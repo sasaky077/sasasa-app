@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>かめらde召喚これくしょん</title>
+  <link rel="apple-touch-icon" href="images/icon-192.png">
+  <link rel="icon" type="image/png" href="images/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0d0f1f; color: #fff; font-family: sans-serif; min-height: 100vh; }
+    .screen { display: none; min-height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+    .header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+    .header-title { font-size: 16px; font-weight: 500; }
+    .back-btn { font-size: 13px; color: #aaa; cursor: pointer; background: none; border: none; }
+    #loading { position: fixed; inset: 0; background: #0d0f1f; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; gap: 12px; }
+    .loading-emoji { font-size: 40px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-txt { font-size: 13px; color: #888; }
+    #screen-main { background: #0d0f1f; }
+    .main-top { padding: 24px 20px 16px; text-align: center; }
+    .main-top img { mix-blend-mode: lighten; }
+    .user-id-badge { font-size: 10px; color: #444; margin-top: 4px; }
+    .favorite-area { margin: 0 20px 20px; background: rgba(255,255,255,0.05); border-radius: 16px; border: 0.5px solid rgba(255,255,255,0.1); padding: 20px; text-align: center; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .fav-label { font-size: 11px; color: #666; margin-bottom: 8px; letter-spacing: 1px; }
+    .fav-img { width: 180px; height: 180px; object-fit: cover; border-radius: 14px; margin-bottom: 8px;box-shadow: 0 6px 16px rgba(0,0,0,0.4);}
+    .fav-emoji { font-size: 56px; line-height: 1; margin-bottom: 6px; }
+    .fav-name { font-size: 15px; font-weight: 500; color: #e0aaff; }
+    .fav-stats { font-size: 11px; color: #888; margin-top: 4px; }
+    .fav-empty { font-size: 13px; color: #555; }
+    .nav-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 20px; }
+    .nav-btn { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; }
+    .nav-btn.summon { border-color: rgba(180,100,255,0.4); background: rgba(120,50,200,0.2); }
+    .nav-btn-icon { font-size: 28px; margin-bottom: 8px; }
+    .nav-btn-label { font-size: 14px; font-weight: 500; }
+    .nav-btn-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .id-area { padding: 0 20px 32px; }
+    .id-box { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px 16px; font-size: 12px; }
+    .id-box-label { color: #666; margin-bottom: 8px; letter-spacing: 1px; }
+    .id-btns { display: flex; gap: 8px; }
+    .id-btn { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; color: #e0aaff; font-size: 12px; cursor: pointer; }
+    #screen-summon { background: #0d0f1f; overflow-y: auto; }
+    .summon-counter { margin: 12px 20px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+    .counter-label { color: #888; }
+    .counter-val { font-weight: 500; color: #e0aaff; }
+    #video { width: calc(100% - 40px); max-width: 500px; border-radius: 14px; margin: 12px auto; display: block; background: #111; }
+    canvas { display: none; }
+    .summon-btns { display: flex; gap: 10px; padding: 0 20px; margin-top: 8px; }
+    .btn-camera { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 24px; padding: 12px; color: #fff; font-size: 14px; cursor: pointer; }
+    .btn-summon { flex: 2; background: rgba(120,50,200,0.7); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 24px; padding: 12px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .btn-summon:disabled { background: rgba(80,80,80,0.4); border-color: rgba(255,255,255,0.1); color: #666; cursor: not-allowed; }
+    #summon-result { display: none; margin: 16px 20px; border-radius: 16px; padding: 20px; text-align: center; }
+    .rarity-bronze { background: rgba(205,127,50,0.15); border: 0.5px solid rgba(205,127,50,0.5); }
+    .rarity-silver { background: rgba(192,192,192,0.12); border: 0.5px solid rgba(192,192,192,0.5); }
+    .rarity-gold   { background: rgba(255,215,0,0.12);  border: 0.5px solid rgba(255,215,0,0.5); }
+    .rarity-rainbow { background: rgba(120,50,200,0.15); border: 2px solid #e040fb; animation: rborder 2s linear infinite; }
+    @keyframes rborder { 0%{border-color:#ff0080}17%{border-color:#ff8000}33%{border-color:#ffff00}50%{border-color:#00ff80}67%{border-color:#0080ff}83%{border-color:#8000ff}100%{border-color:#ff0080} }
+    .result-label { font-size: 12px; color: #b088e0; margin-bottom: 8px; letter-spacing: 1px; }
+    .result-name { font-size: 18px; font-weight: 500; color: #e0aaff; margin-bottom: 4px; }
+    .result-rarity-badge { font-size: 13px; margin-bottom: 10px; }
+    .result-photo { width: 100%; max-height: 120px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; }
+    .stat-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-bottom: 8px; }
+    .stat-table td { padding: 4px 6px; }
+    .stat-name { color: #aaa; text-align: left; }
+    .stat-val { text-align: right; font-weight: 500; }
+    .stat-total-row td { border-top: 0.5px solid rgba(255,255,255,0.15); padding-top: 8px; font-weight: 500; }
+    .opt-badge { display: inline-block; font-size: 10px; padding: 2px 7px; background: rgba(255,200,50,0.15); border: 0.5px solid rgba(255,200,50,0.4); border-radius: 20px; color: #ffc832; margin: 2px; }
+    .result-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-favorite { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 10px; color: #e0aaff; font-size: 13px; cursor: pointer; }
+    .save-status { font-size: 11px; color: #888; margin-top: 8px; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+
+    /* 召喚演出モーダル */
+    #reveal-modal { display: none; position: fixed; inset: 0; z-index: 150; flex-direction: column; align-items: center; justify-content: center; }
+    #reveal-modal.active { display: flex; }
+    #reveal-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: opacity 1.5s ease; }
+    #reveal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background 1.5s ease; }
+    #reveal-content { position: relative; z-index: 1; text-align: center; opacity: 0; transform: scale(0.5); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175,0.885,0.32,1.275); }
+    #reveal-content.show { opacity: 1; transform: scale(1); }
+    #reveal-chara-img { width: 240px; height: 240px; object-fit: cover; border-radius: 20px; box-shadow: 0 0 60px rgba(180,100,255,0.6); margin-bottom: 16px; }
+    #reveal-name { font-size: 24px; font-weight: 500; color: #fff; margin-bottom: 6px; text-shadow: 0 0 20px rgba(180,100,255,0.8); }
+    #reveal-rarity { font-size: 16px; margin-bottom: 24px; }
+    #reveal-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .particle { position: absolute; font-size: 20px; animation: float-up 1.5s ease-out forwards; }
+    @keyframes float-up { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-200px) scale(0.5)} }
+    #reveal-close-btn { background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.3); border-radius: 24px; padding: 12px 32px; color: #fff; font-size: 15px; cursor: pointer; }
+    .modal { background: #1a1a2e; border-radius: 20px; border: 0.5px solid rgba(255,255,255,0.15); padding: 20px 16px; width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 4px; text-align: center; }
+    .modal-sub { font-size: 12px; color: #888; text-align: center; margin-bottom: 16px; }
+    .btn-cancel-txt { background: none; border: none; color: #666; font-size: 13px; padding: 8px; cursor: pointer; width: 100%; margin-top: 4px; }
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+    .compare-table th { font-size: 11px; color: #888; padding: 4px 6px; text-align: center; font-weight: 400; }
+    .compare-table th:first-child { text-align: left; }
+    .compare-table td { padding: 5px 6px; border-top: 0.5px solid rgba(255,255,255,0.07); }
+    .compare-table td:first-child { color: #aaa; }
+    .compare-table td:nth-child(2), .compare-table td:nth-child(3) { text-align: center; font-weight: 500; }
+    .compare-table td:nth-child(4) { text-align: center; font-size: 11px; font-weight: 500; }
+    .diff-plus{color:#4cff8f} .diff-minus{color:#ff5c5c} .diff-new{color:#ffc832} .diff-none{color:#555}
+    .total-row td { border-top: 1px solid rgba(255,255,255,0.2); font-weight: 500; font-size: 13px; }
+    .compare-btns { display: flex; gap: 10px; }
+    .btn-swap { flex: 1; background: rgba(120,50,200,0.5); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 12px; padding: 12px; color: #fff; font-size: 13px; cursor: pointer; }
+    .btn-keep { flex: 1; background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 12px; color: #aaa; font-size: 13px; cursor: pointer; }
+    .modal-inner { text-align: center; }
+    .modal-inner p { font-size: 13px; color: #aaa; margin: 8px 0 20px; }
+    .modal-btns { display: flex; flex-direction: column; gap: 10px; }
+    .btn-ad { background: rgba(255,180,50,0.15); border: 0.5px solid rgba(255,180,50,0.4); border-radius: 12px; padding: 14px; color: #ffc850; font-size: 14px; cursor: pointer; }
+    .btn-pay { background: rgba(120,50,200,0.5); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 12px; padding: 14px; color: #fff; font-size: 14px; cursor: pointer; }
+    #screen-zukan { background: #0d0f1f; overflow-y: auto; }
+    .zukan-stats { margin: 12px 20px; display: flex; gap: 8px; }
+    .stat-card { flex: 1; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px 6px; text-align: center; }
+    .stat-card-val { font-size: 17px; font-weight: 500; }
+    .stat-card-label { font-size: 10px; color: #888; margin-top: 2px; }
+    .c-gold{color:#FFD700} .c-silver{color:#C0C0C0} .c-bronze{color:#CD7F32} .c-rainbow{color:#e040fb}
+    .zukan-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; padding: 12px 20px 32px; }
+    .zukan-card {
+  border: none;
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.zukan-card::after {
+  content: "";
+  position: absolute;
+  inset: 0px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.6));
+}
+
+.zukan-card.bronze::after {
+  background-image: url("images/frame_d.png");
+}
+
+.zukan-card.silver::after {
+  background-image: url("images/frame_g.png");
+}
+
+.zukan-card.gold::after {
+  background-image: url("images/frame_k.png");
+}
+
+.zukan-card.rainbow::after {
+  background-image: url("images/frame_r.png");
+}
+    .zukan-card.unknown { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+    .zukan-card.unknown::after {
+  display: none;
+}
+    /* 旧frame
+    .zukan-card.bronze  { border-color: rgba(205,127,50,0.5); }
+    .zukan-card.silver  { border-color: rgba(192,192,192,0.5); }
+    .zukan-card.gold    { border-color: rgba(255,215,0,0.6); }
+   */
+     .zukan-card.rainbow { animation: rborder 2s linear infinite; }
+   .zukan-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: relative;   /* 追加 */
+  z-index: 1;           /* 追加 */
+  padding: 10px;
+}
+
+.zukan-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  padding: 4px;
+  z-index: 2;           /* 追加 */
+}
+.card-no {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 9px;
+  color: rgba(255,255,255,0.85);
+  z-index: 4;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.45);
+  padding: 2px 5px;
+  border-radius: 6px;
+}
+    .card-emoji { font-size: 26px; }
+    .card-name { font-size: 9px; color: #fff; text-align: center; padding: 0 2px; }
+    .card-question { font-size: 28px; color: #333; }
+    .detail-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+#detail-chara-visual img {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  border-radius: 14px;
+  margin-bottom: 10px;
+}
+    .detail-name { font-size: 18px; font-weight: 500; color: #e0aaff; }
+    .detail-rank { font-size: 12px; margin-top: 2px; }
+    .detail-photo {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 10px;
+  opacity: 0.85;
+  cursor: pointer;
+}
+    .btn-set-fav { width: 100%; margin-top: 14px; background: rgba(120,50,200,0.4); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 12px; padding: 12px; color: #e0aaff; font-size: 14px; cursor: pointer; }
+    .fav-title-img {
+     width: 180px;
+     max-width: 70%;
+     height: auto;
+     display: block;
+     margin: 0 auto 12px;
+     object-fit: contain;
+     filter: drop-shadow(0 0 8px rgba(220,160,255,0.35));
+    }
+    .photo-zoom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.photo-zoom img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 12px;
+  transform: scale(0.95);
+  animation: zoomIn 0.2s ease forwards;
+}
+@keyframes zoomIn {
+  to { transform: scale(1); }
+}
+
+.summon-flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 500;
+}
+
+.summon-flash.active {
+  animation: summonFlash 0.8s ease;
+}
+
+@keyframes summonFlash {
+  0% { opacity: 0; }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+#result-chara-visual img {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  animation: resultPop 0.35s ease;
+}
+
+@keyframes resultPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}.compare-chara-visual {
+  text-align: center;
+  margin: 10px 0 14px;
+}
+
+.compare-chara-visual img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+  animation: resultPop 0.35s ease;
+}
+.compare-rarity {
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  margin: -4px 0 12px;
+  text-shadow: 0 0 6px rgba(255,255,255,0.2);
+}
+ </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-emoji">✨</div>
+  <div class="loading-txt">データを読み込み中...</div>
+</div>
+
+<div id="screen-main" class="screen">
+  <div class="main-top">
+    <img src="images/title.webp" style="width:100%;max-width:400px">
+    <div class="user-id-badge" id="user-id-badge"></div>
+  </div>
+  <div class="favorite-area">
+    <img class="fav-title-img" src="images/oshi-title.png" alt="推しキャラ">
+    <div id="fav-display"><div class="fav-empty">まだお気に入りがいません</div></div>
+  </div>
+  <div class="nav-btns">
+    <div class="nav-btn summon" onclick="showScreen('summon')">
+      <div class="nav-btn-icon">✨</div>
+      <div class="nav-btn-label">召喚する</div>
+      <div class="nav-btn-sub" id="counter-sub">残り3回</div>
+    </div>
+    <div class="nav-btn" onclick="showScreen('zukan')">
+      <div class="nav-btn-icon">📖</div>
+      <div class="nav-btn-label">図鑑</div>
+      <div class="nav-btn-sub" id="zukan-sub">0 / 12</div>
+    </div>
+  </div>
+  <div class="id-area">
+    <div class="id-box">
+      <div class="id-box-label">デバイス間でデータを引き継ぐ</div>
+      <div class="id-btns">
+        <button class="id-btn" onclick="copyId()">📋 IDをコピー</button>
+        <button class="id-btn" onclick="inputId()" style="color:#aaa">✏️ IDを入力</button>
+      </div>
+      <button onclick="resetData()" style="width:100%;margin-top:10px;background:rgba(255,50,50,0.1);border:0.5px solid rgba(255,80,80,0.3);border-radius:10px;padding:10px;color:#ff6666;font-size:12px;cursor:pointer;">🗑️ データをリセット</button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-summon" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="showScreen('main')">＜ 戻る</button>
+    <div class="header-title">キャラ召喚</div>
+    <div></div>
+  </div>
+  <div class="summon-counter">
+    <span class="counter-label">召喚残り回数</span>
+    <span class="counter-val" id="counter-display">3 回</span>
+  </div>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div class="summon-btns">
+    <button class="btn-summon" id="btn-summon" onclick="summonAction()" style="flex:1">カメラを起動</button>
+  </div>
+  <div id="summon-result">
+    <div class="result-label">召喚成功！</div>
+    <div id="result-chara-visual"></div>
+    <div class="result-name" id="result-name"></div>
+    <div class="result-rarity-badge" id="result-rarity"></div>
+    <img class="result-photo" id="result-photo" />
+    <table class="stat-table" id="result-stat-table"></table>
+    <div id="result-opts"></div>
+    <div class="result-btns">
+      <button class="btn-favorite" onclick="setFavoriteFromResult()">★ お気に入り</button>
+      <button class="btn-favorite" onclick="showScreen('main')" style="color:#aaa">🏠 ホームへ</button>
+    </div>
+    <div class="save-status" id="save-status"></div>
+  </div>
+</div>
+
+<div id="screen-zukan" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="showScreen('main')">＜ 戻る</button>
+    <div class="header-title">図鑑</div>
+    <div></div>
+  </div>
+  <div class="zukan-stats">
+    <div class="stat-card"><div class="stat-card-val" id="stat-total">0</div><div class="stat-card-label">収集数</div></div>
+    <div class="stat-card"><div class="stat-card-val c-rainbow" id="stat-rainbow">0</div><div class="stat-card-label">虹</div></div>
+    <div class="stat-card"><div class="stat-card-val c-gold" id="stat-gold">0</div><div class="stat-card-label">金</div></div>
+    <div class="stat-card"><div class="stat-card-val c-silver" id="stat-silver">0</div><div class="stat-card-label">銀</div></div>
+    <div class="stat-card"><div class="stat-card-val c-bronze" id="stat-bronze">0</div><div class="stat-card-label">銅</div></div>
+  </div>
+  <div class="zukan-grid" id="zukan-grid"></div>
+</div>
+
+<div class="modal-overlay" id="compare-modal">
+  <div class="modal">
+    <h2 id="compare-title"></h2>
+    <div class="modal-sub">ステータスを比較して選んでください</div>
+    <div id="compare-chara-visual" class="compare-chara-visual"></div>
+    <div id="compare-rarity" class="compare-rarity"></div>
+    <table class="compare-table">
+      <thead><tr><th>ステータス</th><th>今回</th><th>所持中</th><th>差分</th></tr></thead>
+      <tbody id="compare-tbody"></tbody>
+    </table>
+    <div class="compare-btns">
+      <button class="btn-swap" onclick="swapChara()">今回と入れ替え</button>
+      <button class="btn-keep" onclick="keepChara()">所持中をキープ</button>
+    </div>
+  </div>
+</div>
+
+<!-- 召喚演出モーダル -->
+<div id="reveal-modal">
+  <div id="reveal-bg"></div>
+  <div id="reveal-overlay"></div>
+  <div id="reveal-particles"></div>
+  <div id="reveal-content">
+    <img id="reveal-chara-img" src="" />
+    <div id="reveal-name"></div>
+    <div id="reveal-rarity"></div>
+    <button id="reveal-close-btn" onclick="closeReveal()">タップして続ける ▶</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="paywall-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <h2>召喚回数が0になりました</h2>
+      <p>広告を見るか、チケットを購入して召喚を続けましょう！</p>
+      <div class="modal-btns">
+        <button class="btn-ad" onclick="watchAd()">▶ 広告を見て3回復活</button>
+        <button class="btn-pay" onclick="purchase()">💎 チケット購入（¥120）</button>
+        <button class="btn-cancel-txt" onclick="closeModal('paywall-modal')">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="detail-header">
+      <div id="detail-chara-visual"></div>
+      <div>
+        <div class="detail-name" id="detail-name"></div>
+        <div class="detail-rank" id="detail-rank"></div>
+      </div>
+    </div>
+    <img class="detail-photo" id="detail-photo" />
+    <table class="stat-table" id="detail-stat-table"></table>
+    <div id="detail-opts"></div>
+    <button class="btn-set-fav" onclick="setFavoriteFromDetail()">★ お気に入りに設定</button>
+    <button class="btn-cancel-txt" onclick="closeModal('detail-modal')">閉じる</button>
+  </div>
+</div>
+    <div id="photo-zoom" class="photo-zoom">
+  <img id="photo-zoom-img">
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://xcchgqgkefnzlchitoey.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjY2hncWdrZWZuemxjaGl0b2V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Mjk4MDgsImV4cCI6MjA5MzEwNTgwOH0.1MFak8VVSFjo4TFNJp3b17-DR6DhSGop0Q1EB73XxeA';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const CHARACTERS = [
+    { id:1,  name:"ヒルマ",   emoji:"☀️",  img:"images/chara_01.webp" },
+    { id:2,  name:"ヨルカ",   emoji:"🌙",  img:"images/chara_02.webp" },
+    { id:3,  name:"タソガレ", emoji:"🌆",  img:"images/chara_03.webp" },
+    { id:4,  name:"アサヒ",   emoji:"🌅",  img:"images/chara_04.webp" },
+    { id:5,  name:"スピカ",     emoji:"❄️",  img:"images/chara_05.webp" },
+    { id:6,  name:"アメ", emoji:"🌧️",  img:"images/chara_06.webp" },
+    { id:7,  name:"カゼノ", emoji:"💨",  img:"images/chara_07.webp" },
+    { id:8,  name:"ユキ", emoji:"🌸",  img:"images/chara_08.webp" },
+    { id:9,  name:"カミナリ", emoji:"⚡",  img:"images/chara_09.webp" },
+    { id:10, name:"ニジコ",   emoji:"🌈",  img:"images/chara_10.webp" },
+    { id:11, name:"レイ",   emoji:"⭐",  img:"images/chara_11.webp" },
+    { id:12, name:"アテナ", emoji:"🦊",  img:"images/chara_12.webp" }
+  ];
+
+  const BASE_STATS = ["わんりょく","ぼうぎょりょく","まりょく","みりょく"];
+  const OPT_STATS  = ["しりょく","かりょく","きりょく","ちりょく","ふりょく"];
+
+  const RARITY_LABEL = {
+  bronze: "★★☆☆☆",
+  silver: "★★★☆☆",
+  gold:   "★★★★☆",
+  rainbow:"★★★★★"
+};
+
+const RARITY_COLOR = {
+  bronze: "#cd7f32",
+  silver: "#c0c0c0",
+  gold:   "#ffd700",
+  rainbow:"#e040fb"
+};
+
+  var summonCount=3, collected={}, favoriteId=null;
+  var currentResultData=null, currentDetailData=null, pendingNew=null;
+  var userId = localStorage.getItem('zukan_user_id');
+  if(!userId){ userId = 'user_' + Math.random().toString(36).slice(2,10); localStorage.setItem('zukan_user_id', userId); }
+
+  function getRate(id, h, m, isWeekday, isWeekend) {
+    if(id===1)  return (isWeekday&&h>=10&&h<17)?80:(isWeekend&&h>=10&&h<17)?40:5;
+    if(id===2)  return (h>=22||h<5)?(m%2===0?75:50):((h>=20&&h<22)?30:5);
+    if(id===3)  return (h>=17&&h<20)?(isWeekend?80:70):5;
+    if(id===4)  return (isWeekday&&h>=5&&h<9)?75:(isWeekend&&h>=5&&h<9)?40:5;
+    if(id===5)  return (h>=22||h<5)?40:((h>=5&&h<7)?70:5);
+    if(id===6)  return (h>=12&&h<15&&m%2===0)?65:5;
+    if(id===7)  return (h>=8&&h<12&&m%5===0)?60:5;
+    if(id===8)  return (isWeekend&&h>=13&&h<16)?70:(isWeekday&&h>=13&&h<16)?20:5;
+    if(id===9)  return (h>=21&&m%2===1)?70:5;
+    if(id===10) return (isWeekend&&h>=14&&h<17)?65:(isWeekday&&h>=14&&h<17)?15:5;
+    if(id===11) return (h>=0&&h<4)?75:((h>=22||h<5)?40:5);
+    if(id===12) return (isWeekend&&h>=16&&h<19)?70:(isWeekday&&h>=16&&h<19)?20:5;
+    return 5;
+  }
+
+  function selectChara(now) {
+    var h = now.getHours();
+    var m = now.getMinutes();
+    var wd = now.getDay();
+    var isWeekend = (wd===0||wd===6);
+    var isWeekday = !isWeekend;
+    var rates = CHARACTERS.map(function(c){ return { chara:c, rate:getRate(c.id,h,m,isWeekday,isWeekend) }; });
+    var totalRate = rates.reduce(function(a,b){ return a+b.rate; }, 0);
+    var rv = Math.random() * totalRate;
+    var cumulative = 0;
+    for(var i=0; i<rates.length; i++){
+      cumulative += rates[i].rate;
+      if(rv <= cumulative){ return rates[i].chara; }
+    }
+    return CHARACTERS[CHARACTERS.length-1];
+  }
+
+  function charaVisualHTML(chara, size) {
+    size = size || 120;
+    if(chara.img) {
+      return '<img src="'+chara.img+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:12px;margin-bottom:8px">';
+    }
+    return '<div style="font-size:'+Math.round(size*0.5)+'px;line-height:1;margin-bottom:8px">'+chara.emoji+'</div>';
+  }
+
+  function favVisualHTML(chara) {
+    if(chara.img) return '<img src="'+chara.img+'" class="fav-img">';
+    return '<div class="fav-emoji">'+chara.emoji+'</div>';
+  }
+
+  async function init(){
+    document.getElementById('user-id-badge').textContent = 'ID: ' + userId;
+    try { await loadFromDB(); } catch(e) { console.log('DB load error:', e); }
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('screen-main').classList.add('active');
+    updateCounterUI();
+    updateMainUI();
+  }
+
+  async function loadFromDB(){
+    var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
+    if(res1.data){
+      res1.data.forEach(function(row){
+        var chara = CHARACTERS.find(function(c){ return c.id===row.character_id; });
+        if(chara){
+          collected[row.character_id] = {
+            id:chara.id, name:chara.name, emoji:chara.emoji, img:chara.img,
+            base:row.base_stats, opts:row.opt_stats, total:row.total,
+            rarity:row.rarity, photo:row.photo_url, time:row.captured_at, db_id:row.id
+          };
+        }
+      });
+    }
+    var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId);
+    var profile = (res2.data&&res2.data.length>0) ? res2.data[0] : null;
+    if(profile){ favoriteId = profile.favorite_id; }
+  }
+
+  async function saveToDB(data){
+    document.getElementById('save-status').textContent = '保存中...';
+    var payload = { user_id:userId, character_id:data.id, rarity:data.rarity, base_stats:data.base, opt_stats:data.opts, total:data.total, photo_url:data.photo, captured_at:data.time };
+    var result;
+    if(data.db_id){
+      result = await sb.from('collected_characters').update(payload).eq('id', data.db_id);
+    } else {
+      result = await sb.from('collected_characters').insert(payload).select();
+      if(result.data&&result.data[0]) collected[data.id].db_id = result.data[0].id;
+    }
+    document.getElementById('save-status').textContent = result.error ? '保存失敗 :(' : '✓ 保存しました';
+  }
+
+  async function saveFavoriteToDB(charId){
+    var res = await sb.from('user_profiles').select('*').eq('user_id', userId);
+    var existing = (res.data&&res.data.length>0) ? res.data[0] : null;
+    if(existing){ await sb.from('user_profiles').update({ favorite_id:charId }).eq('user_id', userId); }
+    else { await sb.from('user_profiles').insert({ user_id:userId, favorite_id:charId }); }
+  }
+
+  function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+  function rollStats(){
+    var base={};
+    BASE_STATS.forEach(function(s){ base[s]=rand(1,99); });
+    var pool=OPT_STATS.slice().sort(function(){ return Math.random()-0.5; });
+    var opts={}, oc=0;
+    for(var i=0;i<3;i++){ if(Math.random()<0.15){ opts[pool[oc]]=rand(1,99); oc++; } }
+    var totalBase=Object.values(base).reduce(function(a,b){ return a+b; },0);
+    var totalOpt=Object.values(opts).reduce(function(a,b){ return a+b; },0);
+    var total=totalBase+totalOpt;
+    var rarity=Object.keys(opts).length===3?"rainbow":total>=350?"gold":total>=200?"silver":"bronze";
+    return {base:base, opts:opts, total:total, rarity:rarity};
+  }
+
+  function showScreen(name){
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById('screen-'+name).classList.add('active');
+    if(name==='zukan') renderZukan();
+    if(name==='main')  updateMainUI();
+  }
+
+  async function summonAction(){
+    var video = document.getElementById('video');
+    if(!video.srcObject){
+      await startCamera();
+      document.getElementById('btn-summon').textContent = '✨ 召喚！';
+      return;
+    }
+    takePicture();
+  }
+
+  function stopCamera(){
+    var video=document.getElementById("video");
+    if(video.srcObject){
+      video.srcObject.getTracks().forEach(function(t){ t.stop(); });
+      video.srcObject=null;
+    }
+  }
+
+  async function startCamera(){
+    try{
+      var stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      document.getElementById('video').srcObject=stream;
+    }catch(e){ alert('カメラの起動に失敗しました。'); }
+  }
+
+  function takePicture(){
+    if(summonCount<=0){ document.getElementById('paywall-modal').classList.add('active'); return; }
+    var video=document.getElementById('video');
+    if(!video.srcObject){ alert('先にカメラを起動してください！'); return; }
+    var canvas=document.getElementById('canvas');
+    canvas.width=video.videoWidth||640; canvas.height=video.videoHeight||480;
+    canvas.getContext('2d').drawImage(video,0,0);
+    var photo=canvas.toDataURL('image/jpeg',0.6);
+    var now=new Date();
+    var timeStr=(now.getMonth()+1)+'/'+now.getDate()+' '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+    var chara = selectChara(now);
+    var stats = rollStats();
+    summonCount--;
+    updateCounterUI();
+    stopCamera();
+    document.getElementById('btn-summon').textContent = 'カメラを起動';
+    var newData={id:chara.id,name:chara.name,emoji:chara.emoji,img:chara.img,base:stats.base,opts:stats.opts,total:stats.total,rarity:stats.rarity,photo:photo,time:timeStr};
+    if(collected[chara.id]){ pendingNew=newData; showReveal(newData, true); }
+    else{ collected[chara.id]=newData; showReveal(newData, false); saveToDB(newData); }
+  }
+
+  var pendingRevealIsCompare = false;
+
+  function showReveal(data, isCompare){
+    pendingRevealIsCompare = isCompare;
+    currentResultData = data;
+
+    // 背景に撮影写真をセット
+    var bg = document.getElementById('reveal-bg');
+    bg.style.backgroundImage = 'url('+data.photo+')';
+    bg.style.opacity = '1';
+
+    // オーバーレイ・コンテンツをリセット
+    var overlay = document.getElementById('reveal-overlay');
+    var revContent = document.getElementById('reveal-content');
+    overlay.style.background = 'rgba(0,0,0,0)';
+    revContent.classList.remove('show');
+
+    // モーダル表示
+    document.getElementById('reveal-modal').classList.add('active');
+
+    // フェードイン→暗転→キャラ登場
+    setTimeout(function(){
+      overlay.style.background = 'rgba(0,0,0,0.75)';
+    }, 500);
+
+    setTimeout(function(){
+      var img = document.getElementById('reveal-chara-img');
+      if(data.img){ img.src=data.img; img.style.display='block'; }
+      else{ img.style.display='none'; }
+      document.getElementById('reveal-name').textContent = data.name;
+      document.getElementById('reveal-rarity').textContent = RARITY_LABEL[data.rarity];
+      revContent.classList.add('show');
+      spawnParticles(data.rarity);
+    }, 1800);
+  }
+
+  function spawnParticles(rarity){
+    var container = document.getElementById('reveal-particles');
+    container.innerHTML = '';
+    var emojis = rarity==='rainbow'?['🌈','✨','⭐','💫','🎉']:
+                 rarity==='gold'?['✨','⭐','💫','🌟']:
+                 rarity==='silver'?['✨','💫','⚡']:['✨','💫'];
+    for(var i=0;i<15;i++){
+      var el=document.createElement('div');
+      el.className='particle';
+      el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+      el.style.left=Math.random()*100+'%';
+      el.style.top=(50+Math.random()*50)+'%';
+      el.style.animationDelay=(Math.random()*0.8)+'s';
+      container.appendChild(el);
+    }
+  }
+
+  function closeReveal(){
+    document.getElementById('reveal-modal').classList.remove('active');
+    if(pendingRevealIsCompare){
+      showCompareModal(currentResultData, collected[currentResultData.id]);
+    } else {
+      showResult(currentResultData);
+    }
+  }
+
+  function showResult(data){
+    currentResultData=data;
+    var el=document.getElementById('summon-result');
+    el.className='rarity-'+data.rarity;
+    el.style.display='block';
+    document.getElementById('result-chara-visual').innerHTML=charaVisualHTML(data,240);
+    document.getElementById('result-name').textContent=data.name+' をお迎え！';
+    document.getElementById('result-rarity').innerHTML =
+  '<span style="color:'+RARITY_COLOR[data.rarity]+'">'
+  + RARITY_LABEL[data.rarity] +
+  '</span>';
+    document.getElementById('result-photo').src=data.photo||'';
+    document.getElementById('result-stat-table').innerHTML=buildStatRows(data);
+    document.getElementById('result-opts').innerHTML=buildOptBadges(data.opts);
+    document.getElementById('save-status').textContent='';
+  }
+
+  function buildStatRows(data){
+    var h=BASE_STATS.map(function(s){ return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+data.base[s]+'</td></tr>'; }).join('');
+    Object.keys(data.opts).forEach(function(k){ h+='<tr><td class="stat-name" style="color:#ffc832">'+k+'</td><td class="stat-val" style="color:#ffc832">'+data.opts[k]+'</td></tr>'; });
+    h+='<tr class="stat-total-row"><td class="stat-name">合計</td><td class="stat-val">'+data.total+'</td></tr>';
+    return h;
+  }
+
+  function buildOptBadges(opts){
+    var keys=Object.keys(opts);
+    if(!keys.length) return '<div style="font-size:11px;color:#555;margin-top:4px">オプションなし</div>';
+    return keys.map(function(k){ return '<span class="opt-badge">'+k+' '+opts[k]+'</span>'; }).join('');
+  }
+
+  function showCompareModal(nw,old){
+    document.getElementById('compare-title').textContent=nw.name+' を再びお迎え！';
+    document.getElementById('compare-chara-visual').innerHTML =
+  charaVisualHTML(nw,160);
+
+  document.getElementById('compare-rarity').innerHTML =
+  '<span style="color:'+RARITY_COLOR[nw.rarity]+'">'
+  + RARITY_LABEL[nw.rarity] +
+  '</span>';
+  
+    var rows='', nTotal=0, oTotal=0;
+    BASE_STATS.forEach(function(s){
+      var nv=nw.base[s], ov=old.base[s], diff=nv-ov;
+      nTotal+=nv; oTotal+=ov;
+      var cls=diff>0?'diff-plus':diff<0?'diff-minus':'diff-none';
+      var ds=diff>0?'+'+diff:diff===0?'±0':String(diff);
+      rows+='<tr><td>'+s+'</td><td>'+nv+'</td><td>'+ov+'</td><td class="'+cls+'">'+ds+'</td></tr>';
+    });
+    var allOpts={};
+    Object.keys(nw.opts).forEach(function(k){ allOpts[k]=true; });
+    Object.keys(old.opts).forEach(function(k){ allOpts[k]=true; });
+    Object.keys(allOpts).forEach(function(k){
+      var nv=nw.opts[k], ov=old.opts[k];
+      if(nv!==undefined) nTotal+=nv;
+      if(ov!==undefined) oTotal+=ov;
+      var ds,cls;
+      if(nv!==undefined&&ov!==undefined){ var d=nv-ov; ds=d>0?'+'+d:d===0?'±0':String(d); cls=d>0?'diff-plus':d<0?'diff-minus':'diff-none'; }
+      else if(nv!==undefined){ ds='NEW'; cls='diff-new'; }
+      else{ ds='-'; cls='diff-none'; }
+      rows+='<tr><td style="color:#ffc832">'+k+'</td><td style="color:'+(nv!==undefined?'#ffc832':'#555')+'">'+(nv!==undefined?nv:'-')+'</td><td style="color:'+(ov!==undefined?'#ffc832':'#555')+'">'+(ov!==undefined?ov:'-')+'</td><td class="'+cls+'">'+ds+'</td></tr>';
+    });
+    var td=nTotal-oTotal, tc=td>0?'diff-plus':td<0?'diff-minus':'diff-none';
+    rows+='<tr class="total-row"><td>合計</td><td>'+nTotal+'</td><td>'+oTotal+'</td><td class="'+tc+'">'+(td>0?'+'+td:td)+'</td></tr>';
+    document.getElementById('compare-tbody').innerHTML=rows;
+    document.getElementById('compare-modal').classList.add('active');
+  }
+
+  function swapChara(){ if(!pendingNew)return; pendingNew.db_id=collected[pendingNew.id]?collected[pendingNew.id].db_id:null; collected[pendingNew.id]=pendingNew; closeModal('compare-modal'); showResult(pendingNew); saveToDB(pendingNew); pendingNew=null; pendingRevealIsCompare=false; }
+  function keepChara(){ closeModal('compare-modal'); if(pendingNew) showResult(pendingNew); pendingNew=null; }
+
+  function setFavoriteFromResult(){ if(!currentResultData)return; favoriteId=currentResultData.id; updateMainUI(); saveFavoriteToDB(favoriteId); alert(currentResultData.name+' をお気に入りに設定しました！'); }
+  function setFavoriteFromDetail(){ if(!currentDetailData)return; favoriteId=currentDetailData.id; updateMainUI(); saveFavoriteToDB(favoriteId); closeModal('detail-modal'); alert(currentDetailData.name+' をお気に入りに設定しました！'); }
+
+  function updateMainUI(){
+    var el=document.getElementById('fav-display');
+    if(favoriteId&&collected[favoriteId]){
+      var c=collected[favoriteId];
+      el.innerHTML=favVisualHTML(c)+'<div class="fav-name">'+c.name+'</div><div class="fav-stats">'+RARITY_LABEL[c.rarity]+' ／ 合計 '+c.total+'</div>';
+    } else { el.innerHTML='<div class="fav-empty">まだお気に入りがいません</div>'; }
+    document.getElementById('zukan-sub').textContent=Object.keys(collected).length+' / '+CHARACTERS.length;
+  }
+
+  function watchAd(){ closeModal('paywall-modal'); setTimeout(function(){ summonCount+=3; updateCounterUI(); alert('広告視聴完了！3回分追加されました。'); },500); }
+  function purchase(){ alert('購入機能は準備中です。'); }
+
+  function renderZukan(){
+    var grid=document.getElementById('zukan-grid');
+    grid.innerHTML='';
+    var counts={rainbow:0,gold:0,silver:0,bronze:0};
+    CHARACTERS.forEach(function(c){
+      var data=collected[c.id];
+      var div=document.createElement('div');
+      div.className='zukan-card '+(data?data.rarity:'unknown');
+      if(data){
+        counts[data.rarity]++;
+        if(c.img){
+          div.innerHTML='<div class="card-no">No.'+c.id+'</div><img class="zukan-card-img" src="'+c.img+'"><div class="zukan-card-overlay"><div class="card-name">'+c.name+'</div></div>';
+        } else {
+          div.innerHTML='<div class="card-no">No.'+c.id+'</div><div class="card-emoji">'+c.emoji+'</div><div class="card-name">'+c.name+'</div>';
+        }
+        (function(d){ div.onclick=function(){ showDetail(d); }; })(data);
+      } else {
+        div.innerHTML = `
+       <div class="card-no">No.${c.id}</div>
+       <img class="zukan-card-img" src="images/unknown.png">
+  `;
+}
+      grid.appendChild(div);
+    });
+    document.getElementById('stat-total').textContent=Object.keys(collected).length;
+    document.getElementById('stat-rainbow').textContent=counts.rainbow;
+    document.getElementById('stat-gold').textContent=counts.gold;
+    document.getElementById('stat-silver').textContent=counts.silver;
+    document.getElementById('stat-bronze').textContent=counts.bronze;
+  }
+
+  function showDetail(data){
+    currentDetailData=data;
+    var chara=CHARACTERS.find(function(c){ return c.id===data.id; });
+    document.getElementById('detail-chara-visual').innerHTML=charaVisualHTML(chara||data,220);
+    document.getElementById('detail-name').textContent=data.name;
+    document.getElementById('detail-rank').textContent=RARITY_LABEL[data.rarity]+' ／ 合計 '+data.total;
+    var photo=document.getElementById('detail-photo');
+    if(data.photo){ photo.src=data.photo; photo.style.display='block'; } else photo.style.display='none';
+    document.getElementById('detail-stat-table').innerHTML=buildStatRows(data);
+    document.getElementById('detail-opts').innerHTML=buildOptBadges(data.opts);
+    document.getElementById('detail-modal').classList.add('active');
+  }
+
+  function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+  function updateCounterUI(){ document.getElementById('counter-display').textContent=summonCount+' 回'; document.getElementById('counter-sub').textContent='残り'+summonCount+'回'; document.getElementById('btn-summon').style.opacity=summonCount<=0?'0.5':'1'; }
+  function copyId(){ navigator.clipboard.writeText(userId); alert('IDをコピーしました！\n'+userId+'\n\nスマホでこのIDを入力してください。'); }
+  function inputId(){ var newId=prompt('引き継ぎたいIDを入力してください：'); if(newId&&newId.trim()){ localStorage.setItem('zukan_user_id',newId.trim()); alert('IDを変更しました！ページをリロードします。'); location.reload(); } }
+  function resetData(){
+    if(confirm('データを全てリセットしますか？\n図鑑・お気に入りが消えます。')){
+      sb.from('collected_characters').delete().eq('user_id', userId).then(function(){
+        return sb.from('user_profiles').delete().eq('user_id', userId);
+      }).then(function(){
+        localStorage.removeItem('zukan_user_id');
+        alert('リセットしました！');
+        location.reload();
+      });
+    }
+  }
+
+  init();
+
+const zoom = document.getElementById('photo-zoom');
+const zoomImg = document.getElementById('photo-zoom-img');
+
+document.getElementById('detail-photo').onclick = function(){
+  if(!this.src) return;
+  zoom.style.display = 'flex';
+  zoomImg.src = this.src;
+};
+
+zoom.onclick = function(){
+  zoom.style.display = 'none';
+};
+
+document.getElementById('detail-chara-visual').onclick = function(){
+  const img = this.querySelector('img');
+  if(!img) return;
+  zoom.style.display = 'flex';
+  zoomImg.src = img.src;
+};
+</script>
+<div id="summon-flash" class="summon-flash"></div>
+</body>
+</html>
