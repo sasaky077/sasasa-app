@@ -1,11 +1,11 @@
 {
-  "name": "かめらde召喚これくしょん",
-  "short_name": "カメこれ",
+  "name": "十三番地",
+  "short_name": "十三番地",
   "icons": [
     {
-      "src": "images/icon-192.png", 
+      "src": "images/icon_192.webp",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/webp"
     }
   ],
   "start_url": "index.html",

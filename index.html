@@ -3,400 +3,445 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>かめらde召喚これくしょん</title>
-  <link rel="apple-touch-icon" href="images/icon-192.png">
-  <link rel="icon" type="image/png" href="images/icon-192.png">
+  <meta name="theme-color" content="#0f0f0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>十三番地</title>
+
+  <!-- iOS用-->
+  <link rel="apple-touch-icon" href="images/icon_192.webp">
+
+  <!-- ブラウザタブ用 -->
+  <link rel="icon" type="image/webp" href="images/icon_192.webp">
+
+  <!-- Android PWA用 -->
   <link rel="manifest" href="manifest.json">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0d0f1f; color: #fff; font-family: sans-serif; min-height: 100vh; }
-    .screen { display: none; min-height: 100vh; flex-direction: column; }
-    .screen.active { display: flex; }
-    .header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid rgba(255,255,255,0.1); flex-shrink: 0; }
-    .header-title { font-size: 16px; font-weight: 500; }
-    .back-btn { font-size: 13px; color: #aaa; cursor: pointer; background: none; border: none; }
-    #loading { position: fixed; inset: 0; background: #0d0f1f; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; gap: 12px; }
-    .loading-emoji { font-size: 40px; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-txt { font-size: 13px; color: #888; }
-    #screen-main { background: #0d0f1f; }
-    .main-top { padding: 24px 20px 16px; text-align: center; }
-    .main-top img { mix-blend-mode: lighten; }
-    .user-id-badge { font-size: 10px; color: #444; margin-top: 4px; }
-    .favorite-area { margin: 0 20px 20px; background: rgba(255,255,255,0.05); border-radius: 16px; border: 0.5px solid rgba(255,255,255,0.1); padding: 20px; text-align: center; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .fav-label { font-size: 11px; color: #666; margin-bottom: 8px; letter-spacing: 1px; }
-    .fav-img { width: 180px; height: 180px; object-fit: cover; border-radius: 14px; margin-bottom: 8px;box-shadow: 0 6px 16px rgba(0,0,0,0.4);}
-    .fav-emoji { font-size: 56px; line-height: 1; margin-bottom: 6px; }
-    .fav-name { font-size: 15px; font-weight: 500; color: #e0aaff; }
-    .fav-stats { font-size: 11px; color: #888; margin-top: 4px; }
-    .fav-empty { font-size: 13px; color: #555; }
-    .nav-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 20px; }
-    .nav-btn { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; }
-    .nav-btn.summon { border-color: rgba(180,100,255,0.4); background: rgba(120,50,200,0.2); }
-    .nav-btn-icon { font-size: 28px; margin-bottom: 8px; }
-    .nav-btn-label { font-size: 14px; font-weight: 500; }
-    .nav-btn-sub { font-size: 11px; color: #888; margin-top: 2px; }
-    .id-area { padding: 0 20px 32px; }
-    .id-box { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px 16px; font-size: 12px; }
-    .id-box-label { color: #666; margin-bottom: 8px; letter-spacing: 1px; }
-    .id-btns { display: flex; gap: 8px; }
-    .id-btn { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; color: #e0aaff; font-size: 12px; cursor: pointer; }
-    #screen-summon { background: #0d0f1f; overflow-y: auto; }
-    .summon-counter { margin: 12px 20px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
-    .counter-label { color: #888; }
-    .counter-val { font-weight: 500; color: #e0aaff; }
-    #video { width: calc(100% - 40px); max-width: 500px; border-radius: 14px; margin: 12px auto; display: block; background: #111; }
-    canvas { display: none; }
-    .summon-btns { display: flex; gap: 10px; padding: 0 20px; margin-top: 8px; }
-    .btn-camera { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 24px; padding: 12px; color: #fff; font-size: 14px; cursor: pointer; }
-    .btn-summon { flex: 2; background: rgba(120,50,200,0.7); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 24px; padding: 12px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; }
-    .btn-summon:disabled { background: rgba(80,80,80,0.4); border-color: rgba(255,255,255,0.1); color: #666; cursor: not-allowed; }
-    #summon-result { display: none; margin: 16px 20px; border-radius: 16px; padding: 20px; text-align: center; }
-    .rarity-bronze { background: rgba(205,127,50,0.15); border: 0.5px solid rgba(205,127,50,0.5); }
-    .rarity-silver { background: rgba(192,192,192,0.12); border: 0.5px solid rgba(192,192,192,0.5); }
-    .rarity-gold   { background: rgba(255,215,0,0.12);  border: 0.5px solid rgba(255,215,0,0.5); }
-    .rarity-rainbow { background: rgba(120,50,200,0.15); border: 2px solid #e040fb; animation: rborder 2s linear infinite; }
-    @keyframes rborder { 0%{border-color:#ff0080}17%{border-color:#ff8000}33%{border-color:#ffff00}50%{border-color:#00ff80}67%{border-color:#0080ff}83%{border-color:#8000ff}100%{border-color:#ff0080} }
-    .result-label { font-size: 12px; color: #b088e0; margin-bottom: 8px; letter-spacing: 1px; }
-    .result-name { font-size: 18px; font-weight: 500; color: #e0aaff; margin-bottom: 4px; }
-    .result-rarity-badge { font-size: 13px; margin-bottom: 10px; }
-    .result-photo { width: 100%; max-height: 120px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; }
-    .stat-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-bottom: 8px; }
-    .stat-table td { padding: 4px 6px; }
-    .stat-name { color: #aaa; text-align: left; }
-    .stat-val { text-align: right; font-weight: 500; }
-    .stat-total-row td { border-top: 0.5px solid rgba(255,255,255,0.15); padding-top: 8px; font-weight: 500; }
-    .opt-badge { display: inline-block; font-size: 10px; padding: 2px 7px; background: rgba(255,200,50,0.15); border: 0.5px solid rgba(255,200,50,0.4); border-radius: 20px; color: #ffc832; margin: 2px; }
-    .result-btns { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-favorite { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 10px; color: #e0aaff; font-size: 13px; cursor: pointer; }
-    .save-status { font-size: 11px; color: #888; margin-top: 8px; }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.active { display: flex; }
 
-    /* 召喚演出モーダル */
-    #reveal-modal { display: none; position: fixed; inset: 0; z-index: 150; flex-direction: column; align-items: center; justify-content: center; }
-    #reveal-modal.active { display: flex; }
-    #reveal-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: opacity 1.5s ease; }
-    #reveal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background 1.5s ease; }
-    #reveal-content { position: relative; z-index: 1; text-align: center; opacity: 0; transform: scale(0.5); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175,0.885,0.32,1.275); }
-    #reveal-content.show { opacity: 1; transform: scale(1); }
-    #reveal-chara-img { width: 240px; height: 240px; object-fit: cover; border-radius: 20px; box-shadow: 0 0 60px rgba(180,100,255,0.6); margin-bottom: 16px; }
-    #reveal-name { font-size: 24px; font-weight: 500; color: #fff; margin-bottom: 6px; text-shadow: 0 0 20px rgba(180,100,255,0.8); }
-    #reveal-rarity { font-size: 16px; margin-bottom: 24px; }
-    #reveal-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-    .particle { position: absolute; font-size: 20px; animation: float-up 1.5s ease-out forwards; }
-    @keyframes float-up { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-200px) scale(0.5)} }
-    #reveal-close-btn { background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.3); border-radius: 24px; padding: 12px 32px; color: #fff; font-size: 15px; cursor: pointer; }
-    .modal { background: #1a1a2e; border-radius: 20px; border: 0.5px solid rgba(255,255,255,0.15); padding: 20px 16px; width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
-    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 4px; text-align: center; }
-    .modal-sub { font-size: 12px; color: #888; text-align: center; margin-bottom: 16px; }
-    .btn-cancel-txt { background: none; border: none; color: #666; font-size: 13px; padding: 8px; cursor: pointer; width: 100%; margin-top: 4px; }
-    .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
-    .compare-table th { font-size: 11px; color: #888; padding: 4px 6px; text-align: center; font-weight: 400; }
-    .compare-table th:first-child { text-align: left; }
-    .compare-table td { padding: 5px 6px; border-top: 0.5px solid rgba(255,255,255,0.07); }
-    .compare-table td:first-child { color: #aaa; }
-    .compare-table td:nth-child(2), .compare-table td:nth-child(3) { text-align: center; font-weight: 500; }
-    .compare-table td:nth-child(4) { text-align: center; font-size: 11px; font-weight: 500; }
-    .diff-plus{color:#4cff8f} .diff-minus{color:#ff5c5c} .diff-new{color:#ffc832} .diff-none{color:#555}
-    .total-row td { border-top: 1px solid rgba(255,255,255,0.2); font-weight: 500; font-size: 13px; }
-    .compare-btns { display: flex; gap: 10px; }
-    .btn-swap { flex: 1; background: rgba(120,50,200,0.5); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 12px; padding: 12px; color: #fff; font-size: 13px; cursor: pointer; }
-    .btn-keep { flex: 1; background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 12px; color: #aaa; font-size: 13px; cursor: pointer; }
-    .modal-inner { text-align: center; }
-    .modal-inner p { font-size: 13px; color: #aaa; margin: 8px 0 20px; }
-    .modal-btns { display: flex; flex-direction: column; gap: 10px; }
-    .btn-ad { background: rgba(255,180,50,0.15); border: 0.5px solid rgba(255,180,50,0.4); border-radius: 12px; padding: 14px; color: #ffc850; font-size: 14px; cursor: pointer; }
-    .btn-pay { background: rgba(120,50,200,0.5); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 12px; padding: 14px; color: #fff; font-size: 14px; cursor: pointer; }
-    #screen-zukan { background: #0d0f1f; overflow-y: auto; }
-    .zukan-stats { margin: 12px 20px; display: flex; gap: 8px; }
-    .stat-card { flex: 1; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px 6px; text-align: center; }
-    .stat-card-val { font-size: 17px; font-weight: 500; }
-    .stat-card-label { font-size: 10px; color: #888; margin-top: 2px; }
-    .c-gold{color:#FFD700} .c-silver{color:#C0C0C0} .c-bronze{color:#CD7F32} .c-rainbow{color:#e040fb}
-    .zukan-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; padding: 12px 20px 32px; }
-    .zukan-card {
-  border: none;
-  aspect-ratio: 1;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-.zukan-card::after {
-  content: "";
-  position: absolute;
-  inset: 0px;
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-  pointer-events: none;
-  z-index: 3;
-  filter: drop-shadow(0 0 3px rgba(0,0,0,0.6));
-}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-.zukan-card.bronze::after {
-  background-image: url("images/frame_d.png");
-}
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-.zukan-card.silver::after {
-  background-image: url("images/frame_g.png");
-}
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/story_ui.css">
 
-.zukan-card.gold::after {
-  background-image: url("images/frame_k.png");
-}
-
-.zukan-card.rainbow::after {
-  background-image: url("images/frame_r.png");
-}
-    .zukan-card.unknown { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
-    .zukan-card.unknown::after {
-  display: none;
-}
-    /* 旧frame
-    .zukan-card.bronze  { border-color: rgba(205,127,50,0.5); }
-    .zukan-card.silver  { border-color: rgba(192,192,192,0.5); }
-    .zukan-card.gold    { border-color: rgba(255,215,0,0.6); }
-   */
-     .zukan-card.rainbow { animation: rborder 2s linear infinite; }
-   .zukan-card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: relative;   /* 追加 */
-  z-index: 1;           /* 追加 */
-  padding: 10px;
-}
-
-.zukan-card-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.8));
-  padding: 4px;
-  z-index: 2;           /* 追加 */
-}
-.card-no {
-  position: absolute;
-  top: 6px;
-  left: 8px;
-  font-size: 9px;
-  color: rgba(255,255,255,0.85);
-  z-index: 4;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-  background: rgba(0,0,0,0.45);
-  padding: 2px 5px;
-  border-radius: 6px;
-}
-    .card-emoji { font-size: 26px; }
-    .card-name { font-size: 9px; color: #fff; text-align: center; padding: 0 2px; }
-    .card-question { font-size: 28px; color: #333; }
-    .detail-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-#detail-chara-visual img {
-  width: 100%;
-  max-width: 260px;
-  height: auto;
-  border-radius: 14px;
-  margin-bottom: 10px;
-}
-    .detail-name { font-size: 18px; font-weight: 500; color: #e0aaff; }
-    .detail-rank { font-size: 12px; margin-top: 2px; }
-    .detail-photo {
-  width: 100%;
-  max-height: 160px;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-top: 10px;
-  opacity: 0.85;
-  cursor: pointer;
-}
-    .btn-set-fav { width: 100%; margin-top: 14px; background: rgba(120,50,200,0.4); border: 0.5px solid rgba(180,100,255,0.4); border-radius: 12px; padding: 12px; color: #e0aaff; font-size: 14px; cursor: pointer; }
-    .fav-title-img {
-     width: 180px;
-     max-width: 70%;
-     height: auto;
-     display: block;
-     margin: 0 auto 12px;
-     object-fit: contain;
-     filter: drop-shadow(0 0 8px rgba(220,160,255,0.35));
-    }
-    .photo-zoom {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.9);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.photo-zoom img {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 12px;
-  transform: scale(0.95);
-  animation: zoomIn 0.2s ease forwards;
-}
-@keyframes zoomIn {
-  to { transform: scale(1); }
-}
-
-.summon-flash {
-  position: fixed;
-  inset: 0;
-  background: white;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 500;
-}
-
-.summon-flash.active {
-  animation: summonFlash 0.8s ease;
-}
-
-@keyframes summonFlash {
-  0% { opacity: 0; }
-  30% { opacity: 0.9; }
-  100% { opacity: 0; }
-}
-#result-chara-visual img {
-  width: 100%;
-  max-width: 260px;
-  height: auto;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-  animation: resultPop 0.35s ease;
-}
-
-@keyframes resultPop {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}.compare-chara-visual {
-  text-align: center;
-  margin: 10px 0 14px;
-}
-
-.compare-chara-visual img {
-  width: 160px;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
-  animation: resultPop 0.35s ease;
-}
-.compare-rarity {
-  text-align: center;
-  font-size: 14px;
-  letter-spacing: 2px;
-  font-weight: 600;
-  margin: -4px 0 12px;
-  text-shadow: 0 0 6px rgba(255,255,255,0.2);
-}
- </style>
 </head>
 <body>
+  <div class="global-user-frame" id="global-user-frame">
+  <div class="hud-left">
+    <div class="hud-lv-circle">
+      <span class="hud-lv-label">Lv.</span>
+      <span class="hud-lv-num" id="hud-lv-num">1</span>
+    </div>
+    <div class="hud-info">
+      <div class="hud-name" id="hud-name">Player</div>
+      <div class="hud-id" id="hud-id"></div>
+      <div class="hud-exp-row">
+        <div class="hud-exp-bg">
+          <div class="hud-exp-fill" id="hud-exp-fill" style="width:0%"></div>
+        </div>
+        <span class="hud-exp-text" id="hud-exp-text">0 / 1000</span>
+      </div>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-resource">
+      <img src="images/icon_gem.webp" class="hud-res-icon" onerror="this.style.display='none'">
+      <span class="hud-res-val" id="user-gem">0</span>
+    </div>
+    <div class="hud-resource">
+      <img src="images/icon_coin.webp" class="hud-res-icon" onerror="this.style.display='none'">
+      <span class="hud-res-val" id="user-coin">0</span>
+    </div>
+  </div>
+</div>
+
+<div id="splash" style="cursor:pointer">
+  <img src="images/splash.png" alt="SaSaSa App" onerror="this.style.display='none'">  
+</div>
+
+<audio id="bgm" src="audio/bgm_main2.mp3" loop preload="auto"></audio>
+<audio id="bgm-opening" src="audio/bgm_opening.mp3" loop preload="auto"></audio>
+<audio id="se-summon_slow" src="audio/bgm_summon.mp3" preload="auto" loop></audio>
+<audio id="se-ten_gacha_open" src="audio/ten_gacha_open.mp3" preload="auto"></audio>
+<audio id="se-fullscreen_impact" src="audio/gacha_fullscreen_after.mp3" preload="auto"></audio>
+<audio id="se-tap_ur" src="audio/gacha_tap_ur.mp3" preload="auto"></audio>
+<audio id="se-ur_black" src="audio/gacha_ur_black.mp3" preload="auto"></audio>
+<audio id="story-wind"  src="audio/wind_01.mp3" loop preload="auto"></audio>
+<audio id="story-noise-se-1"  src="audio/radio_noise.mp3" preload="auto"></audio>
+<audio id="story-noise-se-2"  src="audio/radio_noise2.mp3" preload="auto"></audio>
+<div id="glitch-noise"></div>
+
+<div id="title-screen" onclick="startFromTitle()">
+  <img src="images/title.webp" alt="19号棟">
+  <div id="title-tap-hint">✦ TAP TO START ✦</div>
+</div>
 
 <div id="loading">
-  <div class="loading-emoji">✨</div>
-  <div class="loading-txt">データを読み込み中...</div>
+  <img class="loading-img" src="images/op_loading.webp" alt="loading">
+  <div class="loading-txt">LOADING...</div>
+</div>
+
+<div id="screen-ninmu" class="screen">
+  <div class="header">
+    <div></div>
+    <div class="header-title">任務</div>
+    <div></div>
+  </div>
+
+  <div class="ninmu-layout">
+
+    <!-- 左カラム：大カテゴリ -->
+    <div class="ninmu-left">
+      <button class="ninmu-cat-item active" id="ninmu-cat-daily"   onclick="switchNinmuCat('daily')">デイリー任務</button>
+      <button class="ninmu-cat-item"        id="ninmu-cat-special" onclick="switchNinmuCat('special')">特別任務</button>
+      <button class="ninmu-cat-item"        id="ninmu-cat-story"   onclick="switchNinmuCat('story')">ストーリー</button>
+    </div>
+
+    <!-- 右カラム：サブメニュー -->
+    <div class="ninmu-right">
+
+      <!-- デイリー任務 -->
+      <div id="ninmu-panel-daily" class="ninmu-panel">
+        <div class="ninmu-panel-coming">
+          <div class="ninmu-panel-coming-title">COMING SOON</div>
+          <div class="ninmu-panel-coming-body">近日実装予定</div>
+        </div>
+        <!-- テスト用EXPボタン -->
+        <div class="ninmu-test-area">
+          <div class="ninmu-test-label">— TEST —</div>
+          <button class="ninmu-test-btn ninmu-test-btn-first" onclick="testNodeClear(true)">
+            <span class="ninmu-test-btn-title">テストプレイ（初回）</span>
+            <span class="ninmu-test-btn-sub">normal / Sクリア想定　+375 EXP</span>
+          </button>
+          <button class="ninmu-test-btn ninmu-test-btn-repeat" onclick="testNodeClear(false)">
+            <span class="ninmu-test-btn-title">テストプレイ（2回目以降）</span>
+            <span class="ninmu-test-btn-sub">normal / Sクリア想定　+112 EXP</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 特別任務 -->
+      <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
+        <div class="ninmu-panel-coming">
+          <div class="ninmu-panel-coming-title">COMING SOON</div>
+          <div class="ninmu-panel-coming-body">近日実装予定</div>
+        </div>
+      </div>
+
+      <!-- ストーリー -->
+      <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
+        <div class="ninmu-chapter-list">
+          <div class="ninmu-chapter-item"
+               onclick="startStory(CHAPTER_01)">
+            <div class="ninmu-chapter-label">CHAPTER:01</div>
+            <div class="ninmu-chapter-title"></div>
+          </div>
+
+
+          <div class="ninmu-chapter-item">
+            <div class="ninmu-chapter-label">CHAPTER:02</div>
+            <div class="ninmu-chapter-title">漂流者たち</div>
+          </div>
+
+
+          <div class="ninmu-chapter-item">
+            <div class="ninmu-chapter-label">CHAPTER:03</div>
+            <div class="ninmu-chapter-title">つなぐ場所</div>
+          </div>
+
+
+          <div class="ninmu-chapter-item ninmu-chapter-locked">
+            <div class="ninmu-chapter-label">CHAPTER:04</div>
+            <div class="ninmu-chapter-title">dummy</div>
+          </div>
+
+
+          <div class="ninmu-chapter-item ninmu-chapter-locked">
+            <div class="ninmu-chapter-label">CHAPTER:05</div>
+            <div class="ninmu-chapter-title">dummy</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <div id="screen-main" class="screen">
-  <div class="main-top">
-    <img src="images/title.webp" style="width:100%;max-width:400px">
-    <div class="user-id-badge" id="user-id-badge"></div>
-  </div>
   <div class="favorite-area">
-    <img class="fav-title-img" src="images/oshi-title.png" alt="推しキャラ">
-    <div id="fav-display"><div class="fav-empty">まだお気に入りがいません</div></div>
-  </div>
-  <div class="nav-btns">
-    <div class="nav-btn summon" onclick="showScreen('summon')">
-      <div class="nav-btn-icon">✨</div>
-      <div class="nav-btn-label">召喚する</div>
-      <div class="nav-btn-sub" id="counter-sub">残り3回</div>
-    </div>
-    <div class="nav-btn" onclick="showScreen('zukan')">
-      <div class="nav-btn-icon">📖</div>
-      <div class="nav-btn-label">図鑑</div>
-      <div class="nav-btn-sub" id="zukan-sub">0 / 12</div>
-    </div>
-  </div>
-  <div class="id-area">
-    <div class="id-box">
-      <div class="id-box-label">デバイス間でデータを引き継ぐ</div>
-      <div class="id-btns">
-        <button class="id-btn" onclick="copyId()">📋 IDをコピー</button>
-        <button class="id-btn" onclick="inputId()" style="color:#aaa">✏️ IDを入力</button>
-      </div>
-      <button onclick="resetData()" style="width:100%;margin-top:10px;background:rgba(255,50,50,0.1);border:0.5px solid rgba(255,80,80,0.3);border-radius:10px;padding:10px;color:#ff6666;font-size:12px;cursor:pointer;">🗑️ データをリセット</button>
-    </div>
-  </div>
+    <div id="fav-display" style="position:relative;z-index:1;"><div class="fav-empty">まだメインキャラがいません</div></div>
+  </div>  
 </div>
 
 <div id="screen-summon" class="screen">
   <div class="header">
-    <button class="back-btn" onclick="showScreen('main')">＜ 戻る</button>
-    <div class="header-title">キャラ召喚</div>
+    <div></div>
+    <div class="header-title">漂流者観測</div>
     <div></div>
   </div>
-  <div class="summon-counter">
-    <span class="counter-label">召喚残り回数</span>
-    <span class="counter-val" id="counter-display">3 回</span>
-  </div>
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
-  <div class="summon-btns">
-    <button class="btn-summon" id="btn-summon" onclick="summonAction()" style="flex:1">カメラを起動</button>
-  </div>
-  <div id="summon-result">
-    <div class="result-label">召喚成功！</div>
-    <div id="result-chara-visual"></div>
-    <div class="result-name" id="result-name"></div>
-    <div class="result-rarity-badge" id="result-rarity"></div>
-    <img class="result-photo" id="result-photo" />
-    <table class="stat-table" id="result-stat-table"></table>
-    <div id="result-opts"></div>
-    <div class="result-btns">
-      <button class="btn-favorite" onclick="setFavoriteFromResult()">★ お気に入り</button>
-      <button class="btn-favorite" onclick="showScreen('main')" style="color:#aaa">🏠 ホームへ</button>
+
+  <!-- 2カラムレイアウト -->
+  <div class="summon-layout" id="summon-layout">
+
+    <!-- 左：バナーリスト -->
+    <div class="summon-banner-list" id="summon-banner-list"></div>
+
+    <!-- 右：選択中バナー詳細 -->
+    <div class="summon-detail" id="summon-detail">
+      <div class="summon-detail-visual">
+        <img id="summon-detail-img" src="" alt="">
+        <div class="summon-detail-overlay">
+          <div class="summon-detail-title" id="summon-detail-title"></div>
+          <div class="summon-detail-desc" id="summon-detail-desc"></div>
+        </div>
+      </div>
+      <div class="summon-detail-btns" id="summon-detail-btns"></div>
+      <div class="pity-counter" id="pity-counter">
+        <span class="pity-label">天井まで</span>
+        <span class="pity-bar-wrap">
+          <span class="pity-bar-fill" id="pity-bar-fill"></span>
+        </span>
+        <span class="pity-num"><span id="pity-current">0</span> / 100</span>
+      </div>
+      <div class="pity-note">天井到達でURキャラが確定排出</div>
     </div>
-    <div class="save-status" id="save-status"></div>
+
+  </div>
+
+  <!-- ガチャ結果（既存） -->
+  <div id="summon-result" style="display:none">
+    <div id="result-chara-visual"></div>
+    <div id="result-info">
+      <div class="result-name" id="result-name"></div>
+      <div class="result-rarity-badge" id="result-rarity"></div>
+      <table class="stat-table" id="result-stat-table"></table>
+      <div id="result-opts"></div>
+      <div class="result-btns">
+        <button class="btn-favorite" onclick="setFavoriteFromResult()">メインキャラに登録</button>
+        <button class="btn-favorite" onclick="showMainTab('main')" style="color:#aaa">ホームへ戻る</button>
+      </div>
+      <div class="save-status" id="save-status"></div>
+    </div>
   </div>
 </div>
 
 <div id="screen-zukan" class="screen">
   <div class="header">
-    <button class="back-btn" onclick="showScreen('main')">＜ 戻る</button>
-    <div class="header-title">図鑑</div>
     <div></div>
+    <div class="header-title" id="zukan-header-title">編成</div>
+    <div id="zukan-header-back" style="display:none">
+      <button class="zukan-back-btn" onclick="showZukanMenu()">戻る ›</button>
+    </div>
   </div>
-  <div class="zukan-stats">
-    <div class="stat-card"><div class="stat-card-val" id="stat-total">0</div><div class="stat-card-label">収集数</div></div>
-    <div class="stat-card"><div class="stat-card-val c-rainbow" id="stat-rainbow">0</div><div class="stat-card-label">虹</div></div>
-    <div class="stat-card"><div class="stat-card-val c-gold" id="stat-gold">0</div><div class="stat-card-label">金</div></div>
-    <div class="stat-card"><div class="stat-card-val c-silver" id="stat-silver">0</div><div class="stat-card-label">銀</div></div>
-    <div class="stat-card"><div class="stat-card-val c-bronze" id="stat-bronze">0</div><div class="stat-card-label">銅</div></div>
+
+  <div class="screen-scroll">
+
+    <!-- メニュー -->
+    <div id="zukan-menu">
+      <div class="kichi-menu-list">
+        <button class="kichi-menu-item" onclick="switchZukanMainTab('box')">
+          <span class="kichi-menu-icon">👤</span>
+          <span class="kichi-menu-text">
+            <span class="kichi-menu-title">漂流者一覧</span>
+            <span class="kichi-menu-sub">所持キャラクターを確認する</span>
+          </span>
+          <span class="kichi-menu-arrow">›</span>
+        </button>
+        <button class="kichi-menu-item" onclick="switchZukanMainTab('party')">
+          <span class="kichi-menu-icon">⚔</span>
+          <span class="kichi-menu-text">
+            <span class="kichi-menu-title">部隊編成</span>
+            <span class="kichi-menu-sub">3人一組のチームを編成する</span>
+          </span>
+          <span class="kichi-menu-arrow">›</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 漂流者一覧 -->
+    <div id="zukan-sub-box" style="display:none">
+      <div class="zukan-stats" id="zukan-stats">
+        <div class="stat-card stat-card-total">
+          <div class="stat-card-val">
+            <span id="stat-current">0</span>
+            <span class="stat-total-slash"> / </span>
+            <span id="stat-max">150</span>
+          </div>
+          <div class="stat-card-label">COLLECTION</div>
+        </div>
+      </div>
+      <div id="box-grid" class="zukan-grid" style="padding-bottom:100px"></div>
+      <div id="zukan-grid" class="zukan-grid" style="display:none;padding-bottom:100px"></div>
+    </div>
+
+    <!-- 部隊編成 -->
+    <div id="zukan-sub-party" style="display:none;padding-bottom:100px">
+      <div class="party-coming-soon">
+        <div class="party-coming-icon">⚔</div>
+        <div class="party-coming-title">COMING SOON</div>
+        <div class="party-coming-body">近日実装予定</div>
+      </div>
+    </div>
+
   </div>
-  <div class="zukan-grid" id="zukan-grid"></div>
 </div>
 
+<!-- フレンド画面 -->
+<div id="screen-friend" class="screen">
+  <div class="header">
+    <div></div>
+    <div class="header-title">戦友</div>
+    <div></div>
+  </div>
+  <div class="screen-scroll">
+
+    <!-- 申請受信 -->
+    <div class="friend-section">
+      <div class="friend-section-title">フレンド申請</div>
+      <div id="friend-requests-list">
+        <div class="friend-list-empty">申請はありません</div>
+      </div>
+    </div>
+
+    <!-- フレンド検索 -->
+    <div class="friend-section">
+      <div class="friend-section-title">IDで検索</div>
+      <div class="friend-add-box">
+        <input class="friend-add-input" id="friend-add-input" type="text" placeholder="相手のユーザーIDを入力">
+        <button class="friend-add-btn" onclick="searchFriendById()">検索</button>
+      </div>
+      <div style="font-size:11px;color:#555;margin-top:-4px;margin-bottom:8px;padding:0 4px">
+        自分のID: <span id="friend-my-id" onclick="copyId()" style="cursor:pointer">
+  -
+</span>
+      </div>
+      <!-- 検索結果 -->
+      <div id="friend-search-result" style="display:none"></div>
+    </div>
+
+    <!-- フレンド一覧 -->
+    <div class="friend-section">
+      <div class="friend-section-title">フレンド一覧</div>
+      <div id="friend-list">
+        <div class="friend-list-empty">フレンドがいません</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 設定画面 -->
+<div id="screen-setting" class="screen">
+  <div class="header">
+    <div></div>
+    <div class="header-title">設定</div>
+    <div></div>
+  </div>
+  <div class="screen-scroll">
+  <div class="setting-section">
+    <div class="setting-section-title">プロフィール</div>
+    <div class="setting-row" onclick="openNameEdit()">
+      <span class="setting-row-label">プレイヤー名</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span class="setting-row-sub" id="setting-display-name">-</span>
+        <span class="setting-row-arrow">›</span>
+      </span>
+    </div>
+  </div>
+  <div class="setting-section">
+    <div class="setting-section-title">データ引き継ぎ</div>
+    <div class="setting-row" onclick="copyId()">
+      <span class="setting-row-label">IDをコピー</span>
+      <span class="setting-row-arrow">›</span>
+    </div>
+    <div class="setting-row" onclick="inputId()">
+      <span class="setting-row-label">IDを入力して引き継ぐ</span>
+      <span class="setting-row-arrow">›</span>
+    </div>
+  </div>
+  <div class="setting-section">
+    <div class="setting-section-title">その他</div>
+    <div class="setting-row" onclick="toggleBgm()">
+    <span class="setting-row-label">BGM</span>
+    <span class="setting-row-sub" id="bgm-status">ON</span>
+  </div>
+
+  <div class="setting-row" style="cursor:default">
+  <span class="setting-row-label">音量</span>
+  <input
+    id="bgm-volume"
+    type="range"
+    min="0"
+    max="100"
+    value="35"
+    oninput="changeBgmVolume(this.value)"
+    onclick="event.stopPropagation()"
+    style="width:120px"
+  >
+</div>
+
+  <div class="setting-row" style="cursor:default">
+  <span class="setting-row-label">SE音量</span>
+  <input
+    id="se-volume"
+    type="range"
+    min="0"
+    max="100"
+    value="15"
+    oninput="changeSeVolume(this.value)"
+    onclick="event.stopPropagation()"
+    style="width:120px"
+  >
+</div>
+
+  </div>
+  <div class="setting-section" style="margin-bottom:16px">
+    <div class="setting-section-title">※注意※</div>
+    <div class="setting-row setting-danger" onclick="resetData()">
+      <span class="setting-row-label">データをリセット</span>
+      <span class="setting-row-arrow">›</span>
+    </div>
+  </div>
+  </div>
+</div>
+
+
+<!-- 共有ボトムナビ（fixed固定） -->
+<nav class="bottom-nav" id="bottom-nav-shared">
+  <div class="bottom-nav-item" id="bnav-ninmu" onclick="showMainTab('ninmu')">
+    <img src="images/btmnv_ninmu.webp" alt="任務">
+  </div>
+  <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
+    <img src="images/btmnv_hensei.webp" alt="編成">
+  </div>
+  <div class="bottom-nav-item" id="bnav-main" onclick="showMainTab('main')">
+    <img src="images/btmnv_home.webp" alt="ホーム">
+  </div>
+  <div class="bottom-nav-item" id="bnav-summon" onclick="showMainTab('summon')">
+    <img src="images/btmnv_kansoku.webp" alt="観測">
+  </div>
+  <div class="bottom-nav-item" id="bnav-setting" onclick="showMainTab('setting')">
+    <img src="images/btmnv_settei.webp" alt="設定">
+  </div>
+</nav>
+
+
+<!-- 名前編集モーダル -->
+<div id="name-edit-modal">
+  <div class="name-edit-box">
+    <div class="name-edit-title">プレイヤー名を変更</div>
+    <div class="name-edit-sub">12文字以内で入力してください</div>
+    <input class="name-edit-input" id="name-edit-input" type="text" maxlength="12" placeholder="プレイヤー名">
+    <div class="name-edit-count"><span id="name-edit-count">0</span> / 12</div>
+    <div class="name-edit-btns">
+      <button class="name-edit-btn-cancel" onclick="closeNameEdit()">キャンセル</button>
+      <button class="name-edit-btn-ok" onclick="saveNameEdit()">✓ 保存</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="compare-modal">
   <div class="modal">
     <h2 id="compare-title"></h2>
@@ -408,21 +453,24 @@
       <tbody id="compare-tbody"></tbody>
     </table>
     <div class="compare-btns">
-      <button class="btn-swap" onclick="swapChara()">今回と入れ替え</button>
-      <button class="btn-keep" onclick="keepChara()">所持中をキープ</button>
+      <button class="btn-swap" onclick="swapChara()">イデアを更新する</button>
+      <button class="btn-keep" onclick="keepChara()">イデアを還元する</button>
     </div>
   </div>
 </div>
 
-<!-- 召喚演出モーダル -->
+<!-- 演出モーダル -->
 <div id="reveal-modal">
   <div id="reveal-bg"></div>
   <div id="reveal-overlay"></div>
   <div id="reveal-particles"></div>
   <div id="reveal-content">
-    <img id="reveal-chara-img" src="" />
+  <img id="reveal-chara-img" src="" />
+  <img id="reveal-rarity-box" src="" class="reveal-rarity-box-img" />
+  <div class="reveal-info-box">
     <div id="reveal-name"></div>
     <div id="reveal-rarity"></div>
+  </div>
     <button id="reveal-close-btn" onclick="closeReveal()">タップして続ける ▶</button>
   </div>
 </div>
@@ -430,14 +478,185 @@
 <div class="modal-overlay" id="paywall-modal">
   <div class="modal">
     <div class="modal-inner">
-      <h2>召喚回数が0になりました</h2>
-      <p>広告を見るか、チケットを購入して召喚を続けましょう！</p>
+      <h2>結晶が足りません</h2>
+      <p>結晶を購入しますか？</p>
       <div class="modal-btns">
-        <button class="btn-ad" onclick="watchAd()">▶ 広告を見て3回復活</button>
-        <button class="btn-pay" onclick="purchase()">💎 チケット購入（¥120）</button>
+        <button class="btn-pay" onclick="openShopModal()">結晶を購入する</button>
         <button class="btn-cancel-txt" onclick="closeModal('paywall-modal')">キャンセル</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- 結晶ショップモーダル -->
+<div class="modal-overlay" id="shop-modal">
+  <div class="modal shop-modal-inner">
+    <button class="modal-close-btn" onclick="closeModal('shop-modal')">×</button>
+    <div class="shop-header">
+      <div class="shop-title">結晶を購入</div>
+      <div class="shop-subtitle">現在の所持数：<img src="images/icon_gem.webp" class="shop-gem-icon" onerror="this.style.display='none'"><span id="shop-current-gem">0</span> 個</div>
+    </div>
+    <div class="shop-list">
+      <button class="shop-item" onclick="confirmPurchase(0)">
+        <div class="shop-item-left">
+          <img src="images/icon_gem.webp" class="shop-item-gem-icon" onerror="this.style.display='none'">
+          <span class="shop-item-count">1 個</span>
+        </div>
+        <div class="shop-item-right">
+          <span class="shop-item-price">¥100</span>
+          <span class="shop-item-unit">¥100 / 個</span>
+        </div>
+      </button>
+      <button class="shop-item" onclick="confirmPurchase(1)">
+        <div class="shop-item-left">
+          <img src="images/icon_gem.webp" class="shop-item-gem-icon" onerror="this.style.display='none'">
+          <span class="shop-item-count">6 個</span>
+        </div>
+        <div class="shop-item-right">
+          <span class="shop-item-price">¥500</span>
+          <span class="shop-item-unit">¥83.3 / 個</span>
+        </div>
+      </button>
+      <button class="shop-item shop-item-popular" onclick="confirmPurchase(2)">
+        <div class="shop-item-left">
+          <img src="images/icon_gem.webp" class="shop-item-gem-icon" onerror="this.style.display='none'">
+          <span class="shop-item-count">12 個</span>
+        </div>
+        <div class="shop-item-right">
+          <span class="shop-item-price">¥800</span>
+          <span class="shop-item-unit">¥66.7 / 個</span>
+        </div>
+      </button>
+      <button class="shop-item" onclick="confirmPurchase(3)">
+        <div class="shop-item-left">
+          <img src="images/icon_gem.webp" class="shop-item-gem-icon" onerror="this.style.display='none'">
+          <span class="shop-item-count">48 個</span>
+        </div>
+        <div class="shop-item-right">
+          <span class="shop-item-price">¥3,000</span>
+          <span class="shop-item-unit">¥62.5 / 個</span>
+        </div>
+      </button>
+      <button class="shop-item" onclick="confirmPurchase(4)">
+        <div class="shop-item-left">
+          <img src="images/icon_gem.webp" class="shop-item-gem-icon" onerror="this.style.display='none'">
+          <span class="shop-item-count">85 個</span>
+        </div>
+        <div class="shop-item-right">
+          <span class="shop-item-price">¥5,000</span>
+          <span class="shop-item-unit">¥58.8 / 個</span>
+        </div>
+      </button>
+      <button class="shop-item shop-item-best" onclick="confirmPurchase(5)">
+        <div class="shop-item-left">
+          <img src="images/icon_gem.webp" class="shop-item-gem-icon" onerror="this.style.display='none'">
+          <span class="shop-item-count">180 個</span>
+        </div>
+        <div class="shop-item-right">
+          <span class="shop-item-price">¥10,000</span>
+          <span class="shop-item-unit">¥55.6 / 個</span>
+        </div>
+      </button>
+    </div>
+    <div class="shop-note">※ 現在はテスト実装です。実際の課金は発生しません。</div>
+  </div>
+</div>
+
+<!-- 購入確認モーダル -->
+<div class="modal-overlay" id="shop-confirm-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <h2>購入確認</h2>
+      <p id="shop-confirm-text"></p>
+      <div class="modal-btns">
+        <button class="btn-pay" onclick="executePurchase()">購入する</button>
+        <button class="btn-cancel-txt" onclick="closeModal('shop-confirm-modal')">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ten-result-modal">
+  <div class="modal ten-result-modal-inner">
+    <div id="ten-result-grid" class="ten-result-grid"></div>
+    <div class="ten-result-footer">
+      <button class="ten-result-again-btn" onclick="closeTenResult(); summonAction(10);">
+        <img src="images/icon_gem.webp" class="btn-gacha-gem-icon"> 50　もう一度10回引く
+      </button>
+      <button class="ten-result-close-btn" onclick="closeTenResult()">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- ガチャ詳細モーダル -->
+<div class="modal-overlay" id="gacha-detail-modal">
+  <div class="modal">
+    <button class="modal-close-btn" onclick="closeModal('gacha-detail-modal')">×</button>
+    <div class="gacha-detail-banner">
+      <img id="gacha-detail-img" src="" alt="">
+    </div>
+    <div class="gacha-detail-btns">
+  <button class="btn-gacha btn-gacha-ten" onclick="summonAction(10)">
+    <span class="btn-gacha-guarantee-badge">SR以上1体確定</span>
+    <span class="btn-gacha-label">10回引く</span>
+    <span class="btn-gacha-cost"><img src="images/icon_gem.webp" class="btn-gacha-gem-icon"> 50</span>
+  </button>
+</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="delete-confirm-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <h2>確認</h2>
+      <p id="delete-confirm-text"></p>
+      <div class="modal-btns">
+        <button class="btn-delete-ok" onclick="deleteCurrentChara()">はい</button>
+        <button class="btn-cancel-txt" onclick="closeModal('delete-confirm-modal')">いいえ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="summon-confirm-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <p id="summon-confirm-text"></p>
+      <div class="modal-btns">
+        <button class="btn-pay" onclick="confirmSummonYes()">はい</button>
+        <button class="btn-cancel-txt" onclick="confirmSummonNo()">いいえ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ガチャ待機画面 -->
+<div id="summon-standby" onclick="startSummonFromStandby()">
+  <div class="standby-text">タップしてください</div>
+</div>
+<button class="standby-skip-btn" id="standby-skip-btn" onclick="skipSummonEffect()" style="display:none">演出をスキップ</button>
+<!-- UR WARNING -->
+<div id="fullscreen-blackout"></div>
+
+<div id="ur-alert-screen">
+  <div class="ur-alert-bg"></div>
+
+  <div class="ur-alert-content">
+
+    <div class="ur-alert-warning">
+      WARNING
+    </div>
+
+    <div class="ur-alert-sub">
+      UNKNOWN SIGNAL DETECTED
+    </div>
+
+    <div class="ur-alert-line"></div>
+
+    <div class="ur-alert-code">
+      CODE : UR-19
+    </div>
+
   </div>
 </div>
 
@@ -450,15 +669,17 @@
         <div class="detail-rank" id="detail-rank"></div>
       </div>
     </div>
-    <img class="detail-photo" id="detail-photo" />
     <table class="stat-table" id="detail-stat-table"></table>
     <div id="detail-opts"></div>
-    <button class="btn-set-fav" onclick="setFavoriteFromDetail()">★ お気に入りに設定</button>
-    <button class="btn-cancel-txt" onclick="closeModal('detail-modal')">閉じる</button>
+    <button class="btn-set-fav" onclick="setFavoriteFromDetail()">メインキャラに設定</button>
+    <button class="btn-delete-chara" onclick="openDeleteConfirm()">このキャラクター情報を削除する</button>
+    <button class="btn-detail-close" id="btn-detail-close" onclick="closeModal('detail-modal')">閉じる</button>
   </div>
 </div>
-    <div id="photo-zoom" class="photo-zoom">
-  <img id="photo-zoom-img">
+
+<!-- キャラ画像 全画面拡大ビュー -->
+<div id="chara-image-viewer" onclick="closeCharaImageViewer()">
+  <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -466,39 +687,252 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjY2hncWdrZWZuemxjaGl0b2V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Mjk4MDgsImV4cCI6MjA5MzEwNTgwOH0.1MFak8VVSFjo4TFNJp3b17-DR6DhSGop0Q1EB73XxeA';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const CHARACTERS = [
-    { id:1,  name:"ヒルマ",   emoji:"☀️",  img:"images/chara_01.webp" },
-    { id:2,  name:"ヨルカ",   emoji:"🌙",  img:"images/chara_02.webp" },
-    { id:3,  name:"タソガレ", emoji:"🌆",  img:"images/chara_03.webp" },
-    { id:4,  name:"アサヒ",   emoji:"🌅",  img:"images/chara_04.webp" },
-    { id:5,  name:"スピカ",     emoji:"❄️",  img:"images/chara_05.webp" },
-    { id:6,  name:"アメ", emoji:"🌧️",  img:"images/chara_06.webp" },
-    { id:7,  name:"カゼノ", emoji:"💨",  img:"images/chara_07.webp" },
-    { id:8,  name:"ユキ", emoji:"🌸",  img:"images/chara_08.webp" },
-    { id:9,  name:"カミナリ", emoji:"⚡",  img:"images/chara_09.webp" },
-    { id:10, name:"ニジコ",   emoji:"🌈",  img:"images/chara_10.webp" },
-    { id:11, name:"レイ",   emoji:"⭐",  img:"images/chara_11.webp" },
-    { id:12, name:"アテナ", emoji:"🦊",  img:"images/chara_12.webp" }
+  // ─── ガチャバナー定義 ───────────────────────────
+  // 期間ごとにここを編集する（imgはimages/フォルダ内のファイル名）
+  const GACHA_BANNERS = [
+  {
+    id: 'banner_01',
+    category: 'once',    // 'once' / 'normal' 
+    img: 'images/gacha_banner_01.webp',
+    title: '新規登録者限定ガチャ',
+    desc: '「10回引く」でURキャラ1体確定！',
+    cost: 5,
+    minCharaId: 1,
+    maxCharaId: 20,
+    filterGender: null,  // 'man' / 'woman' / null（制限なし）
+    filterType:   null,  // '信念' / '虚無' / '乖離' / '執着' / '希望' / '狂気' / '憤怒' / '畏怖' / null（制限なし）
+  },
+  {
+    id: 'banner_02',
+    category: 'normal',   // 'once' / 'normal'
+    img: 'images/gacha_banner_02.webp',
+    title: '常設ガチャ',
+    desc: '「10回引く」でSR以上のキャラ1体確定！',
+    cost: 5,
+    minCharaId: 1,
+    maxCharaId: 20,
+    filterGender: null,  // 'man' / 'woman' / null（制限なし）
+    filterType:   null,  // '信念' / '虚無' / '乖離' / '執着' / '希望' / '狂気' / '憤怒' / '畏怖' / null（制限なし）
+  },
+// {
+//  id: 'banner_03',
+//  category: 'normal',  // 'once' / 'normal'
+//  img: 'images/gacha_banner_03.webp',
+//  title: '常設ガチャ',
+//  desc: '「10回引く」でSR以上のキャラ1体確定！',
+//  cost: 1,
+//  minCharaId: 1,
+//  maxCharaId: 20,
+//  filterGender: null,  // 'man' / 'woman' / null（制限なし）
+//  filterType:   null,  // '信念' / '虚無' / '乖離' / '執着' / '希望' / '狂気' / '憤怒' / '畏怖' / null（制限なし）
+// }
+];
+
+  var currentGachaId = null; // 選択中のガチャID
+  var pityCount = parseInt(localStorage.getItem('pity_count') || '0', 10); // 天井カウント
+  var PITY_LIMIT = 100; // 天井
+
+  function savePityCount(){
+    localStorage.setItem('pity_count', pityCount);
+  }
+
+  function updatePityUI(){
+    var el = document.getElementById('pity-current');
+    var bar = document.getElementById('pity-bar-fill');
+    if(el) el.textContent = pityCount;
+    if(bar) bar.style.width = Math.min(pityCount / PITY_LIMIT * 100, 100) + '%';
+  }
+
+  // 10連演出管理
+  var tenRevealResults = [];
+  var tenRevealIndex = 0;
+  var tenRevealWaiting = false;
+
+  function renderSummonBanners(){
+    var list = document.getElementById('summon-banner-list');
+    if(!list) return;
+
+    list.innerHTML = '';
+
+    var used = userProfile.used_gachas || [];
+    var firstGacha = null;
+
+    GACHA_BANNERS.forEach(function(gacha){
+      if(gacha.category === 'once' && used.includes(gacha.id)) return;
+
+      if(!firstGacha) firstGacha = gacha;
+
+      var div = document.createElement('div');
+      div.className = 'summon-banner-card';
+      div.id = 'banner-card-' + gacha.id;
+      div.innerHTML =
+        '<img src="' + gacha.img + '" alt="' + gacha.title + '">' +
+        '<div class="banner-desc-overlay">' +
+          '<div class="banner-card-title">' + gacha.title + '</div>' +
+        '</div>';
+      div.onclick = function(){ openGachaDetail(gacha); };
+      list.appendChild(div);
+    });
+
+    // 最初のバナーをデフォルト選択
+    if(firstGacha) openGachaDetail(firstGacha);
+  }
+
+  function openGachaDetail(gacha){
+    currentGachaId = gacha.id;
+
+    // 右エリアを更新
+    var img = document.getElementById('summon-detail-img');
+    var title = document.getElementById('summon-detail-title');
+    var desc  = document.getElementById('summon-detail-desc');
+    var btns  = document.getElementById('summon-detail-btns');
+
+    if(img)   img.src = gacha.img;
+    if(title) title.textContent = gacha.title;
+    if(desc)  desc.textContent  = gacha.desc || '';
+
+    // ボタン切り替え
+    var gemImg = '<img src="images/icon_gem.webp" class="btn-gacha-gem-icon">';
+    if(btns){
+      if(gacha.category === 'once'){
+        btns.innerHTML =
+          '<button class="btn-gacha btn-gacha-ten btn-gacha-guaranteed" onclick="summonAction(10)">' +
+            '<span class="btn-gacha-guarantee-badge">UR確定</span>' +
+            '<span class="btn-gacha-label">10回引く</span>' +
+            '<span class="btn-gacha-cost">' + gemImg + ' ' + (gacha.cost * 10) + '</span>' +
+          '</button>';
+      } else {
+        btns.innerHTML =
+          '<button class="btn-gacha btn-gacha-single" onclick="summonAction(1)">' +
+            '<span class="btn-gacha-label">1回引く</span>' +
+            '<span class="btn-gacha-cost">' + gemImg + ' ' + gacha.cost + '</span>' +
+          '</button>' +
+          '<button class="btn-gacha btn-gacha-ten" onclick="summonAction(10)">' +
+            '<span class="btn-gacha-guarantee-badge">SR以上1体確定</span>' +
+            '<span class="btn-gacha-label">10回引く</span>' +
+            '<span class="btn-gacha-cost">' + gemImg + ' ' + (gacha.cost * 10) + '</span>' +
+          '</button>';
+      }
+    }
+
+    // 選択中カードをハイライト
+    document.querySelectorAll('.summon-banner-card').forEach(function(el){
+      el.classList.remove('active');
+    });
+    var activeCard = document.getElementById('banner-card-' + gacha.id);
+    if(activeCard) activeCard.classList.add('active');
+    updatePityUI();
+  }
+  // ──────────────────────────────────────────────
+
+    const CHARACTERS = [
+  { id: 1, name: "ギョウタツ", type: "信念",  gender: "man", rarity: "r",
+    stats: { HP:50, ATK:50, DEF:40, SPD:40, RES:20 },
+    img: "images/chara_01.webp", cutImg: "images/chara_01_cut.webp", upImg: "images/chara_01_up.webp" },
+
+  { id: 2, name: "タキヤマ", type: "信念",  gender: "woman", rarity: "r",
+    stats: { HP:60, ATK:55, DEF:48, SPD:75, RES:70 },
+    img: "images/chara_02.webp", cutImg: "images/chara_02_cut.webp", upImg: "images/chara_02_up.webp" },
+
+  { id: 3, name: "マツバラ", type: "虚無",  gender: "man", rarity: "r",
+    stats: { HP:65, ATK:60, DEF:72, SPD:45, RES:88 },
+    img: "images/chara_03.webp", cutImg: "images/chara_03_cut.webp", upImg: "images/chara_03_up.webp" },
+
+  { id: 4, name: "リョウ", type: "乖離",  gender: "man", rarity: "r",
+    stats: { HP:80, ATK:78, DEF:65, SPD:70, RES:52 },
+    img: "images/chara_04.webp", cutImg: "images/chara_04_cut.webp", upImg: "images/chara_04_up.webp" ,favScale: 0.85, favOffsetY: -30 },
+
+  { id: 5, name: "マンデラ", type: "信念",  gender: "man", rarity: "sr",
+    stats: { HP:90, ATK:95, DEF:70, SPD:80, RES:75 },
+    img: "images/chara_05.webp", cutImg: "images/chara_05_cut.webp", upImg: "images/chara_05_up.webp", favScale: 0.85, favOffsetY: -30 },
+
+  { id: 6, name: "エミ", type: "執着",  gender: "woman", rarity: "ur",
+    stats: { HP:55, ATK:48, DEF:50, SPD:80, RES:65 },
+    img: "images/chara_06.webp", cutImg: "images/chara_06_cut.webp", upImg: "images/chara_06_up.webp" },
+
+  { id: 7, name: "ミユ", type: "乖離",  gender: "woman", rarity: "r",
+    stats: { HP:58, ATK:52, DEF:45, SPD:88, RES:60 },
+    img: "images/chara_07.webp", cutImg: "images/chara_07_cut.webp", upImg: "images/chara_07_up.webp" },
+
+  { id: 8, name: "カミジョウ", type: "希望",  gender: "man", rarity: "r",
+    stats: { HP:85, ATK:70, DEF:80, SPD:65, RES:95 },
+    img: "images/chara_08.webp", cutImg: "images/chara_08_cut.webp", upImg: "images/chara_08_up.webp" },
+
+  { id: 9, name: "ルナ＆マーヤ", type: "希望",  gender: "woman", rarity: "ur",
+    stats: { HP:75, ATK:82, DEF:60, SPD:72, RES:68 },
+    img: "images/chara_09.webp", cutImg: "images/chara_09_cut.webp", upImg: "images/chara_09_up.webp" },
+
+  { id: 10, name: "キムガ", type: "信念",  gender: "man", rarity: "sr",
+    stats: { HP:62, ATK:70, DEF:42, SPD:65, RES:48 },
+    img: "images/chara_10.webp", cutImg: "images/chara_10_cut.webp", upImg: "images/chara_10_up.webp" },
+
+  { id: 11, name: "レイチェル", type: "狂気",  gender: "woman", rarity: "ur",
+    stats: { HP:88, ATK:100, DEF:55, SPD:90, RES:60 },
+    img: "images/chara_11.webp", cutImg: "images/chara_11_cut.webp", upImg: "images/chara_11_up.webp" },
+
+  { id: 12, name: "エリ", type: "執着",  gender: "woman", rarity: "r",
+    stats: { HP:70, ATK:65, DEF:75, SPD:58, RES:80 },
+    img: "images/chara_12.webp", cutImg: "images/chara_12_cut.webp", upImg: "images/chara_12_up.webp" },
+
+  { id: 13, name: "チサカ", type: "虚無",  gender: "woman", rarity: "r",
+    stats: { HP:68, ATK:60, DEF:78, SPD:55, RES:85 },
+    img: "images/chara_13.webp", cutImg: "images/chara_13_cut.webp", upImg: "images/chara_13_up.webp" },
+
+  { id: 14, name: "ヒメシマ", type: "憤怒",  gender: "man", rarity: "r",
+    stats: { HP:95, ATK:98, DEF:80, SPD:55, RES:50 },
+    img: "images/chara_14.webp", cutImg: "images/chara_14_cut.webp", upImg: "images/chara_14_up.webp" },
+
+  { id: 15, name: "アキ", type: "希望",  gender: "woman", rarity: "sr",
+    stats: { HP:20, ATK:60, DEF:60, SPD:78, RES:62 },
+    img: "images/chara_15.webp", cutImg: "images/chara_15_cut.webp", upImg: "images/chara_15_up.webp" },
+
+  { id: 16, name: "ワタル", type: "畏怖",  gender: "man", rarity: "ur",
+    stats: { HP:78, ATK:75, DEF:68, SPD:62, RES:65 },
+    img: "images/chara_16.webp", cutImg: "images/chara_16_cut.webp", upImg: "images/chara_16_up.webp" },
+
+  { id: 17, name:"アクツ", type:"執着",  gender:"man", rarity: "sr",
+    stats: { HP:62, ATK:30, DEF:42, SPD:65, RES:75 },
+    img: "images/chara_17.webp", cutImg: "images/chara_17_cut.webp", upImg: "images/chara_17_up.webp" },
+
+  { id: 18, name:"リサ", type:"憤怒",  gender:"woman", rarity: "sr",
+    stats: { HP:20, ATK:80, DEF:40, SPD:12, RES:22 },
+    img: "images/chara_18.webp", cutImg: "images/chara_18_cut.webp", upImg: "images/chara_18_up.webp" },
+
+  { id: 19, name:"フクナガ", type:"乖離",  gender:"woman", rarity: "sr",
+    stats: { HP:45, ATK:45, DEF:45, SPD:45, RES:75 },
+    img: "images/chara_19.webp", cutImg: "images/chara_19_cut.webp", upImg: "images/chara_19_up.webp" },
+
+  { id: 20, name:"ゴロウ", type:"畏怖",  gender:"man", rarity: "sr",
+    stats: { HP:30, ATK:50, DEF:30, SPD:60, RES:60 },
+    img: "images/chara_20.webp", cutImg: "images/chara_20_cut.webp", upImg: "images/chara_20_up.webp" }
+
   ];
 
-  const BASE_STATS = ["わんりょく","ぼうぎょりょく","まりょく","みりょく"];
-  const OPT_STATS  = ["しりょく","かりょく","きりょく","ちりょく","ふりょく"];
+const BASE_STATS = ["HP","ATK","DEF","SPD","RES"];
 
-  const RARITY_LABEL = {
-  bronze: "★★☆☆☆",
-  silver: "★★★☆☆",
-  gold:   "★★★★☆",
-  rainbow:"★★★★★"
-};
 
 const RARITY_COLOR = {
-  bronze: "#cd7f32",
-  silver: "#c0c0c0",
-  gold:   "#ffd700",
-  rainbow:"#e040fb"
+  r:  "#c0c0c0",
+  sr: "#ffd700",
+  ur: "#ffffff"
+};
+const RARITY_BOX_IMAGE = {
+  r:  "images/rarity_box_r.webp",
+  sr: "images/rarity_box_sr.webp",
+  ur: "images/rarity_box_ur.webp"
 };
 
-  var summonCount=3, collected={}, favoriteId=null;
+  var box = [];          // 所持BOX：引いた全インスタンスを蓄積
+  var collected = {};    // 図鑑用：character_id → 最初に引いた1件（解放済みフラグ）
+  var favoriteId = null;
+  var userProfile = { 
+    display_name: 'Player', 
+    coin: 0, 
+    gem: 0, 
+    rank: 1, 
+    total_score: 0,
+    used_gachas: []
+  };
   var currentResultData=null, currentDetailData=null, pendingNew=null;
   var userId = localStorage.getItem('zukan_user_id');
   if(!userId){ userId = 'user_' + Math.random().toString(36).slice(2,10); localStorage.setItem('zukan_user_id', userId); }
@@ -519,44 +953,179 @@ const RARITY_COLOR = {
     return 5;
   }
 
-  function selectChara(now) {
-    var h = now.getHours();
-    var m = now.getMinutes();
-    var wd = now.getDay();
-    var isWeekend = (wd===0||wd===6);
-    var isWeekday = !isWeekend;
-    var rates = CHARACTERS.map(function(c){ return { chara:c, rate:getRate(c.id,h,m,isWeekday,isWeekend) }; });
-    var totalRate = rates.reduce(function(a,b){ return a+b.rate; }, 0);
-    var rv = Math.random() * totalRate;
-    var cumulative = 0;
-    for(var i=0; i<rates.length; i++){
-      cumulative += rates[i].rate;
-      if(rv <= cumulative){ return rates[i].chara; }
-    }
-    return CHARACTERS[CHARACTERS.length-1];
+// ガチャのフィルター条件を判定する共通関数
+function matchesGachaFilter(c, gacha) {
+  // charaIds が指定されている場合はそちらを優先（min/max/gender/typeは無視）
+  if (gacha && gacha.charaIds) {
+    return gacha.charaIds.indexOf(c.id) !== -1;
   }
+  var minLimit = (gacha && gacha.minCharaId)   || 1;
+  var maxLimit = (gacha && gacha.maxCharaId)   || 999;
+  var gender   = (gacha && gacha.filterGender) || null;
+  var type     = (gacha && gacha.filterType)   || null;
+  if (c.id < minLimit || c.id > maxLimit)  return false;
+  if (gender && c.gender !== gender)        return false;
+  if (type   && c.type   !== type)          return false;
+  return true;
+}
+
+// 変更後のselectChara（getRateは不要になるので丸ごと置き換え）
+
+function selectChara(now, gacha) {
+  var RATE = { r: 82.5, sr: 15, ur: 2.5 };
+
+  var byRarity = { r: [], sr: [], ur: [] };
+
+  CHARACTERS.forEach(function(c) {
+    if (matchesGachaFilter(c, gacha) && byRarity[c.rarity]) {
+      byRarity[c.rarity].push(c);
+    }
+  });
+
+  var roll = Math.random() * 100;
+  var rarity;
+
+  if (roll < RATE.ur) {
+    rarity = 'ur';
+  } else if (roll < RATE.ur + RATE.sr) {
+    rarity = 'sr';
+  } else {
+    rarity = 'r';
+  }
+
+  var chars = byRarity[rarity];
+
+  if (!chars || chars.length === 0) {
+    console.error('抽選対象キャラがありません:', rarity);
+    return null;
+  }
+
+  return chars[Math.floor(Math.random() * chars.length)];
+}
 
   function charaVisualHTML(chara, size) {
-    size = size || 120;
-    if(chara.img) {
-      return '<img src="'+chara.img+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:12px;margin-bottom:8px">';
-    }
-    return '<div style="font-size:'+Math.round(size*0.5)+'px;line-height:1;margin-bottom:8px">'+chara.emoji+'</div>';
+  size = size || 120;
+  var rarityBox = chara.rarity ? '<img src="' + RARITY_BOX_IMAGE[chara.rarity] + '" class="chara-rarity-box">' : '';
+
+  if(chara.img) {
+    return '<div class="chara-visual-wrap" style="width:'+size+'px;height:'+size+'px">' +
+      '<img src="'+chara.img+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:12px">' +
+      rarityBox +
+      '</div>';
   }
 
+  return '<div class="chara-visual-wrap" style="width:'+size+'px;height:'+size+'px">' +
+    '<div style="width:'+size+'px;height:'+size+'px;background:#222;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#aaa">?</div>' +
+    rarityBox +
+    '</div>';
+  }
+
+  function getBestResult(results) {
+  return results.reduce(function(best, cur) {
+    return RARITY_ORDER[cur.rarity] > RARITY_ORDER[best.rarity] ? cur : best;
+  }, results[0]);
+}
+
   function favVisualHTML(chara) {
-    if(chara.img) return '<img src="'+chara.img+'" class="fav-img">';
-    return '<div class="fav-emoji">'+chara.emoji+'</div>';
+   var urClass = chara.rarity === 'ur' ? ' fav-ur-glow' : '';
+
+   // 表示調整値は CHARACTERS の最新定義から引き直す
+   // (collected に保存されたデータには favScale 等が含まれていない場合があるため)
+   var charaDef = CHARACTERS.find(function(c){ return c.id === chara.id; }) || chara;
+   var scale   = (typeof charaDef.favScale   === 'number') ? charaDef.favScale   : 1;
+   var offsetX = (typeof charaDef.favOffsetX === 'number') ? charaDef.favOffsetX : 0;
+   var offsetY = (typeof charaDef.favOffsetY === 'number') ? charaDef.favOffsetY : 0;
+   var hasAdjust = (scale !== 1 || offsetX !== 0 || offsetY !== 0);
+   var styleAttr = hasAdjust
+     ? ' style="transform: translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + '); transform-origin: 50% 100%;"'
+     : '';
+
+   if(chara.cutImg) {
+     return '<img src="'+chara.cutImg+'" class="fav-cut-img'+urClass+'"'+styleAttr+'>';
+   }
+
+   if(chara.img) {
+     return '<img src="'+chara.img+'" class="fav-img'+urClass+'"'+styleAttr+'>';
+   }
+
+   return '<div style="width:120px;height:120px;background:#111;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px">未実装</div>';
   }
 
   async function init(){
-    document.getElementById('user-id-badge').textContent = 'ID: ' + userId;
-    try { await loadFromDB(); } catch(e) { console.log('DB load error:', e); }
+  // Step1: スプラッシュ（タップで進む）
+  await new Promise(function(resolve){
+    var splash = document.getElementById('splash');
+    splash.style.cursor = 'pointer';
+    splash.addEventListener('click', function(){
+      try {
+        var openingBgm = document.getElementById('bgm-opening');
+        if(openingBgm){
+          openingBgm.volume = 0.3;
+          openingBgm.play().catch(function(){});
+        }
+      } catch(e){}
+
+      splash.style.opacity = '0';
+      setTimeout(function(){
+        splash.style.display = 'none';
+        resolve();
+      }, 800);
+    }, { once: true });
+  });
+
+// Step2: タイトル画面（バックグラウンドでDB読み込み開始）
+window._dbLoadPromise = loadFromDB().catch(function(e){
+  console.log('DB load error:', e);
+});
+
+var titleScreen = document.getElementById('title-screen');
+titleScreen.style.display = 'flex';
+
+var openingBgm = document.getElementById('bgm-opening');
+if(openingBgm){
+  openingBgm.volume = 0.3;
+  setTimeout(function(){
+    openingBgm.play().catch(function(){});
+  }, 100);
+}
+}
+  var titleStarted = false;
+  async function startFromTitle(){
+  if(titleStarted) return;
+  titleStarted = true;
+  var titleScreen = document.getElementById('title-screen');
+
+  titleScreen.classList.add('closing');
+  fadeOutOpeningBgm();
+
+  // ★ 扉の音を再生
+  var tapSE = new Audio('audio/title_tap.mp3');
+  tapSE.volume = 1.0;
+  tapSE.play().catch(function(){});
+
+  // 先にDB待機開始
+  await window._dbLoadPromise;
+
+  // タイトルが消え切ってから画面切替
+  setTimeout(function(){
+    titleScreen.style.display = 'none';
+
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('screen-main').classList.add('active');
-    updateCounterUI();
+
+    var mainScreen = document.getElementById('screen-main');
+    mainScreen.classList.add('active');
+    updateHeaderHeight();
+
+    setReloadBtnVisible(true);
+
+    if(bgmEnabled) fadeInBgm();
+    if(typeof setBnavActive==='function') setBnavActive('main');
+
+    updateSummonGemUI();
     updateMainUI();
-  }
+
+  }, 2000);
+}
 
   async function loadFromDB(){
     var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
@@ -564,308 +1133,1935 @@ const RARITY_COLOR = {
       res1.data.forEach(function(row){
         var chara = CHARACTERS.find(function(c){ return c.id===row.character_id; });
         if(chara){
-          collected[row.character_id] = {
-            id:chara.id, name:chara.name, emoji:chara.emoji, img:chara.img,
-            base:row.base_stats, opts:row.opt_stats, total:row.total,
-            rarity:row.rarity, photo:row.photo_url, time:row.captured_at, db_id:row.id
+          // captured_at（ISO文字列）から表示用timeStrを復元
+          var timeStr = '';
+          if(row.captured_at){
+            var d = new Date(row.captured_at);
+            timeStr = (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+                      d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+          }
+          var entry = {
+            id: chara.id, name: chara.name, img: chara.img, cutImg: chara.cutImg,
+            stats: chara.stats,
+            rarity: chara.rarity,
+            time: timeStr,
+            capturedAt: row.captured_at,
+            db_id: row.id
           };
+          box.push(entry);
+          // 図鑑：初出1件のみ保持
+          if(!collected[chara.id]) collected[chara.id] = entry;
         }
       });
     }
     var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId);
     var profile = (res2.data&&res2.data.length>0) ? res2.data[0] : null;
-    if(profile){ favoriteId = profile.favorite_id; }
+    if(profile){
+      favoriteId = profile.favorite_char_id ?? profile.favorite_db_id ?? null;
+      userProfile.display_name = profile.display_name || 'Player';
+      userProfile.coin        = profile.coin        ?? 100;
+      userProfile.gem         = profile.gem         ?? 10;
+      userProfile.total_score = profile.total_score ?? 0;
+      userProfile.rank        = calcRank(profile.total_score ?? 0);
+      userProfile.used_gachas = profile.used_gachas || [];
+    } else {
+      // 新規ユーザー: デフォルト値で INSERT
+      await sb.from('user_profiles').insert({
+        user_id: userId,
+        display_name: 'Player',
+        coin: 100,
+        gem: 10,
+        used_gachas: []
+      });
+      userProfile = { display_name: 'Player', coin: 100, gem: 10 };
+    }
   }
 
   async function saveToDB(data){
-    document.getElementById('save-status').textContent = '保存中...';
-    var payload = { user_id:userId, character_id:data.id, rarity:data.rarity, base_stats:data.base, opt_stats:data.opts, total:data.total, photo_url:data.photo, captured_at:data.time };
-    var result;
-    if(data.db_id){
-      result = await sb.from('collected_characters').update(payload).eq('id', data.db_id);
-    } else {
-      result = await sb.from('collected_characters').insert(payload).select();
-      if(result.data&&result.data[0]) collected[data.id].db_id = result.data[0].id;
+    var saveEl = document.getElementById('save-status');
+    if(saveEl) saveEl.textContent = '保存中...';
+    var payload = {
+      user_id: userId,
+      character_id: data.id,
+      rarity: data.rarity,
+      stats: data.stats,
+      captured_at: data.capturedAt || new Date().toISOString()  // ISOタイムスタンプを使用
+    };
+
+    // 常にINSERT（BOX方式：重複可）
+    var result = await sb.from('collected_characters').insert(payload).select();
+    if(result.error){
+      console.error('saveToDB error:', result.error);
+      if(saveEl) saveEl.textContent = '保存失敗 :(';
+      return;
     }
-    document.getElementById('save-status').textContent = result.error ? '保存失敗 :(' : '✓ 保存しました';
+    if(result.data && result.data[0]){
+      data.db_id = result.data[0].id;
+    }
+    if(saveEl) saveEl.textContent = '✓ 保存しました';
+  }
+
+
+  // ─── フレンド機能 ───────────────────────────
+
+  async function loadFriendScreen(){
+    // 自分のID表示
+    var myIdEl = document.getElementById('friend-my-id');
+    if(myIdEl) myIdEl.textContent = userId;
+
+    // 申請受信一覧
+    var reqRes = await sb.from('friendships')
+      .select('*')
+      .eq('receiver_id', userId)
+      .eq('status', 'pending');
+
+    var reqList = document.getElementById('friend-requests-list');
+    if(reqRes.data && reqRes.data.length > 0){
+      reqList.innerHTML = '';
+      for(var req of reqRes.data){
+        var name = await getDisplayName(req.requester_id);
+        var div = document.createElement('div');
+        div.className = 'friend-req-card';
+        div.innerHTML =
+          '<div><div class="friend-req-name">'+name+'</div><div style="font-size:11px;color:#666;margin-top:2px">'+req.requester_id+'</div></div>' +
+          '<div class="friend-req-btns">' +
+            '<button class="friend-req-accept" onclick="acceptFriend('+req.id+')">承認</button>' +
+            '<button class="friend-req-decline" onclick="declineFriend('+req.id+')">拒否</button>' +
+          '</div>';
+        reqList.appendChild(div);
+      }
+    } else {
+      reqList.innerHTML = '<div class="friend-list-empty">申請はありません</div>';
+    }
+
+    // フレンド一覧（accepted）
+    var frRes1 = await sb.from('friendships').select('*').eq('requester_id', userId).eq('status','accepted');
+    var frRes2 = await sb.from('friendships').select('*').eq('receiver_id', userId).eq('status','accepted');
+    var friends = [];
+    if(frRes1.data) frRes1.data.forEach(function(r){ friends.push(r.receiver_id); });
+    if(frRes2.data) frRes2.data.forEach(function(r){ friends.push(r.requester_id); });
+
+    var frList = document.getElementById('friend-list');
+    if(friends.length === 0){
+      frList.innerHTML = '<div class="friend-list-empty">フレンドがいません</div>';
+      return;
+    }
+    frList.innerHTML = '';
+    for(var fid of friends){
+      var card = await buildFriendCard(fid);
+      frList.appendChild(card);
+    }
+  }
+
+  async function copyMyId(){
+  await copyId(); // 既存関数使う
+}
+  async function getDisplayName(uid){
+    var res = await sb.from('user_profiles').select('display_name').eq('user_id', uid);
+    return (res.data && res.data[0] && res.data[0].display_name) ? res.data[0].display_name : uid;
+  }
+
+  var RARITY_COLOR_MAP = { r:'#c0c0c0', sr:'#ffd700', ur:'#ffffff' };
+  var RARITY_STAR_MAP  = { r:'★☆☆', sr:'★★☆', ur:'★★★' };
+
+  async function buildFriendCard(fid){
+    // プロフィール取得
+    var pRes = await sb.from('user_profiles').select('*').eq('user_id', fid);
+    var profile = (pRes.data && pRes.data[0]) ? pRes.data[0] : null;
+    var name = profile ? (profile.display_name || fid) : fid;
+    var rank = profile ? (profile.rank || 1) : 1;
+    var lastPlayed = profile && profile.last_played
+      ? new Date(profile.last_played).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '不明';
+
+    // 収集数
+    var colRes = await sb.from('collected_characters').select('id', {count:'exact'}).eq('user_id', fid);
+    var colCount = colRes.count || 0;
+
+    // メインキャラデータ取得
+    var favData = null;
+    var chara = null;
+    if(profile && profile.favorite_db_id){
+
+  var favRes = await sb
+    .from('collected_characters')
+    .select('*')
+    .eq('id', profile.favorite_db_id);
+
+  favData = (favRes.data && favRes.data[0])
+    ? favRes.data[0]
+    : null;
+
+  if(favData){
+    chara = CHARACTERS.find(function(ch){
+      return ch.id === favData.character_id;
+    });
+  }
+}
+
+    var div = document.createElement('div');
+    div.className = 'friend-card';
+
+    // ── メインキャラ表示エリア ──
+    var charaSection = '';
+    if(favData && chara){
+      var rarityColor = RARITY_COLOR_MAP[favData.rarity] || '#aaa';
+      var rarityStar  = RARITY_STAR_MAP[favData.rarity]  || '';
+
+      // キャラ画像 (cutImg or img)
+      var charaImgHTML = '';
+
+      if(chara.img){
+       charaImgHTML = '<img src="'+chara.img+'" class="friend-icon-img">';
+      } else {
+       charaImgHTML = '<div class="friend-icon-empty">'+'</div>';
+      }
+
+      charaSection =
+  '<div class="friend-list-left">' +
+    charaImgHTML +
+    '<div class="friend-chara-caption" style="color:'+rarityColor+'">' +
+      chara.name + ' ' + rarityStar +
+    '</div>' +
+  '</div>';
+
+    } else {
+      charaSection = '<div class="friend-list-empty" style="padding:12px 0">メインキャラ未設定</div>';
+    }
+
+   div.innerHTML =
+  '<div class="friend-list-layout">' +
+    charaSection +
+    '<div class="friend-list-main">' +
+      '<div class="friend-card-name">'+name+'</div>' +
+      '<div class="friend-card-meta">最終プレイ: '+lastPlayed+'</div>' +
+      '<div class="friend-card-stats">' +
+        '<span class="friend-stat-chip">Rank '+rank+'</span>' +
+        '<span class="friend-stat-chip">収集数 '+colCount+' / '+CHARACTERS.length+'</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="friend-list-right">' +
+'</div>' +
+'</div>';
+
+// フレンドカードタップでメインキャラ詳細表示
+div.addEventListener('click', function(){
+  if(!favData || !chara){
+    alert('このフレンドはメインキャラ未設定です');
+    return;
+  }
+
+  var friendCharaData = {
+  id: chara.id,
+  name: chara.name,
+  img: chara.img,
+  cutImg: chara.cutImg,
+  stats: favData.stats || chara.stats || {},
+  rarity: favData.rarity || chara.rarity,
+  time: favData.captured_at
+};
+
+  showFriendDetail(friendCharaData, name);
+});
+
+    return div;
+  }
+
+  async function searchFriendById(){
+    var input = document.getElementById('friend-add-input');
+    var targetId = input.value.trim();
+    var resultEl = document.getElementById('friend-search-result');
+
+    if(!targetId){ alert('IDを入力してください'); return; }
+
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<div class="friend-list-empty">検索中...</div>';
+
+    if(targetId === userId){
+      resultEl.innerHTML = '<div class="friend-list-empty">自分自身は追加できません</div>';
+      return;
+    }
+
+    // ユーザー存在確認
+    var check = await sb.from('user_profiles').select('*').eq('user_id', targetId);
+    if(!check.data || check.data.length === 0){
+      resultEl.innerHTML = '<div class="friend-list-empty">ユーザーが見つかりません</div>';
+      return;
+    }
+    var profile = check.data[0];
+    var name = profile.display_name || targetId;
+
+    // 既存関係チェック
+    var existing = await sb.from('friendships').select('*')
+      .or('and(requester_id.eq.'+userId+',receiver_id.eq.'+targetId+'),and(requester_id.eq.'+targetId+',receiver_id.eq.'+userId+')');
+    var relation = (existing.data && existing.data.length > 0) ? existing.data[0] : null;
+
+    var btnLabel = '申請する';
+    var btnDisabled = false;
+    if(relation){
+      if(relation.status === 'accepted'){ btnLabel = 'すでにフレンドです'; btnDisabled = true; }
+      else if(relation.status === 'pending'){
+        if(relation.requester_id === userId){ btnLabel = '申請中...'; btnDisabled = true; }
+        else { btnLabel = '申請が届いています'; btnDisabled = true; }
+      }
+    }
+
+    resultEl.innerHTML =
+      '<div class="friend-search-card">' +
+        '<div class="friend-search-card-name">'+name+'</div>' +
+        '<div class="friend-search-card-id">ID: '+targetId+'</div>' +
+        '<button class="friend-search-send-btn" '+(btnDisabled?'disabled':'')+' onclick="sendFriendRequest(\'' + targetId + '\')">'+btnLabel+'</button>' +
+      '</div>';
+  }
+
+  async function sendFriendRequest(targetId){
+    await sb.from('friendships').insert({ requester_id: userId, receiver_id: targetId, status: 'pending' });
+    // ボタンを申請済みに更新
+    var resultEl = document.getElementById('friend-search-result');
+    var btn = resultEl ? resultEl.querySelector('.friend-search-send-btn') : null;
+    if(btn){ btn.textContent = '申請しました ✓'; btn.disabled = true; }
+  }
+
+  async function acceptFriend(friendshipId){
+    await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+    loadFriendScreen();
+  }
+
+  async function declineFriend(friendshipId){
+    await sb.from('friendships').delete().eq('id', friendshipId);
+    loadFriendScreen();
+  }
+  // ──────────────────────────────────────────
+
+  // EXP設定：ここだけ変えればLvアップ条件を変更できる
+  var EXP_PER_LEVEL = 1000;
+  var MAX_LEVEL = 100;
+
+  // 任務ノードEXP設定
+  var EXP_BY_NODE = { easy: 100, normal: 250, hard: 500, boss: 1000 };
+  var CLEAR_RANK_MULTIPLIER = { S: 1.5, A: 1.2, B: 1.0, C: 0.7 };
+  var REPEAT_PENALTY = 0.3;
+
+  function calcNodeExp(difficulty, clearRank, isFirstClear) {
+    var base       = EXP_BY_NODE[difficulty] || 250;
+    var rankMul    = CLEAR_RANK_MULTIPLIER[clearRank] || 1.0;
+    var repeatMul  = isFirstClear ? 1.0 : REPEAT_PENALTY;
+    var randomBonus = Math.floor(Math.random() * 51); // 0〜50
+    return Math.floor(base * rankMul * repeatMul) + randomBonus;
+  }
+
+  async function onNodeClear(nodeId, difficulty, clearRank, isFirstClear) {
+    var exp = calcNodeExp(difficulty, clearRank, isFirstClear);
+    await addTotalScore(exp);
+    showToast((isFirstClear ? '初回クリア！ ' : '') + '+' + exp + ' EXP');
+  }
+
+  // テスト用：normal / S クリア想定
+  function testNodeClear(isFirstClear) {
+    onNodeClear('node_test_01', 'normal', 'S', isFirstClear);
+  }
+
+  // 任務カテゴリ切り替え
+  function switchNinmuCat(cat) {
+    ['daily','special','story'].forEach(function(c){
+      var btn   = document.getElementById('ninmu-cat-' + c);
+      var panel = document.getElementById('ninmu-panel-' + c);
+      var active = (c === cat);
+      if(btn)   btn.classList.toggle('active', active);
+      if(panel) panel.style.display = active ? '' : 'none';
+    });
+  }
+
+  function calcRank(score){
+    return Math.min(MAX_LEVEL, Math.floor(score / EXP_PER_LEVEL) + 1);
+  }
+
+  function calcExpProgress(score){
+    var lv = calcRank(score);
+    if(lv >= MAX_LEVEL) return { current: EXP_PER_LEVEL, max: EXP_PER_LEVEL, pct: 100 };
+    var base = (lv - 1) * EXP_PER_LEVEL;
+    var current = score - base;
+    return { current: current, max: EXP_PER_LEVEL, pct: Math.min(100, Math.floor(current / EXP_PER_LEVEL * 100)) };
+  }
+
+  async function saveProfileToDB(patch){
+    await sb.from('user_profiles').update(patch).eq('user_id', userId);
+  }
+
+  async function updateLastPlayed(){
+    await saveProfileToDB({ last_played: new Date().toISOString() });
+  }
+
+  async function addTotalScore(score){
+    userProfile.total_score += score;
+    var newRank = calcRank(userProfile.total_score);
+    var rankUp = newRank > userProfile.rank;
+    userProfile.rank = newRank;
+    await saveProfileToDB({
+      total_score: userProfile.total_score,
+      rank: userProfile.rank,
+      last_played: new Date().toISOString()
+    });
+    updateMainUI();
+    if(rankUp){
+      setTimeout(function(){
+        showRankUpToast(userProfile.rank);
+      }, 2000);
+    }
+  }
+
+  function showRankUpToast(rank){
+    var toast = document.getElementById('rankup-toast');
+    if(!toast) return;
+    document.getElementById('rankup-toast-rank').textContent = rank;
+    toast.classList.add('active');
+    setTimeout(function(){ toast.classList.remove('active'); }, 3000);
+  }
+
+  function openNameEdit(){
+    var input = document.getElementById('name-edit-input');
+    input.value = userProfile.display_name || '';
+    updateNameCount();
+    input.addEventListener('input', updateNameCount);
+    document.getElementById('name-edit-modal').classList.add('active');
+    setTimeout(function(){ input.focus(); }, 100);
+  }
+
+  function updateNameCount(){
+    var val = document.getElementById('name-edit-input').value;
+    document.getElementById('name-edit-count').textContent = val.length;
+  }
+
+  function closeNameEdit(){
+    document.getElementById('name-edit-modal').classList.remove('active');
+  }
+
+  async function saveNameEdit(){
+    var val = document.getElementById('name-edit-input').value.trim();
+    if(!val){ alert('名前を入力してください'); return; }
+    userProfile.display_name = val;
+    updateMainUI();
+    // 設定画面の表示も更新
+    var el = document.getElementById('setting-display-name');
+    if(el) el.textContent = val;
+    closeNameEdit();
+    await saveProfileToDB({ display_name: val });
   }
 
   async function saveFavoriteToDB(charId){
-    var res = await sb.from('user_profiles').select('*').eq('user_id', userId);
-    var existing = (res.data&&res.data.length>0) ? res.data[0] : null;
-    if(existing){ await sb.from('user_profiles').update({ favorite_id:charId }).eq('user_id', userId); }
-    else { await sb.from('user_profiles').insert({ user_id:userId, favorite_id:charId }); }
-  }
+  await saveProfileToDB({
+    favorite_char_id: charId
+  });
+}
 
   function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
-  function rollStats(){
-    var base={};
-    BASE_STATS.forEach(function(s){ base[s]=rand(1,99); });
-    var pool=OPT_STATS.slice().sort(function(){ return Math.random()-0.5; });
-    var opts={}, oc=0;
-    for(var i=0;i<3;i++){ if(Math.random()<0.15){ opts[pool[oc]]=rand(1,99); oc++; } }
-    var totalBase=Object.values(base).reduce(function(a,b){ return a+b; },0);
-    var totalOpt=Object.values(opts).reduce(function(a,b){ return a+b; },0);
-    var total=totalBase+totalOpt;
-    var rarity=Object.keys(opts).length===3?"rainbow":total>=350?"gold":total>=200?"silver":"bronze";
-    return {base:base, opts:opts, total:total, rarity:rarity};
+  function playSE(id, volume = 1){
+  var base = document.getElementById('se-' + id);
+  if(!base) return;
+
+  var se = base.cloneNode();
+  se.volume = (seVolume / 100) * volume;
+  se.play().catch(function(){});
   }
 
-  function showScreen(name){
-    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
-    document.getElementById('screen-'+name).classList.add('active');
-    if(name==='zukan') renderZukan();
-    if(name==='main')  updateMainUI();
+  function playLoopSE(id, volume = 1){
+  var se = document.getElementById('se-' + id);
+  if(!se) return;
+
+  se.volume = (seVolume / 100) * volume;
+  se.currentTime = 0;
+  se.play().catch(function(){});
+ }
+
+  function stopSE(id){
+  var se = document.getElementById('se-' + id);
+  if(!se) return;
+  se.pause();
+  se.currentTime = 0;
   }
 
-  async function summonAction(){
-    var video = document.getElementById('video');
-    if(!video.srcObject){
-      await startCamera();
-      document.getElementById('btn-summon').textContent = '✨ 召喚！';
+ function showScreen(name){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  if(name === 'summon'){ resetSummonResult(); }
+  document.getElementById('screen-'+name).classList.add('active');
+  if(name==='zukan') renderCurrentZukanTab();
+  if(name==='main')  updateMainUI();
+}
+
+  // ボトムナビ active 制御
+  var BNAV_MAP = { ninmu:'bnav-ninmu', zukan:'bnav-zukan', main:'bnav-main', summon:'bnav-summon', setting:'bnav-setting' };
+  function setBnavActive(name){
+    Object.values(BNAV_MAP).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.classList.remove('active');
+    });
+    var shared = document.getElementById('bottom-nav-shared');
+    if(shared) shared.style.display = '';
+    var target = BNAV_MAP[name];
+    if(target){ var el = document.getElementById(target); if(el) el.classList.add('active'); }
+  }
+
+  // ナビの表示/非表示 (生成演出・結果表示中のみ隠す)
+  function setNavVisible(visible){
+    var shared = document.getElementById('bottom-nav-shared');
+    if(shared) shared.style.display = visible ? '' : 'none';
+  }
+
+  function setHomeBtnVisible(visible){ /* 削除済み */ }
+  function setReloadBtnVisible(visible){ /* 削除済み */ }
+  function goHome(){ showMainTab('main'); }
+
+  // ボトムナビゲーション切替
+  function showMainTab(name){
+
+    var guf = document.getElementById('global-user-frame');
+    if(guf){
+      guf.classList.remove('hidden');
+      guf.style.display = '';
+    }
+
+    if(name === 'ninmu'){
+      showScreen('ninmu');
+      setBnavActive('ninmu');
+      setHomeBtnVisible(true);
+      setReloadBtnVisible(true);
+      setNavVisible(true);
+      var gufN = document.getElementById('global-user-frame');
+      if(gufN) gufN.classList.add('hud-dark');
+      updateHeaderHeight();
       return;
     }
-    takePicture();
+
+    if(name === 'summon'){
+      showScreen('summon');
+      setBnavActive('summon');
+      setHomeBtnVisible(true);
+      setReloadBtnVisible(true);
+      setNavVisible(true);
+      var gufS = document.getElementById('global-user-frame');
+      if(gufS) gufS.classList.add('hud-dark');
+      renderSummonBanners();
+      updateHeaderHeight();
+      return;
+    }
+
+    var guf2 = document.getElementById('global-user-frame');
+    if(name === 'main'){
+      document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+      document.getElementById('screen-main').classList.add('active');
+      updateMainUI();
+      resetSummonResult();
+      setHomeBtnVisible(false);
+      setReloadBtnVisible(true);
+      if(guf2) guf2.classList.remove('hud-dark');
+    } else {
+      document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+      if(name === 'zukan') renderCurrentZukanTab();
+      if(name === 'friend') loadFriendScreen();
+      document.getElementById('screen-'+name).classList.add('active');
+      setHomeBtnVisible(true);
+      setReloadBtnVisible(true);
+      if(guf2) guf2.classList.add('hud-dark');
+    }
+    setNavVisible(true);
+    setBnavActive(name);
+    updateHeaderHeight();
   }
 
-  function stopCamera(){
-    var video=document.getElementById("video");
-    if(video.srcObject){
-      video.srcObject.getTracks().forEach(function(t){ t.stop(); });
-      video.srcObject=null;
+   function summonAction(count){
+  currentSummonCount = count || 1;
+
+  userProfile.used_gachas = userProfile.used_gachas || [];
+
+  var currentGacha = GACHA_BANNERS.find(function(g){
+    return g.id === currentGachaId;
+  });
+
+  if(!currentGacha){
+    console.warn('currentGacha not found:', currentGachaId);
+    return;
+  }
+
+  if(currentGacha.category === 'once' && userProfile.used_gachas.includes(currentGachaId)){
+    alert('この生成はすでに利用済みです');
+
+    return;
+  }
+
+  var cost = currentGacha.cost * currentSummonCount;
+
+  document.getElementById('summon-confirm-text').textContent =
+    '結晶を ' + cost + ' 個消費してガチャを回します。';
+
+  if(userProfile.gem < cost){
+
+    document.getElementById('paywall-modal').classList.add('active');
+    return;
+  }
+
+
+  document.getElementById('summon-confirm-modal').classList.add('active');
+}
+
+  function confirmSummonNo(){
+   document.getElementById('summon-confirm-modal').classList.remove('active');
+  }
+
+  function confirmSummonYes(){
+  setNavVisible(false);
+  setHomeBtnVisible(false);
+  setReloadBtnVisible(false);
+
+  document.getElementById('summon-standby').classList.add('active');
+  document.getElementById('summon-confirm-modal').classList.remove('active');
+}
+
+var isSummoning = false;
+
+function startSummonFromStandby(){
+  if(isSummoning) return;
+  isSummoning = true;
+
+  stopBgm();
+
+  // standbyはそのまま表示しておき、演出が画面を覆った後に消す（研究所画面が一瞬見えるのを防止）
+  const standby = document.getElementById('summon-standby');
+  standby.style.pointerEvents = 'none';
+
+  normalSummon(currentSummonCount);
+
+  setTimeout(function(){
+    standby.classList.remove('active');
+    standby.style.pointerEvents = '';
+  }, 400);
+}
+
+  async function normalSummon(count){
+  count = count || 1;
+
+  var currentGacha = GACHA_BANNERS.find(function(g){
+    return g.id === currentGachaId;
+  });
+
+  var cost = currentGacha.cost * count;
+
+  if(userProfile.gem < cost){
+    document.getElementById('paywall-modal').classList.add('active');
+    return;
+  }
+
+  userProfile.gem -= cost;
+
+  if(currentGacha && currentGacha.category === 'once'){
+    userProfile.used_gachas = userProfile.used_gachas || [];
+    if(!userProfile.used_gachas.includes(currentGachaId)){
+      userProfile.used_gachas.push(currentGachaId);
     }
   }
 
-  async function startCamera(){
-    try{
-      var stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-      document.getElementById('video').srcObject=stream;
-    }catch(e){ alert('カメラの起動に失敗しました。'); }
+  await saveProfileToDB({
+    gem: userProfile.gem,
+    used_gachas: userProfile.used_gachas
+  });
+
+  renderSummonBanners();
+  updateSummonGemUI();
+  updateMainUI();
+
+  var results = createSummonResults(count, currentGacha);
+
+if(count === 10){
+  results.forEach(function(data){
+    box.push(data);
+    if(!collected[data.id]) collected[data.id] = data;
+    saveToDB(data);
+  });
+
+  // UR確定音（30%の確率）、70%は無音
+  var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
+  if(hasUR && Math.random() < 0.3){
+    playSE('tap_ur', 0.9);
   }
 
-  function takePicture(){
-    if(summonCount<=0){ document.getElementById('paywall-modal').classList.add('active'); return; }
-    var video=document.getElementById('video');
-    if(!video.srcObject){ alert('先にカメラを起動してください！'); return; }
-    var canvas=document.getElementById('canvas');
-    canvas.width=video.videoWidth||640; canvas.height=video.videoHeight||480;
-    canvas.getContext('2d').drawImage(video,0,0);
-    var photo=canvas.toDataURL('image/jpeg',0.6);
-    var now=new Date();
-    var timeStr=(now.getMonth()+1)+'/'+now.getDate()+' '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
-    var chara = selectChara(now);
-    var stats = rollStats();
-    summonCount--;
-    updateCounterUI();
-    stopCamera();
-    document.getElementById('btn-summon').textContent = 'カメラを起動';
-    var newData={id:chara.id,name:chara.name,emoji:chara.emoji,img:chara.img,base:stats.base,opts:stats.opts,total:stats.total,rarity:stats.rarity,photo:photo,time:timeStr};
-    if(collected[chara.id]){ pendingNew=newData; showReveal(newData, true); }
-    else{ collected[chara.id]=newData; showReveal(newData, false); saveToDB(newData); }
+  startTenInitialEffect(results);
+} else {
+  handleSingleResult(results[0]);
+}
+}
+
+var currentTenResults = [];
+var pendingSkipResults = null; // スキップ用結果保持
+var tenInitialEffectTimer = null; // 演出終了タイマーID（スキップ時にキャンセル）
+var stepTimers = [];              // 各コマのフェードタイマーID群
+
+function setSkipBtnVisible(visible){
+  var btn = document.getElementById('standby-skip-btn');
+  if(btn) btn.style.display = visible ? 'block' : 'none';
+}
+
+function skipSummonEffect(){
+  if(!pendingSkipResults) return;
+
+  // 裏で動いているタイマーをすべてキャンセル
+  if(tenInitialEffectTimer !== null){
+    clearTimeout(tenInitialEffectTimer);
+    tenInitialEffectTimer = null;
+  }
+  stepTimers.forEach(clearTimeout);
+  stepTimers = [];
+
+  setSkipBtnVisible(false);
+
+  // reveal-modal を強制終了
+  var modal = document.getElementById('reveal-modal');
+  if(modal) modal.classList.remove('active');
+  stopSE('summon_slow');
+
+  // standby非表示
+  var standby = document.getElementById('summon-standby');
+  if(standby) standby.classList.remove('active');
+
+  // HUD復元
+  var guf = document.getElementById('global-user-frame');
+  if(guf) guf.style.display = '';
+
+  // 直接10連結果へ
+  var results = pendingSkipResults;
+  pendingSkipResults = null;
+  startTenRevealSequence(results);
+}
+
+const RARITY_ORDER = { r: 1, sr: 2, ur: 3 };
+
+function createSummonResults(count, currentGacha){
+  var results = [];
+
+  for(var i = 0; i < count; i++){
+    results.push(createOneSummonData(currentGacha));
   }
 
-  var pendingRevealIsCompare = false;
+  // 天井カウント加算（onceガチャは天井に影響しない）
+  if(!currentGacha || currentGacha.category !== 'once'){
+    pityCount += count;
+
+    // 天井到達：UR確定
+    if(pityCount >= PITY_LIMIT){
+      var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
+      if(!hasUR){
+        var urChars = CHARACTERS.filter(function(c){ return matchesGachaFilter(c, currentGacha) && c.rarity === 'ur'; });
+        if(urChars.length > 0){
+          var pick = urChars[Math.floor(Math.random() * urChars.length)];
+          results[results.length - 1] = {
+            id: pick.id, name: pick.name, img: pick.img, upImg: pick.upImg, cutImg: pick.cutImg,
+            type: pick.type, stats: pick.stats, rarity: 'ur', time: new Date().toLocaleString()
+          };
+        }
+      }
+      pityCount = 0; // 天井到達でリセット
+      savePityCount();
+      updatePityUI();
+    } else {
+      // UR出たらカウントリセット
+      var hasUR2 = results.some(function(r){ return r.rarity === 'ur'; });
+      if(hasUR2){ pityCount = 0; }
+      savePityCount();
+      updatePityUI();
+    }
+  }
+
+  // banner_01：UR確定
+  if(currentGacha && currentGacha.category === 'once'){
+    var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
+    if(!hasUR){
+      var urChars = CHARACTERS.filter(function(c){
+        return matchesGachaFilter(c, currentGacha) && c.rarity === 'ur';
+      });
+      if(urChars.length > 0){
+        var pick = urChars[Math.floor(Math.random() * urChars.length)];
+        results[results.length - 1] = {
+          id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
+          stats: pick.stats, rarity: pick.rarity, time: new Date().toLocaleString()
+        };
+      }
+    }
+  }
+
+  // 10連：SR以上確定
+  if(count === 10){
+    var hasSR = results.some(function(r){
+      return RARITY_ORDER[r.rarity] >= RARITY_ORDER.sr;
+    });
+    if(!hasSR){
+      var srChars = CHARACTERS.filter(function(c){
+        return matchesGachaFilter(c, currentGacha) && RARITY_ORDER[c.rarity] >= RARITY_ORDER.sr;
+      });
+      if(srChars.length > 0){
+        var pick = srChars[Math.floor(Math.random() * srChars.length)];
+        results[9] = {
+          id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
+          stats: pick.stats, rarity: pick.rarity, time: results[0].time
+        };
+      }
+    }
+  }
+
+  assignNewFlags(results);
+  return results;
+}
+
+function assignNewFlags(results){
+  var seen = {};
+
+  // 既に所持しているキャラは最初から既出扱い
+  Object.keys(collected).forEach(function(id){
+    seen[id] = true;
+  });
+
+  results.forEach(function(data){
+    var key = String(data.id);
+
+    if(seen[key]){
+      data.isNew = false;
+    } else {
+      data.isNew = true;
+      seen[key] = true;
+    }
+  });
+}
+
+function createOneSummonData(currentGacha){
+  var now = new Date();
+  var timeStr =
+    (now.getMonth()+1) + '/' + now.getDate() + ' ' +
+    now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  var chara = selectChara(now, currentGacha);
+  if(!chara){
+  throw new Error('ガチャ抽選対象がありません');
+}
+
+  return {
+    id: chara.id,
+    name: chara.name,
+    img: chara.img,
+    upImg: chara.upImg || chara.img,
+    cutImg: chara.cutImg,
+    type: chara.type,
+    stats: chara.stats,
+    rarity: chara.rarity,
+    time: timeStr,
+    capturedAt: now.toISOString()
+  };
+}
+
+
+function handleSingleResult(data){
+  setNavVisible(false);
+
+  // 常にBOXに追加（上書きなし）
+  box.push(data);
+  if(!collected[data.id]) collected[data.id] = data;
+
+  showReveal(data, false);
+  saveToDB(data);
+
+}
+
+  // デバッグ用: 'bronze'/'silver'/'gold'/'ur' に固定、nullで通常
+  var DEBUG_RARITY = null; // テスト時は 'gold' や 'ur' に変更
+
+  // 全レアリティ共通の前半3枚
+  var REVEAL_COMMON = [
+    'images/summon_01.webp',
+    'images/summon_02.webp',
+    'images/summon_03.webp'
+  ];
+
+  // レアリティから演出用画像配列を生成する関数
+  function buildRevealSequence(rarity) {
+    var last;
+    if (rarity === 'ur') {
+      last = Math.random() < 0.5 ? 'images/summon_04b.webp' : 'images/summon_04a.webp';
+    } else {
+      last = 'images/summon_04a.webp';
+    }
+    return REVEAL_COMMON.concat([last]);
+  }
+
+  // タイミング定数 (ms) ※ここだけ変えれば全体に反映
+  var R_BLACK = 600;
+  var R_FADE_IN = 700;
+  var R_HOLD = 1000;
+  var R_FADE_OUT = 900;
+
+  var R_STEP = R_BLACK + R_FADE_IN + R_HOLD + R_FADE_OUT;
 
   function showReveal(data, isCompare){
+  
+    var guf = document.getElementById('global-user-frame');
+    if (guf) guf.style.display = 'none';
+
+    document.getElementById('reveal-modal').classList.add('active');
+
+    setTimeout(function(){
+     var standby = document.getElementById('summon-standby');
+     if(standby) standby.classList.remove('active');
+    }, 50);
+
     pendingRevealIsCompare = isCompare;
     currentResultData = data;
 
-    // 背景に撮影写真をセット
-    var bg = document.getElementById('reveal-bg');
-    bg.style.backgroundImage = 'url('+data.photo+')';
-    bg.style.opacity = '1';
+    var rarity = DEBUG_RARITY || data.rarity;
+    var imgs   = buildRevealSequence(rarity);
 
-    // オーバーレイ・コンテンツをリセット
-    var overlay = document.getElementById('reveal-overlay');
+    var bg         = document.getElementById('reveal-bg');
+    var overlay    = document.getElementById('reveal-overlay');
     var revContent = document.getElementById('reveal-content');
+
+    // --- リセット ---
+    bg.style.transition      = 'none';
+    bg.style.backgroundImage = '';
+    bg.style.opacity         = '0';
+    overlay.style.transition = 'none'; 
     overlay.style.background = 'rgba(0,0,0,0)';
     revContent.classList.remove('show');
 
-    // モーダル表示
-    document.getElementById('reveal-modal').classList.add('active');
+    var modal = document.getElementById('reveal-modal');
+    modal.classList.add('active');
+    playLoopSE('summon_slow', 0.6);
+  
+   // modal.classList.add('rarity-' + rarity);
 
-    // フェードイン→暗転→キャラ登場
+    imgs.forEach(function(imgUrl, i){
+    var t = i * R_STEP;
+
+    var showAt = (i === 0) ? t : t + R_BLACK;
+
+  // 表示
     setTimeout(function(){
-      overlay.style.background = 'rgba(0,0,0,0.75)';
-    }, 500);
+    if(i > 0){
+      noiseEffect();
+      setTimeout(noiseEffect, 80);
+    }
 
+    bg.style.backgroundImage = "url('" + imgUrl + "')";
+    bg.style.transition = 'opacity ' + (R_FADE_IN/1000) + 's ease';
+    bg.style.opacity = '1';
+  }, showAt);
+
+  // フェードアウト
+  setTimeout(function(){
+    bg.style.transition = 'opacity ' + (R_FADE_OUT/1000) + 's ease';
+    bg.style.opacity = '0';
+  }, showAt + R_FADE_IN + R_HOLD);
+});
+
+    // 全ステップ終了 = 最後の背景のフェードアウト完了タイミング
+    var lastFadeOutEnd =
+   (imgs.length - 1) * R_STEP +
+   ((imgs.length === 1) ? 0 : R_BLACK) +
+   R_FADE_IN + R_HOLD + R_FADE_OUT;
+
+    // キャラ登場前にオーバーレイで完全に暗くする
+    setTimeout(function(){
+      overlay.style.transition = 'background 0.5s ease';
+      overlay.style.background = 'rgba(0,0,0,0.85)';
+    }, lastFadeOutEnd);
+
+    // キャラ登場
     setTimeout(function(){
       var img = document.getElementById('reveal-chara-img');
-      if(data.img){ img.src=data.img; img.style.display='block'; }
-      else{ img.style.display='none'; }
+      if(data.img){ img.src = data.img; img.style.display = 'block'; }
+      else { img.style.display = 'none'; }
+
       document.getElementById('reveal-name').textContent = data.name;
-      document.getElementById('reveal-rarity').textContent = RARITY_LABEL[data.rarity];
+
+      var r = DEBUG_RARITY || data.rarity;
+
+      document.getElementById('reveal-rarity').innerHTML = '';
+      var rboxEl = document.getElementById('reveal-rarity-box');
+      if(rboxEl){ rboxEl.src = RARITY_BOX_IMAGE[r]; rboxEl.style.display = 'block'; }
+
       revContent.classList.add('show');
-      spawnParticles(data.rarity);
-    }, 1800);
+      spawnParticles(r);
+
+      stopSE('summon_slow');
+
+    }, lastFadeOutEnd + R_BLACK);
+  
+   }
+
+function showRevealImageOnly(data){
+  var guf = document.getElementById('global-user-frame');
+  if(guf) guf.style.display = 'none';
+
+  pendingRevealIsCompare = false;
+  currentResultData = data;
+
+  showNormalReveal(data);
+}
+
+function showUrWarningThenReveal(data){
+  var blackout = document.getElementById('fullscreen-blackout');
+  var alertScreen = document.getElementById('ur-alert-screen');
+
+  if(!blackout || !alertScreen){
+    console.error('UR警報用DOMが見つかりません');
+    showNormalReveal(data);
+    return;
   }
 
+  // blackoutをactiveクラスで表示（CSSは.activeでopacity:1）
+  blackout.classList.add('active');
+
+  playSE('ur_black', 1.0);
+
+  setTimeout(function(){
+    alertScreen.classList.add('active');
+  }, 400);
+
+  setTimeout(function(){
+    alertScreen.classList.remove('active');
+
+    setTimeout(function(){
+      blackout.classList.remove('active');
+      showNormalReveal(data);
+    }, 300);
+  }, 2400);
+}
+
+function showNormalReveal(data){
+  var modal = document.getElementById('reveal-modal');
+  var content = document.getElementById('reveal-content');
+
+  content.style.display = '';
+  content.classList.remove('show');
+
+  document.getElementById('reveal-bg').style.backgroundImage = '';
+  document.getElementById('reveal-bg').style.opacity = '0';
+  document.getElementById('reveal-particles').innerHTML = '';
+
+  document.getElementById('reveal-chara-img').src = data.img || '';
+  document.getElementById('reveal-name').textContent = data.name;
+  document.getElementById('reveal-rarity').innerHTML = '';
+
+  var rboxEl2 = document.getElementById('reveal-rarity-box');
+  if(rboxEl2){
+    rboxEl2.src = RARITY_BOX_IMAGE[data.rarity];
+    rboxEl2.style.display = 'block';
+  }
+
+  modal.classList.add('active');
+
+  setTimeout(function(){
+    content.classList.add('show');
+    playSE('fullscreen_impact', 1.0);
+  }, 600);
+}
+
+    function noiseEffect(){
+    var noise = document.createElement('div');
+
+    noise.style.position = 'fixed';
+    noise.style.inset = '0';
+    noise.style.zIndex = '99999';
+    noise.style.pointerEvents = 'none';
+    noise.style.opacity = '1';
+
+     noise.style.background =
+     'repeating-linear-gradient(0deg,' +
+     'rgba(255,255,255,0.15) 0px,' +
+     'rgba(255,255,255,0.15) 2px,' +
+     'rgba(0,0,0,0.15) 2px,' +
+     'rgba(0,0,0,0.15) 4px)';
+
+  noise.style.mixBlendMode = 'overlay';
+  noise.style.opacity = '0.6';
+  noise.style.transform = 'translateY(' + (Math.random() * 10 - 5) + 'px)';
+
+  document.body.appendChild(noise);
+
+  setTimeout(function(){
+    if(noise && noise.parentNode){
+      noise.remove();
+    }
+  }, 1000);
+}
   function spawnParticles(rarity){
     var container = document.getElementById('reveal-particles');
     container.innerHTML = '';
-    var emojis = rarity==='rainbow'?['🌈','✨','⭐','💫','🎉']:
-                 rarity==='gold'?['✨','⭐','💫','🌟']:
-                 rarity==='silver'?['✨','💫','⚡']:['✨','💫'];
-    for(var i=0;i<15;i++){
-      var el=document.createElement('div');
-      el.className='particle';
-      el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-      el.style.left=Math.random()*100+'%';
-      el.style.top=(50+Math.random()*50)+'%';
-      el.style.animationDelay=(Math.random()*0.8)+'s';
+    
+   var count =
+  rarity === 'ur' ? 22 :
+  rarity === 'sr' ? 14 :
+                   6;
+
+    for(var i = 0; i < count; i++){
+      var el = document.createElement('img');
+      el.src = 'images/summon_spark.webp';
+      el.className = 'particle';
+      // ランダムな位置・サイズ・遅延・回転
+      var size = 20 + Math.random() * 36; // 20〜56px
+      el.style.width  = size + 'px';
+      el.style.height = size + 'px';
+      el.style.left   = (Math.random() * 100) + '%';
+      el.style.top    = (30 + Math.random() * 60) + '%';
+      el.style.animationDelay    = (Math.random() * 1.0) + 's';
+      el.style.animationDuration = (1.2 + Math.random() * 0.8) + 's';
+      // ランダムな横方向ドリフト
+      var drift = (Math.random() * 120 - 60); // -60〜+60px
+      el.style.setProperty('--drift', drift + 'px');
+      // レアリティごとに色味をつける
+      if(rarity === 'sr'){
+  el.style.filter = 'hue-rotate(200deg) brightness(1.4)';
+} else if(rarity === 'ur'){
+  el.style.filter = 'hue-rotate(' + Math.floor(Math.random()*360) + 'deg) brightness(1.3)';
+}
       container.appendChild(el);
     }
   }
 
   function closeReveal(){
-    document.getElementById('reveal-modal').classList.remove('active');
-    if(pendingRevealIsCompare){
-      showCompareModal(currentResultData, collected[currentResultData.id]);
-    } else {
-      showResult(currentResultData);
-    }
+  const modal = document.getElementById('reveal-modal');
+  const content = document.getElementById('reveal-content');
+  const blackout = document.getElementById('fullscreen-blackout');
+
+  // 念のためblackout・警報画面もリセット
+  if(blackout){ blackout.classList.remove('active'); blackout.classList.remove('fade-in'); }
+  var alertScreen = document.getElementById('ur-alert-screen');
+  if(alertScreen){ alertScreen.classList.remove('active'); alertScreen.classList.remove('fadeout'); }
+  stopSE('ur_black');
+
+  modal.classList.remove('active');
+  modal.classList.remove(
+    'rarity-normal',
+    'rarity-bronze',
+    'rarity-silver',
+    'rarity-gold',
+    'rarity-rainbow'
+  );
+
+  content.classList.remove('show');
+
+  document.getElementById('reveal-bg').style.backgroundImage = '';
+  document.getElementById('reveal-bg').style.opacity = '0';
+  document.getElementById('reveal-overlay').style.background = 'rgba(0,0,0,0)';
+  document.getElementById('reveal-particles').innerHTML = '';
+  var rboxClose = document.getElementById('reveal-rarity-box');
+  if(rboxClose){ rboxClose.style.display = 'none'; rboxClose.src = ''; }
+
+  var guf = document.getElementById('global-user-frame');
+  if(guf) guf.style.display = 'block';
+
+  if(tenRevealWaiting){
+   tenRevealWaiting = false;
+
+   revealTenCard(tenRevealIndex);
+   tenRevealIndex++;
+
+   setTimeout(function(){
+     openNextTenCard();
+   }, 1200);
+
+   return;
+ }
+
+  // 単発終了
+  isSummoning = false;
+  document.getElementById('summon-standby').classList.remove('active');
+
+  if(bgmEnabled) fadeInBgm();
+
+  if(pendingRevealIsCompare){
+    showCompareModal(currentResultData, collected[currentResultData.id]);
+  } else {
+    showResult(currentResultData);
   }
+}
 
   function showResult(data){
+
     currentResultData=data;
+
+      // ← 追加
+    var guf = document.getElementById('global-user-frame');
+    if(guf) guf.style.display = 'none';
+
+    var scr = document.getElementById('screen-summon');
+    if(scr){
+     scr.style.paddingTop = '0';
+     scr.style.overflowY = 'auto';
+     scr.scrollTop = 0;
+    }
+
     var el=document.getElementById('summon-result');
     el.className='rarity-'+data.rarity;
-    el.style.display='block';
-    document.getElementById('result-chara-visual').innerHTML=charaVisualHTML(data,240);
-    document.getElementById('result-name').textContent=data.name+' をお迎え！';
-    document.getElementById('result-rarity').innerHTML =
-  '<span style="color:'+RARITY_COLOR[data.rarity]+'">'
-  + RARITY_LABEL[data.rarity] +
-  '</span>';
-    document.getElementById('result-photo').src=data.photo||'';
+    el.style.display='flex';
+    
+    // リザルト表示中：ヘッダー・2カラムレイアウトを隠してpaddingをゼロに
+    var hdr = document.querySelector('#screen-summon .header');
+    if(hdr) hdr.style.display = 'none';
+    
+    var layout = document.getElementById('summon-layout') || document.querySelector('.summon-layout');
+    if(layout) layout.style.display = 'none';
+    
+    var scr = document.getElementById('screen-summon');
+    if(scr) scr.style.paddingTop = '0';
+
+    document.getElementById('result-chara-visual').innerHTML=charaVisualHTML(data,220);
+    document.getElementById('result-name').textContent=data.name;
+
+    document.getElementById('result-rarity').innerHTML = '';
+
     document.getElementById('result-stat-table').innerHTML=buildStatRows(data);
-    document.getElementById('result-opts').innerHTML=buildOptBadges(data.opts);
+    document.getElementById('result-opts').innerHTML = '';
     document.getElementById('save-status').textContent='';
+    setNavVisible(true);
   }
 
+function startTenInitialEffect(results){
+  pendingSkipResults = results; // スキップ用に保持
+  setSkipBtnVisible(true);     // スキップボタン表示
+  var best = getBestResult(results);
+  var rarity = DEBUG_RARITY || best.rarity;
+  var imgs = buildRevealSequence(rarity);
+
+  var guf = document.getElementById('global-user-frame');
+  if(guf) guf.style.display = 'none';
+
+  var modal = document.getElementById('reveal-modal');
+  var bg = document.getElementById('reveal-bg');
+  var overlay = document.getElementById('reveal-overlay');
+  var particles = document.getElementById('reveal-particles');
+  var content = document.getElementById('reveal-content');
+
+  // リセット
+  bg.style.transition = 'none';
+  bg.style.backgroundImage = '';
+  bg.style.opacity = '0';
+  overlay.style.transition = 'none';
+  overlay.style.background = 'rgba(0,0,0,0)';
+  particles.innerHTML = '';
+  content.classList.remove('show');
+  content.style.display = 'none';
+
+  modal.classList.add('active');
+  playLoopSE('summon_slow', 0.6);
+
+  modal.classList.remove(
+    'rarity-normal',
+    'rarity-bronze',
+    'rarity-silver',
+    'rarity-gold',
+    'rarity-rainbow'
+  );
+
+ // modal.classList.add('rarity-' + rarity);
+
+  stepTimers = []; // 前回分をリセット
+  imgs.forEach(function(imgUrl, i){
+    var t = i * R_STEP;
+    var showAt = (i === 0) ? t : t + R_BLACK;
+
+    stepTimers.push(setTimeout(function(){
+      if(i > 0){
+        noiseEffect();
+        setTimeout(noiseEffect, 80);
+      }
+
+      bg.style.backgroundImage = "url('" + imgUrl + "')";
+      bg.style.transition = 'opacity ' + (R_FADE_IN / 1000) + 's ease';
+      bg.style.opacity = '1';
+    }, showAt));
+
+    stepTimers.push(setTimeout(function(){
+      bg.style.transition = 'opacity ' + (R_FADE_OUT / 1000) + 's ease';
+      bg.style.opacity = '0';
+    }, showAt + R_FADE_IN + R_HOLD));
+  });
+
+  var lastFadeOutEnd =
+    ((imgs.length - 1) * R_STEP) +
+    R_BLACK +
+    R_FADE_IN +
+    R_HOLD +
+    R_FADE_OUT;
+
+  tenInitialEffectTimer = setTimeout(function(){
+    tenInitialEffectTimer = null;
+
+    // スキップ済みの場合はここでは何もしない
+    if(pendingSkipResults === null) return;
+
+    stopSE('summon_slow');
+
+    modal.classList.remove('active');
+    modal.classList.remove(
+      'rarity-normal',
+      'rarity-bronze',
+      'rarity-silver',
+      'rarity-gold',
+      'rarity-rainbow'
+    );
+
+    bg.style.transition = 'none';
+    bg.style.backgroundImage = '';
+    bg.style.opacity = '0';
+    overlay.style.background = 'rgba(0,0,0,0)';
+    particles.innerHTML = '';
+    content.style.display = '';
+
+    if(guf) guf.style.display = 'block';
+
+    setSkipBtnVisible(false);  // 演出終了でスキップボタン非表示
+    pendingSkipResults = null; // スキップ不要になったのでクリア
+    startTenRevealSequence(results);
+  }, lastFadeOutEnd + 500);
+}
+
+function startTenRevealSequence(results){
+  tenRevealResults = results;
+  tenRevealIndex = 0;
+  tenRevealWaiting = false;
+
+  buildTenResultCards(results);
+
+  // カードグリッドをすぐ表示してから1枚ずつ開封していく
+  document.getElementById('ten-result-modal').classList.add('active');
+  setNavVisible(true);
+
+  setTimeout(openNextTenCard, 500);
+}
+
+function buildTenResultCards(results){
+  var grid = document.getElementById('ten-result-grid');
+  grid.innerHTML = '';
+
+  results.forEach(function(data, index){
+    var div = document.createElement('div');
+    div.className = 'ten-result-card ten-card-hidden';
+    div.id = 'ten-card-' + index;
+    div.onclick = function(){
+      if(index === tenRevealIndex && !tenRevealWaiting){
+        openNextTenCard();
+      }
+    };
+
+    div.innerHTML =
+  '<div class="ten-card-back">' +
+    '<img src="images/summon_result.webp" alt="未開示">' +
+  '</div>';
+    grid.appendChild(div);
+  });
+}
+
+function openNextTenCard(){
+  if(tenRevealIndex >= tenRevealResults.length){
+    finishTenRevealSequence();
+    return;
+  }
+
+  var data = tenRevealResults[tenRevealIndex];
+
+  var isUR  = data.rarity === 'ur';
+  var isNew = data.isNew === true;
+
+  if(isUR){
+    tenRevealWaiting = true;
+    showUrWarningThenReveal(data);
+    return;
+  }
+
+  if(isNew){
+    tenRevealWaiting = true;
+    showRevealImageOnly(data);
+    return;
+  }
+
+  revealTenCard(tenRevealIndex);
+  playSE('ten_gacha_open', 0.8);
+  tenRevealIndex++;
+
+// ★10連の間
+  setTimeout(openNextTenCard, 1200);
+}
+
+function revealTenCard(index){
+  var data = tenRevealResults[index];
+  var card = document.getElementById('ten-card-' + index);
+  if(!card) return;
+
+  var rarityLabel = (data.rarity || '').toUpperCase();
+  var nameLabel   = data.name || '';
+  var isNew       = data.isNew === true;
+
+  card.className = 'ten-result-card rarity-' + data.rarity + (isNew ? ' is-new' : '');
+
+  var imgSrc = data.upImg || data.img || 'images/unknown.webp';
+
+  card.innerHTML =
+    '<img class="ten-card-img" src="' + imgSrc + '">' +
+    '<div class="ten-card-top">' +
+      '<span class="ten-card-rarity-label ten-rarity-' + data.rarity + '">' + rarityLabel + '</span>' +
+    '</div>' +
+    (isNew ? '<div class="ten-card-new-badge">NEW</div>' : '') +
+    '<div class="ten-card-bottom">' +
+      '<span class="ten-card-name">' + nameLabel + '</span>' +
+    '</div>';
+
+  card.onclick = function(){
+    showDetail(data, true);
+  };
+}
+
+function continueTenRevealAfterFullScreen(){
+  tenRevealWaiting = false;
+  setTimeout(openNextTenCard, 300);
+}
+
+function finishTenRevealSequence(){
+  showTenResult(tenRevealResults);
+}
+
+function getTenFrameImage(rarity){
+  if(rarity === 'r')  return 'images/frame_silver.webp';
+  if(rarity === 'sr') return 'images/frame_gold.webp';
+  if(rarity === 'ur') return 'images/frame_rainbow.webp';
+  return '';
+}
+
+function showTenResult(results){
+
+  // DOMを作り直さず開封済みカードをそのまま流用する
+  // （作り直すとアニメーションがリスタートして虹グローの色が飛ぶため）
+  results.forEach(function(data, index){
+    var card = document.getElementById('ten-card-' + index);
+    if(!card) return;
+    // まだ開封されていないカードだけ強制開封
+    if(card.classList.contains('ten-card-hidden')){
+      revealTenCard(index);
+    } else {
+      // すでに開封済みのカードもonclickをshowDetailに付け替え
+      (function(d){ card.onclick = function(){ showDetail(d, true); }; })(data);
+    }
+  });
+
+  document.getElementById('ten-result-modal').classList.add('active');
+  setNavVisible(true);
+
+  }
+
+  function closeTenResult(){
+    document.getElementById('ten-result-modal').classList.remove('active');
+    updateMainUI();
+    renderCurrentZukanTab();
+
+    isSummoning = false;
+    document.getElementById('summon-standby').classList.remove('active');
+    
+    setNavVisible(true);
+    setHomeBtnVisible(true);
+    setReloadBtnVisible(true);
+   }
+
+  function showFriendDetail(data, friendName){
+  currentDetailData = null; // 自分のキャラではないのでお気に入り登録させない
+
+  document.getElementById('detail-chara-visual').innerHTML = charaVisualHTML(data, 240);
+  document.getElementById('detail-name').textContent = friendName + ' の ' + data.name;
+  document.getElementById('detail-rank').innerHTML =
+    '<span style="color:'+RARITY_COLOR[data.rarity]+'">' +
+    RARITY_LABEL[data.rarity] +
+    '</span>';
+
+  document.getElementById('detail-stat-table').innerHTML = buildStatRows(data);
+  document.getElementById('detail-opts').innerHTML = '';
+
+  // フレンドのキャラなので「メインキャラに設定」は非表示
+  var favBtn = document.querySelector('#detail-modal .btn-set-fav');
+  if(favBtn) favBtn.style.display = 'none';
+
+  document.getElementById('detail-modal').classList.add('active');
+}
   function buildStatRows(data){
-    var h=BASE_STATS.map(function(s){ return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+data.base[s]+'</td></tr>'; }).join('');
-    Object.keys(data.opts).forEach(function(k){ h+='<tr><td class="stat-name" style="color:#ffc832">'+k+'</td><td class="stat-val" style="color:#ffc832">'+data.opts[k]+'</td></tr>'; });
-    h+='<tr class="stat-total-row"><td class="stat-name">合計</td><td class="stat-val">'+data.total+'</td></tr>';
-    return h;
-  }
+  var stats = data.stats || {};
+  return BASE_STATS.map(function(s){
+    return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+(stats[s] ?? '-')+'</td></tr>';
+  }).join('');
+}
 
-  function buildOptBadges(opts){
-    var keys=Object.keys(opts);
-    if(!keys.length) return '<div style="font-size:11px;color:#555;margin-top:4px">オプションなし</div>';
-    return keys.map(function(k){ return '<span class="opt-badge">'+k+' '+opts[k]+'</span>'; }).join('');
-  }
-
-  function showCompareModal(nw,old){
-    document.getElementById('compare-title').textContent=nw.name+' を再びお迎え！';
-    document.getElementById('compare-chara-visual').innerHTML =
-  charaVisualHTML(nw,160);
-
+  function showCompareModal(nw, old){
+  document.getElementById('compare-title').textContent = nw.name + ' をすでに所持しています。';
+  document.getElementById('compare-chara-visual').innerHTML = charaVisualHTML(nw, 160);
   document.getElementById('compare-rarity').innerHTML =
-  '<span style="color:'+RARITY_COLOR[nw.rarity]+'">'
-  + RARITY_LABEL[nw.rarity] +
-  '</span>';
+    '<span style="color:'+RARITY_COLOR[nw.rarity]+'">'+RARITY_LABEL[nw.rarity]+'</span>';
+
+  var rows = '';
+  BASE_STATS.forEach(function(s){
+    var v = (nw.stats || {})[s] ?? '-';
+    rows += '<tr><td>'+s+'</td><td>'+v+'</td><td>'+v+'</td><td class="diff-none">±0</td></tr>';
+  });
+  document.getElementById('compare-tbody').innerHTML = rows;
+  document.getElementById('compare-modal').classList.add('active');
+}
+  function swapChara(){ 
+    closeModal('compare-modal');
+    pendingNew = null;
+    pendingRevealIsCompare = false;
+    setNavVisible(true);
+  }
   
-    var rows='', nTotal=0, oTotal=0;
-    BASE_STATS.forEach(function(s){
-      var nv=nw.base[s], ov=old.base[s], diff=nv-ov;
-      nTotal+=nv; oTotal+=ov;
-      var cls=diff>0?'diff-plus':diff<0?'diff-minus':'diff-none';
-      var ds=diff>0?'+'+diff:diff===0?'±0':String(diff);
-      rows+='<tr><td>'+s+'</td><td>'+nv+'</td><td>'+ov+'</td><td class="'+cls+'">'+ds+'</td></tr>';
-    });
-    var allOpts={};
-    Object.keys(nw.opts).forEach(function(k){ allOpts[k]=true; });
-    Object.keys(old.opts).forEach(function(k){ allOpts[k]=true; });
-    Object.keys(allOpts).forEach(function(k){
-      var nv=nw.opts[k], ov=old.opts[k];
-      if(nv!==undefined) nTotal+=nv;
-      if(ov!==undefined) oTotal+=ov;
-      var ds,cls;
-      if(nv!==undefined&&ov!==undefined){ var d=nv-ov; ds=d>0?'+'+d:d===0?'±0':String(d); cls=d>0?'diff-plus':d<0?'diff-minus':'diff-none'; }
-      else if(nv!==undefined){ ds='NEW'; cls='diff-new'; }
-      else{ ds='-'; cls='diff-none'; }
-      rows+='<tr><td style="color:#ffc832">'+k+'</td><td style="color:'+(nv!==undefined?'#ffc832':'#555')+'">'+(nv!==undefined?nv:'-')+'</td><td style="color:'+(ov!==undefined?'#ffc832':'#555')+'">'+(ov!==undefined?ov:'-')+'</td><td class="'+cls+'">'+ds+'</td></tr>';
-    });
-    var td=nTotal-oTotal, tc=td>0?'diff-plus':td<0?'diff-minus':'diff-none';
-    rows+='<tr class="total-row"><td>合計</td><td>'+nTotal+'</td><td>'+oTotal+'</td><td class="'+tc+'">'+(td>0?'+'+td:td)+'</td></tr>';
-    document.getElementById('compare-tbody').innerHTML=rows;
-    document.getElementById('compare-modal').classList.add('active');
+  function keepChara(){
+    closeModal('compare-modal');
+    pendingNew = null;
+    pendingRevealIsCompare = false;
+    resetSummonResult();
+    setNavVisible(true);
   }
 
-  function swapChara(){ if(!pendingNew)return; pendingNew.db_id=collected[pendingNew.id]?collected[pendingNew.id].db_id:null; collected[pendingNew.id]=pendingNew; closeModal('compare-modal'); showResult(pendingNew); saveToDB(pendingNew); pendingNew=null; pendingRevealIsCompare=false; }
-  function keepChara(){ closeModal('compare-modal'); if(pendingNew) showResult(pendingNew); pendingNew=null; }
-
-  function setFavoriteFromResult(){ if(!currentResultData)return; favoriteId=currentResultData.id; updateMainUI(); saveFavoriteToDB(favoriteId); alert(currentResultData.name+' をお気に入りに設定しました！'); }
-  function setFavoriteFromDetail(){ if(!currentDetailData)return; favoriteId=currentDetailData.id; updateMainUI(); saveFavoriteToDB(favoriteId); closeModal('detail-modal'); alert(currentDetailData.name+' をお気に入りに設定しました！'); }
+  function setFavoriteFromResult(){ if(!currentResultData)return; favoriteId=currentResultData.id; updateMainUI(); saveFavoriteToDB(currentResultData.id); alert(currentResultData.name+' をメインキャラに設定しました！'); }
+  function setFavoriteFromDetail(){ if(!currentDetailData)return; favoriteId=currentDetailData.id; updateMainUI(); saveFavoriteToDB(currentDetailData.id); closeModal('detail-modal'); alert(currentDetailData.name+' をメインキャラに設定しました！'); }
 
   function updateMainUI(){
     var el=document.getElementById('fav-display');
     if(favoriteId&&collected[favoriteId]){
-      var c=collected[favoriteId];
-      el.innerHTML=favVisualHTML(c)+'<div class="fav-name">'+c.name+'</div><div class="fav-stats">'+RARITY_LABEL[c.rarity]+' ／ 合計 '+c.total+'</div>';
-    } else { el.innerHTML='<div class="fav-empty">まだお気に入りがいません</div>'; }
-    document.getElementById('zukan-sub').textContent=Object.keys(collected).length+' / '+CHARACTERS.length;
+      var ch=collected[favoriteId];
+      el.innerHTML = favVisualHTML(ch);
+    } else { el.innerHTML='<div class="fav-empty">メインキャラを設定しよう</div>'; }
+    var zukanSub = document.getElementById('zukan-sub');
+    if(zukanSub) zukanSub.textContent = box.length + ' / ' + CHARACTERS.length;
+
+    // HUD更新
+    var lv = userProfile.rank || 1;
+    var lvEl = document.getElementById('hud-lv-num');
+    if(lvEl) lvEl.textContent = lv;
+
+    var nameEl = document.getElementById('hud-name');
+    if(nameEl) nameEl.textContent = userProfile.display_name || 'Player';
+
+    var idEl = document.getElementById('hud-id');
+    if(idEl) idEl.textContent = 'ID: ' + userId;
+
+    var exp = calcExpProgress(userProfile.total_score || 0);
+    var fillEl = document.getElementById('hud-exp-fill');
+    if(fillEl) fillEl.style.width = exp.pct + '%';
+    var expTextEl = document.getElementById('hud-exp-text');
+    if(expTextEl) expTextEl.textContent = exp.current + ' / ' + exp.max;
+
+    var coinEl = document.getElementById('user-coin');
+    if(coinEl) coinEl.textContent = userProfile.coin;
+    var gemEl = document.getElementById('user-gem');
+    if(gemEl) gemEl.textContent = userProfile.gem;
+
+    // 設定画面の名前表示
+    var settingName = document.getElementById('setting-display-name');
+    if(settingName) settingName.textContent = userProfile.display_name || 'Player';
+
   }
 
-  function watchAd(){ closeModal('paywall-modal'); setTimeout(function(){ summonCount+=3; updateCounterUI(); alert('広告視聴完了！3回分追加されました。'); },500); }
-  function purchase(){ alert('購入機能は準備中です。'); }
+  // ── 結晶ショップ ──────────────────────────────
+  var SHOP_PLANS = [
+    { count:   1, price:  '¥100',    unit: '¥100 / 個' },
+    { count:   6, price:  '¥500',    unit: '¥83.3 / 個' },
+    { count:  12, price:  '¥800',    unit: '¥66.7 / 個' },
+    { count:  48, price:  '¥3,000',  unit: '¥62.5 / 個' },
+    { count:  85, price:  '¥5,000',  unit: '¥58.8 / 個' },
+    { count: 180, price:  '¥10,000', unit: '¥55.6 / 個' },
+  ];
+  var pendingPurchaseIndex = null;
 
-  function renderZukan(){
-    var grid=document.getElementById('zukan-grid');
-    grid.innerHTML='';
-    var counts={rainbow:0,gold:0,silver:0,bronze:0};
-    CHARACTERS.forEach(function(c){
-      var data=collected[c.id];
-      var div=document.createElement('div');
-      div.className='zukan-card '+(data?data.rarity:'unknown');
-      if(data){
-        counts[data.rarity]++;
-        if(c.img){
-          div.innerHTML='<div class="card-no">No.'+c.id+'</div><img class="zukan-card-img" src="'+c.img+'"><div class="zukan-card-overlay"><div class="card-name">'+c.name+'</div></div>';
-        } else {
-          div.innerHTML='<div class="card-no">No.'+c.id+'</div><div class="card-emoji">'+c.emoji+'</div><div class="card-name">'+c.name+'</div>';
-        }
-        (function(d){ div.onclick=function(){ showDetail(d); }; })(data);
-      } else {
-        div.innerHTML = `
-       <div class="card-no">No.${c.id}</div>
-       <img class="zukan-card-img" src="images/unknown.png">
-  `;
+  function openShopModal() {
+    document.getElementById('shop-current-gem').textContent = userProfile.gem;
+    closeModal('paywall-modal');
+    document.getElementById('shop-modal').classList.add('active');
+  }
+
+  function confirmPurchase(index) {
+    pendingPurchaseIndex = index;
+    var plan = SHOP_PLANS[index];
+    document.getElementById('shop-confirm-text').textContent =
+      '結晶 ' + plan.count + ' 個を ' + plan.price + ' で購入しますか？';
+    document.getElementById('shop-modal').classList.remove('active');
+    document.getElementById('shop-confirm-modal').classList.add('active');
+  }
+
+  async function executePurchase() {
+    if(pendingPurchaseIndex === null) return;
+    var plan = SHOP_PLANS[pendingPurchaseIndex];
+    pendingPurchaseIndex = null;
+    closeModal('shop-confirm-modal');
+    userProfile.gem += plan.count;
+    await saveProfileToDB({ gem: userProfile.gem, last_played: new Date().toISOString() });
+    updateMainUI();
+    updateSummonGemUI();
+    showToast('💎 ' + plan.count + ' 個を獲得しました！');
+  }
+
+  // 本番課金実装時はexecutePurchaseの中身を課金APIに差し替える
+
+  // 基地の大タブ（所持キャラ/図鑑）
+  var currentZukanMainTab = null;
+
+  function showZukanMenu(){
+    currentZukanMainTab = null;
+    document.getElementById('zukan-menu').style.display      = '';
+    document.getElementById('zukan-sub-box').style.display   = 'none';
+    document.getElementById('zukan-sub-party').style.display = 'none';
+    document.getElementById('zukan-header-back').style.display = 'none';
+    document.getElementById('zukan-header-title').textContent  = '編成';
+    document.getElementById('zukan-header-title').classList.remove('header-title-indented');
+  }
+
+  function switchZukanMainTab(tab){
+    currentZukanMainTab = tab;
+
+    document.getElementById('zukan-menu').style.display      = 'none';
+    document.getElementById('zukan-sub-box').style.display   = (tab === 'box')   ? '' : 'none';
+    document.getElementById('zukan-sub-party').style.display = (tab === 'party') ? '' : 'none';
+    document.getElementById('zukan-grid').style.display      = 'none';
+
+    document.getElementById('zukan-header-back').style.display = '';
+    document.getElementById('zukan-header-title').textContent  =
+      tab === 'box' ? '漂流者一覧' : '部隊編成';
+
+    if(tab === 'box') renderBox();
+  }
+
+  function changeZukanPool(pool){
+    currentZukanPool = pool;
+    document.getElementById('zukan-tab-survivor').classList.toggle('active', pool === 'survivor');
+    document.getElementById('zukan-tab-idea').classList.toggle('active', pool === 'idea');
+    renderCurrentZukanTab();
+  }
+
+  function renderCurrentZukanTab(){
+    if(currentZukanMainTab === 'box'){
+      renderBox();
+    } else if(currentZukanMainTab === null){
+      showZukanMenu();
+    }
+    // party は COMING SOON のため何もしない
+  }
+
+  // ── 所持キャラBOX ──────────────────────────
+  function renderBox(){
+    var grid = document.getElementById('box-grid');
+    grid.innerHTML = '';
+
+    var counts = { normal:0, bronze:0, silver:0, gold:0, rainbow:0 };
+
+    var items = box.slice().reverse();
+
+    items.forEach(function(data){
+      if(counts[data.rarity] !== undefined) counts[data.rarity]++;
+
+     var div = document.createElement('div');
+div.className = 'zukan-card box-card rarity-' + data.rarity;
+
+var chara = CHARACTERS.find(function(c){
+  return c.id === data.id;
+});
+
+var iconSrc = null;
+if(chara && chara.img){
+  iconSrc = chara.img;
+} else if(data.img){
+  iconSrc = data.img;
+} else {
+  iconSrc = 'images/unknown.webp';
 }
+
+var rarityLabel = (data.rarity || '').toUpperCase();
+var typeLabel   = (chara && chara.type) ? chara.type : '';
+var nameLabel   = (chara && chara.name) ? chara.name : (data.name || '');
+
+div.innerHTML =
+  '<img class="box-card-img" src="'+iconSrc+'">' +
+  '<div class="box-card-top">' +
+    '<span class="box-rarity-label rarity-label-'+data.rarity+'">'+rarityLabel+'</span>' +
+    '<span class="box-type-label">'+typeLabel+'</span>' +
+  '</div>' +
+  '<div class="box-card-bottom">' +
+    '<span class="box-card-name">'+nameLabel+'</span>' +
+  '</div>';
+
+      (function(d){
+        div.onclick = function(){ showDetail(d); };
+      })(data);
+
       grid.appendChild(div);
     });
-    document.getElementById('stat-total').textContent=Object.keys(collected).length;
-    document.getElementById('stat-rainbow').textContent=counts.rainbow;
-    document.getElementById('stat-gold').textContent=counts.gold;
-    document.getElementById('stat-silver').textContent=counts.silver;
-    document.getElementById('stat-bronze').textContent=counts.bronze;
   }
 
-  function showDetail(data){
-    currentDetailData=data;
-    var chara=CHARACTERS.find(function(c){ return c.id===data.id; });
-    document.getElementById('detail-chara-visual').innerHTML=charaVisualHTML(chara||data,220);
-    document.getElementById('detail-name').textContent=data.name;
-    document.getElementById('detail-rank').textContent=RARITY_LABEL[data.rarity]+' ／ 合計 '+data.total;
-    var photo=document.getElementById('detail-photo');
-    if(data.photo){ photo.src=data.photo; photo.style.display='block'; } else photo.style.display='none';
-    document.getElementById('detail-stat-table').innerHTML=buildStatRows(data);
-    document.getElementById('detail-opts').innerHTML=buildOptBadges(data.opts);
-    document.getElementById('detail-modal').classList.add('active');
+  // ── 図鑑（解放済み1件/未解放シルエット） ──────
+  function renderZukan(){
+  var grid = document.getElementById('zukan-grid');
+  grid.innerHTML = '';
+
+  var targetChars = CHARACTERS.filter(function(c){
+  return c.pool === 'survivor';
+});
+
+  targetChars.forEach(function(c){
+    var isOwned = !!collected[c.id];
+    var div = document.createElement('div');
+    div.className = 'zukan-card ' + (isOwned ? 'owned' : 'unknown');
+
+    if(isOwned){
+      div.innerHTML =
+        '<div class="card-no">No.'+c.id+'</div>' +
+        '<img class="zukan-card-img" src="'+(c.img || 'images/unknown.webp')+'">';
+
+      div.onclick = function(){
+        showZukanCharacterDetail(c);
+      };
+
+    } else {
+      div.innerHTML =
+        '<div class="card-no">No.'+c.id+'</div>' +
+        '<img class="zukan-card-img" src="images/unknown.webp">';
+    }
+
+    grid.appendChild(div);
+  });
+
+  var collectedCount = targetChars.filter(function(c){
+    return !!collected[c.id];
+  }).length;
+
+document.getElementById('stat-current').textContent = collectedCount;
+document.getElementById('stat-max').textContent = targetChars.length;
+}
+
+ function showDetail(data, fromTenResult){
+  currentDetailData = data;
+
+  var chara = CHARACTERS.find(function(c){
+    return c.id === data.id;
+  });
+
+  var imgSrc = (chara && chara.img) ? chara.img : data.img;
+
+  // キャラ画像＋左上にレアリティ画像（画像タップで全画面表示）
+  document.getElementById('detail-chara-visual').innerHTML =
+  '<div class="detail-visual-wrap" onclick="openCharaImageViewer(\'' + imgSrc + '\')">' +
+    '<img class="detail-main-img" src="' + imgSrc + '">' +
+    '<img class="detail-rarity-img" src="' + RARITY_BOX_IMAGE[data.rarity] + '">' +
+  '</div>';
+
+  // キャラ名
+  document.getElementById('detail-name').textContent = data.name;
+
+  // Typeはキャラ名の下
+  document.getElementById('detail-rank').textContent =
+    'Type：' + ((chara && chara.type) ? chara.type : '-');
+
+  // ステータスは残す
+  document.getElementById('detail-stat-table').innerHTML = buildStatRows(data);
+
+  // オプションも残す
+  document.getElementById('detail-opts').innerHTML = '';
+
+  var favBtn = document.querySelector('#detail-modal .btn-set-fav');
+  if(favBtn) favBtn.style.display = 'block';
+
+  var delBtn  = document.querySelector('#detail-modal .btn-delete-chara');
+  var closeBtn = document.getElementById('btn-detail-close');
+  if(fromTenResult){
+    if(delBtn)   delBtn.style.display   = 'none';
+    if(closeBtn) closeBtn.style.display = 'block';
+  } else {
+    if(delBtn)   delBtn.style.display   = 'block';
+    if(closeBtn) closeBtn.style.display = 'none';
   }
 
-  function closeModal(id){ document.getElementById(id).classList.remove('active'); }
-  function updateCounterUI(){ document.getElementById('counter-display').textContent=summonCount+' 回'; document.getElementById('counter-sub').textContent='残り'+summonCount+'回'; document.getElementById('btn-summon').style.opacity=summonCount<=0?'0.5':'1'; }
-  function copyId(){ navigator.clipboard.writeText(userId); alert('IDをコピーしました！\n'+userId+'\n\nスマホでこのIDを入力してください。'); }
+  document.getElementById('detail-modal').classList.add('active');
+}
+
+// キャラ画像 全画面拡大ビュー
+function openCharaImageViewer(src){
+  if(!src) return;
+  var viewer = document.getElementById('chara-image-viewer');
+  var img = document.getElementById('chara-image-viewer-img');
+  if(!viewer || !img) return;
+  img.src = src;
+  viewer.classList.add('active');
+}
+
+function closeCharaImageViewer(){
+  var viewer = document.getElementById('chara-image-viewer');
+  if(!viewer) return;
+  viewer.classList.remove('active');
+}
+
+const RARITY_JP = { r: 'R', sr: 'SR', ur: 'UR' };
+
+function openDeleteConfirm(){
+  if(!currentDetailData) return;
+
+  var rarityText = RARITY_JP[currentDetailData.rarity] || currentDetailData.rarity;
+  var name = currentDetailData.name || 'この漂流者';
+
+  document.getElementById('delete-confirm-text').innerHTML =
+    rarityText + ' / ' + name + ' が消失します<br>本当にいいですか？';
+
+  document.getElementById('delete-confirm-modal').classList.add('active');
+}
+
+async function deleteCurrentChara(){
+  if(!currentDetailData) return;
+
+  var target = currentDetailData;
+
+  box = box.filter(function(item){
+    return item !== target;
+  });
+
+  if(userProfile.favorite_id === target.id){
+    userProfile.favorite_id = null;
+    await saveProfileToDB({ favorite_id: null });
+  }
+
+  currentDetailData = null;
+
+  closeModal('delete-confirm-modal');
+  closeModal('detail-modal');
+
+  renderBox();
+  updateMainUI();
+
+  await saveProfileToDB({ box: box });
+}
+
+  function showZukanCharacterDetail(chara){
+  currentDetailData = null;
+
+  document.getElementById('detail-chara-visual').innerHTML =
+    charaVisualHTML(chara, 260);
+
+  document.getElementById('detail-name').textContent = chara.name;
+
+  document.getElementById('detail-rank').textContent =
+    'No.' + chara.id + ' ／ ' + (chara.type || '属性不明');
+
+  document.getElementById('detail-stat-table').innerHTML =
+    '<tr><td style="color:#aaa;line-height:1.8;padding:10px 4px" colspan="2">' +
+    '終末世界を旅する存在。詳細なプロフィールは現在調査中です。' +
+    '</td></tr>';
+
+  document.getElementById('detail-opts').innerHTML = '';
+
+  var favBtn = document.querySelector('#detail-modal .btn-set-fav');
+  if(favBtn) favBtn.style.display = 'none';
+
+  document.getElementById('detail-modal').classList.add('active');
+ }
+
+  function closeModal(id){ 
+    document.getElementById(id).classList.remove('active'); 
+  }
+  
+  function testTenResult(){
+  var currentGacha = GACHA_BANNERS.find(function(g){
+    return g.id === 'banner_02';
+  });
+
+  var results = createSummonResults(10, currentGacha);
+  showTenResult(results);
+ }
+
+  function updateSummonGemUI(){
+    var navBadge = document.getElementById('summon-nav-badge');
+    if(navBadge) navBadge.textContent = '💎' + userProfile.gem;
+    var btn = document.getElementById('btn-gacha-summon');
+    if(btn) btn.style.opacity = userProfile.gem <= 0 ? '0.5' : '1';
+  }
+
+  function resetSummonResult(){
+  currentResultData = null;
+  pendingNew = null;
+  pendingRevealIsCompare = false;
+
+  const result = document.getElementById('summon-result');
+  if(result){
+    result.className = '';
+    result.style.display = 'none';
+  }
+  // ヘッダー・2カラムレイアウト・padding-topを戻す
+  var hdr = document.querySelector('#screen-summon .header');
+  if(hdr) hdr.style.display = '';
+  var layout = document.querySelector('.summon-layout');
+  if(layout) layout.style.display = '';
+  var scr = document.getElementById('screen-summon');
+  if(scr) scr.style.paddingTop = '';
+  setNavVisible(true);
+
+  document.getElementById('result-chara-visual').innerHTML = '';
+  document.getElementById('result-name').textContent = '';
+  document.getElementById('result-rarity').innerHTML = '';
+  document.getElementById('result-stat-table').innerHTML = '';
+  document.getElementById('result-opts').innerHTML = '';
+  document.getElementById('save-status').textContent = '';
+
+  var scr = document.getElementById('screen-summon');
+if(scr){
+  scr.style.paddingTop = '';
+  scr.style.overflowY = '';
+}
+
+}
+async function copyId(){
+  try {
+    await navigator.clipboard.writeText(userId);
+
+    showToast('IDコピーが完了しました'); // ←ここ
+  } catch (e) {
+    fallbackCopyId(userId);
+  }
+}
+
+function fallbackCopyId(text){
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+
+  textarea.focus();
+  textarea.select();
+
+  try {
+    document.execCommand('copy');
+    showToast('IDコピーが完了しました');
+  } catch (e) {
+    showToast('コピーできませんでした');
+  }
+
+  document.body.removeChild(textarea);
+}
+
+function showToast(text){
+  const toast = document.getElementById('toast');
+  if(!toast) return;
+
+  toast.textContent = text;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 1500);
+}
   function inputId(){ var newId=prompt('引き継ぎたいIDを入力してください：'); if(newId&&newId.trim()){ localStorage.setItem('zukan_user_id',newId.trim()); alert('IDを変更しました！ページをリロードします。'); location.reload(); } }
   function resetData(){
-    if(confirm('データを全てリセットしますか？\n図鑑・お気に入りが消えます。')){
+    if(confirm('データを全てリセットしますか？\n図鑑・メインキャラ情報が消えます。')){
       sb.from('collected_characters').delete().eq('user_id', userId).then(function(){
         return sb.from('user_profiles').delete().eq('user_id', userId);
       }).then(function(){
         localStorage.removeItem('zukan_user_id');
+        // ガチャ天井カウントもリセット
+        localStorage.removeItem('pity_count');
+        pityCount = 0;
         alert('リセットしました！');
         location.reload();
       });
@@ -874,26 +3070,390 @@ const RARITY_COLOR = {
 
   init();
 
-const zoom = document.getElementById('photo-zoom');
-const zoomImg = document.getElementById('photo-zoom-img');
+document.getElementById('detail-modal').addEventListener('click', function(e){
+  if(e.target === this){
+    closeModal('detail-modal');
+  }
+});
 
-document.getElementById('detail-photo').onclick = function(){
-  if(!this.src) return;
-  zoom.style.display = 'flex';
-  zoomImg.src = this.src;
-};
+var bgmEnabled = localStorage.getItem('bgm_enabled') !== 'false';
+var bgmVolume = Number(localStorage.getItem('bgm_volume') || 30);
+var seVolume = Number(localStorage.getItem('se_volume') || 15);
+var bgmFadeInterval = null;
 
-zoom.onclick = function(){
-  zoom.style.display = 'none';
-};
+function fadeInBgm(){
+  var bgm = document.getElementById('bgm');
+  if(!bgm) return;
 
-document.getElementById('detail-chara-visual').onclick = function(){
-  const img = this.querySelector('img');
-  if(!img) return;
-  zoom.style.display = 'flex';
-  zoomImg.src = img.src;
-};
+  if(bgmFadeInterval){
+    clearInterval(bgmFadeInterval);
+  }
+
+  var target = bgmVolume / 100;
+  var vol = 0;
+
+  bgm.volume = 0;
+  bgm.play();
+
+  bgmFadeInterval = setInterval(function(){
+    vol += 0.05;
+
+    if(vol >= target){
+      vol = target;
+      clearInterval(bgmFadeInterval);
+    }
+
+    bgm.volume = vol;
+  }, 100);
+}
+
+function updateBgmUI(){
+  var status = document.getElementById('bgm-status');
+  var volume = document.getElementById('bgm-volume');
+  var seVol = document.getElementById('se-volume');
+
+  if(status){
+    status.textContent = bgmEnabled ? 'ON' : 'OFF';
+  }
+  if(volume){
+    volume.value = bgmVolume;
+  }
+  if(seVol){
+    seVol.value = seVolume;
+  }
+
+  // iOSはaudio.volumeが効かないためスライダーを非表示
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isIOS){
+    var bgmRow = document.getElementById('bgm-volume');
+    if(bgmRow) bgmRow.closest('.setting-row').style.display = 'none';
+    var seRow = document.getElementById('se-volume');
+    if(seRow) seRow.closest('.setting-row').style.display = 'none';
+  }
+}
+
+function applyBgmVolume(){
+  var bgm = document.getElementById('bgm');
+  if(!bgm) return;
+
+  bgm.volume = bgmVolume / 100;
+}
+
+function changeSeVolume(value){
+  seVolume = Number(value);
+  localStorage.setItem('se_volume', seVolume);
+}
+
+function changeBgmVolume(value){
+  bgmVolume = Number(value);
+  localStorage.setItem('bgm_volume', bgmVolume);
+  applyBgmVolume();
+}
+
+function playBgm(){
+  var bgm = document.getElementById('bgm');
+  if(!bgm) return;
+
+  applyBgmVolume();
+
+  if(bgmEnabled){
+    bgm.play().catch(function(e){
+      console.log('BGM再生待機:', e);
+    });
+  }
+}
+
+function stopBgm(){
+  var bgm = document.getElementById('bgm');
+  if(!bgm) return;
+
+  bgm.pause();
+}
+
+function toggleBgm(){
+  bgmEnabled = !bgmEnabled;
+  localStorage.setItem('bgm_enabled', bgmEnabled);
+
+  updateBgmUI();
+
+  if(bgmEnabled){
+    playBgm();
+  } else {
+    stopBgm();
+  }
+}
+
+window.addEventListener('load', function(){
+  updateBgmUI();
+  applyBgmVolume();
+});
+
+function fadeInBgm(){
+  var bgm = document.getElementById('bgm');
+  var vol = 0;
+  bgm.volume = 0;
+
+  if(bgmEnabled){
+  bgm.play();
+  }
+
+  
+
+  var interval = setInterval(function(){
+    vol += 0.05;
+    if(vol >= bgmVolume/100){
+      vol = bgmVolume/100;
+      clearInterval(interval);
+    }
+    bgm.volume = vol;
+  }, 100);
+}
+
+function updateHeaderHeight() {
+  const el = document.getElementById('global-user-frame');
+  if (!el) return;
+  const h = el.offsetHeight;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+  // ページタイトルバー(.header)の高さも計測してCSS変数にセット
+  // offsetHeight が 0 のとき（非表示画面）はセットしない
+  const ph = document.querySelector('.header');
+  if (ph && ph.offsetHeight > 0) {
+    document.documentElement.style.setProperty('--page-header-h', ph.offsetHeight + 'px');
+  }
+}
+
+window.addEventListener('load', updateHeaderHeight);
+
+function fadeOutOpeningBgm(){
+  const bgm = document.getElementById('bgm-opening');
+  if(!bgm) return;
+
+  let vol = bgm.volume;
+  const interval = setInterval(()=>{
+    vol -= 0.05;
+    if(vol <= 0){
+      bgm.pause();
+      bgm.currentTime = 0;
+      clearInterval(interval);
+    } else {
+      bgm.volume = vol;
+    }
+  }, 50);
+}
+
 </script>
+
+<!-- ランクアップトースト -->
+<div id="rankup-toast">
+  RANK UP　Rank <span id="rankup-toast-rank">-</span> になりました
+</div>
+<style>
+  #rankup-toast {
+    position: fixed;
+    top: calc(60px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, rgba(40,40,40,0.97), rgba(70,70,70,0.97));
+    border: 0.5px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 12px 24px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #rankup-toast.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* reveal演出：キャラ画像を全画面に */
+  #reveal-chara-img {
+    width: 100vw !important;
+    height: 100vh !important;
+    object-fit: cover;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    margin: 0 !important;
+  }
+  #reveal-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 40%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+    transition: opacity 0.9s ease-out, transform 0.9s cubic-bezier(0.22,1,0.36,1);
+  }
+  #reveal-content.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  #reveal-name   { font-size: 28px; font-weight: 700; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin-bottom: 6px; }
+  #reveal-rarity { font-size: 16px; margin-bottom: 24px; }
+
+  /* パーティクル（画像素材版） */
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    animation: spark-float var(--dur, 1.6s) ease-out forwards;
+    transform-origin: center;
+    opacity: 1;
+  }
+  @keyframes spark-float {
+    0%   { opacity: 0;   transform: translateY(0)      translateX(0)           rotate(0deg)   scale(0.6); }
+    15%  { opacity: 1; }
+    100% { opacity: 0;   transform: translateY(-220px) translateX(var(--drift)) rotate(360deg) scale(0.2); }
+  }
+
+  /* 生成演出 背景フェード */
+  #reveal-bg {
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* キャラ画像のグロー一時削除 */
+  #reveal-chara-img {
+    box-shadow: none;
+  }
+
+  /* レアリティ別テキストカラー */
+  #reveal-modal.rarity-bronze #reveal-rarity { color: #cd7f32; }
+  #reveal-modal.rarity-silver #reveal-rarity { color: #c0c0c0; }
+  #reveal-modal.rarity-gold   #reveal-rarity {
+    color: #ffd700;
+    text-shadow: 0 0 16px rgba(255,215,0,0.9), 0 0 32px rgba(255,180,0,0.5);
+  }
+  #reveal-modal.rarity-rainbow #reveal-rarity {
+    background: linear-gradient(90deg,#ff0080,#ff8000,#ffff00,#00ff80,#0080ff,#8000ff,#ff0080);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% auto;
+    animation: rainbow-shift 1.5s linear infinite;
+  }
+  #reveal-modal.rarity-rainbow #reveal-name {
+    text-shadow: 0 0 24px rgba(255,255,255,0.95);
+  }
+  @keyframes rainbow-shift {
+    0%   { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  /* 生成画面 石表示 */
+  .summon-gem-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 20px 4px;
+    padding: 16px;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
+  }
+  .summon-gem-icon { width: 28px; height: 28px; object-fit: contain; }
+  #summon-gem-count {
+    font-size: 36px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .summon-gem-label {
+    font-size: 16px;
+    color: #aaa;
+    align-self: flex-end;
+    padding-bottom: 4px;
+  }
+  .summon-cost-note {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    margin: 4px 0 12px;
+    letter-spacing: 1px;
+  }
+</style>
+
 <div id="summon-flash" class="summon-flash"></div>
+<div id="toast"></div>
+
+<div id="story-root" style="display:none">
+  <div class="story-noise"></div>
+  <div id="story-fade" style="opacity:1;"></div>
+
+<div class="story-screen active" 
+     id="story-screen-story" 
+     onclick="storyNextScene()">
+
+      <button class="story-exit-btn"
+          onclick="storyExit(event)">
+       戻る
+      </button>
+
+  <div class="story-bg-kanji" id="story-bg-kanji"></div>
+
+
+    <div class="story-bg-kanji" id="story-bg-kanji"></div>
+    <div class="story-scene-label" id="story-scene-label">PROLOGUE</div>
+    <div class="story-dots" id="story-dots"></div>
+    <div class="story-text-box">
+      <div class="story-speaker" id="story-speaker"></div>
+      <div class="story-dialogue" id="story-dialogue"></div>
+      <div class="story-tap-hint" id="story-tap-hint">TAP TO CONTINUE</div>
+    </div>
+  </div>
+
+  <div class="story-screen" id="story-screen-map">
+
+      <button class="story-map-exit-btn"
+          onclick="storyExit(event)">
+    戻る
+  </button>
+
+  <div class="story-map-room-label"
+       id="story-map-room-label"></div>
+  <div class="story-scene-label">101号室</div>
+  <div class="story-map-title">— FLOOR MAP —</div>
+  <div class="story-map-floor" id="story-map-floor"></div>
+</div>
+
+  <div class="story-screen" id="story-screen-memo">
+    <div class="story-memo-paper">
+      <div class="story-memo-title">— MEMO —</div>
+      <div id="story-memo-content"></div>
+<button class="story-memo-close" onclick="storyCloseMemo()">閉じる</button>
+    </div>
+  </div>
+ 
+  <div class="story-item-popup" id="story-item-popup">
+    <div class="story-item-card">
+      <div class="story-item-icon" id="story-item-icon"></div>
+      <div class="story-item-name" id="story-item-name"></div>
+      <div class="story-item-desc" id="story-item-desc"></div>
+      <button class="story-item-ok" id="story-item-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/story_engine.js"></script>
+<script src="js/stories/chapter01.js"></script>
+<script src="js/explore.js"></script>
+
 </body>
 </html>
