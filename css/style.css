@@ -169,7 +169,7 @@ body {
 #title-screen {
   position: fixed;
   inset: 0;
-  background: #000;
+  background: #fff;
   display: none;
   align-items: center;
   justify-content: center;
@@ -196,12 +196,12 @@ body {
 @keyframes titleLogoPulse {
   0%, 100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 6px rgba(255,255,255,0.2));
+    filter: drop-shadow(0 0 6px rgba(0,0,0,0.15));
   }
 
   50% {
     transform: scale(1.035);
-    filter: drop-shadow(0 0 14px rgba(255,255,255,0.45));
+    filter: drop-shadow(0 0 14px rgba(0,0,0,0.3));
   }
 }
 
@@ -217,7 +217,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.3);
+  background: rgba(255,255,255,0);
   z-index: 1;
 }
 
@@ -240,7 +240,7 @@ body {
 #title-tap-hint {
   position: relative;
   z-index: 2;
-  color: rgba(255,255,255,0.8);
+  color: rgba(0,0,0,0.55);
   font-size: 14px;
   letter-spacing: 3px;
   animation: blink 1.5s ease-in-out infinite;
@@ -650,8 +650,8 @@ body {
 }
 
 .bottom-nav-item img {
-  width: 72px;
-  height: 72px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s ease;
   filter: brightness(0.55) saturate(0);
@@ -665,8 +665,26 @@ body {
 
 /* 選択中（クラス）: translateYが.bottom-navのoveflowにクリップされないよう親もoverflow:visible */
 .bottom-nav-item.active img {
-  transform: translateY(-12px) scale(1.2);
+  transform: translateY(-4px) scale(1.1);
   filter: brightness(1.0) saturate(1.0);
+}
+
+/* ラベル */
+.bottom-nav-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 1.5px;
+  font-family: "Noto Serif JP", serif;
+  margin-top: 2px;
+  padding-bottom: 6px;
+  transition: color 0.2s ease, font-weight 0.2s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: #fff;
+  font-weight: 500;
 }
 
 /* activeボタンがはみ出せるよう親のoverflowを開放 */
