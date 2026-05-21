@@ -28,13 +28,26 @@ html {
   --page-header-h: 64px;
 }
 
+html {
+  touch-action: pan-x pan-y;
+  -ms-touch-action: pan-x pan-y;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+}
+
 body {
   background: #0f0f0f;
   color: #fff;
   font-family: "Noto Serif JP", serif;
   height: 100vh;
+  width: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  position: fixed;
 }
 
 /* =========================================================

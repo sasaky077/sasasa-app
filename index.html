@@ -2,7 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0f0f0f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -688,6 +689,34 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+  /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
+  (function preventZoom() {
+    // ピンチズーム（2本指）を無効化
+    document.addEventListener('touchmove', function (e) {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // ジェスチャー（iOS独自イベント）を無効化
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('gesturechange', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    // ダブルタップズームを無効化
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (e) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+  })();
+
   const SUPABASE_URL = 'https://xcchgqgkefnzlchitoey.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjY2hncWdrZWZuemxjaGl0b2V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Mjk4MDgsImV4cCI6MjA5MzEwNTgwOH0.1MFak8VVSFjo4TFNJp3b17-DR6DhSGop0Q1EB73XxeA';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -853,11 +882,11 @@
 
   { id: 6, name: "エミ", type: "執着",  gender: "woman", rarity: "ur",
     stats: { HP:55, ATK:48, DEF:50, SPD:80, RES:65 },
-    img: "images/chara_06.webp", cutImg: "images/chara_06_cut.webp", upImg: "images/chara_06_up.webp" },
+    img: "images/chara_06.webp", cutImg: "images/chara_06_cut.webp", upImg: "images/chara_06_up.webp",favScale: 0.85, favOffsetY: -30 },
 
   { id: 7, name: "ミユ", type: "乖離",  gender: "woman", rarity: "r",
     stats: { HP:58, ATK:52, DEF:45, SPD:88, RES:60 },
-    img: "images/chara_07.webp", cutImg: "images/chara_07_cut.webp", upImg: "images/chara_07_up.webp" ,favScale: 0.85, favOffsetY: -30 },
+    img: "images/chara_07.webp", cutImg: "images/chara_07_cut.webp", upImg: "images/chara_07_up.webp"},
 
   { id: 8, name: "カミジョウ", type: "希望",  gender: "man", rarity: "r",
     stats: { HP:85, ATK:70, DEF:80, SPD:65, RES:95 },
@@ -865,7 +894,7 @@
 
   { id: 9, name: "ルナ＆マーヤ", type: "希望",  gender: "woman", rarity: "ur",
     stats: { HP:75, ATK:82, DEF:60, SPD:72, RES:68 },
-    img: "images/chara_09.webp", cutImg: "images/chara_09_cut.webp", upImg: "images/chara_09_up.webp" ,favScale: 0.75, favOffsetY: -100 },
+    img: "images/chara_09.webp", cutImg: "images/chara_09_cut.webp", upImg: "images/chara_09_up.webp" ,favScale: 0.85, favOffsetY: -30 },
 
   { id: 10, name: "フミカ", type: "信念",  gender: "woman", rarity: "sr",
     stats: { HP:62, ATK:70, DEF:42, SPD:65, RES:48 },
