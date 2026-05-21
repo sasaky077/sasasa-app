@@ -48,11 +48,11 @@
   </div>
   <div class="hud-right">
     <div class="hud-resource">
-      <img src="images/icon_gem.webp" class="hud-res-icon" onerror="this.style.display='none'">
+      <img src="images/icon_gem.webp" class="hud-res-icon" onerror="this.style.visibility='hidden'">
       <span class="hud-res-val" id="user-gem">0</span>
     </div>
     <div class="hud-resource">
-      <img src="images/icon_coin.webp" class="hud-res-icon" onerror="this.style.display='none'">
+      <img src="images/icon_coin.webp" class="hud-res-icon" onerror="this.style.visibility='hidden'">
       <span class="hud-res-val" id="user-coin">0</span>
     </div>
   </div>
@@ -833,7 +833,7 @@
     const CHARACTERS = [
   { id: 1, name: "ギョウタツ", type: "信念",  gender: "man", rarity: "r",
     stats: { HP:50, ATK:50, DEF:40, SPD:40, RES:20 },
-    img: "images/chara_01.webp", cutImg: "images/chara_01_cut.webp", upImg: "images/chara_01_up.webp" },
+    img: "images/chara_01.webp", cutImg: "images/chara_01_cut.webp", upImg: "images/chara_01_up.webp" ,favScale: 0.75, favOffsetY: -100},
 
   { id: 2, name: "タキヤマ", type: "信念",  gender: "woman", rarity: "r",
     stats: { HP:60, ATK:55, DEF:48, SPD:75, RES:70 },
@@ -857,7 +857,7 @@
 
   { id: 7, name: "ミユ", type: "乖離",  gender: "woman", rarity: "r",
     stats: { HP:58, ATK:52, DEF:45, SPD:88, RES:60 },
-    img: "images/chara_07.webp", cutImg: "images/chara_07_cut.webp", upImg: "images/chara_07_up.webp" },
+    img: "images/chara_07.webp", cutImg: "images/chara_07_cut.webp", upImg: "images/chara_07_up.webp" ,favScale: 0.85, favOffsetY: -30 },
 
   { id: 8, name: "カミジョウ", type: "希望",  gender: "man", rarity: "r",
     stats: { HP:85, ATK:70, DEF:80, SPD:65, RES:95 },
@@ -865,11 +865,11 @@
 
   { id: 9, name: "ルナ＆マーヤ", type: "希望",  gender: "woman", rarity: "ur",
     stats: { HP:75, ATK:82, DEF:60, SPD:72, RES:68 },
-    img: "images/chara_09.webp", cutImg: "images/chara_09_cut.webp", upImg: "images/chara_09_up.webp" },
+    img: "images/chara_09.webp", cutImg: "images/chara_09_cut.webp", upImg: "images/chara_09_up.webp" ,favScale: 0.75, favOffsetY: -100 },
 
-  { id: 10, name: "キムガ", type: "信念",  gender: "man", rarity: "sr",
+  { id: 10, name: "フミカ", type: "信念",  gender: "woman", rarity: "sr",
     stats: { HP:62, ATK:70, DEF:42, SPD:65, RES:48 },
-    img: "images/chara_10.webp", cutImg: "images/chara_10_cut.webp", upImg: "images/chara_10_up.webp" },
+    img: "images/chara_10.webp", cutImg: "images/chara_10_cut.webp", upImg: "images/chara_10_up.webp" ,favScale: 0.85, favOffsetY: -100 },
 
   { id: 11, name: "レイチェル", type: "狂気",  gender: "woman", rarity: "ur",
     stats: { HP:88, ATK:100, DEF:55, SPD:90, RES:60 },
@@ -889,7 +889,7 @@
 
   { id: 15, name: "アキ", type: "希望",  gender: "woman", rarity: "sr",
     stats: { HP:20, ATK:60, DEF:60, SPD:78, RES:62 },
-    img: "images/chara_15.webp", cutImg: "images/chara_15_cut.webp", upImg: "images/chara_15_up.webp" },
+    img: "images/chara_15.webp", cutImg: "images/chara_15_cut.webp", upImg: "images/chara_15_up.webp"  ,favScale: 0.85, favOffsetY: -30 },
 
   { id: 16, name: "ワタル", type: "畏怖",  gender: "man", rarity: "ur",
     stats: { HP:78, ATK:75, DEF:68, SPD:62, RES:65 },
