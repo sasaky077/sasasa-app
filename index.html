@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <title>No.None</title>
+  <title>神還</title>
 
   <!-- iOS用-->
   <link rel="apple-touch-icon" href="images/icon_192.webp">
@@ -121,6 +121,10 @@
             <span class="ninmu-test-btn-title">テストプレイ（2回目以降）</span>
             <span class="ninmu-test-btn-sub">normal / Sクリア想定　+112 EXP</span>
           </button>
+          <button class="ninmu-test-btn" onclick="openPartySelect()">
+            <span class="ninmu-test-btn-title">バトルテスト</span>
+            <span class="ninmu-test-btn-sub">編成→怪異登場→バトル</span>
+          </button>
         </div>
       </div>
 
@@ -144,7 +148,7 @@
 
           <div class="ninmu-chapter-item">
             <div class="ninmu-chapter-label">CHAPTER:02</div>
-            <div class="ninmu-chapter-title">漂流者たち</div>
+            <div class="ninmu-chapter-title">紡ぎ手たち</div>
           </div>
 
 
@@ -180,7 +184,7 @@
 <div id="screen-summon" class="screen">
   <div class="header">
     <div></div>
-    <div class="header-title">漂流者観測</div>
+    <div class="header-title">協力者徴集</div>
     <div></div>
   </div>
 
@@ -246,7 +250,7 @@
         <button class="kichi-menu-item" onclick="switchZukanMainTab('box')">
           <span class="kichi-menu-icon">👤</span>
           <span class="kichi-menu-text">
-            <span class="kichi-menu-title">漂流者一覧</span>
+            <span class="kichi-menu-title">協力者一覧</span>
             <span class="kichi-menu-sub">所持キャラクターを確認する</span>
           </span>
           <span class="kichi-menu-arrow">›</span>
@@ -262,7 +266,7 @@
       </div>
     </div>
 
-    <!-- 漂流者一覧 -->
+    <!-- 協力者 -->
     <div id="zukan-sub-box" style="display:none">
       <div class="zukan-stats" id="zukan-stats">
         <div class="stat-card stat-card-total">
@@ -857,93 +861,8 @@
     if(activeCard) activeCard.classList.add('active');
     updatePityUI();
   }
-  // ──────────────────────────────────────────────
-
-    const CHARACTERS = [
-  { id: 1, name: "ギョウタツ", type: "信念",  gender: "man", rarity: "r",
-    stats: { HP:50, ATK:50, DEF:40, SPD:40, RES:20 },
-    img: "images/chara_01.webp", cutImg: "images/chara_01_cut.webp", upImg: "images/chara_01_up.webp" ,favScale: 0.75, favOffsetY: -100},
-
-  { id: 2, name: "タキヤマ", type: "信念",  gender: "woman", rarity: "r",
-    stats: { HP:60, ATK:55, DEF:48, SPD:75, RES:70 },
-    img: "images/chara_02.webp", cutImg: "images/chara_02_cut.webp", upImg: "images/chara_02_up.webp" },
-
-  { id: 3, name: "マツバラ", type: "虚無",  gender: "man", rarity: "r",
-    stats: { HP:65, ATK:60, DEF:72, SPD:45, RES:88 },
-    img: "images/chara_03.webp", cutImg: "images/chara_03_cut.webp", upImg: "images/chara_03_up.webp" },
-
-  { id: 4, name: "リョウ", type: "乖離",  gender: "man", rarity: "r",
-    stats: { HP:80, ATK:78, DEF:65, SPD:70, RES:52 },
-    img: "images/chara_04.webp", cutImg: "images/chara_04_cut.webp", upImg: "images/chara_04_up.webp" ,favScale: 0.85, favOffsetY: -30 },
-
-  { id: 5, name: "マンデラ", type: "信念",  gender: "man", rarity: "sr",
-    stats: { HP:90, ATK:95, DEF:70, SPD:80, RES:75 },
-    img: "images/chara_05.webp", cutImg: "images/chara_05_cut.webp", upImg: "images/chara_05_up.webp", favScale: 0.85, favOffsetY: -30 },
-
-  { id: 6, name: "エミ", type: "執着",  gender: "woman", rarity: "ur",
-    stats: { HP:55, ATK:48, DEF:50, SPD:80, RES:65 },
-    img: "images/chara_06.webp", cutImg: "images/chara_06_cut.webp", upImg: "images/chara_06_up.webp",favScale: 0.85, favOffsetY: -30 },
-
-  { id: 7, name: "ミユ", type: "乖離",  gender: "woman", rarity: "r",
-    stats: { HP:58, ATK:52, DEF:45, SPD:88, RES:60 },
-    img: "images/chara_07.webp", cutImg: "images/chara_07_cut.webp", upImg: "images/chara_07_up.webp"},
-
-  { id: 8, name: "カミジョウ", type: "希望",  gender: "man", rarity: "r",
-    stats: { HP:85, ATK:70, DEF:80, SPD:65, RES:95 },
-    img: "images/chara_08.webp", cutImg: "images/chara_08_cut.webp", upImg: "images/chara_08_up.webp" },
-
-  { id: 9, name: "ルナ＆マーヤ", type: "希望",  gender: "woman", rarity: "ur",
-    stats: { HP:75, ATK:82, DEF:60, SPD:72, RES:68 },
-    img: "images/chara_09.webp", cutImg: "images/chara_09_cut.webp", upImg: "images/chara_09_up.webp" ,favScale: 0.85, favOffsetY: -30 },
-
-  { id: 10, name: "フミカ", type: "信念",  gender: "woman", rarity: "sr",
-    stats: { HP:62, ATK:70, DEF:42, SPD:65, RES:48 },
-    img: "images/chara_10.webp", cutImg: "images/chara_10_cut.webp", upImg: "images/chara_10_up.webp" ,favScale: 0.85, favOffsetY: -100 },
-
-  { id: 11, name: "レイチェル", type: "狂気",  gender: "woman", rarity: "ur",
-    stats: { HP:88, ATK:100, DEF:55, SPD:90, RES:60 },
-    img: "images/chara_11.webp", cutImg: "images/chara_11_cut.webp", upImg: "images/chara_11_up.webp" },
-
-  { id: 12, name: "エリ", type: "執着",  gender: "woman", rarity: "r",
-    stats: { HP:70, ATK:65, DEF:75, SPD:58, RES:80 },
-    img: "images/chara_12.webp", cutImg: "images/chara_12_cut.webp", upImg: "images/chara_12_up.webp" },
-
-  { id: 13, name: "チサカ", type: "虚無",  gender: "woman", rarity: "r",
-    stats: { HP:68, ATK:60, DEF:78, SPD:55, RES:85 },
-    img: "images/chara_13.webp", cutImg: "images/chara_13_cut.webp", upImg: "images/chara_13_up.webp" },
-
-  { id: 14, name: "ヒメシマ", type: "憤怒",  gender: "man", rarity: "r",
-    stats: { HP:95, ATK:98, DEF:80, SPD:55, RES:50 },
-    img: "images/chara_14.webp", cutImg: "images/chara_14_cut.webp", upImg: "images/chara_14_up.webp" },
-
-  { id: 15, name: "アキ", type: "希望",  gender: "woman", rarity: "sr",
-    stats: { HP:20, ATK:60, DEF:60, SPD:78, RES:62 },
-    img: "images/chara_15.webp", cutImg: "images/chara_15_cut.webp", upImg: "images/chara_15_up.webp"  ,favScale: 0.85, favOffsetY: -30 },
-
-  { id: 16, name: "ワタル", type: "畏怖",  gender: "man", rarity: "ur",
-    stats: { HP:78, ATK:75, DEF:68, SPD:62, RES:65 },
-    img: "images/chara_16.webp", cutImg: "images/chara_16_cut.webp", upImg: "images/chara_16_up.webp" },
-
-  { id: 17, name:"ベン", type:"執着",  gender:"man", rarity: "sr",
-    stats: { HP:62, ATK:30, DEF:42, SPD:65, RES:75 },
-    img: "images/chara_17.webp", cutImg: "images/chara_17_cut.webp", upImg: "images/chara_17_up.webp" },
-
-  { id: 18, name:"リサ", type:"憤怒",  gender:"woman", rarity: "sr",
-    stats: { HP:20, ATK:80, DEF:40, SPD:12, RES:22 },
-    img: "images/chara_18.webp", cutImg: "images/chara_18_cut.webp", upImg: "images/chara_18_up.webp" },
-
-  { id: 19, name:"フクナガ", type:"乖離",  gender:"woman", rarity: "sr",
-    stats: { HP:45, ATK:45, DEF:45, SPD:45, RES:75 },
-    img: "images/chara_19.webp", cutImg: "images/chara_19_cut.webp", upImg: "images/chara_19_up.webp" },
-
-  { id: 20, name:"ゴロウ", type:"畏怖",  gender:"man", rarity: "sr",
-    stats: { HP:30, ATK:50, DEF:30, SPD:60, RES:60 },
-    img: "images/chara_20.webp", cutImg: "images/chara_20_cut.webp", upImg: "images/chara_20_up.webp" }
-
-  ];
-
-const BASE_STATS = ["HP","ATK","DEF","SPD","RES"];
-
+ 
+const BASE_STATS = ["HP","ATK","DEF","SPD"];
 
 const RARITY_COLOR = {
   r:  "#c0c0c0",
@@ -1763,12 +1682,13 @@ function startSummonFromStandby(){
   const standby = document.getElementById('summon-standby');
   standby.style.pointerEvents = 'none';
 
-  normalSummon(currentSummonCount);
+normalSummon(currentSummonCount);
 
-  setTimeout(function(){
-    standby.classList.remove('active');
-    standby.style.pointerEvents = '';
-  }, 400);
+setTimeout(function(){
+  standby.classList.remove('active');
+  standby.style.pointerEvents = '';
+}, 400);
+
 }
 
   async function normalSummon(count){
@@ -2005,23 +1925,27 @@ function handleSingleResult(data){
   // デバッグ用: 'bronze'/'silver'/'gold'/'ur' に固定、nullで通常
   var DEBUG_RARITY = null; // テスト時は 'gold' や 'ur' に変更
 
-  // 全レアリティ共通の前半3枚
+  // 全レアリティ共通の前半4枚
   var REVEAL_COMMON = [
-    'images/summon_01.webp',
-    'images/summon_02.webp',
-    'images/summon_03.webp'
-  ];
+  'images/summon_01.webp',
+  'images/summon_02.webp',
+  'images/summon_03.webp',
+  'images/summon_04.webp'
+];
 
   // レアリティから演出用画像配列を生成する関数
   function buildRevealSequence(rarity) {
-    var last;
-    if (rarity === 'ur') {
-      last = Math.random() < 0.5 ? 'images/summon_04b.webp' : 'images/summon_04a.webp';
-    } else {
-      last = 'images/summon_04a.webp';
-    }
-    return REVEAL_COMMON.concat([last]);
+
+  var last;
+
+  if (rarity === 'ur') {
+    last = 'images/summon_05b.webp';
+  } else {
+    last = 'images/summon_05a.webp';
   }
+
+  return REVEAL_COMMON.concat([last]);
+}
 
   // タイミング定数 (ms) ※ここだけ変えれば全体に反映
   var R_BLACK = 600;
@@ -2757,7 +2681,7 @@ function showTenResult(results){
 
     document.getElementById('zukan-header-back').style.display = '';
     document.getElementById('zukan-header-title').textContent  =
-      tab === 'box' ? '漂流者一覧' : '部隊編成';
+      tab === 'box' ? '協力者一覧' : '部隊編成';
 
     if(tab === 'box') renderBox();
   }
@@ -2935,7 +2859,7 @@ function openDeleteConfirm(){
   if(!currentDetailData) return;
 
   var rarityText = RARITY_JP[currentDetailData.rarity] || currentDetailData.rarity;
-  var name = currentDetailData.name || 'この漂流者';
+  var name = currentDetailData.name || 'この協力者';
 
   document.getElementById('delete-confirm-text').innerHTML =
     rarityText + ' / ' + name + ' が消失します<br>本当にいいですか？';
@@ -3487,7 +3411,12 @@ function fadeOutOpeningBgm(){
 
 <script src="js/story_engine.js"></script>
 <script src="js/stories/chapter01.js"></script>
-<script src="js/explore.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/party_select.js"></script>
+<script src="js/enemy_intro.js"></script>
+
 
 </body>
 </html>
