@@ -687,7 +687,7 @@
       return {
         id:       'chara_' + master.id,
         name:     master.name,
-        img:      master.upImg || master.img,
+        img:      master.battleImg || master.upImg || master.img,
         hp:       master.stats.HP,
         hpMax:    master.stats.HP,
         atk:      master.stats.ATK,
