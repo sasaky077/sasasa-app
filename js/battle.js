@@ -10,19 +10,41 @@
   const COLS = ['left', 'center', 'right'];
 
   const RANGE_LABEL = {
-  front1: '前方1マス',
-  front3: '前列3マス',
-  pierce2: '縦2マス貫通',
-  pierce3: '縦列貫通',
-  all: '敵全体',
-  col_center: '同列',
-  col_left: '左列',
-  col_right: '右列',
-
-  ally_self: '自身',
-  ally_all: '味方全体',
-  ally_adjacent: '隣接味方',
-  ally_except_self: '自身以外',
+    // 相対系（battle_range.js RANGE_PRESETS）
+    self:           '自身',
+    front1:         '前方1マス',
+    front2:         '前方2マス',
+    front3:         '前方3マス',
+    left1:          '左1マス',
+    right1:         '右1マス',
+    front_row_3:    '前列3マス',
+    front2_row_3:   '前2列3マス',
+    front3_row_3:   '前3列3マス',
+    pierce2:        '縦2マス貫通',
+    pierce3:        '縦3マス貫通',
+    front_wide:     '前方扇形',
+    cone_small:     '前方扇',
+    cross:          '十字',
+    xcross:         '斜め4マス',
+    around8:        '周囲8マス',
+    jump_front:     '1マス飛び前方',
+    sniper:         '遠距離前方',
+    diagonal_front: '前斜め2マス',
+    // 固定系（battle_range.js FIELD_PRESETS）
+    all:            '全体',
+    row_near:       '近列全体',
+    row_mid:        '中列全体',
+    row_far:        '遠列全体',
+    col_left:       '左縦列',
+    col_center:     '中央縦列',
+    col_right:      '右縦列',
+    field_cross:    'フィールド十字',
+    field_xcross:   'フィールド斜め',
+    // 後方互換（旧rangeId）
+    ally_self:      '自身',
+    ally_all:       '味方全体',
+    ally_adjacent:  '隣接味方',
+    ally_except_self: '自身以外',
   };
 
   const ROW_IDX = { near: 0, mid: 1, far: 2 };
@@ -31,7 +53,12 @@
   const COL_BY_IDX = ['left', 'center', 'right'];
 
   // ============================================================
-  // 範囲パターン定義
+  // 範囲パターン定義（後方互換レイヤー）
+  // ⚠ 新規スキルには battle_range.js の RANGE_PRESETS / FIELD_PRESETS を使用すること。
+  //   ここは highlightSkillRange（ally系）や ALLY_RANGES 判定のために残している。
+  //   敵攻撃の範囲計算・スキル範囲ハイライト・ダメージ対象取得は
+  //   すべて BattleRange.getCellsFromRange / getUnitsFromRange に移行済み。
+  //
   // 引数: user={ row, col }（使用者）, grid=対象グリッドのユニット配列
   // 戻り値: ヒットするマスのSet('row-col'形式) or null（全体）
   // ============================================================
@@ -173,50 +200,82 @@
     return (nr && nc) ? new Set([nr+'-'+nc]) : new Set();
   }
 
-  // 範囲パターンからヒットするユニットを取得
+  // 旧 RANGE_PATTERNS ベースのターゲット取得（後方互換・内部使用のみ）
+  // 新規コードでは _getUnits() を使うこと
   function getTargets(rangeId, user, targetGrid) {
     const fn = RANGE_PATTERNS[rangeId];
     if (!fn) return [];
     const cells = fn(user, targetGrid);
-    if (cells === null) return targetGrid.filter(u => u.hp > 0); // 全体
+    if (cells === null) return targetGrid.filter(u => u.hp > 0);
     return targetGrid.filter(u => u.hp > 0 && cells.has(u.row+'-'+u.col));
   }
 
-  function getEnemyCellsFromAllyRange(chara, rangeId) {
-  const s = new Set();
-
-  if (rangeId === 'all') {
-    ROWS.forEach(r => COLS.forEach(c => s.add(r + '-' + c)));
-
-  } else if (rangeId === 'front1') {
-    s.add(chara.row + '-' + chara.col);
-
-  } else if (rangeId === 'front3') {
-   COLS.forEach(c => s.add(chara.row + '-' + c));
-
-  } else if (rangeId === 'pierce2') {
-    s.add('near-' + chara.col);
-    s.add('mid-' + chara.col);
-
-  } else if (rangeId === 'pierce3') {
-    ROWS.forEach(r => s.add(r + '-' + chara.col));
-
-  } else if (rangeId === 'col_center') {
-    ROWS.forEach(r => s.add(r + '-' + chara.col));
-
-  } else if (rangeId === 'col_left') {
-    const c = COL_BY_IDX[COL_IDX[chara.col] - 1];
-    if (c) ROWS.forEach(r => s.add(r + '-' + c));
-
-  } else if (rangeId === 'col_right') {
-    const c = COL_BY_IDX[COL_IDX[chara.col] + 1];
-    if (c) ROWS.forEach(r => s.add(r + '-' + c));
+  // ── BattleRange ラッパー ──────────────────────────────────────
+  // すべての範囲計算は BattleRange に委譲する。
+  // user: { row, col }（使用者）, range: rangeId文字列 or rangeオブジェクト
+  function _getCells(user, range) {
+    if (window.BattleRange) return BattleRange.getCellsFromRange(user, range);
+    return new Set();
   }
+
+  function _getUnits(user, range, pool) {
+    if (window.BattleRange) return BattleRange.getUnitsFromRange(user, range, pool);
+    return [];
+  }
+
+function getEnemyCellsFromAllyRange(chara, range) {
+  // 固定系・全体攻撃はそのまま敵グリッド上で処理
+  const normalized = BattleRange.normalizeRange(range);
+  if (!normalized) return new Set();
+
+  if (normalized.origin === 'field' || normalized.type === 'all') {
+    return BattleRange.getCellsFromRange(chara, range);
+  }
+
+  // 敵3段 + 味方3段を1つの縦6段フィールドとして扱う
+  const FIELD_ROWS = [
+    { side:'enemy', row:'far'  },
+    { side:'enemy', row:'mid'  },
+    { side:'enemy', row:'near' },
+    { side:'ally',  row:'near' },
+    { side:'ally',  row:'mid'  },
+    { side:'ally',  row:'far'  },
+  ];
+
+  const ALLY_ROW_TO_FIELD_IDX = {
+    near: 3,
+    mid:  4,
+    far:  5,
+  };
+
+  const COL_IDX = { left:0, center:1, right:2 };
+  const COL_BY_IDX = ['left','center','right'];
+
+  const s = new Set();
+  const baseRi = ALLY_ROW_TO_FIELD_IDX[chara.row];
+  const baseCi = COL_IDX[chara.col];
+
+  if (baseRi == null || baseCi == null) return s;
+
+  (normalized.cells || []).forEach(cell => {
+    const ri = baseRi + cell.dr;
+    const ci = baseCi + cell.dc;
+
+    const pos = FIELD_ROWS[ri];
+    const col = COL_BY_IDX[ci];
+
+    if (!pos || !col) return;
+
+    // 敵グリッドに入ったマスだけ返す
+    if (pos.side === 'enemy') {
+      s.add(pos.row + '-' + col);
+    }
+  });
 
   return s;
 }
-
-function getEnemyTargetsFromAllyRange(chara, rangeId) {
+  // 後方互換：敵ユニット取得（旧呼び出し箇所用）
+  function getEnemyTargetsFromAllyRange(chara, rangeId) {
   const cells = getEnemyCellsFromAllyRange(chara, rangeId);
   return [bs.enemy].filter(e => e.hp > 0 && cells.has(e.row + '-' + e.col));
 }
@@ -360,7 +419,7 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
             <div class="bt-grid-col-label">中</div>
             <div class="bt-grid-col-label">右</div>
           </div>
-          ${ROWS.map(row => `
+          ${['far','mid','near'].map(row => `
             <div class="bt-grid-row">
               <div class="bt-grid-row-label">${{near:'近',mid:'中',far:'遠'}[row]}</div>
               ${COLS.map(col => `
@@ -488,7 +547,6 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
       .bt-grid-wrap { display:flex; flex-direction:column; flex:1; min-height:0; gap:2px; border-radius:0; padding:4px; background:transparent; border:none; box-shadow:none; }
 
       /* 怪異グリッド */
-      .bt-grid-enemy { flex-direction:column-reverse; }
       .bt-grid-enemy .bt-grid-col-labels { order:99; }
 
       /* 味方グリッド */
@@ -1220,8 +1278,7 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
     let jittaiDangerCells = null;
     if (isVisible) {
       const nextAct = peekNextAction();
-      const patFn = RANGE_PATTERNS[nextAct.range || 'random1'];
-      jittaiDangerCells = patFn ? patFn({ row: bs.enemy.row, col: bs.enemy.col }, bs.party) : null;
+      jittaiDangerCells = _getCells({ row: bs.enemy.row, col: bs.enemy.col }, nextAct.range || 'random1');
     }
     ROWS.forEach(row => {
       COLS.forEach(col => {
@@ -1271,13 +1328,15 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
   }
 
   let drawnSkills = [];
+  let skillDrawLocked = false;
 
   function renderSkills(chara) {
     const area  = document.getElementById('bt-skill-area');
     const cards = document.getElementById('bt-skill-cards');
     if (!area || !cards) return;
     if (!chara) { closeSkillArea(); return; }
-    // 行動選択ボタンは非表示のため何もしない
+
+    skillDrawLocked = false; // 新しいドロー → ロック解除
 
     const pool = chara.skills.filter(sk => sk.cd === 0);
     const tmp = [...pool];
@@ -1354,16 +1413,16 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
     cards.appendChild(moveWrap);
   }
 
-  // 3枚を順番にめくる（めくる前に高さを記録して固定）
+  // 3枚を順番にめくる
   function flipAllCards() {
-  const inners = document.querySelectorAll('.bt-skill-card-inner');
-
-  inners.forEach((inner, i) => {
-    setTimeout(() => {
-      inner.classList.add('flipped');
-    }, i * 300);
-  });
-}
+    skillDrawLocked = true; // めくったらリドロー禁止
+    const inners = document.querySelectorAll('.bt-skill-card-inner');
+    inners.forEach((inner, i) => {
+      setTimeout(() => {
+        inner.classList.add('flipped');
+      }, i * 300);
+    });
+  }
 
   function setupSkillCard(card, chara, sk) {
     let pressTimer = null;
@@ -1409,14 +1468,14 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
 
   // 範囲グリッドHTML生成（詳細ポップアップ用）
   function buildRangeGridHTML(rangeId, user) {
-    const fn = RANGE_PATTERNS[rangeId];
-    if (!fn) return '';
-    const cells = fn(user || {row:'mid',col:'center'}, []);
-    const isAlly = ALLY_RANGES.has(rangeId);
+    const u = user || { row: 'mid', col: 'center' };
+    const cells = _getCells(u, rangeId);
+    if (!cells || cells.size === 0) return '';
+    const isAllyRange = ALLY_RANGES.has(rangeId);
     const html = ROWS.map(row =>
       COLS.map(col => {
-        const hit = cells === null || cells.has(row+'-'+col);
-        const cls = hit ? (isAlly ? 'highlight' : 'danger') : '';
+        const hit = cells.has(row+'-'+col);
+        const cls = hit ? (isAllyRange ? 'highlight' : 'danger') : '';
         return `<div class="bt-range-cell ${cls}"></div>`;
       }).join('')
     ).join('');
@@ -1478,41 +1537,24 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
   document.getElementById('bt-execute-bar').classList.add('visible');
 }
   function highlightSkillRange(chara, sk) {
-  const isAlly = ALLY_RANGES.has(sk.range);
+    const isAllyRange = ALLY_RANGES.has(sk.range);
 
-  if (isAlly) {
-    const fn = RANGE_PATTERNS[sk.range];
+    if (isAllyRange) {
+      // 味方グリッドをハイライト（バフ・回復系）
+      const fn = RANGE_PATTERNS[sk.range];
+      const cells = fn
+        ? fn({ row: chara.row, col: chara.col }, bs.party)
+        : _getCells(chara, sk.range);
 
-    if (!fn) {
-      _skillRangeCache = null;
-      return;
+      _skillRangeCache = { prefix: 'bt-ag-', cells };
+    } else {
+      // 敵グリッドをハイライト（攻撃・デバフ系）
+      const cells = getEnemyCellsFromAllyRange(chara, sk.range);
+      _skillRangeCache = { prefix: 'bt-eg-', cells };
     }
 
-    const cells = fn(
-      { row: chara.row, col: chara.col },
-      bs.party
-    );
-
-    _skillRangeCache = {
-      prefix: 'bt-ag-',
-      cells
-    };
-
-  } else {
-
-    const cells = getEnemyCellsFromAllyRange(
-      chara,
-      sk.range
-    );
-
-    _skillRangeCache = {
-      prefix: 'bt-eg-',
-      cells
-    };
+    renderField();
   }
-
-  renderField();
-}
 
   function clearSkillRangeHighlight() {
     _skillRangeCache = null;
@@ -1959,21 +2001,26 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
   function doPlayerAction(chara, skill, onDone) {
     addLog(chara.name + '「' + skill.name + '」');
 
-    const isAlly = ALLY_RANGES.has(skill.range);
+    // ── ダメージ対象の決定 ──────────────────────────────────────
+    // range が ally系（ALLY_RANGES）→ 味方グリッドから対象取得
+    // それ以外 → BattleRange で敵グリッドから対象取得
+    const isAllyRange = ALLY_RANGES.has(skill.range);
     let targets;
-    if (isAlly) {
-      targets = getTargets(skill.range, { row: chara.row, col: chara.col }, bs.party);
+    if (isAllyRange) {
+      // 味方グリッド上の対象（バフ・回復系）
+      const fn = RANGE_PATTERNS[skill.range];
+      const cells = fn ? fn({ row: chara.row, col: chara.col }, bs.party) : _getCells(chara, skill.range);
+      targets = bs.party.filter(u => u.hp > 0 && (cells === null || cells.has(u.row + '-' + u.col)));
     } else {
-      targets = getEnemyTargetsFromAllyRange(chara, skill.range);
+      // 敵グリッド上の対象（攻撃・デバフ系）
+      targets = _getUnits(chara, skill.range, [bs.enemy]);
     }
 
-    // 必中チェック（自分or味方の sure_hit で命中率100%扱い）
+    // 必中チェック
     const sureHit = hasStatus(chara, 'sure_hit_self') || hasStatus(chara, 'sure_hit_team') ||
                     bs.party.some(c => c.id !== chara.id && hasStatus(c, 'sure_hit_team'));
-    // 必中消費
     if (sureHit) {
       removeStatus(chara, 'sure_hit_self');
-      // sure_hit_team は全員から消費
       bs.party.forEach(c => removeStatus(c, 'sure_hit_team'));
     }
 
@@ -2015,7 +2062,6 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
         _applyEffect(effect, chara, true);
         renderHeader();
         renderField();
-        // 行動順をSPD変動に合わせて再計算
         if (['spd_up','spd_down'].includes(effect.type)) {
           bs.turnOrder = calcTurnOrder(bs.party, bs.enemy);
           renderOrder(null);
@@ -2052,7 +2098,15 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
 
     if (bs.party.filter(c=>c.hp>0).length === 0) { onBattleEnd(false); return; }
 
-    const targets = getTargets(act.range || 'random1', {row:bs.enemy.row, col:bs.enemy.col}, bs.party);
+    const rangeId = act.range || 'random1';
+    let targets;
+    if (rangeId === 'random1') {
+      // ランダム1体：生存中の味方からランダムに1体選ぶ
+      const alive = bs.party.filter(u => u.hp > 0);
+      targets = alive.length ? [alive[Math.floor(Math.random() * alive.length)]] : [];
+    } else {
+      targets = _getUnits({ row: bs.enemy.row, col: bs.enemy.col }, rangeId, bs.party);
+    }
 
     if (targets.length > 0) {
       // 複数ターゲットは200ms刻みで順番にダメージ
@@ -2240,15 +2294,14 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
     // 範囲グリッドHTML（random1以外）
     let gridHTML = '';
     if (!isRandom) {
-      const patFn = RANGE_PATTERNS[act.range];
-      // bs.partyを渡すことでrandom1等も正しく機能する（ミニグリッドではランダム要素は無視）
-      const cells = patFn ? patFn({row:bs.enemy.row, col:bs.enemy.col}, bs.party || []) : null;
+      // BattleRange で敵位置基準の攻撃範囲を取得
+      const cells = _getCells({ row: bs.enemy.row, col: bs.enemy.col }, act.range);
       const ROWS_ = ['near','mid','far'];
       const COLS_ = ['left','center','right'];
       gridHTML = '<div class="bt-ew-grid">';
       ROWS_.forEach(r => {
         COLS_.forEach(c => {
-          const hit = cells === null || cells.has(r+'-'+c);
+          const hit = cells.has(r+'-'+c);
           gridHTML += `<div class="bt-ew-cell${hit?' hit':''}"></div>`;
         });
       });
@@ -2346,10 +2399,9 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
     // 実体化に関わらず常に次の攻撃範囲を表示する
     const nextAct     = peekNextAction();
     const isRandom    = (nextAct.range || 'random1') === 'random1';
-    const patFn       = RANGE_PATTERNS[nextAct.range || 'random1'];
-    // patFnがnull返し（全体攻撃）の場合はdangerCells=nullで全マス対象
-    const dangerCells = (!isRandom && patFn)
-      ? patFn({row:bs.enemy.row, col:bs.enemy.col}, bs.party)
+    // 敵の位置基準で攻撃範囲を BattleRange 経由で計算
+    const dangerCells = (!isRandom)
+      ? _getCells({ row: bs.enemy.row, col: bs.enemy.col }, nextAct.range || 'random1')
       : null;
 
     ROWS.forEach(row => {
@@ -2398,7 +2450,24 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
           <div class="bt-chara-hp-bar-fill ${hpRate < 25 ? 'crit' : hpRate < 50 ? 'low' : ''}" style="width:${hpRate}%"></div>
         </div>
       `;
-      if (c.hp > 0) card.onclick = () => onCharaTap(c.id);
+      if (c.hp > 0) {
+  card.onclick = () => {
+
+    // planning中以外は無効
+    if (bs.phase !== 'planning') return;
+
+    // 移動モード中は無効
+    if (moveMode) return;
+
+    // 既に予約済みなら触れない
+    if (bs.pendingActions.some(a => a.charaId === c.id)) return;
+
+    // 現在操作中キャラ以外は触れない
+    if (c.id !== bs.planningCharaId) return;
+
+    onCharaTap(c.id);
+  };
+}
       cell.appendChild(card);
     });
   }
@@ -2408,27 +2477,27 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
   // ============================================================
   let charaPopupTimer = null;
 
-  function onCharaTap(id) {
-    // planning中は現在予約中のキャラをタップで切り替え
-    if (bs.phase === 'planning') {
-      const chara = bs.party.find(c => c.id === id && c.hp > 0);
-      if (chara) {
-        // カードがすでにめくられていたら再ドロー不可（ロック）
-        const flipped = document.querySelectorAll('.bt-skill-card-inner.flipped');
-        if (flipped.length > 0) {
-          // ポップアップのみ表示して終了
-          showCharaPopup(id);
-          return;
-        }
-        bs.planningCharaId = id;
-        renderSkills(chara);
-        renderField();
-        addLog(chara.name + ' の行動を選んでください');
+ function onCharaTap(id) {
+
+  if (bs.phase === 'planning') {
+
+    const chara = bs.party.find(c => c.id === id && c.hp > 0);
+
+    if (chara) {
+
+      // カードオープン後はリドロー禁止
+      if (skillDrawLocked) {
+        showCharaPopup(id);
         return;
       }
+
+      renderSkills(chara);
+      return;
     }
-    showCharaPopup(id);
   }
+
+  showCharaPopup(id);
+}
 
   function showCharaPopup(id) {
     const chara = bs.party.find(c => c.id === id);
@@ -2496,11 +2565,17 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
 
     const cards = document.getElementById('bt-skill-cards');
     const hint  = document.querySelector('.bt-skill-hint');
-    // カードの現在の中身を退避してからキャンセル表示に切り替え
+    // カード要素を隠してキャンセル表示に切り替え（DOMは保持してリスナーを維持）
     if (cards) {
-      cards.innerHTML = '<div class="bt-move-cancel" onclick="battleMoveMode()">タップでキャンセル</div>';
+      Array.from(cards.children).forEach(el => el.style.display = 'none');
+      const cancel = document.createElement('div');
+      cancel.className = 'bt-move-cancel';
+      cancel.id = 'bt-move-cancel-label';
+      cancel.textContent = 'タップでキャンセル';
+      cancel.onclick = () => battleMoveMode();
+      cards.appendChild(cancel);
     }
-    if (hint)  hint.style.display = 'none';
+    if (hint) hint.style.display = 'none';
     const btn = document.getElementById('bt-move-card');
     if (btn) btn.classList.add('move-active');
 
@@ -2509,22 +2584,27 @@ function getEnemyTargetsFromAllyRange(chara, rangeId) {
   };
 
   function cancelMoveMode() {
-  moveMode = false;
-  movingCharaId = null;
-  _savedSkillCardsHTML = null;
+    moveMode = false;
+    movingCharaId = null;
+    _savedSkillCardsHTML = null;
 
-  const btn = document.getElementById('bt-move-card');
-  if (btn) btn.classList.remove('move-active');
+    const btn = document.getElementById('bt-move-card');
+    if (btn) btn.classList.remove('move-active');
 
-  const hint = document.querySelector('.bt-skill-hint');
-  if (hint) hint.style.display = '';
+    const hint = document.querySelector('.bt-skill-hint');
+    if (hint) hint.style.display = '';
 
-  const chara = bs.party.find(c => c.id === bs.planningCharaId);
-  if (chara) renderSkills(chara);
+    // キャンセルラベルを除去してカード要素を再表示（リスナー維持）
+    const cards = document.getElementById('bt-skill-cards');
+    if (cards) {
+      const label = document.getElementById('bt-move-cancel-label');
+      if (label) label.remove();
+      Array.from(cards.children).forEach(el => el.style.display = '');
+    }
 
-  renderField();
-  addLog('移動キャンセル');
-}
+    renderField();
+    addLog('移動キャンセル');
+  }
 
   function renderFieldMoveMode() {
     ROWS.forEach(row => COLS.forEach(col => {
@@ -2737,5 +2817,14 @@ if (bs.enemy.actionPattern) {
 
   window.startBattle = startBattle;
   window.closeBattle = closeBattle;
+
+  window.testRange = function(row,col,range){
+  console.log(
+    [...BattleRange.getCellsFromRange(
+      { row, col },
+      range
+    )]
+  );
+};
 
 })();

@@ -32,11 +32,11 @@ const CHARACTERS = [
         effects: [],
         desc: '確実に命中する基本攻撃。' },
 
-      { id: 's2', name: '縛打',   cdMax: 2, hit: 85,  type: 'attack', multiplier: 0.8, range: 'front3',
+      { id: 's2', name: '縛打',   cdMax: 2, hit: 85,  type: 'attack', multiplier: 0.8, range: 'front_row_3',
         effects: [{ type: 'atk_down', target: 'enemy', hit: 80, duration: 2 }],
         desc: '打撃に縛りの力を込め、怪異のATKを下げる。' },
 
-      { id: 's3', name: '見切り', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's3', name: '見切り', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [{ type: 'def_up', target: 'ally_self', hit: 100, duration: 2 }],
         desc: '怪異の攻撃を見切り、自身のDEFを2ターン上昇させる。' },
 
@@ -44,7 +44,7 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 70, duration: 2 }],
         desc: '素早く踏み込んで強攻撃。命中時に実体化を付与する。' },
 
-      { id: 's5', name: '転身',   cdMax: 1, hit: 100, type: 'move',   multiplier: 0.8,   range: 'front3',
+      { id: 's5', name: '転身',   cdMax: 1, hit: 100, type: 'move',   multiplier: 0.8,   range: 'front_row_3',
         effects: [],
         desc: 'ポジションを変更する。' },
     ]},
@@ -61,19 +61,19 @@ const CHARACTERS = [
         effects: [],
         desc: '素早い連続斬りで怪異を攻撃する。' },
 
-      { id: 's2', name: '縛鎖',    cdMax: 3, hit: 100, type: 'debuff', multiplier: 0.5,   range: 'front3',
+      { id: 's2', name: '縛鎖',    cdMax: 3, hit: 100, type: 'debuff', multiplier: 0.5,   range: 'front_row_3',
         effects: [{ type: 'spd_down', target: 'enemy', hit: 85, duration: 2 }],
         desc: '鎖で怪異の動きを縛り、SPDを2ターン低下させる。' },
 
-      { id: 's3', name: '加速',    cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's3', name: '加速',    cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [{ type: 'spd_up', target: 'ally_self', hit: 100, duration: 2 }],
         desc: '自身のSPDを2ターン上昇させる。行動順が早くなる。' },
 
-      { id: 's4', name: '切り込み', cdMax: 2, hit: 85, type: 'attack', multiplier: 1.5, range: 'front3',
+      { id: 's4', name: '切り込み', cdMax: 2, hit: 85, type: 'attack', multiplier: 1.5, range: 'front_row_3',
         effects: [{ type: 'spd_down', target: 'enemy', hit: 70, duration: 1 }],
         desc: '斬りながら怪異のSPDを一時的に下げる。' },
 
-      { id: 's5', name: '疾走',    cdMax: 2, hit: 100, type: 'move',   multiplier: 1.0,   range: 'front3',
+      { id: 's5', name: '疾走',    cdMax: 2, hit: 100, type: 'move',   multiplier: 1.0,   range: 'front_row_3',
         effects: [],
         desc: '素早くポジションを移動する。' },
     ]},
@@ -94,7 +94,7 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 100, duration: 2 }],
         desc: '怪異を現実に縛り付け「実体化」を2ターン付与する。敵の位置と次の攻撃範囲が見えるようになる。' },
 
-      { id: 's3', name: '鉄壁',    cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's3', name: '鉄壁',    cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [{ type: 'def_up', target: 'ally_self', hit: 100, duration: 2 }],
         desc: '自身のDEFを2ターン大幅に上昇させる。' },
 
@@ -102,7 +102,7 @@ const CHARACTERS = [
         effects: [{ type: 'pull_1', target: 'enemy', hit: 80, duration: 1 }],
         desc: '体当たりで攻撃し、怪異を1マス吸い寄せる。' },
 
-      { id: 's5', name: '前進',    cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '前進',    cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: 'ポジションを変更する。' },
     ]},
@@ -116,7 +116,7 @@ const CHARACTERS = [
     upImg: 'images/chara_04_up.webp', battleImg: 'images/chara_04_battle.webp',
     favScale: 0.85, favOffsetY: -30,
     skills: [
-      { id: 's1', name: '爆撃',   cdMax: 0, hit: 85,  type: 'attack', multiplier: 3.0, range: 'front3',
+      { id: 's1', name: '爆撃',   cdMax: 0, hit: 85,  type: 'attack', multiplier: 3.0, range: 'front_row_3',
         effects: [],
         desc: '強力な爆発攻撃。ATKの3倍の高火力。' },
 
@@ -128,14 +128,14 @@ const CHARACTERS = [
         effects: [],
         desc: '全力の一撃。ATKの7倍の超火力。命中率は低い。' },
 
-      { id: 's4', name: '集中',   cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's4', name: '集中',   cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [
           { type: 'atk_up',       target: 'ally_self', hit: 100, duration: 2 },
           { type: 'sure_hit_self', target: 'ally_self', hit: 100, duration: 1 },
         ],
         desc: '自身のATKを2ターン上昇させ、次の攻撃を必中にする。' },
 
-      { id: 's5', name: '後退',   cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '後退',   cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: 'ポジションを変更する。' },
     ]},
@@ -160,11 +160,11 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 85, duration: 2 }],
         desc: '糸を絡め怪異を実体化させる。敵の位置と次の攻撃が見える。' },
 
-      { id: 's4', name: '加速糸', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's4', name: '加速糸', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [{ type: 'spd_up', target: 'ally_self', hit: 100, duration: 2 }],
         desc: '糸を使って自身を加速する。SPDを2ターン上昇。' },
 
-      { id: 's5', name: '糸走り', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '糸走り', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '糸を伝って素早く移動する。' },
     ]},
@@ -185,7 +185,7 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 100, duration: 2 }],
         desc: '怪異を現実に繋ぎ止め実体化を付与する。' },
 
-      { id: 's3', name: '結界',    cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's3', name: '結界',    cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [{ type: 'def_up', target: 'ally_self', hit: 100, duration: 2 }],
         desc: '防護の結界を展開し自身のDEFを2ターン上昇させる。' },
 
@@ -193,7 +193,7 @@ const CHARACTERS = [
         effects: [{ type: 'stun', target: 'enemy', hit: 60, duration: 1 }],
         desc: '重い一撃を放つ。命中すると怪異を1ターンスタンさせる。' },
 
-      { id: 's5', name: '陣取り',  cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '陣取り',  cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '有利なポジションへ移動する。' },
     ]},
@@ -210,11 +210,11 @@ const CHARACTERS = [
         effects: [],
         desc: '呪いを込めた打撃。確実に命中する。' },
 
-      { id: 's2', name: '呪縛', cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front3',
+      { id: 's2', name: '呪縛', cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front_row_3',
         effects: [{ type: 'atk_down', target: 'enemy', hit: 85, duration: 2 }],
         desc: '呪いで怪異のATKを2ターン低下させる。' },
 
-      { id: 's3', name: '呪護', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_all',
+      { id: 's3', name: '呪護', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'all',
         effects: [{ type: 'def_up', target: 'ally_all', hit: 100, duration: 2 }],
         desc: '呪いを盾にする。味方全員のDEFを2ターン上昇させる。' },
 
@@ -222,7 +222,7 @@ const CHARACTERS = [
         effects: [{ type: 'atk_down', target: 'enemy', hit: 70, duration: 1 }],
         desc: '強化された呪撃。命中時に怪異のATKを一時的に下げる。' },
 
-      { id: 's5', name: '呪歩', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '呪歩', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '呪力を纏いながら移動する。' },
     ]},
@@ -247,14 +247,14 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 85, duration: 2 }],
         desc: '霊力で怪異を実体化させる。敵の位置と次の攻撃が見える。' },
 
-      { id: 's4', name: '霊護', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's4', name: '霊護', cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [
           { type: 'def_up',        target: 'ally_self', hit: 100, duration: 2 },
           { type: 'sure_hit_self', target: 'ally_self', hit: 100, duration: 1 },
         ],
         desc: '霊力で身を守りながら、次の自分の攻撃を必中にする。' },
 
-      { id: 's5', name: '霊歩', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '霊歩', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '霊力を使って素早く移動する。' },
     ]},
@@ -267,11 +267,11 @@ const CHARACTERS = [
     img: 'images/chara_11.webp', cutImg: 'images/chara_11_cut.webp',
     upImg: 'images/chara_11_up.webp', battleImg: 'images/chara_11_battle.webp',
     skills: [
-      { id: 's1', name: '狂撃',  cdMax: 0, hit: 80,  type: 'attack', multiplier: 3.0, range: 'front3',
+      { id: 's1', name: '狂撃',  cdMax: 0, hit: 80,  type: 'attack', multiplier: 3.0, range: 'front_row_3',
         effects: [],
         desc: '狂気を解放した強烈な一撃。ATKの3倍のダメージ。' },
 
-      { id: 's2', name: '狂縛',  cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front3',
+      { id: 's2', name: '狂縛',  cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front_row_3',
         effects: [{ type: 'def_down', target: 'enemy', hit: 75, duration: 2 }],
         desc: '怪異のDEFを2ターン大幅に低下させる。命中率は低い。' },
 
@@ -283,7 +283,7 @@ const CHARACTERS = [
         effects: [{ type: 'atk_up', target: 'ally_self', hit: 100, duration: 2 }],
         desc: '狂気を纏いATKを2ターン大幅に上昇させる。' },
 
-      { id: 's5', name: '狂走',  cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '狂走',  cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: 'ポジションを変更する。' },
     ]},
@@ -314,7 +314,7 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 80, duration: 2 }],
         desc: '攻撃と同時に怪異を実体化させる。ATKの5倍のダメージ。' },
 
-      { id: 's4', name: '猛爆',  cdMax: 5, hit: 60,  type: 'attack', multiplier: 10.0, range: 'front3',
+      { id: 's4', name: '猛爆',  cdMax: 5, hit: 60,  type: 'attack', multiplier: 10.0, range: 'front_row_3',
         effects: [{ type: 'push_2', target: 'enemy', hit: 100, duration: 1 }],
         desc: '全力の爆撃。ATKの10倍の超火力。命中時に敵を2マス押し出す。' },
 
@@ -347,14 +347,14 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 90, duration: 2 }],
         desc: '素早く怪異を実体化させる。成功率が高い。' },
 
-      { id: 's4', name: '超加速', cdMax: 4, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's4', name: '超加速', cdMax: 4, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [
           { type: 'spd_up',        target: 'ally_self', hit: 100, duration: 3 },
           { type: 'sure_hit_self', target: 'ally_self', hit: 100, duration: 2 },
         ],
         desc: '自身のSPDを3ターン大幅に上昇させ、2ターン必中状態にする。' },
 
-      { id: 's5', name: '瞬歩',   cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '瞬歩',   cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '瞬時に任意のポジションへ移動する。' },
     ]},
@@ -379,7 +379,7 @@ const CHARACTERS = [
         ],
         desc: '怪異を繋ぎ止めながら縛る。実体化とSPDダウンを同時に付与する。' },
 
-      { id: 's3', name: '加護',  cdMax: 4, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_all',
+      { id: 's3', name: '加護',  cdMax: 4, hit: 100, type: 'buff',   multiplier: 0,   range: 'all',
         effects: [
           { type: 'def_up',        target: 'ally_all', hit: 100, duration: 2 },
           { type: 'sure_hit_team', target: 'ally_all', hit: 100, duration: 1 },
@@ -390,7 +390,7 @@ const CHARACTERS = [
         effects: [],
         desc: '素早く斬りかかる。ATKの2倍のダメージ。' },
 
-      { id: 's5', name: '風走り', cdMax: 1, hit: 100, type: 'move',  multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '風走り', cdMax: 1, hit: 100, type: 'move',  multiplier: 0,   range: 'self',
         effects: [],
         desc: '風のように素早く移動する。' },
     ]},
@@ -411,7 +411,7 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 85, duration: 2 }],
         desc: '真実を見抜いた一撃。ATKの2倍のダメージ＋実体化付与。' },
 
-      { id: 's3', name: '鮮やかな推断',   cdMax: 4, hit: 100, type: 'buff',    multiplier: 0,   range: 'ally_self',
+      { id: 's3', name: '鮮やかな推断',   cdMax: 4, hit: 100, type: 'buff',    multiplier: 0,   range: 'self',
         effects: [
           { type: 'def_up', target: 'ally_self', hit: 100, duration: 2 },
           { type: 'atk_up', target: 'ally_self', hit: 100, duration: 2 },
@@ -439,7 +439,7 @@ const CHARACTERS = [
         effects: [],
         desc: '業火を纏った強烈な一撃。ATKの3倍のダメージ。' },
 
-      { id: 's2', name: '炎縛',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front3',
+      { id: 's2', name: '炎縛',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front_row_3',
         effects: [{ type: 'def_down', target: 'enemy', hit: 75, duration: 2 }],
         desc: '炎で怪異のDEFを2ターン低下させる。' },
 
@@ -447,14 +447,14 @@ const CHARACTERS = [
         effects: [],
         desc: '爆発的な炎を解放する。ATKの9倍の超火力。命中率は非常に低い。' },
 
-      { id: 's4', name: '炎加速', cdMax: 4, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's4', name: '炎加速', cdMax: 4, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [
           { type: 'atk_up', target: 'ally_self', hit: 100, duration: 2 },
           { type: 'spd_up', target: 'ally_self', hit: 100, duration: 2 },
         ],
         desc: '炎の勢いでATKとSPDを2ターン同時に上昇させる。' },
 
-      { id: 's5', name: '炎走',   cdMax: 2, hit: 80,  type: 'attack', multiplier: 2.0, range: 'ally_self',
+      { id: 's5', name: '炎走',   cdMax: 2, hit: 80,  type: 'attack', multiplier: 2.0, range: 'self',
         effects: [],
         desc: '炎を纏いながら移動して攻撃する。ATKの2倍のダメージ。' },
     ]},
@@ -471,11 +471,11 @@ const CHARACTERS = [
         effects: [],
         desc: '狼の力を宿した確実な一撃。' },
 
-      { id: 's2', name: '鎖縛',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front3',
+      { id: 's2', name: '鎖縛',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0,   range: 'front_row_3',
         effects: [{ type: 'atk_down', target: 'enemy', hit: 90, duration: 2 }],
         desc: '鎖で怪異のATKを2ターン低下させる。成功率が高い。' },
 
-      { id: 's3', name: '狼盾',   cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's3', name: '狼盾',   cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [{ type: 'def_up', target: 'ally_self', hit: 100, duration: 3 }],
         desc: '狼の加護でDEFを3ターン大幅に上昇させる。' },
 
@@ -483,7 +483,7 @@ const CHARACTERS = [
         effects: [{ type: 'jittai', target: 'enemy', hit: 90, duration: 2 }],
         desc: '鎖で攻撃しながら実体化を付与する。成功率が高い。' },
 
-      { id: 's5', name: '狼走り', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '狼走り', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '狼のように素早く移動する。' },
     ]},
@@ -518,7 +518,7 @@ const CHARACTERS = [
         effects: [{ type: 'def_down', target: 'enemy', hit: 70, duration: 2 }],
         desc: '縦列を貫通する強烈な一撃。ATKの5倍のダメージ＋DEFダウン。' },
 
-      { id: 's5', name: '蛇走り', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '蛇走り', cdMax: 1, hit: 100, type: 'move',   multiplier: 0,   range: 'self',
         effects: [],
         desc: '蛇のようにしなやかに移動する。' },
     ]},
@@ -555,7 +555,7 @@ const CHARACTERS = [
         ],
         desc: '幻影で実体化させながら怪異を1マス右に強制移動。成功率が高い。' },
 
-      { id: 's4', name: '彩愛の人',   cdMax: 4, hit: 100, type: 'buff',    multiplier: 0,   range: 'ally_all',
+      { id: 's4', name: '彩愛の人',   cdMax: 4, hit: 100, type: 'buff',    multiplier: 0,   range: 'all',
         effects: [
           { type: 'spd_up',        target: 'ally_all', hit: 100, duration: 2 },
           { type: 'sure_hit_team', target: 'ally_all', hit: 100, duration: 1 },
@@ -576,32 +576,32 @@ const CHARACTERS = [
     upImg: 'images/chara_09_up.webp', battleImg: 'images/chara_09_battle.webp',
     favScale: 0.85, favOffsetY: -30,
     skills: [
-      { id: 's1', name: '双星撃', cdMax: 0, hit: 90,  type: 'attack',  multiplier: 3.0, range: 'front3',
+      { id: 's1', name: '双星撃', cdMax: 0, hit: 90,  type: 'attack',  multiplier: 3.0, range: 'front_row_3',
         effects: [],
         desc: '二人が同時に攻撃する。ATKの3倍の連携ダメージ。' },
 
-      { id: 's2', name: '双縛',   cdMax: 3, hit: 100, type: 'debuff',  multiplier: 0,   range: 'front3',
+      { id: 's2', name: '双縛',   cdMax: 3, hit: 100, type: 'debuff',  multiplier: 0,   range: 'front_row_3',
         effects: [
           { type: 'atk_down', target: 'enemy', hit: 90, duration: 2 },
           { type: 'spd_down', target: 'enemy', hit: 90, duration: 2 },
         ],
         desc: '二人がかりでATKとSPDを2ターン低下させる。成功率が高い。' },
 
-      { id: 's3', name: '双実',   cdMax: 3, hit: 90,  type: 'debuff',  multiplier: 0,   range: 'front3',
+      { id: 's3', name: '双実',   cdMax: 3, hit: 90,  type: 'debuff',  multiplier: 0,   range: 'front_row_3',
         effects: [
           { type: 'jittai', target: 'enemy', hit: 95, duration: 2 },
           { type: 'stun',   target: 'enemy', hit: 70, duration: 1 },
         ],
         desc: '二人の力で実体化とスタンを付与する。実体化成功率が非常に高い。' },
 
-      { id: 's4', name: '双護',   cdMax: 4, hit: 100, type: 'buff',    multiplier: 0,   range: 'ally_all',
+      { id: 's4', name: '双護',   cdMax: 4, hit: 100, type: 'buff',    multiplier: 0,   range: 'all',
         effects: [
           { type: 'atk_up', target: 'ally_all', hit: 100, duration: 2 },
           { type: 'def_up', target: 'ally_all', hit: 100, duration: 2 },
         ],
         desc: '互いに庇い合い、味方全員のATKとDEFを2ターン上昇させる。' },
 
-      { id: 's5', name: '双星爆', cdMax: 6, hit: 65,  type: 'attack',  multiplier: 8.0, range: 'front3',
+      { id: 's5', name: '双星爆', cdMax: 6, hit: 65,  type: 'attack',  multiplier: 8.0, range: 'front_row_3',
         effects: [],
         desc: '二人の力を爆発させる超技。ATKの8倍の超火力。命中率は低い。' },
     ]},
@@ -629,7 +629,7 @@ const CHARACTERS = [
         effects: [{ type: 'def_down', target: 'enemy', hit: 80, duration: 2 }],
         desc: '全体を巻き込む攻撃。ATKの3倍のダメージ＋DEFダウン。' },
 
-      { id: 's4', name: '踊',     cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'ally_self',
+      { id: 's4', name: '踊',     cdMax: 3, hit: 100, type: 'buff',   multiplier: 0,   range: 'self',
         effects: [
           { type: 'spd_up', target: 'ally_self', hit: 100, duration: 2 },
           { type: 'atk_up', target: 'ally_self', hit: 100, duration: 2 },
@@ -652,15 +652,15 @@ const CHARACTERS = [
     img: 'images/chara_16.webp', cutImg: 'images/chara_16_cut.webp',
     upImg: 'images/chara_16_up.webp', battleImg: 'images/chara_16_battle.webp',
     skills: [
-      { id: 's1', name: '見破り',   cdMax: 0, hit: 85,  type: 'attack',  multiplier: 1.5, range: 'front3',
+      { id: 's1', name: '見破り',   cdMax: 0, hit: 85,  type: 'attack',  multiplier: 1.5, range: 'front_row_3',
         effects: [{ type: 'jittai', target: 'enemy', hit: 80, duration: 2 }],
         desc: '攻撃しながら怪異を実体化させる。ATKの1.5倍のダメージ。' },
 
-      { id: 's2', name: '結界',     cdMax: 3, hit: 100, type: 'buff',    multiplier: 0,   range: 'ally_self',
+      { id: 's2', name: '結界',     cdMax: 3, hit: 100, type: 'buff',    multiplier: 0,   range: 'self',
         effects: [{ type: 'def_up', target: 'ally_self', hit: 100, duration: 3 }],
         desc: '強固な結界を展開し、DEFを3ターン大幅に上昇させる。' },
 
-      { id: 's3', name: '式神-POCHI-',   cdMax: 3, hit: 100, type: 'debuff',  multiplier: 0.5,   range: 'front3',
+      { id: 's3', name: '式神-POCHI-',   cdMax: 3, hit: 100, type: 'debuff',  multiplier: 0.5,   range: 'front_row_3',
         effects: [
           { type: 'jittai',   target: 'enemy', hit: 100, duration: 2 },
           { type: 'atk_down', target: 'enemy', hit: 90,  duration: 2 },
@@ -672,7 +672,7 @@ const CHARACTERS = [
         effects: [{ type: 'stun', target: 'enemy', hit: 60, duration: 1 }],
         desc: '霧を爆発させ全体攻撃。ATKの2倍。命中時に60%でスタンを付与する。' },
 
-      { id: 's5', name: '御魂綴',   cdMax: 1, hit: 100, type: 'move',    multiplier: 0,   range: 'ally_self',
+      { id: 's5', name: '御魂綴',   cdMax: 1, hit: 100, type: 'move',    multiplier: 0,   range: 'self',
         effects: [],
         desc: '魂を清め、自らの傷を癒す。' },
     ]},
