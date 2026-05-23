@@ -14,6 +14,7 @@ const ENEMIES = [
     name: '??????',
     img:   'images/enemy_01.webp',
     upImg: 'images/enemy_01_up.webp',
+    battleImg: 'images/enemy_01_battle.webp',
     hp: 1600, hpMax: 1600,
     atk: 320, def: 200, spd: 340,  // 高速型
     phase: 1,
@@ -90,6 +91,7 @@ const ENEMIES = [
     name: '??????',
     img:   'images/enemy_02.webp',
     upImg: 'images/enemy_02_up.webp',
+    battleImg: 'images/enemy_02_battle.webp',
     hp: 2200, hpMax: 2200,
     atk: 420, def: 350, spd: 180,  // 重装型・高火力
     phase: 1,
@@ -171,6 +173,7 @@ const ENEMIES = [
     name: '??????',
     img:   'images/enemy_03.webp',
     upImg: 'images/enemy_03_up.webp',
+    battleImg: 'images/enemy_03_battle.webp',
     hp: 1900, hpMax: 1900,
     atk: 370, def: 280, spd: 260,  // バランス型
     phase: 1,

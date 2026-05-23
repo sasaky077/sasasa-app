@@ -121,10 +121,10 @@
             <span class="ninmu-test-btn-title">テストプレイ（2回目以降）</span>
             <span class="ninmu-test-btn-sub">normal / Sクリア想定　+112 EXP</span>
           </button>
-          <button class="ninmu-test-btn" onclick="openPartySelect()">
+           <!--　テスト用 <button class="ninmu-test-btn" onclick="openStageSelect(1)">
             <span class="ninmu-test-btn-title">バトルテスト</span>
             <span class="ninmu-test-btn-sub">編成→怪異登場→バトル</span>
-          </button>
+          </button>　-->
         </div>
       </div>
 
@@ -140,21 +140,23 @@
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
           <div class="ninmu-chapter-item"
-               onclick="startStory(CHAPTER_01)">
+               onclick="openStageSelect(1)">
             <div class="ninmu-chapter-label">CHAPTER:01</div>
-            <div class="ninmu-chapter-title"></div>
+            <div class="ninmu-chapter-title">初任務</div>
           </div>
 
 
-          <div class="ninmu-chapter-item">
+          <div class="ninmu-chapter-item"
+               onclick="openStageSelect(2)">
             <div class="ninmu-chapter-label">CHAPTER:02</div>
-            <div class="ninmu-chapter-title">紡ぎ手たち</div>
+            <div class="ninmu-chapter-title">紡ぐ者</div>
           </div>
 
 
-          <div class="ninmu-chapter-item">
+          <div class="ninmu-chapter-item"
+               onclick="openStageSelect(3)">
             <div class="ninmu-chapter-label">CHAPTER:03</div>
-            <div class="ninmu-chapter-title">つなぐ場所</div>
+            <div class="ninmu-chapter-title">御祀り</div>
           </div>
 
 
@@ -3414,6 +3416,8 @@ function fadeOutOpeningBgm(){
 <script src="js/battle.js"></script>
 <script src="js/characters.js"></script>
 <script src="js/enemies.js"></script>
+<script src="js/stages.js"></script>
+<script src="js/stage_select.js"></script>
 <script src="js/party_select.js"></script>
 <script src="js/enemy_intro.js"></script>
 

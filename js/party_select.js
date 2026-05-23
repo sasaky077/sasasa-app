@@ -12,6 +12,9 @@
   // selected: { charaId, row, col }[]  最大3件
   let selected = [];
 
+  // ▼ 修正：現在選択中のステージ敵ID
+  let currentEnemyId = 'enemy_01';
+
   // ============================================================
   // モーダル構築
   // ============================================================
@@ -534,10 +537,7 @@
       const touch = e.touches ? e.touches[0] : e;
       const dx = Math.abs(touch.clientX - startX);
       const dy = Math.abs(touch.clientY - startY);
-      // 少しでも動いたらスクロールと判断してキャンセル
-      if (dx > 6 || dy > 6) {
-        cancel();
-      }
+      if (dx > 6 || dy > 6) { cancel(); }
     };
     const cancel = () => {
       card.classList.remove('pressing');
@@ -644,7 +644,6 @@
 
     // マス選択モードへ
     if (pendingCharaId === charaId) {
-      // 同じキャラをもう一度タップでキャンセル
       pendingCharaId = null;
     } else {
       pendingCharaId = charaId;
@@ -677,7 +676,7 @@
   };
 
   // ============================================================
-  // 戦闘開始
+  // 戦闘開始  ▼ 修正：currentEnemyId を使う
   // ============================================================
   window.confirmPartySelect = function () {
     if (selected.length < 3) return;
@@ -696,45 +695,54 @@
         accuracy: 250,
         row:      s.row,
         col:      s.col,
-        pos:      s.row, // battle.js互換（後で削除）
-        skills:   getDefaultSkills(),
+        pos:      s.row,
+        skills: master.skills.map(sk => ({
+          ...sk,
+          cd: 0,
+        })),
       };
     });
 
+    // ▼ 修正：ENEMIESからcurrentEnemyIdで引く
+    const enemyMaster = (typeof getEnemyById === 'function')
+      ? getEnemyById(currentEnemyId)
+      : null;
+
+    const enemy = enemyMaster
+      ? JSON.parse(JSON.stringify(enemyMaster))
+      : {
+          // enemies.jsが未ロードの場合のフォールバック（開発用）
+          id: 'enemy_01', name: '??????',
+          img: 'images/enemy_01.webp',
+          upImg: 'images/enemy_01_up.webp',
+          battleImg: 'images/enemy_01_battle.webp',
+          hp: 1800, hpMax: 2000,
+          atk: 375, def: 280, spd: 260,
+          phase: 1, status: [],
+          actionPattern: [
+            { turn: 1, action: '全体攻撃',   type: 'atk_all' },
+            { turn: 2, action: '単体攻撃',   type: 'atk_single' },
+            { turn: 3, action: '中縦列攻撃', type: 'atk_center' },
+            { turn: 4, action: '十字攻撃',   type: 'atk_cross' },
+          ],
+          actionIdx: 0,
+        };
+
     window._saveLastParty && window._saveLastParty(party);
     closePartySelect();
-    const enemy = {
-      id: 'enemy_01', name: '??????',
-      img: 'images/enemy_01.webp',
-      upImg: 'images/enemy_01_up.webp',
-      hp: 1800, hpMax: 2000,
-      atk: 375, def: 280, spd: 260,
-      phase: 1, status: [],
-      actionPattern: [
-        { turn: 1, action: '全体攻撃',   type: 'atk_all' },
-        { turn: 2, action: '単体攻撃',   type: 'atk_single' },
-        { turn: 3, action: '中縦列攻撃', type: 'atk_center' },
-        { turn: 4, action: '十字攻撃',   type: 'atk_cross' },
-      ],
-      actionIdx: 0,
-    };
+    console.log('enemy before intro:', enemy);
+    console.log('enemy battleImg:', enemy.battleImg);
+    console.log('enemy upImg:', enemy.upImg);
     setTimeout(() => startEnemyIntro(enemy, party), 400);
   };
 
-  function getDefaultSkills() {
-    return [
-      { id: 's1', name: '縛鎖',   cd: 0, cdMax: 1, hit: 85,  type: 'debuff', desc: '縛り付与' },
-      { id: 's2', name: '実体化', cd: 0, cdMax: 1, hit: 100, type: 'debuff', desc: '実体化付与' },
-      { id: 's3', name: '攻撃',   cd: 0, cdMax: 1, hit: 90,  type: 'attack', desc: '攻撃' },
-      { id: 's4', name: 'バフ',   cd: 0, cdMax: 1, hit: 100, type: 'buff',   desc: 'バフ' },
-      { id: 's5', name: '祓撃',   cd: 0, cdMax: 1, hit: 75,  type: 'attack', desc: '攻撃（祓い）' },
-    ];
-  }
+  // ============================================================
+  // 開閉  ▼ 修正：enemyId を引数で受け取る
+  // ============================================================
+  window.openPartySelect = function (enemyId) {
+    // 敵IDをセット（未指定時はデフォルト）
+    currentEnemyId = enemyId || 'enemy_01';
 
-  // ============================================================
-  // 開閉
-  // ============================================================
-  window.openPartySelect = function () {
     buildModal();
     selected = [];
     pendingCharaId = null;
