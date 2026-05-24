@@ -270,10 +270,7 @@
     // 少し間を置いてから編成モーダルへ
     setTimeout(() => {
       if (typeof openPartySelect === 'function') {
-        openPartySelect(stage.enemyIds || stage.enemyId, {
-          returnChapter: stage.chapter,
-          stageId: stage.id,
-        });
+        openPartySelect(stage.enemyId);
       }
     }, 350);
   }

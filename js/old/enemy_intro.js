@@ -198,12 +198,10 @@
 
   // startEnemyIntro(enemyData, partyData)
   // enemyData: { img, ... }  partyData: battle.jsに渡すparty配列
-  window.startEnemyIntro = function (enemyData, partyData, options) {
-    // 複数敵配列の場合は先頭を代表として演出に使う
-    const introEnemy = Array.isArray(enemyData) ? enemyData[0] : enemyData;
-    const img = introEnemy.img || introEnemy.upImg || 'images/enemy_01.webp';
+  window.startEnemyIntro = function (enemyData, partyData) {
+    const img = enemyData.img || 'images/enemy_01.webp';
     runIntro(img, () => {
-      startBattle(partyData, enemyData, options || {});
+      startBattle(partyData, enemyData);
     });
   };
 

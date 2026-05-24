@@ -12,9 +12,8 @@
   // selected: { charaId, row, col }[]  最大3件
   let selected = [];
 
-  // ▼ 修正：現在選択中のステージ敵ID（文字列 or 配列）
-  let currentEnemyRef = 'enemy_01';
-  let currentBattleOptions = {};
+  // ▼ 修正：現在選択中のステージ敵ID
+  let currentEnemyId = 'enemy_01';
 
   // ============================================================
   // モーダル構築
@@ -704,52 +703,45 @@
       };
     });
 
-    // ▼ 修正：単体 or 複数敵の両方に対応
-    let enemyData;
-    if (Array.isArray(currentEnemyRef)) {
-      enemyData = currentEnemyRef
-        .map(id => {
-          const master = typeof getEnemyById === 'function' ? getEnemyById(id) : null;
-          return master ? JSON.parse(JSON.stringify(master)) : null;
-        })
-        .filter(Boolean);
-    } else {
-      const enemyMaster = (typeof getEnemyById === 'function')
-        ? getEnemyById(currentEnemyRef)
-        : null;
-      enemyData = enemyMaster
-        ? JSON.parse(JSON.stringify(enemyMaster))
-        : {
-            // enemies.jsが未ロードの場合のフォールバック（開発用）
-            id: 'enemy_01', name: '??????',
-            img: 'images/enemy_01.webp',
-            upImg: 'images/enemy_01_up.webp',
-            battleImg: 'images/enemy_01_battle.webp',
-            hp: 1800, hpMax: 2000,
-            atk: 375, def: 280, spd: 260,
-            phase: 1, status: [],
-            actionPattern: [
-              { turn: 1, action: '全体攻撃',   type: 'atk_all' },
-              { turn: 2, action: '単体攻撃',   type: 'atk_single' },
-              { turn: 3, action: '中縦列攻撃', type: 'atk_center' },
-              { turn: 4, action: '十字攻撃',   type: 'atk_cross' },
-            ],
-            actionIdx: 0,
-          };
-    }
+    // ▼ 修正：ENEMIESからcurrentEnemyIdで引く
+    const enemyMaster = (typeof getEnemyById === 'function')
+      ? getEnemyById(currentEnemyId)
+      : null;
+
+    const enemy = enemyMaster
+      ? JSON.parse(JSON.stringify(enemyMaster))
+      : {
+          // enemies.jsが未ロードの場合のフォールバック（開発用）
+          id: 'enemy_01', name: '??????',
+          img: 'images/enemy_01.webp',
+          upImg: 'images/enemy_01_up.webp',
+          battleImg: 'images/enemy_01_battle.webp',
+          hp: 1800, hpMax: 2000,
+          atk: 375, def: 280, spd: 260,
+          phase: 1, status: [],
+          actionPattern: [
+            { turn: 1, action: '全体攻撃',   type: 'atk_all' },
+            { turn: 2, action: '単体攻撃',   type: 'atk_single' },
+            { turn: 3, action: '中縦列攻撃', type: 'atk_center' },
+            { turn: 4, action: '十字攻撃',   type: 'atk_cross' },
+          ],
+          actionIdx: 0,
+        };
 
     window._saveLastParty && window._saveLastParty(party);
     closePartySelect();
-    setTimeout(() => startEnemyIntro(enemyData, party, currentBattleOptions), 400);
+    console.log('enemy before intro:', enemy);
+    console.log('enemy battleImg:', enemy.battleImg);
+    console.log('enemy upImg:', enemy.upImg);
+    setTimeout(() => startEnemyIntro(enemy, party), 400);
   };
 
   // ============================================================
   // 開閉  ▼ 修正：enemyId を引数で受け取る
   // ============================================================
-  window.openPartySelect = function (enemyIdOrIds, options) {
-    // 敵ID（文字列 or 配列）をセット
-    currentEnemyRef = enemyIdOrIds || 'enemy_01';
-    currentBattleOptions = options || {};
+  window.openPartySelect = function (enemyId) {
+    // 敵IDをセット（未指定時はデフォルト）
+    currentEnemyId = enemyId || 'enemy_01';
 
     buildModal();
     selected = [];

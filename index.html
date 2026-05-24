@@ -139,6 +139,13 @@
       <!-- ストーリー -->
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
+          <!-- DEBUG：開発用テストステージ -->
+          <div class="ninmu-chapter-item ninmu-chapter-debug"
+               onclick="openStageSelect(0)">
+            <div class="ninmu-chapter-label">CHAPTER:00</div>
+            <div class="ninmu-chapter-title">DEBUG</div>
+          </div>
+
           <div class="ninmu-chapter-item"
                onclick="openStageSelect(1)">
             <div class="ninmu-chapter-label">CHAPTER:01</div>
@@ -3208,6 +3215,19 @@ function fadeOutOpeningBgm(){
   RANK UP　Rank <span id="rankup-toast-rank">-</span> になりました
 </div>
 <style>
+  /* DEBUGチャプターボタン */
+  .ninmu-chapter-debug {
+    border-color: rgba(100,180,255,.25) !important;
+    background: rgba(100,180,255,.04) !important;
+  }
+  .ninmu-chapter-debug .ninmu-chapter-label {
+    color: rgba(100,180,255,.6) !important;
+  }
+  .ninmu-chapter-debug .ninmu-chapter-title {
+    color: rgba(100,180,255,.5) !important;
+    font-size: 11px;
+    letter-spacing: 3px;
+  }
   #rankup-toast {
     position: fixed;
     top: calc(60px + env(safe-area-inset-top));
