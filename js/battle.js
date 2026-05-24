@@ -308,17 +308,18 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   function calcDamage(atk, def, enemy, multiplier) {
     const m = multiplier || 1.0;
-    // 敵のDEFダウンを反映
-    const mod = enemy._statusMod || {};
-    const effectiveDef = Math.max(0, Math.floor(def * (1 - (mod.def_down || 0))));
-    return Math.max(1, Math.floor(atk * m) - effectiveDef);
+    // def は _rebuildStatusMod() で補正済みの値を受け取る前提。
+    // ここで再度 def_down を掛けると二重適用になるため行わない。
+    return Math.max(1, Math.floor(atk * m) - def);
   }
   function calcEnemyDamage(enemy, target, action) {
-    // action.damageRate が指定されている場合は、対象の最大HP割合ダメージ（DEF無視）
+    // damageRate 指定時：対象の最大HP割合ダメージ（DEF無視）
+    // atk_down / def_up などのバフ・デバフは効かない仕様。
     if (action && action.damageRate != null) {
       return Math.max(1, Math.floor(target.hpMax * action.damageRate));
     }
-    // 後方互換：damageRate未指定なら従来式
+    // enemy.atk・target.def はいずれも _rebuildStatusMod() で補正済みの値。
+    // atk_down が enemy.atk に、def_up が target.def に反映されているため追加補正不要。
     return Math.max(1, enemy.atk - target.def);
   }
 
@@ -363,6 +364,11 @@ function getEnemyCellsFromAllyRange(chara, range) {
   }
   function hitCheck(baseHit, accuracy) {
     return Math.random() * 100 < Math.min(100, baseHit + Math.floor((accuracy - 250) / 10));
+  }
+  // hit_up / hit_down を命中率に反映する（_statusMod 参照）
+  function getEffectiveHit(baseHit, actor) {
+    const mod = actor._statusMod || {};
+    return baseHit + ((mod.hit_up || 0) * 100) - ((mod.hit_down || 0) * 100);
   }
   function calcTurnOrder(party, enemy) {
     const units = party.filter(c=>c.hp>0).map(c=>({...c, isEnemy:false}));
@@ -465,8 +471,26 @@ function getEnemyCellsFromAllyRange(chara, range) {
           <button class="bt-cancel-btn" onclick="cancelSkillSelect()">取消</button>
           <button class="bt-execute-btn" id="bt-execute-btn" onclick="executeSelectedSkill()">決定</button>
         </div>
-        <div class="bt-skill-hint" id="bt-skill-hint">長押しで詳細を確認</div>
+        <div class="bt-skill-hint" id="bt-skill-hint">スキルをタップして詳細を確認</div>
       </div>
+
+        <div class="bt-skill-detail-popup" id="bt-skill-detail-popup">
+      <div class="bt-skill-detail-head">
+        <div>
+          <div class="bt-skill-detail-name" id="bt-skill-detail-name">—</div>
+          <div class="bt-skill-detail-type" id="bt-skill-detail-type">—</div>
+        </div>
+        <button class="bt-skill-detail-x" onclick="cancelSkillSelect()">×</button>
+      </div>
+
+      <div class="bt-skill-detail-body" id="bt-skill-detail-body"></div>
+
+        <div class="bt-skill-detail-actions">
+          <button class="bt-skill-detail-cancel" onclick="cancelSkillSelect()">取消</button>
+          <button class="bt-skill-detail-ok" onclick="executeSelectedSkill()">確定</button>
+        </div>
+      </div>
+
 
       <!-- ログ -->
       <div class="bt-log-wrap">
@@ -842,13 +866,13 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
       /* カードめくり演出 */
       .bt-skill-card-wrap {
-        flex:1;
-        perspective:600px;
-        cursor:pointer;
-        -webkit-tap-highlight-color:transparent;
+        flex: 1;
+        perspective: 600px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
 
-        aspect-ratio:3/4;
-        min-width:0;
+        height: 74px;
+        min-width: 0;
       }
 
       .bt-skill-card-inner {
@@ -902,8 +926,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
       }
 
       #bt-move-card{
-        justify-content:flex-start;
-        padding-top:30px;
+        justify-content: center;
+        padding-top: 0;
       }
 
       /* スキルカード */
@@ -920,6 +944,12 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-skill-card-front,
       .bt-skill-card {
         box-sizing:border-box;
+      }
+
+      .bt-skill-card-front,
+      .bt-skill-card-back {
+        gap: 3px;
+        padding: 6px 4px;
       }
 
       /* ログ */
@@ -1251,6 +1281,109 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-result-btn:active { background:rgba(212,168,75,.25); }
       .bt-result-btn-sub { border-color:rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:rgba(232,228,220,.75); }
       .bt-result-btn-sub:active { background:rgba(255,255,255,.12); }
+      .bt-skill-detail-popup {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: max(18px, env(safe-area-inset-bottom, 18px));
+  z-index: 260000;
+  display: none;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  background: rgba(12, 13, 18, 0.86);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 8px 28px rgba(0,0,0,.85), 0 0 18px rgba(120,80,40,.18);
+  color: #e8e4dc;
+}
+
+.bt-skill-detail-popup.active {
+  display: block;
+}
+
+.bt-skill-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bt-skill-detail-name {
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: #f0e8d8;
+}
+
+.bt-skill-detail-type {
+  margin-top: 3px;
+  font-size: 10px;
+  color: rgba(232,228,220,.55);
+}
+
+.bt-skill-detail-x {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.04);
+  color: rgba(232,228,220,.75);
+}
+
+.bt-skill-detail-body {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.bt-skill-detail-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+}
+
+.bt-skill-detail-label {
+  color: rgba(232,228,220,.45);
+}
+
+.bt-skill-detail-value {
+  color: rgba(232,228,220,.88);
+}
+
+.bt-skill-detail-desc {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: rgba(232,228,220,.72);
+  font-size: 11px;
+}
+
+.bt-skill-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bt-skill-detail-cancel,
+.bt-skill-detail-ok {
+  height: 42px;
+  border-radius: 10px;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.bt-skill-detail-cancel {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: rgba(232,228,220,.7);
+}
+
+.bt-skill-detail-ok {
+  border: 1px solid rgba(210,170,80,.45);
+  background: linear-gradient(180deg, rgba(160,120,45,.34), rgba(70,45,20,.55));
+  color: #f4d98a;
+}
     `;
     document.body.appendChild(s);
   }
@@ -1416,12 +1549,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
       front.className = 'bt-skill-card-front' + (sk.cd>0?' on-cd':'');
       front.dataset.skillId = sk.id;
       front.innerHTML = `
-        ${sk.cd>0?'<span class="bt-skill-cd-badge">CD</span>':''}
-        <div class="bt-skill-name">${sk.name}</div>
-        <div class="bt-skill-subdesc">${TYPE_LABEL[sk.type]||'スキル'}</div>
-        <div class="bt-skill-hit">${sk.hit<100?'HIT '+sk.hit+'%':'確定命中'}</div>
-        <div class="bt-skill-range">射程：${sk.rangeLabel || sk.range || '指定なし'}</div>
-      `;
+      ${sk.cd>0?'<span class="bt-skill-cd-badge">CD</span>':''}
+      <div class="bt-skill-name">${sk.name}</div>
+      <div class="bt-skill-subdesc">${TYPE_LABEL[sk.type]||'スキル'}</div>
+    `;
       if (sk.cd === 0) setupSkillCard(front, chara, sk);
 
       inner.appendChild(back);
@@ -1446,9 +1577,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
     moveCard.id = 'bt-move-card';
     moveCard.style.cssText = 'width:100%; height:100%;';
     moveCard.innerHTML = `
-      <div class="bt-skill-name">移動</div>
-      <div class="bt-skill-subdesc">ポジション変更</div>
-      <div class="bt-skill-hit">確定</div>
+    <div class="bt-skill-name">移動</div>
+    <div class="bt-skill-subdesc">移動</div>
     `;
     moveCard.onclick = () => battleMoveMode();
     moveWrap.appendChild(moveCard);
@@ -1467,30 +1597,14 @@ function getEnemyCellsFromAllyRange(chara, range) {
   }
 
   function setupSkillCard(card, chara, sk) {
-    let pressTimer = null;
-    let pressing = false;
-    let startX = 0, startY = 0;
-    const start = e => {
-      const t = e.touches ? e.touches[0] : e;
-      startX = t.clientX; startY = t.clientY; pressing = true;
-      pressTimer = setTimeout(() => { pressing = false; card.classList.remove('pressing'); showSkillDetail(chara, sk); }, 500);
-    };
-    const move = e => {
-      if (!pressing) return;
-      const t = e.touches ? e.touches[0] : e;
-      if (Math.abs(t.clientX-startX)>6 || Math.abs(t.clientY-startY)>6) cancel();
-    };
-    const cancel = () => { card.classList.remove('pressing'); if(pressTimer){clearTimeout(pressTimer);pressTimer=null;} pressing=false; };
-    const end = () => { card.classList.remove('pressing'); if(pressTimer){clearTimeout(pressTimer);pressTimer=null; if(pressing){pressing=false;selectSkill(chara,sk);}} };
-    card.addEventListener('touchstart', start, {passive:true});
-    card.addEventListener('touchmove',  move,  {passive:true});
-    card.addEventListener('touchend',   end);
-    card.addEventListener('touchcancel',cancel);
-    card.addEventListener('mousedown',  start);
-    card.addEventListener('mousemove',  move);
-    card.addEventListener('mouseup',    end);
-    card.addEventListener('mouseleave', cancel);
-  }
+  card.onclick = function(e){
+    e.stopPropagation();
+
+    if (sk.cd > 0) return;
+
+    selectSkill(chara, sk);
+  };
+}
 
   function addLog(msg) {
     const log = document.getElementById('bt-log');
@@ -1574,11 +1688,244 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
   highlightSkillRange(chara, sk);
 
-  document.getElementById('bt-execute-selected').textContent =
-    '「' + sk.name + '」を予約しますか？';
-  document.getElementById('bt-execute-bar').classList.add('visible');
+  const bar = document.getElementById('bt-execute-bar');
+  if(bar) bar.classList.remove('visible');
+
+  showSkillDetailPopup(chara, sk);
 }
-  function highlightSkillRange(chara, sk) {
+
+function getSkillTypeLabel(sk){
+  if(!sk) return 'その他';
+
+  const range = sk.range || '';
+
+  // 自分・味方・自陣対象はその他
+  if(
+    range === 'self' ||
+    range.indexOf('ally') >= 0
+  ){
+    return 'その他';
+  }
+
+  // pierce系は直進型
+  if(range.indexOf('pierce') >= 0){
+    return '直進型';
+  }
+
+  // front / row / col / all は着弾型
+  if(
+    range.indexOf('front') >= 0 ||
+    range.indexOf('row') >= 0 ||
+    range.indexOf('col') >= 0 ||
+    range === 'all'
+  ){
+    return '着弾型';
+  }
+
+  return 'その他';
+}
+
+function showSkillDetailPopup(chara, sk){
+  const popup = document.getElementById('bt-skill-detail-popup');
+  const nameEl = document.getElementById('bt-skill-detail-name');
+  const typeEl = document.getElementById('bt-skill-detail-type');
+  const bodyEl = document.getElementById('bt-skill-detail-body');
+
+  if(!popup || !nameEl || !typeEl || !bodyEl) return;
+
+  nameEl.textContent = sk.name;
+  typeEl.textContent = 'スキル詳細';
+
+  bodyEl.innerHTML = `
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">スキルタイプ</div>
+      <div class="bt-skill-detail-value">${getSkillTypeLabel(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">貫通</div>
+      <div class="bt-skill-detail-value">${getPierceLabel(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">命中率</div>
+      <div class="bt-skill-detail-value">${sk.hit || 100}%</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">効果</div>
+      <div class="bt-skill-detail-value">${getEffectText(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">継続ターン</div>
+      <div class="bt-skill-detail-value">${getSkillDurationText(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-desc">${sk.desc || ''}</div>
+  `;
+
+  popup.classList.add('active');
+}
+
+function getSkillTypeLabel(sk){
+  if(!sk) return 'その他';
+
+  const range = sk.range || '';
+
+  if(sk.type === 'heal') return 'その他';
+  if(sk.type === 'buff') return 'その他';
+  if(sk.type === 'move') return 'その他';
+
+  if(range.indexOf('pierce') >= 0) return '直進型';
+  if(range === 'front1' || range.indexOf('front') >= 0) return '直進型';
+  if(range === 'all' || range.indexOf('row') >= 0 || range.indexOf('col') >= 0) return '着弾型';
+
+  return 'その他';
+}
+
+function getPierceLabel(sk){
+  return sk && sk.pierce ? '有' : '無';
+}
+
+function getDurationLabel(effect){
+  if(!effect) return '—';
+  if(effect.duration == null) return '永続';
+  return effect.duration + 'ターン';
+}
+
+function getEffectText(sk){
+  if(!sk) return '—';
+
+  const texts = [];
+
+  if(sk.multiplier && sk.multiplier > 0){
+    texts.push('敵に自身の攻撃力の' + sk.multiplier + '倍ダメージ');
+  }
+
+  const effects = sk.effects || [];
+
+  effects.forEach(function(e){
+    if(e.type === 'heal'){
+      if(e.rate != null){
+        texts.push('味方のHPを最大HPの' + Math.round(e.rate * 100) + '%回復');
+      } else if(e.amount != null){
+        texts.push('味方のHPを' + e.amount + '回復');
+      } else {
+        texts.push('味方のHPを回復');
+      }
+    }
+
+    if(e.type === 'atk_down') texts.push('敵の攻撃力を下げる');
+    if(e.type === 'def_down') texts.push('敵の守備力を下げる');
+    if(e.type === 'spd_down') texts.push('敵の素早さを下げる');
+
+    if(e.type === 'atk_up') texts.push('味方の攻撃力を上げる');
+    if(e.type === 'def_up') texts.push('味方の守備力を上げる');
+    if(e.type === 'spd_up') texts.push('味方の素早さを上げる');
+
+    if(e.type === 'jittai') texts.push('敵を実体化する');
+    if(e.type === 'stun') texts.push('敵をスタンさせる');
+
+    if(e.type === 'pull_1') texts.push('敵を1マス引き寄せる');
+    if(e.type === 'pull_2') texts.push('敵を2マス引き寄せる');
+    if(e.type === 'push_1') texts.push('敵を1マス押し出す');
+    if(e.type === 'push_2') texts.push('敵を2マス押し出す');
+
+    if(e.type === 'shift_right_1') texts.push('対象を右へ1マス移動');
+    if(e.type === 'shift_right_2') texts.push('対象を右へ2マス移動');
+    if(e.type === 'shift_left_1') texts.push('対象を左へ1マス移動');
+    if(e.type === 'shift_left_2') texts.push('対象を左へ2マス移動');
+  });
+
+  if(!texts.length && sk.type === 'move'){
+    texts.push('ポジションを変更する');
+  }
+
+  return texts.length ? texts.join(' / ') : '効果なし';
+}
+
+function getSkillDurationText(sk){
+  const effects = sk.effects || [];
+  if(!effects.length) return '—';
+
+  const durations = effects
+    .map(function(e){ return getDurationLabel(e); })
+    .filter(Boolean);
+
+  return durations.length ? durations.join(' / ') : '—';
+}
+
+
+
+function getPierceLabel(sk){
+  return sk && sk.pierce ? '有' : '無';
+}
+
+function getDurationLabel(effect){
+  if(!effect) return '—';
+  if(effect.duration == null) return '永続';
+  return effect.duration + 'ターン';
+}
+
+function getEffectText(sk){
+  if(!sk) return '—';
+
+  const texts = [];
+
+  if(sk.multiplier && sk.multiplier > 0){
+    texts.push('敵に自身の攻撃力の' + sk.multiplier + '倍ダメージ');
+  }
+
+  const effects = sk.effects || [];
+
+  effects.forEach(function(e){
+    if(e.type === 'heal'){
+      if(e.rate != null){
+        texts.push('味方のHPを最大HPの' + Math.round(e.rate * 100) + '%回復');
+      } else if(e.amount != null){
+        texts.push('味方のHPを' + e.amount + '回復');
+      } else {
+        texts.push('味方のHPを回復');
+      }
+    }
+
+    if(e.type === 'atk_down') texts.push('敵の攻撃力を下げる');
+    if(e.type === 'def_down') texts.push('敵の守備力を下げる');
+    if(e.type === 'spd_down') texts.push('敵の素早さを下げる');
+
+    if(e.type === 'atk_up') texts.push('味方の攻撃力を上げる');
+    if(e.type === 'def_up') texts.push('味方の守備力を上げる');
+    if(e.type === 'spd_up') texts.push('味方の素早さを上げる');
+
+    if(e.type === 'jittai') texts.push('敵を実体化する');
+    if(e.type === 'stun') texts.push('敵をスタンさせる');
+
+    if(e.type === 'pull_1') texts.push('敵を1マス引き寄せる');
+    if(e.type === 'pull_2') texts.push('敵を2マス引き寄せる');
+    if(e.type === 'push_1') texts.push('敵を1マス押し出す');
+    if(e.type === 'push_2') texts.push('敵を2マス押し出す');
+
+    if(e.type === 'shift_right_1') texts.push('対象を右へ1マス移動');
+    if(e.type === 'shift_right_2') texts.push('対象を右へ2マス移動');
+    if(e.type === 'shift_left_1') texts.push('対象を左へ1マス移動');
+    if(e.type === 'shift_left_2') texts.push('対象を左へ2マス移動');
+  });
+
+  if(!texts.length && sk.type === 'move'){
+    texts.push('ポジションを変更する');
+  }
+
+  return texts.length ? texts.join(' / ') : '効果なし';
+}
+
+function getSkillDurationText(sk){
+  const effects = sk.effects || [];
+  if(!effects.length) return '—';
+
+  const durations = effects
+    .map(function(e){ return getDurationLabel(e); })
+    .filter(Boolean);
+
+  return durations.length ? durations.join(' / ') : '—';
+}
+
+function highlightSkillRange(chara, sk) {
     const isAllyRange = ALLY_RANGES.has(sk.range);
 
     if (isAllyRange) {
@@ -1607,8 +1954,13 @@ function getEnemyCellsFromAllyRange(chara, range) {
   window.cancelSkillSelect = function () {
     selectedSkill = null;
     selectedChara = null;
+
     document.querySelectorAll('.bt-skill-card-front').forEach(el => el.classList.remove('selected'));
     clearSkillRangeHighlight();
+
+    const popup = document.getElementById('bt-skill-detail-popup');
+    if (popup) popup.classList.remove('active');
+
     const bar  = document.getElementById('bt-execute-bar');
     const hint = document.getElementById('bt-skill-hint');
     if (bar)  bar.classList.remove('visible');
@@ -2340,7 +2692,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
         setTimeout(() => { renderField(); onDone(); }, 1800);
         return;
       }
-      const hit = sureHit ? true : hitCheck(skill.hit, chara.accuracy);
+      const effectiveHit = getEffectiveHit(skill.hit, chara);
+      const hit = sureHit ? true : hitCheck(effectiveHit, chara.accuracy);
       if (!hit) {
         addLog('— 外れた');
         const cell = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);

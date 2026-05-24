@@ -65,7 +65,8 @@
 
 <audio id="bgm" src="audio/bgm_main2.mp3" loop preload="auto"></audio>
 <audio id="bgm-opening" src="audio/bgm_opening.mp3" loop preload="auto"></audio>
-<audio id="se-summon_slow" src="audio/bgm_summon.mp3" preload="auto" loop></audio>
+<audio id="se-gacha_crack" src="audio/gacha_crack.mp3" preload="auto"></audio>
+<audio id="se-gacha_break" src="audio/gacha_break.mp3" preload="auto"></audio>
 <audio id="se-ten_gacha_open" src="audio/ten_gacha_open.mp3" preload="auto"></audio>
 <audio id="se-fullscreen_impact" src="audio/gacha_fullscreen_after.mp3" preload="auto"></audio>
 <audio id="se-tap_ur" src="audio/gacha_tap_ur.mp3" preload="auto"></audio>
@@ -1559,25 +1560,48 @@ div.addEventListener('click', function(){
       if(el) el.classList.remove('active');
     });
     var shared = document.getElementById('bottom-nav-shared');
-    if(shared) shared.style.display = '';
+    if(shared && !isSummoning) shared.style.display = '';
     var target = BNAV_MAP[name];
     if(target){ var el = document.getElementById(target); if(el) el.classList.add('active'); }
   }
 
   // ナビの表示/非表示 (生成演出・結果表示中のみ隠す)
   function setNavVisible(visible){
-    var shared = document.getElementById('bottom-nav-shared');
-    if(shared) shared.style.display = visible ? '' : 'none';
+  var shared = document.getElementById('bottom-nav-shared');
+  if(!shared) return;
+
+  // ガチャ中は、true指定されてもナビを出さない
+  if(visible && isSummoning){
+    shared.style.display = 'none';
+    return;
   }
 
+  shared.style.display = visible ? '' : 'none';
+}
+
+function setTenResultFooterVisible(visible){
+  var footer = document.querySelector('#ten-result-modal .ten-result-footer');
+  if(!footer) return;
+
+  footer.style.display = visible ? '' : 'none';
+}
   function setHomeBtnVisible(visible){ /* 削除済み */ }
   function setReloadBtnVisible(visible){ /* 削除済み */ }
-  function goHome(){ showMainTab('main'); }
-
+  function goHome(){
+  if(isSummoning){
+    console.log('ガチャ中のためホーム遷移をブロック');
+    return;
+  }
+  showMainTab('main');
+}
   // ボトムナビゲーション切替
   function showMainTab(name){
-
+    if(isSummoning){
+      console.log('ガチャ中のため画面遷移をブロック:', name);
+      return;
+    }
     var guf = document.getElementById('global-user-frame');
+
     if(guf){
       guf.classList.remove('hidden');
       guf.style.display = '';
@@ -1996,7 +2020,7 @@ function handleSingleResult(data){
 
     var modal = document.getElementById('reveal-modal');
     modal.classList.add('active');
-    playLoopSE('summon_slow', 0.6);
+    // playLoopSE('summon_slow', 0.6);
   
    // modal.classList.add('rarity-' + rarity);
 
@@ -2008,10 +2032,12 @@ function handleSingleResult(data){
   // 表示
     setTimeout(function(){
     if(i > 0){
-      noiseEffect();
-      setTimeout(noiseEffect, 80);
+     if(i < imgs.length - 1){
+       playSE('gacha_crack', 0.9);
+      } else {
+       playSE('gacha_break', 1.0);
+      }
     }
-
     bg.style.backgroundImage = "url('" + imgUrl + "')";
     bg.style.transition = 'opacity ' + (R_FADE_IN/1000) + 's ease';
     bg.style.opacity = '1';
@@ -2053,7 +2079,7 @@ function handleSingleResult(data){
       revContent.classList.add('show');
       spawnParticles(r);
 
-      stopSE('summon_slow');
+      // stopSE('summon_slow');
 
     }, lastFadeOutEnd + R_BLACK);
   
@@ -2314,7 +2340,7 @@ function startTenInitialEffect(results){
   content.style.display = 'none';
 
   modal.classList.add('active');
-  playLoopSE('summon_slow', 0.6);
+  // playLoopSE('summon_slow', 0.6);
 
   modal.classList.remove(
     'rarity-normal',
@@ -2332,10 +2358,10 @@ function startTenInitialEffect(results){
     var showAt = (i === 0) ? t : t + R_BLACK;
 
     stepTimers.push(setTimeout(function(){
-      if(i > 0){
-        noiseEffect();
-        setTimeout(noiseEffect, 80);
-      }
+      // if(i > 0){
+      //  noiseEffect();
+      //  setTimeout(noiseEffect, 80);
+      //}
 
       bg.style.backgroundImage = "url('" + imgUrl + "')";
       bg.style.transition = 'opacity ' + (R_FADE_IN / 1000) + 's ease';
@@ -2361,7 +2387,7 @@ function startTenInitialEffect(results){
     // スキップ済みの場合はここでは何もしない
     if(pendingSkipResults === null) return;
 
-    stopSE('summon_slow');
+    //stopSE('summon_slow');
 
     modal.classList.remove('active');
     modal.classList.remove(
@@ -2394,9 +2420,12 @@ function startTenRevealSequence(results){
 
   buildTenResultCards(results);
 
+  // 10枚開封が終わるまで下部ボタンを押せないようにする
+  setTenResultFooterVisible(false);
+
   // カードグリッドをすぐ表示してから1枚ずつ開封していく
   document.getElementById('ten-result-modal').classList.add('active');
-  setNavVisible(true);
+  setNavVisible(false);
 
   setTimeout(openNextTenCard, 500);
 }
@@ -2515,7 +2544,10 @@ function showTenResult(results){
   });
 
   document.getElementById('ten-result-modal').classList.add('active');
-  setNavVisible(true);
+setNavVisible(false);
+
+// 10枚すべて開封後にだけ下部ボタンを出す
+setTenResultFooterVisible(true);
 
   }
 
