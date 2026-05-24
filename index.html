@@ -48,9 +48,10 @@
     </div>
   </div>
   <div class="hud-right">
-    <div class="hud-resource">
+    <div class="hud-resource hud-resource-gem">
       <img src="images/icon_gem.webp" class="hud-res-icon" onerror="this.style.visibility='hidden'">
       <span class="hud-res-val" id="user-gem">0</span>
+      <button class="hud-gem-plus-btn" onclick="openShopModalFromHud(event)">＋</button>
     </div>
     <div class="hud-resource">
       <img src="images/icon_coin.webp" class="hud-res-icon" onerror="this.style.visibility='hidden'">
@@ -1681,10 +1682,21 @@ function setTenResultFooterVisible(visible){
     '結晶を ' + cost + ' 個消費してガチャを回します。';
 
   if(userProfile.gem < cost){
+  isSummoning = false;
 
-    document.getElementById('paywall-modal').classList.add('active');
-    return;
+  var standby = document.getElementById('summon-standby');
+  if(standby){
+    standby.classList.remove('active');
+    standby.style.pointerEvents = '';
   }
+
+  setNavVisible(true);
+  setHomeBtnVisible(true);
+  setReloadBtnVisible(true);
+
+  document.getElementById('paywall-modal').classList.add('active');
+  return;
+}
 
 
   document.getElementById('summon-confirm-modal').classList.add('active');
@@ -1766,10 +1778,10 @@ if(count === 10){
   });
 
   // UR確定音（30%の確率）、70%は無音
-  var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
-  if(hasUR && Math.random() < 0.3){
-    playSE('tap_ur', 0.9);
-  }
+  // var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
+  // if(hasUR && Math.random() < 0.3){
+  //   playSE('tap_ur', 0.9);
+  // }
 
   startTenInitialEffect(results);
 } else {
@@ -1981,10 +1993,10 @@ function handleSingleResult(data){
 }
 
   // タイミング定数 (ms) ※ここだけ変えれば全体に反映
-  var R_BLACK = 600;
-  var R_FADE_IN = 700;
-  var R_HOLD = 1000;
-  var R_FADE_OUT = 900;
+var R_BLACK = 0;
+var R_FADE_IN = 500;
+var R_HOLD = 800;
+var R_FADE_OUT = 200;
 
   var R_STEP = R_BLACK + R_FADE_IN + R_HOLD + R_FADE_OUT;
 
@@ -2097,31 +2109,41 @@ function showRevealImageOnly(data){
 
 function showUrWarningThenReveal(data){
   var blackout = document.getElementById('fullscreen-blackout');
-  var alertScreen = document.getElementById('ur-alert-screen');
 
-  if(!blackout || !alertScreen){
-    console.error('UR警報用DOMが見つかりません');
-    showNormalReveal(data);
+  if(!blackout){
+    showRevealImageOnly(data);
     return;
   }
 
-  // blackoutをactiveクラスで表示（CSSは.activeでopacity:1）
-  blackout.classList.add('active');
-
-  playSE('ur_black', 1.0);
-
-  setTimeout(function(){
-    alertScreen.classList.add('active');
-  }, 400);
-
-  setTimeout(function(){
+  // WARNING画面は使わない
+  var alertScreen = document.getElementById('ur-alert-screen');
+  if(alertScreen){
     alertScreen.classList.remove('active');
+    alertScreen.classList.remove('fadeout');
+  }
 
-    setTimeout(function(){
-      blackout.classList.remove('active');
-      showNormalReveal(data);
-    }, 300);
-  }, 2400);
+  // 少し長めの暗転
+  blackout.classList.remove('active');
+  blackout.classList.remove('fade-in');
+
+  void blackout.offsetWidth;
+
+  blackout.classList.add('active');
+  blackout.classList.add('fade-in');
+
+  // 既存のUR警告音は使わないならコメントアウト
+  // playSE('ur_black', 0.8);
+
+  // 通常より長めに黒を維持してから表示
+  setTimeout(function(){
+    showRevealImageOnly(data);
+  }, 900);
+
+  // showRevealImageOnly開始後、少し遅れて黒を抜く
+  setTimeout(function(){
+    blackout.classList.remove('active');
+    blackout.classList.remove('fade-in');
+  }, 1500);
 }
 
 function showNormalReveal(data){
@@ -2181,6 +2203,32 @@ function showNormalReveal(data){
     }
   }, 1000);
 }
+
+function finalGachaFlash(callback){
+  var flash = document.getElementById('final-gacha-flash');
+
+  if(!flash){
+    flash = document.createElement('div');
+    flash.id = 'final-gacha-flash';
+    flash.className = 'final-gacha-flash';
+    document.body.appendChild(flash);
+  }
+
+  flash.classList.remove('active');
+  void flash.offsetWidth; // アニメーション再実行用
+  flash.classList.add('active');
+
+  // 白が最大になったあたりで結果へ進める
+  setTimeout(function(){
+    if(typeof callback === 'function') callback();
+  }, 520);
+
+  // 後片付け
+  setTimeout(function(){
+    flash.classList.remove('active');
+  }, 1000);
+}
+
   function spawnParticles(rarity){
     var container = document.getElementById('reveal-particles');
     container.innerHTML = '';
@@ -2352,34 +2400,42 @@ function startTenInitialEffect(results){
 
  // modal.classList.add('rarity-' + rarity);
 
-  stepTimers = []; // 前回分をリセット
+    stepTimers = []; // 前回分をリセット
+
   imgs.forEach(function(imgUrl, i){
     var t = i * R_STEP;
     var showAt = (i === 0) ? t : t + R_BLACK;
 
+    // 表示
     stepTimers.push(setTimeout(function(){
-      // if(i > 0){
-      //  noiseEffect();
-      //  setTimeout(noiseEffect, 80);
-      //}
+      if(i > 0){
+        if(i < imgs.length - 1){
+          playSE('gacha_crack', 0.9);
+        } else {
+          playSE('gacha_break', 1.0);
+        }
+      }
 
       bg.style.backgroundImage = "url('" + imgUrl + "')";
       bg.style.transition = 'opacity ' + (R_FADE_IN / 1000) + 's ease';
       bg.style.opacity = '1';
     }, showAt));
 
-    stepTimers.push(setTimeout(function(){
-      bg.style.transition = 'opacity ' + (R_FADE_OUT / 1000) + 's ease';
-      bg.style.opacity = '0';
-    }, showAt + R_FADE_IN + R_HOLD));
+    // 最後の画像だけはフェードアウトさせない
+    if(i < imgs.length - 1){
+      stepTimers.push(setTimeout(function(){
+        bg.style.transition = 'opacity ' + (R_FADE_OUT / 1000) + 's ease';
+        bg.style.opacity = '0';
+      }, showAt + R_FADE_IN + R_HOLD));
+    }
   });
 
-  var lastFadeOutEnd =
+  // 最後の画像が表示されたまま白フラッシュへ
+  var finalFlashAt =
     ((imgs.length - 1) * R_STEP) +
     R_BLACK +
     R_FADE_IN +
-    R_HOLD +
-    R_FADE_OUT;
+    R_HOLD;
 
   tenInitialEffectTimer = setTimeout(function(){
     tenInitialEffectTimer = null;
@@ -2387,30 +2443,33 @@ function startTenInitialEffect(results){
     // スキップ済みの場合はここでは何もしない
     if(pendingSkipResults === null) return;
 
-    //stopSE('summon_slow');
+    setSkipBtnVisible(false);
+    pendingSkipResults = null;
 
-    modal.classList.remove('active');
-    modal.classList.remove(
-      'rarity-normal',
-      'rarity-bronze',
-      'rarity-silver',
-      'rarity-gold',
-      'rarity-rainbow'
-    );
+    finalGachaFlash(function(){
 
-    bg.style.transition = 'none';
-    bg.style.backgroundImage = '';
-    bg.style.opacity = '0';
-    overlay.style.background = 'rgba(0,0,0,0)';
-    particles.innerHTML = '';
-    content.style.display = '';
+      modal.classList.remove('active');
+      modal.classList.remove(
+        'rarity-normal',
+        'rarity-bronze',
+        'rarity-silver',
+        'rarity-gold',
+        'rarity-rainbow'
+      );
 
-    if(guf) guf.style.display = 'block';
+      bg.style.transition = 'none';
+      bg.style.backgroundImage = '';
+      bg.style.opacity = '0';
+      overlay.style.background = 'rgba(0,0,0,0)';
+      particles.innerHTML = '';
+      content.style.display = '';
 
-    setSkipBtnVisible(false);  // 演出終了でスキップボタン非表示
-    pendingSkipResults = null; // スキップ不要になったのでクリア
-    startTenRevealSequence(results);
-  }, lastFadeOutEnd + 500);
+      if(guf) guf.style.display = 'block';
+
+      startTenRevealSequence(results);
+    });
+
+  }, finalFlashAt);
 }
 
 function startTenRevealSequence(results){
@@ -2674,6 +2733,17 @@ setTenResultFooterVisible(true);
     document.getElementById('shop-current-gem').textContent = userProfile.gem;
     closeModal('paywall-modal');
     document.getElementById('shop-modal').classList.add('active');
+  }
+
+  function openShopModalFromHud(event){
+    if(event){
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    if(typeof isSummoning !== 'undefined' && isSummoning){
+      return;
+    }
+    openShopModal();
   }
 
   function confirmPurchase(index) {
@@ -3247,6 +3317,43 @@ function fadeOutOpeningBgm(){
   RANK UP　Rank <span id="rankup-toast-rank">-</span> になりました
 </div>
 <style>
+  /* HUD 課金石＋ボタン */
+  .hud-resource-gem {
+    padding-right: 4px;
+  }
+
+  .hud-gem-plus-btn {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.12);
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 16px;
+    font-weight: 700;
+    font-family: "Cinzel", "Noto Serif JP", serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-left: 2px;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 0 8px rgba(255,255,255,0.12);
+  }
+
+  .hud-gem-plus-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.22);
+  }
+
+  .hud-right {
+    pointer-events: auto;
+  }
+
   /* DEBUGチャプターボタン */
   .ninmu-chapter-debug {
     border-color: rgba(100,180,255,.25) !important;

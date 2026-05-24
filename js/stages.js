@@ -119,7 +119,11 @@ const STAGES = [
     no: 1,
     type: 'boss',
     name: '白糸の間',
-    enemyId: 'enemy_01',
+    enemyIds: [
+      'enemy_01',
+      'enemy_mask',
+      'enemy_mask',
+    ],
     enemyName: '??????',
     difficulty: 'boss',
     reward: { exp: 375, coin: 150 },
@@ -173,4 +177,14 @@ function getStageById(id) {
 // チャプターでステージ一覧を取得
 function getStagesByChapter(chapter) {
   return STAGES.filter(s => s.chapter === chapter);
+}
+
+// ステージの敵リストを取得（enemyIds配列 or 単体enemyId に対応）
+function getEnemiesForStage(stage) {
+  if (!stage) return [];
+  const ids = stage.enemyIds || (stage.enemyId ? [stage.enemyId] : []);
+  return ids.map(id => {
+    const e = (typeof getEnemyById === 'function') ? getEnemyById(id) : null;
+    return e ? JSON.parse(JSON.stringify(e)) : null;
+  }).filter(Boolean);
 }

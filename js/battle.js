@@ -1401,12 +1401,28 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   function renderHeader() {
     const e = bs.enemy;
+    // 複数敵の場合は全体HPの合計を表示
+    const enemies = bs.enemies || [e];
+    const totalHp = enemies.reduce((s, en) => s + Math.max(0, en.hp), 0);
+    const totalHpMax = enemies.reduce((s, en) => s + (en.hpMax || 0), 0);
     const fill = document.getElementById('bt-enemy-hp-fill');
-    if (fill) fill.style.width = (e.hp / e.hpMax * 100) + '%';
+    if (fill) fill.style.width = (totalHpMax > 0 ? totalHp / totalHpMax * 100 : 0) + '%';
     const txt = document.getElementById('bt-enemy-hp-txt');
-    if (txt) txt.textContent = e.hp + ' / ' + e.hpMax;
+    if (txt) {
+      if (enemies.length > 1) {
+        txt.textContent = '全 ' + totalHp + ' / ' + totalHpMax;
+      } else {
+        txt.textContent = e.hp + ' / ' + e.hpMax;
+      }
+    }
     const next = document.getElementById('bt-next-val');
-    if (next) next.textContent = peekNextAction().action;
+    if (next) {
+      const nextEnemyUnit = bs.turnOrder.find(u => u.isEnemy && u.hp > 0);
+      const nextEnemy = nextEnemyUnit
+        ? (bs.enemies || []).find(en => en.id === nextEnemyUnit.id) || bs.enemy
+        : bs.enemy;
+      next.textContent = peekNextAction(nextEnemy).action || '—';
+    }
     const row = document.getElementById('bt-enemy-status-row');
     if (row) {
       row.innerHTML = '';
@@ -1414,7 +1430,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
         const b = document.createElement('span');
         const cls = STATUS_BADGE_CLASS[st.type] || 'bt-status-other';
         b.className = 'bt-status-badge ' + cls;
-        b.textContent = STATUS_LABEL[st.type] + (st.duration > 0 ? ' ' + st.duration : '');
+        b.textContent = (STATUS_LABEL[st.type] || st.type) + (st.duration > 0 ? ' ' + st.duration : '');
         row.appendChild(b);
       });
     }
@@ -1443,13 +1459,17 @@ function getEnemyCellsFromAllyRange(chara, range) {
     const enemies = bs.enemies || (bs.enemy ? [bs.enemy] : []);
     const aliveEnemies = enemies.filter(e => e && e.hp > 0);
 
-    // 代表敵（bs.enemy）の実体化で次行動範囲ハイライトを制御
-    const isVisible = (bs.enemy.statusList||[]).some(s => s.type === 'jittai');
-    let jittaiDangerCells = null;
-    if (isVisible) {
-      const nextAct = peekNextAction();
-      jittaiDangerCells = _getCells({ row: bs.enemy.row, col: bs.enemy.col }, nextAct.range || 'random1');
-    }
+    // 各敵の実体化状態と次行動範囲を個別に取得してjittaiDangerCellsを構築
+    const jittaiDangerCells = new Set();
+    (bs.enemies || [bs.enemy]).forEach(en => {
+      if (!en || en.hp <= 0) return;
+      if ((en.statusList || []).some(s => s.type === 'jittai')) {
+        const nextAct = peekNextAction(en);
+        const cells = _getCells({ row: en.row, col: en.col }, nextAct.range || 'random1');
+        cells.forEach(c => jittaiDangerCells.add(c));
+      }
+    });
+    const isVisible = jittaiDangerCells.size > 0;
 
     ROWS.forEach(row => {
       COLS.forEach(col => {
@@ -1485,10 +1505,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
         // セルのクラス設定
         if (hasVisibleEnemy) {
-          const isDanger = isVisible && (jittaiDangerCells === null || (jittaiDangerCells && jittaiDangerCells.has(key)));
+          const isDanger = isVisible && jittaiDangerCells.has(key);
           cell.className = 'bt-grid-cell' + (isDanger ? ' danger' : '');
-        } else if (isVisible && jittaiDangerCells) {
-          const isDanger = jittaiDangerCells === null || jittaiDangerCells.has(key);
+        } else if (isVisible) {
+          const isDanger = jittaiDangerCells.has(key);
           cell.className = 'bt-grid-cell' + (isDanger ? ' danger' : '');
         } else {
           cell.className = 'bt-grid-cell' + (highlightCells && highlightCells.has(key) ? ' highlight' : '');
@@ -2088,15 +2108,39 @@ function highlightSkillRange(chara, sk) {
         if (timing === 'after_each_action' && bs.enemy && bs.enemy.hp > 0) {
           const enemyUnit = bs.turnOrder.find(u => u.isEnemy);
           if (enemyUnit) {
-            _execStepEnemy(enemyUnit, () => executeNext(idx + 1));
+            _execStepEnemy(enemyUnit, () => {
+              _applyReactiveDamage(chara, () => executeNext(idx + 1));
+            });
           } else {
-            executeNext(idx + 1);
+            _applyReactiveDamage(chara, () => executeNext(idx + 1));
           }
         } else {
-          executeNext(idx + 1);
+          // HP30%以下リアクティブダメージ（enemy_01から）
+          _applyReactiveDamage(chara, () => executeNext(idx + 1));
         }
       });
     }
+  }
+
+  // ============================================================
+  // リアクティブダメージ（HP30%以下の enemy_01 からプレイヤーへ）
+  // ============================================================
+  function _applyReactiveDamage(chara, onNext) {
+    if (!chara || chara.hp <= 0) { onNext(); return; }
+    // _reactiveActive が有効な enemy_01 を探す
+    const boss = (bs.enemies || []).find(e => (e._origId || e.id) === 'enemy_01' && e._reactiveActive && e.hp > 0);
+    if (!boss) { onNext(); return; }
+    const dmg = Math.max(1, Math.floor(chara.hpMax * 0.10));
+    chara.hp = Math.max(0, chara.hp - dmg);
+    const cell = document.getElementById('bt-ag-' + chara.row + '-' + chara.col);
+    showResultPop(cell, '反応 -' + dmg, 'dmg');
+    addLog('【反応ダメージ】' + chara.name + ' に ' + dmg + ' ダメージ');
+    renderHeader();
+    renderField();
+    setTimeout(() => {
+      checkPartyDead();
+      onNext();
+    }, 600);
   }
 
   // ⑤→⑥→⑦ プレイヤー版
@@ -2123,7 +2167,9 @@ function highlightSkillRange(chara, sk) {
 
   // ⑤→⑥→⑦ 敵版
   function _execStepEnemy(unit, onNext) {
-    const act = peekNextAction();
+    // unit が bs.enemies の参照に対応する実体を取得（turnOrder は shallow copy のため）
+    const liveEnemy = (bs.enemies || []).find(e => e.id === unit.id) || unit;
+    const act = peekNextAction(liveEnemy);
 
     // ⑤ 敵画像表示
     showActingChara(unit);
@@ -2740,42 +2786,190 @@ function highlightSkillRange(chara, sk) {
   }
 
   // ============================================================
-  // 敵行動実行
+  // 敵行動選択：ランダム（直前と同じ行動を避ける）
   // ============================================================
-  function doEnemyAction(onDone) {
-    // ── スタン中は行動スキップ ────────────────────────────────
-    if (hasStatus(bs.enemy, 'stun')) {
-      addLog('怪異：スタン — 行動できない');
-      const cell = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
+  function pickEnemyAction(pool, lastId) {
+    if (!pool || !pool.length) return null;
+    let candidates = pool.filter(a => a.id !== lastId);
+    if (!candidates.length) candidates = pool; // 候補が1つしかなければ同じ行動も許可
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  // ============================================================
+  // enemy_01 HP帯別行動選択
+  // ============================================================
+  function selectEnemy01Action(enemy) {
+    const hpRate = enemy.hp / enemy.hpMax;
+    enemy._tutorialTurn = (enemy._tutorialTurn || 0) + 1;
+
+    // HP30%以下フェーズ3
+    if (hpRate <= 0.30) {
+      const act = pickEnemyAction(enemy._phase3Pool, enemy._lastActionId);
+      enemy._lastActionId = act ? act.id : null;
+      return act || enemy._phase3Pool[0];
+    }
+    // HP50%以下フェーズ2
+    if (hpRate <= 0.50) {
+      const act = pickEnemyAction(enemy._phase2Pool, enemy._lastActionId);
+      enemy._lastActionId = act ? act.id : null;
+      return act || enemy._phase2Pool[0];
+    }
+    // HP51%以上フェーズ1（初回2ターン固定）
+    if (enemy._tutorialTurn <= 2 && enemy._phase1Fixed) {
+      const act = enemy._phase1Fixed[enemy._tutorialTurn - 1];
+      enemy._lastActionId = act ? act.id : null;
+      return act || enemy._phase1Pool[0];
+    }
+    // ランダム
+    const act = pickEnemyAction(enemy._phase1Pool, enemy._lastActionId);
+    enemy._lastActionId = act ? act.id : null;
+    return act || enemy._phase1Pool[0];
+  }
+
+  // ============================================================
+  // enemy_mask 行動選択
+  // ============================================================
+  function selectMaskAction(enemy) {
+    const pool = enemy._maskActionPool;
+    if (!pool) return enemy.actionPattern[0];
+    const act = pickEnemyAction(pool, enemy._lastActionId);
+    enemy._lastActionId = act ? act.id : null;
+    return act || pool[0];
+  }
+
+  // ============================================================
+  // 敵行動実行（単体）
+  // ============================================================
+  function doSingleEnemyAction(enemy, onDone) {
+    if (hasStatus(enemy, 'stun')) {
+      addLog(enemy.name + '：スタン — 行動できない');
+      const cell = document.getElementById('bt-eg-' + enemy.row + '-' + enemy.col);
       showResultPop(cell, 'STUN', 'miss');
-      consumeAction(); // 行動インデックスは進める
-      setTimeout(onDone, 800);
+      setTimeout(() => { moveEnemy(enemy); onDone(); }, 800);
       return;
     }
 
-    const act = consumeAction();
-    addLog('怪異：' + act.action);
+    // HP30%以下フェーズ3トリガーチェック（enemy_01のみ）
+    const baseId = enemy._origId || enemy.id;
+    if (baseId === 'enemy_01' && !enemy._phase3Triggered && enemy.hp / enemy.hpMax <= 0.30) {
+      enemy._phase3Triggered = true;
+      enemy._reactiveActive = true;
+      // 実体化を解除
+      removeStatus(enemy, 'jittai');
+      // 仲間maskの実体化も解除
+      (bs.enemies || []).forEach(e => {
+        if (e !== enemy && e.hp > 0) removeStatus(e, 'jittai');
+      });
+      addLog('【白糸の怪異】HP30%以下！実体化解除・反応ダメージ開始！');
+      renderHeader();
+      renderField();
+    }
 
-    if (bs.party.filter(c=>c.hp>0).length === 0) { onBattleEnd(false); return; }
+    // 行動選択
+    let act;
+    if (baseId === 'enemy_01' && enemy._phase1Pool) {
+      act = selectEnemy01Action(enemy);
+    } else if ((baseId === 'enemy_mask') && enemy._maskActionPool) {
+      act = selectMaskAction(enemy);
+    } else {
+      // 通常の行動パターン（既存互換）
+      act = enemy.actionPattern[enemy.actionIdx % enemy.actionPattern.length];
+      enemy.actionIdx++;
+    }
 
-    // ── 回復行動 ─────────────────────────────────────────────
-    if (act.type === 'heal') {
-      doEnemyHealAction(bs.enemy, act);
-      moveEnemy();
-      setTimeout(onDone, 1200);
+    // actionPatternのダミーを差し替え（peekNextAction用）
+    enemy.actionPattern[0] = { ...act, turn: 1 };
+    enemy.actionIdx = 1;
+
+    addLog(enemy.name + '：' + act.action);
+
+    if (bs.party.filter(c => c.hp > 0).length === 0) { onBattleEnd(false); return; }
+
+    // ── 行動タイプ別処理 ─────────────────────────────────────
+    const type = act.type;
+
+    // 回復系
+    if (type === 'heal' || type === 'heal_team' || type === 'heal_boss') {
+      doEnemySpecialHeal(enemy, act);
+      setTimeout(() => { moveEnemy(enemy); onDone(); }, 1200);
       return;
     }
 
-    // range優先、未指定ならtypeから補完
-    const rangeId = act.range || getRangeFromEnemyActionType(act.type);
+    // 状態異常回復（cleanse）
+    if (type === 'cleanse_self') {
+      const debuffs = ['atk_down', 'def_down', 'spd_down', 'jittai'];
+      debuffs.forEach(d => removeStatus(enemy, d));
+      const cell = document.getElementById('bt-eg-' + enemy.row + '-' + enemy.col);
+      showResultPop(cell, '状態回復', 'buff');
+      addLog('→ ' + enemy.name + ' がデバフ・実体化を解除した');
+      renderHeader();
+      renderField();
+      setTimeout(() => { moveEnemy(enemy); onDone(); }, 1000);
+      return;
+    }
+
+    // move_lock（行動ロック）
+    if (type === 'move_lock') {
+      const alive = bs.party.filter(u => u.hp > 0);
+      if (alive.length) {
+        const t = alive[Math.floor(Math.random() * alive.length)];
+        addStatus(t, { type: 'move_lock', duration: act.duration || 2 });
+        const cell = document.getElementById('bt-ag-' + t.row + '-' + t.col);
+        showResultPop(cell, '行動封じ', 'debuff');
+        addLog('→ ' + t.name + ' を ' + (act.duration || 2) + 'ターン行動封じ');
+        renderField();
+      }
+      setTimeout(() => { moveEnemy(enemy); onDone(); }, 1000);
+      return;
+    }
+
+    // push_front3（前3列のキャラをfarへ押し出し）
+    if (type === 'push_front3') {
+      const targets = bs.party.filter(u => u.hp > 0 && u.row !== 'far');
+      if (targets.length) {
+        targets.forEach(t => {
+          const dmg = Math.max(1, Math.floor(t.hpMax * (act.damageRate || 0.07)));
+          t.hp = Math.max(0, t.hp - dmg);
+          const prevRow = t.row;
+          t.row = 'far';
+          const cell = document.getElementById('bt-ag-' + t.row + '-' + t.col);
+          showResultPop(cell, '押出 -' + dmg, 'dmg');
+          addLog('→ ' + t.name + ' を最後列へ押し出し、' + dmg + 'ダメージ');
+        });
+        renderField();
+        checkPartyDead();
+      } else {
+        addLog('→ 押し出し対象なし');
+      }
+      setTimeout(() => { moveEnemy(enemy); onDone(); }, 1200);
+      return;
+    }
+
+    // debuff_def / debuff_atk
+    if (type === 'debuff_def' || type === 'debuff_atk') {
+      const alive = bs.party.filter(u => u.hp > 0);
+      if (alive.length) {
+        const t = alive[Math.floor(Math.random() * alive.length)];
+        const statusType = type === 'debuff_def' ? 'def_down' : 'atk_down';
+        addStatus(t, { type: statusType, value: act.value || 0.20, duration: act.duration || 2 });
+        const cell = document.getElementById('bt-ag-' + t.row + '-' + t.col);
+        showResultPop(cell, type === 'debuff_def' ? 'DEF↓' : 'ATK↓', 'debuff');
+        addLog('→ ' + t.name + ' に' + (type === 'debuff_def' ? 'DEF' : 'ATK') + 'ダウン (' + (act.duration || 2) + 'T)');
+        renderField();
+      }
+      setTimeout(() => { moveEnemy(enemy); onDone(); }, 1000);
+      return;
+    }
+
+    // 通常攻撃（range指定）
+    const rangeId = act.range || getRangeFromEnemyActionType(type);
     let targets;
     if (rangeId === 'random1') {
-      // ランダム1体：生存中の味方からランダムに1体選ぶ
       const alive = bs.party.filter(u => u.hp > 0);
       targets = alive.length ? [alive[Math.floor(Math.random() * alive.length)]] : [];
     } else {
       targets = getTargetsByPierce(
-        { row: bs.enemy.row, col: bs.enemy.col },
+        { row: enemy.row, col: enemy.col },
         rangeId,
         bs.party,
         { pierce: act.pierce === true, side: 'ally' }
@@ -2783,31 +2977,97 @@ function highlightSkillRange(chara, sk) {
     }
 
     if (targets.length > 0) {
-      // 複数ターゲットは200ms刻みで順番にダメージ
       let delay = 0;
       targets.forEach(target => {
         setTimeout(() => {
-          const dmg = calcEnemyDamage(bs.enemy, target, act);
+          const dmg = calcEnemyDamage(enemy, target, act);
           target.hp = Math.max(0, target.hp - dmg);
           renderField();
-          const cell = document.getElementById('bt-ag-'+target.row+'-'+target.col);
+          const cell = document.getElementById('bt-ag-' + target.row + '-' + target.col);
           showResultPop(cell, '-' + dmg, 'dmg');
+          addLog('→ ' + target.name + ' に ' + dmg + ' ダメージ');
         }, delay);
         delay += 300;
       });
       setTimeout(() => {
         checkPartyDead();
         renderHeader();
-        moveEnemy();
+        moveEnemy(enemy);
         onDone();
       }, delay + 400);
     } else {
-      // 攻撃範囲に誰もいない
-      const anycell = document.getElementById('bt-ag-'+bs.party.filter(c=>c.hp>0)[0]?.row+'-'+bs.party.filter(c=>c.hp>0)[0]?.col);
-      showResultPop(anycell, 'MISS', 'miss');
-      moveEnemy();
+      addLog('— 範囲内に標的なし');
+      moveEnemy(enemy);
       setTimeout(onDone, 600);
     }
+  }
+
+  // ============================================================
+  // enemy_01/mask 特殊回復処理
+  // ============================================================
+  function doEnemySpecialHeal(enemy, act) {
+    const type = act.type;
+    const rate = act.healRate || 0.20;
+
+    if (type === 'heal_boss') {
+      // enemy_01を回復（なければ味方単体回復）
+      const boss = bs.enemies.find(e => (e._origId || e.id) === 'enemy_01' && e.hp > 0);
+      const target = boss || bs.enemies.find(e => e.hp > 0);
+      if (target) {
+        const amount = Math.max(1, Math.floor(target.hpMax * rate));
+        const healed = healUnit(target, amount);
+        if (healed > 0) {
+          const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
+          showResultPop(cell, '+' + healed, 'heal');
+          addLog('→ ' + target.name + ' を ' + healed + ' 回復');
+        }
+      }
+      renderHeader();
+      renderField();
+      return;
+    }
+
+    if (type === 'heal_team') {
+      // 自身と生存中の仲間全員を回復
+      const aliveEnemies = bs.enemies.filter(e => e.hp > 0);
+      aliveEnemies.forEach(e => {
+        const amount = Math.max(1, Math.floor(e.hpMax * rate));
+        const healed = healUnit(e, amount);
+        if (healed > 0) {
+          const cell = document.getElementById('bt-eg-' + e.row + '-' + e.col);
+          showResultPop(cell, '+' + healed, 'heal');
+        }
+      });
+      addLog('→ 仲間全員を ' + Math.round(rate * 100) + '% 回復');
+      renderHeader();
+      renderField();
+      return;
+    }
+
+    // heal (enemy_self / enemy_all 既存パターン)
+    doEnemyHealAction(enemy, act);
+  }
+
+  // ============================================================
+  // 敵行動実行（メイン：複数敵を順番に処理）
+  // ============================================================
+  function doEnemyAction(onDone) {
+    const aliveEnemies = (bs.enemies || []).filter(e => e && e.hp > 0);
+    if (!aliveEnemies.length) { onDone(); return; }
+
+    // SPD順でソート（速い敵が先に行動）
+    const ordered = aliveEnemies.slice().sort((a, b) => (b.spd || 0) - (a.spd || 0));
+
+    let idx = 0;
+    function next() {
+      if (idx >= ordered.length) { onDone(); return; }
+      const e = ordered[idx++];
+      if (!e || e.hp <= 0) { next(); return; }
+      doSingleEnemyAction(e, () => {
+        setTimeout(next, 600);
+      });
+    }
+    next();
   }
 
   // ============================================================
@@ -2847,15 +3107,33 @@ function highlightSkillRange(chara, sk) {
   }
 
   // ============================================================
-  // 怪異移動
+  // 怪異移動（複数敵対応・衝突回避）
   // ============================================================
-  function moveEnemy() {
-    if (bs.enemy.canMove === false) return; // 移動禁止フラグ
-    if (Math.random() < 0.25) return;
+  function moveEnemy(enemy) {
+    const target = enemy || bs.enemy;
+    if (!target) return;
+    if (target.canMove === false || target.fixedPosition) return;
+    // 移動確率35%
+    if (Math.random() > 0.35) return;
     const _R = ['near','mid','far'];
     const _C = ['left','center','right'];
-    bs.enemy.row = _R[Math.floor(Math.random()*3)];
-    bs.enemy.col = _C[Math.floor(Math.random()*3)];
+    // 他の生存敵が占有しているマスを除外
+    const occupied = new Set(
+      (bs.enemies || [])
+        .filter(e => e && e.hp > 0 && e !== target)
+        .map(e => e.row + '-' + e.col)
+    );
+    const available = [];
+    _R.forEach(r => _C.forEach(c => {
+      const key = r + '-' + c;
+      if (!occupied.has(key) && !(target.row === r && target.col === c)) {
+        available.push({ row: r, col: c });
+      }
+    }));
+    if (!available.length) return;
+    const next = available[Math.floor(Math.random() * available.length)];
+    target.row = next.row;
+    target.col = next.col;
     renderField();
   }
 
@@ -2871,8 +3149,8 @@ function highlightSkillRange(chara, sk) {
     // CD消化
     bs.party.forEach(c => c.skills.forEach(sk => { if (sk.cd > 0) sk.cd--; }));
 
-    // ── statusList持続ターン消化 ──────────────────────────────
-    tickStatusList(bs.enemy);
+    // ── statusList持続ターン消化（全敵） ──────────────────────
+    (bs.enemies || [bs.enemy]).forEach(e => { if (e) tickStatusList(e); });
     bs.party.forEach(c => tickStatusList(c));
 
     // 行動順をSPDバフ変動後に再計算
@@ -3009,13 +3287,19 @@ function highlightSkillRange(chara, sk) {
     setTimeout(() => {
       overlay.classList.remove('active');
       // TURNオーバーレイ後 → 攻撃予告 → onDone
-      setTimeout(() => showEnemyWarning(onDone), 300);
+      // 複数敵のうち最初に行動する敵を予告に使う
+      const nextEnemyUnit = bs.turnOrder.find(u => u.isEnemy && u.hp > 0);
+      const nextEnemy = nextEnemyUnit
+        ? (bs.enemies || []).find(e => e.id === nextEnemyUnit.id) || bs.enemy
+        : bs.enemy;
+      setTimeout(() => showEnemyWarning(onDone, nextEnemy), 300);
     }, 1800);
   }
 
   // 敵攻撃予告オーバーレイ
-  function showEnemyWarning(onDone) {
-    const act = peekNextAction();
+  function showEnemyWarning(onDone, enemy) {
+    const e = enemy || bs.enemy;
+    const act = peekNextAction(e);
     const isRandom = (act.range || 'random1') === 'random1';
 
     let el = document.getElementById('bt-enemy-warning');
@@ -3045,7 +3329,7 @@ function highlightSkillRange(chara, sk) {
     let gridHTML = '';
     if (!isRandom && !isHeal) {
       // BattleRange で敵位置基準の攻撃範囲を取得
-      const cells = _getCells({ row: bs.enemy.row, col: bs.enemy.col }, act.range);
+      const cells = _getCells({ row: e.row, col: e.col }, act.range);
       const ROWS_ = ['near','mid','far'];
       const COLS_ = ['left','center','right'];
       gridHTML = '<div class="bt-ew-grid">';
@@ -3088,9 +3372,11 @@ function highlightSkillRange(chara, sk) {
   // ============================================================
   // 怪異行動パターン
   // ============================================================
-  function peekNextAction() {
-    const pat = bs.enemy.actionPattern;
-    return pat[bs.enemy.actionIdx % pat.length];
+  function peekNextAction(enemy) {
+    const e = enemy || bs.enemy;
+    const pat = e.actionPattern || [];
+    if (!pat.length) return {};
+    return pat[e.actionIdx % pat.length];
   }
   function consumeAction() {
     const act = peekNextAction();
@@ -3147,11 +3433,16 @@ function highlightSkillRange(chara, sk) {
   // ============================================================
   function renderAllyGrid(highlightCells) {
     // 実体化に関わらず常に次の攻撃範囲を表示する
-    const nextAct     = peekNextAction();
+    // 複数敵の場合は最初に行動する敵（turnOrderの先頭isEnemy）を基準にする
+    const nextEnemyUnit = bs.turnOrder.find(u => u.isEnemy && u.hp > 0);
+    const nextEnemy = nextEnemyUnit
+      ? (bs.enemies || []).find(e => e.id === nextEnemyUnit.id) || bs.enemy
+      : bs.enemy;
+    const nextAct     = peekNextAction(nextEnemy);
     const isRandom    = (nextAct.range || 'random1') === 'random1';
-    // 敵の位置基準で攻撃範囲を BattleRange 経由で計算
+    // 次行動敵の位置基準で攻撃範囲を BattleRange 経由で計算
     const dangerCells = (!isRandom)
-      ? _getCells({ row: bs.enemy.row, col: bs.enemy.col }, nextAct.range || 'random1')
+      ? _getCells({ row: nextEnemy.row, col: nextEnemy.col }, nextAct.range || 'random1')
       : null;
 
     ROWS.forEach(row => {
@@ -3438,7 +3729,11 @@ function highlightSkillRange(chara, sk) {
   // 詳細ポップアップ
   // ============================================================
   window.showNextDetail = function () {
-    const act = peekNextAction();
+    const nextEnemyUnit = bs.turnOrder.find(u => u.isEnemy && u.hp > 0);
+    const nextEnemy = nextEnemyUnit
+      ? (bs.enemies || []).find(en => en.id === nextEnemyUnit.id) || bs.enemy
+      : bs.enemy;
+    const act = peekNextAction(nextEnemy);
     let popup = document.getElementById('bt-next-detail-popup');
     if (!popup) {
       popup = document.createElement('div');
@@ -3512,12 +3807,52 @@ function highlightSkillRange(chara, sk) {
       returnStageId:   options && options.stageId ? options.stageId : null,
     };
 
+    // 同一IDの敵が複数いる場合、内部IDをユニーク化（例: enemy_mask → enemy_mask_0, enemy_mask_1）
+    const idCount = {};
+    bs.enemies.forEach(e => {
+      if (!idCount[e.id]) idCount[e.id] = 0;
+      if (idCount[e.id] > 0) {
+        e._origId = e.id;
+        e.id = e.id + '_' + idCount[e.id];
+      }
+      idCount[e._origId || e.id]++;
+    });
+
     // 各敵の初期位置設定
     const _R = ['near','mid','far'], _C = ['left','center','right'];
-    bs.enemies.forEach(e => {
-      if (!e.fixedPosition) {
-        e.row = _R[Math.floor(Math.random()*3)];
-        e.col = _C[Math.floor(Math.random()*3)];
+    const occupied = new Set();
+
+    // チュートリアル3体戦：enemy_01は中央中段、maskは左右に配置
+    bs.enemies.forEach((e, i) => {
+      if (e.fixedPosition) return;
+      const baseId = e._origId || e.id;
+      let placed = false;
+      if (baseId === 'enemy_01') {
+        e.row = 'mid'; e.col = 'center';
+        occupied.add('mid-center');
+        placed = true;
+      } else if (baseId === 'enemy_mask') {
+        // 左→右の順に配置
+        const maskPos = [{ row:'mid', col:'left' }, { row:'mid', col:'right' }];
+        for (const pos of maskPos) {
+          const key = pos.row + '-' + pos.col;
+          if (!occupied.has(key)) {
+            e.row = pos.row; e.col = pos.col;
+            occupied.add(key);
+            placed = true;
+            break;
+          }
+        }
+      }
+      if (!placed) {
+        // ランダム配置（重複回避）
+        let tries = 0;
+        do {
+          e.row = _R[Math.floor(Math.random()*3)];
+          e.col = _C[Math.floor(Math.random()*3)];
+          tries++;
+        } while (occupied.has(e.row + '-' + e.col) && tries < 20);
+        occupied.add(e.row + '-' + e.col);
       }
     });
 

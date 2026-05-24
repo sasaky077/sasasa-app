@@ -3542,6 +3542,61 @@ canvas {
   font-family: "Cinzel", serif;
 }
 
+/* 結果画面直前の強白フラッシュ */
+.final-gacha-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at center,
+      rgba(255,255,255,1) 0%,
+      rgba(255,255,255,0.98) 18%,
+      rgba(255,255,255,0.75) 38%,
+      rgba(255,255,255,0.25) 62%,
+      rgba(255,255,255,0) 100%
+    );
+  transform: scale(0.15);
+  mix-blend-mode: screen;
+}
+
+.final-gacha-flash.active {
+  animation: finalGachaFlash 0.95s cubic-bezier(.12,.8,.16,1) forwards;
+}
+
+@keyframes finalGachaFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+    filter: blur(0px);
+  }
+
+  18% {
+    opacity: 1;
+    transform: scale(0.45);
+    filter: blur(1px);
+  }
+
+  42% {
+    opacity: 1;
+    transform: scale(1.35);
+    filter: blur(3px);
+  }
+
+  62% {
+    opacity: 1;
+    transform: scale(2.4);
+    filter: blur(6px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(3.2);
+    filter: blur(12px);
+  }
+}
+
 
 /* =========================================================
    08 Reveal Modal

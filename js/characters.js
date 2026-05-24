@@ -317,34 +317,34 @@ const CHARACTERS = [
   // 最高クラスの火力。DEFダウン後に10倍攻撃を叩き込む超アタッカー。
   { id: 11, name: 'ユズハ', gender: 'woman', rarity: 'r',
     role: '火力寄り',
-    stats: { HP: 850, ATK: 330, DEF: 250, SPD: 285 },
+    stats: { HP: 350, ATK: 330, DEF: 250, SPD: 285 },
     img: 'images/chara_11.webp', cutImg: 'images/chara_11_cut.webp',
     upImg: 'images/chara_11_up.webp', battleImg: 'images/chara_11_battle.webp',
     skills: [
-      { id: 's1', name: '狂撃',   cdMax: 0, hit: 80, type: 'attack', multiplier: 3.0, range: 'front_row_3',
+      { id: 's1', name: '狂撃',   cdMax: 0, hit: 80, type: 'attack', multiplier: 2.0, range: 'front_row_3',
         pierce: false,
         effects: [],
-        desc: '狂気を解放した強烈な一撃。ATKの3倍のダメージ。' },
+        desc: '神通力を解放した一撃。ATKの2倍のダメージ。' },
 
       { id: 's2', name: '狂縛',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0, range: 'front_row_3',
         effects: [
-          { type: 'def_down', target: 'enemy', hit: 75, duration: 2 }
+          { type: 'def_down', target: 'enemy', hit: 100, duration: 2 }
         ],
-        desc: '怪異のDEFを2ターン大幅に低下させる。命中率は低い。' },
+        desc: '怪異のDEFを2ターン大幅に低下させる。' },
 
-      { id: 's3', name: '狂爆',   cdMax: 5, hit: 55, type: 'attack', multiplier: 10.0, range: 'pierce3',
+      { id: 's3', name: '狂爆',   cdMax: 5, hit: 40, type: 'attack', multiplier: 3.0, range: 'pierce3',
         effects: [],
-        desc: '狂気が爆発する。ATKの10倍の超火力。命中率は非常に低い。' },
+        desc: '力が湧いてくる。ATKの3倍の超火力。命中率は非常に低い。' },
 
       { id: 's4', name: '狂化',   cdMax: 3, hit: 100, type: 'attack', multiplier: 5.0, range: 'pierce3',
         effects: [
-          { type: 'atk_up', target: 'ally_self', hit: 100, duration: 2 }
+          { type: 'atk_up', target: 'enemy', hit: 100, duration: 2 }
         ],
-        desc: '狂気を纏いATKを2ターン大幅に上昇させる。' },
+        desc: '力が爆発する。ATKの5倍の大ダメージ。' },
 
-      { id: 's5', name: '狂走',   cdMax: 1, hit: 100, type: 'move', multiplier: 0, range: 'self',
+      { id: 's5', name: '狂覚',   cdMax: 5, hit: 100, type: 'attack', multiplier: 0.3, range: 'all',
         effects: [],
-        desc: 'ポジションを変更する。' },
+        desc: '敵を実体化する。' },
     ]},
 
 
@@ -622,10 +622,12 @@ const CHARACTERS = [
         ],
         desc: 'ATKの1.0倍のダメージ。敵を1マス左へ動かす。' },
 
-      { id: 's5', name: '蛇ノ撃',   cdMax: 5, hit: 100, type: 'move', multiplier: 3.0, range: 'pierce_all',
+      { id: 's5', name: '蛇ノ眼',   cdMax: 5, hit: 100, type: 'attack', multiplier: 0.7, range: 'all',
         pierce: false,
-        effects: [],
-        desc: '直線上の敵に大ダメージ。' },
+        effects: [
+          { type: 'jittai', target: 'enemy', hit: 80, duration: 3 }
+        ],
+        desc: '蛇ノ眼で怪異を実体化する' },
     ]},
 
 
@@ -748,7 +750,7 @@ const CHARACTERS = [
         ],
         desc: '自身のSPDとATKを2ターン上昇させる。' },
 
-      { id: 's5', name: '哀笑',   cdMax: 6, hit: 100, type: 'attack', multiplier: 8.0, range: 'front1',
+      { id: 's5', name: '哀笑',   cdMax: 6, hit: 100, type: 'attack', multiplier: 5.0, range: 'front3_row_3',
         effects: [
           { type: 'push_2', target: 'enemy', hit: 100, duration: 1 },
           { type: 'sure_hit_team', target: 'ally_all', hit: 100, duration: 1 }

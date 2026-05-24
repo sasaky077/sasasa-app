@@ -220,6 +220,28 @@
       { row: 'far',  col: 'left' },
       { row: 'far',  col: 'right' },
     ],
+
+    // 外周8マス（中央マス以外）
+    field_outer: [
+      { row: 'near', col: 'left'   },
+      { row: 'near', col: 'center' },
+      { row: 'near', col: 'right'  },
+      { row: 'mid',  col: 'left'   },
+      { row: 'mid',  col: 'right'  },
+      { row: 'far',  col: 'left'   },
+      { row: 'far',  col: 'center' },
+      { row: 'far',  col: 'right'  },
+    ],
+
+    // 左列＋右列（中央列除外）
+    field_side_columns: [
+      { row: 'near', col: 'left'  },
+      { row: 'mid',  col: 'left'  },
+      { row: 'far',  col: 'left'  },
+      { row: 'near', col: 'right' },
+      { row: 'mid',  col: 'right' },
+      { row: 'far',  col: 'right' },
+    ],
   };
 
   function allCells() {
