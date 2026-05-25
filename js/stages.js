@@ -113,22 +113,23 @@ const STAGES = [
   // ============================================================
   // CHAPTER 01 — 白糸の怪異
   // ============================================================
-  {
-    id: 'stage_01_boss',
-    chapter: 1,
-    no: 1,
-    type: 'boss',
-    name: '白糸の間',
-    enemyIds: [
-      'enemy_01',
-      'enemy_mask',
-      'enemy_mask',
-    ],
-    enemyName: '??????',
-    difficulty: 'boss',
-    reward: { exp: 375, coin: 150 },
-    unlocked: true,
-  },
+ {
+  id: 'stage_01_boss',
+  chapter: 1,
+  no: 1,
+  type: 'boss',
+  name: '白糸の間',
+  enemyIds: [
+    'enemy_01',
+    'enemy_mask',
+    'enemy_mask',
+  ],
+  enemyRandomStartPosition: true,
+  enemyName: '??????',
+  difficulty: 'boss',
+  reward: { exp: 375, coin: 150 },
+  unlocked: true,
+},
 
   // 将来の雑魚ステージ追加例：
   // { id:'stage_01_1', chapter:1, no:1, type:'normal', name:'???', enemyId:'enemy_xx', ... },
@@ -183,8 +184,18 @@ function getStagesByChapter(chapter) {
 function getEnemiesForStage(stage) {
   if (!stage) return [];
   const ids = stage.enemyIds || (stage.enemyId ? [stage.enemyId] : []);
+
   return ids.map(id => {
     const e = (typeof getEnemyById === 'function') ? getEnemyById(id) : null;
-    return e ? JSON.parse(JSON.stringify(e)) : null;
+    if (!e) return null;
+
+    const copied = JSON.parse(JSON.stringify(e));
+
+    // ステージ側で敵初期位置ランダム指定があれば、各敵に引き継ぐ
+    if (stage.enemyRandomStartPosition) {
+      copied.randomStartPosition = true;
+    }
+
+    return copied;
   }).filter(Boolean);
 }

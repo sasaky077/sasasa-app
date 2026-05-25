@@ -178,7 +178,7 @@ const CHARACTERS = [
   // 糸使い。SPDデバフと実体化を使い分けて敵の行動を制限する。
   { id: 7, name: 'ミユ', gender: 'woman', rarity: 'r',
     role: '速度寄り',
-    stats: { HP: 710, ATK: 220, DEF: 200, SPD: 280 },
+    stats: { HP: 600, ATK: 220, DEF: 200, SPD: 280 },
     img: 'images/chara_07.webp', cutImg: 'images/chara_07_cut.webp',
     upImg: 'images/chara_07_up.webp', battleImg: 'images/chara_07_battle.webp',
     skills: [
@@ -187,24 +187,26 @@ const CHARACTERS = [
         effects: [],
         desc: '敵に祈りを込めた弾を打ち込む。中ダメージ。' },
 
-      { id: 's2', name: '非貫通バン',   cdMax: 3, hit: 100, type: 'attack', multiplier: 1.0, range: 'pierce_all',
+      { id: 's2', name: '非貫通バン',   cdMax: 3, hit: 100, type: 'attack', multiplier: 1.5, range: 'pierce_all',
         pierce: false,
         effects: [],
-        desc: '敵に祈りを込めた弾を乱れ打つ。中ダメージ。' },
+        desc: '敵に祈りを込めた弾を打つ。中ダメージ。' },
 
-      { id: 's3', name: 'ドカーン',   cdMax: 3, hit: 100, type: 'attack', multiplier: 1.0, range: 'pierce_all',
+      { id: 's3', name: 'ドカーン',   cdMax: 3, hit: 100, type: 'attack', multiplier: 1.5, range: 'all',
         pierce: true,
         effects: [],
-        desc: '敵に祈りを込めた弾を打ち込む。大ダメージ。' },
+        desc: '敵に祈りを込めた起爆弾を打ち込む。広範囲に中ダメージ。' },
 
-      { id: 's4', name: 'ズキューン',   cdMax: 3, hit: 100, type: 'attack', multiplier: 0, range: 'pierce_all',
+      { id: 's4', name: 'ズキューン',   cdMax: 3, hit: 100, type: 'attack', multiplier: 2.0, range: 'pierce_all',
         pierce: true,
         effects: [],
-        desc: '敵に祈りを込めた弾を乱れ打つ。大ダメージ。' },
+        desc: '敵に祈りを込めた弾を乱れ打つ。直線上の敵すべてに大ダメージ。' },
 
       { id: 's5', name: 'ガチャッ',   cdMax: 1, hit: 100, type: 'move', multiplier: 0, range: 'self',
-        effects: [],
-        desc: 'マジナイ済みの弾をリロード。2ターンの間、SPDが上がる。' },
+        effects: [
+          { type: 'spd_up', target: 'ally_self', hit: 100, duration: 2 }
+        ],
+        desc: '祈りを込めた弾をリロード。2ターンの間、SPDが上がる。' },
     ]},
 
   // ── id:8 カミジョウ ──────────────────────────────
@@ -317,33 +319,35 @@ const CHARACTERS = [
   // 最高クラスの火力。DEFダウン後に10倍攻撃を叩き込む超アタッカー。
   { id: 11, name: 'ユズハ', gender: 'woman', rarity: 'r',
     role: '火力寄り',
-    stats: { HP: 350, ATK: 330, DEF: 250, SPD: 285 },
+    stats: { HP: 300, ATK: 350, DEF: 200, SPD: 285 },
     img: 'images/chara_11.webp', cutImg: 'images/chara_11_cut.webp',
     upImg: 'images/chara_11_up.webp', battleImg: 'images/chara_11_battle.webp',
     skills: [
-      { id: 's1', name: '狂撃',   cdMax: 0, hit: 80, type: 'attack', multiplier: 2.0, range: 'front_row_3',
+      { id: 's1', name: '解放します',   cdMax: 0, hit: 80, type: 'attack', multiplier: 2.0, range: 'front_row_3',
         pierce: false,
         effects: [],
         desc: '神通力を解放した一撃。ATKの2倍のダメージ。' },
 
-      { id: 's2', name: '狂縛',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0, range: 'front_row_3',
+      { id: 's2', name: '痛いですよ',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0, range: 'front_row_3',
         effects: [
           { type: 'def_down', target: 'enemy', hit: 100, duration: 2 }
         ],
         desc: '怪異のDEFを2ターン大幅に低下させる。' },
 
-      { id: 's3', name: '狂爆',   cdMax: 5, hit: 40, type: 'attack', multiplier: 3.0, range: 'pierce3',
+      { id: 's3', name: '叩きます',   cdMax: 5, hit: 40, type: 'attack', multiplier: 3.0, range: 'pierce3',
         effects: [],
         desc: '力が湧いてくる。ATKの3倍の超火力。命中率は非常に低い。' },
 
-      { id: 's4', name: '狂化',   cdMax: 3, hit: 100, type: 'attack', multiplier: 5.0, range: 'pierce3',
+      { id: 's4', name: '殴ります',   cdMax: 3, hit: 100, type: 'attack', multiplier: 5.0, range: 'pierce3',
         effects: [
           { type: 'atk_up', target: 'enemy', hit: 100, duration: 2 }
         ],
         desc: '力が爆発する。ATKの5倍の大ダメージ。' },
 
-      { id: 's5', name: '狂覚',   cdMax: 5, hit: 100, type: 'attack', multiplier: 0.3, range: 'all',
-        effects: [],
+      { id: 's5', name: '見つけました',   cdMax: 5, hit: 100, type: 'attack', multiplier: 0.3, range: 'all',
+        effects: [
+          { type: 'jittai', target: 'enemy', hit: 100, duration: 2 }
+        ],
         desc: '敵を実体化する。' },
     ]},
 
@@ -551,7 +555,7 @@ const CHARACTERS = [
   // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
   { id: 19, name: 'アンナ', gender: 'woman', rarity: 'sr',
     role: '耐久寄り',
-    stats: { HP: 900, ATK: 230, DEF: 300, SPD: 225 },
+    stats: { HP: 600, ATK: 250, DEF: 300, SPD: 225 },
     img: 'images/chara_19.webp', cutImg: 'images/chara_19_cut.webp',
     upImg: 'images/chara_19_up.webp', battleImg: 'images/chara_19_battle.webp',
     skills: [
@@ -574,7 +578,7 @@ const CHARACTERS = [
         ],
         desc: '味方全員のHPを最大HPの20%回復する。' },
 
-      { id: 's4', name: 'イケない治療',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0, range: 'pierce_all',
+      { id: 's4', name: '荒療治',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0.5, range: 'pierce_all',
         pierce: true,
         effects: [
           { type: 'atk_down', target: 'enemy', hit: 85, duration: 2 },
@@ -582,7 +586,7 @@ const CHARACTERS = [
         ],
         desc: '直線上の敵すべてのATKとDEFを2ターン低下させる。' },
 
-      { id: 's5', name: '神体実験',   cdMax: 4, hit: 100, type: 'buff', multiplier: 0, range: 'ally_all',
+      { id: 's5', name: '神体実験',   cdMax: 5, hit: 100, type: 'buff', multiplier: 0, range: 'ally_all',
         effects: [
           { type: 'def_up', target: 'ally_all', hit: 100, duration: 2 },
           { type: 'heal', target: 'ally_all', rate: 0.15, hit: 100 }
@@ -762,11 +766,11 @@ const CHARACTERS = [
   // 最高DEF。実体化の確実付与と全体攻撃のハイブリッド。スタンも持つ完全体壁役。
   { id: 16, name: 'アズキ', gender: 'woman', rarity: 'ur',
     role: '耐久寄り',
-    stats: { HP: 950, ATK: 255, DEF: 325, SPD: 255 },
+    stats: { HP: 900, ATK: 255, DEF: 325, SPD: 255 },
     img: 'images/chara_16.webp', cutImg: 'images/chara_16_cut.webp',
     upImg: 'images/chara_16_up.webp', battleImg: 'images/chara_16_battle.webp',
     skills: [
-      { id: 's1', name: '見破り',   cdMax: 0, hit: 85, type: 'attack', multiplier: 1.5, range: 'front_row_3',
+      { id: 's1', name: '見破り',   cdMax: 5, hit: 85, type: 'attack', multiplier: 0.7, range: 'all',
         effects: [
           { type: 'jittai', target: 'enemy', hit: 80, duration: 2 }
         ],
@@ -778,13 +782,13 @@ const CHARACTERS = [
         ],
         desc: '強固な結界を展開し、DEFを3ターン大幅に上昇させる。' },
 
-      { id: 's3', name: '式神-POCHI-',   cdMax: 3, hit: 100, type: 'debuff', multiplier: 0.5, range: 'front_row_3',
+      { id: 's3', name: '式神-POCHI-',   cdMax: 6, hit: 100, type: 'debuff', multiplier: 0.5, range: 'front_row_3',
         effects: [
           { type: 'jittai', target: 'enemy', hit: 100, duration: 2 },
-          { type: 'atk_down', target: 'enemy', hit: 90, duration: 2 },
-          { type: 'push_1', target: 'enemy', hit: 90, duration: 2 }
+          { type: 'atk_down', target: 'enemy', hit: 100, duration: 2 },
+          { type: 'push_1', target: 'enemy', hit: 100, duration: 2 }
         ],
-        desc: '怪異を確実に実体化させながらATKを2ターン低下させる。' },
+        desc: '怪異を実体化させながらATKを2ターン低下させ、1マス押し込む。' },
 
       { id: 's4', name: '散霧',   cdMax: 4, hit: 75, type: 'attack', multiplier: 2.0, range: 'all',
         effects: [
@@ -792,8 +796,10 @@ const CHARACTERS = [
         ],
         desc: '霧を爆発させ全体攻撃。ATKの2倍。命中時に60%でスタンを付与する。' },
 
-      { id: 's5', name: '御魂綴',   cdMax: 1, hit: 100, type: 'move', multiplier: 0, range: 'self',
-        effects: [],
+      { id: 's5', name: '御魂綴',   cdMax: 1, hit: 100, type: 'heal', multiplier: 0, range: 'self',
+        effects: [
+          { type: 'heal', target: 'ally_self', rate: 0.3, hit: 100 }
+        ],
         desc: '魂を清め、自らの傷を癒す。' },
     ]},
 

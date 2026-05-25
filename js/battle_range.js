@@ -340,6 +340,110 @@
     });
   }
 
+  // ============================================================
+  // 移動先チェック・共通移動ヘルパー
+  // units: 同陣営のユニット配列（敵なら bs.enemies、味方なら bs.party）
+  // self: 移動対象ユニット自身（占有判定から除外）
+  // ============================================================
+  function isCellOccupied(units, row, col, self) {
+    return (units || []).some(u =>
+      u &&
+      u !== self &&
+      u.hp > 0 &&
+      u.row === row &&
+      u.col === col
+    );
+  }
+
+  function canMoveTo(units, row, col, self) {
+    if (!ROWS.includes(row) || !COLS.includes(col)) return false;
+    if (isCellOccupied(units, row, col, self)) return false;
+    return true;
+  }
+
+  function tryMoveUnit(unit, toRow, toCol, units) {
+    if (!unit) return false;
+    if (!canMoveTo(units, toRow, toCol, unit)) return false;
+    unit.row = toRow;
+    unit.col = toCol;
+    return true;
+  }
+
+  // ============================================================
+  // 段階移動ヘルパー
+  // direction: 'front' | 'back' | 'left' | 'right'
+  //   front = far→mid→near（near方向）
+  //   back  = near→mid→far（far方向）
+  //   left  = right/center→left
+  //   right = left/center→right
+  // ============================================================
+  function getNextCell(row, col, direction) {
+    const rowIdx = ROW_IDX[row];
+    const colIdx = COL_IDX[col];
+
+    if (direction === 'back') {
+      const nextRow = ROW_BY_IDX[rowIdx + 1];
+      return nextRow ? { row: nextRow, col } : null;
+    }
+    if (direction === 'front') {
+      const nextRow = ROW_BY_IDX[rowIdx - 1];
+      return nextRow ? { row: nextRow, col } : null;
+    }
+    if (direction === 'left') {
+      const nextCol = COL_BY_IDX[colIdx - 1];
+      return nextCol ? { row, col: nextCol } : null;
+    }
+    if (direction === 'right') {
+      const nextCol = COL_BY_IDX[colIdx + 1];
+      return nextCol ? { row, col: nextCol } : null;
+    }
+    return null;
+  }
+
+  // 1マスずつ方向へ移動を試みる。途中にユニットがいたらその直前で停止。
+  // 戻り値: { moved: bool, steps: number, from: {row,col}, to: {row,col} }
+  function tryMoveUnitStepwise(unit, direction, maxSteps, units) {
+    if (!unit || maxSteps <= 0) {
+      return {
+        moved: false,
+        steps: 0,
+        from: unit ? { row: unit.row, col: unit.col } : null,
+        to:   unit ? { row: unit.row, col: unit.col } : null,
+      };
+    }
+
+    const from = { row: unit.row, col: unit.col };
+    let curRow = unit.row;
+    let curCol = unit.col;
+    let movedSteps = 0;
+
+    for (let i = 0; i < maxSteps; i++) {
+      const next = getNextCell(curRow, curCol, direction);
+
+      // 盤外
+      if (!next || !next.row || !next.col) break;
+
+      // 占有チェック（死亡ユニットは無視される：canMoveTo → isCellOccupied が hp>0 のみ対象）
+      if (!canMoveTo(units, next.row, next.col, unit)) break;
+
+      curRow = next.row;
+      curCol = next.col;
+      movedSteps++;
+    }
+
+    if (movedSteps > 0) {
+      unit.row = curRow;
+      unit.col = curCol;
+    }
+
+    return {
+      moved: movedSteps > 0,
+      steps: movedSteps,
+      from,
+      to: { row: unit.row, col: unit.col },
+    };
+  }
+
   window.BattleRange = {
     ROWS,
     COLS,
@@ -351,6 +455,11 @@
     normalizeRange,
     getCellsFromRange,
     getUnitsFromRange,
+    isCellOccupied,
+    canMoveTo,
+    tryMoveUnit,
+    getNextCell,
+    tryMoveUnitStepwise,
   };
 
 })();
