@@ -41,6 +41,9 @@
     pointerId:  null,
   };
 
+  // ドラッグ中フラグ（pointerdown〜pointerup の間だけ true）
+  let dragging = false;
+
   // ============================================================
   // ヘルパー
   // ============================================================
@@ -214,6 +217,7 @@
     if (!sw.active || !sw.actor) return;
     const el = document.getElementById('bt-ag-' + sw.actor.row + '-' + sw.actor.col);
     if (el) el.classList.add('swipe-actor');
+    bindActorDragStart();
   }
 
   // ============================================================
@@ -260,45 +264,77 @@
     const log = document.getElementById('bt-log');
     if (log) log.textContent = msg;
   }
-function attachPointerListeners() {
-  const target = document.getElementById('battle-root');
-  if (!target || target._swipeAttached) return;
-  target._swipeAttached = true;
+  // ============================================================
+  // アクターカード直接ドラッグ方式
+  // ============================================================
+  function getActorCell() {
+    if (!sw.actor) return null;
+    return document.getElementById('bt-ag-' + sw.actor.row + '-' + sw.actor.col);
+  }
 
-  // スマホで画面スクロールやブラウザ操作に奪われないようにする
-  target.style.touchAction = 'none';
+  function getActorCard() {
+    const cell = getActorCell();
+    if (!cell) return null;
+    return cell.querySelector('.bt-chara-card');
+  }
 
-  target.addEventListener('pointerdown', (e) => {
+  function bindActorDragStart() {
+    const card = getActorCard();
+    if (!card || card._swipeDragBound) return;
+
+    card._swipeDragBound = true;
+    card.classList.add('swipe-draggable');
+
+    // img に draggable=false を付与
+    card.querySelectorAll('img').forEach(img => {
+      img.draggable = false;
+    });
+
+    // capture: true で上位レイヤーより先に拾う
+    card.addEventListener('pointerdown', onActorPointerDown, { passive: false, capture: true });
+
+    console.log('[SwipeBattle] drag bound:', sw.actor && sw.actor.name);
+  }
+
+  function onActorPointerDown(e) {
+    console.log('[SwipeBattle] onActorPointerDown:', sw.actor && sw.actor.name, 'active:', sw.active);
+
     if (!sw.active || sw.pointerId !== null) return;
-
-    // ボタン上ではスワイプ開始しない
     if (e.target.closest('button')) return;
-
-    // 操作中キャラのセル（またはその子要素）からのみ開始する
-    const actorCell = sw.actor
-      ? document.getElementById('bt-ag-' + sw.actor.row + '-' + sw.actor.col)
-      : null;
-    if (!actorCell || !actorCell.contains(e.target)) {
-      addLog('— 行動中キャラを押さえてスワイプしてください');
-      return;
-    }
 
     sw.pointerId = e.pointerId;
     sw.startX    = e.clientX;
     sw.startY    = e.clientY;
+    dragging     = true;
 
-    target.setPointerCapture(e.pointerId);
+    // DOM再生成でカードが消えても追跡できるよう document 側でリスナーを持つ
+    addDocumentDragListeners();
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    addLog('— キャラをつかみました：そのまま動かしてください');
+    console.log('[SwipeBattle] pointerdown:', sw.actor && sw.actor.name, e.pointerId);
+
     e.preventDefault();
-  }, { passive: false });
+    e.stopPropagation();
+  }
 
-  target.addEventListener('pointermove', (e) => {
-    if (!sw.active || e.pointerId !== sw.pointerId) return;
+  // ============================================================
+  // document レベルのドラッグリスナー（pointerdown 後に付け外し）
+  // ============================================================
+  function onDocumentPointerMove(e) {
+    if (!sw.active || !dragging || e.pointerId !== sw.pointerId) return;
 
     const dx   = e.clientX - sw.startX;
     const dy   = e.clientY - sw.startY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist < SWIPE_THRESHOLD) return;
+    if (dist < SWIPE_THRESHOLD) {
+      e.preventDefault();
+      return;
+    }
 
     // 連続スワイプできるように基準点を更新
     sw.startX = e.clientX;
@@ -306,22 +342,47 @@ function attachPointerListeners() {
 
     trySwipeMove(detectDirection(dx, dy));
     e.preventDefault();
-  }, { passive: false });
+  }
 
-  target.addEventListener('pointerup', (e) => {
+  function onDocumentPointerUp(e) {
     if (!sw.active || e.pointerId !== sw.pointerId) return;
 
+    dragging     = false;
     sw.pointerId = null;
+    removeDocumentDragListeners();
+
     applyIfReady();
     e.preventDefault();
-  }, { passive: false });
+  }
 
-  target.addEventListener('pointercancel', (e) => {
-    if (e.pointerId === sw.pointerId) {
-      sw.pointerId = null;
-    }
-  }, { passive: true });
-}
+  function onDocumentPointerCancel(e) {
+    if (e.pointerId !== sw.pointerId) return;
+
+    dragging     = false;
+    sw.pointerId = null;
+    removeDocumentDragListeners();
+
+    addLog('— ドラッグをキャンセルしました');
+  }
+
+  function addDocumentDragListeners() {
+    document.addEventListener('pointermove',   onDocumentPointerMove,   { passive: false });
+    document.addEventListener('pointerup',     onDocumentPointerUp,     { passive: false });
+    document.addEventListener('pointercancel', onDocumentPointerCancel, { passive: false });
+  }
+
+  function removeDocumentDragListeners() {
+    document.removeEventListener('pointermove',   onDocumentPointerMove);
+    document.removeEventListener('pointerup',     onDocumentPointerUp);
+    document.removeEventListener('pointercancel', onDocumentPointerCancel);
+  }
+
+  // battle-root には touchAction だけ設定（pointermove/up は document 側で処理）
+  function attachPointerListeners() {
+    const target = document.getElementById('battle-root');
+    if (!target) return;
+    target.style.touchAction = 'none';
+  }
   // ============================================================
   // 発動判定（HIT 0 でも必ず発動する）
   // ============================================================
@@ -392,8 +453,9 @@ function attachPointerListeners() {
     highlightActorCell();
 
     attachPointerListeners();
+    bindActorDragStart();
 
-    addLog(actor.name + '「' + skill.name + '」選択中：行動中キャラを押さえてスワイプ');
+    addLog(actor.name + '「' + skill.name + '」選択中：キャラをつかんでドラッグ');
   },
 
   // 外部から終了させたいときに使う
@@ -409,11 +471,15 @@ function attachPointerListeners() {
 
   function endSwipeAimMode() {
     if (!sw.active && !sw.hitTargets.length) return; // 何もしない
+
+    dragging      = false;
     sw.active     = false;
     sw.actor      = null;
     sw.skill      = null;
     sw.pointerId  = null;
     sw.hitTargets = [];
+
+    removeDocumentDragListeners();
 
     const bs = getBs();
     if (bs) bs.swipeComboMultiplier = 1.0;
@@ -421,6 +487,12 @@ function attachPointerListeners() {
     clearPreview();
     removeHUD();
     document.querySelectorAll('.swipe-actor').forEach(el => el.classList.remove('swipe-actor'));
+    // ドラッグバインドをリセット（次回のactorカード再バインドに備える）
+    document.querySelectorAll('.bt-chara-card.swipe-draggable').forEach(card => {
+      card.classList.remove('swipe-draggable');
+      card._swipeDragBound = false;
+      card.removeEventListener('pointerdown', onActorPointerDown, { capture: true });
+    });
   }
 
   // ============================================================
@@ -455,6 +527,7 @@ function attachPointerListeners() {
         if (!sw.active) return;
         refreshPreview();
         highlightActorCell();
+        bindActorDragStart();
       });
     });
     obs.observe(root, { childList: true, subtree: true });
@@ -494,6 +567,34 @@ function attachPointerListeners() {
       .bt-grid-cell.swipe-actor::after {
         border-color: rgba(140,100,255,0.7) !important;
         box-shadow: inset 0 0 12px rgba(120,80,220,0.3) !important;
+      }
+
+      /* タッチ操作・ドラッグ防止 */
+      #battle-root,
+      .bt-main-field,
+      .bt-grid-wrap,
+      .bt-grid-cell,
+      .bt-chara-card,
+      .bt-chara-img {
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      /* ドラッグ可能カード */
+      .bt-chara-card.swipe-draggable {
+        pointer-events: auto !important;
+        cursor: grab;
+      }
+      .bt-chara-card.swipe-draggable:active {
+        cursor: grabbing;
+      }
+
+      /* キャラ画像はポインターイベントを無効化 */
+      .bt-chara-img {
+        pointer-events: none !important;
+        -webkit-user-drag: none;
       }
 
       /* スワイプHUD */

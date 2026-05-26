@@ -1770,6 +1770,24 @@ function getEnemyCellsFromAllyRange(chara, range) {
   80%  { transform: translate(2px, 1px); }
   100% { transform: translate(0, 0); }
 }
+
+#battle-root,
+.bt-main-field,
+.bt-grid-wrap,
+.bt-grid-cell,
+.bt-chara-card,
+.bt-chara-img {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.bt-chara-img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
     `;
     document.body.appendChild(s);
   }
@@ -4255,9 +4273,11 @@ function planAllEnemyActions() {
         let cls = 'bt-grid-cell';
         // スキル選択中の射程ハイライト（味方グリッド対象のスキル）
         if (_skillRangeCache && _skillRangeCache.prefix === 'bt-ag-') {
-          const sc = _skillRangeCache.cells;
-          if (sc === null || sc.has(key)) { cell.className = cls + ' skill-range'; return; }
+        const sc = _skillRangeCache.cells;
+        if (sc === null || sc.has(key)) {
+          cls += ' skill-range';
         }
+      }
         // 敵タップによる攻撃予告
         if (dangerCells) {
           if (dangerCells === 'random') {
@@ -4295,10 +4315,133 @@ function planAllEnemyActions() {
         </div>
       `;
       if (c.hp > 0) {
-  card.onclick = () => {
+        // スキル選択中：このキャラを直接ドラッグ開始させる
+      card.addEventListener('pointerdown', (e) => {
+        console.log('[card.pointerdown]', {
+          chara: c.name,
+          selectedSkill,
+          selectedChara,
+          phase: bs.phase
+        });
+      // スキル未選択なら通常タップに任せる
+      if (!selectedSkill) return;
 
-    // planning中以外は無効
-    if (bs.phase !== 'planning') return;
+      // selectedChara が取れている場合だけ、操作キャラ判定する
+      if (selectedChara && c.id !== selectedChara.id) return;
+
+      // planning中以外は無視
+      if (bs.phase !== 'planning') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+  card.setPointerCapture?.(e.pointerId);
+
+  const startX = e.clientX;
+  const startY = e.clientY;
+
+  addLog('— キャラをつかみました：そのまま動かしてください');
+
+  const onMove = (ev) => {
+  const dx = ev.clientX - startX;
+  const dy = ev.clientY - startY;
+
+  console.log('[card.pointermove]', {
+    dx,
+    dy,
+    absX: Math.abs(dx),
+    absY: Math.abs(dy),
+    selectedSkill,
+    selectedChara,
+    chara: c.name,
+    row: (selectedChara || c).row,
+    col: (selectedChara || c).col
+  });
+
+  ev.preventDefault();
+
+  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
+    console.log('[card.pointermove] under threshold');
+    return;
+  }
+
+    let dir;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      dir = dx > 0 ? 'right' : 'left';
+    } else {
+      dir = dy < 0 ? 'front' : 'back';
+    }
+
+    if (window.BattleRange && BattleRange.tryMoveUnitStepwise) {
+      const dragChara = selectedChara || c;
+      const result = BattleRange.tryMoveUnitStepwise(dragChara, dir, 1, bs.party);
+
+console.log('[tryMoveUnitStepwise]', {
+  dir,
+  before: { row: dragChara.row, col: dragChara.col },
+  result
+});
+
+const moved = result.moved;
+
+      if (moved) {
+        addLog('— 移動：' + dir);
+        renderField();
+      } else {
+        addLog('— 移動できない');
+      }
+    }
+  };
+
+  const onUp = (ev) => {
+  cleanup();
+
+  if (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+
+  // 指を離したら選択中スキルを発動
+  if (selectedSkill && selectedChara && typeof window.executeSelectedSkill === 'function') {
+    window.executeSelectedSkill();
+  }
+};
+
+  function cleanup() {
+  window.removeEventListener('pointermove', onMove);
+  window.removeEventListener('pointerup', onUp);
+  window.removeEventListener('pointercancel', onUp);
+}
+
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', onUp, { passive: false });
+  window.addEventListener('pointercancel', onUp, { passive: false });
+  }, { passive: false, capture: true });
+
+  card.onclick = () => {
+    console.log('[card.onclick]', {
+  chara: c.name,
+  selectedSkill,
+  selectedChara,
+  phase: bs.phase
+});
+
+  // スキル選択中は情報ポップアップを絶対に出さない
+  if (selectedSkill) {
+    return;
+  }
+
+  // スキル選択中（スワイプモード中）は通常タップを無効化
+  if (
+    window.SwipeBattle &&
+    window.SwipeBattle.state &&
+    window.SwipeBattle.state.active
+  ) {
+    return;
+  }
+
+  // planning中以外は無効
+  if (bs.phase !== 'planning') return;
 
     // 移動モード中は無効
     if (moveMode) return;
