@@ -494,7 +494,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
         <div class="bt-skill-detail-actions">
           <button class="bt-skill-detail-cancel" onclick="cancelSkillSelect()">取消</button>
-          <button class="bt-skill-detail-ok" onclick="executeSelectedSkill()">確定</button>
         </div>
       </div>
 
@@ -2017,13 +2016,49 @@ function getEnemyCellsFromAllyRange(chara, range) {
   }
 
   function setupSkillCard(card, chara, sk) {
-  card.onclick = function(e){
-    e.stopPropagation();
+  let pressTimer = null;
+  let longPressed = false;
 
+  card.addEventListener('pointerdown', (e) => {
     if (sk.cd > 0) return;
 
+    e.stopPropagation();
+    longPressed = false;
+
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      showSkillDetailPopup(chara, sk);
+    }, 400);
+  }, { passive: true });
+
+  card.addEventListener('pointerup', (e) => {
+    if (sk.cd > 0) return;
+
+    e.stopPropagation();
+
+    clearTimeout(pressTimer);
+    pressTimer = null;
+
+    const popup = document.getElementById('bt-skill-detail-popup');
+
+    if (longPressed) {
+      longPressed = false;
+      if (popup) popup.classList.remove('active');
+      return;
+    }
+
+    if (popup) popup.classList.remove('active');
     selectSkill(chara, sk);
-  };
+  }, { passive: true });
+
+  card.addEventListener('pointercancel', () => {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+    longPressed = false;
+
+    const popup = document.getElementById('bt-skill-detail-popup');
+    if (popup) popup.classList.remove('active');
+  }, { passive: true });
 }
 
   function addLog(msg) {
@@ -2111,7 +2146,12 @@ function getEnemyCellsFromAllyRange(chara, range) {
   const bar = document.getElementById('bt-execute-bar');
   if(bar) bar.classList.remove('visible');
 
-  showSkillDetailPopup(chara, sk);
+  // showSkillDetailPopup(chara, sk);
+
+  // スワイプ結線システムへの橋渡し（battle_swipe.js が存在する場合のみ）
+  if (window.SwipeBattle && typeof window.SwipeBattle.start === 'function') {
+    window.SwipeBattle.start(chara, sk);
+  }
 }
 
 function getSkillTypeLabel(sk){
@@ -2390,13 +2430,25 @@ function highlightSkillRange(chara, sk) {
     renderField(null, dangerArg);
   };
 
-  // 予約確定（「発動」→「予約」に変わる）
+  // 即時発動（スワイプ結線・通常スキル選択の両方から呼ばれる）
   window.executeSelectedSkill = function () {
     if (!selectedSkill || !selectedChara) return;
+
     const sk    = selectedSkill;
     const chara = selectedChara;
+
+    // cancelSkillSelect() で倍率が 1.0 に戻る可能性があるため先に退避
+    const swipeMult =
+      bs && bs.swipeComboMultiplier && bs.swipeComboMultiplier > 1.0
+        ? bs.swipeComboMultiplier
+        : 1.0;
+
     cancelSkillSelect();
-    reserveAction(chara, sk);
+
+    // cancelSkillSelect 後に倍率を復元
+    if (bs) bs.swipeComboMultiplier = swipeMult;
+
+    executeImmediateSkill(chara, sk);
   };
 
   // ============================================================
@@ -2413,6 +2465,69 @@ function highlightSkillRange(chara, sk) {
 
     // 次のキャラへ、または全員予約済みならEXECUTEボタン表示
     advancePlanningCursor();
+  }
+
+  // ============================================================
+  // 即時発動フロー（スワイプ結線バトル用）
+  // ============================================================
+
+  // スキルを即時発動し、敵攻撃 → 次キャラへ進む
+  function executeImmediateSkill(chara, skill) {
+    if (!bs || !chara || !skill) return;
+    if (bs.phase === 'result') return;
+
+    bs.phase = 'executing';
+    closeSkillArea();
+
+    // CDを消費（移動スキルはcd管理なし）
+    const sk = chara.skills.find(s => s.id === skill.id);
+    if (sk && sk.cdMax > 0) sk.cd = sk.cdMax;
+
+    const battleUnit = {
+      ...chara,
+      img: chara.battleImg || chara.img,
+      isEnemy: false,
+    };
+
+    _execStepPlayer(chara, battleUnit, skill, () => {
+      // プレイヤー行動後：全敵が攻撃
+      doEnemyAction(() => {
+        // リアクティブダメージ（HP30%以下の enemy_01）
+        _applyReactiveDamage(chara, () => {
+          markCharaActed(chara);
+          goNextPlanningCharaOrTurnEnd();
+        });
+      });
+    });
+  }
+
+  // そのターンに行動したキャラのIDを記録
+  function markCharaActed(chara) {
+    if (!bs.actedCharaIds) bs.actedCharaIds = [];
+    if (!bs.actedCharaIds.includes(chara.id)) {
+      bs.actedCharaIds.push(chara.id);
+    }
+  }
+
+  // 未行動キャラがいれば次へ、全員行動済みならターン終了
+  function goNextPlanningCharaOrTurnEnd() {
+    if (!bs || bs.phase === 'result') return;
+
+    const alivePlayers = bs.turnOrder.filter(u => !u.isEnemy && u.hp > 0);
+    const next = alivePlayers.find(u => !(bs.actedCharaIds || []).includes(u.id));
+
+    if (next) {
+      bs.phase = 'planning';
+      bs.planningCharaId = next.id;
+
+      const chara = bs.party.find(c => c.id === next.id);
+      renderSkills(chara);
+      renderField();
+      renderOrder(null);
+      addLog(chara.name + ' の行動を選んでください');
+    } else {
+      onTurnEnd();
+    }
   }
 
   function advancePlanningCursor() {
@@ -3210,24 +3325,52 @@ function showCellDamageEffect(cell) {
     const hasDmg = (skill.multiplier || 0) > 0;
     if (hasDmg) {
       if (targets.length === 0) {
-        addLog('— 範囲内に標的なし');
-        const fallback = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
-        showResultPop(fallback, 'MISS', 'miss');
-        setTimeout(() => { renderField(); onDone(); }, 1800);
-        return;
-      }
+  addLog(chara.name + '「' + skill.name + '」は空を切った');
+
+  const fallback =
+    document.getElementById('bt-eg-mid-center') ||
+    document.querySelector('.bt-grid-enemy .bt-grid-cell');
+
+  showResultPop(fallback, 'MISS', 'miss');
+
+  // 空振りでもスワイプ倍率はリセット
+  if (bs) {
+    bs.swipeComboMultiplier = 1.0;
+  }
+
+  renderHeader();
+  renderField();
+
+  setTimeout(() => {
+    onDone && onDone();
+  }, 600);
+
+  return;
+}
       const effectiveHit = getEffectiveHit(skill.hit, chara);
       const hit = sureHit ? true : hitCheck(effectiveHit, chara.accuracy);
       if (!hit) {
         addLog('— 外れた');
-        const cell = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
-        showResultPop(cell, 'MISS', 'miss');
+        const cell =
+  targets[0]
+    ? document.getElementById('bt-eg-' + targets[0].row + '-' + targets[0].col)
+    : document.getElementById('bt-eg-mid-center');
+
+showResultPop(cell, 'MISS', 'miss');
+
+if (bs) {
+  bs.swipeComboMultiplier = 1.0;
+}
         setTimeout(() => { renderField(); onDone(); }, 1800);
         return;
       }
       let anyVanished = false;
       targets.forEach(target => {
-        const dmg = calcDamage(chara.atk, target.def, target, skill.multiplier);
+        let dmg = calcDamage(chara.atk, target.def, target, skill.multiplier);
+        // スワイプ結線コンボ補正（battle_swipe.js が bs.swipeComboMultiplier をセット）
+        if (bs.swipeComboMultiplier && bs.swipeComboMultiplier > 1.0) {
+          dmg = Math.floor(dmg * bs.swipeComboMultiplier);
+        }
         const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
         showCellDamageEffect(cell);
         showResultPop(cell, '-' + dmg, 'dmg');
@@ -3235,6 +3378,8 @@ function showCellDamageEffect(cell) {
         const vanished = applyDamageAndCheckVanish(target, dmg, 'enemy');
         if (vanished) anyVanished = true;
       });
+      // スワイプ倍率をリセット
+      bs.swipeComboMultiplier = 1.0;
       renderHeader();
       if (anyVanished) {
         setTimeout(() => renderField(), 700);
@@ -3675,6 +3820,7 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     bs.turn++;
     bs.phase = 'planning';
     bs.pendingActions = [];
+    bs.actedCharaIds  = [];       // ← 行動済みIDをリセット
     bs.planningCharaId = null;
 
     // CD消化
@@ -4051,6 +4197,7 @@ function planAllEnemyActions() {
   function startPlanning() {
     bs.phase = 'planning';
     bs.pendingActions = [];
+    bs.actedCharaIds  = [];       // ← 即時発動方式：行動済みIDをリセット
     bs.planningCharaId = null;
     bs.selectedEnemyPreview = null; // 前ターンの攻撃予告をリセット
     resetEnemyPreviewPanel();
@@ -4076,8 +4223,8 @@ function planAllEnemyActions() {
     list.innerHTML = '';
     bs.turnOrder.forEach((u, i) => {
       const chip = document.createElement('div');
-      // pendingActionsに予約があるかチェック
-      const hasAction = !u.isEnemy && bs.pendingActions && bs.pendingActions.some(a => a.charaId === u.id);
+      // 即時発動方式：行動済みかどうかで SET 表示を切り替え
+      const hasAction = !u.isEnemy && bs.actedCharaIds && bs.actedCharaIds.includes(u.id);
       const isActive  = activeIdx !== null && i === activeIdx;
       chip.className = 'bt-order-chip'
         + (u.isEnemy  ? ' is-enemy'  : '')
@@ -4131,7 +4278,9 @@ function planAllEnemyActions() {
       const hpRate   = c.hp / c.hpMax * 100;
       const isPlanning = c.id === planningId;
       const action   = bs.pendingActions && bs.pendingActions.find(a => a.charaId === c.id);
-      const isInactive = bs.phase === 'planning' && !isPlanning && !action;
+      // 即時発動方式：行動済みキャラは非アクティブ表示
+      const hasActed = bs.actedCharaIds && bs.actedCharaIds.includes(c.id);
+      const isInactive = bs.phase === 'planning' && !isPlanning && !hasActed;
 
       const card = document.createElement('div');
       card.className = 'bt-chara-card'
@@ -4139,7 +4288,7 @@ function planAllEnemyActions() {
 
       card.innerHTML = `
         <img class="bt-chara-img" src="${c.img}" onerror="this.style.opacity='0'">
-        ${action ? `<div class="bt-chara-set-label">SET</div>` : ''}
+        ${hasActed ? `<div class="bt-chara-set-label">DONE</div>` : ''}
         ${isPlanning ? `<div class="bt-chara-planning-label">?</div>` : ''}
         <div class="bt-chara-hp-bar-outer">
           <div class="bt-chara-hp-bar-fill ${hpRate < 25 ? 'crit' : hpRate < 50 ? 'low' : ''}" style="width:${hpRate}%"></div>
@@ -4154,8 +4303,8 @@ function planAllEnemyActions() {
     // 移動モード中は無効
     if (moveMode) return;
 
-    // 既に予約済みなら触れない
-    if (bs.pendingActions.some(a => a.charaId === c.id)) return;
+    // 既に行動済みなら触れない
+    if (bs.actedCharaIds && bs.actedCharaIds.includes(c.id)) return;
 
     // 現在操作中キャラ以外は触れない
     if (c.id !== bs.planningCharaId) return;
@@ -4345,8 +4494,8 @@ function planAllEnemyActions() {
     const hint = document.querySelector('.bt-skill-hint');
     if (hint) hint.style.display = '';
 
-    // 移動も予約として登録
-    reserveAction(mover, { id:'move', name:'移動', type:'move', range:'ally_self', hit:100, multiplier:1.0, cd:0, cdMax:0 });
+    // 移動も即時発動として処理
+    executeImmediateSkill(mover, { id:'move', name:'移動', type:'move', range:'ally_self', hit:100, multiplier:1.0, cd:0, cdMax:0 });
   }
 
   // ============================================================
@@ -4461,6 +4610,7 @@ function planAllEnemyActions() {
       actingIdx:       0,
       phase:           'planning',
       pendingActions:  [],
+      actedCharaIds:   [],  // ← 即時発動方式：行動済みキャラID
       planningCharaId: null,
       returnChapter:   options && options.returnChapter != null ? options.returnChapter : null,
       returnStageId:   options && options.stageId ? options.stageId : null,
@@ -4597,7 +4747,12 @@ bs.enemies.forEach((e, i) => {
     });
 
     bs.turnOrder = calcTurnOrder(bs.party, bs.enemies);
+    bs.swipeComboMultiplier = 1.0; // スワイプ結線倍率（battle_swipe.js が使用）
     locked = false; moveMode = false; movingCharaId = null;
+
+    // ── 外部公開（battle_swipe.js からアクセスするため） ──────────
+    window.bs = bs;
+    window.renderBattleField = renderField;
 
     const el = buildBattleScreen();
     el.style.display = 'flex';
