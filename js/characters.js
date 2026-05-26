@@ -1752,13 +1752,13 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'self',
         effects: [
-          { type: 'def_up', target: 'ally_self', hit: 100, duration: 3 }
+          { type: 'def_up', target: 'ally_all', hit: 100, duration: 3 }
         ],
         moveBonus: {
           idealMoves: [0],
           damageRate: 1.0
         },
-        desc: '強固な結界を展開し、DEFを3ターン大幅に上昇させる。' },
+        desc: '結界を展開し、味方全員のDEFを3ターン中アップさせる。' },
 
       { id: 's3',
         name: '式神-ぽち-',

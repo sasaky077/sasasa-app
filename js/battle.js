@@ -312,16 +312,18 @@ function getEnemyCellsFromAllyRange(chara, range) {
     // ここで再度 def_down を掛けると二重適用になるため行わない。
     return Math.max(1, Math.floor(atk * m) - def);
   }
-  function calcEnemyDamage(enemy, target, action) {
-    // damageRate 指定時：対象の最大HP割合ダメージ（DEF無視）
-    // atk_down / def_up などのバフ・デバフは効かない仕様。
-    if (action && action.damageRate != null) {
-      return Math.max(1, Math.floor(target.hpMax * action.damageRate));
-    }
-    // enemy.atk・target.def はいずれも _rebuildStatusMod() で補正済みの値。
-    // atk_down が enemy.atk に、def_up が target.def に反映されているため追加補正不要。
-    return Math.max(1, enemy.atk - target.def);
+ function calcEnemyDamage(enemy, target, action) {
+  // 割合ダメージ：damageRate がある場合
+  // 例：damageRate: 0.20 → 最大HPの20%
+  if (action && action.damageRate != null) {
+    return Math.max(1, Math.floor(target.hpMax * action.damageRate));
   }
+
+  // ATK/DEF依存ダメージ：multiplier がある場合
+  // 例：multiplier: 1.2 → enemy.atk × 1.2 - target.def
+  const m = action && action.multiplier != null ? action.multiplier : 1.0;
+  return Math.max(1, Math.floor(enemy.atk * m) - target.def);
+}
 
   // ============================================================
   // 回復ヘルパー
@@ -4002,6 +4004,9 @@ setTimeout(() => {
     return;
   }
 }, hitDelay + 700);
+
+    } // ← これを追加。ここで if (hasDmg) を閉じる
+
     // ── effects[] 処理 ────────────────────────────────────────
     const effects = (skill.effects || []).filter(effect => effect.type !== 'drain');
     let effectDelay = hasDmg ? hitDelay + 400 : 0;
@@ -4025,7 +4030,6 @@ setTimeout(() => {
     }
 
     setTimeout(onDone, Math.max(800, effectDelay + 200));
-  }
   }
   // ============================================================
   // 敵行動選択：ランダム（直前と同じ行動を避ける）
