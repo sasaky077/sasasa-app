@@ -23,8 +23,9 @@
   // 味方スワイプ方向 → 味方の移動方向
   const ACTOR_DIR = { up: 'front', down: 'back', left: 'left', right: 'right' };
 
-  // スワイプ回数 → ダメージ倍率テーブル（インデックス = 回数、末尾が4手以上に適用）
-  const MULTIPLIER_TABLE = [2.2, 1.8, 1.4, 1.1, 1.0];
+  // 旧仕様：スワイプ回数ごとの共通倍率テーブル
+　// 現在は廃止。倍率はスキルごとの moveBonus で判定する。
+  // const MULTIPLIER_TABLE = [1.0, 1.0, 1.0, 1.0, 1.0];
 
   // ============================================================
   // スワイプ状態（モジュール内シングルトン）
@@ -48,11 +49,60 @@
   // ヘルパー
   // ============================================================
   function getBs() { return window.bs; }
+  // スキルごとの適正移動距離MB倍率
+  function getMoveBonusMultiplier(skill, moveCount) {
+  if (!skill || !skill.moveBonus) return 1.0;
 
-  function getMultiplier(count) {
-    return MULTIPLIER_TABLE[Math.min(count, MULTIPLIER_TABLE.length - 1)];
+  const mb = skill.moveBonus;
+  const idealMoves = mb.idealMoves || [];
+
+  if (!idealMoves.includes(moveCount)) return 1.0;
+
+  return mb.damageRate || 1.0;
+}
+
+  function isMoveBonusActive(skill, moveCount) {
+  if (!skill || !skill.moveBonus) return false;
+
+  const mb = skill.moveBonus;
+  const idealMoves = mb.idealMoves || [];
+
+  return idealMoves.includes(moveCount);
+}
+
+function getMoveBonusLabel(skill, moveCount) {
+  if (!skill || !skill.moveBonus) return 'MBなし';
+
+  const mb = skill.moveBonus;
+
+  if (!isMoveBonusActive(skill, moveCount)) {
+    return 'MBなし';
   }
 
+  const parts = [];
+
+  if (mb.damageRate != null && mb.damageRate !== 1.0) {
+    parts.push('DMG ×' + mb.damageRate);
+  }
+
+  if (mb.hitAdd != null && mb.hitAdd !== 0) {
+    parts.push('HIT +' + mb.hitAdd + '%');
+  }
+
+  if (mb.healRate != null && mb.healRate !== 1.0) {
+    parts.push('HEAL ×' + mb.healRate);
+  }
+
+  if (mb.addEffect) {
+    parts.push('追加効果');
+  }
+
+  if (!parts.length) {
+    return 'MB発動';
+  }
+
+  return 'MB ' + parts.join(' / ');
+}
   // ============================================================
   // 味方→敵グリッド射影
   // battle.js の getEnemyCellsFromAllyRange と同等の処理を再実装
@@ -171,7 +221,7 @@
     }
 
     sw.moveCount++;
-    sw.multiplier = getMultiplier(sw.moveCount);
+    sw.multiplier = getMoveBonusMultiplier(sw.skill, sw.moveCount);
 
     const bs = getBs();
     if (bs) bs.swipeComboMultiplier = sw.multiplier;
@@ -240,7 +290,7 @@
       <div class="swipe-hud-row swipe-hud-stats">
         <span>HIT <b>${sw.hitTargets.length}</b></span>
         <span>MOVE <b>${sw.moveCount}</b></span>
-        <span>×<b>${sw.multiplier.toFixed(1)}</b></span>
+        <span><b>${getMoveBonusLabel(sw.skill, sw.moveCount)}</b></span>
       </div>
     `;
 
@@ -387,23 +437,25 @@
   // 発動判定（HIT 0 でも必ず発動する）
   // ============================================================
   function applyIfReady() {
-    if (!sw.active) return;
+  if (!sw.active) return;
 
-    const hitCount   = sw.hitTargets.length;
-    const multiplier = sw.multiplier;
+  const hitCount = sw.hitTargets.length;
+  const mbLabel = getMoveBonusLabel(sw.skill, sw.moveCount);
 
-    // HIT数によらずログを出して発動へ進む
-    if (hitCount > 0) {
-      addLog(
-        sw.actor.name + '「' + sw.skill.name + '」発動！' +
-        ' (HIT ' + hitCount + ', MOVE ' + sw.moveCount + ', ×' + multiplier.toFixed(1) + ')'
-      );
-    } else {
-      addLog(
-        sw.actor.name + '「' + sw.skill.name + '」空振り！' +
-        ' (HIT 0, MOVE ' + sw.moveCount + ', ×' + multiplier.toFixed(1) + ')'
-      );
-    }
+  // HIT数によらずログを出して発動へ進む
+  if (hitCount > 0) {
+    addLog(
+      sw.actor.name + '「' + sw.skill.name + '」発動！' +
+      ' (HIT ' + hitCount + ', MOVE ' + sw.moveCount + ', ' + mbLabel + ')'
+    );
+  } else {
+    addLog(
+      sw.actor.name + '「' + sw.skill.name + '」空振り！' +
+      ' (HIT 0, MOVE ' + sw.moveCount + ', ' + mbLabel + ')'
+    );
+  }
+
+  // 以下は既存のまま
 
     // ポインターイベントを止める（HUDはまだ残す）
     sw.active = false;
@@ -440,7 +492,7 @@
     sw.actor      = actor;
     sw.skill      = skill;
     sw.moveCount  = 0;
-    sw.multiplier = getMultiplier(0);
+    sw.multiplier = getMoveBonusMultiplier(skill, 0);
     sw.hitTargets = [];
     sw.pointerId  = null;
     sw.startX     = 0;

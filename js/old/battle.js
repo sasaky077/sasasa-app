@@ -230,7 +230,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // 後方互換：敵ユニット取得（旧呼び出し箇所用）
   function getEnemyTargetsFromAllyRange(chara, rangeId) {
   const cells = getEnemyCellsFromAllyRange(chara, rangeId);
-  return [bs.enemy].filter(e => e.hp > 0 && cells.has(e.row + '-' + e.col));
+  const enemies = bs.enemies || (bs.enemy ? [bs.enemy] : []);
+  return enemies.filter(e => e && e.hp > 0 && cells.has(e.row + '-' + e.col));
 }
 
   // ============================================================
@@ -307,21 +308,80 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   function calcDamage(atk, def, enemy, multiplier) {
     const m = multiplier || 1.0;
-    // 敵のDEFダウンを反映
-    const mod = enemy._statusMod || {};
-    const effectiveDef = Math.max(0, Math.floor(def * (1 - (mod.def_down || 0))));
-    return Math.max(1, Math.floor(atk * m) - effectiveDef);
+    // def は _rebuildStatusMod() で補正済みの値を受け取る前提。
+    // ここで再度 def_down を掛けると二重適用になるため行わない。
+    return Math.max(1, Math.floor(atk * m) - def);
   }
-  function calcEnemyDamage(enemy, target) {
+  function calcEnemyDamage(enemy, target, action) {
+    // damageRate 指定時：対象の最大HP割合ダメージ（DEF無視）
+    // atk_down / def_up などのバフ・デバフは効かない仕様。
+    if (action && action.damageRate != null) {
+      return Math.max(1, Math.floor(target.hpMax * action.damageRate));
+    }
+    // enemy.atk・target.def はいずれも _rebuildStatusMod() で補正済みの値。
+    // atk_down が enemy.atk に、def_up が target.def に反映されているため追加補正不要。
     return Math.max(1, enemy.atk - target.def);
+  }
+
+  // ============================================================
+  // 回復ヘルパー
+  // ============================================================
+  function healUnit(unit, amount) {
+    if (!unit || unit.hp <= 0) return 0;
+    const before = unit.hp;
+    unit.hp = Math.min(unit.hpMax, unit.hp + amount);
+    return unit.hp - before;
+  }
+
+  function calcHealAmount(unit, effect) {
+    if (!unit || !effect) return 0;
+    if (effect.amount != null) return Math.max(1, Math.floor(effect.amount));
+    if (effect.rate  != null) return Math.max(1, Math.floor(unit.hpMax * effect.rate));
+    return 0;
+  }
+
+  function getLowestHpUnit(units) {
+    const alive = (units || []).filter(u => u && u.hp > 0);
+    if (!alive.length) return null;
+    return alive.slice().sort((a, b) => (a.hp / a.hpMax) - (b.hp / b.hpMax))[0];
+  }
+
+  // 既存のaction.typeからrangeIdへ変換（action.rangeが未指定の場合のフォールバック）
+  function getRangeFromEnemyActionType(type) {
+    switch (type) {
+      case 'atk_single': return 'random1';
+      case 'atk_near':   return 'row_near';
+      case 'atk_mid':    return 'row_mid';
+      case 'atk_far':    return 'row_far';
+      case 'atk_left':   return 'col_left';
+      case 'atk_center': return 'col_center';
+      case 'atk_right':  return 'col_right';
+      case 'atk_cross':  return 'field_cross';
+      case 'atk_xcross': return 'field_xcross';
+      case 'atk_all':    return 'all';
+      default:           return 'random1';
+    }
   }
   function hitCheck(baseHit, accuracy) {
     return Math.random() * 100 < Math.min(100, baseHit + Math.floor((accuracy - 250) / 10));
   }
-  function calcTurnOrder(party, enemy) {
-    const units = party.filter(c=>c.hp>0).map(c=>({...c, isEnemy:false}));
-    units.push({...enemy, isEnemy:true, name:'怪異'});
-    units.sort((a,b) => b.spd!==a.spd ? b.spd-a.spd : (a.isEnemy?-1:1));
+  // hit_up / hit_down を命中率に反映する（_statusMod 参照）
+  function getEffectiveHit(baseHit, actor) {
+    const mod = actor._statusMod || {};
+    return baseHit + ((mod.hit_up || 0) * 100) - ((mod.hit_down || 0) * 100);
+  }
+  function calcTurnOrder(party, enemyOrEnemies) {
+    const units = party.filter(c => c.hp > 0).map(c => ({ ...c, isEnemy: false }));
+    const enemies = Array.isArray(enemyOrEnemies) ? enemyOrEnemies : [enemyOrEnemies];
+    enemies
+      .filter(e => e && e.hp > 0)
+      .forEach(e => {
+        units.push({ ...e, isEnemy: true, name: e.name || '怪異' });
+      });
+    units.sort((a, b) => {
+      if (b.spd !== a.spd) return b.spd - a.spd;
+      return a.isEnemy ? -1 : 1;
+    });
     return units;
   }
 
@@ -345,11 +405,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
           </div>
           <div class="bt-enemy-hp-txt" id="bt-enemy-hp-txt"></div>
         </div>
-        <div class="bt-next-wrap" id="bt-next-wrap" onclick="showNextDetail()">
-          <span class="bt-next-label">NEXT</span>
-          <span class="bt-next-val" id="bt-next-val">—</span>
-          <span class="bt-next-hint">▸</span>
+        <div class="bt-enemy-preview-panel" id="bt-enemy-preview-panel">
+          <div class="bt-enemy-preview-empty">敵をタップすると次行動の詳細を確認できます</div>
         </div>
+        <button class="bt-menu-btn" id="bt-menu-btn" onclick="openBattleMenu()">MENU</button>
       </div>
 
       <!-- 行動順トグル -->
@@ -419,8 +478,25 @@ function getEnemyCellsFromAllyRange(chara, range) {
           <button class="bt-cancel-btn" onclick="cancelSkillSelect()">取消</button>
           <button class="bt-execute-btn" id="bt-execute-btn" onclick="executeSelectedSkill()">決定</button>
         </div>
-        <div class="bt-skill-hint" id="bt-skill-hint">長押しで詳細を確認</div>
+        <div class="bt-skill-hint" id="bt-skill-hint">スキルをタップして詳細を確認</div>
       </div>
+
+        <div class="bt-skill-detail-popup" id="bt-skill-detail-popup">
+      <div class="bt-skill-detail-head">
+        <div>
+          <div class="bt-skill-detail-name" id="bt-skill-detail-name">—</div>
+          <div class="bt-skill-detail-type" id="bt-skill-detail-type">—</div>
+        </div>
+        <button class="bt-skill-detail-x" onclick="cancelSkillSelect()">×</button>
+      </div>
+
+      <div class="bt-skill-detail-body" id="bt-skill-detail-body"></div>
+
+        <div class="bt-skill-detail-actions">
+          <button class="bt-skill-detail-cancel" onclick="cancelSkillSelect()">取消</button>
+        </div>
+      </div>
+
 
       <!-- ログ -->
       <div class="bt-log-wrap">
@@ -560,11 +636,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
         box-shadow:inset 0 0 0 1px rgba(150,210,90,.3), 0 0 8px rgba(130,200,80,.5);
         animation:highlightPulse .9s ease-in-out infinite;
       }
-      .bt-grid-cell.movable::after {
-        border-color:rgba(80,160,255,.9) !important;
-        box-shadow:inset 0 0 0 1px rgba(70,150,240,.3), 0 0 8px rgba(60,130,220,.5);
-        animation:movePulse .9s ease-in-out infinite;
-      }
+
       .bt-grid-cell.skill-range::after {
         border-color:rgba(220,180,60,.9) !important;
         box-shadow:0 0 10px rgba(200,160,40,.5), 0 0 20px rgba(180,140,30,.3);
@@ -650,6 +722,23 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-enemy-card { width:100%; height:100%; position:relative; display:block; }
       .bt-enemy-card-img { position:absolute; top:0; left:50%; transform:translateX(-50%); width:80%; height:auto; object-fit:contain; object-position:top center; display:block; }
 
+      /* 雑魚敵ミニHPバー */
+      .bt-enemy-mini-hp {
+        position:absolute;
+        left:8%; right:8%; bottom:2px;
+        height:3px;
+        background:rgba(0,0,0,.55);
+        border-radius:999px;
+        overflow:hidden;
+        z-index:5;
+      }
+      .bt-enemy-mini-hp-fill {
+        height:100%;
+        background:linear-gradient(90deg,#7a1515,#c02828);
+        border-radius:999px;
+        transition:width .3s ease;
+      }
+
       /* キャラカード */
       .bt-chara-card { width:100%; height:100%; cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; display:block; overflow:hidden; isolation:isolate; }
       .bt-chara-card.is-inactive {
@@ -731,11 +820,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
       }
       .bt-skill-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
       .bt-skill-acting { font-size:11px; letter-spacing:2px; color:rgba(232,228,220,.5); }
-      .bt-btn-move-card { /* 移動はbt-skill-cardと共通スタイル */ }
-      .bt-btn-move-card.move-active { border-color:rgba(100,180,255,.6) !important; background:rgba(100,180,255,.1) !important; color:rgba(100,180,255,.9) !important; }
       .bt-skill-cards { display:flex; gap:5px; padding:6px 10px 4px; align-items:flex-end; }
       .bt-skill-hint { text-align:center; font-size:8px; letter-spacing:2px; color:rgba(232,228,220,.2); margin-top:2px; padding-bottom:4px; }
-      .bt-move-cancel { text-align:center; font-size:10px; letter-spacing:2px; color:rgba(232,228,220,.3); cursor:pointer; padding:4px 0 2px; }
       .bt-skill-range {
         margin-top: 4px;
         font-size: 9px;
@@ -779,13 +865,13 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
       /* カードめくり演出 */
       .bt-skill-card-wrap {
-        flex:1;
-        perspective:600px;
-        cursor:pointer;
-        -webkit-tap-highlight-color:transparent;
+        flex: 1;
+        perspective: 600px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
 
-        aspect-ratio:3/4;
-        min-width:0;
+        height: 74px;
+        min-width: 0;
       }
 
       .bt-skill-card-inner {
@@ -838,11 +924,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
         background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
       }
 
-      #bt-move-card{
-        justify-content:flex-start;
-        padding-top:30px;
-      }
-
       /* スキルカード */
       .bt-skill-card { flex:1; background:rgba(18,18,24,.95); border:1px solid rgba(255,255,255,.09); border-radius:9px; padding:10px 5px 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; transition:transform .12s, border-color .15s; user-select:none; -webkit-user-select:none; }
       .bt-skill-card::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent); }
@@ -857,6 +938,12 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-skill-card-front,
       .bt-skill-card {
         box-sizing:border-box;
+      }
+
+      .bt-skill-card-front,
+      .bt-skill-card-back {
+        gap: 3px;
+        padding: 6px 4px;
       }
 
       /* ログ */
@@ -895,6 +982,26 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-dmg-pop.heal {
         font-size:18px; color:#5bc47a;
         text-shadow:0 0 12px rgba(91,196,122,.9), 0 1px 4px rgba(0,0,0,.9);
+      }
+      /* 消失（敵HP0） */
+      .bt-dmg-pop.vanish {
+        font-size: 18px;
+        color: rgba(232,228,220,.85);
+        letter-spacing: 4px;
+        text-shadow:
+          0 0 12px rgba(255,255,255,.45),
+          0 0 28px rgba(180,180,220,.25),
+          0 2px 8px rgba(0,0,0,.95);
+      }
+      /* 戦線離脱（味方HP0） */
+      .bt-dmg-pop.withdraw {
+        font-size: 16px;
+        color: rgba(180,220,255,.9);
+        letter-spacing: 3px;
+        text-shadow:
+          0 0 12px rgba(120,180,255,.45),
+          0 0 28px rgba(80,120,220,.25),
+          0 2px 8px rgba(0,0,0,.95);
       }
       @keyframes dmgFloat {
         0%   { opacity:0;   transform:translateX(-50%) translateY(0)    scale(.7); }
@@ -1183,8 +1290,503 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-result-txt { font-family:"Cinzel",serif; font-size:38px; letter-spacing:10px; margin-bottom:36px; }
       .bt-result-txt.win  { color:#d4a84b; text-shadow:0 0 28px rgba(212,168,75,.6); }
       .bt-result-txt.lose { color:#c02828; text-shadow:0 0 28px rgba(192,40,40,.6); }
-      .bt-result-btn { padding:14px 44px; border-radius:12px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07); color:#e8e4dc; font-size:14px; letter-spacing:2px; cursor:pointer; font-family:"Noto Serif JP",serif; }
-      .bt-result-btn:active { background:rgba(255,255,255,.15); }
+      .bt-result-actions { display:flex; gap:10px; justify-content:center; }
+      .bt-result-btn { padding:12px 24px; border-radius:12px; border:1px solid rgba(212,168,75,.55); background:rgba(212,168,75,.12); color:#d4a84b; font-size:13px; letter-spacing:2px; cursor:pointer; font-family:"Noto Serif JP",serif; }
+      .bt-result-btn:active { background:rgba(212,168,75,.25); }
+      .bt-result-btn-sub { border-color:rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:rgba(232,228,220,.75); }
+      .bt-result-btn-sub:active { background:rgba(255,255,255,.12); }
+      .bt-skill-detail-popup {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: max(18px, env(safe-area-inset-bottom, 18px));
+  z-index: 260000;
+  display: none;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  background: rgba(12, 13, 18, 0.86);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 8px 28px rgba(0,0,0,.85), 0 0 18px rgba(120,80,40,.18);
+  color: #e8e4dc;
+}
+
+.bt-skill-detail-popup.active {
+  display: block;
+}
+
+.bt-skill-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bt-skill-detail-name {
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: #f0e8d8;
+}
+
+.bt-skill-detail-type {
+  margin-top: 3px;
+  font-size: 10px;
+  color: rgba(232,228,220,.55);
+}
+
+.bt-skill-detail-x {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.04);
+  color: rgba(232,228,220,.75);
+}
+
+.bt-skill-detail-body {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.bt-skill-detail-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+}
+
+.bt-skill-detail-label {
+  color: rgba(232,228,220,.45);
+}
+
+.bt-skill-detail-value {
+  color: rgba(232,228,220,.88);
+}
+
+.bt-skill-detail-desc {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: rgba(232,228,220,.72);
+  font-size: 11px;
+}
+
+.bt-skill-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bt-skill-detail-cancel,
+.bt-skill-detail-ok {
+  height: 42px;
+  border-radius: 10px;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.bt-skill-detail-cancel {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: rgba(232,228,220,.7);
+}
+
+.bt-skill-detail-ok {
+  border: 1px solid rgba(210,170,80,.45);
+  background: linear-gradient(180deg, rgba(160,120,45,.34), rgba(70,45,20,.55));
+  color: #f4d98a;
+}
+
+      /* 敵技詳細パネル */
+      .bt-enemy-preview-panel {
+        margin-top: 6px;
+        padding: 8px 10px;
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(255,255,255,.03);
+        border-radius: 8px;
+      }
+      .bt-enemy-preview-empty {
+        font-size: 10px;
+        color: rgba(232,228,220,.35);
+        text-align: center;
+        letter-spacing: 1px;
+      }
+      .bt-enemy-preview-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .bt-enemy-preview-enemy {
+        font-size: 10px;
+        color: rgba(232,228,220,.5);
+        letter-spacing: 1px;
+      }
+      .bt-enemy-preview-skill {
+        font-size: 13px;
+        color: #d4a84b;
+        letter-spacing: 1px;
+      }
+      .bt-enemy-preview-desc {
+        font-size: 10px;
+        color: rgba(232,228,220,.7);
+        line-height: 1.5;
+        margin-bottom: 6px;
+      }
+      .bt-enemy-preview-grid {
+        display: flex;
+        gap: 8px;
+      }
+      .bt-enemy-preview-item {
+        flex: 1;
+        min-width: 0;
+      }
+      .bt-enemy-preview-label {
+        font-size: 8px;
+        color: rgba(232,228,220,.35);
+        margin-bottom: 2px;
+        letter-spacing: 1px;
+      }
+      .bt-enemy-preview-value {
+        font-size: 11px;
+        color: rgba(232,228,220,.85);
+      }
+
+      /* MENUボタン */
+      .bt-header { position: relative; }
+      .bt-menu-btn {
+        position: absolute;
+        top: max(10px, env(safe-area-inset-top, 10px));
+        right: 12px;
+        z-index: 2;
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,.15);
+        background: rgba(0,0,0,.35);
+        color: rgba(232,228,220,.8);
+        font-family: "Cinzel", serif;
+        font-size: 10px;
+        letter-spacing: 2px;
+        cursor: pointer;
+      }
+      .bt-menu-btn:active { background: rgba(255,255,255,.08); }
+
+      /* バトルメニューアクション */
+      .bt-battle-menu-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 14px;
+      }
+        /* =========================================
+   追加：バトル画面リッチ化CSS v1
+========================================= */
+
+/* 画面全体：黒一色から儀式場っぽい奥行きへ */
+#battle-root {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(120, 20, 20, .28), transparent 38%),
+    radial-gradient(circle at 50% 78%, rgba(210, 160, 70, .10), transparent 42%),
+    linear-gradient(180deg, #050507 0%, #09080b 46%, #030304 100%) !important;
+}
+
+/* 盤面全体 */
+.bt-grid-wrap {
+  position: relative;
+  border-radius: 14px;
+  padding: 8px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)),
+    rgba(0,0,0,.35);
+  border: 1px solid rgba(220, 190, 120, .12);
+  box-shadow:
+    inset 0 0 24px rgba(0,0,0,.75),
+    0 0 24px rgba(0,0,0,.55);
+}
+
+/* 敵側は赤黒 */
+.bt-grid-enemy {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(160, 20, 20, .20), transparent 55%),
+    rgba(0,0,0,.34);
+  border-color: rgba(180, 40, 40, .22);
+}
+
+/* 味方側は青白 */
+.bt-grid-ally {
+  background:
+    radial-gradient(circle at 50% 80%, rgba(80, 140, 180, .14), transparent 55%),
+    rgba(0,0,0,.34);
+  border-color: rgba(160, 190, 210, .18);
+}
+
+/* セルを石板・結界マスっぽく */
+.bt-grid-cell {
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.01)),
+    rgba(0,0,0,.58) !important;
+  box-shadow:
+    inset 0 0 16px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* セル枠は ::after 側で上書き */
+.bt-grid-cell::after {
+  border-radius: 8px;
+  border-color: rgba(220, 190, 120, .16) !important;
+}
+
+/* 敵味方の境界線を結界っぽく */
+.bt-field-divider {
+  height: 14px;
+  background:
+    linear-gradient(90deg, transparent, rgba(210, 170, 80, .45), transparent);
+  mask-image: linear-gradient(to bottom, transparent, black 45%, transparent);
+}
+
+/* キャラ・敵に影を足す */
+.bt-chara-card::before,
+.bt-enemy-card::before {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 5px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0,0,0,.75), transparent 70%);
+  z-index: 0;
+}
+
+.bt-chara-img,
+.bt-enemy-card-img {
+  z-index: 2;
+  filter:
+    drop-shadow(0 8px 10px rgba(0,0,0,.85))
+    drop-shadow(0 0 12px rgba(255,255,255,.08));
+}
+
+/* スキルカードを術式札っぽく */
+.bt-skill-card-front {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(55,45,35,.96), rgba(16,14,18,.96));
+  border: 1px solid rgba(210, 175, 95, .22);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 0 18px rgba(0,0,0,.75),
+    0 4px 12px rgba(0,0,0,.45);
+}
+
+.bt-skill-name {
+  color: rgba(245, 232, 200, .95);
+  text-shadow: 0 0 8px rgba(210, 160, 70, .18);
+}
+
+.bt-skill-card-front.selected {
+  border-color: rgba(230, 190, 90, .75) !important;
+  box-shadow:
+    0 0 18px rgba(220, 170, 70, .35),
+    inset 0 0 18px rgba(220, 170, 70, .10);
+}
+
+/* 攻撃予告を少し強化 */
+.bt-grid-cell.danger::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(220,40,40,0) 0px,
+      rgba(220,40,40,0) 6px,
+      rgba(220,40,40,.12) 7px,
+      rgba(220,40,40,.12) 9px
+    );
+  animation: dangerScan 1.1s linear infinite;
+}
+
+@keyframes dangerScan {
+  from { background-position: 0 0; }
+  to   { background-position: 18px 18px; }
+}
+
+/* =========================================
+   追加：セル被弾エフェクト
+========================================= */
+
+.bt-cell-hit-effect {
+  animation: btCellHitShake .34s ease-out;
+}
+
+.bt-cell-hit-effect::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 12;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at center,
+      rgba(255,255,255,.65) 0%,
+      rgba(255,80,60,.42) 18%,
+      rgba(180,20,20,.22) 42%,
+      transparent 70%);
+  box-shadow:
+    0 0 18px rgba(255,70,50,.75),
+    inset 0 0 18px rgba(255,80,60,.35);
+  animation: btCellHitFlash .42s ease-out forwards;
+}
+
+.bt-cell-hit-effect::after {
+  border-color: rgba(255,90,70,.95) !important;
+  box-shadow:
+    0 0 18px rgba(255,60,40,.8),
+    0 0 32px rgba(180,30,20,.45),
+    inset 0 0 14px rgba(255,80,60,.28) !important;
+}
+
+@keyframes btCellHitFlash {
+  0% {
+    opacity: 0;
+    transform: scale(.78);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.24);
+  }
+}
+
+@keyframes btCellHitShake {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-2px, 1px); }
+  40%  { transform: translate(2px, -1px); }
+  60%  { transform: translate(-1px, -1px); }
+  80%  { transform: translate(1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+  /* =========================================
+   追加：セル被弾エフェクト v2
+   renderField()で消えない固定レイヤー方式
+========================================= */
+
+.bt-cell-hit-burst {
+  position: fixed;
+  z-index: 310000;
+  pointer-events: none;
+  border-radius: 8px;
+  overflow: visible;
+  box-sizing: border-box;
+  animation: btCellHitBurstShake .36s ease-out forwards;
+}
+
+.bt-cell-hit-burst::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at center,
+      rgba(255,255,255,.95) 0%,
+      rgba(255,95,70,.72) 16%,
+      rgba(190,25,25,.42) 42%,
+      transparent 72%);
+  box-shadow:
+    0 0 20px rgba(255,70,50,.95),
+    0 0 42px rgba(200,30,20,.55),
+    inset 0 0 18px rgba(255,90,70,.45);
+  animation: btCellHitBurstFlash .52s ease-out forwards;
+}
+
+.bt-cell-hit-burst::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(255,110,90,.95);
+  box-shadow:
+    0 0 18px rgba(255,70,50,.9),
+    inset 0 0 16px rgba(255,80,60,.35);
+  animation: btCellHitBurstRing .52s ease-out forwards;
+}
+
+@keyframes btCellHitBurstFlash {
+  0% {
+    opacity: 0;
+    transform: scale(.65);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes btCellHitBurstRing {
+  0% {
+    opacity: 0;
+    transform: scale(.88);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes btCellHitBurstShake {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-3px, 1px); }
+  40%  { transform: translate(3px, -1px); }
+  60%  { transform: translate(-2px, -1px); }
+  80%  { transform: translate(2px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+#battle-root,
+.bt-main-field,
+.bt-grid-wrap,
+.bt-grid-cell,
+.bt-chara-card,
+.bt-chara-img {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.bt-grid-cell.drag-target-cell::after {
+  border-color: rgba(80,160,255,.95) !important;
+  box-shadow:
+    0 0 12px rgba(80,160,255,.65),
+    inset 0 0 10px rgba(80,160,255,.25) !important;
+}
+
+.bt-grid-cell.drag-target-cell {
+  background: rgba(0,20,45,.75) !important;
+}
+
+.bt-chara-img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
     `;
     document.body.appendChild(s);
   }
@@ -1194,20 +1796,55 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   let bs = null;
   let locked = false;
-  let moveMode = false;
-  let movingCharaId = null;
 
   // ============================================================
   // レンダリング
   // ============================================================
+  // ============================================================
+  // 次行動敵の取得・プレビュー保存
+  // ============================================================
+  function getNextActingEnemy() {
+    // bs.turnOrder上の次に行動するisEnemyを探す（生存敵のみ）
+    if (bs.turnOrder && bs.turnOrder.length) {
+      const unit = bs.turnOrder.find(u => u.isEnemy && u.hp > 0);
+      if (unit) {
+        const liveEnemy = (bs.enemies || []).find(e => e.instanceId === unit.instanceId || e.id === unit.id);
+        if (liveEnemy && liveEnemy.hp > 0) return liveEnemy;
+      }
+    }
+    // フォールバック：SPD順で最速の生存敵
+    const alive = (bs.enemies || []).filter(e => e && e.hp > 0);
+    if (!alive.length) return null;
+    return alive.slice().sort((a, b) => (b.spd || 0) - (a.spd || 0))[0];
+  }
+
+  function updateNextPreview() {
+    const nextEnemy = getNextActingEnemy();
+    if (!nextEnemy) {
+      bs.nextPreviewEnemy = null;
+      bs.nextPreviewAction = null;
+      return;
+    }
+    bs.nextPreviewEnemy = nextEnemy;
+    bs.nextPreviewAction = peekNextAction(nextEnemy);
+  }
+
   function renderHeader() {
     const e = bs.enemy;
+    // 複数敵の場合は全体HPの合計を表示
+    const enemies = bs.enemies || [e];
+    const totalHp = enemies.reduce((s, en) => s + Math.max(0, en.hp), 0);
+    const totalHpMax = enemies.reduce((s, en) => s + (en.hpMax || 0), 0);
     const fill = document.getElementById('bt-enemy-hp-fill');
-    if (fill) fill.style.width = (e.hp / e.hpMax * 100) + '%';
+    if (fill) fill.style.width = (totalHpMax > 0 ? totalHp / totalHpMax * 100 : 0) + '%';
     const txt = document.getElementById('bt-enemy-hp-txt');
-    if (txt) txt.textContent = e.hp + ' / ' + e.hpMax;
-    const next = document.getElementById('bt-next-val');
-    if (next) next.textContent = peekNextAction().action;
+    if (txt) {
+      if (enemies.length > 1) {
+        txt.textContent = '全 ' + totalHp + ' / ' + totalHpMax;
+      } else {
+        txt.textContent = e.hp + ' / ' + e.hpMax;
+      }
+    }
     const row = document.getElementById('bt-enemy-status-row');
     if (row) {
       row.innerHTML = '';
@@ -1215,7 +1852,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
         const b = document.createElement('span');
         const cls = STATUS_BADGE_CLASS[st.type] || 'bt-status-other';
         b.className = 'bt-status-badge ' + cls;
-        b.textContent = STATUS_LABEL[st.type] + (st.duration > 0 ? ' ' + st.duration : '');
+        b.textContent = (STATUS_LABEL[st.type] || st.type) + (st.duration > 0 ? ' ' + st.duration : '');
         row.appendChild(b);
       });
     }
@@ -1224,15 +1861,47 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // スキル選択中の射程キャッシュ（renderEnemyGrid/renderAllyGridから参照するため先に宣言）
   let _skillRangeCache = null; // { prefix, cells } or null
 
-  function renderEnemyGrid(highlightCells) {
-    // 実体化中は敵位置と次攻撃範囲を常に表示
-    const isVisible = (bs.enemy.statusList||[]).some(s => s.type === 'jittai');
-    // 実体化中は次の攻撃範囲も敵グリッドに表示
-    let jittaiDangerCells = null;
-    if (isVisible) {
-      const nextAct = peekNextAction();
-      jittaiDangerCells = _getCells({ row: bs.enemy.row, col: bs.enemy.col }, nextAct.range || 'random1');
+  // 敵カードDOM生成（ミニHPバー付き）
+  // ハイライト中・通常描画の両方で使う共通関数
+  function isEnemyJittai(enemy) {
+  // 新仕様：敵はデフォルトで実体化。
+  // spiritual 状態のときだけ霊体化扱い。
+  return !!enemy && !hasStatus(enemy, 'spiritual');
+}
+
+function isEnemySpiritual(enemy) {
+  return !!enemy && hasStatus(enemy, 'spiritual');
+}
+
+  function createEnemyCard(e) {
+    const card = document.createElement('div');
+    card.className = 'bt-enemy-card';
+    const hpPct = e.hpMax > 0 ? Math.max(0, e.hp / e.hpMax * 100) : 0;
+    card.innerHTML = `
+      <img class="bt-enemy-card-img" src="${e.battleImg || e.upImg || e.img}" onerror="this.style.opacity='0'">
+      <div class="bt-enemy-mini-hp">
+        <div class="bt-enemy-mini-hp-fill" style="width:${hpPct}%"></div>
+      </div>
+    `;
+    // 実体化している敵のみタップ可能
+    if (isEnemyJittai(e)) {
+      card.style.cursor = 'pointer';
+      card.onclick = function(ev) {
+        ev.stopPropagation();
+        showEnemyNextRange(e);
+      };
     }
+    return card;
+  }
+
+  function renderEnemyGrid(highlightCells) {
+    // 敵グリッドの役割：
+    //   - 実体化している敵の画像を表示する
+    //   - 味方スキル選択中の敵グリッドハイライトを表示する
+    //   - 敵の攻撃予告danger表示は行わない（味方グリッド側に出す）
+    const enemies = bs.enemies || (bs.enemy ? [bs.enemy] : []);
+    const aliveEnemies = enemies.filter(e => e && e.hp > 0);
+
     ROWS.forEach(row => {
       COLS.forEach(col => {
         const cell = document.getElementById('bt-eg-'+row+'-'+col);
@@ -1240,44 +1909,37 @@ function getEnemyCellsFromAllyRange(chara, range) {
         cell.innerHTML = '';
         const key = row+'-'+col;
 
-        // スキル選択中の射程ハイライト（敵グリッド対象のスキル）
+        // スキル選択中の射程ハイライト
         if (_skillRangeCache && _skillRangeCache.prefix === 'bt-eg-') {
           const sc = _skillRangeCache.cells;
           if (sc === null || sc.has(key)) {
             cell.className = 'bt-grid-cell skill-range';
-            // 実体化中なら敵画像も表示
-            if (isVisible && bs.enemy.row === row && bs.enemy.col === col) {
-              const card = document.createElement('div');
-              card.className = 'bt-enemy-card';
-              card.innerHTML = `<img class="bt-enemy-card-img" src="${bs.enemy.battleImg || bs.enemy.upImg || bs.enemy.img}" onerror="this.style.opacity='0'">`;
-              cell.appendChild(card);
-            }
+            // 実体化中の敵はこのマスにいれば画像を表示
+            aliveEnemies.forEach(e => {
+              if (e.row === row && e.col === col && isEnemyJittai(e)) {
+                cell.appendChild(createEnemyCard(e));
+              }
+            });
             return;
           }
         }
 
-        if (isVisible && bs.enemy.row === row && bs.enemy.col === col) {
-          const card = document.createElement('div');
-          card.className = 'bt-enemy-card';
-          card.innerHTML = `<img class="bt-enemy-card-img" src="${bs.enemy.battleImg || bs.enemy.upImg || bs.enemy.img}" onerror="this.style.opacity='0'">`;
-          cell.appendChild(card);
-          // 実体化中：敵がいるマスは位置表示＋次攻撃範囲をdangerで重ねる
-          const isDanger = jittaiDangerCells === null || (jittaiDangerCells && jittaiDangerCells.has(key));
-          cell.className = 'bt-grid-cell' + (isDanger ? ' danger' : '');
-        } else if (isVisible && jittaiDangerCells) {
-          // 実体化中：攻撃範囲マスをdanger表示（敵がいないマスも）
-          const isDanger = jittaiDangerCells === null || jittaiDangerCells.has(key);
-          cell.className = 'bt-grid-cell' + (isDanger ? ' danger' : '');
-        } else {
-          cell.className = 'bt-grid-cell' + (highlightCells && highlightCells.has(key) ? ' highlight' : '');
-        }
+        // 各敵を描画（実体化している敵のみ表示）
+        aliveEnemies.forEach(e => {
+          if (e.row !== row || e.col !== col) return;
+          if (!isEnemyJittai(e)) return;
+          cell.appendChild(createEnemyCard(e));
+        });
+
+        // セルのクラス設定（danger表示なし・highlightのみ）
+        cell.className = 'bt-grid-cell' + (highlightCells && highlightCells.has(key) ? ' highlight' : '');
       });
     });
   }
 
-  function renderField(highlightEnemy, highlightAlly) {
+  function renderField(highlightEnemy, allyDangerCells) {
     renderEnemyGrid(highlightEnemy);
-    renderAllyGrid(highlightAlly);
+    renderAllyGrid(allyDangerCells);
   }
 
   let drawnSkills = [];
@@ -1327,12 +1989,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
       front.className = 'bt-skill-card-front' + (sk.cd>0?' on-cd':'');
       front.dataset.skillId = sk.id;
       front.innerHTML = `
-        ${sk.cd>0?'<span class="bt-skill-cd-badge">CD</span>':''}
-        <div class="bt-skill-name">${sk.name}</div>
-        <div class="bt-skill-subdesc">${TYPE_LABEL[sk.type]||'スキル'}</div>
-        <div class="bt-skill-hit">${sk.hit<100?'HIT '+sk.hit+'%':'確定命中'}</div>
-        <div class="bt-skill-range">射程：${sk.rangeLabel || sk.range || '指定なし'}</div>
-      `;
+      ${sk.cd>0?'<span class="bt-skill-cd-badge">CD</span>':''}
+      <div class="bt-skill-name">${sk.name}</div>
+      <div class="bt-skill-subdesc">${TYPE_LABEL[sk.type]||'スキル'}</div>
+    `;
       if (sk.cd === 0) setupSkillCard(front, chara, sk);
 
       inner.appendChild(back);
@@ -1348,22 +2008,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
       cards.appendChild(wrap);
     });
-
-    // 移動カード（4枚目・スキルカードと同じwrap構造）
-    const moveWrap = document.createElement('div');
-    moveWrap.className = 'bt-skill-card-wrap';
-    const moveCard = document.createElement('div');
-    moveCard.className = 'bt-skill-card' + (moveMode ? ' move-active' : '');
-    moveCard.id = 'bt-move-card';
-    moveCard.style.cssText = 'width:100%; height:100%;';
-    moveCard.innerHTML = `
-      <div class="bt-skill-name">移動</div>
-      <div class="bt-skill-subdesc">ポジション変更</div>
-      <div class="bt-skill-hit">確定</div>
-    `;
-    moveCard.onclick = () => battleMoveMode();
-    moveWrap.appendChild(moveCard);
-    cards.appendChild(moveWrap);
   }
 
   // 3枚を順番にめくる
@@ -1378,30 +2022,163 @@ function getEnemyCellsFromAllyRange(chara, range) {
   }
 
   function setupSkillCard(card, chara, sk) {
-    let pressTimer = null;
-    let pressing = false;
-    let startX = 0, startY = 0;
-    const start = e => {
-      const t = e.touches ? e.touches[0] : e;
-      startX = t.clientX; startY = t.clientY; pressing = true;
-      pressTimer = setTimeout(() => { pressing = false; card.classList.remove('pressing'); showSkillDetail(chara, sk); }, 500);
-    };
-    const move = e => {
-      if (!pressing) return;
-      const t = e.touches ? e.touches[0] : e;
-      if (Math.abs(t.clientX-startX)>6 || Math.abs(t.clientY-startY)>6) cancel();
-    };
-    const cancel = () => { card.classList.remove('pressing'); if(pressTimer){clearTimeout(pressTimer);pressTimer=null;} pressing=false; };
-    const end = () => { card.classList.remove('pressing'); if(pressTimer){clearTimeout(pressTimer);pressTimer=null; if(pressing){pressing=false;selectSkill(chara,sk);}} };
-    card.addEventListener('touchstart', start, {passive:true});
-    card.addEventListener('touchmove',  move,  {passive:true});
-    card.addEventListener('touchend',   end);
-    card.addEventListener('touchcancel',cancel);
-    card.addEventListener('mousedown',  start);
-    card.addEventListener('mousemove',  move);
-    card.addEventListener('mouseup',    end);
-    card.addEventListener('mouseleave', cancel);
+  let pressTimer = null;
+  let longPressed = false;
+
+  card.addEventListener('pointerdown', (e) => {
+    if (sk.cd > 0) return;
+
+    e.stopPropagation();
+    longPressed = false;
+
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      showSkillDetailPopup(chara, sk);
+    }, 400);
+  }, { passive: true });
+
+  card.addEventListener('pointerup', (e) => {
+    if (sk.cd > 0) return;
+
+    e.stopPropagation();
+
+    clearTimeout(pressTimer);
+    pressTimer = null;
+
+    const popup = document.getElementById('bt-skill-detail-popup');
+
+    if (longPressed) {
+      longPressed = false;
+      if (popup) popup.classList.remove('active');
+      return;
+    }
+
+    if (popup) popup.classList.remove('active');
+    selectSkill(chara, sk);
+  }, { passive: true });
+
+  card.addEventListener('pointercancel', () => {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+    longPressed = false;
+
+    const popup = document.getElementById('bt-skill-detail-popup');
+    if (popup) popup.classList.remove('active');
+  }, { passive: true });
+}
+
+const MOVE_EFFECT_RATE = [1.0, 0.9, 0.75, 0.6, 0.5];
+
+function getMoveEffectRate(distance) {
+  return MOVE_EFFECT_RATE[Math.min(distance, MOVE_EFFECT_RATE.length - 1)];
+}
+
+function getMoveDistance(fromRow, fromCol, toRow, toCol) {
+  const rowIdx = { near: 0, mid: 1, far: 2 };
+  const colIdx = { left: 0, center: 1, right: 2 };
+
+  return (
+    Math.abs(rowIdx[fromRow] - rowIdx[toRow]) +
+    Math.abs(colIdx[fromCol] - colIdx[toCol])
+  );
+}
+
+function getReachableMoveDistanceAvoidingAllies(fromRow, fromCol, toRow, toCol, dragChara) {
+  const rows = ['near', 'mid', 'far'];
+  const cols = ['left', 'center', 'right'];
+
+  const rowIdx = { near: 0, mid: 1, far: 2 };
+  const colIdx = { left: 0, center: 1, right: 2 };
+
+  const startKey = fromRow + '-' + fromCol;
+  const goalKey = toRow + '-' + toCol;
+
+  // 同じマスなら移動距離0
+  if (startKey === goalKey) return 0;
+
+  // 移動先に味方がいるならNG
+  const goalOccupied = bs.party.some(u =>
+    u &&
+    u.hp > 0 &&
+    u.id !== dragChara.id &&
+    u.row === toRow &&
+    u.col === toCol
+  );
+
+  if (goalOccupied) return null;
+
+  // 味方のいるマスを壁にする
+  const blocked = new Set(
+    bs.party
+      .filter(u => u && u.hp > 0 && u.id !== dragChara.id)
+      .map(u => u.row + '-' + u.col)
+  );
+
+  // 幅優先探索：上下左右に1マスずつ進み、最短距離を探す
+  const queue = [{ key: startKey, dist: 0 }];
+  const visited = new Set([startKey]);
+
+  while (queue.length) {
+    const current = queue.shift();
+    const [row, col] = current.key.split('-');
+
+    const r = rowIdx[row];
+    const c = colIdx[col];
+
+    const nextList = [
+      [r - 1, c], // 上
+      [r + 1, c], // 下
+      [r, c - 1], // 左
+      [r, c + 1], // 右
+    ];
+
+    for (const [nr, nc] of nextList) {
+      const nextRow = rows[nr];
+      const nextCol = cols[nc];
+
+      if (!nextRow || !nextCol) continue;
+
+      const nextKey = nextRow + '-' + nextCol;
+
+      if (visited.has(nextKey)) continue;
+      if (blocked.has(nextKey)) continue;
+
+      const nextDist = current.dist + 1;
+
+      if (nextKey === goalKey) {
+        return nextDist;
+      }
+
+      visited.add(nextKey);
+      queue.push({ key: nextKey, dist: nextDist });
+    }
   }
+
+  // どのルートでも到達不可
+  return null;
+}
+
+function getAllyCellFromPoint(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+
+  const cell = el.closest('.bt-grid-ally .bt-grid-cell');
+  if (!cell || !cell.id || !cell.id.startsWith('bt-ag-')) return null;
+
+  const parts = cell.id.replace('bt-ag-', '').split('-');
+
+  return {
+    el: cell,
+    row: parts[0],
+    col: parts[1],
+  };
+}
+
+function clearDragTargetCell() {
+  document.querySelectorAll('.drag-target-cell').forEach(el => {
+    el.classList.remove('drag-target-cell');
+  });
+}
 
   function addLog(msg) {
     const log = document.getElementById('bt-log');
@@ -1485,11 +2262,249 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
   highlightSkillRange(chara, sk);
 
-  document.getElementById('bt-execute-selected').textContent =
-    '「' + sk.name + '」を予約しますか？';
-  document.getElementById('bt-execute-bar').classList.add('visible');
+  const bar = document.getElementById('bt-execute-bar');
+  if(bar) bar.classList.remove('visible');
+
+  // showSkillDetailPopup(chara, sk);
+
+  // スワイプ結線システムへの橋渡し（battle_swipe.js が存在する場合のみ）
+  if (window.SwipeBattle && typeof window.SwipeBattle.start === 'function') {
+    window.SwipeBattle.start(chara, sk);
+  }
 }
-  function highlightSkillRange(chara, sk) {
+
+function getSkillTypeLabel(sk){
+  if(!sk) return 'その他';
+
+  const range = sk.range || '';
+
+  // 自分・味方・自陣対象はその他
+  if(
+    range === 'self' ||
+    range.indexOf('ally') >= 0
+  ){
+    return 'その他';
+  }
+
+  // pierce系は直進型
+  if(range.indexOf('pierce') >= 0){
+    return '直進型';
+  }
+
+  // front / row / col / all は着弾型
+  if(
+    range.indexOf('front') >= 0 ||
+    range.indexOf('row') >= 0 ||
+    range.indexOf('col') >= 0 ||
+    range === 'all'
+  ){
+    return '着弾型';
+  }
+
+  return 'その他';
+}
+
+function showSkillDetailPopup(chara, sk){
+  const popup = document.getElementById('bt-skill-detail-popup');
+  const nameEl = document.getElementById('bt-skill-detail-name');
+  const typeEl = document.getElementById('bt-skill-detail-type');
+  const bodyEl = document.getElementById('bt-skill-detail-body');
+
+  if(!popup || !nameEl || !typeEl || !bodyEl) return;
+
+  nameEl.textContent = sk.name;
+  typeEl.textContent = 'スキル詳細';
+
+  bodyEl.innerHTML = `
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">スキルタイプ</div>
+      <div class="bt-skill-detail-value">${getSkillTypeLabel(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">貫通</div>
+      <div class="bt-skill-detail-value">${getPierceLabel(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">命中率</div>
+      <div class="bt-skill-detail-value">${sk.hit || 100}%</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">効果</div>
+      <div class="bt-skill-detail-value">${getEffectText(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">継続ターン</div>
+      <div class="bt-skill-detail-value">${getSkillDurationText(sk)}</div>
+    </div>
+    <div class="bt-skill-detail-desc">${sk.desc || ''}</div>
+  `;
+
+  popup.classList.add('active');
+}
+
+function getSkillTypeLabel(sk){
+  if(!sk) return 'その他';
+
+  const range = sk.range || '';
+
+  if(sk.type === 'heal') return 'その他';
+  if(sk.type === 'buff') return 'その他';
+  if(sk.type === 'move') return 'その他';
+
+  if(range.indexOf('pierce') >= 0) return '直進型';
+  if(range === 'front1' || range.indexOf('front') >= 0) return '直進型';
+  if(range === 'all' || range.indexOf('row') >= 0 || range.indexOf('col') >= 0) return '着弾型';
+
+  return 'その他';
+}
+
+function getPierceLabel(sk){
+  return sk && sk.pierce ? '有' : '無';
+}
+
+function getDurationLabel(effect){
+  if(!effect) return '—';
+  if(effect.duration == null) return '永続';
+  return effect.duration + 'ターン';
+}
+
+function getEffectText(sk){
+  if(!sk) return '—';
+
+  const texts = [];
+
+  if(sk.multiplier && sk.multiplier > 0){
+    texts.push('敵に自身の攻撃力の' + sk.multiplier + '倍ダメージ');
+  }
+
+  const effects = sk.effects || [];
+
+  effects.forEach(function(e){
+    if(e.type === 'heal'){
+      if(e.rate != null){
+        texts.push('味方のHPを最大HPの' + Math.round(e.rate * 100) + '%回復');
+      } else if(e.amount != null){
+        texts.push('味方のHPを' + e.amount + '回復');
+      } else {
+        texts.push('味方のHPを回復');
+      }
+    }
+
+    if(e.type === 'atk_down') texts.push('敵の攻撃力を下げる');
+    if(e.type === 'def_down') texts.push('敵の守備力を下げる');
+    if(e.type === 'spd_down') texts.push('敵の素早さを下げる');
+
+    if(e.type === 'atk_up') texts.push('味方の攻撃力を上げる');
+    if(e.type === 'def_up') texts.push('味方の守備力を上げる');
+    if(e.type === 'spd_up') texts.push('味方の素早さを上げる');
+
+    if(e.type === 'jittai') texts.push('敵を実体化する');
+    if(e.type === 'stun') texts.push('敵をスタンさせる');
+
+    if(e.type === 'pull_1') texts.push('敵を1マス引き寄せる');
+    if(e.type === 'pull_2') texts.push('敵を2マス引き寄せる');
+    if(e.type === 'push_1') texts.push('敵を1マス押し出す');
+    if(e.type === 'push_2') texts.push('敵を2マス押し出す');
+
+    if(e.type === 'shift_right_1') texts.push('対象を右へ1マス移動');
+    if(e.type === 'shift_right_2') texts.push('対象を右へ2マス移動');
+    if(e.type === 'shift_left_1') texts.push('対象を左へ1マス移動');
+    if(e.type === 'shift_left_2') texts.push('対象を左へ2マス移動');
+  });
+
+  if(!texts.length && sk.type === 'move'){
+    texts.push('ポジションを変更する');
+  }
+
+  return texts.length ? texts.join(' / ') : '効果なし';
+}
+
+function getSkillDurationText(sk){
+  const effects = sk.effects || [];
+  if(!effects.length) return '—';
+
+  const durations = effects
+    .map(function(e){ return getDurationLabel(e); })
+    .filter(Boolean);
+
+  return durations.length ? durations.join(' / ') : '—';
+}
+
+
+
+function getPierceLabel(sk){
+  return sk && sk.pierce ? '有' : '無';
+}
+
+function getDurationLabel(effect){
+  if(!effect) return '—';
+  if(effect.duration == null) return '永続';
+  return effect.duration + 'ターン';
+}
+
+function getEffectText(sk){
+  if(!sk) return '—';
+
+  const texts = [];
+
+  if(sk.multiplier && sk.multiplier > 0){
+    texts.push('敵に自身の攻撃力の' + sk.multiplier + '倍ダメージ');
+  }
+
+  const effects = sk.effects || [];
+
+  effects.forEach(function(e){
+    if(e.type === 'heal'){
+      if(e.rate != null){
+        texts.push('味方のHPを最大HPの' + Math.round(e.rate * 100) + '%回復');
+      } else if(e.amount != null){
+        texts.push('味方のHPを' + e.amount + '回復');
+      } else {
+        texts.push('味方のHPを回復');
+      }
+    }
+
+    if(e.type === 'atk_down') texts.push('敵の攻撃力を下げる');
+    if(e.type === 'def_down') texts.push('敵の守備力を下げる');
+    if(e.type === 'spd_down') texts.push('敵の素早さを下げる');
+
+    if(e.type === 'atk_up') texts.push('味方の攻撃力を上げる');
+    if(e.type === 'def_up') texts.push('味方の守備力を上げる');
+    if(e.type === 'spd_up') texts.push('味方の素早さを上げる');
+
+    if(e.type === 'jittai') texts.push('敵を実体化する');
+    if(e.type === 'stun') texts.push('敵をスタンさせる');
+
+    if(e.type === 'pull_1') texts.push('敵を1マス引き寄せる');
+    if(e.type === 'pull_2') texts.push('敵を2マス引き寄せる');
+    if(e.type === 'push_1') texts.push('敵を1マス押し出す');
+    if(e.type === 'push_2') texts.push('敵を2マス押し出す');
+
+    if(e.type === 'shift_right_1') texts.push('対象を右へ1マス移動');
+    if(e.type === 'shift_right_2') texts.push('対象を右へ2マス移動');
+    if(e.type === 'shift_left_1') texts.push('対象を左へ1マス移動');
+    if(e.type === 'shift_left_2') texts.push('対象を左へ2マス移動');
+  });
+
+  if(!texts.length && sk.type === 'move'){
+    texts.push('ポジションを変更する');
+  }
+
+  return texts.length ? texts.join(' / ') : '効果なし';
+}
+
+function getSkillDurationText(sk){
+  const effects = sk.effects || [];
+  if(!effects.length) return '—';
+
+  const durations = effects
+    .map(function(e){ return getDurationLabel(e); })
+    .filter(Boolean);
+
+  return durations.length ? durations.join(' / ') : '—';
+}
+
+function highlightSkillRange(chara, sk) {
     const isAllyRange = ALLY_RANGES.has(sk.range);
 
     if (isAllyRange) {
@@ -1506,34 +2521,53 @@ function getEnemyCellsFromAllyRange(chara, range) {
       _skillRangeCache = { prefix: 'bt-eg-', cells };
     }
 
-    renderField();
+    // スキルハイライト中は敵攻撃予告は一時非表示
+    renderField(null, null);
   }
 
   function clearSkillRangeHighlight() {
     _skillRangeCache = null;
-    // renderFieldで再描画されるのでクラス直接操作は不要だが念のため残す
     document.querySelectorAll('.skill-range').forEach(el => el.classList.remove('skill-range'));
   }
 
   window.cancelSkillSelect = function () {
     selectedSkill = null;
     selectedChara = null;
+
     document.querySelectorAll('.bt-skill-card-front').forEach(el => el.classList.remove('selected'));
     clearSkillRangeHighlight();
+
+    const popup = document.getElementById('bt-skill-detail-popup');
+    if (popup) popup.classList.remove('active');
+
     const bar  = document.getElementById('bt-execute-bar');
     const hint = document.getElementById('bt-skill-hint');
     if (bar)  bar.classList.remove('visible');
     if (hint) hint.style.display = '';
-    renderField();
+    // 敵タップ時の攻撃予告を維持しながら再描画
+    const dangerArg = bs.selectedEnemyPreview ? bs.selectedEnemyPreview.dangerArg : null;
+    renderField(null, dangerArg);
   };
 
-  // 予約確定（「発動」→「予約」に変わる）
+  // 即時発動（スワイプ結線・通常スキル選択の両方から呼ばれる）
   window.executeSelectedSkill = function () {
     if (!selectedSkill || !selectedChara) return;
+
     const sk    = selectedSkill;
     const chara = selectedChara;
+
+    // cancelSkillSelect() で倍率が 1.0 に戻る可能性があるため先に退避
+    const swipeMult =
+    bs && typeof bs.swipeComboMultiplier === 'number'
+      ? bs.swipeComboMultiplier
+      : 1.0;
+
     cancelSkillSelect();
-    reserveAction(chara, sk);
+
+    // cancelSkillSelect 後に倍率を復元
+    if (bs) bs.swipeComboMultiplier = swipeMult;
+
+    executeImmediateSkill(chara, sk);
   };
 
   // ============================================================
@@ -1552,10 +2586,94 @@ function getEnemyCellsFromAllyRange(chara, range) {
     advancePlanningCursor();
   }
 
+  // ============================================================
+  // 即時発動フロー（スワイプ結線バトル用）
+  // ============================================================
+
+  // スキルを即時発動し、敵攻撃 → 次キャラへ進む
+  function executeImmediateSkill(chara, skill) {
+    if (!bs || !chara || !skill) return;
+    if (bs.phase === 'result') return;
+
+    bs.phase = 'executing';
+    closeSkillArea();
+
+    // CDを消費（移動スキルはcd管理なし）
+    const sk = chara.skills.find(s => s.id === skill.id);
+    if (sk && sk.cdMax > 0) sk.cd = sk.cdMax;
+
+    const battleUnit = {
+      ...chara,
+      img: chara.battleImg || chara.img,
+      isEnemy: false,
+    };
+
+    _execStepPlayer(chara, battleUnit, skill, () => {
+      // プレイヤー行動後：全敵が攻撃
+      doEnemyAction(() => {
+        // リアクティブダメージ（HP30%以下の enemy_01）
+        _applyReactiveDamage(chara, () => {
+          markCharaActed(chara);
+          goNextPlanningCharaOrTurnEnd();
+        });
+      });
+    });
+  }
+
+  // そのターンに行動したキャラのIDを記録
+  function markCharaActed(chara) {
+    if (!bs.actedCharaIds) bs.actedCharaIds = [];
+    if (!bs.actedCharaIds.includes(chara.id)) {
+      bs.actedCharaIds.push(chara.id);
+    }
+  }
+
+  // 未行動キャラがいれば次へ、全員行動済みならターン終了
+  function goNextPlanningCharaOrTurnEnd() {
+  if (!bs || bs.phase === 'result') return;
+
+  // turnOrderはコピーを含むため、HP判定は必ずbs.partyの実体を見る
+  const nextOrderUnit = (bs.turnOrder || []).find(u => {
+    if (!u || u.isEnemy) return false;
+    if ((bs.actedCharaIds || []).includes(u.id)) return false;
+
+    const liveChara = bs.party.find(c => c.id === u.id);
+    return liveChara && liveChara.hp > 0;
+  });
+
+  if (nextOrderUnit) {
+    const chara = bs.party.find(c => c.id === nextOrderUnit.id);
+
+    if (!chara || chara.hp <= 0) {
+      // 念のため。ここには基本来ない
+      markCharaActed(nextOrderUnit);
+      goNextPlanningCharaOrTurnEnd();
+      return;
+    }
+
+    bs.phase = 'planning';
+    bs.planningCharaId = chara.id;
+
+    renderSkills(chara);
+    renderField();
+    renderOrder(null);
+    addLog(chara.name + ' の行動を選んでください');
+  } else {
+    onTurnEnd();
+  }
+}
+
   function advancePlanningCursor() {
     // 未予約のキャラをSPD順で探す
-    const playerUnits = bs.turnOrder.filter(u => !u.isEnemy && u.hp > 0);
-    const unset = playerUnits.find(u => !bs.pendingActions.some(a => a.charaId === u.id));
+    const playerUnits = bs.turnOrder.filter(u => {
+  if (!u || u.isEnemy) return false;
+  const liveChara = bs.party.find(c => c.id === u.id);
+  return liveChara && liveChara.hp > 0;
+});
+
+const unset = playerUnits.find(u =>
+  !bs.pendingActions.some(a => a.charaId === u.id)
+);
 
     if (unset) {
       // 次の未予約キャラのスキルを表示
@@ -1626,6 +2744,13 @@ function getEnemyCellsFromAllyRange(chara, range) {
     renderOrder(idx);
 
     if (unit.isEnemy) {
+      // after_each_action の敵はここでは攻撃しない（各プレイヤー行動後に攻撃済み）
+      const liveEnemy = (bs.enemies || []).find(e => e.instanceId === unit.instanceId || e.id === unit.id) || unit;
+      const timing = liveEnemy.attackTiming || (bs.enemy && bs.enemy.attackTiming) || 'after_round';
+      if (timing === 'after_each_action') {
+        setTimeout(() => executeNext(idx + 1), 100);
+        return;
+      }
       _execStepEnemy(unit, () => executeNext(idx + 1));
     } else {
       const action = bs.pendingActions.find(a => a.charaId === unit.id);
@@ -1635,7 +2760,53 @@ function getEnemyCellsFromAllyRange(chara, range) {
       }
       const chara = bs.party.find(c => c.id === unit.id);
       const battleUnit = { ...unit, img: chara.battleImg || chara.img || unit.img, isEnemy: false };
-      _execStepPlayer(chara, battleUnit, action.skill, () => executeNext(idx + 1));
+      _execStepPlayer(chara, battleUnit, action.skill, () => {
+        // after_each_action：プレイヤー1人行動後に敵が反応攻撃
+        const timing = bs.enemy && bs.enemy.attackTiming || 'after_round';
+        if (timing === 'after_each_action' && bs.enemy && bs.enemy.hp > 0) {
+          const enemyUnit = bs.turnOrder.find(u => u.isEnemy);
+          if (enemyUnit) {
+            _execStepEnemy(enemyUnit, () => {
+              _applyReactiveDamage(chara, () => executeNext(idx + 1));
+            });
+          } else {
+            _applyReactiveDamage(chara, () => executeNext(idx + 1));
+          }
+        } else {
+          // HP30%以下リアクティブダメージ（enemy_01から）
+          _applyReactiveDamage(chara, () => executeNext(idx + 1));
+        }
+      });
+    }
+  }
+
+  // ============================================================
+  // リアクティブダメージ（HP30%以下の enemy_01 からプレイヤーへ）
+  // ============================================================
+  function _applyReactiveDamage(chara, onNext) {
+    if (!chara || chara.hp <= 0) { onNext(); return; }
+    // _reactiveActive が有効な enemy_01 を探す
+    const boss = (bs.enemies || []).find(e => (e._origId || e.id) === 'enemy_01' && e._reactiveActive && e.hp > 0);
+    if (!boss) { onNext(); return; }
+    const dmg = Math.max(1, Math.floor(chara.hpMax * 0.10));
+    const cell = document.getElementById('bt-ag-' + chara.row + '-' + chara.col);
+    showCellDamageEffect(cell);
+    showResultPop(cell, '反応 -' + dmg, 'dmg');
+    addLog('【反応ダメージ】' + chara.name + ' に ' + dmg + ' ダメージ');
+    const vanished = applyDamageAndCheckVanish(chara, dmg, 'ally');
+    renderHeader();
+    if (vanished) {
+      setTimeout(() => {
+        renderField();
+        checkPartyDead();
+        onNext();
+      }, 700);
+    } else {
+      renderField();
+      setTimeout(() => {
+        checkPartyDead();
+        onNext();
+      }, 600);
     }
   }
 
@@ -1663,18 +2834,27 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
   // ⑤→⑥→⑦ 敵版
   function _execStepEnemy(unit, onNext) {
-    const act = peekNextAction();
+    // unit が bs.enemies の参照に対応する実体を取得（turnOrder は shallow copy のため）
+    const liveEnemy = (bs.enemies || []).find(e => e.instanceId === unit.instanceId || e.id === unit.id) || unit;
 
-    // ⑤ 敵画像表示
-    showActingChara(unit);
+    // 死亡済みならスキップ
+    if (!liveEnemy || liveEnemy.hp <= 0) {
+      setTimeout(onNext, 100);
+      return;
+    }
+
+    const act = peekNextAction(liveEnemy);
+
+    // ⑤ 敵画像表示（liveEnemy の情報を使う）
+    showActingChara({ ...liveEnemy, isEnemy: true });
 
     // ⑥ 行動名フラッシュ（1000ms後）
     setTimeout(() => {
-      showSkillFlash(unit.name, act.action);
+      showSkillFlash(act.action || liveEnemy.name);
 
       // ⑦ 結果（さらに1200ms後）
       setTimeout(() => {
-        doEnemyAction(() => {
+        doSingleEnemyAction(liveEnemy, () => {
           setTimeout(() => {
             hideActingChara();
             setTimeout(onNext, 400);
@@ -1696,11 +2876,13 @@ function getEnemyCellsFromAllyRange(chara, range) {
     const rect = el.getBoundingClientRect();
     const pop = document.createElement('div');
     const cls = {
-      miss:   'bt-dmg-pop miss',
-      dmg:    'bt-dmg-pop',
-      buff:   'bt-dmg-pop buff',
-      debuff: 'bt-dmg-pop debuff',
-      heal:   'bt-dmg-pop heal',
+      miss:     'bt-dmg-pop miss',
+      dmg:      'bt-dmg-pop',
+      buff:     'bt-dmg-pop buff',
+      debuff:   'bt-dmg-pop debuff',
+      heal:     'bt-dmg-pop heal',
+      vanish:   'bt-dmg-pop vanish',
+      withdraw: 'bt-dmg-pop withdraw',
     }[type] || 'bt-dmg-pop';
     pop.className = cls;
     pop.textContent = text;
@@ -1708,6 +2890,55 @@ function getEnemyCellsFromAllyRange(chara, range) {
     pop.style.cssText = `left:${cx}px;top:${rect.top + 10}px;transform:translateX(-50%);`;
     document.body.appendChild(pop);
     setTimeout(() => pop.remove(), 2000);
+  }
+
+function showCellDamageEffect(cell) {
+  if (!cell) return;
+
+  const rect = cell.getBoundingClientRect();
+
+  const fx = document.createElement('div');
+  fx.className = 'bt-cell-hit-burst';
+  fx.style.left = rect.left + 'px';
+  fx.style.top = rect.top + 'px';
+  fx.style.width = rect.width + 'px';
+  fx.style.height = rect.height + 'px';
+
+  document.body.appendChild(fx);
+
+  setTimeout(() => {
+    fx.remove();
+  }, 650);
+}
+
+  // ============================================================
+  // HP減算＋HP0時の消失/戦線離脱ポップ共通処理
+  // side: 'enemy' | 'ally'
+  // ============================================================
+  function applyDamageAndCheckVanish(unit, dmg, side) {
+    if (!unit || unit.hp <= 0) return false;
+
+    const before = unit.hp;
+    unit.hp = Math.max(0, unit.hp - dmg);
+
+    const becameDead = before > 0 && unit.hp <= 0;
+
+    if (becameDead) {
+      const cellId = side === 'enemy'
+        ? 'bt-eg-' + unit.row + '-' + unit.col
+        : 'bt-ag-' + unit.row + '-' + unit.col;
+
+      const cell = document.getElementById(cellId);
+
+      const vanishText = side === 'enemy' ? '消失' : '戦線離脱';
+      const vanishType = side === 'enemy' ? 'vanish' : 'withdraw';
+
+      setTimeout(() => {
+        showResultPop(cell, vanishText, vanishType);
+      }, 260);
+    }
+
+    return becameDead;
   }
 
   // ============================================================
@@ -1862,25 +3093,79 @@ function getEnemyCellsFromAllyRange(chara, range) {
     });
   }
 
-  function getTargetsByPierce(attacker, range, units, options) {
-    const pierce = options && options.pierce === true;
-
-    if (!window.BattleRange) return [];
-
-    const cells = BattleRange.getCellsFromRange(attacker, range);
-
-    let candidates = units.filter(u => {
-      return u && u.hp > 0 && cells.has(u.row + '-' + u.col);
-    });
-
-    candidates = sortTargetsByLineOrder(candidates);
-
-    if (!pierce) {
-      return candidates.length ? [candidates[0]] : [];
+  // pierce_ 系rangeかどうかを判定する
+  // pierce_ で始まるrangeID、またはpierce2/pierce3 も対象
+  function isPierceRange(range) {
+    if (typeof range === 'string') {
+      return range.startsWith('pierce_') || range === 'pierce2' || range === 'pierce3';
     }
+    if (range && typeof range.id === 'string') {
+      return range.id.startsWith('pierce_');
+    }
+    return false;
+  }
+  function getEnemyAttackCellsOnAllyGrid(enemy, rangeId) {
+  if (!enemy || !rangeId) return new Set();
 
+  // 敵→味方の直線攻撃は、敵と同じ列の味方グリッドを対象
+  if (rangeId === 'pierce_all' || rangeId === 'pierce3') {
+    return new Set([
+      'near-' + enemy.col,
+      'mid-' + enemy.col,
+      'far-' + enemy.col,
+    ]);
+  }
+
+  if (rangeId === 'pierce2') {
+    return new Set([
+      'near-' + enemy.col,
+      'mid-' + enemy.col,
+    ]);
+  }
+
+  if (!window.BattleRange || !BattleRange.getCellsFromRange) {
+    return new Set();
+  }
+
+  return BattleRange.getCellsFromRange(
+    { row: enemy.row, col: enemy.col },
+    rangeId
+  );
+}
+
+  function getTargetsByPierce(attacker, range, units, options) {
+  const pierce = options && options.pierce === true;
+  const side   = options && options.side;
+
+  let cells;
+
+  if (side === 'enemy') {
+    // 味方 → 敵
+    cells = getEnemyCellsFromAllyRange(attacker, range);
+  } else {
+    // 敵 → 味方
+    cells = getEnemyAttackCellsOnAllyGrid(attacker, range);
+  }
+
+  let candidates = (units || []).filter(u => {
+    return u && u.hp > 0 && cells && cells.has(u.row + '-' + u.col);
+  });
+
+  candidates = sortTargetsByLineOrder(candidates);
+
+  // pierce_ 系rangeでない場合は、範囲内の全対象を返す
+  if (!isPierceRange(range)) {
     return candidates;
   }
+
+  // pierce_ 系rangeで、pierce:false の場合は最前列の1体だけ
+  if (!pierce) {
+    return candidates.length ? [candidates[0]] : [];
+  }
+
+  // pierce:true の場合は直線上すべて
+  return candidates;
+}
 
   // ============================================================
   // 敵強制移動（push / pull / shift_left / shift_right）
@@ -1898,68 +3183,54 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // 戻り値: 移動した場合 true
   // ============================================================
   function applyEnemyMoveEffect(enemy, effect) {
+    
+    if (isEnemySpiritual(enemy)) {
+     addLog('→ ' + enemy.name + ' は霊体化中のため移動効果を受けない');
+    return false;
+    }
+    
     if (!enemy || enemy.hp <= 0) return false;
 
-    const ROW_ORDER = ['near', 'mid', 'far'];
-    const COL_ORDER = ['left', 'center', 'right'];
-
-    let moved = false;
+    let direction = null;
+    let maxSteps  = 1;
 
     // ── 縦方向：push / pull ──────────────────────────────────
-    if (effect.type === 'push' || effect.type === 'pull' ||
-        effect.type === 'push_1' || effect.type === 'push_2' ||
-        effect.type === 'pull_1' || effect.type === 'pull_2') {
-
-      const steps = effect.type.endsWith('_2') ? 2 : (effect.amount || 1);
-      const currentIndex = ROW_ORDER.indexOf(enemy.row);
-      if (currentIndex < 0) return false;
-
-      let nextIndex = currentIndex;
-      if (effect.type.startsWith('push')) {
-        nextIndex = Math.min(ROW_ORDER.length - 1, currentIndex + steps);
-      } else {
-        nextIndex = Math.max(0, currentIndex - steps);
-      }
-
-      if (nextIndex !== currentIndex) {
-        enemy.row = ROW_ORDER[nextIndex];
-        moved = true;
-        addLog(effect.type.startsWith('push') ? '敵を押し込んだ' : '敵を引き寄せた');
-      }
+    if (effect.type === 'push' || effect.type === 'push_1' || effect.type === 'push_2') {
+      direction = 'back';   // near → mid → far
+      maxSteps  = effect.type.endsWith('_2') ? 2 : (effect.amount || 1);
     }
-
+    else if (effect.type === 'pull' || effect.type === 'pull_1' || effect.type === 'pull_2') {
+      direction = 'front';  // far → mid → near
+      maxSteps  = effect.type.endsWith('_2') ? 2 : (effect.amount || 1);
+    }
     // ── 横方向：shift_left / shift_right ────────────────────
-    else if (effect.type === 'shift_left_1' || effect.type === 'shift_left_2' ||
-             effect.type === 'shift_right_1' || effect.type === 'shift_right_2') {
-
-      const steps = effect.type.endsWith('_2') ? 2 : 1;
-      const currentIndex = COL_ORDER.indexOf(enemy.col);
-      if (currentIndex < 0) return false;
-
-      let nextIndex = currentIndex;
-      if (effect.type.startsWith('shift_left')) {
-        nextIndex = Math.max(0, currentIndex - steps);
-      } else {
-        nextIndex = Math.min(COL_ORDER.length - 1, currentIndex + steps);
-      }
-
-      if (nextIndex !== currentIndex) {
-        enemy.col = COL_ORDER[nextIndex];
-        moved = true;
-        addLog('→ 敵を' + steps + 'マス' + (effect.type.startsWith('shift_left') ? '左' : '右') + 'へ移動した');
-      }
+    else if (effect.type === 'shift_left_1' || effect.type === 'shift_left_2') {
+      direction = 'left';
+      maxSteps  = effect.type.endsWith('_2') ? 2 : 1;
     }
-
+    else if (effect.type === 'shift_right_1' || effect.type === 'shift_right_2') {
+      direction = 'right';
+      maxSteps  = effect.type.endsWith('_2') ? 2 : 1;
+    }
     else {
       return false;
     }
 
-    if (moved) {
+    const result = BattleRange.tryMoveUnitStepwise(enemy, direction, maxSteps, bs.enemies);
+
+    if (result.moved) {
+      const dirLabel = {
+        back:  '押し込んだ',
+        front: '引き寄せた',
+        left:  result.steps + 'マス左へ移動した',
+        right: result.steps + 'マス右へ移動した',
+      }[direction];
+      addLog('→ 敵を' + (direction === 'back' || direction === 'front' ? result.steps + 'マス' : '') + dirLabel);
       renderField();
       return true;
     }
 
-    addLog('→ 敵は動かなかった');
+    addLog('→ 移動先が塞がっているため、敵は動かなかった');
     return false;
   }
 
@@ -1972,7 +3243,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
   const ROW_BY_IDX_MAP = ['near','mid','far'];
   const COL_BY_IDX_MAP = ['left','center','right'];
 
-  function _applyEffect(effect, chara, showPop) {
+  function _applyEffect(effect, chara, showPop, effectTargets) {
     const dur = (effect.duration != null) ? effect.duration : 1;
     const effectHit = effect.hit != null ? effect.hit : 100;
 
@@ -1981,85 +3252,98 @@ function getEnemyCellsFromAllyRange(chara, range) {
                       bs.party.some(c => c.id !== chara.id && hasStatus(c, 'sure_hit_team'));
     const landed = isSureHit ? true : (Math.random() * 100 < effectHit);
 
-    const enemyCell = () => document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
+    const enemyCell = (e) => document.getElementById('bt-eg-' + (e || bs.enemy).row + '-' + (e || bs.enemy).col);
     const allyCell  = (c) => document.getElementById('bt-ag-' + c.row + '-' + c.col);
 
     // ── 敵対象 ─────────────────────────────────────────────
     if (effect.target === 'enemy') {
+      // effectTargetsが渡されていればそれを使う。なければbs.enemyにフォールバック
+      const targets = (effectTargets && effectTargets.length)
+        ? effectTargets.filter(e => e && e.hp > 0)
+        : [bs.enemy].filter(Boolean);
+
       if (!landed) {
-        showPop && showResultPop(enemyCell(), 'MISS', 'miss');
+        targets.forEach(enemy => {
+          showPop && showResultPop(enemyCell(enemy), 'MISS', 'miss');
+        });
         return false;
       }
-      switch (effect.type) {
 
-        case 'jittai':
-          addStatus(bs.enemy, 'jittai', dur);
-          showPop && showResultPop(enemyCell(), '実体化▲', 'debuff');
-          addLog('→ 実体化付与 (' + dur + 'T)');
-          break;
+      targets.forEach(enemy => {
+        const cell = enemyCell(enemy);
+        switch (effect.type) {
 
-        case 'stun':
-          addStatus(bs.enemy, 'stun', dur);
-          showPop && showResultPop(enemyCell(), 'スタン▲', 'debuff');
-          addLog('→ スタン付与 (' + dur + 'T)');
-          break;
+          case 'jittai':
+            addStatus(enemy, 'jittai', dur);
+            showPop && showResultPop(cell, '実体化▲', 'debuff');
+            addLog('→ ' + enemy.name + ' に実体化付与 (' + dur + 'T)');
+            break;
 
-        case 'atk_down':
-          addStatus(bs.enemy, 'atk_down', dur);
-          showPop && showResultPop(enemyCell(), 'ATK↓', 'debuff');
-          addLog('→ ATKダウン (' + dur + 'T)');
-          break;
+          case 'stun':
+            addStatus(enemy, 'stun', dur);
+            showPop && showResultPop(cell, 'スタン▲', 'debuff');
+            addLog('→ ' + enemy.name + ' にスタン付与 (' + dur + 'T)');
+            break;
 
-        case 'def_down':
-          addStatus(bs.enemy, 'def_down', dur);
-          showPop && showResultPop(enemyCell(), 'DEF↓', 'debuff');
-          addLog('→ DEFダウン (' + dur + 'T)');
-          break;
+          case 'atk_down':
+            addStatus(enemy, 'atk_down', dur);
+            showPop && showResultPop(cell, 'ATK↓', 'debuff');
+            addLog('→ ' + enemy.name + ' にATKダウン (' + dur + 'T)');
+            break;
 
-        case 'spd_down':
-          addStatus(bs.enemy, 'spd_down', dur);
-          showPop && showResultPop(enemyCell(), 'SPD↓', 'debuff');
-          addLog('→ SPDダウン (' + dur + 'T)');
-          break;
+          case 'def_down':
+            addStatus(enemy, 'def_down', dur);
+            showPop && showResultPop(cell, 'DEF↓', 'debuff');
+            addLog('→ ' + enemy.name + ' にDEFダウン (' + dur + 'T)');
+            break;
 
-        // 敵強制移動（旧形式：後方互換）
-        case 'pull_1': case 'pull_2': {
-          const steps = effect.type === 'pull_1' ? 1 : 2;
-          const moved = applyEnemyMoveEffect(bs.enemy, { type: 'pull', amount: steps });
-          if (moved) showPop && showResultPop(enemyCell(), '吸寄' + steps, 'debuff');
-          break;
+          case 'spd_down':
+            addStatus(enemy, 'spd_down', dur);
+            showPop && showResultPop(cell, 'SPD↓', 'debuff');
+            addLog('→ ' + enemy.name + ' にSPDダウン (' + dur + 'T)');
+            break;
+
+          // 敵強制移動（旧形式：後方互換）
+          case 'pull_1': case 'pull_2': {
+            const steps = effect.type === 'pull_1' ? 1 : 2;
+            const moved = applyEnemyMoveEffect(enemy, { type: 'pull', amount: steps });
+            if (moved) showPop && showResultPop(cell, '吸寄' + steps, 'debuff');
+            break;
+          }
+          case 'push_1': case 'push_2': {
+            const steps = effect.type === 'push_1' ? 1 : 2;
+            const moved = applyEnemyMoveEffect(enemy, { type: 'push', amount: steps });
+            if (moved) showPop && showResultPop(cell, '押出' + steps, 'debuff');
+            break;
+          }
+
+          // 敵強制移動（新形式：push/pull + amount）
+          case 'push': {
+            const moved = applyEnemyMoveEffect(enemy, effect);
+            if (moved) showPop && showResultPop(cell, '押出' + (effect.amount || 1), 'debuff');
+            break;
+          }
+          case 'pull': {
+            const moved = applyEnemyMoveEffect(enemy, effect);
+            if (moved) showPop && showResultPop(cell, '吸寄' + (effect.amount || 1), 'debuff');
+            break;
+          }
+          case 'shift_right_1': case 'shift_right_2': {
+            const steps = effect.type === 'shift_right_1' ? 1 : 2;
+            const moved = applyEnemyMoveEffect(enemy, effect);
+            if (moved) showPop && showResultPop(cell, '右寄' + steps, 'debuff');
+            break;
+          }
+          case 'shift_left_1': case 'shift_left_2': {
+            const steps = effect.type === 'shift_left_1' ? 1 : 2;
+            const moved = applyEnemyMoveEffect(enemy, effect);
+            if (moved) showPop && showResultPop(cell, '左寄' + steps, 'debuff');
+            break;
+          }
         }
-        case 'push_1': case 'push_2': {
-          const steps = effect.type === 'push_1' ? 1 : 2;
-          const moved = applyEnemyMoveEffect(bs.enemy, { type: 'push', amount: steps });
-          if (moved) showPop && showResultPop(enemyCell(), '押出' + steps, 'debuff');
-          break;
-        }
+      });
 
-        // 敵強制移動（新形式：push/pull + amount）
-        case 'push': {
-          const moved = applyEnemyMoveEffect(bs.enemy, effect);
-          if (moved) showPop && showResultPop(enemyCell(), '押出' + (effect.amount || 1), 'debuff');
-          break;
-        }
-        case 'pull': {
-          const moved = applyEnemyMoveEffect(bs.enemy, effect);
-          if (moved) showPop && showResultPop(enemyCell(), '吸寄' + (effect.amount || 1), 'debuff');
-          break;
-        }
-        case 'shift_right_1': case 'shift_right_2': {
-          const steps = effect.type === 'shift_right_1' ? 1 : 2;
-          const moved = applyEnemyMoveEffect(bs.enemy, effect);
-          if (moved) showPop && showResultPop(enemyCell(), '右寄' + steps, 'debuff');
-          break;
-        }
-        case 'shift_left_1': case 'shift_left_2': {
-          const steps = effect.type === 'shift_left_1' ? 1 : 2;
-          const moved = applyEnemyMoveEffect(bs.enemy, effect);
-          if (moved) showPop && showResultPop(enemyCell(), '左寄' + steps, 'debuff');
-          break;
-        }
-      }
+      renderField();
       return true;
     }
 
@@ -2100,14 +3384,53 @@ function getEnemyCellsFromAllyRange(chara, range) {
           showPop && showResultPop(allyCell(target), '必中▲(全)', 'buff');
           addLog('→ 次回必中(全)');
           break;
-        case 'heal':
-          const heal = Math.floor(target.hpMax * (effect.amount || 0.15));
-          target.hp = Math.min(target.hpMax, target.hp + heal);
-          showPop && showResultPop(allyCell(target), '+' + heal, 'heal');
-          addLog('→ HP回復 +' + heal);
-          break;
       }
     });
+
+    // ── 味方回復（target指定あり） ──────────────────────────────
+    if (effect.type === 'heal') {
+      if (!landed) {
+        showPop && showResultPop(allyCell(chara), 'MISS', 'miss');
+        return false;
+      }
+
+      if (effect.target === 'ally_self') {
+        const amount = calcHealAmount(chara, effect);
+        const healed = healUnit(chara, amount);
+        if (healed > 0) {
+          showPop && showResultPop(allyCell(chara), '+' + healed, 'heal');
+          addLog('→ ' + chara.name + ' を ' + healed + ' 回復');
+        }
+        renderField();
+        return true;
+      }
+
+      if (effect.target === 'ally_lowest') {
+        const t = getLowestHpUnit(bs.party);
+        if (!t) return false;
+        const amount = calcHealAmount(t, effect);
+        const healed = healUnit(t, amount);
+        if (healed > 0) {
+          showPop && showResultPop(allyCell(t), '+' + healed, 'heal');
+          addLog('→ ' + t.name + ' を ' + healed + ' 回復');
+        }
+        renderField();
+        return true;
+      }
+
+      if (effect.target === 'ally_all') {
+        const targets = bs.party.filter(c => c && c.hp > 0);
+        targets.forEach(t => {
+          const amount = calcHealAmount(t, effect);
+          const healed = healUnit(t, amount);
+          if (healed > 0) showPop && showResultPop(allyCell(t), '+' + healed, 'heal');
+        });
+        addLog('→ 味方全員を回復');
+        renderField();
+        return true;
+      }
+    }
+
     return landed;
   }
 
@@ -2130,7 +3453,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
     } else {
       // 敵グリッド上の対象（攻撃・デバフ系）
       // pierce未指定は false 扱い（既存スキル互換）
-      targets = getTargetsByPierce(chara, skill.range, [bs.enemy], {
+      targets = getTargetsByPierce(chara, skill.range, bs.enemies, {
         pierce: skill.pierce === true,
         side: 'enemy',
       });
@@ -2148,30 +3471,69 @@ function getEnemyCellsFromAllyRange(chara, range) {
     const hasDmg = (skill.multiplier || 0) > 0;
     if (hasDmg) {
       if (targets.length === 0) {
-        addLog('— 範囲内に標的なし');
-        const fallback = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
-        showResultPop(fallback, 'MISS', 'miss');
-        setTimeout(() => { renderField(); onDone(); }, 1800);
-        return;
-      }
-      const hit = sureHit ? true : hitCheck(skill.hit, chara.accuracy);
+  addLog(chara.name + '「' + skill.name + '」は空を切った');
+
+  const fallback =
+    document.getElementById('bt-eg-mid-center') ||
+    document.querySelector('.bt-grid-enemy .bt-grid-cell');
+
+  showResultPop(fallback, 'MISS', 'miss');
+
+  // 空振りでもスワイプ倍率はリセット
+  if (bs) {
+    bs.swipeComboMultiplier = 1.0;
+  }
+
+  renderHeader();
+  renderField();
+
+  setTimeout(() => {
+    onDone && onDone();
+  }, 600);
+
+  return;
+}
+      const effectiveHit = getEffectiveHit(skill.hit, chara);
+      const hit = sureHit ? true : hitCheck(effectiveHit, chara.accuracy);
       if (!hit) {
         addLog('— 外れた');
-        const cell = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
-        showResultPop(cell, 'MISS', 'miss');
+        const cell =
+  targets[0]
+    ? document.getElementById('bt-eg-' + targets[0].row + '-' + targets[0].col)
+    : document.getElementById('bt-eg-mid-center');
+
+showResultPop(cell, 'MISS', 'miss');
+
+if (bs) {
+  bs.swipeComboMultiplier = 1.0;
+}
         setTimeout(() => { renderField(); onDone(); }, 1800);
         return;
       }
-      targets.forEach(() => {
-        const dmg = calcDamage(chara.atk, bs.enemy.def, bs.enemy, skill.multiplier);
-        bs.enemy.hp = Math.max(0, bs.enemy.hp - dmg);
-        addLog('→ ' + dmg + ' ダメージ');
-        const cell = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
+      let anyVanished = false;
+      targets.forEach(target => {
+        let dmg = calcDamage(chara.atk, target.def, target, skill.multiplier);
+        // スワイプ結線コンボ補正（battle_swipe.js が bs.swipeComboMultiplier をセット）
+        if (bs && typeof bs.swipeComboMultiplier === 'number') {
+         dmg = Math.floor(dmg * bs.swipeComboMultiplier);
+      }
+        const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
+        showCellDamageEffect(cell);
         showResultPop(cell, '-' + dmg, 'dmg');
+        addLog('→ ' + target.name + ' に ' + dmg + ' ダメージ');
+        const vanished = applyDamageAndCheckVanish(target, dmg, 'enemy');
+        if (vanished) anyVanished = true;
       });
+      // スワイプ倍率をリセット
+      bs.swipeComboMultiplier = 1.0;
       renderHeader();
-      renderField();
-      if (bs.enemy.hp <= 0) { setTimeout(() => onBattleEnd(true), 1200); return; }
+      if (anyVanished) {
+        setTimeout(() => renderField(), 700);
+      } else {
+        renderField();
+      }
+      // 全敵が倒れたら勝利
+      if (bs.enemies.every(e => e.hp <= 0)) { setTimeout(() => onBattleEnd(true), 1200); return; }
     }
 
     // ── effects[] 処理 ────────────────────────────────────────
@@ -2179,11 +3541,11 @@ function getEnemyCellsFromAllyRange(chara, range) {
     let effectDelay = hasDmg ? 400 : 0;
     effects.forEach(effect => {
       setTimeout(() => {
-        _applyEffect(effect, chara, true);
+        _applyEffect(effect, chara, true, targets);
         renderHeader();
         renderField();
         if (['spd_up','spd_down'].includes(effect.type)) {
-          bs.turnOrder = calcTurnOrder(bs.party, bs.enemy);
+          bs.turnOrder = calcTurnOrder(bs.party, bs.enemies);
           renderOrder(null);
         }
       }, effectDelay);
@@ -2200,33 +3562,231 @@ function getEnemyCellsFromAllyRange(chara, range) {
   }
 
   // ============================================================
-  // 敵行動実行
+  // 敵行動選択：ランダム（直前と同じ行動を避ける）
   // ============================================================
-  function doEnemyAction(onDone) {
-    // ── スタン中は行動スキップ ────────────────────────────────
-    if (hasStatus(bs.enemy, 'stun')) {
-      addLog('怪異：スタン — 行動できない');
-      const cell = document.getElementById('bt-eg-' + bs.enemy.row + '-' + bs.enemy.col);
+  function pickEnemyAction(pool, lastId) {
+    if (!pool || !pool.length) return null;
+    let candidates = pool.filter(a => a.id !== lastId);
+    if (!candidates.length) candidates = pool; // 候補が1つしかなければ同じ行動も許可
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  // ============================================================
+  // enemy_01 HP帯別行動選択
+  // ============================================================
+  function selectEnemy01Action(enemy) {
+    const hpRate = enemy.hp / enemy.hpMax;
+    enemy._tutorialTurn = (enemy._tutorialTurn || 0) + 1;
+
+    // HP30%以下フェーズ3
+    if (hpRate <= 0.30) {
+      const act = pickEnemyAction(enemy._phase3Pool, enemy._lastActionId);
+      enemy._lastActionId = act ? act.id : null;
+      return act || enemy._phase3Pool[0];
+    }
+    // HP50%以下フェーズ2
+    if (hpRate <= 0.50) {
+      const act = pickEnemyAction(enemy._phase2Pool, enemy._lastActionId);
+      enemy._lastActionId = act ? act.id : null;
+      return act || enemy._phase2Pool[0];
+    }
+    // HP51%以上フェーズ1（初回2ターン固定）
+    if (enemy._tutorialTurn <= 2 && enemy._phase1Fixed) {
+      const act = enemy._phase1Fixed[enemy._tutorialTurn - 1];
+      enemy._lastActionId = act ? act.id : null;
+      return act || enemy._phase1Pool[0];
+    }
+    // ランダム
+    const act = pickEnemyAction(enemy._phase1Pool, enemy._lastActionId);
+    enemy._lastActionId = act ? act.id : null;
+    return act || enemy._phase1Pool[0];
+  }
+
+  // ============================================================
+  // enemy_mask 行動選択
+  // ============================================================
+  function selectMaskAction(enemy) {
+    const pool = enemy._maskActionPool;
+    if (!pool) return enemy.actionPattern[0];
+    const act = pickEnemyAction(pool, enemy._lastActionId);
+    enemy._lastActionId = act ? act.id : null;
+    return act || pool[0];
+  }
+
+  // ============================================================
+  // 敵行動実行（単体）
+  // ============================================================
+  function doSingleEnemyAction(enemy, onDone) {
+    if (hasStatus(enemy, 'stun')) {
+      addLog(enemy.name + '：スタン — 行動できない');
+      const cell = document.getElementById('bt-eg-' + enemy.row + '-' + enemy.col);
       showResultPop(cell, 'STUN', 'miss');
-      consumeAction(); // 行動インデックスは進める
-      setTimeout(onDone, 800);
+      setTimeout(() => {
+         moveEnemy(enemy); 
+         clearEnemyPlannedAction(enemy);
+         onDone();
+      }, 800);
       return;
     }
 
-    const act = consumeAction();
-    addLog('怪異：' + act.action);
+    // HP30%以下フェーズ3トリガーチェック（enemy_01のみ）
+    const baseId = enemy._origId || enemy.id;
+    if (baseId === 'enemy_01' && !enemy._phase3Triggered && enemy.hp / enemy.hpMax <= 0.30) {
+      enemy._phase3Triggered = true;
+      enemy._reactiveActive = true;
+      // 実体化を解除
+      // 霊体化する
+addStatus(enemy, 'spiritual', 2);
 
-    if (bs.party.filter(c=>c.hp>0).length === 0) { onBattleEnd(false); return; }
+// 仲間maskも霊体化する
+(bs.enemies || []).forEach(e => {
+  if (e !== enemy && e.hp > 0) addStatus(e, 'spiritual', 2);
+});
 
-    const rangeId = act.range || 'random1';
+addLog('【白糸の怪異】HP30%以下！霊体化・反応ダメージ開始！');
+      renderHeader();
+      renderField();
+    }
+
+    // 行動選択
+    // 行動選択：予告で確定済みの行動を使う
+let act = enemy._plannedAction || planEnemyAction(enemy);
+
+if (!act) {
+  addLog(enemy.name + '：行動なし');
+  clearEnemyPlannedAction(enemy);
+  setTimeout(() => {
+    moveEnemy(enemy);
+    clearEnemyPlannedAction(enemy);
+    onDone();
+  }, 600);
+  return;
+}
+
+// 通常actionPattern型の敵だけ、実行時にactionIdxを進める
+if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
+    !(baseId === 'enemy_mask' && enemy._maskActionPool)) {
+  enemy.actionIdx = (enemy.actionIdx || 0) + 1;
+}
+
+    addLog(enemy.name + '：' + act.action);
+
+    if (bs.party.filter(c => c.hp > 0).length === 0) { onBattleEnd(false); return; }
+
+    // ── 行動タイプ別処理 ─────────────────────────────────────
+    const type = act.type;
+
+    // 回復系
+   if (type === 'heal' || type === 'heal_team' || type === 'heal_boss') {
+  doEnemySpecialHeal(enemy, act);
+  setTimeout(() => {
+    moveEnemy(enemy);
+    clearEnemyPlannedAction(enemy);
+    onDone();
+}, 1200);
+  return;
+}
+
+    // 状態異常回復（cleanse）
+    if (type === 'cleanse_self') {
+      const debuffs = ['atk_down', 'def_down', 'spd_down', 'jittai'];
+      debuffs.forEach(d => removeStatus(enemy, d));
+      const cell = document.getElementById('bt-eg-' + enemy.row + '-' + enemy.col);
+      showResultPop(cell, '状態回復', 'buff');
+      addLog('→ ' + enemy.name + ' がデバフ・実体化を解除した');
+      renderHeader();
+      renderField();
+      setTimeout(() => { 
+        moveEnemy(enemy); 
+        clearEnemyPlannedAction(enemy);
+        onDone(); 
+      }, 1000);
+      return;
+    }
+
+    // move_lock（行動ロック）
+    if (type === 'move_lock') {
+      const alive = bs.party.filter(u => u.hp > 0);
+      if (alive.length) {
+        const t = alive[Math.floor(Math.random() * alive.length)];
+        addStatus(t, { type: 'move_lock', duration: act.duration || 2 });
+        const cell = document.getElementById('bt-ag-' + t.row + '-' + t.col);
+        showResultPop(cell, '行動封じ', 'debuff');
+        addLog('→ ' + t.name + ' を ' + (act.duration || 2) + 'ターン行動封じ');
+        renderField();
+      }
+      setTimeout(() => { 
+        moveEnemy(enemy);
+        clearEnemyPlannedAction(enemy); 
+        onDone(); 
+      }, 1000);
+      return;
+    }
+
+    // push_front3（前2列のキャラを後方へ最大2マス押し出し）
+    if (type === 'push_front3') {
+      const targets = bs.party.filter(u => u.hp > 0 && u.row !== 'far');
+      if (targets.length) {
+        targets.forEach(t => {
+          const dmg = Math.max(1, Math.floor(t.hpMax * (act.damageRate || 0.07)));
+          // ダメージ表示は移動前のセルに出す
+          const cell = document.getElementById('bt-ag-' + t.row + '-' + t.col);
+          showResultPop(cell, '-' + dmg, 'dmg');
+          const vanished = applyDamageAndCheckVanish(t, dmg, 'ally');
+          const result = BattleRange.tryMoveUnitStepwise(t, 'back', 2, bs.party);
+          if (result.moved) {
+            addLog('→ ' + t.name + ' を' + result.steps + 'マス押し出し、' + dmg + 'ダメージ');
+          } else {
+            addLog('→ ' + t.name + ' は移動先が塞がっていたため移動せず、' + dmg + 'ダメージ');
+          }
+          if (vanished) {
+            setTimeout(() => renderField(), 700);
+          } else {
+            renderField();
+          }
+        });
+        renderField();
+        checkPartyDead();
+      } else {
+        addLog('→ 押し出し対象なし');
+      }
+      setTimeout(() => { 
+        moveEnemy(enemy); 
+        clearEnemyPlannedAction(enemy);
+        onDone(); 
+      }, 1200);
+      return;
+    }
+
+    // debuff_def / debuff_atk
+    if (type === 'debuff_def' || type === 'debuff_atk') {
+      const alive = bs.party.filter(u => u.hp > 0);
+      if (alive.length) {
+        const t = alive[Math.floor(Math.random() * alive.length)];
+        const statusType = type === 'debuff_def' ? 'def_down' : 'atk_down';
+        addStatus(t, { type: statusType, value: act.value || 0.20, duration: act.duration || 2 });
+        const cell = document.getElementById('bt-ag-' + t.row + '-' + t.col);
+        showResultPop(cell, type === 'debuff_def' ? 'DEF↓' : 'ATK↓', 'debuff');
+        addLog('→ ' + t.name + ' に' + (type === 'debuff_def' ? 'DEF' : 'ATK') + 'ダウン (' + (act.duration || 2) + 'T)');
+        renderField();
+      }
+      setTimeout(() => { 
+        moveEnemy(enemy);
+        clearEnemyPlannedAction(enemy); 
+        onDone(); 
+      }, 1000);
+      return;
+    }
+
+    // 通常攻撃（range指定）
+    const rangeId = act.range || getRangeFromEnemyActionType(type);
     let targets;
     if (rangeId === 'random1') {
-      // ランダム1体：生存中の味方からランダムに1体選ぶ
       const alive = bs.party.filter(u => u.hp > 0);
       targets = alive.length ? [alive[Math.floor(Math.random() * alive.length)]] : [];
     } else {
       targets = getTargetsByPierce(
-        { row: bs.enemy.row, col: bs.enemy.col },
+        { row: enemy.row, col: enemy.col },
         rangeId,
         bs.party,
         { pierce: act.pierce === true, side: 'ally' }
@@ -2234,43 +3794,171 @@ function getEnemyCellsFromAllyRange(chara, range) {
     }
 
     if (targets.length > 0) {
-      // 複数ターゲットは200ms刻みで順番にダメージ
       let delay = 0;
+      const vanishedTargets = [];
       targets.forEach(target => {
         setTimeout(() => {
-          const dmg = calcEnemyDamage(bs.enemy, target);
-          target.hp = Math.max(0, target.hp - dmg);
-          renderField();
-          const cell = document.getElementById('bt-ag-'+target.row+'-'+target.col);
+          const dmg = calcEnemyDamage(enemy, target, act);
+          const cell = document.getElementById('bt-ag-' + target.row + '-' + target.col);
+          showCellDamageEffect(cell);
           showResultPop(cell, '-' + dmg, 'dmg');
+          addLog('→ ' + target.name + ' に ' + dmg + ' ダメージ');
+          const vanished = applyDamageAndCheckVanish(target, dmg, 'ally');
+          if (vanished) {
+            setTimeout(() => renderField(), 700);
+          } else {
+            renderField();
+          }
         }, delay);
         delay += 300;
       });
       setTimeout(() => {
         checkPartyDead();
         renderHeader();
-        moveEnemy();
+        moveEnemy(enemy);
+        clearEnemyPlannedAction(enemy);
         onDone();
       }, delay + 400);
     } else {
-      // 攻撃範囲に誰もいない
-      const anycell = document.getElementById('bt-ag-'+bs.party.filter(c=>c.hp>0)[0]?.row+'-'+bs.party.filter(c=>c.hp>0)[0]?.col);
-      showResultPop(anycell, 'MISS', 'miss');
-      moveEnemy();
+      addLog('— 範囲内に標的なし');
+      moveEnemy(enemy);
+      clearEnemyPlannedAction(enemy);
       setTimeout(onDone, 600);
     }
   }
 
   // ============================================================
-  // 怪異移動
+  // enemy_01/mask 特殊回復処理
   // ============================================================
-  function moveEnemy() {
-    if (bs.enemy.canMove === false) return; // 移動禁止フラグ
-    if (Math.random() < 0.25) return;
+  function doEnemySpecialHeal(enemy, act) {
+    const type = act.type;
+    const rate = act.healRate || 0.20;
+
+    if (type === 'heal_boss') {
+      // enemy_01を回復（なければ味方単体回復）
+      const boss = bs.enemies.find(e => (e._origId || e.id) === 'enemy_01' && e.hp > 0);
+      const target = boss || bs.enemies.find(e => e.hp > 0);
+      if (target) {
+        const amount = Math.max(1, Math.floor(target.hpMax * rate));
+        const healed = healUnit(target, amount);
+        if (healed > 0) {
+          const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
+          showResultPop(cell, '+' + healed, 'heal');
+          addLog('→ ' + target.name + ' を ' + healed + ' 回復');
+        }
+      }
+      renderHeader();
+      renderField();
+      return;
+    }
+
+    if (type === 'heal_team') {
+      // 自身と生存中の仲間全員を回復
+      const aliveEnemies = bs.enemies.filter(e => e.hp > 0);
+      aliveEnemies.forEach(e => {
+        const amount = Math.max(1, Math.floor(e.hpMax * rate));
+        const healed = healUnit(e, amount);
+        if (healed > 0) {
+          const cell = document.getElementById('bt-eg-' + e.row + '-' + e.col);
+          showResultPop(cell, '+' + healed, 'heal');
+        }
+      });
+      addLog('→ 仲間全員を ' + Math.round(rate * 100) + '% 回復');
+      renderHeader();
+      renderField();
+      return;
+    }
+
+    // heal (enemy_self / enemy_all 既存パターン)
+    doEnemyHealAction(enemy, act);
+  }
+
+  // ============================================================
+  // 敵行動実行（メイン：複数敵を順番に処理）
+  // ============================================================
+  function doEnemyAction(onDone) {
+    const aliveEnemies = (bs.enemies || []).filter(e => e && e.hp > 0);
+    if (!aliveEnemies.length) { onDone(); return; }
+
+    // SPD順でソート（速い敵が先に行動）
+    const ordered = aliveEnemies.slice().sort((a, b) => (b.spd || 0) - (a.spd || 0));
+
+    let idx = 0;
+    function next() {
+      if (idx >= ordered.length) { onDone(); return; }
+      const e = ordered[idx++];
+      if (!e || e.hp <= 0) { next(); return; }
+      doSingleEnemyAction(e, () => {
+        setTimeout(next, 600);
+      });
+    }
+    next();
+  }
+
+  // ============================================================
+  // 敵回復行動
+  // ============================================================
+  function doEnemyHealAction(enemy, action) {
+    if (!enemy || !action) return false;
+
+    const enemies = bs.enemies || (bs.enemy ? [bs.enemy] : []);
+    let targets = [];
+
+    if (action.target === 'enemy_self') {
+      targets = [enemy].filter(e => e && e.hp > 0);
+    } else if (action.target === 'enemy_lowest') {
+      const t = getLowestHpUnit(enemies);
+      targets = t ? [t] : [];
+    } else if (action.target === 'enemy_all') {
+      targets = enemies.filter(e => e && e.hp > 0);
+    }
+
+    if (!targets.length) return false;
+
+    targets.forEach(target => {
+      const rate = action.healRate != null ? action.healRate : 0.2;
+      const amount = Math.max(1, Math.floor(target.hpMax * rate));
+      const healed = healUnit(target, amount);
+      if (healed > 0) {
+        const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
+        showResultPop(cell, '+' + healed, 'heal');
+      }
+    });
+
+    addLog('→ ' + (action.action || '回復') + ' が発動');
+    renderHeader();
+    renderField();
+    return true;
+  }
+
+  // ============================================================
+  // 怪異移動（複数敵対応・衝突回避）
+  // ============================================================
+  function moveEnemy(enemy) {
+    const target = enemy || bs.enemy;
+    if (!target) return;
+    if (target.canMove === false || target.fixedPosition) return;
+    // 移動確率35%
+    if (Math.random() > 0.35) return;
     const _R = ['near','mid','far'];
     const _C = ['left','center','right'];
-    bs.enemy.row = _R[Math.floor(Math.random()*3)];
-    bs.enemy.col = _C[Math.floor(Math.random()*3)];
+    // 他の生存敵が占有しているマスを除外
+    const occupied = new Set(
+      (bs.enemies || [])
+        .filter(e => e && e.hp > 0 && e !== target)
+        .map(e => e.row + '-' + e.col)
+    );
+    const available = [];
+    _R.forEach(r => _C.forEach(c => {
+      const key = r + '-' + c;
+      if (!occupied.has(key) && !(target.row === r && target.col === c)) {
+        available.push({ row: r, col: c });
+      }
+    }));
+    if (!available.length) return;
+    const next = available[Math.floor(Math.random() * available.length)];
+    target.row = next.row;
+    target.col = next.col;
     renderField();
   }
 
@@ -2281,17 +3969,18 @@ function getEnemyCellsFromAllyRange(chara, range) {
     bs.turn++;
     bs.phase = 'planning';
     bs.pendingActions = [];
+    bs.actedCharaIds  = [];       // ← 行動済みIDをリセット
     bs.planningCharaId = null;
 
     // CD消化
     bs.party.forEach(c => c.skills.forEach(sk => { if (sk.cd > 0) sk.cd--; }));
 
-    // ── statusList持続ターン消化 ──────────────────────────────
-    tickStatusList(bs.enemy);
+    // ── statusList持続ターン消化（全敵） ──────────────────────
+    (bs.enemies || [bs.enemy]).forEach(e => { if (e) tickStatusList(e); });
     bs.party.forEach(c => tickStatusList(c));
 
     // 行動順をSPDバフ変動後に再計算
-    bs.turnOrder = calcTurnOrder(bs.party, bs.enemy);
+    bs.turnOrder = calcTurnOrder(bs.party, bs.enemies);
 
     addLog('— ターン ' + bs.turn + ' —');
     renderOrder(null);
@@ -2304,6 +3993,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // EXECUTE中・行動キャラポップ表示
   // ============================================================
   function showActingChara(unit) {
+  if (!bs || bs.phase === 'result') return;
+
   let pop = document.getElementById('bt-acting-chara-pop');
 
   if (!pop) {
@@ -2334,6 +4025,35 @@ function getEnemyCellsFromAllyRange(chara, range) {
     if (pop) { pop.classList.remove('active'); setTimeout(() => { if(pop.parentNode) pop.remove(); }, 1400); }
   }
 
+  function removeActingCharaNow() {
+    const pop = document.getElementById('bt-acting-chara-pop');
+    if (pop && pop.parentNode) {
+      pop.parentNode.removeChild(pop);
+    }
+  }
+
+  function cleanupBattleOverlays() {
+    const ids = [
+      'bt-acting-chara-pop',
+      'bt-skill-flash',
+      'bt-enemy-turn-overlay',
+      'bt-turn-overlay',
+      'bt-enemy-warning',
+      'bt-exec-phase-overlay',
+      'bt-next-detail-popup',
+      'bt-skill-detail-popup',
+      'bt-battle-menu-popup'
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+    // ダメージ・回復ポップも残っていれば消す
+    document.querySelectorAll('.bt-dmg-pop').forEach(el => el.remove());
+  }
+
   // EXECUTION PHASEオーバーレイ
   function showExecPhaseOverlay(onDone) {
     let el = document.getElementById('bt-exec-phase-overlay');
@@ -2354,6 +4074,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
   // スキル名フラッシュ
   function showSkillFlash(skillName) {
+  if (!bs || bs.phase === 'result') return;
+
   let el = document.getElementById('bt-skill-flash');
 
   if (!el) {
@@ -2391,14 +4113,16 @@ function getEnemyCellsFromAllyRange(chara, range) {
     overlay.classList.add('active');
     setTimeout(() => {
       overlay.classList.remove('active');
-      // TURNオーバーレイ後 → 攻撃予告 → onDone
-      setTimeout(() => showEnemyWarning(onDone), 300);
+      // TURN表示後はそのまま onDone（startPlanning）へ進む。
+      // 敵攻撃範囲の確認は実体化した敵をタップして行う。
+      if (onDone) setTimeout(onDone, 300);
     }, 1800);
   }
 
   // 敵攻撃予告オーバーレイ
-  function showEnemyWarning(onDone) {
-    const act = peekNextAction();
+  function showEnemyWarning(onDone, enemy) {
+    const e = enemy || bs.enemy;
+    const act = peekNextAction(e);
     const isRandom = (act.range || 'random1') === 'random1';
 
     let el = document.getElementById('bt-enemy-warning');
@@ -2410,18 +4134,25 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
     // 威力ランクテキスト＆クラス
     const powerMap = { '特大':['特大ダメージ','tok'], '大':['大ダメージ','dai'], '中':['中ダメージ','chu'], '小':['小ダメージ','sho'] };
-    const [powerTxt, powerCls] = powerMap[act.power] || ['ダメージ','sho'];
+
+    // 回復行動は専用表示
+    const isHeal = act.type === 'heal';
+    const [powerTxt, powerCls] = isHeal
+      ? ['回復行動', 'sho']
+      : (powerMap[act.power] || ['ダメージ','sho']);
 
     // 攻撃説明文を生成
-    const descText = isRandom
-      ? 'ランダムで1体に' + powerTxt
-      : act.action + 'の範囲に' + powerTxt;
+    const descText = isHeal
+      ? (act.desc || act.action)
+      : isRandom
+        ? 'ランダムで1体に' + powerTxt
+        : act.action + 'の範囲に' + powerTxt;
 
-    // 範囲グリッドHTML（random1以外）
+    // 範囲グリッドHTML（random1以外 & 攻撃時のみ）
     let gridHTML = '';
-    if (!isRandom) {
+    if (!isRandom && !isHeal) {
       // BattleRange で敵位置基準の攻撃範囲を取得
-      const cells = _getCells({ row: bs.enemy.row, col: bs.enemy.col }, act.range);
+      const cells = _getCells({ row: e.row, col: e.col }, act.range);
       const ROWS_ = ['near','mid','far'];
       const COLS_ = ['left','center','right'];
       gridHTML = '<div class="bt-ew-grid">';
@@ -2464,14 +4195,149 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   // 怪異行動パターン
   // ============================================================
-  function peekNextAction() {
-    const pat = bs.enemy.actionPattern;
-    return pat[bs.enemy.actionIdx % pat.length];
+  function getEnemyBaseId(enemy) {
+  return enemy ? (enemy._origId || enemy.id) : '';
+}
+
+function planEnemyAction(enemy) {
+  if (!enemy || enemy.hp <= 0) return null;
+
+  // すでにこのターンの予定行動が決まっているなら、それを返す
+  if (enemy._plannedAction) return enemy._plannedAction;
+
+  const baseId = getEnemyBaseId(enemy);
+  let act = null;
+
+  // ボス：HP帯別・固定ターン込みの行動をここで確定
+  if (baseId === 'enemy_01' && enemy._phase1Pool) {
+    act = selectEnemy01Action(enemy);
   }
-  function consumeAction() {
-    const act = peekNextAction();
-    bs.enemy.actionIdx++;
-    return act;
+  // 仮面の従者：ランダム行動をここで確定
+  else if (baseId === 'enemy_mask' && enemy._maskActionPool) {
+    act = selectMaskAction(enemy);
+  }
+  // 通常敵：actionPatternから確定
+  else {
+    const pat = enemy.actionPattern || [];
+    if (pat.length) {
+      const idx = enemy.actionIdx || 0;
+      act = pat[idx % pat.length];
+    }
+  }
+
+  if (!act) return null;
+
+  enemy._plannedAction = { ...act };
+  return enemy._plannedAction;
+}
+
+function peekNextAction(enemy) {
+  return planEnemyAction(enemy);
+}
+
+function clearEnemyPlannedAction(enemy) {
+  if (enemy) enemy._plannedAction = null;
+}
+
+function planAllEnemyActions() {
+  (bs.enemies || []).forEach(enemy => {
+    if (enemy && enemy.hp > 0) planEnemyAction(enemy);
+  });
+}
+
+  // ============================================================
+  // 敵タップ→次行動範囲を味方グリッドに表示
+  // ============================================================
+  function showEnemyNextRange(enemy) {
+    if (!enemy || !isEnemyJittai(enemy)) return;
+    const act = peekNextAction(enemy);
+    if (!act) return;
+
+    // スキル範囲表示が残っていたら解除
+    _skillRangeCache = null;
+    document.querySelectorAll('.skill-range').forEach(el => el.classList.remove('skill-range'));
+
+    const rangeId = act.range || getRangeFromEnemyActionType(act.type) || 'random1';
+    const isRandom = rangeId === 'random1';
+
+    let dangerArg;
+    if (isRandom) {
+      // random1：味方グリッド全体に薄い警告
+      dangerArg = 'random';
+    } else {
+      // 固定範囲：味方グリッド側のマスを計算
+        dangerArg = getEnemyAttackCellsOnAllyGrid(enemy, rangeId);
+      if (!dangerArg || dangerArg.size === 0) {
+        dangerArg = 'random';
+      }
+    }
+
+    bs.selectedEnemyPreview = {
+      enemyId: enemy.id,
+      action: act,
+      dangerArg,
+    };
+
+    renderEnemyPreviewPanel(enemy, act, rangeId, dangerArg);
+
+    // 敵グリッドは光らせない。味方グリッド側にdanger表示。
+    renderField(null, dangerArg);
+
+    const rangeLabel = isRandom ? '（ランダム単体）' : '';
+    addLog(enemy.name + 'の次行動：' + (act.action || '不明') + rangeLabel);
+  }
+
+  function renderEnemyPreviewPanel(enemy, act, rangeId, dangerArg) {
+    const panel = document.getElementById('bt-enemy-preview-panel');
+    if (!panel) return;
+
+    const rangeLabel = getEnemyRangeLabel(rangeId, dangerArg);
+    const powerLabel = act.power || '—';
+    const hitLabel = (act.hit != null) ? (act.hit + '%') : '—';
+
+    panel.innerHTML = `
+      <div class="bt-enemy-preview-head">
+        <div class="bt-enemy-preview-enemy">${enemy.name}</div>
+        <div class="bt-enemy-preview-skill">${act.action || '不明な行動'}</div>
+      </div>
+      <div class="bt-enemy-preview-desc">${act.desc || '詳細情報なし'}</div>
+      <div class="bt-enemy-preview-grid">
+        <div class="bt-enemy-preview-item">
+          <div class="bt-enemy-preview-label">威力</div>
+          <div class="bt-enemy-preview-value">${powerLabel}</div>
+        </div>
+        <div class="bt-enemy-preview-item">
+          <div class="bt-enemy-preview-label">命中</div>
+          <div class="bt-enemy-preview-value">${hitLabel}</div>
+        </div>
+        <div class="bt-enemy-preview-item">
+          <div class="bt-enemy-preview-label">範囲</div>
+          <div class="bt-enemy-preview-value">${rangeLabel}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function getEnemyRangeLabel(rangeId, dangerArg) {
+    if (dangerArg === 'random' || rangeId === 'random1') return 'ランダム単体';
+    if (rangeId === 'all') return '全体';
+    if (rangeId === 'row_near') return '前列';
+    if (rangeId === 'row_mid') return '中列';
+    if (rangeId === 'row_far') return '後列';
+    if (rangeId === 'col_left') return '左列';
+    if (rangeId === 'col_center') return '中央列';
+    if (rangeId === 'col_right') return '右列';
+    if (rangeId === 'cross' || rangeId === 'field_cross') return '十字';
+    if (rangeId === 'xcross' || rangeId === 'field_xcross') return '斜め十字';
+    return rangeId || '不明';
+  }
+
+  function resetEnemyPreviewPanel() {
+    const panel = document.getElementById('bt-enemy-preview-panel');
+    if (!panel) return;
+    panel.innerHTML = `
+      <div class="bt-enemy-preview-empty">敵をタップすると次行動の詳細を確認できます</div>
+    `;
   }
 
   // ============================================================
@@ -2480,8 +4346,12 @@ function getEnemyCellsFromAllyRange(chara, range) {
   function startPlanning() {
     bs.phase = 'planning';
     bs.pendingActions = [];
+    bs.actedCharaIds  = [];       // ← 即時発動方式：行動済みIDをリセット
     bs.planningCharaId = null;
+    bs.selectedEnemyPreview = null; // 前ターンの攻撃予告をリセット
+    resetEnemyPreviewPanel();
     hideExecuteButton();
+    planAllEnemyActions();
 
     const playerUnits = bs.turnOrder.filter(u => !u.isEnemy && u.hp > 0);
     if (playerUnits.length === 0) { onBattleEnd(false); return; }
@@ -2502,8 +4372,8 @@ function getEnemyCellsFromAllyRange(chara, range) {
     list.innerHTML = '';
     bs.turnOrder.forEach((u, i) => {
       const chip = document.createElement('div');
-      // pendingActionsに予約があるかチェック
-      const hasAction = !u.isEnemy && bs.pendingActions && bs.pendingActions.some(a => a.charaId === u.id);
+      // 即時発動方式：行動済みかどうかで SET 表示を切り替え
+      const hasAction = !u.isEnemy && bs.actedCharaIds && bs.actedCharaIds.includes(u.id);
       const isActive  = activeIdx !== null && i === activeIdx;
       chip.className = 'bt-order-chip'
         + (u.isEnemy  ? ' is-enemy'  : '')
@@ -2521,14 +4391,9 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   // フィールドレンダリング（SETラベル付き）
   // ============================================================
-  function renderAllyGrid(highlightCells) {
-    // 実体化に関わらず常に次の攻撃範囲を表示する
-    const nextAct     = peekNextAction();
-    const isRandom    = (nextAct.range || 'random1') === 'random1';
-    // 敵の位置基準で攻撃範囲を BattleRange 経由で計算
-    const dangerCells = (!isRandom)
-      ? _getCells({ row: bs.enemy.row, col: bs.enemy.col }, nextAct.range || 'random1')
-      : null;
+  function renderAllyGrid(dangerCells) {
+    // dangerCells: 敵タップ時に showEnemyNextRange から渡される攻撃予告マスのSet
+    // 常時自動表示はしない。dangerCellsがあればdanger、なければ通常表示。
 
     ROWS.forEach(row => {
       COLS.forEach(col => {
@@ -2539,15 +4404,18 @@ function getEnemyCellsFromAllyRange(chara, range) {
         let cls = 'bt-grid-cell';
         // スキル選択中の射程ハイライト（味方グリッド対象のスキル）
         if (_skillRangeCache && _skillRangeCache.prefix === 'bt-ag-') {
-          const sc = _skillRangeCache.cells;
-          if (sc === null || sc.has(key)) { cell.className = cls + ' skill-range'; return; }
+        const sc = _skillRangeCache.cells;
+        if (sc === null || sc.has(key)) {
+          cls += ' skill-range';
         }
-        if (highlightCells && highlightCells.has(key)) {
-          cls += ' highlight';
-        } else if (isRandom) {
-          cls += ' danger-random';
-        } else if (dangerCells === null || dangerCells.has(key)) {
-          cls += ' danger';
+      }
+        // 敵タップによる攻撃予告
+        if (dangerCells) {
+          if (dangerCells === 'random') {
+            cls += ' danger-random';
+          } else if (dangerCells.has(key)) {
+            cls += ' danger';
+          }
         }
         cell.className = cls;
       });
@@ -2555,38 +4423,199 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
     const planningId = bs.planningCharaId;
 
-    bs.party.forEach(c => {
+    bs.party.filter(c => c && c.hp > 0).forEach(c => {
       const cell = document.getElementById('bt-ag-'+c.row+'-'+c.col);
       if (!cell) return;
       const hpRate   = c.hp / c.hpMax * 100;
       const isPlanning = c.id === planningId;
       const action   = bs.pendingActions && bs.pendingActions.find(a => a.charaId === c.id);
-      const isInactive = bs.phase === 'planning' && !isPlanning && !action && c.hp > 0;
+      // 即時発動方式：行動済みキャラは非アクティブ表示
+      const hasActed = bs.actedCharaIds && bs.actedCharaIds.includes(c.id);
+      const isInactive = bs.phase === 'planning' && !isPlanning && !hasActed;
 
       const card = document.createElement('div');
       card.className = 'bt-chara-card'
-        + (isInactive ? ' is-inactive' : '')
-        + (c.hp <= 0  ? ' is-disabled' : '');
+        + (isInactive ? ' is-inactive' : '');
 
       card.innerHTML = `
         <img class="bt-chara-img" src="${c.img}" onerror="this.style.opacity='0'">
-        ${action ? `<div class="bt-chara-set-label">SET</div>` : ''}
+        ${hasActed ? `<div class="bt-chara-set-label">DONE</div>` : ''}
         ${isPlanning ? `<div class="bt-chara-planning-label">?</div>` : ''}
         <div class="bt-chara-hp-bar-outer">
           <div class="bt-chara-hp-bar-fill ${hpRate < 25 ? 'crit' : hpRate < 50 ? 'low' : ''}" style="width:${hpRate}%"></div>
         </div>
       `;
       if (c.hp > 0) {
+        // スキル選択中：このキャラを直接ドラッグ開始させる
+      card.addEventListener('pointerdown', (e) => {
+
+  console.log('[card.pointerdown]', {
+    chara: c.name,
+    selectedSkill,
+    selectedChara,
+    phase: bs.phase
+  });
+
+  // スキル未選択なら通常タップに任せる
+  if (!selectedSkill) return;
+
+  // selectedChara が取れている場合だけ、操作キャラ判定する
+  if (selectedChara && c.id !== selectedChara.id) return;
+
+  // planning中以外は無視
+  if (bs.phase !== 'planning') return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const dragChara = selectedChara || c;
+
+  const fromRow = dragChara.row;
+  const fromCol = dragChara.col;
+
+  let pendingCell = null;
+  let pendingDistance = 0;
+  let pendingRate = 1.0;
+
+  card.setPointerCapture?.(e.pointerId);
+
+  addLog('— キャラをつかみました：移動先にドラッグしてください');
+
+  const onMove = (ev) => {
+    ev.preventDefault();
+
+    const cellInfo = getAllyCellFromPoint(ev.clientX, ev.clientY);
+    if (!cellInfo) return;
+
+    // 自分以外の生存味方がいるマスは不可
+    const occupied = bs.party.some(u =>
+      u &&
+      u.hp > 0 &&
+      u.id !== dragChara.id &&
+      u.row === cellInfo.row &&
+      u.col === cellInfo.col
+    );
+
+    if (occupied) {
+      clearDragTargetCell();
+      pendingCell = null;
+      pendingDistance = 0;
+      pendingRate = 1.0;
+      addLog('— そのマスには味方がいます');
+      return;
+    }
+
+    const routeDistance = getReachableMoveDistanceAvoidingAllies(
+  fromRow,
+  fromCol,
+  cellInfo.row,
+  cellInfo.col,
+  dragChara
+);
+
+if (routeDistance == null) {
+  clearDragTargetCell();
+  pendingCell = null;
+  pendingDistance = 0;
+  pendingRate = 1.0;
+  addLog('— 味方に道を塞がれています');
+  return;
+}
+
+pendingCell = cellInfo;
+pendingDistance = routeDistance;
+pendingRate = getMoveEffectRate(pendingDistance);
+
+    clearDragTargetCell();
+    cellInfo.el.classList.add('drag-target-cell');
+
+    if (bs) {
+      bs.swipeComboMultiplier = pendingRate;
+    }
+
+    addLog(
+      '— 移動距離：' + pendingDistance +
+      ' / 効果：' + Math.round(pendingRate * 100) + '%'
+    );
+  };
+
+  const onUp = (ev) => {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+
+    clearDragTargetCell();
+
+    if (pendingCell) {
+      dragChara.row = pendingCell.row;
+      dragChara.col = pendingCell.col;
+
+      if (bs) {
+        bs.swipeComboMultiplier = pendingRate;
+      }
+
+      addLog(
+        '— 移動確定：' + pendingCell.row + '-' + pendingCell.col +
+        ' / 効果：' + Math.round(pendingRate * 100) + '%'
+      );
+
+    } else {
+      // 移動なしの場合は100%
+      if (bs) {
+        bs.swipeComboMultiplier = 1.0;
+      }
+
+      addLog('— 移動なし：効果100%');
+    }
+
+    cleanup();
+
+    if (selectedSkill && selectedChara && typeof window.executeSelectedSkill === 'function') {
+      window.executeSelectedSkill();
+    }
+  };
+
+  function cleanup() {
+    clearDragTargetCell();
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+  }
+
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', onUp, { passive: false });
+  window.addEventListener('pointercancel', onUp, { passive: false });
+
+}, { passive: false, capture: true });
+
   card.onclick = () => {
+    console.log('[card.onclick]', {
+  chara: c.name,
+  selectedSkill,
+  selectedChara,
+  phase: bs.phase
+});
 
-    // planning中以外は無効
-    if (bs.phase !== 'planning') return;
+  // スキル選択中は情報ポップアップを絶対に出さない
+  if (selectedSkill) {
+    return;
+  }
 
-    // 移動モード中は無効
-    if (moveMode) return;
+  // スキル選択中（スワイプモード中）は通常タップを無効化
+  if (
+    window.SwipeBattle &&
+    window.SwipeBattle.state &&
+    window.SwipeBattle.state.active
+  ) {
+    return;
+  }
 
-    // 既に予約済みなら触れない
-    if (bs.pendingActions.some(a => a.charaId === c.id)) return;
+  // planning中以外は無効
+  if (bs.phase !== 'planning') return;
+
+    // 既に行動済みなら触れない
+    if (bs.actedCharaIds && bs.actedCharaIds.includes(c.id)) return;
 
     // 現在操作中キャラ以外は触れない
     if (c.id !== bs.planningCharaId) return;
@@ -2626,7 +4655,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
 }
 
   function showCharaPopup(id) {
-    const chara = bs.party.find(c => c.id === id);
+    const chara = bs.party.find(c => c.id === id && c.hp > 0);
     if (!chara) return;
     closeCharaPopup();
 
@@ -2679,107 +4708,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // 移動モード（planningフェーズ内）
   // ============================================================
   let _savedSkillCardsHTML = null; // 移動モード突入前のカードHTML退避用
-
-  window.battleMoveMode = function () {
-    if (bs.phase !== 'planning') return;
-    const chara = bs.party.find(c => c.id === bs.planningCharaId);
-    if (!chara) return;
-
-    if (moveMode) { cancelMoveMode(); return; }
-    moveMode = true;
-    movingCharaId = chara.id;
-
-    const cards = document.getElementById('bt-skill-cards');
-    const hint  = document.querySelector('.bt-skill-hint');
-    // カード要素を隠してキャンセル表示に切り替え（DOMは保持してリスナーを維持）
-    if (cards) {
-      Array.from(cards.children).forEach(el => el.style.display = 'none');
-      const cancel = document.createElement('div');
-      cancel.className = 'bt-move-cancel';
-      cancel.id = 'bt-move-cancel-label';
-      cancel.textContent = 'タップでキャンセル';
-      cancel.onclick = () => battleMoveMode();
-      cards.appendChild(cancel);
-    }
-    if (hint) hint.style.display = 'none';
-    const btn = document.getElementById('bt-move-card');
-    if (btn) btn.classList.add('move-active');
-
-    renderFieldMoveMode();
-    addLog('移動先のマスを選んでください');
-  };
-
-  function cancelMoveMode() {
-    moveMode = false;
-    movingCharaId = null;
-    _savedSkillCardsHTML = null;
-
-    const btn = document.getElementById('bt-move-card');
-    if (btn) btn.classList.remove('move-active');
-
-    const hint = document.querySelector('.bt-skill-hint');
-    if (hint) hint.style.display = '';
-
-    // キャンセルラベルを除去してカード要素を再表示（リスナー維持）
-    const cards = document.getElementById('bt-skill-cards');
-    if (cards) {
-      const label = document.getElementById('bt-move-cancel-label');
-      if (label) label.remove();
-      Array.from(cards.children).forEach(el => el.style.display = '');
-    }
-
-    renderField();
-    addLog('移動キャンセル');
-  }
-
-  function renderFieldMoveMode() {
-    ROWS.forEach(row => COLS.forEach(col => {
-      const cell = document.getElementById('bt-ag-'+row+'-'+col);
-      if (cell) { cell.innerHTML=''; cell.className='bt-grid-cell'; cell.onclick=null; }
-    }));
-    const occupied = new Set(bs.party.filter(c=>c.hp>0).map(c=>c.row+'-'+c.col));
-    const mover = bs.party.find(c=>c.id===movingCharaId);
-    if (mover) occupied.delete(mover.row+'-'+mover.col);
-    ROWS.forEach(row => COLS.forEach(col => {
-      const cell = document.getElementById('bt-ag-'+row+'-'+col);
-      if (!cell) return;
-      if (!occupied.has(row+'-'+col) && !(mover && mover.row===row && mover.col===col)) {
-        cell.className = 'bt-grid-cell movable';
-        cell.onclick = () => executeMove(row, col);
-      }
-    }));
-    bs.party.filter(c=>c.hp>0).forEach(c => {
-      const cell = document.getElementById('bt-ag-'+c.row+'-'+c.col);
-      if (!cell) return;
-      const hpRate = c.hp / c.hpMax * 100;
-      const card = document.createElement('div');
-      card.className = 'bt-chara-card' + (c.id===movingCharaId?' is-acting':'');
-      card.innerHTML = `
-        <img class="bt-chara-img" src="${c.img}" onerror="this.style.opacity='0'">
-        <div class="bt-chara-hp-bar-outer"><div class="bt-chara-hp-bar-fill" style="width:${hpRate}%"></div></div>
-      `;
-      cell.appendChild(card);
-    });
-    renderEnemyGrid();
-  }
-
-  function executeMove(toRow, toCol) {
-    if (!moveMode || !movingCharaId) return;
-    const mover = bs.party.find(c=>c.id===movingCharaId);
-    if (!mover) return;
-    const RL={near:'近',mid:'中',far:'遠'}, CL={left:'左',center:'中',right:'右'};
-    addLog(mover.name+' '+RL[mover.row]+CL[mover.col]+' → '+RL[toRow]+CL[toCol]);
-    mover.row = toRow; mover.col = toCol; mover.pos = toRow;
-    moveMode = false; movingCharaId = null;
-    const btn = document.getElementById('bt-move-card');
-    if (btn) btn.classList.remove('move-active');
-    const hint = document.querySelector('.bt-skill-hint');
-    if (hint) hint.style.display = '';
-
-    // 移動も予約として登録
-    reserveAction(mover, { id:'move', name:'移動', type:'move', range:'ally_self', hit:100, multiplier:1.0, cd:0, cdMax:0 });
-  }
-
   // ============================================================
   // 勝敗
   // ============================================================
@@ -2790,20 +4718,23 @@ function getEnemyCellsFromAllyRange(chara, range) {
   function onBattleEnd(win) {
     bs.phase = 'result';
     hideExecuteButton();
+    hideActingChara();
+    // 念のためスキル名フラッシュも消す
+    const skillFlash = document.getElementById('bt-skill-flash');
+    if (skillFlash) skillFlash.classList.remove('active');
     let banner = document.getElementById('bt-result-banner');
     if (!banner) {
       banner = document.createElement('div');
       banner.id = 'bt-result-banner';
-      banner.innerHTML = `
-        <div class="bt-result-txt ${win?'win':'lose'}">${win?'VICTORY':'DEFEAT'}</div>
-        <button class="bt-result-btn" onclick="closeBattle()">${win?'祀りへ進む':'撤退する'}</button>
-      `;
       document.body.appendChild(banner);
-    } else {
-      banner.querySelector('.bt-result-txt').textContent = win?'VICTORY':'DEFEAT';
-      banner.querySelector('.bt-result-txt').className   = 'bt-result-txt '+(win?'win':'lose');
-      banner.querySelector('.bt-result-btn').textContent = win?'祀りへ進む':'撤退する';
     }
+    banner.innerHTML = `
+      <div class="bt-result-txt ${win ? 'win' : 'lose'}">${win ? 'VICTORY' : 'DEFEAT'}</div>
+      <div class="bt-result-actions">
+        <button class="bt-result-btn" onclick="returnToStageSelect()">ステージ選択へ</button>
+        <button class="bt-result-btn bt-result-btn-sub" onclick="returnToHome()">ホームへ</button>
+      </div>
+    `;
     addLog(win ? '怪異を祓った——' : '敗北…');
     setTimeout(() => banner.classList.add('active'), 800);
   }
@@ -2812,7 +4743,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // 詳細ポップアップ
   // ============================================================
   window.showNextDetail = function () {
-    const act = peekNextAction();
+    // renderHeaderで保存済みのプレビューを使う（peekNextAction再実行しない）
+    const enemy = bs.nextPreviewEnemy;
+    const act = bs.nextPreviewAction;
+    if (!act) return;
     let popup = document.getElementById('bt-next-detail-popup');
     if (!popup) {
       popup = document.createElement('div');
@@ -2822,9 +4756,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
       popup.onclick = e => { if(e.target===popup) closeNextDetail(); };
       document.body.appendChild(popup);
     }
+    const enemyLabel = (enemy && bs.enemies && bs.enemies.length > 1) ? (enemy.name + 'の行動') : '怪異の行動';
     document.getElementById('bt-next-detail-box').innerHTML = `
       <div class="bt-detail-title">${act.action}</div>
-      <div class="bt-detail-type">怪異の行動</div>
+      <div class="bt-detail-type">${enemyLabel}</div>
       <div class="bt-detail-desc">${act.desc||'詳細情報なし'}</div>
       <button class="bt-detail-close" onclick="closeNextDetail()">閉じる</button>
     `;
@@ -2867,61 +4802,167 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   // 起動・終了
   // ============================================================
-  function startBattle(party, enemy) {
-      console.log('startBattle enemy arg:', enemy);
+  function startBattle(party, enemyOrEnemies, options) {
+    // 単体 or 配列どちらでも受け取れる
+    const enemyList = Array.isArray(enemyOrEnemies)
+      ? enemyOrEnemies
+      : [enemyOrEnemies || DUMMY_ENEMY];
+
+    const initialPartySeed   = JSON.parse(JSON.stringify(party || DUMMY_PARTY));
+    const initialEnemySeed   = JSON.parse(JSON.stringify(enemyList));
+    const initialOptionsSeed = JSON.parse(JSON.stringify(options || {}));
+
     bs = {
-      party:           JSON.parse(JSON.stringify(party  || DUMMY_PARTY)),
-      enemy:           JSON.parse(JSON.stringify(enemy  || DUMMY_ENEMY)),
+      party:           JSON.parse(JSON.stringify(initialPartySeed)),
+      enemies:         JSON.parse(JSON.stringify(initialEnemySeed)),
+      enemy:           null, // 後で bs.enemies[0] を代入（後方互換用）
       turn:            1,
       actingIdx:       0,
       phase:           'planning',
       pendingActions:  [],
+      actedCharaIds:   [],  // ← 即時発動方式：行動済みキャラID
       planningCharaId: null,
+      returnChapter:   options && options.returnChapter != null ? options.returnChapter : null,
+      returnStageId:   options && options.stageId ? options.stageId : null,
+      nextPreviewEnemy:  null,
+      nextPreviewAction: null,
+      selectedEnemyPreview: null,
+      initialBattleSeed: {
+        party:   initialPartySeed,
+        enemies: initialEnemySeed,
+        options: initialOptionsSeed,
+      },
     };
-    // 初期位置：fixedPosition が true ならデータの row/col を維持、なければランダム
-    if (!bs.enemy.fixedPosition) {
-      const _R=['near','mid','far'], _C=['left','center','right'];
-      bs.enemy.row = _R[Math.floor(Math.random()*3)];
-      bs.enemy.col = _C[Math.floor(Math.random()*3)];
-    }
 
-    const ENEMY_TYPE_RANGE = {
-  atk_all: 'all',
-  atk_single: 'random1',
-  atk_near: 'row_near',
-  atk_mid: 'row_mid',
-  atk_far: 'row_far',
-  atk_center: 'col_center',
-  atk_right: 'col_right',
-  atk_left: 'col_left',
-  atk_cross: 'cross',
-  atk_xcross: 'xcross'
-};
+    // 全敵に instanceId（個体識別子）を付与する。
+    // 同じ id の敵が複数いても instanceId は必ずユニーク。
+    // 内部処理は instanceId で個体を追跡し、表示・定義参照は _origId / id を使う。
+    const idCount = {};
+    bs.enemies.forEach((e, i) => {
+      const baseId = e.id;
+      if (!idCount[baseId]) idCount[baseId] = 0;
+      // instanceId: 例 "enemy_mask_0", "enemy_mask_1"
+      e.instanceId = baseId + '_' + idCount[baseId];
+      idCount[baseId]++;
+      // 2体目以降は _origId を保存して id をユニーク化（後方互換）
+      if (idCount[baseId] > 1) {
+        e._origId = baseId;
+        e.id = baseId + '_' + (idCount[baseId] - 1);
+      }
+    });
 
-if (bs.enemy.actionPattern) {
-  bs.enemy.actionPattern = bs.enemy.actionPattern.map(a => ({
-    ...a,
-    range: a.range || ENEMY_TYPE_RANGE[a.type] || 'random1',
-    power: a.power || '中'
-  }));
+    // 各敵の初期位置設定
+    // 各敵の初期位置設定
+const _R = ['near','mid','far'], _C = ['left','center','right'];
+const occupied = new Set();
+
+function placeEnemyRandom(e) {
+  const candidates = [];
+
+  _R.forEach(row => {
+    _C.forEach(col => {
+      const key = row + '-' + col;
+      if (!occupied.has(key)) {
+        candidates.push({ row, col, key });
+      }
+    });
+  });
+
+  if (!candidates.length) return false;
+
+  const p = candidates[Math.floor(Math.random() * candidates.length)];
+  e.row = p.row;
+  e.col = p.col;
+  occupied.add(p.key);
+  return true;
 }
 
-    // statusList初期化：敵データに statusList が指定されていればそれを使う
-    if (!bs.enemy.statusList || bs.enemy.statusList.length === 0) {
-      bs.enemy.statusList = [];
-    }
-    bs.enemy._statusMod = {};
-    bs.enemy._base = { atk: bs.enemy.atk, def: bs.enemy.def, spd: bs.enemy.spd };
-    // 初期statusListがある場合は _statusMod を再構築しておく
-    if (bs.enemy.statusList.length > 0) _rebuildStatusMod(bs.enemy);
+// チュートリアル3体戦：enemy_01は中央中段、maskは左右に配置
+bs.enemies.forEach((e, i) => {
+  // 固定位置の場合も占有マスには登録しておく
+  if (e.fixedPosition) {
+    if (e.row && e.col) occupied.add(e.row + '-' + e.col);
+    return;
+  }
+
+  // ステージ側で randomStartPosition:true が指定されていたらランダム配置
+  if (e.randomStartPosition) {
+    placeEnemyRandom(e);
+    return;
+  }
+
+  const baseId = e._origId || e.id;
+  let placed = false;
+      if (baseId === 'enemy_01') {
+        e.row = 'mid'; e.col = 'center';
+        occupied.add('mid-center');
+        placed = true;
+      } else if (baseId === 'enemy_mask') {
+        // 左→右の順に配置
+        const maskPos = [{ row:'mid', col:'left' }, { row:'mid', col:'right' }];
+        for (const pos of maskPos) {
+          const key = pos.row + '-' + pos.col;
+          if (!occupied.has(key)) {
+            e.row = pos.row; e.col = pos.col;
+            occupied.add(key);
+            placed = true;
+            break;
+          }
+        }
+      }
+      if (!placed) {
+        // ランダム配置（重複回避）
+        let tries = 0;
+        do {
+          e.row = _R[Math.floor(Math.random()*3)];
+          e.col = _C[Math.floor(Math.random()*3)];
+          tries++;
+        } while (occupied.has(e.row + '-' + e.col) && tries < 20);
+        occupied.add(e.row + '-' + e.col);
+      }
+    });
+
+    // bs.enemy = 代表敵（既存処理との後方互換）
+    bs.enemy = bs.enemies[0];
+
+    const ENEMY_TYPE_RANGE = {
+      atk_all: 'all', atk_single: 'random1',
+      atk_near: 'row_near', atk_mid: 'row_mid', atk_far: 'row_far',
+      atk_center: 'col_center', atk_right: 'col_right', atk_left: 'col_left',
+      atk_cross: 'cross', atk_xcross: 'xcross',
+    };
+
+    // 全敵のactionPatternにrangeとpowerを補完
+    bs.enemies.forEach(e => {
+      if (e.actionPattern) {
+        e.actionPattern = e.actionPattern.map(a => ({
+          ...a,
+          range: a.range || ENEMY_TYPE_RANGE[a.type] || 'random1',
+          power: a.power || '中',
+        }));
+      }
+    });
+
+    // statusList・_statusMod・_base 初期化（全敵）
+    bs.enemies.forEach(e => {
+      if (!e.statusList || e.statusList.length === 0) e.statusList = [];
+      e._statusMod = {};
+      e._base = { atk: e.atk, def: e.def, spd: e.spd };
+      if (e.statusList.length > 0) _rebuildStatusMod(e);
+    });
     bs.party.forEach(c => {
       c.statusList = [];
       c._statusMod = {};
       c._base = { atk: c.atk, def: c.def, spd: c.spd };
     });
 
-    bs.turnOrder = calcTurnOrder(bs.party, bs.enemy);
-    locked = false; moveMode = false; movingCharaId = null;
+    bs.turnOrder = calcTurnOrder(bs.party, bs.enemies);
+    bs.swipeComboMultiplier = 1.0; // スワイプ結線倍率（battle_swipe.js が使用）
+    locked = false;
+
+    // ── 外部公開（battle_swipe.js からアクセスするため） ──────────
+    window.bs = bs;
+    window.renderBattleField = renderField;
 
     const el = buildBattleScreen();
     el.style.display = 'flex';
@@ -2943,13 +4984,103 @@ if (bs.enemy.actionPattern) {
 
   function closeBattle() {
     const el = document.getElementById('battle-root');
-    if (!el) return;
+
+    // body直下に作られたバトル用一時DOMを先に消す
+    cleanupBattleOverlays();
+
+    const banner = document.getElementById('bt-result-banner');
+    if (banner) banner.classList.remove('active');
+
+    if (!el) {
+      locked = false;
+      return;
+    }
+
     el.style.opacity = '0';
-    setTimeout(() => { el.style.display='none'; locked=false; }, 1200);
+
+    setTimeout(() => {
+      el.style.display = 'none';
+      locked = false;
+    }, 350);
+  }
+
+  function returnToStageSelect() {
+    closeBattle();
+    const banner = document.getElementById('bt-result-banner');
+    if (banner) banner.classList.remove('active');
+    setTimeout(() => {
+      const chapter = bs && bs.returnChapter != null ? bs.returnChapter : 0;
+      if (typeof openStageSelect === 'function') {
+        openStageSelect(chapter);
+      } else {
+        returnToHome();
+      }
+    }, 400);
+  }
+
+  window.openBattleMenu = function () {
+    let popup = document.getElementById('bt-battle-menu-popup');
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.id = 'bt-battle-menu-popup';
+      popup.className = 'bt-detail-popup';
+      popup.innerHTML = `
+        <div class="bt-detail-box">
+          <div class="bt-detail-title">BATTLE MENU</div>
+          <div class="bt-battle-menu-actions">
+            <button class="bt-result-btn" onclick="restartBattleFromMenu()">やり直し</button>
+            <button class="bt-result-btn bt-result-btn-sub" onclick="returnToHomeFromMenu()">ホームに戻る</button>
+            <button class="bt-detail-close" onclick="closeBattleMenu()">閉じる</button>
+          </div>
+        </div>
+      `;
+      popup.onclick = function(e) {
+        if (e.target === popup) closeBattleMenu();
+      };
+      document.body.appendChild(popup);
+    }
+    requestAnimationFrame(() => popup.classList.add('active'));
+  };
+
+  window.closeBattleMenu = function () {
+    const popup = document.getElementById('bt-battle-menu-popup');
+    if (popup) popup.classList.remove('active');
+  };
+
+  window.restartBattleFromMenu = function () {
+    if (!bs || !bs.initialBattleSeed) return;
+    const seed = bs.initialBattleSeed;
+    closeBattleMenu();
+    closeBattle();
+    setTimeout(() => {
+      startBattle(seed.party, seed.enemies, seed.options);
+    }, 450);
+  };
+
+  window.returnToHomeFromMenu = function () {
+    closeBattleMenu();
+    returnToHome();
+  };
+
+  function returnToHome() {
+    closeBattle();
+    const banner = document.getElementById('bt-result-banner');
+    if (banner) banner.classList.remove('active');
+    setTimeout(() => {
+      if (typeof showMainTab === 'function') {
+        showMainTab('main');
+      }
+      const nav = document.getElementById('bottom-nav-shared');
+      if (nav) nav.style.display = '';
+      const guf = document.getElementById('global-user-frame');
+      if (guf) guf.style.display = '';
+    }, 400);
   }
 
   window.startBattle = startBattle;
   window.closeBattle = closeBattle;
+  window.returnToStageSelect = returnToStageSelect;
+  window.returnToHome = returnToHome;
 
   window.testRange = function(row,col,range){
   console.log(

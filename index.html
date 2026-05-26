@@ -639,6 +639,45 @@
   </div>
 </div>
 
+<!-- 共鳴モーダル -->
+<div class="modal-overlay" id="limitbreak-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <h2>共鳴する</h2>
+      <p class="lb-modal-desc">素材にするキャラクターを選んでください。<br>選択したキャラは消去されます。</p>
+      <div id="lb-material-list" class="lb-material-list"></div>
+      <button class="btn-cancel-txt" onclick="closeLimitBreakModal()" style="margin-top:12px">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 共鳴確認モーダル -->
+<div class="modal-overlay" id="limitbreak-confirm-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <h2>共鳴確認</h2>
+      <p id="lb-confirm-text"></p>
+      <div class="modal-btns">
+        <button class="btn-pay" id="lb-confirm-ok-btn">共鳴する</button>
+        <button class="btn-cancel-txt" onclick="closeModal('limitbreak-confirm-modal')">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 共鳴完了モーダル -->
+<div class="modal-overlay" id="limitbreak-complete-modal">
+  <div class="modal">
+    <div class="modal-inner">
+      <h2>共鳴完了</h2>
+      <p>共鳴が完了しました。</p>
+      <div class="modal-btns">
+        <button class="btn-pay" onclick="closeModal('limitbreak-complete-modal')">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="summon-confirm-modal">
   <div class="modal">
     <div class="modal-inner">
@@ -722,14 +761,19 @@
     }, { passive: false });
 
     // ダブルタップズームを無効化
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (e) {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
+    // ダブルタップズームを無効化
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (e) {
+  const now = Date.now();
+
+  if (now - lastTouchEnd <= 300) {
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+  }
+
+  lastTouchEnd = now;
+}, { passive: false });
   })();
 
   const SUPABASE_URL = 'https://xcchgqgkefnzlchitoey.supabase.co';
@@ -874,6 +918,160 @@
   }
  
 const BASE_STATS = ["HP","ATK","DEF","SPD"];
+
+// ── 共鳴システム ──────────────────────────────────
+const MAX_LIMIT_BREAK = 5;
+
+const LIMIT_BREAK_RATE_BY_RARITY = {
+  r:  0.04,
+  sr: 0.035,
+  ur: 0.03
+};
+
+function getLimitBreakRate(limitBreak, rarity){
+  var perLevel = LIMIT_BREAK_RATE_BY_RARITY[rarity] || 0.04;
+  return limitBreak * perLevel;
+}
+
+function applyLimitBreakStats(baseStats, limitBreak, rarity){
+  var rate = getLimitBreakRate(limitBreak, rarity);
+  var result = {};
+
+  BASE_STATS.forEach(function(s){
+    var base = baseStats[s] || 0;
+    result[s] = Math.floor(base * (1 + rate));
+  });
+
+  return result;
+}
+
+function getSameCharaMaterials(target){
+  return box.filter(function(b){
+    return b.id === target.id && b !== target && b.db_id !== target.db_id;
+  });
+}
+
+function openLimitBreakModal(target){
+  if(!target) return;
+  var materials = getSameCharaMaterials(target);
+  var listEl = document.getElementById('lb-material-list');
+  if(!listEl) return;
+
+  if(materials.length === 0){
+    listEl.innerHTML = '<div class="lb-no-material">同じキャラクターの別個体がBOXにありません</div>';
+  } else {
+    listEl.innerHTML = '';
+    materials.forEach(function(mat){
+      var lb = mat.limitBreak || 0;
+      var div = document.createElement('div');
+      div.className = 'lb-material-card';
+      div.innerHTML =
+        '<img class="lb-mat-img" src="'+(mat.img||'images/unknown.webp')+'">' +
+        '<div class="lb-mat-info">' +
+          '<div class="lb-mat-name">'+mat.name+'</div>' +
+          '<div class="lb-mat-lb">共鳴Lv '+lb+' / '+MAX_LIMIT_BREAK+'</div>' +
+        '</div>' +
+        '<button class="lb-mat-select-btn">選択</button>';
+      div.querySelector('.lb-mat-select-btn').onclick = function(){
+        confirmLimitBreak(mat.db_id);
+      };
+      listEl.appendChild(div);
+    });
+  }
+
+  document.getElementById('limitbreak-modal').classList.add('active');
+}
+
+function closeLimitBreakModal(){
+  document.getElementById('limitbreak-modal').classList.remove('active');
+}
+
+function confirmLimitBreak(materialDbId){
+  var target = currentDetailData;
+  if(!target) return;
+
+  var mat = box.find(function(b){ return b.db_id === materialDbId; });
+  if(!mat) return;
+
+  document.getElementById('lb-confirm-text').innerHTML =
+    '【' + mat.name + '】を素材として<br>【' + target.name + '】の共鳴Lvを上げます。<br>素材キャラは消去されます。';
+
+  var okBtn = document.getElementById('lb-confirm-ok-btn');
+  okBtn.onclick = function(){
+    closeModal('limitbreak-confirm-modal');
+    closeLimitBreakModal();
+    executeLimitBreak(target, mat);
+  };
+
+  document.getElementById('limitbreak-confirm-modal').classList.add('active');
+}
+
+async function executeLimitBreak(target, material){
+
+     if(!target || !material) return;
+
+  var currentLb = target.limitBreak || 0;
+
+  if(currentLb >= MAX_LIMIT_BREAK){
+    showToast('共鳴LvはすでにMAXです');
+    return;
+  }
+
+  // limitBreak +1
+  target.limitBreak = (target.limitBreak || 0) + 1;
+  // stats再計算
+  target.stats = applyLimitBreakStats(
+  target.baseStats,
+  target.limitBreak,
+  target.rarity
+);
+
+  // BOXから素材削除
+  box = box.filter(function(b){ return b !== material; });
+
+  // collected が素材を参照していたら差し替え
+  if(collected[material.id] && collected[material.id].db_id === material.db_id){
+    var remain = box.find(function(b){ return b.id === material.id; });
+    if(remain){
+      collected[material.id] = remain;
+    } else {
+      delete collected[material.id];
+    }
+  }
+
+  // DB: 対象キャラのlimit_break/stats/base_statsをUPDATE
+  await updateLimitBreakToDB(target);
+
+  // DB: 素材キャラを DELETE
+  await deleteMaterialFromDB(material);
+
+  // UI更新
+ renderBox();
+updateMainUI();
+showDetail(target, false);
+
+var completeModal = document.getElementById('limitbreak-complete-modal');
+if (completeModal) {
+  completeModal.classList.add('active');
+} else {
+  alert('共鳴が完了しました。');
+}
+}
+
+async function updateLimitBreakToDB(target){
+  if(!target.db_id) return;
+  await sb.from('collected_characters').update({
+    limit_break: target.limitBreak,
+    stats: target.stats,
+    base_stats: target.baseStats
+  }).eq('id', target.db_id);
+}
+
+async function deleteMaterialFromDB(material){
+  if(!material.db_id) return;
+  await sb.from('collected_characters').delete().eq('id', material.db_id);
+}
+// ─────────────────────────────────────────────────
 
 const RARITY_COLOR = {
   r:  "#c0c0c0",
@@ -1092,54 +1290,88 @@ if(openingBgm){
 }
 
   async function loadFromDB(){
-    var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
-    if(res1.data){
-      res1.data.forEach(function(row){
-        var chara = CHARACTERS.find(function(c){ return c.id===row.character_id; });
-        if(chara){
-          // captured_at（ISO文字列）から表示用timeStrを復元
-          var timeStr = '';
-          if(row.captured_at){
-            var d = new Date(row.captured_at);
-            timeStr = (d.getMonth()+1) + '/' + d.getDate() + ' ' +
-                      d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
-          }
-          var entry = {
-            id: chara.id, name: chara.name, img: chara.img, cutImg: chara.cutImg,
-            stats: chara.stats,
-            rarity: chara.rarity,
-            time: timeStr,
-            capturedAt: row.captured_at,
-            db_id: row.id
-          };
-          box.push(entry);
-          // 図鑑：初出1件のみ保持
-          if(!collected[chara.id]) collected[chara.id] = entry;
+  var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
+
+  if(res1.data){
+    res1.data.forEach(function(row){
+      var chara = CHARACTERS.find(function(c){ return c.id === row.character_id; });
+
+      if(chara){
+        // captured_at（ISO文字列）から表示用timeStrを復元
+        var timeStr = '';
+        if(row.captured_at){
+          var d = new Date(row.captured_at);
+          timeStr = (d.getMonth() + 1) + '/' + d.getDate() + ' ' +
+                    d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
         }
-      });
-    }
-    var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId);
-    var profile = (res2.data&&res2.data.length>0) ? res2.data[0] : null;
-    if(profile){
-      favoriteId = profile.favorite_char_id ?? profile.favorite_db_id ?? null;
-      userProfile.display_name = profile.display_name || 'Player';
-      userProfile.coin        = profile.coin        ?? 100;
-      userProfile.gem         = profile.gem         ?? 10;
-      userProfile.total_score = profile.total_score ?? 0;
-      userProfile.rank        = calcRank(profile.total_score ?? 0);
-      userProfile.used_gachas = profile.used_gachas || [];
-    } else {
-      // 新規ユーザー: デフォルト値で INSERT
-      await sb.from('user_profiles').insert({
-        user_id: userId,
-        display_name: 'Player',
-        coin: 100,
-        gem: 10,
-        used_gachas: []
-      });
-      userProfile = { display_name: 'Player', coin: 100, gem: 10 };
-    }
+
+        // ★ 共鳴Lv
+        var limitBreak = row.limit_break || 0;
+
+        // ★ 基礎ステータス
+        // base_stats がDBにあればそれを使う
+        // なければ characters.js の stats を基礎値として使う
+        var baseStats = row.base_stats || Object.assign({}, chara.stats);
+
+        // ★ 表示・バトル用ステータス
+        // DBのstatsをそのまま信じず、baseStats × 共鳴Lv で再計算する
+        var stats = applyLimitBreakStats(baseStats, limitBreak, chara.rarity);
+
+        var entry = {
+          id: chara.id,
+          name: chara.name,
+          img: chara.img,
+          cutImg: chara.cutImg,
+          baseStats: baseStats,
+          stats: stats,
+          limitBreak: limitBreak,
+          rarity: chara.rarity,
+          time: timeStr,
+          capturedAt: row.captured_at,
+          db_id: row.id
+        };
+
+        box.push(entry);
+
+        // 図鑑：初出1件のみ保持
+        if(!collected[chara.id]){
+          collected[chara.id] = entry;
+        }
+      }
+    });
   }
+
+  var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId);
+  var profile = (res2.data && res2.data.length > 0) ? res2.data[0] : null;
+
+  if(profile){
+    favoriteId = profile.favorite_char_id ?? profile.favorite_db_id ?? null;
+    userProfile.display_name = profile.display_name || 'Player';
+    userProfile.coin        = profile.coin        ?? 100;
+    userProfile.gem         = profile.gem         ?? 10;
+    userProfile.total_score = profile.total_score ?? 0;
+    userProfile.rank        = calcRank(profile.total_score ?? 0);
+    userProfile.used_gachas = profile.used_gachas || [];
+  } else {
+    // 新規ユーザー: デフォルト値で INSERT
+    await sb.from('user_profiles').insert({
+      user_id: userId,
+      display_name: 'Player',
+      coin: 100,
+      gem: 10,
+      used_gachas: []
+    });
+
+    userProfile = {
+      display_name: 'Player',
+      coin: 100,
+      gem: 10,
+      rank: 1,
+      total_score: 0,
+      used_gachas: []
+    };
+  }
+}
 
   async function saveToDB(data){
     var saveEl = document.getElementById('save-status');
@@ -1149,6 +1381,8 @@ if(openingBgm){
       character_id: data.id,
       rarity: data.rarity,
       stats: data.stats,
+      base_stats: data.baseStats || data.stats,
+      limit_break: data.limitBreak || 0,
       captured_at: data.capturedAt || new Date().toISOString()  // ISOタイムスタンプを使用
     };
 
@@ -1851,9 +2085,10 @@ function createSummonResults(count, currentGacha){
         var urChars = CHARACTERS.filter(function(c){ return matchesGachaFilter(c, currentGacha) && c.rarity === 'ur'; });
         if(urChars.length > 0){
           var pick = urChars[Math.floor(Math.random() * urChars.length)];
+          var _bs = Object.assign({}, pick.stats);
           results[results.length - 1] = {
             id: pick.id, name: pick.name, img: pick.img, upImg: pick.upImg, cutImg: pick.cutImg,
-            type: pick.type, stats: pick.stats, rarity: 'ur', time: new Date().toLocaleString()
+            type: pick.type, baseStats: _bs, stats: applyLimitBreakStats(_bs, 0), limitBreak: 0, rarity: 'ur', time: new Date().toLocaleString()
           };
         }
       }
@@ -1878,9 +2113,10 @@ function createSummonResults(count, currentGacha){
       });
       if(urChars.length > 0){
         var pick = urChars[Math.floor(Math.random() * urChars.length)];
+        var _bs2 = Object.assign({}, pick.stats);
         results[results.length - 1] = {
           id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
-          stats: pick.stats, rarity: pick.rarity, time: new Date().toLocaleString()
+          baseStats: _bs2, stats: applyLimitBreakStats(_bs2, 0), limitBreak: 0, rarity: pick.rarity, time: new Date().toLocaleString()
         };
       }
     }
@@ -1897,9 +2133,10 @@ function createSummonResults(count, currentGacha){
       });
       if(srChars.length > 0){
         var pick = srChars[Math.floor(Math.random() * srChars.length)];
+        var _bs3 = Object.assign({}, pick.stats);
         results[9] = {
           id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
-          stats: pick.stats, rarity: pick.rarity, time: results[0].time
+          baseStats: _bs3, stats: applyLimitBreakStats(_bs3, 0), limitBreak: 0, rarity: pick.rarity, time: results[0].time
         };
       }
     }
@@ -1940,6 +2177,9 @@ function createOneSummonData(currentGacha){
   throw new Error('ガチャ抽選対象がありません');
 }
 
+  var baseStats = Object.assign({}, chara.stats);
+  var limitBreak = 0;
+
   return {
     id: chara.id,
     name: chara.name,
@@ -1947,7 +2187,9 @@ function createOneSummonData(currentGacha){
     upImg: chara.upImg || chara.img,
     cutImg: chara.cutImg,
     type: chara.type,
-    stats: chara.stats,
+    baseStats: baseStats,
+    stats: applyLimitBreakStats(baseStats, limitBreak),
+    limitBreak: limitBreak,
     rarity: chara.rarity,
     time: timeStr,
     capturedAt: now.toISOString()
@@ -2628,10 +2870,7 @@ setTenResultFooterVisible(true);
 
   document.getElementById('detail-chara-visual').innerHTML = charaVisualHTML(data, 240);
   document.getElementById('detail-name').textContent = friendName + ' の ' + data.name;
-  document.getElementById('detail-rank').innerHTML =
-    '<span style="color:'+RARITY_COLOR[data.rarity]+'">' +
-    RARITY_LABEL[data.rarity] +
-    '</span>';
+  document.getElementById('detail-rank').textContent = '';
 
   document.getElementById('detail-stat-table').innerHTML = buildStatRows(data);
   document.getElementById('detail-opts').innerHTML = '';
@@ -2826,7 +3065,9 @@ setTenResultFooterVisible(true);
       if(counts[data.rarity] !== undefined) counts[data.rarity]++;
 
      var div = document.createElement('div');
-div.className = 'zukan-card box-card rarity-' + data.rarity;
+div.className =
+  'zukan-card box-card rarity-' + data.rarity +
+  ((data.limitBreak || 0) >= MAX_LIMIT_BREAK ? ' lb-max' : '');
 
 var chara = CHARACTERS.find(function(c){
   return c.id === data.id;
@@ -2842,15 +3083,14 @@ if(chara && chara.img){
 }
 
 var rarityLabel = (data.rarity || '').toUpperCase();
-var typeLabel   = (chara && chara.type) ? chara.type : '';
 var nameLabel   = (chara && chara.name) ? chara.name : (data.name || '');
 
 div.innerHTML =
   '<img class="box-card-img" src="'+iconSrc+'">' +
   '<div class="box-card-top">' +
     '<span class="box-rarity-label rarity-label-'+data.rarity+'">'+rarityLabel+'</span>' +
-    '<span class="box-type-label">'+typeLabel+'</span>' +
   '</div>' +
+  (data.limitBreak > 0 ? '<div class="box-card-lb-badge">+'+data.limitBreak+'</div>' : '') +
   '<div class="box-card-bottom">' +
     '<span class="box-card-name">'+nameLabel+'</span>' +
   '</div>';
@@ -2922,15 +3162,56 @@ document.getElementById('stat-max').textContent = targetChars.length;
   // キャラ名
   document.getElementById('detail-name').textContent = data.name;
 
-  // Typeはキャラ名の下
-  document.getElementById('detail-rank').textContent =
-    'Type：' + ((chara && chara.type) ? chara.type : '-');
+ // detail-rank は使用しないため空にする
+document.getElementById('detail-rank').textContent = '';
 
-  // ステータスは残す
-  document.getElementById('detail-stat-table').innerHTML = buildStatRows(data);
+// 通常ステータス表示は使わない
+document.getElementById('detail-stat-table').innerHTML = '';
 
-  // オプションも残す
-  document.getElementById('detail-opts').innerHTML = '';
+// 共鳴Lv表示 + 現在/共鳴後ステータス
+var lb = data.limitBreak || 0;
+var currentStats = data.stats || {};
+var nextLb = Math.min(lb + 1, MAX_LIMIT_BREAK);
+var nextStats = applyLimitBreakStats(
+  data.baseStats || data.stats || {},
+  nextLb,
+  data.rarity
+);
+
+var lbOptsHTML =
+  '<div class="detail-lb-section">' +
+    '<div class="detail-lb-row">' +
+      '<span class="detail-lb-label">共鳴Lv</span>' +
+      '<span class="detail-lb-val">' + lb + ' / ' + MAX_LIMIT_BREAK + '</span>' +
+    '</div>' +
+
+    '<div class="detail-lb-stats">' +
+      '<div class="detail-lb-stats-title">現在ステータス</div>' +
+      '<table class="stat-table stat-table-small">' +
+        BASE_STATS.map(function(s){
+          return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+(currentStats[s] ?? '-')+'</td></tr>';
+        }).join('') +
+      '</table>' +
+    '</div>' +
+
+    '<div class="detail-lb-stats">' +
+      '<div class="detail-lb-stats-title">共鳴後ステータス</div>' +
+      '<table class="stat-table stat-table-small">' +
+        BASE_STATS.map(function(s){
+          return '<tr><td class="stat-name">'+s+'</td><td class="stat-val stat-lb-enhanced">'+(nextStats[s] ?? '-')+'</td></tr>';
+        }).join('') +
+      '</table>' +
+    '</div>' +
+  '</div>';
+
+  var lbBtnHTML;
+  if(lb >= MAX_LIMIT_BREAK){
+    lbBtnHTML = '<button class="btn-limit-break btn-limit-break-max" disabled>共鳴Lv MAX</button>';
+  } else {
+    lbBtnHTML = '<button class="btn-limit-break" onclick="openLimitBreakModal(currentDetailData)">共鳴する</button>';
+  }
+
+  document.getElementById('detail-opts').innerHTML = lbOptsHTML + lbBtnHTML;
 
   var favBtn = document.querySelector('#detail-modal .btn-set-fav');
   if(favBtn) favBtn.style.display = 'block';
@@ -2987,6 +3268,16 @@ async function deleteCurrentChara(){
     return item !== target;
   });
 
+  // collected が削除対象を参照していたら差し替え
+  if(collected[target.id] && collected[target.id].db_id === target.db_id){
+    var remain = box.find(function(b){ return b.id === target.id; });
+    if(remain){
+      collected[target.id] = remain;
+    } else {
+      delete collected[target.id];
+    }
+  }
+
   if(userProfile.favorite_id === target.id){
     userProfile.favorite_id = null;
     await saveProfileToDB({ favorite_id: null });
@@ -3000,7 +3291,10 @@ async function deleteCurrentChara(){
   renderBox();
   updateMainUI();
 
-  await saveProfileToDB({ box: box });
+  // DBからも削除
+  if(target.db_id){
+    await sb.from('collected_characters').delete().eq('id', target.db_id);
+  }
 }
 
   function showZukanCharacterDetail(chara){
@@ -3011,8 +3305,7 @@ async function deleteCurrentChara(){
 
   document.getElementById('detail-name').textContent = chara.name;
 
-  document.getElementById('detail-rank').textContent =
-    'No.' + chara.id + ' ／ ' + (chara.type || '属性不明');
+  document.getElementById('detail-rank').textContent = 'No.' + chara.id;
 
   document.getElementById('detail-stat-table').innerHTML =
     '<tr><td style="color:#aaa;line-height:1.8;padding:10px 4px" colspan="2">' +
@@ -3506,6 +3799,177 @@ function fadeOutOpeningBgm(){
     color: #666;
     margin: 4px 0 12px;
     letter-spacing: 1px;
+  }
+
+  /* ── 共鳴システム CSS ── */
+  .box-card {
+    position: relative;
+  }
+
+  .box-card-lb-badge {
+  position: absolute !important;
+  top: 5px !important;
+  right: 5px !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 20 !important;
+
+  background: linear-gradient(135deg, rgba(180,120,255,0.92), rgba(80,40,180,0.92));
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+  .detail-lb-section {
+    margin: 12px 0 8px;
+    padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+  }
+
+  .detail-lb-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .detail-lb-label {
+    font-size: 12px;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+
+  .detail-lb-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #c8a0ff;
+    letter-spacing: 1px;
+  }
+
+  .detail-lb-stats {
+    margin-top: 8px;
+  }
+
+  .detail-lb-stats-title {
+    font-size: 10px;
+    color: #777;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .stat-table-small td {
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+
+  .stat-lb-enhanced {
+    color: #c8a0ff !important;
+    font-weight: 700;
+  }
+
+  .btn-limit-break {
+    width: 100%;
+    margin: 8px 0 4px;
+    padding: 12px;
+    background: linear-gradient(135deg, #6030c0, #9050e0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-limit-break:active {
+    opacity: 0.7;
+  }
+
+  .btn-limit-break-max {
+    background: rgba(255,255,255,0.08) !important;
+    color: #c8a0ff !important;
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  /* 共鳴モーダル */
+  .lb-modal-desc {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .lb-material-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .lb-material-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+  }
+
+  .lb-mat-img {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .lb-mat-info {
+    flex: 1;
+  }
+
+  .lb-mat-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .lb-mat-lb {
+    font-size: 11px;
+    color: #c8a0ff;
+    margin-top: 2px;
+  }
+
+  .lb-mat-select-btn {
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #6030c0, #9050e0);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .lb-mat-select-btn:active {
+    opacity: 0.7;
+  }
+
+  .lb-no-material {
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+    padding: 20px 0;
   }
 </style>
 

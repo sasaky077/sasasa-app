@@ -3796,21 +3796,7 @@ canvas {
 .rarity-label-sr { color: #ffd700; }
 .rarity-label-ur { color: #ff6ec7; }
 
-/* typeラベル */
-.box-type-label {
-  font-size: 8px;
-  color: rgba(255,255,255,0.75);
-  background: rgba(0,0,0,0.45);
-  padding: 2px 4px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
-  line-height: 1;
-  max-width: 48%;
-  text-align: right;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
 
 /* 下部グラデーション＋キャラ名 */
 #box-grid .box-card-bottom {
@@ -4563,4 +4549,132 @@ canvas {
 #detail-modal .detail-visual-wrap {
   cursor: zoom-in;
   -webkit-tap-highlight-color: transparent;
+}
+
+#detail-modal.active {
+  z-index: 2000;
+}
+
+#limitbreak-modal.active {
+  z-index: 3000;
+}
+
+#limitbreak-confirm-modal.active {
+  z-index: 3100;
+}
+
+/* =========================================================
+   共鳴モーダル：詳細モーダルより前面に出す
+   ========================================================= */
+
+#limitbreak-modal,
+#limitbreak-modal.active {
+  z-index: 4100 !important;
+}
+
+#limitbreak-modal .modal {
+  z-index: 4101 !important;
+}
+
+#limitbreak-confirm-modal,
+#limitbreak-confirm-modal.active {
+  z-index: 4200 !important;
+}
+
+#limitbreak-confirm-modal .modal {
+  z-index: 4201 !important;
+}
+
+/* 共鳴完了モーダル */
+#limitbreak-complete-modal,
+#limitbreak-complete-modal.active {
+  z-index: 4300 !important;
+}
+
+#limitbreak-complete-modal .modal {
+  z-index: 4301 !important;
+}
+
+/* =========================================================
+   BOXカード：共鳴バッジを画像右上に配置
+   ========================================================= */
+
+#box-grid .box-card-lb-badge {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  z-index: 5;
+
+  min-width: 30px;
+  padding: 2px 5px;
+  border-radius: 999px;
+
+  background: rgba(80, 40, 140, 0.88);
+  border: 1px solid rgba(210, 170, 255, 0.75);
+  color: #f1dcff;
+
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  text-align: center;
+
+  box-shadow:
+    0 0 6px rgba(170, 90, 255, 0.55),
+    0 2px 4px rgba(0, 0, 0, 0.65);
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   BOXカード：共鳴MAX時のUR風キラキラ加工
+   ========================================================= */
+
+#box-grid .box-card.lb-max {
+  animation: rborder 2s linear infinite;
+  box-shadow:
+    0 0 8px rgba(255,255,255,0.55),
+    0 0 14px rgba(160,100,255,0.55),
+    0 0 22px rgba(80,180,255,0.35);
+}
+
+#box-grid .box-card.lb-max::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 6;
+
+  background:
+    radial-gradient(circle at 20% 25%, rgba(255,255,255,0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 75% 35%, rgba(255,255,255,0.75) 0 1px, transparent 2px),
+    radial-gradient(circle at 45% 75%, rgba(255,255,255,0.65) 0 1px, transparent 2px),
+    linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.35) 48%, transparent 72%);
+
+  mix-blend-mode: screen;
+  opacity: 0.75;
+  animation: lbMaxShine 2.4s ease-in-out infinite;
+}
+
+@keyframes lbMaxShine {
+  0%, 100% {
+    opacity: 0.35;
+    transform: translateX(-8px);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: translateX(8px);
+  }
+}
+
+/* +5バッジも少し特別感を出す */
+#box-grid .box-card.lb-max .box-card-lb-badge {
+  background: linear-gradient(90deg, #ff4fd8, #9b5cff, #4cc9ff, #4cff8f, #ffe45c, #ff8a4c) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.9) !important;
+  box-shadow:
+    0 0 6px rgba(255,255,255,0.9),
+    0 0 12px rgba(170,90,255,0.8);
 }

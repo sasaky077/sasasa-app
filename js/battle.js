@@ -472,12 +472,16 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
       <!-- スキル＋移動エリア -->
       <div class="bt-skill-area" id="bt-skill-area">
+        <div class="bt-skill-area-header">
+          <button class="bt-pass-btn" onclick="executePassAction()">PASS +3</button>
+          <div class="bt-cost-display" id="bt-cost-display">COST  30 / 30</div>
+      </div>
         <div class="bt-skill-cards" id="bt-skill-cards"></div>
         <div class="bt-execute-bar" id="bt-execute-bar">
-          <div class="bt-execute-selected" id="bt-execute-selected">スキルを選択してください</div>
-          <button class="bt-cancel-btn" onclick="cancelSkillSelect()">取消</button>
-          <button class="bt-execute-btn" id="bt-execute-btn" onclick="executeSelectedSkill()">決定</button>
-        </div>
+        <div class="bt-execute-selected" id="bt-execute-selected">スキルを選択してください</div>
+        <button class="bt-cancel-btn" onclick="cancelSkillSelect()">取消</button>
+        <button class="bt-execute-btn" id="bt-execute-btn" onclick="executeSelectedSkill()">決定</button>
+      </div>
         <div class="bt-skill-hint" id="bt-skill-hint">スキルをタップして詳細を確認</div>
       </div>
 
@@ -526,6 +530,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-enemy-status-row { display:flex; gap:5px; margin-bottom:4px; min-height:16px; }
       .bt-status-badge { font-size:8px; letter-spacing:1px; padding:2px 7px; border-radius:3px; border:1px solid; font-family:"Cinzel",serif; }
       .bt-status-jittai  { color:#a8e6cf; border-color:rgba(168,230,207,.5); background:rgba(168,230,207,.1); }
+      .bt-status-spiritual { color:#a0b8ff; border-color:rgba(140,160,255,.5); background:rgba(100,120,255,.08); }
       .bt-status-stun    { color:#ff8080; border-color:rgba(255,100,100,.5); background:rgba(255,80,80,.1); }
       .bt-status-debuff  { color:#ffd3a8; border-color:rgba(255,211,168,.5); background:rgba(255,211,168,.1); }
       .bt-status-buff    { color:#a8c8ff; border-color:rgba(168,200,255,.5); background:rgba(168,200,255,.1); }
@@ -636,11 +641,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
         box-shadow:inset 0 0 0 1px rgba(150,210,90,.3), 0 0 8px rgba(130,200,80,.5);
         animation:highlightPulse .9s ease-in-out infinite;
       }
-      .bt-grid-cell.movable::after {
-        border-color:rgba(80,160,255,.9) !important;
-        box-shadow:inset 0 0 0 1px rgba(70,150,240,.3), 0 0 8px rgba(60,130,220,.5);
-        animation:movePulse .9s ease-in-out infinite;
-      }
+
       .bt-grid-cell.skill-range::after {
         border-color:rgba(220,180,60,.9) !important;
         box-shadow:0 0 10px rgba(200,160,40,.5), 0 0 20px rgba(180,140,30,.3);
@@ -822,13 +823,82 @@ function getEnemyCellsFromAllyRange(chara, range) {
         background:linear-gradient(to top,rgba(0,0,0,.9),rgba(0,0,0,.5));
         border-top:1px solid rgba(255,255,255,.05);
       }
+      .bt-skill-area-header {
+        display:flex; align-items:center; justify-content:flex-end;
+        padding:4px 10px 0;
+      }
+      .bt-cost-display {
+        font-family:"Cinzel",serif; font-size:11px; letter-spacing:2px;
+        color:rgba(180,220,140,.9);
+        text-shadow:0 0 8px rgba(150,200,100,.35);
+      }
+
+      .bt-pass-btn {
+  margin-right:auto;
+  padding:3px 8px;
+  border-radius:6px;
+  border:1px solid rgba(180,220,140,.35);
+  background:rgba(120,180,80,.08);
+  color:rgba(180,220,140,.9);
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:1px;
+  cursor:pointer;
+}
+
+.bt-pass-btn:active {
+  background:rgba(120,180,80,.18);
+}
+      /* コスト不足カード */
+      .bt-skill-card-front.cost-short {
+        opacity:0.45;
+        pointer-events:none;
+      }
+      .bt-skill-cost-short-badge {
+        position:absolute; top:3px; right:3px;
+        font-family:"Cinzel",serif; font-size:7px; letter-spacing:0.5px;
+        color:#ff6060; background:rgba(0,0,0,.7);
+        padding:1px 4px; border-radius:3px;
+        border:1px solid rgba(220,60,60,.4);
+      }
+      /* コスト・命中行 */
+      .bt-skill-cost-row {
+        display:flex; gap:4px; align-items:center; justify-content:space-between;
+        margin-top:3px;
+      }
+      .bt-skill-cost {
+        font-family:"Cinzel",serif; font-size:8px; letter-spacing:1px;
+        color:rgba(180,220,140,.85);
+      }
+      .bt-skill-cost.short { color:rgba(220,80,80,.8); }
+      .bt-skill-hit {
+        font-family:"Cinzel",serif; font-size:8px; letter-spacing:1px;
+        color:rgba(232,228,220,.45);
+      }
+      /* 超必殺技カード */
+      .bt-skill-card-front.is-ultimate {
+        border-color:rgba(230,190,60,.55) !important;
+        background:linear-gradient(180deg, rgba(70,50,15,.98), rgba(16,14,18,.98)) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,230,100,.12),
+          inset 0 0 18px rgba(180,120,0,.25),
+          0 0 12px rgba(200,160,40,.2),
+          0 4px 12px rgba(0,0,0,.55) !important;
+      }
+      .bt-skill-ultimate-label {
+        font-family:"Cinzel",serif; font-size:7px; letter-spacing:2px;
+        color:rgba(230,190,60,.85);
+        text-align:center; margin-bottom:2px;
+        text-shadow:0 0 8px rgba(220,170,40,.5);
+      }
+      .bt-skill-card-front.is-ultimate .bt-skill-name {
+        color:rgba(255,235,160,.98) !important;
+        text-shadow:0 0 10px rgba(220,170,40,.35) !important;
+      }
       .bt-skill-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
       .bt-skill-acting { font-size:11px; letter-spacing:2px; color:rgba(232,228,220,.5); }
-      .bt-btn-move-card { /* 移動はbt-skill-cardと共通スタイル */ }
-      .bt-btn-move-card.move-active { border-color:rgba(100,180,255,.6) !important; background:rgba(100,180,255,.1) !important; color:rgba(100,180,255,.9) !important; }
       .bt-skill-cards { display:flex; gap:5px; padding:6px 10px 4px; align-items:flex-end; }
       .bt-skill-hint { text-align:center; font-size:8px; letter-spacing:2px; color:rgba(232,228,220,.2); margin-top:2px; padding-bottom:4px; }
-      .bt-move-cancel { text-align:center; font-size:10px; letter-spacing:2px; color:rgba(232,228,220,.3); cursor:pointer; padding:4px 0 2px; }
       .bt-skill-range {
         margin-top: 4px;
         font-size: 9px;
@@ -877,7 +947,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
 
-        height: 74px;
+        height: 82px;
         min-width: 0;
       }
 
@@ -931,11 +1001,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
         background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
       }
 
-      #bt-move-card{
-        justify-content: center;
-        padding-top: 0;
-      }
-
       /* スキルカード */
       .bt-skill-card { flex:1; background:rgba(18,18,24,.95); border:1px solid rgba(255,255,255,.09); border-radius:9px; padding:10px 5px 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; transition:transform .12s, border-color .15s; user-select:none; -webkit-user-select:none; }
       .bt-skill-card::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent); }
@@ -945,6 +1010,56 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-skill-subdesc { font-size:8px; color:rgba(232,228,220,.35); letter-spacing:.5px; text-align:center; }
       .bt-skill-hit  { font-family:"Cinzel",serif; font-size:9px; color:rgba(232,228,220,.3); }
       .bt-skill-cd-badge { position:absolute; top:3px; right:3px; font-family:"Cinzel",serif; font-size:7px; color:rgba(255,255,255,.3); background:rgba(0,0,0,.5); border-radius:3px; padding:1px 4px; }
+
+      .bt-skill-card-mb {
+  margin-top: 2px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(120,80,220,.14);
+  border: 1px solid rgba(160,120,255,.28);
+  color: #d8c7ff;
+  font-family: "Cinzel", serif;
+  font-size: 8px;
+  line-height: 1.15;
+  letter-spacing: .4px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.bt-skill-card-mb-cond,
+.bt-skill-card-mb-benefit {
+  display: block;
+  white-space: nowrap;
+}
+
+      .bt-skill-mb-box {
+        margin-top: 8px;
+        padding: 8px;
+        border-radius: 8px;
+        background: rgba(120,80,220,.12);
+        border: 1px solid rgba(160,120,255,.28);
+      }
+
+      .bt-skill-mb-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .bt-skill-mb-row span {
+        color: rgba(232,228,220,.55);
+      }
+
+      .bt-skill-mb-row b {
+        color: #d8c7ff;
+        font-weight: 600;
+        text-align: right;
+      }
 
       .bt-skill-card-back,
       .bt-skill-card-front,
@@ -1783,6 +1898,17 @@ function getEnemyCellsFromAllyRange(chara, range) {
   -webkit-touch-callout: none;
 }
 
+.bt-grid-cell.drag-target-cell::after {
+  border-color: rgba(80,160,255,.95) !important;
+  box-shadow:
+    0 0 12px rgba(80,160,255,.65),
+    inset 0 0 10px rgba(80,160,255,.25) !important;
+}
+
+.bt-grid-cell.drag-target-cell {
+  background: rgba(0,20,45,.75) !important;
+}
+
 .bt-chara-img {
   pointer-events: none;
   -webkit-user-drag: none;
@@ -1797,8 +1923,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
   // ============================================================
   let bs = null;
   let locked = false;
-  let moveMode = false;
-  let movingCharaId = null;
 
   // ============================================================
   // レンダリング
@@ -1859,16 +1983,29 @@ function getEnemyCellsFromAllyRange(chara, range) {
         row.appendChild(b);
       });
     }
+    // 共通コスト表示を更新
+    const costEl = document.getElementById('bt-cost-display');
+    if (costEl && bs) {
+      const cur = bs.cost != null ? bs.cost : 30;
+      const max = bs.costMax != null ? bs.costMax : 30;
+      costEl.textContent = 'COST  ' + cur + ' / ' + max;
+      const ratio = max > 0 ? cur / max : 1;
+      costEl.style.color = ratio <= 0.3 ? 'rgba(220,80,80,.9)' : ratio <= 0.6 ? 'rgba(220,180,60,.9)' : 'rgba(180,220,140,.9)';
+    }
   }
 
   // スキル選択中の射程キャッシュ（renderEnemyGrid/renderAllyGridから参照するため先に宣言）
   let _skillRangeCache = null; // { prefix, cells } or null
 
-  // 敵カードDOM生成（ミニHPバー付き）
-  // ハイライト中・通常描画の両方で使う共通関数
   function isEnemyJittai(enemy) {
-    return !!(enemy && (enemy.statusList || []).some(s => s.type === 'jittai'));
-  }
+  // 新仕様：敵はデフォルトで実体化。
+  // spiritual 状態のときだけ霊体化扱い。
+  return !!enemy && !hasStatus(enemy, 'spiritual');
+}
+
+function isEnemySpiritual(enemy) {
+  return !!enemy && hasStatus(enemy, 'spiritual');
+}
 
   function createEnemyCard(e) {
     const card = document.createElement('div');
@@ -1880,14 +2017,17 @@ function getEnemyCellsFromAllyRange(chara, range) {
         <div class="bt-enemy-mini-hp-fill" style="width:${hpPct}%"></div>
       </div>
     `;
-    // 実体化している敵のみタップ可能
-    if (isEnemyJittai(e)) {
-      card.style.cursor = 'pointer';
-      card.onclick = function(ev) {
-        ev.stopPropagation();
-        showEnemyNextRange(e);
-      };
+    // 霊体化中は半透明表示
+    if (isEnemySpiritual(e)) {
+      card.style.opacity = '0.4';
+      card.style.filter = 'grayscale(40%) brightness(0.7)';
     }
+    // 敵は常にタップ可能（デフォルト実体化）
+    card.style.cursor = 'pointer';
+    card.onclick = function(ev) {
+      ev.stopPropagation();
+      showEnemyNextRange(e);
+    };
     return card;
   }
 
@@ -1911,9 +2051,9 @@ function getEnemyCellsFromAllyRange(chara, range) {
           const sc = _skillRangeCache.cells;
           if (sc === null || sc.has(key)) {
             cell.className = 'bt-grid-cell skill-range';
-            // 実体化中の敵はこのマスにいれば画像を表示
+            // 全ての敵をこのマスに画像表示
             aliveEnemies.forEach(e => {
-              if (e.row === row && e.col === col && isEnemyJittai(e)) {
+              if (e.row === row && e.col === col) {
                 cell.appendChild(createEnemyCard(e));
               }
             });
@@ -1921,10 +2061,9 @@ function getEnemyCellsFromAllyRange(chara, range) {
           }
         }
 
-        // 各敵を描画（実体化している敵のみ表示）
+        // 各敵を描画（全敵を表示：デフォルト実体化）
         aliveEnemies.forEach(e => {
           if (e.row !== row || e.col !== col) return;
-          if (!isEnemyJittai(e)) return;
           cell.appendChild(createEnemyCard(e));
         });
 
@@ -1948,15 +2087,15 @@ function getEnemyCellsFromAllyRange(chara, range) {
     if (!area || !cards) return;
     if (!chara) { closeSkillArea(); return; }
 
-    skillDrawLocked = false; // 新しいドロー → ロック解除
+    skillDrawLocked = true; // 常時表示なのでロック不要（trueにして古い挙動を無効化）
 
-    const pool = chara.skills.filter(sk => sk.cd === 0);
-    const tmp = [...pool];
-    const drawn = [];
-    while (drawn.length < 3 && tmp.length > 0) {
-      drawn.push(tmp.splice(Math.floor(Math.random()*tmp.length), 1)[0]);
-    }
-    const display = [...drawn, ...chara.skills.filter(sk=>sk.cd>0).slice(0, 3-drawn.length)];
+    // 通常スキル3つ + 超必殺技1つを固定表示
+const normalSkills = (chara.skills || []).filter(sk => !sk.isUltimate).slice(0, 3);
+const ultimateSkill = (chara.skills || []).find(sk => sk.isUltimate);
+
+const display = ultimateSkill
+  ? normalSkills.concat([ultimateSkill])
+  : (chara.skills || []).slice(0, 4);
 
     const TYPE_LABEL = {attack:'攻撃', debuff:'妨害', buff:'補助', move:'移動', special:'特殊'};
 
@@ -1964,16 +2103,16 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
     cards.innerHTML = '';
 
-    // スキル3枚：裏向きで生成
+    // スキル4枚：常に表向きで生成
     display.forEach((sk, i) => {
       const wrap = document.createElement('div');
       wrap.className = 'bt-skill-card-wrap';
 
       const inner = document.createElement('div');
-      inner.className = 'bt-skill-card-inner';
+      inner.className = 'bt-skill-card-inner flipped'; // 常に表向き
       inner.dataset.idx = i;
 
-      // 裏面
+      // 裏面（表示されないが構造上必要）
       const back = document.createElement('div');
       back.className = 'bt-skill-card-back';
       back.innerHTML = `
@@ -1981,56 +2120,57 @@ function getEnemyCellsFromAllyRange(chara, range) {
         <div class="bt-skill-card-back-label">SKILL</div>
       `;
 
+      // コスト不足チェック
+      const skillCost = sk.cost || 0;
+      const currentCost = (bs && bs.cost != null) ? bs.cost : 30;
+      const costShort = skillCost > currentCost;
+      const onCd = sk.cd > 0;
+      const disabled = costShort;
+
       // 表面
       const front = document.createElement('div');
-      front.className = 'bt-skill-card-front' + (sk.cd>0?' on-cd':'');
+      front.className = 'bt-skill-card-front'
+        + (costShort ? ' cost-short' : '')
+        + (sk.isUltimate ? ' is-ultimate' : '');
       front.dataset.skillId = sk.id;
-      front.innerHTML = `
-      ${sk.cd>0?'<span class="bt-skill-cd-badge">CD</span>':''}
-      <div class="bt-skill-name">${sk.name}</div>
-      <div class="bt-skill-subdesc">${TYPE_LABEL[sk.type]||'スキル'}</div>
-    `;
-      if (sk.cd === 0) setupSkillCard(front, chara, sk);
+
+      const mbShortText = buildMoveBonusShortText(sk);
+      if (sk.isUltimate) {
+        front.innerHTML = `
+          ${costShort ? '<span class="bt-skill-cost-short-badge">COST不足</span>' : ''}
+          <div class="bt-skill-ultimate-label">ULTIMATE</div>
+          <div class="bt-skill-name">${sk.name}</div>
+          <div class="bt-skill-cost-row">
+            <span class="bt-skill-cost ${costShort ? 'short' : ''}">COST ${skillCost}</span>
+            <span class="bt-skill-hit">HIT ${sk.hit || 100}</span>
+          </div>
+          ${mbShortText ? '<div class="bt-skill-card-mb">' + mbShortText + '</div>' : ''}
+        `;
+      } else {
+        front.innerHTML = `
+          ${costShort ? '<span class="bt-skill-cost-short-badge">COST不足</span>' : ''}
+          <div class="bt-skill-name">${sk.name}</div>
+          <div class="bt-skill-cost-row">
+            <span class="bt-skill-cost ${costShort ? 'short' : ''}">COST ${skillCost}</span>
+            <span class="bt-skill-hit">HIT ${sk.hit || 100}</span>
+          </div>
+          ${mbShortText ? '<div class="bt-skill-card-mb">' + mbShortText + '</div>' : ''}
+        `;
+      }
+
+      if (!disabled) setupSkillCard(front, chara, sk);
 
       inner.appendChild(back);
       inner.appendChild(front);
       wrap.appendChild(inner);
 
-      // 裏向き状態でタップ→全カードめくり開始
-      wrap.onclick = () => {
-        if (!inner.classList.contains('flipped')) {
-          flipAllCards();
-        }
-      };
-
       cards.appendChild(wrap);
     });
-
-    // 移動カード（4枚目・スキルカードと同じwrap構造）
-    const moveWrap = document.createElement('div');
-    moveWrap.className = 'bt-skill-card-wrap';
-    const moveCard = document.createElement('div');
-    moveCard.className = 'bt-skill-card' + (moveMode ? ' move-active' : '');
-    moveCard.id = 'bt-move-card';
-    moveCard.style.cssText = 'width:100%; height:100%;';
-    moveCard.innerHTML = `
-    <div class="bt-skill-name">移動</div>
-    <div class="bt-skill-subdesc">移動</div>
-    `;
-    moveCard.onclick = () => battleMoveMode();
-    moveWrap.appendChild(moveCard);
-    cards.appendChild(moveWrap);
   }
 
-  // 3枚を順番にめくる
+  // 後方互換：flipAllCards は何もしない（常時表示に変更のため）
   function flipAllCards() {
-    skillDrawLocked = true; // めくったらリドロー禁止
-    const inners = document.querySelectorAll('.bt-skill-card-inner');
-    inners.forEach((inner, i) => {
-      setTimeout(() => {
-        inner.classList.add('flipped');
-      }, i * 300);
-    });
+    skillDrawLocked = true;
   }
 
   function setupSkillCard(card, chara, sk) {
@@ -2077,6 +2217,158 @@ function getEnemyCellsFromAllyRange(chara, range) {
     const popup = document.getElementById('bt-skill-detail-popup');
     if (popup) popup.classList.remove('active');
   }, { passive: true });
+}
+
+// ── Move Bonus 表示ヘルパー ───────────────────────────────────
+function formatMoveBonusCondition(moveBonus) {
+  if (!moveBonus || !Array.isArray(moveBonus.idealMoves)) return '';
+
+  return moveBonus.idealMoves.map(function(n) {
+    return String(n);
+  }).join('/');
+}
+
+function formatMoveBonusBenefit(moveBonus) {
+  if (!moveBonus || !moveBonus.damageRate || moveBonus.damageRate <= 1) return '';
+
+  return 'DMG*' + moveBonus.damageRate;
+}
+
+function buildMoveBonusShortText(skill) {
+  var mb = skill.moveBonus;
+  var cond = formatMoveBonusCondition(mb);
+  var benefit = formatMoveBonusBenefit(mb);
+
+  if (!cond || !benefit) return '';
+
+  return '' +
+    '<span class="bt-skill-card-mb-cond">MB ' + cond + '</span>' +
+    '<span class="bt-skill-card-mb-benefit">' + benefit + '</span>';
+}
+
+function buildMoveBonusDetailHTML(skill) {
+  var mb = skill.moveBonus;
+  var cond = formatMoveBonusCondition(mb);
+  var benefit = formatMoveBonusBenefit(mb);
+  if (!cond || !benefit) return '';
+  return '' +
+    '<div class="bt-skill-mb-box">' +
+      '<div class="bt-skill-mb-row"><span>MB条件</span><b>' + cond + '</b></div>' +
+      '<div class="bt-skill-mb-row"><span>MB恩恵</span><b>' + benefit + '</b></div>' +
+    '</div>';
+}
+
+const MOVE_EFFECT_RATE = [1.0, 0.9, 0.75, 0.6, 0.5];
+
+function getMoveEffectRate(distance) {
+  return MOVE_EFFECT_RATE[Math.min(distance, MOVE_EFFECT_RATE.length - 1)];
+}
+
+function getMoveDistance(fromRow, fromCol, toRow, toCol) {
+  const rowIdx = { near: 0, mid: 1, far: 2 };
+  const colIdx = { left: 0, center: 1, right: 2 };
+
+  return (
+    Math.abs(rowIdx[fromRow] - rowIdx[toRow]) +
+    Math.abs(colIdx[fromCol] - colIdx[toCol])
+  );
+}
+
+function getReachableMoveDistanceAvoidingAllies(fromRow, fromCol, toRow, toCol, dragChara) {
+  const rows = ['near', 'mid', 'far'];
+  const cols = ['left', 'center', 'right'];
+
+  const rowIdx = { near: 0, mid: 1, far: 2 };
+  const colIdx = { left: 0, center: 1, right: 2 };
+
+  const startKey = fromRow + '-' + fromCol;
+  const goalKey = toRow + '-' + toCol;
+
+  // 同じマスなら移動距離0
+  if (startKey === goalKey) return 0;
+
+  // 移動先に味方がいるならNG
+  const goalOccupied = bs.party.some(u =>
+    u &&
+    u.hp > 0 &&
+    u.id !== dragChara.id &&
+    u.row === toRow &&
+    u.col === toCol
+  );
+
+  if (goalOccupied) return null;
+
+  // 味方のいるマスを壁にする
+  const blocked = new Set(
+    bs.party
+      .filter(u => u && u.hp > 0 && u.id !== dragChara.id)
+      .map(u => u.row + '-' + u.col)
+  );
+
+  // 幅優先探索：上下左右に1マスずつ進み、最短距離を探す
+  const queue = [{ key: startKey, dist: 0 }];
+  const visited = new Set([startKey]);
+
+  while (queue.length) {
+    const current = queue.shift();
+    const [row, col] = current.key.split('-');
+
+    const r = rowIdx[row];
+    const c = colIdx[col];
+
+    const nextList = [
+      [r - 1, c], // 上
+      [r + 1, c], // 下
+      [r, c - 1], // 左
+      [r, c + 1], // 右
+    ];
+
+    for (const [nr, nc] of nextList) {
+      const nextRow = rows[nr];
+      const nextCol = cols[nc];
+
+      if (!nextRow || !nextCol) continue;
+
+      const nextKey = nextRow + '-' + nextCol;
+
+      if (visited.has(nextKey)) continue;
+      if (blocked.has(nextKey)) continue;
+
+      const nextDist = current.dist + 1;
+
+      if (nextKey === goalKey) {
+        return nextDist;
+      }
+
+      visited.add(nextKey);
+      queue.push({ key: nextKey, dist: nextDist });
+    }
+  }
+
+  // どのルートでも到達不可
+  return null;
+}
+
+function getAllyCellFromPoint(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+
+  const cell = el.closest('.bt-grid-ally .bt-grid-cell');
+  if (!cell || !cell.id || !cell.id.startsWith('bt-ag-')) return null;
+
+  const parts = cell.id.replace('bt-ag-', '').split('-');
+
+  return {
+    el: cell,
+    row: parts[0],
+    col: parts[1],
+  };
+}
+
+function clearDragTargetCell() {
+  document.querySelectorAll('.drag-target-cell').forEach(el => {
+    el.classList.remove('drag-target-cell');
+  });
 }
 
   function addLog(msg) {
@@ -2220,6 +2512,10 @@ function showSkillDetailPopup(chara, sk){
       <div class="bt-skill-detail-value">${getSkillTypeLabel(sk)}</div>
     </div>
     <div class="bt-skill-detail-row">
+      <div class="bt-skill-detail-label">COST</div>
+      <div class="bt-skill-detail-value">${sk.cost || 0}</div>
+    </div>
+    <div class="bt-skill-detail-row">
       <div class="bt-skill-detail-label">貫通</div>
       <div class="bt-skill-detail-value">${getPierceLabel(sk)}</div>
     </div>
@@ -2235,6 +2531,7 @@ function showSkillDetailPopup(chara, sk){
       <div class="bt-skill-detail-label">継続ターン</div>
       <div class="bt-skill-detail-value">${getSkillDurationText(sk)}</div>
     </div>
+    ${buildMoveBonusDetailHTML(sk)}
     <div class="bt-skill-detail-desc">${sk.desc || ''}</div>
   `;
 
@@ -2297,7 +2594,7 @@ function getEffectText(sk){
     if(e.type === 'def_up') texts.push('味方の守備力を上げる');
     if(e.type === 'spd_up') texts.push('味方の素早さを上げる');
 
-    if(e.type === 'jittai') texts.push('敵を実体化する');
+    if(e.type === 'jittai') texts.push('敵の霊体化を解除する');
     if(e.type === 'stun') texts.push('敵をスタンさせる');
 
     if(e.type === 'pull_1') texts.push('敵を1マス引き寄せる');
@@ -2371,7 +2668,7 @@ function getEffectText(sk){
     if(e.type === 'def_up') texts.push('味方の守備力を上げる');
     if(e.type === 'spd_up') texts.push('味方の素早さを上げる');
 
-    if(e.type === 'jittai') texts.push('敵を実体化する');
+    if(e.type === 'jittai') texts.push('敵の霊体化を解除する');
     if(e.type === 'stun') texts.push('敵をスタンさせる');
 
     if(e.type === 'pull_1') texts.push('敵を1マス引き寄せる');
@@ -2448,6 +2745,25 @@ function highlightSkillRange(chara, sk) {
     renderField(null, dangerArg);
   };
 
+  window.executePassAction = function () {
+  if (!bs || bs.phase === 'result') return;
+
+  // スキル選択中なら selectedChara、未選択なら現在の行動キャラを使う
+  const chara =
+    selectedChara ||
+    (bs.planningCharaId
+      ? bs.party.find(c => c.id === bs.planningCharaId)
+      : null);
+
+  if (!chara || chara.hp <= 0) {
+    addLog('パスするキャラがいません');
+    return;
+  }
+
+  cancelSkillSelect();
+  executePassAction(chara);
+};
+  
   // 即時発動（スワイプ結線・通常スキル選択の両方から呼ばれる）
   window.executeSelectedSkill = function () {
     if (!selectedSkill || !selectedChara) return;
@@ -2457,9 +2773,9 @@ function highlightSkillRange(chara, sk) {
 
     // cancelSkillSelect() で倍率が 1.0 に戻る可能性があるため先に退避
     const swipeMult =
-      bs && bs.swipeComboMultiplier && bs.swipeComboMultiplier > 1.0
-        ? bs.swipeComboMultiplier
-        : 1.0;
+    bs && typeof bs.swipeComboMultiplier === 'number'
+      ? bs.swipeComboMultiplier
+      : 1.0;
 
     cancelSkillSelect();
 
@@ -2494,8 +2810,22 @@ function highlightSkillRange(chara, sk) {
     if (!bs || !chara || !skill) return;
     if (bs.phase === 'result') return;
 
+    // コスト不足チェック
+    const skillCost = skill.cost || 0;
+    if (skillCost > (bs.cost != null ? bs.cost : 30)) {
+      addLog('コストが足りない（必要: ' + skillCost + ' / 現在: ' + bs.cost + '）');
+      return;
+    }
+
     bs.phase = 'executing';
     closeSkillArea();
+
+    // コスト消費
+    if (bs.cost != null) {
+      bs.cost -= skillCost;
+      if (bs.cost < 0) bs.cost = 0;
+    }
+    renderHeader();
 
     // CDを消費（移動スキルはcd管理なし）
     const sk = chara.skills.find(s => s.id === skill.id);
@@ -2519,6 +2849,37 @@ function highlightSkillRange(chara, sk) {
     });
   }
 
+  function executePassAction(chara) {
+  if (!bs || !chara) return;
+  if (bs.phase === 'result') return;
+
+  bs.phase = 'executing';
+  closeSkillArea();
+
+  const recover = 3;
+  const before = bs.cost != null ? bs.cost : 0;
+  const max = bs.costMax != null ? bs.costMax : 30;
+
+  bs.cost = Math.min(max, before + recover);
+
+  renderHeader();
+  addLog(chara.name + ' は様子を見た。COST +' + (bs.cost - before));
+
+  const battleUnit = {
+    ...chara,
+    img: chara.battleImg || chara.img,
+    isEnemy: false,
+  };
+
+  // パス後も敵行動 → リアクティブダメージ → 次キャラへ
+  doEnemyAction(() => {
+    _applyReactiveDamage(chara, () => {
+      markCharaActed(chara);
+      goNextPlanningCharaOrTurnEnd();
+    });
+  });
+}
+
   // そのターンに行動したキャラのIDを記録
   function markCharaActed(chara) {
     if (!bs.actedCharaIds) bs.actedCharaIds = [];
@@ -2529,29 +2890,50 @@ function highlightSkillRange(chara, sk) {
 
   // 未行動キャラがいれば次へ、全員行動済みならターン終了
   function goNextPlanningCharaOrTurnEnd() {
-    if (!bs || bs.phase === 'result') return;
+  if (!bs || bs.phase === 'result') return;
 
-    const alivePlayers = bs.turnOrder.filter(u => !u.isEnemy && u.hp > 0);
-    const next = alivePlayers.find(u => !(bs.actedCharaIds || []).includes(u.id));
+  // turnOrderはコピーを含むため、HP判定は必ずbs.partyの実体を見る
+  const nextOrderUnit = (bs.turnOrder || []).find(u => {
+    if (!u || u.isEnemy) return false;
+    if ((bs.actedCharaIds || []).includes(u.id)) return false;
 
-    if (next) {
-      bs.phase = 'planning';
-      bs.planningCharaId = next.id;
+    const liveChara = bs.party.find(c => c.id === u.id);
+    return liveChara && liveChara.hp > 0;
+  });
 
-      const chara = bs.party.find(c => c.id === next.id);
-      renderSkills(chara);
-      renderField();
-      renderOrder(null);
-      addLog(chara.name + ' の行動を選んでください');
-    } else {
-      onTurnEnd();
+  if (nextOrderUnit) {
+    const chara = bs.party.find(c => c.id === nextOrderUnit.id);
+
+    if (!chara || chara.hp <= 0) {
+      // 念のため。ここには基本来ない
+      markCharaActed(nextOrderUnit);
+      goNextPlanningCharaOrTurnEnd();
+      return;
     }
+
+    bs.phase = 'planning';
+    bs.planningCharaId = chara.id;
+
+    renderSkills(chara);
+    renderField();
+    renderOrder(null);
+    addLog(chara.name + ' の行動を選んでください');
+  } else {
+    onTurnEnd();
   }
+}
 
   function advancePlanningCursor() {
     // 未予約のキャラをSPD順で探す
-    const playerUnits = bs.turnOrder.filter(u => !u.isEnemy && u.hp > 0);
-    const unset = playerUnits.find(u => !bs.pendingActions.some(a => a.charaId === u.id));
+    const playerUnits = bs.turnOrder.filter(u => {
+  if (!u || u.isEnemy) return false;
+  const liveChara = bs.party.find(c => c.id === u.id);
+  return liveChara && liveChara.hp > 0;
+});
+
+const unset = playerUnits.find(u =>
+  !bs.pendingActions.some(a => a.charaId === u.id)
+);
 
     if (unset) {
       // 次の未予約キャラのスキルを表示
@@ -2770,6 +3152,43 @@ function highlightSkillRange(chara, sk) {
     setTimeout(() => pop.remove(), 2000);
   }
 
+function showResultPopOffset(cell, text, type, offsetX, offsetY) {
+  if (!cell) return;
+
+  const rect = cell.getBoundingClientRect();
+  const pop = document.createElement('div');
+
+  pop.className = 'bt-dmg-pop ' + (type || '');
+  pop.textContent = text;
+
+  const x = rect.left + rect.width / 2 + (offsetX || 0);
+  const y = rect.top + rect.height / 2 + (offsetY || 0);
+
+  pop.style.left = x + 'px';
+  pop.style.top = y + 'px';
+
+  document.body.appendChild(pop);
+
+  setTimeout(() => {
+    pop.remove();
+  }, 1600);
+}
+
+function getMultiHitPopOffset(index, count) {
+  if (count <= 1) return { x: 0, y: 0 };
+
+  const pattern = [
+    { x: -14, y: -8 },
+    { x:  12, y: -18 },
+    { x: -6,  y:  8 },
+    { x:  18, y:  4 },
+    { x: -20, y: -22 },
+    { x:  4,  y: -30 },
+  ];
+
+  return pattern[index % pattern.length];
+}
+
 function showCellDamageEffect(cell) {
   if (!cell) return;
 
@@ -2795,6 +3214,11 @@ function showCellDamageEffect(cell) {
   // ============================================================
   function applyDamageAndCheckVanish(unit, dmg, side) {
     if (!unit || unit.hp <= 0) return false;
+
+    // 霊体化中の敵は被ダメ50%軽減
+    if (side === 'enemy' && isEnemySpiritual(unit)) {
+      dmg = Math.max(1, Math.floor(dmg * 0.5));
+    }
 
     const before = unit.hp;
     unit.hp = Math.max(0, unit.hp - dmg);
@@ -2824,6 +3248,7 @@ function showCellDamageEffect(cell) {
   // ============================================================
   const STATUS_LABEL = {
     jittai:       '実体化',
+    spiritual:    '霊体化',
     stun:         'スタン',
     atk_down:     'ATK↓',
     def_down:     'DEF↓',
@@ -2836,6 +3261,7 @@ function showCellDamageEffect(cell) {
   };
   const STATUS_BADGE_CLASS = {
     jittai:       'bt-status-jittai',
+    spiritual:    'bt-status-spiritual',
     stun:         'bt-status-stun',
     atk_down:     'bt-status-debuff',
     def_down:     'bt-status-debuff',
@@ -2852,7 +3278,7 @@ function showCellDamageEffect(cell) {
 
   // フラグ系（value不要・重複スタックしない）typeのセット
   const STATUS_FLAG_TYPES = new Set([
-    'jittai', 'stun', 'sure_hit_self', 'sure_hit_team',
+    'jittai', 'stun', 'sure_hit_self', 'sure_hit_team', 'spiritual',
   ]);
 
   // ============================================================
@@ -2929,6 +3355,7 @@ function showCellDamageEffect(cell) {
         case 'hit_down': mod.hit_down = (mod.hit_down || 0) + v; break;
         case 'jittai':   mod.jittai   = true; break;
         case 'stun':     mod.stun     = true; break;
+        case 'spiritual': mod.spiritual = true; break;
       }
     });
     unit._statusMod = mod;
@@ -3061,10 +3488,15 @@ function showCellDamageEffect(cell) {
   // 戻り値: 移動した場合 true
   // ============================================================
   function applyEnemyMoveEffect(enemy, effect) {
-    if (!enemy || enemy.hp <= 0) return false;
+  if (!enemy || enemy.hp <= 0) return false;
 
-    let direction = null;
-    let maxSteps  = 1;
+  if (isEnemySpiritual(enemy)) {
+    addLog('→ ' + enemy.name + ' は霊体化中のため移動効果を受けない');
+    return false;
+  }
+
+  let direction = null;
+  let maxSteps  = 1;
 
     // ── 縦方向：push / pull ──────────────────────────────────
     if (effect.type === 'push' || effect.type === 'push_1' || effect.type === 'push_2') {
@@ -3146,10 +3578,17 @@ function showCellDamageEffect(cell) {
         switch (effect.type) {
 
           case 'jittai':
-            addStatus(enemy, 'jittai', dur);
-            showPop && showResultPop(cell, '実体化▲', 'debuff');
-            addLog('→ ' + enemy.name + ' に実体化付与 (' + dur + 'T)');
-            break;
+  // 新仕様：jittaiはspiritualを解除する効果。
+  // すでに実体化している敵には失敗扱いにする。
+  if (hasStatus(enemy, 'spiritual')) {
+    removeStatus(enemy, 'spiritual');
+    showPop && showResultPop(cell, '霊体化解除', 'buff');
+    addLog('→ ' + enemy.name + ' の霊体化を解除した');
+  } else {
+    showPop && showResultPop(cell, 'MISS', 'miss');
+    addLog('→ ' + enemy.name + ' はすでに実体化しています');
+  }
+  break;
 
           case 'stun':
             addStatus(enemy, 'stun', dur);
@@ -3306,6 +3745,121 @@ function showCellDamageEffect(cell) {
     return landed;
   }
 
+  function sortEnemyTargetsForHitOrder(targets, skill) {
+  if (!targets || !targets.length) return targets || [];
+
+  // 直線・貫通っぽいスキルだけ順番演出対象にする
+  const range = skill && skill.range;
+  const isLineSkill =
+    range === 'pierce_all' ||
+    range === 'pierce3' ||
+    range === 'pierce2' ||
+    range === 'front3_row_3' ||
+    skill.pierce === true;
+
+  if (!isLineSkill) return targets;
+
+  const rowOrder = {
+    near: 0, // 手前
+    mid: 1,
+    far: 2  // 奥
+  };
+
+  return targets.slice().sort((a, b) => {
+    const ar = rowOrder[a.row] ?? 99;
+    const br = rowOrder[b.row] ?? 99;
+    if (ar !== br) return ar - br;
+
+    // 同じ距離なら左→中→右
+    const colOrder = { left: 0, center: 1, right: 2 };
+    return (colOrder[a.col] ?? 99) - (colOrder[b.col] ?? 99);
+  });
+}
+
+function getHitStyle(skill) {
+  const type = skill && skill.hitStyle ? skill.hitStyle : 'normal';
+
+  switch (type) {
+    case 'heavy':
+      return {
+        count: 1,
+        interval: 0,
+        targetInterval: 220
+      };
+
+    case 'rapid':
+      return {
+        count: 6,
+        interval: 55,
+        targetInterval: 120
+      };
+
+    case 'multi':
+    default:
+      return {
+        count: 3,
+        interval: 90,
+        targetInterval: 160
+      };
+  }
+}
+
+function splitDamage(totalDmg, count) {
+  count = Math.max(1, count || 1);
+
+  const base = Math.floor(totalDmg / count);
+  const rest = totalDmg - base * count;
+
+  const arr = [];
+  for (let i = 0; i < count; i++) {
+    arr.push(base + (i === count - 1 ? rest : 0));
+  }
+  return arr;
+}
+
+function applyDrainEffect(chara, skill, totalDamageDealt) {
+  if (!chara || !skill || totalDamageDealt <= 0) return false;
+
+  const drain = (skill.effects || []).find(e => e.type === 'drain');
+  if (!drain) return false;
+
+  const rate = drain.rate != null ? drain.rate : 1.0;
+  const amount = Math.max(1, Math.floor(totalDamageDealt * rate));
+
+  let target = chara;
+
+  if (drain.target === 'ally_lowest') {
+    target = getLowestHpUnit(bs.party);
+  }
+
+  if (drain.target === 'ally_all') {
+    const allies = bs.party.filter(c => c && c.hp > 0);
+    allies.forEach(ally => {
+      const healed = healUnit(ally, amount);
+      if (healed > 0) {
+        const cell = document.getElementById('bt-ag-' + ally.row + '-' + ally.col);
+        showResultPop(cell, '+' + healed, 'heal');
+      }
+    });
+    addLog('→ 与えたダメージを生命力に変換した');
+    renderField();
+    return true;
+  }
+
+  if (!target || target.hp <= 0) return false;
+
+  const healed = healUnit(target, amount);
+  if (healed > 0) {
+    const cell = document.getElementById('bt-ag-' + target.row + '-' + target.col);
+    showResultPop(cell, '+' + healed, 'heal');
+    addLog('→ ' + target.name + ' は ' + healed + ' 回復');
+    renderHeader();
+    renderField();
+    return true;
+  }
+
+  return false;
+}
   // ============================================================
   // doPlayerAction：effects[]ベースに全面刷新
   // ============================================================
@@ -3383,34 +3937,74 @@ if (bs) {
         return;
       }
       let anyVanished = false;
-      targets.forEach(target => {
-        let dmg = calcDamage(chara.atk, target.def, target, skill.multiplier);
-        // スワイプ結線コンボ補正（battle_swipe.js が bs.swipeComboMultiplier をセット）
-        if (bs.swipeComboMultiplier && bs.swipeComboMultiplier > 1.0) {
-          dmg = Math.floor(dmg * bs.swipeComboMultiplier);
-        }
-        const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
-        showCellDamageEffect(cell);
-        showResultPop(cell, '-' + dmg, 'dmg');
-        addLog('→ ' + target.name + ' に ' + dmg + ' ダメージ');
-        const vanished = applyDamageAndCheckVanish(target, dmg, 'enemy');
-        if (vanished) anyVanished = true;
-      });
-      // スワイプ倍率をリセット
-      bs.swipeComboMultiplier = 1.0;
-      renderHeader();
-      if (anyVanished) {
-        setTimeout(() => renderField(), 700);
-      } else {
-        renderField();
-      }
-      // 全敵が倒れたら勝利
-      if (bs.enemies.every(e => e.hp <= 0)) { setTimeout(() => onBattleEnd(true), 1200); return; }
+let totalDamageDealt = 0;
+
+const orderedTargets = sortEnemyTargetsForHitOrder(targets, skill);
+let hitDelay = 0;
+
+const hitStyle = getHitStyle(skill);
+
+orderedTargets.forEach(target => {
+  setTimeout(() => {
+    let totalDmg = calcDamage(chara.atk, target.def, target, skill.multiplier);
+
+    // スワイプ結線コンボ補正（battle_swipe.js が bs.swipeComboMultiplier をセット）
+    if (bs && typeof bs.swipeComboMultiplier === 'number') {
+      totalDmg = Math.floor(totalDmg * bs.swipeComboMultiplier);
     }
 
+    const cell = document.getElementById('bt-eg-' + target.row + '-' + target.col);
+    const damages = splitDamage(totalDmg, hitStyle.count);
+
+    damages.forEach((partDmg, i) => {
+      setTimeout(() => {
+        if (!target || target.hp <= 0) return;
+
+        showCellDamageEffect(cell);
+
+const offset = getMultiHitPopOffset(i, damages.length);
+showResultPopOffset(cell, '-' + partDmg, 'dmg', offset.x, offset.y);
+
+addLog('→ ' + target.name + ' に ' + partDmg + ' ダメージ');
+
+        totalDamageDealt += partDmg;
+        const vanished = applyDamageAndCheckVanish(target, partDmg, 'enemy');
+        if (vanished) anyVanished = true;
+
+        renderHeader();
+
+        if (vanished) {
+          setTimeout(() => renderField(), 700);
+        } else {
+          renderField();
+        }
+      }, i * hitStyle.interval);
+    });
+  }, hitDelay);
+
+  hitDelay += (hitStyle.count - 1) * hitStyle.interval + hitStyle.targetInterval;
+});
+
+      // 連続ヒット演出が終わってから、最終描画・勝利判定を行う
+setTimeout(() => {
+  // drainはダメージ演出完了後に処理
+  applyDrainEffect(chara, skill, totalDamageDealt);
+
+  // スワイプ倍率をリセット
+  bs.swipeComboMultiplier = 1.0;
+
+  renderHeader();
+  renderField();
+
+  // 全敵が倒れたら勝利
+  if (bs.enemies.every(e => e.hp <= 0)) {
+    setTimeout(() => onBattleEnd(true), 1200);
+    return;
+  }
+}, hitDelay + 700);
     // ── effects[] 処理 ────────────────────────────────────────
-    const effects = skill.effects || [];
-    let effectDelay = hasDmg ? 400 : 0;
+    const effects = (skill.effects || []).filter(effect => effect.type !== 'drain');
+    let effectDelay = hasDmg ? hitDelay + 400 : 0;
     effects.forEach(effect => {
       setTimeout(() => {
         _applyEffect(effect, chara, true, targets);
@@ -3432,7 +4026,7 @@ if (bs) {
 
     setTimeout(onDone, Math.max(800, effectDelay + 200));
   }
-
+  }
   // ============================================================
   // 敵行動選択：ランダム（直前と同じ行動を避ける）
   // ============================================================
@@ -3506,13 +4100,16 @@ if (bs) {
     if (baseId === 'enemy_01' && !enemy._phase3Triggered && enemy.hp / enemy.hpMax <= 0.30) {
       enemy._phase3Triggered = true;
       enemy._reactiveActive = true;
-      // 実体化を解除
-      removeStatus(enemy, 'jittai');
-      // 仲間maskの実体化も解除
-      (bs.enemies || []).forEach(e => {
-        if (e !== enemy && e.hp > 0) removeStatus(e, 'jittai');
-      });
-      addLog('【白糸の怪異】HP30%以下！実体化解除・反応ダメージ開始！');
+      // HP30%以下で敵自身が霊体化（ダメージ軽減・強制移動無効）
+      // 霊体化する
+addStatus(enemy, 'spiritual', 2);
+
+// 仲間maskも霊体化する
+(bs.enemies || []).forEach(e => {
+  if (e !== enemy && e.hp > 0) addStatus(e, 'spiritual', 2);
+});
+
+addLog('【白糸の怪異】HP30%以下！霊体化・反応ダメージ開始！');
       renderHeader();
       renderField();
     }
@@ -3558,11 +4155,11 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
 
     // 状態異常回復（cleanse）
     if (type === 'cleanse_self') {
-      const debuffs = ['atk_down', 'def_down', 'spd_down', 'jittai'];
+      const debuffs = ['atk_down', 'def_down', 'spd_down', 'spiritual'];
       debuffs.forEach(d => removeStatus(enemy, d));
       const cell = document.getElementById('bt-eg-' + enemy.row + '-' + enemy.col);
       showResultPop(cell, '状態回復', 'buff');
-      addLog('→ ' + enemy.name + ' がデバフ・実体化を解除した');
+      addLog('→ ' + enemy.name + ' がデバフ・霊体化を解除した');
       renderHeader();
       renderField();
       setTimeout(() => { 
@@ -3844,6 +4441,11 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     // CD消化
     bs.party.forEach(c => c.skills.forEach(sk => { if (sk.cd > 0) sk.cd--; }));
 
+    // コスト回復（ターン終了時に10回復、最大30）
+    if (bs.cost != null && bs.costMax != null) {
+      bs.cost = Math.min(bs.costMax, bs.cost + 10);
+    }
+
     // ── statusList持続ターン消化（全敵） ──────────────────────
     (bs.enemies || [bs.enemy]).forEach(e => { if (e) tickStatusList(e); });
     bs.party.forEach(c => tickStatusList(c));
@@ -4118,7 +4720,7 @@ function planAllEnemyActions() {
   // 敵タップ→次行動範囲を味方グリッドに表示
   // ============================================================
   function showEnemyNextRange(enemy) {
-    if (!enemy || !isEnemyJittai(enemy)) return;
+    if (!enemy || enemy.hp <= 0) return;
     const act = peekNextAction(enemy);
     if (!act) return;
 
@@ -4317,106 +4919,146 @@ function planAllEnemyActions() {
       if (c.hp > 0) {
         // スキル選択中：このキャラを直接ドラッグ開始させる
       card.addEventListener('pointerdown', (e) => {
-        console.log('[card.pointerdown]', {
-          chara: c.name,
-          selectedSkill,
-          selectedChara,
-          phase: bs.phase
-        });
-      // スキル未選択なら通常タップに任せる
-      if (!selectedSkill) return;
 
-      // selectedChara が取れている場合だけ、操作キャラ判定する
-      if (selectedChara && c.id !== selectedChara.id) return;
+  console.log('[card.pointerdown]', {
+    chara: c.name,
+    selectedSkill,
+    selectedChara,
+    phase: bs.phase
+  });
 
-      // planning中以外は無視
-      if (bs.phase !== 'planning') return;
+  // スキル未選択なら通常タップに任せる
+  if (!selectedSkill) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+  // selectedChara が取れている場合だけ、操作キャラ判定する
+  if (selectedChara && c.id !== selectedChara.id) return;
+
+  // planning中以外は無視
+  if (bs.phase !== 'planning') return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const dragChara = selectedChara || c;
+
+  const fromRow = dragChara.row;
+  const fromCol = dragChara.col;
+
+  let pendingCell = null;
+  let pendingDistance = 0;
+  let pendingRate = 1.0;
 
   card.setPointerCapture?.(e.pointerId);
 
-  const startX = e.clientX;
-  const startY = e.clientY;
-
-  addLog('— キャラをつかみました：そのまま動かしてください');
+  addLog('— キャラをつかみました：移動先にドラッグしてください');
 
   const onMove = (ev) => {
-  const dx = ev.clientX - startX;
-  const dy = ev.clientY - startY;
+    ev.preventDefault();
 
-  console.log('[card.pointermove]', {
-    dx,
-    dy,
-    absX: Math.abs(dx),
-    absY: Math.abs(dy),
-    selectedSkill,
-    selectedChara,
-    chara: c.name,
-    row: (selectedChara || c).row,
-    col: (selectedChara || c).col
-  });
+    const cellInfo = getAllyCellFromPoint(ev.clientX, ev.clientY);
+    if (!cellInfo) return;
 
-  ev.preventDefault();
+    // 自分以外の生存味方がいるマスは不可
+    const occupied = bs.party.some(u =>
+      u &&
+      u.hp > 0 &&
+      u.id !== dragChara.id &&
+      u.row === cellInfo.row &&
+      u.col === cellInfo.col
+    );
 
-  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
-    console.log('[card.pointermove] under threshold');
-    return;
-  }
-
-    let dir;
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      dir = dx > 0 ? 'right' : 'left';
-    } else {
-      dir = dy < 0 ? 'front' : 'back';
+    if (occupied) {
+      clearDragTargetCell();
+      pendingCell = null;
+      pendingDistance = 0;
+      pendingRate = 1.0;
+      addLog('— そのマスには味方がいます');
+      return;
     }
 
-    if (window.BattleRange && BattleRange.tryMoveUnitStepwise) {
-      const dragChara = selectedChara || c;
-      const result = BattleRange.tryMoveUnitStepwise(dragChara, dir, 1, bs.party);
+    const routeDistance = getReachableMoveDistanceAvoidingAllies(
+  fromRow,
+  fromCol,
+  cellInfo.row,
+  cellInfo.col,
+  dragChara
+);
 
-console.log('[tryMoveUnitStepwise]', {
-  dir,
-  before: { row: dragChara.row, col: dragChara.col },
-  result
-});
+if (routeDistance == null) {
+  clearDragTargetCell();
+  pendingCell = null;
+  pendingDistance = 0;
+  pendingRate = 1.0;
+  addLog('— 味方に道を塞がれています');
+  return;
+}
 
-const moved = result.moved;
+pendingCell = cellInfo;
+pendingDistance = routeDistance;
+pendingRate = getMoveEffectRate(pendingDistance);
 
-      if (moved) {
-        addLog('— 移動：' + dir);
-        renderField();
-      } else {
-        addLog('— 移動できない');
-      }
+    clearDragTargetCell();
+    cellInfo.el.classList.add('drag-target-cell');
+
+    if (bs) {
+      bs.swipeComboMultiplier = pendingRate;
     }
+
+    addLog(
+      '— 移動距離：' + pendingDistance +
+      ' / 効果：' + Math.round(pendingRate * 100) + '%'
+    );
   };
 
   const onUp = (ev) => {
-  cleanup();
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
 
-  if (ev) {
-    ev.preventDefault();
-    ev.stopPropagation();
-  }
+    clearDragTargetCell();
 
-  // 指を離したら選択中スキルを発動
-  if (selectedSkill && selectedChara && typeof window.executeSelectedSkill === 'function') {
-    window.executeSelectedSkill();
-  }
-};
+    if (pendingCell) {
+      dragChara.row = pendingCell.row;
+      dragChara.col = pendingCell.col;
+
+      if (bs) {
+        bs.swipeComboMultiplier = pendingRate;
+      }
+
+      addLog(
+        '— 移動確定：' + pendingCell.row + '-' + pendingCell.col +
+        ' / 効果：' + Math.round(pendingRate * 100) + '%'
+      );
+
+    } else {
+      // 移動なしの場合は100%
+      if (bs) {
+        bs.swipeComboMultiplier = 1.0;
+      }
+
+      addLog('— 移動なし：効果100%');
+    }
+
+    cleanup();
+
+    if (selectedSkill && selectedChara && typeof window.executeSelectedSkill === 'function') {
+      window.executeSelectedSkill();
+    }
+  };
 
   function cleanup() {
-  window.removeEventListener('pointermove', onMove);
-  window.removeEventListener('pointerup', onUp);
-  window.removeEventListener('pointercancel', onUp);
-}
+    clearDragTargetCell();
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+  }
 
   window.addEventListener('pointermove', onMove, { passive: false });
   window.addEventListener('pointerup', onUp, { passive: false });
   window.addEventListener('pointercancel', onUp, { passive: false });
-  }, { passive: false, capture: true });
+
+}, { passive: false, capture: true });
 
   card.onclick = () => {
     console.log('[card.onclick]', {
@@ -4443,9 +5085,6 @@ const moved = result.moved;
   // planning中以外は無効
   if (bs.phase !== 'planning') return;
 
-    // 移動モード中は無効
-    if (moveMode) return;
-
     // 既に行動済みなら触れない
     if (bs.actedCharaIds && bs.actedCharaIds.includes(c.id)) return;
 
@@ -4471,13 +5110,6 @@ const moved = result.moved;
     const chara = bs.party.find(c => c.id === id && c.hp > 0);
 
     if (chara) {
-
-      // カードオープン後はリドロー禁止
-      if (skillDrawLocked) {
-        showCharaPopup(id);
-        return;
-      }
-
       renderSkills(chara);
       return;
     }
@@ -4540,107 +5172,6 @@ const moved = result.moved;
   // 移動モード（planningフェーズ内）
   // ============================================================
   let _savedSkillCardsHTML = null; // 移動モード突入前のカードHTML退避用
-
-  window.battleMoveMode = function () {
-    if (bs.phase !== 'planning') return;
-    const chara = bs.party.find(c => c.id === bs.planningCharaId);
-    if (!chara) return;
-
-    if (moveMode) { cancelMoveMode(); return; }
-    moveMode = true;
-    movingCharaId = chara.id;
-
-    const cards = document.getElementById('bt-skill-cards');
-    const hint  = document.querySelector('.bt-skill-hint');
-    // カード要素を隠してキャンセル表示に切り替え（DOMは保持してリスナーを維持）
-    if (cards) {
-      Array.from(cards.children).forEach(el => el.style.display = 'none');
-      const cancel = document.createElement('div');
-      cancel.className = 'bt-move-cancel';
-      cancel.id = 'bt-move-cancel-label';
-      cancel.textContent = 'タップでキャンセル';
-      cancel.onclick = () => battleMoveMode();
-      cards.appendChild(cancel);
-    }
-    if (hint) hint.style.display = 'none';
-    const btn = document.getElementById('bt-move-card');
-    if (btn) btn.classList.add('move-active');
-
-    renderFieldMoveMode();
-    addLog('移動先のマスを選んでください');
-  };
-
-  function cancelMoveMode() {
-    moveMode = false;
-    movingCharaId = null;
-    _savedSkillCardsHTML = null;
-
-    const btn = document.getElementById('bt-move-card');
-    if (btn) btn.classList.remove('move-active');
-
-    const hint = document.querySelector('.bt-skill-hint');
-    if (hint) hint.style.display = '';
-
-    // キャンセルラベルを除去してカード要素を再表示（リスナー維持）
-    const cards = document.getElementById('bt-skill-cards');
-    if (cards) {
-      const label = document.getElementById('bt-move-cancel-label');
-      if (label) label.remove();
-      Array.from(cards.children).forEach(el => el.style.display = '');
-    }
-
-    renderField();
-    addLog('移動キャンセル');
-  }
-
-  function renderFieldMoveMode() {
-    ROWS.forEach(row => COLS.forEach(col => {
-      const cell = document.getElementById('bt-ag-'+row+'-'+col);
-      if (cell) { cell.innerHTML=''; cell.className='bt-grid-cell'; cell.onclick=null; }
-    }));
-    const occupied = new Set(bs.party.filter(c=>c.hp>0).map(c=>c.row+'-'+c.col));
-    const mover = bs.party.find(c=>c.id===movingCharaId);
-    if (mover) occupied.delete(mover.row+'-'+mover.col);
-    ROWS.forEach(row => COLS.forEach(col => {
-      const cell = document.getElementById('bt-ag-'+row+'-'+col);
-      if (!cell) return;
-      if (!occupied.has(row+'-'+col) && !(mover && mover.row===row && mover.col===col)) {
-        cell.className = 'bt-grid-cell movable';
-        cell.onclick = () => executeMove(row, col);
-      }
-    }));
-    bs.party.filter(c=>c.hp>0).forEach(c => {
-      const cell = document.getElementById('bt-ag-'+c.row+'-'+c.col);
-      if (!cell) return;
-      const hpRate = c.hp / c.hpMax * 100;
-      const card = document.createElement('div');
-      card.className = 'bt-chara-card' + (c.id===movingCharaId?' is-acting':'');
-      card.innerHTML = `
-        <img class="bt-chara-img" src="${c.img}" onerror="this.style.opacity='0'">
-        <div class="bt-chara-hp-bar-outer"><div class="bt-chara-hp-bar-fill" style="width:${hpRate}%"></div></div>
-      `;
-      cell.appendChild(card);
-    });
-    renderEnemyGrid();
-  }
-
-  function executeMove(toRow, toCol) {
-    if (!moveMode || !movingCharaId) return;
-    const mover = bs.party.find(c=>c.id===movingCharaId);
-    if (!mover) return;
-    const RL={near:'近',mid:'中',far:'遠'}, CL={left:'左',center:'中',right:'右'};
-    addLog(mover.name+' '+RL[mover.row]+CL[mover.col]+' → '+RL[toRow]+CL[toCol]);
-    mover.row = toRow; mover.col = toCol; mover.pos = toRow;
-    moveMode = false; movingCharaId = null;
-    const btn = document.getElementById('bt-move-card');
-    if (btn) btn.classList.remove('move-active');
-    const hint = document.querySelector('.bt-skill-hint');
-    if (hint) hint.style.display = '';
-
-    // 移動も即時発動として処理
-    executeImmediateSkill(mover, { id:'move', name:'移動', type:'move', range:'ally_self', hit:100, multiplier:1.0, cd:0, cdMax:0 });
-  }
-
   // ============================================================
   // 勝敗
   // ============================================================
@@ -4760,6 +5291,8 @@ const moved = result.moved;
       nextPreviewEnemy:  null,
       nextPreviewAction: null,
       selectedEnemyPreview: null,
+      cost:    30,   // 3キャラ共通コスト
+      costMax: 30,
       initialBattleSeed: {
         party:   initialPartySeed,
         enemies: initialEnemySeed,
@@ -4810,50 +5343,52 @@ function placeEnemyRandom(e) {
   return true;
 }
 
-// チュートリアル3体戦：enemy_01は中央中段、maskは左右に配置
+// placeEnemyRandomly: 仕様書命名エイリアス（placeEnemyRandom と同一処理）
+const placeEnemyRandomly = placeEnemyRandom;
+
+// 敵初期位置設定
+// 優先順位:
+//   1. fixedPosition === true  → data の row/col に固定（occupied 登録のみ）
+//   2. randomStartPosition === true → row/col を無視してランダム配置
+//   3. id別フォールバック固定配置（enemy_mask など）
+//   4. 上記いずれでもなければランダム配置
 bs.enemies.forEach((e, i) => {
-  // 固定位置の場合も占有マスには登録しておく
-  if (e.fixedPosition) {
+  // 1. fixedPosition: true の敵は data の row/col を固定位置として使う
+  if (e.fixedPosition === true) {
     if (e.row && e.col) occupied.add(e.row + '-' + e.col);
     return;
   }
 
-  // ステージ側で randomStartPosition:true が指定されていたらランダム配置
-  if (e.randomStartPosition) {
-    placeEnemyRandom(e);
+  // 2. randomStartPosition: true の敵は最優先でランダム配置
+  //    （enemies.js または stages.js で指定された場合どちらも有効）
+  if (e.randomStartPosition === true) {
+    placeEnemyRandomly(e);
     return;
   }
 
   const baseId = e._origId || e.id;
   let placed = false;
-      if (baseId === 'enemy_01') {
-        e.row = 'mid'; e.col = 'center';
-        occupied.add('mid-center');
+
+  // 3. id別フォールバック固定配置
+  if (baseId === 'enemy_mask') {
+    // 左→右の順に配置
+    const maskPos = [{ row:'mid', col:'left' }, { row:'mid', col:'right' }];
+    for (const pos of maskPos) {
+      const key = pos.row + '-' + pos.col;
+      if (!occupied.has(key)) {
+        e.row = pos.row; e.col = pos.col;
+        occupied.add(key);
         placed = true;
-      } else if (baseId === 'enemy_mask') {
-        // 左→右の順に配置
-        const maskPos = [{ row:'mid', col:'left' }, { row:'mid', col:'right' }];
-        for (const pos of maskPos) {
-          const key = pos.row + '-' + pos.col;
-          if (!occupied.has(key)) {
-            e.row = pos.row; e.col = pos.col;
-            occupied.add(key);
-            placed = true;
-            break;
-          }
-        }
+        break;
       }
-      if (!placed) {
-        // ランダム配置（重複回避）
-        let tries = 0;
-        do {
-          e.row = _R[Math.floor(Math.random()*3)];
-          e.col = _C[Math.floor(Math.random()*3)];
-          tries++;
-        } while (occupied.has(e.row + '-' + e.col) && tries < 20);
-        occupied.add(e.row + '-' + e.col);
-      }
-    });
+    }
+  }
+
+  // 4. 配置できなかった場合はランダム配置（重複回避）
+  if (!placed) {
+    placeEnemyRandomly(e);
+  }
+});
 
     // bs.enemy = 代表敵（既存処理との後方互換）
     bs.enemy = bs.enemies[0];
@@ -4891,7 +5426,7 @@ bs.enemies.forEach((e, i) => {
 
     bs.turnOrder = calcTurnOrder(bs.party, bs.enemies);
     bs.swipeComboMultiplier = 1.0; // スワイプ結線倍率（battle_swipe.js が使用）
-    locked = false; moveMode = false; movingCharaId = null;
+    locked = false;
 
     // ── 外部公開（battle_swipe.js からアクセスするため） ──────────
     window.bs = bs;

@@ -16,6 +16,8 @@ const ENEMIES = [
     battleImg: 'images/enemy_01_battle.webp',
     hp: 2200, hpMax: 2200,
     atk: 260, def: 180, spd: 280,
+    randomStartPosition: true,   // バトル開始時の初期位置をランダムにする
+    fixedPosition: false,        // 固定位置配置は使わない
     phase: 1,
     status: [],
     statusList: [],
@@ -150,7 +152,7 @@ const ENEMIES = [
         action: '状態解除',
         type: 'cleanse_self',
         power: '小',
-        desc: 'デバフ・実体化などの不利な状態異常をすべて解除する。',
+        desc: 'デバフ・霊体化などの不利な状態異常をすべて解除する。',
       },
     ],
     _phase3Pool: [
@@ -399,9 +401,7 @@ TEST_ENEMIES.push({
   canMove: false,
 
   status: [],
-  statusList: [
-    { type: 'jittai', duration: -1 }
-  ],
+  statusList: [],
 
   actionPattern: [
     {
@@ -430,7 +430,7 @@ TEST_ENEMIES.push({
   row: 'near', col: 'center',
   fixedPosition: true, canMove: false,
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
   actionPattern: [{ turn: 1, action: '待機', type: 'wait', desc: 'テスト用。何もしない。' }],
   actionIdx: 0,
 });
@@ -446,7 +446,7 @@ TEST_ENEMIES.push({
   row: 'mid', col: 'center',
   fixedPosition: true, canMove: false,
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
   actionPattern: [{ turn: 1, action: '待機', type: 'wait', desc: 'テスト用。何もしない。' }],
   actionIdx: 0,
 });
@@ -462,7 +462,7 @@ TEST_ENEMIES.push({
   row: 'far', col: 'center',
   fixedPosition: true, canMove: false,
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
   actionPattern: [{ turn: 1, action: '待機', type: 'wait', desc: 'テスト用。何もしない。' }],
   actionIdx: 0,
 });
@@ -490,7 +490,7 @@ TEST_ENEMIES.push({
   attackTiming: 'after_round',
 
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
 
   actionPattern: [
     {
@@ -529,7 +529,7 @@ TEST_ENEMIES.push({
   attackTiming: 'after_round',
 
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
 
   actionPattern: [
     {
@@ -569,7 +569,7 @@ TEST_ENEMIES.push({
   attackTiming: 'after_each_action',
 
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
 
   actionPattern: [
   {
@@ -609,7 +609,7 @@ TEST_ENEMIES.push({
   attackTiming: 'after_round',
 
   status: [],
-  statusList: [{ type: 'jittai', duration: -1 }],
+  statusList: [],
 
   actionPattern: [
     {
