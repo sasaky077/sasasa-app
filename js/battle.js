@@ -3897,7 +3897,9 @@ function applyDrainEffect(chara, skill, totalDamageDealt) {
 
     // ── ダメージ処理 ──────────────────────────────────────────
     const hasDmg = (skill.multiplier || 0) > 0;
-    if (hasDmg) {
+let hitDelay = 0; // ← ifの外に出す
+
+if (hasDmg) {
       if (targets.length === 0) {
   addLog(chara.name + '「' + skill.name + '」は空を切った');
 
@@ -3942,7 +3944,7 @@ if (bs) {
 let totalDamageDealt = 0;
 
 const orderedTargets = sortEnemyTargetsForHitOrder(targets, skill);
-let hitDelay = 0;
+hitDelay = 0;
 
 const hitStyle = getHitStyle(skill);
 
