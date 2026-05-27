@@ -29,7 +29,13 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 780, ATK: 230, DEF: 240, SPD: 210 },
+    stats: 
+    { 
+      HP: 780, 
+      ATK: 230, 
+      DEF: 240, 
+      SPD: 210 
+    },
     img: 'images/chara_01.webp', cutImg: 'images/chara_01_cut.webp', ultImg: 'images/chara_01_cutin.webp',
     upImg: 'images/chara_01_up.webp', battleImg: 'images/chara_01_battle.webp',
     favScale: 0.75, favOffsetY: -100,
@@ -234,7 +240,7 @@ const CHARACTERS = [
         isUltimate: false,
         hit: 100,
         type: 'debuff',
-        multiplier: 0.0,
+        multiplier: 1.0,
         range: 'all',
         effects: [
           { 
@@ -986,7 +992,7 @@ const CHARACTERS = [
             }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [2,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を2マス前へ引き寄せる' },
@@ -1008,7 +1014,7 @@ const CHARACTERS = [
           }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [2,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を2マス奥へ押し出す。' },
@@ -1046,7 +1052,7 @@ const CHARACTERS = [
         pierce: false,
         effects: [],
         moveBonus: {
-          idealMoves: [1],
+          idealMoves: [2,6],
           damageRate: 1.0
         },
         desc: '全てのマスの敵を最前列に寄せ付けてスタンさせる。' }
@@ -1083,7 +1089,7 @@ const CHARACTERS = [
           }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [1,3,5],
           damageRate: 1.3
         },
         desc: '怪異の正体を調査する。実体化する。' },
@@ -1266,7 +1272,7 @@ const CHARACTERS = [
           { type: 'heal', target: 'ally_self', rate: 0.3, hit: 100 }
         ],
         moveBonus: {
-          idealMoves: [0, 2],
+          idealMoves: [0,2,4],
           damageRate: 1.0
         },
         desc: '自身のHPを最大HPの30%回復する。' },
@@ -1283,7 +1289,7 @@ const CHARACTERS = [
           { type: 'heal', target: 'ally_lowest', rate: 0.35, hit: 100 }
         ],
         moveBonus: {
-          idealMoves: [0, 2],
+          idealMoves: [0,2,4],
           damageRate: 1.0
         },
         desc: 'HP割合が最も低い味方1人を最大HPの35%回復する。' },
@@ -1300,7 +1306,7 @@ const CHARACTERS = [
           { type: 'heal', target: 'ally_all', rate: 0.2, hit: 100 }
         ],
         moveBonus: {
-          idealMoves: [0, 2],
+          idealMoves: [0,2,4],
           damageRate: 1.0
         },
         desc: '味方全員のHPを最大HPの20%回復する。' },
@@ -1323,7 +1329,7 @@ const CHARACTERS = [
         ],
         hitStyle: 'heavy',
         moveBonus: {
-          idealMoves: [0, 1],
+          idealMoves: [3,6],
           damageRate: 1.3
         },
         desc: '与えたダメージの70%分、自身のHPを回復する。' }
@@ -1360,7 +1366,7 @@ const CHARACTERS = [
           }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [3,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を1マス前へ引き寄せる' },
@@ -1377,7 +1383,7 @@ const CHARACTERS = [
           { type: 'push_1', target: 'enemy', hit: 100, duration: 1 }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [3,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を1マス奥へ押し出す。' },
@@ -1394,7 +1400,7 @@ const CHARACTERS = [
           { type: 'shift_right_1', target: 'enemy', hit: 100, duration: 1 }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [3,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を1マス右へ動かす。' },
@@ -1412,7 +1418,7 @@ const CHARACTERS = [
           { type: 'jittai', target: 'enemy', hit: 80, duration: 3 }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [3,6],
           damageRate: 1.3
         },
         desc: '蛇ノ眼で怪異を実体化する' }
@@ -1626,7 +1632,7 @@ const CHARACTERS = [
         pierce: false,
         effects: [],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [1,5],
           damageRate: 1.3
         },
         desc: '直前の味方の行動を真似する。' },
@@ -1644,7 +1650,7 @@ const CHARACTERS = [
           { type: 'pull_2', target: 'enemy', hit: 100, duration: 1 }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [1,5],
           damageRate: 1.2
         },
         desc: '怪異を実体化させ、2マス後退させる。' },
@@ -1661,7 +1667,7 @@ const CHARACTERS = [
           { type: 'def_down', target: 'enemy', hit: 80, duration: 2 }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [1,5],
           damageRate: 1.3
         },
         desc: '全体を巻き込む攻撃。ATKの3倍のダメージ＋DEFダウン。' },
@@ -1796,9 +1802,9 @@ const CHARACTERS = [
         cost: 2,
         isUltimate: false,
         hit: 100,
-        type: 'attack',
+        type: 'buff',
         multiplier: 1.0,
-        range: 'front_row_3',
+        range: 'self',
         pierce: false,
         effects: [
           { 
@@ -1809,7 +1815,7 @@ const CHARACTERS = [
           }
         ],
         moveBonus: {
-          idealMoves: [1],
+          idealMoves: [0,1],
           damageRate: 1.3
         },
         desc: '自身のATKを2ターン上げる。' },
@@ -1841,7 +1847,7 @@ const CHARACTERS = [
         pierce: false,
         effects: [],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [2,7],
           damageRate: 1.3
         },
         desc: '正面のマスに大ダメージ。' },
