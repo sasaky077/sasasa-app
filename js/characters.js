@@ -651,9 +651,9 @@ const CHARACTERS = [
   { id: 11, name: 'ユズハ', gender: 'woman', rarity: 'r',
     role: '火力寄り',
     costMax: 14,
-    costStart: 6,
+    costStart: 3,
     costRegen: 4,
-    shinkiMax: 3,
+    shinkiMax: 6,
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 200, ATK: 350, DEF: 200, SPD: 200 },
@@ -702,7 +702,7 @@ const CHARACTERS = [
         name: '叩きます',
         cost: 3,
         isUltimate: false,
-        hit: 40,
+        hit: 50,
         type: 'attack',
         multiplier: 3.0,
         range: 'pierce3',
@@ -714,23 +714,17 @@ const CHARACTERS = [
         desc: '力が湧いてくる。ATKの3倍の超火力。命中率は非常に低い。' },
 
       { id: 'ult',
-        name: '見つけます',
+        name: '壊します！',
         cost: 10,
         isUltimate: true,
         hit: 100,
         type: 'attack',
-        multiplier: 0.3,
-        range: 'all',
+        multiplier: 5.0,
+        range: 'front1',
         effects: [
-          { 
-            type: 'jittai', 
-            target: 'enemy', 
-            hit: 100, 
-            duration: 2 
-          }
         ],
         moveBonus: {
-          idealMoves: [2],
+          idealMoves: [2,3],
           damageRate: 1.3
         },
         desc: '敵を実体化する。' }
