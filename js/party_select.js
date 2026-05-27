@@ -684,24 +684,41 @@
 
     const party = selected.map(s => {
       const master = CHARACTERS.find(c => c.id === s.charaId);
+      const costMax    = master.costMax    ?? 10;
+      const costStart  = master.costStart  ?? 5;
+      const costRegen  = master.costRegen  ?? 3;
+      const shinkiMax  = master.shinkiMax  ?? 3;
+      const shinkiStart = master.shinkiStart ?? 0;
+      const shinkiRegen = master.shinkiRegen ?? 1;
       return {
-        id:       'chara_' + master.id,
-        name:     master.name,
-        img:      master.battleImg || master.upImg || master.img,
-        hp:       master.stats.HP,
-        hpMax:    master.stats.HP,
-        atk:      master.stats.ATK,
-        def:      master.stats.DEF,
-        spd:      master.stats.SPD,
-        accuracy: 250,
-        row:      s.row,
-        col:      s.col,
-        pos:      s.row,
-        skills: master.skills.map(sk => ({
-          ...sk,
-          cd: 0,
-        })),
-      };
+  id:       'chara_' + master.id,
+  charaId:  master.id,
+  name:     master.name,
+  img:      master.battleImg || master.upImg || master.img,
+  battleImg: master.battleImg,
+
+  // ULTカットイン用
+  upImg:    master.upImg,
+  ultImg:   master.ultImg,
+  cutImg:   master.ultImg || master.cutImg || master.upImg || master.battleImg || master.img,
+
+  hp:       master.stats.HP,
+  hpMax:    master.stats.HP,
+  atk:      master.stats.ATK,
+  def:      master.stats.DEF,
+  spd:      master.stats.SPD,
+  accuracy: 250,
+  row:      s.row,
+  col:      s.col,
+  pos:      s.row,
+  cost:      Math.min(costStart, costMax),
+  costMax:   costMax,
+  costRegen: costRegen,
+  shinki:      Math.min(shinkiStart, shinkiMax),
+  shinkiMax:   shinkiMax,
+  shinkiRegen: shinkiRegen,
+  skills: master.skills.map(sk => ({ ...sk })),
+};
     });
 
     // ▼ 修正：単体 or 複数敵の両方に対応

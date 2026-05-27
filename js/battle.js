@@ -256,6 +256,9 @@ function getEnemyCellsFromAllyRange(chara, range) {
       name:     chara.name,
       img:      chara.battleImg || chara.img,
       battleImg:chara.battleImg,
+      upImg:    chara.upImg,
+      ultImg:   chara.ultImg,
+      cutImg:   chara.ultImg || chara.cutImg || chara.upImg || chara.battleImg || chara.img,
       hp:       chara.stats.HP,
       hpMax:    chara.stats.HP,
       atk:      chara.stats.ATK,
@@ -265,7 +268,15 @@ function getEnemyCellsFromAllyRange(chara, range) {
       status:   [],
       row:      pos.row,
       col:      pos.col,
-      skills:   chara.skills.map(sk => ({ ...sk, cd: 0 })),
+      skills:   chara.skills.map(sk => ({ ...sk })),
+      // 個別COST（キャラ固有）
+      cost:     Math.min(chara.costStart ?? 5, chara.costMax ?? 10),
+      costMax:  chara.costMax  ?? 10,
+      costRegen: chara.costRegen ?? 3,
+      // 神気（ULT専用リソース）
+      shinki:      Math.min(chara.shinkiStart ?? 0, chara.shinkiMax ?? 3),
+      shinkiMax:   chara.shinkiMax   ?? 3,
+      shinkiRegen: chara.shinkiRegen ?? 1,
     };
   }
 
@@ -475,10 +486,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
       <!-- スキル＋移動エリア -->
       <div class="bt-skill-area" id="bt-skill-area">
         <div class="bt-skill-area-header">
-          <button class="bt-pass-btn" onclick="executePassAction()">PASS +3</button>
-          <div class="bt-cost-display" id="bt-cost-display">COST  30 / 30</div>
+          <div class="bt-cost-display" id="bt-cost-display"><div class="bt-cost-main">霊力 - / -</div><div class="bt-cost-regen">毎TURN -</div></div>
       </div>
         <div class="bt-skill-cards" id="bt-skill-cards"></div>
+        <div class="bt-ult-bar" id="bt-ult-bar" style="display:none"></div>
         <div class="bt-execute-bar" id="bt-execute-bar">
         <div class="bt-execute-selected" id="bt-execute-selected">スキルを選択してください</div>
         <button class="bt-cancel-btn" onclick="cancelSkillSelect()">取消</button>
@@ -829,28 +840,124 @@ function getEnemyCellsFromAllyRange(chara, range) {
         display:flex; align-items:center; justify-content:flex-end;
         padding:4px 10px 0;
       }
-      .bt-cost-display {
+      /* 通常攻撃ボタン */
+      .bt-normal-attack-btn {
+        display:flex; align-items:center; justify-content:center;
+        flex-shrink:0;
+        width:70px; height:100%;
+        border-radius:8px;
+        border:1px solid rgba(232,228,220,.25);
+        background:rgba(232,228,220,.07);
+        color:rgba(232,228,220,.85);
+        font-family:"Cinzel",serif; font-size:9px; letter-spacing:1px;
+        cursor:pointer; flex-direction:column; gap:2px;
+      }
+      .bt-normal-attack-btn:active { background:rgba(232,228,220,.16); }
+      .bt-normal-atk-label { font-size:8px; letter-spacing:1px; color:rgba(232,228,220,.5); }
+
+      /* ULTバー */
+      .bt-ult-bar {
+        padding:4px 10px 2px;
+      }
+      .bt-ult-btn {
+        position:relative;
+        width:100%; padding:8px 12px;
+        border-radius:12px;
+        border:1px solid rgba(212,168,75,.28);
+        background:linear-gradient(180deg, rgba(80,60,20,.35), rgba(35,25,10,.55));
+        color:rgba(232,228,220,.92);
         font-family:"Cinzel",serif; font-size:11px; letter-spacing:2px;
+        cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+        text-align:center;
+        overflow:hidden;
+        -webkit-tap-highlight-color:transparent;
+        transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .18s ease;
+      }
+      .bt-ult-btn:not(.is-ready) {
+        opacity:0.55;
+        filter:grayscale(0.15);
+        pointer-events:none;
+      }
+      .bt-ult-btn.is-ready {
+        border-color:rgba(255,220,120,.95);
+        box-shadow:
+          0 0 10px rgba(255,210,90,.35),
+          0 0 20px rgba(255,210,90,.28),
+          inset 0 0 12px rgba(255,240,180,.12);
+        animation:btUltReadyPulse 1.1s ease-in-out infinite;
+      }
+      .bt-ult-btn.is-ready::before {
+        content:'';
+        position:absolute;
+        inset:-2px;
+        border-radius:12px;
+        pointer-events:none;
+        background:radial-gradient(circle at 50% 50%, rgba(255,245,200,.18), transparent 65%);
+        animation:btUltReadyAura 1.4s ease-in-out infinite;
+      }
+      .bt-ult-btn.is-ready::after {
+        content:'';
+        position:absolute;
+        left:-30%; top:0;
+        width:35%; height:100%;
+        pointer-events:none;
+        background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+        transform:skewX(-20deg);
+        animation:btUltReadySweep 1.8s linear infinite;
+      }
+      @keyframes btUltReadyPulse {
+        0%,100% {
+          transform:scale(1);
+          box-shadow:
+            0 0 8px rgba(255,210,90,.25),
+            0 0 16px rgba(255,210,90,.18),
+            inset 0 0 10px rgba(255,240,180,.08);
+        }
+        50% {
+          transform:scale(1.02);
+          box-shadow:
+            0 0 14px rgba(255,220,120,.45),
+            0 0 28px rgba(255,220,120,.30),
+            inset 0 0 14px rgba(255,245,200,.16);
+        }
+      }
+      @keyframes btUltReadyAura {
+        0%,100% { opacity:.45; }
+        50%      { opacity:.85; }
+      }
+      @keyframes btUltReadySweep {
+        0%   { transform:translateX(0) skewX(-20deg); opacity:0; }
+        10%  { opacity:.7; }
+        50%  { opacity:.25; }
+        100% { transform:translateX(420%) skewX(-20deg); opacity:0; }
+      }
+      .bt-ult-btn:active { background:linear-gradient(135deg,rgba(80,60,0,.7),rgba(140,100,0,.5)); }
+      .bt-ult-name { font-size:12px; }
+      .bt-ult-shinki { font-size:9px; letter-spacing:1px; color:rgba(240,208,80,.7); }
+      .bt-ult-label {
+        font-size:8px; letter-spacing:3px;
+        color:rgba(240,208,80,.55); padding:0 4px;
+        border:1px solid rgba(240,208,80,.3); border-radius:3px;
+      }
+      .bt-cost-display {
+        font-family:"Cinzel","Noto Serif JP",serif;
+        text-align:right;
+        line-height:1.2;
         color:rgba(180,220,140,.9);
         text-shadow:0 0 8px rgba(150,200,100,.35);
       }
+      .bt-cost-main {
+        font-size:11px;
+        letter-spacing:1.5px;
+      }
+      .bt-cost-regen {
+        margin-top:1px;
+        font-size:8px;
+        letter-spacing:1px;
+        color:rgba(180,220,140,.55);
+      }
 
-      .bt-pass-btn {
-  margin-right:auto;
-  padding:3px 8px;
-  border-radius:6px;
-  border:1px solid rgba(180,220,140,.35);
-  background:rgba(120,180,80,.08);
-  color:rgba(180,220,140,.9);
-  font-family:"Cinzel",serif;
-  font-size:9px;
-  letter-spacing:1px;
-  cursor:pointer;
-}
 
-.bt-pass-btn:active {
-  background:rgba(120,180,80,.18);
-}
       /* コスト不足カード */
       .bt-skill-card-front.cost-short {
         opacity:0.45;
@@ -1007,11 +1114,9 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-skill-card { flex:1; background:rgba(18,18,24,.95); border:1px solid rgba(255,255,255,.09); border-radius:9px; padding:10px 5px 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; transition:transform .12s, border-color .15s; user-select:none; -webkit-user-select:none; }
       .bt-skill-card::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent); }
       .bt-skill-card.pressing { transform:scale(.96); border-color:rgba(232,228,220,.3); background:rgba(232,228,220,.05); }
-      .bt-skill-card.on-cd { opacity:.3; pointer-events:none; }
       .bt-skill-name { font-size:13px; letter-spacing:1px; color:#e8e4dc; font-weight:500; text-align:center; }
       .bt-skill-subdesc { font-size:8px; color:rgba(232,228,220,.35); letter-spacing:.5px; text-align:center; }
       .bt-skill-hit  { font-family:"Cinzel",serif; font-size:9px; color:rgba(232,228,220,.3); }
-      .bt-skill-cd-badge { position:absolute; top:3px; right:3px; font-family:"Cinzel",serif; font-size:7px; color:rgba(255,255,255,.3); background:rgba(0,0,0,.5); border-radius:3px; padding:1px 4px; }
 
       .bt-skill-card-mb {
   margin-top: 2px;
@@ -1911,9 +2016,298 @@ function getEnemyCellsFromAllyRange(chara, range) {
   background: rgba(0,20,45,.75) !important;
 }
 
+.bt-move-step-num {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 40;
+  transform: translate(-50%, -50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 20px;
+  height: 20px;
+  padding: 0 2px;
+
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ff5a5a;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+
+  text-shadow:
+    0 0 4px rgba(255, 80, 80, 0.95),
+    0 0 8px rgba(255, 40, 40, 0.95),
+    0 0 16px rgba(255, 0, 0, 0.85),
+    0 0 28px rgba(255, 0, 0, 0.65);
+
+  pointer-events: none;
+  animation: btMoveStepPop .16s ease-out;
+}
+
+/* MB一致時：緑ネオン */
+.bt-move-step-num.is-mb-match {
+  color: #7dff9b;
+  text-shadow:
+    0 0 4px rgba(125, 255, 155, 0.95),
+    0 0 8px rgba(70, 255, 120, 0.95),
+    0 0 16px rgba(0, 255, 100, 0.85),
+    0 0 28px rgba(0, 255, 120, 0.65);
+}
+
+/* MB一致時の移動先マス：緑枠 */
+.bt-grid-cell.drag-target-mb::after {
+  border-color: rgba(90,255,140,.95) !important;
+  box-shadow:
+    0 0 12px rgba(90,255,140,.7),
+    0 0 24px rgba(40,255,120,.45),
+    inset 0 0 10px rgba(60,255,130,.25) !important;
+}
+
+.bt-grid-cell.drag-target-mb {
+  background: rgba(0,35,15,.75) !important;
+}
+
+@keyframes btMoveStepPop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0);
+  }
+}
+
 .bt-chara-img {
   pointer-events: none;
   -webkit-user-drag: none;
+}
+
+/* =========================================
+   攻撃エフェクト：bt-fx-* シリーズ
+========================================= */
+
+/* ── 貫通ライン ── */
+.bt-fx-pierce-line {
+  position: fixed;
+  pointer-events: none;
+  z-index: 309000;
+  height: 3px;
+  border-radius: 999px;
+  transform-origin: 0 50%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,230,100,.0) 5%,
+    rgba(255,230,100,.9) 30%,
+    rgba(255,255,255,1)  50%,
+    rgba(255,230,100,.9) 70%,
+    rgba(255,200,60,.0)  95%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 6px rgba(255,220,80,.9),
+    0 0 14px rgba(255,180,40,.6);
+  animation: btPierceLine 0.28s ease-out forwards;
+}
+
+@keyframes btPierceLine {
+  0%   { opacity: 0; transform: scaleX(0) rotate(var(--bt-fx-angle, 0deg)); }
+  15%  { opacity: 1; transform: scaleX(1) rotate(var(--bt-fx-angle, 0deg)); }
+  70%  { opacity: 1; transform: scaleX(1) rotate(var(--bt-fx-angle, 0deg)); }
+  100% { opacity: 0; transform: scaleX(1.05) rotate(var(--bt-fx-angle, 0deg)); }
+}
+
+/* ── 貫通着弾フラッシュ ── */
+.bt-fx-impact-flash {
+  position: fixed;
+  pointer-events: none;
+  z-index: 309500;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,1)  0%,
+    rgba(255,220,80,.85) 25%,
+    rgba(255,150,40,.5)  55%,
+    transparent 80%
+  );
+  box-shadow:
+    0 0 12px rgba(255,200,60,.95),
+    0 0 24px rgba(255,150,30,.6);
+  animation: btImpactFlash 0.32s ease-out forwards;
+}
+
+@keyframes btImpactFlash {
+  0%   { opacity: 0; transform: scale(0.3); }
+  20%  { opacity: 1; transform: scale(1.1); }
+  55%  { opacity: 0.7; transform: scale(0.95); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* ── 稲妻エフェクト ── */
+.bt-fx-lightning {
+  position: fixed;
+  pointer-events: none;
+  z-index: 309000;
+  width: 0;
+  overflow: visible;
+  animation: btLightningStrike 0.38s ease-out forwards;
+}
+
+.bt-fx-lightning-svg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  filter:
+    drop-shadow(0 0 4px rgba(160,200,255,1))
+    drop-shadow(0 0 10px rgba(100,160,255,.8))
+    drop-shadow(0 0 20px rgba(80,120,255,.5));
+}
+
+.bt-fx-lightning-glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(200,220,255,.95) 0%,
+    rgba(100,160,255,.7)  30%,
+    rgba(60,100,255,.3)   60%,
+    transparent 80%
+  );
+  box-shadow:
+    0 0 16px rgba(140,180,255,.95),
+    0 0 32px rgba(80,130,255,.6),
+    inset 0 0 14px rgba(200,220,255,.3);
+  animation: btLightningGlow 0.42s ease-out forwards;
+}
+
+@keyframes btLightningStrike {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  60%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes btLightningGlow {
+  0%   { opacity: 0; transform: scale(0.4); }
+  18%  { opacity: 1; transform: scale(1.05); }
+  60%  { opacity: 0.6; transform: scale(0.95); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+/* ============================================================
+   ULTカットイン
+============================================================ */
+.bt-ult-cutin {
+  position: fixed;
+  inset: 0;
+  z-index: 310000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,.08), transparent 45%),
+    rgba(0,0,0,.72);
+  overflow: hidden;
+}
+
+.bt-ult-cutin.active {
+  display: flex;
+  animation: btUltCutinBg 1.35s ease-out forwards;
+}
+
+.bt-ult-cutin::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255,255,255,.16) 46%, rgba(255,255,255,.36) 50%, rgba(255,255,255,.12) 54%, transparent 100%);
+  transform: translateX(-80%) skewX(-12deg);
+  animation: btUltCutinSweep 1.1s ease-out forwards;
+}
+
+.bt-ult-cutin-img {
+  width: min(100vw, 1254px);
+  aspect-ratio: 1254 / 700;
+  object-fit: cover;
+  transform: translateX(-7%) scale(1.08);
+  opacity: 0;
+  filter: brightness(1.15) contrast(1.08);
+  box-shadow:
+    0 0 40px rgba(255,255,255,.18),
+    0 0 80px rgba(160,40,40,.22);
+  animation: btUltCutinImage 1.35s cubic-bezier(.16,.9,.2,1) forwards;
+}
+
+.bt-ult-cutin-name {
+  position: absolute;
+  left: 24px;
+  bottom: max(34px, env(safe-area-inset-bottom, 34px));
+  font-family: "Cinzel","Noto Serif JP",serif;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: rgba(255,245,220,.95);
+  text-shadow:
+    0 0 12px rgba(255,220,120,.8),
+    0 2px 8px rgba(0,0,0,1);
+  opacity: 0;
+  transform: translateY(14px);
+  animation: btUltCutinName .9s ease-out .22s forwards;
+}
+
+.bt-ult-cutin-skill {
+  position: absolute;
+  right: 24px;
+  top: max(28px, env(safe-area-inset-top, 28px));
+  font-family: "Cinzel","Noto Serif JP",serif;
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: rgba(255,255,255,.78);
+  text-shadow: 0 0 10px rgba(255,255,255,.45), 0 2px 8px rgba(0,0,0,1);
+  opacity: 0;
+  transform: translateX(18px);
+  animation: btUltCutinSkill .8s ease-out .15s forwards;
+}
+
+@keyframes btUltCutinBg {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes btUltCutinImage {
+  0%   { opacity: 0; transform: translateX(-18%) scale(1.18); clip-path: inset(42% 0 42% 0); }
+  12%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  72%  { opacity: 1; transform: translateX(0) scale(1.02); }
+  100% { opacity: 0; transform: translateX(6%) scale(1.08); }
+}
+
+@keyframes btUltCutinSweep {
+  0%   { transform: translateX(-90%) skewX(-12deg); opacity: 0; }
+  20%  { opacity: .9; }
+  100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
+}
+
+@keyframes btUltCutinName {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes btUltCutinSkill {
+  to { opacity: 1; transform: translateX(0); }
 }
 
     `;
@@ -1958,26 +2352,50 @@ function getEnemyCellsFromAllyRange(chara, range) {
     bs.nextPreviewAction = peekNextAction(nextEnemy);
   }
 
+  // ボス敵を取得する（上部大HPバー表示用）
+  function getBossEnemy() {
+    const enemies = bs.enemies || (bs.enemy ? [bs.enemy] : []);
+    if (!enemies.length) return bs.enemy || null;
+
+    // 1. 明示的に isBoss が true の敵を優先
+    let boss = enemies.find(e => e && e.isBoss === true && e.hp > 0);
+    if (boss) return boss;
+
+    // 2. enemy_01 を優先
+    boss = enemies.find(e => e && (e._origId || e.id) === 'enemy_01' && e.hp > 0);
+    if (boss) return boss;
+
+    // 3. bs.enemy が生存していればそれを使う
+    if (bs.enemy && bs.enemy.hp > 0) return bs.enemy;
+
+    // 4. 最後のフォールバックとして最大HPが一番高い生存敵
+    const alive = enemies.filter(e => e && e.hp > 0);
+    if (!alive.length) return enemies[0] || null;
+    return alive.slice().sort((a, b) => (b.hpMax || 0) - (a.hpMax || 0))[0];
+  }
+
   function renderHeader() {
-    const e = bs.enemy;
-    // 複数敵の場合は全体HPの合計を表示
-    const enemies = bs.enemies || [e];
-    const totalHp = enemies.reduce((s, en) => s + Math.max(0, en.hp), 0);
-    const totalHpMax = enemies.reduce((s, en) => s + (en.hpMax || 0), 0);
+    const boss = getBossEnemy();
+
     const fill = document.getElementById('bt-enemy-hp-fill');
-    if (fill) fill.style.width = (totalHpMax > 0 ? totalHp / totalHpMax * 100 : 0) + '%';
     const txt = document.getElementById('bt-enemy-hp-txt');
-    if (txt) {
-      if (enemies.length > 1) {
-        txt.textContent = '全 ' + totalHp + ' / ' + totalHpMax;
-      } else {
-        txt.textContent = e.hp + ' / ' + e.hpMax;
-      }
+
+    if (boss) {
+      const hp = Math.max(0, boss.hp || 0);
+      const hpMax = boss.hpMax || 1;
+      const pct = hpMax > 0 ? hp / hpMax * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (txt) txt.textContent = hp + ' / ' + hpMax;
+    } else {
+      if (fill) fill.style.width = '0%';
+      if (txt) txt.textContent = '0 / 0';
     }
+
     const row = document.getElementById('bt-enemy-status-row');
     if (row) {
       row.innerHTML = '';
-      (e.statusList || []).forEach(st => {
+      const statusList = boss ? (boss.statusList || boss.status || []) : [];
+      statusList.forEach(st => {
         const b = document.createElement('span');
         const cls = STATUS_BADGE_CLASS[st.type] || 'bt-status-other';
         b.className = 'bt-status-badge ' + cls;
@@ -1985,14 +2403,24 @@ function getEnemyCellsFromAllyRange(chara, range) {
         row.appendChild(b);
       });
     }
-    // 共通コスト表示を更新
+
+    // COST表示：現在行動中キャラの個別COSTを表示
     const costEl = document.getElementById('bt-cost-display');
     if (costEl && bs) {
-      const cur = bs.cost != null ? bs.cost : 30;
-      const max = bs.costMax != null ? bs.costMax : 30;
-      costEl.textContent = 'COST  ' + cur + ' / ' + max;
-      const ratio = max > 0 ? cur / max : 1;
-      costEl.style.color = ratio <= 0.3 ? 'rgba(220,80,80,.9)' : ratio <= 0.6 ? 'rgba(220,180,60,.9)' : 'rgba(180,220,140,.9)';
+      const actor = bs.planningCharaId
+        ? bs.party.find(c => c.id === bs.planningCharaId && c.hp > 0)
+        : null;
+      if (actor) {
+        const cur = actor.cost ?? 0;
+        const max = actor.costMax ?? 10;
+        const regen = actor.costRegen ?? 3;
+        costEl.innerHTML = '<div class="bt-cost-main">霊力 ' + cur + ' / ' + max + '</div><div class="bt-cost-regen">毎TURN +' + regen + '</div>';
+        const ratio = max > 0 ? cur / max : 1;
+        costEl.style.color = ratio <= 0.3 ? 'rgba(220,80,80,.9)' : ratio <= 0.6 ? 'rgba(220,180,60,.9)' : 'rgba(180,220,140,.9)';
+      } else {
+        costEl.innerHTML = '<div class="bt-cost-main">霊力 - / -</div><div class="bt-cost-regen">毎TURN -</div>';
+        costEl.style.color = 'rgba(180,220,140,.5)';
+      }
     }
   }
 
@@ -2013,11 +2441,14 @@ function isEnemySpiritual(enemy) {
     const card = document.createElement('div');
     card.className = 'bt-enemy-card';
     const hpPct = e.hpMax > 0 ? Math.max(0, e.hp / e.hpMax * 100) : 0;
+    const isBoss = e.isBoss === true || (e._origId || e.id) === 'enemy_01';
     card.innerHTML = `
       <img class="bt-enemy-card-img" src="${e.battleImg || e.upImg || e.img}" onerror="this.style.opacity='0'">
-      <div class="bt-enemy-mini-hp">
-        <div class="bt-enemy-mini-hp-fill" style="width:${hpPct}%"></div>
-      </div>
+      ${isBoss ? '' : `
+        <div class="bt-enemy-mini-hp">
+          <div class="bt-enemy-mini-hp-fill" style="width:${hpPct}%"></div>
+        </div>
+      `}
     `;
     // 霊体化中は半透明表示
     if (isEnemySpiritual(e)) {
@@ -2083,38 +2514,58 @@ function isEnemySpiritual(enemy) {
   let drawnSkills = [];
   let skillDrawLocked = false;
 
+  const NORMAL_ATTACK_SKILL = {
+    id: 'normal_attack',
+    name: '通常攻撃',
+    cost: 0,
+    isUltimate: false,
+    hit: 100,
+    type: 'attack',
+    multiplier: 1.0,
+    range: 'front1',
+    pierce: false,
+    effects: [],
+    hitStyle: 'normal',
+    desc: 'COSTを消費しない基本攻撃。',
+  };
+
   function renderSkills(chara) {
     const area  = document.getElementById('bt-skill-area');
     const cards = document.getElementById('bt-skill-cards');
+    const ultBar = document.getElementById('bt-ult-bar');
     if (!area || !cards) return;
     if (!chara) { closeSkillArea(); return; }
 
-    skillDrawLocked = true; // 常時表示なのでロック不要（trueにして古い挙動を無効化）
+    console.log('[renderSkills cost]', {
+      name: chara.name,
+      cost: chara.cost,
+      costMax: chara.costMax,
+      costRegen: chara.costRegen,
+      skills: (chara.skills || []).map(sk => ({ name: sk.name, cost: sk.cost }))
+    });
 
-    // 通常スキル3つ + 超必殺技1つを固定表示
-const normalSkills = (chara.skills || []).filter(sk => !sk.isUltimate).slice(0, 3);
-const ultimateSkill = (chara.skills || []).find(sk => sk.isUltimate);
+    skillDrawLocked = true;
 
-const display = ultimateSkill
-  ? normalSkills.concat([ultimateSkill])
-  : (chara.skills || []).slice(0, 4);
+    // 通常スキル最大3枚 + ULTは別枠
+    const normalSkills = (chara.skills || []).filter(sk => !sk.isUltimate).slice(0, 3);
+    const ultimateSkill = (chara.skills || []).find(sk => sk.isUltimate);
 
-    const TYPE_LABEL = {attack:'攻撃', debuff:'妨害', buff:'補助', move:'移動', special:'特殊'};
-
+    // drawnSkills = [通常攻撃, ...normalSkills]（ULTはultBarで管理）
+    const display = [NORMAL_ATTACK_SKILL, ...normalSkills];
     drawnSkills = display;
 
+    const currentCost = chara.cost ?? 0;
     cards.innerHTML = '';
 
-    // スキル4枚：常に表向きで生成
+    // スキルカード表示（通常攻撃 + スキル1〜3）
     display.forEach((sk, i) => {
       const wrap = document.createElement('div');
       wrap.className = 'bt-skill-card-wrap';
 
       const inner = document.createElement('div');
-      inner.className = 'bt-skill-card-inner flipped'; // 常に表向き
+      inner.className = 'bt-skill-card-inner flipped';
       inner.dataset.idx = i;
 
-      // 裏面（表示されないが構造上必要）
       const back = document.createElement('div');
       back.className = 'bt-skill-card-back';
       back.innerHTML = `
@@ -2122,52 +2573,59 @@ const display = ultimateSkill
         <div class="bt-skill-card-back-label">SKILL</div>
       `;
 
-      // コスト不足チェック
+      // 通常攻撃は常にcostShort=false
       const skillCost = sk.cost || 0;
-      const currentCost = (bs && bs.cost != null) ? bs.cost : 30;
-      const costShort = skillCost > currentCost;
-      const onCd = sk.cd > 0;
+      const costShort = (sk.id === 'normal_attack') ? false : skillCost > currentCost;
       const disabled = costShort;
 
-      // 表面
       const front = document.createElement('div');
-      front.className = 'bt-skill-card-front'
-        + (costShort ? ' cost-short' : '')
-        + (sk.isUltimate ? ' is-ultimate' : '');
+      front.className = 'bt-skill-card-front' + (costShort ? ' cost-short' : '');
       front.dataset.skillId = sk.id;
 
       const mbShortText = buildMoveBonusShortText(sk);
-      if (sk.isUltimate) {
-        front.innerHTML = `
-          ${costShort ? '<span class="bt-skill-cost-short-badge">COST不足</span>' : ''}
-          <div class="bt-skill-ultimate-label">ULTIMATE</div>
-          <div class="bt-skill-name">${sk.name}</div>
-          <div class="bt-skill-cost-row">
-            <span class="bt-skill-cost ${costShort ? 'short' : ''}">COST ${skillCost}</span>
-            <span class="bt-skill-hit">HIT ${sk.hit || 100}</span>
-          </div>
-          ${mbShortText ? '<div class="bt-skill-card-mb">' + mbShortText + '</div>' : ''}
-        `;
-      } else {
-        front.innerHTML = `
-          ${costShort ? '<span class="bt-skill-cost-short-badge">COST不足</span>' : ''}
-          <div class="bt-skill-name">${sk.name}</div>
-          <div class="bt-skill-cost-row">
-            <span class="bt-skill-cost ${costShort ? 'short' : ''}">COST ${skillCost}</span>
-            <span class="bt-skill-hit">HIT ${sk.hit || 100}</span>
-          </div>
-          ${mbShortText ? '<div class="bt-skill-card-mb">' + mbShortText + '</div>' : ''}
-        `;
-      }
+      const costLabel = sk.id === 'normal_attack' ? 'FREE' : ('霊力' + skillCost);
+      front.innerHTML = `
+        ${costShort ? '<span class="bt-skill-cost-short-badge">霊力不足</span>' : ''}
+        <div class="bt-skill-name">${sk.name}</div>
+        <div class="bt-skill-cost-row">
+          <span class="bt-skill-cost ${costShort ? 'short' : ''}">${costLabel}</span>
+          <span class="bt-skill-hit">HIT ${sk.hit || 100}</span>
+        </div>
+        ${mbShortText ? '<div class="bt-skill-card-mb">' + mbShortText + '</div>' : ''}
+      `;
 
       if (!disabled) setupSkillCard(front, chara, sk);
 
       inner.appendChild(back);
       inner.appendChild(front);
       wrap.appendChild(inner);
-
       cards.appendChild(wrap);
     });
+
+    // ULTバー（別枠）
+    if (ultBar) {
+      if (ultimateSkill) {
+        const shinki    = chara.shinki    ?? 0;
+        const shinkiMax = chara.shinkiMax ?? 3;
+        const ultReady  = shinki >= shinkiMax;
+        ultBar.style.display = 'block';
+        ultBar.innerHTML = '';
+        const btn = document.createElement('button');
+        btn.className = 'bt-ult-btn' + (ultReady ? ' is-ready' : '');
+        btn.innerHTML = `
+          <span class="bt-ult-label">ULT</span>
+          <span class="bt-ult-name">${ultimateSkill.name}</span>
+          <span class="bt-ult-shinki">神気 ${shinki} / ${shinkiMax}</span>
+        `;
+        if (ultReady) {
+          setupSkillCard(btn, chara, ultimateSkill);
+        }
+        ultBar.appendChild(btn);
+      } else {
+        ultBar.style.display = 'none';
+        ultBar.innerHTML = '';
+      }
+    }
   }
 
   // 後方互換：flipAllCards は何もしない（常時表示に変更のため）
@@ -2180,8 +2638,6 @@ const display = ultimateSkill
   let longPressed = false;
 
   card.addEventListener('pointerdown', (e) => {
-    if (sk.cd > 0) return;
-
     e.stopPropagation();
     longPressed = false;
 
@@ -2192,8 +2648,6 @@ const display = ultimateSkill
   }, { passive: true });
 
   card.addEventListener('pointerup', (e) => {
-    if (sk.cd > 0) return;
-
     e.stopPropagation();
 
     clearTimeout(pressTimer);
@@ -2367,9 +2821,47 @@ function getAllyCellFromPoint(x, y) {
   };
 }
 
+function clearMoveStepNumbers() {
+  document.querySelectorAll('.bt-move-step-num').forEach(el => el.remove());
+}
+
+function addMoveStepNumber(cellEl, num, isMbMatch = false) {
+  if (!cellEl) return;
+
+  // 同じセルに既存の番号があれば消す
+  const old = cellEl.querySelector('.bt-move-step-num');
+  if (old) old.remove();
+
+  const badge = document.createElement('div');
+  badge.className = 'bt-move-step-num' + (isMbMatch ? ' is-mb-match' : '');
+  badge.textContent = String(num);
+  cellEl.appendChild(badge);
+}
+
+function isMoveBonusMatch(skill, distance) {
+  if (!skill || !skill.moveBonus) return false;
+  const idealMoves = skill.moveBonus.idealMoves;
+  if (!Array.isArray(idealMoves)) return false;
+  return idealMoves.includes(distance);
+}
+
+function isAdjacentCell(a, b) {
+  if (!a || !b) return false;
+
+  const rowIdx = { near: 0, mid: 1, far: 2 };
+  const colIdx = { left: 0, center: 1, right: 2 };
+
+  const dr = Math.abs(rowIdx[a.row] - rowIdx[b.row]);
+  const dc = Math.abs(colIdx[a.col] - colIdx[b.col]);
+
+  // 上下左右1マスだけ許可。斜めは禁止。
+  return dr + dc === 1;
+}
+
 function clearDragTargetCell() {
   document.querySelectorAll('.drag-target-cell').forEach(el => {
     el.classList.remove('drag-target-cell');
+    el.classList.remove('drag-target-mb');
   });
 }
 
@@ -2514,8 +3006,8 @@ function showSkillDetailPopup(chara, sk){
       <div class="bt-skill-detail-value">${getSkillTypeLabel(sk)}</div>
     </div>
     <div class="bt-skill-detail-row">
-      <div class="bt-skill-detail-label">COST</div>
-      <div class="bt-skill-detail-value">${sk.cost || 0}</div>
+      <div class="bt-skill-detail-label">${sk.isUltimate ? '神気' : '霊力'}</div>
+      <div class="bt-skill-detail-value">${sk.isUltimate ? '最大時発動' : (sk.cost || 0)}</div>
     </div>
     <div class="bt-skill-detail-row">
       <div class="bt-skill-detail-label">貫通</div>
@@ -2747,24 +3239,8 @@ function highlightSkillRange(chara, sk) {
     renderField(null, dangerArg);
   };
 
-  window.executePassAction = function () {
-  if (!bs || bs.phase === 'result') return;
-
-  // スキル選択中なら selectedChara、未選択なら現在の行動キャラを使う
-  const chara =
-    selectedChara ||
-    (bs.planningCharaId
-      ? bs.party.find(c => c.id === bs.planningCharaId)
-      : null);
-
-  if (!chara || chara.hp <= 0) {
-    addLog('パスするキャラがいません');
-    return;
-  }
-
-  cancelSkillSelect();
-  executePassAction(chara);
-};
+  // executePassAction は廃止（PASSボタン削除）。参照エラー防止のため空実装を残す。
+  window.executePassAction = function () {};
   
   // 即時発動（スワイプ結線・通常スキル選択の両方から呼ばれる）
   window.executeSelectedSkill = function () {
@@ -2808,30 +3284,89 @@ function highlightSkillRange(chara, sk) {
   // ============================================================
 
   // スキルを即時発動し、敵攻撃 → 次キャラへ進む
+  function playUltCutin(chara, skill, done) {
+    const imgSrc = chara.ultImg || chara.cutImg || chara.upImg || chara.battleImg || chara.img;
+
+    if (!imgSrc) {
+      if (typeof done === 'function') done();
+      return;
+    }
+
+    let overlay = document.getElementById('bt-ult-cutin');
+
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'bt-ult-cutin';
+      overlay.className = 'bt-ult-cutin';
+      overlay.innerHTML = `
+        <img class="bt-ult-cutin-img" id="bt-ult-cutin-img" alt="">
+        <div class="bt-ult-cutin-skill" id="bt-ult-cutin-skill">ULTIMATE</div>
+        <div class="bt-ult-cutin-name" id="bt-ult-cutin-name"></div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    const img       = document.getElementById('bt-ult-cutin-img');
+    const name      = document.getElementById('bt-ult-cutin-name');
+    const skillLabel = document.getElementById('bt-ult-cutin-skill');
+
+    if (img)        img.src         = imgSrc;
+    if (name)       name.textContent = chara.name || '';
+    if (skillLabel) skillLabel.textContent = skill.name || 'ULTIMATE';
+
+    overlay.classList.remove('active');
+    void overlay.offsetWidth;
+    overlay.classList.add('active');
+
+    if (typeof playSE === 'function') {
+      playSE('ult_cutin', 0.9);
+    }
+
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      if (typeof done === 'function') done();
+    }, 1350);
+  }
+
   function executeImmediateSkill(chara, skill) {
     if (!bs || !chara || !skill) return;
     if (bs.phase === 'result') return;
 
-    // コスト不足チェック
-    const skillCost = skill.cost || 0;
-    if (skillCost > (bs.cost != null ? bs.cost : 30)) {
-      addLog('コストが足りない（必要: ' + skillCost + ' / 現在: ' + bs.cost + '）');
-      return;
+    // コスト不足チェック（通常攻撃は常に使用可能）
+    if (skill.isUltimate) {
+      // ULT：神気チェック
+      const shinki    = chara.shinki    ?? 0;
+      const shinkiMax = chara.shinkiMax ?? 3;
+      if (shinki < shinkiMax) {
+        addLog('神気が足りない（' + chara.name + ': ' + shinki + ' / ' + shinkiMax + '）');
+        return;
+      }
+    } else {
+      // 通常スキル：霊力チェック（通常攻撃は cost=0 なので常に通過）
+      const skillCost = skill.cost || 0;
+      const actorCost = chara.cost ?? 0;
+      if (skill.id !== 'normal_attack' && skillCost > actorCost) {
+        addLog('コストが足りない（必要: ' + skillCost + ' / ' + chara.name + ': ' + actorCost + '）');
+        return;
+      }
     }
 
     bs.phase = 'executing';
     closeSkillArea();
 
-    // コスト消費
-    if (bs.cost != null) {
-      bs.cost -= skillCost;
-      if (bs.cost < 0) bs.cost = 0;
+    // リソース消費
+    if (skill.isUltimate) {
+      // ULT：神気を0にリセット
+      chara.shinki = 0;
+      chara._wasUltReady = false;
+    } else if (skill.id !== 'normal_attack') {
+      // 通常スキル：霊力を消費
+      const skillCost = skill.cost || 0;
+      if (skillCost > 0) {
+        chara.cost = Math.max(0, (chara.cost ?? 0) - skillCost);
+      }
     }
     renderHeader();
-
-    // CDを消費（移動スキルはcd管理なし）
-    const sk = chara.skills.find(s => s.id === skill.id);
-    if (sk && sk.cdMax > 0) sk.cd = sk.cdMax;
 
     const battleUnit = {
       ...chara,
@@ -2839,48 +3374,28 @@ function highlightSkillRange(chara, sk) {
       isEnemy: false,
     };
 
-    _execStepPlayer(chara, battleUnit, skill, () => {
-      // プレイヤー行動後：全敵が攻撃
-      doEnemyAction(() => {
-        // リアクティブダメージ（HP30%以下の enemy_01）
-        _applyReactiveDamage(chara, () => {
-          markCharaActed(chara);
-          goNextPlanningCharaOrTurnEnd();
+    const runPlayerSkill = () => {
+      _execStepPlayer(chara, battleUnit, skill, () => {
+        // プレイヤー行動後：全敵が攻撃
+        doEnemyAction(() => {
+          // リアクティブダメージ（HP30%以下の enemy_01）
+          _applyReactiveDamage(chara, () => {
+            markCharaActed(chara);
+            goNextPlanningCharaOrTurnEnd();
+          });
         });
       });
-    });
+    };
+
+    if (skill.isUltimate) {
+      playUltCutin(chara, skill, runPlayerSkill);
+    } else {
+      runPlayerSkill();
+    }
   }
 
-  function executePassAction(chara) {
-  if (!bs || !chara) return;
-  if (bs.phase === 'result') return;
-
-  bs.phase = 'executing';
-  closeSkillArea();
-
-  const recover = 3;
-  const before = bs.cost != null ? bs.cost : 0;
-  const max = bs.costMax != null ? bs.costMax : 30;
-
-  bs.cost = Math.min(max, before + recover);
-
-  renderHeader();
-  addLog(chara.name + ' は様子を見た。COST +' + (bs.cost - before));
-
-  const battleUnit = {
-    ...chara,
-    img: chara.battleImg || chara.img,
-    isEnemy: false,
-  };
-
-  // パス後も敵行動 → リアクティブダメージ → 次キャラへ
-  doEnemyAction(() => {
-    _applyReactiveDamage(chara, () => {
-      markCharaActed(chara);
-      goNextPlanningCharaOrTurnEnd();
-    });
-  });
-}
+  // executePassAction (内部) 廃止済み。空実装。
+  function executePassAction(chara) {}
 
   // そのターンに行動したキャラのIDを記録
   function markCharaActed(chara) {
@@ -2916,6 +3431,7 @@ function highlightSkillRange(chara, sk) {
     bs.phase = 'planning';
     bs.planningCharaId = chara.id;
 
+    renderHeader();
     renderSkills(chara);
     renderField();
     renderOrder(null);
@@ -2983,7 +3499,6 @@ const unset = playerUnits.find(u =>
     closeSkillArea();
 
     // CDを消費
-    bs.pendingActions.forEach(a => { a.skill.cd = a.skill.cdMax; });
 
     // ④ EXECUTION PHASE 演出 → 実行開始
     showExecPhaseOverlay(() => {
@@ -3209,6 +3724,210 @@ function showCellDamageEffect(cell) {
     fx.remove();
   }, 650);
 }
+
+  // ============================================================
+  // 攻撃エフェクト関数群
+  // ============================================================
+
+  /**
+   * スキル/アクションが貫通系かどうかを判定する
+   * fx: 'pierce' または range が pierce系 または pierce === true
+   */
+  function isPierceLikeSkill(skillOrAction) {
+    if (!skillOrAction) return false;
+    if (skillOrAction.fx === 'pierce') return true;
+    if (skillOrAction.pierce === true) return true;
+    const r = skillOrAction.range || '';
+    return (
+      r === 'pierce_all' ||
+      r === 'pierce3' ||
+      r === 'pierce2' ||
+      r === 'col_center' ||
+      r === 'col_left' ||
+      r === 'col_right' ||
+      (typeof r === 'string' && r.startsWith('pierce_'))
+    );
+  }
+
+  /**
+   * ユニット配列から対象セル（DOM要素）を取得する
+   * side: 'enemy' → bt-eg-row-col / 'ally' → bt-ag-row-col
+   */
+  function getTargetCellsFromUnits(targets, side) {
+    if (!targets || !targets.length) return [];
+    const prefix = side === 'ally' ? 'bt-ag-' : 'bt-eg-';
+    return targets
+      .map(t => document.getElementById(prefix + t.row + '-' + t.col))
+      .filter(Boolean);
+  }
+
+  /**
+   * 2点間に細い光のラインDOMを生成して表示し、durationMs後に消す
+   */
+  function playPierceLineEffect(cells) {
+    if (!cells || cells.length < 1) return;
+
+    // セルの中心座標を取得
+    const centers = cells.map(cell => {
+      const r = cell.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+
+    if (centers.length < 2) {
+      // 単一セルでも小さいフラッシュだけ出す
+      playLightningImpactEffect(cells[0]);
+      return;
+    }
+
+    const first = centers[0];
+    const last  = centers[centers.length - 1];
+    const dx    = last.x - first.x;
+    const dy    = last.y - first.y;
+    const len   = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    const line = document.createElement('div');
+    line.className = 'bt-fx-pierce-line';
+    line.style.cssText = [
+      'left:' + first.x + 'px',
+      'top:' + (first.y - 1.5) + 'px',
+      'width:' + len + 'px',
+      'transform-origin:0 50%',
+      '--bt-fx-angle:' + angle + 'deg',
+      'transform:rotate(' + angle + 'deg)',
+    ].join(';');
+    document.body.appendChild(line);
+    setTimeout(() => line.remove(), 600);
+
+    // 各対象セルに順番に着弾フラッシュ
+    cells.forEach((cell, i) => {
+      setTimeout(() => {
+        playImpactFlashOnCell(cell, 36, 36);
+      }, i * 80);
+    });
+  }
+
+  /**
+   * 単一セルに着弾フラッシュ（小）
+   */
+  function playImpactFlashOnCell(cell, w, h) {
+    if (!cell) return;
+    const r = cell.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const fw = w || 48;
+    const fh = h || 48;
+
+    const flash = document.createElement('div');
+    flash.className = 'bt-fx-impact-flash';
+    flash.style.cssText = [
+      'left:' + (cx - fw / 2) + 'px',
+      'top:' + (cy - fh / 2) + 'px',
+      'width:' + fw + 'px',
+      'height:' + fh + 'px',
+    ].join(';');
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 600);
+  }
+
+  /**
+   * 稲妻エフェクトをセルに表示する（CSS/SVG のみ・画像なし）
+   */
+  function playLightningImpactEffect(cell) {
+    if (!cell) return;
+    const r = cell.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top;
+    const cellH = r.height;
+
+    // 稲妻SVGパスをランダム生成
+    const steps = 6;
+    const stepH = cellH / steps;
+    let pathD = 'M 0 0';
+    for (let i = 1; i <= steps; i++) {
+      const xOff = (Math.random() - 0.5) * 18;
+      pathD += ' L ' + xOff + ' ' + (stepH * i);
+    }
+
+    const glowSize = Math.max(r.width, r.height) * 0.9;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-fx-lightning';
+    wrap.style.cssText = [
+      'left:' + cx + 'px',
+      'top:' + (cy - 10) + 'px',
+      'height:' + (cellH + 10) + 'px',
+    ].join(';');
+
+    // SVG本体
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', '40');
+    svg.setAttribute('height', cellH + 10);
+    svg.setAttribute('viewBox', '-20 -10 40 ' + (cellH + 10));
+    svg.setAttribute('xmlns', ns);
+    svg.className = 'bt-fx-lightning-svg';
+
+    // 太いグロー
+    const pathGlow = document.createElementNS(ns, 'path');
+    pathGlow.setAttribute('d', pathD);
+    pathGlow.setAttribute('stroke', 'rgba(140,180,255,0.55)');
+    pathGlow.setAttribute('stroke-width', '5');
+    pathGlow.setAttribute('fill', 'none');
+    pathGlow.setAttribute('stroke-linecap', 'round');
+
+    // メインライン
+    const pathMain = document.createElementNS(ns, 'path');
+    pathMain.setAttribute('d', pathD);
+    pathMain.setAttribute('stroke', 'rgba(220,235,255,0.98)');
+    pathMain.setAttribute('stroke-width', '1.5');
+    pathMain.setAttribute('fill', 'none');
+    pathMain.setAttribute('stroke-linecap', 'round');
+
+    svg.appendChild(pathGlow);
+    svg.appendChild(pathMain);
+    wrap.appendChild(svg);
+
+    // 着弾グロー
+    const glow = document.createElement('div');
+    glow.className = 'bt-fx-lightning-glow';
+    glow.style.cssText = [
+      'width:' + glowSize + 'px',
+      'height:' + glowSize + 'px',
+      'left:' + (-glowSize / 2) + 'px',
+      'top:' + cellH + 'px',
+    ].join(';');
+    wrap.appendChild(glow);
+
+    document.body.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 700);
+  }
+
+  /**
+   * 攻撃エフェクトのメインエントリ
+   * actor: 攻撃者ユニット
+   * skillOrAction: skill オブジェクト or enemy action オブジェクト
+   * targets: 対象ユニット配列
+   * side: 'enemy'（敵グリッド対象）| 'ally'（味方グリッド対象）
+   *
+   * ※ 非同期で演出を出すだけ。バトル進行には影響しない。
+   */
+  function playSkillAttackEffect(actor, skillOrAction, targets, side) {
+    if (!skillOrAction || !targets || !targets.length) return;
+
+    const cells = getTargetCellsFromUnits(targets, side);
+    if (!cells.length) return;
+
+    if (isPierceLikeSkill(skillOrAction)) {
+      // 貫通系：直線ライン演出
+      playPierceLineEffect(cells);
+    } else {
+      // 単体・その他：稲妻着弾
+      cells.forEach((cell, i) => {
+        setTimeout(() => playLightningImpactEffect(cell), i * 120);
+      });
+    }
+  }
 
   // ============================================================
   // HP減算＋HP0時の消失/戦線離脱ポップ共通処理
@@ -3946,6 +4665,9 @@ let totalDamageDealt = 0;
 const orderedTargets = sortEnemyTargetsForHitOrder(targets, skill);
 hitDelay = 0;
 
+// ── 攻撃エフェクト（非同期・バトル進行に影響しない） ──────────
+playSkillAttackEffect(chara, skill, orderedTargets || targets, 'enemy');
+
 const hitStyle = getHitStyle(skill);
 
 orderedTargets.forEach(target => {
@@ -4000,11 +4722,6 @@ setTimeout(() => {
   renderHeader();
   renderField();
 
-  // 全敵が倒れたら勝利
-  if (bs.enemies.every(e => e.hp <= 0)) {
-    setTimeout(() => onBattleEnd(true), 1200);
-    return;
-  }
 }, hitDelay + 700);
 
     } // ← これを追加。ここで if (hasDmg) を閉じる
@@ -4031,7 +4748,22 @@ setTimeout(() => {
       renderField();
     }
 
-    setTimeout(onDone, Math.max(800, effectDelay + 200));
+        // ── 行動終了処理：勝利していなければ必ず次へ進める ─────────────
+    const doneDelay = Math.max(
+      900,
+      hasDmg ? hitDelay + 900 : 0,
+      effectDelay + 300
+    );
+
+    setTimeout(() => {
+      // 全敵撃破ならバトル終了。次TURNへは進めない。
+      if (bs.enemies && bs.enemies.every(e => e.hp <= 0)) {
+        onBattleEnd(true);
+        return;
+      }
+
+      if (onDone) onDone();
+    }, doneDelay);
   }
   // ============================================================
   // 敵行動選択：ランダム（直前と同じ行動を避ける）
@@ -4266,6 +4998,9 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     }
 
     if (targets.length > 0) {
+      // ── 攻撃エフェクト（非同期・バトル進行に影響しない） ──────────
+      playSkillAttackEffect(enemy, act, targets, 'ally');
+
       let delay = 0;
       const vanishedTargets = [];
       targets.forEach(target => {
@@ -4434,6 +5169,42 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     renderField();
   }
 
+
+  // ============================================================
+  // ターン開始時の個別COST回復
+  // ============================================================
+  function regenPartyCost() {
+    (bs.party || []).forEach(c => {
+      if (!c || c.hp <= 0) return;
+      const max   = c.costMax   ?? 10;
+      const regen = c.costRegen ?? 3;
+      c.cost = Math.min(max, (c.cost ?? 0) + regen);
+    });
+  }
+
+  // ============================================================
+  // ターン開始時の神気回復
+  // ============================================================
+  function regenPartyShinki() {
+    (bs.party || []).forEach(c => {
+      if (!c || c.hp <= 0) return;
+      const before = c.shinki ?? 0;
+      const max    = c.shinkiMax  ?? 3;
+      const regen  = c.shinkiRegen ?? 1;
+      c.shinki = Math.min(max, before + regen);
+      // 神気が満ちた瞬間だけログを出す
+      if (before < max && c.shinki >= max && !c._wasUltReady) {
+        addLog(c.name + ' の神気が満ちた');
+        c._wasUltReady = true;
+      }
+    });
+  }
+
+  // 将来拡張用：コスト回復量バフ
+  // { type: 'cost_regen_up', target: 'ally_all', value: 1, duration: 2 }
+  // → 対象のturning start COST回復量を +value する（spd_up/spd_downの代替）
+  // 未実装。実装時は regenPartyCost() 内で statusList を参照して加算する。
+
   // ============================================================
   // ターン終了処理
   // ============================================================
@@ -4444,13 +5215,12 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     bs.actedCharaIds  = [];       // ← 行動済みIDをリセット
     bs.planningCharaId = null;
 
-    // CD消化
-    bs.party.forEach(c => c.skills.forEach(sk => { if (sk.cd > 0) sk.cd--; }));
-
-    // コスト回復（ターン終了時に10回復、最大30）
-    if (bs.cost != null && bs.costMax != null) {
-      bs.cost = Math.min(bs.costMax, bs.cost + 10);
-    }
+    // 個別COST回復（ターン開始時、生存中の味方全員にcostRegenを加算）
+    // ※ バトル開始直後（turn=1→2以降）から適用。costStartは startBattle 時に設定済み。
+    regenPartyCost();
+    regenPartyShinki();
+    // 互換用：bs.cost/bs.costMax は維持するが実際のスキル判定には使わない
+    // （将来的に削除予定）
 
     // ── statusList持続ターン消化（全敵） ──────────────────────
     (bs.enemies || [bs.enemy]).forEach(e => { if (e) tickStatusList(e); });
@@ -4828,6 +5598,13 @@ function planAllEnemyActions() {
     bs.selectedEnemyPreview = null; // 前ターンの攻撃予告をリセット
     resetEnemyPreviewPanel();
     hideExecuteButton();
+
+    // ターン開始時COST・神気回復（初回ターンは二重回復防止のためスキップ）
+    if (bs.turn > 1) {
+      regenPartyCost();
+      regenPartyShinki();
+    }
+
     planAllEnemyActions();
 
     const playerUnits = bs.turnOrder.filter(u => !u.isEnemy && u.hp > 0);
@@ -4835,6 +5612,7 @@ function planAllEnemyActions() {
 
     bs.planningCharaId = playerUnits[0].id;
     const chara = bs.party.find(c => c.id === playerUnits[0].id);
+    renderHeader();
     renderSkills(chara);
     renderField();
     addLog(playerUnits[0].name + ' の行動を選んでください');
@@ -4954,6 +5732,16 @@ function planAllEnemyActions() {
   let pendingDistance = 0;
   let pendingRate = 1.0;
 
+  let movePath = [];
+  let lastPathCell = {
+    row: fromRow,
+    col: fromCol,
+    el: document.getElementById('bt-ag-' + fromRow + '-' + fromCol)
+  };
+  let lastPathKey = fromRow + '-' + fromCol;
+
+  clearMoveStepNumbers();
+
   card.setPointerCapture?.(e.pointerId);
 
   addLog('— キャラをつかみました：移動先にドラッグしてください');
@@ -4963,6 +5751,34 @@ function planAllEnemyActions() {
 
     const cellInfo = getAllyCellFromPoint(ev.clientX, ev.clientY);
     if (!cellInfo) return;
+
+    const cellKey = cellInfo.row + '-' + cellInfo.col;
+
+    // 同じマス上で動いているだけなら何もしない
+    if (cellKey === lastPathKey) return;
+
+    // スタート地点に戻った場合は、移動なし扱いに戻す
+    const startKey = fromRow + '-' + fromCol;
+    if (cellKey === startKey) {
+      movePath = [];
+      lastPathCell = {
+        row: fromRow,
+        col: fromCol,
+        el: document.getElementById('bt-ag-' + fromRow + '-' + fromCol)
+      };
+      lastPathKey = startKey;
+
+      clearMoveStepNumbers();
+      clearDragTargetCell();
+
+      pendingCell = null;
+      pendingDistance = 0;
+      pendingRate = 1.0;
+
+      if (bs) bs.swipeComboMultiplier = 1.0;
+      addLog('— 移動なし：効果100%');
+      return;
+    }
 
     // 自分以外の生存味方がいるマスは不可
     const occupied = bs.party.some(u =>
@@ -4974,45 +5790,58 @@ function planAllEnemyActions() {
     );
 
     if (occupied) {
-      clearDragTargetCell();
-      pendingCell = null;
-      pendingDistance = 0;
-      pendingRate = 1.0;
       addLog('— そのマスには味方がいます');
       return;
     }
 
-    const routeDistance = getReachableMoveDistanceAvoidingAllies(
-  fromRow,
-  fromCol,
-  cellInfo.row,
-  cellInfo.col,
-  dragChara
-);
+    // 隣接マスだけを追加する（離れたマスに飛んだ場合は無視）
+    if (!isAdjacentCell(lastPathCell, cellInfo)) {
+      return;
+    }
 
-if (routeDistance == null) {
-  clearDragTargetCell();
-  pendingCell = null;
-  pendingDistance = 0;
-  pendingRate = 1.0;
-  addLog('— 味方に道を塞がれています');
-  return;
-}
+    // すでに通ったマスに戻った場合は、そこまで巻き戻す
+    const existingIndex = movePath.findIndex(p => p.row === cellInfo.row && p.col === cellInfo.col);
+    if (existingIndex >= 0) {
+      movePath = movePath.slice(0, existingIndex + 1);
+      clearMoveStepNumbers();
+      movePath.forEach((p, idx) => {
+        const stepNum = idx + 1;
+        addMoveStepNumber(p.el, stepNum, isMoveBonusMatch(selectedSkill, stepNum));
+      });
+    } else {
+      movePath.push(cellInfo);
+      const stepNum = movePath.length;
+      addMoveStepNumber(
+        cellInfo.el,
+        stepNum,
+        isMoveBonusMatch(selectedSkill, stepNum)
+      );
+    }
 
-pendingCell = cellInfo;
-pendingDistance = routeDistance;
-pendingRate = getMoveEffectRate(pendingDistance);
+    lastPathCell = cellInfo;
+    lastPathKey = cellKey;
+
+    pendingCell = cellInfo;
+    pendingDistance = movePath.length;
+    pendingRate = getMoveEffectRate(pendingDistance);
 
     clearDragTargetCell();
     cellInfo.el.classList.add('drag-target-cell');
+    cellInfo.el.classList.toggle(
+      'drag-target-mb',
+      isMoveBonusMatch(selectedSkill, pendingDistance)
+    );
 
     if (bs) {
       bs.swipeComboMultiplier = pendingRate;
     }
 
+    const mbMatched = isMoveBonusMatch(selectedSkill, pendingDistance);
+
     addLog(
       '— 移動距離：' + pendingDistance +
-      ' / 効果：' + Math.round(pendingRate * 100) + '%'
+      ' / 効果：' + Math.round(pendingRate * 100) + '%' +
+      (mbMatched ? ' / MB一致!' : '')
     );
   };
 
@@ -5055,6 +5884,7 @@ pendingRate = getMoveEffectRate(pendingDistance);
 
   function cleanup() {
     clearDragTargetCell();
+    clearMoveStepNumbers();
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);
     window.removeEventListener('pointercancel', onUp);
@@ -5258,7 +6088,6 @@ pendingRate = getMoveEffectRate(pendingDistance);
       <div class="bt-detail-grid">
         <div class="bt-detail-stat"><div class="bt-detail-stat-label">命中率</div><div class="bt-detail-stat-val">${sk.hit<100?sk.hit+'%':'確定'}</div></div>
         <div class="bt-detail-stat"><div class="bt-detail-stat-label">倍率</div><div class="bt-detail-stat-val">${sk.multiplier||1.0}×</div></div>
-        <div class="bt-detail-stat"><div class="bt-detail-stat-label">クールダウン</div><div class="bt-detail-stat-val">${sk.cdMax}ターン</div></div>
       </div>
       <button class="bt-detail-close" onclick="closeSkillDetail()">閉じる</button>
     `;
@@ -5272,6 +6101,39 @@ pendingRate = getMoveEffectRate(pendingDistance);
   // ============================================================
   // 起動・終了
   // ============================================================
+  function normalizePartyCost() {
+    (bs.party || []).forEach(c => {
+      if (!c) return;
+      const max   = c.costMax   ?? 10;
+      const start = c.costStart ?? 5;
+      const regen = c.costRegen ?? 3;
+      c.costMax   = max;
+      c.costRegen = regen;
+      if (c.cost == null) {
+        c.cost = Math.min(start, max);
+      } else {
+        c.cost = Math.min(c.cost, max);
+      }
+    });
+  }
+
+  function normalizePartyShinki() {
+    (bs.party || []).forEach(c => {
+      if (!c) return;
+      const max   = c.shinkiMax   ?? 3;
+      const start = c.shinkiStart ?? 0;
+      const regen = c.shinkiRegen ?? 1;
+      c.shinkiMax   = max;
+      c.shinkiRegen = regen;
+      if (c.shinki == null) {
+        c.shinki = Math.min(start, max);
+      } else {
+        c.shinki = Math.min(c.shinki, max);
+      }
+      c._wasUltReady = c.shinki >= c.shinkiMax;
+    });
+  }
+
   function startBattle(party, enemyOrEnemies, options) {
     // 単体 or 配列どちらでも受け取れる
     const enemyList = Array.isArray(enemyOrEnemies)
@@ -5429,6 +6291,9 @@ bs.enemies.forEach((e, i) => {
       c._statusMod = {};
       c._base = { atk: c.atk, def: c.def, spd: c.spd };
     });
+
+    normalizePartyCost();
+    normalizePartyShinki();
 
     bs.turnOrder = calcTurnOrder(bs.party, bs.enemies);
     bs.swipeComboMultiplier = 1.0; // スワイプ結線倍率（battle_swipe.js が使用）
