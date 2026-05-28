@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <title>神還</title>
+  <title>No.None</title>
 
   <!-- iOS用-->
   <link rel="apple-touch-icon" href="images/icon_192.webp">
@@ -432,8 +432,8 @@
     <span class="bottom-nav-label">任務</span>
   </div>
   <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
-    <img src="images/btmnv_party.webp" alt="編成">
-    <span class="bottom-nav-label">編成</span>
+    <img src="images/btmnv_party.webp" alt="協力者">
+    <span class="bottom-nav-label">協力者</span>
   </div>
   <div class="bottom-nav-item" id="bnav-main" onclick="showMainTab('main')">
     <img src="images/btmnv_home.webp" alt="ホーム">
@@ -918,6 +918,7 @@ document.addEventListener('touchend', function (e) {
   }
  
 const BASE_STATS = ["HP","ATK","DEF","SPD"];
+const DISPLAY_STATS = ["HP","ATK","DEF"]; // 表示用（SPDは除外）
 
 // ── 共鳴システム ──────────────────────────────────
 const MAX_LIMIT_BREAK = 5;
@@ -993,8 +994,34 @@ function confirmLimitBreak(materialDbId){
   var mat = box.find(function(b){ return b.db_id === materialDbId; });
   if(!mat) return;
 
+  var beforeLb = target.limitBreak || 0;
+  var afterLb = Math.min(beforeLb + 1, MAX_LIMIT_BREAK);
+
+  var beforeStats = target.stats || {};
+  var afterStats = applyLimitBreakStats(
+    target.baseStats || target.stats || {},
+    afterLb,
+    target.rarity
+  );
+
+  var rows = DISPLAY_STATS.map(function(s){
+    return '<tr>' +
+      '<td class="stat-name">' + s + '</td>' +
+      '<td class="stat-val">' + (beforeStats[s] ?? '-') + '</td>' +
+      '<td class="stat-arrow">→</td>' +
+      '<td class="stat-val stat-lb-enhanced">' + (afterStats[s] ?? '-') + '</td>' +
+    '</tr>';
+  }).join('');
+
   document.getElementById('lb-confirm-text').innerHTML =
-    '【' + mat.name + '】を素材として<br>【' + target.name + '】の共鳴Lvを上げます。<br>素材キャラは消去されます。';
+    '<div class="lb-confirm-message">' +
+      '共鳴しますか？<br>' +
+      '素材にしたキャラクターは消去されます。' +
+    '</div>' +
+    '<div class="lb-confirm-level">共鳴Lv：' + beforeLb + ' → ' + afterLb + '</div>' +
+    '<table class="stat-table stat-table-small lb-confirm-stat-table">' +
+      rows +
+    '</table>';
 
   var okBtn = document.getElementById('lb-confirm-ok-btn');
   okBtn.onclick = function(){
@@ -2883,7 +2910,7 @@ setTenResultFooterVisible(true);
 }
   function buildStatRows(data){
   var stats = data.stats || {};
-  return BASE_STATS.map(function(s){
+  return DISPLAY_STATS.map(function(s){
     return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+(stats[s] ?? '-')+'</td></tr>';
   }).join('');
 }
@@ -3168,15 +3195,9 @@ document.getElementById('detail-rank').textContent = '';
 // 通常ステータス表示は使わない
 document.getElementById('detail-stat-table').innerHTML = '';
 
-// 共鳴Lv表示 + 現在/共鳴後ステータス
+// 共鳴Lv表示 + 現在ステータス（HP/ATK/DEFのみ）
 var lb = data.limitBreak || 0;
 var currentStats = data.stats || {};
-var nextLb = Math.min(lb + 1, MAX_LIMIT_BREAK);
-var nextStats = applyLimitBreakStats(
-  data.baseStats || data.stats || {},
-  nextLb,
-  data.rarity
-);
 
 var lbOptsHTML =
   '<div class="detail-lb-section">' +
@@ -3188,17 +3209,8 @@ var lbOptsHTML =
     '<div class="detail-lb-stats">' +
       '<div class="detail-lb-stats-title">現在ステータス</div>' +
       '<table class="stat-table stat-table-small">' +
-        BASE_STATS.map(function(s){
+        DISPLAY_STATS.map(function(s){
           return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+(currentStats[s] ?? '-')+'</td></tr>';
-        }).join('') +
-      '</table>' +
-    '</div>' +
-
-    '<div class="detail-lb-stats">' +
-      '<div class="detail-lb-stats-title">共鳴後ステータス</div>' +
-      '<table class="stat-table stat-table-small">' +
-        BASE_STATS.map(function(s){
-          return '<tr><td class="stat-name">'+s+'</td><td class="stat-val stat-lb-enhanced">'+(nextStats[s] ?? '-')+'</td></tr>';
         }).join('') +
       '</table>' +
     '</div>' +
@@ -3871,6 +3883,33 @@ function fadeOutOpeningBgm(){
   .stat-lb-enhanced {
     color: #c8a0ff !important;
     font-weight: 700;
+  }
+
+  /* 共鳴確認モーダル内の表示 */
+  .lb-confirm-message {
+    font-size: 13px;
+    color: rgba(232,228,220,.85);
+    line-height: 1.7;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .lb-confirm-level {
+    font-size: 13px;
+    font-weight: 700;
+    color: #c8a0ff;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .lb-confirm-stat-table {
+    width: 100%;
+    margin: 0 auto;
+  }
+  .stat-arrow {
+    padding: 2px 4px;
+    font-size: 12px;
+    color: rgba(255,255,255,.4);
+    text-align: center;
   }
 
   .btn-limit-break {

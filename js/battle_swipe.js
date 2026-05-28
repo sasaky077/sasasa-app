@@ -338,11 +338,12 @@
   const bs = getBs();
   if (bs) bs.swipeComboMultiplier = sw.multiplier;
 
-  refreshPreview();
-
   if (typeof window.renderBattleField === 'function') {
     window.renderBattleField();
   }
+
+  // renderBattleField() の後に、現在位置ベースの攻撃予定マスを再適用する
+  refreshPreview();
 
   highlightActorCell();
   renderMoveStepNumbers();
@@ -360,18 +361,24 @@
 
     cells.forEach(key => {
       const el = document.getElementById('bt-eg-' + key);
-      if (el) el.classList.add('hit-preview');
+      if (el) el.classList.add('skill-range');
     });
     sw.hitTargets.forEach(e => {
       const el = document.getElementById('bt-eg-' + e.row + '-' + e.col);
-      if (el) el.classList.add('connected-hit');
+      if (el) el.classList.add('skill-range');
     });
   }
 
   function clearPreview() {
-    document.querySelectorAll('.hit-preview, .connected-hit').forEach(el => {
-      el.classList.remove('hit-preview', 'connected-hit');
-    });
+    document
+      .querySelectorAll(
+        '.bt-grid-enemy .hit-preview, ' +
+        '.bt-grid-enemy .connected-hit, ' +
+        '.bt-grid-enemy .skill-range'
+      )
+      .forEach(el => {
+        el.classList.remove('hit-preview', 'connected-hit', 'skill-range');
+      });
   }
 
   function highlightActorCell() {
@@ -949,26 +956,22 @@ bindActorDragStart();
   s.id = 'swipe-style';
 
     s.textContent = `
-      /* レンジ内セル（青紫） */
-      .bt-grid-cell.hit-preview::after {
-        border-color: rgba(140,100,255,0.85) !important;
-        box-shadow: 0 0 10px rgba(120,80,240,0.5), inset 0 0 8px rgba(80,40,200,0.2) !important;
-        animation: hitPreviewPulse 0.9s ease-in-out infinite;
+      /* 着弾予定マス（skill-range と同じ黄色に統一） */
+      .bt-grid-cell.hit-preview,
+      .bt-grid-cell.connected-hit {
+        background: rgba(0,0,0,.55) !important;
+        box-shadow:
+          0 0 10px rgba(200,160,40,.5),
+          0 0 20px rgba(180,140,30,.3),
+          inset 0 0 8px rgba(160,120,20,.2) !important;
       }
-      @keyframes hitPreviewPulse {
-        0%,100% { border-color:rgba(120,80,240,0.6);   box-shadow:0 0 6px rgba(100,60,220,0.3); }
-        50%     { border-color:rgba(180,140,255,0.95); box-shadow:0 0 16px rgba(160,120,255,0.7); }
-      }
-
-      /* 結線成立セル（金） */
+      .bt-grid-cell.hit-preview::after,
       .bt-grid-cell.connected-hit::after {
-        border-color: rgba(255,200,60,0.95) !important;
-        box-shadow: 0 0 14px rgba(255,180,40,0.7), 0 0 28px rgba(240,160,20,0.4), inset 0 0 10px rgba(220,140,10,0.3) !important;
-        animation: connectedPulse 0.6s ease-in-out infinite !important;
-      }
-      @keyframes connectedPulse {
-        0%,100% { border-color:rgba(240,180,40,0.7); box-shadow:0 0 10px rgba(220,160,20,0.5); }
-        50%     { border-color:rgba(255,220,80,1.0);  box-shadow:0 0 22px rgba(255,200,60,0.9), 0 0 40px rgba(240,180,40,0.5); }
+        border-color: rgba(220,180,60,.9) !important;
+        box-shadow:
+          0 0 10px rgba(200,160,40,.5),
+          0 0 20px rgba(180,140,30,.3) !important;
+        animation: skillRangePulse .9s ease-in-out infinite;
       }
 
       #swipe-hud,

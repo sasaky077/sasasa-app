@@ -418,9 +418,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
           </div>
           <div class="bt-enemy-hp-txt" id="bt-enemy-hp-txt"></div>
         </div>
-        <div class="bt-enemy-preview-panel" id="bt-enemy-preview-panel">
-          <div class="bt-enemy-preview-empty">敵をタップすると次行動の詳細を確認できます</div>
-        </div>
+        <div class="bt-enemy-preview-panel" id="bt-enemy-preview-panel" style="display:none"></div>
         <button class="bt-menu-btn" id="bt-menu-btn" onclick="openBattleMenu()">MENU</button>
       </div>
 
@@ -1018,7 +1016,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-skill-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
       .bt-skill-acting { font-size:11px; letter-spacing:2px; color:rgba(232,228,220,.5); }
       .bt-skill-cards { display:flex; gap:5px; padding:6px 10px 4px; align-items:flex-end; }
-      .bt-skill-hint { text-align:center; font-size:8px; letter-spacing:2px; color:rgba(232,228,220,.2); margin-top:2px; padding-bottom:4px; }
+      .bt-skill-hint { display:none; text-align:center; font-size:8px; letter-spacing:2px; color:rgba(232,228,220,.2); margin-top:2px; padding-bottom:4px; }
       .bt-skill-range {
         margin-top: 4px;
         font-size: 9px;
@@ -1095,7 +1093,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
 
-        height: 82px;
+        height: 64px;
         min-width: 0;
       }
 
@@ -1153,7 +1151,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-skill-card { flex:1; background:rgba(18,18,24,.95); border:1px solid rgba(255,255,255,.09); border-radius:9px; padding:10px 5px 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; -webkit-tap-highlight-color:transparent; position:relative; overflow:hidden; transition:transform .12s, border-color .15s; user-select:none; -webkit-user-select:none; }
       .bt-skill-card::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent); }
       .bt-skill-card.pressing { transform:scale(.96); border-color:rgba(232,228,220,.3); background:rgba(232,228,220,.05); }
-      .bt-skill-name { font-size:13px; letter-spacing:1px; color:#e8e4dc; font-weight:500; text-align:center; }
+      .bt-skill-name { font-size:11px; line-height:1.25; letter-spacing:1px; color:#e8e4dc; font-weight:500; text-align:center; }
       .bt-skill-subdesc { font-size:8px; color:rgba(232,228,220,.35); letter-spacing:.5px; text-align:center; }
       .bt-skill-hit  { font-family:"Cinzel",serif; font-size:9px; color:rgba(232,228,220,.3); }
 
@@ -1674,6 +1672,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
 
       /* 敵技詳細パネル */
       .bt-enemy-preview-panel {
+        display: none;
         margin-top: 6px;
         padding: 8px 10px;
         border: 1px solid rgba(255,255,255,.08);
@@ -1753,6 +1752,98 @@ function getEnemyCellsFromAllyRange(chara, range) {
         flex-direction: column;
         gap: 10px;
         margin-top: 14px;
+      }
+
+      /* PASS演出 */
+      #bt-pass-burst {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        z-index: 300000;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        font-family: "Cinzel", serif;
+        font-size: 76px;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: 6px;
+        color: #61ff9a;
+        text-shadow:
+          0 0 6px rgba(120, 255, 170, 1),
+          0 0 16px rgba(40, 255, 120, .95),
+          0 0 32px rgba(20, 220, 100, .75),
+          0 0 52px rgba(0, 180, 80, .65);
+        animation: btPassBurst .72s ease-out forwards;
+      }
+      @keyframes btPassBurst {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(.45);
+          filter: blur(2px);
+        }
+        18% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          filter: blur(0);
+        }
+        70% {
+          opacity: .9;
+          transform: translate(-50%, -50%) scale(1.32);
+          filter: blur(.5px);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.85);
+          filter: blur(7px);
+        }
+      }
+
+      /* キャラカード内 状態バッジ */
+      .bt-unit-status-badges {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        pointer-events: none;
+      }
+      .bt-unit-status-badge {
+        min-width: 34px;
+        padding: 2px 5px;
+        border-radius: 999px;
+        font-family: "Cinzel", "Noto Serif JP", serif;
+        font-size: 8px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: .4px;
+        text-align: center;
+        color: rgba(235,245,255,.95);
+        background: rgba(30,40,60,.78);
+        border: 1px solid rgba(180,210,255,.35);
+        box-shadow: 0 0 5px rgba(120,170,255,.35), 0 1px 4px rgba(0,0,0,.8);
+        text-shadow: 0 1px 2px rgba(0,0,0,.9);
+      }
+      .bt-unit-status-badge.is-debuff {
+        color: #ffd0b0;
+        background: rgba(90,25,18,.82);
+        border-color: rgba(255,120,80,.55);
+        box-shadow: 0 0 6px rgba(255,80,40,.35), 0 1px 4px rgba(0,0,0,.85);
+      }
+      .bt-unit-status-badge.is-buff {
+        color: #cfe4ff;
+        background: rgba(20,45,95,.78);
+        border-color: rgba(120,180,255,.48);
+        box-shadow: 0 0 6px rgba(80,150,255,.32), 0 1px 4px rgba(0,0,0,.85);
+      }
+      .bt-unit-status-badge.is-stun,
+      .bt-unit-status-badge.is-lock {
+        color: #ffe8a0;
+        background: rgba(85,55,10,.86);
+        border-color: rgba(255,210,90,.6);
+        box-shadow: 0 0 7px rgba(255,190,60,.42), 0 1px 4px rgba(0,0,0,.9);
       }
         /* =========================================
    追加：バトル画面リッチ化CSS v1
@@ -2483,6 +2574,7 @@ function isEnemySpiritual(enemy) {
     const isBoss = e.isBoss === true || (e._origId || e.id) === 'enemy_01';
     card.innerHTML = `
       <img class="bt-enemy-card-img" src="${e.battleImg || e.upImg || e.img}" onerror="this.style.opacity='0'">
+      ${buildUnitStatusBadgesHtml(e, 'enemy')}
       ${isBoss ? '' : `
         <div class="bt-enemy-mini-hp">
           <div class="bt-enemy-mini-hp-fill" style="width:${hpPct}%"></div>
@@ -2736,13 +2828,10 @@ function formatMoveBonusBenefit(moveBonus) {
 function buildMoveBonusShortText(skill) {
   var mb = skill.moveBonus;
   var cond = formatMoveBonusCondition(mb);
-  var benefit = formatMoveBonusBenefit(mb);
 
-  if (!cond || !benefit) return '';
+  if (!cond) return '';
 
-  return '' +
-    '<span class="bt-skill-card-mb-cond">MB ' + cond + '</span>' +
-    '<span class="bt-skill-card-mb-benefit">' + benefit + '</span>';
+  return '<span class="bt-skill-card-mb-cond">MB ' + cond + '</span>';
 }
 
 function buildMoveBonusDetailHTML(skill) {
@@ -3307,11 +3396,30 @@ function highlightSkillRange(chara, sk) {
     renderField(null, dangerArg);
   };
 
+  // PASS演出：画面中央に大きく PASS と表示
+  function playPassBurst() {
+    const old = document.getElementById('bt-pass-burst');
+    if (old) old.remove();
+
+    const el = document.createElement('div');
+    el.id = 'bt-pass-burst';
+    el.textContent = 'PASS';
+
+    document.body.appendChild(el);
+
+    el.addEventListener('animationend', () => {
+      el.remove();
+    }, { once: true });
+  }
+
   // executePassAction：PASSボタン用（ターンのみ進める、霊力回復・スキル発動なし）
   window.executePassAction = function () {
     const chara = selectedChara
       || (bs && bs.planningCharaId && bs.party.find(c => c.id === bs.planningCharaId));
     if (!chara) return;
+
+    // PASS演出
+    playPassBurst();
 
     // スワイプ中の場合：歩数表示・プレビューを解除してからスワイプ状態を終了
     if (window.SwipeBattle && typeof window.SwipeBattle.state !== 'undefined' && window.SwipeBattle.state.active) {
@@ -4099,6 +4207,63 @@ function showCellDamageEffect(cell) {
     sure_hit_self: 'bt-status-buff',
     sure_hit_team: 'bt-status-buff',
   };
+  // ============================================================
+  // キャラカード内バッジ表示
+  // ============================================================
+  const UNIT_STATUS_BADGE_TYPES = [
+    'atk_down', 'def_down', 'spd_down',
+    'atk_up',   'def_up',   'spd_up',
+    'stun', 'sure_hit_self', 'sure_hit_team', 'move_lock',
+  ];
+
+  function getUnitStatusBadgeLabel(type) {
+    if (type === 'stun')           return 'STUN';
+    if (type === 'sure_hit_self')  return '必中';
+    if (type === 'sure_hit_team')  return '必中';
+    if (type === 'move_lock')      return 'LOCK';
+    return STATUS_LABEL[type] || type;
+  }
+
+  function getVisibleUnitStatusBadges(unit, side) {
+    if (!unit || !unit.statusList) return [];
+    // 敵が霊体化中の場合、バッジはすべて非表示
+    if (side === 'enemy' && hasStatus(unit, 'spiritual')) return [];
+
+    const seen = new Set();
+    const result = [];
+    unit.statusList.forEach(st => {
+      if (!st || !st.type) return;
+      if (!UNIT_STATUS_BADGE_TYPES.includes(st.type)) return;
+      if (seen.has(st.type)) return;
+      seen.add(st.type);
+      result.push({
+        type:     st.type,
+        label:    getUnitStatusBadgeLabel(st.type),
+        duration: st.duration,
+      });
+    });
+    return result;
+  }
+
+  function buildUnitStatusBadgesHtml(unit, side) {
+    const badges = getVisibleUnitStatusBadges(unit, side);
+    if (!badges.length) return '';
+    return `<div class="bt-unit-status-badges">${
+      badges.map(b => {
+        const isDebuff = b.type.includes('_down');
+        const isStun   = b.type === 'stun';
+        const isLock   = b.type === 'move_lock';
+        const cls = [
+          'bt-unit-status-badge',
+          isDebuff ? 'is-debuff' : 'is-buff',
+          isStun   ? 'is-stun'   : '',
+          isLock   ? 'is-lock'   : '',
+        ].filter(Boolean).join(' ');
+        return `<div class="${cls}">${b.label}</div>`;
+      }).join('')
+    }</div>`;
+  }
+
   // ステータス変動倍率
   // value未指定時のフォールバック効果量
   const STATUS_MOD_RATE = 0.25;
@@ -5669,6 +5834,7 @@ function planAllEnemyActions() {
         </div>
       </div>
     `;
+    panel.style.display = 'block';
   }
 
   function getEnemyRangeLabel(rangeId, dangerArg) {
@@ -5688,9 +5854,8 @@ function planAllEnemyActions() {
   function resetEnemyPreviewPanel() {
     const panel = document.getElementById('bt-enemy-preview-panel');
     if (!panel) return;
-    panel.innerHTML = `
-      <div class="bt-enemy-preview-empty">敵をタップすると次行動の詳細を確認できます</div>
-    `;
+    panel.innerHTML = '';
+    panel.style.display = 'none';
   }
 
   // ============================================================
@@ -5800,6 +5965,7 @@ function planAllEnemyActions() {
 
       card.innerHTML = `
         <img class="bt-chara-img" src="${c.img}" onerror="this.style.opacity='0'">
+        ${buildUnitStatusBadgesHtml(c, 'ally')}
         ${hasActed ? `<div class="bt-chara-set-label">DONE</div>` : ''}
         ${isPlanning ? `<div class="bt-chara-planning-label">?</div>` : ''}
         <div class="bt-chara-hp-bar-outer">

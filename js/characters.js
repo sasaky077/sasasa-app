@@ -1782,7 +1782,7 @@ const CHARACTERS = [
     name: 'アサミ', gender: 'woman', rarity: 'ur',
     role: '速度寄り',
     costMax: 14,
-    costStart: 2,
+    costStart: 4,
     costRegen: 2,
     shinkiMax: 4,
     shinkiStart: 0,
@@ -1792,7 +1792,7 @@ const CHARACTERS = [
     upImg: 'images/chara_08_up.webp', battleImg: 'images/chara_08_battle.webp',
     skills: [
       { id: 's1',
-        name: '準備運動です',
+        name: 'いっくぞー！',
         cost: 2,
         isUltimate: false,
         hit: 100,
@@ -1815,7 +1815,7 @@ const CHARACTERS = [
         desc: '自身のATKを2ターン上げる。' },
 
       { id: 's2',
-        name: 'ざくっ',
+        name: 'ざくっ！',
         cost: 3,
         isUltimate: false,
         hit: 100,
@@ -1831,7 +1831,7 @@ const CHARACTERS = [
         desc: '正面のマスと左右のマスに中ダメージ。' },
 
       { id: 's3',
-        name: 'ぐさっ',
+        name: 'ぐさっ！',
         cost: 4,
         isUltimate: false,
         hit: 100,

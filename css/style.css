@@ -217,8 +217,8 @@ body {
 }
 
 #title-screen img {
-  width: 80%;
-  max-width: 400px;
+  width: 90%;
+  max-width: 560px;
   position: relative;
   z-index: 2;
   animation: titleLogoIn 1.2s ease-out forwards, titleLogoPulse 3.2s ease-in-out 1.2s infinite;
