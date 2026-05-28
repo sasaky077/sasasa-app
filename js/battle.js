@@ -489,7 +489,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
           <div class="bt-cost-display" id="bt-cost-display"><div class="bt-cost-main">霊力 - / -</div><div class="bt-cost-regen">毎TURN -</div></div>
       </div>
         <div class="bt-skill-cards" id="bt-skill-cards"></div>
-        <div class="bt-ult-bar" id="bt-ult-bar" style="display:none"></div>
+        <div class="bt-ult-pass-row" id="bt-ult-pass-row" style="display:none">
+          <div class="bt-ult-bar" id="bt-ult-bar"></div>
+          <button class="bt-pass-btn bt-pass-btn-static" id="bt-pass-btn-static" onclick="executePassAction()" title="行動を見送る（ターンのみ進む）">PASS</button>
+        </div>
         <div class="bt-execute-bar" id="bt-execute-bar">
         <div class="bt-execute-selected" id="bt-execute-selected">スキルを選択してください</div>
         <button class="bt-cancel-btn" onclick="cancelSkillSelect()">取消</button>
@@ -855,9 +858,17 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-normal-attack-btn:active { background:rgba(232,228,220,.16); }
       .bt-normal-atk-label { font-size:8px; letter-spacing:1px; color:rgba(232,228,220,.5); }
 
+      /* ULT+PASSボタン行（2段目・常時表示） */
+      .bt-ult-pass-row {
+        display: flex;
+        align-items: stretch;
+        gap: 6px;
+        padding: 4px 10px 4px;
+      }
       /* ULTバー */
       .bt-ult-bar {
-        padding:4px 10px 2px;
+        flex: 1;
+        min-width: 0;
       }
       .bt-ult-btn {
         position:relative;
@@ -1043,6 +1054,34 @@ function getEnemyCellsFromAllyRange(chara, range) {
         transition:background .15s;
       }
       .bt-cancel-btn:active { background:rgba(255,255,255,.1); }
+      .bt-pass-btn {
+        flex-shrink:0; padding:7px 14px; border-radius:8px;
+        border:1px solid rgba(180,140,80,.3);
+        background:rgba(140,100,40,.12);
+        color:rgba(200,170,90,.7); font-size:11px; letter-spacing:2px;
+        cursor:pointer; font-family:"Cinzel",serif;
+        transition:background .15s;
+      }
+      .bt-pass-btn:active { background:rgba(180,140,60,.25); }
+      /* 常時表示版PASSボタン（2段目右固定） */
+      .bt-pass-btn-static {
+        flex-shrink: 0;
+        width: 78px;
+        align-self: stretch;
+        border-radius: 10px;
+        border: 1px solid rgba(180,140,80,.28);
+        background: rgba(140,100,40,.10);
+        color: rgba(200,170,90,.65);
+        font-size: 11px;
+        letter-spacing: 2px;
+        cursor: pointer;
+        font-family: "Cinzel", serif;
+        transition: background .15s, border-color .15s;
+      }
+      .bt-pass-btn-static:active {
+        background: rgba(180,140,60,.22);
+        border-color: rgba(200,160,80,.45);
+      }
       .bt-skill-card-front.selected {
         border-color:rgba(232,200,100,.6) !important;
         background:rgba(232,200,100,.08) !important;
@@ -2602,7 +2641,10 @@ function isEnemySpiritual(enemy) {
       cards.appendChild(wrap);
     });
 
-    // ULTバー（別枠）
+    // ULTバー + PASSボタン行（2段目：常時表示）
+    const ultPassRow = document.getElementById('bt-ult-pass-row');
+    if (ultPassRow) ultPassRow.style.display = 'flex';
+
     if (ultBar) {
       if (ultimateSkill) {
         const shinki    = chara.shinki    ?? 0;
@@ -2622,6 +2664,7 @@ function isEnemySpiritual(enemy) {
         }
         ultBar.appendChild(btn);
       } else {
+        // ULTなし時はULTバー非表示（PASSボタンのみ右寄せで表示）
         ultBar.style.display = 'none';
         ultBar.innerHTML = '';
       }
@@ -2940,12 +2983,31 @@ function clearDragTargetCell() {
   selectedSkill = sk;
   selectedChara = chara;
 
+  console.log('[selectSkill]', {
+    chara: chara && chara.name,
+    skill: sk && sk.name,
+    charaRow: chara && chara.row,
+    charaCol: chara && chara.col,
+    SwipeBattle: window.SwipeBattle,
+  });
+
   document.querySelectorAll('.bt-skill-card-front').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.bt-skill-card-front').forEach(el => {
     if (el.dataset.skillId === sk.id) el.classList.add('selected');
   });
 
   highlightSkillRange(chara, sk);
+
+  // highlightSkillRange が renderField を呼びカードDOMを再構築する。
+  // SwipeBattle.start はその後に呼ぶ必要がある（bindActorDragStart が新カードを対象にするため）。
+  const cell = document.getElementById('bt-ag-' + (chara && chara.row) + '-' + (chara && chara.col));
+  const card = cell && cell.querySelector('.bt-chara-card');
+  console.log('[selectSkill] renderField後カード確認:', {
+    cellId: 'bt-ag-' + (chara && chara.row) + '-' + (chara && chara.col),
+    cellFound: !!cell,
+    cardFound: !!card,
+    swipeDragBound: card && card._swipeDragBound,
+  });
 
   const bar = document.getElementById('bt-execute-bar');
   if(bar) bar.classList.remove('visible');
@@ -2954,7 +3016,13 @@ function clearDragTargetCell() {
 
   // スワイプ結線システムへの橋渡し（battle_swipe.js が存在する場合のみ）
   if (window.SwipeBattle && typeof window.SwipeBattle.start === 'function') {
+    console.log('[selectSkill] SwipeBattle.start 呼び出し');
     window.SwipeBattle.start(chara, sk);
+  } else {
+    console.warn('[selectSkill] SwipeBattle が存在しない or start が関数でない', {
+      SwipeBattle: window.SwipeBattle,
+      startType: window.SwipeBattle && typeof window.SwipeBattle.start,
+    });
   }
 }
 
@@ -3239,21 +3307,56 @@ function highlightSkillRange(chara, sk) {
     renderField(null, dangerArg);
   };
 
-  // executePassAction は廃止（PASSボタン削除）。参照エラー防止のため空実装を残す。
-  window.executePassAction = function () {};
+  // executePassAction：PASSボタン用（ターンのみ進める、霊力回復・スキル発動なし）
+  window.executePassAction = function () {
+    const chara = selectedChara
+      || (bs && bs.planningCharaId && bs.party.find(c => c.id === bs.planningCharaId));
+    if (!chara) return;
+
+    // スワイプ中の場合：歩数表示・プレビューを解除してからスワイプ状態を終了
+    if (window.SwipeBattle && typeof window.SwipeBattle.state !== 'undefined' && window.SwipeBattle.state.active) {
+      if (typeof clearMoveStepNumbers === 'function') clearMoveStepNumbers();
+      if (typeof clearPreview === 'function') clearPreview();
+      if (typeof window.SwipeBattle.end === 'function') window.SwipeBattle.end();
+    } else if (window.SwipeBattle && typeof window.SwipeBattle.end === 'function') {
+      window.SwipeBattle.end();
+    }
+
+    cancelSkillSelect();
+
+    addLog(chara.name + ' は行動を見送った（PASS）');
+
+    // 霊力回復なし・スキル発動なし・サブスキルなし
+    markCharaActed(chara);
+    goNextPlanningCharaOrTurnEnd();
+  };
+
   
   // 即時発動（スワイプ結線・通常スキル選択の両方から呼ばれる）
   window.executeSelectedSkill = function () {
     if (!selectedSkill || !selectedChara) return;
+
+    // 発動は battle_swipe.js の applyIfReady() 経由でのみ許可。
+    // applyIfReady() が move0/idealMoves判定を通過した時だけ
+    // window.__SWIPE_EXECUTE_APPROVED__ = true をセットして呼ぶ。
+    // それ以外（決定ボタン直押し・古いドラッグ処理残骸）はここで弾く。
+    if (!window.__SWIPE_EXECUTE_APPROVED__) {
+      if (typeof addLog === 'function') {
+        addLog('— キャラをドラッグして、条件に合う歩数で発動してください');
+      }
+      return;
+    }
+    // フラグを即リセット（二重発動防止）
+    window.__SWIPE_EXECUTE_APPROVED__ = false;
 
     const sk    = selectedSkill;
     const chara = selectedChara;
 
     // cancelSkillSelect() で倍率が 1.0 に戻る可能性があるため先に退避
     const swipeMult =
-    bs && typeof bs.swipeComboMultiplier === 'number'
-      ? bs.swipeComboMultiplier
-      : 1.0;
+      bs && typeof bs.swipeComboMultiplier === 'number'
+        ? bs.swipeComboMultiplier
+        : 1.0;
 
     cancelSkillSelect();
 
@@ -3376,13 +3479,11 @@ function highlightSkillRange(chara, sk) {
 
     const runPlayerSkill = () => {
       _execStepPlayer(chara, battleUnit, skill, () => {
-        // プレイヤー行動後：全敵が攻撃
-        doEnemyAction(() => {
-          // リアクティブダメージ（HP30%以下の enemy_01）
-          _applyReactiveDamage(chara, () => {
-            markCharaActed(chara);
-            goNextPlanningCharaOrTurnEnd();
-          });
+        // プレイヤー1人の行動完了：このキャラを行動済みにして次へ
+        // 敵攻撃は味方全員行動後にまとめて行う（goNextPlanningCharaOrTurnEnd内で制御）
+        _applyReactiveDamage(chara, () => {
+          markCharaActed(chara);
+          goNextPlanningCharaOrTurnEnd();
         });
       });
     };
@@ -3437,7 +3538,12 @@ function highlightSkillRange(chara, sk) {
     renderOrder(null);
     addLog(chara.name + ' の行動を選んでください');
   } else {
-    onTurnEnd();
+    // 味方全員の行動が終了 → 敵全員がまとめて攻撃してからターン終了
+    bs.phase = 'executing';
+    addLog('― 敵の行動フェーズ ―');
+    doEnemyAction(() => {
+      onTurnEnd();
+    });
   }
 }
 
@@ -5701,200 +5807,9 @@ function planAllEnemyActions() {
         </div>
       `;
       if (c.hp > 0) {
-        // スキル選択中：このキャラを直接ドラッグ開始させる
-      card.addEventListener('pointerdown', (e) => {
-
-  console.log('[card.pointerdown]', {
-    chara: c.name,
-    selectedSkill,
-    selectedChara,
-    phase: bs.phase
-  });
-
-  // スキル未選択なら通常タップに任せる
-  if (!selectedSkill) return;
-
-  // selectedChara が取れている場合だけ、操作キャラ判定する
-  if (selectedChara && c.id !== selectedChara.id) return;
-
-  // planning中以外は無視
-  if (bs.phase !== 'planning') return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const dragChara = selectedChara || c;
-
-  const fromRow = dragChara.row;
-  const fromCol = dragChara.col;
-
-  let pendingCell = null;
-  let pendingDistance = 0;
-  let pendingRate = 1.0;
-
-  let movePath = [];
-  let lastPathCell = {
-    row: fromRow,
-    col: fromCol,
-    el: document.getElementById('bt-ag-' + fromRow + '-' + fromCol)
-  };
-  let lastPathKey = fromRow + '-' + fromCol;
-
-  clearMoveStepNumbers();
-
-  card.setPointerCapture?.(e.pointerId);
-
-  addLog('— キャラをつかみました：移動先にドラッグしてください');
-
-  const onMove = (ev) => {
-    ev.preventDefault();
-
-    const cellInfo = getAllyCellFromPoint(ev.clientX, ev.clientY);
-    if (!cellInfo) return;
-
-    const cellKey = cellInfo.row + '-' + cellInfo.col;
-
-    // 同じマス上で動いているだけなら何もしない
-    if (cellKey === lastPathKey) return;
-
-    // スタート地点に戻った場合は、移動なし扱いに戻す
-    const startKey = fromRow + '-' + fromCol;
-    if (cellKey === startKey) {
-      movePath = [];
-      lastPathCell = {
-        row: fromRow,
-        col: fromCol,
-        el: document.getElementById('bt-ag-' + fromRow + '-' + fromCol)
-      };
-      lastPathKey = startKey;
-
-      clearMoveStepNumbers();
-      clearDragTargetCell();
-
-      pendingCell = null;
-      pendingDistance = 0;
-      pendingRate = 1.0;
-
-      if (bs) bs.swipeComboMultiplier = 1.0;
-      addLog('— 移動なし：効果100%');
-      return;
-    }
-
-    // 自分以外の生存味方がいるマスは不可
-    const occupied = bs.party.some(u =>
-      u &&
-      u.hp > 0 &&
-      u.id !== dragChara.id &&
-      u.row === cellInfo.row &&
-      u.col === cellInfo.col
-    );
-
-    if (occupied) {
-      addLog('— そのマスには味方がいます');
-      return;
-    }
-
-    // 隣接マスだけを追加する（離れたマスに飛んだ場合は無視）
-    if (!isAdjacentCell(lastPathCell, cellInfo)) {
-      return;
-    }
-
-    // すでに通ったマスに戻った場合は、そこまで巻き戻す
-    const existingIndex = movePath.findIndex(p => p.row === cellInfo.row && p.col === cellInfo.col);
-    if (existingIndex >= 0) {
-      movePath = movePath.slice(0, existingIndex + 1);
-      clearMoveStepNumbers();
-      movePath.forEach((p, idx) => {
-        const stepNum = idx + 1;
-        addMoveStepNumber(p.el, stepNum, isMoveBonusMatch(selectedSkill, stepNum));
-      });
-    } else {
-      movePath.push(cellInfo);
-      const stepNum = movePath.length;
-      addMoveStepNumber(
-        cellInfo.el,
-        stepNum,
-        isMoveBonusMatch(selectedSkill, stepNum)
-      );
-    }
-
-    lastPathCell = cellInfo;
-    lastPathKey = cellKey;
-
-    pendingCell = cellInfo;
-    pendingDistance = movePath.length;
-    pendingRate = getMoveEffectRate(pendingDistance);
-
-    clearDragTargetCell();
-    cellInfo.el.classList.add('drag-target-cell');
-    cellInfo.el.classList.toggle(
-      'drag-target-mb',
-      isMoveBonusMatch(selectedSkill, pendingDistance)
-    );
-
-    if (bs) {
-      bs.swipeComboMultiplier = pendingRate;
-    }
-
-    const mbMatched = isMoveBonusMatch(selectedSkill, pendingDistance);
-
-    addLog(
-      '— 移動距離：' + pendingDistance +
-      ' / 効果：' + Math.round(pendingRate * 100) + '%' +
-      (mbMatched ? ' / MB一致!' : '')
-    );
-  };
-
-  const onUp = (ev) => {
-    if (ev) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
-
-    clearDragTargetCell();
-
-    if (pendingCell) {
-      dragChara.row = pendingCell.row;
-      dragChara.col = pendingCell.col;
-
-      if (bs) {
-        bs.swipeComboMultiplier = pendingRate;
-      }
-
-      addLog(
-        '— 移動確定：' + pendingCell.row + '-' + pendingCell.col +
-        ' / 効果：' + Math.round(pendingRate * 100) + '%'
-      );
-
-    } else {
-      // 移動なしの場合は100%
-      if (bs) {
-        bs.swipeComboMultiplier = 1.0;
-      }
-
-      addLog('— 移動なし：効果100%');
-    }
-
-    cleanup();
-
-    if (selectedSkill && selectedChara && typeof window.executeSelectedSkill === 'function') {
-      window.executeSelectedSkill();
-    }
-  };
-
-  function cleanup() {
-    clearDragTargetCell();
-    clearMoveStepNumbers();
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    window.removeEventListener('pointercancel', onUp);
-  }
-
-  window.addEventListener('pointermove', onMove, { passive: false });
-  window.addEventListener('pointerup', onUp, { passive: false });
-  window.addEventListener('pointercancel', onUp, { passive: false });
-
-}, { passive: false, capture: true });
+        // ※ スキル選択中のキャラカード直接ドラッグ処理は廃止。
+        //   スワイプ発動は battle_swipe.js の SwipeBattle.start() / bindActorDragStart() / applyIfReady() に一本化。
+        //   以下の旧処理（pendingCell / pendingDistance / pendingRate / movePath / onMove / onUp）は削除済み。
 
   card.onclick = () => {
     console.log('[card.onclick]', {

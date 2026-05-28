@@ -4627,45 +4627,73 @@ canvas {
 }
 
 /* =========================================================
-   BOXカード：共鳴MAX時のUR風キラキラ加工
+   BOXカード：共鳴MAX時のUR風発光加工
    ========================================================= */
 
 #box-grid .box-card.lb-max {
-  animation: rborder 2s linear infinite;
+  animation: lbMaxGlow 3.8s ease-in-out infinite;
   box-shadow:
-    0 0 8px rgba(255,255,255,0.55),
-    0 0 14px rgba(160,100,255,0.55),
-    0 0 22px rgba(80,180,255,0.35);
+    0 0 8px rgba(255,255,255,0.45),
+    0 0 14px rgba(180,120,255,0.45),
+    0 0 24px rgba(120,210,255,0.28);
 }
 
+/* URと同じ斜めシャイン。ただし共鳴MAXは紫〜青寄り */
 #box-grid .box-card.lb-max::before {
   content: "";
   position: absolute;
-  inset: 4px;
-  border-radius: 14px;
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(220,190,255,0.22) 50%,
+    rgba(120,210,255,0.10) 55%,
+    transparent 65%
+  );
+
+  transform: skewX(-15deg);
+  z-index: 3;
   pointer-events: none;
-  z-index: 6;
-
-  background:
-    radial-gradient(circle at 20% 25%, rgba(255,255,255,0.9) 0 1px, transparent 2px),
-    radial-gradient(circle at 75% 35%, rgba(255,255,255,0.75) 0 1px, transparent 2px),
-    radial-gradient(circle at 45% 75%, rgba(255,255,255,0.65) 0 1px, transparent 2px),
-    linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.35) 48%, transparent 72%);
-
   mix-blend-mode: screen;
-  opacity: 0.75;
-  animation: lbMaxShine 2.4s ease-in-out infinite;
+
+  animation: lbMaxShine 4s ease-in-out infinite;
 }
 
-@keyframes lbMaxShine {
+@keyframes lbMaxGlow {
   0%, 100% {
-    opacity: 0.35;
-    transform: translateX(-8px);
+    filter:
+      drop-shadow(0 0 5px rgba(180,120,255,0.42))
+      drop-shadow(0 0 9px rgba(120,210,255,0.28));
   }
 
   50% {
-    opacity: 0.95;
-    transform: translateX(8px);
+    filter:
+      drop-shadow(0 0 8px rgba(220,190,255,0.62))
+      drop-shadow(0 0 14px rgba(120,210,255,0.42));
+  }
+}
+
+@keyframes lbMaxShine {
+  0% {
+    left: -75%;
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.75;
+  }
+
+  42% {
+    opacity: 0.25;
+  }
+
+  100% {
+    left: 130%;
+    opacity: 0;
   }
 }
 
@@ -4677,4 +4705,37 @@ canvas {
   box-shadow:
     0 0 6px rgba(255,255,255,0.9),
     0 0 12px rgba(170,90,255,0.8);
+}
+
+/* URかつ共鳴MAXの場合は、UR本来の光を優先する */
+#box-grid .box-card.rarity-ur.lb-max {
+  animation: urGlow 2.8s ease-in-out infinite;
+  box-shadow:
+    0 0 10px rgba(255,255,255,0.55),
+    0 0 18px rgba(255,120,220,0.42),
+    0 0 28px rgba(120,200,255,0.38),
+    0 0 36px rgba(255,220,120,0.22);
+}
+
+/* URの斜めシャインはUR用を維持 */
+#box-grid .box-card.rarity-ur.lb-max::before {
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.30) 50%,
+    rgba(255,180,255,0.16) 56%,
+    transparent 66%
+  );
+
+  transform: skewX(-15deg);
+  z-index: 3;
+  pointer-events: none;
+  mix-blend-mode: screen;
+
+  animation: urShine 3.2s ease-in-out infinite;
 }

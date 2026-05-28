@@ -850,8 +850,7 @@ function getSwipeDirToCell(actor, target) {
       swipeDragBound: card && card._swipeDragBound,
       swipeActive: sw.active,
     });
-    // PASSボタンはbattle.js側で常時表示済みのため動的生成しない
-    // renderSwipePassButton();
+    renderSwipePassButton();
 
     addLog(actor.name + '「' + skill.name + '」選択中：キャラをつかんでドラッグ');
   },
@@ -880,8 +879,7 @@ function getSwipeDirToCell(actor, target) {
     sw.path       = [];
 
     clearMoveStepNumbers();
-    // PASSボタンはbattle.js側の常時表示に移行したため動的削除しない
-    // removeSwipePassButton();
+    removeSwipePassButton();
 
     removeDocumentDragListeners();
 

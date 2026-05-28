@@ -403,7 +403,7 @@ const CHARACTERS = [
         effects: [],
         hitStyle: 'multi',
         moveBonus: {
-          idealMoves: [1, 4],
+          idealMoves: [2,5],
           damageRate: 1.5
         },
         desc: '直線上のすべての敵にダメージ。' },
@@ -420,7 +420,7 @@ const CHARACTERS = [
         effects: [],
         hitStyle: 'multi',
         moveBonus: {
-          idealMoves: [1],
+          idealMoves: [2,5],
           damageRate: 1.3
         },
         desc: '直線上の一番手前の敵に中ダメージ。' },
@@ -1787,7 +1787,7 @@ const CHARACTERS = [
     shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 850, ATK: 205, DEF: 270, SPD: 200 },
+    stats: { HP: 850, ATK: 280, DEF: 270, SPD: 200 },
     img: 'images/chara_08.webp', cutImg: 'images/chara_08_cut.webp', ultImg: 'images/chara_08_cutin.webp',
     upImg: 'images/chara_08_up.webp', battleImg: 'images/chara_08_battle.webp',
     skills: [
@@ -1797,7 +1797,7 @@ const CHARACTERS = [
         isUltimate: false,
         hit: 100,
         type: 'buff',
-        multiplier: 1.0,
+        multiplier: 0.0,
         range: 'self',
         pierce: false,
         effects: [
@@ -1805,17 +1805,17 @@ const CHARACTERS = [
             type: 'atk_up', 
             target: 'ally_self', 
             hit: 100, 
-            duration: 2 
+            duration: 3
           }
         ],
         moveBonus: {
-          idealMoves: [0,1],
+          idealMoves: [1,4],
           damageRate: 1.3
         },
         desc: '自身のATKを2ターン上げる。' },
 
       { id: 's2',
-        name: 'シャキシャキ',
+        name: 'ざくっ',
         cost: 3,
         isUltimate: false,
         hit: 100,
@@ -1831,17 +1831,17 @@ const CHARACTERS = [
         desc: '正面のマスと左右のマスに中ダメージ。' },
 
       { id: 's3',
-        name: 'ザクザク',
-        cost: 3,
+        name: 'ぐさっ',
+        cost: 4,
         isUltimate: false,
-        hit: 85,
+        hit: 100,
         type: 'attack',
         multiplier: 3.0,
         range: 'front1',
         pierce: false,
         effects: [],
         moveBonus: {
-          idealMoves: [2,7],
+          idealMoves: [2,4],
           damageRate: 1.3
         },
         desc: '正面のマスに大ダメージ。' },
@@ -1856,7 +1856,7 @@ const CHARACTERS = [
         range: 'front_row_3',
         effects: [],
         moveBonus: {
-          idealMoves: [0],
+          idealMoves: [1,2,3,4],
           damageRate: 1.5
         },
         desc: '正面のマスと左右のマスに大ダメージ。' }
