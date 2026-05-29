@@ -38,7 +38,7 @@ const CHARACTERS = [
     },
     img: 'images/chara_01.webp', cutImg: 'images/chara_01_cut.webp', ultImg: 'images/chara_01_cutin.webp',
     upImg: 'images/chara_01_up.webp', battleImg: 'images/chara_01_battle.webp',
-    favScale: 0.85, favOffsetY: -35,
+    favScale: 0.75, favOffsetY: -100,
     skills: [
       { id: 's1',
         name: '正拳',
@@ -131,7 +131,6 @@ const CHARACTERS = [
     stats: { HP: 720, ATK: 210, DEF: 200, SPD: 270 },
     img: 'images/chara_02.webp', cutImg: 'images/chara_02_cut.webp', ultImg: 'images/chara_02_cutin.webp',
     upImg: 'images/chara_02_up.webp', battleImg: 'images/chara_02_battle.webp',
-    favScale: 0.85, favOffsetY: -25,
     skills: [
       { id: 's1',
         name: '閃刃',
@@ -218,7 +217,6 @@ const CHARACTERS = [
     stats: { HP: 840, ATK: 200, DEF: 275, SPD: 200 },
     img: 'images/chara_03.webp', cutImg: 'images/chara_03_cut.webp', ultImg: 'images/chara_03_cutin.webp',
     upImg: 'images/chara_03_up.webp', battleImg: 'images/chara_03_battle.webp',
-    favScale: 1.0, favOffsetY: 10,
     skills: [
       { id: 's1',
         name: '盾撃',
@@ -309,7 +307,7 @@ const CHARACTERS = [
     stats: { HP: 730, ATK: 275, DEF: 205, SPD: 220 },
     img: 'images/chara_04.webp', cutImg: 'images/chara_04_cut.webp', ultImg: 'images/chara_04_cutin.webp',
     upImg: 'images/chara_04_up.webp', battleImg: 'images/chara_04_battle.webp',
-    favScale: 1.0, favOffsetY: -10,
+    favScale: 0.85, favOffsetY: -30,
     skills: [
       { id: 's1',
         name: 'アルタイル',
@@ -392,7 +390,6 @@ const CHARACTERS = [
     stats: { HP: 600, ATK: 250, DEF: 250, SPD: 250 },
     img: 'images/chara_07.webp', cutImg: 'images/chara_07_cut.webp', ultImg: 'images/chara_07_cutin.webp',
     upImg: 'images/chara_07_up.webp', battleImg: 'images/chara_07_battle.webp',
-    favScale: 0.95, favOffsetY: 5,
     skills: [
       { id: 's1',
         name: '貫通弾',
@@ -406,7 +403,7 @@ const CHARACTERS = [
         effects: [],
         hitStyle: 'multi',
         moveBonus: {
-          idealMoves: [1,2,3,5,],
+          idealMoves: [2,5],
           damageRate: 1.5
         },
         desc: '直線上のすべての敵にダメージ。' },
@@ -423,7 +420,7 @@ const CHARACTERS = [
         effects: [],
         hitStyle: 'multi',
         moveBonus: {
-          idealMoves: [2,5,8],
+          idealMoves: [2,5],
           damageRate: 1.3
         },
         desc: '直線上の一番手前の敵に中ダメージ。' },
@@ -440,7 +437,7 @@ const CHARACTERS = [
         effects: [],
         hitStyle: 'rapid',
         moveBonus: {
-          idealMoves: [8, 9],
+          idealMoves: [1, 4],
           damageRate: 1.2
         },
         desc: '全てのマスの敵に中ダメージ。' },
@@ -462,7 +459,7 @@ const CHARACTERS = [
         ],
         hitStyle: 'rapid',
         moveBonus: {
-          idealMoves: [7],
+          idealMoves: [1,2,3],
           damageRate: 1.5
         },
         desc: '2ターンの間、SPDが上がり、直線上の全ての敵に大ダメージ。' }
@@ -482,7 +479,6 @@ const CHARACTERS = [
     stats: { HP: 820, ATK: 200, DEF: 278, SPD: 205 },
     img: 'images/chara_12.webp', cutImg: 'images/chara_12_cut.webp', ultImg: 'images/chara_12_cutin.webp',
     upImg: 'images/chara_12_up.webp', battleImg: 'images/chara_12_battle.webp',
-    favScale: 0.85, favOffsetY: -10,    
     skills: [
       { id: 's1',
         name: '閃',
@@ -573,7 +569,6 @@ const CHARACTERS = [
     stats: { HP: 760, ATK: 225, DEF: 235, SPD: 215 },
     img: 'images/chara_13.webp', cutImg: 'images/chara_13_cut.webp', ultImg: 'images/chara_13_cutin.webp',
     upImg: 'images/chara_13_up.webp', battleImg: 'images/chara_13_battle.webp',
-    favScale: 0.90, favOffsetY: 10,
     skills: [
       { id: 's1',
         name: '霊打',
@@ -664,7 +659,6 @@ const CHARACTERS = [
     stats: { HP: 200, ATK: 350, DEF: 200, SPD: 200 },
     img: 'images/chara_11.webp', cutImg: 'images/chara_11_cut.webp', ultImg: 'images/chara_11_cutin.webp',
     upImg: 'images/chara_11_up.webp', battleImg: 'images/chara_11_battle.webp',
-    favScale: 0.85, favOffsetY: -15,
     skills: [
       { id: 's1',
         name: '解放します',
@@ -754,7 +748,7 @@ const CHARACTERS = [
     stats: { HP: 800, ATK: 305, DEF: 230, SPD: 245 },
     img: 'images/chara_05.webp', cutImg: 'images/chara_05_cut.webp', ultImg: 'images/chara_05_cutin.webp',
     upImg: 'images/chara_05_up.webp', battleImg: 'images/chara_05_battle.webp',
-    favScale: 1.0, favOffsetY: 10,
+    favScale: 0.85, favOffsetY: -30,
     skills: [
       { id: 's1',
         name: '爆砕',
@@ -851,7 +845,7 @@ const CHARACTERS = [
     stats: { HP: 760, ATK: 250, DEF: 225, SPD: 300 },
     img: 'images/chara_10.webp', cutImg: 'images/chara_10_cut.webp', ultImg: 'images/chara_10_cutin.webp',
     upImg: 'images/chara_10_up.webp', battleImg: 'images/chara_10_battle.webp',
-    favScale: 0.75, favOffsetY: -80,
+    favScale: 0.85, favOffsetY: -100,
     skills: [
       { id: 's1',
         name: '白日',
@@ -973,7 +967,7 @@ const CHARACTERS = [
     stats: { HP: 770, ATK: 235, DEF: 230, SPD: 295 },
     img: 'images/chara_15.webp', cutImg: 'images/chara_15_cut.webp', ultImg: 'images/chara_15_cutin.webp',
     upImg: 'images/chara_15_up.webp', battleImg: 'images/chara_15_battle.webp',
-    favScale: 0.90, favOffsetY: 20,
+    favScale: 0.85, favOffsetY: -30,
     skills: [
       { id: 's1',
         name: 'こっちきて',
@@ -992,7 +986,7 @@ const CHARACTERS = [
             }
         ],
         moveBonus: {
-          idealMoves: [2,5,6,7],
+          idealMoves: [2,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を2マス前へ引き寄せる' },
@@ -1014,7 +1008,7 @@ const CHARACTERS = [
           }
         ],
         moveBonus: {
-          idealMoves: [1,4,7,9],
+          idealMoves: [2,6],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を2マス奥へ押し出す。' },
@@ -1036,7 +1030,7 @@ const CHARACTERS = [
             }
         ],
         moveBonus: {
-          idealMoves: [4,8,],
+          idealMoves: [2],
           damageRate: 1.3
         },
         desc: 'ATKの1.0倍のダメージ。敵を2マス右へ動かす。' },
@@ -1052,7 +1046,7 @@ const CHARACTERS = [
         pierce: false,
         effects: [],
         moveBonus: {
-          idealMoves: [9],
+          idealMoves: [2,6],
           damageRate: 1.0
         },
         desc: '全てのマスの敵を最前列に寄せ付けてスタンさせる。' }
@@ -1071,7 +1065,6 @@ const CHARACTERS = [
     stats: { HP: 800, ATK: 255, DEF: 250, SPD: 260 },
     img: 'images/chara_17.webp', cutImg: 'images/chara_17_cut.webp', ultImg: 'images/chara_17_cutin.webp',
     upImg: 'images/chara_17_up.webp', battleImg: 'images/chara_17_battle.webp',
-    favScale: 0.95, favOffsetY: 10,
     skills: [
       { id: 's1',
         name: '身元調査',
@@ -1260,7 +1253,6 @@ const CHARACTERS = [
     stats: { HP: 600, ATK: 250, DEF: 300, SPD: 225 },
     img: 'images/chara_19.webp', cutImg: 'images/chara_19_cut.webp', ultImg: 'images/chara_19_cutin.webp',
     upImg: 'images/chara_19_up.webp', battleImg: 'images/chara_19_battle.webp',
-    favScale: 0.95, favOffsetY: 15,
     skills: [
       { id: 's1',
         name: '自己回復',
@@ -1274,7 +1266,7 @@ const CHARACTERS = [
           { type: 'heal', target: 'ally_self', rate: 0.3, hit: 100 }
         ],
         moveBonus: {
-          idealMoves: [0,2,4,6],
+          idealMoves: [0,2,4],
           damageRate: 1.0
         },
         desc: '自身のHPを最大HPの30%回復する。' },
@@ -1291,7 +1283,7 @@ const CHARACTERS = [
           { type: 'heal', target: 'ally_lowest', rate: 0.35, hit: 100 }
         ],
         moveBonus: {
-          idealMoves: [1,3,5,7],
+          idealMoves: [0,2,4],
           damageRate: 1.0
         },
         desc: 'HP割合が最も低い味方1人を最大HPの35%回復する。' },
@@ -1308,7 +1300,7 @@ const CHARACTERS = [
           { type: 'heal', target: 'ally_all', rate: 0.2, hit: 100 }
         ],
         moveBonus: {
-          idealMoves: [6,8],
+          idealMoves: [0,2,4],
           damageRate: 1.0
         },
         desc: '味方全員のHPを最大HPの20%回復する。' },
@@ -1331,7 +1323,7 @@ const CHARACTERS = [
         ],
         hitStyle: 'heavy',
         moveBonus: {
-          idealMoves: [7],
+          idealMoves: [3,6],
           damageRate: 1.3
         },
         desc: '与えたダメージの70%分、自身のHPを回復する。' }
@@ -1350,7 +1342,6 @@ const CHARACTERS = [
     stats: { HP: 780, ATK: 245, DEF: 228, SPD: 298 },
     img: 'images/chara_20.webp', cutImg: 'images/chara_20_cut.webp', ultImg: 'images/chara_20_cutin.webp',
     upImg: 'images/chara_20_up.webp', battleImg: 'images/chara_20_battle.webp',
-    favScale: 0.90, favOffsetY: -35,
     skills: [
       { id: 's1',
         name: '蛇ノ前',
@@ -1445,7 +1436,7 @@ const CHARACTERS = [
     stats: { HP: 840, ATK: 270, DEF: 255, SPD: 330 },
     img: 'images/chara_06.webp', cutImg: 'images/chara_06_cut.webp', ultImg: 'images/chara_06_cutin.webp',
     upImg: 'images/chara_06_up.webp', battleImg: 'images/chara_06_battle.webp',
-    favScale: 0.95, favOffsetY: 10,
+    favScale: 0.85, favOffsetY: -30,
     skills: [
       { id: 's1',
         name: '蝉時雨',
@@ -1529,7 +1520,7 @@ const CHARACTERS = [
     stats: { HP: 900, ATK: 295, DEF: 280, SPD: 275 },
     img: 'images/chara_09.webp', cutImg: 'images/chara_09_cut.webp', ultImg: 'images/chara_09_cutin.webp',
     upImg: 'images/chara_09_up.webp', battleImg: 'images/chara_09_battle.webp',
-    favScale: 0.85, favOffsetY: -15,
+    favScale: 0.85, favOffsetY: -30,
     skills: [
       { id: 's1',
         name: '双星撃',
@@ -1623,7 +1614,6 @@ const CHARACTERS = [
     stats: { HP: 740, ATK: 280, DEF: 205, SPD: 210 },
     img: 'images/chara_14.webp', cutImg: 'images/chara_14_cut.webp', ultImg: 'images/chara_14_cutin.webp',
     upImg: 'images/chara_14_up.webp', battleImg: 'images/chara_14_battle.webp',
-    favScale: 0.85, favOffsetY: -15,
     skills: [
       { id: 's1',
         name: '物真似',
@@ -1708,7 +1698,6 @@ const CHARACTERS = [
     stats: { HP: 800, ATK: 255, DEF: 325, SPD: 255 },
     img: 'images/chara_16.webp', cutImg: 'images/chara_16_cut.webp', ultImg: 'images/chara_16_cutin.webp',
     upImg: 'images/chara_16_up.webp', battleImg: 'images/chara_16_battle.webp',
-    favScale: 1.1, favOffsetY: 35,
     skills: [
       { id: 's1',
         name: '見破',
@@ -1803,7 +1792,7 @@ const CHARACTERS = [
     upImg: 'images/chara_08_up.webp', battleImg: 'images/chara_08_battle.webp',
     skills: [
       { id: 's1',
-        name: 'じゃーん！',
+        name: 'いっくぞー！',
         cost: 2,
         isUltimate: false,
         hit: 100,
@@ -1858,16 +1847,16 @@ const CHARACTERS = [
         desc: '正面のマスに大ダメージ。' },
 
       { id: 'ult',
-        name: 'すごいだろっ',
+        name: 'すごいでしょ',
         cost: 10,
         isUltimate: true,
         hit: 100,
         type: 'attack',
-        multiplier: 4.0,
+        multiplier: 3.0,
         range: 'front_row_3',
         effects: [],
         moveBonus: {
-          idealMoves: [1,3,4,7,8],
+          idealMoves: [1,2,3,4],
           damageRate: 1.5
         },
         desc: '正面のマスと左右のマスに大ダメージ。' }

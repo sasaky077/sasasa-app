@@ -78,7 +78,7 @@
 <div id="glitch-noise"></div>
 
 <div id="title-screen" onclick="startFromTitle()">
-  <img src="images/title.webp" alt="19号棟">
+  <img src="images/title.webp" alt="NO.None">
   <div id="title-tap-hint">✦ TAP TO START ✦</div>
 </div>
 
@@ -187,8 +187,32 @@
 </div>
 
 <div id="screen-main" class="screen">
+  <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
+    <img src="images/mail.webp" alt="お知らせ">
+    <span class="home-notice-badge"></span>
+  </button>
+
+  <!-- メイン上部イベントバナー -->
+  <div class="home-event-banner-wrap" id="home-event-banner-wrap">
+    <div class="home-event-banner-track" id="home-event-banner-track">
+      <button class="home-event-banner-item" onclick="openHomeBanner(0)">
+        <img src="images/event_banner01.webp" alt="期間限定 天使">
+      </button>
+      <button class="home-event-banner-item" onclick="openHomeBanner(1)">
+        <img src="images/event_banner02.webp" alt="UR確定チケット">
+      </button>
+    </div>
+
+    <div class="home-event-banner-dots" id="home-event-banner-dots">
+      <span class="active"></span>
+      <span></span>
+    </div>
+  </div>
+
   <div class="favorite-area">
-    <div id="fav-display" style="position:relative;z-index:1;"><div class="fav-empty">まだメインキャラがいません</div></div>
+    <div id="fav-display" style="position:relative;z-index:1;">
+      <div class="fav-empty">まだメインキャラがいません</div>
+    </div>
   </div>  
 </div>
 
@@ -3442,7 +3466,146 @@ function showToast(text){
     }
   }
 
-  init();
+/* =========================================================
+   Home Event Banner Swipe - Infinite Loop
+   ========================================================= */
+
+var homeBannerRealIndex = 0;   // 実際のバナー番号 0,1,2...
+var homeBannerPosition = 1;    // track上の位置。先頭にクローンを置くので1開始
+var homeBannerStartX = 0;
+var homeBannerStartY = 0;
+var homeBannerDragging = false;
+var homeBannerTotal = 0;
+var homeBannerAnimating = false;
+
+function setHomeBannerTransform(withTransition){
+  var track = document.getElementById('home-event-banner-track');
+  if(!track) return;
+
+  track.style.transition = withTransition ? 'transform 0.32s ease' : 'none';
+  track.style.transform = 'translateX(' + (-100 * homeBannerPosition) + '%)';
+}
+
+function updateHomeBannerDots(){
+  var dots = document.querySelectorAll('#home-event-banner-dots span');
+  dots.forEach(function(dot, i){
+    dot.classList.toggle('active', i === homeBannerRealIndex);
+  });
+}
+
+function initHomeBannerInfinite(){
+  var track = document.getElementById('home-event-banner-track');
+  if(!track) return;
+
+  var originals = Array.from(track.querySelectorAll('.home-event-banner-item'));
+  homeBannerTotal = originals.length;
+  if(homeBannerTotal <= 1) return;
+
+  // すでにクローン済みなら二重実行しない
+  if(track.dataset.infiniteReady === '1') return;
+  track.dataset.infiniteReady = '1';
+
+  var firstClone = originals[0].cloneNode(true);
+  var lastClone = originals[homeBannerTotal - 1].cloneNode(true);
+
+  firstClone.classList.add('home-banner-clone');
+  lastClone.classList.add('home-banner-clone');
+
+  // [最後のクローン] [1枚目] [2枚目] ... [最初のクローン]
+  track.insertBefore(lastClone, originals[0]);
+  track.appendChild(firstClone);
+
+  homeBannerRealIndex = 0;
+  homeBannerPosition = 1;
+
+  setHomeBannerTransform(false);
+  updateHomeBannerDots();
+
+  track.addEventListener('transitionend', function(){
+    homeBannerAnimating = false;
+
+    // 最初のさらに左に行ったら、最後の実体へ瞬間移動
+    if(homeBannerPosition === 0){
+      homeBannerPosition = homeBannerTotal;
+      setHomeBannerTransform(false);
+    }
+
+    // 最後のさらに右に行ったら、最初の実体へ瞬間移動
+    if(homeBannerPosition === homeBannerTotal + 1){
+      homeBannerPosition = 1;
+      setHomeBannerTransform(false);
+    }
+  });
+}
+
+function moveHomeBanner(dir){
+  if(homeBannerAnimating) return;
+  if(homeBannerTotal <= 1) return;
+
+  homeBannerAnimating = true;
+
+  // dir: 1 = 次へ / -1 = 前へ
+  homeBannerPosition += dir;
+  homeBannerRealIndex = (homeBannerRealIndex + dir + homeBannerTotal) % homeBannerTotal;
+
+  updateHomeBannerDots();
+  setHomeBannerTransform(true);
+}
+
+function initHomeBannerSwipe(){
+  initHomeBannerInfinite();
+
+  var wrap = document.getElementById('home-event-banner-wrap');
+  if(!wrap) return;
+
+  wrap.addEventListener('touchstart', function(e){
+    if(!e.touches || !e.touches.length) return;
+
+    homeBannerDragging = true;
+    homeBannerStartX = e.touches[0].clientX;
+    homeBannerStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  wrap.addEventListener('touchend', function(e){
+    if(!homeBannerDragging) return;
+    homeBannerDragging = false;
+
+    if(!e.changedTouches || !e.changedTouches.length) return;
+
+    var endX = e.changedTouches[0].clientX;
+    var endY = e.changedTouches[0].clientY;
+
+    var diffX = endX - homeBannerStartX;
+    var diffY = endY - homeBannerStartY;
+
+    if(Math.abs(diffX) < 45) return;
+    if(Math.abs(diffY) > 45) return;
+
+    if(diffX < 0){
+      moveHomeBanner(1);   // 左スワイプ：次へ
+    } else {
+      moveHomeBanner(-1);  // 右スワイプ：前へ
+    }
+  }, { passive: true });
+}
+
+function openHomeBanner(index){
+  // クローン側を押しても、実体バナー番号に丸める
+  index = index % homeBannerTotal;
+
+  if(index === 0){
+    showMainTab('summon');
+    return;
+  }
+
+  if(index === 1){
+    showMainTab('ninmu');
+    return;
+  }
+}
+
+ initHomeBannerSwipe();
+init();
 
 document.getElementById('detail-modal').addEventListener('click', function(e){
   if(e.target === this){
@@ -3614,6 +3777,33 @@ function fadeOutOpeningBgm(){
     }
   }, 50);
 }
+
+// =========================================================
+// お知らせモーダル
+// =========================================================
+function openNoticeModal(event){
+  if(event){
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  var modal = document.getElementById('notice-modal');
+  if(!modal) return;
+  modal.classList.add('active');
+}
+
+function closeNoticeModal(){
+  var modal = document.getElementById('notice-modal');
+  if(!modal) return;
+  modal.classList.remove('active');
+}
+
+document.addEventListener('click', function(e){
+  var modal = document.getElementById('notice-modal');
+  if(!modal || !modal.classList.contains('active')) return;
+  if(e.target === modal){
+    closeNoticeModal();
+  }
+});
 
 </script>
 
@@ -4069,6 +4259,35 @@ function fadeOutOpeningBgm(){
       <div class="story-item-name" id="story-item-name"></div>
       <div class="story-item-desc" id="story-item-desc"></div>
       <button class="story-item-ok" id="story-item-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- お知らせモーダル -->
+<div id="notice-modal" class="notice-modal">
+  <div class="notice-panel">
+    <button class="notice-close" onclick="closeNoticeModal()">×</button>
+
+    <div class="notice-head">
+      <img src="images/mail.webp" alt="">
+      <div>
+        <div class="notice-title">お知らせ</div>
+        <div class="notice-sub">Notice</div>
+      </div>
+    </div>
+
+    <div class="notice-list">
+      <div class="notice-item">
+        <div class="notice-date">2XXX.05.29</div>
+        <div class="notice-item-title">還祀対応班より通達</div>
+        <div class="notice-body">新たな怪異反応を確認しました。</div>
+      </div>
+
+      <div class="notice-item">
+        <div class="notice-date">2XXX.05.28</div>
+        <div class="notice-item-title">観測記録更新</div>
+        <div class="notice-body">協力者情報が更新されました。</div>
+      </div>
     </div>
   </div>
 </div>

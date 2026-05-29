@@ -5,7 +5,8 @@
 const ENEMIES = [
 
   // ============================================================
-  // enemy_01：白糸の怪異（4×4強化版）
+  // enemy_01：白糸の怪異（チュートリアルボス仕様）
+  // HP帯で行動が変化。HP30%以下でリアクティブダメージ発動。
   // ============================================================
   {
     id: 'enemy_01',
@@ -13,114 +14,90 @@ const ENEMIES = [
     img:   'images/enemy_01.webp',
     upImg: 'images/enemy_01_up.webp',
     battleImg: 'images/enemy_01_battle.webp',
-
-    // 4×4向けに強化
-    hp: 3200, hpMax: 3200,
-    atk: 340, def: 230, spd: 300,
-
-    randomStartPosition: true,
-    fixedPosition: false,
+    hp: 2200, hpMax: 2200,
+    atk: 260, def: 180, spd: 280,
+    randomStartPosition: true,   // バトル開始時の初期位置をランダムにする
+    fixedPosition: false,        // 固定位置配置は使わない
     phase: 1,
     status: [],
     statusList: [],
 
-    // battle.js互換用ダミー
+    // ── チュートリアル用：ランダム行動システム ──────────────
+    // actionPattern は battle.js の既存ループと互換するダミー
+    // 実際の行動選択は enemy_01_selectAction() で行う
     actionPattern: [
       {
-        id: 'e01_all25',
+        id: 'e01_all20',
         turn: 1,
         action: '全体侵食',
         type: 'atk_all',
         range: 'all',
-        damageRate: 0.25,
+        damageRate: 0.20,
         power: '中',
-        desc: '糸を張り巡らせ、全マスに最大HP25%のダメージを与える。',
+        desc: '糸を張り巡らせ、全マスに最大HP20%のダメージを与える。',
       },
     ],
     actionIdx: 0,
 
-    // 初回固定行動
-    // 1T：全体25%
-    // 2T：前列35%
-    // 3T：移動不能予兆
-    // 4T：直線90%
+    // ── HP帯別ランダム行動プール ─────────────────────────────
+    // phase1: HP51%以上（初回2ターンは固定）
+    // phase2: HP50%以下
+    // phase3: HP30%以下（移行時に実体化解除・リアクティブ発動）
     _phase1Fixed: [
       {
-        id: 'e01_all25',
+        id: 'e01_all20',
         action: '全体侵食',
         type: 'atk_all',
         range: 'all',
-        damageRate: 0.25,
+        damageRate: 0.20,
         power: '中',
-        desc: '全マスに最大HP25%のダメージを与える。',
+        desc: '全マスに最大HP20%のダメージを与える。',
       },
       {
-        id: 'e01_row_near35',
+        id: 'e01_row_near30',
         action: '前列薙ぎ払い',
         type: 'atk_near',
         range: 'row_near',
-        damageRate: 0.35,
-        power: '大',
-        desc: '前列すべてに最大HP35%のダメージを与える。',
-      },
-      {
-        id: 'e01_bind_warning',
-        action: '白糸収束',
-        type: 'move_lock',
-        range: 'random1',
-        status: 'move_lock',
-        duration: 1,
-        power: '予兆',
-        desc: '次ターンの大技前にランダムな1体を1ターン移動不能にする。',
-      },
-      {
-        id: 'e01_rupture90_t4',
-        action: '白糸断絶',
-        type: 'atk_line',
-        range: 'pierce_all',
-        pierce: true,
-        damageRate: 0.90,
-        power: '危険',
-        desc: '4ターン目の大技。自身の位置から直線上のすべてに最大HP90%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '前列すべてに最大HP30%のダメージを与える。',
       },
     ],
-
-    // HP51%以上
     _phase1Pool: [
       {
-        id: 'e01_all25_pool',
+        id: 'e01_all20',
         action: '全体侵食',
         type: 'atk_all',
         range: 'all',
-        damageRate: 0.25,
+        damageRate: 0.20,
         power: '中',
-        desc: '全マスに最大HP25%のダメージを与える。',
+        desc: '全マスに最大HP20%のダメージを与える。',
       },
       {
-        id: 'e01_row_near_atk',
-        action: '前列薙ぎ払い',
-        type: 'atk_near',
-        range: 'row_near',
-        multiplier: 3.6,
-        power: '大',
-        desc: '前列すべてにATK依存のダメージを与える。',
-      },
+  id: 'e01_row_near',
+  action: '前列薙ぎ払い',
+  type: 'atk_near',
+  range: 'row_near',
+  multiplier: 3.0,
+  power: '大',
+  desc: '前列すべてにATK依存のダメージを与える。',
+},
       {
-        id: 'e01_single_heavy',
-        action: '白糸の刺突',
-        type: 'atk_single',
-        range: 'random1',
-        multiplier: 3.2,
-        power: '特大',
-        desc: 'ランダムな1体にATK依存の特大ダメージを与える。',
-      },
+  id: 'e01_single50',
+  action: '白糸の刺突',
+  type: 'atk_single',
+  range: 'random1',
+  multiplier: 2.5,
+  power: '特大',
+  desc: 'ランダムな1体にATK依存の特大ダメージを与える。',
+},
       {
         id: 'e01_heal_team',
         action: '糸の修復',
         type: 'heal_team',
-        healRate: 0.15,
+        healRate: 0.20,
         power: '小',
-        desc: '自身と生存中の仲間のHPを最大HPの15%回復する。',
+        desc: '自身と生存中の仲間のHPを最大HPの20%回復する。',
       },
       {
         id: 'e01_move_lock',
@@ -133,54 +110,42 @@ const ENEMIES = [
         desc: 'ランダムな1体を2ターン移動不能にする。',
       },
       {
-        id: 'e01_pierce40',
+        id: 'e01_pierce30',
         action: '直線貫通',
         type: 'atk_line',
         range: 'pierce_all',
         pierce: true,
-        damageRate: 0.40,
-        power: '大',
-        desc: '自身の位置から直線上のすべてに最大HP40%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '自身の位置から直線上のすべてに最大HP30%のダメージを与える。',
       },
     ],
-
-    // HP50%以下
     _phase2Pool: [
       {
-        id: 'e01_cross40',
+        id: 'e01_cross30',
         action: '十字侵食',
         type: 'atk_cross',
         range: 'field_cross',
-        damageRate: 0.40,
-        power: '大',
-        desc: '十字形のマスすべてに最大HP40%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '十字形のマスすべてに最大HP30%のダメージを与える。',
       },
       {
-        id: 'e01_rupture90_p2',
-        action: '白糸断絶',
-        type: 'atk_line',
-        range: 'pierce_all',
-        pierce: true,
-        damageRate: 0.90,
-        power: '危険',
-        desc: '直線上の全対象に最大HP90%の大ダメージ。列避け前提の危険技。',
-      },
-      {
-        id: 'e01_outer40',
+        id: 'e01_outer30',
         action: '外周薙ぎ払い',
         type: 'atk_outer',
         range: 'field_outer',
-        damageRate: 0.40,
-        power: '大',
-        desc: '外周マスすべてに最大HP40%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '外周8マスすべてに最大HP30%のダメージを与える。',
       },
       {
         id: 'e01_heal_team2',
         action: '糸の修復',
         type: 'heal_team',
-        healRate: 0.15,
+        healRate: 0.20,
         power: '小',
-        desc: '自身と生存中の仲間のHPを最大HPの15%回復する。',
+        desc: '自身と生存中の仲間のHPを最大HPの20%回復する。',
       },
       {
         id: 'e01_cleanse',
@@ -190,57 +155,46 @@ const ENEMIES = [
         desc: 'デバフ・霊体化などの不利な状態異常をすべて解除する。',
       },
     ],
-
-    // HP30%以下
     _phase3Pool: [
       {
-        id: 'e01_cross40_3',
+        id: 'e01_cross30_3',
         action: '十字侵食',
         type: 'atk_cross',
         range: 'field_cross',
-        damageRate: 0.40,
-        power: '大',
-        desc: '十字形のマスすべてに最大HP40%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '十字形のマスすべてに最大HP30%のダメージを与える。',
       },
       {
-        id: 'e01_rupture90_p3',
-        action: '白糸断絶',
-        type: 'atk_line',
-        range: 'pierce_all',
-        pierce: true,
-        damageRate: 0.90,
-        power: '危険',
-        desc: '終盤の大技。直線上の全対象に最大HP90%の大ダメージ。',
-      },
-      {
-        id: 'e01_outer40_3',
+        id: 'e01_outer30_3',
         action: '外周薙ぎ払い',
         type: 'atk_outer',
         range: 'field_outer',
-        damageRate: 0.40,
-        power: '大',
-        desc: '外周マスすべてに最大HP40%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '外周8マスすべてに最大HP30%のダメージを与える。',
       },
       {
         id: 'e01_heal_team3',
         action: '糸の修復',
         type: 'heal_team',
-        healRate: 0.15,
+        healRate: 0.20,
         power: '小',
-        desc: '自身と生存中の仲間のHPを最大HPの15%回復する。',
+        desc: '自身と生存中の仲間のHPを最大HPの20%回復する。',
       },
     ],
 
-    _tutorialTurn: 0,
-    _lastActionId: null,
-    _phase3Triggered: false,
-    _reactiveActive: false,
+    // 内部状態
+    _tutorialTurn: 0,           // ボス専用行動ターンカウント
+    _lastActionId: null,        // 直前の行動ID（連続防止）
+    _phase3Triggered: false,    // HP30%以下トリガー済みフラグ
+    _reactiveActive: false,     // リアクティブダメージ有効フラグ
 
     actionIdx: 0,
   },
 
   // ============================================================
-  // enemy_mask：仮面の従者（4×4強化版）
+  // enemy_mask：仮面の従者
   // ============================================================
   {
     id: 'enemy_mask',
@@ -248,57 +202,54 @@ const ENEMIES = [
     img:   'images/enemy_mask_battle.webp',
     upImg: 'images/enemy_mask_battle.webp',
     battleImg: 'images/enemy_mask_battle.webp',
-
-    // 4×4向けに強化
-    hp: 1150, hpMax: 1150,
-    atk: 260, def: 160, spd: 290,
-
+    hp: 700, hpMax: 700,
+    atk: 190, def: 120, spd: 240,
     phase: 1,
     status: [],
     statusList: [],
 
-    // battle.js互換用ダミー
+    // ダミー actionPattern（battle.js 互換）
     actionPattern: [
       {
-        id: 'mask_pierce18',
+        id: 'mask_pierce10',
         action: '直線小ダメージ',
         type: 'atk_line',
         range: 'pierce_all',
         pierce: true,
-        damageRate: 0.18,
+        damageRate: 0.10,
         power: '小',
-        desc: '直線上すべてに最大HP18%のダメージを与える（貫通）。',
+        desc: '直線上すべてに最大HP10%のダメージを与える（貫通）。',
       },
     ],
     actionIdx: 0,
 
     _maskActionPool: [
       {
-        id: 'mask_pierce18',
+        id: 'mask_pierce10',
         action: '直線穿刺',
         type: 'atk_line',
         range: 'pierce_all',
         pierce: true,
-        damageRate: 0.18,
+        damageRate: 0.10,
         power: '小',
-        desc: '直線上すべてに最大HP18%のダメージを与える（貫通）。',
+        desc: '直線上すべてに最大HP10%のダメージを与える（貫通）。',
       },
       {
         id: 'mask_pushback',
         action: '押し出し',
         type: 'push_front3',
         range: 'row_near',
-        damageRate: 0.12,
+        damageRate: 0.07,
         power: '小',
-        desc: '前3列にいるキャラを最後列へ押し出し、最大HP12%のダメージを与える。',
+        desc: '前3列にいるキャラを最後列へ押し出し、最大HP7%のダメージを与える。',
       },
       {
         id: 'mask_heal_boss',
         action: 'ボス回復',
         type: 'heal_boss',
-        healRate: 0.15,
+        healRate: 0.10,
         power: '小',
-        desc: 'ボス（enemy_01）のHPを最大HPの15%回復する。',
+        desc: 'ボス（enemy_01）のHPを最大HPの10%回復する。',
       },
       {
         id: 'mask_def_down',
@@ -306,10 +257,10 @@ const ENEMIES = [
         type: 'debuff_def',
         range: 'random1',
         status: 'def_down',
-        value: 0.30,
+        value: 0.20,
         duration: 2,
-        power: '中',
-        desc: 'ランダムな1体のDEFを2ターン30%ダウンさせる。',
+        power: '小',
+        desc: 'ランダムな1体のDEFを2ターン20%ダウンさせる。',
       },
       {
         id: 'mask_atk_down',
@@ -317,10 +268,10 @@ const ENEMIES = [
         type: 'debuff_atk',
         range: 'random1',
         status: 'atk_down',
-        value: 0.30,
+        value: 0.20,
         duration: 2,
-        power: '中',
-        desc: 'ランダムな1体のATKを2ターン30%ダウンさせる。',
+        power: '小',
+        desc: 'ランダムな1体のATKを2ターン20%ダウンさせる。',
       },
       {
         id: 'mask_front_single',
@@ -328,27 +279,18 @@ const ENEMIES = [
         type: 'atk_line',
         range: 'pierce_all',
         pierce: false,
-        damageRate: 0.45,
-        power: '大',
-        desc: '直線上の最前列にいる1体に最大HP45%のダメージを与える。',
+        damageRate: 0.30,
+        power: '中',
+        desc: '直線上の最前列にいる1体に最大HP30%のダメージを与える。',
       },
       {
         id: 'mask_side_col',
         action: '側面攻撃',
         type: 'atk_sides',
         range: 'field_side_columns',
-        damageRate: 0.25,
-        power: '中',
-        desc: '左列・右列すべてに最大HP25%のダメージを与える。',
-      },
-      {
-        id: 'mask_execute50',
-        action: '処刑糸',
-        type: 'atk_single',
-        range: 'random1',
-        damageRate: 0.50,
-        power: '大',
-        desc: 'ランダムな1体に最大HP50%のダメージ。放置した従者が事故要因になる。',
+        damageRate: 0.15,
+        power: '小',
+        desc: '左列・右列すべてに最大HP15%のダメージを与える（中央列は除外）。',
       },
     ],
 

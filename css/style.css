@@ -217,8 +217,8 @@ body {
 }
 
 #title-screen img {
-  width: 90%;
-  max-width: 560px;
+  width: 115%;
+  max-width: 760px;
   position: relative;
   z-index: 2;
   animation: titleLogoIn 1.2s ease-out forwards, titleLogoPulse 3.2s ease-in-out 1.2s infinite;
@@ -567,7 +567,6 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
-  transform: translateY(120px);
 }
 
 .fav-label {
@@ -4738,4 +4737,634 @@ canvas {
   mix-blend-mode: screen;
 
   animation: urShine 3.2s ease-in-out infinite;
+}
+
+/* =========================================================
+   Main / Notice Button
+   ========================================================= */
+
+.home-notice-btn {
+  position: absolute !important;
+  left: auto !important;
+  right: 12px !important;
+  top: calc(env(safe-area-inset-top) + 164px) !important;
+  bottom: auto !important;
+
+  width: 90px !important;
+  height: 90px !important;
+
+  transform: none !important;
+  z-index: 21 !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  padding: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+}
+
+.home-notice-btn:active {
+  transform: scale(0.96) !important;
+}
+
+.home-notice-badge {
+  display: none;
+}
+
+.home-notice-badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 8px rgba(255,255,255,0.95),
+    0 0 14px rgba(255,255,255,0.45);
+}
+
+
+/* =========================================================
+   Notice Modal
+   ========================================================= */
+
+.notice-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 160000;
+  background: rgba(0,0,0,0.72);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.notice-modal.active {
+  display: flex;
+}
+
+.notice-panel {
+  position: relative;
+  width: min(360px, 100%);
+  max-height: 72vh;
+  overflow-y: auto;
+
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(26,26,30,0.96), rgba(6,6,8,0.96));
+  box-shadow:
+    0 0 32px rgba(255,255,255,0.12),
+    0 20px 60px rgba(0,0,0,0.85);
+
+  padding: 18px;
+  color: #e8e4dc;
+}
+
+.notice-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.8);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.notice-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 34px;
+  margin-bottom: 18px;
+}
+
+.notice-head img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.35));
+}
+
+.notice-title {
+  font-size: 18px;
+  letter-spacing: 3px;
+  font-weight: 600;
+}
+
+.notice-sub {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: rgba(232,228,220,0.45);
+}
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notice-item {
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+}
+
+.notice-date {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  color: rgba(232,228,220,0.45);
+  margin-bottom: 4px;
+}
+
+.notice-item-title {
+  font-size: 13px;
+  color: #fff;
+  margin-bottom: 5px;
+}
+
+.notice-body {
+  font-size: 11px;
+  color: rgba(232,228,220,0.62);
+  line-height: 1.6;
+}
+
+/* =========================================================
+   Notice Button / キャラ右側配置
+   ========================================================= */
+
+.home-notice-btn {
+  position: absolute !important;
+
+  /* 画面中央を基準に、キャラの右側へ置く */
+  left: calc(50% + 72px) !important;
+  right: auto !important;
+
+  /* キャラの上半身〜腰あたりに合わせる */
+  top: 30% !important;
+  bottom: auto !important;
+
+  transform: translateY(-50%) !important;
+  z-index: 20 !important;
+
+  width: 130px !important;
+  height: 130px !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+
+  animation: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.home-notice-btn img {
+  pointer-events: none !important;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.6))
+    drop-shadow(0 6px 12px rgba(0,0,0,0.9)) !important;
+}
+
+.home-notice-btn:active {
+  transform: translateY(-50%) scale(0.96) !important;
+}
+
+.home-notice-badge {
+  display: none !important;
+}
+
+/* =========================================================
+   Main / Event Banner
+   ========================================================= */
+
+.home-event-banner-wrap {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 82px);
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: calc(100% - 28px);
+  max-width: 402px;
+
+  z-index: 12;
+  overflow: hidden;
+
+  /* 角丸なし */
+  border-radius: 0;
+
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.35);
+
+  box-shadow:
+    0 8px 22px rgba(0,0,0,0.55),
+    0 0 16px rgba(255,255,255,0.08);
+
+  touch-action: pan-y;
+}
+
+.home-event-banner-item,
+.home-event-banner-item img {
+  border-radius: 0;
+}
+
+.home-event-banner-track {
+  display: flex;
+  width: 100%;
+  transition: transform 0.32s ease;
+  will-change: transform;
+}
+
+.home-event-banner-item {
+  flex: 0 0 100%;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-event-banner-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 360;
+  object-fit: cover;
+}
+
+.home-event-banner-item:active {
+  filter: brightness(0.85);
+}
+
+.home-event-banner-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.home-event-banner-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.35);
+  box-shadow: 0 0 5px rgba(0,0,0,0.8);
+}
+
+.home-event-banner-dots span.active {
+  width: 14px;
+  background: rgba(255,255,255,0.9);
+}
+
+  .favorite-area {
+    top: calc(env(safe-area-inset-top) + 168px);
+    bottom: calc(68px + env(safe-area-inset-bottom));
+  }
+
+  .fav-cut-img {
+    max-height: 58dvh;
+    max-width: 108%;
+  }
+
+  /* =========================================================
+   Main Layout Safe Fix
+   バナー追加後のメイン画面崩れ対策
+   ========================================================= */
+
+#screen-main {
+  height: 100dvh;
+  overflow: hidden;
+  padding-top: 0;
+}
+
+/* バナーは上部に固定 */
+.home-event-banner-wrap {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 82px);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(calc(100% - 28px), 402px);
+  height: auto;
+  z-index: 12;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* バナー比率を維持 */
+.home-event-banner-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 360;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+/* キャラ位置は元の構造のまま。absoluteにしない */
+.favorite-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  /* ここだけで調整 */
+  transform: translateY(90px);
+  overflow: visible;
+}
+
+/* キャラが大きすぎる場合だけ制御 */
+.fav-cut-img {
+  max-height: 78dvh;
+  max-width: 108%;
+  object-fit: contain;
+}
+
+/* 低い端末だけ少し詰める */
+@media (max-height: 700px) {
+  .home-event-banner-wrap {
+    top: calc(env(safe-area-inset-top) + 78px);
+    width: min(calc(100% - 28px), 402px);
+  }
+
+  .favorite-area {
+    transform: translateY(74px);
+  }
+
+  .fav-cut-img {
+    max-height: 74dvh;
+    max-width: 104%;
+  }
+}
+
+/* =========================================================
+   Home Layout Reset
+   ホーム画面の端末差補正
+   ========================================================= */
+
+#screen-main {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding-top: 0;
+  position: relative;
+}
+
+/* バナー */
+.home-event-banner-wrap {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 84px);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(calc(100% - 28px), 402px);
+  z-index: 20;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.home-event-banner-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 360;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+/* キャラ表示エリア */
+.favorite-area {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  top: calc(env(safe-area-inset-top) + 150px);
+  bottom: calc(58px + env(safe-area-inset-bottom));
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+
+  transform: none !important;
+  overflow: visible;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#fav-display {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.fav-cut-img {
+  width: auto;
+  height: auto;
+  max-width: 92vw;
+  max-height: min(66dvh, 560px);
+  object-fit: contain;
+}
+
+/* iPhone SE系 */
+@media (max-height: 700px) {
+  .home-event-banner-wrap {
+    top: calc(env(safe-area-inset-top) + 82px);
+  }
+
+  .favorite-area {
+    top: calc(env(safe-area-inset-top) + 145px);
+    bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+
+  .fav-cut-img {
+    max-height: 61dvh;
+    max-width: 90vw;
+  }
+}
+
+
+/* =========================================================
+   Main / Notice Button - Final
+   ========================================================= */
+
+.home-notice-btn {
+  position: absolute !important;
+  left: auto !important;
+  right: 10px !important;
+  top: calc(env(safe-area-inset-top) + 150px) !important;
+  bottom: auto !important;
+
+  width: 64px !important;
+  height: 64px !important;
+
+  transform: none !important;
+  z-index: 30 !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  cursor: pointer;
+  padding: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+}
+
+.home-notice-btn:active {
+  transform: scale(0.96) !important;
+}
+
+.home-notice-badge {
+  display: none !important;
+}
+
+/* =========================================================
+   Main / Notice Button - Final v2
+   バナーに重ねず、バナー下に独立配置
+   ========================================================= */
+
+/* =========================================================
+   Main / Notice Button - Final v2
+   バナーに重ねず、バナー下に独立配置
+   ========================================================= */
+
+.home-notice-btn {
+  position: absolute !important;
+  left: auto !important;
+  right: 14px !important;
+
+  top: calc(env(safe-area-inset-top) + 208px) !important;
+  bottom: auto !important;
+
+  width: 90px !important;
+  height: 90px !important;
+
+  transform: none !important;
+  z-index: 30 !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  cursor: pointer;
+  padding: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+}
+
+.home-notice-btn img {
+  width: 90px !important;
+  height: 90px !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.72))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.85)) !important;
+}
+
+.home-notice-btn:active {
+  transform: scale(0.96) !important;
+}
+
+.home-notice-badge {
+  display: none !important;
+}
+
+.home-notice-btn img {
+  width: 90px !important;
+  height: 90px !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.72))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.85)) !important;
+}
+
+.home-notice-btn:active {
+  transform: scale(0.96) !important;
+}
+
+.home-notice-badge {
+  display: none !important;
+}
+
+/* SE系は少し小さく */
+@media (max-height: 700px) {
+  .home-notice-btn {
+    top: calc(env(safe-area-inset-top) + 198px) !important;
+    width: 62px !important;
+    height: 62px !important;
+  }
+
+  .home-notice-btn img {
+    width: 62px !important;
+    height: 62px !important;
+  }
+}
+
+/* =========================================================
+   Main / Notice Badge - Final
+   ========================================================= */
+
+.home-notice-badge {
+  display: block !important;
+  position: absolute !important;
+
+  top: 10px !important;
+  right: 10px !important;
+
+  width: 17px !important;
+  height: 17px !important;
+  border-radius: 999px !important;
+
+  background: #e60023 !important;
+  border: 2px solid rgba(255,255,255,0.95) !important;
+
+  box-shadow:
+    0 0 8px rgba(230,0,35,0.85),
+    0 3px 8px rgba(0,0,0,0.75) !important;
+
+  pointer-events: none !important;
 }

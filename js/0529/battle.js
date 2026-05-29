@@ -6,14 +6,14 @@
   // ============================================================
   // 定数
   // ============================================================
-  const ROWS = ['near', 'mid', 'far', 'deep'];
-  const COLS = ['left', 'center', 'right', 'outer'];
+  const ROWS = ['near', 'mid', 'far'];
+  const COLS = ['left', 'center', 'right'];
 
 
-  const ROW_IDX = { near: 0, mid: 1, far: 2, deep: 3 };
-  const COL_IDX = { left: 0, center: 1, right: 2, outer: 3 };
-  const ROW_BY_IDX = ['near', 'mid', 'far', 'deep'];
-  const COL_BY_IDX = ['left', 'center', 'right', 'outer'];
+  const ROW_IDX = { near: 0, mid: 1, far: 2 };
+  const COL_IDX = { left: 0, center: 1, right: 2 };
+  const ROW_BY_IDX = ['near', 'mid', 'far'];
+  const COL_BY_IDX = ['left', 'center', 'right'];
 
   // ============================================================
   // 範囲パターン定義（後方互換レイヤー）
@@ -41,7 +41,7 @@
     row_mid:     () => _row('mid'),
     row_far:     () => _row('far'),
     row2_near:   () => _rows(['near','mid']),
-    row2_far:    () => _rows(['far','deep']),
+    row2_far:    () => _rows(['mid','far']),
 
     // 列系：userの列を基準に相対計算
     col_center:  (user) => _col(user.col),                          // 自分の列
@@ -59,7 +59,7 @@
     // 十字・特殊：userの位置基準
     cross:       (user) => { const s=_relRow(user,0); _col(user.col).forEach(v=>s.add(v)); return s; },
     xcross:      (user) => { const all=_allCells(); _relRow(user,0).forEach(v=>all.delete(v)); _col(user.col).forEach(v=>all.delete(v)); return all; },
-    corner:      () => new Set(['near-left','near-outer','deep-left','deep-outer']),
+    corner:      () => new Set(['near-left','near-right','far-left','far-right']),
     donut:       (user) => { const s=_allCells(); s.delete(user.row+'-'+user.col); return s; },
     center1:     (user) => new Set([user.row+'-'+user.col]),        // 自分のいるマス
 
@@ -75,7 +75,6 @@
     ally_row_near:    () => _row('near'),
     ally_row_mid:     () => _row('mid'),
     ally_row_far:     () => _row('far'),
-    ally_row_deep:    () => _row('deep'),
     ally_col_center:  (user) => _col(user.col),                     // 自分の列の味方
     ally_col_left:    (user) => { const c=COL_BY_IDX[COL_IDX[user.col]-1]; return c?_col(c):new Set(); },
     ally_col_right:   (user) => { const c=COL_BY_IDX[COL_IDX[user.col]+1]; return c?_col(c):new Set(); },
@@ -186,27 +185,24 @@ function getEnemyCellsFromAllyRange(chara, range) {
     return BattleRange.getCellsFromRange(chara, range);
   }
 
-  // 敵4段 + 味方4段を1つの縦8段フィールドとして扱う
+  // 敵3段 + 味方3段を1つの縦6段フィールドとして扱う
   const FIELD_ROWS = [
-    { side:'enemy', row:'deep' },
     { side:'enemy', row:'far'  },
     { side:'enemy', row:'mid'  },
     { side:'enemy', row:'near' },
     { side:'ally',  row:'near' },
     { side:'ally',  row:'mid'  },
     { side:'ally',  row:'far'  },
-    { side:'ally',  row:'deep' },
   ];
 
   const ALLY_ROW_TO_FIELD_IDX = {
-    near: 4,
-    mid:  5,
-    far:  6,
-    deep: 7,
+    near: 3,
+    mid:  4,
+    far:  5,
   };
 
-  const COL_IDX = { left:0, center:1, right:2, outer:3 };
-  const COL_BY_IDX = ['left','center','right','outer'];
+  const COL_IDX = { left:0, center:1, right:2 };
+  const COL_BY_IDX = ['left','center','right'];
 
   const s = new Set();
   const baseRi = ALLY_ROW_TO_FIELD_IDX[chara.row];
@@ -445,11 +441,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
             <div class="bt-grid-col-label">左</div>
             <div class="bt-grid-col-label">中</div>
             <div class="bt-grid-col-label">右</div>
-            <div class="bt-grid-col-label">外</div>
           </div>
-          ${['deep','far','mid','near'].map(row => `
+          ${['far','mid','near'].map(row => `
             <div class="bt-grid-row">
-              <div class="bt-grid-row-label">${{near:'近',mid:'中',far:'遠',deep:'深'}[row]}</div>
+              <div class="bt-grid-row-label">${{near:'近',mid:'中',far:'遠'}[row]}</div>
               ${COLS.map(col => `
                 <div class="bt-grid-cell" id="bt-eg-${row}-${col}"></div>
               `).join('')}
@@ -467,11 +462,10 @@ function getEnemyCellsFromAllyRange(chara, range) {
             <div class="bt-grid-col-label">左</div>
             <div class="bt-grid-col-label">中</div>
             <div class="bt-grid-col-label">右</div>
-            <div class="bt-grid-col-label">外</div>
           </div>
           ${ROWS.map(row => `
             <div class="bt-grid-row">
-              <div class="bt-grid-row-label">${{near:'近',mid:'中',far:'遠',deep:'深'}[row]}</div>
+              <div class="bt-grid-row-label">${{near:'近',mid:'中',far:'遠'}[row]}</div>
               ${COLS.map(col => `
                 <div class="bt-grid-cell" id="bt-ag-${row}-${col}"></div>
               `).join('')}
@@ -611,21 +605,6 @@ function getEnemyCellsFromAllyRange(chara, range) {
       .bt-grid-col-label { flex:1; text-align:center; font-family:"Cinzel",serif; font-size:7px; letter-spacing:2px; color:rgba(232,228,220,.2); }
       .bt-grid-row { display:flex; align-items:stretch; gap:2px; flex:1; min-height:0; }
       .bt-grid-row-label { width:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:"Cinzel",serif; font-size:8px; color:rgba(232,228,220,.2); }
-
-      /* ── ラベル非表示（表示のみ。ID・row/col・内部処理は変更なし） ── */
-      .bt-grid-col-labels,
-      .bt-grid-row-label,
-      .bt-grid-spacer {
-        display: none !important;
-      }
-      /* ラベル非表示後、各行のセルがグリッド幅いっぱいに均等展開 */
-      .bt-grid-row {
-        width: 100%;
-      }
-      .bt-grid-row .bt-grid-cell {
-        flex: 1;
-        min-width: 0;
-      }
 
       /* 全セル共通：白細枠 */
       .bt-grid-enemy .bt-grid-cell,
@@ -4579,10 +4558,10 @@ function showCellDamageEffect(cell) {
   // 単一エフェクト適用エンジン
   // effect: { type, target, hit, duration, amount }
   // ============================================================
-  const ROW_IDX_MAP = { near:0, mid:1, far:2, deep:3 };
-  const COL_IDX_MAP = { left:0, center:1, right:2, outer:3 };
-  const ROW_BY_IDX_MAP = ['near','mid','far','deep'];
-  const COL_BY_IDX_MAP = ['left','center','right','outer'];
+  const ROW_IDX_MAP = { near:0, mid:1, far:2 };
+  const COL_IDX_MAP = { left:0, center:1, right:2 };
+  const ROW_BY_IDX_MAP = ['near','mid','far'];
+  const COL_BY_IDX_MAP = ['left','center','right'];
 
   function _applyEffect(effect, chara, showPop, effectTargets) {
     const dur = (effect.duration != null) ? effect.duration : 1;
@@ -5463,8 +5442,8 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     if (target.canMove === false || target.fixedPosition) return;
     // 移動確率35%
     if (Math.random() > 0.35) return;
-    const _R = ['near','mid','far','deep'];
-    const _C = ['left','center','right','outer'];
+    const _R = ['near','mid','far'];
+    const _C = ['left','center','right'];
     // 他の生存敵が占有しているマスを除外
     const occupied = new Set(
       (bs.enemies || [])
@@ -5716,8 +5695,8 @@ if (!(baseId === 'enemy_01' && enemy._phase1Pool) &&
     if (!isRandom && !isHeal) {
       // BattleRange で敵位置基準の攻撃範囲を取得
       const cells = _getCells({ row: e.row, col: e.col }, act.range);
-      const ROWS_ = ['near','mid','far','deep'];
-      const COLS_ = ['left','center','right','outer'];
+      const ROWS_ = ['near','mid','far'];
+      const COLS_ = ['left','center','right'];
       gridHTML = '<div class="bt-ew-grid">';
       ROWS_.forEach(r => {
         COLS_.forEach(c => {
@@ -6313,7 +6292,7 @@ function planAllEnemyActions() {
 
     // 各敵の初期位置設定
     // 各敵の初期位置設定
-const _R = ['near','mid','far','deep'], _C = ['left','center','right','outer'];
+const _R = ['near','mid','far'], _C = ['left','center','right'];
 const occupied = new Set();
 
 function placeEnemyRandom(e) {

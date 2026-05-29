@@ -187,20 +187,18 @@
       return BattleRange.getCellsFromRange(chara, range);
     }
 
-    // 8段フィールド：敵deep(0)〜敵near(3)〜味方near(4)〜味方deep(7)
+    // 6段フィールド：敵far(0)〜敵near(2)〜味方near(3)〜味方far(5)
     const FIELD_ROWS = [
-      { side: 'enemy', row: 'deep' },
       { side: 'enemy', row: 'far'  },
       { side: 'enemy', row: 'mid'  },
       { side: 'enemy', row: 'near' },
       { side: 'ally',  row: 'near' },
       { side: 'ally',  row: 'mid'  },
       { side: 'ally',  row: 'far'  },
-      { side: 'ally',  row: 'deep' },
     ];
-    const ALLY_ROW_IDX = { near: 4, mid: 5, far: 6, deep: 7 };
-    const COL_IDX      = { left: 0, center: 1, right: 2, outer: 3 };
-    const COL_BY_IDX   = ['left', 'center', 'right', 'outer'];
+    const ALLY_ROW_IDX = { near: 3, mid: 4, far: 5 };
+    const COL_IDX      = { left: 0, center: 1, right: 2 };
+    const COL_BY_IDX   = ['left', 'center', 'right'];
 
     const s = new Set();
     const baseRi = ALLY_ROW_IDX[chara.row];
@@ -238,10 +236,10 @@
   function moveEnemiesBySwipe(direction) {
     const bs = getBs();
     if (!bs) return false;
-    const ROW_IDX    = { near: 0, mid: 1, far: 2, deep: 3 };
-    const COL_IDX    = { left: 0, center: 1, right: 2, outer: 3 };
-    const ROW_BY_IDX = ['near', 'mid', 'far', 'deep'];
-    const COL_BY_IDX = ['left', 'center', 'right', 'outer'];
+    const ROW_IDX    = { near: 0, mid: 1, far: 2 };
+    const COL_IDX    = { left: 0, center: 1, right: 2 };
+    const ROW_BY_IDX = ['near', 'mid', 'far'];
+    const COL_BY_IDX = ['left', 'center', 'right'];
 
     const enemies = (bs.enemies || []).filter(e => e && e.hp > 0);
     if (!enemies.length) return false;
@@ -639,8 +637,8 @@ function getAllyCellFromPoint(x, y) {
 }
 
 function getSwipeDirToCell(actor, target) {
-  const ROW_IDX = { near: 0, mid: 1, far: 2, deep: 3 };
-  const COL_IDX = { left: 0, center: 1, right: 2, outer: 3 };
+  const ROW_IDX = { near: 0, mid: 1, far: 2 };
+  const COL_IDX = { left: 0, center: 1, right: 2 };
 
   const ar = ROW_IDX[actor.row];
   const ac = COL_IDX[actor.col];

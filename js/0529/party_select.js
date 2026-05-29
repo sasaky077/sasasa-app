@@ -4,12 +4,12 @@
 
 (function () {
 
-  const ROWS = ['near', 'mid', 'far', 'deep'];
-  const COLS = ['left', 'center', 'right', 'outer'];
-  const ROW_LABEL = { near: '近', mid: '中', far: '遠', deep: '深' };
-  const COL_LABEL = { left: '左', center: '中', right: '右', outer: '外' };
+  const ROWS = ['near', 'mid', 'far'];
+  const COLS = ['left', 'center', 'right'];
+  const ROW_LABEL = { near: '近', mid: '中', far: '遠' };
+  const COL_LABEL = { left: '左', center: '中', right: '右' };
 
-  // selected: { charaId, row, col }[]  最大4件
+  // selected: { charaId, row, col }[]  最大3件
   let selected = [];
 
   // ▼ 修正：現在選択中のステージ敵ID（文字列 or 配列）
@@ -53,7 +53,7 @@
     el.innerHTML = `
       <div class="ps-header">
         <div class="ps-title">部隊編成</div>
-        <div class="ps-sub">1〜4人選択 · マスをタップして配置</div>
+        <div class="ps-sub">3人選択 · マスをタップして配置</div>
       </div>
 
       <div class="ps-grid-wrap">
@@ -473,7 +473,7 @@
     });
 
     const btn = document.getElementById('ps-btn-start');
-    if (btn) btn.disabled = selected.length < 1;
+    if (btn) btn.disabled = selected.length < 3;
 
     // ヒント表示
     const hint = document.getElementById('ps-selecting-hint');
@@ -640,8 +640,8 @@
       renderCharaList();
       return;
     }
-    // 4人埋まってたら無視
-    if (selected.length >= 4) return;
+    // 3人埋まってたら無視
+    if (selected.length >= 3) return;
 
     // マス選択モードへ
     if (pendingCharaId === charaId) {
@@ -680,7 +680,7 @@
   // 戦闘開始  ▼ 修正：currentEnemyId を使う
   // ============================================================
   window.confirmPartySelect = function () {
-    if (selected.length < 1) return;
+    if (selected.length < 3) return;
 
     const party = selected.map(s => {
       const master = CHARACTERS.find(c => c.id === s.charaId);
