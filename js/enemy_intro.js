@@ -202,8 +202,31 @@
     // 複数敵配列の場合は先頭を代表として演出に使う
     const introEnemy = Array.isArray(enemyData) ? enemyData[0] : enemyData;
     const img = introEnemy.img || introEnemy.upImg || 'images/enemy_01.webp';
+
     runIntro(img, () => {
-      startBattle(partyData, enemyData, options || {});
+      const opt = options || {};
+
+      // [Battle32] battleMode:'32' のステージは Battle32.start() へ分岐
+      if (opt.battleMode === '32') {
+        if (window.Battle32 && typeof window.Battle32.start === 'function') {
+          window.Battle32.start({
+            partyIds: Array.isArray(opt.partyIds) && opt.partyIds.length
+              ? opt.partyIds
+              : [1, 2, 3],
+            enemyIds: Array.isArray(enemyData)
+              ? enemyData.map(e => e.id)
+              : (enemyData && enemyData.id ? [enemyData.id] : []),
+            stageId: opt.stageId || null,
+          });
+        } else {
+          console.error('[Battle32] Battle32 is not loaded. Check that battle_32.js is included in index.html.');
+          alert('Battle32 が読み込まれていません。index.html の script タグを確認してください。');
+        }
+        return;
+      }
+
+      // 通常バトル（旧 battle.js）
+      startBattle(partyData, enemyData, opt);
     });
   };
 

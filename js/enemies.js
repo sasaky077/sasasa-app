@@ -13,6 +13,7 @@ const ENEMIES = [
     img:   'images/enemy_01.webp',
     upImg: 'images/enemy_01_up.webp',
     battleImg: 'images/enemy_01_battle.webp',
+    isBoss: true,   // 32マスバトルでボス判定に使用
 
     // 4×4向けに強化
     hp: 3200, hpMax: 3200,

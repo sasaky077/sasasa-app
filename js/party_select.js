@@ -691,35 +691,40 @@
       const shinkiStart = master.shinkiStart ?? 0;
       const shinkiRegen = master.shinkiRegen ?? 1;
       return {
-  id:       'chara_' + master.id,
-  charaId:  master.id,
-  name:     master.name,
-  img:      master.battleImg || master.upImg || master.img,
-  battleImg: master.battleImg,
+        id:       'chara_' + master.id,
+        charaId:  master.id,
+        name:     master.name,
 
-  // ULTカットイン用
-  upImg:    master.upImg,
-  ultImg:   master.ultImg,
-  cutImg:   master.ultImg || master.cutImg || master.upImg || master.battleImg || master.img,
+      // 盤面用
+        img:       master.battleImg || master.img,
+        battleImg: master.battleImg || master.img,
 
-  hp:       master.stats.HP,
-  hpMax:    master.stats.HP,
-  atk:      master.stats.ATK,
-  def:      master.stats.DEF,
-  spd:      master.stats.SPD,
-  accuracy: 250,
-  row:      s.row,
-  col:      s.col,
-  pos:      s.row,
-  cost:      Math.min(costStart, costMax),
-  costMax:   costMax,
-  costRegen: costRegen,
-  shinki:      Math.min(shinkiStart, shinkiMax),
-  shinkiMax:   shinkiMax,
-  shinkiRegen: shinkiRegen,
-  skills: master.skills.map(sk => ({ ...sk })),
-};
-    });
+      // 下部パネル用
+        panelImg:  master.panelImg || master.upImg || master.img,
+
+      // ULTカットイン用
+        upImg:    master.upImg,
+        ultImg:   master.ultImg,
+        cutImg:   master.ultImg || master.cutImg || master.upImg || master.battleImg || master.img,
+
+        hp:       master.stats.HP,
+        hpMax:    master.stats.HP,
+        atk:      master.stats.ATK,
+        def:      master.stats.DEF,
+        spd:      master.stats.SPD,
+        accuracy: 250,
+        row:      s.row,
+        col:      s.col,
+        pos:      s.row,
+        cost:      Math.min(costStart, costMax),
+        costMax:   costMax,
+        costRegen: costRegen,
+        shinki:      Math.min(shinkiStart, shinkiMax),
+        shinkiMax:   shinkiMax,
+        shinkiRegen: shinkiRegen,
+        skills: master.skills.map(sk => ({ ...sk })),
+      };
+      });
 
     // ▼ 修正：単体 or 複数敵の両方に対応
     let enemyData;
@@ -757,7 +762,14 @@
 
     window._saveLastParty && window._saveLastParty(party);
     closePartySelect();
-    setTimeout(() => startEnemyIntro(enemyData, party, currentBattleOptions), 400);
+
+    // [Battle32] 選択キャラIDを options に追加し、battleMode:'32' 時に Battle32.start へ渡せるようにする
+    const selectedCharaIds = selected.map(p => p.charaId);
+    const mergedOptions = Object.assign({}, currentBattleOptions, {
+      partyIds: selectedCharaIds,
+    });
+
+    setTimeout(() => startEnemyIntro(enemyData, party, mergedOptions), 400);
   };
 
   // ============================================================

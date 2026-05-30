@@ -129,6 +129,7 @@ const STAGES = [
   difficulty: 'boss',
   reward: { exp: 375, coin: 150 },
   unlocked: true,
+  useBattle32: true,  // [Battle32] 32マス共有盤面バトルで起動する
 },
 
   // 将来の雑魚ステージ追加例：

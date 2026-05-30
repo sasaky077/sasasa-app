@@ -270,10 +270,20 @@
     // 少し間を置いてから編成モーダルへ
     setTimeout(() => {
       if (typeof openPartySelect === 'function') {
-        openPartySelect(stage.enemyIds || stage.enemyId, {
+        // [Battle32 分岐] stage.useBattle32 === true のステージは battleMode:'32' を付与
+        const battleOptions = {
           returnChapter: stage.chapter,
           stageId: stage.id,
-        });
+        };
+        if (stage.useBattle32 === true) {
+          battleOptions.battleMode = '32';
+          // enemyIds を明示的に battleOptions にも持たせる
+          // openPartySelect → Battle32.start(config) の config.enemyIds に渡るようにする
+          if (stage.enemyIds && stage.enemyIds.length > 0) {
+            battleOptions.enemyIds = stage.enemyIds;
+          }
+        }
+        openPartySelect(stage.enemyIds || stage.enemyId, battleOptions);
       }
     }, 350);
   }

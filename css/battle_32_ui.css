@@ -1,0 +1,2472 @@
+/* ============================================================
+   battle_32_ui.css
+   32マスバトルUI スタイルシート
+   battle_32_ui.js の injectStyle() から分離
+   ============================================================ */
+
+/* ── ルート ── */
+#battle32-root {
+  position: fixed;
+  inset: 0;
+  z-index: 160000;
+  display: none;
+  flex-direction: column;
+
+  background: #050608;
+  color: #e8e4dc;
+  font-family: 'Noto Serif JP', serif;
+  overflow: hidden;
+  height: 100dvh;
+  --cell-size: min(15vw, 56px);
+}
+
+/* 背景画像 */
+#battle32-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("../images/battle_bg_01.webp") center center / cover no-repeat;
+  opacity: .35;
+  pointer-events: none;
+}
+
+/* UI本体を背景より前面へ */
+#battle32-root > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── ヘッダー ── */
+#b32-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(14px, env(safe-area-inset-top, 14px)) 16px 10px;
+  background: rgba(0, 0, 0, .55);
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  gap: 12px;
+}
+
+#b32-turn-box {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(232, 228, 220, .5);
+  line-height: 1.5;
+}
+
+#b32-turn-box span {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: rgba(232, 228, 220, .9);
+}
+
+#b32-phase-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid;
+  transition: color .3s, border-color .3s, background .3s;
+}
+
+#b32-stage-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(232, 228, 220, .3);
+  text-align: right;
+  line-height: 1.5;
+}
+
+#b32-stage-label span {
+  display: block;
+  font-size: 12px;
+  color: rgba(232, 228, 220, .55);
+}
+
+/* ── ヒントバー ── */
+#b32-hint-bar {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-align: center;
+  display: none;
+  transition: opacity .2s;
+}
+
+#b32-hint-bar.skill-hint {
+  display: block;
+  background: rgba(232, 192, 64, .10);
+  border-bottom: 1px solid rgba(232, 192, 64, .2);
+  color: rgba(232, 192, 64, .9);
+}
+
+/* ── ボスHP UI ── */
+#b32-boss-hp-ui {
+  flex-shrink: 0;
+  padding: 6px 18px 7px;
+  background: rgba(0, 0, 0, .45);
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+#b32-boss-hp-name {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: rgba(255, 120, 120, .85);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+#b32-boss-hp-bar-wrap {
+  width: 100%;
+  max-width: 420px;
+  height: 8px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .6);
+  border: 1px solid rgba(255, 255, 255, .08);
+  overflow: hidden;
+}
+
+#b32-boss-hp-bar {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(180,40,40,.95), rgba(255,120,120,.95));
+  transition: width .25s ease;
+}
+
+#b32-boss-hp-text {
+  margin-top: 3px;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: rgba(232, 228, 220, .35);
+}
+
+/* ── スクロール領域（スクロール禁止） ── */
+#b32-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px 4px;
+  gap: 2px;
+}
+
+/* ── ボードラッパー ── */
+#b32-board-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  perspective: 900px;
+  padding-top: 18px;
+  padding-bottom: 4px;
+}
+
+/* ── ボード（5×8グリッド） ── */
+#b32-board {
+  display: grid;
+  grid-template-columns: repeat(5, var(--cell-size));
+  grid-template-rows: repeat(8, var(--cell-size));
+  gap: 3px;
+  position: relative;
+
+  transform: rotateX(50deg);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  overflow: visible;
+}
+
+/* ── セル基本 ── */
+.b32-cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border-radius: 6px;
+
+  border: 1px solid rgba(130, 100, 255, .28);
+  background: rgba(8, 12, 20, .34);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  cursor: default;
+
+  overflow: visible;
+  transform-style: preserve-3d;
+
+  box-shadow:
+    inset 0 0 8px rgba(120, 90, 255, .06),
+    0 0 6px rgba(120, 90, 255, .12);
+}
+
+.b32-cell.ally-zone {
+  background: rgba(8, 18, 28, .42);
+  border-color: rgba(90, 200, 255, .24);
+  box-shadow:
+    inset 0 0 8px rgba(90, 200, 255, .06),
+    0 0 6px rgba(90, 200, 255, .10);
+}
+
+.b32-cell.enemy-zone {
+  background: rgba(26, 10, 18, .40);
+  border-color: rgba(255, 90, 140, .22);
+  box-shadow:
+    inset 0 0 8px rgba(255, 90, 140, .05),
+    0 0 6px rgba(255, 90, 140, .09);
+}
+
+.b32-cell.row-divider {
+  border-top: 1px solid rgba(255, 255, 255, .14);
+}
+
+/* 移動先ハイライト */
+.b32-cell.movable {
+  background:
+    linear-gradient(145deg, rgba(90, 230, 255, .18), rgba(20, 48, 58, .32)),
+    rgba(10, 28, 34, .52) !important;
+
+  border-color: rgba(100, 230, 255, .62) !important;
+
+  box-shadow:
+    inset 0 0 12px rgba(100, 230, 255, .20),
+    0 0 13px rgba(100, 230, 255, .22) !important;
+
+  cursor: pointer;
+}
+
+.b32-cell.movable:active {
+  background:
+    linear-gradient(145deg, rgba(120, 240, 255, .28), rgba(20, 58, 68, .38)),
+    rgba(10, 30, 36, .58) !important;
+}
+
+/* 味方選択可能 */
+.b32-cell.selectable-ally {
+  box-shadow: inset 0 0 0 2px rgba(240, 192, 64, .6);
+  cursor: pointer;
+}
+
+.b32-cell.selectable-ally:active {
+  box-shadow: inset 0 0 0 2px rgba(240, 192, 64, 1);
+}
+
+/* 選択中ユニット */
+.b32-cell.selected-unit,
+.b32-cell.skill-selected {
+  border-color: rgba(255, 220, 120, .95) !important;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 220, 120, .95),
+    inset 0 0 14px rgba(255, 210, 90, .16),
+    0 0 16px rgba(255, 210, 90, .38) !important;
+}
+
+/* スキル：行動可能な味方 */
+.b32-cell.skill-selectable {
+  box-shadow: inset 0 0 0 2px rgba(232, 192, 64, .5);
+  cursor: pointer;
+}
+
+.b32-cell.skill-selectable:active {
+  box-shadow: inset 0 0 0 2px rgba(232, 192, 64, 1);
+}
+
+/* スキル：選択中の味方 */
+.b32-cell.skill-selected {
+  box-shadow: inset 0 0 0 2px rgba(232, 192, 64, 1), 0 0 14px rgba(232, 192, 64, .45) !important;
+  cursor: pointer;
+}
+
+/* スキル：射程ハイライト */
+.b32-cell.skill-range {
+  background:
+    linear-gradient(145deg, rgba(190, 120, 255, .16), rgba(48, 24, 64, .28)),
+    rgba(20, 12, 28, .50) !important;
+
+  border-color: rgba(200, 140, 255, .48) !important;
+
+  box-shadow:
+    inset 0 0 12px rgba(190, 120, 255, .16),
+    0 0 12px rgba(190, 120, 255, .18) !important;
+}
+
+/* ── ユニットチップ ── */
+.b32-unit {
+  position: absolute;
+
+  left: 50%;
+  bottom: 0px;
+  width: calc(var(--cell-size) * 1.18);
+  height: calc(var(--cell-size) * 1.68);
+
+  transform: translateX(-50%) rotateX(-50deg);
+  transform-origin: bottom center;
+  transform-style: preserve-3d;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+
+  pointer-events: none;
+  z-index: 2;
+}
+
+.b32-unit.ally {
+  bottom: 0px;
+  transform: translateX(-50%) rotateX(-50deg);
+}
+
+.b32-unit.enemy {
+  bottom: 0px;
+  transform: translateX(-50%) rotateX(-50deg);
+}
+
+.b32-unit.dead {
+  opacity: .18;
+  filter: grayscale(1);
+}
+
+.b32-unit.skill-done {
+  opacity: .55;
+}
+
+.b32-unit-icon {
+  width: 100%;
+  height: calc(var(--cell-size) * 1.45);
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
+  pointer-events: none;
+  image-rendering: auto;
+}
+
+.b32-unit-initial {
+  width: calc(var(--cell-size) * 0.62);
+  height: calc(var(--cell-size) * 0.62);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell-size) * 0.28);
+  color: rgba(232, 228, 220, .7);
+  flex-shrink: 0;
+}
+
+.b32-unit-name {
+  display: none !important;
+}
+
+.b32-hp-bar-wrap {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  width: calc(var(--cell-size) * 0.76);
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, .55);
+  overflow: hidden;
+}
+
+.b32-unit.ally .b32-hp-bar-wrap {
+  display: none;
+}
+
+.b32-unit.boss .b32-hp-bar-wrap {
+  display: none;
+}
+
+/* BOSSだけ大きく表示 */
+.b32-unit.boss {
+  width: calc(var(--cell-size) * 2.5);
+  height: calc(var(--cell-size) * 2.9);
+  z-index: 4;
+}
+
+.b32-unit.boss .b32-unit-icon {
+  height: calc(var(--cell-size) * 2.0);
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+/* BOSSだけ拡大＋マス位置に合わせて補正 */
+.b32-unit.enemy.boss {
+  bottom: -10px;
+}
+
+.b32-unit.enemy.boss .b32-unit-icon {
+  transform: translateX(0px) translateY(18px) scale(1.55);
+  transform-origin: bottom center;
+}
+
+.b32-hp-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+
+.b32-shinki-dots {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: none;
+  gap: 1px;
+}
+
+.b32-shinki-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .3);
+}
+
+.b32-shinki-dot.filled {
+  background: #f0c040;
+  border-color: #f0c040;
+  box-shadow: 0 0 4px #f0c04088;
+}
+
+.b32-boss-badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 6px;
+  letter-spacing: .5px;
+  background: rgba(220, 60, 60, .85);
+  color: #fff;
+  border-radius: 2px;
+  padding: 1px 3px;
+  font-family: 'Cinzel', serif;
+  display: none;
+}
+
+.b32-unit-done-mark {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 10px;
+  line-height: 1;
+  opacity: .7;
+}
+
+/* ── ゾーンラベル ── */
+.b32-zone-label {
+  position: absolute;
+  right: -36px;
+  font-size: 8px;
+  letter-spacing: 2px;
+  writing-mode: vertical-rl;
+  color: rgba(255, 255, 255, .18);
+  font-family: 'Cinzel', serif;
+  pointer-events: none;
+}
+
+/* ── スキルパネル 共通ラッパー ── */
+#b32-bottom-area {
+  width: 100%;
+  max-width: 440px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+#b32-bottom-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: rgba(232, 228, 220, .3);
+  text-align: center;
+}
+
+#b32-bottom-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(232, 228, 220, .25);
+  text-align: center;
+}
+
+/* ── スキルパネル ── */
+#b32-skill-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#b32-skill-chara-name {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(232, 228, 220, .8);
+  text-align: center;
+  padding: 3px 0 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+#b32-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.b32-skill-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .03);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, border-color .15s;
+  user-select: none;
+}
+
+.b32-skill-row:active {
+  background: rgba(232, 192, 64, .14);
+  border-color: rgba(232, 192, 64, .4);
+}
+
+.b32-skill-row.disabled {
+  opacity: .3;
+  pointer-events: none;
+}
+
+.b32-skill-name {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: rgba(232, 228, 220, .9);
+  flex: 0 0 auto;
+}
+
+/* スキル説明：1行省略 */
+.b32-skill-desc {
+  flex: 1;
+  font-size: 10px;
+  letter-spacing: .5px;
+  color: rgba(232, 228, 220, .4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.b32-skill-shinki {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.b32-skill-shinki-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(240, 192, 64, .25);
+  border: 1px solid rgba(240, 192, 64, .4);
+}
+
+.b32-skill-shinki-dot.filled {
+  background: #f0c040;
+  box-shadow: 0 0 4px #f0c04088;
+}
+
+.b32-skill-reason {
+  flex: 0 0 auto;
+  font-size: 9px;
+  letter-spacing: .5px;
+  color: rgba(200, 80, 80, .7);
+}
+
+/* ── ログ（非表示） ── */
+#b32-log-wrap {
+  display: none;
+}
+
+#b32-log {
+  max-height: 56px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, .35);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .06);
+  padding: 6px 10px;
+  font-size: 10px;
+  color: rgba(232, 228, 220, .45);
+  letter-spacing: .5px;
+  line-height: 1.8;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+#b32-log .log-line { display: block; }
+#b32-log .log-line:first-child { color: rgba(232, 228, 220, .75); }
+
+/* ── アクションボタン ── */
+#b32-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px max(12px, env(safe-area-inset-bottom, 12px));
+  background: rgba(0, 0, 0, .5);
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.b32-btn {
+  flex: 1;
+  min-width: 60px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .05);
+  color: rgba(232, 228, 220, .75);
+  font-family: 'Noto Serif JP', serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.b32-btn:active {
+  background: rgba(255, 255, 255, .12);
+  color: rgba(232, 228, 220, 1);
+}
+
+.b32-btn.primary {
+  background: rgba(94, 168, 220, .18);
+  border-color: rgba(94, 168, 220, .4);
+  color: rgba(150, 210, 255, .9);
+}
+
+.b32-btn.primary:active { background: rgba(94, 168, 220, .35); }
+
+.b32-btn.danger {
+  background: rgba(200, 80, 80, .12);
+  border-color: rgba(200, 80, 80, .3);
+  color: rgba(255, 140, 140, .8);
+}
+
+.b32-btn.cancel-sel {
+  background: rgba(240, 192, 64, .12);
+  border-color: rgba(240, 192, 64, .3);
+  color: rgba(240, 192, 64, .8);
+}
+
+.b32-btn:disabled {
+  opacity: .3;
+  pointer-events: none;
+}
+
+/* ── 結果オーバーレイ ── */
+#b32-result-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 24px;
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(4px);
+}
+
+#b32-result-text {
+  font-family: 'Cinzel', serif;
+  font-size: 36px;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
+#b32-result-text.win  { color: #f0c040; text-shadow: 0 0 30px #f0c04088; }
+#b32-result-text.lose { color: #d07878; text-shadow: 0 0 30px #d0787888; }
+
+/* ============================================================
+   パーティステータスパネル
+   ============================================================ */
+
+#b32-party-status {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.b32-party-card {
+  position: relative;
+  min-width: 0;
+  border-radius: 12px;
+  padding: 7px 5px 7px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: linear-gradient(160deg, rgba(28, 28, 40, .72), rgba(12, 12, 20, .80));
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity .15s, border-color .2s, box-shadow .2s, transform .12s;
+  user-select: none;
+}
+
+/* 内側のグロー装飾（選択前は控えめ） */
+.b32-party-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.b32-party-card:active {
+  transform: scale(.96);
+}
+
+.b32-party-card.selected {
+  border-color: rgba(232, 192, 64, .85);
+  box-shadow:
+    0 0 0 1px rgba(232, 192, 64, .25),
+    0 0 18px rgba(232, 192, 64, .40),
+    inset 0 0 12px rgba(232, 192, 64, .08);
+  background: linear-gradient(160deg, rgba(40, 36, 16, .82), rgba(18, 14, 4, .88));
+}
+
+.b32-party-card.done {
+  opacity: .42;
+}
+
+.b32-party-card.dead {
+  opacity: .25;
+  filter: grayscale(1);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* 画像ラッパー：キャラ画像を大きく見せる */
+.b32-party-img-wrap {
+  height: 72px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.b32-party-img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  object-position: center 8%;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .65));
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.b32-party-initial {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .14);
+  color: rgba(232, 228, 220, .75);
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+}
+
+.b32-party-name {
+  display: none !important;
+}
+
+.b32-party-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+/* アニマ（ANIMA）ドット — 神気より一回り大きく */
+.b32-anima-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(80, 230, 220, .40);
+  background: rgba(80, 230, 220, .06);
+  flex-shrink: 0;
+  transition: background .15s, box-shadow .15s;
+}
+
+.b32-anima-dot.filled {
+  background: rgba(80, 230, 220, .92);
+  box-shadow:
+    0 0 6px rgba(80, 230, 220, .60),
+    0 0 2px rgba(80, 230, 220, .90);
+  border-color: rgba(120, 240, 235, .75);
+}
+
+/* アニマが多い場合の数値フォールバック */
+.b32-anima-text {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  color: rgba(80, 230, 220, .9);
+  letter-spacing: .5px;
+}
+
+.b32-anima-max {
+  font-size: 9px;
+  color: rgba(80, 230, 220, .5);
+}
+
+/* 神気（SHINKI）ドット */
+.b32-party-shinki-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(240, 192, 64, .35);
+  background: rgba(240, 192, 64, .06);
+  flex-shrink: 0;
+  transition: background .15s, box-shadow .15s;
+}
+
+.b32-party-shinki-dot.filled {
+  background: rgba(240, 192, 64, .95);
+  box-shadow:
+    0 0 5px rgba(240, 192, 64, .60),
+    0 0 2px rgba(240, 192, 64, .90);
+  border-color: rgba(255, 210, 80, .80);
+}
+
+/* RETURN オーバーレイ（戦闘不能） */
+.b32-party-return {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .58);
+  color: rgba(232, 228, 220, .70);
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+/* ============================================================
+   32マスバトル：下部キャラボックス位置の最終上書き
+   フィールドとキャラボックスの間だけを詰める
+   ============================================================ */
+
+/* 親の余白配分を固定 */
+#battle32-root #b32-scroll {
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 0 !important;
+}
+
+/* ここが本命：盤面下の余白を潰す */
+#battle32-root #b32-board-wrap {
+  padding-top: 18px !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ログ欄は完全に消す */
+#battle32-root #b32-log-wrap {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 0 !important;
+}
+
+/* 案内テキストは1行分だけ */
+#battle32-root #b32-bottom-guide {
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  line-height: 14px !important;
+  margin: 0 0 2px 0 !important;
+  padding: 0 !important;
+  font-size: 10px !important;
+}
+
+/* キャラボックス側の上余白をなくす */
+#battle32-root #b32-bottom-area {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  gap: 2px !important;
+}
+
+/* ============================================================
+   スキル詳細ボックス：下部表示
+   ============================================================ */
+
+#b32-skill-detail-box {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 8px 10px 9px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(232, 192, 64, .32);
+  background:
+    linear-gradient(160deg, rgba(38, 32, 18, .88), rgba(8, 8, 14, .92));
+  box-shadow:
+    0 0 12px rgba(232, 192, 64, .14),
+    inset 0 0 10px rgba(255, 255, 255, .04);
+
+  color: rgba(232, 228, 220, .9);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+#b32-skill-detail-box.show {
+  animation: b32SkillDetailIn .16s ease-out forwards;
+}
+
+#b32-skill-detail-name {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(245, 226, 160, .98);
+  margin-bottom: 4px;
+}
+
+#b32-skill-detail-desc {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 10px;
+  line-height: 1.45;
+  letter-spacing: .5px;
+  color: rgba(232, 228, 220, .78);
+}
+
+#b32-skill-detail-meta {
+  margin-top: 5px;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: rgba(232, 192, 64, .72);
+}
+
+@keyframes b32SkillDetailIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.b32-skill-chip {
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* スキル詳細ボックス：下部固定表示 */
+#battle32-root #b32-skill-detail-box {
+  position: static !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+
+  margin-top: 4px !important;
+  padding: 8px 10px 9px !important;
+
+  border-radius: 12px !important;
+  border: 1px solid rgba(232, 192, 64, .32) !important;
+  background:
+    linear-gradient(160deg, rgba(38, 32, 18, .92), rgba(8, 8, 14, .94)) !important;
+
+  color: rgba(232, 228, 220, .9) !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  transform: none !important;
+  z-index: auto !important;
+}
+
+#battle32-root #b32-skill-detail-box.show {
+  animation: none !important;
+}
+
+#battle32-root #b32-skill-detail-name {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: rgba(245, 226, 160, .98) !important;
+  margin-bottom: 4px !important;
+}
+
+#battle32-root #b32-skill-detail-desc {
+  font-size: 10px !important;
+  line-height: 1.45 !important;
+  color: rgba(232, 228, 220, .78) !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+#battle32-root #b32-skill-detail-meta {
+  margin-top: 5px !important;
+  font-size: 9px !important;
+  color: rgba(232, 192, 64, .72) !important;
+  white-space: normal !important;
+}
+
+#b32-skill-detail-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.b32-skill-confirm-btn {
+  min-width: 72px;
+  height: 30px;
+  padding: 0 12px;
+
+  border-radius: 9px;
+  border: 1px solid rgba(232, 192, 64, .55);
+  background: rgba(232, 192, 64, .18);
+  color: rgba(255, 230, 160, .95);
+
+  font-family: 'Noto Serif JP', serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.b32-skill-confirm-btn:active {
+  background: rgba(232, 192, 64, .32);
+  transform: scale(.97);
+}
+
+/* 選択中スキルを少し光らせる */
+.b32-skill-chip.selected {
+  border-color: rgba(232, 192, 64, .85) !important;
+  background: rgba(232, 192, 64, .18) !important;
+  color: rgba(255, 230, 160, .95) !important;
+}
+
+/* スキル詳細：スキルボタン上に収める */
+#battle32-root #b32-skill-detail-box {
+  margin: 2px 0 4px 0 !important;
+  padding: 6px 8px !important;
+  max-height: 72px !important;
+  overflow: hidden !important;
+}
+
+#battle32-root #b32-skill-detail-name {
+  font-size: 11px !important;
+  margin-bottom: 2px !important;
+}
+
+#battle32-root #b32-skill-detail-desc {
+  font-size: 9px !important;
+  line-height: 1.35 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#battle32-root #b32-skill-detail-meta {
+  margin-top: 2px !important;
+  font-size: 8px !important;
+}
+
+#battle32-root #b32-skill-detail-actions {
+  margin-top: 4px !important;
+}
+
+#battle32-root .b32-skill-confirm-btn {
+  height: 24px !important;
+  min-width: 58px !important;
+  font-size: 10px !important;
+}
+/* スキル詳細：スキルボタンの下に表示 */
+#battle32-root #b32-skill-detail-box {
+  margin: 4px 0 0 0 !important;
+  padding: 6px 8px !important;
+  max-height: 78px !important;
+  overflow: hidden !important;
+}
+
+#battle32-root #b32-skill-list {
+  margin-bottom: 0 !important;
+}
+
+/* ============================================================
+   スキル詳細：一番下に表示しつつ見切れ防止
+   ============================================================ */
+
+#battle32-root #b32-skill-detail-box {
+  margin: 4px 0 0 0 !important;
+  padding: 6px 8px 7px !important;
+
+  max-height: none !important;
+  height: auto !important;
+  min-height: 54px !important;
+
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+#battle32-root #b32-skill-detail-name {
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  margin-bottom: 2px !important;
+}
+
+#battle32-root #b32-skill-detail-desc {
+  font-size: 8px !important;
+  line-height: 1.3 !important;
+
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#battle32-root #b32-skill-detail-meta {
+  margin-top: 2px !important;
+  font-size: 7px !important;
+  line-height: 1.2 !important;
+}
+
+#battle32-root #b32-skill-detail-actions {
+  margin-top: 3px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+#battle32-root .b32-skill-confirm-btn {
+  height: 20px !important;
+  min-width: 48px !important;
+  padding: 0 8px !important;
+  font-size: 9px !important;
+}
+
+/* ============================================================
+   32バトル下メニュー固定レイアウト
+   [キャラ][キャラ][キャラ]
+   [スキル][スキル][スキル]
+          [ULT][終了]
+   ============================================================ */
+
+#battle32-root #b32-bottom-area {
+  width: 100% !important;
+  max-width: 440px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#battle32-root #b32-bottom-guide {
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  line-height: 14px !important;
+  margin: 0 0 3px 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
+  overflow: hidden !important;
+}
+
+/* 1段目：キャラ3枚 */
+#battle32-root #b32-party-status {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  margin: 0 !important;
+}
+
+#battle32-root .b32-party-card {
+  min-width: 0 !important;
+  height: 82px !important;
+  padding: 5px 4px 4px !important;
+  border-radius: 10px !important;
+  box-sizing: border-box !important;
+}
+
+#battle32-root .b32-party-img-wrap {
+  height: 62px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-party-img {
+  width: 100% !important;
+  height: 62px !important;
+  object-fit: contain !important;
+  object-position: center top !important;
+  display: block !important;
+}
+
+#battle32-root .b32-party-row {
+  margin-top: 2px !important;
+  gap: 3px !important;
+}
+
+#battle32-root .b32-anima-dot {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+#battle32-root .b32-party-shinki-dot {
+  width: 5px !important;
+  height: 5px !important;
+}
+
+/* 選択キャラ名は不要 */
+#battle32-root #b32-skill-chara-name {
+  display: none !important;
+}
+
+/* 2段目・3段目：スキルボタン */
+#battle32-root #b32-skill-panel {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#battle32-root #b32-skill-list {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 共通：ボタン行 */
+#battle32-root .b32-skill-chip-row {
+  width: 100% !important;
+  display: grid !important;
+  gap: 4px !important;
+  margin: 0 !important;
+}
+
+/* 2段目：[スキル][スキル][スキル] */
+#battle32-root .b32-skill-chip-row.normal-skills {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+/* 3段目：右寄せで [ULT][終了] */
+#battle32-root .b32-skill-chip-row.utility-skills {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  width: 50% !important;
+  margin-left: auto !important;
+}
+
+/* ボタン本体 */
+#battle32-root .b32-skill-chip {
+  min-width: 0 !important;
+  width: auto !important;
+  height: 29px !important;
+  min-height: 29px !important;
+  box-sizing: border-box !important;
+  padding: 0 6px !important;
+  border-radius: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: none !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  letter-spacing: .5px !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-skill-chip-label {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+#battle32-root .b32-skill-chip.ult,
+#battle32-root .b32-skill-chip.end-turn {
+  flex: none !important;
+  width: auto !important;
+  font-size: 9px !important;
+  letter-spacing: 1px !important;
+}
+
+#battle32-root .b32-chip-shinki {
+  margin-top: 2px !important;
+}
+
+/* 詳細はボタン群の下に出す。見切れ防止でコンパクト */
+#battle32-root #b32-skill-detail-box {
+  margin: 2px 0 0 0 !important;
+  padding: 5px 7px !important;
+  min-height: 0 !important;
+  max-height: 58px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#battle32-root #b32-skill-detail-name {
+  font-size: 9px !important;
+  line-height: 1.15 !important;
+  margin-bottom: 1px !important;
+}
+
+#battle32-root #b32-skill-detail-desc {
+  font-size: 8px !important;
+  line-height: 1.25 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#battle32-root #b32-skill-detail-meta {
+  display: none !important;
+}
+
+#battle32-root #b32-skill-detail-actions {
+  display: none !important;
+}
+
+/* 小さい端末ではさらに圧縮 */
+@media (max-height: 680px) {
+  #battle32-root {
+    --cell-size: min(14.5vw, 50px) !important;
+  }
+
+  #battle32-root #b32-board-wrap {
+    padding-top: 10px !important;
+    padding-bottom: 0 !important;
+  }
+
+  #battle32-root .b32-party-card {
+    height: 76px !important;
+    padding-top: 4px !important;
+  }
+
+  #battle32-root .b32-party-img-wrap {
+  height: 56px !important;
+}
+
+#battle32-root .b32-party-img {
+  width: 100% !important;
+  height: 56px !important;
+  object-fit: contain !important;
+  object-position: center top !important;
+}
+
+  #battle32-root .b32-skill-chip {
+    height: 27px !important;
+    min-height: 27px !important;
+  }
+
+  #battle32-root #b32-skill-detail-box {
+    max-height: 50px !important;
+  }
+}
+/* ============================================================
+   キャラカード：画像＋anima＋shinki 見切れ修正
+   ============================================================ */
+
+#battle32-root .b32-party-card {
+  height: 92px !important;
+  padding: 5px 4px 5px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#battle32-root .b32-party-img-wrap {
+  height: 58px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-party-img {
+  width: 100% !important;
+  height: 58px !important;
+  object-fit: contain !important;
+  object-position: center top !important;
+  display: block !important;
+}
+
+#battle32-root .b32-party-row {
+  height: 8px !important;
+  min-height: 8px !important;
+  line-height: 8px !important;
+  margin-top: 2px !important;
+  gap: 3px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#battle32-root .b32-anima-dot {
+  width: 8px !important;
+  height: 8px !important;
+  flex: 0 0 auto !important;
+}
+
+#battle32-root .b32-party-shinki-dot {
+  width: 5px !important;
+  height: 5px !important;
+  flex: 0 0 auto !important;
+}
+/* ============================================================
+   ULT / 終了 を盤面右下に浮かせる
+   ＆ スキル詳細見切れ対策
+   ============================================================ */
+
+/* 下部全体を基準にする */
+#battle32-root #b32-bottom-area {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* スキルパネル側は余計な制限を弱める */
+#battle32-root #b32-skill-panel {
+  overflow: visible !important;
+  margin-top: 4px !important;
+}
+
+#battle32-root #b32-skill-list {
+  overflow: visible !important;
+}
+
+/* 通常スキル3つはそのまま横並び */
+#battle32-root .b32-skill-chip-row.normal-skills {
+  width: 100% !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  margin: 0 !important;
+}
+
+/* ------------------------------------------------------------
+   ULT / 終了 を右下へフロート
+   レイアウトイメージ
+                      ULT
+                   終了
+   [キャラ][キャラ][キャラ]
+   ------------------------------------------------------------ */
+#battle32-root .b32-skill-chip-row.utility-skills {
+  position: absolute !important;
+  right: 6px !important;
+  top: -106px !important;   /* 位置微調整ポイント */
+  width: 78px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+
+  margin: 0 !important;
+  z-index: 40 !important;
+  pointer-events: none !important; /* 子だけ押せるように */
+}
+
+/* 円形・半透明ボタン */
+#battle32-root .b32-skill-chip-row.utility-skills .b32-skill-chip {
+  pointer-events: auto !important;
+
+  width: 52px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
+  line-height: 1 !important;
+
+  border: 1px solid rgba(160, 220, 255, .30) !important;
+  background: rgba(8, 16, 26, .52) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+
+  box-shadow:
+    0 0 12px rgba(90, 200, 255, .15),
+    inset 0 0 10px rgba(255, 255, 255, .04) !important;
+}
+
+/* 上側にULT */
+#battle32-root .b32-skill-chip-row.utility-skills .b32-skill-chip.ult {
+  align-self: flex-end !important;
+  color: rgba(220, 180, 255, .95) !important;
+  border-color: rgba(200, 140, 255, .42) !important;
+  background: rgba(70, 40, 96, .44) !important;
+}
+
+/* 下側に終了 */
+#battle32-root .b32-skill-chip-row.utility-skills .b32-skill-chip.end-turn {
+  align-self: flex-start !important;
+  color: rgba(232, 228, 220, .82) !important;
+  border-color: rgba(255, 255, 255, .22) !important;
+  background: rgba(14, 18, 26, .52) !important;
+}
+
+/* 無効時 */
+#battle32-root .b32-skill-chip-row.utility-skills .b32-skill-chip.disabled {
+  opacity: .35 !important;
+}
+
+/* ------------------------------------------------------------
+   スキル詳細：少し広げて見切れ防止
+   utility-skills を absolute 化すると高さを食わなくなるので
+   そのぶん詳細を少し戻せる
+   ------------------------------------------------------------ */
+#battle32-root #b32-skill-detail-box {
+  margin: 4px 0 0 0 !important;
+  padding: 7px 8px !important;
+  max-height: 74px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#battle32-root #b32-skill-detail-name {
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  margin-bottom: 2px !important;
+}
+
+#battle32-root #b32-skill-detail-desc {
+  font-size: 9px !important;
+  line-height: 1.3 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#battle32-root #b32-skill-detail-meta {
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+  margin-top: 3px !important;
+}
+
+/* 小さい画面 */
+@media (max-height: 680px) {
+  #battle32-root .b32-skill-chip-row.utility-skills {
+  right: 4px !important;
+  top: -154px !important;
+  width: 72px !important;
+  gap: 8px !important;
+}
+
+  #battle32-root .b32-skill-chip-row.utility-skills .b32-skill-chip {
+    width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 9px !important;
+  }
+
+  #battle32-root #b32-skill-detail-box {
+    max-height: 66px !important;
+  }
+
+  #battle32-root #b32-skill-detail-desc {
+    -webkit-line-clamp: 2 !important;
+  }
+}
+/* ============================================================
+   スキル詳細：下部メニュー上に浮かせて、決定ボタンを表示
+   ============================================================ */
+
+/* bottom-area は基準にするだけ。はみ出し許可 */
+#battle32-root #b32-bottom-area {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* スキル詳細を通常フローから外して、画面下部に固定表示 */
+#battle32-root #b32-skill-detail-box {
+  position: fixed !important;
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 72px !important; /* ← 下メニューとの距離。必要ならここを調整 */
+  z-index: 80 !important;
+
+  display: none;
+  box-sizing: border-box !important;
+
+  margin: 0 !important;
+  padding: 7px 8px 7px !important;
+
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+
+  overflow: visible !important;
+
+  border-radius: 8px !important;
+  border: 1px solid rgba(232, 192, 64, .35) !important;
+  background:
+    linear-gradient(160deg, rgba(35, 28, 14, .92), rgba(8, 8, 14, .96)) !important;
+
+  box-shadow:
+    0 0 12px rgba(232, 192, 64, .16),
+    inset 0 0 8px rgba(255, 255, 255, .04) !important;
+}
+
+/* JSで display='' になった時に表示 */
+#battle32-root #b32-skill-detail-box.show {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 58px !important;
+  grid-template-rows: auto auto auto !important;
+  column-gap: 8px !important;
+  row-gap: 2px !important;
+  align-items: center !important;
+}
+
+/* スキル名 */
+#battle32-root #b32-skill-detail-name {
+  grid-column: 1 / 2 !important;
+  grid-row: 1 !important;
+
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  color: rgba(240, 210, 120, .95) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 説明文 */
+#battle32-root #b32-skill-detail-desc {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 !important;
+
+  font-size: 8.5px !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* メタ情報 */
+#battle32-root #b32-skill-detail-meta {
+  grid-column: 1 / 2 !important;
+  grid-row: 3 !important;
+
+  display: block !important;
+  font-size: 7.5px !important;
+  line-height: 1.1 !important;
+  margin: 1px 0 0 0 !important;
+  padding: 0 !important;
+
+  color: rgba(232, 228, 220, .45) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 決定ボタンを復活 */
+#battle32-root #b32-skill-detail-actions {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / 4 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 決定ボタン本体 */
+#battle32-root #b32-skill-confirm-btn {
+  width: 54px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+
+  border-radius: 999px !important;
+  border: 1px solid rgba(240, 192, 64, .55) !important;
+  background: rgba(232, 192, 64, .16) !important;
+
+  color: rgba(255, 230, 150, .95) !important;
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
+
+  box-shadow:
+    0 0 10px rgba(232, 192, 64, .18),
+    inset 0 0 8px rgba(255, 255, 255, .05) !important;
+
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* スキル詳細が出た時、通常スキル行に少しだけ下余白 */
+#battle32-root #b32-skill-list {
+  padding-bottom: 4px !important;
+}
+
+/* 小さい画面ではさらに薄く */
+@media (max-height: 680px) {
+  #battle32-root #b32-skill-detail-box {
+    bottom: 68px !important;
+    padding: 6px 7px !important;
+  }
+
+  #battle32-root #b32-skill-detail-box.show {
+    grid-template-columns: minmax(0, 1fr) 52px !important;
+  }
+
+  #battle32-root #b32-skill-detail-desc {
+    font-size: 8px !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  #battle32-root #b32-skill-confirm-btn {
+    width: 50px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    font-size: 9px !important;
+  }
+}
+
+/* ============================================================
+   スキル詳細：表示位置を少し上げる
+   キャラカードに被りすぎない位置へ調整
+   ============================================================ */
+
+#battle32-root #b32-skill-detail-box {
+  bottom: 124px !important;
+}
+
+/* 小さい画面 */
+@media (max-height: 680px) {
+  #battle32-root #b32-skill-detail-box {
+    bottom: 116px !important;
+  }
+}
+
+/* ============================================================
+   移動後ボトムUI：キャラ＋スキル3つ / 詳細＋決定キャンセル
+   ============================================================ */
+
+/* 既存の固定詳細パネルは使わない */
+#battle32-root #b32-skill-detail-box {
+  display: none !important;
+}
+
+/* ULT / 終了の円形フロートは維持 */
+#battle32-root .b32-skill-chip-row.utility-skills {
+  position: absolute !important;
+  right: 6px !important;
+  top: -168px !important;   /* ← ここを大きく上げる */
+  width: 78px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+
+  z-index: 90 !important;   /* グリッドより前に出す */
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-skill-chip-row.utility-skills .b32-skill-chip {
+  pointer-events: auto !important;
+}
+
+/* ボトム内のスキルリスト */
+#battle32-root #b32-skill-list {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 通常：左キャラ、右スキル3つ */
+#battle32-root .b32-action-skill-panel {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 96px 1fr !important;
+  gap: 6px !important;
+  align-items: stretch !important;
+}
+
+/* 左の行動キャラ */
+#battle32-root .b32-action-char-card {
+  height: 92px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(232, 192, 64, .45) !important;
+  background: linear-gradient(160deg, rgba(40, 36, 16, .82), rgba(18, 14, 4, .88)) !important;
+  box-shadow:
+    0 0 0 1px rgba(232, 192, 64, .18),
+    0 0 14px rgba(232, 192, 64, .22) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: 5px 4px 4px !important;
+}
+
+#battle32-root .b32-action-char-img-wrap {
+  height: 58px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-action-char-img {
+  width: 100% !important;
+  height: 58px !important;
+  object-fit: contain !important;
+  object-position: center top !important;
+  display: block !important;
+}
+
+#battle32-root .b32-action-char-dots {
+  height: 8px !important;
+  line-height: 8px !important;
+  margin-top: 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+/* 右のスキル3つ */
+#battle32-root .b32-action-skill-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+}
+
+#battle32-root .b32-bottom-skill-btn {
+  width: 100% !important;
+  height: 92px !important;
+  min-width: 0 !important;
+
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, .35) !important;
+  background: rgba(120, 120, 120, .72) !important;
+
+  color: rgba(255, 255, 255, .95) !important;
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: 13px !important;
+  letter-spacing: .5px !important;
+  text-decoration: underline !important;
+
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#battle32-root .b32-bottom-skill-btn:active {
+  transform: scale(.97) !important;
+  background: rgba(150, 150, 150, .78) !important;
+}
+
+#battle32-root .b32-bottom-skill-btn.disabled,
+#battle32-root .b32-bottom-skill-btn:disabled {
+  opacity: .35 !important;
+  cursor: default !important;
+}
+
+/* 詳細画面 */
+#battle32-root .b32-action-detail-panel {
+  width: 100% !important;
+  min-height: 92px !important;
+  box-sizing: border-box !important;
+
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, .45) !important;
+  background: rgba(108, 108, 108, .88) !important;
+
+  padding: 10px 12px 9px !important;
+
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  gap: 5px !important;
+}
+
+#battle32-root .b32-action-detail-title {
+  text-align: center !important;
+  color: rgba(255, 255, 255, .98) !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+  font-family: 'Noto Serif JP', serif !important;
+}
+
+#battle32-root .b32-action-detail-desc {
+  text-align: center !important;
+  color: rgba(255, 255, 255, .92) !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  font-family: 'Noto Serif JP', serif !important;
+
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-action-detail-meta {
+  display: none !important;
+}
+
+#battle32-root .b32-action-detail-buttons {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 36px !important;
+}
+
+#battle32-root .b32-action-detail-btn {
+  min-width: 74px !important;
+  height: 28px !important;
+
+  border: none !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, .98) !important;
+
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: 13px !important;
+  letter-spacing: .5px !important;
+
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#battle32-root .b32-action-detail-btn:active {
+  transform: scale(.96) !important;
+  opacity: .75 !important;
+}
+
+/* 詳細画面に切り替えた時、通常の3スキル行は消えるので余白を安定 */
+#battle32-root #b32-skill-panel {
+  margin-top: 0 !important;
+}
+
+/* 小さい画面 */
+@media (max-height: 680px) {
+  #battle32-root .b32-action-skill-panel {
+    grid-template-columns: 92px 1fr !important;
+  }
+
+  #battle32-root .b32-action-char-card,
+  #battle32-root .b32-bottom-skill-btn,
+  #battle32-root .b32-action-detail-panel {
+    height: 86px !important;
+    min-height: 86px !important;
+  }
+
+  #battle32-root .b32-action-char-img-wrap,
+  #battle32-root .b32-action-char-img {
+    height: 52px !important;
+  }
+
+  #battle32-root .b32-bottom-skill-btn {
+    font-size: 12px !important;
+  }
+
+  #battle32-root .b32-action-detail-title {
+    font-size: 12px !important;
+  }
+
+  #battle32-root .b32-action-detail-desc {
+    font-size: 10px !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  #battle32-root .b32-action-detail-buttons {
+    gap: 24px !important;
+  }
+}
+
+/* ============================================================
+   スキルボトムUI 最終調整
+   ・選択後は3人カードを消す前提
+   ・スキルメニュー見切れ防止
+   ・ULT / 終了 丸ボタン復活
+   ・グレーUIを世界観カラーへ変更
+   ============================================================ */
+
+/* 下部エリアを少しだけ余裕確保 */
+#battle32-root #b32-bottom-area {
+  position: relative !important;
+  overflow: visible !important;
+  padding: 0 8px max(8px, env(safe-area-inset-bottom, 8px)) !important;
+  box-sizing: border-box !important;
+}
+
+/* 選択後スキルリスト */
+#battle32-root #b32-skill-list {
+  position: relative !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* スキル選択パネル：高さを少し圧縮して見切れ防止 */
+#battle32-root .b32-action-skill-panel {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 88px 1fr !important;
+  gap: 5px !important;
+  align-items: stretch !important;
+}
+
+/* 左の行動キャラ */
+#battle32-root .b32-action-char-card {
+  height: 78px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(232, 192, 64, .55) !important;
+  background:
+    linear-gradient(160deg, rgba(42, 36, 16, .90), rgba(10, 12, 18, .94)) !important;
+  box-shadow:
+    0 0 0 1px rgba(232, 192, 64, .18),
+    0 0 14px rgba(232, 192, 64, .24),
+    inset 0 0 10px rgba(255, 255, 255, .04) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: 4px 4px 3px !important;
+}
+
+#battle32-root .b32-action-char-img-wrap {
+  height: 48px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-action-char-img {
+  width: 100% !important;
+  height: 48px !important;
+  object-fit: contain !important;
+  object-position: center top !important;
+  display: block !important;
+}
+
+#battle32-root .b32-action-char-dots {
+  height: 7px !important;
+  line-height: 7px !important;
+  margin-top: 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+/* スキル3ボタン */
+#battle32-root .b32-action-skill-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+}
+
+#battle32-root .b32-bottom-skill-btn {
+  width: 100% !important;
+  height: 78px !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+
+  border-radius: 8px !important;
+  border: 1px solid rgba(90, 220, 255, .30) !important;
+  background:
+    linear-gradient(160deg, rgba(12, 24, 34, .88), rgba(8, 10, 18, .94)) !important;
+
+  color: rgba(232, 228, 220, .90) !important;
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: 12px !important;
+  letter-spacing: .5px !important;
+  text-decoration: none !important;
+
+  box-shadow:
+    inset 0 0 12px rgba(90, 220, 255, .07),
+    0 0 10px rgba(90, 220, 255, .08) !important;
+
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#battle32-root .b32-bottom-skill-btn:active {
+  transform: scale(.97) !important;
+  border-color: rgba(232, 192, 64, .55) !important;
+  background:
+    linear-gradient(160deg, rgba(42, 36, 16, .88), rgba(12, 12, 18, .95)) !important;
+}
+
+#battle32-root .b32-bottom-skill-btn.disabled,
+#battle32-root .b32-bottom-skill-btn:disabled {
+  opacity: .35 !important;
+  cursor: default !important;
+}
+
+/* 詳細パネル */
+#battle32-root .b32-action-detail-panel {
+  width: 100% !important;
+  min-height: 78px !important;
+  height: 78px !important;
+  box-sizing: border-box !important;
+
+  border-radius: 10px !important;
+  border: 1px solid rgba(232, 192, 64, .44) !important;
+  background:
+    linear-gradient(160deg, rgba(34, 28, 14, .92), rgba(8, 10, 18, .96)) !important;
+
+  box-shadow:
+    0 0 14px rgba(232, 192, 64, .16),
+    inset 0 0 10px rgba(255, 255, 255, .04) !important;
+
+  padding: 7px 10px 6px !important;
+
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  gap: 3px !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-action-detail-title {
+  text-align: center !important;
+  color: rgba(245, 226, 160, .98) !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  font-family: 'Noto Serif JP', serif !important;
+}
+
+#battle32-root .b32-action-detail-desc {
+  text-align: center !important;
+  color: rgba(232, 228, 220, .86) !important;
+  font-size: 8.5px !important;
+  line-height: 1.25 !important;
+  font-family: 'Noto Serif JP', serif !important;
+
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#battle32-root .b32-action-detail-meta {
+  display: none !important;
+}
+
+#battle32-root .b32-action-detail-buttons {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 28px !important;
+}
+
+#battle32-root .b32-action-detail-btn {
+  min-width: 62px !important;
+  height: 22px !important;
+
+  border-radius: 999px !important;
+  border: 1px solid rgba(232, 192, 64, .35) !important;
+  background: rgba(232, 192, 64, .10) !important;
+  color: rgba(255, 230, 160, .95) !important;
+
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: 10px !important;
+  letter-spacing: .5px !important;
+
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ULT / 終了 丸ボタン */
+#battle32-root .b32-floating-actions {
+  position: absolute !important;
+  right: 5px !important;
+  top: -106px !important;
+
+  width: 76px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+
+  z-index: 80 !important;
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-float-action-btn {
+  pointer-events: auto !important;
+
+  width: 52px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  font-family: 'Cinzel', serif !important;
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
+  line-height: 1 !important;
+
+  border: 1px solid rgba(120, 230, 255, .30) !important;
+  background: rgba(8, 18, 28, .58) !important;
+  color: rgba(180, 235, 255, .86) !important;
+
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+
+  box-shadow:
+    0 0 12px rgba(90, 220, 255, .16),
+    inset 0 0 10px rgba(255, 255, 255, .04) !important;
+
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#battle32-root .b32-float-action-btn.ult {
+  align-self: flex-end !important;
+  color: rgba(220, 190, 255, .95) !important;
+  border-color: rgba(200, 140, 255, .42) !important;
+  background: rgba(58, 36, 92, .56) !important;
+}
+
+#battle32-root .b32-float-action-btn.end {
+  align-self: flex-start !important;
+  color: rgba(232, 228, 220, .86) !important;
+  border-color: rgba(232, 228, 220, .24) !important;
+  background: rgba(10, 14, 20, .62) !important;
+}
+
+#battle32-root .b32-float-action-btn:active {
+  transform: scale(.95) !important;
+}
+
+#battle32-root .b32-float-action-btn.disabled,
+#battle32-root .b32-float-action-btn:disabled {
+  opacity: .35 !important;
+  cursor: default !important;
+}
+
+/* 小さい画面ではさらに圧縮 */
+@media (max-height: 680px) {
+  #battle32-root .b32-action-skill-panel {
+    grid-template-columns: 82px 1fr !important;
+  }
+
+  #battle32-root .b32-action-char-card,
+  #battle32-root .b32-bottom-skill-btn,
+  #battle32-root .b32-action-detail-panel {
+    height: 72px !important;
+    min-height: 72px !important;
+  }
+
+  #battle32-root .b32-action-char-img-wrap,
+  #battle32-root .b32-action-char-img {
+    height: 43px !important;
+  }
+
+  #battle32-root .b32-bottom-skill-btn {
+    font-size: 11px !important;
+  }
+
+  #battle32-root .b32-action-detail-title {
+    font-size: 10px !important;
+  }
+
+  #battle32-root .b32-action-detail-desc {
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+  }
+
+  #battle32-root .b32-action-detail-buttons {
+    gap: 22px !important;
+  }
+
+  #battle32-root .b32-action-detail-btn {
+    height: 20px !important;
+    font-size: 9px !important;
+  }
+
+  #battle32-root .b32-floating-actions {
+    top: -98px !important;
+    right: 4px !important;
+  }
+
+  #battle32-root .b32-float-action-btn {
+    width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 9px !important;
+  }
+}
+
+/* ============================================================
+   ULT / 終了 丸ボタン：キャラボックス外・グリッド上へ移動
+   ============================================================ */
+
+#battle32-root .b32-floating-actions {
+  position: absolute !important;
+  right: 4px !important;
+  top: -178px !important;  /* ← ここで上下位置調整 */
+  width: 76px !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+
+  z-index: 120 !important;
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-float-action-btn {
+  pointer-events: auto !important;
+}
+
+/* 小さい画面用 */
+@media (max-height: 680px) {
+  #battle32-root .b32-floating-actions {
+    top: -220px !important;
+    right: 4px !important;
+  }
+}
+
+#battle32-root .b32-floating-actions {
+  top: -260px !important;
+  right: 6px !important;
+  z-index: 999 !important;
+}
+/* ============================================================
+   FINAL FIX: スキル選択時レイアウト
+   [選択中キャラ][スキル1][スキル2][スキル3]
+   ============================================================ */
+
+#battle32-root .b32-action-skill-panel {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 82px repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  align-items: stretch !important;
+}
+
+#battle32-root .b32-action-skill-buttons {
+  display: contents !important;
+}
+
+#battle32-root .b32-action-char-card,
+#battle32-root .b32-bottom-skill-btn {
+  height: 74px !important;
+  min-height: 74px !important;
+}
+
+#battle32-root .b32-action-char-img-wrap,
+#battle32-root .b32-action-char-img {
+  height: 45px !important;
+}
+
+#battle32-root .b32-bottom-skill-btn {
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+#battle32-root .b32-action-detail-panel {
+  width: 100% !important;
+  height: 74px !important;
+  min-height: 74px !important;
+}
+
+/* 丸ボタンはグリッド上に残す */
+#battle32-root .b32-floating-actions {
+  top: -260px !important;
+  right: 6px !important;
+  z-index: 999 !important;
+}
+
+@media (max-height: 680px) {
+  #battle32-root .b32-action-skill-panel {
+    grid-template-columns: 78px repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #battle32-root .b32-action-char-card,
+  #battle32-root .b32-bottom-skill-btn,
+  #battle32-root .b32-action-detail-panel {
+    height: 70px !important;
+    min-height: 70px !important;
+  }
+
+  #battle32-root .b32-action-char-img-wrap,
+  #battle32-root .b32-action-char-img {
+    height: 42px !important;
+  }
+
+  #battle32-root .b32-floating-actions {
+    top: -230px !important;
+    right: 6px !important;
+  }
+}
+/* ============================================================
+   FINAL: ULT / 終了 丸ボタン 少し下げる
+   ============================================================ */
+
+#battle32-root .b32-floating-actions {
+  top: -140px !important;
+  right: 6px !important;
+  z-index: 999 !important;
+}
+
+@media (max-height: 680px) {
+  #battle32-root .b32-floating-actions {
+    top: -140px !important;
+    right: 6px !important;
+    z-index: 999 !important;
+  }
+}
