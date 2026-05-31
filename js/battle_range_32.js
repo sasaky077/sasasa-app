@@ -28,6 +28,12 @@
       { dr:  0, dc:  1 },
     ],
 
+    // 左右2マスのみ
+    side_lr: [
+      { dr: 0, dc: -1 },
+      { dr: 0, dc:  1 },
+    ],
+
     // 前方（ally: 上方向 / enemy: 下方向）を基準とした直線3マス
     // この定義は「ally用」: dr = -1〜-3（上）
     pierce_ally_3: [
@@ -49,6 +55,30 @@
       { dr:  0, dc: -1 },                     { dr:  0, dc: 1 },
       { dr:  1, dc: -1 }, { dr:  1, dc: 0 }, { dr:  1, dc: 1 },
     ],
+
+    // 周囲2マス（中心を除く最大24マス）
+    around24: [
+      { dr: -2, dc: -2 }, { dr: -2, dc: -1 }, { dr: -2, dc: 0 }, { dr: -2, dc: 1 }, { dr: -2, dc: 2 },
+      { dr: -1, dc: -2 }, { dr: -1, dc: -1 }, { dr: -1, dc: 0 }, { dr: -1, dc: 1 }, { dr: -1, dc: 2 },
+      { dr:  0, dc: -2 }, { dr:  0, dc: -1 },                     { dr:  0, dc: 1 }, { dr:  0, dc: 2 },
+      { dr:  1, dc: -2 }, { dr:  1, dc: -1 }, { dr:  1, dc: 0 }, { dr:  1, dc: 1 }, { dr:  1, dc: 2 },
+      { dr:  2, dc: -2 }, { dr:  2, dc: -1 }, { dr:  2, dc: 0 }, { dr:  2, dc: 1 }, { dr:  2, dc: 2 },
+    ],
+
+    // 自分中心：斜めX字2マス
+diag_x_2: [
+  { dr: -1, dc: -1 },
+  { dr: -2, dc: -2 },
+
+  { dr: -1, dc:  1 },
+  { dr: -2, dc:  2 },
+
+  { dr:  1, dc: -1 },
+  { dr:  2, dc: -2 },
+
+  { dr:  1, dc:  1 },
+  { dr:  2, dc:  2 },
+],
 
     // 前方隣接1マス（ally: 上）
     front_ally: [{ dr: -1, dc: 0 }],
@@ -89,7 +119,113 @@
       { dr: -1, dc: -1 }, { dr: -2, dc: -2 }, { dr: -3, dc: -3 },
       { dr: -1, dc:  1 }, { dr: -2, dc:  2 }, { dr: -3, dc:  3 },
     ],
+
+    // ── 敵専用攻撃レンジ（盤面固定方向：dr 方向はそのまま使用） ──
+
+    // 敵の前方1マス（下方向）
+    enemy_attack_front: [
+      { dr: 1, dc: 0 }
+    ],
+
+    // 敵の十字範囲（上下左右）
+    enemy_attack_cross: [
+      { dr: -1, dc:  0 },
+      { dr:  1, dc:  0 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 },
+    ],
   };
+
+  // ============================================================
+  // 移動型プリセット（将棋駒風移動定義）
+  // 味方は上方向（dr: -1）を前方とする
+  // 敵の場合は getMoveOffsets 内で dr を反転
+  // ============================================================
+  const MOVE_PRESETS_32 = {
+    // 歩：前方1マス
+    pawn: [
+      { dr: -1, dc: 0 }
+    ],
+    // 香：前方直線最大3マス
+    lance: [
+      { dr: -1, dc: 0 },
+      { dr: -2, dc: 0 },
+      { dr: -3, dc: 0 }
+    ],
+    // 金将：前・左・右
+    gold: [
+      { dr: -1, dc:  0 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 }
+    ],
+    // 銀将：前・斜め前左・斜め前右
+    silver: [
+      { dr: -1, dc:  0 },
+      { dr: -1, dc: -1 },
+      { dr: -1, dc:  1 }
+    ],
+    // 飛車（短縮）：前・左・右 各1マス
+    rook_short: [
+      { dr: -1, dc:  0 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 }
+    ],
+    // 角行（短縮）：斜め前左・斜め前右・斜め後左
+    bishop_short: [
+      { dr: -1, dc: -1 },
+      { dr: -1, dc:  1 },
+      { dr:  1, dc: -1 }
+    ],
+    // 桂馬：前方2マス＋左右1マス（2択）
+    knight: [
+      { dr: -2, dc: -1 },
+      { dr: -2, dc:  1 }
+    ],
+
+    // ── 敵専用移動型（enemy_ プレフィックス：dr 反転しない） ──
+
+    // 敵直進型：下方向へ最大2マス
+    enemy_move_straight: [
+      { dr: 1, dc:  0 },
+      { dr: 2, dc:  0 }
+    ],
+
+    // 敵斜行型：斜め前方（左右）
+    enemy_move_diag: [
+      { dr: 1, dc: -1 },
+      { dr: 1, dc:  1 }
+    ],
+
+    // 移動なし（ボス用）
+    none: []
+  };
+
+  /**
+   * ユニットの moveType から移動オフセット配列を返す
+   * enemy は dr を反転して下方向が前方になる
+   * @param {object} unit - { moveType?: string, side: 'ally'|'enemy' }
+   * @returns {{ dr: number, dc: number }[]}
+   */
+  function getMoveOffsets(unit) {
+    const type   = unit.moveType || 'silver';
+
+    // 移動なし
+    if (type === 'none') return [];
+
+    const preset = MOVE_PRESETS_32[type] || MOVE_PRESETS_32.silver;
+
+    // enemy_ プレフィックスの移動型はそのまま使用（dr 反転しない）
+    if (type.startsWith('enemy_')) {
+      return preset;
+    }
+
+    // 通常の敵（敵側でも将棋駒型を使う場合）は dr を反転して下方向を前方に
+    if (unit.side === 'enemy') {
+      return preset.map(p => ({ dr: -p.dr, dc: p.dc }));
+    }
+
+    return preset;
+  }
 
   // ============================================================
   // フィールド固定座標プリセット
@@ -277,6 +413,8 @@
   window.BattleRange32 = {
     RANGE_PRESETS_32,
     FIELD_PRESETS_32,
+    MOVE_PRESETS_32,
+    getMoveOffsets,
     allCells,
     isValidCell,
     cellsFromRelative32,

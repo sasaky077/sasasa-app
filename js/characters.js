@@ -23,6 +23,7 @@ const CHARACTERS = [
   // 安定した攻撃と自己防御。縛り＋実体化の両方を持つ万能型。
   { id: 1, name: 'ギョウタツ', gender: 'man', rarity: 'r',
     role: 'バランス',
+    moveType: 'gold',
     costMax: 12,
     costStart: 5,
     costRegen: 4,
@@ -130,6 +131,7 @@ const CHARACTERS = [
   // 高SPDで先手を取りSPDデバフを撒く。敵の行動順を崩す妨害役。
   { id: 2, name: 'タキヤマ', gender: 'woman', rarity: 'r',
     role: '速度寄り',
+    moveType: 'silver',
     costMax: 10,
     costStart: 6,
     costRegen: 5,
@@ -221,6 +223,7 @@ const CHARACTERS = [
   // 敵を縛り、ペースを握る。
   { id: 3, name: 'マツバラ', gender: 'man', rarity: 'r',
     role: '耐久寄り',
+    moveType: 'gold',
     costMax: 14,
     costStart: 5,
     costRegen: 3,
@@ -316,6 +319,7 @@ const CHARACTERS = [
   // 高倍率の攻撃特化。DEFダウンで味方の火力を底上げする。
   { id: 4, name: 'リョウ', gender: 'man', rarity: 'r',
     role: '火力寄り',
+    moveType: 'rook_short',
     costMax: 14,
     costStart: 0,
     costRegen: 2,
@@ -403,10 +407,11 @@ const CHARACTERS = [
   // ガンナー。遠距離バランスタイプ。
   { id: 7, name: 'ミユ', gender: 'woman', rarity: 'r',
     role: '速度寄り',
+    moveType: 'lance',
     costMax: 10,
     costStart: 5,
     costRegen: 3,
-    shinkiMax: 3,
+    shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 600, ATK: 250, DEF: 250, SPD: 250 },
@@ -434,50 +439,16 @@ const CHARACTERS = [
           idealMoves: [1,2,3,5,],
           damageRate: 1.5
         },
-        desc: '直線上のすべての敵にダメージ。' },
-
-      { id: 's2',
-        name: '非貫通弾',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'pierce3',
-        pierce: false,
-        effects: [],
-        hitStyle: 'multi',
-        moveBonus: {
-          idealMoves: [2,5,8],
-          damageRate: 1.3
-        },
-        desc: '直線上の一番手前の敵に中ダメージ。' },
-
-      { id: 's3',
-        name: '乱射',
-        cost: 6,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'diag_v3',
-        pierce: true,
-        effects: [],
-        hitStyle: 'rapid',
-        moveBonus: {
-          idealMoves: [8, 9],
-          damageRate: 1.2
-        },
-        desc: '全てのマスの敵に中ダメージ。' },
+        desc: '直線上3マス以内の敵にダメージ' },
 
       { id: 'ult',
-        name: '再装填',
+        name: '鉛の雨',
         cost: 10,
         isUltimate: true,
         hit: 100,
         type: 'attack',
-        multiplier: 2.2,
-        range: 'all',
+        multiplier: 2.0,
+        range: 'around24',
         effects: [
           { type: 'spd_up', 
             target: 'ally_self', 
@@ -490,7 +461,7 @@ const CHARACTERS = [
           idealMoves: [7],
           damageRate: 1.5
         },
-        desc: '2ターンの間、SPDが上がり、直線上の全ての敵に大ダメージ。' }
+        desc: '自分を中心に周囲2マス以内の敵に中ダメージ' }
     ]},
 
 
@@ -498,6 +469,7 @@ const CHARACTERS = [
   // 接近戦に強い。手数で敵を翻弄する。
   { id: 12, name: 'エリ', gender: 'woman', rarity: 'r',
     role: '速度寄り',
+    moveType: 'bishop_short',
     costMax: 14,
     costStart: 5,
     costRegen: 2,
@@ -520,59 +492,15 @@ const CHARACTERS = [
         isUltimate: false,
         hit: 100,
         type: 'attack',
-        multiplier: 1.0,
-        range: 'front1',
+        multiplier: 1.2,
+        range: 'side_lr',
         pierce: false,
         effects: [],
         moveBonus: {
           idealMoves: [1],
           damageRate: 1.3
         },
-        desc: '呪いを込めた打撃。確実に命中する。' },
-
-      { id: 's2',
-        name: '衝',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 0.0,
-        range: 'front_row_3',
-        effects: [
-          { 
-            type: 'push_2', 
-            target: 'enemy', 
-            hit: 100, 
-            duration: 1 
-          }          
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '目の前の敵に中ダメージを与え、最後尾に押し出す。' },
-
-      { id: 's3',
-        name: '乱',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'front1',
-        effects: [
-          { 
-            type: 'stun', 
-            target: 'enemy', 
-            hit: 70, 
-            duration: 1 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [0,3],
-          damageRate: 1.5
-        },
-        desc: '目の前の敵に中ダメージを与え、70%の確率でスタンする。' },
+        desc: '自身の左右1マス以内の敵にダメージ' },
 
       { id: 'ult',
         name: '終',
@@ -581,13 +509,13 @@ const CHARACTERS = [
         hit: 100,
         type: 'attack',
         multiplier: 3.0,
-        range: 'front3_row_3',
+        range: 'diag_x_2',
         effects: [],
         moveBonus: {
           idealMoves: [1],
           damageRate: 1.3
         },
-        desc: '敵マスの上下左右4マスに大ダメージ。' }
+        desc: '自身を中心に斜め2マス以内の敵に大ダメージ' }
     ]},
 
   // ── id:13 チサカ（バランス）──────────────────────────────────
@@ -1014,6 +942,7 @@ const CHARACTERS = [
   // 自分に寄せ付ける系のキャラにしたい。色術的な。
   { id: 15, name: 'アキ', gender: 'woman', rarity: 'sr',
     role: '速度・支援寄り',
+    moveType: 'knight',
     costMax: 12,
     costStart: 7,
     costRegen: 2,
@@ -1887,10 +1816,11 @@ const CHARACTERS = [
   { id: 8, 
     name: 'アサミ', gender: 'woman', rarity: 'ur',
     role: '速度寄り',
+    moveType: 'silver',
     costMax: 14,
     costStart: 4,
     costRegen: 2,
-    shinkiMax: 4,
+    shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 850, ATK: 280, DEF: 270, SPD: 200 },
@@ -1903,51 +1833,12 @@ const CHARACTERS = [
     panelImg: 'images/chara_08_panel.webp',
     skills: [
       { id: 's1',
-        name: 'じゃーん！',
-        cost: 2,
-        isUltimate: false,
-        hit: 100,
-        type: 'buff',
-        multiplier: 0.0,
-        range: 'self',
-        pierce: false,
-        effects: [
-          { 
-            type: 'atk_up', 
-            target: 'ally_self', 
-            hit: 100, 
-            duration: 3
-          }
-        ],
-        moveBonus: {
-          idealMoves: [1,4],
-          damageRate: 1.3
-        },
-        desc: '自身のATKを2ターン上げる。' },
-
-      { id: 's2',
-        name: 'ざくっ！',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'front_row_3',
-        pierce: false,
-        effects: [],
-        moveBonus: {
-          idealMoves: [1, 4],
-          damageRate: 1.5
-        },
-        desc: '正面のマスと左右のマスに中ダメージ。' },
-
-      { id: 's3',
-        name: 'ぐさっ！',
+        name: 'ほいっ！',
         cost: 4,
         isUltimate: false,
         hit: 100,
         type: 'attack',
-        multiplier: 3.0,
+        multiplier: 2.0,
         range: 'front1',
         pierce: false,
         effects: [],
@@ -1955,7 +1846,7 @@ const CHARACTERS = [
           idealMoves: [2,4],
           damageRate: 1.3
         },
-        desc: '正面のマスに大ダメージ。' },
+        desc: '正面のマスに中ダメージ' },
 
       { id: 'ult',
         name: 'すごいだろっ',
@@ -1963,14 +1854,14 @@ const CHARACTERS = [
         isUltimate: true,
         hit: 100,
         type: 'attack',
-        multiplier: 4.0,
+        multiplier: 3.5,
         range: 'around8',
         effects: [],
         moveBonus: {
           idealMoves: [1,3,4,7,8],
           damageRate: 1.5
         },
-        desc: '正面のマスと左右のマスに大ダメージ。' }
+        desc: '自分を中心周囲1マスに大ダメージ' }
     ]},
 
   ];

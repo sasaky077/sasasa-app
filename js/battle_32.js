@@ -18,9 +18,6 @@
 
   const BOARD_ROWS = 8;
   const BOARD_COLS = 5;
-  const ALLY_MOVE_STEPS = 3;
-
-  const ENEMY_MOVE_STEPS = 3;
 
   // ボスのコア直接破壊間隔
   const BOSS_LINE_ATTACK_INTERVAL = 5;
@@ -154,6 +151,7 @@
       rarity: charDef.rarity,
       role: charDef.role,
       side: 'ally',
+      moveType: charDef.moveType || 'silver',
 
       // HP で生存管理（味方・敵ともに統一）
       hp:    charDef.hp,
@@ -209,7 +207,8 @@
       col,
       statusEffects: [],
       stunned: false,
-      attackRange: def.attackRange || (def.isBoss ? 'manhattan_4' : 'manhattan_2'),
+      attackRange: def.attackRange || (def.isBoss ? 'enemy_attack_cross' : 'enemy_attack_front'),
+      moveType:    def.moveType    || (def.isBoss ? 'none' : 'enemy_move_straight'),
     };
   }
 
@@ -225,7 +224,8 @@
     atk: 520,
     def: 220,
     spd: 150,
-    attackRange: 'manhattan_4',
+    moveType: 'none',
+    attackRange: 'enemy_attack_cross',
   },
   {
     id: 'mob1',
@@ -234,7 +234,8 @@
     atk: 240,
     def: 100,
     spd: 180,
-    attackRange: 'manhattan_2',
+    moveType: 'enemy_move_straight',
+    attackRange: 'enemy_attack_front',
   },
   {
     id: 'mob2',
@@ -243,7 +244,8 @@
     atk: 220,
     def: 120,
     spd: 160,
-    attackRange: 'manhattan_3',
+    moveType: 'enemy_move_diag',
+    attackRange: 'enemy_attack_cross',
   },
 ];
 
@@ -255,11 +257,14 @@
 
     const stageId = config.stageId || null;
 
-    // --- 味方生成
     const allChars = window.CHARACTERS_32 || [];
-    let chars = config.partyIds && config.partyIds.length
-      ? config.partyIds.map(pid => allChars.find(c => c.id === pid)).filter(Boolean)
-      : allChars.slice(0, 3);
+
+// テストプレイ用：アサミ・エリ・ミユ
+const TEST_PARTY_IDS_32 = [8, 12, 7];
+
+let chars = config.partyIds && config.partyIds.length
+  ? config.partyIds.map(pid => allChars.find(c => c.id === pid)).filter(Boolean)
+  : TEST_PARTY_IDS_32.map(pid => allChars.find(c => c.id === pid)).filter(Boolean);
 
     while (chars.length < 3 && allChars.length > 0) {
       chars.push(allChars[chars.length % allChars.length]);
@@ -336,6 +341,16 @@
       },
 
       turnLimit: 12,
+
+      // 敵行動数制御
+      enemyActionsPerTurn: config.enemyActionsPerTurn ?? null,
+      enemyActionMode:     config.enemyActionMode     || 'all',
+
+      // ターン単位の行動権
+      moveUsedThisTurn:  false,
+      skillUsedThisTurn: false,
+      movedUnitUid:      null,
+      skillUnitUid:      null,
     };
 
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
@@ -434,8 +449,8 @@
 
     const ally = _bs.allies.find(u => u._uid === allyUid);
     if (!ally || ally.hp <= 0) return false;
-    if (ally.skillUsedThisTurn) {
-      _log(`${ally.name} は既にスキルを使用済みです`);
+    if (_bs.skillUsedThisTurn) {
+      _log('このターンはすでにスキルを使用済みです');
       return false;
     }
 
@@ -602,11 +617,18 @@
     }
 
     ally.shinki -= (skill.shinkiCost || 0);
-    ally.skillUsedThisTurn = true;
+    // ターン単位のスキル権を消費
+    _bs.skillUsedThisTurn = true;
+    _bs.skillUnitUid      = allyUid;
+    ally.skillUsedThisTurn = true;  // 後方互換
 
     _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 
     _checkWinLose();
+    if (_bs.result) return true;
+
+    // 1キャラ行動で味方ターン終了 → 敵ターンへ
+    endSkillPhase();
     return true;
   }
 
@@ -699,26 +721,25 @@
       return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
     }
     function getEnemyAttackTargets(enemy) {
-  const range = enemy.attackRange || 'adjacent';
+  const range = enemy.attackRange || 'enemy_attack_front';
 
   // 生存している味方のみ対象
   const allies = _bs.allies.filter(a => a.hp > 0);
 
-  // adjacent
-  if (range === 'adjacent') {
-    return allies.filter(a => manhattan(enemy, a) === 1);
+  // enemy_attack_* / adjacent は BattleRange32 のレンジ定義で判定
+  if (range.startsWith('enemy_attack_') || range === 'adjacent') {
+    return BR.getUnitsFromRange32(enemy, range, allies);
   }
 
-  // manhattan_N 汎用対応
+  // 後方互換：manhattan_N
   const m = /^manhattan_(\d+)$/.exec(range);
   if (m) {
     const dist = Number(m[1]);
     return allies.filter(a => manhattan(enemy, a) <= dist);
   }
 
-  // 既存射程は従来の BattleRange32 に任せる
-  return BR.getUnitsFromRange32(enemy, range, _bs.allies)
-    .filter(a => a.hp > 0);
+  // その他はそのまま BattleRange32 に委譲
+  return BR.getUnitsFromRange32(enemy, range, allies);
 }
 
 function canEnemyAttackAllyCore(enemy) {
@@ -727,25 +748,24 @@ function canEnemyAttackAllyCore(enemy) {
   const core = _bs.cores.ally;
   if (core.stability <= 0) return false;
 
-  const range = enemy.attackRange || 'adjacent';
+  const range = enemy.attackRange || 'enemy_attack_front';
   const corePos = { row: core.row, col: core.col };
 
-  if (range === 'adjacent') {
-    return manhattan(enemy, corePos) === 1;
+  // enemy_attack_* / adjacent はレンジ定義で判定
+  if (range.startsWith('enemy_attack_') || range === 'adjacent') {
+    const cells = BR.getCellsFromRange32(enemy, range);
+    return cells && cells.has(`${core.row}-${core.col}`);
   }
 
+  // 後方互換：manhattan_N
   const m = /^manhattan_(\d+)$/.exec(range);
   if (m) {
     const dist = Number(m[1]);
     return manhattan(enemy, corePos) <= dist;
   }
 
-  if (window.BattleRange32 && window.BattleRange32.getCellsFromRange32) {
-    const cells = window.BattleRange32.getCellsFromRange32(enemy, range);
-    return cells && cells.has(`${core.row}-${core.col}`);
-  }
-
-  return false;
+  const cells = BR.getCellsFromRange32(enemy, range);
+  return cells && cells.has(`${core.row}-${core.col}`);
 }
 
 function damageAllyCore(sourceEnemy) {
@@ -908,7 +928,13 @@ if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
 
     const ordered = [...mobs, ...bosses];
 
-    for (const enemy of ordered) {
+    // 敵行動数を制御（'all' または未設定なら全員行動）
+    let actors = ordered;
+    if (_bs.enemyActionMode !== 'all' && Number.isFinite(_bs.enemyActionsPerTurn)) {
+      actors = ordered.slice(0, _bs.enemyActionsPerTurn);
+    }
+
+    for (const enemy of actors) {
       if (_bs.result) break;
       await _runEnemySingleAction(enemy);
       if (_bs.result) break;
@@ -965,49 +991,112 @@ if (canEnemyAttackAllyCore(enemy)) {
       return;
     }
 
-    // 雑魚のみ移動を試みる
-    const nearest = BR.nearestUnit(enemy, _bs.allies.filter(u => u.hp > 0));
-    if (nearest) {
-      let movedCount = 0;
+    // moveType: 'none' → 移動しない
+    if (enemy.moveType === 'none') return;
 
-for (let i = 0; i < ENEMY_MOVE_STEPS; i++) {
-  // 途中で味方やコアが射程内に入ったら移動を止める
-  if (getEnemyAttackTargets(enemy).length > 0 || canEnemyAttackAllyCore(enemy)) {
-    break;
-  }
+    // moveType に基づく移動候補を取得
+    const offsets = BR.getMoveOffsets(enemy);
+    if (!offsets || offsets.length === 0) return;
 
-  const moved = BR.stepToward(enemy, nearest, getAllUnits());
-  if (!moved) break;
+    const allUnits = getAllUnits();
+    const aliveAllies = _bs.allies.filter(u => u.hp > 0);
+    const corePos = (_bs.cores && _bs.cores.ally) ? _bs.cores.ally : null;
 
-  movedCount++;
-}
+    // 候補マスを評価して最優先のマスを選ぶ
+    // 優先度: 1. コアマス  2. 味方駒取りマス  3. コアに近づくマス  4. 移動なし
+    let bestCell = null;
+    let bestPriority = -1;
 
-if (movedCount > 0) {
-  _log(`${enemy.name} が ${movedCount} マス接近した`);
-  _renderUI();
-  await wait(B32_WAIT.afterText);
-}
+    for (const { dr, dc } of offsets) {
+      const nr = enemy.row + dr;
+      const nc = enemy.col + dc;
+      if (!BR.isValidCell(nr, nc)) continue;
 
-      // 移動後に攻撃可能か再チェック
-      const afterMoveTargets = getEnemyAttackTargets(enemy);
-if (afterMoveTargets.length > 0) {
-  const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-  const dmg = calcDamage(enemy.atk, target.def, 1.0);
-  applyDamage(target, dmg, enemy);
-  _renderUI();
-  await wait(B32_WAIT.afterText);
-  if (_bs.result) return;
+      const occupant = allUnits.find(u => u.hp > 0 && u.row === nr && u.col === nc);
 
-} else if (canEnemyAttackAllyCore(enemy)) {
-  damageAllyCore(enemy);
-  _renderUI();
-  await wait(B32_WAIT.attack);
-  await wait(B32_WAIT.afterText);
-}
-    } else {
-      // await _centerTextWait(enemy.name, 'NO ACTION', B32_WAIT.enemyAction);
+      // 他の敵がいるマスには移動不可
+      if (occupant && occupant.side === 'enemy') continue;
+
+      let priority = 0;
+      let isCapture = false;
+
+      if (corePos && nr === corePos.row && nc === corePos.col) {
+        // コアマス → 最優先
+        priority = 3;
+      } else if (occupant && occupant.side === 'ally') {
+        // 味方駒取り
+        priority = 2;
+        isCapture = true;
+      } else if (!occupant) {
+        // 空きマス → コアへの距離で評価
+        if (corePos) {
+          const curDist  = BR.manhattanDist(enemy, corePos);
+          const newDist  = BR.manhattanDist({ row: nr, col: nc }, corePos);
+          priority = newDist < curDist ? 1 : 0;
+        } else {
+          priority = 1;
+        }
+      }
+
+      if (priority > bestPriority) {
+        bestPriority = priority;
+        bestCell = { row: nr, col: nc, isCapture, occupant };
+      }
     }
-  }
+
+    if (!bestCell || bestPriority < 1) {
+      // 移動先なし
+      return;
+    }
+
+    // 駒取り処理
+    if (bestCell.isCapture && bestCell.occupant) {
+      const target = bestCell.occupant;
+      target.hp = 0;
+      _log(`${enemy.name} が ${target.name} を制圧した！`);
+      _emit('enemy_capture', { enemy: { ...enemy }, target: { ...target }, bs: _snapshot() });
+      _renderUI();
+      await wait(B32_WAIT.afterText);
+      _checkWinLose();
+      if (_bs.result) return;
+    }
+
+    // コア到達処理
+    if (corePos && bestCell.row === corePos.row && bestCell.col === corePos.col) {
+      _log(`${enemy.name} が自陣コアに到達！`);
+      damageAllyCore(enemy);
+      enemy.row = bestCell.row;
+      enemy.col = bestCell.col;
+      _renderUI();
+      await wait(B32_WAIT.attack);
+      await wait(B32_WAIT.afterText);
+      _checkWinLose();
+      return;
+    }
+
+    // 通常移動
+    enemy.row = bestCell.row;
+    enemy.col = bestCell.col;
+    _log(`${enemy.name} が移動した`);
+    _renderUI();
+    await wait(B32_WAIT.afterText);
+
+    // 移動後に攻撃可能か再チェック
+    const afterMoveTargets = getEnemyAttackTargets(enemy);
+    if (afterMoveTargets.length > 0) {
+      const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
+      const dmg = calcDamage(enemy.atk, target.def, 1.0);
+      applyDamage(target, dmg, enemy);
+      _renderUI();
+      await wait(B32_WAIT.afterText);
+      if (_bs.result) return;
+    } else if (canEnemyAttackAllyCore(enemy)) {
+      damageAllyCore(enemy);
+      _renderUI();
+      await wait(B32_WAIT.attack);
+      await wait(B32_WAIT.afterText);
+    }
+  }   // end _runEnemySingleAction
 
   // ボス予兆攻撃
   function _doBossWarnAttack(boss, allUnits) {
@@ -1056,6 +1145,12 @@ if (afterMoveTargets.length > 0) {
 
     // 行動フラグリセット
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
+
+    // ターン単位の行動権リセット
+    _bs.moveUsedThisTurn  = false;
+    _bs.skillUsedThisTurn = false;
+    _bs.movedUnitUid      = null;
+    _bs.skillUnitUid      = null;
 
     // TODO: カード廃止後の通常移動処理をここに実装する
 
@@ -1109,46 +1204,116 @@ if (afterMoveTargets.length > 0) {
     }
   }
   // ============================================================
-  // 移動可能セル取得（UI用）
+  // 移動可能セル取得（旧API・後方互換用）
+  // UI側の既存呼び出しから段階的に移行するために残す
   // ============================================================
-  function getMovableCells(allyUid, maxSteps) {
-    const ally = _bs.allies.find(u => u._uid === allyUid);
-    if (!ally) return [];
+  function getMovableCells(allyUid, _maxSteps) {
+    // getMoveCells に委譲して move/capture セルだけ返す
+    return getMoveCells(allyUid).map(c => ({ row: c.row, col: c.col }));
+  }
 
-    const allUnits = getAllUnits();
-    const reachable = [];
+  // ============================================================
+  // 移動候補セル取得（新API・移動型対応）
+  // 戻り値: { row, col, cellType: 'move'|'capture', targetUid: string|null }[]
+  // ============================================================
+  function getMoveCells(unitUid) {
+    const unit = _bs
+      ? (_bs.allies.find(u => u._uid === unitUid) || _bs.enemies.find(u => u._uid === unitUid))
+      : null;
+    if (!unit || unit.hp <= 0) return [];
 
-    for (let r = 0; r < BOARD_ROWS; r++) {
-      for (let c = 0; c < BOARD_COLS; c++) {
-        const dist = BR.manhattanDist(ally, { row: r, col: c });
-        if (dist > 0 && dist <= maxSteps) {
-          if (BR.canMoveTo32(allUnits, r, c, ally)) {
-            reachable.push({ row: r, col: c });
-            }
-          }
-        }
-      }
-      return reachable;
-    }
+    const offsets = BR.getMoveOffsets(unit);
+    const cells   = [];
+
+    offsets.forEach(({ dr, dc }) => {
+      const row = unit.row + dr;
+      const col = unit.col + dc;
+
+      if (!BR.isValidCell(row, col)) return;
+
+      const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
+
+      // 同陣営ユニットがいるマスには移動不可
+      if (occupant && occupant.side === unit.side) return;
+
+      cells.push({
+        row,
+        col,
+        cellType:  occupant ? 'capture' : 'move',
+        targetUid: occupant ? occupant._uid : null,
+      });
+    });
+
+    return cells;
+  }
+
+  // ============================================================
+  // 味方移動（駒取り対応）
+  // ============================================================
     function moveAlly(allyUid, toRow, toCol) {
       if (!_bs || _bs.phase !== 'skill') return false;
 
-     const ally = _bs.allies.find(u => u._uid === allyUid);
-      if (!ally || ally.hp <= 0 || ally.skillUsedThisTurn) return false;
+      const ally = _bs.allies.find(u => u._uid === allyUid);
+      if (!ally || ally.hp <= 0) return false;
 
-      const maxSteps = ALLY_MOVE_STEPS;
-      const movable = getMovableCells(allyUid, maxSteps);
-      const ok = movable.some(c => c.row === toRow && c.col === toCol);
-
-      if (!ok) {
-       _log(`${ally.name} はそこへ移動できない`);
-       return false;
+      // このターンすでに移動済みなら拒否
+      if (_bs.moveUsedThisTurn) {
+        _log('このターンはすでに移動済みです');
+        return false;
       }
 
+      const moveCells = getMoveCells(allyUid);
+      const targetCell = moveCells.find(c => c.row === toRow && c.col === toCol);
+
+      if (!targetCell) {
+        _log(`${ally.name} はそこへ移動できない`);
+        return false;
+      }
+
+      // ── 駒取り処理 ──
+      if (targetCell.cellType === 'capture' && targetCell.targetUid) {
+        const target = getAllUnits().find(u => u._uid === targetCell.targetUid);
+
+        if (target && target.side === 'enemy') {
+          if (target.isBoss) {
+            // ボスは即死させず固定ダメージ
+            const dmg = Math.floor(ally.atk * 1.5);
+            target.hp = Math.max(0, target.hp - dmg);
+            _log(`${ally.name} が ${target.name}（ボス）に駒取りを試みた！ ${dmg} ダメージ`);
+            _emit('capture_boss', { ally: { ...ally }, boss: { ...target }, dmg, bs: _snapshot() });
+
+            // ボスHP0後は既存の bossCore / capture 処理へ接続
+            if (target.hp <= 0) {
+              _log(`${target.name} のHPが0になった。コア突破処理へ…`);
+              // ボスHP0フラグを立てて既存フローに乗せる（bossPhase判定等）
+              _emit('boss_hp_zero', { boss: { ...target }, bs: _snapshot() });
+            }
+          } else {
+            // 通常敵：制圧（HP0）
+            target.hp = 0;
+            _log(`${ally.name} が ${target.name} を制圧した！`);
+            _emit('capture', { ally: { ...ally }, target: { ...target }, bs: _snapshot() });
+          }
+        } else if (target && target.side === 'ally') {
+          // 味方コアへの駒取りは敗北（将来の敵移動拡張用フック）
+          _log(`味方コアが制圧された！`);
+          _emit('core_captured', { attacker: { ...target }, bs: _snapshot() });
+        }
+      }
+
+      // ── 移動実行 ──
       ally.row = toRow;
       ally.col = toCol;
 
-      _log(`${ally.name} が移動した`);
+      // ターン単位の移動権を消費
+      _bs.moveUsedThisTurn = true;
+      _bs.movedUnitUid     = allyUid;
+
+      if (targetCell.cellType === 'capture') {
+        _log(`${ally.name} が移動・制圧した`);
+      } else {
+        _log(`${ally.name} が移動した`);
+      }
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
       return true;
@@ -1200,13 +1365,12 @@ if (afterMoveTargets.length > 0) {
   // ============================================================
   // キャラ単位のターン終了（スキルなしで行動終了）
   // ============================================================
-  function endCharTurn(allyUid) {
+  // ターン終了（行動終了ボタン：移動のみ・スキルのみ・何もせず全て対応）
+  function endCharTurn(_allyUid) {
     if (!_bs || _bs.phase !== 'skill') return false;
-    const ally = _bs.allies.find(u => u._uid === allyUid);
-    if (!ally || ally.hp <= 0 || ally.skillUsedThisTurn) return false;
-    ally.skillUsedThisTurn = true;
-    _log(`${ally.name} のターンを終了しました。`);
-    _emit('charTurnEnd', { ally: { ...ally }, bs: _snapshot() });
+    _log('行動終了');
+    _emit('charTurnEnd', { bs: _snapshot() });
+    endSkillPhase();
     return true;
   }
 
@@ -1286,6 +1450,7 @@ if (afterMoveTargets.length > 0) {
   moveAlly,
 
   // UI補助
+  getMoveCells,
   getMovableCells,
   getSkillRangeCells,
   getBossDangerCells,

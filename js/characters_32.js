@@ -99,6 +99,9 @@
       upImg: c.upImg || null,
 
       skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
+
+      // 移動型（未設定キャラは 'silver' をデフォルトとする）
+      moveType: c.moveType || 'silver',
     };
   }
 

@@ -14,6 +14,44 @@ const STAGES = [
   // 本番には影響しない。TEST_ENEMY_* は enemies.js 末尾で定義。
   // 新しいテストケースを追加する場合はここに no を増やして追記。
   // ============================================================
+
+  // ── チュートリアルステージ（32マスバトル） ──
+  {
+    id: 'stage_tutorial_32',
+    chapter: 0,
+    no: 0,
+    type: 'tutorial',
+    name: 'チュートリアル',
+    useBattle32: true,
+    enemyActionMode: 'limit',
+    enemyActionsPerTurn: 2,
+    enemies: [
+      {
+        id: 'mob_tutorial_1',
+        name: '直進型怪異',
+        hp: 600,
+        atk: 220,
+        def: 80,
+        spd: 100,
+        moveType: 'enemy_move_straight',
+        attackRange: 'enemy_attack_front',
+      },
+      {
+        id: 'mob_tutorial_2',
+        name: '斜行型怪異',
+        hp: 550,
+        atk: 200,
+        def: 80,
+        spd: 100,
+        moveType: 'enemy_move_diag',
+        attackRange: 'enemy_attack_cross',
+      },
+    ],
+    difficulty: 'tutorial',
+    reward: { exp: 0, coin: 0 },
+    unlocked: true,
+  },
+
   {
     id: 'stage_00_jittai',
     chapter: 0,
@@ -181,9 +219,15 @@ function getStagesByChapter(chapter) {
   return STAGES.filter(s => s.chapter === chapter);
 }
 
-// ステージの敵リストを取得（enemyIds配列 or 単体enemyId に対応）
+// ステージの敵リストを取得（enemyIds配列 or 単体enemyId or インライン enemies に対応）
 function getEnemiesForStage(stage) {
   if (!stage) return [];
+
+  // インライン enemies 配列（チュートリアル等）
+  if (Array.isArray(stage.enemies) && stage.enemies.length > 0) {
+    return stage.enemies.map(e => JSON.parse(JSON.stringify(e)));
+  }
+
   const ids = stage.enemyIds || (stage.enemyId ? [stage.enemyId] : []);
 
   return ids.map(id => {
