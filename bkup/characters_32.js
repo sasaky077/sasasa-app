@@ -27,44 +27,40 @@
     enemy_all:     'enemy_all',
     ally_all:      'ally_all',
     pierce_all:    'enemy_all',           // 全体貫通 → 全体攻撃として扱う
-
-    // 斜めレンジ（左右V字）
-    diag3:          'diag_ally_3',        // 前方左右斜め3マス（将来 left/right 分離予定）
-    diag_ally_3:    'diag_ally_3',
-    diag_v3:        'diag_v_ally_3',      // 前方左右斜め3マス（V字）
-    diag_v_ally_3:  'diag_v_ally_3',
   };
 
   function convertRangeTo32(range) {
     return RANGE_32_MAP[range] || range;
   }
 
-  function convertSkillTo32(skill, character) {
-  const isUlt = !!skill.isUltimate;
+  function convertSkillTo32(skill) {
+    const isUlt = !!skill.isUltimate;
 
-  return {
-    id: skill.id,
-    name: skill.name,
-    type: skill.type,
-    range: convertRangeTo32(skill.range),
-    target: skill.target || (skill.type === 'heal' || skill.type === 'buff' ? 'ally' : 'enemy'),
+    return {
+      id: skill.id,
+      name: skill.name,
+      type: skill.type,
+      range: convertRangeTo32(skill.range),
+      target: skill.target || (skill.type === 'heal' || skill.type === 'buff' ? 'ally' : 'enemy'),
 
-    multiplier: skill.multiplier || 0,
-    healRate: skill.healRate || 0,
+      multiplier: skill.multiplier || 0,
+      healRate: skill.healRate || 0,
 
-    cost: 0,
+      // cost は撤廃。32マスバトルでは使わない
+      cost: 0,
 
-    shinkiCost: isUlt ? (skill.shinkiCost ?? character.shinkiMax ?? 3) : 0,
+      // shinki は ULT 専用コスト
+      // characters.js 側に shinkiCost があればそれを優先。なければ ULT は 3。
+      shinkiCost: isUlt ? (skill.shinkiCost || 3) : 0,
 
-    hit: skill.hit == null ? 100 : skill.hit,
-    isUltimate: isUlt,
-    hitStyle: skill.hitStyle || 'normal',
-    pierce: !!skill.pierce,
-    effects: skill.effects || [],
-    moveBonus: skill.moveBonus || null,
-    desc: skill.desc || '',
-  };
-}
+      hit: skill.hit == null ? 100 : skill.hit,
+      isUltimate: isUlt,
+      pierce: !!skill.pierce,
+      effects: skill.effects || [],
+      moveBonus: skill.moveBonus || null,
+      desc: skill.desc || '',
+    };
+  }
 
   function convertCharacterTo32(c) {
     return {
@@ -98,7 +94,7 @@
       portrait: c.img || null,
       upImg: c.upImg || null,
 
-      skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
+      skills: (c.skills || []).map(convertSkillTo32),
     };
   }
 

@@ -1,18 +1,11 @@
 // party_select.js
-// 9マスポジション対応編成モーダル
-// ポジション: row(near/mid/far) × col(left/center/right)
+// 出撃メンバー3体選択画面（配置なし）
 
 (function () {
 
-  const ROWS = ['near', 'mid', 'far', 'deep'];
-  const COLS = ['left', 'center', 'right', 'outer'];
-  const ROW_LABEL = { near: '近', mid: '中', far: '遠', deep: '深' };
-  const COL_LABEL = { left: '左', center: '中', right: '右', outer: '外' };
-
-  // selected: { charaId, row, col }[]  最大4件
+  // selected: { charaId }[]  最大3件（左・中・右 の順）
   let selected = [];
 
-  // ▼ 修正：現在選択中のステージ敵ID（文字列 or 配列）
   let currentEnemyRef = 'enemy_01';
   let currentBattleOptions = {};
 
@@ -32,44 +25,19 @@
       'opacity:0','transition:opacity 0.4s ease',
     ].join(';');
 
-    // 列ラベル
-    const colLabels = COLS.map(c =>
-      `<div class="ps-col-label">${COL_LABEL[c]}</div>`
-    ).join('');
-
-    // 9マスグリッド
-    const gridRows = ROWS.map(row => `
-      <div class="ps-grid-row">
-        <div class="ps-row-label">${ROW_LABEL[row]}</div>
-        ${COLS.map(col => `
-          <div class="ps-cell ps-cell-empty" id="ps-cell-${row}-${col}"
-               onclick="onCellTap('${row}','${col}')">
-            <div class="ps-cell-plus">＋</div>
-          </div>
-        `).join('')}
-      </div>
-    `).join('');
-
     el.innerHTML = `
       <div class="ps-header">
         <div class="ps-title">部隊編成</div>
-        <div class="ps-sub">1〜4人選択 · マスをタップして配置</div>
+        <div class="ps-sub">3人選択 · 連れていくキャラを選んでください</div>
       </div>
 
-      <div class="ps-grid-wrap">
-        <div class="ps-col-labels">
-          <div class="ps-row-label-spacer"></div>
-          ${colLabels}
-        </div>
-        <div class="ps-grid" id="ps-grid">
-          ${gridRows}
+      <div class="ps-slots-wrap">
+        <div class="ps-slots" id="ps-slots">
+          <!-- renderSlots() で描画 -->
         </div>
       </div>
 
       <div class="ps-list-wrap">
-        <div class="ps-selecting-hint" id="ps-selecting-hint" style="display:none">
-          配置するマスを選んでください
-        </div>
         <div class="ps-list" id="ps-chara-list"></div>
       </div>
 
@@ -112,115 +80,98 @@
         color: rgba(232,228,220,0.35);
       }
 
-      /* グリッド */
-      .ps-grid-wrap {
+      /* 3枠スロットエリア */
+      .ps-slots-wrap {
         flex-shrink: 0;
-        padding: 10px 14px 8px;
+        padding: 12px 14px 10px;
         background: rgba(0,0,0,0.45);
         border-bottom: 1px solid rgba(255,255,255,0.06);
       }
-      .ps-col-labels {
+      .ps-slots {
         display: flex;
-        align-items: center;
-        margin-bottom: 4px;
+        gap: 10px;
+        justify-content: center;
       }
-      .ps-row-label-spacer {
-        width: 20px;
-        flex-shrink: 0;
-      }
-      .ps-col-label {
+      .ps-slot {
         flex: 1;
-        text-align: center;
-        font-family: "Cinzel", serif;
-        font-size: 9px;
-        letter-spacing: 2px;
-        color: rgba(232,228,220,0.3);
-      }
-      .ps-grid {
+        max-width: 110px;
         display: flex;
         flex-direction: column;
-        gap: 5px;
-      }
-      .ps-grid-row {
-        display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
       }
-      .ps-row-label {
-        width: 20px;
-        flex-shrink: 0;
-        text-align: center;
-        font-family: "Cinzel", serif;
-        font-size: 10px;
-        letter-spacing: 1px;
-        color: rgba(232,228,220,0.35);
-      }
-      .ps-cell {
-        flex: 1;
+      .ps-slot-box {
+        width: 100%;
         aspect-ratio: 1;
-        border-radius: 7px;
-        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 10px;
+        border: 1.5px solid rgba(255,255,255,0.1);
         background: rgba(255,255,255,0.03);
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
         position: relative;
-        transition: border-color 0.15s, background 0.15s;
-        -webkit-tap-highlight-color: transparent;
+        transition: border-color 0.15s;
       }
-      .ps-cell.ps-cell-empty {
-        pointer-events: none;
+      .ps-slot.filled .ps-slot-box {
+        border-color: rgba(232,228,220,0.35);
       }
-      .ps-cell.ps-cell-selectable {
-        pointer-events: auto;
-        border-color: rgba(232,228,220,0.25);
-        background: rgba(232,228,220,0.04);
-        animation: cellPulse 1.2s ease-in-out infinite;
+      .ps-slot.filled .ps-slot-box:active {
+        background: rgba(255,80,80,0.1);
       }
-      @keyframes cellPulse {
-        0%,100% { border-color: rgba(232,228,220,0.2); }
-        50%      { border-color: rgba(232,228,220,0.5); }
+      .ps-slot-empty-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: rgba(232,228,220,0.18);
       }
-      .ps-cell.filled {
-        border-color: rgba(232,228,220,0.3);
-        pointer-events: auto;
+      .ps-slot-empty-label span {
+        font-family: "Cinzel", serif;
+        font-size: 9px;
+        letter-spacing: 2px;
       }
-      .ps-cell.filled:active { background: rgba(255,80,80,0.1); }
-      .ps-cell-plus {
-        font-size: 14px;
-        color: rgba(232,228,220,0.12);
+      .ps-slot-empty-plus {
+        font-size: 18px;
+        line-height: 1;
       }
-      .ps-cell-img {
+      .ps-slot-img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         object-position: top center;
       }
-      .ps-cell-name {
+      .ps-slot-chara-name {
         position: absolute;
         bottom: 0; left: 0; right: 0;
         font-size: 7px;
         color: rgba(232,228,220,0.85);
         background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
         text-align: center;
-        padding: 5px 1px 1px;
+        padding: 6px 2px 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .ps-cell-remove {
+      .ps-slot-remove {
         position: absolute;
-        top: 1px; right: 1px;
-        width: 13px; height: 13px;
+        top: 2px; right: 2px;
+        width: 14px; height: 14px;
         border-radius: 50%;
         background: rgba(0,0,0,0.65);
-        color: rgba(255,255,255,0.6);
+        color: rgba(255,255,255,0.65);
         font-size: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
+      }
+      .ps-slot-label {
+        font-family: "Cinzel", serif;
+        font-size: 9px;
+        letter-spacing: 2px;
+        color: rgba(232,228,220,0.3);
       }
 
       /* キャラ一覧 */
@@ -230,14 +181,6 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         padding: 8px 10px 0;
-      }
-      .ps-selecting-hint {
-        font-size: 11px;
-        letter-spacing: 2px;
-        color: rgba(232,228,220,0.5);
-        text-align: center;
-        padding: 6px 0 8px;
-        animation: cellPulse 1.2s ease-in-out infinite;
       }
       .ps-list {
         display: grid;
@@ -256,10 +199,6 @@
       .ps-chara-card.not-owned {
         opacity: 0.2;
         pointer-events: none;
-      }
-      .ps-chara-card.selecting {
-        outline: 2px solid rgba(232,228,220,0.6);
-        border-radius: 9px;
       }
       .ps-chara-img-wrap {
         width: 100%;
@@ -438,47 +377,56 @@
   }
 
   // ============================================================
-  // 状態
+  // スロット描画（左・中・右）
   // ============================================================
-  let pendingCharaId = null; // マス選択待ちのキャラID
+  const SLOT_LABELS = ['左', '中', '右'];
 
-  // ============================================================
-  // グリッドレンダリング
-  // ============================================================
-  function renderGrid() {
-    ROWS.forEach(row => {
-      COLS.forEach(col => {
-        const cell = document.getElementById('ps-cell-' + row + '-' + col);
-        if (!cell) return;
+  function renderSlots() {
+    const wrap = document.getElementById('ps-slots');
+    if (!wrap) return;
 
-        const entry = selected.find(s => s.row === row && s.col === col);
-        const isSelectable = pendingCharaId !== null && !entry;
+    wrap.innerHTML = SLOT_LABELS.map((label, i) => {
+      const entry = selected[i];
+      if (entry) {
+        const chara = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : []).find(c => c.id === entry.charaId);
+        const imgSrc = chara ? (chara.upImg || chara.img || '') : '';
+        const name   = chara ? chara.name : '';
+        return `
+          <div class="ps-slot filled" onclick="_psRemoveSlot(${i})">
+            <div class="ps-slot-box">
+              <img class="ps-slot-img" src="${imgSrc}" onerror="this.style.opacity='0'">
+              <div class="ps-slot-chara-name">${name}</div>
+              <div class="ps-slot-remove">✕</div>
+            </div>
+            <div class="ps-slot-label">${label}</div>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="ps-slot">
+            <div class="ps-slot-box">
+              <div class="ps-slot-empty-label">
+                <span>${label}</span>
+                <div class="ps-slot-empty-plus">＋</div>
+              </div>
+            </div>
+            <div class="ps-slot-label">${label}</div>
+          </div>
+        `;
+      }
+    }).join('');
 
-        if (entry) {
-          const chara = CHARACTERS.find(c => c.id === entry.charaId);
-          cell.className = 'ps-cell filled';
-          cell.innerHTML = `
-            <img class="ps-cell-img" src="${chara.upImg || chara.img}" onerror="this.style.opacity='0'">
-            <div class="ps-cell-name">${chara.name}</div>
-            <div class="ps-cell-remove">✕</div>
-          `;
-        } else if (isSelectable) {
-          cell.className = 'ps-cell ps-cell-selectable';
-          cell.innerHTML = '<div class="ps-cell-plus">＋</div>';
-        } else {
-          cell.className = 'ps-cell ps-cell-empty';
-          cell.innerHTML = '<div class="ps-cell-plus">＋</div>';
-        }
-      });
-    });
-
+    // 戦闘開始ボタン：3体選択で有効化
     const btn = document.getElementById('ps-btn-start');
-    if (btn) btn.disabled = selected.length < 1;
-
-    // ヒント表示
-    const hint = document.getElementById('ps-selecting-hint');
-    if (hint) hint.style.display = pendingCharaId ? 'block' : 'none';
+    if (btn) btn.disabled = selected.length < 3;
   }
+
+  // スロット削除（クリック時に左詰め）
+  window._psRemoveSlot = function (idx) {
+    selected.splice(idx, 1);
+    renderSlots();
+    renderCharaList();
+  };
 
   // ============================================================
   // キャラ一覧レンダリング
@@ -488,16 +436,15 @@
     if (!list) return;
     list.innerHTML = '';
 
-    CHARACTERS.forEach(c => {
+    const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
+    chars.forEach(c => {
       const owned = typeof collected !== 'undefined' && !!collected[c.id];
       const isSelected = selected.some(s => s.charaId === c.id);
-      const isPending = pendingCharaId === c.id;
 
       const card = document.createElement('div');
       card.className = 'ps-chara-card'
         + (!owned ? ' not-owned' : '')
-        + (isSelected ? ' selected' : '')
-        + (isPending ? ' selecting' : '');
+        + (isSelected ? ' selected' : '');
       card.innerHTML = `
         <div class="ps-chara-img-wrap">
           <img src="${c.upImg || c.img}" onerror="this.style.opacity='0'">
@@ -527,6 +474,7 @@
       startX = touch.clientX;
       startY = touch.clientY;
       pressing = true;
+      card.classList.add('pressing');
       pressTimer = setTimeout(() => {
         pressing = false;
         card.classList.remove('pressing');
@@ -564,7 +512,8 @@
   }
 
   function showCharaDetail(charaId) {
-    const chara = CHARACTERS.find(c => c.id === charaId);
+    const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
+    const chara = chars.find(c => c.id === charaId);
     if (!chara) return;
 
     let popup = document.getElementById('ps-chara-detail-popup');
@@ -630,60 +579,38 @@
     if (p) p.classList.remove('active');
   };
 
+  // キャラタップ：空き枠に追加、選択済みなら解除（左詰め）
   function onCharaTap(charaId) {
-    // 選択済みなら外す
     const idx = selected.findIndex(s => s.charaId === charaId);
     if (idx !== -1) {
+      // 選択解除 → 左詰め
       selected.splice(idx, 1);
-      pendingCharaId = null;
-      renderGrid();
+      renderSlots();
       renderCharaList();
       return;
     }
-    // 4人埋まってたら無視
-    if (selected.length >= 4) return;
+    // 3枠埋まっていたら無視
+    if (selected.length >= 3) return;
 
-    // マス選択モードへ
-    if (pendingCharaId === charaId) {
-      pendingCharaId = null;
-    } else {
-      pendingCharaId = charaId;
-    }
-    renderGrid();
+    selected.push({ charaId });
+    renderSlots();
     renderCharaList();
   }
 
-  // マスタップ
-  window.onCellTap = function (row, col) {
-    const entry = selected.find(s => s.row === row && s.col === col);
-
-    // 埋まってるマスをタップ→そのキャラを外す
-    if (entry) {
-      const idx = selected.indexOf(entry);
-      selected.splice(idx, 1);
-      if (pendingCharaId === entry.charaId) pendingCharaId = null;
-      renderGrid();
-      renderCharaList();
-      return;
-    }
-
-    // マス選択待ち中なら配置
-    if (pendingCharaId !== null) {
-      selected.push({ charaId: pendingCharaId, row, col });
-      pendingCharaId = null;
-      renderGrid();
-      renderCharaList();
-    }
-  };
-
   // ============================================================
-  // 戦闘開始  ▼ 修正：currentEnemyId を使う
+  // 戦闘開始
   // ============================================================
   window.confirmPartySelect = function () {
-    if (selected.length < 1) return;
+    if (selected.length < 3) return;
 
+    // Battle32 に渡す partyIds（選択順の charaId 配列）
+    const selectedCharaIds = selected.map(s => s.charaId);
+
+    // 旧バトル用 party 情報（startEnemyIntro など既存フローへの互換）
+    const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
     const party = selected.map(s => {
-      const master = CHARACTERS.find(c => c.id === s.charaId);
+      const master = chars.find(c => c.id === s.charaId);
+      if (!master) return null;
       const costMax    = master.costMax    ?? 10;
       const costStart  = master.costStart  ?? 5;
       const costRegen  = master.costRegen  ?? 3;
@@ -694,39 +621,29 @@
         id:       'chara_' + master.id,
         charaId:  master.id,
         name:     master.name,
-
-      // 盤面用
         img:       master.battleImg || master.img,
         battleImg: master.battleImg || master.img,
-
-      // 下部パネル用
         panelImg:  master.panelImg || master.upImg || master.img,
-
-      // ULTカットイン用
         upImg:    master.upImg,
         ultImg:   master.ultImg,
         cutImg:   master.ultImg || master.cutImg || master.upImg || master.battleImg || master.img,
-
         hp:       master.stats.HP,
         hpMax:    master.stats.HP,
         atk:      master.stats.ATK,
         def:      master.stats.DEF,
         spd:      master.stats.SPD,
         accuracy: 250,
-        row:      s.row,
-        col:      s.col,
-        pos:      s.row,
         cost:      Math.min(costStart, costMax),
-        costMax:   costMax,
-        costRegen: costRegen,
+        costMax,
+        costRegen,
         shinki:      Math.min(shinkiStart, shinkiMax),
-        shinkiMax:   shinkiMax,
-        shinkiRegen: shinkiRegen,
+        shinkiMax,
+        shinkiRegen,
         skills: master.skills.map(sk => ({ ...sk })),
       };
-      });
+    }).filter(Boolean);
 
-    // ▼ 修正：単体 or 複数敵の両方に対応
+    // 敵データ解決
     let enemyData;
     if (Array.isArray(currentEnemyRef)) {
       enemyData = currentEnemyRef
@@ -742,7 +659,6 @@
       enemyData = enemyMaster
         ? JSON.parse(JSON.stringify(enemyMaster))
         : {
-            // enemies.jsが未ロードの場合のフォールバック（開発用）
             id: 'enemy_01', name: '??????',
             img: 'images/enemy_01.webp',
             upImg: 'images/enemy_01_up.webp',
@@ -763,8 +679,6 @@
     window._saveLastParty && window._saveLastParty(party);
     closePartySelect();
 
-    // [Battle32] 選択キャラIDを options に追加し、battleMode:'32' 時に Battle32.start へ渡せるようにする
-    const selectedCharaIds = selected.map(p => p.charaId);
     const mergedOptions = Object.assign({}, currentBattleOptions, {
       partyIds: selectedCharaIds,
     });
@@ -773,21 +687,19 @@
   };
 
   // ============================================================
-  // 開閉  ▼ 修正：enemyId を引数で受け取る
+  // 開閉
   // ============================================================
   window.openPartySelect = function (enemyIdOrIds, options) {
-    // 敵ID（文字列 or 配列）をセット
     currentEnemyRef = enemyIdOrIds || 'enemy_01';
     currentBattleOptions = options || {};
 
     buildModal();
     selected = [];
-    pendingCharaId = null;
     const el = document.getElementById('party-select-modal');
     el.style.display = 'flex';
     void el.offsetWidth;
     el.style.opacity = '1';
-    renderGrid();
+    renderSlots();
     renderCharaList();
   };
 
@@ -796,7 +708,6 @@
     if (!el) return;
     el.style.opacity = '0';
     setTimeout(() => { el.style.display = 'none'; }, 400);
-    pendingCharaId = null;
   };
 
 })();

@@ -20,18 +20,10 @@
   const BOARD_COLS = 5;
   const ALLY_MOVE_STEPS = 3;
 
-  const ENEMY_MOVE_STEPS = 3;
-
-  // ボスのコア直接破壊間隔
-  const BOSS_LINE_ATTACK_INTERVAL = 5;
-  const BOSS_LINE_ATTACK_RATE = 1.35;
-
   // ボス予兆攻撃の間隔（ターン数）
   const BOSS_WARN_INTERVAL = 4;
   // ボス予兆攻撃のダメージ倍率（ATK比）
   const BOSS_WARN_RATE = 0.90;
-
-  
 
   // ============================================================
   // 内部状態
@@ -121,11 +113,7 @@
   }
 
   function getAllUnits() {
-    if (!_bs) return [];
-    return [
-      ..._bs.allies.filter(u => u.hp > 0),
-      ..._bs.enemies.filter(u => u.hp > 0 || u.isBoss),
-    ];
+    return [..._bs.allies, ..._bs.enemies];
   }
 
   function aliveAllies() {
@@ -209,7 +197,7 @@
       col,
       statusEffects: [],
       stunned: false,
-      attackRange: def.attackRange || (def.isBoss ? 'manhattan_4' : 'manhattan_2'),
+      attackRange: def.attackRange || 'adjacent',
     };
   }
 
@@ -221,29 +209,29 @@
     id: 'boss',
     name: 'ボス怪異',
     isBoss: true,
-    hp: 3200,
-    atk: 520,
-    def: 220,
+    hp: 2400,
+    atk: 320,
+    def: 200,
     spd: 150,
-    attackRange: 'manhattan_4',
+    attackRange: 'manhattan_3',
   },
   {
     id: 'mob1',
     name: '雑魚A',
-    hp: 700,
-    atk: 240,
+    hp: 600,
+    atk: 180,
     def: 100,
     spd: 180,
-    attackRange: 'manhattan_2',
+    attackRange: 'adjacent',
   },
   {
     id: 'mob2',
     name: '雑魚B',
-    hp: 650,
-    atk: 220,
+    hp: 600,
+    atk: 160,
     def: 120,
     spd: 160,
-    attackRange: 'manhattan_3',
+    attackRange: 'manhattan_2',
   },
 ];
 
@@ -391,7 +379,7 @@
   // ダメージ処理（結界・def_down 考慮）
   // 味方・敵ともに hp を減らす（統一）
   // ============================================================
-  function applyDamage(target, rawDamage, source, skill) {
+  function applyDamage(target, rawDamage, source) {
     let dmg = rawDamage;
 
     // 結界：ダメージ軽減（味方のみ）
@@ -412,15 +400,8 @@
       target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
       amount: dmg,
       kind: 'damage',
-      skillId:     skill?.id        || null,
-      skillName:   skill?.name      || null,
-      isUltimate:  !!skill?.isUltimate,
-      hitStyle:    skill?.hitStyle  || 'normal',
       bs: _snapshot(),
     });
-
-    // ダメージ後に勝敗を即チェック（全滅検知）
-    _checkWinLose();
   }
 
   // ============================================================
@@ -469,7 +450,7 @@
       } else {
         targets.forEach(enemy => {
           const dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
-          applyDamage(enemy, dmg, ally, skill);
+          applyDamage(enemy, dmg, ally);
           _applyEffects(skill.effects, enemy, ally);
         });
       }
@@ -484,7 +465,7 @@
         targets.forEach(enemy => {
           if ((skill.multiplier || 0) > 0) {
             const dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
-            applyDamage(enemy, dmg, ally, skill);
+            applyDamage(enemy, dmg, ally);
           }
           _applyEffects(skill.effects, enemy, ally);
         });
@@ -556,10 +537,6 @@
     },
     amount: actualRecover,
     kind: 'heal',
-    skillId:    skill?.id       || null,
-    skillName:  skill?.name     || null,
-    isUltimate: !!skill?.isUltimate,
-    hitStyle:   skill?.hitStyle || 'normal',
     bs: _snapshot(),
   });
 } else {
@@ -637,10 +614,6 @@
           target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
           amount: recover,
           kind:   'heal',
-          skillId:    null,
-          skillName:  null,
-          isUltimate: false,
-          hitStyle:   'normal',
           bs:     _snapshot(),
         });
         return;
@@ -704,135 +677,19 @@
   // 生存している味方のみ対象
   const allies = _bs.allies.filter(a => a.hp > 0);
 
-  // adjacent
-  if (range === 'adjacent') {
-    return allies.filter(a => manhattan(enemy, a) === 1);
+  // 敵専用：マンハッタン距離による攻撃範囲
+  if (range === 'manhattan_2') {
+    return allies.filter(a => manhattan(enemy, a) <= 2);
   }
 
-  // manhattan_N 汎用対応
-  const m = /^manhattan_(\d+)$/.exec(range);
-  if (m) {
-    const dist = Number(m[1]);
-    return allies.filter(a => manhattan(enemy, a) <= dist);
+  if (range === 'manhattan_3') {
+    return allies.filter(a => manhattan(enemy, a) <= 3);
   }
 
   // 既存射程は従来の BattleRange32 に任せる
   return BR.getUnitsFromRange32(enemy, range, _bs.allies)
     .filter(a => a.hp > 0);
 }
-
-function canEnemyAttackAllyCore(enemy) {
-  if (!_bs || !_bs.cores || !_bs.cores.ally) return false;
-
-  const core = _bs.cores.ally;
-  if (core.stability <= 0) return false;
-
-  const range = enemy.attackRange || 'adjacent';
-  const corePos = { row: core.row, col: core.col };
-
-  if (range === 'adjacent') {
-    return manhattan(enemy, corePos) === 1;
-  }
-
-  const m = /^manhattan_(\d+)$/.exec(range);
-  if (m) {
-    const dist = Number(m[1]);
-    return manhattan(enemy, corePos) <= dist;
-  }
-
-  if (window.BattleRange32 && window.BattleRange32.getCellsFromRange32) {
-    const cells = window.BattleRange32.getCellsFromRange32(enemy, range);
-    return cells && cells.has(`${core.row}-${core.col}`);
-  }
-
-  return false;
-}
-
-function damageAllyCore(sourceEnemy) {
-  if (!_bs || !_bs.cores || !_bs.cores.ally) return false;
-
-  const core = _bs.cores.ally;
-  if (core.stability <= 0) return false;
-
-  core.stability = Math.max(0, core.stability - 1);
-
-  _log(`${sourceEnemy.name} が自陣コアを攻撃！ コア耐久度 ${core.stability}/${core.stabilityMax}`);
-
-  _emit('coreDamage', {
-    source: sourceEnemy ? {
-      _uid: sourceEnemy._uid,
-      name: sourceEnemy.name,
-      side: sourceEnemy.side,
-      row: sourceEnemy.row,
-      col: sourceEnemy.col,
-    } : null,
-    core: { ...core },
-    bs: _snapshot(),
-  });
-
-  _checkWinLose();
-
-  return true;
-}
-
-function getBossLineAttackCells(boss) {
-  const cells = new Set();
-
-  // ボスから自陣方向へ一直線
-  // 現状ボスは row:0 col:2 なので、中央列を下方向へ撃つ
-  for (let r = boss.row + 1; r < BOARD_ROWS; r++) {
-    cells.add(`${r}-${boss.col}`);
-  }
-
-  return cells;
-}
-
-function doBossLineAttack(boss) {
-  if (!boss || boss.hp <= 0) return false;
-
-  const cells = getBossLineAttackCells(boss);
-
-  _log(`${boss.name} が直線上に空間断裂攻撃！`);
-
-  _emit('bossWarning', {
-    type: 'boss_line_attack',
-    cells: Array.from(cells),
-    bs: _snapshot(),
-  });
-
-  // 味方への強攻撃
-  _bs.allies.forEach(ally => {
-    if (ally.hp <= 0) return;
-
-    const key = `${ally.row}-${ally.col}`;
-    if (!cells.has(key)) return;
-
-    const dmg = Math.floor(boss.atk * BOSS_LINE_ATTACK_RATE);
-    applyDamage(
-      ally,
-      dmg,
-      boss,
-      {
-        id: 'boss_line_attack',
-        name: '空間断裂',
-        isUltimate: true,
-        hitStyle: 'heavy',
-      }
-    );
-  });
-
-  // コアが直線上にある場合だけコアへダメージ
-  const core = _bs.cores?.ally;
-  if (core && core.stability > 0) {
-    const coreKey = `${core.row}-${core.col}`;
-    if (cells.has(coreKey)) {
-      damageAllyCore(boss);
-    }
-  }
-
-  return true;
-}
-
     function _checkBossCoreCapture() {
       const bc = _bs.bossCore;
       if (!bc || bc.captured) return;
@@ -882,26 +739,9 @@ function doBossLineAttack(boss) {
         _renderUI();
         await wait(B32_WAIT.attack);
         await wait(B32_WAIT.afterText);
-        if (_bs.result) { _renderUI(); return; }
       }
     }
-    // 5ターンに1度：ボスが直線上に強攻撃
-// TODO: 後で条件達成時は回避可能にする
-if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
-  const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
 
-  if (boss) {
-    await _centerTextWait('⚠️ LINE THREAT', '直線上に空間断裂', B32_WAIT.enemyAction);
-
-    doBossLineAttack(boss);
-
-    _renderUI();
-    await wait(B32_WAIT.attack);
-    await wait(B32_WAIT.afterText);
-
-    if (_bs.result) return;
-  }
-}
     // 行動順：雑魚 → ボスの順
     const mobs    = aliveEnemies().filter(e => !e.isBoss);
     const bosses  = aliveEnemies().filter(e =>  e.isBoss);
@@ -916,7 +756,7 @@ if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
 
     _tickStatusEffects();
     _checkWinLose();
-    if (_bs.result) { _renderUI(); return; }
+    if (_bs.result) return;
 
     // ENEMY TURN END
     await _centerTextWait('ENEMY TURN END', '干渉低下', B32_WAIT.enemyEnd);
@@ -946,18 +786,8 @@ if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
-      // applyDamage 内で _checkWinLose を呼んでいるが、念のため result を確認
-      if (_bs.result) return;
       return;
     }
-    // 射程内に味方がいないが、自陣コアを攻撃できる場合
-if (canEnemyAttackAllyCore(enemy)) {
-  damageAllyCore(enemy);
-  _renderUI();
-  await wait(B32_WAIT.attack);
-  await wait(B32_WAIT.afterText);
-  return;
-}
 
     // ボスは固定（射程外でも移動しない）
     if (enemy.isBoss) {
@@ -968,42 +798,22 @@ if (canEnemyAttackAllyCore(enemy)) {
     // 雑魚のみ移動を試みる
     const nearest = BR.nearestUnit(enemy, _bs.allies.filter(u => u.hp > 0));
     if (nearest) {
-      let movedCount = 0;
-
-for (let i = 0; i < ENEMY_MOVE_STEPS; i++) {
-  // 途中で味方やコアが射程内に入ったら移動を止める
-  if (getEnemyAttackTargets(enemy).length > 0 || canEnemyAttackAllyCore(enemy)) {
-    break;
-  }
-
-  const moved = BR.stepToward(enemy, nearest, getAllUnits());
-  if (!moved) break;
-
-  movedCount++;
-}
-
-if (movedCount > 0) {
-  _log(`${enemy.name} が ${movedCount} マス接近した`);
-  _renderUI();
-  await wait(B32_WAIT.afterText);
-}
+      const moved = BR.stepToward(enemy, nearest, getAllUnits());
+      if (moved) {
+        _log(`${enemy.name} が近づいた`);
+        _renderUI();
+        await wait(B32_WAIT.afterText);
+      }
 
       // 移動後に攻撃可能か再チェック
       const afterMoveTargets = getEnemyAttackTargets(enemy);
-if (afterMoveTargets.length > 0) {
-  const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-  const dmg = calcDamage(enemy.atk, target.def, 1.0);
-  applyDamage(target, dmg, enemy);
-  _renderUI();
-  await wait(B32_WAIT.afterText);
-  if (_bs.result) return;
-
-} else if (canEnemyAttackAllyCore(enemy)) {
-  damageAllyCore(enemy);
-  _renderUI();
-  await wait(B32_WAIT.attack);
-  await wait(B32_WAIT.afterText);
-}
+      if (afterMoveTargets.length > 0) {
+        const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
+        const dmg = calcDamage(enemy.atk, target.def, 1.0);
+        applyDamage(target, dmg, enemy);
+        _renderUI();
+        await wait(B32_WAIT.afterText);
+      }
     } else {
       // await _centerTextWait(enemy.name, 'NO ACTION', B32_WAIT.enemyAction);
     }
@@ -1077,34 +887,30 @@ if (afterMoveTargets.length > 0) {
       _bs.phase = 'end';
       _log('★ 神性核固定・収容完了！');
       _emit('result', { result: 'win', bs: _snapshot() });
-      _renderUI();
       return;
     }
 
-    if (_bs.cores?.ally?.stability <= 0) {
-      _bs.result = 'lose';
-      _bs.phase = 'end';
-      _log('✕ 自陣コアが侵食された。収容失敗…');
-      _emit('result', { result: 'lose', bs: _snapshot() });
-      _renderUI();
-      return;
-    }
+        if (_bs.cores?.ally?.stability <= 0) {
+        _bs.result = 'lose';
+        _bs.phase = 'end';
+        _log('✕ 自陣コアが侵食された。収容失敗…');
+        _emit('result', { result: 'lose', bs: _snapshot() });
+        return;
+       }
 
-    if (_bs.turn > _bs.turnLimit) {
-      _bs.result = 'lose';
-      _bs.phase = 'end';
-      _log('✕ 接続限界を超過。強制帰還…');
-      _emit('result', { result: 'lose', bs: _snapshot() });
-      _renderUI();
-      return;
-    }
+        if (_bs.turn > _bs.turnLimit) {
+        _bs.result = 'lose';
+        _bs.phase = 'end';
+         _log('✕ 接続限界を超過。強制帰還…');
+          _emit('result', { result: 'lose', bs: _snapshot() });
+         return;
+        }
 
-    if (aliveAllies().length === 0) {
+      if (aliveAllies().length === 0) {
       _bs.result = 'lose';
       _bs.phase = 'end';
       _log('✕ 味方全滅。敗北…');
       _emit('result', { result: 'lose', bs: _snapshot() });
-      _renderUI();
       return;
     }
   }
@@ -1165,12 +971,8 @@ if (afterMoveTargets.length > 0) {
     const cells = BR.getCellsFromRange32(ally, skill.range);
 
     // ユニット位置マップを作成（セル種別判定に使う）
-    // HP0の味方・雑魚敵は除外。ボスはHP0後も残す。
     const unitMap = {};
-    [
-      ..._bs.allies.filter(u => u.hp > 0),
-      ..._bs.enemies.filter(u => u.hp > 0 || u.isBoss),
-    ].forEach(u => {
+    [..._bs.allies, ..._bs.enemies].forEach(u => {
       unitMap[`${u.row}-${u.col}`] = u;
     });
 
@@ -1213,66 +1015,6 @@ if (afterMoveTargets.length > 0) {
   // ============================================================
   // 公開API
   // ============================================================
-  // ============================================================
-  // 危険エリア取得（UI表示専用・攻撃処理は変更しない）
-  // ============================================================
-  function getBossDangerCells() {
-    if (!_bs || _bs.result || _bs.phase !== 'skill') return [];
-
-    // ボスが生存している場合のみ（HP0後の核露出状態は除く）
-    const boss = _bs.enemies.find(e => e.isBoss && e.hp > 0);
-    if (!boss) return [];
-
-    const result = [];
-
-    // ── 5ターンごとの直線強攻撃（最優先） ──
-    if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
-      const cells = getBossLineAttackCells(boss);
-      Array.from(cells).forEach(key => {
-        const [row, col] = key.split('-').map(Number);
-        result.push({ row, col, type: 'boss_line', label: 'LINE THREAT' });
-      });
-    }
-
-    // ── 4ターンごとの予兆攻撃（中央3列・全行） ──
-    // _doBossWarnAttack の col [1,2,3] と完全に一致させる
-    if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
-      for (let r = 0; r < BOARD_ROWS; r++) {
-        [1, 2, 3].forEach(c => {
-          result.push({ row: r, col: c, type: 'boss_warn', label: 'WARNING' });
-        });
-      }
-    }
-
-    // ── 通常攻撃範囲（特殊攻撃がないターンのみ） ──
-    if (result.length === 0) {
-      const range = boss.attackRange || 'manhattan_4';
-      // manhattan_N 形式：手動でマンハッタン距離計算
-      const m = /^manhattan_(\d+)$/.exec(range);
-      if (m) {
-        const maxDist = Number(m[1]);
-        for (let r = 0; r < BOARD_ROWS; r++) {
-          for (let c = 0; c < BOARD_COLS; c++) {
-            const dist = Math.abs(r - boss.row) + Math.abs(c - boss.col);
-            if (dist > 0 && dist <= maxDist) {
-              result.push({ row: r, col: c, type: 'boss_normal', label: 'DANGER' });
-            }
-          }
-        }
-      } else if (BR && BR.getCellsFromRange32) {
-        const cells = BR.getCellsFromRange32(boss, range);
-        if (cells && cells.forEach) {
-          cells.forEach(key => {
-            const [row, col] = key.split('-').map(Number);
-            result.push({ row, col, type: 'boss_normal', label: 'DANGER' });
-          });
-        }
-      }
-    }
-
-    return result;
-  }
-
     window.Battle32 = {
   // 初期化
   start,
@@ -1288,7 +1030,6 @@ if (afterMoveTargets.length > 0) {
   // UI補助
   getMovableCells,
   getSkillRangeCells,
-  getBossDangerCells,
 
   // 状態参照
   getState: () => _snapshot(),

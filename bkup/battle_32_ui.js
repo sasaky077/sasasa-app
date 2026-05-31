@@ -92,37 +92,8 @@
         justify-content: center;
         pointer-events: none;
         gap: 10px;
-
-        /* 初期状態：非表示 */
         opacity: 0;
-        transform: translate3d(0, 8px, 0) scale(.995);
-        filter: blur(2px);
-
-        /* transition ベース：スマホでも滑らか */
-        transition:
-          opacity 900ms ease,
-          transform 900ms cubic-bezier(.16, 1, .3, 1),
-          filter 900ms ease;
-
-        will-change: opacity, transform, filter;
-        backface-visibility: hidden;
-        transform-style: preserve-3d;
       }
-
-      /* ── 表示状態 ── */
-      #b32-center-text.b32ct-visible {
-        opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
-        filter: blur(0);
-      }
-
-      /* ── 退場状態：上方向へ抜ける ── */
-      #b32-center-text.b32ct-hidden {
-        opacity: 0;
-        transform: translate3d(0, -6px, 0) scale(1);
-        filter: blur(2px);
-      }
-
       /* ── 背景帯：黒ぼかし半透明グラデーション ── */
       #b32-center-text::before {
         content: '';
@@ -168,6 +139,37 @@
           0 0 10px rgba(200, 180, 120, .6),
           0 1px 3px rgba(0,0,0,.9);
         white-space: nowrap;
+      }
+      /* ── じわ〜と浮かび上がり、じわ〜と消える静かな演出 ── */
+      #b32-center-text.b32ct-enter {
+        animation: b32ctEnter .75s ease-out forwards;
+      }
+      #b32-center-text.b32ct-exit {
+        animation: b32ctExit .85s ease-in forwards;
+      }
+      @keyframes b32ctEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(6px) scale(0.995);
+          filter: blur(2px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+      @keyframes b32ctExit {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-4px) scale(1);
+          filter: blur(2px);
+        }
       }
     `;
     document.head.appendChild(style);
@@ -334,22 +336,6 @@
     saturate(1.08)
     drop-shadow(0 0 8px rgba(255,230,170,.28))
     drop-shadow(0 0 18px rgba(255,150,40,.14));
-
-  /* 追加：下端だけ自然に透明へ */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 70%,
-    rgba(0,0,0,.65) 84%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 70%,
-    rgba(0,0,0,.65) 84%,
-    transparent 100%
-  );
 
   transform: translateX(12px) scale(1.08);
   transform-origin: center bottom;
@@ -580,30 +566,6 @@
   }
 }
 
-/* 左から入り・中央で静止・左へ抜けるスライド演出 */
-@keyframes b32UltCutinImgSlide {
-  0% {
-    opacity: 0;
-    transform: translate(-70%, -50%);
-    filter: blur(4px) brightness(1.02);
-  }
-  14% {
-    opacity: .98;
-    transform: translate(-50%, -50%);
-    filter: blur(0) brightness(1.08) contrast(1.16) saturate(1.06);
-  }
-  76% {
-    opacity: .98;
-    transform: translate(-50%, -50%);
-    filter: blur(0) brightness(1.08) contrast(1.14);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-68%, -50%);
-    filter: blur(3px) brightness(1.04);
-  }
-}
-
 @keyframes b32UltTextIn {
   0% {
     opacity: 0;
@@ -655,133 +617,6 @@
   }
   100% {
     opacity: 0;
-  }
-}
-
-/* ── ULTカットイン強化：ULTIMATE ラベル ── */
-.b32-ult-cutin-label {
-  font-size: 12px !important;
-  letter-spacing: 7px !important;
-  color: rgba(255,235,170,.98) !important;
-  text-shadow:
-    0 0 6px rgba(255,255,255,.9),
-    0 0 18px rgba(255,220,120,.95),
-    0 0 40px rgba(255,170,60,.70),
-    0 2px 4px rgba(0,0,0,1) !important;
-}
-
-/* ── ULTカットイン強化：技名 ── */
-.b32-ult-cutin-name {
-  text-shadow:
-    0 0 10px rgba(255,255,255,.98),
-    0 0 32px rgba(255,200,80,.95),
-    0 0 72px rgba(255,130,40,.60),
-    0 0 120px rgba(255,80,20,.25),
-    0 3px 8px rgba(0,0,0,1) !important;
-}
-
-/* ── ULT専用：強い画面揺れ ── */
-.b32-screen-shake-ult {
-  animation: b32ScreenShakeUlt 380ms ease-out;
-}
-
-@keyframes b32ScreenShakeUlt {
-  0%   { transform: translate(0, 0); }
-  14%  { transform: translate(-4px, 2px); }
-  28%  { transform: translate(5px, -2px); }
-  42%  { transform: translate(-4px, 2px); }
-  56%  { transform: translate(3px, -1px); }
-  72%  { transform: translate(-2px, 1px); }
-  86%  { transform: translate(1px, 0); }
-  100% { transform: translate(0, 0); }
-}
-
-/* ── hitStyle: heavy 用：強い画面揺れ ── */
-.b32-screen-shake-heavy {
-  animation: b32ScreenShakeHeavy 340ms ease-out;
-}
-
-@keyframes b32ScreenShakeHeavy {
-  0%   { transform: translate(0, 0); }
-  16%  { transform: translate(-4px, 2px); }
-  32%  { transform: translate(5px, -2px); }
-  52%  { transform: translate(-3px, 1px); }
-  72%  { transform: translate(2px, -1px); }
-  100% { transform: translate(0, 0); }
-}
-
-/* ── ULT ダメージ数値：大きめ ── */
-.b32-float-number.damage.ult {
-  font-size: 26px !important;
-  color: #ffcc44 !important;
-  text-shadow:
-    0 0 10px rgba(255,200,60,.95),
-    0 0 24px rgba(255,140,40,.80),
-    0 1px 4px rgba(0,0,0,.95) !important;
-}
-
-/* ── ULT ヒールナンバー：大きめ ── */
-.b32-float-number.heal.ult {
-  font-size: 24px !important;
-  color: #80ffcc !important;
-  text-shadow:
-    0 0 10px rgba(60,255,180,.9),
-    0 1px 4px rgba(0,0,0,.95) !important;
-}
-
-/* ── hitStyle: rapid — 小さめスラッシュ ── */
-.b32-hit-slash.rapid {
-  width: 38px !important;
-  height: 4px !important;
-  opacity: .75;
-}
-
-/* ── hitStyle: heavy — 大きめスラッシュ ── */
-.b32-hit-slash.heavy {
-  width: 80px !important;
-  height: 9px !important;
-  box-shadow:
-    0 0 14px rgba(255, 90, 70, .95),
-    0 0 28px rgba(255, 90, 70, .50) !important;
-}
-
-/* ── ULT スラッシュ ── */
-.b32-hit-slash.ult {
-  width: 90px !important;
-  height: 10px !important;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,1),
-    rgba(255,210,80,.95),
-    transparent
-  ) !important;
-  box-shadow:
-    0 0 16px rgba(255, 200, 60, .95),
-    0 0 34px rgba(255, 140, 40, .55) !important;
-  animation: b32HitSlashUlt 300ms ease-out forwards !important;
-}
-
-/* ULT + multi は一番派手 */
-.b32-hit-slash.ult.multi {
-  width: 100px !important;
-  height: 12px !important;
-}
-
-@keyframes b32HitSlashUlt {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(-28deg) scaleX(.25);
-    filter: blur(2px);
-  }
-  20% {
-    opacity: 1;
-    filter: blur(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(-28deg) scaleX(1.35);
-    filter: blur(1px);
   }
 }
 
@@ -1087,481 +922,8 @@
         width: 100%;
         margin-top: 3px;
       }
-
-      /* ── 自陣コア画像 ── */
-.b32-core-object {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotateX(-50deg);
-  transform-origin: center center;
-  pointer-events: none;
-}
-
-.b32-core-img {
-  width: 115%;
-  height: 115%;
-  object-fit: contain;
-  filter:
-    drop-shadow(0 0 6px rgba(80, 240, 255, .75))
-    drop-shadow(0 0 12px rgba(80, 220, 255, .35));
-}
-
-.b32-core-object.stability-2 .b32-core-img {
-  filter:
-    drop-shadow(0 0 6px rgba(255, 220, 80, .8))
-    drop-shadow(0 0 14px rgba(255, 180, 40, .45));
-}
-
-.b32-core-object.stability-1 .b32-core-img {
-  filter:
-    drop-shadow(0 0 7px rgba(255, 60, 60, .9))
-    drop-shadow(0 0 16px rgba(255, 40, 40, .55));
-}
-
-/* ── コア被弾：時空歪みレベルの大揺れ ── */
-.b32-screen-shake-core {
-  animation: b32ScreenShakeCore 720ms cubic-bezier(.2,.9,.25,1);
-}
-
-@keyframes b32ScreenShakeCore {
-  0%   { transform: translate(0, 0) rotate(0deg); filter: none; }
-  8%   { transform: translate(-8px, 5px) rotate(-0.4deg); filter: contrast(1.15); }
-  16%  { transform: translate(10px, -6px) rotate(0.5deg); }
-  25%  { transform: translate(-12px, 4px) rotate(-0.6deg); }
-  35%  { transform: translate(9px, 6px) rotate(0.4deg); }
-  48%  { transform: translate(-7px, -5px) rotate(-0.3deg); }
-  62%  { transform: translate(5px, 3px) rotate(0.2deg); }
-  78%  { transform: translate(-3px, 1px) rotate(-0.1deg); }
-  100% { transform: translate(0, 0) rotate(0deg); filter: none; }
-}
-
-/* コア被弾時の赤い画面フラッシュ */
-.b32-core-damage-flash {
-  position: fixed;
-  inset: 0;
-  z-index: 1000002;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 62%, rgba(255,40,40,.34), transparent 36%),
-    linear-gradient(180deg, rgba(70,0,0,.26), rgba(0,0,0,0), rgba(90,0,0,.30));
-  animation: b32CoreDamageFlash 720ms ease-out forwards;
-}
-
-@keyframes b32CoreDamageFlash {
-  0%   { opacity: 0; }
-  12%  { opacity: 1; }
-  36%  { opacity: .55; }
-  100% { opacity: 0; }
-}
-
-/* コア被弾の大きい歪みリング */
-.b32-core-distort-ring {
-  position: fixed;
-  z-index: 1000001;
-  pointer-events: none;
-  left: 50%;
-  top: 62%;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid rgba(255,80,80,.95);
-  box-shadow:
-    0 0 18px rgba(255,40,40,.95),
-    0 0 48px rgba(255,0,0,.55),
-    inset 0 0 18px rgba(255,80,80,.45);
-  animation: b32CoreDistortRing 780ms ease-out forwards;
-}
-
-@keyframes b32CoreDistortRing {
-  0% {
-    opacity: 0;
-    width: 20px;
-    height: 20px;
-    filter: blur(0);
-  }
-  14% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    width: 180px;
-    height: 180px;
-    filter: blur(2px);
-  }
-}
-
-/* コア被弾テキスト */
-.b32-core-damage-text {
-  position: fixed;
-  left: 50%;
-  top: 56%;
-  z-index: 1000003;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  font-family: 'Cinzel', serif;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 4px;
-  color: #ffdddd;
-  text-shadow:
-    0 0 8px rgba(255,255,255,.9),
-    0 0 24px rgba(255,40,40,.95),
-    0 0 60px rgba(255,0,0,.55),
-    0 2px 4px rgba(0,0,0,1);
-  animation: b32CoreDamageText 850ms ease-out forwards;
-}
-
-@keyframes b32CoreDamageText {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(.72);
-    filter: blur(3px);
-  }
-  18% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.12);
-    filter: blur(0);
-  }
-  62% {
-    opacity: 1;
-    transform: translate(-50%, -54%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -62%) scale(1.05);
-    filter: blur(1px);
-  }
-}
-
-/* コア画像自体も揺らす */
-.b32-core-object.core-hit {
-  animation: b32CoreObjectHit 700ms ease-out;
-}
-
-@keyframes b32CoreObjectHit {
-  0%   { transform: rotateX(-50deg) translateX(0) scale(1); }
-  15%  { transform: rotateX(-50deg) translateX(-5px) scale(1.12); }
-  30%  { transform: rotateX(-50deg) translateX(6px) scale(1.08); }
-  48%  { transform: rotateX(-50deg) translateX(-4px) scale(1.10); }
-  70%  { transform: rotateX(-50deg) translateX(2px) scale(1.04); }
-  100% { transform: rotateX(-50deg) translateX(0) scale(1); }
-}
-
     `;
     document.head.appendChild(chipStyle);
-
-    // ── ボス危険エリア用スタイル ──
-    if (document.getElementById('b32-danger-style')) return;
-    const dangerStyle = document.createElement('style');
-    dangerStyle.id = 'b32-danger-style';
-    dangerStyle.textContent = `
-      /* ── ボス危険エリア：通常攻撃（薄い赤） ── */
-      .b32-cell.boss-danger-normal {
-        background:
-          radial-gradient(circle at center, rgba(255, 80, 80, .18), transparent 62%),
-          rgba(60, 8, 8, .18) !important;
-        border-color: rgba(255, 90, 90, .38) !important;
-        box-shadow:
-          inset 0 0 10px rgba(255, 60, 60, .18),
-          0 0 8px rgba(255, 40, 40, .14) !important;
-      }
-
-      /* ── ボス危険エリア：予兆攻撃（オレンジ） ── */
-      .b32-cell.boss-danger-warn {
-        background:
-          linear-gradient(145deg, rgba(255, 150, 40, .24), rgba(80, 20, 0, .28)),
-          rgba(50, 10, 0, .22) !important;
-        border-color: rgba(255, 170, 60, .60) !important;
-        box-shadow:
-          inset 0 0 14px rgba(255, 150, 40, .24),
-          0 0 14px rgba(255, 120, 40, .24) !important;
-      }
-
-      /* ── ボス危険エリア：直線強攻撃（濃い赤＋点滅） ── */
-      .b32-cell.boss-danger-line {
-        background:
-          linear-gradient(180deg, rgba(255, 40, 40, .34), rgba(80, 0, 0, .34)),
-          rgba(60, 0, 0, .30) !important;
-        border-color: rgba(255, 70, 70, .82) !important;
-        box-shadow:
-          inset 0 0 18px rgba(255, 40, 40, .34),
-          0 0 18px rgba(255, 20, 20, .34) !important;
-        /* filter: brightness() は子要素の transform を潰すため使わない */
-        animation: b32DangerPulse 1.2s ease-in-out infinite;
-      }
-
-      /* 点滅は border-color の opacity 変化で表現（filter 非使用） */
-      @keyframes b32DangerPulse {
-        0%, 100% {
-          border-color: rgba(255, 70, 70, .82) !important;
-          box-shadow:
-            inset 0 0 18px rgba(255, 40, 40, .34),
-            0 0 18px rgba(255, 20, 20, .34) !important;
-        }
-        50% {
-          border-color: rgba(255, 120, 120, 1) !important;
-          box-shadow:
-            inset 0 0 28px rgba(255, 60, 60, .55),
-            0 0 28px rgba(255, 40, 40, .55) !important;
-        }
-      }
-
-      /* ── コアセルに危険エリアが重なった場合：点滅アニメを止めてコア表示を保護 ── */
-      .b32-cell.boss-danger-line:has(.b32-core-object),
-      .b32-cell.boss-danger-warn:has(.b32-core-object),
-      .b32-cell.boss-danger-normal:has(.b32-core-object) {
-        animation: none !important;
-      }
-
-      /* :has() 非対応ブラウザ向けフォールバック（JS で has-core クラスを付与） */
-      .b32-cell.has-core.boss-danger-line,
-      .b32-cell.has-core.boss-danger-warn,
-      .b32-cell.has-core.boss-danger-normal {
-        animation: none !important;
-      }
-
-      /* ── 危険エリア + スキル範囲が重なった場合：スキル範囲を前面に ── */
-      .b32-cell.boss-danger-normal.skill-target-enemy,
-      .b32-cell.boss-danger-warn.skill-target-enemy,
-      .b32-cell.boss-danger-line.skill-target-enemy {
-        background:
-          linear-gradient(145deg, rgba(255,100,60,.22), rgba(40,8,4,.34)),
-          rgba(18,6,4,.52) !important;
-        border-color: rgba(255,130,70,.70) !important;
-        box-shadow:
-          inset 0 0 14px rgba(255,100,50,.24),
-          0 0 16px rgba(255,100,50,.28) !important;
-        animation: none !important;
-      }
-
-      .b32-cell.boss-danger-normal.skill-range,
-      .b32-cell.boss-danger-warn.skill-range,
-      .b32-cell.boss-danger-line.skill-range {
-        animation: none !important;
-      }
-
-      /* ── 危険エリア + 移動可能セルが重なった場合：movable枠を上書きしない ── */
-      .b32-cell.boss-danger-normal.movable,
-      .b32-cell.boss-danger-warn.movable,
-      .b32-cell.boss-danger-line.movable {
-        /* movable の枠は残し、危険の背景だけを重ねる */
-        animation: none !important;
-      }
-    `;
-    document.head.appendChild(dangerStyle);
-
-    // ── ULT使用可能演出スタイル ──
-    if (document.getElementById('b32-ult-ready-style')) return;
-    const ultReadyStyle = document.createElement('style');
-    ultReadyStyle.id = 'b32-ult-ready-style';
-    ultReadyStyle.textContent = `
-      /* ── ULT使用可能：鼓動 + 発光 ── */
-      .b32-float-action-btn.ult.ult-ready {
-        position: relative;
-        overflow: visible !important;
-        color: #fff4c8 !important;
-        border-color: rgba(255, 190, 80, .95) !important;
-        background:
-          radial-gradient(circle at 50% 65%, rgba(255, 120, 20, .42), transparent 58%),
-          linear-gradient(180deg, rgba(120, 30, 10, .60), rgba(35, 4, 4, .92)) !important;
-        box-shadow:
-          0 0 10px rgba(255, 210, 90, .85),
-          0 0 22px rgba(255, 110, 30, .70),
-          0 0 42px rgba(255, 40, 20, .42),
-          inset 0 0 12px rgba(255, 180, 70, .38) !important;
-        animation:
-          b32UltHeartbeat 1.05s ease-in-out infinite,
-          b32UltGlow 1.6s ease-in-out infinite;
-      }
-
-      /* 外側の脈動リング */
-      .b32-float-action-btn.ult.ult-ready::after {
-        content: '';
-        position: absolute;
-        inset: -6px;
-        border-radius: 999px;
-        pointer-events: none;
-        border: 1px solid rgba(255, 210, 100, .65);
-        box-shadow:
-          0 0 10px rgba(255, 190, 70, .75),
-          0 0 24px rgba(255, 80, 30, .45);
-        opacity: .75;
-        animation: b32UltPulseRing 1.05s ease-out infinite;
-      }
-
-      /* ── ULTボタン：重なり順の基準 ── */
-      .b32-float-action-btn.ult {
-        position: relative;
-        isolation: isolate;
-      }
-
-      /* 魂炎は文字より背面 */
-      .b32-ult-soul-flame {
-        z-index: 0 !important;
-      }
-
-      /* ── ULT文字：通常時 ── */
-      .b32-float-action-btn.ult .b32-ult-label {
-        position: relative;
-        z-index: 5 !important;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-
-        font-family: 'Cinzel', serif;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 1px;
-
-        color: #fff7d0;
-        text-shadow:
-          0 0 4px rgba(255,255,255,.95),
-          0 0 10px rgba(255,230,140,.95),
-          0 0 18px rgba(255,160,60,.75),
-          0 1px 3px rgba(0,0,0,1);
-
-        pointer-events: none;
-        transform-origin: center center;
-      }
-
-      /* ── ULT使用可能時：文字も鼓動＋シアン発光 ── */
-      .b32-float-action-btn.ult.ult-ready .b32-ult-label {
-        color: #ffffff;
-        font-size: 12px;
-
-        text-shadow:
-          0 0 5px rgba(255,255,255,1),
-          0 0 12px rgba(160,255,255,.95),
-          0 0 22px rgba(60,230,255,.85),
-          0 0 34px rgba(255,200,80,.55),
-          0 2px 4px rgba(0,0,0,1);
-
-        animation: b32UltLabelHeartbeat 1.05s ease-in-out infinite;
-      }
-
-      /* disabled 時は文字鼓動を止める */
-      .b32-float-action-btn.ult.disabled .b32-ult-label {
-        animation: none !important;
-      }
-
-      /* ボタン本体の b32UltHeartbeat と同周期・同タイミング */
-      @keyframes b32UltLabelHeartbeat {
-        0%, 100% {
-          transform: translateY(-1px) scale(1);
-          filter: brightness(1);
-        }
-        12% {
-          transform: translateY(-1px) scale(1.22);
-          filter: brightness(1.45);
-        }
-        24% {
-          transform: translateY(-1px) scale(1.04);
-          filter: brightness(1.08);
-        }
-        38% {
-          transform: translateY(-1px) scale(1.16);
-          filter: brightness(1.32);
-        }
-        56% {
-          transform: translateY(-1px) scale(1);
-          filter: brightness(1);
-        }
-      }
-
-      /* ── 魂炎SVGレイヤー ── */
-      .b32-ult-soul-flame {
-        position: absolute;
-        left: 50%;
-        bottom: -10px;
-        width: 58px;
-        height: 86px;
-        transform: translateX(-50%);
-        pointer-events: none;
-        z-index: 0;
-        opacity: .95;
-        animation: b32UltFlameFloat 1.05s ease-in-out infinite;
-      }
-
-      .b32-ult-soul-flame svg {
-        width: 100%;
-        height: 100%;
-        overflow: visible;
-        filter:
-          drop-shadow(0 0 5px rgba(80, 255, 255, .95))
-          drop-shadow(0 0 14px rgba(40, 220, 255, .75))
-          drop-shadow(0 0 28px rgba(40, 160, 255, .42));
-      }
-
-      .b32-ult-flame-outer,
-      .b32-ult-flame-inner {
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
-
-      .b32-ult-flame-outer {
-        stroke: rgba(40, 255, 255, .95);
-        stroke-width: 8;
-      }
-
-      .b32-ult-flame-inner {
-        stroke: rgba(150, 255, 255, .92);
-        stroke-width: 6;
-      }
-
-      /* 魂炎の浮遊・ゆらぎ */
-      @keyframes b32UltFlameFloat {
-        0%, 100% {
-          transform: translateX(-50%) translateY(2px) scale(.96) rotate(-1deg);
-          opacity: .72;
-        }
-        50% {
-          transform: translateX(-50%) translateY(-7px) scale(1.08) rotate(1deg);
-          opacity: 1;
-        }
-      }
-
-      /* disabled 時は燃やさない */
-      .b32-float-action-btn.ult.disabled {
-        animation: none !important;
-      }
-      .b32-float-action-btn.ult.disabled::after {
-        display: none !important;
-      }
-      .b32-float-action-btn.ult.disabled .b32-ult-soul-flame {
-        display: none !important;
-      }
-
-      /* overflow を親まで伝播させる */
-      .b32-floating-actions {
-        overflow: visible !important;
-      }
-
-      @keyframes b32UltHeartbeat {
-        0%, 100% { transform: scale(1); }
-        12%       { transform: scale(1.08); }
-        24%       { transform: scale(1.02); }
-        38%       { transform: scale(1.06); }
-        56%       { transform: scale(1); }
-      }
-
-      @keyframes b32UltGlow {
-        0%, 100% { filter: brightness(1); }
-        50%       { filter: brightness(1.32); }
-      }
-
-      @keyframes b32UltPulseRing {
-        0%   { transform: scale(.92); opacity: .85; }
-        70%  { transform: scale(1.32); opacity: .18; }
-        100% { transform: scale(1.42); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(ultReadyStyle);
   }
 
   // ============================================================
@@ -1670,35 +1032,29 @@
       document.body.appendChild(el);
     }
 
-    // クラスだけで状態を制御する（style.opacity 直接操作はしない）
-    el.classList.remove('b32ct-visible');
-    el.classList.add('b32ct-hidden');
-
+    // 既存アニメを即リセットしてから再適用（再トリガー用）
+    el.className = '';
+    el.style.opacity = '0';
     el.innerHTML = `
       <div class="b32ct-main">${main}</div>
       ${sub ? `<div class="b32ct-sub">${sub}</div>` : ''}
     `;
 
-    // レイアウト確定 → 次フレームで visible へ（transition が確実に走る）
-    void el.offsetWidth;
-
+    // 次フレームで enter アニメを開始
     requestAnimationFrame(() => {
-      el.classList.remove('b32ct-hidden');
-      el.classList.add('b32ct-visible');
+      el.className = 'b32ct-enter';
     });
 
-    // duration 後にフェードアウト開始
-    const exitDuration = 900;   // CSSの transition 900ms に合わせる
+    // duration 後に exit アニメ開始
+    const exitDuration = 850;  // CSSフェードアウト (.85s) に合わせる
     _centerTextTimer = setTimeout(() => {
-      el.classList.remove('b32ct-visible');
-      el.classList.add('b32ct-hidden');
-
+      el.className = 'b32ct-exit';
       _centerTextTimer2 = setTimeout(() => {
         el.innerHTML = '';
-        el.classList.remove('b32ct-hidden');
+        el.className  = '';
+        el.style.opacity = '0';
         _centerTextTimer2 = null;
       }, exitDuration);
-
       _centerTextTimer = null;
     }, duration || 1200);
   };
@@ -1707,8 +1063,8 @@
   window.showBattle32CenterTextAsync = function (main, sub, duration) {
     return new Promise(resolve => {
       window.showBattle32CenterText(main, sub, duration);
-      // duration(表示) + exitDuration(900ms) + 50ms余裕
-      setTimeout(resolve, (duration || 1200) + 950);
+      // duration(表示) + 400(フェードアウト) + 50(余裕) で resolve
+      setTimeout(resolve, (duration || 1200) + 900);  // フェードアウト(.85s)分を確保
     });
   };
 
@@ -1804,15 +1160,14 @@
 }
 
   // フロートナンバーを表示
-  function _showFloatNumber(unitInfo, amount, kind, isUlt) {
+  function _showFloatNumber(unitInfo, amount, kind) {
     const pos = _getUnitScreenPos(unitInfo);
     if (!pos) return;
 
     const el = document.createElement('div');
     const sign  = kind === 'heal' ? '+' : '-';
     const isBoss = unitInfo.side === 'enemy' && amount > 500;
-    const ultCls = isUlt ? ' ult' : '';
-    el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}`;
+    el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}`;
     el.textContent = `${sign}${amount}`;
     el.style.left = `${pos.x}px`;
     el.style.top  = `${pos.y}px`;
@@ -1879,92 +1234,17 @@ function _showUltCutin(skillName, cutinImg) {
   });
 }
 
-function _showScreenShake(variant) {
+function _showScreenShake() {
   const root = document.getElementById('battle32-root');
   if (!root) return;
 
-  // variant: 'ult' | 'heavy' | '' (normal)
-  const cls = variant === 'ult'   ? 'b32-screen-shake-ult'
-            : variant === 'heavy' ? 'b32-screen-shake-heavy'
-            :                       'b32-screen-shake';
-  const dur = variant === 'ult' ? 400 : variant === 'heavy' ? 360 : 280;
-
-  root.classList.remove('b32-screen-shake', 'b32-screen-shake-ult', 'b32-screen-shake-heavy');
+  root.classList.remove('b32-screen-shake');
   void root.offsetWidth;
-  root.classList.add(cls);
+  root.classList.add('b32-screen-shake');
 
   setTimeout(() => {
-    root.classList.remove(cls);
-  }, dur);
-}
-
-function _getCoreScreenPos(core) {
-  if (!core) return null;
-
-  const cell = document.querySelector(
-    `.b32-cell[data-row="${core.row}"][data-col="${core.col}"]`
-  );
-  const r = _validRect(cell);
-  if (!r) {
-    return {
-      x: window.innerWidth * 0.5,
-      y: window.innerHeight * 0.62,
-    };
-  }
-
-  return {
-    x: r.left + r.width * 0.5,
-    y: r.top + r.height * 0.45,
-  };
-}
-
-function _showCoreDamageEvent(data) {
-  const core = data && data.core ? data.core : null;
-  const pos = _getCoreScreenPos(core);
-
-  const root = document.getElementById('battle32-root');
-  if (root) {
-    root.classList.remove('b32-screen-shake-core');
-    void root.offsetWidth;
-    root.classList.add('b32-screen-shake-core');
-    setTimeout(() => root.classList.remove('b32-screen-shake-core'), 760);
-  }
-
-  const flash = document.createElement('div');
-  flash.className = 'b32-core-damage-flash';
-  document.body.appendChild(flash);
-  setTimeout(() => {
-    if (flash.parentNode) flash.parentNode.removeChild(flash);
-  }, 780);
-
-  const ring = document.createElement('div');
-  ring.className = 'b32-core-distort-ring';
-  ring.style.left = `${pos.x}px`;
-  ring.style.top = `${pos.y}px`;
-  document.body.appendChild(ring);
-  setTimeout(() => {
-    if (ring.parentNode) ring.parentNode.removeChild(ring);
-  }, 820);
-
-  const text = document.createElement('div');
-  text.className = 'b32-core-damage-text';
-  text.textContent = core && core.stability <= 0
-  ? 'SPATIAL LINK LOST'
-  : 'LINK DESTABILIZED';
-  text.style.left = `${pos.x}px`;
-  text.style.top = `${pos.y - 24}px`;
-  document.body.appendChild(text);
-  setTimeout(() => {
-    if (text.parentNode) text.parentNode.removeChild(text);
-  }, 900);
-
-  const coreEl = document.querySelector('.b32-core-object');
-  if (coreEl) {
-    coreEl.classList.remove('core-hit');
-    void coreEl.offsetWidth;
-    coreEl.classList.add('core-hit');
-    setTimeout(() => coreEl.classList.remove('core-hit'), 740);
-  }
+    root.classList.remove('b32-screen-shake');
+  }, 280);
 }
 
 function _wait(ms) {
@@ -1994,32 +1274,12 @@ function _getTargetElement(unitInfo) {
 }
 
 // 衝撃波リング
-function _showImpactRing(unitInfo, kind, variant) {
+function _showImpactRing(unitInfo, kind) {
   const pos = _getUnitScreenPos(unitInfo);
   if (!pos) return;
 
   const el = document.createElement('div');
   el.className = `b32-impact-ring ${kind}`;
-
-  // ULT/heavy は CSS animation を上書きして大きく拡張する
-  if (variant === 'ult' || variant === 'heavy') {
-    const scale = variant === 'ult' ? 1.55 : 1.32;
-    el.style.setProperty('--ring-scale', scale);
-    // アニメEnd幅を直接Styleで制御する代わりに、transformで拡大する
-    el.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    el.style.transformOrigin = 'center center';
-    // アニメ自体が translate(-50%,-50%) を使うため、wrapperでscaleを当てる
-    const wrap = document.createElement('div');
-    wrap.style.cssText = `position:fixed;left:${pos.x}px;top:${pos.y}px;pointer-events:none;z-index:999997;`;
-    const inner = document.createElement('div');
-    inner.className = `b32-impact-ring ${kind}`;
-    inner.style.cssText = `left:0;top:0;transform:translate(-50%,-50%) scale(${scale});transform-origin:center center;`;
-    wrap.appendChild(inner);
-    document.body.appendChild(wrap);
-    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); }, kind === 'heal' ? 560 : 460);
-    return;
-  }
-
   el.style.left = `${pos.x}px`;
   el.style.top  = `${pos.y}px`;
   document.body.appendChild(el);
@@ -2030,35 +1290,19 @@ function _showImpactRing(unitInfo, kind, variant) {
 }
 
 // 斜めヒットスラッシュ
-function _showHitSlash(unitInfo, variant, isMulti) {
+function _showHitSlash(unitInfo) {
   const pos = _getUnitScreenPos(unitInfo);
   if (!pos) return;
 
-  // slashCount: multi は2本、他は1本
-  const count = isMulti ? 2 : 1;
+  const el = document.createElement('div');
+  el.className = 'b32-hit-slash';
+  el.style.left = `${pos.x}px`;
+  el.style.top  = `${pos.y}px`;
+  document.body.appendChild(el);
 
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement('div');
-    // variant クラスを追加
-    const variantCls = variant ? ` ${variant}` : '';
-    const multiCls   = isMulti ? ' multi' : '';
-    el.className = `b32-hit-slash${variantCls}${multiCls}`;
-
-    // 複数本の場合はわずかにズラす
-    const ox = i * 12 - (count - 1) * 6;
-    const oy = i * 8  - (count - 1) * 4;
-    el.style.left = `${pos.x + ox}px`;
-    el.style.top  = `${pos.y + oy}px`;
-
-    // 2本目は少し遅延
-    const delay = i * 80;
-    if (delay > 0) el.style.animationDelay = `${delay}ms`;
-
-    document.body.appendChild(el);
-    setTimeout(() => {
-      if (el.parentNode) el.parentNode.removeChild(el);
-    }, 300 + delay);
-  }
+  setTimeout(() => {
+    if (el.parentNode) el.parentNode.removeChild(el);
+  }, 300);
 }
 
 // 対象を小さく揺らす
@@ -2102,55 +1346,37 @@ function _showImpactShake(unitInfo) {
   function _onDamageEvent(data) {
   if (!data || !data.target) return;
 
-  const isUlt    = !!data.isUltimate;
-  const hitStyle = data.hitStyle || 'normal';
-  const isMulti  = hitStyle === 'multi';
-  const isHeavy  = hitStyle === 'heavy';
-  const isRapid  = hitStyle === 'rapid';
-
-  // shakeVariant: ULT > heavy > normal
-  const shakeVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
-
-  // slashVariant: ULT スラッシュクラス (ult/heavy/rapid/'' のどれか)
-  const slashVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : isRapid ? 'rapid' : '';
-
-  // ringVariant: ULT/heavy で大きく
-  const ringVariant  = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
-
   // スキル名表示の直後に「当たった感」が来るよう、少し溜める
   setTimeout(() => {
-    _showScreenShake(shakeVariant);
-    _showImpactRing(data.target, 'damage', ringVariant);
-    _showHitSlash(data.target, slashVariant, isMulti);
+    _showScreenShake();
+    _showImpactRing(data.target, 'damage');
+    _showHitSlash(data.target);
     _showImpactShake(data.target);
     _showHitFlash(data.target, 'damage');
   }, 120);
 
   // 数値は衝撃より少し後に出す
   setTimeout(() => {
-    _showFloatNumber(data.target, data.amount, 'damage', isUlt);
+    _showFloatNumber(data.target, data.amount, 'damage');
   }, 240);
 }
 
 function _onHealEvent(data) {
   if (!data || !data.target) return;
 
-  const isUlt = !!data.isUltimate;
-
   setTimeout(() => {
-    _showImpactRing(data.target, 'heal', isUlt ? 'ult' : '');
+    _showImpactRing(data.target, 'heal');
     _showHitFlash(data.target, 'heal');
   }, 120);
 
   setTimeout(() => {
-    _showFloatNumber(data.target, data.amount, 'heal', isUlt);
+    _showFloatNumber(data.target, data.amount, 'heal');
   }, 240);
 }
 
   // 公開：hookBattle32Start から呼べるように
   window._b32OnDamage = _onDamageEvent;
   window._b32OnHeal   = _onHealEvent;
-  window._b32OnCoreDamage = _showCoreDamageEvent;
 
   window._b32EndSkill = function () {
     if (_b32InputLocked) return;
@@ -2172,12 +1398,8 @@ function _onHealEvent(data) {
     if (!board) return;
 
     // ユニットマップ
-    // HP0の味方・雑魚はマス占有から除外。ボスはHP0後も核露出状態で残す。
     const unitMap = {};
-    [
-      ...bs.allies.filter(u => u.hp > 0),
-      ...bs.enemies.filter(u => u.hp > 0 || u.isBoss),
-    ].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
+    [...bs.allies, ...bs.enemies].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
 
     // ── スキルフェーズ用ハイライト ──
     let skillSelectableUids = new Set();
@@ -2200,28 +1422,6 @@ function _onHealEvent(data) {
   }
 }
 
-    // ── 危険エリア（ボス攻撃予告） ──
-    // スキルフェーズ中かつボスが生存のときだけ表示
-    let bossDangerCells = new Map();   // key:'row-col', value: 'boss_line' | 'boss_warn' | 'boss_normal'
-    if (
-      bs.phase === 'skill' &&
-      window.Battle32 &&
-      window.Battle32.getBossDangerCells
-    ) {
-      const dangerList = window.Battle32.getBossDangerCells();
-      dangerList.forEach(cell => {
-        const k = `${cell.row}-${cell.col}`;
-        // 同一セルに複数種が重なる場合は優先度の高い方を維持
-        // boss_line > boss_warn > boss_normal
-        const existing = bossDangerCells.get(k);
-        if (!existing ||
-            (cell.type === 'boss_line') ||
-            (cell.type === 'boss_warn' && existing === 'boss_normal')) {
-          bossDangerCells.set(k, cell.type || 'boss_normal');
-        }
-      });
-    }
-
     const cells = [];
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 5; c++) {
@@ -2236,19 +1436,9 @@ function _onHealEvent(data) {
         // skillRangeCells は Map<"row-col", cellType>
         const skillCellType     = skillRangeCells.get ? skillRangeCells.get(key) : null;
         const isMovable         = movableCells.has(key);
-        // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
-        const bossDangerType    = bossDangerCells.get(key);
 
         let cls = `b32-cell ${zoneClass}`;
         if (isDivider)           cls += ' row-divider';
-        // 危険エリアは最初に付与（後続のスキル範囲クラスに上書きされる）
-        if (bossDangerType === 'boss_line')        cls += ' boss-danger-line';
-        else if (bossDangerType === 'boss_warn')   cls += ' boss-danger-warn';
-        else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
-        // コアがあるセルにフラグ付与（filter/animation からコア表示を保護するため）
-        if (bs.cores?.ally && r === bs.cores.ally.row && c === bs.cores.ally.col) {
-          cls += ' has-core';
-        }
         if (isSkillSelectable)   cls += ' skill-selectable';
         if (isSkillSelected)     cls += ' skill-selected';
         if (isMovable)           cls += ' movable';
@@ -2280,21 +1470,21 @@ function _onHealEvent(data) {
   const cores = bs.cores;
   if (!cores) return '';
 
-  // 自陣コアのみ表示
+  // 自陣コアのみ表示（敵コアは廃止・ボス自身がコアを内包する仕様）
   if (cores.ally && row === cores.ally.row && col === cores.ally.col) {
-    const stability = cores.ally.stability ?? 3;
-
-    let img = 'images/battle_core_100.webp';
-    if (stability <= 1) {
-      img = 'images/battle_core_30.webp';
-    } else if (stability === 2) {
-      img = 'images/battle_core_60.webp';
-    }
-
     return `
-      <div class="b32-core-object stability-${stability}">
-        <img class="b32-core-img" src="${img}" alt="CORE" onerror="this.style.display='none'">
-      </div>
+      <div style="
+        font-size:8px;
+        color:#8ff;
+        border:1px solid rgba(120,240,255,.55);
+        padding:2px 4px;
+        border-radius:4px;
+        background:rgba(0,40,55,.65);
+        font-family:'Cinzel',serif;
+        letter-spacing:1px;
+        transform: rotateX(-50deg);
+        transform-origin:center center;
+      ">CORE</div>
     `;
   }
 
@@ -2759,59 +1949,19 @@ await _afterCharTurnFlow();
   if (ultSkill) {
     const shinki = ultSkill.shinkiCost || 0;
     const cantUlt = ally.skillUsedThisTurn || (shinki > ally.shinki);
-    const ultReady = !cantUlt;
-
-    // ULT発動可能時のみ青白い魂炎SVGを表示
-    const flameHtml = ultReady ? `
-      <span class="b32-ult-soul-flame" aria-hidden="true">
-        <svg viewBox="0 0 100 140">
-          <path
-            class="b32-ult-flame-outer"
-            d="M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z"
-          >
-            <animate
-              attributeName="d"
-              dur="1.2s"
-              repeatCount="indefinite"
-              values="
-                M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z;
-                M52 4 C69 35 64 52 76 78 C98 112 72 136 49 134 C22 132 4 108 22 80 C35 59 47 61 39 36 C35 21 46 13 52 4Z;
-                M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z
-              "
-            />
-          </path>
-          <path
-            class="b32-ult-flame-inner"
-            d="M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z"
-          >
-            <animate
-              attributeName="d"
-              dur=".9s"
-              repeatCount="indefinite"
-              values="
-                M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z;
-                M51 50 C60 69 58 80 67 95 C78 113 62 127 49 124 C34 121 27 110 36 95 C44 82 51 83 46 67 C43 58 48 54 51 50Z;
-                M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z
-              "
-            />
-          </path>
-        </svg>
-      </span>
-    ` : '';
 
     ultBtn = `
       <button type="button"
-        class="b32-float-action-btn ult${cantUlt ? ' disabled' : ''}${ultReady ? ' ult-ready' : ''}"
+        class="b32-float-action-btn ult${cantUlt ? ' disabled' : ''}"
         ${cantUlt ? 'disabled' : ''}
         onclick="_b32OnSkillChipClick(event,'${ally._uid}','${ultSkill.id}')">
-        ${flameHtml}
-        <span class="b32-ult-label">ULT</span>
+        ULT
       </button>
     `;
   } else {
     ultBtn = `
       <button type="button" class="b32-float-action-btn ult disabled" disabled>
-        <span class="b32-ult-label">ULT</span>
+        ULT
       </button>
     `;
   }
@@ -3160,7 +2310,7 @@ listEl.innerHTML = `
     bossHpH +
     actionsH +
     bottom.offsetHeight +
-    (rootW <= 390 && rootH <= 700 ? 4 : 20);
+    20;
 
   const boardAvailW = Math.max(240, rootW - 24);
   const boardAvailH = Math.max(200, rootH - reservedH);
@@ -3169,11 +2319,7 @@ listEl.innerHTML = `
   const cellByW = Math.floor((boardAvailW - gap * 4) / 5);
   const cellByH = Math.floor((boardAvailH - gap * 7) / 8);
 
-  const isCompact = rootW <= 390 && rootH <= 700;
-  const minCell = isCompact ? 24 : 28;
-  const maxCell = isCompact ? 48 : 72;
-
-  const cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
+  const cellSize = Math.max(28, Math.min(72, cellByW, cellByH));
   root.style.setProperty('--cell-size', `${cellSize}px`);
 }
 
@@ -3226,7 +2372,6 @@ listEl.innerHTML = `
       // damage / heal コールバックを UI 演出に接続
       // UI演出と外部callbacks を両方呼ぶ（どちらかが undefined でも安全）
       const userCb = callbacks || {};
-      
       const uiCallbacks = {
         ...userCb,
         damage: (data) => {
@@ -3236,10 +2381,6 @@ listEl.innerHTML = `
         heal: (data) => {
           window._b32OnHeal && window._b32OnHeal(data);
           if (typeof userCb.heal === 'function') userCb.heal(data);
-        },
-        coreDamage: (data) => {
-          window._b32OnCoreDamage && window._b32OnCoreDamage(data);
-          if (typeof userCb.coreDamage === 'function') userCb.coreDamage(data);
         },
       };
       originalStart.call(window.Battle32, config, uiCallbacks);

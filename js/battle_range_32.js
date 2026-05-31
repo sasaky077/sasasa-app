@@ -55,6 +55,40 @@
 
     // 前方隣接1マス（enemy: 下）
     front_enemy: [{ dr:  1, dc: 0 }],
+
+    // 前方横3マス・ally用（前・左前・右前）
+    front_row_3_ally: [
+      { dr: -1, dc:  0 },
+      { dr: -1, dc: -1 },
+      { dr: -1, dc:  1 },
+    ],
+
+    // 前方横3マス・enemy用
+    front_row_3_enemy: [
+      { dr:  1, dc:  0 },
+      { dr:  1, dc: -1 },
+      { dr:  1, dc:  1 },
+    ],
+
+    // 前方直線貫通3マス + 横広がり（front3_row_3 = 前3列×横3） — 簡易版
+    front3_row_3_ally: [
+      { dr: -1, dc: -1 }, { dr: -1, dc:  0 }, { dr: -1, dc:  1 },
+      { dr: -2, dc: -1 }, { dr: -2, dc:  0 }, { dr: -2, dc:  1 },
+      { dr: -3, dc: -1 }, { dr: -3, dc:  0 }, { dr: -3, dc:  1 },
+    ],
+
+    // 前方左右斜め各3マス（V字）— ally用
+    // diag_ally_3 は現時点では diag_v_ally_3 と同じ挙動（将来 diag_left/right に分離予定）
+    diag_ally_3: [
+      { dr: -1, dc: -1 }, { dr: -2, dc: -2 }, { dr: -3, dc: -3 },
+      { dr: -1, dc:  1 }, { dr: -2, dc:  2 }, { dr: -3, dc:  3 },
+    ],
+
+    // 前方左右斜め各3マス（V字）— ally用（diag_ally_3 の明示的V字エイリアス）
+    diag_v_ally_3: [
+      { dr: -1, dc: -1 }, { dr: -2, dc: -2 }, { dr: -3, dc: -3 },
+      { dr: -1, dc:  1 }, { dr: -2, dc:  2 }, { dr: -3, dc:  3 },
+    ],
   };
 
   // ============================================================
@@ -62,7 +96,10 @@
   // ============================================================
   const FIELD_PRESETS_32 = {
     // 全マス
-    all: 'all',
+    all:       'all',
+    enemy_all: 'all',   // 全マスから side:'enemy' でフィルタ（全体攻撃・デバフ用）
+    ally_all:  'all',   // 全マスから side:'ally'  でフィルタ（全体バフ・回復用）
+    field_all: 'all',   // 全マス（汎用）
 
     // 中央列（col:1,2）縦全体（ボス予兆攻撃用）
     center_cols: (function () {
@@ -141,6 +178,9 @@
       if (FIELD_PRESETS_32[range] != null) {
         return { origin: 'field', cells: FIELD_PRESETS_32[range] };
       }
+      // 未知レンジを警告（サイレント失敗の代わり）
+      console.warn('[BattleRange32] 未定義のレンジ名:', range,
+        '— RANGE_PRESETS_32 または FIELD_PRESETS_32 への追加を確認してください');
       return null;
     }
     if (range && typeof range === 'object') return range;
