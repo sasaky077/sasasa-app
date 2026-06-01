@@ -29,21 +29,23 @@
   // ============================================================
   // ステート — スキル操作
   // ============================================================
-  let _selSkillAllyUid = null;
-  let _selSkillId      = null;
-  let _moveMode        = false;
+  let _selMoveAllyUid  = null; // 移動対象キャラ（移動先選択中）
+  let _moveMode        = false; // 移動先マス選択中フラグ
+  let _selSkillAllyUid = null; // スキル使用キャラ（移動後に改めて選択）
+  let _selSkillId      = null; // 選択中のスキルID
 
   function _resetSkillState() {
-  _selSkillAllyUid = null;
-  _selSkillId      = null;
-  _moveMode        = false;
+    _selMoveAllyUid  = null;
+    _selSkillAllyUid = null;
+    _selSkillId      = null;
+    _moveMode        = false;
 
-  const box = document.getElementById('b32-skill-detail-box');
-  if (box) {
-    box.style.display = 'none';
-    box.classList.remove('show');
+    const box = document.getElementById('b32-skill-detail-box');
+    if (box) {
+      box.style.display = 'none';
+      box.classList.remove('show');
+    }
   }
-}
 
   // ============================================================
   // ヘルパー
@@ -2261,39 +2263,44 @@ function _onHealEvent(data) {
     let captureCells  = new Set();   // 駒取りマス
 
     if (bs.phase === 'skill') {
-  // ターン単位の行動権チェック
-  const turnMoveUsed  = !!(bs.moveUsedThisTurn);
-  const turnSkillUsed = !!(bs.skillUsedThisTurn);
+      // ターン単位の行動権チェック
+      const turnMoveUsed  = !!(bs.moveUsedThisTurn);
+      const turnSkillUsed = !!(bs.skillUsedThisTurn);
 
-  if (!_selSkillAllyUid) {
-    // スキル権が残っていれば全生存味方が選択可能
-    if (!turnSkillUsed) {
-      bs.allies.filter(u => u.hp > 0)
-        .forEach(u => skillSelectableUids.add(u._uid));
-    }
-  } else {
-    // 移動権が残っている場合のみ移動マスを表示
-    if (_moveMode && !turnMoveUsed && window.Battle32 && window.Battle32.getMoveCells) {
-      const cells = window.Battle32.getMoveCells(_selSkillAllyUid);
-      cells.forEach(c => {
-        const k = `${c.row}-${c.col}`;
-        if (c.cellType === 'capture') {
-          captureCells.add(k);
-        } else {
-          movableCells.add(k);
+      if (_moveMode && _selMoveAllyUid) {
+        // ── フェーズ2: 移動先マス選択中 ──
+        // _selMoveAllyUid のキャラの移動可能マスを表示
+        if (!turnMoveUsed && window.Battle32 && window.Battle32.getMoveCells) {
+          const cells = window.Battle32.getMoveCells(_selMoveAllyUid);
+          cells.forEach(c => {
+            const k = `${c.row}-${c.col}`;
+            if (c.cellType === 'capture') captureCells.add(k);
+            else movableCells.add(k);
+          });
+        } else if (!turnMoveUsed && window.Battle32 && window.Battle32.getMovableCells) {
+          // フォールバック（旧API）
+          const cells = window.Battle32.getMovableCells(_selMoveAllyUid, 3);
+          movableCells = new Set(cells.map(c => `${c.row}-${c.col}`));
         }
-      });
-    } else if (_moveMode && !turnMoveUsed && window.Battle32 && window.Battle32.getMovableCells) {
-      // フォールバック（旧API）
-      const cells = window.Battle32.getMovableCells(_selSkillAllyUid, 3);
-      movableCells = new Set(cells.map(c => `${c.row}-${c.col}`));
-    }
 
-    if (_selSkillId) {
-      skillRangeCells = _skillRangeCells(_selSkillAllyUid, _selSkillId);
+      } else if (_selSkillAllyUid) {
+        // ── フェーズ4: スキルキャラ選択済み ──
+        // スキル範囲のみ表示
+        if (_selSkillId) {
+          skillRangeCells = _skillRangeCells(_selSkillAllyUid, _selSkillId);
+        }
+
+      } else {
+        // ── フェーズ1 or 3: キャラ選択待ち ──
+        // 移動未使用 → 移動キャラ選択
+        // 移動済み・スキル未使用 → スキルキャラ選択
+        // どちらも生存味方全員をタップ可能にする
+        if (!turnSkillUsed) {
+          bs.allies.filter(u => u.hp > 0)
+            .forEach(u => skillSelectableUids.add(u._uid));
+        }
+      }
     }
-  }
-}
 
     // ── 危険エリア（ボス攻撃予告） ──
     // スキルフェーズ中かつボスが生存のときだけ表示
@@ -2327,7 +2334,11 @@ function _onHealEvent(data) {
         const isDivider = r === 4;
 
         const isSkillSelectable = unit && unit.side === 'ally' && skillSelectableUids.has(unit._uid);
-        const isSkillSelected   = unit && unit._uid === _selSkillAllyUid && bs.phase === 'skill';
+        // 移動対象または スキル対象として選択中のキャラを盤面ハイライト
+        const isSkillSelected   = unit && bs.phase === 'skill' && (
+          unit._uid === _selSkillAllyUid ||
+          (unit._uid === _selMoveAllyUid && _moveMode)
+        );
         // skillRangeCells は Map<"row-col", cellType>
         const skillCellType     = skillRangeCells.get ? skillRangeCells.get(key) : null;
         const isMovable         = movableCells.has(key);
@@ -2457,48 +2468,74 @@ function _onHealEvent(data) {
 
   // 盤面上の味方をタップ（スキルフェーズ）
   window._b32OnSkillAllyTap = async function (allyUid) {
-  if (_b32InputLocked) return;
-  const bs = _bs();
-  if (!bs || bs.phase !== 'skill') return;
+    if (_b32InputLocked) return;
+    // 移動先選択中はキャラタップを無視する
+    if (_moveMode && _selMoveAllyUid) return;
+    const bs = _bs();
+    if (!bs || bs.phase !== 'skill') return;
 
-  // スキル権がすでに消費されていたら選択不可
-  if (bs.skillUsedThisTurn) return;
+    const ally = bs.allies.find(u => u._uid === allyUid);
+    if (!ally || ally.hp <= 0) return;
 
-  const ally = bs.allies.find(u => u._uid === allyUid);
-  if (!ally || ally.hp <= 0) return;
+    // ── フェーズ判定 ──
+    // 移動済みまたは移動不要 → スキルキャラ選択モード
+    // まだ移動していない → 移動キャラ選択モード
+    const isMovePhase = !bs.moveUsedThisTurn && !_selMoveAllyUid && !_moveMode;
 
-  // 同キャラを再タップしたら選択解除
-  if (_selSkillAllyUid === allyUid) {
-    _resetSkillState();
-    renderBattle32UI();
-    return;
-  }
+    if (isMovePhase) {
+      // ── フェーズ1: 移動キャラ選択 ──
+      // 同キャラ再タップで選択解除
+      if (_selMoveAllyUid === allyUid && _moveMode) {
+        _selMoveAllyUid = null;
+        _moveMode = false;
+        renderBattle32UI();
+        return;
+      }
+      // 移動キャラとして選択し、移動先マス選択モードへ
+      _selMoveAllyUid  = allyUid;
+      _selSkillAllyUid = null;
+      _selSkillId      = null;
+      _moveMode        = true;
+      renderBattle32UI();
 
-  // キャラ選択
-  _b32InputLocked = true;
-  _selSkillAllyUid = allyUid;
-  _selSkillId      = null;
-  // 移動権が残っていれば移動モードで開始
-  _moveMode        = !bs.moveUsedThisTurn;
-  renderBattle32UI();
-  _b32InputLocked = false;
-  renderBattle32UI();
-};
+    } else if (!_selSkillAllyUid || !bs.skillUsedThisTurn) {
+      // ── フェーズ3: スキルキャラ選択（移動後） ──
+      // スキル権が消費済みなら選択不可
+      if (bs.skillUsedThisTurn) return;
+
+      // 同キャラ再タップで選択解除
+      if (_selSkillAllyUid === allyUid) {
+        _selSkillAllyUid = null;
+        _selSkillId = null;
+        renderBattle32UI();
+        return;
+      }
+      // スキルキャラとして選択
+      _selSkillAllyUid = allyUid;
+      _selSkillId      = null;
+      _moveMode        = false;
+      renderBattle32UI();
+    }
+  };
 
   // 移動可能マスをタップ
   window._b32OnMoveCellTap = async function (row, col) {
     if (_b32InputLocked) return;
-    if (!_selSkillAllyUid || !window.Battle32 || !window.Battle32.moveAlly) return;
+    if (!_selMoveAllyUid || !window.Battle32 || !window.Battle32.moveAlly) return;
 
-   const ok = window.Battle32.moveAlly(_selSkillAllyUid, row, col);
-   if (!ok) return;
+    const ok = window.Battle32.moveAlly(_selMoveAllyUid, row, col);
+    if (!ok) return;
 
-   // 移動後: 移動モード解除。スキル権が残っていればスキル選択状態を維持
-   _b32InputLocked = true;
-   _moveMode = false;
-   renderBattle32UI();
-   _b32InputLocked = false;
-   renderBattle32UI();
+    // 移動成功 → 移動状態をリセット。スキルキャラ選択フェーズへ移行
+    _b32InputLocked  = true;
+    _selMoveAllyUid  = null;
+    _moveMode        = false;
+    // スキルキャラはまだ選んでいない状態に戻す
+    _selSkillAllyUid = null;
+    _selSkillId      = null;
+    renderBattle32UI();
+    _b32InputLocked = false;
+    renderBattle32UI();
   };
 
 
@@ -2747,7 +2784,8 @@ await _afterCharTurnFlow();
       const dead     = ally.hp <= 0;
       // ターン単位のスキル権で「done」を判定
       const done     = !!(bs.skillUsedThisTurn);
-      const selected = ally._uid === _selSkillAllyUid;
+      // 移動対象として選択中 or スキルキャラとして選択中ならハイライト
+      const selected = ally._uid === _selMoveAllyUid || ally._uid === _selSkillAllyUid;
 
       // HP バー＋数値表示
       const hpPct = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
@@ -2798,245 +2836,184 @@ await _afterCharTurnFlow();
     if (bs.phase === 'skill') {
       skillPanel.style.display = '';
 
-  if (!_selSkillAllyUid) {
-  if (guideEl) guideEl.textContent = '移動するキャラを選択してください。';
+      // ── フェーズ判定 ──
+      // Phase1: 移動キャラ選択中      (_selMoveAllyUid=null, _moveMode=false, !bs.moveUsedThisTurn)
+      // Phase2: 移動先マス選択中      (_selMoveAllyUid=set,  _moveMode=true)
+      // Phase3: スキルキャラ選択中    (_selSkillAllyUid=null, bs.moveUsedThisTurn=true)
+      // Phase4: スキル内容選択中      (_selSkillAllyUid=set)
 
-  // キャラ未選択時は3人カードを表示
-  const partyStatusEl = document.getElementById('b32-party-status');
-  if (partyStatusEl) partyStatusEl.style.removeProperty('display');
+      if (_moveMode && _selMoveAllyUid) {
+        // ── Phase2: 移動先マス選択中 ──
+        const partyStatusEl = document.getElementById('b32-party-status');
+        if (partyStatusEl) partyStatusEl.style.setProperty('display', 'none', 'important');
+        if (guideEl) guideEl.textContent = '移動先のマスをタップしてください。';
+        const charaNameEl = document.getElementById('b32-skill-chara-name');
+        if (charaNameEl) charaNameEl.textContent = '';
+        const listEl = document.getElementById('b32-skill-list');
+        if (listEl) {
+          const backBtn = `<button type="button" class="b32-float-action-btn back" onclick="_b32OnBackButtonTap()">戻る</button>`;
+          listEl.innerHTML = `<div class="b32-floating-actions b32-triangle-layout"><div class="b32-float-row b32-float-row--bot">${backBtn}</div></div>`;
+        }
 
-  const charaNameEl = document.getElementById('b32-skill-chara-name');
-  if (charaNameEl) charaNameEl.textContent = '';
+      } else if (_selSkillAllyUid) {
+        // ── Phase4: スキルキャラ選択済み、スキル内容を選ぶ ──
+        const ally = bs.allies.find(u => u._uid === _selSkillAllyUid);
+        if (!ally) {
+          _resetSkillState();
+          renderBattle32UI();
+          return;
+        }
 
-  const listEl = document.getElementById('b32-skill-list');
-  if (listEl) listEl.innerHTML = '';
+        // スキル選択中はパーティカードを隠す
+        const partyStatusEl = document.getElementById('b32-party-status');
+        if (partyStatusEl) partyStatusEl.style.setProperty('display', 'none', 'important');
 
-} else {
-  const ally = bs.allies.find(u => u._uid === _selSkillAllyUid);
-  if (!ally) {
-    _resetSkillState();
-    renderBattle32UI();
-    return;
-  }
+        if (guideEl) guideEl.textContent = 'アクションを選択してください。';
 
-  // キャラ選択後は3人分のキャラカードを消す
-  const partyStatusEl = document.getElementById('b32-party-status');
-  if (partyStatusEl) partyStatusEl.style.setProperty('display', 'none', 'important');
+        const charaNameEl = document.getElementById('b32-skill-chara-name');
+        if (charaNameEl) charaNameEl.textContent = '';
 
-  if (guideEl) guideEl.textContent = _moveMode
-    ? '移動先のマスをタップしてください。'
-    : 'アクションを選択してください。';
+        const listEl = document.getElementById('b32-skill-list');
+        if (!listEl) return;
 
-  // 選択キャラ名の見出しは不要
-  const charaNameEl = document.getElementById('b32-skill-chara-name');
-  if (charaNameEl) charaNameEl.textContent = '';
+        // ULT / 終了の丸ボタン
+        const ultSkill = ally.skills.find(skill => skill.isUltimate);
+        let floatingButtonsHtml = '';
 
-  const listEl = document.getElementById('b32-skill-list');
-  if (!listEl) return;
+        let ultBtn = '';
+        if (ultSkill) {
+          const shinki = ultSkill.shinkiCost || 0;
+          const cantUlt = bs.skillUsedThisTurn || (shinki > ally.shinki);
+          const ultReady = !cantUlt;
 
-  // ULT / 終了の丸ボタン
-  const ultSkill = ally.skills.find(skill => skill.isUltimate);
-  let floatingButtonsHtml = '';
+          const flameHtml = ultReady ? `
+            <span class="b32-ult-soul-flame" aria-hidden="true">
+              <svg viewBox="0 0 100 140">
+                <path class="b32-ult-flame-outer" d="M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z">
+                  <animate attributeName="d" dur="1.2s" repeatCount="indefinite" values="M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z;M52 4 C69 35 64 52 76 78 C98 112 72 136 49 134 C22 132 4 108 22 80 C35 59 47 61 39 36 C35 21 46 13 52 4Z;M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z"/>
+                </path>
+                <path class="b32-ult-flame-inner" d="M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z">
+                  <animate attributeName="d" dur=".9s" repeatCount="indefinite" values="M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z;M51 50 C60 69 58 80 67 95 C78 113 62 127 49 124 C34 121 27 110 36 95 C44 82 51 83 46 67 C43 58 48 54 51 50Z;M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z"/>
+                </path>
+              </svg>
+            </span>
+          ` : '';
 
-  let ultBtn = '';
-  if (ultSkill) {
-    const shinki = ultSkill.shinkiCost || 0;
-    const cantUlt = bs.skillUsedThisTurn || (shinki > ally.shinki);
-    const ultReady = !cantUlt;
+          ultBtn = `
+            <button type="button"
+              class="b32-float-action-btn ult${cantUlt ? ' disabled' : ''}${ultReady ? ' ult-ready' : ''}"
+              ${cantUlt ? 'disabled' : ''}
+              onclick="_b32OnSkillChipClick(event,'${ally._uid}','${ultSkill.id}')">
+              ${flameHtml}
+              <span class="b32-ult-label">ULT</span>
+            </button>
+          `;
+        } else {
+          ultBtn = `<button type="button" class="b32-float-action-btn ult disabled" disabled><span class="b32-ult-label">ULT</span></button>`;
+        }
 
-    // ULT発動可能時のみ青白い魂炎SVGを表示
-    const flameHtml = ultReady ? `
-      <span class="b32-ult-soul-flame" aria-hidden="true">
-        <svg viewBox="0 0 100 140">
-          <path
-            class="b32-ult-flame-outer"
-            d="M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z"
-          >
-            <animate
-              attributeName="d"
-              dur="1.2s"
-              repeatCount="indefinite"
-              values="
-                M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z;
-                M52 4 C69 35 64 52 76 78 C98 112 72 136 49 134 C22 132 4 108 22 80 C35 59 47 61 39 36 C35 21 46 13 52 4Z;
-                M50 6 C76 38 58 55 78 82 C96 112 73 134 50 134 C24 134 5 112 20 82 C30 62 44 58 42 38 C41 24 46 14 50 6Z
-              "
-            />
-          </path>
-          <path
-            class="b32-ult-flame-inner"
-            d="M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z"
-          >
-            <animate
-              attributeName="d"
-              dur=".9s"
-              repeatCount="indefinite"
-              values="
-                M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z;
-                M51 50 C60 69 58 80 67 95 C78 113 62 127 49 124 C34 121 27 110 36 95 C44 82 51 83 46 67 C43 58 48 54 51 50Z;
-                M50 52 C63 70 55 81 66 96 C75 112 64 125 50 125 C35 125 25 112 34 96 C41 84 50 82 47 68 C45 60 48 55 50 52Z
-              "
-            />
-          </path>
-        </svg>
-      </span>
-    ` : '';
+        const endBtn = `<button type="button" class="b32-float-action-btn end" onclick="_b32EndCharTurn('${ally._uid}')">終了</button>`;
+        const backBtn = `<button type="button" class="b32-float-action-btn back" onclick="_b32OnBackButtonTap()">戻る</button>`;
 
-    ultBtn = `
-      <button type="button"
-        class="b32-float-action-btn ult${cantUlt ? ' disabled' : ''}${ultReady ? ' ult-ready' : ''}"
-        ${cantUlt ? 'disabled' : ''}
-        onclick="_b32OnSkillChipClick(event,'${ally._uid}','${ultSkill.id}')">
-        ${flameHtml}
-        <span class="b32-ult-label">ULT</span>
-      </button>
-    `;
-  } else {
-    ultBtn = `
-      <button type="button" class="b32-float-action-btn ult disabled" disabled>
-        <span class="b32-ult-label">ULT</span>
-      </button>
-    `;
-  }
+        floatingButtonsHtml = `
+          <div class="b32-floating-actions b32-triangle-layout">
+            <div class="b32-float-row b32-float-row--top">${ultBtn}</div>
+            <div class="b32-float-row b32-float-row--mid">${endBtn}</div>
+            <div class="b32-float-row b32-float-row--bot">${backBtn}</div>
+          </div>
+        `;
 
-// 終了ボタンは常時有効（移動のみ・スキルのみ・何もせず全て対応）
-const endBtn = `
-  <button type="button"
-    class="b32-float-action-btn end"
-    onclick="_b32EndCharTurn('${ally._uid}')">
-    終了
-  </button>
-`;
+        // スキル詳細画面（スキル選択済みの場合）
+        if (_selSkillId) {
+          const selectedSkill = ally.skills.find(s => s.id === _selSkillId);
+          if (!selectedSkill) {
+            _selSkillId = null;
+            renderBattle32UI();
+            return;
+          }
 
-// 戻るボタン（選択解除のみ・行動権は消費しない）
-const backBtn = `
-  <button type="button"
-    class="b32-float-action-btn back"
-    onclick="_b32OnBackButtonTap()">
-    戻る
-  </button>
-`;
+          const metaParts = [];
+          if ((selectedSkill.shinkiCost || 0) > 0) metaParts.push(`神気 ${selectedSkill.shinkiCost}`);
+          if (selectedSkill.multiplier) metaParts.push(`倍率 ${selectedSkill.multiplier}`);
+          if (selectedSkill.range) metaParts.push(`射程 ${selectedSkill.range}`);
 
-floatingButtonsHtml = `
-  <div class="b32-floating-actions b32-triangle-layout">
-    <div class="b32-float-row b32-float-row--top">${ultBtn}</div>
-    <div class="b32-float-row b32-float-row--mid">${endBtn}</div>
-    <div class="b32-float-row b32-float-row--bot">${backBtn}</div>
-  </div>
-`;
+          listEl.innerHTML = `
+            ${floatingButtonsHtml}
+            <div class="b32-action-detail-panel">
+              <div class="b32-action-detail-title">${selectedSkill.name || 'SKILL'}</div>
+              <div class="b32-action-detail-desc">${selectedSkill.desc || '説明はまだありません。'}</div>
+              <div class="b32-action-detail-meta">${metaParts.join('　/　')}</div>
+              <div class="b32-action-detail-buttons">
+                <button type="button" class="b32-action-detail-btn confirm" onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">決定</button>
+                <button type="button" class="b32-action-detail-btn cancel" onclick="_b32CancelSkillDetail(event)">キャンセル</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
 
-      // ── 移動後ボトムUI ──
-// 通常時： [行動キャラ画像][スキル1][スキル2][スキル3]
-// 詳細時： [スキル説明][決定][キャンセル]
+        // 通常スキル選択画面
+        const normalSkillChips = [];
+        ally.skills
+          .filter(skill => !skill.isUltimate)
+          .slice(0, 3)
+          .forEach(skill => {
+            const shinki = skill.shinkiCost || 0;
+            const cantUse = bs.skillUsedThisTurn || (shinki > ally.shinki);
+            const disabledCls = cantUse ? ' disabled' : '';
+            normalSkillChips.push(
+              `<button type="button" class="b32-bottom-skill-btn${disabledCls}" ${cantUse ? 'disabled' : ''} onclick="_b32OnSkillChipClick(event,'${ally._uid}','${skill.id}')">${skill.name}</button>`
+            );
+          });
+        while (normalSkillChips.length < 3) {
+          normalSkillChips.push(`<button type="button" class="b32-bottom-skill-btn disabled" disabled>—</button>`);
+        }
 
-// 選択中スキルがある場合は、詳細画面へ切り替え
-if (_selSkillId) {
-  const selectedSkill = ally.skills.find(s => s.id === _selSkillId);
+        const img = ally.panelImg || ally.panel || ally.battleImg || ally.img || ally.portrait || ally.upImg || '';
+        const hpPctBottom = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
+        const hpBarColorBottom = hpPctBottom > 50 ? '#5ad48a' : hpPctBottom > 25 ? '#e8c87a' : '#d07878';
+        const animaHtml = `
+          <div class="b32-party-hp-bar-wrap" style="width:100%;margin:2px 0">
+            <div class="b32-party-hp-bar" style="width:${hpPctBottom}%;background:${hpBarColorBottom}"></div>
+          </div>
+          <div class="b32-party-hp-text" style="font-size:9px">${ally.hp}<span class="b32-party-hp-max"> /${ally.hpMax}</span></div>
+        `;
+        const shinkiHtml = Array.from({ length: ally.shinkiMax || 3 }, (_, i) =>
+          `<span class="b32-party-shinki-dot ${i < (ally.shinki || 0) ? 'filled' : ''}"></span>`
+        ).join('');
 
-  if (!selectedSkill) {
-    _selSkillId = null;
-    renderBattle32UI();
-    return;
-  }
+        listEl.innerHTML = `
+          ${floatingButtonsHtml}
+          <div class="b32-action-skill-panel">
+            <div class="b32-action-char-card" data-uid="${ally._uid}">
+              <div class="b32-action-char-img-wrap">
+                ${img ? `<img class="b32-action-char-img" src="${img}" alt="" onerror="this.style.display='none'">` : `<div class="b32-party-initial">${initial(ally.name)}</div>`}
+              </div>
+              <div class="b32-action-char-dots hp">${animaHtml}</div>
+              <div class="b32-action-char-dots shinki">${shinkiHtml}</div>
+            </div>
+            <div class="b32-action-skill-buttons">${normalSkillChips.join('')}</div>
+          </div>
+        `;
 
-  const metaParts = [];
-  if ((selectedSkill.shinkiCost || 0) > 0) metaParts.push(`神気 ${selectedSkill.shinkiCost}`);
-  if (selectedSkill.multiplier) metaParts.push(`倍率 ${selectedSkill.multiplier}`);
-  if (selectedSkill.range) metaParts.push(`射程 ${selectedSkill.range}`);
+      } else {
+        // ── Phase1 or Phase3: キャラ選択待ち ──
+        // Phase1: 移動キャラを選ぶ (moveUsedThisTurn=false)
+        // Phase3: 移動後にスキルキャラを選ぶ (moveUsedThisTurn=true)
+        const guideText = bs.moveUsedThisTurn
+          ? 'スキルを使うキャラを選択してください。'
+          : '移動するキャラを選択してください。';
+        if (guideEl) guideEl.textContent = guideText;
 
-  listEl.innerHTML = `
-  ${floatingButtonsHtml}
+        // 3人分のキャラカードを必ず表示
+        const partyStatusEl = document.getElementById('b32-party-status');
+        if (partyStatusEl) partyStatusEl.style.removeProperty('display');
 
-  <div class="b32-action-detail-panel">
-    <div class="b32-action-detail-title">${selectedSkill.name || 'SKILL'}</div>
-    <div class="b32-action-detail-desc">${selectedSkill.desc || '説明はまだありません。'}</div>
-    <div class="b32-action-detail-meta">${metaParts.join('　/　')}</div>
+        const charaNameEl = document.getElementById('b32-skill-chara-name');
+        if (charaNameEl) charaNameEl.textContent = '';
 
-    <div class="b32-action-detail-buttons">
-      <button type="button"
-        class="b32-action-detail-btn confirm"
-        onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">
-        決定
-      </button>
-
-      <button type="button"
-        class="b32-action-detail-btn cancel"
-        onclick="_b32CancelSkillDetail(event)">
-        キャンセル
-      </button>
-    </div>
-  </div>
-`;
-  return;
-}
-
-// 通常スキル選択画面
-const normalSkillChips = [];
-
-ally.skills
-  .filter(skill => !skill.isUltimate)
-  .slice(0, 3)
-  .forEach(skill => {
-    const shinki = skill.shinkiCost || 0;
-    const cantUse = bs.skillUsedThisTurn || (shinki > ally.shinki);
-    const disabledCls = cantUse ? ' disabled' : '';
-
-    normalSkillChips.push(
-      `<button type="button"
-        class="b32-bottom-skill-btn${disabledCls}"
-        ${cantUse ? 'disabled' : ''}
-        onclick="_b32OnSkillChipClick(event,'${ally._uid}','${skill.id}')">
-        ${skill.name}
-      </button>`
-    );
-  });
-
-// 3つ未満でもレイアウトが崩れないように空ボタンを補完
-while (normalSkillChips.length < 3) {
-  normalSkillChips.push(`<button type="button" class="b32-bottom-skill-btn disabled" disabled>—</button>`);
-}
-
-const img =
-  ally.panelImg ||
-  ally.panel ||
-  ally.battleImg ||
-  ally.img ||
-  ally.portrait ||
-  ally.upImg ||
-  '';
-
-const hpPctBottom = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
-const hpBarColorBottom = hpPctBottom > 50 ? '#5ad48a' : hpPctBottom > 25 ? '#e8c87a' : '#d07878';
-const animaHtml = `
-  <div class="b32-party-hp-bar-wrap" style="width:100%;margin:2px 0">
-    <div class="b32-party-hp-bar" style="width:${hpPctBottom}%;background:${hpBarColorBottom}"></div>
-  </div>
-  <div class="b32-party-hp-text" style="font-size:9px">${ally.hp}<span class="b32-party-hp-max"> /${ally.hpMax}</span></div>
-`;
-
-const shinkiHtml = Array.from({ length: ally.shinkiMax || 3 }, (_, i) =>
-  `<span class="b32-party-shinki-dot ${i < (ally.shinki || 0) ? 'filled' : ''}"></span>`
-).join('');
-
-listEl.innerHTML = `
-  ${floatingButtonsHtml}
-
-  <div class="b32-action-skill-panel">
-    <div class="b32-action-char-card" data-uid="${ally._uid}">
-      <div class="b32-action-char-img-wrap">
-        ${img
-          ? `<img class="b32-action-char-img" src="${img}" alt="" onerror="this.style.display='none'">`
-          : `<div class="b32-party-initial">${initial(ally.name)}</div>`}
-      </div>
-      <div class="b32-action-char-dots hp">${animaHtml}</div>
-      <div class="b32-action-char-dots shinki">${shinkiHtml}</div>
-    </div>
-
-    <div class="b32-action-skill-buttons">
-      ${normalSkillChips.join('')}
-    </div>
-  </div>
-`;
+        const listEl = document.getElementById('b32-skill-list');
+        if (listEl) listEl.innerHTML = '';
       }
 
     } else if (bs.phase === 'enemy') {
@@ -3060,10 +3037,21 @@ listEl.innerHTML = `
 
     bar.className = 'b32-hint-bar';
 
-    if (bs.phase === 'skill' && _selSkillAllyUid) {
-      const ally = bs.allies.find(u => u._uid === _selSkillAllyUid);
-      bar.textContent = ally ? `${ally.name} のスキルを選択` : '';
-      bar.className = 'skill-hint';
+    if (bs.phase === 'skill') {
+      if (_moveMode && _selMoveAllyUid) {
+        // Phase2: 移動先選択中
+        const ally = bs.allies.find(u => u._uid === _selMoveAllyUid);
+        bar.textContent = ally ? `${ally.name} を移動` : '';
+        bar.className = 'skill-hint';
+      } else if (_selSkillAllyUid) {
+        // Phase4: スキルキャラ選択済み
+        const ally = bs.allies.find(u => u._uid === _selSkillAllyUid);
+        bar.textContent = ally ? `${ally.name} のスキルを選択` : '';
+        bar.className = 'skill-hint';
+      } else {
+        bar.textContent = '';
+        bar.className   = '';
+      }
     } else {
       bar.textContent = '';
       bar.className   = '';
@@ -3157,9 +3145,9 @@ listEl.innerHTML = `
   btnEndSkill.disabled = bs.phase !== 'skill';
 }
     if (btnCancel) {
-  // キャラ選択中（移動前・移動後どちらでも）は選択解除ボタンを表示
-  btnCancel.style.display = _selSkillAllyUid ? '' : 'none';
-}
+      // 移動キャラ選択中 or スキルキャラ選択中は選択解除ボタンを表示
+      btnCancel.style.display = (_selMoveAllyUid || _selSkillAllyUid) ? '' : 'none';
+    }
   }
 
   // ============================================================

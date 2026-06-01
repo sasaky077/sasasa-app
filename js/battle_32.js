@@ -19,9 +19,12 @@
   const BOARD_ROWS = 8;
   const BOARD_COLS = 5;
 
-  // ボスのコア直接破壊間隔
-  const BOSS_LINE_ATTACK_INTERVAL = 5;
+  // ボスのコア直接破壊間隔（現在は無効化）
+  // const BOSS_LINE_ATTACK_INTERVAL = 5;
   const BOSS_LINE_ATTACK_RATE = 1.35;
+
+  // ボス3ターンに1度の位置入れ替え攻撃間隔
+  const BOSS_SWAP_INTERVAL = 3;
 
   // ボス予兆攻撃の間隔（ターン数）
   const BOSS_WARN_INTERVAL = 4;
@@ -111,6 +114,30 @@
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+  }
+
+  // ============================================================
+  // ランダム配置ヘルパー
+  // ============================================================
+  function makePositionPool(rows, cols, blockedKeys) {
+    const list = [];
+    rows.forEach(row => {
+      cols.forEach(col => {
+        const key = `${row}-${col}`;
+        if (!blockedKeys || !blockedKeys.has(key)) {
+          list.push({ row, col, key });
+        }
+      });
+    });
+    return list;
+  }
+
+  function takeRandomPosition(pool, occupied) {
+    const candidates = pool.filter(p => !occupied.has(p.key));
+    if (candidates.length === 0) return null;
+    const p = candidates[Math.floor(Math.random() * candidates.length)];
+    occupied.add(p.key);
+    return { row: p.row, col: p.col };
   }
 
   function calcDamage(atk, def, multiplier) {
@@ -228,25 +255,25 @@
     attackRange: 'enemy_attack_cross',
   },
   {
-    id: 'mob1',
-    name: '雑魚A',
-    hp: 700,
-    atk: 240,
-    def: 100,
-    spd: 180,
-    moveType: 'enemy_move_straight',
-    attackRange: 'enemy_attack_front',
-  },
-  {
-    id: 'mob2',
-    name: '雑魚B',
-    hp: 650,
-    atk: 220,
-    def: 120,
-    spd: 160,
-    moveType: 'enemy_move_diag',
-    attackRange: 'enemy_attack_cross',
-  },
+  id: 'mob1',
+  name: '雑魚A',
+  hp: 700,
+  atk: 240,
+  def: 100,
+  spd: 180,
+  moveType: 'enemy_zako_straight',
+  attackRange: 'enemy_attack_front',
+},
+{
+  id: 'mob2',
+  name: '雑魚B',
+  hp: 650,
+  atk: 220,
+  def: 120,
+  spd: 160,
+  moveType: 'enemy_zako_diag',
+  attackRange: 'enemy_attack_cross',
+},
 ];
 
   // ============================================================
@@ -270,22 +297,24 @@ let chars = config.partyIds && config.partyIds.length
       chars.push(allChars[chars.length % allChars.length]);
     }
 
-    const ALLY_POSITIONS = [
-      { row: 6, col: 1 },
-      { row: 6, col: 2 },
-      { row: 6, col: 3 },
-    ];
-    const allies = chars.slice(0, 3).map((c, i) =>
-      makeAlly(c, ALLY_POSITIONS[i].row, ALLY_POSITIONS[i].col)
+    // ── 味方初期配置：row 6〜7、col 0〜4 のランダム配置 ──
+    // 味方コア (row:7, col:2) には配置しない。重複なし。
+    const ALLY_CORE_POS = { row: 7, col: 2 };
+    const allyOccupied = new Set([
+      `${ALLY_CORE_POS.row}-${ALLY_CORE_POS.col}`,
+    ]);
+    const allyStartPool = makePositionPool(
+      [6, 7],
+      [0, 1, 2, 3, 4],
+      allyOccupied
     );
+    const allyChars = chars.slice(0, 3);
+    const allies = allyChars.map(c => {
+      const pos = takeRandomPosition(allyStartPool, allyOccupied) || { row: 6, col: 2 };
+      return makeAlly(c, pos.row, pos.col);
+    });
 
     // --- 敵生成
-    const ENEMY_POSITIONS = [
-  { row: 0, col: 2 }, // BOSS
-  { row: 1, col: 1 },
-  { row: 1, col: 3 },
-];
-
     let enemyDefs;
 
     if (config.enemyIds && config.enemyIds.length > 0) {
@@ -301,9 +330,43 @@ let chars = config.partyIds && config.partyIds.length
       enemyDefs = config.enemies || DEFAULT_ENEMIES;
     }
 
-    const enemies = enemyDefs.slice(0, ENEMY_POSITIONS.length).map((def, i) =>
-      makeEnemy(def, ENEMY_POSITIONS[i].row, ENEMY_POSITIONS[i].col)
+    // ── 敵初期配置：ボスは固定、雑魚は row 0〜1 ランダム配置 ──
+    const BOSS_POS = { row: 0, col: 2 };
+    const enemyOccupied = new Set([
+      `${BOSS_POS.row}-${BOSS_POS.col}`,
+    ]);
+    const enemyStartPool = makePositionPool(
+      [0, 1],
+      [0, 1, 2, 3, 4],
+      enemyOccupied
     );
+
+    let mobIndex = 0;
+
+const enemies = enemyDefs.slice(0, 3).map(def => {
+  let pos;
+
+  if (def.isBoss) {
+    pos = BOSS_POS;
+  } else {
+    pos = takeRandomPosition(enemyStartPool, enemyOccupied) || { row: 1, col: 2 };
+  }
+
+  const enemy = makeEnemy(def, pos.row, pos.col);
+
+  // ボス以外の雑魚を、1体目=直進タイプ、2体目=斜め前タイプに強制分岐
+  if (!enemy.isBoss) {
+    if (mobIndex === 0) {
+      enemy.moveType = 'enemy_zako_straight';
+    } else if (mobIndex === 1) {
+      enemy.moveType = 'enemy_zako_diag';
+    }
+
+    mobIndex++;
+  }
+
+  return enemy;
+});
 
     console.log('[Battle32] enemyDefs:', enemyDefs);
     console.log('[Battle32] enemies:', enemies);
@@ -388,6 +451,11 @@ let chars = config.partyIds && config.partyIds.length
       cores: _bs.cores ? JSON.parse(JSON.stringify(_bs.cores)) : null,
       bossCore: _bs.bossCore ? { ..._bs.bossCore } : null,
       turnLimit: _bs.turnLimit,
+      // ターン単位の行動権（UI側フェーズ判定に必要）
+      moveUsedThisTurn:  _bs.moveUsedThisTurn,
+      skillUsedThisTurn: _bs.skillUsedThisTurn,
+      movedUnitUid:      _bs.movedUnitUid,
+      skillUnitUid:      _bs.skillUnitUid,
     };
   }
 
@@ -853,6 +921,81 @@ function doBossLineAttack(boss) {
   return true;
 }
 
+  // ============================================================
+  // ボス位置入れ替え攻撃
+  // ============================================================
+  function swapUnitPositions(a, b) {
+    if (!a || !b) return false;
+    const ar = a.row;
+    const ac = a.col;
+    a.row = b.row;
+    a.col = b.col;
+    b.row = ar;
+    b.col = ac;
+    return true;
+  }
+
+  function pickTwoRandomUnits(units) {
+    const list = (units || []).filter(u => u && u.hp > 0);
+    if (list.length < 2) return null;
+    const shuffled = shuffle(list);
+    return [shuffled[0], shuffled[1]];
+  }
+
+  function doBossSwapAttack(boss) {
+    if (!boss || boss.hp <= 0) return false;
+
+    const aliveAllies = _bs.allies.filter(u => u.hp > 0);
+    const aliveMobs   = _bs.enemies.filter(u => u.hp > 0 && !u.isBoss);
+
+    const patterns = [];
+    if (aliveAllies.length >= 2) patterns.push('ally');
+    if (aliveMobs.length   >= 2) patterns.push('enemy');
+
+    if (patterns.length === 0) {
+      _log(`${boss.name} が空間干渉を試みたが、入れ替え対象がいない`);
+      return false;
+    }
+
+    const type = patterns[Math.floor(Math.random() * patterns.length)];
+
+    if (type === 'ally') {
+      const pair = pickTwoRandomUnits(aliveAllies);
+      if (!pair) return false;
+      const [a, b] = pair;
+      swapUnitPositions(a, b);
+      _log(`${boss.name} が空間を歪め、${a.name} と ${b.name} の位置を入れ替えた！`);
+      _emit('bossSwap', {
+        type: 'ally',
+        units: [
+          { _uid: a._uid, name: a.name, side: a.side, row: a.row, col: a.col },
+          { _uid: b._uid, name: b.name, side: b.side, row: b.row, col: b.col },
+        ],
+        bs: _snapshot(),
+      });
+      return true;
+    }
+
+    if (type === 'enemy') {
+      const pair = pickTwoRandomUnits(aliveMobs);
+      if (!pair) return false;
+      const [a, b] = pair;
+      swapUnitPositions(a, b);
+      _log(`${boss.name} が空間を歪め、${a.name} と ${b.name} の位置を入れ替えた！`);
+      _emit('bossSwap', {
+        type: 'enemy',
+        units: [
+          { _uid: a._uid, name: a.name, side: a.side, row: a.row, col: a.col },
+          { _uid: b._uid, name: b.name, side: b.side, row: b.row, col: b.col },
+        ],
+        bs: _snapshot(),
+      });
+      return true;
+    }
+
+    return false;
+  }
+
     function _checkBossCoreCapture() {
       const bc = _bs.bossCore;
       if (!bc || bc.captured) return;
@@ -905,23 +1048,22 @@ function doBossLineAttack(boss) {
         if (_bs.result) { _renderUI(); return; }
       }
     }
-    // 5ターンに1度：ボスが直線上に強攻撃
-// TODO: 後で条件達成時は回避可能にする
-if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
-  const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
+    // 3ターンに1度：ボスが位置入れ替え攻撃
+    if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
+      const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
 
-  if (boss) {
-    await _centerTextWait('⚠️ LINE THREAT', '直線上に空間断裂', B32_WAIT.enemyAction);
+      if (boss) {
+        await _centerTextWait('⚠️ SPACE SHIFT', '空間干渉：位置入れ替え', B32_WAIT.enemyAction);
 
-    doBossLineAttack(boss);
+        doBossSwapAttack(boss);
 
-    _renderUI();
-    await wait(B32_WAIT.attack);
-    await wait(B32_WAIT.afterText);
+        _renderUI();
+        await wait(B32_WAIT.attack);
+        await wait(B32_WAIT.afterText);
 
-    if (_bs.result) return;
-  }
-}
+        if (_bs.result) return;
+      }
+    }
     // 行動順：雑魚 → ボスの順
     const mobs    = aliveEnemies().filter(e => !e.isBoss);
     const bosses  = aliveEnemies().filter(e =>  e.isBoss);
@@ -1028,15 +1170,23 @@ if (canEnemyAttackAllyCore(enemy)) {
         priority = 2;
         isCapture = true;
       } else if (!occupant) {
-        // 空きマス → コアへの距離で評価
-        if (corePos) {
-          const curDist  = BR.manhattanDist(enemy, corePos);
-          const newDist  = BR.manhattanDist({ row: nr, col: nc }, corePos);
-          priority = newDist < curDist ? 1 : 0;
-        } else {
-          priority = 1;
-        }
-      }
+  // 空きマス → コアへの距離で評価
+  if (corePos) {
+    const curDist = BR.manhattanDist(enemy, corePos);
+    const newDist = BR.manhattanDist({ row: nr, col: nc }, corePos);
+
+    // 斜め前タイプは、マンハッタン距離が同値でも「前進」していれば移動可
+    if (enemy.moveType === 'enemy_zako_diag') {
+      const isForward = nr > enemy.row; // 敵の前方 = row増加
+      priority = (newDist <= curDist && isForward) ? 1 : 0;
+    } else {
+      priority = newDist < curDist ? 1 : 0;
+    }
+
+  } else {
+    priority = 1;
+  }
+}
 
       if (priority > bestPriority) {
         bestPriority = priority;
@@ -1389,13 +1539,10 @@ if (canEnemyAttackAllyCore(enemy)) {
 
     const result = [];
 
-    // ── 5ターンごとの直線強攻撃（最優先） ──
-    if (_bs.turn % BOSS_LINE_ATTACK_INTERVAL === 0) {
-      const cells = getBossLineAttackCells(boss);
-      Array.from(cells).forEach(key => {
-        const [row, col] = key.split('-').map(Number);
-        result.push({ row, col, type: 'boss_line', label: 'LINE THREAT' });
-      });
+    // ── 3ターンごとの入れ替え攻撃予告 ──
+    if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
+      // 入れ替えは対象がランダムのため盤面セルでの事前予告はなし
+      // (boss_warn 系の表示は予兆攻撃と重複するため省略)
     }
 
     // ── 4ターンごとの予兆攻撃（中央3列・全行） ──

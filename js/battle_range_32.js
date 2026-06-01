@@ -197,7 +197,32 @@ diag_x_2: [
     ],
 
     // 移動なし（ボス用）
-    none: []
+    none: [],
+
+   // 敵雑魚：直進タイプ
+// enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
+// 敵視点の前方 = row増加、後方 = row減少
+enemy_zako_straight: [
+  // 前方 最大2マス
+  { dr:  1, dc: 0 },
+  { dr:  2, dc: 0 },
+
+  // 後方 最大2マス
+  { dr: -1, dc: 0 },
+  { dr: -2, dc: 0 },
+],
+
+// 敵雑魚：斜め前タイプ
+// enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
+enemy_zako_diag: [
+  // 斜め前左 最大2マス
+  { dr:  1, dc: -1 },
+  { dr:  2, dc: -2 },
+
+  // 斜め前右 最大2マス
+  { dr:  1, dc:  1 },
+  { dr:  2, dc:  2 },
+],
   };
 
   /**

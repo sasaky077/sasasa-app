@@ -253,6 +253,8 @@ const ENEMIES = [
     // 4×4向けに強化
     hp: 1150, hpMax: 1150,
     atk: 260, def: 160, spd: 290,
+    moveType: 'enemy_zako_shift',
+    attackRange: 'enemy_attack_front',
 
     phase: 1,
     status: [],
@@ -368,6 +370,8 @@ const ENEMIES = [
     battleImg: 'images/enemy_02_battle.webp',
     hp: 2200, hpMax: 2200,
     atk: 420, def: 350, spd: 180,
+    moveType: 'enemy_zako_shift',
+    attackRange: 'enemy_attack_front',
     phase: 1,
     status: [],
     actionPattern: [
@@ -399,6 +403,8 @@ const ENEMIES = [
     battleImg: 'images/enemy_03_battle.webp',
     hp: 1900, hpMax: 1900,
     atk: 370, def: 280, spd: 260,
+    moveType: 'enemy_zako_shift',
+    attackRange: 'enemy_attack_cross',
     phase: 1,
     status: [],
     actionPattern: [
