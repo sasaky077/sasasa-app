@@ -426,6 +426,58 @@ const ENEMIES = [
     },
   },
 
+  // ============================================================
+  // CHAPTER 02 雑魚系
+  // ============================================================
+
+  // 中ボス（isBoss: false / isMidBoss: true）
+  {
+    id: 'enemy_02b',
+    name: '??????',
+    img:       'images/enemy_02b_battle.webp',
+    upImg:     'images/enemy_02b_battle.webp',
+    battleImg: 'images/enemy_02b_battle.webp',
+
+    isBoss:    false,
+    isMidBoss: true,
+
+    hp: 500, hpMax: 500,
+    atk: 300, def: 160, spd: 140,
+
+    moveType:    'enemy_midboss_front3',
+    attackRange: 'enemy_attack_cross',
+
+    randomStartPosition: true,
+    fixedPosition: false,
+    phase: 1,
+    status: [],
+    statusList: [],
+  },
+
+  // 雑魚（3ターンごとにスポーンする敵として使用）
+  {
+    id: 'enemy_02a',
+    name: '??????',
+    img:       'images/enemy_02a_battle.webp',
+    upImg:     'images/enemy_02a_battle.webp',
+    battleImg: 'images/enemy_02a_battle.webp',
+
+    isBoss:    false,
+    isMidBoss: false,
+
+    hp: 200, hpMax: 200,
+    atk: 220, def: 90, spd: 180,
+
+    moveType:    'enemy_zako_straight',
+    attackRange: 'enemy_attack_front',
+
+    randomStartPosition: true,
+    fixedPosition: false,
+    phase: 1,
+    status: [],
+    statusList: [],
+  },
+
 ];
 
 // IDで怪異データを取得（本番 + テスト両方を検索）

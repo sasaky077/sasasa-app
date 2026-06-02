@@ -107,6 +107,12 @@ diag_x_2: [
       { dr: -3, dc: -1 }, { dr: -3, dc:  0 }, { dr: -3, dc:  1 },
     ],
 
+    front_9_ally: [
+      { dr: -1, dc: -1 }, { dr: -1, dc:  0 }, { dr: -1, dc:  1 },
+      { dr: -2, dc: -1 }, { dr: -2, dc:  0 }, { dr: -2, dc:  1 },
+      { dr: -3, dc: -1 }, { dr: -3, dc:  0 }, { dr: -3, dc:  1 },
+    ],
+
     // 前方左右斜め各3マス（V字）— ally用
     // diag_ally_3 は現時点では diag_v_ally_3 と同じ挙動（将来 diag_left/right に分離予定）
     diag_ally_3: [
@@ -199,6 +205,13 @@ diag_x_2: [
     // 移動なし（ボス用）
     none: [],
 
+    // 中ボス：前方横3マス（盤面固定：敵視点前方=row+1）
+    enemy_midboss_front3: [
+      { dr: 1, dc: -1 },
+      { dr: 1, dc:  0 },
+      { dr: 1, dc:  1 },
+    ],
+
    // 敵雑魚：直進タイプ
 // enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
 // 敵視点の前方 = row増加、後方 = row減少
@@ -232,25 +245,39 @@ enemy_zako_diag: [
    * @returns {{ dr: number, dc: number }[]}
    */
   function getMoveOffsets(unit) {
-    const type   = unit.moveType || 'silver';
+  if (!unit) return [];
 
-    // 移動なし
-    if (type === 'none') return [];
+  // キャラ固有の移動マス定義があれば最優先
+  if (Array.isArray(unit.moveCells)) {
+    const cells = unit.moveCells.map(p => ({ dr: p.dr, dc: p.dc }));
 
-    const preset = MOVE_PRESETS_32[type] || MOVE_PRESETS_32.silver;
-
-    // enemy_ プレフィックスの移動型はそのまま使用（dr 反転しない）
-    if (type.startsWith('enemy_')) {
-      return preset;
-    }
-
-    // 通常の敵（敵側でも将棋駒型を使う場合）は dr を反転して下方向を前方に
+    // 敵に moveCells を持たせた場合だけ反転対応
     if (unit.side === 'enemy') {
-      return preset.map(p => ({ dr: -p.dr, dc: p.dc }));
+      return cells.map(p => ({ dr: -p.dr, dc: p.dc }));
     }
 
+    return cells;
+  }
+
+  const type = unit.moveType || 'silver';
+
+  // 移動なし
+  if (type === 'none') return [];
+
+  const preset = MOVE_PRESETS_32[type] || MOVE_PRESETS_32.silver;
+
+  // enemy_ プレフィックスの移動型はそのまま使用（dr 反転しない）
+  if (type.startsWith('enemy_')) {
     return preset;
   }
+
+  // 通常の敵（敵側でも将棋駒型を使う場合）は dr を反転して下方向を前方に
+  if (unit.side === 'enemy') {
+    return preset.map(p => ({ dr: -p.dr, dc: p.dc }));
+  }
+
+  return preset;
+}
 
   // ============================================================
   // フィールド固定座標プリセット

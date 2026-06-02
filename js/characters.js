@@ -403,11 +403,15 @@ const CHARACTERS = [
         desc: '自身の直線上簿全てのマスに貫通弾を撃ち込む。大ダメージ。' }
     ]},
 
-  // ── id:7 ミユ（速度寄り）─────────────────────────────────────
-  // ガンナー。遠距離バランスタイプ。
-  { id: 7, name: 'ミユ', gender: 'woman', rarity: 'r',
-    role: '速度寄り',
-    moveType: 'lance',
+  // ── id:7 ミユ
+{ id: 7, name: 'ミユ', gender: 'woman', rarity: 'r',
+  role: '速度寄り',
+  moveType: 'custom',
+  moveCells: [
+    { dr: -1, dc: 0 }, // 前1
+    { dr: -2, dc: 0 }, // 前2
+    { dr: -3, dc: 0 }, // 前3
+  ],
     costMax: 10,
     costStart: 5,
     costRegen: 3,
@@ -465,11 +469,16 @@ const CHARACTERS = [
     ]},
 
 
-  // ── id:12 エリ（耐久寄り）────────────────────────────────────
-  // 接近戦に強い。手数で敵を翻弄する。
-  { id: 12, name: 'エリ', gender: 'woman', rarity: 'r',
-    role: '速度寄り',
-    moveType: 'bishop_short',
+  // ── id:12 エリ
+{ id: 12, name: 'エリ', gender: 'woman', rarity: 'r',
+  role: '速度寄り',
+  moveType: 'custom',
+  moveCells: [
+    { dr: -1, dc:  0 }, // 上
+    { dr:  1, dc:  0 }, // 下
+    { dr:  0, dc: -1 }, // 左
+    { dr:  0, dc:  1 }, // 右
+  ],
     costMax: 14,
     costStart: 5,
     costRegen: 2,
@@ -938,11 +947,16 @@ const CHARACTERS = [
         desc: '怪異を実体化し、全員を最後列に押し出す。' }
     ]},
 
-  // ── id:15 アキ（速度・支援寄り）──────────────────────────────
-  // 自分に寄せ付ける系のキャラにしたい。色術的な。
-  { id: 15, name: 'アキ', gender: 'woman', rarity: 'sr',
-    role: '速度・支援寄り',
-    moveType: 'knight',
+// ── id:15 アキ
+{ id: 15, name: 'アキ', gender: 'woman', rarity: 'sr',
+  role: '速度・支援寄り',
+  moveType: 'custom',
+  moveCells: [
+    { dr: -2, dc: 0 }, // 前2
+    { dr:  2, dc: 0 }, // 後2
+    { dr: -2, dc: -1 }, // 左前桂馬
+    { dr: -2, dc:  1 }, // 右前桂馬
+  ],
     costMax: 12,
     costStart: 7,
     costRegen: 2,
@@ -981,50 +995,6 @@ const CHARACTERS = [
         },
         desc: 'ATKの1.0倍のダメージ。敵を2マス前へ引き寄せる' },
 
-      { id: 's2',
-        name: '退いて',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.0,
-        range: 'front3_row_3',
-        effects: [
-          { 
-            type: 'push_2', 
-            target: 'enemy', 
-            hit: 100, 
-            duration: 1 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [1,4,7,9],
-          damageRate: 1.3
-        },
-        desc: 'ATKの1.0倍のダメージ。敵を2マス奥へ押し出す。' },
-
-      { id: 's3',
-        name: '邪魔よ',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.0,
-        range: 'diag_v3',
-        effects: [
-          {
-             type: 'shift_right_2', 
-             target: 'enemy', 
-             hit: 100, 
-             duration: 1 
-            }
-        ],
-        moveBonus: {
-          idealMoves: [4,8,],
-          damageRate: 1.3
-        },
-        desc: 'ATKの1.0倍のダメージ。敵を2マス右へ動かす。' },
-
       { id: 'ult',
         name: '跪きなさい',
         cost: 10,
@@ -1032,7 +1002,7 @@ const CHARACTERS = [
         hit: 100,
         type: 'attack',
         multiplier: 3.0,
-        range: 'all',
+        range: 'front_9',
         pierce: false,
         effects: [],
         moveBonus: {
@@ -1811,12 +1781,17 @@ const CHARACTERS = [
         desc: '与えたダメージの50%分、味方全員のHPを回復する。' }
         ]},
 
-       // ── id:8 アサミ ──────────────────────────────
-  // 接近戦に強い。手数で敵を翻弄する。
-  { id: 8, 
-    name: 'アサミ', gender: 'woman', rarity: 'ur',
-    role: '速度寄り',
-    moveType: 'silver',
+ // ── id:8 アサミ
+{ id: 8, 
+  name: 'アサミ', gender: 'woman', rarity: 'ur',
+  role: '速度寄り',
+  moveType: 'custom',
+  moveCells: [
+    { dr: -1, dc:  0 }, // 前
+    { dr:  1, dc:  0 }, // 後
+    { dr: -1, dc: -1 }, // 左前
+    { dr: -1, dc:  1 }, // 右前
+  ],
     costMax: 14,
     costStart: 4,
     costRegen: 2,

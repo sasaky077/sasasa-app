@@ -151,7 +151,7 @@ const STAGES = [
   // ============================================================
   // CHAPTER 01 — 白糸の怪異
   // ============================================================
- {
+  {
   id: 'stage_01_boss',
   chapter: 1,
   no: 1,
@@ -159,15 +159,23 @@ const STAGES = [
   name: '白糸の間',
   enemyIds: [
     'enemy_01',
-    'enemy_mask',
-    'enemy_mask',
+    'enemy_02b',
+    'enemy_02a',
   ],
   enemyRandomStartPosition: true,
   enemyName: '??????',
   difficulty: 'boss',
   reward: { exp: 375, coin: 150 },
   unlocked: true,
-  useBattle32: true,  // [Battle32] 32マス共有盤面バトルで起動する
+  useBattle32: true,
+
+  // 2ターンに1度 enemy_02a が敵エリア内の空きマスにスポーン
+  enemySpawn: {
+    enemyId: 'enemy_02a',
+    interval: 2,
+    rows: [0, 1, 2, 3],
+    cols: [0, 1, 2, 3, 4],
+  },
 },
 
   // 将来の雑魚ステージ追加例：

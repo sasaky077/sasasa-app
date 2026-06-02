@@ -282,6 +282,10 @@
           if (stage.enemyIds && stage.enemyIds.length > 0) {
             battleOptions.enemyIds = stage.enemyIds;
           }
+          // 敵スポーン設定を引き継ぐ
+          if (stage.enemySpawn) {
+            battleOptions.enemySpawn = stage.enemySpawn;
+          }
         }
         openPartySelect(stage.enemyIds || stage.enemyId, battleOptions);
       }

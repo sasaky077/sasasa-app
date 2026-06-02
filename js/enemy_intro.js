@@ -210,14 +210,23 @@
       if (opt.battleMode === '32') {
         if (window.Battle32 && typeof window.Battle32.start === 'function') {
           window.Battle32.start({
-            partyIds: Array.isArray(opt.partyIds) && opt.partyIds.length
-              ? opt.partyIds
-              : [1, 2, 3],
-            enemyIds: Array.isArray(enemyData)
-              ? enemyData.map(e => e.id)
-              : (enemyData && enemyData.id ? [enemyData.id] : []),
-            stageId: opt.stageId || null,
-          });
+  partyIds: Array.isArray(opt.partyIds) && opt.partyIds.length
+    ? opt.partyIds
+    : [1, 2, 3],
+
+  enemyIds: Array.isArray(enemyData)
+    ? enemyData.map(e => e.id)
+    : (enemyData && enemyData.id ? [enemyData.id] : []),
+
+  stageId: opt.stageId || null,
+
+  // 追加：ステージ側の敵スポーン設定をBattle32へ渡す
+  enemySpawn: opt.enemySpawn || null,
+
+  // 念のため、ステージ側の敵行動設定も渡せるようにしておく
+  enemyActionMode: opt.enemyActionMode || undefined,
+  enemyActionsPerTurn: opt.enemyActionsPerTurn ?? undefined,
+});
         } else {
           console.error('[Battle32] Battle32 is not loaded. Check that battle_32.js is included in index.html.');
           alert('Battle32 が読み込まれていません。index.html の script タグを確認してください。');

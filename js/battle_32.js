@@ -178,7 +178,10 @@
       rarity: charDef.rarity,
       role: charDef.role,
       side: 'ally',
-      moveType: charDef.moveType || 'silver',
+moveType: charDef.moveType || 'silver',
+moveCells: Array.isArray(charDef.moveCells)
+  ? charDef.moveCells.map(p => ({ dr: p.dr, dc: p.dc }))
+  : null,
 
       // HP で生存管理（味方・敵ともに統一）
       hp:    charDef.hp,
@@ -224,7 +227,8 @@
       upImg: def.upImg || null,
       cutin: def.cutin || def.ultImg || def.cutImg || null,
 
-      isBoss: !!def.isBoss,
+      isBoss:    !!def.isBoss,
+      isMidBoss: !!def.isMidBoss,
       hp: def.hp,
       hpMax: def.hpMax || def.hp,
       atk: def.atk,
@@ -343,7 +347,7 @@ let chars = config.partyIds && config.partyIds.length
 
     let mobIndex = 0;
 
-const enemies = enemyDefs.slice(0, 3).map(def => {
+const enemies = enemyDefs.map(def => {
   let pos;
 
   if (def.isBoss) {
@@ -354,14 +358,14 @@ const enemies = enemyDefs.slice(0, 3).map(def => {
 
   const enemy = makeEnemy(def, pos.row, pos.col);
 
-  // ボス以外の雑魚を、1体目=直進タイプ、2体目=斜め前タイプに強制分岐
-  if (!enemy.isBoss) {
+  // moveType は enemies.js / stage定義側を優先する
+  // 未指定の場合のみフォールバックで moveType を設定する
+  if (!enemy.isBoss && !enemy.moveType) {
     if (mobIndex === 0) {
       enemy.moveType = 'enemy_zako_straight';
     } else if (mobIndex === 1) {
       enemy.moveType = 'enemy_zako_diag';
     }
-
     mobIndex++;
   }
 
@@ -409,11 +413,20 @@ const enemies = enemyDefs.slice(0, 3).map(def => {
       enemyActionsPerTurn: config.enemyActionsPerTurn ?? null,
       enemyActionMode:     config.enemyActionMode     || 'all',
 
-      // ターン単位の行動権
+      // 敵スポーン設定（ステージ設定から引き継ぐ）
+      enemySpawn: config.enemySpawn || null,
+
+      // ターン単位の行動権（後方互換用）
       moveUsedThisTurn:  false,
       skillUsedThisTurn: false,
       movedUnitUid:      null,
       skillUnitUid:      null,
+      // 新：行動権管理
+      actionCount:        0,
+      actionMax:          2,
+      lastActionType:     null,
+      lastActionUnitUid:  null,
+      unitActionHistory:  {},
     };
 
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
@@ -451,11 +464,19 @@ const enemies = enemyDefs.slice(0, 3).map(def => {
       cores: _bs.cores ? JSON.parse(JSON.stringify(_bs.cores)) : null,
       bossCore: _bs.bossCore ? { ..._bs.bossCore } : null,
       turnLimit: _bs.turnLimit,
-      // ターン単位の行動権（UI側フェーズ判定に必要）
+      // 後方互換用
       moveUsedThisTurn:  _bs.moveUsedThisTurn,
       skillUsedThisTurn: _bs.skillUsedThisTurn,
       movedUnitUid:      _bs.movedUnitUid,
       skillUnitUid:      _bs.skillUnitUid,
+      // 敵スポーン設定
+      enemySpawn:        _bs.enemySpawn || null,
+      // 新：行動権管理
+      actionCount:       _bs.actionCount,
+      actionMax:         _bs.actionMax,
+      lastActionType:    _bs.lastActionType,
+      lastActionUnitUid: _bs.lastActionUnitUid,
+      unitActionHistory: JSON.parse(JSON.stringify(_bs.unitActionHistory || {})),
     };
   }
 
@@ -517,10 +538,7 @@ const enemies = enemyDefs.slice(0, 3).map(def => {
 
     const ally = _bs.allies.find(u => u._uid === allyUid);
     if (!ally || ally.hp <= 0) return false;
-    if (_bs.skillUsedThisTurn) {
-      _log('このターンはすでにスキルを使用済みです');
-      return false;
-    }
+    if (!_canUsePlayerAction('skill', allyUid)) return false;
 
     const skill = ally.skills.find(s => s.id === skillId);
     if (!skill) return false;
@@ -685,18 +703,11 @@ const enemies = enemyDefs.slice(0, 3).map(def => {
     }
 
     ally.shinki -= (skill.shinkiCost || 0);
-    // ターン単位のスキル権を消費
-    _bs.skillUsedThisTurn = true;
-    _bs.skillUnitUid      = allyUid;
-    ally.skillUsedThisTurn = true;  // 後方互換
 
     _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 
-    _checkWinLose();
-    if (_bs.result) return true;
-
-    // 1キャラ行動で味方ターン終了 → 敵ターンへ
-    endSkillPhase();
+    // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
+    _consumePlayerAction('skill', allyUid);
     return true;
   }
 
@@ -760,6 +771,80 @@ const enemies = enemyDefs.slice(0, 3).map(def => {
       // フェーズ進行
       // ============================================================
 
+      // ============================================================
+      // 行動権管理ヘルパー
+      // ============================================================
+      function _canUsePlayerAction(type, unitUid) {
+        if (!_bs || _bs.phase !== 'skill') return false;
+
+        if ((_bs.actionCount || 0) >= (_bs.actionMax || 2)) {
+          _log('このターンの行動権を使い切っています');
+          return false;
+        }
+
+        const history    = _bs.unitActionHistory || {};
+        const unitHistory = history[unitUid] || {};
+
+        if (unitHistory[type]) {
+          if (type === 'move') {
+            _log('このキャラはこのターンすでに移動しています');
+          } else if (type === 'skill') {
+            _log('このキャラはこのターンすでにスキルを使用しています');
+          } else {
+            _log('このキャラはこのターンすでに同じ行動をしています');
+          }
+          return false;
+        }
+
+        return true;
+      }
+
+      function _consumePlayerAction(type, unitUid) {
+        if (!_bs || _bs.phase !== 'skill') return false;
+
+        if (!_bs.unitActionHistory) _bs.unitActionHistory = {};
+        if (!_bs.unitActionHistory[unitUid]) {
+          _bs.unitActionHistory[unitUid] = {};
+        }
+        _bs.unitActionHistory[unitUid][type] = true;
+
+        _bs.actionCount       = Math.min(_bs.actionMax, (_bs.actionCount || 0) + 1);
+        _bs.lastActionType    = type || null;
+        _bs.lastActionUnitUid = unitUid || null;
+
+        // 後方互換フラグ更新
+        if (type === 'move') {
+          _bs.moveUsedThisTurn = true;
+          _bs.movedUnitUid     = unitUid || null;
+        }
+        if (type === 'skill') {
+          _bs.skillUsedThisTurn = true;
+          _bs.skillUnitUid      = unitUid || null;
+          const ally = _bs.allies.find(u => u._uid === unitUid);
+          if (ally) ally.skillUsedThisTurn = true;
+        }
+
+        _emit('playerActionConsumed', {
+          type,
+          unitUid,
+          actionCount: _bs.actionCount,
+          actionMax:   _bs.actionMax,
+          unitActionHistory: JSON.parse(JSON.stringify(_bs.unitActionHistory || {})),
+          bs: _snapshot(),
+        });
+
+        _checkWinLose();
+        if (_bs.result) return true;
+
+        if (_bs.actionCount >= _bs.actionMax) {
+          endSkillPhase();
+        } else {
+          _renderUI();
+        }
+
+        return true;
+      }
+
       // スキルフェーズ終了 → 敵フェーズ
       function endSkillPhase() {
       if (_bs.phase !== 'skill') return;
@@ -818,6 +903,12 @@ function canEnemyAttackAllyCore(enemy) {
 
   const range = enemy.attackRange || 'enemy_attack_front';
   const corePos = { row: core.row, col: core.col };
+
+  // コアに上下左右で隣接している敵は、攻撃レンジに関係なくコア攻撃可能
+  // 隣接はマンハッタン距離1のみ（斜め隣接は含めない）
+  if (manhattan(enemy, corePos) === 1) {
+    return true;
+  }
 
   // enemy_attack_* / adjacent はレンジ定義で判定
   if (range.startsWith('enemy_attack_') || range === 'adjacent') {
@@ -1032,9 +1123,82 @@ function doBossLineAttack(boss) {
   // ============================================================
   // 敵AIフェーズ（完全 async）
   // ============================================================
+  // ============================================================
+  // 敵スポーン（ステージ設定に応じて定期的に敵を召喚）
+  // ============================================================
+  function _spawnEnemyFromConfig() {
+    if (!_bs || !_bs.enemySpawn) return false;
+
+    const sp = _bs.enemySpawn;
+    const interval = sp.interval || 3;
+
+    if (!_bs.turn || _bs.turn % interval !== 0) return false;
+
+    const enemyId = sp.enemyId;
+    if (!enemyId) return false;
+
+    const enemyDef =
+      (typeof getEnemyById === 'function' ? getEnemyById(enemyId) : null) ||
+      ((window.ENEMIES || []).find(e => e.id === enemyId));
+
+    if (!enemyDef) {
+      _log(`スポーン対象 ${enemyId} が見つかりません`);
+      return false;
+    }
+
+    const rows = sp.rows || [0, 1, 2, 3];
+    const cols = sp.cols || [0, 1, 2, 3, 4];
+
+    const occupied = new Set();
+
+    // 生存味方
+    _bs.allies.forEach(u => {
+      if (u.hp > 0) occupied.add(`${u.row}-${u.col}`);
+    });
+
+    // 生存敵 + ボスはHP0後も盤面に残るため占有扱い
+    _bs.enemies.forEach(u => {
+      if (u.hp > 0 || u.isBoss) occupied.add(`${u.row}-${u.col}`);
+    });
+
+    // 自陣コア
+    if (_bs.cores && _bs.cores.ally) {
+      occupied.add(`${_bs.cores.ally.row}-${_bs.cores.ally.col}`);
+    }
+
+    const candidates = [];
+    rows.forEach(row => {
+      cols.forEach(col => {
+        if (!BR.isValidCell(row, col)) return;
+        const key = `${row}-${col}`;
+        if (occupied.has(key)) return;
+        candidates.push({ row, col });
+      });
+    });
+
+    if (candidates.length === 0) {
+      _log('敵が出現できる空きマスがありません');
+      return false;
+    }
+
+    const pos = candidates[Math.floor(Math.random() * candidates.length)];
+    const enemy = makeEnemy(enemyDef, pos.row, pos.col);
+
+    _bs.enemies.push(enemy);
+
+    _log(`${enemy.name} が出現した`);
+    _emit('enemySpawn', { enemy: { ...enemy }, bs: _snapshot() });
+    _renderUI();
+
+    return true;
+  }
+
   async function _runEnemyPhase() {
     const allies = aliveAllies();
     if (allies.length === 0) { _checkWinLose(); return; }
+
+    // ステージ設定に応じた敵スポーン（ordered 作成前に呼び、即行動させる）
+    _spawnEnemyFromConfig();
 
     // ボス予兆攻撃（行動ループより先に発動）
     if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
@@ -1145,7 +1309,8 @@ if (canEnemyAttackAllyCore(enemy)) {
     const corePos = (_bs.cores && _bs.cores.ally) ? _bs.cores.ally : null;
 
     // 候補マスを評価して最優先のマスを選ぶ
-    // 優先度: 1. コアマス  2. 味方駒取りマス  3. コアに近づくマス  4. 移動なし
+    // 優先度: 1. 味方駒取りマス  2. コアに近づくマス  3. 移動なし
+    // ※コアマスそのものは移動先から除外する
     let bestCell = null;
     let bestPriority = -1;
 
@@ -1162,10 +1327,13 @@ if (canEnemyAttackAllyCore(enemy)) {
       let priority = 0;
       let isCapture = false;
 
+      // 自陣コアのあるマスは移動先にできない
+      // コアは「踏むマス」ではなく「隣接または攻撃範囲内から攻撃する対象」
       if (corePos && nr === corePos.row && nc === corePos.col) {
-        // コアマス → 最優先
-        priority = 3;
-      } else if (occupant && occupant.side === 'ally') {
+        continue;
+      }
+
+      if (occupant && occupant.side === 'ally') {
         // 味方駒取り
         priority = 2;
         isCapture = true;
@@ -1209,19 +1377,6 @@ if (canEnemyAttackAllyCore(enemy)) {
       await wait(B32_WAIT.afterText);
       _checkWinLose();
       if (_bs.result) return;
-    }
-
-    // コア到達処理
-    if (corePos && bestCell.row === corePos.row && bestCell.col === corePos.col) {
-      _log(`${enemy.name} が自陣コアに到達！`);
-      damageAllyCore(enemy);
-      enemy.row = bestCell.row;
-      enemy.col = bestCell.col;
-      _renderUI();
-      await wait(B32_WAIT.attack);
-      await wait(B32_WAIT.afterText);
-      _checkWinLose();
-      return;
     }
 
     // 通常移動
@@ -1296,11 +1451,17 @@ if (canEnemyAttackAllyCore(enemy)) {
     // 行動フラグリセット
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
 
-    // ターン単位の行動権リセット
+    // 後方互換フラグリセット
     _bs.moveUsedThisTurn  = false;
     _bs.skillUsedThisTurn = false;
     _bs.movedUnitUid      = null;
     _bs.skillUnitUid      = null;
+    // 新：行動権管理リセット
+    _bs.actionCount       = 0;
+    _bs.actionMax         = 2;
+    _bs.lastActionType    = null;
+    _bs.lastActionUnitUid = null;
+    _bs.unitActionHistory = {};
 
     // TODO: カード廃止後の通常移動処理をここに実装する
 
@@ -1386,6 +1547,11 @@ if (canEnemyAttackAllyCore(enemy)) {
       // 同陣営ユニットがいるマスには移動不可
       if (occupant && occupant.side === unit.side) return;
 
+      // ボスのいるマスは侵入不可
+      // ボスはHP0後も神性核として盤面に残るため、hp条件を付けずにブロックする
+      const bossOnCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
+      if (unit.side === 'ally' && bossOnCell) return;
+
       cells.push({
         row,
         col,
@@ -1405,12 +1571,7 @@ if (canEnemyAttackAllyCore(enemy)) {
 
       const ally = _bs.allies.find(u => u._uid === allyUid);
       if (!ally || ally.hp <= 0) return false;
-
-      // このターンすでに移動済みなら拒否
-      if (_bs.moveUsedThisTurn) {
-        _log('このターンはすでに移動済みです');
-        return false;
-      }
+      if (!_canUsePlayerAction('move', allyUid)) return false;
 
       const moveCells = getMoveCells(allyUid);
       const targetCell = moveCells.find(c => c.row === toRow && c.col === toCol);
@@ -1452,12 +1613,15 @@ if (canEnemyAttackAllyCore(enemy)) {
       }
 
       // ── 移動実行 ──
+      // 念のための直叩き対策：ボスマスへの移動を最終ガード
+      const bossAtDest = _bs.enemies.find(e => e.isBoss && e.row === toRow && e.col === toCol);
+      if (bossAtDest) {
+        _log('ボスのいるマスには移動できない');
+        return false;
+      }
+
       ally.row = toRow;
       ally.col = toCol;
-
-      // ターン単位の移動権を消費
-      _bs.moveUsedThisTurn = true;
-      _bs.movedUnitUid     = allyUid;
 
       if (targetCell.cellType === 'capture') {
         _log(`${ally.name} が移動・制圧した`);
@@ -1466,6 +1630,8 @@ if (canEnemyAttackAllyCore(enemy)) {
       }
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
+      // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
+      _consumePlayerAction('move', allyUid);
       return true;
     }
   // ============================================================

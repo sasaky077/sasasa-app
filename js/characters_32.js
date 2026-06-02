@@ -23,6 +23,8 @@
 
     front_row_3:   'front_row_3_ally',    // 前方横3マス（前・左前・右前）
     front3_row_3:  'front3_row_3_ally',   // 前方3行×横3マス
+    front_9:      'front_9_ally',
+    front_9_ally: 'front_9_ally',
     all:           'enemy_all',           // 全体（敵対象スキル時は敵全体）
     enemy_all:     'enemy_all',
     ally_all:      'ally_all',
@@ -101,7 +103,13 @@
       skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
 
       // 移動型（未設定キャラは 'silver' をデフォルトとする）
-      moveType: c.moveType || 'silver',
+// 移動型（未設定キャラは 'silver' をデフォルトとする）
+moveType: c.moveType || 'silver',
+
+// キャラ固有の移動マス定義
+moveCells: Array.isArray(c.moveCells)
+  ? c.moveCells.map(p => ({ dr: p.dr, dc: p.dc }))
+  : null,
     };
   }
 

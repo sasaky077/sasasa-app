@@ -681,6 +681,8 @@
 
     const mergedOptions = Object.assign({}, currentBattleOptions, {
       partyIds: selectedCharaIds,
+      // enemySpawn はステージ定義から引き継ぐ（Battle32.start の config に渡る）
+      enemySpawn: currentBattleOptions.enemySpawn || null,
     });
 
     setTimeout(() => startEnemyIntro(enemyData, party, mergedOptions), 400);
