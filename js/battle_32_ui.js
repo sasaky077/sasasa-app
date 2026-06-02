@@ -326,37 +326,27 @@
   position: absolute;
   right: -2px;
   bottom: -22px;
-  height: 255px;
+  height: 240px;
   max-width: 68%;
   object-fit: contain;
+  object-position: center bottom;
+  display: block;
 
-  opacity: .72;
-  filter:
-    brightness(1.12)
-    contrast(1.18)
-    saturate(1.08)
-    drop-shadow(0 0 8px rgba(255,230,170,.28))
-    drop-shadow(0 0 18px rgba(255,150,40,.14));
+  opacity: .86;
 
-  /* 追加：下端だけ自然に透明へ */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 70%,
-    rgba(0,0,0,.65) 84%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 70%,
-    rgba(0,0,0,.65) 84%,
-    transparent 100%
-  );
+  filter: none !important;
+  -webkit-filter: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 
-  transform: translateX(12px) scale(1.08);
+  transform: translate3d(12px, 0, 0) scale(1.04);
+  -webkit-transform: translate3d(12px, 0, 0) scale(1.04);
   transform-origin: center bottom;
+
   animation: b32SkillBurstImg 1500ms ease-out forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .b32-skill-burst-name {
@@ -413,42 +403,19 @@
 @keyframes b32SkillBurstImg {
   0% {
     opacity: 0;
-    transform: translateX(34px) scale(.98);
-    filter:
-      blur(4px)
-      brightness(1.05)
-      contrast(1.05)
-      drop-shadow(0 0 10px rgba(255,230,170,.12));
+    transform: translate3d(34px, 0, 0) scale(.98);
   }
   18% {
-    opacity: .76;
-    transform: translateX(0) scale(1.08);
-    filter:
-      blur(0)
-      brightness(1.12)
-      contrast(1.18)
-      saturate(1.08)
-      drop-shadow(0 0 12px rgba(255,230,170,.30))
-      drop-shadow(0 0 20px rgba(255,150,40,.14));
+    opacity: .86;
+    transform: translate3d(0, 0, 0) scale(1.04);
   }
   72% {
-    opacity: .68;
-    transform: translateX(0) scale(1.09);
-    filter:
-      blur(0)
-      brightness(1.10)
-      contrast(1.16)
-      saturate(1.06)
-      drop-shadow(0 0 10px rgba(255,230,170,.26));
+    opacity: .82;
+    transform: translate3d(0, 0, 0) scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: translateX(-8px) scale(1.12);
-    filter:
-      blur(2px)
-      brightness(1.05)
-      contrast(1.08)
-      drop-shadow(0 0 18px rgba(255,150,40,.12));
+    transform: translate3d(-8px, 0, 0) scale(1.06);
   }
 }
 
@@ -1968,15 +1935,28 @@
     const el = document.createElement('div');
     el.className = 'b32-skill-name-burst';
 
-    const imgHtml = charImg
-      ? `<img class="b32-skill-burst-img" src="${charImg}" alt="" onerror="this.style.display='none'">`
-      : '';
+    const name = document.createElement('div');
+    name.className = 'b32-skill-burst-name';
+    name.textContent = skillName;
 
-    el.innerHTML = `
-      ${imgHtml}
-      <div class="b32-skill-burst-name">${skillName}</div>
-    `;
+    if (charImg) {
+      const img = new Image();
+      img.className = 'b32-skill-burst-img';
+      img.alt = '';
+      img.decoding = 'async';
 
+      img.onload = () => {
+        el.appendChild(img);
+      };
+
+      img.onerror = () => {
+        console.warn('[B32] skill cutin image load failed:', charImg);
+      };
+
+      img.src = charImg;
+    }
+
+    el.appendChild(name);
     document.body.appendChild(el);
 
     setTimeout(() => {
