@@ -308,11 +308,11 @@
   top: 42%;
   z-index: 999999;
   pointer-events: none;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  -webkit-transform: translate3d(-50%, -50%, 0);
   width: min(92vw, 560px);
   height: 180px;
 
-  /* フレーム感を消す */
   background: none;
   border: none;
   box-shadow: none;
@@ -320,6 +320,12 @@
 
   overflow: visible;
   animation: b32SkillNameBurst 1500ms ease-out forwards;
+
+  filter: none !important;
+  -webkit-filter: none !important;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .b32-skill-burst-img {
@@ -332,15 +338,15 @@
   object-position: center bottom;
   display: block;
 
-  opacity: .86;
+  opacity: .9;
 
   filter: none !important;
   -webkit-filter: none !important;
   -webkit-mask-image: none !important;
   mask-image: none !important;
 
-  transform: translate3d(12px, 0, 0) scale(1.04);
-  -webkit-transform: translate3d(12px, 0, 0) scale(1.04);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
   transform-origin: center bottom;
 
   animation: b32SkillBurstImg 1500ms ease-out forwards;
@@ -381,41 +387,38 @@
 @keyframes b32SkillNameBurst {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(.86);
-    filter: blur(3px);
+    transform: translate3d(-50%, -50%, 0) scale(.92);
   }
   18% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.02);
-    filter: blur(0);
+    transform: translate3d(-50%, -50%, 0) scale(1);
   }
   72% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate3d(-50%, -50%, 0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -52%) scale(1.01);
-    filter: blur(1px);
+    transform: translate3d(-50%, -52%, 0) scale(1);
   }
 }
 
 @keyframes b32SkillBurstImg {
   0% {
     opacity: 0;
-    transform: translate3d(34px, 0, 0) scale(.98);
+    transform: translate3d(24px, 0, 0);
   }
   18% {
-    opacity: .86;
-    transform: translate3d(0, 0, 0) scale(1.04);
+    opacity: .9;
+    transform: translate3d(0, 0, 0);
   }
   72% {
-    opacity: .82;
-    transform: translate3d(0, 0, 0) scale(1.05);
+    opacity: .88;
+    transform: translate3d(0, 0, 0);
   }
   100% {
     opacity: 0;
-    transform: translate3d(-8px, 0, 0) scale(1.06);
+    transform: translate3d(-8px, 0, 0);
   }
 }
 
