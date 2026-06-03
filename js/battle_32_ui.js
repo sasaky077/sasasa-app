@@ -103,9 +103,9 @@
 
         /* transition ベース：スマホでも滑らか */
         transition:
-          opacity 900ms ease,
-          transform 900ms cubic-bezier(.16, 1, .3, 1),
-          filter 900ms ease;
+  opacity 220ms ease,
+  transform 220ms cubic-bezier(.16, 1, .3, 1),
+  filter 220ms ease;
 
         will-change: opacity, transform, filter;
         backface-visibility: hidden;
@@ -340,10 +340,30 @@
 
   opacity: .9;
 
+  /* iPhone実機対策：重いblur/drop-shadowは使わない */
   filter: none !important;
   -webkit-filter: none !important;
-  -webkit-mask-image: none !important;
-  mask-image: none !important;
+
+  /*
+    下辺だけを軽くフェードアウト。
+    blurではなくmaskなので、境界のくっきり感だけ自然に消す。
+  */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72%,
+    rgba(0, 0, 0, .72) 84%,
+    rgba(0, 0, 0, .28) 94%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72%,
+    rgba(0, 0, 0, .72) 84%,
+    rgba(0, 0, 0, .28) 94%,
+    transparent 100%
+  );
 
   transform: translate3d(0, 0, 0);
   -webkit-transform: translate3d(0, 0, 0);

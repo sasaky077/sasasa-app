@@ -45,19 +45,19 @@
 
   // ── テンポ定数（ここを変えると全体速度が変わる） ──
   const B32_WAIT = {
-    turn:        2600,  // ALLY TURN / ENEMY TURN 大見出し
-    guide:       2200,  // PLAYER ACTION など操作案内
-    phase:       2200,  // MOVE PHASE / SKILL PHASE
-    action:      2200,  // 敵 ACTION
-    move:        1800,  // 敵 MOVE
-    attack:      2200,  // 敵 ATTACK
-    charEnd:     2200,  // キャラ行動終了
-    turnEnd:     2600,  // ALLY TURN END / ENEMY TURN END
-    enemyTurn:   2600,  // ENEMY TURN
-    enemyAction: 2200,  // 敵ACTION宣言
-    enemyEnd:    2400,  // ENEMY TURN END
-    afterText:    300,  // テキスト消滅後の余韻（フェードが長くなった分を短縮）
-  };
+  turn:        1000,
+  guide:       800,
+  phase:       800,
+  action:      800,
+  move:        700,
+  attack:      900,
+  charEnd:     3700,
+  turnEnd:     800,
+  enemyTurn:   900,
+  enemyAction: 800,
+  enemyEnd:    900,
+  afterText:   160,
+};
 
   function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
