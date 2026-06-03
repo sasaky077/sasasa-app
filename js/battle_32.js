@@ -319,9 +319,13 @@ let chars = config.partyIds && config.partyIds.length
     });
 
     // --- 敵生成
+    // 優先順位: config.enemies（インライン定義）> config.enemyIds（ID参照）> DEFAULT_ENEMIES
     let enemyDefs;
 
-    if (config.enemyIds && config.enemyIds.length > 0) {
+    if (Array.isArray(config.enemies) && config.enemies.length > 0) {
+      // stages.js に直接書かれた敵定義をそのまま使う
+      enemyDefs = config.enemies;
+    } else if (config.enemyIds && config.enemyIds.length > 0) {
       const resolved = config.enemyIds.map(id => {
         if (typeof getEnemyById === 'function') {
           return getEnemyById(id) || null;
@@ -331,7 +335,7 @@ let chars = config.partyIds && config.partyIds.length
 
       enemyDefs = resolved.length > 0 ? resolved : DEFAULT_ENEMIES;
     } else {
-      enemyDefs = config.enemies || DEFAULT_ENEMIES;
+      enemyDefs = DEFAULT_ENEMIES;
     }
 
     // ── 敵初期配置：ボスは固定、雑魚は row 0〜1 ランダム配置 ──
@@ -407,7 +411,7 @@ const enemies = enemyDefs.map(def => {
         captured:   false,
       },
 
-      turnLimit: 12,
+      turnLimit: config.turnLimit ?? 12,
 
       // 敵行動数制御
       enemyActionsPerTurn: config.enemyActionsPerTurn ?? null,
@@ -427,9 +431,31 @@ const enemies = enemyDefs.map(def => {
       lastActionType:     null,
       lastActionUnitUid:  null,
       unitActionHistory:  {},
+
+      // ── ローグライト専用フィールド ──────────────────────────
+      // rogueliteOptions: 保持中の強化OPオブジェクト配列
+      rogueliteOptions:     Array.isArray(config.rogueliteOptions) ? config.rogueliteOptions : [],
+      // isBossStage: ボス戦かどうか（霊装OP等の判定用）
+      isBossStage:          !!config.isBossStage,
+      // スキルダメージ補正倍率（OP「秘術の触媒」が加算）
+      _rl_skillDmgMult:     1.0,
+      // 駒取り時の神気ボーナス（OP「神憑きの手」が加算）
+      _rl_captureSpBonus:   0,
+      // 霊装権ボーナス保持（OP「霊装の予兆」が積む）
+      _rl_pendingReisouBonus: 0,
+      // バトル終了時コールバック（ローグライトコントローラから注入）
+      _rl_onBattleEnd:      typeof config.rogueliteOnBattleEnd === 'function'
+                              ? config.rogueliteOnBattleEnd
+                              : null,
     };
 
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
+
+    // ── ローグライトOP開始時補正を適用 ──────────────────────
+    // applyOnStart(_bs) は _bs を直接書き換える
+    // （HP/ATK/コア耐久などを補正後に _emit('start') でスナップショットを取るため、
+    //   _bs 構築直後かつ emit より前に呼ぶ）
+    _applyRogueliteOnStart();
 
     _emit('start', { bs: _snapshot() });
     _emit('phaseChange', { phase: 'skill', bs: _snapshot() });
@@ -445,6 +471,48 @@ const enemies = enemyDefs.map(def => {
     // await _centerTextWait('PLAYER ACTION', '移動するキャラを選択してください', B32_WAIT.guide);
     _unlockInput();
     _renderUI();
+  }
+
+  // ============================================================
+  // ローグライト補助関数
+  // ============================================================
+
+  /**
+   * バトル開始時に保持OPの applyOnStart(_bs) を順に呼ぶ。
+   * _bs 構築直後かつ _emit('start') より前に実行すること。
+   */
+  function _applyRogueliteOnStart() {
+    const opts = (_bs && Array.isArray(_bs.rogueliteOptions)) ? _bs.rogueliteOptions : [];
+    if (opts.length === 0) return;
+
+    console.log('[Battle32] ローグライトOP開始補正を適用:', opts.map(o => o.id));
+    opts.forEach(op => {
+      if (op && typeof op.applyOnStart === 'function') {
+        try {
+          op.applyOnStart(_bs);
+        } catch (e) {
+          console.error('[Battle32] applyOnStart エラー:', op.id, e);
+        }
+      }
+    });
+  }
+
+  /**
+   * バトル中イベント発火（駒取り等）で各OPの applyOnEvent を呼ぶ。
+   * @param {string} event   - イベント識別子（例: 'capture'）
+   * @param {Object} payload - イベント固有のデータ
+   */
+  function _fireRogueliteEvent(event, payload) {
+    const opts = (_bs && Array.isArray(_bs.rogueliteOptions)) ? _bs.rogueliteOptions : [];
+    opts.forEach(op => {
+      if (op && typeof op.applyOnEvent === 'function') {
+        try {
+          op.applyOnEvent(_bs, event, payload);
+        } catch (e) {
+          console.error('[Battle32] applyOnEvent エラー:', op.id, event, e);
+        }
+      }
+    });
   }
 
   // ============================================================
@@ -569,7 +637,11 @@ const enemies = enemyDefs.map(def => {
         _log(`${ally.name}：範囲内に敵がいません`);
       } else {
         targets.forEach(enemy => {
-          const dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
+          let dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
+          // ─ ローグライト: スキルダメージ補正 ─
+          if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+            dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+          }
           applyDamage(enemy, dmg, ally, skill);
           _applyEffects(skill.effects, enemy, ally);
         });
@@ -584,7 +656,11 @@ const enemies = enemyDefs.map(def => {
       } else {
         targets.forEach(enemy => {
           if ((skill.multiplier || 0) > 0) {
-            const dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
+            let dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
+            // ─ ローグライト: スキルダメージ補正 ─
+            if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+              dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+            }
             applyDamage(enemy, dmg, ally, skill);
           }
           _applyEffects(skill.effects, enemy, ally);
@@ -1256,6 +1332,182 @@ function doBossLineAttack(boss) {
     _nextTurn();
   }
 
+  // ============================================================
+  // 敵移動：詰まり回避ロジック（グループ優先順位つき候補リスト）
+  // ============================================================
+
+  /**
+   * 移動先が有効かどうかを判定する
+   * - 盤面外 / 他ユニット在室 / ボス在室 / 自陣コア は NG
+   * - 味方がいるマスは「駒取り」として許可する
+   */
+  function _canEnemyMoveTo(row, col, enemy) {
+    if (!BR.isValidCell(row, col)) return false;
+
+    const allUnits = getAllUnits();
+
+    // ボスのいるマス（HP0後の核露出状態も含む）は進入禁止
+    const bossAtCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
+    if (bossAtCell) return false;
+
+    // 自陣コアのマスは進入禁止（隣接から攻撃する仕様を維持）
+    const corePos = _bs.cores && _bs.cores.ally;
+    if (corePos && row === corePos.row && col === corePos.col) return false;
+
+    const occupant = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === row && u.col === col);
+
+    // 他の敵がいれば進入禁止
+    if (occupant && occupant.side === 'enemy') return false;
+
+    // 味方がいれば「駒取り」として許可
+    return true;
+  }
+
+  /**
+   * 味方コアへのマンハッタン距離
+   */
+  function _distToAllyCore(row, col) {
+    const core = _bs.cores && _bs.cores.ally;
+    if (!core) return 999;
+    return Math.abs(row - core.row) + Math.abs(col - core.col);
+  }
+
+  /**
+   * 候補マスをコアへの近さでソートする（同距離はランダム）
+   */
+  function _sortByCoreDistance(candidates) {
+    return candidates.sort((a, b) => {
+      const da = _distToAllyCore(a.row, a.col);
+      const db = _distToAllyCore(b.row, b.col);
+      if (da !== db) return da - db;
+      return Math.random() < 0.5 ? -1 : 1;
+    });
+  }
+
+  /**
+   * moveType に応じた移動候補をグループ（優先順位）つきで返す
+   * group が小さいほど優先度が高い
+   */
+  function _getEnemyMoveCandidates(enemy) {
+    const type = enemy.moveType;
+
+    if (type === 'enemy_move_straight' || type === 'enemy_zako_straight') {
+      // 直進型：前 → 左右 → 斜め前
+      return [
+        { dr:  1, dc:  0, group: 1 }, // 前
+        { dr:  0, dc: -1, group: 2 }, // 左
+        { dr:  0, dc:  1, group: 2 }, // 右
+        { dr:  1, dc: -1, group: 3 }, // 左斜め前
+        { dr:  1, dc:  1, group: 3 }, // 右斜め前
+      ];
+    }
+
+    if (type === 'enemy_move_diag' || type === 'enemy_zako_diag') {
+      // 斜行型：斜め前 → 前 → 左右
+      return [
+        { dr:  1, dc: -1, group: 1 }, // 左斜め前
+        { dr:  1, dc:  1, group: 1 }, // 右斜め前
+        { dr:  1, dc:  0, group: 2 }, // 前
+        { dr:  0, dc: -1, group: 3 }, // 左
+        { dr:  0, dc:  1, group: 3 }, // 右
+      ];
+    }
+
+    // それ以外は既存の getMoveOffsets をフォールバックとして使う（全て group:1）
+    const offsets = BR.getMoveOffsets ? BR.getMoveOffsets(enemy) : [];
+    return offsets.map(o => ({ dr: o.dr, dc: o.dc, group: 1 }));
+  }
+
+  /**
+   * 敵1体の移動先を決定する（詰まり回避あり）
+   * 戻り値: { row, col, isCapture, occupant } | null
+   */
+  function _decideEnemyMoveCell(enemy) {
+    const candidates = _getEnemyMoveCandidates(enemy);
+    if (!candidates || candidates.length === 0) return null;
+
+    const allUnits = getAllUnits();
+    const corePos = _bs.cores && _bs.cores.ally;
+
+    // グループを昇順に並べ、グループ内で最良を選ぶ
+    const groups = [...new Set(candidates.map(c => c.group))].sort((a, b) => a - b);
+
+    for (const group of groups) {
+      const groupCandidates = candidates
+        .filter(c => c.group === group)
+        .map(c => ({ row: enemy.row + c.dr, col: enemy.col + c.dc }))
+        .filter(c => _canEnemyMoveTo(c.row, c.col, enemy));
+
+      if (groupCandidates.length === 0) continue;
+
+      // 味方がいるマス（駒取り）を優先。次にコアへ近づくマス。
+      const withOccupant = groupCandidates.filter(c => {
+        const occ = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === c.row && u.col === c.col);
+        return occ && occ.side === 'ally';
+      });
+
+      if (withOccupant.length > 0) {
+        const sorted = _sortByCoreDistance(withOccupant);
+        const chosen = sorted[0];
+        const occupant = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === chosen.row && u.col === chosen.col);
+        return { row: chosen.row, col: chosen.col, isCapture: true, occupant };
+      }
+
+      // 空きマスのみ
+      const emptyMoves = groupCandidates.filter(c => {
+        const occ = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === c.row && u.col === c.col);
+        return !occ;
+      });
+
+      if (emptyMoves.length === 0) continue;
+
+      // group ごとに距離条件を変えてフィルタする
+      //   group 1（主移動）: コアへ近づく（距離が縮まる）マスのみ
+      //   group 2（横回避）: コア距離が同じでも許可（横移動は前進の妨げ解消が目的）
+      //   group 3（斜め fallback）: コア距離が同じでも許可
+      const approaching = emptyMoves.filter(c => {
+        if (!corePos) return true;
+        const curDist = _distToAllyCore(enemy.row, enemy.col);
+        const newDist = _distToAllyCore(c.row, c.col);
+        const type = enemy.moveType;
+
+        if (group === 1) {
+          // 主移動：必ずコアへ近づく
+          if (type === 'enemy_move_diag' || type === 'enemy_zako_diag') {
+            // 斜行型：前進（row増加）かつ距離が縮まる or 同値
+            return c.row > enemy.row && newDist <= curDist;
+          }
+          return newDist < curDist;
+        }
+
+        // group 2（横回避）・group 3（斜め fallback）:
+        // コア距離が悪化しなければ OK（詰まり解消が目的なので同値を許可）
+        return newDist <= curDist;
+      });
+
+      if (approaching.length > 0) {
+        const sorted = _sortByCoreDistance(approaching);
+        const chosen = sorted[0];
+        const isFallback = group > 1;
+        if (isFallback) {
+          console.log('[B32 enemy fallback move]', {
+            name: enemy.name,
+            moveType: enemy.moveType,
+            group,
+            from: { row: enemy.row, col: enemy.col },
+            to: chosen,
+          });
+          _log(`${enemy.name} が進路を変えた`);
+        }
+        return { row: chosen.row, col: chosen.col, isCapture: false, occupant: null };
+      }
+
+      // このグループでは前進できなかった → 次グループへ
+    }
+
+    return null; // 移動できるマスがない
+  }
+
   // 敵1体の行動処理（_centerTextWait で完全に消えてから次へ）
   async function _runEnemySingleAction(enemy) {
     const actionLabel = enemy.isBoss ? 'BOSS ACTION' : 'ENEMY ACTION';
@@ -1300,70 +1552,11 @@ if (canEnemyAttackAllyCore(enemy)) {
     // moveType: 'none' → 移動しない
     if (enemy.moveType === 'none') return;
 
-    // moveType に基づく移動候補を取得
-    const offsets = BR.getMoveOffsets(enemy);
-    if (!offsets || offsets.length === 0) return;
+    // ── 詰まり回避移動：グループ優先順位つき候補リストで移動先を決定 ──
+    const bestCell = _decideEnemyMoveCell(enemy);
 
-    const allUnits = getAllUnits();
-    const aliveAllies = _bs.allies.filter(u => u.hp > 0);
-    const corePos = (_bs.cores && _bs.cores.ally) ? _bs.cores.ally : null;
-
-    // 候補マスを評価して最優先のマスを選ぶ
-    // 優先度: 1. 味方駒取りマス  2. コアに近づくマス  3. 移動なし
-    // ※コアマスそのものは移動先から除外する
-    let bestCell = null;
-    let bestPriority = -1;
-
-    for (const { dr, dc } of offsets) {
-      const nr = enemy.row + dr;
-      const nc = enemy.col + dc;
-      if (!BR.isValidCell(nr, nc)) continue;
-
-      const occupant = allUnits.find(u => u.hp > 0 && u.row === nr && u.col === nc);
-
-      // 他の敵がいるマスには移動不可
-      if (occupant && occupant.side === 'enemy') continue;
-
-      let priority = 0;
-      let isCapture = false;
-
-      // 自陣コアのあるマスは移動先にできない
-      // コアは「踏むマス」ではなく「隣接または攻撃範囲内から攻撃する対象」
-      if (corePos && nr === corePos.row && nc === corePos.col) {
-        continue;
-      }
-
-      if (occupant && occupant.side === 'ally') {
-        // 味方駒取り
-        priority = 2;
-        isCapture = true;
-      } else if (!occupant) {
-  // 空きマス → コアへの距離で評価
-  if (corePos) {
-    const curDist = BR.manhattanDist(enemy, corePos);
-    const newDist = BR.manhattanDist({ row: nr, col: nc }, corePos);
-
-    // 斜め前タイプは、マンハッタン距離が同値でも「前進」していれば移動可
-    if (enemy.moveType === 'enemy_zako_diag') {
-      const isForward = nr > enemy.row; // 敵の前方 = row増加
-      priority = (newDist <= curDist && isForward) ? 1 : 0;
-    } else {
-      priority = newDist < curDist ? 1 : 0;
-    }
-
-  } else {
-    priority = 1;
-  }
-}
-
-      if (priority > bestPriority) {
-        bestPriority = priority;
-        bestCell = { row: nr, col: nc, isCapture, occupant };
-      }
-    }
-
-    if (!bestCell || bestPriority < 1) {
-      // 移動先なし
+    if (!bestCell) {
+      // 移動先なし（詰まり）
       return;
     }
 
@@ -1472,10 +1665,36 @@ if (canEnemyAttackAllyCore(enemy)) {
   }
 
   // ============================================================
+  // ローグライト終了通知ヘルパー（二重呼び出し防止）
+  // ============================================================
+  function _notifyRogueliteBattleEnd(result) {
+    if (!_bs || typeof _bs._rl_onBattleEnd !== 'function') return;
+    const cb = _bs._rl_onBattleEnd;
+    _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
+    setTimeout(() => cb({ result }), 800);
+  }
+
+  // ============================================================
   // 勝敗判定
   // ============================================================
   function _checkWinLose() {
     if (_bs.result) return;
+
+    // ── ローグライト雑魚戦専用：敵全滅で勝利 ──────────────
+    // _rl_onBattleEnd が設定されており、かつボス戦でない場合のみ有効
+    // 通常ステージ（_rl_onBattleEnd === null）には影響しない
+    if (typeof _bs._rl_onBattleEnd === 'function' && !_bs.isBossStage) {
+      const hasAliveEnemy = _bs.enemies.some(e => e.hp > 0);
+      if (!hasAliveEnemy) {
+        _bs.result = 'win';
+        _bs.phase  = 'end';
+        _log('★ 雑魚群の制圧に成功！');
+        _emit('result', { result: 'win', bs: _snapshot() });
+        _renderUI();
+        _notifyRogueliteBattleEnd('win');
+        return;
+      }
+    }
 
     // 勝利条件：神性核の固定（ボスコア制圧）
     if (_bs.bossCore?.captured) {
@@ -1484,6 +1703,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _log('★ 神性核固定・収容完了！');
       _emit('result', { result: 'win', bs: _snapshot() });
       _renderUI();
+      _notifyRogueliteBattleEnd('win');
       return;
     }
 
@@ -1493,6 +1713,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _log('✕ 自陣コアが侵食された。収容失敗…');
       _emit('result', { result: 'lose', bs: _snapshot() });
       _renderUI();
+      _notifyRogueliteBattleEnd('lose');
       return;
     }
 
@@ -1502,6 +1723,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _log('✕ 接続限界を超過。強制帰還…');
       _emit('result', { result: 'lose', bs: _snapshot() });
       _renderUI();
+      _notifyRogueliteBattleEnd('lose');
       return;
     }
 
@@ -1511,6 +1733,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _log('✕ 味方全滅。敗北…');
       _emit('result', { result: 'lose', bs: _snapshot() });
       _renderUI();
+      _notifyRogueliteBattleEnd('lose');
       return;
     }
   }
@@ -1604,6 +1827,8 @@ if (canEnemyAttackAllyCore(enemy)) {
             target.hp = 0;
             _log(`${ally.name} が ${target.name} を制圧した！`);
             _emit('capture', { ally: { ...ally }, target: { ...target }, bs: _snapshot() });
+            // ─ ローグライト: 駒取りイベント発火（「神憑きの手」等） ─
+            _fireRogueliteEvent('capture', { ally });
           }
         } else if (target && target.side === 'ally') {
           // 味方コアへの駒取りは敗北（将来の敵移動拡張用フック）

@@ -5,19 +5,21 @@
 (function () {
 
   const DIFFICULTY_LABEL = {
-    easy:   'EASY',
-    normal: 'NORMAL',
-    hard:   'HARD',
-    boss:   'BOSS',
-    debug:  'DEBUG',
+    easy:      'EASY',
+    normal:    'NORMAL',
+    hard:      'HARD',
+    boss:      'BOSS',
+    debug:     'DEBUG',
+    roguelite: 'ROGUELITE',  // ← 追加
   };
 
   const DIFFICULTY_COLOR = {
-    easy:   'rgba(100,200,140,.85)',
-    normal: 'rgba(200,180,80,.85)',
-    hard:   'rgba(200,90,60,.85)',
-    boss:   'rgba(180,60,180,.85)',
-    debug:  'rgba(100,180,255,.85)',
+    easy:      'rgba(100,200,140,.85)',
+    normal:    'rgba(200,180,80,.85)',
+    hard:      'rgba(200,90,60,.85)',
+    boss:      'rgba(180,60,180,.85)',
+    debug:     'rgba(100,180,255,.85)',
+    roguelite: 'rgba(140,80,255,.85)',  // ← 追加
   };
 
   // ============================================================
@@ -219,12 +221,41 @@
     if (!list) return;
     list.innerHTML = '';
 
+    // ── ローグライトランバナー（chapter === 'roguelite' or chapter === 99 で表示）──
+    // chapter 0（DEBUG）にもバナーを表示してデバッグしやすくする
+    if (chapter === 'roguelite' || chapter === 0) {
+      const rlCard = document.createElement('div');
+      rlCard.className = 'ss-card';
+      rlCard.style.cssText = 'border-color:rgba(140,80,255,.35);background:rgba(60,20,120,.08)';
+      rlCard.innerHTML = `
+        <div class="ss-card-no" style="border-color:rgba(140,80,255,.35);color:rgba(160,100,255,.7)">🎲</div>
+        <div class="ss-card-body">
+          <div class="ss-card-name" style="color:rgba(200,170,255,.9)">ローグライトラン</div>
+          <div class="ss-card-meta">
+            <div class="ss-card-enemy" style="color:rgba(160,120,255,.5)">4ステージ突破 · 強化OP選択</div>
+          </div>
+        </div>
+        <div class="ss-diff-badge" style="color:rgba(140,80,255,.9);border-color:rgba(140,80,255,.4)">ROGUELITE</div>
+        <div class="ss-card-arrow">›</div>
+      `;
+      rlCard.onclick = () => _openRoguelitePartySelect();
+      list.appendChild(rlCard);
+
+      // roguelite 専用表示ならここで終了
+      if (chapter === 'roguelite') return;
+
+      // chapter 0 の場合は通常のステージ一覧も続けて表示（区切り線を入れる）
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;background:rgba(255,255,255,.06);margin:4px 0';
+      list.appendChild(sep);
+    }
+
     const stages = (typeof getStagesByChapter === 'function')
       ? getStagesByChapter(chapter)
       : STAGES.filter(s => s.chapter === chapter);
 
     if (stages.length === 0) {
-      list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.3);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
+      list.innerHTML += '<div style="text-align:center;color:rgba(232,228,220,.3);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
       return;
     }
 
@@ -263,6 +294,25 @@
   }
 
   // ============================================================
+  // ローグライト：パーティ選択を開く（battleMode:'roguelite' を渡す）
+  // ============================================================
+  function _openRoguelitePartySelect() {
+    closeStageSelect();
+    setTimeout(() => {
+      if (typeof window.openPartySelect === 'function') {
+        window.openPartySelect(null, {
+          battleMode: 'roguelite',
+        });
+      } else {
+        // party_select がない場合はデフォルトパーティで即起動
+        if (window.RogueliteController) {
+          window.RogueliteController.startRun([8, 12, 7]);
+        }
+      }
+    }, 350);
+  }
+
+  // ============================================================
   // ステージ選択
   // ============================================================
   function onStageTap(stage) {
@@ -277,14 +327,42 @@
         };
         if (stage.useBattle32 === true) {
           battleOptions.battleMode = '32';
+
           // enemyIds を明示的に battleOptions にも持たせる
           // openPartySelect → Battle32.start(config) の config.enemyIds に渡るようにする
           if (stage.enemyIds && stage.enemyIds.length > 0) {
             battleOptions.enemyIds = stage.enemyIds;
           }
+
+          // enemies（インライン敵定義配列）を引き継ぐ
+          // enemyIds より優先度が高い場合は Battle32.start() 側で判定する
+          if (stage.enemies && stage.enemies.length > 0) {
+            battleOptions.enemies = stage.enemies;
+          }
+
           // 敵スポーン設定を引き継ぐ
           if (stage.enemySpawn) {
             battleOptions.enemySpawn = stage.enemySpawn;
+          }
+
+          // 敵行動モード（'all' | 'limit'）
+          if (stage.enemyActionMode) {
+            battleOptions.enemyActionMode = stage.enemyActionMode;
+          }
+
+          // 1ターンあたりの敵行動数（enemyActionMode:'limit' のとき有効）
+          if (stage.enemyActionsPerTurn != null) {
+            battleOptions.enemyActionsPerTurn = stage.enemyActionsPerTurn;
+          }
+
+          // ターン制限
+          if (stage.turnLimit != null) {
+            battleOptions.turnLimit = stage.turnLimit;
+          }
+
+          // ボス捕獲に必要な駒取り回数
+          if (stage.bossCaptureMax != null) {
+            battleOptions.bossCaptureMax = stage.bossCaptureMax;
           }
         }
         openPartySelect(stage.enemyIds || stage.enemyId, battleOptions);

@@ -727,6 +727,17 @@
   backdrop-filter: blur(4px);
 }
 
+/* ── 結果オーバーレイ内のボタンは伸ばさない ── */
+#b32-result-overlay .b32-btn {
+  flex: 0 0 auto !important;
+  width: min(220px, 70vw);
+  max-width: 220px;
+  height: auto;
+  min-height: 40px;
+  padding: 10px 18px;
+  align-self: center;
+}
+
 #b32-result-text {
   font-family: 'Cinzel', serif;
   font-size: 36px;

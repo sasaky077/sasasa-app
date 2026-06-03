@@ -644,8 +644,13 @@
     }).filter(Boolean);
 
     // 敵データ解決
+    // 優先順位: currentBattleOptions.enemies（インライン定義）> currentEnemyRef（ID参照）
     let enemyData;
-    if (Array.isArray(currentEnemyRef)) {
+    if (Array.isArray(currentBattleOptions.enemies) && currentBattleOptions.enemies.length > 0) {
+      // stages.js に直接書かれた敵定義をそのまま演出用 enemyData として使う
+      // enemy_intro.js が Array 対応済みのため先頭要素の img が演出に使われる
+      enemyData = currentBattleOptions.enemies;
+    } else if (Array.isArray(currentEnemyRef)) {
       enemyData = currentEnemyRef
         .map(id => {
           const master = typeof getEnemyById === 'function' ? getEnemyById(id) : null;
@@ -679,11 +684,26 @@
     window._saveLastParty && window._saveLastParty(party);
     closePartySelect();
 
+    // currentBattleOptions のすべてのフィールド（enemies / enemyActionMode /
+    // enemyActionsPerTurn / turnLimit / bossCaptureMax / enemySpawn 等）を透過的に引き継ぐ。
+    // partyIds だけ編成選択結果で上書きする。
     const mergedOptions = Object.assign({}, currentBattleOptions, {
       partyIds: selectedCharaIds,
-      // enemySpawn はステージ定義から引き継ぐ（Battle32.start の config に渡る）
-      enemySpawn: currentBattleOptions.enemySpawn || null,
     });
+
+    // ─── ローグライト分岐 ─────────────────────────────────────
+    // battleMode: 'roguelite' のとき RogueliteController.startRun へ流す
+    if (mergedOptions.battleMode === 'roguelite') {
+      setTimeout(() => {
+        if (window.RogueliteController && typeof window.RogueliteController.startRun === 'function') {
+          window.RogueliteController.startRun(selectedCharaIds);
+        } else {
+          console.error('[party_select] RogueliteController が見つかりません。roguelite_controller.js を読み込んでいるか確認してください。');
+        }
+      }, 400);
+      return;  // 通常の startEnemyIntro は呼ばない
+    }
+    // ─────────────────────────────────────────────────────────
 
     setTimeout(() => startEnemyIntro(enemyData, party, mergedOptions), 400);
   };

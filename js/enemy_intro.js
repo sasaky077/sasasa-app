@@ -206,27 +206,32 @@
     runIntro(img, () => {
       const opt = options || {};
 
-      // [Battle32] battleMode:'32' のステージは Battle32.start() へ分岐
-      if (opt.battleMode === '32') {
+      // [Battle32] battleMode:'32' または 'roguelite' のステージは Battle32.start() へ分岐
+      if (opt.battleMode === '32' || opt.battleMode === 'roguelite') {
         if (window.Battle32 && typeof window.Battle32.start === 'function') {
+          // opt を全フィールド展開してから partyIds / enemies / enemyIds だけ上書き。
+          // rogueliteOptions / rogueliteOnBattleEnd / isBossStage 等が落ちない。
           window.Battle32.start({
-  partyIds: Array.isArray(opt.partyIds) && opt.partyIds.length
-    ? opt.partyIds
-    : [1, 2, 3],
+            ...opt,
 
-  enemyIds: Array.isArray(enemyData)
-    ? enemyData.map(e => e.id)
-    : (enemyData && enemyData.id ? [enemyData.id] : []),
+            partyIds: Array.isArray(opt.partyIds) && opt.partyIds.length
+              ? opt.partyIds
+              : [1, 2, 3],
 
-  stageId: opt.stageId || null,
+            // opt.enemies（インライン定義配列）があればそれを優先。
+            // なければ opt.enemyIds → enemyData の順にフォールバック。
+            enemies: (Array.isArray(opt.enemies) && opt.enemies.length)
+              ? opt.enemies
+              : undefined,
 
-  // 追加：ステージ側の敵スポーン設定をBattle32へ渡す
-  enemySpawn: opt.enemySpawn || null,
-
-  // 念のため、ステージ側の敵行動設定も渡せるようにしておく
-  enemyActionMode: opt.enemyActionMode || undefined,
-  enemyActionsPerTurn: opt.enemyActionsPerTurn ?? undefined,
-});
+            enemyIds: (Array.isArray(opt.enemies) && opt.enemies.length)
+              ? undefined  // enemies が優先のときは enemyIds を渡さない
+              : (Array.isArray(opt.enemyIds) && opt.enemyIds.length)
+                ? opt.enemyIds
+                : (Array.isArray(enemyData)
+                    ? enemyData.map(e => e.id)
+                    : (enemyData && enemyData.id ? [enemyData.id] : [])),
+          });
         } else {
           console.error('[Battle32] Battle32 is not loaded. Check that battle_32.js is included in index.html.');
           alert('Battle32 が読み込まれていません。index.html の script タグを確認してください。');
