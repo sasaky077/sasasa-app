@@ -267,19 +267,48 @@ function _hideHud() {
     });
   }
 
+  // ── Battle32 UI だけを静かに隠すヘルパー ─────────────────
+  // closeBattle32UI() は nav / explore / map を復帰させてしまうため
+  // ローグライト中は使わない。このヘルパーで盤面だけを非表示にする。
+  function _hideBattle32Only() {
+  window.__ROGUELITE_TRANSITIONING__ = true;
+
+  const root = document.getElementById('battle32-root');
+  if (root) {
+    root.style.display = 'none';
+    root.dataset.rlHidden = '1';
+  }
+
+  const result = document.getElementById('b32-result-overlay');
+  if (result) {
+    result.style.display = 'none';
+    result.classList.remove('active');
+  }
+
+  const center = document.getElementById('b32-center-text');
+  if (center) {
+    center.innerHTML = '';
+    center.className = '';
+    center.style.opacity = '0';
+  }
+}
+
   // ── バトル起動 ───────────────────────────────────────────
   function _startBattle() {
   _hideHud();
 
   if (!window.RogueliteRun || !window.RogueliteRun.isActive()) return;
-    const config = window.RogueliteRun.buildBattleConfig({
-      // バトル終了時のコールバックを注入
-      rogueliteOnBattleEnd: (payload) => _onBattleEnd(payload.result),
-      // Battle32.start で useBattle32 相当として動くよう battleMode を渡す
-      battleMode: '32',
-    });
 
-    console.log('[RogueliteController] Battle32.start:', config);
+  // 次のバトルを始めるので、古いBATTLE END再表示ブロックを解除
+  window.__ROGUELITE_TRANSITIONING__ = false;
+
+  const config = window.RogueliteRun.buildBattleConfig({
+    rogueliteOnBattleEnd: (payload) => _onBattleEnd(payload.result),
+    battleMode: 'roguelite',
+  });
+
+  console.log('[RogueliteController] Battle32.start:', config);
+
 
     // ステージ演出（enemy_intro）を経由してバトルへ
     // isBossStage → ボス敵のimgを使って演出
@@ -348,7 +377,10 @@ async function _onBattleEnd(result) {
   console.log('[RogueliteController] バトル終了:', result,
     '/ Stage:', window.RogueliteRun.getStageNo());
 
+  // 敗北時はすぐBattle32だけ隠してラン失敗画面へ
   if (result === 'lose') {
+    _hideBattle32Only();
+
     const ops = window.RogueliteRun.getOptions();
     window.RogueliteRun.end('lose');
     _hideHud();
@@ -356,8 +388,10 @@ async function _onBattleEnd(result) {
     return;
   }
 
-  // 勝利：ボス戦ならラン成功
+  // ボス戦勝利時もすぐ隠してラン成功画面へ
   if (window.RogueliteRun.isBossStage()) {
+    _hideBattle32Only();
+
     const ops = window.RogueliteRun.getOptions();
     window.RogueliteRun.end('win');
     _hideHud();
@@ -365,32 +399,62 @@ async function _onBattleEnd(result) {
     return;
   }
 
-  // 雑魚戦クリア → VICTORYを見せる → 報酬選択 → 次ステージ
+  // 雑魚戦クリア → ここではまだBattle32を隠さない
   const currentStage   = window.RogueliteRun.getStageNo();
   const currentOptions = window.RogueliteRun.getOptions();
   const excludeIds     = currentOptions.map(o => o.id);
 
-  _hideHud();
+  console.log('[RogueliteController] 報酬待機前');
 
   // VICTORY画面を見せる：タップ or 3秒後に報酬画面へ
   await _waitVictoryConfirm();
+
+  console.log('[RogueliteController] 報酬表示直前');
+ 
+  console.log('[RogueliteController] RogueliteReward:', window.RogueliteReward);
+  console.log('[RogueliteController] getRandomOptions:', window.getRandomOptions);
+  console.log('[RogueliteController] excludeIds:', excludeIds);
 
   window.RogueliteReward.show({
     currentStage,
     currentOptions,
     excludeIds,
     onSelect: (selectedOp) => {
+      console.log('[RogueliteController] 報酬選択 onSelect fired:', selectedOp);
+
+      // 報酬UI非表示後に古いBATTLE END画面が再表示されないよう先に隠す
+      _hideBattle32Only();
+
       if (selectedOp) {
         window.RogueliteRun.addOption(selectedOp);
         console.log('[RogueliteController] OP選択:', selectedOp.name);
       }
 
+      console.log(
+        '[RogueliteController] advance前 stage:',
+        window.RogueliteRun.getStageNo(),
+        'active:',
+        window.RogueliteRun.isActive()
+      );
+
       window.RogueliteRun.advance();
+
+      console.log(
+        '[RogueliteController] advance後 stage:',
+        window.RogueliteRun.getStageNo(),
+        'active:',
+        window.RogueliteRun.isActive(),
+        'isBoss:',
+        window.RogueliteRun.isBossStage()
+      );
+
       _hideHud();
 
-      // 少し間を置いてから次バトル
-      setTimeout(() => _startBattle(), 400);
-    },
+      setTimeout(() => {
+        console.log('[RogueliteController] 次戦開始');
+        _startBattle();
+      }, 400);
+    }
   });
 }
 
@@ -455,6 +519,7 @@ _startBattle();
     // デバッグ用: 直接終了コールバックを呼べるようにする
     _onBattleEnd,
     _updateHud,
+    _hideBattle32Only,
   };
 
 })();

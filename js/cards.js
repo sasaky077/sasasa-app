@@ -1,6 +1,13 @@
 // cards.js
-// 補助カード定義（battle_32.js で使用）
-// 既存バトルには影響しない
+// 補助カード定義（旧バトルシステム用）
+//
+// ⚠️ Battle32 / ローグライト系では使用しない（設計整理 2025）。
+//    cards.js を読み込んでいても Battle32 には影響しない。
+//    位置入替はローグライトOPの「布陣入替」（roguelite_options.js: swap_right_1）として実装。
+//    最大移動・霊装による移動変更は霊装システムで別途実装予定。
+//    旧 battle.js 系との互換のため定義は残す。
+//
+// Battle32 では window.SUPPORT_CARDS を参照しない。
 
 const SUPPORT_CARDS = window.SUPPORT_CARDS = [
 

@@ -140,8 +140,11 @@
     return { row: p.row, col: p.col };
   }
 
-  function calcDamage(atk, def, multiplier) {
-    return Math.max(1, Math.floor(atk * multiplier - def * 0.5));
+  // DEF 参照式を廃止。ATK × multiplier のみで計算する。
+  // 敵の硬さを表現したい場合は target.damageTakenRate（未設定時 1.0）を使う。
+  function calcDamage(atk, multiplier, target) {
+    const rate = (target && target.damageTakenRate != null) ? target.damageTakenRate : 1.0;
+    return Math.max(1, Math.floor(atk * multiplier * rate));
   }
 
   function getAllUnits() {
@@ -178,8 +181,8 @@
       rarity: charDef.rarity,
       role: charDef.role,
       side: 'ally',
-moveType: charDef.moveType || 'silver',
-moveCells: Array.isArray(charDef.moveCells)
+      moveType: charDef.moveType || 'silver',
+      moveCells: Array.isArray(charDef.moveCells)
   ? charDef.moveCells.map(p => ({ dr: p.dr, dc: p.dc }))
   : null,
 
@@ -188,8 +191,6 @@ moveCells: Array.isArray(charDef.moveCells)
       hpMax: charDef.hp,
 
       atk:  charDef.atk,
-      def:  charDef.def,
-      spd:  charDef.spd,
       shinki:    charDef.shinkiStart,
       shinkiMax: charDef.shinkiMax,
       row,
@@ -206,6 +207,9 @@ moveCells: Array.isArray(charDef.moveCells)
 
       // カットイン用
       cutin: charDef.cutin || charDef.ultImg || charDef.cutImg || null,
+
+      uiScale: charDef.uiScale || {},
+      uiOffset: charDef.uiOffset || {},
 
       // 状態異常
       statusEffects:    [],
@@ -232,8 +236,8 @@ moveCells: Array.isArray(charDef.moveCells)
       hp: def.hp,
       hpMax: def.hpMax || def.hp,
       atk: def.atk,
-      def: def.def,
-      spd: def.spd,
+      // damageTakenRate: 敵の硬さを表現（省略時 1.0）
+      damageTakenRate: def.damageTakenRate ?? 1.0,
       row,
       col,
       statusEffects: [],
@@ -253,8 +257,6 @@ moveCells: Array.isArray(charDef.moveCells)
     isBoss: true,
     hp: 3200,
     atk: 520,
-    def: 220,
-    spd: 150,
     moveType: 'none',
     attackRange: 'enemy_attack_cross',
   },
@@ -263,8 +265,6 @@ moveCells: Array.isArray(charDef.moveCells)
   name: '雑魚A',
   hp: 700,
   atk: 240,
-  def: 100,
-  spd: 180,
   moveType: 'enemy_zako_straight',
   attackRange: 'enemy_attack_front',
 },
@@ -273,8 +273,6 @@ moveCells: Array.isArray(charDef.moveCells)
   name: '雑魚B',
   hp: 650,
   atk: 220,
-  def: 120,
-  spd: 160,
   moveType: 'enemy_zako_diag',
   attackRange: 'enemy_attack_cross',
 },
@@ -433,6 +431,8 @@ const enemies = enemyDefs.map(def => {
       unitActionHistory:  {},
 
       // ── ローグライト専用フィールド ──────────────────────────
+      // isRoguelite: ローグライトランとして起動されたか（UI分岐の判定に使う）
+      isRoguelite:          config.battleMode === 'roguelite' || typeof config.rogueliteOnBattleEnd === 'function',
       // rogueliteOptions: 保持中の強化OPオブジェクト配列
       rogueliteOptions:     Array.isArray(config.rogueliteOptions) ? config.rogueliteOptions : [],
       // isBossStage: ボス戦かどうか（霊装OP等の判定用）
@@ -443,6 +443,8 @@ const enemies = enemyDefs.map(def => {
       _rl_captureSpBonus:   0,
       // 霊装権ボーナス保持（OP「霊装の予兆」が積む）
       _rl_pendingReisouBonus: 0,
+      // ボスへのスキルダメージ追加補正（OP「核穿ち」が加算）
+      _rl_bossDmgMult:      1.0,
       // バトル終了時コールバック（ローグライトコントローラから注入）
       _rl_onBattleEnd:      typeof config.rogueliteOnBattleEnd === 'function'
                               ? config.rogueliteOnBattleEnd
@@ -490,6 +492,8 @@ const enemies = enemyDefs.map(def => {
       if (op && typeof op.applyOnStart === 'function') {
         try {
           op.applyOnStart(_bs);
+          // バトルログにOP発動を表示（_log は _bs 構築後なら呼び出し可）
+          _log(`強化OP「${op.name}」が発動`);
         } catch (e) {
           console.error('[Battle32] applyOnStart エラー:', op.id, e);
         }
@@ -529,6 +533,7 @@ const enemies = enemyDefs.map(def => {
       bossWarning: _bs.bossWarning,
       log: [..._bs.log],
       result: _bs.result,
+      isRoguelite: !!_bs.isRoguelite,
       cores: _bs.cores ? JSON.parse(JSON.stringify(_bs.cores)) : null,
       bossCore: _bs.bossCore ? { ..._bs.bossCore } : null,
       turnLimit: _bs.turnLimit,
@@ -572,10 +577,6 @@ const enemies = enemyDefs.map(def => {
       target.shieldRate = 0;
       _log(`${target.name} の結界が発動！ダメージを軽減`);
     }
-
-    // def_down：ダメージ 1.3 倍
-    const defDown = target.statusEffects.some(e => e.type === 'def_down');
-    if (defDown) dmg = Math.floor(dmg * 1.3);
 
     target.hp = Math.max(0, target.hp - dmg);
     _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！（残HP: ${target.hp}）`);
@@ -637,10 +638,16 @@ const enemies = enemyDefs.map(def => {
         _log(`${ally.name}：範囲内に敵がいません`);
       } else {
         targets.forEach(enemy => {
-          let dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
+          let dmg = calcDamage(ally.atk, skill.multiplier, enemy);
           // ─ ローグライト: スキルダメージ補正 ─
           if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+            const _dmgBefore = dmg;
             dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+            console.log('[RL OP] skill_dmg_mult', { before: _dmgBefore, after: dmg, mult: _bs._rl_skillDmgMult });
+          }
+          // ─ ローグライト: ボスへのスキルダメージ追加補正 ─
+          if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+            dmg = Math.round(dmg * _bs._rl_bossDmgMult);
           }
           applyDamage(enemy, dmg, ally, skill);
           _applyEffects(skill.effects, enemy, ally);
@@ -656,10 +663,16 @@ const enemies = enemyDefs.map(def => {
       } else {
         targets.forEach(enemy => {
           if ((skill.multiplier || 0) > 0) {
-            let dmg = calcDamage(ally.atk, enemy.def, skill.multiplier);
+            let dmg = calcDamage(ally.atk, skill.multiplier, enemy);
             // ─ ローグライト: スキルダメージ補正 ─
             if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+              const _dmgBefore = dmg;
               dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+              console.log('[RL OP] skill_dmg_mult(debuff)', { before: _dmgBefore, after: dmg, mult: _bs._rl_skillDmgMult });
+            }
+            // ─ ローグライト: ボスへのスキルダメージ追加補正 ─
+            if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+              dmg = Math.round(dmg * _bs._rl_bossDmgMult);
             }
             applyDamage(enemy, dmg, ally, skill);
           }
@@ -827,6 +840,20 @@ const enemies = enemyDefs.map(def => {
       if (eff.type === 'drain') {
         // drain は attack 後の特殊処理なので、ここでは statusEffects に積まず pass
         _log(`${target.name}: drain は現バージョンではスキップ`);
+        return;
+      }
+
+      // ── stun エフェクト：即時 stunned = true を立てる ──────
+      if (eff.type === 'stun') {
+        const hitRate = eff.hit != null ? eff.hit : 100;
+        if (Math.random() * 100 > hitRate) {
+          _log(`${target.name} にスタン — 外れ`);
+          return;
+        }
+        target.stunned = true;
+        if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+        target.statusEffects.push({ type: 'stun', duration: eff.duration || 1 });
+        _log(`${target.name} はスタンした`);
         return;
       }
 
@@ -1526,7 +1553,7 @@ function doBossLineAttack(boss) {
     if (rangeTargets.length > 0) {
       // 射程内に味方がいる → HPが最も少ない味方を優先攻撃
       const target = rangeTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-      const dmg = calcDamage(enemy.atk, target.def, 1.0);
+      const dmg = calcDamage(enemy.atk, 1.0, target);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
@@ -1583,7 +1610,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     const afterMoveTargets = getEnemyAttackTargets(enemy);
     if (afterMoveTargets.length > 0) {
       const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-      const dmg = calcDamage(enemy.atk, target.def, 1.0);
+      const dmg = calcDamage(enemy.atk, 1.0, target);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
@@ -1625,7 +1652,13 @@ if (canEnemyAttackAllyCore(enemy)) {
         .map(e => ({ ...e, duration: e.duration - 1 }))
         .filter(e => e.duration > 0);
 
-      u.stunned = u.statusEffects.some(e => e.type === 'stun');
+      // stunned フラグはここで変更しない。
+      // 付与時に即 true を立て、行動スキップした瞬間に false に戻す。
+      // statusEffects から stun が消えたときだけ、念のため false に揃える
+      // （スキップせずターンが終わった場合の安全弁）。
+      if (!u.statusEffects.some(e => e.type === 'stun')) {
+        u.stunned = false;
+      }
     });
   }
 
@@ -1657,6 +1690,8 @@ if (canEnemyAttackAllyCore(enemy)) {
     _bs.unitActionHistory = {};
 
     // TODO: カード廃止後の通常移動処理をここに実装する
+    // ※ SUPPORT_CARDS (cards.js) は Battle32 では参照しない。
+    //   位置入替はローグライトOPの「布陣入替」として将来実装予定。
 
     _log(`═══ ターン ${_bs.turn} 開始 ═══`);
     _emit('turnStart', { turn: _bs.turn, bs: _snapshot() });
@@ -1828,7 +1863,13 @@ if (canEnemyAttackAllyCore(enemy)) {
             _log(`${ally.name} が ${target.name} を制圧した！`);
             _emit('capture', { ally: { ...ally }, target: { ...target }, bs: _snapshot() });
             // ─ ローグライト: 駒取りイベント発火（「神憑きの手」等） ─
-            _fireRogueliteEvent('capture', { ally });
+            {
+              const _shinkiBefore = ally.shinki;
+              _fireRogueliteEvent('capture', { ally, target });
+              if (ally.shinki > _shinkiBefore) {
+                _log(`強化OPにより ${ally.name} の神気が ${ally.shinki - _shinkiBefore} 上昇`);
+              }
+            }
           }
         } else if (target && target.side === 'ally') {
           // 味方コアへの駒取りは敗北（将来の敵移動拡張用フック）

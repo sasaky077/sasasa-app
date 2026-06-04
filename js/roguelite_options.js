@@ -11,6 +11,15 @@
 //   applyOnStart(bs) : Battle32 の _bs に開始時補正を加える関数
 //   applyOnEvent(bs, event, payload) : バトル中イベント発火（省略可）
 //
+// ── 対象OPカテゴリ（設計整理 2025） ──
+//   ✅ ATK上昇 / HP上昇 / スキルダメージ上昇 / コア耐久増加
+//   ✅ 戦闘開始時神気補助 / 駒取り時神気獲得 / 位置入替権 / 霊装権
+//   ❌ 移動性能を恒常的に変えるOP（霊装権を除く）
+//   ❌ スキル射程・スキル構成を変えるOP
+//   ❌ DEF / SPD 関連OP
+//   ❌ カード関連OP
+//   ※ 霊装権だけは例外として移動性能・スキル射程を変える権利を与える
+//
 // bs は battle_32.js 内部の _bs オブジェクト（直接変更する）
 //
 // ──────────────────────────────────────────────────────────────
@@ -20,6 +29,7 @@
 //   _bs._rl_skillDmgMult     : スキルダメージ補正倍率（ローグライト専用）
 //   _bs._rl_captureSpBonus   : 駒取り時神気ボーナス（ローグライト専用）
 //   _bs._rl_pendingReisouBonus: 霊装権ボーナス保持（ローグライト専用）
+//   _bs._rl_swapRightCount   : 位置入替権の残回数（ローグライト専用）
 // ──────────────────────────────────────────────────────────────
 
 (function () {
@@ -125,6 +135,78 @@ const ROGUELITE_OPTIONS = [
       // if (bs.isBossStage && typeof bs._applyReisouBonus === 'function') {
       //   bs._applyReisouBonus(1);
       // }
+    },
+  },
+
+  // ── 追加OP ────────────────────────────────────────────────
+
+  {
+    id: 'turn_limit_plus2',
+    name: '時限緩和',
+    desc: 'ターン制限が+2される',
+    rarity: 'common',
+    icon: '⏳',
+    applyOnStart(bs) {
+      if (typeof bs.turnLimit === 'number') {
+        bs.turnLimit += 2;
+      }
+    },
+  },
+
+  {
+    id: 'start_shinki_plus1',
+    name: '神気充填',
+    desc: '各ステージ開始時、味方全員の神気が+1される',
+    rarity: 'rare',
+    icon: '🔥',
+    applyOnStart(bs) {
+      if (!Array.isArray(bs.allies)) return;
+      bs.allies.forEach(a => {
+        if (typeof a.shinki === 'number' && typeof a.shinkiMax === 'number') {
+          a.shinki = Math.min(a.shinkiMax, a.shinki + 1);
+        }
+      });
+    },
+  },
+
+  {
+    id: 'core_repair_each_stage',
+    name: '自動修復陣',
+    desc: '各ステージ開始時、自陣コア耐久を1回復する',
+    rarity: 'rare',
+    icon: '🛡️',
+    applyOnStart(bs) {
+      if (bs.cores && bs.cores.ally) {
+        bs.cores.ally.stability = Math.min(
+          bs.cores.ally.stabilityMax,
+          bs.cores.ally.stability + 1,
+        );
+      }
+    },
+  },
+
+  {
+    id: 'boss_skill_dmg_20',
+    name: '核穿ち',
+    desc: 'ボスへのスキルダメージが20%上昇する',
+    rarity: 'epic',
+    icon: '☄️',
+    applyOnStart(bs) {
+      bs._rl_bossDmgMult = (bs._rl_bossDmgMult || 1.0) * 1.20;
+    },
+  },
+
+  // ── 位置入替権：レア ──────────────────────────────────────
+  // 戦闘中に味方2体の位置を1回入れ替えられる権利を付与する。
+  // 実際の入替は Battle32 UI 側で _rl_swapRightCount を参照して実装する。
+  {
+    id: 'swap_right_1',
+    name: '布陣入替',
+    desc: 'ステージ中に味方2体の位置を1回入れ替えられる',
+    rarity: 'rare',
+    icon: '🔄',
+    applyOnStart(bs) {
+      bs._rl_swapRightCount = (bs._rl_swapRightCount || 0) + 1;
     },
   },
 

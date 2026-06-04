@@ -1,9 +1,14 @@
 
 // characters.js
+// ★ 正式仕様（設計整理 2025）
+//   - stats は HP / ATK のみ
+//   - Battle32 / Roguelite は DEF / SPD を使用しない
+//   - effect type に def_* / spd_* は使用しない
+//   - ダメージ式は ATK × multiplier
+//
 // effects[] 設計：
 //   { type, target, hit, duration }
-//   type: 'jittai' | 'stun' | 'atk_down' | 'def_down' | 'spd_down'
-//         'atk_up' | 'def_up' | 'spd_up'
+//   type: 'jittai' | 'stun' | 'atk_down' | 'atk_up'
 //         'sure_hit_self' | 'sure_hit_team' | 'heal'
 //         'pull_1' | 'pull_2' | 'push_1' | 'push_2'
 //         'shift_right_1' | 'shift_right_2' | 'shift_left_1' | 'shift_left_2'
@@ -11,7 +16,7 @@
 //   hit: 効果命中率（省略時100）
 //   duration: 持続ターン数
 //
-// multiplier: 0 = ダメージなし、>0 = ダメージあり（ATK × multiplier - DEF）
+// multiplier: 0 = ダメージなし、>0 = ダメージあり（ATK × multiplier）
 
 const CHARACTERS = [
 
@@ -33,10 +38,7 @@ const CHARACTERS = [
     stats: 
     { 
       HP: 780, 
-      ATK: 230, 
-      DEF: 240, 
-      SPD: 210 
-    },
+      ATK: 230},
     img: 'images/chara_01.webp', 
     cutImg: 'images/chara_01_cut.webp', 
     ultImg: 'images/chara_01_cutin.webp',
@@ -98,17 +100,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'self',
         effects: [
-          { type: 'def_up', 
-            target: 'ally_self', 
-            hit: 100, 
-            duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [0],
           damageRate: 1.0
         },
-        desc: '精神を統一し、自身のATKとDEFを2ターン上昇させる。' },
+        desc: '精神を統一し、自身のATKを2ターン上昇させる。' },
 
       { id: 'ult',
         name: '精神統一',
@@ -128,7 +125,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:2 タキヤマ（速度寄り）──────────────────────────────────
-  // 高SPDで先手を取りSPDデバフを撒く。敵の行動順を崩す妨害役。
+  // スタン・ATKデバフで敵を妨害する妨害役。
   { id: 2, name: 'タキヤマ', gender: 'woman', rarity: 'r',
     role: '速度寄り',
     moveType: 'silver',
@@ -138,7 +135,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 720, ATK: 210, DEF: 200, SPD: 270 },
+    stats: { HP: 720, ATK: 210 },
     img: 'images/chara_02.webp', 
     cutImg: 'images/chara_02_cut.webp', 
     ultImg: 'images/chara_02_cutin.webp',
@@ -172,13 +169,12 @@ const CHARACTERS = [
         multiplier: 0.5,
         range: 'front_row_3',
         effects: [
-          { type: 'spd_down', target: 'enemy', hit: 85, duration: 2 }
         ],
         moveBonus: {
           idealMoves: [2],
           damageRate: 1.2
         },
-        desc: '鎖で怪異の動きを縛り、SPDを2ターン低下させる。' },
+        desc: '鎖で怪異の動きを縛り、ATKを2ターン低下させる。' },
 
       { id: 's3',
         name: '加速',
@@ -189,18 +185,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'self',
         effects: [
-          { 
-            type: 'spd_up', 
-            target: 'ally_self', 
-            hit: 100, 
-            duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [0],
           damageRate: 1.0
         },
-        desc: '自身のSPDを2ターン上昇させる。行動順が早くなる。' },
+        desc: '精神を研ぎ澄まし、ATKを2ターン上昇させる。' },
 
       { id: 'ult',
         name: '疾走',
@@ -230,7 +220,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 840, ATK: 200, DEF: 275, SPD: 200 },
+    stats: { HP: 840, ATK: 200 },
     img: 'images/chara_03.webp', 
     cutImg: 'images/chara_03_cut.webp', 
     ultImg: 'images/chara_03_cutin.webp',
@@ -286,18 +276,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'self',
         effects: [
-          { 
-            type: 'def_up', 
-            target: 'ally_self', 
-            hit: 100, 
-            duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [0],
           damageRate: 1.0
         },
-        desc: '自身のDEFを2ターン大幅に上昇させる。' },
+        desc: '防御態勢をとり、次の被ダメージを軽減する（シールド付与）。' },
 
       { id: 'ult',
         name: '前進',
@@ -316,7 +300,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:4 リョウ（火力寄り）───────────────────────────────────
-  // 高倍率の攻撃特化。DEFダウンで味方の火力を底上げする。
+  // 高倍率の攻撃特化。高火力スキルで敵を削るアタッカー。
   { id: 4, name: 'リョウ', gender: 'man', rarity: 'r',
     role: '火力寄り',
     moveType: 'rook_short',
@@ -326,7 +310,7 @@ const CHARACTERS = [
     shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 730, ATK: 275, DEF: 205, SPD: 220 },
+    stats: { HP: 730, ATK: 275 },
     img: 'images/chara_04.webp', 
     cutImg: 'images/chara_04_cut.webp', 
     ultImg: 'images/chara_04_cutin.webp',
@@ -418,7 +402,7 @@ const CHARACTERS = [
     shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 600, ATK: 250, DEF: 250, SPD: 250 },
+    stats: { HP: 600, ATK: 250 },
     img: 'images/chara_07.webp', 
     cutImg: 'images/chara_07_cut.webp', 
     ultImg: 'images/chara_07_cutin.webp',
@@ -454,11 +438,6 @@ const CHARACTERS = [
         multiplier: 2.0,
         range: 'around24',
         effects: [
-          { type: 'spd_up', 
-            target: 'ally_self', 
-            hit: 100, 
-            duration: 2 
-          }
         ],
         hitStyle: 'rapid',
         moveBonus: {
@@ -485,7 +464,7 @@ const CHARACTERS = [
     shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 820, ATK: 200, DEF: 278, SPD: 205 },
+    stats: { HP: 820, ATK: 200 },
     img: 'images/chara_12.webp', 
     cutImg: 'images/chara_12_cut.webp', 
     ultImg: 'images/chara_12_cutin.webp',
@@ -537,7 +516,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 760, ATK: 225, DEF: 235, SPD: 215 },
+    stats: { HP: 760, ATK: 225 },
     img: 'images/chara_13.webp', 
     cutImg: 'images/chara_13_cut.webp', 
     ultImg: 'images/chara_13_cutin.webp',
@@ -572,18 +551,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'front1',
         effects: [
-          { 
-            type: 'spd_down', 
-            target: 'enemy', 
-            hit: 80, 
-            duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [2],
           damageRate: 1.2
         },
-        desc: '霊力で怪異の動きを縛りSPDを2ターン低下させる。' },
+        desc: '霊力で怪異を縛り、ATKを2ターン低下させる。' },
 
       { id: 's3',
         name: '霊実',
@@ -624,7 +597,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:11 ユズハ（火力寄り）──────────────────────────────────
-  // 最高クラスの火力。DEFダウン後に10倍攻撃を叩き込む超アタッカー。
+  // 最高クラスの火力。高倍率攻撃を叩き込む超アタッカー。
   { id: 11, name: 'ユズハ', gender: 'woman', rarity: 'r',
     role: '火力寄り',
     costMax: 14,
@@ -633,7 +606,7 @@ const CHARACTERS = [
     shinkiMax: 6,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 200, ATK: 350, DEF: 200, SPD: 200 },
+    stats: { HP: 200, ATK: 350 },
     img: 'images/chara_11.webp', 
     cutImg: 'images/chara_11_cut.webp', 
     ultImg: 'images/chara_11_cutin.webp',
@@ -668,18 +641,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'front_row_3',
         effects: [
-          {
-             type: 'def_down', 
-             target: 'enemy', 
-             hit: 100, 
-             duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [2],
           damageRate: 1.2
         },
-        desc: '怪異のDEFを2ターン大幅に低下させる。' },
+        desc: '怪異のATKを2ターン大幅に低下させる。' },
 
       { id: 's3',
         name: '叩きます',
@@ -728,7 +695,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 800, ATK: 305, DEF: 230, SPD: 245 },
+    stats: { HP: 800, ATK: 305 },
     img: 'images/chara_05.webp', 
     cutImg: 'images/chara_05_cut.webp', 
     ultImg: 'images/chara_05_cutin.webp',
@@ -762,12 +729,6 @@ const CHARACTERS = [
         multiplier:2.0,
         range: 'cross',
         effects: [
-          { 
-            type: 'def_down', 
-            target: 'enemy', 
-            hit: 75, 
-            duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [2],
@@ -821,7 +782,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:10 フミカ（速度寄り）──────────────────────────────────
-  // 最高SPD。必中バフと実体化を組み合わせ、高速で敵情報を暴く。
+  // 必中バフと実体化を組み合わせ、敵情報を暴くサポーター。
   { id: 10, name: 'フミカ', gender: 'woman', rarity: 'sr',
     role: '速度寄り',
     costMax: 10,
@@ -830,7 +791,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 760, ATK: 250, DEF: 225, SPD: 300 },
+    stats: { HP: 760, ATK: 250 },
     img: 'images/chara_10.webp', 
     cutImg: 'images/chara_10_cut.webp', 
     ultImg: 'images/chara_10_cutin.webp',
@@ -870,13 +831,7 @@ const CHARACTERS = [
         type: 'debuff',
         multiplier: 0.0,
         range: 'all',
-        effects: [
-          { 
-            type: 'spd_down', 
-            target: 'enemy', 
-            hit: 85, 
-            duration: 2 
-          },
+        effects: [,
           { 
             type: 'atk_down', 
             target: 'enemy', 
@@ -894,7 +849,7 @@ const CHARACTERS = [
           idealMoves: [2],
           damageRate: 1.2
         },
-        desc: '深い愛情で怪異を2ターン実体化し、SPDとATKを2ターン低下させる。' },
+        desc: '深い愛情で怪異を2ターン実体化し、ATKを2ターン低下させる。' },
 
       { id: 's3',
         name: '寵愛',
@@ -963,7 +918,7 @@ const CHARACTERS = [
     shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 770, ATK: 235, DEF: 230, SPD: 295 },
+    stats: { HP: 770, ATK: 235 },
     img: 'images/chara_15.webp', 
     cutImg: 'images/chara_15_cut.webp', 
     ultImg: 'images/chara_15_cutin.webp',
@@ -972,14 +927,18 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
     favScale: 0.90, favOffsetY: 20,
+    uiScale: {
+    panel: 1.5,
+    battleBack: 1.15
+},
     skills: [
       { id: 's1',
-        name: 'こっちきて',
+        name: '邪魔よ',
         cost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
-        multiplier: 1.0,
+        multiplier: 1.5,
         range: 'pierce3',
         effects: [
           {
@@ -1022,7 +981,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 800, ATK: 255, DEF: 250, SPD: 260 },
+    stats: { HP: 800, ATK: 255 },
     img: 'images/chara_17.webp', 
     cutImg: 'images/chara_17_cut.webp', 
     ultImg: 'images/chara_17_cutin.webp',
@@ -1084,13 +1043,7 @@ const CHARACTERS = [
         type: 'buff',
         multiplier: 0.0,
         range: 'self',
-        effects: [
-          { 
-            type: 'def_up', 
-            target: 'ally_self', 
-            hit: 100, 
-            duration: 2 
-          },
+        effects: [,
           { 
             type: 'atk_up', 
             target: 'ally_self', 
@@ -1102,7 +1055,7 @@ const CHARACTERS = [
           idealMoves: [0],
           damageRate: 1.0
         },
-        desc: '鮮やかな推断により、ATKとDEFを2ターン上昇させる。' },
+        desc: '鮮やかな推断により、ATKを2ターン上昇させる。' },
 
       { id: 'ult',
         name: '華麗なる転換',
@@ -1131,7 +1084,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 760, ATK: 300, DEF: 225, SPD: 240 },
+    stats: { HP: 760, ATK: 300 },
     img: 'images/chara_18.webp', 
     cutImg: 'images/chara_18_cut.webp', 
     ultImg: 'images/chara_18_cutin.webp',
@@ -1165,18 +1118,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'front_row_3',
         effects: [
-          { 
-            type: 'def_down', 
-            target: 'enemy', 
-            hit: 75, 
-            duration: 2 
-          }
         ],
         moveBonus: {
           idealMoves: [2],
           damageRate: 1.2
         },
-        desc: '炎で怪異のDEFを2ターン低下させる。' },
+        desc: '炎で怪異のATKを2ターン低下させる。' },
 
       { id: 's3',
         name: '神通',
@@ -1221,7 +1168,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 600, ATK: 250, DEF: 300, SPD: 225 },
+    stats: { HP: 600, ATK: 250 },
     img: 'images/chara_19.webp', 
     cutImg: 'images/chara_19_cut.webp', 
     ultImg: 'images/chara_19_cutin.webp',
@@ -1232,78 +1179,23 @@ const CHARACTERS = [
     favScale: 0.95, favOffsetY: 15,
     skills: [
       { id: 's1',
-        name: '自己回復',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'heal',
-        multiplier: 0.0,
-        range: 'self',
-        effects: [
-          { type: 'heal', target: 'ally_self', rate: 0.3, hit: 100 }
-        ],
-        moveBonus: {
-          idealMoves: [0,2,4,6],
-          damageRate: 1.0
-        },
-        desc: '自身のHPを最大HPの30%回復する。' },
-
-      { id: 's2',
-        name: '単体回復',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'heal',
-        multiplier: 0.0,
-        range: 'ally_all',
-        effects: [
-          { type: 'heal', target: 'ally_lowest', rate: 0.35, hit: 100 }
-        ],
-        moveBonus: {
-          idealMoves: [1,3,5,7],
-          damageRate: 1.0
-        },
-        desc: 'HP割合が最も低い味方1人を最大HPの35%回復する。' },
-
-      { id: 's3',
-        name: '全体回復',
-        cost: 6,
-        isUltimate: false,
-        hit: 100,
-        type: 'heal',
-        multiplier: 0.0,
-        range: 'ally_all',
-        effects: [
-          { type: 'heal', target: 'ally_all', rate: 0.2, hit: 100 }
-        ],
-        moveBonus: {
-          idealMoves: [6,8],
-          damageRate: 1.0
-        },
-        desc: '味方全員のHPを最大HPの20%回復する。' },
-
-      { id: 'ult',
-        name: '神体実験',
-        cost: 10,
-        isUltimate: true,
-        hit: 100,
-        type: 'attack',
-        multiplier: 2.0,
-        range: 'pierce_all',
-        pierce: true,
-        effects: [
-        { 
-          type: 'drain', 
-          target: 'ally_self', 
-          rate: 0.7 
-        }
-        ],
-        hitStyle: 'heavy',
-        moveBonus: {
-          idealMoves: [7],
-          damageRate: 1.3
-        },
-        desc: '与えたダメージの70%分、自身のHPを回復する。' }
+  name: '麻酔針',
+  cost: 3,
+  isUltimate: false,
+  hit: 100,
+  type: 'attack',
+  multiplier: 0.8,
+  range: 'pierce_ally_3',
+  pierce: false,
+  effects: [
+    { type: 'stun', target: 'enemy', duration: 1, hit: 100 }
+  ],
+  moveBonus: {
+    idealMoves: [0, 2, 4, 6],
+    damageRate: 1.0
+  },
+  desc: '前方の敵に麻酔針を撃ち込み、1ターン行動不能にする。'
+}
         ]},
 
   // ── id:20 ミズキ（速度寄り）──────────────────────────────────
@@ -1316,7 +1208,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 780, ATK: 245, DEF: 228, SPD: 298 },
+    stats: { HP: 780, ATK: 245 },
     img: 'images/chara_20.webp', 
     cutImg: 'images/chara_20_cut.webp', 
     ultImg: 'images/chara_20_cutin.webp',
@@ -1416,7 +1308,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 840, ATK: 270, DEF: 255, SPD: 330 },
+    stats: { HP: 840, ATK: 270 },
     img: 'images/chara_06.webp', 
     cutImg: 'images/chara_06_cut.webp', 
     ultImg: 'images/chara_06_cutin.webp',
@@ -1450,15 +1342,14 @@ const CHARACTERS = [
         type: 'debuff',
         multiplier: 0.0,
         range: 'col_center',
-        effects: [
-          { type: 'spd_down', target: 'enemy', hit: 85, duration: 2 },
+        effects: [,
           { type: 'shift_left_2', target: 'enemy', hit: 80, duration: 1 }
         ],
         moveBonus: {
           idealMoves: [2],
           damageRate: 1.2
         },
-        desc: '幻影でSPDを下げながら怪異を2マス左に強制移動させる。' },
+        desc: '幻影で怪異を2マス左に強制移動させ、ATKを2ターン低下させる。' },
 
       { id: 's3',
         name: '幻実',
@@ -1505,7 +1396,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 900, ATK: 295, DEF: 280, SPD: 275 },
+    stats: { HP: 900, ATK: 295 },
     img: 'images/chara_09.webp', 
     cutImg: 'images/chara_09_cut.webp', 
     ultImg: 'images/chara_09_cutin.webp',
@@ -1515,84 +1406,41 @@ const CHARACTERS = [
     panelImg: 'images/chara_09_panel.webp',
     favScale: 0.85, favOffsetY: -15,
     skills: [
-      { id: 's1',
-        name: '双星撃',
-        cost: 3,
-        isUltimate: false,
-        hit: 90,
-        type: 'attack',
-        multiplier: 3.0,
-        range: 'front_row_3',
-        pierce: false,
-        effects: [],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.3
-        },
-        desc: '二人が同時に攻撃する。ATKの3倍の連携ダメージ。' },
+  { id: 's1',
+    name: 'Twin Star',
+    cost: 3,
+    isUltimate: false,
+    hit: 100,
+    type: 'attack',
+    multiplier: 1.7,
+    range: 'twin_cross_4',
+    pierce: false,
+    effects: [],
+    moveBonus: {
+      idealMoves: [2],
+      damageRate: 1.3
+    },
+    desc: '二人が左右に分かれ、互い違いの軌道で敵を同時に攻撃する。'
+  },
 
-      { id: 's2',
-        name: '双縛',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'front_row_3',
-        effects: [
-          { type: 'atk_down', target: 'enemy', hit: 90, duration: 2 },
-          { type: 'spd_down', target: 'enemy', hit: 90, duration: 2 }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '二人がかりでATKとSPDを2ターン低下させる。成功率が高い。' },
-
-      { id: 's3',
-        name: '双実',
-        cost: 3,
-        isUltimate: false,
-        hit: 90,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'front_row_3',
-        effects: [
-          { 
-            type: 'jittai', 
-            target: 'enemy', 
-            hit: 95, 
-            duration: 2 
-          },
-          { 
-            type: 'stun', 
-            target: 'enemy', 
-            hit: 70, 
-            duration: 1 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '二人の力で実体化とスタンを付与する。実体化成功率が非常に高い。' },
-
-      { id: 'ult',
-        name: '双星爆',
-        cost: 10,
-        isUltimate: true,
-        hit: 65,
-        type: 'attack',
-        multiplier: 8.0,
-        range: 'front_row_3',
-        pierce: false,
-        effects: [],
-        moveBonus: {
-          idealMoves: [2, 4],
-          damageRate: 1.5
-        },
-        desc: '二人の力を爆発させる超技。ATKの8倍の超火力。命中率は低い。' }
-    ]},
+  { id: 'ult',
+    name: 'Twin Star改',
+    cost: 10,
+    isUltimate: true,
+    hit: 100,
+    type: 'attack',
+    multiplier: 2.2,
+    range: 'twin_star_8',
+    pierce: false,
+    effects: [],
+    moveBonus: {
+      idealMoves: [2, 4],
+      damageRate: 1.5
+    },
+    desc: '二人が星を描くように交差し、左右の広範囲を同時に薙ぎ払う。'
+  }
+]
+  },
 
   // ── id:14 アイム（火力寄り）──────────────────────────────────
   // 全体攻撃と吸い寄せ＋押し出しで敵を翻弄する異能者。
@@ -1604,7 +1452,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 740, ATK: 280, DEF: 205, SPD: 210 },
+    stats: { HP: 740, ATK: 280 },
     img: 'images/chara_14.webp', 
     cutImg: 'images/chara_14_cut.webp', 
     ultImg: 'images/chara_14_cutin.webp',
@@ -1657,13 +1505,12 @@ const CHARACTERS = [
         multiplier: 3.0,
         range: 'all',
         effects: [
-          { type: 'def_down', target: 'enemy', hit: 80, duration: 2 }
         ],
         moveBonus: {
           idealMoves: [1,5],
           damageRate: 1.3
         },
-        desc: '全体を巻き込む攻撃。ATKの3倍のダメージ＋DEFダウン。' },
+        desc: '全体を巻き込む攻撃。ATKの3倍のダメージ＋ATKダウン。' },
 
       { id: 'ult',
         name: '哀笑',
@@ -1685,7 +1532,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:16 アズキ（耐久寄り）──────────────────────────────────
-  // 最高DEF。実体化の確実付与と全体攻撃のハイブリッド。スタンも持つ完全体壁役。
+  // 高HP。実体化の確実付与と全体攻撃のハイブリッド。スタンも持つ完全体壁役。
   { id: 16, name: 'アズキ', gender: 'woman', rarity: 'ur',
     role: '耐久寄り',
     costMax: 14,
@@ -1694,7 +1541,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 800, ATK: 255, DEF: 325, SPD: 255 },
+    stats: { HP: 800, ATK: 255 },
     img: 'images/chara_16.webp', 
     cutImg: 'images/chara_16_cut.webp', 
     ultImg: 'images/chara_16_cutin.webp',
@@ -1730,13 +1577,12 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'self',
         effects: [
-          { type: 'def_up', target: 'ally_all', hit: 100, duration: 3 }
         ],
         moveBonus: {
           idealMoves: [0],
           damageRate: 1.0
         },
-        desc: '結界を展開し、味方全員のDEFを3ターン中アップさせる。' },
+        desc: '結界を展開し、味方全員にシールドを付与する（被ダメ軽減）。' },
 
       { id: 's3',
         name: '式神-ぽち-',
@@ -1798,7 +1644,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 850, ATK: 280, DEF: 270, SPD: 200 },
+    stats: { HP: 850, ATK: 280 },
     img: 'images/chara_08.webp', 
     cutImg: 'images/chara_08_cut.webp', 
     ultImg: 'images/chara_08_cutin.webp',

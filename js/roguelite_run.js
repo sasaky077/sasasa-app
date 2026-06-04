@@ -20,9 +20,18 @@
 (function () {
 
   // ── ステージ定義 ──────────────────────────────────────────
+  // 現在の構成：4戦MVP（雑魚3戦 → ボス1戦）
+  //   Stage 1: 雑魚戦
+  //   Stage 2: 雑魚戦
+  //   Stage 3: 雑魚戦
+  //   Stage 4: ボス戦
+  //
+  // 将来的には「雑魚3戦 → ボーナスステージ → ボス戦」の5区間構成へ拡張予定:
+  //   Stage 1〜3: 雑魚戦
+  //   Stage 4:    ボーナス（OP選択・霊装付与等）← 将来追加
+  //   Stage 5:    ボス戦                        ← 将来追加
+  //
   // enemyIds は enemies.js の ENEMIES[].id と対応
-  // ローグライト専用の雑魚は別途 enemies.js or roguelite_enemies.js に追加する想定。
-  // 今はデバッグ用に既存テスト敵を流用する。
   const STAGE_DEFS = [
     {
       stage: 1,
@@ -34,14 +43,14 @@
         {
           id: 'rl_mob_s1_a',
           name: '直進型怪異',
-          hp: 700, atk: 240, def: 100, spd: 150,
+          hp: 700, atk: 240,
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },
         {
           id: 'rl_mob_s1_b',
           name: '斜行型怪異',
-          hp: 650, atk: 220, def: 120, spd: 140,
+          hp: 650, atk: 220,
           moveType: 'enemy_zako_diag',
           attackRange: 'enemy_attack_cross',
         },
@@ -60,21 +69,21 @@
         {
           id: 'rl_mob_s2_a',
           name: '強化直進型怪異',
-          hp: 900, atk: 280, def: 130, spd: 160,
+          hp: 900, atk: 280,
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },
         {
           id: 'rl_mob_s2_b',
           name: '強化斜行型怪異',
-          hp: 850, atk: 260, def: 150, spd: 150,
+          hp: 850, atk: 260,
           moveType: 'enemy_zako_diag',
           attackRange: 'enemy_attack_cross',
         },
         {
           id: 'rl_mob_s2_c',
           name: '強化直進型怪異',
-          hp: 800, atk: 270, def: 140, spd: 155,
+          hp: 800, atk: 270,
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },
@@ -93,21 +102,21 @@
         {
           id: 'rl_mob_s3_a',
           name: '精鋭直進型怪異',
-          hp: 1100, atk: 320, def: 160, spd: 170,
+          hp: 1100, atk: 320,
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },
         {
           id: 'rl_mob_s3_b',
           name: '精鋭斜行型怪異',
-          hp: 1050, atk: 300, def: 180, spd: 165,
+          hp: 1050, atk: 300,
           moveType: 'enemy_zako_diag',
           attackRange: 'enemy_attack_cross',
         },
         {
           id: 'rl_mob_s3_c',
           name: '精鋭直進型怪異',
-          hp: 1000, atk: 310, def: 170, spd: 168,
+          hp: 1000, atk: 310,
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },

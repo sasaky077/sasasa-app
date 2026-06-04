@@ -555,14 +555,7 @@
               <div class="ps-detail-stat-label">ATK</div>
               <div class="ps-detail-stat-val">${chara.stats.ATK}</div>
             </div>
-            <div class="ps-detail-stat">
-              <div class="ps-detail-stat-label">DEF</div>
-              <div class="ps-detail-stat-val">${chara.stats.DEF}</div>
-            </div>
-            <div class="ps-detail-stat">
-              <div class="ps-detail-stat-label">SPD</div>
-              <div class="ps-detail-stat-val">${chara.stats.SPD}</div>
-            </div>
+            <!-- DEF / SPD は使用しないため非表示（設計整理 2025） -->
           </div>
         </div>
       </div>
@@ -630,8 +623,7 @@
         hp:       master.stats.HP,
         hpMax:    master.stats.HP,
         atk:      master.stats.ATK,
-        def:      master.stats.DEF,
-        spd:      master.stats.SPD,
+        // DEF / SPD は使用しない（設計整理 2025）
         accuracy: 250,
         cost:      Math.min(costStart, costMax),
         costMax,
@@ -669,7 +661,7 @@
             upImg: 'images/enemy_01_up.webp',
             battleImg: 'images/enemy_01_battle.webp',
             hp: 1800, hpMax: 2000,
-            atk: 375, def: 280, spd: 260,
+            atk: 375,
             phase: 1, status: [],
             actionPattern: [
               { turn: 1, action: '全体攻撃',   type: 'atk_all' },

@@ -252,7 +252,7 @@
       name: '??????',
       img: imgPath || 'images/enemy_01.webp',
       hp: 1800, hpMax: 2000,
-      atk: 375, def: 280, spd: 260,
+      atk: 375,
       phase: 1, status: [],
       actionPattern: [
         { turn: 1, action: '全体攻撃',  type: 'atk_all' },

@@ -290,34 +290,54 @@
   let _callback = null;
 
   function show({ onSelect, excludeIds, currentStage, currentOptions } = {}) {
-    if (_overlay) hide();
+  console.log('[RogueliteReward] show called', {
+    onSelect,
+    excludeIds,
+    currentStage,
+    currentOptions
+  });
 
-    _injectStyles();
-    _callback = onSelect || null;
+  if (_overlay) hide();
 
-    const choices = (typeof window.getRandomOptions === 'function')
-      ? window.getRandomOptions(excludeIds || [])
-      : [];
+  _injectStyles();
+  _callback = onSelect || null;
 
-    if (choices.length === 0) {
-      console.warn('[RogueliteReward] 選択肢を生成できませんでした');
-      if (_callback) _callback(null);
-      return;
-    }
+  const choices = (typeof window.getRandomOptions === 'function')
+    ? window.getRandomOptions(excludeIds || [])
+    : [];
 
-    _overlay = _buildOverlay(choices, currentStage || 1, currentOptions || []);
+  console.log('[RogueliteReward] choices:', choices);
+
+  if (choices.length === 0) {
+    console.warn('[RogueliteReward] 選択肢を生成できませんでした');
+    if (_callback) _callback(null);
+    return;
+  }
+
+  _overlay = _buildOverlay(choices, currentStage || 1, currentOptions || []);
+
+  console.log('[RogueliteReward] overlay built:', _overlay);
 
     // カードクリック
     _overlay.querySelectorAll('.rl-rw-card').forEach((card, i) => {
       card.addEventListener('click', () => {
+        if (!_overlay) return;
+
         // 二重クリック防止
         _overlay.querySelectorAll('.rl-rw-card')
           .forEach(c => { c.style.pointerEvents = 'none'; });
+
         card.classList.add('selected');
         const selected = choices[i];
+
+        // hide() の中で _callback = null になるため、必ず先に退避する
+        const cb = _callback;
+
         setTimeout(() => {
           hide();
-          if (_callback) _callback(selected);
+          if (typeof cb === 'function') {
+            cb(selected);
+          }
         }, 360);
       });
     });

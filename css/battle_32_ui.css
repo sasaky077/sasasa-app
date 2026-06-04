@@ -1605,10 +1605,14 @@
    行動選択 丸ボタン：固定レイアウト
    ============================================================ */
 
+/* --b32-panel-h は JS の fitBattle32Layout() が動的にセットする。
+   キャラパネル高さ + safe-area + 余白 = ボタン群の bottom 基準値。
+   実際の bottom は renderActionMenu() が getBoundingClientRect() で
+   実測して wrap.style.bottom に直接書き込む。このCSSは初期表示用フォールバック。 */
 #battle32-root .b32-action-radial-menu {
   position: fixed;
   right: 14px;
-  bottom: 170px;
+  bottom: 120px; /* フォールバック：JSが実測値で上書きする */
   z-index: 99999;
   pointer-events: none;
 }

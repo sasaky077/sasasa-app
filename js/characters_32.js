@@ -44,6 +44,23 @@
   function convertSkillTo32(skill, character) {
   const isUlt = !!skill.isUltimate;
 
+  // DEF / SPD 系エフェクトは撤廃。atk_down → そのまま維持、stun/heal/shieldは維持。
+  // def_up / def_down / spd_up / spd_down → atk_down に統一変換（最低限の維持）
+  const DEF_SPD_REMAP = {
+    def_up:   'atk_up',
+    def_down: 'atk_down',
+    spd_up:   null,       // 削除
+    spd_down: 'atk_down',
+  };
+  const filteredEffects = (skill.effects || [])
+    .map(e => {
+      const remapped = DEF_SPD_REMAP[e.type];
+      if (remapped === null) return null; // 削除
+      if (remapped !== undefined) return { ...e, type: remapped };
+      return e;
+    })
+    .filter(Boolean);
+
   return {
     id: skill.id,
     name: skill.name,
@@ -62,56 +79,51 @@
     isUltimate: isUlt,
     hitStyle: skill.hitStyle || 'normal',
     pierce: !!skill.pierce,
-    effects: skill.effects || [],
+    effects: filteredEffects,
     moveBonus: skill.moveBonus || null,
     desc: skill.desc || '',
   };
 }
 
   function convertCharacterTo32(c) {
-    return {
-      id: c.id,
-      name: c.name,
-      gender: c.gender,
-      rarity: c.rarity,
-      role: c.role,
+  return {
+    id: c.id,
+    name: c.name,
+    gender: c.gender,
+    rarity: c.rarity,
+    role: c.role,
 
-      hp: c.stats?.HP || 1,
-      atk: c.stats?.ATK || 1,
-      def: c.stats?.DEF || 0,
-      spd: c.stats?.SPD || 0,
+    hp: c.stats?.HP || 1,
+    atk: c.stats?.ATK || 1,
 
-      shinkiMax: c.shinkiMax || 3,
-      shinkiStart: c.shinkiStart || 0,
-      shinkiRegen: c.shinkiRegen || 1,
+    shinkiMax: c.shinkiMax || 3,
+    shinkiStart: c.shinkiStart || 0,
+    shinkiRegen: c.shinkiRegen || 1,
 
-      // 盤面上の画像
-      img: c.battleImg || c.img || null,
-      battleImg: c.battleImg || c.img || null,
-      battleBackImg: c.battleBackImg || c.battleImg || c.img || null,
+    img: c.battleImg || c.img || null,
+    battleImg: c.battleImg || c.img || null,
+    battleBackImg: c.battleBackImg || c.battleImg || c.img || null,
 
-      // 下部パネル用
-      panelImg: c.panelImg || c.upImg || c.img || null,
+    panelImg: c.panelImg || c.upImg || c.img || null,
 
-      // カットイン用
-      cutin: c.ultImg || c.cutImg || null,
+    cutin: c.ultImg || c.cutImg || null,
 
-      // 参照用
-      portrait: c.img || null,
-      upImg: c.upImg || null,
+    portrait: c.img || null,
+    upImg: c.upImg || null,
 
-      skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
+    // ★追加
+    uiScale: c.uiScale || {},
+    uiOffset: c.uiOffset || {},
 
-      // 移動型（未設定キャラは 'silver' をデフォルトとする）
-// 移動型（未設定キャラは 'silver' をデフォルトとする）
-moveType: c.moveType || 'silver',
+    skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
 
-// キャラ固有の移動マス定義
-moveCells: Array.isArray(c.moveCells)
-  ? c.moveCells.map(p => ({ dr: p.dr, dc: p.dc }))
-  : null,
-    };
-  }
+    moveType: c.moveType || 'silver',
+
+    moveCells: Array.isArray(c.moveCells)
+      ? c.moveCells.map(p => ({ dr: p.dr, dc: p.dc }))
+      : null,
+  };
+}
 
   window.CHARACTERS_32 = BASE.map(convertCharacterTo32);
 

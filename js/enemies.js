@@ -16,8 +16,8 @@ const ENEMIES = [
     isBoss: true,   // 32マスバトルでボス判定に使用
 
     // 4×4向けに強化
-    hp: 3200, hpMax: 3200,
-    atk: 340, def: 230, spd: 300,
+    hp: 2200, hpMax: 2200,
+    atk: 400,
 
     randomStartPosition: true,
     fixedPosition: false,
@@ -252,7 +252,7 @@ const ENEMIES = [
 
     // 4×4向けに強化
     hp: 1150, hpMax: 1150,
-    atk: 260, def: 160, spd: 290,
+    atk: 260,
     moveType: 'enemy_zako_shift',
     attackRange: 'enemy_attack_front',
 
@@ -304,15 +304,15 @@ const ENEMIES = [
         desc: 'ボス（enemy_01）のHPを最大HPの15%回復する。',
       },
       {
-        id: 'mask_def_down',
-        action: 'DEFデバフ',
-        type: 'debuff_def',
+        id: 'mask_atk_down',
+        action: 'ATKデバフ',
+        type: 'debuff_atk',
         range: 'random1',
-        status: 'def_down',
+        status: 'atk_down',
         value: 0.30,
         duration: 2,
         power: '中',
-        desc: 'ランダムな1体のDEFを2ターン30%ダウンさせる。',
+        desc: 'ランダムな1体のATKを2ターン30%ダウンさせる。',
       },
       {
         id: 'mask_atk_down',
@@ -369,7 +369,7 @@ const ENEMIES = [
     upImg: 'images/enemy_02_up.webp',
     battleImg: 'images/enemy_02_battle.webp',
     hp: 2200, hpMax: 2200,
-    atk: 420, def: 350, spd: 180,
+    atk: 420,
     moveType: 'enemy_zako_shift',
     attackRange: 'enemy_attack_front',
     phase: 1,
@@ -402,7 +402,7 @@ const ENEMIES = [
     upImg: 'images/enemy_03_up.webp',
     battleImg: 'images/enemy_03_battle.webp',
     hp: 1900, hpMax: 1900,
-    atk: 370, def: 280, spd: 260,
+    atk: 370,
     moveType: 'enemy_zako_shift',
     attackRange: 'enemy_attack_cross',
     phase: 1,
@@ -442,7 +442,7 @@ const ENEMIES = [
     isMidBoss: true,
 
     hp: 500, hpMax: 500,
-    atk: 300, def: 160, spd: 140,
+    atk: 300,
 
     moveType:    'enemy_midboss_front3',
     attackRange: 'enemy_attack_cross',
@@ -466,7 +466,7 @@ const ENEMIES = [
     isMidBoss: false,
 
     hp: 200, hpMax: 200,
-    atk: 220, def: 90, spd: 180,
+    atk: 220,
 
     moveType:    'enemy_zako_straight',
     attackRange: 'enemy_attack_front',
@@ -508,8 +508,6 @@ TEST_ENEMIES.push({
   hp: 2000,
   hpMax: 2000,
   atk: 100,
-  def: 50,
-  spd: 100,
 
   row: 'mid',
   col: 'center',
@@ -543,7 +541,7 @@ TEST_ENEMIES.push({
   upImg: 'images/enemy_test.webp',
   battleImg: 'images/enemy_test_battle.webp',
   hp: 500, hpMax: 500,
-  atk: 0, def: 0, spd: 50,
+  atk: 0,
   row: 'near', col: 'center',
   fixedPosition: true, canMove: false,
   status: [],
@@ -559,7 +557,7 @@ TEST_ENEMIES.push({
   upImg: 'images/enemy_test.webp',
   battleImg: 'images/enemy_test_battle.webp',
   hp: 500, hpMax: 500,
-  atk: 0, def: 0, spd: 50,
+  atk: 0,
   row: 'mid', col: 'center',
   fixedPosition: true, canMove: false,
   status: [],
@@ -575,7 +573,7 @@ TEST_ENEMIES.push({
   upImg: 'images/enemy_test.webp',
   battleImg: 'images/enemy_test_battle.webp',
   hp: 500, hpMax: 500,
-  atk: 0, def: 0, spd: 50,
+  atk: 0,
   row: 'far', col: 'center',
   fixedPosition: true, canMove: false,
   status: [],
@@ -596,8 +594,6 @@ TEST_ENEMIES.push({
   hp: 2000,
   hpMax: 2000,
   atk: 100,
-  def: 0,
-  spd: 100,
 
   row: 'mid',
   col: 'center',
@@ -635,8 +631,6 @@ TEST_ENEMIES.push({
   hp: 2000,
   hpMax: 2000,
   atk: 100,
-  def: 0,
-  spd: 100,
 
   row: 'mid',
   col: 'center',
@@ -675,8 +669,6 @@ TEST_ENEMIES.push({
   hp: 2000,
   hpMax: 2000,
   atk: 100,
-  def: 0,
-  spd: 100,
 
   row: 'mid',
   col: 'center',
@@ -715,8 +707,6 @@ TEST_ENEMIES.push({
   hp: 2000,
   hpMax: 2000,
   atk: 100,
-  def: 0,
-  spd: 100,
 
   row: 'mid',
   col: 'center',

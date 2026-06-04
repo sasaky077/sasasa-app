@@ -34,6 +34,7 @@
   let _selSkillAllyUid = null; // スキル使用キャラ（移動後に改めて選択）
   let _selSkillId      = null;
   let _selActionAllyUid = null; // 行動選択メニューを表示中の味方キャラ
+  let _selectedEnemyUid = null; // 敵情報表示・移動ガイド対象
 
   function _resetSkillState() {
     _selMoveAllyUid   = null;
@@ -73,6 +74,138 @@
     cells.forEach(c => map.set(`${c.row}-${c.col}`, c.cellType || 'range'));
     return map;
   }
+
+  function enemyMoveLabel(moveType) {
+  const map = {
+    none: '移動なし',
+    enemy_move_straight: '直進型',
+    enemy_zako_straight: '直進型',
+    enemy_move_diag: '斜行型',
+    enemy_zako_diag: '斜行型',
+    enemy_move_random: 'ランダム移動',
+  };
+  return map[moveType] || moveType || '不明';
+}
+
+function enemyAttackLabel(attackRange) {
+  const map = {
+    enemy_attack_front: '前方攻撃',
+    enemy_attack_cross: '十字攻撃',
+    enemy_attack_line: '直線攻撃',
+    enemy_attack_all: '全体攻撃',
+  };
+  return map[attackRange] || attackRange || '不明';
+}
+
+function getUnitUiScale(unit, key) {
+  return unit?.uiScale?.[key] || 1;
+}
+
+function getUnitUiOffsetY(unit, key) {
+  return unit?.uiOffset?.[`${key}Y`] || 0;
+}
+
+function getEnemyMoveGuideCells(enemy, bs) {
+  if (!enemy || !bs) return [];
+
+  const occupied = new Set();
+
+  [...(bs.allies || []), ...(bs.enemies || [])].forEach(u => {
+    if (!u || u._uid === enemy._uid) return;
+    if (u.hp <= 0 && !u.isBoss) return;
+    occupied.add(`${u.row}-${u.col}`);
+  });
+
+  const cells = [];
+
+  function addCell(row, col) {
+    if (row < 0 || row >= 8 || col < 0 || col >= 5) return;
+    const key = `${row}-${col}`;
+    if (occupied.has(key)) return;
+
+    // 自陣コアには入らない想定
+    if (bs.cores?.ally && row === bs.cores.ally.row && col === bs.cores.ally.col) return;
+
+    cells.push({ row, col });
+  }
+
+  switch (enemy.moveType) {
+    case 'enemy_move_straight':
+    case 'enemy_zako_straight':
+      // 敵は下方向へ進む想定
+      addCell(enemy.row + 1, enemy.col);
+      break;
+
+    case 'enemy_move_diag':
+    case 'enemy_zako_diag':
+      addCell(enemy.row + 1, enemy.col - 1);
+      addCell(enemy.row + 1, enemy.col + 1);
+      break;
+
+    case 'enemy_move_random':
+      addCell(enemy.row + 1, enemy.col);
+      addCell(enemy.row - 1, enemy.col);
+      addCell(enemy.row, enemy.col - 1);
+      addCell(enemy.row, enemy.col + 1);
+      break;
+
+    case 'none':
+    default:
+      break;
+  }
+
+  return cells;
+}
+
+function showEnemyInfo(enemy) {
+  let ov = document.getElementById('b32-enemy-info-overlay');
+  if (ov) ov.remove();
+
+  ov = document.createElement('div');
+  ov.id = 'b32-enemy-info-overlay';
+  ov.innerHTML = `
+    <div class="b32-enemy-info-panel">
+      <div class="b32-enemy-info-title">${enemy.name || '??????'}</div>
+      <div class="b32-enemy-info-row">
+        <span>HP</span><strong>${enemy.hp} / ${enemy.hpMax}</strong>
+      </div>
+      <div class="b32-enemy-info-row">
+        <span>ATK</span><strong>${enemy.atk}</strong>
+      </div>
+      <div class="b32-enemy-info-row">
+        <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
+      </div>
+      <div class="b32-enemy-info-row">
+        <span>攻撃</span><strong>${enemyAttackLabel(enemy.attackRange)}</strong>
+      </div>
+      <button class="b32-enemy-info-close">閉じる</button>
+    </div>
+  `;
+
+  ov.addEventListener('click', (e) => {
+    if (e.target === ov || e.target.classList.contains('b32-enemy-info-close')) {
+      ov.remove();
+    }
+  });
+
+  document.body.appendChild(ov);
+}
+window._b32ShowEnemyInfo = function (enemyUid) {
+  const bs = _bs();
+  if (!bs) return;
+
+  const enemy = (bs.enemies || []).find(e =>
+    e._uid === enemyUid &&
+    (e.hp > 0 || e.isBoss)
+  );
+
+  if (!enemy) return;
+
+  // 同じ敵をもう一度タップしたら解除
+  _selectedEnemyUid = (_selectedEnemyUid === enemyUid) ? null : enemyUid;
+
+  window.renderBattle32UI();
+}; 
 
   // ============================================================
   // CSS
@@ -172,6 +305,19 @@
           0 1px 3px rgba(0,0,0,.9);
         white-space: nowrap;
       }
+      .b32-unit-icon {
+  transform:
+    translateY(var(--unit-offset-y, 0px))
+    scale(var(--unit-scale, 1));
+  transform-origin: center bottom;
+}
+  .b32-party-img {
+  transform:
+    translateY(var(--panel-offset-y, 0px))
+    scale(var(--panel-scale, 1));
+  transform-origin: center center;
+}
+
     `;
     document.head.appendChild(style);
 
@@ -1245,6 +1391,200 @@
   100% { transform: rotateX(-50deg) translateX(0) scale(1); }
 }
 
+#b32-enemy-info-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.b32-enemy-info-panel {
+  width: min(320px, 92vw);
+  background: linear-gradient(168deg, #17101f 0%, #07050c 100%);
+  border: 1px solid rgba(220,120,120,.35);
+  border-radius: 16px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 0 40px rgba(180,40,40,.25), 0 20px 40px rgba(0,0,0,.65);
+  color: #e8e4dc;
+  font-family: "Noto Serif JP", serif;
+}
+
+.b32-enemy-info-title {
+  font-family: "Cinzel", serif;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: #ffb0b0;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.b32-enemy-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  font-size: 13px;
+}
+
+.b32-enemy-info-row span {
+  color: rgba(232,228,220,.55);
+}
+
+.b32-enemy-info-row strong {
+  color: #fff0d0;
+  font-weight: 700;
+}
+
+.b32-enemy-info-close {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 0;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  color: rgba(232,228,220,.85);
+  font-family: "Noto Serif JP", serif;
+}
+
+  .b32-cell.enemy-move-guide {
+  background:
+    radial-gradient(circle at center, rgba(120, 180, 255, .26), transparent 62%),
+    rgba(20, 50, 90, .24) !important;
+  border-color: rgba(120, 190, 255, .70) !important;
+  box-shadow:
+    inset 0 0 14px rgba(80, 160, 255, .24),
+    0 0 16px rgba(80, 160, 255, .28) !important;
+}
+
+.b32-cell.enemy-move-guide::after {
+  content: 'MOVE';
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  transform: translateX(-50%);
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: rgba(160, 210, 255, .9);
+  pointer-events: none;
+  text-shadow: 0 0 6px rgba(80,160,255,.8);
+}
+
+#b32-enemy-quick-info,
+.b32-enemy-quick-info {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 76px);
+  transform: translateX(-50%) !important;
+  z-index: 3000000;
+
+  width: min(230px, 86vw);
+  padding: 8px 10px;
+  border-radius: 10px;
+
+  background: rgba(10, 8, 16, .92);
+  border: 1px solid rgba(220,120,120,.38);
+  box-shadow: 0 0 18px rgba(180,40,40,.26), 0 10px 24px rgba(0,0,0,.45);
+
+  color: #e8e4dc;
+  font-family: "Noto Serif JP", serif;
+  pointer-events: none;
+
+  transform-style: flat;
+  backface-visibility: hidden;
+}
+
+.b32-enemy-quick-title {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #ffb0b0;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.b32-enemy-quick-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.b32-enemy-quick-row span {
+  color: rgba(232,228,220,.55);
+}
+
+.b32-enemy-quick-row strong {
+  color: #fff0d0;
+}
+
+/* ── Battle右上メニュー ── */
+#b32-battle-menu {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: 10px;
+  z-index: 3000000;
+  font-family: "Noto Serif JP", serif;
+}
+
+#b32-battle-menu-btn {
+  min-width: 58px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(8, 8, 16, .72);
+  color: rgba(232,228,220,.88);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+#b32-battle-menu-panel {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  width: 150px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(8, 8, 16, .92);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 10px 28px rgba(0,0,0,.55);
+  display: none;
+}
+
+#b32-battle-menu.open #b32-battle-menu-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.b32-battle-menu-item {
+  width: 100%;
+  padding: 9px 8px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 9px;
+  background: rgba(255,255,255,.05);
+  color: rgba(232,228,220,.86);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.b32-battle-menu-item.danger {
+  color: #ffb0b0;
+  border-color: rgba(255,90,90,.22);
+}
+
     `;
     document.head.appendChild(chipStyle);
 
@@ -1633,7 +1973,7 @@
         .b32-action-radial-menu {
           position: fixed;
           right: 14px;
-          bottom: 170px;
+          bottom: 120px; /* フォールバック：renderActionMenu()が実測値で上書きする */
           z-index: 99999;
           pointer-events: none;
         }
@@ -1762,7 +2102,7 @@
 
       <div id="b32-result-overlay">
         <div id="b32-result-text"></div>
-        <button class="b32-btn" style="max-width:200px" onclick="closeBattle32UI()">
+        <button class="b32-btn" id="b32-result-back-btn" style="max-width:200px">
           マップへ戻る
         </button>
       </div>
@@ -2396,6 +2736,25 @@ function _onHealEvent(data) {
       });
     }
 
+    // ── 敵タップ時の移動ガイド ──
+let enemyGuideCells = new Set();
+let selectedEnemy = null;
+
+if (_selectedEnemyUid) {
+  selectedEnemy = (bs.enemies || []).find(e =>
+    e._uid === _selectedEnemyUid &&
+    (e.hp > 0 || e.isBoss)
+  );
+
+  if (selectedEnemy) {
+    getEnemyMoveGuideCells(selectedEnemy, bs).forEach(c => {
+      enemyGuideCells.add(`${c.row}-${c.col}`);
+    });
+  } else {
+    _selectedEnemyUid = null;
+  }
+}
+
     const cells = [];
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 5; c++) {
@@ -2417,6 +2776,7 @@ function _onHealEvent(data) {
         const isCapture         = captureCells.has(key);
         // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
         const bossDangerType    = bossDangerCells.get(key);
+        const isEnemyMoveGuide = enemyGuideCells.has(key);
 
         let cls = `b32-cell ${zoneClass}`;
         if (isDivider)           cls += ' row-divider';
@@ -2424,6 +2784,8 @@ function _onHealEvent(data) {
         if (bossDangerType === 'boss_line')        cls += ' boss-danger-line';
         else if (bossDangerType === 'boss_warn')   cls += ' boss-danger-warn';
         else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
+
+        if (isEnemyMoveGuide) cls += ' enemy-move-guide';
         // コアがあるセルにフラグ付与（filter/animation からコア表示を保護するため）
         if (bs.cores?.ally && r === bs.cores.ally.row && c === bs.cores.ally.col) {
           cls += ' has-core';
@@ -2438,17 +2800,27 @@ function _onHealEvent(data) {
         else if (skillCellType === 'range')       cls += ' skill-range';
 
         // クリックハンドラ
-        let onclick = '';
+let onclick = '';
 
-        if (isMovable && !unit) {
-           onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
-        } else if (isCapture) {
-          // 駒取りマス（敵ユニットがいるセルへの移動）
-          onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
-        } else if (isSkillSelectable || isSkillSelected) {
-          onclick = `onclick="_b32OnSkillAllyTap('${unit._uid}')"` ;
-        }
+if (isMovable && !unit) {
+  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
+} else if (isCapture) {
+  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
+
+} else if (isSkillSelectable || isSkillSelected) {
+  onclick = `onclick="_b32OnSkillAllyTap('${unit._uid}')"`;
+
+} else if (
+  unit &&
+  unit.side === 'enemy' &&
+  !bs.result &&
+  !_moveMode &&
+  !_selSkillAllyUid &&
+  !_selSkillId
+) {
+  onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
+}
         cells.push(
          `<div class="${cls}" data-row="${r}" data-col="${c}" ${onclick}>` +
          (unit ? renderUnit(unit, bs.phase) : renderCore(r, c, bs)) +
@@ -2456,8 +2828,151 @@ function _onHealEvent(data) {
        );
       }
     }
+
     board.innerHTML = cells.join('');
+
+    renderEnemyQuickInfo(selectedEnemy);
+    
   }
+
+  function renderEnemyQuickInfo(enemy) {
+  let box = document.getElementById('b32-enemy-quick-info');
+  if (box) box.remove();
+
+  if (!enemy) return;
+
+  box = document.createElement('div');
+  box.id = 'b32-enemy-quick-info';
+  box.className = 'b32-enemy-quick-info';
+  box.innerHTML = `
+    <div class="b32-enemy-quick-title">${enemy.name || '??????'}</div>
+    <div class="b32-enemy-quick-row">
+      <span>HP</span><strong>${enemy.hp} / ${enemy.hpMax}</strong>
+    </div>
+    <div class="b32-enemy-quick-row">
+      <span>ATK</span><strong>${enemy.atk}</strong>
+    </div>
+    <div class="b32-enemy-quick-row">
+      <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
+    </div>
+  `;
+
+  document.body.appendChild(box);
+}
+
+function renderBattleMenu(bs) {
+  let menu = document.getElementById('b32-battle-menu');
+
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'b32-battle-menu';
+    menu.innerHTML = `
+      <button id="b32-battle-menu-btn" type="button">MENU</button>
+      <div id="b32-battle-menu-panel">
+        <button class="b32-battle-menu-item" type="button" data-action="restart">
+          やり直す
+        </button>
+        <button class="b32-battle-menu-item danger" type="button" data-action="stage">
+          ステージ選択に戻る
+        </button>
+        <button class="b32-battle-menu-item" type="button" data-action="close">
+          閉じる
+        </button>
+      </div>
+    `;
+    document.body.appendChild(menu);
+
+    const btn = menu.querySelector('#b32-battle-menu-btn');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.toggle('open');
+    });
+
+    menu.querySelectorAll('.b32-battle-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        const action = item.dataset.action;
+        menu.classList.remove('open');
+
+        if (action === 'close') return;
+
+        if (action === 'restart') {
+          if (!confirm('このバトルを最初からやり直しますか？')) return;
+          b32RestartBattle();
+          return;
+        }
+
+        if (action === 'stage') {
+          if (!confirm('バトルを中断してステージ選択に戻りますか？')) return;
+          b32ReturnToStageSelect();
+          return;
+        }
+      });
+    });
+
+    document.addEventListener('click', () => {
+      const m = document.getElementById('b32-battle-menu');
+      if (m) m.classList.remove('open');
+    });
+  }
+
+  // バトル画面中だけ表示
+  menu.style.display = bs ? 'block' : 'none';
+}
+
+function b32RestartBattle() {
+  const bs = _bs();
+  if (!bs) return;
+
+  // ローグライト中はラン全体の再開ではなく、いったん現在ランを最初からにするのは危険。
+  // まずは通常Battle32の再読み込み扱いにする。
+  if (bs.isRoguelite) {
+    alert('ローグライト中のやり直しは、現在は未対応です。');
+    return;
+  }
+
+  // 通常バトルなら、今のところはページ/画面復帰ではなく再読み込みが一番安全
+  location.reload();
+}
+
+function b32ReturnToStageSelect() {
+  const bs = _bs();
+
+  // ローグライト中ならランを終了
+  if (bs && bs.isRoguelite && window.RogueliteRun) {
+    window.RogueliteRun.end('lose');
+  }
+
+  // Battle32だけ閉じる
+  const root = document.getElementById('battle32-root');
+  if (root) root.style.display = 'none';
+
+  const info = document.getElementById('b32-enemy-quick-info');
+  if (info) info.remove();
+
+  const menu = document.getElementById('b32-battle-menu');
+  if (menu) menu.remove();
+
+  // 既存のステージ選択へ戻す処理があるなら優先
+  if (typeof window.openStageSelect === 'function') {
+    window.openStageSelect();
+    return;
+  }
+
+  if (typeof window.showStageSelect === 'function') {
+    window.showStageSelect();
+    return;
+  }
+
+  // 最後の手段：既存closeBattle32UIを使う
+  if (typeof window.closeBattle32UI === 'function') {
+    window.closeBattle32UI();
+    return;
+  }
+
+  console.warn('[Battle32UI] ステージ選択へ戻る関数が見つかりません');
+}
 
   function renderCore(row, col, bs) {
   const cores = bs.cores;
@@ -2500,13 +3015,30 @@ function _onHealEvent(data) {
     const isDone = u.side === 'ally' && phase === 'skill' && !!(_uh.move && _uh.skill);
 
     let inner = '';
-    const displayImg = u.img || u.battleImg || null;
-    if (displayImg) {
-      inner += `<img class="b32-unit-icon" src="${displayImg}" alt="" onerror="this.style.display='none'">`;
-    } else {
-      inner += `<div class="b32-unit-initial">${initial(u.name)}</div>`;
-    }
-    inner += `<div class="b32-unit-name">${u.name}</div>`;
+const displayImg =
+  u.battleBackImg ||
+  u.battleBack ||
+  u.img ||
+  u.battleImg ||
+  null;
+
+const battleBackScale = getUnitUiScale(u, 'battleBack');
+const battleBackY = getUnitUiOffsetY(u, 'battleBack');
+
+if (displayImg) {
+  inner += `
+    <img
+      class="b32-unit-icon"
+      src="${displayImg}"
+      alt=""
+      style="--unit-scale:${battleBackScale}; --unit-offset-y:${battleBackY}px;"
+      onerror="this.style.display='none'"
+    >
+  `;
+} else {
+  inner += `<div class="b32-unit-initial">${initial(u.name)}</div>`;
+}
+inner += `<div class="b32-unit-name">${u.name}</div>`;
 
     // 敵のみ HP バーを出力（味方は HP バー廃止）
     // ボスは核露出後もバーを表示（HP0で0%表示になる）
@@ -2926,6 +3458,8 @@ await _afterCharTurnFlow();
         ally.portrait ||
         ally.upImg ||
         '';
+      const panelScale = getUnitUiScale(ally, 'panel');
+      const panelY = getUnitUiOffsetY(ally, 'panel');
 
       const dead     = ally.hp <= 0;
       // 両方の行動を使い切ったキャラを done 扱い
@@ -2963,8 +3497,14 @@ await _afterCharTurnFlow();
           <div class="b32-party-shinki-badge">${shinkiDots}</div>
           <div class="b32-party-img-wrap">
             ${img
-              ? `<img class="b32-party-img" src="${img}" alt="" onerror="this.style.display='none'">`
-              : `<div class="b32-party-initial">${initial(ally.name)}</div>`}
+  ? `<img
+  class="b32-party-img"
+  src="${img}"
+  alt=""
+  style="transform: translateY(${panelY}px) scale(${panelScale}); transform-origin: center center;"
+  onerror="this.style.display='none'"
+>`
+  : `<div class="b32-party-initial">${initial(ally.name)}</div>`}
           </div>
           <div class="b32-party-name">${ally.name}</div>
           <!-- HP バー＋数値：カード下部 -->
@@ -3272,12 +3812,33 @@ await _afterCharTurnFlow();
     const overlay = document.getElementById('b32-result-overlay');
     const text    = document.getElementById('b32-result-text');
     if (!overlay || !text) return;
+
+    // ローグライト中は Battle32 側の結果オーバーレイを出さない。
+    // 勝敗表示・報酬選択・次戦遷移は RogueliteController が担当する。
+    if (bs.isRoguelite) {
+      overlay.style.display = 'none';
+      return;
+    }
+
     if (bs.result === 'win') {
       text.textContent = 'VICTORY'; text.className = 'win';
       overlay.style.display = 'flex';
+      // 通常ステージのみ「マップへ戻る」ボタンを有効化
+      const btn = document.getElementById('b32-result-back-btn');
+      if (btn && !btn._b32Bound) {
+        btn._b32Bound = true;
+        btn.addEventListener('click', () => window.closeBattle32UI());
+      }
+      if (btn) btn.style.display = '';
     } else if (bs.result === 'lose') {
       text.textContent = 'DEFEAT'; text.className = 'lose';
       overlay.style.display = 'flex';
+      const btn = document.getElementById('b32-result-back-btn');
+      if (btn && !btn._b32Bound) {
+        btn._b32Bound = true;
+        btn.addEventListener('click', () => window.closeBattle32UI());
+      }
+      if (btn) btn.style.display = '';
     } else {
       overlay.style.display = 'none';
     }
@@ -3293,23 +3854,39 @@ await _afterCharTurnFlow();
       return;
     }
 
-    buildRoot();
-    document.getElementById(ROOT_ID).style.display = 'flex';
+  buildRoot();
 
-    renderHeader(bs);
-    renderHintBar(bs);
-    renderBossHp(bs);
-    renderBoard(bs);
-    renderPartyStatus(bs);
-    renderLog(bs);
-    renderBottomArea(bs);
-    // renderCoreStatus(bs);
-    renderButtons(bs);
-    renderActionMenu(bs);
-    renderResult(bs);
+  const root = document.getElementById(ROOT_ID);
 
-    requestAnimationFrame(fitBattle32Layout);
-  };
+  // ローグライト遷移中は、古いBATTLE END画面を再表示しない
+  if (
+    window.__ROGUELITE_TRANSITIONING__ &&
+    bs.isRoguelite &&
+    (bs.result || bs.phase === 'end')
+  ) {
+    if (root) root.style.display = 'none';
+    return;
+  }
+
+  if (root) {
+    root.style.display = 'flex';
+    delete root.dataset.rlHidden;
+  }
+
+  renderHeader(bs);
+  renderHintBar(bs);
+  renderBossHp(bs);
+  renderBoard(bs);
+  renderPartyStatus(bs);
+  renderLog(bs);
+  renderBottomArea(bs);
+  renderButtons(bs);
+  renderActionMenu(bs);
+  renderResult(bs);
+  renderBattleMenu(bs);
+  
+  requestAnimationFrame(fitBattle32Layout);
+};
 
   // ============================================================
   // 行動選択メニュー（円形ボタン）
@@ -3392,9 +3969,22 @@ if (actionAllyUid) {
       ${showBack ? `<button class="b32-action-circle-btn back" onclick="_b32OnActionBackTap()">戻る</button>` : ''}
     `;
 
-    // battle32-root に追加（fixed配置なので位置は常にCSS固定）
     const root = document.getElementById('battle32-root');
     if (root) root.appendChild(wrap);
+
+    // ── パネル実測でボタン群の bottom を直接セット ──────────
+    // position:fixed の要素は #battle32-root の CSS変数を継承しないため、
+    // キャラパネルの getBoundingClientRect() で画面下端からの距離を
+    // 実測して wrap.style.bottom に直接書き込む。
+    requestAnimationFrame(() => {
+      const panel = document.getElementById('b32-bottom-area');
+      if (!panel || !wrap.isConnected) return;
+
+      const panelTop   = panel.getBoundingClientRect().top;
+      const screenH    = window.innerHeight;
+      const fromBottom = screenH - panelTop + 12; // パネル上端から12px余白
+      wrap.style.bottom = `${fromBottom}px`;
+    });
   }
 
   // ============================================================
@@ -3443,6 +4033,23 @@ if (actionAllyUid) {
 
   const cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
   root.style.setProperty('--cell-size', `${cellSize}px`);
+
+  // ── 丸ボタン群 bottom 基準を動的更新 ──────────────────────
+  // キャラパネル (#b32-bottom-area) の実測高さ + 余白(12px) を
+  // --b32-panel-h にセット。safe-area-inset-bottom は
+  // ダミー要素で env() を読み出して加算する。
+  let safeBottom = 0;
+  try {
+    const probe = document.createElement('div');
+    probe.style.cssText =
+      'position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
+    document.body.appendChild(probe);
+    safeBottom = probe.offsetHeight || 0;
+    document.body.removeChild(probe);
+  } catch (_) { safeBottom = 0; }
+
+  const panelH = bottom.offsetHeight + safeBottom + 12;
+  root.style.setProperty('--b32-panel-h', `${panelH}px`);
 }
 
   window.addEventListener('resize', () => {
