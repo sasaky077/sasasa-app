@@ -1717,6 +1717,106 @@ window._b32ShowEnemyInfo = function (enemyUid) {
     }
 
 
+    // ── スタンエフェクト用スタイル ──
+    if (!document.getElementById('b32-stun-style')) {
+      const stunStyle = document.createElement('style');
+      stunStyle.id = 'b32-stun-style';
+      stunStyle.textContent = `
+        /* ── スタン中ユニット ── */
+        .b32-unit.is-stunned {
+          position: relative;
+          overflow: visible;
+        }
+        .b32-stun-fx {
+          position: absolute;
+          inset: -4px;
+          pointer-events: none;
+          z-index: 6;
+        }
+        .b32-stun-ring {
+          position: absolute;
+          left: 50%;
+          top: 18%;
+          width: 42px;
+          height: 18px;
+          transform: translateX(-50%);
+          border-radius: 50%;
+          border: 1px solid rgba(255, 235, 120, .85);
+          box-shadow:
+            0 0 6px rgba(255, 235, 120, .55),
+            0 0 10px rgba(160, 220, 255, .35);
+          opacity: .85;
+          animation: b32StunRingPulse 900ms ease-in-out infinite;
+        }
+        .b32-stun-spark {
+          position: absolute;
+          width: 12px;
+          height: 12px;
+          border-radius: 2px;
+          opacity: 0;
+          transform: scale(.8) rotate(0deg);
+          background:
+            linear-gradient(135deg,
+              rgba(255,255,255,.95) 0%,
+              rgba(255,240,120,.95) 40%,
+              rgba(120,220,255,.85) 100%);
+          clip-path: polygon(45% 0%, 62% 35%, 100% 35%, 56% 100%, 42% 62%, 0% 62%);
+          animation: b32StunSpark 820ms steps(1, end) infinite;
+        }
+        .b32-stun-spark.s1 { left: 18%; top: 22%; animation-delay: 0ms; }
+        .b32-stun-spark.s2 { right: 16%; top: 28%; animation-delay: 240ms; }
+        .b32-stun-spark.s3 { left: 44%; top: 8%;  animation-delay: 460ms; }
+        .b32-stun-badge {
+          position: absolute;
+          right: -2px;
+          top: -4px;
+          font-size: 12px;
+          line-height: 1;
+          color: #fff2a8;
+          text-shadow:
+            0 0 6px rgba(255,230,120,.85),
+            0 0 10px rgba(120,220,255,.55);
+          animation: b32StunBadgeFlicker 700ms ease-in-out infinite;
+        }
+        .b32-party-card { position: relative; }
+        .b32-party-status-badge.stun {
+          position: absolute;
+          bottom: 2px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 8px;
+          font-family: 'Cinzel', serif;
+          letter-spacing: 1px;
+          color: #fff2a8;
+          background: rgba(40,20,0,.75);
+          border: 1px solid rgba(255,230,100,.45);
+          border-radius: 4px;
+          padding: 1px 4px;
+          white-space: nowrap;
+          pointer-events: none;
+          text-shadow: 0 0 6px rgba(255,230,120,.8);
+          animation: b32StunBadgeFlicker 700ms ease-in-out infinite;
+          z-index: 5;
+        }
+        @keyframes b32StunRingPulse {
+          0%   { opacity: .55; transform: translateX(-50%) scale(.96); }
+          50%  { opacity: .95; transform: translateX(-50%) scale(1.03); }
+          100% { opacity: .55; transform: translateX(-50%) scale(.96); }
+        }
+        @keyframes b32StunSpark {
+          0%   { opacity: 0;   transform: scale(.75) rotate(-8deg); }
+          20%  { opacity: .95; transform: scale(1.0)  rotate(6deg);  }
+          45%  { opacity: .35; }
+          100% { opacity: 0;   transform: scale(.82) rotate(-4deg); }
+        }
+        @keyframes b32StunBadgeFlicker {
+          0%, 100% { opacity: .65; transform: translateX(-50%) translateY(0); }
+          50%      { opacity: 1;   transform: translateX(-50%) translateY(-1px); }
+        }
+      `;
+      document.head.appendChild(stunStyle);
+    }
+
     // ── ULT使用可能演出スタイル ──
     if (document.getElementById('b32-ult-ready-style')) return;
     const ultReadyStyle = document.createElement('style');
@@ -2008,27 +2108,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
           opacity: .28;
           pointer-events: none;
         }
-        /* 斜め階段配置 — 右下から左下が「戻る」、右上が「終了」 */
-        /* 最下段：戻る・移動を横並び */
-        .b32-action-circle-btn.back  { right: 62px; bottom: 0;     }
-        .b32-action-circle-btn.move  { right:  0;   bottom: 0;     }
-        /* 右端に縦積み */
-        .b32-action-circle-btn.skill { right:  0;   bottom: 62px;  }
-        .b32-action-circle-btn.ult   { right:  0;   bottom: 124px; }
-        .b32-action-circle-btn.end   { right:  0;   bottom: 186px; }
-        /* 色アクセント */
-        .b32-action-circle-btn.move  { border-color: rgba(100,200,255,.35); }
-        .b32-action-circle-btn.skill { border-color: rgba(255,200,80,.35);  }
-        .b32-action-circle-btn.ult   { border-color: rgba(200,120,255,.45); }
-        .b32-action-circle-btn.end   {
-          background: rgba(60,30,30,.90);
-          border-color: rgba(255,100,80,.40);
-        }
-        .b32-action-circle-btn.back  {
-          background: rgba(30,30,50,.88);
-          border-color: rgba(160,160,200,.35);
-          color: rgba(200,200,220,.80);
-        }
+        /* ボタン配置は battle_32_ui.css で管理 */
       `;
       document.head.appendChild(menuStyle);
     }
@@ -2045,19 +2125,45 @@ window._b32ShowEnemyInfo = function (enemyUid) {
     root.id = ROOT_ID;
     root.innerHTML = `
       <div id="b32-header">
-        <div id="b32-turn-box">TURN<span id="b32-turn-num">1</span></div>
-        <div id="b32-phase-badge"></div>
-        <div id="b32-stage-label">STAGE<span id="b32-stage-id">—</span></div>
+        <!-- 左: BATTLE 01 / UNREGISTERED DEITY -->
+        <div id="b32-turn-box">
+          <div id="b32-battle-title">BATTLE <span id="b32-stage-id">01</span></div>
+          <div id="b32-battle-subtitle">UNREGISTERED DEITY</div>
+        </div>
+        <!-- 中央: TURN 05 / 12 -->
+        <div id="b32-phase-badge">
+          <div id="b32-turn-center">
+            <span id="b32-turn-label">TURN</span>
+            <span id="b32-turn-num-large" id="b32-turn-num">1</span>
+            <span id="b32-turn-slash">/</span>
+            <span id="b32-turn-max">—</span>
+          </div>
+        </div>
+        <!-- 右: 神気マーカー等 -->
+        <div id="b32-stage-label">
+          <span id="b32-stage-id-right"></span>
+        </div>
       </div>
 
       <div id="b32-hint-bar"></div>
 
         <div id="b32-boss-hp-ui" style="display:none">
-          <div id="b32-boss-hp-name">BOSS</div>
-          <div id="b32-boss-hp-bar-wrap">
-            <div id="b32-boss-hp-bar"></div>
+          <div id="b32-boss-hp-layout">
+            <!-- 左: 菱形紋章 + BOSS -->
+            <div id="b32-boss-hp-left">
+              <div id="b32-boss-hp-emblem"></div>
+              <div id="b32-boss-hp-name">BOSS</div>
+            </div>
+            <!-- 中央: RESISTANCE ラベル + バー -->
+            <div id="b32-boss-hp-center">
+              <div id="b32-boss-hp-resistance-label">RESISTANCE</div>
+              <div id="b32-boss-hp-bar-wrap">
+                <div id="b32-boss-hp-bar"></div>
+              </div>
+            </div>
+            <!-- 右: HP数値 -->
+            <div id="b32-boss-hp-text"></div>
           </div>
-          <div id="b32-boss-hp-text"></div>
         </div>
 
       <div id="b32-scroll">
@@ -3062,11 +3168,30 @@ inner += `<div class="b32-unit-name">${u.name}</div>`;
     }
     if (isDone) inner += `<div class="b32-unit-done-mark">✓</div>`;
 
+    // ── スタン判定 ──
+    const isStunned =
+      !!u.stunned ||
+      (Array.isArray(u.statusEffects) && u.statusEffects.some(e => e.type === 'stun'));
+
+    if (isStunned) {
+      inner += `
+        <div class="b32-stun-fx" aria-hidden="true">
+          <span class="b32-stun-ring"></span>
+          <span class="b32-stun-spark s1"></span>
+          <span class="b32-stun-spark s2"></span>
+          <span class="b32-stun-spark s3"></span>
+          <span class="b32-stun-badge">⚡</span>
+        </div>
+      `;
+    }
+
     const midBossClass = u.isMidBoss ? ' midboss' : '';
 
 const enemyIdClass = u.side === 'enemy' && u.id
   ? ` enemy-id-${String(u.id).replace(/[^a-zA-Z0-9_-]/g, '')}`
   : '';
+
+const stunnedClass = isStunned ? ' is-stunned' : '';
 
 const extraCls =
   (isDone ? ' skill-done' : '') +
@@ -3074,7 +3199,7 @@ const extraCls =
   midBossClass +
   enemyIdClass;
 
-return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}">${inner}</div>`;
+return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunnedClass}">${inner}</div>`;
   }
 
   // ============================================================
@@ -3468,19 +3593,34 @@ await _afterCharTurnFlow();
       // 移動対象として選択中 or スキルキャラとして選択中ならハイライト
       const selected = ally._uid === _selMoveAllyUid || ally._uid === _selSkillAllyUid;
 
-      // HP バー＋数値表示
+      // HP バー＋数値表示（下部キャラパネル専用：バー色はCSS固定）
       const hpPct = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
-      const hpBarColor = hpPct > 50 ? '#5ad48a' : hpPct > 25 ? '#e8c87a' : '#d07878';
       const hpHtml = `
-        <div class="b32-party-hp-bar-wrap">
-          <div class="b32-party-hp-bar" style="width:${hpPct}%;background:${hpBarColor}"></div>
+        <div class="b32-party-hp-row">
+          <span class="b32-party-hp-label">HP</span>
+          <div class="b32-party-hp-area">
+            <div class="b32-party-hp-text">
+              ${ally.hp}<span class="b32-party-hp-max"> / ${ally.hpMax}</span>
+            </div>
+            <div class="b32-party-hp-bar-wrap">
+              <div class="b32-party-hp-bar" style="width:${hpPct}%"></div>
+            </div>
+          </div>
         </div>
-        <div class="b32-party-hp-text">${ally.hp}<span class="b32-party-hp-max"> /${ally.hpMax}</span></div>
       `;
 
-      const shinkiDots = Array.from({ length: ally.shinkiMax || 3 }, (_, i) =>
+      // 神気ドット（HP下横並び用）
+      const shinkiDotsInner = Array.from({ length: ally.shinkiMax || 3 }, (_, i) =>
         `<span class="b32-party-shinki-dot ${i < (ally.shinki || 0) ? 'filled' : ''}"></span>`
       ).join('');
+      const shinkiRow = `
+        <div class="b32-party-shinki-row">
+          <span class="b32-party-shinki-label">SHINKI</span>
+          <div class="b32-party-shinki-dots">${shinkiDotsInner}</div>
+        </div>
+      `;
+      // 旧バッジ用（非表示にしてあるが変数は残す）
+      const shinkiDots = shinkiDotsInner;
 
       // タップ可否：move か skill のいずれかが可能であればタップ可
       const _canActNow = !bs.result && (bs.actionCount || 0) < (bs.actionMax || 2);
@@ -3493,6 +3633,8 @@ await _afterCharTurnFlow();
         <div class="b32-party-card${dead ? ' dead' : ''}${done ? ' done' : ''}${selected ? ' selected' : ''}"
           data-uid="${ally._uid}"
           ${onclickAttr}>
+          <!-- ACTIVEバッジ（選択中のみ表示） -->
+          <div class="b32-party-active-badge">ACTIVE</div>
           <!-- 神気ドット：絶対配置でカード右上に固定 -->
           <div class="b32-party-shinki-badge">${shinkiDots}</div>
           <div class="b32-party-img-wrap">
@@ -3509,7 +3651,11 @@ await _afterCharTurnFlow();
           <div class="b32-party-name">${ally.name}</div>
           <!-- HP バー＋数値：カード下部 -->
           <div class="b32-party-hp-section">${hpHtml}</div>
+          <!-- 神気：HPの下に横並び -->
+          ${shinkiRow}
           ${dead ? `<div class="b32-party-return">RETURN</div>` : ''}
+          ${(!!ally.stunned || (Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'stun')))
+            ? `<div class="b32-party-status-badge stun">⚡STUN</div>` : ''}
         </div>
       `;
     }).join('');
@@ -3707,18 +3853,26 @@ await _afterCharTurnFlow();
   // ヘッダー・ボタン
   // ============================================================
   function renderHeader(bs) {
-    const turnNum   = document.getElementById('b32-turn-num');
-    const phaseBadge= document.getElementById('b32-phase-badge');
-    const stageId   = document.getElementById('b32-stage-id');
-    if (turnNum)    turnNum.textContent   = bs.turn;
-    if (stageId)    stageId.textContent   = bs.stageId || '—';
+    // 旧要素（非表示だが念のため更新）
+    const turnNumOld = document.getElementById('b32-turn-num');
+    if (turnNumOld) turnNumOld.textContent = bs.turn;
+
+    // 新ヘッダー要素
+    const battleTitle = document.getElementById('b32-battle-title');
+    const stageIdEl   = document.getElementById('b32-stage-id');
+    const turnNumLarge = document.getElementById('b32-turn-num-large');
+    const turnMaxEl   = document.getElementById('b32-turn-max');
+    const phaseBadge  = document.getElementById('b32-phase-badge');
+
+    if (stageIdEl) stageIdEl.textContent = bs.stageId || '01';
+    if (turnNumLarge) turnNumLarge.textContent = bs.turn || 1;
+    if (turnMaxEl) turnMaxEl.textContent = bs.turnLimit || '—';
+
+    // フェーズバッジ：文字だけ残して色付けを最小限に
     if (phaseBadge) {
       const label = PHASE_LABEL[bs.phase] || bs.phase;
-      const color = PHASE_COLOR[bs.phase] || '#aaa';
-      phaseBadge.textContent     = label;
-      phaseBadge.style.color       = color;
-      phaseBadge.style.borderColor = color + '66';
-      phaseBadge.style.background  = color + '18';
+      // フェーズラベルは非表示（デザイン上不要）にするが残す
+      // phaseBadge の中に #b32-turn-center があるので書き換えない
     }
   }
 
@@ -3775,7 +3929,7 @@ await _afterCharTurnFlow();
       textEl.textContent  = `干渉 ${bc.capture}/${bc.captureMax}`;
     } else {
       nameEl.textContent = boss.name || 'BOSS';
-      textEl.textContent = `${boss.hp} / ${hpMax}`;
+      textEl.textContent = `${boss.hp.toLocaleString()} / ${hpMax.toLocaleString()}`;
     }
     barEl.style.width = hpPct + '%';
   }
