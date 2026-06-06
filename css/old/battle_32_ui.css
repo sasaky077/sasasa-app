@@ -1359,10 +1359,8 @@
 /* スキルボタン */
 #battle32-root .b32-bottom-skill-btn {
  display: flex !important;
- flex-direction: column !important;
  align-items: center !important;
  justify-content: center !important;
- gap: 1px !important;
  border-radius: 4px !important;
  border: 1px solid rgba(80,140,255,.28) !important;
  background: rgba(8,16,40,.80) !important;
@@ -1378,14 +1376,6 @@
  white-space: normal !important;
  line-height: 1.25 !important;
  height: auto !important;
-}
-
-#battle32-root .b32-bottom-skill-btn small {
- font-family: 'Cinzel', serif !important;
- font-size: 8px !important;
- letter-spacing: 1px !important;
- line-height: 1 !important;
- color: rgba(150, 180, 255, .70) !important;
 }
 
 #battle32-root .b32-bottom-skill-btn:active {

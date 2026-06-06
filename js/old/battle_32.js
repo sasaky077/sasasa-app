@@ -32,8 +32,8 @@
 
   // ターン数に応じたLINK最大値
   function calcLinkMax(turn) {
-  return 6;
-}
+    return Math.min(6, 2 + turn);
+  }
 
   // LINK消費ヘルパー
   function _canSpendLink(cost) {
@@ -698,7 +698,7 @@ const enemies = enemyDefs.map(def => {
 
     // ULTかどうかでLINK判定タイプを切り替え
     const actionType = skill.isUltimate ? 'ult' : 'skill';
-    if (!_canUsePlayerAction(actionType, allyUid, skillId)) return false;
+    if (!_canUsePlayerAction(actionType, allyUid)) return false;
 
     if ((skill.shinkiCost || 0) > ally.shinki) {
       _log(`${ally.name}: 神気が不足しています`);
@@ -884,7 +884,7 @@ const enemies = enemyDefs.map(def => {
     _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 
     // 行動権を消費（LINKも消費される）
-    _consumePlayerAction(actionType, allyUid, skillId);
+    _consumePlayerAction(actionType, allyUid);
     return true;
   }
 
@@ -965,7 +965,7 @@ const enemies = enemyDefs.map(def => {
       // ============================================================
       // 行動権管理ヘルパー
       // ============================================================
-      function _canUsePlayerAction(type, unitUid, skillId) {
+      function _canUsePlayerAction(type, unitUid) {
         if (!_bs || _bs.phase !== 'skill') return false;
         if (_bs.result) return false;
 
@@ -980,29 +980,19 @@ const enemies = enemyDefs.map(def => {
         }
 
         // LINK消費チェック
-        const cost = _getLinkCostForAction(type, unitUid, skillId);
+        const cost = _getLinkCostForAction(type, unitUid);
         if (!_canSpendLink(cost)) {
-          const current = _bs.link ? Number(_bs.link.current || 0) : 0;
-          _log(`LINKが不足しています（必要: ${cost} / 残: ${current}）`);
+          _log(`LINKが不足しています（必要: ${cost} / 残: ${_bs.link.current}）`);
           return false;
         }
 
         return true;
       }
 
-      function _getLinkCostForAction(type, unitUid, skillId) {
+      function _getLinkCostForAction(type, unitUid) {
         if (type === 'move') return LINK_COST.move;
-
-        if (type === 'skill' || type === 'ult') {
-          const ally = (_bs && _bs.allies || []).find(u => u._uid === unitUid);
-          const skill = ally && (ally.skills || []).find(s => s.id === skillId);
-          if (skill && skill.linkCost != null) {
-            const n = Number(skill.linkCost);
-            return Number.isFinite(n) ? Math.max(0, n) : (type === 'ult' ? LINK_COST.ult : LINK_COST.skill);
-          }
-          return type === 'ult' ? LINK_COST.ult : LINK_COST.skill;
-        }
-
+        if (type === 'skill') return LINK_COST.skill;
+        if (type === 'ult') return LINK_COST.ult;
         if (type === 'summon') {
           if (!_bs.roster || !unitUid) return 1;
           const r = _bs.roster.find(r => r.rosterId === unitUid);
@@ -1011,11 +1001,11 @@ const enemies = enemyDefs.map(def => {
         return 0;
       }
 
-      function _consumePlayerAction(type, unitUid, skillId) {
+      function _consumePlayerAction(type, unitUid) {
         if (!_bs || _bs.phase !== 'skill') return false;
 
         // LINK消費
-        const linkCost = _getLinkCostForAction(type, unitUid, skillId);
+        const linkCost = _getLinkCostForAction(type, unitUid);
         _spendLink(linkCost, null);
 
         if (!_bs.unitActionHistory) _bs.unitActionHistory = {};
@@ -2032,7 +2022,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
       // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
-      _consumePlayerAction('move', allyUid, null);
+      _consumePlayerAction('move', allyUid);
       return true;
     }
   // ============================================================
@@ -2359,7 +2349,6 @@ if (canEnemyAttackAllyCore(enemy)) {
   getMovableCells,
   getSkillRangeCells,
   getBossDangerCells,
-  getLinkCostForAction: (type, unitUid, skillId) => _getLinkCostForAction(type, unitUid, skillId),
 
   // 状態参照
   getState: () => _snapshot(),

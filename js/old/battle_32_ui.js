@@ -2337,6 +2337,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
       <span class="b32-bottom-action-icon">✦</span>
       <span class="b32-bottom-action-label">召喚</span>
     </span>
+    <span class="b32-bottom-action-cost">LINK <span id="b32-btn-summon-cost">-</span></span>
     <span class="b32-bottom-action-sub" id="b32-btn-summon-sub">待機選択</span>
   </button>
 
@@ -4334,7 +4335,10 @@ if (listEl) {
  const skillBtn  = document.getElementById('b32-btn-skill');
  const ultBtn    = document.getElementById('b32-btn-ult');
  const endBtn    = document.getElementById('b32-btn-end-skill');
+ const summonCostEl = document.getElementById('b32-btn-summon-cost');
  const summonSubEl  = document.getElementById('b32-btn-summon-sub');
+ const skillCostEl  = document.getElementById('b32-btn-skill-cost');
+ const ultCostEl    = document.getElementById('b32-btn-ult-cost');
 
  const inSkillPhase = !!bs && bs.phase === 'skill' && !bs.result;
 
@@ -4360,10 +4364,12 @@ if (listEl) {
  );
 
  let canUlt = false;
+ let ultCostText = '-';
  if (selectedAlly) {
    const ultSkill = (selectedAlly.skills || []).find(s => s.isUltimate);
    if (ultSkill) {
      const ultLinkCost = _getSkillLinkCostForUnit(bs, selectedAlly._uid, ultSkill);
+     ultCostText = String(ultLinkCost);
      const shinkiCost = ultSkill.shinkiCost || selectedAlly.shinkiMax || 3;
      canUlt = inSkillPhase
        && unitCanAct
@@ -4372,8 +4378,12 @@ if (listEl) {
    }
  }
 
+ if (skillCostEl) skillCostEl.textContent = selectedAlly ? _getNormalSkillLinkRange(selectedAlly) : '2';
+ if (ultCostEl) ultCostEl.textContent = ultCostText === '-' ? '3' : ultCostText;
+
  // 召喚可否
  let canSummon = false;
+ let summonCostText = '-';
  let summonSubText = '待機選択';
 
  if (bs && bs.isRoguelite) {
@@ -4388,11 +4398,14 @@ if (listEl) {
      const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
      if (selectedRoster) {
        const cost = Number(selectedRoster.summonCost || 1);
+       summonCostText = String(cost);
        summonSubText = _summonMode ? '位置選択中' : '召喚可能';
        canSummon = inSkillPhase && _canActByLink(bs, cost);
      }
    } else if (standby.length > 0) {
      const affordable = standby.some(r => _canActByLink(bs, Number(r.summonCost || 1)));
+     const minCost = Math.min(...standby.map(r => Number(r.summonCost || 1)));
+     summonCostText = String(minCost);
      summonSubText = '待機選択';
      canSummon = inSkillPhase && affordable;
    } else {
@@ -4402,6 +4415,7 @@ if (listEl) {
    summonSubText = 'ROGUE';
  }
 
+ if (summonCostEl) summonCostEl.textContent = summonCostText;
  if (summonSubEl) summonSubEl.textContent = summonSubText;
 
  function setBtn(btn, enabled, active) {
