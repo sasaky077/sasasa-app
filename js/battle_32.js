@@ -23,10 +23,10 @@
   // LINK コスト定数
   // ============================================================
   const LINK_COST = {
-    summon: { r: 1, sr: 3, ur: 5 },
+    summon: { r: 4, sr: 5, ur: 6 },
     move: 1,
-    skill: 2,
-    ult: 3,
+    skill: 99,
+    ult: 99,
     itemDefault: 1,
   };
 

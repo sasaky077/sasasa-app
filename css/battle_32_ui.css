@@ -2880,43 +2880,73 @@
 
 /* コアがあるマスは暗いセル背景に埋もれないようにする */
 .b32-cell.has-core {
- background: radial-gradient(circle at 50% 48%, rgba(80, 220, 255, .22), rgba(8, 20, 40, .45) 58%, rgba(6, 8, 18, .38) 100%) !important;
- box-shadow:
- inset 0 0 18px rgba(80, 220, 255, .16),
- 0 0 14px rgba(80, 220, 255, .18) !important;
+  /* ──────────────────────────────────────────────────────
+   * コアセルは 3D コンテキストから切り離す。
+   * board が rotateX(38deg) で傾いている中で、コア要素が
+   * セル border（1px solid）の面と交差して「横線」が
+   * 見える問題を防ぐため、このセルだけ flat にする。
+   * overflow:visible でコアのはみ出しを許可。
+   * ────────────────────────────────────────────────────── */
+  transform-style: flat !important;
+  /* セル border を透明にしてグリッド線がコアを横切らないようにする */
+  border-color: transparent !important;
+  /* ::before の◇装飾も非表示（コアと干渉するため） */
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
 }
 
-/* コア本体を拡大。セル外にはみ出しても見えるようにする */
+/* has-core セルの::before（空◇装飾）を非表示 */
+.b32-cell.has-core::before {
+  display: none !important;
+}
+
+/* コア本体：盤面の傾きを完全に打ち消し、2D平面として描画する */
 .b32-core-object {
- width: 120% !important;
- height: 120% !important;
- left: 50% !important;
- top: 50% !important;
- position: absolute !important;
- transform: translate(-50%, -50%) rotateX(-38deg) !important;
- transform-origin: center center !important;
- z-index: 5 !important;
- overflow: visible !important;
+  /* position:fixed ではなくセル基準の absolute のまま中央固定 */
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 140% !important;
+  height: 140% !important;
+  /* translate で中央合わせ + rotateX で board の傾き（38deg）を相殺 */
+  transform: translate(-50%, -50%) rotateX(-38deg) !important;
+  transform-origin: center center !important;
+  transform-style: flat !important;
+  /* 3D 空間内では z-index より translateZ が効く。
+   * 少し手前に押し出してセル border の面を確実に上回る */
+  z-index: 10 !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  /* コア自体が発光背景を持つため、後ろのセル背景を上書き */
+  background: radial-gradient(
+    circle at 50% 52%,
+    rgba(80, 220, 255, .18) 0%,
+    rgba(8, 20, 40, .30) 55%,
+    transparent 80%
+  ) !important;
+  border-radius: 50% !important;
 }
 
-/* コア画像をさらに大きく、暗く沈まないように補正 */
+/* コア画像：セル内に収まるサイズに統一して上下分断を防ぐ */
 .b32-core-img {
- width: 115% !important;
- height: 115% !important;
- object-fit: contain !important;
- opacity: 1 !important;
- filter:
- brightness(1.28) contrast(1.08) saturate(1.12)
- drop-shadow(0 0 8px rgba(80, 240, 255, .95))
- drop-shadow(0 0 18px rgba(80, 220, 255, .55)) !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  opacity: 1 !important;
+  display: block !important;
+  filter:
+    brightness(1.28) contrast(1.08) saturate(1.12)
+    drop-shadow(0 0 8px rgba(80, 240, 255, .95))
+    drop-shadow(0 0 18px rgba(80, 220, 255, .55)) !important;
 }
 
-/* 損傷状態の色変化は維持しつつ、暗くなりすぎないようにする */
+/* 損傷状態の色変化は維持 */
 .b32-core-object.stability-2 .b32-core-img {
- filter:
- brightness(1.25) contrast(1.08) saturate(1.12)
- drop-shadow(0 0 8px rgba(255, 220, 80, .9))
- drop-shadow(0 0 18px rgba(255, 180, 40, .55)) !important;
+  filter:
+    brightness(1.25) contrast(1.08) saturate(1.12)
+    drop-shadow(0 0 8px rgba(255, 220, 80, .9))
+    drop-shadow(0 0 18px rgba(255, 180, 40, .55)) !important;
 }
 
 .b32-core-object.stability-1 .b32-core-img {
@@ -3487,9 +3517,9 @@
  ■ 2. コア画像：盤面パースに合わせて傾き調整
  ──────────────────────────────────────────── */
 
-/* コアのあるセル：はみ出し許可 */
+/* コアのあるセル：はみ出し許可（上の定義と統合済み、念のため残す） */
 .b32-cell.has-core {
- overflow: visible !important;
+  overflow: visible !important;
 }
 
 /* ============================================================
@@ -4445,4 +4475,260 @@
   #battle32-root .b32-roster-info-status {
     font-size: 8px !important;
   }
+}
+
+.b32-roster-info-panel {
+  position: relative;
+}
+
+.b32-roster-info-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.45);
+  color: rgba(232,228,220,.9);
+
+  font-size: 18px;
+  line-height: 1;
+  font-family: 'Cinzel', serif;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.b32-roster-info-close:active {
+  transform: scale(.92);
+  background: rgba(255,255,255,.10);
+}
+
+/* ============================================================
+  Battle画面：明度アップ調整
+============================================================ */
+
+/* 背景画像をもう少し見せる */
+#battle32-root::before {
+  opacity: .46 !important;
+  filter: brightness(1.18) contrast(1.05);
+}
+
+/* 暗い紫のかぶせを弱める */
+#battle32-root::after {
+  background:
+    radial-gradient(ellipse at 50% 30%,
+      rgba(80, 60, 140, .16) 0%,
+      rgba(20, 16, 36, .10) 52%,
+      transparent 78%
+    ) !important;
+}
+
+/* 全体の地色を少し明るく */
+#battle32-root {
+  background: #0c1020 !important;
+}
+
+/* ヘッダーの黒を薄く */
+#b32-header {
+  background: rgba(8, 10, 22, .46) !important;
+}
+
+/* ボスHP帯の黒を薄く */
+#b32-boss-hp-ui {
+  background: rgba(8, 10, 22, .42) !important;
+}
+
+/* 下部アクションバーの黒を薄く */
+#b32-actions {
+  background: rgba(8, 10, 22, .42) !important;
+}
+
+/* 盤面セルを少し明るく */
+.b32-cell {
+  background: rgba(18, 22, 42, .46) !important;
+  border-color: rgba(190, 180, 255, .30) !important;
+}
+
+/* 味方ゾーンも視認性アップ */
+.b32-cell.ally-zone {
+  background: rgba(18, 44, 72, .52) !important;
+  border-color: rgba(90, 170, 255, .38) !important;
+}
+
+/* 敵ゾーンも沈みすぎないように */
+.b32-cell.enemy-zone {
+  background: rgba(42, 20, 62, .50) !important;
+  border-color: rgba(170, 110, 230, .36) !important;
+}
+
+/* キャラパネルも少し明るく */
+.b32-party-card {
+  background: rgba(18, 20, 34, .72) !important;
+  border-color: rgba(255, 255, 255, .14) !important;
+}
+
+/* ボトムボタンも暗すぎないように */
+.b32-bottom-action {
+  background: rgba(20, 24, 42, .82) !important;
+  border-color: rgba(255, 255, 255, .16) !important;
+}
+
+/* ============================================================
+   キャラパネル・ボトムナビ：角丸撤廃
+   ============================================================ */
+
+/* キャラパネルのフレームを鋭角化 */
+#battle32-root .b32-party-card,
+#battle32-root .b32-party-card::before,
+#battle32-root .b32-party-card::after {
+  border-radius: 0 !important;
+}
+
+/* ボトムナビ（アクションボタン）のフレームを鋭角化 */
+#battle32-root .b32-bottom-action,
+#battle32-root .b32-bottom-action::before,
+#battle32-root .b32-bottom-action::after {
+  border-radius: 0 !important;
+}
+
+/* ボトムナビ外枠が角丸なら無効化 */
+#battle32-root #b32-bottom-nav,
+#battle32-root .b32-bottom-nav {
+  border-radius: 0 !important;
+}
+
+/* スキルチップ・スキルボタンを鋭角化 */
+#battle32-root .b32-skill-chip,
+#battle32-root .b32-skill-chip::before,
+#battle32-root .b32-skill-chip::after,
+#battle32-root .b32-bottom-skill-btn,
+#battle32-root .b32-bottom-skill-btn::before,
+#battle32-root .b32-bottom-skill-btn::after {
+  border-radius: 0 !important;
+}
+
+/* 汎用ボタン（.b32-btn）を鋭角化 */
+#battle32-root .b32-btn,
+#battle32-root .b32-btn::before,
+#battle32-root .b32-btn::after {
+  border-radius: 0 !important;
+}
+
+/* スキル詳細パネルも鋭角化 */
+#battle32-root .b32-action-detail-panel {
+  border-radius: 0 !important;
+}
+
+
+/* ============================================================
+   roster情報パネル・rosterカード：角丸撤廃
+   ============================================================ */
+
+#battle32-root .b32-roster-info-panel,
+#battle32-root .b32-roster-info-card {
+  border-radius: 0 !important;
+}
+
+
+/* ============================================================
+   操作ガイド：ボードの直下にフロー配置
+   ============================================================ */
+
+#battle32-root #b32-bottom-guide {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  line-height: 20px !important;
+  margin: 2px 0 0 0 !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
+  color: rgba(232, 238, 255, .82) !important;
+  text-shadow:
+    0 0 8px rgba(100, 180, 255, .42),
+    0 1px 3px rgba(0, 0, 0, .95) !important;
+  z-index: auto !important;
+  pointer-events: none !important;
+}
+
+/* iPhone SE など低い画面（幅430px以下 かつ 高さ740px以下）では
+   フォントを小さく */
+@media (max-width: 430px) and (max-height: 740px) {
+  #battle32-root #b32-bottom-guide {
+    font-size: 9px !important;
+  }
+}
+
+
+/* ============================================================
+   iPhone 14 / 大画面向けレイアウト強化
+   ─────────────────────────────────────────────────────────
+   SE は max-height:700px で縮小済み。
+   iPhone 14（393×852px）は max-width:430px に引っかかるため
+   「幅AND高さ」の複合条件で SE を除外し、
+   14 だけに拡大を当てる。
+   条件：幅360px以上 かつ 高さ750px以上
+   ============================================================ */
+@media (min-width: 360px) and (min-height: 750px) {
+
+  /* ── bottom-area：パディングを広げてボタンが被らないようにする ── */
+  #battle32-root #b32-bottom-area {
+    padding: 8px 10px max(18px, env(safe-area-inset-bottom, 18px)) !important;
+    gap: 6px !important;
+  }
+
+  /* ── キャラパネル行（party-status）：
+       幅を画面いっぱいに、カード間のギャップを広げる ── */
+  #battle32-root #b32-party-status {
+    width: 100% !important;
+    gap: 7px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* ── キャラカード本体：高さを拡大 ── */
+  #battle32-root .b32-party-card {
+    height: 116px !important;
+    padding: 6px 7px 7px !important;
+  }
+
+  /* 画像エリアをキャラが見える高さに */
+  #battle32-root .b32-party-img-wrap {
+    height: 66px !important;
+  }
+
+  /* ── ボトムアクションボタン行 ── */
+  #battle32-root #b32-actions {
+    gap: 6px !important;
+    margin-top: 2px !important;
+  }
+
+  /* ── ボタン1個のサイズ ── */
+  #battle32-root .b32-bottom-action {
+    min-height: 82px !important;
+    padding: 10px 6px 9px !important;
+  }
+
+  #battle32-root .b32-bottom-action-icon  { font-size: 20px !important; }
+  #battle32-root .b32-bottom-action-label { font-size: 14px !important; }
+  #battle32-root .b32-bottom-action-cost  { font-size: 10px !important; }
+  #battle32-root .b32-bottom-action-sub   { font-size: 10px !important; }
 }

@@ -4388,13 +4388,10 @@ if (listEl) {
 
  if (bs && bs.isRoguelite) {
    const roster = bs.roster || [];
-   const aliveAllies = (bs.allies || []).filter(a => a.hp > 0).length;
-   const deployLimit = bs.deployLimit || 4;
    const standby = roster.filter(r => r.status === 'standby');
 
-   if (aliveAllies >= deployLimit) {
-     summonSubText = `${aliveAllies}/${deployLimit}`;
-   } else if (_summonRosterId) {
+  if (_summonRosterId) {
+
      const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
      if (selectedRoster) {
        const cost = Number(selectedRoster.summonCost || 1);
@@ -4611,7 +4608,7 @@ if (listEl) {
    el.style.display = 'flex';
 
    const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
-   const atLimit = aliveCount >= (bs.deployLimit || 4);
+const atLimit = false;
    const RARITY_COLOR = { r: '#c0c0c0', sr: '#ffd700', ur: '#ff80ff' };
 
    el.innerHTML = bs.roster.map(r => {
@@ -4619,7 +4616,10 @@ if (listEl) {
      const isDeployed = r.status === 'deployed';
      const isDead = r.status === 'dead';
      const linkCost = r.summonCost || 1;
-     const canSummon = isStandby && !atLimit && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
+     const canSummon = 
+     isStandby && !atLimit &&
+      (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' &&
+       !bs.result;
      const isSummonSelected =
       (_summonMode && _summonRosterId === r.rosterId) ||
       (!_summonMode && _selectedRosterId === r.rosterId);

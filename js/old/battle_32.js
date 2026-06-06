@@ -458,7 +458,7 @@ const enemies = enemyDefs.map(def => {
 
       // ── ローグライト: ロスター（5体持ち込み）──
       roster: rosterData,
-      deployLimit: 4,
+      deployLimit: null,
 
       // ── ローグライト: アイテム2枠 ──
       items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 2) : [],
@@ -612,7 +612,7 @@ const enemies = enemyDefs.map(def => {
       link: _bs.link ? { ..._bs.link } : null,
       // ローグライト: roster / deployLimit / items
       roster: _bs.roster ? _bs.roster.map(r => ({ ...r })) : [],
-      deployLimit: _bs.deployLimit || 4,
+      deployLimit: _bs.deployLimit ?? null,
       items: _bs.items ? [..._bs.items] : [],
       // 後方互換用
       moveUsedThisTurn:  _bs.moveUsedThisTurn,
@@ -2184,7 +2184,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     const aliveCount = _bs.allies.filter(a => a.hp > 0).length;
     return _bs.roster.filter(r => r.status === 'standby').map(r => ({
       ...r,
-      canSummon: aliveCount < (_bs.deployLimit || 4) && _canSpendLink(LINK_COST.summon[r.rarity] || 1),
+      canSummon: _canSpendLink(LINK_COST.summon[r.rarity] || 1),
     }));
   }
 
@@ -2210,12 +2210,6 @@ if (canEnemyAttackAllyCore(enemy)) {
     const rEntry = _bs.roster.find(r => r.rosterId === rosterId);
     if (!rEntry || rEntry.status !== 'standby') {
       _log('召喚できません');
-      return false;
-    }
-
-    const aliveCount = _bs.allies.filter(a => a.hp > 0).length;
-    if (aliveCount >= (_bs.deployLimit || 4)) {
-      _log(`出撃数が上限（${_bs.deployLimit}体）に達しています`);
       return false;
     }
 

@@ -124,9 +124,9 @@ const CHARACTERS = [
         desc: 'ポジションを変更する。' },
     ]},
 
-  // ── id:2 タキヤマ（速度寄り）──────────────────────────────────
+  // ── id:2 シグレ（速度寄り）──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
-  { id: 2, name: 'タキヤマ', gender: 'woman', rarity: 'r',
+  { id: 2, name: 'シグレ', gender: 'woman', rarity: 'r',
     role: '速度寄り',
     moveType: 'silver',
     costMax: 10,
@@ -142,15 +142,16 @@ const CHARACTERS = [
     upImg: 'images/chara_02_up.webp', 
     battleImg: 'images/chara_02_battle.webp',
     battleBackImg: 'images/chara_02_battle_back.webp',
+    panelImg: 'images/chara_02_panel.webp',
     favScale: 0.85, favOffsetY: -25,
     skills: [
       { id: 's1',
-        name: '閃刃',
+        name: '神巫',
         cost: 3,
         isUltimate: false,
-        hit: 90,
+        hit: 100,
         type: 'attack',
-        multiplier: 1.0,
+        multiplier: 2.0,
         range: 'front1',
         pierce: false,
         effects: [],
@@ -158,55 +159,26 @@ const CHARACTERS = [
           idealMoves: [1],
           damageRate: 1.3
         },
-        desc: '素早い連続斬りで怪異を攻撃する。' },
+        desc: '素早い太刀で目の前の1マスを攻撃する。' },
 
-      { id: 's2',
-        name: '縛鎖',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.5,
-        range: 'front_row_3',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '鎖で怪異の動きを縛り、ATKを2ターン低下させる。' },
-
-      { id: 's3',
-        name: '加速',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'buff',
-        multiplier: 0.0,
-        range: 'self',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [0],
-          damageRate: 1.0
-        },
-        desc: '精神を研ぎ澄まし、ATKを2ターン上昇させる。' },
-
-      { id: 'ult',
-        name: '疾走',
-        cost: 10,
-        isUltimate: true,
-        hit: 100,
-        type: 'move',
-        multiplier: 1.0,
-        range: 'front_row_3',
-        pierce: false,
-        effects: [],
-        moveBonus: {
-          idealMoves: [1],
-          damageRate: 1.0
-        },
-        desc: '素早くポジションを移動する。' }
+      {
+  id: 'ult',
+  name: '時雨',
+  cost: 10,
+  isUltimate: true,
+  hit: 100,
+  type: 'attack',
+  multiplier: 3.0,
+  range: 'cross_tail_6',
+  pierce: false,
+  effects: [],
+  hitStyle: 'multi',
+  moveBonus: {
+    idealMoves: [1],
+    damageRate: 1.5
+  },
+  desc: '上2マス、左右、斜め下左右を攻撃する。'
+}
     ]},
 
   // ── id:3 マツバラ（耐久寄り）──────────────────────────────────
@@ -1673,6 +1645,10 @@ const CHARACTERS = [
     battleImg: 'images/chara_08_battle.webp',
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
+    uiScale: {
+    panel: 1.0,
+    battleBack: 1.15
+    },
     skills: [
       { id: 's1',
         name: 'ほいっ！',

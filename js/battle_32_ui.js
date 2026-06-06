@@ -515,7 +515,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  flex-direction: column;
  align-items: center;
  justify-content: center;
- border-radius: 9px;
+ border-radius: 0;
  border: 1px solid rgba(255,255,255,.12);
  background: rgba(255,255,255,.05);
  color: rgba(232,228,220,.85);
@@ -1337,14 +1337,16 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  display: flex;
  align-items: center;
  justify-content: center;
- transform: rotateX(-50deg);
+ /* board の rotateX(38deg) を相殺する基本値。
+  * 実際の上書きは battle_32_ui.css の .b32-core-object ルールで行う */
+ transform: rotateX(-38deg);
  transform-origin: center center;
  pointer-events: none;
 }
 
 .b32-core-img {
- width: 115%;
- height: 115%;
+ width: 100%;
+ height: 100%;
  object-fit: contain;
  filter:
  drop-shadow(0 0 6px rgba(80, 240, 255, .75))
@@ -1485,12 +1487,12 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 }
 
 @keyframes b32CoreObjectHit {
- 0% { transform: rotateX(-50deg) translateX(0) scale(1); }
- 15% { transform: rotateX(-50deg) translateX(-5px) scale(1.12); }
- 30% { transform: rotateX(-50deg) translateX(6px) scale(1.08); }
- 48% { transform: rotateX(-50deg) translateX(-4px) scale(1.10); }
- 70% { transform: rotateX(-50deg) translateX(2px) scale(1.04); }
- 100% { transform: rotateX(-50deg) translateX(0) scale(1); }
+ 0%   { transform: translate(-50%, -50%) rotateX(-38deg) translateX(0)    scale(1); }
+ 15%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(-5px) scale(1.12); }
+ 30%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(6px)  scale(1.08); }
+ 48%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(-4px) scale(1.10); }
+ 70%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(2px)  scale(1.04); }
+ 100% { transform: translate(-50%, -50%) rotateX(-38deg) translateX(0)    scale(1); }
 }
 
 #b32-enemy-info-overlay {
@@ -1626,6 +1628,37 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
 .b32-enemy-quick-row strong {
  color: #fff0d0;
+}
+
+/* ── ロスター情報 閉じるボタン：タップ優先 ── */
+#battle32-root .b32-roster-info-panel {
+ position: fixed !important;
+ pointer-events: auto !important;
+}
+#battle32-root .b32-roster-info-close {
+ position: absolute !important;
+ top: 6px !important;
+ right: 6px !important;
+ z-index: 3000010 !important;
+ pointer-events: auto !important;
+ touch-action: manipulation !important;
+ -webkit-tap-highlight-color: transparent;
+ width: 28px !important;
+ height: 28px !important;
+ border-radius: 999px !important;
+ border: 1px solid rgba(255,255,255,.22) !important;
+ background: rgba(0,0,0,.68) !important;
+ color: rgba(232,228,220,.96) !important;
+ font-size: 18px !important;
+ line-height: 1 !important;
+ display: flex !important;
+ align-items: center !important;
+ justify-content: center !important;
+ cursor: pointer !important;
+}
+#battle32-root .b32-roster-info-close:active {
+ transform: scale(.92);
+ background: rgba(255,255,255,.14) !important;
 }
 
 /* ── Battle右上メニュー ── */
@@ -2303,10 +2336,11 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  <div class="b32-zone-label" style="bottom:0">ALLY</div>
  </div>
 
+ <div id="b32-bottom-guide"></div>
+
  <div id="b32-log-wrap"><div id="b32-log"></div></div>
 
  <div id="b32-bottom-area">
- <div id="b32-bottom-guide"></div>
 
  <!-- パーティステータス：常時表示 -->
  <div id="b32-party-status"></div>
@@ -4155,43 +4189,50 @@ if (listEl) {
         r.status || '—';
 
       listEl.innerHTML = `
-        <div class="b32-roster-info-panel">
-          <div class="b32-roster-info-card">
-            <div class="b32-roster-info-rarity">${rarity}</div>
-            <div class="b32-roster-info-img-wrap">
-              ${img
-                ? `<img class="b32-roster-info-img" src="${img}" alt="" onerror="this.style.display='none'">`
-                : `<div class="b32-roster-info-initial">${initial(r.name)}</div>`
-              }
-            </div>
-          </div>
+  <div class="b32-roster-info-panel">
+    <button
+      type="button"
+      class="b32-roster-info-close"
+      onclick="_b32CloseRosterInfo(event)"
+      onpointerdown="_b32CloseRosterInfo(event)"
+      ontouchstart="_b32CloseRosterInfo(event)"
+      aria-label="閉じる"
+    >×</button>
 
-          <div class="b32-roster-info-main">
-            <div class="b32-roster-info-title">
-              <span class="name">${r.name || c.name || 'UNKNOWN'}</span>
-              <span class="cost">召喚LINK ${cost}</span>
-            </div>
+    <div class="b32-roster-info-card">
+      <div class="b32-roster-info-rarity">${rarity}</div>
+      <div class="b32-roster-info-img-wrap">
+        ${img
+          ? `<img class="b32-roster-info-img" src="${img}" alt="" onerror="this.style.display='none'">`
+          : `<div class="b32-roster-info-initial">${initial(r.name)}</div>`
+        }
+      </div>
+    </div>
 
-            <div class="b32-roster-info-role">
-              ${role}　/　HP ${hp}　ATK ${atk}
-            </div>
+    <div class="b32-roster-info-main">
+      <div class="b32-roster-info-title">
+  <span class="name">${r.name || c.name || 'UNKNOWN'}</span>
+</div>
+      <div class="b32-roster-info-role">
+        ${role}　/　HP ${hp}　ATK ${atk}
+      </div>
 
-            <div class="b32-roster-info-desc">
-              ${c.desc || firstSkill?.desc || '戦闘に参加する祓い手。'}
-            </div>
+      <div class="b32-roster-info-desc">
+        ${c.desc || firstSkill?.desc || '戦闘に参加する祓い手。'}
+      </div>
 
-            <div class="b32-roster-info-skill">
-              <span>スキル</span>
-              <strong>${firstSkill ? firstSkill.name : '—'}</strong>
-              <em>${firstSkill ? firstSkill.desc || '' : ''}</em>
-            </div>
+      <div class="b32-roster-info-skill">
+        <span>スキル</span>
+        <strong>${firstSkill ? firstSkill.name : '—'}</strong>
+        <em>${firstSkill ? firstSkill.desc || '' : ''}</em>
+      </div>
 
-            <div class="b32-roster-info-status">
-              ${statusLabel}
-            </div>
-          </div>
-        </div>
-      `;
+      <div class="b32-roster-info-status">
+        ${statusLabel}
+      </div>
+    </div>
+  </div>
+`;
     } else {
       listEl.innerHTML = '';
     }
@@ -4378,13 +4419,9 @@ if (listEl) {
 
  if (bs && bs.isRoguelite) {
    const roster = bs.roster || [];
-   const aliveAllies = (bs.allies || []).filter(a => a.hp > 0).length;
-   const deployLimit = bs.deployLimit || 4;
    const standby = roster.filter(r => r.status === 'standby');
 
-   if (aliveAllies >= deployLimit) {
-     summonSubText = `${aliveAllies}/${deployLimit}`;
-   } else if (_summonRosterId) {
+   if (_summonRosterId) {
      const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
      if (selectedRoster) {
        const cost = Number(selectedRoster.summonCost || 1);
@@ -4513,7 +4550,10 @@ if (listEl) {
  renderResult(bs);
  renderBattleMenu(bs);
  
- requestAnimationFrame(fitBattle32Layout);
+ requestAnimationFrame(() => {
+   fitBattle32Layout();
+   _syncRosterInfoCloseHitbox();
+ });
 };
 
  // ============================================================
@@ -4537,7 +4577,7 @@ if (listEl) {
   'padding:6px 12px 4px',
   'background:rgba(6,4,18,.72)',
   'border:1px solid rgba(100,80,200,.25)',
-  'border-radius:8px',
+  'border-radius:0',
   'pointer-events:none',
 ].join(';');
 
@@ -4579,25 +4619,28 @@ if (listEl) {
      el.id = 'b32-roster-panel';
     el.style.cssText = [
   'position:fixed',
-  'bottom:calc(86px + env(safe-area-inset-bottom, 0px))',
-  'left:0',
-  'right:0',
+  'bottom:calc(124px + env(safe-area-inset-bottom, 0px))',
+  'left:50%',
+  'right:auto',
+  'transform:translateX(-50%)',
+  'width:min(calc(100vw - 16px), 420px)',
   'z-index:3000000',
   'display:flex',
-  'gap:4px',
-  'padding:6px 8px',
-  'background:rgba(6,4,18,.92)',
-  'border-top:1px solid rgba(100,80,200,.25)',
-  'overflow-x:auto',
+  'justify-content:space-between',
+  'align-items:center',
+  'gap:5px',
+  'padding:0',
+  'background:transparent',
+  'border-top:none',
+  'overflow:visible',
   '-webkit-overflow-scrolling:touch',
 ].join(';');
+
      document.body.appendChild(el);
    }
    if (!bs || !bs.roster || !bs.isRoguelite) { el.style.display = 'none'; return; }
    el.style.display = 'flex';
 
-   const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
-   const atLimit = aliveCount >= (bs.deployLimit || 4);
    const RARITY_COLOR = { r: '#c0c0c0', sr: '#ffd700', ur: '#ff80ff' };
 
    el.innerHTML = bs.roster.map(r => {
@@ -4605,7 +4648,7 @@ if (listEl) {
      const isDeployed = r.status === 'deployed';
      const isDead = r.status === 'dead';
      const linkCost = r.summonCost || 1;
-     const canSummon = isStandby && !atLimit && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
+     const canSummon = isStandby && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
      const isSummonSelected =
       (_summonMode && _summonRosterId === r.rosterId) ||
       (!_summonMode && _selectedRosterId === r.rosterId);
@@ -4622,32 +4665,25 @@ if (listEl) {
 
      return `<div onclick="_b32OnRosterTap('${r.rosterId}')"
        style="
-         flex-shrink:0;width:56px;
+         flex-shrink:1;width:min(18vw, 76px);
          display:flex;flex-direction:column;align-items:center;gap:2px;
          cursor:${canSummon ? 'pointer' : 'default'};
-         border-radius:8px;padding:4px 2px;
+         border-radius:0;padding:4px 2px;
          border:1.5px solid ${isSummonSelected ? 'rgba(140,100,255,.9)' : isStandby ? 'rgba(100,80,200,.4)' : 'rgba(60,50,100,.3)'};
          background:${isSummonSelected ? 'rgba(80,40,180,.3)' : 'rgba(20,15,40,.6)'};
          opacity:${isDead ? '0.4' : isDeployed ? '0.7' : '1'};
          transition:border-color .15s,background .15s;
          box-shadow:${isSummonSelected ? '0 0 12px rgba(120,80,255,.5)' : 'none'};
        ">
-       <div style="font-size:7px;letter-spacing:1px;color:${rarColor};font-family:'Cinzel',serif;">${r.rarity.toUpperCase()}</div>
-       <div style="width:40px;height:40px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+       <div style="font-size:8px;letter-spacing:1px;color:${rarColor};font-family:'Cinzel',serif;">${r.rarity.toUpperCase()}</div>
+       <div style="width:min(14vw,60px);height:min(14vw,60px);border-radius:0;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
          ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;object-position:top center;" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
        </div>
-       <div style="font-size:7px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
-       <div style="font-size:7px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
+       <div style="font-size:8px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
+       <div style="font-size:8px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
      </div>`;
    }).join('');
 
-   // 盤面出撃数表示
-   const countEl = `<div style="flex-shrink:0;width:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
-     <div style="font-family:'Cinzel',serif;font-size:9px;color:rgba(140,110,200,.6);">出撃</div>
-     <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:${atLimit ? 'rgba(255,100,100,.8)' : 'rgba(160,130,255,.9)'};">${aliveCount}/${bs.deployLimit || 4}</div>
-     <div style="font-size:7px;color:rgba(100,80,160,.5);">${atLimit ? '上限' : '人'}</div>
-   </div>`;
-   el.innerHTML = countEl + el.innerHTML;
  }
 
  // ============================================================
@@ -4678,7 +4714,7 @@ if (listEl) {
      const item = items[i];
      if (!item) {
        return `<div style="
-         width:52px;height:52px;border-radius:8px;
+         width:52px;height:52px;border-radius:0;
          border:1px dashed rgba(100,80,200,.25);
          background:rgba(20,15,40,.4);
          display:flex;align-items:center;justify-content:center;
@@ -4689,7 +4725,7 @@ if (listEl) {
      const canUse = bs.phase === 'skill' && !bs.result && bs.link && bs.link.current >= linkCost && !item.used;
      const isActive = _itemMode && _itemSlotIndex === i;
      return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
-       width:52px;min-height:52px;border-radius:8px;padding:4px;
+       width:52px;min-height:52px;border-radius:0;padding:4px;
        border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
        background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
        opacity:${canUse ? '1' : '0.45'};
@@ -4738,14 +4774,6 @@ window._b32OnBottomSummonTap = function () {
   if (!r || r.status !== 'standby') {
     const guide = document.getElementById('b32-bottom-guide');
     if (guide) guide.textContent = 'このキャラは召喚できません。';
-    return;
-  }
-
-  const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
-  const deployLimit = bs.deployLimit || 4;
-  if (aliveCount >= deployLimit) {
-    const guide = document.getElementById('b32-bottom-guide');
-    if (guide) guide.textContent = '最大出撃数に到達しています。';
     return;
   }
 
@@ -4806,6 +4834,91 @@ window._b32OnRosterTap = function(rosterId) {
 
   renderBattle32UI();
 };
+
+function _closeRosterInfoHard(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') {
+      event.stopImmediatePropagation();
+    }
+  }
+
+  _selectedRosterId = null;
+
+  const hitbox = document.getElementById('b32-roster-info-close-hitbox');
+  if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
+
+  renderBattle32UI();
+}
+
+window._b32CloseRosterInfo = _closeRosterInfoHard;
+
+function _syncRosterInfoCloseHitbox() {
+  let hitbox = document.getElementById('b32-roster-info-close-hitbox');
+  const panel = document.querySelector('#battle32-root .b32-roster-info-panel');
+
+  if (!_selectedRosterId || !panel) {
+    if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
+    return;
+  }
+
+  if (!hitbox) {
+    hitbox = document.createElement('button');
+    hitbox.id = 'b32-roster-info-close-hitbox';
+    hitbox.type = 'button';
+    hitbox.textContent = '×';
+    hitbox.setAttribute('aria-label', '閉じる');
+
+    ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(type => {
+      hitbox.addEventListener(type, _closeRosterInfoHard, { capture: true, passive: false });
+    });
+
+    document.body.appendChild(hitbox);
+  }
+
+  const r = panel.getBoundingClientRect();
+  const size = 34;
+  const left = Math.max(6, Math.min(window.innerWidth - size - 6, r.right - size - 6));
+  const top = Math.max(6, Math.min(window.innerHeight - size - 6, r.top + 6));
+
+  hitbox.style.cssText = [
+    'position:fixed',
+    `left:${left}px`,
+    `top:${top}px`,
+    `width:${size}px`,
+    `height:${size}px`,
+    'z-index:2147483647',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'border-radius:999px',
+    'border:1px solid rgba(255,255,255,.26)',
+    'background:rgba(0,0,0,.78)',
+    'color:rgba(232,228,220,.98)',
+    'font-size:21px',
+    'line-height:1',
+    "font-family:'Cinzel',serif",
+    'cursor:pointer',
+    'pointer-events:auto',
+    'touch-action:manipulation',
+    '-webkit-tap-highlight-color:transparent',
+    'box-shadow:0 0 12px rgba(0,0,0,.65)'
+  ].join(';');
+}
+
+// インライン onclick が届かない端末・重なり順でも拾うため、capture で保険をかける
+if (!window.__b32RosterCloseCaptureBound) {
+  window.__b32RosterCloseCaptureBound = true;
+  ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(type => {
+    document.addEventListener(type, function(e) {
+      const t = e.target;
+      if (t && t.closest && t.closest('.b32-roster-info-close, #b32-roster-info-close-hitbox')) {
+        _closeRosterInfoHard(e);
+      }
+    }, { capture: true, passive: false });
+  });
+}
 
  // 召喚マスタップ
  window._b32OnSummonCellTap = async function(row, col) {
@@ -4970,7 +5083,10 @@ window._b32OnRosterTap = function(rosterId) {
 }
 
  window.addEventListener('resize', () => {
- requestAnimationFrame(fitBattle32Layout);
+ requestAnimationFrame(() => {
+   fitBattle32Layout();
+   _syncRosterInfoCloseHitbox();
+ });
  });
 
  // ============================================================
@@ -4986,6 +5102,8 @@ window._b32OnRosterTap = function(rosterId) {
    const el = document.getElementById(id);
    if (el) el.style.display = 'none';
  });
+ const rosterCloseHitbox = document.getElementById('b32-roster-info-close-hitbox');
+ if (rosterCloseHitbox && rosterCloseHitbox.parentNode) rosterCloseHitbox.parentNode.removeChild(rosterCloseHitbox);
 
  const nav = document.getElementById('bottom-nav-shared');
  if (nav) nav.style.display = '';
