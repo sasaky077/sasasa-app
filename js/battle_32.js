@@ -1800,6 +1800,10 @@ if (canEnemyAttackAllyCore(enemy)) {
 
       if (!BR.isValidCell(row, col)) return;
 
+      // 自陣コアのマスには味方も移動不可（敵と同様）
+      const allyCore = _bs.cores && _bs.cores.ally;
+      if (allyCore && row === allyCore.row && col === allyCore.col) return;
+
       const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
 
       // 同陣営ユニットがいるマスには移動不可
@@ -1830,6 +1834,13 @@ if (canEnemyAttackAllyCore(enemy)) {
       const ally = _bs.allies.find(u => u._uid === allyUid);
       if (!ally || ally.hp <= 0) return false;
       if (!_canUsePlayerAction('move', allyUid)) return false;
+
+      // 自陣コアマスへの直叩き対策（最終ガード）
+      const _allyCore = _bs.cores && _bs.cores.ally;
+      if (_allyCore && toRow === _allyCore.row && toCol === _allyCore.col) {
+        _log('自陣コアのマスには移動できない');
+        return false;
+      }
 
       const moveCells = getMoveCells(allyUid);
       const targetCell = moveCells.find(c => c.row === toRow && c.col === toCol);
@@ -1909,7 +1920,32 @@ if (canEnemyAttackAllyCore(enemy)) {
     const skill = ally.skills.find(s => s.id === skillId);
     if (!skill) return [];
 
-    const cells = BR.getCellsFromRange32(ally, skill.range);
+    // enemy_all / ally_all は盤面全体ではなく実ユニット位置のみをガイド表示する
+    let cells = BR.getCellsFromRange32(ally, skill.range);
+
+    console.log('[B32 RangeGuide]', {
+      ally: ally.name,
+      skill: skill.name,
+      range: skill.range,
+      type: skill.type,
+      cells: Array.from(cells),
+    });
+
+    const isEnemyRangeAll = skill.range === 'enemy_all' || skill.range === 'all';
+    const isAllyRangeAll  = skill.range === 'ally_all';
+    if (isEnemyRangeAll && ['attack', 'debuff'].includes(skill.type)) {
+      cells = new Set(
+        _bs.enemies
+          .filter(u => u.hp > 0)
+          .map(u => `${u.row}-${u.col}`)
+      );
+    } else if (isAllyRangeAll && ['heal', 'buff'].includes(skill.type)) {
+      cells = new Set(
+        _bs.allies
+          .filter(u => u.hp > 0)
+          .map(u => `${u.row}-${u.col}`)
+      );
+    }
 
     // ユニット位置マップを作成（セル種別判定に使う）
     // HP0の味方・雑魚敵は除外。ボスはHP0後も残す。
@@ -1923,6 +1959,8 @@ if (canEnemyAttackAllyCore(enemy)) {
 
     const isEnemySkill = ['attack', 'debuff'].includes(skill.type);
     const isAllySkill  = ['heal', 'buff'].includes(skill.type);
+
+    if (cells.size === 0) return [];
 
     return Array.from(cells).map(key => {
       const [r, c] = key.split('-').map(Number);

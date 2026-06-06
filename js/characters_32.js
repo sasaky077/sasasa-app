@@ -14,17 +14,21 @@
   const RANGE_32_MAP = {
     // 旧バトル系 range → 32マス用への変換
     front1:        'front_ally',          // 前方1マス（ally向き）
+    front2:        'pierce_ally_2',       // 前方直線2マス
     front3:        'pierce_ally_3',       // 前方直線3マス
-    pierce3:       'pierce_ally_3',       // 同上（別名）
+    pierce2:       'pierce_ally_2',       // 前方直線2マス（別名）
+    pierce3:       'pierce_ally_3',       // 前方直線3マス（別名）
+    pierce_ally_2: 'pierce_ally_2',
     pierce_ally_3: 'pierce_ally_3',
     adjacent:      'adjacent',
     self:          'self',
     around8:       'around8',
+    around24:      'around24',
 
     front_row_3:   'front_row_3_ally',    // 前方横3マス（前・左前・右前）
     front3_row_3:  'front3_row_3_ally',   // 前方3行×横3マス
-    front_9:      'front_9_ally',
-    front_9_ally: 'front_9_ally',
+    front_9:       'front_9_ally',
+    front_9_ally:  'front_9_ally',
     all:           'enemy_all',           // 全体（敵対象スキル時は敵全体）
     enemy_all:     'enemy_all',
     ally_all:      'ally_all',
@@ -35,6 +39,14 @@
     diag_ally_3:    'diag_ally_3',
     diag_v3:        'diag_v_ally_3',      // 前方左右斜め3マス（V字）
     diag_v_ally_3:  'diag_v_ally_3',
+
+    // 追加：未変換で警告が出ていたレンジ名
+    cross:         'cross_32',           // 十字（上下左右1マス）
+    col_center:    'col_center_32',      // 自列縦全体（特殊処理）
+    side_lr:       'side_lr',            // 左右のみ
+    diag_x_2:      'diag_x_2',          // 斜めX字2マス
+    twin_cross_4:  'twin_cross_4',       // ツイン十字4マス
+    twin_star_8:   'twin_star_8',        // ツイン星8マス
   };
 
   function convertRangeTo32(range) {

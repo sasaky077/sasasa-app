@@ -80,6 +80,46 @@ diag_x_2: [
   { dr:  2, dc:  2 },
 ],
 
+    // ── 旧range名互換エイリアス ──────────────────────────────
+    // ローグライト等でcharacters_32.jsの変換を通らずに旧名が来ても壊れないようにする
+
+    // front1 = front_ally（目の前1マス）
+    front1: [{ dr: -1, dc: 0 }],
+
+    // front2 = pierce_ally_2（前方直線2マス）
+    front2: [
+      { dr: -1, dc: 0 },
+      { dr: -2, dc: 0 },
+    ],
+
+    // front3 = pierce_ally_3（前方直線3マス）
+    front3: [
+      { dr: -1, dc: 0 },
+      { dr: -2, dc: 0 },
+      { dr: -3, dc: 0 },
+    ],
+
+    // pierce2 = pierce_ally_2
+    pierce2: [
+      { dr: -1, dc: 0 },
+      { dr: -2, dc: 0 },
+    ],
+
+    // pierce3 = pierce_ally_3
+    pierce3: [
+      { dr: -1, dc: 0 },
+      { dr: -2, dc: 0 },
+      { dr: -3, dc: 0 },
+    ],
+
+    // pierce_ally_2（前方直線2マス・ally向き）
+    pierce_ally_2: [
+      { dr: -1, dc: 0 },
+      { dr: -2, dc: 0 },
+    ],
+
+    // ────────────────────────────────────────────────────────
+
     // 前方隣接1マス（ally: 上）
     front_ally: [{ dr: -1, dc: 0 }],
 
@@ -142,6 +182,14 @@ diag_x_2: [
       { dr:  1, dc: -2 }, // 左下
       { dr:  1, dc:  2 }, // 右下
       { dr:  2, dc: -2 }, // 左下奥
+    ],
+
+    // 十字（上下左右1マス）
+    cross_32: [
+      { dr: -1, dc:  0 },
+      { dr:  1, dc:  0 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 },
     ],
 
     // ── 敵専用攻撃レンジ（盤面固定方向：dr 方向はそのまま使用） ──
@@ -395,6 +443,17 @@ enemy_zako_diag: [
 
   // ユーザー位置とレンジ定義からマスセットを取得
   function getCellsFromRange32(user, range) {
+    // col_center_32: ユーザーの列を縦全体（特殊処理）
+    if (range === 'col_center_32') {
+      const s = new Set();
+      if (user && user.col != null) {
+        for (let r = 0; r < 8; r++) {
+          if (isValidCell(r, user.col)) s.add(`${r}-${user.col}`);
+        }
+      }
+      return s;
+    }
+
     const normalized = normalizeRange32(range);
     if (!normalized) return new Set();
     if (normalized.origin === 'field') return cellsFromField32(normalized.cells);

@@ -1179,24 +1179,45 @@ const CHARACTERS = [
     favScale: 0.95, favOffsetY: 15,
     skills: [
       { id: 's1',
-  name: '麻酔針',
-  cost: 3,
-  isUltimate: false,
-  hit: 100,
-  type: 'attack',
-  multiplier: 0.8,
-  range: 'pierce_ally_3',
-  pierce: false,
-  effects: [
-    { type: 'stun', target: 'enemy', duration: 1, hit: 100 }
-  ],
-  moveBonus: {
-    idealMoves: [0, 2, 4, 6],
-    damageRate: 1.0
-  },
-  desc: '前方の敵に麻酔針を撃ち込み、1ターン行動不能にする。'
-}
-        ]},
+        name: '麻酔針',
+        cost: 3,
+        isUltimate: false,
+        hit: 100,
+        type: 'attack',
+        multiplier: 0.8,
+        range: 'pierce_ally_3',
+        pierce: false,
+        effects: [
+          { type: 'stun', target: 'enemy', duration: 1, hit: 100 }
+        ],
+        moveBonus: {
+          idealMoves: [0, 2, 4, 6],
+          damageRate: 1.0
+        },
+        desc: '前方の敵に麻酔針を撃ち込み、1ターン行動不能にする。'
+      },
+      {
+        id: 'ult',
+        name: '神体実験',
+        cost: 0,
+        shinkiCost: 7,
+        isUltimate: true,
+        hit: 100,
+        type: 'debuff',
+        multiplier: 1.5,
+        range: 'enemy_all',
+        pierce: false,
+        effects: [
+          { type: 'stun',     target: 'enemy', duration: 1, hit: 100 },
+          { type: 'atk_down', target: 'enemy', duration: 2, hit: 100 }
+        ],
+        moveBonus: {
+          idealMoves: [0],
+          damageRate: 1.0
+        },
+        desc: '敵全体に麻酔領域を展開し、スタンとATK低下を付与する。'
+      }
+    ]},
 
   // ── id:20 ミズキ（速度寄り）──────────────────────────────────
   // 強制移動でポジションを支配する。
