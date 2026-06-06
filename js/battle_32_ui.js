@@ -36,12 +36,27 @@
  let _selActionAllyUid = null; // 行動選択メニューを表示中の味方キャラ
  let _selectedEnemyUid = null; // 敵情報表示・移動ガイド対象
 
+// ============================================================
+// ステート — 召喚 / アイテム操作
+// ============================================================
+let _summonMode = false;
+let _summonRosterId = null;
+
+let _selectedRosterId = null; // キャラ情報表示用
+
+let _itemMode = false;
+let _itemSlotIndex = null;
+let _itemPhase = null;       // 'target' | 'cell'
+let _itemTargetUid = null;
+
  function _resetSkillState() {
  _selMoveAllyUid = null;
  _selSkillAllyUid = null;
  _selSkillId = null;
  _moveMode = false;
  _selActionAllyUid = null;
+
+ _selectedRosterId = null;
 
  const box = document.getElementById('b32-skill-detail-box');
  if (box) {
@@ -65,6 +80,51 @@
  function _bs() {
  return window.Battle32 && window.Battle32.getState ? window.Battle32.getState() : null;
  }
+
+ // ============================================================
+ // LINK ベース行動可否判定ヘルパー（UI表示・押下可否用）
+ // ※ 実際のLINK消費は battle_32.js 側で行う
+ // ============================================================
+
+ /**
+  * LINKが足りるか（UI表示・disabled判定用）
+  * LINK未導入の通常Battle32では常にtrue（後方互換）
+  */
+ function _canActByLink(bs, cost) {
+   if (!bs || bs.result || bs.phase !== 'skill') return false;
+   if (!bs.link) return true; // 通常Battle32互換：LINKなしは常に行動可
+   const need = Number(cost || 0);
+   const current = Number(bs.link.current || 0);
+   return current >= need;
+ }
+
+ /**
+  * ユニットがこのターンまだ駒アクション（移動/スキル/ULT）をしていないか
+  * unitActionDone フラグで一元管理
+  */
+ function _unitCanAct(bs, unitUid) {
+   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
+   return !h.unitActionDone;
+ }
+
+ function _getActiveActionAllyUid() {
+  return _selActionAllyUid || _selMoveAllyUid || _selSkillAllyUid || null;
+}
+
+function _clearActionModesKeepUnit(uid) {
+  _selActionAllyUid = uid || null;
+  _selMoveAllyUid = null;
+  _selSkillAllyUid = null;
+  _selSkillId = null;
+  _moveMode = false;
+
+  // 召喚・アイテム状態も解除
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
+}
 
  // cellType 付き Map を返す: key = "row-col", value = cellType
  function _skillRangeCells(allyUid, skillId) {
@@ -1727,8 +1787,36 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  document.head.appendChild(moveCaptureStyle);
  }
 
-
- // ── スタンエフェクト用スタイル ──
+ // ── 召喚マス・アイテムターゲット スタイル ──
+ if (!document.getElementById('b32-summon-item-style')) {
+   const siStyle = document.createElement('style');
+   siStyle.id = 'b32-summon-item-style';
+   siStyle.textContent = `
+     /* ── 召喚可能マス（青系） ── */
+     .b32-cell.summon-cell {
+       background:
+         radial-gradient(circle at center, rgba(80,160,255,.22), transparent 62%),
+         rgba(10,30,70,.24) !important;
+       border-color: rgba(80,160,255,.72) !important;
+       box-shadow:
+         inset 0 0 14px rgba(60,140,255,.22),
+         0 0 14px rgba(60,140,255,.28) !important;
+       cursor: pointer;
+     }
+     /* ── アイテム移動先マス（緑系） ── */
+     .b32-cell.item-cell-target {
+       background:
+         radial-gradient(circle at center, rgba(80,220,140,.20), transparent 62%),
+         rgba(10,50,30,.22) !important;
+       border-color: rgba(80,220,140,.65) !important;
+       box-shadow:
+         inset 0 0 12px rgba(60,200,120,.20),
+         0 0 12px rgba(60,200,120,.24) !important;
+       cursor: pointer;
+     }
+   `;
+   document.head.appendChild(siStyle);
+ }
  if (!document.getElementById('b32-stun-style')) {
  const stunStyle = document.createElement('style');
  stunStyle.id = 'b32-stun-style';
@@ -2210,6 +2298,51 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  </div>
  </div>
 </div>
+
+<!-- ボトム固定アクションバー -->
+<div id="b32-actions" class="b32-bottom-actions">
+  <button id="b32-btn-summon" class="b32-bottom-action summon" type="button" onclick="_b32OnBottomSummonTap()">
+    <span class="b32-bottom-action-main">
+      <span class="b32-bottom-action-icon">✦</span>
+      <span class="b32-bottom-action-label">召喚</span>
+    </span>
+    <span class="b32-bottom-action-cost">LINK <span id="b32-btn-summon-cost">-</span></span>
+    <span class="b32-bottom-action-sub" id="b32-btn-summon-sub">待機選択</span>
+  </button>
+
+  <button id="b32-btn-move" class="b32-bottom-action move" type="button" onclick="_b32OnActionMoveTap()">
+    <span class="b32-bottom-action-main">
+      <span class="b32-bottom-action-icon">➜</span>
+      <span class="b32-bottom-action-label">移動</span>
+    </span>
+    <span class="b32-bottom-action-cost">LINK 1</span>
+  </button>
+
+  <button id="b32-btn-skill" class="b32-bottom-action skill" type="button" onclick="_b32OnActionSkillTap()">
+    <span class="b32-bottom-action-main">
+      <span class="b32-bottom-action-icon">✦</span>
+      <span class="b32-bottom-action-label">スキル</span>
+    </span>
+    <span class="b32-bottom-action-cost">LINK 2</span>
+  </button>
+
+  <button id="b32-btn-ult" class="b32-bottom-action ult" type="button" onclick="_b32OnActionUltTap()">
+    <span class="b32-bottom-action-main">
+      <span class="b32-bottom-action-icon">✧</span>
+      <span class="b32-bottom-action-label">ULT</span>
+    </span>
+    <span class="b32-bottom-action-cost">LINK 3</span>
+  </button>
+
+  <button id="b32-btn-end-skill" class="b32-bottom-action end" type="button" onclick="_b32OnActionEndTap()">
+    <span class="b32-bottom-action-main">
+      <span class="b32-bottom-action-icon">⌛</span>
+      <span class="b32-bottom-action-label">終了</span>
+    </span>
+    <span class="b32-bottom-action-cost">ターン終了</span>
+  </button>
+</div>
+
 </div>
 
  </div>
@@ -2793,12 +2926,12 @@ function _onHealEvent(data) {
  let captureCells = new Set(); // 駒取りマス
 
  if (bs.phase === 'skill') {
- // ── 新仕様：actionCount / unitActionHistory で判定 ──
- const canAct = !bs.result
- && (bs.actionCount || 0) < (bs.actionMax || 2);
+ // ── LINK + unitActionDone で行動可否を判定 ──
+ const canAct = !bs.result && _canActByLink(bs, 1);
  const _history = bs.unitActionHistory || {};
- const canMoveUnit = (uid) => canAct && !(_history[uid] || {}).move;
- const canSkillUnit = (uid) => canAct && !(_history[uid] || {}).skill;
+ // 駒アクション（移動/スキル/ULT）は1ターン1回 → unitActionDone で一元管理
+ const canMoveUnit  = (uid) => canAct && !(_history[uid] || {}).unitActionDone;
+ const canSkillUnit = (uid) => canAct && !(_history[uid] || {}).unitActionDone;
 
  if (_moveMode && _selMoveAllyUid) {
  // ── 移動先マス選択中 ──
@@ -2872,6 +3005,24 @@ if (_selectedEnemyUid) {
  }
 }
 
+ // ── ローグライト: 召喚マス ──
+ const summonCells = _summonMode ? _getSummonCells() : new Set();
+
+ // ── ローグライト: アイテム対象（転位符の移動先マス）──
+ // _itemPhase === 'cell' のとき: 盤面の空きマスをクリック可能にする
+ let itemCellTargets = new Set();
+ if (_itemMode && _itemPhase === 'cell' && _itemTargetUid) {
+   for (let r = 0; r < 8; r++) {
+     for (let c = 0; c < 5; c++) {
+       const key = `${r}-${c}`;
+       const occupied = unitMap[key];
+       const allyCore = bs.cores && bs.cores.ally;
+       if (allyCore && r === allyCore.row && c === allyCore.col) continue;
+       if (!occupied) itemCellTargets.add(key);
+     }
+   }
+ }
+
  const cells = [];
  for (let r = 0; r < 8; r++) {
  for (let c = 0; c < 5; c++) {
@@ -2894,6 +3045,12 @@ if (_selectedEnemyUid) {
  // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
  const bossDangerType = bossDangerCells.get(key);
  const isEnemyMoveGuide = enemyGuideCells.has(key);
+ // ローグライト: 召喚マス
+ const isSummonCell = summonCells.has(key);
+ // ローグライト: アイテム対象（転位符移動先）
+ const isItemCell = itemCellTargets.has(key);
+ // ローグライト: アイテム対象の味方（heal/転位符）
+ const isItemAllyTarget = _itemMode && _itemPhase === 'target' && unit && unit.side === 'ally' && unit.hp > 0;
 
  let cls = `b32-cell ${zoneClass}`;
  if (isDivider) cls += ' row-divider';
@@ -2915,11 +3072,26 @@ if (_selectedEnemyUid) {
  if (skillCellType === 'target_enemy') cls += ' skill-target-enemy';
  else if (skillCellType === 'target_ally') cls += ' skill-target-ally';
  else if (skillCellType === 'range') cls += ' skill-range';
+ // 召喚マス
+ if (isSummonCell) cls += ' summon-cell';
+ // アイテム移動先マス
+ if (isItemCell) cls += ' item-cell-target';
+ // アイテム対象味方
+ if (isItemAllyTarget) cls += ' skill-target-ally';
 
  // クリックハンドラ
 let onclick = '';
 
-if (isMovable && !unit) {
+if (_summonMode && isSummonCell && !unit) {
+ onclick = `onclick="_b32OnSummonCellTap(${r},${c})"`;
+
+} else if (_itemMode && isItemAllyTarget && _itemPhase === 'target') {
+ onclick = `onclick="_b32OnItemAllyTap('${unit._uid}')"`;
+
+} else if (_itemMode && isItemCell && _itemPhase === 'cell') {
+ onclick = `onclick="_b32OnItemCellTap(${r},${c})"`;
+
+} else if (isMovable && !unit) {
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
 } else if (isCapture) {
@@ -2934,7 +3106,9 @@ if (isMovable && !unit) {
  !bs.result &&
  !_moveMode &&
  !_selSkillAllyUid &&
- !_selSkillId
+ !_selSkillId &&
+ !_summonMode &&
+ !_itemMode
 ) {
  onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
 }
@@ -2942,10 +3116,15 @@ if (isMovable && !unit) {
   const skillOverlay = skillCellType
     ? `<span class="b32-skill-range-overlay ${skillCellType}"></span>`
     : '';
+  // 召喚マスオーバーレイ
+  const summonOverlay = isSummonCell && !unit
+    ? `<span style="position:absolute;top:2px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:rgba(120,180,255,.9);text-shadow:0 0 6px rgba(80,160,255,.8);pointer-events:none;">SUMMON</span>`
+    : '';
 
   cells.push(
     `<div class="${cls}" data-row="${r}" data-col="${c}" ${onclick}>` +
     skillOverlay +
+    summonOverlay +
     (unit ? renderUnit(unit, bs.phase) : renderCore(r, c, bs)) +
     `</div>`
   );
@@ -3234,16 +3413,16 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  const ally = bs.allies.find(u => u._uid === allyUid);
  if (!ally || ally.hp <= 0) return;
 
- const canAct = (bs.actionCount || 0) < (bs.actionMax || 2);
+ const canAct = _canActByLink(bs, 1);
  if (!canAct) return;
 
  const history = bs.unitActionHistory || {};
  const unitHistory = history[allyUid] || {};
- const unitCanMove = !unitHistory.move;
- const unitCanSkill = !unitHistory.skill;
+ // unitActionDone: 駒アクション（移動/スキル/ULT）済みフラグ
+ const unitActionDone = !!unitHistory.unitActionDone;
 
- // 移動もスキルもできないキャラなら何もしない
- if (!unitCanMove && !unitCanSkill) return;
+ // 駒アクション済みかつLINKも尽きていれば何もしない
+ if (unitActionDone) return;
 
  // 同じキャラを再タップしたらメニューを閉じる
  if (_selActionAllyUid === allyUid && !_moveMode && !_selSkillAllyUid) {
@@ -3275,71 +3454,122 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  };
 
  window._b32OnActionMoveTap = function () {
- if (_b32InputLocked) return;
- const bs = _bs();
- if (!bs || bs.phase !== 'skill' || bs.result) return;
- if (!_selActionAllyUid) return;
- const history = bs.unitActionHistory || {};
- const unitHistory = history[_selActionAllyUid] || {};
- const canAct = (bs.actionCount || 0) < (bs.actionMax || 2);
- if (!canAct || unitHistory.move) return;
- _selMoveAllyUid = _selActionAllyUid;
- _selSkillAllyUid = null;
- _selSkillId = null;
- _moveMode = true;
- _selActionAllyUid = null;
- renderBattle32UI();
- };
+  if (_b32InputLocked) return;
 
- window._b32OnActionSkillTap = function () {
- if (_b32InputLocked) return;
- const bs = _bs();
- if (!bs || bs.phase !== 'skill' || bs.result) return;
- if (!_selActionAllyUid) return;
- const history = bs.unitActionHistory || {};
- const unitHistory = history[_selActionAllyUid] || {};
- const canAct = (bs.actionCount || 0) < (bs.actionMax || 2);
- if (!canAct || unitHistory.skill) return;
- _selSkillAllyUid = _selActionAllyUid;
- _selSkillId = null;
- _selMoveAllyUid = null;
- _moveMode = false;
- _selActionAllyUid = null;
- renderBattle32UI();
- };
+  const bs = _bs();
+  if (!bs || bs.phase !== 'skill' || bs.result) return;
 
- window._b32OnActionUltTap = function () {
- if (_b32InputLocked) return;
- const bs = _bs();
- if (!bs || bs.phase !== 'skill' || bs.result) return;
- if (!_selActionAllyUid) return;
- const ally = bs.allies.find(u => u._uid === _selActionAllyUid);
- if (!ally || ally.hp <= 0) return;
- const ultSkill = (ally.skills || []).find(s => s.isUltimate);
- if (!ultSkill) return;
- const history = bs.unitActionHistory || {};
- const unitHistory = history[_selActionAllyUid] || {};
- const canAct = (bs.actionCount || 0) < (bs.actionMax || 2);
- const canSkill = canAct && !unitHistory.skill;
- const shinkiCost = ultSkill.shinkiCost || ally.shinkiMax || 3;
- if (!canSkill || ally.shinki < shinkiCost) return;
- _selSkillAllyUid = _selActionAllyUid;
- _selSkillId = ultSkill.id;
- _selMoveAllyUid = null;
- _moveMode = false;
- _selActionAllyUid = null;
- renderBattle32UI();
- };
+  const uid = _getActiveActionAllyUid();
+  if (!uid) return;
+
+  const ally = (bs.allies || []).find(u => u._uid === uid);
+  if (!ally || ally.hp <= 0) return;
+
+  const history = bs.unitActionHistory || {};
+  const unitHistory = history[uid] || {};
+
+  const canAct = _canActByLink(bs, 1);
+  if (!canAct || unitHistory.unitActionDone) return;
+
+  _selMoveAllyUid = uid;
+  _selSkillAllyUid = null;
+  _selSkillId = null;
+  _selActionAllyUid = null;
+  _moveMode = true;
+
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
+
+  renderBattle32UI();
+};
+
+window._b32OnActionSkillTap = function () {
+  if (_b32InputLocked) return;
+
+  const bs = _bs();
+  if (!bs || bs.phase !== 'skill' || bs.result) return;
+
+  const uid = _getActiveActionAllyUid();
+  if (!uid) return;
+
+  const ally = (bs.allies || []).find(u => u._uid === uid);
+  if (!ally || ally.hp <= 0) return;
+
+  const history = bs.unitActionHistory || {};
+  const unitHistory = history[uid] || {};
+
+  const canAct = _canActByLink(bs, 2);
+  if (!canAct || unitHistory.unitActionDone) return;
+
+  _selSkillAllyUid = uid;
+  _selSkillId = null;
+  _selMoveAllyUid = null;
+  _selActionAllyUid = null;
+  _moveMode = false;
+
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
+
+  renderBattle32UI();
+};
+
+window._b32OnActionUltTap = function () {
+  if (_b32InputLocked) return;
+
+  const bs = _bs();
+  if (!bs || bs.phase !== 'skill' || bs.result) return;
+
+  const uid = _getActiveActionAllyUid();
+  if (!uid) return;
+
+  const ally = (bs.allies || []).find(u => u._uid === uid);
+  if (!ally || ally.hp <= 0) return;
+
+  const ultSkill = (ally.skills || []).find(s => s.isUltimate);
+  if (!ultSkill) return;
+
+  const history = bs.unitActionHistory || {};
+  const unitHistory = history[uid] || {};
+
+  const canActUlt = _canActByLink(bs, 3);
+  const unitDone = !!unitHistory.unitActionDone;
+  const shinkiCost = ultSkill.shinkiCost || ally.shinkiMax || 3;
+
+  if (!canActUlt || unitDone || ally.shinki < shinkiCost) return;
+
+  _selSkillAllyUid = uid;
+  _selSkillId = ultSkill.id;
+  _selMoveAllyUid = null;
+  _selActionAllyUid = null;
+  _moveMode = false;
+
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
+
+  renderBattle32UI();
+};
 
  window._b32OnActionEndTap = function () {
  if (_b32InputLocked) return;
- _selActionAllyUid = null;
- _selMoveAllyUid = null;
- _selSkillAllyUid = null;
- _selSkillId = null;
- _moveMode = false;
- if (window.Battle32 && window.Battle32.endCharTurn) {
- window.Battle32.endCharTurn();
+ const bs = _bs();
+ if (!bs || bs.result || bs.phase !== 'skill') return;
+
+ _resetSkillState();
+
+ if (window.Battle32 && typeof window.Battle32.endSkillPhase === 'function') {
+   window.Battle32.endSkillPhase();
+ } else if (window.Battle32 && typeof window.Battle32.endCharTurn === 'function') {
+   // 後方互換フォールバック
+   window.Battle32.endCharTurn();
  }
  };
 
@@ -3639,11 +3869,11 @@ await _afterCharTurnFlow();
  // 旧バッジ用（非表示にしてあるが変数は残す）
  const shinkiDots = shinkiDotsInner;
 
- // タップ可否：move か skill のいずれかが可能であればタップ可
- const _canActNow = !bs.result && (bs.actionCount || 0) < (bs.actionMax || 2);
+ // タップ可否：unitActionDoneが立っていなければタップ可（LINK 1以上必要）
+ const _canActNow = !bs.result && _canActByLink(bs, 1);
  const _uh2 = (bs.unitActionHistory || {})[ally._uid] || {};
  const tappable = !dead && bs.phase === 'skill'
- && _canActNow && (!_uh2.move || !_uh2.skill);
+   && _canActNow && !_uh2.unitActionDone;
  const onclickAttr = tappable ? `onclick="_b32OnSkillAllyTap('${ally._uid}')"` : '';
 
  return `
@@ -3686,8 +3916,44 @@ await _afterCharTurnFlow();
  const skillPanel = document.getElementById('b32-skill-panel');
  if (!skillPanel) return;
 
+ const rosterPanelEl = document.getElementById('b32-roster-panel');
+ const itemPanelEl = document.getElementById('b32-item-panel');
+
+ // ローグライト時は b32-party-status パネルを非表示
+ if (bs.isRoguelite) {
+   const ps = document.getElementById('b32-party-status');
+   if (ps) ps.style.setProperty('display', 'none', 'important');
+ }
+
  if (bs.phase === 'skill') {
  skillPanel.style.display = '';
+
+ // 召喚モード中はガイドを変える
+ if (_summonMode) {
+   if (guideEl) guideEl.textContent = '召喚するマスをタップしてください。';
+   const charaNameEl = document.getElementById('b32-skill-chara-name');
+   if (charaNameEl) charaNameEl.textContent = '';
+   const listEl = document.getElementById('b32-skill-list');
+   if (listEl) listEl.innerHTML = '';
+   const ps = document.getElementById('b32-party-status');
+   if (ps) ps.style.setProperty('display', 'none', 'important');
+   return;
+ }
+
+ // アイテムモード中はガイドを変える
+ if (_itemMode) {
+   const item = bs.items && bs.items[_itemSlotIndex];
+   if (guideEl) guideEl.textContent = _itemPhase === 'cell'
+     ? '転位先のマスをタップしてください。'
+     : `${item ? item.name : 'アイテム'}の対象を選んでください。`;
+   const charaNameEl = document.getElementById('b32-skill-chara-name');
+   if (charaNameEl) charaNameEl.textContent = '';
+   const listEl = document.getElementById('b32-skill-list');
+   if (listEl) listEl.innerHTML = '';
+   const ps = document.getElementById('b32-party-status');
+   if (ps) ps.style.setProperty('display', 'none', 'important');
+   return;
+ }
 
  // ── フェーズ判定 ──
  // Move: 移動先マス選択中 (_selMoveAllyUid=set, _moveMode=true)
@@ -3705,20 +3971,23 @@ await _afterCharTurnFlow();
  const listEl = document.getElementById('b32-skill-list');
  if (listEl) listEl.innerHTML = '';
 
- } else if (_selSkillAllyUid) {
- // ── Phase4: スキルキャラ選択済み、スキル内容を選ぶ ──
- const ally = bs.allies.find(u => u._uid === _selSkillAllyUid);
- if (!ally) {
- _resetSkillState();
- renderBattle32UI();
- return;
- }
+} else if (_selSkillAllyUid) {
+  // ── Phase4: スキルキャラ選択済み、スキル内容を選ぶ ──
+  const ally = bs.allies.find(u => u._uid === _selSkillAllyUid);
+  if (!ally) {
+    _resetSkillState();
+    renderBattle32UI();
+    return;
+  }
 
- // スキル選択中はパーティカードを隠す
- const partyStatusEl = document.getElementById('b32-party-status');
- if (partyStatusEl) partyStatusEl.style.setProperty('display', 'none', 'important');
+  if (rosterPanelEl) rosterPanelEl.style.display = 'none';
+  if (itemPanelEl) itemPanelEl.style.display = 'none';
 
- if (guideEl) guideEl.textContent = 'アクションを選択してください。';
+  // スキル選択中はパーティカードを隠す
+  const partyStatusEl = document.getElementById('b32-party-status');
+  if (partyStatusEl) partyStatusEl.style.setProperty('display', 'none', 'important');
+
+  if (guideEl) guideEl.textContent = 'アクションを選択してください。';
 
  const charaNameEl = document.getElementById('b32-skill-chara-name');
  if (charaNameEl) charaNameEl.textContent = '';
@@ -3766,8 +4035,9 @@ await _afterCharTurnFlow();
  .slice(0, 3)
  .forEach(skill => {
  const shinki = skill.shinkiCost || 0;
- const _canSkill = !bs.result && (bs.actionCount || 0) < (bs.actionMax || 2)
- && !((bs.unitActionHistory || {})[ally._uid] || {}).skill;
+ // スキルはLINK 2消費、かつunitActionDone未設定のみ使用可
+ const _canSkill = !bs.result && _canActByLink(bs, 2)
+   && !((bs.unitActionHistory || {})[ally._uid] || {}).unitActionDone;
  const cantUse = !_canSkill || (shinki > ally.shinki);
  const disabledCls = cantUse ? ' disabled' : '';
  normalSkillChips.push(
@@ -3805,26 +4075,102 @@ await _afterCharTurnFlow();
  </div>
  `;
 
- } else {
- // ── キャラ選択待ち（移動 / スキル どちらでも選択可） ──
- const _actCount = bs.actionCount || 0;
- const guideText = _actCount === 0
- ? '行動するキャラを選択してください。'
- : '2回目の行動を選択してください。';
+} else {
+  // ── キャラ選択待ち（移動 / スキル どちらでも選択可） ──
+  if (bs.isRoguelite) {
+    if (rosterPanelEl) rosterPanelEl.style.display = 'flex';
+    if (itemPanelEl) itemPanelEl.style.display = 'flex';
+  }
+
+  const _linkCurrent = bs.link ? bs.link.current : 99;
+  const guideText = bs.isRoguelite
+    ? `盤面のキャラをタップ　残LINK: ${_linkCurrent}`
+    : '行動するキャラを選択してください。';
+
  if (guideEl) guideEl.textContent = guideText;
 
- // 3人分のキャラカードを必ず表示
- const partyStatusEl = document.getElementById('b32-party-status');
- if (partyStatusEl) partyStatusEl.style.removeProperty('display');
+ // 3人分のキャラカードを必ず表示（通常バトルのみ）
+ if (!bs.isRoguelite) {
+   const partyStatusEl = document.getElementById('b32-party-status');
+   if (partyStatusEl) partyStatusEl.style.removeProperty('display');
+ }
 
  const charaNameEl = document.getElementById('b32-skill-chara-name');
  if (charaNameEl) charaNameEl.textContent = '';
 
- const listEl = document.getElementById('b32-skill-list');
- if (listEl) listEl.innerHTML = '';
- }
+const listEl = document.getElementById('b32-skill-list');
 
- } else if (bs.phase === 'enemy') {
+if (listEl) {
+  if (bs.isRoguelite && _selectedRosterId) {
+    const r = (bs.roster || []).find(x => x.rosterId === _selectedRosterId);
+
+    if (r) {
+      const c = r.charDef || {};
+      const img = c.panelImg || c.upImg || c.img || '';
+      const rarity = (r.rarity || c.rarity || 'r').toUpperCase();
+      const cost = r.summonCost || 1;
+
+      const hp = c.hp || c.stats?.HP || 0;
+      const atk = c.atk || c.stats?.ATK || 0;
+      const role = c.role || '—';
+
+      const firstSkill = (c.skills || []).find(s => !s.isUltimate);
+      const ultSkill = (c.skills || []).find(s => s.isUltimate);
+
+      const statusLabel =
+        r.status === 'standby' ? '召喚可能' :
+        r.status === 'deployed' ? '出撃中' :
+        r.status === 'dead' ? 'RETURN' :
+        r.status || '—';
+
+      listEl.innerHTML = `
+        <div class="b32-roster-info-panel">
+          <div class="b32-roster-info-card">
+            <div class="b32-roster-info-rarity">${rarity}</div>
+            <div class="b32-roster-info-img-wrap">
+              ${img
+                ? `<img class="b32-roster-info-img" src="${img}" alt="" onerror="this.style.display='none'">`
+                : `<div class="b32-roster-info-initial">${initial(r.name)}</div>`
+              }
+            </div>
+          </div>
+
+          <div class="b32-roster-info-main">
+            <div class="b32-roster-info-title">
+              <span class="name">${r.name || c.name || 'UNKNOWN'}</span>
+              <span class="cost">召喚LINK ${cost}</span>
+            </div>
+
+            <div class="b32-roster-info-role">
+              ${role}　/　HP ${hp}　ATK ${atk}
+            </div>
+
+            <div class="b32-roster-info-desc">
+              ${c.desc || firstSkill?.desc || '戦闘に参加する祓い手。'}
+            </div>
+
+            <div class="b32-roster-info-skill">
+              <span>スキル</span>
+              <strong>${firstSkill ? firstSkill.name : '—'}</strong>
+              <em>${firstSkill ? firstSkill.desc || '' : ''}</em>
+            </div>
+
+            <div class="b32-roster-info-status">
+              ${statusLabel}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      listEl.innerHTML = '';
+    }
+  } else {
+    listEl.innerHTML = '';
+  }
+}
+}
+
+} else if (bs.phase === 'enemy') {
  skillPanel.style.display = 'none';
  if (guideEl) guideEl.textContent = '敵の行動中です。';
  // 敵ターン中はパーティカードを表示（演出位置取得に必要）
@@ -3952,18 +4298,93 @@ await _afterCharTurnFlow();
  }
 
  function renderButtons(bs) {
- const btnEndSkill = document.getElementById('b32-btn-end-skill');
- const btnCancel = document.getElementById('b32-btn-cancel');
+ const summonBtn = document.getElementById('b32-btn-summon');
+ const moveBtn   = document.getElementById('b32-btn-move');
+ const skillBtn  = document.getElementById('b32-btn-skill');
+ const ultBtn    = document.getElementById('b32-btn-ult');
+ const endBtn    = document.getElementById('b32-btn-end-skill');
+ const summonCostEl = document.getElementById('b32-btn-summon-cost');
+ const summonSubEl  = document.getElementById('b32-btn-summon-sub');
 
- if (btnEndSkill) {
- btnEndSkill.style.display = bs.phase === 'skill' ? '' : 'none';
- // スキルフェーズ中は常に押せる（移動後にスキルを強制しない）
- btnEndSkill.disabled = bs.phase !== 'skill';
-}
- if (btnCancel) {
- // 移動キャラ選択中 or スキルキャラ選択中は選択解除ボタンを表示
- btnCancel.style.display = (_selMoveAllyUid || _selSkillAllyUid) ? '' : 'none';
+ const inSkillPhase = !!bs && bs.phase === 'skill' && !bs.result;
+
+ const selectedUid =
+   _selActionAllyUid ||
+   _selSkillAllyUid ||
+   _selMoveAllyUid ||
+   null;
+
+ const selectedAlly = selectedUid
+   ? (bs.allies || []).find(a => a._uid === selectedUid)
+   : null;
+
+ const unitCanAct = !!selectedAlly
+   && selectedAlly.hp > 0
+   && _unitCanAct(bs, selectedAlly._uid);
+
+ const canMove  = inSkillPhase && unitCanAct && _canActByLink(bs, 1);
+ const canSkill = inSkillPhase && unitCanAct && _canActByLink(bs, 2);
+
+ let canUlt = false;
+ if (selectedAlly) {
+   const ultSkill = (selectedAlly.skills || []).find(s => s.isUltimate);
+   if (ultSkill) {
+     const shinkiCost = ultSkill.shinkiCost || selectedAlly.shinkiMax || 3;
+     canUlt = inSkillPhase
+       && unitCanAct
+       && _canActByLink(bs, 3)
+       && selectedAlly.shinki >= shinkiCost;
+   }
  }
+
+ // 召喚可否
+ let canSummon = false;
+ let summonCostText = '-';
+ let summonSubText = '待機選択';
+
+ if (bs && bs.isRoguelite) {
+   const roster = bs.roster || [];
+   const aliveAllies = (bs.allies || []).filter(a => a.hp > 0).length;
+   const deployLimit = bs.deployLimit || 4;
+   const standby = roster.filter(r => r.status === 'standby');
+
+   if (aliveAllies >= deployLimit) {
+     summonSubText = `${aliveAllies}/${deployLimit}`;
+   } else if (_summonRosterId) {
+     const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
+     if (selectedRoster) {
+       const cost = Number(selectedRoster.summonCost || 1);
+       summonCostText = String(cost);
+       summonSubText = _summonMode ? '位置選択中' : '召喚可能';
+       canSummon = inSkillPhase && _canActByLink(bs, cost);
+     }
+   } else if (standby.length > 0) {
+     const affordable = standby.some(r => _canActByLink(bs, Number(r.summonCost || 1)));
+     const minCost = Math.min(...standby.map(r => Number(r.summonCost || 1)));
+     summonCostText = String(minCost);
+     summonSubText = '待機選択';
+     canSummon = inSkillPhase && affordable;
+   } else {
+     summonSubText = '待機なし';
+   }
+ } else {
+   summonSubText = 'ROGUE';
+ }
+
+ if (summonCostEl) summonCostEl.textContent = summonCostText;
+ if (summonSubEl) summonSubEl.textContent = summonSubText;
+
+ function setBtn(btn, enabled, active) {
+   if (!btn) return;
+   btn.disabled = !enabled;
+   btn.classList.toggle('is-active', !!active);
+ }
+
+ setBtn(summonBtn, canSummon, _summonMode);
+ setBtn(moveBtn,   canMove,   _moveMode);
+ setBtn(skillBtn,  canSkill,  !!(_selSkillAllyUid && !_selSkillId));
+ setBtn(ultBtn,    canUlt,    !!(_selSkillAllyUid && _selSkillId));
+ setBtn(endBtn,    inSkillPhase, false);
  }
 
  // ============================================================
@@ -4048,7 +4469,13 @@ await _afterCharTurnFlow();
  renderHintBar(bs);
  renderBossHp(bs);
  renderBoard(bs);
- renderPartyStatus(bs);
+ if (bs.isRoguelite) {
+   renderLinkBar(bs);
+   renderRoster(bs);
+   renderItemPanel(bs);
+ } else {
+   renderPartyStatus(bs);
+ }
  renderLog(bs);
  renderBottomArea(bs);
  renderButtons(bs);
@@ -4060,110 +4487,383 @@ await _afterCharTurnFlow();
 };
 
  // ============================================================
+ // LINK バー描画（ローグライト専用）
+ // ============================================================
+ function renderLinkBar(bs) {
+   let el = document.getElementById('b32-link-bar');
+   if (!el) {
+     el = document.createElement('div');
+     el.id = 'b32-link-bar';
+     el.style.cssText = [
+  'position:fixed',
+  'top:92px',
+  'left:8px',
+  'right:8px',
+  'z-index:3000000',
+  'display:flex',
+  'flex-direction:column',
+  'align-items:center',
+  'gap:3px',
+  'padding:6px 12px 4px',
+  'background:rgba(6,4,18,.72)',
+  'border:1px solid rgba(100,80,200,.25)',
+  'border-radius:8px',
+  'pointer-events:none',
+].join(';');
+
+     document.body.appendChild(el);
+   }
+   if (!bs || !bs.link) { el.style.display = 'none'; return; }
+   el.style.display = 'flex';
+
+   const { current, max } = bs.link;
+   const diamonds = Array.from({ length: 6 }, (_, i) => {
+     const filled = i < current;
+     return `<div style="
+       width:14px;height:14px;
+       transform:rotate(45deg);
+       border:1.5px solid ${filled ? 'rgba(140,100,255,.9)' : 'rgba(100,80,200,.3)'};
+       background:${filled ? 'rgba(120,80,240,.7)' : 'rgba(30,20,60,.4)'};
+       box-shadow:${filled ? '0 0 6px rgba(120,80,240,.6)' : 'none'};
+       transition:background .2s,border-color .2s;
+     "></div>`;
+   }).join('');
+
+   el.innerHTML = `
+     <div style="display:flex;align-items:center;gap:6px;">
+       <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:rgba(160,130,255,.7);">LINK</span>
+       <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:rgba(180,150,255,.9);">${current}<span style="font-size:9px;color:rgba(120,100,200,.6);">/${max}</span></span>
+       <div style="display:flex;gap:3px;align-items:center;">${diamonds}</div>
+     </div>
+     <div style="font-size:8px;letter-spacing:1px;color:rgba(120,100,200,.45);font-family:'Noto Serif JP',serif;">毎ターン全回復 · LINKがある限り行動可能</div>
+   `;
+ }
+
+ // ============================================================
+ // roster 5体表示（ローグライト専用）
+ // ============================================================
+ function renderRoster(bs) {
+   let el = document.getElementById('b32-roster-panel');
+   if (!el) {
+     el = document.createElement('div');
+     el.id = 'b32-roster-panel';
+    el.style.cssText = [
+  'position:fixed',
+  'bottom:calc(86px + env(safe-area-inset-bottom, 0px))',
+  'left:0',
+  'right:0',
+  'z-index:3000000',
+  'display:flex',
+  'gap:4px',
+  'padding:6px 8px',
+  'background:rgba(6,4,18,.92)',
+  'border-top:1px solid rgba(100,80,200,.25)',
+  'overflow-x:auto',
+  '-webkit-overflow-scrolling:touch',
+].join(';');
+     document.body.appendChild(el);
+   }
+   if (!bs || !bs.roster || !bs.isRoguelite) { el.style.display = 'none'; return; }
+   el.style.display = 'flex';
+
+   const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
+   const atLimit = aliveCount >= (bs.deployLimit || 4);
+   const RARITY_COLOR = { r: '#c0c0c0', sr: '#ffd700', ur: '#ff80ff' };
+
+   el.innerHTML = bs.roster.map(r => {
+     const isStandby = r.status === 'standby';
+     const isDeployed = r.status === 'deployed';
+     const isDead = r.status === 'dead';
+     const linkCost = r.summonCost || 1;
+     const canSummon = isStandby && !atLimit && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
+     const isSummonSelected =
+      (_summonMode && _summonRosterId === r.rosterId) ||
+      (!_summonMode && _selectedRosterId === r.rosterId);
+
+     const rarColor = RARITY_COLOR[r.rarity] || '#c0c0c0';
+
+     let statusLabel = '';
+     let statusColor = '';
+     if (isDeployed) { statusLabel = '出撃中'; statusColor = 'rgba(80,200,120,.8)'; }
+     else if (isDead) { statusLabel = 'RETURN'; statusColor = 'rgba(200,80,80,.6)'; }
+     else { statusLabel = `LINK ${linkCost}`; statusColor = 'rgba(140,110,255,.8)'; }
+
+     const img = r.charDef && (r.charDef.panelImg || r.charDef.upImg || r.charDef.img || '');
+
+     return `<div onclick="_b32OnRosterTap('${r.rosterId}')"
+       style="
+         flex-shrink:0;width:56px;
+         display:flex;flex-direction:column;align-items:center;gap:2px;
+         cursor:${canSummon ? 'pointer' : 'default'};
+         border-radius:8px;padding:4px 2px;
+         border:1.5px solid ${isSummonSelected ? 'rgba(140,100,255,.9)' : isStandby ? 'rgba(100,80,200,.4)' : 'rgba(60,50,100,.3)'};
+         background:${isSummonSelected ? 'rgba(80,40,180,.3)' : 'rgba(20,15,40,.6)'};
+         opacity:${isDead ? '0.4' : isDeployed ? '0.7' : '1'};
+         transition:border-color .15s,background .15s;
+         box-shadow:${isSummonSelected ? '0 0 12px rgba(120,80,255,.5)' : 'none'};
+       ">
+       <div style="font-size:7px;letter-spacing:1px;color:${rarColor};font-family:'Cinzel',serif;">${r.rarity.toUpperCase()}</div>
+       <div style="width:40px;height:40px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+         ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;object-position:top center;" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
+       </div>
+       <div style="font-size:7px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
+       <div style="font-size:7px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
+     </div>`;
+   }).join('');
+
+   // 盤面出撃数表示
+   const countEl = `<div style="flex-shrink:0;width:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+     <div style="font-family:'Cinzel',serif;font-size:9px;color:rgba(140,110,200,.6);">出撃</div>
+     <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:${atLimit ? 'rgba(255,100,100,.8)' : 'rgba(160,130,255,.9)'};">${aliveCount}/${bs.deployLimit || 4}</div>
+     <div style="font-size:7px;color:rgba(100,80,160,.5);">${atLimit ? '上限' : '人'}</div>
+   </div>`;
+   el.innerHTML = countEl + el.innerHTML;
+ }
+
+ // ============================================================
+ // アイテム2枠パネル（ローグライト専用）
+ // ============================================================
+ function renderItemPanel(bs) {
+   let el = document.getElementById('b32-item-panel');
+   if (!el) {
+     el = document.createElement('div');
+     el.id = 'b32-item-panel';
+     el.style.cssText = [
+  'position:fixed',
+  'right:8px',
+  'bottom:calc(170px + env(safe-area-inset-bottom, 0px))',
+  'z-index:3000001',
+  'display:flex',
+  'flex-direction:column',
+  'gap:4px',
+].join(';');
+
+     document.body.appendChild(el);
+   }
+   if (!bs || !bs.isRoguelite) { el.style.display = 'none'; return; }
+   el.style.display = 'flex';
+
+   const items = bs.items || [];
+   const slots = [0, 1].map(i => {
+     const item = items[i];
+     if (!item) {
+       return `<div style="
+         width:52px;height:52px;border-radius:8px;
+         border:1px dashed rgba(100,80,200,.25);
+         background:rgba(20,15,40,.4);
+         display:flex;align-items:center;justify-content:center;
+         font-size:10px;color:rgba(100,80,160,.35);
+       ">—</div>`;
+     }
+     const linkCost = item.linkCost != null ? item.linkCost : 1;
+     const canUse = bs.phase === 'skill' && !bs.result && bs.link && bs.link.current >= linkCost && !item.used;
+     const isActive = _itemMode && _itemSlotIndex === i;
+     return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
+       width:52px;min-height:52px;border-radius:8px;padding:4px;
+       border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
+       background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
+       opacity:${canUse ? '1' : '0.45'};
+       cursor:${canUse ? 'pointer' : 'default'};
+       display:flex;flex-direction:column;align-items:center;gap:2px;
+       box-shadow:${isActive ? '0 0 10px rgba(200,160,80,.4)' : 'none'};
+     ">
+       <div style="font-size:16px;line-height:1;">${item.id === 'heal_small' ? '💊' : item.id === 'reposition' ? '🌀' : '📦'}</div>
+       <div style="font-size:7px;color:rgba(220,190,120,.8);text-align:center;line-height:1.2;">${item.name}</div>
+       <div style="font-size:7px;color:rgba(140,110,200,.7);">L${linkCost}</div>
+     </div>`;
+   }).join('');
+
+   el.innerHTML = slots;
+ }
+
+ // ============================================================
+ // 召喚マスのハイライト（renderBoard内で参照）
+ // ============================================================
+ function _getSummonCells() {
+   if (!_summonMode || !_summonRosterId || !window.Battle32 || !window.Battle32.getSummonCells) return new Set();
+   const cells = window.Battle32.getSummonCells(_summonRosterId);
+   return new Set(cells.map(c => `${c.row}-${c.col}`));
+ }
+
+ // ============================================================
+ // roster タップ
+ // ============================================================
+ 
+// ボトム「召喚」ボタン
+window._b32OnBottomSummonTap = function () {
+  if (_b32InputLocked) return;
+
+  const bs = _bs();
+  if (!bs || bs.result || bs.phase !== 'skill') return;
+  if (!bs.isRoguelite) return;
+
+  if (!_summonRosterId) {
+    const guide = document.getElementById('b32-bottom-guide');
+    if (guide) guide.textContent = '召喚する待機メンバーを選択してください。';
+    return;
+  }
+
+  const roster = bs.roster || [];
+  const r = roster.find(x => x.rosterId === _summonRosterId);
+  if (!r || r.status !== 'standby') {
+    const guide = document.getElementById('b32-bottom-guide');
+    if (guide) guide.textContent = 'このキャラは召喚できません。';
+    return;
+  }
+
+  const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
+  const deployLimit = bs.deployLimit || 4;
+  if (aliveCount >= deployLimit) {
+    const guide = document.getElementById('b32-bottom-guide');
+    if (guide) guide.textContent = '最大出撃数に到達しています。';
+    return;
+  }
+
+  const cost = Number(r.summonCost || 1);
+  if (!_canActByLink(bs, cost)) {
+    const guide = document.getElementById('b32-bottom-guide');
+    if (guide) guide.textContent = 'LINKが不足しています。';
+    return;
+  }
+
+  // 他モード解除
+  _selActionAllyUid = null;
+  _selMoveAllyUid = null;
+  _selSkillAllyUid = null;
+  _selSkillId = null;
+  _moveMode = false;
+
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
+
+  // 召喚位置選択へ
+  _summonMode = true;
+
+  const guide = document.getElementById('b32-bottom-guide');
+  if (guide) guide.textContent = '召喚位置を選択してください。';
+
+  renderBattle32UI();
+};
+
+window._b32OnRosterTap = function(rosterId) {
+  if (_b32InputLocked) return;
+
+  const bs = _bs();
+  if (!bs || !bs.isRoguelite) return;
+
+  // キャラ情報表示用に選択
+  _selectedRosterId = rosterId;
+
+  // 召喚候補としても保持
+  _summonRosterId = rosterId;
+
+  // ただし即召喚モードには入らない
+  _summonMode = false;
+
+  // 他モードは解除
+  _selActionAllyUid = null;
+  _selMoveAllyUid = null;
+  _selSkillAllyUid = null;
+  _selSkillId = null;
+  _moveMode = false;
+
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
+
+  renderBattle32UI();
+};
+
+ // 召喚マスタップ
+ window._b32OnSummonCellTap = async function(row, col) {
+   if (_b32InputLocked) return;
+   if (!_summonMode || !_summonRosterId) return;
+   if (!window.Battle32 || !window.Battle32.summonAlly) return;
+
+   const ok = window.Battle32.summonAlly(_summonRosterId, row, col);
+   if (ok) {
+     _summonMode = false;
+     _summonRosterId = null;
+   }
+   renderBattle32UI();
+ };
+
+ // アイテムタップ
+ window._b32OnItemTap = function(slotIndex) {
+   if (_b32InputLocked) return;
+   const bs = _bs();
+   if (!bs || !bs.items) return;
+   const item = bs.items[slotIndex];
+   if (!item) return;
+
+   if (_itemMode && _itemSlotIndex === slotIndex) {
+     // 同じアイテムを再タップ → 解除
+     _itemMode = false;
+     _itemSlotIndex = null;
+     _itemPhase = null;
+     _itemTargetUid = null;
+   } else {
+     _resetSkillState();
+     _itemMode = true;
+     _itemSlotIndex = slotIndex;
+     _itemPhase = 'target';
+     _itemTargetUid = null;
+   }
+   renderBattle32UI();
+ };
+
+ // アイテム対象の味方タップ
+ window._b32OnItemAllyTap = function(uid) {
+   if (_b32InputLocked) return;
+   if (!_itemMode || _itemSlotIndex == null) return;
+   const bs = _bs();
+   if (!bs) return;
+   const item = bs.items[_itemSlotIndex];
+   if (!item) return;
+
+   if (item.type === 'heal') {
+     // 即時使用
+     const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
+     if (ok) {
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+     }
+     renderBattle32UI();
+   } else if (item.type === 'move_ally') {
+     // 転位符: 対象選択 → マス選択へ
+     _itemTargetUid = uid;
+     _itemPhase = 'cell';
+     renderBattle32UI();
+   }
+ };
+
+ // 転位符: 移動先マスタップ
+ window._b32OnItemCellTap = function(row, col) {
+   if (_b32InputLocked) return;
+   if (!_itemMode || _itemSlotIndex == null || _itemPhase !== 'cell' || !_itemTargetUid) return;
+   const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: _itemTargetUid, toRow: row, toCol: col });
+   if (ok) {
+     _itemMode = false;
+     _itemSlotIndex = null;
+     _itemPhase = null;
+     _itemTargetUid = null;
+   }
+   renderBattle32UI();
+ };
+
+ // ============================================================
  // 行動選択メニュー（円形ボタン）
  // ボタン位置はCSSで固定。状態によって表示するボタンだけを変える。
  // ============================================================
  function renderActionMenu(bs) {
- // 既存の要素を削除
- const prev = document.getElementById('b32-action-radial-menu');
- if (prev) prev.remove();
-
- if (!bs || bs.phase !== 'skill' || bs.result) return;
-
- // メニューを表示すべき状態か判定
- const isActionSelect = !!_selActionAllyUid;
- const isMoveSelect = !!(_moveMode && _selMoveAllyUid);
- const isSkillSelect = !!(_selSkillAllyUid && !_selActionAllyUid);
-
- if (!isActionSelect && !isMoveSelect && !isSkillSelect) return;
-
- // 状態ごとの表示ボタン決定（位置は変えない）
- let showBack = false;
- let showMove = false;
- let showSkill = false;
- let showUlt = false;
- let showEnd = false;
-
- // ULTボタンは isUltimate スキルを持つキャラだけ表示する
- const _actionUid4ult = _selActionAllyUid || _selSkillAllyUid || _selMoveAllyUid || null;
- const _hasUltSkill = _actionUid4ult
-   ? !!(bs.allies.find(u => u._uid === _actionUid4ult)?.skills || []).find(s => s.isUltimate)
-   : false;
-
- if (isActionSelect) {
- showBack = showMove = showSkill = showEnd = true;
- showUlt = _hasUltSkill;
- } else if (isMoveSelect) {
- showBack = true;
- } else if (isSkillSelect) {
- showBack = showEnd = true;
- showUlt = _hasUltSkill;
- }
-
- // disabled 判定（キャラ選択中の場合のみ意味あり）
- // disabled 判定
-let canMove = false;
-let canSkill = false;
-let canUlt = false;
-
-// 行動対象キャラを決める
-const actionAllyUid =
- _selActionAllyUid ||
- _selSkillAllyUid ||
- _selMoveAllyUid ||
- null;
-
-if (actionAllyUid) {
- const ally = bs.allies.find(u => u._uid === actionAllyUid);
-
- if (ally && ally.hp > 0) {
- const history = bs.unitActionHistory || {};
- const unitHistory = history[actionAllyUid] || {};
- const canAct = (bs.actionCount || 0) < (bs.actionMax || 2);
-
- canMove = canAct && !unitHistory.move;
- canSkill = canAct && !unitHistory.skill;
-
- const ultSkill = (ally.skills || []).find(s => s.isUltimate);
- const shinkiCost = ultSkill
- ? (ultSkill.shinkiCost || ally.shinkiMax || 3)
- : 999;
-
- canUlt =
- canAct &&
- canSkill &&
- !!ultSkill &&
- (ally.shinki || 0) >= shinkiCost;
- }
-}
-
- const wrap = document.createElement('div');
- wrap.id = 'b32-action-radial-menu';
- wrap.className = 'b32-action-radial-menu';
- wrap.innerHTML = `
- ${showEnd ? `<button class="b32-action-circle-btn end" onclick="_b32OnActionEndTap()">終了</button>` : ''}
- ${showUlt ? `<button class="b32-action-circle-btn ult${canUlt ? ' is-ready' : ' disabled'}" onclick="_b32OnActionUltTap()">ULT</button>` : ''}
- ${showSkill ? `<button class="b32-action-circle-btn skill${canSkill ? '' : ' disabled'}" onclick="_b32OnActionSkillTap()">スキル</button>` : ''}
- ${showMove ? `<button class="b32-action-circle-btn move${canMove ? '' : ' disabled'}" onclick="_b32OnActionMoveTap()">移動</button>` : ''}
- ${showBack ? `<button class="b32-action-circle-btn back" onclick="_b32OnActionBackTap()">戻る</button>` : ''}
- `;
-
- const root = document.getElementById('battle32-root');
- if (root) root.appendChild(wrap);
-
- // ── パネル実測でボタン群の bottom を直接セット ──────────
- // position:fixed の要素は #battle32-root の CSS変数を継承しないため、
- // キャラパネルの getBoundingClientRect() で画面下端からの距離を
- // 実測して wrap.style.bottom に直接書き込む。
- requestAnimationFrame(() => {
- const panel = document.getElementById('b32-bottom-area');
- if (!panel || !wrap.isConnected) return;
-
- const panelTop = panel.getBoundingClientRect().top;
- const screenH = window.innerHeight;
- const fromBottom = screenH - panelTop + 12; // パネル上端から12px余白
- wrap.style.bottom = `${fromBottom}px`;
- });
+ // ボトム5ボタンUIへ移行したため、旧ラジアルメニューは表示しない
+ const oldMenu = document.getElementById('b32-action-radial-menu');
+ if (oldMenu) oldMenu.remove();
+ return;
  }
 
  // ============================================================
@@ -4199,8 +4899,16 @@ if (actionAllyUid) {
  bottom.offsetHeight +
  (rootW <= 390 && rootH <= 700 ? 4 : 20);
 
+ // ローグライト時は roster + link-bar の高さも予約
+ const rosterEl = document.getElementById('b32-roster-panel');
+ const linkBarEl = document.getElementById('b32-link-bar');
+ const rosterH = (rosterEl && rosterEl.style.display !== 'none') ? rosterEl.offsetHeight : 0;
+ const linkBarH = (linkBarEl && linkBarEl.style.display !== 'none') ? linkBarEl.offsetHeight : 0;
+
+ const reservedHFinal = reservedH + rosterH + linkBarH;
+
  const boardAvailW = Math.max(240, rootW - 24);
- const boardAvailH = Math.max(200, rootH - reservedH);
+ const boardAvailH = Math.max(200, rootH - reservedHFinal);
 
  const gap = 3;
  const cellByW = Math.floor((boardAvailW - gap * 4) / 5);
@@ -4242,6 +4950,12 @@ if (actionAllyUid) {
  _resetSkillState();
  const root = document.getElementById(ROOT_ID);
  if (root) root.style.display = 'none';
+
+ // ローグライト専用UI要素を非表示
+ ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
+   const el = document.getElementById(id);
+   if (el) el.style.display = 'none';
+ });
 
  const nav = document.getElementById('bottom-nav-shared');
  if (nav) nav.style.display = '';

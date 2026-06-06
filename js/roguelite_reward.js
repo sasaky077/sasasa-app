@@ -214,6 +214,19 @@
 }
 
 /* ── フッター ── */
+.rl-rw-item-badge {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: .55rem;
+  letter-spacing: .08em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(80,200,120,.25);
+  border: 1px solid rgba(80,200,120,.55);
+  color: #80e8a0;
+  font-family: "Cinzel", serif;
+}
 .rl-rw-footer {
   text-align: center;
   font-size: .68rem;
@@ -249,15 +262,21 @@
         ).join('')
       : '<span style="font-size:.68rem;color:rgba(190,165,255,0.22)">なし</span>';
 
+    // アイテム枠の空き確認（show時にcurrentOptionsとitemsを参照できないためchoicesから判定）
     // 3択カード
-    const cardsHtml = choices.map((op, i) => `
-      <div class="rl-rw-card" data-index="${i}" data-rarity="${op.rarity || 'common'}">
-        <span class="rl-rw-card-icon">${op.icon || '✦'}</span>
-        <span class="rl-rw-card-name">${op.name}</span>
-        <span class="rl-rw-card-desc">${op.desc}</span>
-        <span class="rl-rw-card-rarity">${RL[op.rarity] || op.rarity}</span>
-      </div>
-    `).join('');
+    const cardsHtml = choices.map((op, i) => {
+      const isItem = op.rewardKind === 'item';
+      const itemBadge = isItem ? '<span class="rl-rw-item-badge">ITEM</span>' : '';
+      return `
+        <div class="rl-rw-card" data-index="${i}" data-rarity="${op.rarity || 'common'}" data-kind="${op.rewardKind || 'passive'}">
+          ${itemBadge}
+          <span class="rl-rw-card-icon">${op.icon || '✦'}</span>
+          <span class="rl-rw-card-name">${op.name}</span>
+          <span class="rl-rw-card-desc">${op.desc}</span>
+          <span class="rl-rw-card-rarity">${RL[op.rarity] || op.rarity}</span>
+        </div>
+      `;
+    }).join('');
 
     const ov = document.createElement('div');
     ov.id = 'rl-reward-overlay';

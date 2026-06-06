@@ -156,7 +156,8 @@
     return {
       active:   true,
       stageNo:  1,
-      options:  [],   // 取得済みOP オブジェクト
+      options:  [],   // 取得済みOP オブジェクト（passive）
+      items:    [],   // 取得済みアイテム（最大2枠）
       partyIds: partyIds || [],
       result:   null, // 'win' | 'lose'
     };
@@ -193,10 +194,29 @@
 
   function addOption(op) {
     if (!_state || !_state.active) return;
-    if (_state.options.length >= 3) return;
-    _state.options.push(op);
-    console.log('[RogueliteRun] OP追加:', op.name,
-      '/ 保持:', _state.options.map(o => o.name));
+    if (!op) return;
+
+    const kind = op.rewardKind || 'passive';
+
+    if (kind === 'item' && op.item) {
+      if (_state.items.length >= 2) {
+        console.warn('[RogueliteRun] アイテム枠が満杯（最大2）:', op.item.name);
+        return;
+      }
+      _state.items.push({ ...op.item });
+      console.log('[RogueliteRun] アイテム追加:', op.item.name,
+        '/ 保持:', _state.items.map(i => i.name));
+    } else {
+      // passive（通常OP）
+      if (_state.options.length >= 3) return;
+      _state.options.push(op);
+      console.log('[RogueliteRun] OP追加:', op.name,
+        '/ 保持:', _state.options.map(o => o.name));
+    }
+  }
+
+  function getItems() {
+    return _state ? _state.items.slice() : [];
   }
 
   function advance() {
@@ -237,6 +257,9 @@
       // 保持OPを渡す（battle_32.js 側で applyOnStart / applyOnEvent を呼ぶ）
       rogueliteOptions: _state.options.slice(),
 
+      // 保持アイテムを渡す
+      rogueliteItems: _state.items.slice(),
+
       // ボスステージフラグ
       isBossStage: def.isBoss,
 
@@ -271,6 +294,7 @@
     isBossStage,
     getStageDef,
     getOptions,
+    getItems,
     addOption,
     advance,
     end,

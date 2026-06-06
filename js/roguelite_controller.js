@@ -279,6 +279,12 @@ function _hideHud() {
     root.dataset.rlHidden = '1';
   }
 
+  // ローグライト専用UI要素も非表示
+  ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
   const result = document.getElementById('b32-result-overlay');
   if (result) {
     result.style.display = 'none';

@@ -233,3 +233,77 @@ window.getRandomOptions  = getRandomOptions;
 window.getOptionById     = getOptionById;
 
 })();
+
+// ── アイテム報酬定義（rewardKind: 'item'） ─────────────────
+
+// 既存OPにrewardKind:'passive'を追加する（後方互換）
+// ROGUELITE_OPTIONS配列のシャドー更新
+(function() {
+  if (typeof ROGUELITE_OPTIONS !== 'undefined') {
+    ROGUELITE_OPTIONS.forEach(op => {
+      if (!op.rewardKind) op.rewardKind = 'passive';
+    });
+  }
+})();
+
+const ROGUELITE_ITEM_REWARDS = [
+  {
+    id: 'item_reward_heal_small',
+    name: '回復札',
+    desc: '味方1体のHPを30%回復する（1回使い切り）',
+    rarity: 'common',
+    icon: '💊',
+    rewardKind: 'item',
+    item: {
+      id: 'heal_small',
+      name: '回復札',
+      type: 'heal',
+      rarity: 'common',
+      linkCost: 1,
+      target: 'ally_single',
+      value: 0.3,
+      consume: true,
+      desc: '味方1体のHPを30%回復する。',
+    },
+  },
+  {
+    id: 'item_reward_reposition',
+    name: '転位符',
+    desc: '味方1体を任意の空きマスに移動させる（1回使い切り）',
+    rarity: 'rare',
+    icon: '🌀',
+    rewardKind: 'item',
+    item: {
+      id: 'reposition',
+      name: '転位符',
+      type: 'move_ally',
+      rarity: 'rare',
+      linkCost: 2,
+      target: 'ally_single_cell',
+      value: 1,
+      consume: true,
+      desc: '味方1体を任意の空きマスに移動させる。',
+    },
+  },
+];
+
+// アイテム報酬を含むgetRandomOptions拡張
+const _origGetRandomOptions = window.getRandomOptions;
+window.getRandomOptions = function(excludeIds, includeItems) {
+  // デフォルト: アイテム報酬も混ぜる
+  const excl = Array.isArray(excludeIds) ? excludeIds : [];
+  let pool = (typeof ROGUELITE_OPTIONS !== 'undefined' ? ROGUELITE_OPTIONS : [])
+    .filter(op => !excl.includes(op.id));
+  
+  // アイテム報酬も候補に追加（25%の確率でアイテム系が混入）
+  const itemPool = ROGUELITE_ITEM_REWARDS.filter(op => !excl.includes(op.id));
+  pool = [...pool, ...itemPool];
+
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(3, pool.length));
+};
+
+window.ROGUELITE_ITEM_REWARDS = ROGUELITE_ITEM_REWARDS;

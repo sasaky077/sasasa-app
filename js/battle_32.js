@@ -19,6 +19,37 @@
   const BOARD_ROWS = 8;
   const BOARD_COLS = 5;
 
+  // ============================================================
+  // LINK コスト定数
+  // ============================================================
+  const LINK_COST = {
+    summon: { r: 1, sr: 3, ur: 5 },
+    move: 1,
+    skill: 2,
+    ult: 3,
+    itemDefault: 1,
+  };
+
+  // ターン数に応じたLINK最大値
+  function calcLinkMax(turn) {
+    return Math.min(6, 2 + turn);
+  }
+
+  // LINK消費ヘルパー
+  function _canSpendLink(cost) {
+    return _bs && _bs.link && _bs.link.current >= cost;
+  }
+
+  function _spendLink(cost, label) {
+    if (!_canSpendLink(cost)) {
+      _log('LINKが不足しています');
+      return false;
+    }
+    _bs.link.current -= cost;
+    if (label) _log(`${label}：LINK ${cost} 消費`);
+    return true;
+  }
+
   // ボスのコア直接破壊間隔（現在は無効化）
   // const BOSS_LINE_ATTACK_INTERVAL = 5;
   const BOSS_LINE_ATTACK_RATE = 1.35;
@@ -380,16 +411,57 @@ const enemies = enemyDefs.map(def => {
     // captureMax は config で上書き可能（デフォルト2）
     const bossCaptureMax = config.bossCaptureMax || 2;
 
+    // ── ローグライトモードのroster構築 ──
+    const isRogueliteMode = config.battleMode === 'roguelite' || typeof config.rogueliteOnBattleEnd === 'function';
+    let rosterData = [];
+    let initialAllies = allies;
+
+    if (isRogueliteMode && config.partyIds && config.partyIds.length > 0) {
+      // ローグライト：5体持ち込み、初期盤面は0体
+      const allChars32 = window.CHARACTERS_32 || [];
+      rosterData = config.partyIds.map((pid, idx) => {
+        const charDef = allChars32.find(c => c.id === pid);
+        if (!charDef) return null;
+        const rar = (charDef.rarity || 'r').toLowerCase();
+        const cost = LINK_COST.summon[rar] || 1;
+        return {
+          rosterId: `roster_${idx}`,
+          charaId: pid,
+          name: charDef.name,
+          rarity: rar,
+          summonCost: cost,
+          status: 'standby',
+          deployedUid: null,
+          charDef,
+        };
+      }).filter(Boolean);
+      initialAllies = []; // ローグライトは初期盤面0体
+    }
+
     _bs = {
       turn: 1,
       phase: 'skill',
       stageId,
-      allies,
+      allies: initialAllies,
       enemies,
       log: [],
       bossWarnTurn: BOSS_WARN_INTERVAL,
       bossWarning: false,
       result: null,
+
+      // ── LINK システム ──
+      link: {
+        current: calcLinkMax(1),
+        max: calcLinkMax(1),
+        cap: 6,
+      },
+
+      // ── ローグライト: ロスター（5体持ち込み）──
+      roster: rosterData,
+      deployLimit: 4,
+
+      // ── ローグライト: アイテム2枠 ──
+      items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 2) : [],
 
       cores: {
         ally: {
@@ -398,7 +470,6 @@ const enemies = enemyDefs.map(def => {
           stability: 3,
           stabilityMax: 3,
         },
-        // cores.enemy は廃止。ボス自身がコアを内包する仕様へ移行。
       },
 
       // ── 神性核（ボスコア）状態 ──
@@ -418,21 +489,21 @@ const enemies = enemyDefs.map(def => {
       // 敵スポーン設定（ステージ設定から引き継ぐ）
       enemySpawn: config.enemySpawn || null,
 
-      // ターン単位の行動権（後方互換用）
+      // ターン単位の行動権（後方互換用・判定には使わない）
       moveUsedThisTurn:  false,
       skillUsedThisTurn: false,
       movedUnitUid:      null,
       skillUnitUid:      null,
-      // 新：行動権管理
+      // LINKベース行動権管理
       actionCount:        0,
-      actionMax:          2,
+      actionMax:          99, // 後方互換用（判定には使わない）
       lastActionType:     null,
       lastActionUnitUid:  null,
-      unitActionHistory:  {},
+      unitActionHistory:  {}, // ユニット単位の1ターン1回制限
 
       // ── ローグライト専用フィールド ──────────────────────────
       // isRoguelite: ローグライトランとして起動されたか（UI分岐の判定に使う）
-      isRoguelite:          config.battleMode === 'roguelite' || typeof config.rogueliteOnBattleEnd === 'function',
+      isRoguelite:          isRogueliteMode,
       // rogueliteOptions: 保持中の強化OPオブジェクト配列
       rogueliteOptions:     Array.isArray(config.rogueliteOptions) ? config.rogueliteOptions : [],
       // isBossStage: ボス戦かどうか（霊装OP等の判定用）
@@ -537,6 +608,12 @@ const enemies = enemyDefs.map(def => {
       cores: _bs.cores ? JSON.parse(JSON.stringify(_bs.cores)) : null,
       bossCore: _bs.bossCore ? { ..._bs.bossCore } : null,
       turnLimit: _bs.turnLimit,
+      // LINK
+      link: _bs.link ? { ..._bs.link } : null,
+      // ローグライト: roster / deployLimit / items
+      roster: _bs.roster ? _bs.roster.map(r => ({ ...r })) : [],
+      deployLimit: _bs.deployLimit || 4,
+      items: _bs.items ? [..._bs.items] : [],
       // 後方互換用
       moveUsedThisTurn:  _bs.moveUsedThisTurn,
       skillUsedThisTurn: _bs.skillUsedThisTurn,
@@ -544,7 +621,7 @@ const enemies = enemyDefs.map(def => {
       skillUnitUid:      _bs.skillUnitUid,
       // 敵スポーン設定
       enemySpawn:        _bs.enemySpawn || null,
-      // 新：行動権管理
+      // 行動権管理
       actionCount:       _bs.actionCount,
       actionMax:         _bs.actionMax,
       lastActionType:    _bs.lastActionType,
@@ -580,6 +657,14 @@ const enemies = enemyDefs.map(def => {
 
     target.hp = Math.max(0, target.hp - dmg);
     _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！（残HP: ${target.hp}）`);
+
+    // ローグライト: 味方HPが0になったらrosterをdead更新
+    if (target.side === 'ally' && target.hp <= 0 && _bs.roster) {
+      const rEntry = _bs.roster.find(r => r.deployedUid === target._uid);
+      if (rEntry && rEntry.status === 'deployed') {
+        rEntry.status = 'dead';
+      }
+    }
     _emit('damage', {
       source: source ? { _uid: source._uid, name: source.name, side: source.side, row: source.row, col: source.col } : null,
       target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
@@ -607,10 +692,13 @@ const enemies = enemyDefs.map(def => {
 
     const ally = _bs.allies.find(u => u._uid === allyUid);
     if (!ally || ally.hp <= 0) return false;
-    if (!_canUsePlayerAction('skill', allyUid)) return false;
 
     const skill = ally.skills.find(s => s.id === skillId);
     if (!skill) return false;
+
+    // ULTかどうかでLINK判定タイプを切り替え
+    const actionType = skill.isUltimate ? 'ult' : 'skill';
+    if (!_canUsePlayerAction(actionType, allyUid)) return false;
 
     if ((skill.shinkiCost || 0) > ally.shinki) {
       _log(`${ally.name}: 神気が不足しています`);
@@ -795,8 +883,8 @@ const enemies = enemyDefs.map(def => {
 
     _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 
-    // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
-    _consumePlayerAction('skill', allyUid);
+    // 行動権を消費（LINKも消費される）
+    _consumePlayerAction(actionType, allyUid);
     return true;
   }
 
@@ -879,39 +967,59 @@ const enemies = enemyDefs.map(def => {
       // ============================================================
       function _canUsePlayerAction(type, unitUid) {
         if (!_bs || _bs.phase !== 'skill') return false;
+        if (_bs.result) return false;
 
-        if ((_bs.actionCount || 0) >= (_bs.actionMax || 2)) {
-          _log('このターンの行動権を使い切っています');
-          return false;
+        // 駒アクション（move/skill/ult）はユニット単位で1ターン1回制限
+        if (type === 'move' || type === 'skill' || type === 'ult') {
+          const history = _bs.unitActionHistory || {};
+          const unitHistory = history[unitUid] || {};
+          if (unitHistory.unitActionDone) {
+            _log('このキャラはこのターンすでに行動しています');
+            return false;
+          }
         }
 
-        const history    = _bs.unitActionHistory || {};
-        const unitHistory = history[unitUid] || {};
-
-        if (unitHistory[type]) {
-          if (type === 'move') {
-            _log('このキャラはこのターンすでに移動しています');
-          } else if (type === 'skill') {
-            _log('このキャラはこのターンすでにスキルを使用しています');
-          } else {
-            _log('このキャラはこのターンすでに同じ行動をしています');
-          }
+        // LINK消費チェック
+        const cost = _getLinkCostForAction(type, unitUid);
+        if (!_canSpendLink(cost)) {
+          _log(`LINKが不足しています（必要: ${cost} / 残: ${_bs.link.current}）`);
           return false;
         }
 
         return true;
       }
 
+      function _getLinkCostForAction(type, unitUid) {
+        if (type === 'move') return LINK_COST.move;
+        if (type === 'skill') return LINK_COST.skill;
+        if (type === 'ult') return LINK_COST.ult;
+        if (type === 'summon') {
+          if (!_bs.roster || !unitUid) return 1;
+          const r = _bs.roster.find(r => r.rosterId === unitUid);
+          return r ? (LINK_COST.summon[r.rarity] || 1) : 1;
+        }
+        return 0;
+      }
+
       function _consumePlayerAction(type, unitUid) {
         if (!_bs || _bs.phase !== 'skill') return false;
+
+        // LINK消費
+        const linkCost = _getLinkCostForAction(type, unitUid);
+        _spendLink(linkCost, null);
 
         if (!_bs.unitActionHistory) _bs.unitActionHistory = {};
         if (!_bs.unitActionHistory[unitUid]) {
           _bs.unitActionHistory[unitUid] = {};
         }
+
+        // 駒アクション（move/skill/ult）はunitActionDoneフラグで1回制限
+        if (type === 'move' || type === 'skill' || type === 'ult') {
+          _bs.unitActionHistory[unitUid].unitActionDone = true;
+        }
         _bs.unitActionHistory[unitUid][type] = true;
 
-        _bs.actionCount       = Math.min(_bs.actionMax, (_bs.actionCount || 0) + 1);
+        _bs.actionCount       = (_bs.actionCount || 0) + 1;
         _bs.lastActionType    = type || null;
         _bs.lastActionUnitUid = unitUid || null;
 
@@ -920,7 +1028,7 @@ const enemies = enemyDefs.map(def => {
           _bs.moveUsedThisTurn = true;
           _bs.movedUnitUid     = unitUid || null;
         }
-        if (type === 'skill') {
+        if (type === 'skill' || type === 'ult') {
           _bs.skillUsedThisTurn = true;
           _bs.skillUnitUid      = unitUid || null;
           const ally = _bs.allies.find(u => u._uid === unitUid);
@@ -932,6 +1040,7 @@ const enemies = enemyDefs.map(def => {
           unitUid,
           actionCount: _bs.actionCount,
           actionMax:   _bs.actionMax,
+          link: { ..._bs.link },
           unitActionHistory: JSON.parse(JSON.stringify(_bs.unitActionHistory || {})),
           bs: _snapshot(),
         });
@@ -939,12 +1048,7 @@ const enemies = enemyDefs.map(def => {
         _checkWinLose();
         if (_bs.result) return true;
 
-        if (_bs.actionCount >= _bs.actionMax) {
-          endSkillPhase();
-        } else {
-          _renderUI();
-        }
-
+        _renderUI();
         return true;
       }
 
@@ -1682,12 +1786,18 @@ if (canEnemyAttackAllyCore(enemy)) {
     _bs.skillUsedThisTurn = false;
     _bs.movedUnitUid      = null;
     _bs.skillUnitUid      = null;
-    // 新：行動権管理リセット
+    // 行動権管理リセット
     _bs.actionCount       = 0;
-    _bs.actionMax         = 2;
+    _bs.actionMax         = 99; // 後方互換用（判定には使わない）
     _bs.lastActionType    = null;
     _bs.lastActionUnitUid = null;
     _bs.unitActionHistory = {};
+
+    // LINK全回復
+    if (_bs.link) {
+      _bs.link.max = calcLinkMax(_bs.turn);
+      _bs.link.current = _bs.link.max;
+    }
 
     // TODO: カード廃止後の通常移動処理をここに実装する
     // ※ SUPPORT_CARDS (cards.js) は Battle32 では参照しない。
@@ -1763,6 +1873,10 @@ if (canEnemyAttackAllyCore(enemy)) {
     }
 
     if (aliveAllies().length === 0) {
+      // ローグライト: standbyキャラが残っている場合は敗北しない
+      const hasStandby = _bs.roster && _bs.roster.some(r => r.status === 'standby');
+      if (hasStandby) return; // まだ召喚できる
+
       _bs.result = 'lose';
       _bs.phase = 'end';
       _log('✕ 味方全滅。敗北…');
@@ -2054,6 +2168,161 @@ if (canEnemyAttackAllyCore(enemy)) {
     return result;
   }
 
+  // ============================================================
+  // 召喚API（ローグライト専用）
+  // ============================================================
+
+  // マス占有チェック
+  function _isOccupied(row, col) {
+    const allUnits = [..._bs.allies, ..._bs.enemies];
+    return allUnits.some(u => u.hp > 0 && u.row === row && u.col === col);
+  }
+
+  // 召喚可能なrosterエントリ一覧
+  function getSummonableRoster() {
+    if (!_bs || !_bs.roster) return [];
+    const aliveCount = _bs.allies.filter(a => a.hp > 0).length;
+    return _bs.roster.filter(r => r.status === 'standby').map(r => ({
+      ...r,
+      canSummon: aliveCount < (_bs.deployLimit || 4) && _canSpendLink(LINK_COST.summon[r.rarity] || 1),
+    }));
+  }
+
+  // 召喚可能マス一覧
+  function getSummonCells(rosterId) {
+    const result = [];
+    const allyCore = _bs.cores && _bs.cores.ally;
+    for (let row of [6, 7]) {
+      for (let col = 0; col < 5; col++) {
+        if (allyCore && row === allyCore.row && col === allyCore.col) continue;
+        if (_isOccupied(row, col)) continue;
+        result.push({ row, col, cellType: 'summon' });
+      }
+    }
+    return result;
+  }
+
+  // 召喚実行
+  function summonAlly(rosterId, row, col) {
+    if (!_bs || _bs.phase !== 'skill' || _bs.result) return false;
+    if (!_bs.roster) return false;
+
+    const rEntry = _bs.roster.find(r => r.rosterId === rosterId);
+    if (!rEntry || rEntry.status !== 'standby') {
+      _log('召喚できません');
+      return false;
+    }
+
+    const aliveCount = _bs.allies.filter(a => a.hp > 0).length;
+    if (aliveCount >= (_bs.deployLimit || 4)) {
+      _log(`出撃数が上限（${_bs.deployLimit}体）に達しています`);
+      return false;
+    }
+
+    const summonCost = LINK_COST.summon[rEntry.rarity] || 1;
+    const validCells = getSummonCells(rosterId);
+    const isValid = validCells.some(c => c.row === row && c.col === col);
+    if (!isValid) {
+      _log('そのマスには召喚できません');
+      return false;
+    }
+
+    if (!_spendLink(summonCost, `${rEntry.name} 召喚`)) return false;
+
+    const unit = makeAlly(rEntry.charDef, row, col);
+    _bs.allies.push(unit);
+    rEntry.status = 'deployed';
+    rEntry.deployedUid = unit._uid;
+
+    _log(`${rEntry.name} が召喚された！`);
+    _emit('summon', { unit: { ...unit }, bs: _snapshot() });
+    _renderUI();
+    return true;
+  }
+
+  // ============================================================
+  // アイテムAPI（ローグライト専用）
+  // ============================================================
+
+  function getItems() {
+    if (!_bs) return [];
+    return (_bs.items || []).map((item, idx) => ({ ...item, slotIndex: idx }));
+  }
+
+  function useItem(itemSlotIndex, payload) {
+    if (!_bs || _bs.phase !== 'skill' || _bs.result) return false;
+    if (!_bs.items) return false;
+
+    const item = _bs.items[itemSlotIndex];
+    if (!item) {
+      _log('アイテムがありません');
+      return false;
+    }
+    if (item.used) {
+      _log('このアイテムはすでに使用済みです');
+      return false;
+    }
+
+    const linkCost = item.linkCost != null ? item.linkCost : LINK_COST.itemDefault;
+    if (!_canSpendLink(linkCost)) {
+      _log(`LINKが不足しています（必要: ${linkCost}）`);
+      return false;
+    }
+
+    // アイテムタイプ別処理
+    if (item.type === 'heal') {
+      // 対象: payload.targetUid
+      const targetUid = payload && payload.targetUid;
+      const target = _bs.allies.find(u => u._uid === targetUid && u.hp > 0);
+      if (!target) {
+        _log('回復対象がいません');
+        return false;
+      }
+      _spendLink(linkCost, item.name);
+      const healAmount = Math.max(1, Math.round(target.hpMax * (item.value || 0.3)));
+      const before = target.hp;
+      target.hp = Math.min(target.hpMax, target.hp + healAmount);
+      const actual = target.hp - before;
+      _log(`${item.name}：${target.name} のHPを ${actual} 回復！`);
+      _emit('heal', {
+        source: null, target: { _uid: target._uid, name: target.name, side: 'ally', row: target.row, col: target.col },
+        amount: actual, kind: 'heal', skillId: null, skillName: item.name,
+        isUltimate: false, hitStyle: 'normal', bs: _snapshot(),
+      });
+      if (item.consume) _bs.items.splice(itemSlotIndex, 1);
+
+    } else if (item.type === 'move_ally') {
+      // 対象: payload.targetUid, payload.toRow, payload.toCol
+      const targetUid = payload && payload.targetUid;
+      const toRow = payload && payload.toRow;
+      const toCol = payload && payload.toCol;
+      const target = _bs.allies.find(u => u._uid === targetUid && u.hp > 0);
+      if (!target) { _log('移動対象がいません'); return false; }
+      if (toRow == null || toCol == null) { _log('移動先が指定されていません'); return false; }
+
+      // 移動先チェック
+      const allyCore = _bs.cores && _bs.cores.ally;
+      if (allyCore && toRow === allyCore.row && toCol === allyCore.col) { _log('コアマスには移動できません'); return false; }
+      if (_isOccupied(toRow, toCol) && !(target.row === toRow && target.col === toCol)) { _log('そのマスは占有されています'); return false; }
+      if (toRow < 0 || toRow >= BOARD_ROWS || toCol < 0 || toCol >= BOARD_COLS) { _log('盤面外には移動できません'); return false; }
+
+      _spendLink(linkCost, item.name);
+      target.row = toRow;
+      target.col = toCol;
+      _log(`${item.name}：${target.name} を移動`);
+      _emit('move', { ally: { ...target }, bs: _snapshot() });
+      if (item.consume) _bs.items.splice(itemSlotIndex, 1);
+
+    } else {
+      _log(`未対応のアイテムタイプ: ${item.type}`);
+      return false;
+    }
+
+    _emit('playerActionConsumed', { type: 'item', bs: _snapshot() });
+    _renderUI();
+    return true;
+  }
+
     window.Battle32 = {
   // 初期化
   start,
@@ -2066,6 +2335,15 @@ if (canEnemyAttackAllyCore(enemy)) {
   executeAllySkill,
   moveAlly,
 
+  // 召喚（ローグライト）
+  getSummonableRoster,
+  getSummonCells,
+  summonAlly,
+
+  // アイテム（ローグライト）
+  getItems,
+  useItem,
+
   // UI補助
   getMoveCells,
   getMovableCells,
@@ -2075,6 +2353,7 @@ if (canEnemyAttackAllyCore(enemy)) {
   // 状態参照
   getState: () => _snapshot(),
   getBS: () => _bs,  // デバッグ用
+
 };
 
     })();

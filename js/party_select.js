@@ -9,6 +9,9 @@
   let currentEnemyRef = 'enemy_01';
   let currentBattleOptions = {};
 
+  function _isRogueliteMode() { return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite'; }
+  function _maxPartySize() { return _isRogueliteMode() ? 5 : 3; }
+
   // ============================================================
   // モーダル構築
   // ============================================================
@@ -28,7 +31,7 @@
     el.innerHTML = `
       <div class="ps-header">
         <div class="ps-title">部隊編成</div>
-        <div class="ps-sub">3人選択 · 連れていくキャラを選んでください</div>
+        <div class="ps-sub" id="ps-sub-text">3人選択 · 連れていくキャラを選んでください</div>
       </div>
 
       <div class="ps-slots-wrap">
@@ -379,12 +382,25 @@
   // ============================================================
   // スロット描画（左・中・右）
   // ============================================================
-  const SLOT_LABELS = ['左', '中', '右'];
+  function _getSlotLabels() {
+    return _isRogueliteMode()
+      ? ['1', '2', '3', '4', '5']
+      : ['左', '中', '右'];
+  }
 
   function renderSlots() {
     const wrap = document.getElementById('ps-slots');
     if (!wrap) return;
 
+    // サブテキスト更新
+    const subEl = document.getElementById('ps-sub-text');
+    if (subEl) {
+      subEl.textContent = _isRogueliteMode()
+        ? '5人選択 · 連れていくキャラを選んでください'
+        : '3人選択 · 連れていくキャラを選んでください';
+    }
+
+    const SLOT_LABELS = _getSlotLabels();
     wrap.innerHTML = SLOT_LABELS.map((label, i) => {
       const entry = selected[i];
       if (entry) {
@@ -418,7 +434,8 @@
 
     // 戦闘開始ボタン：3体選択で有効化
     const btn = document.getElementById('ps-btn-start');
-    if (btn) btn.disabled = selected.length < 3;
+    const maxSize = _maxPartySize();
+    if (btn) btn.disabled = selected.length < maxSize;
   }
 
   // スロット削除（クリック時に左詰め）
@@ -582,8 +599,8 @@
       renderCharaList();
       return;
     }
-    // 3枠埋まっていたら無視
-    if (selected.length >= 3) return;
+    // 枠が埋まっていたら無視
+    if (selected.length >= _maxPartySize()) return;
 
     selected.push({ charaId });
     renderSlots();
@@ -594,7 +611,7 @@
   // 戦闘開始
   // ============================================================
   window.confirmPartySelect = function () {
-    if (selected.length < 3) return;
+    if (selected.length < _maxPartySize()) return;
 
     // Battle32 に渡す partyIds（選択順の charaId 配列）
     const selectedCharaIds = selected.map(s => s.charaId);
