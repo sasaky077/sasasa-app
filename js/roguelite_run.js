@@ -87,6 +87,15 @@
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },
+
+       {
+        id: 'rl_mob_s2_ranged_test',
+        name: '遠距離テスト怪異',
+        hp: 650,
+        atk: 220,
+        moveType: 'enemy_zako_straight',
+        attackRange: 'enemy_attack_line',
+      },
       ],
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 2,
@@ -120,6 +129,15 @@
           moveType: 'enemy_zako_straight',
           attackRange: 'enemy_attack_front',
         },
+        {
+          id: 'rl_mob_s2_ranged_test',
+          name: '遠距離テスト怪異',
+          hp: 650,
+          atk: 220,
+          moveType: 'enemy_zako_straight',
+          attackRange: 'enemy_attack_line',
+        },
+
       ],
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 3,

@@ -404,10 +404,30 @@
   </div>
   <div class="setting-section">
     <div class="setting-section-title">その他</div>
-    <div class="setting-row" onclick="toggleBgm()">
-    <span class="setting-row-label">BGM</span>
-    <span class="setting-row-sub" id="bgm-status">ON</span>
-  </div>
+    <div class="setting-row" onclick="toggleAudioSetting('title_bgm')">
+  <span class="setting-row-label">タイトル画面BGM</span>
+  <span class="setting-row-sub" id="title-bgm-status">ON</span>
+</div>
+
+<div class="setting-row" onclick="toggleAudioSetting('main_bgm')">
+  <span class="setting-row-label">通常BGM</span>
+  <span class="setting-row-sub" id="main-bgm-status">ON</span>
+</div>
+
+<div class="setting-row" onclick="toggleAudioSetting('gacha_se')">
+  <span class="setting-row-label">ガチャSE</span>
+  <span class="setting-row-sub" id="gacha-se-status">ON</span>
+</div>
+
+<div class="setting-row" onclick="toggleAudioSetting('battle_se')">
+  <span class="setting-row-label">バトルSE</span>
+  <span class="setting-row-sub" id="battle-se-status">ON</span>
+</div>
+
+<div class="setting-row" onclick="toggleAudioSetting('other_se')">
+  <span class="setting-row-label">その他SE</span>
+  <span class="setting-row-sub" id="other-se-status">ON</span>
+</div>
 
   <div class="setting-row" style="cursor:default">
   <span class="setting-row-label">音量</span>
@@ -1272,10 +1292,10 @@ function selectChara(now, gacha) {
     splash.addEventListener('click', function(){
       try {
         var openingBgm = document.getElementById('bgm-opening');
-        if(openingBgm){
-          openingBgm.volume = 0.3;
-          openingBgm.play().catch(function(){});
-        }
+        if(openingBgm && isAudioEnabled('title_bgm')){
+  openingBgm.volume = 0.3;
+  openingBgm.play().catch(function(){});
+}
       } catch(e){}
 
       splash.style.opacity = '0';
@@ -1295,10 +1315,12 @@ var titleScreen = document.getElementById('title-screen');
 titleScreen.style.display = 'flex';
 
 var openingBgm = document.getElementById('bgm-opening');
-if(openingBgm){
+if(openingBgm && isAudioEnabled('title_bgm')){
   openingBgm.volume = 0.3;
   setTimeout(function(){
-    openingBgm.play().catch(function(){});
+    if(isAudioEnabled('title_bgm')){
+      openingBgm.play().catch(function(){});
+    }
   }, 100);
 }
 }
@@ -1312,9 +1334,11 @@ if(openingBgm){
   fadeOutOpeningBgm();
 
   // ★ 扉の音を再生
+  if (isAudioEnabled('other_se')) {
   var tapSE = new Audio('audio/title_tap.mp3');
   tapSE.volume = 1.0;
   tapSE.play().catch(function(){});
+}
 
   // 先にDB待機開始
   await window._dbLoadPromise;
@@ -1806,13 +1830,25 @@ div.addEventListener('click', function(){
   function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
   function playSE(id, volume = 1){
+  var gachaSeIds = [
+    'gacha_crack',
+    'gacha_break',
+    'ten_gacha_open',
+    'fullscreen_impact',
+    'tap_ur',
+    'ur_black'
+  ];
+
+  if (gachaSeIds.includes(id) && !isAudioEnabled('gacha_se')) return;
+  if (!gachaSeIds.includes(id) && !isAudioEnabled('other_se')) return;
+
   var base = document.getElementById('se-' + id);
   if(!base) return;
 
   var se = base.cloneNode();
   se.volume = (seVolume / 100) * volume;
   se.play().catch(function(){});
-  }
+}
 
   function playLoopSE(id, volume = 1){
   var se = document.getElementById('se-' + id);
@@ -3782,42 +3818,66 @@ document.getElementById('detail-modal').addEventListener('click', function(e){
 var bgmEnabled = localStorage.getItem('bgm_enabled') !== 'false';
 var bgmVolume = Number(localStorage.getItem('bgm_volume') || 30);
 var seVolume = Number(localStorage.getItem('se_volume') || 15);
+
+var audioSettings = {
+  title_bgm: localStorage.getItem('audio_title_bgm') !== 'false',
+  main_bgm: localStorage.getItem('audio_main_bgm') !== 'false',
+  gacha_se: localStorage.getItem('audio_gacha_se') !== 'false',
+  battle_se: localStorage.getItem('audio_battle_se') !== 'false',
+  other_se: localStorage.getItem('audio_other_se') !== 'false',
+};
+
 var bgmFadeInterval = null;
 
-function fadeInBgm(){
-  var bgm = document.getElementById('bgm');
-  if(!bgm) return;
+function isAudioEnabled(key) {
+  return audioSettings[key] !== false;
+}
 
-  if(bgmFadeInterval){
-    clearInterval(bgmFadeInterval);
+function toggleAudioSetting(key) {
+  audioSettings[key] = !audioSettings[key];
+  localStorage.setItem('audio_' + key, audioSettings[key]);
+
+  if (key === 'title_bgm' && !audioSettings[key]) {
+    var opening = document.getElementById('bgm-opening');
+    if (opening) {
+      opening.pause();
+      opening.currentTime = 0;
+    }
   }
 
-  var target = bgmVolume / 100;
-  var vol = 0;
+  if (key === 'main_bgm' && !audioSettings[key]) {
+    stopBgm();
+  }
 
-  bgm.volume = 0;
-  bgm.play();
+  if (key === 'main_bgm' && audioSettings[key] && bgmEnabled) {
+    playBgm();
+  }
 
-  bgmFadeInterval = setInterval(function(){
-    vol += 0.05;
+  updateBgmUI();
+}
 
-    if(vol >= target){
-      vol = target;
-      clearInterval(bgmFadeInterval);
-    }
+function updateAudioSettingsUI() {
+  var map = {
+    'title-bgm-status': 'title_bgm',
+    'main-bgm-status': 'main_bgm',
+    'gacha-se-status': 'gacha_se',
+    'battle-se-status': 'battle_se',
+    'other-se-status': 'other_se',
+  };
 
-    bgm.volume = vol;
-  }, 100);
+  Object.keys(map).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+
+    var key = map[id];
+    el.textContent = audioSettings[key] ? 'ON' : 'OFF';
+  });
 }
 
 function updateBgmUI(){
-  var status = document.getElementById('bgm-status');
   var volume = document.getElementById('bgm-volume');
   var seVol = document.getElementById('se-volume');
 
-  if(status){
-    status.textContent = bgmEnabled ? 'ON' : 'OFF';
-  }
   if(volume){
     volume.value = bgmVolume;
   }
@@ -3825,11 +3885,13 @@ function updateBgmUI(){
     seVol.value = seVolume;
   }
 
-  // iOSはaudio.volumeが効かないためスライダーを非表示
+  updateAudioSettingsUI();
+
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if(isIOS){
     var bgmRow = document.getElementById('bgm-volume');
     if(bgmRow) bgmRow.closest('.setting-row').style.display = 'none';
+
     var seRow = document.getElementById('se-volume');
     if(seRow) seRow.closest('.setting-row').style.display = 'none';
   }
@@ -3859,7 +3921,7 @@ function playBgm(){
 
   applyBgmVolume();
 
-  if(bgmEnabled){
+  if(bgmEnabled && isAudioEnabled('main_bgm')){
     bgm.play().catch(function(e){
       console.log('BGM再生待機:', e);
     });
@@ -3886,31 +3948,43 @@ function toggleBgm(){
   }
 }
 
-window.addEventListener('load', function(){
-  updateBgmUI();
-  applyBgmVolume();
-});
-
 function fadeInBgm(){
   var bgm = document.getElementById('bgm');
-  var vol = 0;
-  bgm.volume = 0;
+  if(!bgm) return;
 
-  if(bgmEnabled){
-  bgm.play();
+  if(bgmFadeInterval){
+    clearInterval(bgmFadeInterval);
   }
 
-  
+  var target = bgmVolume / 100;
+  var vol = 0;
 
-  var interval = setInterval(function(){
+  bgm.volume = 0;
+
+  if(bgmEnabled && isAudioEnabled('main_bgm')){
+    bgm.play().catch(function(e){
+      console.log('BGMフェードイン待機:', e);
+    });
+  } else {
+    return;
+  }
+
+  bgmFadeInterval = setInterval(function(){
     vol += 0.05;
-    if(vol >= bgmVolume/100){
-      vol = bgmVolume/100;
-      clearInterval(interval);
+
+    if(vol >= target){
+      vol = target;
+      clearInterval(bgmFadeInterval);
     }
+
     bgm.volume = vol;
   }, 100);
 }
+
+window.addEventListener('load', function(){
+  updateBgmUI();
+  applyBgmVolume();
+});  
 
 function updateHeaderHeight() {
   const el = document.getElementById('global-user-frame');

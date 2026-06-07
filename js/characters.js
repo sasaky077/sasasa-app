@@ -273,70 +273,6 @@ const CHARACTERS = [
         desc: 'ポジションを変更する。' }
     ]},
 
-  // ── id:4 ユズハ（ギャル寄り）───────────────────────────────────
-  // 予知系。数ターン先に攻撃を予約する感じ。
-  { id: 4, name: 'ユズハ', gender: 'man', rarity: 'r',
-    role: '火力寄り',
-    moveType: 'rook_short',
-    costMax: 14,
-    costStart: 0,
-    costRegen: 2,
-    shinkiMax: 5,
-    shinkiStart: 0,
-    shinkiRegen: 1,
-    stats: { HP: 730, ATK: 275 },
-    img: 'images/chara_04.webp', 
-    cutImg: 'images/chara_04_cut.webp', 
-    ultImg: 'images/chara_04_cutin.webp',
-    upImg: 'images/chara_04_up.webp', 
-    battleImg: 'images/chara_04_battle.webp',
-    battleBackImg: 'images/chara_04_battle_back.webp',
-    panelImg: 'images/chara_04_panel.webp',
-    favScale: 1.00, favOffsetY: 20,
-    uiScale: {
-    panel: 1.0,
-    battleBack: 1.0
-},
-    skills: [
-      { id: 's1',
-        name: '堕ちろっ♡',
-        cost: 3,
-        linkCost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'diag_x_1',
-        pierce: false,
-        effects: [],
-        hitStyle: 'rapid',
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.3
-        },
-        desc: '自身の直線上3マス先まで非貫弾を打ち込む。' },
-
-      { id: 'ult',
-        name: '圧倒的神頼みっ♡',
-        cost: 10,
-        linkCost: 5,
-        isUltimate: true,
-        hit: 100,
-        type: 'delayed_attack',
-        multiplier: 3.0,
-        range: 'field_cross_center',
-        pierce: true,
-        effects: [],
-        hitStyle: 'multi',
-        delayTurns: 2,
-        delayedTrigger: 'allyTurnStart',
-        moveBonus: {
-          idealMoves: [1],
-          damageRate: 1.5
-        },
-        desc: '使用した2ターン後のターン開始時に固定マスに大ダメージ。' }
-    ]},
-
   // ── id:7 ミユ
 { id: 7, name: 'ミユ', gender: 'woman', rarity: 'r',
   role: '速度寄り',
@@ -394,6 +330,126 @@ const CHARACTERS = [
         desc: '自分を中心に周囲2マス以内の敵に中ダメージ' }
     ]},
 
+    // ── id:10 フミカ（速度寄り）──────────────────────────────────
+  // 必中バフと実体化を組み合わせ、敵情報を暴くサポーター。
+  { id: 10, name: 'フミカ', gender: 'woman', rarity: 'r',
+    role: '速度寄り',
+    costMax: 10,
+    costStart: 5,
+    costRegen: 2,
+    shinkiMax: 3,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 760, ATK: 250 },
+    img: 'images/chara_10.webp', 
+    cutImg: 'images/chara_10_cut.webp', 
+    ultImg: 'images/chara_10_cutin.webp',
+    upImg: 'images/chara_10_up.webp', 
+    battleImg: 'images/chara_10_battle.webp',
+    battleBackImg: 'images/chara_10_battle_back.webp',
+    panelImg: 'images/chara_10_panel.webp',
+    favScale: 0.75, favOffsetY: -80,
+    skills: [
+      { id: 's1',
+        name: '白日',
+        cost: 3,
+        isUltimate: false,
+        hit: 90,
+        type: 'attack',
+        multiplier: 1.5,
+        range: 'all',
+        effects: [
+          { 
+            type: 'jittai', 
+            target: 'enemy', 
+            hit: 90, 
+            duration: 2 
+          }
+        ],
+        moveBonus: {
+          idealMoves: [2],
+          damageRate: 1.3
+        },
+        desc: '素早く怪異を実体化させる。成功率が高い。' },
+
+      { id: 's2',
+        name: '慈愛',
+        cost: 6,
+        isUltimate: false,
+        hit: 100,
+        type: 'debuff',
+        multiplier: 0.0,
+        range: 'all',
+        effects: [,
+          { 
+            type: 'atk_down', 
+            target: 'enemy', 
+            hit: 75, 
+            duration: 2 
+          },
+          { 
+            type: 'jittai', 
+            target: 'enemy', 
+            hit: 90, 
+            duration: 2 
+          }
+        ],
+        moveBonus: {
+          idealMoves: [2],
+          damageRate: 1.2
+        },
+        desc: '深い愛情で怪異を2ターン実体化し、ATKを2ターン低下させる。' },
+
+      { id: 's3',
+        name: '寵愛',
+        cost: 3,
+        isUltimate: false,
+        hit: 90,
+        type: 'debuff',
+        multiplier: 0.0,
+        range: 'all',
+        effects: [
+          {
+             type: 'jittai', 
+             target: 'enemy', 
+             hit: 90, 
+             duration: 2 
+            }
+        ],
+        moveBonus: {
+          idealMoves: [2],
+          damageRate: 1.2
+        },
+        desc: '素早く怪異を実体化させる。成功率が高い。' },
+
+      { id: 'ult',
+        name: '風',
+        cost: 10,
+        isUltimate: true,
+        hit: 100,
+        type: 'move',
+        multiplier: 2.0,
+        range: 'all',
+        effects: [
+          { 
+            type: 'jittai', 
+            target: 'enemy', 
+            hit: 90, 
+            duration: 2 
+          },
+          { 
+            type: 'push_2', 
+            target: 'enemy', 
+            hit: 100, 
+            duration: 1 
+          }
+        ],
+        moveBonus: {
+          idealMoves: [1,2,3,4],
+          damageRate: 1.0
+        },
+        desc: '怪異を実体化し、全員を最後列に押し出す。' }
+    ]},
 
   // ── id:12 エリ
 { id: 12, name: 'エリ', gender: 'woman', rarity: 'r',
@@ -597,6 +653,70 @@ const CHARACTERS = [
   // SR
   // ══════════════════════════════════════════════════════════════
 
+  // ── id:4 ユズハ（ギャル寄り）───────────────────────────────────
+  // 予知系。数ターン先に攻撃を予約する感じ。
+  { id: 4, name: 'ユズハ', gender: 'man', rarity: 'sr',
+    role: '火力寄り',
+    moveType: 'yuzuha',
+    costMax: 14,
+    costStart: 0,
+    costRegen: 2,
+    shinkiMax: 4,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 730, ATK: 275 },
+    img: 'images/chara_04.webp', 
+    cutImg: 'images/chara_04_cut.webp', 
+    ultImg: 'images/chara_04_cutin.webp',
+    upImg: 'images/chara_04_up.webp', 
+    battleImg: 'images/chara_04_battle.webp',
+    battleBackImg: 'images/chara_04_battle_back.webp',
+    panelImg: 'images/chara_04_panel.webp',
+    favScale: 1.00, favOffsetY: 20,
+    uiScale: {
+    panel: 1.0,
+    battleBack: 1.0
+},
+    skills: [
+      { id: 's1',
+        name: '堕ちろっ♡',
+        cost: 3,
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        type: 'attack',
+        multiplier: 1.5,
+        range: 'diag_x_1',
+        pierce: false,
+        effects: [],
+        hitStyle: 'rapid',
+        moveBonus: {
+          idealMoves: [2],
+          damageRate: 1.3
+        },
+        desc: '自身の直線上3マス先まで非貫弾を打ち込む。' },
+
+      { id: 'ult',
+        name: '圧倒的神頼みっ♡',
+        cost: 10,
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        type: 'delayed_attack',
+        multiplier: 3.0,
+        range: 'field_cross_center',
+        pierce: true,
+        effects: [],
+        hitStyle: 'multi',
+        delayTurns: 2,
+        delayedTrigger: 'allyTurnStart',
+        moveBonus: {
+          idealMoves: [1],
+          damageRate: 1.5
+        },
+        desc: '使用した2ターン後のターン開始時に固定マスに大ダメージ。' }
+    ]},
+
   // ── id:5 ナガラ（火力寄り）───────────────────────────────────
   // 爆発系の超高火力。遠距離攻撃＋押し出しで敵ポジションも操作する。
   { id: 5, name: 'ナガラ', gender: 'man', rarity: 'sr',
@@ -691,127 +811,6 @@ const CHARACTERS = [
           damageRate: 1.5
         },
         desc: '最後列の敵に特大ダメージを与え、最前列に寄せ付ける。' }
-    ]},
-
-  // ── id:10 フミカ（速度寄り）──────────────────────────────────
-  // 必中バフと実体化を組み合わせ、敵情報を暴くサポーター。
-  { id: 10, name: 'フミカ', gender: 'woman', rarity: 'sr',
-    role: '速度寄り',
-    costMax: 10,
-    costStart: 5,
-    costRegen: 2,
-    shinkiMax: 3,
-    shinkiStart: 0,
-    shinkiRegen: 1,
-    stats: { HP: 760, ATK: 250 },
-    img: 'images/chara_10.webp', 
-    cutImg: 'images/chara_10_cut.webp', 
-    ultImg: 'images/chara_10_cutin.webp',
-    upImg: 'images/chara_10_up.webp', 
-    battleImg: 'images/chara_10_battle.webp',
-    battleBackImg: 'images/chara_10_battle_back.webp',
-    panelImg: 'images/chara_10_panel.webp',
-    favScale: 0.75, favOffsetY: -80,
-    skills: [
-      { id: 's1',
-        name: '白日',
-        cost: 3,
-        isUltimate: false,
-        hit: 90,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'all',
-        effects: [
-          { 
-            type: 'jittai', 
-            target: 'enemy', 
-            hit: 90, 
-            duration: 2 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.3
-        },
-        desc: '素早く怪異を実体化させる。成功率が高い。' },
-
-      { id: 's2',
-        name: '慈愛',
-        cost: 6,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'all',
-        effects: [,
-          { 
-            type: 'atk_down', 
-            target: 'enemy', 
-            hit: 75, 
-            duration: 2 
-          },
-          { 
-            type: 'jittai', 
-            target: 'enemy', 
-            hit: 90, 
-            duration: 2 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '深い愛情で怪異を2ターン実体化し、ATKを2ターン低下させる。' },
-
-      { id: 's3',
-        name: '寵愛',
-        cost: 3,
-        isUltimate: false,
-        hit: 90,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'all',
-        effects: [
-          {
-             type: 'jittai', 
-             target: 'enemy', 
-             hit: 90, 
-             duration: 2 
-            }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '素早く怪異を実体化させる。成功率が高い。' },
-
-      { id: 'ult',
-        name: '風',
-        cost: 10,
-        isUltimate: true,
-        hit: 100,
-        type: 'move',
-        multiplier: 2.0,
-        range: 'all',
-        effects: [
-          { 
-            type: 'jittai', 
-            target: 'enemy', 
-            hit: 90, 
-            duration: 2 
-          },
-          { 
-            type: 'push_2', 
-            target: 'enemy', 
-            hit: 100, 
-            duration: 1 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [1,2,3,4],
-          damageRate: 1.0
-        },
-        desc: '怪異を実体化し、全員を最後列に押し出す。' }
     ]},
 
 // ── id:15 アキ
@@ -1071,7 +1070,7 @@ const CHARACTERS = [
     costMax: 14,
     costStart: 5,
     costRegen: 3,
-    shinkiMax: 3,
+    shinkiMax: 6,
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 600, ATK: 250 },
@@ -1108,7 +1107,6 @@ const CHARACTERS = [
         name: '神体実験',
         cost: 0,
         linkCost: 6,
-        shinkiCost: 7,
         isUltimate: true,
         hit: 100,
         type: 'debuff',

@@ -4781,6 +4781,33 @@ const isSummonSelected =
      let hpTextHtml = '';
      const hpMax = (r.charDef && Number(r.charDef.hp)) || 0;
 
+// ULTゲージ表示：deployed は実測shinki、standby/dead は0扱い
+let ultGaugeHtml = '';
+{
+  let shinkiCurrent = 0;
+  let shinkiMax = Number(r.charDef?.shinkiMax || 0);
+
+  if (isDeployed && r.deployedUid) {
+    const deployedUnit = (bs.allies || []).find(a => a._uid === r.deployedUid);
+    if (deployedUnit) {
+      shinkiCurrent = Math.max(0, Number(deployedUnit.shinki || 0));
+      shinkiMax = Math.max(shinkiMax, Number(deployedUnit.shinkiMax || 0));
+    }
+  }
+
+  if (shinkiMax > 0) {
+    const dots = Array.from({ length: shinkiMax }, (_, i) =>
+      `<span class="b32-roster-ult-dot${i < shinkiCurrent ? ' filled' : ''}"></span>`
+    ).join('');
+
+    ultGaugeHtml = `
+      <div class="b32-roster-ult-row" aria-label="ULT ${shinkiCurrent}/${shinkiMax}">
+        ${dots}
+      </div>
+    `;
+  }
+}
+
      if (hpMax > 0) {
        let hpCurrent = hpMax;
        let hpTextClass = 'standby';
@@ -4824,6 +4851,8 @@ const isSummonSelected =
        <div style="font-size:8px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
        ${hpTextHtml}
        ${hpBarHtml}
+       ${ultGaugeHtml}
+
      </div>`;
    }).join('');
 
@@ -4853,7 +4882,7 @@ function renderItemPanel(bs) {
     el.style.cssText = [
       'position:fixed',
       'right:8px',
-      'bottom:calc(170px + env(safe-area-inset-bottom, 0px))',
+      'bottom:calc(270px + env(safe-area-inset-bottom, 0px))',
       'z-index:3000001',
       'display:flex',
       'flex-direction:column',
