@@ -2452,9 +2452,89 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  window.b32UnlockInput = function () { _b32InputLocked = false; };
 
  let _centerTextTimer = null;
- let _centerTextTimer2 = null;
+let _centerTextTimer2 = null;
+let _centerTextRaf = null;
+let _centerTextSeq = 0;
 
- window.showBattle32CenterText = function (main, sub, duration) {
+window.showBattle32CenterText = function (main, sub, duration) {
+  const seq = ++_centerTextSeq;
+
+  // 既存タイマーを全クリア
+  if (_centerTextTimer) {
+    clearTimeout(_centerTextTimer);
+    _centerTextTimer = null;
+  }
+
+  if (_centerTextTimer2) {
+    clearTimeout(_centerTextTimer2);
+    _centerTextTimer2 = null;
+  }
+
+  // iPhone Safari対策：前回のrequestAnimationFrameも必ずキャンセル
+  if (_centerTextRaf) {
+    cancelAnimationFrame(_centerTextRaf);
+    _centerTextRaf = null;
+  }
+
+  // スタイルを確実に注入済みにする
+  if (!document.getElementById('b32-center-text-style')) injectStyle();
+
+  let el = document.getElementById('b32-center-text');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'b32-center-text';
+    document.body.appendChild(el);
+  }
+
+  el.classList.remove('b32ct-visible');
+  el.classList.add('b32ct-hidden');
+
+  el.innerHTML = `
+    <div class="b32ct-main">${main}</div>
+    ${sub ? `<div class="b32ct-sub">${sub}</div>` : ''}
+  `;
+
+  void el.offsetWidth;
+
+  _centerTextRaf = requestAnimationFrame(() => {
+    // 古い表示命令なら無視
+    if (seq !== _centerTextSeq) return;
+
+    el.classList.remove('b32ct-hidden');
+    el.classList.add('b32ct-visible');
+    _centerTextRaf = null;
+  });
+
+  // CSSのtransitionが220msなので、少し余裕を見て300ms
+  const exitDuration = 300;
+
+  _centerTextTimer = setTimeout(() => {
+    if (seq !== _centerTextSeq) return;
+
+    el.classList.remove('b32ct-visible');
+    el.classList.add('b32ct-hidden');
+
+    _centerTextTimer2 = setTimeout(() => {
+      if (seq !== _centerTextSeq) return;
+
+      el.innerHTML = '';
+      el.classList.remove('b32ct-hidden');
+      _centerTextTimer2 = null;
+    }, exitDuration);
+
+    _centerTextTimer = null;
+  }, duration || 1200);
+};
+
+window.showBattle32CenterTextAsync = function (main, sub, duration) {
+  return new Promise(resolve => {
+    window.showBattle32CenterText(main, sub, duration);
+
+    // duration + exitDuration + 余裕
+    setTimeout(resolve, (duration || 1200) + 350);
+  });
+};
+
  // 既存タイマーを全クリア
  if (_centerTextTimer) { clearTimeout(_centerTextTimer); _centerTextTimer = null; }
  if (_centerTextTimer2) { clearTimeout(_centerTextTimer2); _centerTextTimer2 = null; }
