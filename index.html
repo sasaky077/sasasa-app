@@ -1361,6 +1361,11 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     updateSummonGemUI();
     updateMainUI();
 
+    // Battle32 中断バトルの復元確認（ホーム表示後に実行）
+    if (checkBattle32Resume()) {
+      return;
+    }
+
   }, 2000);
 }
 
@@ -1963,6 +1968,8 @@ function setTenResultFooterVisible(visible){
       setHomeBtnVisible(false);
       setReloadBtnVisible(true);
       if(guf2) guf2.classList.remove('hud-dark');
+      // Battle32バトル中にホームへ戻った場合は中断保存を削除
+      if (typeof clearBattle32ResumeState === 'function') clearBattle32ResumeState();
     } else {
       document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
       if(name === 'zukan') renderCurrentZukanTab();
@@ -4031,6 +4038,107 @@ document.addEventListener('click', function(e){
   }
 });
 
+const B32_SAVE_KEY = 'battle32_resume_state';
+const B32_SAVE_VERSION = '2026-06-07-b32-resume-001';
+
+function saveBattle32ResumeState(reason) {
+  try {
+    if (!window.Battle32 || typeof window.Battle32.getState !== 'function') return;
+
+    const bs = window.Battle32.getState();
+    if (!bs) return;
+
+    // 終了済みバトルは保存しない
+    if (bs.result || bs.phase === 'end') {
+      localStorage.removeItem(B32_SAVE_KEY);
+      return;
+    }
+
+    const payload = {
+      version: B32_SAVE_VERSION,
+      savedAt: Date.now(),
+      reason: reason || '',
+      state: bs
+    };
+
+    localStorage.setItem(B32_SAVE_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.warn('[Battle32] resume save failed', e);
+  }
+}
+
+function clearBattle32ResumeState() {
+  localStorage.removeItem(B32_SAVE_KEY);
+}
+
+function checkBattle32Resume() {
+  try {
+    const raw = localStorage.getItem(B32_SAVE_KEY);
+    if (!raw) return false;
+
+    const payload = JSON.parse(raw);
+    if (!payload || payload.version !== B32_SAVE_VERSION || !payload.state) {
+      localStorage.removeItem(B32_SAVE_KEY);
+      return false;
+    }
+
+    // 24時間以上古い保存データは破棄
+    const age = Date.now() - (payload.savedAt || 0);
+    if (age > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(B32_SAVE_KEY);
+      return false;
+    }
+
+    const ok = confirm('中断中のバトルがあります。途中から再開しますか？');
+    if (!ok) {
+      localStorage.removeItem(B32_SAVE_KEY);
+      return false;
+    }
+
+    // ホーム画面などを隠し、Battle32を前面表示できる状態にする
+    if (typeof hideAllMainScreens === 'function') {
+      hideAllMainScreens();
+    } else {
+      document.querySelectorAll('.screen').forEach(function(el) {
+        el.classList.remove('active');
+      });
+    }
+
+    // 共有HUD・ボトムナビを隠す（バトル中と同じ状態に）
+    const hud = document.getElementById('global-user-frame');
+    if (hud) hud.classList.add('hidden');
+
+    const nav = document.getElementById('bottom-nav-shared');
+    if (nav) nav.style.display = 'none';
+
+    if (window.Battle32 && typeof window.Battle32.restore === 'function') {
+      const restored = window.Battle32.restore(payload.state);
+      if (restored) {
+        if (typeof window.renderBattle32UI === 'function') {
+          window.renderBattle32UI();
+        }
+        return true;
+      }
+    }
+
+    return false;
+  } catch (e) {
+    console.warn('[Battle32] resume load failed', e);
+    localStorage.removeItem(B32_SAVE_KEY);
+    return false;
+  }
+}
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') {
+    saveBattle32ResumeState('visibilitychange');
+  }
+});
+
+window.addEventListener('pagehide', function () {
+  saveBattle32ResumeState('pagehide');
+});
+
 </script>
 
 <!-- ランクアップトースト -->
@@ -4538,7 +4646,7 @@ document.addEventListener('click', function(e){
 <script src="js/battle_range_32.js"></script>
 <script src="js/characters_32.js"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js"></script>
+<script src="js/battle_32.js?v=135"></script>
 <script src="js/battle_32_ui.js"></script>
 
 <!-- ローグライト（新規追加） -->         ← ここから追加

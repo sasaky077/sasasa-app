@@ -139,6 +139,15 @@
     return JSON.parse(JSON.stringify(obj));
   }
 
+  // ============================================================
+  // 中断保存ヘルパー（index.html 側の saveBattle32ResumeState を呼ぶ）
+  // ============================================================
+  function _saveResume() {
+    if (typeof window.saveBattle32ResumeState === 'function') {
+      window.saveBattle32ResumeState('battle-action');
+    }
+  }
+
   function uid() {
     return Math.random().toString(36).slice(2, 9);
   }
@@ -1123,11 +1132,24 @@ if (stype === 'delayed_attack') {
 
     ally.shinki -= (skill.shinkiCost || 0);
 
-    _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
+// スキル/ULTのダメージで勝敗が確定していたら、ここで終了する
+// applyDamage() 内で _checkWinLose() は既に呼ばれている
+if (_bs.result) {
+  _renderUI();
+  return true;
+}
 
-    // 行動権を消費（LINKも消費される）
-    _consumePlayerAction(actionType, allyUid, skillId);
-    return true;
+_emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
+
+// 行動権を消費（LINKも消費される）
+_consumePlayerAction(actionType, allyUid, skillId);
+
+// 勝敗未確定のときだけ保存
+if (!_bs.result) {
+  _saveResume();
+}
+
+return true;
   }
 
   // ============================================================
@@ -2116,6 +2138,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     _emit('turnStart', { turn: _bs.turn, bs: _snapshot() });
     _emit('phaseChange', { phase: 'skill', bs: _snapshot() });
     _startAllyTurnFlow();   // ALLY TURN → PLAYER ACTION → 操作解除
+    _saveResume();
   }
 
   // ============================================================
@@ -2143,6 +2166,13 @@ if (canEnemyAttackAllyCore(enemy)) {
   function _checkWinLose() {
     if (_bs.result) return;
 
+    // 勝敗確定時に保存データを削除するヘルパー
+    function _clearResume() {
+      if (typeof window.clearBattle32ResumeState === 'function') {
+        window.clearBattle32ResumeState();
+      }
+    }
+
     // ── ローグライト雑魚戦専用：敵全滅で勝利 ──────────────
     // _rl_onBattleEnd が設定されており、かつボス戦でない場合のみ有効
     // 通常ステージ（_rl_onBattleEnd === null）には影響しない
@@ -2152,6 +2182,7 @@ if (canEnemyAttackAllyCore(enemy)) {
         _bs.result = 'win';
         _bs.phase  = 'end';
         _log('★ 雑魚群の制圧に成功！');
+        _clearResume();
         _emit('result', { result: 'win', bs: _snapshot() });
         _renderUI();
         _notifyRogueliteBattleEnd('win');
@@ -2164,6 +2195,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _bs.result = 'win';
       _bs.phase = 'end';
       _log('★ 神性核固定・収容完了！');
+      _clearResume();
       _emit('result', { result: 'win', bs: _snapshot() });
       _renderUI();
       _notifyRogueliteBattleEnd('win');
@@ -2174,6 +2206,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _bs.result = 'lose';
       _bs.phase = 'end';
       _log('✕ 自陣コアが侵食された。収容失敗…');
+      _clearResume();
       _emit('result', { result: 'lose', bs: _snapshot() });
       _renderUI();
       _notifyRogueliteBattleEnd('lose');
@@ -2184,6 +2217,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _bs.result = 'lose';
       _bs.phase = 'end';
       _log('✕ 接続限界を超過。強制帰還…');
+      _clearResume();
       _emit('result', { result: 'lose', bs: _snapshot() });
       _renderUI();
       _notifyRogueliteBattleEnd('lose');
@@ -2198,6 +2232,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _bs.result = 'lose';
       _bs.phase = 'end';
       _log('✕ 味方全滅。敗北…');
+      _clearResume();
       _emit('result', { result: 'lose', bs: _snapshot() });
       _renderUI();
       _notifyRogueliteBattleEnd('lose');
@@ -2341,6 +2376,7 @@ if (canEnemyAttackAllyCore(enemy)) {
 
       // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
       _consumePlayerAction('move', allyUid, null);
+      _saveResume();
       return true;
     }
   // ============================================================
@@ -2555,6 +2591,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     _log(`${rEntry.name} が召喚された！`);
     _emit('summon', { unit: { ...unit }, bs: _snapshot() });
     _renderUI();
+    _saveResume();
     return true;
   }
 
@@ -2638,41 +2675,63 @@ if (canEnemyAttackAllyCore(enemy)) {
 
     _emit('playerActionConsumed', { type: 'item', bs: _snapshot() });
     _renderUI();
+    _saveResume();
     return true;
   }
 
-    window.Battle32 = {
-  // 初期化
-  start,
+function restore(savedState, callbacks) {
+  if (!savedState) return false;
 
-  // フェーズ操作
+  _cb = callbacks || {};
+
+  _battleFlowToken++;
+  _allyTurnFlowRunning = false;
+  _enemyTurnFlowRunning = false;
+
+  _bs = deepClone(savedState);
+
+  // 再開直後は演出中ではなく、操作可能な状態に寄せる
+  if (_bs.result) {
+    _bs.phase = 'end';
+  } else if (_bs.phase !== 'skill' && _bs.phase !== 'enemy') {
+    _bs.phase = 'skill';
+  }
+
+  _renderUI();
+
+  // skillフェーズなら入力可能に戻す
+  if (_bs.phase === 'skill' && !_bs.result) {
+    _unlockInput();
+  }
+
+  return true;
+}
+
+window.Battle32 = {
+  start,
+  restore,
+
   endSkillPhase,
   endCharTurn,
 
-  // アクション
   executeAllySkill,
   moveAlly,
 
-  // 召喚（ローグライト）
   getSummonableRoster,
   getSummonCells,
   summonAlly,
 
-  // アイテム（ローグライト）
   getItems,
   useItem,
 
-  // UI補助
   getMoveCells,
   getMovableCells,
   getSkillRangeCells,
   getBossDangerCells,
   getLinkCostForAction: (type, unitUid, skillId) => _getLinkCostForAction(type, unitUid, skillId),
 
-  // 状態参照
-  getState: () => _snapshot(),
-  getBS: () => _bs,  // デバッグ用
-
+  getState: () => _bs ? _snapshot() : null,
+  getBS: () => _bs,
 };
 
     })();

@@ -2535,62 +2535,6 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
   });
 };
 
- // 既存タイマーを全クリア
- if (_centerTextTimer) { clearTimeout(_centerTextTimer); _centerTextTimer = null; }
- if (_centerTextTimer2) { clearTimeout(_centerTextTimer2); _centerTextTimer2 = null; }
-
- // スタイルを確実に注入済みにする
- if (!document.getElementById('b32-center-text-style')) injectStyle();
-
- let el = document.getElementById('b32-center-text');
- if (!el) {
- el = document.createElement('div');
- el.id = 'b32-center-text';
- document.body.appendChild(el);
- }
-
- // クラスだけで状態を制御する（style.opacity 直接操作はしない）
- el.classList.remove('b32ct-visible');
- el.classList.add('b32ct-hidden');
-
- el.innerHTML = `
- <div class="b32ct-main">${main}</div>
- ${sub ? `<div class="b32ct-sub">${sub}</div>` : ''}
- `;
-
- // レイアウト確定 → 次フレームで visible へ（transition が確実に走る）
- void el.offsetWidth;
-
- requestAnimationFrame(() => {
- el.classList.remove('b32ct-hidden');
- el.classList.add('b32ct-visible');
- });
-
- // duration 後にフェードアウト開始
- const exitDuration = 900; // CSSの transition 900ms に合わせる
- _centerTextTimer = setTimeout(() => {
- el.classList.remove('b32ct-visible');
- el.classList.add('b32ct-hidden');
-
- _centerTextTimer2 = setTimeout(() => {
- el.innerHTML = '';
- el.classList.remove('b32ct-hidden');
- _centerTextTimer2 = null;
- }, exitDuration);
-
- _centerTextTimer = null;
- }, duration || 1200);
- };
-
- // await 可能バージョン：テキストが完全に消えるまで Promise を返す
- window.showBattle32CenterTextAsync = function (main, sub, duration) {
- return new Promise(resolve => {
- window.showBattle32CenterText(main, sub, duration);
- // duration(表示) + exitDuration(900ms) + 50ms余裕
- setTimeout(resolve, (duration || 1200) + 950);
- });
- };
-
  // ============================================================
  // ダメージ・回復 演出
  // ============================================================
@@ -3959,18 +3903,24 @@ await _wait(60);
 
 const ok = window.Battle32.executeAllySkill(allyUid, skillId);
 if (!ok) {
- console.warn('[Battle32UI] executeAllySkill failed');
- _b32InputLocked = false;
- return;
+  console.warn('[Battle32UI] executeAllySkill failed');
+  _b32InputLocked = false;
+  return;
 }
 
 _resetSkillState();
 renderBattle32UI();
 
+// 勝敗確定していたら、ターン終了演出に進まない
+const bsAfterSkill = _bs();
+if (bsAfterSkill && bsAfterSkill.result) {
+  _b32InputLocked = true;
+  return;
+}
+
 // ダメージ・回復演出を見せるための待ち
 await _wait(skillNow?.isUltimate ? 1200 : 850);
 
-// キャラのターン終了演出
 await window.showBattle32CenterTextAsync('ターン終了', '', 700);
 
 await _afterCharTurnFlow();
@@ -3991,8 +3941,6 @@ await _afterCharTurnFlow();
  _resetSkillState();
  _b32InputLocked = true;
  renderBattle32UI();
-
- await window.showBattle32CenterTextAsync('ターン終了', '', 900);
 
  await _afterCharTurnFlow();
  };
