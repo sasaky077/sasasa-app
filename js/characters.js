@@ -1359,6 +1359,7 @@ const CHARACTERS = [
       { id: 's1',
         name: '物真似',
         cost: 3,
+        linkCost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -1372,48 +1373,15 @@ const CHARACTERS = [
         },
         desc: '直前の味方の行動を真似する。' },
 
-      { id: 's2',
-        name: '虚像劇',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 1.0,
-        range: 'all',
-        effects: [
-          { type: 'jittai', target: 'enemy', hit: 100, duration: 3},
-          { type: 'pull_2', target: 'enemy', hit: 100, duration: 1 }
-        ],
-        moveBonus: {
-          idealMoves: [1,5],
-          damageRate: 1.2
-        },
-        desc: '怪異を実体化させ、2マス後退させる。' },
-
-      { id: 's3',
-        name: '御遊戯',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 3.0,
-        range: 'all',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [1,5],
-          damageRate: 1.3
-        },
-        desc: '全体を巻き込む攻撃。ATKの3倍のダメージ＋ATKダウン。' },
-
       { id: 'ult',
-        name: '哀笑',
+        name: 'ワンダーランド',
         cost: 10,
+        linkCost: 5,
         isUltimate: true,
         hit: 100,
         type: 'attack',
-        multiplier: 5.0,
-        range: 'front3_row_3',
+        multiplier: 3.5,
+        range: 'enemy_all',
         effects: [
           { type: 'push_2', target: 'enemy', hit: 100, duration: 1 },
           { type: 'sure_hit_team', target: 'ally_all', hit: 100, duration: 1 }
@@ -1422,7 +1390,7 @@ const CHARACTERS = [
           idealMoves: [2, 4],
           damageRate: 1.5
         },
-        desc: '全体に圧倒的な攻撃。ATKの8倍。敵を2マス押し出し、味方全員を次ターン必中にする。' }
+        desc: '敵全体にATKの3.5倍のダメージを与える。' }
     ]},
 
   // ── id:16 アズキ（耐久寄り）──────────────────────────────────

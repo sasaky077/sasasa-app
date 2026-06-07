@@ -324,70 +324,44 @@ yuzuha: [
     ],
 
     // ── 敵専用移動型（enemy_ プレフィックス：dr 反転しない） ──
-
-    // 敵直進型：下方向へ最大2マス
-    enemy_move_straight: [
-      { dr: 1, dc:  0 },
-      { dr: 2, dc:  0 }
-    ],
-
-    // 敵斜行型：斜め前方（左右）
-    enemy_move_diag: [
-      { dr: 1, dc: -1 },
-      { dr: 1, dc:  1 }
-    ],
+    // [enemy movement unified] 名前と挙動を一致させ、後退・余分な候補を除去。
+    // 唯一の正：これを参照して getMoveCells() / 敵AI / UIガイドが動く。
 
     // 移動なし（ボス用）
     none: [],
 
-    // 中ボス：前方横3マス（盤面固定：敵視点前方=row+1）
+    // 敵直進型：前方1マスのみ
+    // enemy_move_straight / enemy_zako_straight は同一仕様に統一
+    enemy_move_straight: [
+      { dr: 1, dc: 0 },
+    ],
+    enemy_zako_straight: [
+      { dr: 1, dc: 0 },
+    ],
+
+    // 敵斜行型：斜め前左・斜め前右のみ
+    enemy_move_diag: [
+      { dr: 1, dc: -1 },
+      { dr: 1, dc:  1 },
+    ],
+    enemy_zako_diag: [
+      { dr: 1, dc: -1 },
+      { dr: 1, dc:  1 },
+    ],
+
+    // 敵シフト型：前進＋左右横移動（詰まり回避あり）
+    enemy_zako_shift: [
+      { dr: 1, dc:  0 }, // 前方
+      { dr: 0, dc: -1 }, // 左
+      { dr: 0, dc:  1 }, // 右
+    ],
+
+    // 中ボス：前方横3マス
     enemy_midboss_front3: [
       { dr: 1, dc: -1 },
       { dr: 1, dc:  0 },
       { dr: 1, dc:  1 },
     ],
-
-   // 敵雑魚：直進タイプ
-// enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
-// 敵視点の前方 = row増加、後方 = row減少
-enemy_zako_straight: [
-  // 前方 最大2マス
-  { dr:  1, dc: 0 },
-  { dr:  2, dc: 0 },
-
-  // 後方 最大2マス
-  { dr: -1, dc: 0 },
-  { dr: -2, dc: 0 },
-],
-
-// 敵雑魚：斜め前タイプ
-// enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
-enemy_zako_diag: [
-  // 斜め前左 最大2マス
-  { dr:  1, dc: -1 },
-  { dr:  2, dc: -2 },
-
-  // 斜め前右 最大2マス
-  { dr:  1, dc:  1 },
-  { dr:  2, dc:  2 },
-],
-
-// 敵雑魚：シフト型（前進優先・左右横移動も可能な汎用移動型）
-// enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
-// enemy_mask / enemy_03 など enemies.js で moveType:'enemy_zako_shift' を指定している敵に使用
-enemy_zako_shift: [
-  // 前方 最大2マス
-  { dr:  1, dc:  0 },
-  { dr:  2, dc:  0 },
-
-  // 左右 各1マス（詰まり回避）
-  { dr:  0, dc: -1 },
-  { dr:  0, dc:  1 },
-
-  // 斜め前 各1マス（回避補助）
-  { dr:  1, dc: -1 },
-  { dr:  1, dc:  1 },
-],
   };
 
   /**

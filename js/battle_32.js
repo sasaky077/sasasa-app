@@ -373,6 +373,7 @@
       stunned: false,
       attackRange: def.attackRange || (def.isBoss ? 'enemy_attack_cross' : 'enemy_attack_front'),
       moveType:    def.moveType    || (def.isBoss ? 'none' : 'enemy_move_straight'),
+      uiScale:     def.uiScale    || {},
     };
   }
 
@@ -1823,152 +1824,72 @@ function doBossLineAttack(boss) {
     });
   }
 
+  // [enemy movement unified] _getEnemyMoveCandidates() を廃止。
+  // 移動候補の唯一の入口は getMoveCells(unitUid)。
+  // MOVE_PRESETS_32 → BR.getMoveOffsets() → getMoveCells() の経路に一元化。
+
   /**
-   * moveType に応じた移動候補をグループ（優先順位）つきで返す
-   * group が小さいほど優先度が高い
+   * 後方互換用ラッパー。getMoveCells() に委譲するだけ。
+   * 外部が getEnemyMoveCells() を呼んでいても壊れないよう残す。
    */
-  function _getEnemyMoveCandidates(enemy) {
-    const type = enemy.moveType;
-
-    if (type === 'enemy_move_straight' || type === 'enemy_zako_straight') {
-      // 直進型：前 → 左右 → 斜め前
-      return [
-        { dr:  1, dc:  0, group: 1 }, // 前
-        { dr:  0, dc: -1, group: 2 }, // 左
-        { dr:  0, dc:  1, group: 2 }, // 右
-        { dr:  1, dc: -1, group: 3 }, // 左斜め前
-        { dr:  1, dc:  1, group: 3 }, // 右斜め前
-      ];
-    }
-
-    if (type === 'enemy_move_diag' || type === 'enemy_zako_diag') {
-      // 斜行型：斜め前 → 前 → 左右
-      return [
-        { dr:  1, dc: -1, group: 1 }, // 左斜め前
-        { dr:  1, dc:  1, group: 1 }, // 右斜め前
-        { dr:  1, dc:  0, group: 2 }, // 前
-        { dr:  0, dc: -1, group: 3 }, // 左
-        { dr:  0, dc:  1, group: 3 }, // 右
-      ];
-    }
-
-    // シフト型（enemy_zako_shift）：前進優先・左右横移動も可
-    // enemy_mask / enemy_03 など前進＋横移動を持つ汎用移動型
-    if (type === 'enemy_zako_shift') {
-      return [
-        { dr:  1, dc:  0, group: 1 }, // 前
-        { dr:  0, dc: -1, group: 2 }, // 左（詰まり回避）
-        { dr:  0, dc:  1, group: 2 }, // 右（詰まり回避）
-        { dr:  1, dc: -1, group: 3 }, // 左斜め前（fallback）
-        { dr:  1, dc:  1, group: 3 }, // 右斜め前（fallback）
-      ];
-    }
-
-    // 中ボス：前方横3マスから最もコアに近いマスへ移動
-    if (type === 'enemy_midboss_front3') {
-      return [
-        { dr:  1, dc: -1, group: 1 }, // 左斜め前
-        { dr:  1, dc:  0, group: 1 }, // 前
-        { dr:  1, dc:  1, group: 1 }, // 右斜め前
-        { dr:  0, dc: -1, group: 2 }, // 左（詰まり回避）
-        { dr:  0, dc:  1, group: 2 }, // 右（詰まり回避）
-      ];
-    }
-
-    // それ以外は既存の getMoveOffsets をフォールバックとして使う（全て group:1）
-    const offsets = BR.getMoveOffsets ? BR.getMoveOffsets(enemy) : [];
-    return offsets.map(o => ({ dr: o.dr, dc: o.dc, group: 1 }));
+  function getEnemyMoveCells(enemyUid) {
+    return getMoveCells(enemyUid);
   }
 
+
   /**
-   * 敵1体の移動先を決定する（詰まり回避あり）
+   * [enemy movement unified] 敵1体の移動先を決定する
+   * 移動候補は getMoveCells(enemy._uid) から取得（MOVE_PRESETS_32 が唯一の正）。
+   * ここでは「候補の中からどのマスを選ぶか」だけを担当する。
    * 戻り値: { row, col, isCapture, occupant } | null
    */
   function _decideEnemyMoveCell(enemy) {
-    const candidates = _getEnemyMoveCandidates(enemy);
+    // getMoveCells() が唯一の移動候補ソース
+    const candidates = getMoveCells(enemy._uid);
     if (!candidates || candidates.length === 0) return null;
 
     const allUnits = getAllUnits();
-    const corePos = _bs.cores && _bs.cores.ally;
+    const corePos  = _bs.cores && _bs.cores.ally;
 
-    // グループを昇順に並べ、グループ内で最良を選ぶ
-    const groups = [...new Set(candidates.map(c => c.group))].sort((a, b) => a - b);
-
-    for (const group of groups) {
-      const groupCandidates = candidates
-        .filter(c => c.group === group)
-        .map(c => ({ row: enemy.row + c.dr, col: enemy.col + c.dc }))
-        .filter(c => _canEnemyMoveTo(c.row, c.col, enemy));
-
-      if (groupCandidates.length === 0) continue;
-
-      // 味方がいるマス（駒取り）を優先。次にコアへ近づくマス。
-      const withOccupant = groupCandidates.filter(c => {
-        const occ = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === c.row && u.col === c.col);
-        return occ && occ.side === 'ally';
-      });
-
-      if (withOccupant.length > 0) {
-        const sorted = _sortByCoreDistance(withOccupant);
-        const chosen = sorted[0];
-        const occupant = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === chosen.row && u.col === chosen.col);
-        return { row: chosen.row, col: chosen.col, isCapture: true, occupant };
-      }
-
-      // 空きマスのみ
-      const emptyMoves = groupCandidates.filter(c => {
-        const occ = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === c.row && u.col === c.col);
-        return !occ;
-      });
-
-      if (emptyMoves.length === 0) continue;
-
-      // group ごとに距離条件を変えてフィルタする
-      //   group 1（主移動）: コアへ近づく（距離が縮まる）マスのみ
-      //   group 2（横回避）: コア距離が同じでも許可（横移動は前進の妨げ解消が目的）
-      //   group 3（斜め fallback）: コア距離が同じでも許可
-      const approaching = emptyMoves.filter(c => {
-        if (!corePos) return true;
-        const curDist = _distToAllyCore(enemy.row, enemy.col);
-        const newDist = _distToAllyCore(c.row, c.col);
-        const type = enemy.moveType;
-
-        if (group === 1) {
-          // 主移動：必ずコアへ近づく
-          if (type === 'enemy_move_diag' || type === 'enemy_zako_diag') {
-            // 斜行型：前進（row増加）かつ距離が縮まる or 同値
-            return c.row > enemy.row && newDist <= curDist;
-          }
-          return newDist < curDist;
-        }
-
-        // group 2（横回避）・group 3（斜め fallback）:
-        // コア距離が悪化しなければ OK（詰まり解消が目的なので同値を許可）
-        return newDist <= curDist;
-      });
-
-      if (approaching.length > 0) {
-        const sorted = _sortByCoreDistance(approaching);
-        const chosen = sorted[0];
-        const isFallback = group > 1;
-        if (isFallback) {
-          console.log('[B32 enemy fallback move]', {
-            name: enemy.name,
-            moveType: enemy.moveType,
-            group,
-            from: { row: enemy.row, col: enemy.col },
-            to: chosen,
-          });
-          _log(`${enemy.name} が進路を変えた`);
-        }
-        return { row: chosen.row, col: chosen.col, isCapture: false, occupant: null };
-      }
-
-      // このグループでは前進できなかった → 次グループへ
+    // ── 駒取り優先（味方がいるマス）──
+    const captures = candidates.filter(c => c.cellType === 'capture');
+    if (captures.length > 0) {
+      const sorted = _sortByCoreDistance(captures);
+      const chosen = sorted[0];
+      const occupant = allUnits.find(u =>
+        u.hp > 0 && u.row === chosen.row && u.col === chosen.col
+      );
+      return { row: chosen.row, col: chosen.col, isCapture: true, occupant };
     }
 
-    return null; // 移動できるマスがない
+    // ── 空きマスのうち、コアへ近づくマスを優先 ──
+    const moves = candidates.filter(c => c.cellType === 'move');
+    if (moves.length === 0) return null;
+
+    const curDist = _distToAllyCore(enemy.row, enemy.col);
+    const approaching = moves.filter(c => {
+      if (!corePos) return true;
+      return _distToAllyCore(c.row, c.col) < curDist;
+    });
+
+    const pool = approaching.length > 0 ? approaching : moves;
+    const sorted = _sortByCoreDistance(pool);
+    const chosen = sorted[0];
+
+    if (approaching.length === 0) {
+      // コアへ近づけないとき（横移動など）
+      console.log('[B32 enemy lateral move]', {
+        name: enemy.name,
+        moveType: enemy.moveType,
+        from: { row: enemy.row, col: enemy.col },
+        to: chosen,
+      });
+      _log(`${enemy.name} が進路を調整した`);
+    }
+
+    return { row: chosen.row, col: chosen.col, isCapture: false, occupant: null };
   }
+
 
   // 敵1体の行動処理（_centerTextWait で完全に消えてから次へ）
   async function _runEnemySingleAction(enemy) {
@@ -2252,14 +2173,23 @@ if (canEnemyAttackAllyCore(enemy)) {
   // 移動候補セル取得（新API・移動型対応）
   // 戻り値: { row, col, cellType: 'move'|'capture', targetUid: string|null }[]
   // ============================================================
+  // [enemy movement unified] 味方・敵共通の移動候補API。
+  // MOVE_PRESETS_32 → BR.getMoveOffsets() → ここで盤面ルール適用。
+  // 敵AIも UIガイドもこれを参照する。
   function getMoveCells(unitUid) {
-    const unit = _bs
-      ? (_bs.allies.find(u => u._uid === unitUid) || _bs.enemies.find(u => u._uid === unitUid))
-      : null;
-    if (!unit || unit.hp <= 0) return [];
+    if (!_bs) return [];
+    const unit = _bs.allies.find(u => u._uid === unitUid)
+              || _bs.enemies.find(u => u._uid === unitUid);
+
+    if (!unit) return [];
+    // 敵：ボス・moveType:'none' は移動なし
+    if (unit.side === 'enemy' && (unit.isBoss || unit.moveType === 'none')) return [];
+    // HP0 の非ボス敵は移動なし
+    if (unit.hp <= 0 && !unit.isBoss) return [];
 
     const offsets = BR.getMoveOffsets(unit);
     const cells   = [];
+    const allyCore = _bs.cores && _bs.cores.ally;
 
     offsets.forEach(({ dr, dc }) => {
       const row = unit.row + dr;
@@ -2267,8 +2197,7 @@ if (canEnemyAttackAllyCore(enemy)) {
 
       if (!BR.isValidCell(row, col)) return;
 
-      // 自陣コアのマスには味方も移動不可（敵と同様）
-      const allyCore = _bs.cores && _bs.cores.ally;
+      // 自陣コアは進入禁止
       if (allyCore && row === allyCore.row && col === allyCore.col) return;
 
       const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
@@ -2276,10 +2205,9 @@ if (canEnemyAttackAllyCore(enemy)) {
       // 同陣営ユニットがいるマスには移動不可
       if (occupant && occupant.side === unit.side) return;
 
-      // ボスのいるマスは侵入不可
-      // ボスはHP0後も神性核として盤面に残るため、hp条件を付けずにブロックする
+      // ボスのいるマスは進入禁止（HP0後の核露出状態も含む）
       const bossOnCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
-      if (unit.side === 'ally' && bossOnCell) return;
+      if (bossOnCell) return;
 
       cells.push({
         row,
@@ -2726,6 +2654,7 @@ window.Battle32 = {
 
   getMoveCells,
   getMovableCells,
+  getEnemyMoveCells,
   getSkillRangeCells,
   getBossDangerCells,
   getLinkCostForAction: (type, unitUid, skillId) => _getLinkCostForAction(type, unitUid, skillId),

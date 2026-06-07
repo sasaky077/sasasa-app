@@ -571,59 +571,19 @@
 }
 .b32-unit.boss .b32-hp-bar-wrap { display: none; }
 
-/* BOSSだけ大きく表示 */
-.b32-unit.boss {
- width: calc(var(--cell-size) * 2.5);
- height: calc(var(--cell-size) * 2.9);
- z-index: 4;
-}
+/* BOSSだけ大きく表示 ── 削除済み（#battle32-root スコープで一元管理） */
+/* .b32-unit.boss { ... } */
+/* .b32-unit.boss .b32-unit-icon { ... } */
+/* .b32-unit.enemy.boss { bottom: -10px; } */
+/* .b32-unit.enemy.boss .b32-unit-icon { transform: ... scale(1.55); } */
 
-.b32-unit.boss .b32-unit-icon {
- height: calc(var(--cell-size) * 2.0);
- object-fit: contain;
- object-position: bottom center;
-}
+/* 中ボス ── 削除済み（#battle32-root スコープで一元管理） */
+/* .b32-unit.enemy.midboss, .b32-unit.enemy.enemy-id-enemy_02b { width/height/scale } */
+/* .b32-unit.enemy.midboss .b32-unit-icon, ... { scale(1.12) } */
 
-.b32-unit.enemy.boss {
- bottom: -10px;
-}
-
-.b32-unit.enemy.boss .b32-unit-icon {
- transform: translateX(0px) translateY(18px) scale(1.55);
- transform-origin: bottom center;
-}
-
-/* 中ボス */
-.b32-unit.enemy.midboss,
-.b32-unit.enemy.enemy-id-enemy_02b {
- width: calc(var(--cell-size) * 1.85);
- height: calc(var(--cell-size) * 2.25);
- z-index: 3;
-}
-
-.b32-unit.enemy.midboss .b32-unit-icon,
-.b32-unit.enemy.enemy-id-enemy_02b .b32-unit-icon {
- height: calc(var(--cell-size) * 1.95);
- object-fit: contain;
- object-position: bottom center;
- transform: translateY(10px) scale(1.12);
- transform-origin: bottom center;
-}
-
-/* 雑魚 enemy_02a */
-.b32-unit.enemy.enemy-id-enemy_02a {
- width: calc(var(--cell-size) * 1.45);
- height: calc(var(--cell-size) * 1.95);
- z-index: 2;
-}
-
-.b32-unit.enemy.enemy-id-enemy_02a .b32-unit-icon {
- height: calc(var(--cell-size) * 1.68);
- object-fit: contain;
- object-position: bottom center;
- transform: translateY(6px) scale(1.08);
- transform-origin: bottom center;
-}
+/* 雑魚 enemy_02a ── 削除済み（#battle32-root スコープで一元管理） */
+/* .b32-unit.enemy.enemy-id-enemy_02a { width/height } */
+/* .b32-unit.enemy.enemy-id-enemy_02a .b32-unit-icon { scale(1.08) } */
 
 .b32-hp-bar {
  height: 100%;
@@ -2023,12 +1983,7 @@
 }
 
 /* 敵移動ガイド */
-.b32-cell.enemy-move-guide {
- background:
- linear-gradient(145deg, rgba(220,80,80,.12), rgba(40,8,8,.26)),
- rgba(16,4,4,.46) !important;
- border-color: rgba(220,80,80,.38) !important;
-}
+/* enemy-move-guide は battle_32_ui.js の injectStyle() で定義（青系）*/
 
 /* ============================================================
  スタン表示
@@ -4042,9 +3997,8 @@
    盤面セルより下に見える問題の補正
    ============================================================ */
 
-#battle32-root .b32-unit.enemy {
-  bottom: calc(var(--cell-size) * 0.45) !important;
-}
+/* 敵ユニット bottom 補正 ── 削除済み（Enemy Unit Reset で一元管理） */
+/* #battle32-root .b32-unit.enemy:not(.boss) { bottom: calc(var(--cell-size) * 0.45) !important; } */
 /* ============================================================
    スキル選択パネル：左キャラ枠は維持し、画像だけ縮小
    ============================================================ */
@@ -4378,32 +4332,6 @@
   /* セル自体を少し大きくする */
   #battle32-root {
     --cell-size: 38px !important;
-  }
-
-  /* LINKバー：少し高さを確保して説明文を見せる */
-  #b32-link-bar {
-    top: 56px !important;
-    left: 10px !important;
-    right: 10px !important;
-    padding: 5px 8px 5px !important;
-    gap: 2px !important;
-    transform: scale(.88) !important;
-    transform-origin: top center !important;
-    z-index: 3000000 !important;
-  }
-
-  /* 説明文を非表示にしていた場合は表示に戻す */
-  #b32-link-bar > div:nth-child(2) {
-    display: block !important;
-    font-size: 7px !important;
-    line-height: 1.1 !important;
-    opacity: .70 !important;
-    white-space: nowrap !important;
-  }
-
-  /* LINKバーが高くなる分、盤面は少しだけ下げる */
-  #battle32-root #b32-board-wrap {
-    padding-top: 30px !important;
   }
 
   /* キャラ情報パネル：キャラパネル行より上に */
@@ -5190,10 +5118,59 @@
 }
 
 /* ============================================================
- iPhone SE系：上部LINKバー位置調整
+ iPhone SE系：盤面を少し上げて、下部パネルとの被りを回避
  ============================================================ */
 @media (max-height: 700px) {
-  #b32-link-bar {
-    top: calc(env(safe-area-inset-top, 0px) + 68px) !important;
+  #battle32-root #b32-board-wrap {
+    transform: translateY(-24px) !important;
   }
 }
+
+/* ============================================================
+ Enemy Unit Reset: 敵ユニット表示位置・サイズを標準化
+ ============================================================ */
+
+#battle32-root .b32-unit.enemy {
+  bottom: calc(var(--cell-size) * 0.5)!important;
+  width: calc(var(--cell-size) * 1.18) !important;
+  height: calc(var(--cell-size) * 1.68) !important;
+  transform: translateX(-50%) rotateX(-38deg) !important;
+  transform-origin: bottom center !important;
+  z-index: 2 !important;
+}
+
+#battle32-root .b32-unit.enemy .b32-unit-icon {
+  width: 100% !important;
+  height: calc(var(--cell-size) * 1.45) !important;
+  object-fit: contain !important;
+  object-position: bottom center !important;
+  /* scale は --unit-scale 変数で制御（uiScale.battleBack から注入）*/
+  transform: translateY(var(--unit-offset-y, 0px)) scale(var(--unit-scale, 1)) !important;
+  transform-origin: bottom center !important;
+}
+
+/* ボス → JS側インラインスタイルで制御（CSS競合を避けるため最小限に） */
+#battle32-root .b32-unit.enemy.boss {
+  overflow: visible !important;
+  z-index: 1 !important;
+}
+
+/* 中ボス・雑魚も一旦、標準敵と同じ基準で表示する */
+#battle32-root .b32-unit.enemy.midboss,
+#battle32-root .b32-unit.enemy.enemy-id-enemy_02b,
+#battle32-root .b32-unit.enemy.enemy-id-enemy_02a {
+  width: calc(var(--cell-size) * 1.18) !important;
+  height: calc(var(--cell-size) * 1.68) !important;
+  z-index: 2 !important;
+}
+
+#battle32-root .b32-unit.enemy.midboss .b32-unit-icon,
+#battle32-root .b32-unit.enemy.enemy-id-enemy_02b .b32-unit-icon,
+#battle32-root .b32-unit.enemy.enemy-id-enemy_02a .b32-unit-icon {
+  height: calc(var(--cell-size) * 1.45) !important;
+  /* 中ボス・雑魚も --unit-scale 変数に従う */
+  transform: translateY(var(--unit-offset-y, 0px)) scale(var(--unit-scale, 1)) !important;
+  transform-origin: bottom center !important;
+}
+
+/* Boss Scale: サイズはJS（renderBoard内）のインラインスタイルで注入済み */

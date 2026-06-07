@@ -174,6 +174,8 @@ function _clearActionModesKeepUnit(uid) {
  enemy_move_diag: '斜行型',
  enemy_zako_diag: '斜行型',
  enemy_move_random: 'ランダム移動',
+ enemy_zako_shift: 'シフト型',
+ enemy_midboss_front3: '前方制圧型',
  };
  return map[moveType] || moveType || '不明';
 }
@@ -196,56 +198,14 @@ function getUnitUiOffsetY(unit, key) {
  return unit?.uiOffset?.[`${key}Y`] || 0;
 }
 
+// [enemy movement unified] 薄いラッパー。
+// 移動候補の計算は Battle32.getMoveCells() に完全委譲。
+// UI側でmoveTypeを判定しない。
 function getEnemyMoveGuideCells(enemy, bs) {
- if (!enemy || !bs) return [];
-
- const occupied = new Set();
-
- [...(bs.allies || []), ...(bs.enemies || [])].forEach(u => {
- if (!u || u._uid === enemy._uid) return;
- if (u.hp <= 0 && !u.isBoss) return;
- occupied.add(`${u.row}-${u.col}`);
- });
-
- const cells = [];
-
- function addCell(row, col) {
- if (row < 0 || row >= 8 || col < 0 || col >= 5) return;
- const key = `${row}-${col}`;
- if (occupied.has(key)) return;
-
- // 自陣コアには入らない想定
- if (bs.cores?.ally && row === bs.cores.ally.row && col === bs.cores.ally.col) return;
-
- cells.push({ row, col });
- }
-
- switch (enemy.moveType) {
- case 'enemy_move_straight':
- case 'enemy_zako_straight':
- // 敵は下方向へ進む想定
- addCell(enemy.row + 1, enemy.col);
- break;
-
- case 'enemy_move_diag':
- case 'enemy_zako_diag':
- addCell(enemy.row + 1, enemy.col - 1);
- addCell(enemy.row + 1, enemy.col + 1);
- break;
-
- case 'enemy_move_random':
- addCell(enemy.row + 1, enemy.col);
- addCell(enemy.row - 1, enemy.col);
- addCell(enemy.row, enemy.col - 1);
- addCell(enemy.row, enemy.col + 1);
- break;
-
- case 'none':
- default:
- break;
- }
-
- return cells;
+  if (!enemy || !bs) return [];
+  if (enemy.isBoss || enemy.moveType === 'none') return [];
+  if (!window.Battle32 || typeof window.Battle32.getMoveCells !== 'function') return [];
+  return window.Battle32.getMoveCells(enemy._uid);
 }
 
 function showEnemyInfo(enemy) {
@@ -4734,18 +4694,29 @@ window.renderBattle32UI = function () {
      el.id = 'b32-link-bar';
      el.style.cssText = [
   'position:fixed',
-  'top:92px',
-  'left:8px',
-  'right:8px',
+  // 右側、アイテム置き場の少し上あたり
+  'right:10px',
+  'top:calc(env(safe-area-inset-top, 0px) + 150px)',
   'z-index:3000000',
+
+  // 縦レイアウト
   'display:flex',
   'flex-direction:column',
   'align-items:center',
-  'gap:3px',
-  'padding:6px 12px 4px',
-  'background:rgba(6,4,18,.72)',
-  'border:1px solid rgba(100,80,200,.25)',
-  'border-radius:0',
+  'justify-content:flex-start',
+  'gap:5px',
+
+  // 小さめの縦パネル
+  'width:28px',
+  'padding:7px 4px',
+  'box-sizing:border-box',
+
+  // 目立ちすぎない背景
+  'background:rgba(6,4,18,.46)',
+  'border:1px solid rgba(120,100,220,.22)',
+  'border-radius:999px',
+  'box-shadow:0 0 10px rgba(80,60,180,.18)',
+
   'pointer-events:none',
 ].join(';');
 
@@ -4754,26 +4725,40 @@ window.renderBattle32UI = function () {
    el.style.display = 'flex';
 
    const { current, max } = bs.link;
-   const diamonds = Array.from({ length: 6 }, (_, i) => {
-     const filled = i < current;
-     return `<div style="
-       width:14px;height:14px;
-       transform:rotate(45deg);
-       border:1.5px solid ${filled ? 'rgba(140,100,255,.9)' : 'rgba(100,80,200,.3)'};
-       background:${filled ? 'rgba(120,80,240,.7)' : 'rgba(30,20,60,.4)'};
-       box-shadow:${filled ? '0 0 6px rgba(120,80,240,.6)' : 'none'};
-       transition:background .2s,border-color .2s;
-     "></div>`;
-   }).join('');
+   const diamonds = Array.from({ length: max || 6 }, (_, i) => {
+  const filled = i < current;
+  return `<div style="
+    width:10px;
+    height:10px;
+    transform:rotate(45deg);
+    border:1.3px solid ${filled ? 'rgba(150,115,255,.95)' : 'rgba(100,80,200,.28)'};
+    background:${filled ? 'rgba(125,85,245,.78)' : 'rgba(30,20,60,.35)'};
+    box-shadow:${filled ? '0 0 6px rgba(130,90,255,.65)' : 'none'};
+    transition:background .2s,border-color .2s,box-shadow .2s;
+    flex:0 0 auto;
+  "></div>`;
+}).join('');
 
    el.innerHTML = `
-     <div style="display:flex;align-items:center;gap:6px;">
-       <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:rgba(160,130,255,.7);">LINK</span>
-       <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:rgba(180,150,255,.9);">${current}<span style="font-size:9px;color:rgba(120,100,200,.6);">/${max}</span></span>
-       <div style="display:flex;gap:3px;align-items:center;">${diamonds}</div>
-     </div>
-     <div style="font-size:8px;letter-spacing:1px;color:rgba(120,100,200,.45);font-family:'Noto Serif JP',serif;">毎ターン全回復 · LINKがある限り行動可能</div>
-   `;
+  <div style="
+    writing-mode:vertical-rl;
+    font-family:'Cinzel',serif;
+    font-size:8px;
+    letter-spacing:2px;
+    color:rgba(170,145,255,.82);
+    line-height:1;
+  ">LINK</div>
+
+  <div style="
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    margin-top:3px;
+  ">
+    ${diamonds}
+  </div>
+`;
  }
 
  // ============================================================

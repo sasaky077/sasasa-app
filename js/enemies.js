@@ -14,6 +14,7 @@ const ENEMIES = [
     upImg: 'images/enemy_01_up.webp',
     battleImg: 'images/enemy_01_battle.webp',
     isBoss: true,   // 32マスバトルでボス判定に使用
+    uiScale: { battleBack: 2.0 },  // 盤面表示サイズ（3倍）
 
     // 4×4向けに強化
     hp: 2200, hpMax: 2200,
