@@ -942,7 +942,7 @@ document.addEventListener('touchend', function (e) {
   }
  
 const BASE_STATS = ["HP","ATK","DEF","SPD"];
-const DISPLAY_STATS = ["HP","ATK","DEF"]; // 表示用（SPDは除外）
+const DISPLAY_STATS = ["HP","ATK"]; // 表示用（Battle32仕様：DEF/SPDは使用しない）
 
 // ── 共鳴システム ──────────────────────────────────
 const MAX_LIMIT_BREAK = 5;
@@ -3194,60 +3194,213 @@ document.getElementById('stat-current').textContent = collectedCount;
 document.getElementById('stat-max').textContent = targetChars.length;
 }
 
+
+// ── キャラクター詳細表示ヘルパー ─────────────────────────────
+const DETAIL_MOVE_LABELS = {
+  pawn: '歩型',
+  lance: '香型',
+  gold: '金型',
+  silver: '銀型',
+  rook_short: '短距離飛車型',
+  bishop_short: '短距離角型',
+  knight: '桂馬型',
+  shigure: 'シグレ型',
+  miyu: 'ミユ型',
+  eri: 'エリ型',
+  aki: 'アキ型',
+  asami: 'アサミ型',
+  none: '移動なし'
+};
+
+const DETAIL_SKILL_TYPE_LABELS = {
+  attack: '攻撃',
+  buff: '強化',
+  debuff: '弱体',
+  heal: '回復',
+  move: '移動',
+};
+
+const DETAIL_RANGE_LABELS = {
+  front1: '前方1マス',
+  front_ally: '前方1マス',
+  front2: '前方2マス',
+  front3: '前方3マス',
+  pierce3: '前方直線3マス',
+  pierce_ally_3: '前方直線3マス',
+  pierce_all: '全体貫通',
+  all: '敵全体',
+  enemy_all: '敵全体',
+  ally_all: '味方全体',
+  self: '自身',
+  adjacent: '隣接',
+  around8: '周囲1マス',
+  around24: '周囲2マス',
+  side_lr: '左右1マス',
+  diag_x_2: '斜め2マス',
+  cross: '十字',
+  cross_32: '十字',
+  cross_tail_6: '上2・左右・斜め下',
+  twin_cross_4: 'ツイン十字',
+  twin_star_8: 'ツインスター',
+  front_row_3: '前方横3マス',
+  front3_row_3: '前方3×横3',
+  front_9: '前方9マス'
+};
+
+function detailEscapeHTML(v){
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getDetailCharaDef(data){
+  return CHARACTERS.find(function(c){
+    return c.id === data.id;
+  }) || data;
+}
+
+function getDetailStatValue(data, chara, key){
+  if(data && data.stats && data.stats[key] != null) return data.stats[key];
+  if(chara && chara.stats && chara.stats[key] != null) return chara.stats[key];
+  return '-';
+}
+
+function getDetailMoveLabel(moveType){
+  return DETAIL_MOVE_LABELS[moveType] || moveType || '未設定';
+}
+
+function getDetailRangeLabel(range){
+  return DETAIL_RANGE_LABELS[range] || range || '-';
+}
+
+function getDetailSkillTypeLabel(type){
+  return DETAIL_SKILL_TYPE_LABELS[type] || type || '-';
+}
+
+function getDetailSkillPowerText(skill){
+  if(!skill) return '-';
+  if(skill.multiplier && skill.multiplier > 0){
+    return 'ATK × ' + skill.multiplier;
+  }
+  if(skill.healRate && skill.healRate > 0){
+    return '回復 ' + Math.round(skill.healRate * 100) + '%';
+  }
+  return '効果';
+}
+
+function getDetailSkillEffectText(skill){
+  var effects = (skill && skill.effects) ? skill.effects : [];
+  if(!effects.length) return '';
+  return effects.map(function(e){
+    var parts = [];
+    if(e.type) parts.push(e.type);
+    if(e.duration != null) parts.push(e.duration + 'T');
+    if(e.hit != null) parts.push(e.hit + '%');
+    return parts.join(' / ');
+  }).join('、');
+}
+
+function buildDetailSkillHTML(chara){
+  var skills = (chara && chara.skills) ? chara.skills : [];
+  if(!skills.length){
+    return '<div class="detail-skill-empty">スキル情報なし</div>';
+  }
+
+  return '<div class="detail-skill-section">' +
+    '<div class="detail-section-title">スキル詳細</div>' +
+    skills.map(function(skill){
+      var badge = skill.isUltimate ? 'ULT' : 'SKILL';
+      var effectText = getDetailSkillEffectText(skill);
+      return '<div class="detail-skill-card ' + (skill.isUltimate ? 'is-ult' : '') + '">' +
+        '<div class="detail-skill-head">' +
+          '<span class="detail-skill-badge">' + badge + '</span>' +
+          '<span class="detail-skill-name">' + detailEscapeHTML(skill.name || '-') + '</span>' +
+        '</div>' +
+        '<div class="detail-skill-meta">' +
+          '<span>' + getDetailSkillTypeLabel(skill.type) + '</span>' +
+          '<span>範囲：' + getDetailRangeLabel(skill.range) + '</span>' +
+          '<span>威力：' + getDetailSkillPowerText(skill) + '</span>' +
+          '<span>命中：' + (skill.hit == null ? 100 : skill.hit) + '%</span>' +
+        '</div>' +
+        (effectText ? '<div class="detail-skill-effect">効果：' + detailEscapeHTML(effectText) + '</div>' : '') +
+        (skill.desc ? '<div class="detail-skill-desc">' + detailEscapeHTML(skill.desc) + '</div>' : '') +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+function buildCharacterDetailHTML(data, options){
+  options = options || {};
+  var chara = getDetailCharaDef(data);
+  var lb = data.limitBreak || 0;
+  var moveType = (chara && chara.moveType) || data.moveType || 'silver';
+
+  var html =
+    '<div class="detail-lb-section">' +
+      '<div class="detail-lb-row">' +
+        '<span class="detail-lb-label">共鳴Lv</span>' +
+        '<span class="detail-lb-val">' + lb + ' / ' + MAX_LIMIT_BREAK + '</span>' +
+      '</div>' +
+
+      '<div class="detail-status-grid">' +
+        '<div class="detail-status-row">' +
+          '<span class="detail-status-label">HP</span>' +
+          '<span class="detail-status-val">' + getDetailStatValue(data, chara, 'HP') + '</span>' +
+        '</div>' +
+        '<div class="detail-status-row">' +
+          '<span class="detail-status-label">ATK</span>' +
+          '<span class="detail-status-val">' + getDetailStatValue(data, chara, 'ATK') + '</span>' +
+        '</div>' +
+        '<div class="detail-status-row">' +
+          '<span class="detail-status-label">移動型</span>' +
+          '<span class="detail-status-val">' + detailEscapeHTML(getDetailMoveLabel(moveType)) + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    buildDetailSkillHTML(chara);
+
+  if(options.showLimitBreakButton){
+    if(lb >= MAX_LIMIT_BREAK){
+      html += '<button class="btn-limit-break btn-limit-break-max" disabled>共鳴Lv MAX</button>';
+    } else {
+      html += '<button class="btn-limit-break" onclick="openLimitBreakModal(currentDetailData)">共鳴する</button>';
+    }
+  }
+
+  return html;
+}
+
  function showDetail(data, fromTenResult){
   currentDetailData = data;
 
-  var chara = CHARACTERS.find(function(c){
-    return c.id === data.id;
-  });
-
+  var chara = getDetailCharaDef(data);
   var imgSrc = (chara && chara.img) ? chara.img : data.img;
+  var rarityKey = (data.rarity || (chara && chara.rarity) || 'r').toLowerCase();
+  var rarityImg = RARITY_BOX_IMAGE[rarityKey] || '';
 
   // キャラ画像＋左上にレアリティ画像（画像タップで全画面表示）
   document.getElementById('detail-chara-visual').innerHTML =
   '<div class="detail-visual-wrap" onclick="openCharaImageViewer(\'' + imgSrc + '\')">' +
     '<img class="detail-main-img" src="' + imgSrc + '">' +
-    '<img class="detail-rarity-img" src="' + RARITY_BOX_IMAGE[data.rarity] + '">' +
+    (rarityImg ? '<img class="detail-rarity-img" src="' + rarityImg + '">' : '') +
   '</div>';
 
   // キャラ名
-  document.getElementById('detail-name').textContent = data.name;
+  document.getElementById('detail-name').textContent = (chara && chara.name) ? chara.name : data.name;
 
- // detail-rank は使用しないため空にする
-document.getElementById('detail-rank').textContent = '';
+  // detail-rank は使用しないため空にする
+  document.getElementById('detail-rank').textContent = '';
 
-// 通常ステータス表示は使わない
-document.getElementById('detail-stat-table').innerHTML = '';
+  // 通常ステータス表は使わず、detail-opts 側に集約する
+  document.getElementById('detail-stat-table').innerHTML = '';
 
-// 共鳴Lv表示 + 現在ステータス（HP/ATK/DEFのみ）
-var lb = data.limitBreak || 0;
-var currentStats = data.stats || {};
-
-var lbOptsHTML =
-  '<div class="detail-lb-section">' +
-    '<div class="detail-lb-row">' +
-      '<span class="detail-lb-label">共鳴Lv</span>' +
-      '<span class="detail-lb-val">' + lb + ' / ' + MAX_LIMIT_BREAK + '</span>' +
-    '</div>' +
-
-    '<div class="detail-lb-stats">' +
-      '<div class="detail-lb-stats-title">現在ステータス</div>' +
-      '<table class="stat-table stat-table-small">' +
-        DISPLAY_STATS.map(function(s){
-          return '<tr><td class="stat-name">'+s+'</td><td class="stat-val">'+(currentStats[s] ?? '-')+'</td></tr>';
-        }).join('') +
-      '</table>' +
-    '</div>' +
-  '</div>';
-
-  var lbBtnHTML;
-  if(lb >= MAX_LIMIT_BREAK){
-    lbBtnHTML = '<button class="btn-limit-break btn-limit-break-max" disabled>共鳴Lv MAX</button>';
-  } else {
-    lbBtnHTML = '<button class="btn-limit-break" onclick="openLimitBreakModal(currentDetailData)">共鳴する</button>';
-  }
-
-  document.getElementById('detail-opts').innerHTML = lbOptsHTML + lbBtnHTML;
+  // 共鳴Lv / HP / ATK / 移動型 / スキル詳細
+  document.getElementById('detail-opts').innerHTML = buildCharacterDetailHTML(data, {
+    showLimitBreakButton: true
+  });
 
   var favBtn = document.querySelector('#detail-modal .btn-set-fav');
   if(favBtn) favBtn.style.display = 'block';
@@ -3340,18 +3493,31 @@ async function deleteCurrentChara(){
     charaVisualHTML(chara, 260);
 
   document.getElementById('detail-name').textContent = chara.name;
-
   document.getElementById('detail-rank').textContent = 'No.' + chara.id;
 
-  document.getElementById('detail-stat-table').innerHTML =
-    '<tr><td style="color:#aaa;line-height:1.8;padding:10px 4px" colspan="2">' +
-    '終末世界を旅する存在。詳細なプロフィールは現在調査中です。' +
-    '</td></tr>';
+  // 通常ステータス表は使わず、detail-opts 側に集約する
+  document.getElementById('detail-stat-table').innerHTML = '';
 
-  document.getElementById('detail-opts').innerHTML = '';
+  // 図鑑側は未所持データ扱いなので、共鳴ボタンは出さない
+  document.getElementById('detail-opts').innerHTML = buildCharacterDetailHTML({
+    id: chara.id,
+    name: chara.name,
+    rarity: chara.rarity,
+    stats: chara.stats || {},
+    limitBreak: 0,
+    img: chara.img
+  }, {
+    showLimitBreakButton: false
+  });
 
   var favBtn = document.querySelector('#detail-modal .btn-set-fav');
   if(favBtn) favBtn.style.display = 'none';
+
+  var delBtn = document.querySelector('#detail-modal .btn-delete-chara');
+  if(delBtn) delBtn.style.display = 'none';
+
+  var closeBtn = document.getElementById('btn-detail-close');
+  if(closeBtn) closeBtn.style.display = 'block';
 
   document.getElementById('detail-modal').classList.add('active');
  }

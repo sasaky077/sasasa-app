@@ -85,6 +85,10 @@
 
     cost: 0,
 
+    linkCost: skill.linkCost,
+    delayTurns: skill.delayTurns || 0,
+    delayedTrigger: skill.delayedTrigger || null,
+
     shinkiCost: isUlt ? (skill.shinkiCost ?? character.shinkiMax ?? 3) : 0,
 
     hit: skill.hit == null ? 100 : skill.hit,
@@ -129,11 +133,9 @@
 
     skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
 
+    // 移動型は battle_range_32.js の MOVE_PRESETS_32 に集約
+    // characters.js 側では moveType 名だけ指定する
     moveType: c.moveType || 'silver',
-
-    moveCells: Array.isArray(c.moveCells)
-      ? c.moveCells.map(p => ({ dr: p.dr, dc: p.dc }))
-      : null,
   };
 }
 

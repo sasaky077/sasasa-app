@@ -65,6 +65,15 @@
       { dr:  2, dc: -2 }, { dr:  2, dc: -1 }, { dr:  2, dc: 0 }, { dr:  2, dc: 1 }, { dr:  2, dc: 2 },
     ],
 
+
+    // 自分中心：斜め4マス
+diag_x_1: [
+  { dr: -1, dc: -1 },
+  { dr: -1, dc:  1 },
+  { dr:  1, dc: -1 },
+  { dr:  1, dc:  1 },
+],
+
     // 自分中心：斜めX字2マス
 diag_x_2: [
   { dr: -1, dc: -1 },
@@ -253,6 +262,48 @@ diag_x_2: [
       { dr:  0, dc: -1 },
       { dr:  0, dc:  1 }
     ],
+    // シグレ型
+    // 　□
+    // 　自
+    // □□□
+    shigure: [
+      { dr: -1, dc:  0 },
+      { dr:  1, dc: -1 },
+      { dr:  1, dc:  0 },
+      { dr:  1, dc:  1 },
+    ],
+
+    // ミユ型：前方直進3マス
+    miyu: [
+      { dr: -1, dc:  0 },
+      { dr: -2, dc:  0 },
+      { dr: -3, dc:  0 },
+    ],
+
+    // エリ型：上下左右1マス
+    eri: [
+      { dr: -1, dc:  0 },
+      { dr:  1, dc:  0 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 },
+    ],
+
+    // アキ型：前2・後2・前桂馬左右
+    aki: [
+      { dr: -2, dc:  0 },
+      { dr:  2, dc:  0 },
+      { dr: -2, dc: -1 },
+      { dr: -2, dc:  1 },
+    ],
+
+    // アサミ型：前・後・左前・右前
+    asami: [
+      { dr: -1, dc:  0 },
+      { dr:  1, dc:  0 },
+      { dr: -1, dc: -1 },
+      { dr: -1, dc:  1 },
+    ],
+
     // 角行（短縮）：斜め前左・斜め前右・斜め後左
     bishop_short: [
       { dr: -1, dc: -1 },
@@ -313,6 +364,23 @@ enemy_zako_diag: [
   { dr:  1, dc:  1 },
   { dr:  2, dc:  2 },
 ],
+
+// 敵雑魚：シフト型（前進優先・左右横移動も可能な汎用移動型）
+// enemy_ プレフィックスなので getMoveOffsets 内で dr 反転しない
+// enemy_mask / enemy_03 など enemies.js で moveType:'enemy_zako_shift' を指定している敵に使用
+enemy_zako_shift: [
+  // 前方 最大2マス
+  { dr:  1, dc:  0 },
+  { dr:  2, dc:  0 },
+
+  // 左右 各1マス（詰まり回避）
+  { dr:  0, dc: -1 },
+  { dr:  0, dc:  1 },
+
+  // 斜め前 各1マス（回避補助）
+  { dr:  1, dc: -1 },
+  { dr:  1, dc:  1 },
+],
   };
 
   /**
@@ -324,17 +392,8 @@ enemy_zako_diag: [
   function getMoveOffsets(unit) {
   if (!unit) return [];
 
-  // キャラ固有の移動マス定義があれば最優先
-  if (Array.isArray(unit.moveCells)) {
-    const cells = unit.moveCells.map(p => ({ dr: p.dr, dc: p.dc }));
-
-    // 敵に moveCells を持たせた場合だけ反転対応
-    if (unit.side === 'enemy') {
-      return cells.map(p => ({ dr: -p.dr, dc: p.dc }));
-    }
-
-    return cells;
-  }
+  // 移動型は MOVE_PRESETS_32 に集約する。
+  // キャラ個別の moveCells は使わない。
 
   const type = unit.moveType || 'silver';
 
@@ -360,21 +419,46 @@ enemy_zako_diag: [
   // フィールド固定座標プリセット
   // ============================================================
   const FIELD_PRESETS_32 = {
-    // 全マス
-    all:       'all',
-    enemy_all: 'all',   // 全マスから side:'enemy' でフィルタ（全体攻撃・デバフ用）
-    ally_all:  'all',   // 全マスから side:'ally'  でフィルタ（全体バフ・回復用）
-    field_all: 'all',   // 全マス（汎用）
+  // 全マス
+  all:       'all',
+  enemy_all: 'all',
+  ally_all:  'all',
+  field_all: 'all',
 
-    // 中央列（col:1,2）縦全体（ボス予兆攻撃用）
-    center_cols: (function () {
-      const cells = [];
-      for (let r = 0; r < 8; r++) {
-        cells.push({ row: r, col: 1 });
-        cells.push({ row: r, col: 2 });
-      }
-      return cells;
-    })(),
+  // 固定十字：中央縦1列 + row2横一列
+  // □□■□□
+  // □□■□□
+  // ■■■■■
+  // □□■□□
+  // □□■□□
+  // □□■□□
+  // □□■□□
+  // □□■□□
+  field_cross_center: (function () {
+    const cells = [];
+
+    // 縦線：中央列 col:2 を全row
+    for (let r = 0; r < 8; r++) {
+      cells.push({ row: r, col: 2 });
+    }
+
+    // 横線：row:2 を全col
+    for (let c = 0; c < 5; c++) {
+      cells.push({ row: 2, col: c });
+    }
+
+    return cells;
+  })(),
+
+  // 中央列（col:1,2）縦全体（ボス予兆攻撃用）
+  center_cols: (function () {
+    const cells = [];
+    for (let r = 0; r < 8; r++) {
+      cells.push({ row: r, col: 1 });
+      cells.push({ row: r, col: 2 });
+    }
+    return cells;
+  })(),
 
     // 味方初期エリア row:5〜7
     ally_zone: (function () {

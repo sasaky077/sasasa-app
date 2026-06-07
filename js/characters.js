@@ -127,8 +127,8 @@ const CHARACTERS = [
   // ── id:2 シグレ（速度寄り）──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
   { id: 2, name: 'シグレ', gender: 'woman', rarity: 'r',
-    role: '速度寄り',
-    moveType: 'silver',
+  role: '速度寄り',
+  moveType: 'shigure',
     costMax: 10,
     costStart: 6,
     costRegen: 5,
@@ -148,6 +148,7 @@ const CHARACTERS = [
       { id: 's1',
         name: '神巫',
         cost: 3,
+        linkCost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -165,6 +166,7 @@ const CHARACTERS = [
   id: 'ult',
   name: '時雨',
   cost: 10,
+  linkCost: 4,
   isUltimate: true,
   hit: 100,
   type: 'attack',
@@ -271,9 +273,9 @@ const CHARACTERS = [
         desc: 'ポジションを変更する。' }
     ]},
 
-  // ── id:4 リョウ（火力寄り）───────────────────────────────────
-  // 高倍率の攻撃特化。高火力スキルで敵を削るアタッカー。
-  { id: 4, name: 'リョウ', gender: 'man', rarity: 'r',
+  // ── id:4 ユズハ（ギャル寄り）───────────────────────────────────
+  // 予知系。数ターン先に攻撃を予約する感じ。
+  { id: 4, name: 'ユズハ', gender: 'man', rarity: 'r',
     role: '火力寄り',
     moveType: 'rook_short',
     costMax: 14,
@@ -289,16 +291,22 @@ const CHARACTERS = [
     upImg: 'images/chara_04_up.webp', 
     battleImg: 'images/chara_04_battle.webp',
     battleBackImg: 'images/chara_04_battle_back.webp',
-    favScale: 1.0, favOffsetY: -10,
+    panelImg: 'images/chara_04_panel.webp',
+    favScale: 1.00, favOffsetY: 20,
+    uiScale: {
+    panel: 1.0,
+    battleBack: 1.0
+},
     skills: [
       { id: 's1',
-        name: 'アルタイル',
+        name: '堕ちろっ♡',
         cost: 3,
+        linkCost: 3,
         isUltimate: false,
-        hit: 85,
+        hit: 100,
         type: 'attack',
-        multiplier: 3.0,
-        range: 'pierce3',
+        multiplier: 1.5,
+        range: 'diag_x_1',
         pierce: false,
         effects: [],
         hitStyle: 'rapid',
@@ -308,66 +316,31 @@ const CHARACTERS = [
         },
         desc: '自身の直線上3マス先まで非貫弾を打ち込む。' },
 
-      { id: 's2',
-        name: 'デネブ',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.0,
-        range: 'all',
-        effects: [],
-        hitStyle: 'rapid',
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.3
-        },
-        desc: '敵の全マスに鉛の雨が降り注ぐ。' },
-
-      { id: 's3',
-        name: 'ベガ',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
-        range: 'pierce_all',
-        pierce: true,
-        effects: [],
-        hitStyle: 'heavy',
-        moveBonus: {
-          idealMoves: [2, 4],
-          damageRate: 1.3
-        },
-        desc: '自身の直線上の全てのマスに貫通弾を撃ち込む。' },
-
       { id: 'ult',
-        name: 'アンタレス',
+        name: '圧倒的神頼みっ♡',
         cost: 10,
+        linkCost: 5,
         isUltimate: true,
         hit: 100,
-        type: 'attack',
+        type: 'delayed_attack',
         multiplier: 3.0,
-        range: 'pierce_all',
+        range: 'field_cross_center',
         pierce: true,
         effects: [],
         hitStyle: 'multi',
+        delayTurns: 2,
+        delayedTrigger: 'allyTurnStart',
         moveBonus: {
           idealMoves: [1],
           damageRate: 1.5
         },
-        desc: '自身の直線上簿全てのマスに貫通弾を撃ち込む。大ダメージ。' }
+        desc: '使用した2ターン後のターン開始時に固定マスに大ダメージ。' }
     ]},
 
   // ── id:7 ミユ
 { id: 7, name: 'ミユ', gender: 'woman', rarity: 'r',
   role: '速度寄り',
-  moveType: 'custom',
-  moveCells: [
-    { dr: -1, dc: 0 }, // 前1
-    { dr: -2, dc: 0 }, // 前2
-    { dr: -3, dc: 0 }, // 前3
-  ],
+  moveType: 'miyu',
     costMax: 10,
     costStart: 5,
     costRegen: 3,
@@ -387,6 +360,7 @@ const CHARACTERS = [
       { id: 's1',
         name: '貫通弾',
         cost: 4,
+        linkCost: 2,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -404,6 +378,7 @@ const CHARACTERS = [
       { id: 'ult',
         name: '鉛の雨',
         cost: 10,
+        linkCost: 4,
         isUltimate: true,
         hit: 100,
         type: 'attack',
@@ -423,13 +398,7 @@ const CHARACTERS = [
   // ── id:12 エリ
 { id: 12, name: 'エリ', gender: 'woman', rarity: 'r',
   role: '速度寄り',
-  moveType: 'custom',
-  moveCells: [
-    { dr: -1, dc:  0 }, // 上
-    { dr:  1, dc:  0 }, // 下
-    { dr:  0, dc: -1 }, // 左
-    { dr:  0, dc:  1 }, // 右
-  ],
+  moveType: 'eri',
     costMax: 14,
     costStart: 5,
     costRegen: 2,
@@ -449,6 +418,7 @@ const CHARACTERS = [
       { id: 's1',
         name: '閃',
         cost: 3,
+        linkCost: 2,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -465,6 +435,7 @@ const CHARACTERS = [
       { id: 'ult',
         name: '終',
         cost: 10,
+        linkCost: 4,
         isUltimate: true,
         hit: 100,
         type: 'attack',
@@ -568,9 +539,9 @@ const CHARACTERS = [
         desc: '霊力を使って素早く移動する。' }
     ]},
 
-  // ── id:11 ユズハ（火力寄り）──────────────────────────────────
+  // ── id:11 カンナ（火力寄り）──────────────────────────────────
   // 最高クラスの火力。高倍率攻撃を叩き込む超アタッカー。
-  { id: 11, name: 'ユズハ', gender: 'woman', rarity: 'r',
+  { id: 11, name: 'カンナ', gender: 'woman', rarity: 'r',
     role: '火力寄り',
     costMax: 14,
     costStart: 3,
@@ -603,37 +574,6 @@ const CHARACTERS = [
           damageRate: 1.3
         },
         desc: '神通力を解放した一撃。ATKの2倍のダメージ。' },
-
-      { id: 's2',
-        name: '怒りますよ',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'front_row_3',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '怪異のATKを2ターン大幅に低下させる。' },
-
-      { id: 's3',
-        name: '叩きます',
-        cost: 3,
-        isUltimate: false,
-        hit: 50,
-        type: 'attack',
-        multiplier: 3.0,
-        range: 'pierce3',
-        effects: [],
-        moveBonus: {
-          idealMoves: [1, 3],
-          damageRate: 1.4
-        },
-        desc: '力が湧いてくる。ATKの3倍の超火力。命中率は非常に低い。' },
 
       { id: 'ult',
         name: '壊します！',
@@ -877,13 +817,7 @@ const CHARACTERS = [
 // ── id:15 アキ
 { id: 15, name: 'アキ', gender: 'woman', rarity: 'sr',
   role: '速度・支援寄り',
-  moveType: 'custom',
-  moveCells: [
-    { dr: -2, dc: 0 }, // 前2
-    { dr:  2, dc: 0 }, // 後2
-    { dr: -2, dc: -1 }, // 左前桂馬
-    { dr: -2, dc:  1 }, // 右前桂馬
-  ],
+  moveType: 'aki',
     costMax: 12,
     costStart: 7,
     costRegen: 2,
@@ -1153,6 +1087,7 @@ const CHARACTERS = [
       { id: 's1',
         name: '麻酔針',
         cost: 3,
+        linkCost: 4,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -1172,6 +1107,7 @@ const CHARACTERS = [
         id: 'ult',
         name: '神体実験',
         cost: 0,
+        linkCost: 6,
         shinkiCost: 7,
         isUltimate: true,
         hit: 100,
@@ -1314,8 +1250,9 @@ const CHARACTERS = [
       { id: 's1',
         name: '蝉時雨',
         cost: 3,
+        linkCost: 3,
         isUltimate: false,
-        hit: 90,
+        hit: 100,
         type: 'attack',
         multiplier: 2.0,
         range: 'front1',
@@ -1327,46 +1264,12 @@ const CHARACTERS = [
         },
         desc: '幻影を使った素早い攻撃。ATKの2倍のダメージ。' },
 
-      { id: 's2',
-        name: '湖上の月',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'col_center',
-        effects: [,
-          { type: 'shift_left_2', target: 'enemy', hit: 80, duration: 1 }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '幻影で怪異を2マス左に強制移動させ、ATKを2ターン低下させる。' },
-
-      { id: 's3',
-        name: '幻実',
-        cost: 3,
-        isUltimate: false,
-        hit: 90,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'all',
-        effects: [
-          { type: 'jittai', target: 'enemy', hit: 90, duration: 2 },
-          { type: 'shift_right_1', target: 'enemy', hit: 80, duration: 1 }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '幻影で実体化させながら怪異を1マス右に強制移動。成功率が高い。' },
-
       { id: 'ult',
-        name: '爆発',
+        name: '夢幻',
         cost: 10,
+        linkCost: 4,
         isUltimate: true,
-        hit: 60,
+        hit: 100,
         type: 'attack',
         multiplier: 3.0,
         range: 'all',
@@ -1624,13 +1527,7 @@ const CHARACTERS = [
 { id: 8, 
   name: 'アサミ', gender: 'woman', rarity: 'ur',
   role: '速度寄り',
-  moveType: 'custom',
-  moveCells: [
-    { dr: -1, dc:  0 }, // 前
-    { dr:  1, dc:  0 }, // 後
-    { dr: -1, dc: -1 }, // 左前
-    { dr: -1, dc:  1 }, // 右前
-  ],
+  moveType: 'asami',
     costMax: 14,
     costStart: 4,
     costRegen: 2,
@@ -1653,6 +1550,7 @@ const CHARACTERS = [
       { id: 's1',
         name: 'ほいっ！',
         cost: 4,
+        linkCost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -1669,6 +1567,7 @@ const CHARACTERS = [
       { id: 'ult',
         name: 'すごいだろっ',
         cost: 10,
+        linkCost: 3,
         isUltimate: true,
         hit: 100,
         type: 'attack',

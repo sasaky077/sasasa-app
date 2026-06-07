@@ -138,6 +138,90 @@
     return Math.random().toString(36).slice(2, 9);
   }
 
+
+  // ============================================================
+  // 所持データ反映（共鳴Lv後ステータス）
+  // ============================================================
+  // Battle32 / Roguelite は partyIds（キャラID）だけで起動するため、
+  // ここで所持BOX・図鑑データから最新の共鳴後 HP / ATK を引き当てる。
+  // 同一キャラを複数所持している場合は、現在のUI仕様では個体指定ではなく
+  // charaId指定のため、もっとも共鳴Lvが高い個体を採用する。
+  function _getOwnedEntryForBattle(charaId) {
+    const idNum = Number(charaId);
+    const candidates = [];
+
+    // box: 所持BOX（全個体）
+    if (Array.isArray(window.box)) {
+      window.box.forEach(entry => {
+        if (entry && Number(entry.id) === idNum) candidates.push(entry);
+      });
+    }
+
+    // collected: 図鑑用代表個体
+    if (window.collected && window.collected[idNum]) {
+      candidates.push(window.collected[idNum]);
+    }
+
+    if (candidates.length === 0) return null;
+
+    // もっとも共鳴Lvが高い個体を採用。同Lvなら stats がある方を優先。
+    candidates.sort((a, b) => {
+      const lbA = Number(a.limitBreak || 0);
+      const lbB = Number(b.limitBreak || 0);
+      if (lbA !== lbB) return lbB - lbA;
+      const hasStatsA = a.stats && (a.stats.HP != null || a.stats.ATK != null) ? 1 : 0;
+      const hasStatsB = b.stats && (b.stats.HP != null || b.stats.ATK != null) ? 1 : 0;
+      return hasStatsB - hasStatsA;
+    });
+
+    return candidates[0];
+  }
+
+  function _calcOwnedStatsForBattle(baseCharDef, ownedEntry) {
+    if (!baseCharDef || !ownedEntry) return null;
+
+    const lb = Number(ownedEntry.limitBreak || 0);
+    const rarity = ownedEntry.rarity || baseCharDef.rarity || 'r';
+
+    // index.html 側の共鳴計算関数が使えるなら、それで再計算する。
+    // これによりDB保存済みstatsの古さ・不整合を避ける。
+    if (typeof window.applyLimitBreakStats === 'function') {
+      const baseStats = ownedEntry.baseStats || {
+        HP: baseCharDef.hp,
+        ATK: baseCharDef.atk,
+      };
+      return window.applyLimitBreakStats(baseStats, lb, rarity);
+    }
+
+    // fallback: 所持データのstatsを使う。
+    if (ownedEntry.stats) return ownedEntry.stats;
+
+    return null;
+  }
+
+  function _applyOwnedStatsToCharDef(charDef) {
+    if (!charDef) return null;
+
+    const c = deepClone(charDef);
+    const owned = _getOwnedEntryForBattle(c.id);
+    if (!owned) return c;
+
+    const ownedStats = _calcOwnedStatsForBattle(c, owned);
+    if (!ownedStats) return c;
+
+    const hp  = Number(ownedStats.HP ?? ownedStats.hp ?? c.hp);
+    const atk = Number(ownedStats.ATK ?? ownedStats.atk ?? c.atk);
+
+    if (Number.isFinite(hp) && hp > 0) c.hp = Math.floor(hp);
+    if (Number.isFinite(atk) && atk > 0) c.atk = Math.floor(atk);
+
+    // UI/デバッグ用に共鳴情報も持たせる
+    c.limitBreak = Number(owned.limitBreak || 0);
+    c.ownedStatsApplied = true;
+
+    return c;
+  }
+
   function shuffle(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -317,7 +401,7 @@
 
     const stageId = config.stageId || null;
 
-    const allChars = window.CHARACTERS_32 || [];
+    const allChars = (window.CHARACTERS_32 || []).map(c => _applyOwnedStatsToCharDef(c)).filter(Boolean);
 
 // テストプレイ用：アサミ・エリ・ミユ
 const TEST_PARTY_IDS_32 = [8, 12, 7];
@@ -418,7 +502,7 @@ const enemies = enemyDefs.map(def => {
 
     if (isRogueliteMode && config.partyIds && config.partyIds.length > 0) {
       // ローグライト：5体持ち込み、初期盤面は0体
-      const allChars32 = window.CHARACTERS_32 || [];
+      const allChars32 = allChars;
       rosterData = config.partyIds.map((pid, idx) => {
         const charDef = allChars32.find(c => c.id === pid);
         if (!charDef) return null;
@@ -448,6 +532,8 @@ const enemies = enemyDefs.map(def => {
       bossWarnTurn: BOSS_WARN_INTERVAL,
       bossWarning: false,
       result: null,
+
+      delayedActions: [],
 
       // ── LINK システム ──
       link: {
@@ -538,13 +624,22 @@ const enemies = enemyDefs.map(def => {
 
   // ターン開始演出フロー（ALLY TURN → PLAYER ACTION → 操作解除）
   async function _startAllyTurnFlow() {
-    _lockInput();
+  _lockInput();
+  _renderUI();
+
+  // ★追加：味方ターン開始直後に予約攻撃を処理
+  await _processDelayedActions('allyTurnStart');
+
+  if (_bs.result) {
     _renderUI();
-    await _centerTextWait('ALLY TURN', `TURN ${_bs.turn}`, B32_WAIT.turn);
-    // await _centerTextWait('PLAYER ACTION', '移動するキャラを選択してください', B32_WAIT.guide);
-    _unlockInput();
-    _renderUI();
+    return;
   }
+
+  await _centerTextWait('ALLY TURN', `TURN ${_bs.turn}`, B32_WAIT.turn);
+
+  _unlockInput();
+  _renderUI();
+}
 
   // ============================================================
   // ローグライト補助関数
@@ -604,6 +699,9 @@ const enemies = enemyDefs.map(def => {
       bossWarning: _bs.bossWarning,
       log: [..._bs.log],
       result: _bs.result,
+
+      delayedActions: _bs.delayedActions ? _bs.delayedActions.map(a => ({ ...a })) : [],
+
       isRoguelite: !!_bs.isRoguelite,
       cores: _bs.cores ? JSON.parse(JSON.stringify(_bs.cores)) : null,
       bossCore: _bs.bossCore ? { ..._bs.bossCore } : null,
@@ -681,6 +779,115 @@ const enemies = enemyDefs.map(def => {
     _checkWinLose();
   }
 
+function _queueDelayedAttack(ally, skill) {
+  if (!_bs.delayedActions) _bs.delayedActions = [];
+
+  const delayTurns = Number(skill.delayTurns || 2);
+
+  _bs.delayedActions.push({
+    id: uid(),
+    ownerUid: ally._uid,
+    ownerName: ally.name,
+    ownerAtk: ally.atk,
+
+    skillId: skill.id,
+    skillName: skill.name,
+    isUltimate: !!skill.isUltimate,
+
+    range: skill.range,
+    multiplier: skill.multiplier || 1,
+    hit: skill.hit == null ? 100 : skill.hit,
+    hitStyle: skill.hitStyle || 'normal',
+    effects: Array.isArray(skill.effects) ? deepClone(skill.effects) : [],
+
+    trigger: skill.delayedTrigger || 'allyTurnStart',
+    triggerTurn: _bs.turn + delayTurns,
+  });
+
+  _log(`${ally.name} は「${skill.name}」を予約した。${delayTurns}ターン後に発動する`);
+}
+
+async function _processDelayedActions(trigger) {
+  if (!_bs || !_bs.delayedActions || _bs.delayedActions.length === 0) return;
+
+  const ready = _bs.delayedActions.filter(a =>
+    a.trigger === trigger &&
+    _bs.turn >= a.triggerTurn
+  );
+
+  if (ready.length === 0) return;
+
+  _bs.delayedActions = _bs.delayedActions.filter(a => !ready.includes(a));
+
+  for (const action of ready) {
+    if (_bs.result) break;
+
+    await _centerTextWait(action.skillName || 'DELAYED ATTACK', '未来干渉 発動', B32_WAIT.action);
+
+    _executeDelayedAttack(action);
+
+    _renderUI();
+    await wait(B32_WAIT.attack);
+    await wait(B32_WAIT.afterText);
+  }
+}
+
+function _executeDelayedAttack(action) {
+  // field系レンジは使用者位置に依存しないのでダミーでOK
+  const dummyUser = {
+    row: 0,
+    col: 0,
+    side: 'ally',
+    name: action.ownerName || '予約攻撃',
+  };
+
+  const targets = BR
+    .getUnitsFromRange32(dummyUser, action.range, _bs.enemies)
+    .filter(e => e.hp > 0);
+
+  if (targets.length === 0) {
+    _log(`「${action.skillName}」が発動したが、範囲内に敵はいなかった`);
+    return;
+  }
+
+  _log(`「${action.skillName}」が発動！`);
+
+  targets.forEach(enemy => {
+    let dmg = calcDamage(action.ownerAtk || 1, action.multiplier || 1, enemy);
+
+    // ローグライト：スキルダメージ補正
+    if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+      dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+    }
+
+    // ローグライト：ボスダメージ補正
+    if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+      dmg = Math.round(dmg * _bs._rl_bossDmgMult);
+    }
+
+    applyDamage(enemy, dmg, {
+      _uid: action.ownerUid,
+      name: action.ownerName,
+      side: 'ally',
+      row: dummyUser.row,
+      col: dummyUser.col,
+    }, {
+      id: action.skillId,
+      name: action.skillName,
+      isUltimate: action.isUltimate,
+      hitStyle: action.hitStyle || 'normal',
+    });
+
+    _applyEffects(action.effects, enemy, {
+      _uid: action.ownerUid,
+      name: action.ownerName,
+      side: 'ally',
+    });
+  });
+
+  _checkWinLose();
+}
+
   // ============================================================
   // スキル実行（味方）
   // ============================================================
@@ -719,7 +926,13 @@ const enemies = enemyDefs.map(def => {
     let noTargets = false;
 
     // ── attack ──────────────────────────────────────────────────
-    if (stype === 'attack') {
+    // ── delayed_attack：未来予約攻撃 ─────────────────────────────
+if (stype === 'delayed_attack') {
+  _queueDelayedAttack(ally, skill);
+
+// ── attack ──────────────────────────────────────────────────
+} else if (stype === 'attack') {
+
       const targets = _enemyTargets(skill.range);
       if (targets.length === 0) {
         noTargets = true;
@@ -1411,8 +1624,11 @@ function doBossLineAttack(boss) {
   }
 
   async function _runEnemyPhase() {
-    const allies = aliveAllies();
-    if (allies.length === 0) { _checkWinLose(); return; }
+    // 盤面に味方が0体でも敵はコアへ向かって行動する。
+    // standby キャラが残っている場合は敗北しないため、早期 return せず通常フローを続ける。
+    // 勝敗が確定している場合のみここで終了する。
+    _checkWinLose();
+    if (_bs.result) { _renderUI(); return; }
 
     // ステージ設定に応じた敵スポーン（ordered 作成前に呼び、即行動させる）
     _spawnEnemyFromConfig();
@@ -1551,6 +1767,29 @@ function doBossLineAttack(boss) {
         { dr:  1, dc:  0, group: 2 }, // 前
         { dr:  0, dc: -1, group: 3 }, // 左
         { dr:  0, dc:  1, group: 3 }, // 右
+      ];
+    }
+
+    // シフト型（enemy_zako_shift）：前進優先・左右横移動も可
+    // enemy_mask / enemy_03 など前進＋横移動を持つ汎用移動型
+    if (type === 'enemy_zako_shift') {
+      return [
+        { dr:  1, dc:  0, group: 1 }, // 前
+        { dr:  0, dc: -1, group: 2 }, // 左（詰まり回避）
+        { dr:  0, dc:  1, group: 2 }, // 右（詰まり回避）
+        { dr:  1, dc: -1, group: 3 }, // 左斜め前（fallback）
+        { dr:  1, dc:  1, group: 3 }, // 右斜め前（fallback）
+      ];
+    }
+
+    // 中ボス：前方横3マスから最もコアに近いマスへ移動
+    if (type === 'enemy_midboss_front3') {
+      return [
+        { dr:  1, dc: -1, group: 1 }, // 左斜め前
+        { dr:  1, dc:  0, group: 1 }, // 前
+        { dr:  1, dc:  1, group: 1 }, // 右斜め前
+        { dr:  0, dc: -1, group: 2 }, // 左（詰まり回避）
+        { dr:  0, dc:  1, group: 2 }, // 右（詰まり回避）
       ];
     }
 
@@ -1826,7 +2065,16 @@ if (canEnemyAttackAllyCore(enemy)) {
     if (!_bs || typeof _bs._rl_onBattleEnd !== 'function') return;
     const cb = _bs._rl_onBattleEnd;
     _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
-    setTimeout(() => cb({ result }), 800);
+    setTimeout(() => {
+      // バトルUI専用要素（link-bar / roster-panel 等）を確実に除去し、
+      // ホーム共通UI（bottom-nav-shared / global-user-frame）を復帰させる
+      if (typeof window.cleanupBattle32Overlays === 'function') {
+        window.cleanupBattle32Overlays({ restoreCommonUi: true });
+      } else if (typeof window.closeBattle32UI === 'function') {
+        window.closeBattle32UI();
+      }
+      cb({ result });
+    }, 800);
   }
 
   // ============================================================

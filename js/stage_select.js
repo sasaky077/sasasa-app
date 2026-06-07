@@ -374,7 +374,10 @@
   // 開閉
   // ============================================================
   window.openStageSelect = function (chapter) {
-    buildModal();
+  chapter = chapter ?? 1;
+
+  buildModal();
+
     const el = document.getElementById('stage-select-modal');
     const title = document.getElementById('ss-title');
     if (title) {
@@ -383,17 +386,25 @@
         : 'CHAPTER ' + String(chapter).padStart(2, '0');
     }
 
-    renderList(chapter ?? 1);
+    renderList(chapter);
 
     el.style.display = 'flex';
     void el.offsetWidth;
     el.style.opacity = '1';
 
-    // ボトムナビを隠す
-    const nav = document.getElementById('bottom-nav-shared');
-    if (nav) nav.style.display = 'none';
-    const guf = document.getElementById('global-user-frame');
-    if (guf) guf.style.display = 'none';
+// ボトムナビ・HUD制御
+// 通常のステージ選択ではホーム用ボトムナビを表示する
+// 明示的に隠したい場合だけ window.__HIDE_HOME_NAV_ON_STAGE_SELECT__ = true にする
+const shouldHideHomeNav = window.__HIDE_HOME_NAV_ON_STAGE_SELECT__ === true;
+
+const nav = document.getElementById('bottom-nav-shared');
+if (nav) nav.style.display = shouldHideHomeNav ? 'none' : '';
+
+const guf = document.getElementById('global-user-frame');
+if (guf) {
+  guf.classList.remove('hidden');
+  guf.style.display = shouldHideHomeNav ? 'none' : '';
+}
   };
 
   window.closeStageSelect = function () {

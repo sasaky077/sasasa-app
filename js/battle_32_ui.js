@@ -1121,25 +1121,42 @@ window._b32ShowEnemyInfo = function (enemyUid) {
   }
 
  /* ── パーティパネル HP バー ── */
+ /* HPブロック全体：数値が右上、バーが直下 */
+ .b32-party-hp-block {
+ width: 100%;
+ display: flex;
+ flex-direction: column;
+ align-items: flex-end; /* 数値を右寄せ */
+ gap: 1px;
+ }
+ .b32-party-hp-num {
+ font-family: 'Cinzel', serif;
+ font-size: 9px;
+ letter-spacing: .5px;
+ color: rgba(232,228,220,.72);
+ line-height: 1.2;
+ text-align: right;
+ white-space: nowrap;
+ }
  .b32-party-hp-bar-wrap {
  width: 100%;
  height: 4px;
  border-radius: 2px;
  background: rgba(0,0,0,.45);
  overflow: hidden;
- margin: 3px 0 1px;
  }
  .b32-party-hp-bar {
  height: 100%;
  border-radius: 2px;
  transition: width .25s ease;
  }
+ /* 旧クラス（後方互換） */
  .b32-party-hp-text {
  font-family: 'Cinzel', serif;
  font-size: 9px;
  letter-spacing: .5px;
  color: rgba(232,228,220,.65);
- text-align: center;
+ text-align: right;
  line-height: 1.2;
  }
  .b32-party-hp-max {
@@ -1326,7 +1343,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  /* ── HP セクション：カード最下部 ── */
  .b32-party-hp-section {
  width: 100%;
- margin-top: 3px;
+ margin-top: 2px;
  }
 
  /* ── 自陣コア画像 ── */
@@ -3301,41 +3318,67 @@ function b32RestartBattle() {
 }
 
 function b32ReturnToStageSelect() {
- const bs = _bs();
+  const bs = _bs();
 
- // ローグライト中ならランを終了
- if (bs && bs.isRoguelite && window.RogueliteRun) {
- window.RogueliteRun.end('lose');
- }
+  // 戻り先チャプターを決める
+  let chapter = 1;
 
- // Battle32だけ閉じる
- const root = document.getElementById('battle32-root');
- if (root) root.style.display = 'none';
+  if (bs && bs.returnChapter != null) {
+    chapter = bs.returnChapter;
+  } else if (bs && bs.stageId && typeof STAGES !== 'undefined') {
+    const st = STAGES.find(s => s.id === bs.stageId);
+    if (st && st.chapter != null) chapter = st.chapter;
+  }
 
- const info = document.getElementById('b32-enemy-quick-info');
- if (info) info.remove();
+  // ローグライト中ならラン終了
+  if (bs && bs.isRoguelite && window.RogueliteRun) {
+    window.RogueliteRun.end('lose');
+  }
 
- const menu = document.getElementById('b32-battle-menu');
- if (menu) menu.remove();
+// Battle32 / Roguelite UIを掃除
+if (typeof window.cleanupBattle32Overlays === 'function') {
+  window.cleanupBattle32Overlays({ restoreCommonUi: false });
+}
 
- // 既存のステージ選択へ戻す処理があるなら優先
- if (typeof window.openStageSelect === 'function') {
- window.openStageSelect();
- return;
- }
+// cleanupBattle32Overlays で消し漏れがあっても、ここで必ず消す
+[
+  'battle32-root',
+  'b32-link-bar',
+  'b32-roster-panel',
+  'b32-item-panel',
+  'b32-roster-info-close-hitbox',
+  'b32-enemy-info-overlay',
+  'b32-enemy-quick-info',
+  'b32-battle-menu',
+  'b32-center-text',
+  'b32-result-overlay',
+  'rl-victory-wait-layer'
+].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
 
- if (typeof window.showStageSelect === 'function') {
- window.showStageSelect();
- return;
- }
+  if (id === 'battle32-root') {
+    el.style.display = 'none';
+  } else {
+    el.remove();
+  }
+});
 
- // 最後の手段：既存closeBattle32UIを使う
- if (typeof window.closeBattle32UI === 'function') {
- window.closeBattle32UI();
- return;
- }
+window.__BATTLE32_UI_ACTIVE__ = false;
+window.__ROGUELITE_TRANSITIONING__ = false;
 
- console.warn('[Battle32UI] ステージ選択へ戻る関数が見つかりません');
+  // ステージ選択へ戻す
+  if (typeof window.openStageSelect === 'function') {
+    window.openStageSelect(chapter);
+    return;
+  }
+
+  if (typeof window.showStageSelect === 'function') {
+    window.showStageSelect(chapter);
+    return;
+  }
+
+  console.warn('[Battle32UI] ステージ選択へ戻る関数が見つかりません');
 }
 
  function renderCore(row, col, bs) {
@@ -3410,6 +3453,12 @@ inner += `<div class="b32-unit-name">${u.name}</div>`;
  const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
  const hpCol = hpColor(u.hp, u.hpMax);
  inner += `<div class="b32-hp-bar-wrap"><div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div></div>`;
+ }
+
+ if (u.side === 'ally') {
+ const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
+ // ally は CSS で青系固定（hpColor 上書き）
+ inner += `<div class="b32-hp-bar-wrap"><div class="b32-hp-bar" style="width:${hpPct}%"></div></div>`;
  }
 
  if (u.side === 'ally') {
@@ -3904,19 +3953,21 @@ await _afterCharTurnFlow();
  // 移動対象として選択中 or スキルキャラとして選択中ならハイライト
  const selected = ally._uid === _selMoveAllyUid || ally._uid === _selSkillAllyUid;
 
+ // レアリティ（画像左上オーバーレイ用）
+ const rarityRaw = (ally.rarity || '').toLowerCase();
+ const rarityLabel = rarityRaw ? rarityRaw.toUpperCase() : '';
+ const rarityClass = rarityRaw ? `rarity-${rarityRaw}` : '';
+
  // HP バー＋数値表示（下部キャラパネル専用：バー色はCSS固定）
  const hpPct = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
  const hpHtml = `
- <div class="b32-party-hp-row">
- <span class="b32-party-hp-label">HP</span>
- <div class="b32-party-hp-area">
- <div class="b32-party-hp-text">
- ${ally.hp}<span class="b32-party-hp-max"> / ${ally.hpMax}</span>
- </div>
- <div class="b32-party-hp-bar-wrap">
- <div class="b32-party-hp-bar" style="width:${hpPct}%"></div>
- </div>
- </div>
+ <div class="b32-party-hp-block">
+   <div class="b32-party-hp-num">
+     ${ally.hp}<span class="b32-party-hp-max">/${ally.hpMax}</span>
+   </div>
+   <div class="b32-party-hp-bar-wrap">
+     <div class="b32-party-hp-bar" style="width:${hpPct}%"></div>
+   </div>
  </div>
  `;
 
@@ -3949,6 +4000,7 @@ await _afterCharTurnFlow();
  <!-- 神気ドット：絶対配置でカード右上に固定 -->
  <div class="b32-party-shinki-badge">${shinkiDots}</div>
  <div class="b32-party-img-wrap">
+ ${rarityLabel ? `<span class="b32-party-rarity ${rarityClass}">${rarityLabel}</span>` : ''}
  ${img
  ? `<img
  class="b32-party-img"
@@ -4503,64 +4555,105 @@ if (listEl) {
  }
  }
 
- // ============================================================
- // 公開: renderBattle32UI()
- // ============================================================
- window.renderBattle32UI = function () {
- const bs = _bs();
- if (!bs) {
- console.warn('[Battle32UI] Battle32.getState() が null。Battle32.start() を先に呼んでください。');
- return;
- }
+// ============================================================
+// 公開: renderBattle32UI()
+// ============================================================
+window.renderBattle32UI = function () {
 
- buildRoot();
+  // ★ 追加：バトルUI終了後の再描画を完全に止める
+  if (window.__BATTLE32_UI_ACTIVE__ === false) {
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.style.display = 'none';
 
- const root = document.getElementById(ROOT_ID);
+    [
+      'b32-link-bar',
+      'b32-roster-panel',
+      'b32-item-panel',
+      'b32-roster-info-close-hitbox',
+      'b32-enemy-info-overlay'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
 
- // ローグライト遷移中は、古いBATTLE END画面を再表示しない
- if (
- window.__ROGUELITE_TRANSITIONING__ &&
- bs.isRoguelite &&
- (bs.result || bs.phase === 'end')
- ) {
- if (root) root.style.display = 'none';
- return;
- }
+    return;
+  }
 
- if (root) {
- root.style.display = 'flex';
- delete root.dataset.rlHidden;
- }
+  const bs = _bs();
+  if (!bs) {
+    console.warn('[Battle32UI] Battle32.getState() が null。Battle32.start() を先に呼んでください。');
+    return;
+  }
 
- renderHeader(bs);
- renderHintBar(bs);
- renderBossHp(bs);
- renderBoard(bs);
- if (bs.isRoguelite) {
-   renderLinkBar(bs);
-   renderRoster(bs);
-   renderItemPanel(bs);
- } else {
-   renderPartyStatus(bs);
- }
- renderLog(bs);
- renderBottomArea(bs);
- renderButtons(bs);
- renderActionMenu(bs);
- renderResult(bs);
- renderBattleMenu(bs);
- 
- requestAnimationFrame(() => {
-   fitBattle32Layout();
-   _syncRosterInfoCloseHitbox();
- });
+  buildRoot();
+
+  const root = document.getElementById(ROOT_ID);
+
+  // ローグライト遷移中は、古いBATTLE END画面を再表示しない
+  if (
+    window.__ROGUELITE_TRANSITIONING__ &&
+    bs.isRoguelite &&
+    (bs.result || bs.phase === 'end')
+  ) {
+    if (root) root.style.display = 'none';
+
+    // ★ ここにも保険で追加してOK
+    ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+
+    return;
+  }
+
+  if (root) {
+    root.style.display = 'flex';
+    delete root.dataset.rlHidden;
+  }
+
+  renderHeader(bs);
+  renderHintBar(bs);
+  renderBossHp(bs);
+  renderBoard(bs);
+
+  if (bs.isRoguelite) {
+    renderLinkBar(bs);
+    renderRoster(bs);
+    renderItemPanel(bs);
+  } else {
+    renderPartyStatus(bs);
+  }
+
+  renderLog(bs);
+  renderBottomArea(bs);
+  renderButtons(bs);
+  renderActionMenu(bs);
+  renderResult(bs);
+  renderBattleMenu(bs);
+
+  requestAnimationFrame(() => {
+    fitBattle32Layout();
+    _syncRosterInfoCloseHitbox();
+  });
 };
 
  // ============================================================
  // LINK バー描画（ローグライト専用）
  // ============================================================
  function renderLinkBar(bs) {
-   let el = document.getElementById('b32-link-bar');
+  let el = document.getElementById('b32-link-bar');
+
+  if (
+    window.__BATTLE32_UI_ACTIVE__ === false ||
+    !bs ||
+    !bs.link ||
+    !bs.isRoguelite ||
+    bs.result
+  ) {
+    if (el) el.remove();
+    return;
+  }
+
    if (!el) {
      el = document.createElement('div');
      el.id = 'b32-link-bar';
@@ -4583,7 +4676,6 @@ if (listEl) {
 
      document.body.appendChild(el);
    }
-   if (!bs || !bs.link) { el.style.display = 'none'; return; }
    el.style.display = 'flex';
 
    const { current, max } = bs.link;
@@ -4613,7 +4705,18 @@ if (listEl) {
  // roster 5体表示（ローグライト専用）
  // ============================================================
  function renderRoster(bs) {
-   let el = document.getElementById('b32-roster-panel');
+  let el = document.getElementById('b32-roster-panel');
+
+  if (
+    window.__BATTLE32_UI_ACTIVE__ === false ||
+    !bs ||
+    !bs.isRoguelite ||
+    bs.result
+  ) {
+    if (el) el.remove();
+    return;
+  }
+
    if (!el) {
      el = document.createElement('div');
      el.id = 'b32-roster-panel';
@@ -4638,12 +4741,9 @@ if (listEl) {
 
      document.body.appendChild(el);
    }
-   if (!bs || !bs.roster || !bs.isRoguelite) { el.style.display = 'none'; return; }
    el.style.display = 'flex';
 
-   const RARITY_COLOR = { r: '#c0c0c0', sr: '#ffd700', ur: '#ff80ff' };
-
-   el.innerHTML = bs.roster.map(r => {
+      el.innerHTML = bs.roster.map(r => {
      const isStandby = r.status === 'standby';
      const isDeployed = r.status === 'deployed';
      const isDead = r.status === 'dead';
@@ -4653,8 +4753,6 @@ if (listEl) {
       (_summonMode && _summonRosterId === r.rosterId) ||
       (!_summonMode && _selectedRosterId === r.rosterId);
 
-     const rarColor = RARITY_COLOR[r.rarity] || '#c0c0c0';
-
      let statusLabel = '';
      let statusColor = '';
      if (isDeployed) { statusLabel = '出撃中'; statusColor = 'rgba(80,200,120,.8)'; }
@@ -4662,6 +4760,34 @@ if (listEl) {
      else { statusLabel = `LINK ${linkCost}`; statusColor = 'rgba(140,110,255,.8)'; }
 
      const img = r.charDef && (r.charDef.panelImg || r.charDef.upImg || r.charDef.img || '');
+
+     // HP表示：deployed は実測HP、standby は最大HP/最大HP、dead は0/最大HP
+     let hpBarHtml = '';
+     let hpTextHtml = '';
+     const hpMax = (r.charDef && Number(r.charDef.hp)) || 0;
+
+     if (hpMax > 0) {
+       let hpCurrent = hpMax;
+       let hpTextClass = 'standby';
+       let hpTextStr = `${hpMax}/${hpMax}`;
+
+       if (isDeployed && r.deployedUid) {
+         const deployedUnit = (bs.allies || []).find(a => a._uid === r.deployedUid);
+         if (deployedUnit) {
+           hpCurrent = Math.max(0, Number(deployedUnit.hp) || 0);
+           hpTextStr = `${hpCurrent}/${hpMax}`;
+           hpTextClass = '';
+         }
+       } else if (isDead) {
+         hpCurrent = 0;
+         hpTextStr = `0/${hpMax}`;
+         hpTextClass = 'dead';
+       }
+
+       const hpPct = Math.max(0, Math.min(100, Math.round((hpCurrent / hpMax) * 100)));
+       hpTextHtml = `<div class="b32-roster-hp-text ${hpTextClass}">${hpTextStr}</div>`;
+       hpBarHtml = `<div class="b32-roster-hp-bar-wrap"><div class="b32-roster-hp-bar" style="width:${hpPct}%"></div></div>`;
+     }
 
      return `<div onclick="_b32OnRosterTap('${r.rosterId}')"
        style="
@@ -4675,72 +4801,89 @@ if (listEl) {
          transition:border-color .15s,background .15s;
          box-shadow:${isSummonSelected ? '0 0 12px rgba(120,80,255,.5)' : 'none'};
        ">
-       <div style="font-size:8px;letter-spacing:1px;color:${rarColor};font-family:'Cinzel',serif;">${r.rarity.toUpperCase()}</div>
-       <div style="width:min(14vw,60px);height:min(14vw,60px);border-radius:0;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
-         ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;object-position:top center;" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
+       <div class="b32-roster-img-wrap">
+         <span class="b32-roster-rarity rarity-${r.rarity}">${String(r.rarity || '').toUpperCase()}</span>
+         ${img ? `<img class="b32-roster-img" src="${img}" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
        </div>
        <div style="font-size:8px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
        <div style="font-size:8px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
+       ${hpTextHtml}
+       ${hpBarHtml}
      </div>`;
    }).join('');
 
  }
 
- // ============================================================
- // アイテム2枠パネル（ローグライト専用）
- // ============================================================
- function renderItemPanel(bs) {
-   let el = document.getElementById('b32-item-panel');
-   if (!el) {
-     el = document.createElement('div');
-     el.id = 'b32-item-panel';
-     el.style.cssText = [
-  'position:fixed',
-  'right:8px',
-  'bottom:calc(170px + env(safe-area-inset-bottom, 0px))',
-  'z-index:3000001',
-  'display:flex',
-  'flex-direction:column',
-  'gap:4px',
-].join(';');
+// ============================================================
+// アイテム2枠パネル（ローグライト専用）
+// ============================================================
+function renderItemPanel(bs) {
+  let el = document.getElementById('b32-item-panel');
 
-     document.body.appendChild(el);
-   }
-   if (!bs || !bs.isRoguelite) { el.style.display = 'none'; return; }
-   el.style.display = 'flex';
+  // ★追加：バトルUIが終了済み、またはローグライト外、または戦闘終了済みなら作らない/消す
+  if (
+    window.__BATTLE32_UI_ACTIVE__ === false ||
+    !bs ||
+    !bs.isRoguelite ||
+    bs.result
+  ) {
+    if (el) el.remove();
+    return;
+  }
 
-   const items = bs.items || [];
-   const slots = [0, 1].map(i => {
-     const item = items[i];
-     if (!item) {
-       return `<div style="
-         width:52px;height:52px;border-radius:0;
-         border:1px dashed rgba(100,80,200,.25);
-         background:rgba(20,15,40,.4);
-         display:flex;align-items:center;justify-content:center;
-         font-size:10px;color:rgba(100,80,160,.35);
-       ">—</div>`;
-     }
-     const linkCost = item.linkCost != null ? item.linkCost : 1;
-     const canUse = bs.phase === 'skill' && !bs.result && bs.link && bs.link.current >= linkCost && !item.used;
-     const isActive = _itemMode && _itemSlotIndex === i;
-     return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
-       width:52px;min-height:52px;border-radius:0;padding:4px;
-       border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
-       background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
-       opacity:${canUse ? '1' : '0.45'};
-       cursor:${canUse ? 'pointer' : 'default'};
-       display:flex;flex-direction:column;align-items:center;gap:2px;
-       box-shadow:${isActive ? '0 0 10px rgba(200,160,80,.4)' : 'none'};
-     ">
-       <div style="font-size:16px;line-height:1;">${item.id === 'heal_small' ? '💊' : item.id === 'reposition' ? '🌀' : '📦'}</div>
-       <div style="font-size:7px;color:rgba(220,190,120,.8);text-align:center;line-height:1.2;">${item.name}</div>
-       <div style="font-size:7px;color:rgba(140,110,200,.7);">L${linkCost}</div>
-     </div>`;
-   }).join('');
+  // ★ここから下で初めて作る
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'b32-item-panel';
+    el.style.cssText = [
+      'position:fixed',
+      'right:8px',
+      'bottom:calc(170px + env(safe-area-inset-bottom, 0px))',
+      'z-index:3000001',
+      'display:flex',
+      'flex-direction:column',
+      'gap:4px',
+    ].join(';');
 
-   el.innerHTML = slots;
- }
+    document.body.appendChild(el);
+  }
+
+  el.style.display = 'flex';
+
+  const items = bs.items || [];
+  const slots = [0, 1].map(i => {
+    const item = items[i];
+    if (!item) {
+      return `<div style="
+        width:52px;height:52px;border-radius:0;
+        border:1px dashed rgba(100,80,200,.25);
+        background:rgba(20,15,40,.4);
+        display:flex;align-items:center;justify-content:center;
+        font-size:10px;color:rgba(100,80,160,.35);
+      ">—</div>`;
+    }
+
+    const linkCost = item.linkCost != null ? item.linkCost : 1;
+    const canUse = bs.phase === 'skill' && !bs.result && bs.link && bs.link.current >= linkCost && !item.used;
+    const isActive = _itemMode && _itemSlotIndex === i;
+
+    return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
+      width:52px;min-height:52px;border-radius:0;padding:4px;
+      border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
+      background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
+      opacity:${canUse ? '1' : '0.45'};
+      cursor:${canUse ? 'pointer' : 'default'};
+      display:flex;flex-direction:column;align-items:center;gap:2px;
+      box-shadow:${isActive ? '0 0 10px rgba(200,160,80,.4)' : 'none'};
+    ">
+      <div style="font-size:16px;line-height:1;">${item.id === 'heal_small' ? '💊' : item.id === 'reposition' ? '🌀' : '📦'}</div>
+      <div style="font-size:7px;color:rgba(220,190,120,.8);text-align:center;line-height:1.2;">${item.name}</div>
+      <div style="font-size:7px;color:rgba(140,110,200,.7);">L${linkCost}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = slots;
+}
 
  // ============================================================
  // 召喚マスのハイライト（renderBoard内で参照）
@@ -5090,27 +5233,59 @@ if (!window.__b32RosterCloseCaptureBound) {
  });
 
  // ============================================================
- // 公開: closeBattle32UI()
  // ============================================================
+ // 公開: cleanupBattle32Overlays()
+ // closeBattle32UI() とローグライト終了の両方から呼ぶ共通掃除関数
+ // ============================================================
+ window.cleanupBattle32Overlays = function (options) {
+
+   // ★追加：バトルUIは終了済み。以後 renderBattle32UI() が呼ばれても再生成させない
+   window.__BATTLE32_UI_ACTIVE__ = false;
+
+   options = options || {};
+   const restoreCommonUi = options.restoreCommonUi !== false;
+
+   _resetSkillState();
+
+   const root = document.getElementById(ROOT_ID);
+   if (root) root.style.display = 'none';
+
+   // body直下に生成されるローグライトUIは remove() で完全除去
+[
+  'b32-link-bar',
+  'b32-roster-panel',
+  'b32-item-panel',
+  'b32-roster-info-close-hitbox',
+  'b32-enemy-info-overlay',
+  'b32-enemy-quick-info',
+  'b32-battle-menu',
+  'b32-center-text',
+  'b32-result-overlay',
+  'rl-victory-wait-layer'
+].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.remove();
+});
+
+   if (restoreCommonUi) {
+     const nav = document.getElementById('bottom-nav-shared');
+     if (nav) nav.style.display = '';
+
+     const guf = document.getElementById('global-user-frame');
+     if (guf) {
+       guf.classList.remove('hidden');
+       guf.style.display = '';
+     }
+
+     const explore = document.getElementById('explore-root') || document.getElementById('explore-screen');
+     if (explore) explore.style.display = '';
+   }
+ };
+
+ // 公開: closeBattle32UI() — cleanupBattle32Overlays の薄いラッパー
  window.closeBattle32UI = function () {
- _resetSkillState();
- const root = document.getElementById(ROOT_ID);
- if (root) root.style.display = 'none';
-
- // ローグライト専用UI要素を非表示
- ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
-   const el = document.getElementById(id);
-   if (el) el.style.display = 'none';
- });
- const rosterCloseHitbox = document.getElementById('b32-roster-info-close-hitbox');
- if (rosterCloseHitbox && rosterCloseHitbox.parentNode) rosterCloseHitbox.parentNode.removeChild(rosterCloseHitbox);
-
- const nav = document.getElementById('bottom-nav-shared');
- if (nav) nav.style.display = '';
- const guf = document.getElementById('global-user-frame');
- if (guf) guf.style.display = '';
- const explore = document.getElementById('explore-root') || document.getElementById('explore-screen');
- if (explore) explore.style.display = '';
+   window.cleanupBattle32Overlays({ restoreCommonUi: true });
  };
 
  // ============================================================
@@ -5137,8 +5312,13 @@ if (!window.__b32RosterCloseCaptureBound) {
 
  const originalStart = window.Battle32.start;
  window.Battle32.start = function (config, callbacks) {
- _resetSkillState();
- _hideAllScreens();
+
+  // ★追加：バトル開始。UI描画を許可する
+  window.__BATTLE32_UI_ACTIVE__ = true;
+
+  _resetSkillState();
+  _hideAllScreens();
+
  // damage / heal コールバックを UI 演出に接続
  // UI演出と外部callbacks を両方呼ぶ（どちらかが undefined でも安全）
  const userCb = callbacks || {};
@@ -5158,7 +5338,22 @@ if (!window.__b32RosterCloseCaptureBound) {
  if (typeof userCb.coreDamage === 'function') userCb.coreDamage(data);
  },
  };
- originalStart.call(window.Battle32, config, uiCallbacks);
+
+ // rogueliteOnBattleEnd をラップ：終了前に必ずUI掃除を実行する
+ const wrappedConfig = Object.assign({}, config);
+ if (typeof wrappedConfig.rogueliteOnBattleEnd === 'function') {
+   const originalRogueliteEnd = wrappedConfig.rogueliteOnBattleEnd;
+   wrappedConfig.rogueliteOnBattleEnd = function (payload) {
+     if (typeof window.cleanupBattle32Overlays === 'function') {
+       window.cleanupBattle32Overlays({ restoreCommonUi: true });
+     } else if (typeof window.closeBattle32UI === 'function') {
+       window.closeBattle32UI();
+     }
+     originalRogueliteEnd(payload);
+   };
+ }
+
+ originalStart.call(window.Battle32, wrappedConfig, uiCallbacks);
  window.renderBattle32UI();
  };
 
