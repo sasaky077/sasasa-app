@@ -70,6 +70,11 @@
   let _bs = null;   // バトルステート
   let _cb = null;   // コールバック群
 
+  // ターン演出・フェーズ進行の二重起動防止
+  let _allyTurnFlowRunning = false;
+  let _enemyTurnFlowRunning = false;
+  let _battleFlowToken = 0;
+ 
   // ============================================================
   // 演出ユーティリティ（UI との橋渡し）
   // ============================================================
@@ -399,6 +404,10 @@
   function start(config, callbacks) {
     _cb = callbacks || {};
 
+    _battleFlowToken++;
+    _allyTurnFlowRunning = false;
+    _enemyTurnFlowRunning = false;
+
     const stageId = config.stageId || null;
 
     const allChars = (window.CHARACTERS_32 || []).map(c => _applyOwnedStatsToCharDef(c)).filter(Boolean);
@@ -624,21 +633,41 @@ const enemies = enemyDefs.map(def => {
 
   // ターン開始演出フロー（ALLY TURN → PLAYER ACTION → 操作解除）
   async function _startAllyTurnFlow() {
-  _lockInput();
-  _renderUI();
+  if (!_bs || _bs.result) return;
 
-  // ★追加：味方ターン開始直後に予約攻撃を処理
-  await _processDelayedActions('allyTurnStart');
+  // 二重起動防止
+  if (_allyTurnFlowRunning) return;
 
-  if (_bs.result) {
+  const token = _battleFlowToken;
+  _allyTurnFlowRunning = true;
+
+  try {
+    _lockInput();
     _renderUI();
-    return;
+
+    // 味方ターン開始直後に予約攻撃を処理
+    await _processDelayedActions('allyTurnStart');
+
+    if (!_bs || _bs.result || token !== _battleFlowToken) {
+      _renderUI();
+      return;
+    }
+
+    await _centerTextWait('ALLY TURN', `TURN ${_bs.turn}`, B32_WAIT.turn);
+
+    if (!_bs || _bs.result || _bs.phase !== 'skill' || token !== _battleFlowToken) {
+      _renderUI();
+      return;
+    }
+
+    _unlockInput();
+    _renderUI();
+
+  } finally {
+    if (token === _battleFlowToken) {
+      _allyTurnFlowRunning = false;
+    }
   }
-
-  await _centerTextWait('ALLY TURN', `TURN ${_bs.turn}`, B32_WAIT.turn);
-
-  _unlockInput();
-  _renderUI();
 }
 
   // ============================================================
@@ -1277,7 +1306,10 @@ if (stype === 'delayed_attack') {
 
       // スキルフェーズ終了 → 敵フェーズ
       function endSkillPhase() {
-      if (_bs.phase !== 'skill') return;
+  if (!_bs || _bs.phase !== 'skill') return;
+
+  // スマホの二重タップ・二重イベント対策
+  if (_enemyTurnFlowRunning) return;
 
       // 神性核干渉判定（ボスHP0後のみ有効）
       _checkBossCoreCapture();
@@ -1294,12 +1326,40 @@ if (stype === 'delayed_attack') {
 
     // ALLY TURN END → ENEMY TURN → 敵行動 の完全 async フロー
     async function _runEnemyTurnFlow() {
-      _lockInput();
+  if (!_bs || _bs.result) return;
+
+  // 二重起動防止
+  if (_enemyTurnFlowRunning) return;
+
+  const token = _battleFlowToken;
+  _enemyTurnFlowRunning = true;
+
+  try {
+    _lockInput();
+    _renderUI();
+
+    await _centerTextWait('ALLY TURN END', '行動終了', B32_WAIT.turnEnd);
+
+    if (!_bs || _bs.result || _bs.phase !== 'enemy' || token !== _battleFlowToken) {
       _renderUI();
-      await _centerTextWait('ALLY TURN END', '行動終了', B32_WAIT.turnEnd);
-      await _centerTextWait('ENEMY TURN', '怪異の干渉を検知', B32_WAIT.enemyTurn);
-      await _runEnemyPhase();   // 敵行動は _unlockInput を呼ばない（敵ターン中は常にロック）
+      return;
     }
+
+    await _centerTextWait('ENEMY TURN', '怪異の干渉を検知', B32_WAIT.enemyTurn);
+
+    if (!_bs || _bs.result || _bs.phase !== 'enemy' || token !== _battleFlowToken) {
+      _renderUI();
+      return;
+    }
+
+    await _runEnemyPhase();
+
+  } finally {
+    if (token === _battleFlowToken) {
+      _enemyTurnFlowRunning = false;
+    }
+  }
+}
     function manhattan(a, b) {
       return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
     }

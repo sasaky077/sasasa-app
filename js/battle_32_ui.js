@@ -3676,6 +3676,9 @@ window._b32OnActionUltTap = function () {
  const bs = _bs();
  if (!bs || bs.result || bs.phase !== 'skill') return;
 
+ // スマホの二重タップ・二重click対策
+ _b32InputLocked = true;
+
  _resetSkillState();
 
  if (window.Battle32 && typeof window.Battle32.endSkillPhase === 'function') {
@@ -3683,8 +3686,10 @@ window._b32OnActionUltTap = function () {
  } else if (window.Battle32 && typeof window.Battle32.endCharTurn === 'function') {
    // 後方互換フォールバック
    window.Battle32.endCharTurn();
+ } else {
+   _b32InputLocked = false;
  }
- };
+};
 
  // 移動可能マスをタップ
  window._b32OnMoveCellTap = async function (row, col) {
@@ -4749,9 +4754,19 @@ window.renderBattle32UI = function () {
      const isDead = r.status === 'dead';
      const linkCost = r.summonCost || 1;
      const canSummon = isStandby && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
-     const isSummonSelected =
-      (_summonMode && _summonRosterId === r.rosterId) ||
-      (!_summonMode && _selectedRosterId === r.rosterId);
+    const isActionSelected =
+  isDeployed &&
+  r.deployedUid &&
+  (
+    _selActionAllyUid === r.deployedUid ||
+    _selMoveAllyUid === r.deployedUid ||
+    _selSkillAllyUid === r.deployedUid
+  );
+
+const isSummonSelected =
+  isActionSelected ||
+  (_summonMode && _summonRosterId === r.rosterId) ||
+  (!_summonMode && _selectedRosterId === r.rosterId);
 
      let statusLabel = '';
      let statusColor = '';
@@ -4793,11 +4808,11 @@ window.renderBattle32UI = function () {
        style="
          flex-shrink:1;width:min(18vw, 76px);
          display:flex;flex-direction:column;align-items:center;gap:2px;
-         cursor:${canSummon ? 'pointer' : 'default'};
+         cursor:${(canSummon || isDeployed) ? 'pointer' : 'default'};
          border-radius:0;padding:4px 2px;
          border:1.5px solid ${isSummonSelected ? 'rgba(140,100,255,.9)' : isStandby ? 'rgba(100,80,200,.4)' : 'rgba(60,50,100,.3)'};
          background:${isSummonSelected ? 'rgba(80,40,180,.3)' : 'rgba(20,15,40,.6)'};
-         opacity:${isDead ? '0.4' : isDeployed ? '0.7' : '1'};
+         opacity:${isDead ? '0.4' : '1'};
          transition:border-color .15s,background .15s;
          box-shadow:${isSummonSelected ? '0 0 12px rgba(120,80,255,.5)' : 'none'};
        ">
@@ -4954,10 +4969,31 @@ window._b32OnRosterTap = function(rosterId) {
   const bs = _bs();
   if (!bs || !bs.isRoguelite) return;
 
-  // キャラ情報表示用に選択
-  _selectedRosterId = rosterId;
+  const roster = bs.roster || [];
+  const r = roster.find(x => x.rosterId === rosterId);
+  if (!r) return;
 
-  // 召喚候補としても保持
+  // 出撃中キャラなら、盤面上の味方タップと同じ扱いにする
+  if (r.status === 'deployed' && r.deployedUid) {
+    _selectedRosterId = rosterId;
+    _summonRosterId = null;
+    _summonMode = false;
+
+    _itemMode = false;
+    _itemSlotIndex = null;
+    _itemPhase = null;
+    _itemTargetUid = null;
+
+    if (typeof window._b32OnSkillAllyTap === 'function') {
+      window._b32OnSkillAllyTap(r.deployedUid);
+    } else {
+      renderBattle32UI();
+    }
+    return;
+  }
+
+  // 待機中・死亡中は従来通り、情報表示／召喚候補選択
+  _selectedRosterId = rosterId;
   _summonRosterId = rosterId;
 
   // ただし即召喚モードには入らない
