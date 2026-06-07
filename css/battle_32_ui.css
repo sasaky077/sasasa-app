@@ -2665,7 +2665,7 @@
 .b32-ult-white-flash {
  position: fixed;
  inset: 0;
- z-index: 2000001;
+ z-index: 4000001;
  pointer-events: none;
  background: #fff;
  animation: b32UltWhiteFlash 1920ms ease-out forwards;
@@ -5019,5 +5019,181 @@
 @media (max-height: 640px) {
   #battle32-root .b32-roster-info-panel {
     bottom: calc(238px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* ============================================================
+ ULTカットイン 最終上書き
+ ============================================================ */
+
+.b32-ult-cutin {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 4000000 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 55% 48%, rgba(255,230,170,.18), transparent 42%),
+    linear-gradient(180deg, rgba(0,0,0,.62), rgba(6,8,18,.42), rgba(0,0,0,.72)) !important;
+  animation: b32UltCutinFade 1900ms ease-out forwards !important;
+}
+
+.b32-ult-cutin-img {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+
+  width: 100vw !important;
+  max-width: none !important;
+  min-width: 100vw !important;
+  height: auto !important;
+  max-height: none !important;
+
+  object-fit: cover !important;
+  object-position: center center !important;
+
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) !important;
+
+  filter:
+    brightness(1.45)
+    contrast(1.18)
+    saturate(1.12)
+    drop-shadow(0 0 18px rgba(255,230,170,.22)) !important;
+
+  animation: b32UltCutinImgSlideNew 1900ms ease-out forwards !important;
+}
+
+.b32-ult-cutin-shade {
+  position: absolute !important;
+  inset: 0 !important;
+  background:
+    linear-gradient(180deg,
+      rgba(0,0,0,.78) 0%,
+      rgba(0,0,0,.24) 24%,
+      rgba(0,0,0,.08) 48%,
+      rgba(0,0,0,.22) 72%,
+      rgba(0,0,0,.82) 100%
+    ),
+    linear-gradient(90deg,
+      rgba(0,0,0,.48) 0%,
+      rgba(0,0,0,.08) 36%,
+      rgba(0,0,0,.04) 72%,
+      rgba(0,0,0,.38) 100%
+    ) !important;
+}
+
+.b32-ult-cutin-label {
+  position: absolute !important;
+  left: 22px !important;
+  top: 30% !important;
+  bottom: auto !important;
+
+  font-family: 'Cinzel', serif !important;
+  font-size: 12px !important;
+  letter-spacing: 7px !important;
+  color: rgba(255,235,170,.98) !important;
+  text-shadow:
+    0 0 6px rgba(255,255,255,.9),
+    0 0 18px rgba(255,220,120,.95),
+    0 2px 4px rgba(0,0,0,1) !important;
+
+  animation: b32UltTextIn 1900ms ease-out forwards !important;
+}
+
+.b32-ult-cutin-line {
+  position: absolute !important;
+  left: 0 !important;
+  top: 32% !important;
+  width: 100% !important;
+  height: 1px !important;
+  transform: none !important;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,245,210,.95),
+    transparent
+  ) !important;
+
+  box-shadow:
+    0 0 12px rgba(255,230,170,.8),
+    0 0 28px rgba(255,160,70,.4) !important;
+
+  animation: b32UltLineNew 1900ms ease-out forwards !important;
+}
+
+.b32-ult-cutin-name {
+  position: absolute !important;
+  left: 22px !important;
+  bottom: 28% !important;
+  top: auto !important;
+
+  max-width: 88vw !important;
+
+  font-family: 'Noto Serif JP', serif !important;
+  font-size: clamp(26px, 8vw, 46px) !important;
+  font-weight: 800 !important;
+  letter-spacing: 6px !important;
+  line-height: 1.05 !important;
+  color: #fff4c8 !important;
+  text-align: left !important;
+
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 32px rgba(255,200,80,.95),
+    0 0 72px rgba(255,130,40,.60),
+    0 3px 8px rgba(0,0,0,1) !important;
+
+  animation: b32UltTextIn 1900ms ease-out forwards !important;
+}
+
+@keyframes b32UltCutinImgSlideNew {
+  0% {
+    opacity: 0;
+    transform: translate(-70%, -50%);
+    filter: brightness(1.30) contrast(1.12) saturate(1.08);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+    filter: brightness(1.45) contrast(1.18) saturate(1.12);
+  }
+  76% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+    filter: brightness(1.45) contrast(1.18) saturate(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-68%, -50%);
+    filter: brightness(1.22) contrast(1.10) saturate(1.06);
+  }
+}
+
+@keyframes b32UltLineNew {
+  0% {
+    opacity: 0;
+    transform: scaleX(.3);
+  }
+  20% {
+    opacity: .95;
+    transform: scaleX(1);
+  }
+  46% {
+    opacity: .35;
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1.1);
+  }
+}
+
+/* ============================================================
+ iPhone SE系：上部LINKバー位置調整
+ ============================================================ */
+@media (max-height: 700px) {
+  #b32-link-bar {
+    top: calc(env(safe-area-inset-top, 0px) + 68px) !important;
   }
 }

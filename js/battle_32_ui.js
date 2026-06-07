@@ -679,96 +679,138 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  }
 }
 
-/* ── ULT専用カットイン ── */
+/* ── ULT専用カットイン：横帯レイアウト ── */
 .b32-ult-cutin {
  position: fixed;
  inset: 0;
  z-index: 1000000;
  pointer-events: none;
  overflow: hidden;
+
+ /* 背景は暗くしすぎない */
  background:
- radial-gradient(circle at 70% 45%, rgba(255,230,170,.20), transparent 34%),
- linear-gradient(180deg, rgba(0,0,0,.88), rgba(4,6,14,.72), rgba(0,0,0,.90));
+ radial-gradient(circle at 55% 48%, rgba(255,230,170,.18), transparent 42%),
+ linear-gradient(180deg, rgba(0,0,0,.72), rgba(6,8,18,.54), rgba(0,0,0,.78));
+
  animation: b32UltCutinWrap 1900ms ease-out forwards;
 }
 
+/* 画像：中央の横帯いっぱいに明るく表示 */
 .b32-ult-cutin-img {
  position: absolute;
  left: 50%;
- top: 46%;
+ top: 50%;
 
  width: 100vw;
  min-width: 100vw;
  height: auto;
  max-width: none;
 
- object-fit: fill; /* 実質効かないが置いてもOK */
- transform: translate(-50%, -50%);
+ object-fit: cover;
+ object-position: center center;
 
- opacity: .98;
+ transform: translate(-50%, -50%);
+ opacity: 1;
+
+ /* 暗さ対策。ここを強める */
  filter:
- brightness(1.08)
- contrast(1.16)
- saturate(1.06)
- drop-shadow(0 0 22px rgba(255,230,170,.28));
+ brightness(1.42)
+ contrast(1.18)
+ saturate(1.12)
+ drop-shadow(0 0 18px rgba(255,230,170,.22));
 
  animation: b32UltCutinImgSlide 1700ms cubic-bezier(.18,.82,.22,1) forwards;
 }
 
+/* 画像の上に乗る暗幕：薄めに変更 */
 .b32-ult-cutin-shade {
  position: absolute;
  inset: 0;
+
+ /* 上下だけ締めて、中央画像は暗くしすぎない */
  background:
- linear-gradient(90deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.24) 36%, rgba(0,0,0,.10) 70%, rgba(0,0,0,.62) 100%),
- linear-gradient(180deg, rgba(0,0,0,.40) 0%, transparent 42%, rgba(0,0,0,.70) 100%);
+ linear-gradient(180deg,
+   rgba(0,0,0,.82) 0%,
+   rgba(0,0,0,.30) 24%,
+   rgba(0,0,0,.10) 48%,
+   rgba(0,0,0,.26) 72%,
+   rgba(0,0,0,.86) 100%
+ ),
+ linear-gradient(90deg,
+   rgba(0,0,0,.56) 0%,
+   rgba(0,0,0,.12) 34%,
+   rgba(0,0,0,.06) 70%,
+   rgba(0,0,0,.44) 100%
+ );
 }
 
+/* 上の ULTIMATE */
 .b32-ult-cutin-label {
  position: absolute;
  left: 22px;
- bottom: 82px;
+ top: 21%;
+
  font-family: 'Cinzel', serif;
- font-size: 11px;
- letter-spacing: 5px;
- color: rgba(255,220,150,.88);
+ font-size: 12px !important;
+ letter-spacing: 7px !important;
+ color: rgba(255,235,170,.98) !important;
+
  text-shadow:
- 0 0 10px rgba(255,210,120,.7),
- 0 2px 4px rgba(0,0,0,1);
+ 0 0 6px rgba(255,255,255,.9),
+ 0 0 18px rgba(255,220,120,.95),
+ 0 2px 4px rgba(0,0,0,1) !important;
+
  animation: b32UltTextIn 1900ms ease-out forwards;
 }
 
+/* 中央の区切り線：画像帯の上に置く */
+.b32-ult-cutin-line {
+ position: absolute;
+ left: 0;
+ top: 30%;
+ width: 100%;
+ height: 1px;
+
+ background: linear-gradient(
+ 90deg,
+ transparent,
+ rgba(255,245,210,.95),
+ transparent
+ );
+
+ box-shadow:
+ 0 0 12px rgba(255,230,170,.8),
+ 0 0 28px rgba(255,160,70,.4);
+
+ transform: none;
+ opacity: .9;
+ animation: b32UltLine 1900ms ease-out forwards;
+}
+
+/* 下のスキル名：画像の左下 */
 .b32-ult-cutin-name {
  position: absolute;
  left: 22px;
- bottom: 42px;
+ bottom: 15%;
+
  max-width: 88vw;
+
  font-family: 'Noto Serif JP', serif;
- font-size: clamp(28px, 9vw, 52px);
+ font-size: clamp(26px, 8vw, 46px);
  font-weight: 800;
  letter-spacing: 6px;
- line-height: 1;
- color: #fff4c8;
- text-shadow:
- 0 0 8px rgba(255,255,255,.92),
- 0 0 28px rgba(255,190,70,.82),
- 0 0 60px rgba(255,120,40,.44),
- 0 3px 6px rgba(0,0,0,1);
- animation: b32UltTextIn 1900ms ease-out forwards;
-}
+ line-height: 1.05;
 
-.b32-ult-cutin-line {
- position: absolute;
- left: -20%;
- top: 50%;
- width: 140%;
- height: 2px;
- background: linear-gradient(90deg, transparent, rgba(255,245,210,.95), transparent);
- box-shadow:
- 0 0 14px rgba(255,230,170,.9),
- 0 0 34px rgba(255,160,70,.5);
- transform: rotate(-8deg);
- opacity: 0;
- animation: b32UltLine 1900ms ease-out forwards;
+ color: #fff4c8;
+ text-align: left;
+
+ text-shadow:
+ 0 0 8px rgba(255,255,255,.95),
+ 0 0 26px rgba(255,190,70,.90),
+ 0 0 58px rgba(255,120,40,.45),
+ 0 3px 6px rgba(0,0,0,1);
+
+ animation: b32UltTextIn 1900ms ease-out forwards;
 }
 
 .b32-ult-white-flash {
@@ -815,22 +857,22 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  0% {
  opacity: 0;
  transform: translate(-70%, -50%);
- filter: brightness(1.02);
+ filter: brightness(1.32) contrast(1.14) saturate(1.10);
  }
  14% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.08) contrast(1.16) saturate(1.06);
+ filter: brightness(1.42) contrast(1.18) saturate(1.12);
  }
  76% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.08) contrast(1.14);
+ filter: brightness(1.42) contrast(1.18) saturate(1.12);
  }
  100% {
  opacity: 0;
  transform: translate(-68%, -50%);
- filter: brightness(1.04);
+ filter: brightness(1.22) contrast(1.10) saturate(1.06);
  }
 }
 
