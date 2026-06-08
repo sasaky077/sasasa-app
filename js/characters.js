@@ -526,73 +526,37 @@ const CHARACTERS = [
     favScale: 0.90, favOffsetY: 10,
     skills: [
       { id: 's1',
-        name: '霊打',
+        name: '影打ち',
         cost: 3,
+        linkCost: 2,
         isUltimate: false,
-        hit: 90,
+        hit: 100,
         type: 'attack',
-        multiplier: 1.0,
-        range: 'front1',
+        multiplier: 1.2,
+        range: 'side_lr',
         pierce: false,
         effects: [],
         moveBonus: {
           idealMoves: [1],
           damageRate: 1.3
         },
-        desc: '霊力を込めた打撃で怪異を攻撃する。' },
-
-      { id: 's2',
-        name: '霊縛',
-        cost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'front1',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '霊力で怪異を縛り、ATKを2ターン低下させる。' },
-
-      { id: 's3',
-        name: '霊実',
-        cost: 3,
-        isUltimate: false,
-        hit: 85,
-        type: 'debuff',
-        multiplier: 0.0,
-        range: 'front1',
-        effects: [
-          { 
-            type: 'jittai', 
-            target: 'enemy', 
-            hit: 85, 
-            duration: 2 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.2
-        },
-        desc: '霊力で怪異を実体化させる。敵の位置と次の攻撃が見える。' },
+        desc: '自身の左右1マス以内の敵にダメージ' },
 
       { id: 'ult',
-        name: '霊歩',
+        name: '無音',
         cost: 10,
+        linkCost: 4,
         isUltimate: true,
         hit: 100,
-        type: 'move',
-        multiplier: 0.0,
-        range: 'self',
+        type: 'attack',
+        multiplier: 3.0,
+        range: 'diag_x_2',
         effects: [],
         moveBonus: {
           idealMoves: [1],
-          damageRate: 1.0
+          damageRate: 1.3
         },
-        desc: '霊力を使って素早く移動する。' }
+        desc: '自身を中心に斜め2マス以内の敵に大ダメージ' }
     ]},
 
   // ── id:11 カンナ（火力寄り）──────────────────────────────────
