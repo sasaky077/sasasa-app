@@ -157,13 +157,92 @@ function _clearActionModesKeepUnit(uid) {
   _itemTargetUid = null;
 }
 
+ // ============================================================
+ // repeat_skill（リプレイ）用：コピー元スキルを解決するヘルパー
+ // UI表示専用。実際の発動処理は battle_32.js 側が担う。
+ // ============================================================
+ function resolvePreviewSkillForRangeGuide(skill) {
+   if (!skill || skill.type !== 'repeat_skill') return skill;
+
+   // getBS() で _bs に直接アクセス（lastAllySkillThisTurn はスナップショット外）
+   const rawBs = window.Battle32 && typeof window.Battle32.getBS === 'function'
+     ? window.Battle32.getBS()
+     : null;
+   const last = rawBs && rawBs.lastAllySkillThisTurn;
+
+   if (!last || !last.skill) return null; // コピー元なし → ガイド非表示
+
+   const copied = last.skill;
+
+   // コピー不可スキルはプレビューしない
+   if (
+     copied.type === 'repeat_skill' ||
+     copied.type === 'delayed_attack' ||
+     copied.isUltimate
+   ) {
+     return skill; // フォールバック：self のまま
+   }
+
+   console.log('[B32 RepeatSkill Preview]', {
+     user: null,
+     repeatSkill: skill.name,
+     copiedFrom: last.ownerName,
+     copiedSkill: copied.name,
+     range: copied.range,
+     type: copied.type,
+   });
+
+   return copied;
+ }
+
  // cellType 付き Map を返す: key = "row-col", value = cellType
  function _skillRangeCells(allyUid, skillId) {
- if (!window.Battle32 || !window.Battle32.getSkillRangeCells) return new Map();
- const cells = window.Battle32.getSkillRangeCells(allyUid, skillId);
- const map = new Map();
- cells.forEach(c => map.set(`${c.row}-${c.col}`, c.cellType || 'range'));
- return map;
+   if (!window.Battle32 || !window.Battle32.getSkillRangeCells) return new Map();
+
+   // ── repeat_skill（リプレイ）の場合はUI側でレンジを差し替える ──
+   const rawBs = typeof window.Battle32.getBS === 'function' ? window.Battle32.getBS() : null;
+   const ally = rawBs && rawBs.allies.find(u => u._uid === allyUid);
+   const skill = ally && ally.skills.find(s => s.id === skillId);
+
+   if (skill && skill.type === 'repeat_skill' && window.BattleRange32) {
+     const previewSkill = resolvePreviewSkillForRangeGuide(skill);
+
+     // コピー元なし → 空Map（ガイドなし）
+     if (!previewSkill) return new Map();
+
+     // コピー元あり → アイムの位置を起点に previewSkill.range でセル計算
+     if (previewSkill !== skill) {
+       const cellsSet = window.BattleRange32.getCellsFromRange32(ally, previewSkill.range);
+       const map = new Map();
+       const isEnemySkill = ['attack', 'debuff'].includes(previewSkill.type);
+       const isAllySkill  = ['heal', 'buff'].includes(previewSkill.type);
+
+       // unitMap（セル種別判定用）
+       const unitMap = {};
+       [
+         ...(rawBs.allies || []).filter(u => u.hp > 0),
+         ...(rawBs.enemies || []).filter(u => u.hp > 0 || u.isBoss),
+       ].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
+
+       cellsSet.forEach(key => {
+         const unit = unitMap[key] || null;
+         let cellType = 'range';
+         if (unit) {
+           if (isEnemySkill && unit.side === 'enemy' && unit.hp > 0) cellType = 'target_enemy';
+           else if (isAllySkill && unit.side === 'ally' && unit.hp > 0) cellType = 'target_ally';
+         }
+         map.set(key, cellType);
+       });
+       return map;
+     }
+     // previewSkill === skill（コピー不可 → self のまま通常ルートへ）
+   }
+
+   // 通常スキル：既存ルート
+   const cells = window.Battle32.getSkillRangeCells(allyUid, skillId);
+   const map = new Map();
+   cells.forEach(c => map.set(`${c.row}-${c.col}`, c.cellType || 'range'));
+   return map;
  }
 
  function enemyMoveLabel(moveType) {
@@ -1605,7 +1684,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 .b32-enemy-quick-info {
  position: fixed;
  left: 50%;
- top: calc(env(safe-area-inset-top, 0px) + 76px);
+ top: calc(env(safe-area-inset-top, 0px) + 40px) !important;
  transform: translateX(-50%) !important;
  z-index: 3000000;
 
@@ -3253,14 +3332,9 @@ if (_summonMode && isSummonCell && !unit) {
  box.className = 'b32-enemy-quick-info';
  box.innerHTML = `
  <div class="b32-enemy-quick-title">${enemy.name || '??????'}</div>
- <div class="b32-enemy-quick-row">
- <span>HP</span><strong>${enemy.hp} / ${enemy.hpMax}</strong>
- </div>
- <div class="b32-enemy-quick-row">
- <span>ATK</span><strong>${enemy.atk}</strong>
- </div>
- <div class="b32-enemy-quick-row">
- <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
+ <div class="b32-enemy-quick-statline">
+   <span>HP <strong>${enemy.hp} / ${enemy.hpMax}</strong></span>
+   <span>ATK <strong>${enemy.atk}</strong></span>
  </div>
  `;
 
@@ -3697,7 +3771,46 @@ window._b32OnActionUltTap = function () {
   renderBattle32UI();
 };
 
- window._b32OnActionEndTap = function () {
+ // ============================================================
+ // ターン移行前に詳細系UIを一括クローズする
+ // ============================================================
+ function _closeBattle32DetailPanelsBeforeTurnChange() {
+   // UI内部状態をリセット
+   _resetSkillState();
+
+   // 敵選択・召喚・アイテム状態も解除
+   _selectedEnemyUid = null;
+   _summonMode = false;
+   _summonRosterId = null;
+   _itemMode = false;
+   _itemSlotIndex = null;
+   _itemPhase = null;
+   _itemTargetUid = null;
+
+   // スキル詳細ボックスを明示的に閉じる
+   const skillBox = document.getElementById('b32-skill-detail-box');
+   if (skillBox) {
+     skillBox.style.display = 'none';
+     skillBox.classList.remove('show');
+   }
+
+   // ロスター詳細パネルを明示的に削除
+   document
+     .querySelectorAll('#battle32-root .b32-roster-info-panel')
+     .forEach(el => el.remove());
+
+   // ロスター詳細の閉じる用ヒットボックスも削除
+   const rosterHitbox = document.getElementById('b32-roster-info-close-hitbox');
+   if (rosterHitbox) rosterHitbox.remove();
+
+   // 敵情報系も残らないよう削除
+   const enemyInfo = document.getElementById('b32-enemy-info-overlay');
+   if (enemyInfo) enemyInfo.remove();
+   const enemyQuick = document.getElementById('b32-enemy-quick-info');
+   if (enemyQuick) enemyQuick.remove();
+ }
+
+ window._b32OnActionEndTap = async function () {
  if (_b32InputLocked) return;
  const bs = _bs();
  if (!bs || bs.result || bs.phase !== 'skill') return;
@@ -3705,12 +3818,22 @@ window._b32OnActionUltTap = function () {
  // スマホの二重タップ・二重click対策
  _b32InputLocked = true;
 
- _resetSkillState();
+ // 詳細系UIを先に閉じる
+ _closeBattle32DetailPanelsBeforeTurnChange();
+
+ // 閉じた状態を一度描画する
+ renderBattle32UI();
+
+ // 1フレーム待って DOM 反映後に敵ターンへ移る
+ if (typeof _wait === 'function') {
+   await _wait(60);
+ } else {
+   await new Promise(resolve => requestAnimationFrame(resolve));
+ }
 
  if (window.Battle32 && typeof window.Battle32.endSkillPhase === 'function') {
    window.Battle32.endSkillPhase();
  } else if (window.Battle32 && typeof window.Battle32.endCharTurn === 'function') {
-   // 後方互換フォールバック
    window.Battle32.endCharTurn();
  } else {
    _b32InputLocked = false;
@@ -3940,7 +4063,9 @@ await _afterCharTurnFlow();
  if (typeof window.Battle32.endCharTurn === 'function') {
  window.Battle32.endCharTurn(allyUid);
  }
- _resetSkillState();
+
+ // 詳細系UIを先に閉じてから描画
+ _closeBattle32DetailPanelsBeforeTurnChange();
  _b32InputLocked = true;
  renderBattle32UI();
 
@@ -4304,10 +4429,6 @@ if (listEl) {
         ${role}　/　HP ${hp}　ATK ${atk}
       </div>
 
-      <div class="b32-roster-info-desc">
-        ${c.desc || firstSkill?.desc || '戦闘に参加する祓い手。'}
-      </div>
-
       <div class="b32-roster-info-skill">
         <span>スキル</span>
         <strong>${firstSkill ? firstSkill.name : '—'}</strong>
@@ -4620,11 +4741,14 @@ window.renderBattle32UI = function () {
     return;
   }
 
-  buildRoot();
+ buildRoot();
 
-  const root = document.getElementById(ROOT_ID);
+const root = document.getElementById(ROOT_ID);
+if (!root) return;
 
-  // ローグライト遷移中は、古いBATTLE END画面を再表示しない
+applyBattle32ViewportClass(root);
+
+// ローグライト遷移中は、古いBATTLE END画面を再表示しない
   if (
     window.__ROGUELITE_TRANSITIONING__ &&
     bs.isRoguelite &&
@@ -4671,6 +4795,28 @@ window.renderBattle32UI = function () {
     _syncRosterInfoCloseHitbox();
   });
 };
+
+function applyBattle32ViewportClass(root) {
+  if (!root) return;
+
+  const w = window.innerWidth || document.documentElement.clientWidth || 0;
+  // screen.height は物理画面高さ（アドレスバーの影響を受けない）
+  // innerHeight はSafariでアドレスバー展開中に小さくなるため使わない
+  const sh = window.screen ? window.screen.height : 0;
+
+  root.classList.remove('b32-vp-se', 'b32-vp-iphone14');
+
+  // SE系：物理画面が低い端末（SE第3世代 = 667pt）
+  if (w <= 390 && sh <= 700) {
+    root.classList.add('b32-vp-se');
+    return;
+  }
+
+  // iPhone14系以上：幅430以下の通常スマホ
+  if (w <= 430) {
+    root.classList.add('b32-vp-iphone14');
+  }
+}
 
  // ============================================================
  // LINK バー描画（ローグライト専用）
@@ -5277,6 +5423,10 @@ if (!window.__b32RosterCloseCaptureBound) {
  // ============================================================
  function fitBattle32Layout() {
  const root = document.getElementById(ROOT_ID);
+ // レイアウト計算前に必ず viewport クラスを再判定する
+ // Safariではアドレスバーの展開/収縮でinnerHeightが変わるため
+ applyBattle32ViewportClass(root);
+
  const header = document.getElementById('b32-header');
  const hint = document.getElementById('b32-hint-bar');
  const actions = document.getElementById('b32-actions'); // 消していてもOKにする
@@ -5295,21 +5445,29 @@ if (!window.__b32RosterCloseCaptureBound) {
  const bossHpH = bossHpVisible ? bossHp.offsetHeight : 0;
 
  const actionsVisible = actions && getComputedStyle(actions).display !== 'none';
- const actionsH = actionsVisible ? actions.offsetHeight : 0;
+ // actionsH はフロー計算では 0 扱い（position:fixed になったため）
+ // ただし後段の --b32-actions-h 計算で使うため別途取得する
+ const actionsHFlow = 0; // fixed なのでフロー高さには含めない
 
- const reservedH =
+ const isCompact = rootW <= 390 && rootH <= 700;
+const isIphone14Like = root.classList.contains('b32-vp-iphone14');
+
+const reservedExtra = isCompact ? 0 : (isIphone14Like ? 20 : 20);
+
+const reservedH =
  header.offsetHeight +
  hintH +
  bossHpH +
- actionsH +
+ actionsHFlow +
  bottom.offsetHeight +
- (rootW <= 390 && rootH <= 700 ? 4 : 20);
+ reservedExtra;
 
  // ローグライト時は roster + link-bar の高さも予約
  const rosterEl = document.getElementById('b32-roster-panel');
  const linkBarEl = document.getElementById('b32-link-bar');
- const rosterH = (rosterEl && rosterEl.style.display !== 'none') ? rosterEl.offsetHeight : 0;
- const linkBarH = (linkBarEl && linkBarEl.style.display !== 'none') ? linkBarEl.offsetHeight : 0;
+ // style.display はインラインのみ参照するため getComputedStyle を使う
+ const rosterH = (rosterEl && getComputedStyle(rosterEl).display !== 'none') ? rosterEl.offsetHeight : 0;
+ const linkBarH = (linkBarEl && getComputedStyle(linkBarEl).display !== 'none') ? linkBarEl.offsetHeight : 0;
 
  const reservedHFinal = reservedH + rosterH + linkBarH;
 
@@ -5320,28 +5478,48 @@ if (!window.__b32RosterCloseCaptureBound) {
  const cellByW = Math.floor((boardAvailW - gap * 4) / 5);
  const cellByH = Math.floor((boardAvailH - gap * 7) / 8);
 
- const isCompact = rootW <= 390 && rootH <= 700;
- const minCell = isCompact ? 24 : 28;
- const maxCell = isCompact ? 48 : 72;
+const minCell = isCompact ? 28 : 28;
+const maxCell = isCompact ? 60 : (isIphone14Like ? 80 : 72);
 
- const cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
- root.style.setProperty('--cell-size', `${cellSize}px`);
+let cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
 
- // ── 丸ボタン群 bottom 基準を動的更新 ──────────────────────
- // キャラパネル (#b32-bottom-area) の実測高さ + 余白(12px) を
- // --b32-panel-h にセット。safe-area-inset-bottom は
- // ダミー要素で env() を読み出して加算する。
+// iPhone14系だけ、JS側の自動計算結果を補正する
+// CSSの --cell-size 指定はここで上書きされるため、ここで直接調整する
+if (isIphone14Like) {
+  cellSize = Math.max(cellSize, 46);
+}
+
+root.style.setProperty('--cell-size', `${cellSize}px`);
+
+ // ── safe-area-inset-bottom を取得 ──────────────────────────
  let safeBottom = 0;
  try {
- const probe = document.createElement('div');
- probe.style.cssText =
- 'position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
- document.body.appendChild(probe);
- safeBottom = probe.offsetHeight || 0;
- document.body.removeChild(probe);
+   const probe = document.createElement('div');
+   probe.style.cssText =
+     'position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
+   document.body.appendChild(probe);
+   safeBottom = probe.offsetHeight || 0;
+   document.body.removeChild(probe);
  } catch (_) { safeBottom = 0; }
 
- const panelH = bottom.offsetHeight + safeBottom + 12;
+ // ── #b32-actions の高さを CSS変数 --b32-actions-h にセット ──
+ // actions は position:fixed になったのでフロー計算に含まれない。
+ // #b32-scroll の padding-bottom はこの変数で確保する（CSS側参照）。
+ const actionsEl = document.getElementById('b32-actions');
+ const actionsH = (actionsEl && getComputedStyle(actionsEl).display !== 'none')
+   ? actionsEl.offsetHeight : 0;
+ root.style.setProperty('--b32-actions-h', `${actionsH + safeBottom}px`);
+
+ // ── #b32-roster-panel の bottom を actions の上に積む ───────
+ // roster-panel（ローグライト5キャラパネル）は body 直下 fixed。
+ // actions の高さ + safe-area + 4px の余白で積み上げる。
+ const rosterPanelEl2 = document.getElementById('b32-roster-panel');
+ if (rosterPanelEl2) {
+   rosterPanelEl2.style.bottom = `${actionsH + safeBottom + 4}px`;
+ }
+
+ // ── --b32-panel-h（後方互換：丸ボタン等が参照） ────────────
+ const panelH = actionsH + safeBottom + 12;
  root.style.setProperty('--b32-panel-h', `${panelH}px`);
 }
 

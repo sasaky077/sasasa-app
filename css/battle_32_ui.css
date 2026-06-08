@@ -313,8 +313,8 @@
  display: flex;
  flex-direction: column;
  align-items: center;
- padding: 4px 8px 2px;
- gap: 2px;
+ padding: 2px 8px 2px;
+ gap: 0;
 }
 
 /* ── ボードラッパー ── */
@@ -325,8 +325,8 @@
  align-items: center;
  justify-content: center;
  perspective: 700px;
- padding-top: 12px;
- padding-bottom: 2px;
+ padding-top: 4px;
+ padding-bottom: 0;
 }
 
 /* ── ボード（5×8グリッド）── */
@@ -1170,12 +1170,12 @@
  justify-content: flex-start !important;
  align-items: center !important;
  gap: 0 !important;
- padding-top: 4px !important;
+ padding-top: 2px !important;
  padding-bottom: 0 !important;
 }
 
 #battle32-root #b32-board-wrap {
- padding-top: 12px !important;
+ padding-top: 4px !important;
  padding-bottom: 0 !important;
  margin-bottom: 0 !important;
 }
@@ -1758,35 +1758,61 @@
  cursor: pointer;
 }
 
-/* 敵クイック情報 */
+//* 敵クイック情報：グリッドに被らないよう上部へ逃がす */
 .b32-enemy-quick-info {
  position: fixed;
- right: 70px;
- background: rgba(4,6,18,.90);
- border: 1px solid rgba(180,100,200,.28);
- border-radius: 6px;
- padding: 8px 12px;
- min-width: 120px;
+ left: 50%;
+ top: calc(env(safe-area-inset-top, 0px) + 24px);
+ transform: translateX(-50%);
  z-index: 1900000;
  pointer-events: none;
+
+ min-width: 0;
+ width: auto;
+ max-width: calc(100vw - 24px);
+
+ background: rgba(4,6,18,.86);
+ border: 1px solid rgba(180,100,200,.28);
+ border-radius: 6px;
+ padding: 5px 10px 6px;
+
+ box-shadow: 0 8px 22px rgba(0,0,0,.45);
  transform-style: flat;
  backface-visibility: hidden;
 }
 
 .b32-enemy-quick-title {
  font-family: 'Cinzel', serif;
- font-size: 11px;
+ font-size: 10px;
+ line-height: 1.1;
  letter-spacing: 2px;
  color: rgba(220,160,255,.90);
  text-align: center;
- margin-bottom: 4px;
+ margin-bottom: 3px;
+ white-space: nowrap;
 }
 
-.b32-enemy-quick-row {
+.b32-enemy-quick-statline {
  display: flex;
- justify-content: space-between;
+ align-items: center;
+ justify-content: center;
+ gap: 12px;
+
+ font-family: 'Cinzel', serif;
  font-size: 10px;
- line-height: 1.45;
+ line-height: 1.2;
+ white-space: nowrap;
+ color: rgba(232,228,220,.60);
+}
+
+.b32-enemy-quick-statline strong {
+ color: #fff0d0;
+ font-weight: 700;
+}
+
+/* 旧row指定が残っていても無害化 */
+.b32-enemy-quick-row {
+ display: none;
 }
 
 .b32-enemy-quick-row span { color: rgba(232,228,220,.55); }
@@ -3188,10 +3214,10 @@
  gap: 0 !important;
 }
 
-/* bottom-area：margin-top: auto で画面下端に押し下げ */
+/* bottom-area：グリッド直下に詰める（margin-top:auto 廃止） */
 #battle32-root #b32-bottom-area {
- margin-top: auto !important;
- padding: 6px 8px max(10px, env(safe-area-inset-bottom, 10px)) !important;
+ margin-top: 0 !important;
+ padding: 4px 8px max(10px, env(safe-area-inset-bottom, 10px)) !important;
  gap: 3px !important;
 }
 
@@ -3958,21 +3984,21 @@
 /* iPhone SE系 */
 @media (max-width: 430px), (max-height: 740px) {
   #battle32-root #b32-actions {
-    gap: 5px;
-    margin-top: 5px;
+    gap: 4px;
+    margin-top: 0;
   }
 
   #battle32-root .b32-bottom-action {
-    min-height: 62px;
-    padding: 6px 4px 6px;
+    min-height: 54px;
+    padding: 4px 3px 4px;
   }
 
   #battle32-root .b32-bottom-action-icon {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   #battle32-root .b32-bottom-action-label {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   #battle32-root .b32-bottom-action-cost {
@@ -4323,16 +4349,12 @@
   }
 
   #battle32-root #b32-board-wrap {
-    padding-top: 22px !important;
+    padding-top: 4px !important;
     padding-bottom: 0 !important;
-    transform: scale(1.08) !important;
-    transform-origin: top center !important;
+    transform: none !important;
   }
 
-  /* セル自体を少し大きくする */
-  #battle32-root {
-    --cell-size: 38px !important;
-  }
+  /* セルサイズはJS（fitBattle32Layout）に委ねる。固定値は指定しない */
 
   /* キャラ情報パネル：キャラパネル行より上に */
   #battle32-root .b32-roster-info-panel {
@@ -4559,11 +4581,11 @@
   bottom: auto !important;
   transform: none !important;
   width: 100% !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  max-height: 20px !important;
-  line-height: 20px !important;
-  margin: 2px 0 0 0 !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  line-height: 14px !important;
+  margin: 0 !important;
   padding: 0 8px !important;
   box-sizing: border-box !important;
   text-align: center !important;
@@ -4602,8 +4624,8 @@
 
   /* ── bottom-area：パディングを広げてボタンが被らないようにする ── */
   #battle32-root #b32-bottom-area {
-    padding: 8px 10px max(18px, env(safe-area-inset-bottom, 18px)) !important;
-    gap: 6px !important;
+    padding: 4px 10px max(18px, env(safe-area-inset-bottom, 18px)) !important;
+    gap: 4px !important;
   }
 
   /* ── キャラパネル行（party-status）：
@@ -4611,7 +4633,7 @@
   #battle32-root #b32-party-status {
     width: 100% !important;
     gap: 7px !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
   }
 
   /* ── キャラカード本体：高さを拡大 ── */
@@ -4933,20 +4955,20 @@
    ============================================================ */
 
 #battle32-root .b32-roster-info-panel {
-  bottom: calc(270px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(250px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* iPhone SE / 縦が短い端末 */
 @media (max-height: 700px) {
   #battle32-root .b32-roster-info-panel {
-    bottom: calc(252px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(212px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
 /* さらに低い画面では、上げすぎると盤面に被るので少し控えめ */
 @media (max-height: 640px) {
   #battle32-root .b32-roster-info-panel {
-    bottom: calc(238px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(198px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -5118,13 +5140,8 @@
 }
 
 /* ============================================================
- iPhone SE系：盤面を少し上げて、下部パネルとの被りを回避
+/* iPhone SE系：盤面位置はJS計算に委ねる（translateY廃止）
  ============================================================ */
-@media (max-height: 700px) {
-  #battle32-root #b32-board-wrap {
-    transform: translateY(-24px) !important;
-  }
-}
 
 /* ============================================================
  Enemy Unit Reset: 敵ユニット表示位置・サイズを標準化
@@ -5174,3 +5191,46 @@
 }
 
 /* Boss Scale: サイズはJS（renderBoard内）のインラインスタイルで注入済み */
+
+/* ============================================================
+ レイアウト確定修正
+ ─────────────────────────────────────────────────────────────
+ 狙い配置:
+   グリッド（#b32-scroll 内、上寄せ）
+   キャラパネル（#b32-roster-panel、fixed）
+   ボトムメニュー（#b32-actions、fixed 最下部）
+
+ #b32-actions を position:fixed にすることで通常フローから外し
+ 常に画面最下部に固定する。
+ #b32-scroll には padding-bottom で actions の高さ分を確保し
+ グリッドがボタンに隠れないようにする。
+ #b32-roster-panel の bottom は fitBattle32Layout() で
+ actions の実高さの上に動的積み上げする。
+ ============================================================ */
+
+/* ── ボトムアクションバー：画面最下部固定 ── */
+#battle32-root #b32-actions {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 2000 !important;
+  margin-top: 0 !important;
+  /* 幅制限がある場合は中央寄せ */
+  max-width: none !important;
+}
+
+/* #b32-bottom-area：actions が fixed になりフローから外れるため
+   残りのコンテンツ（party-status 等）だけが残る。
+   margin-top:auto 禁止。 */
+#battle32-root #b32-bottom-area {
+  margin-top: 0 !important;
+}
+
+/* #b32-scroll：画面下部の fixed 要素（actions）に隠れないよう
+   padding-bottom を確保する。実際の高さは fitBattle32Layout() が
+   CSS変数 --b32-actions-h で注入する。初期値として 90px を設定。 */
+#battle32-root #b32-scroll {
+  padding-bottom: var(--b32-actions-h, 90px) !important;
+}
+

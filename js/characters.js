@@ -840,6 +840,7 @@ const CHARACTERS = [
       { id: 's1',
         name: '邪魔よ',
         cost: 3,
+        linkCost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
@@ -862,6 +863,7 @@ const CHARACTERS = [
       { id: 'ult',
         name: '跪きなさい',
         cost: 10,
+        linkCost: 5,
         isUltimate: true,
         hit: 100,
         type: 'attack',
@@ -1063,9 +1065,9 @@ const CHARACTERS = [
         desc: '炎を纏いながら移動して攻撃する。ATKの2倍のダメージ。' }
     ]},
 
-  // ── id:19 アンナ（耐久寄り）──────────────────────────────────
+  // ── id:19 カンナ（耐久寄り）──────────────────────────────────
   // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
-  { id: 19, name: 'アンナ', gender: 'woman', rarity: 'sr',
+  { id: 19, name: 'カンナ', gender: 'woman', rarity: 'sr',
     role: '耐久寄り',
     costMax: 14,
     costStart: 5,
@@ -1084,14 +1086,14 @@ const CHARACTERS = [
     favScale: 0.95, favOffsetY: 15,
     skills: [
       { id: 's1',
-        name: '麻酔針',
+        name: '麻酔薬',
         cost: 3,
         linkCost: 4,
         isUltimate: false,
         hit: 100,
         type: 'attack',
         multiplier: 0.8,
-        range: 'pierce_ally_3',
+        range: 'front2',
         pierce: false,
         effects: [
           { type: 'stun', target: 'enemy', duration: 1, hit: 100 }
@@ -1337,16 +1339,16 @@ const CHARACTERS = [
   },
 
   // ── id:14 アイム（火力寄り）──────────────────────────────────
-  // 全体攻撃と吸い寄せ＋押し出しで敵を翻弄する異能者。
+  // コピー系。
   { id: 14, name: 'アイム', gender: 'man', rarity: 'ur',
-    role: '火力寄り',
+    role: 'テクニック寄り',
     costMax: 14,
     costStart: 6,
     costRegen: 4,
-    shinkiMax: 3,
+    shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 740, ATK: 280 },
+    stats: { HP: 777, ATK: 246 },
     img: 'images/chara_14.webp', 
     cutImg: 'images/chara_14_cut.webp', 
     ultImg: 'images/chara_14_cutin.webp',
@@ -1355,47 +1357,50 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
     favScale: 0.85, favOffsetY: -15,
-    skills: [
-      { id: 's1',
-        name: '物真似',
-        cost: 3,
-        linkCost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.0,
-        range: 'all',
-        pierce: false,
-        effects: [],
-        moveBonus: {
-          idealMoves: [1,5],
-          damageRate: 1.3
-        },
-        desc: '直前の味方の行動を真似する。' },
+    skills: [  
+  { 
+    id: 's1', 
+    name: 'リプレイ',
+    cost: 3,
+    linkCost: 2,
+    isUltimate: false,
+    hit: 100,
+    type: 'repeat_skill',
+    multiplier: 0.0,
+    range: 'self',
+    pierce: false,
+    effects: [],
+    moveBonus: {
+    idealMoves: [1,5],
+    damageRate: 1.0
+  },
+    desc: 'このターン中、直前に発動した味方の通常スキルをもう一度発動する。'
+},
 
-      { id: 'ult',
-        name: 'ワンダーランド',
-        cost: 10,
-        linkCost: 5,
-        isUltimate: true,
-        hit: 100,
-        type: 'attack',
-        multiplier: 3.5,
-        range: 'enemy_all',
-        effects: [
-          { type: 'push_2', target: 'enemy', hit: 100, duration: 1 },
-          { type: 'sure_hit_team', target: 'ally_all', hit: 100, duration: 1 }
-        ],
-        moveBonus: {
-          idealMoves: [2, 4],
-          damageRate: 1.5
-        },
-        desc: '敵全体にATKの3.5倍のダメージを与える。' }
+{ id: 'ult',
+  name: 'ジャグラー',
+  cost: 10,
+  linkCost: 5,
+  isUltimate: true,
+  hit: 100,
+  type: 'random_cell_attack',
+  multiplier: 7.0,
+  randomCellCount: 7,
+  range: 'field_all',
+  effects: [],
+  hitStyle: 'heavy',
+  moveBonus: {
+    idealMoves: [2, 4],
+    damageRate: 1.0
+  },
+  desc: '盤面上のランダムな7マスを攻撃する。当たった敵にATKの7倍ダメージ。'
+}
     ]},
 
-  // ── id:16 アズキ（耐久寄り）──────────────────────────────────
+
+  // ── id:16 ミト（耐久寄り）──────────────────────────────────
   // 高HP。実体化の確実付与と全体攻撃のハイブリッド。スタンも持つ完全体壁役。
-  { id: 16, name: 'アズキ', gender: 'woman', rarity: 'ur',
+  { id: 16, name: 'ミト', gender: 'woman', rarity: 'ur',
     role: '耐久寄り',
     costMax: 14,
     costStart: 5,
@@ -1414,13 +1419,14 @@ const CHARACTERS = [
     favScale: 1.1, favOffsetY: 35,
     skills: [
       { id: 's1',
-        name: '見破',
+        name: 'シロと一緒',
         cost: 2,
+        linkCost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
         multiplier: 0.7,
-        range: 'all',
+        range: 'around8',
         effects: [
           { type: 'jittai', target: 'enemy', hit: 80, duration: 2 }
         ],
@@ -1430,44 +1436,10 @@ const CHARACTERS = [
         },
         desc: '攻撃しながら怪異を実体化させる。ATKの0.7倍のダメージ。' },
 
-      { id: 's2',
-        name: '結界',
-        cost: 5,
-        isUltimate: false,
-        hit: 100,
-        type: 'buff',
-        multiplier: 0.0,
-        range: 'self',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [0],
-          damageRate: 1.0
-        },
-        desc: '結界を展開し、味方全員にシールドを付与する（被ダメ軽減）。' },
-
-      { id: 's3',
-        name: '式神-ぽち-',
-        cost: 6,
-        isUltimate: false,
-        hit: 100,
-        type: 'debuff',
-        multiplier: 0.7,
-        range: 'front_row_3',
-        effects: [
-          { type: 'jittai', target: 'enemy', hit: 100, duration: 2 },
-          { type: 'atk_down', target: 'enemy', hit: 100, duration: 2 },
-          { type: 'push_1', target: 'enemy', hit: 100, duration: 2 }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.3
-        },
-        desc: '怪異を実体化させながらATKを2ターン低下させ、1マス押し込む。' },
-
       { id: 'ult',
-        name: '御魂綴',
+        name: 'ご飯の時間',
         cost: 10,
+        linkCost: 4,
         isUltimate: true,
         hit: 100,
         type: 'attack',
@@ -1514,7 +1486,7 @@ const CHARACTERS = [
     },
     skills: [
       { id: 's1',
-        name: 'ほいっ！',
+        name: 'じゃっく！',
         cost: 4,
         linkCost: 3,
         isUltimate: false,
@@ -1531,7 +1503,7 @@ const CHARACTERS = [
         desc: '正面のマスに中ダメージ' },
 
       { id: 'ult',
-        name: 'すごいだろっ',
+        name: 'ざ・りっぱー！',
         cost: 10,
         linkCost: 3,
         isUltimate: true,

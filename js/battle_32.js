@@ -276,6 +276,19 @@
     return Math.max(1, Math.floor(atk * multiplier * rate));
   }
 
+function pickRandomBoardCells(count) {
+  const cells = [];
+
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
+      cells.push({ row, col, key: `${row}-${col}` });
+    }
+  }
+
+  const shuffled = shuffle(cells);
+  return shuffled.slice(0, Math.max(0, Number(count || 0)));
+}
+
   function getAllUnits() {
     if (!_bs) return [];
     return [
@@ -601,10 +614,13 @@ const enemies = enemyDefs.map(def => {
       skillUnitUid:      null,
       // LINKベース行動権管理
       actionCount:        0,
-      actionMax:          99, // 後方互換用（判定には使わない）
+      actionMax:          99,
       lastActionType:     null,
       lastActionUnitUid:  null,
-      unitActionHistory:  {}, // ユニット単位の1ターン1回制限
+      unitActionHistory:  {},
+
+      // このターン中に直前に成功した味方スキル
+      lastAllySkillThisTurn: null,
 
       // ── ローグライト専用フィールド ──────────────────────────
       // isRoguelite: ローグライトランとして起動されたか（UI分岐の判定に使う）
@@ -964,10 +980,222 @@ function _executeDelayedAttack(action) {
     const stype = skill.type;
     let noTargets = false;
 
-    // ── attack ──────────────────────────────────────────────────
-    // ── delayed_attack：未来予約攻撃 ─────────────────────────────
-if (stype === 'delayed_attack') {
+    // ── repeat_skill：このターン中、直前に成功した味方通常スキルを再発動 ──
+if (stype === 'repeat_skill') {
+  const last = _bs.lastAllySkillThisTurn;
+
+  if (!last || !last.skill) {
+    noTargets = true;
+    _log(`${ally.name}：このターン中に再現できる味方スキルがありません`);
+  } else {
+    const copiedSkill = deepClone(last.skill);
+
+    // 安全対策：物真似・ULT・予約攻撃はコピーしない
+    if (
+      copiedSkill.type === 'repeat_skill' ||
+      copiedSkill.isUltimate ||
+      copiedSkill.type === 'delayed_attack'
+    ) {
+      noTargets = true;
+      _log(`${ally.name}：そのスキルは再現できません`);
+    } else {
+      copiedSkill.id = `repeat_${copiedSkill.id}`;
+      copiedSkill.name = `${copiedSkill.name}`;
+      copiedSkill.shinkiCost = 0;
+      copiedSkill.linkCost = 0;
+      copiedSkill.isUltimate = false;
+
+      _log(`${ally.name} は ${last.ownerName} の「${copiedSkill.name}」を再現した！`);
+
+      // ここでは「アイムが使った」扱いにする。
+      // 射程・ATK・位置はアイム基準。
+      const copiedType = copiedSkill.type;
+
+      if (copiedType === 'attack') {
+        const targets = _enemyTargets(copiedSkill.range);
+        if (targets.length === 0) {
+          noTargets = true;
+          _log(`${ally.name}：範囲内に敵がいません`);
+        } else {
+          let drainTotal = 0;
+          const hasDrain = (copiedSkill.effects || []).some(e => e.type === 'drain');
+
+          targets.forEach(enemy => {
+            let dmg = calcDamage(ally.atk, copiedSkill.multiplier, enemy);
+
+            if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+              dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+            }
+
+            if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+              dmg = Math.round(dmg * _bs._rl_bossDmgMult);
+            }
+
+            const hpBefore = enemy.hp;
+            applyDamage(enemy, dmg, ally, copiedSkill);
+            if (hasDrain) drainTotal += Math.min(dmg, hpBefore);
+            _applyEffects(copiedSkill.effects, enemy, ally);
+          });
+
+          if (hasDrain) _applyDrainHealing(copiedSkill, ally, drainTotal);
+        }
+
+      } else if (copiedType === 'debuff') {
+        const targets = _enemyTargets(copiedSkill.range);
+        if (targets.length === 0) {
+          noTargets = true;
+          _log(`${ally.name}：範囲内に敵がいません`);
+        } else {
+          targets.forEach(enemy => {
+            if ((copiedSkill.multiplier || 0) > 0) {
+              let dmg = calcDamage(ally.atk, copiedSkill.multiplier, enemy);
+
+              if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+                dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+              }
+
+              if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+                dmg = Math.round(dmg * _bs._rl_bossDmgMult);
+              }
+
+              applyDamage(enemy, dmg, ally, copiedSkill);
+            }
+            _applyEffects(copiedSkill.effects, enemy, ally);
+          });
+        }
+
+      } else if (copiedType === 'heal') {
+        const healEffect = (copiedSkill.effects || []).find(e => e.type === 'heal') || {};
+        const healTarget = healEffect.target || copiedSkill.target || 'ally';
+        const healRate = healEffect.rate || healEffect.healRate || copiedSkill.healRate || 0.1;
+
+        const alive = _bs.allies.filter(u => u.hp > 0);
+        let targets = [];
+
+        if (healTarget === 'ally_self' || healTarget === 'self' || copiedSkill.range === 'self') {
+          targets = [ally].filter(u => u && u.hp > 0);
+        } else if (healTarget === 'ally_lowest') {
+          const candidates = alive.slice();
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => {
+              const ar = a.hpMax > 0 ? a.hp / a.hpMax : 1;
+              const br = b.hpMax > 0 ? b.hp / b.hpMax : 1;
+              return ar - br;
+            });
+            targets = [candidates[0]];
+          }
+        } else if (healTarget === 'ally_all' || copiedSkill.range === 'ally_all') {
+          targets = alive;
+        } else {
+          targets = _allyTargets(copiedSkill.range);
+        }
+
+        if (targets.length === 0) {
+          noTargets = true;
+          _log(`${ally.name}：回復対象がいません`);
+        } else {
+          targets.forEach(a => {
+            const before = a.hp;
+            const recover = Math.max(1, Math.round(a.hpMax * healRate));
+            a.hp = Math.min(a.hpMax, a.hp + recover);
+            const actualRecover = a.hp - before;
+
+            if (actualRecover > 0) {
+              _log(`${a.name} の HP が ${actualRecover} 回復！（残HP: ${a.hp}）`);
+              _emit('heal', {
+                source: { _uid: ally._uid, name: ally.name, side: ally.side, row: ally.row, col: ally.col },
+                target: { _uid: a._uid, name: a.name, side: a.side, row: a.row, col: a.col },
+                amount: actualRecover,
+                kind: 'heal',
+                skillId: copiedSkill.id || null,
+                skillName: copiedSkill.name || null,
+                isUltimate: false,
+                hitStyle: copiedSkill.hitStyle || 'normal',
+                bs: _snapshot(),
+              });
+            } else {
+              _log(`${a.name} は既にHP満タンです`);
+            }
+          });
+        }
+
+      } else if (copiedType === 'buff') {
+        const mainEffect = (copiedSkill.effects || [])[0];
+        const effTarget = mainEffect ? (mainEffect.target || '') : '';
+        let targets;
+
+        if (copiedSkill.range === 'self' || effTarget === 'ally_self') {
+          targets = [ally];
+        } else {
+          targets = _allyTargets(copiedSkill.range);
+          if (targets.length === 0) targets = [ally];
+        }
+
+        targets.forEach(a => {
+          _applyEffects(copiedSkill.effects, a, ally);
+          _log(`${a.name} にバフを付与（${copiedSkill.name}）`);
+        });
+
+      } else {
+        noTargets = true;
+        _log(`${ally.name}：そのスキルタイプは再現できません`);
+      }
+    }
+  }
+
+// ── delayed_attack：未来予約攻撃 ─────────────────────────────
+} else if (stype === 'delayed_attack') {
   _queueDelayedAttack(ally, skill);
+
+// ── random_cell_attack：盤面ランダムマス攻撃 ────────────────
+} else if (stype === 'random_cell_attack') {
+  const count = Number(skill.randomCellCount || 7);
+  const pickedCells = pickRandomBoardCells(count);
+  const pickedKeys = new Set(pickedCells.map(c => c.key));
+
+  _log(`${ally.name} の「${skill.name}」が盤面上の${count}マスを乱撃！`);
+
+  // 演出・ガイド用イベント
+  _emit('randomCellAttack', {
+    source: {
+      _uid: ally._uid,
+      name: ally.name,
+      side: ally.side,
+      row: ally.row,
+      col: ally.col,
+    },
+    skillId: skill.id,
+    skillName: skill.name,
+    cells: pickedCells.map(c => ({ row: c.row, col: c.col })),
+    bs: _snapshot(),
+  });
+
+  const targets = _bs.enemies.filter(e =>
+    e &&
+    e.hp > 0 &&
+    pickedKeys.has(`${e.row}-${e.col}`)
+  );
+
+  if (targets.length === 0) {
+  _log(`${ally.name}：ランダム攻撃は空振りした`);
+  } else {
+    targets.forEach(enemy => {
+      let dmg = calcDamage(ally.atk, skill.multiplier || 7.0, enemy);
+
+      // ローグライト: スキルダメージ補正
+      if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+        dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+      }
+
+      // ローグライト: ボスへのスキルダメージ追加補正
+      if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+        dmg = Math.round(dmg * _bs._rl_bossDmgMult);
+      }
+
+      applyDamage(enemy, dmg, ally, skill);
+      _applyEffects(skill.effects, enemy, ally);
+    });
+  }
 
 // ── attack ──────────────────────────────────────────────────
 } else if (stype === 'attack') {
@@ -977,6 +1205,9 @@ if (stype === 'delayed_attack') {
         noTargets = true;
         _log(`${ally.name}：範囲内に敵がいません`);
       } else {
+        let drainTotal = 0;
+        const hasDrain = (skill.effects || []).some(e => e.type === 'drain');
+
         targets.forEach(enemy => {
           let dmg = calcDamage(ally.atk, skill.multiplier, enemy);
           // ─ ローグライト: スキルダメージ補正 ─
@@ -989,9 +1220,13 @@ if (stype === 'delayed_attack') {
           if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
             dmg = Math.round(dmg * _bs._rl_bossDmgMult);
           }
+          const hpBefore = enemy.hp;
           applyDamage(enemy, dmg, ally, skill);
+          if (hasDrain) drainTotal += Math.min(dmg, hpBefore); // 実ダメージ分だけ積算
           _applyEffects(skill.effects, enemy, ally);
         });
+
+        if (hasDrain) _applyDrainHealing(skill, ally, drainTotal);
       }
 
     // ── debuff（ダメージあり/なし両対応） ──────────────────────
@@ -1125,11 +1360,11 @@ if (stype === 'delayed_attack') {
       _log(`${ally.name}：未知のスキルタイプ「${stype}」（スキップ）`);
     }
 
-    // 対象なしの場合はスキル消費せず選び直せるようにする
-    if (noTargets) {
-      _log('→ スキル選択に戻ります');
-      return false;
-    }
+    // リプレイ不成立だけはスキル消費せず選び直せるようにする
+if (noTargets && skill.type === 'repeat_skill') {
+  _log('→ スキル選択に戻ります');
+  return false;
+}
 
     ally.shinki -= (skill.shinkiCost || 0);
 
@@ -1138,6 +1373,21 @@ if (stype === 'delayed_attack') {
 if (_bs.result) {
   _renderUI();
   return true;
+}
+
+// 成功した味方通常スキルを、このターン中のコピー候補として記録
+// repeat_skill / ULT / delayed_attack はコピー対象外
+if (
+  !noTargets &&
+  skill.type !== 'repeat_skill' &&
+  skill.type !== 'delayed_attack' &&
+  !skill.isUltimate
+) {
+  _bs.lastAllySkillThisTurn = {
+    ownerUid: ally._uid,
+    ownerName: ally.name,
+    skill: deepClone(skill),
+  };
 }
 
 _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
@@ -1151,6 +1401,46 @@ if (!_bs.result) {
 }
 
 return true;
+  }
+
+  // ============================================================
+  // drain 回復ヘルパー
+  // ============================================================
+  function _applyDrainHealing(skill, ally, totalDamage) {
+    const drainEff = (skill.effects || []).find(e => e.type === 'drain');
+    if (!drainEff || totalDamage <= 0) return;
+
+    const rate = drainEff.rate != null ? drainEff.rate : 0.5;
+    const healAmount = Math.max(1, Math.round(totalDamage * rate));
+    const tgt = drainEff.target || 'ally_all';
+
+    let healTargets = [];
+    if (tgt === 'ally_self' || tgt === 'self') {
+      healTargets = [ally].filter(u => u && u.hp > 0);
+    } else {
+      healTargets = (_bs.allies || []).filter(u => u.hp > 0);
+    }
+
+    healTargets.forEach(a => {
+      const before = a.hp;
+      a.hp = Math.min(a.hpMax, a.hp + healAmount);
+      const actual = a.hp - before;
+      if (actual <= 0) return;
+      _log(`${a.name} はドレインで ${actual} HP 回復！（残HP: ${a.hp}）`);
+      _emit('heal', {
+        source: { _uid: ally._uid, name: ally.name, side: ally.side, row: ally.row, col: ally.col },
+        target: { _uid: a._uid,    name: a.name,    side: a.side,    row: a.row,    col: a.col    },
+        amount: actual,
+        kind:   'drain',
+        skillId:    skill.id   || null,
+        skillName:  skill.name || null,
+        isUltimate: !!skill.isUltimate,
+        hitStyle:   skill.hitStyle || 'normal',
+        bs: _snapshot(),
+      });
+    });
+
+    _log(`${ally.name}「${skill.name}」ドレイン：与えた ${totalDamage} ダメージの ${Math.round(rate * 100)}% → ${healAmount} HP 回復`);
   }
 
   // ============================================================
@@ -1189,10 +1479,8 @@ return true;
         return;
       }
 
-      // ── drain エフェクト（ダメージの一部を回復）──
+      // ── drain エフェクト：attack ループ側で totalDrain として処理するためここはスキップ ──
       if (eff.type === 'drain') {
-        // drain は attack 後の特殊処理なので、ここでは statusEffects に積まず pass
-        _log(`${target.name}: drain は現バージョンではスキップ`);
         return;
       }
 
@@ -2044,6 +2332,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     _bs.lastActionType    = null;
     _bs.lastActionUnitUid = null;
     _bs.unitActionHistory = {};
+    _bs.lastAllySkillThisTurn = null;
 
     // LINK全回復
     if (_bs.link) {
