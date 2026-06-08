@@ -1404,6 +1404,111 @@ return true;
   }
 
   // ============================================================
+  // 強制移動ヘルパー群（pull / push / shift）
+  // ============================================================
+
+  function _isInsideBoard(row, col) {
+    return row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS;
+  }
+
+  function _isAllyCoreCell(row, col) {
+    const core = _bs && _bs.cores && _bs.cores.ally;
+    return !!(core && core.row === row && core.col === col);
+  }
+
+  function _getAliveUnitAt(row, col, ignoreUid) {
+    return getAllUnits().find(u =>
+      u._uid !== ignoreUid &&
+      u.row === row &&
+      u.col === col &&
+      (u.hp > 0 || u.isBoss)
+    ) || null;
+  }
+
+  function _canForcedMoveTo(unit, row, col) {
+    if (!_isInsideBoard(row, col)) return false;
+    if (_isAllyCoreCell(row, col)) return false;
+    if (_getAliveUnitAt(row, col, unit._uid)) return false;
+    return true;
+  }
+
+  function _sign(n) {
+    return n === 0 ? 0 : n > 0 ? 1 : -1;
+  }
+
+  function _getEffectStep(effectType) {
+    const m = String(effectType || '').match(/_(\d+)$/);
+    return m ? Math.max(0, Number(m[1])) : 0;
+  }
+
+  function _getForcedMoveVector(effectType, source, target) {
+    const rowToSource = _sign(source.row - target.row);
+    const colToSource = _sign(source.col - target.col);
+
+    if (effectType.startsWith('pull_')) {
+      return { dr: rowToSource, dc: colToSource };
+    }
+    if (effectType.startsWith('push_')) {
+      return { dr: -rowToSource, dc: -colToSource };
+    }
+    if (effectType.startsWith('shift_right_')) {
+      return { dr: 0, dc: 1 };
+    }
+    if (effectType.startsWith('shift_left_')) {
+      return { dr: 0, dc: -1 };
+    }
+    return { dr: 0, dc: 0 };
+  }
+
+  function _applyForcedEnemyMove(effect, target, source) {
+    if (!_bs || !effect || !target || !source) return 0;
+    if (target.side !== 'enemy') return 0;
+    if (target.isBoss) {
+      _log(`${target.name} は強制移動を受けない`);
+      return 0;
+    }
+    if (target.hp <= 0) return 0;
+
+    const effectType = effect.type;
+    const steps = _getEffectStep(effectType);
+    if (steps <= 0) return 0;
+
+    const vec = _getForcedMoveVector(effectType, source, target);
+    if (!vec.dr && !vec.dc) return 0;
+
+    const from = { row: target.row, col: target.col };
+    let moved = 0;
+
+    for (let i = 0; i < steps; i++) {
+      const nr = target.row + vec.dr;
+      const nc = target.col + vec.dc;
+      if (!_canForcedMoveTo(target, nr, nc)) break;
+      target.row = nr;
+      target.col = nc;
+      moved++;
+    }
+
+    const to = { row: target.row, col: target.col };
+
+    if (moved > 0) {
+      _log(`${target.name} を ${moved}マス移動させた`);
+      _emit('forcedMove', {
+        source: { _uid: source._uid, name: source.name, side: source.side, row: source.row, col: source.col },
+        target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+        from,
+        to,
+        effectType,
+        moved,
+        bs: _snapshot(),
+      });
+    } else {
+      _log(`${target.name} は移動できなかった`);
+    }
+
+    return moved;
+  }
+
+  // ============================================================
   // drain 回復ヘルパー
   // ============================================================
   function _applyDrainHealing(skill, ally, totalDamage) {
@@ -1449,13 +1554,25 @@ return true;
   // source は任意（省略可）
   function _applyEffects(effects, target, source) {
     if (!effects || effects.length === 0) return;
-    const MOVE_TYPES = new Set([
-      'push_1','push_2','pull_1','pull_2',
-      'shift_right_1','shift_right_2','shift_left_1','shift_left_2'
+    const FORCED_MOVE_TYPES = new Set([
+      'pull_1', 'pull_2',
+      'push_1', 'push_2',
+      'shift_right_1', 'shift_right_2',
+      'shift_left_1',  'shift_left_2',
     ]);
     effects.forEach(eff => {
-      if (MOVE_TYPES.has(eff.type)) {
-        _log(`${target.name}: ${eff.type} は未実装のためスキップ`);
+      // ── 強制移動エフェクト ────────────────────────────────────
+      if (FORCED_MOVE_TYPES.has(eff.type)) {
+        if (eff.target === 'enemy' && target.side === 'enemy') {
+          // hp <= 0 の敵は移動しない（ダメージで倒れた直後も除外）
+          if (target.hp <= 0 && !target.isBoss) return;
+          const hitRate = eff.hit == null ? 100 : Number(eff.hit);
+          if (Math.random() * 100 <= hitRate) {
+            _applyForcedEnemyMove(eff, target, source);
+          } else {
+            _log(`${target.name} への強制移動は失敗`);
+          }
+        }
         return;
       }
 
