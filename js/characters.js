@@ -24,15 +24,15 @@ const CHARACTERS = [
   // R
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:1 ギョウタツ（バランス）────────────────────────────────
-  // 安定した攻撃と自己防御。縛り＋実体化の両方を持つ万能型。
-  { id: 1, name: 'ギョウタツ', gender: 'man', rarity: 'r',
+  // ── id:1 アズミ（バランス）────────────────────────────────
+  // 安定した攻撃と自己防御。縛りと広範囲打撃。
+  { id: 1, name: 'アズミ', gender: 'man', rarity: 'r',
     role: 'バランス',
     moveType: 'gold',
     costMax: 12,
     costStart: 5,
     costRegen: 4,
-    shinkiMax: 3,
+    shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: 
@@ -48,85 +48,49 @@ const CHARACTERS = [
     favScale: 0.85, favOffsetY: -35,
     skills: [
       { id: 's1',
-        name: '正拳',
+        name: '蛇睨み',
         cost: 3,
+        linkCost: 2,
         isUltimate: false,
         hit: 100,
         type: 'attack',
         multiplier: 2.0,
         range: 'front1',
         pierce: false,
-        effects: [],
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+        ],
         moveBonus: {
           idealMoves: [1, 3],
           damageRate: 1.4
         },
-        desc: '確実に命中する基本攻撃。' },
-
-      { id: 's2',
-        name: '縛拳',
-        cost: 4,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 3.0,
-        range: 'front1',
-        effects: [
-          { 
-            type: 'atk_down', 
-            target: 'enemy', 
-            hit: 70, 
-            duration: 2 
-          },
-          { 
-            type: 'stun', 
-            target: 'enemy', 
-            hit: 70, 
-            duration: 1 
-          }
-        ],
-        moveBonus: {
-          idealMoves: [2],
-          damageRate: 1.3
-        },
-        desc: '打撃に縛りの力を込め、怪異のATKを下げる。' },
-
-      { id: 's3',
-        name: '精神統一',
-        cost: 4,
-        isUltimate: false,
-        hit: 100,
-        type: 'buff',
-        multiplier: 0.0,
-        range: 'self',
-        effects: [
-        ],
-        moveBonus: {
-          idealMoves: [0],
-          damageRate: 1.0
-        },
-        desc: '精神を統一し、自身のATKを2ターン上昇させる。' },
+        desc: '目の前の敵を攻撃し、スタンさせる。' },
 
       { id: 'ult',
-        name: '精神統一',
+        name: '八岐大蛇',
         cost: 10,
+        linkCost: 4,
+
         isUltimate: true,
         hit: 100,
-        type: 'move',
-        multiplier: 0.0,
-        range: 'self',
+        type: 'debuff',
+        multiplier: 2.0,
+        range: 'random8',
         pierce: false,
-        effects: [],
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+        ],
+        hitStyle: 'multi',
         moveBonus: {
           idealMoves: [1],
           damageRate: 1.0
         },
-        desc: 'ポジションを変更する。' },
+        desc: '8マスをランダムに攻撃し、スタンさせる。' },
     ]},
 
-  // ── id:2 シグレ（速度寄り）──────────────────────────────────
+  // ── id:2 レイチェル（速度寄り）──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
-  { id: 2, name: 'シグレ', gender: 'woman', rarity: 'r',
+  { id: 2, name: 'レイチェル', gender: 'woman', rarity: 'r',
   role: '速度寄り',
   moveType: 'shigure',
     costMax: 10,
@@ -146,40 +110,42 @@ const CHARACTERS = [
     favScale: 0.85, favOffsetY: -25,
     skills: [
       { id: 's1',
-        name: '神巫',
+        name: 'ばぁっ',
         cost: 3,
         linkCost: 3,
         isUltimate: false,
         hit: 100,
         type: 'attack',
         multiplier: 2.0,
-        range: 'front1',
+        range: 'fan_2row_3_ally',
         pierce: false,
         effects: [],
         moveBonus: {
           idealMoves: [1],
           damageRate: 1.3
         },
-        desc: '素早い太刀で目の前の1マスを攻撃する。' },
+        desc: '' },
 
       {
   id: 'ult',
-  name: '時雨',
+  name: '超BUTな夜',
   cost: 10,
-  linkCost: 4,
+  linkCost: 5,
   isUltimate: true,
   hit: 100,
   type: 'attack',
   multiplier: 3.0,
-  range: 'cross_tail_6',
+  range: 'super_but_night_6',
   pierce: false,
-  effects: [],
+  effects: [
+    { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+  ],
   hitStyle: 'multi',
   moveBonus: {
     idealMoves: [1],
     damageRate: 1.5
   },
-  desc: '上2マス、左右、斜め下左右を攻撃する。'
+  desc: '前方に広がるコウモリの群れで攻撃し、命中した敵を1ターンスタンさせる。'
 }
     ]},
 

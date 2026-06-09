@@ -162,6 +162,15 @@ diag_x_2: [
       { dr: -3, dc: -1 }, { dr: -3, dc:  0 }, { dr: -3, dc:  1 },
     ],
 
+    // 前方扇形2段（横3×2行 = 6マス）— ally用
+    // ■ ■ ■   ← 2段前
+    //   ■■■   ← 1段前
+    //     自
+    fan_2row_3_ally: [
+      { dr: -1, dc: -1 }, { dr: -1, dc:  0 }, { dr: -1, dc:  1 },
+      { dr: -2, dc: -1 }, { dr: -2, dc:  0 }, { dr: -2, dc:  1 },
+    ],
+
     // 前方左右斜め各3マス（V字）— ally用
     // diag_ally_3 は現時点では diag_v_ally_3 と同じ挙動（将来 diag_left/right に分離予定）
     diag_ally_3: [
@@ -201,16 +210,23 @@ diag_x_2: [
       { dr:  0, dc:  1 },
     ],
 
+    // 超BUTな夜：前方へ広がるコウモリ型6マス
+    // ■　■　■
+    // 　■　■
+    // 　　■
+    // 　　自
+    super_but_night_6: [
+      { dr: -3, dc: -2 }, { dr: -3, dc:  0 }, { dr: -3, dc:  2 },
+      { dr: -2, dc: -1 }, { dr: -2, dc:  1 },
+      { dr: -1, dc:  0 },
+    ],
+
+    // 旧名互換：既存参照が残っていても同じ挙動にする
     cross_tail_6: [
-  { dr: -2, dc:  0 }, // 2マス上
-  { dr: -1, dc:  0 }, // 1マス上
-
-  { dr:  0, dc: -1 }, // 左
-  { dr:  0, dc:  1 }, // 右
-
-  { dr:  1, dc: -1 }, // 左下
-  { dr:  1, dc:  1 }, // 右下
-],
+      { dr: -3, dc: -2 }, { dr: -3, dc:  0 }, { dr: -3, dc:  2 },
+      { dr: -2, dc: -1 }, { dr: -2, dc:  1 },
+      { dr: -1, dc:  0 },
+    ],
 
     // ── 敵専用攻撃レンジ（盤面固定方向：dr 方向はそのまま使用） ──
 
@@ -406,6 +422,25 @@ yuzuha: [
   ally_all:  'all',
   field_all: 'all',
 
+  // ランダム8マス（アズミULT「八岐大蛇」用）
+  // 発動ごとに盤面全体から重複なしで8マスを選ぶ。
+  random8: function () {
+    const cells = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 5; c++) cells.push({ row: r, col: c });
+    }
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = cells[i];
+      cells[i] = cells[j];
+      cells[j] = tmp;
+    }
+    return cells.slice(0, 8);
+  },
+  random_field_8: function () {
+    return FIELD_PRESETS_32.random8();
+  },
+
   // 固定十字：中央縦1列 + row2横一列
   // □□■□□
   // □□■□□
@@ -491,6 +526,8 @@ yuzuha: [
 
   // フィールド固定座標からセットを生成
   function cellsFromField32(cells) {
+    // random8 など、発動時に対象マスを決める動的レンジを許可
+    if (typeof cells === 'function') cells = cells();
     if (cells === 'all') return allCells();
     const s = new Set();
     cells.forEach(({ row, col }) => {
