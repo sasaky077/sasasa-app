@@ -12,6 +12,17 @@
   function _isRogueliteMode() { return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite'; }
   function _maxPartySize() { return _isRogueliteMode() ? 5 : 3; }
 
+
+  // 部隊編成画面専用画像
+  // レイチェルだけ partyImg を優先し、他キャラは従来通り upImg -> img を使う
+  function getPartySelectImg(chara) {
+    if (!chara) return '';
+    if (chara.id === 2 || chara.name === 'レイチェル') {
+      return chara.partyImg || chara.upImg || chara.img || '';
+    }
+    return chara.upImg || chara.img || '';
+  }
+
   // ============================================================
   // モーダル構築
   // ============================================================
@@ -405,7 +416,7 @@
       const entry = selected[i];
       if (entry) {
         const chara = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : []).find(c => c.id === entry.charaId);
-        const imgSrc = chara ? (chara.upImg || chara.img || '') : '';
+        const imgSrc = getPartySelectImg(chara);
         const name   = chara ? chara.name : '';
         return `
           <div class="ps-slot filled" onclick="_psRemoveSlot(${i})">
@@ -464,7 +475,7 @@
         + (isSelected ? ' selected' : '');
       card.innerHTML = `
         <div class="ps-chara-img-wrap">
-          <img src="${c.upImg || c.img}" onerror="this.style.opacity='0'">
+          <img src="${getPartySelectImg(c)}" onerror="this.style.opacity='0'">
           <div class="ps-rarity-dot ${c.rarity}"></div>
           <div class="ps-chara-check">✓</div>
         </div>
@@ -559,7 +570,7 @@
 
     document.getElementById('ps-chara-detail-box').innerHTML = `
       <div class="ps-detail-hero">
-        <img class="ps-detail-img" src="${chara.upImg || chara.img}" onerror="this.style.opacity='0'">
+        <img class="ps-detail-img" src="${getPartySelectImg(chara)}" onerror="this.style.opacity='0'">
         <div class="ps-detail-info">
           <div class="ps-detail-name">${chara.name}</div>
           <div class="ps-detail-rarity ${chara.rarity}">${RARITY_LABEL[chara.rarity] || ''}</div>

@@ -276,6 +276,48 @@
     return Math.max(1, Math.floor(atk * multiplier * rate));
   }
 
+  // 状態異常込みのATKを返す。
+  // atk_up / atk_down は effects[] の rate で倍率指定可能。
+  // 例: { type:'atk_up', rate:1.5 } / { type:'atk_down', rate:0.7 }
+  function getEffectiveAtk(unit) {
+    if (!unit) return 1;
+    let atk = Number(unit.atk || 1);
+    const effects = Array.isArray(unit.statusEffects) ? unit.statusEffects : [];
+
+    effects.forEach(e => {
+      if (!e) return;
+      if (e.type === 'atk_up') {
+        const rate = Number(e.rate != null ? e.rate : 1.5);
+        if (Number.isFinite(rate) && rate > 0) atk *= rate;
+      } else if (e.type === 'atk_down') {
+        const rate = Number(e.rate != null ? e.rate : 0.7);
+        if (Number.isFinite(rate) && rate > 0) atk *= rate;
+      }
+    });
+
+    return Math.max(1, Math.floor(atk));
+  }
+
+
+
+  // 背後攻撃判定。
+  // 敵は下方向へ進行するため、敵より上側のマスから攻撃した場合を「背後」とする。
+  function isBackstabAttack(source, target) {
+    if (!source || !target) return false;
+    if (source.side !== 'ally' || target.side !== 'enemy') return false;
+    return Number(source.row) < Number(target.row);
+  }
+
+  function applyBackstabBonus(dmg, source, target, skill) {
+    const rate = Number(skill && skill.backstabMultiplier != null ? skill.backstabMultiplier : 1);
+    if (!Number.isFinite(rate) || rate <= 1) return dmg;
+    if (!isBackstabAttack(source, target)) return dmg;
+
+    const boosted = Math.max(1, Math.round(dmg * rate));
+    _log(`${source.name} の背後攻撃！ ダメージ ${rate}倍`);
+    return boosted;
+  }
+
 function pickRandomBoardCells(count) {
   const cells = [];
 
@@ -843,7 +885,7 @@ function _queueDelayedAttack(ally, skill) {
     id: uid(),
     ownerUid: ally._uid,
     ownerName: ally.name,
-    ownerAtk: ally.atk,
+    ownerAtk: getEffectiveAtk(ally),
 
     skillId: skill.id,
     skillName: skill.name,
@@ -1021,7 +1063,8 @@ if (stype === 'repeat_skill') {
           const hasDrain = (copiedSkill.effects || []).some(e => e.type === 'drain');
 
           targets.forEach(enemy => {
-            let dmg = calcDamage(ally.atk, copiedSkill.multiplier, enemy);
+            let dmg = calcDamage(getEffectiveAtk(ally), copiedSkill.multiplier, enemy);
+            dmg = applyBackstabBonus(dmg, ally, enemy, copiedSkill);
 
             if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
               dmg = Math.round(dmg * _bs._rl_skillDmgMult);
@@ -1048,7 +1091,8 @@ if (stype === 'repeat_skill') {
         } else {
           targets.forEach(enemy => {
             if ((copiedSkill.multiplier || 0) > 0) {
-              let dmg = calcDamage(ally.atk, copiedSkill.multiplier, enemy);
+              let dmg = calcDamage(getEffectiveAtk(ally), copiedSkill.multiplier, enemy);
+            dmg = applyBackstabBonus(dmg, ally, enemy, copiedSkill);
 
               if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
                 dmg = Math.round(dmg * _bs._rl_skillDmgMult);
@@ -1180,7 +1224,8 @@ if (stype === 'repeat_skill') {
   _log(`${ally.name}：ランダム攻撃は空振りした`);
   } else {
     targets.forEach(enemy => {
-      let dmg = calcDamage(ally.atk, skill.multiplier || 7.0, enemy);
+      let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier || 7.0, enemy);
+            dmg = applyBackstabBonus(dmg, ally, enemy, skill);
 
       // ローグライト: スキルダメージ補正
       if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
@@ -1209,7 +1254,8 @@ if (stype === 'repeat_skill') {
         const hasDrain = (skill.effects || []).some(e => e.type === 'drain');
 
         targets.forEach(enemy => {
-          let dmg = calcDamage(ally.atk, skill.multiplier, enemy);
+          let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier, enemy);
+            dmg = applyBackstabBonus(dmg, ally, enemy, skill);
           // ─ ローグライト: スキルダメージ補正 ─
           if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
             const _dmgBefore = dmg;
@@ -1238,7 +1284,8 @@ if (stype === 'repeat_skill') {
       } else {
         targets.forEach(enemy => {
           if ((skill.multiplier || 0) > 0) {
-            let dmg = calcDamage(ally.atk, skill.multiplier, enemy);
+            let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier, enemy);
+            dmg = applyBackstabBonus(dmg, ally, enemy, skill);
             // ─ ローグライト: スキルダメージ補正 ─
             if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
               const _dmgBefore = dmg;
@@ -1555,11 +1602,11 @@ return true;
   function _applyEffects(effects, target, source) {
     if (!effects || effects.length === 0) return;
     const FORCED_MOVE_TYPES = new Set([
-      'pull_1', 'pull_2',
-      'push_1', 'push_2',
-      'shift_right_1', 'shift_right_2',
-      'shift_left_1',  'shift_left_2',
-    ]);
+  'pull_1', 'pull_2',
+  'push_1', 'push_2', 'push_3',
+  'shift_right_1', 'shift_right_2',
+  'shift_left_1',  'shift_left_2',
+]);
     effects.forEach(eff => {
       // ── 強制移動エフェクト ────────────────────────────────────
       if (FORCED_MOVE_TYPES.has(eff.type)) {
@@ -1615,6 +1662,27 @@ return true;
         return;
       }
 
+      // ── poison エフェクト：敵ターン開始時に継続ダメージ ──────
+      // rate は sourceAtk に対する倍率。例 rate:0.25 なら使用者ATKの25%/ターン。
+      if (eff.type === 'poison') {
+        const hitRate = eff.hit != null ? eff.hit : 100;
+        if (Math.random() * 100 > hitRate) {
+          _log(`${target.name} に毒 — 外れ`);
+          return;
+        }
+        if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+        target.statusEffects.push({
+          type: 'poison',
+          duration: eff.duration || 2,
+          rate: eff.rate != null ? Number(eff.rate) : 0.25,
+          sourceAtk: source ? getEffectiveAtk(source) : 1,
+          sourceName: source ? source.name : '毒',
+          sourceUid: source ? source._uid : null,
+        });
+        _log(`${target.name} は毒に侵された（${eff.duration || 2}T）`);
+        return;
+      }
+
       const hitRate = eff.hit != null ? eff.hit : 100;
       if (Math.random() * 100 > hitRate) {
         _log(`${target.name} に ${eff.type} — 外れ`);
@@ -1623,6 +1691,7 @@ return true;
       target.statusEffects.push({
         type:     eff.type,
         duration: eff.duration || 1,
+        rate:     eff.rate,
       });
       _log(`${target.name} に ${eff.type} を付与（${eff.duration || 1}T）`);
     });
@@ -2118,6 +2187,11 @@ function doBossLineAttack(boss) {
     _checkWinLose();
     if (_bs.result) { _renderUI(); return; }
 
+    // 敵ターン開始時：毒の継続ダメージ
+    _applyPoisonTicks();
+    _checkWinLose();
+    if (_bs.result) { _renderUI(); return; }
+
     // ステージ設定に応じた敵スポーン（ordered 作成前に呼び、即行動させる）
     _spawnEnemyFromConfig();
 
@@ -2314,7 +2388,7 @@ function doBossLineAttack(boss) {
     if (rangeTargets.length > 0) {
       // 射程内に味方がいる → HPが最も少ない味方を優先攻撃
       const target = rangeTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-      const dmg = calcDamage(enemy.atk, 1.0, target);
+      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
@@ -2371,7 +2445,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     const afterMoveTargets = getEnemyAttackTargets(enemy);
     if (afterMoveTargets.length > 0) {
       const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-      const dmg = calcDamage(enemy.atk, 1.0, target);
+      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
@@ -2398,11 +2472,44 @@ if (canEnemyAttackAllyCore(enemy)) {
       if (ally.hp <= 0) return;
       const key = ally.row + '-' + ally.col;
       if (cells.has(key)) {
-        const dmg = Math.floor(boss.atk * BOSS_WARN_RATE);
+        const dmg = Math.floor(getEffectiveAtk(boss) * BOSS_WARN_RATE);
         applyDamage(ally, dmg, boss);
       }
     });
     _bs.bossWarning = false;
+  }
+
+  // 毒の継続ダメージ処理
+  // 敵ターン開始時に、poison が付与された敵へ使用者ATK × rate のダメージを与える。
+  function _applyPoisonTicks() {
+    if (!_bs || !_bs.enemies) return;
+
+    _bs.enemies.forEach(enemy => {
+      if (!enemy || enemy.hp <= 0) return;
+      const effects = Array.isArray(enemy.statusEffects) ? enemy.statusEffects : [];
+      const poisons = effects.filter(e => e && e.type === 'poison' && (e.duration || 0) > 0);
+      if (poisons.length === 0) return;
+
+      poisons.forEach(poison => {
+        const sourceAtk = Number(poison.sourceAtk || 1);
+        const rate = Number(poison.rate != null ? poison.rate : 0.25);
+        const dmg = Math.max(1, Math.floor(sourceAtk * rate));
+        const source = {
+          _uid: poison.sourceUid || null,
+          name: poison.sourceName || '毒',
+          side: 'ally',
+          row: enemy.row,
+          col: enemy.col,
+        };
+        applyDamage(enemy, dmg, source, {
+          id: 'poison',
+          name: '毒',
+          isUltimate: false,
+          hitStyle: 'poison',
+        });
+        _log(`${enemy.name} は毒で ${dmg} ダメージを受けた`);
+      });
+    });
   }
 
   // 状態異常ターン経過処理
@@ -2472,20 +2579,19 @@ if (canEnemyAttackAllyCore(enemy)) {
   // ローグライト終了通知ヘルパー（二重呼び出し防止）
   // ============================================================
   function _notifyRogueliteBattleEnd(result) {
-    if (!_bs || typeof _bs._rl_onBattleEnd !== 'function') return;
-    const cb = _bs._rl_onBattleEnd;
-    _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
-    setTimeout(() => {
-      // バトルUI専用要素（link-bar / roster-panel 等）を確実に除去し、
-      // ホーム共通UI（bottom-nav-shared / global-user-frame）を復帰させる
-      if (typeof window.cleanupBattle32Overlays === 'function') {
-        window.cleanupBattle32Overlays({ restoreCommonUi: true });
-      } else if (typeof window.closeBattle32UI === 'function') {
-        window.closeBattle32UI();
-      }
-      cb({ result });
-    }, 800);
-  }
+  if (!_bs || typeof _bs._rl_onBattleEnd !== 'function') return;
+
+  const cb = _bs._rl_onBattleEnd;
+  _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
+
+  setTimeout(() => {
+    // ローグライト中はここで Battle32 UI を閉じない。
+    // ここで closeBattle32UI / cleanupBattle32Overlays を呼ぶと、
+    // VICTORY表示前にステージ選択・共通UIが復帰して一瞬見える。
+    // 画面を隠すタイミングは RogueliteController 側に任せる。
+    cb({ result });
+  }, 800);
+}
 
   // ============================================================
   // 勝敗判定
