@@ -14,6 +14,7 @@
  // ============================================================
  const ROOT_ID = 'battle32-root';
  const STYLE_ID = 'battle32-ui-style';
+ const SUMMON_LINK_COST = 4;
 
  const PHASE_LABEL = {
  skill: 'SKILL PHASE',
@@ -108,14 +109,20 @@ let _itemTargetUid = null;
  }
 
  function _getSkillLinkCostForUnit(bs, allyUid, skill) {
-   if (!skill) return 0;
-   if (window.Battle32 && typeof window.Battle32.getLinkCostForAction === 'function') {
-     const type = skill.isUltimate ? 'ult' : 'skill';
-     const n = Number(window.Battle32.getLinkCostForAction(type, allyUid, skill.id));
-     if (Number.isFinite(n)) return Math.max(0, n);
-   }
-   return _getSkillLinkCost(skill);
- }
+  if (!skill) return 0;
+
+  if (window.Battle32 && typeof window.Battle32.getLinkCostForAction === 'function') {
+    const type = skill.isUltimate ? 'ult' : 'skill';
+    const n = Number(window.Battle32.getLinkCostForAction(type, allyUid, skill.id));
+
+    // 99などの異常値・使用不可用ダミー値は、表示上は本来のコストに戻す
+    if (Number.isFinite(n) && n >= 0 && n < 90) {
+      return n;
+    }
+  }
+
+  return _getSkillLinkCost(skill);
+}
 
  function _getNormalSkillLinkRange(ally) {
    const costs = (ally && ally.skills || [])
@@ -290,6 +297,95 @@ function unitElementIcon(element) {
 function unitElementClass(element) {
   const map = { chaos: 'chaos', logos: 'logos', mystis: 'mystis' };
   return map[element] || 'none';
+}
+
+
+function b32EscapeHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function b32SkillTypeLabel(skill) {
+  const map = {
+    attack: '攻撃',
+    heal: '回復',
+    buff: '強化',
+    debuff: '弱体',
+    repeat_skill: '再演',
+    delayed_attack: '予約攻撃',
+    random_cell_attack: 'ランダム攻撃'
+  };
+  return map[skill?.type] || skill?.type || '—';
+}
+
+function b32RangeLabel(range) {
+  const map = {
+    self: '自身',
+    ally_all: '味方全体',
+    front1: '前方1マス',
+    front2: '前方2マス',
+    front3: '前方3マス',
+    pierce3: '前方直線3マス',
+    around8: '周囲1マス',
+    around24: '周囲2マス',
+    diag_x_1: 'X字1マス',
+    diag_x_2: 'X字2マス',
+    side_lr: '左右1マス',
+    field_all: '盤面全体',
+    field_cross_center: '中央十字',
+    fan_2row_3_ally: '前方扇状',
+    super_but_night_6: '前方特殊範囲'
+  };
+  return map[range] || range || '—';
+}
+
+function b32BuildSkillDetailHtml(skill, ally) {
+  if (!skill) return '';
+
+  const linkCost = _getSkillLinkCostForUnit(_bs(), ally?._uid, skill);
+  const shinkiCost = skill.isUltimate ? (skill.shinkiCost || ally?.shinkiMax || 3) : (skill.shinkiCost || 0);
+  const powerText = Number(skill.multiplier || 0) > 0 ? `ATK×${skill.multiplier}` : 'ダメージなし';
+  const hitText = skill.hit != null ? `${skill.hit}%` : '100%';
+  const desc = skill.desc || '説明なし';
+  const badge = skill.isUltimate ? 'ULT' : 'SKILL';
+
+  return `
+    <div class="b32-roster-skill-detail ${skill.isUltimate ? 'is-ult' : 'is-skill'}">
+      <div class="b32-roster-skill-detail-head">
+        <span class="b32-roster-skill-badge">${badge}</span>
+        <strong>${b32EscapeHtml(skill.name || '—')}</strong>
+      </div>
+      <div class="b32-roster-skill-detail-meta">
+        <span>LINK ${linkCost}</span>
+        ${skill.isUltimate ? `<span>神気 ${shinkiCost}</span>` : ''}
+        <span>${b32EscapeHtml(b32SkillTypeLabel(skill))}</span>
+        <span>${b32EscapeHtml(b32RangeLabel(skill.range))}</span>
+        <span>命中 ${hitText}</span>
+        <span>${powerText}</span>
+      </div>
+      <div class="b32-roster-skill-detail-desc">${b32EscapeHtml(desc)}</div>
+    </div>
+  `;
+}
+
+function b32BuildRosterSkillDetailsHtml(chara, ally) {
+  const skills = (chara?.skills || []);
+  if (!skills.length) {
+    return '<div class="b32-roster-skill-empty">スキル情報なし</div>';
+  }
+
+  const normalSkills = skills.filter(s => !s.isUltimate);
+  const ultSkills = skills.filter(s => s.isUltimate);
+  return `
+    <div class="b32-roster-skill-detail-list">
+      ${normalSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('')}
+      ${ultSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('')}
+    </div>
+  `;
 }
 
 function getUnitUiScale(unit, key) {
@@ -4582,15 +4678,13 @@ if (listEl) {
     if (r) {
       const c = r.charDef || {};
       const img = c.panelImg || c.upImg || c.img || '';
-      const rarity = (r.rarity || c.rarity || 'r').toUpperCase();
-      const cost = r.summonCost || 1;
+      const cost = SUMMON_LINK_COST;
 
       const hp = c.hp || c.stats?.HP || 0;
       const atk = c.atk || c.stats?.ATK || 0;
       const role = c.role || '—';
 
-      const firstSkill = (c.skills || []).find(s => !s.isUltimate);
-      const ultSkill = (c.skills || []).find(s => s.isUltimate);
+      const skillDetailsHtml = b32BuildRosterSkillDetailsHtml(c, r.unit || c);
 
       const statusLabel =
         r.status === 'standby' ? '召喚可能' :
@@ -4610,7 +4704,6 @@ if (listEl) {
     >×</button>
 
     <div class="b32-roster-info-card">
-      <div class="b32-roster-info-rarity">${rarity}</div>
       <div class="b32-roster-info-img-wrap">
         ${img
           ? `<img class="b32-roster-info-img" src="${img}" alt="" onerror="this.style.display='none'">`
@@ -4627,11 +4720,7 @@ if (listEl) {
         ${role}　/　HP ${hp}　ATK ${atk}
       </div>
 
-      <div class="b32-roster-info-skill">
-        <span>スキル</span>
-        <strong>${firstSkill ? firstSkill.name : '—'}</strong>
-        <em>${firstSkill ? firstSkill.desc || '' : ''}</em>
-      </div>
+      ${skillDetailsHtml}
 
       <div class="b32-roster-info-status">
         ${statusLabel}
@@ -4830,12 +4919,12 @@ if (listEl) {
    if (_summonRosterId) {
      const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
      if (selectedRoster) {
-       const cost = Number(selectedRoster.summonCost || 1);
+       const cost = SUMMON_LINK_COST;
        summonSubText = _summonMode ? '位置選択中' : '召喚可能';
        canSummon = inSkillPhase && _canActByLink(bs, cost);
      }
    } else if (standby.length > 0) {
-     const affordable = standby.some(r => _canActByLink(bs, Number(r.summonCost || 1)));
+     const affordable = standby.some(r => _canActByLink(bs, SUMMON_LINK_COST));
      summonSubText = '待機選択';
      canSummon = inSkillPhase && affordable;
    } else {
@@ -5151,7 +5240,7 @@ function applyBattle32ViewportClass(root) {
      const isStandby = r.status === 'standby';
      const isDeployed = r.status === 'deployed';
      const isDead = r.status === 'dead';
-     const linkCost = r.summonCost || 1;
+     const linkCost = SUMMON_LINK_COST;
      const canSummon = isStandby && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
     const isActionSelected =
   isDeployed &&
@@ -5367,7 +5456,7 @@ window._b32OnBottomSummonTap = function () {
     return;
   }
 
-  const cost = Number(r.summonCost || 1);
+  const cost = SUMMON_LINK_COST;
   if (!_canActByLink(bs, cost)) {
     const guide = document.getElementById('b32-bottom-guide');
     if (guide) guide.textContent = 'LINKが不足しています。';

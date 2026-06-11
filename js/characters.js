@@ -25,10 +25,10 @@ const CHARACTERS = [
   // ══════════════════════════════════════════════════════════════
 
   // ── id:12 アンジェリカ（バランス）────────────────────────────────
-  // 安定した攻撃と自己防御。縛りと広範囲打撃。
+  // 自己防御。縛りと広範囲打撃。
   { id: 12, name: 'アンジェリカ', rarity: 'ur',
     element: 'mystis',
-    role: 'バランス',
+    role: '回復寄り',
     moveType: 'gold',
     costMax: 12,
     costStart: 5,
@@ -84,7 +84,7 @@ const CHARACTERS = [
   // スタン・ATKデバフで敵を妨害する妨害役。
   { id: 2, name: 'レイチェル', rarity: 'r',
     element: 'chaos',
-  role: '速度寄り',
+  role: '妨害寄り',
   moveType: 'shigure',
     costMax: 10,
     costStart: 6,
@@ -104,7 +104,7 @@ const CHARACTERS = [
     favScale: 0.85, favOffsetY: -25,
     skills: [
       { id: 's1',
-        name: 'ばぁっ',
+        name: 'イケてるNOISE',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -112,11 +112,11 @@ const CHARACTERS = [
         multiplier: 1.5,
         range: 'fan_2row_3_ally',
         effects: [],
-        desc: '' },
+        desc: '前方へ広がる範囲の敵にダメージを与える。' },
 
       {
   id: 'ult',
-  name: '超BUTな夜',
+  name: '超BATな夜',
   linkCost: 5,
   isUltimate: true,
   hit: 100,
@@ -134,7 +134,7 @@ const CHARACTERS = [
   // 敵を縛り、ペースを握る。
   { id: 3, name: 'アズミ', rarity: 'r',
     element: 'chaos',
-    role: '耐久寄り',
+    role: '妨害寄り',
     moveType: 'gold',
     costMax: 14,
     costStart: 5,
@@ -153,17 +153,17 @@ const CHARACTERS = [
     favScale: 1.0, favOffsetY: 10,
     skills: [
       { id: 's1',
-        name: '蛇睨み',
-        linkCost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 0.8,
-        range: 'front1',
-        effects: [
-          { type: 'stun', target: 'enemy', hit: 70, duration: 1 }
-        ],
-        desc: '目の前の敵に小ダメージを与え、1ターン行動不能にする。' },
+      name: '蛇睨み',
+     linkCost: 3,
+  isUltimate: false,
+  hit: 100,
+  type: 'debuff',
+  multiplier: 0.0,
+  range: 'front_all_rows_ally',
+  effects: [
+    { type: 'jittai', target: 'enemy', hit: 100, duration: 2 }
+  ],
+  desc: '自分より前方にいるすべての怪異を2ターン実体化させる。' },
 
       { id: 'ult',
         name: '白鱗呑天',
@@ -177,13 +177,13 @@ const CHARACTERS = [
           { type: 'stun', target: 'enemy', hit: 50, duration: 1 }
         ],
         hitStyle: 'multi',
-        desc: '前方直線3マスの敵にダメージを与え、1ターン行動不能にする。' }
+        desc: '前方直線3マスの敵にダメージを与え、1ターンスタンさせる。' }
     ]},
 
   // ── id:7 ルナ
 { id: 7, name: 'ルナ', rarity: 'r',
     element: 'logos',
-  role: '速度寄り',
+  role: 'バランス寄り',
   moveType: 'miyu',
     costMax: 10,
     costStart: 5,
@@ -230,7 +230,7 @@ const CHARACTERS = [
   // ── id:1 エリ
 { id: 1, name: 'エリ', rarity: 'r',
     element: 'mystis',
-  role: '速度寄り',
+  role: 'バランス寄り',
   moveType: 'eri',
     costMax: 14,
     costStart: 5,
@@ -275,7 +275,7 @@ const CHARACTERS = [
   // 背後からの攻撃で大ダメージを狙う暗殺型。
   { id: 13, name: 'チサカ', rarity: 'r',
     element: 'logos',
-    role: '暗殺寄り',
+    role: 'テクニック寄り',
     moveType: 'chisaka',
     costMax: 12,
     costStart: 6,
@@ -307,7 +307,7 @@ const CHARACTERS = [
 
       { id: 'ult',
         name: '無音',
-        linkCost: 5,
+        linkCost: 4,
         isUltimate: true,
         hit: 100,
         type: 'attack',
@@ -323,11 +323,11 @@ const CHARACTERS = [
   // SR
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:4 ユズハ（ギャル寄り）───────────────────────────────────
+  // ── id:4 キティ───────────────────────────────────
   // 予知系。数ターン先に攻撃を予約する感じ。
-  { id: 4, name: 'ユズハ', rarity: 'sr',
+  { id: 4, name: 'キティ', rarity: 'sr',
     element: 'mystis',
-    role: '火力寄り',
+    role: 'テクニック寄り',
     moveType: 'yuzuha',
     costMax: 14,
     costStart: 0,
@@ -350,7 +350,7 @@ const CHARACTERS = [
 },
     skills: [
       { id: 's1',
-        name: 'マジ卍',
+        name: 'もう無理～',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -362,7 +362,7 @@ const CHARACTERS = [
         desc: '自分を中心にX字の範囲にダメージ' },
 
       { id: 'ult',
-        name: 'マジ十字',
+        name: '明日やる！',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
@@ -379,7 +379,7 @@ const CHARACTERS = [
 // ── id:15 アキ
 { id: 15, name: 'アキ', rarity: 'sr',
     element: 'chaos',
-  role: '速度・支援寄り',
+  role: '妨害寄り',
   moveType: 'aki',
     costMax: 12,
     costStart: 7,
@@ -441,7 +441,7 @@ const CHARACTERS = [
   // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
   { id: 19, name: 'カンナ', rarity: 'sr',
     element: 'logos',
-    role: '制御・妨害寄り',
+    role: '妨害寄り',
     moveType: 'silver',
     costMax: 14,
     costStart: 5,
@@ -493,7 +493,7 @@ const CHARACTERS = [
   // ── id:20 マアヤ（支援寄り）──────────────────────────────────
   { id: 20, name: 'マアヤ', rarity: 'sr',
     element: 'logos',
-    role: '支援・毒寄り',
+    role: '支援寄り',
     moveType: 'shigure',
     costMax: 10,
     costStart: 6,
@@ -522,7 +522,7 @@ const CHARACTERS = [
         effects: [
           { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.3 }
         ],
-        desc: '薬剤を投与し、味方全体のATKを1ターン上昇させる。' },
+        desc: '味方全体のATKを1ターン上昇させる。' },
 
       { id: 'ult',
         name: 'Toxic Mist',
@@ -684,7 +684,7 @@ const CHARACTERS = [
         desc: '正面のマスに中ダメージ' },
 
       { id: 'ult',
-        name: 'ざ・りっぱー！',
+        name: 'りっぱー！',
         linkCost: 5,
         isUltimate: true,
         hit: 100,

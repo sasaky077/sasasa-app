@@ -603,6 +603,38 @@ yuzuha: [
       return s;
     }
 
+    function getCellsFromRange32(user, range) {
+  // col_center_32: ユーザーの列を縦全体（特殊処理）
+  if (range === 'col_center_32') {
+    const s = new Set();
+    if (user && user.col != null) {
+      for (let r = 0; r < 8; r++) {
+        if (isValidCell(r, user.col)) s.add(`${r}-${user.col}`);
+      }
+    }
+    return s;
+  }
+
+  // front_all_rows_ally: 自分より前方の全マス
+  // 味方は上方向が前方なので、row 0 〜 user.row - 1 の全列
+  if (range === 'front_all_rows_ally') {
+    const s = new Set();
+    if (user && user.row != null) {
+      for (let r = 0; r < user.row; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (isValidCell(r, c)) s.add(`${r}-${c}`);
+        }
+      }
+    }
+    return s;
+  }
+
+  const normalized = normalizeRange32(range);
+  if (!normalized) return new Set();
+  if (normalized.origin === 'field') return cellsFromField32(normalized.cells);
+  return cellsFromRelative32(user, normalized.cells || []);
+}
+
     const normalized = normalizeRange32(range);
     if (!normalized) return new Set();
     if (normalized.origin === 'field') return cellsFromField32(normalized.cells);
