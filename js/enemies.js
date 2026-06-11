@@ -10,6 +10,7 @@ const ENEMIES = [
   {
     id: 'enemy_01',
     name: '??????',
+    element: 'chaos',
     img:   'images/enemy_01.webp',
     upImg: 'images/enemy_01_up.webp',
     battleImg: 'images/enemy_01_battle.webp',
@@ -247,6 +248,7 @@ const ENEMIES = [
   {
     id: 'enemy_mask',
     name: '仮面の従者',
+    element: 'chaos',
     img:   'images/enemy_mask_battle.webp',
     upImg: 'images/enemy_mask_battle.webp',
     battleImg: 'images/enemy_mask_battle.webp',
@@ -366,6 +368,7 @@ const ENEMIES = [
   {
     id: 'enemy_02',
     name: '??????',
+    element: 'chaos',
     img:   'images/enemy_02.webp',
     upImg: 'images/enemy_02_up.webp',
     battleImg: 'images/enemy_02_battle.webp',
@@ -399,6 +402,7 @@ const ENEMIES = [
   {
     id: 'enemy_03',
     name: '??????',
+    element: 'chaos',
     img:   'images/enemy_03.webp',
     upImg: 'images/enemy_03_up.webp',
     battleImg: 'images/enemy_03_battle.webp',
@@ -435,6 +439,7 @@ const ENEMIES = [
   {
     id: 'enemy_02b',
     name: '??????',
+    element: 'chaos',
     img:       'images/enemy_02b_battle.webp',
     upImg:     'images/enemy_02b_battle.webp',
     battleImg: 'images/enemy_02b_battle.webp',
@@ -459,6 +464,7 @@ const ENEMIES = [
   {
     id: 'enemy_02a',
     name: '??????',
+    element: 'chaos',
     img:       'images/enemy_02a_battle.webp',
     upImg:     'images/enemy_02a_battle.webp',
     battleImg: 'images/enemy_02a_battle.webp',
@@ -501,6 +507,7 @@ const TEST_ENEMIES = [];
 TEST_ENEMIES.push({
   id: 'enemy_test_static_jittai',
   name: 'TEST_FIXED',
+    element: 'chaos',
 
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
@@ -538,6 +545,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_pierce_front',
   name: 'TEST_FRONT',
+    element: 'chaos',
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
   battleImg: 'images/enemy_test_battle.webp',
@@ -554,6 +562,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_pierce_mid',
   name: 'TEST_MID',
+    element: 'chaos',
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
   battleImg: 'images/enemy_test_battle.webp',
@@ -570,6 +579,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_pierce_back',
   name: 'TEST_BACK',
+    element: 'chaos',
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
   battleImg: 'images/enemy_test_battle.webp',
@@ -587,6 +597,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_damage_20',
   name: 'TEST_DAMAGE_20',
+    element: 'chaos',
 
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
@@ -624,6 +635,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_damage_80',
   name: 'TEST_DAMAGE_80',
+    element: 'chaos',
 
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
@@ -662,6 +674,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_reactive',
   name: 'TEST_REACTIVE',
+    element: 'chaos',
 
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
@@ -700,6 +713,7 @@ TEST_ENEMIES.push({
 TEST_ENEMIES.push({
   id: 'enemy_test_healer',
   name: 'TEST_HEALER',
+    element: 'chaos',
 
   img: 'images/enemy_test.webp',
   upImg: 'images/enemy_test.webp',
@@ -739,6 +753,200 @@ TEST_ENEMIES.push({
   ],
 
   actionIdx: 0
+});
+
+// ============================================================
+// ローグライト専用怪異マスタ
+// 属性：chaos / logos / mystis
+//   chaos  = 終末世界で自然発生した魂
+//   logos  = 現実世界由来の転生者・研究体の魂
+//   mystis = 天界・神性由来の魂
+// ============================================================
+
+// ── Stage 1（2体）──────────────────────────────────────────
+
+ENEMIES.push({
+  id: 'rl_chaos_walker',
+  name: '??????',
+  element: 'chaos',
+  img:       'images/enemy_02a_battle.webp',
+  upImg:     'images/enemy_02a_battle.webp',
+  battleImg: 'images/enemy_02a_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 700, hpMax: 700,
+  atk: 190,
+  moveType:    'enemy_zako_straight',
+  attackRange: 'enemy_attack_front',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_chaos_slant',
+  name: '??????',
+  element: 'chaos',
+  img:       'images/enemy_02a_battle.webp',
+  upImg:     'images/enemy_02a_battle.webp',
+  battleImg: 'images/enemy_02a_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 650, hpMax: 650,
+  atk: 180,
+  moveType:    'enemy_zako_diag',
+  attackRange: 'enemy_attack_cross',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+// ── Stage 2（3体）──────────────────────────────────────────
+
+ENEMIES.push({
+  id: 'rl_chaos_walker_plus',
+  name: '??????',
+  element: 'chaos',
+  img:       'images/enemy_02a_battle.webp',
+  upImg:     'images/enemy_02a_battle.webp',
+  battleImg: 'images/enemy_02a_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 900, hpMax: 900,
+  atk: 250,
+  moveType:    'enemy_zako_straight',
+  attackRange: 'enemy_attack_front',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_logos_ranged',
+  name: '??????',
+  element: 'logos',
+  img:       'images/enemy_02b_battle.webp',
+  upImg:     'images/enemy_02b_battle.webp',
+  battleImg: 'images/enemy_02b_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 800, hpMax: 800,
+  atk: 240,
+  moveType:    'enemy_zako_straight',
+  attackRange: 'enemy_attack_line',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_mystis_caster',
+  name: '??????',
+  element: 'mystis',
+  img:       'images/enemy_02b_battle.webp',
+  upImg:     'images/enemy_02b_battle.webp',
+  battleImg: 'images/enemy_02b_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 750, hpMax: 750,
+  atk: 230,
+  moveType:    'enemy_zako_diag',
+  attackRange: 'enemy_attack_cross',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+// ── Stage 3（4体）──────────────────────────────────────────
+
+ENEMIES.push({
+  id: 'rl_chaos_elite',
+  name: '??????',
+  element: 'chaos',
+  img:       'images/enemy_02a_battle.webp',
+  upImg:     'images/enemy_02a_battle.webp',
+  battleImg: 'images/enemy_02a_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 1100, hpMax: 1100,
+  atk: 310,
+  moveType:    'enemy_zako_straight',
+  attackRange: 'enemy_attack_front',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_logos_elite',
+  name: '??????',
+  element: 'logos',
+  img:       'images/enemy_02b_battle.webp',
+  upImg:     'images/enemy_02b_battle.webp',
+  battleImg: 'images/enemy_02b_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 1050, hpMax: 1050,
+  atk: 300,
+  moveType:    'enemy_zako_diag',
+  attackRange: 'enemy_attack_cross',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_mystis_elite',
+  name: '??????',
+  element: 'mystis',
+  img:       'images/enemy_02b_battle.webp',
+  upImg:     'images/enemy_02b_battle.webp',
+  battleImg: 'images/enemy_02b_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 1000, hpMax: 1000,
+  atk: 295,
+  moveType:    'enemy_zako_diag',
+  attackRange: 'enemy_attack_cross',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_chaos_ranged',
+  name: '??????',
+  element: 'chaos',
+  img:       'images/enemy_02a_battle.webp',
+  upImg:     'images/enemy_02a_battle.webp',
+  battleImg: 'images/enemy_02a_battle.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 950, hpMax: 950,
+  atk: 290,
+  moveType:    'enemy_zako_straight',
+  attackRange: 'enemy_attack_line',
+  randomStartPosition: true,
+  fixedPosition: false,
+  phase: 1,
+  status: [],
+  statusList: [],
 });
 
 // TEST_ENEMIES を ENEMIES にマージ（getEnemyById から参照可能にする）

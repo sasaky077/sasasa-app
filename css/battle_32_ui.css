@@ -5234,3 +5234,224 @@
   padding-bottom: var(--b32-actions-h, 90px) !important;
 }
 
+
+
+/* ============================================================
+   キャラパネル：レアリティ非表示 → 属性アイコン表示
+   ============================================================ */
+#battle32-root .b32-party-rarity {
+  display: none !important;
+}
+
+#battle32-root .b32-party-img-wrap {
+  position: relative;
+}
+
+#battle32-root .b32-party-element-icon {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 50%;
+  z-index: 8;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+  pointer-events: none;
+}
+
+/* ============================================================
+   PATCH: 盤面ユニット足元UIの属性アイコン暴走防止
+   HTML順が HPバー → 属性アイコン のため、row-reverseで
+   表示は「属性アイコン → HPバー」にする。
+   ============================================================ */
+#battle32-root .b32-unit-foot-ui {
+  position: absolute !important;
+  bottom: 0px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  width: calc(var(--cell-size) * 1.02) !important;
+  height: 10px !important;
+  z-index: 9 !important;
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-unit-foot-ui .b32-hp-bar-wrap {
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: calc(var(--cell-size) * 0.68) !important;
+  height: 3px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+#battle32-root .b32-unit.ally .b32-unit-foot-ui .b32-hp-bar-wrap {
+  height: 2px !important;
+}
+
+#battle32-root .b32-foot-element-icon {
+  width: 10px !important;
+  height: 10px !important;
+  max-width: 10px !important;
+  max-height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  object-fit: contain !important;
+  border-radius: 50% !important;
+  flex: 0 0 10px !important;
+  display: block !important;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+  pointer-events: none !important;
+}
+
+/* ボスは足元HPバー非表示だが、属性アイコンだけ巨大化しないよう明示 */
+#battle32-root .b32-unit.boss .b32-unit-foot-ui {
+  display: none !important;
+}
+
+/* キャラパネル左上：レアリティを消して属性アイコンのみ表示 */
+#battle32-root .b32-party-rarity {
+  display: none !important;
+}
+
+#battle32-root .b32-party-img-wrap {
+  position: relative !important;
+}
+
+#battle32-root .b32-party-element-icon {
+  position: absolute !important;
+  top: 3px !important;
+  left: 4px !important;
+  width: 16px !important;
+  height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  object-fit: contain !important;
+  border-radius: 50% !important;
+  z-index: 8 !important;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+  pointer-events: none !important;
+}
+
+
+/* ============================================================
+   PATCH: ローグライト下部5枚 左上表示をレアリティ → 属性アイコンへ
+   ============================================================ */
+#b32-roster-panel .b32-roster-rarity {
+  display: none !important;
+}
+
+#b32-roster-panel .b32-roster-img-wrap {
+  position: relative !important;
+}
+
+#b32-roster-panel .b32-roster-element-icon {
+  position: absolute !important;
+  top: -1px !important;
+  left: -1px !important;
+  width: 17px !important;
+  height: 17px !important;
+  max-width: 17px !important;
+  max-height: 17px !important;
+  object-fit: contain !important;
+  border-radius: 50% !important;
+  z-index: 8 !important;
+  pointer-events: none !important;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+}
+
+/* ローグライト下部キャラパネル：カード間を詰める */
+#b32-roster-panel {
+  gap: -2px !important;
+  column-gap: -2px !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+
+/* ローグライト下部キャラパネル：カード間を本当に詰める */
+#b32-roster-panel {
+  width: auto !important;
+  max-width: calc(100vw - 8px) !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  column-gap: 3px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* ローグライト下部キャラカード：4枚時の横幅調整 */
+#b32-roster-panel {
+  width: auto !important;
+  max-width: calc(100vw - 16px) !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#b32-roster-panel .b32-roster-card {
+  width: 84px !important;
+  min-width: 84px !important;
+  box-sizing: border-box !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+
+#b32-roster-panel .b32-roster-img-wrap {
+  width: 100% !important;
+  height: 60px !important;
+}
+
+/* ローグライト下部キャラパネル：画面幅に合わせて4枚を広げる */
+#b32-roster-panel {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+
+  width: calc(100vw - 24px) !important;
+  max-width: 420px !important;
+
+  display: flex !important;
+  justify-content: center !important;
+  gap: 5px !important;
+
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* JSインラインstyleを上書き：固定幅ではなく均等伸長 */
+#b32-roster-panel > div[onclick^="_b32OnRosterTap"] {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+
+  box-sizing: border-box !important;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
+/* カードは横に広げるが、キャラ画像枠は高さキープ・正方形寄り */
+#b32-roster-panel .b32-roster-img-wrap {
+  width: 64px !important;
+  height: 64px !important;
+  max-width: 64px !important;
+  min-width: 64px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  flex: 0 0 64px !important;
+}
+
+#b32-roster-panel .b32-roster-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: top center !important;
+}

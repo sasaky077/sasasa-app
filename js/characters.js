@@ -27,6 +27,7 @@ const CHARACTERS = [
   // ── id:12 アンジェリカ（バランス）────────────────────────────────
   // 安定した攻撃と自己防御。縛りと広範囲打撃。
   { id: 12, name: 'アンジェリカ', rarity: 'ur',
+    element: 'mystis',
     role: 'バランス',
     moveType: 'gold',
     costMax: 12,
@@ -82,6 +83,7 @@ const CHARACTERS = [
   // ── id:2 レイチェル（速度寄り）──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
   { id: 2, name: 'レイチェル', rarity: 'r',
+    element: 'chaos',
   role: '速度寄り',
   moveType: 'shigure',
     costMax: 10,
@@ -122,7 +124,7 @@ const CHARACTERS = [
   multiplier: 2.2,
   range: 'super_but_night_6',
   effects: [
-    { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+    { type: 'stun', target: 'enemy', hit: 60, duration: 1 }
   ],
   hitStyle: 'multi',
   desc: '前方に広がるコウモリの群れで攻撃し、命中した敵を1ターンスタンさせる。'}
@@ -131,6 +133,7 @@ const CHARACTERS = [
   // ── id:3 アズミ（耐久寄り）──────────────────────────────────
   // 敵を縛り、ペースを握る。
   { id: 3, name: 'アズミ', rarity: 'r',
+    element: 'chaos',
     role: '耐久寄り',
     moveType: 'gold',
     costMax: 14,
@@ -158,7 +161,7 @@ const CHARACTERS = [
         multiplier: 0.8,
         range: 'front1',
         effects: [
-          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+          { type: 'stun', target: 'enemy', hit: 70, duration: 1 }
         ],
         desc: '目の前の敵に小ダメージを与え、1ターン行動不能にする。' },
 
@@ -171,7 +174,7 @@ const CHARACTERS = [
         multiplier: 1.6,
         range: 'pierce3',
         effects: [
-          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+          { type: 'stun', target: 'enemy', hit: 50, duration: 1 }
         ],
         hitStyle: 'multi',
         desc: '前方直線3マスの敵にダメージを与え、1ターン行動不能にする。' }
@@ -179,6 +182,7 @@ const CHARACTERS = [
 
   // ── id:7 ルナ
 { id: 7, name: 'ルナ', rarity: 'r',
+    element: 'logos',
   role: '速度寄り',
   moveType: 'miyu',
     costMax: 10,
@@ -225,6 +229,7 @@ const CHARACTERS = [
   
   // ── id:1 エリ
 { id: 1, name: 'エリ', rarity: 'r',
+    element: 'mystis',
   role: '速度寄り',
   moveType: 'eri',
     costMax: 14,
@@ -269,6 +274,7 @@ const CHARACTERS = [
   // ── id:13 チサカ（暗殺寄り）──────────────────────────────────
   // 背後からの攻撃で大ダメージを狙う暗殺型。
   { id: 13, name: 'チサカ', rarity: 'r',
+    element: 'logos',
     role: '暗殺寄り',
     moveType: 'chisaka',
     costMax: 12,
@@ -320,6 +326,7 @@ const CHARACTERS = [
   // ── id:4 ユズハ（ギャル寄り）───────────────────────────────────
   // 予知系。数ターン先に攻撃を予約する感じ。
   { id: 4, name: 'ユズハ', rarity: 'sr',
+    element: 'mystis',
     role: '火力寄り',
     moveType: 'yuzuha',
     costMax: 14,
@@ -343,7 +350,7 @@ const CHARACTERS = [
 },
     skills: [
       { id: 's1',
-        name: '堕ちちゃう系？',
+        name: 'マジ卍',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -355,7 +362,7 @@ const CHARACTERS = [
         desc: '自分を中心にX字の範囲にダメージ' },
 
       { id: 'ult',
-        name: '意外と神様信じてる',
+        name: 'マジ十字',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
@@ -371,6 +378,7 @@ const CHARACTERS = [
  
 // ── id:15 アキ
 { id: 15, name: 'アキ', rarity: 'sr',
+    element: 'chaos',
   role: '速度・支援寄り',
   moveType: 'aki',
     costMax: 12,
@@ -432,6 +440,7 @@ const CHARACTERS = [
   // ── id:19 カンナ（耐久寄り）──────────────────────────────────
   // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
   { id: 19, name: 'カンナ', rarity: 'sr',
+    element: 'logos',
     role: '制御・妨害寄り',
     moveType: 'silver',
     costMax: 14,
@@ -473,7 +482,7 @@ const CHARACTERS = [
         multiplier: 0.8,
         range: 'enemy_all',
         effects: [
-          { type: 'stun', target: 'enemy', duration: 1, hit: 100 },
+          { type: 'stun', target: 'enemy', duration: 1, hit: 30 },
           { type: 'atk_down', target: 'enemy', duration: 2, hit: 100, rate: 0.7 }
         ],
         hitStyle: 'all',
@@ -483,6 +492,7 @@ const CHARACTERS = [
 
   // ── id:20 マアヤ（支援寄り）──────────────────────────────────
   { id: 20, name: 'マアヤ', rarity: 'sr',
+    element: 'logos',
     role: '支援・毒寄り',
     moveType: 'shigure',
     costMax: 10,
@@ -537,6 +547,7 @@ const CHARACTERS = [
   // ── id:14 アイム（火力寄り）──────────────────────────────────
   // コピー系。
   { id: 14, name: 'アイム', rarity: 'sr',
+    element: 'chaos',
     role: 'テクニック寄り',
     costMax: 14,
     costStart: 6,
@@ -586,6 +597,7 @@ const CHARACTERS = [
   // ── id:16 ミト（耐久寄り）──────────────────────────────────
   // 高HP。実体化の確実付与と全体攻撃のハイブリッド。スタンも持つ完全体壁役。
   { id: 16, name: 'ミト', rarity: 'ur',
+    element: 'mystis',
     role: '耐久寄り',
     costMax: 14,
     costStart: 5,
@@ -638,6 +650,7 @@ const CHARACTERS = [
  // ── id:8 アサミ
 { id: 8, 
   name: 'アサミ', rarity: 'sr',
+    element: 'logos',
   role: '速度寄り',
   moveType: 'asami',
     costMax: 14,

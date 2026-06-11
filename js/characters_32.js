@@ -108,6 +108,7 @@
     gender: c.gender,
     rarity: c.rarity,
     role: c.role,
+    element: c.element || 'chaos',
 
     hp: c.stats?.HP || 1,
     atk: c.stats?.ATK || 1,

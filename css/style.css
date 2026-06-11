@@ -5620,3 +5620,43 @@ canvas {
     height: 50px !important;
   }
 }
+
+/* ===== アプリ全体：ブラウザ標準の長押し/選択/画像ドラッグ対策 ===== */
+html,
+body,
+.screen,
+.modal-overlay,
+#battle32-root {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* 画像の長押し保存メニュー・ドラッグ対策 */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* ボタン・カード類も選択されないようにする */
+button,
+.bottom-nav-item,
+.zukan-card,
+.box-card,
+.party-card,
+.b32-party-card,
+.b32-cell,
+.ninmu-chapter-item,
+.kichi-menu-item,
+.summon-banner-item,
+.home-event-banner-item {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}

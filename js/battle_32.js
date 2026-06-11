@@ -20,6 +20,41 @@
   const BOARD_COLS = 5;
 
   // ============================================================
+  // 属性相性
+  // ============================================================
+  // ロゴス → ケイオス / ケイオス → ミスティス / ミスティス → ロゴス
+  const ELEMENT_RATE_32 = {
+  chaos:  { logos: 1.25, mystis: 0.80, chaos: 1.00 },
+  logos:  { mystis: 1.25, chaos: 0.80, logos: 1.00 },
+  mystis: { chaos: 1.25, logos: 0.80, mystis: 1.00 },
+};
+
+  const ELEMENT_LABEL_32 = {
+    logos:  'ロゴス',
+    chaos:  'ケイオス',
+    mystis: 'ミスティス',
+  };
+
+  function getElementRate32(sourceElement, targetElement) {
+    const s = sourceElement || null;
+    const t = targetElement || null;
+    if (!s || !t) return 1.0;
+    return (ELEMENT_RATE_32[s] && ELEMENT_RATE_32[s][t]) || 1.0;
+  }
+
+  function getElementLabel32(element) {
+    return ELEMENT_LABEL_32[element] || element || '無属性';
+  }
+
+  function getElementMatchText32(sourceElement, targetElement) {
+    const rate = getElementRate32(sourceElement, targetElement);
+    if (rate > 1) return '有利';
+    if (rate < 1) return '不利';
+    return '';
+  }
+
+
+  // ============================================================
   // LINK コスト定数
   // ============================================================
   const LINK_COST = {
@@ -271,9 +306,10 @@
 
   // DEF 参照式を廃止。ATK × multiplier のみで計算する。
   // 敵の硬さを表現したい場合は target.damageTakenRate（未設定時 1.0）を使う。
-  function calcDamage(atk, multiplier, target) {
-    const rate = (target && target.damageTakenRate != null) ? target.damageTakenRate : 1.0;
-    return Math.max(1, Math.floor(atk * multiplier * rate));
+  function calcDamage(atk, multiplier, target, source) {
+    const takenRate = (target && target.damageTakenRate != null) ? target.damageTakenRate : 1.0;
+    const elementRate = getElementRate32(source && source.element, target && target.element);
+    return Math.max(1, Math.floor(atk * multiplier * takenRate * elementRate));
   }
 
   // 状態異常込みのATKを返す。
@@ -364,6 +400,7 @@ function pickRandomBoardCells(count) {
       name: charDef.name,
       rarity: charDef.rarity,
       role: charDef.role,
+      element: charDef.element || 'chaos',
       side: 'ally',
       moveType: charDef.moveType || 'silver',
       moveCells: Array.isArray(charDef.moveCells)
@@ -408,6 +445,7 @@ function pickRandomBoardCells(count) {
       _uid: uid(),
       id: def.id,
       name: def.name,
+      element: def.element || 'chaos',
       side: 'enemy',
 
       img: def.battleImg || def.img || def.upImg || null,
@@ -439,6 +477,7 @@ function pickRandomBoardCells(count) {
   {
     id: 'boss',
     name: 'ボス怪異',
+    element: 'chaos',
     isBoss: true,
     hp: 3200,
     atk: 520,
@@ -448,6 +487,7 @@ function pickRandomBoardCells(count) {
   {
   id: 'mob1',
   name: '雑魚A',
+  element: 'chaos',
   hp: 700,
   atk: 240,
   moveType: 'enemy_zako_straight',
@@ -456,6 +496,7 @@ function pickRandomBoardCells(count) {
 {
   id: 'mob2',
   name: '雑魚B',
+  element: 'chaos',
   hp: 650,
   atk: 220,
   moveType: 'enemy_zako_diag',
@@ -673,7 +714,7 @@ const enemies = enemyDefs.map(def => {
       isBossStage:          !!config.isBossStage,
       // スキルダメージ補正倍率（OP「秘術の触媒」が加算）
       _rl_skillDmgMult:     1.0,
-      // 駒取り時の神気ボーナス（OP「神憑きの手」が加算）
+      // 駒取り廃止により未使用（将来: スキル撃破時の神気ボーナスに転用予定）
       _rl_captureSpBonus:   0,
       // 霊装権ボーナス保持（OP「霊装の予兆」が積む）
       _rl_pendingReisouBonus: 0,
@@ -851,7 +892,9 @@ const enemies = enemyDefs.map(def => {
     }
 
     target.hp = Math.max(0, target.hp - dmg);
-    _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！（残HP: ${target.hp}）`);
+    const elementText = source ? getElementMatchText32(source.element, target.element) : '';
+    const elementSuffix = elementText ? `【${elementText}】` : '';
+    _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！${elementSuffix}（残HP: ${target.hp}）`);
 
     // ローグライト: 味方HPが0になったらrosterをdead更新
     if (target.side === 'ally' && target.hp <= 0 && _bs.roster) {
@@ -861,10 +904,32 @@ const enemies = enemyDefs.map(def => {
       }
     }
     _emit('damage', {
-      source: source ? { _uid: source._uid, name: source.name, side: source.side, row: source.row, col: source.col } : null,
-      target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+      source: source ? { 
+        _uid: source._uid, 
+        name: source.name, 
+        side: source.side, 
+        row: source.row, 
+        col: source.col,
+        element: source.element,
+      } : null,
+
+      target: { 
+        _uid: target._uid, 
+        name: target.name, 
+        side: target.side, 
+        row: target.row, 
+        col: target.col,
+        element: target.element,
+         },
+
       amount: dmg,
       kind: 'damage',
+
+      elementMatch: elementText || '',
+      elementRate: source ? getElementRate32(source.element, target.element) : 1.0,
+      sourceElement: source ? source.element : null,
+      targetElement: target ? target.element : null,
+
       skillId:     skill?.id        || null,
       skillName:   skill?.name      || null,
       isUltimate:  !!skill?.isUltimate,
@@ -885,6 +950,7 @@ function _queueDelayedAttack(ally, skill) {
     id: uid(),
     ownerUid: ally._uid,
     ownerName: ally.name,
+    ownerElement: ally.element || null,
     ownerAtk: getEffectiveAtk(ally),
 
     skillId: skill.id,
@@ -950,7 +1016,7 @@ function _executeDelayedAttack(action) {
   _log(`「${action.skillName}」が発動！`);
 
   targets.forEach(enemy => {
-    let dmg = calcDamage(action.ownerAtk || 1, action.multiplier || 1, enemy);
+    let dmg = calcDamage(action.ownerAtk || 1, action.multiplier || 1, enemy, { element: action.ownerElement });
 
     // ローグライト：スキルダメージ補正
     if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
@@ -965,6 +1031,7 @@ function _executeDelayedAttack(action) {
     applyDamage(enemy, dmg, {
       _uid: action.ownerUid,
       name: action.ownerName,
+      element: action.ownerElement || null,
       side: 'ally',
       row: dummyUser.row,
       col: dummyUser.col,
@@ -1063,7 +1130,7 @@ if (stype === 'repeat_skill') {
           const hasDrain = (copiedSkill.effects || []).some(e => e.type === 'drain');
 
           targets.forEach(enemy => {
-            let dmg = calcDamage(getEffectiveAtk(ally), copiedSkill.multiplier, enemy);
+            let dmg = calcDamage(getEffectiveAtk(ally), copiedSkill.multiplier, enemy, ally);
             dmg = applyBackstabBonus(dmg, ally, enemy, copiedSkill);
 
             if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
@@ -1091,7 +1158,7 @@ if (stype === 'repeat_skill') {
         } else {
           targets.forEach(enemy => {
             if ((copiedSkill.multiplier || 0) > 0) {
-              let dmg = calcDamage(getEffectiveAtk(ally), copiedSkill.multiplier, enemy);
+              let dmg = calcDamage(getEffectiveAtk(ally), copiedSkill.multiplier, enemy, ally);
             dmg = applyBackstabBonus(dmg, ally, enemy, copiedSkill);
 
               if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
@@ -1224,7 +1291,7 @@ if (stype === 'repeat_skill') {
   _log(`${ally.name}：ランダム攻撃は空振りした`);
   } else {
     targets.forEach(enemy => {
-      let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier || 7.0, enemy);
+      let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier || 7.0, enemy, ally);
             dmg = applyBackstabBonus(dmg, ally, enemy, skill);
 
       // ローグライト: スキルダメージ補正
@@ -1254,7 +1321,7 @@ if (stype === 'repeat_skill') {
         const hasDrain = (skill.effects || []).some(e => e.type === 'drain');
 
         targets.forEach(enemy => {
-          let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier, enemy);
+          let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier, enemy, ally);
             dmg = applyBackstabBonus(dmg, ally, enemy, skill);
           // ─ ローグライト: スキルダメージ補正 ─
           if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
@@ -1284,7 +1351,7 @@ if (stype === 'repeat_skill') {
       } else {
         targets.forEach(enemy => {
           if ((skill.multiplier || 0) > 0) {
-            let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier, enemy);
+            let dmg = calcDamage(getEffectiveAtk(ally), skill.multiplier, enemy, ally);
             dmg = applyBackstabBonus(dmg, ally, enemy, skill);
             // ─ ローグライト: スキルダメージ補正 ─
             if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
@@ -1678,6 +1745,7 @@ return true;
           sourceAtk: source ? getEffectiveAtk(source) : 1,
           sourceName: source ? source.name : '毒',
           sourceUid: source ? source._uid : null,
+          sourceElement: source ? source.element : null,
         });
         _log(`${target.name} は毒に侵された（${eff.duration || 2}T）`);
         return;
@@ -2327,21 +2395,9 @@ function doBossLineAttack(boss) {
     const candidates = getMoveCells(enemy._uid);
     if (!candidates || candidates.length === 0) return null;
 
-    const allUnits = getAllUnits();
-    const corePos  = _bs.cores && _bs.cores.ally;
+    const corePos = _bs.cores && _bs.cores.ally;
 
-    // ── 駒取り優先（味方がいるマス）──
-    const captures = candidates.filter(c => c.cellType === 'capture');
-    if (captures.length > 0) {
-      const sorted = _sortByCoreDistance(captures);
-      const chosen = sorted[0];
-      const occupant = allUnits.find(u =>
-        u.hp > 0 && u.row === chosen.row && u.col === chosen.col
-      );
-      return { row: chosen.row, col: chosen.col, isCapture: true, occupant };
-    }
-
-    // ── 空きマスのうち、コアへ近づくマスを優先 ──
+    // 駒取り廃止：空きマスへの移動のみ
     const moves = candidates.filter(c => c.cellType === 'move');
     if (moves.length === 0) return null;
 
@@ -2356,7 +2412,6 @@ function doBossLineAttack(boss) {
     const chosen = sorted[0];
 
     if (approaching.length === 0) {
-      // コアへ近づけないとき（横移動など）
       console.log('[B32 enemy lateral move]', {
         name: enemy.name,
         moveType: enemy.moveType,
@@ -2388,7 +2443,7 @@ function doBossLineAttack(boss) {
     if (rangeTargets.length > 0) {
       // 射程内に味方がいる → HPが最も少ない味方を優先攻撃
       const target = rangeTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target);
+      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
@@ -2422,19 +2477,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       return;
     }
 
-    // 駒取り処理
-    if (bestCell.isCapture && bestCell.occupant) {
-      const target = bestCell.occupant;
-      target.hp = 0;
-      _log(`${enemy.name} が ${target.name} を制圧した！`);
-      _emit('enemy_capture', { enemy: { ...enemy }, target: { ...target }, bs: _snapshot() });
-      _renderUI();
-      await wait(B32_WAIT.afterText);
-      _checkWinLose();
-      if (_bs.result) return;
-    }
-
-    // 通常移動
+    // 駒取り廃止：空きマスへの移動のみ実行
     enemy.row = bestCell.row;
     enemy.col = bestCell.col;
     _log(`${enemy.name} が移動した`);
@@ -2445,7 +2488,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     const afterMoveTargets = getEnemyAttackTargets(enemy);
     if (afterMoveTargets.length > 0) {
       const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
-      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target);
+      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
@@ -2493,14 +2536,15 @@ if (canEnemyAttackAllyCore(enemy)) {
       poisons.forEach(poison => {
         const sourceAtk = Number(poison.sourceAtk || 1);
         const rate = Number(poison.rate != null ? poison.rate : 0.25);
-        const dmg = Math.max(1, Math.floor(sourceAtk * rate));
         const source = {
           _uid: poison.sourceUid || null,
           name: poison.sourceName || '毒',
+          element: poison.sourceElement || null,
           side: 'ally',
           row: enemy.row,
           col: enemy.col,
         };
+        const dmg = calcDamage(sourceAtk, rate, enemy, source);
         applyDamage(enemy, dmg, source, {
           id: 'poison',
           name: '毒',
@@ -2714,8 +2758,8 @@ if (canEnemyAttackAllyCore(enemy)) {
 
       const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
 
-      // 同陣営ユニットがいるマスには移動不可
-      if (occupant && occupant.side === unit.side) return;
+      // 駒取り廃止：敵味方問わず、ユニットがいるマスには移動不可
+      if (occupant) return;
 
       // ボスのいるマスは進入禁止（HP0後の核露出状態も含む）
       const bossOnCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
@@ -2724,8 +2768,8 @@ if (canEnemyAttackAllyCore(enemy)) {
       cells.push({
         row,
         col,
-        cellType:  occupant ? 'capture' : 'move',
-        targetUid: occupant ? occupant._uid : null,
+        cellType:  'move',
+        targetUid: null,
       });
     });
 
@@ -2757,46 +2801,19 @@ if (canEnemyAttackAllyCore(enemy)) {
         return false;
       }
 
-      // ── 駒取り処理 ──
-      if (targetCell.cellType === 'capture' && targetCell.targetUid) {
-        const target = getAllUnits().find(u => u._uid === targetCell.targetUid);
-
-        if (target && target.side === 'enemy') {
-          if (target.isBoss) {
-            // ボスは即死させず固定ダメージ
-            const dmg = Math.floor(ally.atk * 1.5);
-            target.hp = Math.max(0, target.hp - dmg);
-            _log(`${ally.name} が ${target.name}（ボス）に駒取りを試みた！ ${dmg} ダメージ`);
-            _emit('capture_boss', { ally: { ...ally }, boss: { ...target }, dmg, bs: _snapshot() });
-
-            // ボスHP0後は既存の bossCore / capture 処理へ接続
-            if (target.hp <= 0) {
-              _log(`${target.name} のHPが0になった。コア突破処理へ…`);
-              // ボスHP0フラグを立てて既存フローに乗せる（bossPhase判定等）
-              _emit('boss_hp_zero', { boss: { ...target }, bs: _snapshot() });
-            }
-          } else {
-            // 通常敵：制圧（HP0）
-            target.hp = 0;
-            _log(`${ally.name} が ${target.name} を制圧した！`);
-            _emit('capture', { ally: { ...ally }, target: { ...target }, bs: _snapshot() });
-            // ─ ローグライト: 駒取りイベント発火（「神憑きの手」等） ─
-            {
-              const _shinkiBefore = ally.shinki;
-              _fireRogueliteEvent('capture', { ally, target });
-              if (ally.shinki > _shinkiBefore) {
-                _log(`強化OPにより ${ally.name} の神気が ${ally.shinki - _shinkiBefore} 上昇`);
-              }
-            }
-          }
-        } else if (target && target.side === 'ally') {
-          // 味方コアへの駒取りは敗北（将来の敵移動拡張用フック）
-          _log(`味方コアが制圧された！`);
-          _emit('core_captured', { attacker: { ...target }, bs: _snapshot() });
-        }
+      // 駒取り廃止：最終ガード（getMoveCells で除外済みだが念のため）
+      const occupant = getAllUnits().find(u =>
+        u &&
+        u._uid !== ally._uid &&
+        u.hp > 0 &&
+        u.row === toRow &&
+        u.col === toCol
+      );
+      if (occupant) {
+        _log('ユニットがいるマスには移動できない');
+        return false;
       }
 
-      // ── 移動実行 ──
       // 念のための直叩き対策：ボスマスへの移動を最終ガード
       const bossAtDest = _bs.enemies.find(e => e.isBoss && e.row === toRow && e.col === toCol);
       if (bossAtDest) {
@@ -2806,12 +2823,7 @@ if (canEnemyAttackAllyCore(enemy)) {
 
       ally.row = toRow;
       ally.col = toCol;
-
-      if (targetCell.cellType === 'capture') {
-        _log(`${ally.name} が移動・制圧した`);
-      } else {
-        _log(`${ally.name} が移動した`);
-      }
+      _log(`${ally.name} が移動した`);
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
       // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
@@ -3170,6 +3182,8 @@ window.Battle32 = {
   getSkillRangeCells,
   getBossDangerCells,
   getLinkCostForAction: (type, unitUid, skillId) => _getLinkCostForAction(type, unitUid, skillId),
+  getElementRate: getElementRate32,
+  getElementLabel: getElementLabel32,
 
   getState: () => _bs ? _snapshot() : null,
   getBS: () => _bs,

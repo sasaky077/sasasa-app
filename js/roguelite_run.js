@@ -38,65 +38,18 @@
       isBoss: false,
       label: 'Stage 1',
       subLabel: '雑魚戦',
-      // 既存 enemies.js の雑魚を流用（ローグライト用に後で差し替え可能）
-      enemies: [
-        {
-          id: 'rl_mob_s1_a',
-          name: '直進型怪異',
-          hp: 700, atk: 240,
-          moveType: 'enemy_zako_straight',
-          attackRange: 'enemy_attack_front',
-        },
-        {
-          id: 'rl_mob_s1_b',
-          name: '斜行型怪異',
-          hp: 650, atk: 220,
-          moveType: 'enemy_zako_diag',
-          attackRange: 'enemy_attack_cross',
-        },
-      ],
+      enemyIds: ['rl_chaos_walker', 'rl_chaos_slant'],
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 2,
       turnLimit: 10,
-      bossCaptureMax: null, // 雑魚戦では使わない
+      bossCaptureMax: null,
     },
     {
       stage: 2,
       isBoss: false,
       label: 'Stage 2',
       subLabel: '雑魚戦',
-      enemies: [
-        {
-          id: 'rl_mob_s2_a',
-          name: '強化直進型怪異',
-          hp: 900, atk: 280,
-          moveType: 'enemy_zako_straight',
-          attackRange: 'enemy_attack_front',
-        },
-        {
-          id: 'rl_mob_s2_b',
-          name: '強化斜行型怪異',
-          hp: 850, atk: 260,
-          moveType: 'enemy_zako_diag',
-          attackRange: 'enemy_attack_cross',
-        },
-        {
-          id: 'rl_mob_s2_c',
-          name: '強化直進型怪異',
-          hp: 800, atk: 270,
-          moveType: 'enemy_zako_straight',
-          attackRange: 'enemy_attack_front',
-        },
-
-       {
-        id: 'rl_mob_s2_ranged_test',
-        name: '遠距離テスト怪異',
-        hp: 650,
-        atk: 220,
-        moveType: 'enemy_zako_straight',
-        attackRange: 'enemy_attack_line',
-      },
-      ],
+      enemyIds: ['rl_chaos_walker_plus', 'rl_logos_ranged', 'rl_mystis_caster'],
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 2,
       turnLimit: 10,
@@ -107,38 +60,7 @@
       isBoss: false,
       label: 'Stage 3',
       subLabel: '雑魚戦',
-      enemies: [
-        {
-          id: 'rl_mob_s3_a',
-          name: '精鋭直進型怪異',
-          hp: 1100, atk: 320,
-          moveType: 'enemy_zako_straight',
-          attackRange: 'enemy_attack_front',
-        },
-        {
-          id: 'rl_mob_s3_b',
-          name: '精鋭斜行型怪異',
-          hp: 1050, atk: 300,
-          moveType: 'enemy_zako_diag',
-          attackRange: 'enemy_attack_cross',
-        },
-        {
-          id: 'rl_mob_s3_c',
-          name: '精鋭直進型怪異',
-          hp: 1000, atk: 310,
-          moveType: 'enemy_zako_straight',
-          attackRange: 'enemy_attack_front',
-        },
-        {
-          id: 'rl_mob_s2_ranged_test',
-          name: '遠距離テスト怪異',
-          hp: 650,
-          atk: 220,
-          moveType: 'enemy_zako_straight',
-          attackRange: 'enemy_attack_line',
-        },
-
-      ],
+      enemyIds: ['rl_chaos_elite', 'rl_logos_elite', 'rl_mystis_elite', 'rl_chaos_ranged'],
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 3,
       turnLimit: 12,
@@ -149,8 +71,7 @@
       isBoss: true,
       label: 'Stage 4',
       subLabel: 'BOSS',
-      // 既存ボスを流用（白糸の怪異）
-      enemyIds: ['enemy_01', 'enemy_02a'],
+      enemyIds: ['enemy_01', 'enemy_02b'],
       enemyRandomStartPosition: true,
       enemyActionMode: 'all',
       enemyActionsPerTurn: null,
@@ -288,15 +209,15 @@
       bossCaptureMax:    def.bossCaptureMax      || 2,
     });
 
-    // ── 敵設定：雑魚戦はインライン定義、ボス戦は enemyIds ──
-    if (def.isBoss) {
-      cfg.enemyIds              = def.enemyIds || [];
+    // ── 敵設定：enemyIds を優先、インライン定義（enemies）は後方互換フォールバック ──
+    if (Array.isArray(def.enemyIds) && def.enemyIds.length > 0) {
+      cfg.enemyIds = def.enemyIds.slice();
       cfg.enemyRandomStartPosition = def.enemyRandomStartPosition || false;
-      cfg.enemySpawn            = def.enemySpawn || null;
+      cfg.enemySpawn = def.enemySpawn || null;
       delete cfg.enemies;
-    } else {
-      // 雑魚戦：インライン敵定義
-      cfg.enemies = def.enemies || [];
+    } else if (Array.isArray(def.enemies) && def.enemies.length > 0) {
+      // 後方互換：インライン敵定義（旧形式）
+      cfg.enemies = def.enemies.slice();
       delete cfg.enemyIds;
     }
 

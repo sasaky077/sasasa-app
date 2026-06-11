@@ -3,14 +3,15 @@
 
 (function () {
 
-  // selected: { charaId }[]  最大3件（左・中・右 の順）
+  // selected: { charaId }[]  通常最大3件 / ローグライト最大4件
   let selected = [];
 
   let currentEnemyRef = 'enemy_01';
   let currentBattleOptions = {};
 
   function _isRogueliteMode() { return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite'; }
-  function _maxPartySize() { return _isRogueliteMode() ? 5 : 3; }
+  function _maxPartySize() { return _isRogueliteMode() ? 4 : 3; }
+  function _minPartySize() { return _isRogueliteMode() ? 1 : 3; }
 
 
   // 部隊編成画面専用画像
@@ -21,6 +22,24 @@
       return chara.partyImg || chara.upImg || chara.img || '';
     }
     return chara.upImg || chara.img || '';
+  }
+
+  function unitElementIcon(element) {
+    const map = {
+      chaos:  'images/icon_chaos.webp',
+      logos:  'images/icon_logos.webp',
+      mystis: 'images/icon_mystis.webp',
+    };
+    return map[element] || '';
+  }
+
+  function unitElementLabel(element) {
+    const map = {
+      chaos:  'ケイオス',
+      logos:  'ロゴス',
+      mystis: 'ミスティス',
+    };
+    return map[element] || element || '無属性';
   }
 
   // ============================================================
@@ -94,7 +113,7 @@
         color: rgba(232,228,220,0.35);
       }
 
-      /* 3枠スロットエリア */
+      /* スロットエリア */
       .ps-slots-wrap {
         flex-shrink: 0;
         padding: 12px 14px 10px;
@@ -224,7 +243,7 @@
         position: relative;
         transition: border-color 0.15s;
       }
-      .ps-chara-img-wrap img {
+      .ps-chara-img-wrap > img:not(.ps-element-icon) {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -245,6 +264,33 @@
         color: #fff;
       }
       .ps-chara-card.selected .ps-chara-check { display: flex; }
+      .ps-element-icon {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px !important;
+        height: 16px !important;
+        object-fit: contain !important;
+        border-radius: 50%;
+        z-index: 6;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,.8));
+        pointer-events: none;
+      }
+      .ps-slot-box {
+        position: relative;
+      }
+      .ps-slot-element-icon {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 18px !important;
+        height: 18px !important;
+        object-fit: contain !important;
+        border-radius: 50%;
+        z-index: 6;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+        pointer-events: none;
+      }
       .ps-rarity-dot {
         position: absolute;
         bottom: 3px; right: 3px;
@@ -395,7 +441,7 @@
   // ============================================================
   function _getSlotLabels() {
     return _isRogueliteMode()
-      ? ['1', '2', '3', '4', '5']
+      ? ['1', '2', '3', '4']
       : ['左', '中', '右'];
   }
 
@@ -407,7 +453,7 @@
     const subEl = document.getElementById('ps-sub-text');
     if (subEl) {
       subEl.textContent = _isRogueliteMode()
-        ? '5人選択 · 連れていくキャラを選んでください'
+        ? '1〜4人選択 · 連れていくキャラを選んでください'
         : '3人選択 · 連れていくキャラを選んでください';
     }
 
@@ -422,6 +468,7 @@
           <div class="ps-slot filled" onclick="_psRemoveSlot(${i})">
             <div class="ps-slot-box">
               <img class="ps-slot-img" src="${imgSrc}" onerror="this.style.opacity='0'">
+              ${chara && unitElementIcon(chara.element) ? `<img class="ps-slot-element-icon" src="${unitElementIcon(chara.element)}" alt="${unitElementLabel(chara.element)}" title="${unitElementLabel(chara.element)}" onerror="this.style.display='none'">` : ''}
               <div class="ps-slot-chara-name">${name}</div>
               <div class="ps-slot-remove">✕</div>
             </div>
@@ -443,10 +490,10 @@
       }
     }).join('');
 
-    // 戦闘開始ボタン：3体選択で有効化
+    // 戦闘開始ボタン：通常は3体必須 / ローグライトは1体以上で有効化
     const btn = document.getElementById('ps-btn-start');
-    const maxSize = _maxPartySize();
-    if (btn) btn.disabled = selected.length < maxSize;
+    const minSize = _minPartySize();
+    if (btn) btn.disabled = selected.length < minSize;
   }
 
   // スロット削除（クリック時に左詰め）
@@ -478,6 +525,7 @@
           <img src="${getPartySelectImg(c)}" onerror="this.style.opacity='0'">
           <div class="ps-rarity-dot ${c.rarity}"></div>
           <div class="ps-chara-check">✓</div>
+          ${unitElementIcon(c.element) ? `<img class="ps-element-icon" src="${unitElementIcon(c.element)}" alt="${unitElementLabel(c.element)}" title="${unitElementLabel(c.element)}" onerror="this.style.display='none'">` : ''}
         </div>
         <div class="ps-chara-name">${c.name}</div>
       `;
@@ -622,7 +670,7 @@
   // 戦闘開始
   // ============================================================
   window.confirmPartySelect = function () {
-    if (selected.length < _maxPartySize()) return;
+    if (selected.length < _minPartySize()) return;
 
     // Battle32 に渡す partyIds（選択順の charaId 配列）
     const selectedCharaIds = selected.map(s => s.charaId);

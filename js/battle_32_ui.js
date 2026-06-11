@@ -269,6 +269,29 @@ function enemyAttackLabel(attackRange) {
  return map[attackRange] || attackRange || '不明';
 }
 
+function unitElementLabel(element) {
+ const map = {
+   logos: 'ロゴス',
+   chaos: 'ケイオス',
+   mystis: 'ミスティス',
+ };
+ return map[element] || element || '無属性';
+}
+
+function unitElementIcon(element) {
+  const map = {
+    chaos:  'images/icon_chaos.webp',
+    logos:  'images/icon_logos.webp',
+    mystis: 'images/icon_mystis.webp',
+  };
+  return map[element] || '';
+}
+
+function unitElementClass(element) {
+  const map = { chaos: 'chaos', logos: 'logos', mystis: 'mystis' };
+  return map[element] || 'none';
+}
+
 function getUnitUiScale(unit, key) {
  return unit?.uiScale?.[key] || 1;
 }
@@ -301,6 +324,13 @@ function showEnemyInfo(enemy) {
  </div>
  <div class="b32-enemy-info-row">
  <span>ATK</span><strong>${enemy.atk}</strong>
+ </div>
+ <div class="b32-enemy-info-row">
+ <span>属性</span>
+ <strong class="b32-enemy-info-element">
+   ${unitElementIcon(enemy.element) ? `<img class="b32-info-element-icon" src="${unitElementIcon(enemy.element)}" alt="" onerror="this.style.display='none'">` : ''}
+   ${unitElementLabel(enemy.element)}
+ </strong>
  </div>
  <div class="b32-enemy-info-row">
  <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
@@ -1262,6 +1292,60 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  color: #ff6060;
  text-shadow: 0 0 8px rgba(255,60,60,.8), 0 1px 3px rgba(0,0,0,.9);
  }
+
+ .b32-float-number.damage.weak {
+ font-size: 24px !important;
+ color: #ffd84a !important;
+ text-shadow:
+ 0 0 10px rgba(255,220,80,.95),
+ 0 0 24px rgba(255,160,40,.75),
+ 0 1px 4px rgba(0,0,0,.95) !important;
+}
+
+.b32-float-number.damage.resist {
+ font-size: 14px !important;
+ color: #9aa8bd !important;
+ opacity: .85;
+ text-shadow:
+ 0 0 8px rgba(120,150,210,.65),
+ 0 1px 3px rgba(0,0,0,.95) !important;
+}
+
+.b32-element-match-text {
+ position: fixed;
+ z-index: 1000000;
+ pointer-events: none;
+ font-family: 'Cinzel', serif;
+ font-weight: 900;
+ letter-spacing: 2px;
+ transform: translate(-50%, -50%);
+ animation: b32ElementMatchPop 720ms ease-out forwards;
+}
+
+.b32-element-match-text.weak {
+ font-size: 22px;
+ color: #ffe680;
+ text-shadow:
+ 0 0 8px rgba(255,255,255,.95),
+ 0 0 18px rgba(255,210,80,.9),
+ 0 0 34px rgba(255,120,40,.6),
+ 0 2px 4px rgba(0,0,0,.95);
+}
+
+.b32-element-match-text.resist {
+ font-size: 16px;
+ color: #aeb8c8;
+ text-shadow:
+ 0 0 8px rgba(160,180,220,.65),
+ 0 2px 4px rgba(0,0,0,.95);
+}
+
+@keyframes b32ElementMatchPop {
+ 0% { opacity: 0; transform: translate(-50%, -40%) scale(.75); }
+ 18% { opacity: 1; transform: translate(-50%, -70%) scale(1.18); }
+ 62% { opacity: 1; transform: translate(-50%, -88%) scale(1); }
+ 100% { opacity: 0; transform: translate(-50%, -112%) scale(.92); }
+}
  .b32-float-number.damage.boss {
  font-size: 22px;
  color: #ff9020;
@@ -2373,6 +2457,68 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  `;
  document.head.appendChild(menuStyle);
  }
+
+ // ── 属性アイコン CSS ──
+ if (!document.getElementById('b32-element-icon-style')) {
+   const elemStyle = document.createElement('style');
+   elemStyle.id = 'b32-element-icon-style';
+   elemStyle.textContent = `
+     /* 盤面ユニット上の属性アイコン */
+     .b32-element-icon {
+       position: absolute;
+       top: 2px;
+       right: 2px;
+       width: 18px;
+       height: 18px;
+       object-fit: contain;
+       z-index: 8;
+       border-radius: 50%;
+       filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+       pointer-events: none;
+     }
+     .b32-cell .b32-element-icon {
+       width: clamp(14px, calc(var(--cell-size, 52px) * 0.32), 22px);
+       height: clamp(14px, calc(var(--cell-size, 52px) * 0.32), 22px);
+     }
+     .b32-unit.midboss .b32-element-icon,
+     .b32-unit.enemy-id-enemy_01 .b32-element-icon {
+       width: 22px;
+       height: 22px;
+     }
+
+     /* 味方カード（下部パネル）の属性アイコン */
+     .b32-party-img-wrap {
+       position: relative;
+     }
+     .b32-party-element-icon {
+       position: absolute;
+       top: 3px;
+       left: 4px;
+       width: 16px;
+       height: 16px;
+       object-fit: contain;
+       border-radius: 50%;
+       z-index: 8;
+       filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
+       pointer-events: none;
+     }
+
+     /* 敵情報ウィンドウの属性行 */
+     .b32-enemy-info-element {
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+     }
+     .b32-info-element-icon {
+       width: 20px;
+       height: 20px;
+       object-fit: contain;
+       border-radius: 50%;
+       filter: drop-shadow(0 1px 2px rgba(0,0,0,.75));
+     }
+   `;
+   document.head.appendChild(elemStyle);
+ }
  }
 
  // ============================================================
@@ -2708,7 +2854,8 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
 }
 
  // フロートナンバーを表示
- function _showFloatNumber(unitInfo, amount, kind, isUlt) {
+ // フロートナンバーを表示
+function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch) {
  const pos = _getUnitScreenPos(unitInfo);
  if (!pos) return;
 
@@ -2716,14 +2863,50 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
  const sign = kind === 'heal' ? '+' : '-';
  const isBoss = unitInfo.side === 'enemy' && amount > 500;
  const ultCls = isUlt ? ' ult' : '';
- el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}`;
+
+ // 属性相性クラス
+ let elementCls = '';
+ if (kind === 'damage') {
+   if (elementMatch === '有利') elementCls = ' weak';
+   if (elementMatch === '不利') elementCls = ' resist';
+ }
+
+ el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}${elementCls}`;
  el.textContent = `${sign}${amount}`;
  el.style.left = `${pos.x}px`;
  el.style.top = `${pos.y}px`;
+
  document.body.appendChild(el);
 
- setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
- }
+ setTimeout(() => {
+   if (el.parentNode) el.parentNode.removeChild(el);
+ }, 1000);
+}
+
+// 属性相性テキストを表示
+function _showElementMatchText(unitInfo, elementMatch) {
+ if (!elementMatch) return;
+
+ const isWeak = elementMatch === '有利';
+ const isResist = elementMatch === '不利';
+ if (!isWeak && !isResist) return;
+
+ const pos = _getUnitScreenPos(unitInfo);
+ if (!pos) return;
+
+ const el = document.createElement('div');
+ el.className = `b32-element-match-text ${isWeak ? 'weak' : 'resist'}`;
+ el.textContent = isWeak ? 'WEAK!' : 'RESIST';
+
+ el.style.left = `${pos.x}px`;
+ el.style.top = `${pos.y - 20}px`;
+
+ document.body.appendChild(el);
+
+ setTimeout(() => {
+   if (el.parentNode) el.parentNode.removeChild(el);
+ }, 760);
+}
 
  function _showSkillNameBurst(skillName, charImg) {
  if (!skillName) return Promise.resolve();
@@ -3045,9 +3228,10 @@ function _showImpactShake(unitInfo) {
 
  // 数値は衝撃より少し後に出す
  setTimeout(() => {
- _showFloatNumber(data.target, data.amount, 'damage', isUlt);
- }, 240);
-}
+ _showFloatNumber(data.target, data.amount, 'damage', isUlt, data.elementMatch);
+ _showElementMatchText(data.target, data.elementMatch);
+}, 240);
+ }
 
 function _onHealEvent(data) {
  if (!data || !data.target) return;
@@ -3549,17 +3733,34 @@ inner += `<div class="b32-unit-name">${u.name}</div>`;
 
  // 敵のみ HP バーを出力（味方は HP バー廃止）
  // ボスは核露出後もバーを表示（HP0で0%表示になる）
- if (u.side === 'enemy') {
+if (u.side === 'enemy') {
  const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
  const hpCol = hpColor(u.hp, u.hpMax);
- inner += `<div class="b32-hp-bar-wrap"><div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div></div>`;
- }
+ const elemIcon = unitElementIcon(u.element);
 
- if (u.side === 'ally') {
+ inner += `
+  <div class="b32-unit-foot-ui">
+    <div class="b32-hp-bar-wrap">
+      <div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div>
+    </div>
+    ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
+  </div>
+ `;
+}
+
+if (u.side === 'ally') {
  const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
- // ally は CSS で青系固定（hpColor 上書き）
- inner += `<div class="b32-hp-bar-wrap"><div class="b32-hp-bar" style="width:${hpPct}%"></div></div>`;
- }
+ const elemIcon = unitElementIcon(u.element);
+
+ inner += `
+  <div class="b32-unit-foot-ui">
+    <div class="b32-hp-bar-wrap">
+      <div class="b32-hp-bar" style="width:${hpPct}%"></div>
+    </div>
+    ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
+  </div>
+ `;
+}
 
  if (u.side === 'ally') {
  const dots = Array.from({ length: u.shinkiMax }, (_, i) =>
@@ -4113,10 +4314,7 @@ await _afterCharTurnFlow();
  // 移動対象として選択中 or スキルキャラとして選択中ならハイライト
  const selected = ally._uid === _selMoveAllyUid || ally._uid === _selSkillAllyUid;
 
- // レアリティ（画像左上オーバーレイ用）
- const rarityRaw = (ally.rarity || '').toLowerCase();
- const rarityLabel = rarityRaw ? rarityRaw.toUpperCase() : '';
- const rarityClass = rarityRaw ? `rarity-${rarityRaw}` : '';
+ // レアリティ表示は廃止。カード左上には属性アイコンを表示する。
 
  // HP バー＋数値表示（下部キャラパネル専用：バー色はCSS固定）
  const hpPct = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
@@ -4160,7 +4358,6 @@ await _afterCharTurnFlow();
  <!-- 神気ドット：絶対配置でカード右上に固定 -->
  <div class="b32-party-shinki-badge">${shinkiDots}</div>
  <div class="b32-party-img-wrap">
- ${rarityLabel ? `<span class="b32-party-rarity ${rarityClass}">${rarityLabel}</span>` : ''}
  ${img
  ? `<img
  class="b32-party-img"
@@ -4170,6 +4367,7 @@ await _afterCharTurnFlow();
  onerror="this.style.display='none'"
 >`
  : `<div class="b32-party-initial">${initial(ally.name)}</div>`}
+ ${unitElementIcon(ally.element) ? `<img class="b32-party-element-icon b32-party-element-icon-${unitElementClass(ally.element)}" src="${unitElementIcon(ally.element)}" alt="${unitElementLabel(ally.element)}" title="${unitElementLabel(ally.element)}" onerror="this.style.display='none'">` : ''}
  </div>
  <div class="b32-party-name">${ally.name}</div>
  <!-- HP バー＋数値：カード下部 -->
@@ -4976,6 +5174,10 @@ const isSummonSelected =
      else { statusLabel = `LINK ${linkCost}`; statusColor = 'rgba(140,110,255,.8)'; }
 
      const img = r.charDef && (r.charDef.panelImg || r.charDef.upImg || r.charDef.img || '');
+     const element = r.charDef && r.charDef.element;
+     const elementIcon = unitElementIcon(element);
+     const elementLabel = unitElementLabel(element);
+     const elementClass = unitElementClass(element);
 
      // HP表示：deployed は実測HP、standby は最大HP/最大HP、dead は0/最大HP
      let hpBarHtml = '';
@@ -5032,9 +5234,9 @@ let ultGaugeHtml = '';
        hpBarHtml = `<div class="b32-roster-hp-bar-wrap"><div class="b32-roster-hp-bar" style="width:${hpPct}%"></div></div>`;
      }
 
-     return `<div onclick="_b32OnRosterTap('${r.rosterId}')"
+     return `<div class="b32-roster-card" onclick="_b32OnRosterTap('${r.rosterId}')"
        style="
-         flex-shrink:1;width:min(18vw, 76px);
+         flex:0 0 82px;width:82px;min-width:82px;max-width:82px;
          display:flex;flex-direction:column;align-items:center;gap:2px;
          cursor:${(canSummon || isDeployed) ? 'pointer' : 'default'};
          border-radius:0;padding:4px 2px;
@@ -5045,7 +5247,7 @@ let ultGaugeHtml = '';
          box-shadow:${isSummonSelected ? '0 0 12px rgba(120,80,255,.5)' : 'none'};
        ">
        <div class="b32-roster-img-wrap">
-         <span class="b32-roster-rarity rarity-${r.rarity}">${String(r.rarity || '').toUpperCase()}</span>
+         ${elementIcon ? `<img class="b32-roster-element-icon b32-roster-element-icon-${elementClass}" src="${elementIcon}" alt="${elementLabel}" title="${elementLabel}" onerror="this.style.display='none'">` : ''}
          ${img ? `<img class="b32-roster-img" src="${img}" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
        </div>
        <div style="font-size:8px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
