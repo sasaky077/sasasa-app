@@ -24,9 +24,9 @@ const CHARACTERS = [
   // R
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:1 アンジェリカ（バランス）────────────────────────────────
+  // ── id:12 アンジェリカ（バランス）────────────────────────────────
   // 安定した攻撃と自己防御。縛りと広範囲打撃。
-  { id: 1, name: 'アンジェリカ', rarity: 'r',
+  { id: 12, name: 'アンジェリカ', rarity: 'ur',
     role: 'バランス',
     moveType: 'gold',
     costMax: 12,
@@ -39,13 +39,13 @@ const CHARACTERS = [
     { 
       HP: 780, 
       ATK: 230},
-    img: 'images/chara_01.webp', 
-    cutImg: 'images/chara_01_cut.webp', 
-    ultImg: 'images/chara_01_cutin.webp',
-    upImg: 'images/chara_01_up.webp', 
-    battleImg: 'images/chara_01_battle.webp',
-    battleBackImg: 'images/chara_01_battle_back.webp',
-    panelImg: 'images/chara_01_panel.webp',
+    img: 'images/chara_12.webp', 
+    cutImg: 'images/chara_12_cut.webp', 
+    ultImg: 'images/chara_12_cutin.webp',
+    upImg: 'images/chara_12_up.webp', 
+    battleImg: 'images/chara_12_battle.webp',
+    battleBackImg: 'images/chara_12_battle_back.webp',
+    panelImg: 'images/chara_12_panel.webp',
     favScale: 0.85, favOffsetY: -35,
     skills: [
   {
@@ -223,8 +223,8 @@ const CHARACTERS = [
         desc: '自分を中心に周囲2マス以内の敵に中ダメージ' }
     ]},
   
-  // ── id:12 エリ
-{ id: 12, name: 'エリ', rarity: 'r',
+  // ── id:1 エリ
+{ id: 1, name: 'エリ', rarity: 'r',
   role: '速度寄り',
   moveType: 'eri',
     costMax: 14,
@@ -234,13 +234,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 820, ATK: 200 },
-    img: 'images/chara_12.webp', 
-    cutImg: 'images/chara_12_cut.webp', 
-    ultImg: 'images/chara_12_cutin.webp',
-    upImg: 'images/chara_12_up.webp', 
-    battleImg: 'images/chara_12_battle.webp',
-    battleBackImg: 'images/chara_12_battle_back.webp',
-    panelImg: 'images/chara_12_panel.webp',
+    img: 'images/chara_01.webp', 
+    cutImg: 'images/chara_01_cut.webp', 
+    ultImg: 'images/chara_01_cutin.webp',
+    upImg: 'images/chara_01_up.webp', 
+    battleImg: 'images/chara_01_battle.webp',
+    battleBackImg: 'images/chara_01_battle_back.webp',
+    panelImg: 'images/chara_01_panel.webp',
     favScale: 0.85, favOffsetY: -10,    
     skills: [
       { id: 's1',
@@ -270,6 +270,7 @@ const CHARACTERS = [
   // 背後からの攻撃で大ダメージを狙う暗殺型。
   { id: 13, name: 'チサカ', rarity: 'r',
     role: '暗殺寄り',
+    moveType: 'chisaka',
     costMax: 12,
     costStart: 6,
     costRegen: 4,
@@ -501,7 +502,7 @@ const CHARACTERS = [
     favScale: 0.90, favOffsetY: -35,
     skills: [
       { id: 's1',
-        name: 'オーバードーズ',
+        name: 'Overdose',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -514,15 +515,15 @@ const CHARACTERS = [
         desc: '薬剤を投与し、味方全体のATKを1ターン上昇させる。' },
 
       { id: 'ult',
-        name: 'トキシックミスト',
+        name: 'Toxic Mist',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
         type: 'debuff',
-        multiplier: 0.4,
+        multiplier: 0.5,
         range: 'enemy_all',
         effects: [
-          { type: 'poison', target: 'enemy', hit: 100, duration: 3, rate: 0.20 }
+          { type: 'poison', target: 'enemy', hit: 100, duration: 3, rate: 0.50 }
         ],
         hitStyle: 'all',
         desc: '毒性ミストを戦場全体に拡散し、敵全体に小ダメージを与える。さらに3ターンの間、毒による継続ダメージを与える。' }
@@ -535,7 +536,7 @@ const CHARACTERS = [
 
   // ── id:14 アイム（火力寄り）──────────────────────────────────
   // コピー系。
-  { id: 14, name: 'アイム', rarity: 'ur',
+  { id: 14, name: 'アイム', rarity: 'sr',
     role: 'テクニック寄り',
     costMax: 14,
     costStart: 6,
@@ -636,7 +637,7 @@ const CHARACTERS = [
 
  // ── id:8 アサミ
 { id: 8, 
-  name: 'アサミ', rarity: 'ur',
+  name: 'アサミ', rarity: 'sr',
   role: '速度寄り',
   moveType: 'asami',
     costMax: 14,
