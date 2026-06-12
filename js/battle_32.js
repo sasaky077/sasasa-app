@@ -878,10 +878,106 @@ const enemies = enemyDefs.map(def => {
   }
 
   // ============================================================
+  // 酔ノ想葬：敵攻撃への回避・移動・反撃
+  // ============================================================
+  function _hasYoiNoSousou(unit) {
+    return !!(unit && Array.isArray(unit.statusEffects) &&
+      unit.statusEffects.some(e => e && e.type === 'yoi_no_sousou' && (e.duration || 0) > 0));
+  }
+
+  function _pickYoiNoSousouCounterCell(ally, enemy) {
+    if (!ally || !enemy) return null;
+
+    // 敵に隣接する8方向の空きマス。現在地は「移動」にならないので除外。
+    const candidates = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const row = enemy.row + dr;
+        const col = enemy.col + dc;
+        if (row === ally.row && col === ally.col) continue;
+        if (!_canForcedMoveTo(ally, row, col)) continue;
+        candidates.push({ row, col });
+      }
+    }
+
+    if (candidates.length === 0) return null;
+
+    // 酔剣らしく候補からランダム。近接できればどこでも良い。
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function _tryYoiNoSousouCounter(target, source, rawDamage, skill) {
+    if (!_bs || !target || !source) return false;
+    if (target.side !== 'ally' || source.side !== 'enemy') return false;
+    if (target.hp <= 0 || source.hp <= 0) return false;
+    if (!_hasYoiNoSousou(target)) return false;
+
+    const from = { row: target.row, col: target.col };
+    const cell = _pickYoiNoSousouCounterCell(target, source);
+
+    _log(`${target.name} は「酔ノ想葬」で ${source.name} の攻撃を回避！`);
+
+    if (!cell) {
+      _log(`${target.name} は反撃位置を取れなかった`);
+      _emit('evadeCounter', {
+        source: { _uid: source._uid, name: source.name, side: source.side, row: source.row, col: source.col },
+        target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+        evaded: true,
+        countered: false,
+        skillName: '酔ノ想葬',
+        bs: _snapshot(),
+      });
+      return true;
+    }
+
+    target.row = cell.row;
+    target.col = cell.col;
+
+    _emit('forcedMove', {
+      source: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+      target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+      from,
+      to: { row: target.row, col: target.col },
+      effectType: 'yoi_no_sousou',
+      moved: 1,
+      bs: _snapshot(),
+    });
+
+    const eff = target.statusEffects.find(e => e && e.type === 'yoi_no_sousou' && (e.duration || 0) > 0) || {};
+    const rate = Number(eff.counterMultiplier != null ? eff.counterMultiplier : 1.0);
+    const counterDmg = calcDamage(getEffectiveAtk(target), Number.isFinite(rate) ? rate : 1.0, source, target);
+
+    _log(`${target.name} が ${source.name} に反撃！`);
+    applyDamage(source, counterDmg, target, {
+      id: 'yoi_no_sousou_counter',
+      name: '酔ノ想葬・反撃',
+      isUltimate: false,
+      hitStyle: 'counter',
+    });
+
+    _emit('evadeCounter', {
+      source: { _uid: source._uid, name: source.name, side: source.side, row: source.row, col: source.col },
+      target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+      evaded: true,
+      countered: true,
+      skillName: '酔ノ想葬',
+      bs: _snapshot(),
+    });
+
+    return true;
+  }
+
+  // ============================================================
   // ダメージ処理（結界・def_down 考慮）
   // 味方・敵ともに hp を減らす（統一）
   // ============================================================
   function applyDamage(target, rawDamage, source, skill) {
+    if (_tryYoiNoSousouCounter(target, source, rawDamage, skill)) {
+      _checkWinLose();
+      return;
+    }
+
     let dmg = rawDamage;
 
     // 結界：ダメージ軽減（味方のみ）
@@ -1051,6 +1147,20 @@ function _executeDelayedAttack(action) {
 
   _checkWinLose();
 }
+
+  function _splitSkillEffectsByTarget(skill) {
+    const effects = Array.isArray(skill && skill.effects) ? skill.effects : [];
+    return {
+      enemyEffects: effects.filter(e => !e.target || e.target === 'enemy'),
+      selfEffects: effects.filter(e => e.target === 'ally_self' || e.target === 'self'),
+    };
+  }
+
+  function _applySelfEffectsFromSkill(skill, ally) {
+    const { selfEffects } = _splitSkillEffectsByTarget(skill);
+    if (!selfEffects.length || !ally || ally.hp <= 0) return;
+    _applyEffects(selfEffects, ally, ally);
+  }
 
   // ============================================================
   // スキル実行（味方）
@@ -1318,6 +1428,7 @@ if (stype === 'repeat_skill') {
         _log(`${ally.name}：範囲内に敵がいません`);
       } else {
         let drainTotal = 0;
+        const { enemyEffects } = _splitSkillEffectsByTarget(skill);
         const hasDrain = (skill.effects || []).some(e => e.type === 'drain');
 
         targets.forEach(enemy => {
@@ -1336,11 +1447,14 @@ if (stype === 'repeat_skill') {
           const hpBefore = enemy.hp;
           applyDamage(enemy, dmg, ally, skill);
           if (hasDrain) drainTotal += Math.min(dmg, hpBefore); // 実ダメージ分だけ積算
-          _applyEffects(skill.effects, enemy, ally);
+          _applyEffects(enemyEffects, enemy, ally);
         });
 
         if (hasDrain) _applyDrainHealing(skill, ally, drainTotal);
       }
+
+      // 攻撃対象の有無に関わらず、自己付与効果は1回だけ処理する
+      _applySelfEffectsFromSkill(skill, ally);
 
     // ── debuff（ダメージあり/なし両対応） ──────────────────────
     } else if (stype === 'debuff') {
@@ -1748,6 +1862,31 @@ return true;
           sourceElement: source ? source.element : null,
         });
         _log(`${target.name} は毒に侵された（${eff.duration || 2}T）`);
+        return;
+      }
+
+      // ── 酔ノ想葬：敵攻撃を回避して反撃する自己状態 ──────
+      if (eff.type === 'yoi_no_sousou') {
+        const hitRate = eff.hit != null ? eff.hit : 100;
+        if (Math.random() * 100 > hitRate) {
+          _log(`${target.name} に 酔ノ想葬 — 外れ`);
+          return;
+        }
+        if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+
+        // 重複した場合はターン数を延長/更新。複数スタックにはしない。
+        const existing = target.statusEffects.find(e => e && e.type === 'yoi_no_sousou');
+        if (existing) {
+          existing.duration = Math.max(existing.duration || 0, eff.duration || 2);
+          existing.counterMultiplier = eff.counterMultiplier != null ? Number(eff.counterMultiplier) : 1.0;
+        } else {
+          target.statusEffects.push({
+            type: 'yoi_no_sousou',
+            duration: eff.duration || 2,
+            counterMultiplier: eff.counterMultiplier != null ? Number(eff.counterMultiplier) : 1.0,
+          });
+        }
+        _log(`${target.name} は「酔ノ想葬」に入った（${eff.duration || 2}T）`);
         return;
       }
 

@@ -338,6 +338,8 @@ function b32RangeLabel(range) {
     field_all: '盤面全体',
     field_cross_center: '中央十字',
     fan_2row_3_ally: '前方扇状',
+    front_row_3_ally: '前方横3マス',
+    front_and_side_3_ally: '前方1・左右1マス',
     super_but_night_6: '前方特殊範囲'
   };
   return map[range] || range || '—';
@@ -4473,6 +4475,8 @@ await _afterCharTurnFlow();
  ${dead ? `<div class="b32-party-return">RETURN</div>` : ''}
  ${(!!ally.stunned || (Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'stun')))
  ? `<div class="b32-party-status-badge stun">⚡STUN</div>` : ''}
+ ${(Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'yoi_no_sousou'))
+ ? `<div class="b32-party-status-badge yoi">酔ノ想葬</div>` : ''}
  </div>
  `;
  }).join('');

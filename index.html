@@ -2561,37 +2561,9 @@ function finalGachaFlash(callback){
 }
 
   function spawnParticles(rarity){
+    // summon_spark.webp を削除したため、画像パーティクル演出は無効化
     var container = document.getElementById('reveal-particles');
-    container.innerHTML = '';
-    
-   var count =
-  rarity === 'ur' ? 22 :
-  rarity === 'sr' ? 14 :
-                   6;
-
-    for(var i = 0; i < count; i++){
-      var el = document.createElement('img');
-      el.src = 'images/summon_spark.webp';
-      el.className = 'particle';
-      // ランダムな位置・サイズ・遅延・回転
-      var size = 20 + Math.random() * 36; // 20〜56px
-      el.style.width  = size + 'px';
-      el.style.height = size + 'px';
-      el.style.left   = (Math.random() * 100) + '%';
-      el.style.top    = (30 + Math.random() * 60) + '%';
-      el.style.animationDelay    = (Math.random() * 1.0) + 's';
-      el.style.animationDuration = (1.2 + Math.random() * 0.8) + 's';
-      // ランダムな横方向ドリフト
-      var drift = (Math.random() * 120 - 60); // -60〜+60px
-      el.style.setProperty('--drift', drift + 'px');
-      // レアリティごとに色味をつける
-      if(rarity === 'sr'){
-  el.style.filter = 'hue-rotate(200deg) brightness(1.4)';
-} else if(rarity === 'ur'){
-  el.style.filter = 'hue-rotate(' + Math.floor(Math.random()*360) + 'deg) brightness(1.3)';
-}
-      container.appendChild(el);
-    }
+    if(container) container.innerHTML = '';
   }
 
   function closeReveal(){
@@ -3264,6 +3236,7 @@ const DETAIL_RANGE_LABELS = {
   front2: '前方2マス',
   front3: '前方3マス',
   pierce3: '前方直線3マス',
+  front_row_3_ally: '前方横3マス',
   pierce_ally_3: '前方直線3マス',
   pierce_all: '全体貫通',
   all: '敵全体',
@@ -3281,6 +3254,7 @@ const DETAIL_RANGE_LABELS = {
   twin_cross_4: 'ツイン十字',
   twin_star_8: 'ツインスター',
   front_row_3: '前方横3マス',
+  front_and_side_3_ally: '前方1・左右1マス',
   front3_row_3: '前方3×横3',
   front_9: '前方9マス',
   fan_2row_3_ally: '前方扇形',
@@ -3371,10 +3345,19 @@ function getDetailSkillEffectText(skill){
   }).join('、');
 }
 
+function getDetailRangePreviewSelf(range){
+  // X字系は自分を中央に置かないと、下方向の斜めが欠けてV字に見えるため中央表示にする。
+  if(range === 'diag_x_1' || range === 'diag_x_2') {
+    return { row: 2, col: 2 };
+  }
+  // 通常の前方系レンジは、これまで通り自分を下中央に置く。
+  return { row: 4, col: 2 };
+}
+
 function getDetailRangePreviewCells(range){
-  // 5列×5行のミニ盤面。自分は下中央。
+  // 5列×5行のミニ盤面。通常は自分を下中央、X字系は中央に置く。
   // row: 0〜4, col: 0〜4
-  var self = { row: 4, col: 2 };
+  var self = getDetailRangePreviewSelf(range);
   var cells = [];
 
   function add(r, c){
@@ -3428,15 +3411,21 @@ function getDetailRangePreviewCells(range){
       break;
 
     case 'diag_x_1':
-      add(3, 1);
-      add(3, 3);
+      add(self.row - 1, self.col - 1);
+      add(self.row - 1, self.col + 1);
+      add(self.row + 1, self.col - 1);
+      add(self.row + 1, self.col + 1);
       break;
 
     case 'diag_x_2':
-      add(3, 1);
-      add(3, 3);
-      add(2, 0);
-      add(2, 4);
+      add(self.row - 1, self.col - 1);
+      add(self.row - 2, self.col - 2);
+      add(self.row - 1, self.col + 1);
+      add(self.row - 2, self.col + 2);
+      add(self.row + 1, self.col - 1);
+      add(self.row + 2, self.col - 2);
+      add(self.row + 1, self.col + 1);
+      add(self.row + 2, self.col + 2);
       break;
 
     case 'cross':
@@ -3454,6 +3443,12 @@ function getDetailRangePreviewCells(range){
       add(3, 3);
       break;
 
+    case 'front_and_side_3_ally':
+      add(3, 2);
+      add(4, 1);
+      add(4, 3);
+      break;
+
     case 'front3_row_3':
     case 'front_9':
       for(var rr = 1; rr <= 3; rr++){
@@ -3461,6 +3456,14 @@ function getDetailRangePreviewCells(range){
           add(rr, cc);
         }
       }
+      break;
+
+      
+    case 'front_row_3':
+    case 'front_row_3_ally':
+    add(3, 1);
+    add(3, 2);
+    add(3, 3);
       break;
 
     case 'fan_2row_3_ally':
@@ -3537,6 +3540,7 @@ function buildDetailRangePreviewHTML(skill){
   if(!skill) return '';
 
   var range = skill.range || '';
+  var self = getDetailRangePreviewSelf(range);
   var cells = getDetailRangePreviewCells(range);
 
   var html = '<div class="detail-range-preview">';
@@ -3547,7 +3551,7 @@ function buildDetailRangePreviewHTML(skill){
       var key = r + '-' + c;
       var cls = 'detail-range-cell';
 
-      if(r === 4 && c === 2){
+      if(r === self.row && c === self.col){
         cls += ' self';
       } else if(cells.indexOf(key) >= 0){
         cls += skill.type === 'heal' || skill.type === 'buff' ? ' ally' : ' target';
@@ -3563,35 +3567,6 @@ function buildDetailRangePreviewHTML(skill){
   return html;
 }
 
-function buildDetailRangePreviewHTML(skill){
-  if(!skill) return '';
-
-  var range = skill.range || '';
-  var cells = getDetailRangePreviewCells(range);
-
-  var html = '<div class="detail-range-preview">';
-  html += '<div class="detail-range-board">';
-
-  for(var r = 0; r < 5; r++){
-    for(var c = 0; c < 5; c++){
-      var key = r + '-' + c;
-      var cls = 'detail-range-cell';
-
-      if(r === 4 && c === 2){
-        cls += ' self';
-      } else if(cells.indexOf(key) >= 0){
-        cls += skill.type === 'heal' || skill.type === 'buff' ? ' ally' : ' target';
-      }
-
-      html += '<span class="' + cls + '"></span>';
-    }
-  }
-
-  html += '</div>';
-  html += '</div>';
-
-  return html;
-}
 
 function getDetailMovePreviewCells(moveType){
   var self = { row: 2, col: 2 };

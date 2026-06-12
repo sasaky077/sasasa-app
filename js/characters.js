@@ -39,7 +39,7 @@ const CHARACTERS = [
     stats: 
     { 
       HP: 780, 
-      ATK: 230},
+      ATK: 210},
     img: 'images/chara_12.webp', 
     cutImg: 'images/chara_12_cut.webp', 
     ultImg: 'images/chara_12_cutin.webp',
@@ -48,21 +48,23 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
     favScale: 0.85, favOffsetY: -35,
+    uiScale: {panel: 1.0,battleBack: 0.9},
     skills: [
   {
-    id: 's1',
-    name: 'Grace',
-    linkCost: 3,
-    isUltimate: false,
-    hit: 100,
-    type: 'heal',
-    multiplier: 0.0,
-    range: 'self',
-    effects: [
-      { type: 'heal', target: 'ally_self', rate: 0.30 }
-    ],
-    desc: '祈りにより自身のHPを30%回復する。'
-  },
+  id: 's1',
+  name: 'Grace',
+  linkCost: 3,
+  isUltimate: false,
+  hit: 100,
+  type: 'attack',
+  multiplier: 0.7,
+  range: 'front_and_side_3_ally',
+  effects: [
+    { type: 'heal', target: 'ally_self', rate: 0.30 }
+  ],
+  hitStyle: 'multi',
+  desc: '自身のHPを30%回復し、前方1マスと左右1マスの敵にATK×0.7のダメージを与える。'
+},
   {
   id: 'ult',
   name: 'Descent',
@@ -102,6 +104,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_02_battle_back.webp',
     panelImg: 'images/chara_02_panel.webp',
     favScale: 0.85, favOffsetY: -25,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: 'イケてるNOISE',
@@ -130,9 +133,9 @@ const CHARACTERS = [
   desc: '前方に広がるコウモリの群れで攻撃し、命中した敵を1ターンスタンさせる。'}
   ]},
 
-  // ── id:3 アズミ（耐久寄り）──────────────────────────────────
+  // ── id:3 アカネ（耐久寄り）──────────────────────────────────
   // 敵を縛り、ペースを握る。
-  { id: 3, name: 'アズミ', rarity: 'r',
+  { id: 3, name: 'アカネ', rarity: 'r',
     element: 'chaos',
     role: '妨害寄り',
     moveType: 'gold',
@@ -151,6 +154,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_03_battle_back.webp',
     panelImg: 'images/chara_03_panel.webp',
     favScale: 1.0, favOffsetY: 10,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
       name: '蛇睨み',
@@ -182,7 +186,7 @@ const CHARACTERS = [
 
   // ── id:7 ルナ
 { id: 7, name: 'ルナ', rarity: 'r',
-    element: 'logos',
+    element: 'chaos',
   role: 'バランス寄り',
   moveType: 'miyu',
     costMax: 10,
@@ -200,6 +204,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_07_battle_back.webp',
     panelImg: 'images/chara_07_panel.webp',
     favScale: 0.95, favOffsetY: 5,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: 'いくよ！ベル！',
@@ -226,6 +231,57 @@ const CHARACTERS = [
         hitStyle: 'rapid',
         desc: '自分を中心に周囲2マス以内の敵に中ダメージ' }
     ]},
+
+    // ── id:7 シグレ
+{ id: 5, name: 'シグレ', rarity: 'r',
+    element: 'logos',
+  role: 'テクニック寄り',
+  moveType: 'gold',
+    costMax: 10,
+    costStart: 5,
+    costRegen: 3,
+    shinkiMax: 3,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 600, ATK: 250 },
+    img: 'images/chara_05.webp', 
+    cutImg: 'images/chara_05_cut.webp', 
+    ultImg: 'images/chara_05_cutin.webp',
+    upImg: 'images/chara_05_up.webp', 
+    battleImg: 'images/chara_05_battle.webp',
+    battleBackImg: 'images/chara_05_battle_back.webp',
+    panelImg: 'images/chara_05_panel.webp',
+    favScale: 0.95, favOffsetY: 5,
+    uiScale: {panel: 1.0,battleBack: 1.0},
+    skills: [
+      { id: 's1',
+        name: '藤影流・紫繰',
+        linkCost: 2,
+        isUltimate: false,
+        hit: 100,
+        type: 'attack',
+        multiplier: 1.2,
+        range: 'front1',
+        effects: [
+          { type: 'push_1', target: 'enemy', hit: 100 }
+        ],
+        hitStyle: 'normal',
+        desc: '目の前の敵にダメージを与え、1マス押し出す。' },
+
+      { id: 'ult',
+        name: '藤影流奥義・酔ノ想葬',
+        linkCost: 3,
+        isUltimate: true,
+        hit: 100,
+        type: 'attack',
+        multiplier: 1.5,
+        range: 'front_row_3_ally',
+        effects: [
+          { type: 'yoi_no_sousou', target: 'ally_self', hit: 100, duration: 2, counterMultiplier: 1.0 }
+        ],
+        hitStyle: 'multi',
+        desc: '自身の前方3マスにATK×1.5のダメージ。さらに自身に2ターンの間「酔ノ想葬」を付与する。酔ノ想葬：敵から攻撃される時、その攻撃を回避し、攻撃者に隣接する空きマスへ移動してATK×1.0の反撃を行う。効果中、この反撃は条件を満たすたびに発動する。' }
+    ]},
   
   // ── id:1 エリ
 { id: 1, name: 'エリ', rarity: 'r',
@@ -246,10 +302,11 @@ const CHARACTERS = [
     battleImg: 'images/chara_01_battle.webp',
     battleBackImg: 'images/chara_01_battle_back.webp',
     panelImg: 'images/chara_01_panel.webp',
-    favScale: 0.85, favOffsetY: -10,    
+    favScale: 0.85, favOffsetY: -10,
+    uiScale: {panel: 1.0,battleBack: 1.0},    
     skills: [
       { id: 's1',
-        name: '閃',
+        name: '謎の光',
         linkCost: 2,
         isUltimate: false,
         hit: 100,
@@ -260,7 +317,7 @@ const CHARACTERS = [
         desc: '自身の左右1マス以内の敵にダメージ' },
 
       { id: 'ult',
-        name: '終',
+        name: '暴走',
         linkCost: 4,
         isUltimate: true,
         hit: 100,
@@ -292,6 +349,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_13_battle_back.webp',
     panelImg: 'images/chara_13_panel.webp',
     favScale: 0.90, favOffsetY: 10,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: '影刺し',
@@ -344,10 +402,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_04_battle_back.webp',
     panelImg: 'images/chara_04_panel.webp',
     favScale: 1.00, favOffsetY: 20,
-    uiScale: {
-    panel: 1.0,
-    battleBack: 1.0
-},
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: 'もう無理～',
@@ -362,7 +417,7 @@ const CHARACTERS = [
         desc: '自分を中心にX字の範囲にダメージ' },
 
       { id: 'ult',
-        name: '明日やる！',
+        name: '明日から本気出すってば',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
@@ -396,9 +451,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
     favScale: 0.90, favOffsetY: 20,
-    uiScale: {
-    panel: 1.5,
-    battleBack: 1.15
+    uiScale: {panel: 1.0,battleBack: 1.15
 },
     skills: [
       { id: 's1',
@@ -458,6 +511,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_19_battle_back.webp',
     panelImg: 'images/chara_19_panel.webp',
     favScale: 0.95, favOffsetY: 15,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: '神経遮断',
@@ -510,6 +564,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_20_battle_back.webp',
     panelImg: 'images/chara_20_panel.webp',
     favScale: 0.90, favOffsetY: -35,
+    uiScale: {panel: 1.0,battleBack: 1.15},
     skills: [
       { id: 's1',
         name: 'Overdose',
@@ -564,6 +619,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
     favScale: 0.85, favOffsetY: -15,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [  
   { 
     id: 's1', 
@@ -614,6 +670,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_16_battle_back.webp',
     panelImg: 'images/chara_16_panel.webp',
     favScale: 1.1, favOffsetY: 35,
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: 'シロと一緒',
@@ -667,10 +724,7 @@ const CHARACTERS = [
     battleImg: 'images/chara_08_battle.webp',
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
-    uiScale: {
-    panel: 1.0,
-    battleBack: 1.15
-    },
+    uiScale: {panel: 1.0,battleBack: 1.15},
     skills: [
       { id: 's1',
         name: 'じゃっく！',
