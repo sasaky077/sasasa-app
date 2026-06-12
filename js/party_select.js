@@ -399,6 +399,54 @@
         background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
         border-radius: 9px; padding: 10px 12px;
       }
+      .ps-detail-skill-main {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: start;
+      }
+      .ps-mini-range-board {
+        display: grid;
+        grid-template-columns: repeat(5, 9px);
+        grid-template-rows: repeat(8, 9px);
+        gap: 2px;
+        padding: 6px;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.08);
+        flex-shrink: 0;
+      }
+      .ps-mini-range-cell {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.05);
+      }
+      .ps-mini-range-cell.enemy-zone {
+        background: rgba(80,40,120,0.16);
+        border-color: rgba(160,100,220,0.12);
+      }
+      .ps-mini-range-cell.ally-zone {
+        background: rgba(40,90,150,0.15);
+        border-color: rgba(90,170,255,0.12);
+      }
+      .ps-mini-range-cell.self {
+        background: rgba(255,230,120,0.95);
+        border-color: rgba(255,245,180,0.95);
+        box-shadow: 0 0 7px rgba(255,210,80,0.65);
+        border-radius: 50%;
+      }
+      .ps-mini-range-cell.target {
+        background: rgba(255,90,90,0.60);
+        border-color: rgba(255,140,120,0.95);
+        box-shadow: 0 0 7px rgba(255,70,70,0.45);
+      }
+      .ps-mini-range-cell.ally-target {
+        background: rgba(90,200,255,0.55);
+        border-color: rgba(150,230,255,0.9);
+        box-shadow: 0 0 7px rgba(90,200,255,0.45);
+      }
       .ps-detail-skill-header {
         display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
       }
@@ -587,6 +635,73 @@
     card.addEventListener('mouseleave', cancel);
   }
 
+  function buildSkillMetaText(sk) {
+    const parts = [];
+    if (sk.linkCost != null) parts.push('LINK ' + sk.linkCost);
+    if (sk.hit != null) parts.push(sk.hit < 100 ? 'HIT ' + sk.hit + '%' : '確定命中');
+    if (sk.cdMax != null) parts.push('CD ' + sk.cdMax + 'ターン');
+    if (sk.isUltimate) parts.push('ULT');
+    return parts.join(' / ') || '—';
+  }
+
+  function buildPartySkillMiniBoard(sk) {
+    const range = sk && sk.range;
+    if (!range) return '';
+
+    // 味方は下側から上方向へ攻撃する前提。中央下寄りを発動者にする。
+    const user = { row: 6, col: 2, side: 'ally' };
+    let cells = new Set();
+
+    if (window.BattleRange32 && typeof window.BattleRange32.getCellsFromRange32 === 'function') {
+      cells = window.BattleRange32.getCellsFromRange32(user, range) || new Set();
+    } else {
+      cells = fallbackPartyRangeCells(user, range);
+    }
+
+    const isAllySkill = sk.type === 'heal' || (sk.effects || []).some(e => String(e.target || '').startsWith('ally'));
+    let html = '<div class="ps-mini-range-board" aria-label="スキル範囲">';
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 5; c++) {
+        const key = r + '-' + c;
+        const cls = ['ps-mini-range-cell'];
+        if (r <= 2) cls.push('enemy-zone');
+        if (r >= 5) cls.push('ally-zone');
+        if (r === user.row && c === user.col) cls.push('self');
+        else if (cells.has(key)) cls.push(isAllySkill ? 'ally-target' : 'target');
+        html += '<span class="' + cls.join(' ') + '"></span>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function fallbackPartyRangeCells(user, range) {
+    const s = new Set();
+    const add = (r, c) => {
+      if (r >= 0 && r < 8 && c >= 0 && c < 5) s.add(r + '-' + c);
+    };
+    const rel = (list) => list.forEach(p => add(user.row + p.dr, user.col + p.dc));
+
+    if (range === 'self') add(user.row, user.col);
+    else if (range === 'ally_all' || range === 'enemy_all' || range === 'field_all') {
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 5; c++) add(r, c);
+    } else if (range === 'front_all_rows_ally') {
+      for (let r = 0; r < user.row; r++) for (let c = 0; c < 5; c++) add(r, c);
+    } else if (range === 'front_row_3_ally' || range === 'front_and_side_3_ally') {
+      rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1}]);
+    } else if (range === 'fan_2row_3_ally') {
+      rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:-2,dc:-1},{dr:-2,dc:0},{dr:-2,dc:1}]);
+    } else if (range === 'pierce_all' || range === 'pierce_ally_3' || range === 'front3') {
+      for (let r = user.row - 1; r >= 0; r--) add(r, user.col);
+    } else if (range === 'around8') {
+      rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:0,dc:-1},{dr:0,dc:1},{dr:1,dc:-1},{dr:1,dc:0},{dr:1,dc:1}]);
+    } else {
+      // 未定義でも空欄にせず、自分マスだけ出して「起点」を見せる
+      add(user.row, user.col);
+    }
+    return s;
+  }
+
   function showCharaDetail(charaId) {
     const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
     const chara = chars.find(c => c.id === charaId);
@@ -603,7 +718,7 @@
     }
 
     const RARITY_LABEL = { r: 'R', sr: 'SR', ur: 'UR' };
-    const TYPE_LABEL = { attack:'攻撃', debuff:'妨害', buff:'補助', move:'移動', special:'特殊' };
+    const TYPE_LABEL = { attack:'攻撃', debuff:'妨害', buff:'補助', heal:'回復', move:'移動', special:'特殊' };
 
     const skillsHTML = (chara.skills || []).map(sk => `
       <div class="ps-detail-skill">
@@ -611,8 +726,13 @@
           <div class="ps-detail-skill-name">${sk.name}</div>
           <div class="ps-detail-skill-type ${sk.type}">${TYPE_LABEL[sk.type]||'スキル'}</div>
         </div>
-        <div class="ps-detail-skill-desc">${sk.desc || '詳細情報なし'}</div>
-        <div class="ps-detail-skill-hit">${sk.hit < 100 ? 'HIT ' + sk.hit + '%' : '確定命中'} / CD ${sk.cdMax}ターン</div>
+        <div class="ps-detail-skill-main">
+          <div>
+            <div class="ps-detail-skill-desc">${sk.desc || '詳細情報なし'}</div>
+            <div class="ps-detail-skill-hit">${buildSkillMetaText(sk)}</div>
+          </div>
+          ${buildPartySkillMiniBoard(sk)}
+        </div>
       </div>
     `).join('');
 

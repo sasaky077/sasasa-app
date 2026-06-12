@@ -84,7 +84,7 @@ const CHARACTERS = [
 
   // ── id:2 レイチェル（速度寄り）──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
-  { id: 2, name: 'レイチェル', rarity: 'r',
+  { id: 2, name: 'レイチェル', rarity: 'ur',
     element: 'chaos',
   role: '妨害寄り',
   moveType: 'shigure',
@@ -135,7 +135,7 @@ const CHARACTERS = [
 
   // ── id:3 アカネ（耐久寄り）──────────────────────────────────
   // 敵を縛り、ペースを握る。
-  { id: 3, name: 'アカネ', rarity: 'r',
+  { id: 3, name: 'アカネ', rarity: 'ur',
     element: 'chaos',
     role: '妨害寄り',
     moveType: 'gold',
@@ -185,7 +185,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:7 ルナ
-{ id: 7, name: 'ルナ', rarity: 'r',
+{ id: 7, name: 'ルナ', rarity: 'ur',
     element: 'chaos',
   role: 'バランス寄り',
   moveType: 'miyu',
@@ -233,7 +233,7 @@ const CHARACTERS = [
     ]},
 
     // ── id:7 シグレ
-{ id: 5, name: 'シグレ', rarity: 'r',
+{ id: 5, name: 'シグレ', rarity: 'ur',
     element: 'logos',
   role: 'テクニック寄り',
   moveType: 'gold',
@@ -284,7 +284,7 @@ const CHARACTERS = [
     ]},
   
   // ── id:1 エリ
-{ id: 1, name: 'エリ', rarity: 'r',
+{ id: 1, name: 'エリ', rarity: 'ur',
     element: 'mystis',
   role: 'バランス寄り',
   moveType: 'eri',
@@ -330,7 +330,7 @@ const CHARACTERS = [
 
   // ── id:13 チサカ（暗殺寄り）──────────────────────────────────
   // 背後からの攻撃で大ダメージを狙う暗殺型。
-  { id: 13, name: 'チサカ', rarity: 'r',
+  { id: 13, name: 'チサカ', rarity: 'ur',
     element: 'logos',
     role: 'テクニック寄り',
     moveType: 'chisaka',
@@ -383,7 +383,7 @@ const CHARACTERS = [
 
   // ── id:4 キティ───────────────────────────────────
   // 予知系。数ターン先に攻撃を予約する感じ。
-  { id: 4, name: 'キティ', rarity: 'sr',
+  { id: 4, name: 'キティ', rarity: 'ur',
     element: 'mystis',
     role: 'テクニック寄り',
     moveType: 'yuzuha',
@@ -417,7 +417,7 @@ const CHARACTERS = [
         desc: '自分を中心にX字の範囲にダメージ' },
 
       { id: 'ult',
-        name: '明日から本気出すってば',
+        name: '明日から本気出すもん',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
@@ -432,7 +432,7 @@ const CHARACTERS = [
     ]},
  
 // ── id:15 アキ
-{ id: 15, name: 'アキ', rarity: 'sr',
+{ id: 15, name: 'アキ', rarity: 'ur',
     element: 'chaos',
   role: '妨害寄り',
   moveType: 'aki',
@@ -492,7 +492,7 @@ const CHARACTERS = [
   
   // ── id:19 カンナ（耐久寄り）──────────────────────────────────
   // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
-  { id: 19, name: 'カンナ', rarity: 'sr',
+  { id: 19, name: 'カンナ', rarity: 'ur',
     element: 'logos',
     role: '妨害寄り',
     moveType: 'silver',
@@ -545,7 +545,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:20 マアヤ（支援寄り）──────────────────────────────────
-  { id: 20, name: 'マアヤ', rarity: 'sr',
+  { id: 20, name: 'マアヤ', rarity: 'ur',
     element: 'logos',
     role: '支援寄り',
     moveType: 'shigure',
@@ -601,7 +601,7 @@ const CHARACTERS = [
 
   // ── id:14 アイム（火力寄り）──────────────────────────────────
   // コピー系。
-  { id: 14, name: 'アイム', rarity: 'sr',
+  { id: 14, name: 'アイム', rarity: 'ur',
     element: 'chaos',
     role: 'テクニック寄り',
     costMax: 14,
@@ -706,7 +706,7 @@ const CHARACTERS = [
 
  // ── id:8 アサミ
 { id: 8, 
-  name: 'アサミ', rarity: 'sr',
+  name: 'アサミ', rarity: 'ur',
     element: 'logos',
   role: '速度寄り',
   moveType: 'asami',
