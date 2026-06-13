@@ -14,7 +14,7 @@
   function _minPartySize() { return _isRogueliteMode() ? 1 : 3; }
 
 
-  // 部隊編成画面専用画像
+  // パーティ編成画面専用画像
   // レイチェルだけ partyImg を優先し、他キャラは従来通り upImg -> img を使う
   function getPartySelectImg(chara) {
     if (!chara) return '';
@@ -60,7 +60,7 @@
 
     el.innerHTML = `
       <div class="ps-header">
-        <div class="ps-title">部隊編成</div>
+        <div class="ps-title">パーティ編成</div>
         <div class="ps-sub" id="ps-sub-text">3人選択 · 連れていくキャラを選んでください</div>
       </div>
 
@@ -200,13 +200,6 @@
         align-items: center;
         justify-content: center;
       }
-      .ps-slot-label {
-        font-family: "Cinzel", serif;
-        font-size: 9px;
-        letter-spacing: 2px;
-        color: rgba(232,228,220,0.3);
-      }
-
       /* キャラ一覧 */
       .ps-list-wrap {
         flex: 1;
@@ -447,6 +440,17 @@
         border-color: rgba(150,230,255,0.9);
         box-shadow: 0 0 7px rgba(90,200,255,0.45);
       }
+
+      .ps-mini-range-board-5x5 {
+        grid-template-columns: repeat(5, 10px) !important;
+        grid-template-rows: repeat(5, 10px) !important;
+      }
+      .ps-mini-range-board.mode-center .ps-mini-range-cell.self {
+        box-shadow:
+          0 0 7px rgba(255,220,120,0.55),
+          inset 0 0 0 1px rgba(255,255,255,0.28);
+      }
+
       .ps-detail-skill-header {
         display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
       }
@@ -466,6 +470,78 @@
       }
       .ps-detail-skill-hit {
         font-family: "Cinzel", serif; font-size: 9px; color: rgba(232,228,220,0.3); margin-top: 4px;
+      }
+      .ps-detail-move-section {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding-bottom: 10px;
+      }
+      .ps-detail-move-title {
+        font-size: 9px;
+        letter-spacing: 3px;
+        color: rgba(232,228,220,0.3);
+        padding: 12px 18px 8px;
+        font-family: "Cinzel", serif;
+      }
+      .ps-detail-move-list {
+        padding: 0 14px;
+      }
+      .ps-detail-move-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 9px;
+        padding: 10px 12px;
+      }
+      .ps-detail-move-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: start;
+      }
+      .ps-detail-move-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+      }
+      .ps-detail-move-name {
+        font-size: 13px;
+        letter-spacing: 1px;
+        color: rgba(232,228,220,0.9);
+        font-weight: 500;
+      }
+      .ps-detail-move-type {
+        font-size: 8px;
+        letter-spacing: 1px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        border: 1px solid rgba(128,200,240,0.4);
+        color: #80c8f0;
+        background: rgba(128,200,240,0.08);
+      }
+      .ps-detail-move-desc {
+        font-size: 11px;
+        color: rgba(232,228,220,0.5);
+        line-height: 1.7;
+        letter-spacing: 0.3px;
+      }
+      .ps-detail-move-meta {
+        font-family: "Cinzel", serif;
+        font-size: 9px;
+        color: rgba(232,228,220,0.3);
+        margin-top: 4px;
+      }
+      .ps-mini-range-board-7x5 {
+        grid-template-columns: repeat(5, 9px) !important;
+        grid-template-rows: repeat(7, 9px) !important;
+      }
+      .ps-mini-range-board.move-board {
+        background: rgba(0,0,0,0.35);
+        border-color: rgba(255,255,255,0.08);
+      }
+      .ps-mini-range-cell.move-target {
+        background: rgba(90,200,255,0.58);
+        border-color: rgba(150,230,255,0.95);
+        box-shadow: 0 0 7px rgba(90,200,255,0.45);
       }
       .ps-detail-close {
         width: calc(100% - 28px); margin: 14px 14px 0;
@@ -520,7 +596,6 @@
               <div class="ps-slot-chara-name">${name}</div>
               <div class="ps-slot-remove">✕</div>
             </div>
-            <div class="ps-slot-label">${label}</div>
           </div>
         `;
       } else {
@@ -532,7 +607,6 @@
                 <div class="ps-slot-empty-plus">＋</div>
               </div>
             </div>
-            <div class="ps-slot-label">${label}</div>
           </div>
         `;
       }
@@ -644,12 +718,162 @@
     return parts.join(' / ') || '—';
   }
 
-  function buildPartySkillMiniBoard(sk) {
-    const range = sk && sk.range;
-    if (!range) return '';
+  function normalizePartyMiniRange(range) {
+    const alias = {
+      front_row_3: 'front_row_3_ally',
+      front3_row_3: 'front3_row_3_ally',
+      front_9: 'front_9_ally',
+      cross: 'cross_32'
+    };
+    return alias[range] || range || '';
+  }
 
-    // 味方は下側から上方向へ攻撃する前提。中央下寄りを発動者にする。
-    const user = { row: 6, col: 2, side: 'ally' };
+  function getPartyMiniRangeMode(range) {
+    range = normalizePartyMiniRange(range);
+
+    const fullBoard = new Set([
+      'all',
+      'enemy_all',
+      'ally_all',
+      'field_all',
+      'field_cross_center',
+      'front_all_rows_ally',
+      'pierce_all',
+      'col_center_32'
+    ]);
+
+    const centered = new Set([
+      'self',
+      'adjacent',
+      'around8',
+      'around24',
+      'side_lr',
+      'diag_x_1',
+      'diag_x_2',
+      'cross_32'
+    ]);
+
+    if (fullBoard.has(range)) return 'field';
+    return centered.has(range) ? 'center' : 'front';
+  }
+
+  function getPartyMiniRangeSpec(range) {
+    range = normalizePartyMiniRange(range);
+    const mode = getPartyMiniRangeMode(range);
+
+    if (mode === 'field') {
+      return { rows: 8, cols: 5, user: { row: 6, col: 2, side: 'ally' }, mode: 'field' };
+    }
+
+    return mode === 'center'
+      ? { rows: 5, cols: 5, user: { row: 2, col: 2, side: 'ally' }, mode: 'center' }
+      : { rows: 7, cols: 5, user: { row: 6, col: 2, side: 'ally' }, mode: 'front' };
+  }
+
+
+  function getPartyMoveTypeLabel(moveType) {
+    const map = {
+      pawn: '歩型：前方1マス',
+      lance: '香型：前方直線',
+      gold: '金型：前・左右',
+      silver: '銀型：前方3方向',
+      rook_short: '飛車型：前・左右',
+      shigure: 'シグレ型：前・後方横3',
+      miyu: 'ミユ型：前方直線3',
+      eri: 'エリ型：上下左右',
+      aki: 'アキ型：前後2・前桂馬',
+      asami: 'アサミ型：前後・斜め前',
+      chisaka: 'チサカ型：前・左右・飛越',
+      yuzuha: 'ユズハ型：前2・後方斜め',
+      bishop_short: '角型：斜め3方向',
+      knight: '桂馬型：前方桂馬',
+      none: '移動なし'
+    };
+    return map[moveType] || (moveType || 'silver');
+  }
+
+  function buildPartyMoveMiniBoard(chara) {
+    if (!chara) return '';
+
+    const moveType = chara.moveType || 'silver';
+    const spec = { rows: 7, cols: 5, user: { row: 3, col: 2, side: 'ally', moveType }, mode: 'move' };
+    const user = spec.user;
+    let offsets = [];
+
+    if (window.BattleRange32 && typeof window.BattleRange32.getMoveOffsets === 'function') {
+      offsets = window.BattleRange32.getMoveOffsets(user) || [];
+    } else {
+      offsets = fallbackPartyMoveOffsets(moveType);
+    }
+
+    const cells = new Set();
+    offsets.forEach(p => {
+      const r = user.row + p.dr;
+      const c = user.col + p.dc;
+      if (r >= 0 && r < spec.rows && c >= 0 && c < spec.cols) cells.add(r + '-' + c);
+    });
+
+    let board = '<div class="ps-mini-range-board ps-mini-range-board-7x5 move-board mode-move" aria-label="移動範囲">';
+    for (let r = 0; r < spec.rows; r++) {
+      for (let c = 0; c < spec.cols; c++) {
+        const cls = ['ps-mini-range-cell'];
+        if (r === user.row && c === user.col) cls.push('self');
+        else if (cells.has(r + '-' + c)) cls.push('move-target');
+        board += '<span class="' + cls.join(' ') + '"></span>';
+      }
+    }
+    board += '</div>';
+
+    return `
+      <div class="ps-detail-move-section">
+        <div class="ps-detail-move-title">— MOVE —</div>
+        <div class="ps-detail-move-list">
+          <div class="ps-detail-move-card">
+            <div class="ps-detail-move-row">
+              <div>
+                <div class="ps-detail-move-header">
+                  <div class="ps-detail-move-name">${getPartyMoveTypeLabel(moveType)}</div>
+                  <div class="ps-detail-move-type">移動</div>
+                </div>
+                <div class="ps-detail-move-desc">このキャラの移動可能マスを表示します。</div>
+                <div class="ps-detail-move-meta">MOVE / PARTY SELECT</div>
+              </div>
+              ${board}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function fallbackPartyMoveOffsets(moveType) {
+    const presets = {
+      pawn: [{ dr:-1, dc:0 }],
+      lance: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
+      gold: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+      silver: [{ dr:-1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
+      rook_short: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+      shigure: [{ dr:-1, dc:0 }, { dr:1, dc:-1 }, { dr:1, dc:0 }, { dr:1, dc:1 }],
+      miyu: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
+      eri: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+      aki: [{ dr:-2, dc:0 }, { dr:2, dc:0 }, { dr:-2, dc:-1 }, { dr:-2, dc:1 }],
+      asami: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
+      chisaka: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }, { dr:-2, dc:0 }, { dr:-2, dc:-2 }, { dr:-2, dc:2 }],
+      yuzuha: [{ dr:-2, dc:0 }, { dr:2, dc:-1 }, { dr:2, dc:1 }],
+      bishop_short: [{ dr:-1, dc:-1 }, { dr:-1, dc:1 }, { dr:1, dc:-1 }],
+      knight: [{ dr:-2, dc:-1 }, { dr:-2, dc:1 }],
+      none: []
+    };
+    return presets[moveType] || presets.silver;
+  }
+
+  function buildPartySkillMiniBoard(sk) {
+    const rawRange = sk && sk.range;
+    if (!rawRange) return '';
+    const range = normalizePartyMiniRange(rawRange);
+
+    const spec = getPartyMiniRangeSpec(range);
+    const user = spec.user;
     let cells = new Set();
 
     if (window.BattleRange32 && typeof window.BattleRange32.getCellsFromRange32 === 'function') {
@@ -658,14 +882,16 @@
       cells = fallbackPartyRangeCells(user, range);
     }
 
-    const isAllySkill = sk.type === 'heal' || (sk.effects || []).some(e => String(e.target || '').startsWith('ally'));
-    let html = '<div class="ps-mini-range-board" aria-label="スキル範囲">';
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 5; c++) {
+    const isAllySkill = sk.type === 'heal' || sk.type === 'buff' || (sk.effects || []).some(e => String(e.target || '').startsWith('ally'));
+    let html = '<div class="ps-mini-range-board ps-mini-range-board-' + spec.rows + 'x' + spec.cols + ' mode-' + spec.mode + '" aria-label="スキル範囲">';
+    for (let r = 0; r < spec.rows; r++) {
+      for (let c = 0; c < spec.cols; c++) {
         const key = r + '-' + c;
         const cls = ['ps-mini-range-cell'];
-        if (r <= 2) cls.push('enemy-zone');
-        if (r >= 5) cls.push('ally-zone');
+        if (spec.rows === 8) {
+          if (r <= 2) cls.push('enemy-zone');
+          if (r >= 5) cls.push('ally-zone');
+        }
         if (r === user.row && c === user.col) cls.push('self');
         else if (cells.has(key)) cls.push(isAllySkill ? 'ally-target' : 'target');
         html += '<span class="' + cls.join(' ') + '"></span>';
@@ -683,24 +909,57 @@
     const rel = (list) => list.forEach(p => add(user.row + p.dr, user.col + p.dc));
 
     if (range === 'self') add(user.row, user.col);
-    else if (range === 'ally_all' || range === 'enemy_all' || range === 'field_all') {
-      for (let r = 0; r < 8; r++) for (let c = 0; c < 5; c++) add(r, c);
+    else if (range === 'ally_all' || range === 'enemy_all' || range === 'field_all' || range === 'all') {
+      for (let r = user.row - 2; r <= user.row + 2; r++) {
+        for (let c = user.col - 2; c <= user.col + 2; c++) add(r, c);
+      }
     } else if (range === 'front_all_rows_ally') {
-      for (let r = 0; r < user.row; r++) for (let c = 0; c < 5; c++) add(r, c);
-    } else if (range === 'front_row_3_ally' || range === 'front_and_side_3_ally') {
+      for (let r = user.row - 1; r >= user.row - 4; r--) for (let c = user.col - 2; c <= user.col + 2; c++) add(r, c);
+    } else if (range === 'front_row_3_ally' || range === 'front_row_3') {
       rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1}]);
+    } else if (range === 'front_and_side_3_ally') {
+      rel([{dr:-1,dc:0},{dr:0,dc:-1},{dr:0,dc:1}]);
     } else if (range === 'fan_2row_3_ally') {
-      rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:-2,dc:-1},{dr:-2,dc:0},{dr:-2,dc:1}]);
-    } else if (range === 'pierce_all' || range === 'pierce_ally_3' || range === 'front3') {
-      for (let r = user.row - 1; r >= 0; r--) add(r, user.col);
-    } else if (range === 'around8') {
+      rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:-2,dc:-2},{dr:-2,dc:-1},{dr:-2,dc:0},{dr:-2,dc:1},{dr:-2,dc:2}]);
+    } else if (range === 'pierce_all') {
+      for (let r = user.row - 1; r >= user.row - 4; r--) add(r, user.col);
+    } else if (range === 'pierce_ally_3' || range === 'pierce3' || range === 'front3') {
+      rel([{dr:-1,dc:0},{dr:-2,dc:0},{dr:-3,dc:0}]);
+    } else if (range === 'front2' || range === 'pierce_ally_2' || range === 'pierce2') {
+      rel([{dr:-1,dc:0},{dr:-2,dc:0}]);
+    } else if (range === 'front1' || range === 'front_ally') {
+      rel([{dr:-1,dc:0}]);
+    } else if (range === 'around8' || range === 'adjacent') {
       rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:0,dc:-1},{dr:0,dc:1},{dr:1,dc:-1},{dr:1,dc:0},{dr:1,dc:1}]);
+    } else if (range === 'around24') {
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          add(user.row + dr, user.col + dc);
+        }
+      }
+    } else if (range === 'side_lr') {
+      rel([{dr:0,dc:-1},{dr:0,dc:1}]);
+    } else if (range === 'diag_x_1') {
+      rel([{dr:-1,dc:-1},{dr:-1,dc:1},{dr:1,dc:-1},{dr:1,dc:1}]);
+    } else if (range === 'diag_x_2') {
+      rel([{dr:-1,dc:-1},{dr:-2,dc:-2},{dr:-1,dc:1},{dr:-2,dc:2},{dr:1,dc:-1},{dr:2,dc:-2},{dr:1,dc:1},{dr:2,dc:2}]);
+    } else if (range === 'cross' || range === 'cross_32') {
+      rel([{dr:-1,dc:0},{dr:-2,dc:0},{dr:1,dc:0},{dr:0,dc:-1},{dr:0,dc:1}]);
+    } else if (range === 'field_cross_center') {
+      for (let r = 0; r < 8; r++) add(r, 2);
+      for (let c = 0; c < 5; c++) add(2, c);
+    } else if (range === 'cross_large') {
+      rel([{dr:-1,dc:0},{dr:-2,dc:0},{dr:-3,dc:0},{dr:-4,dc:0},{dr:-2,dc:-2},{dr:-2,dc:-1},{dr:-2,dc:1},{dr:-2,dc:2}]);
+    } else if (range === 'super_but_night_6') {
+      rel([{dr:-1,dc:-2},{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:-1,dc:2},{dr:-2,dc:-1},{dr:-2,dc:0},{dr:-2,dc:1},{dr:-3,dc:0}]);
     } else {
       // 未定義でも空欄にせず、自分マスだけ出して「起点」を見せる
       add(user.row, user.col);
     }
     return s;
   }
+
 
   function showCharaDetail(charaId) {
     const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
@@ -755,6 +1014,7 @@
           </div>
         </div>
       </div>
+      ${buildPartyMoveMiniBoard(chara)}
       <div class="ps-detail-skills-title">— SKILLS —</div>
       <div class="ps-detail-skill-list">${skillsHTML}</div>
       <button class="ps-detail-close" onclick="closeCharaDetail()">閉じる</button>

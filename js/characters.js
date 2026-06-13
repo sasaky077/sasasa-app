@@ -37,9 +37,7 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: 
-    { 
-      HP: 780, 
-      ATK: 210},
+    { HP: 780, ATK: 210},
     img: 'images/chara_12.webp', 
     cutImg: 'images/chara_12_cut.webp', 
     ultImg: 'images/chara_12_cutin.webp',
@@ -82,6 +80,62 @@ const CHARACTERS = [
 },
     ]},
 
+     // ── id:6 カヒ（弁財天モデル / 神奏ギター）────────────────────
+  // 神が奏でる音で敵を払いつつ、味方の攻撃テンポを上げる支援寄りアタッカー。
+  { id: 6, name: 'カヒ', rarity: 'ur',
+    element: 'mystis',
+    role: '支援寄り',
+    moveType: 'gold',
+    costMax: 12,
+    costStart: 5,
+    costRegen: 4,
+    shinkiMax: 5,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: 
+    { HP: 720, ATK: 240},
+    img: 'images/chara_06.webp', 
+    cutImg: 'images/chara_06_cut.webp', 
+    ultImg: 'images/chara_06_cutin.webp',
+    upImg: 'images/chara_06_up.webp', 
+    battleImg: 'images/chara_06_battle.webp',
+    battleBackImg: 'images/chara_06_battle_back.webp',
+    panelImg: 'images/chara_06_panel.webp',
+    favScale: 0.85, favOffsetY: -35,
+    uiScale: {panel: 1.0,battleBack: 0.9},
+    skills: [
+      {
+        id: 's1',
+        name: 'アマノネイロ',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        type: 'attack',
+        multiplier: 1.2,
+        range: 'front_row_3_ally',
+        effects: [
+          { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.15 }
+        ],
+        hitStyle: 'multi',
+        desc: '前方横3マスの敵にATK×1.2のダメージを与える。さらに味方全体のATKを1ターン15%上昇させる。'
+      },
+      {
+        id: 'ult',
+        name: 'ロックオブリンネ',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        type: 'attack',
+        multiplier: 2.6,
+        range: 'cross_large',
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+        ],
+        hitStyle: 'multi',
+        desc: '輪廻を揺らす神奏で、前方大十字範囲の敵にATK×2.6のダメージを与え、1ターン行動不能にする。'
+      },
+    ]},
+
   // ── id:2 レイチェル（速度寄り）──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
   { id: 2, name: 'レイチェル', rarity: 'ur',
@@ -104,7 +158,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_02_battle_back.webp',
     panelImg: 'images/chara_02_panel.webp',
     favScale: 0.85, favOffsetY: -25,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 0.87},
     skills: [
       { id: 's1',
         name: 'イケてるNOISE',
@@ -130,7 +184,7 @@ const CHARACTERS = [
     { type: 'stun', target: 'enemy', hit: 60, duration: 1 }
   ],
   hitStyle: 'multi',
-  desc: '前方に広がるコウモリの群れで攻撃し、命中した敵を1ターンスタンさせる。'}
+  desc: '前方にコウモリの群れが突撃、命中した敵を1ターンスタンさせる。'}
   ]},
 
   // ── id:3 アカネ（耐久寄り）──────────────────────────────────
@@ -204,7 +258,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_07_battle_back.webp',
     panelImg: 'images/chara_07_panel.webp',
     favScale: 0.95, favOffsetY: 5,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 0.88},
     skills: [
       { id: 's1',
         name: 'いくよ！ベル！',
@@ -219,7 +273,7 @@ const CHARACTERS = [
         desc: '直線上3マス以内の敵にダメージ' },
 
       { id: 'ult',
-        name: 'あ、当たるよね？！',
+        name: 'て、手加減しません！',
         linkCost: 4,
         isUltimate: true,
         hit: 100,
@@ -291,10 +345,10 @@ const CHARACTERS = [
     costMax: 14,
     costStart: 5,
     costRegen: 2,
-    shinkiMax: 4,
+    shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 820, ATK: 200 },
+    stats: { HP: 700, ATK: 230 },
     img: 'images/chara_01.webp', 
     cutImg: 'images/chara_01_cut.webp', 
     ultImg: 'images/chara_01_cutin.webp',
@@ -311,13 +365,13 @@ const CHARACTERS = [
         isUltimate: false,
         hit: 100,
         type: 'attack',
-        multiplier: 1.2,
+        multiplier: 1.3,
         range: 'side_lr',
         effects: [],
         desc: '自身の左右1マス以内の敵にダメージ' },
 
       { id: 'ult',
-        name: '暴走',
+        name: '駆け巡る閃光',
         linkCost: 4,
         isUltimate: true,
         hit: 100,
@@ -402,7 +456,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_04_battle_back.webp',
     panelImg: 'images/chara_04_panel.webp',
     favScale: 1.00, favOffsetY: 20,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 0.87},
     skills: [
       { id: 's1',
         name: 'もう無理～',
@@ -451,8 +505,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
     favScale: 0.90, favOffsetY: 20,
-    uiScale: {panel: 1.0,battleBack: 1.15
-},
+    uiScale: {panel: 1.0,battleBack: 1.02},
     skills: [
       { id: 's1',
         name: 'おいで',
@@ -502,7 +555,7 @@ const CHARACTERS = [
     shinkiMax: 6,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 600, ATK: 250 },
+    stats: { HP: 600, ATK: 220 },
     img: 'images/chara_19.webp', 
     cutImg: 'images/chara_19_cut.webp', 
     ultImg: 'images/chara_19_cutin.webp',
@@ -511,7 +564,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_19_battle_back.webp',
     panelImg: 'images/chara_19_panel.webp',
     favScale: 0.95, favOffsetY: 15,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 0.97},
     skills: [
       { id: 's1',
         name: '神経遮断',
@@ -564,7 +617,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_20_battle_back.webp',
     panelImg: 'images/chara_20_panel.webp',
     favScale: 0.90, favOffsetY: -35,
-    uiScale: {panel: 1.0,battleBack: 1.15},
+    uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
         name: 'Overdose',
@@ -619,7 +672,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
     favScale: 0.85, favOffsetY: -15,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 0.9},
     skills: [  
   { 
     id: 's1', 
@@ -670,7 +723,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_16_battle_back.webp',
     panelImg: 'images/chara_16_panel.webp',
     favScale: 1.1, favOffsetY: 35,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 0.83},
     skills: [
       { id: 's1',
         name: 'シロと一緒',
@@ -716,7 +769,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 850, ATK: 280 },
+    stats: { HP: 700, ATK: 280 },
     img: 'images/chara_08.webp', 
     cutImg: 'images/chara_08_cut.webp', 
     ultImg: 'images/chara_08_cutin.webp',
@@ -724,7 +777,7 @@ const CHARACTERS = [
     battleImg: 'images/chara_08_battle.webp',
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
-    uiScale: {panel: 1.0,battleBack: 1.15},
+    uiScale: {panel: 1.0,battleBack: 0.9},
     skills: [
       { id: 's1',
         name: 'じゃっく！',

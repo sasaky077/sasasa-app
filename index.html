@@ -25,8 +25,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=159">
-  <link rel="stylesheet" href="css/story_ui.css?v=1">
+  <link rel="stylesheet" href="css/style.css?v=182">
+  <link rel="stylesheet" href="css/story_ui.css?v=5">
 
 </head>
 <body>
@@ -219,7 +219,7 @@
 <div id="screen-summon" class="screen">
   <div class="header">
     <div></div>
-    <div class="header-title">協力者徴集</div>
+    <div class="header-title">創乙女徴集</div>
     <div></div>
   </div>
 
@@ -256,7 +256,7 @@
     <div id="result-chara-visual"></div>
     <div id="result-info">
       <div class="result-name" id="result-name"></div>
-      <div class="result-rarity-badge" id="result-rarity"></div>
+      <div class="result-element-badge" id="result-rarity"></div>
       <table class="stat-table" id="result-stat-table"></table>
       <div id="result-opts"></div>
       <div class="result-btns">
@@ -285,7 +285,7 @@
         <button class="kichi-menu-item" onclick="switchZukanMainTab('box')">
           <span class="kichi-menu-icon">👤</span>
           <span class="kichi-menu-text">
-            <span class="kichi-menu-title">協力者一覧</span>
+            <span class="kichi-menu-title">創乙女一覧</span>
             <span class="kichi-menu-sub">所持キャラクターを確認する</span>
           </span>
           <span class="kichi-menu-arrow">›</span>
@@ -293,7 +293,7 @@
         <button class="kichi-menu-item" onclick="switchZukanMainTab('party')">
           <span class="kichi-menu-icon">⚔</span>
           <span class="kichi-menu-text">
-            <span class="kichi-menu-title">部隊編成</span>
+            <span class="kichi-menu-title">パーティ編成</span>
             <span class="kichi-menu-sub">3人一組のチームを編成する</span>
           </span>
           <span class="kichi-menu-arrow">›</span>
@@ -301,7 +301,7 @@
       </div>
     </div>
 
-    <!-- 協力者 -->
+    <!-- 創乙女 -->
     <div id="zukan-sub-box" style="display:none">
       <div class="zukan-stats" id="zukan-stats">
         <div class="stat-card stat-card-total">
@@ -317,7 +317,7 @@
       <div id="zukan-grid" class="zukan-grid" style="display:none;padding-bottom:100px"></div>
     </div>
 
-    <!-- 部隊編成 -->
+    <!-- パーティ編成 -->
     <div id="zukan-sub-party" style="display:none;padding-bottom:100px">
       <div class="party-coming-soon">
         <div class="party-coming-icon">⚔</div>
@@ -476,8 +476,9 @@
     <span class="bottom-nav-label">任務</span>
   </div>
   <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
-    <img src="images/btmnv_party.webp" alt="協力者">
-    <span class="bottom-nav-label">協力者</span>
+    <span class="bottom-nav-notice" id="bnav-zukan-notice" style="display:none"></span>
+    <img src="images/btmnv_party.webp" alt="創乙女">
+    <span class="bottom-nav-label">創乙女</span>
   </div>
   <div class="bottom-nav-item" id="bnav-main" onclick="showMainTab('main')">
     <img src="images/btmnv_home.webp" alt="ホーム">
@@ -662,7 +663,6 @@
     </div>
     <div class="gacha-detail-btns">
   <button class="btn-gacha btn-gacha-ten" onclick="summonAction(10)">
-    <span class="btn-gacha-guarantee-badge">SR以上1体確定</span>
     <span class="btn-gacha-label">10回引く</span>
     <span class="btn-gacha-cost"><img src="images/icon_gem.webp" class="btn-gacha-gem-icon"> 50</span>
   </button>
@@ -832,7 +832,7 @@ document.addEventListener('touchend', function (e) {
     category: 'once',    // 'once' / 'normal' 
     img: 'images/gacha_banner_01.webp',
     title: '新規登録者限定ガチャ',
-    desc: '「10回引く」でURキャラ1体確定！',
+    desc: '「10回引く」で創乙女を10体徴集',
     cost: 5,
     minCharaId: 1,
     maxCharaId: 20,
@@ -844,7 +844,7 @@ document.addEventListener('touchend', function (e) {
     category: 'normal',   // 'once' / 'normal'
     img: 'images/gacha_banner_02.webp',
     title: '常設ガチャ',
-    desc: '「10回引く」でSR以上のキャラ1体確定！',
+    desc: '「10回引く」で創乙女を10体徴集',
     cost: 5,
     minCharaId: 1,
     maxCharaId: 20,
@@ -856,7 +856,7 @@ document.addEventListener('touchend', function (e) {
 //  category: 'normal',  // 'once' / 'normal'
 //  img: 'images/gacha_banner_03.webp',
 //  title: '常設ガチャ',
-//  desc: '「10回引く」でSR以上のキャラ1体確定！',
+//  desc: '「10回引く」で創乙女を10体徴集',
 //  cost: 1,
 //  minCharaId: 1,
 //  maxCharaId: 20,
@@ -945,7 +945,6 @@ document.addEventListener('touchend', function (e) {
             '<span class="btn-gacha-cost">' + gemImg + ' ' + gacha.cost + '</span>' +
           '</button>' +
           '<button class="btn-gacha btn-gacha-ten" onclick="summonAction(10)">' +
-            '<span class="btn-gacha-guarantee-badge">SR以上1体確定</span>' +
             '<span class="btn-gacha-label">10回引く</span>' +
             '<span class="btn-gacha-cost">' + gemImg + ' ' + (gacha.cost * 10) + '</span>' +
           '</button>';
@@ -1112,9 +1111,11 @@ async function executeLimitBreak(target, material){
   await deleteMaterialFromDB(material);
 
   // UI更新
- renderBox();
+renderBox();
 updateMainUI();
-showDetail(target, false);
+if(currentZukanMainTab !== 'box'){
+  showDetail(target, false);
+}
 
 var completeModal = document.getElementById('limitbreak-complete-modal');
 if (completeModal) {
@@ -1150,6 +1151,42 @@ const RARITY_BOX_IMAGE = {
   ur: "images/rarity_box_ur.webp"
 };
 
+const ELEMENT_ICON_IMAGE = {
+  logos:  "images/icon_logos.webp",
+  mystis: "images/icon_mystis.webp",
+  chaos:  "images/icon_chaos.webp"
+};
+
+const ELEMENT_LABEL = {
+  logos:  "LOGOS",
+  mystis: "MYSTIS",
+  chaos:  "CHAOS"
+};
+
+function getElementIconImage(element){
+  return ELEMENT_ICON_IMAGE[element] || "";
+}
+
+function getElementLabel(element){
+  return ELEMENT_LABEL[element] || "";
+}
+
+function getElementCornerIconHTML(data, className){
+  var element = (data && data.element) || '';
+  var icon = getElementIconImage(element);
+  var label = getElementLabel(element);
+  if(!icon) return '';
+  return '<img class="' + (className || 'chara-element-corner-icon') + '" src="' + icon + '" alt="' + label + '" onerror="this.style.display=\'none\'">';
+}
+
+function renderResultElementBadge(data){
+  // 属性アイコンはキャラ画像の左上に重ねるため、下部バッジ欄は空にする
+  var el = document.getElementById('result-rarity');
+  if(!el) return;
+  el.className = 'result-element-badge';
+  el.innerHTML = '';
+}
+
   var box = [];          // 所持BOX：引いた全インスタンスを蓄積
   var collected = {};    // 図鑑用：character_id → 最初に引いた1件（解放済みフラグ）
   var favoriteId = null;
@@ -1162,6 +1199,7 @@ const RARITY_BOX_IMAGE = {
     used_gachas: []
   };
   var currentResultData=null, currentDetailData=null, pendingNew=null;
+  var detailReturnToSummonAfterClose = false;
   var userId = localStorage.getItem('zukan_user_id');
   if(!userId){ userId = 'user_' + Math.random().toString(36).slice(2,10); localStorage.setItem('zukan_user_id', userId); }
 
@@ -1200,12 +1238,28 @@ function matchesGachaFilter(c, gacha) {
 // 変更後のselectChara（getRateは不要になるので丸ごと置き換え）
 
 function selectChara(now, gacha) {
-  var RATE = { r: 75, sr: 20, ur: 5 };
+  // レアリティ撤廃後のキャラ定義では c.rarity が無い。
+  // その状態で rarity 別に抽選すると全配列が空になり、ガチャ画面で停止するため、
+  // まずガチャ条件に合う候補全体を作り、レアリティが無い場合はその中から等確率で抽選する。
+  var candidates = CHARACTERS.filter(function(c){
+    return matchesGachaFilter(c, gacha);
+  });
 
+  if(!candidates || candidates.length === 0){
+    console.error('抽選対象キャラがありません:', gacha);
+    return null;
+  }
+
+  var hasRarityData = candidates.some(function(c){ return !!c.rarity; });
+  if(!hasRarityData){
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  var RATE = { r: 75, sr: 20, ur: 5 };
   var byRarity = { r: [], sr: [], ur: [] };
 
-  CHARACTERS.forEach(function(c) {
-    if (matchesGachaFilter(c, gacha) && byRarity[c.rarity]) {
+  candidates.forEach(function(c) {
+    if (byRarity[c.rarity]) {
       byRarity[c.rarity].push(c);
     }
   });
@@ -1223,27 +1277,31 @@ function selectChara(now, gacha) {
 
   var chars = byRarity[rarity];
 
+  // 指定レアリティに候補が無い場合でも固めず、全候補から抽選する。
   if (!chars || chars.length === 0) {
-    console.error('抽選対象キャラがありません:', rarity);
-    return null;
+    console.warn('指定レアリティの抽選対象がないため全候補から抽選します:', rarity);
+    chars = candidates;
   }
 
   return chars[Math.floor(Math.random() * chars.length)];
 }
 
-  function charaVisualHTML(chara, size) {
+  function charaVisualHTML(chara, size, showElementIcon) {
   size = size || 120;
-  var rarityBox = chara.rarity ? '<img src="' + RARITY_BOX_IMAGE[chara.rarity] + '" class="chara-rarity-box">' : '';
+  var rarityBox = ''; // レアリティバッジは廃止
+  var elementIcon = showElementIcon ? getElementCornerIconHTML(chara, 'chara-element-corner-icon') : '';
 
   if(chara.img) {
     return '<div class="chara-visual-wrap" style="width:'+size+'px;height:'+size+'px">' +
       '<img src="'+chara.img+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:12px">' +
+      elementIcon +
       rarityBox +
       '</div>';
   }
 
   return '<div class="chara-visual-wrap" style="width:'+size+'px;height:'+size+'px">' +
     '<div style="width:'+size+'px;height:'+size+'px;background:#222;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#aaa">?</div>' +
+    elementIcon +
     rarityBox +
     '</div>';
   }
@@ -1397,6 +1455,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
           name: chara.name,
           img: chara.img,
           cutImg: chara.cutImg,
+          element: chara.element,
           baseStats: baseStats,
           stats: stats,
           limitBreak: limitBreak,
@@ -1446,6 +1505,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       used_gachas: []
     };
   }
+  updateZukanLimitBreakNotice();
 }
 
   async function saveToDB(data){
@@ -2099,6 +2159,7 @@ if(count === 10){
     if(!collected[data.id]) collected[data.id] = data;
     saveToDB(data);
   });
+  updateZukanLimitBreakNotice();
 
   // UR確定音（30%の確率）、70%は無音
   // var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
@@ -2177,7 +2238,7 @@ function createSummonResults(count, currentGacha){
           var _bs = Object.assign({}, pick.stats);
           results[results.length - 1] = {
             id: pick.id, name: pick.name, img: pick.img, upImg: pick.upImg, cutImg: pick.cutImg,
-            type: pick.type, baseStats: _bs, stats: applyLimitBreakStats(_bs, 0), limitBreak: 0, rarity: 'ur', time: new Date().toLocaleString()
+            element: pick.element, type: pick.type, baseStats: _bs, stats: applyLimitBreakStats(_bs, 0), limitBreak: 0, rarity: 'ur', time: new Date().toLocaleString()
           };
         }
       }
@@ -2205,6 +2266,7 @@ function createSummonResults(count, currentGacha){
         var _bs2 = Object.assign({}, pick.stats);
         results[results.length - 1] = {
           id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
+          element: pick.element,
           baseStats: _bs2, stats: applyLimitBreakStats(_bs2, 0), limitBreak: 0, rarity: pick.rarity, time: new Date().toLocaleString()
         };
       }
@@ -2225,6 +2287,7 @@ function createSummonResults(count, currentGacha){
         var _bs3 = Object.assign({}, pick.stats);
         results[9] = {
           id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
+          element: pick.element,
           baseStats: _bs3, stats: applyLimitBreakStats(_bs3, 0), limitBreak: 0, rarity: pick.rarity, time: results[0].time
         };
       }
@@ -2275,11 +2338,13 @@ function createOneSummonData(currentGacha){
     img: chara.img,
     upImg: chara.upImg || chara.img,
     cutImg: chara.cutImg,
+    element: chara.element,
     type: chara.type,
     baseStats: baseStats,
     stats: applyLimitBreakStats(baseStats, limitBreak),
     limitBreak: limitBreak,
-    rarity: chara.rarity,
+    rarity: chara.rarity || 'r', // 演出互換用。表示バッジには使わない
+    hasRarity: !!chara.rarity,
     time: timeStr,
     capturedAt: now.toISOString()
   };
@@ -2292,6 +2357,7 @@ function handleSingleResult(data){
   // 常にBOXに追加（上書きなし）
   box.push(data);
   if(!collected[data.id]) collected[data.id] = data;
+  updateZukanLimitBreakNotice();
 
   showReveal(data, false);
   saveToDB(data);
@@ -2417,7 +2483,7 @@ var R_FADE_OUT = 200;
 
       document.getElementById('reveal-rarity').innerHTML = '';
       var rboxEl = document.getElementById('reveal-rarity-box');
-      if(rboxEl){ rboxEl.src = RARITY_BOX_IMAGE[r]; rboxEl.style.display = 'block'; }
+      if(rboxEl){ rboxEl.src = ''; rboxEl.style.display = 'none'; }
 
       revContent.classList.add('show');
       spawnParticles(r);
@@ -2494,8 +2560,8 @@ function showNormalReveal(data){
 
   var rboxEl2 = document.getElementById('reveal-rarity-box');
   if(rboxEl2){
-    rboxEl2.src = RARITY_BOX_IMAGE[data.rarity];
-    rboxEl2.style.display = 'block';
+    rboxEl2.src = '';
+    rboxEl2.style.display = 'none';
   }
 
   modal.classList.add('active');
@@ -2615,14 +2681,72 @@ function finalGachaFlash(callback){
   isSummoning = false;
   document.getElementById('summon-standby').classList.remove('active');
 
-  if(bgmEnabled) fadeInBgm();
+  // main_bgm 設定を見てBGMを復帰。旧変数 bgmEnabled は存在しないため参照しない。
+  if(typeof fadeInBgm === 'function'){
+    if(typeof isAudioEnabled === 'function'){
+      if(isAudioEnabled('main_bgm')) fadeInBgm();
+    } else {
+      fadeInBgm();
+    }
+  }
 
   if(pendingRevealIsCompare){
     showCompareModal(currentResultData, collected[currentResultData.id]);
   } else {
-    showResult(currentResultData);
+    showSingleGachaDetail(currentResultData);
   }
 }
+
+  function restoreSummonScreenAfterSingleGacha(){
+    isSummoning = false;
+    detailReturnToSummonAfterClose = false;
+
+    var standby = document.getElementById('summon-standby');
+    if(standby) standby.classList.remove('active');
+
+    resetSummonResult();
+
+    showScreen('summon');
+    setBnavActive('summon');
+    setNavVisible(true);
+
+    var guf = document.getElementById('global-user-frame');
+    if(guf){
+      guf.style.display = '';
+      guf.classList.remove('hidden');
+      guf.classList.add('hud-dark');
+    }
+
+    var scr = document.getElementById('screen-summon');
+    if(scr){
+      scr.style.paddingTop = '';
+      scr.style.overflowY = '';
+      scr.scrollTop = 0;
+    }
+
+    renderSummonBanners();
+    updateHeaderHeight();
+  }
+
+  function showSingleGachaDetail(data){
+    if(!data) return;
+
+    currentResultData = data;
+    detailReturnToSummonAfterClose = true;
+
+    // 単発ガチャでは結果カード画面を挟まず、詳細モーダルへ進める
+    resetSummonResult();
+    setNavVisible(false);
+
+    var guf = document.getElementById('global-user-frame');
+    if(guf){
+      guf.style.display = '';
+      guf.classList.remove('hidden');
+      guf.classList.add('hud-dark');
+    }
+
+    showDetail(data, true);
+  }
 
   function showResult(data){
 
@@ -2653,10 +2777,10 @@ function finalGachaFlash(callback){
     var scr = document.getElementById('screen-summon');
     if(scr) scr.style.paddingTop = '0';
 
-    document.getElementById('result-chara-visual').innerHTML=charaVisualHTML(data,220);
+    document.getElementById('result-chara-visual').innerHTML=charaVisualHTML(data,220,true);
     document.getElementById('result-name').textContent=data.name;
 
-    document.getElementById('result-rarity').innerHTML = '';
+    renderResultElementBadge(data);
 
     document.getElementById('result-stat-table').innerHTML=buildStatRows(data);
     document.getElementById('result-opts').innerHTML = '';
@@ -2850,18 +2974,19 @@ function revealTenCard(index){
   var card = document.getElementById('ten-card-' + index);
   if(!card) return;
 
-  var rarityLabel = (data.rarity || '').toUpperCase();
+  var rarityLabel = '';
   var nameLabel   = data.name || '';
   var isNew       = data.isNew === true;
 
-  card.className = 'ten-result-card rarity-' + data.rarity + (isNew ? ' is-new' : '');
+  card.className = 'ten-result-card' + (data.rarity ? ' rarity-' + data.rarity : '') + (isNew ? ' is-new' : '');
 
   var imgSrc = data.upImg || data.img || 'images/unknown.webp';
 
   card.innerHTML =
     '<img class="ten-card-img" src="' + imgSrc + '">' +
+    getElementCornerIconHTML(data, 'ten-card-element-icon') +
     '<div class="ten-card-top">' +
-      '<span class="ten-card-rarity-label ten-rarity-' + data.rarity + '">' + rarityLabel + '</span>' +
+      '' +
     '</div>' +
     (isNew ? '<div class="ten-card-new-badge">NEW</div>' : '') +
     '<div class="ten-card-bottom">' +
@@ -3092,7 +3217,7 @@ setTenResultFooterVisible(true);
 
     document.getElementById('zukan-header-back').style.display = '';
     document.getElementById('zukan-header-title').textContent  =
-      tab === 'box' ? '協力者一覧' : '部隊編成';
+      tab === 'box' ? '創乙女一覧' : 'パーティ編成';
 
     if(tab === 'box') renderBox();
   }
@@ -3113,57 +3238,228 @@ setTenResultFooterVisible(true);
     // party は COMING SOON のため何もしない
   }
 
-  // ── 所持キャラBOX ──────────────────────────
-  function renderBox(){
-    var grid = document.getElementById('box-grid');
-    grid.innerHTML = '';
+  // ── 創乙女一覧：キャラ単位カルーセル ──────────────────────────
+  var currentBoxCarouselIndex = 0;
 
-    var counts = { normal:0, bronze:0, silver:0, gold:0, rainbow:0 };
-
-    var items = box.slice().reverse();
-
-    items.forEach(function(data){
-      if(counts[data.rarity] !== undefined) counts[data.rarity]++;
-
-     var div = document.createElement('div');
-div.className =
-  'zukan-card box-card rarity-' + data.rarity +
-  ((data.limitBreak || 0) >= MAX_LIMIT_BREAK ? ' lb-max' : '');
-
-var chara = CHARACTERS.find(function(c){
-  return c.id === data.id;
-});
-
-var iconSrc = null;
-if(chara && chara.img){
-  iconSrc = chara.img;
-} else if(data.img){
-  iconSrc = data.img;
-} else {
-  iconSrc = 'images/unknown.webp';
-}
-
-var rarityLabel = (data.rarity || '').toUpperCase();
-var nameLabel   = (chara && chara.name) ? chara.name : (data.name || '');
-
-div.innerHTML =
-  '<img class="box-card-img" src="'+iconSrc+'">' +
-  '<div class="box-card-top">' +
-    '<span class="box-rarity-label rarity-label-'+data.rarity+'">'+rarityLabel+'</span>' +
-  '</div>' +
-  (data.limitBreak > 0 ? '<div class="box-card-lb-badge">+'+data.limitBreak+'</div>' : '') +
-  '<div class="box-card-bottom">' +
-    '<span class="box-card-name">'+nameLabel+'</span>' +
-  '</div>';
-
-      (function(d){
-        div.onclick = function(){ showDetail(d); };
-      })(data);
-
-      grid.appendChild(div);
+  function getAllBoxCharaDefs(){
+    return CHARACTERS.slice().sort(function(a, b){
+      return (a.id || 0) - (b.id || 0);
     });
   }
 
+  function getOwnedInstancesByCharaId(charaId){
+    return box.filter(function(b){ return b.id === charaId; });
+  }
+
+  function getRepresentativeOwnedInstance(charaId){
+    var owned = getOwnedInstancesByCharaId(charaId);
+    if(!owned.length) return null;
+
+    // 共鳴Lvが最も高い個体を代表として表示する。
+    // 同Lvなら先に入手したものを優先する。
+    return owned.slice().sort(function(a, b){
+      var lbA = a.limitBreak || 0;
+      var lbB = b.limitBreak || 0;
+      if(lbA !== lbB) return lbB - lbA;
+      return String(a.capturedAt || '').localeCompare(String(b.capturedAt || ''));
+    })[0];
+  }
+
+  function getOwnedUniqueCharaCount(){
+    var ids = {};
+    box.forEach(function(b){ if(b && b.id != null) ids[b.id] = true; });
+    return Object.keys(ids).length;
+  }
+
+  function getAvailableLimitBreakTargets(){
+    var chars = getAllBoxCharaDefs();
+
+    return chars.filter(function(chara){
+      if(!chara || chara.id == null) return false;
+
+      var ownedList = getOwnedInstancesByCharaId(chara.id);
+      if(ownedList.length < 2) return false;
+
+      var representative = getRepresentativeOwnedInstance(chara.id);
+      if(!representative) return false;
+
+      return (representative.limitBreak || 0) < MAX_LIMIT_BREAK;
+    });
+  }
+
+  function getAvailableLimitBreakTarget(){
+    return getAvailableLimitBreakTargets().length > 0;
+  }
+
+  function updateZukanLimitBreakNotice(){
+    var badge = document.getElementById('bnav-zukan-notice');
+    if(!badge) return;
+    badge.style.display = getAvailableLimitBreakTarget() ? 'block' : 'none';
+  }
+
+  function jumpToNextLimitBreakTarget(){
+    var chars = getAllBoxCharaDefs();
+    var targets = getAvailableLimitBreakTargets();
+    if(!chars.length || !targets.length) return;
+
+    var currentChara = chars[currentBoxCarouselIndex];
+    var currentId = currentChara ? currentChara.id : null;
+
+    var nextTarget = targets.find(function(chara){
+      return (chara.id || 0) > (currentId || 0);
+    }) || targets[0];
+
+    var nextIndex = chars.findIndex(function(chara){
+      return chara.id === nextTarget.id;
+    });
+
+    if(nextIndex >= 0){
+      currentBoxCarouselIndex = nextIndex;
+      renderBox();
+    }
+  }
+
+  function buildBoxLimitBreakNoticeHTML(chara){
+    var targets = getAvailableLimitBreakTargets();
+    if(!targets.length) return '';
+
+    var currentCanLimitBreak = chara && targets.some(function(target){
+      return target.id === chara.id;
+    });
+
+    return '' +
+      '<button class="box-limitbreak-jump ' + (currentCanLimitBreak ? 'is-current' : '') + '" onclick="jumpToNextLimitBreakTarget()">' +
+        '<span class="box-limitbreak-dot"></span>' +
+        '<span class="box-limitbreak-text">' +
+          (currentCanLimitBreak ? 'この創乙女は共鳴可能です' : '共鳴可能な創乙女がいます') +
+        '</span>' +
+        '<span class="box-limitbreak-count">' + targets.length + '</span>' +
+        '<span class="box-limitbreak-arrow">›</span>' +
+      '</button>';
+  }
+
+  function normalizeBoxCarouselIndex(){
+    var chars = getAllBoxCharaDefs();
+    if(!chars.length){ currentBoxCarouselIndex = 0; return; }
+    if(currentBoxCarouselIndex < 0) currentBoxCarouselIndex = chars.length - 1;
+    if(currentBoxCarouselIndex >= chars.length) currentBoxCarouselIndex = 0;
+  }
+
+  function moveBoxCarousel(delta){
+    currentBoxCarouselIndex += delta;
+    normalizeBoxCarouselIndex();
+    renderBox();
+  }
+
+  function getBoxCarouselCurrentChara(){
+    var chars = getAllBoxCharaDefs();
+    normalizeBoxCarouselIndex();
+    return chars[currentBoxCarouselIndex] || null;
+  }
+
+  function buildLockedBoxDetailHTML(chara){
+    var no = chara && chara.id != null ? String(chara.id).padStart(2, '0') : '--';
+    return '' +
+      '<div class="box-carousel-locked-panel">' +
+        '<div class="box-carousel-locked-title">LOCKED</div>' +
+        '<div class="box-carousel-locked-seal">封</div>' +
+        '<div class="box-carousel-locked-no">NO. ' + no + '</div>' +
+        '<div class="box-carousel-locked-text">未照合の創乙女</div>' +
+      '</div>';
+  }
+
+  function renderBox(){
+    var grid = document.getElementById('box-grid');
+    if(!grid) return;
+
+    var chars = getAllBoxCharaDefs();
+    grid.className = 'zukan-grid box-carousel';
+    grid.innerHTML = '';
+
+    if(!chars.length){
+      grid.innerHTML = '<div class="box-carousel-empty">キャラクター情報がありません</div>';
+      document.getElementById('stat-current').textContent = '0';
+      document.getElementById('stat-max').textContent = '0';
+      updateZukanLimitBreakNotice();
+      return;
+    }
+
+    normalizeBoxCarouselIndex();
+    var chara = chars[currentBoxCarouselIndex];
+    var ownedList = getOwnedInstancesByCharaId(chara.id);
+    var owned = ownedList.length > 0;
+    var displayData = owned ? getRepresentativeOwnedInstance(chara.id) : null;
+    var panelSrc = chara.panelImg || chara.img || 'images/unknown.webp';
+    var lb = displayData ? (displayData.limitBreak || 0) : 0;
+    var canLimitBreak = owned && ownedList.length >= 2 && lb < MAX_LIMIT_BREAK;
+
+    currentDetailData = displayData || null;
+
+    document.getElementById('stat-current').textContent = getOwnedUniqueCharaCount();
+    document.getElementById('stat-max').textContent = chars.length;
+    updateZukanLimitBreakNotice();
+
+    var headerHtml =
+      '<div class="box-carousel-count">' +
+        '<span>' + (currentBoxCarouselIndex + 1) + '</span>' +
+        '<span class="box-carousel-count-slash"> / </span>' +
+        '<span>' + chars.length + '</span>' +
+      '</div>' +
+      buildBoxLimitBreakNoticeHTML(chara);
+
+    var visualHtml;
+    var nameHtml;
+    var detailHtml;
+
+    if(owned){
+      visualHtml =
+        '<div class="box-carousel-visual owned">' +
+          '<img class="box-carousel-img" src="' + panelSrc + '">' +
+        '</div>';
+      nameHtml = '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || displayData.name || '') + '</div>';
+      detailHtml = buildCharacterDetailHTML(Object.assign({}, displayData, {
+        id: chara.id,
+        name: chara.name,
+        rarity: displayData.rarity || chara.rarity,
+        element: displayData.element || chara.element,
+        role: chara.role,
+        moveType: chara.moveType,
+        stats: displayData.stats || chara.stats || {},
+        baseStats: displayData.baseStats || chara.stats || {},
+        limitBreak: lb,
+        img: chara.img,
+        panelImg: chara.panelImg
+      }), {
+        showLimitBreakButton: true,
+        ownedCount: ownedList.length,
+        canLimitBreak: canLimitBreak
+      });
+    } else {
+      visualHtml =
+        '<div class="box-carousel-visual locked">' +
+          '<img class="box-carousel-img box-carousel-silhouette" src="' + panelSrc + '">' +
+          '<div class="box-carousel-lock-mark">封</div>' +
+          '<div class="box-carousel-locked-label">LOCKED</div>' +
+        '</div>';
+      nameHtml = '<div class="box-carousel-name locked">？？？</div>';
+      detailHtml = buildLockedBoxDetailHTML(chara);
+    }
+
+    grid.innerHTML =
+      '<div class="box-carousel-view ' + (owned ? 'is-owned' : 'is-locked') + '">' +
+        '<div class="box-carousel-fixed">' +
+          headerHtml +
+          '<button class="box-carousel-arrow box-carousel-prev" onclick="moveBoxCarousel(-1)" aria-label="前の創乙女">‹</button>' +
+          '<button class="box-carousel-arrow box-carousel-next" onclick="moveBoxCarousel(1)" aria-label="次の創乙女">›</button>' +
+          visualHtml +
+          nameHtml +
+          '<div class="box-carousel-separator"></div>' +
+        '</div>' +
+        '<div class="box-carousel-detail-scroll">' +
+          '<div class="box-carousel-detail">' + detailHtml + '</div>' +
+        '</div>' +
+      '</div>';
+  }
   // ── 図鑑（解放済み1件/未解放シルエット） ──────
   function renderZukan(){
   var grid = document.getElementById('zukan-grid');
@@ -3250,6 +3546,7 @@ const DETAIL_RANGE_LABELS = {
   diag_x_2: '斜め2マス',
   cross: '十字',
   cross_32: '十字',
+  cross_large: '前方大十字',
   cross_tail_6: '上2・左右・斜め下',
   twin_cross_4: 'ツイン十字',
   twin_star_8: 'ツインスター',
@@ -3345,216 +3642,169 @@ function getDetailSkillEffectText(skill){
   }).join('、');
 }
 
-function getDetailRangePreviewSelf(range){
-  // X字系は自分を中央に置かないと、下方向の斜めが欠けてV字に見えるため中央表示にする。
-  if(range === 'diag_x_1' || range === 'diag_x_2') {
-    return { row: 2, col: 2 };
+
+function normalizeDetailPreviewRange(range){
+  // 表示側の古い短縮名を BattleRange32 側の正式名へ寄せる。
+  // 新しいレンジは battle_range_32.js へ追加すれば、ここを増やさなくても基本表示できる。
+  var alias = {
+    front_row_3: 'front_row_3_ally',
+    front3_row_3: 'front3_row_3_ally',
+    front_9: 'front_9_ally',
+    cross: 'cross_32'
+  };
+  return alias[range] || range || '';
+}
+
+function getDetailRangePreviewSpec(range){
+  range = normalizeDetailPreviewRange(range);
+
+  // フィールド固定 / 長射程系は8×5で実盤面に近く表示する。
+  // これにより、新しいレンジ追加時も BattleRange32 の定義をそのままミニ盤面へ反映できる。
+  var fullBoardRanges = {
+    all: true,
+    enemy_all: true,
+    ally_all: true,
+    field_all: true,
+    field_cross_center: true,
+    front_all_rows_ally: true,
+    pierce_all: true,
+    col_center_32: true
+  };
+
+  // 自分中心の範囲は中央起点。前方系は下寄せ起点。
+  var centerRanges = {
+    self: true,
+    adjacent: true,
+    around8: true,
+    around24: true,
+    side_lr: true,
+    diag_x_1: true,
+    diag_x_2: true,
+    cross_32: true
+  };
+
+  if(fullBoardRanges[range]){
+    return { rows: 8, cols: 5, user: { row: 6, col: 2, side: 'ally' }, mode: 'field' };
   }
-  // 通常の前方系レンジは、これまで通り自分を下中央に置く。
-  return { row: 4, col: 2 };
+
+  if(centerRanges[range]){
+    return { rows: 5, cols: 5, user: { row: 2, col: 2, side: 'ally' }, mode: 'center' };
+  }
+
+  // デフォルトは前方長射程を見切れにくくするため7×5。
+  // cross_large など、今後追加する前方系レンジもここで自動的に収まる。
+  return { rows: 7, cols: 5, user: { row: 6, col: 2, side: 'ally' }, mode: 'front' };
+}
+
+function getDetailRangePreviewMode(range){
+  return getDetailRangePreviewSpec(range).mode;
+}
+
+function getDetailRangePreviewSelf(range){
+  var spec = getDetailRangePreviewSpec(range);
+  return { row: spec.user.row, col: spec.user.col };
 }
 
 function getDetailRangePreviewCells(range){
-  // 5列×5行のミニ盤面。通常は自分を下中央、X字系は中央に置く。
-  // row: 0〜4, col: 0〜4
-  var self = getDetailRangePreviewSelf(range);
+  range = normalizeDetailPreviewRange(range);
+  var spec = getDetailRangePreviewSpec(range);
+  var user = spec.user;
+  var rawCells = null;
+
+  if(window.BattleRange32 && typeof window.BattleRange32.getCellsFromRange32 === 'function'){
+    rawCells = window.BattleRange32.getCellsFromRange32(user, range);
+  }
+
+  if(!rawCells){
+    rawCells = getDetailFallbackRangeCells(user, range);
+  }
+
   var cells = [];
-
-  function add(r, c){
-    if(r < 0 || r > 4 || c < 0 || c > 4) return;
-    if(r === self.row && c === self.col) return;
-    cells.push(r + '-' + c);
-  }
-
-  switch(range){
-    case 'self':
-      break;
-
-    case 'front1':
-    case 'front_ally':
-      add(3, 2);
-      break;
-
-    case 'front2':
-      add(3, 2);
-      add(2, 2);
-      break;
-
-    case 'front3':
-    case 'pierce3':
-    case 'pierce_ally_3':
-      add(3, 2);
-      add(2, 2);
-      add(1, 2);
-      break;
-
-    case 'side_lr':
-      add(4, 1);
-      add(4, 3);
-      break;
-
-    case 'around8':
-    case 'adjacent':
-      for(var r = 3; r <= 4; r++){
-        for(var c = 1; c <= 3; c++){
-          add(r, c);
-        }
-      }
-      break;
-
-    case 'around24':
-      for(var r2 = 2; r2 <= 4; r2++){
-        for(var c2 = 0; c2 <= 4; c2++){
-          add(r2, c2);
-        }
-      }
-      break;
-
-    case 'diag_x_1':
-      add(self.row - 1, self.col - 1);
-      add(self.row - 1, self.col + 1);
-      add(self.row + 1, self.col - 1);
-      add(self.row + 1, self.col + 1);
-      break;
-
-    case 'diag_x_2':
-      add(self.row - 1, self.col - 1);
-      add(self.row - 2, self.col - 2);
-      add(self.row - 1, self.col + 1);
-      add(self.row - 2, self.col + 2);
-      add(self.row + 1, self.col - 1);
-      add(self.row + 2, self.col - 2);
-      add(self.row + 1, self.col + 1);
-      add(self.row + 2, self.col + 2);
-      break;
-
-    case 'cross':
-    case 'cross_32':
-      add(3, 2);
-      add(2, 2);
-      add(1, 2);
-      add(4, 1);
-      add(4, 3);
-      break;
-
-    case 'front_row_3':
-      add(3, 1);
-      add(3, 2);
-      add(3, 3);
-      break;
-
-    case 'front_and_side_3_ally':
-      add(3, 2);
-      add(4, 1);
-      add(4, 3);
-      break;
-
-    case 'front3_row_3':
-    case 'front_9':
-      for(var rr = 1; rr <= 3; rr++){
-        for(var cc = 1; cc <= 3; cc++){
-          add(rr, cc);
-        }
-      }
-      break;
-
-      
-    case 'front_row_3':
-    case 'front_row_3_ally':
-    add(3, 1);
-    add(3, 2);
-    add(3, 3);
-      break;
-
-    case 'fan_2row_3_ally':
-      add(3, 1);
-      add(3, 2);
-      add(3, 3);
-      add(2, 0);
-      add(2, 1);
-      add(2, 2);
-      add(2, 3);
-      add(2, 4);
-      break;
-
-    case 'super_but_night_6':
-      add(3, 0);
-      add(3, 1);
-      add(3, 2);
-      add(3, 3);
-      add(3, 4);
-      add(2, 1);
-      add(2, 2);
-      add(2, 3);
-      add(1, 2);
-      break;
-
-    case 'cross_tail_6':
-      add(3, 2);
-      add(2, 2);
-      add(4, 1);
-      add(4, 3);
-      add(3, 1);
-      add(3, 3);
-      break;
-
-    case 'field_cross_center':
-      add(0, 2);
-      add(1, 2);
-      add(2, 0);
-      add(2, 1);
-      add(2, 2);
-      add(2, 3);
-      add(2, 4);
-      add(3, 2);
-      break;
-
-    case 'all':
-    case 'enemy_all':
-    case 'ally_all':
-    case 'pierce_all':
-      for(var ar = 0; ar <= 3; ar++){
-        for(var ac = 0; ac <= 4; ac++){
-          add(ar, ac);
-        }
-      }
-      break;
-
-      case 'front_all_rows_ally':
-  for(var fr = 0; fr <= 3; fr++){
-    for(var fc = 0; fc <= 4; fc++){
-      add(fr, fc);
-    }
-  }
-  break;
-
-    default:
-      // 未定義レンジは表示なし
-      break;
-  }
+  rawCells.forEach(function(key){
+    var parts = String(key).split('-');
+    var r = Number(parts[0]);
+    var c = Number(parts[1]);
+    if(r < 0 || r >= spec.rows || c < 0 || c >= spec.cols) return;
+    if(r === user.row && c === user.col) return;
+    var normalizedKey = r + '-' + c;
+    if(cells.indexOf(normalizedKey) < 0) cells.push(normalizedKey);
+  });
 
   return cells;
+}
+
+function getDetailFallbackRangeCells(user, range){
+  var s = new Set();
+
+  function add(r, c){
+    if(r < 0 || r >= 8 || c < 0 || c >= 5) return;
+    s.add(r + '-' + c);
+  }
+
+  function rel(list){
+    list.forEach(function(p){ add(user.row + p.dr, user.col + p.dc); });
+  }
+
+  if(range === 'self') add(user.row, user.col);
+  else if(range === 'ally_all' || range === 'enemy_all' || range === 'field_all' || range === 'all'){
+    for(var allR = 0; allR < 8; allR++) for(var allC = 0; allC < 5; allC++) add(allR, allC);
+  }
+  else if(range === 'front_all_rows_ally'){
+    for(var far = 0; far < user.row; far++) for(var fac = 0; fac < 5; fac++) add(far, fac);
+  }
+  else if(range === 'field_cross_center'){
+    for(var fcr = 0; fcr < 8; fcr++) add(fcr, 2);
+    for(var fcc = 0; fcc < 5; fcc++) add(2, fcc);
+  }
+  else if(range === 'front_row_3_ally') rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1}]);
+  else if(range === 'front_and_side_3_ally') rel([{dr:-1,dc:0},{dr:0,dc:-1},{dr:0,dc:1}]);
+  else if(range === 'front3_row_3_ally' || range === 'front_9_ally'){
+    for(var fr = -1; fr >= -3; fr--) for(var fc = -1; fc <= 1; fc++) rel([{dr:fr,dc:fc}]);
+  }
+  else if(range === 'fan_2row_3_ally') rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:-2,dc:-1},{dr:-2,dc:0},{dr:-2,dc:1}]);
+  else if(range === 'pierce_all') for(var pr = -1; pr >= -7; pr--) rel([{dr:pr,dc:0}]);
+  else if(range === 'pierce_ally_3' || range === 'pierce3' || range === 'front3') rel([{dr:-1,dc:0},{dr:-2,dc:0},{dr:-3,dc:0}]);
+  else if(range === 'front2' || range === 'pierce_ally_2' || range === 'pierce2') rel([{dr:-1,dc:0},{dr:-2,dc:0}]);
+  else if(range === 'front1' || range === 'front_ally') rel([{dr:-1,dc:0}]);
+  else if(range === 'around8' || range === 'adjacent') rel([{dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},{dr:0,dc:-1},{dr:0,dc:1},{dr:1,dc:-1},{dr:1,dc:0},{dr:1,dc:1}]);
+  else if(range === 'around24'){
+    for(var ar = -2; ar <= 2; ar++) for(var ac = -2; ac <= 2; ac++) if(ar || ac) rel([{dr:ar,dc:ac}]);
+  }
+  else if(range === 'side_lr') rel([{dr:0,dc:-1},{dr:0,dc:1}]);
+  else if(range === 'diag_x_1') rel([{dr:-1,dc:-1},{dr:-1,dc:1},{dr:1,dc:-1},{dr:1,dc:1}]);
+  else if(range === 'diag_x_2') rel([{dr:-1,dc:-1},{dr:-2,dc:-2},{dr:-1,dc:1},{dr:-2,dc:2},{dr:1,dc:-1},{dr:2,dc:-2},{dr:1,dc:1},{dr:2,dc:2}]);
+  else if(range === 'cross_32') rel([{dr:-1,dc:0},{dr:1,dc:0},{dr:0,dc:-1},{dr:0,dc:1}]);
+  else if(range === 'cross_large') rel([{dr:-1,dc:0},{dr:-2,dc:0},{dr:-3,dc:0},{dr:-4,dc:0},{dr:-2,dc:-2},{dr:-2,dc:-1},{dr:-2,dc:1},{dr:-2,dc:2}]);
+  else if(range === 'super_but_night_6') rel([{dr:-3,dc:-2},{dr:-3,dc:0},{dr:-3,dc:2},{dr:-2,dc:-1},{dr:-2,dc:1},{dr:-1,dc:0}]);
+  else add(user.row, user.col);
+
+  return s;
 }
 
 function buildDetailRangePreviewHTML(skill){
   if(!skill) return '';
 
-  var range = skill.range || '';
-  var self = getDetailRangePreviewSelf(range);
+  var range = normalizeDetailPreviewRange(skill.range || '');
+  var spec = getDetailRangePreviewSpec(range);
+  var self = spec.user;
   var cells = getDetailRangePreviewCells(range);
+  var isAllySkill = skill.type === 'heal' || skill.type === 'buff' || ((skill.effects || []).some(function(e){
+    return String(e.target || '').indexOf('ally') === 0;
+  }));
 
+  var boardStyle = 'grid-template-columns:repeat(' + spec.cols + ',14px);grid-template-rows:repeat(' + spec.rows + ',14px);';
   var html = '<div class="detail-range-preview">';
-  html += '<div class="detail-range-board">';
+  html += '<div class="detail-range-board mode-' + spec.mode + '" style="' + boardStyle + '">';
 
-  for(var r = 0; r < 5; r++){
-    for(var c = 0; c < 5; c++){
+  for(var r = 0; r < spec.rows; r++){
+    for(var c = 0; c < spec.cols; c++){
       var key = r + '-' + c;
       var cls = 'detail-range-cell';
 
       if(r === self.row && c === self.col){
         cls += ' self';
       } else if(cells.indexOf(key) >= 0){
-        cls += skill.type === 'heal' || skill.type === 'buff' ? ' ally' : ' target';
+        cls += isAllySkill ? ' ally' : ' target';
       }
 
       html += '<span class="' + cls + '"></span>';
@@ -3568,117 +3818,69 @@ function buildDetailRangePreviewHTML(skill){
 }
 
 
+function getDetailMovePreviewSpec(moveType){
+  return { rows: 7, cols: 5, user: { row: 3, col: 2, side: 'ally', moveType: moveType || 'silver' } };
+}
+
 function getDetailMovePreviewCells(moveType){
-  var self = { row: 2, col: 2 };
+  var spec = getDetailMovePreviewSpec(moveType);
+  var user = spec.user;
+  var offsets = [];
+
+  if(window.BattleRange32 && typeof window.BattleRange32.getMoveOffsets === 'function'){
+    offsets = window.BattleRange32.getMoveOffsets(user) || [];
+  } else {
+    offsets = getDetailFallbackMoveOffsets(moveType);
+  }
+
   var cells = [];
-
-  function add(r, c){
-    if(r < 0 || r > 4 || c < 0 || c > 4) return;
-    if(r === self.row && c === self.col) return;
-    cells.push(r + '-' + c);
-  }
-
-  switch(moveType){
-    case 'pawn':
-      add(1, 2);
-      break;
-
-    case 'lance':
-    case 'miyu':
-      add(1, 2);
-      add(0, 2);
-      break;
-
-    case 'gold':
-    case 'rook_short':
-      add(1, 2);
-      add(2, 1);
-      add(2, 3);
-      break;
-
-    case 'silver':
-      add(1, 2);
-      add(1, 1);
-      add(1, 3);
-      break;
-
-    case 'shigure':
-      add(1, 2);
-      add(3, 1);
-      add(3, 2);
-      add(3, 3);
-      break;
-
-    case 'eri':
-      add(1, 2);
-      add(3, 2);
-      add(2, 1);
-      add(2, 3);
-      break;
-
-    case 'aki':
-      add(0, 2);
-      add(4, 2);
-      add(0, 1);
-      add(0, 3);
-      break;
-
-    case 'asami':
-      add(1, 2);
-      add(3, 2);
-      add(1, 1);
-      add(1, 3);
-      break;
-
-    case 'chisaka':
-      add(1, 2);
-      add(2, 1);
-      add(2, 3);
-      add(0, 2);
-      add(0, 0);
-      add(0, 4);
-      break;
-
-    case 'yuzuha':
-      add(0, 2);
-      add(4, 1);
-      add(4, 3);
-      break;
-
-    case 'bishop_short':
-      add(1, 1);
-      add(1, 3);
-      add(3, 1);
-      break;
-
-    case 'knight':
-      add(0, 1);
-      add(0, 3);
-      break;
-
-    default:
-      // 未定義は銀型扱い
-      add(1, 2);
-      add(1, 1);
-      add(1, 3);
-      break;
-  }
+  offsets.forEach(function(p){
+    var r = user.row + p.dr;
+    var c = user.col + p.dc;
+    if(r < 0 || r >= spec.rows || c < 0 || c >= spec.cols) return;
+    var key = r + '-' + c;
+    if(cells.indexOf(key) < 0) cells.push(key);
+  });
 
   return cells;
 }
 
+function getDetailFallbackMoveOffsets(moveType){
+  var presets = {
+    pawn: [{ dr:-1, dc:0 }],
+    lance: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
+    gold: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+    silver: [{ dr:-1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
+    rook_short: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+    shigure: [{ dr:-1, dc:0 }, { dr:1, dc:-1 }, { dr:1, dc:0 }, { dr:1, dc:1 }],
+    miyu: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
+    eri: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+    aki: [{ dr:-2, dc:0 }, { dr:2, dc:0 }, { dr:-2, dc:-1 }, { dr:-2, dc:1 }],
+    asami: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
+    chisaka: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }, { dr:-2, dc:0 }, { dr:-2, dc:-2 }, { dr:-2, dc:2 }],
+    yuzuha: [{ dr:-2, dc:0 }, { dr:2, dc:-1 }, { dr:2, dc:1 }],
+    bishop_short: [{ dr:-1, dc:-1 }, { dr:-1, dc:1 }, { dr:1, dc:-1 }],
+    knight: [{ dr:-2, dc:-1 }, { dr:-2, dc:1 }],
+    none: []
+  };
+  return presets[moveType] || presets.silver;
+}
+
 function buildDetailMovePreviewHTML(moveType){
+  var spec = getDetailMovePreviewSpec(moveType);
+  var self = spec.user;
   var cells = getDetailMovePreviewCells(moveType);
+  var boardStyle = 'grid-template-columns:repeat(' + spec.cols + ',12px);grid-template-rows:repeat(' + spec.rows + ',12px);';
 
   var html = '<div class="detail-move-preview">';
-  html += '<div class="detail-move-board">';
+  html += '<div class="detail-move-board" style="' + boardStyle + '">';
 
-  for(var r = 0; r < 5; r++){
-    for(var c = 0; c < 5; c++){
+  for(var r = 0; r < spec.rows; r++){
+    for(var c = 0; c < spec.cols; c++){
       var key = r + '-' + c;
       var cls = 'detail-move-cell';
 
-      if(r === 2 && c === 2){
+      if(r === self.row && c === self.col){
         cls += ' self';
       } else if(cells.indexOf(key) >= 0){
         cls += ' movable';
@@ -3731,15 +3933,46 @@ function buildCharacterDetailHTML(data, options){
   var chara = getDetailCharaDef(data);
   var lb = data.limitBreak || 0;
   var moveType = (chara && chara.moveType) || data.moveType || 'silver';
+  var canLimitBreakNow = !!options.canLimitBreak && lb < MAX_LIMIT_BREAK;
+  var detailElementData = Object.assign({}, chara || {}, data || {});
+  var element = detailElementData.element || '';
+  var elementIcon = getElementIconImage(element);
+  var elementLabel = getElementLabel(element) || '-';
+  var elementHtml = elementIcon
+    ? '<span class="detail-type-icon-wrap"><img class="detail-element-type-icon" src="' + elementIcon + '" alt="' + elementLabel + '" onerror="this.style.display=\'none\'"><span class="detail-element-type-label">' + detailEscapeHTML(elementLabel) + '</span></span>'
+    : '<span class="detail-element-type-label">-</span>';
+
+  function buildLimitBreakActionHTML(){
+    if(!options.showLimitBreakButton) return '';
+
+    var btnHtml = '';
+    if(lb >= MAX_LIMIT_BREAK){
+      btnHtml = '<button class="btn-limit-break btn-limit-break-max" disabled>共鳴Lv MAX</button>';
+    } else if(options.canLimitBreak === false){
+      btnHtml = '<button class="btn-limit-break btn-limit-break-disabled" disabled>共鳴素材が不足しています</button>';
+    } else {
+      btnHtml = '<button class="btn-limit-break btn-limit-break-ready" onclick="openLimitBreakModal(currentDetailData)">共鳴する</button>';
+    }
+
+    return '<div class="detail-lb-action-block">' +
+      btnHtml +
+      '<div class="detail-lb-meta">' +
+        (canLimitBreakNow ? '<span class="detail-lb-ready-badge">共鳴可能</span>' : '') +
+        '<span class="detail-lb-info">共鳴Lv：' + lb + ' / ' + MAX_LIMIT_BREAK +
+          (options.ownedCount != null ? '　所持数：' + options.ownedCount : '') +
+        '</span>' +
+      '</div>' +
+    '</div>';
+  }
 
   var html =
-    '<div class="detail-lb-section">' +
-      '<div class="detail-lb-row">' +
-        '<span class="detail-lb-label">共鳴Lv</span>' +
-        '<span class="detail-lb-val">' + lb + ' / ' + MAX_LIMIT_BREAK + '</span>' +
-      '</div>' +
-
+    '<div class="detail-lb-section ' + (canLimitBreakNow ? 'can-limit-break' : '') + '">' +
+      buildLimitBreakActionHTML() +
       '<div class="detail-status-grid">' +
+        '<div class="detail-status-row detail-type-row">' +
+          '<span class="detail-status-label">Type</span>' +
+          '<span class="detail-status-val detail-type-val">' + elementHtml + '</span>' +
+        '</div>' +
         '<div class="detail-status-row">' +
           '<span class="detail-status-label">HP</span>' +
           '<span class="detail-status-val">' + getDetailStatValue(data, chara, 'HP') + '</span>' +
@@ -3752,22 +3985,12 @@ function buildCharacterDetailHTML(data, options){
           '<span class="detail-status-label">移動型</span>' +
           '<span class="detail-status-val">' + detailEscapeHTML(getDetailMoveLabel(moveType)) + '</span>' +
         '</div>' +
-
-          '<div class="detail-move-preview-row">' +
-  buildDetailMovePreviewHTML(moveType) +
-'</div>' +
-
+        '<div class="detail-move-preview-row">' +
+          buildDetailMovePreviewHTML(moveType) +
+        '</div>' +
       '</div>' +
     '</div>' +
     buildDetailSkillHTML(chara);
-
-  if(options.showLimitBreakButton){
-    if(lb >= MAX_LIMIT_BREAK){
-      html += '<button class="btn-limit-break btn-limit-break-max" disabled>共鳴Lv MAX</button>';
-    } else {
-      html += '<button class="btn-limit-break" onclick="openLimitBreakModal(currentDetailData)">共鳴する</button>';
-    }
-  }
 
   return html;
 }
@@ -3777,14 +4000,14 @@ function buildCharacterDetailHTML(data, options){
 
   var chara = getDetailCharaDef(data);
   var imgSrc = (chara && chara.img) ? chara.img : data.img;
-  var rarityKey = (data.rarity || (chara && chara.rarity) || 'r').toLowerCase();
-  var rarityImg = RARITY_BOX_IMAGE[rarityKey] || '';
+  var detailElementData = Object.assign({}, chara || {}, data || {});
+  var elementIconHtml = getElementCornerIconHTML(detailElementData, 'detail-element-img');
 
-  // キャラ画像＋左上にレアリティ画像（画像タップで全画面表示）
+  // キャラ画像＋左上に属性アイコン（画像タップで全画面表示）
   document.getElementById('detail-chara-visual').innerHTML =
   '<div class="detail-visual-wrap" onclick="openCharaImageViewer(\'' + imgSrc + '\')">' +
     '<img class="detail-main-img" src="' + imgSrc + '">' +
-    (rarityImg ? '<img class="detail-rarity-img" src="' + rarityImg + '">' : '') +
+    elementIconHtml +
   '</div>';
 
   // キャラ名
@@ -3839,7 +4062,7 @@ function openDeleteConfirm(){
   if(!currentDetailData) return;
 
   var rarityText = RARITY_JP[currentDetailData.rarity] || currentDetailData.rarity;
-  var name = currentDetailData.name || 'この協力者';
+  var name = currentDetailData.name || 'この創乙女';
 
   document.getElementById('delete-confirm-text').innerHTML =
     rarityText + ' / ' + name + ' が消失します<br>本当にいいですか？';
@@ -3921,8 +4144,13 @@ async function deleteCurrentChara(){
   document.getElementById('detail-modal').classList.add('active');
  }
 
-  function closeModal(id){ 
-    document.getElementById(id).classList.remove('active'); 
+  function closeModal(id){
+    var modal = document.getElementById(id);
+    if(modal) modal.classList.remove('active');
+
+    if(id === 'detail-modal' && detailReturnToSummonAfterClose){
+      restoreSummonScreenAfterSingleGacha();
+    }
   }
   
   function testTenResult(){
@@ -3962,7 +4190,11 @@ async function deleteCurrentChara(){
 
   document.getElementById('result-chara-visual').innerHTML = '';
   document.getElementById('result-name').textContent = '';
-  document.getElementById('result-rarity').innerHTML = '';
+  var resultElementBadge = document.getElementById('result-rarity');
+  if(resultElementBadge){
+    resultElementBadge.className = 'result-element-badge';
+    resultElementBadge.innerHTML = '';
+  }
   document.getElementById('result-stat-table').innerHTML = '';
   document.getElementById('result-opts').innerHTML = '';
   document.getElementById('save-status').textContent = '';
@@ -4976,7 +5208,7 @@ window.addEventListener('pagehide', function () {
       <div class="notice-item">
         <div class="notice-date">2XXX.05.28</div>
         <div class="notice-item-title">観測記録更新</div>
-        <div class="notice-body">協力者情報が更新されました。</div>
+        <div class="notice-body">創乙女情報が更新されました。</div>
       </div>
     </div>
   </div>

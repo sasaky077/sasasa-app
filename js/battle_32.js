@@ -1033,7 +1033,8 @@ const enemies = enemyDefs.map(def => {
       bs: _snapshot(),
     });
 
-    // ダメージ後に勝敗を即チェック（全滅検知）
+    // ダメージ後にボス撃破チェック→勝敗を即チェック
+    _checkBossCoreCapture();
     _checkWinLose();
   }
 
@@ -1911,16 +1912,48 @@ return true;
       // ============================================================
       // 行動権管理ヘルパー
       // ============================================================
+      const UNIT_ACTION_MAX_PER_TURN = 2;
+
+      function _getUnitActionHistory(unitUid) {
+        if (!_bs.unitActionHistory) _bs.unitActionHistory = {};
+        if (!_bs.unitActionHistory[unitUid]) _bs.unitActionHistory[unitUid] = {};
+        return _bs.unitActionHistory[unitUid];
+      }
+
+      function _getUnitActionCount(unitHistory) {
+        const explicit = Number(unitHistory && unitHistory.actionCount);
+        if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+        // 後方互換：古い保存データに actionCount がない場合だけ、既存フラグから復元する。
+        let count = 0;
+        if (unitHistory && unitHistory.move) count += 1;
+        if (unitHistory && (unitHistory.skill || unitHistory.ult || unitHistory.skillOrUlt)) count += 1;
+        if (unitHistory && unitHistory.unitActionDone && count === 0) count = UNIT_ACTION_MAX_PER_TURN;
+        return count;
+      }
+
       function _canUsePlayerAction(type, unitUid, skillId) {
         if (!_bs || _bs.phase !== 'skill') return false;
         if (_bs.result) return false;
 
-        // 駒アクション（move/skill/ult）はユニット単位で1ターン1回制限
+        // 駒アクション（move/skill/ult）はユニット単位で1ターン最大2回。
+        // ただし移動は1回まで、スキル/ULTはいずれか1回まで。
         if (type === 'move' || type === 'skill' || type === 'ult') {
-          const history = _bs.unitActionHistory || {};
-          const unitHistory = history[unitUid] || {};
-          if (unitHistory.unitActionDone) {
-            _log('このキャラはこのターンすでに行動しています');
+          const unitHistory = (_bs.unitActionHistory || {})[unitUid] || {};
+          const count = _getUnitActionCount(unitHistory);
+
+          if (count >= UNIT_ACTION_MAX_PER_TURN || unitHistory.unitActionDone) {
+            _log('このキャラはこのターンの行動上限に達しています');
+            return false;
+          }
+
+          if (type === 'move' && unitHistory.move) {
+            _log('このキャラはこのターンすでに移動しています');
+            return false;
+          }
+
+          if ((type === 'skill' || type === 'ult') && (unitHistory.skill || unitHistory.ult || unitHistory.skillOrUlt)) {
+            _log('このキャラはこのターンすでにスキルを使用しています');
             return false;
           }
         }
@@ -1964,16 +1997,20 @@ return true;
         const linkCost = _getLinkCostForAction(type, unitUid, skillId);
         _spendLink(linkCost, null);
 
-        if (!_bs.unitActionHistory) _bs.unitActionHistory = {};
-        if (!_bs.unitActionHistory[unitUid]) {
-          _bs.unitActionHistory[unitUid] = {};
-        }
+        const unitHistory = _getUnitActionHistory(unitUid);
 
-        // 駒アクション（move/skill/ult）はunitActionDoneフラグで1回制限
+        // 駒アクション（move/skill/ult）はユニット単位で最大2回。
+        // 移動1回 + スキル/ULT1回までを記録する。
         if (type === 'move' || type === 'skill' || type === 'ult') {
-          _bs.unitActionHistory[unitUid].unitActionDone = true;
+          const beforeCount = _getUnitActionCount(unitHistory);
+          unitHistory.actionCount = Math.min(UNIT_ACTION_MAX_PER_TURN, beforeCount + 1);
+
+          if (type === 'move') unitHistory.move = true;
+          if (type === 'skill' || type === 'ult') unitHistory.skillOrUlt = true;
+
+          unitHistory.unitActionDone = unitHistory.actionCount >= UNIT_ACTION_MAX_PER_TURN;
         }
-        _bs.unitActionHistory[unitUid][type] = true;
+        unitHistory[type] = true;
 
         _bs.actionCount       = (_bs.actionCount || 0) + 1;
         _bs.lastActionType    = type || null;
@@ -2287,29 +2324,11 @@ function doBossLineAttack(boss) {
 
       const boss = _bs.enemies.find(e => e.isBoss);
 
-      // ボスHP0以下で核が露出する
-      if (boss && boss.hp <= 0 && !bc.exposed) {
-        bc.exposed = true;
-        _log('ボスの抵抗が崩壊。神性核が露出した！');
-        _emit('bossCoreExposed', { bs: _snapshot() });
-      }
-
-      if (!bc.exposed) return;
-
-      // 露出状態かつボス隣接マスに生存味方がいれば capture +1
-      if (!boss) return;
-      const hasAdjacentAlly = _bs.allies.some(a =>
-        a.hp > 0 && manhattan(a, boss) === 1
-      );
-
-      if (!hasAdjacentAlly) return;
-
-      bc.capture = Math.min(bc.captureMax, bc.capture + 1);
-      _log(`神性核へ干渉中…… ${bc.capture}/${bc.captureMax}`);
-
-      if (bc.capture >= bc.captureMax) {
+      // ボスHP0以下で即座に撃破・収容完了
+      if (boss && boss.hp <= 0) {
+        bc.exposed  = true;
         bc.captured = true;
-        _log('神性核の固定に成功。収容完了！');
+        _log('ボスを撃破。収容完了！');
         _emit('bossCoreCapture', { bs: _snapshot() });
       }
     }
@@ -2829,7 +2848,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       return;
     }
 
-    if (_bs.turn > _bs.turnLimit) {
+    if (_bs.turn >= _bs.turnLimit) {
       _bs.result = 'lose';
       _bs.phase = 'end';
       _log('✕ 接続限界を超過。強制帰還…');
@@ -2916,7 +2935,7 @@ if (canEnemyAttackAllyCore(enemy)) {
   }
 
   // ============================================================
-  // 味方移動（駒取り対応）
+  // 味方移動（駒取り廃止・移動1回制限）
   // ============================================================
     function moveAlly(allyUid, toRow, toCol) {
       if (!_bs || _bs.phase !== 'skill') return false;
@@ -2965,7 +2984,7 @@ if (canEnemyAttackAllyCore(enemy)) {
       _log(`${ally.name} が移動した`);
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
-      // 行動権を消費（actionCount >= actionMax なら内部で endSkillPhase() を呼ぶ）
+      // 行動権を消費（同一キャラは移動1回＋スキル/ULT1回まで）
       _consumePlayerAction('move', allyUid, null);
       _saveResume();
       return true;

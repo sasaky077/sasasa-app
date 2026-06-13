@@ -7,6 +7,8 @@
   // row 0〜7、col 0〜3
   const ROWS = [0, 1, 2, 3, 4, 5, 6, 7];
   const COLS = [0, 1, 2, 3, 4];
+  const BOARD_ROWS_32 = 8;
+  const BOARD_COLS_32 = 5;
 
   // ============================================================
   // レンジプリセット（相対座標系）
@@ -158,6 +160,19 @@ pierce_all: [
       { dr:  1, dc:  0 },
       { dr:  1, dc: -1 },
       { dr:  1, dc:  1 },
+    ],
+
+    // カヒULT「ロックオブリンネ」用：前方大十字
+    // □□■□□
+    // □□■□□
+    // ■■■■■
+    // □□■□□
+    // □□自□□
+    cross_large: [
+      { dr: -4, dc:  0 },
+      { dr: -3, dc:  0 },
+      { dr: -2, dc: -2 }, { dr: -2, dc: -1 }, { dr: -2, dc:  0 }, { dr: -2, dc:  1 }, { dr: -2, dc:  2 },
+      { dr: -1, dc:  0 },
     ],
 
     // 前方直線貫通3マス + 横広がり（front3_row_3 = 前3列×横3） — 簡易版
@@ -603,44 +618,26 @@ yuzuha: [
     if (range === 'col_center_32') {
       const s = new Set();
       if (user && user.col != null) {
-        for (let r = 0; r < 8; r++) {
+        for (let r = 0; r < BOARD_ROWS_32; r++) {
           if (isValidCell(r, user.col)) s.add(`${r}-${user.col}`);
         }
       }
       return s;
     }
 
-    function getCellsFromRange32(user, range) {
-  // col_center_32: ユーザーの列を縦全体（特殊処理）
-  if (range === 'col_center_32') {
-    const s = new Set();
-    if (user && user.col != null) {
-      for (let r = 0; r < 8; r++) {
-        if (isValidCell(r, user.col)) s.add(`${r}-${user.col}`);
-      }
-    }
-    return s;
-  }
-
-  // front_all_rows_ally: 自分より前方の全マス
-  // 味方は上方向が前方なので、row 0 〜 user.row - 1 の全列
-  if (range === 'front_all_rows_ally') {
-    const s = new Set();
-    if (user && user.row != null) {
-      for (let r = 0; r < user.row; r++) {
-        for (let c = 0; c < 5; c++) {
-          if (isValidCell(r, c)) s.add(`${r}-${c}`);
+    // front_all_rows_ally: 自分より前方の全マス
+    // 味方は上方向が前方なので、row 0 〜 user.row - 1 の全列
+    if (range === 'front_all_rows_ally') {
+      const s = new Set();
+      if (user && user.row != null) {
+        for (let r = 0; r < user.row; r++) {
+          for (let c = 0; c < BOARD_COLS_32; c++) {
+            if (isValidCell(r, c)) s.add(`${r}-${c}`);
+          }
         }
       }
+      return s;
     }
-    return s;
-  }
-
-  const normalized = normalizeRange32(range);
-  if (!normalized) return new Set();
-  if (normalized.origin === 'field') return cellsFromField32(normalized.cells);
-  return cellsFromRelative32(user, normalized.cells || []);
-}
 
     const normalized = normalizeRange32(range);
     if (!normalized) return new Set();

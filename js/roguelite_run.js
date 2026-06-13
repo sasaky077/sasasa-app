@@ -75,7 +75,7 @@
       enemyRandomStartPosition: true,
       enemyActionMode: 'all',
       enemyActionsPerTurn: null,
-      turnLimit: 12,
+      turnLimit: 13,
       bossCaptureMax: 2,
       enemySpawn: {
         enemyId: 'enemy_02a',

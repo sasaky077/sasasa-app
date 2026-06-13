@@ -14,7 +14,7 @@
  // ============================================================
  const ROOT_ID = 'battle32-root';
  const STYLE_ID = 'battle32-ui-style';
- const SUMMON_LINK_COST = 4;
+ const SUMMON_LINK_COST = 6; // UI fallback. 実コストはBattle32.getLinkCostForAction('summon')を優先
 
  const PHASE_LABEL = {
  skill: 'SKILL PHASE',
@@ -64,6 +64,8 @@ let _itemTargetUid = null;
  box.style.display = 'none';
  box.classList.remove('show');
  }
+
+ _hideActionDetailPortal();
  }
 
  // ============================================================
@@ -80,6 +82,46 @@ let _itemTargetUid = null;
 
  function _bs() {
  return window.Battle32 && window.Battle32.getState ? window.Battle32.getState() : null;
+ }
+
+ // ============================================================
+ // スキル詳細レイヤー
+ // ============================================================
+ // #b32-roster-panel は body 直下 fixed + 高い z-index で描画されるため、
+ // #battle32-root 配下のままだとスキル詳細がキャラパネルの背面に回る。
+ // スキル詳細だけ body 直下へ移動し、独立した前面レイヤーとして扱う。
+ function _ensureSkillDetailLayer() {
+   const box = document.getElementById('b32-skill-detail-box');
+   if (!box) return null;
+
+   if (box.parentElement !== document.body) {
+     document.body.appendChild(box);
+   }
+
+   return box;
+ }
+
+ // ============================================================
+ // スキル詳細ポータル — body 直下に固定レイヤーとして描画する
+ // #b32-roster-panel より確実に前面に出すため body 直下に置く
+ // ============================================================
+ function _ensureActionDetailPortal() {
+   let el = document.getElementById('b32-action-detail-portal');
+   if (!el) {
+     el = document.createElement('div');
+     el.id = 'b32-action-detail-portal';
+     document.body.appendChild(el);
+   }
+   return el;
+ }
+
+ function _hideActionDetailPortal() {
+   const el = document.getElementById('b32-action-detail-portal');
+   if (el) {
+     el.innerHTML = '';
+     el.classList.remove('show');
+     el.style.display = 'none';
+   }
  }
 
  // ============================================================
@@ -124,6 +166,22 @@ let _itemTargetUid = null;
   return _getSkillLinkCost(skill);
 }
 
+
+
+ function _getSummonLinkCostForRoster(bs, rosterEntry) {
+   if (!rosterEntry) return SUMMON_LINK_COST;
+
+   if (window.Battle32 && typeof window.Battle32.getLinkCostForAction === 'function') {
+     const n = Number(window.Battle32.getLinkCostForAction('summon', rosterEntry.rosterId));
+     if (Number.isFinite(n) && n >= 0) return n;
+   }
+
+   // battle_32.js 側の定義に合わせた後方互換。現行キャラは基本URなので実質6。
+   const rarity = String(rosterEntry.rarity || rosterEntry.charDef?.rarity || '').toLowerCase();
+   const byRarity = { r: 4, sr: 5, ur: 6 };
+   return byRarity[rarity] || SUMMON_LINK_COST;
+ }
+
  function _getNormalSkillLinkRange(ally) {
    const costs = (ally && ally.skills || [])
      .filter(s => !s.isUltimate)
@@ -136,13 +194,62 @@ let _itemTargetUid = null;
  }
 
 
+ const UNIT_ACTION_MAX_PER_TURN = 2;
+
  /**
-  * ユニットがこのターンまだ駒アクション（移動/スキル/ULT）をしていないか
-  * unitActionDone フラグで一元管理
+  * ユニットのターン内行動数を返す。
+  * 現仕様：1キャラ最大2行動、移動1回 + スキル/ULT1回まで。
+  */
+ function _getUnitActionCount(bs, unitUid) {
+   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
+   const explicit = Number(h.actionCount);
+   if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+   // 後方互換：古い保存データ用
+   let count = 0;
+   if (h.move) count += 1;
+   if (h.skill || h.ult || h.skillOrUlt) count += 1;
+   if (h.unitActionDone && count === 0) count = UNIT_ACTION_MAX_PER_TURN;
+   return count;
+ }
+
+ /**
+  * ユニットがこのターンまだ追加行動できるか。
   */
  function _unitCanAct(bs, unitUid) {
    const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
-   return !h.unitActionDone;
+   return !h.unitActionDone && _getUnitActionCount(bs, unitUid) < UNIT_ACTION_MAX_PER_TURN;
+ }
+
+ function _unitCanMoveNow(bs, unitUid) {
+   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
+   return _unitCanAct(bs, unitUid) && !h.move;
+ }
+
+ function _unitCanUseSkillActionNow(bs, unitUid) {
+   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
+   return _unitCanAct(bs, unitUid) && !(h.skill || h.ult || h.skillOrUlt);
+ }
+
+ /**
+  * 実際にスキル/ULTを発動できるか。
+  * 情報表示・スキル内容確認は行動上限到達後も許可し、
+  * 発動だけをこの判定で止める。
+  */
+ function _canUseSkillNow(bs, ally, skill) {
+   if (!bs || bs.result || bs.phase !== 'skill') return false;
+   if (!ally || ally.hp <= 0 || !skill) return false;
+   if (!_unitCanUseSkillActionNow(bs, ally._uid)) return false;
+
+   const linkCost = _getSkillLinkCostForUnit(bs, ally._uid, skill);
+   if (!_canActByLink(bs, linkCost)) return false;
+
+   const shinkiCost = skill.isUltimate
+     ? (skill.shinkiCost || ally.shinkiMax || 3)
+     : (skill.shinkiCost || 0);
+   if ((ally.shinki || 0) < shinkiCost) return false;
+
+   return true;
  }
 
  function _getActiveActionAllyUid() {
@@ -162,6 +269,50 @@ function _clearActionModesKeepUnit(uid) {
   _itemSlotIndex = null;
   _itemPhase = null;
   _itemTargetUid = null;
+}
+
+// ============================================================
+// アイテムパネル位置調整
+// ============================================================
+// #b32-item-panel は body 直下 fixed のため、#battle32-root 配下のCSSだけでは
+// ロスター（キャラパネル）の上へ積み上げにくい。
+// iPhone14/SE系では「グリッド → item → キャラパネル」の順に見えるよう、
+// ロスター実測位置を基準にアイテム欄を配置する。
+function _positionItemPanel() {
+  const el = document.getElementById('b32-item-panel');
+  if (!el) return;
+
+  const root = document.getElementById(ROOT_ID);
+  const roster = document.getElementById('b32-roster-panel');
+  const isPhoneNarrow = !!(root && (root.classList.contains('b32-vp-iphone14') || root.classList.contains('b32-vp-se')));
+
+  if (!isPhoneNarrow) {
+    el.style.left = 'auto';
+    el.style.right = '8px';
+    el.style.transform = 'none';
+    el.style.bottom = 'calc(270px + env(safe-area-inset-bottom, 0px))';
+    el.style.flexDirection = 'column';
+    return;
+  }
+
+  // iPhone14/SE系：キャラパネルの直上、中央寄せ。
+  // roster がまだ未計測の瞬間だけCSS変数のフォールバックを使う。
+  let bottomPx = null;
+  if (roster && getComputedStyle(roster).display !== 'none') {
+    const rr = roster.getBoundingClientRect();
+    if (rr.height > 0 && rr.top > 0) {
+      // item の下端を roster 上端の少し上に置く。
+      bottomPx = Math.max(0, window.innerHeight - rr.top + 6);
+    }
+  }
+
+  el.style.left = '50%';
+  el.style.right = 'auto';
+  el.style.transform = 'translateX(-50%)';
+  el.style.bottom = bottomPx != null
+    ? `${bottomPx}px`
+    : 'calc(var(--b32-actions-h, 74px) + 96px + 10px + env(safe-area-inset-bottom, 0px))';
+  el.style.flexDirection = 'row';
 }
 
  // ============================================================
@@ -3392,12 +3543,11 @@ function _onHealEvent(data) {
  let captureCells = new Set(); // 駒取りマス
 
  if (bs.phase === 'skill') {
- // ── LINK + unitActionDone で行動可否を判定 ──
- const canAct = !bs.result && _canActByLink(bs, 1);
- const _history = bs.unitActionHistory || {};
- // 駒アクション（移動/スキル/ULT）は1ターン1回 → unitActionDone で一元管理
- const canMoveUnit  = (uid) => canAct && !(_history[uid] || {}).unitActionDone;
- const canSkillUnit = (uid) => canAct && !(_history[uid] || {}).unitActionDone;
+ // ── LINK + キャラ別行動履歴で行動可否を判定 ──
+ const canAct = !bs.result && bs.phase === 'skill';
+ // 現仕様：1キャラ最大2行動。移動1回 + スキル/ULT1回まで。
+ const canMoveUnit  = (uid) => canAct && _unitCanMoveNow(bs, uid) && _canActByLink(bs, 1);
+ const canSkillUnit = (uid) => canAct && _unitCanUseSkillActionNow(bs, uid);
 
  if (_moveMode && _selMoveAllyUid) {
  // ── 移動先マス選択中 ──
@@ -3415,7 +3565,8 @@ function _onHealEvent(data) {
 
  } else if (_selSkillAllyUid) {
  // ── スキルキャラ選択済み ──
- if (canSkillUnit(_selSkillAllyUid) && _selSkillId) {
+ // 行動上限到達後でも、スキル確認用に射程だけは表示する。
+ if (_selSkillId) {
  skillRangeCells = _skillRangeCells(_selSkillAllyUid, _selSkillId);
  }
 
@@ -3499,8 +3650,35 @@ if (_selectedEnemyUid) {
  const isDivider = r === 4;
 
  const isSkillSelectable = unit && unit.side === 'ally' && skillSelectableUids.has(unit._uid);
+ // 行動済みでも情報確認のため、通常待機中は生存味方をタップ可能にする
+ const isAllyInspectable = !!(
+   unit &&
+   unit.side === 'ally' &&
+   unit.hp > 0 &&
+   bs.phase === 'skill' &&
+   !bs.result &&
+   !_moveMode &&
+   !_selSkillAllyUid &&
+   !_selSkillId &&
+   !_summonMode &&
+   !_itemMode
+ );
+
+ // 各種選択中でも敵はタップ可能にする。
+ // 目的：敵の移動可能マス・簡易情報を見ながら、召喚位置/移動先/スキル使用判断ができるようにする。
+ // 対象：通常待機中、移動先選択中、召喚マス選択中、スキル/ULT確認・実行画面。
+ // ※ アイテム使用中は対象選択と競合しやすいため既存操作を優先する。
+ const isEnemyInspectable = !!(
+   unit &&
+   unit.side === 'enemy' &&
+   (unit.hp > 0 || unit.isBoss) &&
+   bs.phase === 'skill' &&
+   !bs.result &&
+   !_itemMode
+ );
  // 移動対象または スキル対象として選択中のキャラを盤面ハイライト
  const isSkillSelected = unit && bs.phase === 'skill' && (
+ unit._uid === _selActionAllyUid ||
  unit._uid === _selSkillAllyUid ||
  (unit._uid === _selMoveAllyUid && _moveMode)
  );
@@ -3531,6 +3709,8 @@ if (_selectedEnemyUid) {
  cls += ' has-core';
  }
  if (isSkillSelectable) cls += ' skill-selectable';
+ if (isAllyInspectable) cls += ' ally-inspectable';
+ if (isEnemyInspectable) cls += ' enemy-inspectable';
  if (isSkillSelected) cls += ' skill-selected';
  if (isMovable) cls += ' movable';
  if (isCapture) cls += ' move-capture';
@@ -3560,23 +3740,15 @@ if (_summonMode && isSummonCell && !unit) {
 } else if (isMovable && !unit) {
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
+} else if (isEnemyInspectable) {
+ // 選択中モードでも敵情報・敵移動ガイドを表示する
+ onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
+
 } else if (isCapture) {
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
-} else if (isSkillSelectable || isSkillSelected) {
+} else if (isAllyInspectable || isSkillSelectable || isSkillSelected) {
  onclick = `onclick="_b32OnSkillAllyTap('${unit._uid}')"`;
-
-} else if (
- unit &&
- unit.side === 'enemy' &&
- !bs.result &&
- !_moveMode &&
- !_selSkillAllyUid &&
- !_selSkillId &&
- !_summonMode &&
- !_itemMode
-) {
- onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
 }
   // スキルレンジオーバーレイ（背景CSSが !important 上書きされても視認できる専用span）
   const skillOverlay = skillCellType
@@ -3734,7 +3906,8 @@ if (typeof window.cleanupBattle32Overlays === 'function') {
   'b32-battle-menu',
   'b32-center-text',
   'b32-result-overlay',
-  'rl-victory-wait-layer'
+  'rl-victory-wait-layer',
+  'b32-action-detail-portal'
 ].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
@@ -3923,16 +4096,12 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  const ally = bs.allies.find(u => u._uid === allyUid);
  if (!ally || ally.hp <= 0) return;
 
- const canAct = _canActByLink(bs, 1);
- if (!canAct) return;
-
  const history = bs.unitActionHistory || {};
  const unitHistory = history[allyUid] || {};
- // unitActionDone: 駒アクション（移動/スキル/ULT）済みフラグ
+ // actionCount: 1キャラ最大2行動。移動1回 + スキル/ULT1回まで。
+ // 行動上限到達後でも、情報確認・スキル確認のために選択は許可する。
+ // 実際の移動/スキル/ULT発動は各アクション側で個別に止める。
  const unitActionDone = !!unitHistory.unitActionDone;
-
- // 駒アクション済みかつLINKも尽きていれば何もしない
- if (unitActionDone) return;
 
  // 同じキャラを再タップしたらメニューを閉じる
  if (_selActionAllyUid === allyUid && !_moveMode && !_selSkillAllyUid) {
@@ -3979,7 +4148,7 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
   const unitHistory = history[uid] || {};
 
   const canAct = _canActByLink(bs, 1);
-  if (!canAct || unitHistory.unitActionDone) return;
+  if (!canAct || !_unitCanMoveNow(bs, uid)) return;
 
   _selMoveAllyUid = uid;
   _selSkillAllyUid = null;
@@ -4012,8 +4181,9 @@ window._b32OnActionSkillTap = function () {
   const unitHistory = history[uid] || {};
 
   const normalSkills = (ally.skills || []).filter(s => !s.isUltimate);
-  const canUseAnySkill = normalSkills.some(s => _canActByLink(bs, _getSkillLinkCostForUnit(bs, uid, s)) && ((s.shinkiCost || 0) <= (ally.shinki || 0)));
-  if (!canUseAnySkill || unitHistory.unitActionDone) return;
+  // 行動済みでもスキル内容の確認は許可する。
+  // 実際の発動可否はスキル詳細の決定ボタンと _b32ConfirmSkill 側で制御する。
+  if (!normalSkills.length) return;
 
   _selSkillAllyUid = uid;
   _selSkillId = null;
@@ -4048,12 +4218,8 @@ window._b32OnActionUltTap = function () {
   const history = bs.unitActionHistory || {};
   const unitHistory = history[uid] || {};
 
-  const ultLinkCost = _getSkillLinkCostForUnit(bs, uid, ultSkill);
-  const canActUlt = _canActByLink(bs, ultLinkCost);
-  const unitDone = !!unitHistory.unitActionDone;
-  const shinkiCost = ultSkill.shinkiCost || ally.shinkiMax || 3;
-
-  if (!canActUlt || unitDone || ally.shinki < shinkiCost) return;
+  // 行動済み・LINK不足・神気不足でも、ULT情報の確認だけは許可する。
+  // 発動可否はスキル詳細の決定ボタンと _b32ConfirmSkill 側で制御する。
 
   _selSkillAllyUid = uid;
   _selSkillId = ultSkill.id;
@@ -4235,6 +4401,8 @@ window._b32CancelSkillDetail = function (event) {
  box.classList.remove('show');
  }
 
+ _hideActionDetailPortal();
+
  renderBattle32UI();
 };
 
@@ -4248,7 +4416,7 @@ window._b32CancelSkillDetail = function (event) {
  const skill = ally.skills.find(s => s.id === skillId);
  if (!skill) return;
 
- const box = document.getElementById('b32-skill-detail-box');
+ const box = _ensureSkillDetailLayer();
  const name = document.getElementById('b32-skill-detail-name');
  const desc = document.getElementById('b32-skill-detail-desc');
  const meta = document.getElementById('b32-skill-detail-meta');
@@ -4296,6 +4464,13 @@ const allyNow = bs.allies.find(u => u._uid === allyUid);
 const skillNow = allyNow && allyNow.skills
  ? allyNow.skills.find(s => s.id === skillId)
  : null;
+
+// 行動済み・LINK不足・神気不足の場合は、情報確認のみで発動しない。
+if (!_canUseSkillNow(bs, allyNow, skillNow)) {
+  const guide = document.getElementById('b32-bottom-guide');
+  if (guide) guide.textContent = 'このキャラはこのターン行動済み、またはコスト不足です。';
+  return;
+}
 
 // 入力ロックして、スキル名をボワァン表示
 _b32InputLocked = true;
@@ -4440,11 +4615,9 @@ await _afterCharTurnFlow();
  // 旧バッジ用（非表示にしてあるが変数は残す）
  const shinkiDots = shinkiDotsInner;
 
- // タップ可否：unitActionDoneが立っていなければタップ可（LINK 1以上必要）
- const _canActNow = !bs.result && _canActByLink(bs, 1);
- const _uh2 = (bs.unitActionHistory || {})[ally._uid] || {};
- const tappable = !dead && bs.phase === 'skill'
-   && _canActNow && !_uh2.unitActionDone;
+ // タップ可否：行動済みでも情報確認のためタップ可能にする。
+ // 実際の行動可否はアクションボタン/決定ボタン側で制御する。
+ const tappable = !dead && bs.phase === 'skill' && !bs.result;
  const onclickAttr = tappable ? `onclick="_b32OnSkillAllyTap('${ally._uid}')"` : '';
 
  return `
@@ -4578,6 +4751,7 @@ await _afterCharTurnFlow();
  const selectedSkill = ally.skills.find(s => s.id === _selSkillId);
  if (!selectedSkill) {
  _selSkillId = null;
+ _hideActionDetailPortal();
  renderBattle32UI();
  return;
  }
@@ -4588,14 +4762,23 @@ await _afterCharTurnFlow();
  if (selectedSkill.multiplier) metaParts.push(`倍率 ${selectedSkill.multiplier}`);
  if (selectedSkill.range) metaParts.push(`射程 ${selectedSkill.range}`);
 
- listEl.innerHTML = `
- ${floatingButtonsHtml}
+ listEl.innerHTML = '';
+
+ const portal = _ensureActionDetailPortal();
+ portal.style.display = 'block';
+ portal.classList.add('show');
+
+ const canConfirmSkill = _canUseSkillNow(bs, ally, selectedSkill);
+ const confirmDisabledAttr = canConfirmSkill ? '' : 'disabled aria-disabled="true"';
+ const confirmDisabledCls = canConfirmSkill ? '' : ' disabled';
+
+ portal.innerHTML = `
  <div class="b32-action-detail-panel">
  <div class="b32-action-detail-title">${selectedSkill.name || 'SKILL'}</div>
  <div class="b32-action-detail-desc">${selectedSkill.desc || '説明はまだありません。'}</div>
  <div class="b32-action-detail-meta">${metaParts.join('　/　')}</div>
  <div class="b32-action-detail-buttons">
- <button type="button" class="b32-action-detail-btn confirm" onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">決定</button>
+ <button type="button" class="b32-action-detail-btn confirm${confirmDisabledCls}" ${confirmDisabledAttr} onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">${canConfirmSkill ? '決定' : '確認のみ'}</button>
  <button type="button" class="b32-action-detail-btn cancel" onclick="_b32CancelSkillDetail(event)">キャンセル</button>
  </div>
  </div>
@@ -4604,6 +4787,7 @@ await _afterCharTurnFlow();
  }
 
  // 通常スキル選択画面
+ _hideActionDetailPortal();
  const normalSkillChips = [];
  ally.skills
  .filter(skill => !skill.isUltimate)
@@ -4611,12 +4795,10 @@ await _afterCharTurnFlow();
  .forEach(skill => {
  const shinki = skill.shinkiCost || 0;
  const linkCost = _getSkillLinkCostForUnit(bs, ally._uid, skill);
- const _canSkill = !bs.result && _canActByLink(bs, linkCost)
-   && !((bs.unitActionHistory || {})[ally._uid] || {}).unitActionDone;
- const cantUse = !_canSkill || (shinki > ally.shinki);
- const disabledCls = cantUse ? ' disabled' : '';
+ const canUseThisSkill = _canUseSkillNow(bs, ally, skill);
+ const unusableCls = canUseThisSkill ? '' : ' is-unusable';
  normalSkillChips.push(
- `<button type="button" class="b32-bottom-skill-btn${disabledCls}" ${cantUse ? 'disabled' : ''} onclick="_b32OnSkillChipClick(event,'${ally._uid}','${skill.id}')"><span>${skill.name}</span><small>LINK ${linkCost}</small></button>`
+ `<button type="button" class="b32-bottom-skill-btn${unusableCls}" ${canUseThisSkill ? '' : 'aria-disabled="true"'} onclick="_b32OnSkillChipClick(event,'${ally._uid}','${skill.id}')"><span>${skill.name}</span><small>LINK ${linkCost}</small></button>`
  );
  });
  while (normalSkillChips.length < 3) {
@@ -4652,14 +4834,15 @@ await _afterCharTurnFlow();
 
 } else {
   // ── キャラ選択待ち（移動 / スキル どちらでも選択可） ──
+  _hideActionDetailPortal();
   if (bs.isRoguelite) {
     if (rosterPanelEl) rosterPanelEl.style.display = 'flex';
     if (itemPanelEl) itemPanelEl.style.display = 'flex';
   }
 
-  const _linkCurrent = bs.link ? bs.link.current : 99;
+  // ローグライト通常待機時の案内文は表示しない（盤面視認性を優先）。
   const guideText = bs.isRoguelite
-    ? `盤面のキャラをタップ　残LINK: ${_linkCurrent}`
+    ? ''
     : '行動するキャラを選択してください。';
 
  if (guideEl) guideEl.textContent = guideText;
@@ -4682,7 +4865,7 @@ if (listEl) {
     if (r) {
       const c = r.charDef || {};
       const img = c.panelImg || c.upImg || c.img || '';
-      const cost = SUMMON_LINK_COST;
+      const cost = _getSummonLinkCostForRoster(bs, r);
 
       const hp = c.hp || c.stats?.HP || 0;
       const atk = c.atk || c.stats?.ATK || 0;
@@ -4892,24 +5075,16 @@ if (listEl) {
    && selectedAlly.hp > 0
    && _unitCanAct(bs, selectedAlly._uid);
 
- const canMove  = inSkillPhase && unitCanAct && _canActByLink(bs, 1);
+ const canMove  = inSkillPhase && !!selectedAlly && selectedAlly.hp > 0 && _unitCanMoveNow(bs, selectedAlly._uid) && _canActByLink(bs, 1);
  const normalSkillsForCost = selectedAlly ? (selectedAlly.skills || []).filter(s => !s.isUltimate) : [];
- const canSkill = inSkillPhase && unitCanAct && normalSkillsForCost.some(s =>
-   _canActByLink(bs, _getSkillLinkCostForUnit(bs, selectedAlly._uid, s)) &&
-   ((s.shinkiCost || 0) <= (selectedAlly.shinki || 0))
- );
+ // スキル/ULTボタンは「確認用」として行動済みでも開ける。
+ // 発動可否はスキル詳細の決定ボタンで止める。
+ const canSkill = inSkillPhase && !!selectedAlly && selectedAlly.hp > 0 && normalSkillsForCost.length > 0;
 
  let canUlt = false;
  if (selectedAlly) {
    const ultSkill = (selectedAlly.skills || []).find(s => s.isUltimate);
-   if (ultSkill) {
-     const ultLinkCost = _getSkillLinkCostForUnit(bs, selectedAlly._uid, ultSkill);
-     const shinkiCost = ultSkill.shinkiCost || selectedAlly.shinkiMax || 3;
-     canUlt = inSkillPhase
-       && unitCanAct
-       && _canActByLink(bs, ultLinkCost)
-       && selectedAlly.shinki >= shinkiCost;
-   }
+   canUlt = inSkillPhase && selectedAlly.hp > 0 && !!ultSkill;
  }
 
  // 召喚可否
@@ -4923,12 +5098,12 @@ if (listEl) {
    if (_summonRosterId) {
      const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
      if (selectedRoster) {
-       const cost = SUMMON_LINK_COST;
+       const cost = _getSummonLinkCostForRoster(bs, selectedRoster);
        summonSubText = _summonMode ? '位置選択中' : '召喚可能';
        canSummon = inSkillPhase && _canActByLink(bs, cost);
      }
    } else if (standby.length > 0) {
-     const affordable = standby.some(r => _canActByLink(bs, SUMMON_LINK_COST));
+     const affordable = standby.some(r => _canActByLink(bs, _getSummonLinkCostForRoster(bs, r)));
      summonSubText = '待機選択';
      canSummon = inSkillPhase && affordable;
    } else {
@@ -5017,7 +5192,8 @@ window.renderBattle32UI = function () {
       'b32-roster-panel',
       'b32-item-panel',
       'b32-roster-info-close-hitbox',
-      'b32-enemy-info-overlay'
+      'b32-enemy-info-overlay',
+      'b32-action-detail-portal'
     ].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.remove();
@@ -5244,7 +5420,7 @@ function applyBattle32ViewportClass(root) {
      const isStandby = r.status === 'standby';
      const isDeployed = r.status === 'deployed';
      const isDead = r.status === 'dead';
-     const linkCost = SUMMON_LINK_COST;
+     const linkCost = _getSummonLinkCostForRoster(bs, r);
      const canSummon = isStandby && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
     const isActionSelected =
   isDeployed &&
@@ -5371,31 +5547,51 @@ function renderItemPanel(bs) {
     return;
   }
 
+  const items = bs.items || [];
+
+  // アイテム未所持ならパネル自体を出さない。
+  // 空スロットだけの固定UIが、iPhone14系で召喚/移動マス選択を邪魔していたため。
+  if (!items.some(Boolean)) {
+    if (el) el.remove();
+    return;
+  }
+
   // ★ここから下で初めて作る
   if (!el) {
     el = document.createElement('div');
     el.id = 'b32-item-panel';
-    el.style.cssText = [
-      'position:fixed',
-      'right:8px',
-      'bottom:calc(270px + env(safe-area-inset-bottom, 0px))',
-      'z-index:3000001',
-      'display:flex',
-      'flex-direction:column',
-      'gap:4px',
-    ].join(';');
-
     document.body.appendChild(el);
   }
 
-  el.style.display = 'flex';
+  const root = document.getElementById(ROOT_ID);
+  const isPhoneNarrow = !!(root && (root.classList.contains('b32-vp-iphone14') || root.classList.contains('b32-vp-se')));
 
-  const items = bs.items || [];
+  // body直下のfixed UIなので、CSSの親セレクタに頼らずJSで配置を同期する。
+  // iPhone14系では「グリッド → item → キャラパネル」の順に見えるよう、
+  // ロスター直上に横置きする。詳細なbottom値は _positionItemPanel() で実測補正。
+  el.style.cssText = [
+    'position:fixed',
+    isPhoneNarrow ? 'left:50%' : 'right:8px',
+    isPhoneNarrow ? 'right:auto' : 'left:auto',
+    isPhoneNarrow ? 'transform:translateX(-50%)' : 'transform:none',
+    isPhoneNarrow
+      ? 'bottom:calc(var(--b32-actions-h, 74px) + 96px + 10px + env(safe-area-inset-bottom, 0px))'
+      : 'bottom:calc(270px + env(safe-area-inset-bottom, 0px))',
+    'z-index:3000001',
+    'display:flex',
+    isPhoneNarrow ? 'flex-direction:row' : 'flex-direction:column',
+    'gap:4px',
+    'pointer-events:none',
+  ].join(';');
+
+  requestAnimationFrame(_positionItemPanel);
+
   const slots = [0, 1].map(i => {
     const item = items[i];
     if (!item) {
       return `<div style="
         width:52px;height:52px;border-radius:0;
+        pointer-events:none;
         border:1px dashed rgba(100,80,200,.25);
         background:rgba(20,15,40,.4);
         display:flex;align-items:center;justify-content:center;
@@ -5409,6 +5605,7 @@ function renderItemPanel(bs) {
 
     return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
       width:52px;min-height:52px;border-radius:0;padding:4px;
+      pointer-events:${canUse ? 'auto' : 'none'};
       border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
       background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
       opacity:${canUse ? '1' : '0.45'};
@@ -5460,7 +5657,7 @@ window._b32OnBottomSummonTap = function () {
     return;
   }
 
-  const cost = SUMMON_LINK_COST;
+  const cost = _getSummonLinkCostForRoster(bs, r);
   if (!_canActByLink(bs, cost)) {
     const guide = document.getElementById('b32-bottom-guide');
     if (guide) guide.textContent = 'LINKが不足しています。';
@@ -5478,6 +5675,12 @@ window._b32OnBottomSummonTap = function () {
   _itemSlotIndex = null;
   _itemPhase = null;
   _itemTargetUid = null;
+
+  // 召喚ボタンを押した時点でキャラ詳細は閉じる。
+  // ここで _selectedRosterId を残すと、召喚完了後の再描画で詳細が再表示される。
+  _selectedRosterId = null;
+  const hitbox = document.getElementById('b32-roster-info-close-hitbox');
+  if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
 
   // 召喚位置選択へ
   _summonMode = true;
@@ -5634,6 +5837,12 @@ if (!window.__b32RosterCloseCaptureBound) {
    if (ok) {
      _summonMode = false;
      _summonRosterId = null;
+
+     // 召喚完了後は盤面確認を優先する。
+     // 召喚前に選んでいた待機キャラの詳細を再表示しない。
+     _selectedRosterId = null;
+     const hitbox = document.getElementById('b32-roster-info-close-hitbox');
+     if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
    }
    renderBattle32UI();
  };
@@ -5804,6 +6013,8 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
  const actionsH = (actionsEl && getComputedStyle(actionsEl).display !== 'none')
    ? actionsEl.offsetHeight : 0;
  root.style.setProperty('--b32-actions-h', `${actionsH + safeBottom}px`);
+ // スキル詳細は body 直下へ移動するため、CSS変数を body にも同期する
+ document.body.style.setProperty('--b32-actions-h', `${actionsH + safeBottom}px`);
 
  // ── #b32-roster-panel の bottom を actions の上に積む ───────
  // roster-panel（ローグライト5キャラパネル）は body 直下 fixed。
@@ -5812,6 +6023,9 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
  if (rosterPanelEl2) {
    rosterPanelEl2.style.bottom = `${actionsH + safeBottom + 4}px`;
  }
+
+ // ── itemパネルをロスター直上へ同期 ────────────────────────
+ _positionItemPanel();
 
  // ── --b32-panel-h（後方互換：丸ボタン等が参照） ────────────
  const panelH = actionsH + safeBottom + 12;
@@ -5854,7 +6068,8 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
   'b32-battle-menu',
   'b32-center-text',
   'b32-result-overlay',
-  'rl-victory-wait-layer'
+  'rl-victory-wait-layer',
+  'b32-action-detail-portal'
 ].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;

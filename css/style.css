@@ -441,6 +441,7 @@ body {
   gap: 6px;
   pointer-events: auto;
   flex-shrink: 0;
+  transform: translateY(-6px);
 }
 
 .hud-resource {
@@ -1123,11 +1124,26 @@ canvas {
 }
 
 
+/* 属性アイコン：ガチャ結果キャラ画像の左上隅に配置 */
+.chara-element-corner-icon {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  z-index: 6;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.35))
+    drop-shadow(0 3px 8px rgba(0,0,0,0.9));
+}
+
 /* =========================================================
    07 Summon / Gacha
    ========================================================= */
 
-#result-chara-visual img:not(.chara-rarity-box) {
+#result-chara-visual img:not(.chara-rarity-box):not(.chara-element-corner-icon) {
   width: 220px;
   height: 220px;
   object-fit: cover;
@@ -1142,8 +1158,7 @@ canvas {
   background: none;
 }
 
-#result-info .result-rarity-badge {
-  font-size: 15px;
+#result-info .result-element-badge {
   margin-top: 4px;
   margin-bottom: 16px;
 }
@@ -1263,10 +1278,35 @@ canvas {
   margin-bottom: 4px;
 }
 
-.result-rarity-badge {
-  font-size: 13px;
+.result-element-badge {
+  min-height: 36px;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
+
+.result-element-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+  filter:
+    drop-shadow(0 0 10px rgba(255,255,255,0.28))
+    drop-shadow(0 3px 10px rgba(0,0,0,0.75));
+}
+
+.result-element-label {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(232,228,220,0.78);
+}
+
+.result-element-badge.element-logos .result-element-label { color: rgba(170,210,255,0.9); }
+.result-element-badge.element-mystis .result-element-label { color: rgba(220,190,255,0.9); }
+.result-element-badge.element-chaos .result-element-label { color: rgba(255,170,145,0.9); }
 
 .result-photo {
   width: 100%;
@@ -3074,6 +3114,22 @@ canvas {
   margin: 0;
 }
 
+
+/* 10連結果カード：属性アイコンを左上隅に重ねる */
+.ten-card-element-icon {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  z-index: 6;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,0.28))
+    drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+}
+
 /* 上部オーバーレイ */
 .ten-card-top {
   position: absolute;
@@ -3795,6 +3851,24 @@ canvas {
 .rarity-label-sr { color: #ffd700; }
 .rarity-label-ur { color: #ff6ec7; }
 
+/* 協力者一覧：旧レアリティ文字は使わず、属性アイコンを左上に表示 */
+#box-grid .box-rarity-label {
+  display: none !important;
+}
+
+#box-grid .box-card-element-icon {
+  width: 22px !important;
+  height: 22px !important;
+  object-fit: contain;
+  display: block;
+  margin: -4px 0 0 -4px;
+  z-index: 4;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,0.30))
+    drop-shadow(0 2px 5px rgba(0,0,0,0.90));
+}
+
 
 
 /* 下部グラデーション＋キャラ名 */
@@ -4358,7 +4432,7 @@ canvas {
   cursor: pointer;
   font-family: "Noto Serif JP", serif;
 }
-/* キャラ詳細：レアリティ画像をキャラ左上に小さく固定 */
+/* キャラ詳細：属性アイコンをキャラ左上に小さく固定 */
 #detail-modal #detail-chara-visual .detail-visual-wrap {
   position: relative;
   width: 220px;
@@ -4374,17 +4448,25 @@ canvas {
   margin-bottom: 10px;
 }
 
-#detail-modal #detail-chara-visual .detail-rarity-img {
+#detail-modal #detail-chara-visual .detail-element-img {
   position: absolute;
   top: -8px;
   left: -8px;
-  width: 58px !important;
+  width: 50px !important;
   max-width: none !important;
-  height: auto !important;
+  height: 50px !important;
+  object-fit: contain;
   margin: 0 !important;
   z-index: 5;
   pointer-events: none;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.85));
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.32))
+    drop-shadow(0 2px 6px rgba(0,0,0,0.85));
+}
+
+/* 旧レアリティ画像が残っていても表示しない */
+#detail-modal #detail-chara-visual .detail-rarity-img {
+  display: none !important;
 }
 
 /* 削除確認モーダルをキャラ詳細より前面に出す */
@@ -5391,6 +5473,21 @@ canvas {
   margin-bottom: 12px;
 }
 
+.detail-lb-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.detail-lb-info {
+  font-size: 10px;
+  color: rgba(232,228,220,0.45);
+  letter-spacing: 0.5px;
+  text-align: right;
+}
+
 .detail-lb-row,
 .detail-status-row {
   display: flex;
@@ -5756,4 +5853,580 @@ button,
   background: rgba(120,170,255,0.55);
   border-color: rgba(160,200,255,0.9);
   box-shadow: 0 0 7px rgba(90,150,255,0.4);
+}
+
+/* ガチャ結果では属性表示を画像左上へ移動したため、下部バッジ欄の余白を消す */
+#result-info .result-element-badge:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+/* =========================================================
+   協力者一覧：キャラ単位カルーセル / 未所持ロック表示
+   ========================================================= */
+.bottom-nav-notice {
+  position: absolute;
+  top: 8px;
+  right: 26%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff1748;
+  box-shadow: 0 0 10px rgba(255,23,72,0.9), 0 0 2px rgba(255,255,255,0.9) inset;
+  z-index: 5;
+  pointer-events: none;
+}
+
+#box-grid.box-carousel {
+  display: block;
+  padding: 8px 12px 120px;
+}
+
+.box-carousel-view {
+  position: relative;
+  min-height: calc(100dvh - var(--header-h) - var(--page-header-h) - 86px);
+  padding: 6px 8px 18px;
+}
+
+.box-carousel-count {
+  text-align: center;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  color: rgba(232,228,220,0.42);
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+
+.box-carousel-count-slash {
+  color: rgba(232,228,220,0.24);
+}
+
+.box-carousel-arrow {
+  position: fixed;
+  top: 48%;
+  transform: translateY(-50%);
+  z-index: 8;
+  width: 34px;
+  height: 64px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.9);
+  font-size: 54px;
+  line-height: 1;
+  font-family: "Cinzel", serif;
+  cursor: pointer;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.95);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.box-carousel-prev { left: 10px; }
+.box-carousel-next { right: 10px; }
+
+@media (min-width: 500px) {
+  .box-carousel-prev { left: calc(50% - 215px + 10px); }
+  .box-carousel-next { right: calc(50% - 215px + 10px); }
+}
+
+.box-carousel-visual {
+  position: relative;
+  width: min(76vw, 300px);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto 8px;
+  overflow: hidden;
+  background: #202020;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+}
+
+.box-carousel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.box-carousel-name {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 2px;
+  margin: 8px 0 20px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+}
+
+.box-carousel-name.locked {
+  color: rgba(232,228,220,0.28);
+  letter-spacing: 5px;
+}
+
+.box-carousel-detail {
+  width: min(100%, 340px);
+  margin: 0 auto;
+}
+
+.box-carousel-detail .detail-lb-section {
+  margin-bottom: 14px;
+}
+
+.box-carousel-detail .detail-skill-section {
+  padding-bottom: 12px;
+}
+
+.box-carousel-silhouette {
+  filter: brightness(0) contrast(1.15) grayscale(1);
+  opacity: 0.72;
+  transform: scale(1.02);
+}
+
+.box-carousel-visual.locked {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255,255,255,0.09), transparent 34%),
+    linear-gradient(135deg, rgba(255,255,255,0.04), rgba(0,0,0,0.55)),
+    #111;
+  border-color: rgba(255,255,255,0.06);
+}
+
+.box-carousel-visual.locked::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, transparent, rgba(0,0,0,0.55)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 7px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.box-carousel-lock-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,228,220,0.24);
+  background: rgba(0,0,0,0.52);
+  color: rgba(232,228,220,0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 700;
+  font-family: "Noto Serif JP", serif;
+  z-index: 3;
+  box-shadow: 0 0 22px rgba(0,0,0,0.75), 0 0 18px rgba(255,255,255,0.06) inset;
+}
+
+.box-carousel-locked-label {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: rgba(232,228,220,0.58);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.95);
+}
+
+.box-carousel-locked-panel {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.025);
+  border-radius: 12px;
+  padding: 28px 14px 26px;
+  text-align: center;
+  min-height: 220px;
+}
+
+.box-carousel-locked-title {
+  font-family: "Cinzel", serif;
+  color: rgba(232,228,220,0.32);
+  font-size: 12px;
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+}
+
+.box-carousel-locked-seal {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,228,220,0.16);
+  color: rgba(232,228,220,0.46);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.28);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.box-carousel-locked-no,
+.box-carousel-locked-text {
+  color: rgba(232,228,220,0.28);
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-top: 8px;
+}
+
+.detail-type-row {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.detail-type-val {
+  color: rgba(232,228,220,0.92);
+}
+
+.detail-owned-count {
+  margin: 10px 0 0;
+  text-align: right;
+  color: rgba(232,228,220,0.52);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.btn-limit-break-disabled {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* =========================================================
+   協力者一覧：共鳴可能ジャンプ通知
+   ========================================================= */
+.box-limitbreak-jump {
+  width: min(100%, 330px);
+  margin: 4px auto 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 45, 85, 0.32);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 10% 50%, rgba(255, 45, 85, 0.2), transparent 34%),
+    rgba(20, 8, 12, 0.82);
+  color: rgba(255,255,255,0.88);
+  font-family: "Noto Serif JP", serif;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(255, 23, 72, 0.16);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.box-limitbreak-jump:active {
+  transform: scale(0.985);
+  background: rgba(40, 10, 18, 0.95);
+}
+
+.box-limitbreak-jump.is-current {
+  border-color: rgba(255, 76, 112, 0.58);
+  box-shadow:
+    0 0 18px rgba(255, 23, 72, 0.28),
+    inset 0 0 18px rgba(255, 23, 72, 0.08);
+}
+
+.box-limitbreak-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff1748;
+  box-shadow: 0 0 10px rgba(255, 23, 72, 0.95);
+  flex-shrink: 0;
+  animation: box-lb-dot-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes box-lb-dot-pulse {
+  0%,100% { transform: scale(1); opacity: 0.92; }
+  50% { transform: scale(1.28); opacity: 1; }
+}
+
+.box-limitbreak-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  color: rgba(255,255,255,0.86);
+}
+
+.box-limitbreak-count {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  background: rgba(255, 23, 72, 0.22);
+  border: 1px solid rgba(255, 23, 72, 0.42);
+  color: #fff;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.box-limitbreak-arrow {
+  color: rgba(255,255,255,0.66);
+  font-size: 17px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.detail-lb-section.can-limit-break {
+  border-color: rgba(255, 45, 85, 0.35);
+  box-shadow:
+    0 0 18px rgba(255, 23, 72, 0.13),
+    inset 0 0 20px rgba(255, 23, 72, 0.045);
+}
+
+.detail-lb-ready-badge {
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 23, 72, 0.2);
+  border: 1px solid rgba(255, 23, 72, 0.42);
+  color: rgba(255,255,255,0.95);
+  font-size: 10px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  box-shadow: 0 0 10px rgba(255, 23, 72, 0.2);
+}
+
+.btn-limit-break-ready {
+  border-color: rgba(255, 45, 85, 0.55) !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.16), transparent 38%),
+    rgba(255, 23, 72, 0.26) !important;
+  color: #fff !important;
+  box-shadow: 0 0 18px rgba(255, 23, 72, 0.22);
+}
+
+/* =========================================================
+   協力者一覧カルーセル：固定ヘッダー / スクロール分離 修正
+   ========================================================= */
+#screen-zukan #zukan-sub-box {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#screen-zukan #zukan-sub-box .zukan-stats {
+  flex-shrink: 0;
+}
+
+#box-grid.box-carousel {
+  height: calc(100dvh - var(--header-h) - var(--page-header-h) - 78px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 12px 0;
+}
+
+.box-carousel-view {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 8px;
+}
+
+.box-carousel-fixed {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+  background: #0f0f0f;
+  padding-bottom: 10px;
+}
+
+.box-carousel-visual {
+  width: min(70vw, 260px);
+  max-width: 260px;
+  margin-bottom: 6px;
+}
+
+.box-carousel-name {
+  margin: 6px 0 10px;
+}
+
+.box-carousel-separator {
+  width: min(100%, 340px);
+  height: 1px;
+  margin: 0 auto;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.18), transparent);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.8);
+}
+
+.box-carousel-detail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 0 calc(74px + env(safe-area-inset-bottom));
+}
+
+.box-carousel-detail {
+  width: min(100%, 340px);
+  margin: 0 auto;
+}
+
+.detail-element-type-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.22)) drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+}
+
+.detail-type-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.detail-element-type-label {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  color: rgba(232,228,220,0.78);
+}
+
+.detail-type-val {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+@media (max-height: 720px) {
+  .box-carousel-visual {
+    width: min(62vw, 230px);
+    max-width: 230px;
+  }
+  .box-carousel-count {
+    margin-bottom: 3px;
+  }
+  .box-limitbreak-jump {
+    margin-top: 2px;
+    margin-bottom: 6px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+  .box-carousel-name {
+    margin-bottom: 8px;
+  }
+}
+
+/* =========================================================
+   協力者一覧カルーセル：表示領域拡張 修正
+   - パネル画像を縮小
+   - 下段スクロール領域の余白を削減
+   - ボトムナビ直上まで詳細を使う
+   ========================================================= */
+#screen-zukan #zukan-sub-box {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#box-grid.box-carousel {
+  /* ボトムナビ直上まで使い切る */
+  height: calc(100dvh - var(--header-h) - var(--page-header-h) - 0px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 4px 12px 0;
+}
+
+.box-carousel-view {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 8px;
+}
+
+.box-carousel-fixed {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+  background: #0f0f0f;
+  padding-bottom: 7px;
+}
+
+.box-carousel-visual {
+  width: min(58vw, 216px);
+  max-width: 216px;
+  margin-bottom: 4px;
+}
+
+.box-carousel-name {
+  margin: 4px 0 7px;
+}
+
+.box-carousel-separator {
+  width: min(100%, 340px);
+  height: 1px;
+  margin: 0 auto;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.24), transparent);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.8);
+}
+
+.box-carousel-detail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 0 calc(74px + env(safe-area-inset-bottom));
+}
+
+.box-carousel-count {
+  margin-bottom: 4px;
+}
+
+.box-limitbreak-jump {
+  margin-top: 2px;
+  margin-bottom: 6px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+@media (max-height: 720px) {
+  #box-grid.box-carousel {
+    height: calc(100dvh - var(--header-h) - var(--page-header-h) - 0px);
+    padding-top: 2px;
+  }
+  .box-carousel-visual {
+    width: min(52vw, 188px);
+    max-width: 188px;
+  }
+  .box-carousel-fixed {
+    padding-bottom: 6px;
+  }
+  .box-carousel-name {
+    margin: 3px 0 6px;
+  }
+  .box-carousel-detail-scroll {
+    padding-top: 8px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-height: 660px) {
+  .box-carousel-visual {
+    width: min(48vw, 170px);
+    max-width: 170px;
+  }
+  .box-carousel-count {
+    margin-bottom: 2px;
+  }
+  .box-limitbreak-jump {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    margin-bottom: 5px;
+  }
 }
