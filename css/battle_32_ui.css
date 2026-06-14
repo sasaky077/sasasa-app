@@ -7668,3 +7668,120 @@
 #battle32-root.b32-vp-se .b32-unit {
   height: calc(var(--cell-size) * 1.58) !important;
 }
+
+
+/* ============================================================
+   PATCH: Battle brightness recovery / 常時暗幕の解消
+   - キャラパネル以外にかかって見える暗いフィルター感を軽減
+   - レイアウト・タップ判定・盤面サイズは変更しない
+   - 白いアルケミア空間として、背景/盤面/ヘッダーの黒影を弱める
+   ============================================================ */
+
+/* 画面全体を白基調に戻す。旧パッチの低opacity背景・暗い線形グラデーションを上書き */
+#battle32-root {
+  background: #fffefb !important;
+  color: rgba(34, 38, 52, .94) !important;
+}
+
+/* 背景レイヤー：暗い画像/グレー化を使わず、明るい白い余白に統一 */
+#battle32-root::before {
+  background:
+    radial-gradient(ellipse at 50% 32%, rgba(255,255,255,1) 0%, rgba(255,255,252,.98) 48%, rgba(246,247,243,.96) 100%) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* 全体に被さる影フィルターに見えるレイヤーを、薄い円環だけにする */
+#battle32-root::after {
+  background:
+    radial-gradient(circle at 50% 37%, transparent 0 30%, rgba(80,84,104,.055) 30.3%, transparent 31.0%),
+    radial-gradient(circle at 50% 37%, transparent 0 47%, rgba(80,84,104,.040) 47.3%, transparent 48.0%) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  pointer-events: none !important;
+}
+
+/* フィールド領域の縦グラデーションを明るく。下半分が沈む見え方を抑える */
+#battle32-root #b32-scroll {
+  background:
+    radial-gradient(ellipse at 50% 26%, rgba(255,255,255,.92), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,.94), rgba(250,251,247,.98)) !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* 盤面背面の円形オーラは維持しつつ、暗い影をほぼ削除 */
+#battle32-root #b32-board-wrap::before {
+  background: rgba(255,255,255,.10) !important;
+  border-color: rgba(72, 78, 100, .055) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.82),
+    0 0 28px rgba(120,130,150,.035) !important;
+  opacity: 1 !important;
+}
+
+/* board自体に影/フィルターをかけない。タップ補助・3D表示はそのまま */
+#battle32-root #b32-board {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* 通常マスを少し明るくして、キャラパネルだけが浮く状態を緩和 */
+#battle32-root .b32-cell {
+  background: rgba(255,255,255,.72) !important;
+  border-color: rgba(76, 84, 112, .14) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.88),
+    0 1px 5px rgba(66,72,92,.025) !important;
+}
+
+#battle32-root .b32-cell::before {
+  border-color: rgba(76, 84, 112, .10) !important;
+  opacity: .55 !important;
+}
+
+/* 味方/敵ゾーンの色は残しつつ、暗さを減らす */
+#battle32-root .b32-cell.ally-zone {
+  background: rgba(232, 249, 255, .88) !important;
+  border-color: rgba(64, 150, 210, .24) !important;
+  box-shadow:
+    inset 0 0 10px rgba(80, 180, 230, .09),
+    0 1px 5px rgba(40,120,180,.030) !important;
+}
+
+#battle32-root .b32-cell.enemy-zone {
+  background: rgba(250, 243, 255, .86) !important;
+  border-color: rgba(150, 100, 190, .22) !important;
+  box-shadow:
+    inset 0 0 10px rgba(165, 110, 205, .075),
+    0 1px 5px rgba(110,70,160,.025) !important;
+}
+
+/* ヘッダーや上部UIの暗い影も弱める。実機での暗さを抑える */
+#battle32-root #b32-header,
+#battle32-root #b32-boss-hp-ui {
+  background: rgba(255,255,255,.94) !important;
+  border-bottom-color: rgba(72,78,100,.09) !important;
+  box-shadow: 0 4px 12px rgba(70,76,96,.035) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* LINKピル/下部ボタンの影を少し抑えて、画面全体のトーンを均す */
+#b32-link-bar,
+#battle32-root .b32-bottom-action,
+#battle32-root .b32-btn {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.76),
+    0 4px 10px rgba(70,76,96,.045) !important;
+}
+
+/* キャラカードは明るさを維持。ただし他要素との差が出すぎないよう影だけ少し軽くする */
+#battle32-root .b32-party-card,
+#b32-roster-panel .b32-roster-card {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.78),
+    0 5px 14px rgba(70,76,96,.055) !important;
+}
