@@ -7670,198 +7670,23 @@
 }
 
 /* ============================================================
-   FINAL PATCH: Battle screen no-dim / Alchemia brightness recovery
-   - キャラパネルだけが浮いて見える原因になる全体暗幕・減光を完全解除
-   - レイアウト / 盤面サイズ / タップ補助には触れない
-   ============================================================ */
-
-/* 画面全体を白基調に固定。後続・旧Darkパッチの地色を無効化 */
-#battle32-root {
-  background: #fbfbf8 !important;
-  color: rgba(34, 40, 58, .94) !important;
-  filter: none !important;
-  opacity: 1 !important;
-  mix-blend-mode: normal !important;
-}
-
-/* 背景画像・暗い合成フィルターを使わず、明るいアルケミア背景にする */
-#battle32-root::before {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  background:
-    radial-gradient(circle at 50% 36%, rgba(255,255,255,1) 0%, rgba(250,250,247,.98) 48%, rgba(242,244,240,.96) 100%) !important;
-  opacity: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  mix-blend-mode: normal !important;
-  pointer-events: none !important;
-}
-
-/* ここが暗幕化しやすいので完全停止。円環は board-wrap 側で薄く表現する */
-#battle32-root::after {
-  content: none !important;
-  display: none !important;
-  background: none !important;
-  opacity: 0 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  mix-blend-mode: normal !important;
-  pointer-events: none !important;
-}
-
-/* ルート配下のフィールド・ヘッダーに減光/合成が残らないよう保険 */
-#battle32-root,
-#battle32-root > *,
-#battle32-root #b32-header,
-#battle32-root #b32-scroll,
-#battle32-root #b32-board-wrap,
-#battle32-root #b32-board,
-#battle32-root #b32-bottom-area,
-#battle32-root #b32-actions {
-  opacity: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  mix-blend-mode: normal !important;
-}
-
-/* フィールド領域：暗いグラデーションを廃止して白背景に寄せる */
-#battle32-root #b32-scroll {
-  background:
-    radial-gradient(ellipse at 50% 26%, rgba(255,255,255,.98) 0%, rgba(252,252,249,.94) 56%, transparent 74%),
-    linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,249,246,.96)) !important;
-  color: rgba(34, 40, 58, .92) !important;
-  text-shadow: none !important;
-  isolation: isolate !important;
-}
-
-/* 盤面背後の円環は暗くせず、薄い線だけにする */
-#battle32-root #b32-board-wrap::before {
-  content: '' !important;
-  position: absolute !important;
-  width: min(112vw, 470px) !important;
-  height: min(112vw, 470px) !important;
-  left: 50% !important;
-  top: 48% !important;
-  transform: translate(-50%, -50%) rotateX(38deg) !important;
-  border-radius: 50% !important;
-  background: transparent !important;
-  border: 1px solid rgba(74, 82, 110, .08) !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.72),
-    0 0 28px rgba(80, 100, 130, .035) !important;
-  opacity: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  mix-blend-mode: normal !important;
-  pointer-events: none !important;
-  z-index: 0 !important;
-}
-
-/* 盤面自体は3D維持。暗いdrop-shadowは禁止 */
-#battle32-root #b32-board {
-  transform: rotateX(38deg) translateZ(0) !important;
-  transform-style: preserve-3d !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  opacity: 1 !important;
-  mix-blend-mode: normal !important;
-  z-index: 1 !important;
-}
-
-/* SEだけ既存の24degを維持 */
-#battle32-root.b32-vp-se #b32-board {
-  transform: rotateX(24deg) translateZ(0) !important;
-}
-#battle32-root.b32-vp-se #b32-board-wrap::before {
-  transform: translate(-50%, -50%) rotateX(24deg) !important;
-}
-
-/* セル：白背景上で見やすい明るさへ。暗い透明セルを禁止 */
-#battle32-root .b32-cell {
-  background: rgba(255,255,255,.46) !important;
-  border-color: rgba(66, 76, 108, .18) !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.70),
-    0 1px 4px rgba(70, 86, 120, .035) !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  opacity: 1 !important;
-  mix-blend-mode: normal !important;
-}
-
-#battle32-root .b32-cell.ally-zone {
-  background: rgba(232,248,255,.62) !important;
-  border-color: rgba(56, 150, 215, .26) !important;
-  box-shadow:
-    inset 0 0 10px rgba(80, 180, 235, .08),
-    0 1px 5px rgba(60, 150, 210, .05) !important;
-}
-
-#battle32-root .b32-cell.enemy-zone {
-  background: rgba(248,242,255,.60) !important;
-  border-color: rgba(145, 100, 200, .23) !important;
-  box-shadow:
-    inset 0 0 10px rgba(150, 100, 210, .07),
-    0 1px 5px rgba(125, 90, 180, .045) !important;
-}
-
-/* ユニットを暗くする加工を禁止。HPやキャラ画像はそのまま明るく表示 */
-#battle32-root .b32-unit,
-#battle32-root .b32-unit.ally,
-#battle32-root .b32-unit.enemy,
-#battle32-root .b32-unit-icon,
-#battle32-root .b32-core-object,
-#battle32-root .b32-core-img {
-  opacity: 1 !important;
-  mix-blend-mode: normal !important;
-}
-
-#battle32-root .b32-unit-icon,
-#battle32-root .b32-core-img {
-  filter: drop-shadow(0 4px 7px rgba(40, 52, 75, .16)) brightness(1.12) contrast(1.03) saturate(1.04) !important;
-  -webkit-filter: drop-shadow(0 4px 7px rgba(40, 52, 75, .16)) brightness(1.12) contrast(1.03) saturate(1.04) !important;
-}
-
-/* ヘッダーも暗幕を感じない白ピル寄せにする */
-#battle32-root #b32-header,
-#battle32-root #b32-boss-hp-ui {
-  background: rgba(255,255,255,.96) !important;
-  border-bottom-color: rgba(58, 68, 96, .10) !important;
-  box-shadow: 0 5px 14px rgba(60, 70, 95, .045) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* 何らかの演出用暗幕が残った場合の保険。ULT中だけ必要なものはJS側で生成されるが、通常表示では暗幕不要 */
-#battle32-root .b32-ult-cutin-shade:not(.playing),
-#battle32-root .b32-screen-dim,
-#battle32-root .b32-field-dim,
-#battle32-root .b32-focus-dim,
-#battle32-root .b32-dark-overlay {
-  display: none !important;
-  opacity: 0 !important;
-  background: none !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-}
-
-
-/* ============================================================
-   REAL FINAL PATCH: stale center-text dim guard
-   実機SEで「キャラパネル以外が暗い」原因になり得る
-   #b32-center-text の暗幕が空表示で残るケースを完全遮断。
+   HOTFIX: Keep original 3D board, remove stale center-text dim only
+   - Based on the last known-good 3D CSS before top rows disappeared.
+   - Do NOT touch #b32-board / .b32-cell / .b32-unit transforms.
+   - Purpose: prevent the center text overlay from leaving a dark film.
    ============================================================ */
 #b32-center-text:empty,
-#b32-center-text:not(.b32ct-visible) {
+#b32-center-text:not(.b32ct-visible),
+#b32-center-text.b32ct-hidden {
   display: none !important;
-  opacity: 0 !important;
   visibility: hidden !important;
+  opacity: 0 !important;
   pointer-events: none !important;
 }
 
 #b32-center-text:empty::before,
-#b32-center-text:not(.b32ct-visible)::before {
+#b32-center-text:not(.b32ct-visible)::before,
+#b32-center-text.b32ct-hidden::before {
   content: none !important;
   display: none !important;
   background: none !important;
@@ -7873,59 +7698,17 @@
   visibility: visible !important;
 }
 
-/* 通常ターン表示の暗幕を薄くする。危険ターン演出は b32ct-turn-danger 側を優先。 */
+/* 通常の TURN 表示時だけ、黒暗幕ではなく白い薄光にする */
 #b32-center-text.b32ct-visible:not(.b32ct-turn-danger)::before {
+  content: '' !important;
+  display: block !important;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(255,255,255,.08) 32%,
-    rgba(255,255,255,.14) 50%,
-    rgba(255,255,255,.08) 68%,
+    rgba(255,255,255,.06) 32%,
+    rgba(255,255,255,.12) 50%,
+    rgba(255,255,255,.06) 68%,
     transparent 100%
   ) !important;
   opacity: 1 !important;
-}
-
-/* 通常時のフィールド自体は完全に明るい白基調へ固定 */
-#battle32-root {
-  background: #fbfbf8 !important;
-}
-
-#battle32-root #b32-scroll,
-#battle32-root #b32-board-wrap {
-  background-color: #fbfbf8 !important;
-  background-image: none !important;
-}
-
-#battle32-root #b32-board-wrap::before {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-color: rgba(74,82,110,.08) !important;
-}
-
-/* キャラ情報パネルも半透明黒ではなく白寄せにして、表示時に暗幕に見えないようにする */
-#battle32-root .b32-roster-info-panel {
-  background: rgba(250,250,247,.96) !important;
-  border-color: rgba(78,88,120,.20) !important;
-  color: rgba(36,42,60,.94) !important;
-  box-shadow: 0 8px 22px rgba(70,80,110,.12) !important;
-}
-
-#battle32-root .b32-roster-info-card {
-  background: rgba(255,255,255,.72) !important;
-  border-color: rgba(78,88,120,.16) !important;
-}
-
-#battle32-root .b32-roster-info-title,
-#battle32-root .b32-roster-info-role,
-#battle32-root .b32-roster-info-status,
-#battle32-root .b32-roster-skill-detail,
-#battle32-root .b32-roster-skill-detail-desc {
-  color: rgba(36,42,60,.92) !important;
-  text-shadow: none !important;
-}
-
-#battle32-root .b32-roster-skill-detail {
-  background: rgba(255,255,255,.58) !important;
-  border-color: rgba(78,88,120,.16) !important;
 }

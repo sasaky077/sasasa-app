@@ -3858,8 +3858,20 @@ if (_summonMode && isSummonCell && !unit) {
     ? `<span style="position:absolute;top:2px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:rgba(120,180,255,.9);text-shadow:0 0 6px rgba(80,160,255,.8);pointer-events:none;">SUMMON</span>`
     : '';
 
+  // iOS実機向け：3D rotateXを使わずに奥行きを出すため、
+  // 行ごとに横幅と中央寄せ量を持たせる。
+  // CSS側でスマホ時のみ参照するため、通常表示/ロジックには影響しない。
+  const rootForCell = document.getElementById(ROOT_ID);
+  const cellPx = rootForCell
+    ? (parseFloat(getComputedStyle(rootForCell).getPropertyValue('--cell-size')) || 40)
+    : 40;
+  const rowScale = Math.max(0.76, Math.min(1.00, 0.78 + r * 0.034));
+  const rowInvScale = 1 / rowScale;
+  const cellShift = (2 - c) * (1 - rowScale) * cellPx * 0.72;
+  const depthStyle = `style="--b32-row-scale:${rowScale.toFixed(3)};--b32-row-inv-scale:${rowInvScale.toFixed(3)};--b32-cell-shift:${cellShift.toFixed(2)}px;"`;
+
   cells.push(
-    `<div class="${cls}" data-row="${r}" data-col="${c}" ${onclick}>` +
+    `<div class="${cls}" data-row="${r}" data-col="${c}" ${depthStyle} ${onclick}>` +
     skillOverlay +
     summonOverlay +
     (unit ? renderUnit(unit, bs.phase) : renderCore(r, c, bs)) +
