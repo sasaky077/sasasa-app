@@ -7845,3 +7845,87 @@
   filter: none !important;
   -webkit-filter: none !important;
 }
+
+
+/* ============================================================
+   REAL FINAL PATCH: stale center-text dim guard
+   実機SEで「キャラパネル以外が暗い」原因になり得る
+   #b32-center-text の暗幕が空表示で残るケースを完全遮断。
+   ============================================================ */
+#b32-center-text:empty,
+#b32-center-text:not(.b32ct-visible) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#b32-center-text:empty::before,
+#b32-center-text:not(.b32ct-visible)::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  opacity: 0 !important;
+}
+
+#b32-center-text.b32ct-visible {
+  display: flex !important;
+  visibility: visible !important;
+}
+
+/* 通常ターン表示の暗幕を薄くする。危険ターン演出は b32ct-turn-danger 側を優先。 */
+#b32-center-text.b32ct-visible:not(.b32ct-turn-danger)::before {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255,255,255,.08) 32%,
+    rgba(255,255,255,.14) 50%,
+    rgba(255,255,255,.08) 68%,
+    transparent 100%
+  ) !important;
+  opacity: 1 !important;
+}
+
+/* 通常時のフィールド自体は完全に明るい白基調へ固定 */
+#battle32-root {
+  background: #fbfbf8 !important;
+}
+
+#battle32-root #b32-scroll,
+#battle32-root #b32-board-wrap {
+  background-color: #fbfbf8 !important;
+  background-image: none !important;
+}
+
+#battle32-root #b32-board-wrap::before {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: rgba(74,82,110,.08) !important;
+}
+
+/* キャラ情報パネルも半透明黒ではなく白寄せにして、表示時に暗幕に見えないようにする */
+#battle32-root .b32-roster-info-panel {
+  background: rgba(250,250,247,.96) !important;
+  border-color: rgba(78,88,120,.20) !important;
+  color: rgba(36,42,60,.94) !important;
+  box-shadow: 0 8px 22px rgba(70,80,110,.12) !important;
+}
+
+#battle32-root .b32-roster-info-card {
+  background: rgba(255,255,255,.72) !important;
+  border-color: rgba(78,88,120,.16) !important;
+}
+
+#battle32-root .b32-roster-info-title,
+#battle32-root .b32-roster-info-role,
+#battle32-root .b32-roster-info-status,
+#battle32-root .b32-roster-skill-detail,
+#battle32-root .b32-roster-skill-detail-desc {
+  color: rgba(36,42,60,.92) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-roster-skill-detail {
+  background: rgba(255,255,255,.58) !important;
+  border-color: rgba(78,88,120,.16) !important;
+}

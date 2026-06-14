@@ -2961,11 +2961,15 @@ window.showBattle32CenterText = function (main, sub, duration) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'b32-center-text';
+    el.style.display = 'none';
+    el.style.visibility = 'hidden';
     document.body.appendChild(el);
   }
 
   el.classList.remove('b32ct-visible');
   el.classList.add('b32ct-hidden');
+  el.style.display = 'flex';
+  el.style.visibility = 'visible';
 
   el.innerHTML = `
     <div class="b32ct-main">${main}</div>
@@ -2996,7 +3000,9 @@ window.showBattle32CenterText = function (main, sub, duration) {
       if (seq !== _centerTextSeq) return;
 
       el.innerHTML = '';
-      el.classList.remove('b32ct-hidden');
+      el.classList.remove('b32ct-visible', 'b32ct-hidden', 'b32ct-turn-danger');
+      el.style.display = 'none';
+      el.style.visibility = 'hidden';
       _centerTextTimer2 = null;
     }, exitDuration);
 
