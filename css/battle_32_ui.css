@@ -7669,119 +7669,179 @@
   height: calc(var(--cell-size) * 1.58) !important;
 }
 
-
 /* ============================================================
-   PATCH: Battle brightness recovery / 常時暗幕の解消
-   - キャラパネル以外にかかって見える暗いフィルター感を軽減
-   - レイアウト・タップ判定・盤面サイズは変更しない
-   - 白いアルケミア空間として、背景/盤面/ヘッダーの黒影を弱める
+   FINAL PATCH: Battle screen no-dim / Alchemia brightness recovery
+   - キャラパネルだけが浮いて見える原因になる全体暗幕・減光を完全解除
+   - レイアウト / 盤面サイズ / タップ補助には触れない
    ============================================================ */
 
-/* 画面全体を白基調に戻す。旧パッチの低opacity背景・暗い線形グラデーションを上書き */
+/* 画面全体を白基調に固定。後続・旧Darkパッチの地色を無効化 */
 #battle32-root {
-  background: #fffefb !important;
-  color: rgba(34, 38, 52, .94) !important;
+  background: #fbfbf8 !important;
+  color: rgba(34, 40, 58, .94) !important;
+  filter: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
 }
 
-/* 背景レイヤー：暗い画像/グレー化を使わず、明るい白い余白に統一 */
+/* 背景画像・暗い合成フィルターを使わず、明るいアルケミア背景にする */
 #battle32-root::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
   background:
-    radial-gradient(ellipse at 50% 32%, rgba(255,255,255,1) 0%, rgba(255,255,252,.98) 48%, rgba(246,247,243,.96) 100%) !important;
+    radial-gradient(circle at 50% 36%, rgba(255,255,255,1) 0%, rgba(250,250,247,.98) 48%, rgba(242,244,240,.96) 100%) !important;
   opacity: 1 !important;
   filter: none !important;
   -webkit-filter: none !important;
-}
-
-/* 全体に被さる影フィルターに見えるレイヤーを、薄い円環だけにする */
-#battle32-root::after {
-  background:
-    radial-gradient(circle at 50% 37%, transparent 0 30%, rgba(80,84,104,.055) 30.3%, transparent 31.0%),
-    radial-gradient(circle at 50% 37%, transparent 0 47%, rgba(80,84,104,.040) 47.3%, transparent 48.0%) !important;
-  opacity: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
+  mix-blend-mode: normal !important;
   pointer-events: none !important;
 }
 
-/* フィールド領域の縦グラデーションを明るく。下半分が沈む見え方を抑える */
+/* ここが暗幕化しやすいので完全停止。円環は board-wrap 側で薄く表現する */
+#battle32-root::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  opacity: 0 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  mix-blend-mode: normal !important;
+  pointer-events: none !important;
+}
+
+/* ルート配下のフィールド・ヘッダーに減光/合成が残らないよう保険 */
+#battle32-root,
+#battle32-root > *,
+#battle32-root #b32-header,
+#battle32-root #b32-scroll,
+#battle32-root #b32-board-wrap,
+#battle32-root #b32-board,
+#battle32-root #b32-bottom-area,
+#battle32-root #b32-actions {
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* フィールド領域：暗いグラデーションを廃止して白背景に寄せる */
 #battle32-root #b32-scroll {
   background:
-    radial-gradient(ellipse at 50% 26%, rgba(255,255,255,.92), transparent 58%),
-    linear-gradient(180deg, rgba(255,255,255,.94), rgba(250,251,247,.98)) !important;
-  filter: none !important;
-  -webkit-filter: none !important;
+    radial-gradient(ellipse at 50% 26%, rgba(255,255,255,.98) 0%, rgba(252,252,249,.94) 56%, transparent 74%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,249,246,.96)) !important;
+  color: rgba(34, 40, 58, .92) !important;
+  text-shadow: none !important;
+  isolation: isolate !important;
 }
 
-/* 盤面背面の円形オーラは維持しつつ、暗い影をほぼ削除 */
+/* 盤面背後の円環は暗くせず、薄い線だけにする */
 #battle32-root #b32-board-wrap::before {
-  background: rgba(255,255,255,.10) !important;
-  border-color: rgba(72, 78, 100, .055) !important;
+  content: '' !important;
+  position: absolute !important;
+  width: min(112vw, 470px) !important;
+  height: min(112vw, 470px) !important;
+  left: 50% !important;
+  top: 48% !important;
+  transform: translate(-50%, -50%) rotateX(38deg) !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  border: 1px solid rgba(74, 82, 110, .08) !important;
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.82),
-    0 0 28px rgba(120,130,150,.035) !important;
+    inset 0 0 0 1px rgba(255,255,255,.72),
+    0 0 28px rgba(80, 100, 130, .035) !important;
   opacity: 1 !important;
-}
-
-/* board自体に影/フィルターをかけない。タップ補助・3D表示はそのまま */
-#battle32-root #b32-board {
   filter: none !important;
   -webkit-filter: none !important;
+  mix-blend-mode: normal !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
 }
 
-/* 通常マスを少し明るくして、キャラパネルだけが浮く状態を緩和 */
+/* 盤面自体は3D維持。暗いdrop-shadowは禁止 */
+#battle32-root #b32-board {
+  transform: rotateX(38deg) translateZ(0) !important;
+  transform-style: preserve-3d !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  z-index: 1 !important;
+}
+
+/* SEだけ既存の24degを維持 */
+#battle32-root.b32-vp-se #b32-board {
+  transform: rotateX(24deg) translateZ(0) !important;
+}
+#battle32-root.b32-vp-se #b32-board-wrap::before {
+  transform: translate(-50%, -50%) rotateX(24deg) !important;
+}
+
+/* セル：白背景上で見やすい明るさへ。暗い透明セルを禁止 */
 #battle32-root .b32-cell {
-  background: rgba(255,255,255,.72) !important;
-  border-color: rgba(76, 84, 112, .14) !important;
+  background: rgba(255,255,255,.46) !important;
+  border-color: rgba(66, 76, 108, .18) !important;
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.88),
-    0 1px 5px rgba(66,72,92,.025) !important;
+    inset 0 0 0 1px rgba(255,255,255,.70),
+    0 1px 4px rgba(70, 86, 120, .035) !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
 }
 
-#battle32-root .b32-cell::before {
-  border-color: rgba(76, 84, 112, .10) !important;
-  opacity: .55 !important;
-}
-
-/* 味方/敵ゾーンの色は残しつつ、暗さを減らす */
 #battle32-root .b32-cell.ally-zone {
-  background: rgba(232, 249, 255, .88) !important;
-  border-color: rgba(64, 150, 210, .24) !important;
+  background: rgba(232,248,255,.62) !important;
+  border-color: rgba(56, 150, 215, .26) !important;
   box-shadow:
-    inset 0 0 10px rgba(80, 180, 230, .09),
-    0 1px 5px rgba(40,120,180,.030) !important;
+    inset 0 0 10px rgba(80, 180, 235, .08),
+    0 1px 5px rgba(60, 150, 210, .05) !important;
 }
 
 #battle32-root .b32-cell.enemy-zone {
-  background: rgba(250, 243, 255, .86) !important;
-  border-color: rgba(150, 100, 190, .22) !important;
+  background: rgba(248,242,255,.60) !important;
+  border-color: rgba(145, 100, 200, .23) !important;
   box-shadow:
-    inset 0 0 10px rgba(165, 110, 205, .075),
-    0 1px 5px rgba(110,70,160,.025) !important;
+    inset 0 0 10px rgba(150, 100, 210, .07),
+    0 1px 5px rgba(125, 90, 180, .045) !important;
 }
 
-/* ヘッダーや上部UIの暗い影も弱める。実機での暗さを抑える */
+/* ユニットを暗くする加工を禁止。HPやキャラ画像はそのまま明るく表示 */
+#battle32-root .b32-unit,
+#battle32-root .b32-unit.ally,
+#battle32-root .b32-unit.enemy,
+#battle32-root .b32-unit-icon,
+#battle32-root .b32-core-object,
+#battle32-root .b32-core-img {
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+#battle32-root .b32-unit-icon,
+#battle32-root .b32-core-img {
+  filter: drop-shadow(0 4px 7px rgba(40, 52, 75, .16)) brightness(1.12) contrast(1.03) saturate(1.04) !important;
+  -webkit-filter: drop-shadow(0 4px 7px rgba(40, 52, 75, .16)) brightness(1.12) contrast(1.03) saturate(1.04) !important;
+}
+
+/* ヘッダーも暗幕を感じない白ピル寄せにする */
 #battle32-root #b32-header,
 #battle32-root #b32-boss-hp-ui {
-  background: rgba(255,255,255,.94) !important;
-  border-bottom-color: rgba(72,78,100,.09) !important;
-  box-shadow: 0 4px 12px rgba(70,76,96,.035) !important;
+  background: rgba(255,255,255,.96) !important;
+  border-bottom-color: rgba(58, 68, 96, .10) !important;
+  box-shadow: 0 5px 14px rgba(60, 70, 95, .045) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
-/* LINKピル/下部ボタンの影を少し抑えて、画面全体のトーンを均す */
-#b32-link-bar,
-#battle32-root .b32-bottom-action,
-#battle32-root .b32-btn {
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.76),
-    0 4px 10px rgba(70,76,96,.045) !important;
-}
-
-/* キャラカードは明るさを維持。ただし他要素との差が出すぎないよう影だけ少し軽くする */
-#battle32-root .b32-party-card,
-#b32-roster-panel .b32-roster-card {
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.78),
-    0 5px 14px rgba(70,76,96,.055) !important;
+/* 何らかの演出用暗幕が残った場合の保険。ULT中だけ必要なものはJS側で生成されるが、通常表示では暗幕不要 */
+#battle32-root .b32-ult-cutin-shade:not(.playing),
+#battle32-root .b32-screen-dim,
+#battle32-root .b32-field-dim,
+#battle32-root .b32-focus-dim,
+#battle32-root .b32-dark-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  background: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
 }
