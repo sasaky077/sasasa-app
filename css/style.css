@@ -8488,3 +8488,14 @@ body,
   transform: scale(0.985);
   filter: brightness(0.96);
 }
+
+
+/* =========================================================
+   Box Carousel: Home Button inside scroll detail
+   固定エリアではなく、共鳴Lvカードの直上に配置する
+   ========================================================= */
+.box-carousel-detail .box-carousel-home-btn-in-detail {
+  margin: 0 auto 12px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}

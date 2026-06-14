@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=208-home-button-carousel">
+  <link rel="stylesheet" href="css/style.css?v=209-home-button-scroll-detail">
   <link rel="stylesheet" href="css/story_ui.css?v=5">
 
 </head>
@@ -3573,11 +3573,13 @@ setTenResultFooterVisible(true);
             '<button class="box-carousel-arrow box-carousel-next" onclick="moveBoxCarousel(1)" aria-label="次のプリモア">›</button>' +
           '</div>' +
           nameHtml +
-          (owned ? '<button class="box-carousel-home-btn" onclick="setHomeCharacterFromDetail()">ホーム画面に設定</button>' : '') +
           '<div class="box-carousel-separator"></div>' +
         '</div>' +
         '<div class="box-carousel-detail-scroll">' +
-          '<div class="box-carousel-detail">' + detailHtml + '</div>' +
+          '<div class="box-carousel-detail">' +
+            (owned ? '<button class="box-carousel-home-btn box-carousel-home-btn-in-detail" onclick="setHomeCharacterFromDetail()">ホーム画面に設定</button>' : '') +
+            detailHtml +
+          '</div>' +
         '</div>' +
       '</div>';
 
