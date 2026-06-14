@@ -9,8 +9,8 @@ const ENEMIES = [
   // ============================================================
   {
     id: 'enemy_01',
-    name: '??????',
-    element: 'chaos',
+    name: 'レムナント：オーバーシア',
+    element: 'mystis',
     img:   'images/enemy_01.webp',
     upImg: 'images/enemy_01_up.webp',
     battleImg: 'images/enemy_01_battle.webp',
@@ -50,7 +50,7 @@ const ENEMIES = [
     _phase1Fixed: [
       {
         id: 'e01_all25',
-        action: '全体侵食',
+        action: '侵食',
         type: 'atk_all',
         range: 'all',
         damageRate: 0.25,
@@ -59,7 +59,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_row_near35',
-        action: '前列薙ぎ払い',
+        action: '薙ぎ払い',
         type: 'atk_near',
         range: 'row_near',
         damageRate: 0.35,
@@ -68,7 +68,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_bind_warning',
-        action: '白糸収束',
+        action: '収束',
         type: 'move_lock',
         range: 'random1',
         status: 'move_lock',
@@ -78,7 +78,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_rupture90_t4',
-        action: '白糸断絶',
+        action: '断絶',
         type: 'atk_line',
         range: 'pierce_all',
         pierce: true,
@@ -92,7 +92,7 @@ const ENEMIES = [
     _phase1Pool: [
       {
         id: 'e01_all25_pool',
-        action: '全体侵食',
+        action: '侵食',
         type: 'atk_all',
         range: 'all',
         damageRate: 0.25,
@@ -101,7 +101,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_row_near_atk',
-        action: '前列薙ぎ払い',
+        action: '薙ぎ払い',
         type: 'atk_near',
         range: 'row_near',
         multiplier: 3.6,
@@ -110,7 +110,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_single_heavy',
-        action: '白糸の刺突',
+        action: '刺突',
         type: 'atk_single',
         range: 'random1',
         multiplier: 3.2,
@@ -119,7 +119,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_heal_team',
-        action: '糸の修復',
+        action: '修復',
         type: 'heal_team',
         healRate: 0.15,
         power: '小',
@@ -127,7 +127,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_move_lock',
-        action: '縛糸',
+        action: '束縛',
         type: 'move_lock',
         range: 'random1',
         status: 'move_lock',
@@ -160,7 +160,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_rupture90_p2',
-        action: '白糸断絶',
+        action: '断絶',
         type: 'atk_line',
         range: 'pierce_all',
         pierce: true,
@@ -179,7 +179,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_heal_team2',
-        action: '糸の修復',
+        action: '修復',
         type: 'heal_team',
         healRate: 0.15,
         power: '小',
@@ -207,7 +207,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_rupture90_p3',
-        action: '白糸断絶',
+        action: '断絶',
         type: 'atk_line',
         range: 'pierce_all',
         pierce: true,
@@ -226,7 +226,7 @@ const ENEMIES = [
       },
       {
         id: 'e01_heal_team3',
-        action: '糸の修復',
+        action: '修復',
         type: 'heal_team',
         healRate: 0.15,
         power: '小',

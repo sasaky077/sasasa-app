@@ -19,6 +19,15 @@
 
 (function () {
 
+  // ローグライト専用：主人公エリは1st固定
+  const ROGUELITE_FIXED_FIRST_CHARA_ID = 1;
+
+  function normalizeRoguelitePartyIds(partyIds) {
+    const ids = Array.isArray(partyIds) ? partyIds.map(Number).filter(Number.isFinite) : [];
+    const rest = ids.filter(id => id !== ROGUELITE_FIXED_FIRST_CHARA_ID);
+    return [ROGUELITE_FIXED_FIRST_CHARA_ID, ...rest].slice(0, 4);
+  }
+
   // ── ステージ定義 ──────────────────────────────────────────
   // 現在の構成：4戦MVP（雑魚3戦 → ボス1戦）
   //   Stage 1: 雑魚戦
@@ -42,7 +51,6 @@
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 2,
       turnLimit: 10,
-      bossCaptureMax: null,
     },
     {
       stage: 2,
@@ -53,7 +61,6 @@
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 2,
       turnLimit: 10,
-      bossCaptureMax: null,
     },
     {
       stage: 3,
@@ -64,7 +71,6 @@
       enemyActionMode: 'limit',
       enemyActionsPerTurn: 3,
       turnLimit: 12,
-      bossCaptureMax: null,
     },
     {
       stage: 4,
@@ -76,7 +82,6 @@
       enemyActionMode: 'all',
       enemyActionsPerTurn: null,
       turnLimit: 13,
-      bossCaptureMax: 2,
       enemySpawn: {
         enemyId: 'enemy_02a',
         interval: 2,
@@ -97,7 +102,7 @@
       stageNo:  1,
       options:  [],   // 取得済みOP オブジェクト（passive）
       items:    [],   // 取得済みアイテム（最大2枠）
-      partyIds: partyIds || [],
+      partyIds: normalizeRoguelitePartyIds(partyIds),
       result:   null, // 'win' | 'lose'
     };
   }
@@ -206,7 +211,6 @@
       turnLimit:         def.turnLimit          || 12,
       enemyActionMode:   def.enemyActionMode     || 'all',
       enemyActionsPerTurn: def.enemyActionsPerTurn ?? null,
-      bossCaptureMax:    def.bossCaptureMax      || 2,
     });
 
     // ── 敵設定：enemyIds を優先、インライン定義（enemies）は後方互換フォールバック ──

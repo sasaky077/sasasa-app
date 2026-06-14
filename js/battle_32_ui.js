@@ -3706,10 +3706,6 @@ if (_selectedEnemyUid) {
  else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
 
  if (isEnemyMoveGuide) cls += ' enemy-move-guide';
- // コアがあるセルにフラグ付与（filter/animation からコア表示を保護するため）
- if (bs.cores?.ally && r === bs.cores.ally.row && c === bs.cores.ally.col) {
- cls += ' has-core';
- }
  if (isSkillSelectable) cls += ' skill-selectable';
  if (isAllyInspectable) cls += ' ally-inspectable';
  if (isEnemyInspectable) cls += ' enemy-inspectable';
@@ -3939,39 +3935,15 @@ window.__ROGUELITE_TRANSITIONING__ = false;
 }
 
  function renderCore(row, col, bs) {
- const cores = bs.cores;
- if (!cores) return '';
-
- // 自陣コアのみ表示
- if (cores.ally && row === cores.ally.row && col === cores.ally.col) {
- const stability = cores.ally.stability ?? 3;
-
- let img = 'images/battle_core_100.webp';
- if (stability <= 1) {
- img = 'images/battle_core_30.webp';
- } else if (stability === 2) {
- img = 'images/battle_core_60.webp';
- }
-
- return `
- <div class="b32-core-object stability-${stability}">
- <img class="b32-core-img" src="${img}" alt="CORE" onerror="this.style.display='none'">
- </div>
- `;
- }
-
+ // コア概念廃止：盤面にはコアを描画しない
  return '';
 }
 
  function renderUnit(u, phase) {
  // 生存判定：味方・敵ともに hp で統一
- // ただしボスは HP0 後も盤面に残る（核露出状態）
  const bsCurrent = _bs();
- const bossExposed = u.isBoss && bsCurrent?.bossCore?.exposed;
 
- const dead = u.side === 'ally'
- ? (u.hp <= 0)
- : (u.hp <= 0 && !bossExposed); // ボス核露出中は dead 扱いしない
+ const dead = u.hp <= 0;
 
  // 両方の行動（move + skill）を使い切ったキャラを done 扱い
  const _uah = (bsCurrent && bsCurrent.unitActionHistory || {});
@@ -4042,11 +4014,6 @@ if (u.side === 'ally') {
  inner += `<div class="b32-shinki-dots">${dots}</div>`;
  }
  if (u.isBoss) inner += `<div class="b32-boss-badge">BOSS</div>`;
- // 核露出中はバッジを追加表示
- if (bossExposed) {
- const bc = bsCurrent.bossCore;
- inner += `<div class="b32-boss-badge" style="top:14px;background:rgba(180,80,220,.9)">CORE ${bc.capture}/${bc.captureMax}</div>`;
- }
  if (isDone) inner += `<div class="b32-unit-done-mark">✓</div>`;
 
  // ── スタン判定 ──
@@ -4996,28 +4963,11 @@ if (listEl) {
  }
 
  function renderCoreStatus(bs) {
+ // コア概念廃止：下部サブ表示は使わない
  const subEl = document.getElementById('b32-bottom-sub');
- if (!subEl || !bs.cores) return;
-
- // 味方操作中・敵ターン中は、操作案内テキストを優先する
- if (bs.phase === 'skill' || bs.phase === 'enemy') return;
-
- const ally = bs.cores.ally;
- const bc = bs.bossCore;
-
- let bossCoreText;
- if (!bc) {
- bossCoreText = '—';
- } else if (bc.captured) {
- bossCoreText = '固定済';
- } else if (bc.exposed) {
- bossCoreText = `露出 ${bc.capture}/${bc.captureMax}`;
- } else {
- bossCoreText = '未露出';
+ if (subEl && bs && bs.phase !== 'skill' && bs.phase !== 'enemy') {
+   subEl.textContent = `残TURN ${Math.max(0, (bs.turnLimit || 0) - (bs.turn || 1) + 1)}`;
  }
-
- subEl.textContent =
- `自コア ${ally.stability}/${ally.stabilityMax}　神性核 ${bossCoreText}　残TURN ${Math.max(0, bs.turnLimit - bs.turn + 1)}`;
 }
 
  function renderBossHp(bs) {
@@ -5028,11 +4978,9 @@ if (listEl) {
 
  if (!box || !nameEl || !barEl || !textEl) return;
 
- // ボスは HP0 後も核露出状態で表示する
- const boss = (bs.enemies || []).find(e => e.isBoss);
- const bossExposed = bs.bossCore?.exposed;
+ const boss = (bs.enemies || []).find(e => e.isBoss && e.hp > 0);
 
- if (!boss || (!bossExposed && boss.hp <= 0)) {
+ if (!boss) {
  box.style.display = 'none';
  return;
  }
@@ -5041,15 +4989,8 @@ if (listEl) {
  const hpPct = Math.max(0, Math.min(100, Math.round((boss.hp / hpMax) * 100)));
 
  box.style.display = 'block';
- // 核露出後は名前に状態を付加
- if (bossExposed) {
- const bc = bs.bossCore;
- nameEl.textContent = `${boss.name || 'BOSS'} ▸ 神性核露出`;
- textEl.textContent = `干渉 ${bc.capture}/${bc.captureMax}`;
- } else {
  nameEl.textContent = boss.name || 'BOSS';
  textEl.textContent = `${boss.hp.toLocaleString()} / ${hpMax.toLocaleString()}`;
- }
  barEl.style.width = hpPct + '%';
  }
 
@@ -5323,23 +5264,23 @@ function applyBattle32ViewportClass(root) {
   'top:calc(env(safe-area-inset-top, 0px) + 150px)',
   'z-index:3000000',
 
-  // 縦レイアウト
+  // 縦レイアウト（位置は既存維持。見た目だけ白UI用へ）
   'display:flex',
   'flex-direction:column',
   'align-items:center',
   'justify-content:flex-start',
-  'gap:5px',
+  'gap:2px',
 
-  // 小さめの縦パネル
-  'width:28px',
-  'padding:7px 4px',
+  // 表示幅だけLINK表記に合わせる
+  'width:34px',
+  'padding:0',
   'box-sizing:border-box',
 
-  // 目立ちすぎない背景
-  'background:rgba(6,4,18,.46)',
-  'border:1px solid rgba(120,100,220,.22)',
-  'border-radius:999px',
-  'box-shadow:0 0 10px rgba(80,60,180,.18)',
+  // 外側は透明。白いピルは内側要素で描画する
+  'background:transparent',
+  'border:0',
+  'border-radius:0',
+  'box-shadow:none',
 
   'pointer-events:none',
 ].join(';');
@@ -5349,37 +5290,17 @@ function applyBattle32ViewportClass(root) {
    el.style.display = 'flex';
 
    const { current, max } = bs.link;
-   const diamonds = Array.from({ length: max || 6 }, (_, i) => {
-  const filled = i < current;
-  return `<div style="
-    width:10px;
-    height:10px;
-    transform:rotate(45deg);
-    border:1.3px solid ${filled ? 'rgba(150,115,255,.95)' : 'rgba(100,80,200,.28)'};
-    background:${filled ? 'rgba(125,85,245,.78)' : 'rgba(30,20,60,.35)'};
-    box-shadow:${filled ? '0 0 6px rgba(130,90,255,.65)' : 'none'};
-    transition:background .2s,border-color .2s,box-shadow .2s;
-    flex:0 0 auto;
-  "></div>`;
+   const linkCurrent = Number(current || 0);
+   const linkMax = Number(max || 6);
+   const diamonds = Array.from({ length: linkMax }, (_, i) => {
+  const filled = i < linkCurrent;
+  return `<div class="b32-link-diamond ${filled ? 'filled' : 'empty'}"></div>`;
 }).join('');
 
    el.innerHTML = `
-  <div style="
-    writing-mode:vertical-rl;
-    font-family:'Cinzel',serif;
-    font-size:8px;
-    letter-spacing:2px;
-    color:rgba(170,145,255,.82);
-    line-height:1;
-  ">LINK</div>
-
-  <div style="
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:6px;
-    margin-top:3px;
-  ">
+  <div class="b32-link-label">LINK</div>
+  <div class="b32-link-count">${linkCurrent}<span>/</span>${linkMax}</div>
+  <div class="b32-link-pill">
     ${diamonds}
   </div>
 `;

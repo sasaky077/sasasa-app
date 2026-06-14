@@ -217,11 +217,11 @@ body {
 }
 
 #title-screen img {
-  width: 115%;
-  max-width: 760px;
+  width: 80%;
+  max-width: 600px;
   position: relative;
   z-index: 2;
-  animation: titleLogoIn 1.2s ease-out forwards, titleLogoPulse 3.2s ease-in-out 1.2s infinite;
+  animation: titleLogoIn 1.2s ease-out forwards;
 }
 
 #title-screen::before {
@@ -6428,5 +6428,1888 @@ button,
     padding-top: 6px;
     padding-bottom: 6px;
     margin-bottom: 5px;
+  }
+}
+
+
+/* =========================================================
+   プリモア一覧：画像左右矢印 / スワイプ対応
+   ========================================================= */
+.box-carousel-visual-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.box-carousel-visual-row .box-carousel-visual {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.box-carousel-arrow {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  z-index: 8;
+}
+
+@media (min-width: 500px) {
+  .box-carousel-prev,
+  .box-carousel-next {
+    left: auto !important;
+    right: auto !important;
+  }
+}
+
+@media (max-height: 660px) {
+  .box-carousel-visual-row {
+    gap: 8px;
+  }
+
+  .box-carousel-arrow {
+    flex-basis: 28px;
+    width: 28px;
+    height: 48px;
+    font-size: 36px;
+  }
+}
+
+
+/* =========================================================
+   100 Zeraphia Light Visibility Patch
+   - 全体を暗く見せていた黒背景・黒オーバーレイを軽減
+   - 白いアルケミア寄りの明るいUIへ寄せる
+   - 既存構造は変更せず、末尾上書きのみ
+   ========================================================= */
+
+:root {
+  --z-light-bg: #f7f6f1;
+  --z-light-bg-2: #ffffff;
+  --z-light-panel: rgba(255,255,255,0.78);
+  --z-light-panel-solid: #ffffff;
+  --z-light-border: rgba(24,28,36,0.12);
+  --z-light-text: #17181c;
+  --z-light-sub: rgba(24,28,36,0.58);
+  --z-light-muted: rgba(24,28,36,0.38);
+  --z-light-gold: #9e7d35;
+}
+
+/* アプリ全体の黒ベースを解除 */
+html,
+body {
+  background: var(--z-light-bg) !important;
+  color: var(--z-light-text) !important;
+}
+
+/* 各通常画面を明るい白基調へ */
+.screen,
+#screen-main,
+#screen-ninmu,
+#screen-summon,
+#screen-zukan,
+#screen-friend,
+#screen-setting {
+  background-color: var(--z-light-bg) !important;
+  color: var(--z-light-text) !important;
+}
+
+/* 汎用ヘッダーを黒ベタから白半透明へ */
+.header {
+  background: rgba(255,255,255,0.92) !important;
+  border-bottom: 1px solid rgba(24,28,36,0.08) !important;
+  box-shadow: 0 8px 22px rgba(24,28,36,0.06) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.header-title,
+.back-btn,
+.zukan-back-btn {
+  color: var(--z-light-text) !important;
+  text-shadow: none !important;
+}
+
+/* 上部HUDの黒グラデーションを白グラデーションへ */
+.global-user-frame {
+  background:
+    linear-gradient(to bottom,
+      rgba(255,255,255,0.92) 0%,
+      rgba(255,255,255,0.74) 48%,
+      rgba(255,255,255,0) 100%) !important;
+}
+
+.global-user-frame.hud-dark {
+  background: rgba(255,255,255,0.92) !important;
+  border-bottom: 1px solid rgba(24,28,36,0.08) !important;
+}
+
+.hud-lv-circle,
+.hud-resource {
+  background: rgba(255,255,255,0.72) !important;
+  border-color: rgba(24,28,36,0.13) !important;
+  box-shadow: 0 6px 16px rgba(24,28,36,0.08) !important;
+}
+
+.hud-lv-label,
+.hud-id,
+.hud-exp-text {
+  color: var(--z-light-sub) !important;
+}
+
+.hud-lv-num,
+.hud-name,
+.hud-res-val {
+  color: var(--z-light-text) !important;
+  text-shadow: none !important;
+}
+
+.hud-exp-bg {
+  background: rgba(24,28,36,0.12) !important;
+}
+
+.hud-exp-fill {
+  background: linear-gradient(90deg, #b8984d, #17181c) !important;
+}
+
+/* ホーム背景の暗幕をほぼ解除 */
+#screen-main::before {
+  background:
+    linear-gradient(to bottom,
+      rgba(255,255,255,0.16) 0%,
+      rgba(255,255,255,0.04) 34%,
+      rgba(255,255,255,0.10) 100%) !important;
+}
+
+#screen-main::after {
+  background:
+    radial-gradient(circle at 50% 32%, rgba(255,255,255,0.34), transparent 30%),
+    radial-gradient(circle at 50% 48%, rgba(220,200,150,0.10), transparent 42%),
+    linear-gradient(120deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%) !important;
+  mix-blend-mode: screen !important;
+  opacity: 0.58 !important;
+}
+
+/* ホームのキャラを暗く落としすぎない */
+.fav-cut-img {
+  filter:
+    drop-shadow(0 24px 34px rgba(24,28,36,0.28))
+    drop-shadow(0 0 12px rgba(255,255,255,0.35)) !important;
+}
+
+.fav-name,
+.fav-empty {
+  color: var(--z-light-text) !important;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.80) !important;
+}
+
+.fav-stats,
+.fav-label {
+  color: var(--z-light-sub) !important;
+}
+
+/* 下部ナビを黒ベタから明るいガラス調へ */
+.bottom-nav {
+  background: rgba(255,255,255,0.92) !important;
+  border-top: 1px solid rgba(24,28,36,0.10) !important;
+  box-shadow: 0 -10px 24px rgba(24,28,36,0.08) !important;
+}
+
+.bottom-nav-item img {
+  filter: grayscale(0.35) brightness(0.82) saturate(0.9) !important;
+}
+
+.bottom-nav-item.active img {
+  filter: brightness(1.08) saturate(1.08) drop-shadow(0 0 10px rgba(160,126,53,0.22)) !important;
+}
+
+.bottom-nav-label {
+  color: rgba(24,28,36,0.48) !important;
+  text-shadow: none !important;
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: var(--z-light-text) !important;
+}
+
+/* 各メニュー／カード／行の暗さを軽減 */
+.setting-row,
+.kichi-menu-item,
+.ninmu-cat-item,
+.ninmu-panel-coming,
+.ninmu-test-btn,
+.ninmu-chapter-item,
+.friend-add-box,
+.friend-section,
+.friend-search-result,
+.friend-card,
+.summon-counter,
+.summon-banner-item,
+.summon-detail,
+.pity-counter,
+.zukan-stats,
+.stat-card,
+.party-coming-soon,
+.id-box,
+.box-carousel-locked-panel,
+.detail-lb-section,
+.detail-skill-section {
+  background: var(--z-light-panel) !important;
+  border-color: var(--z-light-border) !important;
+  color: var(--z-light-text) !important;
+  box-shadow: 0 8px 22px rgba(24,28,36,0.06) !important;
+}
+
+.kichi-menu-title,
+.ninmu-test-btn-title,
+.ninmu-chapter-title,
+.friend-section-title,
+.setting-row-label,
+.summon-detail-title,
+.stat-card-val,
+.box-carousel-name,
+.detail-lb-title,
+.detail-skill-title,
+.result-name {
+  color: var(--z-light-text) !important;
+  text-shadow: none !important;
+}
+
+.kichi-menu-sub,
+.ninmu-test-btn-sub,
+.ninmu-panel-coming-body,
+.ninmu-chapter-label,
+.friend-empty-txt,
+.setting-section-title,
+.setting-row-sub,
+.summon-detail-desc,
+.pity-note,
+.stat-card-label,
+.box-carousel-count,
+.box-carousel-count-slash {
+  color: var(--z-light-sub) !important;
+  text-shadow: none !important;
+}
+
+/* 巡行の選択中だけ少し強調 */
+.ninmu-cat-item.active,
+.ninmu-chapter-item:not(.ninmu-chapter-locked):active,
+.kichi-menu-item:active,
+.summon-banner-item.active {
+  background: rgba(255,255,255,0.96) !important;
+  border-color: rgba(158,125,53,0.32) !important;
+  box-shadow:
+    0 8px 22px rgba(24,28,36,0.08),
+    0 0 0 1px rgba(158,125,53,0.10) inset !important;
+}
+
+/* ガチャ画面の画像下部にある黒い説明帯を軽めに */
+.summon-detail-overlay,
+.banner-desc-overlay,
+.box-card-overlay,
+.zukan-card-overlay {
+  background:
+    linear-gradient(to top,
+      rgba(255,255,255,0.86) 0%,
+      rgba(255,255,255,0.58) 48%,
+      rgba(255,255,255,0) 100%) !important;
+  color: var(--z-light-text) !important;
+}
+
+.summon-detail-visual,
+.home-event-banner-item,
+.box-carousel-visual,
+.zukan-card,
+.box-card {
+  border-color: rgba(24,28,36,0.10) !important;
+  box-shadow: 0 10px 24px rgba(24,28,36,0.10) !important;
+}
+
+/* ロック・未所持の暗さを少し緩和 */
+#zukan-grid .zukan-card.unknown,
+.box-carousel-silhouette,
+.box-carousel-visual.locked {
+  filter: grayscale(0.75) brightness(0.86) !important;
+  opacity: 0.76 !important;
+}
+
+/* ボタン類の黒ベタを明るく */
+.btn-gacha,
+.btn-gacha-single,
+.btn-gacha-ten,
+.btn-gacha-guaranteed,
+.id-btn,
+.friend-add-btn,
+.name-edit-btn-ok,
+.btn-favorite,
+.btn-swap,
+.btn-keep {
+  background: rgba(255,255,255,0.90) !important;
+  color: var(--z-light-text) !important;
+  border-color: rgba(24,28,36,0.14) !important;
+  box-shadow: 0 6px 18px rgba(24,28,36,0.08) !important;
+}
+
+.btn-gacha-ten,
+.btn-gacha-guaranteed {
+  border-color: rgba(158,125,53,0.48) !important;
+}
+
+.btn-gacha-label,
+.btn-gacha-cost,
+.btn-gacha-ten .btn-gacha-label {
+  color: var(--z-light-text) !important;
+}
+
+/* 入力欄も白基調へ */
+input,
+textarea,
+select,
+.friend-add-input,
+.name-edit-input {
+  background: rgba(255,255,255,0.92) !important;
+  color: var(--z-light-text) !important;
+  border-color: rgba(24,28,36,0.16) !important;
+}
+
+/* モーダル背景は暗すぎない半透明に */
+.modal-overlay,
+#name-edit-modal,
+#shop-modal,
+#notice-modal {
+  background: rgba(248,247,242,0.64) !important;
+}
+
+.modal,
+.name-edit-box {
+  background: rgba(255,255,255,0.96) !important;
+  color: var(--z-light-text) !important;
+  border-color: rgba(24,28,36,0.12) !important;
+  box-shadow: 0 18px 52px rgba(24,28,36,0.18) !important;
+}
+
+/* ローディングだけは白背景にして眩しすぎないグレー文字 */
+#loading {
+  background: var(--z-light-bg) !important;
+}
+
+.loading-txt {
+  color: var(--z-light-sub) !important;
+}
+
+/* PC幅で見た時の外側影も少し軽く */
+@media (min-width: 500px) {
+  body {
+    box-shadow: 0 0 24px rgba(24,28,36,0.16) !important;
+  }
+}
+
+
+
+/* =========================================================
+   101 Zeraphia Light Readability Patch
+   - プリモア一覧の黒い画像周りを白基調へ
+   - 白背景に飲まれていた詳細テキストを濃色へ
+   - 既存構造は変更せず、末尾上書きのみ
+   ========================================================= */
+
+:root {
+  --z-readable-text: #1b1b1f;
+  --z-readable-sub: rgba(27,27,31,0.66);
+  --z-readable-muted: rgba(27,27,31,0.46);
+  --z-readable-panel: rgba(255,255,255,0.94);
+  --z-readable-panel-soft: rgba(255,255,255,0.74);
+  --z-readable-border: rgba(27,27,31,0.14);
+  --z-readable-gold: #9c7a32;
+  --z-readable-purple: #7452b8;
+}
+
+/* プリモア一覧：画像エリアの黒背景を撤去 */
+#screen-zukan,
+#screen-zukan .screen-scroll,
+#screen-zukan #zukan-sub-box,
+#box-grid.box-carousel,
+.box-carousel-view,
+.box-carousel-fixed,
+.box-carousel-visual-row {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+#screen-zukan {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.96) 0%, rgba(248,247,242,0.92) 44%, rgba(238,236,229,0.96) 100%) !important;
+}
+
+/* キャラ画像の台座だけ、黒ではなく淡い白グレーに */
+.box-carousel-visual {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.96), rgba(238,236,229,0.78) 72%, rgba(226,224,218,0.70)) !important;
+  border: 1px solid rgba(27,27,31,0.10) !important;
+  box-shadow:
+    0 8px 22px rgba(27,27,31,0.10),
+    0 0 0 1px rgba(255,255,255,0.70) inset !important;
+  overflow: hidden !important;
+}
+
+.box-carousel-img {
+  background: transparent !important;
+}
+
+/* 左右矢印を白背景でも見える黒系へ */
+.box-carousel-arrow {
+  color: rgba(27,27,31,0.74) !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,0.95),
+    0 3px 12px rgba(27,27,31,0.18) !important;
+}
+
+.box-carousel-arrow:active {
+  color: rgba(27,27,31,0.98) !important;
+}
+
+/* 画像下の名前・区切り線 */
+.box-carousel-name,
+.box-carousel-name.locked {
+  color: var(--z-readable-text) !important;
+  text-shadow: none !important;
+}
+
+.box-carousel-separator {
+  background: linear-gradient(to right, transparent, rgba(27,27,31,0.18), transparent) !important;
+  box-shadow: none !important;
+}
+
+/* 詳細カードを白で少し濃くして、中の文字を読めるように */
+.box-carousel-detail,
+.box-carousel-detail-scroll {
+  color: var(--z-readable-text) !important;
+}
+
+.detail-lb-section,
+.detail-skill-section,
+.detail-skill-card,
+.detail-skill-empty,
+.box-carousel-locked-panel {
+  background: rgba(255,255,255,0.96) !important;
+  border-color: rgba(27,27,31,0.12) !important;
+  box-shadow:
+    0 8px 22px rgba(27,27,31,0.08),
+    0 0 0 1px rgba(255,255,255,0.62) inset !important;
+  color: var(--z-readable-text) !important;
+}
+
+.detail-skill-card.is-ult {
+  background: rgba(248,245,255,0.98) !important;
+  border-color: rgba(116,82,184,0.24) !important;
+}
+
+/* 詳細テキスト一式：白文字を濃色へ強制 */
+.detail-lb-label,
+.detail-status-label,
+.detail-lb-info,
+.detail-section-title,
+.detail-skill-meta span,
+.detail-skill-desc,
+.detail-skill-empty,
+.detail-type-row,
+.detail-type-val,
+.detail-element-type-label,
+.detail-owned-count,
+.stat-name,
+.stat-val {
+  color: var(--z-readable-sub) !important;
+  text-shadow: none !important;
+}
+
+.detail-status-val,
+.detail-skill-name,
+.detail-lb-title,
+.detail-skill-title,
+.detail-type-val,
+.detail-owned-count strong,
+.box-carousel-locked-title {
+  color: var(--z-readable-text) !important;
+  text-shadow: none !important;
+}
+
+.detail-lb-val {
+  color: var(--z-readable-purple) !important;
+  text-shadow: none !important;
+}
+
+.detail-skill-effect {
+  color: #5f42a3 !important;
+  text-shadow: none !important;
+}
+
+.detail-skill-badge {
+  background: rgba(27,27,31,0.06) !important;
+  border-color: rgba(27,27,31,0.14) !important;
+  color: rgba(27,27,31,0.70) !important;
+}
+
+.detail-skill-card.is-ult .detail-skill-badge {
+  background: rgba(116,82,184,0.12) !important;
+  border-color: rgba(116,82,184,0.28) !important;
+  color: #5f42a3 !important;
+}
+
+/* ステータス行の罫線も白背景用へ */
+.detail-lb-row {
+  border-bottom-color: rgba(27,27,31,0.10) !important;
+}
+
+/* 属性表示が薄くならないように */
+.detail-element-type-icon {
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,0.90))
+    drop-shadow(0 2px 5px rgba(27,27,31,0.18)) !important;
+}
+
+/* MOVEミニ盤面：白カード内で視認できるように少し濃く */
+.detail-range-preview,
+.detail-move-preview {
+  background: rgba(27,27,31,0.06) !important;
+  border-color: rgba(27,27,31,0.10) !important;
+}
+
+.detail-range-board,
+.detail-move-board {
+  background: rgba(27,27,31,0.08) !important;
+  border-color: rgba(27,27,31,0.12) !important;
+}
+
+.detail-range-cell,
+.detail-move-cell {
+  background: rgba(255,255,255,0.58) !important;
+  border-color: rgba(27,27,31,0.08) !important;
+}
+
+.detail-range-cell.self,
+.detail-move-cell.self {
+  background: #f1c94b !important;
+}
+
+.detail-range-cell.target,
+.detail-move-cell.movable {
+  background: #8fb5ff !important;
+}
+
+/* 未所持・ロック時の黒被せを白基調へ */
+.box-carousel-visual.locked {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255,255,255,0.95), rgba(232,230,224,0.78)) !important;
+  border-color: rgba(27,27,31,0.12) !important;
+}
+
+.box-carousel-visual.locked::before {
+  background:
+    linear-gradient(to bottom, transparent, rgba(255,255,255,0.42)),
+    repeating-linear-gradient(90deg, rgba(27,27,31,0.035) 0 1px, transparent 1px 7px) !important;
+}
+
+.box-carousel-lock-mark {
+  background: rgba(255,255,255,0.88) !important;
+  color: rgba(27,27,31,0.60) !important;
+  border-color: rgba(27,27,31,0.18) !important;
+  box-shadow: 0 8px 20px rgba(27,27,31,0.10) !important;
+}
+
+.box-carousel-locked-label,
+.box-carousel-locked-no,
+.box-carousel-locked-text {
+  color: rgba(27,27,31,0.58) !important;
+  text-shadow: none !important;
+}
+
+/* 下部ナビのアイコンが薄すぎたので少し濃く */
+.bottom-nav-item img {
+  filter: grayscale(0.20) brightness(0.72) saturate(0.95) !important;
+  opacity: 0.82 !important;
+}
+
+.bottom-nav-item.active img {
+  filter: brightness(1.02) saturate(1.06) drop-shadow(0 0 8px rgba(156,122,50,0.20)) !important;
+  opacity: 1 !important;
+}
+
+.bottom-nav-label {
+  color: rgba(27,27,31,0.52) !important;
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: rgba(27,27,31,0.88) !important;
+}
+
+/* 共通の薄すぎる白文字救済 */
+#screen-zukan .screen-scroll,
+#screen-zukan .screen-scroll * {
+  text-shadow: none;
+}
+
+
+/* =========================================================
+   101 Zeraphia Gacha UI Polish Patch
+   - ガチャ画面の視認性と余白を調整
+   - 左の灰色感を除去
+   - メインバナーを主役として見せる
+   - ボタンと天井表示を上品に整理
+   ========================================================= */
+
+#screen-summon {
+  background:
+    radial-gradient(circle at top center, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 38%),
+    linear-gradient(to bottom, #f7f6f1 0%, #f5f4ef 100%) !important;
+}
+
+.summon-layout {
+  gap: 10px;
+  padding: 10px 10px calc(88px + env(safe-area-inset-bottom));
+  align-items: flex-start;
+}
+
+.summon-banner-list {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  gap: 10px;
+  padding: 0;
+  background: transparent !important;
+  border-right: none;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.summon-banner-list::-webkit-scrollbar {
+  display: none;
+}
+
+.summon-banner-card {
+  border-radius: 12px;
+  border: 1px solid rgba(24,28,36,0.12) !important;
+  background: rgba(255,255,255,0.92) !important;
+  box-shadow: 0 6px 16px rgba(24,28,36,0.08) !important;
+}
+
+.summon-banner-card.active {
+  border-color: rgba(158,125,53,0.48) !important;
+  box-shadow:
+    0 8px 20px rgba(24,28,36,0.10),
+    0 0 0 1px rgba(158,125,53,0.16) inset !important;
+}
+
+.summon-banner-card img {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center center;
+  background: #fff;
+}
+
+.banner-desc-overlay {
+  padding: 10px 5px 5px;
+  background: linear-gradient(to top, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.60) 52%, rgba(255,255,255,0) 100%) !important;
+}
+
+.banner-card-title {
+  font-size: 9px;
+  line-height: 1.25;
+  color: #17181c !important;
+  text-shadow: none;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.summon-detail {
+  min-width: 0;
+  gap: 10px;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.summon-detail-visual {
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.94);
+  border: 1px solid rgba(24,28,36,0.10);
+  box-shadow: 0 12px 28px rgba(24,28,36,0.10) !important;
+}
+
+.summon-detail-visual img {
+  width: 100%;
+  aspect-ratio: 1145 / 1370;
+  max-height: 50dvh;
+  object-fit: cover;
+  object-position: center top;
+  background: #fff;
+  display: block;
+}
+
+.summon-detail-overlay {
+  display: block;
+  position: static;
+  background: rgba(255,255,255,0.92) !important;
+  border-top: 1px solid rgba(24,28,36,0.08);
+  padding: 12px 14px 13px;
+}
+
+.summon-detail-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  margin-bottom: 5px;
+  color: #17181c !important;
+}
+
+.summon-detail-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(24,28,36,0.60) !important;
+}
+
+.summon-detail-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.summon-detail-btns:has(.btn-gacha-guaranteed) {
+  grid-template-columns: 1fr;
+}
+
+.btn-gacha {
+  min-height: 82px;
+  border-radius: 16px;
+  gap: 6px;
+  padding: 14px 10px 12px;
+  background: rgba(255,255,255,0.96) !important;
+  border: 1px solid rgba(24,28,36,0.12) !important;
+  box-shadow: 0 10px 20px rgba(24,28,36,0.08) !important;
+}
+
+.btn-gacha-single {
+  background: rgba(255,255,255,0.96) !important;
+}
+
+.btn-gacha-ten,
+.btn-gacha-guaranteed {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,244,235,0.98) 100%) !important;
+  border-color: rgba(158,125,53,0.40) !important;
+  box-shadow:
+    0 10px 20px rgba(24,28,36,0.08),
+    0 0 0 1px rgba(158,125,53,0.08) inset !important;
+}
+
+.btn-gacha-label {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.btn-gacha-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  color: rgba(77,90,120,0.88) !important;
+}
+
+.btn-gacha-gem-icon {
+  width: 15px;
+  height: 15px;
+  margin-right: 2px;
+}
+
+.btn-gacha-guarantee-badge {
+  background: rgba(255,255,255,0.98) !important;
+  color: #9e7d35;
+  border-color: rgba(158,125,53,0.52) !important;
+  box-shadow: 0 4px 10px rgba(24,28,36,0.08);
+}
+
+.pity-counter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
+  padding: 12px 14px;
+  margin-top: -2px;
+  background: rgba(255,255,255,0.82) !important;
+  border: 1px solid rgba(24,28,36,0.08) !important;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(24,28,36,0.06) !important;
+}
+
+.pity-label {
+  font-size: 11px;
+  color: rgba(24,28,36,0.62) !important;
+  letter-spacing: 0.08em;
+}
+
+.pity-bar-wrap {
+  height: 6px;
+  background: rgba(24,28,36,0.08) !important;
+}
+
+.pity-bar-fill {
+  background: linear-gradient(90deg, #d8c08d 0%, #9e7d35 100%) !important;
+}
+
+.pity-num {
+  font-size: 11px;
+  color: rgba(24,28,36,0.62) !important;
+  min-width: 52px;
+}
+
+.pity-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(24,28,36,0.56) !important;
+  padding: 0 10px calc(10px + env(safe-area-inset-bottom));
+  margin-top: -2px;
+}
+
+@media (max-width: 380px) {
+  .summon-banner-list {
+    width: 64px;
+    min-width: 64px;
+    max-width: 64px;
+  }
+
+  .summon-layout {
+    gap: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .summon-detail-visual img {
+    max-height: 46dvh;
+  }
+
+  .btn-gacha {
+    min-height: 78px;
+  }
+
+  .btn-gacha-label {
+    font-size: 15px;
+  }
+}
+
+
+/* =========================================================
+   102 Zeraphia Gacha SE Fit Patch
+   - iPhone SEなど縦が短い端末でガチャ画面が潰れないよう調整
+   - 14系では現状の見え方を大きく変えない
+   ========================================================= */
+
+/* ガチャ画面全体を、固定ヘッダー＋下部ナビの内側で収める */
+#screen-summon {
+  overflow: hidden !important;
+}
+
+#screen-summon .summon-layout {
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 通常端末でも少しだけ余白を詰める */
+.summon-detail {
+  gap: 8px !important;
+}
+
+.summon-detail-visual img {
+  max-height: 46dvh !important;
+}
+
+/* SE / 小型端末向け */
+@media (max-width: 380px), (max-height: 700px) {
+  :root {
+    --page-header-h: 50px;
+  }
+
+  #screen-summon .header {
+    padding-top: 10px !important;
+    padding-bottom: 12px !important;
+  }
+
+  #screen-summon .header-title {
+    font-size: 22px !important;
+  }
+
+  #screen-summon .summon-layout {
+    gap: 8px !important;
+    padding:
+      8px
+      8px
+      calc(68px + env(safe-area-inset-bottom))
+      8px !important;
+    align-items: flex-start !important;
+  }
+
+  .summon-banner-list {
+    width: 56px !important;
+    min-width: 56px !important;
+    max-width: 56px !important;
+    gap: 8px !important;
+  }
+
+  .summon-banner-card {
+    border-radius: 9px !important;
+  }
+
+  .banner-card-title {
+    font-size: 8px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* バナーをSEで潰れない高さに制御 */
+  .summon-detail-visual {
+    border-radius: 14px !important;
+  }
+
+  .summon-detail-visual img {
+    aspect-ratio: 1145 / 1370 !important;
+    max-height: 35dvh !important;
+    object-fit: cover !important;
+    object-position: center top !important;
+  }
+
+  /* タイトル説明はカード下ではなく薄くコンパクト化 */
+  .summon-detail-overlay {
+    padding: 8px 10px 9px !important;
+  }
+
+  .summon-detail-title {
+    font-size: 17px !important;
+    line-height: 1.15 !important;
+    margin-bottom: 3px !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .summon-detail-desc {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .summon-detail-btns {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 0 !important;
+  }
+
+  .summon-detail-btns:has(.btn-gacha-guaranteed) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .btn-gacha {
+    min-height: 62px !important;
+    border-radius: 13px !important;
+    padding: 10px 8px 9px !important;
+    gap: 3px !important;
+  }
+
+  .btn-gacha-label {
+    font-size: 14px !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .btn-gacha-cost {
+    font-size: 11px !important;
+  }
+
+  .btn-gacha-gem-icon {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  .pity-counter {
+    margin-top: 0 !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    column-gap: 8px !important;
+  }
+
+  .pity-label,
+  .pity-num {
+    font-size: 9px !important;
+  }
+
+  .pity-bar-wrap {
+    height: 5px !important;
+  }
+
+  .pity-note {
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+    margin-top: -3px !important;
+    padding: 0 6px 4px !important;
+  }
+}
+
+/* さらに縦がかなり短い端末用。SEでボタン見切れを防ぐ */
+@media (max-height: 620px) {
+  #screen-summon .summon-layout {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .summon-detail {
+    gap: 6px !important;
+  }
+
+  .summon-detail-visual img {
+    max-height: 31dvh !important;
+  }
+
+  .summon-detail-overlay {
+    padding: 7px 9px !important;
+  }
+
+  .summon-detail-title {
+    font-size: 16px !important;
+  }
+
+  .summon-detail-desc {
+    display: none !important;
+  }
+
+  .btn-gacha {
+    min-height: 58px !important;
+    padding: 9px 8px 8px !important;
+  }
+
+  .pity-counter {
+    padding: 7px 9px !important;
+  }
+
+  .pity-note {
+    display: none !important;
+  }
+}
+
+
+
+/* =========================================================
+   103 Zeraphia Gacha Visual Polish Patch
+   - 邂逅画面の上部タイトルの違和感を軽減
+   - サムネ列とメインバナー周りの余白・視線導線を整理
+   - 「undefined」表示を避けるため title fallback はHTML側で対応
+   ========================================================= */
+
+#screen-summon {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.98) 0%, rgba(248,247,242,0.96) 44%, rgba(239,237,231,0.98) 100%) !important;
+}
+
+#screen-summon .header {
+  padding: 12px 18px 14px !important;
+}
+
+#screen-summon .header-title {
+  left: 18px !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  color: #8f7440 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.75) !important;
+}
+
+#screen-summon .header-title::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(183,155,94,0.85), rgba(183,155,94,0.15));
+}
+
+#screen-summon .summon-layout {
+  gap: 10px !important;
+  padding: 12px 10px calc(78px + env(safe-area-inset-bottom)) !important;
+  align-items: flex-start !important;
+  background: transparent !important;
+}
+
+/* 左サムネ列を「帯」ではなく小さな選択レールにする */
+#screen-summon .summon-banner-list {
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+  padding: 0 !important;
+  gap: 10px !important;
+  background: transparent !important;
+  border-right: none !important;
+  overflow-y: auto !important;
+}
+
+#screen-summon .summon-banner-card {
+  border-radius: 12px !important;
+  border: 1px solid rgba(24,28,36,0.10) !important;
+  background: rgba(255,255,255,0.96) !important;
+  box-shadow: 0 8px 18px rgba(24,28,36,0.08) !important;
+}
+
+#screen-summon .summon-banner-card.active {
+  border-color: rgba(158,125,53,0.42) !important;
+  box-shadow:
+    0 10px 20px rgba(24,28,36,0.08),
+    0 0 0 1px rgba(158,125,53,0.14) inset !important;
+}
+
+#screen-summon .summon-banner-card img {
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+}
+
+#screen-summon .banner-desc-overlay {
+  position: static !important;
+  padding: 0 !important;
+  background: none !important;
+}
+
+#screen-summon .banner-card-title {
+  display: block !important;
+  padding: 4px 3px 6px !important;
+  font-size: 8px !important;
+  line-height: 1.15 !important;
+  color: #7f6a45 !important;
+  text-align: center !important;
+  text-shadow: none !important;
+  word-break: keep-all !important;
+}
+
+/* 右側メイン */
+#screen-summon .summon-detail {
+  gap: 10px !important;
+  overflow: visible !important;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+}
+
+#screen-summon .summon-detail-visual {
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(24,28,36,0.08) !important;
+  background: rgba(255,255,255,0.92) !important;
+  box-shadow: 0 12px 28px rgba(24,28,36,0.08) !important;
+}
+
+#screen-summon .summon-detail-visual img {
+  width: 100% !important;
+  aspect-ratio: 1145 / 1370 !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  max-height: 45dvh !important;
+  display: block !important;
+}
+
+#screen-summon .summon-detail-overlay {
+  display: none !important;
+}
+
+#screen-summon .summon-detail-btns {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  padding: 0 !important;
+}
+
+#screen-summon .summon-detail-btns:has(.btn-gacha-guaranteed) {
+  grid-template-columns: 1fr !important;
+}
+
+#screen-summon .btn-gacha {
+  min-height: 74px !important;
+  border-radius: 16px !important;
+  padding: 12px 8px 11px !important;
+}
+
+#screen-summon .btn-gacha-label {
+  font-size: 15px !important;
+  letter-spacing: 0.04em !important;
+}
+
+#screen-summon .btn-gacha-cost {
+  font-size: 12px !important;
+}
+
+#screen-summon .pity-counter {
+  margin-top: -2px !important;
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+}
+
+#screen-summon .pity-note {
+  text-align: center !important;
+  padding: 0 6px calc(8px + env(safe-area-inset-bottom)) !important;
+  margin-top: -2px !important;
+}
+
+/* 小型端末はさらに少し詰める */
+@media (max-width: 380px), (max-height: 700px) {
+  #screen-summon .header-title {
+    font-size: 18px !important;
+  }
+
+  #screen-summon .summon-layout {
+    gap: 8px !important;
+    padding: 8px 8px calc(68px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-banner-list {
+    width: 54px !important;
+    min-width: 54px !important;
+    max-width: 54px !important;
+    gap: 8px !important;
+  }
+
+  #screen-summon .summon-banner-card {
+    border-radius: 10px !important;
+  }
+
+  #screen-summon .banner-card-title {
+    font-size: 7px !important;
+    padding: 3px 2px 5px !important;
+  }
+
+  #screen-summon .summon-detail {
+    gap: 8px !important;
+  }
+
+  #screen-summon .summon-detail-visual {
+    border-radius: 15px !important;
+  }
+
+  #screen-summon .summon-detail-visual img {
+    max-height: 34dvh !important;
+  }
+
+  #screen-summon .summon-detail-btns {
+    gap: 8px !important;
+  }
+
+  #screen-summon .btn-gacha {
+    min-height: 60px !important;
+    border-radius: 14px !important;
+    padding: 10px 6px 9px !important;
+  }
+
+  #screen-summon .btn-gacha-label {
+    font-size: 14px !important;
+  }
+
+  #screen-summon .btn-gacha-cost {
+    font-size: 11px !important;
+  }
+
+  #screen-summon .pity-counter {
+    padding: 8px 10px !important;
+  }
+
+  #screen-summon .pity-note {
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+    padding: 0 4px 4px !important;
+  }
+}
+
+
+/* =========================================================
+   Gacha screen SE-size fit patch
+   - iPhone SE等の小型端末でガチャバナー下部文字が見切れないよう調整
+   ========================================================= */
+@media (max-width: 380px), (max-height: 700px) {
+  #screen-summon .summon-layout {
+    gap: 7px !important;
+    padding: 8px 7px calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-banner-list {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    gap: 7px !important;
+  }
+
+  #screen-summon .summon-detail {
+    gap: 7px !important;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-detail-visual {
+    border-radius: 14px !important;
+  }
+
+  #screen-summon .summon-detail-visual img {
+    max-height: 39dvh !important;
+    object-position: center bottom !important;
+  }
+
+  #screen-summon .summon-detail-btns {
+    gap: 7px !important;
+  }
+
+  #screen-summon .btn-gacha {
+    min-height: 56px !important;
+    border-radius: 14px !important;
+    padding: 8px 6px !important;
+  }
+
+  #screen-summon .btn-gacha-label {
+    font-size: 13px !important;
+  }
+
+  #screen-summon .btn-gacha-cost {
+    font-size: 10px !important;
+  }
+
+  #screen-summon .pity-counter {
+    padding: 7px 9px !important;
+  }
+
+  #screen-summon .pity-note {
+    font-size: 8px !important;
+    line-height: 1.25 !important;
+    padding: 0 2px 2px !important;
+  }
+}
+
+@media (max-width: 375px) and (max-height: 670px) {
+  #screen-summon .summon-detail-visual img {
+    max-height: 40dvh !important;
+    object-position: center bottom !important;
+  }
+}
+
+
+/* =========================================================
+   104 Zeraphia Gacha Contain + Header Polish Patch
+   - SEサイズでもガチャバナー全体を見切れにくくする
+   - 巡行/プリモア/設定/邂逅の左上見出しを統一
+   ========================================================= */
+
+/* 左上見出しの共通トーンを統一 */
+#screen-ninmu .header-title,
+#screen-zukan .header-title,
+#screen-summon .header-title,
+#screen-setting .header-title {
+  left: 18px !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  color: #8f7440 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.75) !important;
+}
+
+#screen-ninmu .header-title::after,
+#screen-zukan .header-title::after,
+#screen-summon .header-title::after,
+#screen-setting .header-title::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(183,155,94,0.85), rgba(183,155,94,0.15));
+}
+
+/* ガチャバナーは基本的に全体表示を優先 */
+#screen-summon .summon-detail-visual {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.98), rgba(246,244,238,0.96)) !important;
+}
+
+#screen-summon .summon-detail-visual img {
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: rgba(255,255,255,0.96) !important;
+}
+
+/* 小型端末では画像全体表示を最優先しつつ、下の余白を詰める */
+@media (max-width: 380px), (max-height: 700px) {
+  #screen-ninmu .header-title,
+  #screen-zukan .header-title,
+  #screen-summon .header-title,
+  #screen-setting .header-title {
+    font-size: 18px !important;
+  }
+
+  #screen-summon .summon-layout {
+    gap: 7px !important;
+    padding: 8px 7px calc(60px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-banner-list {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    gap: 7px !important;
+  }
+
+  #screen-summon .summon-detail {
+    gap: 7px !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-detail-visual {
+    border-radius: 14px !important;
+  }
+
+  #screen-summon .summon-detail-visual img {
+    max-height: 42dvh !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+
+  #screen-summon .summon-detail-btns {
+    gap: 7px !important;
+  }
+
+  #screen-summon .btn-gacha {
+    min-height: 54px !important;
+    border-radius: 14px !important;
+    padding: 8px 6px !important;
+  }
+
+  #screen-summon .btn-gacha-label {
+    font-size: 13px !important;
+  }
+
+  #screen-summon .btn-gacha-cost {
+    font-size: 10px !important;
+  }
+
+  #screen-summon .pity-counter {
+    padding: 7px 9px !important;
+    margin-top: -1px !important;
+  }
+
+  #screen-summon .pity-label,
+  #screen-summon .pity-num {
+    font-size: 8px !important;
+  }
+
+  #screen-summon .pity-bar-wrap {
+    height: 5px !important;
+  }
+
+  #screen-summon .pity-note {
+    font-size: 8px !important;
+    line-height: 1.25 !important;
+    padding: 0 2px 2px !important;
+    margin-top: -2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+
+/* iPhone SE相当。下部ナビ上の無駄な空間を少し詰める */
+@media (max-width: 375px) and (max-height: 670px) {
+  #screen-summon .summon-detail-visual img {
+    max-height: 43dvh !important;
+  }
+
+  #screen-summon .summon-detail {
+    gap: 6px !important;
+  }
+
+  #screen-summon .btn-gacha {
+    min-height: 52px !important;
+  }
+
+  #screen-summon .pity-note {
+    font-size: 7.5px !important;
+  }
+}
+
+
+/* =========================================================
+   105 Zeraphia Gacha Banner 1145x1000 Fit Patch
+   - 新しい横長寄りバナー（1145×1000）をきれいに表示
+   - containによる余白を減らし、coverでバナーらしく大きく見せる
+   - SEサイズでも上下の重要部分が切れにくいよう表示領域を再調整
+   ========================================================= */
+
+/* ガチャ画面のバナー表示枠を、新バナー比率 1145:1000 に合わせる */
+#screen-summon .summon-detail-visual {
+  aspect-ratio: 1145 / 1000 !important;
+  width: 100% !important;
+  max-height: 44dvh !important;
+  border-radius: 17px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.98), rgba(246,244,238,0.96)) !important;
+}
+
+/* 1145×1000画像は、containではなくcoverで大きく見せる */
+#screen-summon .summon-detail-visual img {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1145 / 1000 !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  background: rgba(255,255,255,0.96) !important;
+}
+
+/* ガチャ画面全体の間隔を少し整理 */
+#screen-summon .summon-layout {
+  gap: 9px !important;
+}
+
+#screen-summon .summon-detail {
+  gap: 9px !important;
+}
+
+/* 左サムネも新バナー比率に合わせて、潰れ感を減らす */
+#screen-summon .summon-banner-card img {
+  aspect-ratio: 1145 / 1000 !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+}
+
+/* 小型端末向け。画像は大きく、ボタン/天井は少し詰める */
+@media (max-width: 380px), (max-height: 700px) {
+  #screen-summon .summon-layout {
+    gap: 7px !important;
+    padding: 8px 7px calc(60px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-banner-list {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    gap: 7px !important;
+  }
+
+  #screen-summon .summon-detail {
+    gap: 7px !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-summon .summon-detail-visual {
+    aspect-ratio: 1145 / 1000 !important;
+    max-height: 41dvh !important;
+    border-radius: 14px !important;
+  }
+
+  #screen-summon .summon-detail-visual img {
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+
+  #screen-summon .summon-detail-btns {
+    gap: 7px !important;
+  }
+
+  #screen-summon .btn-gacha {
+    min-height: 54px !important;
+    border-radius: 14px !important;
+    padding: 8px 6px !important;
+  }
+
+  #screen-summon .btn-gacha-label {
+    font-size: 13px !important;
+  }
+
+  #screen-summon .btn-gacha-cost {
+    font-size: 10px !important;
+  }
+
+  #screen-summon .pity-counter {
+    padding: 7px 9px !important;
+    margin-top: -1px !important;
+  }
+
+  #screen-summon .pity-label,
+  #screen-summon .pity-num {
+    font-size: 8px !important;
+  }
+
+  #screen-summon .pity-bar-wrap {
+    height: 5px !important;
+  }
+
+  #screen-summon .pity-note {
+    font-size: 8px !important;
+    line-height: 1.25 !important;
+    padding: 0 2px 2px !important;
+    margin-top: -2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+
+/* iPhone SE相当。表示はさらに少しだけ引き締める */
+@media (max-width: 375px) and (max-height: 670px) {
+  #screen-summon .summon-detail-visual {
+    max-height: 42dvh !important;
+  }
+
+  #screen-summon .summon-detail {
+    gap: 6px !important;
+  }
+
+  #screen-summon .btn-gacha {
+    min-height: 52px !important;
+  }
+
+  #screen-summon .pity-note {
+    font-size: 7.5px !important;
+  }
+}
+
+
+/* =========================================================
+   106 Zeraphia Header Position + Gold Bottom Nav Patch
+   - 全メニューの左上見出しを少し下げる
+   - ボトムナビの文字色を見出しと同系統のゴールドへ
+   ========================================================= */
+
+:root {
+  --z-menu-gold: #8f7440;
+  --z-menu-gold-soft: rgba(143,116,64,0.62);
+  --z-menu-gold-muted: rgba(143,116,64,0.42);
+}
+
+/* すべての通常メニュー見出しを少し下げる */
+.screen .header {
+  padding-top: 20px !important;
+  padding-bottom: 12px !important;
+  min-height: 58px !important;
+  align-items: flex-start !important;
+}
+
+/* 左上見出し位置・色を統一 */
+.screen .header-title {
+  top: 19px !important;
+  left: 18px !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  color: var(--z-menu-gold) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.75) !important;
+}
+
+/* 見出し下の小さなラインも少し下げた位置に自然表示 */
+.screen .header-title::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(183,155,94,0.85), rgba(183,155,94,0.15));
+}
+
+/* 戻るボタンがある画面も位置を合わせる */
+.screen .back-btn,
+.screen .zukan-back-btn {
+  margin-top: 2px !important;
+  color: var(--z-menu-gold-soft) !important;
+}
+
+/* ボトムナビ文字色をゴールド系へ */
+.bottom-nav-label {
+  color: var(--z-menu-gold-muted) !important;
+  text-shadow: none !important;
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: var(--z-menu-gold) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.65) !important;
+}
+
+/* 非選択アイコンも少しだけゴールド寄りに見せる */
+.bottom-nav-item img {
+  opacity: 0.78 !important;
+}
+
+.bottom-nav-item.active img {
+  opacity: 1 !important;
+  filter:
+    brightness(1.02)
+    saturate(1.05)
+    sepia(0.10)
+    drop-shadow(0 0 8px rgba(143,116,64,0.22)) !important;
+}
+
+/* 小型端末では下げ幅を少しだけ控えめに */
+@media (max-width: 380px), (max-height: 700px) {
+  .screen .header {
+    padding-top: 18px !important;
+    padding-bottom: 10px !important;
+    min-height: 54px !important;
+  }
+
+  .screen .header-title {
+    top: 17px !important;
+    font-size: 18px !important;
+  }
+}
+
+
+/* =========================================================
+   107 Zeraphia Soft Text + Bottom Nav Position Patch
+   - 黒文字をグレー/ゴールド寄りへ変更
+   - ボトムナビ画像位置を少し下げる
+   ========================================================= */
+
+:root {
+  --z-text-main-soft: #4b4640;
+  --z-text-sub-soft: rgba(75,70,64,0.62);
+  --z-text-muted-soft: rgba(75,70,64,0.42);
+  --z-text-gold-soft: #8f7440;
+}
+
+/* 白背景上の黒文字を少し柔らかく */
+body,
+.screen,
+.screen-scroll {
+  color: var(--z-text-main-soft) !important;
+}
+
+/* プリモア一覧まわり：黒を抑えてグレー/ゴールドへ */
+.box-carousel-name,
+.detail-status-val,
+.detail-type-val,
+.detail-owned-count strong,
+.stat-card-val,
+.setting-row-label,
+.ninmu-chapter-title,
+.ninmu-test-btn-title,
+.friend-section-title,
+.friend-card-name,
+.friend-search-card-name,
+.result-name {
+  color: var(--z-text-main-soft) !important;
+  text-shadow: none !important;
+}
+
+.detail-lb-title,
+.detail-skill-title,
+.detail-section-title,
+.detail-lb-val {
+  color: var(--z-text-gold-soft) !important;
+  text-shadow: none !important;
+}
+
+.detail-lb-label,
+.detail-status-label,
+.detail-lb-info,
+.detail-type-row,
+.detail-element-type-label,
+.detail-owned-count,
+.detail-skill-desc,
+.detail-skill-meta span,
+.stat-name,
+.stat-val,
+.stat-card-label,
+.card-name,
+.setting-row-sub,
+.ninmu-chapter-label,
+.ninmu-test-btn-sub,
+.friend-card-meta,
+.friend-card-stats,
+.friend-chara-name,
+.friend-chara-stats,
+.box-carousel-count,
+.box-carousel-count-slash {
+  color: var(--z-text-sub-soft) !important;
+  text-shadow: none !important;
+}
+
+/* 画像下のキャラ名は主張しすぎない濃度に */
+.box-carousel-name {
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* 左右矢印も黒すぎない色へ */
+.box-carousel-arrow {
+  color: rgba(143,116,64,0.72) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.75) !important;
+}
+
+/* 詳細カード内の強い黒を少し柔らかく */
+.detail-lb-section,
+.detail-skill-section,
+.detail-skill-card,
+.box-carousel-locked-panel {
+  color: var(--z-text-main-soft) !important;
+}
+
+/* ボトムナビ：画像位置を少し下げる */
+.bottom-nav-item {
+  justify-content: flex-end !important;
+  padding-top: 2px !important;
+}
+
+.bottom-nav-item img {
+  transform: translateY(4px) !important;
+}
+
+/* タップ時も下げ位置を維持 */
+.bottom-nav-item:not(.active):active img {
+  transform: translateY(4px) scale(0.94) !important;
+}
+
+/* 選択中も上に跳ねすぎないようにする */
+.bottom-nav-item.active img {
+  transform: translateY(0px) scale(1.06) !important;
+}
+
+/* ラベルとの間隔を少し詰めて、全体を下に落ち着かせる */
+.bottom-nav-label {
+  margin-top: -2px !important;
+  padding-bottom: 5px !important;
+}
+
+/* SEなど小型端末ではさらに少しだけ下げる */
+@media (max-width: 380px), (max-height: 700px) {
+  .bottom-nav-item img {
+    transform: translateY(5px) !important;
+  }
+
+  .bottom-nav-item:not(.active):active img {
+    transform: translateY(5px) scale(0.94) !important;
+  }
+
+  .bottom-nav-item.active img {
+    transform: translateY(1px) scale(1.05) !important;
+  }
+
+  .bottom-nav-label {
+    margin-top: -3px !important;
+    padding-bottom: 4px !important;
   }
 }

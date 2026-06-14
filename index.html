@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0f0f0f">
+  <meta name="theme-color" content="#f7f6f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <title>No.None</title>
+  <title>Zeraphia</title>
 
   <!-- iOS用-->
   <link rel="apple-touch-icon" href="images/icon_192.webp">
@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=182">
+  <link rel="stylesheet" href="css/style.css?v=206-gacha-contain-header">
   <link rel="stylesheet" href="css/story_ui.css?v=5">
 
 </head>
@@ -78,7 +78,7 @@
 <div id="glitch-noise"></div>
 
 <div id="title-screen" onclick="startFromTitle()">
-  <img src="images/title.webp" alt="NO.None">
+  <img src="images/title.webp" alt="Zeraphia">
   <div id="title-tap-hint">✦ TAP TO START ✦</div>
 </div>
 
@@ -90,7 +90,7 @@
 <div id="screen-ninmu" class="screen">
   <div class="header">
     <div></div>
-    <div class="header-title">任務</div>
+    <div class="header-title">巡行</div>
     <div></div>
   </div>
 
@@ -98,15 +98,15 @@
 
     <!-- 左カラム：大カテゴリ -->
     <div class="ninmu-left">
-      <button class="ninmu-cat-item active" id="ninmu-cat-daily"   onclick="switchNinmuCat('daily')">デイリー任務</button>
-      <button class="ninmu-cat-item"        id="ninmu-cat-special" onclick="switchNinmuCat('special')">特別任務</button>
+      <button class="ninmu-cat-item active" id="ninmu-cat-daily"   onclick="switchNinmuCat('daily')">デイリー巡行</button>
+      <button class="ninmu-cat-item"        id="ninmu-cat-special" onclick="switchNinmuCat('special')">特別巡行</button>
       <button class="ninmu-cat-item"        id="ninmu-cat-story"   onclick="switchNinmuCat('story')">ストーリー</button>
     </div>
 
     <!-- 右カラム：サブメニュー -->
     <div class="ninmu-right">
 
-      <!-- デイリー任務 -->
+      <!-- デイリー巡行 -->
       <div id="ninmu-panel-daily" class="ninmu-panel">
         <div class="ninmu-panel-coming">
           <div class="ninmu-panel-coming-title">COMING SOON</div>
@@ -130,7 +130,7 @@
         </div>
       </div>
 
-      <!-- 特別任務 -->
+      <!-- 特別巡行 -->
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
         <div class="ninmu-panel-coming">
           <div class="ninmu-panel-coming-title">COMING SOON</div>
@@ -151,7 +151,7 @@
           <div class="ninmu-chapter-item"
                onclick="openStageSelect(1)">
             <div class="ninmu-chapter-label">CHAPTER:01</div>
-            <div class="ninmu-chapter-title">初任務</div>
+            <div class="ninmu-chapter-title">初巡行</div>
           </div>
 
 
@@ -198,14 +198,10 @@
       <button class="home-event-banner-item" onclick="openHomeBanner(0)">
         <img src="images/event_banner01.webp" alt="期間限定 天使">
       </button>
-      <button class="home-event-banner-item" onclick="openHomeBanner(1)">
-        <img src="images/event_banner02.webp" alt="UR確定チケット">
-      </button>
     </div>
 
     <div class="home-event-banner-dots" id="home-event-banner-dots">
       <span class="active"></span>
-      <span></span>
     </div>
   </div>
 
@@ -219,7 +215,7 @@
 <div id="screen-summon" class="screen">
   <div class="header">
     <div></div>
-    <div class="header-title">創乙女徴集</div>
+    <div class="header-title">邂逅</div>
     <div></div>
   </div>
 
@@ -246,7 +242,7 @@
         </span>
         <span class="pity-num"><span id="pity-current">0</span> / 100</span>
       </div>
-      <div class="pity-note">天井到達でURキャラが確定排出</div>
+      <div class="pity-note">天井到達：ピックアップ対象から1体を選択して獲得可能</div>
     </div>
 
   </div>
@@ -271,38 +267,13 @@
 <div id="screen-zukan" class="screen">
   <div class="header">
     <div></div>
-    <div class="header-title" id="zukan-header-title">編成</div>
-    <div id="zukan-header-back" style="display:none">
-      <button class="zukan-back-btn" onclick="showZukanMenu()">戻る ›</button>
-    </div>
+    <div class="header-title" id="zukan-header-title">プリモア一覧</div>
+    <div id="zukan-header-back" style="display:none"></div>
   </div>
 
   <div class="screen-scroll">
-
-    <!-- メニュー -->
-    <div id="zukan-menu">
-      <div class="kichi-menu-list">
-        <button class="kichi-menu-item" onclick="switchZukanMainTab('box')">
-          <span class="kichi-menu-icon">👤</span>
-          <span class="kichi-menu-text">
-            <span class="kichi-menu-title">創乙女一覧</span>
-            <span class="kichi-menu-sub">所持キャラクターを確認する</span>
-          </span>
-          <span class="kichi-menu-arrow">›</span>
-        </button>
-        <button class="kichi-menu-item" onclick="switchZukanMainTab('party')">
-          <span class="kichi-menu-icon">⚔</span>
-          <span class="kichi-menu-text">
-            <span class="kichi-menu-title">パーティ編成</span>
-            <span class="kichi-menu-sub">3人一組のチームを編成する</span>
-          </span>
-          <span class="kichi-menu-arrow">›</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 創乙女 -->
-    <div id="zukan-sub-box" style="display:none">
+    <!-- プリモア一覧を直接表示。編成メニュー/パーティ編成画面は削除。 -->
+    <div id="zukan-sub-box">
       <div class="zukan-stats" id="zukan-stats">
         <div class="stat-card stat-card-total">
           <div class="stat-card-val">
@@ -316,16 +287,6 @@
       <div id="box-grid" class="zukan-grid" style="padding-bottom:100px"></div>
       <div id="zukan-grid" class="zukan-grid" style="display:none;padding-bottom:100px"></div>
     </div>
-
-    <!-- パーティ編成 -->
-    <div id="zukan-sub-party" style="display:none;padding-bottom:100px">
-      <div class="party-coming-soon">
-        <div class="party-coming-icon">⚔</div>
-        <div class="party-coming-title">COMING SOON</div>
-        <div class="party-coming-body">近日実装予定</div>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -472,21 +433,21 @@
 <!-- 共有ボトムナビ（fixed固定） -->
 <nav class="bottom-nav" id="bottom-nav-shared">
   <div class="bottom-nav-item" id="bnav-ninmu" onclick="showMainTab('ninmu')">
-    <img src="images/btmnv_missions.webp" alt="任務">
-    <span class="bottom-nav-label">任務</span>
+    <img src="images/btmnv_missions.webp" alt="巡行">
+    <span class="bottom-nav-label">巡行</span>
   </div>
   <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
     <span class="bottom-nav-notice" id="bnav-zukan-notice" style="display:none"></span>
-    <img src="images/btmnv_party.webp" alt="創乙女">
-    <span class="bottom-nav-label">創乙女</span>
+    <img src="images/btmnv_party.webp" alt="プリモア">
+    <span class="bottom-nav-label">プリモア</span>
   </div>
   <div class="bottom-nav-item" id="bnav-main" onclick="showMainTab('main')">
     <img src="images/btmnv_home.webp" alt="ホーム">
     <span class="bottom-nav-label">ホーム</span>
   </div>
   <div class="bottom-nav-item" id="bnav-summon" onclick="showMainTab('summon')">
-    <img src="images/btmnv_recruit.webp" alt="徴集">
-    <span class="bottom-nav-label">徴集</span>
+    <img src="images/btmnv_recruit.webp" alt="邂逅">
+    <span class="bottom-nav-label">邂逅</span>
   </div>
   <div class="bottom-nav-item" id="bnav-setting" onclick="showMainTab('setting')">
     <img src="images/btmnv_settings.webp" alt="設定">
@@ -829,10 +790,10 @@ document.addEventListener('touchend', function (e) {
   const GACHA_BANNERS = [
   {
     id: 'banner_01',
-    category: 'once',    // 'once' / 'normal' 
+    category: 'once',    // 'once' / 'normal'
+    hidden: true,        // UR確定ガチャは機能として非表示。ロジックは残す。
     img: 'images/gacha_banner_01.webp',
     title: '新規登録者限定ガチャ',
-    desc: '「10回引く」で創乙女を10体徴集',
     cost: 5,
     minCharaId: 1,
     maxCharaId: 20,
@@ -843,8 +804,6 @@ document.addEventListener('touchend', function (e) {
     id: 'banner_02',
     category: 'normal',   // 'once' / 'normal'
     img: 'images/gacha_banner_02.webp',
-    title: '常設ガチャ',
-    desc: '「10回引く」で創乙女を10体徴集',
     cost: 5,
     minCharaId: 1,
     maxCharaId: 20,
@@ -856,7 +815,7 @@ document.addEventListener('touchend', function (e) {
 //  category: 'normal',  // 'once' / 'normal'
 //  img: 'images/gacha_banner_03.webp',
 //  title: '常設ガチャ',
-//  desc: '「10回引く」で創乙女を10体徴集',
+//  desc: '「10回引く」でプリモアを10体邂逅',
 //  cost: 1,
 //  minCharaId: 1,
 //  maxCharaId: 20,
@@ -895,6 +854,8 @@ document.addEventListener('touchend', function (e) {
     var firstGacha = null;
 
     GACHA_BANNERS.forEach(function(gacha){
+      // 非表示フラグのあるガチャは、ロジックを残したまま一覧には出さない
+      if(gacha.hidden === true) return;
       if(gacha.category === 'once' && used.includes(gacha.id)) return;
 
       if(!firstGacha) firstGacha = gacha;
@@ -902,17 +863,24 @@ document.addEventListener('touchend', function (e) {
       var div = document.createElement('div');
       div.className = 'summon-banner-card';
       div.id = 'banner-card-' + gacha.id;
+      var cardTitle = gacha.thumbTitle || gacha.title || '邂逅';
       div.innerHTML =
-        '<img src="' + gacha.img + '" alt="' + gacha.title + '">' +
+        '<img src="' + gacha.img + '" alt="' + cardTitle + '">' +
         '<div class="banner-desc-overlay">' +
-          '<div class="banner-card-title">' + gacha.title + '</div>' +
+          '<div class="banner-card-title">' + cardTitle + '</div>' +
         '</div>';
       div.onclick = function(){ openGachaDetail(gacha); };
       list.appendChild(div);
     });
 
     // 最初のバナーをデフォルト選択
-    if(firstGacha) openGachaDetail(firstGacha);
+    if(firstGacha) {
+      openGachaDetail(firstGacha);
+    } else {
+      currentGachaId = null;
+      var detail = document.getElementById('summon-detail');
+      if(detail) detail.innerHTML = '<div class="summon-empty">現在開催中の邂逅はありません</div>';
+    }
   }
 
   function openGachaDetail(gacha){
@@ -925,7 +893,7 @@ document.addEventListener('touchend', function (e) {
     var btns  = document.getElementById('summon-detail-btns');
 
     if(img)   img.src = gacha.img;
-    if(title) title.textContent = gacha.title;
+    if(title) title.textContent = gacha.detailTitle || gacha.title || '';
     if(desc)  desc.textContent  = gacha.desc || '';
 
     // ボタン切り替え
@@ -1219,8 +1187,22 @@ function renderResultElementBadge(data){
     return 5;
   }
 
+// ガチャ排出対象外キャラ
+// エリは主人公のため、通常抽選・UR確定・SR以上確定・charaIds指定のいずれからも除外する
+const GACHA_EXCLUDED_CHARACTER_IDS = [1];
+const GACHA_EXCLUDED_CHARACTER_NAMES = ['エリ'];
+
+function isGachaExcludedChara(c){
+  if(!c) return true;
+  return GACHA_EXCLUDED_CHARACTER_IDS.indexOf(c.id) !== -1 ||
+         GACHA_EXCLUDED_CHARACTER_NAMES.indexOf(c.name) !== -1;
+}
+
 // ガチャのフィルター条件を判定する共通関数
 function matchesGachaFilter(c, gacha) {
+  // 主人公エリはガチャから排出しない
+  if (isGachaExcludedChara(c)) return false;
+
   // charaIds が指定されている場合はそちらを優先（min/max/gender/typeは無視）
   if (gacha && gacha.charaIds) {
     return gacha.charaIds.indexOf(c.id) !== -1;
@@ -1770,7 +1752,7 @@ div.addEventListener('click', function(){
   var EXP_PER_LEVEL = 1000;
   var MAX_LEVEL = 100;
 
-  // 任務ノードEXP設定
+  // 巡行ノードEXP設定
   var EXP_BY_NODE = { easy: 100, normal: 250, hard: 500, boss: 1000 };
   var CLEAR_RANK_MULTIPLIER = { S: 1.5, A: 1.2, B: 1.0, C: 0.7 };
   var REPEAT_PENALTY = 0.3;
@@ -1794,7 +1776,7 @@ div.addEventListener('click', function(){
     onNodeClear('node_test_01', 'normal', 'S', isFirstClear);
   }
 
-  // 任務カテゴリ切り替え
+  // 巡行カテゴリ切り替え
   function switchNinmuCat(cat) {
     ['daily','special','story'].forEach(function(c){
       var btn   = document.getElementById('ninmu-cat-' + c);
@@ -2027,7 +2009,7 @@ function setTenResultFooterVisible(visible){
       if (typeof clearBattle32ResumeState === 'function') clearBattle32ResumeState();
     } else {
       document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
-      if(name === 'zukan') renderCurrentZukanTab();
+      if(name === 'zukan') switchZukanMainTab('box');
       if(name === 'friend') loadFriendScreen();
       document.getElementById('screen-'+name).classList.add('active');
       setHomeBtnVisible(true);
@@ -3194,51 +3176,49 @@ setTenResultFooterVisible(true);
 
   // 本番課金実装時はexecutePurchaseの中身を課金APIに差し替える
 
-  // 基地の大タブ（所持キャラ/図鑑）
-  var currentZukanMainTab = null;
+  // プリモア一覧：ボトムナビ「プリモア」押下時は一覧を直接表示する
+  // 旧「編成」メニュー/パーティ編成画面は削除
+  var currentZukanMainTab = 'box';
 
   function showZukanMenu(){
-    currentZukanMainTab = null;
-    document.getElementById('zukan-menu').style.display      = '';
-    document.getElementById('zukan-sub-box').style.display   = 'none';
-    document.getElementById('zukan-sub-party').style.display = 'none';
-    document.getElementById('zukan-header-back').style.display = 'none';
-    document.getElementById('zukan-header-title').textContent  = '編成';
-    document.getElementById('zukan-header-title').classList.remove('header-title-indented');
+    switchZukanMainTab('box');
   }
 
   function switchZukanMainTab(tab){
-    currentZukanMainTab = tab;
+    // 編成画面は廃止したため、常にプリモア一覧へ寄せる
+    currentZukanMainTab = 'box';
 
-    document.getElementById('zukan-menu').style.display      = 'none';
-    document.getElementById('zukan-sub-box').style.display   = (tab === 'box')   ? '' : 'none';
-    document.getElementById('zukan-sub-party').style.display = (tab === 'party') ? '' : 'none';
-    document.getElementById('zukan-grid').style.display      = 'none';
+    var subBox = document.getElementById('zukan-sub-box');
+    var zukanGrid = document.getElementById('zukan-grid');
+    var headerBack = document.getElementById('zukan-header-back');
+    var headerTitle = document.getElementById('zukan-header-title');
 
-    document.getElementById('zukan-header-back').style.display = '';
-    document.getElementById('zukan-header-title').textContent  =
-      tab === 'box' ? '創乙女一覧' : 'パーティ編成';
+    if(subBox) subBox.style.display = '';
+    if(zukanGrid) zukanGrid.style.display = 'none';
+    if(headerBack) headerBack.style.display = 'none';
+    if(headerTitle){
+      headerTitle.textContent = 'プリモア一覧';
+      headerTitle.classList.remove('header-title-indented');
+    }
 
-    if(tab === 'box') renderBox();
+    renderBox();
   }
 
   function changeZukanPool(pool){
     currentZukanPool = pool;
-    document.getElementById('zukan-tab-survivor').classList.toggle('active', pool === 'survivor');
-    document.getElementById('zukan-tab-idea').classList.toggle('active', pool === 'idea');
+    var survivorTab = document.getElementById('zukan-tab-survivor');
+    var ideaTab = document.getElementById('zukan-tab-idea');
+    if(survivorTab) survivorTab.classList.toggle('active', pool === 'survivor');
+    if(ideaTab) ideaTab.classList.toggle('active', pool === 'idea');
     renderCurrentZukanTab();
   }
 
   function renderCurrentZukanTab(){
-    if(currentZukanMainTab === 'box'){
-      renderBox();
-    } else if(currentZukanMainTab === null){
-      showZukanMenu();
-    }
-    // party は COMING SOON のため何もしない
+    currentZukanMainTab = 'box';
+    renderBox();
   }
 
-  // ── 創乙女一覧：キャラ単位カルーセル ──────────────────────────
+  // ── プリモア一覧：キャラ単位カルーセル ──────────────────────────
   var currentBoxCarouselIndex = 0;
 
   function getAllBoxCharaDefs(){
@@ -3331,7 +3311,7 @@ setTenResultFooterVisible(true);
       '<button class="box-limitbreak-jump ' + (currentCanLimitBreak ? 'is-current' : '') + '" onclick="jumpToNextLimitBreakTarget()">' +
         '<span class="box-limitbreak-dot"></span>' +
         '<span class="box-limitbreak-text">' +
-          (currentCanLimitBreak ? 'この創乙女は共鳴可能です' : '共鳴可能な創乙女がいます') +
+          (currentCanLimitBreak ? 'このプリモアは共鳴可能です' : '共鳴可能なプリモアがいます') +
         '</span>' +
         '<span class="box-limitbreak-count">' + targets.length + '</span>' +
         '<span class="box-limitbreak-arrow">›</span>' +
@@ -3364,7 +3344,7 @@ setTenResultFooterVisible(true);
         '<div class="box-carousel-locked-title">LOCKED</div>' +
         '<div class="box-carousel-locked-seal">封</div>' +
         '<div class="box-carousel-locked-no">NO. ' + no + '</div>' +
-        '<div class="box-carousel-locked-text">未照合の創乙女</div>' +
+        '<div class="box-carousel-locked-text">未照合のプリモア</div>' +
       '</div>';
   }
 
@@ -3449,9 +3429,11 @@ setTenResultFooterVisible(true);
       '<div class="box-carousel-view ' + (owned ? 'is-owned' : 'is-locked') + '">' +
         '<div class="box-carousel-fixed">' +
           headerHtml +
-          '<button class="box-carousel-arrow box-carousel-prev" onclick="moveBoxCarousel(-1)" aria-label="前の創乙女">‹</button>' +
-          '<button class="box-carousel-arrow box-carousel-next" onclick="moveBoxCarousel(1)" aria-label="次の創乙女">›</button>' +
-          visualHtml +
+          '<div class="box-carousel-visual-row">' +
+            '<button class="box-carousel-arrow box-carousel-prev" onclick="moveBoxCarousel(-1)" aria-label="前のプリモア">‹</button>' +
+            visualHtml +
+            '<button class="box-carousel-arrow box-carousel-next" onclick="moveBoxCarousel(1)" aria-label="次のプリモア">›</button>' +
+          '</div>' +
           nameHtml +
           '<div class="box-carousel-separator"></div>' +
         '</div>' +
@@ -3459,6 +3441,63 @@ setTenResultFooterVisible(true);
           '<div class="box-carousel-detail">' + detailHtml + '</div>' +
         '</div>' +
       '</div>';
+
+    setupBoxCarouselSwipe();
+  }
+
+  function setupBoxCarouselSwipe(){
+    var view = document.querySelector('#box-grid .box-carousel-view');
+    if(!view) return;
+
+    var startX = 0;
+    var startY = 0;
+    var lastX = 0;
+    var lastY = 0;
+    var tracking = false;
+    var horizontal = false;
+
+    view.addEventListener('touchstart', function(e){
+      if(!e.touches || e.touches.length !== 1) return;
+      startX = lastX = e.touches[0].clientX;
+      startY = lastY = e.touches[0].clientY;
+      tracking = true;
+      horizontal = false;
+    }, { passive: true });
+
+    view.addEventListener('touchmove', function(e){
+      if(!tracking || !e.touches || e.touches.length !== 1) return;
+
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+
+      var dx = lastX - startX;
+      var dy = lastY - startY;
+
+      if(!horizontal && Math.abs(dx) > 18 && Math.abs(dx) > Math.abs(dy) * 1.25){
+        horizontal = true;
+      }
+
+      if(horizontal){
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    view.addEventListener('touchend', function(){
+      if(!tracking) return;
+      tracking = false;
+
+      var dx = lastX - startX;
+      var dy = lastY - startY;
+
+      if(Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.25){
+        moveBoxCarousel(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+
+    view.addEventListener('touchcancel', function(){
+      tracking = false;
+      horizontal = false;
+    }, { passive: true });
   }
   // ── 図鑑（解放済み1件/未解放シルエット） ──────
   function renderZukan(){
@@ -4087,7 +4126,7 @@ function openDeleteConfirm(){
   if(!currentDetailData) return;
 
   var rarityText = RARITY_JP[currentDetailData.rarity] || currentDetailData.rarity;
-  var name = currentDetailData.name || 'この創乙女';
+  var name = currentDetailData.name || 'このプリモア';
 
   document.getElementById('delete-confirm-text').innerHTML =
     rarityText + ' / ' + name + ' が消失します<br>本当にいいですか？';
@@ -5233,7 +5272,7 @@ window.addEventListener('pagehide', function () {
       <div class="notice-item">
         <div class="notice-date">2XXX.05.28</div>
         <div class="notice-item-title">観測記録更新</div>
-        <div class="notice-body">創乙女情報が更新されました。</div>
+        <div class="notice-body">プリモア情報が更新されました。</div>
       </div>
     </div>
   </div>

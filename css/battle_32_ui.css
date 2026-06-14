@@ -6009,3 +6009,1370 @@
   pointer-events: none;
   box-shadow: 0 0 8px rgba(150, 80, 255, .16);
 }
+
+/* ============================================================
+   Zeraphia Battle Field Theme — Alchemia White Space
+   バトルフィールドのみ：白い未創世空間 / アルケミア調
+   既存CSSの末尾に置いて上書きすること
+   ============================================================ */
+
+#battle32-root {
+  background: #fbfbf8 !important;
+  color: rgba(28, 30, 36, .92) !important;
+}
+
+#battle32-root::before {
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,.96) 0%, rgba(248,248,243,.92) 45%, rgba(238,240,236,.88) 100%) !important;
+  opacity: 1 !important;
+}
+
+#battle32-root::after {
+  background:
+    radial-gradient(circle at 50% 36%, rgba(0,0,0,.035) 0 1px, transparent 2px),
+    radial-gradient(circle at 50% 36%, transparent 0 22%, rgba(40,42,50,.055) 22.3%, transparent 23.2%),
+    radial-gradient(circle at 50% 36%, transparent 0 36%, rgba(40,42,50,.040) 36.3%, transparent 37.2%),
+    linear-gradient(180deg, rgba(255,255,255,.56), rgba(236,238,234,.42)) !important;
+  pointer-events: none !important;
+}
+
+/* ── Header / Boss HP ── */
+#battle32-root #b32-header,
+#battle32-root #b32-boss-hp-ui {
+  background: rgba(255,255,255,.82) !important;
+  border-bottom: 1px solid rgba(35,38,48,.12) !important;
+  box-shadow: 0 8px 22px rgba(40,44,52,.045) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+#battle32-root #b32-battle-title,
+#battle32-root #b32-turn-num-large,
+#battle32-root #b32-turn-max,
+#battle32-root #b32-boss-hp-text,
+#battle32-root #b32-bottom-label,
+#battle32-root #b32-skill-chara-name {
+  color: rgba(24,26,32,.92) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root #b32-battle-subtitle,
+#battle32-root #b32-stage-id,
+#battle32-root #b32-turn-label,
+#battle32-root #b32-turn-slash,
+#battle32-root #b32-boss-hp-resistance-label,
+#battle32-root #b32-bottom-sub {
+  color: rgba(70,74,86,.50) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root #b32-boss-hp-name {
+  color: rgba(150,52,52,.90) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root #b32-boss-hp-ui::before {
+  background: linear-gradient(90deg, transparent, rgba(150,52,52,.32), transparent) !important;
+}
+
+#battle32-root #b32-boss-hp-emblem::before {
+  background: rgba(150,52,52,.82) !important;
+  border-color: rgba(150,52,52,.34) !important;
+  box-shadow: 0 0 8px rgba(150,52,52,.18) !important;
+}
+
+#battle32-root #b32-boss-hp-emblem::after {
+  background: rgba(255,255,255,.92) !important;
+}
+
+#battle32-root #b32-boss-hp-bar-wrap {
+  background: rgba(70,50,50,.12) !important;
+  border-color: rgba(150,52,52,.18) !important;
+}
+
+#battle32-root #b32-boss-hp-bar {
+  background: linear-gradient(90deg, rgba(130,44,44,.92), rgba(210,84,70,.88), rgba(235,132,110,.82)) !important;
+}
+
+/* ── Scroll / Board space ── */
+#battle32-root #b32-scroll {
+  background:
+    radial-gradient(ellipse at 50% 24%, rgba(255,255,255,.72), transparent 48%),
+    linear-gradient(180deg, rgba(255,255,255,.20), rgba(235,236,232,.34)) !important;
+}
+
+#battle32-root #b32-board-wrap::before {
+  content: '' !important;
+  position: absolute !important;
+  width: min(104vw, 440px) !important;
+  height: min(104vw, 440px) !important;
+  left: 50% !important;
+  top: 46% !important;
+  transform: translate(-50%, -50%) rotateX(38deg) !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(35,38,48,.075) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.70),
+    0 0 42px rgba(40,44,52,.045) !important;
+  pointer-events: none !important;
+}
+
+#battle32-root #b32-board {
+  filter: drop-shadow(0 18px 28px rgba(42,45,52,.12)) !important;
+}
+
+/* ── Cells: white glass board ── */
+#battle32-root .b32-cell {
+  background: rgba(255,255,255,.54) !important;
+  border-color: rgba(42,45,55,.15) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.82),
+    0 2px 8px rgba(30,34,42,.045) !important;
+}
+
+#battle32-root .b32-cell::before {
+  border-color: rgba(42,45,55,.11) !important;
+  opacity: .72 !important;
+}
+
+#battle32-root .b32-cell.ally-zone {
+  background: rgba(236,248,255,.70) !important;
+  border-color: rgba(60,145,210,.25) !important;
+  box-shadow:
+    inset 0 0 12px rgba(95,180,230,.12),
+    0 2px 8px rgba(40,120,180,.055) !important;
+}
+
+#battle32-root .b32-cell.ally-zone::before {
+  border-color: rgba(60,145,210,.19) !important;
+}
+
+#battle32-root .b32-cell.enemy-zone {
+  background: rgba(248,240,255,.68) !important;
+  border-color: rgba(142,92,180,.23) !important;
+  box-shadow:
+    inset 0 0 12px rgba(160,105,200,.10),
+    0 2px 8px rgba(110,70,160,.045) !important;
+}
+
+#battle32-root .b32-cell.enemy-zone::before {
+  border-color: rgba(142,92,180,.17) !important;
+}
+
+#battle32-root .b32-cell.row-divider {
+  border-top-color: rgba(40,42,52,.25) !important;
+}
+
+#battle32-root .b32-zone-label {
+  color: rgba(42,45,55,.24) !important;
+}
+
+/* ── Highlights on white background ── */
+#battle32-root .b32-cell.movable {
+  background: rgba(225,248,255,.92) !important;
+  border-color: rgba(36,150,205,.72) !important;
+  box-shadow:
+    inset 0 0 14px rgba(50,175,220,.18),
+    0 0 13px rgba(30,155,205,.24) !important;
+}
+
+#battle32-root .b32-cell.movable::after,
+#battle32-root .b32-cell.skill-selected::after {
+  border-color: rgba(30,150,205,.88) !important;
+  box-shadow:
+    0 0 10px rgba(30,150,205,.32),
+    inset 0 0 6px rgba(40,160,210,.16) !important;
+}
+
+#battle32-root .b32-cell.selected-unit,
+#battle32-root .b32-cell.skill-selected {
+  border-color: rgba(30,150,205,.95) !important;
+  box-shadow:
+    inset 0 0 0 2px rgba(30,150,205,.62),
+    inset 0 0 16px rgba(30,150,205,.12),
+    0 0 16px rgba(30,150,205,.26) !important;
+}
+
+#battle32-root .b32-cell.skill-selectable,
+#battle32-root .b32-cell.selectable-ally {
+  box-shadow: inset 0 0 0 2px rgba(176,132,34,.46) !important;
+}
+
+#battle32-root .b32-cell.skill-range {
+  background: rgba(245,234,255,.88) !important;
+  border-color: rgba(145,88,190,.55) !important;
+  box-shadow:
+    inset 0 0 13px rgba(145,88,190,.14),
+    0 0 12px rgba(145,88,190,.18) !important;
+}
+
+#battle32-root .b32-cell.skill-target-enemy,
+#battle32-root .b32-cell.move-capture {
+  background: rgba(255,235,232,.90) !important;
+  border-color: rgba(200,78,68,.62) !important;
+  box-shadow:
+    inset 0 0 12px rgba(210,70,60,.14),
+    0 0 13px rgba(200,70,60,.20) !important;
+}
+
+#battle32-root .b32-cell.skill-target-ally {
+  background: rgba(228,250,245,.90) !important;
+  border-color: rgba(34,150,120,.58) !important;
+  box-shadow:
+    inset 0 0 12px rgba(30,160,125,.13),
+    0 0 12px rgba(30,160,125,.18) !important;
+}
+
+#battle32-root .b32-cell.boss-danger-normal,
+#battle32-root .b32-cell.boss-danger-warn,
+#battle32-root .b32-cell.boss-danger-line {
+  background: rgba(255,236,232,.90) !important;
+  border-color: rgba(210,60,55,.55) !important;
+  box-shadow:
+    inset 0 0 14px rgba(220,60,55,.14),
+    0 0 14px rgba(220,50,50,.18) !important;
+}
+
+/* ── Units readability on white board ── */
+#battle32-root .b32-unit-icon,
+#battle32-root .b32-core-img,
+#battle32-root .b32-party-img,
+#b32-roster-panel .b32-party-img,
+#b32-roster-panel img {
+  filter: drop-shadow(0 8px 10px rgba(30,34,42,.20)) brightness(1.03) contrast(1.04) saturate(1.04) !important;
+}
+
+#battle32-root .b32-hp-bar-wrap,
+#battle32-root .b32-unit.ally .b32-hp-bar-wrap {
+  background: rgba(35,38,48,.20) !important;
+}
+
+#battle32-root .b32-unit.ally .b32-hp-bar,
+#battle32-root .b32-hp-bar,
+#battle32-root .b32-party-hp-bar,
+#b32-roster-panel .b32-roster-hp-bar {
+  background: linear-gradient(90deg, rgba(45,150,205,.92), rgba(96,210,225,.88)) !important;
+  box-shadow: 0 0 6px rgba(45,160,210,.30) !important;
+}
+
+/* ── Bottom panels / party cards ── */
+#battle32-root #b32-bottom-area,
+#battle32-root #b32-skill-panel,
+#battle32-root .b32-action-skill-panel,
+#battle32-root .b32-roster-info-panel,
+#b32-roster-panel,
+#b32-link-bar,
+#b32-item-panel,
+#b32-action-detail-portal .b32-action-detail-panel {
+  color: rgba(28,30,36,.92) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-party-card,
+#b32-roster-panel .b32-roster-card,
+#battle32-root .b32-action-char-card,
+#battle32-root .b32-action-detail-panel,
+#b32-action-detail-portal .b32-action-detail-panel {
+  background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(244,245,241,.92)) !important;
+  border-color: rgba(42,45,55,.16) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.78),
+    0 8px 22px rgba(30,34,42,.09) !important;
+}
+
+#battle32-root .b32-party-card::before,
+#b32-roster-panel .b32-roster-card::before {
+  background: linear-gradient(90deg, transparent, rgba(42,45,55,.22), transparent) !important;
+}
+
+#battle32-root .b32-party-card.selected,
+#battle32-root .b32-party-card.active,
+#b32-roster-panel .b32-roster-card.selected,
+#b32-roster-panel .b32-roster-card.active {
+  background: linear-gradient(180deg, rgba(250,254,255,.94), rgba(236,248,255,.94)) !important;
+  border-color: rgba(35,155,205,.72) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.92),
+    0 0 16px rgba(35,155,205,.26) !important;
+}
+
+#battle32-root .b32-party-hp-num,
+#battle32-root .b32-party-name,
+#battle32-root .b32-action-detail-title,
+#b32-action-detail-portal .b32-action-detail-title,
+#battle32-root .b32-action-detail-desc,
+#b32-action-detail-portal .b32-action-detail-desc,
+#battle32-root .b32-action-detail-meta,
+#b32-action-detail-portal .b32-action-detail-meta,
+#battle32-root .b32-roster-info-title,
+#battle32-root .b32-roster-info-desc,
+#battle32-root .b32-roster-info-role,
+#battle32-root .b32-roster-info-skill,
+#battle32-root .b32-roster-info-status {
+  color: rgba(28,30,36,.86) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-party-hp-max,
+#battle32-root .b32-roster-hp-text,
+#b32-roster-panel .b32-roster-hp-text {
+  color: rgba(70,74,86,.55) !important;
+}
+
+#battle32-root .b32-party-hp-bar-wrap,
+#b32-roster-panel .b32-roster-hp-bar-wrap {
+  background: rgba(42,45,55,.16) !important;
+  border-color: rgba(42,45,55,.12) !important;
+}
+
+/* ── Fixed action buttons / bottom buttons ── */
+#battle32-root .b32-action-circle-btn,
+#battle32-root .b32-bottom-skill-btn,
+#battle32-root .b32-action-detail-btn,
+#b32-action-detail-portal .b32-action-detail-btn,
+#battle32-root .b32-btn,
+.b32-action-btn {
+  background: rgba(255,255,255,.82) !important;
+  border-color: rgba(42,45,55,.18) !important;
+  color: rgba(28,30,36,.82) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.72),
+    0 6px 16px rgba(30,34,42,.08) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-action-circle-btn.move:not(.disabled),
+#battle32-root .b32-action-circle-btn.skill:not(.disabled),
+#battle32-root .b32-action-circle-btn.ult.is-ready,
+#battle32-root .b32-bottom-skill-btn:not(.disabled),
+#battle32-root .b32-action-detail-btn.confirm,
+#b32-action-detail-portal .b32-action-detail-btn.confirm {
+  background: rgba(232,249,255,.92) !important;
+  border-color: rgba(35,155,205,.48) !important;
+  color: rgba(20,95,130,.94) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.76),
+    0 0 14px rgba(35,155,205,.18) !important;
+}
+
+#battle32-root .b32-action-circle-btn.end,
+#battle32-root .b32-btn.danger {
+  background: rgba(255,238,236,.88) !important;
+  border-color: rgba(190,80,72,.34) !important;
+  color: rgba(130,46,42,.88) !important;
+}
+
+#battle32-root .b32-action-circle-btn.disabled,
+#battle32-root .b32-bottom-skill-btn.disabled,
+#battle32-root .b32-btn:disabled {
+  opacity: .42 !important;
+  filter: grayscale(.28) !important;
+}
+
+#battle32-root #b32-bottom-guide,
+#battle32-root #b32-skill-list,
+#battle32-root .b32-skill-row {
+  background: rgba(255,255,255,.70) !important;
+  border-color: rgba(42,45,55,.12) !important;
+  color: rgba(28,30,36,.78) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-skill-name,
+#battle32-root .b32-skill-desc {
+  color: rgba(28,30,36,.80) !important;
+}
+
+#b32-action-detail-portal .b32-action-detail-buttons {
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(246,247,244,.96) 35%) !important;
+}
+
+/* ── Result overlay keeps dramatic but white-space compatible ── */
+#battle32-root #b32-result-overlay {
+  background: rgba(255,255,255,.76) !important;
+}
+
+#battle32-root #b32-result-text.win {
+  color: rgba(20,110,150,.95) !important;
+  text-shadow: 0 0 24px rgba(50,170,220,.28) !important;
+}
+
+#battle32-root #b32-result-text.lose {
+  color: rgba(150,52,52,.95) !important;
+  text-shadow: 0 0 22px rgba(170,60,60,.22) !important;
+}
+
+
+/* ============================================================
+   PATCH: 盤面ユニット寝かせ修正 / billboard reset
+   - 盤面は傾ける
+   - キャラ・敵・コアだけ盤面の逆回転で正面に起こす
+   - 3D flatten を避けるため親階層にも preserve-3d を明示
+   ============================================================ */
+
+#battle32-root #b32-board-wrap {
+  perspective: 700px !important;
+  transform-style: preserve-3d !important;
+  overflow: visible !important;
+  filter: none !important;
+}
+
+#battle32-root #b32-board {
+  transform: rotateX(38deg) translateZ(0) !important;
+  transform-origin: center center !important;
+  transform-style: preserve-3d !important;
+  overflow: visible !important;
+  filter: none !important;
+}
+
+#battle32-root .b32-cell {
+  transform-style: preserve-3d !important;
+  overflow: visible !important;
+  filter: none !important;
+}
+
+/* キャラ・敵は盤面の傾きを相殺して、画面に対して立たせる */
+#battle32-root .b32-unit,
+#battle32-root .b32-unit.ally,
+#battle32-root .b32-unit.enemy {
+  transform:
+    translateX(-50%)
+    rotateX(-38deg)
+    translateZ(calc(var(--cell-size) * 0.08)) !important;
+  transform-origin: center bottom !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden !important;
+  will-change: transform !important;
+}
+
+/* 画像側には追加の寝かせを入れない。拡縮・上下補正だけに限定 */
+#battle32-root .b32-unit-icon {
+  transform:
+    translateY(var(--unit-offset-y, 0px))
+    scale(var(--unit-scale, 1))
+    translateZ(1px) !important;
+  transform-origin: center bottom !important;
+  backface-visibility: hidden !important;
+  will-change: transform !important;
+}
+
+/* 足元UIはキャラ本体と同じ立ち方向を継承。ここで回転を追加しない */
+#battle32-root .b32-unit-foot-ui {
+  transform: translateX(-50%) translateZ(2px) !important;
+  transform-origin: center bottom !important;
+  backface-visibility: hidden !important;
+}
+
+/* コアも盤面に寝かせず、正面向きに維持 */
+#battle32-root .b32-core-object {
+  transform:
+    translate(-50%, -50%)
+    rotateX(-38deg)
+    translateZ(calc(var(--cell-size) * 0.06)) !important;
+  transform-origin: center center !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden !important;
+}
+
+/* ============================================================
+   COLOR ONLY PATCH v5 - White Mythic Battle UI
+   レイアウト固定。色・背景・枠線・影・文字色のみ上書き。
+   ============================================================ */
+
+/* ── 画面全体：白背景ベース ── */
+#battle32-root {
+  background: #f7f7f3 !important;
+  color: rgba(43, 52, 74, .94) !important;
+}
+
+#battle32-root::before {
+  opacity: .16 !important;
+  filter: grayscale(.1) brightness(1.22) contrast(.92) !important;
+}
+
+#battle32-root::after {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(126, 118, 170, .10) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,.90), rgba(250,250,246,.64) 48%, rgba(246,247,244,.88)) !important;
+}
+
+/* ── 上部ヘッダー：モック寄せの白・紺文字 ── */
+#battle32-root #b32-header {
+  background: rgba(255, 255, 255, .90) !important;
+  border-bottom-color: rgba(57, 66, 92, .10) !important;
+  box-shadow: 0 8px 22px rgba(45, 50, 65, .055) !important;
+}
+
+#battle32-root #b32-battle-title,
+#battle32-root #b32-turn-num-large {
+  color: rgba(45, 54, 78, .96) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root #b32-battle-subtitle,
+#battle32-root #b32-phase-badge,
+#battle32-root #b32-turn-label,
+#battle32-root #b32-turn-slash,
+#battle32-root #b32-turn-max,
+#battle32-root #b32-stage-id {
+  color: rgba(82, 90, 112, .52) !important;
+  text-shadow: none !important;
+}
+
+/* ── ローグライト進捗：白に飲まれない濃度へ ── */
+#battle32-root #rl-hud,
+#rl-hud {
+  color: rgba(85, 92, 120, .82) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root #rl-hud *,
+#rl-hud * {
+  color: rgba(92, 96, 128, .78) !important;
+  text-shadow: none !important;
+  border-color: rgba(120, 118, 160, .18) !important;
+}
+
+#battle32-root #rl-hud .active,
+#battle32-root #rl-hud [class*="active"],
+#rl-hud .active,
+#rl-hud [class*="active"] {
+  color: rgba(150, 92, 240, .92) !important;
+  background-color: rgba(150, 92, 240, .72) !important;
+  border-color: rgba(150, 92, 240, .55) !important;
+  box-shadow: 0 0 8px rgba(150, 92, 240, .22) !important;
+}
+
+/* ── 右側 LINK ゲージ：白いピル + 紫ゲージ ── */
+#b32-link-bar {
+  background: rgba(255, 255, 255, .78) !important;
+  border-color: rgba(110, 96, 150, .12) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.78),
+    0 8px 20px rgba(45, 50, 70, .10) !important;
+}
+
+#b32-link-bar > div:first-child {
+  color: rgba(78, 84, 112, .58) !important;
+  text-shadow: none !important;
+}
+
+/* filled LINK diamond */
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(125,85,245"],
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(150,115,255"] {
+  background: rgba(146, 92, 238, .86) !important;
+  border-color: rgba(146, 92, 238, .88) !important;
+  box-shadow: 0 0 7px rgba(146, 92, 238, .36) !important;
+}
+
+/* empty LINK diamond */
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(30,20,60"],
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(100,80,200"] {
+  background: rgba(86, 90, 105, .22) !important;
+  border-color: rgba(86, 90, 105, .26) !important;
+  box-shadow: none !important;
+}
+
+/* ── 盤面：白背景上で薄すぎない線へ ── */
+#battle32-root .b32-cell {
+  background: rgba(255, 255, 255, .36) !important;
+  border-color: rgba(85, 92, 118, .12) !important;
+  box-shadow: inset 0 0 10px rgba(80, 90, 120, .025) !important;
+}
+
+#battle32-root .b32-cell.enemy-zone {
+  background: rgba(156, 108, 220, .055) !important;
+  border-color: rgba(138, 108, 190, .16) !important;
+}
+
+#battle32-root .b32-cell.ally-zone {
+  background: rgba(70, 170, 230, .070) !important;
+  border-color: rgba(55, 155, 215, .22) !important;
+}
+
+#battle32-root .b32-cell.row-divider {
+  border-top-color: rgba(100, 110, 145, .20) !important;
+}
+
+/* ── ロスターカード：モック寄せの白カード ── */
+#b32-roster-panel .b32-roster-card,
+#battle32-root .b32-party-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(246,247,244,.94)) !important;
+  border-color: rgba(62, 68, 88, .15) !important;
+  color: rgba(48, 56, 82, .84) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.72),
+    0 6px 14px rgba(45, 50, 65, .075) !important;
+  text-shadow: none !important;
+}
+
+#b32-roster-panel .b32-roster-card.selected,
+#b32-roster-panel .b32-roster-card.active,
+#battle32-root .b32-party-card.selected,
+#battle32-root .b32-party-card.active {
+  background: linear-gradient(180deg, rgba(252,254,255,.98), rgba(238,248,255,.96)) !important;
+  border-color: rgba(55, 170, 220, .60) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.86),
+    0 0 14px rgba(50, 170, 220, .18) !important;
+}
+
+#b32-roster-panel .b32-roster-card::before,
+#battle32-root .b32-party-card::before {
+  background: linear-gradient(90deg, transparent, rgba(60, 72, 105, .20), transparent) !important;
+}
+
+#b32-roster-panel .b32-roster-card.selected::before,
+#b32-roster-panel .b32-roster-card.active::before,
+#battle32-root .b32-party-card.selected::before,
+#battle32-root .b32-party-card.active::before {
+  background: linear-gradient(90deg, transparent, rgba(70, 190, 230, .48), transparent) !important;
+}
+
+#b32-roster-panel .b32-roster-card > div,
+#battle32-root .b32-party-card,
+#battle32-root .b32-party-hp-num,
+#battle32-root .b32-party-name {
+  color: rgba(68, 76, 105, .80) !important;
+  text-shadow: none !important;
+}
+
+#b32-roster-panel .b32-roster-hp-text,
+#battle32-root .b32-party-hp-num,
+#battle32-root .b32-party-hp-max {
+  color: rgba(90, 96, 115, .52) !important;
+}
+
+#b32-roster-panel .b32-roster-hp-bar-wrap,
+#battle32-root .b32-party-hp-bar-wrap {
+  background: rgba(68, 76, 96, .14) !important;
+  border-color: rgba(68, 76, 96, .08) !important;
+}
+
+#b32-roster-panel .b32-roster-hp-bar,
+#battle32-root .b32-party-hp-bar,
+#battle32-root .b32-unit.ally .b32-hp-bar,
+#battle32-root .b32-hp-bar {
+  background: linear-gradient(90deg, rgba(38, 155, 215, .88), rgba(88, 210, 225, .82)) !important;
+  box-shadow: 0 0 6px rgba(38, 155, 215, .20) !important;
+}
+
+/* ── キャラ詳細：位置は触らず、白系の情報パネルにする ── */
+#battle32-root .b32-roster-info-panel,
+#battle32-root .b32-action-detail-panel,
+#b32-action-detail-portal .b32-action-detail-panel {
+  background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(245,246,243,.97)) !important;
+  border-color: rgba(58, 66, 92, .18) !important;
+  color: rgba(38, 46, 70, .90) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.80),
+    0 10px 24px rgba(42, 48, 66, .13) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-roster-info-card,
+#battle32-root .b32-action-char-card {
+  background: rgba(255,255,255,.62) !important;
+  border-color: rgba(58, 66, 92, .16) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.55) !important;
+}
+
+#battle32-root .b32-roster-info-title,
+#battle32-root .b32-roster-info-title .name,
+#battle32-root .b32-roster-info-desc,
+#battle32-root .b32-roster-info-role,
+#battle32-root .b32-roster-info-skill,
+#battle32-root .b32-roster-info-status,
+#battle32-root .b32-action-detail-title,
+#battle32-root .b32-action-detail-desc,
+#battle32-root .b32-action-detail-meta,
+#b32-action-detail-portal .b32-action-detail-title,
+#b32-action-detail-portal .b32-action-detail-desc,
+#b32-action-detail-portal .b32-action-detail-meta {
+  color: rgba(38, 46, 70, .86) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-roster-info-title {
+  border-bottom-color: rgba(58, 66, 92, .14) !important;
+}
+
+/* ── 下部アクション：レイアウトそのまま白カード化 ── */
+#battle32-root .b32-bottom-action {
+  background: linear-gradient(180deg, rgba(255,255,255,.91), rgba(246,246,242,.96)) !important;
+  border-color: rgba(58, 66, 92, .16) !important;
+  color: rgba(48, 56, 82, .88) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.76),
+    0 8px 18px rgba(42, 48, 66, .075) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-bottom-action::before {
+  background: linear-gradient(180deg, rgba(255,255,255,.35), transparent 48%) !important;
+  opacity: .65 !important;
+}
+
+#battle32-root .b32-bottom-action-icon,
+#battle32-root .b32-bottom-action-label,
+#battle32-root .b32-bottom-action-cost,
+#battle32-root .b32-bottom-action-sub {
+  color: rgba(55, 64, 96, .86) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-bottom-action.is-active,
+#battle32-root .b32-bottom-action.move.is-active,
+#battle32-root .b32-bottom-action.skill.is-active,
+#battle32-root .b32-bottom-action.ult.is-active {
+  background: linear-gradient(180deg, rgba(252,254,255,.98), rgba(238,248,255,.96)) !important;
+  border-color: rgba(80, 170, 230, .66) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.88),
+    0 0 15px rgba(70, 170, 230, .20) !important;
+}
+
+#battle32-root .b32-bottom-action.end {
+  background: linear-gradient(180deg, rgba(255,252,247,.94), rgba(249,245,238,.98)) !important;
+  border-color: rgba(206, 138, 72, .34) !important;
+}
+
+#battle32-root .b32-bottom-action.end .b32-bottom-action-icon,
+#battle32-root .b32-bottom-action.end .b32-bottom-action-label,
+#battle32-root .b32-bottom-action.end .b32-bottom-action-sub {
+  color: rgba(92, 68, 45, .86) !important;
+}
+
+#battle32-root .b32-bottom-action:disabled {
+  opacity: .42 !important;
+  filter: grayscale(.22) !important;
+}
+
+/* ── 旧ボタン系が出た場合も白系に統一 ── */
+#battle32-root .b32-btn,
+#battle32-root .b32-action-circle-btn,
+#battle32-root .b32-bottom-skill-btn,
+#battle32-root .b32-action-detail-btn,
+#b32-action-detail-portal .b32-action-detail-btn,
+.b32-action-btn {
+  background: rgba(255,255,255,.86) !important;
+  border-color: rgba(58, 66, 92, .18) !important;
+  color: rgba(48, 56, 82, .86) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.74),
+    0 6px 14px rgba(42, 48, 66, .08) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-btn.danger,
+#battle32-root .b32-action-circle-btn.end {
+  background: rgba(255, 248, 244, .90) !important;
+  border-color: rgba(202, 120, 86, .30) !important;
+  color: rgba(118, 62, 46, .86) !important;
+}
+
+/* ============================================================
+   COLOR ONLY PATCH v6 - White UI readability tune
+   レイアウトは変更しない。色・背景・枠線・影・文字色のみ上書き。
+   ============================================================ */
+
+/* 上部ヘッダー文字：白背景でも読める濃度へ */
+#battle32-root #b32-header {
+  background: rgba(255,255,255,.94) !important;
+  border-bottom-color: rgba(46,54,78,.12) !important;
+  box-shadow: 0 8px 18px rgba(38,44,60,.055) !important;
+}
+#battle32-root #b32-battle-title,
+#battle32-root #b32-turn-num-large,
+#battle32-root #b32-battle-menu-btn {
+  color: rgba(42,52,78,.96) !important;
+  text-shadow: none !important;
+}
+#battle32-root #b32-battle-subtitle,
+#battle32-root #b32-phase-badge,
+#battle32-root #b32-turn-label,
+#battle32-root #b32-turn-slash,
+#battle32-root #b32-turn-max,
+#battle32-root #b32-stage-id,
+#battle32-root #b32-stage-id-right {
+  color: rgba(72,82,112,.62) !important;
+  text-shadow: none !important;
+}
+
+/* 右上 MENU：黒ボタンではなく、モック寄せの白ピル */
+#b32-battle-menu-btn {
+  background: rgba(255,255,255,.78) !important;
+  border: 1px solid rgba(58,68,92,.14) !important;
+  color: rgba(52,62,92,.88) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.75),
+    0 5px 14px rgba(38,44,62,.065) !important;
+  text-shadow: none !important;
+}
+#b32-battle-menu.open #b32-battle-menu-btn,
+#b32-battle-menu-btn:active {
+  background: rgba(246,246,242,.92) !important;
+  border-color: rgba(115,92,170,.24) !important;
+  color: rgba(60,54,92,.94) !important;
+}
+#b32-battle-menu-panel,
+#b32-battle-menu .b32-battle-menu-item {
+  background: rgba(255,255,255,.96) !important;
+  border-color: rgba(58,68,92,.14) !important;
+  color: rgba(42,52,78,.90) !important;
+  text-shadow: none !important;
+}
+
+/* STAGE進捗：四角い発光をやめ、線だけが淡く光るように */
+#rl-hud,
+#battle32-root #rl-hud {
+  background: rgba(255,255,255,.18) !important;
+  color: rgba(70,78,106,.78) !important;
+  text-shadow: none !important;
+}
+#rl-hud *,
+#battle32-root #rl-hud * {
+  color: rgba(76,84,112,.66) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+#rl-hud .active,
+#rl-hud [class*="active"],
+#rl-hud [aria-current="true"],
+#battle32-root #rl-hud .active,
+#battle32-root #rl-hud [class*="active"],
+#battle32-root #rl-hud [aria-current="true"] {
+  color: rgba(146,88,236,.94) !important;
+  background: linear-gradient(90deg, transparent, rgba(146,88,236,.76), transparent) !important;
+  background-color: transparent !important;
+  border-color: rgba(146,88,236,.38) !important;
+  box-shadow: 0 0 5px rgba(146,88,236,.18) !important;
+}
+#rl-hud .active::before,
+#rl-hud .active::after,
+#rl-hud [class*="active"]::before,
+#rl-hud [class*="active"]::after,
+#battle32-root #rl-hud .active::before,
+#battle32-root #rl-hud .active::after,
+#battle32-root #rl-hud [class*="active"]::before,
+#battle32-root #rl-hud [class*="active"]::after {
+  background: linear-gradient(90deg, transparent, rgba(146,88,236,.70), transparent) !important;
+  box-shadow: 0 0 5px rgba(146,88,236,.16) !important;
+}
+
+/* 右側 LINK：文字を濃く、背景は白ピルのまま */
+#b32-link-bar {
+  background: rgba(255,255,255,.82) !important;
+  border-color: rgba(76,70,112,.13) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.78),
+    0 7px 16px rgba(42,48,66,.09) !important;
+}
+#b32-link-bar > div:first-child {
+  color: rgba(66,72,100,.72) !important;
+  text-shadow: none !important;
+}
+#b32-link-bar > div:nth-child(2) > div {
+  box-shadow: none !important;
+}
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(125,85,245"],
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(150,115,255"] {
+  background: rgba(146,92,238,.88) !important;
+  border-color: rgba(146,92,238,.92) !important;
+  box-shadow: 0 0 5px rgba(146,92,238,.24) !important;
+}
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(30,20,60"],
+#b32-link-bar > div:nth-child(2) > div[style*="rgba(100,80,200"] {
+  background: rgba(84,88,104,.28) !important;
+  border-color: rgba(84,88,104,.30) !important;
+}
+
+/* 詳細モーダル：文字を明確化。位置・サイズは変更しない */
+#battle32-root .b32-roster-info-panel,
+#b32-action-detail-portal .b32-action-detail-panel,
+#battle32-root .b32-action-detail-panel,
+#b32-skill-detail-box {
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(52,62,88,.18) !important;
+  color: rgba(30,38,58,.94) !important;
+  text-shadow: none !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.76),
+    0 10px 22px rgba(34,40,58,.12) !important;
+}
+#battle32-root .b32-roster-info-panel *,
+#b32-action-detail-portal .b32-action-detail-panel *,
+#battle32-root .b32-action-detail-panel *,
+#b32-skill-detail-box * {
+  text-shadow: none !important;
+}
+#battle32-root .b32-roster-info-title,
+#battle32-root .b32-roster-info-title .name,
+#battle32-root .b32-action-detail-title,
+#b32-action-detail-portal .b32-action-detail-title,
+#b32-skill-detail-name {
+  color: rgba(28,36,58,.96) !important;
+}
+#battle32-root .b32-roster-info-role,
+#battle32-root .b32-roster-info-status,
+#battle32-root .b32-roster-skill-detail-head strong,
+#battle32-root .b32-roster-skill-detail-desc,
+#battle32-root .b32-action-detail-desc,
+#battle32-root .b32-action-detail-meta,
+#b32-action-detail-portal .b32-action-detail-desc,
+#b32-action-detail-portal .b32-action-detail-meta,
+#b32-skill-detail-desc,
+#b32-skill-detail-meta {
+  color: rgba(42,50,72,.84) !important;
+}
+#battle32-root .b32-roster-skill-detail,
+#battle32-root .b32-roster-info-card,
+#battle32-root .b32-action-char-card {
+  background: rgba(247,248,246,.88) !important;
+  border-color: rgba(58,68,92,.14) !important;
+  color: rgba(42,50,72,.86) !important;
+}
+#battle32-root .b32-roster-skill-detail-meta span,
+#battle32-root .b32-roster-skill-badge,
+#b32-skill-detail-meta span {
+  background: rgba(228,232,240,.72) !important;
+  border-color: rgba(58,68,92,.12) !important;
+  color: rgba(46,54,76,.76) !important;
+}
+#battle32-root .b32-roster-skill-detail.is-ult,
+#battle32-root .b32-roster-skill-detail.is-ult .b32-roster-skill-badge {
+  border-color: rgba(146,92,238,.22) !important;
+}
+#battle32-root .b32-roster-info-close {
+  background: rgba(36,42,56,.92) !important;
+  border-color: rgba(255,255,255,.55) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+
+/* ボトムメニュー：外側グレーを薄い白に寄せる。配置は触らない */
+#battle32-root #b32-actions {
+  background: rgba(247,247,243,.94) !important;
+  border-top-color: rgba(58,68,92,.10) !important;
+  box-shadow: 0 -8px 20px rgba(42,48,66,.04) !important;
+}
+#battle32-root .b32-bottom-action {
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(249,249,246,.98)) !important;
+  border-color: rgba(58,68,92,.13) !important;
+  color: rgba(48,58,88,.88) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.80),
+    0 5px 12px rgba(42,48,66,.045) !important;
+  text-shadow: none !important;
+}
+#battle32-root .b32-bottom-action-icon,
+#battle32-root .b32-bottom-action-label,
+#battle32-root .b32-bottom-action-cost,
+#battle32-root .b32-bottom-action-sub {
+  color: rgba(54,64,96,.88) !important;
+  text-shadow: none !important;
+}
+#battle32-root .b32-bottom-action.is-active,
+#battle32-root .b32-bottom-action.summon.is-active,
+#battle32-root .b32-bottom-action.move.is-active,
+#battle32-root .b32-bottom-action.skill.is-active,
+#battle32-root .b32-bottom-action.ult.is-active {
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,242,255,.96)) !important;
+  border-color: rgba(146,92,238,.30) !important;
+  box-shadow:
+    inset 0 -2px 0 rgba(146,92,238,.60),
+    inset 0 0 0 1px rgba(255,255,255,.82) !important;
+}
+#battle32-root .b32-bottom-action.end {
+  background: linear-gradient(180deg, rgba(255,253,249,.98), rgba(250,247,241,.98)) !important;
+  border-color: rgba(214,150,76,.35) !important;
+}
+
+/* ============================================================
+   COLOR ONLY PATCH v7 - Close button & stage progress cleanup
+   レイアウト・機能は変更しない。色・背景・枠線・影のみ上書き。
+   ============================================================ */
+
+/* ── 詳細パネルの×ボタン：黒丸で浮かないよう白UIになじませる ── */
+#battle32-root .b32-roster-info-close {
+  background: rgba(255,255,255,.88) !important;
+  border-color: rgba(52,62,88,.18) !important;
+  color: rgba(42,50,72,.82) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.78),
+    0 3px 8px rgba(34,40,58,.08) !important;
+  text-shadow: none !important;
+}
+
+#battle32-root .b32-roster-info-close:active {
+  background: rgba(242,243,240,.96) !important;
+  border-color: rgba(146,92,238,.24) !important;
+  color: rgba(46,40,78,.92) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.72),
+    0 2px 6px rgba(34,40,58,.06) !important;
+  text-shadow: none !important;
+}
+
+/* 透明ヒットボックスが見えてしまう場合の保険：見た目だけ完全透明 */
+#b32-roster-info-close-hitbox {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* ── 上部STAGE進捗：四角い塗りを禁止し、細い線と文字だけで見せる ── */
+#battle32-root #rl-hud,
+#rl-hud {
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(72,80,108,.62) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+#battle32-root #rl-hud *,
+#rl-hud * {
+  color: rgba(78,86,112,.56) !important;
+  background-color: transparent !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* active系に矩形背景が付くのを止める */
+#battle32-root #rl-hud .active,
+#battle32-root #rl-hud [class*="active"],
+#battle32-root #rl-hud [aria-current="true"],
+#rl-hud .active,
+#rl-hud [class*="active"],
+#rl-hud [aria-current="true"] {
+  color: rgba(143,88,232,.92) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: rgba(143,88,232,.34) !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 4px rgba(143,88,232,.18) !important;
+}
+
+/* activeの疑似要素だけ、細い紫ラインとして残す。四角い面発光は作らない */
+#battle32-root #rl-hud .active::before,
+#battle32-root #rl-hud .active::after,
+#battle32-root #rl-hud [class*="active"]::before,
+#battle32-root #rl-hud [class*="active"]::after,
+#battle32-root #rl-hud [aria-current="true"]::before,
+#battle32-root #rl-hud [aria-current="true"]::after,
+#rl-hud .active::before,
+#rl-hud .active::after,
+#rl-hud [class*="active"]::before,
+#rl-hud [class*="active"]::after,
+#rl-hud [aria-current="true"]::before,
+#rl-hud [aria-current="true"]::after {
+  background: linear-gradient(90deg, transparent, rgba(143,88,232,.66), transparent) !important;
+  background-color: transparent !important;
+  box-shadow: 0 0 4px rgba(143,88,232,.18) !important;
+  text-shadow: none !important;
+}
+
+/* 進捗バー内のインラインstyle色が矩形に見える場合も、薄い線色へ寄せる */
+#battle32-root #rl-hud [style*="background"],
+#rl-hud [style*="background"] {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+#battle32-root #rl-hud [style*="box-shadow"],
+#rl-hud [style*="box-shadow"] {
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   COLOR ONLY PATCH v8 - Restore current STAGE indicator
+   レイアウト・機能は変更しない。色・背景・枠線・影のみ上書き。
+   v7 の「四角い塗り禁止」で現在ステージ色まで消えたため、
+   active系だけ細い紫ラインとして復活させる。
+   ============================================================ */
+
+/* STAGE HUD全体：白背景上で読める薄い紺グレー */
+#battle32-root #rl-hud,
+#rl-hud {
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(72,80,108,.64) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+#battle32-root #rl-hud *,
+#rl-hud * {
+  color: rgba(78,86,112,.58) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* 非activeのインライン背景だけ透明化。activeまで消さない */
+#battle32-root #rl-hud [style*="background"]:not(.active):not([class*="active"]):not([aria-current="true"]),
+#rl-hud [style*="background"]:not(.active):not([class*="active"]):not([aria-current="true"]) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 現在ステージ：矩形の面ではなく、細い紫ラインとして復活 */
+#battle32-root #rl-hud .active,
+#battle32-root #rl-hud [class*="active"],
+#battle32-root #rl-hud [aria-current="true"],
+#rl-hud .active,
+#rl-hud [class*="active"],
+#rl-hud [aria-current="true"] {
+  color: rgba(146,88,236,.96) !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(146,88,236,.00) 12%,
+      rgba(146,88,236,.78) 48%,
+      rgba(146,88,236,.00) 88%,
+      transparent 100%
+    ) !important;
+  background-color: transparent !important;
+  border-color: rgba(146,88,236,.34) !important;
+  box-shadow: 0 0 5px rgba(146,88,236,.18) !important;
+  text-shadow: 0 0 4px rgba(146,88,236,.14) !important;
+}
+
+/* activeにインラインstyleがある場合も、上の紫ラインを優先 */
+#battle32-root #rl-hud .active[style*="background"],
+#battle32-root #rl-hud [class*="active"][style*="background"],
+#battle32-root #rl-hud [aria-current="true"][style*="background"],
+#rl-hud .active[style*="background"],
+#rl-hud [class*="active"][style*="background"],
+#rl-hud [aria-current="true"][style*="background"] {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(146,88,236,.00) 12%,
+      rgba(146,88,236,.78) 48%,
+      rgba(146,88,236,.00) 88%,
+      transparent 100%
+    ) !important;
+  background-color: transparent !important;
+  box-shadow: 0 0 5px rgba(146,88,236,.18) !important;
+}
+
+/* 疑似要素を使っているタイプも、同じく細い紫ラインに統一 */
+#battle32-root #rl-hud .active::before,
+#battle32-root #rl-hud .active::after,
+#battle32-root #rl-hud [class*="active"]::before,
+#battle32-root #rl-hud [class*="active"]::after,
+#battle32-root #rl-hud [aria-current="true"]::before,
+#battle32-root #rl-hud [aria-current="true"]::after,
+#rl-hud .active::before,
+#rl-hud .active::after,
+#rl-hud [class*="active"]::before,
+#rl-hud [class*="active"]::after,
+#rl-hud [aria-current="true"]::before,
+#rl-hud [aria-current="true"]::after {
+  background:
+    linear-gradient(90deg, transparent, rgba(146,88,236,.72), transparent) !important;
+  background-color: transparent !important;
+  box-shadow: 0 0 5px rgba(146,88,236,.16) !important;
+  text-shadow: none !important;
+}
+
+/* ============================================================
+   COLOR ONLY PATCH v9 - Stage indicator without glow
+   レイアウト・機能は変更しない。色・背景・枠線・影のみ上書き。
+   光らせず、現在ステージは文字色＋細い下線だけで示す。
+   ============================================================ */
+
+/* STAGE進捗全体：白背景に馴染む薄いグレー */
+#battle32-root #rl-hud,
+#rl-hud {
+  background: rgba(255,255,255,.04) !important;
+  color: rgba(82,90,116,.56) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+#battle32-root #rl-hud *,
+#rl-hud * {
+  color: rgba(86,94,120,.52) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* 現在ステージ：発光なし。薄紫の文字＋細い下線のみ */
+#battle32-root #rl-hud .active,
+#battle32-root #rl-hud [class*="active"],
+#battle32-root #rl-hud [aria-current="true"],
+#rl-hud .active,
+#rl-hud [class*="active"],
+#rl-hud [aria-current="true"] {
+  color: rgba(126,82,204,.96) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: rgba(126,82,204,.34) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* activeにインラインstyleがあっても、面・発光・グラデーションを消す */
+#battle32-root #rl-hud .active[style],
+#battle32-root #rl-hud [class*="active"][style],
+#battle32-root #rl-hud [aria-current="true"][style],
+#rl-hud .active[style],
+#rl-hud [class*="active"][style],
+#rl-hud [aria-current="true"][style] {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* 疑似要素の光を完全に消す。下線は border-bottom 側で表現する */
+#battle32-root #rl-hud .active::before,
+#battle32-root #rl-hud .active::after,
+#battle32-root #rl-hud [class*="active"]::before,
+#battle32-root #rl-hud [class*="active"]::after,
+#battle32-root #rl-hud [aria-current="true"]::before,
+#battle32-root #rl-hud [aria-current="true"]::after,
+#rl-hud .active::before,
+#rl-hud .active::after,
+#rl-hud [class*="active"]::before,
+#rl-hud [class*="active"]::after,
+#rl-hud [aria-current="true"]::before,
+#rl-hud [aria-current="true"]::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* currentが要素自身に当たるタイプ向け：面ではなく細線だけ */
+#battle32-root #rl-hud .active,
+#battle32-root #rl-hud [class*="active"],
+#battle32-root #rl-hud [aria-current="true"],
+#rl-hud .active,
+#rl-hud [class*="active"],
+#rl-hud [aria-current="true"] {
+  border-bottom: 1px solid rgba(126,82,204,.78) !important;
+}
+
+/* 進捗のバー要素が別DOMの場合：塗りは濃すぎない紫、発光なし */
+#battle32-root #rl-hud [style*="background"]:not(.active):not([class*="active"]):not([aria-current="true"]),
+#rl-hud [style*="background"]:not(.active):not([class*="active"]):not([aria-current="true"]) {
+  background: rgba(186,190,204,.22) !important;
+  background-color: rgba(186,190,204,.22) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+#battle32-root #rl-hud .active [style*="background"],
+#battle32-root #rl-hud [class*="active"] [style*="background"],
+#battle32-root #rl-hud [aria-current="true"] [style*="background"],
+#rl-hud .active [style*="background"],
+#rl-hud [class*="active"] [style*="background"],
+#rl-hud [aria-current="true"] [style*="background"] {
+  background: rgba(126,82,204,.82) !important;
+  background-color: rgba(126,82,204,.82) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* ============================================================
+ 右側 LINK 表示：白UI用・添付イメージ寄せ
+ ※位置・機能はJS既存のまま。外側は透明、内側だけ白ピル化。
+ ============================================================ */
+#b32-link-bar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: rgba(86, 78, 135, .92) !important;
+  text-shadow: none !important;
+}
+
+#b32-link-bar .b32-link-label {
+  writing-mode: horizontal-tb !important;
+  font-family: 'Cinzel', serif !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+  letter-spacing: 3px !important;
+  color: rgba(150, 108, 235, .88) !important;
+  text-align: center !important;
+  text-shadow: none !important;
+}
+
+#b32-link-bar .b32-link-count {
+  margin-top: 5px !important;
+  margin-bottom: 8px !important;
+  font-family: 'Cinzel', serif !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  letter-spacing: 1px !important;
+  color: rgba(86, 92, 128, .82) !important;
+  text-align: center !important;
+  text-shadow: none !important;
+}
+
+#b32-link-bar .b32-link-count span {
+  display: inline-block !important;
+  margin: 0 3px !important;
+  font-size: 12px !important;
+  color: rgba(106, 112, 146, .58) !important;
+}
+
+#b32-link-bar .b32-link-pill {
+  width: 30px !important;
+  box-sizing: border-box !important;
+  padding: 14px 0 !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, .92) !important;
+  border: 1px solid rgba(120, 116, 150, .10) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .90),
+    0 8px 18px rgba(46, 50, 68, .10) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+#b32-link-bar .b32-link-diamond {
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px !important;
+  box-sizing: border-box !important;
+  transform: rotate(45deg) !important;
+  border-radius: 1px !important;
+  transition: background .2s, border-color .2s, opacity .2s !important;
+  box-shadow: none !important;
+}
+
+#b32-link-bar .b32-link-diamond.filled {
+  background: rgba(150, 100, 240, .88) !important;
+  border: 1px solid rgba(150, 100, 240, .76) !important;
+}
+
+#b32-link-bar .b32-link-diamond.empty {
+  background: rgba(92, 96, 112, .30) !important;
+  border: 1px solid rgba(92, 96, 112, .24) !important;
+}
+
+
+/* ============================================================
+ Core concept removal patch
+ コア概念廃止：旧コア表示・旧コア被弾演出は表示しない
+ ============================================================ */
+.b32-core-object,
+.b32-core-img,
+.b32-core-damage-flash,
+.b32-core-distort-ring,
+.b32-core-damage-text {
+  display: none !important;
+}

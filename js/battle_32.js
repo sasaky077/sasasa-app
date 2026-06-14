@@ -19,6 +19,10 @@
   const BOARD_ROWS = 8;
   const BOARD_COLS = 5;
 
+  // ローグライト専用：主人公エリは最初から1st固定・盤面配置済み
+  const ROGUELITE_FIXED_FIRST_CHARA_ID = 1;
+  const ROGUELITE_ERI_START_POS = { row: 7, col: 2 }; // 主人公エリの初期配置
+
   // ============================================================
   // 属性相性
   // ============================================================
@@ -508,6 +512,28 @@ function pickRandomBoardCells(count) {
     return _bs.allies.filter(u => u.hp > 0);
   }
 
+  function getEriUnit() {
+    if (!_bs || !Array.isArray(_bs.allies)) return null;
+    return _bs.allies.find(u => Number(u.id) === ROGUELITE_FIXED_FIRST_CHARA_ID) || null;
+  }
+
+  function isEriLost() {
+    const eri = getEriUnit();
+    return !!(eri && eri.hp <= 0);
+  }
+
+  function aliveBosses() {
+    return _bs.enemies.filter(e => e.isBoss && e.hp > 0);
+  }
+
+  function hasBossInBattle() {
+    return _bs.enemies.some(e => e.isBoss);
+  }
+
+  function aliveNonBossEnemies() {
+    return _bs.enemies.filter(e => !e.isBoss && e.hp > 0);
+  }
+
   function aliveEnemies() {
     // ボスはHP0以降も盤面に残るが、行動しない（hp > 0 のみ返す）
     // 雑魚はHP0で除外（通常通り）
@@ -736,34 +762,49 @@ const enemies = enemyDefs.map(def => {
     console.log('[Battle32] enemyDefs:', enemyDefs);
     console.log('[Battle32] enemies:', enemies);
 
-    // captureMax は config で上書き可能（デフォルト2）
-    const bossCaptureMax = config.bossCaptureMax || 2;
-
     // ── ローグライトモードのroster構築 ──
     const isRogueliteMode = config.battleMode === 'roguelite' || typeof config.rogueliteOnBattleEnd === 'function';
     let rosterData = [];
     let initialAllies = allies;
 
     if (isRogueliteMode && config.partyIds && config.partyIds.length > 0) {
-      // ローグライト：5体持ち込み、初期盤面は0体
+      // ローグライト：エリは1st固定で、味方コアの前に初期配置済み。
+      // 2〜4枠目だけ召喚対象として待機させる。
       const allChars32 = allChars;
-      rosterData = config.partyIds.map((pid, idx) => {
-        const charDef = allChars32.find(c => c.id === pid);
+      const normalizedPartyIds = [
+        ROGUELITE_FIXED_FIRST_CHARA_ID,
+        ...config.partyIds.filter(pid => Number(pid) !== ROGUELITE_FIXED_FIRST_CHARA_ID),
+      ].slice(0, 4);
+
+      let fixedDeployedUid = null;
+      initialAllies = [];
+
+      rosterData = normalizedPartyIds.map((pid, idx) => {
+        const charDef = allChars32.find(c => Number(c.id) === Number(pid));
         if (!charDef) return null;
         const rar = (charDef.rarity || 'r').toLowerCase();
         const cost = LINK_COST.summon[rar] || 1;
+        const isFixedFirst = idx === 0 && Number(pid) === ROGUELITE_FIXED_FIRST_CHARA_ID;
+
+        if (isFixedFirst) {
+          const unit = makeAlly(charDef, ROGUELITE_ERI_START_POS.row, ROGUELITE_ERI_START_POS.col);
+          unit.isFixedFirst = true;
+          initialAllies.push(unit);
+          fixedDeployedUid = unit._uid;
+        }
+
         return {
           rosterId: `roster_${idx}`,
           charaId: pid,
           name: charDef.name,
           rarity: rar,
           summonCost: cost,
-          status: 'standby',
-          deployedUid: null,
+          status: isFixedFirst ? 'deployed' : 'standby',
+          deployedUid: isFixedFirst ? fixedDeployedUid : null,
+          fixedFirst: isFixedFirst,
           charDef,
         };
       }).filter(Boolean);
-      initialAllies = []; // ローグライトは初期盤面0体
     }
 
     _bs = {
@@ -794,22 +835,9 @@ const enemies = enemyDefs.map(def => {
       // ── ローグライト: アイテム2枠 ──
       items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 2) : [],
 
-      cores: {
-        ally: {
-          row: 7,
-          col: 2,
-          stability: 3,
-          stabilityMax: 3,
-        },
-      },
-
-      // ── 神性核（ボスコア）状態 ──
-      bossCore: {
-        exposed:    false,
-        capture:    0,
-        captureMax: bossCaptureMax,
-        captured:   false,
-      },
+      // コア概念は廃止。敗北条件はエリのロスト / タイムオーバー。
+      cores: null,
+      bossCore: null,
 
       turnLimit: config.turnLimit ?? 12,
 
@@ -979,8 +1007,8 @@ const enemies = enemyDefs.map(def => {
       delayedActions: _bs.delayedActions ? _bs.delayedActions.map(a => ({ ...a })) : [],
 
       isRoguelite: !!_bs.isRoguelite,
-      cores: _bs.cores ? JSON.parse(JSON.stringify(_bs.cores)) : null,
-      bossCore: _bs.bossCore ? { ..._bs.bossCore } : null,
+      cores: null,
+      bossCore: null,
       turnLimit: _bs.turnLimit,
       // LINK
       link: _bs.link ? { ..._bs.link } : null,
@@ -1171,8 +1199,7 @@ const enemies = enemyDefs.map(def => {
       bs: _snapshot(),
     });
 
-    // ダメージ後にボス撃破チェック→勝敗を即チェック
-    _checkBossCoreCapture();
+    // ダメージ後に勝敗を即チェック
     _checkWinLose();
   }
 
@@ -1779,8 +1806,8 @@ return true;
   }
 
   function _isAllyCoreCell(row, col) {
-    const core = _bs && _bs.cores && _bs.cores.ally;
-    return !!(core && core.row === row && core.col === col);
+    // コア概念廃止：コアセルは存在しない
+    return false;
   }
 
   function _getAliveUnitAt(row, col, ignoreUid) {
@@ -2190,10 +2217,7 @@ return true;
   // スマホの二重タップ・二重イベント対策
   if (_enemyTurnFlowRunning) return;
 
-      // 神性核干渉判定（ボスHP0後のみ有効）
-      _checkBossCoreCapture();
-
-      // 制圧で勝利条件を満たした可能性があるので確認
+      // 勝敗条件を確認
       _checkWinLose();
       if (_bs.result) return;
 
@@ -2242,85 +2266,77 @@ return true;
     function manhattan(a, b) {
       return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
     }
+
     function getEnemyAttackTargets(enemy) {
-  const range = enemy.attackRange || 'enemy_attack_front';
+      const range = enemy.attackRange || 'enemy_attack_front';
 
-  // 生存している味方のみ対象
-  const allies = _bs.allies.filter(a => a.hp > 0);
+      // 生存している味方のみ対象
+      const allies = _bs.allies.filter(a => a.hp > 0);
 
-  // enemy_attack_* / adjacent は BattleRange32 のレンジ定義で判定
-  if (range.startsWith('enemy_attack_') || range === 'adjacent') {
-    return BR.getUnitsFromRange32(enemy, range, allies);
-  }
+      // enemy_attack_* / adjacent は BattleRange32 のレンジ定義で判定
+      if (range.startsWith('enemy_attack_') || range === 'adjacent') {
+        return BR.getUnitsFromRange32(enemy, range, allies);
+      }
 
-  // 後方互換：manhattan_N
-  const m = /^manhattan_(\d+)$/.exec(range);
-  if (m) {
-    const dist = Number(m[1]);
-    return allies.filter(a => manhattan(enemy, a) <= dist);
-  }
+      // 後方互換：manhattan_N
+      const m = /^manhattan_(\d+)$/.exec(range);
+      if (m) {
+        const dist = Number(m[1]);
+        return allies.filter(a => manhattan(enemy, a) <= dist);
+      }
 
-  // その他はそのまま BattleRange32 に委譲
-  return BR.getUnitsFromRange32(enemy, range, allies);
-}
+      // その他はそのまま BattleRange32 に委譲
+      return BR.getUnitsFromRange32(enemy, range, allies);
+    }
+
+    function _isEriPriorityEnemy(enemy) {
+      return !!(enemy && (enemy.isBoss || enemy.eriPriority || enemy.targetPriority === 'eri' || enemy.aiTarget === 'eri'));
+    }
+
+    function _pickClosestUnit(from, units) {
+      const list = (units || []).filter(u => u && u.hp > 0);
+      if (list.length === 0) return null;
+      return list.slice().sort((a, b) => {
+        const da = manhattan(from, a);
+        const db = manhattan(from, b);
+        if (da !== db) return da - db;
+        return Math.random() < 0.5 ? -1 : 1;
+      })[0];
+    }
+
+    function _pickEnemyAttackTarget(enemy, targets) {
+      const list = (targets || []).filter(t => t && t.hp > 0);
+      if (list.length === 0) return null;
+
+      if (_isEriPriorityEnemy(enemy)) {
+        const eri = getEriUnit();
+        const eriInRange = eri && eri.hp > 0 && list.some(t => t._uid === eri._uid);
+        if (eriInRange) return eri;
+      }
+
+      return _pickClosestUnit(enemy, list);
+    }
+
+    function _getEnemyMoveTarget(enemy) {
+      const allies = aliveAllies();
+      if (allies.length === 0) return null;
+
+      if (_isEriPriorityEnemy(enemy)) {
+        const eri = getEriUnit();
+        if (eri && eri.hp > 0) return eri;
+      }
+
+      return _pickClosestUnit(enemy, allies);
+    }
 
 function canEnemyAttackAllyCore(enemy) {
-  if (!_bs || !_bs.cores || !_bs.cores.ally) return false;
-
-  const core = _bs.cores.ally;
-  if (core.stability <= 0) return false;
-
-  const range = enemy.attackRange || 'enemy_attack_front';
-  const corePos = { row: core.row, col: core.col };
-
-  // コアに上下左右で隣接している敵は、攻撃レンジに関係なくコア攻撃可能
-  // 隣接はマンハッタン距離1のみ（斜め隣接は含めない）
-  if (manhattan(enemy, corePos) === 1) {
-    return true;
-  }
-
-  // enemy_attack_* / adjacent はレンジ定義で判定
-  if (range.startsWith('enemy_attack_') || range === 'adjacent') {
-    const cells = BR.getCellsFromRange32(enemy, range);
-    return cells && cells.has(`${core.row}-${core.col}`);
-  }
-
-  // 後方互換：manhattan_N
-  const m = /^manhattan_(\d+)$/.exec(range);
-  if (m) {
-    const dist = Number(m[1]);
-    return manhattan(enemy, corePos) <= dist;
-  }
-
-  const cells = BR.getCellsFromRange32(enemy, range);
-  return cells && cells.has(`${core.row}-${core.col}`);
+  // コア概念廃止：敵はコアを攻撃しない
+  return false;
 }
 
 function damageAllyCore(sourceEnemy) {
-  if (!_bs || !_bs.cores || !_bs.cores.ally) return false;
-
-  const core = _bs.cores.ally;
-  if (core.stability <= 0) return false;
-
-  core.stability = Math.max(0, core.stability - 1);
-
-  _log(`${sourceEnemy.name} が自陣コアを攻撃！ コア耐久度 ${core.stability}/${core.stabilityMax}`);
-
-  _emit('coreDamage', {
-    source: sourceEnemy ? {
-      _uid: sourceEnemy._uid,
-      name: sourceEnemy.name,
-      side: sourceEnemy.side,
-      row: sourceEnemy.row,
-      col: sourceEnemy.col,
-    } : null,
-    core: { ...core },
-    bs: _snapshot(),
-  });
-
-  _checkWinLose();
-
-  return true;
+  // コア概念廃止：互換用no-op
+  return false;
 }
 
 function getBossLineAttackCells(boss) {
@@ -2368,15 +2384,6 @@ function doBossLineAttack(boss) {
       }
     );
   });
-
-  // コアが直線上にある場合だけコアへダメージ
-  const core = _bs.cores?.ally;
-  if (core && core.stability > 0) {
-    const coreKey = `${core.row}-${core.col}`;
-    if (cells.has(coreKey)) {
-      damageAllyCore(boss);
-    }
-  }
 
   return true;
 }
@@ -2457,18 +2464,7 @@ function doBossLineAttack(boss) {
   }
 
     function _checkBossCoreCapture() {
-      const bc = _bs.bossCore;
-      if (!bc || bc.captured) return;
-
-      const boss = _bs.enemies.find(e => e.isBoss);
-
-      // ボスHP0以下で即座に撃破・収容完了
-      if (boss && boss.hp <= 0) {
-        bc.exposed  = true;
-        bc.captured = true;
-        _log('ボスを撃破。収容完了！');
-        _emit('bossCoreCapture', { bs: _snapshot() });
-      }
+      // コア概念廃止：ボスHP0は _checkWinLose() で直接勝利判定する
     }
 
   // ============================================================
@@ -2512,11 +2508,6 @@ function doBossLineAttack(boss) {
       if (u.hp > 0 || u.isBoss) occupied.add(`${u.row}-${u.col}`);
     });
 
-    // 自陣コア
-    if (_bs.cores && _bs.cores.ally) {
-      occupied.add(`${_bs.cores.ally.row}-${_bs.cores.ally.col}`);
-    }
-
     const candidates = [];
     rows.forEach(row => {
       cols.forEach(col => {
@@ -2545,8 +2536,7 @@ function doBossLineAttack(boss) {
   }
 
   async function _runEnemyPhase() {
-    // 盤面に味方が0体でも敵はコアへ向かって行動する。
-    // standby キャラが残っている場合は敗北しないため、早期 return せず通常フローを続ける。
+    // エリが生存していれば、他の味方が倒れていても通常フローを続ける。
     // 勝敗が確定している場合のみここで終了する。
     _checkWinLose();
     if (_bs.result) { _renderUI(); return; }
@@ -2621,8 +2611,8 @@ function doBossLineAttack(boss) {
 
   /**
    * 移動先が有効かどうかを判定する
-   * - 盤面外 / 他ユニット在室 / ボス在室 / 自陣コア は NG
-   * - 味方がいるマスは「駒取り」として許可する
+   * - 盤面外 / 他ユニット在室 / ボス在室 は NG
+   * - コア概念廃止により、コアマス制約は持たない
    */
   function _canEnemyMoveTo(row, col, enemy) {
     if (!BR.isValidCell(row, col)) return false;
@@ -2632,10 +2622,6 @@ function doBossLineAttack(boss) {
     // ボスのいるマス（HP0後の核露出状態も含む）は進入禁止
     const bossAtCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
     if (bossAtCell) return false;
-
-    // 自陣コアのマスは進入禁止（隣接から攻撃する仕様を維持）
-    const corePos = _bs.cores && _bs.cores.ally;
-    if (corePos && row === corePos.row && col === corePos.col) return false;
 
     const occupant = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === row && u.col === col);
 
@@ -2647,21 +2633,20 @@ function doBossLineAttack(boss) {
   }
 
   /**
-   * 味方コアへのマンハッタン距離
+   * 指定ターゲットへのマンハッタン距離
    */
-  function _distToAllyCore(row, col) {
-    const core = _bs.cores && _bs.cores.ally;
-    if (!core) return 999;
-    return Math.abs(row - core.row) + Math.abs(col - core.col);
+  function _distToTarget(row, col, target) {
+    if (!target) return 999;
+    return Math.abs(row - target.row) + Math.abs(col - target.col);
   }
 
   /**
-   * 候補マスをコアへの近さでソートする（同距離はランダム）
+   * 候補マスをターゲットへの近さでソートする（同距離はランダム）
    */
-  function _sortByCoreDistance(candidates) {
+  function _sortByTargetDistance(candidates, target) {
     return candidates.sort((a, b) => {
-      const da = _distToAllyCore(a.row, a.col);
-      const db = _distToAllyCore(b.row, b.col);
+      const da = _distToTarget(a.row, a.col, target);
+      const db = _distToTarget(b.row, b.col, target);
       if (da !== db) return da - db;
       return Math.random() < 0.5 ? -1 : 1;
     });
@@ -2691,26 +2676,25 @@ function doBossLineAttack(boss) {
     const candidates = getMoveCells(enemy._uid);
     if (!candidates || candidates.length === 0) return null;
 
-    const corePos = _bs.cores && _bs.cores.ally;
-
     // 駒取り廃止：空きマスへの移動のみ
     const moves = candidates.filter(c => c.cellType === 'move');
     if (moves.length === 0) return null;
 
-    const curDist = _distToAllyCore(enemy.row, enemy.col);
-    const approaching = moves.filter(c => {
-      if (!corePos) return true;
-      return _distToAllyCore(c.row, c.col) < curDist;
-    });
+    const target = _getEnemyMoveTarget(enemy);
+    if (!target) return null;
+
+    const curDist = _distToTarget(enemy.row, enemy.col, target);
+    const approaching = moves.filter(c => _distToTarget(c.row, c.col, target) < curDist);
 
     const pool = approaching.length > 0 ? approaching : moves;
-    const sorted = _sortByCoreDistance(pool);
+    const sorted = _sortByTargetDistance(pool, target);
     const chosen = sorted[0];
 
     if (approaching.length === 0) {
       console.log('[B32 enemy lateral move]', {
         name: enemy.name,
         moveType: enemy.moveType,
+        target: target.name,
         from: { row: enemy.row, col: enemy.col },
         to: chosen,
       });
@@ -2737,8 +2721,9 @@ function doBossLineAttack(boss) {
     const rangeTargets = getEnemyAttackTargets(enemy);
 
     if (rangeTargets.length > 0) {
-      // 射程内に味方がいる → HPが最も少ない味方を優先攻撃
-      const target = rangeTargets.reduce((a, b) => a.hp < b.hp ? a : b);
+      // 射程内に味方がいる → ボス/特殊敵はエリ優先、通常敵は最も近い味方を攻撃
+      const target = _pickEnemyAttackTarget(enemy, rangeTargets);
+      if (!target) return;
       const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
       applyDamage(target, dmg, enemy);
       _renderUI();
@@ -2747,14 +2732,6 @@ function doBossLineAttack(boss) {
       if (_bs.result) return;
       return;
     }
-    // 射程内に味方がいないが、自陣コアを攻撃できる場合
-if (canEnemyAttackAllyCore(enemy)) {
-  damageAllyCore(enemy);
-  _renderUI();
-  await wait(B32_WAIT.attack);
-  await wait(B32_WAIT.afterText);
-  return;
-}
 
     // ボスは固定（射程外でも移動しない）
     if (enemy.isBoss) {
@@ -2783,17 +2760,13 @@ if (canEnemyAttackAllyCore(enemy)) {
     // 移動後に攻撃可能か再チェック
     const afterMoveTargets = getEnemyAttackTargets(enemy);
     if (afterMoveTargets.length > 0) {
-      const target = afterMoveTargets.reduce((a, b) => a.hp < b.hp ? a : b);
+      const target = _pickEnemyAttackTarget(enemy, afterMoveTargets);
+      if (!target) return;
       const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
       applyDamage(target, dmg, enemy);
       _renderUI();
       await wait(B32_WAIT.afterText);
       if (_bs.result) return;
-    } else if (canEnemyAttackAllyCore(enemy)) {
-      damageAllyCore(enemy);
-      _renderUI();
-      await wait(B32_WAIT.attack);
-      await wait(B32_WAIT.afterText);
     }
   }   // end _runEnemySingleAction
 
@@ -2957,28 +2930,38 @@ if (canEnemyAttackAllyCore(enemy)) {
       }
     }
 
-    // ── ローグライト雑魚戦専用：敵全滅で勝利 ──────────────
-    // _rl_onBattleEnd が設定されており、かつボス戦でない場合のみ有効
-    // 通常ステージ（_rl_onBattleEnd === null）には影響しない
-    if (typeof _bs._rl_onBattleEnd === 'function' && !_bs.isBossStage) {
-      const hasAliveEnemy = _bs.enemies.some(e => e.hp > 0);
-      if (!hasAliveEnemy) {
+    // ── 敗北条件：エリのロスト ─────────────────
+    // 他の味方が倒れても、エリが生存していれば続行する。
+    if (isEriLost()) {
+      _bs.result = 'lose';
+      _bs.loseReason = 'eri_lost';
+      _bs.phase = 'end';
+      _log('✕ エリがロストした。収容失敗…');
+      _clearResume();
+      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
+      _renderUI();
+      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
+      return;
+    }
+
+    // ── 勝利条件 ──────────────────────────────
+    // ボスがいるバトル：ボス破壊で勝利
+    // ボスがいないバトル：敵全滅で勝利
+    if (hasBossInBattle()) {
+      if (aliveBosses().length === 0) {
         _bs.result = 'win';
-        _bs.phase  = 'end';
-        _log('★ 雑魚群の制圧に成功！');
+        _bs.phase = 'end';
+        _log('★ ボスの破壊に成功！');
         _clearResume();
         _emit('result', { result: 'win', bs: _snapshot() });
         _renderUI();
         _notifyRogueliteBattleEnd('win');
         return;
       }
-    }
-
-    // 勝利条件：神性核の固定（ボスコア制圧）
-    if (_bs.bossCore?.captured) {
+    } else if (aliveEnemies().length === 0) {
       _bs.result = 'win';
-      _bs.phase = 'end';
-      _log('★ 神性核固定・収容完了！');
+      _bs.phase  = 'end';
+      _log('★ 敵群の制圧に成功！');
       _clearResume();
       _emit('result', { result: 'win', bs: _snapshot() });
       _renderUI();
@@ -2986,39 +2969,12 @@ if (canEnemyAttackAllyCore(enemy)) {
       return;
     }
 
-    if (_bs.cores?.ally?.stability <= 0) {
-      _bs.result = 'lose';
-      _bs.loseReason = 'core_destroyed';
-      _bs.phase = 'end';
-      _log('✕ 自陣コアが侵食された。収容失敗…');
-      _clearResume();
-      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
-      _renderUI();
-      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
-      return;
-    }
-
+    // ── 敗北条件：ターン経過によるタイムオーバー ───────
     if (_bs.turn >= _bs.turnLimit) {
       _bs.result = 'lose';
       _bs.loseReason = 'turn_over';
       _bs.phase = 'end';
       _log('✕ 接続限界を超過。強制帰還…');
-      _clearResume();
-      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
-      _renderUI();
-      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
-      return;
-    }
-
-    if (aliveAllies().length === 0) {
-      // ローグライト: standbyキャラが残っている場合は敗北しない
-      const hasStandby = _bs.roster && _bs.roster.some(r => r.status === 'standby');
-      if (hasStandby) return; // まだ召喚できる
-
-      _bs.result = 'lose';
-      _bs.loseReason = 'all_dead';
-      _bs.phase = 'end';
-      _log('✕ 味方全滅。敗北…');
       _clearResume();
       _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
       _renderUI();
@@ -3055,16 +3011,11 @@ if (canEnemyAttackAllyCore(enemy)) {
 
     const offsets = BR.getMoveOffsets(unit);
     const cells   = [];
-    const allyCore = _bs.cores && _bs.cores.ally;
-
     offsets.forEach(({ dr, dc }) => {
       const row = unit.row + dr;
       const col = unit.col + dc;
 
       if (!BR.isValidCell(row, col)) return;
-
-      // 自陣コアは進入禁止
-      if (allyCore && row === allyCore.row && col === allyCore.col) return;
 
       const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
 
@@ -3095,13 +3046,6 @@ if (canEnemyAttackAllyCore(enemy)) {
       const ally = _bs.allies.find(u => u._uid === allyUid);
       if (!ally || ally.hp <= 0) return false;
       if (!_canUsePlayerAction('move', allyUid)) return false;
-
-      // 自陣コアマスへの直叩き対策（最終ガード）
-      const _allyCore = _bs.cores && _bs.cores.ally;
-      if (_allyCore && toRow === _allyCore.row && toCol === _allyCore.col) {
-        _log('自陣コアのマスには移動できない');
-        return false;
-      }
 
       const moveCells = getMoveCells(allyUid);
       const targetCell = moveCells.find(c => c.row === toRow && c.col === toCol);
@@ -3307,10 +3251,8 @@ if (canEnemyAttackAllyCore(enemy)) {
   // 召喚可能マス一覧
   function getSummonCells(rosterId) {
     const result = [];
-    const allyCore = _bs.cores && _bs.cores.ally;
     for (let row of [6, 7]) {
       for (let col = 0; col < 5; col++) {
-        if (allyCore && row === allyCore.row && col === allyCore.col) continue;
         if (_isOccupied(row, col)) continue;
         result.push({ row, col, cellType: 'summon' });
       }
@@ -3418,8 +3360,6 @@ if (canEnemyAttackAllyCore(enemy)) {
       if (toRow == null || toCol == null) { _log('移動先が指定されていません'); return false; }
 
       // 移動先チェック
-      const allyCore = _bs.cores && _bs.cores.ally;
-      if (allyCore && toRow === allyCore.row && toCol === allyCore.col) { _log('コアマスには移動できません'); return false; }
       if (_isOccupied(toRow, toCol) && !(target.row === toRow && target.col === toCol)) { _log('そのマスは占有されています'); return false; }
       if (toRow < 0 || toRow >= BOARD_ROWS || toCol < 0 || toCol >= BOARD_COLS) { _log('盤面外には移動できません'); return false; }
 

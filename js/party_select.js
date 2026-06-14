@@ -6,12 +6,26 @@
   // selected: { charaId }[]  通常最大3件 / ローグライト最大4件
   let selected = [];
 
+  // ローグライト専用：主人公エリは1st固定
+  const ROGUELITE_FIXED_FIRST_CHARA_ID = 1;
+
   let currentEnemyRef = 'enemy_01';
   let currentBattleOptions = {};
 
   function _isRogueliteMode() { return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite'; }
   function _maxPartySize() { return _isRogueliteMode() ? 4 : 3; }
-  function _minPartySize() { return _isRogueliteMode() ? 1 : 3; }
+  function _minPartySize() { return _isRogueliteMode() ? 4 : 3; }
+  function _isFixedFirstChara(charaId) {
+    return _isRogueliteMode() && Number(charaId) === ROGUELITE_FIXED_FIRST_CHARA_ID;
+  }
+  function _ensureRogueliteFixedFirst() {
+    if (!_isRogueliteMode()) return;
+
+    // エリを必ず先頭に置き、重複があれば除去する。
+    selected = selected.filter(s => Number(s.charaId) !== ROGUELITE_FIXED_FIRST_CHARA_ID);
+    selected.unshift({ charaId: ROGUELITE_FIXED_FIRST_CHARA_ID, fixed: true });
+    selected = selected.slice(0, _maxPartySize());
+  }
 
 
   // パーティ編成画面専用画像
@@ -199,6 +213,18 @@
         display: flex;
         align-items: center;
         justify-content: center;
+      }
+      .ps-slot.fixed { cursor: default; }
+      .ps-slot-lock {
+        position: absolute;
+        top: 3px; right: 3px;
+        padding: 2px 4px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.68);
+        color: rgba(232,228,220,0.72);
+        font-family: "Cinzel", serif;
+        font-size: 6px;
+        letter-spacing: .08em;
       }
       /* キャラ一覧 */
       .ps-list-wrap {
@@ -551,7 +577,8 @@
         cursor: pointer; font-family: "Noto Serif JP", serif; display: block;
       }
       .ps-detail-close:active { background: rgba(255,255,255,0.1); }
-      .ps-chara-card.pressing .ps-chara-img-wrap {
+      .ps-chara-card.pressing .ps-chara-img-wrap,
+      .ps-slot.pressing .ps-slot-box {
         border-color: rgba(232,228,220,0.5);
         transform: scale(0.95);
         transition: transform 0.1s;
@@ -577,7 +604,7 @@
     const subEl = document.getElementById('ps-sub-text');
     if (subEl) {
       subEl.textContent = _isRogueliteMode()
-        ? '1〜4人選択 · 連れていくキャラを選んでください'
+        ? 'エリ固定 · 2〜4枠目のキャラを選んでください'
         : '3人選択 · 連れていくキャラを選んでください';
     }
 
@@ -589,12 +616,12 @@
         const imgSrc = getPartySelectImg(chara);
         const name   = chara ? chara.name : '';
         return `
-          <div class="ps-slot filled" onclick="_psRemoveSlot(${i})">
+          <div class="ps-slot filled${entry.fixed ? ' fixed' : ''}" data-slot-index="${i}">
             <div class="ps-slot-box">
               <img class="ps-slot-img" src="${imgSrc}" onerror="this.style.opacity='0'">
               ${chara && unitElementIcon(chara.element) ? `<img class="ps-slot-element-icon" src="${unitElementIcon(chara.element)}" alt="${unitElementLabel(chara.element)}" title="${unitElementLabel(chara.element)}" onerror="this.style.display='none'">` : ''}
-              <div class="ps-slot-chara-name">${name}</div>
-              <div class="ps-slot-remove">✕</div>
+              <div class="ps-slot-chara-name">${entry.fixed ? '1st · ' : ''}${name}</div>
+              ${entry.fixed ? '<div class="ps-slot-lock">LOCK</div>' : '<div class="ps-slot-remove">✕</div>'}
             </div>
           </div>
         `;
@@ -612,6 +639,13 @@
       }
     }).join('');
 
+    // スロット：タップで解除 / 長押しで詳細表示
+    wrap.querySelectorAll('.ps-slot.filled[data-slot-index]').forEach(slot => {
+      const idx = Number(slot.dataset.slotIndex);
+      const entry = selected[idx];
+      if (entry) setupSlotCard(slot, entry, idx);
+    });
+
     // 戦闘開始ボタン：通常は3体必須 / ローグライトは1体以上で有効化
     const btn = document.getElementById('ps-btn-start');
     const minSize = _minPartySize();
@@ -620,10 +654,89 @@
 
   // スロット削除（クリック時に左詰め）
   window._psRemoveSlot = function (idx) {
+    const entry = selected[idx];
+    if (entry && entry.fixed) return;
+
     selected.splice(idx, 1);
+    _ensureRogueliteFixedFirst();
     renderSlots();
     renderCharaList();
   };
+
+  // スロット：タップで解除、長押しでキャラ詳細を表示
+  // エリ固定枠はタップ解除不可。ただし長押しで能力確認は可能。
+  function setupSlotCard(slot, entry, idx) {
+    if (!slot || !entry) return;
+
+    let pressTimer = null;
+    let pressing = false;
+    let longPressed = false;
+    let startX = 0;
+    let startY = 0;
+
+    const start = (e) => {
+      const touch = e.touches ? e.touches[0] : e;
+      if (!touch) return;
+
+      startX = touch.clientX;
+      startY = touch.clientY;
+      pressing = true;
+      longPressed = false;
+      slot.classList.add('pressing');
+
+      pressTimer = setTimeout(() => {
+        longPressed = true;
+        pressing = false;
+        pressTimer = null;
+        slot.classList.remove('pressing');
+        showCharaDetail(entry.charaId);
+      }, 500);
+    };
+
+    const move = (e) => {
+      if (!pressing) return;
+      const touch = e.touches ? e.touches[0] : e;
+      if (!touch) return;
+
+      const dx = Math.abs(touch.clientX - startX);
+      const dy = Math.abs(touch.clientY - startY);
+      if (dx > 6 || dy > 6) cancel();
+    };
+
+    const cancel = () => {
+      slot.classList.remove('pressing');
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+      pressing = false;
+    };
+
+    const end = () => {
+      slot.classList.remove('pressing');
+
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+
+        if (pressing && !longPressed && !entry.fixed) {
+          window._psRemoveSlot(idx);
+        }
+      }
+
+      pressing = false;
+      setTimeout(() => { longPressed = false; }, 0);
+    };
+
+    slot.addEventListener('touchstart', start, {passive: true});
+    slot.addEventListener('touchmove', move, {passive: true});
+    slot.addEventListener('touchend', end);
+    slot.addEventListener('touchcancel', cancel);
+    slot.addEventListener('mousedown', start);
+    slot.addEventListener('mousemove', move);
+    slot.addEventListener('mouseup', end);
+    slot.addEventListener('mouseleave', cancel);
+  }
 
   // ============================================================
   // キャラ一覧レンダリング
@@ -633,15 +746,20 @@
     if (!list) return;
     list.innerHTML = '';
 
-    const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
+    // 表示順は characters.js の CHARACTERS 配列順。
+    // ローグライトでは主人公エリは1st固定枠にだけ表示し、選択候補一覧からは除外する。
+    const chars = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : [])
+      .filter(c => !(_isRogueliteMode() && Number(c.id) === ROGUELITE_FIXED_FIRST_CHARA_ID));
+
     chars.forEach(c => {
-      const owned = typeof collected !== 'undefined' && !!collected[c.id];
+      const owned = _isFixedFirstChara(c.id) || (typeof collected !== 'undefined' && !!collected[c.id]);
       const isSelected = selected.some(s => s.charaId === c.id);
 
       const card = document.createElement('div');
       card.className = 'ps-chara-card'
         + (!owned ? ' not-owned' : '')
-        + (isSelected ? ' selected' : '');
+        + (isSelected ? ' selected' : '')
+        + (_isFixedFirstChara(c.id) ? ' fixed-first' : '');
       card.innerHTML = `
         <div class="ps-chara-img-wrap">
           <img src="${getPartySelectImg(c)}" onerror="this.style.opacity='0'">
@@ -1052,10 +1170,13 @@
 
   // キャラタップ：空き枠に追加、選択済みなら解除（左詰め）
   function onCharaTap(charaId) {
+    if (_isFixedFirstChara(charaId)) return;
+
     const idx = selected.findIndex(s => s.charaId === charaId);
     if (idx !== -1) {
-      // 選択解除 → 左詰め
+      // 選択解除 → 左詰め（ローグライトの1st固定エリは維持）
       selected.splice(idx, 1);
+      _ensureRogueliteFixedFirst();
       renderSlots();
       renderCharaList();
       return;
@@ -1064,6 +1185,7 @@
     if (selected.length >= _maxPartySize()) return;
 
     selected.push({ charaId });
+    _ensureRogueliteFixedFirst();
     renderSlots();
     renderCharaList();
   }
@@ -1072,6 +1194,7 @@
   // 戦闘開始
   // ============================================================
   window.confirmPartySelect = function () {
+    _ensureRogueliteFixedFirst();
     if (selected.length < _minPartySize()) return;
 
     // Battle32 に渡す partyIds（選択順の charaId 配列）
@@ -1187,6 +1310,7 @@
 
     buildModal();
     selected = [];
+    _ensureRogueliteFixedFirst();
     const el = document.getElementById('party-select-modal');
     el.style.display = 'flex';
     void el.offsetWidth;
