@@ -773,20 +773,33 @@
 
   function getPartyMoveTypeLabel(moveType) {
     const map = {
-      pawn: '歩型：前方1マス',
-      lance: '香型：前方直線',
-      gold: '金型：前・左右',
-      silver: '銀型：前方3方向',
-      rook_short: '飛車型：前・左右',
-      shigure: 'シグレ型：前・後方横3',
-      miyu: 'ミユ型：前方直線3',
-      eri: 'エリ型：上下左右',
-      aki: 'アキ型：前後2・前桂馬',
-      asami: 'アサミ型：前後・斜め前',
-      chisaka: 'チサカ型：前・左右・飛越',
-      yuzuha: 'ユズハ型：前2・後方斜め',
-      bishop_short: '角型：斜め3方向',
-      knight: '桂馬型：前方桂馬',
+      // 汎用名（正式）
+      pawn: '前方1マス',
+      front_1: '前方1マス',
+      lance: '前方直線3マス',
+      line_front_3: '前方直線3マス',
+      gold: '前・左右',
+      front_side_3: '前・左右',
+      silver: '前方3方向',
+      front_diag_3: '前方3方向',
+      rook_short: '前・左右',
+      bishop_short: '斜め前2方向＋斜め後ろ',
+      knight: '前方桂馬',
+      cross_1: '上下左右1マス',
+      front_back_row3: '前1・後方横3',
+      front_back_frontdiag: '前後・斜め前',
+      vertical2_frontdiag2: '前後2・前桂馬',
+      front_side_jump: '前・左右・飛越',
+      front2_backdiag2: '前2・後方斜め',
+
+      // 旧名互換
+      shigure: '前1・後方横3',
+      miyu: '前方直線3マス',
+      eri: '上下左右1マス',
+      aki: '前後2・前桂馬',
+      asami: '前後・斜め前',
+      chisaka: '前・左右・飛越',
+      yuzuha: '前2・後方斜め',
       none: '移動なし'
     };
     return map[moveType] || (moveType || 'silver');
@@ -836,7 +849,6 @@
                   <div class="ps-detail-move-type">移動</div>
                 </div>
                 <div class="ps-detail-move-desc">このキャラの移動可能マスを表示します。</div>
-                <div class="ps-detail-move-meta">MOVE / PARTY SELECT</div>
               </div>
               ${board}
             </div>
@@ -849,17 +861,27 @@
   function fallbackPartyMoveOffsets(moveType) {
     const presets = {
       pawn: [{ dr:-1, dc:0 }],
+      front_1: [{ dr:-1, dc:0 }],
       lance: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
+      line_front_3: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
       gold: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+      front_side_3: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
       silver: [{ dr:-1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
+      front_diag_3: [{ dr:-1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
       rook_short: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
       shigure: [{ dr:-1, dc:0 }, { dr:1, dc:-1 }, { dr:1, dc:0 }, { dr:1, dc:1 }],
+      front_back_row3: [{ dr:-1, dc:0 }, { dr:1, dc:-1 }, { dr:1, dc:0 }, { dr:1, dc:1 }],
       miyu: [{ dr:-1, dc:0 }, { dr:-2, dc:0 }, { dr:-3, dc:0 }],
       eri: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
+      cross_1: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }],
       aki: [{ dr:-2, dc:0 }, { dr:2, dc:0 }, { dr:-2, dc:-1 }, { dr:-2, dc:1 }],
+      vertical2_frontdiag2: [{ dr:-2, dc:0 }, { dr:2, dc:0 }, { dr:-2, dc:-1 }, { dr:-2, dc:1 }],
       asami: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
+      front_back_frontdiag: [{ dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:-1, dc:-1 }, { dr:-1, dc:1 }],
       chisaka: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }, { dr:-2, dc:0 }, { dr:-2, dc:-2 }, { dr:-2, dc:2 }],
+      front_side_jump: [{ dr:-1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 }, { dr:-2, dc:0 }, { dr:-2, dc:-2 }, { dr:-2, dc:2 }],
       yuzuha: [{ dr:-2, dc:0 }, { dr:2, dc:-1 }, { dr:2, dc:1 }],
+      front2_backdiag2: [{ dr:-2, dc:0 }, { dr:2, dc:-1 }, { dr:2, dc:1 }],
       bishop_short: [{ dr:-1, dc:-1 }, { dr:-1, dc:1 }, { dr:1, dc:-1 }],
       knight: [{ dr:-2, dc:-1 }, { dr:-2, dc:1 }],
       none: []

@@ -289,84 +289,72 @@ enemy_attack_line: [
   };
 
   // ============================================================
-  // 移動型プリセット（将棋駒風移動定義）
+  // 移動型プリセット（汎用移動定義）
   // 味方は上方向（dr: -1）を前方とする
   // 敵の場合は getMoveOffsets 内で dr を反転
   // ============================================================
   const MOVE_PRESETS_32 = {
-    // 歩：前方1マス
+    // pawn：前方1マス
     pawn: [
       { dr: -1, dc: 0 }
     ],
-    // 香：前方直線最大3マス
-    lance: [
-      { dr: -1, dc: 0 },
-      { dr: -2, dc: 0 },
-      { dr: -3, dc: 0 }
-    ],
-    // 金将：前・左・右
-    gold: [
+    // front_side_3：前・左・右
+    front_side_3: [
       { dr: -1, dc:  0 },
       { dr:  0, dc: -1 },
       { dr:  0, dc:  1 }
     ],
-    // 銀将：前・斜め前左・斜め前右
+    // silver：前・斜め前左・斜め前右（未指定時のデフォルト）
     silver: [
       { dr: -1, dc:  0 },
       { dr: -1, dc: -1 },
       { dr: -1, dc:  1 }
     ],
-    // 飛車（短縮）：前・左・右 各1マス
-    rook_short: [
-      { dr: -1, dc:  0 },
-      { dr:  0, dc: -1 },
-      { dr:  0, dc:  1 }
-    ],
-    // シグレ型
+    // front_back_row3：前1・後方横3
     // 　□
     // 　自
     // □□□
-    shigure: [
+    front_back_row3: [
       { dr: -1, dc:  0 },
       { dr:  1, dc: -1 },
       { dr:  1, dc:  0 },
       { dr:  1, dc:  1 },
     ],
 
-    // ミユ型：前方直進3マス
-    miyu: [
+    // line_front_3：前方直進3マス
+    line_front_3: [
       { dr: -1, dc:  0 },
       { dr: -2, dc:  0 },
       { dr: -3, dc:  0 },
     ],
 
-    // エリ型：上下左右1マス
-    eri: [
+    // cross_1：上下左右1マス
+    cross_1: [
       { dr: -1, dc:  0 },
       { dr:  1, dc:  0 },
       { dr:  0, dc: -1 },
       { dr:  0, dc:  1 },
     ],
 
-    // アキ型：前2・後2・前桂馬左右
-    aki: [
+    // vertical2_frontdiag2：前後2・前方斜め2
+    vertical2_frontdiag2: [
       { dr: -2, dc:  0 },
       { dr:  2, dc:  0 },
       { dr: -2, dc: -1 },
       { dr: -2, dc:  1 },
     ],
 
-    // アサミ型：前・後・左前・右前
-    asami: [
+    // front_back_frontdiag：前・後・左前・右前
+    front_back_frontdiag: [
       { dr: -1, dc:  0 },
       { dr:  1, dc:  0 },
       { dr: -1, dc: -1 },
       { dr: -1, dc:  1 },
     ],
 
-// チサカ型：敵を飛び越えて背後に回る暗殺移動
+// front_side_jump：前・左右＋飛び越え移動
 // 2マス先へ跳ぶ。中間マスに敵がいる場合のみ有効にする想定。
-chisaka: [
+front_side_jump: [
   // 通常移動
   { dr: -1, dc:  0 },
   { dr:  0, dc: -1 },
@@ -378,8 +366,8 @@ chisaka: [
   { dr: -2, dc:  2 }, // 右前の敵を越える
 ],
 
-    // ユズハ型：前2・右後2・左後2
-yuzuha: [
+    // front2_backdiag2：前2・後方斜め2方向
+front2_backdiag2: [
   { dr: -2, dc:  0 }, // 2マス上
   { dr:  2, dc: -1 }, // 2マス下・左
   { dr:  2, dc:  1 }, // 2マス下・右
@@ -450,7 +438,24 @@ yuzuha: [
   // 移動型は MOVE_PRESETS_32 に集約する。
   // キャラ個別の moveCells は使わない。
 
-  const type = unit.moveType || 'silver';
+  const rawType = unit.moveType || 'silver';
+
+  // 旧キャラ固有名・旧将棋名の互換変換。
+  // characters.js 側は汎用名へ置換済みだが、保存データや古い参照が残っても壊れないようにする。
+  const MOVE_TYPE_ALIASES = {
+    gold: 'front_side_3',
+    rook_short: 'front_side_3',
+    lance: 'line_front_3',
+    miyu: 'line_front_3',
+    eri: 'cross_1',
+    shigure: 'front_back_row3',
+    asami: 'front_back_frontdiag',
+    aki: 'vertical2_frontdiag2',
+    chisaka: 'front_side_jump',
+    yuzuha: 'front2_backdiag2',
+  };
+
+  const type = MOVE_TYPE_ALIASES[rawType] || rawType;
 
   // 移動なし
   if (type === 'none') return [];

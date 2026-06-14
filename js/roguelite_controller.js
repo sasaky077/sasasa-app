@@ -54,42 +54,218 @@
 
 /* ── ラン中HUD（画面上部） ── */
 #rl-hud {
-  position: fixed;
-  top: calc(max(14px, env(safe-area-inset-top, 14px)));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 170000;
+  position: relative;
+  z-index: 2;
+  flex: 0 0 36px;
   display: none;
   align-items: center;
-  gap: 10px;
-  background: rgba(14,8,36,0.88);
-  border: 1px solid rgba(140,100,255,0.28);
-  border-radius: 28px;
-  padding: 6px 16px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  justify-content: center;
   pointer-events: none;
-  white-space: nowrap;
-  max-width: 92vw;
+  width: 100%;
+  max-width: none;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 6px 0 5px;
+  margin: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.34), rgba(7,5,22,0.22));
+  border-bottom: 1px solid rgba(160,120,255,0.08);
 }
 #rl-hud.visible { display: flex; }
-.rl-hud-stage {
-  font-size: .72rem;
-  font-weight: 700;
-  color: #c0a8ff;
-  letter-spacing: .1em;
+.rl-hud-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  width: 100%;
+}
+.rl-hud-title { display: none; }
+.rl-hud-progress {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   font-family: "Cinzel", serif;
 }
-.rl-hud-div { color: rgba(140,100,255,0.35); font-size: .8rem; }
-.rl-hud-ops { display: flex; gap: 5px; flex-wrap: wrap; }
-.rl-hud-op {
-  font-size: .66rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: rgba(100,55,200,0.28);
-  border: 1px solid rgba(120,70,220,0.32);
-  color: #b09fff;
+.rl-hud-pip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.rl-hud-pip-bar {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  transition: background .25s ease, box-shadow .25s ease;
+}
+.rl-hud-pip.done .rl-hud-pip-bar {
+  background: rgba(108,63,255,0.72);
+}
+.rl-hud-pip.active .rl-hud-pip-bar {
+  background: rgba(184,127,255,0.98);
+  box-shadow: 0 0 9px rgba(184,127,255,0.82);
+}
+.rl-hud-pip-label {
+  font-size: .58rem;
+  line-height: 1;
+  letter-spacing: .05em;
+  color: rgba(190,165,255,0.32);
+}
+.rl-hud-pip.done .rl-hud-pip-label {
+  color: rgba(140,105,255,0.62);
+}
+.rl-hud-pip.active .rl-hud-pip-label {
+  color: rgba(218,198,255,0.92);
+  text-shadow: 0 0 6px rgba(184,127,255,0.55);
+}
+.rl-hud-pip.boss .rl-hud-pip-label {
+  letter-spacing: .02em;
+}
+.rl-hud-sep { display: none; }
+.rl-hud-node { display: none; }
+.rl-hud-ops { display: none; }
+.rl-hud-op { display: none; }
+/* ── ステージクリア演出 ── */
+#rl-stage-clear-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 210000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: rgba(0,0,0,0.86);
+  color: #fff;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: rl-stage-clear-in .22s ease both;
+}
+.rl-stage-clear-title {
+  font-family: "Cinzel", serif;
+  font-size: clamp(2rem, 9vw, 4rem);
+  font-weight: 900;
+  letter-spacing: .12em;
+  color: #efe6ff;
+  text-shadow: 0 0 18px rgba(170,115,255,.85), 0 0 48px rgba(100,54,255,.52);
+  transform: translateY(0);
+}
+.rl-stage-clear-sub {
+  margin-top: 12px;
   font-family: "Noto Serif JP", serif;
+  font-size: .78rem;
+  letter-spacing: .14em;
+  color: rgba(220,205,255,.58);
+}
+.rl-stage-clear-progress {
+  margin-top: 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  padding: 5px 10px 4px;
+  border-radius: 10px;
+  background: rgba(12,8,34,0.50);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.rl-stage-clear-pip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.rl-stage-clear-pip-bar {
+  width: 34px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  transition: background .25s ease, box-shadow .25s ease;
+}
+.rl-stage-clear-pip.done .rl-stage-clear-pip-bar,
+.rl-stage-clear-pip.active .rl-stage-clear-pip-bar {
+  background: rgba(184,127,255,0.96);
+  box-shadow: 0 0 8px rgba(184,127,255,0.70);
+}
+.rl-stage-clear-pip-label {
+  font-family: "Cinzel", serif;
+  font-size: .55rem;
+  line-height: 1;
+  letter-spacing: .05em;
+  color: rgba(190,165,255,.38);
+}
+.rl-stage-clear-pip.done .rl-stage-clear-pip-label,
+.rl-stage-clear-pip.active .rl-stage-clear-pip-label {
+  color: rgba(218,198,255,.92);
+}
+.rl-stage-clear-sep,
+.rl-stage-clear-node { display: none; }
+@keyframes rl-stage-clear-in {
+  from { opacity: 0; transform: scale(1.025); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+
+/* ── ステージ失敗演出 ── */
+#rl-stage-fail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 210000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(150,35,55,0.18), transparent 42%),
+    rgba(0,0,0,0.88);
+  color: #fff;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: rl-stage-clear-in .22s ease both;
+}
+.rl-stage-fail-title {
+  font-family: "Cinzel", serif;
+  font-size: clamp(2.2rem, 10vw, 4.4rem);
+  font-weight: 900;
+  letter-spacing: .14em;
+  color: #ffe8e8;
+  text-shadow:
+    0 0 18px rgba(255,70,90,.88),
+    0 0 52px rgba(170,20,50,.58),
+    0 2px 4px rgba(0,0,0,.95);
+}
+.rl-stage-fail-reason {
+  margin-top: 12px;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: clamp(1rem, 4.2vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: #ff9c9c;
+  text-shadow: 0 0 14px rgba(255,80,90,.65);
+}
+.rl-stage-fail-detail {
+  margin-top: 8px;
+  font-family: "Noto Serif JP", serif;
+  font-size: .76rem;
+  letter-spacing: .08em;
+  line-height: 1.7;
+  color: rgba(255,220,220,.66);
+  text-align: center;
+}
+.rl-stage-fail-stage {
+  margin-top: 22px;
+  font-family: "Cinzel", serif;
+  font-size: .68rem;
+  letter-spacing: .14em;
+  color: rgba(255,210,220,.42);
 }
 
 /* ── ラン結果オーバーレイ ── */
@@ -173,12 +349,49 @@
 
   // ── HUD 更新 ─────────────────────────────────────────────
   // ── HUD 更新 ─────────────────────────────────────────────
+function _makeStageProgressHtml(stageNo, baseClass) {
+  const current = Math.max(1, Math.min(4, Number(stageNo || 1)));
+  let html = '';
+
+  for (let i = 1; i <= 4; i++) {
+    const classes = [baseClass + '-pip'];
+    if (i < current) classes.push('done');
+    if (i === current) classes.push('active');
+    if (i === 4) classes.push('boss');
+
+    const label = i === 4 ? 'BOSS' : `ST${i}`;
+    html += `
+      <span class="${classes.join(' ')}">
+        <span class="${baseClass}-pip-bar"></span>
+        <span class="${baseClass}-pip-label">${label}</span>
+      </span>
+    `;
+  }
+
+  return html;
+}
+
 function _updateHud() {
+  const battleRoot = document.getElementById('battle32-root');
+  const battleHeader = document.getElementById('b32-header');
   let hud = document.getElementById('rl-hud');
+
+  // battle_32_ui.js の通常フローへ必ず組み込む。
+  // root/header がまだ無いタイミングでは body 直下に出さない。
+  if (!battleRoot || !battleHeader) {
+    if (hud && hud.parentNode === document.body) hud.remove();
+    return;
+  }
+
   if (!hud) {
     hud = document.createElement('div');
     hud.id = 'rl-hud';
-    document.body.appendChild(hud);
+  }
+
+  // Header → Stage Progress → Hint/Board の順を強制。
+  // renderBattle32UI() の再描画後もここで正しい位置へ戻す。
+  if (hud.parentNode !== battleRoot || hud.previousElementSibling !== battleHeader) {
+    battleRoot.insertBefore(hud, battleHeader.nextSibling);
   }
 
   if (!window.RogueliteRun || !window.RogueliteRun.isActive()) {
@@ -189,21 +402,16 @@ function _updateHud() {
   }
 
   const stageNo = window.RogueliteRun.getStageNo();
-  const ops     = window.RogueliteRun.getOptions();
-  const isBoss  = window.RogueliteRun.isBossStage();
-  const stageLabel = isBoss ? '⚔ BOSS' : `STAGE ${stageNo}`;
-
-  const opTagsHtml = ops.map(op =>
-    `<span class="rl-hud-op">${op.icon || '✦'} ${op.name}</span>`
-  ).join('');
+  const progressHtml = _makeStageProgressHtml(stageNo, 'rl-hud');
 
   hud.innerHTML = `
-    <span class="rl-hud-stage">🎲 ${stageLabel}</span>
-    ${ops.length > 0 ? '<span class="rl-hud-div">|</span>' : ''}
-    <div class="rl-hud-ops">${opTagsHtml}</div>
+    <div class="rl-hud-main">
+      <div class="rl-hud-progress" aria-label="Roguelite Stage Progress">
+        ${progressHtml}
+      </div>
+    </div>
   `;
 
-  // _hideHud() で display:none にした後でも再表示できるようにする
   hud.style.display = 'flex';
   hud.classList.add('visible');
 }
@@ -301,15 +509,15 @@ function _hideHud() {
 
   // ── バトル起動 ───────────────────────────────────────────
   function _startBattle() {
-  _hideHud();
-
   if (!window.RogueliteRun || !window.RogueliteRun.isActive()) return;
+
+  _updateHud();
 
   // 次のバトルを始めるので、古いBATTLE END再表示ブロックを解除
   window.__ROGUELITE_TRANSITIONING__ = false;
 
   const config = window.RogueliteRun.buildBattleConfig({
-    rogueliteOnBattleEnd: (payload) => _onBattleEnd(payload.result),
+    rogueliteOnBattleEnd: (payload) => _onBattleEnd(payload.result, payload),
     battleMode: 'roguelite',
   });
 
@@ -339,43 +547,131 @@ function _hideHud() {
       console.error('[RogueliteController] Battle32 が見つかりません');
     }
   }
-  function _waitVictoryConfirm() {
+  function _waitStageClear(stageNo) {
   return new Promise(resolve => {
     let done = false;
+    const current = Math.max(1, Math.min(4, Number(stageNo || 1)));
 
-    const blocker = document.createElement('div');
-    blocker.id = 'rl-victory-wait-layer';
-    blocker.style.cssText = [
-      'position:fixed',
-      'inset:0',
-      'z-index:210000',
-      'background:transparent',
-      'cursor:pointer',
-      '-webkit-tap-highlight-color:transparent',
-    ].join(';');
+    const old = document.getElementById('rl-stage-clear-overlay');
+    if (old) old.remove();
+
+    const ov = document.createElement('div');
+    ov.id = 'rl-stage-clear-overlay';
+    ov.innerHTML = `
+      <div class="rl-stage-clear-title">STAGE ${current} CLEAR</div>
+      <div class="rl-stage-clear-sub">${current >= 4 ? 'RUN COMPLETE' : 'REWARD SELECT'}</div>
+      <div class="rl-stage-clear-progress">
+        ${_makeStageProgressHtml(current, 'rl-stage-clear')}
+      </div>
+    `;
 
     function finish() {
       if (done) return;
       done = true;
       clearTimeout(timer);
-      if (blocker.parentNode) blocker.parentNode.removeChild(blocker);
-      resolve();
+
+      ov.style.transition = 'opacity .24s ease, transform .24s ease';
+      ov.style.opacity = '0';
+      ov.style.transform = 'scale(1.015)';
+
+      setTimeout(() => {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        resolve();
+      }, 250);
     }
 
-    blocker.addEventListener('pointerdown', (e) => {
+    ov.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       finish();
     }, { once: true });
 
-    document.body.appendChild(blocker);
+    document.body.appendChild(ov);
 
-    const timer = setTimeout(finish, 3000);
+    const timer = setTimeout(finish, 1400);
+  });
+}
+
+
+function _getLoseReasonView(reason) {
+  const key = String(reason || '').toLowerCase();
+
+  if (key === 'turn_over' || key === 'turnover' || key === 'time_over') {
+    return {
+      title: 'TURN OVER',
+      detail: '規定ターン内に制圧できなかったため、接続限界に到達しました。',
+    };
+  }
+
+  if (key === 'all_dead' || key === 'party_wipe' || key === 'annihilated') {
+    return {
+      title: '全滅',
+      detail: '出撃可能な味方が全員戦闘不能になりました。',
+    };
+  }
+
+  if (key === 'core_destroyed') {
+    return {
+      title: 'CORE BREAK',
+      detail: '自陣コアが侵食され、戦線を維持できませんでした。',
+    };
+  }
+
+  return {
+    title: 'MISSION FAILED',
+    detail: '作戦継続不能によりランを終了します。',
+  };
+}
+
+function _waitStageFail(payload) {
+  return new Promise(resolve => {
+    let done = false;
+    const reason = _getLoseReasonView(payload && (payload.reason || payload.loseReason));
+    const stageNo = window.RogueliteRun && window.RogueliteRun.getStageNo
+      ? window.RogueliteRun.getStageNo()
+      : null;
+
+    const old = document.getElementById('rl-stage-fail-overlay');
+    if (old) old.remove();
+
+    const ov = document.createElement('div');
+    ov.id = 'rl-stage-fail-overlay';
+    ov.innerHTML = `
+      <div class="rl-stage-fail-title">GAME OVER</div>
+      <div class="rl-stage-fail-reason">${reason.title}</div>
+      <div class="rl-stage-fail-detail">${reason.detail}</div>
+      ${stageNo ? `<div class="rl-stage-fail-stage">STAGE ${stageNo} FAILED</div>` : ''}
+    `;
+
+    function finish() {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+
+      ov.style.transition = 'opacity .24s ease, transform .24s ease';
+      ov.style.opacity = '0';
+      ov.style.transform = 'scale(1.015)';
+
+      setTimeout(() => {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        resolve();
+      }, 250);
+    }
+
+    ov.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      finish();
+    }, { once: true });
+
+    document.body.appendChild(ov);
+
+    const timer = setTimeout(finish, 1700);
   });
 }
 
  // ── バトル終了ハンドラ ──────────────────────────────────
-async function _onBattleEnd(result) {
+async function _onBattleEnd(result, payload) {
   _hideHud();
 
   if (!window.RogueliteRun || !window.RogueliteRun.isActive()) return;
@@ -383,8 +679,9 @@ async function _onBattleEnd(result) {
   console.log('[RogueliteController] バトル終了:', result,
     '/ Stage:', window.RogueliteRun.getStageNo());
 
-  // 敗北時はすぐBattle32だけ隠してラン失敗画面へ
+  // 敗北時：失敗理由を表示してからラン失敗画面へ
   if (result === 'lose') {
+    await _waitStageFail(payload || { reason: 'unknown' });
     _hideBattle32Only();
 
     const ops = window.RogueliteRun.getOptions();
@@ -394,8 +691,10 @@ async function _onBattleEnd(result) {
     return;
   }
 
-  // ボス戦勝利時もすぐ隠してラン成功画面へ
+  // ボス戦勝利時：STAGE 4 CLEAR を見せてからラン成功画面へ
   if (window.RogueliteRun.isBossStage()) {
+    const currentStage = window.RogueliteRun.getStageNo();
+    await _waitStageClear(currentStage);
     _hideBattle32Only();
 
     const ops = window.RogueliteRun.getOptions();
@@ -412,8 +711,8 @@ async function _onBattleEnd(result) {
 
   console.log('[RogueliteController] 報酬待機前');
 
-  // VICTORY画面を見せる：タップ or 3秒後に報酬画面へ
-  await _waitVictoryConfirm();
+  // STAGE CLEAR 演出を見せてから報酬画面へ
+  await _waitStageClear(currentStage);
 
   console.log('[RogueliteController] 報酬表示直前');
  
@@ -525,6 +824,7 @@ _startBattle();
     // デバッグ用: 直接終了コールバックを呼べるようにする
     _onBattleEnd,
     _updateHud,
+    _hideHud,
     _hideBattle32Only,
   };
 

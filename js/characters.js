@@ -29,7 +29,7 @@ const CHARACTERS = [
   { id: 12, name: 'アンジェリカ', rarity: 'ur',
     element: 'mystis',
     role: '回復寄り',
-    moveType: 'gold',
+    moveType: 'front_side_3',
     costMax: 12,
     costStart: 5,
     costRegen: 4,
@@ -61,7 +61,7 @@ const CHARACTERS = [
     { type: 'heal', target: 'ally_self', rate: 0.30 }
   ],
   hitStyle: 'multi',
-  desc: '自身のHPを30%回復し、前方1マスと左右1マスの敵にATK×0.7のダメージを与える。'
+  desc: '射程：前方1マス＋左右1マス。対象の敵にATK×0.7のダメージを与え、自身のHPを30%回復する。'
 },
   {
   id: 'ult',
@@ -76,7 +76,7 @@ const CHARACTERS = [
     { type: 'heal', target: 'ally_all', rate: 0.35 }
   ],
   hitStyle: 'all',
-  desc: '味方全体のHPを35%回復する。'
+  desc: '射程：味方全体。ダメージなし。味方全体のHPを35%回復する。'
 },
     ]},
 
@@ -85,7 +85,7 @@ const CHARACTERS = [
   { id: 6, name: 'カヒ', rarity: 'ur',
     element: 'mystis',
     role: '支援寄り',
-    moveType: 'gold',
+    moveType: 'front_side_3',
     costMax: 12,
     costStart: 5,
     costRegen: 4,
@@ -117,7 +117,7 @@ const CHARACTERS = [
           { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.15 }
         ],
         hitStyle: 'multi',
-        desc: '前方横3マスの敵にATK×1.2のダメージを与える。さらに味方全体のATKを1ターン15%上昇させる。'
+        desc: '射程：前方横3マス。対象の敵にATK×1.2のダメージを与え、味方全体のATKを1ターン15%上昇させる。'
       },
       {
         id: 'ult',
@@ -132,7 +132,7 @@ const CHARACTERS = [
           { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
         ],
         hitStyle: 'multi',
-        desc: '輪廻を揺らす神奏で、前方大十字範囲の敵にATK×2.6のダメージを与え、1ターン行動不能にする。'
+        desc: '射程：前方大十字範囲。対象の敵にATK×2.6のダメージを与え、1ターン行動不能にする。'
       },
     ]},
 
@@ -141,7 +141,7 @@ const CHARACTERS = [
   { id: 2, name: 'レイチェル', rarity: 'ur',
     element: 'chaos',
   role: '妨害寄り',
-  moveType: 'shigure',
+  moveType: 'front_back_row3',
     costMax: 10,
     costStart: 6,
     costRegen: 5,
@@ -169,7 +169,7 @@ const CHARACTERS = [
         multiplier: 1.5,
         range: 'fan_2row_3_ally',
         effects: [],
-        desc: '前方へ広がる範囲の敵にダメージを与える。' },
+        desc: '射程：前方2段×横3マス。対象の敵にATK×1.5のダメージを与える。' },
 
       {
   id: 'ult',
@@ -184,7 +184,7 @@ const CHARACTERS = [
     { type: 'stun', target: 'enemy', hit: 60, duration: 1 }
   ],
   hitStyle: 'multi',
-  desc: '前方にコウモリの群れが突撃、命中した敵を1ターンスタンさせる。'}
+  desc: '射程：前方特殊6マス。対象の敵にATK×2.2のダメージを与え、60%の確率で1ターン行動不能にする。'}
   ]},
 
   // ── id:3 アカネ（耐久寄り）──────────────────────────────────
@@ -192,7 +192,7 @@ const CHARACTERS = [
   { id: 3, name: 'アカネ', rarity: 'ur',
     element: 'chaos',
     role: '妨害寄り',
-    moveType: 'gold',
+    moveType: 'front_side_3',
     costMax: 14,
     costStart: 5,
     costRegen: 3,
@@ -221,7 +221,7 @@ const CHARACTERS = [
   effects: [
     { type: 'jittai', target: 'enemy', hit: 100, duration: 2 }
   ],
-  desc: '自分より前方にいるすべての怪異を2ターン実体化させる。' },
+  desc: '射程：自身より前方すべて。ダメージなし。対象の敵を2ターン実体化させる。' },
 
       { id: 'ult',
         name: '白鱗呑天',
@@ -235,14 +235,14 @@ const CHARACTERS = [
           { type: 'stun', target: 'enemy', hit: 50, duration: 1 }
         ],
         hitStyle: 'multi',
-        desc: '前方直線3マスの敵にダメージを与え、1ターンスタンさせる。' }
+        desc: '射程：前方直線3マス。対象の敵にATK×1.6のダメージを与え、50%の確率で1ターン行動不能にする。' }
     ]},
 
   // ── id:7 ルナ
 { id: 7, name: 'ルナ', rarity: 'ur',
     element: 'chaos',
   role: 'バランス寄り',
-  moveType: 'miyu',
+  moveType: 'line_front_3',
     costMax: 10,
     costStart: 5,
     costRegen: 3,
@@ -270,7 +270,7 @@ const CHARACTERS = [
         range: 'pierce3',
         effects: [],
         hitStyle: 'multi',
-        desc: '直線上3マス以内の敵にダメージ' },
+        desc: '射程：前方直線3マス。対象の敵にATK×1.2のダメージを与える。' },
 
       { id: 'ult',
         name: 'て、手加減しません！',
@@ -283,14 +283,14 @@ const CHARACTERS = [
         effects: [
         ],
         hitStyle: 'rapid',
-        desc: '自分を中心に周囲2マス以内の敵に中ダメージ' }
+        desc: '射程：自身の周囲2マス。対象の敵にATK×1.6のダメージを与える。' }
     ]},
 
     // ── id:7 シグレ
 { id: 5, name: 'シグレ', rarity: 'ur',
     element: 'logos',
   role: 'テクニック寄り',
-  moveType: 'gold',
+  moveType: 'front_side_3',
     costMax: 10,
     costStart: 5,
     costRegen: 3,
@@ -320,7 +320,7 @@ const CHARACTERS = [
           { type: 'push_1', target: 'enemy', hit: 100 }
         ],
         hitStyle: 'normal',
-        desc: '目の前の敵にダメージを与え、1マス押し出す。' },
+        desc: '射程：正面1マス。対象の敵にATK×1.2のダメージを与え、1マス押し出す。' },
 
       { id: 'ult',
         name: '藤影流奥義・酔ノ想葬',
@@ -334,14 +334,14 @@ const CHARACTERS = [
           { type: 'yoi_no_sousou', target: 'ally_self', hit: 100, duration: 2, counterMultiplier: 1.0 }
         ],
         hitStyle: 'multi',
-        desc: '自身の前方3マスにATK×1.5のダメージ。さらに自身に2ターンの間「酔ノ想葬」を付与する。酔ノ想葬：敵から攻撃される時、その攻撃を回避し、攻撃者に隣接する空きマスへ移動してATK×1.0の反撃を行う。効果中、この反撃は条件を満たすたびに発動する。' }
+        desc: '射程：前方横3マス。対象の敵にATK×1.5のダメージを与える。さらに自身に2ターンの間「酔ノ想葬」を付与する。酔ノ想葬：敵から攻撃される時、その攻撃を回避し、攻撃者に隣接する空きマスへ移動してATK×1.0の反撃を行う。' }
     ]},
   
   // ── id:1 エリ
 { id: 1, name: 'エリ', rarity: 'ur',
     element: 'mystis',
   role: 'バランス寄り',
-  moveType: 'eri',
+  moveType: 'cross_1',
     costMax: 14,
     costStart: 5,
     costRegen: 2,
@@ -368,7 +368,7 @@ const CHARACTERS = [
         multiplier: 1.3,
         range: 'side_lr',
         effects: [],
-        desc: '自身の左右1マス以内の敵にダメージ' },
+        desc: '射程：左右1マス。対象の敵にATK×1.3のダメージを与える。' },
 
       { id: 'ult',
         name: '駆け巡る閃光',
@@ -379,7 +379,7 @@ const CHARACTERS = [
         multiplier: 3.0,
         range: 'diag_x_2',
         effects: [],
-        desc: '自身を中心に斜め2マス以内の敵に大ダメージ' }
+        desc: '射程：自身中心の斜め2マス。対象の敵にATK×3.0のダメージを与える。' }
     ]},
 
   // ── id:13 チサカ（暗殺寄り）──────────────────────────────────
@@ -387,7 +387,7 @@ const CHARACTERS = [
   { id: 13, name: 'チサカ', rarity: 'ur',
     element: 'logos',
     role: 'テクニック寄り',
-    moveType: 'chisaka',
+    moveType: 'front_side_jump',
     costMax: 12,
     costStart: 6,
     costRegen: 4,
@@ -415,7 +415,7 @@ const CHARACTERS = [
         range: 'around8',
         backstabMultiplier: 2.0,
         effects: [],
-        desc: '周囲1マスの敵にダメージを与える。敵の背後から攻撃した場合、ダメージが2倍になる。' },
+        desc: '射程：自身の周囲1マス。対象の敵にATK×1.0のダメージを与える。敵の背後から攻撃した場合、ダメージが2倍になる。' },
 
       { id: 'ult',
         name: '無音',
@@ -428,7 +428,7 @@ const CHARACTERS = [
         backstabMultiplier: 2.0,
         effects: [],
         hitStyle: 'multi',
-        desc: '周囲2マスの敵にダメージを与える。敵の背後から攻撃した場合、ダメージが2倍になる。' }
+        desc: '射程：自身の周囲2マス。対象の敵にATK×1.8のダメージを与える。敵の背後から攻撃した場合、ダメージが2倍になる。' }
     ]},  
 
   // ══════════════════════════════════════════════════════════════
@@ -440,7 +440,7 @@ const CHARACTERS = [
   { id: 4, name: 'キティ', rarity: 'ur',
     element: 'mystis',
     role: 'テクニック寄り',
-    moveType: 'yuzuha',
+    moveType: 'front2_backdiag2',
     costMax: 14,
     costStart: 0,
     costRegen: 2,
@@ -468,7 +468,7 @@ const CHARACTERS = [
         range: 'diag_x_1',
         effects: [],
         hitStyle: 'rapid',
-        desc: '自分を中心にX字の範囲にダメージ' },
+        desc: '射程：自身中心の斜め1マス。対象の敵にATK×1.2のダメージを与える。' },
 
       { id: 'ult',
         name: '明日から本気出すもん',
@@ -482,14 +482,14 @@ const CHARACTERS = [
         hitStyle: 'multi',
         delayTurns: 2,
         delayedTrigger: 'allyTurnStart',
-        desc: '使用した2ターン後のターン開始時に固定マスに大ダメージ。' }
+        desc: '射程：盤面中央十字。使用から2ターン後のターン開始時、対象の敵にATK×2.2のダメージを与える。' }
     ]},
  
 // ── id:15 アキ
 { id: 15, name: 'アキ', rarity: 'ur',
     element: 'chaos',
   role: '妨害寄り',
-  moveType: 'aki',
+  moveType: 'vertical2_frontdiag2',
     costMax: 12,
     costStart: 7,
     costRegen: 2,
@@ -523,7 +523,7 @@ const CHARACTERS = [
              duration: 1 
             }
         ],
-        desc: '前方直線3マスの敵にダメージを与え、2マス引き寄せる。' },
+        desc: '射程：前方直線3マス。対象の敵にATK×1.3のダメージを与え、2マス引き寄せる。' },
 
       {
   id: 'ult',
@@ -538,7 +538,7 @@ const CHARACTERS = [
     { type: 'push_3', target: 'enemy', hit: 100, duration: 1 }
   ],
   hitStyle: 'multi',
-  desc: '自身の周囲8マスの敵にダメージを与え、3マス後退させる。'
+  desc: '射程：自身の周囲1マス。対象の敵にATK×1.0のダメージを与え、3マス後退させる。'
 }
     ]},
 
@@ -577,7 +577,7 @@ const CHARACTERS = [
         effects: [
           { type: 'stun', target: 'enemy', duration: 1, hit: 100 }
         ],
-        desc: '神経伝達を遮断する麻酔弾を撃ち込み、前方2マスの敵に小ダメージを与えて1ターン行動不能にする。'
+        desc: '射程：前方直線2マス。対象の敵にATK×0.8のダメージを与え、1ターン行動不能にする。'
       },
       {
         id: 'ult',
@@ -593,7 +593,7 @@ const CHARACTERS = [
           { type: 'atk_down', target: 'enemy', duration: 2, hit: 100, rate: 0.7 }
         ],
         hitStyle: 'all',
-        desc: '敵全体に小ダメージを与える。さらに1ターン行動不能にし、2ターンATKを低下させる。'
+        desc: '射程：敵全体。対象の敵にATK×0.8のダメージを与える。さらに30%の確率で1ターン行動不能にし、2ターンATKを低下させる。'
       }
     ]},
 
@@ -601,7 +601,7 @@ const CHARACTERS = [
   { id: 20, name: 'マアヤ', rarity: 'ur',
     element: 'logos',
     role: '支援寄り',
-    moveType: 'shigure',
+    moveType: 'front_back_row3',
     costMax: 10,
     costStart: 6,
     costRegen: 5,
@@ -630,7 +630,7 @@ const CHARACTERS = [
         effects: [
           { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.3 }
         ],
-        desc: '味方全体のATKを1ターン上昇させる。' },
+        desc: '射程：味方全体。ダメージなし。味方全体のATKを1ターン30%上昇させる。' },
 
       { id: 'ult',
         name: 'Toxic Mist',
@@ -644,7 +644,7 @@ const CHARACTERS = [
           { type: 'poison', target: 'enemy', hit: 100, duration: 3, rate: 0.50 }
         ],
         hitStyle: 'all',
-        desc: '毒性ミストを戦場全体に拡散し、敵全体に小ダメージを与える。さらに3ターンの間、毒による継続ダメージを与える。' }
+        desc: '射程：敵全体。対象の敵にATK×0.5のダメージを与える。さらに3ターンの間、毒による継続ダメージを与える。' }
     ]},
 
 
@@ -657,6 +657,7 @@ const CHARACTERS = [
   { id: 14, name: 'アイム', rarity: 'ur',
     element: 'chaos',
     role: 'テクニック寄り',
+    moveType: 'silver',
     costMax: 14,
     costStart: 6,
     costRegen: 4,
@@ -684,7 +685,7 @@ const CHARACTERS = [
     multiplier: 0.0,
     range: 'self',
     effects: [],
-    desc: 'このターン中、直前に発動した味方の通常スキルをもう一度発動する。'
+    desc: '射程：自身。ダメージなし。このターン中、直前に発動した味方の通常スキルをもう一度発動する。'
 },
 
 { id: 'ult',
@@ -698,7 +699,7 @@ const CHARACTERS = [
   range: 'field_all',
   effects: [],
   hitStyle: 'heavy',
-  desc: '盤面上のランダムな6マスを攻撃する。当たった敵にATKの4倍ダメージ。'
+  desc: '射程：盤面全体からランダム6マス。命中した敵にATK×4.0のダメージを与える。'
 }
     ]},
 
@@ -708,6 +709,7 @@ const CHARACTERS = [
   { id: 16, name: 'ミト', rarity: 'ur',
     element: 'mystis',
     role: '耐久寄り',
+    moveType: 'silver',
     costMax: 14,
     costStart: 5,
     costRegen: 3,
@@ -736,7 +738,7 @@ const CHARACTERS = [
         effects: [
           { type: 'jittai', target: 'enemy', hit: 80, duration: 2 }
         ],
-        desc: '攻撃しながら怪異を実体化させる。ATKの0.7倍のダメージ。' },
+        desc: '射程：自身の周囲1マス。対象の敵にATK×0.7のダメージを与え、80%の確率で2ターン実体化させる。' },
 
       { id: 'ult',
         name: 'ご飯の時間',
@@ -754,22 +756,22 @@ const CHARACTERS = [
         }
         ],
         hitStyle: 'multi',
-        desc: '与えたダメージの30%分、味方全員のHPを回復する。' }
+        desc: '射程：前方直線全体。対象の敵にATK×2.0のダメージを与える。さらに与えたダメージの30%分、味方全員のHPを回復する。' }
         ]},
 
  // ── id:8 アサミ
 { id: 8, 
   name: 'アサミ', rarity: 'ur',
-    element: 'logos',
+    element: 'chaos',
   role: '速度寄り',
-  moveType: 'asami',
+  moveType: 'front_back_frontdiag',
     costMax: 14,
     costStart: 4,
     costRegen: 2,
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 700, ATK: 280 },
+    stats: { HP: 600, ATK: 280 },
     img: 'images/chara_08.webp', 
     cutImg: 'images/chara_08_cut.webp', 
     ultImg: 'images/chara_08_cutin.webp',
@@ -780,7 +782,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 0.9},
     skills: [
       { id: 's1',
-        name: 'じゃっく！',
+        name: 'ギルティ',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -788,18 +790,18 @@ const CHARACTERS = [
         multiplier: 1.5,
         range: 'front1',
         effects: [],
-        desc: '正面のマスに中ダメージ' },
+        desc: '射程：正面1マス。対象の敵にATK×1.5のダメージを与える。' },
 
       { id: 'ult',
-        name: 'りっぱー！',
+        name: 'エグゼキュート',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
         type: 'attack',
-        multiplier: 2.2,
+        multiplier: 2.5,
         range: 'around8',
         effects: [],
-        desc: '自分を中心周囲1マスにダメージ' }
+        desc: '射程：自身の周囲1マス。対象の敵にATK×2.5のダメージを与える。' }
     ]},
 
   ];

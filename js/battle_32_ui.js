@@ -2801,6 +2801,8 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  </div>
  </div>
 
+ <div id="rl-hud" aria-label="Roguelite Stage Progress"></div>
+
  <div id="b32-hint-bar"></div>
 
  <div id="b32-boss-hp-ui" style="display:none">
@@ -5237,6 +5239,15 @@ applyBattle32ViewportClass(root);
     delete root.dataset.rlHidden;
   }
 
+  // ローグライト進捗バーは battle32-root の通常フローに差し込む。
+  // RogueliteController.startRun() は Battle32 DOM 生成前にも呼ばれるため、
+  // renderBattle32UI() 側からも毎回同期して表示漏れを防ぐ。
+  if (bs.isRoguelite && window.RogueliteController && typeof window.RogueliteController._updateHud === 'function') {
+    window.RogueliteController._updateHud();
+  } else if (window.RogueliteController && typeof window.RogueliteController._hideHud === 'function') {
+    window.RogueliteController._hideHud();
+  }
+
   renderHeader(bs);
   renderHintBar(bs);
   renderBossHp(bs);
@@ -5948,6 +5959,10 @@ if (!window.__b32RosterCloseCaptureBound) {
  const bossHpVisible = bossHp && getComputedStyle(bossHp).display !== 'none';
  const bossHpH = bossHpVisible ? bossHp.offsetHeight : 0;
 
+ const rlHud = document.getElementById('rl-hud');
+ const rlHudVisible = rlHud && getComputedStyle(rlHud).display !== 'none';
+ const rlHudH = rlHudVisible ? rlHud.offsetHeight : 0;
+
  const actionsVisible = actions && getComputedStyle(actions).display !== 'none';
  // actionsH はフロー計算では 0 扱い（position:fixed になったため）
  // ただし後段の --b32-actions-h 計算で使うため別途取得する
@@ -5960,6 +5975,7 @@ const reservedExtra = isCompact ? 0 : (isIphone14Like ? 20 : 20);
 
 const reservedH =
  header.offsetHeight +
+ rlHudH +
  hintH +
  bossHpH +
  actionsHFlow +

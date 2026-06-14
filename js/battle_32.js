@@ -168,6 +168,135 @@
   }
 
   // ============================================================
+  // ターン制限アラート演出
+  // ============================================================
+  // 残り3ターン以下で、画面フチの赤点滅 + 中央ターン表示の赤点滅/拡大を行う。
+  // battle_32_ui.js 側の中央テキスト関数は汎用のまま使い、
+  // ここで一時的にCSSクラスを付与して危険演出だけ上書きする。
+  function _injectTurnDangerStyle() {
+    if (document.getElementById('b32-turn-danger-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'b32-turn-danger-style';
+    style.textContent = `
+#b32-turn-danger-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+  pointer-events: none;
+  opacity: 0;
+  box-sizing: border-box;
+  border: 0 solid rgba(255,40,60,0);
+  transition: opacity .16s ease;
+}
+#b32-turn-danger-frame.active {
+  opacity: 1;
+  animation: b32TurnDangerEdge 900ms steps(2, end) infinite;
+}
+#b32-turn-danger-frame::before,
+#b32-turn-danger-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#b32-turn-danger-frame::before {
+  box-shadow:
+    inset 0 0 0 3px rgba(255,55,70,.82),
+    inset 0 0 22px rgba(255,20,30,.62),
+    inset 0 0 62px rgba(180,0,20,.34);
+}
+#b32-turn-danger-frame::after {
+  background:
+    linear-gradient(90deg, rgba(255,20,35,.28), transparent 18%, transparent 82%, rgba(255,20,35,.28)),
+    linear-gradient(180deg, rgba(255,20,35,.24), transparent 16%, transparent 84%, rgba(255,20,35,.24));
+  mix-blend-mode: screen;
+}
+@keyframes b32TurnDangerEdge {
+  0%, 100% { filter: brightness(1); opacity: .44; }
+  50% { filter: brightness(1.85); opacity: 1; }
+}
+#b32-center-text.b32ct-turn-danger::before {
+  background: radial-gradient(circle at 50% 50%, rgba(120,0,0,.62), rgba(0,0,0,.60) 46%, transparent 76%);
+}
+#b32-center-text.b32ct-turn-danger .b32ct-main {
+  color: #ff3b48 !important;
+  font-size: clamp(34px, 10vw, 62px) !important;
+  letter-spacing: 8px !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.84),
+    0 0 18px rgba(255,40,55,.95),
+    0 0 52px rgba(255,0,30,.82),
+    0 3px 6px rgba(0,0,0,1) !important;
+  animation: b32TurnDangerText 560ms ease-in-out infinite;
+}
+#b32-center-text.b32ct-turn-danger .b32ct-sub {
+  color: #ffd0d0 !important;
+  font-size: clamp(15px, 4.2vw, 21px) !important;
+  font-weight: 800 !important;
+  text-shadow:
+    0 0 10px rgba(255,60,80,.95),
+    0 2px 4px rgba(0,0,0,1) !important;
+  animation: b32TurnDangerSub 560ms ease-in-out infinite;
+}
+@keyframes b32TurnDangerText {
+  0%, 100% { transform: scale(1); opacity: .86; }
+  50% { transform: scale(1.13); opacity: 1; }
+}
+@keyframes b32TurnDangerSub {
+  0%, 100% { transform: scale(1); opacity: .72; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function _setTurnDangerAlert(active) {
+    _injectTurnDangerStyle();
+
+    let el = document.getElementById('b32-turn-danger-frame');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'b32-turn-danger-frame';
+      document.body.appendChild(el);
+    }
+
+    if (active) {
+      el.classList.add('active');
+      el.style.display = 'block';
+    } else {
+      el.classList.remove('active');
+      el.style.opacity = '0';
+      setTimeout(() => {
+        if (!el.classList.contains('active')) el.style.display = 'none';
+      }, 180);
+    }
+  }
+
+  async function _centerTextWaitTurn(main, sub, duration, isDanger) {
+    if (!isDanger) {
+      await _centerTextWait(main, sub, duration);
+      return;
+    }
+
+    _injectTurnDangerStyle();
+
+    // showBattle32CenterTextAsync だとクラス付与のタイミングが取りづらいため、
+    // 危険ターンだけは同期版を呼んでからclassを足す。
+    _centerText(main, sub, duration);
+
+    const center = document.getElementById('b32-center-text');
+    if (center) center.classList.add('b32ct-turn-danger');
+
+    await wait((duration || 1200) + 360);
+
+    const current = document.getElementById('b32-center-text');
+    if (current) current.classList.remove('b32ct-turn-danger');
+
+    await wait(B32_WAIT.afterText);
+  }
+
+  // ============================================================
   // ユーティリティ
   // ============================================================
   function deepClone(obj) {
@@ -647,6 +776,7 @@ const enemies = enemyDefs.map(def => {
       bossWarnTurn: BOSS_WARN_INTERVAL,
       bossWarning: false,
       result: null,
+      loseReason: null,
 
       delayedActions: [],
 
@@ -762,7 +892,14 @@ const enemies = enemyDefs.map(def => {
       return;
     }
 
-    await _centerTextWait('ALLY TURN', `TURN ${_bs.turn}`, B32_WAIT.turn);
+    const remainTurns = Math.max(0, Number(_bs.turnLimit || 0) - Number(_bs.turn || 0) + 1);
+    const isTurnDanger = remainTurns <= 3;
+    const turnSub = isTurnDanger ? `残り ${remainTurns} TURN` : 'PLAYER ACTION';
+
+    // 残り3ターン以下は、次のターン/戦闘終了まで画面フチを赤く点滅させる。
+    _setTurnDangerAlert(isTurnDanger);
+
+    await _centerTextWaitTurn(`TURNS ${_bs.turn}/${_bs.turnLimit}`, turnSub, B32_WAIT.turn, isTurnDanger);
 
     if (!_bs || _bs.result || _bs.phase !== 'skill' || token !== _battleFlowToken) {
       _renderUI();
@@ -837,6 +974,7 @@ const enemies = enemyDefs.map(def => {
       bossWarning: _bs.bossWarning,
       log: [..._bs.log],
       result: _bs.result,
+      loseReason: _bs.loseReason || null,
 
       delayedActions: _bs.delayedActions ? _bs.delayedActions.map(a => ({ ...a })) : [],
 
@@ -2780,10 +2918,21 @@ if (canEnemyAttackAllyCore(enemy)) {
   // ============================================================
   // ローグライト終了通知ヘルパー（二重呼び出し防止）
   // ============================================================
-  function _notifyRogueliteBattleEnd(result) {
+  function _notifyRogueliteBattleEnd(result, reason) {
   if (!_bs || typeof _bs._rl_onBattleEnd !== 'function') return;
 
+  // 戦闘終了後に危険ターン警告が残らないよう解除する。
+  _setTurnDangerAlert(false);
+
   const cb = _bs._rl_onBattleEnd;
+  const payload = {
+    result,
+    reason: reason || _bs.loseReason || null,
+    loseReason: reason || _bs.loseReason || null,
+    turn: _bs.turn,
+    turnLimit: _bs.turnLimit,
+  };
+
   _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
 
   setTimeout(() => {
@@ -2791,7 +2940,7 @@ if (canEnemyAttackAllyCore(enemy)) {
     // ここで closeBattle32UI / cleanupBattle32Overlays を呼ぶと、
     // VICTORY表示前にステージ選択・共通UIが復帰して一瞬見える。
     // 画面を隠すタイミングは RogueliteController 側に任せる。
-    cb({ result });
+    cb(payload);
   }, 800);
 }
 
@@ -2839,23 +2988,25 @@ if (canEnemyAttackAllyCore(enemy)) {
 
     if (_bs.cores?.ally?.stability <= 0) {
       _bs.result = 'lose';
+      _bs.loseReason = 'core_destroyed';
       _bs.phase = 'end';
       _log('✕ 自陣コアが侵食された。収容失敗…');
       _clearResume();
-      _emit('result', { result: 'lose', bs: _snapshot() });
+      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
       _renderUI();
-      _notifyRogueliteBattleEnd('lose');
+      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
       return;
     }
 
     if (_bs.turn >= _bs.turnLimit) {
       _bs.result = 'lose';
+      _bs.loseReason = 'turn_over';
       _bs.phase = 'end';
       _log('✕ 接続限界を超過。強制帰還…');
       _clearResume();
-      _emit('result', { result: 'lose', bs: _snapshot() });
+      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
       _renderUI();
-      _notifyRogueliteBattleEnd('lose');
+      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
       return;
     }
 
@@ -2865,12 +3016,13 @@ if (canEnemyAttackAllyCore(enemy)) {
       if (hasStandby) return; // まだ召喚できる
 
       _bs.result = 'lose';
+      _bs.loseReason = 'all_dead';
       _bs.phase = 'end';
       _log('✕ 味方全滅。敗北…');
       _clearResume();
-      _emit('result', { result: 'lose', bs: _snapshot() });
+      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
       _renderUI();
-      _notifyRogueliteBattleEnd('lose');
+      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
       return;
     }
   }
