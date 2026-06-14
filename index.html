@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=206-gacha-contain-header">
+  <link rel="stylesheet" href="css/style.css?v=207-decision-button-text">
   <link rel="stylesheet" href="css/story_ui.css?v=5">
 
 </head>
@@ -1404,6 +1404,77 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }, 2000);
 }
 
+  function buildOwnedEntryFromChara(chara, row){
+    row = row || {};
+
+    var timeStr = '';
+    if(row.captured_at){
+      var d = new Date(row.captured_at);
+      timeStr = (d.getMonth() + 1) + '/' + d.getDate() + ' ' +
+                d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
+    var limitBreak = row.limit_break || 0;
+    var baseStats = row.base_stats || Object.assign({}, chara.stats);
+    var stats = row.stats || applyLimitBreakStats(baseStats, limitBreak, chara.rarity);
+
+    return {
+      id: chara.id,
+      name: chara.name,
+      img: chara.img,
+      cutImg: chara.cutImg,
+      element: chara.element,
+      baseStats: baseStats,
+      stats: stats,
+      limitBreak: limitBreak,
+      rarity: chara.rarity,
+      time: timeStr,
+      capturedAt: row.captured_at || new Date().toISOString(),
+      db_id: row.id || null
+    };
+  }
+
+  async function ensureStarterEriOwned(){
+    var eri = CHARACTERS.find(function(c){ return c.id === 1 || c.name === 'エリ'; });
+    if(!eri) return;
+
+    var alreadyOwned = box.some(function(b){ return b && b.id === eri.id; });
+    if(alreadyOwned){
+      if(!collected[eri.id]){
+        collected[eri.id] = box.find(function(b){ return b && b.id === eri.id; });
+      }
+      return;
+    }
+
+    var capturedAt = new Date().toISOString();
+    var entry = buildOwnedEntryFromChara(eri, {
+      captured_at: capturedAt,
+      base_stats: Object.assign({}, eri.stats),
+      stats: Object.assign({}, eri.stats),
+      limit_break: 0
+    });
+
+    box.push(entry);
+    collected[eri.id] = entry;
+
+    var result = await sb.from('collected_characters').insert({
+      user_id: userId,
+      character_id: eri.id,
+      rarity: eri.rarity,
+      stats: entry.stats,
+      base_stats: entry.baseStats,
+      limit_break: 0,
+      captured_at: capturedAt
+    }).select();
+
+    if(result && result.data && result.data[0]){
+      entry.db_id = result.data[0].id;
+    }
+    if(result && result.error){
+      console.error('starter Eri insert error:', result.error);
+    }
+  }
+
   async function loadFromDB(){
   var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
 
@@ -1456,6 +1527,8 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       }
     });
   }
+
+  await ensureStarterEriOwned();
 
   var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId);
   var profile = (res2.data && res2.data.length > 0) ? res2.data[0] : null;

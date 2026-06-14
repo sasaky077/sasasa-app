@@ -3524,6 +3524,101 @@ function _onHealEvent(data) {
  };
 
  // ============================================================
+ // スマホ向け：盤面全体でタップを拾うフォールバック
+ // ------------------------------------------------------------
+ // iPhone SE / iPhone14 では 3D傾斜により、奥側グリッドの
+ // DOMヒット判定がシビアになる。さらに、上段セルは pointerup の
+ // target が #b32-board にならないケースがあるため、document capture で
+ // 画面座標から最寄りの .movable セルを解決する。
+ // 通常のセル onclick は残すため、既存操作は壊さない。
+ // ============================================================
+ function installBattle32BoardPointerFallback() {
+   const board = document.getElementById('b32-board');
+   if (!board) return;
+
+   // 旧版は board にだけ listener を付けていたため、SE上段で event が
+   // board まで来ないケースを拾えなかった。document に1回だけ付ける。
+   if (document.documentElement.dataset.b32MovePointerFallbackInstalled === '1') return;
+   document.documentElement.dataset.b32MovePointerFallbackInstalled = '1';
+
+   document.addEventListener('pointerup', function (e) {
+     if (_b32InputLocked) return;
+     if (!_moveMode || !_selMoveAllyUid) return;
+
+     const root = document.getElementById(ROOT_ID);
+     const currentBoard = document.getElementById('b32-board');
+     if (!root || !currentBoard) return;
+
+     const isTouchAssistDevice =
+       root.classList.contains('b32-vp-se') ||
+       root.classList.contains('b32-vp-iphone14') ||
+       (root.clientWidth <= 430 && root.clientHeight <= 940);
+
+     // PC/大型画面では余計な横取りをしない。
+     // iPhone SE / iPhone14 系だけ、奥側グリッドの取りこぼしを補助する。
+     if (!isTouchAssistDevice) return;
+
+     const movable = Array.from(currentBoard.querySelectorAll('.b32-cell.movable'));
+     if (!movable.length) return;
+
+      // 盤面から大きく外れたタップは無視して、下部UIの誤爆を防ぐ。
+      // transform済みの boardRect はSE上段で小さく潰れるため、各movableセルの
+      // 外接範囲から判定する。
+      const rects = movable
+        .map(cell => cell.getBoundingClientRect())
+        .filter(rect => rect.width > 0 && rect.height > 0);
+
+      if (!rects.length) return;
+
+      const hitBounds = rects.reduce((acc, rect) => ({
+        left: Math.min(acc.left, rect.left),
+        right: Math.max(acc.right, rect.right),
+        top: Math.min(acc.top, rect.top),
+        bottom: Math.max(acc.bottom, rect.bottom),
+      }), { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity });
+
+      const margin = 64;
+      if (
+        e.clientX < hitBounds.left - margin ||
+        e.clientX > hitBounds.right + margin ||
+        e.clientY < hitBounds.top - margin ||
+        e.clientY > hitBounds.bottom + margin
+      ) {
+        return;
+      }
+
+     let best = null;
+     let bestDist = Infinity;
+
+     movable.forEach(cell => {
+       const rect = cell.getBoundingClientRect();
+       const cx = rect.left + rect.width / 2;
+       const cy = rect.top + rect.height / 2;
+       const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+
+       if (d < bestDist) {
+         bestDist = d;
+         best = cell;
+       }
+     });
+
+     // 上段は rotateX の影響で見た目の高さが圧縮されるため広めに拾う。
+     const cellSize = parseFloat(getComputedStyle(root).getPropertyValue('--cell-size')) || 42;
+     const threshold = Math.max(48, cellSize * 1.35);
+
+     if (best && bestDist <= threshold) {
+       const r = Number(best.dataset.row);
+       const c = Number(best.dataset.col);
+       if (Number.isFinite(r) && Number.isFinite(c)) {
+         e.preventDefault();
+         e.stopPropagation();
+         window._b32OnMoveCellTap(r, c);
+       }
+     }
+   }, true);
+ }
+
+ // ============================================================
  // ボード描画
  // ============================================================
  function renderBoard(bs) {
@@ -3768,6 +3863,7 @@ if (_summonMode && isSummonCell && !unit) {
  }
 
  board.innerHTML = cells.join('');
+ installBattle32BoardPointerFallback();
 
  renderEnemyQuickInfo(selectedEnemy);
  
@@ -5873,6 +5969,7 @@ if (!window.__b32RosterCloseCaptureBound) {
 
  const rootH = root.clientHeight;
  const rootW = root.clientWidth;
+ const isSELike = root.classList.contains('b32-vp-se') || (rootW <= 390 && rootH <= 700);
 
  const hintVisible = hint && getComputedStyle(hint).display !== 'none';
  const hintH = hintVisible ? hint.offsetHeight : 0;
@@ -5892,6 +5989,9 @@ if (!window.__b32RosterCloseCaptureBound) {
  const isCompact = rootW <= 390 && rootH <= 700;
 const isIphone14Like = root.classList.contains('b32-vp-iphone14');
 
+// iPhone SE系は盤面が小さくなりすぎるため、下部UIをCSSで圧縮しつつ
+// 盤面計算にも少し余裕を持たせる。14系には影響させない。
+const seBoardBoostH = isSELike ? 104 : 0;
 const reservedExtra = isCompact ? 0 : (isIphone14Like ? 20 : 20);
 
 const reservedH =
@@ -5913,16 +6013,27 @@ const reservedH =
  const reservedHFinal = reservedH + rosterH + linkBarH;
 
  const boardAvailW = Math.max(240, rootW - 24);
- const boardAvailH = Math.max(200, rootH - reservedHFinal);
+ const boardAvailH = Math.max(200, rootH - reservedHFinal + seBoardBoostH);
 
  const gap = 3;
  const cellByW = Math.floor((boardAvailW - gap * 4) / 5);
  const cellByH = Math.floor((boardAvailH - gap * 7) / 8);
 
-const minCell = isCompact ? 28 : 28;
-const maxCell = isCompact ? 60 : (isIphone14Like ? 80 : 72);
+// 端末別セルサイズ。
+// SE系はタップできるだけでなく、ゲーム性を保つため最低38pxを確保する。
+// 赤丸で確認された「盤面下〜キャラカード上」の余白を盤面拡大に使うため、
+// SEのみ上限を45pxまで引き上げる。14系には影響させない。
+const minCell = isSELike ? 38 : (isCompact ? 30 : 28);
+const maxCell = isSELike ? 45 : (isCompact ? 42 : (isIphone14Like ? 80 : 72));
 
 let cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
+
+// iPhone SE系：38〜45pxの範囲に固定。盤面の可読性を優先する。
+if (isSELike) {
+  cellSize = Math.max(38, Math.min(45, cellSize));
+} else if (isCompact) {
+  cellSize = Math.max(30, Math.min(42, cellSize));
+}
 
 // iPhone14系だけ、JS側の自動計算結果を補正する
 // CSSの --cell-size 指定はここで上書きされるため、ここで直接調整する

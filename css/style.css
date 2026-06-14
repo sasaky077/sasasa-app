@@ -1773,6 +1773,50 @@ canvas {
   margin: 8px 0 20px;
 }
 
+
+/* 購入・ガチャ確認モーダル：白背景/演出背景に埋もれない文字色へ調整 */
+#paywall-modal .modal,
+#shop-modal .modal,
+#shop-confirm-modal .modal,
+#summon-confirm-modal .modal,
+#gacha-detail-modal .modal {
+  color: #d4a840;
+}
+
+#paywall-modal .modal h2,
+#shop-confirm-modal .modal h2,
+#summon-confirm-modal .modal h2 {
+  color: #d4a840;
+}
+
+#paywall-modal .modal-inner p,
+#shop-confirm-modal .modal-inner p,
+#summon-confirm-modal .modal-inner p,
+#shop-confirm-text,
+#summon-confirm-text {
+  color: #777;
+}
+
+#shop-modal .shop-title,
+#shop-modal .shop-item-count,
+#shop-modal .shop-item-price,
+#gacha-detail-modal .btn-gacha-label,
+#gacha-detail-modal .btn-gacha-cost {
+  color: #d4a840;
+}
+
+#shop-modal .shop-subtitle,
+#shop-modal .shop-item-unit,
+#shop-modal .shop-note {
+  color: #777;
+}
+
+#paywall-modal .btn-cancel-txt,
+#shop-confirm-modal .btn-cancel-txt,
+#summon-confirm-modal .btn-cancel-txt {
+  color: #777;
+}
+
 .modal-btns {
   display: flex;
   flex-direction: column;
@@ -8312,4 +8356,81 @@ body,
     margin-top: -3px !important;
     padding-bottom: 4px !important;
   }
+}
+
+/* =========================================================
+   108 Modal / Gacha Decision Button Text Visibility Patch
+   - 白背景ボタン上の白文字を、グレー〜ゴールド系へ固定
+   - 結晶購入 / 購入確認 / ガチャ確認 / ガチャ実行ボタン対象
+   ========================================================= */
+
+:root {
+  --z-decision-text: #4b4640;
+  --z-decision-gold: #8f7440;
+  --z-decision-sub: rgba(75,70,64,0.68);
+}
+
+/* 結晶購入・購入確認・ガチャ確認などの決定ボタン */
+#paywall-modal .btn-pay,
+#shop-confirm-modal .btn-pay,
+#summon-confirm-modal .btn-pay,
+#limitbreak-confirm-modal .btn-pay,
+#limitbreak-complete-modal .btn-pay,
+.modal-overlay .btn-pay {
+  color: var(--z-decision-gold) !important;
+  text-shadow: none !important;
+}
+
+/* ボタン内にspan等が入っても白文字に戻らないようにする */
+#paywall-modal .btn-pay *,
+#shop-confirm-modal .btn-pay *,
+#summon-confirm-modal .btn-pay *,
+#limitbreak-confirm-modal .btn-pay *,
+#limitbreak-complete-modal .btn-pay *,
+.modal-overlay .btn-pay * {
+  color: var(--z-decision-gold) !important;
+  text-shadow: none !important;
+}
+
+/* ガチャを引くボタン：通常画面・詳細モーダル・10連結果フッター共通 */
+.btn-gacha,
+.btn-gacha-single,
+.btn-gacha-ten,
+.btn-gacha-guaranteed,
+#gacha-detail-modal .btn-gacha,
+#screen-summon .btn-gacha,
+.ten-result-again-btn {
+  color: var(--z-decision-text) !important;
+  text-shadow: none !important;
+}
+
+.btn-gacha-label,
+.btn-gacha-ten .btn-gacha-label,
+.btn-gacha-cost,
+.btn-gacha-guarantee-badge,
+#gacha-detail-modal .btn-gacha-label,
+#gacha-detail-modal .btn-gacha-cost,
+#screen-summon .btn-gacha-label,
+#screen-summon .btn-gacha-cost,
+.ten-result-again-btn,
+.ten-result-again-btn * {
+  color: var(--z-decision-gold) !important;
+  text-shadow: none !important;
+}
+
+/* コスト部分は少しだけ控えめに */
+.btn-gacha-cost,
+#gacha-detail-modal .btn-gacha-cost,
+#screen-summon .btn-gacha-cost {
+  color: var(--z-decision-sub) !important;
+}
+
+/* disabled時も白ではなく、薄いグレーにする */
+.btn-gacha:disabled,
+.btn-gacha:disabled .btn-gacha-label,
+.btn-gacha:disabled .btn-gacha-cost,
+.btn-pay:disabled,
+.btn-pay:disabled * {
+  color: rgba(75,70,64,0.36) !important;
+  text-shadow: none !important;
 }

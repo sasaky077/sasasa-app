@@ -7376,3 +7376,295 @@
 .b32-core-damage-text {
   display: none !important;
 }
+
+/* ============================================================
+   PATCH: iPhone SE 盤面タップ安定化
+   - 奥側グリッドが小さく潰れてタップできない問題を軽減
+   - SEだけ盤面傾斜を弱め、セルのヒット領域を確保
+   ============================================================ */
+@media (max-width: 390px) and (max-height: 700px) {
+  /* セルサイズはJSで計算。CSS側では強制拡大しない。 */
+
+  #battle32-root #b32-board-wrap {
+    perspective: 520px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  #battle32-root #b32-board {
+    gap: 3px !important;
+    transform: rotateX(24deg) translateZ(0) !important;
+    transform-origin: center center !important;
+  }
+
+  #battle32-root .b32-unit,
+  #battle32-root .b32-unit.ally,
+  #battle32-root .b32-unit.enemy {
+    transform:
+      translateX(-50%)
+      rotateX(-24deg)
+      translateZ(calc(var(--cell-size) * 0.08)) !important;
+  }
+
+  #battle32-root .b32-core-object {
+    transform:
+      translate(-50%, -50%)
+      rotateX(-24deg)
+      translateZ(calc(var(--cell-size) * 0.06)) !important;
+  }
+
+  #battle32-root .b32-cell.movable {
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+  }
+}
+
+
+/* ============================================================
+   SAFE PATCH: iPhone SE レイアウト復旧 + タップ安定化
+   - フラット化しない（巨大化・重なり崩れ防止）
+   - 盤面は軽い傾斜のまま、JSのdocument fallbackでタップ補助
+   ============================================================ */
+@media (max-width: 390px) and (max-height: 700px) {
+  #battle32-root #b32-board-wrap {
+    perspective: 520px !important;
+    transform-style: preserve-3d !important;
+    overflow: visible !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  #battle32-root #b32-board {
+    gap: 2px !important;
+    transform: rotateX(24deg) translateZ(0) !important;
+    transform-origin: center center !important;
+    transform-style: preserve-3d !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  #battle32-root .b32-cell {
+    transform-style: preserve-3d !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  #battle32-root .b32-unit,
+  #battle32-root .b32-unit.ally,
+  #battle32-root .b32-unit.enemy {
+    transform:
+      translateX(-50%)
+      rotateX(-24deg)
+      translateZ(calc(var(--cell-size) * 0.08)) !important;
+    transform-origin: center bottom !important;
+    transform-style: preserve-3d !important;
+  }
+
+  #battle32-root .b32-unit-icon {
+    transform:
+      translateY(var(--unit-offset-y, 0px))
+      scale(var(--unit-scale, 1))
+      translateZ(1px) !important;
+    transform-origin: center bottom !important;
+  }
+
+  #battle32-root .b32-cell.movable,
+  #battle32-root .b32-cell.move-capture,
+  #battle32-root .b32-cell.summon-cell,
+  #battle32-root .b32-cell.item-cell-target {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+}
+
+
+/* ============================================================
+   PATCH: iPhone SE 盤面サイズ改善
+   - タップ問題はJSのfallbackで解消済み
+   - ここでは下部UIを少し圧縮し、盤面セル34〜38pxを確保する
+   - iPhone14系には影響しないよう .b32-vp-se のみに限定
+   ============================================================ */
+#battle32-root.b32-vp-se #b32-scroll {
+  padding-top: 0 !important;
+  padding-bottom: var(--b32-actions-h, 52px) !important;
+}
+
+#battle32-root.b32-vp-se #b32-board-wrap {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: -2px !important;
+}
+
+#battle32-root.b32-vp-se #b32-board {
+  gap: 2px !important;
+  transform: rotateX(24deg) translateZ(0) !important;
+  transform-origin: center center !important;
+}
+
+#battle32-root.b32-vp-se .b32-unit,
+#battle32-root.b32-vp-se .b32-unit.ally,
+#battle32-root.b32-vp-se .b32-unit.enemy {
+  transform:
+    translateX(-50%)
+    rotateX(-24deg)
+    translateZ(calc(var(--cell-size) * 0.08)) !important;
+}
+
+#battle32-root.b32-vp-se #b32-bottom-guide {
+  height: 9px !important;
+  min-height: 9px !important;
+  max-height: 9px !important;
+  line-height: 9px !important;
+  font-size: 8px !important;
+  margin: 0 0 1px 0 !important;
+}
+
+#battle32-root.b32-vp-se #b32-bottom-area {
+  gap: 1px !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  padding-bottom: max(2px, env(safe-area-inset-bottom, 2px)) !important;
+}
+
+#battle32-root.b32-vp-se #b32-party-status {
+  gap: 3px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-card {
+  height: 66px !important;
+  padding: 2px 3px 2px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-img-wrap {
+  height: 39px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-img {
+  height: 43px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-hp-num {
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-hp-bar-wrap {
+  height: 3px !important;
+}
+
+#battle32-root.b32-vp-se #b32-actions {
+  gap: 3px !important;
+  padding: 5px 6px max(5px, env(safe-area-inset-bottom, 5px)) !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action {
+  min-height: 48px !important;
+  padding: 3px 2px 3px !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action-icon {
+  font-size: 13px !important;
+  line-height: 1 !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action-label {
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action-cost,
+#battle32-root.b32-vp-se .b32-bottom-action-sub {
+  font-size: 7px !important;
+  line-height: 1 !important;
+}
+
+
+/* ============================================================
+ SE専用：グリッド大型化のための追加圧縮
+ - JS側でSEセル上限を45pxまで引き上げる前提。
+ - 盤面表示領域を確保するため、下部カード/操作ボタンをさらに少しだけ圧縮。
+ ============================================================ */
+#battle32-root.b32-vp-se #b32-scroll {
+  padding-top: 0 !important;
+}
+
+#battle32-root.b32-vp-se #b32-board-wrap {
+  margin-top: -4px !important;
+}
+
+#battle32-root.b32-vp-se #b32-bottom-area {
+  gap: 0 !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  padding-bottom: max(1px, env(safe-area-inset-bottom, 1px)) !important;
+}
+
+#battle32-root.b32-vp-se #b32-bottom-guide {
+  height: 8px !important;
+  min-height: 8px !important;
+  max-height: 8px !important;
+  line-height: 8px !important;
+  font-size: 7px !important;
+  margin: 0 !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-card {
+  height: 62px !important;
+  padding: 1px 3px 1px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-img-wrap {
+  height: 36px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-img {
+  height: 40px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-row {
+  margin-top: 1px !important;
+}
+
+#battle32-root.b32-vp-se .b32-party-hp-num {
+  font-size: 7px !important;
+}
+
+#battle32-root.b32-vp-se #b32-actions {
+  gap: 2px !important;
+  padding: 4px 5px max(4px, env(safe-area-inset-bottom, 4px)) !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action {
+  min-height: 44px !important;
+  padding: 2px 2px 2px !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action-icon {
+  font-size: 12px !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action-label {
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+
+#battle32-root.b32-vp-se .b32-bottom-action-cost,
+#battle32-root.b32-vp-se .b32-bottom-action-sub {
+  font-size: 6px !important;
+}
+
+
+/* ============================================================
+ SE専用：盤面下の余白をグリッド拡大に利用
+ - 盤面下〜キャラカード上に残っていた空白を使う。
+ - レイアウトは崩さず、盤面領域だけを少し下へ広げる。
+ ============================================================ */
+#battle32-root.b32-vp-se #b32-board-wrap {
+  margin-bottom: -10px !important;
+}
+
+/* 拡大時でもユニットがカードへ食い込みすぎないよう、SEのみ足元を少しだけ締める */
+#battle32-root.b32-vp-se .b32-unit {
+  height: calc(var(--cell-size) * 1.58) !important;
+}
