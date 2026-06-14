@@ -5521,12 +5521,6 @@ canvas {
 #detail-modal .modal {
   max-height: 88vh;
   padding-bottom: 18px;
-  overflow-y: auto;
-}
-
-#detail-modal .btn-set-home {
-  display: block;
-  margin: 12px 0 14px;
 }
 
 #detail-opts {
@@ -8457,34 +8451,4 @@ body,
 .btn-pay:disabled * {
   color: rgba(75,70,64,0.36) !important;
   text-shadow: none !important;
-}
-
-
-/* =========================================================
-   Box Carousel: Home Button
-   プリモア一覧の詳細画面からホーム設定できるボタン
-   ========================================================= */
-.box-carousel-home-btn {
-  display: block;
-  width: min(100%, 260px);
-  margin: 4px auto 12px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(178,140,58,0.55);
-  background: linear-gradient(135deg, rgba(214,178,92,0.96), rgba(252,246,214,0.90));
-  color: #4a3514;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  font-family: "Noto Serif JP", serif;
-  box-shadow:
-    0 6px 16px rgba(143,116,64,0.14),
-    inset 0 1px 0 rgba(255,255,255,0.60);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.box-carousel-home-btn:active {
-  transform: scale(0.985);
-  filter: brightness(0.96);
 }

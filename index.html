@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=207-decision-button-text">
+  <link rel="stylesheet" href="css/style.css?v=208-home-button-carousel">
   <link rel="stylesheet" href="css/story_ui.css?v=5">
 
 </head>
@@ -207,7 +207,7 @@
 
   <div class="favorite-area">
     <div id="fav-display" style="position:relative;z-index:1;">
-      <div class="fav-empty">まだメインキャラがいません</div>
+      <div class="fav-empty">ホーム画面にプリモアを設定しよう</div>
     </div>
   </div>  
 </div>
@@ -256,7 +256,7 @@
       <table class="stat-table" id="result-stat-table"></table>
       <div id="result-opts"></div>
       <div class="result-btns">
-        <button class="btn-favorite" onclick="setFavoriteFromResult()">メインキャラに登録</button>
+        <button class="btn-favorite" onclick="setFavoriteFromResult()">ホーム画面に設定</button>
         <button class="btn-favorite" onclick="showMainTab('main')" style="color:#aaa">ホームへ戻る</button>
       </div>
       <div class="save-status" id="save-status"></div>
@@ -735,8 +735,8 @@
       </div>
     </div>
     <table class="stat-table" id="detail-stat-table"></table>
+    <button class="btn-set-fav btn-set-home" onclick="setHomeCharacterFromDetail()">ホーム画面に設定</button>
     <div id="detail-opts"></div>
-    <button class="btn-set-fav" onclick="setFavoriteFromDetail()">メインキャラに設定</button>
     <button class="btn-delete-chara" onclick="openDeleteConfirm()">このキャラクター情報を削除する</button>
     <button class="btn-detail-close" id="btn-detail-close" onclick="closeModal('detail-modal')">閉じる</button>
   </div>
@@ -3158,15 +3158,80 @@ setTenResultFooterVisible(true);
     setNavVisible(true);
   }
 
-  function setFavoriteFromResult(){ if(!currentResultData)return; favoriteId=currentResultData.id; updateMainUI(); saveFavoriteToDB(currentResultData.id); alert(currentResultData.name+' をメインキャラに設定しました！'); }
-  function setFavoriteFromDetail(){ if(!currentDetailData)return; favoriteId=currentDetailData.id; updateMainUI(); saveFavoriteToDB(currentDetailData.id); closeModal('detail-modal'); alert(currentDetailData.name+' をメインキャラに設定しました！'); }
+  function getHomeCharacterData(data){
+    if(!data) return null;
+
+    var charaDef = CHARACTERS.find(function(c){ return String(c.id) === String(data.id); }) || {};
+    var merged = Object.assign({}, charaDef, data);
+
+    // ホーム画面は立ち絵用の cut 画像を優先する。
+    // 古い保存データに cutImg が無い場合でも chara_XX_cut.webp を補完する。
+    if(!merged.cutImg && merged.id != null){
+      var idText = String(merged.id).padStart(2, '0');
+      merged.cutImg = 'images/chara_' + idText + '_cut.webp';
+    }
+
+    return merged;
+  }
+
+  function setHomeCharacter(data){
+    var homeChara = getHomeCharacterData(data);
+    if(!homeChara || homeChara.id == null) return;
+
+    favoriteId = homeChara.id;
+    collected[homeChara.id] = Object.assign({}, collected[homeChara.id] || {}, homeChara);
+    userProfile.favorite_id = homeChara.id;
+
+    updateMainUI();
+    saveFavoriteToDB(homeChara.id);
+
+    return homeChara;
+  }
+
+  function setFavoriteFromResult(){
+    if(!currentResultData) return;
+    var homeChara = setHomeCharacter(currentResultData);
+    if(homeChara) alert((homeChara.name || currentResultData.name || 'このプリモア') + ' をホーム画面に設定しました！');
+  }
+
+  function setHomeCharacterFromDetail(){
+    if(!currentDetailData) return;
+    var homeChara = setHomeCharacter(currentDetailData);
+    closeModal('detail-modal');
+    if(homeChara) alert((homeChara.name || currentDetailData.name || 'このプリモア') + ' をホーム画面に設定しました！');
+  }
+
+  // 旧onclick互換
+  function setFavoriteFromDetail(){
+    setHomeCharacterFromDetail();
+  }
+
+  function getDefaultHomeCharacter(){
+    var eriDef = CHARACTERS.find(function(c){
+      return c && (c.id === 1 || c.name === 'エリ');
+    });
+    if(!eriDef) return null;
+
+    var owned = collected[eriDef.id] || box.find(function(b){
+      return b && b.id === eriDef.id;
+    });
+
+    return getHomeCharacterData(Object.assign({}, eriDef, owned || {}));
+  }
 
   function updateMainUI(){
     var el=document.getElementById('fav-display');
     if(favoriteId&&collected[favoriteId]){
       var ch=collected[favoriteId];
       el.innerHTML = favVisualHTML(ch);
-    } else { el.innerHTML='<div class="fav-empty">メインキャラを設定しよう</div>'; }
+    } else {
+      var defaultHomeChara = getDefaultHomeCharacter();
+      if(defaultHomeChara){
+        el.innerHTML = favVisualHTML(defaultHomeChara);
+      } else {
+        el.innerHTML='<div class="fav-empty">ホーム画面にプリモアを設定しよう</div>';
+      }
+    }
     var zukanSub = document.getElementById('zukan-sub');
     if(zukanSub) zukanSub.textContent = box.length + ' / ' + CHARACTERS.length;
 
@@ -3508,6 +3573,7 @@ setTenResultFooterVisible(true);
             '<button class="box-carousel-arrow box-carousel-next" onclick="moveBoxCarousel(1)" aria-label="次のプリモア">›</button>' +
           '</div>' +
           nameHtml +
+          (owned ? '<button class="box-carousel-home-btn" onclick="setHomeCharacterFromDetail()">ホーム画面に設定</button>' : '') +
           '<div class="box-carousel-separator"></div>' +
         '</div>' +
         '<div class="box-carousel-detail-scroll">' +
