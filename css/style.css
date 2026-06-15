@@ -953,8 +953,8 @@ canvas {
   position: fixed;
   inset: 0;
   z-index: 145;
-  background-image: url("../images/summon_01.webp");  /* ← ../ を追加 */
-  background-size: cover;
+  background-image: none;
+  background-size: auto;
   background-position: center;
   align-items: center;
   justify-content: center;
@@ -8498,4 +8498,1521 @@ body,
   margin: 0 auto 12px !important;
   position: relative !important;
   z-index: 1 !important;
+}
+
+
+/* =========================================================
+   109 Zeraphia / Alchemia Encounter Gacha Effect
+   - ガチャ演出を「召喚」ではなく「白いアルケミアでの邂逅」に寄せる
+   - 既存DOMとJS導線を維持し、CSS演出だけで世界観を強化
+   ========================================================= */
+
+#summon-standby {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,1) 0%, rgba(249,247,240,0.98) 28%, rgba(236,228,207,0.94) 56%, rgba(202,184,142,0.84) 78%, rgba(37,34,28,0.94) 100%) !important;
+  background-image:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,1) 0%, rgba(249,247,240,0.98) 28%, rgba(236,228,207,0.94) 56%, rgba(202,184,142,0.84) 78%, rgba(37,34,28,0.94) 100%) !important;
+  background-size: auto !important;
+  background-position: center !important;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+#summon-standby::after {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 35%, rgba(143,116,64,0.18) 68%, rgba(0,0,0,0.72) 100%),
+    linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.28)) !important;
+  z-index: 1;
+}
+
+.standby-alchemia-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.standby-orbit,
+.standby-core,
+.standby-light-fragment {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.standby-orbit {
+  border-radius: 50%;
+  border: 1px solid rgba(143,116,64,0.34);
+  box-shadow:
+    0 0 18px rgba(255,255,255,0.48),
+    inset 0 0 16px rgba(255,255,255,0.35);
+}
+
+.standby-orbit-1 {
+  width: min(74vw, 318px);
+  height: min(74vw, 318px);
+  border-top-color: rgba(255,255,255,0.82);
+  border-right-color: rgba(143,116,64,0.12);
+  animation: standbyOrbitRotate 14s linear infinite;
+}
+
+.standby-orbit-2 {
+  width: min(54vw, 232px);
+  height: min(54vw, 232px);
+  border-left-color: rgba(255,255,255,0.88);
+  border-bottom-color: rgba(143,116,64,0.18);
+  animation: standbyOrbitRotateReverse 9s linear infinite;
+}
+
+.standby-orbit-3 {
+  width: min(31vw, 132px);
+  height: min(31vw, 132px);
+  border-color: rgba(255,255,255,0.56);
+  animation: standbyPulse 2.6s ease-in-out infinite;
+}
+
+.standby-core {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.92);
+  box-shadow:
+    0 0 18px rgba(255,255,255,0.95),
+    0 0 44px rgba(214,188,126,0.65),
+    0 0 86px rgba(165,202,255,0.32);
+  animation: standbyCoreBeat 1.8s ease-in-out infinite;
+}
+
+.standby-light-fragment {
+  width: 2px;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.92), transparent);
+  box-shadow: 0 0 12px rgba(255,255,255,0.8);
+  opacity: 0.72;
+}
+
+.standby-light-fragment-1 { transform: translate(-120px, -128px) rotate(28deg); }
+.standby-light-fragment-2 { transform: translate(104px, 74px) rotate(-36deg); height: 40px; opacity: 0.46; }
+.standby-light-fragment-3 { transform: translate(-86px, 104px) rotate(61deg); height: 34px; opacity: 0.5; }
+
+.standby-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: rgba(45,42,36,0.9) !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,0.9),
+    0 0 18px rgba(255,255,255,0.95) !important;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  animation: standbyTextBreath 1.8s ease-in-out infinite !important;
+}
+
+.standby-main-copy {
+  font-size: 17px;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+
+.standby-sub-copy {
+  font-family: "Noto Serif JP", serif;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: rgba(143,116,64,0.82);
+}
+
+#summon-standby.is-starting .standby-orbit-1,
+#summon-standby.is-starting .standby-orbit-2,
+#summon-standby.is-starting .standby-orbit-3 {
+  animation-duration: 1.1s;
+  box-shadow:
+    0 0 28px rgba(255,255,255,0.8),
+    0 0 78px rgba(214,188,126,0.55),
+    inset 0 0 20px rgba(255,255,255,0.55);
+}
+
+#summon-standby.is-starting .standby-core {
+  animation: standbyStartCore 0.42s ease-out forwards;
+}
+
+@keyframes standbyOrbitRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes standbyOrbitRotateReverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to   { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+@keyframes standbyPulse {
+  0%,100% { opacity: 0.36; transform: translate(-50%, -50%) scale(0.94); }
+  50%     { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@keyframes standbyCoreBeat {
+  0%,100% { transform: translate(-50%, -50%) scale(0.86); opacity: 0.8; }
+  50%     { transform: translate(-50%, -50%) scale(1.26); opacity: 1; }
+}
+
+@keyframes standbyStartCore {
+  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  to   { transform: translate(-50%, -50%) scale(34); opacity: 0; }
+}
+
+@keyframes standbyTextBreath {
+  0%,100% { opacity: 0.46; transform: translateY(0); }
+  50%     { opacity: 1;    transform: translateY(-2px); }
+}
+
+/* Reveal base */
+#reveal-modal {
+  background:
+    radial-gradient(circle at 50% 42%, #fff 0%, #f8f5ed 38%, #eee5d0 74%, #d7c59f 100%) !important;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+#reveal-bg {
+  z-index: 1;
+  background-image: none !important;
+  opacity: 0 !important;
+  mix-blend-mode: normal;
+  filter: none;
+}
+
+#reveal-overlay {
+  z-index: 2;
+}
+
+#reveal-alchemia-effect {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+#reveal-modal.active #reveal-alchemia-effect {
+  opacity: 1;
+}
+
+.reveal-circle,
+.reveal-axis,
+.reveal-wing-light,
+.reveal-glyph {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  pointer-events: none;
+}
+
+.reveal-circle {
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.76);
+  border: 1px solid rgba(143,116,64,0.22);
+  box-shadow:
+    0 0 18px rgba(255,255,255,0.62),
+    inset 0 0 18px rgba(255,255,255,0.45);
+}
+
+.reveal-circle-outer { width: min(88vw, 380px); height: min(88vw, 380px); }
+.reveal-circle-mid   { width: min(64vw, 276px); height: min(64vw, 276px); }
+.reveal-circle-inner { width: min(36vw, 154px); height: min(36vw, 154px); }
+
+.reveal-axis {
+  width: 1px;
+  height: min(82vw, 350px);
+  background: linear-gradient(to bottom, transparent, rgba(143,116,64,0.26), rgba(255,255,255,0.86), rgba(143,116,64,0.24), transparent);
+  transform: translate(-50%, -50%);
+  opacity: 0.0;
+}
+
+.reveal-axis-h {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.reveal-wing-light {
+  width: 42vw;
+  max-width: 180px;
+  height: 110px;
+  border-radius: 50%;
+  opacity: 0;
+  filter: blur(12px);
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.78), rgba(214,188,126,0.16) 50%, transparent 72%);
+}
+
+.reveal-wing-left  { transform: translate(-122%, -42%) rotate(-17deg); }
+.reveal-wing-right { transform: translate(22%, -42%) rotate(17deg); }
+
+.reveal-glyph {
+  width: 2px;
+  height: 68px;
+  border-radius: 999px;
+  opacity: 0;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.94), transparent);
+  box-shadow: 0 0 16px rgba(255,255,255,0.86);
+}
+
+.reveal-glyph-1 { transform: translate(-132px, -152px) rotate(34deg); }
+.reveal-glyph-2 { transform: translate(122px, -128px) rotate(-44deg); height: 52px; }
+.reveal-glyph-3 { transform: translate(-14px, 116px) rotate(90deg); height: 82px; }
+
+#reveal-alchemia-effect.phase-forming .reveal-circle-outer { animation: revealCircleBirth 0.9s cubic-bezier(.16,.8,.18,1) forwards, revealSlowSpin 9s linear infinite 0.9s; }
+#reveal-alchemia-effect.phase-forming .reveal-circle-mid   { animation: revealCircleBirth 0.75s cubic-bezier(.16,.8,.18,1) forwards reverse, revealSlowSpinReverse 7.5s linear infinite 0.75s; }
+#reveal-alchemia-effect.phase-forming .reveal-circle-inner { animation: revealCirclePulse 1.4s ease-in-out infinite; }
+
+#reveal-alchemia-effect.phase-connect .reveal-axis,
+#reveal-alchemia-effect.phase-crack .reveal-axis,
+#reveal-alchemia-effect.phase-open .reveal-axis {
+  opacity: 0.86;
+  animation: revealAxisDraw 0.7s ease-out forwards;
+}
+
+#reveal-alchemia-effect.phase-crack .reveal-glyph,
+#reveal-alchemia-effect.phase-open .reveal-glyph {
+  opacity: 1;
+  animation: revealGlyphFall 1.2s ease-out infinite;
+}
+
+#reveal-alchemia-effect.phase-open .reveal-wing-light {
+  opacity: 1;
+  animation: revealWingOpen 1.1s ease-out forwards;
+}
+
+#reveal-alchemia-effect.phase-open .reveal-circle-outer,
+#reveal-alchemia-effect.phase-open .reveal-circle-mid,
+#reveal-alchemia-effect.phase-open .reveal-circle-inner {
+  border-color: rgba(143,116,64,0.34);
+  box-shadow:
+    0 0 24px rgba(255,255,255,0.86),
+    0 0 72px rgba(214,188,126,0.44),
+    inset 0 0 22px rgba(255,255,255,0.62);
+}
+
+#reveal-alchemia-effect.is-new.phase-open .reveal-circle-inner {
+  border-color: rgba(214,188,126,0.62);
+  box-shadow:
+    0 0 26px rgba(255,255,255,0.96),
+    0 0 84px rgba(214,188,126,0.72),
+    inset 0 0 28px rgba(255,255,255,0.7);
+}
+
+#reveal-alchemia-effect.is-known.phase-open .reveal-circle-inner {
+  border-color: rgba(164,170,178,0.44);
+  box-shadow:
+    0 0 22px rgba(255,255,255,0.78),
+    0 0 58px rgba(160,170,185,0.36),
+    inset 0 0 18px rgba(255,255,255,0.5);
+}
+
+@keyframes revealCircleBirth {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.1) rotate(-32deg); filter: blur(6px); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); filter: blur(0); }
+}
+
+@keyframes revealCirclePulse {
+  0%,100% { opacity: 0.54; transform: translate(-50%, -50%) scale(0.88); }
+  50%     { opacity: 1;    transform: translate(-50%, -50%) scale(1.06); }
+}
+
+@keyframes revealSlowSpin {
+  from { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+}
+
+@keyframes revealSlowSpinReverse {
+  from { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+  to   { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+
+@keyframes revealAxisDraw {
+  0%   { transform: translate(-50%, -50%) scaleY(0.05); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scaleY(1); opacity: 0.86; }
+}
+
+@keyframes revealGlyphFall {
+  0%   { opacity: 0; filter: blur(3px); }
+  25%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 0; top: 48%; filter: blur(7px); }
+}
+
+@keyframes revealWingOpen {
+  0%   { opacity: 0; transform: translate(-50%, -42%) scaleX(0.2); }
+  100% { opacity: 1; }
+}
+
+#reveal-content {
+  z-index: 12 !important;
+  top: 0;
+  bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+#reveal-content:not(.show) #reveal-chara-img,
+#reveal-content:not(.show) .reveal-info-box,
+#reveal-content:not(.show) #reveal-encounter-label,
+#reveal-content:not(.show) #reveal-close-btn {
+  opacity: 0;
+  transform: translateY(18px) scale(0.98);
+}
+
+#reveal-content.show #reveal-chara-img {
+  animation: encounterCharacterIn 0.9s cubic-bezier(.13,.88,.18,1) forwards;
+}
+
+#reveal-chara-img {
+  width: min(64vw, 260px) !important;
+  height: min(64vw, 260px) !important;
+  border-radius: 26px !important;
+  object-fit: cover !important;
+  border: 1px solid rgba(143,116,64,0.22);
+  box-shadow:
+    0 22px 52px rgba(64,54,36,0.22),
+    0 0 50px rgba(255,255,255,0.88),
+    0 0 92px rgba(214,188,126,0.36) !important;
+  margin-bottom: 96px !important;
+}
+
+#reveal-encounter-label {
+  position: absolute;
+  top: calc(62px + env(safe-area-inset-top));
+  left: 18px;
+  right: 18px;
+  text-align: center;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: rgba(72,62,43,0.76);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.9);
+}
+
+#reveal-encounter-label.is-new {
+  color: rgba(143,116,64,0.92);
+}
+
+#reveal-encounter-label.is-known {
+  color: rgba(83,88,96,0.72);
+}
+
+.reveal-info-box {
+  padding: 54px 0 calc(92px + env(safe-area-inset-bottom)) !important;
+  background: linear-gradient(to top,
+    rgba(248,246,239,0.96) 0%,
+    rgba(248,246,239,0.88) 42%,
+    rgba(248,246,239,0.28) 76%,
+    rgba(248,246,239,0) 100%) !important;
+  color: #2f2b24;
+}
+
+#reveal-name {
+  color: rgba(34,32,28,0.94) !important;
+  font-family: "Noto Serif JP", serif;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 0 20px rgba(255,255,255,0.9) !important;
+}
+
+#reveal-encounter-copy {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(84,76,58,0.72);
+}
+
+#reveal-encounter-copy.is-new {
+  color: rgba(143,116,64,0.84);
+}
+
+#reveal-close-btn {
+  background: rgba(255,255,255,0.58) !important;
+  border: 1px solid rgba(143,116,64,0.28) !important;
+  color: rgba(76,65,43,0.86) !important;
+  box-shadow: 0 8px 22px rgba(64,54,36,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@keyframes encounterCharacterIn {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.86); filter: blur(10px) brightness(1.8); }
+  55%  { opacity: 1; transform: translateY(-4px) scale(1.04); filter: blur(0) brightness(1.2); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0) brightness(1); }
+}
+
+.final-gacha-flash {
+  background:
+    radial-gradient(circle at center,
+      rgba(255,255,255,1) 0%,
+      rgba(255,255,255,0.98) 20%,
+      rgba(232,213,164,0.66) 42%,
+      rgba(255,255,255,0.24) 68%,
+      rgba(255,255,255,0) 100%) !important;
+}
+
+@media (max-width: 380px), (max-height: 700px) {
+  #reveal-chara-img {
+    width: min(58vw, 220px) !important;
+    height: min(58vw, 220px) !important;
+    margin-bottom: 88px !important;
+  }
+
+  #reveal-encounter-label {
+    top: calc(44px + env(safe-area-inset-top));
+    font-size: 10px;
+  }
+
+  #reveal-name {
+    font-size: 20px !important;
+  }
+
+  #reveal-encounter-copy {
+    font-size: 11px;
+  }
+}
+
+
+/* =========================================================
+   110 Pure Alchemia Encounter / image-free gacha overrides
+   - summon_01〜05、summon_result などの演出画像に依存しない
+   - 白い余白・円環・光粒・中心核だけで邂逅を表現する
+   ========================================================= */
+
+#summon-standby,
+#summon-standby.active {
+  background-image:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,1) 0%, rgba(250,248,242,0.98) 26%, rgba(238,230,210,0.95) 54%, rgba(211,192,149,0.78) 76%, rgba(30,28,23,0.96) 100%) !important;
+}
+
+#summon-standby::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 28%, rgba(255,255,255,0.34) 48%, transparent 66%),
+    radial-gradient(circle at 24% 28%, rgba(255,255,255,0.46), transparent 18%),
+    radial-gradient(circle at 74% 64%, rgba(214,188,126,0.24), transparent 22%);
+  opacity: 0.74;
+  animation: alchemiaAmbientDrift 8s ease-in-out infinite;
+}
+
+#summon-standby::after {
+  background:
+    radial-gradient(circle at 50% 43%, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 38%, rgba(143,116,64,0.14) 66%, rgba(0,0,0,0.62) 100%) !important;
+}
+
+#reveal-bg {
+  background-image: none !important;
+  opacity: 0 !important;
+}
+
+#reveal-modal::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255,255,255,0.98), transparent 34%),
+    linear-gradient(120deg, transparent 34%, rgba(255,255,255,0.36) 48%, transparent 62%),
+    radial-gradient(circle at 50% 86%, rgba(214,188,126,0.18), transparent 36%);
+  animation: alchemiaAmbientDrift 7.5s ease-in-out infinite;
+}
+
+#reveal-modal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.38;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.88) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(214,188,126,0.48) 0 1px, transparent 1.4px);
+  background-size: 58px 58px, 91px 91px;
+  background-position: 0 0, 18px 30px;
+  animation: alchemiaParticleLift 6s linear infinite;
+}
+
+#reveal-alchemia-effect.phase-open {
+  animation: alchemiaOpenShock 0.9s cubic-bezier(.12,.82,.16,1) both;
+}
+
+.ten-card-alchemia-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.96), rgba(242,235,218,0.92) 48%, rgba(42,37,29,0.96) 100%);
+  border: 1px solid rgba(214,188,126,0.34);
+  box-shadow: inset 0 0 24px rgba(255,255,255,0.30), 0 0 18px rgba(214,188,126,0.18);
+}
+
+.ten-card-alchemia-back::before,
+.ten-card-alchemia-back::after,
+.ten-card-back-ring,
+.ten-card-back-core {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ten-card-alchemia-back::before {
+  content: "";
+  width: 72%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(143,116,64,0.38);
+  box-shadow: 0 0 18px rgba(255,255,255,0.58), inset 0 0 14px rgba(255,255,255,0.34);
+}
+
+.ten-card-alchemia-back::after {
+  content: "";
+  width: 1px;
+  height: 82%;
+  background: linear-gradient(to bottom, transparent, rgba(143,116,64,0.4), rgba(255,255,255,0.86), rgba(143,116,64,0.32), transparent);
+}
+
+.ten-card-back-ring {
+  width: 44%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.62);
+  box-shadow: 0 0 16px rgba(255,255,255,0.62);
+}
+
+.ten-card-back-core {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.96);
+  box-shadow: 0 0 14px rgba(255,255,255,0.95), 0 0 34px rgba(214,188,126,0.64);
+}
+
+@keyframes alchemiaAmbientDrift {
+  0%,100% { transform: translate3d(-1.5%, 0, 0) rotate(0deg); opacity: 0.58; }
+  50%     { transform: translate3d(1.5%, -1.5%, 0) rotate(2deg); opacity: 0.86; }
+}
+
+@keyframes alchemiaParticleLift {
+  from { background-position: 0 42px, 18px 80px; }
+  to   { background-position: 0 -96px, 18px -70px; }
+}
+
+@keyframes alchemiaOpenShock {
+  0%   { filter: blur(0); transform: scale(1); }
+  48%  { filter: blur(1px); transform: scale(1.025); }
+  100% { filter: blur(0); transform: scale(1); }
+}
+
+
+/* =========================================================
+   09-B Ten Result — Alchemia Primor Frame
+   10連結果カード用：白いアルケミア世界観フレーム
+   ========================================================= */
+
+/* 10連結果全体を、黒いガチャ結果ではなく「白い邂逅記録」へ寄せる */
+#ten-result-modal {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,0.98) 0%, rgba(248,246,239,0.96) 34%, rgba(230,226,214,0.92) 100%);
+}
+
+#ten-result-modal .modal,
+#ten-result-modal .ten-result-modal-inner {
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255,255,255,0.98) 0%, rgba(248,246,239,0.98) 42%, rgba(230,226,214,0.96) 100%);
+  color: #2d2a24;
+}
+
+.ten-result-grid {
+  gap: 6px;
+  padding: calc(env(safe-area-inset-top) + 10px) 8px 8px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255,255,255,0.78), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,0.56), rgba(238,234,222,0.32));
+}
+
+/* カード本体：細い聖印フレームを重ねる */
+.ten-result-card {
+  border-radius: 13px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.86), rgba(220,214,198,0.42));
+  border: 1px solid rgba(176,151,94,0.46);
+  box-shadow:
+    0 8px 18px rgba(76,61,32,0.18),
+    inset 0 0 0 1px rgba(255,255,255,0.58),
+    inset 0 0 18px rgba(255,255,255,0.18);
+  isolation: isolate;
+}
+
+/* キャラ画像：chara_XX_upをカード内に正しく敷き、自然な上半身表示に戻す */
+.ten-card-img {
+  position: absolute;
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 9px;
+  filter:
+    saturate(0.96)
+    contrast(1.02)
+    brightness(1.03);
+}
+
+/* 淡い円環・細線の装飾 */
+.ten-result-card::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 10px;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 0 10%, rgba(224,202,148,0.8) 10% 18%, transparent 18% 82%, rgba(224,202,148,0.8) 82% 90%, transparent 90% 100%) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent 0 10%, rgba(224,202,148,0.5) 10% 18%, transparent 18% 82%, rgba(224,202,148,0.5) 82% 90%, transparent 90% 100%) bottom / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 0 8%, rgba(224,202,148,0.55) 8% 16%, transparent 16% 84%, rgba(224,202,148,0.55) 84% 92%, transparent 92% 100%) left / 1px 100% no-repeat,
+    linear-gradient(180deg, transparent 0 8%, rgba(224,202,148,0.55) 8% 16%, transparent 16% 84%, rgba(224,202,148,0.55) 84% 92%, transparent 92% 100%) right / 1px 100% no-repeat,
+    radial-gradient(circle at 50% 12%, transparent 0 17px, rgba(255,255,255,0.12) 18px, transparent 20px),
+    radial-gradient(circle at 50% 50%, transparent 0 44%, rgba(240,224,178,0.13) 45%, transparent 47%);
+  opacity: 0.9;
+}
+
+/* 上から薄い白膜をかけ、旧ダーク感を少し中和 */
+.ten-result-card::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 9px;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.18), transparent 22%, transparent 72%, rgba(255,255,255,0.08)),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.28), transparent 38%);
+  mix-blend-mode: screen;
+}
+
+/* 属性アイコンはフレームに埋め込むように小さく上品に */
+.ten-card-element-icon {
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  z-index: 7;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,0.6))
+    drop-shadow(0 2px 4px rgba(60,48,30,0.38));
+}
+
+/* NEW：紫帯ではなく、淡金の邂逅印 */
+.ten-card-new-badge {
+  top: 8px;
+  left: 50%;
+  z-index: 8;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.92), rgba(230,207,145,0.92), rgba(255,255,255,0.92));
+  border: 1px solid rgba(166,132,62,0.52);
+  color: #4b3b20;
+  box-shadow: 0 0 12px rgba(230,207,145,0.42);
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 7px;
+  letter-spacing: 1.4px;
+}
+
+/* 名前帯も黒ベタから白い記録板へ */
+.ten-card-bottom {
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  padding: 13px 4px 5px;
+  border-radius: 0 0 9px 9px;
+  z-index: 5;
+  background:
+    linear-gradient(to top, rgba(252,249,240,0.92) 0%, rgba(252,249,240,0.78) 44%, transparent 100%);
+}
+
+.ten-card-name {
+  color: #2f2b22;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,0.7),
+    0 0 8px rgba(255,255,255,0.55);
+}
+
+/* 上部黒グラデーションは不要。属性アイコンとフレームに任せる */
+.ten-card-top {
+  background: none;
+  padding: 0;
+}
+
+/* 未開封カードもアルケミアの封印板にする */
+.ten-card-back {
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.96) 0%, rgba(246,242,229,0.88) 34%, rgba(215,205,180,0.54) 100%);
+  border: 1px solid rgba(181,154,94,0.44);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.72),
+    inset 0 0 22px rgba(217,197,139,0.25);
+}
+
+.ten-card-back-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(174,144,75,0.46);
+  box-shadow:
+    0 0 0 7px rgba(255,255,255,0.22),
+    0 0 22px rgba(225,207,150,0.34);
+}
+
+.ten-card-back-ring::before,
+.ten-card-back-ring::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(174,144,75,0.34);
+  transform: translate(-50%, -50%);
+}
+
+.ten-card-back-ring::before {
+  width: 76px;
+  height: 1px;
+}
+
+.ten-card-back-ring::after {
+  width: 1px;
+  height: 76px;
+}
+
+.ten-card-back-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: rgba(176,145,73,0.62);
+  box-shadow: 0 0 18px rgba(232,211,153,0.72);
+}
+
+/* レアリティ別の強弱も、虹やギラつきではなく「接続強度」の差にする */
+.ten-result-card.rarity-r {
+  border-color: rgba(180,176,164,0.52);
+  box-shadow:
+    0 7px 16px rgba(72,66,54,0.14),
+    inset 0 0 0 1px rgba(255,255,255,0.56);
+}
+
+.ten-result-card.rarity-sr {
+  border-color: rgba(201,169,91,0.76);
+  box-shadow:
+    0 8px 20px rgba(146,113,44,0.22),
+    0 0 16px rgba(223,195,122,0.22),
+    inset 0 0 0 1px rgba(255,255,255,0.64);
+}
+
+.ten-result-card.rarity-ur {
+  border-color: rgba(246,235,203,0.96);
+  animation: tenAlchemiaUrGlow 3.8s ease-in-out infinite;
+  box-shadow:
+    0 9px 24px rgba(113,90,38,0.24),
+    0 0 22px rgba(255,244,212,0.46),
+    0 0 34px rgba(180,218,255,0.2),
+    inset 0 0 0 1px rgba(255,255,255,0.78);
+}
+
+.ten-result-card.rarity-ur::before {
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(255,245,210,0.95) 8% 22%, transparent 22% 78%, rgba(255,245,210,0.95) 78% 92%, transparent 92% 100%) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent 0 8%, rgba(255,245,210,0.85) 8% 22%, transparent 22% 78%, rgba(255,245,210,0.85) 78% 92%, transparent 92% 100%) bottom / 100% 1px no-repeat,
+    radial-gradient(circle at 50% 12%, transparent 0 16px, rgba(255,255,255,0.32) 17px, transparent 21px),
+    radial-gradient(circle at 50% 50%, transparent 0 42%, rgba(247,230,177,0.24) 43%, transparent 47%);
+  filter: none;
+  opacity: 1;
+  animation: none;
+  z-index: 3;
+}
+
+@keyframes tenAlchemiaUrGlow {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 7px rgba(255,244,215,0.58))
+      drop-shadow(0 0 14px rgba(177,220,255,0.16));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 13px rgba(255,249,226,0.86))
+      drop-shadow(0 0 24px rgba(177,220,255,0.28));
+  }
+}
+
+/* 旧虹演出を完全に抑制 */
+@keyframes tenUrBorder {
+  0%, 100% { border-color: rgba(246,235,203,0.96); }
+}
+
+@keyframes tenUrGlow {
+  0%, 100% { filter: none; }
+}
+
+.ten-result-footer {
+  background:
+    linear-gradient(180deg, rgba(248,246,239,0.2), rgba(248,246,239,0.96));
+}
+
+.ten-result-again-btn,
+.ten-result-close-btn {
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(168,137,72,0.34);
+  color: #6b5731;
+  box-shadow: 0 4px 14px rgba(94,75,36,0.1);
+}
+
+.ten-result-again-btn:active,
+.ten-result-close-btn:active {
+  background: rgba(241,231,202,0.82);
+}
+
+
+
+/* =========================================================
+   106 Zeraphia Summon UI Luminaria Patch
+   - 添付イメージ寄せ：白×淡金×黒ヘッダー、横長バナー、下部黒金ナビ
+   - 既存DOM/ガチャロジックは維持し、CSSで画面構成を再整理
+   ========================================================= */
+
+:root {
+  --zf-ink: #171612;
+  --zf-ink-2: #2d2a22;
+  --zf-paper: #f7f4ea;
+  --zf-paper-2: #ede7d7;
+  --zf-gold: #b99a52;
+  --zf-gold-2: #d8bf78;
+  --zf-line: rgba(146, 116, 55, 0.32);
+}
+
+/* 全体の黒金HUD */
+.global-user-frame {
+  min-height: var(--header-h) !important;
+  padding: calc(env(safe-area-inset-top) + 8px) 12px 8px !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(209,178,98,0.18), transparent 34%),
+    linear-gradient(180deg, rgba(20,20,18,0.98) 0%, rgba(11,11,10,0.96) 100%) !important;
+  border-bottom: 1px solid rgba(214,185,111,0.32) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.24) !important;
+}
+
+.hud-lv-circle {
+  width: 46px !important;
+  height: 46px !important;
+  background:
+    radial-gradient(circle, rgba(255,245,205,0.12), rgba(0,0,0,0.82)) !important;
+  border: 1px solid rgba(220,190,105,0.72) !important;
+  box-shadow: inset 0 0 14px rgba(213,180,90,0.16), 0 0 10px rgba(0,0,0,0.55) !important;
+}
+
+.hud-lv-label,
+.hud-exp-text,
+.hud-id { color: rgba(226,207,151,0.68) !important; }
+.hud-lv-num,
+.hud-name { color: #f4ead0 !important; }
+.hud-exp-bg { background: rgba(255,255,255,0.16) !important; border: 1px solid rgba(214,185,111,0.18) !important; height: 5px !important; }
+.hud-exp-fill { background: linear-gradient(90deg, #96783b, #e4cc7b) !important; }
+
+.hud-resource {
+  height: 34px !important;
+  min-width: 88px !important;
+  border-radius: 18px !important;
+  padding: 4px 10px 4px 7px !important;
+  background: linear-gradient(180deg, rgba(26,25,22,0.92), rgba(8,8,7,0.92)) !important;
+  border: 1px solid rgba(214,185,111,0.36) !important;
+  box-shadow: inset 0 0 8px rgba(255,255,255,0.04) !important;
+}
+
+.hud-res-val { color: #f4ead0 !important; font-size: 14px !important; }
+.hud-gem-plus-btn {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: rgba(20,18,14,0.95) !important;
+  color: #e9d48a !important;
+  border: 1px solid rgba(214,185,111,0.44) !important;
+}
+
+/* 画面共通ヘッダーを白紙×金線へ。ガチャ画面だけ中央タイトルにする */
+.header {
+  background:
+    linear-gradient(180deg, rgba(250,248,241,0.98), rgba(238,232,218,0.96)) !important;
+  border-bottom: 1px solid rgba(154,124,61,0.28) !important;
+  box-shadow: 0 2px 12px rgba(85,67,31,0.08) !important;
+}
+
+#screen-summon {
+  padding-top: var(--header-h) !important;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255,255,255,1) 0 0, rgba(255,255,255,0) 42%),
+    linear-gradient(160deg, rgba(192,164,95,0.10) 0 1px, transparent 1px 100%),
+    linear-gradient(25deg, rgba(192,164,95,0.08) 0 1px, transparent 1px 100%),
+    linear-gradient(180deg, #fbfaf5 0%, #f1ebdc 100%) !important;
+  background-size: auto, 210px 210px, 260px 260px, auto !important;
+  color: var(--zf-ink) !important;
+  overflow: hidden !important;
+}
+
+#screen-summon::before,
+#screen-summon::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#screen-summon::before {
+  inset: var(--header-h) 0 0;
+  background:
+    radial-gradient(circle at 8% 48%, transparent 0 70px, rgba(185,154,82,0.16) 71px, transparent 73px),
+    radial-gradient(circle at 92% 56%, transparent 0 76px, rgba(185,154,82,0.13) 77px, transparent 79px),
+    linear-gradient(90deg, transparent 0 24px, rgba(178,145,73,0.18) 24px 25px, transparent 25px calc(100% - 25px), rgba(178,145,73,0.18) calc(100% - 25px) calc(100% - 24px), transparent calc(100% - 24px));
+  opacity: 0.78;
+}
+
+#screen-summon .header {
+  top: var(--header-h) !important;
+  height: var(--page-header-h) !important;
+  padding: 10px 16px !important;
+  display: grid !important;
+  grid-template-columns: 52px 1fr 70px !important;
+  align-items: center !important;
+  z-index: 94 !important;
+}
+
+#screen-summon .header-title {
+  position: static !important;
+  text-align: center !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+  letter-spacing: 0.2em !important;
+  color: #353027 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.88) !important;
+}
+
+#screen-summon .header-title::after { display: none !important; }
+
+.summon-header-sigil {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(117,89,38,0.42);
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(117,89,38,0.48) 50%, transparent 51%),
+    linear-gradient(0deg, transparent 49%, rgba(117,89,38,0.48) 50%, transparent 51%),
+    radial-gradient(circle, transparent 0 10px, rgba(117,89,38,0.28) 11px, transparent 12px),
+    radial-gradient(circle, rgba(255,255,255,0.72), rgba(217,199,145,0.20));
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.34), 0 0 14px rgba(168,132,59,0.22);
+}
+
+.summon-history-btn {
+  width: 64px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(133,102,46,0.36);
+  background: rgba(255,255,255,0.72);
+  color: #6e5a32;
+  font-size: 10px;
+  font-family: "Noto Serif JP", serif;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 10px rgba(97,78,36,0.10), inset 0 0 0 1px rgba(255,255,255,0.62);
+}
+
+.summon-title-panel {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  padding: 26px 18px 16px;
+  margin-top: var(--page-header-h);
+  text-align: center;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.78), rgba(247,243,232,0.58));
+  border-bottom: 1px solid rgba(146,116,55,0.22);
+}
+
+.summon-title-main {
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 35px;
+  letter-spacing: 0.18em;
+  color: #302c24;
+  line-height: 1;
+}
+
+.summon-title-en {
+  margin-top: 8px;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 0.58em;
+  color: rgba(48,44,36,0.72);
+}
+
+.summon-title-line {
+  width: 118px;
+  height: 1px;
+  margin: 9px auto 10px;
+  background: linear-gradient(90deg, transparent, rgba(128,100,49,0.52), transparent);
+}
+
+.summon-title-sub {
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  color: #8c6f36;
+}
+
+#screen-summon .summon-layout {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto !important;
+  display: block !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 10px 18px calc(104px + env(safe-area-inset-bottom)) !important;
+  background: transparent !important;
+}
+
+#screen-summon .summon-detail {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+#screen-summon .summon-detail-visual {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 16 / 9 !important;
+  max-height: 36dvh !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(153,124,60,0.32) !important;
+  background: #f8f6ed !important;
+  box-shadow:
+    0 12px 24px rgba(80,62,25,0.14),
+    inset 0 0 0 1px rgba(255,255,255,0.58) !important;
+}
+
+#screen-summon .summon-detail-visual::before,
+#screen-summon .summon-detail-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+#screen-summon .summon-detail-visual::before {
+  border: 1px solid rgba(255,255,255,0.46);
+  margin: 5px;
+  background:
+    linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent) top / 100% 1px no-repeat,
+    radial-gradient(circle at 82% 50%, transparent 0 86px, rgba(222,200,140,0.20) 87px, transparent 89px);
+}
+
+#screen-summon .summon-detail-visual::after {
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.58) 0%, transparent 18%, transparent 82%, rgba(255,255,255,0.38) 100%),
+    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(20,16,8,0.12));
+  mix-blend-mode: screen;
+}
+
+#screen-summon .summon-detail-visual img {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  filter: saturate(0.92) brightness(1.06) contrast(0.98) !important;
+  background: #f7f3e7 !important;
+}
+
+#screen-summon .summon-detail-overlay {
+  display: block !important;
+  position: absolute !important;
+  left: 16px !important;
+  right: auto !important;
+  top: 16px !important;
+  bottom: auto !important;
+  z-index: 5 !important;
+  width: min(72%, 310px) !important;
+  padding: 0 !important;
+  background: transparent !important;
+  text-align: left !important;
+  color: #2d281d !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.65) !important;
+}
+
+#screen-summon .summon-detail-title {
+  display: block !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  font-size: clamp(19px, 5.8vw, 32px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0.06em !important;
+  color: #2c281f !important;
+  font-weight: 700 !important;
+}
+
+#screen-summon .summon-detail-desc {
+  display: block !important;
+  margin-top: 8px !important;
+  font-size: clamp(10px, 3.2vw, 14px) !important;
+  letter-spacing: 0.05em !important;
+  color: #6f5b31 !important;
+}
+
+/* 横サムネイル */
+#screen-summon .summon-banner-list {
+  order: 2 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 2px 2px 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none;
+  background: transparent !important;
+  border: 0 !important;
+}
+#screen-summon .summon-banner-list::-webkit-scrollbar { display: none; }
+
+#screen-summon .summon-banner-card {
+  flex: 0 0 31% !important;
+  max-width: 160px !important;
+  aspect-ratio: 2.2 / 1 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(143,112,53,0.32) !important;
+  background: rgba(255,255,255,0.82) !important;
+  box-shadow: 0 7px 14px rgba(79,59,20,0.12), inset 0 0 0 1px rgba(255,255,255,0.58) !important;
+}
+
+#screen-summon .summon-banner-card.active {
+  border-color: rgba(180,145,65,0.78) !important;
+  box-shadow: 0 8px 18px rgba(104,79,26,0.18), 0 0 0 2px rgba(255,248,221,0.70) inset !important;
+}
+
+#screen-summon .summon-banner-card img {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: auto !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  filter: brightness(1.05) saturate(0.9) !important;
+}
+
+#screen-summon .banner-desc-overlay {
+  position: absolute !important;
+  inset: auto 0 0 !important;
+  padding: 10px 6px 5px !important;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.82)) !important;
+}
+
+#screen-summon .banner-card-title {
+  color: #3a3327 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.03em !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8) !important;
+}
+
+/* 天井・ボタン */
+#screen-summon .pity-counter {
+  order: 3 !important;
+  margin: 0 !important;
+  padding: 13px 14px 15px !important;
+  border-radius: 0 !important;
+  background: rgba(255,255,255,0.72) !important;
+  border: 1px solid rgba(151,120,57,0.30) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.58), 0 8px 16px rgba(86,66,24,0.08) !important;
+  color: #2f2a20 !important;
+}
+
+#screen-summon .pity-label,
+#screen-summon .pity-num {
+  color: #776136 !important;
+  font-family: "Noto Serif JP", serif !important;
+  font-size: 12px !important;
+}
+
+#screen-summon .pity-bar-wrap {
+  height: 9px !important;
+  border-radius: 999px !important;
+  background: #26231d !important;
+  border: 1px solid rgba(144,111,49,0.52) !important;
+  overflow: visible !important;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.42) !important;
+}
+
+#screen-summon .pity-bar-fill {
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: linear-gradient(90deg, #83662e, #e6cc76 70%, #fff2b5) !important;
+  box-shadow: 0 0 10px rgba(218,187,92,0.52) !important;
+}
+
+#screen-summon .pity-note {
+  order: 4 !important;
+  margin: -6px 0 0 !important;
+  color: rgba(64,56,41,0.72) !important;
+  font-size: 11px !important;
+  text-align: center !important;
+}
+
+#screen-summon .summon-detail-btns {
+  order: 5 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+  padding: 8px 0 4px !important;
+}
+#screen-summon .summon-detail-btns:has(.btn-gacha-guaranteed) { grid-template-columns: 1fr !important; }
+
+#screen-summon .btn-gacha {
+  min-height: 80px !important;
+  border-radius: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(146,113,49,0.46) !important;
+  color: #2b271f !important;
+  background:
+    linear-gradient(135deg, transparent 0 10px, rgba(255,255,255,0.76) 10px calc(100% - 10px), transparent calc(100% - 10px)),
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(236,226,199,0.88)) !important;
+  box-shadow: 0 8px 16px rgba(78,58,19,0.12), inset 0 0 0 1px rgba(255,255,255,0.72) !important;
+}
+
+#screen-summon .btn-gacha-ten,
+#screen-summon .btn-gacha-guaranteed {
+  color: #fff8dc !important;
+  border-color: rgba(255,231,153,0.74) !important;
+  background:
+    radial-gradient(circle at 85% 45%, rgba(255,246,202,0.22), transparent 24%),
+    linear-gradient(180deg, #b79a50 0%, #806126 100%) !important;
+  box-shadow: 0 9px 20px rgba(100,74,22,0.23), inset 0 0 0 1px rgba(255,255,255,0.25) !important;
+}
+
+#screen-summon .btn-gacha-label {
+  font-family: "Noto Serif JP", serif !important;
+  font-size: 25px !important;
+  line-height: 1 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
+}
+
+#screen-summon .btn-gacha-cost {
+  margin-top: 8px !important;
+  font-size: 14px !important;
+  letter-spacing: 0.04em !important;
+  opacity: 0.92 !important;
+}
+
+#screen-summon .btn-gacha-gem-icon {
+  width: 18px !important;
+  height: 18px !important;
+  margin-right: 4px !important;
+}
+
+/* 下部ナビ：黒金の重いフッターへ */
+.bottom-nav {
+  min-height: calc(76px + env(safe-area-inset-bottom)) !important;
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom)) !important;
+  align-items: center !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(218,188,100,0.16), transparent 34%),
+    linear-gradient(180deg, rgba(30,29,25,0.98), rgba(8,8,7,0.98)) !important;
+  border-top: 1px solid rgba(214,185,111,0.34) !important;
+  box-shadow: 0 -10px 24px rgba(0,0,0,0.22) !important;
+}
+
+.bottom-nav-item {
+  min-height: 64px !important;
+  justify-content: center !important;
+  gap: 2px !important;
+}
+
+.bottom-nav-item img {
+  width: 42px !important;
+  height: 42px !important;
+  filter: brightness(0.78) saturate(0.25) sepia(0.35) hue-rotate(350deg) !important;
+  opacity: 0.76 !important;
+}
+
+.bottom-nav-label {
+  font-size: 11px !important;
+  color: rgba(231,218,184,0.72) !important;
+  padding-bottom: 0 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.bottom-nav-item.active::before {
+  content: "";
+  position: absolute;
+  inset: -8px 7px -10px;
+  border-left: 1px solid rgba(214,185,111,0.34);
+  border-right: 1px solid rgba(214,185,111,0.34);
+  background: radial-gradient(circle at 50% 18%, rgba(239,211,115,0.25), transparent 50%);
+  pointer-events: none;
+}
+
+.bottom-nav-item.active img {
+  transform: translateY(-6px) scale(1.12) !important;
+  filter: brightness(1.18) saturate(0.92) sepia(0.35) hue-rotate(350deg) drop-shadow(0 0 12px rgba(226,195,99,0.74)) !important;
+  opacity: 1 !important;
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: #f5e8bd !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 380px), (max-height: 700px) {
+  :root { --page-header-h: 54px; }
+  #screen-summon .header { grid-template-columns: 42px 1fr 58px !important; padding: 7px 10px !important; }
+  .summon-header-sigil { width: 38px; height: 38px; }
+  .summon-history-btn { width: 54px; height: 36px; font-size: 8.5px; }
+  #screen-summon .header-title { font-size: 24px !important; }
+  .summon-title-panel { padding: 18px 12px 10px; }
+  .summon-title-main { font-size: 28px; }
+  .summon-title-en { font-size: 9px; letter-spacing: 0.46em; }
+  .summon-title-sub { font-size: 11px; }
+  #screen-summon .summon-layout { padding: 8px 14px calc(94px + env(safe-area-inset-bottom)) !important; }
+  #screen-summon .summon-detail { gap: 9px !important; }
+  #screen-summon .summon-detail-visual { max-height: 33dvh !important; }
+  #screen-summon .summon-banner-card { flex-basis: 42% !important; }
+  #screen-summon .btn-gacha { min-height: 64px !important; }
+  #screen-summon .btn-gacha-label { font-size: 20px !important; }
+  #screen-summon .btn-gacha-cost { font-size: 12px !important; margin-top: 5px !important; }
+  #screen-summon .pity-counter { padding: 10px 12px 12px !important; }
+  .bottom-nav { min-height: calc(68px + env(safe-area-inset-bottom)) !important; }
+  .bottom-nav-item img { width: 36px !important; height: 36px !important; }
+  .bottom-nav-label { font-size: 10px !important; }
+}
+
+
+/* =========================================================
+   107 Summon Header Clean Patch
+   - 邂逅画面の上部HUDをホームと同じ黒金へ固定
+   - 余分な小ヘッダー/黒バー/邂逅履歴ボタンを非表示
+   ========================================================= */
+
+/* 添付1枚目に合わせて、上部プレイヤーHUDは常に黒金 */
+.global-user-frame,
+.global-user-frame.hud-dark {
+  min-height: var(--header-h) !important;
+  padding: calc(env(safe-area-inset-top) + 8px) 12px 8px !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(209,178,98,0.18), transparent 34%),
+    linear-gradient(180deg, rgba(20,20,18,0.98) 0%, rgba(11,11,10,0.96) 100%) !important;
+  border-bottom: 1px solid rgba(214,185,111,0.32) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.24) !important;
+}
+
+.global-user-frame .hud-lv-circle {
+  width: 46px !important;
+  height: 46px !important;
+  background:
+    radial-gradient(circle, rgba(255,245,205,0.12), rgba(0,0,0,0.82)) !important;
+  border: 1px solid rgba(220,190,105,0.72) !important;
+  box-shadow: inset 0 0 14px rgba(213,180,90,0.16), 0 0 10px rgba(0,0,0,0.55) !important;
+}
+
+.global-user-frame .hud-lv-label,
+.global-user-frame .hud-exp-text,
+.global-user-frame .hud-id {
+  color: rgba(226,207,151,0.68) !important;
+}
+
+.global-user-frame .hud-lv-num,
+.global-user-frame .hud-name,
+.global-user-frame .hud-res-val {
+  color: #f4ead0 !important;
+  text-shadow: none !important;
+}
+
+.global-user-frame .hud-exp-bg {
+  background: rgba(255,255,255,0.16) !important;
+  border: 1px solid rgba(214,185,111,0.18) !important;
+  height: 5px !important;
+}
+
+.global-user-frame .hud-exp-fill {
+  background: linear-gradient(90deg, #96783b, #e4cc7b) !important;
+}
+
+.global-user-frame .hud-resource {
+  height: 34px !important;
+  min-width: 88px !important;
+  border-radius: 18px !important;
+  padding: 4px 10px 4px 7px !important;
+  background: linear-gradient(180deg, rgba(26,25,22,0.92), rgba(8,8,7,0.92)) !important;
+  border: 1px solid rgba(214,185,111,0.36) !important;
+  box-shadow: inset 0 0 8px rgba(255,255,255,0.04) !important;
+}
+
+.global-user-frame .hud-gem-plus-btn {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: rgba(20,18,14,0.95) !important;
+  color: #e9d48a !important;
+  border: 1px solid rgba(214,185,111,0.44) !important;
+}
+
+/* 邂逅画面の小ヘッダーは不要。HTMLからも削除済みだが、残っても表示しない */
+#screen-summon .summon-page-header,
+#screen-summon .summon-header-sigil,
+#screen-summon .summon-history-btn {
+  display: none !important;
+}
+
+/* 小ヘッダー分の余白を削除し、黒バーを発生させない */
+#screen-summon {
+  padding-top: var(--header-h) !important;
+}
+
+#screen-summon .summon-title-panel {
+  margin-top: 0 !important;
+  padding-top: 20px !important;
+}
+
+@media (max-width: 380px), (max-height: 700px) {
+  #screen-summon .summon-title-panel {
+    margin-top: 0 !important;
+    padding-top: 16px !important;
+  }
 }

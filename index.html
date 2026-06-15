@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=209-home-button-scroll-detail">
+  <link rel="stylesheet" href="css/style.css?v=215-summon-header-clean">
   <link rel="stylesheet" href="css/story_ui.css?v=5">
 
 </head>
@@ -213,19 +213,16 @@
 </div>
 
 <div id="screen-summon" class="screen">
-  <div class="header">
-    <div></div>
-    <div class="header-title">邂逅</div>
-    <div></div>
+  <div class="summon-title-panel" aria-hidden="true">
+    <div class="summon-title-main">邂逅</div>
+    <div class="summon-title-en">Z E R A P H I A</div>
+    <div class="summon-title-line"></div>
   </div>
 
-  <!-- 2カラムレイアウト -->
+  <!-- 邂逅レイアウト -->
   <div class="summon-layout" id="summon-layout">
 
-    <!-- 左：バナーリスト -->
-    <div class="summon-banner-list" id="summon-banner-list"></div>
-
-    <!-- 右：選択中バナー詳細 -->
+    <!-- 選択中バナー詳細 -->
     <div class="summon-detail" id="summon-detail">
       <div class="summon-detail-visual">
         <img id="summon-detail-img" src="" alt="">
@@ -234,6 +231,8 @@
           <div class="summon-detail-desc" id="summon-detail-desc"></div>
         </div>
       </div>
+      <!-- バナーリスト -->
+      <div class="summon-banner-list" id="summon-banner-list"></div>
       <div class="summon-detail-btns" id="summon-detail-btns"></div>
       <div class="pity-counter" id="pity-counter">
         <span class="pity-label">天井まで</span>
@@ -491,11 +490,25 @@
   <div id="reveal-bg"></div>
   <div id="reveal-overlay"></div>
   <div id="reveal-particles"></div>
-  <div id="reveal-content">
+  <div id="reveal-alchemia-effect" aria-hidden="true">
+  <div class="reveal-circle reveal-circle-outer"></div>
+  <div class="reveal-circle reveal-circle-mid"></div>
+  <div class="reveal-circle reveal-circle-inner"></div>
+  <div class="reveal-axis reveal-axis-v"></div>
+  <div class="reveal-axis reveal-axis-h"></div>
+  <div class="reveal-wing-light reveal-wing-left"></div>
+  <div class="reveal-wing-light reveal-wing-right"></div>
+  <div class="reveal-glyph reveal-glyph-1"></div>
+  <div class="reveal-glyph reveal-glyph-2"></div>
+  <div class="reveal-glyph reveal-glyph-3"></div>
+</div>
+<div id="reveal-content">
+  <div id="reveal-encounter-label"></div>
   <img id="reveal-chara-img" src="" />
   <img id="reveal-rarity-box" src="" class="reveal-rarity-box-img" />
   <div class="reveal-info-box">
     <div id="reveal-name"></div>
+    <div id="reveal-encounter-copy"></div>
     <div id="reveal-rarity"></div>
   </div>
     <button id="reveal-close-btn" onclick="closeReveal()">タップして続ける ▶</button>
@@ -697,7 +710,19 @@
 
 <!-- ガチャ待機画面 -->
 <div id="summon-standby" onclick="startSummonFromStandby()">
-  <div class="standby-text">タップしてください</div>
+  <div class="standby-alchemia-bg" aria-hidden="true">
+    <div class="standby-orbit standby-orbit-1"></div>
+    <div class="standby-orbit standby-orbit-2"></div>
+    <div class="standby-orbit standby-orbit-3"></div>
+    <div class="standby-core"></div>
+    <div class="standby-light-fragment standby-light-fragment-1"></div>
+    <div class="standby-light-fragment standby-light-fragment-2"></div>
+    <div class="standby-light-fragment standby-light-fragment-3"></div>
+  </div>
+  <div class="standby-text">
+    <span class="standby-main-copy">TAP TO ENCOUNTER</span>
+    <span class="standby-sub-copy">アルケミアに触れる</span>
+  </div>
 </div>
 <button class="standby-skip-btn" id="standby-skip-btn" onclick="skipSummonEffect()" style="display:none">演出をスキップ</button>
 <!-- UR WARNING -->
@@ -804,6 +829,8 @@ document.addEventListener('touchend', function (e) {
     id: 'banner_02',
     category: 'normal',   // 'once' / 'normal'
     img: 'images/gacha_banner_02.webp',
+    title: '',
+    thumbTitle: '',
     cost: 5,
     minCharaId: 1,
     maxCharaId: 20,
@@ -2149,7 +2176,11 @@ function setTenResultFooterVisible(visible){
   setHomeBtnVisible(false);
   setReloadBtnVisible(false);
 
-  document.getElementById('summon-standby').classList.add('active');
+  var standbyConfirm = document.getElementById('summon-standby');
+  if(standbyConfirm){
+    standbyConfirm.classList.remove('is-starting');
+    standbyConfirm.classList.add('active');
+  }
   document.getElementById('summon-confirm-modal').classList.remove('active');
 }
 
@@ -2163,12 +2194,14 @@ function startSummonFromStandby(){
 
   // standbyはそのまま表示しておき、演出が画面を覆った後に消す（研究所画面が一瞬見えるのを防止）
   const standby = document.getElementById('summon-standby');
+  standby.classList.add('is-starting');
   standby.style.pointerEvents = 'none';
 
 normalSummon(currentSummonCount);
 
 setTimeout(function(){
   standby.classList.remove('active');
+  standby.classList.remove('is-starting');
   standby.style.pointerEvents = '';
 }, 400);
 
@@ -2250,6 +2283,8 @@ function skipSummonEffect(){
   stepTimers = [];
 
   setSkipBtnVisible(false);
+  clearGachaEffectTimers();
+  setGachaEffectPhase('', null);
 
   // reveal-modal を強制終了
   var modal = document.getElementById('reveal-modal');
@@ -2422,132 +2457,137 @@ function handleSingleResult(data){
   // デバッグ用: 'bronze'/'silver'/'gold'/'ur' に固定、nullで通常
   var DEBUG_RARITY = null; // テスト時は 'gold' や 'ur' に変更
 
-  // 全レアリティ共通の前半4枚
-  var REVEAL_COMMON = [
-  'images/summon_01.webp',
-  'images/summon_02.webp',
-  'images/summon_03.webp',
-  'images/summon_04.webp'
-];
+  // ガチャ演出用の画像シーケンスは廃止。
+  // 「白いアルケミア空間の抽象演出」だけで邂逅を見せる。
+  var ALCHEMIA_PHASE_TIMING = {
+    connect: 520,
+    crack: 1180,
+    open: 1880,
+    reveal: 2380
+  };
 
-  // レアリティから演出用画像配列を生成する関数
-  function buildRevealSequence(rarity) {
 
-  var last;
-
-  if (rarity === 'ur') {
-    last = 'images/summon_05b.webp';
-  } else {
-    last = 'images/summon_05a.webp';
+function clearGachaEffectTimers(){
+  if(window.gachaEffectTimers && window.gachaEffectTimers.length){
+    window.gachaEffectTimers.forEach(clearTimeout);
   }
-
-  return REVEAL_COMMON.concat([last]);
+  window.gachaEffectTimers = [];
 }
 
-  // タイミング定数 (ms) ※ここだけ変えれば全体に反映
-var R_BLACK = 0;
-var R_FADE_IN = 500;
-var R_HOLD = 800;
-var R_FADE_OUT = 200;
+function queueGachaEffectPhase(phase, delay){
+  window.gachaEffectTimers = window.gachaEffectTimers || [];
+  window.gachaEffectTimers.push(setTimeout(function(){
+    setGachaEffectPhase(phase);
+  }, delay || 0));
+}
 
-  var R_STEP = R_BLACK + R_FADE_IN + R_HOLD + R_FADE_OUT;
+function setGachaEffectPhase(phase, data){
+  var fx = document.getElementById('reveal-alchemia-effect');
+  if(!fx) return;
 
+  fx.className = '';
+  fx.id = 'reveal-alchemia-effect';
+
+  if(phase){
+    fx.classList.add('phase-' + phase);
+  }
+
+  if(data){
+    fx.classList.toggle('is-new', data.isNew === true);
+    fx.classList.toggle('is-known', data.isNew !== true);
+    fx.classList.toggle('is-ur', data.rarity === 'ur');
+  }
+}
+
+function setRevealEncounterText(data){
+  var label = document.getElementById('reveal-encounter-label');
+  var copy  = document.getElementById('reveal-encounter-copy');
+  var isNew = data && data.isNew === true;
+
+  if(label){
+    label.textContent = isNew ? 'NEW PRIMOR ENCOUNTERED' : 'RESONANCE TRACE';
+    label.className = isNew ? 'is-new' : 'is-known';
+  }
+  if(copy){
+    copy.textContent = isNew ? '新たなプリモアと邂逅した' : '既知のプリモアの残響を観測した';
+    copy.className = isNew ? 'is-new' : 'is-known';
+  }
+}
   function showReveal(data, isCompare){
-  
+
     var guf = document.getElementById('global-user-frame');
     if (guf) guf.style.display = 'none';
-
-    document.getElementById('reveal-modal').classList.add('active');
-
-    setTimeout(function(){
-     var standby = document.getElementById('summon-standby');
-     if(standby) standby.classList.remove('active');
-    }, 50);
 
     pendingRevealIsCompare = isCompare;
     currentResultData = data;
 
     var rarity = DEBUG_RARITY || data.rarity;
-    var imgs   = buildRevealSequence(rarity);
-
     var bg         = document.getElementById('reveal-bg');
     var overlay    = document.getElementById('reveal-overlay');
+    var particles  = document.getElementById('reveal-particles');
     var revContent = document.getElementById('reveal-content');
+    var modal      = document.getElementById('reveal-modal');
 
     // --- リセット ---
-    bg.style.transition      = 'none';
-    bg.style.backgroundImage = '';
-    bg.style.opacity         = '0';
-    overlay.style.transition = 'none'; 
-    overlay.style.background = 'rgba(0,0,0,0)';
-    revContent.classList.remove('show');
-
-    var modal = document.getElementById('reveal-modal');
-    modal.classList.add('active');
-    // playLoopSE('summon_slow', 0.6);
-  
-   // modal.classList.add('rarity-' + rarity);
-
-    imgs.forEach(function(imgUrl, i){
-    var t = i * R_STEP;
-
-    var showAt = (i === 0) ? t : t + R_BLACK;
-
-  // 表示
-    setTimeout(function(){
-    if(i > 0){
-     if(i < imgs.length - 1){
-       playSE('gacha_crack', 0.9);
-      } else {
-       playSE('gacha_break', 1.0);
-      }
+    if(bg){
+      bg.style.transition      = 'none';
+      bg.style.backgroundImage = '';
+      bg.style.opacity         = '0';
     }
-    bg.style.backgroundImage = "url('" + imgUrl + "')";
-    bg.style.transition = 'opacity ' + (R_FADE_IN/1000) + 's ease';
-    bg.style.opacity = '1';
-  }, showAt);
+    if(overlay){
+      overlay.style.transition = 'none';
+      overlay.style.background = 'rgba(248,246,239,0.72)';
+    }
+    if(particles) particles.innerHTML = '';
+    if(revContent){
+      revContent.classList.remove('show');
+      revContent.style.display = '';
+    }
 
-  // フェードアウト
-  setTimeout(function(){
-    bg.style.transition = 'opacity ' + (R_FADE_OUT/1000) + 's ease';
-    bg.style.opacity = '0';
-  }, showAt + R_FADE_IN + R_HOLD);
-});
+    modal.classList.add('active');
+    modal.classList.toggle('reveal-is-new', data.isNew === true);
+    modal.classList.toggle('reveal-is-known', data.isNew !== true);
+    setRevealEncounterText(data);
 
-    // 全ステップ終了 = 最後の背景のフェードアウト完了タイミング
-    var lastFadeOutEnd =
-   (imgs.length - 1) * R_STEP +
-   ((imgs.length === 1) ? 0 : R_BLACK) +
-   R_FADE_IN + R_HOLD + R_FADE_OUT;
-
-    // キャラ登場前にオーバーレイで完全に暗くする
     setTimeout(function(){
-      overlay.style.transition = 'background 0.5s ease';
-      overlay.style.background = 'rgba(0,0,0,0.85)';
-    }, lastFadeOutEnd);
+      var standby = document.getElementById('summon-standby');
+      if(standby) standby.classList.remove('active');
+    }, 50);
+
+    clearGachaEffectTimers();
+    setGachaEffectPhase('forming', data);
+    queueGachaEffectPhase('connect', ALCHEMIA_PHASE_TIMING.connect);
+    queueGachaEffectPhase('crack', ALCHEMIA_PHASE_TIMING.crack);
+    queueGachaEffectPhase('open', ALCHEMIA_PHASE_TIMING.open);
+
+    // 画像送りではなく、位相変化に合わせてSEだけ鳴らす
+    window.gachaEffectTimers = window.gachaEffectTimers || [];
+    window.gachaEffectTimers.push(setTimeout(function(){ playSE('gacha_crack', 0.45); }, ALCHEMIA_PHASE_TIMING.connect));
+    window.gachaEffectTimers.push(setTimeout(function(){ playSE('gacha_break', 0.72); }, ALCHEMIA_PHASE_TIMING.open));
 
     // キャラ登場
-    setTimeout(function(){
+    window.gachaEffectTimers.push(setTimeout(function(){
       var img = document.getElementById('reveal-chara-img');
       if(data.img){ img.src = data.img; img.style.display = 'block'; }
       else { img.style.display = 'none'; }
 
       document.getElementById('reveal-name').textContent = data.name;
-
-      var r = DEBUG_RARITY || data.rarity;
+      setRevealEncounterText(data);
+      setGachaEffectPhase('open', data);
 
       document.getElementById('reveal-rarity').innerHTML = '';
       var rboxEl = document.getElementById('reveal-rarity-box');
       if(rboxEl){ rboxEl.src = ''; rboxEl.style.display = 'none'; }
 
+      if(overlay){
+        overlay.style.transition = 'background 0.55s ease';
+        overlay.style.background = 'rgba(248,246,239,0.88)';
+      }
+
       revContent.classList.add('show');
-      spawnParticles(r);
-
-      // stopSE('summon_slow');
-
-    }, lastFadeOutEnd + R_BLACK);
-  
-   }
+      spawnParticles(rarity);
+    }, ALCHEMIA_PHASE_TIMING.reveal));
+  }
 
 function showRevealImageOnly(data){
   var guf = document.getElementById('global-user-frame');
@@ -2601,12 +2641,18 @@ function showUrWarningThenReveal(data){
 function showNormalReveal(data){
   var modal = document.getElementById('reveal-modal');
   var content = document.getElementById('reveal-content');
+  setRevealEncounterText(data);
+  clearGachaEffectTimers();
+  setGachaEffectPhase('open', data);
+  modal.classList.toggle('reveal-is-new', data && data.isNew === true);
+  modal.classList.toggle('reveal-is-known', !(data && data.isNew === true));
 
   content.style.display = '';
   content.classList.remove('show');
 
   document.getElementById('reveal-bg').style.backgroundImage = '';
   document.getElementById('reveal-bg').style.opacity = '0';
+  document.getElementById('reveal-overlay').style.background = 'rgba(248,246,239,0.84)';
   document.getElementById('reveal-particles').innerHTML = '';
 
   document.getElementById('reveal-chara-img').src = data.img || '';
@@ -2697,6 +2743,8 @@ function finalGachaFlash(callback){
   var alertScreen = document.getElementById('ur-alert-screen');
   if(alertScreen){ alertScreen.classList.remove('active'); alertScreen.classList.remove('fadeout'); }
   stopSE('ur_black');
+  clearGachaEffectTimers();
+  setGachaEffectPhase('', null);
 
   modal.classList.remove('active');
   modal.classList.remove(
@@ -2704,7 +2752,9 @@ function finalGachaFlash(callback){
     'rarity-bronze',
     'rarity-silver',
     'rarity-gold',
-    'rarity-rainbow'
+    'rarity-rainbow',
+    'reveal-is-new',
+    'reveal-is-known'
   );
 
   content.classList.remove('show');
@@ -2847,8 +2897,6 @@ function startTenInitialEffect(results){
   pendingSkipResults = results; // スキップ用に保持
   setSkipBtnVisible(true);     // スキップボタン表示
   var best = getBestResult(results);
-  var rarity = DEBUG_RARITY || best.rarity;
-  var imgs = buildRevealSequence(rarity);
 
   var guf = document.getElementById('global-user-frame');
   if(guf) guf.style.display = 'none';
@@ -2860,64 +2908,34 @@ function startTenInitialEffect(results){
   var content = document.getElementById('reveal-content');
 
   // リセット
-  bg.style.transition = 'none';
-  bg.style.backgroundImage = '';
-  bg.style.opacity = '0';
-  overlay.style.transition = 'none';
-  overlay.style.background = 'rgba(0,0,0,0)';
-  particles.innerHTML = '';
-  content.classList.remove('show');
-  content.style.display = 'none';
+  if(bg){
+    bg.style.transition = 'none';
+    bg.style.backgroundImage = '';
+    bg.style.opacity = '0';
+  }
+  if(overlay){
+    overlay.style.transition = 'none';
+    overlay.style.background = 'rgba(248,246,239,0.72)';
+  }
+  if(particles) particles.innerHTML = '';
+  if(content){
+    content.classList.remove('show');
+    content.style.display = 'none';
+  }
 
   modal.classList.add('active');
-  // playLoopSE('summon_slow', 0.6);
+  modal.classList.toggle('reveal-is-new', best && best.isNew === true);
+  modal.classList.toggle('reveal-is-known', !(best && best.isNew === true));
+  setRevealEncounterText(best);
+  clearGachaEffectTimers();
+  setGachaEffectPhase('forming', best);
+  queueGachaEffectPhase('connect', ALCHEMIA_PHASE_TIMING.connect);
+  queueGachaEffectPhase('crack', ALCHEMIA_PHASE_TIMING.crack);
+  queueGachaEffectPhase('open', ALCHEMIA_PHASE_TIMING.open);
 
-  modal.classList.remove(
-    'rarity-normal',
-    'rarity-bronze',
-    'rarity-silver',
-    'rarity-gold',
-    'rarity-rainbow'
-  );
-
- // modal.classList.add('rarity-' + rarity);
-
-    stepTimers = []; // 前回分をリセット
-
-  imgs.forEach(function(imgUrl, i){
-    var t = i * R_STEP;
-    var showAt = (i === 0) ? t : t + R_BLACK;
-
-    // 表示
-    stepTimers.push(setTimeout(function(){
-      if(i > 0){
-        if(i < imgs.length - 1){
-          playSE('gacha_crack', 0.9);
-        } else {
-          playSE('gacha_break', 1.0);
-        }
-      }
-
-      bg.style.backgroundImage = "url('" + imgUrl + "')";
-      bg.style.transition = 'opacity ' + (R_FADE_IN / 1000) + 's ease';
-      bg.style.opacity = '1';
-    }, showAt));
-
-    // 最後の画像だけはフェードアウトさせない
-    if(i < imgs.length - 1){
-      stepTimers.push(setTimeout(function(){
-        bg.style.transition = 'opacity ' + (R_FADE_OUT / 1000) + 's ease';
-        bg.style.opacity = '0';
-      }, showAt + R_FADE_IN + R_HOLD));
-    }
-  });
-
-  // 最後の画像が表示されたまま白フラッシュへ
-  var finalFlashAt =
-    ((imgs.length - 1) * R_STEP) +
-    R_BLACK +
-    R_FADE_IN +
-    R_HOLD;
+  stepTimers = [];
+  stepTimers.push(setTimeout(function(){ playSE('gacha_crack', 0.45); }, ALCHEMIA_PHASE_TIMING.connect));
+  stepTimers.push(setTimeout(function(){ playSE('gacha_break', 0.72); }, ALCHEMIA_PHASE_TIMING.open));
 
   tenInitialEffectTimer = setTimeout(function(){
     tenInitialEffectTimer = null;
@@ -2929,29 +2947,34 @@ function startTenInitialEffect(results){
     pendingSkipResults = null;
 
     finalGachaFlash(function(){
-
       modal.classList.remove('active');
       modal.classList.remove(
         'rarity-normal',
         'rarity-bronze',
         'rarity-silver',
         'rarity-gold',
-        'rarity-rainbow'
+        'rarity-rainbow',
+        'reveal-is-new',
+        'reveal-is-known'
       );
 
-      bg.style.transition = 'none';
-      bg.style.backgroundImage = '';
-      bg.style.opacity = '0';
-      overlay.style.background = 'rgba(0,0,0,0)';
-      particles.innerHTML = '';
-      content.style.display = '';
+      if(bg){
+        bg.style.transition = 'none';
+        bg.style.backgroundImage = '';
+        bg.style.opacity = '0';
+      }
+      if(overlay) overlay.style.background = 'rgba(0,0,0,0)';
+      if(particles) particles.innerHTML = '';
+      if(content) content.style.display = '';
+      clearGachaEffectTimers();
+      setGachaEffectPhase('', null);
 
       if(guf) guf.style.display = 'block';
 
       startTenRevealSequence(results);
     });
 
-  }, finalFlashAt);
+  }, ALCHEMIA_PHASE_TIMING.reveal);
 }
 
 function startTenRevealSequence(results){
@@ -2986,8 +3009,9 @@ function buildTenResultCards(results){
     };
 
     div.innerHTML =
-  '<div class="ten-card-back">' +
-    '<img src="images/summon_result.webp" alt="未開示">' +
+  '<div class="ten-card-back ten-card-alchemia-back" aria-label="未開示">' +
+    '<span class="ten-card-back-ring"></span>' +
+    '<span class="ten-card-back-core"></span>' +
   '</div>';
     grid.appendChild(div);
   });
@@ -3035,7 +3059,18 @@ function revealTenCard(index){
 
   card.className = 'ten-result-card' + (data.rarity ? ' rarity-' + data.rarity : '') + (isNew ? ' is-new' : '');
 
-  var imgSrc = data.upImg || data.img || 'images/unknown.webp';
+  var masterChara = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS.find(function(c){ return String(c.id) === String(data.id); })
+    : null;
+
+  // 10連結果は必ず上半身用の chara_XX_up を優先する。
+  // 保存済みデータに upImg が欠けている場合でも、CHARACTERS 定義から補完する。
+  var imgSrc =
+    (masterChara && masterChara.upImg) ||
+    data.upImg ||
+    (masterChara && masterChara.img) ||
+    data.img ||
+    'images/unknown.webp';
 
   card.innerHTML =
     '<img class="ten-card-img" src="' + imgSrc + '">' +
