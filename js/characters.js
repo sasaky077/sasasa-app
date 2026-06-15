@@ -153,7 +153,6 @@ const CHARACTERS = [
     cutImg: 'images/chara_02_cut.webp', 
     ultImg: 'images/chara_02_cutin.webp',
     upImg: 'images/chara_02_up.webp', 
-    partyImg: 'images/chara_02_party.webp',
     battleImg: 'images/chara_02_battle.webp',
     battleBackImg: 'images/chara_02_battle_back.webp',
     panelImg: 'images/chara_02_panel.webp',
