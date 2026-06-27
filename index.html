@@ -714,7 +714,7 @@
   </div>
   <div class="standby-text">
     <span class="standby-main-copy">TAP TO ENCOUNTER</span>
-    <span class="standby-sub-copy">アルケミアに触れる</span>
+    <span class="standby-sub-copy">プリモアと出会う</span>
   </div>
 </div>
 <button class="standby-skip-btn" id="standby-skip-btn" onclick="skipSummonEffect()" style="display:none">演出をスキップ</button>
@@ -4227,9 +4227,10 @@ function buildCharacterDetailHTML(data, options){
   var chara = getDetailCharaDef(data);
   var imgSrc = (chara && chara.img) ? chara.img : data.img;
   var detailElementData = Object.assign({}, chara || {}, data || {});
-  var elementIconHtml = getElementCornerIconHTML(detailElementData, 'detail-element-img');
+  // 10連ガチャ結果から開いた詳細では、キャラ画像左上の属性アイコンを表示しない
+  var elementIconHtml = fromTenResult ? '' : getElementCornerIconHTML(detailElementData, 'detail-element-img');
 
-  // キャラ画像＋左上に属性アイコン（画像タップで全画面表示）
+  // キャラ画像（画像タップで全画面表示）
   document.getElementById('detail-chara-visual').innerHTML =
   '<div class="detail-visual-wrap" onclick="openCharaImageViewer(\'' + imgSrc + '\')">' +
     '<img class="detail-main-img" src="' + imgSrc + '">' +

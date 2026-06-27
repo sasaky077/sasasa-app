@@ -160,7 +160,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 0.87},
     skills: [
       { id: 's1',
-        name: 'イケてるNOISE',
+        name: 'おやすみなさい',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -172,7 +172,7 @@ const CHARACTERS = [
 
       {
   id: 'ult',
-  name: '超BATな夜',
+  name: 'どりいむたいむ',
   linkCost: 5,
   isUltimate: true,
   hit: 100,
@@ -210,7 +210,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
-      name: '蛇睨み',
+      name: '支配',
      linkCost: 3,
   isUltimate: false,
   hit: 100,
@@ -223,7 +223,7 @@ const CHARACTERS = [
   desc: '射程：自身より前方すべて。ダメージなし。対象の敵を2ターン実体化させる。' },
 
       { id: 'ult',
-        name: '白鱗呑天',
+        name: '絶対の命令',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
@@ -260,7 +260,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 0.88},
     skills: [
       { id: 's1',
-        name: 'いくよ！ベル！',
+        name: '集中',
         linkCost: 2,
         isUltimate: false,
         hit: 100,
@@ -272,7 +272,7 @@ const CHARACTERS = [
         desc: '射程：前方直線3マス。対象の敵にATK×1.2のダメージを与える。' },
 
       { id: 'ult',
-        name: 'て、手加減しません！',
+        name: '絶対零度',
         linkCost: 4,
         isUltimate: true,
         hit: 100,
@@ -308,7 +308,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
-        name: '藤影流・紫繰',
+        name: '剣術・紫繰',
         linkCost: 2,
         isUltimate: false,
         hit: 100,
@@ -322,7 +322,7 @@ const CHARACTERS = [
         desc: '射程：正面1マス。対象の敵にATK×1.2のダメージを与え、1マス押し出す。' },
 
       { id: 'ult',
-        name: '藤影流奥義・酔ノ想葬',
+        name: '剣術・酔ノ想葬',
         linkCost: 3,
         isUltimate: true,
         hit: 100,
@@ -405,7 +405,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.0},
     skills: [
       { id: 's1',
-        name: '影刺し',
+        name: '影打ち',
         linkCost: 2,
         isUltimate: false,
         hit: 100,
@@ -417,7 +417,7 @@ const CHARACTERS = [
         desc: '射程：自身の周囲1マス。対象の敵にATK×1.0のダメージを与える。敵の背後から攻撃した場合、ダメージが2倍になる。' },
 
       { id: 'ult',
-        name: '無音',
+        name: '音のない世界',
         linkCost: 4,
         isUltimate: true,
         hit: 100,
@@ -507,7 +507,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.02},
     skills: [
       { id: 's1',
-        name: 'おいで',
+        name: '序章',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
@@ -526,7 +526,7 @@ const CHARACTERS = [
 
       {
   id: 'ult',
-  name: '退いて',
+  name: '森羅万象',
   linkCost: 5,
   isUltimate: true,
   hit: 100,
@@ -566,7 +566,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 0.97},
     skills: [
       { id: 's1',
-        name: '神経遮断',
+        name: '浄化の風',
         linkCost: 4,
         isUltimate: false,
         hit: 100,
@@ -580,7 +580,7 @@ const CHARACTERS = [
       },
       {
         id: 'ult',
-        name: 'シナプス崩壊',
+        name: '癒しの雨',
         linkCost: 6,
         isUltimate: true,
         hit: 100,
@@ -676,7 +676,7 @@ const CHARACTERS = [
     skills: [  
   { 
     id: 's1', 
-    name: 'リプレイ',
+    name: '猿真似',
     linkCost: 3,
     isUltimate: false,
     hit: 100,
@@ -688,7 +688,7 @@ const CHARACTERS = [
 },
 
 { id: 'ult',
-  name: 'ジャグラー',
+  name: '神のみぞ知る',
   linkCost: 5,
   isUltimate: true,
   hit: 100,

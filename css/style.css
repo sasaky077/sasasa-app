@@ -10016,3 +10016,15 @@ body,
     padding-top: 16px !important;
   }
 }
+
+.home-notice-btn img {
+  width: 90px !important;
+  height: 90px !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+
+  /* 通知アイコン：透過四角が目立たないようシャドウを弱める */
+  filter:
+    drop-shadow(0 0 3px rgba(255,255,255,0.22))
+    drop-shadow(0 2px 4px rgba(0,0,0,0.35)) !important;
+}
