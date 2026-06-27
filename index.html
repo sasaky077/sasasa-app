@@ -193,16 +193,10 @@
   </button>
 
   <!-- メイン上部イベントバナー -->
+  <!-- バナー本体は js/home_banners.js の HOME_EVENT_BANNERS から自動生成 -->
   <div class="home-event-banner-wrap" id="home-event-banner-wrap">
-    <div class="home-event-banner-track" id="home-event-banner-track">
-      <button class="home-event-banner-item" onclick="openHomeBanner(0)">
-        <img src="images/event_banner01.webp" alt="期間限定 天使">
-      </button>
-    </div>
-
-    <div class="home-event-banner-dots" id="home-event-banner-dots">
-      <span class="active"></span>
-    </div>
+    <div class="home-event-banner-track" id="home-event-banner-track"></div>
+    <div class="home-event-banner-dots" id="home-event-banner-dots"></div>
   </div>
 
   <div class="favorite-area">
@@ -215,7 +209,6 @@
 <div id="screen-summon" class="screen">
   <div class="summon-title-panel" aria-hidden="true">
     <div class="summon-title-main">邂逅</div>
-    <div class="summon-title-en">Z E R A P H I A</div>
     <div class="summon-title-line"></div>
   </div>
 
@@ -772,6 +765,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/home_banners.js?v=1"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -812,44 +806,35 @@ document.addEventListener('touchend', function (e) {
 
   // ─── ガチャバナー定義 ───────────────────────────
   // 期間ごとにここを編集する（imgはimages/フォルダ内のファイル名）
+  // 一旦ロジックは同じ。邂逅画面で2種類のバナーを選択できるようにする。
   const GACHA_BANNERS = [
-  {
-    id: 'banner_01',
-    category: 'once',    // 'once' / 'normal'
-    hidden: true,        // UR確定ガチャは機能として非表示。ロジックは残す。
-    img: 'images/gacha_banner_01.webp',
-    title: '新規登録者限定ガチャ',
-    cost: 5,
-    minCharaId: 1,
-    maxCharaId: 20,
-    filterGender: null,  // 'man' / 'woman' / null（制限なし）
-    filterType:   null,  // '信念' / '虚無' / '乖離' / '執着' / '希望' / '狂気' / '憤怒' / '畏怖' / null（制限なし）
-  },
-  {
-    id: 'banner_02',
-    category: 'normal',   // 'once' / 'normal'
-    img: 'images/gacha_banner_02.webp',
-    title: '',
-    thumbTitle: '',
-    cost: 5,
-    minCharaId: 1,
-    maxCharaId: 20,
-    filterGender: null,  // 'man' / 'woman' / null（制限なし）
-    filterType:   null,  // '信念' / '虚無' / '乖離' / '執着' / '希望' / '狂気' / '憤怒' / '畏怖' / null（制限なし）
-  },
-// {
-//  id: 'banner_03',
-//  category: 'normal',  // 'once' / 'normal'
-//  img: 'images/gacha_banner_03.webp',
-//  title: '常設ガチャ',
-//  desc: '「10回引く」でプリモアを10体邂逅',
-//  cost: 1,
-//  minCharaId: 1,
-//  maxCharaId: 20,
-//  filterGender: null,  // 'man' / 'woman' / null（制限なし）
-//  filterType:   null,  // '信念' / '虚無' / '乖離' / '執着' / '希望' / '狂気' / '憤怒' / '畏怖' / null（制限なし）
-// }
-];
+    {
+      id: 'banner_01',
+      category: 'normal',
+      img: 'images/gacha_banner_01.webp',
+      detailTitle: '',
+      thumbTitle: '',
+      desc: '',
+      cost: 5,
+      minCharaId: 1,
+      maxCharaId: 20,
+      filterGender: null,
+      filterType: null
+    },
+    {
+      id: 'banner_02',
+      category: 'normal',
+      img: 'images/gacha_banner_02.webp',
+      detailTitle: '',
+      thumbTitle: '',
+      desc: '',
+      cost: 5,
+      minCharaId: 1,
+      maxCharaId: 20,
+      filterGender: null,
+      filterType: null
+    }
+  ];
 
   var currentGachaId = null; // 選択中のガチャID
   var pityCount = parseInt(localStorage.getItem('pity_count') || '0', 10); // 天井カウント
@@ -890,12 +875,15 @@ document.addEventListener('touchend', function (e) {
       var div = document.createElement('div');
       div.className = 'summon-banner-card';
       div.id = 'banner-card-' + gacha.id;
-      var cardTitle = gacha.thumbTitle || gacha.title || '邂逅';
+      var cardTitle = gacha.thumbTitle || '';
+      var imgAlt = gacha.title || gacha.id || '邂逅';
       div.innerHTML =
-        '<img src="' + gacha.img + '" alt="' + cardTitle + '">' +
-        '<div class="banner-desc-overlay">' +
-          '<div class="banner-card-title">' + cardTitle + '</div>' +
-        '</div>';
+        '<img src="' + gacha.img + '" alt="' + imgAlt + '">' +
+        (cardTitle ?
+          '<div class="banner-desc-overlay">' +
+            '<div class="banner-card-title">' + cardTitle + '</div>' +
+          '</div>'
+        : '');
       div.onclick = function(){ openGachaDetail(gacha); };
       list.appendChild(div);
     });
@@ -4502,6 +4490,60 @@ function showToast(text){
   }
 
 /* =========================================================
+   Home Event Banner Render
+   - バナー追加/削除は js/home_banners.js の HOME_EVENT_BANNERS を編集
+   ========================================================= */
+
+function getHomeEventBanners(){
+  return Array.isArray(window.HOME_EVENT_BANNERS) ? window.HOME_EVENT_BANNERS : [];
+}
+
+function renderHomeEventBanners(){
+  var track = document.getElementById('home-event-banner-track');
+  var dots = document.getElementById('home-event-banner-dots');
+  var wrap = document.getElementById('home-event-banner-wrap');
+  if(!track || !dots) return;
+
+  var banners = getHomeEventBanners().filter(function(banner){
+    return banner && banner.hidden !== true;
+  });
+
+  track.innerHTML = '';
+  dots.innerHTML = '';
+  track.dataset.infiniteReady = '0';
+
+  if(!banners.length){
+    if(wrap) wrap.style.display = 'none';
+    homeBannerTotal = 0;
+    return;
+  }
+
+  if(wrap) wrap.style.display = '';
+
+  banners.forEach(function(banner, index){
+    var btn = document.createElement('button');
+    btn.className = 'home-event-banner-item';
+    btn.type = 'button';
+    btn.onclick = function(){ openHomeBanner(index); };
+
+    var img = document.createElement('img');
+    img.src = banner.img;
+    img.alt = banner.alt || banner.title || 'イベントバナー';
+    btn.appendChild(img);
+
+    track.appendChild(btn);
+
+    var dot = document.createElement('span');
+    if(index === 0) dot.classList.add('active');
+    dots.appendChild(dot);
+  });
+
+  homeBannerRealIndex = 0;
+  homeBannerPosition = banners.length > 1 ? 1 : 0;
+  homeBannerTotal = banners.length;
+}
+
+/* =========================================================
    Home Event Banner Swipe - Infinite Loop
    ========================================================= */
 
@@ -4625,21 +4667,36 @@ function initHomeBannerSwipe(){
 }
 
 function openHomeBanner(index){
-  // クローン側を押しても、実体バナー番号に丸める
-  index = index % homeBannerTotal;
+  var banners = getHomeEventBanners().filter(function(banner){
+    return banner && banner.hidden !== true;
+  });
+  if(!banners.length) return;
 
-  if(index === 0){
-    showMainTab('summon');
+  // クローン側を押しても、実体バナー番号に丸める
+  index = ((index % banners.length) + banners.length) % banners.length;
+  var banner = banners[index];
+  if(!banner) return;
+
+  // actionTab があれば指定タブへ移動
+  if(banner.actionTab){
+    showMainTab(banner.actionTab);
     return;
   }
 
-  if(index === 1){
-    showMainTab('ninmu');
+  // url があれば外部/内部リンクとして開く
+  if(banner.url){
+    window.location.href = banner.url;
     return;
+  }
+
+  // actionName で個別処理を追加したい場合のフック
+  if(banner.actionName && typeof window[banner.actionName] === 'function'){
+    window[banner.actionName](banner, index);
   }
 }
 
- initHomeBannerSwipe();
+ renderHomeEventBanners();
+initHomeBannerSwipe();
 init();
 
 document.getElementById('detail-modal').addEventListener('click', function(e){

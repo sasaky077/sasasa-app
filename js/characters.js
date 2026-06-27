@@ -24,9 +24,9 @@ const CHARACTERS = [
   // R
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:12 アンジェリカ（バランス）────────────────────────────────
+  // ── id:12────────────────────────────────
   // 自己防御。縛りと広範囲打撃。
-  { id: 12, name: 'アンジェリカ', rarity: 'r',
+  { id: 12, name: 'イリス', rarity: 'r',
     element: 'mystis',
     role: '回復寄り',
     moveType: 'front_side_3',
@@ -80,9 +80,9 @@ const CHARACTERS = [
 },
     ]},
 
-     // ── id:6 カヒ（弁財天モデル / 神奏ギター）────────────────────
+     // ── id:6 ────────────────────
   // 神が奏でる音で敵を払いつつ、味方の攻撃テンポを上げる支援寄りアタッカー。
-  { id: 6, name: 'カヒ', rarity: 'r',
+  { id: 6, name: 'オルフィア', rarity: 'r',
     element: 'mystis',
     role: '支援寄り',
     moveType: 'front_side_3',
@@ -136,9 +136,9 @@ const CHARACTERS = [
       },
     ]},
 
-  // ── id:2 レイチェル（速度寄り）──────────────────────────────────
+  // ── id:2 ──────────────────────────────────
   // スタン・ATKデバフで敵を妨害する妨害役。
-  { id: 2, name: 'レイチェル', rarity: 'r',
+  { id: 2, name: 'ネム', rarity: 'r',
     element: 'chaos',
   role: '妨害寄り',
   moveType: 'front_back_row3',
@@ -186,9 +186,9 @@ const CHARACTERS = [
   desc: '射程：前方特殊6マス。対象の敵にATK×2.2のダメージを与え、60%の確率で1ターン行動不能にする。'}
   ]},
 
-  // ── id:3 アカネ（耐久寄り）──────────────────────────────────
+  // ── id:3 ──────────────────────────────────
   // 敵を縛り、ペースを握る。
-  { id: 3, name: 'アカネ', rarity: 'r',
+  { id: 3, name: 'ヴェラ', rarity: 'r',
     element: 'chaos',
     role: '妨害寄り',
     moveType: 'front_side_3',
@@ -237,8 +237,8 @@ const CHARACTERS = [
         desc: '射程：前方直線3マス。対象の敵にATK×1.6のダメージを与え、50%の確率で1ターン行動不能にする。' }
     ]},
 
-  // ── id:7 ルナ
-{ id: 7, name: 'ルナ', rarity: 'r',
+  // ── id:7 
+{ id: 7, name: 'スイ', rarity: 'r',
     element: 'chaos',
   role: 'バランス寄り',
   moveType: 'line_front_3',
@@ -381,9 +381,9 @@ const CHARACTERS = [
         desc: '射程：自身中心の斜め2マス。対象の敵にATK×3.0のダメージを与える。' }
     ]},
 
-  // ── id:13 チサカ（暗殺寄り）──────────────────────────────────
+  // ── id:13 ──────────────────────────────────
   // 背後からの攻撃で大ダメージを狙う暗殺型。
-  { id: 13, name: 'チサカ', rarity: 'r',
+  { id: 13, name: 'アヤカ', rarity: 'r',
     element: 'logos',
     role: 'テクニック寄り',
     moveType: 'front_side_jump',
@@ -434,9 +434,9 @@ const CHARACTERS = [
   // SR
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:4 キティ───────────────────────────────────
+  // ── id:4 ───────────────────────────────────
   // 予知系。数ターン先に攻撃を予約する感じ。
-  { id: 4, name: 'キティ', rarity: 'r',
+  { id: 4, name: 'フローラ', rarity: 'r',
     element: 'mystis',
     role: 'テクニック寄り',
     moveType: 'front2_backdiag2',
@@ -484,8 +484,8 @@ const CHARACTERS = [
         desc: '射程：盤面中央十字。使用から2ターン後のターン開始時、対象の敵にATK×2.2のダメージを与える。' }
     ]},
  
-// ── id:15 アキ
-{ id: 15, name: 'アキ', rarity: 'r',
+// ── id:15 
+{ id: 15, name: 'エテルナ', rarity: 'r',
     element: 'chaos',
   role: '妨害寄り',
   moveType: 'vertical2_frontdiag2',
@@ -542,9 +542,9 @@ const CHARACTERS = [
     ]},
 
   
-  // ── id:19 カンナ（耐久寄り）──────────────────────────────────
+  // ── id:19 ──────────────────────────────────
   // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
-  { id: 19, name: 'カンナ', rarity: 'r',
+  { id: 19, name: 'アンジェ', rarity: 'r',
     element: 'logos',
     role: '妨害寄り',
     moveType: 'silver',
@@ -596,8 +596,8 @@ const CHARACTERS = [
       }
     ]},
 
-  // ── id:20 マアヤ（支援寄り）──────────────────────────────────
-  { id: 20, name: 'マアヤ', rarity: 'r',
+  // ── id:20 ──────────────────────────────────
+  { id: 20, name: 'リブラ', rarity: 'r',
     element: 'logos',
     role: '支援寄り',
     moveType: 'front_back_row3',
@@ -651,9 +651,9 @@ const CHARACTERS = [
   // UR
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:14 アイム（火力寄り）──────────────────────────────────
+  // ── id:14 ──────────────────────────────────
   // コピー系。
-  { id: 14, name: 'アイム', rarity: 'r',
+  { id: 14, name: 'ロゼ', rarity: 'r',
     element: 'chaos',
     role: 'テクニック寄り',
     moveType: 'silver',
@@ -758,9 +758,9 @@ const CHARACTERS = [
         desc: '射程：前方直線全体。対象の敵にATK×2.0のダメージを与える。さらに与えたダメージの30%分、味方全員のHPを回復する。' }
         ]},
 
- // ── id:8 アサミ
+ // ── id:8 
 { id: 8, 
-  name: 'アサミ', rarity: 'r',
+  name: 'アルノ', rarity: 'r',
     element: 'chaos',
   role: '速度寄り',
   moveType: 'front_back_frontdiag',
