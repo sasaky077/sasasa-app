@@ -505,6 +505,7 @@ function pickRandomBoardCells(count) {
     return [
       ..._bs.allies.filter(u => u.hp > 0),
       ..._bs.enemies.filter(u => u.hp > 0 || u.isBoss),
+      ...((_bs.summons || []).filter(u => u && u.hp > 0)),
     ];
   }
 
@@ -821,6 +822,9 @@ const enemies = enemyDefs.map(def => {
 
       delayedActions: [],
 
+      // ── 盤面設置型召喚物 ──────────────────────────
+      summons: [],
+
       // ── LINK システム ──
       link: {
         current: calcLinkMax(1),
@@ -1005,6 +1009,7 @@ const enemies = enemyDefs.map(def => {
       loseReason: _bs.loseReason || null,
 
       delayedActions: _bs.delayedActions ? _bs.delayedActions.map(a => ({ ...a })) : [],
+      summons: _bs.summons ? _bs.summons.map(u => ({ ...u, statusEffects: [...(u.statusEffects || [])] })) : [],
 
       isRoguelite: !!_bs.isRoguelite,
       cores: null,
@@ -1314,6 +1319,161 @@ function _executeDelayedAttack(action) {
   _checkWinLose();
 }
 
+
+  // ============================================================
+  // 盤面設置型召喚物（chara_16 ULTなど）
+  // ============================================================
+  function _getForwardCellFromUnit(unit, distance) {
+    const d = Math.max(1, Number(distance || 1));
+    // 味方は上方向（row小）を前方として扱う
+    const dr = unit && unit.side === 'enemy' ? d : -d;
+    return { row: Number(unit.row) + dr, col: Number(unit.col) };
+  }
+
+  function _isCellBlocked(row, col) {
+    if (!_isInsideBoard(row, col)) return true;
+    return getAllUnits().some(u =>
+      u && (u.hp > 0 || u.isBoss) && Number(u.row) === Number(row) && Number(u.col) === Number(col)
+    );
+  }
+
+  function _createBoardSummon(owner, skill, row, col) {
+    if (!_bs.summons) _bs.summons = [];
+
+    const duration = Math.max(1, Number(skill.summonDuration || 3));
+    const summon = {
+      _uid: uid(),
+      id: `${owner.id || 'ally'}_${skill.id || 'summon'}_set`,
+      name: skill.summonName || '式神',
+      side: 'summon',
+      ownerUid: owner._uid,
+      ownerName: owner.name,
+      ownerElement: owner.element || null,
+      ownerAtk: getEffectiveAtk(owner),
+      skillId: skill.id || null,
+      skillName: skill.name || null,
+      row,
+      col,
+      hp: 1,
+      hpMax: 1,
+      atk: 0,
+      element: owner.element || 'mystis',
+      img: skill.summonImg || 'images/chara_16_set.webp',
+      battleImg: skill.summonImg || 'images/chara_16_set.webp',
+      battleBackImg: skill.summonImg || 'images/chara_16_set.webp',
+      uiScale: { battleBack: 1.45 },
+      uiOffset: { battleBack: 0 },
+      statusEffects: [],
+      remainingTurns: duration,
+      tickMultiplier: Number(skill.summonTickMultiplier || skill.multiplier || 1.0),
+      drainRate: ((skill.effects || []).find(e => e && e.type === 'drain') || {}).rate ?? 0.5,
+      drainTarget: ((skill.effects || []).find(e => e && e.type === 'drain') || {}).target || 'ally_all',
+    };
+
+    _bs.summons.push(summon);
+    _log(`${owner.name} は ${summon.name} を設置した（${duration}T）`);
+    _emit('summonObject', { summon: { ...summon }, owner: { ...owner }, skill, bs: _snapshot() });
+    return summon;
+  }
+
+  function _executeSummonObjectSkill(ally, skill) {
+    const pos = _getForwardCellFromUnit(ally, 2);
+    if (!_isInsideBoard(pos.row, pos.col)) {
+      _log(`${ally.name}：2マス先が盤面外です`);
+      return false;
+    }
+    if (_isCellBlocked(pos.row, pos.col)) {
+      _log(`${ally.name}：2マス先には設置できません`);
+      return false;
+    }
+    _createBoardSummon(ally, skill, pos.row, pos.col);
+    return true;
+  }
+
+  function _getEnemiesAround9(row, col) {
+    return (_bs.enemies || []).filter(enemy => {
+      if (!enemy || enemy.hp <= 0) return false;
+      return Math.abs(Number(enemy.row) - Number(row)) <= 1 &&
+             Math.abs(Number(enemy.col) - Number(col)) <= 1;
+    });
+  }
+
+  function _applyBoardSummonTicks() {
+    if (!_bs || !_bs.summons || _bs.summons.length === 0) return;
+
+    const survivors = [];
+
+    _bs.summons.forEach(summon => {
+      if (!summon || summon.hp <= 0) return;
+
+      const targets = _getEnemiesAround9(summon.row, summon.col);
+      let drainTotal = 0;
+
+      if (targets.length > 0) {
+        targets.forEach(enemy => {
+          const source = {
+            _uid: summon.ownerUid || summon._uid,
+            name: summon.ownerName || summon.name || '式神',
+            element: summon.ownerElement || summon.element || null,
+            side: 'ally',
+            row: summon.row,
+            col: summon.col,
+          };
+          const skillInfo = {
+            id: summon.skillId || 'summon_object_tick',
+            name: summon.skillName || summon.name || '式神',
+            isUltimate: true,
+            hitStyle: 'summon_tick',
+          };
+          const dmg = calcDamage(Number(summon.ownerAtk || 1), Number(summon.tickMultiplier || 1.0), enemy, source);
+          const hpBefore = enemy.hp;
+          applyDamage(enemy, dmg, source, skillInfo);
+          drainTotal += Math.min(dmg, hpBefore);
+          _log(`${summon.name} が ${enemy.name} に ${dmg} ダメージ`);
+        });
+
+        if (drainTotal > 0) {
+          const rate = Number(summon.drainRate != null ? summon.drainRate : 0.5);
+          const healAmount = Math.max(1, Math.round(drainTotal * rate));
+          const healTargets = (summon.drainTarget === 'ally_self' || summon.drainTarget === 'self')
+            ? (_bs.allies || []).filter(a => a && a.hp > 0 && a._uid === summon.ownerUid)
+            : (_bs.allies || []).filter(a => a && a.hp > 0);
+
+          healTargets.forEach(a => {
+            const before = a.hp;
+            a.hp = Math.min(a.hpMax, a.hp + healAmount);
+            const actual = a.hp - before;
+            if (actual <= 0) return;
+            _log(`${a.name} は式神のドレインで ${actual} HP 回復`);
+            _emit('heal', {
+              source: { _uid: summon._uid, name: summon.name, side: 'summon', row: summon.row, col: summon.col },
+              target: { _uid: a._uid, name: a.name, side: a.side, row: a.row, col: a.col },
+              amount: actual,
+              kind: 'drain',
+              skillId: summon.skillId || null,
+              skillName: summon.skillName || summon.name,
+              isUltimate: true,
+              hitStyle: 'summon_tick',
+              bs: _snapshot(),
+            });
+          });
+        }
+      } else {
+        _log(`${summon.name} の周囲に敵はいない`);
+      }
+
+      summon.remainingTurns = Number(summon.remainingTurns || 1) - 1;
+      if (summon.remainingTurns > 0) {
+        survivors.push(summon);
+      } else {
+        _log(`${summon.name} は消滅した`);
+        _emit('summonObjectExpired', { summon: { ...summon }, bs: _snapshot() });
+      }
+    });
+
+    _bs.summons = survivors;
+  }
+
   function _splitSkillEffectsByTarget(skill) {
     const effects = Array.isArray(skill && skill.effects) ? skill.effects : [];
     return {
@@ -1326,6 +1486,29 @@ function _executeDelayedAttack(action) {
     const { selfEffects } = _splitSkillEffectsByTarget(skill);
     if (!selfEffects.length || !ally || ally.hp <= 0) return;
     _applyEffects(selfEffects, ally, ally);
+  }
+
+  function _unitHasStatus32(unit, statusType) {
+    if (!unit) return false;
+    const status = String(statusType || '').toLowerCase();
+    const effects = Array.isArray(unit.statusEffects) ? unit.statusEffects : [];
+
+    // 仕様上「眠り」は stun として扱う。
+    if (status === 'stun' || status === 'sleep' || status === '眠り') {
+      return !!unit.stunned || effects.some(e =>
+        e && e.type === 'stun' && (e.duration == null || Number(e.duration) > 0)
+      );
+    }
+
+    return effects.some(e =>
+      e && e.type === status && (e.duration == null || Number(e.duration) > 0)
+    );
+  }
+
+  function _filterTargetsByRequiredStatus(targets, skill) {
+    const requiredStatus = skill && (skill.requiredStatus || skill.targetStatus);
+    if (!requiredStatus) return targets;
+    return (targets || []).filter(target => _unitHasStatus32(target, requiredStatus));
   }
 
   // ============================================================
@@ -1530,6 +1713,11 @@ if (stype === 'repeat_skill') {
     }
   }
 
+// ── summon_object：盤面設置型召喚物 ───────────────────────
+} else if (stype === 'summon_object') {
+  const ok = _executeSummonObjectSkill(ally, skill);
+  if (!ok) noTargets = true;
+
 // ── delayed_attack：未来予約攻撃 ─────────────────────────────
 } else if (stype === 'delayed_attack') {
   _queueDelayedAttack(ally, skill);
@@ -1588,10 +1776,16 @@ if (stype === 'repeat_skill') {
 // ── attack ──────────────────────────────────────────────────
 } else if (stype === 'attack') {
 
-      const targets = _enemyTargets(skill.range);
+      let targets = _enemyTargets(skill.range);
+      targets = _filterTargetsByRequiredStatus(targets, skill);
       if (targets.length === 0) {
         noTargets = true;
-        _log(`${ally.name}：範囲内に敵がいません`);
+        const requiredStatus = skill.requiredStatus || skill.targetStatus;
+        if (requiredStatus) {
+          _log(`${ally.name}：対象状態の敵がいません`);
+        } else {
+          _log(`${ally.name}：範囲内に敵がいません`);
+        }
       } else {
         let drainTotal = 0;
         const { enemyEffects } = _splitSkillEffectsByTarget(skill);
@@ -1754,8 +1948,8 @@ if (stype === 'repeat_skill') {
       _log(`${ally.name}：未知のスキルタイプ「${stype}」（スキップ）`);
     }
 
-    // リプレイ不成立だけはスキル消費せず選び直せるようにする
-if (noTargets && skill.type === 'repeat_skill') {
+    // リプレイ不成立・設置失敗はスキル消費せず選び直せるようにする
+if (noTargets && (skill.type === 'repeat_skill' || skill.type === 'summon_object')) {
   _log('→ スキル選択に戻ります');
   return false;
 }
@@ -2546,6 +2740,12 @@ function doBossLineAttack(boss) {
     _checkWinLose();
     if (_bs.result) { _renderUI(); return; }
 
+    // 敵ターン開始時：盤面設置型召喚物の継続ダメージ
+    _applyBoardSummonTicks();
+    _checkWinLose();
+    _renderUI();
+    if (_bs.result) { _renderUI(); return; }
+
     // ステージ設定に応じた敵スポーン（ordered 作成前に呼び、即行動させる）
     _spawnEnemyFromConfig();
 
@@ -2625,10 +2825,9 @@ function doBossLineAttack(boss) {
 
     const occupant = allUnits.find(u => u !== enemy && u.hp > 0 && u.row === row && u.col === col);
 
-    // 他の敵がいれば進入禁止
-    if (occupant && occupant.side === 'enemy') return false;
+    // 他の敵・召喚物がいれば進入禁止。味方のみ「駒取り」として許可。
+    if (occupant && occupant.side !== 'ally') return false;
 
-    // 味方がいれば「駒取り」として許可
     return true;
   }
 
@@ -2711,8 +2910,10 @@ function doBossLineAttack(boss) {
 
     // スタン
     if (enemy.stunned) {
-      _log(`${enemy.name} はスタン中のため行動できない`);
-      enemy.stunned = false;
+      _log(`${enemy.name} は眠り／スタン中のため行動できない`);
+      // stunned はここでは解除しない。
+      // duration が残っている間は _tickStatusEffects() 後も stunned を維持し、
+      // duration が0になった時点で解除する。
       //await _centerTextWait(enemy.name, 'NO ACTION', B32_WAIT.enemyAction);
       _renderUI();
       return;
@@ -2833,13 +3034,9 @@ function doBossLineAttack(boss) {
         .map(e => ({ ...e, duration: e.duration - 1 }))
         .filter(e => e.duration > 0);
 
-      // stunned フラグはここで変更しない。
-      // 付与時に即 true を立て、行動スキップした瞬間に false に戻す。
-      // statusEffects から stun が消えたときだけ、念のため false に揃える
-      // （スキップせずターンが終わった場合の安全弁）。
-      if (!u.statusEffects.some(e => e.type === 'stun')) {
-        u.stunned = false;
-      }
+      // stun / 眠りは duration が残っている限り行動不能を維持する。
+      // duration が0になって statusEffects から消えたら解除する。
+      u.stunned = u.statusEffects.some(e => e && e.type === 'stun');
     });
   }
 
@@ -3234,8 +3431,8 @@ function doBossLineAttack(boss) {
 
   // マス占有チェック
   function _isOccupied(row, col) {
-    const allUnits = [..._bs.allies, ..._bs.enemies];
-    return allUnits.some(u => u.hp > 0 && u.row === row && u.col === col);
+    const allUnits = [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])];
+    return allUnits.some(u => (u.hp > 0 || u.isBoss) && u.row === row && u.col === col);
   }
 
   // 召喚可能なrosterエントリ一覧

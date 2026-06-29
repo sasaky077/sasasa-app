@@ -15,7 +15,7 @@ window.HOME_EVENT_BANNERS = [
     id: 'event_sachiel',
     img: 'images/event_banner01.webp',
     alt: 'サキエル降臨',
-    actionTab: 'ninmu',
+    actionName: 'openSakielRogueliteFromHome',
     hidden: false
   },
   {

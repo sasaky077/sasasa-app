@@ -373,7 +373,7 @@ function _positionItemPanel() {
        const cellsSet = window.BattleRange32.getCellsFromRange32(ally, previewSkill.range);
        const map = new Map();
        const isEnemySkill = ['attack', 'debuff'].includes(previewSkill.type);
-       const isAllySkill  = ['heal', 'buff'].includes(previewSkill.type);
+       const isAllySkill  = ['heal', 'buff', 'ally_reposition'].includes(previewSkill.type);
 
        // unitMap（セル種別判定用）
        const unitMap = {};
@@ -468,7 +468,8 @@ function b32SkillTypeLabel(skill) {
     debuff: '弱体',
     repeat_skill: '再演',
     delayed_attack: '予約攻撃',
-    random_cell_attack: 'ランダム攻撃'
+    random_cell_attack: 'ランダム攻撃',
+    ally_reposition: '位置移動'
   };
   return map[skill?.type] || skill?.type || '—';
 }
@@ -477,6 +478,7 @@ function b32RangeLabel(range) {
   const map = {
     self: '自身',
     ally_all: '味方全体',
+    enemy_all: '敵全体',
     front1: '前方1マス',
     front2: '前方2マス',
     front3: '前方3マス',
@@ -491,7 +493,8 @@ function b32RangeLabel(range) {
     fan_2row_3_ally: '前方扇状',
     front_row_3_ally: '前方横3マス',
     front_and_side_3_ally: '前方1・左右1マス',
-    super_but_night_6: '前方特殊範囲'
+    super_but_night_6: '前方特殊範囲',
+    front_line_all_ally: '前方同列すべて'
   };
   return map[range] || range || '—';
 }
@@ -3055,13 +3058,25 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
 
  // ── 味方：HP増減は必ず下部パネル側に表示 ──
 
- // 1) 3人パーティカード
+ // 1) 3人パーティカード（通常バトル）
  const card = document.querySelector(`.b32-party-card[data-uid="${unitInfo._uid}"]`);
  const cardRect = _validRect(card);
  if (cardRect) {
  return {
  x: cardRect.left + cardRect.width * 0.5,
  y: cardRect.top + cardRect.height * 0.22,
+ };
+ }
+
+ // 1.5) ローグライト用ロスターカード
+ // ローグライトでは #b32-party-status を描画せず、#b32-roster-panel 側がキャラパネルになるため、
+ // deployedUid と一致するロスターカードを優先してダメージ/回復数値の表示先にする。
+ const rosterCard = document.querySelector(`.b32-roster-card[data-deployed-uid="${unitInfo._uid}"]`);
+ const rosterRect = _validRect(rosterCard);
+ if (rosterRect) {
+ return {
+ x: rosterRect.left + rosterRect.width * 0.5,
+ y: rosterRect.top + rosterRect.height * 0.18,
  };
  }
 
@@ -3344,6 +3359,9 @@ function _getTargetElement(unitInfo) {
  const card = document.querySelector(`.b32-party-card[data-uid="${unitInfo._uid}"]`);
  if (_validRect(card)) return card;
 
+ const rosterCard = document.querySelector(`.b32-roster-card[data-deployed-uid="${unitInfo._uid}"]`);
+ if (_validRect(rosterCard)) return rosterCard;
+
  const actionCard = document.querySelector(`.b32-action-char-card[data-uid="${unitInfo._uid}"]`);
  if (_validRect(actionCard)) return actionCard;
 
@@ -3445,8 +3463,13 @@ function _showImpactShake(unitInfo) {
  if (_validRect(card)) {
  el = card;
  } else {
+ const rosterCard = document.querySelector(`.b32-roster-card[data-deployed-uid="${unitInfo._uid}"]`);
+ if (_validRect(rosterCard)) {
+ el = rosterCard;
+ } else {
  const ac = document.querySelector(`.b32-action-char-card[data-uid="${unitInfo._uid}"]`);
  if (_validRect(ac)) el = ac;
+ }
  }
  }
  if (!el) return;
@@ -3637,6 +3660,7 @@ function _onHealEvent(data) {
  [
  ...bs.allies.filter(u => u.hp > 0),
  ...bs.enemies.filter(u => u.hp > 0 || u.isBoss),
+ ...(bs.summons || []).filter(u => u && u.hp > 0),
  ].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
 
  // ── スキルフェーズ用ハイライト ──
@@ -4017,6 +4041,7 @@ if (typeof window.cleanupBattle32Overlays === 'function') {
   'b32-enemy-quick-info',
   'b32-battle-menu',
   'b32-center-text',
+  'b32-turn-danger-frame',
   'b32-result-overlay',
   'rl-victory-wait-layer',
   'b32-action-detail-portal'
@@ -4155,9 +4180,12 @@ const enemyIdClass = u.side === 'enemy' && u.id
 
 const stunnedClass = isStunned ? ' is-stunned' : '';
 
+const summonClass = u.side === 'summon' ? ' summon' : '';
+
 const extraCls =
  (isDone ? ' skill-done' : '') +
  (u.isBoss ? ' boss' : '') +
+ summonClass +
  midBossClass +
  enemyIdClass;
 
@@ -5549,7 +5577,10 @@ let ultGaugeHtml = '';
        hpBarHtml = `<div class="b32-roster-hp-bar-wrap"><div class="b32-roster-hp-bar" style="width:${hpPct}%"></div></div>`;
      }
 
-     return `<div class="b32-roster-card" onclick="_b32OnRosterTap('${r.rosterId}')"
+     return `<div class="b32-roster-card"
+       data-roster-id="${r.rosterId}"
+       data-deployed-uid="${r.deployedUid || ''}"
+       onclick="_b32OnRosterTap('${r.rosterId}')"
        style="
          flex:0 0 82px;width:82px;min-width:82px;max-width:82px;
          display:flex;flex-direction:column;align-items:center;gap:2px;
@@ -6133,6 +6164,7 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
   'b32-enemy-quick-info',
   'b32-battle-menu',
   'b32-center-text',
+  'b32-turn-danger-frame',
   'b32-result-overlay',
   'rl-victory-wait-layer',
   'b32-action-detail-portal'

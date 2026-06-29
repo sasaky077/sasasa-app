@@ -221,25 +221,44 @@
     if (!list) return;
     list.innerHTML = '';
 
-    // ── ローグライトランバナー（chapter === 'roguelite' or chapter === 99 で表示）──
+    // ── ローグライトランバナー（chapter === 'roguelite' or chapter === 0 で表示）──
     // chapter 0（DEBUG）にもバナーを表示してデバッグしやすくする
     if (chapter === 'roguelite' || chapter === 0) {
-      const rlCard = document.createElement('div');
-      rlCard.className = 'ss-card';
-      rlCard.style.cssText = 'border-color:rgba(140,80,255,.35);background:rgba(60,20,120,.08)';
-      rlCard.innerHTML = `
-        <div class="ss-card-no" style="border-color:rgba(140,80,255,.35);color:rgba(160,100,255,.7)">🎲</div>
-        <div class="ss-card-body">
-          <div class="ss-card-name" style="color:rgba(200,170,255,.9)">ローグライトラン</div>
-          <div class="ss-card-meta">
-            <div class="ss-card-enemy" style="color:rgba(160,120,255,.5)">4ステージ突破 · 強化OP選択</div>
+      const runs = [
+        {
+          id: 'default',
+          icon: '🎲',
+          name: 'ローグライトラン',
+          meta: '4ステージ突破 · 強化OP選択',
+          color: 'rgba(140,80,255,.9)',
+        },
+        {
+          id: 'sakiel',
+          icon: '✦',
+          name: 'サキエル降臨',
+          meta: '雑魚3戦 → Stage 4 サキエル',
+          color: 'rgba(230,220,255,.92)',
+        },
+      ];
+
+      runs.forEach(run => {
+        const rlCard = document.createElement('div');
+        rlCard.className = 'ss-card';
+        rlCard.style.cssText = 'border-color:rgba(140,80,255,.35);background:rgba(60,20,120,.08)';
+        rlCard.innerHTML = `
+          <div class="ss-card-no" style="border-color:rgba(140,80,255,.35);color:${run.color}">${run.icon}</div>
+          <div class="ss-card-body">
+            <div class="ss-card-name" style="color:rgba(232,228,220,.92)">${run.name}</div>
+            <div class="ss-card-meta">
+              <div class="ss-card-enemy" style="color:rgba(190,170,255,.55)">${run.meta}</div>
+            </div>
           </div>
-        </div>
-        <div class="ss-diff-badge" style="color:rgba(140,80,255,.9);border-color:rgba(140,80,255,.4)">ROGUELITE</div>
-        <div class="ss-card-arrow">›</div>
-      `;
-      rlCard.onclick = () => _openRoguelitePartySelect();
-      list.appendChild(rlCard);
+          <div class="ss-diff-badge" style="color:rgba(140,80,255,.9);border-color:rgba(140,80,255,.4)">ROGUELITE</div>
+          <div class="ss-card-arrow">›</div>
+        `;
+        rlCard.onclick = () => _openRoguelitePartySelect(run.id);
+        list.appendChild(rlCard);
+      });
 
       // roguelite 専用表示ならここで終了
       if (chapter === 'roguelite') return;
@@ -296,17 +315,20 @@
   // ============================================================
   // ローグライト：パーティ選択を開く（battleMode:'roguelite' を渡す）
   // ============================================================
-  function _openRoguelitePartySelect() {
+  function _openRoguelitePartySelect(runId) {
+    const selectedRunId = runId || 'default';
+    window.__ROGUELITE_PENDING_RUN_ID__ = selectedRunId;
     closeStageSelect();
     setTimeout(() => {
       if (typeof window.openPartySelect === 'function') {
         window.openPartySelect(null, {
           battleMode: 'roguelite',
+          rogueliteRunId: selectedRunId,
         });
       } else {
         // party_select がない場合はデフォルトパーティで即起動
         if (window.RogueliteController) {
-          window.RogueliteController.startRun([8, 12, 7]);
+          window.RogueliteController.startRun([8, 12, 7], { runId: selectedRunId });
         }
       }
     }, 350);
@@ -381,9 +403,11 @@
     const el = document.getElementById('stage-select-modal');
     const title = document.getElementById('ss-title');
     if (title) {
-      title.textContent = chapter === 0
-        ? '— DEBUG —'
-        : 'CHAPTER ' + String(chapter).padStart(2, '0');
+      title.textContent = chapter === 'roguelite'
+        ? 'ROGUELITE'
+        : chapter === 0
+          ? '— DEBUG —'
+          : 'CHAPTER ' + String(chapter).padStart(2, '0');
     }
 
     renderList(chapter);

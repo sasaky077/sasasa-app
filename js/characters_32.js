@@ -95,8 +95,17 @@
     isUltimate: isUlt,
     hitStyle: skill.hitStyle || 'normal',
     pierce: !!skill.pierce,
+    targetStatus: skill.targetStatus || skill.requiredStatus || null,
+    requiredStatus: skill.requiredStatus || skill.targetStatus || null,
     effects: filteredEffects,
     moveBonus: skill.moveBonus || null,
+
+    // 盤面設置型スキル用
+    summonImg: skill.summonImg || null,
+    summonDuration: skill.summonDuration || 0,
+    summonRange: skill.summonRange || null,
+    summonTickMultiplier: skill.summonTickMultiplier || null,
+
     desc: skill.desc || '',
   };
 }

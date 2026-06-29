@@ -12,6 +12,7 @@
 //         'sure_hit_self' | 'sure_hit_team' | 'heal' | 'poison'
 //         'pull_1' | 'pull_2' | 'push_1' | 'push_2' | 'push_3'
 //         'shift_right_1' | 'shift_right_2' | 'shift_left_1' | 'shift_left_2'
+//         'ally_shift_right_down' | 'ally_shift_left_down'
 //   target: 'enemy' | 'ally_self' | 'ally_all'
 //   hit: 効果命中率（省略時100）
 //   duration: 持続ターン数
@@ -46,7 +47,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
     favScale: 0.85, favOffsetY: -35,
-    uiScale: {panel: 1.0,battleBack: 0.9},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
   {
   id: 's1',
@@ -102,7 +103,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_06_battle_back.webp',
     panelImg: 'images/chara_06_panel.webp',
     favScale: 0.85, favOffsetY: -35,
-    uiScale: {panel: 1.0,battleBack: 0.9},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       {
         id: 's1',
@@ -157,18 +158,21 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_02_battle_back.webp',
     panelImg: 'images/chara_02_panel.webp',
     favScale: 0.85, favOffsetY: -25,
-    uiScale: {panel: 1.0,battleBack: 0.87},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: 'おやすみなさい',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
-        type: 'attack',
-        multiplier: 1.5,
+        type: 'debuff',
+        multiplier: 0.0,
         range: 'fan_2row_3_ally',
-        effects: [],
-        desc: '射程：前方2段×横3マス。対象の敵にATK×1.5のダメージを与える。' },
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 2 }
+        ],
+        hitStyle: 'sleep',
+        desc: '射程：前方2段×横3マス。対象の敵に眠りを付与する（2ターンスタン）。' },
 
       {
   id: 'ult',
@@ -177,13 +181,12 @@ const CHARACTERS = [
   isUltimate: true,
   hit: 100,
   type: 'attack',
-  multiplier: 2.2,
-  range: 'super_but_night_6',
-  effects: [
-    { type: 'stun', target: 'enemy', hit: 60, duration: 1 }
-  ],
-  hitStyle: 'multi',
-  desc: '射程：前方特殊6マス。対象の敵にATK×2.2のダメージを与え、60%の確率で1ターン行動不能にする。'}
+  multiplier: 3.2,
+  range: 'enemy_all',
+  targetStatus: 'stun',
+  effects: [],
+  hitStyle: 'heavy',
+  desc: '射程：敵全体。ただし眠り（スタン）状態の敵のみを対象に、ATK×3.2の大ダメージを与える。'}
   ]},
 
   // ── id:3 ──────────────────────────────────
@@ -207,20 +210,21 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_03_battle_back.webp',
     panelImg: 'images/chara_03_panel.webp',
     favScale: 1.0, favOffsetY: 10,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
       name: '支配',
-     linkCost: 3,
-  isUltimate: false,
-  hit: 100,
-  type: 'debuff',
-  multiplier: 0.0,
-  range: 'front_all_rows_ally',
-  effects: [
-    { type: 'jittai', target: 'enemy', hit: 100, duration: 2 }
-  ],
-  desc: '射程：自身より前方すべて。ダメージなし。対象の敵を2ターン実体化させる。' },
+      linkCost: 3,
+      isUltimate: false,
+      hit: 100,
+      type: 'ally_reposition',
+      multiplier: 0.0,
+      range: 'front_line_all_ally',
+      allyShiftDirection: 'right',
+      effects: [
+        { type: 'ally_shift_right_down', target: 'ally', hit: 100 }
+      ],
+      desc: '射程：自身の前方同列すべて。対象の味方を1マス右へずらし、さらに味方側へ限界まで引き寄せる。' },
 
       { id: 'ult',
         name: '絶対の命令',
@@ -257,7 +261,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_07_battle_back.webp',
     panelImg: 'images/chara_07_panel.webp',
     favScale: 0.95, favOffsetY: 5,
-    uiScale: {panel: 1.0,battleBack: 0.88},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: '集中',
@@ -305,7 +309,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_05_battle_back.webp',
     panelImg: 'images/chara_05_panel.webp',
     favScale: 0.95, favOffsetY: 5,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: '剣術・紫繰',
@@ -355,8 +359,8 @@ const CHARACTERS = [
     battleImg: 'images/chara_01_battle.webp',
     battleBackImg: 'images/chara_01_battle_back.webp',
     panelImg: 'images/chara_01_panel.webp',
-    favScale: 0.85, favOffsetY: -10,
-    uiScale: {panel: 1.0,battleBack: 1.0},    
+    favScale: 1.0, favOffsetY: -10,
+    uiScale: {panel: 1.0,battleBack: 1.5},    
     skills: [
       { id: 's1',
         name: '謎の光',
@@ -402,7 +406,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_13_battle_back.webp',
     panelImg: 'images/chara_13_panel.webp',
     favScale: 0.90, favOffsetY: 10,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: '影打ち',
@@ -455,7 +459,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_04_battle_back.webp',
     panelImg: 'images/chara_04_panel.webp',
     favScale: 1.00, favOffsetY: 20,
-    uiScale: {panel: 1.0,battleBack: 0.87},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: 'もう無理～',
@@ -504,25 +508,23 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
     favScale: 0.90, favOffsetY: 20,
-    uiScale: {panel: 1.0,battleBack: 1.02},
+    uiScale: {panel: 1.0,battleBack: 1.52},
     skills: [
-      { id: 's1',
-        name: '序章',
-        linkCost: 3,
-        isUltimate: false,
-        hit: 100,
-        type: 'attack',
-        multiplier: 1.3,
-        range: 'pierce3',
-        effects: [
-          {
-             type: 'pull_2', 
-             target: 'enemy', 
-             hit: 100, 
-             duration: 1 
-            }
-        ],
-        desc: '射程：前方直線3マス。対象の敵にATK×1.3のダメージを与え、2マス引き寄せる。' },
+{
+  id: 's1',
+  name: '序章',
+  linkCost: 3,
+  isUltimate: false,
+  hit: 100,
+  type: 'ally_reposition',
+  multiplier: 0.0,
+  range: 'front_line_all_ally',
+  allyShiftDirection: 'left',
+  effects: [
+    { type: 'ally_shift_left_down', target: 'ally', hit: 100 }
+  ],
+  desc: '射程：自身の前方同列すべて。対象の味方を1マス左へずらし、さらに味方側へ限界まで引き寄せる。'
+},
 
       {
   id: 'ult',
@@ -531,13 +533,13 @@ const CHARACTERS = [
   isUltimate: true,
   hit: 100,
   type: 'attack',
-  multiplier: 1.0,
+  multiplier: 3.0,
   range: 'around8',
   effects: [
     { type: 'push_3', target: 'enemy', hit: 100, duration: 1 }
   ],
   hitStyle: 'multi',
-  desc: '射程：自身の周囲1マス。対象の敵にATK×1.0のダメージを与え、3マス後退させる。'
+  desc: '射程：自身の周囲1マス。対象の敵にATK×3.0のダメージを与え、3マス後退させる。'
 }
     ]},
 
@@ -563,7 +565,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_19_battle_back.webp',
     panelImg: 'images/chara_19_panel.webp',
     favScale: 0.95, favOffsetY: 15,
-    uiScale: {panel: 1.0,battleBack: 0.97},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: '浄化の風',
@@ -616,7 +618,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_20_battle_back.webp',
     panelImg: 'images/chara_20_panel.webp',
     favScale: 0.90, favOffsetY: -35,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: 'Overdose',
@@ -671,8 +673,8 @@ const CHARACTERS = [
     battleImg: 'images/chara_14_battle.webp',
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
-    favScale: 0.85, favOffsetY: -15,
-    uiScale: {panel: 1.0,battleBack: 0.9},
+    favScale: 1.0, favOffsetY: -15,
+    uiScale: {panel: 1.0,battleBack: 1.7},
     skills: [  
   { 
     id: 's1', 
@@ -724,7 +726,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_16_battle_back.webp',
     panelImg: 'images/chara_16_panel.webp',
     favScale: 1.1, favOffsetY: 35,
-    uiScale: {panel: 1.0,battleBack: 0.83},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: 'シロと一緒',
@@ -744,18 +746,22 @@ const CHARACTERS = [
         linkCost: 5,
         isUltimate: true,
         hit: 100,
-        type: 'attack',
-        multiplier: 2.0,
-        range: 'pierce_all',
+        type: 'summon_object',
+        multiplier: 1.0,
+        range: 'front2',
+        summonImg: 'images/chara_16_set.webp',
+        summonDuration: 3,
+        summonRange: 'around9',
+        summonTickMultiplier: 1.0,
         effects: [
         { 
           type: 'drain', 
           target: 'ally_all', 
-          rate: 0.3 
+          rate: 0.5 
         }
         ],
         hitStyle: 'multi',
-        desc: '射程：前方直線全体。対象の敵にATK×2.0のダメージを与える。さらに与えたダメージの30%分、味方全員のHPを回復する。' }
+        desc: '射程：前方2マス先。式神を設置する。式神は3ターンの間、周囲9マスの敵にATK×1.0の継続ダメージを与え、与えたダメージの50%分、味方全員のHPを回復する。3ターン後に消える。' }
         ]},
 
  // ── id:8 
@@ -778,7 +784,7 @@ const CHARACTERS = [
     battleImg: 'images/chara_08_battle.webp',
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
-    uiScale: {panel: 1.0,battleBack: 0.9},
+    uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
         name: 'ギルティ',

@@ -7712,3 +7712,23 @@
   ) !important;
   opacity: 1 !important;
 }
+
+
+/* 盤面設置型召喚物（chara_16_set.webp） */
+.b32-unit.summon {
+  width: calc(var(--cell-size) * 1.28);
+  height: calc(var(--cell-size) * 1.78);
+  bottom: 0px;
+  z-index: 2;
+}
+
+.b32-unit.summon .b32-unit-icon {
+  height: calc(var(--cell-size) * 1.62);
+  filter: drop-shadow(0 0 8px rgba(220,240,255,.55));
+}
+
+.b32-unit.summon .b32-unit-name,
+.b32-unit.summon .b32-unit-foot-ui,
+.b32-unit.summon .b32-shinki-dots {
+  display: none !important;
+}

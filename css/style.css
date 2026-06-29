@@ -10028,3 +10028,27 @@ body,
     drop-shadow(0 0 3px rgba(255,255,255,0.22))
     drop-shadow(0 2px 4px rgba(0,0,0,0.35)) !important;
 }
+
+.global-user-frame .hud-resource {
+  height: 24px !important;
+  min-width: 64px !important;
+  border-radius: 12px !important;
+  padding: 3px 8px 3px 6px !important;
+}
+
+.global-user-frame .hud-res-icon {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+}
+
+.global-user-frame .hud-res-val {
+  font-size: 12px !important;
+  min-width: 26px !important;
+}
+
+.global-user-frame .hud-gem-plus-btn {
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 12px !important;
+}

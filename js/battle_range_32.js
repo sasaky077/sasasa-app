@@ -644,6 +644,18 @@ front2_backdiag2: [
       return s;
     }
 
+    // front_line_all_ally: 自分より前方の同じ列すべて
+    // 味方位置移動スキル用。味方は上方向が前方なので、row 0 〜 user.row - 1 の同列。
+    if (range === 'front_line_all_ally') {
+      const s = new Set();
+      if (user && user.row != null && user.col != null) {
+        for (let r = 0; r < user.row; r++) {
+          if (isValidCell(r, user.col)) s.add(`${r}-${user.col}`);
+        }
+      }
+      return s;
+    }
+
     const normalized = normalizeRange32(range);
     if (!normalized) return new Set();
     if (normalized.origin === 'field') return cellsFromField32(normalized.cells);

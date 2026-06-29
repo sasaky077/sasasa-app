@@ -28,77 +28,146 @@
     return [ROGUELITE_FIXED_FIRST_CHARA_ID, ...rest].slice(0, 4);
   }
 
-  // ── ステージ定義 ──────────────────────────────────────────
-  // 現在の構成：4戦MVP（雑魚3戦 → ボス1戦）
-  //   Stage 1: 雑魚戦
-  //   Stage 2: 雑魚戦
-  //   Stage 3: 雑魚戦
-  //   Stage 4: ボス戦
-  //
-  // 将来的には「雑魚3戦 → ボーナスステージ → ボス戦」の5区間構成へ拡張予定:
-  //   Stage 1〜3: 雑魚戦
-  //   Stage 4:    ボーナス（OP選択・霊装付与等）← 将来追加
-  //   Stage 5:    ボス戦                        ← 将来追加
-  //
+  // ── ラン定義 ──────────────────────────────────────────
+  // 1つ目: 既存ローグライトラン
+  // 2つ目: サキエル降臨（雑魚3戦 → サキエル）
   // enemyIds は enemies.js の ENEMIES[].id と対応
-  const STAGE_DEFS = [
-    {
-      stage: 1,
-      isBoss: false,
-      label: 'Stage 1',
-      subLabel: '雑魚戦',
-      enemyIds: ['rl_chaos_walker', 'rl_chaos_slant'],
-      enemyActionMode: 'limit',
-      enemyActionsPerTurn: 2,
-      turnLimit: 10,
+  const ROGUELITE_RUN_DEFS = {
+    default: {
+      id: 'default',
+      name: 'ローグライトラン',
+      subName: '白糸の残響',
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: false,
+          label: 'Stage 1',
+          subLabel: '雑魚戦',
+          enemyIds: ['rl_chaos_walker', 'rl_chaos_slant'],
+          enemyActionMode: 'limit',
+          enemyActionsPerTurn: 2,
+          turnLimit: 10,
+        },
+        {
+          stage: 2,
+          isBoss: false,
+          label: 'Stage 2',
+          subLabel: '雑魚戦',
+          enemyIds: ['rl_chaos_walker_plus', 'rl_logos_ranged', 'rl_mystis_caster'],
+          enemyActionMode: 'limit',
+          enemyActionsPerTurn: 2,
+          turnLimit: 10,
+        },
+        {
+          stage: 3,
+          isBoss: false,
+          label: 'Stage 3',
+          subLabel: '雑魚戦',
+          enemyIds: ['rl_chaos_elite', 'rl_logos_elite', 'rl_mystis_elite', 'rl_chaos_ranged'],
+          enemyActionMode: 'limit',
+          enemyActionsPerTurn: 3,
+          turnLimit: 12,
+        },
+        {
+          stage: 4,
+          isBoss: true,
+          label: 'Stage 4',
+          subLabel: 'BOSS',
+          enemyIds: ['enemy_01', 'enemy_02b'],
+          enemyRandomStartPosition: true,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 13,
+          enemySpawn: {
+            enemyId: 'enemy_02a',
+            interval: 2,
+            rows: [0, 1, 2, 3],
+            cols: [0, 1, 2, 3, 4],
+          },
+        },
+      ],
     },
-    {
-      stage: 2,
-      isBoss: false,
-      label: 'Stage 2',
-      subLabel: '雑魚戦',
-      enemyIds: ['rl_chaos_walker_plus', 'rl_logos_ranged', 'rl_mystis_caster'],
-      enemyActionMode: 'limit',
-      enemyActionsPerTurn: 2,
-      turnLimit: 10,
+
+    sakiel: {
+      id: 'sakiel',
+      name: 'サキエル降臨',
+      subName: '白翼の断罪者',
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: false,
+          label: 'Stage 1',
+          subLabel: '雑魚戦',
+          enemyIds: ['rl_sakiel_zako_straight', 'rl_sakiel_zako_diag'],
+          enemyActionMode: 'limit',
+          enemyActionsPerTurn: 2,
+          turnLimit: 10,
+        },
+        {
+          stage: 2,
+          isBoss: false,
+          label: 'Stage 2',
+          subLabel: '雑魚戦',
+          enemyIds: ['rl_sakiel_zako_straight', 'rl_sakiel_zako_ranged', 'rl_sakiel_zako_diag'],
+          enemyActionMode: 'limit',
+          enemyActionsPerTurn: 2,
+          turnLimit: 10,
+        },
+        {
+          stage: 3,
+          isBoss: false,
+          label: 'Stage 3',
+          subLabel: '雑魚戦',
+          enemyIds: ['rl_sakiel_zako_elite', 'rl_sakiel_zako_ranged', 'rl_sakiel_zako_diag', 'rl_sakiel_zako_straight'],
+          enemyActionMode: 'limit',
+          enemyActionsPerTurn: 3,
+          turnLimit: 12,
+        },
+        {
+          stage: 4,
+          isBoss: true,
+          label: 'Stage 4',
+          subLabel: 'SAKIEL',
+          enemyIds: ['enemy_sakiel_roguelite'],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 14,
+          enemySpawn: {
+            enemyId: 'rl_sakiel_zako_straight',
+            interval: 2,
+            rows: [0, 1, 2, 3],
+            cols: [0, 1, 2, 3, 4],
+          },
+        },
+      ],
     },
-    {
-      stage: 3,
-      isBoss: false,
-      label: 'Stage 3',
-      subLabel: '雑魚戦',
-      enemyIds: ['rl_chaos_elite', 'rl_logos_elite', 'rl_mystis_elite', 'rl_chaos_ranged'],
-      enemyActionMode: 'limit',
-      enemyActionsPerTurn: 3,
-      turnLimit: 12,
-    },
-    {
-      stage: 4,
-      isBoss: true,
-      label: 'Stage 4',
-      subLabel: 'BOSS',
-      enemyIds: ['enemy_01', 'enemy_02b'],
-      enemyRandomStartPosition: true,
-      enemyActionMode: 'all',
-      enemyActionsPerTurn: null,
-      turnLimit: 13,
-      enemySpawn: {
-        enemyId: 'enemy_02a',
-        interval: 2,
-        rows: [0, 1, 2, 3],
-        cols: [0, 1, 2, 3, 4],
-      },
-    },
-  ];
+  };
+
+  const STAGE_DEFS = ROGUELITE_RUN_DEFS.default.stageDefs;
+
+  function getRunDef(runId) {
+    return ROGUELITE_RUN_DEFS[runId] || ROGUELITE_RUN_DEFS.default;
+  }
+
+  function getCurrentRunDef() {
+    if (!_state && window.__ROGUELITE_PENDING_RUN_ID__) {
+      return getRunDef(window.__ROGUELITE_PENDING_RUN_ID__);
+    }
+    return getRunDef(_state && _state.runId);
+  }
 
   // ── 内部状態 ───────────────────────────────────────────────
   let _state = null;
   // { active, stageNo, options[], partyIds[], result }
 
   // ── 内部: 初期ステート ────────────────────────────────────
-  function _newState(partyIds) {
+  function _newState(partyIds, runId) {
+    const runDef = getRunDef(runId || 'default');
     return {
       active:   true,
+      runId:    runDef.id,
+      runName:  runDef.name,
       stageNo:  1,
       options:  [],   // 取得済みOP オブジェクト（passive）
       items:    [],   // 取得済みアイテム（最大2枠）
@@ -109,9 +178,9 @@
 
   // ── 公開API ───────────────────────────────────────────────
 
-  function start(partyIds) {
-    _state = _newState(partyIds);
-    console.log('[RogueliteRun] ラン開始', { partyIds, state: _state });
+  function start(partyIds, runId) {
+    _state = _newState(partyIds, runId);
+    console.log('[RogueliteRun] ラン開始', { partyIds, runId: _state.runId, state: _state });
     return _state;
   }
 
@@ -129,7 +198,8 @@
 
   function getStageDef() {
     if (!_state) return null;
-    return STAGE_DEFS[_state.stageNo - 1] || null;
+    const runDef = getRunDef(_state.runId);
+    return runDef.stageDefs[_state.stageNo - 1] || null;
   }
 
   function getOptions() {
@@ -165,7 +235,8 @@
 
   function advance() {
     if (!_state || !_state.active) return;
-    if (_state.stageNo < 4) {
+    const runDef = getRunDef(_state.runId);
+    if (_state.stageNo < runDef.stageDefs.length) {
       _state.stageNo++;
       console.log('[RogueliteRun] 次ステージ:', _state.stageNo);
     }
@@ -176,6 +247,8 @@
     _state.active = false;
     _state.result = result;
     const snap = JSON.parse(JSON.stringify({
+      runId: _state.runId,
+      runName: _state.runName,
       stageNo: _state.stageNo,
       options: _state.options.map(o => ({ id: o.id, name: o.name, icon: o.icon })),
       result,
@@ -231,11 +304,16 @@
   // グローバル公開
   window.RogueliteRun = {
     STAGE_DEFS,
+    RUN_DEFS: ROGUELITE_RUN_DEFS,
+    getRunDef,
+    getCurrentRunDef,
     start,
     isActive,
     getStageNo,
     isBossStage,
     getStageDef,
+    getRunId: () => _state ? _state.runId : null,
+    getRunName: () => _state ? _state.runName : getCurrentRunDef().name,
     getOptions,
     getItems,
     addOption,

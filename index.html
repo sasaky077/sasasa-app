@@ -132,9 +132,11 @@
 
       <!-- 特別巡行 -->
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
-        <div class="ninmu-panel-coming">
-          <div class="ninmu-panel-coming-title">COMING SOON</div>
-          <div class="ninmu-panel-coming-body">近日実装予定</div>
+        <div class="ninmu-chapter-list">
+          <div class="ninmu-chapter-item" onclick="openStageSelect('roguelite')">
+            <div class="ninmu-chapter-label">ROGUELITE</div>
+            <div class="ninmu-chapter-title">ローグライト</div>
+          </div>
         </div>
       </div>
 
@@ -765,7 +767,8 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=1"></script>
+<script src="js/home_banners.js?v=2"></script>
+<script src="js/notices.js?v=1"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -4667,6 +4670,36 @@ function initHomeBannerSwipe(){
   }, { passive: true });
 }
 
+
+// ホームイベントバナー「サキエル降臨」から、サキエルローグライトへ直接遷移
+function openSakielRogueliteFromHome(){
+  // 背面表示は巡行 > 特別巡行に合わせておく
+  if (typeof showMainTab === 'function') {
+    showMainTab('ninmu');
+  }
+  if (typeof switchNinmuCat === 'function') {
+    switchNinmuCat('special');
+  }
+
+  // stage_select.js の _openRoguelitePartySelect('sakiel') と同等の処理
+  window.__ROGUELITE_PENDING_RUN_ID__ = 'sakiel';
+
+  setTimeout(function(){
+    if (typeof window.openPartySelect === 'function') {
+      window.openPartySelect(null, {
+        battleMode: 'roguelite',
+        rogueliteRunId: 'sakiel'
+      });
+      return;
+    }
+
+    // party_select が未読込・未実装の場合のフォールバック
+    if (window.RogueliteController && typeof window.RogueliteController.startRun === 'function') {
+      window.RogueliteController.startRun([8, 12, 7], { runId: 'sakiel' });
+    }
+  }, 350);
+}
+
 function openHomeBanner(index){
   var banners = getHomeEventBanners().filter(function(banner){
     return banner && banner.hidden !== true;
@@ -4894,33 +4927,6 @@ function fadeOutOpeningBgm(){
     }
   }, 50);
 }
-
-// =========================================================
-// お知らせモーダル
-// =========================================================
-function openNoticeModal(event){
-  if(event){
-    event.stopPropagation();
-    event.preventDefault();
-  }
-  var modal = document.getElementById('notice-modal');
-  if(!modal) return;
-  modal.classList.add('active');
-}
-
-function closeNoticeModal(){
-  var modal = document.getElementById('notice-modal');
-  if(!modal) return;
-  modal.classList.remove('active');
-}
-
-document.addEventListener('click', function(e){
-  var modal = document.getElementById('notice-modal');
-  if(!modal || !modal.classList.contains('active')) return;
-  if(e.target === modal){
-    closeNoticeModal();
-  }
-});
 
 const B32_SAVE_KEY = 'battle32_resume_state';
 const B32_SAVE_VERSION = '2026-06-07-b32-resume-001';
@@ -5481,17 +5487,6 @@ window.addEventListener('pagehide', function () {
   </div>
 </div>
 
-<!-- お知らせモーダル -->
-<div id="notice-modal" class="notice-modal">
-  <div class="notice-panel">
-    <button class="notice-close" onclick="closeNoticeModal()">×</button>
-
-    <div class="notice-head">
-      <img src="images/mail.webp" alt="">
-      <div>
-        <div class="notice-title">お知らせ</div>
-        <div class="notice-sub">Notice</div>
-      </div>
     </div>
 
     <div class="notice-list">

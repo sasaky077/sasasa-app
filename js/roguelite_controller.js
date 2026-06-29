@@ -488,7 +488,7 @@ function _hideHud() {
   }
 
   // ローグライト専用UI要素も非表示
-  ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
+  ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel', 'b32-turn-danger-frame'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -528,15 +528,17 @@ function _hideHud() {
     // isBossStage → ボス敵のimgを使って演出
     // 雑魚戦 → 先頭の雑魚定義を使って演出（imgがなければスキップ）
     const def = window.RogueliteRun.getStageDef();
-    const introEnemies = def && def.isBoss
-      ? (config.enemyIds || []).map(id => {
-          const e = typeof getEnemyById === 'function' ? getEnemyById(id) : null;
-          return e ? JSON.parse(JSON.stringify(e)) : { id, name:'??????', img:'images/enemy_01.webp' };
-        }).filter(Boolean)
-      : (config.enemies || []).map(e => ({
-          ...e,
-          img: e.img || 'images/enemy_test.webp',
-        }));
+    const introEnemies = (config.enemyIds || []).map(id => {
+      const e = typeof getEnemyById === 'function' ? getEnemyById(id) : null;
+      return e ? JSON.parse(JSON.stringify(e)) : { id, name:'??????', img:'images/enemy_test.webp' };
+    }).filter(Boolean);
+
+    if (introEnemies.length === 0 && Array.isArray(config.enemies)) {
+      config.enemies.forEach(e => introEnemies.push({
+        ...e,
+        img: e.img || 'images/enemy_test.webp',
+      }));
+    }
 
     if (typeof window.startEnemyIntro === 'function' && introEnemies.length > 0) {
       window.startEnemyIntro(introEnemies, [], config);
@@ -768,14 +770,22 @@ async function _onBattleEnd(result, payload) {
    * party_select.js の confirmPartySelect() 等から呼ぶ
    * @param {number[]} partyIds - 選択済みキャラ ID 配列
    */
-  function startRun(partyIds) {
+  function startRun(partyIds, runOptions) {
     _injectStyles();
+
+    const runId = (typeof runOptions === 'string')
+      ? runOptions
+      : (runOptions && runOptions.runId)
+        || window.__ROGUELITE_PENDING_RUN_ID__
+        || 'default';
+
+    window.__ROGUELITE_PENDING_RUN_ID__ = null;
 
     if (window.RogueliteRun.isActive()) {
       window.RogueliteRun.end('lose'); // 既存ランを中断
     }
 
-    window.RogueliteRun.start(partyIds || []);
+    window.RogueliteRun.start(partyIds || [], runId);
 _hideHud();
 _startBattle();
   }
@@ -820,6 +830,7 @@ _startBattle();
   // グローバル公開
   window.RogueliteController = {
     startRun,
+    startSakielRun: (partyIds) => startRun(partyIds, { runId: 'sakiel' }),
     mountDebugButton,
     // デバッグ用: 直接終了コールバックを呼べるようにする
     _onBattleEnd,
