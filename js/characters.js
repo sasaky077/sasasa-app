@@ -241,6 +241,73 @@ const CHARACTERS = [
         desc: '射程：前方直線3マス。対象の敵にATK×1.6のダメージを与え、50%の確率で1ターン行動不能にする。' }
     ]},
 
+     // ── id:17 ──────────────────────────────────
+  // スタン・ATKデバフで敵を妨害する妨害役。
+  { id: 17, name: 'ロゼ', rarity: 'r',
+    element: 'chaos',
+  role: '妨害寄り',
+  moveType: 'front_back_row3',
+    costMax: 10,
+    costStart: 6,
+    costRegen: 5,
+    shinkiMax: 3,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 720, ATK: 210 },
+    img: 'images/chara_17.webp', 
+    cutImg: 'images/chara_17_cut.webp', 
+    ultImg: 'images/chara_17_cutin.webp',
+    upImg: 'images/chara_17_up.webp', 
+    battleImg: 'images/chara_17_battle.webp',
+    battleBackImg: 'images/chara_17_battle_back.webp',
+    panelImg: 'images/chara_17_panel.webp',
+    favScale: 0.85, favOffsetY: -25,
+    uiScale: {panel: 1.0,battleBack: 1.5},
+    skills: [
+      { id: 's1',
+        name: 'ラブリーソーン',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        type: 'debuff',
+        multiplier: 0.0,
+        range: 'fan_2row_3_ally',
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 2 }
+        ],
+        hitStyle: 'sleep',
+        desc: '射程：前方2段×横3マス。対象の敵に眠りを付与する（2ターンスタン）。' },
+
+      {
+  id: 'ult',
+  name: 'ブラッディ・ローズ・ガーデン',
+  linkCost: 5,
+  isUltimate: true,
+  hit: 100,
+  type: 'summon_object',
+  multiplier: 0.0,
+  range: 'front2',
+  summonName: '茨薔薇',
+  summonImg: 'images/chara_17_set.webp',
+  summonDuration: 3,
+  summonDistance: 2,
+  summonCount: 3,
+  summonOffsets: [
+    { dr: 0, dc: -1 },
+    { dr: 0, dc:  0 },
+    { dr: 0, dc:  1 },
+  ],
+  summonRange: 'around9',
+  summonTickMultiplier: 0.35,
+  summonScale: 1.35,
+  effects: [
+    { type: 'stun', target: 'enemy', hit: 40, duration: 1 }
+  ],
+  hitStyle: 'summon_tick',
+  desc: '射程：前方2マス先を中心に横3マス。3つの茨薔薇を設置する。茨薔薇は3ターンの間、周囲9マスの敵に毎ターンATK×0.35の継続ダメージを与え、40%の確率で1ターンスタンさせる。'}
+  ]},
+
+
   // ── id:7 
 { id: 7, name: 'スイ', rarity: 'r',
     element: 'chaos',
@@ -655,7 +722,7 @@ const CHARACTERS = [
 
   // ── id:14 ──────────────────────────────────
   // コピー系。
-  { id: 14, name: 'ロゼ', rarity: 'r',
+  { id: 14, name: 'イグニス', rarity: 'r',
     element: 'chaos',
     role: 'テクニック寄り',
     moveType: 'silver',
@@ -807,6 +874,60 @@ const CHARACTERS = [
         range: 'around8',
         effects: [],
         desc: '射程：自身の周囲1マス。対象の敵にATK×2.5のダメージを与える。' }
+    ]},
+
+
+  // ── id:9 ミア ──────────────────────────────────
+  // 猫モチーフ。白猫のように距離を詰め、爪跡で敵の攻撃力を落とす妨害寄りアタッカー。
+  { id: 9, name: 'ミア', rarity: 'r',
+    element: 'mystis',
+    role: '妨害寄り',
+    moveType: 'front_side_jump',
+    costMax: 12,
+    costStart: 5,
+    costRegen: 4,
+    shinkiMax: 4,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 680, ATK: 265 },
+    img: 'images/chara_09.webp',
+    cutImg: 'images/chara_09_cut.webp',
+    ultImg: 'images/chara_09_cutin.webp',
+    upImg: 'images/chara_09_up.webp',
+    battleImg: 'images/chara_09_battle.webp',
+    battleBackImg: 'images/chara_09_battle_back.webp',
+    panelImg: 'images/chara_09_panel.webp',
+    favScale: 0.90, favOffsetY: -25,
+    uiScale: {panel: 1.0, battleBack: 1.5},
+    skills: [
+      { id: 's1',
+        name: 'ネコダマシ',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        type: 'attack',
+        multiplier: 1.1,
+        range: 'cat_paw_ally',
+        effects: [
+          { type: 'atk_down', target: 'enemy', hit: 70, duration: 1, rate: 0.75 }
+        ],
+        hitStyle: 'rapid',
+        desc: '射程：前方1マス＋斜め前2マス＋左右1マス。対象の敵にATK×1.1のダメージを与え、70%の確率で1ターンATKを25%低下させる。' },
+
+      { id: 'ult',
+        name: 'ルミニャス・インパクト',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        type: 'attack',
+        multiplier: 2.2,
+        range: 'cat_moon_ally',
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 60, duration: 1 },
+          { type: 'atk_down', target: 'enemy', hit: 100, duration: 2, rate: 0.65 }
+        ],
+        hitStyle: 'heavy',
+        desc: '射程：前方2段の月爪範囲。対象の敵にATK×2.2のダメージを与え、60%の確率で1ターン行動不能にし、2ターンATKを35%低下させる。' }
     ]},
 
   ];

@@ -1361,11 +1361,15 @@ function _executeDelayedAttack(action) {
       img: skill.summonImg || 'images/chara_16_set.webp',
       battleImg: skill.summonImg || 'images/chara_16_set.webp',
       battleBackImg: skill.summonImg || 'images/chara_16_set.webp',
-      uiScale: { battleBack: 1.45 },
+      uiScale: { battleBack: Number(skill.summonScale || 1.45) },
       uiOffset: { battleBack: 0 },
       statusEffects: [],
       remainingTurns: duration,
       tickMultiplier: Number(skill.summonTickMultiplier || skill.multiplier || 1.0),
+      tickEffects: (skill.effects || [])
+        .filter(e => e && e.type !== 'drain' && (!e.target || e.target === 'enemy'))
+        .map(e => ({ ...e })),
+      summonRange: skill.summonRange || 'around9',
       drainRate: ((skill.effects || []).find(e => e && e.type === 'drain') || {}).rate ?? 0.5,
       drainTarget: ((skill.effects || []).find(e => e && e.type === 'drain') || {}).target || 'ally_all',
     };
@@ -1377,16 +1381,36 @@ function _executeDelayedAttack(action) {
   }
 
   function _executeSummonObjectSkill(ally, skill) {
-    const pos = _getForwardCellFromUnit(ally, 2);
-    if (!_isInsideBoard(pos.row, pos.col)) {
-      _log(`${ally.name}：2マス先が盤面外です`);
+    const distance = Math.max(1, Number(skill.summonDistance || 2));
+    const base = _getForwardCellFromUnit(ally, distance);
+    const rawOffsets = Array.isArray(skill.summonOffsets) && skill.summonOffsets.length > 0
+      ? skill.summonOffsets
+      : [{ dr: 0, dc: 0 }];
+    const count = Math.max(1, Number(skill.summonCount || rawOffsets.length || 1));
+    const offsets = rawOffsets.slice(0, count);
+
+    let created = 0;
+    offsets.forEach(offset => {
+      const row = Number(base.row) + Number(offset && offset.dr || 0);
+      const col = Number(base.col) + Number(offset && offset.dc || 0);
+
+      if (!_isInsideBoard(row, col)) {
+        _log(`${ally.name}：設置候補が盤面外です`);
+        return;
+      }
+      if (_isCellBlocked(row, col)) {
+        _log(`${ally.name}：設置候補には設置できません`);
+        return;
+      }
+
+      _createBoardSummon(ally, skill, row, col);
+      created += 1;
+    });
+
+    if (created <= 0) {
+      _log(`${ally.name}：召喚物を設置できるマスがありません`);
       return false;
     }
-    if (_isCellBlocked(pos.row, pos.col)) {
-      _log(`${ally.name}：2マス先には設置できません`);
-      return false;
-    }
-    _createBoardSummon(ally, skill, pos.row, pos.col);
     return true;
   }
 
@@ -1430,6 +1454,10 @@ function _executeDelayedAttack(action) {
           applyDamage(enemy, dmg, source, skillInfo);
           drainTotal += Math.min(dmg, hpBefore);
           _log(`${summon.name} が ${enemy.name} に ${dmg} ダメージ`);
+
+          if (enemy.hp > 0 && Array.isArray(summon.tickEffects) && summon.tickEffects.length > 0) {
+            _applyEffects(summon.tickEffects, enemy, source);
+          }
         });
 
         if (drainTotal > 0) {

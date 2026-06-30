@@ -469,6 +469,7 @@ function b32SkillTypeLabel(skill) {
     repeat_skill: '再演',
     delayed_attack: '予約攻撃',
     random_cell_attack: 'ランダム攻撃',
+    summon_object: '召喚',
     ally_reposition: '位置移動'
   };
   return map[skill?.type] || skill?.type || '—';

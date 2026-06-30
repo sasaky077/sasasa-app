@@ -101,10 +101,15 @@
     moveBonus: skill.moveBonus || null,
 
     // 盤面設置型スキル用
+    summonName: skill.summonName || null,
     summonImg: skill.summonImg || null,
     summonDuration: skill.summonDuration || 0,
+    summonDistance: skill.summonDistance || null,
+    summonCount: skill.summonCount || null,
+    summonOffsets: Array.isArray(skill.summonOffsets) ? skill.summonOffsets.map(o => ({ ...o })) : null,
     summonRange: skill.summonRange || null,
     summonTickMultiplier: skill.summonTickMultiplier || null,
+    summonScale: skill.summonScale || null,
 
     desc: skill.desc || '',
   };

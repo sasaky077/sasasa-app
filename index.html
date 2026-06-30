@@ -3511,6 +3511,49 @@ setTenResultFooterVisible(true);
       '</div>';
   }
 
+
+  function openPrimorImageFullscreen(charaId){
+    var id = Number(charaId);
+    var chara = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+      ? CHARACTERS.find(function(c){ return Number(c.id) === id; })
+      : null;
+    if(!chara) return;
+
+    // 未所持は全画面表示しない（LOCKEDの中身を見せないため）
+    var owned = getOwnedInstancesByCharaId(id).length > 0;
+    if(!owned) return;
+
+    var src = chara.img || chara.upImg || chara.panelImg || 'images/unknown.webp';
+    var name = chara.name || '';
+
+    var old = document.getElementById('primor-fullscreen-viewer');
+    if(old) old.remove();
+
+    var ov = document.createElement('div');
+    ov.id = 'primor-fullscreen-viewer';
+    ov.innerHTML =
+      '<div class="primor-fullscreen-bg"></div>' +
+      '<button class="primor-fullscreen-close" aria-label="閉じる">×</button>' +
+      '<div class="primor-fullscreen-content">' +
+        '<img class="primor-fullscreen-img" src="' + detailEscapeHTML(src) + '" alt="' + detailEscapeHTML(name) + '">' +
+        '<div class="primor-fullscreen-name">' + detailEscapeHTML(name) + '</div>' +
+      '</div>';
+
+    function close(){
+      ov.classList.add('closing');
+      setTimeout(function(){ if(ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 180);
+      document.removeEventListener('keydown', onKeyDown);
+    }
+    function onKeyDown(e){ if(e.key === 'Escape') close(); }
+
+    ov.addEventListener('click', close);
+    ov.querySelector('.primor-fullscreen-content').addEventListener('click', function(e){ e.stopPropagation(); });
+    ov.querySelector('.primor-fullscreen-close').addEventListener('click', function(e){ e.stopPropagation(); close(); });
+    document.addEventListener('keydown', onKeyDown);
+
+    document.body.appendChild(ov);
+  }
+
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
@@ -3556,8 +3599,9 @@ setTenResultFooterVisible(true);
 
     if(owned){
       visualHtml =
-        '<div class="box-carousel-visual owned">' +
-          '<img class="box-carousel-img" src="' + panelSrc + '">' +
+        '<div class="box-carousel-visual owned is-clickable" onclick="openPrimorImageFullscreen(' + chara.id + ')" role="button" aria-label="プリモア画像を全画面表示">' +
+          '<img class="box-carousel-img" src="' + panelSrc + '" alt="' + detailEscapeHTML(chara.name || displayData.name || '') + '">' +
+          '<div class="box-carousel-zoom-hint">画像をタップで拡大</div>' +
         '</div>';
       nameHtml = '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || displayData.name || '') + '</div>';
       detailHtml = buildCharacterDetailHTML(Object.assign({}, displayData, {

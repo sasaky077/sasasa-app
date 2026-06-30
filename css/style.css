@@ -10052,3 +10052,149 @@ body,
   height: 18px !important;
   font-size: 12px !important;
 }
+
+/* 邂逅画面の「10回引く」文字色を見やすくする */
+#screen-summon .btn-gacha-ten .btn-gacha-label,
+#screen-summon .btn-gacha-guaranteed .btn-gacha-label {
+  color: #fff6d6 !important;
+}
+
+#screen-summon .btn-gacha-ten .btn-gacha-cost,
+#screen-summon .btn-gacha-guaranteed .btn-gacha-cost {
+  color: rgba(255, 245, 210, 0.95) !important;
+}
+
+/* =========================================================
+   102 Primor Fullscreen Viewer
+   - プリモア一覧の画像タップで chara_XX.webp を全画面表示
+   ========================================================= */
+.box-carousel-visual.is-clickable {
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.box-carousel-visual.is-clickable:active {
+  transform: scale(0.985);
+}
+
+.box-carousel-zoom-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(27,27,31,0.10);
+  color: rgba(27,27,31,0.48);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+  box-shadow: 0 4px 12px rgba(27,27,31,0.10);
+}
+
+.box-carousel-visual.is-clickable:hover .box-carousel-zoom-hint,
+.box-carousel-visual.is-clickable:active .box-carousel-zoom-hint {
+  opacity: 1;
+}
+
+#primor-fullscreen-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 500000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.94);
+  animation: primorFullscreenIn .18s ease both;
+  cursor: zoom-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#primor-fullscreen-viewer.closing {
+  animation: primorFullscreenOut .18s ease both;
+}
+
+.primor-fullscreen-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 36%),
+    rgba(0,0,0,0.92);
+  pointer-events: none;
+}
+
+.primor-fullscreen-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 22px) 18px calc(env(safe-area-inset-bottom) + 28px);
+  box-sizing: border-box;
+  cursor: default;
+}
+
+.primor-fullscreen-img {
+  max-width: 100%;
+  max-height: calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  object-fit: contain;
+  display: block;
+  filter:
+    drop-shadow(0 24px 42px rgba(0,0,0,0.92))
+    drop-shadow(0 0 18px rgba(255,255,255,0.18));
+}
+
+.primor-fullscreen-name {
+  margin-top: 14px;
+  color: rgba(255,255,255,0.92);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  font-family: "Noto Serif JP", serif;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+}
+
+.primor-fullscreen-hint {
+  margin-top: 6px;
+  color: rgba(255,255,255,0.42);
+  font-size: 11px;
+  letter-spacing: .12em;
+  font-family: "Noto Serif JP", serif;
+}
+
+.primor-fullscreen-close {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: 14px;
+  z-index: 3;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.42);
+  color: rgba(255,255,255,0.88);
+  font-size: 28px;
+  line-height: 36px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@keyframes primorFullscreenIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes primorFullscreenOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}

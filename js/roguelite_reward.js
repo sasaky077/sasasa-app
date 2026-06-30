@@ -234,6 +234,93 @@
   letter-spacing: .08em;
   font-family: "Noto Serif JP", serif;
 }
+
+
+/* ── 選択確認モーダル ── */
+.rl-rw-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.58);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: rl-fade-in .16s ease both;
+}
+.rl-rw-confirm-panel {
+  width: min(360px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(190,150,255,0.34);
+  background: linear-gradient(168deg, #1b1232 0%, #080514 100%);
+  box-shadow: 0 18px 42px rgba(0,0,0,0.62), 0 0 38px rgba(120,70,255,0.25);
+  padding: 22px 18px 18px;
+  text-align: center;
+  font-family: "Noto Serif JP", serif;
+}
+.rl-rw-confirm-title {
+  margin: 0 0 12px;
+  font-size: .98rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  color: #efe6ff;
+  text-shadow: 0 0 14px rgba(160,100,255,.55);
+}
+.rl-rw-confirm-choice {
+  margin: 0 auto 14px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(160,120,255,0.18);
+}
+.rl-rw-confirm-icon {
+  display: block;
+  font-size: 1.8rem;
+  line-height: 1;
+  margin-bottom: 7px;
+}
+.rl-rw-confirm-name {
+  display: block;
+  font-size: .9rem;
+  font-weight: 800;
+  color: #e1d4ff;
+  letter-spacing: .06em;
+}
+.rl-rw-confirm-desc {
+  margin-top: 6px;
+  font-size: .68rem;
+  line-height: 1.55;
+  color: rgba(205,185,255,0.64);
+}
+.rl-rw-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.rl-rw-confirm-btn {
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(180,150,255,0.28);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  font-family: "Noto Serif JP", serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.rl-rw-confirm-btn.cancel {
+  color: rgba(225,215,255,0.78);
+  background: rgba(255,255,255,0.055);
+}
+.rl-rw-confirm-btn.ok {
+  color: #fff;
+  background: linear-gradient(135deg, #6b38ff, #a06cff);
+  box-shadow: 0 0 18px rgba(120,70,255,0.42);
+}
+.rl-rw-confirm-btn:active { transform: scale(.98); }
     `;
     document.head.appendChild(s);
   }
@@ -303,6 +390,76 @@
     return ov;
   }
 
+
+
+  function _escapeHtml(v) {
+    return String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function _showConfirmDialog(selected, selectedCard, cb) {
+    if (!_overlay || !selected) return;
+
+    const old = _overlay.querySelector('.rl-rw-confirm-backdrop');
+    if (old) old.remove();
+
+    const confirm = document.createElement('div');
+    confirm.className = 'rl-rw-confirm-backdrop';
+    confirm.innerHTML = `
+      <div class="rl-rw-confirm-panel" role="dialog" aria-modal="true" aria-label="報酬選択の確認">
+        <div class="rl-rw-confirm-title">これでいいですか？</div>
+        <div class="rl-rw-confirm-choice" data-rarity="${_escapeHtml(selected.rarity || 'common')}">
+          <span class="rl-rw-confirm-icon">${_escapeHtml(selected.icon || '✦')}</span>
+          <span class="rl-rw-confirm-name">${_escapeHtml(selected.name || '')}</span>
+          <div class="rl-rw-confirm-desc">${_escapeHtml(selected.desc || '')}</div>
+        </div>
+        <div class="rl-rw-confirm-actions">
+          <button type="button" class="rl-rw-confirm-btn cancel">戻る</button>
+          <button type="button" class="rl-rw-confirm-btn ok">決定</button>
+        </div>
+      </div>
+    `;
+
+    confirm.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    const restoreCards = () => {
+      if (!_overlay) return;
+      _overlay.querySelectorAll('.rl-rw-card').forEach(c => {
+        c.style.pointerEvents = '';
+        c.classList.remove('selected');
+      });
+    };
+
+    confirm.querySelector('.rl-rw-confirm-btn.cancel').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      confirm.remove();
+      restoreCards();
+    });
+
+    confirm.querySelector('.rl-rw-confirm-btn.ok').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      confirm.querySelectorAll('button').forEach(btn => { btn.disabled = true; });
+
+      setTimeout(() => {
+        hide();
+        if (typeof cb === 'function') {
+          cb(selected);
+        }
+      }, 160);
+    });
+
+    _overlay.appendChild(confirm);
+  }
+
   // ── 公開API ────────────────────────────────────────────────
 
   let _overlay  = null;
@@ -337,12 +494,18 @@
 
   console.log('[RogueliteReward] overlay built:', _overlay);
 
-    // カードクリック
+    // カードクリック：即決定せず、確認モーダルを挟む
     _overlay.querySelectorAll('.rl-rw-card').forEach((card, i) => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
         if (!_overlay) return;
+        if (_overlay.querySelector('.rl-rw-confirm-backdrop')) return;
 
-        // 二重クリック防止
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // 確認中の二重クリック防止
         _overlay.querySelectorAll('.rl-rw-card')
           .forEach(c => { c.style.pointerEvents = 'none'; });
 
@@ -352,12 +515,7 @@
         // hide() の中で _callback = null になるため、必ず先に退避する
         const cb = _callback;
 
-        setTimeout(() => {
-          hide();
-          if (typeof cb === 'function') {
-            cb(selected);
-          }
-        }, 360);
+        _showConfirmDialog(selected, card, cb);
       });
     });
 
