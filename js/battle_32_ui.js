@@ -1011,8 +1011,8 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
  /* 背景は暗くしすぎない */
  background:
- radial-gradient(circle at 55% 48%, rgba(255,230,170,.18), transparent 42%),
- linear-gradient(180deg, rgba(0,0,0,.72), rgba(6,8,18,.54), rgba(0,0,0,.78));
+ radial-gradient(circle at 55% 48%, rgba(255,240,190,.14), transparent 42%),
+ linear-gradient(180deg, rgba(0,0,0,.50), rgba(6,8,18,.30), rgba(0,0,0,.58));
 
  animation: b32UltCutinWrap 1900ms ease-out forwards;
 }
@@ -1034,12 +1034,12 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  transform: translate(-50%, -50%);
  opacity: 1;
 
- /* 暗さ対策。ここを強める */
+ /* ULT画像の視認性を最優先。暗幕より前で明るく強く出す */
  filter:
- brightness(1.42)
- contrast(1.18)
- saturate(1.12)
- drop-shadow(0 0 18px rgba(255,230,170,.22));
+ brightness(1.95)
+ contrast(1.28)
+ saturate(1.22)
+ drop-shadow(0 0 24px rgba(255,240,190,.45));
 
  animation: b32UltCutinImgSlide 1700ms cubic-bezier(.18,.82,.22,1) forwards;
 }
@@ -1052,17 +1052,17 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  /* 上下だけ締めて、中央画像は暗くしすぎない */
  background:
  linear-gradient(180deg,
-   rgba(0,0,0,.82) 0%,
-   rgba(0,0,0,.30) 24%,
-   rgba(0,0,0,.10) 48%,
-   rgba(0,0,0,.26) 72%,
-   rgba(0,0,0,.86) 100%
+   rgba(0,0,0,.58) 0%,
+   rgba(0,0,0,.12) 24%,
+   rgba(0,0,0,.00) 48%,
+   rgba(0,0,0,.10) 72%,
+   rgba(0,0,0,.62) 100%
  ),
  linear-gradient(90deg,
-   rgba(0,0,0,.56) 0%,
-   rgba(0,0,0,.12) 34%,
-   rgba(0,0,0,.06) 70%,
-   rgba(0,0,0,.44) 100%
+   rgba(0,0,0,.30) 0%,
+   rgba(0,0,0,.04) 34%,
+   rgba(0,0,0,.00) 70%,
+   rgba(0,0,0,.26) 100%
  );
 }
 
@@ -1179,22 +1179,22 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  0% {
  opacity: 0;
  transform: translate(-70%, -50%);
- filter: brightness(1.32) contrast(1.14) saturate(1.10);
+ filter: brightness(1.80) contrast(1.22) saturate(1.18);
  }
  14% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.42) contrast(1.18) saturate(1.12);
+ filter: brightness(1.95) contrast(1.28) saturate(1.22);
  }
  76% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.42) contrast(1.18) saturate(1.12);
+ filter: brightness(1.95) contrast(1.28) saturate(1.22);
  }
  100% {
  opacity: 0;
  transform: translate(-68%, -50%);
- filter: brightness(1.22) contrast(1.10) saturate(1.06);
+ filter: brightness(1.65) contrast(1.18) saturate(1.14);
  }
 }
 
@@ -3219,6 +3219,320 @@ function _showElementMatchText(unitInfo, elementMatch) {
  });
 }
 
+
+// ============================================================
+// 攻撃アップ演出：味方と敵を大きく見せてからヒットさせる
+// damage イベント後に表示するため、HP計算は Battle32 側で完了済み。
+// ============================================================
+let _b32AttackCinematicBusy = false;
+let _b32AttackCinematicLastKey = '';
+let _b32AttackCinematicLastAt = 0;
+
+function _injectAttackCinematicStyle() {
+ if (document.getElementById('b32-attack-cinematic-style')) return;
+ const s = document.createElement('style');
+ s.id = 'b32-attack-cinematic-style';
+ s.textContent = `
+#b32-attack-cinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 62% 34%, rgba(255,255,255,.18), transparent 30%),
+    radial-gradient(circle at 30% 62%, rgba(120,190,255,.10), transparent 34%),
+    linear-gradient(180deg, rgba(8,6,18,.42), rgba(0,0,0,.74));
+  backdrop-filter: blur(6px) saturate(1.10);
+  -webkit-backdrop-filter: blur(6px) saturate(1.10);
+  opacity: 0;
+  animation: b32CineInOut 1120ms ease forwards;
+}
+#b32-attack-cinematic::before {
+  content: '';
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 48%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,235,190,.92), rgba(255,255,255,.96), rgba(255,235,190,.92), transparent);
+  box-shadow: 0 0 24px rgba(255,235,190,.72), 0 0 54px rgba(255,255,255,.38);
+  transform: rotate(-18deg) scaleX(0);
+  transform-origin: 36% 50%;
+  animation: b32CineLine 1120ms ease forwards;
+}
+#b32-attack-cinematic::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(126px, 22vh, 210px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+  opacity: .65;
+}
+.b32-cine-unit {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  filter: drop-shadow(0 18px 26px rgba(0,0,0,.72));
+}
+.b32-cine-unit img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+  transform: none !important;
+}
+.b32-cine-ally {
+  left: max(10px, 7vw);
+  bottom: clamp(132px, 24vh, 220px);
+  width: min(44vw, 270px);
+  height: min(48vh, 390px);
+  transform: translate(-28px, 18px) scale(.92);
+  z-index: 2;
+  animation: b32CineAlly 1120ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+.b32-cine-enemy {
+  right: max(10px, 8vw);
+  top: clamp(50px, 10vh, 92px);
+  width: min(42vw, 250px);
+  height: min(44vh, 360px);
+  transform: translate(28px, -14px) scale(.92);
+  z-index: 1;
+  animation: b32CineEnemy 1120ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+.b32-cine-impact {
+  position: absolute;
+  left: 63%;
+  top: 38%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.95);
+  box-shadow: 0 0 20px rgba(255,255,255,.95), 0 0 80px rgba(255,210,120,.72);
+  transform: translate(-50%, -50%) scale(.1);
+  opacity: 0;
+  animation: b32CineImpact 1120ms ease forwards;
+}
+.b32-cine-damage {
+  position: absolute;
+  left: 63%;
+  top: 31%;
+  transform: translate(-50%, -50%) scale(.72);
+  color: #fff2d2;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-weight: 900;
+  font-size: clamp(30px, 10vw, 64px);
+  letter-spacing: .04em;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.95),
+    0 0 24px rgba(255,210,110,.92),
+    0 4px 16px rgba(0,0,0,1);
+  opacity: 0;
+  animation: b32CineDamage 1120ms ease forwards;
+}
+.b32-cine-skill {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(96px, 18vh, 168px);
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border: 1px solid rgba(232,200,122,.42);
+  border-radius: 999px;
+  background: rgba(9,7,18,.62);
+  color: rgba(255,245,215,.92);
+  font-family: "Noto Serif JP", serif;
+  font-weight: 800;
+  font-size: clamp(12px, 3.3vw, 16px);
+  letter-spacing: .12em;
+  white-space: nowrap;
+  opacity: 0;
+  animation: b32CineSkill 1120ms ease forwards;
+}
+@keyframes b32CineInOut {
+  0% { opacity: 0; }
+  10%, 82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes b32CineLine {
+  0%, 28% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
+  44% { transform: rotate(-18deg) scaleX(1); opacity: 1; }
+  70%, 100% { transform: rotate(-18deg) scaleX(1.08); opacity: 0; }
+}
+@keyframes b32CineAlly {
+  0% { opacity: 0; transform: translate(-42px, 28px) scale(.86); }
+  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
+  38% { transform: translate(18px, -18px) scale(1.04); }
+  50% { transform: translate(42px, -40px) scale(1.10); filter: drop-shadow(0 0 26px rgba(255,235,180,.72)); }
+  78% { opacity: 1; transform: translate(28px, -26px) scale(1.03); }
+  100% { opacity: 0; transform: translate(28px, -26px) scale(1); }
+}
+@keyframes b32CineEnemy {
+  0% { opacity: 0; transform: translate(42px, -28px) scale(.86); }
+  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
+  42% { transform: translate(-8px, 6px) scale(1.02); }
+  50% { transform: translate(-26px, 18px) scale(1.05) rotate(-1.5deg); filter: drop-shadow(0 0 28px rgba(255,255,255,.66)); }
+  78% { opacity: 1; transform: translate(-16px, 12px) scale(1.02); }
+  100% { opacity: 0; transform: translate(-16px, 12px) scale(1); }
+}
+@keyframes b32CineImpact {
+  0%, 40% { opacity: 0; transform: translate(-50%, -50%) scale(.1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(5.8); }
+  72%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(9); }
+}
+@keyframes b32CineDamage {
+  0%, 48% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
+  56% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  80% { opacity: 1; transform: translate(-50%, -64%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -86%) scale(.96); }
+}
+@keyframes b32CineSkill {
+  0%, 8% { opacity: 0; transform: translate(-50%, 8px); }
+  22%, 78% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -8px); }
+}
+
+/* ── 敵→味方 攻撃時：配置は同じ（敵★右上 / 味方☆左下）、動きと着弾位置だけ反転 ── */
+#b32-attack-cinematic.enemy-attack::before {
+  transform-origin: 64% 50%;
+  animation-name: b32CineLineEnemy;
+}
+#b32-attack-cinematic.enemy-attack .b32-cine-enemy {
+  z-index: 2;
+  animation: b32CineEnemyAttack 1120ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+#b32-attack-cinematic.enemy-attack .b32-cine-ally {
+  z-index: 1;
+  animation: b32CineAllyHit 1120ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+#b32-attack-cinematic.enemy-attack .b32-cine-impact {
+  left: 35%;
+  top: 62%;
+  box-shadow: 0 0 20px rgba(255,255,255,.95), 0 0 80px rgba(255,70,90,.62);
+}
+#b32-attack-cinematic.enemy-attack .b32-cine-damage {
+  left: 35%;
+  top: 53%;
+  color: #ffd8d8;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.95),
+    0 0 24px rgba(255,80,95,.92),
+    0 4px 16px rgba(0,0,0,1);
+}
+#b32-attack-cinematic.enemy-attack .b32-cine-skill {
+  border-color: rgba(255,120,130,.38);
+  color: rgba(255,225,225,.94);
+}
+@keyframes b32CineLineEnemy {
+  0%, 28% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
+  44% { transform: rotate(-18deg) scaleX(1); opacity: 1; }
+  70%, 100% { transform: rotate(-18deg) scaleX(1.08); opacity: 0; }
+}
+@keyframes b32CineEnemyAttack {
+  0% { opacity: 0; transform: translate(42px, -28px) scale(.86); }
+  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
+  38% { transform: translate(-10px, 10px) scale(1.03); }
+  50% { transform: translate(-42px, 40px) scale(1.10); filter: drop-shadow(0 0 28px rgba(255,130,130,.70)); }
+  78% { opacity: 1; transform: translate(-30px, 26px) scale(1.03); }
+  100% { opacity: 0; transform: translate(-30px, 26px) scale(1); }
+}
+@keyframes b32CineAllyHit {
+  0% { opacity: 0; transform: translate(-42px, 28px) scale(.86); }
+  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
+  42% { transform: translate(4px, -4px) scale(1.00); }
+  50% { transform: translate(-18px, 14px) scale(1.04) rotate(1.2deg); filter: drop-shadow(0 0 28px rgba(255,210,210,.62)); }
+  78% { opacity: 1; transform: translate(-10px, 8px) scale(1.01); }
+  100% { opacity: 0; transform: translate(-10px, 8px) scale(1); }
+}
+@media (max-width: 420px) {
+  .b32-cine-ally {
+    left: max(6px, 6vw);
+    bottom: clamp(122px, 23vh, 190px);
+    width: 46vw;
+    height: 45vh;
+  }
+  .b32-cine-enemy {
+    right: max(6px, 6vw);
+    top: clamp(44px, 9vh, 78px);
+    width: 44vw;
+    height: 40vh;
+  }
+  .b32-cine-impact { left: 64%; top: 36%; }
+  .b32-cine-damage { left: 64%; top: 29%; }
+  .b32-cine-skill {
+    bottom: clamp(88px, 17vh, 148px);
+    max-width: 86vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+ `;
+ document.head.appendChild(s);
+}
+
+function _findCinematicUnit(bs, info) {
+ if (!bs || !info) return null;
+ const list = info.side === 'ally' ? (bs.allies || []) : (bs.enemies || []);
+ return list.find(u => u._uid === info._uid) || null;
+}
+
+function _getCinematicImg(unit) {
+ if (!unit) return '';
+ // 攻撃アップ演出では通常UI用の upImg を使わない。
+ // 専用画像がなければ、盤面用画像へ安全にフォールバックする。
+ return unit.battleUpImg || unit.battleImg || unit.img || unit.panelImg || unit.portrait || unit.cutin || '';
+}
+
+function _showAttackCinematic(data) {
+ if (!data || !data.source || !data.target) return;
+ if (!data.amount || data.amount <= 0) return;
+
+ const isAllyAttack = data.source.side === 'ally' && data.target.side === 'enemy';
+ const isEnemyAttack = data.source.side === 'enemy' && data.target.side === 'ally';
+ if (!isAllyAttack && !isEnemyAttack) return;
+
+ const now = Date.now();
+ const key = `${data.source._uid || ''}:${data.target._uid || ''}:${data.skillId || 'attack'}`;
+ if (_b32AttackCinematicBusy) return;
+ if (_b32AttackCinematicLastKey === key && now - _b32AttackCinematicLastAt < 900) return;
+
+ const bs = data.bs || _bs();
+ const sourceUnit = _findCinematicUnit(bs, data.source);
+ const targetUnit = _findCinematicUnit(bs, data.target);
+ const sourceImg = _getCinematicImg(sourceUnit);
+ const targetImg = _getCinematicImg(targetUnit);
+ if (!sourceImg || !targetImg) return;
+
+ // 表示位置は固定：味方☆は左下、敵★は右上。
+ // 攻撃方向は ov の enemy-attack クラスで切り替える。
+ const allyImg = isAllyAttack ? sourceImg : targetImg;
+ const enemyImg = isAllyAttack ? targetImg : sourceImg;
+
+ _b32AttackCinematicBusy = true;
+ _b32AttackCinematicLastKey = key;
+ _b32AttackCinematicLastAt = now;
+ _injectAttackCinematicStyle();
+
+ const ov = document.createElement('div');
+ ov.id = 'b32-attack-cinematic';
+ if (isEnemyAttack) ov.classList.add('enemy-attack');
+ ov.innerHTML = `
+   <div class="b32-cine-unit b32-cine-ally"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
+   <div class="b32-cine-unit b32-cine-enemy"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>
+   <div class="b32-cine-impact"></div>
+   <div class="b32-cine-damage">-${data.amount}</div>
+   <div class="b32-cine-skill">${data.skillName || (isEnemyAttack ? 'ENEMY ATTACK' : 'ATTACK')}</div>
+ `;
+ document.body.appendChild(ov);
+
+ setTimeout(() => {
+   if (ov.parentNode) ov.parentNode.removeChild(ov);
+   _b32AttackCinematicBusy = false;
+ }, 1180);
+}
+
 function _showUltCutin(skillName, cutinImg) {
  if (!skillName) skillName = 'ULT';
 
@@ -3482,6 +3796,9 @@ function _showImpactShake(unitInfo) {
  // damage / heal イベントハンドラ（Battle32 callbacks から呼ばれる）
  function _onDamageEvent(data) {
  if (!data || !data.target) return;
+
+ // 味方→敵 / 敵→味方のダメージ時に、俯瞰グリッドから一瞬アップ演出へ切り替える。
+ _showAttackCinematic(data);
 
  const isUlt = !!data.isUltimate;
  const hitStyle = data.hitStyle || 'normal';
@@ -4605,12 +4922,11 @@ if (skillNow?.isUltimate) {
  null;
 
  await _showUltCutin(skillNow ? skillNow.name : 'ULT', ultImg);
-} else {
- await _showSkillNameBurst(skillNow ? skillNow.name : 'SKILL', charImg);
 }
 
-// 少しだけ溜めてから実行
-await _wait(60);
+// 通常スキルはスキル名カットインを挟まず、すぐ攻撃アップ演出へ入る。
+// ULTのみ専用カットインを表示してから実行する。
+await _wait(skillNow?.isUltimate ? 60 : 0);
 
 const ok = window.Battle32.executeAllySkill(allyUid, skillId);
 if (!ok) {
@@ -4630,7 +4946,7 @@ if (bsAfterSkill && bsAfterSkill.result) {
 }
 
 // ダメージ・回復演出を見せるための待ち
-await _wait(skillNow?.isUltimate ? 1200 : 850);
+await _wait(skillNow?.isUltimate ? 1800 : 1350);
 
 await window.showBattle32CenterTextAsync('ターン終了', '', 700);
 

@@ -601,7 +601,7 @@ function _getLoseReasonView(reason) {
   if (key === 'turn_over' || key === 'turnover' || key === 'time_over') {
     return {
       title: 'TURN OVER',
-      detail: '規定ターン内に制圧できなかったため、接続限界に到達しました。',
+      detail: '規定ターン内に討伐できなかったため、ゲームオーバーとなります。',
     };
   }
 

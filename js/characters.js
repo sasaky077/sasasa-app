@@ -162,11 +162,11 @@ const CHARACTERS = [
     skills: [
       { id: 's1',
         name: 'おやすみなさい',
-        linkCost: 3,
+        linkCost: 4,
         isUltimate: false,
         hit: 100,
         type: 'debuff',
-        multiplier: 0.0,
+        multiplier: 0.5,
         range: 'fan_2row_3_ally',
         effects: [
           { type: 'stun', target: 'enemy', hit: 100, duration: 2 }
@@ -424,6 +424,7 @@ const CHARACTERS = [
     ultImg: 'images/chara_01_cutin.webp',
     upImg: 'images/chara_01_up.webp', 
     battleImg: 'images/chara_01_battle.webp',
+    battleUpImg: 'images/chara_01_battle_up.webp',
     battleBackImg: 'images/chara_01_battle_back.webp',
     panelImg: 'images/chara_01_panel.webp',
     favScale: 1.0, favOffsetY: -10,
@@ -737,6 +738,7 @@ const CHARACTERS = [
     cutImg: 'images/chara_14_cut.webp', 
     ultImg: 'images/chara_14_cutin.webp',
     upImg: 'images/chara_14_up.webp', 
+    battleUpImg: 'images/chara_14_battle_up.webp',
     battleImg: 'images/chara_14_battle.webp',
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
@@ -849,6 +851,7 @@ const CHARACTERS = [
     ultImg: 'images/chara_08_cutin.webp',
     upImg: 'images/chara_08_up.webp', 
     battleImg: 'images/chara_08_battle.webp',
+    battleUpImg: 'images/chara_08_battle_up.webp',
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
     uiScale: {panel: 1.0,battleBack: 1.5},
@@ -909,10 +912,10 @@ const CHARACTERS = [
         multiplier: 1.1,
         range: 'cat_paw_ally',
         effects: [
-          { type: 'atk_down', target: 'enemy', hit: 70, duration: 1, rate: 0.75 }
+          { type: 'stun', target: 'enemy', hit: 70, duration: 1, rate: 0.75 }
         ],
         hitStyle: 'rapid',
-        desc: '射程：前方1マス＋斜め前2マス＋左右1マス。対象の敵にATK×1.1のダメージを与え、70%の確率で1ターンATKを25%低下させる。' },
+        desc: '射程：前方1マス＋斜め前2マス＋左右1マス。対象の敵にATK×1.1のダメージを与え、70%の確率で敵を1ターンスタンする。' },
 
       { id: 'ult',
         name: 'ルミニャス・インパクト',

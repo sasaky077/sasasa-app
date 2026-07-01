@@ -131,9 +131,10 @@
     shinkiStart: c.shinkiStart || 0,
     shinkiRegen: c.shinkiRegen || 1,
 
-    img: c.battleImg || c.img || null,
-    battleImg: c.battleImg || c.img || null,
-    battleBackImg: c.battleBackImg || c.battleImg || c.img || null,
+    img: c.battleImg || c.battleUpImg || c.img || null,
+    battleImg: c.battleImg || c.battleUpImg || c.img || null,
+    battleUpImg: c.battleUpImg || c.battleImg || c.img || null,
+    battleBackImg: c.battleBackImg || c.battleImg || c.battleUpImg || c.img || null,
 
     panelImg: c.panelImg || c.upImg || c.img || null,
 

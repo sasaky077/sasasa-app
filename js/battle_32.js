@@ -579,8 +579,12 @@ function pickRandomBoardCells(count) {
       battleImg:    charDef.battleImg     || charDef.img       || null,
       battleBackImg: charDef.battleBackImg || null,
 
-      // 下部パネル用
-      panelImg: charDef.panelImg || charDef.upImg || charDef.img || null,
+      // アップ演出・下部パネル用
+      // upImg は通常UI用、battleUpImg はバトル中の攻撃アップ演出専用。
+      // battleUpImg を分けることで、通常詳細/一覧用の upImg を汚さない。
+      battleUpImg: charDef.battleUpImg || null,
+      upImg:       charDef.upImg || charDef.panelImg || charDef.img || null,
+      panelImg:    charDef.panelImg || charDef.upImg || charDef.img || null,
 
       // カットイン用
       cutin: charDef.cutin || charDef.ultImg || charDef.cutImg || null,
@@ -606,6 +610,7 @@ function pickRandomBoardCells(count) {
 
       img: def.battleImg || def.img || def.upImg || null,
       battleImg: def.battleImg || def.img || null,
+      battleUpImg: def.battleUpImg || null,
       upImg: def.upImg || null,
       cutin: def.cutin || def.ultImg || def.cutImg || null,
 
