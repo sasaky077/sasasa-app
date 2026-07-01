@@ -1206,6 +1206,7 @@ const enemies = enemyDefs.map(def => {
       skillName:   skill?.name      || null,
       isUltimate:  !!skill?.isUltimate,
       hitStyle:    skill?.hitStyle  || 'normal',
+      hitCount:    skill?.hitCount  || null,
       bs: _snapshot(),
     });
 

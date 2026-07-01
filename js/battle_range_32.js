@@ -358,6 +358,20 @@ enemy_attack_line: [
       { dr:  0, dc:  1 },
     ],
 
+    // king_8：周囲8方向に1マス移動
+king_8: [
+  { dr: -1, dc: -1 },
+  { dr: -1, dc:  0 },
+  { dr: -1, dc:  1 },
+
+  { dr:  0, dc: -1 },
+  { dr:  0, dc:  1 },
+
+  { dr:  1, dc: -1 },
+  { dr:  1, dc:  0 },
+  { dr:  1, dc:  1 },
+],
+
     // vertical2_frontdiag2：前後2・前方斜め2
     vertical2_frontdiag2: [
       { dr: -2, dc:  0 },

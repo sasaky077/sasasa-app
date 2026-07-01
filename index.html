@@ -3685,9 +3685,9 @@ setTenResultFooterVisible(true);
         horizontal = true;
       }
 
-      if(horizontal){
-        e.preventDefault();
-      }
+      if (horizontal && e.cancelable) {
+  e.preventDefault();
+}
     }, { passive: false });
 
     view.addEventListener('touchend', function(){

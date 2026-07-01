@@ -3128,9 +3128,12 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
 
  // フロートナンバーを表示
  // フロートナンバーを表示
-function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch) {
+function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch, offset) {
  const pos = _getUnitScreenPos(unitInfo);
  if (!pos) return;
+
+ const ox = offset && Number.isFinite(Number(offset.x)) ? Number(offset.x) : 0;
+ const oy = offset && Number.isFinite(Number(offset.y)) ? Number(offset.y) : 0;
 
  const el = document.createElement('div');
  const sign = kind === 'heal' ? '+' : '-';
@@ -3146,8 +3149,8 @@ function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch) {
 
  el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}${elementCls}`;
  el.textContent = `${sign}${amount}`;
- el.style.left = `${pos.x}px`;
- el.style.top = `${pos.y}px`;
+ el.style.left = `${pos.x + ox}px`;
+ el.style.top = `${pos.y + oy}px`;
 
  document.body.appendChild(el);
 
@@ -3425,6 +3428,127 @@ function _injectAttackCinematicStyle() {
   border-color: rgba(255,120,130,.38);
   color: rgba(255,225,225,.94);
 }
+
+/* ── アルノなどの高速多段用：アップ中の敵画像上部に0.4秒ごとにばらけて着弾 ── */
+#b32-attack-cinematic.rapid-multi {
+  animation: b32CineInOutRapid 2600ms ease forwards;
+}
+#b32-attack-cinematic.rapid-multi::before {
+  animation: b32CineRapidLine 2600ms ease forwards;
+}
+#b32-attack-cinematic.rapid-multi .b32-cine-ally {
+  animation: b32CineAllyRapid 2600ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+#b32-attack-cinematic.rapid-multi .b32-cine-enemy {
+  animation: b32CineEnemyRapid 2600ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+#b32-attack-cinematic.rapid-multi .b32-cine-skill {
+  animation: b32CineSkillRapid 2600ms ease forwards;
+}
+.b32-cine-rapid-hit {
+  position: absolute;
+  left: var(--rx, 64%);
+  top: var(--ry, 26%);
+  transform: translate(-50%, -50%) scale(.62);
+  color: #fff2d2;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-weight: 900;
+  font-size: clamp(20px, 6.6vw, 42px);
+  letter-spacing: .04em;
+  text-shadow:
+    0 0 7px rgba(255,255,255,.96),
+    0 0 20px rgba(255,220,120,.92),
+    0 4px 14px rgba(0,0,0,1);
+  opacity: 0;
+  z-index: 5;
+  animation: b32CineRapidDamage 620ms ease forwards;
+  animation-delay: var(--delay, 0ms);
+}
+.b32-cine-rapid-flash {
+  position: absolute;
+  left: var(--rx, 64%);
+  top: var(--ry, 26%);
+  width: clamp(46px, 13vw, 84px);
+  height: clamp(14px, 4vw, 22px);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.98), rgba(255,222,140,.92), transparent);
+  box-shadow:
+    0 0 18px rgba(255,255,255,.96),
+    0 0 42px rgba(255,210,120,.78);
+  opacity: 0;
+  z-index: 4;
+  transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(.12);
+  animation: b32CineRapidFlash 340ms ease-out forwards;
+  animation-delay: var(--delay, 0ms);
+}
+.b32-cine-rapid-burst {
+  position: absolute;
+  left: var(--rx, 64%);
+  top: var(--ry, 26%);
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.92);
+  box-shadow: 0 0 16px rgba(255,255,255,.92), 0 0 42px rgba(255,210,100,.70);
+  opacity: 0;
+  z-index: 3;
+  transform: translate(-50%, -50%) scale(.1);
+  animation: b32CineRapidBurst 380ms ease-out forwards;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes b32CineInOutRapid {
+  0% { opacity: 0; }
+  7%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes b32CineRapidLine {
+  0%, 10% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
+  18%, 76% { transform: rotate(-18deg) scaleX(1.04); opacity: .82; }
+  100% { transform: rotate(-18deg) scaleX(1.10); opacity: 0; }
+}
+@keyframes b32CineAllyRapid {
+  0% { opacity: 0; transform: translate(-42px, 28px) scale(.86); }
+  10% { opacity: 1; transform: translate(0, 0) scale(.96); }
+  22% { transform: translate(36px, -36px) scale(1.08); filter: drop-shadow(0 0 24px rgba(255,235,180,.72)); }
+  32% { transform: translate(22px, -24px) scale(1.03); }
+  42% { transform: translate(42px, -42px) scale(1.09); }
+  52% { transform: translate(24px, -26px) scale(1.04); }
+  62% { transform: translate(44px, -42px) scale(1.10); }
+  76% { opacity: 1; transform: translate(30px, -28px) scale(1.03); }
+  100% { opacity: 0; transform: translate(30px, -28px) scale(1); }
+}
+@keyframes b32CineEnemyRapid {
+  0% { opacity: 0; transform: translate(42px, -28px) scale(.86); }
+  10% { opacity: 1; transform: translate(0, 0) scale(.96); }
+  20% { transform: translate(-8px, 4px) scale(1.01) rotate(-.6deg); }
+  30% { transform: translate(6px, -3px) scale(1.00) rotate(.5deg); }
+  40% { transform: translate(-10px, 5px) scale(1.02) rotate(-.8deg); }
+  50% { transform: translate(7px, -4px) scale(1.00) rotate(.6deg); }
+  60% { transform: translate(-12px, 6px) scale(1.03) rotate(-1deg); filter: drop-shadow(0 0 28px rgba(255,255,255,.66)); }
+  80% { opacity: 1; transform: translate(-8px, 4px) scale(1.01); }
+  100% { opacity: 0; transform: translate(-8px, 4px) scale(1); }
+}
+@keyframes b32CineRapidDamage {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+  58% { opacity: 1; transform: translate(-50%, -74%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -105%) scale(.94); }
+}
+@keyframes b32CineRapidFlash {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(.10); }
+  35% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(1.12); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(1.50); }
+}
+@keyframes b32CineRapidBurst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.1); }
+  36% { opacity: .95; transform: translate(-50%, -50%) scale(3.8); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(6.4); }
+}
+@keyframes b32CineSkillRapid {
+  0%, 5% { opacity: 0; transform: translate(-50%, 8px); }
+  14%, 82% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -8px); }
+}
 @keyframes b32CineLineEnemy {
   0%, 28% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
   44% { transform: rotate(-18deg) scaleX(1); opacity: 1; }
@@ -3515,14 +3639,38 @@ function _showAttackCinematic(data) {
  _b32AttackCinematicLastAt = now;
  _injectAttackCinematicStyle();
 
+ const isRapidMulti = data.hitStyle === 'rapid_multi';
+ const rapidCount = Math.min(8, Math.max(4, Math.floor(Number(data.hitCount || 5))));
+ const rapidParts = isRapidMulti ? _splitDamageAmount(data.amount, rapidCount) : [];
+ const rapidPos = [
+   { x: 62, y: 24, rot: -23 },
+   { x: 70, y: 18, rot:  18 },
+   { x: 66, y: 31, rot: -12 },
+   { x: 58, y: 20, rot:  24 },
+   { x: 72, y: 28, rot: -30 },
+   { x: 61, y: 15, rot:  12 },
+   { x: 68, y: 23, rot: -18 },
+   { x: 74, y: 17, rot:  22 },
+ ];
+ const rapidHtml = isRapidMulti ? rapidParts.map((amount, i) => {
+   const p = rapidPos[i % rapidPos.length];
+   const delay = 300 + i * 400; // 0.4秒ごとに順番表示
+   const style = `--rx:${p.x}%;--ry:${p.y}%;--delay:${delay}ms;--rot:${p.rot}deg;`;
+   return `
+     <div class="b32-cine-rapid-flash" style="${style}"></div>
+     <div class="b32-cine-rapid-burst" style="${style}"></div>
+     <div class="b32-cine-rapid-hit" style="${style}">-${amount}</div>
+   `;
+ }).join('') : '';
+
  const ov = document.createElement('div');
  ov.id = 'b32-attack-cinematic';
  if (isEnemyAttack) ov.classList.add('enemy-attack');
+ if (isRapidMulti) ov.classList.add('rapid-multi');
  ov.innerHTML = `
    <div class="b32-cine-unit b32-cine-ally"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
    <div class="b32-cine-unit b32-cine-enemy"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>
-   <div class="b32-cine-impact"></div>
-   <div class="b32-cine-damage">-${data.amount}</div>
+   ${isRapidMulti ? rapidHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage">-${data.amount}</div>`}
    <div class="b32-cine-skill">${data.skillName || (isEnemyAttack ? 'ENEMY ATTACK' : 'ATTACK')}</div>
  `;
  document.body.appendChild(ov);
@@ -3530,7 +3678,7 @@ function _showAttackCinematic(data) {
  setTimeout(() => {
    if (ov.parentNode) ov.parentNode.removeChild(ov);
    _b32AttackCinematicBusy = false;
- }, 1180);
+ }, isRapidMulti ? 2680 : 1180);
 }
 
 function _showUltCutin(skillName, cutinImg) {
@@ -3720,9 +3868,12 @@ function _showImpactRing(unitInfo, kind, variant) {
 }
 
 // 斜めヒットスラッシュ
-function _showHitSlash(unitInfo, variant, isMulti) {
+function _showHitSlash(unitInfo, variant, isMulti, offset) {
  const pos = _getUnitScreenPos(unitInfo);
  if (!pos) return;
+
+ const baseOx = offset && Number.isFinite(Number(offset.x)) ? Number(offset.x) : 0;
+ const baseOy = offset && Number.isFinite(Number(offset.y)) ? Number(offset.y) : 0;
 
  // slashCount: multi は2本、他は1本
  const count = isMulti ? 2 : 1;
@@ -3737,8 +3888,8 @@ function _showHitSlash(unitInfo, variant, isMulti) {
  // 複数本の場合はわずかにズラす
  const ox = i * 12 - (count - 1) * 6;
  const oy = i * 8 - (count - 1) * 4;
- el.style.left = `${pos.x + ox}px`;
- el.style.top = `${pos.y + oy}px`;
+ el.style.left = `${pos.x + baseOx + ox}px`;
+ el.style.top = `${pos.y + baseOy + oy}px`;
 
  // 2本目は少し遅延
  const delay = i * 80;
@@ -3794,26 +3945,85 @@ function _showImpactShake(unitInfo) {
  }
 
  // damage / heal イベントハンドラ（Battle32 callbacks から呼ばれる）
+ function _splitDamageAmount(total, count) {
+   const safeTotal = Math.max(0, Math.floor(Number(total || 0)));
+   const safeCount = Math.max(1, Math.floor(Number(count || 1)));
+   const base = Math.floor(safeTotal / safeCount);
+   const rest = safeTotal % safeCount;
+   return Array.from({ length: safeCount }, (_, i) => base + (i < rest ? 1 : 0));
+ }
+
+ function _getRapidMultiHitOffset(index, count) {
+   // 敵セルの上部に、同じ場所へ重ならないよう散らす。
+   // 5hit: 左上 → 右上 → 中央上 → 右中上 → 左中上 の順で「パンパンパン」と出る。
+   const presets = [
+     { x: -26, y: -20 },
+     { x:  22, y: -34 },
+     { x:  -6, y: -50 },
+     { x:  30, y: -18 },
+     { x: -18, y: -38 },
+     { x:  10, y: -62 },
+     { x: -34, y: -30 },
+     { x:  36, y: -44 },
+   ];
+   if (count <= presets.length) return presets[index % presets.length];
+   const angle = -Math.PI + (Math.PI * 0.9 * index / Math.max(1, count - 1));
+   return {
+     x: Math.round(Math.cos(angle) * 34),
+     y: Math.round(-38 + Math.sin(angle) * 18),
+   };
+ }
+
  function _onDamageEvent(data) {
  if (!data || !data.target) return;
-
- // 味方→敵 / 敵→味方のダメージ時に、俯瞰グリッドから一瞬アップ演出へ切り替える。
- _showAttackCinematic(data);
 
  const isUlt = !!data.isUltimate;
  const hitStyle = data.hitStyle || 'normal';
  const isMulti = hitStyle === 'multi';
  const isHeavy = hitStyle === 'heavy';
  const isRapid = hitStyle === 'rapid';
+ const isRapidMulti = hitStyle === 'rapid_multi';
+
+ // 味方→敵 / 敵→味方のダメージ時に、俯瞰グリッドから一瞬アップ演出へ切り替える。
+ // rapid_multi はアップ演出側で敵画像上部に5連撃を出すため、グリッド側の数値・フラッシュは出さない。
+ _showAttackCinematic(data);
+ if (isRapidMulti) return;
 
  // shakeVariant: ULT > heavy > normal
  const shakeVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
 
  // slashVariant: ULT スラッシュクラス (ult/heavy/rapid/'' のどれか)
- const slashVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : isRapid ? 'rapid' : '';
+ const slashVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : (isRapid || isRapidMulti) ? 'rapid' : '';
 
  // ringVariant: ULT/heavy で大きく
  const ringVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
+
+ if (isRapidMulti) {
+   const hitCount = Math.min(8, Math.max(4, Math.floor(Number(data.hitCount || 5))));
+   const parts = _splitDamageAmount(data.amount, hitCount);
+
+   parts.forEach((amount, i) => {
+     const hitDelay = 90 + i * 200; // 0.2秒ごとに順番に発生
+     const offset = _getRapidMultiHitOffset(i, hitCount);
+
+     setTimeout(() => {
+       if (i === 0) _showScreenShake(shakeVariant);
+       _showHitSlash(data.target, slashVariant, false, offset);
+       _showImpactShake(data.target);
+       _showHitFlash(data.target, 'damage');
+       if (i === 0 || i === Math.floor(hitCount / 2)) {
+         _showImpactRing(data.target, 'damage', ringVariant);
+       }
+     }, hitDelay);
+
+     setTimeout(() => {
+       _showFloatNumber(data.target, amount, 'damage', false, data.elementMatch, offset);
+       if (i === hitCount - 1) _showElementMatchText(data.target, data.elementMatch);
+     }, hitDelay + 45);
+   });
+
+   return;
+ }
 
  // スキル名表示の直後に「当たった感」が来るよう、少し溜める
  setTimeout(() => {
