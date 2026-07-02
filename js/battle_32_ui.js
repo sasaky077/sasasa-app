@@ -1314,6 +1314,35 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  0 1px 4px rgba(0,0,0,.95) !important;
 }
 
+/* ── CRITICAL ダメージ数値 ── */
+.b32-float-number.damage.critical {
+ font-size: 28px !important;
+ color: #fff6c4 !important;
+ letter-spacing: .06em;
+ text-shadow:
+ 0 0 10px rgba(255,255,255,.95),
+ 0 0 24px rgba(255,220,80,.95),
+ 0 0 42px rgba(255,120,40,.72),
+ 0 2px 5px rgba(0,0,0,1) !important;
+}
+.b32-float-number.damage.critical::before {
+ content: 'CRITICAL';
+ position: absolute;
+ left: 50%;
+ top: -18px;
+ transform: translateX(-50%);
+ font-family: "Cinzel", "Noto Serif JP", serif;
+ font-size: 10px;
+ font-weight: 900;
+ letter-spacing: .12em;
+ color: #fff1a8;
+ text-shadow:
+ 0 0 8px rgba(255,255,255,.9),
+ 0 0 18px rgba(255,200,60,.85),
+ 0 1px 3px rgba(0,0,0,1);
+ white-space: nowrap;
+}
+
 /* ── ULT ヒールナンバー：大きめ ── */
 .b32-float-number.heal.ult {
  font-size: 24px !important;
@@ -3128,7 +3157,7 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
 
  // フロートナンバーを表示
  // フロートナンバーを表示
-function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch, offset) {
+function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch, offset, isCritical) {
  const pos = _getUnitScreenPos(unitInfo);
  if (!pos) return;
 
@@ -3139,6 +3168,7 @@ function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch, offset) {
  const sign = kind === 'heal' ? '+' : '-';
  const isBoss = unitInfo.side === 'enemy' && amount > 500;
  const ultCls = isUlt ? ' ult' : '';
+ const criticalCls = (kind === 'damage' && isCritical) ? ' critical' : '';
 
  // 属性相性クラス
  let elementCls = '';
@@ -3147,7 +3177,7 @@ function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch, offset) {
    if (elementMatch === '不利') elementCls = ' resist';
  }
 
- el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}${elementCls}`;
+ el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}${elementCls}${criticalCls}`;
  el.textContent = `${sign}${amount}`;
  el.style.left = `${pos.x + ox}px`;
  el.style.top = `${pos.y + oy}px`;
@@ -3336,6 +3366,58 @@ function _injectAttackCinematicStyle() {
   opacity: 0;
   animation: b32CineDamage 1120ms ease forwards;
 }
+.b32-cine-damage.critical {
+  color: #fff6b6;
+  font-size: clamp(38px, 12vw, 76px);
+  text-shadow:
+    0 0 10px rgba(255,255,255,1),
+    0 0 28px rgba(255,220,80,.98),
+    0 0 58px rgba(255,116,38,.78),
+    0 5px 18px rgba(0,0,0,1);
+}
+.b32-cine-critical-label {
+  position: absolute;
+  left: 63%;
+  top: 20%;
+  transform: translate(-50%, -50%) scale(.7);
+  color: #fff0a8;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-weight: 900;
+  font-size: clamp(18px, 5.8vw, 38px);
+  letter-spacing: .15em;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.95),
+    0 0 24px rgba(255,220,80,.92),
+    0 3px 12px rgba(0,0,0,1);
+  opacity: 0;
+  animation: b32CineCritical 1120ms ease forwards;
+  pointer-events: none;
+}
+.b32-cine-rapid-hit.critical {
+  color: #fff5af;
+  font-size: clamp(21px, 6vw, 40px);
+  text-shadow:
+    0 0 8px rgba(255,255,255,.95),
+    0 0 22px rgba(255,220,80,.92),
+    0 3px 10px rgba(0,0,0,1);
+}
+.b32-cine-rapid-hit.critical::before {
+  content: 'CRIT';
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  transform: translateX(-50%);
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 9px;
+  letter-spacing: .12em;
+  color: #fff0a8;
+}
+@keyframes b32CineCritical {
+  0%, 14% { opacity: 0; transform: translate(-50%, -50%) scale(.55); filter: blur(2px); }
+  28% { opacity: 1; transform: translate(-50%, -50%) scale(1.14); filter: blur(0); }
+  52% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -58%) scale(.94); }
+}
 .b32-cine-skill {
   position: absolute;
   left: 50%;
@@ -3427,6 +3509,178 @@ function _injectAttackCinematicStyle() {
 #b32-attack-cinematic.enemy-attack .b32-cine-skill {
   border-color: rgba(255,120,130,.38);
   color: rgba(255,225,225,.94);
+}
+
+
+/* ── 致死ダメージ時：BREAK → 対象がゆっくり消えるフィニッシュ演出 ── */
+#b32-attack-cinematic.fatal-break {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,.26), transparent 28%),
+    radial-gradient(circle at 63% 34%, rgba(255,80,90,.18), transparent 32%),
+    radial-gradient(circle at 30% 62%, rgba(120,190,255,.10), transparent 34%),
+    linear-gradient(180deg, rgba(12,6,18,.54), rgba(0,0,0,.84));
+  animation: b32CineFatalInOut 1880ms ease forwards;
+}
+#b32-attack-cinematic.fatal-break::before {
+  height: 3px;
+  box-shadow:
+    0 0 34px rgba(255,255,255,.90),
+    0 0 86px rgba(255,80,95,.70),
+    0 0 120px rgba(255,225,170,.35);
+  animation: b32CineFatalLine 1880ms ease forwards;
+}
+#b32-attack-cinematic.fatal-break .b32-cine-impact {
+  box-shadow:
+    0 0 26px rgba(255,255,255,.98),
+    0 0 96px rgba(255,80,95,.82),
+    0 0 150px rgba(255,220,140,.50);
+  animation: b32CineFatalImpact 1880ms ease forwards;
+}
+#b32-attack-cinematic.fatal-break .b32-cine-damage {
+  color: #fff7e8;
+  text-shadow:
+    0 0 10px rgba(255,255,255,1),
+    0 0 30px rgba(255,90,100,.98),
+    0 0 62px rgba(255,220,130,.72),
+    0 4px 18px rgba(0,0,0,1);
+  animation: b32CineFatalDamage 1880ms ease forwards;
+}
+.b32-cine-break-label {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%) scale(.72);
+  color: rgba(255,255,255,.98);
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-weight: 900;
+  font-size: clamp(42px, 14vw, 92px);
+  letter-spacing: .12em;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 34px rgba(255,70,90,.98),
+    0 0 76px rgba(255,220,130,.72),
+    0 5px 18px rgba(0,0,0,1);
+  opacity: 0;
+  z-index: 8;
+  animation: b32CineBreakLabel 1880ms ease forwards;
+}
+.b32-cine-break-sub {
+  position: absolute;
+  left: 50%;
+  top: calc(42% + clamp(42px, 10vw, 72px));
+  transform: translate(-50%, -50%);
+  padding: 5px 12px;
+  border: 1px solid rgba(255,210,210,.42);
+  border-radius: 999px;
+  background: rgba(20,4,10,.48);
+  color: rgba(255,225,225,.92);
+  font-family: "Noto Serif JP", serif;
+  font-size: clamp(11px, 3.2vw, 15px);
+  font-weight: 800;
+  letter-spacing: .18em;
+  opacity: 0;
+  z-index: 8;
+  animation: b32CineBreakSub 1880ms ease forwards;
+}
+.b32-cine-break-particle {
+  position: absolute;
+  left: var(--px, 60%);
+  top: var(--py, 35%);
+  width: var(--ps, 6px);
+  height: var(--ps, 6px);
+  border-radius: 999px;
+  background: rgba(255,245,220,.96);
+  box-shadow: 0 0 12px rgba(255,255,255,.95), 0 0 28px rgba(255,80,95,.72);
+  opacity: 0;
+  z-index: 7;
+  animation: b32CineBreakParticle 1880ms ease-out forwards;
+  animation-delay: var(--pd, 0ms);
+}
+#b32-attack-cinematic.target-enemy-broken .b32-cine-enemy img,
+#b32-attack-cinematic.target-ally-broken .b32-cine-ally img {
+  animation: b32CineTargetDissolve 1880ms ease forwards;
+}
+#b32-attack-cinematic.target-enemy-broken .b32-cine-enemy::after,
+#b32-attack-cinematic.target-ally-broken .b32-cine-ally::after {
+  content: '';
+  position: absolute;
+  inset: 8% 10%;
+  background:
+    linear-gradient(120deg, transparent 0 42%, rgba(255,255,255,.88) 49%, transparent 56% 100%),
+    radial-gradient(circle at 50% 50%, rgba(255,90,100,.42), transparent 58%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  filter: blur(.4px);
+  animation: b32CineTargetCrack 1880ms ease forwards;
+}
+#b32-attack-cinematic.rapid-multi.fatal-break {
+  animation: b32CineFatalRapidInOut 3340ms ease forwards;
+}
+#b32-attack-cinematic.rapid-multi.fatal-break::before {
+  animation: b32CineFatalRapidLine 3340ms ease forwards;
+}
+#b32-attack-cinematic.rapid-multi.fatal-break .b32-cine-break-label,
+#b32-attack-cinematic.rapid-multi.fatal-break .b32-cine-break-sub {
+  animation-duration: 3340ms;
+}
+#b32-attack-cinematic.rapid-multi.target-enemy-broken .b32-cine-enemy img,
+#b32-attack-cinematic.rapid-multi.target-ally-broken .b32-cine-ally img,
+#b32-attack-cinematic.rapid-multi.target-enemy-broken .b32-cine-enemy::after,
+#b32-attack-cinematic.rapid-multi.target-ally-broken .b32-cine-ally::after {
+  animation-duration: 3340ms;
+}
+@keyframes b32CineFatalInOut { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes b32CineFatalLine {
+  0%, 24% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
+  40% { transform: rotate(-18deg) scaleX(1.12); opacity: 1; }
+  58% { transform: rotate(-18deg) scaleX(1.25); opacity: .55; }
+  100% { transform: rotate(-18deg) scaleX(1.35); opacity: 0; }
+}
+@keyframes b32CineFatalImpact {
+  0%, 36% { opacity: 0; transform: translate(-50%, -50%) scale(.1); }
+  48% { opacity: 1; transform: translate(-50%, -50%) scale(7.2); }
+  68%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(12); }
+}
+@keyframes b32CineFatalDamage {
+  0%, 42% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+  64% { opacity: .78; transform: translate(-50%, -64%) scale(1.02); }
+  86%, 100% { opacity: 0; transform: translate(-50%, -102%) scale(.86); }
+}
+@keyframes b32CineBreakLabel {
+  0%, 48% { opacity: 0; transform: translate(-50%, -50%) scale(.62); letter-spacing: .24em; }
+  56% { opacity: 1; transform: translate(-50%, -50%) scale(1.10); letter-spacing: .12em; }
+  72% { opacity: .96; transform: translate(-50%, -50%) scale(1); }
+  92%, 100% { opacity: 0; transform: translate(-50%, -54%) scale(1.08); }
+}
+@keyframes b32CineBreakSub {
+  0%, 56% { opacity: 0; transform: translate(-50%, -44%) scale(.9); }
+  66%, 84% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -68%) scale(.96); }
+}
+@keyframes b32CineBreakParticle {
+  0%, 48% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  56% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, -80px))) scale(.15); }
+}
+@keyframes b32CineTargetDissolve {
+  0%, 46% { opacity: 1; filter: brightness(1) saturate(1) drop-shadow(0 18px 26px rgba(0,0,0,.72)); transform: translateY(0) scale(1); }
+  56% { opacity: 1; filter: brightness(2.2) saturate(0.8) drop-shadow(0 0 34px rgba(255,255,255,.92)); transform: translateY(-2px) scale(1.03); }
+  76% { opacity: .58; filter: brightness(1.55) grayscale(.45) blur(.4px) drop-shadow(0 0 28px rgba(255,100,120,.72)); transform: translateY(-14px) scale(.98); }
+  100% { opacity: 0; filter: brightness(2.4) grayscale(1) blur(3px) drop-shadow(0 0 42px rgba(255,255,255,.80)); transform: translateY(-44px) scale(.86); }
+}
+@keyframes b32CineTargetCrack {
+  0%, 43% { opacity: 0; transform: scale(.86) rotate(-4deg); }
+  54% { opacity: .95; transform: scale(1.04) rotate(-4deg); }
+  76% { opacity: .36; transform: scale(1.10) rotate(-4deg); }
+  100% { opacity: 0; transform: scale(1.20) rotate(-4deg); }
+}
+@keyframes b32CineFatalRapidInOut { 0% { opacity: 0; } 6%, 92% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes b32CineFatalRapidLine {
+  0%, 8% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
+  16%, 58% { transform: rotate(-18deg) scaleX(1.04); opacity: .82; }
+  72% { transform: rotate(-18deg) scaleX(1.24); opacity: .72; }
+  100% { transform: rotate(-18deg) scaleX(1.36); opacity: 0; }
 }
 
 /* ── アルノなどの高速多段用：アップ中の敵画像上部に0.4秒ごとにばらけて着弾 ── */
@@ -3640,8 +3894,17 @@ function _showAttackCinematic(data) {
  _injectAttackCinematicStyle();
 
  const isRapidMulti = data.hitStyle === 'rapid_multi';
+ const isCritical = !!(data.isCritical || data.criticalCount > 0);
+ const criticalHits = Array.isArray(data.criticalHits) ? data.criticalHits : [];
+ const isFatal = !!(
+   data.isFatal ||
+   data.target?.isFatal ||
+   (Number(data.hpBefore || data.target?.hpBefore || 0) > 0 && Number(data.hpAfter ?? data.target?.hpAfter ?? 1) <= 0)
+ );
  const rapidCount = Math.min(8, Math.max(4, Math.floor(Number(data.hitCount || 5))));
- const rapidParts = isRapidMulti ? _splitDamageAmount(data.amount, rapidCount) : [];
+ const rapidParts = isRapidMulti
+   ? (criticalHits.length ? criticalHits.map(h => Math.max(0, Math.floor(Number(h.amount || 0)))) : _splitDamageAmount(data.amount, rapidCount))
+   : [];
  const rapidPos = [
    { x: 62, y: 24, rot: -23 },
    { x: 70, y: 18, rot:  18 },
@@ -3656,21 +3919,48 @@ function _showAttackCinematic(data) {
    const p = rapidPos[i % rapidPos.length];
    const delay = 300 + i * 400; // 0.4秒ごとに順番表示
    const style = `--rx:${p.x}%;--ry:${p.y}%;--delay:${delay}ms;--rot:${p.rot}deg;`;
+   const isHitCritical = !!(criticalHits[i] && criticalHits[i].isCritical);
    return `
      <div class="b32-cine-rapid-flash" style="${style}"></div>
      <div class="b32-cine-rapid-burst" style="${style}"></div>
-     <div class="b32-cine-rapid-hit" style="${style}">-${amount}</div>
+     <div class="b32-cine-rapid-hit${isHitCritical ? ' critical' : ''}" style="${style}">-${amount}</div>
    `;
  }).join('') : '';
+
+ const breakParticleHtml = isFatal ? Array.from({ length: 14 }, (_, i) => {
+   const baseX = isEnemyAttack ? 36 : 64;
+   const baseY = isEnemyAttack ? 58 : 34;
+   const dxList = [-72, 58, -42, 84, -18, 30, -92, 70, -58, 48, -24, 94, -80, 20];
+   const dyList = [-96, -72, -122, -48, -142, -92, -38, -118, -76, -154, -110, -62, -132, -44];
+   const pxList = [-8, 6, -3, 9, 2, -6, 10, -10, 4, -4, 8, -9, 1, 5];
+   const pyList = [-5, 2, -8, 6, 0, -4, 5, -2, 7, -7, 3, -1, -6, 4];
+   const px = baseX + pxList[i];
+   const py = baseY + pyList[i];
+   const size = 4 + (i % 4) * 2;
+   const delay = (isRapidMulti ? 2060 : 820) + (i % 5) * 34;
+   return `<span class="b32-cine-break-particle" style="--px:${px}%;--py:${py}%;--tx:${dxList[i]}px;--ty:${dyList[i]}px;--ps:${size}px;--pd:${delay}ms;"></span>`;
+ }).join('') : '';
+ const breakHtml = isFatal ? `
+   <div class="b32-cine-break-label">BREAK</div>
+   <div class="b32-cine-break-sub">${isEnemyAttack ? 'ALLY LOST' : 'ENEMY VANISHED'}</div>
+   ${breakParticleHtml}
+ ` : '';
 
  const ov = document.createElement('div');
  ov.id = 'b32-attack-cinematic';
  if (isEnemyAttack) ov.classList.add('enemy-attack');
  if (isRapidMulti) ov.classList.add('rapid-multi');
+ if (isCritical) ov.classList.add('critical');
+ if (isFatal) {
+   ov.classList.add('fatal-break');
+   ov.classList.add(isEnemyAttack ? 'target-ally-broken' : 'target-enemy-broken');
+ }
  ov.innerHTML = `
    <div class="b32-cine-unit b32-cine-ally"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
    <div class="b32-cine-unit b32-cine-enemy"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>
-   ${isRapidMulti ? rapidHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage">-${data.amount}</div>`}
+   ${isRapidMulti ? rapidHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage${isCritical ? ' critical' : ''}">-${data.amount}</div>`}
+   ${isCritical ? '<div class="b32-cine-critical-label">CRITICAL</div>' : ''}
+   ${breakHtml}
    <div class="b32-cine-skill">${data.skillName || (isEnemyAttack ? 'ENEMY ATTACK' : 'ATTACK')}</div>
  `;
  document.body.appendChild(ov);
@@ -3678,7 +3968,7 @@ function _showAttackCinematic(data) {
  setTimeout(() => {
    if (ov.parentNode) ov.parentNode.removeChild(ov);
    _b32AttackCinematicBusy = false;
- }, isRapidMulti ? 2680 : 1180);
+ }, isRapidMulti ? (isFatal ? 3420 : 2680) : (isFatal ? 1940 : 1180));
 }
 
 function _showUltCutin(skillName, cutinImg) {
@@ -4017,7 +4307,7 @@ function _showImpactShake(unitInfo) {
      }, hitDelay);
 
      setTimeout(() => {
-       _showFloatNumber(data.target, amount, 'damage', false, data.elementMatch, offset);
+       _showFloatNumber(data.target, amount, 'damage', false, data.elementMatch, offset, !!(data.criticalHits && data.criticalHits[i] && data.criticalHits[i].isCritical));
        if (i === hitCount - 1) _showElementMatchText(data.target, data.elementMatch);
      }, hitDelay + 45);
    });
@@ -4036,7 +4326,7 @@ function _showImpactShake(unitInfo) {
 
  // 数値は衝撃より少し後に出す
  setTimeout(() => {
- _showFloatNumber(data.target, data.amount, 'damage', isUlt, data.elementMatch);
+ _showFloatNumber(data.target, data.amount, 'damage', isUlt, data.elementMatch, null, !!data.isCritical);
  _showElementMatchText(data.target, data.elementMatch);
 }, 240);
  }

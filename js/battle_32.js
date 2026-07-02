@@ -101,6 +101,16 @@
   // ボス予兆攻撃のダメージ倍率（ATK比）
   const BOSS_WARN_RATE = 0.90;
 
+  // ============================================================
+  // CRITICAL
+  // ============================================================
+  // criticalRate は 0.10 = 10% として扱う。
+  // critical_up / critical_down は statusEffects に乗せれば将来バフとして使える。
+  const CRITICAL_DAMAGE_RATE_32 = 1.5;
+  const DEFAULT_ALLY_CRITICAL_RATE_32 = 0.10;
+  const DEFAULT_ENEMY_CRITICAL_RATE_32 = 0.05;
+
+
   
 
   // ============================================================
@@ -445,6 +455,146 @@
     return Math.max(1, Math.floor(atk * multiplier * takenRate * elementRate));
   }
 
+  function _normalizeCriticalRate32(rate) {
+    const n = Number(rate);
+    if (!Number.isFinite(n)) return 0;
+    // 10 と書いた場合は 10% として扱い、0.10 と書いた場合もそのまま使える。
+    return n > 1 ? n / 100 : n;
+  }
+
+  function _clampCriticalRate32(rate) {
+    return Math.max(0, Math.min(1, _normalizeCriticalRate32(rate)));
+  }
+
+  function _getSkillHitCountForCritical32(skill) {
+    if (!skill) return 1;
+    const explicit = Number(skill.hitCount);
+    if (Number.isFinite(explicit) && explicit > 1) {
+      return Math.min(12, Math.max(1, Math.floor(explicit)));
+    }
+    // アルノ等の多段アップ演出。現状は5hitとして内部判定する。
+    if (skill.hitStyle === 'rapid_multi') return 5;
+    // 汎用multiは3hitとして扱う。厳密に変えたい場合は skill.hitCount を指定する。
+    if (skill.hitStyle === 'multi') return 3;
+    return 1;
+  }
+
+  function _canCritical32(source, skill) {
+    if (!source) return false;
+    if (skill && skill.canCritical === false) return false;
+
+    // 継続ダメージ・設置物tickは通常の攻撃ではないためcritical対象外。
+    const hitStyle = skill && skill.hitStyle;
+    if (hitStyle === 'poison' || hitStyle === 'summon_tick') return false;
+
+    return true;
+  }
+
+  function getCriticalRate32(source, skill) {
+    if (!_canCritical32(source, skill)) return 0;
+
+    let rate = source.criticalRate ?? source.critRate;
+    if (rate == null) {
+      rate = source.side === 'enemy' ? DEFAULT_ENEMY_CRITICAL_RATE_32 : DEFAULT_ALLY_CRITICAL_RATE_32;
+    }
+    rate = Number(rate);
+
+    if (Array.isArray(source.statusEffects)) {
+      source.statusEffects.forEach(e => {
+        if (!e || (e.duration != null && e.duration <= 0)) return;
+        if (e.type === 'critical_up' || e.type === 'crit_up') {
+          rate += _normalizeCriticalRate32(e.rate != null ? e.rate : 0.20);
+        } else if (e.type === 'critical_down' || e.type === 'crit_down') {
+          rate -= _normalizeCriticalRate32(e.rate != null ? e.rate : 0.20);
+        }
+      });
+    }
+
+    return _clampCriticalRate32(rate);
+  }
+
+  function getCriticalDamageRate32(source, skill) {
+    const n = Number(
+      (skill && (skill.criticalDamageRate ?? skill.critDamageRate)) ??
+      (source && (source.criticalDamageRate ?? source.critDamageRate)) ??
+      CRITICAL_DAMAGE_RATE_32
+    );
+    return Number.isFinite(n) && n > 1 ? n : CRITICAL_DAMAGE_RATE_32;
+  }
+
+  function _splitDamageAmount32(total, count) {
+    const safeTotal = Math.max(0, Math.floor(Number(total || 0)));
+    const safeCount = Math.max(1, Math.floor(Number(count || 1)));
+    const base = Math.floor(safeTotal / safeCount);
+    const rest = safeTotal % safeCount;
+    return Array.from({ length: safeCount }, (_, i) => base + (i < rest ? 1 : 0));
+  }
+
+  // rawDamage に対して critical を適用する。
+  // 多段系はhitごとに判定し、合計値を最終ダメージにする。
+  function rollCriticalDamage32(rawDamage, source, skill) {
+    const baseDamage = Math.max(0, Math.floor(Number(rawDamage || 0)));
+    const rate = getCriticalRate32(source, skill);
+    const critMultiplier = getCriticalDamageRate32(source, skill);
+    const hitCount = _getSkillHitCountForCritical32(skill);
+
+    const result = {
+      amount: baseDamage,
+      baseAmount: baseDamage,
+      isCritical: false,
+      criticalCount: 0,
+      criticalRate: rate,
+      criticalMultiplier: critMultiplier,
+      hitCount,
+      criticalHits: [],
+    };
+
+    if (baseDamage <= 0 || rate <= 0 || !_canCritical32(source, skill)) {
+      if (hitCount > 1) {
+        result.criticalHits = _splitDamageAmount32(baseDamage, hitCount).map((amount, index) => ({
+          index,
+          amount,
+          baseAmount: amount,
+          isCritical: false,
+        }));
+      }
+      return result;
+    }
+
+    if (hitCount <= 1) {
+      const isCritical = Math.random() < rate;
+      result.isCritical = isCritical;
+      result.criticalCount = isCritical ? 1 : 0;
+      result.amount = isCritical ? Math.max(1, Math.floor(baseDamage * critMultiplier)) : baseDamage;
+      result.criticalHits = [{
+        index: 0,
+        amount: result.amount,
+        baseAmount: baseDamage,
+        isCritical,
+      }];
+      return result;
+    }
+
+    const parts = _splitDamageAmount32(baseDamage, hitCount);
+    let total = 0;
+    result.criticalHits = parts.map((part, index) => {
+      const isCritical = Math.random() < rate;
+      const amount = isCritical ? Math.max(1, Math.floor(part * critMultiplier)) : part;
+      if (isCritical) result.criticalCount += 1;
+      total += amount;
+      return {
+        index,
+        amount,
+        baseAmount: part,
+        isCritical,
+      };
+    });
+
+    result.isCritical = result.criticalCount > 0;
+    result.amount = Math.max(1, total);
+    return result;
+  }
+
   // 状態異常込みのATKを返す。
   // atk_up / atk_down は effects[] の rate で倍率指定可能。
   // 例: { type:'atk_up', rate:1.5 } / { type:'atk_down', rate:0.7 }
@@ -568,6 +718,8 @@ function pickRandomBoardCells(count) {
       hpMax: charDef.hp,
 
       atk:  charDef.atk,
+      criticalRate: Number.isFinite(Number(charDef.criticalRate ?? charDef.critRate)) ? Number(charDef.criticalRate ?? charDef.critRate) : DEFAULT_ALLY_CRITICAL_RATE_32,
+      criticalDamageRate: Number.isFinite(Number(charDef.criticalDamageRate ?? charDef.critDamageRate)) ? Number(charDef.criticalDamageRate ?? charDef.critDamageRate) : CRITICAL_DAMAGE_RATE_32,
       shinki:    charDef.shinkiStart,
       shinkiMax: charDef.shinkiMax,
       row,
@@ -619,6 +771,8 @@ function pickRandomBoardCells(count) {
       hp: def.hp,
       hpMax: def.hpMax || def.hp,
       atk: def.atk,
+      criticalRate: Number.isFinite(Number(def.criticalRate ?? def.critRate)) ? Number(def.criticalRate ?? def.critRate) : DEFAULT_ENEMY_CRITICAL_RATE_32,
+      criticalDamageRate: Number.isFinite(Number(def.criticalDamageRate ?? def.critDamageRate)) ? Number(def.criticalDamageRate ?? def.critDamageRate) : CRITICAL_DAMAGE_RATE_32,
       // damageTakenRate: 敵の硬さを表現（省略時 1.0）
       damageTakenRate: def.damageTakenRate ?? 1.0,
       row,
@@ -1154,7 +1308,8 @@ const enemies = enemyDefs.map(def => {
       return;
     }
 
-    let dmg = rawDamage;
+    const criticalRoll = rollCriticalDamage32(rawDamage, source, skill);
+    let dmg = criticalRoll.amount;
 
     // 結界：ダメージ軽減（味方のみ）
     if (target.side === 'ally' && target.shieldRate > 0) {
@@ -1163,10 +1318,15 @@ const enemies = enemyDefs.map(def => {
       _log(`${target.name} の結界が発動！ダメージを軽減`);
     }
 
+    const hpBefore = Number(target.hp || 0);
     target.hp = Math.max(0, target.hp - dmg);
+    const hpAfter = Number(target.hp || 0);
+    const isFatalDamage = hpBefore > 0 && dmg > 0 && hpAfter <= 0;
+    const overkillDamage = isFatalDamage ? Math.max(0, dmg - hpBefore) : 0;
     const elementText = source ? getElementMatchText32(source.element, target.element) : '';
     const elementSuffix = elementText ? `【${elementText}】` : '';
-    _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！${elementSuffix}（残HP: ${target.hp}）`);
+    const criticalSuffix = criticalRoll.isCritical ? ` CRITICAL×${criticalRoll.criticalCount || 1}` : '';
+    _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！${criticalSuffix}${elementSuffix}（残HP: ${target.hp}）`);
 
     // ローグライト: 味方HPが0になったらrosterをdead更新
     if (target.side === 'ally' && target.hp <= 0 && _bs.roster) {
@@ -1192,10 +1352,26 @@ const enemies = enemyDefs.map(def => {
         row: target.row, 
         col: target.col,
         element: target.element,
+        hpBefore,
+        hpAfter,
+        hpMax: target.hpMax,
+        isFatal: isFatalDamage,
          },
 
       amount: dmg,
       kind: 'damage',
+      hpBefore,
+      hpAfter,
+      targetHpMax: target.hpMax,
+      isFatal: isFatalDamage,
+      overkill: overkillDamage,
+
+      isCritical: !!criticalRoll.isCritical,
+      criticalCount: criticalRoll.criticalCount || 0,
+      criticalRate: criticalRoll.criticalRate || 0,
+      criticalMultiplier: criticalRoll.criticalMultiplier || CRITICAL_DAMAGE_RATE_32,
+      baseAmount: criticalRoll.baseAmount,
+      criticalHits: Array.isArray(criticalRoll.criticalHits) ? criticalRoll.criticalHits.map(h => ({ ...h })) : [],
 
       elementMatch: elementText || '',
       elementRate: source ? getElementRate32(source.element, target.element) : 1.0,
@@ -1206,7 +1382,7 @@ const enemies = enemyDefs.map(def => {
       skillName:   skill?.name      || null,
       isUltimate:  !!skill?.isUltimate,
       hitStyle:    skill?.hitStyle  || 'normal',
-      hitCount:    skill?.hitCount  || null,
+      hitCount:    skill?.hitCount  || criticalRoll.hitCount || null,
       bs: _snapshot(),
     });
 

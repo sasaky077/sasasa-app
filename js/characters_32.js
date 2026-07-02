@@ -126,6 +126,8 @@
 
     hp: c.stats?.HP || 1,
     atk: c.stats?.ATK || 1,
+    criticalRate: Number.isFinite(Number(c.criticalRate ?? c.critRate)) ? Number(c.criticalRate ?? c.critRate) : 0.10,
+    criticalDamageRate: Number.isFinite(Number(c.criticalDamageRate ?? c.critDamageRate)) ? Number(c.criticalDamageRate ?? c.critDamageRate) : 1.5,
 
     shinkiMax: c.shinkiMax || 3,
     shinkiStart: c.shinkiStart || 0,
