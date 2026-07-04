@@ -171,6 +171,8 @@
       stageNo:  1,
       options:  [],   // 取得済みOP オブジェクト（passive）
       items:    [],   // 取得済みアイテム（最大2枠）
+      totalTurns: 0,  // ラン通算クリアターン数
+      stageTurns: [], // 各ステージのクリアターン履歴
       partyIds: normalizeRoguelitePartyIds(partyIds),
       result:   null, // 'win' | 'lose'
     };
@@ -233,6 +235,60 @@
     return _state ? _state.items.slice() : [];
   }
 
+  // Battle32側で使い切りアイテムを使用した時に、ラン状態からも削除する。
+  // これをしないと、次ステージ開始時に buildBattleConfig() が未使用扱いの
+  // _state.items を再度渡してしまい、使用済みアイテムが復活する。
+  function consumeItem(slotIndex, usedItem) {
+    if (!_state || !_state.active) return null;
+
+    const idx = Number(slotIndex);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= _state.items.length) {
+      console.warn('[RogueliteRun] consumeItem: 不正なslotIndex', slotIndex, usedItem);
+      return null;
+    }
+
+    const removed = _state.items.splice(idx, 1)[0] || null;
+
+    console.log('[RogueliteRun] アイテム消費:', removed && removed.name,
+      '/ 残り:', _state.items.map(i => i.name));
+
+    return removed;
+  }
+
+  function setItems(items) {
+    if (!_state || !_state.active) return;
+    _state.items = Array.isArray(items)
+      ? items.filter(Boolean).slice(0, 2).map(item => ({ ...item }))
+      : [];
+  }
+
+  function addClearedStageTurn(turn) {
+    if (!_state || !_state.active) return 0;
+    const t = Math.max(0, Math.floor(Number(turn || 0)));
+    _state.stageTurns.push(t);
+    _state.totalTurns += t;
+    console.log('[RogueliteRun] ステージTURN記録:', t, '/ 通算:', _state.totalTurns);
+    return _state.totalTurns;
+  }
+
+  function getTotalTurns() {
+    return _state ? Number(_state.totalTurns || 0) : 0;
+  }
+
+  function getStageTurns() {
+    return _state ? _state.stageTurns.slice() : [];
+  }
+
+  function getClearRank(totalTurns) {
+    const t = Number(totalTurns || 0);
+    if (t <= 32) return 'S';
+    if (t <= 35) return 'A';
+    if (t <= 38) return 'B';
+    if (t <= 41) return 'C';
+    if (t <= 45) return 'D';
+    return 'E';
+  }
+
   function advance() {
     if (!_state || !_state.active) return;
     const runDef = getRunDef(_state.runId);
@@ -251,6 +307,10 @@
       runName: _state.runName,
       stageNo: _state.stageNo,
       options: _state.options.map(o => ({ id: o.id, name: o.name, icon: o.icon })),
+      items: _state.items.map(i => ({ id: i.id, name: i.name, icon: i.icon })),
+      totalTurns: _state.totalTurns || 0,
+      stageTurns: _state.stageTurns ? _state.stageTurns.slice() : [],
+      clearRank: getClearRank(_state.totalTurns || 0),
       result,
     }));
     console.log('[RogueliteRun] ラン終了:', result, snap);
@@ -274,8 +334,8 @@
       // 保持OPを渡す（battle_32.js 側で applyOnStart / applyOnEvent を呼ぶ）
       rogueliteOptions: _state.options.slice(),
 
-      // 保持アイテムを渡す
-      rogueliteItems: _state.items.slice(),
+      // 保持アイテムを渡す（Battle32側でspliceしてもラン状態が勝手に戻らないよう複製）
+      rogueliteItems: _state.items.map(item => ({ ...item })),
 
       // ボスステージフラグ
       isBossStage: def.isBoss,
@@ -316,7 +376,13 @@
     getRunName: () => _state ? _state.runName : getCurrentRunDef().name,
     getOptions,
     getItems,
+    consumeItem,
+    setItems,
     addOption,
+    addClearedStageTurn,
+    getTotalTurns,
+    getStageTurns,
+    getClearRank,
     advance,
     end,
     buildBattleConfig,

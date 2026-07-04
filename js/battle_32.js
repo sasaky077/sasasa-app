@@ -1311,6 +1311,24 @@ const enemies = enemyDefs.map(def => {
     const criticalRoll = rollCriticalDamage32(rawDamage, source, skill);
     let dmg = criticalRoll.amount;
 
+    // ローグライト: ガードアイテムによるダメージカット。
+    // 追加効果（スタン/毒など）はこの後の effects 処理で通常通り入るため、ダメージだけを軽減する。
+    if (target.side === 'ally' && Array.isArray(target.statusEffects)) {
+      const guards = target.statusEffects.filter(e =>
+        e && e.type === 'damage_cut' && (e.duration == null || e.duration > 0)
+      );
+      if (guards.length > 0) {
+        const cut = guards.reduce((m, e) => {
+          const r = Number(e.rate != null ? e.rate : e.value);
+          return Number.isFinite(r) ? Math.max(m, Math.max(0, Math.min(0.95, r))) : m;
+        }, 0);
+        if (cut > 0) {
+          dmg = Math.max(0, Math.floor(dmg * (1 - cut)));
+          _log(`${target.name} はガード状態：ダメージ${Math.round(cut * 100)}%カット`);
+        }
+      }
+    }
+
     // 結界：ダメージ軽減（味方のみ）
     if (target.side === 'ally' && target.shieldRate > 0) {
       dmg = Math.floor(dmg * (1 - target.shieldRate));
@@ -2987,23 +3005,59 @@ function doBossLineAttack(boss) {
         if (_bs.result) return;
       }
     }
-    // 行動順：雑魚 → ボスの順
-    const mobs    = aliveEnemies().filter(e => !e.isBoss);
-    const bosses  = aliveEnemies().filter(e =>  e.isBoss);
-
-    const ordered = [...mobs, ...bosses];
+    // 行動順：毎ターン、生存敵をランダム順に並べて1体ずつ処理する。
+    // 以前の「雑魚 → ボス」固定順だと、複数敵が一気に動いたように見えるため、
+    // ここで actors を確定し、各敵の移動・攻撃・演出待ちが終わってから次の敵へ進む。
+    const ordered = shuffle(aliveEnemies().filter(e => e && e.hp > 0));
 
     // 敵行動数を制御（'all' または未設定なら全員行動）
+    // limit の場合も、先にランダム並びへしてから先頭N体を採用する。
     let actors = ordered;
     if (_bs.enemyActionMode !== 'all' && Number.isFinite(_bs.enemyActionsPerTurn)) {
       actors = ordered.slice(0, _bs.enemyActionsPerTurn);
     }
 
-    for (const enemy of actors) {
+    _bs.enemyActionOrder = actors.map(e => e._uid);
+    _bs.enemyActionIndex = 0;
+    _bs.enemyActionTotal = actors.length;
+    _bs.activeEnemyUid = null;
+
+    for (let i = 0; i < actors.length; i++) {
       if (_bs.result) break;
+
+      const enemy = actors[i];
+      if (!enemy || enemy.hp <= 0) continue;
+
+      _bs.activeEnemyUid = enemy._uid;
+      _bs.enemyActionIndex = i + 1;
+      _emit('enemyActionStart', {
+        enemy: { ...enemy },
+        index: _bs.enemyActionIndex,
+        total: _bs.enemyActionTotal,
+        bs: _snapshot(),
+      });
+      _renderUI();
+      await wait(260);
+
       await _runEnemySingleAction(enemy);
+
+      _emit('enemyActionEnd', {
+        enemy: { ...enemy },
+        index: _bs.enemyActionIndex,
+        total: _bs.enemyActionTotal,
+        bs: _snapshot(),
+      });
+      _bs.activeEnemyUid = null;
+      _renderUI();
+
       if (_bs.result) break;
+      await wait(320);
     }
+
+    _bs.activeEnemyUid = null;
+    _bs.enemyActionOrder = [];
+    _bs.enemyActionIndex = 0;
+    _bs.enemyActionTotal = 0;
 
     _tickStatusEffects();
     _checkWinLose();
@@ -3114,9 +3168,13 @@ function doBossLineAttack(boss) {
   }
 
 
-  // 敵1体の行動処理（_centerTextWait で完全に消えてから次へ）
+  // 敵1体の行動処理。
+  // 移動・攻撃・攻撃アップ演出の待ちまでこの関数内で完了させ、
+  // 呼び出し元の for-await ループが次の敵へ進むのを防ぐ。
   async function _runEnemySingleAction(enemy) {
     const actionLabel = enemy.isBoss ? 'BOSS ACTION' : 'ENEMY ACTION';
+
+    if (!enemy || enemy.hp <= 0) return;
 
     // スタン
     if (enemy.stunned) {
@@ -3136,8 +3194,19 @@ function doBossLineAttack(boss) {
       const target = _pickEnemyAttackTarget(enemy, rangeTargets);
       if (!target) return;
       const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
+      const targetHpBefore = Number(target.hp || 0);
+      _emit('enemyActionStep', {
+        step: 'attack',
+        enemy: { ...enemy },
+        target: { ...target },
+        bs: _snapshot(),
+      });
       applyDamage(target, dmg, enemy);
+      const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
       _renderUI();
+      // 通常攻撃アップ演出は約1.18秒、BREAK時は約1.94秒。
+      // 次の敵行動が重ならないよう、ここで十分に待つ。
+      await wait(killed ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
       // applyDamage 内で _checkWinLose を呼んでいるが、念のため result を確認
       if (_bs.result) return;
@@ -3162,10 +3231,17 @@ function doBossLineAttack(boss) {
     }
 
     // 駒取り廃止：空きマスへの移動のみ実行
+    _emit('enemyActionStep', {
+      step: 'move',
+      enemy: { ...enemy },
+      to: { row: bestCell.row, col: bestCell.col },
+      bs: _snapshot(),
+    });
     enemy.row = bestCell.row;
     enemy.col = bestCell.col;
     _log(`${enemy.name} が移動した`);
     _renderUI();
+    await wait(B32_WAIT.move);
     await wait(B32_WAIT.afterText);
 
     // 移動後に攻撃可能か再チェック
@@ -3174,8 +3250,17 @@ function doBossLineAttack(boss) {
       const target = _pickEnemyAttackTarget(enemy, afterMoveTargets);
       if (!target) return;
       const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
+      const targetHpBefore = Number(target.hp || 0);
+      _emit('enemyActionStep', {
+        step: 'attack_after_move',
+        enemy: { ...enemy },
+        target: { ...target },
+        bs: _snapshot(),
+      });
       applyDamage(target, dmg, enemy);
+      const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
       _renderUI();
+      await wait(killed ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
       if (_bs.result) return;
     }
@@ -3735,11 +3820,45 @@ function doBossLineAttack(boss) {
       return false;
     }
 
+    function consumeItem() {
+      if (!item.consume) return;
+
+      const removed = _bs.items.splice(itemSlotIndex, 1)[0] || item;
+
+      // ローグライトでは、Battle32内の一時アイテムだけでなく、
+      // ラン本体の所持アイテムからも消す。
+      // これをしないと、次ステージ開始時に RogueliteRun.buildBattleConfig()
+      // が同じアイテムを再配布してしまい、使用済みアイテムが復活する。
+      if (
+        _bs.isRoguelite &&
+        window.RogueliteRun &&
+        typeof window.RogueliteRun.consumeItem === 'function'
+      ) {
+        window.RogueliteRun.consumeItem(itemSlotIndex, removed);
+      }
+    }
+
+    function getLiveAlly(uid) {
+      return _bs.allies.find(u => u._uid === uid && u.hp > 0) || null;
+    }
+
+    function getLiveEnemy(uid) {
+      return _bs.enemies.find(u => u._uid === uid && u.hp > 0) || null;
+    }
+
+    function swapPositions(a, b) {
+      const ar = a.row;
+      const ac = a.col;
+      a.row = b.row;
+      a.col = b.col;
+      b.row = ar;
+      b.col = ac;
+    }
+
     // アイテムタイプ別処理
     if (item.type === 'heal') {
-      // 対象: payload.targetUid
       const targetUid = payload && payload.targetUid;
-      const target = _bs.allies.find(u => u._uid === targetUid && u.hp > 0);
+      const target = getLiveAlly(targetUid);
       if (!target) {
         _log('回復対象がいません');
         return false;
@@ -3755,18 +3874,16 @@ function doBossLineAttack(boss) {
         amount: actual, kind: 'heal', skillId: null, skillName: item.name,
         isUltimate: false, hitStyle: 'normal', bs: _snapshot(),
       });
-      if (item.consume) _bs.items.splice(itemSlotIndex, 1);
+      consumeItem();
 
     } else if (item.type === 'move_ally') {
-      // 対象: payload.targetUid, payload.toRow, payload.toCol
       const targetUid = payload && payload.targetUid;
       const toRow = payload && payload.toRow;
       const toCol = payload && payload.toCol;
-      const target = _bs.allies.find(u => u._uid === targetUid && u.hp > 0);
+      const target = getLiveAlly(targetUid);
       if (!target) { _log('移動対象がいません'); return false; }
       if (toRow == null || toCol == null) { _log('移動先が指定されていません'); return false; }
 
-      // 移動先チェック
       if (_isOccupied(toRow, toCol) && !(target.row === toRow && target.col === toCol)) { _log('そのマスは占有されています'); return false; }
       if (toRow < 0 || toRow >= BOARD_ROWS || toCol < 0 || toCol >= BOARD_COLS) { _log('盤面外には移動できません'); return false; }
 
@@ -3775,7 +3892,85 @@ function doBossLineAttack(boss) {
       target.col = toCol;
       _log(`${item.name}：${target.name} を移動`);
       _emit('move', { ally: { ...target }, bs: _snapshot() });
-      if (item.consume) _bs.items.splice(itemSlotIndex, 1);
+      consumeItem();
+
+    } else if (item.type === 'swap_ally') {
+      const a = getLiveAlly(payload && payload.targetAUid);
+      const b = getLiveAlly(payload && payload.targetBUid);
+      if (!a || !b || a._uid === b._uid) { _log('入れ替える味方2体を選択してください'); return false; }
+
+      _spendLink(linkCost, item.name);
+      swapPositions(a, b);
+      _log(`${item.name}：${a.name} と ${b.name} の位置を入れ替えた`);
+      _emit('move', { ally: { ...a }, bs: _snapshot() });
+      consumeItem();
+
+    } else if (item.type === 'swap_enemy') {
+      const a = getLiveEnemy(payload && payload.targetAUid);
+      const b = getLiveEnemy(payload && payload.targetBUid);
+      if (!a || !b || a._uid === b._uid) { _log('入れ替える敵2体を選択してください'); return false; }
+
+      _spendLink(linkCost, item.name);
+      swapPositions(a, b);
+      _log(`${item.name}：${a.name} と ${b.name} の位置を入れ替えた`);
+      _emit('move', { enemy: { ...a }, bs: _snapshot() });
+      consumeItem();
+
+    } else if (item.type === 'link_recover') {
+      if (!_bs.link) { _log('LINKがありません'); return false; }
+      _spendLink(linkCost, item.name);
+      const add = Math.max(0, Math.floor(Number(item.value || 0)));
+      const before = Number(_bs.link.current || 0);
+      _bs.link.current = Math.min(Number(_bs.link.max || before + add), before + add);
+      _log(`${item.name}：LINK ${before} → ${_bs.link.current}`);
+      consumeItem();
+
+    } else if (item.type === 'shinki_max') {
+      const target = getLiveAlly(payload && payload.targetUid);
+      if (!target) { _log('神気ブースト対象がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      target.shinki = target.shinkiMax || target.shinki || 0;
+      _log(`${item.name}：${target.name} の神気がMAXになった`);
+      consumeItem();
+
+    } else if (item.type === 'enemy_hp_cut_all') {
+      const enemies = (_bs.enemies || []).filter(e => e && e.hp > 0);
+      if (!enemies.length) { _log('対象の敵がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      const rate = Math.max(0, Math.min(1, Number(item.value || 0.10)));
+      enemies.forEach(enemy => {
+        const dmg = Math.max(1, Math.floor(enemy.hp * rate));
+        applyDamage(enemy, dmg, { name: item.name, side: 'ally', element: null, row: enemy.row, col: enemy.col }, {
+          id: item.id,
+          name: item.name,
+          isUltimate: false,
+          canCritical: false,
+          hitStyle: 'item',
+        });
+      });
+      _log(`${item.name}：フィールド上の全敵のHPを${Math.round(rate * 100)}%削った`);
+      consumeItem();
+
+    } else if (item.type === 'guard') {
+      const target = getLiveAlly(payload && payload.targetUid);
+      if (!target) { _log('ガード対象がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+      target.statusEffects = target.statusEffects.filter(e => e && e.type !== 'damage_cut');
+      const rate = Math.max(0, Math.min(0.95, Number(item.value || 0.5)));
+      target.statusEffects.push({ type: 'damage_cut', rate, duration: item.duration || 1, sourceName: item.name });
+      _log(`${item.name}：${target.name} が1ターン、ダメージ${Math.round(rate * 100)}%カット`);
+      consumeItem();
+
+    } else if (item.type === 'stun_enemy') {
+      const target = getLiveEnemy(payload && payload.targetUid);
+      if (!target || target.hp <= 0) { _log('スタン対象がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      target.stunned = true;
+      if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+      target.statusEffects.push({ type: 'stun', duration: item.duration || 1, sourceName: item.name });
+      _log(`${item.name}：${target.name} をスタンした`);
+      consumeItem();
 
     } else {
       _log(`未対応のアイテムタイプ: ${item.type}`);

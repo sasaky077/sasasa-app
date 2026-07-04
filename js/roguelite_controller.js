@@ -132,6 +132,51 @@
 .rl-hud-node { display: none; }
 .rl-hud-ops { display: none; }
 .rl-hud-op { display: none; }
+
+/* ── ローグライト専用：画面遷移シールド ── */
+#rl-transition-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 260000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  pointer-events: auto;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(150,105,255,.18), transparent 34%),
+    linear-gradient(180deg, rgba(0,0,0,.96), rgba(5,3,14,.98));
+  color: #efe6ff;
+  opacity: 1;
+  transition: opacity .22s ease, transform .22s ease;
+}
+#rl-transition-shield.is-hiding {
+  opacity: 0;
+  transform: scale(1.015);
+}
+.rl-transition-kicker {
+  font-family: "Cinzel", serif;
+  font-size: .62rem;
+  letter-spacing: .22em;
+  color: rgba(220,205,255,.42);
+  margin-bottom: 10px;
+}
+.rl-transition-title {
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: clamp(1.25rem, 6vw, 2rem);
+  font-weight: 900;
+  letter-spacing: .18em;
+  color: #fff3c4;
+  text-shadow: 0 0 18px rgba(255,220,120,.55), 0 0 42px rgba(130,80,255,.42);
+}
+.rl-transition-line {
+  width: min(54vw, 220px);
+  height: 1px;
+  margin-top: 18px;
+  background: linear-gradient(90deg, transparent, rgba(255,230,150,.76), transparent);
+  box-shadow: 0 0 14px rgba(255,220,120,.42);
+}
+
 /* ── ステージクリア演出 ── */
 #rl-stage-clear-overlay {
   position: fixed;
@@ -266,6 +311,220 @@
   font-size: .68rem;
   letter-spacing: .14em;
   color: rgba(255,210,220,.42);
+}
+
+
+/* ── ラン最終勝利：盤面上フィニッシュ演出 ── */
+#rl-run-victory-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 220000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(255,228,150,.16), transparent 28%),
+    radial-gradient(circle at 50% 58%, rgba(150,95,255,.18), transparent 44%),
+    rgba(0,0,0,.08);
+  animation: rlRunVictoryBg 2600ms ease both;
+}
+#rl-run-victory-fx::before,
+#rl-run-victory-fx::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle, rgba(255,235,170,.9) 0 1px, transparent 2px) 0 0 / 34px 34px,
+    radial-gradient(circle, rgba(190,155,255,.72) 0 1px, transparent 2px) 12px 18px / 42px 42px;
+  opacity: 0;
+  animation: rlRunSparkle 2400ms ease-out both;
+}
+#rl-run-victory-fx::after {
+  filter: blur(1px);
+  transform: rotate(18deg) scale(1.08);
+  animation-delay: 180ms;
+}
+.rl-run-victory-line {
+  position: absolute;
+  width: min(88vw, 420px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,236,170,.96), transparent);
+  box-shadow: 0 0 18px rgba(255,220,120,.75);
+  animation: rlRunVictoryLine 1500ms ease-out both;
+}
+.rl-run-victory-title {
+  position: relative;
+  z-index: 2;
+  font-family: "Noto Serif JP", "Cinzel", serif;
+  font-size: clamp(2rem, 10vw, 4.2rem);
+  font-weight: 900;
+  letter-spacing: .34em;
+  color: #fff3b0;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.82),
+    0 0 24px rgba(255,214,96,.92),
+    0 0 64px rgba(130,75,255,.72),
+    0 3px 8px rgba(0,0,0,.98);
+  transform: translateX(.17em);
+  opacity: 0;
+  animation: rlRunVictoryTitle 2300ms cubic-bezier(.16,1,.3,1) both;
+}
+.b32-unit.enemy.boss.rl-boss-vanish,
+.b32-unit.enemy.midboss.rl-boss-vanish,
+.b32-unit.enemy-id-enemy_01.rl-boss-vanish,
+.b32-unit.enemy-id-enemy_sakiel_roguelite.rl-boss-vanish {
+  animation: rlBossVanish 1500ms ease-in forwards !important;
+  filter: brightness(1.8) saturate(0.55) drop-shadow(0 0 18px rgba(255,235,165,.9));
+}
+@keyframes rlBossVanish {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  38%  { opacity: 1; transform: translateY(-5px) scale(1.08); }
+  100% { opacity: 0; transform: translateY(-26px) scale(.82); filter: blur(5px) brightness(2.2); }
+}
+@keyframes rlRunVictoryBg {
+  0% { opacity: 0; }
+  15%, 84% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes rlRunSparkle {
+  0% { opacity: 0; transform: translateY(20px) scale(.96); }
+  18% { opacity: .95; }
+  100% { opacity: 0; transform: translateY(-80px) scale(1.08); }
+}
+@keyframes rlRunVictoryLine {
+  0% { opacity: 0; transform: scaleX(.1); }
+  28%, 72% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.15); }
+}
+@keyframes rlRunVictoryTitle {
+  0% { opacity: 0; transform: translateX(.17em) scale(.86); filter: blur(6px); }
+  18% { opacity: 1; transform: translateX(.17em) scale(1.05); filter: blur(0); }
+  70% { opacity: 1; transform: translateX(.17em) scale(1); }
+  100% { opacity: 0; transform: translateX(.17em) scale(1.08); filter: blur(4px); }
+}
+
+/* ── リッチ版ラン結果 ── */
+.rl-result-panel.rich {
+  position: relative;
+  overflow: hidden;
+  padding: 28px 22px 24px;
+  background:
+    radial-gradient(circle at 50% -8%, rgba(255,220,110,.20), transparent 34%),
+    radial-gradient(circle at 50% 22%, rgba(120,70,255,.26), transparent 54%),
+    linear-gradient(168deg, #140b2c 0%, #060412 100%);
+}
+.rl-result-panel.rich::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(255,245,190,.12), transparent),
+    radial-gradient(circle, rgba(255,230,150,.42) 0 1px, transparent 2px) 0 0 / 38px 38px;
+  opacity: .34;
+  pointer-events: none;
+}
+.rl-result-kicker {
+  position: relative;
+  z-index: 1;
+  font-family: "Cinzel", serif;
+  font-size: .62rem;
+  letter-spacing: .22em;
+  color: rgba(220,205,255,.52);
+  margin-bottom: 6px;
+}
+.rl-result-rank-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 14px 0 16px;
+}
+.rl-result-rank-label {
+  font-family: "Cinzel", serif;
+  font-size: .66rem;
+  letter-spacing: .18em;
+  color: rgba(220,205,255,.48);
+}
+.rl-result-rank {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: "Cinzel", serif;
+  font-size: 3.8rem;
+  font-weight: 900;
+  color: #fff1a6;
+  background: radial-gradient(circle, rgba(255,230,120,.20), rgba(82,38,210,.18) 58%, rgba(0,0,0,.18));
+  border: 1px solid rgba(255,225,140,.36);
+  box-shadow: 0 0 28px rgba(255,205,80,.30), inset 0 0 20px rgba(120,80,255,.22);
+  text-shadow: 0 0 16px rgba(255,210,90,.86), 0 2px 5px rgba(0,0,0,.95);
+}
+.rl-result-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0 18px;
+}
+.rl-result-stat {
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(190,160,255,.16);
+}
+.rl-result-stat-label {
+  font-family: "Cinzel", serif;
+  font-size: .56rem;
+  letter-spacing: .12em;
+  color: rgba(220,205,255,.42);
+  margin-bottom: 4px;
+}
+.rl-result-stat-value {
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #efe6ff;
+}
+.rl-result-rewards {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+.rl-result-reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: rgba(20,12,46,.72);
+  border: 1px solid rgba(255,230,150,.16);
+}
+.rl-result-reward-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  color: rgba(240,232,255,.82);
+  font-size: .76rem;
+  letter-spacing: .08em;
+}
+.rl-result-reward-icon { font-size: 1.15rem; }
+.rl-result-reward-value {
+  font-family: "Cinzel", serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #ffe680;
+  text-shadow: 0 0 12px rgba(255,210,90,.55);
 }
 
 /* ── ラン結果オーバーレイ ── */
@@ -426,8 +685,75 @@ function _hideHud() {
 }
 
   // ── ラン結果画面 ─────────────────────────────────────────
-  function _showResult(result, ops) {
+  function _getRankFromTurns(totalTurns) {
+    if (window.RogueliteRun && typeof window.RogueliteRun.getClearRank === 'function') {
+      return window.RogueliteRun.getClearRank(totalTurns);
+    }
+    const t = Number(totalTurns || 0);
+    if (t <= 32) return 'S';
+    if (t <= 35) return 'A';
+    if (t <= 38) return 'B';
+    if (t <= 41) return 'C';
+    if (t <= 45) return 'D';
+    return 'E';
+  }
+
+  function _coinByRank(rank) {
+    return ({ S: 500, A: 400, B: 300, C: 220, D: 150, E: 100 })[rank] || 100;
+  }
+
+  function _calcRunExp(rank) {
+    // 既存の巡行EXPロジックがあればそれを使う。
+    // boss/S相当をベースに、ラン評価ランクで倍率を変える。
+    if (typeof window.calcNodeExp === 'function') {
+      return window.calcNodeExp('boss', rank, true);
+    }
+    const mul = ({ S: 1.5, A: 1.2, B: 1.0, C: 0.7, D: 0.55, E: 0.4 })[rank] || 0.4;
+    return Math.floor(1000 * mul);
+  }
+
+  async function _grantRunRewards(rank) {
+    const coin = _coinByRank(rank);
+    const exp = _calcRunExp(rank);
+
+    try {
+      if (window.userProfile) {
+        window.userProfile.coin = Number(window.userProfile.coin || 0) + coin;
+      }
+
+      if (typeof window.addTotalScore === 'function') {
+        await window.addTotalScore(exp);
+      } else if (window.userProfile) {
+        window.userProfile.total_score = Number(window.userProfile.total_score || 0) + exp;
+      }
+
+      if (typeof window.saveProfileToDB === 'function' && window.userProfile) {
+        await window.saveProfileToDB({
+          coin: window.userProfile.coin,
+          total_score: window.userProfile.total_score,
+          rank: window.userProfile.rank,
+          last_played: new Date().toISOString(),
+        });
+      }
+
+      if (typeof window.updateMainUI === 'function') window.updateMainUI();
+    } catch (err) {
+      console.warn('[RogueliteController] 報酬付与に失敗:', err);
+    }
+
+    return { coin, exp };
+  }
+
+  async function _showResult(result, ops, summary) {
+    _hideCommonGameScreens();
+    _hideTransitionShield();
+
     const isWin = result === 'win';
+    const data = summary || {};
+    const totalTurns = Number(data.totalTurns || 0);
+    const rank = data.rank || _getRankFromTurns(totalTurns);
+    const reward = isWin ? (data.reward || await _grantRunRewards(rank)) : null;
+
     const ov    = document.createElement('div');
     ov.id       = 'rl-result-overlay';
 
@@ -441,45 +767,235 @@ function _hideHud() {
       </div>
     `).join('');
 
-    ov.innerHTML = `
-      <div class="rl-result-panel">
-        <div class="rl-result-title ${isWin ? 'win' : 'lose'}">
-          ${isWin ? '🏆 ラン成功' : '💀 ラン失敗'}
+    ov.innerHTML = isWin ? `
+      <div class="rl-result-panel rich">
+        <div class="rl-result-kicker">ROGUELITE COMPLETE</div>
+        <div class="rl-result-title win">ラン成功</div>
+        <div class="rl-result-sub">怪異の収容に成功した。全ステージクリア。</div>
+
+        <div class="rl-result-rank-wrap">
+          <div class="rl-result-rank-label">SCORE</div>
+          <div class="rl-result-rank">${rank}</div>
         </div>
-        <div class="rl-result-sub">
-          ${isWin
-            ? '怪異の収容に成功した。全ステージクリア。'
-            : 'ランが終了した。また挑め。'}
+
+        <div class="rl-result-stats">
+          <div class="rl-result-stat">
+            <div class="rl-result-stat-label">TOTAL TURN</div>
+            <div class="rl-result-stat-value">${totalTurns}</div>
+          </div>
+          <div class="rl-result-stat">
+            <div class="rl-result-stat-label">STAGE</div>
+            <div class="rl-result-stat-value">4 / 4</div>
+          </div>
+          <div class="rl-result-stat">
+            <div class="rl-result-stat-label">GRADE</div>
+            <div class="rl-result-stat-value">${rank}</div>
+          </div>
         </div>
+
+        <div class="rl-result-rewards">
+          <div class="rl-result-reward-row">
+            <div class="rl-result-reward-left"><span class="rl-result-reward-icon">🪙</span><span>獲得コイン</span></div>
+            <div class="rl-result-reward-value">+${reward.coin}</div>
+          </div>
+          <div class="rl-result-reward-row">
+            <div class="rl-result-reward-left"><span class="rl-result-reward-icon">✦</span><span>獲得EXP</span></div>
+            <div class="rl-result-reward-value">+${reward.exp}</div>
+          </div>
+        </div>
+
         ${ops && ops.length > 0 ? `
-          <div style="font-size:.68rem;color:rgba(190,165,255,0.35);
-            letter-spacing:.1em;font-family:'Cinzel',serif;
-            text-align:center;margin-bottom:10px;">
+          <div style="position:relative;z-index:1;font-size:.62rem;color:rgba(190,165,255,0.35);letter-spacing:.1em;font-family:'Cinzel',serif;text-align:center;margin-bottom:10px;">
             — 取得した強化OP —
           </div>
           <div class="rl-result-ops">${opsHtml}</div>
         ` : ''}
-        <button class="rl-result-btn" id="rl-result-close-btn">
-          タイトルへ戻る
-        </button>
+        <button class="rl-result-btn" id="rl-result-close-btn">タイトルへ戻る</button>
+      </div>
+    ` : `
+      <div class="rl-result-panel">
+        <div class="rl-result-title lose">💀 ラン失敗</div>
+        <div class="rl-result-sub">ランが終了した。また挑め。</div>
+        ${ops && ops.length > 0 ? `
+          <div style="font-size:.68rem;color:rgba(190,165,255,0.35);letter-spacing:.1em;font-family:'Cinzel',serif;text-align:center;margin-bottom:10px;">
+            — 取得した強化OP —
+          </div>
+          <div class="rl-result-ops">${opsHtml}</div>
+        ` : ''}
+        <button class="rl-result-btn" id="rl-result-close-btn">タイトルへ戻る</button>
       </div>
     `;
 
     document.body.appendChild(ov);
 
     document.getElementById('rl-result-close-btn').addEventListener('click', () => {
-      ov.remove();
       _hideHud();
-      // 既存のステージ選択 / タイトル表示があれば呼ぶ
-      // （現状は何もしない — 画面が battle_32_ui.js 管理のため）
+      _restoreCommonGameScreensAfterRun();
+    });
+  }
+
+  function _waitRunVictoryGridFx() {
+    return new Promise(resolve => {
+      const root = document.getElementById('battle32-root');
+      if (!root || root.style.display === 'none') {
+        resolve();
+        return;
+      }
+
+      root.querySelectorAll('.b32-unit.enemy.boss, .b32-unit.enemy.midboss, .b32-unit.enemy-id-enemy_01, .b32-unit.enemy-id-enemy_sakiel_roguelite')
+        .forEach(el => el.classList.add('rl-boss-vanish'));
+
+      const old = document.getElementById('rl-run-victory-fx');
+      if (old) old.remove();
+
+      const fx = document.createElement('div');
+      fx.id = 'rl-run-victory-fx';
+      fx.innerHTML = `
+        <div class="rl-run-victory-line"></div>
+        <div class="rl-run-victory-title">殲 滅 完 了</div>
+      `;
+      document.body.appendChild(fx);
+
+      setTimeout(() => {
+        if (fx.parentNode) fx.parentNode.removeChild(fx);
+        resolve();
+      }, 2700);
     });
   }
 
   // ── Battle32 UI だけを静かに隠すヘルパー ─────────────────
   // closeBattle32UI() は nav / explore / map を復帰させてしまうため
+
+  // ── ローグライト専用：通常画面を見せないための共通隠蔽 ─────────────
+  function _hideCommonGameScreens() {
+    [
+      'stage-select-modal',
+      'party-select-modal',
+      'enemy-intro-root',
+      'battle-root',
+      'explore-root',
+      'explore-screen'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+
+    const nav = document.getElementById('bottom-nav-shared');
+    if (nav) nav.style.display = 'none';
+
+    const guf = document.getElementById('global-user-frame');
+    if (guf) guf.style.display = 'none';
+  }
+
+  // ── ローグライト終了後：通常UIを必ず復帰してステージ選択へ戻す ─────────────
+  // ラン失敗/成功の結果画面を閉じた後、_hideCommonGameScreens() で消した
+  // 共通ヘッダー・ボトムナビが残留非表示にならないようにここへ集約する。
+  function _restoreCommonGameScreensAfterRun() {
+    window.__ROGUELITE_TRANSITIONING__ = false;
+    window.__BATTLE32_UI_ACTIVE__ = false;
+
+    // Battle32側の掃除関数がある場合は、body直下のバトル系オーバーレイもまとめて掃除する。
+    // ただし closeBattle32UI() は通常ステージ復帰ロジックまで走るため直接呼ばない。
+    if (typeof window.cleanupBattle32Overlays === 'function') {
+      window.cleanupBattle32Overlays({ restoreCommonUi: true });
+    }
+
+    [
+      'rl-transition-shield',
+      'rl-stage-clear-overlay',
+      'rl-stage-fail-overlay',
+      'rl-run-victory-fx',
+      'rl-result-overlay',
+      'b32-result-overlay',
+      'b32-center-text',
+      'b32-turn-danger-frame',
+      'b32-link-bar',
+      'b32-roster-panel',
+      'b32-item-panel',
+      'b32-action-detail-portal'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === 'b32-result-overlay') {
+        el.style.display = 'none';
+        el.classList.remove('active');
+      } else {
+        el.remove();
+      }
+    });
+
+    const battle32Root = document.getElementById('battle32-root');
+    if (battle32Root) {
+      battle32Root.style.display = 'none';
+      delete battle32Root.dataset.rlHidden;
+    }
+
+    const nav = document.getElementById('bottom-nav-shared');
+    if (nav) {
+      nav.classList.remove('hidden');
+      nav.style.display = '';
+      nav.style.visibility = '';
+      nav.style.opacity = '';
+      nav.style.pointerEvents = '';
+    }
+
+    const guf = document.getElementById('global-user-frame');
+    if (guf) {
+      guf.classList.remove('hidden');
+      guf.style.display = '';
+      guf.style.visibility = '';
+      guf.style.opacity = '';
+      guf.style.pointerEvents = '';
+    }
+
+    // ステージ選択画面へ戻す。環境差に備えて複数の既存APIを順に試す。
+    if (typeof window.openStageSelect === 'function') {
+      window.openStageSelect();
+    } else if (typeof window.showStageSelect === 'function') {
+      window.showStageSelect();
+    } else {
+      const stage = document.getElementById('stage-select-modal');
+      if (stage) stage.style.display = '';
+    }
+
+    if (typeof window.updateMainUI === 'function') {
+      window.updateMainUI();
+    }
+  }
+
+  function _showTransitionShield(title) {
+    _hideCommonGameScreens();
+
+    let shield = document.getElementById('rl-transition-shield');
+    if (!shield) {
+      shield = document.createElement('div');
+      shield.id = 'rl-transition-shield';
+      document.body.appendChild(shield);
+    }
+
+    shield.classList.remove('is-hiding');
+    shield.innerHTML = `
+      <div class="rl-transition-kicker">ROGUELITE</div>
+      <div class="rl-transition-title">${title || 'NEXT STAGE'}</div>
+      <div class="rl-transition-line"></div>
+    `;
+    shield.style.display = 'flex';
+    return shield;
+  }
+
+  function _hideTransitionShield() {
+    const shield = document.getElementById('rl-transition-shield');
+    if (!shield) return;
+    shield.classList.add('is-hiding');
+    setTimeout(() => {
+      if (shield && shield.parentNode) shield.parentNode.removeChild(shield);
+    }, 240);
+  }
+
   // ローグライト中は使わない。このヘルパーで盤面だけを非表示にする。
   function _hideBattle32Only() {
   window.__ROGUELITE_TRANSITIONING__ = true;
+  _hideCommonGameScreens();
 
   const root = document.getElementById('battle32-root');
   if (root) {
@@ -511,6 +1027,7 @@ function _hideHud() {
   function _startBattle() {
   if (!window.RogueliteRun || !window.RogueliteRun.isActive()) return;
 
+  _hideCommonGameScreens();
   _updateHud();
 
   // 次のバトルを始めるので、古いBATTLE END再表示ブロックを解除
@@ -548,6 +1065,9 @@ function _hideHud() {
     } else {
       console.error('[RogueliteController] Battle32 が見つかりません');
     }
+
+    // enemy_intro / battle32-root が前面に乗った後、黒シールドを外す。
+    setTimeout(_hideTransitionShield, 260);
   }
   function _waitStageClear(stageNo) {
   return new Promise(resolve => {
@@ -684,25 +1204,38 @@ async function _onBattleEnd(result, payload) {
   // 敗北時：失敗理由を表示してからラン失敗画面へ
   if (result === 'lose') {
     await _waitStageFail(payload || { reason: 'unknown' });
+    _showTransitionShield('RUN FAILED');
     _hideBattle32Only();
 
     const ops = window.RogueliteRun.getOptions();
     window.RogueliteRun.end('lose');
     _hideHud();
-    _showResult('lose', ops);
+    await _showResult('lose', ops);
     return;
   }
 
-  // ボス戦勝利時：STAGE 4 CLEAR を見せてからラン成功画面へ
+  // 勝利ターンをラン通算に加算
+  if (result === 'win' && typeof window.RogueliteRun.addClearedStageTurn === 'function') {
+    window.RogueliteRun.addClearedStageTurn(payload && payload.turn);
+  }
+
+  // ボス戦勝利時：盤面上フィニッシュ演出 → STAGE 4 CLEAR → ラン成功画面へ
   if (window.RogueliteRun.isBossStage()) {
     const currentStage = window.RogueliteRun.getStageNo();
+    await _waitRunVictoryGridFx();
     await _waitStageClear(currentStage);
+    _showTransitionShield('RESULT');
     _hideBattle32Only();
 
     const ops = window.RogueliteRun.getOptions();
+    const totalTurns = typeof window.RogueliteRun.getTotalTurns === 'function'
+      ? window.RogueliteRun.getTotalTurns()
+      : 0;
+    const rank = _getRankFromTurns(totalTurns);
+    const reward = await _grantRunRewards(rank);
     window.RogueliteRun.end('win');
     _hideHud();
-    _showResult('win', ops);
+    await _showResult('win', ops, { totalTurns, rank, reward });
     return;
   }
 
@@ -729,7 +1262,8 @@ async function _onBattleEnd(result, payload) {
     onSelect: (selectedOp) => {
       console.log('[RogueliteController] 報酬選択 onSelect fired:', selectedOp);
 
-      // 報酬UI非表示後に古いBATTLE END画面が再表示されないよう先に隠す
+      // 報酬選択後は黒シールドで通常画面を覆ったまま次ステージへ移管する
+      _showTransitionShield('NEXT STAGE');
       _hideBattle32Only();
 
       if (selectedOp) {
@@ -786,6 +1320,7 @@ async function _onBattleEnd(result, payload) {
     }
 
     window.RogueliteRun.start(partyIds || [], runId);
+_showTransitionShield('RUN START');
 _hideHud();
 _startBattle();
   }
@@ -837,6 +1372,9 @@ _startBattle();
     _updateHud,
     _hideHud,
     _hideBattle32Only,
+    _showTransitionShield,
+    _hideTransitionShield,
+    _restoreCommonGameScreensAfterRun,
   };
 
 })();

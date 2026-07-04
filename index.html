@@ -1915,6 +1915,13 @@ div.addEventListener('click', function(){
     }
   }
 
+  // ローグライト等の外部JSから既存EXP/保存処理を呼べるよう明示公開
+  window.calcNodeExp = calcNodeExp;
+  window.addTotalScore = addTotalScore;
+  window.saveProfileToDB = saveProfileToDB;
+  window.updateMainUI = updateMainUI;
+  window.userProfile = userProfile;
+
   function showRankUpToast(rank){
     var toast = document.getElementById('rankup-toast');
     if(!toast) return;

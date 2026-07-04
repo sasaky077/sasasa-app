@@ -35,7 +35,8 @@
  let _selSkillAllyUid = null; // スキル使用キャラ（移動後に改めて選択）
  let _selSkillId = null;
  let _selActionAllyUid = null; // 行動選択メニューを表示中の味方キャラ
- let _selectedEnemyUid = null; // 敵情報表示・移動ガイド対象
+ let _selectedEnemyUid = null; // 敵情報表示・移動/攻撃ガイド対象
+ let _selectedEnemyGuideMode = null; // null | 'move' | 'attack'
 
 // ============================================================
 // ステート — 召喚 / アイテム操作
@@ -56,6 +57,8 @@ let _itemTargetUid = null;
  _selSkillId = null;
  _moveMode = false;
  _selActionAllyUid = null;
+ _selectedEnemyUid = null;
+ _selectedEnemyGuideMode = null;
 
  _selectedRosterId = null;
 
@@ -113,6 +116,28 @@ let _itemTargetUid = null;
      document.body.appendChild(el);
    }
    return el;
+ }
+
+ function _positionActionDetailPortal() {
+   const el = document.getElementById('b32-action-detail-portal');
+   if (!el) return;
+
+   const root = document.getElementById(ROOT_ID);
+   const actions = document.getElementById('b32-actions');
+   const isSE = !!(root && root.classList.contains('b32-vp-se'));
+
+   // スキル/ULT詳細は「下の余白」を使う。
+   // 以前は CSS の !important bottom が勝ち、SEでグリッド下段に被っていたため、
+   // JS 側も !important 付きでアクションボタン直上へ吸着させる。
+   let bottomPx = isSE ? 4 : 6;
+   if (actions && getComputedStyle(actions).display !== 'none') {
+     bottomPx += actions.offsetHeight || 0;
+   }
+
+   el.classList.toggle('is-se', isSE);
+   el.style.setProperty('bottom', `${Math.max(4, bottomPx)}px`, 'important');
+   el.style.setProperty('left', '50%', 'important');
+   el.style.setProperty('transform', 'translateX(-50%)', 'important');
  }
 
  function _hideActionDetailPortal() {
@@ -500,6 +525,152 @@ function b32RangeLabel(range) {
   return map[range] || range || '—';
 }
 
+
+function b32PercentTextFromRate(rate) {
+  const n = Number(rate);
+  if (!Number.isFinite(n)) return '';
+  if (n > 1) return `${Math.round((n - 1) * 100)}%`;
+  return `${Math.round(n * 100)}%`;
+}
+
+function b32EffectTargetLabel(target) {
+  const map = {
+    ally_self: '自身',
+    ally_all: '味方全体',
+    ally: '味方',
+    enemy: '敵',
+    target: '対象',
+  };
+  return map[target] || '';
+}
+
+function b32EffectSummary(effect) {
+  if (!effect) return '';
+  const target = b32EffectTargetLabel(effect.target);
+  const dur = effect.duration ? `${effect.duration}T` : '';
+  const rate = Number(effect.rate);
+  const rateUpText = Number.isFinite(rate) ? ` ${Math.round((rate - 1) * 100)}%` : '';
+  const rateDownText = Number.isFinite(rate) ? ` ${Math.round((1 - rate) * 100)}%` : '';
+
+  const prefix = target ? `${target}` : '';
+  switch (effect.type) {
+    case 'atk_up': return `${prefix}ATK+${rateUpText.trim() || ''}${dur ? `/${dur}` : ''}`;
+    case 'atk_down': return `${prefix}ATK-${rateDownText.trim() || ''}${dur ? `/${dur}` : ''}`;
+    case 'stun': return `${prefix}スタン${dur ? `/${dur}` : ''}`;
+    case 'heal': return `${prefix}回復`;
+    case 'poison': return `${prefix}毒${dur ? `/${dur}` : ''}`;
+    case 'jittai': return `${prefix}実体化${dur ? `/${dur}` : ''}`;
+    case 'sure_hit_self': return '自身必中';
+    case 'sure_hit_team': return '味方全体必中';
+    case 'pull_1': return '引き寄せ1';
+    case 'pull_2': return '引き寄せ2';
+    case 'push_1': return '押し出し1';
+    case 'push_2': return '押し出し2';
+    case 'push_3': return '押し出し3';
+    case 'shift_right_1': return '右移動1';
+    case 'shift_right_2': return '右移動2';
+    case 'shift_left_1': return '左移動1';
+    case 'shift_left_2': return '左移動2';
+    case 'ally_shift_right_down': return '味方を右下へ移動';
+    case 'ally_shift_left_down': return '味方を左下へ移動';
+    default: return effect.type || '';
+  }
+}
+
+function b32FindMasterSkillDef(skill, ally) {
+  if (!skill) return null;
+
+  let chara = null;
+  const idCandidates = [
+    ally?.charId,
+    ally?.charaId,
+    ally?.characterId,
+    ally?.baseId,
+    ally?.id,
+    skill?.charId,
+    skill?.charaId,
+    skill?.characterId,
+  ].filter(v => v != null);
+
+  for (const id of idCandidates) {
+    if (typeof getCharaById === 'function') {
+      chara = getCharaById(id);
+    }
+    if (!chara && window.getCharaById) {
+      chara = window.getCharaById(id);
+    }
+    if (chara) break;
+  }
+
+  const list = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS
+    : (Array.isArray(window.CHARACTERS) ? window.CHARACTERS : []);
+
+  if (!chara && list.length) {
+    chara = list.find(c => idCandidates.some(id => String(c.id) === String(id))) || null;
+  }
+
+  if (!chara && ally?.name && list.length) {
+    chara = list.find(c => c.name === ally.name) || null;
+  }
+
+  const skills = Array.isArray(chara?.skills) ? chara.skills : [];
+  return skills.find(s => s.id === skill.id) || skills.find(s => s.name === skill.name) || null;
+}
+
+function b32GetSkillFieldFromMaster(skill, ally, key, fallbackValue) {
+  const masterSkill = b32FindMasterSkillDef(skill, ally);
+  if (masterSkill && masterSkill[key] != null) return masterSkill[key];
+  if (skill && skill[key] != null) return skill[key];
+  return fallbackValue;
+}
+
+function b32FormatPercentRate(value, fallbackText = '0%') {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallbackText;
+  const pct = n <= 1 ? n * 100 : n;
+  return `${Math.round(pct)}%`;
+}
+
+function b32BuildCompactSkillSummaryHtml(skill, ally) {
+  if (!skill) return '';
+
+  const linkCost = ally
+    ? _getSkillLinkCostForUnit(_bs(), ally._uid, skill)
+    : _getSkillLinkCost(skill);
+
+  const multiplier = Number(skill.multiplier || 0);
+  const multiplierText = multiplier > 0 ? `ATK×${multiplier}` : 'ダメージなし';
+
+  // Battle32.getState() 側の ally.skills は、戦闘用に整形されたスキル情報で、
+  // criticalRate が欠落または 0 初期化される場合がある。
+  // 表示値は characters.js のスキル定義を正として引き直す。
+  const criticalRate = b32GetSkillFieldFromMaster(skill, ally, 'criticalRate', 0);
+  const criticalText = b32FormatPercentRate(criticalRate, '0%');
+
+  const effects = Array.isArray(skill.effects)
+    ? skill.effects.map(b32EffectSummary).filter(Boolean)
+    : [];
+  const effectText = effects.length ? effects.join(' / ') : 'なし';
+
+  return `
+    <div class="b32-action-detail-summary b32-action-detail-summary-grid">
+      <div class="b32-action-detail-summary-item">
+        <span>攻撃倍率：</span><strong>${b32EscapeHtml(multiplierText)}</strong>
+      </div>
+      <div class="b32-action-detail-summary-item">
+        <span>critical率：</span><strong>${b32EscapeHtml(criticalText)}</strong>
+      </div>
+      <div class="b32-action-detail-summary-item">
+        <span>追加効果：</span><strong>${b32EscapeHtml(effectText)}</strong>
+      </div>
+      <div class="b32-action-detail-summary-item">
+        <span>消費LINK：</span><strong>${b32EscapeHtml(String(linkCost))}</strong>
+      </div>
+    </div>
+  `;
+}
+
 function b32BuildSkillDetailHtml(skill, ally) {
   if (!skill) return '';
 
@@ -563,6 +734,44 @@ function getEnemyMoveGuideCells(enemy, bs) {
   return window.Battle32.getMoveCells(enemy._uid);
 }
 
+function getEnemyAttackGuideCells(enemy, bs) {
+  if (!enemy || !bs || !window.BattleRange32) return [];
+
+  const range = enemy.attackRange || 'enemy_attack_front';
+  let keys = new Set();
+
+  // 通常の enemy_attack_* / adjacent / field 系は BattleRange32 に委譲。
+  if (typeof range === 'string' && /^manhattan_(\d+)$/.test(range)) {
+    const dist = Number(/^manhattan_(\d+)$/.exec(range)[1]);
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 5; c++) {
+        const d = Math.abs(r - enemy.row) + Math.abs(c - enemy.col);
+        if (d > 0 && d <= dist) keys.add(`${r}-${c}`);
+      }
+    }
+  } else {
+    keys = window.BattleRange32.getCellsFromRange32(enemy, range);
+  }
+
+  const allyMap = {};
+  (bs.allies || [])
+    .filter(u => u && u.hp > 0)
+    .forEach(u => { allyMap[`${u.row}-${u.col}`] = u; });
+
+  const cells = [];
+  keys.forEach(key => {
+    const [row, col] = String(key).split('-').map(Number);
+    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+    cells.push({
+      row,
+      col,
+      cellType: allyMap[key] ? 'target_ally' : 'attack',
+      targetUid: allyMap[key] ? allyMap[key]._uid : null,
+    });
+  });
+  return cells;
+}
+
 function showEnemyInfo(enemy) {
  let ov = document.getElementById('b32-enemy-info-overlay');
  if (ov) ov.remove();
@@ -614,9 +823,34 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
  if (!enemy) return;
 
- // 同じ敵をもう一度タップしたら解除
- _selectedEnemyUid = (_selectedEnemyUid === enemyUid) ? null : enemyUid;
+ // 敵タップ時は情報パネルを開く。ガイドは「移動」「攻撃」ボタンで切り替える。
+ if (_selectedEnemyUid !== enemyUid) {
+   _selectedEnemyUid = enemyUid;
+   _selectedEnemyGuideMode = null;
+ } else {
+   // 同じ敵を再タップした場合は、情報表示を維持してガイドだけ解除する。
+   _selectedEnemyGuideMode = null;
+ }
 
+ window.renderBattle32UI();
+};
+
+window._b32EnemyGuide = function (mode) {
+ const bs = _bs();
+ if (!bs || !_selectedEnemyUid) return;
+ if (mode !== 'move' && mode !== 'attack') return;
+
+ _selectedEnemyGuideMode = (_selectedEnemyGuideMode === mode) ? null : mode;
+ window.renderBattle32UI();
+};
+
+window._b32CloseEnemyInfo = function () {
+ _selectedEnemyUid = null;
+ _selectedEnemyGuideMode = null;
+ const enemyInfo = document.getElementById('b32-enemy-info-overlay');
+ if (enemyInfo) enemyInfo.remove();
+ const enemyQuick = document.getElementById('b32-enemy-quick-info');
+ if (enemyQuick) enemyQuick.remove();
  window.renderBattle32UI();
 }; 
 
@@ -1011,8 +1245,8 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
  /* 背景は暗くしすぎない */
  background:
- radial-gradient(circle at 55% 48%, rgba(255,240,190,.14), transparent 42%),
- linear-gradient(180deg, rgba(0,0,0,.50), rgba(6,8,18,.30), rgba(0,0,0,.58));
+ radial-gradient(circle at 55% 48%, rgba(255,240,190,.06), transparent 46%),
+ linear-gradient(180deg, rgba(0,0,0,.72), rgba(6,8,18,.36), rgba(0,0,0,.76));
 
  animation: b32UltCutinWrap 1900ms ease-out forwards;
 }
@@ -1036,10 +1270,10 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
  /* ULT画像の視認性を最優先。暗幕より前で明るく強く出す */
  filter:
- brightness(1.95)
- contrast(1.28)
- saturate(1.22)
- drop-shadow(0 0 24px rgba(255,240,190,.45));
+ brightness(1.18)
+ contrast(1.16)
+ saturate(1.06)
+ drop-shadow(0 4px 18px rgba(0,0,0,.72));
 
  animation: b32UltCutinImgSlide 1700ms cubic-bezier(.18,.82,.22,1) forwards;
 }
@@ -1052,17 +1286,17 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  /* 上下だけ締めて、中央画像は暗くしすぎない */
  background:
  linear-gradient(180deg,
-   rgba(0,0,0,.58) 0%,
-   rgba(0,0,0,.12) 24%,
-   rgba(0,0,0,.00) 48%,
-   rgba(0,0,0,.10) 72%,
-   rgba(0,0,0,.62) 100%
+   rgba(0,0,0,.62) 0%,
+   rgba(0,0,0,.06) 24%,
+   rgba(0,0,0,.00) 50%,
+   rgba(0,0,0,.06) 74%,
+   rgba(0,0,0,.66) 100%
  ),
  linear-gradient(90deg,
-   rgba(0,0,0,.30) 0%,
-   rgba(0,0,0,.04) 34%,
+   rgba(0,0,0,.20) 0%,
+   rgba(0,0,0,.00) 34%,
    rgba(0,0,0,.00) 70%,
-   rgba(0,0,0,.26) 100%
+   rgba(0,0,0,.18) 100%
  );
 }
 
@@ -1143,6 +1377,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  background: white;
  opacity: 0;
  animation: b32UltWhiteFlash 1900ms ease-out forwards;
+ mix-blend-mode: normal;
 }
 
 @keyframes b32UltCutinWrap {
@@ -1179,22 +1414,22 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  0% {
  opacity: 0;
  transform: translate(-70%, -50%);
- filter: brightness(1.80) contrast(1.22) saturate(1.18);
+ filter: brightness(1.10) contrast(1.12) saturate(1.04);
  }
  14% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.95) contrast(1.28) saturate(1.22);
+ filter: brightness(1.18) contrast(1.16) saturate(1.06);
  }
  76% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.95) contrast(1.28) saturate(1.22);
+ filter: brightness(1.18) contrast(1.16) saturate(1.06);
  }
  100% {
  opacity: 0;
  transform: translate(-68%, -50%);
- filter: brightness(1.65) contrast(1.18) saturate(1.14);
+ filter: brightness(1.08) contrast(1.10) saturate(1.03);
  }
 }
 
@@ -1242,7 +1477,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  opacity: 0;
  }
  76% {
- opacity: .72;
+ opacity: .16;
  }
  86% {
  opacity: 0;
@@ -1959,6 +2194,34 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  100% { transform: translate(-50%, -50%) rotateX(-38deg) translateX(0)    scale(1); }
 }
 
+
+.b32-unit.enemy.active-enemy-action {
+  filter: drop-shadow(0 0 10px rgba(255,215,120,.95)) drop-shadow(0 0 18px rgba(255,100,80,.55));
+  animation: b32EnemyActionPulse 720ms ease-in-out infinite;
+  z-index: 9;
+}
+.b32-unit.enemy.active-enemy-action::after {
+  content: 'ACTION';
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  transform: translateX(-50%) rotateX(-38deg);
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.72);
+  border: 1px solid rgba(255,220,140,.65);
+  color: rgba(255,236,175,.96);
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: .12em;
+  text-shadow: 0 0 8px rgba(255,180,90,.82);
+  pointer-events: none;
+}
+@keyframes b32EnemyActionPulse {
+  0%, 100% { transform: translateX(-50%) rotateX(-38deg) scale(1); }
+  50% { transform: translateX(-50%) rotateX(-38deg) scale(1.06); }
+}
+
 #b32-enemy-info-overlay {
  position: fixed;
  inset: 0;
@@ -2046,28 +2309,84 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  text-shadow: 0 0 6px rgba(80,160,255,.8);
 }
 
+
+.b32-cell.enemy-attack-guide {
+ background:
+ radial-gradient(circle at center, rgba(255, 120, 110, .30), transparent 62%),
+ rgba(90, 24, 28, .26) !important;
+ border-color: rgba(255, 125, 125, .76) !important;
+ box-shadow:
+ inset 0 0 14px rgba(255, 80, 80, .24),
+ 0 0 16px rgba(255, 70, 70, .28) !important;
+}
+
+.b32-cell.enemy-attack-guide::after {
+ content: 'ATK';
+ position: absolute;
+ left: 50%;
+ top: 3px;
+ transform: translateX(-50%);
+ font-family: 'Cinzel', serif;
+ font-size: 7px;
+ letter-spacing: 1px;
+ color: rgba(255, 190, 180, .96);
+ pointer-events: none;
+ text-shadow: 0 0 6px rgba(255,80,80,.88);
+}
+
+.b32-cell.enemy-attack-target {
+ background:
+ radial-gradient(circle at center, rgba(255, 235, 150, .34), transparent 58%),
+ rgba(110, 50, 20, .30) !important;
+ border-color: rgba(255, 220, 120, .86) !important;
+ box-shadow:
+ inset 0 0 14px rgba(255, 210, 100, .30),
+ 0 0 18px rgba(255, 170, 80, .34) !important;
+}
+
+.b32-cell.enemy-attack-target::after {
+ content: 'TARGET';
+ position: absolute;
+ left: 50%;
+ top: 3px;
+ transform: translateX(-50%);
+ font-family: 'Cinzel', serif;
+ font-size: 7px;
+ letter-spacing: 1px;
+ color: rgba(255, 235, 170, .98);
+ pointer-events: none;
+ text-shadow: 0 0 7px rgba(255,120,80,.92);
+}
+
 #b32-enemy-quick-info,
 .b32-enemy-quick-info {
  position: fixed;
  left: 50%;
- top: calc(env(safe-area-inset-top, 0px) + 40px) !important;
+ bottom: calc(var(--b32-actions-h, 74px) + 114px + env(safe-area-inset-bottom, 0px));
  transform: translateX(-50%) !important;
  z-index: 3000000;
 
- width: min(230px, 86vw);
- padding: 8px 10px;
- border-radius: 10px;
+ width: min(320px, calc(100vw - 28px));
+ padding: 9px 11px 10px;
+ border-radius: 12px;
 
- background: rgba(10, 8, 16, .92);
+ background: rgba(10, 8, 16, .94);
  border: 1px solid rgba(220,120,120,.38);
- box-shadow: 0 0 18px rgba(180,40,40,.26), 0 10px 24px rgba(0,0,0,.45);
+ box-shadow: 0 0 18px rgba(180,40,40,.24), 0 10px 24px rgba(0,0,0,.46);
 
  color: #e8e4dc;
  font-family: "Noto Serif JP", serif;
- pointer-events: none;
+ pointer-events: auto;
 
  transform-style: flat;
  backface-visibility: hidden;
+ transition: opacity .16s ease, transform .16s ease, bottom .16s ease;
+}
+
+.b32-enemy-quick-info.is-guide-mode {
+ width: min(300px, calc(100vw - 34px));
+ padding: 7px 9px 8px;
+ opacity: .92;
 }
 
 .b32-enemy-quick-title {
@@ -2077,6 +2396,35 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  color: #ffb0b0;
  text-align: center;
  margin-bottom: 4px;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-title {
+ font-size: 10px;
+ margin-bottom: 2px;
+ color: rgba(255,190,190,.82);
+}
+
+.b32-enemy-quick-mode-label {
+ display: none;
+ margin-bottom: 4px;
+ text-align: center;
+ font-size: 10px;
+ letter-spacing: .12em;
+ color: rgba(232,228,220,.78);
+}
+.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-mode-label {
+ display: block;
+}
+.b32-enemy-quick-info.is-guide-mode.is-move .b32-enemy-quick-mode-label {
+ color: rgba(185,225,255,.98);
+ text-shadow: 0 0 8px rgba(80,160,255,.38);
+}
+.b32-enemy-quick-info.is-guide-mode.is-attack .b32-enemy-quick-mode-label {
+ color: rgba(255,220,205,.98);
+ text-shadow: 0 0 8px rgba(255,80,70,.38);
 }
 
 .b32-enemy-quick-row {
@@ -2093,6 +2441,76 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 .b32-enemy-quick-row strong {
  color: #fff0d0;
 }
+
+.b32-enemy-quick-statline {
+ display: flex;
+ justify-content: space-between;
+ gap: 8px;
+ font-size: 10px;
+ line-height: 1.45;
+ color: rgba(232,228,220,.58);
+}
+
+.b32-enemy-quick-statline strong {
+ color: #fff0d0;
+}
+
+.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-statline {
+ display: none;
+}
+
+.b32-enemy-quick-actions {
+ display: grid;
+ grid-template-columns: 1fr 1fr auto;
+ gap: 6px;
+ margin-top: 8px;
+}
+
+.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-actions {
+ margin-top: 4px;
+}
+
+.b32-enemy-quick-btn,
+.b32-enemy-quick-close {
+ min-height: 28px;
+ border-radius: 999px;
+ border: 1px solid rgba(255,255,255,.14);
+ background: rgba(255,255,255,.06);
+ color: rgba(232,228,220,.88);
+ font-family: "Noto Serif JP", serif;
+ font-size: 11px;
+ letter-spacing: .08em;
+ cursor: pointer;
+ pointer-events: auto;
+ touch-action: manipulation;
+ -webkit-tap-highlight-color: transparent;
+}
+
+.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-btn,
+.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-close {
+ min-height: 26px;
+ font-size: 10px;
+}
+
+.b32-enemy-quick-btn.active.move {
+ border-color: rgba(120,190,255,.75);
+ background: rgba(70,150,255,.20);
+ color: rgba(185,225,255,.98);
+ box-shadow: 0 0 12px rgba(80,160,255,.25);
+}
+
+.b32-enemy-quick-btn.active.attack {
+ border-color: rgba(255,150,130,.76);
+ background: rgba(255,80,70,.18);
+ color: rgba(255,220,205,.98);
+ box-shadow: 0 0 12px rgba(255,80,70,.25);
+}
+
+.b32-enemy-quick-close {
+ width: 34px;
+ padding: 0;
+}
+
 
 /* ── ロスター情報 閉じるボタン：タップ優先 ── */
 #battle32-root .b32-roster-info-panel {
@@ -2182,6 +2600,91 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 .b32-battle-menu-item.danger {
  color: #ffb0b0;
  border-color: rgba(255,90,90,.22);
+}
+
+
+/* ============================================================
+   Enemy info guide clarity update
+   - 敵タップ可能表示の紫リングは非表示
+   - 移動範囲は青、攻撃範囲は赤、攻撃対象は橙で明確化
+   ============================================================ */
+.b32-cell.enemy-inspectable::after {
+  content: none !important;
+  display: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.b32-cell.enemy-move-guide {
+  background:
+    linear-gradient(145deg, rgba(60,190,255,.46), rgba(10,80,135,.34)),
+    rgba(20,120,190,.30) !important;
+  border-color: rgba(70,205,255,.98) !important;
+  box-shadow:
+    inset 0 0 18px rgba(60,205,255,.42),
+    0 0 18px rgba(40,175,255,.48),
+    0 0 0 2px rgba(70,205,255,.52) !important;
+}
+.b32-cell.enemy-move-guide::after {
+  content: 'MOVE' !important;
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  transform: translateX(-50%);
+  z-index: 8;
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: rgba(230,250,255,.98);
+  pointer-events: none;
+  text-shadow: 0 0 7px rgba(0,120,255,.95), 0 1px 2px rgba(0,0,0,.55);
+}
+.b32-cell.enemy-attack-guide {
+  background:
+    linear-gradient(145deg, rgba(255,90,80,.48), rgba(120,22,28,.36)),
+    rgba(180,42,45,.28) !important;
+  border-color: rgba(255,95,92,.98) !important;
+  box-shadow:
+    inset 0 0 18px rgba(255,70,70,.42),
+    0 0 18px rgba(255,50,50,.44),
+    0 0 0 2px rgba(255,90,90,.46) !important;
+}
+.b32-cell.enemy-attack-guide::after {
+  content: 'ATK' !important;
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  transform: translateX(-50%);
+  z-index: 8;
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: rgba(255,245,240,.98);
+  pointer-events: none;
+  text-shadow: 0 0 7px rgba(255,30,30,.98), 0 1px 2px rgba(0,0,0,.55);
+}
+.b32-cell.enemy-attack-target {
+  background:
+    linear-gradient(145deg, rgba(255,200,72,.58), rgba(190,70,18,.38)),
+    rgba(240,130,28,.34) !important;
+  border-color: rgba(255,220,95,.98) !important;
+  box-shadow:
+    inset 0 0 20px rgba(255,210,80,.48),
+    0 0 20px rgba(255,140,40,.52),
+    0 0 0 2px rgba(255,210,90,.60) !important;
+}
+.b32-cell.enemy-attack-target::after {
+  content: 'TARGET' !important;
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  transform: translateX(-50%);
+  z-index: 8;
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: rgba(70,30,0,.95);
+  pointer-events: none;
+  text-shadow: 0 0 6px rgba(255,255,200,.95), 0 1px 2px rgba(255,255,255,.55);
 }
 
  `;
@@ -2836,6 +3339,9 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
  <div id="rl-hud" aria-label="Roguelite Stage Progress"></div>
 
+ <!-- 上部メッセージバー：ステージ進捗の直下に表示 -->
+ <div id="b32-bottom-guide"></div>
+
  <div id="b32-hint-bar"></div>
 
  <div id="b32-boss-hp-ui" style="display:none">
@@ -2860,11 +3366,7 @@ window._b32ShowEnemyInfo = function (enemyUid) {
  <div id="b32-scroll">
  <div id="b32-board-wrap">
  <div id="b32-board"></div>
- <div class="b32-zone-label" style="top:0">ENEMY</div>
- <div class="b32-zone-label" style="bottom:0">ALLY</div>
  </div>
-
- <div id="b32-bottom-guide"></div>
 
  <div id="b32-log-wrap"><div id="b32-log"></div></div>
 
@@ -3261,6 +3763,11 @@ let _b32AttackCinematicBusy = false;
 let _b32AttackCinematicLastKey = '';
 let _b32AttackCinematicLastAt = 0;
 
+// 同一スキルで複数体へ同時ヒットした damage イベントを、
+// アップ演出上は1つの「複数対象攻撃」として束ねる。
+let _b32PendingAttackCinematic = null;
+let _b32PendingAttackCinematicTimer = null;
+
 function _injectAttackCinematicStyle() {
  if (document.getElementById('b32-attack-cinematic-style')) return;
  const s = document.createElement('style');
@@ -3477,6 +3984,69 @@ function _injectAttackCinematicStyle() {
   0%, 8% { opacity: 0; transform: translate(-50%, 8px); }
   22%, 78% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -8px); }
+}
+
+/* ── 複数対象攻撃：敵を複数並べ、各対象に着弾・ダメージを出す ── */
+#b32-attack-cinematic.multi-target::before {
+  height: 3px;
+  transform-origin: 34% 50%;
+  box-shadow:
+    0 0 30px rgba(255,235,190,.88),
+    0 0 84px rgba(255,255,255,.46);
+}
+#b32-attack-cinematic.multi-target .b32-cine-enemy.b32-cine-target {
+  right: auto;
+  top: auto;
+  left: var(--cx);
+  top: var(--cy);
+  width: min(30vw, 176px);
+  height: min(34vh, 286px);
+  transform: translate(-50%, 0) scale(.86);
+  z-index: calc(3 + var(--ti));
+  animation: b32CineEnemyMulti 1120ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+#b32-attack-cinematic.multi-target .b32-cine-enemy.b32-cine-target img {
+  filter: drop-shadow(0 15px 22px rgba(0,0,0,.72));
+}
+#b32-attack-cinematic.multi-target .b32-cine-impact-multi {
+  left: var(--mx);
+  top: var(--my);
+}
+#b32-attack-cinematic.multi-target .b32-cine-damage-multi {
+  left: var(--mx);
+  top: calc(var(--my) - 7%);
+  font-size: clamp(24px, 7.2vw, 48px);
+}
+#b32-attack-cinematic.multi-target .b32-cine-damage-multi.critical {
+  font-size: clamp(30px, 8.4vw, 58px);
+}
+.b32-cine-mini-break {
+  position: absolute;
+  left: 50%;
+  top: 92%;
+  transform: translateX(-50%);
+  display: block;
+  color: #fff;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: clamp(11px, 3.2vw, 18px);
+  font-weight: 900;
+  letter-spacing: .13em;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.96),
+    0 0 22px rgba(255,70,90,.92),
+    0 3px 10px rgba(0,0,0,1);
+}
+#b32-attack-cinematic.multi-target .b32-cine-critical-label {
+  left: 50%;
+  top: 15%;
+}
+@keyframes b32CineEnemyMulti {
+  0% { opacity: 0; transform: translate(-38%, -16px) scale(.78); }
+  16% { opacity: 1; transform: translate(-50%, 0) scale(.88); }
+  42% { transform: translate(calc(-50% - 8px), 6px) scale(.94); }
+  50% { transform: translate(calc(-50% - 22px), 18px) scale(.98) rotate(-1.5deg); filter: drop-shadow(0 0 26px rgba(255,255,255,.66)); }
+  78% { opacity: 1; transform: translate(calc(-50% - 14px), 12px) scale(.94); }
+  100% { opacity: 0; transform: translate(calc(-50% - 14px), 12px) scale(.92); }
 }
 
 /* ── 敵→味方 攻撃時：配置は同じ（敵★右上 / 味方☆左下）、動きと着弾位置だけ反転 ── */
@@ -3871,22 +4441,33 @@ function _showAttackCinematic(data) {
  const isEnemyAttack = data.source.side === 'enemy' && data.target.side === 'ally';
  if (!isAllyAttack && !isEnemyAttack) return;
 
+ const targetEvents = Array.isArray(data.targetEvents) && data.targetEvents.length
+   ? data.targetEvents.filter(ev => ev && ev.target && Number(ev.amount || 0) > 0)
+   : [data];
+ if (!targetEvents.length) return;
+
+ const isMultiTarget = isAllyAttack && targetEvents.length > 1;
+
  const now = Date.now();
- const key = `${data.source._uid || ''}:${data.target._uid || ''}:${data.skillId || 'attack'}`;
+ const key = `${data.source._uid || ''}:${isMultiTarget ? 'multi' : data.target._uid || ''}:${data.skillId || 'attack'}`;
  if (_b32AttackCinematicBusy) return;
  if (_b32AttackCinematicLastKey === key && now - _b32AttackCinematicLastAt < 900) return;
 
  const bs = data.bs || _bs();
  const sourceUnit = _findCinematicUnit(bs, data.source);
- const targetUnit = _findCinematicUnit(bs, data.target);
  const sourceImg = _getCinematicImg(sourceUnit);
- const targetImg = _getCinematicImg(targetUnit);
- if (!sourceImg || !targetImg) return;
+ const targetUnits = targetEvents
+   .map(ev => _findCinematicUnit(bs, ev.target))
+   .filter(Boolean);
+ const targetImgs = targetUnits
+   .map(u => _getCinematicImg(u))
+   .filter(Boolean);
+ if (!sourceImg || !targetImgs.length) return;
 
  // 表示位置は固定：味方☆は左下、敵★は右上。
  // 攻撃方向は ov の enemy-attack クラスで切り替える。
- const allyImg = isAllyAttack ? sourceImg : targetImg;
- const enemyImg = isAllyAttack ? targetImg : sourceImg;
+ const allyImg = isAllyAttack ? sourceImg : targetImgs[0];
+ const enemyImg = isAllyAttack ? targetImgs[0] : sourceImg;
 
  _b32AttackCinematicBusy = true;
  _b32AttackCinematicLastKey = key;
@@ -3894,11 +4475,13 @@ function _showAttackCinematic(data) {
  _injectAttackCinematicStyle();
 
  const isRapidMulti = data.hitStyle === 'rapid_multi';
- const isCritical = !!(data.isCritical || data.criticalCount > 0);
+ const isCritical = !!(data.isCritical || data.criticalCount > 0 || targetEvents.some(ev => ev.isCritical || ev.criticalCount > 0));
  const criticalHits = Array.isArray(data.criticalHits) ? data.criticalHits : [];
  const isFatal = !!(
    data.isFatal ||
    data.target?.isFatal ||
+   targetEvents.some(ev => ev.isFatal || ev.target?.isFatal ||
+     (Number(ev.hpBefore || ev.target?.hpBefore || 0) > 0 && Number(ev.hpAfter ?? ev.target?.hpAfter ?? 1) <= 0)) ||
    (Number(data.hpBefore || data.target?.hpBefore || 0) > 0 && Number(data.hpAfter ?? data.target?.hpAfter ?? 1) <= 0)
  );
  const rapidCount = Math.min(8, Math.max(4, Math.floor(Number(data.hitCount || 5))));
@@ -3927,9 +4510,39 @@ function _showAttackCinematic(data) {
    `;
  }).join('') : '';
 
+ const multiSlots = [
+   { cx: 61, cy: 8,  mx: 61, my: 36 },
+   { cx: 78, cy: 17, mx: 78, my: 45 },
+   { cx: 52, cy: 24, mx: 52, my: 52 },
+   { cx: 86, cy: 5,  mx: 86, my: 33 },
+   { cx: 68, cy: 31, mx: 68, my: 59 },
+ ];
+ const targetHtml = isMultiTarget
+   ? targetImgs.slice(0, 5).map((img, i) => {
+       const slot = multiSlots[i % multiSlots.length];
+       const style = `--ti:${i};--cx:${slot.cx}%;--cy:${slot.cy}%;`;
+       return `<div class="b32-cine-unit b32-cine-enemy b32-cine-target b32-cine-target-${i}" style="${style}"><img src="${img}" alt="" onerror="this.style.display='none'"></div>`;
+     }).join('')
+   : `<div class="b32-cine-unit b32-cine-enemy"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>`;
+
+ const multiDamageHtml = isMultiTarget && !isRapidMulti
+   ? targetEvents.slice(0, 5).map((ev, i) => {
+       const slot = multiSlots[i % multiSlots.length];
+       const amount = Math.max(0, Math.floor(Number(ev.amount || 0)));
+       const evCritical = !!(ev.isCritical || ev.criticalCount > 0);
+       const evFatal = !!(ev.isFatal || ev.target?.isFatal ||
+         (Number(ev.hpBefore || ev.target?.hpBefore || 0) > 0 && Number(ev.hpAfter ?? ev.target?.hpAfter ?? 1) <= 0));
+       const style = `--mx:${slot.mx}%;--my:${slot.my}%;`;
+       return `
+         <div class="b32-cine-impact b32-cine-impact-multi" style="${style}"></div>
+         <div class="b32-cine-damage b32-cine-damage-multi${evCritical ? ' critical' : ''}" style="${style}">-${amount}${evFatal ? '<span class="b32-cine-mini-break">BREAK</span>' : ''}</div>
+       `;
+     }).join('')
+   : '';
+
  const breakParticleHtml = isFatal ? Array.from({ length: 14 }, (_, i) => {
-   const baseX = isEnemyAttack ? 36 : 64;
-   const baseY = isEnemyAttack ? 58 : 34;
+   const baseX = isEnemyAttack ? 36 : (isMultiTarget ? 68 : 64);
+   const baseY = isEnemyAttack ? 58 : (isMultiTarget ? 44 : 34);
    const dxList = [-72, 58, -42, 84, -18, 30, -92, 70, -58, 48, -24, 94, -80, 20];
    const dyList = [-96, -72, -122, -48, -142, -92, -38, -118, -76, -154, -110, -62, -132, -44];
    const pxList = [-8, 6, -3, 9, 2, -6, 10, -10, 4, -4, 8, -9, 1, 5];
@@ -3942,13 +4555,14 @@ function _showAttackCinematic(data) {
  }).join('') : '';
  const breakHtml = isFatal ? `
    <div class="b32-cine-break-label">BREAK</div>
-   <div class="b32-cine-break-sub">${isEnemyAttack ? 'ALLY LOST' : 'ENEMY VANISHED'}</div>
+   <div class="b32-cine-break-sub">${isEnemyAttack ? 'ALLY LOST' : (isMultiTarget ? 'ENEMIES VANISHED' : 'ENEMY VANISHED')}</div>
    ${breakParticleHtml}
  ` : '';
 
  const ov = document.createElement('div');
  ov.id = 'b32-attack-cinematic';
  if (isEnemyAttack) ov.classList.add('enemy-attack');
+ if (isMultiTarget) ov.classList.add('multi-target');
  if (isRapidMulti) ov.classList.add('rapid-multi');
  if (isCritical) ov.classList.add('critical');
  if (isFatal) {
@@ -3957,8 +4571,8 @@ function _showAttackCinematic(data) {
  }
  ov.innerHTML = `
    <div class="b32-cine-unit b32-cine-ally"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
-   <div class="b32-cine-unit b32-cine-enemy"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>
-   ${isRapidMulti ? rapidHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage${isCritical ? ' critical' : ''}">-${data.amount}</div>`}
+   ${targetHtml}
+   ${isRapidMulti ? rapidHtml : (isMultiTarget ? multiDamageHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage${isCritical ? ' critical' : ''}">-${data.amount}</div>`)}
    ${isCritical ? '<div class="b32-cine-critical-label">CRITICAL</div>' : ''}
    ${breakHtml}
    <div class="b32-cine-skill">${data.skillName || (isEnemyAttack ? 'ENEMY ATTACK' : 'ATTACK')}</div>
@@ -4264,6 +4878,64 @@ function _showImpactShake(unitInfo) {
    };
  }
 
+ function _getAttackCinematicGroupKey(data) {
+   if (!data || !data.source || !data.target) return '';
+   const isAllyAttack = data.source.side === 'ally' && data.target.side === 'enemy';
+   // 今回束ねたいのは「味方1体 → 敵複数体」の同時攻撃。
+   // 敵攻撃や回復、特殊イベントは従来通り1体ずつ扱う。
+   if (!isAllyAttack) return '';
+   return [
+     data.source._uid || '',
+     data.skillId || data.skillName || 'attack',
+     data.isUltimate ? 'ult' : 'skill',
+     data.hitStyle || 'normal',
+   ].join(':');
+ }
+
+ function _queueAttackCinematic(data) {
+   const key = _getAttackCinematicGroupKey(data);
+   if (!key) {
+     _showAttackCinematic(data);
+     return;
+   }
+
+   if (!_b32PendingAttackCinematic || _b32PendingAttackCinematic.key !== key) {
+     if (_b32PendingAttackCinematicTimer) {
+       clearTimeout(_b32PendingAttackCinematicTimer);
+       _b32PendingAttackCinematicTimer = null;
+     }
+     _b32PendingAttackCinematic = { key, items: [] };
+   }
+
+   _b32PendingAttackCinematic.items.push(data);
+
+   // applyDamage が targets.forEach 内で連続発火するため、短い猶予で同時ヒット分をまとめる。
+   if (_b32PendingAttackCinematicTimer) clearTimeout(_b32PendingAttackCinematicTimer);
+   _b32PendingAttackCinematicTimer = setTimeout(() => {
+     const pending = _b32PendingAttackCinematic;
+     _b32PendingAttackCinematic = null;
+     _b32PendingAttackCinematicTimer = null;
+     if (!pending || !pending.items.length) return;
+
+     if (pending.items.length === 1) {
+       _showAttackCinematic(pending.items[0]);
+       return;
+     }
+
+     const first = pending.items[0];
+     const totalAmount = pending.items.reduce((sum, ev) => sum + Math.max(0, Number(ev.amount || 0)), 0);
+     _showAttackCinematic({
+       ...first,
+       amount: Math.floor(totalAmount),
+       targetEvents: pending.items,
+       multiTargetCount: pending.items.length,
+       isCritical: pending.items.some(ev => ev.isCritical || ev.criticalCount > 0),
+       isFatal: pending.items.some(ev => ev.isFatal || ev.target?.isFatal ||
+         (Number(ev.hpBefore || ev.target?.hpBefore || 0) > 0 && Number(ev.hpAfter ?? ev.target?.hpAfter ?? 1) <= 0)),
+     });
+   }, 45);
+ }
+
  function _onDamageEvent(data) {
  if (!data || !data.target) return;
 
@@ -4275,8 +4947,9 @@ function _showImpactShake(unitInfo) {
  const isRapidMulti = hitStyle === 'rapid_multi';
 
  // 味方→敵 / 敵→味方のダメージ時に、俯瞰グリッドから一瞬アップ演出へ切り替える。
+ // 味方1体が複数敵へ同時ヒットした場合は、短時間バッファして複数対象アップ演出に束ねる。
  // rapid_multi はアップ演出側で敵画像上部に5連撃を出すため、グリッド側の数値・フラッシュは出さない。
- _showAttackCinematic(data);
+ _queueAttackCinematic(data);
  if (isRapidMulti) return;
 
  // shakeVariant: ULT > heavy > normal
@@ -4390,7 +5063,6 @@ function _onHealEvent(data) {
 
    document.addEventListener('pointerup', function (e) {
      if (_b32InputLocked) return;
-     if (!_moveMode || !_selMoveAllyUid) return;
 
      const root = document.getElementById(ROOT_ID);
      const currentBoard = document.getElementById('b32-board');
@@ -4404,6 +5076,78 @@ function _onHealEvent(data) {
      // PC/大型画面では余計な横取りをしない。
      // iPhone SE / iPhone14 系だけ、奥側グリッドの取りこぼしを補助する。
      if (!isTouchAssistDevice) return;
+
+     const cellSize = parseFloat(getComputedStyle(root).getPropertyValue('--cell-size')) || 42;
+
+     // ------------------------------------------------------------
+     // 敵情報タップ fallback
+     // ------------------------------------------------------------
+     // ローグライトの敵は盤面上段に出ることが多く、rotateX + スマホ実機の
+     // ヒット判定で inline onclick が発火しないケースがある。
+     // 既に .enemy-inspectable セルを直接踏めている場合は通常 onclick に任せ、
+     // 取りこぼした時だけ座標から最寄りの敵セルを解決する。
+     const directEnemyCell = e.target && e.target.closest
+       ? e.target.closest('.b32-cell.enemy-inspectable')
+       : null;
+
+     if (!directEnemyCell) {
+       const enemyCells = Array.from(currentBoard.querySelectorAll('.b32-cell.enemy-inspectable'));
+       if (enemyCells.length) {
+         const rects = enemyCells
+           .map(cell => cell.getBoundingClientRect())
+           .filter(rect => rect.width > 0 && rect.height > 0);
+
+         if (rects.length) {
+           const hitBounds = rects.reduce((acc, rect) => ({
+             left: Math.min(acc.left, rect.left),
+             right: Math.max(acc.right, rect.right),
+             top: Math.min(acc.top, rect.top),
+             bottom: Math.max(acc.bottom, rect.bottom),
+           }), { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity });
+
+           const margin = Math.max(28, cellSize * 0.70);
+           const insideEnemyArea = !(
+             e.clientX < hitBounds.left - margin ||
+             e.clientX > hitBounds.right + margin ||
+             e.clientY < hitBounds.top - margin ||
+             e.clientY > hitBounds.bottom + margin
+           );
+
+           if (insideEnemyArea) {
+             let bestEnemy = null;
+             let bestEnemyDist = Infinity;
+
+             enemyCells.forEach(cell => {
+               const rect = cell.getBoundingClientRect();
+               const cx = rect.left + rect.width / 2;
+               const cy = rect.top + rect.height / 2;
+               const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+               if (d < bestEnemyDist) {
+                 bestEnemyDist = d;
+                 bestEnemy = cell;
+               }
+             });
+
+             const enemyThreshold = Math.max(36, cellSize * 1.05);
+             if (bestEnemy && bestEnemyDist <= enemyThreshold) {
+               const onclick = bestEnemy.getAttribute('onclick') || '';
+               const m = onclick.match(/_b32ShowEnemyInfo\('([^']+)'\)/);
+               if (m && m[1] && typeof window._b32ShowEnemyInfo === 'function') {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 window._b32ShowEnemyInfo(m[1]);
+                 return;
+               }
+             }
+           }
+         }
+       }
+     }
+
+     // ------------------------------------------------------------
+     // 移動先タップ fallback（既存）
+     // ------------------------------------------------------------
+     if (!_moveMode || !_selMoveAllyUid) return;
 
      const movable = Array.from(currentBoard.querySelectorAll('.b32-cell.movable'));
      if (!movable.length) return;
@@ -4450,7 +5194,6 @@ function _onHealEvent(data) {
      });
 
      // 上段は rotateX の影響で見た目の高さが圧縮されるため広めに拾う。
-     const cellSize = parseFloat(getComputedStyle(root).getPropertyValue('--cell-size')) || 42;
      const threshold = Math.max(48, cellSize * 1.35);
 
      if (best && bestDist <= threshold) {
@@ -4548,8 +5291,9 @@ function _onHealEvent(data) {
  });
  }
 
- // ── 敵タップ時の移動ガイド ──
-let enemyGuideCells = new Set();
+ // ── 敵タップ時の情報ガイド ──
+let enemyMoveGuideCells = new Set();
+let enemyAttackGuideCells = new Map(); // key:'row-col', value:'attack' | 'target_ally'
 let selectedEnemy = null;
 
 if (_selectedEnemyUid) {
@@ -4559,11 +5303,18 @@ if (_selectedEnemyUid) {
  );
 
  if (selectedEnemy) {
- getEnemyMoveGuideCells(selectedEnemy, bs).forEach(c => {
- enemyGuideCells.add(`${c.row}-${c.col}`);
- });
+   if (_selectedEnemyGuideMode === 'move') {
+     getEnemyMoveGuideCells(selectedEnemy, bs).forEach(c => {
+       enemyMoveGuideCells.add(`${c.row}-${c.col}`);
+     });
+   } else if (_selectedEnemyGuideMode === 'attack') {
+     getEnemyAttackGuideCells(selectedEnemy, bs).forEach(c => {
+       enemyAttackGuideCells.set(`${c.row}-${c.col}`, c.cellType || 'attack');
+     });
+   }
  } else {
- _selectedEnemyUid = null;
+   _selectedEnemyUid = null;
+   _selectedEnemyGuideMode = null;
  }
 }
 
@@ -4573,7 +5324,8 @@ if (_selectedEnemyUid) {
  // ── ローグライト: アイテム対象（転位符の移動先マス）──
  // _itemPhase === 'cell' のとき: 盤面の空きマスをクリック可能にする
  let itemCellTargets = new Set();
- if (_itemMode && _itemPhase === 'cell' && _itemTargetUid) {
+ const activeItem = (_itemMode && bs.items && _itemSlotIndex != null) ? bs.items[_itemSlotIndex] : null;
+ if (_itemMode && activeItem && activeItem.type === 'move_ally' && _itemPhase === 'cell' && _itemTargetUid) {
    for (let r = 0; r < 8; r++) {
      for (let c = 0; c < 5; c++) {
        const key = `${r}-${c}`;
@@ -4633,13 +5385,25 @@ if (_selectedEnemyUid) {
  const isCapture = captureCells.has(key);
  // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
  const bossDangerType = bossDangerCells.get(key);
- const isEnemyMoveGuide = enemyGuideCells.has(key);
+ const isEnemyMoveGuide = enemyMoveGuideCells.has(key);
+ const enemyAttackCellType = enemyAttackGuideCells.get ? enemyAttackGuideCells.get(key) : null;
+ const isEnemyAttackGuide = enemyAttackCellType === 'attack';
+ const isEnemyAttackTarget = enemyAttackCellType === 'target_ally';
  // ローグライト: 召喚マス
  const isSummonCell = summonCells.has(key);
  // ローグライト: アイテム対象（転位符移動先）
  const isItemCell = itemCellTargets.has(key);
- // ローグライト: アイテム対象の味方（heal/転位符）
- const isItemAllyTarget = _itemMode && _itemPhase === 'target' && unit && unit.side === 'ally' && unit.hp > 0;
+ // ローグライト: アイテム対象ユニット
+ const isItemAllyTarget = !!(
+   _itemMode && activeItem && _itemPhase === 'target' &&
+   unit && unit.side === 'ally' && unit.hp > 0 &&
+   ['heal', 'move_ally', 'shinki_max', 'guard', 'swap_ally'].includes(activeItem.type)
+ );
+ const isItemEnemyTarget = !!(
+   _itemMode && activeItem && _itemPhase === 'target' &&
+   unit && unit.side === 'enemy' && unit.hp > 0 &&
+   ['stun_enemy', 'swap_enemy'].includes(activeItem.type)
+ );
 
  let cls = `b32-cell ${zoneClass}`;
  if (isDivider) cls += ' row-divider';
@@ -4649,6 +5413,8 @@ if (_selectedEnemyUid) {
  else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
 
  if (isEnemyMoveGuide) cls += ' enemy-move-guide';
+ if (isEnemyAttackGuide) cls += ' enemy-attack-guide';
+ if (isEnemyAttackTarget) cls += ' enemy-attack-target';
  if (isSkillSelectable) cls += ' skill-selectable';
  if (isAllyInspectable) cls += ' ally-inspectable';
  if (isEnemyInspectable) cls += ' enemy-inspectable';
@@ -4663,8 +5429,9 @@ if (_selectedEnemyUid) {
  if (isSummonCell) cls += ' summon-cell';
  // アイテム移動先マス
  if (isItemCell) cls += ' item-cell-target';
- // アイテム対象味方
+ // アイテム対象味方/敵
  if (isItemAllyTarget) cls += ' skill-target-ally';
+ if (isItemEnemyTarget) cls += ' skill-target-enemy';
 
  // クリックハンドラ
 let onclick = '';
@@ -4674,6 +5441,9 @@ if (_summonMode && isSummonCell && !unit) {
 
 } else if (_itemMode && isItemAllyTarget && _itemPhase === 'target') {
  onclick = `onclick="_b32OnItemAllyTap('${unit._uid}')"`;
+
+} else if (_itemMode && isItemEnemyTarget && _itemPhase === 'target') {
+ onclick = `onclick="_b32OnItemEnemyTap('${unit._uid}')"`;
 
 } else if (_itemMode && isItemCell && _itemPhase === 'cell') {
  onclick = `onclick="_b32OnItemCellTap(${r},${c})"`;
@@ -4691,6 +5461,18 @@ if (_summonMode && isSummonCell && !unit) {
 } else if (isAllyInspectable || isSkillSelectable || isSkillSelected) {
  onclick = `onclick="_b32OnSkillAllyTap('${unit._uid}')"`;
 }
+  // 敵情報ガイド専用オーバーレイ
+  // cell の background だけだと、白背景・3D変形・ゾーン背景の上で薄く見えるため、
+  // スキルレンジと同じく専用spanを置いて視認性を担保する。
+  let enemyGuideOverlay = '';
+  if (isEnemyMoveGuide) {
+    enemyGuideOverlay = '<span class="b32-enemy-guide-overlay move"></span>';
+  } else if (isEnemyAttackTarget) {
+    enemyGuideOverlay = '<span class="b32-enemy-guide-overlay target_ally"></span>';
+  } else if (isEnemyAttackGuide) {
+    enemyGuideOverlay = '<span class="b32-enemy-guide-overlay attack"></span>';
+  }
+
   // スキルレンジオーバーレイ（背景CSSが !important 上書きされても視認できる専用span）
   const skillOverlay = skillCellType
     ? `<span class="b32-skill-range-overlay ${skillCellType}"></span>`
@@ -4714,6 +5496,7 @@ if (_summonMode && isSummonCell && !unit) {
 
   cells.push(
     `<div class="${cls}" data-row="${r}" data-col="${c}" ${depthStyle} ${onclick}>` +
+    enemyGuideOverlay +
     skillOverlay +
     summonOverlay +
     (unit ? renderUnit(unit, bs.phase) : renderCore(r, c, bs)) +
@@ -4729,25 +5512,81 @@ if (_summonMode && isSummonCell && !unit) {
  
  }
 
- function renderEnemyQuickInfo(enemy) {
+ function _positionEnemyQuickInfoPanel(box) {
+ if (!box) return;
+
+ // 敵情報パネルはグリッド上段を隠さないよう、味方カードの直上へ逃がす。
+ // #b32-roster-panel は端末別に位置が変わるため、実測して bottom を決める。
+ const roster = document.getElementById('b32-roster-panel');
+ const root = document.getElementById(ROOT_ID);
+ let bottomPx = null;
+
+ if (roster && getComputedStyle(roster).display !== 'none') {
+   const rr = roster.getBoundingClientRect();
+   if (rr.height > 0 && rr.top > 0) {
+     bottomPx = Math.max(8, window.innerHeight - rr.top + 8);
+   }
+ }
+
+ if (bottomPx == null) {
+   const actions = document.getElementById('b32-actions');
+   if (actions && getComputedStyle(actions).display !== 'none') {
+     const ar = actions.getBoundingClientRect();
+     if (ar.height > 0 && ar.top > 0) {
+       bottomPx = Math.max(8, window.innerHeight - ar.top + 96);
+     }
+   }
+ }
+
+ if (bottomPx == null && root) {
+   bottomPx = root.classList.contains('b32-vp-se')
+     ? 162
+     : 186;
+ }
+
+ if (bottomPx != null) {
+   box.style.bottom = `${bottomPx}px`;
+   box.style.top = 'auto';
+ }
+}
+
+function renderEnemyQuickInfo(enemy) {
  let box = document.getElementById('b32-enemy-quick-info');
  if (box) box.remove();
 
  if (!enemy) return;
 
+ const moveActive = _selectedEnemyGuideMode === 'move';
+ const attackActive = _selectedEnemyGuideMode === 'attack';
+ const guideMode = moveActive || attackActive;
+ const modeText = moveActive ? '移動範囲表示中' : attackActive ? '攻撃範囲表示中' : '';
+
  box = document.createElement('div');
  box.id = 'b32-enemy-quick-info';
- box.className = 'b32-enemy-quick-info';
+ box.className = `b32-enemy-quick-info ${guideMode ? 'is-guide-mode' : ''} ${moveActive ? 'is-move' : ''} ${attackActive ? 'is-attack' : ''}`;
  box.innerHTML = `
- <div class="b32-enemy-quick-title">${enemy.name || '??????'}</div>
+ <div class="b32-enemy-quick-title">${b32EscapeHtml(enemy.name || '??????')}</div>
+ <div class="b32-enemy-quick-mode-label">${b32EscapeHtml(modeText)}</div>
  <div class="b32-enemy-quick-statline">
    <span>HP <strong>${enemy.hp} / ${enemy.hpMax}</strong></span>
    <span>ATK <strong>${enemy.atk}</strong></span>
  </div>
+ <div class="b32-enemy-quick-statline">
+   <span>移動 <strong>${b32EscapeHtml(enemyMoveLabel(enemy.moveType))}</strong></span>
+   <span>攻撃 <strong>${b32EscapeHtml(enemyAttackLabel(enemy.attackRange))}</strong></span>
+ </div>
+ <div class="b32-enemy-quick-actions">
+   <button type="button" class="b32-enemy-quick-btn ${moveActive ? 'active move' : ''}" onclick="_b32EnemyGuide('move')">移動</button>
+   <button type="button" class="b32-enemy-quick-btn ${attackActive ? 'active attack' : ''}" onclick="_b32EnemyGuide('attack')">攻撃</button>
+   <button type="button" class="b32-enemy-quick-close" onclick="_b32CloseEnemyInfo()">×</button>
+ </div>
  `;
 
  document.body.appendChild(box);
+ _positionEnemyQuickInfoPanel(box);
+ requestAnimationFrame(() => _positionEnemyQuickInfoPanel(box));
 }
+
 
 function renderBattleMenu(bs) {
  let menu = document.getElementById('b32-battle-menu');
@@ -4793,7 +5632,11 @@ function renderBattleMenu(bs) {
  }
 
  if (action === 'stage') {
- if (!confirm('バトルを中断してステージ選択に戻りますか？')) return;
+ const currentBs = _bs();
+ const msg = currentBs && currentBs.isRoguelite
+   ? 'ローグライトを中断して巡行画面に戻りますか？'
+   : 'バトルを中断してステージ選択に戻りますか？';
+ if (!confirm(msg)) return;
  b32ReturnToStageSelect();
  return;
  }
@@ -4825,10 +5668,118 @@ function b32RestartBattle() {
  location.reload();
 }
 
+function _b32CleanupBattleAndRogueliteOverlays(restoreCommonUi) {
+  if (typeof window.cleanupBattle32Overlays === 'function') {
+    window.cleanupBattle32Overlays({ restoreCommonUi: !!restoreCommonUi });
+  }
+
+  // cleanupBattle32Overlays で消し漏れがあっても、ここで必ず消す
+  [
+    'battle32-root',
+    'b32-link-bar',
+    'b32-roster-panel',
+    'b32-item-panel',
+    'b32-roster-info-close-hitbox',
+    'b32-enemy-info-overlay',
+    'b32-enemy-quick-info',
+    'b32-battle-menu',
+    'b32-center-text',
+    'b32-turn-danger-frame',
+    'b32-result-overlay',
+    'rl-victory-wait-layer',
+    'rl-transition-shield',
+    'rl-stage-clear-overlay',
+    'rl-stage-fail-overlay',
+    'rl-run-result-overlay',
+    'rl-run-victory-fx',
+    'b32-action-detail-portal'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (id === 'battle32-root') {
+      el.style.display = 'none';
+    } else {
+      el.remove();
+    }
+  });
+
+  window.__BATTLE32_UI_ACTIVE__ = false;
+  window.__ROGUELITE_TRANSITIONING__ = false;
+}
+
+function _b32RestoreCommonUi() {
+  const nav = document.getElementById('bottom-nav-shared');
+  if (nav) nav.style.display = '';
+
+  const guf = document.getElementById('global-user-frame');
+  if (guf) {
+    guf.classList.remove('hidden');
+    guf.style.display = '';
+  }
+}
+
+function _b32OpenRogueliteMain() {
+  // ローグライト中断時は CHAPTER01 のステージ選択ではなく、巡行メインへ戻す。
+  // 画面系の関数名はプロジェクト側の実装差分を吸収するため、存在するものだけ呼ぶ。
+  ['stage-select-modal', 'party-select-modal', 'enemy-intro-root', 'battle-root'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  const openers = [
+    window.openExplore,
+    window.showExplore,
+    window.openExploration,
+    window.showExploration,
+    window.openExploreScreen,
+    window.showExploreScreen,
+    window.openMainExplore,
+    window.showMainExplore,
+  ];
+
+  for (const fn of openers) {
+    if (typeof fn === 'function') {
+      try {
+        fn();
+        _b32RestoreCommonUi();
+        if (typeof window.updateMainUI === 'function') window.updateMainUI();
+        return;
+      } catch (e) {
+        console.warn('[Battle32UI] 巡行画面復帰関数の呼び出しに失敗:', e);
+      }
+    }
+  }
+
+  const explore = document.getElementById('explore-root') || document.getElementById('explore-screen');
+  if (explore) {
+    explore.classList.remove('hidden');
+    explore.style.display = '';
+  }
+
+  _b32RestoreCommonUi();
+  if (typeof window.updateMainUI === 'function') window.updateMainUI();
+}
+
 function b32ReturnToStageSelect() {
   const bs = _bs();
+  const isRoguelite = !!(bs && bs.isRoguelite);
 
-  // 戻り先チャプターを決める
+  // ローグライト中ならラン終了し、ステージ選択ではなく巡行メインへ戻す
+  if (isRoguelite) {
+    if (window.RogueliteRun) {
+      window.RogueliteRun.end('lose');
+    }
+    if (typeof window.clearBattle32ResumeState === 'function') {
+      window.clearBattle32ResumeState();
+    }
+
+    _b32CleanupBattleAndRogueliteOverlays(true);
+    _b32OpenRogueliteMain();
+    return;
+  }
+
+  // 通常バトルのみ、戻り先チャプターを決めてステージ選択へ戻す
   let chapter = 1;
 
   if (bs && bs.returnChapter != null) {
@@ -4838,44 +5789,7 @@ function b32ReturnToStageSelect() {
     if (st && st.chapter != null) chapter = st.chapter;
   }
 
-  // ローグライト中ならラン終了
-  if (bs && bs.isRoguelite && window.RogueliteRun) {
-    window.RogueliteRun.end('lose');
-  }
-
-// Battle32 / Roguelite UIを掃除
-if (typeof window.cleanupBattle32Overlays === 'function') {
-  window.cleanupBattle32Overlays({ restoreCommonUi: false });
-}
-
-// cleanupBattle32Overlays で消し漏れがあっても、ここで必ず消す
-[
-  'battle32-root',
-  'b32-link-bar',
-  'b32-roster-panel',
-  'b32-item-panel',
-  'b32-roster-info-close-hitbox',
-  'b32-enemy-info-overlay',
-  'b32-enemy-quick-info',
-  'b32-battle-menu',
-  'b32-center-text',
-  'b32-turn-danger-frame',
-  'b32-result-overlay',
-  'rl-victory-wait-layer',
-  'b32-action-detail-portal'
-].forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-
-  if (id === 'battle32-root') {
-    el.style.display = 'none';
-  } else {
-    el.remove();
-  }
-});
-
-window.__BATTLE32_UI_ACTIVE__ = false;
-window.__ROGUELITE_TRANSITIONING__ = false;
+  _b32CleanupBattleAndRogueliteOverlays(false);
 
   // ステージ選択へ戻す
   if (typeof window.openStageSelect === 'function') {
@@ -5000,12 +5914,18 @@ const stunnedClass = isStunned ? ' is-stunned' : '';
 
 const summonClass = u.side === 'summon' ? ' summon' : '';
 
+const activeEnemyClass =
+ u.side === 'enemy' && bsCurrent && bsCurrent.activeEnemyUid === u._uid
+   ? ' active-enemy-action'
+   : '';
+
 const extraCls =
  (isDone ? ' skill-done' : '') +
  (u.isBoss ? ' boss' : '') +
  summonClass +
  midBossClass +
- enemyIdClass;
+ enemyIdClass +
+ activeEnemyClass;
 
 return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunnedClass}">${inner}</div>`;
  }
@@ -5174,6 +6094,7 @@ window._b32OnActionUltTap = function () {
 
    // 敵選択・召喚・アイテム状態も解除
    _selectedEnemyUid = null;
+   _selectedEnemyGuideMode = null;
    _summonMode = false;
    _summonRosterId = null;
    _itemMode = false;
@@ -5593,6 +6514,10 @@ await _afterCharTurnFlow();
 
  const rosterPanelEl = document.getElementById('b32-roster-panel');
  const itemPanelEl = document.getElementById('b32-item-panel');
+ const rootEl = document.getElementById(ROOT_ID);
+ const isSkillChoiceOpen = !!(bs && bs.phase === 'skill' && _selSkillAllyUid && !_moveMode && !_summonMode && !_itemMode);
+ if (rootEl) rootEl.classList.toggle('b32-skill-choice-open', isSkillChoiceOpen);
+ skillPanel.classList.toggle('b32-skill-choice-open', isSkillChoiceOpen);
 
  // ローグライト時は b32-party-status パネルを非表示
  if (bs.isRoguelite) {
@@ -5618,9 +6543,15 @@ await _afterCharTurnFlow();
  // アイテムモード中はガイドを変える
  if (_itemMode) {
    const item = bs.items && bs.items[_itemSlotIndex];
-   if (guideEl) guideEl.textContent = _itemPhase === 'cell'
-     ? '転位先のマスをタップしてください。'
-     : `${item ? item.name : 'アイテム'}の対象を選んでください。`;
+   if (guideEl) {
+     if (_itemPhase === 'cell') {
+       guideEl.textContent = '転位先のマスをタップしてください。';
+     } else if (item && (item.type === 'swap_ally' || item.type === 'swap_enemy') && _itemTargetUid) {
+       guideEl.textContent = `${item.name}：2体目を選んでください。`;
+     } else {
+       guideEl.textContent = `${item ? item.name : 'アイテム'}の対象を選んでください。`;
+     }
+   }
    const charaNameEl = document.getElementById('b32-skill-chara-name');
    if (charaNameEl) charaNameEl.textContent = '';
    const listEl = document.getElementById('b32-skill-list');
@@ -5655,8 +6586,8 @@ await _afterCharTurnFlow();
     return;
   }
 
-  if (rosterPanelEl) rosterPanelEl.style.display = 'none';
-  if (itemPanelEl) itemPanelEl.style.display = 'none';
+  if (rosterPanelEl) rosterPanelEl.style.setProperty('display', 'none', 'important');
+  if (itemPanelEl) itemPanelEl.style.setProperty('display', 'none', 'important');
 
   // スキル選択中はパーティカードを隠す
   const partyStatusEl = document.getElementById('b32-party-status');
@@ -5684,27 +6615,23 @@ await _afterCharTurnFlow();
  return;
  }
 
- const metaParts = [];
- metaParts.push(`LINK ${_getSkillLinkCostForUnit(bs, ally._uid, selectedSkill)}`);
- if ((selectedSkill.shinkiCost || 0) > 0) metaParts.push(`神気 ${selectedSkill.shinkiCost}`);
- if (selectedSkill.multiplier) metaParts.push(`倍率 ${selectedSkill.multiplier}`);
- if (selectedSkill.range) metaParts.push(`射程 ${selectedSkill.range}`);
+ const compactSummaryHtml = b32BuildCompactSkillSummaryHtml(selectedSkill, ally);
 
  listEl.innerHTML = '';
 
  const portal = _ensureActionDetailPortal();
  portal.style.display = 'block';
  portal.classList.add('show');
+ _positionActionDetailPortal();
 
  const canConfirmSkill = _canUseSkillNow(bs, ally, selectedSkill);
  const confirmDisabledAttr = canConfirmSkill ? '' : 'disabled aria-disabled="true"';
  const confirmDisabledCls = canConfirmSkill ? '' : ' disabled';
 
  portal.innerHTML = `
- <div class="b32-action-detail-panel">
- <div class="b32-action-detail-title">${selectedSkill.name || 'SKILL'}</div>
- <div class="b32-action-detail-desc">${selectedSkill.desc || '説明はまだありません。'}</div>
- <div class="b32-action-detail-meta">${metaParts.join('　/　')}</div>
+ <div class="b32-action-detail-panel b32-action-detail-panel-compact">
+ <div class="b32-action-detail-title">${b32EscapeHtml(selectedSkill.name || 'SKILL')}</div>
+ ${compactSummaryHtml}
  <div class="b32-action-detail-buttons">
  <button type="button" class="b32-action-detail-btn confirm${confirmDisabledCls}" ${confirmDisabledAttr} onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">${canConfirmSkill ? '決定' : '確認のみ'}</button>
  <button type="button" class="b32-action-detail-btn cancel" onclick="_b32CancelSkillDetail(event)">キャンセル</button>
@@ -5764,8 +6691,8 @@ await _afterCharTurnFlow();
   // ── キャラ選択待ち（移動 / スキル どちらでも選択可） ──
   _hideActionDetailPortal();
   if (bs.isRoguelite) {
-    if (rosterPanelEl) rosterPanelEl.style.display = 'flex';
-    if (itemPanelEl) itemPanelEl.style.display = 'flex';
+    if (rosterPanelEl) rosterPanelEl.style.setProperty('display', 'flex', 'important');
+    if (itemPanelEl) itemPanelEl.style.setProperty('display', 'flex', 'important');
   }
 
   // ローグライト通常待機時の案内文は表示しない（盤面視認性を優先）。
@@ -6427,6 +7354,20 @@ let ultGaugeHtml = '';
 // ============================================================
 // アイテム2枠パネル（ローグライト専用）
 // ============================================================
+function _getRogueliteItemIcon(item) {
+  if (!item) return '📦';
+  if (item.type === 'heal') return '💊';
+  if (item.type === 'move_ally') return '🌀';
+  if (item.type === 'swap_ally') return '🔄';
+  if (item.type === 'swap_enemy') return '🌀';
+  if (item.type === 'link_recover') return '🔗';
+  if (item.type === 'shinki_max') return '🔥';
+  if (item.type === 'enemy_hp_cut_all') return '☄️';
+  if (item.type === 'guard') return '🛡️';
+  if (item.type === 'stun_enemy') return '⚡';
+  return '📦';
+}
+
 function renderItemPanel(bs) {
   let el = document.getElementById('b32-item-panel');
 
@@ -6507,7 +7448,7 @@ function renderItemPanel(bs) {
       display:flex;flex-direction:column;align-items:center;gap:2px;
       box-shadow:${isActive ? '0 0 10px rgba(200,160,80,.4)' : 'none'};
     ">
-      <div style="font-size:16px;line-height:1;">${item.id === 'heal_small' ? '💊' : item.id === 'reposition' ? '🌀' : '📦'}</div>
+      <div style="font-size:16px;line-height:1;">${_getRogueliteItemIcon(item)}</div>
       <div style="font-size:7px;color:rgba(220,190,120,.8);text-align:center;line-height:1.2;">${item.name}</div>
       <div style="font-size:7px;color:rgba(140,110,200,.7);">L${linkCost}</div>
     </div>`;
@@ -6755,13 +7696,26 @@ if (!window.__b32RosterCloseCaptureBound) {
      _itemSlotIndex = null;
      _itemPhase = null;
      _itemTargetUid = null;
-   } else {
-     _resetSkillState();
-     _itemMode = true;
-     _itemSlotIndex = slotIndex;
-     _itemPhase = 'target';
-     _itemTargetUid = null;
+     renderBattle32UI();
+     return;
    }
+
+   _resetSkillState();
+   _itemMode = true;
+   _itemSlotIndex = slotIndex;
+   _itemTargetUid = null;
+
+   if (item.target === 'instant' || item.type === 'link_recover' || item.type === 'enemy_hp_cut_all') {
+     const ok = window.Battle32.useItem(_itemSlotIndex, {});
+     _itemMode = false;
+     _itemSlotIndex = null;
+     _itemPhase = null;
+     _itemTargetUid = null;
+     renderBattle32UI();
+     return;
+   }
+
+   _itemPhase = 'target';
    renderBattle32UI();
  };
 
@@ -6774,19 +7728,69 @@ if (!window.__b32RosterCloseCaptureBound) {
    const item = bs.items[_itemSlotIndex];
    if (!item) return;
 
-   if (item.type === 'heal') {
-     // 即時使用
+   if (item.type === 'heal' || item.type === 'shinki_max' || item.type === 'guard') {
      const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
      if (ok) {
        _itemMode = false;
        _itemSlotIndex = null;
        _itemPhase = null;
+       _itemTargetUid = null;
      }
      renderBattle32UI();
    } else if (item.type === 'move_ally') {
-     // 転位符: 対象選択 → マス選択へ
      _itemTargetUid = uid;
      _itemPhase = 'cell';
+     renderBattle32UI();
+   } else if (item.type === 'swap_ally') {
+     if (!_itemTargetUid) {
+       _itemTargetUid = uid;
+       _itemPhase = 'target';
+       renderBattle32UI();
+       return;
+     }
+     const ok = window.Battle32.useItem(_itemSlotIndex, { targetAUid: _itemTargetUid, targetBUid: uid });
+     if (ok) {
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
+     }
+     renderBattle32UI();
+   }
+ };
+
+ // アイテム対象の敵タップ
+ window._b32OnItemEnemyTap = function(uid) {
+   if (_b32InputLocked) return;
+   if (!_itemMode || _itemSlotIndex == null) return;
+   const bs = _bs();
+   if (!bs) return;
+   const item = bs.items[_itemSlotIndex];
+   if (!item) return;
+
+   if (item.type === 'stun_enemy') {
+     const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
+     if (ok) {
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
+     }
+     renderBattle32UI();
+   } else if (item.type === 'swap_enemy') {
+     if (!_itemTargetUid) {
+       _itemTargetUid = uid;
+       _itemPhase = 'target';
+       renderBattle32UI();
+       return;
+     }
+     const ok = window.Battle32.useItem(_itemSlotIndex, { targetAUid: _itemTargetUid, targetBUid: uid });
+     if (ok) {
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
+     }
      renderBattle32UI();
    }
  };
@@ -6940,6 +7944,7 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
 
  // ── itemパネルをロスター直上へ同期 ────────────────────────
  _positionItemPanel();
+ _positionActionDetailPortal();
 
  // ── --b32-panel-h（後方互換：丸ボタン等が参照） ────────────
  const panelH = actionsH + safeBottom + 12;
@@ -7062,16 +8067,14 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
  },
  };
 
- // rogueliteOnBattleEnd をラップ：終了前に必ずUI掃除を実行する
+ // rogueliteOnBattleEnd をラップするが、ローグライト中はここでUI掃除しない。
+ // ここで共通UIを復帰させると、報酬/次ステージ移管の一瞬にステージ選択画面が見えるため、
+ // Battle32の盤面を残したまま RogueliteController 側の演出・遷移管理へ渡す。
  const wrappedConfig = Object.assign({}, config);
  if (typeof wrappedConfig.rogueliteOnBattleEnd === 'function') {
    const originalRogueliteEnd = wrappedConfig.rogueliteOnBattleEnd;
    wrappedConfig.rogueliteOnBattleEnd = function (payload) {
-     if (typeof window.cleanupBattle32Overlays === 'function') {
-       window.cleanupBattle32Overlays({ restoreCommonUi: true });
-     } else if (typeof window.closeBattle32UI === 'function') {
-       window.closeBattle32UI();
-     }
+     window.__ROGUELITE_TRANSITIONING__ = true;
      originalRogueliteEnd(payload);
    };
  }

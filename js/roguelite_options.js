@@ -1,309 +1,292 @@
 // roguelite_options.js
-// ローグライトラン用：強化OP（オプション）マスタ定義
-// 依存: なし（単独で読み込み可能）
+// ローグライトラン用：報酬マスタ定義
+// 依存: なし
 //
-// 各OPの構造:
-//   id          : 一意なキー（文字列）
-//   name        : 表示名
-//   desc        : 説明文
-//   rarity      : 'common' | 'rare' | 'epic'
-//   icon        : 絵文字アイコン
-//   applyOnStart(bs) : Battle32 の _bs に開始時補正を加える関数
-//   applyOnEvent(bs, event, payload) : バトル中イベント発火（省略可）
-//
-// ── 対象OPカテゴリ（設計整理 2025） ──
-//   ✅ ATK上昇 / HP上昇 / スキルダメージ上昇 / コア耐久増加
-//   ✅ 戦闘開始時神気補助 / 駒取り時神気獲得 / 位置入替権 / 霊装権
-//   ❌ 移動性能を恒常的に変えるOP（霊装権を除く）
-//   ❌ スキル射程・スキル構成を変えるOP
-//   ❌ DEF / SPD 関連OP
-//   ❌ カード関連OP
-//   ※ 霊装権だけは例外として移動性能・スキル射程を変える権利を与える
-//
-// bs は battle_32.js 内部の _bs オブジェクト（直接変更する）
-//
-// ──────────────────────────────────────────────────────────────
-// _bs の主なフィールド（参照先）
-//   _bs.allies[]             : 味方ユニット配列  { hp, hpMax, atk, shinki, shinkiMax, ... }
-//   _bs.cores.ally           : { stability, stabilityMax }
-//   _bs._rl_skillDmgMult     : スキルダメージ補正倍率（ローグライト専用）
-//   _bs._rl_captureSpBonus   : 駒取り時神気ボーナス（ローグライト専用）
-//   _bs._rl_pendingReisouBonus: 霊装権ボーナス保持（ローグライト専用）
-//   _bs._rl_swapRightCount   : 位置入替権の残回数（ローグライト専用）
-// ──────────────────────────────────────────────────────────────
+// rewardKind:
+//   passive : 取得後、以降の各ステージ開始時に applyOnStart(bs) を適用
+//   item    : 取得後、バトル中アイテム枠に入る使い切りアイテム
 
 (function () {
 
-const ROGUELITE_OPTIONS = [
-
-  // ── ステータス補正：コモン ────────────────────────────────
-
-  {
-    id: 'atk_up_10',
-    name: '鬼力の紋',
-    desc: '味方全員のATKが10%上昇する',
-    rarity: 'common',
-    icon: '⚔️',
-    applyOnStart(bs) {
-      if (!Array.isArray(bs.allies)) return;
-      bs.allies.forEach(u => {
-        if (u && typeof u.atk === 'number') {
-          u.atk = Math.round(u.atk * 1.10);
-        }
-      });
-    },
-  },
-
-  {
-    id: 'hp_up_15',
-    name: '鋼の加護',
-    desc: '味方全員の最大HPが15%上昇する',
-    rarity: 'common',
-    icon: '💚',
-    applyOnStart(bs) {
-      if (!Array.isArray(bs.allies)) return;
-      bs.allies.forEach(u => {
-        if (u && typeof u.hpMax === 'number') {
-          const bonus = Math.round(u.hpMax * 0.15);
-          u.hpMax += bonus;
-          u.hp = Math.min(u.hp + bonus, u.hpMax);
-        }
-      });
-    },
-  },
-
-  {
-    id: 'core_hp_plus1',
-    name: '霊脈の強化',
-    desc: '自陣コアの耐久が+1される',
-    rarity: 'common',
-    icon: '🔮',
-    applyOnStart(bs) {
-      if (bs.cores && bs.cores.ally && typeof bs.cores.ally.stability === 'number') {
-        bs.cores.ally.stability    += 1;
-        bs.cores.ally.stabilityMax += 1;
-      }
-    },
-  },
-
-  // ── ダメージ補正：レア ────────────────────────────────────
-
-  {
-    id: 'skill_dmg_15',
-    name: '秘術の触媒',
-    desc: 'スキルダメージが15%上昇する',
-    rarity: 'rare',
-    icon: '✨',
-    applyOnStart(bs) {
-      bs._rl_skillDmgMult = (bs._rl_skillDmgMult || 1.0) * 1.15;
-    },
-  },
-
-  // ── 神気ボーナス：レア ────────────────────────────────────
-
-  {
-    id: 'capture_sp_plus1',
-    name: '神憑きの手',
-    desc: '駒を取るたびに駒取りしたキャラの神気が+1される',
-    rarity: 'rare',
-    icon: '🌟',
-    applyOnStart(bs) {
-      bs._rl_captureSpBonus = (bs._rl_captureSpBonus || 0) + 1;
-    },
-    applyOnEvent(bs, event, payload) {
-      if (event !== 'capture') return;
-      const ally = payload && payload.ally;
-      if (!ally) return;
-      const liveAlly = (bs.allies || []).find(u => u._uid === ally._uid);
-      if (!liveAlly) return;
-      const bonus = bs._rl_captureSpBonus || 0;
-      liveAlly.shinki = Math.min(liveAlly.shinkiMax, liveAlly.shinki + bonus);
-    },
-  },
-
-  // ── 霊装権：エピック ─────────────────────────────────────
-
-  {
-    id: 'boss_reisou_plus1',
-    name: '霊装の予兆',
-    desc: 'ボス戦開始時、霊装権が+1される（霊装実装後に有効化）',
-    rarity: 'epic',
-    icon: '👁️',
-    applyOnStart(bs) {
-      bs._rl_pendingReisouBonus = (bs._rl_pendingReisouBonus || 0) + 1;
-      // 霊装実装後に有効化:
-      // if (bs.isBossStage && typeof bs._applyReisouBonus === 'function') {
-      //   bs._applyReisouBonus(1);
-      // }
-    },
-  },
-
-  // ── 追加OP ────────────────────────────────────────────────
-
-  {
-    id: 'turn_limit_plus2',
-    name: '時限緩和',
-    desc: 'ターン制限が+2される',
-    rarity: 'common',
-    icon: '⏳',
-    applyOnStart(bs) {
-      if (typeof bs.turnLimit === 'number') {
-        bs.turnLimit += 2;
-      }
-    },
-  },
-
-  {
-    id: 'start_shinki_plus1',
-    name: '神気充填',
-    desc: '各ステージ開始時、味方全員の神気が+1される',
-    rarity: 'rare',
-    icon: '🔥',
-    applyOnStart(bs) {
-      if (!Array.isArray(bs.allies)) return;
-      bs.allies.forEach(a => {
-        if (typeof a.shinki === 'number' && typeof a.shinkiMax === 'number') {
-          a.shinki = Math.min(a.shinkiMax, a.shinki + 1);
-        }
-      });
-    },
-  },
-
-  {
-    id: 'core_repair_each_stage',
-    name: '自動修復陣',
-    desc: '各ステージ開始時、自陣コア耐久を1回復する',
-    rarity: 'rare',
-    icon: '🛡️',
-    applyOnStart(bs) {
-      if (bs.cores && bs.cores.ally) {
-        bs.cores.ally.stability = Math.min(
-          bs.cores.ally.stabilityMax,
-          bs.cores.ally.stability + 1,
-        );
-      }
-    },
-  },
-
-  {
-    id: 'boss_skill_dmg_20',
-    name: '核穿ち',
-    desc: 'ボスへのスキルダメージが20%上昇する',
-    rarity: 'epic',
-    icon: '☄️',
-    applyOnStart(bs) {
-      bs._rl_bossDmgMult = (bs._rl_bossDmgMult || 1.0) * 1.20;
-    },
-  },
-
-  // ── 位置入替権：レア ──────────────────────────────────────
-  // 戦闘中に味方2体の位置を1回入れ替えられる権利を付与する。
-  // 実際の入替は Battle32 UI 側で _rl_swapRightCount を参照して実装する。
-  {
-    id: 'swap_right_1',
-    name: '布陣入替',
-    desc: 'ステージ中に味方2体の位置を1回入れ替えられる',
-    rarity: 'rare',
-    icon: '🔄',
-    applyOnStart(bs) {
-      bs._rl_swapRightCount = (bs._rl_swapRightCount || 0) + 1;
-    },
-  },
-
-];
-
-// ── ランダム3択生成 ─────────────────────────────────────────
-
-function getRandomOptions(excludeIds) {
-  const excl = Array.isArray(excludeIds) ? excludeIds : [];
-  const pool  = ROGUELITE_OPTIONS.filter(op => !excl.includes(op.id));
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+  function pct(n) {
+    return Math.round(Number(n || 0) * 100);
   }
-  return pool.slice(0, Math.min(3, pool.length));
-}
 
-function getOptionById(id) {
-  return ROGUELITE_OPTIONS.find(op => op.id === id) || null;
-}
-
-window.ROGUELITE_OPTIONS = ROGUELITE_OPTIONS;
-window.getRandomOptions  = getRandomOptions;
-window.getOptionById     = getOptionById;
-
-})();
-
-// ── アイテム報酬定義（rewardKind: 'item'） ─────────────────
-
-// 既存OPにrewardKind:'passive'を追加する（後方互換）
-// ROGUELITE_OPTIONS配列のシャドー更新
-(function() {
-  if (typeof ROGUELITE_OPTIONS !== 'undefined') {
-    ROGUELITE_OPTIONS.forEach(op => {
-      if (!op.rewardKind) op.rewardKind = 'passive';
-    });
+  function addCriticalRate(unit, amount) {
+    if (!unit) return;
+    const base = Number(unit.criticalRate ?? unit.critRate ?? 0.10);
+    unit.criticalRate = Math.max(0, Math.min(1, base + Number(amount || 0)));
+    unit.critRate = unit.criticalRate;
   }
-})();
 
-const ROGUELITE_ITEM_REWARDS = [
-  {
-    id: 'item_reward_heal_small',
-    name: '回復札',
-    desc: '味方1体のHPを30%回復する（1回使い切り）',
-    rarity: 'common',
-    icon: '💊',
-    rewardKind: 'item',
-    item: {
-      id: 'heal_small',
-      name: '回復札',
-      type: 'heal',
+  function makeAtkUp(rate, rarity) {
+    const p = pct(rate);
+    return {
+      id: `atk_up_${p}`,
+      name: `ATK +${p}%`,
+      desc: `味方全員のATKが${p}%上昇する`,
+      rarity,
+      icon: '⚔️',
+      rewardKind: 'passive',
+      applyOnStart(bs) {
+        if (!Array.isArray(bs.allies)) return;
+        bs.allies.forEach(u => {
+          if (u && typeof u.atk === 'number') {
+            u.atk = Math.round(u.atk * (1 + rate));
+          }
+        });
+      },
+    };
+  }
+
+  function makeHpUp(rate, rarity) {
+    const p = pct(rate);
+    return {
+      id: `hp_up_${p}`,
+      name: `HP +${p}%`,
+      desc: `味方全員の最大HPが${p}%上昇する`,
+      rarity,
+      icon: '💚',
+      rewardKind: 'passive',
+      applyOnStart(bs) {
+        if (!Array.isArray(bs.allies)) return;
+        bs.allies.forEach(u => {
+          if (u && typeof u.hpMax === 'number') {
+            const bonus = Math.round(u.hpMax * rate);
+            u.hpMax += bonus;
+            u.hp = Math.min(u.hpMax, Number(u.hp || 0) + bonus);
+          }
+        });
+      },
+    };
+  }
+
+  function makeCriticalUp(rate, rarity) {
+    const p = pct(rate);
+    return {
+      id: `critical_up_${p}`,
+      name: `CRITICAL +${p}%`,
+      desc: `味方全員のクリティカル率が${p}%上昇する`,
+      rarity,
+      icon: '✦',
+      rewardKind: 'passive',
+      applyOnStart(bs) {
+        if (!Array.isArray(bs.allies)) return;
+        bs.allies.forEach(u => addCriticalRate(u, rate));
+      },
+    };
+  }
+
+  const ROGUELITE_OPTIONS = [
+    makeAtkUp(0.10, 'common'),
+    makeAtkUp(0.15, 'rare'),
+    makeAtkUp(0.20, 'epic'),
+
+    makeCriticalUp(0.10, 'rare'),
+    makeCriticalUp(0.15, 'epic'),
+
+    makeHpUp(0.10, 'common'),
+    makeHpUp(0.20, 'rare'),
+  ];
+
+  const ROGUELITE_ITEM_REWARDS = [
+    {
+      id: 'item_reward_heal_30',
+      name: 'HP回復 30%',
+      desc: '味方1体のHPを最大HPの30%回復する',
       rarity: 'common',
-      linkCost: 1,
-      target: 'ally_single',
-      value: 0.3,
-      consume: true,
-      desc: '味方1体のHPを30%回復する。',
+      icon: '💊',
+      rewardKind: 'item',
+      item: {
+        id: 'heal_30', name: 'HP回復30%', type: 'heal', rarity: 'common',
+        linkCost: 0, target: 'ally_single', value: 0.30, consume: true,
+        desc: '味方1体のHPを最大HPの30%回復する。',
+      },
     },
-  },
-  {
-    id: 'item_reward_reposition',
-    name: '転位符',
-    desc: '味方1体を任意の空きマスに移動させる（1回使い切り）',
-    rarity: 'rare',
-    icon: '🌀',
-    rewardKind: 'item',
-    item: {
-      id: 'reposition',
-      name: '転位符',
-      type: 'move_ally',
+    {
+      id: 'item_reward_heal_50',
+      name: 'HP回復 50%',
+      desc: '味方1体のHPを最大HPの50%回復する',
       rarity: 'rare',
-      linkCost: 2,
-      target: 'ally_single_cell',
-      value: 1,
-      consume: true,
-      desc: '味方1体を任意の空きマスに移動させる。',
+      icon: '💊',
+      rewardKind: 'item',
+      item: {
+        id: 'heal_50', name: 'HP回復50%', type: 'heal', rarity: 'rare',
+        linkCost: 0, target: 'ally_single', value: 0.50, consume: true,
+        desc: '味方1体のHPを最大HPの50%回復する。',
+      },
     },
-  },
-];
+    {
+      id: 'item_reward_swap_ally',
+      name: '味方位置入れ替え',
+      desc: '選択した味方Aと味方Bの位置を入れ替える',
+      rarity: 'rare',
+      icon: '🔄',
+      rewardKind: 'item',
+      item: {
+        id: 'swap_ally', name: '味方入替', type: 'swap_ally', rarity: 'rare',
+        linkCost: 0, target: 'ally_pair', consume: true,
+        desc: '選択した味方Aと味方Bの位置を入れ替える。',
+      },
+    },
+    {
+      id: 'item_reward_swap_enemy',
+      name: '敵位置入れ替え',
+      desc: '選択した敵Aと敵Bの位置を入れ替える',
+      rarity: 'rare',
+      icon: '🌀',
+      rewardKind: 'item',
+      item: {
+        id: 'swap_enemy', name: '敵入替', type: 'swap_enemy', rarity: 'rare',
+        linkCost: 0, target: 'enemy_pair', consume: true,
+        desc: '選択した敵Aと敵Bの位置を入れ替える。',
+      },
+    },
+    {
+      id: 'item_reward_link_1',
+      name: 'LINK回復 +1',
+      desc: '現在LINKを+1回復する',
+      rarity: 'common',
+      icon: '🔗',
+      rewardKind: 'item',
+      item: {
+        id: 'link_recover_1', name: 'LINK+1', type: 'link_recover', rarity: 'common',
+        linkCost: 0, target: 'instant', value: 1, consume: true,
+        desc: '現在LINKを+1回復する。',
+      },
+    },
+    {
+      id: 'item_reward_link_2',
+      name: 'LINK回復 +2',
+      desc: '現在LINKを+2回復する',
+      rarity: 'rare',
+      icon: '🔗',
+      rewardKind: 'item',
+      item: {
+        id: 'link_recover_2', name: 'LINK+2', type: 'link_recover', rarity: 'rare',
+        linkCost: 0, target: 'instant', value: 2, consume: true,
+        desc: '現在LINKを+2回復する。',
+      },
+    },
+    {
+      id: 'item_reward_shinki_max',
+      name: '神気ブースト',
+      desc: '任意の味方1体の神気をMAXにする',
+      rarity: 'epic',
+      icon: '🔥',
+      rewardKind: 'item',
+      item: {
+        id: 'shinki_max', name: '神気MAX', type: 'shinki_max', rarity: 'epic',
+        linkCost: 0, target: 'ally_single', consume: true,
+        desc: '任意の味方1体の神気をMAXにする。',
+      },
+    },
+    {
+      id: 'item_reward_enemy_hp_cut_10',
+      name: '敵HP削り 10%',
+      desc: 'フィールド上の全敵のHPを現在HPから10%削る',
+      rarity: 'rare',
+      icon: '☄️',
+      rewardKind: 'item',
+      item: {
+        id: 'enemy_hp_cut_10', name: '敵HP-10%', type: 'enemy_hp_cut_all', rarity: 'rare',
+        linkCost: 0, target: 'instant', value: 0.10, consume: true,
+        desc: 'フィールド上の全敵のHPを現在HPから10%削る。',
+      },
+    },
+    {
+      id: 'item_reward_guard_50',
+      name: 'ガード 50%',
+      desc: '1ターンの間、任意の味方1体が受けるダメージを50%カットする（追加効果は受ける）',
+      rarity: 'common',
+      icon: '🛡️',
+      rewardKind: 'item',
+      item: {
+        id: 'guard_50', name: 'ガード50%', type: 'guard', rarity: 'common',
+        linkCost: 0, target: 'ally_single', value: 0.50, duration: 1, consume: true,
+        desc: '1ターンの間、任意の味方1体が受けるダメージを50%カットする。追加効果は受ける。',
+      },
+    },
+    {
+      id: 'item_reward_guard_70',
+      name: 'ガード 70%',
+      desc: '1ターンの間、任意の味方1体が受けるダメージを70%カットする（追加効果は受ける）',
+      rarity: 'rare',
+      icon: '🛡️',
+      rewardKind: 'item',
+      item: {
+        id: 'guard_70', name: 'ガード70%', type: 'guard', rarity: 'rare',
+        linkCost: 0, target: 'ally_single', value: 0.70, duration: 1, consume: true,
+        desc: '1ターンの間、任意の味方1体が受けるダメージを70%カットする。追加効果は受ける。',
+      },
+    },
+    {
+      id: 'item_reward_guard_90',
+      name: 'ガード 90%',
+      desc: '1ターンの間、任意の味方1体が受けるダメージを90%カットする（追加効果は受ける）',
+      rarity: 'epic',
+      icon: '🛡️',
+      rewardKind: 'item',
+      item: {
+        id: 'guard_90', name: 'ガード90%', type: 'guard', rarity: 'epic',
+        linkCost: 0, target: 'ally_single', value: 0.90, duration: 1, consume: true,
+        desc: '1ターンの間、任意の味方1体が受けるダメージを90%カットする。追加効果は受ける。',
+      },
+    },
+    {
+      id: 'item_reward_stun_enemy',
+      name: 'スタンアイテム',
+      desc: '任意の敵1体を1ターンスタンする',
+      rarity: 'rare',
+      icon: '⚡',
+      rewardKind: 'item',
+      item: {
+        id: 'stun_enemy', name: 'スタン', type: 'stun_enemy', rarity: 'rare',
+        linkCost: 0, target: 'enemy_single', duration: 1, consume: true,
+        desc: '任意の敵1体を1ターンスタンする。',
+      },
+    },
+  ];
 
-// アイテム報酬を含むgetRandomOptions拡張
-const _origGetRandomOptions = window.getRandomOptions;
-window.getRandomOptions = function(excludeIds, includeItems) {
-  // デフォルト: アイテム報酬も混ぜる
-  const excl = Array.isArray(excludeIds) ? excludeIds : [];
-  let pool = (typeof ROGUELITE_OPTIONS !== 'undefined' ? ROGUELITE_OPTIONS : [])
-    .filter(op => !excl.includes(op.id));
-  
-  // アイテム報酬も候補に追加（25%の確率でアイテム系が混入）
-  const itemPool = ROGUELITE_ITEM_REWARDS.filter(op => !excl.includes(op.id));
-  pool = [...pool, ...itemPool];
-
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+  function shuffle(list) {
+    const arr = list.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
-  return pool.slice(0, Math.min(3, pool.length));
-};
 
-window.ROGUELITE_ITEM_REWARDS = ROGUELITE_ITEM_REWARDS;
+  // ランダム3択生成
+  // passiveは重複排除、itemは消耗品なので基本的に再出現可能。
+  // ただしアイテム枠が満杯ならitem報酬は出さない。
+  function getRandomOptions(excludeIds) {
+    const excl = Array.isArray(excludeIds) ? excludeIds : [];
+    const passivePool = ROGUELITE_OPTIONS.filter(op => !excl.includes(op.id));
+
+    let canAddItem = true;
+    try {
+      if (window.RogueliteRun && typeof window.RogueliteRun.getItems === 'function') {
+        canAddItem = window.RogueliteRun.getItems().length < 2;
+      }
+    } catch (e) {
+      canAddItem = true;
+    }
+
+    const itemPool = canAddItem ? ROGUELITE_ITEM_REWARDS.slice() : [];
+    const pool = shuffle([...passivePool, ...itemPool]);
+    return pool.slice(0, Math.min(3, pool.length));
+  }
+
+  function getOptionById(id) {
+    return ROGUELITE_OPTIONS.find(op => op.id === id) ||
+      ROGUELITE_ITEM_REWARDS.find(op => op.id === id) ||
+      null;
+  }
+
+  window.ROGUELITE_OPTIONS = ROGUELITE_OPTIONS;
+  window.ROGUELITE_ITEM_REWARDS = ROGUELITE_ITEM_REWARDS;
+  window.getRandomOptions = getRandomOptions;
+  window.getOptionById = getOptionById;
+
+})();

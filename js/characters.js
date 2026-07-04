@@ -27,58 +27,58 @@ const CHARACTERS = [
 
   // ── id:12────────────────────────────────
   // 自己防御。縛りと広範囲打撃。
-  { id: 12, name: 'イリス', rarity: 'r',
-    element: 'mystis',
-    role: '回復寄り',
-    moveType: 'front_side_3',
-    costMax: 12,
-    costStart: 5,
+  { id: 12, name: 'クラリネ', rarity: 'r',
+ element: 'chaos',
+    role: 'テクニック寄り',
+    moveType: 'king_8',
+    costMax: 14,
+    costStart: 6,
     costRegen: 4,
-    shinkiMax: 5,
+    shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: 
-    { HP: 780, ATK: 210},
+    stats: { HP: 777, ATK: 240 },
     img: 'images/chara_12.webp', 
     cutImg: 'images/chara_12_cut.webp', 
     ultImg: 'images/chara_12_cutin.webp',
     upImg: 'images/chara_12_up.webp', 
+    battleUpImg: 'images/chara_12_battle_up.webp',
     battleImg: 'images/chara_12_battle.webp',
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
-    favScale: 0.85, favOffsetY: -35,
-    uiScale: {panel: 1.0,battleBack: 1.5},
-    skills: [
-  {
-  id: 's1',
-  name: 'Grace',
-  linkCost: 3,
-  isUltimate: false,
-  hit: 100,
-  type: 'attack',
-  multiplier: 0.7,
-  range: 'front_and_side_3_ally',
-  effects: [
-    { type: 'heal', target: 'ally_self', rate: 0.30 }
-  ],
-  hitStyle: 'multi',
-  desc: '射程：前方1マス＋左右1マス。対象の敵にATK×0.7のダメージを与え、自身のHPを30%回復する。'
+    favScale: 1.0, favOffsetY: -15,
+    uiScale: {panel: 1.0,battleBack: 1.2},
+    skills: [  
+  { 
+    id: 's1', 
+    name: 'アンコール',
+    linkCost: 3,
+    isUltimate: false,
+    hit: 100,
+    criticalRate: 0.10,
+    criticalDamageRate: 1.5,
+    type: 'repeat_skill',
+    multiplier: 0.0,
+    range: 'self',
+    effects: [],
+    desc: 'このターン中、直前に発動した味方の通常スキルをもう一度発動する。'
 },
-  {
-  id: 'ult',
-  name: 'Descent',
+
+{ id: 'ult',
+  name: 'ワンダー・パニッシュ',
   linkCost: 5,
   isUltimate: true,
   hit: 100,
-  type: 'heal',
-  multiplier: 0.0,
-  range: 'ally_all',
-  effects: [
-    { type: 'heal', target: 'ally_all', rate: 0.35 }
-  ],
-  hitStyle: 'all',
-  desc: '射程：味方全体。ダメージなし。味方全体のHPを35%回復する。'
-},
+  criticalRate: 0.00,
+  criticalDamageRate: 1.5,
+  type: 'random_cell_attack',
+  multiplier: 4.0,
+  randomCellCount: 8,
+  range: 'field_all',
+  effects: [],
+  hitStyle: 'heavy',
+  desc: '射程：盤面全体からランダム8マス。命中した敵にATK×4.0のダメージを与える。'
+}
     ]},
 
      // ── id:6 ────────────────────
@@ -162,7 +162,7 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
-        name: 'おやすみなさい',
+        name: 'ぐっどないと',
         linkCost: 4,
         isUltimate: false,
         hit: 100,
@@ -290,7 +290,7 @@ const CHARACTERS = [
 
       {
   id: 'ult',
-  name: 'ブラッディ・ローズ・ガーデン',
+  name: 'イグゾースト・ガーデン',
   linkCost: 5,
   isUltimate: true,
   hit: 100,
@@ -466,7 +466,7 @@ const CHARACTERS = [
         linkCost: 4,
         isUltimate: true,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.20,
         criticalDamageRate: 1.5,
         type: 'attack',
         multiplier: 3.0,
@@ -699,7 +699,7 @@ const CHARACTERS = [
     ]},
 
   // ── id:20 ──────────────────────────────────
-  { id: 20, name: 'リブラ', rarity: 'r',
+  { id: 20, name: 'ミモザ', rarity: 'r',
     element: 'logos',
     role: '支援寄り',
     moveType: 'front_back_row3',
@@ -707,7 +707,7 @@ const CHARACTERS = [
     costStart: 6,
     costRegen: 5,
     shinkiMax: 3,
-    shinkiStart: 0,
+    shinkiStart: 3,
     shinkiRegen: 1,
     stats: { HP: 780, ATK: 245 },
     img: 'images/chara_20.webp', 
@@ -715,6 +715,7 @@ const CHARACTERS = [
     ultImg: 'images/chara_20_cutin.webp',
     upImg: 'images/chara_20_up.webp', 
     battleImg: 'images/chara_20_battle.webp',
+    battleUpImg: 'images/chara_20_battle_up.webp',
     battleBackImg: 'images/chara_20_battle_back.webp',
     panelImg: 'images/chara_20_panel.webp',
     favScale: 0.90, favOffsetY: -35,
@@ -737,13 +738,13 @@ const CHARACTERS = [
 
       { id: 'ult',
         name: 'Toxic Mist',
-        linkCost: 5,
+        linkCost: 1,
         isUltimate: true,
         hit: 100,
         criticalRate: 0.10,
         criticalDamageRate: 1.5,
         type: 'debuff',
-        multiplier: 0.5,
+        multiplier: 100.0,
         range: 'enemy_all',
         effects: [
           { type: 'poison', target: 'enemy', hit: 100, duration: 3, rate: 0.50 }
@@ -757,19 +758,20 @@ const CHARACTERS = [
   // UR
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:14 ──────────────────────────────────
-  // コピー系。
+    // ── id:14 ──────────────────────────────────
+  // 闘志を司るプリモア。自己強化しながら正面突破する直線火力アタッカー。
+  // 前進・後退・斜め前移動で、踏み込みと離脱の両方を行える。
   { id: 14, name: 'イグニス', rarity: 'r',
     element: 'chaos',
-    role: 'テクニック寄り',
-    moveType: 'king_8',
-    costMax: 14,
-    costStart: 6,
+    role: '火力寄り',
+    moveType: 'front_back_frontdiag',
+    costMax: 12,
+    costStart: 5,
     costRegen: 4,
-    shinkiMax: 4,
+    shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 777, ATK: 246 },
+    stats: { HP: 760, ATK: 290 },
     img: 'images/chara_14.webp', 
     cutImg: 'images/chara_14_cut.webp', 
     ultImg: 'images/chara_14_cutin.webp',
@@ -780,35 +782,42 @@ const CHARACTERS = [
     panelImg: 'images/chara_14_panel.webp',
     favScale: 1.0, favOffsetY: -15,
     uiScale: {panel: 1.0,battleBack: 1.7},
-    skills: [  
-  { 
-    id: 's1', 
-    name: '猿真似',
-    linkCost: 3,
-    isUltimate: false,
-    hit: 100,
-    type: 'repeat_skill',
-    multiplier: 0.0,
-    range: 'self',
-    effects: [],
-    desc: '射程：自身。ダメージなし。このターン中、直前に発動した味方の通常スキルをもう一度発動する。'
-},
+    skills: [
+      {
+        id: 's1',
+        name: 'ブレイブ・スマッシュ',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        criticalRate: 0.50,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 1.4,
+        range: 'front_row_3_ally',
+        effects: [
+          { type: 'atk_up', target: 'ally_self', hit: 100, duration: 1, rate: 1.30 }
+        ],
+        hitStyle: 'heavy',
+        desc: '射程：前方横3マス。対象の敵にATK×1.4のダメージを与える。さらに自身のATKを1ターン30%上昇させる。'
+      },
 
-{ id: 'ult',
-  name: '神のみぞ知る',
-  linkCost: 5,
-  isUltimate: true,
-  hit: 100,
-  criticalRate: 0.10,
-  criticalDamageRate: 1.5,
-  type: 'random_cell_attack',
-  multiplier: 4.0,
-  randomCellCount: 6,
-  range: 'field_all',
-  effects: [],
-  hitStyle: 'heavy',
-  desc: '射程：盤面全体からランダム6マス。命中した敵にATK×4.0のダメージを与える。'
-}
+      {
+        id: 'ult',
+        name: 'イグニッション・ブレイカー',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        criticalRate: 0.5,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 3.6,
+        range: 'pierce_all',
+        effects: [
+          { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.15 }
+        ],
+        hitStyle: 'heavy',
+        desc: '射程：前方直線全マス。対象の敵にATK×3.6の大ダメージを与える。さらに味方全体のATKを1ターン15%上昇させる。'
+      }
     ]},
 
 
@@ -887,7 +896,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 600, ATK: 280 },
+    stats: { HP: 600, ATK: 260 },
     img: 'images/chara_08.webp', 
     cutImg: 'images/chara_08_cut.webp', 
     ultImg: 'images/chara_08_cutin.webp',
