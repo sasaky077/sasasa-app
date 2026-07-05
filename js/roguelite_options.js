@@ -19,6 +19,23 @@
     unit.critRate = unit.criticalRate;
   }
 
+  // ローグライト報酬の永続補正を、バトルUIのバフ欄へ表示するための表示専用メタ。
+  // 実数値は applyOnStart 内で直接反映済みなので、ここでは計算に使わない。
+  function addRogueliteBuffDisplay(unit, type, rate, sourceName) {
+    if (!unit) return;
+    if (!Array.isArray(unit.rogueliteBuffs)) unit.rogueliteBuffs = [];
+    const key = `${type}_${Math.round(Number(rate || 0) * 100)}`;
+    if (unit.rogueliteBuffs.some(b => b && b.key === key)) return;
+    unit.rogueliteBuffs.push({
+      key,
+      type,
+      rate: Number(rate || 0),
+      sourceName: sourceName || '',
+      permanent: true,
+      displayOnly: true,
+    });
+  }
+
   function makeAtkUp(rate, rarity) {
     const p = pct(rate);
     return {
@@ -28,13 +45,15 @@
       rarity,
       icon: '⚔️',
       rewardKind: 'passive',
+      applyToUnit(unit) {
+        if (unit && typeof unit.atk === 'number') {
+          unit.atk = Math.round(unit.atk * (1 + rate));
+          addRogueliteBuffDisplay(unit, 'roguelite_atk_up', rate, `ATK +${p}%`);
+        }
+      },
       applyOnStart(bs) {
         if (!Array.isArray(bs.allies)) return;
-        bs.allies.forEach(u => {
-          if (u && typeof u.atk === 'number') {
-            u.atk = Math.round(u.atk * (1 + rate));
-          }
-        });
+        bs.allies.forEach(u => this.applyToUnit(u, bs));
       },
     };
   }
@@ -48,15 +67,17 @@
       rarity,
       icon: '💚',
       rewardKind: 'passive',
+      applyToUnit(unit) {
+        if (unit && typeof unit.hpMax === 'number') {
+          const bonus = Math.round(unit.hpMax * rate);
+          unit.hpMax += bonus;
+          unit.hp = Math.min(unit.hpMax, Number(unit.hp || 0) + bonus);
+          addRogueliteBuffDisplay(unit, 'roguelite_hp_up', rate, `HP +${p}%`);
+        }
+      },
       applyOnStart(bs) {
         if (!Array.isArray(bs.allies)) return;
-        bs.allies.forEach(u => {
-          if (u && typeof u.hpMax === 'number') {
-            const bonus = Math.round(u.hpMax * rate);
-            u.hpMax += bonus;
-            u.hp = Math.min(u.hpMax, Number(u.hp || 0) + bonus);
-          }
-        });
+        bs.allies.forEach(u => this.applyToUnit(u, bs));
       },
     };
   }
@@ -70,9 +91,13 @@
       rarity,
       icon: '✦',
       rewardKind: 'passive',
+      applyToUnit(unit) {
+        addCriticalRate(unit, rate);
+        addRogueliteBuffDisplay(unit, 'roguelite_critical_up', rate, `CRITICAL +${p}%`);
+      },
       applyOnStart(bs) {
         if (!Array.isArray(bs.allies)) return;
-        bs.allies.forEach(u => addCriticalRate(u, rate));
+        bs.allies.forEach(u => this.applyToUnit(u, bs));
       },
     };
   }

@@ -10198,3 +10198,1291 @@ body,
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+
+/* =========================================================
+   99 Shinju / Genesis Tree
+   ========================================================= */
+.shinju-home-entry {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 28px);
+  margin: 10px auto 8px;
+  min-height: 74px;
+  border: 1px solid rgba(255,255,255,0.32);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  color: #fff;
+  background: rgba(255,255,255,0.10);
+  box-shadow: 0 12px 34px rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.shinju-home-entry-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 40%, rgba(255,255,255,0.46), transparent 28%),
+    radial-gradient(circle at 82% 35%, rgba(160,220,255,0.28), transparent 34%),
+    linear-gradient(135deg, rgba(190,220,255,0.22), rgba(255,244,206,0.14));
+  opacity: .9;
+}
+.shinju-home-entry::after {
+  content: '›';
+  position: relative;
+  z-index: 1;
+  margin-left: 10px;
+  font-size: 26px;
+  color: rgba(255,255,255,0.75);
+}
+.shinju-home-entry-main,
+.shinju-home-entry-side {
+  position: relative;
+  z-index: 1;
+}
+.shinju-home-entry-kicker {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: .22em;
+  color: rgba(255,255,255,0.72);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+}
+.shinju-home-entry-title {
+  margin-top: 3px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.45), 0 0 16px rgba(210,235,255,0.55);
+}
+.shinju-home-entry-side {
+  text-align: right;
+  margin-left: auto;
+}
+.shinju-home-entry-stage {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #fff8ce;
+  text-shadow: 0 0 10px rgba(255,230,150,0.62), 0 1px 8px rgba(0,0,0,0.55);
+}
+.shinju-home-entry-items {
+  margin-top: 5px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.72);
+}
+.shinju-home-entry.has-items {
+  border-color: rgba(255,238,170,0.72);
+  box-shadow: 0 0 22px rgba(255,220,120,0.22), 0 12px 34px rgba(0,0,0,0.26);
+}
+.shinju-home-entry.is-clear .shinju-home-entry-bg {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,0.60), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(255,228,150,0.34), transparent 38%),
+    linear-gradient(135deg, rgba(230,245,255,0.30), rgba(255,244,206,0.26));
+}
+
+#shinju-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 260000;
+  display: none;
+  align-items: stretch;
+  justify-content: center;
+  background: rgba(2,7,14,0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+}
+#shinju-overlay.active { display: flex; }
+.shinju-panel {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #dfeef8 0%, #f8f6eb 42%, #121826 100%);
+  box-shadow: 0 0 40px rgba(0,0,0,0.45);
+}
+.shinju-close {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: calc(50% - min(215px, 50vw) + 14px);
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.60);
+  background: rgba(0,0,0,0.28);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+}
+.shinju-visual-wrap {
+  position: relative;
+  height: 47dvh;
+  min-height: 330px;
+  max-height: 500px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,0.92), transparent 38%),
+    linear-gradient(180deg, #dcecff 0%, #f9f5df 100%);
+}
+.shinju-visual {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 44%;
+  display: block;
+}
+.shinju-visual-glow {
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  background: linear-gradient(180deg, transparent, rgba(248,246,235,0.96));
+  pointer-events: none;
+}
+.shinju-content {
+  position: relative;
+  margin-top: -26px;
+  border-radius: 28px 28px 0 0;
+  padding: 24px 18px calc(34px + env(safe-area-inset-bottom));
+  min-height: 52dvh;
+  background:
+    radial-gradient(circle at 50% -8%, rgba(255,246,190,0.22), transparent 32%),
+    linear-gradient(180deg, rgba(15,23,37,0.98), #080c14 100%);
+  border-top: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 -16px 35px rgba(0,0,0,0.22);
+}
+.shinju-kicker {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: .26em;
+  color: rgba(214,236,255,0.55);
+  text-align: center;
+}
+.shinju-title {
+  margin-top: 4px;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: .22em;
+  text-align: center;
+  transform: translateX(.11em);
+  color: #fff;
+  text-shadow: 0 0 18px rgba(200,230,255,0.68);
+}
+.shinju-stage {
+  margin: 12px auto 0;
+  width: fit-content;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,236,170,0.38);
+  background: rgba(255,236,170,0.08);
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: #fff2bc;
+}
+.shinju-progress-box {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.045);
+}
+.shinju-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 11px;
+  color: rgba(255,255,255,0.62);
+  letter-spacing: .06em;
+}
+.shinju-progress-bg {
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.10);
+}
+.shinju-progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dff8ff, #fff2aa);
+  box-shadow: 0 0 16px rgba(255,235,150,0.58);
+  transition: width .45s ease;
+}
+.shinju-lore {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.66);
+  text-align: center;
+}
+.shinju-items-head {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,0.72);
+}
+.shinju-offer-all {
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,236,170,0.38);
+  background: rgba(255,236,170,0.10);
+  color: #fff2bc;
+  font-size: 11px;
+  font-family: "Noto Serif JP", serif;
+}
+.shinju-item-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.shinju-item-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border-radius: 15px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.shinju-item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,236,170,0.12);
+  color: #fff2bc;
+  box-shadow: inset 0 0 0 1px rgba(255,236,170,0.22);
+}
+.shinju-item-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.shinju-item-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .04em;
+}
+.shinju-item-desc {
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.50);
+}
+.shinju-item-exp {
+  margin-top: 5px;
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: .06em;
+  color: #fff2bc;
+}
+.shinju-offer-btn {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #edfaff, #fff0a8);
+  color: #1e2430;
+  font-size: 12px;
+  font-weight: 900;
+  font-family: "Noto Serif JP", serif;
+}
+.shinju-item-empty {
+  padding: 18px 14px;
+  border-radius: 15px;
+  background: rgba(255,255,255,0.045);
+  border: 1px dashed rgba(255,255,255,0.13);
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.52);
+  text-align: center;
+}
+#shinju-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(94px + env(safe-area-inset-bottom));
+  z-index: 300000;
+  transform: translate(-50%, 10px);
+  opacity: 0;
+  padding: 10px 15px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  font-size: 12px;
+  transition: opacity .25s ease, transform .25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#shinju-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+#shinju-clear-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 310000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255,255,255,0.34), transparent 32%),
+    radial-gradient(circle at 50% 56%, rgba(255,226,128,0.23), transparent 44%),
+    rgba(0,0,0,0.86);
+}
+.shinju-clear-card {
+  width: min(360px, 100%);
+  padding: 30px 22px 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,236,170,0.48);
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255,244,190,0.24), transparent 34%),
+    linear-gradient(168deg, #162032, #080c14);
+  text-align: center;
+  box-shadow: 0 0 50px rgba(255,230,150,0.20), 0 24px 60px rgba(0,0,0,0.62);
+}
+.shinju-clear-kicker {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: .28em;
+  color: rgba(255,236,170,0.68);
+}
+.shinju-clear-title {
+  margin-top: 8px;
+  font-size: 31px;
+  font-weight: 900;
+  letter-spacing: .22em;
+  transform: translateX(.11em);
+  color: #fff3b0;
+  text-shadow: 0 0 18px rgba(255,220,120,0.82);
+}
+.shinju-clear-body {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.68);
+}
+.shinju-clear-btn {
+  margin-top: 22px;
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #edfaff, #fff0a8);
+  color: #141923;
+  font-weight: 900;
+  font-family: "Noto Serif JP", serif;
+}
+
+
+/* =========================================================
+   Shinju Home Icon Patch
+   - ホーム右側、お知らせアイコンの下に神樹入口を配置
+   - 表示画像: images/shinju.webp
+   ========================================================= */
+.shinju-home-entry {
+  position: absolute !important;
+  left: auto !important;
+  right: 14px !important;
+  top: calc(env(safe-area-inset-top) + 300px) !important;
+  bottom: auto !important;
+  z-index: 30 !important;
+
+  width: 78px !important;
+  height: 78px !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.shinju-home-entry::after,
+.shinju-home-entry-bg,
+.shinju-home-entry-main,
+.shinju-home-entry-side,
+.shinju-home-entry-kicker,
+.shinju-home-entry-title,
+.shinju-home-entry-stage,
+.shinju-home-entry-items {
+  display: none !important;
+}
+
+.shinju-home-entry-icon {
+  width: 78px !important;
+  height: 78px !important;
+  object-fit: contain !important;
+  display: block !important;
+  pointer-events: none !important;
+  opacity: .94;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.62))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.88)) !important;
+  transition: transform .16s ease, filter .16s ease, opacity .16s ease !important;
+}
+
+.shinju-home-entry:active .shinju-home-entry-icon {
+  transform: scale(.94) !important;
+  opacity: 1;
+}
+
+.shinju-home-entry.has-items .shinju-home-entry-icon {
+  filter:
+    drop-shadow(0 0 10px rgba(255,238,170,0.86))
+    drop-shadow(0 0 18px rgba(255,220,120,0.38))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.88)) !important;
+}
+
+.shinju-home-entry.is-clear .shinju-home-entry-icon {
+  filter:
+    drop-shadow(0 0 12px rgba(255,255,255,0.88))
+    drop-shadow(0 0 24px rgba(210,238,255,0.48))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.88)) !important;
+}
+
+.shinju-home-entry-badge {
+  position: absolute !important;
+  top: 10px !important;
+  right: 8px !important;
+  width: 13px !important;
+  height: 13px !important;
+  border-radius: 999px !important;
+  background: #f6d36c !important;
+  border: 1px solid rgba(255,255,255,0.9) !important;
+  box-shadow: 0 0 10px rgba(246,211,108,0.82) !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.shinju-home-entry.has-items .shinju-home-entry-badge {
+  display: block !important;
+}
+
+@media (max-height: 700px) {
+  .shinju-home-entry {
+    right: 12px !important;
+    top: calc(env(safe-area-inset-top) + 250px) !important;
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  .shinju-home-entry-icon {
+    width: 58px !important;
+    height: 58px !important;
+  }
+}
+
+@media (max-height: 620px) {
+  .shinju-home-entry {
+    right: 12px !important;
+    top: calc(env(safe-area-inset-top) + 238px) !important;
+    width: 54px !important;
+    height: 54px !important;
+  }
+
+  .shinju-home-entry-icon {
+    width: 54px !important;
+    height: 54px !important;
+  }
+}
+
+/* =========================================================
+   Home Right Icons - Unified CSS
+   mail / shinju の表示サイズ・影・押下挙動を統一
+   ========================================================= */
+:root {
+  --home-side-icon-size: 90px;
+  --home-side-icon-right: 14px;
+  --home-side-icon-mail-top: calc(env(safe-area-inset-top) + 208px);
+  --home-side-icon-shinju-top: calc(env(safe-area-inset-top) + 300px);
+}
+
+.home-notice-btn,
+.shinju-home-entry {
+  position: absolute !important;
+  left: auto !important;
+  right: var(--home-side-icon-right) !important;
+  bottom: auto !important;
+  z-index: 30 !important;
+
+  width: var(--home-side-icon-size) !important;
+  height: var(--home-side-icon-size) !important;
+  min-width: var(--home-side-icon-size) !important;
+  min-height: var(--home-side-icon-size) !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  cursor: pointer !important;
+  transform: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.home-notice-btn {
+  top: var(--home-side-icon-mail-top) !important;
+}
+
+.shinju-home-entry {
+  top: var(--home-side-icon-shinju-top) !important;
+}
+
+.home-notice-btn img,
+.shinju-home-entry-icon {
+  width: var(--home-side-icon-size) !important;
+  height: var(--home-side-icon-size) !important;
+  display: block !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: transform .16s ease, filter .16s ease, opacity .16s ease !important;
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,0.72))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.85)) !important;
+}
+
+.home-notice-btn:active,
+.shinju-home-entry:active {
+  transform: scale(0.96) !important;
+}
+
+.home-notice-btn:active img,
+.shinju-home-entry:active .shinju-home-entry-icon {
+  transform: none !important;
+}
+
+/* 神樹の旧カード型要素は右側アイコン運用では非表示 */
+.shinju-home-entry::after,
+.shinju-home-entry-bg,
+.shinju-home-entry-main,
+.shinju-home-entry-side,
+.shinju-home-entry-kicker,
+.shinju-home-entry-title,
+.shinju-home-entry-stage,
+.shinju-home-entry-items {
+  display: none !important;
+}
+
+.home-notice-badge {
+  display: block !important;
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 17px !important;
+  height: 17px !important;
+  border-radius: 999px !important;
+  background: #e60023 !important;
+  border: 2px solid rgba(255,255,255,0.95) !important;
+  box-shadow:
+    0 0 8px rgba(230,0,35,0.85),
+    0 3px 8px rgba(0,0,0,0.75) !important;
+  pointer-events: none !important;
+}
+
+.shinju-home-entry-badge {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 17px !important;
+  height: 17px !important;
+  border-radius: 999px !important;
+  background: #f6d36c !important;
+  border: 2px solid rgba(255,255,255,0.95) !important;
+  box-shadow:
+    0 0 8px rgba(246,211,108,0.85),
+    0 3px 8px rgba(0,0,0,0.75) !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.shinju-home-entry.has-items .shinju-home-entry-badge {
+  display: block !important;
+}
+
+@media (max-height: 700px) {
+  :root {
+    --home-side-icon-size: 62px;
+    --home-side-icon-right: 12px;
+    --home-side-icon-mail-top: calc(env(safe-area-inset-top) + 198px);
+    --home-side-icon-shinju-top: calc(env(safe-area-inset-top) + 262px);
+  }
+
+  .home-notice-badge,
+  .shinju-home-entry-badge {
+    top: 6px !important;
+    right: 6px !important;
+    width: 13px !important;
+    height: 13px !important;
+    border-width: 1.5px !important;
+  }
+}
+
+@media (max-height: 620px) {
+  :root {
+    --home-side-icon-size: 54px;
+    --home-side-icon-right: 12px;
+    --home-side-icon-mail-top: calc(env(safe-area-inset-top) + 190px);
+    --home-side-icon-shinju-top: calc(env(safe-area-inset-top) + 246px);
+  }
+}
+
+/* =========================================================
+   Shinju Screen Visual Priority Patch
+   - 神樹を見せるため、上部ビジュアル領域を拡大
+   - 下部情報パネルを白系・半透明・低背に変更
+   ========================================================= */
+#shinju-overlay {
+  background: rgba(246, 250, 255, 0.18) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+  color: #263044 !important;
+}
+
+.shinju-panel {
+  overflow-y: auto !important;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255,255,255,0.98), rgba(238,248,255,0.62) 30%, transparent 58%),
+    linear-gradient(180deg, #edf8ff 0%, #fbf8ec 54%, #f7f3e8 100%) !important;
+  box-shadow: 0 0 32px rgba(120, 140, 170, 0.20) !important;
+}
+
+.shinju-close {
+  border: 1px solid rgba(255,255,255,0.86) !important;
+  background: rgba(64, 70, 82, 0.36) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.16) !important;
+}
+
+.shinju-visual-wrap {
+  height: 66dvh !important;
+  min-height: 430px !important;
+  max-height: 620px !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,0.98), transparent 36%),
+    linear-gradient(180deg, #eaf7ff 0%, #fffaf0 100%) !important;
+}
+
+.shinju-visual {
+  object-fit: cover !important;
+  object-position: center 34% !important;
+  filter: saturate(1.04) contrast(1.02) brightness(1.03) !important;
+}
+
+.shinju-visual-glow {
+  height: 32% !important;
+  background: linear-gradient(180deg, transparent, rgba(250, 247, 238, 0.58)) !important;
+}
+
+.shinju-content {
+  margin: -96px 14px 18px !important;
+  border-radius: 28px !important;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom)) !important;
+  min-height: auto !important;
+  max-height: 48dvh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  background:
+    radial-gradient(circle at 50% -18%, rgba(255, 248, 210, 0.62), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,0.76), rgba(248,246,239,0.66)) !important;
+  border: 1px solid rgba(255,255,255,0.74) !important;
+  box-shadow: 0 -8px 28px rgba(80, 95, 120, 0.18), 0 10px 32px rgba(110, 120, 135, 0.14) !important;
+  backdrop-filter: blur(15px) saturate(1.12) !important;
+  -webkit-backdrop-filter: blur(15px) saturate(1.12) !important;
+}
+
+.shinju-kicker {
+  font-size: 9px !important;
+  color: rgba(67, 82, 108, 0.58) !important;
+}
+
+.shinju-title {
+  margin-top: 3px !important;
+  font-size: 25px !important;
+  color: #38445a !important;
+  text-shadow: 0 0 14px rgba(255,255,255,0.9), 0 2px 10px rgba(140,160,190,0.18) !important;
+}
+
+.shinju-stage {
+  margin-top: 9px !important;
+  padding: 5px 12px !important;
+  border-color: rgba(148, 118, 52, 0.38) !important;
+  background: rgba(255, 250, 224, 0.62) !important;
+  color: #7b6534 !important;
+  box-shadow: inset 0 0 12px rgba(255,255,255,0.66) !important;
+}
+
+.shinju-progress-box {
+  margin-top: 13px !important;
+  padding: 12px 13px !important;
+  border-color: rgba(97, 119, 150, 0.14) !important;
+  background: rgba(255,255,255,0.46) !important;
+}
+
+.shinju-progress-head {
+  color: rgba(54, 65, 85, 0.62) !important;
+}
+
+.shinju-progress-bg {
+  height: 8px !important;
+  background: rgba(80, 94, 120, 0.15) !important;
+}
+
+.shinju-progress-fill {
+  background: linear-gradient(90deg, #bfeaff, #e8d890) !important;
+  box-shadow: 0 0 14px rgba(230, 210, 126, 0.38) !important;
+}
+
+.shinju-lore {
+  margin-top: 11px !important;
+  color: rgba(50, 58, 75, 0.70) !important;
+}
+
+.shinju-items-head {
+  margin-top: 16px !important;
+  color: rgba(47, 55, 72, 0.76) !important;
+}
+
+.shinju-offer-all {
+  border-color: rgba(148, 118, 52, 0.36) !important;
+  background: rgba(255, 250, 224, 0.62) !important;
+  color: #7b6534 !important;
+}
+
+.shinju-item-list {
+  max-height: 22dvh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.shinju-item-card,
+.shinju-item-empty {
+  background: rgba(255,255,255,0.46) !important;
+  border-color: rgba(97, 119, 150, 0.14) !important;
+  color: rgba(50, 58, 75, 0.70) !important;
+}
+
+.shinju-item-name {
+  color: #38445a !important;
+}
+
+.shinju-item-desc {
+  color: rgba(50, 58, 75, 0.58) !important;
+}
+
+.shinju-item-icon {
+  background: rgba(255, 250, 224, 0.68) !important;
+  color: #8c7136 !important;
+  box-shadow: inset 0 0 0 1px rgba(148, 118, 52, 0.20) !important;
+}
+
+.shinju-item-exp {
+  color: #8c7136 !important;
+}
+
+.shinju-offer-btn {
+  background: linear-gradient(135deg, #faffff, #fff0a8) !important;
+  color: #4d4228 !important;
+}
+
+@media (max-height: 700px) {
+  .shinju-visual-wrap {
+    height: 63dvh !important;
+    min-height: 370px !important;
+  }
+
+  .shinju-content {
+    margin-top: -86px !important;
+    padding-top: 15px !important;
+    max-height: 50dvh !important;
+  }
+
+  .shinju-title {
+    font-size: 23px !important;
+  }
+
+  .shinju-lore {
+    font-size: 11px !important;
+    line-height: 1.65 !important;
+  }
+}
+
+
+/* =========================================================
+   Shinju Mock Overlay Layout Final
+   - モック画像に合わせ、成長段階/EXPを神樹画像の上に重ねる
+   - 下部パネルは説明と奉納リストだけにする
+   ========================================================= */
+#shinju-overlay {
+  background: rgba(247, 250, 255, 0.16) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  color: #263044 !important;
+}
+
+.shinju-panel {
+  position: relative !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  max-width: 430px !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  background:
+    radial-gradient(circle at 50% 9%, rgba(255,255,255,0.98), rgba(235,247,255,0.66) 28%, transparent 58%),
+    linear-gradient(180deg, #eaf7ff 0%, #fbf8ec 58%, #f4efe4 100%) !important;
+  box-shadow: none !important;
+}
+
+.shinju-close {
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top) + 14px) !important;
+  right: max(14px, calc((100vw - 430px) / 2 + 14px)) !important;
+  z-index: 40 !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(255,255,255,0.74) !important;
+  background: rgba(58, 64, 76, 0.34) !important;
+  color: rgba(255,255,255,0.96) !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.shinju-visual-wrap {
+  position: relative !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 13%, rgba(255,255,255,0.95), transparent 34%),
+    linear-gradient(180deg, #eaf7ff 0%, #fff9ec 100%) !important;
+}
+
+.shinju-visual {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  filter: saturate(1.04) contrast(1.02) brightness(1.04) !important;
+  z-index: 1 !important;
+}
+
+.shinju-visual-glow {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 36%, rgba(255,250,238,0.30) 58%, rgba(255,250,238,0.76) 78%, rgba(255,250,238,0.96) 100%),
+    radial-gradient(circle at 50% 25%, rgba(255,255,255,0.20), transparent 36%) !important;
+}
+
+.shinju-hero-info {
+  position: absolute !important;
+  left: 18px !important;
+  right: 18px !important;
+  bottom: calc(242px + env(safe-area-inset-bottom)) !important;
+  z-index: 7 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 14px 16px 15px !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 50% -18%, rgba(255,252,220,0.66), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.60), rgba(246,243,234,0.44)) !important;
+  border: 1px solid rgba(255,255,255,0.72) !important;
+  box-shadow: 0 12px 34px rgba(78, 92, 120, 0.16), inset 0 0 24px rgba(255,255,255,0.34) !important;
+  backdrop-filter: blur(14px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.08) !important;
+}
+
+.shinju-kicker {
+  margin: 0 !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.38em !important;
+  color: rgba(58, 70, 96, 0.58) !important;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.82) !important;
+}
+
+.shinju-title {
+  margin: 7px 0 0 !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  font-size: 29px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.20em !important;
+  color: #344059 !important;
+  text-shadow: 0 0 18px rgba(255,255,255,0.95), 0 2px 14px rgba(120,140,178,0.22) !important;
+}
+
+.shinju-stage {
+  margin-top: 10px !important;
+  padding: 5px 15px !important;
+  min-width: 92px !important;
+  text-align: center !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(147, 114, 46, 0.38) !important;
+  background: rgba(255, 250, 224, 0.62) !important;
+  color: #735d2f !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  box-shadow: inset 0 0 12px rgba(255,255,255,0.70), 0 4px 14px rgba(110, 92, 44, 0.10) !important;
+}
+
+.shinju-progress-box {
+  width: 100% !important;
+  margin-top: 13px !important;
+  padding: 11px 13px 12px !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(86, 106, 138, 0.14) !important;
+  background: rgba(255,255,255,0.42) !important;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.35) !important;
+}
+
+.shinju-progress-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 7px !important;
+  color: rgba(50, 62, 86, 0.66) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.shinju-progress-bg {
+  width: 100% !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  background: rgba(76, 90, 116, 0.16) !important;
+}
+
+.shinju-progress-fill {
+  height: 100% !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #c6ecff, #ead98e) !important;
+  box-shadow: 0 0 14px rgba(230, 210, 126, 0.42) !important;
+}
+
+.shinju-content {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 8 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  max-height: calc(236px + env(safe-area-inset-bottom)) !important;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom)) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  border-radius: 28px 28px 0 0 !important;
+  background:
+    radial-gradient(circle at 50% -16%, rgba(255,255,255,0.82), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.70), rgba(247,244,235,0.86)) !important;
+  border-top: 1px solid rgba(255,255,255,0.78) !important;
+  box-shadow: 0 -10px 34px rgba(78, 92, 120, 0.18) !important;
+  backdrop-filter: blur(17px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(17px) saturate(1.08) !important;
+}
+
+.shinju-lore {
+  margin: 0 !important;
+  color: rgba(45, 55, 78, 0.74) !important;
+  font-size: 11px !important;
+  line-height: 1.72 !important;
+  text-align: center !important;
+  text-shadow: 0 1px 10px rgba(255,255,255,0.62) !important;
+}
+
+.shinju-items-head {
+  margin-top: 14px !important;
+  color: rgba(48, 58, 78, 0.82) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+}
+
+.shinju-offer-all {
+  border-color: rgba(147, 114, 46, 0.34) !important;
+  background: rgba(255, 250, 224, 0.64) !important;
+  color: #705a2e !important;
+}
+
+.shinju-item-list {
+  max-height: 112px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.shinju-item-card,
+.shinju-item-empty {
+  background: rgba(255,255,255,0.48) !important;
+  border-color: rgba(86, 106, 138, 0.14) !important;
+  color: rgba(48, 58, 78, 0.70) !important;
+}
+
+.shinju-item-name { color: #344059 !important; }
+.shinju-item-desc { color: rgba(48, 58, 78, 0.58) !important; }
+.shinju-item-exp { color: #816832 !important; }
+
+.shinju-item-icon {
+  background: rgba(255, 250, 224, 0.68) !important;
+  color: #806735 !important;
+  box-shadow: inset 0 0 0 1px rgba(147, 114, 46, 0.20) !important;
+}
+
+.shinju-offer-btn {
+  background: linear-gradient(135deg, #fbffff, #fff0a8) !important;
+  color: #4f4328 !important;
+}
+
+@media (max-height: 700px) {
+  .shinju-hero-info {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: calc(218px + env(safe-area-inset-bottom)) !important;
+    padding: 12px 14px 13px !important;
+  }
+
+  .shinju-title {
+    font-size: 25px !important;
+    margin-top: 5px !important;
+  }
+
+  .shinju-stage {
+    margin-top: 8px !important;
+  }
+
+  .shinju-progress-box {
+    margin-top: 10px !important;
+    padding: 10px 12px !important;
+  }
+
+  .shinju-content {
+    max-height: calc(210px + env(safe-area-inset-bottom)) !important;
+    padding-top: 15px !important;
+  }
+
+  .shinju-lore {
+    font-size: 10.5px !important;
+    line-height: 1.62 !important;
+  }
+
+  .shinju-items-head {
+    margin-top: 11px !important;
+  }
+
+  .shinju-item-list {
+    max-height: 88px !important;
+  }
+}
+
+/* =========================================================
+   Shinju Layout Visibility Patch
+   - 成長率/EXPをさらに上へ移動
+   - 上部情報の白い大きな背景を撤去
+   - 下部パネルの角丸を撤去し、透明度を上げる
+   - 神樹画像を隠す白グラデーションを弱める
+   ========================================================= */
+#shinju-overlay {
+  background: rgba(247, 250, 255, 0.06) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.shinju-panel {
+  background: transparent !important;
+}
+
+.shinju-visual-wrap {
+  background: transparent !important;
+}
+
+.shinju-visual {
+  filter: saturate(1.06) contrast(1.03) brightness(1.02) !important;
+}
+
+.shinju-visual-glow {
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.00) 34%,
+      rgba(255,250,238,0.08) 62%,
+      rgba(255,250,238,0.18) 82%,
+      rgba(255,250,238,0.30) 100%
+    ),
+    radial-gradient(circle at 50% 19%, rgba(255,255,255,0.12), transparent 38%) !important;
+}
+
+/* 上の情報ブロック：白カードを消し、画像上に直接浮かせる */
+.shinju-hero-info {
+  left: 28px !important;
+  right: 28px !important;
+  bottom: auto !important;
+  top: calc(env(safe-area-inset-top) + 292px) !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.shinju-stage {
+  margin-top: 0 !important;
+  padding: 5px 16px !important;
+  background: rgba(255, 250, 224, 0.48) !important;
+  border-color: rgba(147, 114, 46, 0.32) !important;
+  box-shadow:
+    0 4px 14px rgba(255,255,255,0.24),
+    0 1px 8px rgba(96, 86, 62, 0.10) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+}
+
+.shinju-progress-box {
+  width: 100% !important;
+  margin-top: 13px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.shinju-progress-head {
+  margin-bottom: 7px !important;
+  color: rgba(58, 68, 88, 0.70) !important;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.70) !important;
+}
+
+.shinju-progress-bg {
+  height: 8px !important;
+  background: rgba(82, 94, 118, 0.18) !important;
+  box-shadow: 0 1px 8px rgba(255,255,255,0.34) !important;
+}
+
+.shinju-progress-fill {
+  background: linear-gradient(90deg, rgba(181,231,255,0.82), rgba(231,210,134,0.86)) !important;
+}
+
+/* 下の情報パネル：角丸なし、さらに透過 */
+.shinju-content {
+  max-height: calc(218px + env(safe-area-inset-bottom)) !important;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom)) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,0.34),
+      rgba(250,247,238,0.46)
+    ) !important;
+  border-top: 1px solid rgba(255,255,255,0.40) !important;
+  box-shadow: 0 -8px 22px rgba(78, 92, 120, 0.08) !important;
+  backdrop-filter: blur(8px) saturate(1.03) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.03) !important;
+}
+
+.shinju-lore {
+  color: rgba(46, 56, 76, 0.68) !important;
+}
+
+.shinju-items-head {
+  color: rgba(48, 58, 78, 0.76) !important;
+}
+
+.shinju-offer-all {
+  background: rgba(255, 250, 224, 0.42) !important;
+}
+
+.shinju-item-card,
+.shinju-item-empty {
+  background: rgba(255,255,255,0.28) !important;
+  border-color: rgba(255,255,255,0.30) !important;
+}
+
+.shinju-item-list {
+  max-height: 96px !important;
+}
+
+@media (max-height: 700px) {
+  .shinju-hero-info {
+    left: 26px !important;
+    right: 26px !important;
+    top: calc(env(safe-area-inset-top) + 270px) !important;
+    padding: 0 !important;
+  }
+
+  .shinju-progress-box {
+    margin-top: 11px !important;
+    padding: 0 !important;
+  }
+
+  .shinju-content {
+    max-height: calc(196px + env(safe-area-inset-bottom)) !important;
+    padding-top: 14px !important;
+  }
+
+  .shinju-item-list {
+    max-height: 74px !important;
+  }
+}

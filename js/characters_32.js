@@ -32,7 +32,7 @@
     all:           'enemy_all',           // 全体（敵対象スキル時は敵全体）
     enemy_all:     'enemy_all',
     ally_all:      'ally_all',
-    pierce_all:    'enemy_all',           // 全体貫通 → 全体攻撃として扱う
+    pierce_all:    'pierce_all',          // 前方直線全マス（enemy_allに変換しない）
 
     // 斜めレンジ（左右V字）
     diag3:          'diag_ally_3',        // 前方左右斜め3マス（将来 left/right 分離予定）
@@ -86,8 +86,15 @@
     cost: 0,
 
     linkCost: skill.linkCost,
-    delayTurns: skill.delayTurns || 0,
+    // 通常スキルに delayTurns:0 を持たせると、Battle32側で予約攻撃と誤判定しやすい。
+    // 未指定なら null、本当に予約するスキルだけ数値を持つ。
+    delayTurns: skill.delayTurns != null ? skill.delayTurns : null,
     delayedTrigger: skill.delayedTrigger || null,
+
+    // スイ「星読み」など、未来支援スキル用の候補を32マス版にも引き継ぐ。
+    randomOptions: Array.isArray(skill.randomOptions) ? skill.randomOptions.map(o => ({ ...o })) : null,
+    choiceOptions: Array.isArray(skill.choiceOptions) ? skill.choiceOptions.map(o => ({ ...o })) : null,
+    selectedOption: skill.selectedOption ? { ...skill.selectedOption } : null,
 
     shinkiCost: isUlt ? (skill.shinkiCost ?? character.shinkiMax ?? 3) : 0,
 
@@ -95,6 +102,9 @@
     isUltimate: isUlt,
     hitStyle: skill.hitStyle || 'normal',
     pierce: !!skill.pierce,
+    randomCellCount: skill.randomCellCount || null,
+    criticalRate: skill.criticalRate,
+    criticalDamageRate: skill.criticalDamageRate,
     targetStatus: skill.targetStatus || skill.requiredStatus || null,
     requiredStatus: skill.requiredStatus || skill.targetStatus || null,
     effects: filteredEffects,

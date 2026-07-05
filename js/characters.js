@@ -2,6 +2,7 @@
 // characters.js
 // ★ 正式仕様（設計整理 2025）
 //   - stats は HP / ATK のみ
+//   - element は 'logos' / 'mystis' / 'chaos'、または ['logos','chaos'] のような複属性に対応
 //   - Battle32 / Roguelite は DEF / SPD を使用しない
 //   - effect type に def_* / spd_* は使用しない
 //   - ダメージ式は ATK × multiplier
@@ -320,7 +321,7 @@ const CHARACTERS = [
 
   // ── id:7 
 { id: 7, name: 'スイ', rarity: 'r',
-    element: 'chaos',
+    element: 'mystis',
   role: 'バランス寄り',
   moveType: 'line_front_3',
     costMax: 10,
@@ -341,33 +342,42 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
-        name: '集中',
+        name: '星読みの予兆',
         linkCost: 2,
         isUltimate: false,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.00,
         criticalDamageRate: 1.5,
-        type: 'attack',
-        multiplier: 1.2,
-        range: 'pierce3',
+        type: 'delayed_random_support',
+        multiplier: 0.0,
+        range: 'self',
+        randomOptions: [
+          { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
+          { effectType: 'lowest_full_heal', label: '一番HPの低い味方を全回復' },
+          { effectType: 'all_critical_up', label: '味方全体critical率+20%', rate: 0.20, duration: 1 }
+        ],
         effects: [],
-        hitStyle: 'multi',
-        desc: '射程：前方直線3マス。対象の敵にATK×1.2のダメージを与える。' },
+        hitStyle: 'support',
+        desc: '次の自ターン開始時、LINK+2／一番HPの低い味方のHPを全回復／味方全体critical率+20% のいずれかがランダムで発動する。' },
 
       { id: 'ult',
-        name: '絶対零度',
-        linkCost: 4,
+        name: '星環の約束',
+        linkCost: 5,
         isUltimate: true,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.00,
         criticalDamageRate: 1.5,
-        type: 'attack',
-        multiplier: 1.6,
-        range: 'around24',
-        effects: [
+        type: 'delayed_choice_support',
+        multiplier: 0.0,
+        range: 'self',
+        choiceOptions: [
+          { effectType: 'link_plus_3', label: 'LINK+3', amount: 3 },
+          { effectType: 'all_critical_up', label: '味方全体critical率+50%', rate: 0.50, duration: 1 },
+          { effectType: 'all_guard', label: '味方全体ガード（ダメージ80%カット）', rate: 0.80, duration: 2 }
         ],
-        hitStyle: 'rapid',
-        desc: '射程：自身の周囲2マス。対象の敵にATK×1.6のダメージを与える。' }
+        effects: [],
+        hitStyle: 'support',
+        desc: '任意の効果を選択して予約する。次の自ターン開始時、LINK+3／味方全体critical率+50%／味方全体ガード（ダメージ80%カット）のいずれかが発動する。' }
     ]},
 
     // ── id:7 シグレ
@@ -427,9 +437,9 @@ const CHARACTERS = [
   
   // ── id:1 エリ
 { id: 1, name: 'エリ', rarity: 'r',
-    element: 'mystis',
-  role: 'バランス寄り',
-  moveType: 'cross_1',
+    element: ['mystis', 'logos'],
+    role: 'バランス寄り',
+    moveType: 'cross_1',
     costMax: 14,
     costStart: 5,
     costRegen: 2,
@@ -798,7 +808,7 @@ const CHARACTERS = [
           { type: 'atk_up', target: 'ally_self', hit: 100, duration: 1, rate: 1.30 }
         ],
         hitStyle: 'heavy',
-        desc: '射程：前方横3マス。対象の敵にATK×1.4のダメージを与える。さらに自身のATKを1ターン30%上昇させる。'
+        desc: '射程：前方横3マス。対象の敵にATK×1.4のダメージを与える。さらに自身のATKを2ターン30%上昇させる。'
       },
 
       {

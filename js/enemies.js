@@ -1053,10 +1053,10 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'enemy_sakiel_roguelite',
-  name: 'サキエル',
+  name: '大天使 サキエル',
   element: 'mystis',
   img:       'images/enemy_sakiel.webp',
-  upImg:     'images/enemy_sakiel.webp',
+  upImg:     'images/enemy_sakiel_up.webp',
   battleImg: 'images/enemy_sakiel_battle.webp',
   isBoss: true,
   isMidBoss: false,

@@ -38,22 +38,49 @@
     return chara.upImg || chara.img || '';
   }
 
+  // 属性アイコン。単属性 / 2属性 / 3属性に対応。
+  // element: 'mystis' / ['mystis','logos'] / 'mystis+logos' いずれも可。
+  function normalizeElementList(element) {
+    if (Array.isArray(element)) {
+      return element.map(e => String(e || '').trim()).filter(Boolean);
+    }
+    const s = String(element || '').trim();
+    if (!s) return [];
+    return s.split(/[+_,\s]+/).map(e => e.trim()).filter(Boolean);
+  }
+
+  function elementIconKey(element) {
+    const order = { logos: 1, mystis: 2, chaos: 3 };
+    const list = normalizeElementList(element)
+      .filter(e => order[e])
+      .filter((e, i, arr) => arr.indexOf(e) === i)
+      .sort((a, b) => order[a] - order[b]);
+    return list.join('_');
+  }
+
   function unitElementIcon(element) {
+    const key = elementIconKey(element);
     const map = {
       chaos:  'images/icon_chaos.webp',
       logos:  'images/icon_logos.webp',
       mystis: 'images/icon_mystis.webp',
+      logos_mystis: 'images/icon_logos_mystis.webp',
+      logos_chaos: 'images/icon_logos_chaos.webp',
+      mystis_chaos: 'images/icon_mystis_chaos.webp',
+      logos_mystis_chaos: 'images/icon_logos_mystis_chaos.webp',
     };
-    return map[element] || '';
+    return map[key] || '';
   }
 
   function unitElementLabel(element) {
-    const map = {
+    const labelMap = {
       chaos:  'ケイオス',
       logos:  'ロゴス',
       mystis: 'ミスティス',
     };
-    return map[element] || element || '無属性';
+    const list = elementIconKey(element).split('_').filter(Boolean);
+    if (!list.length) return '無属性';
+    return list.map(e => labelMap[e] || e).join(' / ');
   }
 
   // ============================================================

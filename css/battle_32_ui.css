@@ -486,7 +486,7 @@
  bottom: 0px;
  width: calc(var(--cell-size) * 1.18);
  height: calc(var(--cell-size) * 1.68);
- transform: translateX(-50%) rotateX(-38deg);
+ transform: translateX(-50%);
  transform-origin: bottom center;
  transform-style: preserve-3d;
  display: flex;
@@ -499,12 +499,12 @@
 
 .b32-unit.ally {
  bottom: 0px;
- transform: translateX(-50%) rotateX(-38deg);
+ transform: translateX(-50%);
 }
 
 .b32-unit.enemy {
  bottom: 0px;
- transform: translateX(-50%) rotateX(-38deg);
+ transform: translateX(-50%);
 }
 
 .b32-unit.dead {
@@ -8320,4 +8320,237 @@
   #b32-action-detail-portal .b32-action-detail-summary-item {
     font-size: 10px !important;
   }
+}
+
+/* ============================================================
+ 能力変動表示（バフ / デバフ）
+ ============================================================ */
+#battle32-root .b32-status-badges {
+ position: absolute;
+ left: 50%;
+ bottom: calc(var(--cell-size) * 1.18);
+ transform: translateX(-50%);
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ gap: 2px;
+ z-index: 8;
+ pointer-events: none;
+ white-space: nowrap;
+}
+
+#battle32-root .b32-status-badges.compact {
+ bottom: calc(var(--cell-size) * 1.24);
+ transform: translateX(-50%) scale(.86);
+ transform-origin: center bottom;
+}
+
+#battle32-root .b32-status-badge {
+ min-width: 34px;
+ padding: 1px 5px 2px;
+ border-radius: 999px;
+ font-family: 'Cinzel', 'Noto Serif JP', serif;
+ font-size: 8px;
+ font-weight: 800;
+ letter-spacing: .5px;
+ line-height: 1.1;
+ text-align: center;
+ background: rgba(0,0,0,.62);
+ border: 1px solid rgba(255,255,255,.20);
+ box-shadow: 0 0 8px rgba(0,0,0,.42);
+}
+
+#battle32-root .b32-status-badge.buff {
+ color: #bfffe6;
+ border-color: rgba(100,255,190,.60);
+ text-shadow: 0 0 6px rgba(80,255,180,.70);
+ box-shadow:
+  0 0 8px rgba(80,255,180,.24),
+  inset 0 0 6px rgba(80,255,180,.12);
+}
+
+#battle32-root .b32-status-badge.debuff {
+ color: #ffc2df;
+ border-color: rgba(255,90,170,.60);
+ text-shadow: 0 0 6px rgba(255,80,160,.70);
+ box-shadow:
+  0 0 8px rgba(255,80,160,.22),
+  inset 0 0 6px rgba(255,80,160,.12);
+}
+
+#battle32-root .b32-party-card .b32-status-badges {
+ position: static;
+ transform: none;
+ flex-direction: row;
+ justify-content: center;
+ flex-wrap: wrap;
+ gap: 2px;
+ margin-top: 2px;
+ max-width: 100%;
+}
+
+#battle32-root .b32-party-card .b32-status-badge {
+ font-size: 7px;
+ padding: 1px 4px;
+ min-width: 0;
+ max-width: 100%;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.b32-status-change-pop {
+ position: fixed;
+ z-index: 1000001;
+ pointer-events: none;
+ transform: translate(-50%, -50%);
+ font-family: 'Cinzel', 'Noto Serif JP', serif;
+ font-size: 18px;
+ font-weight: 900;
+ letter-spacing: 1px;
+ white-space: nowrap;
+ animation: b32StatusChangePop 1050ms ease-out forwards;
+}
+
+.b32-status-change-pop.buff {
+ color: #caffef;
+ text-shadow:
+  0 0 10px rgba(255,255,255,.90),
+  0 0 20px rgba(80,255,180,.90),
+  0 2px 4px rgba(0,0,0,.95);
+}
+
+.b32-status-change-pop.debuff {
+ color: #ffc1df;
+ text-shadow:
+  0 0 10px rgba(255,255,255,.72),
+  0 0 22px rgba(255,70,160,.92),
+  0 2px 4px rgba(0,0,0,.95);
+}
+
+.b32-status-change-pop.status {
+ color: #d7e8ff;
+ text-shadow:
+  0 0 10px rgba(255,255,255,.70),
+  0 0 20px rgba(120,180,255,.80),
+  0 2px 4px rgba(0,0,0,.95);
+}
+
+.b32-status-change-ring {
+ position: fixed;
+ z-index: 1000000;
+ pointer-events: none;
+ width: 58px;
+ height: 24px;
+ border-radius: 50%;
+ transform: translate(-50%, -50%);
+ animation: b32StatusChangeRing 760ms ease-out forwards;
+}
+
+.b32-status-change-ring.buff {
+ border: 1px solid rgba(100,255,190,.85);
+ box-shadow: 0 0 16px rgba(80,255,180,.58), inset 0 0 12px rgba(80,255,180,.30);
+}
+
+.b32-status-change-ring.debuff {
+ border: 1px solid rgba(255,90,170,.85);
+ box-shadow: 0 0 16px rgba(255,80,160,.58), inset 0 0 12px rgba(255,80,160,.30);
+}
+
+.b32-status-change-ring.status {
+ border: 1px solid rgba(140,190,255,.80);
+ box-shadow: 0 0 16px rgba(120,180,255,.52), inset 0 0 12px rgba(120,180,255,.26);
+}
+
+@keyframes b32StatusChangePop {
+ 0% { opacity: 0; transform: translate(-50%, -25%) scale(.76); }
+ 18% { opacity: 1; transform: translate(-50%, -72%) scale(1.16); }
+ 58% { opacity: 1; transform: translate(-50%, -98%) scale(1); }
+ 100% { opacity: 0; transform: translate(-50%, -135%) scale(.92); }
+}
+
+@keyframes b32StatusChangeRing {
+ 0% { opacity: 0; transform: translate(-50%, -50%) scale(.45); }
+ 20% { opacity: 1; }
+ 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.75); }
+}
+
+
+/* ============================================================
+   PATCH: 能力変動表示をユニットHPバーの下へ移動
+   ============================================================ */
+#battle32-root .b32-unit-foot-ui {
+  position: absolute !important;
+  bottom: -12px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 2px !important;
+  width: calc(var(--cell-size) * 1.18) !important;
+  height: auto !important;
+  z-index: 12 !important;
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-unit-foot-main {
+  width: calc(var(--cell-size) * 1.02) !important;
+  height: 10px !important;
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+#battle32-root .b32-unit-foot-main .b32-hp-bar-wrap {
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: calc(var(--cell-size) * 0.68) !important;
+  height: 3px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+#battle32-root .b32-unit.ally .b32-unit-foot-main .b32-hp-bar-wrap {
+  height: 2px !important;
+}
+
+#battle32-root .b32-unit-foot-ui .b32-status-badges,
+#battle32-root .b32-unit-foot-ui .b32-status-badges.compact {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 2px !important;
+  max-width: calc(var(--cell-size) * 1.28) !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+}
+
+#battle32-root .b32-unit-foot-ui .b32-status-badge {
+  min-width: 0 !important;
+  max-width: calc(var(--cell-size) * 1.18) !important;
+  padding: 1px 4px 2px !important;
+  font-size: 7px !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+
+/* ローグライト報酬などの永続補正バッジ */
+#battle32-root .b32-status-badge.passive {
+  border-style: double;
+  box-shadow:
+    0 0 7px rgba(120,210,255,.34),
+    inset 0 0 5px rgba(255,255,255,.10);
 }

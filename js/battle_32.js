@@ -39,15 +39,76 @@
     mystis: 'ミスティス',
   };
 
+  const ELEMENT_CANONICAL_ORDER_32 = ['logos', 'mystis', 'chaos'];
+
+  function normalizeElements32(element) {
+    if (Array.isArray(element)) {
+      return [...new Set(element.map(v => String(v || '').trim()).filter(Boolean))]
+        .filter(v => ELEMENT_LABEL_32[v]);
+    }
+
+    if (typeof element === 'string') {
+      const raw = element.trim();
+      if (!raw) return [];
+
+      // 対応表記:
+      // 'logos'
+      // 'logos+chaos'
+      // 'logos_mystis'
+      // 'logos,mystis'
+      // 'logos mystis'
+      const parts = raw
+        .split(/[+,\s/|]+|_/)
+        .map(v => v.trim())
+        .filter(Boolean)
+        .filter(v => ELEMENT_LABEL_32[v]);
+
+      if (parts.length) return [...new Set(parts)];
+      return ELEMENT_LABEL_32[raw] ? [raw] : [];
+    }
+
+    return [];
+  }
+
+  function getElementKey32(element) {
+    const list = normalizeElements32(element);
+    if (!list.length) return '';
+    return ELEMENT_CANONICAL_ORDER_32
+      .filter(e => list.includes(e))
+      .join('_');
+  }
+
   function getElementRate32(sourceElement, targetElement) {
-    const s = sourceElement || null;
-    const t = targetElement || null;
-    if (!s || !t) return 1.0;
-    return (ELEMENT_RATE_32[s] && ELEMENT_RATE_32[s][t]) || 1.0;
+    const sources = normalizeElements32(sourceElement);
+    const targets = normalizeElements32(targetElement);
+    if (!sources.length || !targets.length) return 1.0;
+
+    let hasAdvantage = false;
+    let hasDisadvantage = false;
+
+    sources.forEach(s => {
+      targets.forEach(t => {
+        const rate = (ELEMENT_RATE_32[s] && ELEMENT_RATE_32[s][t]) || 1.0;
+        if (rate > 1) hasAdvantage = true;
+        if (rate < 1) hasDisadvantage = true;
+      });
+    });
+
+    // 複属性は「有利属性が増える」ことを優先する。
+    // 例: logos+chaos → mystis は logos 側で有利、chaos 側で不利だが、攻撃時は有利扱い。
+    // 一方、防御時も弱点属性が増えるため、相手側から見た時は有利を取られやすくなる。
+    if (hasAdvantage) return 1.25;
+    if (hasDisadvantage) return 0.80;
+    return 1.0;
   }
 
   function getElementLabel32(element) {
-    return ELEMENT_LABEL_32[element] || element || '無属性';
+    const list = normalizeElements32(element);
+    if (!list.length) return element || '無属性';
+    return ELEMENT_CANONICAL_ORDER_32
+      .filter(e => list.includes(e))
+      .map(e => ELEMENT_LABEL_32[e])
+      .join('+');
   }
 
   function getElementMatchText32(sourceElement, targetElement) {
@@ -1133,6 +1194,34 @@ const enemies = enemyDefs.map(def => {
     });
   }
 
+
+  /**
+   * ローグライトOPを、バトル中に新しく召喚された1ユニットへ適用する。
+   * applyOnStart はバトル開始時点の bs.allies だけを対象にするため、
+   * 後から召喚した味方にも同じ永続補正・表示バッジを反映する。
+   */
+  function _applyRogueliteOptionsToUnit(unit) {
+    if (!_bs || !unit) return;
+    const opts = Array.isArray(_bs.rogueliteOptions) ? _bs.rogueliteOptions : [];
+    if (opts.length === 0) return;
+
+    opts.forEach(op => {
+      if (!op) return;
+      try {
+        if (typeof op.applyToUnit === 'function') {
+          op.applyToUnit(unit, _bs);
+        } else if (typeof op.applyOnStart === 'function') {
+          // 後方互換：古いOP定義は applyToUnit を持たないため、
+          // allies を召喚ユニット1体だけにした一時BSで適用する。
+          // 現行のATK/HP/CRITICAL系OPは allies のみを見るため安全。
+          op.applyOnStart({ ..._bs, allies: [unit] });
+        }
+      } catch (e) {
+        console.error('[Battle32] applyToUnit エラー:', op.id, unit.name, e);
+      }
+    });
+  }
+
   /**
    * バトル中イベント発火（駒取り等）で各OPの applyOnEvent を呼ぶ。
    * @param {string} event   - イベント識別子（例: 'capture'）
@@ -1198,13 +1287,75 @@ const enemies = enemyDefs.map(def => {
 
   function _emit(event, data) {
     if (_cb && typeof _cb[event] === 'function') {
-      _cb[event](data);
+      try {
+        _cb[event](data);
+      } catch (e) {
+        // UI演出側の例外で、ダメージ計算・HP更新・行動消費まで巻き戻らないようにする。
+        // 例：damage演出のDOM取得/演出処理で落ちても、バトルロジックは継続する。
+        console.error('[Battle32] callback error:', event, e, data);
+      }
     }
   }
 
   function _log(msg) {
     _bs.log.push(msg);
     _emit('log', { msg, bs: _snapshot() });
+  }
+
+
+  // ============================================================
+  // 能力変動エフェクト通知ヘルパー
+  // ============================================================
+  function _statusEffectLabel32(effect) {
+    if (!effect) return '';
+    const type = effect.type || '';
+    const rate = Number(effect.rate);
+    const dur = effect.duration ? `${effect.duration}T` : '';
+
+    if (type === 'atk_up') {
+      const pct = Number.isFinite(rate) ? Math.round((rate - 1) * 100) : 50;
+      return `ATK+${pct}%${dur ? ` / ${dur}` : ''}`;
+    }
+    if (type === 'atk_down') {
+      const pct = Number.isFinite(rate) ? Math.round((1 - rate) * 100) : 30;
+      return `ATK-${pct}%${dur ? ` / ${dur}` : ''}`;
+    }
+    if (type === 'critical_up' || type === 'crit_up') {
+      const pct = Number.isFinite(rate) ? Math.round(_normalizeCriticalRate32(rate) * 100) : 20;
+      return `CRI+${pct}%${dur ? ` / ${dur}` : ''}`;
+    }
+    if (type === 'critical_down' || type === 'crit_down') {
+      const pct = Number.isFinite(rate) ? Math.round(_normalizeCriticalRate32(rate) * 100) : 20;
+      return `CRI-${pct}%${dur ? ` / ${dur}` : ''}`;
+    }
+    if (type === 'damage_cut') {
+      const pct = Number.isFinite(rate) ? Math.round(rate * 100) : 50;
+      return `DMG-${pct}%${dur ? ` / ${dur}` : ''}`;
+    }
+    if (type === 'stun') return `STUN${dur ? ` / ${dur}` : ''}`;
+    if (type === 'poison') return `POISON${dur ? ` / ${dur}` : ''}`;
+    if (type === 'yoi_no_sousou') return `COUNTER${dur ? ` / ${dur}` : ''}`;
+    return `${String(type).toUpperCase()}${dur ? ` / ${dur}` : ''}`;
+  }
+
+  function _statusEffectTone32(effect) {
+    const type = effect && effect.type;
+    if (type === 'atk_up' || type === 'damage_cut' || type === 'yoi_no_sousou' || type === 'critical_up' || type === 'crit_up') return 'buff';
+    if (type === 'atk_down' || type === 'stun' || type === 'poison' || type === 'critical_down' || type === 'crit_down') return 'debuff';
+    return 'status';
+  }
+
+  function _emitStatusChange32(target, effect, source, reason) {
+    if (!target || !effect) return;
+    _emit('statusChange', {
+      source: source ? { _uid: source._uid, name: source.name, side: source.side, row: source.row, col: source.col } : null,
+      target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+      effect: { ...effect },
+      label: _statusEffectLabel32(effect),
+      tone: _statusEffectTone32(effect),
+      reason: reason || null,
+      bs: _snapshot(),
+    });
   }
 
   // ============================================================
@@ -1415,6 +1566,7 @@ function _queueDelayedAttack(ally, skill) {
 
   _bs.delayedActions.push({
     id: uid(),
+    kind: 'attack',
     ownerUid: ally._uid,
     ownerName: ally.name,
     ownerElement: ally.element || null,
@@ -1437,6 +1589,281 @@ function _queueDelayedAttack(ally, skill) {
   _log(`${ally.name} は「${skill.name}」を予約した。${delayTurns}ターン後に発動する`);
 }
 
+
+function _findOriginalSkillDefinition32(ally, skill) {
+  if (!ally || !skill) return null;
+
+  const charIdCandidates = [
+    ally.id,
+    ally.charId,
+    ally.charaId,
+    ally.characterId,
+    skill.charId,
+    skill.charaId,
+    skill.characterId,
+  ].filter(v => v != null);
+
+  const charList = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS
+    : (Array.isArray(window.CHARACTERS) ? window.CHARACTERS : []);
+
+  let charDef = null;
+  for (const id of charIdCandidates) {
+    charDef = charList.find(c => c && String(c.id) === String(id)) || null;
+    if (charDef) break;
+  }
+  if (!charDef && ally.name) {
+    charDef = charList.find(c => c && c.name === ally.name) || null;
+  }
+
+  const skills = Array.isArray(charDef && charDef.skills) ? charDef.skills : [];
+  return skills.find(s => s && s.id === skill.id) || skills.find(s => s && s.name === skill.name) || null;
+}
+
+function _getDelayedSupportOptions32(ally, skill, key) {
+  const fromSkill = Array.isArray(skill && skill[key]) ? skill[key] : [];
+  if (fromSkill.length > 0) return deepClone(fromSkill);
+
+  const masterSkill = _findOriginalSkillDefinition32(ally, skill);
+  const fromMaster = Array.isArray(masterSkill && masterSkill[key]) ? masterSkill[key] : [];
+  if (fromMaster.length > 0) return deepClone(fromMaster);
+
+  // 最終フォールバック：スイの星読み系だけはここで候補を復元する。
+  // characters_32 変換で randomOptions / choiceOptions が落ちても、空効果にならないようにする。
+  const skillName = String((skill && skill.name) || '');
+  const skillType = String((skill && skill.type) || '').toLowerCase();
+  if (key === 'randomOptions' && (skillType === 'delayed_random_support' || skillName.includes('星読み'))) {
+    return [
+      { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
+      { effectType: 'lowest_full_heal', label: '一番HPの低い味方を全回復' },
+      { effectType: 'all_critical_up', label: '味方全体critical率+20%', rate: 0.20, duration: 1 },
+    ];
+  }
+  if (key === 'choiceOptions' && (skillType === 'delayed_choice_support' || skillName.includes('星環'))) {
+    return [
+      { effectType: 'link_plus_3', label: 'LINK+3', amount: 3 },
+      { effectType: 'all_critical_up', label: '味方全体critical率+50%', rate: 0.50, duration: 1 },
+      { effectType: 'all_guard', label: '味方全体ガード（ダメージ80%カット）', rate: 0.80, duration: 2 },
+    ];
+  }
+
+  return [];
+}
+
+function _queueDelayedSupport(ally, skill) {
+  if (!_bs.delayedActions) _bs.delayedActions = [];
+
+  // 支援予約は「次の自ターン開始時」が基本。明示指定があればそれを優先。
+  const delayTurns = Math.max(1, Number(skill.delayTurns || 1));
+  const randomOptions = _getDelayedSupportOptions32(ally, skill, 'randomOptions');
+  const choiceOptions = _getDelayedSupportOptions32(ally, skill, 'choiceOptions');
+
+  _bs.delayedActions.push({
+    id: uid(),
+    kind: 'support',
+    ownerUid: ally._uid,
+    ownerName: ally.name,
+    ownerElement: ally.element || null,
+
+    skillId: skill.id,
+    skillName: skill.name,
+    isUltimate: !!skill.isUltimate,
+    hitStyle: skill.hitStyle || 'support',
+
+    randomOptions,
+    choiceOptions,
+    selectedOption: skill.selectedOption ? deepClone(skill.selectedOption) : null,
+
+    trigger: skill.delayedTrigger || 'allyTurnStart',
+    triggerTurn: _bs.turn + delayTurns,
+  });
+
+  _log(`${ally.name} は「${skill.name}」を予約した。次の味方ターン開始時に発動する`);
+}
+
+function _pickDelayedSupportOption(action) {
+  if (!action) return null;
+
+  if (action.selectedOption) return deepClone(action.selectedOption);
+
+  const randomOptions = Array.isArray(action.randomOptions) ? action.randomOptions : [];
+  if (randomOptions.length > 0) {
+    return deepClone(randomOptions[Math.floor(Math.random() * randomOptions.length)]);
+  }
+
+  const choiceOptions = Array.isArray(action.choiceOptions) ? action.choiceOptions : [];
+  if (choiceOptions.length > 0) {
+    // UI側で選択肢指定がまだない場合の安全フォールバック。
+    // ULTが未選択で止まるよりは、先頭効果を発動させる。
+    return deepClone(choiceOptions[0]);
+  }
+
+  return null;
+}
+
+function _formatDelayedSupportOptionLabel(option) {
+  if (!option) return '効果なし';
+  if (option.label) return String(option.label);
+
+  const type = String(option.effectType || option.type || '');
+  const rate = Number(option.rate);
+  const amount = Number(option.amount);
+
+  if (type === 'link_plus_2' || type === 'link_plus_3' || type === 'link_plus') {
+    const n = Number.isFinite(amount) ? amount : Number(type.replace('link_plus_', '')) || 0;
+    return `LINK+${n}`;
+  }
+  if (type === 'lowest_full_heal') return '一番HPの低い味方を全回復';
+  if (type === 'all_critical_up' || type === 'critical_up' || type === 'crit_up') {
+    return `味方全体CRI+${Number.isFinite(rate) ? Math.round(rate * 100) : 20}%`;
+  }
+  if (type === 'all_guard' || type === 'damage_cut') {
+    return `味方全体ガード`;
+  }
+  return type || '効果';
+}
+
+function _applyDelayedSupportOption(action, option) {
+  if (!_bs || !option) return { label: '効果なし', detail: '発動できる効果がありません' };
+
+  const type = String(option.effectType || option.type || '');
+  const label = _formatDelayedSupportOptionLabel(option);
+  const source = {
+    _uid: action.ownerUid,
+    name: action.ownerName || '星読み',
+    side: 'ally',
+    row: 0,
+    col: 0,
+    element: action.ownerElement || null,
+  };
+
+  if (type === 'link_plus_2' || type === 'link_plus_3' || type === 'link_plus') {
+    if (!_bs.link) return { label, detail: 'LINKがありません' };
+
+    const amount = Math.max(0, Math.floor(Number(option.amount != null ? option.amount : String(type).replace('link_plus_', '')) || 0));
+    const before = Number(_bs.link.current || 0);
+
+    // ターン開始直後はLINKが満タンになりがちなので、星読み分はそのターンだけ一時的に上限も押し上げる。
+    // 例：6/6の状態でLINK+2を引いたら 8/8 まで保持できる。
+    const baseMax = Number(_bs.link.max || before);
+    const after = before + amount;
+    _bs.link.max = Math.max(baseMax, after);
+    _bs.link.current = after;
+    _bs.link.overCapUntilTurnEnd = _bs.link.max > Number(_bs.link.baseMax || calcLinkMax(_bs.turn));
+
+    const detail = _bs.link.max > baseMax
+      ? `LINK上限突破 ${before} → ${_bs.link.current}`
+      : `LINK ${before} → ${_bs.link.current}`;
+    _log(`${action.ownerName}の「${action.skillName}」により ${label} が発動（${detail}）`);
+    return { label, detail };
+  }
+
+  if (type === 'lowest_full_heal') {
+    const targets = (_bs.allies || []).filter(a => a && a.hp > 0);
+    if (!targets.length) {
+      _log(`${action.ownerName}の「${action.skillName}」が発動したが、回復対象がいません`);
+      return { label, detail: '回復対象なし' };
+    }
+
+    targets.sort((a, b) => {
+      const ar = a.hpMax > 0 ? a.hp / a.hpMax : 1;
+      const br = b.hpMax > 0 ? b.hp / b.hpMax : 1;
+      return ar - br;
+    });
+
+    const target = targets[0];
+    const before = Number(target.hp || 0);
+    target.hp = Number(target.hpMax || target.hp || 0);
+    const amount = Math.max(0, target.hp - before);
+    const detail = amount > 0 ? `${target.name} HP ${before} → ${target.hp}` : `${target.name} はHP満タン`;
+
+    _log(`${action.ownerName}の「${action.skillName}」により ${target.name} が全回復`);
+    if (amount > 0) {
+      _emit('heal', {
+        source,
+        target: { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+        amount,
+        kind: 'heal',
+        skillId: action.skillId || null,
+        skillName: action.skillName || null,
+        isUltimate: !!action.isUltimate,
+        hitStyle: action.hitStyle || 'support',
+        bs: _snapshot(),
+      });
+    }
+    return { label, detail };
+  }
+
+  if (type === 'all_critical_up' || type === 'critical_up' || type === 'crit_up') {
+    const rate = Math.max(0, Math.min(1, Number(option.rate != null ? option.rate : 0.20)));
+    const duration = Math.max(1, Number(option.duration || 1));
+    const targets = (_bs.allies || []).filter(a => a && a.hp > 0);
+
+    targets.forEach(target => {
+      if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+      const applied = {
+        type: 'critical_up',
+        rate,
+        duration,
+        sourceName: action.skillName || action.ownerName || '星読み',
+      };
+      target.statusEffects.push(applied);
+      _emitStatusChange32(target, applied, source, 'delayed_support');
+    });
+
+    const detail = `味方全体にCRI+${Math.round(rate * 100)}% / ${duration}T`;
+    _log(`${action.ownerName}の「${action.skillName}」により ${detail} が付与された`);
+    return { label: `CRI+${Math.round(rate * 100)}%`, detail };
+  }
+
+  if (type === 'all_guard' || type === 'damage_cut') {
+    const rate = Math.max(0, Math.min(0.95, Number(option.rate != null ? option.rate : 0.80)));
+    const duration = Math.max(1, Number(option.duration || 2));
+    const targets = (_bs.allies || []).filter(a => a && a.hp > 0);
+
+    targets.forEach(target => {
+      if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+      const applied = {
+        type: 'damage_cut',
+        rate,
+        duration,
+        sourceName: action.skillName || action.ownerName || '星読み',
+      };
+      target.statusEffects.push(applied);
+      _emitStatusChange32(target, applied, source, 'delayed_support');
+    });
+
+    const detail = `味方全体にガード / ダメージ${Math.round(rate * 100)}%カット / ${duration}T`;
+    _log(`${action.ownerName}の「${action.skillName}」により ${detail} が付与された`);
+    return { label: 'ガード', detail };
+  }
+
+  _log(`${action.ownerName}の「${action.skillName}」が発動したが、未対応効果です: ${type}`);
+  return { label, detail: `未対応効果: ${type}` };
+}
+
+async function _executeDelayedSupport(action) {
+  const option = _pickDelayedSupportOption(action);
+  const result = _applyDelayedSupportOption(action, option);
+
+  _renderUI();
+
+  const owner = action.ownerName || 'スイ';
+  const skill = action.skillName || '星読みの予兆';
+  const label = result && result.label ? result.label : _formatDelayedSupportOptionLabel(option);
+  const detail = result && result.detail ? result.detail : label;
+
+  // 星読み系はランダム効果の把握が重要なので、通常アクションより長めに見せる。
+  // 次の TURNS 表示に即上書きされて「何が起きたか分からない」状態を防ぐ。
+  await _centerTextWait(
+    `${owner}の${skill}`,
+    `${label} が発動：${detail}`,
+    Math.max(2200, B32_WAIT.action || 0)
+  );
+
+  await wait(420);
+}
+
 async function _processDelayedActions(trigger) {
   if (!_bs || !_bs.delayedActions || _bs.delayedActions.length === 0) return;
 
@@ -1451,6 +1878,11 @@ async function _processDelayedActions(trigger) {
 
   for (const action of ready) {
     if (_bs.result) break;
+
+    if (action && action.kind === 'support') {
+      await _executeDelayedSupport(action);
+      continue;
+    }
 
     await _centerTextWait(action.skillName || 'DELAYED ATTACK', '未来干渉 発動', B32_WAIT.action);
 
@@ -1739,24 +2171,84 @@ function _executeDelayedAttack(action) {
     return (targets || []).filter(target => _unitHasStatus32(target, requiredStatus));
   }
 
+
+  // 予約攻撃系スキル判定。
+  // characters.js 側で type 名が揺れても、delayTurns / delayedTrigger を持つものは
+  // 「今は攻撃せず、未来ターンに発動するスキル」として成功扱いにする。
+  function _isDelayedAttackSkill(skill) {
+    if (!skill) return false;
+    const t = String(skill.type || '').toLowerCase();
+
+    // スイ系の未来支援は攻撃ではないため、別ルートで処理する。
+    if (_isDelayedSupportSkill(skill)) return false;
+
+    const delayedAttackTypes = new Set([
+      'delayed_attack',
+      'delayed',
+      'reserve_attack',
+      'reserved_attack',
+      'future_attack',
+      'forecast_attack',
+    ]);
+    if (delayedAttackTypes.has(t)) return true;
+
+    // characters_32 変換で通常スキルに delayTurns:0 が入ることがある。
+    // 0 / null / undefined は通常攻撃として扱い、予約攻撃にはしない。
+    const delayTurns = Number(skill.delayTurns);
+    return Number.isFinite(delayTurns) && delayTurns > 0 && !!skill.delayedTrigger;
+  }
+
+  // 予約支援系スキル判定。
+  // 例：スイ「星読みの予兆」= 次の味方ターン開始時にランダム支援が発動。
+  function _isDelayedSupportSkill(skill) {
+    if (!skill) return false;
+    const t = String(skill.type || '').toLowerCase();
+    return t === 'delayed_random_support' ||
+      t === 'delayed_choice_support' ||
+      t === 'delayed_support' ||
+      t === 'reserved_support' ||
+      t === 'future_support' ||
+      Array.isArray(skill.randomOptions) ||
+      Array.isArray(skill.choiceOptions);
+  }
+
   // ============================================================
   // スキル実行（味方）
   // ============================================================
   function executeAllySkill(allyUid, skillId) {
     if (_bs.phase !== 'skill') {
       _log('スキルフェーズではありません');
+      console.warn('[Battle32] executeAllySkill failed: phase is not skill', { phase: _bs && _bs.phase, allyUid, skillId });
       return false;
     }
 
     const ally = _bs.allies.find(u => u._uid === allyUid);
-    if (!ally || ally.hp <= 0) return false;
+    if (!ally || ally.hp <= 0) {
+      _log('スキル使用対象の味方が見つかりません');
+      console.warn('[Battle32] executeAllySkill failed: ally not found or dead', { allyUid, skillId, ally });
+      return false;
+    }
 
     const skill = ally.skills.find(s => s.id === skillId);
-    if (!skill) return false;
+    if (!skill) {
+      _log('スキル情報が見つかりません');
+      console.warn('[Battle32] executeAllySkill failed: skill not found', { allyUid, skillId, skills: ally.skills });
+      return false;
+    }
 
     // ULTかどうかでLINK判定タイプを切り替え
     const actionType = skill.isUltimate ? 'ult' : 'skill';
-    if (!_canUsePlayerAction(actionType, allyUid, skillId)) return false;
+    if (!_canUsePlayerAction(actionType, allyUid, skillId)) {
+      console.warn('[Battle32] executeAllySkill failed: cannot use player action', {
+        allyUid,
+        skillId,
+        skillName: skill.name,
+        actionType,
+        link: _bs && _bs.link,
+        unitActionHistory: _bs && _bs.unitActionHistory && _bs.unitActionHistory[allyUid],
+      });
+      return false;
+    }
 
     if ((skill.shinkiCost || 0) > ally.shinki) {
       _log(`${ally.name}: 神気が不足しています`);
@@ -1774,6 +2266,7 @@ function _executeDelayedAttack(action) {
         : BR.getUnitsFromRange32(ally, rangeKey, _bs.allies).filter(u => u.hp > 0));
 
     const stype = skill.type;
+    const isDelayedAttack = _isDelayedAttackSkill(skill);
     let noTargets = false;
 
     // ── repeat_skill：このターン中、直前に成功した味方通常スキルを再発動 ──
@@ -1946,8 +2439,14 @@ if (stype === 'repeat_skill') {
   const ok = _executeSummonObjectSkill(ally, skill);
   if (!ok) noTargets = true;
 
+// ── delayed_random_support / delayed_choice_support：未来支援 ─────
+} else if (_isDelayedSupportSkill(skill)) {
+  _queueDelayedSupport(ally, skill);
+
 // ── delayed_attack：未来予約攻撃 ─────────────────────────────
-} else if (stype === 'delayed_attack') {
+} else if (isDelayedAttack) {
+  // 予約攻撃は「今この瞬間に敵へ命中しない」ことが正常なので、
+  // 範囲内に敵がいなくても失敗扱いにしない。
   _queueDelayedAttack(ally, skill);
 
 // ── random_cell_attack：盤面ランダムマス攻撃 ────────────────
@@ -2196,7 +2695,8 @@ if (_bs.result) {
 if (
   !noTargets &&
   skill.type !== 'repeat_skill' &&
-  skill.type !== 'delayed_attack' &&
+  !_isDelayedAttackSkill(skill) &&
+  !_isDelayedSupportSkill(skill) &&
   !skill.isUltimate
 ) {
   _bs.lastAllySkillThisTurn = {
@@ -2426,8 +2926,10 @@ return true;
         }
         target.stunned = true;
         if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
-        target.statusEffects.push({ type: 'stun', duration: eff.duration || 1 });
+        const applied = { type: 'stun', duration: eff.duration || 1 };
+        target.statusEffects.push(applied);
         _log(`${target.name} はスタンした`);
+        _emitStatusChange32(target, applied, source, 'effect');
         return;
       }
 
@@ -2440,7 +2942,7 @@ return true;
           return;
         }
         if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
-        target.statusEffects.push({
+        const applied = {
           type: 'poison',
           duration: eff.duration || 2,
           rate: eff.rate != null ? Number(eff.rate) : 0.25,
@@ -2448,8 +2950,10 @@ return true;
           sourceName: source ? source.name : '毒',
           sourceUid: source ? source._uid : null,
           sourceElement: source ? source.element : null,
-        });
+        };
+        target.statusEffects.push(applied);
         _log(`${target.name} は毒に侵された（${eff.duration || 2}T）`);
+        _emitStatusChange32(target, applied, source, 'effect');
         return;
       }
 
@@ -2464,17 +2968,21 @@ return true;
 
         // 重複した場合はターン数を延長/更新。複数スタックにはしない。
         const existing = target.statusEffects.find(e => e && e.type === 'yoi_no_sousou');
+        let applied;
         if (existing) {
           existing.duration = Math.max(existing.duration || 0, eff.duration || 2);
           existing.counterMultiplier = eff.counterMultiplier != null ? Number(eff.counterMultiplier) : 1.0;
+          applied = existing;
         } else {
-          target.statusEffects.push({
+          applied = {
             type: 'yoi_no_sousou',
             duration: eff.duration || 2,
             counterMultiplier: eff.counterMultiplier != null ? Number(eff.counterMultiplier) : 1.0,
-          });
+          };
+          target.statusEffects.push(applied);
         }
         _log(`${target.name} は「酔ノ想葬」に入った（${eff.duration || 2}T）`);
+        _emitStatusChange32(target, applied, source, 'effect');
         return;
       }
 
@@ -2483,12 +2991,15 @@ return true;
         _log(`${target.name} に ${eff.type} — 外れ`);
         return;
       }
-      target.statusEffects.push({
+      if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+      const applied = {
         type:     eff.type,
         duration: eff.duration || 1,
         rate:     eff.rate,
-      });
+      };
+      target.statusEffects.push(applied);
       _log(`${target.name} に ${eff.type} を付与（${eff.duration || 1}T）`);
+      _emitStatusChange32(target, applied, source, 'effect');
     });
   }
 
@@ -3364,8 +3875,12 @@ function doBossLineAttack(boss) {
     _bs.lastAllySkillThisTurn = null;
 
     // LINK全回復
+    // 通常ターン開始時は基本上限に戻す。
+    // 星読みなどの遅延支援でLINK+が発動した場合は、この後の allyTurnStart 処理内で
+    // そのターンだけ max/current を押し上げ、6以上の一時保有を許可する。
     if (_bs.link) {
-      _bs.link.max = calcLinkMax(_bs.turn);
+      _bs.link.baseMax = calcLinkMax(_bs.turn);
+      _bs.link.max = _bs.link.baseMax;
       _bs.link.current = _bs.link.max;
     }
 
@@ -3780,6 +4295,7 @@ function doBossLineAttack(boss) {
     if (!_spendLink(summonCost, `${rEntry.name} 召喚`)) return false;
 
     const unit = makeAlly(rEntry.charDef, row, col);
+    _applyRogueliteOptionsToUnit(unit);
     _bs.allies.push(unit);
     rEntry.status = 'deployed';
     rEntry.deployedUid = unit._uid;
@@ -3921,7 +4437,12 @@ function doBossLineAttack(boss) {
       _spendLink(linkCost, item.name);
       const add = Math.max(0, Math.floor(Number(item.value || 0)));
       const before = Number(_bs.link.current || 0);
-      _bs.link.current = Math.min(Number(_bs.link.max || before + add), before + add);
+      const after = before + add;
+      // LINK回復アイテムも、最大値時に無駄撃ちにならないよう一時的に上限突破を許可する。
+      const baseMax = Number(_bs.link.max || before);
+      _bs.link.max = Math.max(baseMax, after);
+      _bs.link.current = after;
+      _bs.link.overCapUntilTurnEnd = _bs.link.max > Number(_bs.link.baseMax || calcLinkMax(_bs.turn));
       _log(`${item.name}：LINK ${before} → ${_bs.link.current}`);
       consumeItem();
 
@@ -3951,6 +4472,71 @@ function doBossLineAttack(boss) {
       _log(`${item.name}：フィールド上の全敵のHPを${Math.round(rate * 100)}%削った`);
       consumeItem();
 
+
+    } else if (item.type === 'critical_up' || item.type === 'crit_up') {
+      const target = item.target === 'ally_all'
+        ? null
+        : getLiveAlly(payload && payload.targetUid);
+      const targets = item.target === 'ally_all'
+        ? (_bs.allies || []).filter(u => u && u.hp > 0)
+        : (target ? [target] : []);
+      if (!targets.length) { _log('クリティカル上昇対象がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      const amount = Math.max(0, Math.min(1, Number(item.value ?? item.rate ?? 0.10)));
+      targets.forEach(t => {
+        const base = Number(t.criticalRate ?? t.critRate ?? DEFAULT_ALLY_CRITICAL_RATE_32);
+        t.criticalRate = Math.max(0, Math.min(1, base + amount));
+        t.critRate = t.criticalRate;
+        if (!Array.isArray(t.statusEffects)) t.statusEffects = [];
+        const applied = { type: 'critical_up', rate: amount, duration: item.duration || 1, sourceName: item.name };
+        t.statusEffects.push(applied);
+        _emitStatusChange32(t, applied, { name: item.name, side: 'ally', row: t.row, col: t.col }, 'item');
+      });
+      _log(`${item.name}：${targets.map(t => t.name).join('・')} のクリティカル率+${Math.round(amount * 100)}%`);
+      consumeItem();
+
+    } else if (item.type === 'atk_up') {
+      const target = item.target === 'ally_all'
+        ? null
+        : getLiveAlly(payload && payload.targetUid);
+      const targets = item.target === 'ally_all'
+        ? (_bs.allies || []).filter(u => u && u.hp > 0)
+        : (target ? [target] : []);
+      if (!targets.length) { _log('ATK上昇対象がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      const raw = Number(item.value ?? item.rate ?? 0.20);
+      const rate = raw > 1 ? raw : 1 + raw;
+      targets.forEach(t => {
+        if (!Array.isArray(t.statusEffects)) t.statusEffects = [];
+        const applied = { type: 'atk_up', rate, duration: item.duration || 1, sourceName: item.name };
+        t.statusEffects.push(applied);
+        _emitStatusChange32(t, applied, { name: item.name, side: 'ally', row: t.row, col: t.col }, 'item');
+      });
+      _log(`${item.name}：${targets.map(t => t.name).join('・')} のATK+${Math.round((rate - 1) * 100)}%`);
+      consumeItem();
+
+    } else if (item.type === 'hp_up') {
+      const target = item.target === 'ally_all'
+        ? null
+        : getLiveAlly(payload && payload.targetUid);
+      const targets = item.target === 'ally_all'
+        ? (_bs.allies || []).filter(u => u && u.hp > 0)
+        : (target ? [target] : []);
+      if (!targets.length) { _log('HP上昇対象がいません'); return false; }
+      _spendLink(linkCost, item.name);
+      const amount = Math.max(0, Number(item.value ?? item.rate ?? 0.20));
+      targets.forEach(t => {
+        const bonus = Math.max(1, Math.round(Number(t.hpMax || 1) * amount));
+        t.hpMax += bonus;
+        t.hp = Math.min(t.hpMax, Number(t.hp || 0) + bonus);
+        if (!Array.isArray(t.statusEffects)) t.statusEffects = [];
+        const applied = { type: 'hp_up', rate: amount, duration: item.duration || 1, sourceName: item.name };
+        t.statusEffects.push(applied);
+        _emitStatusChange32(t, applied, { name: item.name, side: 'ally', row: t.row, col: t.col }, 'item');
+      });
+      _log(`${item.name}：${targets.map(t => t.name).join('・')} の最大HP+${Math.round(amount * 100)}%`);
+      consumeItem();
+
     } else if (item.type === 'guard') {
       const target = getLiveAlly(payload && payload.targetUid);
       if (!target) { _log('ガード対象がいません'); return false; }
@@ -3958,8 +4544,10 @@ function doBossLineAttack(boss) {
       if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
       target.statusEffects = target.statusEffects.filter(e => e && e.type !== 'damage_cut');
       const rate = Math.max(0, Math.min(0.95, Number(item.value || 0.5)));
-      target.statusEffects.push({ type: 'damage_cut', rate, duration: item.duration || 1, sourceName: item.name });
+      const applied = { type: 'damage_cut', rate, duration: item.duration || 1, sourceName: item.name };
+      target.statusEffects.push(applied);
       _log(`${item.name}：${target.name} が1ターン、ダメージ${Math.round(rate * 100)}%カット`);
+      _emitStatusChange32(target, applied, { name: item.name, side: 'ally', row: target.row, col: target.col }, 'item');
       consumeItem();
 
     } else if (item.type === 'stun_enemy') {
@@ -3968,8 +4556,10 @@ function doBossLineAttack(boss) {
       _spendLink(linkCost, item.name);
       target.stunned = true;
       if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
-      target.statusEffects.push({ type: 'stun', duration: item.duration || 1, sourceName: item.name });
+      const applied = { type: 'stun', duration: item.duration || 1, sourceName: item.name };
+      target.statusEffects.push(applied);
       _log(`${item.name}：${target.name} をスタンした`);
+      _emitStatusChange32(target, applied, { name: item.name, side: 'ally', row: target.row, col: target.col }, 'item');
       consumeItem();
 
     } else {
@@ -4036,6 +4626,8 @@ window.Battle32 = {
   getLinkCostForAction: (type, unitUid, skillId) => _getLinkCostForAction(type, unitUid, skillId),
   getElementRate: getElementRate32,
   getElementLabel: getElementLabel32,
+  getElementKey: getElementKey32,
+  normalizeElements: normalizeElements32,
 
   getState: () => _bs ? _snapshot() : null,
   getBS: () => _bs,

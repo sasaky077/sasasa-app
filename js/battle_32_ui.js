@@ -452,27 +452,83 @@ function enemyAttackLabel(attackRange) {
  return map[attackRange] || attackRange || '不明';
 }
 
+const B32_ELEMENT_LABELS = {
+  logos: 'ロゴス',
+  chaos: 'ケイオス',
+  mystis: 'ミスティス',
+};
+
+const B32_ELEMENT_ORDER = ['logos', 'mystis', 'chaos'];
+
+function normalizeUnitElements(element) {
+  if (window.Battle32 && typeof window.Battle32.normalizeElements === 'function') {
+    const list = window.Battle32.normalizeElements(element);
+    if (Array.isArray(list) && list.length) return list;
+  }
+
+  if (Array.isArray(element)) {
+    return [...new Set(element.map(v => String(v || '').trim()).filter(Boolean))]
+      .filter(v => B32_ELEMENT_LABELS[v]);
+  }
+
+  if (typeof element === 'string') {
+    const raw = element.trim();
+    if (!raw) return [];
+    const parts = raw
+      .split(/[+,\s/|]+|_/)
+      .map(v => v.trim())
+      .filter(Boolean)
+      .filter(v => B32_ELEMENT_LABELS[v]);
+    if (parts.length) return [...new Set(parts)];
+    return B32_ELEMENT_LABELS[raw] ? [raw] : [];
+  }
+
+  return [];
+}
+
+function unitElementKey(element) {
+  if (window.Battle32 && typeof window.Battle32.getElementKey === 'function') {
+    const key = window.Battle32.getElementKey(element);
+    if (key) return key;
+  }
+
+  const list = normalizeUnitElements(element);
+  return B32_ELEMENT_ORDER
+    .filter(e => list.includes(e))
+    .join('_');
+}
+
 function unitElementLabel(element) {
- const map = {
-   logos: 'ロゴス',
-   chaos: 'ケイオス',
-   mystis: 'ミスティス',
- };
- return map[element] || element || '無属性';
+  if (window.Battle32 && typeof window.Battle32.getElementLabel === 'function') {
+    return window.Battle32.getElementLabel(element);
+  }
+
+  const list = normalizeUnitElements(element);
+  if (!list.length) return element || '無属性';
+  return B32_ELEMENT_ORDER
+    .filter(e => list.includes(e))
+    .map(e => B32_ELEMENT_LABELS[e])
+    .join('+');
 }
 
 function unitElementIcon(element) {
+  const key = unitElementKey(element);
   const map = {
     chaos:  'images/icon_chaos.webp',
     logos:  'images/icon_logos.webp',
     mystis: 'images/icon_mystis.webp',
+
+    logos_mystis: 'images/icon_logos_mystis.webp',
+    logos_chaos: 'images/icon_logos_chaos.webp',
+    mystis_chaos: 'images/icon_mystis_chaos.webp',
+    logos_mystis_chaos: 'images/icon_logos_mystis_chaos.webp',
   };
-  return map[element] || '';
+  return map[key] || '';
 }
 
 function unitElementClass(element) {
-  const map = { chaos: 'chaos', logos: 'logos', mystis: 'mystis' };
-  return map[element] || 'none';
+  const key = unitElementKey(element);
+  return key || 'none';
 }
 
 
@@ -4936,6 +4992,37 @@ function _showImpactShake(unitInfo) {
    }, 45);
  }
 
+
+function _showStatusChangeFx(data) {
+ if (!data || !data.target) return;
+ const pos = _getUnitScreenPos(data.target);
+ if (!pos) return;
+ const tone = data.tone || 'status';
+ const label = data.label || (data.effect && data.effect.type) || 'STATUS';
+
+ const el = document.createElement('div');
+ el.className = `b32-status-change-pop ${tone}`;
+ el.textContent = label;
+ el.style.left = `${pos.x}px`;
+ el.style.top = `${pos.y - 18}px`;
+ document.body.appendChild(el);
+
+ const ring = document.createElement('div');
+ ring.className = `b32-status-change-ring ${tone}`;
+ ring.style.left = `${pos.x}px`;
+ ring.style.top = `${pos.y}px`;
+ document.body.appendChild(ring);
+
+ setTimeout(() => {
+   if (el.parentNode) el.parentNode.removeChild(el);
+   if (ring.parentNode) ring.parentNode.removeChild(ring);
+ }, 1150);
+}
+
+function _onStatusChangeEvent(data) {
+ _showStatusChangeFx(data);
+}
+
  function _onDamageEvent(data) {
  if (!data || !data.target) return;
 
@@ -4949,7 +5036,12 @@ function _showImpactShake(unitInfo) {
  // 味方→敵 / 敵→味方のダメージ時に、俯瞰グリッドから一瞬アップ演出へ切り替える。
  // 味方1体が複数敵へ同時ヒットした場合は、短時間バッファして複数対象アップ演出に束ねる。
  // rapid_multi はアップ演出側で敵画像上部に5連撃を出すため、グリッド側の数値・フラッシュは出さない。
- _queueAttackCinematic(data);
+ try {
+   _queueAttackCinematic(data);
+ } catch (e) {
+   // 攻撃アップ演出が壊れても、通常の盤面ヒット演出とHP更新表示は止めない。
+   console.error('[Battle32UI] attack cinematic failed', e, data);
+ }
  if (isRapidMulti) return;
 
  // shakeVariant: ULT > heavy > normal
@@ -5022,6 +5114,7 @@ function _onHealEvent(data) {
  // 公開：hookBattle32Start から呼べるように
  window._b32OnDamage = _onDamageEvent;
  window._b32OnHeal = _onHealEvent;
+ window._b32OnStatusChange = _onStatusChangeEvent;
  window._b32OnCoreDamage = _showCoreDamageEvent;
 
  window._b32EndSkill = function () {
@@ -5810,6 +5903,84 @@ function b32ReturnToStageSelect() {
  return '';
 }
 
+
+function b32StatusEffectBadgeList(unit) {
+ const effects = Array.isArray(unit && unit.statusEffects) ? unit.statusEffects : [];
+ const passiveBuffs = Array.isArray(unit && unit.rogueliteBuffs) ? unit.rogueliteBuffs : [];
+ const badges = [];
+ const pushBadge = (cls, text, priority = 50) => {
+   if (text && !badges.some(b => b.text === text)) badges.push({ cls, text, priority });
+ };
+ const fmtDur = (e) => e && e.duration ? `${e.duration}T` : '';
+ const fmtPctFromAdd = (value, fallback) => {
+   const n = Number(value);
+   if (!Number.isFinite(n)) return fallback;
+   return Math.round((n <= 1 ? n : n / 100) * 100);
+ };
+ const fmtPctFromMultiplier = (value, fallback, up = true) => {
+   const n = Number(value);
+   if (!Number.isFinite(n)) return fallback;
+   return up ? Math.round((n - 1) * 100) : Math.round((1 - n) * 100);
+ };
+
+ // ローグライト報酬などの永続補正。実数値には別途反映済みなので、ここでは表示だけ行う。
+ passiveBuffs.forEach(e => {
+   if (!e) return;
+   const rate = Number(e.rate);
+   const type = e.type || e.kind;
+   if (type === 'roguelite_atk_up' || type === 'atk_bonus' || type === 'atk_up_passive') {
+     pushBadge('buff passive', `ATK+${fmtPctFromAdd(rate, 10)}%`, 10);
+   } else if (type === 'roguelite_hp_up' || type === 'hp_bonus' || type === 'hp_up_passive') {
+     pushBadge('buff passive', `HP+${fmtPctFromAdd(rate, 10)}%`, 11);
+   } else if (type === 'roguelite_critical_up' || type === 'critical_bonus' || type === 'crit_bonus') {
+     pushBadge('buff passive', `CRI+${fmtPctFromAdd(rate, 10)}%`, 12);
+   }
+ });
+
+ effects.forEach(e => {
+   if (!e) return;
+   const dur = fmtDur(e);
+   const rate = Number(e.rate);
+   if (e.type === 'atk_up') {
+     const pct = fmtPctFromMultiplier(rate, 50, true);
+     pushBadge('buff', `ATK+${pct}%${dur ? ` ${dur}` : ''}`, 20);
+   } else if (e.type === 'atk_down') {
+     const pct = fmtPctFromMultiplier(rate, 30, false);
+     pushBadge('debuff', `ATK-${pct}%${dur ? ` ${dur}` : ''}`, 21);
+   } else if (e.type === 'critical_up' || e.type === 'crit_up') {
+     const pct = fmtPctFromAdd(e.rate != null ? e.rate : e.amount, 20);
+     pushBadge('buff', `CRI+${pct}%${dur ? ` ${dur}` : ''}`, 22);
+   } else if (e.type === 'critical_down' || e.type === 'crit_down') {
+     const pct = fmtPctFromAdd(e.rate != null ? e.rate : e.amount, 20);
+     pushBadge('debuff', `CRI-${pct}%${dur ? ` ${dur}` : ''}`, 23);
+   } else if (e.type === 'hp_up') {
+     const pct = fmtPctFromAdd(e.rate != null ? e.rate : e.amount, 20);
+     pushBadge('buff', `HP+${pct}%${dur ? ` ${dur}` : ''}`, 24);
+   } else if (e.type === 'damage_cut') {
+     const pct = Number.isFinite(rate) ? Math.round(rate * 100) : 50;
+     pushBadge('buff', `DMG-${pct}%${dur ? ` ${dur}` : ''}`, 25);
+   } else if (e.type === 'poison') {
+     pushBadge('debuff', `毒${dur ? ` ${dur}` : ''}`, 40);
+   } else if (e.type === 'yoi_no_sousou') {
+     pushBadge('buff', `反撃${dur ? ` ${dur}` : ''}`, 30);
+   }
+ });
+
+ if (unit && (unit.stunned || effects.some(e => e && e.type === 'stun'))) {
+   const stun = effects.find(e => e && e.type === 'stun');
+   pushBadge('debuff', `STUN${stun && stun.duration ? ` ${stun.duration}T` : ''}`, 5);
+ }
+
+ return badges.sort((a, b) => a.priority - b.priority).slice(0, 4);
+}
+
+function b32StatusEffectBadgesHtml(unit, compact) {
+ const list = b32StatusEffectBadgeList(unit);
+ if (!list.length) return '';
+ const cls = compact ? 'b32-status-badges compact' : 'b32-status-badges';
+ return `<div class="${cls}">${list.map(b => `<span class="b32-status-badge ${b.cls}">${b32EscapeHtml(b.text)}</span>`).join('')}</div>`;
+}
+
  function renderUnit(u, phase) {
  // 生存判定：味方・敵ともに hp で統一
  const bsCurrent = _bs();
@@ -5854,12 +6025,16 @@ if (u.side === 'enemy') {
  const hpCol = hpColor(u.hp, u.hpMax);
  const elemIcon = unitElementIcon(u.element);
 
+ const statusHtml = b32StatusEffectBadgesHtml(u, true);
  inner += `
   <div class="b32-unit-foot-ui">
-    <div class="b32-hp-bar-wrap">
-      <div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div>
+    <div class="b32-unit-foot-main">
+      <div class="b32-hp-bar-wrap">
+        <div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div>
+      </div>
+      ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
     </div>
-    ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
+    ${statusHtml}
   </div>
  `;
 }
@@ -5868,12 +6043,16 @@ if (u.side === 'ally') {
  const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
  const elemIcon = unitElementIcon(u.element);
 
+ const statusHtml = b32StatusEffectBadgesHtml(u, true);
  inner += `
   <div class="b32-unit-foot-ui">
-    <div class="b32-hp-bar-wrap">
-      <div class="b32-hp-bar" style="width:${hpPct}%"></div>
+    <div class="b32-unit-foot-main">
+      <div class="b32-hp-bar-wrap">
+        <div class="b32-hp-bar" style="width:${hpPct}%"></div>
+      </div>
+      ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
     </div>
-    ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
+    ${statusHtml}
   </div>
  `;
 }
@@ -5937,8 +6116,6 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  // 盤面上の味方をタップ（スキルフェーズ）→ 行動選択メニューを表示
  window._b32OnSkillAllyTap = async function (allyUid) {
  if (_b32InputLocked) return;
- // 移動先選択中はキャラタップを無視する
- if (_moveMode && _selMoveAllyUid) return;
  const bs = _bs();
  if (!bs || bs.phase !== 'skill' || bs.result) return;
 
@@ -5952,19 +6129,46 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  // 実際の移動/スキル/ULT発動は各アクション側で個別に止める。
  const unitActionDone = !!unitHistory.unitActionDone;
 
- // 同じキャラを再タップしたらメニューを閉じる
- if (_selActionAllyUid === allyUid && !_moveMode && !_selSkillAllyUid) {
+ const wasTargetSelecting = !!(
+   _moveMode ||
+   _selMoveAllyUid ||
+   _selSkillAllyUid ||
+   _selSkillId ||
+   _summonMode ||
+   _itemMode
+ );
+
+ // 同じキャラを通常選択中に再タップした場合だけ、従来通りメニューを閉じる。
+ // 移動先/スキル対象/召喚/アイテム選択中のキャラタップは、必ず現在の操作をキャンセルして
+ // タップしたキャラの行動選択へ切り替える。
+ if (_selActionAllyUid === allyUid && !wasTargetSelecting) {
  _selActionAllyUid = null;
  renderBattle32UI();
  return;
  }
 
- // 行動選択メニューを表示
+ // 現在の選択モードをすべて解除して、タップしたキャラの行動選択メニューへ切り替える。
  _selActionAllyUid = allyUid;
  _selMoveAllyUid = null;
  _selSkillAllyUid = null;
  _selSkillId = null;
  _moveMode = false;
+
+ _summonMode = false;
+ _summonRosterId = null;
+ _selectedRosterId = null;
+
+ _itemMode = false;
+ _itemSlotIndex = null;
+ _itemPhase = null;
+ _itemTargetUid = null;
+
+ _selectedEnemyUid = null;
+ _selectedEnemyGuideMode = null;
+
+ _hideActionDetailPortal();
+ const rosterHitbox = document.getElementById('b32-roster-info-close-hitbox');
+ if (rosterHitbox && rosterHitbox.parentNode) rosterHitbox.parentNode.removeChild(rosterHitbox);
 
  renderBattle32UI();
  };
@@ -6349,9 +6553,20 @@ if (skillNow?.isUltimate) {
 // ULTのみ専用カットインを表示してから実行する。
 await _wait(skillNow?.isUltimate ? 60 : 0);
 
-const ok = window.Battle32.executeAllySkill(allyUid, skillId);
+let ok = false;
+try {
+  ok = window.Battle32.executeAllySkill(allyUid, skillId);
+} catch (e) {
+  console.error('[Battle32UI] executeAllySkill crashed', e, { allyUid, skillId, skillName: skillNow && skillNow.name });
+  // applyDamage後のUI演出コールバックなどで例外が出た場合でも、
+  // 内部状態のHPだけ更新済みのことがあるため、必ず再描画して見える化する。
+  renderBattle32UI();
+  _b32InputLocked = false;
+  return;
+}
 if (!ok) {
   console.warn('[Battle32UI] executeAllySkill failed');
+  renderBattle32UI();
   _b32InputLocked = false;
   return;
 }
@@ -6464,6 +6679,8 @@ await _afterCharTurnFlow();
  // 旧バッジ用（非表示にしてあるが変数は残す）
  const shinkiDots = shinkiDotsInner;
 
+ const statusBadgesHtml = b32StatusEffectBadgesHtml(ally, false);
+
  // タップ可否：行動済みでも情報確認のためタップ可能にする。
  // 実際の行動可否はアクションボタン/決定ボタン側で制御する。
  const tappable = !dead && bs.phase === 'skill' && !bs.result;
@@ -6495,6 +6712,7 @@ await _afterCharTurnFlow();
  <!-- 神気：HPの下に横並び -->
  ${shinkiRow}
  ${dead ? `<div class="b32-party-return">RETURN</div>` : ''}
+ ${statusBadgesHtml}
  ${(!!ally.stunned || (Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'stun')))
  ? `<div class="b32-party-status-badge stun">⚡STUN</div>` : ''}
  ${(Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'yoi_no_sousou'))
@@ -8060,6 +8278,10 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
  heal: (data) => {
  window._b32OnHeal && window._b32OnHeal(data);
  if (typeof userCb.heal === 'function') userCb.heal(data);
+ },
+ statusChange: (data) => {
+ window._b32OnStatusChange && window._b32OnStatusChange(data);
+ if (typeof userCb.statusChange === 'function') userCb.statusChange(data);
  },
  coreDamage: (data) => {
  window._b32OnCoreDamage && window._b32OnCoreDamage(data);

@@ -753,6 +753,7 @@ function _hideHud() {
     const totalTurns = Number(data.totalTurns || 0);
     const rank = data.rank || _getRankFromTurns(totalTurns);
     const reward = isWin ? (data.reward || await _grantRunRewards(rank)) : null;
+    const shinjuItem = isWin ? (data.shinjuItem || null) : null;
 
     const ov    = document.createElement('div');
     ov.id       = 'rl-result-overlay';
@@ -802,6 +803,11 @@ function _hideHud() {
             <div class="rl-result-reward-left"><span class="rl-result-reward-icon">✦</span><span>獲得EXP</span></div>
             <div class="rl-result-reward-value">+${reward.exp}</div>
           </div>
+          ${shinjuItem ? `
+          <div class="rl-result-reward-row">
+            <div class="rl-result-reward-left"><span class="rl-result-reward-icon">🌳</span><span>創世資源</span></div>
+            <div class="rl-result-reward-value">${shinjuItem.name} +${shinjuItem.exp}</div>
+          </div>` : ''}
         </div>
 
         ${ops && ops.length > 0 ? `
@@ -1233,9 +1239,15 @@ async function _onBattleEnd(result, payload) {
       : 0;
     const rank = _getRankFromTurns(totalTurns);
     const reward = await _grantRunRewards(rank);
+    const runId = (window.RogueliteRun && typeof window.RogueliteRun.getRunId === 'function')
+      ? window.RogueliteRun.getRunId()
+      : 'default';
+    const shinjuItem = (window.ShinjuProgress && typeof window.ShinjuProgress.grantBossItemFromRoguelite === 'function')
+      ? window.ShinjuProgress.grantBossItemFromRoguelite({ runId, rank, totalTurns })
+      : null;
     window.RogueliteRun.end('win');
     _hideHud();
-    await _showResult('win', ops, { totalTurns, rank, reward });
+    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem });
     return;
   }
 

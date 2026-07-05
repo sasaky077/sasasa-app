@@ -200,6 +200,12 @@
     <div class="home-event-banner-dots" id="home-event-banner-dots"></div>
   </div>
 
+  <!-- 神樹：アルケミア創世進捗への入口（右側アイコン） -->
+  <button class="shinju-home-entry" id="shinju-home-entry" type="button" onclick="openShinjuScreen()" aria-label="神樹へ移動">
+    <img class="shinju-home-entry-icon" src="images/shinju.webp" alt="神樹">
+    <span class="shinju-home-entry-badge" id="shinju-home-entry-badge" aria-hidden="true"></span>
+  </button>
+
   <div class="favorite-area">
     <div id="fav-display" style="position:relative;z-index:1;">
       <div class="fav-empty">ホーム画面にプリモアを設定しよう</div>
@@ -1139,21 +1145,57 @@ const RARITY_BOX_IMAGE = {
 const ELEMENT_ICON_IMAGE = {
   logos:  "images/icon_logos.webp",
   mystis: "images/icon_mystis.webp",
-  chaos:  "images/icon_chaos.webp"
+  chaos:  "images/icon_chaos.webp",
+  logos_mystis: "images/icon_logos_mystis.webp",
+  logos_chaos: "images/icon_logos_chaos.webp",
+  mystis_chaos: "images/icon_mystis_chaos.webp",
+  logos_mystis_chaos: "images/icon_logos_mystis_chaos.webp"
 };
 
 const ELEMENT_LABEL = {
   logos:  "LOGOS",
   mystis: "MYSTIS",
-  chaos:  "CHAOS"
+  chaos:  "CHAOS",
+  logos_mystis: "LOGOS / MYSTIS",
+  logos_chaos: "LOGOS / CHAOS",
+  mystis_chaos: "MYSTIS / CHAOS",
+  logos_mystis_chaos: "LOGOS / MYSTIS / CHAOS"
 };
 
+const ELEMENT_ORDER = ['logos', 'mystis', 'chaos'];
+
+function normalizeElementList(element){
+  if(Array.isArray(element)){
+    return element
+      .map(function(e){ return String(e || '').trim().toLowerCase(); })
+      .filter(function(e){ return ELEMENT_ORDER.indexOf(e) !== -1; });
+  }
+
+  if(typeof element === 'string'){
+    return element
+      .split(/[+_,/\s]+/)
+      .map(function(e){ return String(e || '').trim().toLowerCase(); })
+      .filter(function(e){ return ELEMENT_ORDER.indexOf(e) !== -1; });
+  }
+
+  return [];
+}
+
+function getElementKey(element){
+  var list = normalizeElementList(element);
+  var unique = [];
+  ELEMENT_ORDER.forEach(function(e){
+    if(list.indexOf(e) !== -1) unique.push(e);
+  });
+  return unique.join('_');
+}
+
 function getElementIconImage(element){
-  return ELEMENT_ICON_IMAGE[element] || "";
+  return ELEMENT_ICON_IMAGE[getElementKey(element)] || "";
 }
 
 function getElementLabel(element){
-  return ELEMENT_LABEL[element] || "";
+  return ELEMENT_LABEL[getElementKey(element)] || "";
 }
 
 function getElementCornerIconHTML(data, className){
@@ -1161,7 +1203,7 @@ function getElementCornerIconHTML(data, className){
   var icon = getElementIconImage(element);
   var label = getElementLabel(element);
   if(!icon) return '';
-  return '<img class="' + (className || 'chara-element-corner-icon') + '" src="' + icon + '" alt="' + label + '" onerror="this.style.display=\'none\'">';
+  return '<img class="' + (className || 'chara-element-corner-icon') + '" src="' + icon + '" alt="' + label + '" title="' + label + '" onerror="this.style.display=\'none\'">';
 }
 
 function renderResultElementBadge(data){
@@ -5582,6 +5624,7 @@ window.addEventListener('pagehide', function () {
 <script src="js/roguelite_options.js"></script>
 <script src="js/roguelite_run.js"></script>
 <script src="js/roguelite_reward.js"></script>
+<script src="js/shinju.js"></script>
 <script src="js/roguelite_controller.js"></script>
 
 </body>
