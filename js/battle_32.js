@@ -1972,6 +1972,8 @@ function _executeDelayedAttack(action) {
     if (!_bs.summons) _bs.summons = [];
 
     const duration = Math.max(1, Number(skill.summonDuration || 3));
+    const summonHp = Math.max(1, Number(skill.summonHp || 1));
+    const drainEffect = (skill.effects || []).find(e => e && e.type === 'drain') || null;
     const summon = {
       _uid: uid(),
       id: `${owner.id || 'ally'}_${skill.id || 'summon'}_set`,
@@ -1985,8 +1987,8 @@ function _executeDelayedAttack(action) {
       skillName: skill.name || null,
       row,
       col,
-      hp: 1,
-      hpMax: 1,
+      hp: summonHp,
+      hpMax: summonHp,
       atk: 0,
       element: owner.element || 'mystis',
       img: skill.summonImg || 'images/chara_16_set.webp',
@@ -2001,8 +2003,15 @@ function _executeDelayedAttack(action) {
         .filter(e => e && e.type !== 'drain' && (!e.target || e.target === 'enemy'))
         .map(e => ({ ...e })),
       summonRange: skill.summonRange || 'around9',
-      drainRate: ((skill.effects || []).find(e => e && e.type === 'drain') || {}).rate ?? 0.5,
-      drainTarget: ((skill.effects || []).find(e => e && e.type === 'drain') || {}).target || 'ally_all',
+      drainRate: drainEffect
+        ? Number(drainEffect.rate != null ? drainEffect.rate : 0.5)
+        : Number(skill.summonDrainRate != null ? skill.summonDrainRate : 0),
+      drainTarget: (drainEffect && drainEffect.target) || 'ally_all',
+
+      // ロゼの茨薔薇など、敵の直線系攻撃を遮る設置物。
+      // 敵の攻撃対象として先に受け、後ろの味方へ貫通させない。
+      blocksEnemyProjectiles: !!skill.summonBlockEnemyProjectiles,
+      blocksEnemyFrontAttack: !!skill.summonBlockEnemyFrontAttack,
     };
 
     _bs.summons.push(summon);
@@ -2091,7 +2100,7 @@ function _executeDelayedAttack(action) {
           }
         });
 
-        if (drainTotal > 0) {
+        if (drainTotal > 0 && Number(summon.drainRate || 0) > 0) {
           const rate = Number(summon.drainRate != null ? summon.drainRate : 0.5);
           const healAmount = Math.max(1, Math.round(drainTotal * rate));
           const healTargets = (summon.drainTarget === 'ally_self' || summon.drainTarget === 'self')
@@ -2644,6 +2653,21 @@ if (stype === 'repeat_skill') {
 } else {
   _log(`${a.name} は既にHP満タンです`);
 }
+
+      // healスキルに付随した防御バフなどを同じ対象へ付与する。
+      // heal効果そのものは上で処理済みなので二重回復を避ける。
+      const supportEffects = (skill.effects || []).filter(e =>
+        e && e.type !== 'heal' && (
+          e.target === 'ally' ||
+          e.target === 'ally_all' ||
+          e.target === 'ally_self' ||
+          e.target === 'self' ||
+          !e.target
+        )
+      );
+      if (supportEffects.length > 0) {
+        _applyEffects(supportEffects, a, ally);
+      }
     });
   }
 
@@ -3199,8 +3223,47 @@ return true;
       return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
     }
 
+    function _isEnemyProjectileBlocker(unit, range) {
+      if (!unit || unit.hp <= 0) return false;
+      if (unit.side !== 'summon') return false;
+      if (range === 'enemy_attack_front') {
+        return !!(unit.blocksEnemyProjectiles || unit.blocksEnemyFrontAttack);
+      }
+      return !!unit.blocksEnemyProjectiles;
+    }
+
+    function _getFirstEnemyLineTarget(enemy, includeFrontOnly) {
+      if (!enemy) return null;
+      const candidates = [
+        ...(_bs.summons || []).filter(u => _isEnemyProjectileBlocker(u, includeFrontOnly ? 'enemy_attack_front' : 'enemy_attack_line')),
+        ...(_bs.allies || []).filter(u => u && u.hp > 0),
+      ].filter(u => Number(u.col) === Number(enemy.col) && Number(u.row) > Number(enemy.row));
+
+      if (!candidates.length) return null;
+
+      candidates.sort((a, b) => Number(a.row) - Number(b.row));
+      const first = candidates[0];
+
+      if (includeFrontOnly) {
+        return Number(first.row) === Number(enemy.row) + 1 ? first : null;
+      }
+
+      return first;
+    }
+
     function getEnemyAttackTargets(enemy) {
       const range = enemy.attackRange || 'enemy_attack_front';
+
+      // ロゼの茨薔薇などの設置物は、敵の正面/直線攻撃を遮る。
+      // 直線系は最初に当たった味方または遮蔽物だけを返し、後ろへ貫通させない。
+      if (range === 'enemy_attack_line') {
+        const first = _getFirstEnemyLineTarget(enemy, false);
+        return first ? [first] : [];
+      }
+      if (range === 'enemy_attack_front') {
+        const first = _getFirstEnemyLineTarget(enemy, true);
+        return first ? [first] : [];
+      }
 
       // 生存している味方のみ対象
       const allies = _bs.allies.filter(a => a.hp > 0);
@@ -3296,16 +3359,20 @@ function doBossLineAttack(boss) {
     bs: _snapshot(),
   });
 
-  // 味方への強攻撃
-  _bs.allies.forEach(ally => {
-    if (ally.hp <= 0) return;
+  // 味方への強攻撃。
+  // 敵の直線攻撃と同様、遮蔽物が先にある場合はそこで止まり、後ろへ貫通しない。
+  const candidates = [
+    ...(_bs.summons || []).filter(u => _isEnemyProjectileBlocker(u, 'enemy_attack_line')),
+    ...(_bs.allies || []).filter(u => u && u.hp > 0),
+  ].filter(u => cells.has(`${u.row}-${u.col}`));
 
-    const key = `${ally.row}-${ally.col}`;
-    if (!cells.has(key)) return;
+  candidates.sort((a, b) => Number(a.row) - Number(b.row));
+  const target = candidates[0] || null;
 
+  if (target) {
     const dmg = Math.floor(boss.atk * BOSS_LINE_ATTACK_RATE);
     applyDamage(
-      ally,
+      target,
       dmg,
       boss,
       {
@@ -3315,7 +3382,7 @@ function doBossLineAttack(boss) {
         hitStyle: 'heavy',
       }
     );
-  });
+  }
 
   return true;
 }

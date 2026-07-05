@@ -1761,9 +1761,11 @@
 //* 敵クイック情報：グリッドに被らないよう上部へ逃がす */
 .b32-enemy-quick-info {
  position: fixed;
- left: 50%;
- top: calc(env(safe-area-inset-top, 0px) + 24px);
- transform: translateX(-50%);
+ left: auto;
+ top: auto;
+ right: auto;
+ bottom: auto;
+ transform: none !important;
  z-index: 1900000;
  pointer-events: none;
 
@@ -8553,4 +8555,136 @@
   box-shadow:
     0 0 7px rgba(120,210,255,.34),
     inset 0 0 5px rgba(255,255,255,.10);
+}
+
+
+/* ============================================================
+ 敵クイック情報パネル：ドラッグ移動対応
+ - タイトル行をドラッグして、バトル中だけ好きな位置へ移動できる
+ ============================================================ */
+.b32-enemy-quick-info {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.b32-enemy-quick-drag-handle {
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 2px 18px 2px 18px;
+  margin: -2px -4px 4px;
+  position: relative;
+}
+
+.b32-enemy-quick-drag-handle:active,
+.b32-enemy-quick-info.is-dragging .b32-enemy-quick-drag-handle {
+  cursor: grabbing;
+}
+
+.b32-enemy-quick-drag-mark {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  opacity: .42;
+  pointer-events: none;
+}
+
+.b32-enemy-quick-info.is-dragging {
+  transition: none !important;
+  opacity: .96;
+}
+
+
+/* 左吸い寄せ防止：敵クイック情報は transform 中央寄せを使わず left/top のpx座標で動かす */
+#b32-enemy-quick-info,
+.b32-enemy-quick-info {
+  transform: none !important;
+  transition: opacity .16s ease, left .12s ease, top .12s ease !important;
+}
+.b32-enemy-quick-info.is-dragging {
+  transition: none !important;
+}
+
+
+/* Enemy quick info drag performance patch */
+#b32-enemy-quick-info,
+.b32-enemy-quick-info {
+  transform: none !important;
+  will-change: auto;
+  contain: layout paint style;
+}
+
+#b32-enemy-quick-info.is-dragging,
+.b32-enemy-quick-info.is-dragging {
+  transition: none !important;
+  will-change: left, top;
+}
+
+/* ============================================================
+ 敵クイック情報：閉じるボタン右上・白色固定
+ ============================================================ */
+#b32-enemy-quick-info,
+.b32-enemy-quick-info {
+  position: fixed;
+  transform: none !important;
+  overflow: visible;
+  padding-top: 10px !important;
+}
+
+#b32-enemy-quick-info .b32-enemy-quick-title,
+.b32-enemy-quick-info .b32-enemy-quick-title {
+  padding-right: 28px;
+}
+
+#b32-enemy-quick-info .b32-enemy-quick-actions,
+.b32-enemy-quick-info .b32-enemy-quick-actions {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+#b32-enemy-quick-info .b32-enemy-quick-close,
+.b32-enemy-quick-info .b32-enemy-quick-close {
+  position: absolute !important;
+  top: 5px !important;
+  right: 6px !important;
+  left: auto !important;
+  bottom: auto !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  background: rgba(255,255,255,.12) !important;
+  color: #ffffff !important;
+
+  font-family: 'Cinzel', serif !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 0 8px rgba(255,255,255,.45) !important;
+  box-shadow: 0 0 8px rgba(255,255,255,.10) !important;
+
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  z-index: 4 !important;
+}
+
+#b32-enemy-quick-info .b32-enemy-quick-close:active,
+.b32-enemy-quick-info .b32-enemy-quick-close:active {
+  background: rgba(255,255,255,.22) !important;
+  color: #ffffff !important;
 }

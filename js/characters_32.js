@@ -47,6 +47,8 @@
     diag_x_2:      'diag_x_2',          // 斜めX字2マス
     twin_cross_4:  'twin_cross_4',       // ツイン十字4マス
     twin_star_8:   'twin_star_8',        // ツイン星8マス
+    cat_snipe_ally: 'cat_snipe_ally',      // ミア遠距離狙撃
+    cat_luminous_far_ally: 'cat_luminous_far_ally', // ミア遠距離ULT
   };
 
   function convertRangeTo32(range) {
@@ -120,6 +122,12 @@
     summonRange: skill.summonRange || null,
     summonTickMultiplier: skill.summonTickMultiplier || null,
     summonScale: skill.summonScale || null,
+
+    // 召喚物の追加挙動
+    summonHp: skill.summonHp || null,
+    summonDrainRate: skill.summonDrainRate,
+    summonBlockEnemyProjectiles: !!skill.summonBlockEnemyProjectiles,
+    summonBlockEnemyFrontAttack: !!skill.summonBlockEnemyFrontAttack,
 
     desc: skill.desc || '',
   };

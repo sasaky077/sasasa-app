@@ -48,7 +48,7 @@ const CHARACTERS = [
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
     favScale: 1.0, favOffsetY: -15,
-    uiScale: {panel: 1.0,battleBack: 1.2},
+    uiScale: {panel: 1.0,battleBack: 1.3},
     skills: [  
   { 
     id: 's1', 
@@ -250,18 +250,18 @@ const CHARACTERS = [
     ]},
 
      // ── id:17 ──────────────────────────────────
-  // スタン・ATKデバフで敵を妨害する妨害役。
+  // スタンと設置物で盤面を制圧する妨害役。
   { id: 17, name: 'ロゼ', rarity: 'r',
-    element: 'chaos',
-  role: '妨害寄り',
-  moveType: 'front_back_row3',
+    element: 'logos',
+    role: '盤面制圧寄り',
+    moveType: 'front_back_row3',
     costMax: 10,
     costStart: 6,
     costRegen: 5,
-    shinkiMax: 3,
+    shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 570, ATK: 280 },
+    stats: { HP: 680, ATK: 230 },
     img: 'images/chara_17.webp', 
     cutImg: 'images/chara_17_cut.webp', 
     ultImg: 'images/chara_17_cutin.webp',
@@ -274,50 +274,55 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
-        name: 'ラブリーソーン',
+        name: 'ローズ・バインド',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.00,
         criticalDamageRate: 1.5,
         type: 'debuff',
         multiplier: 0.0,
         range: 'fan_2row_3_ally',
         effects: [
-          { type: 'stun', target: 'enemy', hit: 100, duration: 2 }
+          { type: 'stun', target: 'enemy', hit: 75, duration: 1 },
+          { type: 'atk_down', target: 'enemy', hit: 100, duration: 1, rate: 0.85 }
         ],
         hitStyle: 'sleep',
-        desc: '射程：前方2段×横3マス。対象の敵に眠りを付与する（2ターンスタン）。' },
+        desc: '射程：前方2段×横3マス。対象の敵に75%で1ターンスタンを付与し、1ターンATKを15%低下させる。高確率だが確定ではない、盤面制圧用の通常スキル。' },
 
       {
-  id: 'ult',
-  name: 'イグゾースト・ガーデン',
-  linkCost: 5,
-  isUltimate: true,
-  hit: 100,
-  type: 'summon_object',
-  multiplier: 0.0,
-  range: 'front2',
-  summonName: '茨薔薇',
-  summonImg: 'images/chara_17_set.webp',
-  summonDuration: 3,
-  summonDistance: 2,
-  summonCount: 3,
-  summonOffsets: [
-    { dr: 0, dc: -1 },
-    { dr: 0, dc:  0 },
-    { dr: 0, dc:  1 },
-  ],
-  summonRange: 'around9',
-  summonTickMultiplier: 0.35,
-  summonScale: 1.35,
-  effects: [
-    { type: 'stun', target: 'enemy', hit: 40, duration: 1 }
-  ],
-  hitStyle: 'summon_tick',
-  desc: '射程：前方2マス先を中心に横3マス。3つの茨薔薇を設置する。茨薔薇は3ターンの間、周囲9マスの敵に毎ターンATK×0.35の継続ダメージを与え、40%の確率で1ターンスタンさせる。'}
-  ]},
-
+        id: 'ult',
+        name: 'イグゾースト・ガーデン',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        criticalRate: 0.00,
+        criticalDamageRate: 1.5,
+        type: 'summon_object',
+        multiplier: 0.0,
+        range: 'front2',
+        summonName: '茨薔薇',
+        summonImg: 'images/chara_17_set.webp',
+        summonDuration: 2,
+        summonDistance: 2,
+        summonCount: 3,
+        summonOffsets: [
+          { dr: 0, dc: -1 },
+          { dr: 0, dc:  0 },
+          { dr: 0, dc:  1 },
+        ],
+        summonRange: 'around9',
+        summonTickMultiplier: 0.15,
+        summonDrainRate: 0,
+        summonBlockEnemyProjectiles: true,
+        summonBlockEnemyFrontAttack: true,
+        summonScale: 1.35,
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 35, duration: 1 }
+        ],
+        hitStyle: 'summon_tick',
+        desc: '射程：前方2マス先を中心に横3マス。2ターン持続する茨薔薇を3つ設置する。茨薔薇は敵の直線系攻撃を遮り、後ろの味方を守る。毎ターン周囲9マスの敵に小ダメージを与え、35%で1ターンスタンさせる。'}
+    ]},
 
   // ── id:7 
 { id: 7, name: 'スイ', rarity: 'r',
@@ -380,7 +385,7 @@ const CHARACTERS = [
         desc: '任意の効果を選択して予約する。次の自ターン開始時、LINK+3／味方全体critical率+50%／味方全体ガード（ダメージ80%カット）のいずれかが発動する。' }
     ]},
 
-    // ── id:7 シグレ
+    // ── id:5
 { id: 5, name: 'シグレ', rarity: 'r',
     element: 'logos',
   role: 'テクニック寄り',
@@ -653,18 +658,18 @@ const CHARACTERS = [
 
   
   // ── id:19 ──────────────────────────────────
-  // 高HPと全体デバフが強力。実体化＋ATKダウンで攻防両立の壁。
+  // 高火力敵ステージで味方を立て直すヒーラー。
   { id: 19, name: 'アンジェ', rarity: 'r',
     element: 'logos',
-    role: '妨害寄り',
+    role: 'ヒーラー',
     moveType: 'silver',
     costMax: 14,
     costStart: 5,
     costRegen: 3,
-    shinkiMax: 6,
+    shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 800, ATK: 205 },
+    stats: { HP: 720, ATK: 190 },
     img: 'images/chara_19.webp', 
     cutImg: 'images/chara_19_cut.webp', 
     ultImg: 'images/chara_19_cutin.webp',
@@ -676,35 +681,41 @@ const CHARACTERS = [
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
       { id: 's1',
-        name: '浄化の風',
-        linkCost: 4,
+        name: 'セイクリッド・ミスト',
+        linkCost: 3,
         isUltimate: false,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.00,
         criticalDamageRate: 1.5,
-        type: 'attack',
-        multiplier: 0.8,
-        range: 'front2',
+        type: 'heal',
+        multiplier: 0.0,
+        healRate: 0.35,
+        range: 'ally_all',
         effects: [
-          { type: 'stun', target: 'enemy', duration: 1, hit: 100 }
+          { type: 'heal', target: 'ally_lowest', hit: 100, rate: 0.35 },
+          { type: 'damage_cut', target: 'ally', hit: 100, duration: 1, rate: 0.35 }
         ],
-        desc: '射程：前方直線2マス。対象の敵にATK×0.8のダメージを与え、1ターン行動不能にする。'
+        hitStyle: 'heal',
+        desc: 'HP割合が最も低い味方1体を最大HPの35%回復し、1ターン被ダメージを35%カットする。高火力敵の集中攻撃を受けた味方を立て直す。'
       },
       {
         id: 'ult',
-        name: '癒しの雨',
-        linkCost: 6,
+        name: 'レイン・オブ・サンクチュアリ',
+        linkCost: 5,
         isUltimate: true,
         hit: 100,
-        type: 'debuff',
-        multiplier: 0.8,
-        range: 'enemy_all',
+        criticalRate: 0.00,
+        criticalDamageRate: 1.5,
+        type: 'heal',
+        multiplier: 0.0,
+        healRate: 0.28,
+        range: 'ally_all',
         effects: [
-          { type: 'stun', target: 'enemy', duration: 1, hit: 30 },
-          { type: 'atk_down', target: 'enemy', duration: 2, hit: 100, rate: 0.7 }
+          { type: 'heal', target: 'ally_all', hit: 100, rate: 0.28 },
+          { type: 'damage_cut', target: 'ally_all', hit: 100, duration: 1, rate: 0.50 }
         ],
-        hitStyle: 'all',
-        desc: '射程：敵全体。対象の敵にATK×0.8のダメージを与える。さらに30%の確率で1ターン行動不能にし、2ターンATKを低下させる。'
+        hitStyle: 'heal_all',
+        desc: '味方全体のHPを最大HPの28%回復し、1ターン被ダメージを50%カットする。高火力ステージの敵フェーズを受け切るための防御型ULT。'
       }
     ]},
 
@@ -950,18 +961,18 @@ const CHARACTERS = [
 
 
   // ── id:9 ミア ──────────────────────────────────
-  // 猫モチーフ。白猫のように距離を詰め、爪跡で敵の攻撃力を落とす妨害寄りアタッカー。
+  // 遠距離特化。近距離は苦手だが、独特なステップで距離を取りながら遠方を射抜く。
   { id: 9, name: 'ミア', rarity: 'r',
     element: 'mystis',
-    role: '妨害寄り',
-    moveType: 'front_side_jump',
+    role: '遠距離寄り',
+    moveType: 'cat_step',
     costMax: 12,
     costStart: 5,
     costRegen: 4,
     shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 650, ATK: 255 },
+    stats: { HP: 540, ATK: 295 },
     img: 'images/chara_09.webp',
     cutImg: 'images/chara_09_cut.webp',
     ultImg: 'images/chara_09_cutin.webp',
@@ -973,37 +984,34 @@ const CHARACTERS = [
     uiScale: {panel: 1.0, battleBack: 1.5},
     skills: [
       { id: 's1',
-        name: 'ネコダマシ',
+        name: 'キャット・スナイプ',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.20,
         criticalDamageRate: 1.5,
         type: 'attack',
-        multiplier: 1.1,
-        range: 'cat_paw_ally',
-        effects: [
-          { type: 'stun', target: 'enemy', hit: 70, duration: 1, rate: 0.75 }
-        ],
+        multiplier: 1.75,
+        range: 'cat_snipe_ally',
+        effects: [],
         hitStyle: 'rapid',
-        desc: '射程：前方1マス＋斜め前2マス＋左右1マス。対象の敵にATK×1.1のダメージを与え、70%の確率で敵を1ターンスタンする。' },
+        desc: '射程：前方3〜5マスの遠距離狙撃。近距離には当たらない。対象の敵にATK×1.75のダメージを与える。' },
 
       { id: 'ult',
-        name: 'ルミニャス・インパクト',
+        name: 'ルミニャス・シュート',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.25,
         criticalDamageRate: 1.5,
         type: 'attack',
-        multiplier: 2.2,
-        range: 'cat_moon_ally',
+        multiplier: 2.75,
+        range: 'cat_luminous_far_ally',
         effects: [
-          { type: 'stun', target: 'enemy', hit: 60, duration: 1 },
-          { type: 'atk_down', target: 'enemy', hit: 100, duration: 2, rate: 0.65 }
+          { type: 'atk_down', target: 'enemy', hit: 100, duration: 1, rate: 0.80 }
         ],
-        hitStyle: 'heavy',
-        desc: '射程：前方2段の月爪範囲。対象の敵にATK×2.2のダメージを与え、60%の確率で1ターン行動不能にし、2ターンATKを35%低下させる。' }
+        hitStyle: 'multi',
+        desc: '射程：前方3〜5マスの広域遠距離。近距離には当たらない。対象の敵にATK×2.75のダメージを与え、1ターンATKを20%低下させる。' }
     ]},
 
   ];

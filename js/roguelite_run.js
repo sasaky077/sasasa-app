@@ -126,7 +126,7 @@
           enemyActionMode: 'all',
           enemyActionsPerTurn: null,
           enemySpawn: {
-            enemyId: 'rl_sakiel_zako_straight',
+            enemyId: 'rl_sakiel_spawn_glass',
             interval: 2,
             rows: [0, 1, 2, 3],
             cols: [0, 1, 2, 3, 4],

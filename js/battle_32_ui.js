@@ -38,6 +38,10 @@
  let _selectedEnemyUid = null; // 敵情報表示・移動/攻撃ガイド対象
  let _selectedEnemyGuideMode = null; // null | 'move' | 'attack'
 
+ // 敵情報パネルのドラッグ位置（バトル中だけ保持）
+ let _enemyQuickInfoPos = null; // { x, y } viewport px
+ let _enemyQuickInfoDragging = false;
+
 // ============================================================
 // ステート — 召喚 / アイテム操作
 // ============================================================
@@ -828,6 +832,35 @@ function getEnemyAttackGuideCells(enemy, bs) {
   return cells;
 }
 
+// ============================================================
+// ローグライト: 味方対象アイテムの判定
+// ============================================================
+function b32IsAllyTargetItem(item) {
+  if (!item) return false;
+  if (item.target === 'ally_all') return false;
+  return [
+    'heal',
+    'move_ally',
+    'shinki_max',
+    'guard',
+    'swap_ally',
+    'critical_up',
+    'crit_up',
+    'atk_up',
+    'hp_up',
+  ].includes(item.type);
+}
+
+function b32GetActiveItem(bs) {
+  if (!_itemMode || !bs || !bs.items || _itemSlotIndex == null) return null;
+  return bs.items[_itemSlotIndex] || null;
+}
+
+function b32IsAllyItemTargetMode(bs) {
+  const item = b32GetActiveItem(bs);
+  return !!(_itemMode && _itemPhase === 'target' && b32IsAllyTargetItem(item));
+}
+
 function showEnemyInfo(enemy) {
  let ov = document.getElementById('b32-enemy-info-overlay');
  if (ov) ov.remove();
@@ -908,7 +941,15 @@ window._b32CloseEnemyInfo = function () {
  const enemyQuick = document.getElementById('b32-enemy-quick-info');
  if (enemyQuick) enemyQuick.remove();
  window.renderBattle32UI();
-}; 
+};
+
+
+window._b32ResetEnemyInfoPanelPosition = function () {
+  _enemyQuickInfoPos = null;
+  const box = document.getElementById('b32-enemy-quick-info');
+  if (box) _positionEnemyQuickInfoPanel(box);
+};
+ 
 
  // ============================================================
  // CSS
@@ -2417,9 +2458,11 @@ window._b32CloseEnemyInfo = function () {
 #b32-enemy-quick-info,
 .b32-enemy-quick-info {
  position: fixed;
- left: 50%;
- bottom: calc(var(--b32-actions-h, 74px) + 114px + env(safe-area-inset-bottom, 0px));
- transform: translateX(-50%) !important;
+ left: auto;
+ top: auto;
+ right: auto;
+ bottom: auto;
+ transform: none !important;
  z-index: 3000000;
 
  width: min(320px, calc(100vw - 28px));
@@ -2436,7 +2479,7 @@ window._b32CloseEnemyInfo = function () {
 
  transform-style: flat;
  backface-visibility: hidden;
- transition: opacity .16s ease, transform .16s ease, bottom .16s ease;
+ transition: opacity .16s ease, left .12s ease, top .12s ease;
 }
 
 .b32-enemy-quick-info.is-guide-mode {
@@ -5490,7 +5533,7 @@ if (_selectedEnemyUid) {
  const isItemAllyTarget = !!(
    _itemMode && activeItem && _itemPhase === 'target' &&
    unit && unit.side === 'ally' && unit.hp > 0 &&
-   ['heal', 'move_ally', 'shinki_max', 'guard', 'swap_ally'].includes(activeItem.type)
+   b32IsAllyTargetItem(activeItem)
  );
  const isItemEnemyTarget = !!(
    _itemMode && activeItem && _itemPhase === 'target' &&
@@ -5605,11 +5648,190 @@ if (_summonMode && isSummonCell && !unit) {
  
  }
 
+ function _getViewportBoundsForEnemyInfo() {
+   const vv = window.visualViewport || null;
+   const width = vv ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 0);
+   const height = vv ? vv.height : (window.innerHeight || document.documentElement.clientHeight || 0);
+   const offsetLeft = vv ? vv.offsetLeft : 0;
+   const offsetTop = vv ? vv.offsetTop : 0;
+   return { width, height, offsetLeft, offsetTop };
+ }
+
+ function _clampEnemyQuickInfoPosWithSize(pos, size) {
+   const p = pos || { x: 0, y: 0 };
+   const b = _getViewportBoundsForEnemyInfo();
+   const w = Math.max(80, Number(size && size.width) || 300);
+   const h = Math.max(40, Number(size && size.height) || 120);
+   const margin = 8;
+
+   const minX = b.offsetLeft + margin;
+   const maxX = b.offsetLeft + Math.max(margin, b.width - w - margin);
+   const minY = b.offsetTop + margin;
+   const maxY = b.offsetTop + Math.max(margin, b.height - h - margin);
+
+   return {
+     x: Math.min(Math.max(Number(p.x || 0), minX), maxX),
+     y: Math.min(Math.max(Number(p.y || 0), minY), maxY),
+   };
+ }
+
+ function _clampEnemyQuickInfoPos(pos, box) {
+   const rect = box ? box.getBoundingClientRect() : { width: 300, height: 120 };
+   return _clampEnemyQuickInfoPosWithSize(pos, rect);
+ }
+
+ function _setEnemyQuickInfoLeftTop(box, pos) {
+   if (!box || !pos) return;
+   box.style.left = `${pos.x}px`;
+   box.style.top = `${pos.y}px`;
+   box.style.right = 'auto';
+   box.style.bottom = 'auto';
+   box.style.transform = 'none';
+ }
+
+ function _applyEnemyQuickInfoPos(box, pos) {
+   if (!box || !pos) return;
+   const p = _clampEnemyQuickInfoPos(pos, box);
+   _enemyQuickInfoPos = p;
+   _setEnemyQuickInfoLeftTop(box, p);
+ }
+
+ function _ensureEnemyQuickInfoDragStyle() {
+   if (document.getElementById('b32-enemy-quick-drag-style')) return;
+   const style = document.createElement('style');
+   style.id = 'b32-enemy-quick-drag-style';
+   style.textContent = `
+.b32-enemy-quick-info {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.b32-enemy-quick-drag-handle {
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 2px 18px 2px 18px;
+  margin: -2px -4px 4px;
+  position: relative;
+}
+.b32-enemy-quick-drag-handle:active,
+.b32-enemy-quick-info.is-dragging .b32-enemy-quick-drag-handle {
+  cursor: grabbing;
+}
+.b32-enemy-quick-drag-mark {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  opacity: .42;
+  pointer-events: none;
+}
+.b32-enemy-quick-info.is-dragging {
+  transition: none !important;
+  opacity: .96;
+}
+`;
+   document.head.appendChild(style);
+ }
+
+ function _installEnemyQuickInfoDrag(box) {
+   if (!box || box.dataset.dragReady === '1') return;
+   _ensureEnemyQuickInfoDragStyle();
+
+   const handle = box.querySelector('.b32-enemy-quick-drag-handle') || box;
+   box.dataset.dragReady = '1';
+
+   handle.addEventListener('pointerdown', (e) => {
+     if (e.button != null && e.button !== 0) return;
+
+     e.preventDefault();
+     e.stopPropagation();
+
+     // 追従遅れ対策：
+     // ドラッグ開始時にだけサイズ・境界を確定し、移動中は getBoundingClientRect() を呼ばない。
+     // 座標は安定版と同じ left/top のみ。transform は使わない。
+     const rect = box.getBoundingClientRect();
+     const start = {
+       pointerId: e.pointerId,
+       sx: e.clientX,
+       sy: e.clientY,
+       x: rect.left,
+       y: rect.top,
+       size: {
+         width: rect.width || box.offsetWidth || 300,
+         height: rect.height || box.offsetHeight || 120,
+       },
+       moved: false,
+     };
+
+     _enemyQuickInfoDragging = true;
+     box.classList.add('is-dragging');
+     box.style.transition = 'none';
+     box.style.willChange = 'left, top';
+     box.style.transform = 'none';
+
+     try {
+       handle.setPointerCapture(e.pointerId);
+     } catch (err) {}
+
+     function onMove(ev) {
+       if (ev.pointerId !== start.pointerId) return;
+       ev.preventDefault();
+       ev.stopPropagation();
+
+       const dx = ev.clientX - start.sx;
+       const dy = ev.clientY - start.sy;
+       if (Math.abs(dx) + Math.abs(dy) > 3) start.moved = true;
+
+       const p = _clampEnemyQuickInfoPosWithSize({
+         x: start.x + dx,
+         y: start.y + dy,
+       }, start.size);
+
+       _enemyQuickInfoPos = p;
+       _setEnemyQuickInfoLeftTop(box, p);
+     }
+
+     function onEnd(ev) {
+       if (ev.pointerId !== start.pointerId) return;
+       ev.preventDefault();
+       ev.stopPropagation();
+
+       handle.removeEventListener('pointermove', onMove);
+       handle.removeEventListener('pointerup', onEnd);
+       handle.removeEventListener('pointercancel', onEnd);
+
+       try {
+         handle.releasePointerCapture(start.pointerId);
+       } catch (err) {}
+
+       box.classList.remove('is-dragging');
+       box.style.willChange = '';
+       box.style.transition = '';
+
+       setTimeout(() => { _enemyQuickInfoDragging = false; }, 0);
+     }
+
+     handle.addEventListener('pointermove', onMove, { passive: false });
+     handle.addEventListener('pointerup', onEnd, { passive: false });
+     handle.addEventListener('pointercancel', onEnd, { passive: false });
+   }, { passive: false });
+ }
+
  function _positionEnemyQuickInfoPanel(box) {
  if (!box) return;
 
+ // ドラッグ済みの場合は、保存位置を最優先する。
+ if (_enemyQuickInfoPos) {
+   _applyEnemyQuickInfoPos(box, _enemyQuickInfoPos);
+   return;
+ }
+
  // 敵情報パネルはグリッド上段を隠さないよう、味方カードの直上へ逃がす。
- // #b32-roster-panel は端末別に位置が変わるため、実測して bottom を決める。
+ // 中央寄せの translateX(-50%) はドラッグ量と競合して左へ吸われるため使わない。
+ // 初期位置も left/top のpxで確定し、以後のドラッグも同じ座標系で扱う。
  const roster = document.getElementById('b32-roster-panel');
  const root = document.getElementById(ROOT_ID);
  let bottomPx = null;
@@ -5637,10 +5859,16 @@ if (_summonMode && isSummonCell && !unit) {
      : 186;
  }
 
- if (bottomPx != null) {
-   box.style.bottom = `${bottomPx}px`;
-   box.style.top = 'auto';
- }
+ const view = _getViewportBoundsForEnemyInfo();
+ const rect = box.getBoundingClientRect();
+ const w = Math.max(80, rect.width || 300);
+ const h = Math.max(40, rect.height || 120);
+ const targetX = view.offsetLeft + Math.max(8, (view.width - w) / 2);
+ const targetY = bottomPx != null
+   ? view.offsetTop + view.height - bottomPx - h
+   : view.offsetTop + 24;
+
+ _applyEnemyQuickInfoPos(box, { x: targetX, y: targetY });
 }
 
 function renderEnemyQuickInfo(enemy) {
@@ -5658,7 +5886,8 @@ function renderEnemyQuickInfo(enemy) {
  box.id = 'b32-enemy-quick-info';
  box.className = `b32-enemy-quick-info ${guideMode ? 'is-guide-mode' : ''} ${moveActive ? 'is-move' : ''} ${attackActive ? 'is-attack' : ''}`;
  box.innerHTML = `
- <div class="b32-enemy-quick-title">${b32EscapeHtml(enemy.name || '??????')}</div>
+ <button type="button" class="b32-enemy-quick-close" onclick="_b32CloseEnemyInfo()" aria-label="閉じる">×</button>
+ <div class="b32-enemy-quick-title b32-enemy-quick-drag-handle">${b32EscapeHtml(enemy.name || '??????')}<span class="b32-enemy-quick-drag-mark">↕</span></div>
  <div class="b32-enemy-quick-mode-label">${b32EscapeHtml(modeText)}</div>
  <div class="b32-enemy-quick-statline">
    <span>HP <strong>${enemy.hp} / ${enemy.hpMax}</strong></span>
@@ -5671,15 +5900,13 @@ function renderEnemyQuickInfo(enemy) {
  <div class="b32-enemy-quick-actions">
    <button type="button" class="b32-enemy-quick-btn ${moveActive ? 'active move' : ''}" onclick="_b32EnemyGuide('move')">移動</button>
    <button type="button" class="b32-enemy-quick-btn ${attackActive ? 'active attack' : ''}" onclick="_b32EnemyGuide('attack')">攻撃</button>
-   <button type="button" class="b32-enemy-quick-close" onclick="_b32CloseEnemyInfo()">×</button>
  </div>
  `;
 
  document.body.appendChild(box);
+ _installEnemyQuickInfoDrag(box);
  _positionEnemyQuickInfoPanel(box);
- requestAnimationFrame(() => _positionEnemyQuickInfoPanel(box));
 }
-
 
 function renderBattleMenu(bs) {
  let menu = document.getElementById('b32-battle-menu');
@@ -5797,6 +6024,8 @@ function _b32CleanupBattleAndRogueliteOverlays(restoreCommonUi) {
     }
   });
 
+  _enemyQuickInfoPos = null;
+  _enemyQuickInfoDragging = false;
   window.__BATTLE32_UI_ACTIVE__ = false;
   window.__ROGUELITE_TRANSITIONING__ = false;
 }
@@ -6121,6 +6350,15 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
 
  const ally = bs.allies.find(u => u._uid === allyUid);
  if (!ally || ally.hp <= 0) return;
+
+ // アイテムの味方対象選択中は、盤面/キャラパネルの味方タップをアイテム使用として扱う。
+ // これにより、HP回復・神気MAX・ガード等をグリッドではなくキャラパネルから確実に使える。
+ if (b32IsAllyItemTargetMode(bs)) {
+   if (typeof window._b32OnItemAllyTap === 'function') {
+     window._b32OnItemAllyTap(allyUid);
+   }
+   return;
+ }
 
  const history = bs.unitActionHistory || {};
  const unitHistory = history[allyUid] || {};
@@ -6683,8 +6921,11 @@ await _afterCharTurnFlow();
 
  // タップ可否：行動済みでも情報確認のためタップ可能にする。
  // 実際の行動可否はアクションボタン/決定ボタン側で制御する。
+ const itemTargetMode = b32IsAllyItemTargetMode(bs) && !dead && ally.hp > 0;
  const tappable = !dead && bs.phase === 'skill' && !bs.result;
- const onclickAttr = tappable ? `onclick="_b32OnSkillAllyTap('${ally._uid}')"` : '';
+ const onclickAttr = itemTargetMode
+   ? `onclick="_b32OnItemAllyTap('${ally._uid}')"`
+   : (tappable ? `onclick="_b32OnSkillAllyTap('${ally._uid}')"` : '');
 
  return `
  <div class="b32-party-card${dead ? ' dead' : ''}${done ? ' done' : ''}${selected ? ' selected' : ''}"
@@ -6766,6 +7007,8 @@ await _afterCharTurnFlow();
        guideEl.textContent = '転位先のマスをタップしてください。';
      } else if (item && (item.type === 'swap_ally' || item.type === 'swap_enemy') && _itemTargetUid) {
        guideEl.textContent = `${item.name}：2体目を選んでください。`;
+     } else if (b32IsAllyTargetItem(item)) {
+       guideEl.textContent = `${item ? item.name : 'アイテム'}：対象のキャラパネルをタップしてください。`;
      } else {
        guideEl.textContent = `${item ? item.name : 'アイテム'}の対象を選んでください。`;
      }
@@ -7245,6 +7488,7 @@ window.renderBattle32UI = function () {
       'b32-item-panel',
       'b32-roster-info-close-hitbox',
       'b32-enemy-info-overlay',
+      'b32-enemy-quick-info',
       'b32-action-detail-portal'
     ].forEach(id => {
       const el = document.getElementById(id);
@@ -7475,7 +7719,8 @@ function applyBattle32ViewportClass(root) {
 const isSummonSelected =
   isActionSelected ||
   (_summonMode && _summonRosterId === r.rosterId) ||
-  (!_summonMode && _selectedRosterId === r.rosterId);
+  (!_summonMode && _selectedRosterId === r.rosterId) ||
+  (_itemMode && r.deployedUid && _itemTargetUid === r.deployedUid);
 
      let statusLabel = '';
      let statusColor = '';
@@ -7544,14 +7789,23 @@ let ultGaugeHtml = '';
        hpBarHtml = `<div class="b32-roster-hp-bar-wrap"><div class="b32-roster-hp-bar" style="width:${hpPct}%"></div></div>`;
      }
 
+     const isItemTargetCard = !!(
+       isDeployed &&
+       r.deployedUid &&
+       b32IsAllyItemTargetMode(bs)
+     );
+     const rosterClick = isItemTargetCard
+       ? `_b32OnItemAllyTap('${r.deployedUid}')`
+       : `_b32OnRosterTap('${r.rosterId}')`;
+
      return `<div class="b32-roster-card"
        data-roster-id="${r.rosterId}"
        data-deployed-uid="${r.deployedUid || ''}"
-       onclick="_b32OnRosterTap('${r.rosterId}')"
+       onclick="${rosterClick}"
        style="
          flex:0 0 82px;width:82px;min-width:82px;max-width:82px;
          display:flex;flex-direction:column;align-items:center;gap:2px;
-         cursor:${(canSummon || isDeployed) ? 'pointer' : 'default'};
+         cursor:${(canSummon || isDeployed || isItemTargetCard) ? 'pointer' : 'default'};
          border-radius:0;padding:4px 2px;
          border:1.5px solid ${isSummonSelected ? 'rgba(140,100,255,.9)' : isStandby ? 'rgba(100,80,200,.4)' : 'rgba(60,50,100,.3)'};
          background:${isSummonSelected ? 'rgba(80,40,180,.3)' : 'rgba(20,15,40,.6)'};
@@ -7759,8 +8013,16 @@ window._b32OnRosterTap = function(rosterId) {
   const r = roster.find(x => x.rosterId === rosterId);
   if (!r) return;
 
-  // 出撃中キャラなら、盤面上の味方タップと同じ扱いにする
+  // 出撃中キャラなら、盤面上の味方タップと同じ扱いにする。
+  // ただしアイテムの味方対象選択中は、キャラパネルタップをアイテム使用に優先ルーティングする。
   if (r.status === 'deployed' && r.deployedUid) {
+    if (b32IsAllyItemTargetMode(bs)) {
+      if (typeof window._b32OnItemAllyTap === 'function') {
+        window._b32OnItemAllyTap(r.deployedUid);
+      }
+      return;
+    }
+
     _selectedRosterId = rosterId;
     _summonRosterId = null;
     _summonMode = false;
@@ -7928,7 +8190,7 @@ if (!window.__b32RosterCloseCaptureBound) {
    _itemSlotIndex = slotIndex;
    _itemTargetUid = null;
 
-   if (item.target === 'instant' || item.type === 'link_recover' || item.type === 'enemy_hp_cut_all') {
+   if (item.target === 'instant' || item.target === 'ally_all' || item.type === 'link_recover' || item.type === 'enemy_hp_cut_all') {
      const ok = window.Battle32.useItem(_itemSlotIndex, {});
      _itemMode = false;
      _itemSlotIndex = null;
