@@ -11486,3 +11486,211 @@ body,
     max-height: 74px !important;
   }
 }
+
+
+/* =========================================================
+   Remnant List / レムナント一覧
+   ※ プリモア一覧の既存レイアウトには影響しないよう、
+      remnant-carousel 配下だけに限定する。
+   ========================================================= */
+.zukan-header-switch {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(160,120,70,0.30);
+  border-radius: 999px;
+  color: rgba(120,82,36,0.86);
+  font-family: "Noto Serif JP", serif;
+  font-size: 11px;
+  letter-spacing: .08em;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.zukan-header-switch:active {
+  transform: scale(0.96);
+  background: rgba(160,120,70,0.10);
+}
+
+.remnant-carousel .box-carousel-name {
+  letter-spacing: .12em;
+}
+
+.remnant-carousel .box-carousel-visual.remnant-owned {
+  background: radial-gradient(circle at 50% 35%, rgba(255,245,210,.14), rgba(0,0,0,.28) 70%);
+  border-color: rgba(255,230,160,.28);
+}
+
+.remnant-carousel .remnant-panel-img {
+  object-fit: contain !important;
+  filter: drop-shadow(0 18px 30px rgba(0,0,0,.88));
+}
+
+.remnant-carousel .remnant-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.remnant-carousel .remnant-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  background: rgba(0,0,0,0.025);
+}
+
+.remnant-carousel .remnant-detail-row span {
+  font-size: 11px;
+  color: rgba(0,0,0,.42);
+  letter-spacing: .08em;
+}
+
+.remnant-carousel .remnant-detail-row strong {
+  font-size: 12px;
+  color: rgba(90,62,32,.92);
+  font-weight: 600;
+  text-align: right;
+}
+
+.remnant-carousel .remnant-detail-note {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: rgba(0,0,0,.42);
+  text-align: center;
+}
+
+
+/* =========================================================
+   Remnant Fullscreen Viewer / レムナント全身表示
+   ========================================================= */
+.remnant-carousel .box-carousel-visual.remnant-owned.is-clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.remnant-carousel .remnant-zoom-hint {
+  color: rgba(100,70,35,.62);
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(160,120,70,.18);
+}
+
+#remnant-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 260000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.92);
+  animation: remnantFsIn .18s ease both;
+  overflow: hidden;
+}
+
+#remnant-fullscreen-overlay.closing {
+  animation: remnantFsOut .18s ease both;
+}
+
+.remnant-fullscreen-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255,255,255,.20), transparent 30%),
+    radial-gradient(circle at 50% 68%, rgba(160,120,255,.16), transparent 42%),
+    linear-gradient(180deg, rgba(20,18,22,.95), rgba(0,0,0,.98));
+  pointer-events: none;
+}
+
+.remnant-fullscreen-inner {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(24px + env(safe-area-inset-top)) 18px calc(34px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.remnant-fullscreen-kicker {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: .24em;
+  color: rgba(255,236,190,.56);
+  margin-bottom: 10px;
+}
+
+.remnant-fullscreen-img {
+  width: min(94vw, 390px);
+  max-width: 100%;
+  max-height: 72dvh;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 28px 38px rgba(0,0,0,.95))
+    drop-shadow(0 0 22px rgba(255,255,255,.14));
+}
+
+.remnant-fullscreen-info {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(255,230,170,.22);
+  background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.28));
+  text-align: center;
+}
+
+.remnant-fullscreen-no {
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: .18em;
+  color: rgba(255,230,170,.58);
+  margin-bottom: 5px;
+}
+
+.remnant-fullscreen-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.95);
+  text-shadow: 0 0 16px rgba(255,255,255,.28);
+}
+
+.remnant-fullscreen-desc {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: .06em;
+  color: rgba(255,255,255,.58);
+}
+
+.remnant-fullscreen-close {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 14px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(0,0,0,.36);
+  color: rgba(255,255,255,.88);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@keyframes remnantFsIn {
+  from { opacity: 0; transform: scale(1.015); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes remnantFsOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.015); }
+}

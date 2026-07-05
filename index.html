@@ -273,7 +273,7 @@
   <div class="screen-scroll">
     <!-- プリモア一覧を直接表示。編成メニュー/パーティ編成画面は削除。 -->
     <div id="zukan-sub-box">
-      <div class="zukan-stats" id="zukan-stats">
+<div class="zukan-stats" id="zukan-stats">
         <div class="stat-card stat-card-total">
           <div class="stat-card-val">
             <span id="stat-current">0</span>
@@ -3388,32 +3388,255 @@ setTenResultFooterVisible(true);
 
   // 本番課金実装時はexecutePurchaseの中身を課金APIに差し替える
 
-  // プリモア一覧：ボトムナビ「プリモア」押下時は一覧を直接表示する
-  // 旧「編成」メニュー/パーティ編成画面は削除
+  // プリモア/レムナント一覧：ボトムナビ「プリモア」押下時は一覧を直接表示する
+  // 既存のプリモア一覧レイアウトは変更せず、レムナントは同じカルーセルUIを別モードで描画する。
   var currentZukanMainTab = 'box';
+  var currentRemnantCarouselIndex = 0;
+  var REMNANT_STORAGE_KEY = 'zeraphia_remnants_owned_v1';
+
+  // BOSSドロップ率。1周で抽選されるドロップ枠は最大1つだけ。
+  // 現時点では「レムナント」または「コイン」のどちらかをBOSSドロップとして扱う。
+  var REMNANT_BOSS_DROP_RATE_BY_RANK = { S: 1.00, A: 0.70, B: 0.45, C: 0.30, D: 0.15, E: 0.05 };
+  var REMNANT_BOSS_COIN_FALLBACK_BY_RANK = { S: 0, A: 160, B: 130, C: 100, D: 80, E: 50 };
+
+  function getBossDropRateByRank(rank){
+    rank = String(rank || 'E').toUpperCase();
+    return REMNANT_BOSS_DROP_RATE_BY_RANK[rank] != null ? REMNANT_BOSS_DROP_RATE_BY_RANK[rank] : REMNANT_BOSS_DROP_RATE_BY_RANK.E;
+  }
+
+  function getBossDropCoinByRank(rank){
+    rank = String(rank || 'E').toUpperCase();
+    return REMNANT_BOSS_COIN_FALLBACK_BY_RANK[rank] != null ? REMNANT_BOSS_COIN_FALLBACK_BY_RANK[rank] : REMNANT_BOSS_COIN_FALLBACK_BY_RANK.E;
+  }
+
+  // レムナント一覧マスター。今後8体まで登録予定。
+  // サキエルは No.04 として固定登録。
+  var REMNANT_MASTER = [
+    { no: 1, id: 'remnant_01', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
+    { no: 2, id: 'remnant_02', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
+    { no: 3, id: 'remnant_03', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
+    { no: 4, id: 'remnant_04_sakiel', enemyId: 'enemy_sakiel_roguelite', name: '大天使 サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'サキエル降臨 BOSSドロップ', desc: '旧世界に残された白翼の残響。現在は記録のみで、使用機能は未実装です。' },
+    { no: 5, id: 'remnant_05', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
+    { no: 6, id: 'remnant_06', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
+    { no: 7, id: 'remnant_07', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
+    { no: 8, id: 'remnant_08', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' }
+  ];
+
+  var ownedRemnants = loadOwnedRemnantsFromLocal();
+
+  function loadOwnedRemnantsFromLocal(){
+    try {
+      var raw = localStorage.getItem(REMNANT_STORAGE_KEY);
+      var parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch(e) {
+      console.warn('[Remnant] load failed:', e);
+      return {};
+    }
+  }
+
+  function saveOwnedRemnantsToLocal(){
+    try {
+      localStorage.setItem(REMNANT_STORAGE_KEY, JSON.stringify(ownedRemnants || {}));
+    } catch(e) {
+      console.warn('[Remnant] save failed:', e);
+    }
+  }
+
+  function getAllRemnantDefs(){
+    return REMNANT_MASTER.slice().sort(function(a, b){ return (a.no || 0) - (b.no || 0); });
+  }
+
+  function getRemnantDefById(id){
+    return getAllRemnantDefs().find(function(r){ return r.id === id || r.enemyId === id; }) || null;
+  }
+
+  function isRemnantOwned(id){
+    var def = getRemnantDefById(id);
+    return !!(def && ownedRemnants && ownedRemnants[def.id]);
+  }
+
+  function getOwnedRemnantCount(){
+    return getAllRemnantDefs().filter(function(r){ return isRemnantOwned(r.id); }).length;
+  }
+
+  async function unlockRemnantById(remnantId, meta){
+    var def = getRemnantDefById(remnantId);
+    if(!def) return { ok: false, unlocked: false, reason: 'not_found' };
+
+    var now = new Date().toISOString();
+    var existing = ownedRemnants && ownedRemnants[def.id] ? ownedRemnants[def.id] : null;
+
+    // 既に所持済みでも、BOSS凸素材として所持数を加算する。
+    // 「一覧解放」は初回のみ、以降は count が増える。
+    if(existing){
+      existing.count = Math.max(1, Number(existing.count || 1)) + 1;
+      existing.lastAcquiredAt = now;
+      existing.lastSource = meta && meta.source ? meta.source : 'unknown';
+      existing.lastRunId = meta && meta.runId ? meta.runId : null;
+      existing.lastRank = meta && meta.rank ? meta.rank : null;
+      existing.lastTotalTurns = meta && meta.totalTurns != null ? meta.totalTurns : null;
+      ownedRemnants[def.id] = existing;
+      saveOwnedRemnantsToLocal();
+
+      if(typeof showToast === 'function'){
+        showToast('レムナント「' + def.name + '」を追加取得しました ×' + existing.count);
+      }
+
+      if(currentZukanMainTab === 'remnant') renderRemnantBox();
+      return { ok: true, unlocked: false, alreadyOwned: true, duplicate: true, remnant: def, entry: existing, count: existing.count };
+    }
+
+    var entry = {
+      id: def.id,
+      no: def.no,
+      enemyId: def.enemyId || null,
+      name: def.name,
+      img: def.img,
+      panelImg: def.panelImg,
+      acquiredAt: now,
+      lastAcquiredAt: now,
+      count: 1,
+      source: meta && meta.source ? meta.source : 'unknown',
+      runId: meta && meta.runId ? meta.runId : null,
+      rank: meta && meta.rank ? meta.rank : null,
+      totalTurns: meta && meta.totalTurns != null ? meta.totalTurns : null
+    };
+
+    ownedRemnants[def.id] = entry;
+    saveOwnedRemnantsToLocal();
+
+    if(typeof showToast === 'function'){
+      showToast('レムナント「' + def.name + '」を入手しました');
+    }
+
+    if(currentZukanMainTab === 'remnant') renderRemnantBox();
+    return { ok: true, unlocked: true, alreadyOwned: false, duplicate: false, remnant: def, entry: entry, count: 1 };
+  }
+
+  async function grantBossDropCoin(amount, meta){
+    amount = Math.max(0, Math.floor(Number(amount || 0)));
+    if(amount <= 0) return { ok: true, coin: 0 };
+
+    try {
+      if(window.userProfile){
+        window.userProfile.coin = Number(window.userProfile.coin || 0) + amount;
+      }
+      if(typeof window.saveProfileToDB === 'function' && window.userProfile){
+        await window.saveProfileToDB({
+          coin: window.userProfile.coin,
+          last_played: new Date().toISOString()
+        });
+      }
+      if(typeof window.updateMainUI === 'function') window.updateMainUI();
+      if(typeof showToast === 'function') showToast('BOSS DROP：コイン +' + amount);
+    } catch(e) {
+      console.warn('[Remnant] boss drop coin grant failed:', e);
+    }
+
+    return { ok: true, coin: amount, meta: meta || null };
+  }
+
+  async function rollBossDropFromRoguelite(result){
+    result = result || {};
+    var runId = result.runId || '';
+    var rank = String(result.rank || 'E').toUpperCase();
+    var totalTurns = result.totalTurns;
+
+    // 現在はサキエル降臨のみBOSSドロップ対象。
+    if(runId !== 'sakiel'){
+      return { ok: true, type: 'none', dropped: false, reason: 'not_target_run' };
+    }
+
+    var rate = getBossDropRateByRank(rank);
+    var roll = Math.random();
+    var hit = roll < rate;
+
+    if(hit){
+      var res = await unlockRemnantById('remnant_04_sakiel', {
+        source: 'boss_drop',
+        runId: runId,
+        rank: rank,
+        totalTurns: totalTurns,
+        rate: rate,
+        roll: roll
+      });
+
+      return {
+        ok: true,
+        type: 'remnant',
+        dropped: true,
+        rate: rate,
+        roll: roll,
+        unlocked: !!(res && res.unlocked),
+        duplicate: !!(res && res.duplicate),
+        alreadyOwned: !!(res && res.alreadyOwned),
+        remnant: res && res.remnant,
+        entry: res && res.entry,
+        count: res && res.count ? res.count : 1
+      };
+    }
+
+    var coin = getBossDropCoinByRank(rank);
+    await grantBossDropCoin(coin, { source: 'boss_drop_fallback', runId: runId, rank: rank, totalTurns: totalTurns, rate: rate, roll: roll });
+
+    return {
+      ok: true,
+      type: 'coin',
+      dropped: false,
+      rate: rate,
+      roll: roll,
+      coin: coin,
+      reason: 'remnant_not_dropped'
+    };
+  }
+
+  // 旧API互換。以前の呼び出しが残っていてもBOSSドロップ抽選に流す。
+  async function tryUnlockRemnantFromRoguelite(result){
+    return await rollBossDropFromRoguelite(result || {});
+  }
+
+  window.REMNANT_MASTER = REMNANT_MASTER;
+  window.getOwnedRemnantCount = getOwnedRemnantCount;
+  window.isRemnantOwned = isRemnantOwned;
+  window.unlockRemnantById = unlockRemnantById;
+  window.tryUnlockRemnantFromRoguelite = tryUnlockRemnantFromRoguelite;
+  window.rollBossDropFromRoguelite = rollBossDropFromRoguelite;
+  window.getBossDropRateByRank = getBossDropRateByRank;
 
   function showZukanMenu(){
     switchZukanMainTab('box');
   }
 
-  function switchZukanMainTab(tab){
-    // 編成画面は廃止したため、常にプリモア一覧へ寄せる
-    currentZukanMainTab = 'box';
-
-    var subBox = document.getElementById('zukan-sub-box');
-    var zukanGrid = document.getElementById('zukan-grid');
+  function updateZukanHeaderForMode(){
     var headerBack = document.getElementById('zukan-header-back');
     var headerTitle = document.getElementById('zukan-header-title');
 
-    if(subBox) subBox.style.display = '';
-    if(zukanGrid) zukanGrid.style.display = 'none';
-    if(headerBack) headerBack.style.display = 'none';
     if(headerTitle){
-      headerTitle.textContent = 'プリモア一覧';
+      headerTitle.textContent = currentZukanMainTab === 'remnant' ? 'レムナント一覧' : 'プリモア一覧';
       headerTitle.classList.remove('header-title-indented');
     }
 
-    renderBox();
+    // 既存レイアウトを崩さないため、切替UIはヘッダー右側の空き枠だけに置く。
+    if(headerBack){
+      headerBack.style.display = 'block';
+      headerBack.innerHTML = currentZukanMainTab === 'remnant'
+        ? '<button class="zukan-header-switch" type="button" onclick="switchZukanMainTab(\'box\')">プリモア</button>'
+        : '<button class="zukan-header-switch" type="button" onclick="switchZukanMainTab(\'remnant\')">レムナント</button>';
+    }
+  }
+
+  function switchZukanMainTab(tab){
+    currentZukanMainTab = (tab === 'remnant') ? 'remnant' : 'box';
+
+    var subBox = document.getElementById('zukan-sub-box');
+    var zukanGrid = document.getElementById('zukan-grid');
+
+    if(subBox) subBox.style.display = '';
+    if(zukanGrid) zukanGrid.style.display = 'none';
+
+    updateZukanHeaderForMode();
+    renderCurrentZukanTab();
   }
 
   function changeZukanPool(pool){
@@ -3426,7 +3649,12 @@ setTenResultFooterVisible(true);
   }
 
   function renderCurrentZukanTab(){
+    if(currentZukanMainTab === 'remnant'){
+      renderRemnantBox();
+      return;
+    }
     currentZukanMainTab = 'box';
+    updateZukanHeaderForMode();
     renderBox();
   }
 
@@ -3757,6 +3985,208 @@ setTenResultFooterVisible(true);
     }, { passive: true });
   }
   // ── 図鑑（解放済み1件/未解放シルエット） ──────
+
+
+  // ── レムナント一覧：プリモア一覧とは別モードで描画 ─────────────────
+  function normalizeRemnantCarouselIndex(){
+    var remnants = getAllRemnantDefs();
+    if(!remnants.length){ currentRemnantCarouselIndex = 0; return; }
+    if(currentRemnantCarouselIndex < 0) currentRemnantCarouselIndex = remnants.length - 1;
+    if(currentRemnantCarouselIndex >= remnants.length) currentRemnantCarouselIndex = 0;
+  }
+
+  function moveRemnantCarousel(delta){
+    currentRemnantCarouselIndex += delta;
+    normalizeRemnantCarouselIndex();
+    renderRemnantBox();
+  }
+
+  function buildLockedRemnantDetailHTML(remnant){
+    var no = remnant && remnant.no != null ? String(remnant.no).padStart(2, '0') : '--';
+    return '' +
+      '<div class="box-carousel-locked-panel remnant-locked-panel">' +
+        '<div class="box-carousel-locked-title">LOCKED</div>' +
+        '<div class="box-carousel-locked-no">NO. ' + no + '</div>' +
+        '<div class="box-carousel-locked-text">未照合のレムナント</div>' +
+      '</div>';
+  }
+
+
+  function openRemnantImageFullscreen(remnantId){
+    var remnant = getRemnantDefById(remnantId);
+    if(!remnant || !isRemnantOwned(remnant.id)) return;
+
+    var src = remnant.img || remnant.fullImg || remnant.panelImg || 'images/unknown.webp';
+    var no = remnant.no != null ? String(remnant.no).padStart(2, '0') : '--';
+    var name = remnant.name || 'レムナント';
+    var desc = remnant.desc || '旧世界の残響が記録されています。';
+
+    var old = document.getElementById('remnant-fullscreen-overlay');
+    if(old) old.remove();
+
+    var ov = document.createElement('div');
+    ov.id = 'remnant-fullscreen-overlay';
+    ov.innerHTML =
+      '<div class="remnant-fullscreen-bg"></div>' +
+      '<button class="remnant-fullscreen-close" type="button" aria-label="閉じる">×</button>' +
+      '<div class="remnant-fullscreen-inner">' +
+        '<div class="remnant-fullscreen-kicker">REMNANT ARCHIVE</div>' +
+        '<img class="remnant-fullscreen-img" src="' + detailEscapeHTML(src) + '" alt="' + detailEscapeHTML(name) + '">' +
+        '<div class="remnant-fullscreen-info">' +
+          '<div class="remnant-fullscreen-no">NO. ' + no + '</div>' +
+          '<div class="remnant-fullscreen-name">' + detailEscapeHTML(name) + '</div>' +
+          '<div class="remnant-fullscreen-desc">' + detailEscapeHTML(desc) + '</div>' +
+        '</div>' +
+      '</div>';
+
+    function close(){
+      ov.classList.add('closing');
+      setTimeout(function(){ if(ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 180);
+      document.removeEventListener('keydown', onKeyDown);
+    }
+    function onKeyDown(e){ if(e.key === 'Escape') close(); }
+
+    ov.addEventListener('click', function(e){ if(e.target === ov || e.target.classList.contains('remnant-fullscreen-bg')) close(); });
+    ov.querySelector('.remnant-fullscreen-close').addEventListener('click', function(e){ e.stopPropagation(); close(); });
+    document.addEventListener('keydown', onKeyDown);
+    document.body.appendChild(ov);
+  }
+
+  window.openRemnantImageFullscreen = openRemnantImageFullscreen;
+
+  function renderRemnantBox(){
+    var grid = document.getElementById('box-grid');
+    if(!grid) return;
+
+    var remnants = getAllRemnantDefs();
+    grid.className = 'zukan-grid box-carousel remnant-carousel';
+    grid.innerHTML = '';
+
+    if(!remnants.length){
+      grid.innerHTML = '<div class="box-carousel-empty">レムナント情報がありません</div>';
+      document.getElementById('stat-current').textContent = '0';
+      document.getElementById('stat-max').textContent = '0';
+      return;
+    }
+
+    normalizeRemnantCarouselIndex();
+    var remnant = remnants[currentRemnantCarouselIndex];
+    var owned = isRemnantOwned(remnant.id);
+    var entry = ownedRemnants[remnant.id] || null;
+    var panelSrc = owned ? (remnant.panelImg || remnant.img || 'images/unknown.webp') : 'images/unknown.webp';
+    var name = owned ? remnant.name : (remnant.hiddenName || '??????');
+    var acquiredText = entry && entry.acquiredAt ? new Date(entry.acquiredAt).toLocaleDateString('ja-JP') : '-';
+    var remnantCount = entry ? Math.max(1, Number(entry.count || 1)) : 0;
+    var lastAcquiredText = entry && entry.lastAcquiredAt ? new Date(entry.lastAcquiredAt).toLocaleDateString('ja-JP') : acquiredText;
+
+    document.getElementById('stat-current').textContent = getOwnedRemnantCount();
+    document.getElementById('stat-max').textContent = remnants.length;
+
+    var headerHtml =
+      '<div class="box-carousel-count">' +
+        '<span>' + (currentRemnantCarouselIndex + 1) + '</span>' +
+        '<span class="box-carousel-count-slash"> / </span>' +
+        '<span>' + remnants.length + '</span>' +
+      '</div>';
+
+    var visualHtml = owned
+      ? '<div class="box-carousel-visual owned remnant-owned is-clickable" onclick="openRemnantImageFullscreen(\'' + detailEscapeHTML(remnant.id) + '\')" role="button" aria-label="レムナント画像を全画面表示">' +
+          '<img class="box-carousel-img remnant-panel-img" src="' + detailEscapeHTML(panelSrc) + '" alt="' + detailEscapeHTML(name) + '">' +
+          '<div class="box-carousel-zoom-hint remnant-zoom-hint">画像をタップで全身表示</div>' +
+        '</div>'
+      : '<div class="box-carousel-visual locked remnant-locked">' +
+          '<img class="box-carousel-img box-carousel-silhouette" src="images/unknown.webp">' +
+          '<div class="box-carousel-locked-label">LOCKED</div>' +
+        '</div>';
+
+    var nameHtml = '<div class="box-carousel-name ' + (owned ? '' : 'locked') + '">' + detailEscapeHTML(name) + '</div>';
+
+    var detailHtml = owned
+      ? '<div class="remnant-detail-card">' +
+          '<div class="remnant-detail-row"><span>NO.</span><strong>' + String(remnant.no).padStart(2, '0') + '</strong></div>' +
+          '<div class="remnant-detail-row"><span>種別</span><strong>REMNANT</strong></div>' +
+          '<div class="remnant-detail-row"><span>入手条件</span><strong>' + detailEscapeHTML(remnant.acquireCondition || 'BOSSドロップ') + '</strong></div>' +
+          '<div class="remnant-detail-row"><span>所持数</span><strong>×' + remnantCount + '</strong></div>' +
+          '<div class="remnant-detail-row"><span>初回入手</span><strong>' + detailEscapeHTML(acquiredText) + '</strong></div>' +
+          '<div class="remnant-detail-row"><span>最終入手</span><strong>' + detailEscapeHTML(lastAcquiredText) + '</strong></div>' +
+          '<div class="remnant-detail-note">' + detailEscapeHTML(remnant.desc || '現在は一覧登録のみ。使用機能は未実装です。') + '</div>' +
+        '</div>'
+      : buildLockedRemnantDetailHTML(remnant);
+
+    grid.innerHTML =
+      '<div class="box-carousel-view ' + (owned ? 'is-owned' : 'is-locked') + '">' +
+        '<div class="box-carousel-fixed">' +
+          headerHtml +
+          '<div class="box-carousel-visual-row">' +
+            '<button class="box-carousel-arrow box-carousel-prev" onclick="moveRemnantCarousel(-1)" aria-label="前のレムナント">‹</button>' +
+            visualHtml +
+            '<button class="box-carousel-arrow box-carousel-next" onclick="moveRemnantCarousel(1)" aria-label="次のレムナント">›</button>' +
+          '</div>' +
+          nameHtml +
+          '<div class="box-carousel-separator"></div>' +
+        '</div>' +
+        '<div class="box-carousel-detail-scroll">' +
+          '<div class="box-carousel-detail">' + detailHtml + '</div>' +
+        '</div>' +
+      '</div>';
+
+    setupBoxCarouselSwipeForRemnant();
+  }
+
+  function setupBoxCarouselSwipeForRemnant(){
+    var view = document.querySelector('#box-grid .box-carousel-view');
+    if(!view) return;
+
+    var startX = 0;
+    var startY = 0;
+    var lastX = 0;
+    var lastY = 0;
+    var tracking = false;
+    var horizontal = false;
+
+    view.addEventListener('touchstart', function(e){
+      if(!e.touches || e.touches.length !== 1) return;
+      startX = lastX = e.touches[0].clientX;
+      startY = lastY = e.touches[0].clientY;
+      tracking = true;
+      horizontal = false;
+    }, { passive: true });
+
+    view.addEventListener('touchmove', function(e){
+      if(!tracking || !e.touches || e.touches.length !== 1) return;
+
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+
+      var dx = lastX - startX;
+      var dy = lastY - startY;
+
+      if(!horizontal && Math.abs(dx) > 18 && Math.abs(dx) > Math.abs(dy) * 1.25){
+        horizontal = true;
+      }
+
+      if(horizontal && e.cancelable){
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    view.addEventListener('touchend', function(){
+      if(!tracking) return;
+      tracking = false;
+
+      var dx = lastX - startX;
+      var dy = lastY - startY;
+
+      if(Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.25){
+        moveRemnantCarousel(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+
+    view.addEventListener('touchcancel', function(){
+      tracking = false;
+      horizontal = false;
+    }, { passive: true });
+  }
   function renderZukan(){
   var grid = document.getElementById('zukan-grid');
   grid.innerHTML = '';
@@ -5620,14 +6050,12 @@ window.addEventListener('pagehide', function () {
 <script src="js/battle_32.js?v=135"></script>
 <script src="js/battle_32_ui.js"></script>
 
-<!-- ローグライト（新規追加） -->         ← ここから追加
+<!-- ローグライト（新規追加） -->
 <script src="js/roguelite_options.js"></script>
 <script src="js/roguelite_run.js"></script>
 <script src="js/roguelite_reward.js"></script>
 <script src="js/shinju.js"></script>
 <script src="js/roguelite_controller.js"></script>
-
-</body>
 
 </body>
 </html>

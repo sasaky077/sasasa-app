@@ -98,7 +98,7 @@
   // ============================================================
   // タイムライン
   // ============================================================
-  function runIntro(enemyImg, onComplete) {
+  function runIntro(enemyImg, onComplete, introName, introSubText) {
     buildIntro();
 
     const root    = document.getElementById('enemy-intro-root');
@@ -111,6 +111,13 @@
 
     // リセット
     img.src = enemyImg;
+
+    // 表示名を毎回リセットする。
+    // 旧実装では #ei-name の初期HTML「??????」を変更していなかったため、
+    // enemyData.name が正しく渡っていてもステージ入り演出では常に ?????? のままだった。
+    name.textContent = introName || '??????';
+    sub.textContent = introSubText || '怪異が顕現した';
+
     img.style.opacity = '0';
     img.style.transform = 'scale(1.08)';
     img.style.transition = 'opacity 1.4s ease, transform 2.5s ease';
@@ -199,12 +206,53 @@
   // startEnemyIntro(enemyData, partyData)
   // enemyData: { img, ... }  partyData: battle.jsに渡すparty配列
   window.startEnemyIntro = function (enemyData, partyData, options) {
+    const opt = options || {};
+
     // 複数敵配列の場合は先頭を代表として演出に使う
     const introEnemy = Array.isArray(enemyData) ? enemyData[0] : enemyData;
-    const img = introEnemy.img || introEnemy.upImg || 'images/enemy_01.webp';
+
+    function _isUnknownEnemyName(v) {
+      const s = String(v == null ? '' : v).trim();
+      return !s || /^\?+$/.test(s) || s === '不明';
+    }
+
+    function _fallbackIntroName(enemy) {
+      const id = String(enemy && enemy.id || '');
+      if (id === 'enemy_sakiel_roguelite') return '大天使 サキエル';
+      if (id.indexOf('rl_sakiel_zako') === 0) return 'サキエルのしもべ';
+      return '??????';
+    }
+
+    function _resolveIntroName(enemy, opt) {
+      const candidates = [
+        enemy && enemy.stageIntroName,
+        enemy && enemy.introName,
+        enemy && enemy.displayName,
+        enemy && enemy.enemyName,
+        enemy && enemy.name,
+        enemy && enemy.title,
+        enemy && enemy.label,
+        opt && opt.stageIntroEnemyName,
+        opt && opt.introEnemyName,
+        opt && opt.enemyDisplayName,
+        opt && opt.enemyName,
+        opt && opt.enemyTitle,
+        opt && opt.enemyLabel,
+      ];
+      const found = candidates.find(v => !_isUnknownEnemyName(v));
+      return found || _fallbackIntroName(enemy);
+    }
+
+    const img = (introEnemy && (introEnemy.stageImg || introEnemy.introImg || introEnemy.img || introEnemy.upImg))
+      || opt.enemyImg
+      || opt.enemyUpImg
+      || 'images/enemy_01.webp';
+    const introName = _resolveIntroName(introEnemy, opt);
+    const introSub = (introEnemy && (introEnemy.introSub || introEnemy.subText)) || opt.introSubText || '怪異が顕現した';
+
+    console.log('[EnemyIntro] display:', { introName, img, introEnemy, opt });
 
     runIntro(img, () => {
-      const opt = options || {};
 
       // [Battle32] battleMode:'32' または 'roguelite' のステージは Battle32.start() へ分岐
       if (opt.battleMode === '32' || opt.battleMode === 'roguelite') {
@@ -241,7 +289,7 @@
 
       // 通常バトル（旧 battle.js）
       startBattle(partyData, enemyData, opt);
-    });
+    }, introName, introSub);
   };
 
   // テスト用：コンソールから直接呼べる
@@ -264,7 +312,7 @@
     };
     runIntro(DUMMY_ENEMY.img, () => {
       startBattle(DUMMY_PARTY, DUMMY_ENEMY);
-    });
+    }, DUMMY_ENEMY.name, '怪異が顕現した');
   };
 
   // party_select.jsのconfirmPartySelectから呼ぶ用にpartyを保存

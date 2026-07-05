@@ -466,10 +466,10 @@ const CHARACTERS = [
         criticalRate: 0.10,
         criticalDamageRate: 1.5,
         type: 'attack',
-        multiplier: 1.3,
+        multiplier: 1.5,
         range: 'side_lr',
         effects: [],
-        desc: '射程：左右1マス。対象の敵にATK×1.3のダメージを与える。' },
+        desc: '射程：左右1マス。対象の敵にATK×1.5のダメージを与える。' },
 
       { id: 'ult',
         name: '駆け巡る閃光',

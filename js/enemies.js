@@ -970,10 +970,18 @@ ENEMIES.push({
 ENEMIES.push({
   id: 'rl_sakiel_zako_straight',
   name: 'サキエルのしもべ',
+  displayName: 'サキエルのしもべ',
+  enemyName: 'サキエルのしもべ',
+  introName: 'サキエルのしもべ',
+  stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
-  img:       'images/enemy_sakiel_zako_up.webp',
-  upImg:     'images/enemy_sakiel_zako_up.webp',
-  battleImg: 'images/enemy_sakiel_zako.webp',
+  // ステージ入り演出用（添付1枚目）
+  img:         'images/enemy_sakiel_zako_up.webp',
+  upImg:       'images/enemy_sakiel_zako_up.webp',
+  // グリッド上表示用（添付3枚目）
+  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  // 攻撃演出中のアップ表示用（添付4枚目）
+  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -991,10 +999,18 @@ ENEMIES.push({
 ENEMIES.push({
   id: 'rl_sakiel_zako_diag',
   name: 'サキエルのしもべ',
+  displayName: 'サキエルのしもべ',
+  enemyName: 'サキエルのしもべ',
+  introName: 'サキエルのしもべ',
+  stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
-  img:       'images/enemy_sakiel_zako_up.webp',
-  upImg:     'images/enemy_sakiel_zako_up.webp',
-  battleImg: 'images/enemy_sakiel_zako.webp',
+  // ステージ入り演出用（添付1枚目）
+  img:         'images/enemy_sakiel_zako_up.webp',
+  upImg:       'images/enemy_sakiel_zako_up.webp',
+  // グリッド上表示用（添付3枚目）
+  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  // 攻撃演出中のアップ表示用（添付4枚目）
+  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1012,10 +1028,18 @@ ENEMIES.push({
 ENEMIES.push({
   id: 'rl_sakiel_zako_ranged',
   name: 'サキエルのしもべ',
+  displayName: 'サキエルのしもべ',
+  enemyName: 'サキエルのしもべ',
+  introName: 'サキエルのしもべ',
+  stageIntroName: 'サキエルのしもべ',
   element: 'logos',
-  img:       'images/enemy_sakiel_zako_up.webp',
-  upImg:     'images/enemy_sakiel_zako_up.webp',
-  battleImg: 'images/enemy_sakiel_zako.webp',
+  // ステージ入り演出用（添付1枚目）
+  img:         'images/enemy_sakiel_zako_up.webp',
+  upImg:       'images/enemy_sakiel_zako_up.webp',
+  // グリッド上表示用（添付3枚目）
+  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  // 攻撃演出中のアップ表示用（添付4枚目）
+  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1033,10 +1057,18 @@ ENEMIES.push({
 ENEMIES.push({
   id: 'rl_sakiel_zako_elite',
   name: 'サキエルのしもべ',
+  displayName: 'サキエルのしもべ',
+  enemyName: 'サキエルのしもべ',
+  introName: 'サキエルのしもべ',
+  stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
-  img:       'images/enemy_sakiel_zako_up.webp',
-  upImg:     'images/enemy_sakiel_zako_up.webp',
-  battleImg: 'images/enemy_sakiel_zako.webp',
+  // ステージ入り演出用（添付1枚目）
+  img:         'images/enemy_sakiel_zako_up.webp',
+  upImg:       'images/enemy_sakiel_zako_up.webp',
+  // グリッド上表示用（添付3枚目）
+  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  // 攻撃演出中のアップ表示用（添付4枚目）
+  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1054,10 +1086,18 @@ ENEMIES.push({
 ENEMIES.push({
   id: 'enemy_sakiel_roguelite',
   name: '大天使 サキエル',
+  displayName: '大天使 サキエル',
+  enemyName: '大天使 サキエル',
+  introName: '大天使 サキエル',
+  stageIntroName: '大天使 サキエル',
   element: 'mystis',
-  img:       'images/enemy_sakiel.webp',
-  upImg:     'images/enemy_sakiel_up.webp',
-  battleImg: 'images/enemy_sakiel_battle.webp',
+  // ステージ入り演出用（添付2枚目）
+  img:         'images/enemy_sakiel_up.webp',
+  upImg:       'images/enemy_sakiel_up.webp',
+  // グリッド上表示用（添付5枚目）
+  battleImg:   'images/enemy_sakiel_battle.webp',
+  // 攻撃演出中のアップ表示用（添付6枚目）
+  battleUpImg: 'images/enemy_sakiel_battle_up.webp',
   isBoss: true,
   isMidBoss: false,
   uiScale: { battleBack: 2.0},

@@ -409,7 +409,7 @@
 .rl-result-panel.rich {
   position: relative;
   overflow: hidden;
-  padding: 28px 22px 24px;
+  padding: 16px 14px 16px;
   background:
     radial-gradient(circle at 50% -8%, rgba(255,220,110,.20), transparent 34%),
     radial-gradient(circle at 50% 22%, rgba(120,70,255,.26), transparent 54%),
@@ -429,10 +429,10 @@
   position: relative;
   z-index: 1;
   font-family: "Cinzel", serif;
-  font-size: .62rem;
-  letter-spacing: .22em;
+  font-size: .56rem;
+  letter-spacing: .20em;
   color: rgba(220,205,255,.52);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .rl-result-rank-wrap {
   position: relative;
@@ -440,8 +440,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  margin: 14px 0 16px;
+  gap: 10px;
+  margin: 4px 0 8px;
 }
 .rl-result-rank-label {
   font-family: "Cinzel", serif;
@@ -450,13 +450,13 @@
   color: rgba(220,205,255,.48);
 }
 .rl-result-rank {
-  width: 92px;
-  height: 92px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-family: "Cinzel", serif;
-  font-size: 3.8rem;
+  font-size: 2.35rem;
   font-weight: 900;
   color: #fff1a6;
   background: radial-gradient(circle, rgba(255,230,120,.20), rgba(82,38,210,.18) 58%, rgba(0,0,0,.18));
@@ -469,25 +469,25 @@
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 16px 0 18px;
+  gap: 6px;
+  margin: 8px 0 9px;
 }
 .rl-result-stat {
-  padding: 10px 8px;
+  padding: 7px 6px;
   border-radius: 12px;
   background: rgba(255,255,255,.055);
   border: 1px solid rgba(190,160,255,.16);
 }
 .rl-result-stat-label {
   font-family: "Cinzel", serif;
-  font-size: .56rem;
+  font-size: .50rem;
   letter-spacing: .12em;
   color: rgba(220,205,255,.42);
   margin-bottom: 4px;
 }
 .rl-result-stat-value {
   font-family: "Cinzel", "Noto Serif JP", serif;
-  font-size: 1.02rem;
+  font-size: .92rem;
   font-weight: 800;
   color: #efe6ff;
 }
@@ -496,15 +496,15 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 0 0 18px;
+  gap: 6px;
+  margin: 0 0 8px;
 }
 .rl-result-reward-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 11px 14px;
+  gap: 10px;
+  padding: 9px 12px;
   border-radius: 14px;
   background: rgba(20,12,46,.72);
   border: 1px solid rgba(255,230,150,.16);
@@ -527,32 +527,95 @@
   text-shadow: 0 0 12px rgba(255,210,90,.55);
 }
 
+.rl-result-remnant-acquired {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 10px;
+  padding: 10px 10px 11px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,230,150,.34);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,235,170,.18), transparent 42%),
+    linear-gradient(160deg, rgba(45,34,18,.72), rgba(16,10,32,.78));
+  box-shadow: 0 0 28px rgba(255,210,90,.16), inset 0 0 22px rgba(255,255,255,.035);
+}
+.rl-result-remnant-kicker {
+  font-family: "Cinzel", serif;
+  font-size: .52rem;
+  letter-spacing: .20em;
+  color: rgba(255,238,190,.70);
+  margin-bottom: 6px;
+}
+.rl-result-remnant-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.rl-result-remnant-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 13px;
+  border: 1px solid rgba(255,236,190,.30);
+  background: rgba(0,0,0,.28);
+  box-shadow: 0 8px 18px rgba(0,0,0,.42), 0 0 18px rgba(255,230,170,.13);
+  flex-shrink: 0;
+}
+.rl-result-remnant-no {
+  font-family: "Cinzel", serif;
+  font-size: .54rem;
+  letter-spacing: .18em;
+  color: rgba(255,238,190,.54);
+  margin-bottom: 3px;
+}
+.rl-result-remnant-name {
+  font-size: .90rem;
+  font-weight: 900;
+  color: #fff1b8;
+  letter-spacing: .08em;
+  text-shadow: 0 0 12px rgba(255,210,90,.45);
+}
+.rl-result-remnant-desc {
+  margin-top: 3px;
+  font-size: .61rem;
+  line-height: 1.35;
+  color: rgba(235,225,255,.58);
+  letter-spacing: .04em;
+}
+
+
 /* ── ラン結果オーバーレイ ── */
 #rl-result-overlay {
   position: fixed;
   inset: 0;
   z-index: 190000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: rgba(0,0,0,0.88);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 16px;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   animation: rl-fade-in 0.3s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .rl-result-panel {
   width: min(460px, 100%);
+  max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - max(12px, env(safe-area-inset-bottom, 0px)));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(168deg, #120a28 0%, #060412 100%);
   border: 1px solid rgba(150,110,255,0.28);
   border-radius: 20px;
-  padding: 38px 28px 32px;
+  padding: 24px 18px 22px;
   text-align: center;
   box-shadow: 0 0 80px rgba(90,50,255,0.2), 0 32px 64px rgba(0,0,0,0.7);
 }
 .rl-result-title {
-  font-size: 1.9rem;
+  font-size: 1.25rem;
   font-weight: 900;
   letter-spacing: .16em;
   margin-bottom: 8px;
@@ -561,9 +624,9 @@
 .rl-result-title.win  { color: #ffe680; text-shadow: 0 0 22px rgba(255,220,0,0.6); }
 .rl-result-title.lose { color: #ff6b6b; text-shadow: 0 0 22px rgba(255,80,80,0.5); }
 .rl-result-sub {
-  font-size: .82rem;
+  font-size: .70rem;
   color: rgba(190,165,255,0.55);
-  margin-bottom: 22px;
+  margin-bottom: 8px;
   letter-spacing: .08em;
   font-family: "Noto Serif JP", serif;
 }
@@ -602,6 +665,326 @@
   font-family: "Noto Serif JP", serif;
 }
 .rl-result-btn:hover { transform: translateY(-2px); }
+
+@media (max-height: 700px) {
+  #rl-result-overlay {
+    padding: 6px 8px;
+  }
+  .rl-result-panel.rich {
+    padding: 12px 12px 14px;
+    border-radius: 16px;
+  }
+  .rl-result-kicker {
+    font-size: .50rem;
+    margin-bottom: 2px;
+  }
+  .rl-result-sub {
+    font-size: .64rem;
+    margin-bottom: 5px;
+  }
+  .rl-result-rank {
+    width: 44px;
+    height: 44px;
+    font-size: 2rem;
+  }
+  .rl-result-rank-wrap {
+    margin: 2px 0 6px;
+  }
+  .rl-result-stat {
+    padding: 6px 5px;
+  }
+  .rl-result-remnant-acquired {
+    margin-bottom: 8px;
+    padding: 9px;
+  }
+  .rl-result-remnant-img {
+    width: 46px;
+    height: 46px;
+  }
+  .rl-result-reward-row {
+    padding: 8px 10px;
+  }
+  .rl-result-ops {
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .rl-result-op {
+    padding: 8px 10px;
+  }
+}
+
+
+/* ── ラン結果：SE向け最終コンパクト版 ── */
+.rl-result-panel-compact {
+  padding: 13px 12px 14px !important;
+}
+.rl-result-topline {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.rl-result-topline .rl-result-kicker {
+  margin: 0 0 2px;
+  text-align: left;
+  font-size: .52rem;
+}
+.rl-result-topline .rl-result-sub {
+  margin: 0;
+  text-align: left;
+  font-size: .64rem;
+}
+.rl-result-rank-mini {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: "Cinzel", serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff1a6;
+  background: radial-gradient(circle, rgba(255,230,120,.22), rgba(82,38,210,.20) 58%, rgba(0,0,0,.18));
+  border: 1px solid rgba(255,225,140,.36);
+  box-shadow: 0 0 20px rgba(255,205,80,.24), inset 0 0 16px rgba(120,80,255,.20);
+  text-shadow: 0 0 12px rgba(255,210,90,.78), 0 2px 5px rgba(0,0,0,.95);
+}
+.rl-result-stats.compact {
+  margin: 5px 0 8px !important;
+  gap: 6px !important;
+}
+.rl-result-stats.compact .rl-result-stat {
+  padding: 6px 5px !important;
+  border-radius: 10px !important;
+}
+.rl-result-stats.compact .rl-result-stat-label {
+  font-size: .46rem !important;
+  margin-bottom: 2px !important;
+}
+.rl-result-stats.compact .rl-result-stat-value {
+  font-size: .86rem !important;
+}
+.rl-result-section-label {
+  position: relative;
+  z-index: 1;
+  font-family: "Cinzel", serif;
+  font-size: .50rem;
+  letter-spacing: .16em;
+  color: rgba(218,198,255,.43);
+  text-align: left;
+  margin: 7px 0 5px;
+}
+.rl-result-party-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.rl-result-party-member {
+  min-width: 0;
+  text-align: center;
+}
+.rl-result-party-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 9px;
+  overflow: hidden;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,230,150,.14);
+}
+.rl-result-party-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.rl-result-party-name {
+  margin-top: 3px;
+  font-size: .50rem;
+  line-height: 1.15;
+  color: rgba(245,238,255,.72);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rl-result-drop-box {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 7px;
+}
+.rl-result-drop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.rl-result-drop-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 12px;
+  background: rgba(20,12,46,.72);
+  border: 1px solid rgba(255,230,150,.14);
+}
+.rl-result-drop-icon {
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.22);
+  font-size: 1.05rem;
+}
+.rl-result-drop-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rl-result-drop-text {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+  width: 100%;
+}
+.rl-result-drop-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .62rem;
+  color: rgba(240,232,255,.76);
+}
+.rl-result-drop-value {
+  flex-shrink: 0;
+  font-family: "Cinzel", serif;
+  font-size: .82rem;
+  font-weight: 900;
+  color: #ffe680;
+  text-shadow: 0 0 10px rgba(255,210,90,.50);
+}
+.rl-result-build-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.rl-result-build-chip {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  border-radius: 11px;
+  background: rgba(72,42,158,.22);
+  border: 1px solid rgba(155,115,255,.18);
+}
+.rl-result-build-icon {
+  flex-shrink: 0;
+  font-size: .95rem;
+}
+.rl-result-build-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #d8c4ff;
+  font-size: .66rem;
+  font-weight: 800;
+}
+.rl-result-panel-compact .rl-result-btn {
+  position: relative;
+  z-index: 1;
+  padding: 10px 26px !important;
+  font-size: .82rem !important;
+  margin-top: 0;
+}
+@media (max-height: 680px) {
+  .rl-result-panel-compact { padding: 10px 10px 12px !important; }
+  .rl-result-rank-mini { width: 40px; height: 40px; font-size: 1.75rem; }
+  .rl-result-party-row { gap: 5px; margin-bottom: 5px; }
+  .rl-result-party-name { font-size: .46rem; }
+  .rl-result-section-label { margin: 5px 0 4px; font-size: .47rem; }
+  .rl-result-drop-item { padding: 6px 7px; }
+  .rl-result-drop-icon { width: 24px; height: 24px; }
+  .rl-result-build-chip { padding: 6px 7px; }
+}
+
+
+/* ── ラン結果：SCORE上部中央配置 + 報酬履歴表示 ── */
+.rl-result-score-head {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin: 0 0 7px;
+}
+.rl-result-score-head .rl-result-kicker {
+  text-align: center;
+  margin: 0 0 2px;
+  font-size: .50rem;
+  letter-spacing: .20em;
+}
+.rl-result-score-head .rl-result-sub {
+  text-align: center;
+  margin: 0 0 2px;
+  font-size: .62rem;
+}
+.rl-result-score-label {
+  font-family: "Cinzel", serif;
+  font-size: .48rem;
+  letter-spacing: .22em;
+  color: rgba(220,205,255,.46);
+  margin-bottom: 1px;
+}
+.rl-result-rank-main {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: "Cinzel", serif;
+  font-size: 3rem;
+  font-weight: 900;
+  color: #fff1a6;
+  background: radial-gradient(circle, rgba(255,230,120,.24), rgba(82,38,210,.22) 58%, rgba(0,0,0,.18));
+  border: 1px solid rgba(255,225,140,.38);
+  box-shadow: 0 0 25px rgba(255,205,80,.28), inset 0 0 18px rgba(120,80,255,.22);
+  text-shadow: 0 0 14px rgba(255,210,90,.84), 0 2px 5px rgba(0,0,0,.95);
+}
+.rl-result-build-chip.is-item {
+  background: rgba(38,72,120,.24);
+  border-color: rgba(120,190,255,.20);
+}
+.rl-result-build-chip.is-item .rl-result-build-name {
+  color: #c8e4ff;
+}
+.rl-result-build-kind {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: "Cinzel", serif;
+  font-size: .45rem;
+  letter-spacing: .10em;
+  color: rgba(235,225,255,.42);
+}
+@media (max-height: 680px) {
+  .rl-result-score-head { margin-bottom: 5px; }
+  .rl-result-rank-main { width: 58px; height: 58px; font-size: 2.65rem; }
+  .rl-result-score-label { font-size: .44rem; }
+}
     `;
     document.head.appendChild(s);
   }
@@ -744,6 +1127,116 @@ function _hideHud() {
     return { coin, exp };
   }
 
+  function _escapeResultHtml(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+
+
+  function _getResultPartyItems(partyIds) {
+    const rawIds = Array.isArray(partyIds) ? partyIds : [];
+    const ids = rawIds.map(Number).filter(Number.isFinite);
+    const fixedFirst = 1;
+    const normalized = [fixedFirst, ...ids.filter(id => id !== fixedFirst)].slice(0, 4);
+    const masters = Array.isArray(window.CHARACTERS)
+      ? window.CHARACTERS
+      : (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS) ? CHARACTERS : []);
+
+    return normalized.map(id => {
+      let c = null;
+      if (typeof window.getCharaById === 'function') c = window.getCharaById(id);
+      if (!c && typeof getCharaById === 'function') c = getCharaById(id);
+      if (!c) c = masters.find(x => Number(x && x.id) === Number(id)) || null;
+      if (!c) return null;
+      return {
+        id,
+        name: c.name || `ID${id}`,
+        img: c.panelImg || c.upImg || c.partyImg || c.battleImg || c.img || '',
+      };
+    }).filter(Boolean);
+  }
+
+  function _buildResultPartyHtml(partyIds) {
+    const party = _getResultPartyItems(partyIds);
+    if (!party.length) return '';
+    return `
+      <div class="rl-result-section-label">CLEAR PARTY</div>
+      <div class="rl-result-party-row">
+        ${party.map(c => `
+          <div class="rl-result-party-member">
+            <div class="rl-result-party-img-wrap">
+              ${c.img ? `<img class="rl-result-party-img" src="${_escapeResultHtml(c.img)}" alt="${_escapeResultHtml(c.name)}" onerror="this.style.opacity='0'">` : ''}
+            </div>
+            <div class="rl-result-party-name">${_escapeResultHtml(c.name)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem }) {
+    const items = [];
+    if (reward) {
+      items.push({ cls: 'coin', iconHtml: '<img src="images/icon_coin.webp" alt="" onerror="this.style.display=\'none\'">', name: 'コイン', value: `+${Number(reward.coin || 0)}` });
+      items.push({ cls: 'exp', iconHtml: '<span>✦</span>', name: 'EXP', value: `+${Number(reward.exp || 0)}` });
+    }
+    if (shinjuItem) {
+      items.push({ cls: 'shinju', iconHtml: '<span>🌳</span>', name: shinjuItem.name || '創世資源', value: `+${Number(shinjuItem.exp || 0)}` });
+    }
+    if (remnantItem) {
+      const img = _escapeResultHtml(remnantItem.panelImg || remnantItem.img || 'images/remnant_04_panel.webp');
+      const name = _escapeResultHtml(remnantItem.name || 'レムナント');
+      const count = 1; // リザルトでは今回ドロップ分のみ表示。所持合計数は出さない。
+      items.push({ cls: 'remnant', iconHtml: `<img src="${img}" alt="${name}" onerror="this.style.opacity=\'0\'">`, name, value: `×${count}` });
+    } else if (coinDropItem) {
+      items.push({ cls: 'bosscoin', iconHtml: '<img src="images/icon_coin.webp" alt="" onerror="this.style.display=\'none\'">', name: 'BOSS', value: `+${Number(coinDropItem.coin || 0)}` });
+    }
+
+    if (!items.length) return '';
+    return `
+      <div class="rl-result-drop-box">
+        <div class="rl-result-section-label">DROP</div>
+        <div class="rl-result-drop-grid">
+          ${items.map(item => `
+            <div class="rl-result-drop-item ${item.cls}">
+              <div class="rl-result-drop-icon">${item.iconHtml}</div>
+              <div class="rl-result-drop-text">
+                <div class="rl-result-drop-name">${item.name}</div>
+                <div class="rl-result-drop-value">${item.value}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function _buildResultBuildHtml(ops) {
+    const list = Array.isArray(ops) ? ops.filter(Boolean) : [];
+    if (!list.length) return '';
+    return `
+      <div class="rl-result-section-label">SELECTED REWARDS</div>
+      <div class="rl-result-build-grid">
+        ${list.map(op => {
+          const kind = op.rewardKind === 'item' || op.item ? 'item' : 'passive';
+          const kindLabel = kind === 'item' ? 'ITEM' : 'OP';
+          const cls = kind === 'item' ? ' is-item' : '';
+          return `
+          <div class="rl-result-build-chip${cls}" data-rarity="${_escapeResultHtml(op.rarity || '')}">
+            <span class="rl-result-build-icon">${op.icon || (kind === 'item' ? '◆' : '✦')}</span>
+            <span class="rl-result-build-name">${_escapeResultHtml(op.name || '')}</span>
+            <span class="rl-result-build-kind">${kindLabel}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
   async function _showResult(result, ops, summary) {
     _hideCommonGameScreens();
     _hideTransitionShield();
@@ -754,39 +1247,42 @@ function _hideHud() {
     const rank = data.rank || _getRankFromTurns(totalTurns);
     const reward = isWin ? (data.reward || await _grantRunRewards(rank)) : null;
     const shinjuItem = isWin ? (data.shinjuItem || null) : null;
+    const bossDropItem = isWin ? (data.bossDropItem || data.remnantItem || null) : null;
+    const remnantItem = bossDropItem && bossDropItem.type === 'remnant' ? bossDropItem : null;
+    const coinDropItem = bossDropItem && bossDropItem.type === 'coin' ? bossDropItem : null;
+    const partyIds = Array.isArray(data.partyIds) && data.partyIds.length
+      ? data.partyIds
+      : (Array.isArray(window.__ROGUELITE_LAST_PARTY_IDS__) ? window.__ROGUELITE_LAST_PARTY_IDS__ : []);
+    const selectedRewards = Array.isArray(data.selectedRewards) && data.selectedRewards.length
+      ? data.selectedRewards
+      : (Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) && window.__ROGUELITE_SELECTED_REWARDS__.length
+        ? window.__ROGUELITE_SELECTED_REWARDS__
+        : (Array.isArray(ops) ? ops : []));
 
-    const ov    = document.createElement('div');
-    ov.id       = 'rl-result-overlay';
+    const ov = document.createElement('div');
+    ov.id = 'rl-result-overlay';
 
-    const opsHtml = (ops || []).map(op => `
-      <div class="rl-result-op">
-        <span class="rl-result-op-icon">${op.icon || '✦'}</span>
-        <div>
-          <div class="rl-result-op-name">${op.name}</div>
-          <div class="rl-result-op-desc">${op.desc || ''}</div>
-        </div>
-      </div>
-    `).join('');
+    const partyHtml = _buildResultPartyHtml(partyIds);
+    const dropHtml = isWin ? _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem }) : '';
+    const buildHtml = _buildResultBuildHtml(selectedRewards);
 
     ov.innerHTML = isWin ? `
-      <div class="rl-result-panel rich">
-        <div class="rl-result-kicker">ROGUELITE COMPLETE</div>
-        <div class="rl-result-title win">ラン成功</div>
-        <div class="rl-result-sub">怪異の収容に成功した。全ステージクリア。</div>
-
-        <div class="rl-result-rank-wrap">
-          <div class="rl-result-rank-label">SCORE</div>
-          <div class="rl-result-rank">${rank}</div>
+      <div class="rl-result-panel rich rl-result-panel-compact">
+        <div class="rl-result-score-head">
+          <div class="rl-result-kicker">ROGUELITE COMPLETE</div>
+          <div class="rl-result-score-label">SCORE</div>
+          <div class="rl-result-rank-main" aria-label="GRADE ${rank}">${rank}</div>
+          <div class="rl-result-sub">全ステージクリア。</div>
         </div>
 
-        <div class="rl-result-stats">
+        <div class="rl-result-stats compact">
           <div class="rl-result-stat">
-            <div class="rl-result-stat-label">TOTAL TURN</div>
+            <div class="rl-result-stat-label">TURN</div>
             <div class="rl-result-stat-value">${totalTurns}</div>
           </div>
           <div class="rl-result-stat">
             <div class="rl-result-stat-label">STAGE</div>
-            <div class="rl-result-stat-value">4 / 4</div>
+            <div class="rl-result-stat-value">4/4</div>
           </div>
           <div class="rl-result-stat">
             <div class="rl-result-stat-label">GRADE</div>
@@ -794,40 +1290,18 @@ function _hideHud() {
           </div>
         </div>
 
-        <div class="rl-result-rewards">
-          <div class="rl-result-reward-row">
-            <div class="rl-result-reward-left"><span class="rl-result-reward-icon">🪙</span><span>獲得コイン</span></div>
-            <div class="rl-result-reward-value">+${reward.coin}</div>
-          </div>
-          <div class="rl-result-reward-row">
-            <div class="rl-result-reward-left"><span class="rl-result-reward-icon">✦</span><span>獲得EXP</span></div>
-            <div class="rl-result-reward-value">+${reward.exp}</div>
-          </div>
-          ${shinjuItem ? `
-          <div class="rl-result-reward-row">
-            <div class="rl-result-reward-left"><span class="rl-result-reward-icon">🌳</span><span>創世資源</span></div>
-            <div class="rl-result-reward-value">${shinjuItem.name} +${shinjuItem.exp}</div>
-          </div>` : ''}
-        </div>
+        ${partyHtml}
+        ${dropHtml}
+        ${buildHtml}
 
-        ${ops && ops.length > 0 ? `
-          <div style="position:relative;z-index:1;font-size:.62rem;color:rgba(190,165,255,0.35);letter-spacing:.1em;font-family:'Cinzel',serif;text-align:center;margin-bottom:10px;">
-            — 取得した強化OP —
-          </div>
-          <div class="rl-result-ops">${opsHtml}</div>
-        ` : ''}
         <button class="rl-result-btn" id="rl-result-close-btn">タイトルへ戻る</button>
       </div>
     ` : `
-      <div class="rl-result-panel">
+      <div class="rl-result-panel rl-result-panel-compact">
         <div class="rl-result-title lose">💀 ラン失敗</div>
         <div class="rl-result-sub">ランが終了した。また挑め。</div>
-        ${ops && ops.length > 0 ? `
-          <div style="font-size:.68rem;color:rgba(190,165,255,0.35);letter-spacing:.1em;font-family:'Cinzel',serif;text-align:center;margin-bottom:10px;">
-            — 取得した強化OP —
-          </div>
-          <div class="rl-result-ops">${opsHtml}</div>
-        ` : ''}
+        ${partyHtml}
+        ${buildHtml}
         <button class="rl-result-btn" id="rl-result-close-btn">タイトルへ戻る</button>
       </div>
     `;
@@ -954,14 +1428,48 @@ function _hideHud() {
       guf.style.pointerEvents = '';
     }
 
-    // ステージ選択画面へ戻す。環境差に備えて複数の既存APIを順に試す。
-    if (typeof window.openStageSelect === 'function') {
-      window.openStageSelect();
-    } else if (typeof window.showStageSelect === 'function') {
-      window.showStageSelect();
+    // ローグライト終了後はCHAPTER01/ステージ選択へ戻さず、巡行トップへ戻す。
+    // 成功リザルト後・ラン失敗後のどちらもこの関数を通るため、戻り先をここで統一する。
+    const stage = document.getElementById('stage-select-modal');
+    if (stage) {
+      stage.style.display = 'none';
+      stage.classList.remove('active', 'show', 'visible');
+    }
+
+    const party = document.getElementById('party-select-modal');
+    if (party) {
+      party.style.display = 'none';
+      party.classList.remove('active', 'show', 'visible');
+    }
+
+    if (typeof window.showMainTab === 'function') {
+      window.showMainTab('ninmu');
     } else {
-      const stage = document.getElementById('stage-select-modal');
-      if (stage) stage.style.display = '';
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
+      });
+      const ninmu = document.getElementById('screen-ninmu');
+      if (ninmu) {
+        ninmu.classList.add('active');
+        ninmu.style.display = 'flex';
+      }
+
+      document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
+      const navNinmu = document.getElementById('bnav-ninmu');
+      if (navNinmu) navNinmu.classList.add('active');
+    }
+
+    // 巡行トップはデイリー巡行を初期表示にする。
+    if (typeof window.switchNinmuCat === 'function') {
+      window.switchNinmuCat('daily');
+    } else {
+      ['daily', 'special', 'story'].forEach(key => {
+        const btn = document.getElementById(`ninmu-cat-${key}`);
+        const panel = document.getElementById(`ninmu-panel-${key}`);
+        if (btn) btn.classList.toggle('active', key === 'daily');
+        if (panel) panel.style.display = key === 'daily' ? '' : 'none';
+      });
     }
 
     if (typeof window.updateMainUI === 'function') {
@@ -1048,19 +1556,86 @@ function _hideHud() {
 
 
     // ステージ演出（enemy_intro）を経由してバトルへ
-    // isBossStage → ボス敵のimgを使って演出
-    // 雑魚戦 → 先頭の雑魚定義を使って演出（imgがなければスキップ）
+    // enemy_intro 側の実装差分に耐えるため、name だけでなく
+    // displayName / enemyName / introName / title / label にも同じ表示名を入れる。
+    // また、enemy_intro が config 側だけを見る実装でも名前が落ちないように
+    // config.enemyName / config.introEnemyName / config.introEnemies も埋める。
     const def = window.RogueliteRun.getStageDef();
-    const introEnemies = (config.enemyIds || []).map(id => {
-      const e = typeof getEnemyById === 'function' ? getEnemyById(id) : null;
-      return e ? JSON.parse(JSON.stringify(e)) : { id, name:'??????', img:'images/enemy_test.webp' };
+
+    function _isUnknownEnemyName(v) {
+      const s = String(v == null ? '' : v).trim();
+      return !s || /^\?+$/.test(s) || s === '不明';
+    }
+
+    function _fallbackIntroEnemyName(id) {
+      const key = String(id || '');
+      if (key === 'enemy_sakiel_roguelite') return '大天使 サキエル';
+      if (key.indexOf('rl_sakiel_zako') === 0) return 'サキエルのしもべ';
+      return '??????';
+    }
+
+    function _resolveIntroEnemyName(enemy, id) {
+      const candidates = [
+        enemy && enemy.introName,
+        enemy && enemy.displayName,
+        enemy && enemy.enemyName,
+        enemy && enemy.name,
+        enemy && enemy.title,
+        enemy && enemy.label,
+      ];
+      const found = candidates.find(v => !_isUnknownEnemyName(v));
+      return found || _fallbackIntroEnemyName(id || (enemy && enemy.id));
+    }
+
+    function _cloneIntroEnemy(enemy, id) {
+      const raw = enemy ? JSON.parse(JSON.stringify(enemy)) : { id };
+      raw.id = raw.id || id;
+
+      const displayName = _resolveIntroEnemyName(raw, raw.id || id);
+      raw.name = displayName;
+      raw.displayName = displayName;
+      raw.enemyName = displayName;
+      raw.introName = displayName;
+      raw.stageIntroName = displayName;
+      raw.title = displayName;
+      raw.label = displayName;
+
+      // ステージ入り画像は upImg を最優先。enemy_intro が img しか見ない場合もあるため、
+      // intro 用オブジェクトでは img に upImg を寄せる。
+      raw.stageImg = raw.stageImg || raw.upImg || raw.img || 'images/enemy_test.webp';
+      raw.introImg = raw.introImg || raw.stageImg;
+      raw.img = raw.stageImg;
+      raw.upImg = raw.upImg || raw.stageImg;
+
+      return raw;
+    }
+
+    const introEnemyIds = Array.isArray(config.enemyIds) && config.enemyIds.length > 0
+      ? config.enemyIds.slice()
+      : (Array.isArray(def && def.enemyIds) ? def.enemyIds.slice() : []);
+
+    const introEnemies = introEnemyIds.map(id => {
+      const e = typeof getEnemyById === 'function'
+        ? getEnemyById(id)
+        : ((window.ENEMIES || []).find(x => x && x.id === id) || null);
+      return _cloneIntroEnemy(e, id);
     }).filter(Boolean);
 
     if (introEnemies.length === 0 && Array.isArray(config.enemies)) {
-      config.enemies.forEach(e => introEnemies.push({
-        ...e,
-        img: e.img || 'images/enemy_test.webp',
-      }));
+      config.enemies.forEach(e => introEnemies.push(_cloneIntroEnemy(e, e && e.id)));
+    }
+
+    const primaryIntroEnemy = introEnemies[0] || null;
+    if (primaryIntroEnemy) {
+      config.enemyName = primaryIntroEnemy.name;
+      config.enemyDisplayName = primaryIntroEnemy.name;
+      config.introEnemyName = primaryIntroEnemy.name;
+      config.stageIntroEnemyName = primaryIntroEnemy.name;
+      config.enemyTitle = primaryIntroEnemy.name;
+      config.enemyLabel = primaryIntroEnemy.name;
+      config.enemyImg = primaryIntroEnemy.stageImg || primaryIntroEnemy.img;
+      config.enemyUpImg = primaryIntroEnemy.upImg || primaryIntroEnemy.stageImg || primaryIntroEnemy.img;
+      config.introEnemies = introEnemies.map(e => ({ ...e }));
     }
 
     if (typeof window.startEnemyIntro === 'function' && introEnemies.length > 0) {
@@ -1216,7 +1791,7 @@ async function _onBattleEnd(result, payload) {
     const ops = window.RogueliteRun.getOptions();
     window.RogueliteRun.end('lose');
     _hideHud();
-    await _showResult('lose', ops);
+    await _showResult('lose', ops, { selectedRewards: Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) ? window.__ROGUELITE_SELECTED_REWARDS__ : ops });
     return;
   }
 
@@ -1245,9 +1820,61 @@ async function _onBattleEnd(result, payload) {
     const shinjuItem = (window.ShinjuProgress && typeof window.ShinjuProgress.grantBossItemFromRoguelite === 'function')
       ? window.ShinjuProgress.grantBossItemFromRoguelite({ runId, rank, totalTurns })
       : null;
+
+    let bossDropItem = null;
+    if (typeof window.rollBossDropFromRoguelite === 'function') {
+      try {
+        const drop = await window.rollBossDropFromRoguelite({ runId, rank, totalTurns });
+        if (drop && drop.type === 'remnant' && drop.remnant) {
+          bossDropItem = {
+            type: 'remnant',
+            dropped: true,
+            unlocked: !!drop.unlocked,
+            duplicate: !!drop.duplicate,
+            alreadyOwned: !!drop.alreadyOwned,
+            count: drop.count || 1,
+            rate: drop.rate,
+            roll: drop.roll,
+            id: drop.remnant.id,
+            no: drop.remnant.no,
+            name: drop.remnant.name || 'レムナント',
+            img: drop.remnant.img,
+            panelImg: drop.remnant.panelImg,
+            desc: drop.remnant.desc || '旧世界の残響が記録されました。',
+          };
+        } else if (drop && drop.type === 'coin') {
+          bossDropItem = {
+            type: 'coin',
+            dropped: false,
+            rate: drop.rate,
+            roll: drop.roll,
+            coin: Number(drop.coin || 0),
+          };
+        }
+      } catch (err) {
+        console.warn('[RogueliteController] BOSSドロップ抽選に失敗:', err);
+      }
+    } else if (typeof window.tryUnlockRemnantFromRoguelite === 'function') {
+      // 旧API互換
+      try {
+        const unlocked = await window.tryUnlockRemnantFromRoguelite({ runId, rank, totalTurns });
+        if (unlocked && unlocked.remnant) {
+          bossDropItem = {
+            type: 'remnant', dropped: true, unlocked: !!unlocked.unlocked, duplicate: !!unlocked.duplicate, count: unlocked.count || 1,
+            id: unlocked.remnant.id, no: unlocked.remnant.no, name: unlocked.remnant.name || 'レムナント',
+            img: unlocked.remnant.img, panelImg: unlocked.remnant.panelImg, desc: unlocked.remnant.desc || '旧世界の残響が記録されました。',
+          };
+        }
+      } catch (err) {
+        console.warn('[RogueliteController] レムナント解放に失敗:', err);
+      }
+    }
+
     window.RogueliteRun.end('win');
     _hideHud();
-    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem });
+    const partyIds = Array.isArray(window.__ROGUELITE_LAST_PARTY_IDS__) ? window.__ROGUELITE_LAST_PARTY_IDS__ : [];
+    const selectedRewards = Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) ? window.__ROGUELITE_SELECTED_REWARDS__ : ops;
+    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem, bossDropItem, partyIds, selectedRewards });
     return;
   }
 
@@ -1279,8 +1906,10 @@ async function _onBattleEnd(result, payload) {
       _hideBattle32Only();
 
       if (selectedOp) {
+        if (!Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__)) window.__ROGUELITE_SELECTED_REWARDS__ = [];
+        window.__ROGUELITE_SELECTED_REWARDS__.push(JSON.parse(JSON.stringify(selectedOp)));
         window.RogueliteRun.addOption(selectedOp);
-        console.log('[RogueliteController] OP選択:', selectedOp.name);
+        console.log('[RogueliteController] 報酬選択:', selectedOp.name);
       }
 
       console.log(
@@ -1326,10 +1955,14 @@ async function _onBattleEnd(result, payload) {
         || 'default';
 
     window.__ROGUELITE_PENDING_RUN_ID__ = null;
+    window.__ROGUELITE_SELECTED_REWARDS__ = [];
 
     if (window.RogueliteRun.isActive()) {
       window.RogueliteRun.end('lose'); // 既存ランを中断
     }
+
+    const rlPartyIds = Array.isArray(partyIds) ? partyIds.map(Number).filter(Number.isFinite) : [];
+    window.__ROGUELITE_LAST_PARTY_IDS__ = [1, ...rlPartyIds.filter(id => id !== 1)].slice(0, 4);
 
     window.RogueliteRun.start(partyIds || [], runId);
 _showTransitionShield('RUN START');
