@@ -1059,11 +1059,13 @@ const enemies = enemyDefs.map(def => {
       // ── ローグライト: アイテム2枠 ──
       items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 2) : [],
 
-      // コア概念は廃止。敗北条件はエリのロスト / タイムオーバー。
+      // コア概念は廃止。敗北条件はエリのロストのみ。
+      // ターン制限は廃止。早いほどスコアが高く、遅くてもタイムオーバー敗北にはしない。
       cores: null,
       bossCore: null,
 
-      turnLimit: config.turnLimit ?? 12,
+      turnLimit: null,
+      noTurnLimit: true,
 
       // 敵行動数制御
       enemyActionsPerTurn: config.enemyActionsPerTurn ?? null,
@@ -1144,14 +1146,10 @@ const enemies = enemyDefs.map(def => {
       return;
     }
 
-    const remainTurns = Math.max(0, Number(_bs.turnLimit || 0) - Number(_bs.turn || 0) + 1);
-    const isTurnDanger = remainTurns <= 3;
-    const turnSub = isTurnDanger ? `残り ${remainTurns} TURN` : 'PLAYER ACTION';
+    // ターン制限は廃止。ターン数はスコア評価用としてのみ表示する。
+    _setTurnDangerAlert(false);
 
-    // 残り3ターン以下は、次のターン/戦闘終了まで画面フチを赤く点滅させる。
-    _setTurnDangerAlert(isTurnDanger);
-
-    await _centerTextWaitTurn(`TURNS ${_bs.turn}/${_bs.turnLimit}`, turnSub, B32_WAIT.turn, isTurnDanger);
+    await _centerTextWaitTurn(`TURN ${_bs.turn}`, 'PLAYER ACTION', B32_WAIT.turn, false);
 
     if (!_bs || _bs.result || _bs.phase !== 'skill' || token !== _battleFlowToken) {
       _renderUI();
@@ -1262,7 +1260,8 @@ const enemies = enemyDefs.map(def => {
       isRoguelite: !!_bs.isRoguelite,
       cores: null,
       bossCore: null,
-      turnLimit: _bs.turnLimit,
+      turnLimit: null,
+      noTurnLimit: true,
       // LINK
       link: _bs.link ? { ..._bs.link } : null,
       // ローグライト: roster / deployLimit / items
@@ -3910,7 +3909,7 @@ function doBossLineAttack(boss) {
     reason: reason || _bs.loseReason || null,
     loseReason: reason || _bs.loseReason || null,
     turn: _bs.turn,
-    turnLimit: _bs.turnLimit,
+    turnLimit: null,
   };
 
   _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
@@ -3976,18 +3975,7 @@ function doBossLineAttack(boss) {
       return;
     }
 
-    // ── 敗北条件：ターン経過によるタイムオーバー ───────
-    if (_bs.turn >= _bs.turnLimit) {
-      _bs.result = 'lose';
-      _bs.loseReason = 'turn_over';
-      _bs.phase = 'end';
-      _log('✕ 接続限界を超過。強制帰還…');
-      _clearResume();
-      _emit('result', { result: 'lose', reason: _bs.loseReason, bs: _snapshot() });
-      _renderUI();
-      _notifyRogueliteBattleEnd('lose', _bs.loseReason);
-      return;
-    }
+    // ターン制限による敗北は廃止。
   }
   // ============================================================
   // 移動可能セル取得（旧API・後方互換用）

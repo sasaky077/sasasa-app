@@ -46,7 +46,6 @@
           enemyIds: ['rl_chaos_walker', 'rl_chaos_slant'],
           enemyActionMode: 'limit',
           enemyActionsPerTurn: 2,
-          turnLimit: 10,
         },
         {
           stage: 2,
@@ -56,7 +55,6 @@
           enemyIds: ['rl_chaos_walker_plus', 'rl_logos_ranged', 'rl_mystis_caster'],
           enemyActionMode: 'limit',
           enemyActionsPerTurn: 2,
-          turnLimit: 10,
         },
         {
           stage: 3,
@@ -66,7 +64,6 @@
           enemyIds: ['rl_chaos_elite', 'rl_logos_elite', 'rl_mystis_elite', 'rl_chaos_ranged'],
           enemyActionMode: 'limit',
           enemyActionsPerTurn: 3,
-          turnLimit: 12,
         },
         {
           stage: 4,
@@ -77,7 +74,6 @@
           enemyRandomStartPosition: true,
           enemyActionMode: 'all',
           enemyActionsPerTurn: null,
-          turnLimit: 13,
           enemySpawn: {
             enemyId: 'enemy_02a',
             interval: 2,
@@ -101,7 +97,6 @@
           enemyIds: ['rl_sakiel_zako_straight', 'rl_sakiel_zako_diag'],
           enemyActionMode: 'limit',
           enemyActionsPerTurn: 2,
-          turnLimit: 10,
         },
         {
           stage: 2,
@@ -111,7 +106,6 @@
           enemyIds: ['rl_sakiel_zako_straight', 'rl_sakiel_zako_ranged', 'rl_sakiel_zako_diag'],
           enemyActionMode: 'limit',
           enemyActionsPerTurn: 2,
-          turnLimit: 10,
         },
         {
           stage: 3,
@@ -121,7 +115,6 @@
           enemyIds: ['rl_sakiel_zako_elite', 'rl_sakiel_zako_ranged', 'rl_sakiel_zako_diag', 'rl_sakiel_zako_straight'],
           enemyActionMode: 'limit',
           enemyActionsPerTurn: 3,
-          turnLimit: 12,
         },
         {
           stage: 4,
@@ -132,7 +125,6 @@
           enemyRandomStartPosition: false,
           enemyActionMode: 'all',
           enemyActionsPerTurn: null,
-          turnLimit: 14,
           enemySpawn: {
             enemyId: 'rl_sakiel_zako_straight',
             interval: 2,

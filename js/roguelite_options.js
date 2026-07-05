@@ -282,12 +282,27 @@
     return arr;
   }
 
+  function isTurnExtendReward(op) {
+    const id = String(op && op.id || '').toLowerCase();
+    const name = String(op && op.name || '');
+    const desc = String(op && op.desc || '');
+    const type = String(op && op.type || op && op.item && op.item.type || '').toLowerCase();
+
+    // 「ターン+」「TURN+」「turn_extend」系だけを除外する。
+    // ガード/スタンなど「1ターン持続」系アイテムは残す。
+    return /turn_(up|plus|add|extend)|add_turn|extend_turn|turnextend/.test(id)
+      || /turn_(up|plus|add|extend)|add_turn|extend_turn|turnextend/.test(type)
+      || /(?:ターン|TURN)\s*[+＋]/i.test(name)
+      || /(?:ターン|TURN)\s*[+＋]/i.test(desc)
+      || /ターン延長|制限ターン/i.test(name + desc);
+  }
+
   // ランダム3択生成
   // passiveは重複排除、itemは消耗品なので基本的に再出現可能。
   // ただしアイテム枠が満杯ならitem報酬は出さない。
   function getRandomOptions(excludeIds) {
     const excl = Array.isArray(excludeIds) ? excludeIds : [];
-    const passivePool = ROGUELITE_OPTIONS.filter(op => !excl.includes(op.id));
+    const passivePool = ROGUELITE_OPTIONS.filter(op => !excl.includes(op.id) && !isTurnExtendReward(op));
 
     let canAddItem = true;
     try {
@@ -298,7 +313,7 @@
       canAddItem = true;
     }
 
-    const itemPool = canAddItem ? ROGUELITE_ITEM_REWARDS.slice() : [];
+    const itemPool = canAddItem ? ROGUELITE_ITEM_REWARDS.filter(op => !isTurnExtendReward(op)) : [];
     const pool = shuffle([...passivePool, ...itemPool]);
     return pool.slice(0, Math.min(3, pool.length));
   }

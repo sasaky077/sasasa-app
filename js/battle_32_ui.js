@@ -7056,7 +7056,14 @@ if (listEl) {
 
  if (stageIdEl) stageIdEl.textContent = bs.stageId || '01';
  if (turnNumLarge) turnNumLarge.textContent = bs.turn || 1;
- if (turnMaxEl) turnMaxEl.textContent = bs.turnLimit || '—';
+
+ // ターン制限廃止：ヘッダーは現在ターンのみ表示する。
+ const turnSlashEl = document.getElementById('b32-turn-slash');
+ if (turnSlashEl) turnSlashEl.style.display = 'none';
+ if (turnMaxEl) {
+   turnMaxEl.textContent = '';
+   turnMaxEl.style.display = 'none';
+ }
 
  // フェーズバッジ：文字だけ残して色付けを最小限に
  if (phaseBadge) {
@@ -7067,11 +7074,9 @@ if (listEl) {
  }
 
  function renderCoreStatus(bs) {
- // コア概念廃止：下部サブ表示は使わない
+ // コア概念・ターン制限廃止：下部の残TURN表示は使わない
  const subEl = document.getElementById('b32-bottom-sub');
- if (subEl && bs && bs.phase !== 'skill' && bs.phase !== 'enemy') {
-   subEl.textContent = `残TURN ${Math.max(0, (bs.turnLimit || 0) - (bs.turn || 1) + 1)}`;
- }
+ if (subEl) subEl.textContent = '';
 }
 
  function renderBossHp(bs) {
