@@ -476,7 +476,7 @@ const CHARACTERS = [
         linkCost: 4,
         isUltimate: true,
         hit: 100,
-        criticalRate: 0.20,
+        criticalRate: 0.30,
         criticalDamageRate: 1.5,
         type: 'attack',
         multiplier: 3.0,
