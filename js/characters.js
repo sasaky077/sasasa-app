@@ -396,7 +396,7 @@ const CHARACTERS = [
     shinkiMax: 3,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 720, ATK: 230 },
+    stats: { HP: 500, ATK: 200 },
     img: 'images/chara_05.webp', 
     cutImg: 'images/chara_05_cut.webp', 
     ultImg: 'images/chara_05_cutin.webp',
