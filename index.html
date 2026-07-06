@@ -662,7 +662,7 @@
   <div class="modal">
     <div class="modal-inner">
       <h2>共鳴する</h2>
-      <p class="lb-modal-desc">素材にするキャラクターを選んでください。<br>選択したキャラは消去されます。</p>
+      <p class="lb-modal-desc">共鳴には、共鳴用素材が必要です。<br>素材にしたアイテムは消去されます。</p>
       <div id="lb-material-list" class="lb-material-list"></div>
       <button class="btn-cancel-txt" onclick="closeLimitBreakModal()" style="margin-top:12px">キャンセル</button>
     </div>
@@ -688,7 +688,7 @@
   <div class="modal">
     <div class="modal-inner">
       <h2>共鳴完了</h2>
-      <p>共鳴が完了しました。</p>
+      <p id="lb-complete-text">共鳴が完了しました。</p>
       <div class="modal-btns">
         <button class="btn-pay" onclick="closeModal('limitbreak-complete-modal')">OK</button>
       </div>
@@ -815,32 +815,70 @@ document.addEventListener('touchend', function (e) {
   // ─── ガチャバナー定義 ───────────────────────────
   // 期間ごとにここを編集する（imgはimages/フォルダ内のファイル名）
   // 一旦ロジックは同じ。邂逅画面で2種類のバナーを選択できるようにする。
+  const GACHA_COMMON_CHARACTER_IDS = [3, 13, 16, 6, 5];
+  const GACHA_COMMON_MATERIAL_IDS = [
+    'soul_vessel_chaos',
+    'soul_vessel_mystis',
+    'soul_vessel_logos',
+    'seihai',
+    'kyoumei_stone'
+  ];
+
+  // ─── ガチャバナー定義 ───────────────────────────
+  // pickupRate: 0.05 = 5%
+  // pickup以外は commonCharacterIds + commonMaterialIds から等確率で抽選する。
   const GACHA_BANNERS = [
     {
-      id: 'banner_01',
+      id: 'gacha_01',
       category: 'normal',
       img: 'images/gacha_banner_01.webp',
-      detailTitle: '',
-      thumbTitle: '',
-      desc: '',
       cost: 5,
-      minCharaId: 1,
-      maxCharaId: 20,
-      filterGender: null,
-      filterType: null
+      pickupCharaId: 8,
+      pickupRate: 0.05,
+      commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
+      commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
+      itemMixed: true,
+      disablePity: true,
+      disableTenGuarantee: true
     },
     {
-      id: 'banner_02',
+      id: 'gacha_02',
       category: 'normal',
       img: 'images/gacha_banner_02.webp',
-      detailTitle: '',
-      thumbTitle: '',
-      desc: '',
       cost: 5,
-      minCharaId: 1,
-      maxCharaId: 20,
-      filterGender: null,
-      filterType: null
+      pickupCharaId: 4,
+      pickupRate: 0.05,
+      commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
+      commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
+      itemMixed: true,
+      disablePity: true,
+      disableTenGuarantee: true
+    },
+    {
+      id: 'gacha_03',
+      category: 'normal',
+      img: 'images/gacha_banner_03.webp',
+      cost: 5,
+      pickupCharaId: 17,
+      pickupRate: 0.05,
+      commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
+      commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
+      itemMixed: true,
+      disablePity: true,
+      disableTenGuarantee: true
+    },
+    {
+      id: 'gacha_04',
+      category: 'normal',
+      img: 'images/gacha_banner_04.webp',
+      cost: 5,
+      pickupCharaId: 7,
+      pickupRate: 0.05,
+      commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
+      commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
+      itemMixed: true,
+      disablePity: true,
+      disableTenGuarantee: true
     }
   ];
 
@@ -955,7 +993,7 @@ const BASE_STATS = ["HP","ATK","DEF","SPD"];
 const DISPLAY_STATS = ["HP","ATK"]; // 表示用（Battle32仕様：DEF/SPDは使用しない）
 
 // ── 共鳴システム ──────────────────────────────────
-const MAX_LIMIT_BREAK = 5;
+const MAX_LIMIT_BREAK = 4;
 
 const LIMIT_BREAK_RATE = 0.04;
 
@@ -975,38 +1013,456 @@ function applyLimitBreakStats(baseStats, limitBreak){
   return result;
 }
 
+
+// ── 共鳴用進化素材 ──────────────────────────────────
+// 保存先はlocalStorage。DBスキーマを増やさず、まずは素材所持数を永続化する。
+const EVOLUTION_MATERIAL_STORAGE_KEY = 'zeraphia_evolution_materials_v1';
+const EVOLUTION_MATERIAL_MASTER = {
+  kyoumei_stone: {
+    id: 'kyoumei_stone',
+    name: '共鳴石',
+    shortName: '共鳴石',
+    img: 'images/item_kyoumeistone.webp',
+    desc: 'プリモアの魂を同調させる神秘的な石。'
+  },
+  soul_vessel_logos: {
+    id: 'soul_vessel_logos',
+    name: '魂の器（LOGOS）',
+    shortName: 'LOGOSの器',
+    img: 'images/item_logos.webp',
+    element: 'logos',
+    desc: 'LOGOSの魂を受け止める神具。'
+  },
+  soul_vessel_chaos: {
+    id: 'soul_vessel_chaos',
+    name: '魂の器（CHAOS）',
+    shortName: 'CHAOSの器',
+    img: 'images/item_chaos.webp',
+    element: 'chaos',
+    desc: 'CHAOSの魂を受け止める神具。'
+  },
+  soul_vessel_mystis: {
+    id: 'soul_vessel_mystis',
+    name: '魂の器（MYSTIS）',
+    shortName: 'MYSTISの器',
+    img: 'images/item_mystis.webp',
+    element: 'mystis',
+    desc: 'MYSTISの魂を受け止める神具。'
+  },
+  seihai: {
+    id: 'seihai',
+    name: '聖なる盃',
+    shortName: '聖なる盃',
+    img: 'images/item_seihai.webp',
+    desc: '神聖な力を湛えた進化用素材。'
+  }
+};
+
+var evolutionMaterials = loadEvolutionMaterialsFromLocal();
+
+function loadEvolutionMaterialsFromLocal(){
+  try {
+    var raw = localStorage.getItem(EVOLUTION_MATERIAL_STORAGE_KEY);
+    var parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch(e) {
+    console.warn('[EvolutionMaterial] load failed:', e);
+    return {};
+  }
+}
+
+function saveEvolutionMaterialsToLocal(){
+  try {
+    localStorage.setItem(EVOLUTION_MATERIAL_STORAGE_KEY, JSON.stringify(evolutionMaterials || {}));
+  } catch(e) {
+    console.warn('[EvolutionMaterial] save failed:', e);
+  }
+}
+
+function getEvolutionMaterialDef(materialId){
+  return EVOLUTION_MATERIAL_MASTER[materialId] || null;
+}
+
+function getEvolutionMaterialCount(materialId){
+  return Math.max(0, Number((evolutionMaterials && evolutionMaterials[materialId]) || 0));
+}
+
+function addEvolutionMaterial(materialId, count){
+  var def = getEvolutionMaterialDef(materialId);
+  if(!def) return null;
+  var n = Math.max(1, Number(count || 1));
+  evolutionMaterials[materialId] = getEvolutionMaterialCount(materialId) + n;
+  saveEvolutionMaterialsToLocal();
+  updateZukanLimitBreakNotice();
+  return Object.assign({}, def, { count: n, total: getEvolutionMaterialCount(materialId) });
+}
+
+function consumeEvolutionMaterial(materialId, count){
+  var n = Math.max(1, Number(count || 1));
+  if(getEvolutionMaterialCount(materialId) < n) return false;
+  evolutionMaterials[materialId] = getEvolutionMaterialCount(materialId) - n;
+  if(evolutionMaterials[materialId] <= 0) delete evolutionMaterials[materialId];
+  saveEvolutionMaterialsToLocal();
+  return true;
+}
+
+var selectedLimitBreakSoulVesselId = '';
+var selectedLimitBreakTargetKey = '';
+
+function escapeHtml(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getLimitBreakTargetKey(target){
+  if(!target) return '';
+  return String(target.db_id || target.instanceId || target.id || '') + '_' + String(target.limitBreak || 0);
+}
+
+function getLimitBreakElementList(element){
+  var list = (typeof normalizeElementList === 'function') ? normalizeElementList(element) : [];
+  var unique = [];
+  list.forEach(function(key){
+    if(key && unique.indexOf(key) === -1) unique.push(key);
+  });
+  return unique;
+}
+
+function normalizeLimitBreakElement(element){
+  var list = getLimitBreakElementList(element);
+  return list[0] || '';
+}
+
+function getSoulVesselMaterialIdByElement(element){
+  var key = normalizeLimitBreakElement(element);
+  if(!key) return '';
+  return 'soul_vessel_' + key;
+}
+
+function getSoulVesselMaterialIdsByElement(element){
+  return getLimitBreakElementList(element).map(function(key){
+    return 'soul_vessel_' + key;
+  }).filter(function(materialId){
+    return !!getEvolutionMaterialDef(materialId);
+  });
+}
+
+function resolveLimitBreakSoulVesselId(target, preferredId){
+  var ids = getSoulVesselMaterialIdsByElement(target && target.element);
+  if(!ids.length) return '';
+
+  if(preferredId && ids.indexOf(preferredId) !== -1){
+    return preferredId;
+  }
+
+  // まず所持している器を優先する。複数所持している場合は、このあとUIから選択可能。
+  var owned = ids.filter(function(materialId){
+    return getEvolutionMaterialCount(materialId) >= 1;
+  });
+  if(owned.length) return owned[0];
+
+  return ids[0];
+}
+
+function setLimitBreakSoulVesselSelection(materialId){
+  if(!currentDetailData) return;
+  var ids = getSoulVesselMaterialIdsByElement(currentDetailData.element);
+  if(ids.indexOf(materialId) === -1) return;
+  if(getEvolutionMaterialCount(materialId) < 1){
+    showToast('この魂の器は不足しています');
+    return;
+  }
+  selectedLimitBreakSoulVesselId = materialId;
+  openLimitBreakModal(currentDetailData);
+}
+window.selectLimitBreakSoulVessel = setLimitBreakSoulVesselSelection;
+
+function getLimitBreakRecipe(target, preferredSoulVesselId){
+  var currentLb = target ? Number(target.limitBreak || 0) : 0;
+  var nextLb = Math.min(currentLb + 1, MAX_LIMIT_BREAK);
+  var vesselOptions = getSoulVesselMaterialIdsByElement(target && target.element).map(function(materialId){
+    return {
+      id: materialId,
+      count: 1
+    };
+  });
+  var selectedVesselId = resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
+  return {
+    nextLb: nextLb,
+    sameChara: 1,
+    soulVesselId: selectedVesselId,
+    soulVesselOptions: vesselOptions,
+    soulVesselCount: 1,
+    stoneId: 'kyoumei_stone',
+    stoneCount: nextLb
+  };
+}
+
+function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
+  var recipe = getLimitBreakRecipe(target, preferredSoulVesselId);
+  var sameCharaCount = target ? getSameCharaMaterials(target).length : 0;
+  var stoneOwned = getEvolutionMaterialCount(recipe.stoneId);
+  var currentLb = target ? Number(target.limitBreak || 0) : 0;
+
+  var vesselOptionsStatus = (recipe.soulVesselOptions || []).map(function(opt){
+    var owned = getEvolutionMaterialCount(opt.id);
+    var def = getEvolutionMaterialDef(opt.id);
+    return {
+      id: opt.id,
+      def: def,
+      owned: owned,
+      need: opt.count || 1,
+      selected: opt.id === recipe.soulVesselId,
+      available: owned >= (opt.count || 1)
+    };
+  });
+
+  var selectedVessel = vesselOptionsStatus.find(function(opt){ return opt.selected; }) || null;
+  var soulVesselAvailable = !!selectedVessel && selectedVessel.available;
+  var hasAnySoulVesselOption = vesselOptionsStatus.length > 0;
+
+  return {
+    recipe: recipe,
+    sameCharaOwned: sameCharaCount,
+    soulVesselOwned: selectedVessel ? selectedVessel.owned : 0,
+    soulVesselOptions: vesselOptionsStatus,
+    selectedSoulVessel: selectedVessel,
+    stoneOwned: stoneOwned,
+    canLimitBreak: !!target && currentLb < MAX_LIMIT_BREAK &&
+      sameCharaCount >= recipe.sameChara &&
+      hasAnySoulVesselOption && soulVesselAvailable &&
+      stoneOwned >= recipe.stoneCount
+  };
+}
+
+function getLimitBreakLackList(target){
+  var status = getLimitBreakMaterialStatus(target);
+  var recipe = status.recipe;
+  var lacks = [];
+
+  function pushLack(name, owned, need){
+    var lackCount = Math.max(0, Number(need || 0) - Number(owned || 0));
+    if(lackCount > 0){
+      lacks.push({ name: name, owned: owned, need: need, lack: lackCount });
+    }
+  }
+
+  var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
+  var selectedVessel = status.selectedSoulVessel;
+
+  pushLack(target && target.name ? target.name : '同キャラ', status.sameCharaOwned, recipe.sameChara);
+  pushLack(selectedVessel && selectedVessel.def ? selectedVessel.def.name : '同タイプの魂の器', status.soulVesselOwned, recipe.soulVesselCount);
+  pushLack(stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount);
+
+  return lacks;
+}
+
+function buildLimitBreakLackHTML(target){
+  var lacks = getLimitBreakLackList(target);
+  if(!lacks.length) return '';
+  return '<div class="lb-lack-box">' +
+    '<div class="lb-lack-title">不足しています</div>' +
+    lacks.map(function(item){
+      return '<div class="lb-lack-row">' +
+        '<span class="lb-lack-name">' + escapeHtml(item.name) + '</span>' +
+        '<span class="lb-lack-count">不足：' + item.lack + '個</span>' +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+function buildLimitBreakRecipeHTML(target){
+  var status = getLimitBreakMaterialStatus(target);
+  var recipe = status.recipe;
+  var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
+
+  function row(iconHtml, name, owned, need){
+    var ok = Number(owned || 0) >= Number(need || 0);
+    return '<div class="lb-recipe-row ' + (ok ? 'ok' : 'ng') + '">' +
+      '<div class="lb-recipe-icon">' + iconHtml + '</div>' +
+      '<div class="lb-recipe-name">' + escapeHtml(name) + '</div>' +
+      '<div class="lb-recipe-count">' + owned + ' / ' + need + '</div>' +
+    '</div>';
+  }
+
+  function buildSoulVesselHTML(){
+    var options = status.soulVesselOptions || [];
+    if(options.length <= 1){
+      var opt = options[0];
+      var def = opt && opt.def;
+      var icon = def ? '<img src="' + def.img + '" onerror="this.style.display=\'none\'">' : '<span>?</span>';
+      return row(icon, def ? def.name : '同タイプの魂の器', opt ? opt.owned : 0, opt ? opt.need : 1);
+    }
+
+    return '<div class="lb-vessel-choice-wrap">' +
+      '<div class="lb-vessel-choice-title">魂の器を選択</div>' +
+      options.map(function(opt){
+        var def = opt.def;
+        var selected = opt.selected;
+        var disabled = !opt.available;
+        var icon = def ? '<img src="' + def.img + '" onerror="this.style.display=\'none\'">' : '<span>?</span>';
+        return '<button type="button" class="lb-vessel-choice ' +
+          (selected ? 'selected ' : '') +
+          (opt.available ? 'ok' : 'ng') + '" ' +
+          (disabled ? 'disabled ' : '') +
+          'onclick="selectLimitBreakSoulVessel(\'' + opt.id + '\')">' +
+            '<span class="lb-vessel-choice-icon">' + icon + '</span>' +
+            '<span class="lb-vessel-choice-name">' + escapeHtml(def ? def.name : '魂の器') + '</span>' +
+            '<span class="lb-vessel-choice-count">' + opt.owned + ' / ' + opt.need + '</span>' +
+        '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  var stoneIcon = stoneDef ? '<img src="' + stoneDef.img + '" onerror="this.style.display=\'none\'">' : '<span>✦</span>';
+  var charaName = target && target.name ? target.name : '同キャラ';
+  var charaImg = target && target.img
+    ? target.img
+    : 'images/chara_' + String(target && target.id || '').padStart(2, '0') + '_panel.webp';
+  var charaIcon = '<img class="lb-recipe-chara-img" src="' + charaImg + '" onerror="this.style.display=\'none\'">';
+
+  return '<div class="lb-recipe-box">' +
+    '<div class="lb-recipe-title">必要素材</div>' +
+    row(charaIcon, charaName, status.sameCharaOwned, recipe.sameChara) +
+    buildSoulVesselHTML() +
+    row(stoneIcon, stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount) +
+  '</div>';
+}
+
+function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
+  var status = getLimitBreakMaterialStatus(target, preferredSoulVesselId);
+  if(!status.canLimitBreak) return false;
+  var recipe = status.recipe;
+  var vesselId = recipe.soulVesselId;
+
+  if(!consumeEvolutionMaterial(vesselId, recipe.soulVesselCount)) return false;
+  if(!consumeEvolutionMaterial(recipe.stoneId, recipe.stoneCount)) {
+    // 念のため器だけ戻す
+    addEvolutionMaterial(vesselId, recipe.soulVesselCount);
+    return false;
+  }
+  return true;
+}
+
+function rollEvolutionMaterialDropFromRoguelite(meta){
+  meta = meta || {};
+  var rank = String(meta.rank || 'B').toUpperCase();
+  var stoneCount = ({ S: 3, A: 3, B: 2, C: 2, D: 1, E: 1 })[rank] || 1;
+  var elements = ['logos', 'chaos', 'mystis'];
+  var vesselElement = elements[Math.floor(Math.random() * elements.length)];
+  var drops = [];
+  drops.push(addEvolutionMaterial('kyoumei_stone', stoneCount));
+  drops.push(addEvolutionMaterial('soul_vessel_' + vesselElement, 1));
+  return drops.filter(Boolean);
+}
+
+// 外部JS（ローグライト結果など）から付与できるよう公開
+window.EVOLUTION_MATERIAL_MASTER = EVOLUTION_MATERIAL_MASTER;
+window.getEvolutionMaterialCount = getEvolutionMaterialCount;
+window.addEvolutionMaterial = addEvolutionMaterial;
+window.grantEvolutionMaterialDropFromRoguelite = rollEvolutionMaterialDropFromRoguelite;
+
+function isGachaMaterialResult(data){
+  return !!(data && (data.resultKind === 'material' || data.materialId));
+}
+
+function getGachaMaterialRewardData(materialId, count, timeStr, capturedAt){
+  var def = getEvolutionMaterialDef(materialId);
+  if(!def) return null;
+  var n = Math.max(1, Number(count || 1));
+  return {
+    resultKind: 'material',
+    materialId: materialId,
+    itemCount: n,
+    id: 'material_' + materialId,
+    name: def.name,
+    img: def.img,
+    upImg: def.img,
+    cutImg: def.img,
+    element: def.element || '',
+    baseStats: {},
+    stats: {},
+    limitBreak: 0,
+    rarity: 'r',
+    hasRarity: false,
+    isNew: false,
+    time: timeStr || new Date().toLocaleString(),
+    capturedAt: capturedAt || new Date().toISOString()
+  };
+}
+
+function grantGachaResult(data){
+  if(!data) return;
+
+  if(isGachaMaterialResult(data)){
+    if(!data.granted){
+      var granted = addEvolutionMaterial(data.materialId, data.itemCount || 1);
+      if(granted) data.total = granted.total;
+      data.granted = true;
+    }
+    updateZukanLimitBreakNotice();
+    return;
+  }
+
+  box.push(data);
+  if(!collected[data.id]) collected[data.id] = data;
+  updateZukanLimitBreakNotice();
+  saveToDB(data);
+}
+// ─────────────────────────────────────────────────
+
 function getSameCharaMaterials(target){
   return box.filter(function(b){
     return b.id === target.id && b !== target && b.db_id !== target.db_id;
   });
 }
 
+function getAutoLimitBreakMaterial(target){
+  var materials = getSameCharaMaterials(target);
+  if(!materials.length) return null;
+
+  // 手動選択を省略するため、素材候補は自動選択する。
+  // 育成済み個体をなるべく残すため、共鳴Lvが低い個体を優先して消費する。
+  materials.sort(function(a, b){
+    var lbA = Number(a.limitBreak || 0);
+    var lbB = Number(b.limitBreak || 0);
+    if(lbA !== lbB) return lbA - lbB;
+    return String(a.db_id || '').localeCompare(String(b.db_id || ''));
+  });
+  return materials[0];
+}
+
 function openLimitBreakModal(target){
   if(!target) return;
-  var materials = getSameCharaMaterials(target);
   var listEl = document.getElementById('lb-material-list');
   if(!listEl) return;
 
-  if(materials.length === 0){
-    listEl.innerHTML = '<div class="lb-no-material">同じキャラクターの別個体がBOXにありません</div>';
+  var targetKey = getLimitBreakTargetKey(target);
+  var validVesselIds = getSoulVesselMaterialIdsByElement(target.element);
+  if(selectedLimitBreakTargetKey !== targetKey || validVesselIds.indexOf(selectedLimitBreakSoulVesselId) === -1){
+    selectedLimitBreakSoulVesselId = resolveLimitBreakSoulVesselId(target, selectedLimitBreakSoulVesselId);
+  }
+  selectedLimitBreakTargetKey = targetKey;
+
+  var status = getLimitBreakMaterialStatus(target, selectedLimitBreakSoulVesselId);
+  var recipeHtml = buildLimitBreakRecipeHTML(target);
+  listEl.innerHTML = recipeHtml;
+
+  if((target.limitBreak || 0) >= MAX_LIMIT_BREAK){
+    listEl.innerHTML += '<div class="lb-no-material">共鳴LvはすでにMAXです</div>';
+  } else if(status.canLimitBreak){
+    listEl.innerHTML +=
+      '<div class="lb-execute-area">' +
+        '<button type="button" class="btn-pay lb-execute-btn" onclick="confirmLimitBreak()">共鳴実行</button>' +
+        '<div class="lb-execute-note">同キャラ素材は自動で1体消費されます</div>' +
+      '</div>';
   } else {
-    listEl.innerHTML = '';
-    materials.forEach(function(mat){
-      var lb = mat.limitBreak || 0;
-      var div = document.createElement('div');
-      div.className = 'lb-material-card';
-      div.innerHTML =
-        '<img class="lb-mat-img" src="'+(mat.img||'images/unknown.webp')+'">' +
-        '<div class="lb-mat-info">' +
-          '<div class="lb-mat-name">'+mat.name+'</div>' +
-          '<div class="lb-mat-lb">共鳴Lv '+lb+' / '+MAX_LIMIT_BREAK+'</div>' +
-        '</div>' +
-        '<button class="lb-mat-select-btn">選択</button>';
-      div.querySelector('.lb-mat-select-btn').onclick = function(){
-        confirmLimitBreak(mat.db_id);
-      };
-      listEl.appendChild(div);
-    });
+    // 不足数は必要素材欄の「所持 / 必要」で確認できるため、追加の不足欄は表示しない。
+    listEl.innerHTML += '<div class="lb-no-material">共鳴素材が不足しています</div>';
   }
 
   document.getElementById('limitbreak-modal').classList.add('active');
@@ -1020,49 +1476,43 @@ function confirmLimitBreak(materialDbId){
   var target = currentDetailData;
   if(!target) return;
 
-  var mat = box.find(function(b){ return b.db_id === materialDbId; });
-  if(!mat) return;
+  var mat = materialDbId
+    ? box.find(function(b){ return b.db_id === materialDbId; })
+    : getAutoLimitBreakMaterial(target);
+
+  if(!mat){
+    showToast('同キャラ素材が不足しています');
+    return;
+  }
+
+  var status = getLimitBreakMaterialStatus(target, selectedLimitBreakSoulVesselId);
+  if(!status.canLimitBreak){
+    showToast('共鳴素材が不足しています');
+    return;
+  }
 
   var beforeLb = target.limitBreak || 0;
   var afterLb = Math.min(beforeLb + 1, MAX_LIMIT_BREAK);
 
-  var beforeStats = target.stats || {};
-  var afterStats = applyLimitBreakStats(
-    target.baseStats || target.stats || {},
-    afterLb,
-    target.rarity
-  );
-
-  var rows = DISPLAY_STATS.map(function(s){
-    return '<tr>' +
-      '<td class="stat-name">' + s + '</td>' +
-      '<td class="stat-val">' + (beforeStats[s] ?? '-') + '</td>' +
-      '<td class="stat-arrow">→</td>' +
-      '<td class="stat-val stat-lb-enhanced">' + (afterStats[s] ?? '-') + '</td>' +
-    '</tr>';
-  }).join('');
-
   document.getElementById('lb-confirm-text').innerHTML =
     '<div class="lb-confirm-message">' +
-      '共鳴しますか？<br>' +
-      '素材にしたキャラクターは消去されます。' +
+      '素材が消失します。<br>' +
+      '共鳴を実行しますか？' +
     '</div>' +
-    '<div class="lb-confirm-level">共鳴Lv：' + beforeLb + ' → ' + afterLb + '</div>' +
-    '<table class="stat-table stat-table-small lb-confirm-stat-table">' +
-      rows +
-    '</table>';
+    '<div class="lb-confirm-level">共鳴Lv：' + beforeLb + ' → ' + afterLb + '</div>';
 
   var okBtn = document.getElementById('lb-confirm-ok-btn');
+  okBtn.textContent = 'はい';
   okBtn.onclick = function(){
     closeModal('limitbreak-confirm-modal');
     closeLimitBreakModal();
-    executeLimitBreak(target, mat);
+    executeLimitBreak(target, mat, selectedLimitBreakSoulVesselId);
   };
 
   document.getElementById('limitbreak-confirm-modal').classList.add('active');
 }
 
-async function executeLimitBreak(target, material){
+async function executeLimitBreak(target, material, selectedSoulVesselId){
 
      if(!target || !material) return;
 
@@ -1070,6 +1520,16 @@ async function executeLimitBreak(target, material){
 
   if(currentLb >= MAX_LIMIT_BREAK){
     showToast('共鳴LvはすでにMAXです');
+    return;
+  }
+
+  if(!getLimitBreakMaterialStatus(target, selectedSoulVesselId).canLimitBreak){
+    showToast('共鳴素材が不足しています');
+    return;
+  }
+
+  if(!consumeLimitBreakRecipeMaterials(target, selectedSoulVesselId)){
+    showToast('共鳴素材の消費に失敗しました');
     return;
   }
 
@@ -1106,6 +1566,11 @@ renderBox();
 updateMainUI();
 if(currentZukanMainTab !== 'box'){
   showDetail(target, false);
+}
+
+var completeText = document.getElementById('lb-complete-text');
+if(completeText){
+  completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。';
 }
 
 var completeModal = document.getElementById('limitbreak-complete-modal');
@@ -1623,6 +2088,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 }
 
   async function saveToDB(data){
+    if(isGachaMaterialResult(data)) return;
     var saveEl = document.getElementById('save-status');
     if(saveEl) saveEl.textContent = '保存中...';
     var payload = {
@@ -2282,11 +2748,8 @@ setTimeout(function(){
 
 if(count === 10){
   results.forEach(function(data){
-    box.push(data);
-    if(!collected[data.id]) collected[data.id] = data;
-    saveToDB(data);
+    grantGachaResult(data);
   });
-  updateZukanLimitBreakNotice();
 
   // UR確定音（30%の確率）、70%は無音
   // var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
@@ -2353,6 +2816,12 @@ function createSummonResults(count, currentGacha){
     results.push(createOneSummonData(currentGacha));
   }
 
+  // ピックアップ＋素材混在ガチャは、指定率を崩さないため旧天井/10連保証を適用しない。
+  if(currentGacha && currentGacha.itemMixed === true){
+    assignNewFlags(results);
+    return results;
+  }
+
   // 天井カウント加算（onceガチャは天井に影響しない）
   if(!currentGacha || currentGacha.category !== 'once'){
     pityCount += count;
@@ -2364,11 +2833,7 @@ function createSummonResults(count, currentGacha){
         var urChars = CHARACTERS.filter(function(c){ return matchesGachaFilter(c, currentGacha) && c.rarity === 'ur'; });
         if(urChars.length > 0){
           var pick = urChars[Math.floor(Math.random() * urChars.length)];
-          var _bs = Object.assign({}, pick.stats);
-          results[results.length - 1] = {
-            id: pick.id, name: pick.name, img: pick.img, upImg: pick.upImg, cutImg: pick.cutImg,
-            element: pick.element, type: pick.type, baseStats: _bs, stats: applyLimitBreakStats(_bs, 0), limitBreak: 0, rarity: 'ur', time: new Date().toLocaleString()
-          };
+          results[results.length - 1] = createCharaSummonData(pick, new Date());
         }
       }
       pityCount = 0; // 天井到達でリセット
@@ -2383,21 +2848,16 @@ function createSummonResults(count, currentGacha){
     }
   }
 
-  // banner_01：UR確定
+  // once：UR確定
   if(currentGacha && currentGacha.category === 'once'){
-    var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
-    if(!hasUR){
-      var urChars = CHARACTERS.filter(function(c){
+    var hasUR3 = results.some(function(r){ return r.rarity === 'ur'; });
+    if(!hasUR3){
+      var urChars2 = CHARACTERS.filter(function(c){
         return matchesGachaFilter(c, currentGacha) && c.rarity === 'ur';
       });
-      if(urChars.length > 0){
-        var pick = urChars[Math.floor(Math.random() * urChars.length)];
-        var _bs2 = Object.assign({}, pick.stats);
-        results[results.length - 1] = {
-          id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
-          element: pick.element,
-          baseStats: _bs2, stats: applyLimitBreakStats(_bs2, 0), limitBreak: 0, rarity: pick.rarity, time: new Date().toLocaleString()
-        };
+      if(urChars2.length > 0){
+        var pick2 = urChars2[Math.floor(Math.random() * urChars2.length)];
+        results[results.length - 1] = createCharaSummonData(pick2, new Date());
       }
     }
   }
@@ -2412,13 +2872,8 @@ function createSummonResults(count, currentGacha){
         return matchesGachaFilter(c, currentGacha) && RARITY_ORDER[c.rarity] >= RARITY_ORDER.sr;
       });
       if(srChars.length > 0){
-        var pick = srChars[Math.floor(Math.random() * srChars.length)];
-        var _bs3 = Object.assign({}, pick.stats);
-        results[9] = {
-          id: pick.id, name: pick.name, img: pick.img, cutImg: pick.cutImg,
-          element: pick.element,
-          baseStats: _bs3, stats: applyLimitBreakStats(_bs3, 0), limitBreak: 0, rarity: pick.rarity, time: results[0].time
-        };
+        var pick3 = srChars[Math.floor(Math.random() * srChars.length)];
+        results[9] = createCharaSummonData(pick3, new Date(), results[0] && results[0].time);
       }
     }
   }
@@ -2436,6 +2891,11 @@ function assignNewFlags(results){
   });
 
   results.forEach(function(data){
+    if(isGachaMaterialResult(data)){
+      data.isNew = false;
+      return;
+    }
+
     var key = String(data.id);
 
     if(seen[key]){
@@ -2447,21 +2907,21 @@ function assignNewFlags(results){
   });
 }
 
-function createOneSummonData(currentGacha){
-  var now = new Date();
-  var timeStr =
+function getCharaById(id){
+  return CHARACTERS.find(function(c){ return Number(c.id) === Number(id); }) || null;
+}
+
+function createCharaSummonData(chara, now, fixedTimeStr){
+  now = now || new Date();
+  var timeStr = fixedTimeStr ||
     (now.getMonth()+1) + '/' + now.getDate() + ' ' +
     now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
-
-  var chara = selectChara(now, currentGacha);
-  if(!chara){
-  throw new Error('ガチャ抽選対象がありません');
-}
 
   var baseStats = Object.assign({}, chara.stats);
   var limitBreak = 0;
 
   return {
+    resultKind: 'character',
     id: chara.id,
     name: chara.name,
     img: chara.img,
@@ -2479,18 +2939,56 @@ function createOneSummonData(currentGacha){
   };
 }
 
+function createOneSummonData(currentGacha){
+  var now = new Date();
+  var timeStr =
+    (now.getMonth()+1) + '/' + now.getDate() + ' ' +
+    now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  // ピックアップ＋素材混在ガチャ
+  if(currentGacha && currentGacha.itemMixed === true){
+    var pickupRate = Number(currentGacha.pickupRate != null ? currentGacha.pickupRate : 0.05);
+    var pickup = getCharaById(currentGacha.pickupCharaId);
+
+    if(pickup && Math.random() < pickupRate){
+      var pickupData = createCharaSummonData(pickup, now, timeStr);
+      pickupData.isPickup = true;
+      return pickupData;
+    }
+
+    var pool = [];
+    (currentGacha.commonCharacterIds || []).forEach(function(id){
+      var c = getCharaById(id);
+      if(c) pool.push({ kind: 'character', chara: c });
+    });
+    (currentGacha.commonMaterialIds || []).forEach(function(materialId){
+      if(getEvolutionMaterialDef(materialId)) pool.push({ kind: 'material', materialId: materialId });
+    });
+
+    if(!pool.length){
+      throw new Error('ガチャ抽選対象がありません');
+    }
+
+    var hit = pool[Math.floor(Math.random() * pool.length)];
+    if(hit.kind === 'material'){
+      return getGachaMaterialRewardData(hit.materialId, 1, timeStr, now.toISOString());
+    }
+    return createCharaSummonData(hit.chara, now, timeStr);
+  }
+
+  var chara = selectChara(now, currentGacha);
+  if(!chara){
+    throw new Error('ガチャ抽選対象がありません');
+  }
+
+  return createCharaSummonData(chara, now, timeStr);
+}
+
 
 function handleSingleResult(data){
   setNavVisible(false);
-
-  // 常にBOXに追加（上書きなし）
-  box.push(data);
-  if(!collected[data.id]) collected[data.id] = data;
-  updateZukanLimitBreakNotice();
-
+  grantGachaResult(data);
   showReveal(data, false);
-  saveToDB(data);
-
 }
 
   // デバッグ用: 'bronze'/'silver'/'gold'/'ur' に固定、nullで通常
@@ -2541,6 +3039,19 @@ function setGachaEffectPhase(phase, data){
 function setRevealEncounterText(data){
   var label = document.getElementById('reveal-encounter-label');
   var copy  = document.getElementById('reveal-encounter-copy');
+
+  if(isGachaMaterialResult(data)){
+    if(label){
+      label.textContent = 'MATERIAL ACQUIRED';
+      label.className = 'is-known';
+    }
+    if(copy){
+      copy.textContent = '共鳴用素材を入手した';
+      copy.className = 'is-known';
+    }
+    return;
+  }
+
   var isNew = data && data.isNew === true;
 
   if(label){
@@ -2875,6 +3386,11 @@ function finalGachaFlash(callback){
   function showSingleGachaDetail(data){
     if(!data) return;
 
+    if(isGachaMaterialResult(data)){
+      showGachaMaterialDetail(data, false);
+      return;
+    }
+
     currentResultData = data;
     detailReturnToSummonAfterClose = true;
 
@@ -2890,6 +3406,52 @@ function finalGachaFlash(callback){
     }
 
     showDetail(data, true);
+  }
+
+  function showGachaMaterialDetail(data, fromTenResult){
+    if(!data) return;
+
+    currentResultData = data;
+    currentDetailData = null;
+    detailReturnToSummonAfterClose = !fromTenResult;
+
+    resetSummonResult();
+    setNavVisible(false);
+
+    var guf = document.getElementById('global-user-frame');
+    if(guf){
+      guf.style.display = '';
+      guf.classList.remove('hidden');
+      guf.classList.add('hud-dark');
+    }
+
+    var total = getEvolutionMaterialCount(data.materialId);
+    var itemCount = data.itemCount || 1;
+
+    document.getElementById('detail-chara-visual').innerHTML =
+      '<div class="detail-visual-wrap detail-item-visual-wrap">' +
+        '<img class="detail-main-img detail-item-img" src="' + (data.img || 'images/unknown.webp') + '">' +
+      '</div>';
+    document.getElementById('detail-name').textContent = data.name || '素材';
+    document.getElementById('detail-rank').textContent = '共鳴用素材';
+    document.getElementById('detail-stat-table').innerHTML = '';
+    document.getElementById('detail-opts').innerHTML =
+      '<div class="gacha-material-detail-box">' +
+        '<div class="gacha-material-detail-title">入手数</div>' +
+        '<div class="gacha-material-detail-count">×' + itemCount + '</div>' +
+        '<div class="gacha-material-detail-total">現在の所持数：' + total + '</div>' +
+      '</div>';
+
+    var favBtn = document.querySelector('#detail-modal .btn-set-fav');
+    if(favBtn) favBtn.style.display = 'none';
+
+    var delBtn = document.querySelector('#detail-modal .btn-delete-chara');
+    if(delBtn) delBtn.style.display = 'none';
+
+    var closeBtn = document.getElementById('btn-detail-close');
+    if(closeBtn) closeBtn.style.display = 'block';
+
+    document.getElementById('detail-modal').classList.add('active');
   }
 
   function showResult(data){
@@ -3092,28 +3654,31 @@ function revealTenCard(index){
   var card = document.getElementById('ten-card-' + index);
   if(!card) return;
 
-  var rarityLabel = '';
   var nameLabel   = data.name || '';
   var isNew       = data.isNew === true;
+  var isMaterial  = isGachaMaterialResult(data);
 
-  card.className = 'ten-result-card' + (data.rarity ? ' rarity-' + data.rarity : '') + (isNew ? ' is-new' : '');
+  card.className = 'ten-result-card' +
+    (data.rarity ? ' rarity-' + data.rarity : '') +
+    (isNew ? ' is-new' : '') +
+    (isMaterial ? ' is-material' : '');
 
-  var masterChara = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+  var masterChara = (!isMaterial && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
     ? CHARACTERS.find(function(c){ return String(c.id) === String(data.id); })
     : null;
 
-  // 10連結果は必ず上半身用の chara_XX_up を優先する。
-  // 保存済みデータに upImg が欠けている場合でも、CHARACTERS 定義から補完する。
-  var imgSrc =
-    (masterChara && masterChara.upImg) ||
-    data.upImg ||
-    (masterChara && masterChara.img) ||
-    data.img ||
-    'images/unknown.webp';
+  // 10連結果はキャラなら上半身用、素材なら素材アイコンを表示する。
+  var imgSrc = isMaterial
+    ? (data.img || 'images/unknown.webp')
+    : ((masterChara && masterChara.upImg) ||
+       data.upImg ||
+       (masterChara && masterChara.img) ||
+       data.img ||
+       'images/unknown.webp');
 
   card.innerHTML =
-    '<img class="ten-card-img" src="' + imgSrc + '">' +
-    getElementCornerIconHTML(data, 'ten-card-element-icon') +
+    '<img class="ten-card-img' + (isMaterial ? ' ten-card-item-img' : '') + '" src="' + imgSrc + '">' +
+    (isMaterial ? '<div class="ten-card-item-badge">ITEM</div>' : getElementCornerIconHTML(data, 'ten-card-element-icon')) +
     '<div class="ten-card-top">' +
       '' +
     '</div>' +
@@ -3123,7 +3688,11 @@ function revealTenCard(index){
     '</div>';
 
   card.onclick = function(){
-    showDetail(data, true);
+    if(isGachaMaterialResult(data)){
+      showGachaMaterialDetail(data, true);
+    } else {
+      showDetail(data, true);
+    }
   };
 }
 
@@ -3155,7 +3724,7 @@ function showTenResult(results){
       revealTenCard(index);
     } else {
       // すでに開封済みのカードもonclickをshowDetailに付け替え
-      (function(d){ card.onclick = function(){ showDetail(d, true); }; })(data);
+      (function(d){ card.onclick = function(){ if(isGachaMaterialResult(d)){ showGachaMaterialDetail(d, true); } else { showDetail(d, true); } }; })(data);
     }
   });
 
@@ -3703,7 +4272,7 @@ setTenResultFooterVisible(true);
       var representative = getRepresentativeOwnedInstance(chara.id);
       if(!representative) return false;
 
-      return (representative.limitBreak || 0) < MAX_LIMIT_BREAK;
+      return getLimitBreakMaterialStatus(representative).canLimitBreak;
     });
   }
 
@@ -3853,7 +4422,7 @@ setTenResultFooterVisible(true);
     var displayData = owned ? getRepresentativeOwnedInstance(chara.id) : null;
     var panelSrc = chara.panelImg || chara.img || 'images/unknown.webp';
     var lb = displayData ? (displayData.limitBreak || 0) : 0;
-    var canLimitBreak = owned && ownedList.length >= 2 && lb < MAX_LIMIT_BREAK;
+    var canLimitBreak = owned && getLimitBreakMaterialStatus(displayData).canLimitBreak;
 
     currentDetailData = displayData || null;
 
@@ -4700,9 +5269,9 @@ function buildCharacterDetailHTML(data, options){
     if(lb >= MAX_LIMIT_BREAK){
       btnHtml = '<button class="btn-limit-break btn-limit-break-max" disabled>共鳴Lv MAX</button>';
     } else if(options.canLimitBreak === false){
-      btnHtml = '<button class="btn-limit-break btn-limit-break-disabled" disabled>共鳴素材が不足しています</button>';
+      btnHtml = '<button class="btn-limit-break btn-limit-break-disabled" onclick="openLimitBreakModal(currentDetailData)">共鳴</button>';
     } else {
-      btnHtml = '<button class="btn-limit-break btn-limit-break-ready" onclick="openLimitBreakModal(currentDetailData)">共鳴する</button>';
+      btnHtml = '<button class="btn-limit-break btn-limit-break-ready" onclick="openLimitBreakModal(currentDetailData)">共鳴</button>';
     }
 
     return '<div class="detail-lb-action-block">' +
@@ -5945,6 +6514,209 @@ window.addEventListener('pagehide', function () {
     color: #666;
     font-size: 13px;
     padding: 20px 0;
+  }
+
+  .lb-select-title {
+    margin: 12px 0 8px;
+    color: #6d5a38;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+  }
+
+  .lb-material-card.is-disabled {
+    opacity: .72;
+  }
+
+  .lb-mat-select-btn:disabled {
+    background: #aaa;
+    color: #fff;
+    cursor: default;
+    opacity: .75;
+  }
+
+  .lb-lack-box {
+    margin: 10px 0 12px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(180, 55, 55, .24);
+    background: rgba(255, 245, 245, .92);
+    color: #6b3333;
+  }
+
+  .lb-lack-title {
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: #9a3b3b;
+  }
+
+  .lb-lack-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border-top: 1px solid rgba(150,60,60,.10);
+    font-size: 12px;
+  }
+
+  .lb-lack-row:first-of-type {
+    border-top: none;
+  }
+
+  .lb-lack-name {
+    color: #5f4a3f;
+  }
+
+  .lb-lack-count {
+    color: #b64a4a;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+
+  .lb-recipe-box {
+    margin: 8px 0 14px;
+    padding: 12px;
+    border: 1px solid rgba(220,190,120,.35);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(35,27,17,.72), rgba(15,12,10,.72));
+  }
+  .lb-recipe-title {
+    margin-bottom: 8px;
+    font-size: .82rem;
+    color: #f4df9a;
+    letter-spacing: .08em;
+    font-weight: 700;
+    text-align: center;
+  }
+  .lb-recipe-row {
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-top: 1px solid rgba(255,255,255,.07);
+    color: rgba(255,255,255,.86);
+  }
+  .lb-recipe-row.ok .lb-recipe-count { color: #a8f0b6; }
+  .lb-recipe-row.ng .lb-recipe-count { color: #ff9b9b; }
+  .lb-recipe-icon {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lb-recipe-icon img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(255,230,160,.32));
+  }
+  .lb-recipe-icon img.lb-recipe-chara-img {
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  .lb-recipe-chara-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
+    font-size: .72rem;
+    color: #fff1c2;
+  }
+  .lb-recipe-name { font-size: .78rem; }
+  .lb-recipe-count {
+    font-family: "Cinzel", serif;
+    font-weight: 700;
+    font-size: .82rem;
+  }
+
+  .lb-vessel-choice-wrap {
+    margin: 8px 0 4px;
+    padding-top: 7px;
+    border-top: 1px solid rgba(255,255,255,.07);
+  }
+
+  .lb-vessel-choice-title {
+    margin: 0 0 7px;
+    color: rgba(244,223,154,.92);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-align: center;
+  }
+
+  .lb-vessel-choice {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    padding: 7px 0;
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    color: rgba(255,255,255,.86);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .lb-vessel-choice.selected {
+    background: rgba(244,223,154,.12);
+    border-color: rgba(244,223,154,.65);
+    box-shadow: 0 0 0 1px rgba(244,223,154,.18) inset;
+  }
+
+  .lb-vessel-choice:disabled {
+    cursor: not-allowed;
+    opacity: .58;
+    filter: grayscale(.45);
+  }
+
+  .lb-vessel-choice-icon {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lb-vessel-choice-icon img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(255,230,160,.32));
+  }
+
+  .lb-vessel-choice-name {
+    font-size: .78rem;
+    text-align: left;
+  }
+
+  .lb-vessel-choice-count {
+    padding-right: 10px;
+    font-family: "Cinzel", serif;
+    font-weight: 700;
+    font-size: .82rem;
+  }
+
+  .lb-vessel-choice.ok .lb-vessel-choice-count { color: #a8f0b6; }
+  .lb-vessel-choice.ng .lb-vessel-choice-count { color: #ff9b9b; }
+
+  .lb-no-material-warn { color: #ffb5b5; }
+  .lb-mat-select-btn:disabled {
+    opacity: .45;
+    filter: grayscale(1);
+    cursor: not-allowed;
   }
 </style>
 

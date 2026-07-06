@@ -11694,3 +11694,231 @@ body,
   from { opacity: 1; transform: scale(1); }
   to   { opacity: 0; transform: scale(1.015); }
 }
+
+
+/* =========================================================
+   共鳴モーダル：複数タイプの魂の器選択
+   ========================================================= */
+.lb-recipe-title {
+  text-align: center !important;
+}
+
+.lb-vessel-choice-wrap {
+  margin: 8px 0 4px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+
+.lb-vessel-choice-title {
+  margin: 0 0 7px;
+  color: rgba(244,223,154,.92);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-align: center;
+}
+
+.lb-vessel-choice {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 7px 0;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  color: rgba(255,255,255,.86);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.lb-vessel-choice.selected {
+  background: rgba(244,223,154,.12);
+  border-color: rgba(244,223,154,.65);
+  box-shadow: 0 0 0 1px rgba(244,223,154,.18) inset;
+}
+
+.lb-vessel-choice:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+  filter: grayscale(.45);
+}
+
+.lb-vessel-choice-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lb-vessel-choice-icon img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(255,230,160,.32));
+}
+
+.lb-vessel-choice-name {
+  font-size: .78rem;
+  text-align: left;
+}
+
+.lb-vessel-choice-count {
+  padding-right: 10px;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: .82rem;
+}
+
+.lb-vessel-choice.ok .lb-vessel-choice-count { color: #a8f0b6; }
+.lb-vessel-choice.ng .lb-vessel-choice-count { color: #ff9b9b; }
+
+/* =========================================================
+   Gacha Material Result
+   ========================================================= */
+.ten-result-card.is-material .ten-card-img,
+.ten-result-card.is-material .ten-card-item-img {
+  object-fit: contain;
+  object-position: center center !important;
+  inset: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  padding: 2px;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.18), rgba(0,0,0,0.16) 64%, rgba(0,0,0,0.34));
+}
+
+.ten-card-item-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 5;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.58);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.86);
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+.detail-item-visual-wrap {
+  cursor: default;
+}
+
+.detail-item-img {
+  object-fit: contain !important;
+  background: radial-gradient(circle at 50% 42%, rgba(255,255,255,0.2), rgba(0,0,0,0.08) 60%, rgba(0,0,0,0.2));
+}
+
+.gacha-material-detail-box {
+  margin-top: 12px;
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  text-align: center;
+}
+
+.gacha-material-detail-title {
+  font-size: 11px;
+  letter-spacing: .18em;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 4px;
+}
+
+.gacha-material-detail-count {
+  font-family: "Cinzel", serif;
+  font-size: 22px;
+  color: #fff3c4;
+  text-shadow: 0 0 12px rgba(255,220,140,0.35);
+}
+
+.gacha-material-detail-total {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+}
+
+/* =========================================================
+   09-C Ten Result — Item Card Emphasis
+   10連結果のアイテム枠を大きく・中央で見栄えよく表示
+   ※キャラクターカードには影響しない
+   ========================================================= */
+.ten-result-card.is-material {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255,255,255,0.94) 0%, rgba(247,243,232,0.78) 34%, rgba(218,210,190,0.50) 100%),
+    linear-gradient(180deg, rgba(255,255,255,0.90), rgba(224,216,199,0.56));
+}
+
+.ten-result-card.is-material::before {
+  background:
+    radial-gradient(circle at 50% 46%, transparent 0 28%, rgba(224,202,148,0.28) 30%, transparent 36%),
+    radial-gradient(circle at 50% 46%, rgba(255,255,255,0.50), transparent 58%),
+    linear-gradient(90deg, transparent 0 10%, rgba(224,202,148,0.80) 10% 18%, transparent 18% 82%, rgba(224,202,148,0.80) 82% 90%, transparent 90% 100%) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent 0 10%, rgba(224,202,148,0.50) 10% 18%, transparent 18% 82%, rgba(224,202,148,0.50) 82% 90%, transparent 90% 100%) bottom / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 0 8%, rgba(224,202,148,0.55) 8% 16%, transparent 16% 84%, rgba(224,202,148,0.55) 84% 92%, transparent 92% 100%) left / 1px 100% no-repeat,
+    linear-gradient(180deg, transparent 0 8%, rgba(224,202,148,0.55) 8% 16%, transparent 16% 84%, rgba(224,202,148,0.55) 84% 92%, transparent 92% 100%) right / 1px 100% no-repeat;
+  opacity: 1;
+}
+
+.ten-result-card.is-material::after {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255,255,255,0.56), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.20), transparent 28%, transparent 70%, rgba(255,255,255,0.12));
+  mix-blend-mode: screen;
+}
+
+.ten-result-card.is-material .ten-card-img,
+.ten-result-card.is-material .ten-card-item-img {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  object-fit: contain;
+  object-position: center center !important;
+  transform: translateY(-2px) scale(1.62);
+  transform-origin: center center;
+  z-index: 4;
+  background: transparent;
+  filter:
+    drop-shadow(0 5px 8px rgba(72,58,32,0.38))
+    drop-shadow(0 0 12px rgba(255,245,205,0.62));
+}
+
+.ten-result-card.is-material .ten-card-bottom {
+  z-index: 7;
+  background:
+    linear-gradient(to top, rgba(252,249,240,0.94) 0%, rgba(252,249,240,0.70) 42%, transparent 100%);
+}
+
+.ten-result-card.is-material .ten-card-item-badge {
+  z-index: 8;
+}
+
+
+/* =========================================================
+   共鳴モーダル：素材選択省略・実行ボタン
+   ========================================================= */
+.lb-execute-area {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.lb-execute-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 999px;
+  font-size: .9rem;
+  letter-spacing: .12em;
+}
+
+.lb-execute-note {
+  margin-top: 8px;
+  color: rgba(110,101,86,.62);
+  font-size: .68rem;
+  line-height: 1.5;
+}

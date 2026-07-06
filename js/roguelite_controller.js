@@ -1179,7 +1179,7 @@ function _hideHud() {
     `;
   }
 
-  function _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem }) {
+  function _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem, evolutionMaterialItems }) {
     const items = [];
     if (reward) {
       items.push({ cls: 'coin', iconHtml: '<img src="images/icon_coin.webp" alt="" onerror="this.style.display=\'none\'">', name: 'コイン', value: `+${Number(reward.coin || 0)}` });
@@ -1187,6 +1187,15 @@ function _hideHud() {
     }
     if (shinjuItem) {
       items.push({ cls: 'shinju', iconHtml: '<span>🌳</span>', name: shinjuItem.name || '創世資源', value: `+${Number(shinjuItem.exp || 0)}` });
+    }
+    if (Array.isArray(evolutionMaterialItems)) {
+      evolutionMaterialItems.forEach(mat => {
+        if (!mat) return;
+        const img = _escapeResultHtml(mat.img || 'images/item_kyoumeistone.webp');
+        const name = _escapeResultHtml(mat.name || '共鳴素材');
+        const count = Number(mat.count || 1);
+        items.push({ cls: 'evo-material', iconHtml: `<img src="${img}" alt="${name}" onerror="this.style.opacity='0'">`, name, value: `×${count}` });
+      });
     }
     if (remnantItem) {
       const img = _escapeResultHtml(remnantItem.panelImg || remnantItem.img || 'images/remnant_04_panel.webp');
@@ -1263,7 +1272,7 @@ function _hideHud() {
     ov.id = 'rl-result-overlay';
 
     const partyHtml = _buildResultPartyHtml(partyIds);
-    const dropHtml = isWin ? _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem }) : '';
+    const dropHtml = isWin ? _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem, evolutionMaterialItems: data.evolutionMaterialItems }) : '';
     const buildHtml = _buildResultBuildHtml(selectedRewards);
 
     ov.innerHTML = isWin ? `
@@ -1821,6 +1830,10 @@ async function _onBattleEnd(result, payload) {
       ? window.ShinjuProgress.grantBossItemFromRoguelite({ runId, rank, totalTurns })
       : null;
 
+    const evolutionMaterialItems = (typeof window.grantEvolutionMaterialDropFromRoguelite === 'function')
+      ? window.grantEvolutionMaterialDropFromRoguelite({ runId, rank, totalTurns })
+      : [];
+
     let bossDropItem = null;
     if (typeof window.rollBossDropFromRoguelite === 'function') {
       try {
@@ -1874,7 +1887,7 @@ async function _onBattleEnd(result, payload) {
     _hideHud();
     const partyIds = Array.isArray(window.__ROGUELITE_LAST_PARTY_IDS__) ? window.__ROGUELITE_LAST_PARTY_IDS__ : [];
     const selectedRewards = Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) ? window.__ROGUELITE_SELECTED_REWARDS__ : ops;
-    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem, bossDropItem, partyIds, selectedRewards });
+    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem, bossDropItem, evolutionMaterialItems, partyIds, selectedRewards });
     return;
   }
 

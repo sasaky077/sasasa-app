@@ -38,6 +38,67 @@
     return chara.upImg || chara.img || '';
   }
 
+
+  // 所持個体データを優先して取得する。
+  // プリモア一覧は getRepresentativeOwnedInstance() で「共鳴Lvが最も高い個体」を代表表示しているため、
+  // パーティセレクト側も同じ個体を参照して HP / ATK の表示・戦闘投入値を一致させる。
+  function getOwnedPartyInstance(charaId) {
+    const id = Number(charaId);
+
+    if (typeof getRepresentativeOwnedInstance === 'function') {
+      const rep = getRepresentativeOwnedInstance(id);
+      if (rep) return rep;
+    }
+
+    if (typeof collected !== 'undefined' && collected && collected[id]) {
+      return collected[id];
+    }
+
+    if (typeof box !== 'undefined' && Array.isArray(box)) {
+      const owned = box.filter(b => b && Number(b.id) === id);
+      if (owned.length) {
+        return owned.slice().sort((a, b) => {
+          const lbA = a.limitBreak || 0;
+          const lbB = b.limitBreak || 0;
+          if (lbA !== lbB) return lbB - lbA;
+          return String(a.capturedAt || '').localeCompare(String(b.capturedAt || ''));
+        })[0];
+      }
+    }
+
+    return null;
+  }
+
+  // CHARACTERS のマスター定義に、所持個体の stats / limitBreak / baseStats を重ねる。
+  // 画像・スキル・移動型などはマスター、HP/ATK は所持個体を正とする。
+  function getPartyCharaData(charaId) {
+    const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
+    const master = chars.find(c => Number(c.id) === Number(charaId));
+    if (!master) return null;
+
+    const owned = getOwnedPartyInstance(charaId);
+    if (!owned) return master;
+
+    return Object.assign({}, master, owned, {
+      id: master.id,
+      name: master.name,
+      rarity: owned.rarity || master.rarity,
+      element: owned.element || master.element,
+      img: master.img,
+      battleImg: master.battleImg,
+      panelImg: master.panelImg,
+      partyImg: master.partyImg,
+      upImg: master.upImg,
+      ultImg: master.ultImg,
+      cutImg: master.cutImg,
+      moveType: master.moveType,
+      skills: master.skills || [],
+      stats: owned.stats || master.stats || {},
+      baseStats: owned.baseStats || master.stats || {},
+      limitBreak: owned.limitBreak || 0
+    });
+  }
+
   // 属性アイコン。単属性 / 2属性 / 3属性に対応。
   // element: 'mystis' / ['mystis','logos'] / 'mystis+logos' いずれも可。
   function normalizeElementList(element) {
@@ -639,7 +700,7 @@
     wrap.innerHTML = SLOT_LABELS.map((label, i) => {
       const entry = selected[i];
       if (entry) {
-        const chara = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : []).find(c => c.id === entry.charaId);
+        const chara = getPartyCharaData(entry.charaId);
         const imgSrc = getPartySelectImg(chara);
         const name   = chara ? chara.name : '';
         return `
@@ -796,7 +857,7 @@
         </div>
         <div class="ps-chara-name">${c.name}</div>
       `;
-      if (owned) setupCharaCard(card, c);
+      if (owned) setupCharaCard(card, getPartyCharaData(c.id) || c);
       list.appendChild(card);
     });
   }
@@ -1129,8 +1190,7 @@
 
 
   function showCharaDetail(charaId) {
-    const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
-    const chara = chars.find(c => c.id === charaId);
+    const chara = getPartyCharaData(charaId);
     if (!chara) return;
 
     let popup = document.getElementById('ps-chara-detail-popup');
@@ -1230,7 +1290,7 @@
     // 旧バトル用 party 情報（startEnemyIntro など既存フローへの互換）
     const chars = typeof CHARACTERS !== 'undefined' ? CHARACTERS : [];
     const party = selected.map(s => {
-      const master = chars.find(c => c.id === s.charaId);
+      const master = getPartyCharaData(s.charaId) || chars.find(c => c.id === s.charaId);
       if (!master) return null;
       const costMax    = master.costMax    ?? 10;
       const costStart  = master.costStart  ?? 5;
