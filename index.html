@@ -27,6 +27,51 @@
 
   <link rel="stylesheet" href="css/style.css?v=215-summon-header-clean">
 
+
+  <style id="remnant-locked-silhouette-style">
+    /* ===== Remnant LOCK silhouette implementation (simple silhouette only) ===== */
+    .remnant-carousel .box-carousel-view.is-locked .box-carousel-visual.remnant-locked {
+      position: relative;
+      overflow: visible;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .remnant-carousel .box-carousel-view.is-locked .box-carousel-visual.remnant-locked::before,
+    .remnant-carousel .box-carousel-view.is-locked .box-carousel-visual.remnant-locked::after {
+      content: none !important;
+      display: none !important;
+    }
+
+    .remnant-carousel .box-carousel-view.is-locked .box-carousel-img.box-carousel-silhouette,
+    .remnant-carousel .box-carousel-view.is-locked .remnant-silhouette-img {
+      filter: grayscale(1) brightness(0.08) contrast(1.18) opacity(0.78);
+      transform: none;
+      transform-origin: center center;
+      mix-blend-mode: multiply;
+      user-select: none;
+      -webkit-user-drag: none;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .remnant-carousel .box-carousel-view.is-locked .box-carousel-locked-label {
+      display: none !important;
+    }
+
+    .remnant-carousel .box-carousel-name.locked {
+      color: rgba(80,80,80,0.62);
+      letter-spacing: 0.16em;
+      font-family: 'Cinzel', 'Noto Serif JP', serif;
+    }
+
+    .remnant-locked-panel .box-carousel-locked-text::after {
+      content: " / 記録は失われている";
+      opacity: 0.72;
+    }
+  </style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -3981,14 +4026,14 @@ setTenResultFooterVisible(true);
   // レムナント一覧マスター。今後8体まで登録予定。
   // サキエルは No.04 として固定登録。
   var REMNANT_MASTER = [
-    { no: 1, id: 'remnant_01', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
-    { no: 2, id: 'remnant_02', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
-    { no: 3, id: 'remnant_03', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
-    { no: 4, id: 'remnant_04_sakiel', enemyId: 'enemy_sakiel_roguelite', name: '大天使 サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'サキエル降臨 BOSSドロップ', desc: '旧世界に残された白翼の残響。現在は記録のみで、使用機能は未実装です。' },
-    { no: 5, id: 'remnant_05', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
-    { no: 6, id: 'remnant_06', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
-    { no: 7, id: 'remnant_07', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' },
-    { no: 8, id: 'remnant_08', name: '未照合のレムナント', img: 'images/unknown.webp', panelImg: 'images/unknown.webp', hiddenName: '??????' }
+    { no: 1, id: 'remnant_01', enemyId: 'enemy_01', name: 'レムナント：オーバーシア', img: 'images/remnant_01.webp', panelImg: 'images/remnant_01_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 2, id: 'remnant_02', enemyId: 'enemy_02', name: '未照合のレムナント', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 3, id: 'remnant_03', enemyId: 'enemy_03', name: '未照合のレムナント', img: 'images/remnant_03.webp', panelImg: 'images/remnant_03_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 4, id: 'remnant_04', enemyId: 'enemy_sakiel_roguelite', name: '大天使 サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'サキエル降臨 BOSSドロップ', desc: '旧世界に残された白翼の残響。現在は記録のみで、使用機能は未実装です。' },
+    { no: 5, id: 'remnant_05', enemyId: 'enemy_05', name: '未照合のレムナント', img: 'images/remnant_05.webp', panelImg: 'images/remnant_05_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 6, id: 'remnant_06', enemyId: 'enemy_06', name: '未照合のレムナント', img: 'images/remnant_06.webp', panelImg: 'images/remnant_06_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 7, id: 'remnant_07', enemyId: 'enemy_07', name: '未照合のレムナント', img: 'images/remnant_07.webp', panelImg: 'images/remnant_07_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 8, id: 'remnant_08', enemyId: 'enemy_08', name: '未照合のレムナント', img: 'images/remnant_08.webp', panelImg: 'images/remnant_08_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' }
   ];
 
   var ownedRemnants = loadOwnedRemnantsFromLocal();
@@ -4122,7 +4167,7 @@ setTenResultFooterVisible(true);
     var hit = roll < rate;
 
     if(hit){
-      var res = await unlockRemnantById('remnant_04_sakiel', {
+      var res = await unlockRemnantById('remnant_04', {
         source: 'boss_drop',
         runId: runId,
         rank: rank,
@@ -4642,7 +4687,7 @@ setTenResultFooterVisible(true);
     var remnant = remnants[currentRemnantCarouselIndex];
     var owned = isRemnantOwned(remnant.id);
     var entry = ownedRemnants[remnant.id] || null;
-    var panelSrc = owned ? (remnant.panelImg || remnant.img || 'images/unknown.webp') : 'images/unknown.webp';
+    var panelSrc = remnant.panelImg || remnant.img || 'images/unknown.webp';
     var name = owned ? remnant.name : (remnant.hiddenName || '??????');
     var acquiredText = entry && entry.acquiredAt ? new Date(entry.acquiredAt).toLocaleDateString('ja-JP') : '-';
     var remnantCount = entry ? Math.max(1, Number(entry.count || 1)) : 0;
@@ -4660,12 +4705,11 @@ setTenResultFooterVisible(true);
 
     var visualHtml = owned
       ? '<div class="box-carousel-visual owned remnant-owned is-clickable" onclick="openRemnantImageFullscreen(\'' + detailEscapeHTML(remnant.id) + '\')" role="button" aria-label="レムナント画像を全画面表示">' +
-          '<img class="box-carousel-img remnant-panel-img" src="' + detailEscapeHTML(panelSrc) + '" alt="' + detailEscapeHTML(name) + '">' +
+          '<img class="box-carousel-img remnant-panel-img" src="' + detailEscapeHTML(panelSrc) + '" alt="' + detailEscapeHTML(name) + '" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
           '<div class="box-carousel-zoom-hint remnant-zoom-hint">画像をタップで全身表示</div>' +
         '</div>'
-      : '<div class="box-carousel-visual locked remnant-locked">' +
-          '<img class="box-carousel-img box-carousel-silhouette" src="images/unknown.webp">' +
-          '<div class="box-carousel-locked-label">LOCKED</div>' +
+      : '<div class="box-carousel-visual locked remnant-locked" aria-label="LOCKED REMNANT">' +
+          '<img class="box-carousel-img box-carousel-silhouette remnant-silhouette-img" src="' + detailEscapeHTML(panelSrc) + '" alt="LOCKED REMNANT" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
         '</div>';
 
     var nameHtml = '<div class="box-carousel-name ' + (owned ? '' : 'locked') + '">' + detailEscapeHTML(name) + '</div>';
