@@ -282,7 +282,7 @@
     if (fill) fill.style.width = `${s.progress}%`;
     if (lore) {
       lore.textContent = s.isMax
-        ? '神樹は開闢の地アルケミアに根を張り、新世界の創世は臨界へ到達した。'
+        ? '神樹は成長臨界点に到達した。'
         : '創世資源を奉納すると、アルケミアの創世が進む。';
     }
 

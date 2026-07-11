@@ -547,6 +547,7 @@
 </div>
 <div id="reveal-content">
   <div id="reveal-encounter-label"></div>
+  <div id="reveal-pickup-badge" aria-hidden="true"><span>PICK UP</span></div>
   <img id="reveal-chara-img" src="" />
   <img id="reveal-rarity-box" src="" class="reveal-rarity-box-img" />
   <div class="reveal-info-box">
@@ -3164,6 +3165,14 @@ function setGachaEffectPhase(phase, data){
   }
 }
 
+function applyRevealPickupState(data){
+  var modal = document.getElementById('reveal-modal');
+  if(!modal) return;
+
+  var isPickup = !!(data && data.isPickup === true);
+  modal.classList.toggle('is-pickup', isPickup);
+}
+
 function setRevealEncounterText(data){
   var label = document.getElementById('reveal-encounter-label');
   var copy  = document.getElementById('reveal-encounter-copy');
@@ -3225,6 +3234,7 @@ function setRevealEncounterText(data){
     modal.classList.add('active');
     modal.classList.toggle('reveal-is-new', data.isNew === true);
     modal.classList.toggle('reveal-is-known', data.isNew !== true);
+    applyRevealPickupState(data);
     setRevealEncounterText(data);
 
     setTimeout(function(){
@@ -3324,6 +3334,7 @@ function showNormalReveal(data){
   setGachaEffectPhase('open', data);
   modal.classList.toggle('reveal-is-new', data && data.isNew === true);
   modal.classList.toggle('reveal-is-known', !(data && data.isNew === true));
+  applyRevealPickupState(data);
 
   content.style.display = '';
   content.classList.remove('show');
@@ -3432,7 +3443,8 @@ function finalGachaFlash(callback){
     'rarity-gold',
     'rarity-rainbow',
     'reveal-is-new',
-    'reveal-is-known'
+    'reveal-is-known',
+    'is-pickup'
   );
 
   content.classList.remove('show');
@@ -3789,6 +3801,7 @@ function revealTenCard(index){
   card.className = 'ten-result-card' +
     (data.rarity ? ' rarity-' + data.rarity : '') +
     (isNew ? ' is-new' : '') +
+    (data.isPickup ? ' is-pickup' : '') +
     (isMaterial ? ' is-material' : '');
 
   var masterChara = (!isMaterial && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
@@ -3811,6 +3824,7 @@ function revealTenCard(index){
       '' +
     '</div>' +
     (isNew ? '<div class="ten-card-new-badge">NEW</div>' : '') +
+    (data.isPickup ? '<div class="ten-card-pickup-badge"><span>PICK UP</span></div>' : '') +
     '<div class="ten-card-bottom">' +
       '<span class="ten-card-name">' + nameLabel + '</span>' +
     '</div>';

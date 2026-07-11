@@ -11525,3 +11525,135 @@ body,
   display: none;
 }
 
+
+
+/* =========================================================
+   PICK UP ornament (rich / low-noise)
+   ========================================================= */
+
+#reveal-pickup-badge {
+  position: absolute;
+  top: calc(86px + env(safe-area-inset-top));
+  right: 18px;
+  z-index: 14;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 7px 14px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(173, 136, 60, 0.34);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.9), rgba(245,237,218,0.82));
+  box-shadow:
+    0 8px 22px rgba(103, 82, 36, 0.12),
+    inset 0 1px 0 rgba(255,255,255,0.92),
+    0 0 18px rgba(227, 198, 127, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#reveal-pickup-badge::before,
+#reveal-pickup-badge::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(225,197,124,0.88) 46%, rgba(225,197,124,0) 76%);
+  opacity: 0.9;
+}
+
+#reveal-pickup-badge span {
+  margin: 0 10px;
+  font-family: 'Cinzel', 'Noto Serif JP', serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  color: rgba(108, 80, 27, 0.95);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.9);
+}
+
+#reveal-modal.is-pickup #reveal-pickup-badge {
+  display: inline-flex;
+  animation: pickupBadgeFloatIn 0.55s cubic-bezier(.18,.88,.22,1) both;
+}
+
+#reveal-modal.is-pickup #reveal-chara-img {
+  border-color: rgba(194, 160, 86, 0.58);
+  box-shadow:
+    0 22px 52px rgba(64,54,36,0.22),
+    0 0 56px rgba(255,255,255,0.92),
+    0 0 96px rgba(214,188,126,0.48),
+    0 0 0 1px rgba(255,248,228,0.55) inset !important;
+}
+
+#reveal-modal.is-pickup .reveal-info-box {
+  background: linear-gradient(to top,
+    rgba(248,246,239,0.97) 0%,
+    rgba(248,246,239,0.92) 42%,
+    rgba(248,246,239,0.34) 76%,
+    rgba(248,246,239,0) 100%) !important;
+}
+
+#reveal-modal.is-pickup #reveal-name {
+  text-shadow:
+    0 1px 0 rgba(255,255,255,0.94),
+    0 0 20px rgba(255,255,255,0.92),
+    0 0 26px rgba(222, 195, 131, 0.28) !important;
+}
+
+#reveal-modal.is-pickup #reveal-close-btn {
+  border-color: rgba(170,133,58,0.34) !important;
+  box-shadow: 0 8px 22px rgba(64,54,36,0.12), inset 0 1px 0 rgba(255,255,255,0.94), 0 0 16px rgba(225,198,128,0.12);
+}
+
+.ten-result-card.is-pickup {
+  border-color: rgba(205, 172, 96, 0.86);
+  box-shadow:
+    0 10px 24px rgba(146,113,44,0.20),
+    0 0 18px rgba(223,195,122,0.22),
+    inset 0 0 0 1px rgba(255,255,255,0.72),
+    inset 0 0 26px rgba(236, 222, 185, 0.12);
+}
+
+.ten-result-card.is-pickup::after {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.2), transparent 22%, transparent 72%, rgba(255,255,255,0.08)),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.3), transparent 38%),
+    radial-gradient(circle at 50% 22%, rgba(231, 207, 145, 0.16), transparent 44%);
+}
+
+.ten-card-pickup-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 9px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(173, 136, 60, 0.44);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(242,231,201,0.92));
+  box-shadow:
+    0 4px 10px rgba(101, 79, 33, 0.12),
+    inset 0 1px 0 rgba(255,255,255,0.94);
+}
+
+.ten-card-pickup-badge span {
+  font-family: 'Cinzel', 'Noto Serif JP', serif;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #6f5520;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.92);
+}
+
+.ten-result-card.is-pickup .ten-card-name {
+  color: #2d271b;
+}
+
+@keyframes pickupBadgeFloatIn {
+  0% { opacity: 0; transform: translateY(-8px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
