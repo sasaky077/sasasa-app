@@ -1,6 +1,7 @@
 // characters_32.js
 // 既存 characters.js の CHARACTERS を 32マス共有盤面バトル用に変換する
 //
+// キャラクターIDは characters.js の再採番後IDをそのまま引き継ぐ。
 // 前提：
 // index.html では characters.js の後に、この characters_32.js を読み込むこと
 
@@ -133,6 +134,15 @@
   };
 }
 
+
+  function convertComboTo32(combo, character) {
+    if (!combo || !combo.skill) return null;
+    return {
+      range: combo.range || 'combo_cross_4',
+      skill: convertSkillTo32({ ...combo.skill, isUltimate: false, linkCost: 0, shinkiCost: 0 }, character),
+    };
+  }
+
   function convertCharacterTo32(c) {
   return {
     id: c.id,
@@ -168,6 +178,7 @@
     uiOffset: c.uiOffset || {},
 
     skills: (c.skills || []).map(skill => convertSkillTo32(skill, c)),
+    combo: convertComboTo32(c.combo, c),
 
     // 移動型は battle_range_32.js の MOVE_PRESETS_32 に集約
     // characters.js 側では moveType 名だけ指定する

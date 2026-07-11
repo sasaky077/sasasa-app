@@ -3803,7 +3803,7 @@ canvas {
 
 /* URシャイン */
 #box-grid .box-card.rarity-ur::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -50%;
   left: -75%;
@@ -3832,7 +3832,7 @@ canvas {
 
 /* 下部カラー帯（フェード部分に色を乗せてドロップシャドウと繋げる） */
 #box-grid .box-card::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0; right: 0; bottom: 0;
   height: 35%;
@@ -4606,7 +4606,7 @@ canvas {
   width: 100%;
   text-align: center;
   color: #fff;
-  font-family: 'Cinzel', serif;
+  font-family: "Cinzel", serif;
   letter-spacing: 0.25em;
 }
 
@@ -4887,55 +4887,13 @@ canvas {
    Main / Notice Button
    ========================================================= */
 
-.home-notice-btn {
-  position: absolute !important;
-  left: auto !important;
-  right: 12px !important;
-  top: calc(env(safe-area-inset-top) + 164px) !important;
-  bottom: auto !important;
 
-  width: 90px !important;
-  height: 90px !important;
 
-  transform: none !important;
-  z-index: 21 !important;
 
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
-  cursor: pointer;
-  padding: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  animation: none !important;
-}
 
-.home-notice-btn:active {
-  transform: scale(0.96) !important;
-}
 
-.home-notice-badge {
-  display: none;
-}
-
-.home-notice-badge {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 13px;
-  height: 13px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow:
-    0 0 8px rgba(255,255,255,0.95),
-    0 0 14px rgba(255,255,255,0.45);
-}
 
 
 /* =========================================================
@@ -5053,52 +5011,13 @@ canvas {
    Notice Button / キャラ右側配置
    ========================================================= */
 
-.home-notice-btn {
-  position: absolute !important;
 
-  /* 画面中央を基準に、キャラの右側へ置く */
-  left: calc(50% + 72px) !important;
-  right: auto !important;
 
-  /* キャラの上半身〜腰あたりに合わせる */
-  top: 30% !important;
-  bottom: auto !important;
 
-  transform: translateY(-50%) !important;
-  z-index: 20 !important;
 
-  width: 130px !important;
-  height: 130px !important;
 
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
 
-  animation: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.home-notice-btn img {
-  pointer-events: none !important;
-  filter:
-    drop-shadow(0 0 8px rgba(255,255,255,0.6))
-    drop-shadow(0 6px 12px rgba(0,0,0,0.9)) !important;
-}
-
-.home-notice-btn:active {
-  transform: translateY(-50%) scale(0.96) !important;
-}
-
-.home-notice-badge {
-  display: none !important;
-}
 
 /* =========================================================
    Main / Event Banner
@@ -5361,42 +5280,11 @@ canvas {
    Main / Notice Button - Final
    ========================================================= */
 
-.home-notice-btn {
-  position: absolute !important;
-  left: auto !important;
-  right: 10px !important;
-  top: calc(env(safe-area-inset-top) + 150px) !important;
-  bottom: auto !important;
 
-  width: 64px !important;
-  height: 64px !important;
 
-  transform: none !important;
-  z-index: 30 !important;
 
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
 
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 
-  cursor: pointer;
-  padding: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  animation: none !important;
-}
-
-.home-notice-btn:active {
-  transform: scale(0.96) !important;
-}
-
-.home-notice-badge {
-  display: none !important;
-}
 
 /* =========================================================
    Main / Notice Button - Final v2
@@ -5408,110 +5296,28 @@ canvas {
    バナーに重ねず、バナー下に独立配置
    ========================================================= */
 
-.home-notice-btn {
-  position: absolute !important;
-  left: auto !important;
-  right: 14px !important;
 
-  top: calc(env(safe-area-inset-top) + 208px) !important;
-  bottom: auto !important;
 
-  width: 90px !important;
-  height: 90px !important;
 
-  transform: none !important;
-  z-index: 30 !important;
 
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
 
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 
-  cursor: pointer;
-  padding: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  animation: none !important;
-}
 
-.home-notice-btn img {
-  width: 90px !important;
-  height: 90px !important;
-  object-fit: contain !important;
-  pointer-events: none !important;
-  filter:
-    drop-shadow(0 0 8px rgba(255,255,255,0.72))
-    drop-shadow(0 5px 10px rgba(0,0,0,0.85)) !important;
-}
 
-.home-notice-btn:active {
-  transform: scale(0.96) !important;
-}
 
-.home-notice-badge {
-  display: none !important;
-}
 
-.home-notice-btn img {
-  width: 90px !important;
-  height: 90px !important;
-  object-fit: contain !important;
-  pointer-events: none !important;
-  filter:
-    drop-shadow(0 0 8px rgba(255,255,255,0.72))
-    drop-shadow(0 5px 10px rgba(0,0,0,0.85)) !important;
-}
 
-.home-notice-btn:active {
-  transform: scale(0.96) !important;
-}
 
-.home-notice-badge {
-  display: none !important;
-}
+
 
 /* SE系は少し小さく */
-@media (max-height: 700px) {
-  .home-notice-btn {
-    top: calc(env(safe-area-inset-top) + 198px) !important;
-    width: 62px !important;
-    height: 62px !important;
-  }
 
-  .home-notice-btn img {
-    width: 62px !important;
-    height: 62px !important;
-  }
-}
 
 /* =========================================================
    Main / Notice Badge - Final
    ========================================================= */
 
-.home-notice-badge {
-  display: block !important;
-  position: absolute !important;
 
-  top: 10px !important;
-  right: 10px !important;
-
-  width: 17px !important;
-  height: 17px !important;
-  border-radius: 999px !important;
-
-  background: #e60023 !important;
-  border: 2px solid rgba(255,255,255,0.95) !important;
-
-  box-shadow:
-    0 0 8px rgba(230,0,35,0.85),
-    0 3px 8px rgba(0,0,0,0.75) !important;
-
-  pointer-events: none !important;
-}
 
 /* =========================================================
    Character Detail: Battle32向け情報表示
@@ -5738,12 +5544,7 @@ canvas {
     top: calc(env(safe-area-inset-top) + 138px) !important;
   }
 
-  .home-notice-btn {
-    top: calc(env(safe-area-inset-top) + 134px) !important;
-    right: 12px !important;
-    width: 54px !important;
-    height: 54px !important;
-  }
+  
 }
 
 /* さらに低い端末用 */
@@ -5757,34 +5558,16 @@ canvas {
     top: calc(env(safe-area-inset-top) + 126px) !important;
   }
 
-  .home-notice-btn {
-    top: calc(env(safe-area-inset-top) + 122px) !important;
-    width: 50px !important;
-    height: 50px !important;
-  }
+  
 }
 /* =========================================================
    Home Notice Button - SE overlap fix
    SE系ではバナー下へ逃がす
    ========================================================= */
 
-@media (max-height: 700px) {
-  .home-notice-btn {
-    top: calc(env(safe-area-inset-top) + 188px) !important;
-    right: 12px !important;
-    width: 54px !important;
-    height: 54px !important;
-  }
-}
 
-@media (max-height: 620px) {
-  .home-notice-btn {
-    top: calc(env(safe-area-inset-top) + 178px) !important;
-    right: 12px !important;
-    width: 50px !important;
-    height: 50px !important;
-  }
-}
+
+
 
 /* ===== アプリ全体：ブラウザ標準の長押し/選択/画像ドラッグ対策 ===== */
 html,
@@ -10017,17 +9800,7 @@ body,
   }
 }
 
-.home-notice-btn img {
-  width: 90px !important;
-  height: 90px !important;
-  object-fit: contain !important;
-  pointer-events: none !important;
 
-  /* 通知アイコン：透過四角が目立たないようシャドウを弱める */
-  filter:
-    drop-shadow(0 0 3px rgba(255,255,255,0.22))
-    drop-shadow(0 2px 4px rgba(0,0,0,0.35)) !important;
-}
 
 .global-user-frame .hud-resource {
   height: 24px !important;
@@ -10202,90 +9975,17 @@ body,
 /* =========================================================
    99 Shinju / Genesis Tree
    ========================================================= */
-.shinju-home-entry {
-  position: relative;
-  z-index: 2;
-  width: calc(100% - 28px);
-  margin: 10px auto 8px;
-  min-height: 74px;
-  border: 1px solid rgba(255,255,255,0.32);
-  border-radius: 18px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  color: #fff;
-  background: rgba(255,255,255,0.10);
-  box-shadow: 0 12px 34px rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.shinju-home-entry-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 18% 40%, rgba(255,255,255,0.46), transparent 28%),
-    radial-gradient(circle at 82% 35%, rgba(160,220,255,0.28), transparent 34%),
-    linear-gradient(135deg, rgba(190,220,255,0.22), rgba(255,244,206,0.14));
-  opacity: .9;
-}
-.shinju-home-entry::after {
-  content: '›';
-  position: relative;
-  z-index: 1;
-  margin-left: 10px;
-  font-size: 26px;
-  color: rgba(255,255,255,0.75);
-}
-.shinju-home-entry-main,
-.shinju-home-entry-side {
-  position: relative;
-  z-index: 1;
-}
-.shinju-home-entry-kicker {
-  font-family: "Cinzel", serif;
-  font-size: 10px;
-  letter-spacing: .22em;
-  color: rgba(255,255,255,0.72);
-  text-shadow: 0 1px 8px rgba(0,0,0,0.35);
-}
-.shinju-home-entry-title {
-  margin-top: 3px;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: .12em;
-  color: #fff;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.45), 0 0 16px rgba(210,235,255,0.55);
-}
-.shinju-home-entry-side {
-  text-align: right;
-  margin-left: auto;
-}
-.shinju-home-entry-stage {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  color: #fff8ce;
-  text-shadow: 0 0 10px rgba(255,230,150,0.62), 0 1px 8px rgba(0,0,0,0.55);
-}
-.shinju-home-entry-items {
-  margin-top: 5px;
-  font-size: 10px;
-  color: rgba(255,255,255,0.72);
-}
-.shinju-home-entry.has-items {
-  border-color: rgba(255,238,170,0.72);
-  box-shadow: 0 0 22px rgba(255,220,120,0.22), 0 12px 34px rgba(0,0,0,0.26);
-}
-.shinju-home-entry.is-clear .shinju-home-entry-bg {
-  background:
-    radial-gradient(circle at 50% 45%, rgba(255,255,255,0.60), transparent 28%),
-    radial-gradient(circle at 80% 20%, rgba(255,228,150,0.34), transparent 38%),
-    linear-gradient(135deg, rgba(230,245,255,0.30), rgba(255,244,206,0.26));
-}
+
+
+
+
+
+
+
+
+
+
+
 
 #shinju-overlay {
   position: fixed;
@@ -10598,275 +10298,56 @@ body,
    - ホーム右側、お知らせアイコンの下に神樹入口を配置
    - 表示画像: images/shinju.webp
    ========================================================= */
-.shinju-home-entry {
-  position: absolute !important;
-  left: auto !important;
-  right: 14px !important;
-  top: calc(env(safe-area-inset-top) + 300px) !important;
-  bottom: auto !important;
-  z-index: 30 !important;
 
-  width: 78px !important;
-  height: 78px !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
 
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: visible !important;
-  cursor: pointer !important;
-  -webkit-tap-highlight-color: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
 
-.shinju-home-entry::after,
-.shinju-home-entry-bg,
-.shinju-home-entry-main,
-.shinju-home-entry-side,
-.shinju-home-entry-kicker,
-.shinju-home-entry-title,
-.shinju-home-entry-stage,
-.shinju-home-entry-items {
-  display: none !important;
-}
 
-.shinju-home-entry-icon {
-  width: 78px !important;
-  height: 78px !important;
-  object-fit: contain !important;
-  display: block !important;
-  pointer-events: none !important;
-  opacity: .94;
-  filter:
-    drop-shadow(0 0 8px rgba(255,255,255,0.62))
-    drop-shadow(0 5px 10px rgba(0,0,0,0.88)) !important;
-  transition: transform .16s ease, filter .16s ease, opacity .16s ease !important;
-}
 
-.shinju-home-entry:active .shinju-home-entry-icon {
-  transform: scale(.94) !important;
-  opacity: 1;
-}
 
-.shinju-home-entry.has-items .shinju-home-entry-icon {
-  filter:
-    drop-shadow(0 0 10px rgba(255,238,170,0.86))
-    drop-shadow(0 0 18px rgba(255,220,120,0.38))
-    drop-shadow(0 5px 10px rgba(0,0,0,0.88)) !important;
-}
 
-.shinju-home-entry.is-clear .shinju-home-entry-icon {
-  filter:
-    drop-shadow(0 0 12px rgba(255,255,255,0.88))
-    drop-shadow(0 0 24px rgba(210,238,255,0.48))
-    drop-shadow(0 5px 10px rgba(0,0,0,0.88)) !important;
-}
 
-.shinju-home-entry-badge {
-  position: absolute !important;
-  top: 10px !important;
-  right: 8px !important;
-  width: 13px !important;
-  height: 13px !important;
-  border-radius: 999px !important;
-  background: #f6d36c !important;
-  border: 1px solid rgba(255,255,255,0.9) !important;
-  box-shadow: 0 0 10px rgba(246,211,108,0.82) !important;
-  display: none !important;
-  pointer-events: none !important;
-}
 
-.shinju-home-entry.has-items .shinju-home-entry-badge {
-  display: block !important;
-}
 
-@media (max-height: 700px) {
-  .shinju-home-entry {
-    right: 12px !important;
-    top: calc(env(safe-area-inset-top) + 250px) !important;
-    width: 58px !important;
-    height: 58px !important;
-  }
 
-  .shinju-home-entry-icon {
-    width: 58px !important;
-    height: 58px !important;
-  }
-}
 
-@media (max-height: 620px) {
-  .shinju-home-entry {
-    right: 12px !important;
-    top: calc(env(safe-area-inset-top) + 238px) !important;
-    width: 54px !important;
-    height: 54px !important;
-  }
 
-  .shinju-home-entry-icon {
-    width: 54px !important;
-    height: 54px !important;
-  }
-}
+
+
+
+
+
 
 /* =========================================================
    Home Right Icons - Unified CSS
    mail / shinju の表示サイズ・影・押下挙動を統一
    ========================================================= */
-:root {
-  --home-side-icon-size: 90px;
-  --home-side-icon-right: 14px;
-  --home-side-icon-mail-top: calc(env(safe-area-inset-top) + 208px);
-  --home-side-icon-shinju-top: calc(env(safe-area-inset-top) + 300px);
-}
 
-.home-notice-btn,
-.shinju-home-entry {
-  position: absolute !important;
-  left: auto !important;
-  right: var(--home-side-icon-right) !important;
-  bottom: auto !important;
-  z-index: 30 !important;
 
-  width: var(--home-side-icon-size) !important;
-  height: var(--home-side-icon-size) !important;
-  min-width: var(--home-side-icon-size) !important;
-  min-height: var(--home-side-icon-size) !important;
 
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: visible !important;
 
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 
-  cursor: pointer !important;
-  transform: none !important;
-  animation: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-}
 
-.home-notice-btn {
-  top: var(--home-side-icon-mail-top) !important;
-}
 
-.shinju-home-entry {
-  top: var(--home-side-icon-shinju-top) !important;
-}
 
-.home-notice-btn img,
-.shinju-home-entry-icon {
-  width: var(--home-side-icon-size) !important;
-  height: var(--home-side-icon-size) !important;
-  display: block !important;
-  object-fit: contain !important;
-  pointer-events: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-  transition: transform .16s ease, filter .16s ease, opacity .16s ease !important;
-  filter:
-    drop-shadow(0 0 8px rgba(255,255,255,0.72))
-    drop-shadow(0 5px 10px rgba(0,0,0,0.85)) !important;
-}
 
-.home-notice-btn:active,
-.shinju-home-entry:active {
-  transform: scale(0.96) !important;
-}
 
-.home-notice-btn:active img,
-.shinju-home-entry:active .shinju-home-entry-icon {
-  transform: none !important;
-}
+
+
+
 
 /* 神樹の旧カード型要素は右側アイコン運用では非表示 */
-.shinju-home-entry::after,
-.shinju-home-entry-bg,
-.shinju-home-entry-main,
-.shinju-home-entry-side,
-.shinju-home-entry-kicker,
-.shinju-home-entry-title,
-.shinju-home-entry-stage,
-.shinju-home-entry-items {
-  display: none !important;
-}
 
-.home-notice-badge {
-  display: block !important;
-  position: absolute !important;
-  top: 10px !important;
-  right: 10px !important;
-  width: 17px !important;
-  height: 17px !important;
-  border-radius: 999px !important;
-  background: #e60023 !important;
-  border: 2px solid rgba(255,255,255,0.95) !important;
-  box-shadow:
-    0 0 8px rgba(230,0,35,0.85),
-    0 3px 8px rgba(0,0,0,0.75) !important;
-  pointer-events: none !important;
-}
 
-.shinju-home-entry-badge {
-  position: absolute !important;
-  top: 10px !important;
-  right: 10px !important;
-  width: 17px !important;
-  height: 17px !important;
-  border-radius: 999px !important;
-  background: #f6d36c !important;
-  border: 2px solid rgba(255,255,255,0.95) !important;
-  box-shadow:
-    0 0 8px rgba(246,211,108,0.85),
-    0 3px 8px rgba(0,0,0,0.75) !important;
-  display: none !important;
-  pointer-events: none !important;
-}
 
-.shinju-home-entry.has-items .shinju-home-entry-badge {
-  display: block !important;
-}
 
-@media (max-height: 700px) {
-  :root {
-    --home-side-icon-size: 62px;
-    --home-side-icon-right: 12px;
-    --home-side-icon-mail-top: calc(env(safe-area-inset-top) + 198px);
-    --home-side-icon-shinju-top: calc(env(safe-area-inset-top) + 262px);
-  }
 
-  .home-notice-badge,
-  .shinju-home-entry-badge {
-    top: 6px !important;
-    right: 6px !important;
-    width: 13px !important;
-    height: 13px !important;
-    border-width: 1.5px !important;
-  }
-}
 
-@media (max-height: 620px) {
-  :root {
-    --home-side-icon-size: 54px;
-    --home-side-icon-right: 12px;
-    --home-side-icon-mail-top: calc(env(safe-area-inset-top) + 190px);
-    --home-side-icon-shinju-top: calc(env(safe-area-inset-top) + 246px);
-  }
-}
+
+
+
+
+
 
 /* =========================================================
    Shinju Screen Visual Priority Patch
@@ -11922,3 +11403,125 @@ body,
   font-size: .68rem;
   line-height: 1.5;
 }
+
+
+/* =========================================================
+   07-D Summon Banner Pager
+   選択中以外の次バナー2件だけを表示し、矢印／スワイプで送る
+   ========================================================= */
+#screen-summon .summon-banner-list {
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr) 28px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 2px 0 8px !important;
+  overflow: hidden !important;
+  touch-action: pan-y !important;
+}
+
+#screen-summon .summon-banner-card {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  flex: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+}
+
+#screen-summon .summon-banner-card.active {
+  border-color: rgba(143,112,53,0.32) !important;
+  box-shadow: 0 7px 14px rgba(79,59,20,0.12), inset 0 0 0 1px rgba(255,255,255,0.58) !important;
+}
+
+#screen-summon .summon-banner-arrow {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 28px;
+  height: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(112, 85, 35, 0.82);
+  font-family: "Cinzel", serif;
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.9);
+}
+
+#screen-summon .summon-banner-arrow:active {
+  transform: scale(0.88);
+  color: rgba(156, 119, 46, 1);
+}
+
+/* =========================================================
+   Home Right Icons - Size / Position Only / Tighter Gap
+   装飾効果なし。mail / shinju を同一サイズで配置。
+   ========================================================= */
+
+#screen-main .home-notice-btn,
+#screen-main .shinju-home-entry {
+  position: absolute;
+  right: 14px;
+  width: clamp(62px, 16vw, 70px);
+  height: clamp(62px, 16vw, 70px);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  overflow: visible;
+  box-shadow: none;
+  filter: none;
+  transform: none;
+  transition: none;
+  animation: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#screen-main .home-notice-btn {
+  top: calc(var(--header-h) + 132px);
+}
+
+#screen-main .shinju-home-entry {
+  top: calc(var(--header-h) + 196px);
+}
+
+#screen-main .home-notice-btn > img,
+#screen-main .shinju-home-entry-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  filter: none;
+  transform: none;
+  transition: none;
+  animation: none;
+}
+
+#screen-main .home-notice-btn::before,
+#screen-main .home-notice-btn::after,
+#screen-main .shinju-home-entry::before,
+#screen-main .shinju-home-entry::after,
+#screen-main .home-notice-btn > img::before,
+#screen-main .home-notice-btn > img::after,
+#screen-main .shinju-home-entry-icon::before,
+#screen-main .shinju-home-entry-icon::after {
+  content: none;
+  display: none;
+}
+

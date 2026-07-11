@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=215-summon-header-clean">
+  <link rel="stylesheet" href="css/style.css?v=220-home-icons-size-only">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -235,7 +235,6 @@
 <div id="screen-main" class="screen">
   <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
     <img src="images/mail.webp" alt="お知らせ">
-    <span class="home-notice-badge"></span>
   </button>
 
   <!-- メイン上部イベントバナー -->
@@ -248,7 +247,6 @@
   <!-- 神樹：アルケミア創世進捗への入口（右側アイコン） -->
   <button class="shinju-home-entry" id="shinju-home-entry" type="button" onclick="openShinjuScreen()" aria-label="神樹へ移動">
     <img class="shinju-home-entry-icon" src="images/shinju.webp" alt="神樹">
-    <span class="shinju-home-entry-badge" id="shinju-home-entry-badge" aria-hidden="true"></span>
   </button>
 
   <div class="favorite-area">
@@ -860,7 +858,10 @@ document.addEventListener('touchend', function (e) {
   // ─── ガチャバナー定義 ───────────────────────────
   // 期間ごとにここを編集する（imgはimages/フォルダ内のファイル名）
   // 一旦ロジックは同じ。邂逅画面で2種類のバナーを選択できるようにする。
-  const GACHA_COMMON_CHARACTER_IDS = [3, 13, 16, 6, 5];
+  // キャラクターID再採番（本番8体）:
+// 旧 01,02,07,08,12,14,17,20 → 新 01,02,03,04,05,06,07,08
+// 画像ファイル名は旧番号のまま使用する。
+const GACHA_COMMON_CHARACTER_IDS = [9, 14, 16, 12, 11, 8];
   const GACHA_COMMON_MATERIAL_IDS = [
     'soul_vessel_chaos',
     'soul_vessel_mystis',
@@ -878,7 +879,7 @@ document.addEventListener('touchend', function (e) {
       category: 'normal',
       img: 'images/gacha_banner_01.webp',
       cost: 5,
-      pickupCharaId: 8,
+      pickupCharaId: 4,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
@@ -891,7 +892,7 @@ document.addEventListener('touchend', function (e) {
       category: 'normal',
       img: 'images/gacha_banner_02.webp',
       cost: 5,
-      pickupCharaId: 4,
+      pickupCharaId: 6,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
@@ -904,7 +905,7 @@ document.addEventListener('touchend', function (e) {
       category: 'normal',
       img: 'images/gacha_banner_03.webp',
       cost: 5,
-      pickupCharaId: 17,
+      pickupCharaId: 7,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
@@ -917,7 +918,7 @@ document.addEventListener('touchend', function (e) {
       category: 'normal',
       img: 'images/gacha_banner_04.webp',
       cost: 5,
-      pickupCharaId: 7,
+      pickupCharaId: 3,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
@@ -947,23 +948,61 @@ document.addEventListener('touchend', function (e) {
   var tenRevealIndex = 0;
   var tenRevealWaiting = false;
 
-  function renderSummonBanners(){
+  var visibleGachaBanners = [];
+  var summonPagerTouchStartX = null;
+
+  function getVisibleGachaBanners(){
+    var used = userProfile.used_gachas || [];
+    return GACHA_BANNERS.filter(function(gacha){
+      if(gacha.hidden === true) return false;
+      if(gacha.category === 'once' && used.includes(gacha.id)) return false;
+      return true;
+    });
+  }
+
+  function moveSummonBanner(step){
+    if(!visibleGachaBanners.length) return;
+    var currentIndex = visibleGachaBanners.findIndex(function(gacha){
+      return gacha.id === currentGachaId;
+    });
+    if(currentIndex < 0) currentIndex = 0;
+
+    var nextIndex = (currentIndex + step + visibleGachaBanners.length) % visibleGachaBanners.length;
+    openGachaDetail(visibleGachaBanners[nextIndex]);
+  }
+
+  function renderSummonBannerPager(){
     var list = document.getElementById('summon-banner-list');
     if(!list) return;
 
     list.innerHTML = '';
+    if(visibleGachaBanners.length <= 1){
+      list.style.display = 'none';
+      return;
+    }
+    list.style.display = '';
 
-    var used = userProfile.used_gachas || [];
-    var firstGacha = null;
+    var currentIndex = visibleGachaBanners.findIndex(function(gacha){
+      return gacha.id === currentGachaId;
+    });
+    if(currentIndex < 0) currentIndex = 0;
 
-    GACHA_BANNERS.forEach(function(gacha){
-      // 非表示フラグのあるガチャは、ロジックを残したまま一覧には出さない
-      if(gacha.hidden === true) return;
-      if(gacha.category === 'once' && used.includes(gacha.id)) return;
+    var prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'summon-banner-arrow summon-banner-arrow-prev';
+    prevBtn.setAttribute('aria-label', '前のバナーへ戻る');
+    prevBtn.textContent = '‹';
+    prevBtn.onclick = function(event){
+      event.stopPropagation();
+      moveSummonBanner(-1);
+    };
+    list.appendChild(prevBtn);
 
-      if(!firstGacha) firstGacha = gacha;
-
-      var div = document.createElement('div');
+    var previewCount = Math.min(2, visibleGachaBanners.length - 1);
+    for(var offset = 1; offset <= previewCount; offset++){
+      var gacha = visibleGachaBanners[(currentIndex + offset) % visibleGachaBanners.length];
+      var div = document.createElement('button');
+      div.type = 'button';
       div.className = 'summon-banner-card';
       div.id = 'banner-card-' + gacha.id;
       var cardTitle = gacha.thumbTitle || '';
@@ -975,18 +1014,39 @@ document.addEventListener('touchend', function (e) {
             '<div class="banner-card-title">' + cardTitle + '</div>' +
           '</div>'
         : '');
-      div.onclick = function(){ openGachaDetail(gacha); };
+      div.onclick = (function(targetGacha){
+        return function(){ openGachaDetail(targetGacha); };
+      })(gacha);
       list.appendChild(div);
-    });
+    }
 
-    // 最初のバナーをデフォルト選択
-    if(firstGacha) {
-      openGachaDetail(firstGacha);
-    } else {
+    var nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'summon-banner-arrow summon-banner-arrow-next';
+    nextBtn.setAttribute('aria-label', '次のバナーへ送る');
+    nextBtn.textContent = '›';
+    nextBtn.onclick = function(event){
+      event.stopPropagation();
+      moveSummonBanner(1);
+    };
+    list.appendChild(nextBtn);
+  }
+
+  function renderSummonBanners(){
+    visibleGachaBanners = getVisibleGachaBanners();
+
+    if(!visibleGachaBanners.length){
       currentGachaId = null;
       var detail = document.getElementById('summon-detail');
       if(detail) detail.innerHTML = '<div class="summon-empty">現在開催中の邂逅はありません</div>';
+      return;
     }
+
+    var selected = visibleGachaBanners.find(function(gacha){
+      return gacha.id === currentGachaId;
+    }) || visibleGachaBanners[0];
+
+    openGachaDetail(selected);
   }
 
   function openGachaDetail(gacha){
@@ -1031,8 +1091,31 @@ document.addEventListener('touchend', function (e) {
     });
     var activeCard = document.getElementById('banner-card-' + gacha.id);
     if(activeCard) activeCard.classList.add('active');
+
+    renderSummonBannerPager();
     updatePityUI();
   }
+
+  (function setupSummonPagerSwipe(){
+    document.addEventListener('touchstart', function(event){
+      var list = event.target.closest && event.target.closest('#summon-banner-list');
+      if(!list || !event.touches || !event.touches.length) return;
+      summonPagerTouchStartX = event.touches[0].clientX;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(event){
+      if(summonPagerTouchStartX === null) return;
+      var list = event.target.closest && event.target.closest('#summon-banner-list');
+      if(!list || !event.changedTouches || !event.changedTouches.length){
+        summonPagerTouchStartX = null;
+        return;
+      }
+      var diffX = event.changedTouches[0].clientX - summonPagerTouchStartX;
+      summonPagerTouchStartX = null;
+      if(Math.abs(diffX) < 36) return;
+      moveSummonBanner(diffX < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
  
 const BASE_STATS = ["HP","ATK","DEF","SPD"];
 const DISPLAY_STATS = ["HP","ATK"]; // 表示用（Battle32仕様：DEF/SPDは使用しない）
@@ -6862,8 +6945,9 @@ window.addEventListener('pagehide', function () {
 
 <script src="js/battle_range_32.js"></script>
 <script src="js/characters_32.js"></script>
+<script src="js/combo_32.js?v=1"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=135"></script>
+<script src="js/battle_32.js?v=136-combo"></script>
 <script src="js/battle_32_ui.js"></script>
 
 <!-- ローグライト（新規追加） -->

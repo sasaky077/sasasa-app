@@ -1,0 +1,7 @@
+/* コンボウインドウをローグライトキャラパネルより確実に前面へ */
+html body #b32-combo-inspect {
+  position: fixed !important;
+  z-index: 4000000 !important;
+  isolation: isolate !important;
+  pointer-events: auto !important;
+}

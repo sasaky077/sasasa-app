@@ -29,10 +29,10 @@
 
 
   // パーティ編成画面専用画像
-  // レイチェルだけ partyImg を優先し、他キャラは従来通り upImg -> img を使う
+  // レイチェルだけ partyImg を優先。ID再採番の影響を避けるため名前で判定する。
   function getPartySelectImg(chara) {
     if (!chara) return '';
-    if (chara.id === 2 || chara.name === 'レイチェル') {
+    if (chara.name === 'レイチェル') {
       return chara.partyImg || chara.upImg || chara.img || '';
     }
     return chara.upImg || chara.img || '';
@@ -834,14 +834,19 @@
     if (!list) return;
     list.innerHTML = '';
 
-    // 表示順は characters.js の CHARACTERS 配列順。
+    // 表示順はキャラクターIDの昇順。
     // ローグライトでは主人公エリは1st固定枠にだけ表示し、選択候補一覧からは除外する。
+    // そのため候補一覧は 02,03,04,05 / 06,07,08,09 ... の順で並ぶ。
     const chars = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : [])
-      .filter(c => !(_isRogueliteMode() && Number(c.id) === ROGUELITE_FIXED_FIRST_CHARA_ID));
+      .filter(c => !(_isRogueliteMode() && Number(c.id) === ROGUELITE_FIXED_FIRST_CHARA_ID))
+      .slice()
+      .sort((a, b) => Number(a.id) - Number(b.id));
 
     chars.forEach(c => {
-      const owned = _isFixedFirstChara(c.id) || (typeof collected !== 'undefined' && !!collected[c.id]);
-      const isSelected = selected.some(s => s.charaId === c.id);
+      // 所持判定は collected だけに限定しない。
+      // getOwnedPartyInstance() が representative / collected / box を統一して確認する。
+      const owned = _isFixedFirstChara(c.id) || !!getOwnedPartyInstance(c.id);
+      const isSelected = selected.some(s => Number(s.charaId) === Number(c.id));
 
       const card = document.createElement('div');
       card.className = 'ps-chara-card'

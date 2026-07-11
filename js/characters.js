@@ -26,9 +26,9 @@ const CHARACTERS = [
   // R
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:12────────────────────────────────
+  // ── id:5────────────────────────────────
   // コピー系。テクニカル。
-  { id: 12, name: 'クラリネ', rarity: 'r',
+  { id: 5, name: 'クラリネ', rarity: 'r',
  element: 'chaos',
     role: 'テクニック寄り',
     moveType: 'king_8',
@@ -39,14 +39,14 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 580, ATK: 280 },
-    img: 'images/chara_12.webp', 
-    cutImg: 'images/chara_12_cut.webp', 
-    ultImg: 'images/chara_12_cutin.webp',
-    upImg: 'images/chara_12_up.webp', 
-    battleUpImg: 'images/chara_12_battle_up.webp',
-    battleImg: 'images/chara_12_battle.webp',
-    battleBackImg: 'images/chara_12_battle_back.webp',
-    panelImg: 'images/chara_12_panel.webp',
+    img: 'images/chara_05.webp', 
+    cutImg: 'images/chara_05_cut.webp', 
+    ultImg: 'images/chara_05_cutin.webp',
+    upImg: 'images/chara_05_up.webp', 
+    battleUpImg: 'images/chara_05_battle_up.webp',
+    battleImg: 'images/chara_05_battle.webp',
+    battleBackImg: 'images/chara_05_battle_back.webp',
+    panelImg: 'images/chara_05_panel.webp',
     favScale: 1.0, favOffsetY: -15,
     uiScale: {panel: 1.0,battleBack: 1.3},
     skills: [  
@@ -82,9 +82,9 @@ const CHARACTERS = [
 }
     ]},
 
-     // ── id:6 ────────────────────
+     // ── id:12 ────────────────────
   // 味方の攻撃テンポを上げる支援寄りアタッカー。
-  { id: 6, name: 'オルフィア', rarity: 'r',
+  { id: 12, name: 'オルフィア', rarity: 'r',
     element: 'mystis',
     role: '支援寄り',
     moveType: 'front_side_3',
@@ -96,13 +96,13 @@ const CHARACTERS = [
     shinkiRegen: 1,
     stats: 
     { HP: 680, ATK: 240 },
-    img: 'images/chara_06.webp', 
-    cutImg: 'images/chara_06_cut.webp', 
-    ultImg: 'images/chara_06_cutin.webp',
-    upImg: 'images/chara_06_up.webp', 
-    battleImg: 'images/chara_06_battle.webp',
-    battleBackImg: 'images/chara_06_battle_back.webp',
-    panelImg: 'images/chara_06_panel.webp',
+    img: 'images/chara_12.webp', 
+    cutImg: 'images/chara_12_cut.webp', 
+    ultImg: 'images/chara_12_cutin.webp',
+    upImg: 'images/chara_12_up.webp', 
+    battleImg: 'images/chara_12_battle.webp',
+    battleBackImg: 'images/chara_12_battle_back.webp',
+    panelImg: 'images/chara_12_panel.webp',
     favScale: 0.85, favOffsetY: -35,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -193,9 +193,9 @@ const CHARACTERS = [
   desc: '射程：敵全体。ただし眠り（スタン）状態の敵のみを対象に、ATK×3.2の大ダメージを与える。'}
   ]},
 
-  // ── id:3 ──────────────────────────────────
+  // ── id:9 ──────────────────────────────────
   // 敵を縛り、ペースを握る。
-  { id: 3, name: 'ヴェラ', rarity: 'r',
+  { id: 9, name: 'ヴェラ', rarity: 'r',
     element: 'chaos',
     role: '妨害寄り',
     moveType: 'front_side_3',
@@ -206,13 +206,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 590, ATK: 275 },
-    img: 'images/chara_03.webp', 
-    cutImg: 'images/chara_03_cut.webp', 
-    ultImg: 'images/chara_03_cutin.webp',
-    upImg: 'images/chara_03_up.webp', 
-    battleImg: 'images/chara_03_battle.webp',
-    battleBackImg: 'images/chara_03_battle_back.webp',
-    panelImg: 'images/chara_03_panel.webp',
+    img: 'images/chara_09.webp', 
+    cutImg: 'images/chara_09_cut.webp', 
+    ultImg: 'images/chara_09_cutin.webp',
+    upImg: 'images/chara_09_up.webp', 
+    battleImg: 'images/chara_09_battle.webp',
+    battleBackImg: 'images/chara_09_battle_back.webp',
+    panelImg: 'images/chara_09_panel.webp',
     favScale: 1.0, favOffsetY: 10,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -249,9 +249,9 @@ const CHARACTERS = [
         desc: '射程：前方直線3マス。対象の敵にATK×1.6のダメージを与え、50%の確率で1ターン行動不能にする。' }
     ]},
 
-     // ── id:17 ──────────────────────────────────
+     // ── id:7 ──────────────────────────────────
   // スタンと設置物で盤面を制圧する妨害役。
-  { id: 17, name: 'ロゼ', rarity: 'r',
+  { id: 7, name: 'ロゼ', rarity: 'r',
     element: 'logos',
     role: '盤面制圧寄り',
     moveType: 'front_back_row3',
@@ -262,17 +262,21 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 680, ATK: 230 },
-    img: 'images/chara_17.webp', 
-    cutImg: 'images/chara_17_cut.webp', 
-    ultImg: 'images/chara_17_cutin.webp',
-    upImg: 'images/chara_17_up.webp', 
-    battleImg: 'images/chara_17_battle.webp',
-    battleUpImg: 'images/chara_17_battle_up.webp',
-    battleBackImg: 'images/chara_17_battle_back.webp',
-    panelImg: 'images/chara_17_panel.webp',
+    img: 'images/chara_07.webp', 
+    cutImg: 'images/chara_07_cut.webp', 
+    ultImg: 'images/chara_07_cutin.webp',
+    upImg: 'images/chara_07_up.webp', 
+    battleImg: 'images/chara_07_battle.webp',
+    battleUpImg: 'images/chara_07_battle_up.webp',
+    battleBackImg: 'images/chara_07_battle_back.webp',
+    panelImg: 'images/chara_07_panel.webp',
     favScale: 0.85, favOffsetY: -25,
     uiScale: {panel: 1.0,battleBack: 1.5},
-    skills: [
+        combo: {
+      range: 'combo_cross_all',
+      skill: { id: 'combo', name: 'ローズ・エコー', type: 'debuff', multiplier: 0.35, range: 'combo_line_all', effects: [{ type: 'atk_down', target: 'enemy', hit: 100, duration: 1, rate: 0.90 }], hitStyle: 'sleep', desc: '斜め位置の味方スキルに呼応し、周囲の敵へ小ダメージとATK10%低下を与える。' }
+    },
+skills: [
       { id: 's1',
         name: 'ローズ・バインド',
         linkCost: 3,
@@ -302,7 +306,7 @@ const CHARACTERS = [
         multiplier: 0.0,
         range: 'front2',
         summonName: '茨薔薇',
-        summonImg: 'images/chara_17_set.webp',
+        summonImg: 'images/chara_07_set.webp',
         summonDuration: 2,
         summonDistance: 2,
         summonCount: 3,
@@ -324,8 +328,8 @@ const CHARACTERS = [
         desc: '射程：前方2マス先を中心に横3マス。2ターン持続する茨薔薇を3つ設置する。茨薔薇は敵の直線系攻撃を遮り、後ろの味方を守る。毎ターン周囲9マスの敵に小ダメージを与え、35%で1ターンスタンさせる。'}
     ]},
 
-  // ── id:7 
-{ id: 7, name: 'スイ', rarity: 'r',
+  // ── id:3 
+{ id: 3, name: 'スイ', rarity: 'r',
     element: 'mystis',
   role: 'バランス寄り',
   moveType: 'line_front_3',
@@ -336,16 +340,20 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 600, ATK: 250 },
-    img: 'images/chara_07.webp', 
-    cutImg: 'images/chara_07_cut.webp', 
-    ultImg: 'images/chara_07_cutin.webp',
-    upImg: 'images/chara_07_up.webp', 
-    battleImg: 'images/chara_07_battle.webp',
-    battleBackImg: 'images/chara_07_battle_back.webp',
-    panelImg: 'images/chara_07_panel.webp',
+    img: 'images/chara_03.webp', 
+    cutImg: 'images/chara_03_cut.webp', 
+    ultImg: 'images/chara_03_cutin.webp',
+    upImg: 'images/chara_03_up.webp', 
+    battleImg: 'images/chara_03_battle.webp',
+    battleBackImg: 'images/chara_03_battle_back.webp',
+    panelImg: 'images/chara_03_panel.webp',
     favScale: 0.95, favOffsetY: 5,
     uiScale: {panel: 1.0,battleBack: 1.5},
-    skills: [
+        combo: {
+      range: 'combo_x_all',
+      skill: { id: 'combo', name: '星導の余光', type: 'buff', multiplier: 0, range: 'combo_around8', effects: [{ type: 'critical_up', target: 'ally_all', hit: 100, duration: 1, rate: 0.10 }], hitStyle: 'support', desc: '上下左右の味方スキルに呼応し、味方全体のcritical率を1ターン10%上昇する。' }
+    },
+skills: [
       { id: 's1',
         name: '星読みの予兆',
         linkCost: 2,
@@ -385,8 +393,8 @@ const CHARACTERS = [
         desc: '任意の効果を選択して予約する。次の自ターン開始時、LINK+3／味方全体critical率+50%／味方全体ガード（ダメージ80%カット）のいずれかが発動する。' }
     ]},
 
-    // ── id:5
-{ id: 5, name: 'シグレ', rarity: 'r',
+    // ── id:11
+{ id: 11, name: 'シグレ', rarity: 'r',
     element: 'logos',
   role: 'テクニック寄り',
   moveType: 'front_side_3',
@@ -397,13 +405,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 500, ATK: 200 },
-    img: 'images/chara_05.webp', 
-    cutImg: 'images/chara_05_cut.webp', 
-    ultImg: 'images/chara_05_cutin.webp',
-    upImg: 'images/chara_05_up.webp', 
-    battleImg: 'images/chara_05_battle.webp',
-    battleBackImg: 'images/chara_05_battle_back.webp',
-    panelImg: 'images/chara_05_panel.webp',
+    img: 'images/chara_11.webp', 
+    cutImg: 'images/chara_11_cut.webp', 
+    ultImg: 'images/chara_11_cutin.webp',
+    upImg: 'images/chara_11_up.webp', 
+    battleImg: 'images/chara_11_battle.webp',
+    battleBackImg: 'images/chara_11_battle_back.webp',
+    panelImg: 'images/chara_11_panel.webp',
     favScale: 0.95, favOffsetY: 5,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -460,9 +468,13 @@ const CHARACTERS = [
     battleUpImg: 'images/chara_01_battle_up.webp',
     battleBackImg: 'images/chara_01_battle_back.webp',
     panelImg: 'images/chara_01_panel.webp',
-    favScale: 1.0, favOffsetY: -10,
-    uiScale: {panel: 1.0,battleBack: 1.5},    
-    skills: [
+    favScale: 0.88, favOffsetY: -10,
+    uiScale: {panel: 1.0,battleBack: 1.2,},    
+        combo: {
+      range: 'combo_line_all',
+      skill: { id: 'combo', name: '共鳴する閃光', type: 'attack', multiplier: 0.75, range: 'combo_x_all', effects: [], hitStyle: 'normal', desc: '上下左右の味方スキルに呼応し、周囲の敵へ追撃する。' }
+    },
+skills: [
       { id: 's1',
         name: '謎の光',
         linkCost: 2,
@@ -490,9 +502,9 @@ const CHARACTERS = [
         desc: '射程：自身中心の斜め2マス。対象の敵にATK×3.0のダメージを与える。' }
     ]},
 
-  // ── id:13 ──────────────────────────────────
+  // ── id:14 ──────────────────────────────────
   // 背後からの攻撃で大ダメージを狙う暗殺型。
-  { id: 13, name: 'アヤカ', rarity: 'r',
+  { id: 14, name: 'アヤカ', rarity: 'r',
     element: 'logos',
     role: 'テクニック寄り',
     moveType: 'front_side_jump',
@@ -503,13 +515,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 740, ATK: 225 },
-    img: 'images/chara_13.webp', 
-    cutImg: 'images/chara_13_cut.webp', 
-    ultImg: 'images/chara_13_cutin.webp',
-    upImg: 'images/chara_13_up.webp', 
-    battleImg: 'images/chara_13_battle.webp',
-    battleBackImg: 'images/chara_13_battle_back.webp',
-    panelImg: 'images/chara_13_panel.webp',
+    img: 'images/chara_14.webp', 
+    cutImg: 'images/chara_14_cut.webp', 
+    ultImg: 'images/chara_14_cutin.webp',
+    upImg: 'images/chara_14_up.webp', 
+    battleImg: 'images/chara_14_battle.webp',
+    battleBackImg: 'images/chara_14_battle_back.webp',
+    panelImg: 'images/chara_14_panel.webp',
     favScale: 0.90, favOffsetY: 10,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -547,9 +559,9 @@ const CHARACTERS = [
   // SR
   // ══════════════════════════════════════════════════════════════
 
-  // ── id:4 ───────────────────────────────────
+  // ── id:10 ───────────────────────────────────
   // 予知系。数ターン先に攻撃を予約する感じ。
-  { id: 4, name: 'フローラ', rarity: 'r',
+  { id: 10, name: 'フローラ', rarity: 'r',
     element: 'mystis',
     role: 'テクニック寄り',
     moveType: 'front2_backdiag2',
@@ -560,13 +572,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 640, ATK: 255 },
-    img: 'images/chara_04.webp', 
-    cutImg: 'images/chara_04_cut.webp', 
-    ultImg: 'images/chara_04_cutin.webp',
-    upImg: 'images/chara_04_up.webp', 
-    battleImg: 'images/chara_04_battle.webp',
-    battleBackImg: 'images/chara_04_battle_back.webp',
-    panelImg: 'images/chara_04_panel.webp',
+    img: 'images/chara_10.webp', 
+    cutImg: 'images/chara_10_cut.webp', 
+    ultImg: 'images/chara_10_cutin.webp',
+    upImg: 'images/chara_10_up.webp', 
+    battleImg: 'images/chara_10_battle.webp',
+    battleBackImg: 'images/chara_10_battle_back.webp',
+    panelImg: 'images/chara_10_panel.webp',
     favScale: 1.00, favOffsetY: 20,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -657,9 +669,9 @@ const CHARACTERS = [
     ]},
 
   
-  // ── id:19 ──────────────────────────────────
+  // ── id:17 ──────────────────────────────────
   // 高火力敵ステージで味方を立て直すヒーラー。
-  { id: 19, name: 'アンジェ', rarity: 'r',
+  { id: 17, name: 'アンジェ', rarity: 'r',
     element: 'logos',
     role: 'ヒーラー',
     moveType: 'silver',
@@ -670,13 +682,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 720, ATK: 190 },
-    img: 'images/chara_19.webp', 
-    cutImg: 'images/chara_19_cut.webp', 
-    ultImg: 'images/chara_19_cutin.webp',
-    upImg: 'images/chara_19_up.webp', 
-    battleImg: 'images/chara_19_battle.webp',
-    battleBackImg: 'images/chara_19_battle_back.webp',
-    panelImg: 'images/chara_19_panel.webp',
+    img: 'images/chara_17.webp', 
+    cutImg: 'images/chara_17_cut.webp', 
+    ultImg: 'images/chara_17_cutin.webp',
+    upImg: 'images/chara_17_up.webp', 
+    battleImg: 'images/chara_17_battle.webp',
+    battleBackImg: 'images/chara_17_battle_back.webp',
+    panelImg: 'images/chara_17_panel.webp',
     favScale: 0.95, favOffsetY: 15,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -719,8 +731,8 @@ const CHARACTERS = [
       }
     ]},
 
-  // ── id:20 ──────────────────────────────────
-  { id: 20, name: 'ミモザ', rarity: 'r',
+  // ── id:8 ──────────────────────────────────
+  { id: 8, name: 'ミモザ', rarity: 'r',
     element: 'logos',
     role: '支援寄り',
     moveType: 'front_back_row3',
@@ -731,14 +743,14 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 760, ATK: 220 },
-    img: 'images/chara_20.webp', 
-    cutImg: 'images/chara_20_cut.webp', 
-    ultImg: 'images/chara_20_cutin.webp',
-    upImg: 'images/chara_20_up.webp', 
-    battleImg: 'images/chara_20_battle.webp',
-    battleUpImg: 'images/chara_20_battle_up.webp',
-    battleBackImg: 'images/chara_20_battle_back.webp',
-    panelImg: 'images/chara_20_panel.webp',
+    img: 'images/chara_08.webp', 
+    cutImg: 'images/chara_08_cut.webp', 
+    ultImg: 'images/chara_08_cutin.webp',
+    upImg: 'images/chara_08_up.webp', 
+    battleImg: 'images/chara_08_battle.webp',
+    battleUpImg: 'images/chara_08_battle_up.webp',
+    battleBackImg: 'images/chara_08_battle_back.webp',
+    panelImg: 'images/chara_08_panel.webp',
     favScale: 0.90, favOffsetY: -35,
     uiScale: {panel: 1.0,battleBack: 1.5},
     skills: [
@@ -779,10 +791,10 @@ const CHARACTERS = [
   // UR
   // ══════════════════════════════════════════════════════════════
 
-    // ── id:14 ──────────────────────────────────
+    // ── id:6 ──────────────────────────────────
   // 闘志を司るプリモア。自己強化しながら正面突破する直線火力アタッカー。
   // 前進・後退・斜め前移動で、踏み込みと離脱の両方を行える。
-  { id: 14, name: 'イグニス', rarity: 'r',
+  { id: 6, name: 'イグニス', rarity: 'r',
     element: 'chaos',
     role: '火力寄り',
     moveType: 'front_back_frontdiag',
@@ -793,17 +805,21 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 600, ATK: 300 },
-    img: 'images/chara_14.webp', 
-    cutImg: 'images/chara_14_cut.webp', 
-    ultImg: 'images/chara_14_cutin.webp',
-    upImg: 'images/chara_14_up.webp', 
-    battleUpImg: 'images/chara_14_battle_up.webp',
-    battleImg: 'images/chara_14_battle.webp',
-    battleBackImg: 'images/chara_14_battle_back.webp',
-    panelImg: 'images/chara_14_panel.webp',
+    img: 'images/chara_06.webp', 
+    cutImg: 'images/chara_06_cut.webp', 
+    ultImg: 'images/chara_06_cutin.webp',
+    upImg: 'images/chara_06_up.webp', 
+    battleUpImg: 'images/chara_06_battle_up.webp',
+    battleImg: 'images/chara_06_battle.webp',
+    battleBackImg: 'images/chara_06_battle_back.webp',
+    panelImg: 'images/chara_06_panel.webp',
     favScale: 1.0, favOffsetY: -15,
     uiScale: {panel: 1.0,battleBack: 1.7},
-    skills: [
+        combo: {
+      range: 'combo_cross_all',
+      skill: { id: 'combo', name: 'ブレイズ・リレー', type: 'attack', multiplier: 1.05, range: 'combo_x_all', effects: [], hitStyle: 'heavy', desc: '前方の味方スキルに呼応し、前方横3マスへ炎の追撃を行う。' }
+    },
+skills: [
       {
         id: 's1',
         name: 'ブレイブ・スマッシュ',
@@ -905,8 +921,8 @@ const CHARACTERS = [
         desc: '射程：前方2マス先。式神を設置する。式神は3ターンの間、周囲9マスの敵にATK×1.0の継続ダメージを与え、与えたダメージの50%分、味方全員のHPを回復する。3ターン後に消える。' }
         ]},
 
- // ── id:8 
-{ id: 8, 
+ // ── id:4 
+{ id: 4, 
   name: 'アルノ', rarity: 'r',
     element: 'chaos',
   role: '速度寄り',
@@ -918,16 +934,20 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 500, ATK: 300 },
-    img: 'images/chara_08.webp', 
-    cutImg: 'images/chara_08_cut.webp', 
-    ultImg: 'images/chara_08_cutin.webp',
-    upImg: 'images/chara_08_up.webp', 
-    battleImg: 'images/chara_08_battle.webp',
-    battleUpImg: 'images/chara_08_battle_up.webp',
-    battleBackImg: 'images/chara_08_battle_back.webp',
-    panelImg: 'images/chara_08_panel.webp',
+    img: 'images/chara_04.webp', 
+    cutImg: 'images/chara_04_cut.webp', 
+    ultImg: 'images/chara_04_cutin.webp',
+    upImg: 'images/chara_04_up.webp', 
+    battleImg: 'images/chara_04_battle.webp',
+    battleUpImg: 'images/chara_04_battle_up.webp',
+    battleBackImg: 'images/chara_04_battle_back.webp',
+    panelImg: 'images/chara_04_panel.webp',
     uiScale: {panel: 1.0,battleBack: 1.5},
-    skills: [
+        combo: {
+      range: 'combo_around8',
+      skill: { id: 'combo', name: 'クイック・ギルティ', type: 'attack', multiplier: 0.90, range: 'combo_line_all', effects: [], hitStyle: 'rapid_multi', hitCount: 3, desc: '前方の味方スキルに呼応し、正面の敵へ高速追撃する。' }
+    },
+skills: [
       { id: 's1',
         name: 'ギルティ',
         linkCost: 3,
@@ -960,9 +980,9 @@ const CHARACTERS = [
     ]},
 
 
-  // ── id:9 ミア ──────────────────────────────────
+  // ── id:13 ミア ──────────────────────────────────
   // 遠距離特化。近距離は苦手だが、独特なステップで距離を取りながら遠方を射抜く。
-  { id: 9, name: 'ミア', rarity: 'r',
+  { id: 13, name: 'ミア', rarity: 'r',
     element: 'mystis',
     role: '遠距離寄り',
     moveType: 'cat_step',
@@ -973,13 +993,13 @@ const CHARACTERS = [
     shinkiStart: 0,
     shinkiRegen: 1,
     stats: { HP: 540, ATK: 295 },
-    img: 'images/chara_09.webp',
-    cutImg: 'images/chara_09_cut.webp',
-    ultImg: 'images/chara_09_cutin.webp',
-    upImg: 'images/chara_09_up.webp',
-    battleImg: 'images/chara_09_battle.webp',
-    battleBackImg: 'images/chara_09_battle_back.webp',
-    panelImg: 'images/chara_09_panel.webp',
+    img: 'images/chara_13.webp',
+    cutImg: 'images/chara_13_cut.webp',
+    ultImg: 'images/chara_13_cutin.webp',
+    upImg: 'images/chara_13_up.webp',
+    battleImg: 'images/chara_13_battle.webp',
+    battleBackImg: 'images/chara_13_battle_back.webp',
+    panelImg: 'images/chara_13_panel.webp',
     favScale: 0.90, favOffsetY: -25,
     uiScale: {panel: 1.0, battleBack: 1.5},
     skills: [

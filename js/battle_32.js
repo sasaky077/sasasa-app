@@ -787,6 +787,10 @@ function pickRandomBoardCells(count) {
       col,
       skills: charDef.skills,
 
+      // コンボ定義。キャラクターマスターからバトルユニットへ引き継ぐ。
+      // これが無いとコンボ発動・レンジ表示・説明表示のすべてが参照できない。
+      combo: charDef.combo ? deepClone(charDef.combo) : null,
+
       // 盤面用
       img:          charDef.battleBackImg || charDef.battleImg || charDef.img || null,
       battleImg:    charDef.battleImg     || charDef.img       || null,
@@ -2223,7 +2227,7 @@ function _executeDelayedAttack(action) {
   // ============================================================
   // スキル実行（味方）
   // ============================================================
-  function executeAllySkill(allyUid, skillId) {
+  async function executeAllySkill(allyUid, skillId) {
     if (_bs.phase !== 'skill') {
       _log('スキルフェーズではありません');
       console.warn('[Battle32] executeAllySkill failed: phase is not skill', { phase: _bs && _bs.phase, allyUid, skillId });
@@ -2267,11 +2271,11 @@ function _executeDelayedAttack(action) {
 
     // ── 対象解決ヘルパー（スコープ内ローカル） ──
     const _enemyTargets = (rangeKey) =>
-      BR.getUnitsFromRange32(ally, rangeKey, _bs.enemies).filter(u => u.hp > 0);
+      _getComboRangeUnits32(ally, rangeKey, _bs.enemies).filter(u => u.hp > 0);
     const _allyTargets = (rangeKey) =>
       (rangeKey === 'self'
         ? [ally]
-        : BR.getUnitsFromRange32(ally, rangeKey, _bs.allies).filter(u => u.hp > 0));
+        : _getComboRangeUnits32(ally, rangeKey, _bs.allies).filter(u => u.hp > 0));
 
     const stype = skill.type;
     const isDelayedAttack = _isDelayedAttackSkill(skill);
@@ -2734,12 +2738,229 @@ _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 // 行動権を消費（LINKも消費される）
 _consumePlayerAction(actionType, allyUid, skillId);
 
+// 敵を攻撃したスキル/ULTの全処理完了後に、コンボ連鎖を開始する。
+// 演出・ダメージ・追加効果・撃破判定を終えてから、世代キューをawaitする。
+const comboTriggerEligible =
+  !noTargets &&
+  (skill.type === 'attack' || skill.type === 'debuff');
+
+if (
+  comboTriggerEligible &&
+  !_bs.result &&
+  window.Combo32 &&
+  typeof window.Combo32.runFromAction === 'function'
+) {
+  await window.Combo32.runFromAction(allyUid, {
+    skillId: skill.id,
+    skillName: skill.name,
+    isUltimate: !!skill.isUltimate,
+  });
+}
+
 // 勝敗未確定のときだけ保存
 if (!_bs.result) {
   _saveResume();
 }
 
 return true;
+  }
+
+
+  // ============================================================
+  // コンボスキル実行（LINK・神気・行動回数を消費しない）
+  // ============================================================
+  function _getComboRangeUnits32(owner, rangeId, units) {
+    if (
+      window.Combo32 &&
+      typeof window.Combo32.getRangeCells === 'function' &&
+      ['combo_line_all', 'combo_cross_all', 'combo_x_all', 'combo_around8'].includes(rangeId)
+    ) {
+      const keys = new Set(
+        window.Combo32.getRangeCells(owner, rangeId)
+          .map(cell => `${cell.row}-${cell.col}`)
+      );
+      return (units || []).filter(unit =>
+        unit && keys.has(`${unit.row}-${unit.col}`)
+      );
+    }
+
+    return BR.getUnitsFromRange32(owner, rangeId, units);
+  }
+
+  async function executeComboSkill(allyUid, comboSkill, context) {
+    if (!_bs || _bs.result || !comboSkill) {
+      return { executed: false, affected: false };
+    }
+
+    const ally = (_bs.allies || []).find(unit =>
+      unit && unit._uid === allyUid && unit.hp > 0
+    );
+    if (!ally) {
+      return { executed: false, affected: false };
+    }
+
+    const enemyTargets = rangeKey =>
+      _getComboRangeUnits32(ally, rangeKey, _bs.enemies)
+        .filter(unit => unit && unit.hp > 0);
+
+    const allyTargets = rangeKey =>
+      rangeKey === 'self'
+        ? [ally]
+        : _getComboRangeUnits32(ally, rangeKey, _bs.allies)
+            .filter(unit => unit && unit.hp > 0);
+
+    const stype = comboSkill.type || 'attack';
+
+    // 実行直前に対象を再計算する。
+    // 先行コンボで敵が倒れた場合、対象なしなら演出も省略する。
+    let previewTargets = [];
+    if (stype === 'attack' || stype === 'debuff') {
+      previewTargets = enemyTargets(comboSkill.range);
+      if (!previewTargets.length) {
+        return { executed: false, affected: false, reason: 'no-target' };
+      }
+    }
+
+    _lockInput();
+
+    try {
+      const generation = Number(context && context.generation || 1);
+      const comboIndex = Number(context && context.comboIndex || generation || 1);
+
+      // 通常攻撃の演出・ダメージ処理後、盤面へ戻ってから
+      // 「COMBO発生！」と反応キャラのグリッドエフェクトを見せる。
+      // 起点攻撃のアップ演出が残っている間に次の演出を始めると、
+      // COMBO表示が隠れ、コンボ攻撃演出もbusy判定で弾かれる。
+      if (typeof window.waitBattle32AttackCinematicIdle === 'function') {
+        await window.waitBattle32AttackCinematicIdle(4200);
+      } else {
+        await wait(1320);
+      }
+
+      _renderUI();
+      await wait(100);
+
+      if (typeof window.showBattle32ComboReady === 'function') {
+        await window.showBattle32ComboReady({
+          ally: { ...ally },
+          skill: deepClone(comboSkill),
+          comboIndex,
+          generation,
+        });
+      } else {
+        await wait(520);
+      }
+
+      _log(`COMBO：${ally.name} が「${comboSkill.name}」を発動！`);
+
+      // 既存イベントを先に通知し、UI側のキャラ演出を開始可能にする。
+      _emit('comboActionStart', {
+        ally: { ...ally },
+        skill: deepClone(comboSkill),
+        context: context || null,
+        bs: _snapshot(),
+      });
+
+      _renderUI();
+      await wait(180);
+
+      let affected = false;
+      let affectedCount = 0;
+
+      if (stype === 'attack' || stype === 'debuff') {
+        // 演出後にもう一度対象を再取得
+        const targets = enemyTargets(comboSkill.range);
+
+        for (const enemy of targets) {
+          if (_bs.result) break;
+
+          if (Number(comboSkill.multiplier || 0) > 0) {
+            const damage = calcDamage(
+              getEffectiveAtk(ally),
+              comboSkill.multiplier,
+              enemy,
+              ally
+            );
+            applyDamage(enemy, damage, ally, comboSkill);
+          }
+
+          if (
+            enemy.hp > 0 &&
+            Array.isArray(comboSkill.effects) &&
+            comboSkill.effects.length
+          ) {
+            _applyEffects(comboSkill.effects, enemy, ally);
+          }
+
+          affected = true;
+          affectedCount += 1;
+        }
+      } else if (stype === 'buff' || stype === 'heal') {
+        const effectTarget = (comboSkill.effects || [])[0]?.target || '';
+
+        let targets = effectTarget === 'ally_all'
+          ? (_bs.allies || []).filter(unit => unit && unit.hp > 0)
+          : allyTargets(comboSkill.range || 'self');
+
+        if (!targets.length) targets = [ally];
+
+        for (const target of targets) {
+          if (stype === 'heal') {
+            const amount = Math.max(
+              1,
+              Math.round(
+                getEffectiveAtk(ally) *
+                Number(comboSkill.healRate || comboSkill.multiplier || 0.25)
+              )
+            );
+            target.hp = Math.min(target.hpMax, target.hp + amount);
+          }
+
+          _applyEffects(comboSkill.effects || [], target, ally);
+          affected = true;
+          affectedCount += 1;
+        }
+      }
+
+      _checkWinLose();
+      _renderUI();
+
+      _emit('comboAction', {
+        ally: { ...ally },
+        skill: deepClone(comboSkill),
+        context: context || null,
+        affected,
+        affectedCount,
+        bs: _snapshot(),
+      });
+
+      // damage callbackで開始される攻撃アップ演出が終わり、
+      // 盤面へ戻ってから通算コンボ数をグリッド上へ表示する。
+      if (typeof window.waitBattle32AttackCinematicIdle === 'function') {
+        await window.waitBattle32AttackCinematicIdle(5200);
+      } else {
+        const cinematicWait = comboSkill.hitStyle === 'rapid_multi' ? 2820 : 1320;
+        await wait(cinematicWait);
+      }
+
+      _renderUI();
+      await wait(100);
+
+      if (typeof window.showBattle32ComboCount === 'function') {
+        await window.showBattle32ComboCount(comboIndex);
+      } else {
+        await wait(520);
+      }
+
+      return {
+        executed: true,
+        affected,
+        affectedCount,
+        allyUid,
+      };
+    } finally {
+      _unlockInput();
+    }
   }
 
   // ============================================================
@@ -4639,6 +4860,17 @@ function restore(savedState, callbacks) {
 
   _bs = deepClone(savedState);
 
+  // 旧保存データには combo が含まれていない場合があるため、
+  // CHARACTERS_32 のマスターからキャラIDを使って復元する。
+  const comboMasterList = Array.isArray(window.CHARACTERS_32) ? window.CHARACTERS_32 : [];
+  if (Array.isArray(_bs.allies)) {
+    _bs.allies.forEach(unit => {
+      if (!unit || unit.combo) return;
+      const master = comboMasterList.find(c => c && Number(c.id) === Number(unit.id));
+      if (master && master.combo) unit.combo = deepClone(master.combo);
+    });
+  }
+
   // 再開直後は演出中ではなく、操作可能な状態に寄せる
   if (_bs.result) {
     _bs.phase = 'end';
@@ -4664,6 +4896,7 @@ window.Battle32 = {
   endCharTurn,
 
   executeAllySkill,
+  executeComboSkill,
   moveAlly,
 
   getSummonableRoster,
