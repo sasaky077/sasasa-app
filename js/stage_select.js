@@ -98,12 +98,12 @@
         flex: 1;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 14px 14px calc(40px + env(safe-area-inset-bottom, 20px));
+        padding: 0 0 calc(40px + env(safe-area-inset-bottom, 20px));
       }
       .ss-list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 0;
       }
 
       /* ステージカード */
@@ -111,13 +111,15 @@
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 14px 16px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,.08);
+        min-height: 72px;
+        padding: 14px 18px;
+        border-radius: 0;
+        border: 0;
+        border-bottom: 1px solid rgba(255,255,255,.08);
         background: rgba(255,255,255,.03);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        transition: background .15s, border-color .15s;
+        transition: background .15s;
         position: relative;
         overflow: hidden;
       }
@@ -129,8 +131,7 @@
         pointer-events: none;
       }
       .ss-card:active {
-        background: rgba(255,255,255,.07);
-        border-color: rgba(255,255,255,.18);
+        background: rgba(255,255,255,.09);
       }
       .ss-card.locked {
         opacity: .35;
@@ -141,17 +142,17 @@
       .ss-card-no {
         flex-shrink: 0;
         width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        border: 1px solid rgba(255,255,255,.12);
-        background: rgba(255,255,255,.05);
+        height: auto;
+        border-radius: 0;
+        border: 0;
+        background: transparent;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         font-family: "Cinzel", serif;
-        font-size: 13px;
-        color: rgba(232,228,220,.6);
-        letter-spacing: 0;
+        font-size: 11px;
+        color: rgba(232,228,220,.55);
+        letter-spacing: .12em;
       }
 
       /* テキストエリア */
@@ -191,9 +192,10 @@
         font-family: "Cinzel", serif;
         font-size: 8px;
         letter-spacing: 2px;
-        padding: 3px 9px;
-        border-radius: 4px;
-        border: 1px solid;
+        padding: 0;
+        border-radius: 0;
+        border: 0;
+        background: transparent;
       }
 
       /* 矢印 */
@@ -221,15 +223,15 @@
     if (!list) return;
     list.innerHTML = '';
 
-    // ── ローグライトランバナー（chapter === 'roguelite' or chapter === 0 で表示）──
-    // chapter 0（DEBUG）にもバナーを表示してデバッグしやすくする
-    if (chapter === 'roguelite' || chapter === 0) {
+    // ── 特別巡行用ローグライト一覧 ──
+    // CHAPTER 00はSTAGESに定義したBOSS単戦だけを表示する。
+    if (chapter === 'roguelite') {
       const runs = [
         {
-          id: 'default',
-          icon: '🎲',
-          name: 'ローグライトラン',
-          meta: '4ステージ突破 · 強化OP選択',
+          id: 'overseer',
+          icon: '◉',
+          name: '万象を知る白亜の座',
+          meta: '全3戦 · レムナント：オーバーシア',
           color: 'rgba(140,80,255,.9)',
         },
         {
@@ -244,7 +246,7 @@
       runs.forEach(run => {
         const rlCard = document.createElement('div');
         rlCard.className = 'ss-card';
-        rlCard.style.cssText = 'border-color:rgba(140,80,255,.35);background:rgba(60,20,120,.08)';
+        rlCard.classList.add('ss-card-roguelite');
         rlCard.innerHTML = `
           <div class="ss-card-no" style="border-color:rgba(140,80,255,.35);color:${run.color}">${run.icon}</div>
           <div class="ss-card-body">
@@ -259,14 +261,7 @@
         rlCard.onclick = () => _openRoguelitePartySelect(run.id);
         list.appendChild(rlCard);
       });
-
-      // roguelite 専用表示ならここで終了
-      if (chapter === 'roguelite') return;
-
-      // chapter 0 の場合は通常のステージ一覧も続けて表示（区切り線を入れる）
-      const sep = document.createElement('div');
-      sep.style.cssText = 'height:1px;background:rgba(255,255,255,.06);margin:4px 0';
-      list.appendChild(sep);
+      return;
     }
 
     const stages = (typeof getStagesByChapter === 'function')
@@ -334,10 +329,17 @@
     }, 350);
   }
 
+  window.openRoguelitePartySelect = _openRoguelitePartySelect;
+
   // ============================================================
   // ステージ選択
   // ============================================================
   function onStageTap(stage) {
+    if (stage && stage.rogueliteRunId) {
+      _openRoguelitePartySelect(stage.rogueliteRunId);
+      return;
+    }
+
     closeStageSelect();
     // 少し間を置いてから編成モーダルへ
     setTimeout(() => {
@@ -380,6 +382,16 @@
           // ターン制限
           if (stage.turnLimit != null) {
             battleOptions.turnLimit = stage.turnLimit;
+          }
+
+          // バトル背景番号（設計者指定）。未指定はUI側で01。
+          if (stage.battleBackgroundNo != null) {
+            battleOptions.battleBackgroundNo = stage.battleBackgroundNo;
+          }
+
+          // DEBUG等でローグライトと同じロスター/初期配置だけを使う
+          if (stage.forceRogueliteLayout === true) {
+            battleOptions.forceRogueliteLayout = true;
           }
 
           // ボス捕獲に必要な駒取り回数

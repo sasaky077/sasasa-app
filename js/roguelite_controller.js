@@ -992,16 +992,26 @@
   // ── HUD 更新 ─────────────────────────────────────────────
   // ── HUD 更新 ─────────────────────────────────────────────
 function _makeStageProgressHtml(stageNo, baseClass) {
-  const current = Math.max(1, Math.min(4, Number(stageNo || 1)));
+  const runDef = window.RogueliteRun && typeof window.RogueliteRun.getCurrentRunDef === 'function'
+    ? window.RogueliteRun.getCurrentRunDef()
+    : null;
+  const defs = Array.isArray(runDef && runDef.stageDefs) && runDef.stageDefs.length
+    ? runDef.stageDefs
+    : [{}, {}, {}, { isBoss: true }];
+
+  const maxStage = defs.length;
+  const current = Math.max(1, Math.min(maxStage, Number(stageNo || 1)));
   let html = '';
 
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= maxStage; i++) {
+    const def = defs[i - 1] || {};
+    const isBoss = !!def.isBoss;
     const classes = [baseClass + '-pip'];
     if (i < current) classes.push('done');
     if (i === current) classes.push('active');
-    if (i === 4) classes.push('boss');
+    if (isBoss) classes.push('boss');
 
-    const label = i === 4 ? 'BOSS' : `ST${i}`;
+    const label = isBoss ? 'BOSS' : `ST${i}`;
     html += `
       <span class="${classes.join(' ')}">
         <span class="${baseClass}-pip-bar"></span>
@@ -1809,7 +1819,7 @@ async function _onBattleEnd(result, payload) {
     window.RogueliteRun.addClearedStageTurn(payload && payload.turn);
   }
 
-  // ボス戦勝利時：盤面上フィニッシュ演出 → STAGE 4 CLEAR → ラン成功画面へ
+  // ボス戦勝利時：盤面上フィニッシュ演出 → 最終STAGE CLEAR → ラン成功画面へ
   if (window.RogueliteRun.isBossStage()) {
     const currentStage = window.RogueliteRun.getStageNo();
     await _waitRunVictoryGridFx();
@@ -1822,20 +1832,27 @@ async function _onBattleEnd(result, payload) {
       ? window.RogueliteRun.getTotalTurns()
       : 0;
     const rank = _getRankFromTurns(totalTurns);
-    const reward = await _grantRunRewards(rank);
     const runId = (window.RogueliteRun && typeof window.RogueliteRun.getRunId === 'function')
       ? window.RogueliteRun.getRunId()
       : 'default';
-    const shinjuItem = (window.ShinjuProgress && typeof window.ShinjuProgress.grantBossItemFromRoguelite === 'function')
-      ? window.ShinjuProgress.grantBossItemFromRoguelite({ runId, rank, totalTurns })
-      : null;
+    const isDebugRun = window.RogueliteRun
+      && typeof window.RogueliteRun.isDebugRun === 'function'
+      && window.RogueliteRun.isDebugRun();
 
-    const evolutionMaterialItems = (typeof window.grantEvolutionMaterialDropFromRoguelite === 'function')
-      ? window.grantEvolutionMaterialDropFromRoguelite({ runId, rank, totalTurns })
-      : [];
+    const reward = isDebugRun ? { coin: 0, exp: 0 } : await _grantRunRewards(rank);
+    const shinjuItem = !isDebugRun
+      && window.ShinjuProgress
+      && typeof window.ShinjuProgress.grantBossItemFromRoguelite === 'function'
+        ? window.ShinjuProgress.grantBossItemFromRoguelite({ runId, rank, totalTurns })
+        : null;
+
+    const evolutionMaterialItems = !isDebugRun
+      && typeof window.grantEvolutionMaterialDropFromRoguelite === 'function'
+        ? window.grantEvolutionMaterialDropFromRoguelite({ runId, rank, totalTurns })
+        : [];
 
     let bossDropItem = null;
-    if (typeof window.rollBossDropFromRoguelite === 'function') {
+    if (!isDebugRun && typeof window.rollBossDropFromRoguelite === 'function') {
       try {
         const drop = await window.rollBossDropFromRoguelite({ runId, rank, totalTurns });
         if (drop && drop.type === 'remnant' && drop.remnant) {
@@ -1867,7 +1884,7 @@ async function _onBattleEnd(result, payload) {
       } catch (err) {
         console.warn('[RogueliteController] BOSSドロップ抽選に失敗:', err);
       }
-    } else if (typeof window.tryUnlockRemnantFromRoguelite === 'function') {
+    } else if (!isDebugRun && typeof window.tryUnlockRemnantFromRoguelite === 'function') {
       // 旧API互換
       try {
         const unlocked = await window.tryUnlockRemnantFromRoguelite({ runId, rank, totalTurns });

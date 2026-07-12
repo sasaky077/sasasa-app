@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=220-home-icons-size-only">
+  <link rel="stylesheet" href="css/style.css?v=281-patrol-font-press-unified">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -142,7 +142,7 @@
 
     <!-- 左カラム：大カテゴリ -->
     <div class="ninmu-left">
-      <button class="ninmu-cat-item active" id="ninmu-cat-daily"   onclick="switchNinmuCat('daily')">デイリー巡行</button>
+      <button class="ninmu-cat-item active" id="ninmu-cat-daily"   onclick="switchNinmuCat('daily')">デイリー</button>
       <button class="ninmu-cat-item"        id="ninmu-cat-special" onclick="switchNinmuCat('special')">特別巡行</button>
       <button class="ninmu-cat-item"        id="ninmu-cat-story"   onclick="switchNinmuCat('story')">ストーリー</button>
     </div>
@@ -150,18 +150,12 @@
     <!-- 右カラム：サブメニュー -->
     <div class="ninmu-right">
 
-      <!-- デイリー巡行 -->
+      <!-- デイリー -->
       <div id="ninmu-panel-daily" class="ninmu-panel">
-        <div class="ninmu-panel-coming">
-          <div class="ninmu-panel-coming-title">COMING SOON</div>
-          <div class="ninmu-panel-coming-body">近日実装予定</div>
-        </div>
-        <!-- テスト用EXPボタン -->
-        <div class="ninmu-test-area">
-          <div class="ninmu-test-label">— TEST —</div>
+        <div class="ninmu-test-area ninmu-daily-area">
           <button class="ninmu-test-btn ninmu-test-btn-first" onclick="testNodeClear(true)">
-            <span class="ninmu-test-btn-title">テストプレイ（初回）</span>
-            <span class="ninmu-test-btn-sub">normal / Sクリア想定　+375 EXP</span>
+            <span class="ninmu-test-btn-title">デイリー巡行</span>
+            <span class="ninmu-test-btn-sub">normal / Sクリア想定　+375 EXP ／ 原初の翼環 ×1</span>
           </button>
           <button class="ninmu-test-btn ninmu-test-btn-repeat" onclick="testNodeClear(false)">
             <span class="ninmu-test-btn-title">テストプレイ（2回目以降）</span>
@@ -177,9 +171,13 @@
       <!-- 特別巡行 -->
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
-          <div class="ninmu-chapter-item" onclick="openStageSelect('roguelite')">
+          <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('overseer')">
             <div class="ninmu-chapter-label">ROGUELITE</div>
-            <div class="ninmu-chapter-title">ローグライト</div>
+            <div class="ninmu-chapter-title">万象を知る白亜の座</div>
+          </div>
+          <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('sakiel')">
+            <div class="ninmu-chapter-label">ROGUELITE</div>
+            <div class="ninmu-chapter-title">サキエル降臨</div>
           </div>
         </div>
       </div>
@@ -187,43 +185,21 @@
       <!-- ストーリー -->
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
-          <!-- DEBUG：開発用テストステージ -->
-          <div class="ninmu-chapter-item ninmu-chapter-debug"
-               onclick="openStageSelect(0)">
+          <div class="ninmu-chapter-item ninmu-chapter-debug" onclick="openStageSelect(0)">
             <div class="ninmu-chapter-label">CHAPTER:00</div>
             <div class="ninmu-chapter-title">DEBUG</div>
           </div>
-
-          <div class="ninmu-chapter-item"
-               onclick="openStageSelect(1)">
+          <div class="ninmu-chapter-item" onclick="openStageSelect(1)">
             <div class="ninmu-chapter-label">CHAPTER:01</div>
-            <div class="ninmu-chapter-title">初巡行</div>
+            <div class="ninmu-chapter-title">知恵</div>
           </div>
-
-
-          <div class="ninmu-chapter-item"
-               onclick="openStageSelect(2)">
+          <div class="ninmu-chapter-item" onclick="openStageSelect(2)">
             <div class="ninmu-chapter-label">CHAPTER:02</div>
-            <div class="ninmu-chapter-title">紡ぐ者</div>
+            <div class="ninmu-chapter-title">破壊</div>
           </div>
-
-
-          <div class="ninmu-chapter-item"
-               onclick="openStageSelect(3)">
+          <div class="ninmu-chapter-item" onclick="openStageSelect(3)">
             <div class="ninmu-chapter-label">CHAPTER:03</div>
-            <div class="ninmu-chapter-title">御祀り</div>
-          </div>
-
-
-          <div class="ninmu-chapter-item ninmu-chapter-locked">
-            <div class="ninmu-chapter-label">CHAPTER:04</div>
-            <div class="ninmu-chapter-title">dummy</div>
-          </div>
-
-
-          <div class="ninmu-chapter-item ninmu-chapter-locked">
-            <div class="ninmu-chapter-label">CHAPTER:05</div>
-            <div class="ninmu-chapter-title">dummy</div>
+            <div class="ninmu-chapter-title">忘却</div>
           </div>
         </div>
       </div>
@@ -257,9 +233,10 @@
 </div>
 
 <div id="screen-summon" class="screen">
-  <div class="summon-title-panel" aria-hidden="true">
-    <div class="summon-title-main">邂逅</div>
-    <div class="summon-title-line"></div>
+  <div class="header">
+    <div></div>
+    <div class="header-title">邂逅</div>
+    <div></div>
   </div>
 
   <!-- 邂逅レイアウト -->
@@ -893,7 +870,7 @@ const GACHA_COMMON_CHARACTER_IDS = [9, 14, 16, 12, 11, 8];
       category: 'normal',
       img: 'images/gacha_banner_02.webp',
       cost: 5,
-      pickupCharaId: 6,
+      pickupCharaId: 8,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
@@ -1126,12 +1103,45 @@ const MAX_LIMIT_BREAK = 4;
 
 const LIMIT_BREAK_RATE = 0.04;
 
-function getLimitBreakRate(limitBreak){
-  return limitBreak * LIMIT_BREAK_RATE;
+// エリ専用共鳴ボーナス。
+// DBにはlimitBreakだけを保存し、効果はキャラIDとLvから毎回導出する。
+const ERI_RESONANCE_BONUSES = {
+  1: {
+    title: '基礎共鳴',
+    summary: 'HP・ATKが5%上昇',
+    detail: 'エリの基礎HPとATKが5%上昇する。'
+  },
+  2: {
+    title: '導きの残光',
+    summary: '「謎の光」に味方回復を追加',
+    detail: '謎の光の攻撃後、HP割合が最も低い味方をエリのATK×0.35回復する。'
+  },
+  3: {
+    title: '連鎖領域拡張',
+    summary: 'コンボ発動レンジ：直線 → 十字',
+    detail: '共鳴する閃光の発動レンジが「直線上すべて」から「十字すべて」へ拡張する。'
+  },
+  4: {
+    title: '光脈の同調',
+    summary: 'コンボ時、味方全体ATK+10%',
+    detail: 'エリのコンボ発動後、味方全体のATKを1ターン10%上昇させる。'
+  }
+};
+window.ERI_RESONANCE_BONUSES = ERI_RESONANCE_BONUSES;
+
+function getLimitBreakRate(limitBreak, charaId){
+  var lb = Math.max(0, Number(limitBreak || 0));
+
+  // エリはLv1で+5%、以降は従来どおり1Lvごとに+4%。
+  if(Number(charaId) === 1 && lb > 0){
+    return 0.05 + Math.max(0, lb - 1) * LIMIT_BREAK_RATE;
+  }
+
+  return lb * LIMIT_BREAK_RATE;
 }
 
-function applyLimitBreakStats(baseStats, limitBreak){
-  var rate = getLimitBreakRate(limitBreak);
+function applyLimitBreakStats(baseStats, limitBreak, rarity, charaId){
+  var rate = getLimitBreakRate(limitBreak, charaId);
   var result = {};
 
   BASE_STATS.forEach(function(s){
@@ -1142,11 +1152,65 @@ function applyLimitBreakStats(baseStats, limitBreak){
   return result;
 }
 
+function getResonanceBonusMaster(target){
+  return target && Number(target.id) === 1 ? ERI_RESONANCE_BONUSES : null;
+}
+
+function buildResonanceBonusHTML(target){
+  var master = getResonanceBonusMaster(target);
+  if(!master) return '';
+
+  var currentLb = Number(target.limitBreak || 0);
+  var rows = [1,2,3,4].map(function(level){
+    var bonus = master[level];
+    var state = level <= currentLb
+      ? 'unlocked'
+      : (level === currentLb + 1 ? 'next' : 'locked');
+    var stateLabel = state === 'unlocked'
+      ? '解放済み'
+      : (state === 'next' ? '次回解放' : '未解放');
+
+    return '<div class="lb-bonus-row ' + state + '">' +
+      '<div class="lb-bonus-level">Lv.' + level + '</div>' +
+      '<div class="lb-bonus-body">' +
+        '<div class="lb-bonus-title">' + escapeHtml(bonus.title) + '</div>' +
+        '<div class="lb-bonus-summary">' + escapeHtml(bonus.summary) + '</div>' +
+      '</div>' +
+      '<div class="lb-bonus-state">' + stateLabel + '</div>' +
+    '</div>';
+  }).join('');
+
+  return '<div class="lb-bonus-box">' +
+    '<div class="lb-bonus-box-title">RESONANCE BONUS</div>' +
+    rows +
+  '</div>';
+}
+
+function buildNextResonanceBonusHTML(target, nextLb){
+  var master = getResonanceBonusMaster(target);
+  var bonus = master && master[nextLb];
+  if(!bonus) return '';
+
+  return '<div class="lb-next-bonus">' +
+    '<div class="lb-next-bonus-label">今回解放されるボーナス</div>' +
+    '<div class="lb-next-bonus-title">Lv.' + nextLb + '　' + escapeHtml(bonus.title) + '</div>' +
+    '<div class="lb-next-bonus-detail">' + escapeHtml(bonus.detail) + '</div>' +
+  '</div>';
+}
+
 
 // ── 共鳴用進化素材 ──────────────────────────────────
 // 保存先はlocalStorage。DBスキーマを増やさず、まずは素材所持数を永続化する。
 const EVOLUTION_MATERIAL_STORAGE_KEY = 'zeraphia_evolution_materials_v1';
 const EVOLUTION_MATERIAL_MASTER = {
+  eri_origin_wing: {
+    id: 'eri_origin_wing',
+    name: '原初の翼環',
+    shortName: '原初の翼環',
+    img: 'images/item_wing.webp',
+    exclusiveCharaId: 1,
+    desc: 'エリの魂と世界の残響を結び直す、特別な共鳴素材。'
+  },
   kyoumei_stone: {
     id: 'kyoumei_stone',
     name: '共鳴石',
@@ -1320,9 +1384,13 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
     };
   });
   var selectedVesselId = resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
+  var isEri = !!(target && Number(target.id) === 1);
+
   return {
     nextLb: nextLb,
-    sameChara: 1,
+    sameChara: isEri ? 0 : 1,
+    specialMaterialId: isEri ? 'eri_origin_wing' : '',
+    specialMaterialCount: isEri ? 1 : 0,
     soulVesselId: selectedVesselId,
     soulVesselOptions: vesselOptions,
     soulVesselCount: 1,
@@ -1334,6 +1402,9 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
 function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
   var recipe = getLimitBreakRecipe(target, preferredSoulVesselId);
   var sameCharaCount = target ? getSameCharaMaterials(target).length : 0;
+  var specialOwned = recipe.specialMaterialId
+    ? getEvolutionMaterialCount(recipe.specialMaterialId)
+    : 0;
   var stoneOwned = getEvolutionMaterialCount(recipe.stoneId);
   var currentLb = target ? Number(target.limitBreak || 0) : 0;
 
@@ -1357,12 +1428,14 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
   return {
     recipe: recipe,
     sameCharaOwned: sameCharaCount,
+    specialMaterialOwned: specialOwned,
     soulVesselOwned: selectedVessel ? selectedVessel.owned : 0,
     soulVesselOptions: vesselOptionsStatus,
     selectedSoulVessel: selectedVessel,
     stoneOwned: stoneOwned,
     canLimitBreak: !!target && currentLb < MAX_LIMIT_BREAK &&
       sameCharaCount >= recipe.sameChara &&
+      (!recipe.specialMaterialId || specialOwned >= recipe.specialMaterialCount) &&
       hasAnySoulVesselOption && soulVesselAvailable &&
       stoneOwned >= recipe.stoneCount
   };
@@ -1383,7 +1456,12 @@ function getLimitBreakLackList(target){
   var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
   var selectedVessel = status.selectedSoulVessel;
 
-  pushLack(target && target.name ? target.name : '同キャラ', status.sameCharaOwned, recipe.sameChara);
+  if(recipe.specialMaterialId){
+    var specialDef = getEvolutionMaterialDef(recipe.specialMaterialId);
+    pushLack(specialDef ? specialDef.name : '専用共鳴素材', status.specialMaterialOwned, recipe.specialMaterialCount);
+  } else {
+    pushLack(target && target.name ? target.name : '同キャラ', status.sameCharaOwned, recipe.sameChara);
+  }
   pushLack(selectedVessel && selectedVessel.def ? selectedVessel.def.name : '同タイプの魂の器', status.soulVesselOwned, recipe.soulVesselCount);
   pushLack(stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount);
 
@@ -1454,12 +1532,29 @@ function buildLimitBreakRecipeHTML(target){
     : 'images/chara_' + String(target && target.id || '').padStart(2, '0') + '_panel.webp';
   var charaIcon = '<img class="lb-recipe-chara-img" src="' + charaImg + '" onerror="this.style.display=\'none\'">';
 
+  var firstMaterialRow = '';
+  if(recipe.specialMaterialId){
+    var specialDef = getEvolutionMaterialDef(recipe.specialMaterialId);
+    var specialIcon = specialDef
+      ? '<img class="lb-recipe-special-img" src="' + specialDef.img + '" onerror="this.style.display=\'none\'">'
+      : '<span>✦</span>';
+    firstMaterialRow = row(
+      specialIcon,
+      specialDef ? specialDef.name : '専用共鳴素材',
+      status.specialMaterialOwned,
+      recipe.specialMaterialCount
+    );
+  } else {
+    firstMaterialRow = row(charaIcon, charaName, status.sameCharaOwned, recipe.sameChara);
+  }
+
   return '<div class="lb-recipe-box">' +
     '<div class="lb-recipe-title">必要素材</div>' +
-    row(charaIcon, charaName, status.sameCharaOwned, recipe.sameChara) +
+    firstMaterialRow +
     buildSoulVesselHTML() +
     row(stoneIcon, stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount) +
-  '</div>';
+  '</div>' +
+  buildResonanceBonusHTML(target);
 }
 
 function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
@@ -1468,10 +1563,19 @@ function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
   var recipe = status.recipe;
   var vesselId = recipe.soulVesselId;
 
-  if(!consumeEvolutionMaterial(vesselId, recipe.soulVesselCount)) return false;
+  if(recipe.specialMaterialId){
+    if(!consumeEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount)) return false;
+  }
+
+  if(!consumeEvolutionMaterial(vesselId, recipe.soulVesselCount)){
+    if(recipe.specialMaterialId) addEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount);
+    return false;
+  }
+
   if(!consumeEvolutionMaterial(recipe.stoneId, recipe.stoneCount)) {
-    // 念のため器だけ戻す
+    // 念のため、先に消費した素材を戻す
     addEvolutionMaterial(vesselId, recipe.soulVesselCount);
+    if(recipe.specialMaterialId) addEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount);
     return false;
   }
   return true;
@@ -1587,7 +1691,11 @@ function openLimitBreakModal(target){
     listEl.innerHTML +=
       '<div class="lb-execute-area">' +
         '<button type="button" class="btn-pay lb-execute-btn" onclick="confirmLimitBreak()">共鳴実行</button>' +
-        '<div class="lb-execute-note">同キャラ素材は自動で1体消費されます</div>' +
+        '<div class="lb-execute-note">' +
+          (status.recipe.specialMaterialId
+            ? 'エリ専用素材「原初の翼環」を1個消費します'
+            : '同キャラ素材は自動で1体消費されます') +
+        '</div>' +
       '</div>';
   } else {
     // 不足数は必要素材欄の「所持 / 必要」で確認できるため、追加の不足欄は表示しない。
@@ -1605,13 +1713,18 @@ function confirmLimitBreak(materialDbId){
   var target = currentDetailData;
   if(!target) return;
 
-  var mat = materialDbId
-    ? box.find(function(b){ return b.db_id === materialDbId; })
-    : getAutoLimitBreakMaterial(target);
+  var isEri = Number(target.id) === 1;
+  var mat = null;
 
-  if(!mat){
-    showToast('同キャラ素材が不足しています');
-    return;
+  if(!isEri){
+    mat = materialDbId
+      ? box.find(function(b){ return b.db_id === materialDbId; })
+      : getAutoLimitBreakMaterial(target);
+
+    if(!mat){
+      showToast('同キャラ素材が不足しています');
+      return;
+    }
   }
 
   var status = getLimitBreakMaterialStatus(target, selectedLimitBreakSoulVesselId);
@@ -1623,12 +1736,40 @@ function confirmLimitBreak(materialDbId){
   var beforeLb = target.limitBreak || 0;
   var afterLb = Math.min(beforeLb + 1, MAX_LIMIT_BREAK);
 
+  var recipe = status.recipe;
+  var selectedVessel = status.selectedSoulVessel;
+  var vesselDef = selectedVessel && selectedVessel.def
+    ? selectedVessel.def
+    : getEvolutionMaterialDef(recipe.soulVesselId);
+  var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
+  var materialName = mat && mat.name ? mat.name : (target.name || '同キャラ');
+  var firstConsumeName = recipe.specialMaterialId
+    ? ((getEvolutionMaterialDef(recipe.specialMaterialId) || {}).name || '専用共鳴素材')
+    : materialName;
+  var firstConsumeCount = recipe.specialMaterialId
+    ? recipe.specialMaterialCount
+    : 1;
+
   document.getElementById('lb-confirm-text').innerHTML =
-    '<div class="lb-confirm-message">' +
-      '素材が消失します。<br>' +
-      '共鳴を実行しますか？' +
+    '<div class="lb-confirm-message">共鳴を実行しますか？</div>' +
+    buildNextResonanceBonusHTML(target, afterLb) +
+    '<div class="lb-confirm-consume-box">' +
+      '<div class="lb-confirm-consume-title">消失する素材</div>' +
+      '<div class="lb-confirm-consume-row">' +
+        '<span class="lb-confirm-consume-name">' + escapeHtml(firstConsumeName) + '</span>' +
+        '<span class="lb-confirm-consume-count">× ' + firstConsumeCount + '</span>' +
+      '</div>' +
+      '<div class="lb-confirm-consume-row">' +
+        '<span class="lb-confirm-consume-name">' + escapeHtml(vesselDef ? vesselDef.name : '魂の器') + '</span>' +
+        '<span class="lb-confirm-consume-count">× ' + recipe.soulVesselCount + '</span>' +
+      '</div>' +
+      '<div class="lb-confirm-consume-row">' +
+        '<span class="lb-confirm-consume-name">' + escapeHtml(stoneDef ? stoneDef.name : '共鳴石') + '</span>' +
+        '<span class="lb-confirm-consume-count">× ' + recipe.stoneCount + '</span>' +
+      '</div>' +
     '</div>' +
-    '<div class="lb-confirm-level">共鳴Lv：' + beforeLb + ' → ' + afterLb + '</div>';
+    '<div class="lb-confirm-level"><span>共鳴Lv</span><strong>' + beforeLb + ' → ' + afterLb + '</strong></div>' +
+    '<div class="lb-confirm-warning">上記の素材は実行後に元へ戻せません。</div>';
 
   var okBtn = document.getElementById('lb-confirm-ok-btn');
   okBtn.textContent = 'はい';
@@ -1643,7 +1784,9 @@ function confirmLimitBreak(materialDbId){
 
 async function executeLimitBreak(target, material, selectedSoulVesselId){
 
-     if(!target || !material) return;
+  if(!target) return;
+  var isEri = Number(target.id) === 1;
+  if(!isEri && !material) return;
 
   var currentLb = target.limitBreak || 0;
 
@@ -1666,29 +1809,34 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
   target.limitBreak = (target.limitBreak || 0) + 1;
   // stats再計算
   target.stats = applyLimitBreakStats(
-  target.baseStats,
-  target.limitBreak,
-  target.rarity
-);
+    target.baseStats,
+    target.limitBreak,
+    target.rarity,
+    target.id
+  );
 
-  // BOXから素材削除
-  box = box.filter(function(b){ return b !== material; });
+  // 通常キャラのみ、同キャラ素材をBOXから削除する。
+  // エリは専用アイテムを消費するため、キャラクターは削除しない。
+  if(material){
+    box = box.filter(function(b){ return b !== material; });
 
-  // collected が素材を参照していたら差し替え
-  if(collected[material.id] && collected[material.id].db_id === material.db_id){
-    var remain = box.find(function(b){ return b.id === material.id; });
-    if(remain){
-      collected[material.id] = remain;
-    } else {
-      delete collected[material.id];
+    if(collected[material.id] && collected[material.id].db_id === material.db_id){
+      var remain = box.find(function(b){ return b.id === material.id; });
+      if(remain){
+        collected[material.id] = remain;
+      } else {
+        delete collected[material.id];
+      }
     }
   }
 
   // DB: 対象キャラのlimit_break/stats/base_statsをUPDATE
   await updateLimitBreakToDB(target);
 
-  // DB: 素材キャラを DELETE
-  await deleteMaterialFromDB(material);
+  // DB: 通常キャラだけ素材キャラをDELETE
+  if(material){
+    await deleteMaterialFromDB(material);
+  }
 
   // UI更新
 renderBox();
@@ -1699,7 +1847,10 @@ if(currentZukanMainTab !== 'box'){
 
 var completeText = document.getElementById('lb-complete-text');
 if(completeText){
-  completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。';
+  var unlockedBonus = getResonanceBonusMaster(target);
+  var unlocked = unlockedBonus && unlockedBonus[target.limitBreak];
+  completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。' +
+    (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
 }
 
 var completeModal = document.getElementById('limitbreak-complete-modal');
@@ -2069,7 +2220,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
     var limitBreak = row.limit_break || 0;
     var baseStats = row.base_stats || Object.assign({}, chara.stats);
-    var stats = row.stats || applyLimitBreakStats(baseStats, limitBreak, chara.rarity);
+    var stats = row.stats || applyLimitBreakStats(baseStats, limitBreak, chara.rarity, chara.id);
 
     return {
       id: chara.id,
@@ -2154,7 +2305,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
         // ★ 表示・バトル用ステータス
         // DBのstatsをそのまま信じず、baseStats × 共鳴Lv で再計算する
-        var stats = applyLimitBreakStats(baseStats, limitBreak, chara.rarity);
+        var stats = applyLimitBreakStats(baseStats, limitBreak, chara.rarity, chara.id);
 
         var entry = {
           id: chara.id,
@@ -2499,8 +2650,17 @@ div.addEventListener('click', function(){
   }
 
   // テスト用：normal / S クリア想定
-  function testNodeClear(isFirstClear) {
-    onNodeClear('node_test_01', 'normal', 'S', isFirstClear);
+  // 「デイリー巡行」ボタン（isFirstClear=true）を押すたび、
+  // エリ専用共鳴素材「原初の翼環」を1個付与する。
+  async function testNodeClear(isFirstClear) {
+    await onNodeClear('node_test_01', 'normal', 'S', isFirstClear);
+
+    if(isFirstClear && typeof addEvolutionMaterial === 'function'){
+      var reward = addEvolutionMaterial('eri_origin_wing', 1);
+      if(reward){
+        showToast('原初の翼環 ×1 を獲得（所持：' + reward.total + '）');
+      }
+    }
   }
 
   // 巡行カテゴリ切り替え
@@ -3059,7 +3219,7 @@ function createCharaSummonData(chara, now, fixedTimeStr){
     element: chara.element,
     type: chara.type,
     baseStats: baseStats,
-    stats: applyLimitBreakStats(baseStats, limitBreak),
+    stats: applyLimitBreakStats(baseStats, limitBreak, null, chara.id),
     limitBreak: limitBreak,
     rarity: chara.rarity || 'r', // 演出互換用。表示バッジには使わない
     hasRarity: !!chara.rarity,
@@ -4541,6 +4701,22 @@ setTenResultFooterVisible(true);
     document.body.appendChild(ov);
   }
 
+  function getPrimorRarityBadgeHTML(chara, displayData){
+    var raw = (displayData && displayData.rarity != null)
+      ? displayData.rarity
+      : (chara && chara.rarity != null ? chara.rarity : 'R');
+    var rarity = String(raw || 'R').trim().toUpperCase();
+    var isSR = rarity === 'SR';
+    var src = isSR ? 'images/rarity_sr.webp' : 'images/rarity_r.webp';
+    var label = isSR ? 'SR' : 'R';
+
+    return '<img class="box-carousel-rarity-badge rarity-' +
+      label.toLowerCase() +
+      '" src="' + src +
+      '" alt="' + label +
+      '" aria-label="レアリティ ' + label + '">';
+  }
+
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
@@ -4588,6 +4764,7 @@ setTenResultFooterVisible(true);
       visualHtml =
         '<div class="box-carousel-visual owned is-clickable" onclick="openPrimorImageFullscreen(' + chara.id + ')" role="button" aria-label="プリモア画像を全画面表示">' +
           '<img class="box-carousel-img" src="' + panelSrc + '" alt="' + detailEscapeHTML(chara.name || displayData.name || '') + '">' +
+          getPrimorRarityBadgeHTML(chara, displayData) +
           '<div class="box-carousel-zoom-hint">画像をタップで拡大</div>' +
         '</div>';
       nameHtml = '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || displayData.name || '') + '</div>';
@@ -5101,7 +5278,18 @@ function normalizeDetailPreviewRange(range){
     front_row_3: 'front_row_3_ally',
     front3_row_3: 'front3_row_3_ally',
     front_9: 'front_9_ally',
-    cross: 'cross_32'
+    cross: 'cross_32',
+
+    // コンボスキル専用レンジ
+    combo_line_all: 'combo_line_all',
+    combo_cross_all: 'combo_cross_all',
+    combo_x_all: 'combo_x_all',
+    combo_around8: 'combo_around8',
+
+    // 旧ID互換
+    combo_front_4: 'combo_line_all',
+    combo_cross_4: 'combo_cross_all',
+    combo_diagonal_4: 'combo_x_all'
   };
   return alias[range] || range || '';
 }
@@ -5119,7 +5307,8 @@ function getDetailRangePreviewSpec(range){
     field_cross_center: true,
     front_all_rows_ally: true,
     pierce_all: true,
-    col_center_32: true
+    col_center_32: true,
+    combo_line_all: true
   };
 
   // 自分中心の範囲は中央起点。前方系は下寄せ起点。
@@ -5131,7 +5320,10 @@ function getDetailRangePreviewSpec(range){
     side_lr: true,
     diag_x_1: true,
     diag_x_2: true,
-    cross_32: true
+    cross_32: true,
+    combo_cross_all: true,
+    combo_x_all: true,
+    combo_around8: true
   };
 
   if(fullBoardRanges[range]){
@@ -5162,11 +5354,18 @@ function getDetailRangePreviewCells(range){
   var user = spec.user;
   var rawCells = null;
 
-  if(window.BattleRange32 && typeof window.BattleRange32.getCellsFromRange32 === 'function'){
+  var isComboRange = (
+    range === 'combo_line_all' ||
+    range === 'combo_cross_all' ||
+    range === 'combo_x_all' ||
+    range === 'combo_around8'
+  );
+
+  if(!isComboRange && window.BattleRange32 && typeof window.BattleRange32.getCellsFromRange32 === 'function'){
     rawCells = window.BattleRange32.getCellsFromRange32(user, range);
   }
 
-  if(!rawCells){
+  if(!rawCells || (typeof rawCells.size === 'number' && rawCells.size === 0)){
     rawCells = getDetailFallbackRangeCells(user, range);
   }
 
@@ -5227,6 +5426,39 @@ function getDetailFallbackRangeCells(user, range){
   else if(range === 'cross_32') rel([{dr:-1,dc:0},{dr:1,dc:0},{dr:0,dc:-1},{dr:0,dc:1}]);
   else if(range === 'cross_large') rel([{dr:-1,dc:0},{dr:-2,dc:0},{dr:-3,dc:0},{dr:-4,dc:0},{dr:-2,dc:-2},{dr:-2,dc:-1},{dr:-2,dc:1},{dr:-2,dc:2}]);
   else if(range === 'super_but_night_6') rel([{dr:-3,dc:-2},{dr:-3,dc:0},{dr:-3,dc:2},{dr:-2,dc:-1},{dr:-2,dc:1},{dr:-1,dc:0}]);
+
+  // コンボスキル攻撃範囲
+  else if(range === 'combo_line_all'){
+    for(var clr = 0; clr < 8; clr++){
+      if(clr !== user.row) add(clr, user.col);
+    }
+  }
+  else if(range === 'combo_cross_all'){
+    for(var crr = 0; crr < 8; crr++){
+      if(crr !== user.row) add(crr, user.col);
+    }
+    for(var crc = 0; crc < 5; crc++){
+      if(crc !== user.col) add(user.row, crc);
+    }
+  }
+  else if(range === 'combo_x_all'){
+    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(function(dir){
+      var xr = user.row + dir[0];
+      var xc = user.col + dir[1];
+      while(xr >= 0 && xr < 8 && xc >= 0 && xc < 5){
+        add(xr, xc);
+        xr += dir[0];
+        xc += dir[1];
+      }
+    });
+  }
+  else if(range === 'combo_around8'){
+    rel([
+      {dr:-1,dc:-1},{dr:-1,dc:0},{dr:-1,dc:1},
+      {dr:0,dc:-1},{dr:0,dc:1},
+      {dr:1,dc:-1},{dr:1,dc:0},{dr:1,dc:1}
+    ]);
+  }
   else add(user.row, user.col);
 
   return s;
@@ -5389,6 +5621,178 @@ function buildDetailSkillHTML(chara){
   '</div>';
 }
 
+
+function getDetailComboRangeLabel(rangeId){
+  if(window.Combo32 && typeof window.Combo32.getRangeLabel === 'function'){
+    return window.Combo32.getRangeLabel(rangeId);
+  }
+
+  var labels = {
+    combo_line_all: '直線上すべて',
+    combo_cross_all: '十字すべて',
+    combo_x_all: 'X字すべて',
+    combo_around8: '周囲8マス',
+    combo_cross_4: '十字すべて',
+    combo_front_4: '直線上すべて',
+    combo_diagonal_4: 'X字すべて'
+  };
+
+  return labels[rangeId] || rangeId || '-';
+}
+
+function getDetailComboTriggerPreviewSpec(rangeId){
+  if(rangeId === 'combo_line_all' || rangeId === 'combo_front_4'){
+    return { rows: 8, cols: 5, self: { row: 4, col: 2 } };
+  }
+
+  return { rows: 5, cols: 5, self: { row: 2, col: 2 } };
+}
+
+function getDetailComboTriggerCells(rangeId, spec){
+  var owner = { row: spec.self.row, col: spec.self.col };
+  var cells = [];
+
+  if(window.Combo32 && typeof window.Combo32.getRangeCells === 'function'){
+    cells = window.Combo32.getRangeCells(owner, rangeId) || [];
+  } else {
+    var id = rangeId || 'combo_cross_all';
+
+    if(id === 'combo_cross_4') id = 'combo_cross_all';
+    if(id === 'combo_front_4') id = 'combo_line_all';
+    if(id === 'combo_diagonal_4') id = 'combo_x_all';
+
+    if(id === 'combo_line_all'){
+      for(var r = 0; r < spec.rows; r++){
+        if(r !== owner.row) cells.push({ row:r, col:owner.col });
+      }
+    } else if(id === 'combo_cross_all'){
+      for(var cr = 0; cr < spec.rows; cr++){
+        if(cr !== owner.row) cells.push({ row:cr, col:owner.col });
+      }
+      for(var cc = 0; cc < spec.cols; cc++){
+        if(cc !== owner.col) cells.push({ row:owner.row, col:cc });
+      }
+    } else if(id === 'combo_x_all'){
+      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(function(dir){
+        var xr = owner.row + dir[0];
+        var xc = owner.col + dir[1];
+        while(xr >= 0 && xr < spec.rows && xc >= 0 && xc < spec.cols){
+          cells.push({ row:xr, col:xc });
+          xr += dir[0];
+          xc += dir[1];
+        }
+      });
+    } else {
+      for(var dr = -1; dr <= 1; dr++){
+        for(var dc = -1; dc <= 1; dc++){
+          if(dr === 0 && dc === 0) continue;
+          var ar = owner.row + dr;
+          var ac = owner.col + dc;
+          if(ar >= 0 && ar < spec.rows && ac >= 0 && ac < spec.cols){
+            cells.push({ row:ar, col:ac });
+          }
+        }
+      }
+    }
+  }
+
+  return cells.filter(function(cell){
+    return cell &&
+      cell.row >= 0 && cell.row < spec.rows &&
+      cell.col >= 0 && cell.col < spec.cols &&
+      !(cell.row === spec.self.row && cell.col === spec.self.col);
+  });
+}
+
+function buildDetailComboTriggerPreviewHTML(rangeId){
+  var spec = getDetailComboTriggerPreviewSpec(rangeId);
+  var cells = getDetailComboTriggerCells(rangeId, spec);
+  var cellMap = {};
+
+  cells.forEach(function(cell){
+    cellMap[cell.row + '-' + cell.col] = true;
+  });
+
+  var boardStyle =
+    'grid-template-columns:repeat(' + spec.cols + ',14px);' +
+    'grid-template-rows:repeat(' + spec.rows + ',14px);';
+
+  var html = '<div class="detail-range-preview detail-combo-trigger-preview">';
+  html += '<div class="detail-range-board detail-combo-trigger-board" style="' + boardStyle + '">';
+
+  for(var r = 0; r < spec.rows; r++){
+    for(var c = 0; c < spec.cols; c++){
+      var key = r + '-' + c;
+      var cls = 'detail-range-cell';
+
+      if(r === spec.self.row && c === spec.self.col){
+        cls += ' self';
+      } else if(cellMap[key]){
+        cls += ' combo-trigger';
+      }
+
+      html += '<span class="' + cls + '"></span>';
+    }
+  }
+
+  html += '</div></div>';
+  return html;
+}
+
+function buildDetailComboHTML(chara){
+  var combo = chara && chara.combo;
+  var skill = combo && combo.skill;
+
+  if(!combo || !skill){
+    return '<div class="detail-combo-section">' +
+      '<div class="detail-section-title">コンボスキル</div>' +
+      '<div class="detail-skill-empty">コンボスキル情報なし</div>' +
+    '</div>';
+  }
+
+  var effectText = getDetailSkillEffectText(skill);
+  var triggerRange = combo.range || 'combo_cross_all';
+  var attackRange = skill.range || '-';
+
+  return '<div class="detail-combo-section">' +
+    '<div class="detail-section-title">コンボスキル</div>' +
+    '<div class="detail-skill-card detail-combo-card">' +
+      '<div class="detail-skill-head">' +
+        '<span class="detail-skill-badge detail-combo-badge">COMBO</span>' +
+        '<span class="detail-skill-name">' + detailEscapeHTML(skill.name || 'コンボスキル') + '</span>' +
+      '</div>' +
+
+      '<div class="detail-combo-condition">' +
+        '反応範囲内の味方がスキルを発動すると、自動で1回発動' +
+      '</div>' +
+
+      '<div class="detail-skill-meta detail-combo-meta">' +
+        '<span>' + getDetailSkillTypeLabel(skill.type) + '</span>' +
+        '<span>威力：' + getDetailSkillPowerText(skill) + '</span>' +
+        '<span>命中：' + (skill.hit == null ? 100 : skill.hit) + '%</span>' +
+      '</div>' +
+
+      '<div class="detail-combo-range-block">' +
+        '<div class="detail-combo-range-item">' +
+          '<div class="detail-combo-range-title">反応範囲</div>' +
+          '<div class="detail-combo-range-label">' + detailEscapeHTML(getDetailComboRangeLabel(triggerRange)) + '</div>' +
+          buildDetailComboTriggerPreviewHTML(triggerRange) +
+        '</div>' +
+
+        '<div class="detail-combo-range-item">' +
+          '<div class="detail-combo-range-title">攻撃範囲</div>' +
+          '<div class="detail-combo-range-label">' + detailEscapeHTML(getDetailRangeLabel(attackRange)) + '</div>' +
+          buildDetailRangePreviewHTML(skill) +
+        '</div>' +
+      '</div>' +
+
+      (effectText ? '<div class="detail-skill-effect">効果：' + detailEscapeHTML(effectText) + '</div>' : '') +
+      (skill.desc ? '<div class="detail-skill-desc">' + detailEscapeHTML(skill.desc) + '</div>' : '') +
+    '</div>' +
+  '</div>';
+}
+
+
 function buildCharacterDetailHTML(data, options){
   options = options || {};
   var chara = getDetailCharaDef(data);
@@ -5451,7 +5855,8 @@ function buildCharacterDetailHTML(data, options){
         '</div>' +
       '</div>' +
     '</div>' +
-    buildDetailSkillHTML(chara);
+    buildDetailSkillHTML(chara) +
+    buildDetailComboHTML(chara);
 
   return html;
 }
@@ -6945,31 +7350,32 @@ window.addEventListener('pagehide', function () {
 
 <script src="js/battle_range.js"></script>
 <script src="js/characters.js"></script>
-<script src="js/enemies.js"></script>
+<script src="js/enemies.js?v=117-sakiel-random5"></script>
 <script src="js/battle.js"></script>
 <script src="js/battle_swipe.js?v=49"></script>
 
-<script src="js/stages.js"></script>
-<script src="js/stage_select.js"></script>
-<script src="js/party_select.js"></script>
+<script src="js/stages.js?v=64-patrol-structure"></script>
+<script src="js/stage_select.js?v=70-stage-row-unified"></script>
+<script src="js/party_select.js?v=104-debug-roguelite-boss"></script>
 <script src="js/enemy_intro.js"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=230-sakiel-random5">
 
-<script src="js/battle_range_32.js"></script>
+<script src="js/battle_range_32.js?v=134-sakiel-random5"></script>
 <script src="js/characters_32.js"></script>
 <script src="js/combo_32.js?v=1"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=136-combo"></script>
-<script src="js/battle_32_ui.js"></script>
+<script src="js/battle_32.js?v=282-sakiel-random5"></script>
+<script src="js/battle_32_ui.js?v=378-sakiel-random5"></script>
 
 <!-- ローグライト（新規追加） -->
 <script src="js/roguelite_options.js"></script>
-<script src="js/roguelite_run.js"></script>
+<script src="js/roguelite_run.js?v=71-debug-boss-runs"></script>
 <script src="js/roguelite_reward.js"></script>
 <script src="js/shinju.js"></script>
-<script src="js/roguelite_controller.js"></script>
+<script src="js/roguelite_controller.js?v=81-debug-no-reward"></script>
+<script src="js/roguelite_overseer_run.js?v=1"></script>
 
 </body>
 </html>

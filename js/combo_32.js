@@ -12,7 +12,7 @@
   const BOARD_ROWS = 8;
   const BOARD_COLS = 5;
 
-  // コンボ発動レンジの4基本形。
+  // コンボ反応範囲の基本形。
   // owner自身のマスは含めない。
   const RANGE_BUILDERS = {
     // 同じ縦列すべて（前後両方向）
@@ -39,6 +39,73 @@
     // 斜め4方向すべて
     combo_x_all(owner) {
       const cells = [];
+      const dirs = [
+        { dr: -1, dc: -1 }, { dr: -1, dc: 1 },
+        { dr: 1, dc: -1 }, { dr: 1, dc: 1 },
+      ];
+      dirs.forEach(({ dr, dc }) => {
+        let row = owner.row + dr;
+        let col = owner.col + dc;
+        while (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+          cells.push({ row, col });
+          row += dr;
+          col += dc;
+        }
+      });
+      return cells;
+    },
+
+    // R向け：上下左右の隣接4マス
+    combo_cross_1(owner) {
+      const cells = [];
+      [
+        { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+        { dr: 0, dc: -1 }, { dr: 0, dc: 1 },
+      ].forEach(({ dr, dc }) => {
+        const row = owner.row + dr;
+        const col = owner.col + dc;
+        if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+          cells.push({ row, col });
+        }
+      });
+      return cells;
+    },
+
+    // R向け：斜め隣接4マス
+    combo_x_1(owner) {
+      const cells = [];
+      [
+        { dr: -1, dc: -1 }, { dr: -1, dc: 1 },
+        { dr: 1, dc: -1 }, { dr: 1, dc: 1 },
+      ].forEach(({ dr, dc }) => {
+        const row = owner.row + dr;
+        const col = owner.col + dc;
+        if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+          cells.push({ row, col });
+        }
+      });
+      return cells;
+    },
+
+    // R向け：同じ縦列の前後2マス以内
+    combo_line_2(owner) {
+      const cells = [];
+      [-2, -1, 1, 2].forEach(dr => {
+        const row = owner.row + dr;
+        if (row >= 0 && row < BOARD_ROWS) cells.push({ row, col: owner.col });
+      });
+      return cells;
+    },
+
+    // 十字＋斜め4方向すべて（SR共鳴強化用）
+    combo_star_all(owner) {
+      const cells = [];
+      for (let row = 0; row < BOARD_ROWS; row++) {
+        if (row !== owner.row) cells.push({ row, col: owner.col });
+      }
+      for (let col = 0; col < BOARD_COLS; col++) {
+        if (col !== owner.col) cells.push({ row: owner.row, col });
+      }
       const dirs = [
         { dr: -1, dc: -1 }, { dr: -1, dc: 1 },
         { dr: 1, dc: -1 }, { dr: 1, dc: 1 },
@@ -167,7 +234,6 @@
       queued: new Set(),
       log: [],
       generation: 0,
-      comboCount: 0,
       options: options || {},
     };
 
@@ -207,7 +273,6 @@
               actionId: ctx.id,
               rootUid: ctx.rootUid,
               generation: ctx.generation + 1,
-              comboIndex: ctx.comboCount + 1,
               triggerUids: ctx.generation === 0
                 ? [root._uid]
                 : [],
@@ -216,7 +281,6 @@
 
           if (!result || result.executed === false) continue;
 
-          ctx.comboCount += 1;
           ctx.log.push(responder._uid);
 
           // Bの処理が完全に終わった時点で、Bに反応する次世代を収集。
@@ -266,6 +330,9 @@
       combo_cross_all: '十字すべて',
       combo_x_all: 'X字すべて',
       combo_around8: '周囲8マス',
+      combo_cross_1: '上下左右1マス',
+      combo_x_1: '斜め隣接4マス',
+      combo_line_2: '縦列・前後2マス',
     };
     return labels[id] || id || '—';
   }

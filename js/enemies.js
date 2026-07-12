@@ -487,6 +487,90 @@ const ENEMIES = [
     statusList: [],
   },
 
+
+  // ============================================================
+  // レムナント：オーバーシア ローグライト専用
+  // ============================================================
+  {
+    id: 'rl_overseer_servant_straight',
+    name: 'オーバーシアのしもべ',
+    element: 'mystis',
+    img: 'images/remnant_01_zako.webp',
+    upImg: 'images/remnant_01_zako_up.webp',
+    battleImg: 'images/remnant_01_zako.webp',
+    battleUpImg: 'images/remnant_01_zako_up.webp',
+    hp: 420, hpMax: 420,
+    atk: 125,
+    moveType: 'enemy_zako_straight',
+    attackRange: 'enemy_attack_line',
+    fixedPosition: false,
+    canMove: true,
+    uiScale: { battleBack: 1.22 },
+    actionPattern: [],
+    status: [], statusList: [],
+  },
+  {
+    id: 'rl_overseer_servant_cross',
+    name: 'オーバーシアのしもべ',
+    element: 'mystis',
+    img: 'images/remnant_01_zako.webp',
+    upImg: 'images/remnant_01_zako_up.webp',
+    battleImg: 'images/remnant_01_zako.webp',
+    battleUpImg: 'images/remnant_01_zako_up.webp',
+    hp: 460, hpMax: 460,
+    atk: 115,
+    moveType: 'enemy_zako_shift',
+    attackRange: 'enemy_attack_cross',
+    fixedPosition: false,
+    canMove: true,
+    uiScale: { battleBack: 1.22 },
+    actionPattern: [],
+    status: [], statusList: [],
+  },
+  {
+    id: 'rl_overseer_servant_skip',
+    name: 'オーバーシアのしもべ',
+    element: 'mystis',
+    img: 'images/remnant_01_zako.webp',
+    upImg: 'images/remnant_01_zako_up.webp',
+    battleImg: 'images/remnant_01_zako.webp',
+    battleUpImg: 'images/remnant_01_zako_up.webp',
+    hp: 390, hpMax: 390,
+    atk: 140,
+    moveType: 'enemy_zako_diag',
+    attackRange: 'around8',
+    fixedPosition: false,
+    canMove: true,
+    uiScale: { battleBack: 1.22 },
+    actionPattern: [],
+    status: [], statusList: [],
+  },
+  {
+    id: 'enemy_overseer_roguelite',
+    name: 'レムナント：オーバーシア',
+    element: 'mystis',
+    img: 'images/remnant_01_battle.webp',
+    upImg: 'images/remnant_01_battle_up.webp',
+    battleImg: 'images/remnant_01_battle.webp',
+    battleUpImg: 'images/remnant_01_battle_up.webp',
+    isBoss: true,
+    hp: 3600, hpMax: 3600,
+    atk: 260,
+    moveType: 'none',
+    attackRange: 'enemy_attack_cross',
+    fixedPosition: true,
+    canMove: false,
+    startPosition: { row: 2, col: 2 },
+    uiScale: { battleBack: 2.0 },
+    status: [], statusList: [],
+    actionPattern: [
+      { id:'overseer_cross', turn:1, action:'万象照覧', type:'atk_cross', range:'enemy_attack_cross', multiplier:1.05, power:'中', desc:'十字方向へ白光を放つ。' },
+      { id:'overseer_line',  turn:2, action:'白亜の視線', type:'atk_line', range:'pierce_all', multiplier:1.25, power:'大', desc:'直線上を貫く視線を放つ。' },
+      { id:'overseer_all',   turn:3, action:'監督者の宣告', type:'atk_all', range:'all', damageRate:0.18, power:'大', desc:'味方全体へ最大HP割合ダメージ。' },
+    ],
+    actionIdx: 0,
+  },
+
 ];
 
 // IDで怪異データを取得（本番 + テスト両方を検索）
@@ -976,12 +1060,12 @@ ENEMIES.push({
   stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
   // ステージ入り演出用（添付1枚目）
-  img:         'images/enemy_sakiel_zako_up.webp',
-  upImg:       'images/enemy_sakiel_zako_up.webp',
+  img:         'images/remnant_04_zako_up.webp',
+  upImg:       'images/remnant_04_zako_up.webp',
   // グリッド上表示用（添付3枚目）
-  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  battleImg:   'images/remnant_04_zako.webp',
   // 攻撃演出中のアップ表示用（添付4枚目）
-  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
+  battleUpImg: 'images/remnant_04_zako_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1005,10 +1089,10 @@ ENEMIES.push({
   stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
   // サキエルBOSS戦スポーン専用：高火力・紙耐久
-  img:         'images/enemy_sakiel_zako_up.webp',
-  upImg:       'images/enemy_sakiel_zako_up.webp',
-  battleImg:   'images/enemy_sakiel_zako_battle.webp',
-  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
+  img:         'images/remnant_04_zako_up.webp',
+  upImg:       'images/remnant_04_zako_up.webp',
+  battleImg:   'images/remnant_04_zako.webp',
+  battleUpImg: 'images/remnant_04_zako_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7 },
@@ -1032,12 +1116,12 @@ ENEMIES.push({
   stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
   // ステージ入り演出用（添付1枚目）
-  img:         'images/enemy_sakiel_zako_up.webp',
-  upImg:       'images/enemy_sakiel_zako_up.webp',
+  img:         'images/remnant_04_zako_up.webp',
+  upImg:       'images/remnant_04_zako_up.webp',
   // グリッド上表示用（添付3枚目）
-  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  battleImg:   'images/remnant_04_zako.webp',
   // 攻撃演出中のアップ表示用（添付4枚目）
-  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
+  battleUpImg: 'images/remnant_04_zako_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1061,12 +1145,12 @@ ENEMIES.push({
   stageIntroName: 'サキエルのしもべ',
   element: 'logos',
   // ステージ入り演出用（添付1枚目）
-  img:         'images/enemy_sakiel_zako_up.webp',
-  upImg:       'images/enemy_sakiel_zako_up.webp',
+  img:         'images/remnant_04_zako_up.webp',
+  upImg:       'images/remnant_04_zako_up.webp',
   // グリッド上表示用（添付3枚目）
-  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  battleImg:   'images/remnant_04_zako.webp',
   // 攻撃演出中のアップ表示用（添付4枚目）
-  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
+  battleUpImg: 'images/remnant_04_zako_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1090,12 +1174,12 @@ ENEMIES.push({
   stageIntroName: 'サキエルのしもべ',
   element: 'mystis',
   // ステージ入り演出用（添付1枚目）
-  img:         'images/enemy_sakiel_zako_up.webp',
-  upImg:       'images/enemy_sakiel_zako_up.webp',
+  img:         'images/remnant_04_zako_up.webp',
+  upImg:       'images/remnant_04_zako_up.webp',
   // グリッド上表示用（添付3枚目）
-  battleImg:   'images/enemy_sakiel_zako_battle.webp',
+  battleImg:   'images/remnant_04_zako.webp',
   // 攻撃演出中のアップ表示用（添付4枚目）
-  battleUpImg: 'images/enemy_sakiel_zako_battle_up.webp',
+  battleUpImg: 'images/remnant_04_zako_up.webp',
   isBoss: false,
   isMidBoss: false,
   uiScale: { battleBack: 1.7},
@@ -1119,15 +1203,15 @@ ENEMIES.push({
   stageIntroName: '大天使 サキエル',
   element: 'mystis',
   // ステージ入り演出用（添付2枚目）
-  img:         'images/enemy_sakiel_up.webp',
-  upImg:       'images/enemy_sakiel_up.webp',
+  img:         'images/remnant_04_battle_up.webp',
+  upImg:       'images/remnant_04_battle_up.webp',
   // グリッド上表示用（添付5枚目）
-  battleImg:   'images/enemy_sakiel_battle.webp',
+  battleImg:   'images/remnant_04_battle.webp',
   // 攻撃演出中のアップ表示用（添付6枚目）
-  battleUpImg: 'images/enemy_sakiel_battle_up.webp',
+  battleUpImg: 'images/remnant_04_battle_up.webp',
   isBoss: true,
   isMidBoss: false,
-  uiScale: { battleBack: 2.0},
+  uiScale: { battleBack: 2.2},
   hp: 3600, hpMax: 3600,
   atk: 470,
   moveType: 'none',
@@ -1135,6 +1219,11 @@ ENEMIES.push({
   randomStartPosition: false,
   fixedPosition: true,
   eriPriority: true,
+
+  // 毎ターン、専用5パターンから1つを等確率でランダム実行
+  specialActionType: 'sakiel_random_5',
+  specialActionDamageRate: 0.90,
+
   phase: 1,
   status: [],
   statusList: [],

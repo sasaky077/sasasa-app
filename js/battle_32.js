@@ -443,7 +443,7 @@
         HP: baseCharDef.hp,
         ATK: baseCharDef.atk,
       };
-      return window.applyLimitBreakStats(baseStats, lb, rarity);
+      return window.applyLimitBreakStats(baseStats, lb, rarity, baseCharDef.id);
     }
 
     // fallback: 所持データのstatsを使う。
@@ -457,20 +457,171 @@
 
     const c = deepClone(charDef);
     const owned = _getOwnedEntryForBattle(c.id);
-    if (!owned) return c;
+    const lb = Number(owned && owned.limitBreak || 0);
 
-    const ownedStats = _calcOwnedStatsForBattle(c, owned);
-    if (!ownedStats) return c;
+    // 共鳴Lvはステータス保存状態にかかわらず、必ずバトル定義へ反映する。
+    c.limitBreak = lb;
+    c.ownedStatsApplied = false;
 
-    const hp  = Number(ownedStats.HP ?? ownedStats.hp ?? c.hp);
-    const atk = Number(ownedStats.ATK ?? ownedStats.atk ?? c.atk);
+    if (owned) {
+      const ownedStats = _calcOwnedStatsForBattle(c, owned);
+      if (ownedStats) {
+        const hp  = Number(ownedStats.HP ?? ownedStats.hp ?? c.hp);
+        const atk = Number(ownedStats.ATK ?? ownedStats.atk ?? c.atk);
+        if (Number.isFinite(hp) && hp > 0) c.hp = Math.floor(hp);
+        if (Number.isFinite(atk) && atk > 0) c.atk = Math.floor(atk);
+        c.ownedStatsApplied = true;
+      }
+    }
 
-    if (Number.isFinite(hp) && hp > 0) c.hp = Math.floor(hp);
-    if (Number.isFinite(atk) && atk > 0) c.atk = Math.floor(atk);
+    const s1 = Array.isArray(c.skills)
+      ? c.skills.find(skill => skill && skill.id === 's1')
+      : null;
+    const combo = c.combo && c.combo.skill ? c.combo.skill : null;
+    const effect = (type) => combo && Array.isArray(combo.effects)
+      ? combo.effects.find(e => e && e.type === type)
+      : null;
 
-    // UI/デバッグ用に共鳴情報も持たせる
-    c.limitBreak = Number(owned.limitBreak || 0);
-    c.ownedStatsApplied = true;
+    // Lv.2＝通常スキル強化 / Lv.3＝コンボ範囲強化 / Lv.4＝コンボ完成効果
+    switch (Number(c.id)) {
+      case 1: // エリ
+        if (lb >= 2 && s1) s1.resonanceHealLowestAtkRate = 0.35;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
+        if (lb >= 4 && combo) combo.resonanceTeamAtkUp = { rate: 1.10, duration: 1 };
+        break;
+      case 2: // ネム R
+        if (lb >= 2 && s1) s1.multiplier = 0.65;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.30;
+          const e = effect('stun'); if (e) e.hit = 40;
+        }
+        break;
+      case 3: // スイ SR
+        if (lb >= 2 && s1 && Array.isArray(s1.randomOptions)) {
+          s1.randomOptions.forEach(o => {
+            if (o.effectType === 'link_plus_2') { o.effectType = 'link_plus_3'; o.amount = 3; o.label = 'LINK+3'; }
+            if (o.effectType === 'all_critical_up') { o.rate = 0.30; o.label = '味方全体critical率+30%'; }
+          });
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
+        if (lb >= 4 && combo) {
+          const e = effect('critical_up'); if (e) e.rate = 0.15;
+          combo.resonanceLinkPlus = 1;
+        }
+        break;
+      case 4: // アルノ SR
+        if (lb >= 2 && s1) { s1.multiplier = 1.70; s1.criticalRate = 0.75; }
+        if (lb >= 3 && combo) combo.range = 'combo_cross_all';
+        if (lb >= 4 && combo) { combo.multiplier = 1.05; combo.resonanceSelfAtkUpOnCritical = { rate: 1.15, duration: 1 }; }
+        break;
+      case 5: // クラリネ R
+        if (lb >= 2 && s1) s1.linkCost = 2;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceNextS1Discount = 1; }
+        break;
+      case 6: // イグニス R
+        if (lb >= 2 && s1) {
+          s1.multiplier = 1.55;
+          const e = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (e) e.rate = 1.35;
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.70; combo.resonanceSelfAtkUp = { rate: 1.10, duration: 1 }; }
+        break;
+      case 7: // ロゼ SR
+        if (lb >= 2 && s1) {
+          const stun = (s1.effects || []).find(x => x && x.type === 'stun'); if (stun) stun.hit = 90;
+          const down = (s1.effects || []).find(x => x && x.type === 'atk_down'); if (down) down.rate = 0.80;
+        }
+        if (lb >= 3 && combo) combo.range = 'combo_cross_all';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.50;
+          const down = effect('atk_down'); if (down) down.rate = 0.85;
+          if (!effect('stun')) combo.effects.push({ type:'stun', target:'enemy', hit:25, duration:1 });
+        }
+        break;
+      case 8: // ミモザ SR
+        if (lb >= 2 && s1) {
+          const up = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (up) up.rate = 1.35;
+          if (!(s1.effects || []).some(x => x && x.type === 'critical_up')) s1.effects.push({ type:'critical_up', target:'ally_all', hit:100, rate:0.10, duration:1 });
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
+        if (lb >= 4 && combo) {
+          const up = effect('atk_up'); if (up) up.rate = 1.15;
+          combo.resonanceHealLowestSourceHpRate = 0.10;
+        }
+        break;
+      case 9: // ヴェラ R
+        if (lb >= 2 && s1) s1.resonanceAffectedAllyAtkUp = { rate:1.10, duration:1 };
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.40;
+          const down = effect('atk_down'); if (down) down.rate = 0.90;
+        }
+        break;
+      case 10: // フローラ R
+        if (lb >= 2 && s1) s1.multiplier = 1.40;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceDelayedUltBoost = 1.10; }
+        break;
+      case 11: // シグレ R
+        if (lb >= 2 && s1) s1.multiplier = 1.40;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.60;
+          const push = effect('push_1'); if (push) push.hit = 75;
+        }
+        break;
+      case 12: // オルフィア R
+        if (lb >= 2 && s1) {
+          const up = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (up) up.rate = 1.20;
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_line_all';
+        if (lb >= 4 && combo) {
+          const up = effect('atk_up'); if (up) up.rate = 1.10;
+          combo.resonanceLowestAllyAtkUp = { rate:1.05, duration:1 };
+        }
+        break;
+      case 13: // ミア SR
+        c.rarity = 'sr';
+        if (lb >= 2 && s1) { s1.multiplier = 2.05; s1.criticalRate = 0.30; }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.80;
+          combo.criticalRate = 0.25;
+          if (!effect('atk_down')) combo.effects.push({ type:'atk_down', target:'enemy', hit:100, duration:1, rate:0.90 });
+        }
+        break;
+      case 14: // アヤカ R
+        if (lb >= 2 && s1) s1.multiplier = 1.15;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.60; combo.backstabMultiplier = 1.50; }
+        break;
+      case 15: // エテルナ R
+        if (lb >= 2 && s1) s1.resonanceAffectedAllyGuard = { rate:0.10, duration:1 };
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.50;
+          const push = effect('push_1'); if (push) push.hit = 75;
+        }
+        break;
+      case 16: // ミト R
+        if (lb >= 2 && s1) {
+          s1.multiplier = 0.85;
+          const e = (s1.effects || []).find(x => x && x.type === 'jittai'); if (e) e.hit = 90;
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.45;
+          const e = effect('jittai'); if (e) e.hit = 60;
+        }
+        break;
+      case 17: // アンジェ R
+        if (lb >= 2 && s1) s1.healRate = Number(s1.healRate || 0.35) * 1.20;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_line_all';
+        if (lb >= 4 && combo) { combo.healRate = 0.12; combo.resonanceHealLowestTargetHpRate = 0.05; }
+        break;
+    }
 
     return c;
   }
@@ -847,6 +998,13 @@ function pickRandomBoardCells(count) {
       attackRange: def.attackRange || (def.isBoss ? 'enemy_attack_cross' : 'enemy_attack_front'),
       moveType:    def.moveType    || (def.isBoss ? 'none' : 'enemy_move_straight'),
       uiScale:     def.uiScale    || {},
+
+      // 特殊BOSS制御
+      eriPriority: !!def.eriPriority,
+      specialActionType: def.specialActionType || null,
+      specialActionDamageRate: Number.isFinite(Number(def.specialActionDamageRate))
+        ? Number(def.specialActionDamageRate)
+        : 0.90,
     };
   }
 
@@ -962,7 +1120,12 @@ let chars = config.partyIds && config.partyIds.length
 const enemies = enemyDefs.map(def => {
   let pos;
 
-  if (def.isBoss) {
+  // 敵定義側の startPosition を最優先。
+  // オーバーシア戦では敵側3列目中央（row:2,col:2）へ固定配置する。
+  if (def && def.startPosition && Number.isFinite(Number(def.startPosition.row)) && Number.isFinite(Number(def.startPosition.col))) {
+    pos = { row: Number(def.startPosition.row), col: Number(def.startPosition.col) };
+    enemyOccupied.add(`${pos.row}-${pos.col}`);
+  } else if (def.isBoss) {
     pos = BOSS_POS;
   } else {
     pos = takeRandomPosition(enemyStartPool, enemyOccupied) || { row: 1, col: 2 };
@@ -1560,6 +1723,7 @@ const enemies = enemyDefs.map(def => {
 
     // ダメージ後に勝敗を即チェック
     _checkWinLose();
+    return { amount: dmg, criticalRoll, hpBefore, hpAfter };
   }
 
 function _queueDelayedAttack(ally, skill) {
@@ -2733,6 +2897,64 @@ if (
   };
 }
 
+// エリ共鳴Lv.2：通常スキルの攻撃処理後、HP割合が最も低い味方を回復する。
+if (
+  !noTargets &&
+  Number(ally.id) === 1 &&
+  skill.id === 's1' &&
+  Number(skill.resonanceHealLowestAtkRate || 0) > 0
+) {
+  const candidates = (_bs.allies || [])
+    .filter(unit => unit && unit.hp > 0 && unit.hp < unit.hpMax)
+    .sort((a, b) => {
+      const ar = a.hpMax > 0 ? a.hp / a.hpMax : 1;
+      const br = b.hpMax > 0 ? b.hp / b.hpMax : 1;
+      return ar - br;
+    });
+
+  const healTarget = candidates[0] || null;
+  if (healTarget) {
+    const recover = Math.max(
+      1,
+      Math.round(getEffectiveAtk(ally) * Number(skill.resonanceHealLowestAtkRate))
+    );
+    const before = healTarget.hp;
+    healTarget.hp = Math.min(healTarget.hpMax, healTarget.hp + recover);
+    const actual = healTarget.hp - before;
+
+    if (actual > 0) {
+      _log(`共鳴：${healTarget.name} のHPが ${actual} 回復`);
+      _emit('heal', {
+        source: { _uid: ally._uid, name: ally.name, side: ally.side, row: ally.row, col: ally.col },
+        target: { _uid: healTarget._uid, name: healTarget.name, side: healTarget.side, row: healTarget.row, col: healTarget.col },
+        amount: actual,
+        kind: 'resonance_heal',
+        skillId: skill.id,
+        skillName: skill.name,
+        isUltimate: false,
+        hitStyle: 'normal',
+        bs: _snapshot(),
+      });
+    }
+  }
+}
+
+// 共鳴Lv.2：位置操作スキル後の対象味方バフ。
+if (!noTargets && skill.id === 's1' && (skill.resonanceAffectedAllyAtkUp || skill.resonanceAffectedAllyGuard)) {
+  let targets = BR.getUnitsFromRange32(ally, skill.range, _bs.allies).filter(u => u && u.hp > 0 && u._uid !== ally._uid);
+  if (!targets.length) targets = (_bs.allies || []).filter(u => u && u.hp > 0 && u._uid !== ally._uid);
+  targets.forEach(target => {
+    if (skill.resonanceAffectedAllyAtkUp) {
+      const b = skill.resonanceAffectedAllyAtkUp;
+      _applyEffects([{ type:'atk_up', target:'ally', hit:100, rate:Number(b.rate||1.10), duration:Number(b.duration||1) }], target, ally);
+    }
+    if (skill.resonanceAffectedAllyGuard) {
+      const b = skill.resonanceAffectedAllyGuard;
+      _applyEffects([{ type:'guard', target:'ally', hit:100, rate:Number(b.rate||0.10), duration:Number(b.duration||1) }], target, ally);
+    }
+  });
+}
+
 _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 
 // 行動権を消費（LINKも消費される）
@@ -2800,13 +3022,13 @@ return true;
     }
 
     const enemyTargets = rangeKey =>
-      _getComboRangeUnits32(ally, rangeKey, _bs.enemies)
+      BR.getUnitsFromRange32(ally, rangeKey, _bs.enemies)
         .filter(unit => unit && unit.hp > 0);
 
     const allyTargets = rangeKey =>
       rangeKey === 'self'
         ? [ally]
-        : _getComboRangeUnits32(ally, rangeKey, _bs.allies)
+        : BR.getUnitsFromRange32(ally, rangeKey, _bs.allies)
             .filter(unit => unit && unit.hp > 0);
 
     const stype = comboSkill.type || 'attack';
@@ -2825,31 +3047,13 @@ return true;
 
     try {
       const generation = Number(context && context.generation || 1);
-      const comboIndex = Number(context && context.comboIndex || generation || 1);
 
-      // 通常攻撃の演出・ダメージ処理後、盤面へ戻ってから
-      // 「COMBO発生！」と反応キャラのグリッドエフェクトを見せる。
-      // 起点攻撃のアップ演出が残っている間に次の演出を始めると、
-      // COMBO表示が隠れ、コンボ攻撃演出もbusy判定で弾かれる。
-      if (typeof window.waitBattle32AttackCinematicIdle === 'function') {
-        await window.waitBattle32AttackCinematicIdle(4200);
-      } else {
-        await wait(1320);
-      }
-
-      _renderUI();
-      await wait(100);
-
-      if (typeof window.showBattle32ComboReady === 'function') {
-        await window.showBattle32ComboReady({
-          ally: { ...ally },
-          skill: deepClone(comboSkill),
-          comboIndex,
-          generation,
-        });
-      } else {
-        await wait(520);
-      }
+      // COMBO専用演出。完全に消えるまで待ってからダメージ処理へ。
+      await _centerTextWait(
+        `COMBO ${generation}`,
+        `${ally.name}「${comboSkill.name}」`,
+        620
+      );
 
       _log(`COMBO：${ally.name} が「${comboSkill.name}」を発動！`);
 
@@ -2866,6 +3070,7 @@ return true;
 
       let affected = false;
       let affectedCount = 0;
+      let comboHadCritical = false;
 
       if (stype === 'attack' || stype === 'debuff') {
         // 演出後にもう一度対象を再取得
@@ -2875,13 +3080,15 @@ return true;
           if (_bs.result) break;
 
           if (Number(comboSkill.multiplier || 0) > 0) {
-            const damage = calcDamage(
+            let damage = calcDamage(
               getEffectiveAtk(ally),
               comboSkill.multiplier,
               enemy,
               ally
             );
-            applyDamage(enemy, damage, ally, comboSkill);
+            damage = applyBackstabBonus(damage, ally, enemy, comboSkill);
+            const damageResult = applyDamage(enemy, damage, ally, comboSkill);
+            if (damageResult && damageResult.criticalRoll && damageResult.criticalRoll.isCritical) comboHadCritical = true;
           }
 
           if (
@@ -2906,19 +3113,96 @@ return true;
 
         for (const target of targets) {
           if (stype === 'heal') {
-            const amount = Math.max(
-              1,
-              Math.round(
-                getEffectiveAtk(ally) *
-                Number(comboSkill.healRate || comboSkill.multiplier || 0.25)
-              )
+            // effects に heal が定義されている場合は _applyEffects() 側だけで回復する。
+            // これにより、アンジェの「最大HP×8%回復」が二重適用されるのを防ぐ。
+            const hasExplicitHealEffect = (comboSkill.effects || []).some(
+              effect => effect && effect.type === 'heal'
             );
-            target.hp = Math.min(target.hpMax, target.hp + amount);
+
+            if (!hasExplicitHealEffect) {
+              const amount = Math.max(
+                1,
+                Math.round(
+                  getEffectiveAtk(ally) *
+                  Number(comboSkill.healRate || comboSkill.multiplier || 0.25)
+                )
+              );
+              target.hp = Math.min(target.hpMax, target.hp + amount);
+            }
           }
 
           _applyEffects(comboSkill.effects || [], target, ally);
           affected = true;
           affectedCount += 1;
+        }
+      }
+
+      // エリ共鳴Lv.4：コンボ発動後、味方全体のATKを1ターン10%上昇。
+      if (
+        Number(ally.id) === 1 &&
+        comboSkill.resonanceTeamAtkUp &&
+        affected
+      ) {
+        const buff = comboSkill.resonanceTeamAtkUp;
+        (_bs.allies || [])
+          .filter(unit => unit && unit.hp > 0)
+          .forEach(unit => {
+            _applyEffects([{
+              type: 'atk_up',
+              target: 'ally_all',
+              hit: 100,
+              rate: Number(buff.rate || 1.10),
+              duration: Number(buff.duration || 1)
+            }], unit, ally);
+          });
+        _log('共鳴：味方全体のATKが10%上昇');
+      }
+
+      // 全キャラ共通の共鳴Lv.4コンボ追加効果。
+      if (affected) {
+        if (Number(comboSkill.resonanceLinkPlus || 0) > 0 && _bs.link) {
+          const before = Number(_bs.link.current || 0);
+          _bs.link.current = Math.min(Number(_bs.link.max || 6), before + Number(comboSkill.resonanceLinkPlus));
+          _log(`共鳴：LINK +${_bs.link.current - before}`);
+        }
+        if (comboSkill.resonanceSelfAtkUp) {
+          const b = comboSkill.resonanceSelfAtkUp;
+          _applyEffects([{ type:'atk_up', target:'ally_self', hit:100, rate:Number(b.rate||1.10), duration:Number(b.duration||1) }], ally, ally);
+        }
+        if (comboHadCritical && comboSkill.resonanceSelfAtkUpOnCritical) {
+          const b = comboSkill.resonanceSelfAtkUpOnCritical;
+          _applyEffects([{ type:'atk_up', target:'ally_self', hit:100, rate:Number(b.rate||1.15), duration:Number(b.duration||1) }], ally, ally);
+          _log('共鳴：コンボcriticalにより自身のATKが上昇');
+        }
+        if (Number(comboSkill.resonanceNextS1Discount || 0) > 0) {
+          ally._resonanceNextS1Discount = Number(comboSkill.resonanceNextS1Discount);
+          _log('共鳴：次の通常スキルLINKコストを軽減');
+        }
+        if (Number(comboSkill.resonanceDelayedUltBoost || 0) > 1 && Array.isArray(_bs.delayedActions)) {
+          const pending = _bs.delayedActions.filter(a => a && a.ownerUid === ally._uid && a.isUltimate);
+          pending.forEach(a => { a.multiplier = Number(a.multiplier || 1) * Number(comboSkill.resonanceDelayedUltBoost); });
+          if (pending.length) _log('共鳴：予約中ULTの威力が10%上昇');
+        }
+        const healLowest = (rate, sourceHpBased) => {
+          const candidates = (_bs.allies || []).filter(u => u && u.hp > 0 && u.hp < u.hpMax)
+            .sort((a,b) => (a.hp/a.hpMax) - (b.hp/b.hpMax));
+          const target = candidates[0];
+          if (!target) return;
+          const baseHp = sourceHpBased ? ally.hpMax : target.hpMax;
+          const amount = Math.max(1, Math.round(baseHp * Number(rate || 0)));
+          target.hp = Math.min(target.hpMax, target.hp + amount);
+          _log(`共鳴：${target.name} のHPが ${amount} 回復`);
+        };
+        if (Number(comboSkill.resonanceHealLowestSourceHpRate || 0) > 0) healLowest(comboSkill.resonanceHealLowestSourceHpRate, true);
+        if (Number(comboSkill.resonanceHealLowestTargetHpRate || 0) > 0) healLowest(comboSkill.resonanceHealLowestTargetHpRate, false);
+        if (comboSkill.resonanceLowestAllyAtkUp) {
+          const candidates = (_bs.allies || []).filter(u => u && u.hp > 0)
+            .sort((a,b) => (a.hp/a.hpMax) - (b.hp/b.hpMax));
+          const target = candidates[0];
+          if (target) {
+            const b = comboSkill.resonanceLowestAllyAtkUp;
+            _applyEffects([{ type:'atk_up', target:'ally', hit:100, rate:Number(b.rate||1.05), duration:Number(b.duration||1) }], target, ally);
+          }
         }
       }
 
@@ -2934,23 +3218,8 @@ return true;
         bs: _snapshot(),
       });
 
-      // damage callbackで開始される攻撃アップ演出が終わり、
-      // 盤面へ戻ってから通算コンボ数をグリッド上へ表示する。
-      if (typeof window.waitBattle32AttackCinematicIdle === 'function') {
-        await window.waitBattle32AttackCinematicIdle(5200);
-      } else {
-        const cinematicWait = comboSkill.hitStyle === 'rapid_multi' ? 2820 : 1320;
-        await wait(cinematicWait);
-      }
-
-      _renderUI();
-      await wait(100);
-
-      if (typeof window.showBattle32ComboCount === 'function') {
-        await window.showBattle32ComboCount(comboIndex);
-      } else {
-        await wait(520);
-      }
+      // ダメージポップアップ等を見せてから次のコンボへ。
+      await wait(700);
 
       return {
         executed: true,
@@ -3319,7 +3588,11 @@ return true;
           const skill = ally && (ally.skills || []).find(s => s.id === skillId);
           if (skill && skill.linkCost != null) {
             const n = Number(skill.linkCost);
-            return Number.isFinite(n) ? Math.max(0, n) : (type === 'ult' ? LINK_COST.ult : LINK_COST.skill);
+            let cost = Number.isFinite(n) ? Math.max(0, n) : (type === 'ult' ? LINK_COST.ult : LINK_COST.skill);
+            if (type === 'skill' && skill.id === 's1' && Number(ally && ally._resonanceNextS1Discount || 0) > 0) {
+              cost = Math.max(1, cost - Number(ally._resonanceNextS1Discount));
+            }
+            return cost;
           }
           return type === 'ult' ? LINK_COST.ult : LINK_COST.skill;
         }
@@ -3338,6 +3611,10 @@ return true;
         // LINK消費
         const linkCost = _getLinkCostForAction(type, unitUid, skillId);
         _spendLink(linkCost, null);
+        const actedUnit = (_bs.allies || []).find(u => u && u._uid === unitUid);
+        if (type === 'skill' && actedUnit && skillId === 's1' && Number(actedUnit._resonanceNextS1Discount || 0) > 0) {
+          actedUnit._resonanceNextS1Discount = 0;
+        }
 
         const unitHistory = _getUnitActionHistory(unitUid);
 
@@ -3778,7 +4055,7 @@ function doBossLineAttack(boss) {
     // ボス予兆攻撃（行動ループより先に発動）
     if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
-      if (boss) {
+      if (boss && !_isSakielBoss(boss)) {
         await _centerTextWait('⚠️ WARNING', 'ボスが予兆攻撃…', B32_WAIT.enemyAction);
         _doBossWarnAttack(boss, getAllUnits());
         _renderUI();
@@ -3791,7 +4068,7 @@ function doBossLineAttack(boss) {
     if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
 
-      if (boss) {
+      if (boss && !_isSakielBoss(boss)) {
         await _centerTextWait('⚠️ SPACE SHIFT', '空間干渉：位置入れ替え', B32_WAIT.enemyAction);
 
         doBossSwapAttack(boss);
@@ -3966,6 +4243,187 @@ function doBossLineAttack(boss) {
   }
 
 
+  // ============================================================
+  // サキエル専用：毎ターン5種からランダム1行動
+  // ============================================================
+
+  function _isSakielBoss(enemy) {
+    return !!(enemy && enemy.id === 'enemy_sakiel_roguelite');
+  }
+
+  function _sakielPatternCells(enemy, patternId) {
+    const cells = new Set();
+    const add = (row, col) => {
+      if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS) {
+        cells.add(`${row}-${col}`);
+      }
+    };
+
+    const row = Number(enemy.row);
+    const col = Number(enemy.col);
+
+    if (patternId === 'fan_3_lines') {
+      // ① ★から前方へ ／｜＼ の3直線
+      for (const dc of [-1, 0, 1]) {
+        let r = row + 1;
+        let c = col + dc;
+        while (r < BOARD_ROWS && c >= 0 && c < BOARD_COLS) {
+          add(r, c);
+          r += 1;
+          c += dc;
+        }
+      }
+    } else if (patternId === 'parallel_3_lines') {
+      // ② 自列と左右1列、縦3ライン
+      [col - 1, col, col + 1].forEach(c => {
+        for (let r = row + 1; r < BOARD_ROWS; r++) add(r, c);
+      });
+    } else if (patternId === 'border_3_rows') {
+      // ③ 一列おきの横3ライン
+      [3, 5, 7].forEach(r => {
+        for (let c = 0; c < BOARD_COLS; c++) add(r, c);
+      });
+    } else if (patternId === 'outer_4_columns') {
+      // ④ 左右端2列ずつ。中央列のみ安全
+      [0, 1, 3, 4].forEach(c => {
+        for (let r = 0; r < BOARD_ROWS; r++) add(r, c);
+      });
+    }
+
+    return cells;
+  }
+
+  function _setTransientBossDangerCells(cells, label) {
+    _bs.activeBossDangerCells = Array.from(cells || []).map(key => {
+      const [row, col] = String(key).split('-').map(Number);
+      return { row, col, type: 'boss_warn', label: label || 'WARNING' };
+    });
+    _renderUI();
+  }
+
+  function _clearTransientBossDangerCells() {
+    _bs.activeBossDangerCells = [];
+    _renderUI();
+  }
+
+  function _replaceTimedStatus(target, type, status) {
+    if (!target) return;
+    if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+    target.statusEffects = target.statusEffects.filter(e => !(e && e.type === type));
+    target.statusEffects.push({
+      ...status,
+      type,
+      duration: 2,
+      appliedTurn: _bs.turn,
+    });
+  }
+
+  async function _runSakielSpecialAction(enemy) {
+    const patterns = [
+      {
+        id: 'fan_3_lines',
+        title: '三叉天罰',
+        sub: '直線貫通3ライン ／｜＼',
+      },
+      {
+        id: 'parallel_3_lines',
+        title: '三列断罪',
+        sub: '直線貫通3ライン ｜｜｜',
+      },
+      {
+        id: 'border_3_rows',
+        title: '白界の境界',
+        sub: '一列おきに横断するボーダー',
+      },
+      {
+        id: 'outer_4_columns',
+        title: '外縁粛清',
+        sub: '左右端2列ずつを貫通',
+      },
+      {
+        id: 'atk_shift',
+        title: '天威転写',
+        sub: '自身ATK上昇・敵ATK低下',
+      },
+    ];
+
+    const selected = patterns[Math.floor(Math.random() * patterns.length)];
+
+    if (selected.id === 'atk_shift') {
+      await _centerTextWait(selected.title, selected.sub, B32_WAIT.enemyAction);
+
+      _replaceTimedStatus(enemy, 'atk_up', {
+        name: '天威',
+        rate: 1.20,
+        sourceUid: enemy._uid,
+        sourceName: enemy.name,
+      });
+
+      const candidates = (_bs.allies || []).filter(a => a && a.hp > 0);
+      const target = candidates.length
+        ? candidates[Math.floor(Math.random() * candidates.length)]
+        : null;
+
+      if (target) {
+        _replaceTimedStatus(target, 'atk_down', {
+          name: '断罪',
+          rate: 0.80,
+          sourceUid: enemy._uid,
+          sourceName: enemy.name,
+        });
+        _log(`${enemy.name} のATKが20%上昇。${target.name} のATKが20%低下（2ターン）`);
+      } else {
+        _log(`${enemy.name} のATKが20%上昇（2ターン）`);
+      }
+
+      _emit('enemyActionStep', {
+        step: 'sakiel_buff_debuff',
+        enemy: { ...enemy },
+        target: target ? { ...target } : null,
+        patternId: selected.id,
+        bs: _snapshot(),
+      });
+      _renderUI();
+      await wait(B32_WAIT.attack);
+      return;
+    }
+
+    const cells = _sakielPatternCells(enemy, selected.id);
+    _setTransientBossDangerCells(cells, 'WARNING');
+
+    await _centerTextWait('⚠️ ' + selected.title, selected.sub, B32_WAIT.guide);
+
+    const targets = (_bs.allies || []).filter(ally => {
+      return ally && ally.hp > 0 && cells.has(`${ally.row}-${ally.col}`);
+    });
+
+    _emit('enemyActionStep', {
+      step: 'sakiel_pattern',
+      enemy: { ...enemy },
+      patternId: selected.id,
+      cells: Array.from(cells),
+      targets: targets.map(t => ({ ...t })),
+      bs: _snapshot(),
+    });
+
+    const damageRate = Number(enemy.specialActionDamageRate || 0.90);
+    targets.forEach(target => {
+      const dmg = calcDamage(getEffectiveAtk(enemy), damageRate, target, enemy);
+      applyDamage(target, dmg, enemy, {
+        id: `sakiel_${selected.id}`,
+        name: selected.title,
+        hitStyle: 'holy',
+        canCritical: false,
+      });
+    });
+
+    _log(`${enemy.name}：${selected.title}`);
+    _renderUI();
+    await wait(B32_WAIT.attack);
+    await wait(B32_WAIT.afterText);
+    _clearTransientBossDangerCells();
+  }
+
   // 敵1体の行動処理。
   // 移動・攻撃・攻撃アップ演出の待ちまでこの関数内で完了させ、
   // 呼び出し元の for-await ループが次の敵へ進むのを防ぐ。
@@ -3982,6 +4440,12 @@ function doBossLineAttack(boss) {
       // duration が0になった時点で解除する。
       //await _centerTextWait(enemy.name, 'NO ACTION', B32_WAIT.enemyAction);
       _renderUI();
+      return;
+    }
+
+    // サキエル本体は通常攻撃を使わず、毎ターン5種から1つをランダム実行する。
+    if (_isSakielBoss(enemy) || enemy.specialActionType === 'sakiel_random_5') {
+      await _runSakielSpecialAction(enemy);
       return;
     }
 
@@ -4124,7 +4588,10 @@ function doBossLineAttack(boss) {
     const all = getAllUnits();
     all.forEach(u => {
       u.statusEffects = u.statusEffects
-        .map(e => ({ ...e, duration: e.duration - 1 }))
+        .map(e => {
+          if (e && Number(e.appliedTurn) === Number(_bs.turn)) return { ...e };
+          return { ...e, duration: e.duration - 1 };
+        })
         .filter(e => e.duration > 0);
 
       // stun / 眠りは duration が残っている限り行動不能を維持する。
@@ -4458,57 +4925,10 @@ function doBossLineAttack(boss) {
   // 危険エリア取得（UI表示専用・攻撃処理は変更しない）
   // ============================================================
   function getBossDangerCells() {
-    if (!_bs || _bs.result || _bs.phase !== 'skill') return [];
-
-    // ボスが生存している場合のみ（HP0後の核露出状態は除く）
-    const boss = _bs.enemies.find(e => e.isBoss && e.hp > 0);
-    if (!boss) return [];
-
-    const result = [];
-
-    // ── 3ターンごとの入れ替え攻撃予告 ──
-    if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
-      // 入れ替えは対象がランダムのため盤面セルでの事前予告はなし
-      // (boss_warn 系の表示は予兆攻撃と重複するため省略)
-    }
-
-    // ── 4ターンごとの予兆攻撃（中央3列・全行） ──
-    // _doBossWarnAttack の col [1,2,3] と完全に一致させる
-    if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
-      for (let r = 0; r < BOARD_ROWS; r++) {
-        [1, 2, 3].forEach(c => {
-          result.push({ row: r, col: c, type: 'boss_warn', label: 'WARNING' });
-        });
-      }
-    }
-
-    // ── 通常攻撃範囲（特殊攻撃がないターンのみ） ──
-    if (result.length === 0) {
-      const range = boss.attackRange || 'manhattan_4';
-      // manhattan_N 形式：手動でマンハッタン距離計算
-      const m = /^manhattan_(\d+)$/.exec(range);
-      if (m) {
-        const maxDist = Number(m[1]);
-        for (let r = 0; r < BOARD_ROWS; r++) {
-          for (let c = 0; c < BOARD_COLS; c++) {
-            const dist = Math.abs(r - boss.row) + Math.abs(c - boss.col);
-            if (dist > 0 && dist <= maxDist) {
-              result.push({ row: r, col: c, type: 'boss_normal', label: 'DANGER' });
-            }
-          }
-        }
-      } else if (BR && BR.getCellsFromRange32) {
-        const cells = BR.getCellsFromRange32(boss, range);
-        if (cells && cells.forEach) {
-          cells.forEach(key => {
-            const [row, col] = key.split('-').map(Number);
-            result.push({ row, col, type: 'boss_normal', label: 'DANGER' });
-          });
-        }
-      }
-    }
-
-    return result;
+    if (!_bs || _bs.result) return [];
+    return Array.isArray(_bs.activeBossDangerCells)
+      ? _bs.activeBossDangerCells.map(cell => ({ ...cell }))
+      : [];
   }
 
   // ============================================================

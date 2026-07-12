@@ -104,6 +104,9 @@
     hit: skill.hit == null ? 100 : skill.hit,
     isUltimate: isUlt,
     hitStyle: skill.hitStyle || 'normal',
+    // 多段攻撃数を32マス版へ引き継ぐ。
+    // 未指定時は battle_32.js 側の hitStyle フォールバックを使用する。
+    hitCount: skill.hitCount != null ? Number(skill.hitCount) : null,
     pierce: !!skill.pierce,
     randomCellCount: skill.randomCellCount || null,
     criticalRate: skill.criticalRate,
@@ -112,6 +115,8 @@
     requiredStatus: skill.requiredStatus || skill.targetStatus || null,
     effects: filteredEffects,
     moveBonus: skill.moveBonus || null,
+    allyShiftDirection: skill.allyShiftDirection || null,
+    backstabMultiplier: skill.backstabMultiplier || null,
 
     // 盤面設置型スキル用
     summonName: skill.summonName || null,

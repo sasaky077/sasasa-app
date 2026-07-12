@@ -12,14 +12,26 @@
   let currentEnemyRef = 'enemy_01';
   let currentBattleOptions = {};
 
-  function _isRogueliteMode() { return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite'; }
-  function _maxPartySize() { return _isRogueliteMode() ? 4 : 3; }
-  function _minPartySize() { return _isRogueliteMode() ? 4 : 3; }
+  function _isRogueliteMode() {
+    return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite';
+  }
+
+  // 本番ローグライト、またはDEBUGでローグライト編成だけ再現する場合。
+  // forceRogueliteLayout はラン進行を開始せず、エリ固定＋任意3体の編成・初期配置だけを共有する。
+  function _usesRoguelitePartyLayout() {
+    return !!(currentBattleOptions && (
+      currentBattleOptions.battleMode === 'roguelite' ||
+      currentBattleOptions.forceRogueliteLayout === true
+    ));
+  }
+
+  function _maxPartySize() { return _usesRoguelitePartyLayout() ? 4 : 3; }
+  function _minPartySize() { return _usesRoguelitePartyLayout() ? 4 : 3; }
   function _isFixedFirstChara(charaId) {
-    return _isRogueliteMode() && Number(charaId) === ROGUELITE_FIXED_FIRST_CHARA_ID;
+    return _usesRoguelitePartyLayout() && Number(charaId) === ROGUELITE_FIXED_FIRST_CHARA_ID;
   }
   function _ensureRogueliteFixedFirst() {
-    if (!_isRogueliteMode()) return;
+    if (!_usesRoguelitePartyLayout()) return;
 
     // エリを必ず先頭に置き、重複があれば除去する。
     selected = selected.filter(s => Number(s.charaId) !== ROGUELITE_FIXED_FIRST_CHARA_ID);
@@ -77,13 +89,11 @@
     if (!master) return null;
 
     const owned = getOwnedPartyInstance(charaId);
-    if (!owned) return master;
-
-    return Object.assign({}, master, owned, {
+    const merged = Object.assign({}, master, owned || {}, {
       id: master.id,
       name: master.name,
-      rarity: owned.rarity || master.rarity,
-      element: owned.element || master.element,
+      rarity: (owned && owned.rarity) || master.rarity,
+      element: (owned && owned.element) || master.element,
       img: master.img,
       battleImg: master.battleImg,
       panelImg: master.panelImg,
@@ -92,11 +102,43 @@
       ultImg: master.ultImg,
       cutImg: master.cutImg,
       moveType: master.moveType,
-      skills: master.skills || [],
-      stats: owned.stats || master.stats || {},
-      baseStats: owned.baseStats || master.stats || {},
-      limitBreak: owned.limitBreak || 0
+
+      // スキルとコンボは、保存済み個体の古い定義ではなく
+      // 現在のcharacters.jsを正として表示する。
+      skills: (master.skills || []).map(skill => ({
+        ...skill,
+        effects: Array.isArray(skill.effects)
+          ? skill.effects.map(effect => ({ ...effect }))
+          : []
+      })),
+      combo: master.combo && master.combo.skill
+        ? {
+            ...master.combo,
+            skill: {
+              ...master.combo.skill,
+              effects: Array.isArray(master.combo.skill.effects)
+                ? master.combo.skill.effects.map(effect => ({ ...effect }))
+                : []
+            }
+          }
+        : null,
+
+      stats: (owned && owned.stats) || master.stats || {},
+      baseStats: (owned && owned.baseStats) || master.stats || {},
+      limitBreak: Number((owned && owned.limitBreak) || 0)
     });
+
+    // エリ共鳴Lv.3：コンボ反応範囲を直線から十字へ拡張。
+    // バトル中の補正と同じ状態を、出撃前詳細にも反映する。
+    if (
+      Number(merged.id) === 1 &&
+      merged.limitBreak >= 3 &&
+      merged.combo
+    ) {
+      merged.combo.range = 'combo_cross_all';
+    }
+
+    return merged;
   }
 
   // 属性アイコン。単属性 / 2属性 / 3属性に対応。
@@ -155,7 +197,7 @@
     el.style.cssText = [
       'position:fixed','inset:0','z-index:150000',
       'display:none','flex-direction:column',
-      'background:#0a0a0c','color:#e8e4dc',
+      'background:#f6f1e6 url("images/zeraphia_bg_01.webp") center / cover no-repeat','color:#55472f',
       'font-family:"Noto Serif JP",serif',
       'opacity:0','transition:opacity 0.4s ease',
     ].join(';');
@@ -657,6 +699,168 @@
         border-color: rgba(150,230,255,0.95);
         box-shadow: 0 0 7px rgba(90,200,255,0.45);
       }
+
+      /* コンボスキル詳細：プリモア一覧と同じ情報構成 */
+      .ps-detail-combo-section {
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+      }
+      .ps-detail-combo-title {
+        padding: 12px 18px 8px;
+        font-family: "Cinzel", serif;
+        font-size: 9px;
+        letter-spacing: 3px;
+        color: rgba(232,228,220,0.3);
+      }
+      .ps-detail-combo-list {
+        padding: 0 14px;
+      }
+      .ps-detail-combo-card {
+        padding: 11px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(179,135,255,0.22);
+        background:
+          radial-gradient(circle at 50% 0%, rgba(153,94,255,0.09), transparent 62%),
+          rgba(255,255,255,0.025);
+      }
+      .ps-detail-combo-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .ps-detail-combo-badge {
+        padding: 2px 7px;
+        border: 1px solid rgba(184,145,255,0.45);
+        border-radius: 4px;
+        background: rgba(145,85,240,0.10);
+        color: rgba(215,192,255,0.95);
+        font-family: "Cinzel", serif;
+        font-size: 8px;
+        letter-spacing: 1px;
+      }
+      .ps-detail-combo-name {
+        color: rgba(241,235,255,0.95);
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 1px;
+      }
+      .ps-detail-combo-condition {
+        margin-bottom: 8px;
+        color: rgba(210,192,240,0.54);
+        font-size: 9px;
+        line-height: 1.55;
+      }
+      .ps-detail-combo-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px 8px;
+        margin-bottom: 9px;
+      }
+      .ps-detail-combo-meta span {
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.04);
+        color: rgba(232,228,220,0.45);
+        font-family: "Cinzel", "Noto Serif JP", serif;
+        font-size: 8px;
+      }
+      .ps-detail-combo-ranges {
+        display: grid;
+        grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+        gap: 8px;
+      }
+      .ps-detail-combo-range-item {
+        min-width: 0;
+        padding: 8px 6px;
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 8px;
+        background: rgba(0,0,0,0.26);
+      }
+      .ps-detail-combo-range-title {
+        margin-bottom: 3px;
+        color: rgba(232,228,220,0.35);
+        font-size: 8px;
+        text-align: center;
+      }
+      .ps-detail-combo-range-label {
+        min-height: 26px;
+        margin-bottom: 6px;
+        color: rgba(232,228,220,0.70);
+        font-size: 9px;
+        line-height: 1.35;
+        text-align: center;
+      }
+      .ps-detail-combo-range-item.trigger .ps-detail-combo-range-label {
+        color: rgba(204,174,255,0.94);
+      }
+      .ps-detail-combo-range-item.attack .ps-detail-combo-range-label {
+        color: rgba(255,216,125,0.94);
+      }
+      .ps-mini-combo-board {
+        display: grid;
+        grid-template-columns: repeat(5, 10px);
+        justify-content: center;
+        gap: 2px;
+      }
+      .ps-mini-combo-board.rows-8 {
+        grid-template-rows: repeat(8, 10px);
+      }
+      .ps-mini-combo-board.rows-5 {
+        grid-template-rows: repeat(5, 10px);
+      }
+      .ps-mini-combo-cell {
+        width: 10px;
+        height: 10px;
+        border: 1px solid rgba(255,255,255,0.045);
+        border-radius: 2px;
+        background: rgba(255,255,255,0.04);
+      }
+      .ps-mini-combo-cell.self {
+        border-color: rgba(255,248,205,0.95);
+        border-radius: 50%;
+        background: rgba(255,240,165,0.94);
+        box-shadow: 0 0 6px rgba(255,213,90,0.58);
+      }
+      .ps-mini-combo-cell.trigger {
+        border-color: rgba(202,168,255,0.96);
+        background: rgba(153,86,255,0.58);
+        box-shadow: 0 0 6px rgba(139,68,255,0.44);
+      }
+      .ps-mini-combo-cell.attack {
+        border-color: rgba(255,224,142,0.98);
+        background: rgba(255,184,52,0.58);
+        box-shadow: 0 0 6px rgba(255,157,25,0.40);
+      }
+      .ps-detail-combo-effect,
+      .ps-detail-combo-desc {
+        margin-top: 8px;
+        color: rgba(232,228,220,0.50);
+        font-size: 10px;
+        line-height: 1.65;
+      }
+      .ps-detail-combo-effect {
+        color: rgba(219,202,245,0.63);
+      }
+      .ps-detail-combo-resonance {
+        margin-top: 8px;
+        padding: 7px 9px;
+        border-left: 2px solid rgba(245,214,145,0.62);
+        background: rgba(245,214,145,0.055);
+        color: rgba(245,225,175,0.74);
+        font-size: 9px;
+        line-height: 1.55;
+      }
+      .ps-detail-combo-none {
+        margin: 0 14px;
+        padding: 12px;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 9px;
+        background: rgba(255,255,255,0.02);
+        color: rgba(232,228,220,0.30);
+        font-size: 10px;
+      }
+
       .ps-detail-close {
         width: calc(100% - 28px); margin: 14px 14px 0;
         padding: 12px; border-radius: 10px;
@@ -671,6 +875,118 @@
         transform: scale(0.95);
         transition: transform 0.1s;
       }
+
+
+      /* =====================================================
+         ZERAPHIA light paper theme / party select
+         ===================================================== */
+      #party-select-modal {
+        background-color: #f6f1e6 !important;
+        background-image:
+          linear-gradient(rgba(255,253,247,.22), rgba(255,253,247,.22)),
+          url("images/zeraphia_bg_01.webp") !important;
+        background-position: center !important;
+        background-size: cover !important;
+        color: #55472f !important;
+      }
+      .ps-header {
+        background: rgba(255,252,244,.84) !important;
+        border-bottom: 1px solid rgba(156,126,70,.22) !important;
+        box-shadow: 0 2px 12px rgba(87,65,32,.08);
+        backdrop-filter: blur(3px);
+      }
+      .ps-title {
+        color: #5c492d !important;
+        text-shadow: 0 1px 0 rgba(255,255,255,.9);
+      }
+      .ps-sub { color: rgba(86,68,42,.62) !important; }
+      .ps-slots-wrap {
+        background: rgba(255,252,244,.58) !important;
+        border-bottom: 1px solid rgba(156,126,70,.18) !important;
+      }
+      .ps-slot-box {
+        border-color: rgba(132,103,55,.25) !important;
+        background: rgba(255,255,255,.54) !important;
+        box-shadow: 0 4px 12px rgba(75,55,25,.10);
+      }
+      .ps-slot.filled .ps-slot-box {
+        border-color: rgba(151,113,43,.55) !important;
+      }
+      .ps-slot-empty-label { color: rgba(95,75,46,.30) !important; }
+      .ps-slot-chara-name {
+        color: #fffaf0 !important;
+        background: linear-gradient(to top, rgba(70,52,28,.78), transparent) !important;
+      }
+      .ps-slot-lock {
+        background: rgba(255,250,238,.88) !important;
+        color: #6d5530 !important;
+        border: 1px solid rgba(136,103,49,.28);
+      }
+      .ps-list-wrap { background: rgba(255,252,244,.12); }
+      .ps-chara-img-wrap {
+        border-color: rgba(126,98,54,.22) !important;
+        background: rgba(255,255,255,.48) !important;
+        box-shadow: 0 3px 9px rgba(72,53,25,.09);
+      }
+      .ps-chara-card.selected .ps-chara-img-wrap {
+        border-color: rgba(184,137,43,.86) !important;
+        box-shadow: 0 0 0 2px rgba(223,185,91,.20), 0 5px 13px rgba(91,64,22,.16) !important;
+      }
+      .ps-chara-check { background: rgba(246,237,211,.42) !important; color: #8a6729 !important; }
+      .ps-chara-name { color: rgba(76,59,37,.78) !important; text-shadow: 0 1px 0 #fff; }
+      .ps-chara-card.not-owned { opacity: .34 !important; }
+      .ps-footer {
+        background: rgba(255,252,244,.92) !important;
+        border-top: 1px solid rgba(156,126,70,.22) !important;
+        box-shadow: 0 -4px 16px rgba(75,55,25,.10);
+        backdrop-filter: blur(4px);
+      }
+      .ps-btn-cancel {
+        border-color: rgba(120,91,47,.30) !important;
+        background: rgba(255,255,255,.62) !important;
+        color: #665137 !important;
+        box-shadow: 0 3px 8px rgba(72,53,25,.08);
+      }
+      .ps-btn-start {
+        border-color: rgba(154,113,42,.48) !important;
+        background: linear-gradient(180deg, #d7b764 0%, #b18b35 100%) !important;
+        color: #fffaf0 !important;
+        text-shadow: 0 1px 2px rgba(67,47,17,.40);
+        box-shadow: 0 5px 12px rgba(85,58,17,.22), inset 0 1px 0 rgba(255,255,255,.42);
+      }
+      .ps-btn-start:disabled {
+        background: rgba(113,104,88,.18) !important;
+        border-color: rgba(95,80,57,.18) !important;
+        color: rgba(86,72,52,.38) !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+      }
+      .ps-btn-start:not(:disabled):active,
+      .ps-btn-cancel:active { transform: translateY(1px); box-shadow: none; }
+
+      /* 詳細パネルも同じ紙色へ統一 */
+      .ps-detail-popup { background: rgba(54,43,29,.45) !important; }
+      .ps-detail-box {
+        background: #f7f1e5 url("images/zeraphia_bg_01.webp") center / cover no-repeat !important;
+        border-top-color: rgba(145,111,55,.30) !important;
+        color: #55472f !important;
+      }
+      .ps-detail-name,
+      .ps-detail-stat-val { color: #59462c !important; }
+      .ps-detail-stat-label,
+      .ps-detail-combo-range-title,
+      .ps-detail-combo-meta span { color: rgba(82,64,40,.58) !important; }
+      .ps-detail-stat,
+      .ps-detail-combo-range-item,
+      .ps-detail-combo-none {
+        background: rgba(255,255,255,.48) !important;
+        border-color: rgba(130,99,52,.18) !important;
+      }
+      .ps-detail-close {
+        background: rgba(255,255,255,.62) !important;
+        border-color: rgba(125,94,48,.26) !important;
+        color: #665137 !important;
+      }
     `;
     document.body.appendChild(s);
   }
@@ -679,7 +995,7 @@
   // スロット描画（左・中・右）
   // ============================================================
   function _getSlotLabels() {
-    return _isRogueliteMode()
+    return _usesRoguelitePartyLayout()
       ? ['1', '2', '3', '4']
       : ['左', '中', '右'];
   }
@@ -691,8 +1007,8 @@
     // サブテキスト更新
     const subEl = document.getElementById('ps-sub-text');
     if (subEl) {
-      subEl.textContent = _isRogueliteMode()
-        ? 'エリ固定 · 2〜4枠目のキャラを選んでください'
+      subEl.textContent = _usesRoguelitePartyLayout()
+        ? '2体目以降のキャラを選んでください。'
         : '3人選択 · 連れていくキャラを選んでください';
     }
 
@@ -838,7 +1154,7 @@
     // ローグライトでは主人公エリは1st固定枠にだけ表示し、選択候補一覧からは除外する。
     // そのため候補一覧は 02,03,04,05 / 06,07,08,09 ... の順で並ぶ。
     const chars = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : [])
-      .filter(c => !(_isRogueliteMode() && Number(c.id) === ROGUELITE_FIXED_FIRST_CHARA_ID))
+      .filter(c => !(_usesRoguelitePartyLayout() && Number(c.id) === ROGUELITE_FIXED_FIRST_CHARA_ID))
       .slice()
       .sort((a, b) => Number(a.id) - Number(b.id));
 
@@ -1100,6 +1416,282 @@
     return presets[moveType] || presets.silver;
   }
 
+
+  const PARTY_COMBO_EFFECT_LABELS = {
+    jittai: '実体化',
+    stun: 'スタン',
+    atk_down: 'ATK低下',
+    atk_up: 'ATK上昇',
+    critical_up: 'クリティカル率上昇',
+    sure_hit_self: '自身必中',
+    sure_hit_team: '味方必中',
+    heal: '回復',
+    poison: '毒',
+    damage_cut: 'ダメージ軽減',
+    pull_1: '引き寄せ1マス',
+    pull_2: '引き寄せ2マス',
+    push_1: '後退1マス',
+    push_2: '後退2マス',
+    push_3: '後退3マス'
+  };
+
+  function partyEscapeHTML(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getPartyComboRangeLabel(rangeId) {
+    if (
+      window.Combo32 &&
+      typeof window.Combo32.getRangeLabel === 'function'
+    ) {
+      return window.Combo32.getRangeLabel(rangeId);
+    }
+
+    const labels = {
+      combo_line_all: '直線上すべて',
+      combo_cross_all: '十字すべて',
+      combo_x_all: 'X字すべて',
+      combo_around8: '周囲8マス',
+      combo_front_4: '直線上すべて',
+      combo_cross_4: '十字すべて',
+      combo_diagonal_4: 'X字すべて'
+    };
+    return labels[rangeId] || rangeId || '—';
+  }
+
+  function getPartyComboSkillTypeLabel(type) {
+    const labels = {
+      attack: '攻撃',
+      debuff: '妨害',
+      buff: '補助',
+      heal: '回復',
+      ally_reposition: '位置移動'
+    };
+    return labels[type] || '特殊';
+  }
+
+  function getPartyComboPowerText(skill) {
+    const multiplier = Number(skill && skill.multiplier || 0);
+    if (multiplier <= 0) return 'なし';
+    return 'ATK×' + multiplier;
+  }
+
+  function getPartyComboEffectText(skill) {
+    const effects = skill && Array.isArray(skill.effects)
+      ? skill.effects
+      : [];
+
+    return effects.map(effect => {
+      const parts = [];
+      if (effect.type) {
+        parts.push(PARTY_COMBO_EFFECT_LABELS[effect.type] || effect.type);
+      }
+      if (effect.rate != null) {
+        const rate = Number(effect.rate);
+        if (effect.type === 'atk_up' || effect.type === 'atk_down') {
+          const percent = effect.type === 'atk_up'
+            ? Math.round((rate - 1) * 100)
+            : Math.round((1 - rate) * 100);
+          parts.push(Math.abs(percent) + '%');
+        } else if (effect.type === 'critical_up') {
+          parts.push(Math.round(rate * 100) + '%');
+        }
+      }
+      if (effect.duration != null) parts.push(effect.duration + 'T');
+      if (effect.hit != null && Number(effect.hit) < 100) {
+        parts.push('確率' + effect.hit + '%');
+      }
+      return parts.join(' / ');
+    }).filter(Boolean).join('、');
+  }
+
+  function getPartyComboPreviewSpec(rangeId) {
+    const id = {
+      combo_front_4: 'combo_line_all',
+      combo_cross_4: 'combo_cross_all',
+      combo_diagonal_4: 'combo_x_all'
+    }[rangeId] || rangeId;
+
+    if (id === 'combo_line_all') {
+      return {
+        rows: 8,
+        cols: 5,
+        owner: { row: 6, col: 2, side: 'ally' }
+      };
+    }
+
+    return {
+      rows: 5,
+      cols: 5,
+      owner: { row: 2, col: 2, side: 'ally' }
+    };
+  }
+
+  function getPartyComboCells(owner, rangeId) {
+    if (
+      window.Combo32 &&
+      typeof window.Combo32.getRangeCells === 'function'
+    ) {
+      return window.Combo32.getRangeCells(owner, rangeId) || [];
+    }
+
+    const cells = [];
+    const rows = owner.previewRows || 8;
+    const cols = owner.previewCols || 5;
+    const normalized = {
+      combo_front_4: 'combo_line_all',
+      combo_cross_4: 'combo_cross_all',
+      combo_diagonal_4: 'combo_x_all'
+    }[rangeId] || rangeId;
+
+    const add = (row, col) => {
+      if (
+        row >= 0 && row < rows &&
+        col >= 0 && col < cols &&
+        !(row === owner.row && col === owner.col)
+      ) {
+        cells.push({ row, col });
+      }
+    };
+
+    if (normalized === 'combo_line_all') {
+      for (let row = 0; row < rows; row++) add(row, owner.col);
+    } else if (normalized === 'combo_cross_all') {
+      for (let row = 0; row < rows; row++) add(row, owner.col);
+      for (let col = 0; col < cols; col++) add(owner.row, col);
+    } else if (normalized === 'combo_x_all') {
+      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr, dc]) => {
+        let row = owner.row + dr;
+        let col = owner.col + dc;
+        while (row >= 0 && row < rows && col >= 0 && col < cols) {
+          add(row, col);
+          row += dr;
+          col += dc;
+        }
+      });
+    } else {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr || dc) add(owner.row + dr, owner.col + dc);
+        }
+      }
+    }
+
+    return cells;
+  }
+
+  function buildPartyComboMiniBoard(rangeId, cellType) {
+    const spec = getPartyComboPreviewSpec(rangeId);
+    const owner = {
+      ...spec.owner,
+      previewRows: spec.rows,
+      previewCols: spec.cols
+    };
+
+    // Combo32は実盤面8×5を基準にするため、
+    // 5×5プレビューではローカル計算に寄せる。
+    let rawCells;
+    if (spec.rows === 8) {
+      rawCells = getPartyComboCells(owner, rangeId);
+    } else {
+      const savedCombo = window.Combo32;
+      try {
+        window.Combo32 = null;
+        rawCells = getPartyComboCells(owner, rangeId);
+      } finally {
+        window.Combo32 = savedCombo;
+      }
+    }
+
+    const cells = new Set(
+      (rawCells || []).map(cell => cell.row + '-' + cell.col)
+    );
+
+    let html = '<div class="ps-mini-combo-board rows-' + spec.rows + '">';
+    for (let row = 0; row < spec.rows; row++) {
+      for (let col = 0; col < spec.cols; col++) {
+        const cls = ['ps-mini-combo-cell'];
+        if (row === owner.row && col === owner.col) {
+          cls.push('self');
+        } else if (cells.has(row + '-' + col)) {
+          cls.push(cellType);
+        }
+        html += '<span class="' + cls.join(' ') + '"></span>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function buildPartyComboSection(chara) {
+    const combo = chara && chara.combo;
+    const skill = combo && combo.skill;
+
+    if (!skill) {
+      return `
+        <div class="ps-detail-combo-section">
+          <div class="ps-detail-combo-title">— COMBO —</div>
+          <div class="ps-detail-combo-none">コンボスキル情報なし</div>
+        </div>
+      `;
+    }
+
+    const effectText = getPartyComboEffectText(skill);
+    const resonanceText = (
+      Number(chara.id) === 1 &&
+      Number(chara.limitBreak || 0) >= 3
+    )
+      ? '<div class="ps-detail-combo-resonance">共鳴Lv.3適用中：反応範囲が「十字すべて」へ拡張されています。</div>'
+      : '';
+
+    return `
+      <div class="ps-detail-combo-section">
+        <div class="ps-detail-combo-title">— COMBO —</div>
+        <div class="ps-detail-combo-list">
+          <div class="ps-detail-combo-card">
+            <div class="ps-detail-combo-head">
+              <span class="ps-detail-combo-badge">COMBO</span>
+              <span class="ps-detail-combo-name">${partyEscapeHTML(skill.name || 'コンボスキル')}</span>
+            </div>
+
+            <div class="ps-detail-combo-condition">
+              反応範囲内の味方が攻撃スキルを使用すると、自動で発動
+            </div>
+
+            <div class="ps-detail-combo-meta">
+              <span>${partyEscapeHTML(getPartyComboSkillTypeLabel(skill.type))}</span>
+              <span>威力：${partyEscapeHTML(getPartyComboPowerText(skill))}</span>
+              <span>命中：${skill.hit == null ? 100 : skill.hit}%</span>
+            </div>
+
+            <div class="ps-detail-combo-ranges">
+              <div class="ps-detail-combo-range-item trigger">
+                <div class="ps-detail-combo-range-title">反応範囲</div>
+                <div class="ps-detail-combo-range-label">${partyEscapeHTML(getPartyComboRangeLabel(combo.range))}</div>
+                ${buildPartyComboMiniBoard(combo.range, 'trigger')}
+              </div>
+
+              <div class="ps-detail-combo-range-item attack">
+                <div class="ps-detail-combo-range-title">攻撃範囲</div>
+                <div class="ps-detail-combo-range-label">${partyEscapeHTML(getPartyComboRangeLabel(skill.range))}</div>
+                ${buildPartyComboMiniBoard(skill.range, 'attack')}
+              </div>
+            </div>
+
+            ${effectText ? '<div class="ps-detail-combo-effect">効果：' + partyEscapeHTML(effectText) + '</div>' : ''}
+            ${skill.desc ? '<div class="ps-detail-combo-desc">' + partyEscapeHTML(skill.desc) + '</div>' : ''}
+            ${resonanceText}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function buildPartySkillMiniBoard(sk) {
     const rawRange = sk && sk.range;
     if (!rawRange) return '';
@@ -1211,7 +1803,7 @@
     const RARITY_LABEL = { r: 'R', sr: 'SR', ur: 'UR' };
     const TYPE_LABEL = { attack:'攻撃', debuff:'妨害', buff:'補助', heal:'回復', move:'移動', special:'特殊' };
 
-    const skillsHTML = (chara.skills || []).map(sk => `
+    const buildSkillCardHTML = sk => `
       <div class="ps-detail-skill">
         <div class="ps-detail-skill-header">
           <div class="ps-detail-skill-name">${sk.name}</div>
@@ -1225,7 +1817,17 @@
           ${buildPartySkillMiniBoard(sk)}
         </div>
       </div>
-    `).join('');
+    `;
+
+    const normalSkillsHTML = (chara.skills || [])
+      .filter(sk => !sk.isUltimate && sk.id !== 'ult')
+      .map(buildSkillCardHTML)
+      .join('');
+
+    const ultimateSkillsHTML = (chara.skills || [])
+      .filter(sk => sk.isUltimate || sk.id === 'ult')
+      .map(buildSkillCardHTML)
+      .join('');
 
     document.getElementById('ps-chara-detail-box').innerHTML = `
       <div class="ps-detail-hero">
@@ -1247,8 +1849,19 @@
         </div>
       </div>
       ${buildPartyMoveMiniBoard(chara)}
-      <div class="ps-detail-skills-title">— SKILLS —</div>
-      <div class="ps-detail-skill-list">${skillsHTML}</div>
+
+      <div class="ps-detail-skills-title">— SKILL —</div>
+      <div class="ps-detail-skill-list">
+        ${normalSkillsHTML || '<div class="ps-detail-combo-none">スキル情報なし</div>'}
+      </div>
+
+      <div class="ps-detail-skills-title">— ULT —</div>
+      <div class="ps-detail-skill-list">
+        ${ultimateSkillsHTML || '<div class="ps-detail-combo-none">ULT情報なし</div>'}
+      </div>
+
+      ${buildPartyComboSection(chara)}
+
       <button class="ps-detail-close" onclick="closeCharaDetail()">閉じる</button>
     `;
 
@@ -1381,7 +1994,9 @@
     if (mergedOptions.battleMode === 'roguelite') {
       setTimeout(() => {
         if (window.RogueliteController && typeof window.RogueliteController.startRun === 'function') {
-          window.RogueliteController.startRun(selectedCharaIds);
+          window.RogueliteController.startRun(selectedCharaIds, {
+            runId: mergedOptions.rogueliteRunId || window.__ROGUELITE_PENDING_RUN_ID__ || 'default'
+          });
         } else {
           console.error('[party_select] RogueliteController が見つかりません。roguelite_controller.js を読み込んでいるか確認してください。');
         }

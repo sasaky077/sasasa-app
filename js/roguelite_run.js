@@ -84,6 +84,110 @@
       ],
     },
 
+    overseer: {
+      id: 'overseer',
+      name: '万象を知る白亜の座',
+      subName: 'レムナント：オーバーシア',
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: false,
+          label: 'ST1',
+          subLabel: 'オーバーシアのしもべ',
+          enemyIds: [
+            'rl_overseer_servant_straight',
+            'rl_overseer_servant_cross',
+          ],
+          enemyRandomStartPosition: true,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 10,
+        },
+        {
+          stage: 2,
+          isBoss: false,
+          label: 'ST2',
+          subLabel: 'オーバーシアのしもべ',
+          enemyIds: [
+            'rl_overseer_servant_straight',
+            'rl_overseer_servant_cross',
+            'rl_overseer_servant_skip',
+          ],
+          enemyRandomStartPosition: true,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 11,
+        },
+        {
+          stage: 3,
+          isBoss: true,
+          label: 'BOSS',
+          subLabel: 'レムナント：オーバーシア',
+          enemyIds: [
+            'enemy_overseer_roguelite',
+            'rl_overseer_servant_straight',
+            'rl_overseer_servant_cross',
+            'rl_overseer_servant_skip',
+          ],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 14,
+        },
+      ],
+    },
+
+    debug_overseer_boss: {
+      id: 'debug_overseer_boss',
+      name: 'オーバーシア戦（BOSS）',
+      subName: 'CHAPTER 00 / DEBUG',
+      debugOnly: true,
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: true,
+          label: 'BOSS',
+          subLabel: 'レムナント：オーバーシア',
+          enemyIds: [
+            'enemy_overseer_roguelite',
+            'rl_overseer_servant_straight',
+            'rl_overseer_servant_cross',
+            'rl_overseer_servant_skip',
+          ],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 14,
+        },
+      ],
+    },
+
+    debug_sakiel_boss: {
+      id: 'debug_sakiel_boss',
+      name: 'サキエル戦（BOSS）',
+      subName: 'CHAPTER 00 / DEBUG',
+      debugOnly: true,
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: true,
+          label: 'BOSS',
+          subLabel: '大天使 サキエル',
+          enemyIds: ['enemy_sakiel_roguelite'],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          enemySpawn: {
+            enemyId: 'rl_sakiel_spawn_glass',
+            interval: 2,
+            rows: [0, 1, 2, 3],
+            cols: [0, 1, 2, 3, 4],
+          },
+          turnLimit: 12,
+        },
+      ],
+    },
+
     sakiel: {
       id: 'sakiel',
       name: 'サキエル降臨',
@@ -160,6 +264,7 @@
       active:   true,
       runId:    runDef.id,
       runName:  runDef.name,
+      debugOnly: runDef.debugOnly === true,
       stageNo:  1,
       options:  [],   // 取得済みOP オブジェクト（passive）
       items:    [],   // 取得済みアイテム（最大2枠）
@@ -187,13 +292,19 @@
   }
 
   function isBossStage() {
-    return _state ? _state.stageNo === 4 : false;
+    const def = getStageDef();
+    return !!(def && def.isBoss);
   }
 
   function getStageDef() {
     if (!_state) return null;
     const runDef = getRunDef(_state.runId);
     return runDef.stageDefs[_state.stageNo - 1] || null;
+  }
+
+  function getStageCount() {
+    const runDef = getCurrentRunDef();
+    return Array.isArray(runDef && runDef.stageDefs) ? runDef.stageDefs.length : 0;
   }
 
   function getOptions() {
@@ -297,6 +408,7 @@
     const snap = JSON.parse(JSON.stringify({
       runId: _state.runId,
       runName: _state.runName,
+      debugOnly: _state.debugOnly === true,
       stageNo: _state.stageNo,
       options: _state.options.map(o => ({ id: o.id, name: o.name, icon: o.icon })),
       items: _state.items.map(i => ({ id: i.id, name: i.name, icon: i.icon })),
@@ -328,6 +440,10 @@
 
       // 保持アイテムを渡す（Battle32側でspliceしてもラン状態が勝手に戻らないよう複製）
       rogueliteItems: _state.items.map(item => ({ ...item })),
+
+      // ラン識別・現在ステージ
+      rogueliteRunId: _state.runId,
+      rogueliteStageNo: _state.stageNo,
 
       // ボスステージフラグ
       isBossStage: def.isBoss,
@@ -364,8 +480,10 @@
     getStageNo,
     isBossStage,
     getStageDef,
+    getStageCount,
     getRunId: () => _state ? _state.runId : null,
     getRunName: () => _state ? _state.runName : getCurrentRunDef().name,
+    isDebugRun: () => !!(_state && _state.debugOnly),
     getOptions,
     getItems,
     consumeItem,

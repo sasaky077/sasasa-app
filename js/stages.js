@@ -10,139 +10,32 @@
 const STAGES = [
 
   // ============================================================
-  // CHAPTER 00 — デバッグ用テストステージ
-  // 本番には影響しない。TEST_ENEMY_* は enemies.js 末尾で定義。
-  // 新しいテストケースを追加する場合はここに no を増やして追記。
+  // CHAPTER 00 — DEBUG / ローグライトBOSS単戦
   // ============================================================
-
-  // ── チュートリアルステージ（32マスバトル） ──
   {
-    id: 'stage_tutorial_32',
-    chapter: 0,
-    no: 0,
-    type: 'tutorial',
-    name: 'チュートリアル',
-    useBattle32: true,
-    enemyActionMode: 'limit',
-    enemyActionsPerTurn: 2,
-    enemies: [
-      {
-        id: 'mob_tutorial_1',
-        name: '直進型怪異',
-        hp: 600,
-        atk: 220,
-        moveType: 'enemy_move_straight',
-        attackRange: 'enemy_attack_front',
-      },
-      {
-        id: 'mob_tutorial_2',
-        name: '斜行型怪異',
-        hp: 550,
-        atk: 200,
-        moveType: 'enemy_move_diag',
-        attackRange: 'enemy_attack_cross',
-      },
-    ],
-    difficulty: 'tutorial',
-    reward: { exp: 0, coin: 0 },
-    unlocked: true,
-  },
-
-  {
-    id: 'stage_00_jittai',
+    id: 'stage_00_overseer_boss_test',
     chapter: 0,
     no: 1,
-    type: 'boss',
-    name: '常時実体化・固定位置',
-    enemyId: 'enemy_test_static_jittai',
-    enemyName: '固定怪異',
+    type: 'debug',
+    name: 'オーバーシア戦（BOSS）',
+    enemyName: 'レムナント：オーバーシア',
     difficulty: 'debug',
+    rogueliteRunId: 'debug_overseer_boss',
     reward: { exp: 0, coin: 0 },
     unlocked: true,
   },
-
   {
-    id: 'stage_00_pierce_test',
+    id: 'stage_00_sakiel_boss_test',
     chapter: 0,
     no: 2,
     type: 'debug',
-    name: '貫通・非貫通テスト',
-    enemyIds: [
-      'enemy_test_pierce_front',
-      'enemy_test_pierce_mid',
-      'enemy_test_pierce_back',
-    ],
-    enemyName: '貫通判定テスト',
+    name: 'サキエル戦（BOSS）',
+    enemyName: '大天使 サキエル',
     difficulty: 'debug',
+    rogueliteRunId: 'debug_sakiel_boss',
     reward: { exp: 0, coin: 0 },
     unlocked: true,
   },
-
-  {
-    id: 'stage_00_damage_20',
-    chapter: 0,
-    no: 3,
-    type: 'debug',
-    name: '被ダメ20%テスト',
-    enemyId: 'enemy_test_damage_20',
-    enemyName: '20%攻撃テスト',
-    difficulty: 'debug',
-    reward: { exp: 0, coin: 0 },
-    unlocked: true,
-  },
-
-  {
-    id: 'stage_00_damage_80',
-    chapter: 0,
-    no: 4,
-    type: 'debug',
-    name: '被ダメ80%テスト',
-    enemyId: 'enemy_test_damage_80',
-    enemyName: '80%攻撃テスト',
-    difficulty: 'debug',
-    reward: { exp: 0, coin: 0 },
-    unlocked: true,
-  },
-
-  {
-    id: 'stage_00_reactive',
-    chapter: 0,
-    no: 5,
-    type: 'debug',
-    name: '行動ごと反応攻撃テスト',
-    enemyId: 'enemy_test_reactive',
-    enemyName: '反応型テスト',
-    difficulty: 'debug',
-    reward: { exp: 0, coin: 0 },
-    unlocked: true,
-  },
-
-  {
-    id: 'stage_00_heal',
-    chapter: 0,
-    no: 6,
-    type: 'debug',
-    name: '回復行動テスト',
-    enemyId: 'enemy_test_healer',
-    enemyName: '回復テスト',
-    difficulty: 'debug',
-    reward: { exp: 0, coin: 0 },
-    unlocked: true,
-  },
-
-  // テストケース追加例：
-  // {
-  //   id: 'stage_00_highdef',
-  //   chapter: 0,
-  //   no: 2,
-  //   type: 'boss',
-  //   name: '高防御テスト',
-  //   enemyId: 'enemy_test_high_def',
-  //   enemyName: '高防御怪異',
-  //   difficulty: 'debug',
-  //   reward: { exp: 0, coin: 0 },
-  //   unlocked: true,
-  // },
 
   // ============================================================
   // CHAPTER 01 — 白糸の怪異
@@ -152,7 +45,7 @@ const STAGES = [
   chapter: 1,
   no: 1,
   type: 'boss',
-  name: '白糸の間',
+  name: '知恵',
   enemyIds: [
     'enemy_01',
     'enemy_02b',
@@ -187,7 +80,7 @@ const STAGES = [
     chapter: 2,
     no: 1,
     type: 'boss',
-    name: '荊棘の間',
+    name: '破壊',
     enemyId: 'enemy_02',
     enemyName: '??????',
     difficulty: 'boss',
@@ -203,12 +96,39 @@ const STAGES = [
     chapter: 3,
     no: 1,
     type: 'boss',
-    name: '堕天の間',
+    name: '忘却',
     enemyId: 'enemy_03',
     enemyName: '??????',
     difficulty: 'boss',
     reward: { exp: 500, coin: 200 },
     unlocked: true,
+  },
+
+
+  // ============================================================
+  // SPECIAL ROGUELITE — 万象を知る白亜の座
+  // 実際の連戦進行は roguelite_overseer_run.js が管理する。
+  // ============================================================
+  {
+    id: 'roguelite_overseer_01', chapter: 'roguelite_overseer', no: 1,
+    type: 'normal', name: 'オーバーシアのしもべ', useBattle32: true,
+    enemyIds: ['rl_overseer_servant_straight', 'rl_overseer_servant_cross'],
+    enemyName: 'オーバーシアのしもべ ×2', difficulty: 'roguelite',
+    turnLimit: 10, unlocked: true, reward: { exp: 0, coin: 0 },
+  },
+  {
+    id: 'roguelite_overseer_02', chapter: 'roguelite_overseer', no: 2,
+    type: 'normal', name: 'オーバーシアのしもべ', useBattle32: true,
+    enemyIds: ['rl_overseer_servant_straight', 'rl_overseer_servant_cross', 'rl_overseer_servant_skip'],
+    enemyName: 'オーバーシアのしもべ ×3', difficulty: 'roguelite',
+    turnLimit: 11, unlocked: true, reward: { exp: 0, coin: 0 },
+  },
+  {
+    id: 'roguelite_overseer_03', chapter: 'roguelite_overseer', no: 3,
+    type: 'boss', name: 'レムナント：オーバーシア', useBattle32: true,
+    enemyIds: ['enemy_overseer_roguelite', 'rl_overseer_servant_straight', 'rl_overseer_servant_cross', 'rl_overseer_servant_skip'],
+    enemyName: 'レムナント：オーバーシア', difficulty: 'boss',
+    turnLimit: 14, unlocked: true, reward: { exp: 0, coin: 0 },
   },
 
 ];

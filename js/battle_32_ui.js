@@ -305,81 +305,6 @@ function _clearActionModesKeepUnit(uid) {
   _itemTargetUid = null;
 }
 
-
-// ============================================================
-// 排他的メニュー制御
-// 各画面へ移る前に、直前の画面・モーダル・選択状態を必ず破棄する。
-// ============================================================
-function _closeAllBattle32ActionViews(options) {
-  const opt = options || {};
-
-  _selActionAllyUid = null;
-  _selMoveAllyUid = null;
-  _selSkillAllyUid = null;
-  _selSkillId = null;
-  _moveMode = false;
-
-  _summonMode = false;
-  if (!opt.keepSummonRoster) _summonRosterId = null;
-
-  _itemMode = false;
-  _itemSlotIndex = null;
-  _itemPhase = null;
-  _itemTargetUid = null;
-
-  _selectedEnemyUid = null;
-  _selectedEnemyGuideMode = null;
-
-  if (!opt.keepRosterSelection) _selectedRosterId = null;
-
-  _hideActionDetailPortal();
-
-  const skillBox = document.getElementById('b32-skill-detail-box');
-  if (skillBox) {
-    skillBox.style.display = 'none';
-    skillBox.classList.remove('show');
-  }
-
-  document.querySelectorAll('#battle32-root .b32-roster-info-panel').forEach(el => el.remove());
-  const rosterHitbox = document.getElementById('b32-roster-info-close-hitbox');
-  if (rosterHitbox) rosterHitbox.remove();
-
-  const enemyInfo = document.getElementById('b32-enemy-info-overlay');
-  if (enemyInfo) enemyInfo.remove();
-  const enemyQuick = document.getElementById('b32-enemy-quick-info');
-  if (enemyQuick) enemyQuick.remove();
-}
-
-
-// ============================================================
-// 行動成立後のUI完全クローズ
-// 攻撃・移動・召喚・アイテム使用の成功時に必ず呼び、
-// 旧モーダルや選択状態を残さずキャラパネルへ戻す。
-// ============================================================
-function _finishPlayerActionUI() {
-  _closeAllBattle32ActionViews();
-
-  // body直下へ退避した詳細レイヤーも念のため完全消去する。
-  const portal = document.getElementById('b32-action-detail-portal');
-  if (portal) {
-    portal.innerHTML = '';
-    portal.classList.remove('show');
-    portal.style.display = 'none';
-  }
-
-  const skillBox = document.getElementById('b32-skill-detail-box');
-  if (skillBox) {
-    skillBox.style.display = 'none';
-    skillBox.classList.remove('show');
-  }
-
-  // 一時的に付いた画面状態クラスも解除する。
-  const root = document.getElementById(ROOT_ID);
-  if (root) root.classList.remove('b32-skill-choice-open');
-
-  renderBattle32UI();
-}
-
 // ============================================================
 // アイテムパネル位置調整
 // ============================================================
@@ -664,6 +589,7 @@ function b32RangeLabel(range) {
     combo_line_all: '直線上すべて',
     combo_cross_all: '十字すべて',
     combo_x_all: 'X字すべて',
+    combo_star_all: '十字＋X字すべて',
     combo_around8: '周囲8マス'
   };
   return map[range] || range || '—';
@@ -729,7 +655,7 @@ function b32ComboSkillRangeCells(ally, bs) {
   if (
     window.Combo32 &&
     typeof window.Combo32.getRangeCells === 'function' &&
-    ['combo_line_all', 'combo_cross_all', 'combo_x_all', 'combo_around8'].includes(comboSkill.range)
+    ['combo_line_all', 'combo_cross_all', 'combo_x_all', 'combo_star_all', 'combo_around8'].includes(comboSkill.range)
   ) {
     keys = new Set(
       window.Combo32.getRangeCells(ally, comboSkill.range)
@@ -778,10 +704,12 @@ function b32ComboRangeLabel(rangeId) {
     combo_line_all: '直線上すべて',
     combo_cross_all: '十字すべて',
     combo_x_all: 'X字すべて',
+    combo_star_all: '十字＋X字すべて',
     combo_around8: '周囲8マス',
     combo_cross_4: '十字すべて',
     combo_front_4: '直線上すべて',
     combo_diagonal_4: 'X字すべて',
+    combo_star_all: '十字＋X字すべて',
   };
   return labels[rangeId] || rangeId || '—';
 }
@@ -4255,12 +4183,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  <div id="b32-skill-detail-desc"></div>
  <div id="b32-skill-detail-meta"></div>
 
- <div id="b32-skill-detail-actions" style="display:flex;gap:10px;justify-content:center;align-items:center;">
- <button type="button" id="b32-skill-cancel-btn" class="b32-skill-confirm-btn"
-   style="background:rgba(45,45,52,.92);border-color:rgba(255,255,255,.28);"
-   onclick="_b32CancelSkillDetail(event)">
- 戻る
- </button>
+ <div id="b32-skill-detail-actions">
  <button type="button" id="b32-skill-confirm-btn" class="b32-skill-confirm-btn">
  決定
  </button>
@@ -4427,205 +4350,6 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
     setTimeout(resolve, (duration || 1200) + 350);
   });
 };
-
- // ============================================================
- // コンボ発生・コンボ数演出
- // ============================================================
- function _injectComboRhythmStyle() {
-   if (document.getElementById('b32-combo-rhythm-style')) return;
-
-   const style = document.createElement('style');
-   style.id = 'b32-combo-rhythm-style';
-   style.textContent = `
-#b32-combo-ready-layer,
-#b32-combo-count-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 999998;
-  pointer-events: none;
-  overflow: hidden;
-}
-#b32-combo-ready-label {
-  position: fixed;
-  left: 50%;
-  top: 39%;
-  transform: translate(-50%, -50%) scale(.72);
-  white-space: nowrap;
-  color: #fff8d9;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(24px, 7vw, 42px);
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-shadow:
-    0 0 5px rgba(255,255,255,.95),
-    0 0 16px rgba(178,112,255,.95),
-    0 0 38px rgba(94,32,180,.82),
-    0 3px 8px rgba(0,0,0,.92);
-  opacity: 0;
-  animation: b32ComboReadyLabel 680ms cubic-bezier(.16,.9,.22,1) forwards;
-}
-#b32-combo-ready-ring {
-  position: fixed;
-  left: var(--cx);
-  top: var(--cy);
-  width: var(--cw);
-  height: var(--ch);
-  transform: translate(-50%, -50%) scale(.32);
-  border: 3px solid rgba(242,222,255,.98);
-  border-radius: 18%;
-  box-shadow:
-    0 0 10px rgba(255,255,255,.96),
-    0 0 25px rgba(173,103,255,.98),
-    0 0 54px rgba(92,34,180,.78),
-    inset 0 0 20px rgba(220,188,255,.52);
-  opacity: 0;
-  animation: b32ComboReadyRing 720ms ease-out forwards;
-}
-#b32-combo-ready-ring::before,
-#b32-combo-ready-ring::after {
-  content: '';
-  position: absolute;
-  inset: -12%;
-  border: 1px solid rgba(255,240,190,.78);
-  border-radius: 50%;
-  animation: b32ComboReadyOrbit 720ms ease-out forwards;
-}
-#b32-combo-ready-ring::after {
-  inset: -26%;
-  border-color: rgba(186,126,255,.54);
-  animation-delay: 50ms;
-}
-#b32-combo-ready-flash {
-  position: fixed;
-  left: var(--cx);
-  top: var(--cy);
-  width: calc(var(--cw) * 1.7);
-  height: calc(var(--ch) * 1.7);
-  transform: translate(-50%, -50%) scale(.15);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.96), rgba(211,167,255,.48) 28%, transparent 70%);
-  opacity: 0;
-  animation: b32ComboReadyFlash 620ms ease-out forwards;
-}
-#b32-combo-count-text {
-  position: fixed;
-  left: 50%;
-  top: 36%;
-  transform: translate(-50%, -50%) scale(.56) rotate(-3deg);
-  white-space: nowrap;
-  color: #fff4b9;
-  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-  font-size: clamp(34px, 11vw, 68px);
-  font-style: italic;
-  letter-spacing: .035em;
-  text-shadow:
-    0 2px 0 #6a3b16,
-    0 0 6px rgba(255,255,255,.98),
-    0 0 20px rgba(255,197,74,.96),
-    0 0 52px rgba(174,91,20,.72),
-    0 6px 12px rgba(0,0,0,.88);
-  opacity: 0;
-  animation: b32ComboCountPop 760ms cubic-bezier(.15,1.15,.26,1) forwards;
-}
-#b32-combo-count-text small {
-  display: inline-block;
-  margin-left: .12em;
-  font-size: .48em;
-  letter-spacing: .09em;
-}
-@keyframes b32ComboReadyLabel {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); filter: blur(5px); }
-  22% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); filter: blur(0); }
-  68% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -56%) scale(.94); }
-}
-@keyframes b32ComboReadyRing {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.32) rotate(-12deg); }
-  28% { opacity: 1; transform: translate(-50%, -50%) scale(1.13) rotate(3deg); }
-  70% { opacity: .9; transform: translate(-50%, -50%) scale(.98) rotate(0); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.34); }
-}
-@keyframes b32ComboReadyOrbit {
-  0% { opacity: 0; transform: scale(.5) rotate(0deg); }
-  30% { opacity: .9; }
-  100% { opacity: 0; transform: scale(1.48) rotate(55deg); }
-}
-@keyframes b32ComboReadyFlash {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.15); }
-  20% { opacity: .95; }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.45); }
-}
-@keyframes b32ComboCountPop {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.56) rotate(-3deg); filter: blur(3px); }
-  22% { opacity: 1; transform: translate(-50%, -50%) scale(1.18) rotate(1deg); filter: blur(0); }
-  48% { transform: translate(-50%, -50%) scale(.98) rotate(-1deg); }
-  72% { opacity: 1; transform: translate(-50%, -50%) scale(1.04) rotate(0); }
-  100% { opacity: 0; transform: translate(-50%, -58%) scale(.96); }
-}
-`;
-   document.head.appendChild(style);
- }
-
- function _getGridCellRect(row, col) {
-   const cell = document.querySelector(`.b32-cell[data-row="${row}"][data-col="${col}"]`);
-   return _validRect(cell);
- }
-
- window.showBattle32ComboReady = function (payload) {
-   return new Promise(resolve => {
-     _injectComboRhythmStyle();
-
-     const old = document.getElementById('b32-combo-ready-layer');
-     if (old) old.remove();
-
-     const ally = payload && payload.ally;
-     const rect = ally ? _getGridCellRect(ally.row, ally.col) : null;
-     const fallback = document.getElementById('b32-grid') || document.getElementById('battle32-root');
-     const fallbackRect = _validRect(fallback);
-
-     const cx = rect ? rect.left + rect.width / 2 : (fallbackRect ? fallbackRect.left + fallbackRect.width / 2 : window.innerWidth / 2);
-     const cy = rect ? rect.top + rect.height / 2 : (fallbackRect ? fallbackRect.top + fallbackRect.height / 2 : window.innerHeight * .48);
-     const cw = rect ? Math.max(34, rect.width * .94) : 58;
-     const ch = rect ? Math.max(34, rect.height * .94) : 58;
-
-     const layer = document.createElement('div');
-     layer.id = 'b32-combo-ready-layer';
-     layer.style.setProperty('--cx', `${cx}px`);
-     layer.style.setProperty('--cy', `${cy}px`);
-     layer.style.setProperty('--cw', `${cw}px`);
-     layer.style.setProperty('--ch', `${ch}px`);
-     layer.innerHTML = `
-       <div id="b32-combo-ready-label">COMBO発生！</div>
-       <div id="b32-combo-ready-flash"></div>
-       <div id="b32-combo-ready-ring"></div>
-     `;
-     document.body.appendChild(layer);
-
-     setTimeout(() => {
-       if (layer.parentNode) layer.parentNode.removeChild(layer);
-       resolve();
-     }, 760);
-   });
- };
-
- window.showBattle32ComboCount = function (count) {
-   return new Promise(resolve => {
-     _injectComboRhythmStyle();
-
-     const old = document.getElementById('b32-combo-count-layer');
-     if (old) old.remove();
-
-     const layer = document.createElement('div');
-     layer.id = 'b32-combo-count-layer';
-     layer.innerHTML = `<div id="b32-combo-count-text">${Math.max(1, Number(count || 1))}<small>COMBO!</small></div>`;
-     document.body.appendChild(layer);
-
-     setTimeout(() => {
-       if (layer.parentNode) layer.parentNode.removeChild(layer);
-       resolve();
-     }, 820);
-   });
- };
 
  // ============================================================
  // ダメージ・回復 演出
@@ -4840,30 +4564,6 @@ let _b32AttackCinematicLastAt = 0;
 // アップ演出上は1つの「複数対象攻撃」として束ねる。
 let _b32PendingAttackCinematic = null;
 let _b32PendingAttackCinematicTimer = null;
-
-// コンボ演出用：直前の攻撃アップ演出が完全に終わるまで待つ。
-// damageイベントは短時間バッファ後にシネマティックを開始するため、
-// busyだけでなくpending/timerも確認する。
-window.waitBattle32AttackCinematicIdle = function (timeoutMs) {
-  const timeout = Math.max(300, Number(timeoutMs || 4200));
-  const startedAt = Date.now();
-
-  return new Promise(resolve => {
-    const poll = () => {
-      const pending = !!_b32PendingAttackCinematic || !!_b32PendingAttackCinematicTimer;
-      if (!_b32AttackCinematicBusy && !pending) {
-        setTimeout(resolve, 90);
-        return;
-      }
-      if (Date.now() - startedAt >= timeout) {
-        resolve();
-        return;
-      }
-      setTimeout(poll, 40);
-    };
-    poll();
-  });
-};
 
 function _injectAttackCinematicStyle() {
  if (document.getElementById('b32-attack-cinematic-style')) return;
@@ -6166,7 +5866,8 @@ function _onHealEvent(data) {
  };
  window._b32CancelSel = function () {
  if (_b32InputLocked) return;
- _finishPlayerActionUI();
+ _resetSkillState();
+ renderBattle32UI();
  };
 
  // 戻るボタン：選択解除のみ。行動権は消費しない。
@@ -6944,7 +6645,11 @@ function renderBattleMenu(bs) {
  menu = document.createElement('div');
  menu.id = 'b32-battle-menu';
  menu.innerHTML = `
- <button id="b32-battle-menu-btn" type="button">MENU</button>
+ <button id="b32-battle-menu-btn" type="button" aria-label="バトルメニュー" title="メニュー">
+ <span class="b32-menu-line" aria-hidden="true"></span>
+ <span class="b32-menu-line" aria-hidden="true"></span>
+ <span class="b32-menu-line" aria-hidden="true"></span>
+ </button>
  <div id="b32-battle-menu-panel">
  <button class="b32-battle-menu-item" type="button" data-action="restart">
  やり直す
@@ -7444,7 +7149,11 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
 
  window._b32OnActionBackTap = function () {
  if (_b32InputLocked) return;
- _closeAllBattle32ActionViews();
+ _selActionAllyUid = null;
+ _selMoveAllyUid = null;
+ _selSkillAllyUid = null;
+ _selSkillId = null;
+ _moveMode = false;
  renderBattle32UI();
  };
 
@@ -7466,9 +7175,17 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
   const canAct = _canActByLink(bs, 1);
   if (!canAct || !_unitCanMoveNow(bs, uid)) return;
 
-  _closeAllBattle32ActionViews();
   _selMoveAllyUid = uid;
+  _selSkillAllyUid = null;
+  _selSkillId = null;
+  _selActionAllyUid = null;
   _moveMode = true;
+
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
 
   renderBattle32UI();
 };
@@ -7478,16 +7195,6 @@ window._b32OnActionSkillTap = function () {
 
   const bs = _bs();
   if (!bs || bs.phase !== 'skill' || bs.result) return;
-
-  // 通常スキル一覧を開いている最中に、下部の「戻る」を押した場合。
-  // 行動権・LINK・神気は一切消費せず、同じキャラの行動選択状態へ戻す。
-  if (_selSkillAllyUid && !_selSkillId && !_moveMode && !_summonMode && !_itemMode) {
-    const returnUid = _selSkillAllyUid;
-    _closeAllBattle32ActionViews();
-    _selActionAllyUid = returnUid;
-    renderBattle32UI();
-    return;
-  }
 
   const uid = _getActiveActionAllyUid();
   if (!uid) return;
@@ -7503,9 +7210,17 @@ window._b32OnActionSkillTap = function () {
   // 実際の発動可否はスキル詳細の決定ボタンと _b32ConfirmSkill 側で制御する。
   if (!normalSkills.length) return;
 
-  _closeAllBattle32ActionViews();
   _selSkillAllyUid = uid;
   _selSkillId = null;
+  _selMoveAllyUid = null;
+  _selActionAllyUid = null;
+  _moveMode = false;
+
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
 
   renderBattle32UI();
 };
@@ -7531,9 +7246,17 @@ window._b32OnActionUltTap = function () {
   // 行動済み・LINK不足・神気不足でも、ULT情報の確認だけは許可する。
   // 発動可否はスキル詳細の決定ボタンと _b32ConfirmSkill 側で制御する。
 
-  _closeAllBattle32ActionViews();
   _selSkillAllyUid = uid;
   _selSkillId = ultSkill.id;
+  _selMoveAllyUid = null;
+  _selActionAllyUid = null;
+  _moveMode = false;
+
+  _summonMode = false;
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
 
   renderBattle32UI();
 };
@@ -7695,20 +7418,7 @@ window._b32CancelSkillDetail = function (event) {
 
  if (_b32InputLocked) return;
 
- const bs = _bs();
- const ally = bs && (bs.allies || []).find(u => u._uid === _selSkillAllyUid);
- const selectedSkill = ally && (ally.skills || []).find(s => s.id === _selSkillId);
- const wasUltimateDetail = !!(selectedSkill && selectedSkill.isUltimate);
-
- // ULT確認をキャンセルした場合は、直前のスキル一覧へ戻さない。
- // すべての操作画面を閉じ、通常のキャラパネル表示へ戻す。
- if (wasUltimateDetail) {
-   _closeAllBattle32ActionViews();
-   renderBattle32UI();
-   return;
- }
-
- // 通常スキル詳細のキャンセルは、通常スキル一覧へ戻す。
+ // 詳細画面を閉じて、スキル選択画面へ戻す
  _selSkillId = null;
 
  const box = document.getElementById('b32-skill-detail-box');
@@ -7721,24 +7431,6 @@ window._b32CancelSkillDetail = function (event) {
 
  renderBattle32UI();
 };
-
-// スキル詳細を誤って開いた場合、Escapeキーでも閉じられる。
-// 演出中は既存の入力ロックを優先し、キャンセル処理を走らせない。
-if (!window.__b32SkillDetailEscapeBound) {
-  window.__b32SkillDetailEscapeBound = true;
-  document.addEventListener('keydown', function (event) {
-    if (event.key !== 'Escape' || _b32InputLocked) return;
-
-    const legacyBox = document.getElementById('b32-skill-detail-box');
-    const actionPortal = document.getElementById('b32-action-detail-portal');
-    const legacyOpen = legacyBox && legacyBox.style.display !== 'none' && legacyBox.classList.contains('show');
-    const portalOpen = actionPortal && actionPortal.style.display !== 'none' && actionPortal.classList.contains('show');
-
-    if (legacyOpen || portalOpen || _selSkillId) {
-      window._b32CancelSkillDetail(event);
-    }
-  });
-}
 
  function _b32ShowSkillDetail(allyUid, skillId) {
  const bs = _bs();
@@ -7855,7 +7547,8 @@ if (!ok) {
   return;
 }
 
-_finishPlayerActionUI();
+_resetSkillState();
+renderBattle32UI();
 
 // 勝敗確定していたら、ターン終了演出に進まない
 const bsAfterSkill = _bs();
@@ -7864,8 +7557,12 @@ if (bsAfterSkill && bsAfterSkill.result) {
   return;
 }
 
-// キャラ単位の「ターン終了」表示は行わず、
-// 攻撃・コンボ完了後はそのまま操作可能状態へ戻す。
+// 通常攻撃とコンボチェーンはBattle32側で完全同期済み。
+// 最後のポップアップを見せる短い余韻だけ置く。
+await _wait(skillNow?.isUltimate ? 520 : 380);
+
+await window.showBattle32CenterTextAsync('ターン終了', '', 700);
+
 await _afterCharTurnFlow();
  };
 
@@ -8458,22 +8155,9 @@ if (listEl) {
    btn.classList.toggle('is-active', !!active);
  }
 
- const isNormalSkillChoiceOpen = !!(_selSkillAllyUid && !_selSkillId && !_moveMode && !_summonMode && !_itemMode);
-
- // 通常スキル一覧を開いている間だけ、同じ下部ボタンを「戻る」に切り替える。
- // ボタン位置が変わらないため、誤タップ後も直感的に元の行動選択へ戻れる。
- if (skillBtn) {
-   const iconEl = skillBtn.querySelector('.b32-bottom-action-icon');
-   const labelEl = skillBtn.querySelector('.b32-bottom-action-label');
-   if (iconEl) iconEl.textContent = isNormalSkillChoiceOpen ? '↩' : '✦';
-   if (labelEl) labelEl.textContent = isNormalSkillChoiceOpen ? '戻る' : 'スキル';
-   skillBtn.setAttribute('aria-label', isNormalSkillChoiceOpen ? 'スキル選択をやめて戻る' : 'スキルを選択');
- }
-
  setBtn(summonBtn, canSummon, _summonMode);
  setBtn(moveBtn,   canMove,   _moveMode);
- // 戻る状態では、通常スキルの発動可否に関係なく必ず押せる。
- setBtn(skillBtn,  isNormalSkillChoiceOpen ? inSkillPhase : canSkill, isNormalSkillChoiceOpen);
+ setBtn(skillBtn,  canSkill,  !!(_selSkillAllyUid && !_selSkillId));
  setBtn(ultBtn,    canUlt,    !!(_selSkillAllyUid && _selSkillId));
  setBtn(endBtn,    inSkillPhase, false);
  }
@@ -9033,8 +8717,17 @@ window._b32OnBottomSummonTap = function () {
     return;
   }
 
-  // 直前の画面を完全に閉じてから召喚位置選択へ移る。
-  _closeAllBattle32ActionViews({ keepSummonRoster: true });
+  // 他モード解除
+  _selActionAllyUid = null;
+  _selMoveAllyUid = null;
+  _selSkillAllyUid = null;
+  _selSkillId = null;
+  _moveMode = false;
+
+  _itemMode = false;
+  _itemSlotIndex = null;
+  _itemPhase = null;
+  _itemTargetUid = null;
 
   // 召喚ボタンを押した時点でキャラ詳細は閉じる。
   // ここで _selectedRosterId を残すと、召喚完了後の再描画で詳細が再表示される。
@@ -9071,7 +8764,14 @@ window._b32OnRosterTap = function(rosterId) {
       return;
     }
 
-    _closeAllBattle32ActionViews();
+    _selectedRosterId = rosterId;
+    _summonRosterId = null;
+    _summonMode = false;
+
+    _itemMode = false;
+    _itemSlotIndex = null;
+    _itemPhase = null;
+    _itemTargetUid = null;
 
     if (typeof window._b32OnSkillAllyTap === 'function') {
       window._b32OnSkillAllyTap(r.deployedUid);
@@ -9196,8 +8896,14 @@ if (!window.__b32RosterCloseCaptureBound) {
 
    const ok = window.Battle32.summonAlly(_summonRosterId, row, col);
    if (ok) {
-     _finishPlayerActionUI();
-     return;
+     _summonMode = false;
+     _summonRosterId = null;
+
+     // 召喚完了後は盤面確認を優先する。
+     // 召喚前に選んでいた待機キャラの詳細を再表示しない。
+     _selectedRosterId = null;
+     const hitbox = document.getElementById('b32-roster-info-close-hitbox');
+     if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
    }
    renderBattle32UI();
  };
@@ -9220,18 +8926,18 @@ if (!window.__b32RosterCloseCaptureBound) {
      return;
    }
 
-   _closeAllBattle32ActionViews();
+   _resetSkillState();
    _itemMode = true;
    _itemSlotIndex = slotIndex;
    _itemTargetUid = null;
 
    if (item.target === 'instant' || item.target === 'ally_all' || item.type === 'link_recover' || item.type === 'enemy_hp_cut_all') {
      const ok = window.Battle32.useItem(_itemSlotIndex, {});
-     if (ok) {
-       _finishPlayerActionUI();
-     } else {
-       renderBattle32UI();
-     }
+     _itemMode = false;
+     _itemSlotIndex = null;
+     _itemPhase = null;
+     _itemTargetUid = null;
+     renderBattle32UI();
      return;
    }
 
@@ -9251,8 +8957,10 @@ if (!window.__b32RosterCloseCaptureBound) {
    if (item.type === 'heal' || item.type === 'shinki_max' || item.type === 'guard') {
      const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
      if (ok) {
-       _finishPlayerActionUI();
-       return;
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
      }
      renderBattle32UI();
    } else if (item.type === 'move_ally') {
@@ -9268,8 +8976,10 @@ if (!window.__b32RosterCloseCaptureBound) {
      }
      const ok = window.Battle32.useItem(_itemSlotIndex, { targetAUid: _itemTargetUid, targetBUid: uid });
      if (ok) {
-       _finishPlayerActionUI();
-       return;
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
      }
      renderBattle32UI();
    }
@@ -9287,8 +8997,10 @@ if (!window.__b32RosterCloseCaptureBound) {
    if (item.type === 'stun_enemy') {
      const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
      if (ok) {
-       _finishPlayerActionUI();
-       return;
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
      }
      renderBattle32UI();
    } else if (item.type === 'swap_enemy') {
@@ -9300,8 +9012,10 @@ if (!window.__b32RosterCloseCaptureBound) {
      }
      const ok = window.Battle32.useItem(_itemSlotIndex, { targetAUid: _itemTargetUid, targetBUid: uid });
      if (ok) {
-       _finishPlayerActionUI();
-       return;
+       _itemMode = false;
+       _itemSlotIndex = null;
+       _itemPhase = null;
+       _itemTargetUid = null;
      }
      renderBattle32UI();
    }
@@ -9313,8 +9027,10 @@ if (!window.__b32RosterCloseCaptureBound) {
    if (!_itemMode || _itemSlotIndex == null || _itemPhase !== 'cell' || !_itemTargetUid) return;
    const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: _itemTargetUid, toRow: row, toCol: col });
    if (ok) {
-     _finishPlayerActionUI();
-     return;
+     _itemMode = false;
+     _itemSlotIndex = null;
+     _itemPhase = null;
+     _itemTargetUid = null;
    }
    renderBattle32UI();
  };
