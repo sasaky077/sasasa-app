@@ -88,6 +88,8 @@
       id: 'overseer',
       name: '万象を知る白亜の座',
       subName: 'レムナント：オーバーシア',
+      zakoBattleStartImg: 'images/remnant_01_zako_battle_start.webp',
+      bossBattleStartImg: 'images/remnant_01_battle_start.webp',
       stageDefs: [
         {
           stage: 1,
@@ -142,6 +144,7 @@
       name: 'オーバーシア戦（BOSS）',
       subName: 'CHAPTER 00 / DEBUG',
       debugOnly: true,
+      bossBattleStartImg: 'images/remnant_01_battle_start.webp',
       stageDefs: [
         {
           stage: 1,
@@ -167,6 +170,7 @@
       name: 'サキエル戦（BOSS）',
       subName: 'CHAPTER 00 / DEBUG',
       debugOnly: true,
+      bossBattleStartImg: 'images/remnant_04_battle_start.webp',
       stageDefs: [
         {
           stage: 1,
@@ -192,6 +196,8 @@
       id: 'sakiel',
       name: 'サキエル降臨',
       subName: '白翼の断罪者',
+      zakoBattleStartImg: 'images/remnant_04_zako_battle_start.webp',
+      bossBattleStartImg: 'images/remnant_04_battle_start.webp',
       stageDefs: [
         {
           stage: 1,
@@ -447,6 +453,12 @@
 
       // ボスステージフラグ
       isBossStage: def.isBoss,
+
+      // バトル開始前の専用画像。ステージ個別指定を最優先し、
+      // 未指定時はラン定義の雑魚戦/BOSS戦画像を使う。
+      stageIntroImage: def.battleStartImg
+        || (def.isBoss ? getCurrentRunDef().bossBattleStartImg : getCurrentRunDef().zakoBattleStartImg)
+        || null,
 
       // ターン制限・行動数
       turnLimit:         def.turnLimit          || 12,

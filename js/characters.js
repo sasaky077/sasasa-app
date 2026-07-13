@@ -538,7 +538,7 @@ skills: [
     upImg: 'images/chara_10_up.webp', 
     battleImg: 'images/chara_10_battle.webp',
     battleBackImg: 'images/chara_10_battle_back.webp',
-    panelImg: 'images/chara_04_panel.webp',
+    panelImg: 'images/chara_10_panel.webp',
     favScale: 1.00, favOffsetY: 20,
     uiScale: {panel: 1.0,battleBack: 1.5},
     combo: {

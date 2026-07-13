@@ -1606,6 +1606,8 @@ function _hideHud() {
       return found || _fallbackIntroEnemyName(id || (enemy && enemy.id));
     }
 
+    const stageIntroImage = String(config.stageIntroImage || '').trim();
+
     function _cloneIntroEnemy(enemy, id) {
       const raw = enemy ? JSON.parse(JSON.stringify(enemy)) : { id };
       raw.id = raw.id || id;
@@ -1621,8 +1623,8 @@ function _hideHud() {
 
       // ステージ入り画像は upImg を最優先。enemy_intro が img しか見ない場合もあるため、
       // intro 用オブジェクトでは img に upImg を寄せる。
-      raw.stageImg = raw.stageImg || raw.upImg || raw.img || 'images/enemy_test.webp';
-      raw.introImg = raw.introImg || raw.stageImg;
+      raw.stageImg = stageIntroImage || raw.stageImg || raw.upImg || raw.img || 'images/enemy_test.webp';
+      raw.introImg = raw.stageImg;
       raw.img = raw.stageImg;
       raw.upImg = raw.upImg || raw.stageImg;
 

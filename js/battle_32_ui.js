@@ -4351,6 +4351,137 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
   });
 };
 
+
+// ============================================================
+// COMBO専用中央演出
+// 通常中央テキストとはDOM・タイマーを分離し、TURN/PHASE表示との競合を防ぐ。
+// ============================================================
+let _comboTextTimer = null;
+let _comboTextTimer2 = null;
+let _comboTextRaf = null;
+let _comboTextSeq = 0;
+
+function _ensureBattle32ComboTextStyle() {
+  if (document.getElementById('b32-combo-text-style')) return;
+
+  const style = document.createElement('style');
+  style.id = 'b32-combo-text-style';
+  style.textContent = `
+    html body #b32-combo-text {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 5100000 !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none !important;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate3d(0, 10px, 0) scale(.92);
+      transition:
+        opacity 180ms ease,
+        transform 260ms cubic-bezier(.16, 1, .3, 1),
+        visibility 0s linear 280ms;
+      isolation: isolate;
+    }
+    html body #b32-combo-text.b32combo-visible {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translate3d(0, 0, 0) scale(1) !important;
+      transition-delay: 0s;
+    }
+    html body #b32-combo-text::before {
+      content: '';
+      position: absolute;
+      inset: 24% 0;
+      background: radial-gradient(ellipse at center,
+        rgba(245, 218, 126, .22) 0%,
+        rgba(35, 24, 8, .56) 38%,
+        transparent 76%);
+      pointer-events: none;
+    }
+    html body #b32-combo-text .b32combo-main,
+    html body #b32-combo-text .b32combo-sub {
+      position: relative;
+      z-index: 1;
+      white-space: nowrap;
+    }
+    html body #b32-combo-text .b32combo-main {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(32px, 9vw, 58px);
+      font-weight: 800;
+      letter-spacing: 7px;
+      color: #fff1a8;
+      text-shadow:
+        0 0 7px rgba(255,255,255,.9),
+        0 0 20px rgba(255,214,80,.95),
+        0 0 52px rgba(255,145,20,.72),
+        0 3px 5px rgba(0,0,0,1);
+    }
+    html body #b32-combo-text .b32combo-sub {
+      font-family: 'Noto Serif JP', serif;
+      font-size: clamp(12px, 3.4vw, 18px);
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: rgba(255,248,220,.94);
+      text-shadow: 0 0 12px rgba(255,190,70,.75), 0 2px 4px rgba(0,0,0,1);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+window.showBattle32ComboTextAsync = function (main, sub, duration) {
+  const showDuration = Number(duration || 620);
+  const seq = ++_comboTextSeq;
+
+  if (_comboTextTimer) clearTimeout(_comboTextTimer);
+  if (_comboTextTimer2) clearTimeout(_comboTextTimer2);
+  if (_comboTextRaf) cancelAnimationFrame(_comboTextRaf);
+  _comboTextTimer = null;
+  _comboTextTimer2 = null;
+  _comboTextRaf = null;
+
+  _ensureBattle32ComboTextStyle();
+
+  let el = document.getElementById('b32-combo-text');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'b32-combo-text';
+    document.body.appendChild(el);
+  }
+
+  el.classList.remove('b32combo-visible');
+  el.innerHTML = `
+    <div class="b32combo-main">${main}</div>
+    ${sub ? `<div class="b32combo-sub">${sub}</div>` : ''}
+  `;
+
+  // 2フレームに分け、iOS Safariでも初期状態から確実に遷移させる。
+  return new Promise(resolve => {
+    _comboTextRaf = requestAnimationFrame(() => {
+      _comboTextRaf = requestAnimationFrame(() => {
+        if (seq !== _comboTextSeq) return resolve();
+        el.classList.add('b32combo-visible');
+        _comboTextRaf = null;
+
+        _comboTextTimer = setTimeout(() => {
+          if (seq !== _comboTextSeq) return resolve();
+          el.classList.remove('b32combo-visible');
+          _comboTextTimer = null;
+
+          _comboTextTimer2 = setTimeout(() => {
+            if (seq === _comboTextSeq) el.innerHTML = '';
+            _comboTextTimer2 = null;
+            resolve();
+          }, 300);
+        }, showDuration);
+      });
+    });
+  });
+};
+
  // ============================================================
  // ダメージ・回復 演出
  // ============================================================
@@ -4564,6 +4695,30 @@ let _b32AttackCinematicLastAt = 0;
 // アップ演出上は1つの「複数対象攻撃」として束ねる。
 let _b32PendingAttackCinematic = null;
 let _b32PendingAttackCinematicTimer = null;
+
+// コンボ連鎖用：damageイベントから起動する攻撃アップ演出が
+// 完全に終了するまで待つ。これにより次のCOMBO表示・攻撃演出と重ならない。
+window.waitForBattle32AttackCinematicIdle = function (timeoutMs) {
+  const timeout = Math.max(500, Number(timeoutMs || 6000));
+  const startedAt = Date.now();
+
+  return new Promise(resolve => {
+    const poll = () => {
+      const pending = !!_b32PendingAttackCinematic || !!_b32PendingAttackCinematicTimer;
+      const overlay = !!document.getElementById('b32-attack-cinematic');
+      const busy = !!_b32AttackCinematicBusy || pending || overlay;
+
+      if (!busy || Date.now() - startedAt >= timeout) {
+        resolve();
+        return;
+      }
+      setTimeout(poll, 40);
+    };
+
+    // damageイベントの45ms集約タイマーが登録される猶予を確保する。
+    setTimeout(poll, 60);
+  });
+};
 
 function _injectAttackCinematicStyle() {
  if (document.getElementById('b32-attack-cinematic-style')) return;
@@ -6738,6 +6893,7 @@ function _b32CleanupBattleAndRogueliteOverlays(restoreCommonUi) {
     'b32-enemy-quick-info',
     'b32-battle-menu',
     'b32-center-text',
+    'b32-combo-text',
     'b32-turn-danger-frame',
     'b32-result-overlay',
     'rl-victory-wait-layer',
@@ -9213,6 +9369,7 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
   'b32-enemy-quick-info',
   'b32-battle-menu',
   'b32-center-text',
+  'b32-combo-text',
   'b32-turn-danger-frame',
   'b32-result-overlay',
   'rl-victory-wait-layer',

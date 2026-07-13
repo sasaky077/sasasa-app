@@ -2992,10 +2992,14 @@ return true;
   // コンボスキル実行（LINK・神気・行動回数を消費しない）
   // ============================================================
   function _getComboRangeUnits32(owner, rangeId, units) {
+    const isComboRange =
+      typeof rangeId === 'string' &&
+      rangeId.startsWith('combo_');
+
     if (
+      isComboRange &&
       window.Combo32 &&
-      typeof window.Combo32.getRangeCells === 'function' &&
-      ['combo_line_all', 'combo_cross_all', 'combo_x_all', 'combo_around8'].includes(rangeId)
+      typeof window.Combo32.getRangeCells === 'function'
     ) {
       const keys = new Set(
         window.Combo32.getRangeCells(owner, rangeId)
@@ -3022,13 +3026,13 @@ return true;
     }
 
     const enemyTargets = rangeKey =>
-      BR.getUnitsFromRange32(ally, rangeKey, _bs.enemies)
+      _getComboRangeUnits32(ally, rangeKey, _bs.enemies)
         .filter(unit => unit && unit.hp > 0);
 
     const allyTargets = rangeKey =>
       rangeKey === 'self'
         ? [ally]
-        : BR.getUnitsFromRange32(ally, rangeKey, _bs.allies)
+        : _getComboRangeUnits32(ally, rangeKey, _bs.allies)
             .filter(unit => unit && unit.hp > 0);
 
     const stype = comboSkill.type || 'attack';
@@ -3048,12 +3052,22 @@ return true;
     try {
       const generation = Number(context && context.generation || 1);
 
-      // COMBO専用演出。完全に消えるまで待ってからダメージ処理へ。
-      await _centerTextWait(
-        `COMBO ${generation}`,
-        `${ally.name}「${comboSkill.name}」`,
-        620
-      );
+      // COMBO専用演出。
+      // 通常の中央テキストは単一DOM・単一タイマーを共有しており、
+      // 別演出の表示命令で上書きされるとコンボ表示だけ消えるため、専用レイヤーを優先する。
+      if (typeof window.showBattle32ComboTextAsync === 'function') {
+        await window.showBattle32ComboTextAsync(
+          `${generation}COMBO!`,
+          `${ally.name}「${comboSkill.name}」`,
+          620
+        );
+      } else {
+        await _centerTextWait(
+          `${generation}COMBO!`,
+          `${ally.name}「${comboSkill.name}」`,
+          620
+        );
+      }
 
       _log(`COMBO：${ally.name} が「${comboSkill.name}」を発動！`);
 

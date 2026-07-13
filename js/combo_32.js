@@ -240,6 +240,12 @@
     try {
       const panelOrder = getPanelOrderMap(bs);
 
+      // 起点キャラAの攻撃アップ演出が完全に終わってから、
+      // 1COMBO目の表示へ進む。
+      if (typeof window.waitForBattle32AttackCinematicIdle === 'function') {
+        await window.waitForBattle32AttackCinematicIdle();
+      }
+
       // 第1世代: 起点キャラAに反応する全キャラ
       let currentGeneration = collectResponders(
         bs,
@@ -280,6 +286,12 @@
           );
 
           if (!result || result.executed === false) continue;
+
+          // responderの攻撃アップ演出・ダメージ表示が完全に終わるまで待つ。
+          // 終了後にだけ次のCOMBO表示へ進める。
+          if (typeof window.waitForBattle32AttackCinematicIdle === 'function') {
+            await window.waitForBattle32AttackCinematicIdle();
+          }
 
           ctx.log.push(responder._uid);
 
