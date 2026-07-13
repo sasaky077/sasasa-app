@@ -1215,7 +1215,8 @@ ENEMIES.push({
   hp: 3600, hpMax: 3600,
   atk: 470,
   moveType: 'none',
-  attackRange: 'manhattan_4',
+  // 固定攻撃範囲は使用しない。次回行動を先行抽選してUIへ予告する。
+  attackRange: null,
   randomStartPosition: false,
   fixedPosition: true,
   eriPriority: true,

@@ -234,6 +234,7 @@
       queued: new Set(),
       log: [],
       generation: 0,
+      comboCount: 0,
       options: options || {},
     };
 
@@ -271,6 +272,10 @@
           ctx.queued.delete(responder._uid);
           ctx.fired.add(responder._uid);
 
+          // 表示番号は世代番号ではなく、実際に発動したコンボの連番にする。
+          // Aを起点にB・Cが同時反応した場合も、B=1COMBO / C=2COMBO の順で表示する。
+          const comboIndex = ctx.comboCount + 1;
+
           // 演出・ダメージ・追加効果・撃破判定まで完全にawait
           const result = await B.executeComboSkill(
             responder._uid,
@@ -278,14 +283,17 @@
             {
               actionId: ctx.id,
               rootUid: ctx.rootUid,
-              generation: ctx.generation + 1,
-              triggerUids: ctx.generation === 0
+              generation: comboIndex,
+              comboIndex,
+              triggerUids: ctx.comboCount === 0
                 ? [root._uid]
                 : [],
             }
           );
 
           if (!result || result.executed === false) continue;
+
+          ctx.comboCount = comboIndex;
 
           // responderの攻撃アップ演出・ダメージ表示が完全に終わるまで待つ。
           // 終了後にだけ次のCOMBO表示へ進める。

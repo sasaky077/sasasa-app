@@ -1285,6 +1285,10 @@ const enemies = enemyDefs.map(def => {
     //   _bs 構築直後かつ emit より前に呼ぶ）
     _applyRogueliteOnStart();
 
+    // サキエルはバトル開始時点で最初の行動を先行決定する。
+    // これによりTURN 1の味方フェーズから攻撃予告を確認できる。
+    _initializeSakielNextActions();
+
     _emit('start', { bs: _snapshot() });
     _emit('phaseChange', { phase: 'skill', bs: _snapshot() });
     // バトル開始時の演出は _startAllyTurnFlow() で管理
@@ -3232,8 +3236,15 @@ return true;
         bs: _snapshot(),
       });
 
-      // ダメージポップアップ等を見せてから次のコンボへ。
-      await wait(700);
+      // damageイベントから開始される攻撃アップ演出を、このコンボ処理の一部として待つ。
+      // 待機をCombo32側だけに任せると、45msの集約タイマーと次コンボ開始が競合し、
+      // ダメージだけ入り攻撃演出が落ちる場合がある。
+      if (affected && typeof window.waitForBattle32AttackCinematicIdle === 'function') {
+        await window.waitForBattle32AttackCinematicIdle();
+      } else {
+        // UIヘルパーがない環境でも、ダメージ表示の最低時間は確保する。
+        await wait(700);
+      }
 
       return {
         executed: true,
@@ -4265,6 +4276,39 @@ function doBossLineAttack(boss) {
     return !!(enemy && enemy.id === 'enemy_sakiel_roguelite');
   }
 
+  const SAKIEL_ACTION_PATTERNS = [
+    {
+      id: 'fan_3_lines',
+      title: '三叉天罰',
+      sub: '直線貫通3ライン ／｜＼',
+      guideText: '前方へ伸びる3本の貫通ライン',
+    },
+    {
+      id: 'parallel_3_lines',
+      title: '三列断罪',
+      sub: '直線貫通3ライン ｜｜｜',
+      guideText: 'サキエルの自列と左右1列を貫通',
+    },
+    {
+      id: 'border_3_rows',
+      title: '白界の境界',
+      sub: '一列おきに横断するボーダー',
+      guideText: '盤面の横3列を一列おきに攻撃',
+    },
+    {
+      id: 'outer_4_columns',
+      title: '外縁粛清',
+      sub: '左右端2列ずつを貫通',
+      guideText: '左右端2列ずつを攻撃。中央列は安全',
+    },
+    {
+      id: 'atk_shift',
+      title: '天威転写',
+      sub: '自身ATK上昇・ランダムな味方1体のATK低下',
+      guideText: '自身ATK+20%／ランダムな味方1体のATK-20%（各2ターン）',
+    },
+  ];
+
   function _sakielPatternCells(enemy, patternId) {
     const cells = new Set();
     const add = (row, col) => {
@@ -4332,36 +4376,58 @@ function doBossLineAttack(boss) {
     });
   }
 
-  async function _runSakielSpecialAction(enemy) {
-    const patterns = [
-      {
-        id: 'fan_3_lines',
-        title: '三叉天罰',
-        sub: '直線貫通3ライン ／｜＼',
-      },
-      {
-        id: 'parallel_3_lines',
-        title: '三列断罪',
-        sub: '直線貫通3ライン ｜｜｜',
-      },
-      {
-        id: 'border_3_rows',
-        title: '白界の境界',
-        sub: '一列おきに横断するボーダー',
-      },
-      {
-        id: 'outer_4_columns',
-        title: '外縁粛清',
-        sub: '左右端2列ずつを貫通',
-      },
-      {
-        id: 'atk_shift',
-        title: '天威転写',
-        sub: '自身ATK上昇・敵ATK低下',
-      },
-    ];
+  function _rollSakielNextAction(enemy) {
+    if (!enemy) return null;
 
-    const selected = patterns[Math.floor(Math.random() * patterns.length)];
+    const selected = SAKIEL_ACTION_PATTERNS[
+      Math.floor(Math.random() * SAKIEL_ACTION_PATTERNS.length)
+    ];
+    if (!selected) return null;
+
+    const cells = selected.id === 'atk_shift'
+      ? []
+      : Array.from(_sakielPatternCells(enemy, selected.id)).map(key => {
+          const [row, col] = String(key).split('-').map(Number);
+          return { row, col };
+        });
+
+    enemy._sakielNextAction = {
+      id: selected.id,
+      title: selected.title,
+      sub: selected.sub,
+      guideText: selected.guideText,
+      cells,
+      isRandomTarget: selected.id === 'atk_shift',
+      decidedTurn: Number(_bs && _bs.turn || 1),
+    };
+
+    return enemy._sakielNextAction;
+  }
+
+  function _ensureSakielNextAction(enemy) {
+    if (!enemy) return null;
+    const next = enemy._sakielNextAction;
+    if (next && next.id && Array.isArray(next.cells)) return next;
+    return _rollSakielNextAction(enemy);
+  }
+
+  function _initializeSakielNextActions() {
+    if (!_bs || !Array.isArray(_bs.enemies)) return;
+    _bs.enemies.forEach(enemy => {
+      if (_isSakielBoss(enemy) || enemy.specialActionType === 'sakiel_random_5') {
+        _ensureSakielNextAction(enemy);
+      }
+    });
+  }
+
+  async function _runSakielSpecialAction(enemy) {
+    // 味方ターン中に予告していた行動を、そのまま実行する。
+    // 保存データ等で予告がない場合だけフォールバック抽選する。
+    const selected = _ensureSakielNextAction(enemy);
+    if (!selected) return;
+
+    // 実行開始時点で消費済みにする。処理完了後に次回分を再抽選する。
+    enemy._sakielNextAction = null;
 
     if (selected.id === 'atk_shift') {
       await _centerTextWait(selected.title, selected.sub, B32_WAIT.enemyAction);
@@ -4399,6 +4465,8 @@ function doBossLineAttack(boss) {
       });
       _renderUI();
       await wait(B32_WAIT.attack);
+      _rollSakielNextAction(enemy);
+      _renderUI();
       return;
     }
 
@@ -4436,6 +4504,10 @@ function doBossLineAttack(boss) {
     await wait(B32_WAIT.attack);
     await wait(B32_WAIT.afterText);
     _clearTransientBossDangerCells();
+
+    // 次の味方ターンで確認できるよう、行動終了直後に次回行動を決定する。
+    _rollSakielNextAction(enemy);
+    _renderUI();
   }
 
   // 敵1体の行動処理。

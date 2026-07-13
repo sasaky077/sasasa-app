@@ -1105,6 +1105,85 @@ function _hideHud() {
     return Math.floor(1000 * mul);
   }
 
+
+
+  // ── ボス心核ドロップ ─────────────────────────────────────
+  // クリアランク別ドロップ率
+  const ROGUELITE_CORE_DROP_RATE = Object.freeze({
+    S: 1.00,
+    A: 0.70,
+    B: 0.50,
+    C: 0.30,
+    D: 0.15,
+    E: 0.05,
+  });
+
+  const ROGUELITE_CORE_DEFS = Object.freeze({
+    sakiel: {
+      id: 'sakiel_core',
+      name: 'サキエルの心核',
+      img: 'images/item_sakielcore.webp',
+    },
+    overseer: {
+      id: 'overseer_core',
+      name: 'オーバーシアの心核',
+      img: 'images/item_overseercore.webp',
+    },
+  });
+
+  function _loadBossCoreInventory() {
+    try {
+      const raw = localStorage.getItem('zeraphia_boss_cores');
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function _saveBossCoreInventory(inventory) {
+    const safe = inventory && typeof inventory === 'object' ? inventory : {};
+    try {
+      localStorage.setItem('zeraphia_boss_cores', JSON.stringify(safe));
+    } catch (err) {
+      console.warn('[RogueliteController] 心核所持数の保存に失敗:', err);
+    }
+
+    // 他画面から参照できるよう、実行中プロフィールにも同期する。
+    if (window.userProfile) {
+      window.userProfile.bossCores = { ...safe };
+    }
+  }
+
+  function _rollAndGrantBossCore({ runId, rank }) {
+    const def = ROGUELITE_CORE_DEFS[String(runId || '')];
+    if (!def) return null;
+
+    const rate = Number(ROGUELITE_CORE_DROP_RATE[String(rank || '').toUpperCase()] || 0);
+    const roll = Math.random();
+    if (roll >= rate) {
+      return { type: 'core', dropped: false, rate, roll, ...def };
+    }
+
+    const inventory = _loadBossCoreInventory();
+    const nextCount = Math.max(0, Number(inventory[def.id] || 0)) + 1;
+    inventory[def.id] = nextCount;
+    _saveBossCoreInventory(inventory);
+
+    return {
+      type: 'core',
+      dropped: true,
+      count: 1,
+      totalCount: nextCount,
+      rate,
+      roll,
+      ...def,
+    };
+  }
+
+  // 心核所持数の参照API（素材一覧などから利用可能）
+  window.getRogueliteBossCoreInventory = _loadBossCoreInventory;
+
   async function _grantRunRewards(rank) {
     const coin = _coinByRank(rank);
     const exp = _calcRunExp(rank);
@@ -1189,7 +1268,7 @@ function _hideHud() {
     `;
   }
 
-  function _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem, evolutionMaterialItems }) {
+  function _buildResultDropHtml({ reward, shinjuItem, coreItem, evolutionMaterialItems }) {
     const items = [];
     if (reward) {
       items.push({ cls: 'coin', iconHtml: '<img src="images/icon_coin.webp" alt="" onerror="this.style.display=\'none\'">', name: 'コイン', value: `+${Number(reward.coin || 0)}` });
@@ -1207,14 +1286,12 @@ function _hideHud() {
         items.push({ cls: 'evo-material', iconHtml: `<img src="${img}" alt="${name}" onerror="this.style.opacity='0'">`, name, value: `×${count}` });
       });
     }
-    if (remnantItem) {
-      const img = _escapeResultHtml(remnantItem.panelImg || remnantItem.img || 'images/remnant_04_panel.webp');
-      const name = _escapeResultHtml(remnantItem.name || 'レムナント');
-      const count = 1; // リザルトでは今回ドロップ分のみ表示。所持合計数は出さない。
-      items.push({ cls: 'remnant', iconHtml: `<img src="${img}" alt="${name}" onerror="this.style.opacity=\'0\'">`, name, value: `×${count}` });
-    } else if (coinDropItem) {
-      items.push({ cls: 'bosscoin', iconHtml: '<img src="images/icon_coin.webp" alt="" onerror="this.style.display=\'none\'">', name: 'BOSS', value: `+${Number(coinDropItem.coin || 0)}` });
+    if (coreItem && coreItem.dropped) {
+      const img = _escapeResultHtml(coreItem.img || '');
+      const name = _escapeResultHtml(coreItem.name || '心核');
+      items.push({ cls: 'boss-core', iconHtml: `<img src="${img}" alt="${name}" onerror="this.style.opacity='0'">`, name, value: `×${Number(coreItem.count || 1)}` });
     }
+
 
     if (!items.length) return '';
     return `
@@ -1266,9 +1343,7 @@ function _hideHud() {
     const rank = data.rank || _getRankFromTurns(totalTurns);
     const reward = isWin ? (data.reward || await _grantRunRewards(rank)) : null;
     const shinjuItem = isWin ? (data.shinjuItem || null) : null;
-    const bossDropItem = isWin ? (data.bossDropItem || data.remnantItem || null) : null;
-    const remnantItem = bossDropItem && bossDropItem.type === 'remnant' ? bossDropItem : null;
-    const coinDropItem = bossDropItem && bossDropItem.type === 'coin' ? bossDropItem : null;
+    const coreItem = isWin ? (data.coreItem || null) : null;
     const partyIds = Array.isArray(data.partyIds) && data.partyIds.length
       ? data.partyIds
       : (Array.isArray(window.__ROGUELITE_LAST_PARTY_IDS__) ? window.__ROGUELITE_LAST_PARTY_IDS__ : []);
@@ -1282,7 +1357,7 @@ function _hideHud() {
     ov.id = 'rl-result-overlay';
 
     const partyHtml = _buildResultPartyHtml(partyIds);
-    const dropHtml = isWin ? _buildResultDropHtml({ reward, shinjuItem, remnantItem, coinDropItem, evolutionMaterialItems: data.evolutionMaterialItems }) : '';
+    const dropHtml = isWin ? _buildResultDropHtml({ reward, shinjuItem, coreItem, evolutionMaterialItems: data.evolutionMaterialItems }) : '';
     const buildHtml = _buildResultBuildHtml(selectedRewards);
 
     ov.innerHTML = isWin ? `
@@ -1848,65 +1923,23 @@ async function _onBattleEnd(result, payload) {
         ? window.ShinjuProgress.grantBossItemFromRoguelite({ runId, rank, totalTurns })
         : null;
 
+    const coreItem = !isDebugRun
+      ? _rollAndGrantBossCore({ runId, rank })
+      : null;
+
     const evolutionMaterialItems = !isDebugRun
       && typeof window.grantEvolutionMaterialDropFromRoguelite === 'function'
         ? window.grantEvolutionMaterialDropFromRoguelite({ runId, rank, totalTurns })
         : [];
 
-    let bossDropItem = null;
-    if (!isDebugRun && typeof window.rollBossDropFromRoguelite === 'function') {
-      try {
-        const drop = await window.rollBossDropFromRoguelite({ runId, rank, totalTurns });
-        if (drop && drop.type === 'remnant' && drop.remnant) {
-          bossDropItem = {
-            type: 'remnant',
-            dropped: true,
-            unlocked: !!drop.unlocked,
-            duplicate: !!drop.duplicate,
-            alreadyOwned: !!drop.alreadyOwned,
-            count: drop.count || 1,
-            rate: drop.rate,
-            roll: drop.roll,
-            id: drop.remnant.id,
-            no: drop.remnant.no,
-            name: drop.remnant.name || 'レムナント',
-            img: drop.remnant.img,
-            panelImg: drop.remnant.panelImg,
-            desc: drop.remnant.desc || '旧世界の残響が記録されました。',
-          };
-        } else if (drop && drop.type === 'coin') {
-          bossDropItem = {
-            type: 'coin',
-            dropped: false,
-            rate: drop.rate,
-            roll: drop.roll,
-            coin: Number(drop.coin || 0),
-          };
-        }
-      } catch (err) {
-        console.warn('[RogueliteController] BOSSドロップ抽選に失敗:', err);
-      }
-    } else if (!isDebugRun && typeof window.tryUnlockRemnantFromRoguelite === 'function') {
-      // 旧API互換
-      try {
-        const unlocked = await window.tryUnlockRemnantFromRoguelite({ runId, rank, totalTurns });
-        if (unlocked && unlocked.remnant) {
-          bossDropItem = {
-            type: 'remnant', dropped: true, unlocked: !!unlocked.unlocked, duplicate: !!unlocked.duplicate, count: unlocked.count || 1,
-            id: unlocked.remnant.id, no: unlocked.remnant.no, name: unlocked.remnant.name || 'レムナント',
-            img: unlocked.remnant.img, panelImg: unlocked.remnant.panelImg, desc: unlocked.remnant.desc || '旧世界の残響が記録されました。',
-          };
-        }
-      } catch (err) {
-        console.warn('[RogueliteController] レムナント解放に失敗:', err);
-      }
-    }
+    // ボス本体・代替BOSSコインの抽選は廃止。
+    // ボス固有報酬は上記 coreItem（心核）のランク別抽選だけを使用する。
 
     window.RogueliteRun.end('win');
     _hideHud();
     const partyIds = Array.isArray(window.__ROGUELITE_LAST_PARTY_IDS__) ? window.__ROGUELITE_LAST_PARTY_IDS__ : [];
     const selectedRewards = Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) ? window.__ROGUELITE_SELECTED_REWARDS__ : ops;
-    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem, bossDropItem, evolutionMaterialItems, partyIds, selectedRewards });
+    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem, coreItem, evolutionMaterialItems, partyIds, selectedRewards });
     return;
   }
 

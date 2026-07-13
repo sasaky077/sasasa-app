@@ -71,13 +71,7 @@ let _itemTargetUid = null;
 
  _selectedRosterId = null;
 
- const box = document.getElementById('b32-skill-detail-box');
- if (box) {
- box.style.display = 'none';
- box.classList.remove('show');
- }
-
- _hideActionDetailPortal();
+ _closeSkillDetailLayers();
  }
 
  // ============================================================
@@ -155,6 +149,19 @@ let _itemTargetUid = null;
      el.innerHTML = '';
      el.classList.remove('show');
      el.style.display = 'none';
+   }
+ }
+
+
+ // スキル/ULT関連の詳細レイヤーを一括で閉じる。
+ // 画面切替時に前のモーダルがbody直下へ残るのを防ぐ。
+ function _closeSkillDetailLayers() {
+   _hideActionDetailPortal();
+
+   const box = document.getElementById('b32-skill-detail-box');
+   if (box) {
+     box.style.display = 'none';
+     box.classList.remove('show');
    }
  }
 
@@ -459,6 +466,26 @@ function enemyAttackLabel(attackRange) {
  enemy_attack_all: '全体攻撃',
  };
  return map[attackRange] || attackRange || '不明';
+}
+
+function isSakielPreviewEnemy(enemy) {
+  return !!(enemy && (
+    enemy.id === 'enemy_sakiel_roguelite' ||
+    enemy.specialActionType === 'sakiel_random_5'
+  ));
+}
+
+function getEnemyPlannedAction(enemy) {
+  if (!isSakielPreviewEnemy(enemy)) return null;
+  const next = enemy && enemy._sakielNextAction;
+  return next && next.id ? next : null;
+}
+
+function enemyAttackDisplayLabel(enemy) {
+  const next = getEnemyPlannedAction(enemy);
+  if (next) return `次回：${next.title || '特殊行動'}`;
+  if (isSakielPreviewEnemy(enemy)) return '次回行動を決定中';
+  return enemyAttackLabel(enemy && enemy.attackRange);
 }
 
 const B32_ELEMENT_LABELS = {
@@ -1495,6 +1522,27 @@ function getEnemyMoveGuideCells(enemy, bs) {
 function getEnemyAttackGuideCells(enemy, bs) {
   if (!enemy || !bs || !window.BattleRange32) return [];
 
+  // サキエルは固定attackRangeではなく、先行決定済みの次回行動を表示する。
+  const planned = getEnemyPlannedAction(enemy);
+  if (planned) {
+    const allyMap = {};
+    (bs.allies || [])
+      .filter(u => u && u.hp > 0)
+      .forEach(u => { allyMap[`${u.row}-${u.col}`] = u; });
+
+    return (planned.cells || []).map(cell => {
+      const key = `${cell.row}-${cell.col}`;
+      return {
+        row: Number(cell.row),
+        col: Number(cell.col),
+        cellType: allyMap[key] ? 'target_ally' : 'attack',
+        targetUid: allyMap[key] ? allyMap[key]._uid : null,
+      };
+    }).filter(cell => Number.isFinite(cell.row) && Number.isFinite(cell.col));
+  }
+
+  if (isSakielPreviewEnemy(enemy)) return [];
+
   const range = enemy.attackRange || 'enemy_attack_front';
   let keys = new Set();
 
@@ -1585,7 +1633,7 @@ function showEnemyInfo(enemy) {
  <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
  </div>
  <div class="b32-enemy-info-row">
- <span>攻撃</span><strong>${enemyAttackLabel(enemy.attackRange)}</strong>
+ <span>攻撃</span><strong>${b32EscapeHtml(enemyAttackDisplayLabel(enemy))}</strong>
  </div>
  <button class="b32-enemy-info-close">閉じる</button>
  </div>
@@ -6756,7 +6804,44 @@ if (_summonMode && isSummonCell && !unit) {
  _applyEnemyQuickInfoPos(box, { x: targetX, y: targetY });
 }
 
+function ensureSakielPreviewStyle() {
+  if (document.getElementById('b32-sakiel-preview-style')) return;
+  const style = document.createElement('style');
+  style.id = 'b32-sakiel-preview-style';
+  style.textContent = `
+    .b32-enemy-quick-next-action {
+      margin: 7px 0 2px;
+      padding: 7px 9px;
+      border: 1px solid rgba(214,177,112,.34);
+      border-radius: 9px;
+      background: rgba(92,45,33,.22);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2px 8px;
+      text-align: left;
+    }
+    .b32-enemy-quick-next-action span {
+      color: rgba(238,218,190,.58);
+      font-size: .58rem;
+      letter-spacing: .08em;
+    }
+    .b32-enemy-quick-next-action strong {
+      color: #ffd6b8;
+      font-size: .72rem;
+      text-align: right;
+    }
+    .b32-enemy-quick-next-action small {
+      grid-column: 1 / -1;
+      color: rgba(245,230,215,.72);
+      font-size: .61rem;
+      line-height: 1.45;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderEnemyQuickInfo(enemy) {
+  ensureSakielPreviewStyle();
  let box = document.getElementById('b32-enemy-quick-info');
  if (box) box.remove();
 
@@ -6765,7 +6850,16 @@ function renderEnemyQuickInfo(enemy) {
  const moveActive = _selectedEnemyGuideMode === 'move';
  const attackActive = _selectedEnemyGuideMode === 'attack';
  const guideMode = moveActive || attackActive;
- const modeText = moveActive ? '移動範囲表示中' : attackActive ? '攻撃範囲表示中' : '';
+ const plannedAction = getEnemyPlannedAction(enemy);
+ const isRandomTargetPreview = !!(plannedAction && plannedAction.isRandomTarget);
+ const modeText = moveActive
+   ? '移動範囲表示中'
+   : attackActive
+     ? (isRandomTargetPreview ? '次回行動の効果表示中' : '次回攻撃範囲表示中')
+     : '';
+ const plannedDetailHtml = plannedAction
+   ? `<div class="b32-enemy-quick-next-action"><span>次回行動</span><strong>${b32EscapeHtml(plannedAction.title || '特殊行動')}</strong><small>${b32EscapeHtml(plannedAction.guideText || plannedAction.sub || '')}</small></div>`
+   : '';
 
  box = document.createElement('div');
  box.id = 'b32-enemy-quick-info';
@@ -6780,8 +6874,9 @@ function renderEnemyQuickInfo(enemy) {
  </div>
  <div class="b32-enemy-quick-statline">
    <span>移動 <strong>${b32EscapeHtml(enemyMoveLabel(enemy.moveType))}</strong></span>
-   <span>攻撃 <strong>${b32EscapeHtml(enemyAttackLabel(enemy.attackRange))}</strong></span>
+   <span>攻撃 <strong>${b32EscapeHtml(enemyAttackDisplayLabel(enemy))}</strong></span>
  </div>
+ ${plannedDetailHtml}
  <div class="b32-enemy-quick-actions">
    <button type="button" class="b32-enemy-quick-btn ${moveActive ? 'active move' : ''}" onclick="_b32EnemyGuide('move')">移動</button>
    <button type="button" class="b32-enemy-quick-btn ${attackActive ? 'active attack' : ''}" onclick="_b32EnemyGuide('attack')">攻撃</button>
@@ -7310,6 +7405,7 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  _selSkillAllyUid = null;
  _selSkillId = null;
  _moveMode = false;
+ _closeSkillDetailLayers();
  renderBattle32UI();
  };
 
@@ -7343,6 +7439,7 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
   _itemPhase = null;
   _itemTargetUid = null;
 
+  _closeSkillDetailLayers();
   renderBattle32UI();
 };
 
@@ -7358,13 +7455,21 @@ window._b32OnActionSkillTap = function () {
   const ally = (bs.allies || []).find(u => u._uid === uid);
   if (!ally || ally.hp <= 0) return;
 
-  const history = bs.unitActionHistory || {};
-  const unitHistory = history[uid] || {};
-
   const normalSkills = (ally.skills || []).filter(s => !s.isUltimate);
-  // 行動済みでもスキル内容の確認は許可する。
-  // 実際の発動可否はスキル詳細の決定ボタンと _b32ConfirmSkill 側で制御する。
   if (!normalSkills.length) return;
+
+  // SKILL画面またはスキル詳細を表示中にSKILLをもう一度押した場合は、
+  // すべて閉じて未選択状態へ戻す。
+  if (_selSkillAllyUid === uid) {
+    _selSkillAllyUid = null;
+    _selSkillId = null;
+    _selMoveAllyUid = null;
+    _selActionAllyUid = null;
+    _moveMode = false;
+    _closeSkillDetailLayers();
+    renderBattle32UI();
+    return;
+  }
 
   _selSkillAllyUid = uid;
   _selSkillId = null;
@@ -7378,6 +7483,8 @@ window._b32OnActionSkillTap = function () {
   _itemPhase = null;
   _itemTargetUid = null;
 
+  // 別画面からSKILLへ移る前に、現在開いている詳細を必ず閉じる。
+  _closeSkillDetailLayers();
   renderBattle32UI();
 };
 
@@ -7414,6 +7521,8 @@ window._b32OnActionUltTap = function () {
   _itemPhase = null;
   _itemTargetUid = null;
 
+  // SKILLなど別画面の詳細を閉じてからULTを開く。
+  _closeSkillDetailLayers();
   renderBattle32UI();
 };
 
@@ -7557,12 +7666,7 @@ window._b32OnSkillChipClick = function (event, allyUid, skillId) {
  // スキルを選んだら、ボトムUIを詳細画面へ切り替える
  _selSkillId = skillId;
 
- const box = document.getElementById('b32-skill-detail-box');
- if (box) {
- box.style.display = 'none';
- box.classList.remove('show');
- }
-
+ _closeSkillDetailLayers();
  renderBattle32UI();
 };
 
@@ -7577,14 +7681,7 @@ window._b32CancelSkillDetail = function (event) {
  // 詳細画面を閉じて、スキル選択画面へ戻す
  _selSkillId = null;
 
- const box = document.getElementById('b32-skill-detail-box');
- if (box) {
- box.style.display = 'none';
- box.classList.remove('show');
- }
-
- _hideActionDetailPortal();
-
+ _closeSkillDetailLayers();
  renderBattle32UI();
 };
 
@@ -7655,7 +7752,14 @@ if (!_canUseSkillNow(bs, allyNow, skillNow)) {
 }
 
 // 入力ロックして、スキル/ULT演出中はコンボウインドウとレンジを退避する。
+// 発動開始時点で詳細画面と選択状態を先に消し、演出後にモーダルが残らないようにする。
 _b32InputLocked = true;
+_closeSkillDetailLayers();
+_selSkillId = null;
+_selSkillAllyUid = null;
+_selMoveAllyUid = null;
+_selActionAllyUid = null;
+_moveMode = false;
 const comboInspectDuringAction = document.getElementById('b32-combo-inspect');
 if (comboInspectDuringAction) comboInspectDuringAction.remove();
 renderBattle32UI();

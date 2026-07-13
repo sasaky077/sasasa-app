@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=281-patrol-font-press-unified">
+  <link rel="stylesheet" href="css/style.css?v=285-home-icon-compact-shadow">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -139,71 +139,87 @@
   </div>
 
   <div class="ninmu-layout">
-
-    <!-- 左カラム：大カテゴリ -->
-    <div class="ninmu-left">
-      <button class="ninmu-cat-item active" id="ninmu-cat-daily"   onclick="switchNinmuCat('daily')">デイリー</button>
-      <button class="ninmu-cat-item"        id="ninmu-cat-special" onclick="switchNinmuCat('special')">特別巡行</button>
-      <button class="ninmu-cat-item"        id="ninmu-cat-story"   onclick="switchNinmuCat('story')">ストーリー</button>
+    <div class="ninmu-left" aria-label="巡行カテゴリ">
+      <button class="ninmu-cat-item active" id="ninmu-cat-daily" onclick="switchNinmuCat('daily')">
+        <span class="ninmu-cat-jp">デイリー</span><span class="ninmu-cat-en">DAILY</span>
+      </button>
+      <button class="ninmu-cat-item" id="ninmu-cat-special" onclick="switchNinmuCat('special')">
+        <span class="ninmu-cat-jp">特別巡行</span><span class="ninmu-cat-en">SPECIAL</span>
+      </button>
+      <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
+        <span class="ninmu-cat-jp">ストーリー</span><span class="ninmu-cat-en">STORY</span>
+      </button>
     </div>
 
-    <!-- 右カラム：サブメニュー -->
     <div class="ninmu-right">
-
-      <!-- デイリー -->
       <div id="ninmu-panel-daily" class="ninmu-panel">
         <div class="ninmu-test-area ninmu-daily-area">
-          <button class="ninmu-test-btn ninmu-test-btn-first" onclick="testNodeClear(true)">
-            <span class="ninmu-test-btn-title">デイリー巡行</span>
-            <span class="ninmu-test-btn-sub">normal / Sクリア想定　+375 EXP ／ 原初の翼環 ×1</span>
+          <button class="ninmu-test-btn ninmu-test-btn-first" onclick="dailyNodeClear('beginner')">
+            <span class="ninmu-stage-mark">✥</span>
+            <span class="ninmu-stage-copy">
+              <span class="ninmu-test-btn-title">デイリー巡行（初級）</span>
+              <span class="ninmu-test-btn-sub"><b>BEGINNER</b> ／ デイリー報酬</span>
+              <span class="ninmu-stage-drop">原初の翼環 ×1</span>
+              <span class="ninmu-stage-reward-label">主な報酬　原初の翼環</span>
+            </span>
+            <span class="ninmu-stage-action">挑戦する</span>
           </button>
-          <button class="ninmu-test-btn ninmu-test-btn-repeat" onclick="testNodeClear(false)">
-            <span class="ninmu-test-btn-title">テストプレイ（2回目以降）</span>
-            <span class="ninmu-test-btn-sub">normal / Sクリア想定　+112 EXP</span>
+          <button class="ninmu-test-btn ninmu-test-btn-repeat" onclick="dailyNodeClear('intermediate')">
+            <span class="ninmu-stage-mark">✥</span>
+            <span class="ninmu-stage-copy">
+              <span class="ninmu-test-btn-title">デイリー巡行（中級）</span>
+              <span class="ninmu-test-btn-sub"><b>INTERMEDIATE</b> ／ デイリー報酬</span>
+              <span class="ninmu-stage-drop">共鳴石 ×1</span>
+              <span class="ninmu-stage-reward-label">主な報酬　共鳴石</span>
+            </span>
+            <span class="ninmu-stage-action">挑戦する</span>
           </button>
-           <!--　テスト用 <button class="ninmu-test-btn" onclick="openStageSelect(1)">
-            <span class="ninmu-test-btn-title">バトルテスト</span>
-            <span class="ninmu-test-btn-sub">編成→怪異登場→バトル</span>
-          </button>　-->
+          <button class="ninmu-test-btn ninmu-test-btn-ex" onclick="dailyNodeClear('advanced')">
+            <span class="ninmu-stage-mark">✥</span>
+            <span class="ninmu-stage-copy">
+              <span class="ninmu-test-btn-title">デイリー巡行（上級）</span>
+              <span class="ninmu-test-btn-sub"><b>ADVANCED</b> ／ デイリー報酬</span>
+              <span class="ninmu-stage-drop">ガチャ石 ×5</span>
+              <span class="ninmu-stage-reward-label">主な報酬　ガチャ石</span>
+            </span>
+            <span class="ninmu-stage-action">挑戦する</span>
+          </button>
         </div>
+
+        <section class="ninmu-detail-card" aria-label="選択中巡行の詳細">
+          <div class="ninmu-detail-visual" aria-hidden="true"></div>
+          <div class="ninmu-detail-copy">
+            <div class="ninmu-detail-head">
+              <h3>デイリー巡行</h3><span>推奨Lv. 1</span>
+            </div>
+            <p>毎日訪れる、小さな試練の巡礼。<br>静けさの中に、確かな成長のきざしを見出そう。</p>
+            <div class="ninmu-detail-reward-title">獲得可能アイテム</div>
+            <div class="ninmu-detail-rewards" aria-label="獲得可能アイテム">
+              <span>◈</span><span>◇</span><span>✿</span><span>●</span>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <!-- 特別巡行 -->
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
           <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('overseer')">
-            <div class="ninmu-chapter-label">ROGUELITE</div>
-            <div class="ninmu-chapter-title">万象を知る白亜の座</div>
+            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">万象を知る白亜の座</div>
           </div>
           <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('sakiel')">
-            <div class="ninmu-chapter-label">ROGUELITE</div>
-            <div class="ninmu-chapter-title">サキエル降臨</div>
+            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">サキエル降臨</div>
           </div>
         </div>
       </div>
 
-      <!-- ストーリー -->
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
-          <div class="ninmu-chapter-item ninmu-chapter-debug" onclick="openStageSelect(0)">
-            <div class="ninmu-chapter-label">CHAPTER:00</div>
-            <div class="ninmu-chapter-title">DEBUG</div>
-          </div>
-          <div class="ninmu-chapter-item" onclick="openStageSelect(1)">
-            <div class="ninmu-chapter-label">CHAPTER:01</div>
-            <div class="ninmu-chapter-title">知恵</div>
-          </div>
-          <div class="ninmu-chapter-item" onclick="openStageSelect(2)">
-            <div class="ninmu-chapter-label">CHAPTER:02</div>
-            <div class="ninmu-chapter-title">破壊</div>
-          </div>
-          <div class="ninmu-chapter-item" onclick="openStageSelect(3)">
-            <div class="ninmu-chapter-label">CHAPTER:03</div>
-            <div class="ninmu-chapter-title">忘却</div>
-          </div>
+          <div class="ninmu-chapter-item ninmu-chapter-debug" onclick="openStageSelect(0)"><div class="ninmu-chapter-label">CHAPTER:00</div><div class="ninmu-chapter-title">DEBUG</div></div>
+          <div class="ninmu-chapter-item" onclick="openStageSelect(1)"><div class="ninmu-chapter-label">CHAPTER:01</div><div class="ninmu-chapter-title">知恵</div></div>
+          <div class="ninmu-chapter-item" onclick="openStageSelect(2)"><div class="ninmu-chapter-label">CHAPTER:02</div><div class="ninmu-chapter-title">破壊</div></div>
+          <div class="ninmu-chapter-item" onclick="openStageSelect(3)"><div class="ninmu-chapter-label">CHAPTER:03</div><div class="ninmu-chapter-title">忘却</div></div>
         </div>
       </div>
-
     </div>
   </div>
 </div>
@@ -839,7 +855,7 @@ document.addEventListener('touchend', function (e) {
   // キャラクターID再採番（本番8体）:
 // 旧 01,02,07,08,12,14,17,20 → 新 01,02,03,04,05,06,07,08
 // 画像ファイル名は旧番号のまま使用する。
-const GACHA_COMMON_CHARACTER_IDS = [9, 14, 16, 12, 11, 8];
+const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
   const GACHA_COMMON_MATERIAL_IDS = [
     'soul_vessel_chaos',
     'soul_vessel_mystis',
@@ -1488,11 +1504,16 @@ function buildLimitBreakRecipeHTML(target){
   var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
 
   function row(iconHtml, name, owned, need){
-    var ok = Number(owned || 0) >= Number(need || 0);
+    var ownedNum = Number(owned || 0);
+    var needNum = Number(need || 0);
+    var ok = ownedNum >= needNum;
+    var lack = Math.max(0, needNum - ownedNum);
     return '<div class="lb-recipe-row ' + (ok ? 'ok' : 'ng') + '">' +
       '<div class="lb-recipe-icon">' + iconHtml + '</div>' +
-      '<div class="lb-recipe-name">' + escapeHtml(name) + '</div>' +
-      '<div class="lb-recipe-count">' + owned + ' / ' + need + '</div>' +
+      '<div class="lb-recipe-name">' + escapeHtml(name) +
+        (!ok ? '<span class="lb-recipe-shortage-label">あと ' + lack + ' 個必要</span>' : '') +
+      '</div>' +
+      '<div class="lb-recipe-count">' + ownedNum + ' / ' + needNum + '</div>' +
     '</div>';
   }
 
@@ -1698,8 +1719,7 @@ function openLimitBreakModal(target){
         '</div>' +
       '</div>';
   } else {
-    // 不足数は必要素材欄の「所持 / 必要」で確認できるため、追加の不足欄は表示しない。
-    listEl.innerHTML += '<div class="lb-no-material">共鳴素材が不足しています</div>';
+    listEl.innerHTML += buildLimitBreakLackHTML(target);
   }
 
   document.getElementById('limitbreak-modal').classList.add('active');
@@ -2649,18 +2669,49 @@ div.addEventListener('click', function(){
     showToast((isFirstClear ? '初回クリア！ ' : '') + '+' + exp + ' EXP');
   }
 
-  // テスト用：normal / S クリア想定
-  // 「デイリー巡行」ボタン（isFirstClear=true）を押すたび、
-  // エリ専用共鳴素材「原初の翼環」を1個付与する。
-  async function testNodeClear(isFirstClear) {
-    await onNodeClear('node_test_01', 'normal', 'S', isFirstClear);
-
-    if(isFirstClear && typeof addEvolutionMaterial === 'function'){
-      var reward = addEvolutionMaterial('eri_origin_wing', 1);
-      if(reward){
-        showToast('原初の翼環 ×1 を獲得（所持：' + reward.total + '）');
+  // デイリー巡行クリア報酬
+  // 初級：原初の翼環×1 / 中級：共鳴石×1 / 上級：ガチャ石×5
+  async function dailyNodeClear(level) {
+    var defs = {
+      beginner: {
+        nodeId: 'daily_beginner', difficulty: 'normal', materialId: 'eri_origin_wing',
+        rewardName: '原初の翼環', count: 1
+      },
+      intermediate: {
+        nodeId: 'daily_intermediate', difficulty: 'hard', materialId: 'kyoumei_stone',
+        rewardName: '共鳴石', count: 1
+      },
+      advanced: {
+        nodeId: 'daily_advanced', difficulty: 'hard', gem: 5,
+        rewardName: 'ガチャ石', count: 5
       }
+    };
+
+    var def = defs[level];
+    if(!def) return;
+
+    await onNodeClear(def.nodeId, def.difficulty, 'S', true);
+
+    if(def.materialId && typeof addEvolutionMaterial === 'function'){
+      var reward = addEvolutionMaterial(def.materialId, def.count);
+      if(reward){
+        showToast(def.rewardName + ' ×' + def.count + ' を獲得（所持：' + reward.total + '）');
+      }
+      return;
     }
+
+    if(def.gem){
+      userProfile.gem = Number(userProfile.gem || 0) + def.gem;
+      await saveProfileToDB({ gem: userProfile.gem, last_played: new Date().toISOString() });
+      updateMainUI();
+      if(typeof updateSummonGemUI === 'function') updateSummonGemUI();
+      showToast(def.rewardName + ' ×' + def.gem + ' を獲得（所持：' + userProfile.gem + '）');
+    }
+  }
+
+  // 旧デバッグ呼び出し互換
+  async function testNodeClear(isFirstClear) {
+    return dailyNodeClear(isFirstClear ? 'beginner' : 'intermediate');
   }
 
   // 巡行カテゴリ切り替え

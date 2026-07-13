@@ -11382,8 +11382,8 @@ body,
 }
 
 /* =========================================================
-   Home Right Icons - Size / Position Only / Tighter Gap
-   装飾効果なし。mail / shinju を同一サイズで配置。
+   Home Right Icons - compact size / subtle shadow
+   メールは二回り、神樹は一回り小さく表示。
    ========================================================= */
 
 #screen-main .home-notice-btn,
@@ -11420,18 +11420,34 @@ body,
 #screen-main .home-notice-btn > img,
 #screen-main .shinju-home-entry-icon {
   display: block;
-  width: 100%;
-  height: 100%;
   object-fit: contain;
-  margin: 0;
+  margin: auto;
   padding: 0;
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  filter: none;
   transform: none;
-  transition: none;
+  transition: transform 0.18s ease, filter 0.18s ease;
   animation: none;
+}
+
+/* メール：現状から二回り小さく */
+#screen-main .home-notice-btn > img {
+  width: 72%;
+  height: 72%;
+  filter: drop-shadow(0 4px 5px rgba(68, 51, 24, 0.24));
+}
+
+/* 神樹：現状から一回り小さく */
+#screen-main .shinju-home-entry-icon {
+  width: 84%;
+  height: 84%;
+  filter: drop-shadow(0 4px 5px rgba(68, 51, 24, 0.22));
+}
+
+#screen-main .home-notice-btn:active > img,
+#screen-main .shinju-home-entry:active .shinju-home-entry-icon {
+  transform: scale(0.94);
 }
 
 #screen-main .home-notice-btn::before,
@@ -13047,4 +13063,242 @@ body,
 /* ボタン要素由来の太字継承を完全に遮断 */
 #screen-ninmu .ninmu-test-btn {
   font-weight: 400 !important;
+}
+
+
+/* =========================================================
+   112 巡行：支給素材を使ったモック準拠レイアウト
+   junkou_tab.webp / junkou_right.webp
+   ========================================================= */
+#screen-ninmu {
+  background: #f5f0e6;
+  color: #4a3c2b;
+  overflow: hidden;
+}
+#screen-ninmu .header {
+  background: rgba(250,247,239,.96) !important;
+  border-bottom: 1px solid rgba(155,124,67,.22);
+}
+#screen-ninmu .header-title { color:#6d583b; }
+#screen-ninmu .ninmu-layout {
+  display:grid;
+  grid-template-columns: 106px minmax(0,1fr);
+  gap:10px;
+  flex:1;
+  min-height:0;
+  padding:10px 10px calc(86px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 91% 5%, rgba(182,151,91,.09), transparent 20%),
+    linear-gradient(rgba(255,255,255,.38),rgba(255,255,255,.38));
+}
+#screen-ninmu .ninmu-left {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+  background:rgba(244,237,223,.38);
+}
+#screen-ninmu .ninmu-cat-item {
+  position:relative;
+  width:100%;
+  min-height:98px;
+  border:0 !important;
+  border-radius:0 !important;
+  background: url("../images/junkou_tab.webp") center/100% 100% no-repeat !important;
+  color:#4d402f !important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  padding:12px 6px !important;
+  box-shadow:0 2px 6px rgba(82,59,25,.08) !important;
+  opacity:.78;
+}
+#screen-ninmu .ninmu-cat-item.active {
+  opacity:1;
+  filter:brightness(1.03) saturate(1.08);
+  box-shadow:0 0 0 1px rgba(194,150,63,.28), 0 4px 10px rgba(82,59,25,.12) !important;
+}
+#screen-ninmu .ninmu-cat-item.active::after {
+  content:"✦";
+  position:absolute;
+  right:-5px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#d5ad50;
+  text-shadow:0 0 8px rgba(218,174,72,.72);
+}
+#screen-ninmu .ninmu-cat-jp { font-size:15px; letter-spacing:.08em; }
+#screen-ninmu .ninmu-cat-en { font:8px "Cinzel",serif; letter-spacing:.28em; color:#a68a5e; }
+#screen-ninmu .ninmu-right { min-width:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px; }
+#screen-ninmu .ninmu-panel { width:100%; }
+#screen-ninmu .ninmu-daily-area { display:flex; flex-direction:column; gap:8px !important; }
+#screen-ninmu .ninmu-test-btn,
+#screen-ninmu .ninmu-chapter-item {
+  position:relative;
+  width:100% !important;
+  min-height:124px !important;
+  padding:14px 12px 14px 15px !important;
+  display:grid !important;
+  grid-template-columns:24px minmax(0,1fr) 76px;
+  align-items:center !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:url("../images/junkou_right.webp") center/100% 100% no-repeat !important;
+  box-shadow:0 3px 8px rgba(77,56,28,.12) !important;
+  text-align:left !important;
+  color:#4b3e2d !important;
+}
+#screen-ninmu .ninmu-stage-mark { align-self:start; padding-top:4px; color:#9b8666; font-size:17px; }
+#screen-ninmu .ninmu-stage-copy { display:flex; flex-direction:column; min-width:0; gap:5px; }
+#screen-ninmu .ninmu-test-btn-title { color:#443827 !important; font-size:15px !important; letter-spacing:.06em !important; white-space:normal; }
+#screen-ninmu .ninmu-test-btn-sub { color:#776a58 !important; font-size:8px !important; letter-spacing:.08em !important; }
+#screen-ninmu .ninmu-test-btn-sub b { display:inline-block; padding:2px 8px; background:#cfc5b5; color:#fff; font-weight:400; letter-spacing:.15em; }
+#screen-ninmu .ninmu-test-btn-ex .ninmu-test-btn-sub b { background:#c99d45; }
+#screen-ninmu .ninmu-test-btn-sub em { font-style:normal; color:#9a8b77; }
+#screen-ninmu .ninmu-stage-drop { font-size:9px; color:#8a7b67; }
+#screen-ninmu .ninmu-stage-reward-label { margin-top:5px; font-size:9px; color:#8b6e3c; letter-spacing:.08em; }
+#screen-ninmu .ninmu-stage-action {
+  justify-self:end;
+  align-self:end;
+  margin-bottom:4px;
+  min-width:72px;
+  padding:8px 7px;
+  border:1px solid rgba(255,255,255,.7);
+  outline:1px solid #b58b38;
+  border-radius:18px;
+  background:linear-gradient(#c6a351,#a98231);
+  color:#fff;
+  text-align:center;
+  font-size:11px;
+  letter-spacing:.08em;
+  text-shadow:0 1px 1px rgba(89,55,10,.35);
+  box-shadow:0 2px 4px rgba(73,48,13,.18);
+}
+#screen-ninmu .ninmu-detail-card {
+  margin-top:10px;
+  min-height:180px;
+  padding:12px;
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr);
+  gap:13px;
+  background:url("../images/junkou_right.webp") center/100% 100% no-repeat;
+  box-shadow:0 3px 8px rgba(77,56,28,.1);
+}
+#screen-ninmu .ninmu-detail-visual {
+  min-height:150px;
+  border:1px solid rgba(166,136,81,.28);
+  background:
+    linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.12)),
+    radial-gradient(circle at 50% 30%,#dce1df,transparent 48%),
+    linear-gradient(145deg,#eef0e9,#cbd2cd);
+  opacity:.78;
+}
+#screen-ninmu .ninmu-detail-copy { min-width:0; padding:4px 4px 0 0; }
+#screen-ninmu .ninmu-detail-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(139,112,69,.18); padding-bottom:6px; }
+#screen-ninmu .ninmu-detail-head h3 { margin:0; font-size:15px; font-weight:400; letter-spacing:.08em; }
+#screen-ninmu .ninmu-detail-head span { font-size:8px; color:#7f725f; }
+#screen-ninmu .ninmu-detail-copy p { margin:9px 0 12px; font-size:9px; line-height:1.8; color:#746855; }
+#screen-ninmu .ninmu-detail-reward-title { font-size:9px; color:#765d34; padding-bottom:5px; border-bottom:1px solid rgba(139,112,69,.18); }
+#screen-ninmu .ninmu-detail-rewards { display:flex; gap:7px; margin-top:8px; }
+#screen-ninmu .ninmu-detail-rewards span { width:34px; height:34px; display:grid; place-items:center; border:1px solid rgba(143,113,64,.32); background:rgba(255,255,255,.45); color:#aa7e26; font-size:18px; }
+#screen-ninmu .ninmu-chapter-list { display:flex; flex-direction:column; gap:8px; }
+#screen-ninmu .ninmu-chapter-item { display:flex !important; flex-direction:column; justify-content:center; align-items:flex-start !important; gap:6px; }
+#screen-ninmu .ninmu-chapter-label { color:#a3834e !important; font-size:8px !important; letter-spacing:.18em !important; }
+#screen-ninmu .ninmu-chapter-title { color:#443827 !important; font-size:15px !important; }
+@media (max-height:740px) {
+  #screen-ninmu .ninmu-cat-item { min-height:82px; }
+  #screen-ninmu .ninmu-test-btn { min-height:108px !important; }
+  #screen-ninmu .ninmu-detail-card { min-height:154px; }
+  #screen-ninmu .ninmu-detail-visual { min-height:128px; }
+}
+
+
+/* =========================================================
+   109 プリモア一覧：キャラクターフレーム重ね表示
+   - images/chara_frame.webp をキャラ画像の最前面に配置
+   - レアリティバッジと拡大ヒントはフレームより上に表示
+   ========================================================= */
+#box-grid.box-carousel .box-carousel-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: url("../images/chara_frame.webp") center / 100% 100% no-repeat;
+  pointer-events: none;
+  user-select: none;
+}
+
+#box-grid.box-carousel .box-carousel-rarity-badge {
+  z-index: 7;
+}
+
+#box-grid.box-carousel .box-carousel-zoom-hint {
+  z-index: 8;
+}
+
+
+/* =========================================================
+   共鳴モーダル：不足素材の明示
+   ========================================================= */
+#limitbreak-modal .lb-recipe-row.ng {
+  border-radius: 9px !important;
+  background: rgba(188, 48, 48, .075) !important;
+  box-shadow: inset 3px 0 0 rgba(190, 48, 48, .72) !important;
+}
+
+#limitbreak-modal .lb-recipe-row.ng .lb-recipe-name,
+#limitbreak-modal .lb-recipe-row.ng .lb-recipe-count,
+#limitbreak-modal .lb-vessel-choice.ng .lb-vessel-choice-name,
+#limitbreak-modal .lb-vessel-choice.ng .lb-vessel-choice-count {
+  color: #bd3838 !important;
+  font-weight: 700 !important;
+}
+
+#limitbreak-modal .lb-recipe-shortage-label {
+  display: block;
+  margin-top: 2px;
+  color: #c13b3b !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+#limitbreak-modal .lb-lack-box {
+  margin: 2px 0 8px;
+  padding: 10px 11px;
+  border: 1px solid rgba(185, 48, 48, .28);
+  border-radius: 11px;
+  background: rgba(188, 48, 48, .065);
+}
+
+#limitbreak-modal .lb-lack-title {
+  margin-bottom: 6px;
+  color: #a72f2f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-align: center;
+}
+
+#limitbreak-modal .lb-lack-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 2px;
+  color: #bd3838;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#limitbreak-modal .lb-lack-count {
+  white-space: nowrap;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+}
+
+#limitbreak-modal .lb-no-material-shortage {
+  color: #a93232 !important;
+  font-weight: 700 !important;
 }
