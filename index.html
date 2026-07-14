@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=290-shinju-growth-gold-gauge">
+  <link rel="stylesheet" href="css/style.css?v=298-remnant-panel-blend">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -299,7 +299,7 @@
   </div>
 </div>
 
-<div id="screen-zukan" class="screen">
+<div id="screen-zukan" class="screen is-primoa-mode">
   <div class="header">
     <div></div>
     <div class="header-title" id="zukan-header-title">プリモア一覧</div>
@@ -4704,6 +4704,13 @@ setTenResultFooterVisible(true);
   function updateZukanHeaderForMode(){
     var headerBack = document.getElementById('zukan-header-back');
     var headerTitle = document.getElementById('zukan-header-title');
+    var zukanScreen = document.getElementById('screen-zukan');
+
+    // プリモア／レムナントで背景と装飾を切り替えるため、画面モードを明示する。
+    if(zukanScreen){
+      zukanScreen.classList.toggle('is-primoa-mode', currentZukanMainTab !== 'remnant');
+      zukanScreen.classList.toggle('is-remnant-mode', currentZukanMainTab === 'remnant');
+    }
 
     if(headerTitle){
       headerTitle.textContent = currentZukanMainTab === 'remnant' ? 'レムナント一覧' : 'プリモア一覧';

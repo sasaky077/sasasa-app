@@ -7843,6 +7843,81 @@ window._b32CancelSkillDetail = function (event) {
  renderBattle32UI();
 };
 
+
+// ============================================================
+// 選択式支援ULT（スイ「星環の約束」など）
+// ============================================================
+function _b32GetChoiceOptions(skill) {
+  if (!skill) return [];
+  if (Array.isArray(skill.choiceOptions) && skill.choiceOptions.length) {
+    return skill.choiceOptions.map(option => ({ ...option }));
+  }
+
+  // 戦闘用データ変換時に choiceOptions が欠落した場合の復元。
+  const type = String(skill.type || '').toLowerCase();
+  const name = String(skill.name || '');
+  if (type === 'delayed_choice_support' || name.includes('星環')) {
+    return [
+      { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
+      { effectType: 'all_critical_up', label: '味方全体critical率+50%', rate: 0.50, duration: 1 },
+      { effectType: 'all_guard', label: '味方全体ガード（ダメージ70%カット）', rate: 0.70, duration: 1 },
+    ];
+  }
+  return [];
+}
+
+function _b32ChooseDelayedSupportOption(skill) {
+  const options = _b32GetChoiceOptions(skill);
+  if (!options.length) return Promise.resolve(null);
+
+  return new Promise(resolve => {
+    const old = document.getElementById('b32-choice-support-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'b32-choice-support-overlay';
+    overlay.innerHTML = `
+      <div class="b32-choice-support-modal" role="dialog" aria-modal="true" aria-label="ULT効果選択">
+        <div class="b32-choice-support-kicker">ULT EFFECT</div>
+        <div class="b32-choice-support-title">発動する効果を選択</div>
+        <div class="b32-choice-support-skill">${b32EscapeHtml(skill.name || 'ULT')}</div>
+        <div class="b32-choice-support-list">
+          ${options.map((option, index) => `
+            <button type="button" class="b32-choice-support-option" data-index="${index}">
+              <span class="b32-choice-support-number">0${index + 1}</span>
+              <span class="b32-choice-support-label">${b32EscapeHtml(option.label || '効果')}</span>
+            </button>
+          `).join('')}
+        </div>
+        <button type="button" class="b32-choice-support-cancel">キャンセル</button>
+      </div>`;
+
+    const finish = value => {
+      overlay.remove();
+      resolve(value);
+    };
+
+    overlay.querySelectorAll('.b32-choice-support-option').forEach(button => {
+      button.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(button.dataset.index);
+        finish(options[index] ? { ...options[index] } : null);
+      });
+    });
+    overlay.querySelector('.b32-choice-support-cancel')?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      finish(null);
+    });
+    overlay.addEventListener('click', event => {
+      if (event.target === overlay) finish(null);
+    });
+
+    document.body.appendChild(overlay);
+  });
+}
+
  function _b32ShowSkillDetail(allyUid, skillId) {
  const bs = _bs();
  if (!bs) return;
@@ -7909,6 +7984,18 @@ if (!_canUseSkillNow(bs, allyNow, skillNow)) {
   return;
 }
 
+// 選択式支援ULTは、消費・演出開始前に効果を選ばせる。
+// キャンセル時はLINK・神気・行動回数を一切消費しない。
+let selectedChoiceOption = null;
+const choiceOptions = _b32GetChoiceOptions(skillNow);
+if (choiceOptions.length > 0) {
+  selectedChoiceOption = await _b32ChooseDelayedSupportOption(skillNow);
+  if (!selectedChoiceOption) {
+    renderBattle32UI();
+    return;
+  }
+}
+
 // 入力ロックして、スキル/ULT演出中はコンボウインドウとレンジを退避する。
 // 発動開始時点で詳細画面と選択状態を先に消し、演出後にモーダルが残らないようにする。
 _b32InputLocked = true;
@@ -7949,7 +8036,7 @@ await _wait(skillNow?.isUltimate ? 60 : 0);
 
 let ok = false;
 try {
-  ok = await window.Battle32.executeAllySkill(allyUid, skillId);
+  ok = await window.Battle32.executeAllySkill(allyUid, skillId, { selectedOption: selectedChoiceOption });
 } catch (e) {
   console.error('[Battle32UI] executeAllySkill crashed', e, { allyUid, skillId, skillName: skillNow && skillNow.name });
   // applyDamage後のUI演出コールバックなどで例外が出た場合でも、

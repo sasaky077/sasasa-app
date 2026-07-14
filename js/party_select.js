@@ -983,9 +983,93 @@
         border-color: rgba(130,99,52,.18) !important;
       }
       .ps-detail-close {
-        background: rgba(255,255,255,.62) !important;
-        border-color: rgba(125,94,48,.26) !important;
-        color: #665137 !important;
+        background: rgba(255,255,255,.78) !important;
+        border-color: rgba(125,94,48,.34) !important;
+        color: #4f3b24 !important;
+        font-weight: 700;
+      }
+
+      /* キャラ詳細：紙背景でも全文を確実に読める高コントラスト補正 */
+      .ps-detail-box {
+        background-image:
+          linear-gradient(rgba(255,253,247,.82), rgba(255,253,247,.82)),
+          url("images/zeraphia_bg_01.webp") !important;
+      }
+      .ps-detail-hero {
+        border-bottom-color: rgba(113,82,39,.22) !important;
+        background: rgba(255,252,244,.34);
+      }
+      .ps-detail-name {
+        color: #44311d !important;
+        font-weight: 700;
+        text-shadow: 0 1px 0 rgba(255,255,255,.9);
+      }
+      .ps-detail-rarity.r  { color: #75654f !important; }
+      .ps-detail-rarity.sr { color: #9b6e13 !important; }
+      .ps-detail-rarity.ur { color: #81507f !important; }
+      .ps-detail-stat {
+        background: rgba(255,255,255,.72) !important;
+        border-color: rgba(118,84,39,.25) !important;
+      }
+      .ps-detail-stat-label { color: #8a765b !important; }
+      .ps-detail-stat-val { color: #4b3721 !important; font-weight: 700; }
+
+      .ps-detail-skills-title,
+      .ps-detail-move-title,
+      .ps-detail-combo-title {
+        color: #766044 !important;
+        font-weight: 700;
+      }
+      .ps-detail-skill,
+      .ps-detail-move-card,
+      .ps-detail-combo-card {
+        background: rgba(255,255,255,.70) !important;
+        border-color: rgba(120,87,42,.24) !important;
+        box-shadow: 0 3px 10px rgba(78,55,24,.07);
+      }
+      .ps-detail-skill-name,
+      .ps-detail-move-name,
+      .ps-detail-combo-name {
+        color: #49341f !important;
+        font-weight: 700 !important;
+      }
+      .ps-detail-skill-desc,
+      .ps-detail-move-desc,
+      .ps-detail-combo-desc {
+        color: #624d34 !important;
+        font-weight: 500;
+      }
+      .ps-detail-skill-hit,
+      .ps-detail-move-meta {
+        color: #846e52 !important;
+      }
+      .ps-detail-combo-condition { color: #725881 !important; }
+      .ps-detail-combo-meta span {
+        color: #665039 !important;
+        background: rgba(113,82,42,.08) !important;
+        border: 1px solid rgba(113,82,42,.12);
+      }
+      .ps-detail-combo-range-item {
+        background: rgba(250,246,236,.88) !important;
+        border-color: rgba(113,82,42,.22) !important;
+      }
+      .ps-detail-combo-range-title { color: #735d42 !important; font-weight: 700; }
+      .ps-detail-combo-range-label { color: #5b472f !important; font-weight: 600; }
+      .ps-detail-combo-range-item.trigger .ps-detail-combo-range-label { color: #76519a !important; }
+      .ps-detail-combo-range-item.attack .ps-detail-combo-range-label { color: #9a6417 !important; }
+      .ps-detail-combo-effect { color: #6c4f7d !important; font-weight: 500; }
+      .ps-detail-combo-resonance {
+        color: #6b5128 !important;
+        background: rgba(194,149,58,.10) !important;
+        border-left-color: rgba(164,116,28,.72) !important;
+      }
+      .ps-detail-combo-none { color: #725f46 !important; }
+
+      .ps-mini-range-board,
+      .ps-mini-range-board.move-board,
+      .ps-mini-combo-board {
+        background-color: rgba(78,68,54,.52) !important;
+        border-color: rgba(88,68,43,.32) !important;
       }
     `;
     document.body.appendChild(s);

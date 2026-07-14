@@ -1868,7 +1868,7 @@ function _getDelayedSupportOptions32(ally, skill, key) {
   return [];
 }
 
-function _queueDelayedSupport(ally, skill) {
+function _queueDelayedSupport(ally, skill, selectedOptionOverride) {
   if (!_bs.delayedActions) _bs.delayedActions = [];
 
   // 支援予約は「次の自ターン開始時」が基本。明示指定があればそれを優先。
@@ -1890,7 +1890,9 @@ function _queueDelayedSupport(ally, skill) {
 
     randomOptions,
     choiceOptions,
-    selectedOption: skill.selectedOption ? deepClone(skill.selectedOption) : null,
+    selectedOption: selectedOptionOverride
+      ? deepClone(selectedOptionOverride)
+      : (skill.selectedOption ? deepClone(skill.selectedOption) : null),
 
     trigger: skill.delayedTrigger || 'allyTurnStart',
     triggerTurn: _bs.turn + delayTurns,
@@ -2454,7 +2456,7 @@ function _executeDelayedAttack(action) {
   // ============================================================
   // スキル実行（味方）
   // ============================================================
-  async function executeAllySkill(allyUid, skillId) {
+  async function executeAllySkill(allyUid, skillId, executionOptions) {
     if (_bs.phase !== 'skill') {
       _log('スキルフェーズではありません');
       console.warn('[Battle32] executeAllySkill failed: phase is not skill', { phase: _bs && _bs.phase, allyUid, skillId });
@@ -2680,7 +2682,10 @@ if (stype === 'repeat_skill') {
 
 // ── delayed_random_support / delayed_choice_support：未来支援 ─────
 } else if (_isDelayedSupportSkill(skill)) {
-  _queueDelayedSupport(ally, skill);
+  const selectedOption = executionOptions && executionOptions.selectedOption
+    ? executionOptions.selectedOption
+    : null;
+  _queueDelayedSupport(ally, skill, selectedOption);
 
 // ── delayed_attack：未来予約攻撃 ─────────────────────────────
 } else if (isDelayedAttack) {

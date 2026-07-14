@@ -1984,6 +1984,20 @@ canvas {
   height: 100dvh;
 }
 
+/* プリモア一覧のみ専用背景を使用。レムナント一覧は従来の暗色背景を維持する。 */
+#screen-zukan.is-primoa-mode {
+  background-color: #f4efe5;
+  background-image: url("../images/primoa_bg.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#screen-zukan.is-remnant-mode {
+  background-color: #0f0f0f;
+  background-image: none;
+}
+
 
 /* =========================================================
    04 Screens / Header / Scroll
@@ -13214,7 +13228,7 @@ body,
    - images/chara_frame.webp をキャラ画像の最前面に配置
    - レアリティバッジと拡大ヒントはフレームより上に表示
    ========================================================= */
-#box-grid.box-carousel .box-carousel-visual::after {
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -13470,4 +13484,328 @@ body,
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.48),
     0 0 7px rgba(194, 164, 80, 0.30) !important;
+}
+
+/* =========================================================
+   110 プリモア／レムナント背景 最終優先指定
+   - 共通紙背景（103）の後段上書き対策
+   ========================================================= */
+#screen-zukan.is-primoa-mode {
+  background-color: #f4efe5 !important;
+  background-image: url("../images/primoa_bg.webp") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: cover !important;
+}
+
+#screen-zukan.is-remnant-mode {
+  background-color: #f4efe5 !important;
+  background-image: url("../images/primoa_bg.webp") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: cover !important;
+}
+
+/* レムナント一覧のスクロール領域・カルーセルは背景素材を透かす */
+#screen-zukan.is-remnant-mode .screen-scroll,
+#screen-zukan.is-remnant-mode #zukan-sub-box,
+#screen-zukan.is-remnant-mode #box-grid.remnant-carousel {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+
+/* =========================================================
+   102 Primoa Status Panel Blend Patch
+   - プリモア詳細の白すぎるステータスカードを画面になじませる
+   - 文字色も読みやすい暖色系へ調整
+   ========================================================= */
+
+#screen-zukan.is-primoa-mode .box-carousel-detail,
+#screen-zukan.is-primoa-mode .box-carousel-detail-scroll,
+#screen-zukan.is-primoa-mode #detail-modal .modal {
+  color: #4c4031 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-section,
+#screen-zukan.is-primoa-mode .detail-skill-section,
+#screen-zukan.is-primoa-mode .detail-skill-card,
+#screen-zukan.is-primoa-mode .detail-skill-empty,
+#screen-zukan.is-primoa-mode .box-carousel-locked-panel,
+#detail-modal .detail-lb-section,
+#detail-modal .detail-skill-section,
+#detail-modal .detail-skill-card,
+#detail-modal .detail-skill-empty {
+  background:
+    linear-gradient(180deg,
+      rgba(247,243,234,0.95) 0%,
+      rgba(242,236,226,0.94) 100%) !important;
+  border-color: rgba(171,149,114,0.24) !important;
+  box-shadow:
+    0 8px 20px rgba(93,76,49,0.08),
+    0 0 0 1px rgba(255,255,255,0.52) inset !important;
+  color: #4c4031 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-skill-card.is-ult,
+#detail-modal .detail-skill-card.is-ult {
+  background:
+    linear-gradient(180deg,
+      rgba(243,238,247,0.96) 0%,
+      rgba(237,231,243,0.94) 100%) !important;
+  border-color: rgba(126,104,173,0.24) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-label,
+#screen-zukan.is-primoa-mode .detail-status-label,
+#screen-zukan.is-primoa-mode .detail-lb-info,
+#screen-zukan.is-primoa-mode .detail-section-title,
+#screen-zukan.is-primoa-mode .detail-skill-meta span,
+#screen-zukan.is-primoa-mode .detail-skill-desc,
+#screen-zukan.is-primoa-mode .detail-skill-empty,
+#screen-zukan.is-primoa-mode .detail-type-row,
+#screen-zukan.is-primoa-mode .detail-type-val,
+#screen-zukan.is-primoa-mode .detail-element-type-label,
+#screen-zukan.is-primoa-mode .detail-owned-count,
+#screen-zukan.is-primoa-mode .stat-name,
+#screen-zukan.is-primoa-mode .stat-val,
+#detail-modal .detail-lb-label,
+#detail-modal .detail-status-label,
+#detail-modal .detail-lb-info,
+#detail-modal .detail-section-title,
+#detail-modal .detail-skill-meta span,
+#detail-modal .detail-skill-desc,
+#detail-modal .detail-skill-empty,
+#detail-modal .detail-type-row,
+#detail-modal .detail-type-val,
+#detail-modal .detail-element-type-label,
+#detail-modal .detail-owned-count,
+#detail-modal .stat-name,
+#detail-modal .stat-val {
+  color: rgba(92,76,56,0.78) !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-status-val,
+#screen-zukan.is-primoa-mode .detail-skill-name,
+#screen-zukan.is-primoa-mode .detail-lb-title,
+#screen-zukan.is-primoa-mode .detail-skill-title,
+#screen-zukan.is-primoa-mode .detail-type-val,
+#screen-zukan.is-primoa-mode .detail-owned-count strong,
+#screen-zukan.is-primoa-mode .box-carousel-locked-title,
+#detail-modal .detail-status-val,
+#detail-modal .detail-skill-name,
+#detail-modal .detail-lb-title,
+#detail-modal .detail-skill-title,
+#detail-modal .detail-type-val,
+#detail-modal .detail-owned-count strong,
+#detail-modal .box-carousel-locked-title {
+  color: #4c4031 !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-val,
+#detail-modal .detail-lb-val {
+  color: #7a5faf !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-skill-effect,
+#detail-modal .detail-skill-effect {
+  color: #7b5f98 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-row,
+#detail-modal .detail-lb-row {
+  border-bottom-color: rgba(171,149,114,0.18) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-status-grid,
+#detail-modal .detail-status-grid {
+  gap: 10px;
+}
+
+#screen-zukan.is-primoa-mode .detail-status-row,
+#detail-modal .detail-status-row {
+  min-height: 28px;
+}
+
+#screen-zukan.is-primoa-mode .detail-skill-badge,
+#detail-modal .detail-skill-badge {
+  background: rgba(147,121,80,0.08) !important;
+  border-color: rgba(147,121,80,0.18) !important;
+  color: rgba(92,76,56,0.78) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-skill-card.is-ult .detail-skill-badge,
+#detail-modal .detail-skill-card.is-ult .detail-skill-badge {
+  background: rgba(122,95,175,0.10) !important;
+  border-color: rgba(122,95,175,0.22) !important;
+  color: #6a5396 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-range-preview,
+#screen-zukan.is-primoa-mode .detail-move-preview,
+#detail-modal .detail-range-preview,
+#detail-modal .detail-move-preview {
+  background: rgba(120,103,79,0.06) !important;
+  border-color: rgba(171,149,114,0.16) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-range-board,
+#screen-zukan.is-primoa-mode .detail-move-board,
+#detail-modal .detail-range-board,
+#detail-modal .detail-move-board {
+  background: rgba(120,103,79,0.07) !important;
+  border-color: rgba(171,149,114,0.16) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-range-cell,
+#screen-zukan.is-primoa-mode .detail-move-cell,
+#detail-modal .detail-range-cell,
+#detail-modal .detail-move-cell {
+  background: rgba(255,255,255,0.46) !important;
+  border-color: rgba(171,149,114,0.10) !important;
+}
+
+
+/* =========================================================
+   Primoa detail range guide visibility enhancement
+   - white-theme generic cells must not wash out state colors
+   - self/origin is gold, enemy target is rose, ally target is blue
+   ========================================================= */
+#screen-zukan.is-primoa-mode .detail-range-cell.self,
+#detail-modal .detail-range-cell.self {
+  background: #d8ad45 !important;
+  border-color: #fff2b6 !important;
+  box-shadow:
+    0 0 0 2px rgba(126, 91, 25, 0.24),
+    0 0 10px rgba(207, 157, 48, 0.70),
+    inset 0 0 0 1px rgba(255,255,255,0.72) !important;
+  border-radius: 50% !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-range-cell.target,
+#detail-modal .detail-range-cell.target {
+  background: rgba(205, 73, 91, 0.82) !important;
+  border-color: rgba(139, 38, 54, 0.88) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.58),
+    0 0 8px rgba(190, 55, 76, 0.46) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-range-cell.ally,
+#detail-modal .detail-range-cell.ally {
+  background: rgba(74, 153, 205, 0.82) !important;
+  border-color: rgba(38, 105, 153, 0.90) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.58),
+    0 0 8px rgba(55, 138, 194, 0.44) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-move-cell.self,
+#detail-modal .detail-move-cell.self {
+  background: #d8ad45 !important;
+  border-color: #fff2b6 !important;
+  box-shadow:
+    0 0 0 2px rgba(126, 91, 25, 0.24),
+    0 0 10px rgba(207, 157, 48, 0.68) !important;
+  border-radius: 50% !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-move-cell.movable,
+#detail-modal .detail-move-cell.movable {
+  background: rgba(91, 143, 193, 0.76) !important;
+  border-color: rgba(45, 96, 146, 0.88) !important;
+  box-shadow: 0 0 7px rgba(65, 126, 183, 0.40) !important;
+}
+
+
+/* =========================================================
+   103 Primoa Combo Trigger Visibility Patch
+   - 反応範囲の combo-trigger 色が白テーマ汎用セルに負けるため再指定
+   ========================================================= */
+
+#screen-zukan.is-primoa-mode .detail-combo-trigger-preview,
+#detail-modal .detail-combo-trigger-preview {
+  background: rgba(120,103,79,0.08) !important;
+  border-color: rgba(171,149,114,0.18) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-combo-trigger-board,
+#detail-modal .detail-combo-trigger-board {
+  background: rgba(120,103,79,0.09) !important;
+  border-color: rgba(171,149,114,0.18) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-combo-trigger-board .detail-range-cell.combo-trigger,
+#detail-modal .detail-combo-trigger-board .detail-range-cell.combo-trigger {
+  background:
+    linear-gradient(180deg, rgba(226,210,242,0.98), rgba(191,161,220,0.96)) !important;
+  border-color: rgba(119,84,160,0.72) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.82),
+    0 0 0 1px rgba(255,255,255,0.42),
+    0 0 8px rgba(124,84,170,0.34) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-combo-range-item .detail-range-cell.target,
+#detail-modal .detail-combo-range-item .detail-range-cell.target {
+  background:
+    linear-gradient(180deg, rgba(214,108,123,0.98), rgba(192,72,90,0.94)) !important;
+  border-color: rgba(145,49,64,0.76) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.76),
+    0 0 0 1px rgba(255,255,255,0.36),
+    0 0 8px rgba(183,63,82,0.28) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-combo-range-item .detail-range-cell.ally,
+#detail-modal .detail-combo-range-item .detail-range-cell.ally {
+  background:
+    linear-gradient(180deg, rgba(131,206,214,0.98), rgba(85,176,185,0.94)) !important;
+  border-color: rgba(58,138,145,0.72) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.76),
+    0 0 0 1px rgba(255,255,255,0.36),
+    0 0 8px rgba(64,155,163,0.26) !important;
+}
+
+/* =========================================================
+   111 Remnant Locked Panel Blend Patch
+   - レムナント情報カードの白浮きを抑え、背景へなじませる
+   ========================================================= */
+#screen-zukan.is-remnant-mode .box-carousel-locked-panel,
+#screen-zukan.is-remnant-mode .remnant-locked-panel {
+  background:
+    linear-gradient(180deg,
+      rgba(247, 241, 229, 0.88) 0%,
+      rgba(236, 226, 208, 0.84) 100%) !important;
+  border: 1px solid rgba(160, 132, 91, 0.26) !important;
+  box-shadow:
+    0 10px 26px rgba(90, 70, 42, 0.12),
+    inset 0 1px 0 rgba(255,255,255,0.58),
+    inset 0 0 28px rgba(190, 163, 116, 0.08) !important;
+  color: #5c4b36 !important;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+#screen-zukan.is-remnant-mode .box-carousel-locked-title {
+  color: rgba(83, 65, 43, 0.82) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.42) !important;
+}
+
+#screen-zukan.is-remnant-mode .box-carousel-locked-no {
+  color: rgba(101, 80, 54, 0.68) !important;
+}
+
+#screen-zukan.is-remnant-mode .box-carousel-locked-text {
+  color: rgba(92, 72, 49, 0.72) !important;
+  line-height: 1.8;
+}
+
+#screen-zukan.is-remnant-mode .box-carousel-locked-seal {
+  background: rgba(178, 148, 101, 0.10) !important;
+  border-color: rgba(143, 111, 69, 0.24) !important;
+  color: rgba(96, 73, 45, 0.66) !important;
 }
