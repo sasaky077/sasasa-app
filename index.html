@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=285-home-icon-compact-shadow">
+  <link rel="stylesheet" href="css/style.css?v=290-shinju-growth-gold-gauge">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -878,7 +878,7 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
       itemMixed: true,
-      disablePity: true,
+      disablePity: false,
       disableTenGuarantee: true
     },
     {
@@ -891,7 +891,7 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
       itemMixed: true,
-      disablePity: true,
+      disablePity: false,
       disableTenGuarantee: true
     },
     {
@@ -904,7 +904,7 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
       itemMixed: true,
-      disablePity: true,
+      disablePity: false,
       disableTenGuarantee: true
     },
     {
@@ -917,7 +917,7 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
       itemMixed: true,
-      disablePity: true,
+      disablePity: false,
       disableTenGuarantee: true
     }
   ];
@@ -926,8 +926,12 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
   var pityCount = parseInt(localStorage.getItem('pity_count') || '0', 10); // 天井カウント
   var PITY_LIMIT = 100; // 天井
 
+  // 不正値・旧データを安全な範囲へ補正
+  if(!Number.isFinite(pityCount)) pityCount = 0;
+  pityCount = Math.max(0, Math.min(pityCount, PITY_LIMIT));
+
   function savePityCount(){
-    localStorage.setItem('pity_count', pityCount);
+    localStorage.setItem('pity_count', String(pityCount));
   }
 
   function updatePityUI(){
@@ -1145,6 +1149,149 @@ const ERI_RESONANCE_BONUSES = {
 };
 window.ERI_RESONANCE_BONUSES = ERI_RESONANCE_BONUSES;
 
+
+// イグニス専用共鳴ボーナス（R）。
+// Lv.1は通常R共通のHP・ATK+4%。Lv.2以降は戦闘側でprofile/configを参照して適用する。
+const IGNIS_RESONANCE_BONUSES = {
+  1: {
+    title: '猛炎の基礎',
+    summary: 'HP・ATKが4%上昇',
+    detail: 'イグニスの基礎HPとATKが4%上昇する。'
+  },
+  2: {
+    title: '燃え残る闘志',
+    summary: '「ブレイブ・スマッシュ」後、自身を回復',
+    detail: 'ブレイブ・スマッシュの攻撃後、自身のHPをイグニスのATK×0.20回復する。'
+  },
+  3: {
+    title: '炎陣拡張',
+    summary: 'コンボ発動レンジ：隣接十字 → 十字全域',
+    detail: 'ブレイズ・リレーの発動レンジが「上下左右1マス」から「十字上すべて」へ拡張する。'
+  },
+  4: {
+    title: '天裂く炎輪',
+    summary: 'コンボ効果範囲：前方横3マス → 前方2段×横3マス',
+    detail: 'ブレイズ・リレーの効果範囲が「前方横3マス」から「前方2段×横3マス」へ拡張する。'
+  }
+};
+window.IGNIS_RESONANCE_BONUSES = IGNIS_RESONANCE_BONUSES;
+
+// ロゼ専用共鳴ボーナス。
+const ROSE_RESONANCE_BONUSES = {
+  1: {
+    title: '早咲きの号令',
+    summary: 'ULT必要LINKコスト -1',
+    detail: 'イグゾースト・ガーデンの必要LINKコストを1減少する。'
+  },
+  2: {
+    title: '蔓薔薇の歩み',
+    summary: '移動範囲に斜め前2マスを追加',
+    detail: '通常の移動範囲に、斜め前方の左右1マスを追加する。'
+  },
+  3: {
+    title: '薔薇園の侵食',
+    summary: 'コンボ反応範囲：十字 → 十字＋X字',
+    detail: 'ローズ・エコーの反応範囲を「十字すべて」から「十字＋X字すべて」へ拡張する。'
+  },
+  4: {
+    title: '棘園の支配',
+    summary: 'コンボATK-15%・25%スタン追加',
+    detail: 'ローズ・エコーのATK低下を15%へ強化し、25%の確率で1ターンスタンを追加する。'
+  }
+};
+window.ROSE_RESONANCE_BONUSES = ROSE_RESONANCE_BONUSES;
+
+
+// その他キャラクター用共鳴ボーナス。
+// キャラ詳細・共鳴画面では、全キャラクターに4段階の内容を表示する。
+const CHARACTER_RESONANCE_BONUSES = {
+  2: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'ネムの基礎HPとATKが4%上昇する。' },
+    2: { title:'深いまどろみ', summary:'通常スキルの威力を強化', detail:'ぐっどないとのダメージ倍率をATK×0.65へ強化する。' },
+    3: { title:'夢域拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'スリープ・チェインの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'夢鎖深化', summary:'コンボ威力強化・スタン40%', detail:'コンボのダメージ倍率をATK×0.30へ強化し、スタン確率を40%へ上昇する。' }
+  },
+  3: {
+    1: { title:'星環短縮', summary:'ULT必要LINKコスト -1', detail:'星環の約束の必要LINKコストを1減少する。' },
+    2: { title:'星読み深化', summary:'HP回復70%・critical+20%', detail:'星読みの予兆のHP回復量を最大HPの70%へ、味方全体critical上昇量を20%へ強化する。' },
+    3: { title:'星路拡張', summary:'移動範囲に左右1マスを追加', detail:'前方直線3マスの移動範囲に、左右1マスを追加する。' },
+    4: { title:'全天の星図', summary:'コンボ反応範囲：X字 → 十字＋X字', detail:'星導の余光の反応範囲をX字上すべてから、十字＋X字上すべてへ拡張する。' }
+  },
+  4: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'アルノの基礎HPとATKが4%上昇する。' },
+    2: { title:'高速処刑', summary:'通常スキル威力・critical率強化', detail:'ギルティの倍率をATK×1.70、critical率を75%へ強化する。' },
+    3: { title:'疾走連鎖', summary:'コンボ反応範囲を十字全域へ拡張', detail:'クイック・ギルティの反応範囲を十字上すべてへ拡張する。' },
+    4: { title:'断罪加速', summary:'コンボ威力強化・critical時ATK+15%', detail:'コンボ倍率をATK×1.05へ強化し、critical発生時に自身のATKを1ターン15%上昇する。' }
+  },
+  5: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'クラリネの基礎HPとATKが4%上昇する。' },
+    2: { title:'再演準備', summary:'通常スキル必要LINKコスト -1', detail:'通常スキルの必要LINKコストを1減少する。' },
+    3: { title:'喝采領域', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'アンコール', summary:'コンボ威力強化・次の通常スキル軽減', detail:'コンボ倍率をATK×0.55へ強化し、次に使用する通常スキルの必要LINKを1軽減する。' }
+  },
+  8: {
+    1: { title:'薬効促進', summary:'通常スキル必要LINKコスト -1', detail:'Overdoseの必要LINKコストを1減少する。' },
+    2: { title:'高濃度投与', summary:'通常スキルATK上昇：20% → 30%', detail:'Overdoseによる味方全体のATK上昇量を30%へ強化する。' },
+    3: { title:'機動調合', summary:'移動範囲：前方横3＋後方横3', detail:'移動範囲を前方横3マスと後方横3マスへ拡張する。' },
+    4: { title:'極性触媒', summary:'コンボ反応範囲：十字 → 十字＋X字', detail:'ケミカル・シナジーの反応範囲を十字上すべてから、十字＋X字上すべてへ拡張する。' }
+  },
+  9: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'ヴェラの基礎HPとATKが4%上昇する。' },
+    2: { title:'服従補助', summary:'通常スキル対象の味方ATK+10%', detail:'通常スキルで移動させた味方のATKを1ターン10%上昇する。' },
+    3: { title:'支配領域', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'絶対服従', summary:'コンボ威力強化・敵ATK-10%', detail:'コンボ倍率をATK×0.40へ強化し、対象のATKを1ターン10%低下させる。' }
+  },
+  10: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'フローラの基礎HPとATKが4%上昇する。' },
+    2: { title:'本気の一撃', summary:'通常スキル倍率をATK×1.40へ強化', detail:'通常スキルのダメージ倍率をATK×1.40へ強化する。' },
+    3: { title:'応援範囲拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'あと押し', summary:'コンボ威力強化・予約ULT+10%', detail:'コンボ倍率をATK×0.55へ強化し、予約済みULTの効果を10%強化する。' }
+  },
+  11: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'シグレの基礎HPとATKが4%上昇する。' },
+    2: { title:'剣圧強化', summary:'通常スキル倍率をATK×1.40へ強化', detail:'通常スキルのダメージ倍率をATK×1.40へ強化する。' },
+    3: { title:'間合い拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'押し切り', summary:'コンボ威力強化・押し出し75%', detail:'コンボ倍率をATK×0.60へ強化し、押し出し成功率を75%へ上昇する。' }
+  },
+  12: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'オルフィアの基礎HPとATKが4%上昇する。' },
+    2: { title:'祝福強化', summary:'通常スキルATK上昇量を20%へ強化', detail:'通常スキルによるATK上昇量を20%へ強化する。' },
+    3: { title:'祈りの導線', summary:'コンボ反応範囲を縦列全域へ拡張', detail:'コンボの反応範囲を同じ縦列上すべてへ拡張する。' },
+    4: { title:'重なる祝福', summary:'コンボATK+10%・最低ATK味方+5%', detail:'コンボのATK上昇量を10%へ強化し、最もATKが低い味方を追加で5%上昇する。' }
+  },
+  13: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'ミアの基礎HPとATKが4%上昇する。' },
+    2: { title:'精密狙撃', summary:'通常スキル威力・critical率強化', detail:'通常スキル倍率をATK×2.05、critical率を30%へ強化する。' },
+    3: { title:'月猫の星域', summary:'コンボ反応範囲を十字＋X字へ拡張', detail:'コンボの反応範囲を十字＋X字上すべてへ拡張する。' },
+    4: { title:'審判の爪痕', summary:'コンボ威力・critical強化、ATK-10%', detail:'コンボ倍率をATK×0.80、critical率を25%へ強化し、敵のATKを10%低下させる。' }
+  },
+  14: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'アヤカの基礎HPとATKが4%上昇する。' },
+    2: { title:'奇襲強化', summary:'通常スキル倍率をATK×1.15へ強化', detail:'通常スキルのダメージ倍率をATK×1.15へ強化する。' },
+    3: { title:'死角拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'背面必殺', summary:'コンボ威力強化・背面倍率1.50倍', detail:'コンボ倍率をATK×0.60へ強化し、背面攻撃倍率を1.50倍へ上昇する。' }
+  },
+  15: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'エテルナの基礎HPとATKが4%上昇する。' },
+    2: { title:'守護転移', summary:'通常スキル対象へ10%ガード', detail:'通常スキルで移動させた味方に、1ターン10%ガードを付与する。' },
+    3: { title:'守護圏拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'堅牢なる反響', summary:'コンボ威力強化・押し出し75%', detail:'コンボ倍率をATK×0.50へ強化し、押し出し成功率を75%へ上昇する。' }
+  },
+  16: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'ミトの基礎HPとATKが4%上昇する。' },
+    2: { title:'実体侵食', summary:'通常スキル威力・実体化率強化', detail:'通常スキル倍率をATK×0.85、実体化成功率を90%へ強化する。' },
+    3: { title:'侵食圏拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
+    4: { title:'深層実体化', summary:'コンボ威力強化・実体化率60%', detail:'コンボ倍率をATK×0.45へ強化し、実体化成功率を60%へ上昇する。' }
+  },
+  17: {
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'アンジェの基礎HPとATKが4%上昇する。' },
+    2: { title:'治癒増幅', summary:'通常スキル回復量+20%', detail:'通常スキルの回復量を20%増加する。' },
+    3: { title:'祈りの縦糸', summary:'コンボ反応範囲を縦列全域へ拡張', detail:'コンボの反応範囲を同じ縦列上すべてへ拡張する。' },
+    4: { title:'慈愛の余波', summary:'コンボ回復12%・最低HP味方+5%', detail:'コンボ回復量を最大HPの12%へ強化し、最もHPが低い味方を追加で最大HPの5%回復する。' }
+  }
+};
+window.CHARACTER_RESONANCE_BONUSES = CHARACTER_RESONANCE_BONUSES;
+
 function getLimitBreakRate(limitBreak, charaId){
   var lb = Math.max(0, Number(limitBreak || 0));
 
@@ -1169,7 +1316,18 @@ function applyLimitBreakStats(baseStats, limitBreak, rarity, charaId){
 }
 
 function getResonanceBonusMaster(target){
-  return target && Number(target.id) === 1 ? ERI_RESONANCE_BONUSES : null;
+  if(!target) return null;
+
+  var charaId = Number(target.id);
+  var charaDef = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS.find(function(c){ return Number(c.id) === charaId; })
+    : null;
+  var profile = target.resonanceBonusProfile || (charaDef && charaDef.resonanceBonusProfile) || '';
+
+  if(profile === 'eri_v1' || charaId === 1) return ERI_RESONANCE_BONUSES;
+  if(profile === 'ignis_v1' || charaId === 6) return IGNIS_RESONANCE_BONUSES;
+  if(profile === 'rose_v1' || charaId === 7) return ROSE_RESONANCE_BONUSES;
+  return CHARACTER_RESONANCE_BONUSES[charaId] || null;
 }
 
 function buildResonanceBonusHTML(target){
@@ -1201,6 +1359,23 @@ function buildResonanceBonusHTML(target){
     rows +
   '</div>';
 }
+
+// 戦闘側から共鳴プロファイル／段階別設定を参照するための共通API。
+function getCharacterResonanceConfig(target){
+  if(!target) return null;
+  var charaId = Number(target.id != null ? target.id : target.charaId);
+  var charaDef = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS.find(function(c){ return Number(c.id) === charaId; })
+    : null;
+  if(!charaDef) return null;
+
+  return {
+    profile: charaDef.resonanceBonusProfile || '',
+    limitBreak: Math.max(0, Number(target.limitBreak != null ? target.limitBreak : target.limit_break || 0)),
+    config: charaDef.resonanceBonusConfig || null
+  };
+}
+window.getCharacterResonanceConfig = getCharacterResonanceConfig;
 
 function buildNextResonanceBonusHTML(target, nextLb){
   var master = getResonanceBonusMaster(target);
@@ -3156,36 +3331,32 @@ function createSummonResults(count, currentGacha){
     results.push(createOneSummonData(currentGacha));
   }
 
-  // ピックアップ＋素材混在ガチャは、指定率を崩さないため旧天井/10連保証を適用しない。
-  if(currentGacha && currentGacha.itemMixed === true){
-    assignNewFlags(results);
-    return results;
-  }
+  var pityEnabled = !!currentGacha &&
+    currentGacha.category !== 'once' &&
+    currentGacha.disablePity !== true;
 
-  // 天井カウント加算（onceガチャは天井に影響しない）
-  if(!currentGacha || currentGacha.category !== 'once'){
+  // 通常ガチャの天井：100回到達時、現在のバナーのピックアップを確定。
+  // 素材混在ガチャでもカウントと確定処理を行う。
+  if(pityEnabled){
     pityCount += count;
 
-    // 天井到達：UR確定
     if(pityCount >= PITY_LIMIT){
-      var hasUR = results.some(function(r){ return r.rarity === 'ur'; });
-      if(!hasUR){
-        var urChars = CHARACTERS.filter(function(c){ return matchesGachaFilter(c, currentGacha) && c.rarity === 'ur'; });
-        if(urChars.length > 0){
-          var pick = urChars[Math.floor(Math.random() * urChars.length)];
-          results[results.length - 1] = createCharaSummonData(pick, new Date());
-        }
+      var pickup = getCharaById(currentGacha.pickupCharaId);
+      if(pickup){
+        var guaranteed = createCharaSummonData(
+          pickup,
+          new Date(),
+          results[results.length - 1] && results[results.length - 1].time
+        );
+        guaranteed.isPickup = true;
+        guaranteed.isPity = true;
+        results[results.length - 1] = guaranteed;
       }
-      pityCount = 0; // 天井到達でリセット
-      savePityCount();
-      updatePityUI();
-    } else {
-      // UR出たらカウントリセット
-      var hasUR2 = results.some(function(r){ return r.rarity === 'ur'; });
-      if(hasUR2){ pityCount = 0; }
-      savePityCount();
-      updatePityUI();
+      pityCount = 0;
     }
+
+    savePityCount();
+    updatePityUI();
   }
 
   // once：UR確定
@@ -3202,8 +3373,8 @@ function createSummonResults(count, currentGacha){
     }
   }
 
-  // 10連：SR以上確定
-  if(count === 10){
+  // 10連保証は明示的に無効化されていないガチャだけに適用
+  if(count === 10 && (!currentGacha || currentGacha.disableTenGuarantee !== true)){
     var hasSR = results.some(function(r){
       return RARITY_ORDER[r.rarity] >= RARITY_ORDER.sr;
     });
@@ -7424,7 +7595,7 @@ window.addEventListener('pagehide', function () {
 <script src="js/roguelite_options.js"></script>
 <script src="js/roguelite_run.js?v=71-debug-boss-runs"></script>
 <script src="js/roguelite_reward.js"></script>
-<script src="js/shinju.js"></script>
+<script src="js/shinju.js?v=5-growth-thresholds"></script>
 <script src="js/roguelite_controller.js?v=81-debug-no-reward"></script>
 <script src="js/roguelite_overseer_run.js?v=1"></script>
 

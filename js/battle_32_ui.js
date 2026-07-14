@@ -478,16 +478,34 @@ function isSakielPreviewEnemy(enemy) {
   ));
 }
 
+function isOverseerPreviewEnemy(enemy) {
+  return !!(enemy && (
+    enemy.id === 'enemy_overseer_roguelite' ||
+    enemy.id === 'enemy_01' ||
+    enemy.specialActionType === 'overseer_random_4_ult6'
+  ));
+}
+
+function isPlannedActionEnemy(enemy) {
+  return isSakielPreviewEnemy(enemy) || isOverseerPreviewEnemy(enemy);
+}
+
 function getEnemyPlannedAction(enemy) {
-  if (!isSakielPreviewEnemy(enemy)) return null;
-  const next = enemy && enemy._sakielNextAction;
-  return next && next.id ? next : null;
+  if (isSakielPreviewEnemy(enemy)) {
+    const next = enemy && enemy._sakielNextAction;
+    return next && next.id ? next : null;
+  }
+  if (isOverseerPreviewEnemy(enemy)) {
+    const next = enemy && enemy._overseerNextAction;
+    return next && next.id ? next : null;
+  }
+  return null;
 }
 
 function enemyAttackDisplayLabel(enemy) {
   const next = getEnemyPlannedAction(enemy);
   if (next) return `次回：${next.title || '特殊行動'}`;
-  if (isSakielPreviewEnemy(enemy)) return '次回行動を決定中';
+  if (isPlannedActionEnemy(enemy)) return '次回行動を決定中';
   return enemyAttackLabel(enemy && enemy.attackRange);
 }
 
@@ -1616,7 +1634,7 @@ function getEnemyAttackGuideCells(enemy, bs) {
     }).filter(cell => Number.isFinite(cell.row) && Number.isFinite(cell.col));
   }
 
-  if (isSakielPreviewEnemy(enemy)) return [];
+  if (isPlannedActionEnemy(enemy)) return [];
 
   const range = enemy.attackRange || 'enemy_attack_front';
   let keys = new Set();

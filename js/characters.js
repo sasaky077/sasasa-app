@@ -156,6 +156,7 @@ skills: [
     battleBackImg: 'images/chara_03_battle_back.webp',
     panelImg: 'images/chara_03_panel.webp',
     favScale: 0.95, favOffsetY: 5,
+    resonanceBonusProfile: 'sui_v1',
     uiScale: {panel: 1.0,battleBack: 1.5},
         combo: {
       range: 'combo_x_all',
@@ -174,12 +175,12 @@ skills: [
         range: 'self',
         randomOptions: [
           { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
-          { effectType: 'lowest_full_heal', label: '一番HPの低い味方を全回復' },
-          { effectType: 'all_critical_up', label: '味方全体critical率+20%', rate: 0.20, duration: 1 }
+          { effectType: 'lowest_hp_heal', label: '一番HPの低い味方を最大HPの50%回復', rate: 0.50 },
+          { effectType: 'all_critical_up', label: '味方全体critical率+15%', rate: 0.15, duration: 1 }
         ],
         effects: [],
         hitStyle: 'support',
-        desc: '次の自ターン開始時、LINK+2／一番HPの低い味方のHPを全回復／味方全体critical率+20% のいずれかがランダムで発動する。' },
+        desc: '次の自ターン開始時、LINK+2／一番HPの低い味方を最大HPの50%回復／味方全体critical率+15% のいずれかがランダムで発動する。' },
 
       { id: 'ult',
         name: '星環の約束',
@@ -192,13 +193,13 @@ skills: [
         multiplier: 0.0,
         range: 'self',
         choiceOptions: [
-          { effectType: 'link_plus_3', label: 'LINK+3', amount: 3 },
+          { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
           { effectType: 'all_critical_up', label: '味方全体critical率+50%', rate: 0.50, duration: 1 },
-          { effectType: 'all_guard', label: '味方全体ガード（ダメージ80%カット）', rate: 0.80, duration: 2 }
+          { effectType: 'all_guard', label: '味方全体ガード（ダメージ70%カット）', rate: 0.70, duration: 1 }
         ],
         effects: [],
         hitStyle: 'support',
-        desc: '任意の効果を選択して予約する。次の自ターン開始時、LINK+3／味方全体critical率+50%／味方全体ガード（ダメージ80%カット）のいずれかが発動する。' }
+        desc: '任意の効果を選択して予約する。次の自ターン開始時、LINK+2／味方全体critical率+50%（1ターン）／味方全体ガード（ダメージ70%カット・1ターン）のいずれかが発動する。' }
     ]},
 
      // ── id:4 アルノ
@@ -339,6 +340,12 @@ skills: [
     battleBackImg: 'images/chara_06_battle_back.webp',
     panelImg: 'images/chara_06_panel.webp',
     favScale: 1.0, favOffsetY: -15,
+    resonanceBonusProfile: 'ignis_v1',
+    resonanceBonusConfig: {
+      2: { skillId: 's1', selfHealAtkRate: 0.20 },
+      3: { comboTriggerRange: 'combo_cross_all' },
+      4: { comboSkillRange: 'fan_2row_3_ally' }
+    },
     uiScale: {panel: 1.0,battleBack: 1.7},
         combo: {
       range: 'combo_cross_1',
@@ -403,6 +410,7 @@ skills: [
     battleBackImg: 'images/chara_07_battle_back.webp',
     panelImg: 'images/chara_07_panel.webp',
     favScale: 0.85, favOffsetY: -25,
+    resonanceBonusProfile: 'rose_v1',
     uiScale: {panel: 1.0,battleBack: 1.5},
         combo: {
       range: 'combo_cross_all',
@@ -471,7 +479,7 @@ skills: [
     shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 760, ATK: 220 },
+    stats: { HP: 700, ATK: 220 },
     img: 'images/chara_08.webp', 
     cutImg: 'images/chara_08_cut.webp', 
     ultImg: 'images/chara_08_cutin.webp',
@@ -498,25 +506,25 @@ skills: [
         multiplier: 0.0,
         range: 'ally_all',
         effects: [
-          { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.3 }
+          { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.20 }
         ],
-        desc: '射程：味方全体。ダメージなし。味方全体のATKを1ターン30%上昇させる。' },
+        desc: '射程：味方全体。ダメージなし。味方全体のATKを1ターン20%上昇させる。' },
 
       { id: 'ult',
         name: 'Toxic Mist',
-        linkCost: 4,
+        linkCost: 5,
         isUltimate: true,
         hit: 100,
         criticalRate: 0.10,
         criticalDamageRate: 1.5,
         type: 'debuff',
         multiplier: 0.7,
-        range: 'enemy_all',
+        range: 'cross_all',
         effects: [
           { type: 'poison', target: 'enemy', hit: 100, duration: 3, rate: 0.50 }
         ],
         hitStyle: 'all',
-        desc: '射程：敵全体。対象の敵にATK×0.5のダメージを与える。さらに3ターンの間、毒による継続ダメージを与える。' }
+        desc: '射程：自身中心の十字上すべて。対象の敵にATK×0.7のダメージを与える。さらに3ターンの間、毒による継続ダメージを与える。' }
     ]},
 
 

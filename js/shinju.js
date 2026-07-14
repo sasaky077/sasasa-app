@@ -14,7 +14,8 @@
   const MAX_STAGE = 5;
 
   // stage 1 = shinju_01.webp（芽） / stage 5 = shinju_05.webp（大木）
-  const STAGE_EXP = [0, 100, 250, 450, 700];
+  const STAGE_EXP = [0, 1000, 2000, 4000, 7000];
+  const COMPLETE_EXP = 10000;
   const STAGE_LABELS = [
     '萌芽',
     '若芽',
@@ -103,8 +104,8 @@
     const s = normalizeState(state || readState());
     const stage = getStageByExp(s.exp);
     const currentMin = STAGE_EXP[stage - 1] || 0;
-    const nextNeed = STAGE_EXP[stage] || STAGE_EXP[MAX_STAGE - 1];
-    const isMax = stage >= MAX_STAGE;
+    const nextNeed = stage >= MAX_STAGE ? COMPLETE_EXP : STAGE_EXP[stage];
+    const isMax = s.exp >= COMPLETE_EXP;
     const intoStage = Math.max(0, s.exp - currentMin);
     const stageSpan = Math.max(1, nextNeed - currentMin);
     const progress = isMax ? 100 : clamp((intoStage / stageSpan) * 100, 0, 100);
@@ -116,7 +117,7 @@
       progress,
       currentStageExp: currentMin,
       nextStageExp: isMax ? null : nextNeed,
-      totalRequiredExp: STAGE_EXP[MAX_STAGE - 1],
+      totalRequiredExp: COMPLETE_EXP,
       isMax,
       pendingItemCount: s.inventory.length,
       imageSrc: `images/shinju_${String(stage).padStart(2, '0')}.webp`,

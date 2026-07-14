@@ -1123,11 +1123,13 @@ function _hideHud() {
       id: 'sakiel_core',
       name: 'サキエルの心核',
       img: 'images/item_sakielcore.webp',
+      remnantId: 'remnant_04',
     },
     overseer: {
       id: 'overseer_core',
       name: 'オーバーシアの心核',
       img: 'images/item_overseercore.webp',
+      remnantId: 'remnant_01',
     },
   });
 
@@ -1179,6 +1181,41 @@ function _hideHud() {
       roll,
       ...def,
     };
+  }
+
+  // 心核の初回入手時だけ、対応するレムナント情報を解放する。
+  // 2個目以降の心核では unlockRemnantById() を呼ばないため、
+  // レムナント側の count は増やさず、心核所持数だけを蓄積する。
+  async function _unlockRemnantFromFirstCore(coreItem, { runId, rank, totalTurns } = {}) {
+    if (!coreItem || !coreItem.dropped || !coreItem.remnantId) return null;
+
+    if (typeof window.isRemnantOwned !== 'function' || typeof window.unlockRemnantById !== 'function') {
+      console.warn('[RogueliteController] レムナント解放APIが見つかりません:', coreItem.remnantId);
+      return null;
+    }
+
+    if (window.isRemnantOwned(coreItem.remnantId)) {
+      return { ok: true, unlocked: false, alreadyOwned: true, remnantId: coreItem.remnantId };
+    }
+
+    try {
+      const result = await window.unlockRemnantById(coreItem.remnantId, {
+        source: 'boss_core',
+        coreId: coreItem.id,
+        runId: runId || null,
+        rank: rank || null,
+        totalTurns: totalTurns != null ? totalTurns : null,
+      });
+
+      if (result && result.unlocked) {
+        coreItem.remnantUnlocked = true;
+        coreItem.unlockedRemnantId = coreItem.remnantId;
+      }
+      return result;
+    } catch (err) {
+      console.warn('[RogueliteController] 心核によるレムナント解放に失敗:', err);
+      return null;
+    }
   }
 
   // 心核所持数の参照API（素材一覧などから利用可能）
@@ -1926,6 +1963,12 @@ async function _onBattleEnd(result, payload) {
     const coreItem = !isDebugRun
       ? _rollAndGrantBossCore({ runId, rank })
       : null;
+
+    // 未解放のレムナントは、対応する心核を初めて入手した時点で情報解放する。
+    // 既に解放済みの場合は何もせず、心核所持数だけが増える。
+    if (coreItem && coreItem.dropped) {
+      await _unlockRemnantFromFirstCore(coreItem, { runId, rank, totalTurns });
+    }
 
     const evolutionMaterialItems = !isDebugRun
       && typeof window.grantEvolutionMaterialDropFromRoguelite === 'function'

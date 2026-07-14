@@ -9480,10 +9480,10 @@ body,
 #screen-summon .pity-bar-wrap {
   height: 9px !important;
   border-radius: 999px !important;
-  background: #26231d !important;
-  border: 1px solid rgba(144,111,49,0.52) !important;
-  overflow: visible !important;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.42) !important;
+  background: linear-gradient(180deg, #d8d6d0 0%, #c8c6c0 100%) !important;
+  border: 1px solid rgba(121,116,104,0.42) !important;
+  overflow: hidden !important;
+  box-shadow: inset 0 1px 3px rgba(72,68,59,0.22), 0 1px 0 rgba(255,255,255,0.78) !important;
 }
 
 #screen-summon .pity-bar-fill {
@@ -11382,16 +11382,16 @@ body,
 }
 
 /* =========================================================
-   Home Right Icons - compact size / subtle shadow
-   メールは二回り、神樹は一回り小さく表示。
+   Home Right Icons - unified large size / subtle shadow
+   メール・神樹を同サイズに統一し、従来より二回り大きく表示。
    ========================================================= */
 
 #screen-main .home-notice-btn,
 #screen-main .shinju-home-entry {
   position: absolute;
-  right: 14px;
-  width: clamp(62px, 16vw, 70px);
-  height: clamp(62px, 16vw, 70px);
+  right: 10px;
+  width: clamp(88px, 22vw, 98px);
+  height: clamp(88px, 22vw, 98px);
   padding: 0;
   margin: 0;
   border: 0;
@@ -11410,11 +11410,11 @@ body,
 }
 
 #screen-main .home-notice-btn {
-  top: calc(var(--header-h) + 132px);
+  top: calc(var(--header-h) + 118px);
 }
 
 #screen-main .shinju-home-entry {
-  top: calc(var(--header-h) + 196px);
+  top: calc(var(--header-h) + 216px);
 }
 
 #screen-main .home-notice-btn > img,
@@ -11431,18 +11431,12 @@ body,
   animation: none;
 }
 
-/* メール：現状から二回り小さく */
-#screen-main .home-notice-btn > img {
-  width: 72%;
-  height: 72%;
-  filter: drop-shadow(0 4px 5px rgba(68, 51, 24, 0.24));
-}
-
-/* 神樹：現状から一回り小さく */
+/* メール・神樹：同一サイズ */
+#screen-main .home-notice-btn > img,
 #screen-main .shinju-home-entry-icon {
-  width: 84%;
-  height: 84%;
-  filter: drop-shadow(0 4px 5px rgba(68, 51, 24, 0.22));
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 5px 7px rgba(68, 51, 24, 0.24));
 }
 
 #screen-main .home-notice-btn:active > img,
@@ -13301,4 +13295,179 @@ body,
 #limitbreak-modal .lb-no-material-shortage {
   color: #a93232 !important;
   font-weight: 700 !important;
+}
+
+/* =========================================================
+   108 Home HUD / Bottom Nav Ivory Gold Patch
+   - ホームモックの白紙・淡金・ブラウン基調へ統一
+   ========================================================= */
+:root {
+  --home-paper: #f7f2e7;
+  --home-paper-deep: #e9dfca;
+  --home-brown: #5f4b2d;
+  --home-brown-soft: #8a7348;
+  --home-gold: #b79652;
+  --home-gold-light: #ddc98f;
+}
+
+.global-user-frame,
+.global-user-frame.hud-dark {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,0.96), transparent 38%),
+    linear-gradient(180deg, rgba(250,247,239,0.98), rgba(237,228,210,0.98)) !important;
+  border-bottom: 1px solid rgba(153,119,56,0.42) !important;
+  box-shadow:
+    inset 0 -1px 0 rgba(255,255,255,0.82),
+    0 5px 14px rgba(91,69,31,0.13) !important;
+}
+
+.global-user-frame::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(176,139,67,0.52) 12%, rgba(176,139,67,0.52) 88%, transparent);
+  pointer-events: none;
+}
+
+.global-user-frame .hud-lv-circle {
+  background:
+    radial-gradient(circle at 38% 30%, rgba(255,255,255,0.96), rgba(245,238,222,0.94) 58%, rgba(222,208,178,0.94)) !important;
+  border: 1px solid rgba(151,116,50,0.72) !important;
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,0.52),
+    inset 0 0 12px rgba(164,126,57,0.13),
+    0 2px 6px rgba(91,69,31,0.12) !important;
+}
+
+.global-user-frame .hud-lv-label,
+.global-user-frame .hud-exp-text,
+.global-user-frame .hud-id {
+  color: rgba(103,82,47,0.74) !important;
+}
+
+.global-user-frame .hud-lv-num,
+.global-user-frame .hud-name,
+.global-user-frame .hud-res-val {
+  color: var(--home-brown) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8) !important;
+}
+
+.global-user-frame .hud-exp-bg {
+  background: rgba(83,69,47,0.38) !important;
+  border: 1px solid rgba(132,103,51,0.28) !important;
+  box-shadow: inset 0 1px 2px rgba(75,57,26,0.18) !important;
+}
+
+.global-user-frame .hud-exp-fill {
+  background: linear-gradient(90deg, #a87f32 0%, #d8bb68 70%, #f0df9f 100%) !important;
+  box-shadow: 0 0 5px rgba(190,151,66,0.35) !important;
+}
+
+.global-user-frame .hud-resource {
+  background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(239,231,214,0.92)) !important;
+  border: 1px solid rgba(144,110,49,0.38) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 2px 7px rgba(88,65,27,0.12) !important;
+}
+
+.global-user-frame .hud-gem-plus-btn {
+  background: linear-gradient(180deg, #fffdf7, #e8dcc2) !important;
+  color: #765a2b !important;
+  border: 1px solid rgba(145,109,45,0.56) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.86) !important;
+}
+
+.bottom-nav {
+  min-height: calc(76px + env(safe-area-inset-bottom)) !important;
+  padding: 7px 4px calc(7px + env(safe-area-inset-bottom)) !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.94), transparent 42%),
+    linear-gradient(180deg, rgba(249,246,237,0.99), rgba(231,220,198,0.99)) !important;
+  border-top: 1px solid rgba(147,111,48,0.52) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    0 -7px 18px rgba(91,68,29,0.13) !important;
+}
+
+.bottom-nav::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(183,145,71,0.55) 12%, rgba(183,145,71,0.55) 88%, transparent);
+  pointer-events: none;
+}
+
+.bottom-nav-item {
+  min-height: 64px !important;
+  border-right: 1px solid rgba(164,132,72,0.20);
+}
+
+.bottom-nav-item:last-child { border-right: 0; }
+
+.bottom-nav-item img {
+  filter: sepia(0.58) saturate(0.68) brightness(0.70) contrast(1.08) !important;
+  opacity: 0.78 !important;
+}
+
+.bottom-nav-label {
+  color: rgba(83,65,38,0.82) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.78) !important;
+}
+
+.bottom-nav-item.active::before {
+  inset: -7px 4px -9px !important;
+  border: 1px solid rgba(181,143,66,0.48) !important;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255,244,192,0.72), transparent 43%),
+    linear-gradient(180deg, rgba(255,252,239,0.88), rgba(232,214,170,0.68)) !important;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.52),
+    0 0 12px rgba(169,128,49,0.16) !important;
+}
+
+.bottom-nav-item.active img {
+  filter: sepia(0.42) saturate(1.1) brightness(0.86) contrast(1.08) drop-shadow(0 2px 4px rgba(118,86,31,0.24)) !important;
+  opacity: 1 !important;
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: #6d5227 !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 380px), (max-height: 700px) {
+  .bottom-nav {
+    min-height: calc(68px + env(safe-area-inset-bottom)) !important;
+    padding-top: 5px !important;
+  }
+}
+
+
+/* =========================================================
+   Shinju growth gauge — ivory / antique gold integration
+   ========================================================= */
+.shinju-progress-head {
+  color: rgba(105, 87, 55, 0.78) !important;
+}
+
+.shinju-progress-bg {
+  background: linear-gradient(180deg, rgba(168, 164, 151, 0.34), rgba(205, 201, 188, 0.46)) !important;
+  border: 1px solid rgba(135, 119, 83, 0.20) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(92, 82, 60, 0.14),
+    0 1px 5px rgba(255,255,255,0.46) !important;
+}
+
+.shinju-progress-fill {
+  background: linear-gradient(90deg, #a68f50 0%, #d3bd73 50%, #eee0a6 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.48),
+    0 0 7px rgba(194, 164, 80, 0.30) !important;
 }

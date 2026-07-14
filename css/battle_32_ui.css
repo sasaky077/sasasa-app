@@ -9934,3 +9934,98 @@ html body.b32-cinematic-roster-hidden #b32-roster-info-close-hitbox {
   pointer-events: none !important;
   transition: opacity 100ms ease, visibility 0s linear 100ms !important;
 }
+
+/* ============================================================
+   FIX: 盤面ユニット足元UIの重なり順と位置を再調整
+   - 足元UIがユニットから離れないように bottom を戻す
+   - 属性アイコン / HPバーをグリッドより前面へ
+   - 敵側も同じ前面レイヤーに載せる
+   ============================================================ */
+#battle32-root .b32-unit {
+  z-index: 6 !important;
+}
+
+#battle32-root .b32-unit-foot-ui {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 1px !important;
+  width: calc(var(--cell-size) * 1.02) !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 2px !important;
+  transform: translateX(-50%) translateZ(8px) !important;
+  transform-origin: center bottom !important;
+  z-index: 20 !important;
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-unit-foot-main {
+  width: calc(var(--cell-size) * 1.02) !important;
+  min-height: 10px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  transform: translateZ(10px) !important;
+}
+
+#battle32-root .b32-unit-foot-main .b32-hp-bar-wrap,
+#battle32-root .b32-unit.ally .b32-unit-foot-main .b32-hp-bar-wrap {
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: calc(var(--cell-size) * 0.68) !important;
+  min-width: calc(var(--cell-size) * 0.68) !important;
+  flex: 0 0 calc(var(--cell-size) * 0.68) !important;
+  transform: translateZ(10px) !important;
+  z-index: 21 !important;
+}
+
+#battle32-root .b32-unit-foot-main .b32-hp-bar-wrap {
+  height: 3px !important;
+}
+
+#battle32-root .b32-unit.ally .b32-unit-foot-main .b32-hp-bar-wrap {
+  height: 2px !important;
+}
+
+#battle32-root .b32-foot-element-icon {
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  max-width: 10px !important;
+  max-height: 10px !important;
+  flex: 0 0 10px !important;
+  display: block !important;
+  transform: translateZ(10px) !important;
+  z-index: 22 !important;
+}
+
+#battle32-root .b32-unit-foot-ui .b32-status-badges,
+#battle32-root .b32-unit-foot-ui .b32-status-badges.compact {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 2px !important;
+  max-width: calc(var(--cell-size) * 1.28) !important;
+  transform: translateZ(10px) !important;
+  z-index: 21 !important;
+}
+
+/* ============================================================
+   FIX v3: 足元UIの属性アイコンを左側に配置
+   HTML順は HPバー → 属性アイコン のため、row-reverse で左配置にする
+   ============================================================ */
+#battle32-root .b32-unit-foot-main {
+  flex-direction: row-reverse !important;
+}

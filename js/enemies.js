@@ -15,6 +15,8 @@ const ENEMIES = [
     upImg: 'images/enemy_01_up.webp',
     battleImg: 'images/enemy_01_battle.webp',
     isBoss: true,   // 32マスバトルでボス判定に使用
+    // DEBUGなど旧導線で enemy_01 が選ばれても、現行オーバーシア専用AIを使用する。
+    specialActionType: 'overseer_random_4_ult6',
     uiScale: { battleBack: 2.0 },  // 盤面表示サイズ（3倍）
 
     // 4×4向けに強化
@@ -554,6 +556,7 @@ const ENEMIES = [
     battleImg: 'images/remnant_01_battle.webp',
     battleUpImg: 'images/remnant_01_battle_up.webp',
     isBoss: true,
+    specialActionType: 'overseer_random_4_ult6',
     hp: 3600, hpMax: 3600,
     atk: 260,
     moveType: 'none',
@@ -564,9 +567,11 @@ const ENEMIES = [
     uiScale: { battleBack: 2.0 },
     status: [], statusList: [],
     actionPattern: [
-      { id:'overseer_cross', turn:1, action:'万象照覧', type:'atk_cross', range:'enemy_attack_cross', multiplier:1.05, power:'中', desc:'十字方向へ白光を放つ。' },
-      { id:'overseer_line',  turn:2, action:'白亜の視線', type:'atk_line', range:'pierce_all', multiplier:1.25, power:'大', desc:'直線上を貫く視線を放つ。' },
-      { id:'overseer_all',   turn:3, action:'監督者の宣告', type:'atk_all', range:'all', damageRate:0.18, power:'大', desc:'味方全体へ最大HP割合ダメージ。' },
+      { id:'overseer_three_lines', action:'三条照射', type:'atk_pattern', range:'forward_three_lines', multiplier:1.0, power:'大', desc:'前方3ラインを盤面端まで貫通する。' },
+      { id:'overseer_pull', action:'収監', type:'reposition', range:'farthest1', power:'特殊', desc:'最も離れたプレイヤーユニット1体を自身の目の前へ移動させる。' },
+      { id:'overseer_triangle', action:'白亜三角陣', type:'atk_pattern', range:'forward_triangle', multiplier:1.0, power:'大', desc:'前方1・3・5マスの三角形範囲を攻撃する。' },
+      { id:'overseer_summon', action:'観測端末', type:'summon', range:'highest_hp_front', power:'特殊', desc:'HPが最も多いプレイヤーユニットの目の前へしもべを1体召喚する。' },
+      { id:'overseer_grid_ult', turn:6, action:'万象格子', type:'atk_grid', range:'checkerboard', fixedDamage:150, power:'必殺', desc:'6ターンごとに盤面全域を格子状に攻撃し、対象へ150ダメージを与える。' },
     ],
     actionIdx: 0,
   },

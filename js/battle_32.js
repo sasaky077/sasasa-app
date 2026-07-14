@@ -162,6 +162,11 @@
   // ボス予兆攻撃のダメージ倍率（ATK比）
   const BOSS_WARN_RATE = 0.90;
 
+  // オーバーシア専用行動
+  const OVERSEER_ULT_INTERVAL = 6;
+  const OVERSEER_PATTERN_RATE = 1.0;
+  const OVERSEER_GRID_DAMAGE = 150;
+
   // ============================================================
   // CRITICAL
   // ============================================================
@@ -497,19 +502,42 @@
           const e = effect('stun'); if (e) e.hit = 40;
         }
         break;
-      case 3: // スイ SR
+      case 3: { // スイ SR
+        const ult = Array.isArray(c.skills)
+          ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
+          : null;
+
+        // Lv.1：ULT必要LINKコスト -1
+        if (lb >= 1 && ult) {
+          ult.linkCost = Math.max(0, Number(ult.linkCost || 0) - 1);
+        }
+
+        // Lv.2：通常スキルの回復を50%→70%、criticalを15%→20%へ強化
         if (lb >= 2 && s1 && Array.isArray(s1.randomOptions)) {
-          s1.randomOptions.forEach(o => {
-            if (o.effectType === 'link_plus_2') { o.effectType = 'link_plus_3'; o.amount = 3; o.label = 'LINK+3'; }
-            if (o.effectType === 'all_critical_up') { o.rate = 0.30; o.label = '味方全体critical率+30%'; }
+          s1.randomOptions.forEach(option => {
+            if (!option) return;
+            if (option.effectType === 'lowest_hp_heal') {
+              option.rate = 0.70;
+              option.label = '一番HPの低い味方を最大HPの70%回復';
+            }
+            if (option.effectType === 'all_critical_up') {
+              option.rate = 0.20;
+              option.label = '味方全体critical率+20%';
+            }
           });
         }
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
-        if (lb >= 4 && combo) {
-          const e = effect('critical_up'); if (e) e.rate = 0.15;
-          combo.resonanceLinkPlus = 1;
+
+        // Lv.3：前方直線3マス＋左右1マスへ移動範囲を拡張
+        if (lb >= 3) {
+          c.moveType = 'line_front_3_side';
+        }
+
+        // Lv.4：コンボ反応範囲をX字から十字＋X字へ拡張
+        if (lb >= 4 && c.combo) {
+          c.combo.range = 'combo_star_all';
         }
         break;
+      }
       case 4: // アルノ SR
         if (lb >= 2 && s1) { s1.multiplier = 1.70; s1.criticalRate = 0.75; }
         if (lb >= 3 && combo) combo.range = 'combo_cross_all';
@@ -521,25 +549,43 @@
         if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceNextS1Discount = 1; }
         break;
       case 6: // イグニス R
-        if (lb >= 2 && s1) {
-          s1.multiplier = 1.55;
-          const e = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (e) e.rate = 1.35;
-        }
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) { combo.multiplier = 0.70; combo.resonanceSelfAtkUp = { rate: 1.10, duration: 1 }; }
+        // Lv.2：ブレイブ・スマッシュ後、自身をATK×0.20回復
+        if (lb >= 2 && s1) s1.resonanceSelfHealAtkRate = 0.20;
+        // Lv.3：コンボ反応範囲を上下左右1マスから十字すべてへ拡張
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
+        // Lv.4：コンボ効果範囲を前方横3マスから前方2段×横3マスへ拡張
+        if (lb >= 4 && combo) combo.range = 'fan_2row_3_ally';
         break;
-      case 7: // ロゼ SR
-        if (lb >= 2 && s1) {
-          const stun = (s1.effects || []).find(x => x && x.type === 'stun'); if (stun) stun.hit = 90;
-          const down = (s1.effects || []).find(x => x && x.type === 'atk_down'); if (down) down.rate = 0.80;
+      case 7: { // ロゼ SR
+        const ult = Array.isArray(c.skills)
+          ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
+          : null;
+
+        // Lv.1：ULT必要LINKコスト -1
+        if (lb >= 1 && ult) {
+          ult.linkCost = Math.max(0, Number(ult.linkCost || 0) - 1);
         }
-        if (lb >= 3 && combo) combo.range = 'combo_cross_all';
+
+        // Lv.2：前方横3 + 後方横3へ移動範囲を拡張
+        if (lb >= 2) {
+          c.moveType = 'rose_resonance_move';
+        }
+
+        // Lv.3：コンボ反応範囲を十字から十字＋X字へ拡張
+        if (lb >= 3 && c.combo) {
+          c.combo.range = 'combo_star_all';
+        }
+
+        // Lv.4：コンボATK低下を15%へ強化し、25%スタンを追加
         if (lb >= 4 && combo) {
-          combo.multiplier = 0.50;
-          const down = effect('atk_down'); if (down) down.rate = 0.85;
-          if (!effect('stun')) combo.effects.push({ type:'stun', target:'enemy', hit:25, duration:1 });
+          const down = effect('atk_down');
+          if (down) down.rate = 0.85;
+          if (!effect('stun')) {
+            combo.effects.push({ type:'stun', target:'enemy', hit:25, duration:1 });
+          }
         }
         break;
+      }
       case 8: // ミモザ SR
         if (lb >= 2 && s1) {
           const up = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (up) up.rate = 1.35;
@@ -1288,6 +1334,7 @@ const enemies = enemyDefs.map(def => {
     // サキエルはバトル開始時点で最初の行動を先行決定する。
     // これによりTURN 1の味方フェーズから攻撃予告を確認できる。
     _initializeSakielNextActions();
+    _initializeOverseerNextActions();
 
     _emit('start', { bs: _snapshot() });
     _emit('phaseChange', { phase: 'skill', bs: _snapshot() });
@@ -1806,15 +1853,15 @@ function _getDelayedSupportOptions32(ally, skill, key) {
   if (key === 'randomOptions' && (skillType === 'delayed_random_support' || skillName.includes('星読み'))) {
     return [
       { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
-      { effectType: 'lowest_full_heal', label: '一番HPの低い味方を全回復' },
-      { effectType: 'all_critical_up', label: '味方全体critical率+20%', rate: 0.20, duration: 1 },
+      { effectType: 'lowest_hp_heal', label: '一番HPの低い味方を最大HPの50%回復', rate: 0.50 },
+      { effectType: 'all_critical_up', label: '味方全体critical率+15%', rate: 0.15, duration: 1 },
     ];
   }
   if (key === 'choiceOptions' && (skillType === 'delayed_choice_support' || skillName.includes('星環'))) {
     return [
-      { effectType: 'link_plus_3', label: 'LINK+3', amount: 3 },
+      { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
       { effectType: 'all_critical_up', label: '味方全体critical率+50%', rate: 0.50, duration: 1 },
-      { effectType: 'all_guard', label: '味方全体ガード（ダメージ80%カット）', rate: 0.80, duration: 2 },
+      { effectType: 'all_guard', label: '味方全体ガード（ダメージ70%カット）', rate: 0.70, duration: 1 },
     ];
   }
 
@@ -1885,6 +1932,10 @@ function _formatDelayedSupportOptionLabel(option) {
     return `LINK+${n}`;
   }
   if (type === 'lowest_full_heal') return '一番HPの低い味方を全回復';
+  if (type === 'lowest_hp_heal') {
+    const healRate = Number.isFinite(rate) ? rate : 0.50;
+    return `一番HPの低い味方を最大HPの${Math.round(healRate * 100)}%回復`;
+  }
   if (type === 'all_critical_up' || type === 'critical_up' || type === 'crit_up') {
     return `味方全体CRI+${Number.isFinite(rate) ? Math.round(rate * 100) : 20}%`;
   }
@@ -1929,7 +1980,7 @@ function _applyDelayedSupportOption(action, option) {
     return { label, detail };
   }
 
-  if (type === 'lowest_full_heal') {
+  if (type === 'lowest_full_heal' || type === 'lowest_hp_heal') {
     const targets = (_bs.allies || []).filter(a => a && a.hp > 0);
     if (!targets.length) {
       _log(`${action.ownerName}の「${action.skillName}」が発動したが、回復対象がいません`);
@@ -1944,11 +1995,19 @@ function _applyDelayedSupportOption(action, option) {
 
     const target = targets[0];
     const before = Number(target.hp || 0);
-    target.hp = Number(target.hpMax || target.hp || 0);
+    const hpMax = Number(target.hpMax || target.hp || 0);
+    const healRate = type === 'lowest_full_heal'
+      ? 1
+      : Math.max(0, Math.min(1, Number(option.rate != null ? option.rate : 0.50)));
+    const healValue = type === 'lowest_full_heal'
+      ? hpMax
+      : Math.max(1, Math.floor(hpMax * healRate));
+    target.hp = Math.min(hpMax, before + healValue);
     const amount = Math.max(0, target.hp - before);
     const detail = amount > 0 ? `${target.name} HP ${before} → ${target.hp}` : `${target.name} はHP満タン`;
 
-    _log(`${action.ownerName}の「${action.skillName}」により ${target.name} が全回復`);
+    const healText = type === 'lowest_full_heal' ? '全回復' : `最大HPの${Math.round(healRate * 100)}%回復`;
+    _log(`${action.ownerName}の「${action.skillName}」により ${target.name} が${healText}`);
     if (amount > 0) {
       _emit('heal', {
         source,
@@ -2940,6 +2999,38 @@ if (
         bs: _snapshot(),
       });
     }
+  }
+}
+
+// イグニス共鳴Lv.2：通常スキルの攻撃処理後、自身をATK×0.20回復する。
+if (
+  !noTargets &&
+  skill.id === 's1' &&
+  Number(skill.resonanceSelfHealAtkRate || 0) > 0 &&
+  ally.hp > 0 &&
+  ally.hp < ally.hpMax
+) {
+  const recover = Math.max(
+    1,
+    Math.round(getEffectiveAtk(ally) * Number(skill.resonanceSelfHealAtkRate))
+  );
+  const before = ally.hp;
+  ally.hp = Math.min(ally.hpMax, ally.hp + recover);
+  const actual = ally.hp - before;
+
+  if (actual > 0) {
+    _log(`共鳴：${ally.name} のHPが ${actual} 回復`);
+    _emit('heal', {
+      source: { _uid: ally._uid, name: ally.name, side: ally.side, row: ally.row, col: ally.col },
+      target: { _uid: ally._uid, name: ally.name, side: ally.side, row: ally.row, col: ally.col },
+      amount: actual,
+      kind: 'resonance_self_heal',
+      skillId: skill.id,
+      skillName: skill.name,
+      isUltimate: false,
+      hitStyle: 'normal',
+      bs: _snapshot(),
+    });
   }
 }
 
@@ -4080,7 +4171,7 @@ function doBossLineAttack(boss) {
     // ボス予兆攻撃（行動ループより先に発動）
     if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
-      if (boss && !_isSakielBoss(boss)) {
+      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss)) {
         await _centerTextWait('⚠️ WARNING', 'ボスが予兆攻撃…', B32_WAIT.enemyAction);
         _doBossWarnAttack(boss, getAllUnits());
         _renderUI();
@@ -4093,7 +4184,7 @@ function doBossLineAttack(boss) {
     if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
 
-      if (boss && !_isSakielBoss(boss)) {
+      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss)) {
         await _centerTextWait('⚠️ SPACE SHIFT', '空間干渉：位置入れ替え', B32_WAIT.enemyAction);
 
         doBossSwapAttack(boss);
@@ -4271,6 +4362,249 @@ function doBossLineAttack(boss) {
   // ============================================================
   // サキエル専用：毎ターン5種からランダム1行動
   // ============================================================
+
+  function _isOverseerBoss(enemy) {
+    if (!enemy) return false;
+    // 本番ローグライトは enemy_overseer_roguelite。
+    // DEBUG・旧ステージ定義では enemy_01 が残っているため、両方を同じ専用AIへ統一する。
+    return enemy.id === 'enemy_overseer_roguelite'
+      || enemy.id === 'enemy_01'
+      || enemy.specialActionType === 'overseer_random_4_ult6';
+  }
+
+  function _overseerForwardCells(enemy, mode) {
+    const cells = new Set();
+    if (!enemy) return cells;
+
+    if (mode === 'three_lines') {
+      for (let r = enemy.row + 1; r < BOARD_ROWS; r++) {
+        [enemy.col - 1, enemy.col, enemy.col + 1].forEach(c => {
+          if (BR.isValidCell(r, c)) cells.add(`${r}-${c}`);
+        });
+      }
+      return cells;
+    }
+
+    if (mode === 'triangle') {
+      for (let depth = 1; depth <= 3; depth++) {
+        const row = enemy.row + depth;
+        const radius = depth - 1;
+        for (let c = enemy.col - radius; c <= enemy.col + radius; c++) {
+          if (BR.isValidCell(row, c)) cells.add(`${row}-${c}`);
+        }
+      }
+      return cells;
+    }
+
+    if (mode === 'grid') {
+      for (let r = 0; r < BOARD_ROWS; r++) {
+        for (let c = 0; c < BOARD_COLS; c++) {
+          if ((r + c) % 2 === 0) cells.add(`${r}-${c}`);
+        }
+      }
+    }
+    return cells;
+  }
+
+  async function _overseerDamagePattern(enemy, mode, title, sub, fixedDamage) {
+    const cells = _overseerForwardCells(enemy, mode);
+    _setTransientBossDangerCells(cells, mode === 'grid' ? 'ULT' : 'WARNING');
+    await _centerTextWait(mode === 'grid' ? `⚠️ ${title}` : title, sub, B32_WAIT.guide);
+
+    const targets = (_bs.allies || []).filter(a => a && a.hp > 0 && cells.has(`${a.row}-${a.col}`));
+    _emit('enemyActionStep', {
+      step: 'overseer_pattern',
+      enemy: { ...enemy },
+      patternId: mode,
+      cells: Array.from(cells),
+      targets: targets.map(t => ({ ...t })),
+      bs: _snapshot(),
+    });
+
+    targets.forEach(target => {
+      const dmg = fixedDamage != null
+        ? Number(fixedDamage)
+        : calcDamage(getEffectiveAtk(enemy), OVERSEER_PATTERN_RATE, target, enemy);
+      applyDamage(target, dmg, enemy, {
+        id: `overseer_${mode}`,
+        name: title,
+        isUltimate: mode === 'grid',
+        hitStyle: mode === 'grid' ? 'heavy' : 'holy',
+        canCritical: false,
+      });
+    });
+
+    _log(`${enemy.name}：${title}`);
+    _renderUI();
+    await wait(B32_WAIT.attack);
+    await wait(B32_WAIT.afterText);
+    _clearTransientBossDangerCells();
+  }
+
+  async function _overseerPullFarthest(enemy) {
+    const allies = (_bs.allies || []).filter(a => a && a.hp > 0);
+    if (!allies.length) return;
+    allies.sort((a, b) => manhattan(enemy, b) - manhattan(enemy, a));
+    const target = allies[0];
+    const dest = { row: enemy.row + 1, col: enemy.col };
+    if (!BR.isValidCell(dest.row, dest.col)) return;
+
+    await _centerTextWait('収監', '最遠のユニットを眼前へ引き寄せる', B32_WAIT.enemyAction);
+
+    const occupant = getAllUnits().find(u => u && u.hp > 0 && u._uid !== target._uid && u.row === dest.row && u.col === dest.col);
+    const old = { row: target.row, col: target.col };
+    target.row = dest.row;
+    target.col = dest.col;
+    if (occupant) {
+      occupant.row = old.row;
+      occupant.col = old.col;
+    }
+
+    _log(`${enemy.name} が ${target.name} を目の前へ引き寄せた`);
+    _emit('bossSwap', {
+      type: 'overseer_pull',
+      units: [
+        { _uid: target._uid, name: target.name, side: target.side, row: target.row, col: target.col },
+        ...(occupant ? [{ _uid: occupant._uid, name: occupant.name, side: occupant.side, row: occupant.row, col: occupant.col }] : []),
+      ],
+      bs: _snapshot(),
+    });
+    _renderUI();
+    await wait(B32_WAIT.move);
+    await wait(B32_WAIT.afterText);
+  }
+
+  function _findOverseerSummonCell(target) {
+    const occupied = new Set(getAllUnits().filter(u => u && (u.hp > 0 || u.isBoss)).map(u => `${u.row}-${u.col}`));
+    const preferred = [
+      { row: target.row - 1, col: target.col },
+      { row: target.row - 1, col: target.col - 1 },
+      { row: target.row - 1, col: target.col + 1 },
+      { row: target.row, col: target.col - 1 },
+      { row: target.row, col: target.col + 1 },
+    ];
+    return preferred.find(p => BR.isValidCell(p.row, p.col) && !occupied.has(`${p.row}-${p.col}`)) || null;
+  }
+
+  async function _overseerSummonAtHighestHp(enemy) {
+    const allies = (_bs.allies || []).filter(a => a && a.hp > 0);
+    if (!allies.length) return;
+    allies.sort((a, b) => Number(b.hp || 0) - Number(a.hp || 0));
+    const target = allies[0];
+    const pos = _findOverseerSummonCell(target);
+
+    await _centerTextWait('観測端末', `${target.name} の前方へしもべを召喚`, B32_WAIT.enemyAction);
+    if (!pos) {
+      _log('しもべを召喚できる空きマスがない');
+      return;
+    }
+
+    const enemyDef =
+      (typeof getEnemyById === 'function' ? getEnemyById('rl_overseer_servant_straight') : null) ||
+      ((window.ENEMIES || []).find(e => e.id === 'rl_overseer_servant_straight'));
+    if (!enemyDef) return;
+
+    const summoned = makeEnemy(enemyDef, pos.row, pos.col);
+    _bs.enemies.push(summoned);
+    _log(`${target.name} の目の前に ${summoned.name} が出現した`);
+    _emit('enemySpawn', { enemy: { ...summoned }, source: { ...enemy }, target: { ...target }, bs: _snapshot() });
+    _renderUI();
+    await wait(B32_WAIT.move);
+    await wait(B32_WAIT.afterText);
+  }
+
+  const OVERSEER_ACTION_PATTERNS = [
+    { id: 'three_lines', title: '三条照射', sub: '前方3ラインを貫通する', guideText: 'オーバーシア正面の3列を盤面端まで貫通' },
+    { id: 'pull', title: '収監', sub: '最遠のユニットを眼前へ引き寄せる', guideText: '最も離れた味方1体をオーバーシア正面へ移動', isRandomTarget: true },
+    { id: 'triangle', title: '白亜三角陣', sub: '前方を三角形に薙ぎ払う', guideText: '正面1マス→横3マス→横5マスの三角範囲' },
+    { id: 'summon', title: '観測端末', sub: '最大HPのユニット前方へしもべを召喚', guideText: '現在HPが最も高い味方の前方へ雑魚1体を召喚', isRandomTarget: true },
+  ];
+
+  function _overseerPlannedCells(enemy, actionId) {
+    if (!enemy) return [];
+    let set = new Set();
+    if (actionId === 'grid') {
+      set = _overseerForwardCells(enemy, 'grid');
+    } else if (actionId === 'three_lines' || actionId === 'triangle') {
+      set = _overseerForwardCells(enemy, actionId);
+    } else if (actionId === 'pull') {
+      const row = enemy.row + 1;
+      const col = enemy.col;
+      if (BR.isValidCell(row, col)) set.add(`${row}-${col}`);
+    } else if (actionId === 'summon') {
+      const allies = (_bs && _bs.allies || []).filter(a => a && a.hp > 0)
+        .sort((a, b) => Number(b.hp || 0) - Number(a.hp || 0));
+      const target = allies[0];
+      const pos = target ? _findOverseerSummonCell(target) : null;
+      if (pos) set.add(`${pos.row}-${pos.col}`);
+    }
+    return Array.from(set).map(key => {
+      const [row, col] = String(key).split('-').map(Number);
+      return { row, col };
+    });
+  }
+
+  function _rollOverseerNextAction(enemy, targetTurn) {
+    if (!enemy) return null;
+    const turn = Math.max(1, Number(targetTurn || (_bs && _bs.turn) || 1));
+    let selected;
+    if (turn % OVERSEER_ULT_INTERVAL === 0) {
+      selected = {
+        id: 'grid', title: '万象格子',
+        sub: '全域を格子状に断裁する／固定150ダメージ',
+        guideText: '盤面全域の格子状マスへ固定150ダメージ',
+      };
+    } else {
+      selected = OVERSEER_ACTION_PATTERNS[Math.floor(Math.random() * OVERSEER_ACTION_PATTERNS.length)];
+    }
+    if (!selected) return null;
+    enemy._overseerNextAction = {
+      id: selected.id,
+      title: selected.title,
+      sub: selected.sub,
+      guideText: selected.guideText,
+      cells: _overseerPlannedCells(enemy, selected.id),
+      isRandomTarget: !!selected.isRandomTarget,
+      decidedTurn: turn,
+    };
+    return enemy._overseerNextAction;
+  }
+
+  function _ensureOverseerNextAction(enemy) {
+    if (!enemy) return null;
+    const turn = Math.max(1, Number(_bs && _bs.turn || 1));
+    const next = enemy._overseerNextAction;
+    if (next && next.id && Array.isArray(next.cells) && Number(next.decidedTurn) === turn) return next;
+    return _rollOverseerNextAction(enemy, turn);
+  }
+
+  function _initializeOverseerNextActions() {
+    if (!_bs || !Array.isArray(_bs.enemies)) return;
+    _bs.enemies.forEach(enemy => {
+      if (_isOverseerBoss(enemy)) _ensureOverseerNextAction(enemy);
+    });
+  }
+
+  async function _runOverseerSpecialAction(enemy) {
+    const selected = _ensureOverseerNextAction(enemy);
+    if (!selected) return;
+    enemy._overseerNextAction = null;
+
+    if (selected.id === 'grid') {
+      await _overseerDamagePattern(enemy, 'grid', '万象格子', '全域を格子状に断裁する', OVERSEER_GRID_DAMAGE);
+    } else if (selected.id === 'three_lines') {
+      await _overseerDamagePattern(enemy, 'three_lines', '三条照射', '前方3ラインを貫通する');
+    } else if (selected.id === 'pull') {
+      await _overseerPullFarthest(enemy);
+    } else if (selected.id === 'triangle') {
+      await _overseerDamagePattern(enemy, 'triangle', '白亜三角陣', '前方を三角形に薙ぎ払う');
+    } else if (selected.id === 'summon') {
+      await _overseerSummonAtHighestHp(enemy);
+    }
+
+    _rollOverseerNextAction(enemy, Number(_bs && _bs.turn || 1) + 1);
+    _renderUI();
+  }
 
   function _isSakielBoss(enemy) {
     return !!(enemy && enemy.id === 'enemy_sakiel_roguelite');
@@ -4526,6 +4860,12 @@ function doBossLineAttack(boss) {
       // duration が0になった時点で解除する。
       //await _centerTextWait(enemy.name, 'NO ACTION', B32_WAIT.enemyAction);
       _renderUI();
+      return;
+    }
+
+    // オーバーシア本体は通常攻撃を使わず、専用4種＋6ターン必殺技を実行する。
+    if (_isOverseerBoss(enemy)) {
+      await _runOverseerSpecialAction(enemy);
       return;
     }
 

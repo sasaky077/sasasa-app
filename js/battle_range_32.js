@@ -30,6 +30,21 @@
       { dr:  0, dc:  1 },
     ],
 
+    // 自身中心の十字上すべて（縦横全ライン）
+    // 盤面外の座標は getCellsFromRange32 側で除外される。
+    cross_all: [
+      { dr: -7, dc:  0 }, { dr: -6, dc:  0 }, { dr: -5, dc:  0 },
+      { dr: -4, dc:  0 }, { dr: -3, dc:  0 }, { dr: -2, dc:  0 },
+      { dr: -1, dc:  0 },
+      { dr:  1, dc:  0 }, { dr:  2, dc:  0 }, { dr:  3, dc:  0 },
+      { dr:  4, dc:  0 }, { dr:  5, dc:  0 }, { dr:  6, dc:  0 },
+      { dr:  7, dc:  0 },
+      { dr:  0, dc: -4 }, { dr:  0, dc: -3 }, { dr:  0, dc: -2 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 }, { dr:  0, dc:  2 }, { dr:  0, dc:  3 },
+      { dr:  0, dc:  4 },
+    ],
+
     // 左右2マスのみ
     side_lr: [
       { dr: 0, dc: -1 },
@@ -358,11 +373,33 @@ enemy_attack_line: [
       { dr:  1, dc:  1 },
     ],
 
+    // ロゼ共鳴Lv.2：前方横3 + 後方横3
+    // □□□
+    //  自
+    // □□□
+    rose_resonance_move: [
+      { dr: -1, dc: -1 },
+      { dr: -1, dc:  0 },
+      { dr: -1, dc:  1 },
+      { dr:  1, dc: -1 },
+      { dr:  1, dc:  0 },
+      { dr:  1, dc:  1 },
+    ],
+
     // line_front_3：前方直進3マス
     line_front_3: [
       { dr: -1, dc:  0 },
       { dr: -2, dc:  0 },
       { dr: -3, dc:  0 },
+    ],
+
+    // line_front_3_side：前方直進3マス＋左右1マス
+    line_front_3_side: [
+      { dr: -1, dc:  0 },
+      { dr: -2, dc:  0 },
+      { dr: -3, dc:  0 },
+      { dr:  0, dc: -1 },
+      { dr:  0, dc:  1 },
     ],
 
     // cross_1：上下左右1マス
