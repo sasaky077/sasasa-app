@@ -222,7 +222,7 @@ skills: [
     battleUpImg: 'images/chara_04_battle_up.webp',
     battleBackImg: 'images/chara_04_battle_back.webp',
     panelImg: 'images/chara_04_panel.webp',
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.0},
         combo: {
       range: 'combo_cross_all',
       skill: { id: 'combo', name: 'クイック・ギルティ', type: 'attack', multiplier: 0.90, range: 'combo_line_all', effects: [], hitStyle: 'rapid_multi', hitCount: 3, desc: '十字上の味方スキルに反応し、同じ縦列上の敵へ高速追撃する。' }

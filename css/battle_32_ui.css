@@ -9515,3 +9515,422 @@
     inset 0 2px 4px rgba(50,54,65,.08),
     0 1px 3px rgba(43,48,61,.05) !important;
 }
+
+/* ============================================================
+   キャラ詳細：SKILL / ULT / COMBO 3ページ切替
+   ============================================================ */
+#battle32-root .b32-roster-skill-pager {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  touch-action: pan-y;
+}
+#battle32-root .b32-roster-page-viewport {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(94, 72, 155, .16);
+  background: rgba(255, 255, 255, .34);
+  padding: 4px 5px 3px;
+}
+#battle32-root .b32-roster-page-label {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: rgba(74, 52, 115, .72);
+  margin: 0 0 3px;
+}
+#battle32-root .b32-roster-page-arrow {
+  border: 1px solid rgba(92, 68, 145, .18);
+  background: rgba(255, 255, 255, .48);
+  color: rgba(67, 48, 105, .72);
+  font-family: serif;
+  font-size: 24px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+#battle32-root .b32-roster-page-arrow:active {
+  background: rgba(113, 82, 181, .12);
+}
+#battle32-root .b32-roster-page-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+#battle32-root .b32-roster-page-dots button {
+  width: 5px;
+  height: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(86, 65, 130, .22);
+}
+#battle32-root .b32-roster-page-dots button.active {
+  background: rgba(113, 78, 190, .78);
+  box-shadow: 0 0 5px rgba(113, 78, 190, .32);
+}
+#battle32-root .b32-roster-skill-detail.is-combo {
+  border-color: rgba(121, 79, 196, .28);
+  background: linear-gradient(135deg, rgba(116, 76, 184, .08), rgba(255,255,255,.28));
+}
+#battle32-root .b32-roster-skill-detail.is-combo .b32-roster-skill-badge {
+  color: #6f4ca6;
+  border-color: rgba(111, 76, 166, .30);
+  background: rgba(111, 76, 166, .08);
+}
+
+
+/* ============================================================
+   キャラ詳細ページ微調整
+   ============================================================ */
+#battle32-root .b32-roster-skill-pager {
+  height: 108px;
+  min-height: 108px;
+  max-height: 108px;
+}
+
+#battle32-root .b32-roster-page-viewport {
+  height: 108px;
+  min-height: 108px;
+  max-height: 108px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+#battle32-root .b32-roster-skill-detail-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#battle32-root .b32-roster-page-arrow {
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#battle32-root .b32-roster-page-arrow:active,
+#battle32-root .b32-roster-page-arrow:focus,
+#battle32-root .b32-roster-page-arrow:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+/* ============================================================
+   盤面コンボレンジ表示
+   コンボ説明ウインドウの生成有無に依存させず、常時読み込む。
+   ============================================================ */
+.b32-cell.combo-range {
+  position: relative;
+}
+
+.b32-combo-range-overlay {
+  position: absolute;
+  inset: 2px;
+  z-index: 24;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid rgba(155, 92, 255, .96);
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(202,166,255,.34) 0%,
+      rgba(142,78,242,.22) 48%,
+      rgba(112,52,210,.12) 70%,
+      transparent 78%);
+  box-shadow:
+    inset 0 0 12px rgba(170,105,255,.42),
+    0 0 10px rgba(137,70,240,.48);
+  animation: b32ComboRangePulse 1.15s ease-in-out infinite;
+}
+
+.b32-combo-range-overlay::after {
+  content: '◇';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(166, 101, 255, 1);
+  font-size: clamp(14px, 4vw, 20px);
+  line-height: 1;
+  font-weight: 800;
+  text-shadow:
+    0 0 5px rgba(255,255,255,.92),
+    0 0 10px rgba(142,75,255,1);
+}
+
+.b32-cell.combo-range:has(.b32-unit) .b32-combo-range-overlay::after {
+  top: 15%;
+  font-size: 12px;
+}
+
+.b32-combo-skill-range-overlay {
+  position: absolute;
+  inset: 7px;
+  z-index: 25;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 196, 76, .96);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255,224,135,.30) 0%,
+      rgba(255,183,55,.17) 50%,
+      rgba(245,140,25,.08) 72%,
+      transparent 80%);
+  box-shadow:
+    inset 0 0 9px rgba(255,203,92,.35),
+    0 0 8px rgba(255,165,35,.44);
+  animation: b32ComboSkillRangePulse 1.25s ease-in-out infinite;
+}
+
+.b32-combo-skill-range-overlay::after {
+  content: '✦';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,205,88,1);
+  font-size: clamp(10px, 3vw, 15px);
+  line-height: 1;
+  font-weight: 800;
+  text-shadow:
+    0 0 4px rgba(255,255,230,.94),
+    0 0 9px rgba(255,170,30,.96);
+}
+
+.b32-combo-skill-range-overlay.target_enemy {
+  border-color: rgba(255,118,70,.98);
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255,175,90,.35) 0%,
+      rgba(255,89,50,.20) 55%,
+      rgba(180,35,20,.09) 74%,
+      transparent 82%);
+  box-shadow:
+    inset 0 0 10px rgba(255,98,55,.40),
+    0 0 10px rgba(255,75,40,.52);
+}
+
+.b32-combo-skill-range-overlay.target_ally {
+  border-color: rgba(255,225,110,.98);
+}
+
+.b32-cell:has(.b32-unit) .b32-combo-skill-range-overlay::after {
+  top: 15%;
+  font-size: 10px;
+}
+
+@keyframes b32ComboRangePulse {
+  0%, 100% { filter: brightness(.95); opacity: .82; }
+  50% { filter: brightness(1.18); opacity: 1; }
+}
+
+@keyframes b32ComboSkillRangePulse {
+  0%, 100% { opacity: .78; filter: brightness(.96); }
+  50% { opacity: 1; filter: brightness(1.18); }
+}
+
+
+/* ============================================================
+   LINK GAUGE IMAGE FRAME PATCH
+   外枠画像 + 動的LINK石。値の増減はDOMクラスで制御する。
+   ============================================================ */
+#b32-link-bar {
+  width: 58px !important;
+  right: 4px !important;
+  top: calc(env(safe-area-inset-top, 0px) + 142px) !important;
+  gap: 0 !important;
+  overflow: visible !important;
+}
+
+#b32-link-bar .b32-link-frame {
+  position: relative !important;
+  width: 58px !important;
+  height: 292px !important; /* 最大9個のLINK石を収める縦長仕様 */
+  box-sizing: border-box !important;
+  background: url('../images/link_frame.webp') center / 100% 100% no-repeat !important;
+  filter: drop-shadow(0 5px 8px rgba(53, 45, 71, .14)) !important;
+  overflow: visible !important;
+}
+
+#b32-link-bar .b32-link-content {
+  position: absolute !important;
+  inset: 39px 10px 41px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+}
+
+#battle32-root #b32-link-bar .b32-link-label,
+#b32-link-bar .b32-link-label {
+  margin: 0 !important;
+  font-family: 'Cinzel', serif !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+  font-weight: 600 !important;
+  letter-spacing: 1.8px !important;
+  color: rgba(64, 58, 91, .84) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.92) !important;
+}
+
+#battle32-root #b32-link-bar .b32-link-count,
+#b32-link-bar .b32-link-count {
+  margin: 3px 0 5px !important;
+  font-family: 'Cinzel', serif !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  font-weight: 600 !important;
+  letter-spacing: .4px !important;
+  color: rgba(45, 47, 76, .88) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.96) !important;
+}
+
+#b32-link-bar .b32-link-count span {
+  margin: 0 2px !important;
+  font-size: 9px !important;
+  color: rgba(79, 76, 108, .55) !important;
+}
+
+#b32-link-bar .b32-link-stones {
+  position: relative !important;
+  width: 30px !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-evenly !important;
+  gap: 1px !important;
+}
+
+#b32-link-bar .b32-link-stones::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 7px !important;
+  bottom: 7px !important;
+  left: 50% !important;
+  width: 1px !important;
+  transform: translateX(-50%) !important;
+  background: linear-gradient(180deg, transparent, rgba(132,106,181,.18) 18%, rgba(132,106,181,.18) 82%, transparent) !important;
+  pointer-events: none !important;
+}
+
+#b32-link-bar .b32-link-stone-slot {
+  position: relative !important;
+  z-index: 1 !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity .22s ease, transform .22s ease, filter .22s ease !important;
+}
+
+#b32-link-bar .b32-link-stone {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+}
+
+#b32-link-bar .b32-link-stone-slot.filled {
+  opacity: 1 !important;
+  filter:
+    saturate(1.06)
+    brightness(1.02)
+    drop-shadow(0 0 3px rgba(124, 78, 226, .40)) !important;
+}
+
+#b32-link-bar .b32-link-stone-slot.empty {
+  opacity: .17 !important;
+  filter: grayscale(.88) saturate(.35) brightness(1.13) !important;
+  transform: scale(.92) !important;
+}
+
+/* 旧CSSピル／菱形を完全に無効化 */
+#b32-link-bar .b32-link-pill,
+#b32-link-bar .b32-link-diamond {
+  display: none !important;
+}
+
+/* iPhone SE：9個表示対応の縦長フレームを縮小して盤面を圧迫しない */
+#battle32-root.b32-vp-se ~ #b32-link-bar,
+body:has(#battle32-root.b32-vp-se) #b32-link-bar {
+  top: calc(env(safe-area-inset-top, 0px) + 126px) !important;
+  transform: scale(.80) !important;
+  transform-origin: top right !important;
+}
+
+
+/* ============================================================
+   TALL SMARTPHONE BATTLE BOARD LAYOUT
+   現行 b32-vp-iphone14 クラスを「通常～縦長スマホ」向けとして利用。
+   SE専用レイアウトには影響させない。
+   ============================================================ */
+#battle32-root.b32-vp-iphone14 #b32-scroll {
+  padding-top: 0 !important;
+}
+
+#battle32-root.b32-vp-iphone14 #b32-board-wrap {
+  perspective: 620px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 6px !important;
+  margin-bottom: -4px !important;
+  transform-style: preserve-3d !important;
+}
+
+#battle32-root.b32-vp-iphone14 #b32-board {
+  gap: 2px !important;
+  transform: rotateX(30deg) translateZ(0) !important;
+  transform-origin: center center !important;
+  transform-style: preserve-3d !important;
+}
+
+#battle32-root.b32-vp-iphone14 .b32-unit,
+#battle32-root.b32-vp-iphone14 .b32-unit.ally,
+#battle32-root.b32-vp-iphone14 .b32-unit.enemy {
+  transform:
+    translateX(-50%)
+    rotateX(-30deg)
+    translateZ(calc(var(--cell-size) * 0.08)) !important;
+  transform-origin: center bottom !important;
+}
+
+/* LINKは右端へのオーバーレイ。盤面自体は画面中央を維持する。 */
+body:has(#battle32-root.b32-vp-iphone14) #b32-link-bar {
+  right: 3px !important;
+}
+
+
+/* ============================================================
+   攻撃・ULT・コンボ演出中：下部キャラパネルを非表示
+   body側のクラスは battle_32_ui.js が演出開始・終了に合わせて管理する。
+   ============================================================ */
+html body.b32-cinematic-roster-hidden #b32-roster-panel,
+html body.b32-cinematic-roster-hidden #battle32-root .b32-roster-info-panel,
+html body.b32-cinematic-roster-hidden #b32-roster-info-close-hitbox {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: opacity 100ms ease, visibility 0s linear 100ms !important;
+}

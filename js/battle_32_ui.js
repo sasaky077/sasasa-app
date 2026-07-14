@@ -45,7 +45,10 @@
  // コンボ説明パネルのドラッグ位置（バトル中だけ保持）
  let _comboInspectPos = null; // { x, y } viewport px
  let _comboInspectDragging = false;
- let _comboInspectDismissedUid = null; // ×で閉じたキャラ。別キャラ選択まで再表示しない
+ let _comboInspectDismissedUid = null; // 旧コンボ説明互換
+ let _comboRangeAllyUid = null; // 盤面タップで表示するコンボ反応/効果レンジ
+ let _rosterInfoPage = 0; // 0:SKILL / 1:ULT / 2:COMBO
+ let _rosterInfoTouchStartX = null;
 
 // ============================================================
 // ステート — 召喚 / アイテム操作
@@ -624,15 +627,33 @@ function b32RangeLabel(range) {
 
 
 
+function b32ResolveComboDef(ally) {
+  if (!ally) return null;
+  if (ally.combo && ally.combo.skill) return ally.combo;
+
+  const list = Array.isArray(window.CHARACTERS)
+    ? window.CHARACTERS
+    : (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS) ? CHARACTERS : []);
+
+  const master = list.find(c =>
+    (ally.id != null && c.id === ally.id) ||
+    (ally.charaId != null && c.id === ally.charaId) ||
+    (ally.name && c.name === ally.name)
+  );
+
+  return master && master.combo && master.combo.skill ? master.combo : null;
+}
+
 function b32ComboRangeCells(ally) {
   const map = new Map();
-  if (!ally || !ally.combo || !ally.combo.skill) return map;
+  const combo = b32ResolveComboDef(ally);
+  if (!ally || !combo || !combo.skill) return map;
 
   let cells = [];
   if (window.Combo32 && typeof window.Combo32.getRangeCells === 'function') {
-    cells = window.Combo32.getRangeCells(ally, ally.combo.range);
+    cells = window.Combo32.getRangeCells(ally, combo.range);
   } else {
-    const id = ally.combo.range;
+    const id = combo.range;
     if (id === 'combo_line_all') {
       for (let row = 0; row < 8; row++) {
         if (row !== ally.row) cells.push({ row, col: ally.col });
@@ -670,7 +691,8 @@ function b32ComboRangeCells(ally) {
 
 function b32ComboSkillRangeCells(ally, bs) {
   const map = new Map();
-  const comboSkill = ally && ally.combo && ally.combo.skill;
+  const combo = b32ResolveComboDef(ally);
+  const comboSkill = combo && combo.skill;
   if (!ally || !comboSkill || !comboSkill.range) return map;
   if (!window.BattleRange32 || typeof window.BattleRange32.getCellsFromRange32 !== 'function') {
     return map;
@@ -1485,21 +1507,74 @@ function b32BuildSkillDetailHtml(skill, ally) {
   `;
 }
 
-function b32BuildRosterSkillDetailsHtml(chara, ally) {
-  const skills = (chara?.skills || []);
-  if (!skills.length) {
-    return '<div class="b32-roster-skill-empty">スキル情報なし</div>';
-  }
+function b32BuildComboDetailHtml(chara, ally) {
+  const combo = chara?.combo || ally?.combo;
+  const skill = combo?.skill;
+  if (!skill) return '<div class="b32-roster-skill-empty">コンボスキル情報なし</div>';
 
+  const powerText = Number(skill.multiplier || 0) > 0 ? `ATK×${skill.multiplier}` : 'ダメージなし';
+  const effects = (skill.effects || []).map(b32EffectSummary).filter(Boolean).join(' / ');
+  return `
+    <div class="b32-roster-skill-detail is-combo">
+      <div class="b32-roster-skill-detail-head">
+        <span class="b32-roster-skill-badge">COMBO</span>
+        <strong>${b32EscapeHtml(skill.name || '—')}</strong>
+      </div>
+      <div class="b32-roster-skill-detail-meta">
+        <span>発動範囲 ${b32EscapeHtml(b32ComboRangeLabel(combo.range))}</span>
+        <span>効果範囲 ${b32EscapeHtml(b32RangeLabel(skill.range))}</span>
+        <span>${b32EscapeHtml(b32SkillTypeLabel(skill))}</span>
+        <span>${b32EscapeHtml(powerText)}</span>
+        ${effects ? `<span>${b32EscapeHtml(effects)}</span>` : ''}
+      </div>
+      <div class="b32-roster-skill-detail-desc">${b32EscapeHtml(skill.desc || '説明なし')}</div>
+    </div>`;
+}
+
+function b32BuildRosterSkillDetailsHtml(chara, ally) {
+  const skills = Array.isArray(chara?.skills) ? chara.skills : [];
   const normalSkills = skills.filter(s => !s.isUltimate);
   const ultSkills = skills.filter(s => s.isUltimate);
+  const pages = [
+    { label: 'SKILL', body: normalSkills.length ? normalSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('') : '<div class="b32-roster-skill-empty">スキル情報なし</div>' },
+    { label: 'ULT', body: ultSkills.length ? ultSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('') : '<div class="b32-roster-skill-empty">ULT情報なし</div>' },
+    { label: 'COMBO', body: b32BuildComboDetailHtml(chara, ally) },
+  ];
+  const page = Math.max(0, Math.min(2, Number(_rosterInfoPage) || 0));
   return `
-    <div class="b32-roster-skill-detail-list">
-      ${normalSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('')}
-      ${ultSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('')}
-    </div>
-  `;
+    <div class="b32-roster-skill-pager" ontouchstart="_b32RosterInfoTouchStart(event)" ontouchend="_b32RosterInfoTouchEnd(event)">
+      <button type="button" class="b32-roster-page-arrow prev" onclick="_b32ChangeRosterInfoPage(-1,event)" aria-label="前の説明">‹</button>
+      <div class="b32-roster-page-viewport">
+        <div class="b32-roster-skill-detail-list">${pages[page].body}</div>
+        <div class="b32-roster-page-dots">${pages.map((_,i)=>`<button type="button" class="${i===page?'active':''}" onclick="_b32SetRosterInfoPage(${i},event)" aria-label="${pages[i].label}"></button>`).join('')}</div>
+      </div>
+      <button type="button" class="b32-roster-page-arrow next" onclick="_b32ChangeRosterInfoPage(1,event)" aria-label="次の説明">›</button>
+    </div>`;
 }
+
+window._b32SetRosterInfoPage = function(page, event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  _rosterInfoPage = (Number(page) + 3) % 3;
+  renderBattle32UI();
+};
+window._b32ChangeRosterInfoPage = function(delta, event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  _rosterInfoPage = (_rosterInfoPage + Number(delta || 0) + 3) % 3;
+  renderBattle32UI();
+};
+window._b32RosterInfoTouchStart = function(event) {
+  const t = event?.changedTouches?.[0] || event?.touches?.[0];
+  _rosterInfoTouchStartX = t ? t.clientX : null;
+};
+window._b32RosterInfoTouchEnd = function(event) {
+  const t = event?.changedTouches?.[0];
+  if (_rosterInfoTouchStartX == null || !t) return;
+  const dx = t.clientX - _rosterInfoTouchStartX;
+  _rosterInfoTouchStartX = null;
+  if (Math.abs(dx) < 36) return;
+  _rosterInfoPage = (_rosterInfoPage + (dx < 0 ? 1 : -1) + 3) % 3;
+  renderBattle32UI();
+};
 
 function getUnitUiScale(unit, key) {
  return unit?.uiScale?.[key] || 1;
@@ -4401,6 +4476,51 @@ window.showBattle32CenterTextAsync = function (main, sub, duration) {
 
 
 // ============================================================
+// 攻撃・コンボ演出中の下部キャラパネル表示制御
+// 複数演出が連続・重複しても途中で再表示されないよう参照カウントで管理する。
+// ============================================================
+let _b32CinematicRosterHideCount = 0;
+let _b32CinematicRosterRestoreTimer = null;
+
+function _setBattle32CinematicRosterHidden(hidden) {
+  if (_b32CinematicRosterRestoreTimer) {
+    clearTimeout(_b32CinematicRosterRestoreTimer);
+    _b32CinematicRosterRestoreTimer = null;
+  }
+
+  if (hidden) {
+    _b32CinematicRosterHideCount += 1;
+
+    // 攻撃・ULT・COMBO演出開始時は、キャラ情報ウインドウも完全に閉じる。
+    // 一時的に隠すだけでは演出終了後に再表示されるため、選択状態も解除する。
+    _selectedRosterId = null;
+    _rosterInfoPage = 0;
+
+    document
+      .querySelectorAll('#battle32-root .b32-roster-info-panel')
+      .forEach(el => el.remove());
+
+    const rosterInfoHitbox = document.getElementById('b32-roster-info-close-hitbox');
+    if (rosterInfoHitbox) rosterInfoHitbox.remove();
+
+    _closeSkillDetailLayers();
+    document.body.classList.add('b32-cinematic-roster-hidden');
+    return;
+  }
+
+  _b32CinematicRosterHideCount = Math.max(0, _b32CinematicRosterHideCount - 1);
+  if (_b32CinematicRosterHideCount > 0) return;
+
+  // COMBO表示終了直後に攻撃アップ演出が始まる場合の一瞬の再表示を防ぐ。
+  _b32CinematicRosterRestoreTimer = setTimeout(() => {
+    if (_b32CinematicRosterHideCount === 0) {
+      document.body.classList.remove('b32-cinematic-roster-hidden');
+    }
+    _b32CinematicRosterRestoreTimer = null;
+  }, 140);
+}
+
+// ============================================================
 // COMBO専用中央演出
 // 通常中央テキストとはDOM・タイマーを分離し、TURN/PHASE表示との競合を防ぐ。
 // ============================================================
@@ -4481,6 +4601,7 @@ function _ensureBattle32ComboTextStyle() {
 }
 
 window.showBattle32ComboTextAsync = function (main, sub, duration) {
+  _setBattle32CinematicRosterHidden(true);
   const showDuration = Number(duration || 620);
   const seq = ++_comboTextSeq;
 
@@ -4508,21 +4629,29 @@ window.showBattle32ComboTextAsync = function (main, sub, duration) {
 
   // 2フレームに分け、iOS Safariでも初期状態から確実に遷移させる。
   return new Promise(resolve => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      _setBattle32CinematicRosterHidden(false);
+      resolve();
+    };
+
     _comboTextRaf = requestAnimationFrame(() => {
       _comboTextRaf = requestAnimationFrame(() => {
-        if (seq !== _comboTextSeq) return resolve();
+        if (seq !== _comboTextSeq) return finish();
         el.classList.add('b32combo-visible');
         _comboTextRaf = null;
 
         _comboTextTimer = setTimeout(() => {
-          if (seq !== _comboTextSeq) return resolve();
+          if (seq !== _comboTextSeq) return finish();
           el.classList.remove('b32combo-visible');
           _comboTextTimer = null;
 
           _comboTextTimer2 = setTimeout(() => {
             if (seq === _comboTextSeq) el.innerHTML = '';
             _comboTextTimer2 = null;
-            resolve();
+            finish();
           }, 300);
         }, showDuration);
       });
@@ -5577,17 +5706,20 @@ function _showAttackCinematic(data) {
    ${breakHtml}
    <div class="b32-cine-skill">${data.skillName || (isEnemyAttack ? 'ENEMY ATTACK' : 'ATTACK')}</div>
  `;
+ _setBattle32CinematicRosterHidden(true);
  document.body.appendChild(ov);
 
  setTimeout(() => {
    if (ov.parentNode) ov.parentNode.removeChild(ov);
    _b32AttackCinematicBusy = false;
+   _setBattle32CinematicRosterHidden(false);
  }, isRapidMulti ? (isFatal ? 3420 : 2680) : (isFatal ? 1940 : 1180));
 }
 
 function _showUltCutin(skillName, cutinImg) {
  if (!skillName) skillName = 'ULT';
 
+ _setBattle32CinematicRosterHidden(true);
  return new Promise(resolve => {
  const wrap = document.createElement('div');
  wrap.className = 'b32-ult-cutin';
@@ -5613,6 +5745,7 @@ function _showUltCutin(skillName, cutinImg) {
  setTimeout(() => {
  if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
  if (flash.parentNode) flash.parentNode.removeChild(flash);
+ _setBattle32CinematicRosterHidden(false);
  resolve();
  }, 1920);
  });
@@ -6270,6 +6403,19 @@ function _onHealEvent(data) {
  let captureCells = new Set(); // 駒取りマス
 
  if (bs.phase === 'skill') {
+ // 盤面タップで選択中の味方は、行動選択状態に関係なくコンボ反応範囲と効果範囲を表示する。
+ if (_comboRangeAllyUid) {
+   const selectedComboAlly = (bs.allies || []).find(u =>
+     u._uid === _comboRangeAllyUid && u.hp > 0
+   );
+   if (selectedComboAlly && b32ResolveComboDef(selectedComboAlly)) {
+     comboRangeCells = b32ComboRangeCells(selectedComboAlly);
+     comboSkillRangeCells = b32ComboSkillRangeCells(selectedComboAlly, bs);
+   } else if (!selectedComboAlly) {
+     _comboRangeAllyUid = null;
+   }
+ }
+
  // ── LINK + キャラ別行動履歴で行動可否を判定 ──
  const canAct = !bs.result && bs.phase === 'skill';
  // 現仕様：1キャラ最大2行動。移動1回 + スキル/ULT1回まで。
@@ -6299,17 +6445,6 @@ function _onHealEvent(data) {
 
  } else {
  // ── キャラ選択待ち ──
- // 盤面上の味方を選択中は、そのキャラのコンボ発動レンジを常時表示する。
- if (_selActionAllyUid && !_b32InputLocked) {
-   const selectedComboAlly = (bs.allies || []).find(u =>
-     u._uid === _selActionAllyUid && u.hp > 0 && u.combo && u.combo.skill
-   );
-   if (selectedComboAlly) {
-     comboRangeCells = b32ComboRangeCells(selectedComboAlly);
-     comboSkillRangeCells = b32ComboSkillRangeCells(selectedComboAlly, bs);
-   }
- }
-
  // move または skill のどちらかが可能な生存味方をタップ可能にする
  if (canAct) {
  bs.allies.filter(u => u.hp > 0)
@@ -7361,14 +7496,15 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
    _itemMode
  );
 
- // 同じキャラを通常選択中に再タップした場合だけ、従来通りメニューを閉じる。
- // 移動先/スキル対象/召喚/アイテム選択中のキャラタップは、必ず現在の操作をキャンセルして
- // タップしたキャラの行動選択へ切り替える。
- if (_selActionAllyUid === allyUid && !wasTargetSelecting) {
- _selActionAllyUid = null;
- renderBattle32UI();
- return;
+ // 盤面上の同じキャラをもう一度タップしたら、コンボ反応レンジと効果範囲を閉じる。
+ // 初回タップでは従来の行動選択を維持しつつ、レンジだけを表示する。
+ if (_comboRangeAllyUid === allyUid && !wasTargetSelecting) {
+   _comboRangeAllyUid = null;
+   _selActionAllyUid = null;
+   renderBattle32UI();
+   return;
  }
+ _comboRangeAllyUid = allyUid;
 
  // 現在の選択モードをすべて解除して、タップしたキャラの行動選択メニューへ切り替える。
  _selActionAllyUid = allyUid;
@@ -7432,6 +7568,10 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
   _selSkillId = null;
   _selActionAllyUid = null;
   _moveMode = true;
+
+  // 移動可能マスとコンボレンジが重ならないよう、
+  // 移動モードへ入った時点でコンボレンジ選択を解除する。
+  _comboRangeAllyUid = null;
 
   _summonMode = false;
   _itemMode = false;
@@ -8196,15 +8336,6 @@ if (listEl) {
 
       listEl.innerHTML = `
   <div class="b32-roster-info-panel">
-    <button
-      type="button"
-      class="b32-roster-info-close"
-      onclick="_b32CloseRosterInfo(event)"
-      onpointerdown="_b32CloseRosterInfo(event)"
-      ontouchstart="_b32CloseRosterInfo(event)"
-      aria-label="閉じる"
-    >×</button>
-
     <div class="b32-roster-info-card">
       <div class="b32-roster-info-img-wrap">
         ${img
@@ -8559,7 +8690,9 @@ applyBattle32ViewportClass(root);
   renderBottomArea(bs);
   renderButtons(bs);
   renderActionMenu(bs);
-  renderComboInspect(bs);
+  // コンボ説明はキャラパネル内の3ページ目へ統合
+  const oldComboInspect = document.getElementById('b32-combo-inspect');
+  if (oldComboInspect) oldComboInspect.remove();
   renderResult(bs);
   renderBattleMenu(bs);
 
@@ -8648,14 +8781,21 @@ function applyBattle32ViewportClass(root) {
    const linkMax = Number(max || 6);
    const diamonds = Array.from({ length: linkMax }, (_, i) => {
   const filled = i < linkCurrent;
-  return `<div class="b32-link-diamond ${filled ? 'filled' : 'empty'}"></div>`;
+  return `
+    <div class="b32-link-stone-slot ${filled ? 'filled' : 'empty'}" aria-hidden="true">
+      <img class="b32-link-stone" src="images/link_gauge.webp" alt="">
+    </div>`;
 }).join('');
 
    el.innerHTML = `
-  <div class="b32-link-label">LINK</div>
-  <div class="b32-link-count">${linkCurrent}<span>/</span>${linkMax}</div>
-  <div class="b32-link-pill">
-    ${diamonds}
+  <div class="b32-link-frame">
+    <div class="b32-link-content">
+      <div class="b32-link-label">LINK</div>
+      <div class="b32-link-count">${linkCurrent}<span>/</span>${linkMax}</div>
+      <div class="b32-link-stones">
+        ${diamonds}
+      </div>
+    </div>
   </div>
 `;
  }
@@ -9014,6 +9154,30 @@ window._b32OnRosterTap = function(rosterId) {
   const r = roster.find(x => x.rosterId === rosterId);
   if (!r) return;
 
+  // 同じキャラパネルをもう一度タップした場合は詳細を閉じる。
+  // 待機キャラでは召喚候補状態も同時に解除する。
+  if (_selectedRosterId === rosterId) {
+    _selectedRosterId = null;
+    _rosterInfoPage = 0;
+    if (_summonRosterId === rosterId) _summonRosterId = null;
+    _summonMode = false;
+
+    // 同じ出撃中キャラのパネルを再タップした場合は、
+    // 詳細ウインドウだけでなく下部アクション選択も完全に解除する。
+    if (r.status === 'deployed' && r.deployedUid) {
+      _selActionAllyUid = null;
+      _selMoveAllyUid = null;
+      _selSkillAllyUid = null;
+      _selSkillId = null;
+      _moveMode = false;
+      _comboRangeAllyUid = null;
+      _closeSkillDetailLayers();
+    }
+
+    renderBattle32UI();
+    return;
+  }
+
   // 出撃中キャラなら、盤面上の味方タップと同じ扱いにする。
   // ただしアイテムの味方対象選択中は、キャラパネルタップをアイテム使用に優先ルーティングする。
   if (r.status === 'deployed' && r.deployedUid) {
@@ -9033,16 +9197,23 @@ window._b32OnRosterTap = function(rosterId) {
     _itemPhase = null;
     _itemTargetUid = null;
 
-    if (typeof window._b32OnSkillAllyTap === 'function') {
-      window._b32OnSkillAllyTap(r.deployedUid);
-    } else {
-      renderBattle32UI();
-    }
+    // 出撃中キャラのパネルをタップしたら、
+    // 詳細ウインドウを開くと同時に移動・スキル・ULTを操作可能にする。
+    _selActionAllyUid = r.deployedUid;
+    _selMoveAllyUid = null;
+    _selSkillAllyUid = null;
+    _selSkillId = null;
+    _moveMode = false;
+    _comboRangeAllyUid = null;
+    _rosterInfoPage = 0;
+    _closeSkillDetailLayers();
+    renderBattle32UI();
     return;
   }
 
   // 待機中・死亡中は従来通り、情報表示／召喚候補選択
   _selectedRosterId = rosterId;
+  _rosterInfoPage = 0;
   _summonRosterId = rosterId;
 
   // ただし即召喚モードには入らない
@@ -9073,6 +9244,7 @@ function _closeRosterInfoHard(event) {
   }
 
   _selectedRosterId = null;
+  _rosterInfoPage = 0;
 
   const hitbox = document.getElementById('b32-roster-info-close-hitbox');
   if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
@@ -9083,70 +9255,12 @@ function _closeRosterInfoHard(event) {
 window._b32CloseRosterInfo = _closeRosterInfoHard;
 
 function _syncRosterInfoCloseHitbox() {
-  let hitbox = document.getElementById('b32-roster-info-close-hitbox');
-  const panel = document.querySelector('#battle32-root .b32-roster-info-panel');
-
-  if (!_selectedRosterId || !panel) {
-    if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
-    return;
-  }
-
-  if (!hitbox) {
-    hitbox = document.createElement('button');
-    hitbox.id = 'b32-roster-info-close-hitbox';
-    hitbox.type = 'button';
-    hitbox.textContent = '×';
-    hitbox.setAttribute('aria-label', '閉じる');
-
-    ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(type => {
-      hitbox.addEventListener(type, _closeRosterInfoHard, { capture: true, passive: false });
-    });
-
-    document.body.appendChild(hitbox);
-  }
-
-  const r = panel.getBoundingClientRect();
-  const size = 34;
-  const left = Math.max(6, Math.min(window.innerWidth - size - 6, r.right - size - 6));
-  const top = Math.max(6, Math.min(window.innerHeight - size - 6, r.top + 6));
-
-  hitbox.style.cssText = [
-    'position:fixed',
-    `left:${left}px`,
-    `top:${top}px`,
-    `width:${size}px`,
-    `height:${size}px`,
-    'z-index:2147483647',
-    'display:flex',
-    'align-items:center',
-    'justify-content:center',
-    'border-radius:999px',
-    'border:1px solid rgba(255,255,255,.26)',
-    'background:rgba(0,0,0,.78)',
-    'color:rgba(232,228,220,.98)',
-    'font-size:21px',
-    'line-height:1',
-    "font-family:'Cinzel',serif",
-    'cursor:pointer',
-    'pointer-events:auto',
-    'touch-action:manipulation',
-    '-webkit-tap-highlight-color:transparent',
-    'box-shadow:0 0 12px rgba(0,0,0,.65)'
-  ].join(';');
+  // 閉じる操作は「同じキャラパネルを再タップ」に統一。
+  // 旧版で body 直下に生成した×ボタンが残っていれば除去する。
+  const hitbox = document.getElementById('b32-roster-info-close-hitbox');
+  if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
 }
 
-// インライン onclick が届かない端末・重なり順でも拾うため、capture で保険をかける
-if (!window.__b32RosterCloseCaptureBound) {
-  window.__b32RosterCloseCaptureBound = true;
-  ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(type => {
-    document.addEventListener(type, function(e) {
-      const t = e.target;
-      if (t && t.closest && t.closest('.b32-roster-info-close, #b32-roster-info-close-hitbox')) {
-        _closeRosterInfoHard(e);
-      }
-    }, { capture: true, passive: false });
-  });
-}
 
  // 召喚マスタップ
  window._b32OnSummonCellTap = async function(row, col) {
@@ -9391,10 +9505,13 @@ if (isSELike) {
   cellSize = Math.max(30, Math.min(42, cellSize));
 }
 
-// iPhone14系だけ、JS側の自動計算結果を補正する
-// CSSの --cell-size 指定はここで上書きされるため、ここで直接調整する
+// 通常～縦長スマホ：SEより広い表示領域を盤面へ使う。
+// 50pxを基準にし、十分に高い端末では最大52pxまで拡張する。
+// LINKゲージは右端fixedのため、盤面の横幅計算には含めない。
 if (isIphone14Like) {
-  cellSize = Math.max(cellSize, 46);
+  const tallPhoneCell = rootH >= 880 ? 52 : 50;
+  cellSize = Math.max(cellSize, tallPhoneCell);
+  cellSize = Math.min(cellSize, 52);
 }
 
 root.style.setProperty('--cell-size', `${cellSize}px`);
