@@ -5,6 +5,26 @@
 
   // selected: { charaId }[]  通常最大3件 / ローグライト最大4件
   let selected = [];
+  let selectedBlessingId = null;
+
+  const PARTY_BLESSINGS = [
+    {
+      id: 'remnant_01',
+      name: 'オーバーシアの加護',
+      img: 'images/remnant_01_panel.webp',
+      passive: '常時：critical率+10%',
+      inv: 'INV：発動ターンのみcritical率+100%',
+      invCondition: 'INV条件：敵を合計3体撃破'
+    }
+  ];
+
+  function isBlessingOwned(id) {
+    if (typeof window.isRemnantOwned === 'function') return !!window.isRemnantOwned(id);
+    try {
+      const raw = JSON.parse(localStorage.getItem('zeraphia_remnants_owned_v1') || '{}');
+      return !!(raw && raw[id]);
+    } catch (_) { return false; }
+  }
 
   // ローグライト専用：主人公エリは1st固定
   const ROGUELITE_FIXED_FIRST_CHARA_ID = 1;
@@ -214,6 +234,14 @@
         </div>
       </div>
 
+      <div class="ps-blessing-wrap">
+        <div class="ps-blessing-head">
+          <span>加護</span>
+          <small>任意・1つまで</small>
+        </div>
+        <div class="ps-blessing-list" id="ps-blessing-list"></div>
+      </div>
+
       <div class="ps-list-wrap">
         <div class="ps-list" id="ps-chara-list"></div>
       </div>
@@ -223,6 +251,19 @@
         <button class="ps-btn-start" id="ps-btn-start" onclick="confirmPartySelect()" disabled>
           戦闘開始
         </button>
+      </div>
+
+      <div class="ps-blessing-picker" id="ps-blessing-picker" aria-hidden="true">
+        <div class="ps-blessing-picker-panel">
+          <div class="ps-blessing-picker-head">
+            <div>
+              <div class="ps-blessing-picker-title">加護選択</div>
+              <div class="ps-blessing-picker-sub">授かる加護を1つ選択</div>
+            </div>
+            <button type="button" class="ps-blessing-picker-close" onclick="closePartyBlessingPicker()">×</button>
+          </div>
+          <div class="ps-blessing-picker-list" id="ps-blessing-picker-list"></div>
+        </div>
       </div>
     `;
 
@@ -256,6 +297,106 @@
         letter-spacing: 2px;
         color: rgba(232,228,220,0.35);
       }
+
+
+      .ps-blessing-wrap {
+        flex-shrink: 0;
+        padding: 8px 14px 10px;
+        background: rgba(246,241,230,.92);
+        border-bottom: 1px solid rgba(101,77,38,.14);
+      }
+      .ps-blessing-head {
+        display:flex; align-items:center; justify-content:space-between;
+        margin-bottom:6px; color:#6e542d; font-size:11px; letter-spacing:2px;
+      }
+      .ps-blessing-head small { font-size:9px; letter-spacing:1px; color:rgba(91,68,35,.52); }
+      .ps-blessing-list { min-height:76px; }
+      .ps-blessing-slot {
+        font-family:'Noto Serif JP',serif;
+        width:100%; min-height:58px; display:grid; grid-template-columns:54px 1fr;
+        align-items:center; gap:10px; padding:5px 7px; border-radius:10px;
+        border:1px solid rgba(121,91,44,.18); background:rgba(255,255,255,.44);
+        color:#55472f; text-align:left; cursor:pointer;
+      }
+      .ps-blessing-slot.empty { grid-template-columns:54px 1fr; }
+      .ps-blessing-slot:hover { border-color:rgba(174,124,40,.45); }
+      .ps-blessing-slot-img,
+      .ps-blessing-slot-placeholder {
+        width:54px; height:54px; border-radius:8px; display:block;
+      }
+      .ps-blessing-slot-img { object-fit:cover; }
+      .ps-blessing-slot-placeholder {
+        position:relative; border:1px dashed rgba(121,91,44,.38);
+        background:rgba(255,255,255,.32);
+      }
+      .ps-blessing-slot-placeholder::before,
+      .ps-blessing-slot-placeholder::after {
+        content:''; position:absolute; left:50%; top:50%;
+        background:rgba(121,91,44,.45); transform:translate(-50%,-50%);
+      }
+      .ps-blessing-slot-placeholder::before { width:20px; height:1px; }
+      .ps-blessing-slot-placeholder::after { width:1px; height:20px; }
+      .ps-blessing-slot-name { font-size:12px; font-weight:700; letter-spacing:1px; margin-bottom:3px; }
+      .ps-blessing-slot-desc {
+        display:flex;
+        flex-direction:column;
+        gap:1px;
+        font-family:'Noto Serif JP',serif;
+        font-size:9px;
+        line-height:1.45;
+        color:rgba(85,71,47,.72);
+      }
+      .ps-blessing-slot-desc > span { display:block; white-space:nowrap; }
+      .ps-blessing-slot-empty-text { font-size:10px; color:rgba(85,71,47,.58); letter-spacing:1px; }
+
+      .ps-blessing-picker {
+        position:absolute; inset:0; z-index:20; display:none;
+        align-items:center; justify-content:center; padding:18px;
+        background:rgba(25,20,14,.72); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+      }
+      .ps-blessing-picker.open { display:flex; }
+      .ps-blessing-picker-panel {
+        width:min(390px,100%); max-height:82vh; overflow:hidden;
+        border-radius:16px; border:1px solid rgba(151,113,54,.32);
+        background:linear-gradient(180deg,rgba(251,247,237,.98),rgba(239,230,211,.98));
+        box-shadow:0 18px 50px rgba(0,0,0,.30);
+      }
+      .ps-blessing-picker-head {
+        display:flex; align-items:center; justify-content:space-between;
+        padding:14px 14px 11px; border-bottom:1px solid rgba(121,91,44,.15);
+      }
+      .ps-blessing-picker-title { font-size:15px; font-weight:700; letter-spacing:3px; color:#5d4522; }
+      .ps-blessing-picker-sub { margin-top:2px; font-size:9px; letter-spacing:1px; color:rgba(91,68,35,.54); }
+      .ps-blessing-picker-close {
+        width:32px; height:32px; border-radius:50%; border:1px solid rgba(121,91,44,.18);
+        background:rgba(255,255,255,.55); color:#765b31; font-size:19px; cursor:pointer;
+      }
+      .ps-blessing-picker-list { padding:10px; overflow-y:auto; max-height:calc(82vh - 66px); }
+      .ps-blessing-option {
+        font-family:'Noto Serif JP',serif;
+        width:100%; display:grid; grid-template-columns:72px 1fr auto; align-items:center;
+        gap:10px; padding:8px; margin-bottom:8px; border-radius:12px;
+        border:1px solid rgba(121,91,44,.17); background:rgba(255,255,255,.48);
+        color:#55472f; text-align:left; cursor:pointer;
+      }
+      .ps-blessing-option.none { grid-template-columns:1fr auto; min-height:52px; }
+      .ps-blessing-option.selected { border-color:rgba(174,124,40,.62); background:rgba(255,248,222,.92); box-shadow:0 0 0 2px rgba(222,177,83,.14); }
+      .ps-blessing-option.locked { opacity:.46; filter:grayscale(.8); cursor:not-allowed; }
+      .ps-blessing-option-img { width:72px; height:72px; object-fit:cover; border-radius:9px; }
+      .ps-blessing-option-name { font-size:12px; font-weight:700; letter-spacing:1px; margin-bottom:4px; }
+      .ps-blessing-option-desc {
+        display:flex;
+        flex-direction:column;
+        gap:1px;
+        margin-top:4px;
+        font-family:'Noto Serif JP',serif;
+        font-size:9px;
+        line-height:1.45;
+        color:rgba(85,71,47,.70);
+      }
+      .ps-blessing-option-desc > span { display:block; }
+      .ps-blessing-option-check { color:#a77724; font-size:18px; }
+
 
       /* スロットエリア */
       .ps-slots-wrap {
@@ -1149,6 +1290,7 @@
     _ensureRogueliteFixedFirst();
     renderSlots();
     renderCharaList();
+    renderBlessingSelect();
   };
 
   // スロット：タップで解除、長押しでキャラ詳細を表示
@@ -1979,6 +2121,92 @@
     renderCharaList();
   }
 
+
+  function getSelectedBlessing() {
+    return PARTY_BLESSINGS.find(b => b.id === selectedBlessingId) || null;
+  }
+
+  function renderBlessingSelect() {
+    const el = document.getElementById('ps-blessing-list');
+    if (!el) return;
+    const blessing = getSelectedBlessing();
+
+    if (!blessing) {
+      el.innerHTML = `<button type="button" class="ps-blessing-slot empty" onclick="openPartyBlessingPicker()">
+        <span class="ps-blessing-slot-placeholder" aria-hidden="true"></span>
+        <span>
+          <span class="ps-blessing-slot-name">加護を選択</span>
+          <span class="ps-blessing-slot-empty-text">タップしてレムナントを選択</span>
+        </span>
+      </button>`;
+    } else {
+      el.innerHTML = `<button type="button" class="ps-blessing-slot" onclick="openPartyBlessingPicker()">
+        <img class="ps-blessing-slot-img" src="${blessing.img}" alt="${blessing.name}" onerror="this.style.opacity='.2'">
+        <span>
+          <span class="ps-blessing-slot-name">${blessing.name}</span>
+          <span class="ps-blessing-slot-desc">
+            <span>${blessing.passive}</span>
+            <span>${blessing.inv}</span>
+            <span>${blessing.invCondition}</span>
+          </span>
+        </span>
+      </button>`;
+    }
+  }
+
+  function renderBlessingPicker() {
+    const el = document.getElementById('ps-blessing-picker-list');
+    if (!el) return;
+
+    const rows = [
+      `<button type="button" class="ps-blessing-option none ${selectedBlessingId === null ? 'selected' : ''}" onclick="selectPartyBlessing(null)">
+        <span><span class="ps-blessing-option-name">加護なし</span><br><span class="ps-blessing-option-desc">加護を授からずに出撃する</span></span>
+        <span class="ps-blessing-option-check">${selectedBlessingId === null ? '✓' : ''}</span>
+      </button>`,
+      ...PARTY_BLESSINGS.map(b => {
+        const owned = isBlessingOwned(b.id);
+        const selected = selectedBlessingId === b.id;
+        return `<button type="button" class="ps-blessing-option ${selected ? 'selected' : ''} ${owned ? '' : 'locked'}" ${owned ? `onclick="selectPartyBlessing('${b.id}')"` : 'disabled'}>
+          <img class="ps-blessing-option-img" src="${b.img}" alt="${b.name}" onerror="this.style.opacity='.2'">
+          <span>
+            <span class="ps-blessing-option-name">${b.name}${owned ? '' : '（未取得）'}</span>
+            <span class="ps-blessing-option-desc">
+              <span>${b.passive}</span>
+              <span>${b.inv}</span>
+              <span>${b.invCondition}</span>
+            </span>
+          </span>
+          <span class="ps-blessing-option-check">${selected ? '✓' : ''}</span>
+        </button>`;
+      })
+    ];
+    el.innerHTML = rows.join('');
+  }
+
+  window.openPartyBlessingPicker = function() {
+    renderBlessingPicker();
+    const picker = document.getElementById('ps-blessing-picker');
+    if (!picker) return;
+    picker.classList.add('open');
+    picker.setAttribute('aria-hidden', 'false');
+  };
+
+  window.closePartyBlessingPicker = function() {
+    const picker = document.getElementById('ps-blessing-picker');
+    if (!picker) return;
+    picker.classList.remove('open');
+    picker.setAttribute('aria-hidden', 'true');
+  };
+
+  window.selectPartyBlessing = function(id) {
+    if (id && !isBlessingOwned(id)) return;
+    selectedBlessingId = id || null;
+    renderBlessingSelect();
+    renderBlessingPicker();
+    closePartyBlessingPicker();
+  };
+
+
   // ============================================================
   // 戦闘開始
   // ============================================================
@@ -2071,6 +2299,7 @@
     // partyIds だけ編成選択結果で上書きする。
     const mergedOptions = Object.assign({}, currentBattleOptions, {
       partyIds: selectedCharaIds,
+      blessingId: selectedBlessingId,
     });
 
     // ─── ローグライト分岐 ─────────────────────────────────────
@@ -2079,7 +2308,8 @@
       setTimeout(() => {
         if (window.RogueliteController && typeof window.RogueliteController.startRun === 'function') {
           window.RogueliteController.startRun(selectedCharaIds, {
-            runId: mergedOptions.rogueliteRunId || window.__ROGUELITE_PENDING_RUN_ID__ || 'default'
+            runId: mergedOptions.rogueliteRunId || window.__ROGUELITE_PENDING_RUN_ID__ || 'default',
+            blessingId: mergedOptions.blessingId || null
           });
         } else {
           console.error('[party_select] RogueliteController が見つかりません。roguelite_controller.js を読み込んでいるか確認してください。');
@@ -2101,6 +2331,7 @@
 
     buildModal();
     selected = [];
+    selectedBlessingId = null;
     _ensureRogueliteFixedFirst();
     const el = document.getElementById('party-select-modal');
     el.style.display = 'flex';
@@ -2108,9 +2339,11 @@
     el.style.opacity = '1';
     renderSlots();
     renderCharaList();
+    renderBlessingSelect();
   };
 
   window.closePartySelect = function () {
+    window.closePartyBlessingPicker && window.closePartyBlessingPicker();
     const el = document.getElementById('party-select-modal');
     if (!el) return;
     el.style.opacity = '0';

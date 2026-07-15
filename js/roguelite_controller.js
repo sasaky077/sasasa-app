@@ -2056,6 +2056,8 @@ async function _onBattleEnd(result, payload) {
   function startRun(partyIds, runOptions) {
     _injectStyles();
 
+    const blessingId = (runOptions && typeof runOptions === 'object') ? (runOptions.blessingId || null) : null;
+
     const runId = (typeof runOptions === 'string')
       ? runOptions
       : (runOptions && runOptions.runId)
@@ -2072,7 +2074,7 @@ async function _onBattleEnd(result, payload) {
     const rlPartyIds = Array.isArray(partyIds) ? partyIds.map(Number).filter(Number.isFinite) : [];
     window.__ROGUELITE_LAST_PARTY_IDS__ = [1, ...rlPartyIds.filter(id => id !== 1)].slice(0, 4);
 
-    window.RogueliteRun.start(partyIds || [], runId);
+    window.RogueliteRun.start(partyIds || [], runId, blessingId);
 _showTransitionShield('RUN START');
 _hideHud();
 _startBattle();

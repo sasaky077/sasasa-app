@@ -176,6 +176,28 @@
   const DEFAULT_ALLY_CRITICAL_RATE_32 = 0.10;
   const DEFAULT_ENEMY_CRITICAL_RATE_32 = 0.05;
 
+  const BLESSING_DEFS_32 = {
+    remnant_01: {
+      id: 'remnant_01',
+      name: 'オーバーシアの加護',
+      passiveCriticalRate: 0.10,
+      invRequiredKills: 3,
+      invCriticalRate: 1.00,
+    },
+  };
+
+  function makeBlessingState32(id) {
+    const def = BLESSING_DEFS_32[id];
+    if (!def) return null;
+    return {
+      ...def,
+      killCount: 0,
+      used: false,
+      activeTurn: null,
+      defeatedEnemyUids: [],
+    };
+  }
+
 
   
 
@@ -757,6 +779,16 @@
     }
     rate = Number(rate);
 
+
+    if (_bs && _bs.blessing && source.side === 'ally') {
+      rate += Number(_bs.blessing.passiveCriticalRate || 0);
+      if (!_bs.blessing.used || _bs.blessing.activeTurn === _bs.turn) {
+        if (_bs.blessing.activeTurn === _bs.turn) {
+          rate += Number(_bs.blessing.invCriticalRate || 0);
+        }
+      }
+    }
+
     if (Array.isArray(source.statusEffects)) {
       source.statusEffects.forEach(e => {
         if (!e || (e.duration != null && e.duration <= 0)) return;
@@ -1252,6 +1284,7 @@ const enemies = enemyDefs.map(def => {
       bossWarning: false,
       result: null,
       loseReason: null,
+      blessing: makeBlessingState32(config.blessingId || null),
 
       delayedActions: [],
 
@@ -1471,6 +1504,7 @@ const enemies = enemyDefs.map(def => {
       log: [..._bs.log],
       result: _bs.result,
       loseReason: _bs.loseReason || null,
+      blessing: _bs.blessing ? JSON.parse(JSON.stringify(_bs.blessing)) : null,
 
       delayedActions: _bs.delayedActions ? _bs.delayedActions.map(a => ({ ...a })) : [],
       summons: _bs.summons ? _bs.summons.map(u => ({ ...u, statusEffects: [...(u.statusEffects || [])] })) : [],
@@ -1519,6 +1553,38 @@ const enemies = enemyDefs.map(def => {
     _emit('log', { msg, bs: _snapshot() });
   }
 
+
+
+  function _syncBlessingDefeats32() {
+    if (!_bs || !_bs.blessing) return;
+    const blessing = _bs.blessing;
+    const seen = new Set(Array.isArray(blessing.defeatedEnemyUids) ? blessing.defeatedEnemyUids : []);
+    (_bs.enemies || []).forEach(enemy => {
+      if (!enemy || Number(enemy.hp || 0) > 0) return;
+      const uid = enemy._uid || enemy.id;
+      if (!uid || seen.has(uid)) return;
+      seen.add(uid);
+      blessing.killCount = Number(blessing.killCount || 0) + 1;
+      _log(`加護条件：敵撃破 ${blessing.killCount} / ${blessing.invRequiredKills}`);
+      _emit('blessingProgress', { blessing: { ...blessing, defeatedEnemyUids: [...seen] }, bs: _snapshot() });
+    });
+    blessing.defeatedEnemyUids = [...seen];
+  }
+
+  function activateBlessingInv() {
+    if (!_bs || !_bs.blessing || _bs.result || _bs.phase !== 'skill') return false;
+    const blessing = _bs.blessing;
+    _syncBlessingDefeats32();
+    if (blessing.used) return false;
+    if (Number(blessing.killCount || 0) < Number(blessing.invRequiredKills || 0)) return false;
+    blessing.used = true;
+    blessing.activeTurn = _bs.turn;
+    _log(`INV「万象観測」発動：このターン、味方全員のcritical率+100%`);
+    _emit('blessingInv', { blessing: { ...blessing }, bs: _snapshot() });
+    _renderUI();
+    _saveResume();
+    return true;
+  }
 
   // ============================================================
   // 能力変動エフェクト通知ヘルパー
@@ -1707,6 +1773,7 @@ const enemies = enemyDefs.map(def => {
     const hpBefore = Number(target.hp || 0);
     target.hp = Math.max(0, target.hp - dmg);
     const hpAfter = Number(target.hp || 0);
+    if (target.side === 'enemy' && hpBefore > 0 && hpAfter <= 0) _syncBlessingDefeats32();
     const isFatalDamage = hpBefore > 0 && dmg > 0 && hpAfter <= 0;
     const overkillDamage = isFatalDamage ? Math.max(0, dmg - hpBefore) : 0;
     const elementText = source ? getElementMatchText32(source.element, target.element) : '';
@@ -5114,6 +5181,7 @@ function doBossLineAttack(boss) {
   // ============================================================
   function _checkWinLose() {
     if (_bs.result) return;
+    _syncBlessingDefeats32();
 
     // 勝敗確定時に保存データを削除するヘルパー
     function _clearResume() {
@@ -5756,6 +5824,7 @@ window.Battle32 = {
 
   getItems,
   useItem,
+  activateBlessingInv,
 
   getMoveCells,
   getMovableCells,

@@ -10131,3 +10131,250 @@ html body.b32-cinematic-roster-hidden #b32-roster-info-close-hitbox {
   letter-spacing: 2px;
   cursor: pointer;
 }
+
+
+/* ============================================================
+   Blessing / Remnant battle icon + detail panel
+   ============================================================ */
+#b32-blessing-inv-wrap {
+  position: fixed;
+  right: 8px;
+  bottom: calc(var(--b32-actions-h, 74px) + 142px + env(safe-area-inset-bottom, 0px));
+  z-index: 3000002;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+}
+
+#b32-blessing-icon-btn {
+  width: 80px;
+  height: 80px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #604b2f;
+  display: block;
+  cursor: pointer;
+  pointer-events: auto;
+  font-family: 'Noto Serif JP', serif;
+  filter: drop-shadow(0 8px 15px rgba(78,58,31,.18));
+  -webkit-tap-highlight-color: transparent;
+}
+
+.b32-blessing-icon-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: block;
+  overflow: hidden;
+  position: relative;
+  background: rgba(249,246,237,.86);
+  border: 1px solid rgba(191,153,91,.58);
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,.58),
+    0 0 0 6px rgba(194,157,95,.24),
+    0 8px 18px rgba(73,54,29,.16),
+    inset 0 0 16px rgba(122,94,54,.10);
+}
+
+.b32-blessing-icon-ring::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(203,171,114,.44);
+  pointer-events: none;
+}
+
+#b32-blessing-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+
+.b32-blessing-icon-state {
+  margin-top: 3px;
+  min-height: 13px;
+  color: rgba(86,66,42,.66);
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+
+/* INV条件達成時：アイコン外周が金色に脈動し、光が一周する */
+#b32-blessing-icon-btn.ready .b32-blessing-icon-ring::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  z-index: -1;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255,224,139,.12) 65deg,
+    rgba(255,248,205,.98) 105deg,
+    rgba(232,181,70,.40) 145deg,
+    transparent 205deg,
+    transparent 360deg
+  );
+  filter: blur(2px);
+  animation: b32BlessingReadyOrbit 2.2s linear infinite;
+  pointer-events: none;
+}
+
+#b32-blessing-icon-btn.ready .b32-blessing-icon-ring::after {
+  border-color: rgba(255,225,155,.88);
+  box-shadow:
+    0 0 7px rgba(255,244,205,.92),
+    inset 0 0 8px rgba(255,220,120,.42);
+  animation: b32BlessingReadyInner 1.15s ease-in-out infinite;
+}
+
+#b32-blessing-icon-btn.ready .b32-blessing-icon-ring {
+  border-color: rgba(188,139,54,.90);
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,.68),
+    0 0 0 6px rgba(208,164,77,.42),
+    0 0 22px rgba(238,193,94,.62),
+    inset 0 0 18px rgba(235,192,91,.12);
+  animation: b32BlessingReady 1.35s ease-in-out infinite;
+}
+
+#b32-blessing-icon-btn.ready .b32-blessing-icon-state { color: #9a6d17; }
+#b32-blessing-icon-btn.active .b32-blessing-icon-ring { box-shadow: 0 0 0 5px rgba(255,233,168,.72), 0 0 28px rgba(255,205,92,.72); }
+#b32-blessing-icon-btn.used { opacity: .58; filter: grayscale(.35) drop-shadow(0 8px 15px rgba(78,58,31,.12)); }
+
+
+/* 加護詳細表示中：キャラパネルを一時的に隠して重なりを防止 */
+html body.b32-blessing-info-open #b32-roster-panel {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#b32-blessing-info-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000100;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px 14px calc(var(--b32-actions-h, 74px) + 18px + env(safe-area-inset-bottom, 0px));
+  background: rgba(30,25,20,.24);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+#b32-blessing-info-overlay.show { display: flex; animation: b32BlessingOverlayIn .18s ease; }
+
+#b32-blessing-info-panel {
+  width: min(390px, 100%);
+  position: relative;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(176,143,90,.42);
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.97), rgba(244,238,225,.98)),
+    rgba(248,244,234,.98);
+  color: #4f402e;
+  box-shadow: 0 18px 46px rgba(57,43,27,.28), inset 0 1px 0 rgba(255,255,255,.92);
+  font-family: 'Noto Serif JP', serif;
+}
+
+#b32-blessing-info-close {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(113,86,51,.18);
+  background: rgba(255,255,255,.54);
+  color: rgba(80,62,40,.66);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.b32-blessing-info-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 0 34px 13px 0;
+  border-bottom: 1px solid rgba(142,111,68,.16);
+}
+
+.b32-blessing-info-portrait {
+  width: 66px;
+  height: 66px;
+  flex: 0 0 66px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid rgba(183,143,78,.46);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.68), 0 4px 12px rgba(69,50,27,.16);
+}
+
+.b32-blessing-info-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+.b32-blessing-info-titlebox { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.b32-blessing-info-kicker { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 3px; color: rgba(126,94,52,.54); }
+#b32-blessing-info-name { font-size: 16px; letter-spacing: 1px; color: #4e3c27; }
+#b32-blessing-info-progress { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 1.5px; color: #9b742d; }
+
+.b32-blessing-info-body { display: flex; flex-direction: column; gap: 0; margin-top: 5px; }
+.b32-blessing-info-row { display: grid; grid-template-columns: 72px 1fr; gap: 11px; padding: 10px 2px; border-bottom: 1px solid rgba(139,105,61,.12); }
+.b32-blessing-info-label { color: #9b742d; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.b32-blessing-info-row p { margin: 0; color: #554633; font-size: 11px; line-height: 1.65; }
+
+#b32-blessing-inv-btn {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 13px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(151,119,73,.22);
+  background: rgba(109,95,74,.12);
+  color: rgba(82,68,50,.42);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Noto Serif JP', serif;
+}
+
+#b32-blessing-inv-btn.ready {
+  border-color: rgba(180,132,49,.62);
+  background: linear-gradient(135deg, rgba(226,190,102,.92), rgba(255,246,203,.96));
+  color: #57401f;
+  box-shadow: 0 0 18px rgba(213,164,62,.30), inset 0 1px 0 rgba(255,255,255,.72);
+}
+#b32-blessing-inv-btn.active { border-color: rgba(202,154,50,.72); background: linear-gradient(135deg, rgba(255,221,126,.96), rgba(255,248,213,.98)); color: #5a4018; }
+#b32-blessing-inv-btn.used { opacity: .56; }
+.b32-blessing-inv-kicker { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; }
+.b32-blessing-inv-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-align: left; }
+.b32-blessing-inv-action-state { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; }
+
+@keyframes b32BlessingReady {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-2px) scale(1.035); filter: brightness(1.16); }
+}
+@keyframes b32BlessingReadyOrbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes b32BlessingReadyInner {
+  0%, 100% { opacity: .62; }
+  50% { opacity: 1; }
+}
+@keyframes b32BlessingOverlayIn { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+
+@media (max-width: 390px) {
+  #b32-blessing-inv-wrap { right: 4px; width: 70px; height: 70px; }
+  #b32-blessing-icon-btn { width: 70px; height: 70px; min-height: 0; }
+  .b32-blessing-icon-ring { width: 70px; height: 70px; }
+}
+

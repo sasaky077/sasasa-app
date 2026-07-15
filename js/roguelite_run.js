@@ -264,7 +264,7 @@
   // { active, stageNo, options[], partyIds[], result }
 
   // ── 内部: 初期ステート ────────────────────────────────────
-  function _newState(partyIds, runId) {
+  function _newState(partyIds, runId, blessingId) {
     const runDef = getRunDef(runId || 'default');
     return {
       active:   true,
@@ -277,14 +277,15 @@
       totalTurns: 0,  // ラン通算クリアターン数
       stageTurns: [], // 各ステージのクリアターン履歴
       partyIds: normalizeRoguelitePartyIds(partyIds),
+      blessingId: blessingId || null,
       result:   null, // 'win' | 'lose'
     };
   }
 
   // ── 公開API ───────────────────────────────────────────────
 
-  function start(partyIds, runId) {
-    _state = _newState(partyIds, runId);
+  function start(partyIds, runId, blessingId) {
+    _state = _newState(partyIds, runId, blessingId);
     console.log('[RogueliteRun] ラン開始', { partyIds, runId: _state.runId, state: _state });
     return _state;
   }
@@ -440,6 +441,7 @@
     const cfg = Object.assign({}, baseConfig || {}, {
       // パーティID（ラン開始時に保存したもの）
       partyIds: _state.partyIds,
+      blessingId: _state.blessingId || null,
 
       // 保持OPを渡す（battle_32.js 側で applyOnStart / applyOnEvent を呼ぶ）
       rogueliteOptions: _state.options.slice(),

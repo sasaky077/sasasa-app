@@ -359,6 +359,27 @@ function _positionItemPanel() {
   el.style.flexDirection = 'row';
 }
 
+// ============================================================
+// Remnant加護アイコン位置調整
+// キャラパネルの実測上端を基準に、その直上へ配置して重なりを防ぐ。
+// ============================================================
+function _positionBlessingIcon() {
+  const wrap = document.getElementById('b32-blessing-inv-wrap');
+  if (!wrap || getComputedStyle(wrap).display === 'none') return;
+
+  const roster = document.getElementById('b32-roster-panel');
+  if (roster && getComputedStyle(roster).display !== 'none') {
+    const rr = roster.getBoundingClientRect();
+    if (rr.height > 0 && rr.top > 0) {
+      const bottomPx = Math.max(0, window.innerHeight - rr.top + 8);
+      wrap.style.setProperty('bottom', `${bottomPx}px`, 'important');
+      return;
+    }
+  }
+
+  wrap.style.removeProperty('bottom');
+}
+
  // ============================================================
  // repeat_skill（リプレイ）用：コピー元スキルを解決するヘルパー
  // UI表示専用。実際の発動処理は battle_32.js 側が担う。
@@ -4274,6 +4295,48 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  <span id="b32-stage-id-right"></span>
  </div>
  </div>
+<div id="b32-blessing-inv-wrap" style="display:none">
+  <button id="b32-blessing-icon-btn" type="button" onclick="_b32ToggleBlessingInfo(event)" aria-label="加護情報を表示">
+    <span class="b32-blessing-icon-ring">
+      <img id="b32-blessing-icon-img" src="images/remnant_01_panel.webp" alt="オーバーシアの加護">
+    </span>
+  </button>
+</div>
+
+<div id="b32-blessing-info-overlay" aria-hidden="true" onclick="_b32CloseBlessingInfo(event)">
+  <section id="b32-blessing-info-panel" role="dialog" aria-modal="true" aria-label="加護情報" onclick="event.stopPropagation()">
+    <button id="b32-blessing-info-close" type="button" onclick="_b32CloseBlessingInfo()" aria-label="閉じる">×</button>
+    <div class="b32-blessing-info-head">
+      <span class="b32-blessing-info-portrait">
+        <img id="b32-blessing-info-img" src="images/remnant_01_panel.webp" alt="">
+      </span>
+      <div class="b32-blessing-info-titlebox">
+        <span class="b32-blessing-info-kicker">BLESSING</span>
+        <strong id="b32-blessing-info-name">オーバーシアの加護</strong>
+        <span id="b32-blessing-info-progress">INV 0 / 3</span>
+      </div>
+    </div>
+    <div class="b32-blessing-info-body">
+      <div class="b32-blessing-info-row">
+        <span class="b32-blessing-info-label">常時能力</span>
+        <p id="b32-blessing-info-passive">味方全員のcritical率 +10%</p>
+      </div>
+      <div class="b32-blessing-info-row">
+        <span class="b32-blessing-info-label">INV条件</span>
+        <p id="b32-blessing-info-condition">敵を合計で3体撃破</p>
+      </div>
+      <div class="b32-blessing-info-row">
+        <span class="b32-blessing-info-label">INV効果</span>
+        <p id="b32-blessing-info-effect">発動ターンのみ、味方全員のcritical率 +100%</p>
+      </div>
+    </div>
+    <button id="b32-blessing-inv-btn" type="button" onclick="_b32ActivateBlessingInv()">
+      <span class="b32-blessing-inv-kicker">INV</span>
+      <span class="b32-blessing-inv-name">万象観測</span>
+      <span class="b32-blessing-inv-action-state" id="b32-blessing-inv-action-state">0 / 3</span>
+    </button>
+  </section>
+</div>
 
  <div id="rl-hud" aria-label="Roguelite Stage Progress"></div>
 
@@ -8581,6 +8644,100 @@ if (listEl) {
  barEl.style.width = hpPct + '%';
  }
 
+
+ const BLESSING_UI_DEFS = {
+   remnant_01: {
+     name: 'オーバーシアの加護',
+     invName: '万象観測',
+     img: 'images/remnant_01_panel.webp',
+     passive: '味方全員のcritical率 +10%',
+     condition: '敵を合計で3体撃破',
+     effect: '発動ターンのみ、味方全員のcritical率 +100%'
+   }
+ };
+
+ function renderBlessingInv(bs) {
+   const wrap = document.getElementById('b32-blessing-inv-wrap');
+   const iconBtn = document.getElementById('b32-blessing-icon-btn');
+   const invBtn = document.getElementById('b32-blessing-inv-btn');
+    const actionState = document.getElementById('b32-blessing-inv-action-state');
+   const overlay = document.getElementById('b32-blessing-info-overlay');
+   if (!wrap || !iconBtn || !invBtn || !actionState) return;
+
+   const b = bs && bs.blessing;
+   const def = b && BLESSING_UI_DEFS[b.id];
+   if (!b || !def || bs.result) {
+     wrap.style.display = 'none';
+     if (overlay) {
+       overlay.classList.remove('show');
+       overlay.setAttribute('aria-hidden', 'true');
+     }
+     return;
+   }
+
+   wrap.style.display = 'block';
+   const kills = Number(b.killCount || 0);
+   const need = Number(b.invRequiredKills || 3);
+   const active = b.activeTurn === bs.turn;
+   // INV条件を満たした時点で縁の発光演出を開始する。
+   // 実際にINVを発動できるのは従来どおり味方のskillフェーズのみ。
+   const invReady = !b.used && kills >= need;
+   const canActivate = invReady && bs.phase === 'skill';
+   const stateText = active ? 'ACTIVE' : (b.used ? 'USED' : `${Math.min(kills, need)} / ${need}`);
+
+   const iconImg = document.getElementById('b32-blessing-icon-img');
+   const infoImg = document.getElementById('b32-blessing-info-img');
+   if (iconImg) { iconImg.src = def.img; iconImg.alt = def.name; }
+   if (infoImg) { infoImg.src = def.img; infoImg.alt = def.name; }
+   const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+   setText('b32-blessing-info-name', def.name);
+   setText('b32-blessing-info-passive', def.passive);
+   setText('b32-blessing-info-condition', def.condition);
+   setText('b32-blessing-info-effect', def.effect);
+   setText('b32-blessing-info-progress', `INV ${stateText}`);
+   setText('b32-blessing-inv-action-state', stateText);
+
+   iconBtn.classList.toggle('ready', invReady);
+   iconBtn.classList.toggle('active', active);
+   iconBtn.classList.toggle('used', !!b.used && !active);
+
+   invBtn.disabled = !canActivate;
+   invBtn.classList.toggle('ready', canActivate);
+   invBtn.classList.toggle('active', active);
+   invBtn.classList.toggle('used', !!b.used && !active);
+ }
+
+ function _setBlessingInfoOpen(open) {
+   const overlay = document.getElementById('b32-blessing-info-overlay');
+   if (!overlay) return;
+
+   overlay.classList.toggle('show', open);
+   overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+
+   // 加護詳細を開いている間は、body直下のキャラパネルを隠す。
+   // 詳細パネルの下部がキャラパネルに覆われるのを防ぎ、閉じたら自動復帰する。
+   document.body.classList.toggle('b32-blessing-info-open', open);
+ }
+
+ window._b32ToggleBlessingInfo = function (event) {
+   if (event) event.stopPropagation();
+   const overlay = document.getElementById('b32-blessing-info-overlay');
+   if (!overlay) return;
+   _setBlessingInfoOpen(!overlay.classList.contains('show'));
+ };
+
+ window._b32CloseBlessingInfo = function (event) {
+   if (event && event.target && event.currentTarget && event.target !== event.currentTarget) return;
+   _setBlessingInfoOpen(false);
+ };
+
+ window._b32ActivateBlessingInv = function () {
+   if (window.Battle32 && typeof window.Battle32.activateBlessingInv === 'function') {
+     const ok = window.Battle32.activateBlessingInv();
+     if (ok !== false) window._b32CloseBlessingInfo();
+   }
+ };
+
  function renderButtons(bs) {
  const summonBtn = document.getElementById('b32-btn-summon');
  const moveBtn   = document.getElementById('b32-btn-move');
@@ -8787,8 +8944,10 @@ applyBattle32ViewportClass(root);
     renderLinkBar(bs);
     renderRoster(bs);
     renderItemPanel(bs);
+    renderBlessingInv(bs);
   } else {
     renderPartyStatus(bs);
+    renderBlessingInv(bs);
   }
 
   renderLog(bs);
@@ -9650,8 +9809,9 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
    rosterPanelEl2.style.bottom = `${actionsH + safeBottom + 4}px`;
  }
 
- // ── itemパネルをロスター直上へ同期 ────────────────────────
+ // ── itemパネル／加護アイコンをロスター直上へ同期 ──────────
  _positionItemPanel();
+ _positionBlessingIcon();
  _positionActionDetailPortal();
  _positionComboInspect();
 
