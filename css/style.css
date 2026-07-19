@@ -13892,3 +13892,240 @@ body,
   font-size: 10px !important;
   line-height: 1.65 !important;
 }
+
+
+/* =========================================================
+   Remnant Blessing Level / Upgrade
+   ========================================================= */
+.remnant-blessing-card {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(232,200,122,.34);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(35,27,18,.92), rgba(10,10,10,.92));
+}
+.remnant-blessing-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.remnant-blessing-head span { font-family:"Cinzel",serif; font-size:10px; letter-spacing:.18em; color:rgba(232,200,122,.72); }
+.remnant-blessing-head strong { font-family:"Cinzel",serif; color:#f3d58b; font-size:14px; }
+.remnant-blessing-name { font-size:15px; font-weight:700; margin-bottom:10px; color:#fff3cf; }
+.remnant-blessing-effect,.remnant-blessing-condition { font-size:12px; line-height:1.7; color:rgba(255,255,255,.78); }
+.remnant-blessing-condition { color:rgba(255,255,255,.55); margin-bottom:12px; }
+.remnant-blessing-upgrade-material { display:flex; align-items:center; justify-content:space-between; padding:9px 10px; margin-top:8px; border-radius:8px; background:rgba(255,255,255,.05); font-size:12px; }
+.remnant-blessing-upgrade-material strong { color:#f3d58b; font-family:"Cinzel",serif; }
+.remnant-blessing-upgrade-btn { width:100%; margin-top:9px; padding:11px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:rgba(255,255,255,.35); font-family:"Noto Serif JP",serif; font-weight:700; }
+.remnant-blessing-upgrade-btn.ready { color:#201506; background:linear-gradient(180deg,#f3d58b,#bd8c37); border-color:#ffe6a8; box-shadow:0 0 18px rgba(232,200,122,.25); cursor:pointer; }
+.remnant-blessing-upgrade-btn:disabled { cursor:not-allowed; }
+.remnant-blessing-max { margin-top:10px; text-align:center; padding:10px; border:1px solid rgba(243,213,139,.38); color:#f3d58b; font-family:"Cinzel",serif; font-size:11px; letter-spacing:.12em; }
+
+
+/* =========================================================
+   Remnant Detail: Blessing text layout
+   ========================================================= */
+#screen-zukan.is-remnant-mode .remnant-detail-row.remnant-detail-row-multiline {
+  align-items: flex-start !important;
+}
+
+#screen-zukan.is-remnant-mode .remnant-detail-row.remnant-detail-row-multiline span {
+  flex: 0 0 30% !important;
+  padding-top: 1px !important;
+}
+
+#screen-zukan.is-remnant-mode .remnant-detail-row.remnant-detail-row-multiline strong {
+  text-align: left !important;
+  line-height: 1.55 !important;
+  font-family: "Noto Serif JP", serif !important;
+  letter-spacing: 0.02em !important;
+}
+
+
+/* =========================================================
+   Remnant Blessing Level / Upgrade integrated panel
+   ========================================================= */
+#screen-zukan.is-remnant-mode .remnant-blessing-level-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 2px 4px 0;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-level-head > span {
+  color: rgba(104, 77, 42, 0.66);
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-level-head > strong {
+  color: #8d672c;
+  font-family: "Cinzel", serif;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-level-head > strong small {
+  color: rgba(104, 77, 42, 0.48);
+  font-size: 10px;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-level-track {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  padding: 0 4px 5px;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-level-track i {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(116, 86, 47, 0.13);
+  box-shadow: inset 0 1px 2px rgba(80, 53, 22, 0.08);
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-level-track i.filled {
+  background: linear-gradient(90deg, #b88838, #e0bd70);
+  box-shadow: 0 0 7px rgba(192, 143, 55, 0.28);
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-upgrade-area {
+  margin-top: 3px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(126, 96, 58, 0.15);
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-material-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid rgba(126, 96, 58, 0.13);
+  border-radius: 9px;
+  background: rgba(255, 253, 247, 0.52);
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-material-row span {
+  color: rgba(91, 70, 45, 0.70);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-material-row strong {
+  color: #735638;
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-material-row strong.is-ready {
+  color: #a06f1f;
+  text-shadow: 0 0 8px rgba(190, 137, 45, 0.25);
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-upgrade-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  border: 1px solid rgba(119, 91, 54, 0.15);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(224, 216, 199, 0.82), rgba(202, 191, 171, 0.82));
+  color: rgba(91, 70, 45, 0.40);
+  font-family: "Noto Serif JP", serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-upgrade-btn.ready {
+  border-color: rgba(163, 111, 26, 0.58);
+  background: linear-gradient(180deg, #f0cf7e 0%, #c99739 100%);
+  color: #3f290e;
+  box-shadow:
+    0 5px 12px rgba(112, 74, 20, 0.18),
+    inset 0 1px 0 rgba(255, 246, 204, 0.74);
+  cursor: pointer;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-upgrade-btn.ready:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 5px rgba(92, 57, 12, 0.18);
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-max {
+  padding: 11px 8px;
+  border: 1px solid rgba(174, 128, 49, 0.28);
+  border-radius: 9px;
+  background: rgba(232, 207, 151, 0.20);
+  color: #966d2d;
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+}
+
+
+/* =========================================================
+   Remnant Blessing: hold to preview Lv.5 maximum
+   ========================================================= */
+#screen-zukan.is-remnant-mode .remnant-blessing-longpress {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform .14s ease, border-color .14s ease, background .14s ease;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-longpress.is-max-previewing {
+  transform: scale(.985);
+  border-color: rgba(174, 128, 50, .52) !important;
+  background: rgba(255, 246, 218, .82) !important;
+}
+
+#screen-zukan.is-remnant-mode .remnant-blessing-hold-hint {
+  display: block;
+  margin-top: 2px;
+  color: rgba(111, 82, 46, .42);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+
+#remnant-blessing-max-preview {
+  position: fixed;
+  left: 50%;
+  z-index: 250000;
+  width: min(310px, calc(100vw - 40px));
+  padding: 13px 16px 14px;
+  border: 1px solid rgba(163, 116, 42, .42);
+  border-radius: 13px;
+  background: linear-gradient(180deg, rgba(255, 251, 238, .98), rgba(235, 220, 188, .98));
+  color: #4f3820;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(75, 52, 25, .24), inset 0 1px 0 rgba(255,255,255,.9);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px) scale(.96);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+#remnant-blessing-max-preview.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+#remnant-blessing-max-preview .remnant-blessing-max-preview-label {
+  margin-bottom: 5px;
+  color: #9b7130;
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+
+#remnant-blessing-max-preview .remnant-blessing-max-preview-text {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}

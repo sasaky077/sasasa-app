@@ -1131,6 +1131,18 @@ function _hideHud() {
       img: 'images/item_overseercore.webp',
       remnantId: 'remnant_01',
     },
+    irish: {
+      id: 'irish_core',
+      name: 'イリシュの心核',
+      img: 'images/item_irishcore.webp',
+      remnantId: 'remnant_02',
+    },
+    rivia: {
+      id: 'rivia_core',
+      name: 'リヴィアの心核',
+      img: 'images/item_riviacore.webp',
+      remnantId: 'remnant_03',
+    },
   });
 
   function _loadBossCoreInventory() {
@@ -1702,6 +1714,9 @@ function _hideHud() {
       const key = String(id || '');
       if (key === 'enemy_sakiel_roguelite') return '大天使 サキエル';
       if (key.indexOf('rl_sakiel_zako') === 0) return 'サキエルのしもべ';
+      if (key === 'enemy_rivia_roguelite') return 'レムナント：リヴィア';
+      if (key === 'rl_rivia_zako_a') return '忘却の槍使い';
+      if (key === 'rl_rivia_zako_b') return '消失の星詠み';
       return '??????';
     }
 

@@ -508,7 +508,7 @@ function isOverseerPreviewEnemy(enemy) {
 }
 
 function isPlannedActionEnemy(enemy) {
-  return isSakielPreviewEnemy(enemy) || isOverseerPreviewEnemy(enemy);
+  return isSakielPreviewEnemy(enemy) || isOverseerPreviewEnemy(enemy) || !!(enemy && (enemy.id === 'enemy_rivia_roguelite' || enemy.specialActionType === 'rivia_oblivion_4'));
 }
 
 function getEnemyPlannedAction(enemy) {
@@ -518,6 +518,10 @@ function getEnemyPlannedAction(enemy) {
   }
   if (isOverseerPreviewEnemy(enemy)) {
     const next = enemy && enemy._overseerNextAction;
+    return next && next.id ? next : null;
+  }
+  if (enemy && (enemy.id === 'enemy_rivia_roguelite' || enemy.specialActionType === 'rivia_oblivion_4')) {
+    const next = enemy._riviaNextAction;
     return next && next.id ? next : null;
   }
   return null;
@@ -5851,6 +5855,67 @@ function _showScreenShake(variant) {
  }, dur);
 }
 
+// ============================================================
+// 敵の強攻撃：盤面シェイク
+// battle_32.js から window.playBattle32EnemyStrongShake() を呼ぶ。
+// ============================================================
+function _ensureEnemyStrongShakeStyle() {
+ const STYLE_ID = 'b32-enemy-strong-shake-style';
+ if (document.getElementById(STYLE_ID)) return;
+ const style = document.createElement('style');
+ style.id = STYLE_ID;
+ style.textContent = `
+@keyframes b32EnemyStrongBoardShake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  12% { transform: translate3d(-6px, 2px, 0); }
+  25% { transform: translate3d(5px, -3px, 0); }
+  38% { transform: translate3d(-4px, 3px, 0); }
+  52% { transform: translate3d(4px, -2px, 0); }
+  68% { transform: translate3d(-3px, 1px, 0); }
+  84% { transform: translate3d(2px, -1px, 0); }
+}
+@keyframes b32EnemyUltimateBoardShake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  8% { transform: translate3d(-9px, 3px, 0); }
+  18% { transform: translate3d(8px, -4px, 0); }
+  30% { transform: translate3d(-7px, 4px, 0); }
+  44% { transform: translate3d(6px, -3px, 0); }
+  58% { transform: translate3d(-5px, 2px, 0); }
+  72% { transform: translate3d(4px, -2px, 0); }
+  86% { transform: translate3d(-2px, 1px, 0); }
+}
+#b32-board-wrap.b32-enemy-strong-shake {
+  animation: b32EnemyStrongBoardShake 360ms ease-out both;
+  will-change: transform;
+}
+#b32-board-wrap.b32-enemy-ultimate-shake {
+  animation: b32EnemyUltimateBoardShake 520ms ease-out both;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  #b32-board-wrap.b32-enemy-strong-shake,
+  #b32-board-wrap.b32-enemy-ultimate-shake {
+    animation-duration: 1ms !important;
+  }
+}`;
+ document.head.appendChild(style);
+}
+
+window.playBattle32EnemyStrongShake = function (variant) {
+ _ensureEnemyStrongShakeStyle();
+ const boardWrap = document.getElementById('b32-board-wrap');
+ if (!boardWrap) return false;
+ const cls = variant === 'ultimate'
+   ? 'b32-enemy-ultimate-shake'
+   : 'b32-enemy-strong-shake';
+ const duration = variant === 'ultimate' ? 540 : 380;
+ boardWrap.classList.remove('b32-enemy-strong-shake', 'b32-enemy-ultimate-shake');
+ void boardWrap.offsetWidth;
+ boardWrap.classList.add(cls);
+ window.setTimeout(() => boardWrap.classList.remove(cls), duration);
+ return true;
+};
+
 function _getCoreScreenPos(core) {
  if (!core) return null;
 
@@ -6333,62 +6398,54 @@ function _onHealEvent(data) {
      // ------------------------------------------------------------
      // 敵情報タップ fallback
      // ------------------------------------------------------------
-     // ローグライトの敵は盤面上段に出ることが多く、rotateX + スマホ実機の
-     // ヒット判定で inline onclick が発火しないケースがある。
-     // 既に .enemy-inspectable セルを直接踏めている場合は通常 onclick に任せ、
-     // 取りこぼした時だけ座標から最寄りの敵セルを解決する。
-     const directEnemyCell = e.target && e.target.closest
-       ? e.target.closest('.b32-cell.enemy-inspectable')
-       : null;
+     // 移動モード中は移動操作を最優先し、敵情報の補助判定は行わない。
+     // 通常時のみ、3D傾斜でセルonclickを取りこぼした場合に敵セルを補助する。
+     if (!_moveMode) {
+       const directEnemyCell = e.target && e.target.closest
+         ? e.target.closest('.b32-cell.enemy-inspectable')
+         : null;
 
-     if (!directEnemyCell) {
-       const enemyCells = Array.from(currentBoard.querySelectorAll('.b32-cell.enemy-inspectable'));
-       if (enemyCells.length) {
-         const rects = enemyCells
-           .map(cell => cell.getBoundingClientRect())
-           .filter(rect => rect.width > 0 && rect.height > 0);
+       if (!directEnemyCell) {
+         const enemyCells = Array.from(currentBoard.querySelectorAll('.b32-cell.enemy-inspectable'));
+         if (enemyCells.length) {
+           let bestEnemy = null;
+           let bestEnemyDist = Infinity;
 
-         if (rects.length) {
-           const hitBounds = rects.reduce((acc, rect) => ({
-             left: Math.min(acc.left, rect.left),
-             right: Math.max(acc.right, rect.right),
-             top: Math.min(acc.top, rect.top),
-             bottom: Math.max(acc.bottom, rect.bottom),
-           }), { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity });
+           enemyCells.forEach(cell => {
+             const rect = cell.getBoundingClientRect();
+             if (rect.width <= 0 || rect.height <= 0) return;
 
-           const margin = Math.max(28, cellSize * 0.70);
-           const insideEnemyArea = !(
-             e.clientX < hitBounds.left - margin ||
-             e.clientX > hitBounds.right + margin ||
-             e.clientY < hitBounds.top - margin ||
-             e.clientY > hitBounds.bottom + margin
-           );
+             // まず実際の表示矩形内なら、そのセルを最優先する。
+             const inside =
+               e.clientX >= rect.left && e.clientX <= rect.right &&
+               e.clientY >= rect.top && e.clientY <= rect.bottom;
 
-           if (insideEnemyArea) {
-             let bestEnemy = null;
-             let bestEnemyDist = Infinity;
+             const cx = rect.left + rect.width / 2;
+             const cy = rect.top + rect.height / 2;
+             const d = Math.hypot(e.clientX - cx, e.clientY - cy);
 
-             enemyCells.forEach(cell => {
-               const rect = cell.getBoundingClientRect();
-               const cx = rect.left + rect.width / 2;
-               const cy = rect.top + rect.height / 2;
-               const d = Math.hypot(e.clientX - cx, e.clientY - cy);
-               if (d < bestEnemyDist) {
-                 bestEnemyDist = d;
-                 bestEnemy = cell;
-               }
-             });
+             if (inside) {
+               bestEnemy = cell;
+               bestEnemyDist = 0;
+               return;
+             }
 
-             const enemyThreshold = Math.max(36, cellSize * 1.05);
-             if (bestEnemy && bestEnemyDist <= enemyThreshold) {
-               const onclick = bestEnemy.getAttribute('onclick') || '';
-               const m = onclick.match(/_b32ShowEnemyInfo\('([^']+)'\)/);
-               if (m && m[1] && typeof window._b32ShowEnemyInfo === 'function') {
-                 e.preventDefault();
-                 e.stopPropagation();
-                 window._b32ShowEnemyInfo(m[1]);
-                 return;
-               }
+             if (d < bestEnemyDist) {
+               bestEnemyDist = d;
+               bestEnemy = cell;
+             }
+           });
+
+           // 奥側セルの取りこぼしだけを補助する。以前より少し控えめな範囲。
+           const enemyThreshold = Math.max(34, cellSize * 0.92);
+           if (bestEnemy && bestEnemyDist <= enemyThreshold) {
+             const onclick = bestEnemy.getAttribute('onclick') || '';
+             const m = onclick.match(/_b32ShowEnemyInfo\('([^']+)'\)/);
+             if (m && m[1] && typeof window._b32ShowEnemyInfo === 'function') {
+               e.preventDefault();
+               e.stopPropagation();
+               window._b32ShowEnemyInfo(m[1]);
+               return;
              }
            }
          }
@@ -6396,65 +6453,69 @@ function _onHealEvent(data) {
      }
 
      // ------------------------------------------------------------
-     // 移動先タップ fallback（既存）
+     // 移動先タップ fallback
      // ------------------------------------------------------------
      if (!_moveMode || !_selMoveAllyUid) return;
 
-     const movable = Array.from(currentBoard.querySelectorAll('.b32-cell.movable'));
-     if (!movable.length) return;
+     // 通常どおりセル自体へイベントが届いている場合は、各セルのonclickへ任せる。
+     // capture段階で先に移動させるとclickとの二重実行になるため、ここでは何もしない。
+     const directCell = e.target && e.target.closest
+       ? e.target.closest('.b32-cell')
+       : null;
+     if (directCell && currentBoard.contains(directCell)) return;
 
-      // 盤面から大きく外れたタップは無視して、下部UIの誤爆を防ぐ。
-      // transform済みの boardRect はSE上段で小さく潰れるため、各movableセルの
-      // 外接範囲から判定する。
-      const rects = movable
-        .map(cell => cell.getBoundingClientRect())
-        .filter(rect => rect.width > 0 && rect.height > 0);
+     // iOSの3D盤面でtargetがboard等になった場合だけ、画面座標から
+     // 「実際に押された1マス」を特定する。
+     // 最寄りの移動可能マスへ吸着させる処理は行わない。
+     const allCells = Array.from(currentBoard.querySelectorAll('.b32-cell'));
+     if (!allCells.length) return;
 
-      if (!rects.length) return;
+     let hitCell = null;
 
-      const hitBounds = rects.reduce((acc, rect) => ({
-        left: Math.min(acc.left, rect.left),
-        right: Math.max(acc.right, rect.right),
-        top: Math.min(acc.top, rect.top),
-        bottom: Math.max(acc.bottom, rect.bottom),
-      }), { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity });
-
-      const margin = 64;
-      if (
-        e.clientX < hitBounds.left - margin ||
-        e.clientX > hitBounds.right + margin ||
-        e.clientY < hitBounds.top - margin ||
-        e.clientY > hitBounds.bottom + margin
-      ) {
-        return;
-      }
-
-     let best = null;
-     let bestDist = Infinity;
-
-     movable.forEach(cell => {
-       const rect = cell.getBoundingClientRect();
-       const cx = rect.left + rect.width / 2;
-       const cy = rect.top + rect.height / 2;
-       const d = Math.hypot(e.clientX - cx, e.clientY - cy);
-
-       if (d < bestDist) {
-         bestDist = d;
-         best = cell;
+     // まずブラウザの実ヒット結果を優先する。
+     if (typeof document.elementsFromPoint === 'function') {
+       const stack = document.elementsFromPoint(e.clientX, e.clientY);
+       for (const el of stack) {
+         const cell = el && el.closest ? el.closest('.b32-cell') : null;
+         if (cell && currentBoard.contains(cell)) {
+           hitCell = cell;
+           break;
+         }
        }
-     });
+     }
 
-     // 上段は rotateX の影響で見た目の高さが圧縮されるため広めに拾う。
-     const threshold = Math.max(48, cellSize * 1.35);
+     // elementsFromPointで拾えないiOS向けに、各セルの実表示矩形内だけを判定する。
+     // 複数矩形が重なる場合は、中心が最も近いセルを採用する。
+     if (!hitCell) {
+       let bestDist = Infinity;
+       allCells.forEach(cell => {
+         const rect = cell.getBoundingClientRect();
+         if (rect.width <= 0 || rect.height <= 0) return;
+         if (
+           e.clientX < rect.left || e.clientX > rect.right ||
+           e.clientY < rect.top || e.clientY > rect.bottom
+         ) return;
 
-     if (best && bestDist <= threshold) {
-       const r = Number(best.dataset.row);
-       const c = Number(best.dataset.col);
-       if (Number.isFinite(r) && Number.isFinite(c)) {
-         e.preventDefault();
-         e.stopPropagation();
-         window._b32OnMoveCellTap(r, c);
-       }
+         const cx = rect.left + rect.width / 2;
+         const cy = rect.top + rect.height / 2;
+         const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+         if (dist < bestDist) {
+           bestDist = dist;
+           hitCell = cell;
+         }
+       });
+     }
+
+     // 押したマスそのものが移動可能でなければ何もしない。
+     // 隣の移動可能マスへ自動補正しない。
+     if (!hitCell || !hitCell.classList.contains('movable')) return;
+
+     const r = Number(hitCell.dataset.row);
+     const c = Number(hitCell.dataset.col);
+     if (Number.isFinite(r) && Number.isFinite(c)) {
+       e.preventDefault();
+       e.stopPropagation();
+       window._b32OnMoveCellTap(r, c);
      }
    }, true);
  }
@@ -6557,6 +6618,12 @@ function _onHealEvent(data) {
  });
  }
 
+ // ── 敵攻撃の実行導線 ──
+ const enemyAttackTraceCells = new Map();
+ (Array.isArray(bs.activeEnemyAttackTraceCells) ? bs.activeEnemyAttackTraceCells : []).forEach(cell => {
+   if (cell) enemyAttackTraceCells.set(`${cell.row}-${cell.col}`, cell);
+ });
+
  // ── 敵タップ時の情報ガイド ──
 let enemyMoveGuideCells = new Set();
 let enemyAttackGuideCells = new Map(); // key:'row-col', value:'attack' | 'target_ally'
@@ -6655,6 +6722,7 @@ if (_selectedEnemyUid) {
  const isCapture = captureCells.has(key);
  // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
  const bossDangerType = bossDangerCells.get(key);
+ const enemyAttackTrace = enemyAttackTraceCells.get(key) || null;
  const isEnemyMoveGuide = enemyMoveGuideCells.has(key);
  const enemyAttackCellType = enemyAttackGuideCells.get ? enemyAttackGuideCells.get(key) : null;
  const isEnemyAttackGuide = enemyAttackCellType === 'attack';
@@ -6681,6 +6749,7 @@ if (_selectedEnemyUid) {
  if (bossDangerType === 'boss_line') cls += ' boss-danger-line';
  else if (bossDangerType === 'boss_warn') cls += ' boss-danger-warn';
  else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
+ if (enemyAttackTrace) cls += enemyAttackTrace.hit ? ' enemy-attack-trace-hit' : ' enemy-attack-trace';
 
  if (isEnemyMoveGuide) cls += ' enemy-move-guide';
  if (isEnemyAttackGuide) cls += ' enemy-attack-guide';
@@ -6723,16 +6792,21 @@ if (_summonMode && isSummonCell && !unit) {
 } else if (isMovable && !unit) {
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
-} else if (isEnemyInspectable) {
- // 選択中モードでも敵情報・敵移動ガイドを表示する
- onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
-
 } else if (isCapture) {
+ // 移動先として選択可能な敵マスは、敵情報より移動操作を優先する。
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
+
+} else if (isEnemyInspectable) {
+ // 敵情報は、その敵が立っているセル内を直接タップした時だけ表示する。
+ onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
 
 } else if (isAllyInspectable || isSkillSelectable || isSkillSelected) {
  onclick = `onclick="_b32OnSkillAllyTap('${unit._uid}')"`;
 }
+  const enemyAttackTraceOverlay = enemyAttackTrace
+    ? `<span class="b32-enemy-attack-trace-overlay${enemyAttackTrace.hit ? ' hit' : ''}" aria-hidden="true"><i></i><b></b></span>`
+    : '';
+
   // 敵情報ガイド専用オーバーレイ
   // cell の background だけだと、白背景・3D変形・ゾーン背景の上で薄く見えるため、
   // スキルレンジと同じく専用spanを置いて視認性を担保する。
@@ -6780,6 +6854,7 @@ if (_summonMode && isSummonCell && !unit) {
   cells.push(
     `<div class="${cls}" data-row="${r}" data-col="${c}" ${depthStyle} ${onclick}>` +
     enemyGuideOverlay +
+    enemyAttackTraceOverlay +
     skillOverlay +
     comboOverlay +
     comboSkillOverlay +
@@ -6932,7 +7007,8 @@ if (_summonMode && isSummonCell && !unit) {
 
        const dx = ev.clientX - start.sx;
        const dy = ev.clientY - start.sy;
-       if (Math.abs(dx) + Math.abs(dy) > 3) start.moved = true;
+       // 敵情報パネルのドラッグ開始感度。旧3pxから半分の1.5pxへ短縮。
+       if (Math.abs(dx) + Math.abs(dy) > 1.5) start.moved = true;
 
        const p = _clampEnemyQuickInfoPosWithSize({
          x: start.x + dx,
@@ -7389,6 +7465,8 @@ function b32StatusEffectBadgeList(unit) {
    } else if (e.type === 'damage_cut') {
      const pct = Number.isFinite(rate) ? Math.round(rate * 100) : 50;
      pushBadge('buff', `DMG-${pct}%${dur ? ` ${dur}` : ''}`, 25);
+   } else if (e.type === 'skill_forget') {
+     pushBadge('debuff', `忘却${dur ? ` ${dur}` : ''}`, 39);
    } else if (e.type === 'poison') {
      pushBadge('debuff', `毒${dur ? ` ${dur}` : ''}`, 40);
    } else if (e.type === 'yoi_no_sousou') {
@@ -7401,14 +7479,29 @@ function b32StatusEffectBadgeList(unit) {
    pushBadge('debuff', `STUN${stun && stun.duration ? ` ${stun.duration}T` : ''}`, 5);
  }
 
- return badges.sort((a, b) => a.priority - b.priority).slice(0, 4);
+ return badges.sort((a, b) => a.priority - b.priority);
 }
 
 function b32StatusEffectBadgesHtml(unit, compact) {
  const list = b32StatusEffectBadgeList(unit);
  if (!list.length) return '';
- const cls = compact ? 'b32-status-badges compact' : 'b32-status-badges';
- return `<div class="${cls}">${list.map(b => `<span class="b32-status-badge ${b.cls}">${b32EscapeHtml(b.text)}</span>`).join('')}</div>`;
+
+ // 盤面上は効果名を並べず、バフ/デバフの有無と件数だけを要約表示する。
+ // 詳細な効果名・効果量・残りターンはキャラ情報側（compact=false）で確認する。
+ if (compact) {
+   const buffCount = list.filter(b => String(b.cls || '').split(/\s+/).includes('buff')).length;
+   const debuffCount = list.filter(b => String(b.cls || '').split(/\s+/).includes('debuff')).length;
+   const parts = [];
+   if (buffCount > 0) {
+     parts.push(`<span class="b32-status-summary-chip buff" aria-label="バフ${buffCount}件"><span class="mark">▲</span>${buffCount > 1 ? `<span class="count">${buffCount}</span>` : ''}</span>`);
+   }
+   if (debuffCount > 0) {
+     parts.push(`<span class="b32-status-summary-chip debuff" aria-label="デバフ${debuffCount}件"><span class="mark">▼</span>${debuffCount > 1 ? `<span class="count">${debuffCount}</span>` : ''}</span>`);
+   }
+   return parts.length ? `<div class="b32-status-summary">${parts.join('')}</div>` : '';
+ }
+
+ return `<div class="b32-status-badges">${list.map(b => `<span class="b32-status-badge ${b.cls}">${b32EscapeHtml(b.text)}</span>`).join('')}</div>`;
 }
 
  function renderUnit(u, phase) {
@@ -8494,7 +8587,13 @@ if (listEl) {
       const atk = c.atk || c.stats?.ATK || 0;
       const role = c.role || '—';
 
-      const skillDetailsHtml = b32BuildRosterSkillDetailsHtml(c, r.unit || c);
+      const liveUnit = r.deployedUid
+        ? (bs.allies || []).find(u => u && u._uid === r.deployedUid)
+        : null;
+      const skillDetailsHtml = b32BuildRosterSkillDetailsHtml(c, liveUnit || r.unit || c);
+      const statusDetailsHtml = liveUnit
+        ? b32StatusEffectBadgesHtml(liveUnit, false)
+        : '';
 
       const statusLabel =
         r.status === 'standby' ? '召喚可能' :
@@ -8522,6 +8621,8 @@ if (listEl) {
       </div>
 
       ${skillDetailsHtml}
+
+      ${statusDetailsHtml ? `<div class="b32-roster-info-effect-section"><div class="b32-roster-info-effect-title">STATUS EFFECT</div>${statusDetailsHtml}</div>` : ''}
 
       <div class="b32-roster-info-status">
         ${statusLabel}
@@ -8645,16 +8746,19 @@ if (listEl) {
  }
 
 
- const BLESSING_UI_DEFS = {
-   remnant_01: {
-     name: 'オーバーシアの加護',
-     invName: '万象観測',
-     img: 'images/remnant_01_panel.webp',
-     passive: '味方全員のcritical率 +10%',
-     condition: '敵を合計で3体撃破',
-     effect: '発動ターンのみ、味方全員のcritical率 +100%'
-   }
- };
+ function getBlessingUiDef(b) {
+   if (!b) return null;
+   const passivePct = Math.round(Number(b.passiveCriticalRate || 0) * 100);
+   const invPct = Math.round(Number(b.invCriticalRate || 0) * 100);
+   return {
+     name: `${b.name || '加護'} Lv.${Number(b.level || 1)}`,
+     invName: b.invName || 'INV',
+     img: b.panelImg || 'images/unknown.webp',
+     passive: `味方全員のcritical率 +${passivePct}%`,
+     condition: `敵を合計で${Number(b.invRequiredKills || 0)}体撃破`,
+     effect: `発動ターンのみ、味方全員のcritical率 +${invPct}%`
+   };
+ }
 
  function renderBlessingInv(bs) {
    const wrap = document.getElementById('b32-blessing-inv-wrap');
@@ -8665,7 +8769,7 @@ if (listEl) {
    if (!wrap || !iconBtn || !invBtn || !actionState) return;
 
    const b = bs && bs.blessing;
-   const def = b && BLESSING_UI_DEFS[b.id];
+   const def = getBlessingUiDef(b);
    if (!b || !def || bs.result) {
      wrap.style.display = 'none';
      if (overlay) {

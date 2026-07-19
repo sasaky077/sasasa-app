@@ -241,6 +241,20 @@
           meta: '雑魚3戦 → Stage 4 サキエル',
           color: 'rgba(230,220,255,.92)',
         },
+        {
+          id: 'irish',
+          icon: '◆',
+          name: '無へ還す破壊の座',
+          meta: '中ボス2戦 → Stage 3 レムナント：イリシュ',
+          color: 'rgba(230,120,105,.92)',
+        },
+        {
+          id: 'rivia',
+          icon: '◇',
+          name: '記憶を失くす白き座',
+          meta: '眷属2戦 → Stage 3 レムナント：リヴィア',
+          color: 'rgba(205,195,245,.92)',
+        },
       ];
 
       runs.forEach(run => {

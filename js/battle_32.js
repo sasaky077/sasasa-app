@@ -1,6 +1,6 @@
 // battle_32.js
 // 32マス共有盤面バトルシステム（MVP）
-// 依存: battle_range_32.js, characters_32.js
+// 依存: battle_range_32.js, characters_32.js, remnant_blessings.js
 // 既存 battle.js / battle_range.js / battle_swipe.js には一切触れない
 //
 // 使い方（index.html）:
@@ -176,18 +176,26 @@
   const DEFAULT_ALLY_CRITICAL_RATE_32 = 0.10;
   const DEFAULT_ENEMY_CRITICAL_RATE_32 = 0.05;
 
-  const BLESSING_DEFS_32 = {
-    remnant_01: {
-      id: 'remnant_01',
-      name: 'オーバーシアの加護',
-      passiveCriticalRate: 0.10,
-      invRequiredKills: 3,
-      invCriticalRate: 1.00,
-    },
-  };
+  // 加護マスターデータは remnant_blessings.js に分離。
+  // index.htmlでは remnant_blessings.js を battle_32.js より前に読み込むこと。
+  function getBlessingDef32(id) {
+    if (!id) return null;
+
+    if (typeof window.cloneRemnantBlessingById === 'function') {
+      return window.cloneRemnantBlessingById(id);
+    }
+
+    const defs = window.REMNANT_BLESSINGS;
+    if (defs && defs[id]) {
+      return JSON.parse(JSON.stringify(defs[id]));
+    }
+
+    console.error(`[Battle32] 加護定義が見つかりません: ${id}。remnant_blessings.js の読み込み順を確認してください。`);
+    return null;
+  }
 
   function makeBlessingState32(id) {
-    const def = BLESSING_DEFS_32[id];
+    const def = getBlessingDef32(id);
     if (!def) return null;
     return {
       ...def,
@@ -1368,6 +1376,7 @@ const enemies = enemyDefs.map(def => {
     // これによりTURN 1の味方フェーズから攻撃予告を確認できる。
     _initializeSakielNextActions();
     _initializeOverseerNextActions();
+    _initializeRiviaNextActions();
 
     _emit('start', { bs: _snapshot() });
     _emit('phaseChange', { phase: 'skill', bs: _snapshot() });
@@ -1533,6 +1542,9 @@ const enemies = enemyDefs.map(def => {
       lastActionType:    _bs.lastActionType,
       lastActionUnitUid: _bs.lastActionUnitUid,
       unitActionHistory: JSON.parse(JSON.stringify(_bs.unitActionHistory || {})),
+      activeEnemyAttackTraceCells: Array.isArray(_bs.activeEnemyAttackTraceCells)
+        ? _bs.activeEnemyAttackTraceCells.map(cell => ({ ...cell }))
+        : [],
     };
   }
 
@@ -1579,7 +1591,9 @@ const enemies = enemyDefs.map(def => {
     if (Number(blessing.killCount || 0) < Number(blessing.invRequiredKills || 0)) return false;
     blessing.used = true;
     blessing.activeTurn = _bs.turn;
-    _log(`INV「万象観測」発動：このターン、味方全員のcritical率+100%`);
+    const invName = blessing.invName || blessing.name || '加護';
+    const invRate = Math.round(Number(blessing.invCriticalRate || 0) * 100);
+    _log(`INV「${invName}」発動：このターン、味方全員のcritical率+${invRate}%`);
     _emit('blessingInv', { blessing: { ...blessing }, bs: _snapshot() });
     _renderUI();
     _saveResume();
@@ -2534,6 +2548,12 @@ function _executeDelayedAttack(action) {
     if (!ally || ally.hp <= 0) {
       _log('スキル使用対象の味方が見つかりません');
       console.warn('[Battle32] executeAllySkill failed: ally not found or dead', { allyUid, skillId, ally });
+      return false;
+    }
+
+    if (_unitHasStatus32(ally, 'skill_forget')) {
+      _log(`${ally.name} はスキルを忘れている`);
+      await _centerTextWait(ally.name, 'SKILL FORGOTTEN', B32_WAIT.enemyAction);
       return false;
     }
 
@@ -3970,6 +3990,85 @@ return true;
       return BR.getUnitsFromRange32(enemy, range, allies);
     }
 
+    // 敵攻撃の実行導線（命中の有無に関係なく全通過マスを表示）
+    function _getEnemyAttackTraceCells(enemy, explicitRange) {
+      const cells = new Set();
+      if (!enemy) return cells;
+      const range = explicitRange || enemy.attackRange || 'enemy_attack_front';
+      const add = (row, col) => { if (BR.isValidCell(row, col)) cells.add(`${row}-${col}`); };
+      if (range === 'enemy_attack_line') {
+        for (let row = Number(enemy.row) + 1; row < BOARD_ROWS; row++) add(row, Number(enemy.col));
+        return cells;
+      }
+      if (range === 'enemy_attack_front') {
+        add(Number(enemy.row) + 1, Number(enemy.col));
+        return cells;
+      }
+      if (window.BattleRange32 && typeof window.BattleRange32.getCellsFromRange32 === 'function') {
+        const resolved = window.BattleRange32.getCellsFromRange32(enemy, range);
+        if (resolved && typeof resolved.forEach === 'function') resolved.forEach(key => cells.add(String(key)));
+      }
+      return cells;
+    }
+
+    function _setEnemyAttackTraceCells(cells, enemy, label) {
+      const targetKeys = new Set((_bs.allies || []).filter(u => u && u.hp > 0).map(u => `${u.row}-${u.col}`));
+      _bs.activeEnemyAttackTraceCells = Array.from(cells || []).map(key => {
+        const [row, col] = String(key).split('-').map(Number);
+        return { row, col, hit: targetKeys.has(`${row}-${col}`), enemyUid: enemy && enemy._uid || null, label: label || 'ATTACK' };
+      });
+      _renderUI();
+    }
+
+    function _clearEnemyAttackTraceCells() {
+      if (!_bs) return;
+      _bs.activeEnemyAttackTraceCells = [];
+      _renderUI();
+    }
+
+
+    // ============================================================
+    // 敵の「強攻撃」共通定義
+    // ------------------------------------------------------------
+    // 1) 敵/行動データに strongAttack:true がある
+    // 2) power が「大」「危険」「強」
+    // 3) 必殺技・ULT
+    // 4) ATK倍率1.5以上 / 最大HP割合45%以上 / 固定150以上
+    // 5) 3ライン以上、または10マス以上を攻撃する広範囲技
+    // のいずれかを満たす攻撃を強攻撃として扱う。
+    // strongAttack:false を明示すると自動判定を無効化できる。
+    // ============================================================
+    function _isStrongEnemyAttack(meta) {
+      const m = meta || {};
+      if (m.strongAttack === false) return false;
+      if (m.strongAttack === true) return true;
+      if (m.isUltimate || m.ultimate) return true;
+
+      const power = String(m.power || m.attackPower || '').trim();
+      if (['大', '危険', '強', '強攻撃', 'HEAVY', 'DANGER'].includes(power.toUpperCase ? power.toUpperCase() : power)) return true;
+      if (['大', '危険', '強', '強攻撃'].includes(power)) return true;
+
+      const multiplier = Number(m.multiplier || 0);
+      const damageRate = Number(m.damageRate || 0);
+      const fixedDamage = Number(m.fixedDamage || 0);
+      const cellCount = Number(m.cellCount || 0);
+      const lineCount = Number(m.lineCount || 0);
+
+      if (multiplier >= 1.5) return true;
+      if (damageRate >= 0.45) return true;
+      if (fixedDamage >= 150) return true;
+      if (lineCount >= 3) return true;
+      if (cellCount >= 10) return true;
+      return false;
+    }
+
+    function _playEnemyStrongAttackShake(meta) {
+      if (!_isStrongEnemyAttack(meta)) return false;
+      if (typeof window.playBattle32EnemyStrongShake !== 'function') return false;
+      const isUltimate = !!(meta && (meta.isUltimate || meta.ultimate));
+      return window.playBattle32EnemyStrongShake(isUltimate ? 'ultimate' : 'strong');
+    }
+
     function _isEriPriorityEnemy(enemy) {
       return !!(enemy && (enemy.isBoss || enemy.eriPriority || enemy.targetPriority === 'eri' || enemy.aiTarget === 'eri'));
     }
@@ -4317,6 +4416,7 @@ function doBossLineAttack(boss) {
       await wait(320);
     }
 
+    _clearEnemyAttackTraceCells();
     _bs.activeEnemyUid = null;
     _bs.enemyActionOrder = [];
     _bs.enemyActionIndex = 0;
@@ -4483,6 +4583,16 @@ function doBossLineAttack(boss) {
     _setTransientBossDangerCells(cells, mode === 'grid' ? 'ULT' : 'WARNING');
     await _centerTextWait(mode === 'grid' ? `⚠️ ${title}` : title, sub, B32_WAIT.guide);
 
+    _setEnemyAttackTraceCells(cells, enemy, title);
+    await wait(180);
+    _playEnemyStrongAttackShake({
+      strongAttack: true,
+      isUltimate: mode === 'grid',
+      fixedDamage: fixedDamage,
+      cellCount: cells.size,
+      lineCount: mode === 'three_lines' ? 3 : 0,
+      patternId: mode,
+    });
     const targets = (_bs.allies || []).filter(a => a && a.hp > 0 && cells.has(`${a.row}-${a.col}`));
     _emit('enemyActionStep', {
       step: 'overseer_pattern',
@@ -4510,6 +4620,7 @@ function doBossLineAttack(boss) {
     _renderUI();
     await wait(B32_WAIT.attack);
     await wait(B32_WAIT.afterText);
+    _clearEnemyAttackTraceCells();
     _clearTransientBossDangerCells();
   }
 
@@ -4881,6 +4992,15 @@ function doBossLineAttack(boss) {
 
     await _centerTextWait('⚠️ ' + selected.title, selected.sub, B32_WAIT.guide);
 
+    _setEnemyAttackTraceCells(cells, enemy, selected.title);
+    await wait(180);
+    _playEnemyStrongAttackShake({
+      strongAttack: selected.strongAttack !== false,
+      isUltimate: !!selected.isUltimate,
+      cellCount: cells.size,
+      lineCount: selected.lineCount || 3,
+      patternId: selected.id,
+    });
     const targets = (_bs.allies || []).filter(ally => {
       return ally && ally.hp > 0 && cells.has(`${ally.row}-${ally.col}`);
     });
@@ -4909,10 +5029,143 @@ function doBossLineAttack(boss) {
     _renderUI();
     await wait(B32_WAIT.attack);
     await wait(B32_WAIT.afterText);
+    _clearEnemyAttackTraceCells();
     _clearTransientBossDangerCells();
 
     // 次の味方ターンで確認できるよう、行動終了直後に次回行動を決定する。
     _rollSakielNextAction(enemy);
+    _renderUI();
+  }
+
+  // ============================================================
+  // リヴィア専用：忘却・消失・消去
+  // ============================================================
+  function _addRiviaForget(target, duration) {
+    if (!target) return;
+    if (!Array.isArray(target.statusEffects)) target.statusEffects = [];
+    target.statusEffects = target.statusEffects.filter(e => !(e && e.type === 'skill_forget'));
+    target.statusEffects.push({
+      type: 'skill_forget',
+      name: '忘却',
+      duration: Math.max(1, Number(duration || 1)),
+      appliedTurn: _bs.turn,
+      sourceName: 'リヴィア',
+    });
+  }
+
+  function _riviaEmptyCells(maxRow) {
+    const occupied = new Set(getAllUnits().filter(u => u && u.hp > 0).map(u => `${u.row}-${u.col}`));
+    const cells = [];
+    for (let r = 0; r <= Math.min(BOARD_ROWS - 1, Number(maxRow == null ? 3 : maxRow)); r++) {
+      for (let c = 0; c < BOARD_COLS; c++) {
+        if (!occupied.has(`${r}-${c}`)) cells.push({ row:r, col:c });
+      }
+    }
+    return shuffle(cells);
+  }
+
+  async function _riviaTeleport(enemy, title) {
+    const next = _riviaEmptyCells(3)[0];
+    if (!next) return;
+    await _centerTextWait(title || '消失', '姿が記録から消える', B32_WAIT.enemyAction);
+    _emit('enemyVanish', { enemy:{...enemy}, bs:_snapshot() });
+    enemy.row = next.row;
+    enemy.col = next.col;
+    _renderUI();
+    await wait(B32_WAIT.move);
+    _emit('enemyReappear', { enemy:{...enemy}, bs:_snapshot() });
+  }
+
+  function _riviaDiagonalCells(enemy) {
+    const cells = new Set();
+    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => {
+      let r = enemy.row + dr, c = enemy.col + dc;
+      while (BR.isValidCell(r,c)) { cells.add(`${r}-${c}`); r += dr; c += dc; }
+    });
+    return cells;
+  }
+
+  async function _riviaDamageCells(enemy, cells, title, rate) {
+    _setTransientBossDangerCells(cells, '忘却');
+    await _centerTextWait(`⚠️ ${title}`, '記録のない軌道から攻撃する', B32_WAIT.guide);
+    _setEnemyAttackTraceCells(cells, enemy, title);
+    await wait(180);
+    const targets = (_bs.allies || []).filter(a => a && a.hp > 0 && cells.has(`${a.row}-${a.col}`));
+    targets.forEach(target => {
+      const dmg = calcDamage(getEffectiveAtk(enemy), Number(rate || 0.9), target, enemy);
+      applyDamage(target, dmg, enemy, { id:'rivia_diagonal', name:title, hitStyle:'holy', canCritical:false });
+    });
+    _renderUI();
+    await wait(B32_WAIT.attack);
+    _clearEnemyAttackTraceCells();
+    _clearTransientBossDangerCells();
+  }
+
+  async function _runRiviaVanishCaster(enemy) {
+    await _riviaTeleport(enemy, '記録消失');
+    await _riviaDamageCells(enemy, _riviaDiagonalCells(enemy), '虚像星芒', Number(enemy.specialActionDamageRate || 0.90));
+  }
+
+  const RIVIA_ACTIONS = [
+    { id:'forget', title:'記憶剥離', sub:'ランダムな1体が次のターン、スキルを忘れる' },
+    { id:'erase', title:'追憶抹消', sub:'味方の強化効果とLINKを消去する' },
+    { id:'vanish', title:'存在消失', sub:'姿を消して別地点から斜めに攻撃する' },
+  ];
+
+  function _rollRiviaNextAction(enemy, turn) {
+    if (!enemy) return null;
+    const t = Math.max(1, Number(turn || (_bs && _bs.turn) || 1));
+    const selected = (t % 4 === 0)
+      ? { id:'blank', title:'白紙化', sub:'全員のスキル記憶とLINKを消去する' }
+      : RIVIA_ACTIONS[Math.floor(Math.random() * RIVIA_ACTIONS.length)];
+    enemy._riviaNextAction = { ...selected, cells:[], decidedTurn:t };
+    return enemy._riviaNextAction;
+  }
+
+  function _ensureRiviaNextAction(enemy) {
+    const turn = Math.max(1, Number(_bs && _bs.turn || 1));
+    const next = enemy && enemy._riviaNextAction;
+    if (next && next.id && Number(next.decidedTurn) === turn) return next;
+    return _rollRiviaNextAction(enemy, turn);
+  }
+
+  function _initializeRiviaNextActions() {
+    if (!_bs || !Array.isArray(_bs.enemies)) return;
+    _bs.enemies.forEach(e => {
+      if (e && (e.id === 'enemy_rivia_roguelite' || e.specialActionType === 'rivia_oblivion_4')) _ensureRiviaNextAction(e);
+    });
+  }
+
+  async function _runRiviaBossAction(enemy) {
+    const selected = _ensureRiviaNextAction(enemy);
+    enemy._riviaNextAction = null;
+    const allies = (_bs.allies || []).filter(a => a && a.hp > 0);
+
+    if (selected.id === 'forget') {
+      const target = allies.length ? allies[Math.floor(Math.random() * allies.length)] : null;
+      await _centerTextWait(selected.title, selected.sub, B32_WAIT.enemyAction);
+      if (target) { _addRiviaForget(target, 1); _log(`${target.name} はスキルを忘れた`); }
+      _renderUI(); await wait(B32_WAIT.attack);
+    } else if (selected.id === 'erase') {
+      await _centerTextWait(selected.title, selected.sub, B32_WAIT.enemyAction);
+      allies.forEach(a => {
+        a.statusEffects = (a.statusEffects || []).filter(e => !['atk_up','critical_up','crit_up','damage_cut','hp_up'].includes(e && e.type));
+      });
+      if (_bs.link) _bs.link.current = Math.max(0, Number(_bs.link.current || 0) - 3);
+      _log('味方の強化効果とLINK 3が消去された');
+      _renderUI(); await wait(B32_WAIT.attack);
+    } else if (selected.id === 'blank') {
+      await _centerTextWait('⚠️ 白紙化', selected.sub, B32_WAIT.guide);
+      allies.forEach(a => _addRiviaForget(a, 1));
+      if (_bs.link) _bs.link.current = 0;
+      _log('全員のスキル記憶とLINKが白紙化された');
+      _renderUI(); await wait(B32_WAIT.attack);
+    } else {
+      await _riviaTeleport(enemy, selected.title);
+      await _riviaDamageCells(enemy, _riviaDiagonalCells(enemy), '忘却星界', Number(enemy.specialActionDamageRate || 0.95));
+    }
+
+    _rollRiviaNextAction(enemy, Number(_bs && _bs.turn || 1) + 1);
     _renderUI();
   }
 
@@ -4947,6 +5200,16 @@ function doBossLineAttack(boss) {
       return;
     }
 
+    if (enemy.specialActionType === 'rivia_vanish_caster') {
+      await _runRiviaVanishCaster(enemy);
+      return;
+    }
+
+    if (enemy.id === 'enemy_rivia_roguelite' || enemy.specialActionType === 'rivia_oblivion_4') {
+      await _runRiviaBossAction(enemy);
+      return;
+    }
+
     const rangeTargets = getEnemyAttackTargets(enemy);
 
     if (rangeTargets.length > 0) {
@@ -4955,6 +5218,17 @@ function doBossLineAttack(boss) {
       if (!target) return;
       const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
       const targetHpBefore = Number(target.hp || 0);
+      const attackTraceCells = _getEnemyAttackTraceCells(enemy);
+      _setEnemyAttackTraceCells(attackTraceCells, enemy, enemy.attackRange || 'ATTACK');
+      await wait(180);
+      _playEnemyStrongAttackShake({
+        strongAttack: enemy.strongAttack,
+        power: enemy.power || enemy.attackPower,
+        multiplier: Number(enemy.attackMultiplier || 1.0),
+        damageRate: Number(enemy.damageRate || 0),
+        cellCount: attackTraceCells.size,
+        lineCount: Number(enemy.attackLineCount || 0),
+      });
       _emit('enemyActionStep', {
         step: 'attack',
         enemy: { ...enemy },
@@ -4962,12 +5236,17 @@ function doBossLineAttack(boss) {
         bs: _snapshot(),
       });
       applyDamage(target, dmg, enemy);
+      if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
+        _addRiviaForget(target, 1);
+        _log(`${target.name} は次のターン、スキルを忘れる`);
+      }
       const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
       _renderUI();
       // 通常攻撃アップ演出は約1.18秒、BREAK時は約1.94秒。
       // 次の敵行動が重ならないよう、ここで十分に待つ。
       await wait(killed ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
+      _clearEnemyAttackTraceCells();
       // applyDamage 内で _checkWinLose を呼んでいるが、念のため result を確認
       if (_bs.result) return;
       return;
@@ -5011,6 +5290,17 @@ function doBossLineAttack(boss) {
       if (!target) return;
       const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
       const targetHpBefore = Number(target.hp || 0);
+      const attackTraceCells = _getEnemyAttackTraceCells(enemy);
+      _setEnemyAttackTraceCells(attackTraceCells, enemy, enemy.attackRange || 'ATTACK');
+      await wait(180);
+      _playEnemyStrongAttackShake({
+        strongAttack: enemy.strongAttack,
+        power: enemy.power || enemy.attackPower,
+        multiplier: Number(enemy.attackMultiplier || 1.0),
+        damageRate: Number(enemy.damageRate || 0),
+        cellCount: attackTraceCells.size,
+        lineCount: Number(enemy.attackLineCount || 0),
+      });
       _emit('enemyActionStep', {
         step: 'attack_after_move',
         enemy: { ...enemy },
@@ -5018,10 +5308,15 @@ function doBossLineAttack(boss) {
         bs: _snapshot(),
       });
       applyDamage(target, dmg, enemy);
+      if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
+        _addRiviaForget(target, 1);
+        _log(`${target.name} は次のターン、スキルを忘れる`);
+      }
       const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
       _renderUI();
       await wait(killed ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
+      _clearEnemyAttackTraceCells();
       if (_bs.result) return;
     }
   }   // end _runEnemySingleAction

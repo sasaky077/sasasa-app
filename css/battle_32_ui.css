@@ -10378,3 +10378,121 @@ html body.b32-blessing-info-open #b32-roster-panel {
   .b32-blessing-icon-ring { width: 70px; height: 70px; }
 }
 
+
+
+/* ============================================================
+   Enemy tap range fix
+   - ユニット画像は見た目だけ。入力は必ず所属セルが受け取る
+   - 敵タップ判定をキャラクター画像のはみ出し領域まで拡張しない
+   ============================================================ */
+#battle32-root .b32-unit,
+#battle32-root .b32-unit *,
+#battle32-root .b32-unit-icon,
+#battle32-root .b32-unit-foot-ui,
+#battle32-root .b32-unit-foot-ui * {
+  pointer-events: none !important;
+}
+
+#battle32-root .b32-cell.enemy-inspectable {
+  touch-action: manipulation;
+}
+
+
+/* 敵攻撃の実行導線 */
+#battle32-root .b32-enemy-attack-trace-overlay{position:absolute;inset:-1px;z-index:8;pointer-events:none;overflow:hidden;border-radius:2px;background:linear-gradient(90deg,transparent 32%,rgba(255,239,120,.45) 43%,rgba(255,255,255,.98) 50%,rgba(255,218,55,.48) 57%,transparent 68%);box-shadow:inset 0 0 12px rgba(255,230,80,.55),0 0 12px rgba(255,215,45,.72);animation:b32EnemyTraceFlash 170ms steps(2,end) infinite}
+#battle32-root .b32-enemy-attack-trace-overlay:before{content:"";position:absolute;left:35%;top:-8%;width:30%;height:116%;background:linear-gradient(180deg,transparent 0 7%,#fff 8% 14%,transparent 15% 27%,#ffe85a 28% 36%,transparent 37% 49%,#fff 50% 58%,transparent 59% 72%,#ffc929 73% 82%,transparent 83%);clip-path:polygon(46% 0,78% 0,58% 28%,88% 28%,36% 100%,47% 57%,17% 57%);filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 7px #ffd92d)}
+#battle32-root .b32-enemy-attack-trace-overlay i{position:absolute;inset:0;border:1px solid rgba(255,245,165,.88);box-shadow:inset 0 0 8px rgba(255,255,255,.72)}
+#battle32-root .b32-enemy-attack-trace-overlay b{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 5px #fff,0 0 12px #ffe659,0 0 22px #ffb800}
+#battle32-root .b32-enemy-attack-trace-overlay.hit{background:radial-gradient(circle at 50% 50%,#fff 0 12%,rgba(255,85,55,.78) 27%,transparent 64%),linear-gradient(90deg,transparent 25%,rgba(255,220,80,.55),#fff,rgba(255,105,65,.58),transparent 75%);box-shadow:inset 0 0 18px rgba(255,80,45,.82),0 0 16px rgba(255,70,35,.96);animation:b32EnemyTraceHit 120ms steps(2,end) infinite}
+@keyframes b32EnemyTraceFlash{0%,100%{opacity:.58;filter:brightness(1)}50%{opacity:1;filter:brightness(1.8)}}
+@keyframes b32EnemyTraceHit{0%,100%{opacity:.8;transform:scale(.98)}50%{opacity:1;transform:scale(1.04);filter:brightness(1.8)}}
+
+
+/* ============================================================
+   PATCH: 盤面状態効果を ▲バフ数 / ▼デバフ数 へ要約
+   ============================================================ */
+#battle32-root .b32-unit-foot-ui .b32-status-summary {
+  position: static !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  min-height: 12px !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+}
+
+#battle32-root .b32-status-summary-chip {
+  height: 12px !important;
+  min-width: 14px !important;
+  padding: 0 3px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1px !important;
+  background: rgba(12, 12, 18, .72) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: 0 1px 5px rgba(0,0,0,.34) !important;
+  font-family: 'Cinzel', 'Noto Serif JP', serif !important;
+  font-size: 7px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+#battle32-root .b32-status-summary-chip .mark {
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+#battle32-root .b32-status-summary-chip .count {
+  font-size: 7px !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#battle32-root .b32-status-summary-chip.buff {
+  color: #aaf6d5 !important;
+  border-color: rgba(78, 213, 160, .58) !important;
+  text-shadow: 0 0 5px rgba(70,235,170,.62) !important;
+}
+
+#battle32-root .b32-status-summary-chip.debuff {
+  color: #ffacd1 !important;
+  border-color: rgba(239, 75, 148, .58) !important;
+  text-shadow: 0 0 5px rgba(255,70,150,.62) !important;
+}
+
+/* キャラ情報内では従来の詳細バッジを表示 */
+#battle32-root .b32-roster-info-effect-section {
+  width: 100%;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+
+#battle32-root .b32-roster-info-effect-title {
+  margin-bottom: 5px;
+  color: rgba(220,205,245,.60);
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: .16em;
+}
+
+#battle32-root .b32-roster-info-effect-section .b32-status-badges {
+  position: static !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 3px !important;
+  max-width: 100% !important;
+}
+
+#battle32-root .b32-roster-info-effect-section .b32-status-badge {
+  min-width: 0 !important;
+  padding: 2px 5px !important;
+  font-size: 8px !important;
+}

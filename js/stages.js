@@ -36,6 +36,30 @@ const STAGES = [
     reward: { exp: 0, coin: 0 },
     unlocked: true,
   },
+  {
+    id: 'stage_00_irish_boss_test',
+    chapter: 0,
+    no: 3,
+    type: 'debug',
+    name: 'イリシュ戦（BOSS）',
+    enemyName: 'レムナント：イリシュ',
+    difficulty: 'debug',
+    rogueliteRunId: 'debug_irish_boss',
+    reward: { exp: 0, coin: 0 },
+    unlocked: true,
+  },
+  {
+    id: 'stage_00_rivia_boss_test',
+    chapter: 0,
+    no: 4,
+    type: 'debug',
+    name: 'リヴィア戦（BOSS）',
+    enemyName: 'レムナント：リヴィア',
+    difficulty: 'debug',
+    rogueliteRunId: 'debug_rivia_boss',
+    reward: { exp: 0, coin: 0 },
+    unlocked: true,
+  },
 
   // ============================================================
   // CHAPTER 01 — 白糸の怪異

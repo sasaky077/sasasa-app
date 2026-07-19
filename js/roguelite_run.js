@@ -139,6 +139,70 @@
       ],
     },
 
+
+    irish: {
+      id: 'irish',
+      name: '無へ還す破壊の座',
+      subName: 'レムナント：イリシュ',
+      zakoBattleStartImg: 'images/remnant_02_zako_battle_start.webp',
+      bossBattleStartImg: 'images/remnant_02_battle_start.webp',
+      stageDefs: [
+        {
+          stage: 1, isBoss: false, label: 'ST1', subLabel: '破断の執行者',
+          enemyIds: ['rl_irish_midboss_breaker'],
+          enemyRandomStartPosition: false, enemyActionMode: 'all', enemyActionsPerTurn: 1, turnLimit: 10,
+        },
+        {
+          stage: 2, isBoss: false, label: 'ST2', subLabel: '崩砕の砲座',
+          enemyIds: ['rl_irish_midboss_cannon'],
+          enemyRandomStartPosition: false, enemyActionMode: 'all', enemyActionsPerTurn: 1, turnLimit: 11,
+        },
+        {
+          stage: 3, isBoss: true, label: 'BOSS', subLabel: 'レムナント：イリシュ',
+          enemyIds: ['enemy_irish_roguelite'],
+          enemyRandomStartPosition: false, enemyActionMode: 'all', enemyActionsPerTurn: null, turnLimit: 14,
+        },
+      ],
+    },
+
+
+    rivia: {
+      id: 'rivia',
+      name: '記憶を失くす白き座',
+      subName: 'レムナント：リヴィア',
+      zakoBattleStartImg: 'images/remnant_03_zako_battle_start.webp',
+      bossBattleStartImg: 'images/remnant_03_battle_start.webp',
+      stageDefs: [
+        {
+          stage: 1, isBoss: false, label: 'ST1', subLabel: '忘却の槍使い',
+          enemyIds: ['rl_rivia_zako_a', 'rl_rivia_zako_a'],
+          enemyRandomStartPosition: false, enemyActionMode: 'limit', enemyActionsPerTurn: 2, turnLimit: 10,
+        },
+        {
+          stage: 2, isBoss: false, label: 'ST2', subLabel: '消失の星詠み',
+          enemyIds: ['rl_rivia_zako_b', 'rl_rivia_zako_a', 'rl_rivia_zako_b'],
+          enemyRandomStartPosition: false, enemyActionMode: 'limit', enemyActionsPerTurn: 2, turnLimit: 11,
+        },
+        {
+          stage: 3, isBoss: true, label: 'BOSS', subLabel: 'レムナント：リヴィア',
+          enemyIds: ['enemy_rivia_roguelite'],
+          enemyRandomStartPosition: false, enemyActionMode: 'all', enemyActionsPerTurn: null, turnLimit: 14,
+        },
+      ],
+    },
+
+    debug_rivia_boss: {
+      id: 'debug_rivia_boss', name: 'リヴィア戦（BOSS）', subName: 'CHAPTER 00 / DEBUG', debugOnly: true,
+      bossBattleStartImg: 'images/remnant_03_battle_start.webp',
+      stageDefs: [{ stage:1, isBoss:true, label:'BOSS', subLabel:'レムナント：リヴィア', enemyIds:['enemy_rivia_roguelite'], enemyRandomStartPosition:false, enemyActionMode:'all', enemyActionsPerTurn:null, turnLimit:14 }],
+    },
+
+    debug_irish_boss: {
+      id: 'debug_irish_boss', name: 'イリシュ戦（BOSS）', subName: 'CHAPTER 00 / DEBUG', debugOnly: true,
+      bossBattleStartImg: 'images/remnant_02_battle_start.webp',
+      stageDefs: [{ stage:1, isBoss:true, label:'BOSS', subLabel:'レムナント：イリシュ', enemyIds:['enemy_irish_roguelite'], enemyRandomStartPosition:false, enemyActionMode:'all', enemyActionsPerTurn:null, turnLimit:14 }],
+    },
+
     debug_overseer_boss: {
       id: 'debug_overseer_boss',
       name: 'オーバーシア戦（BOSS）',

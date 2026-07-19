@@ -72,6 +72,9 @@
     }
   </style>
 
+
+
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -204,10 +207,16 @@
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
           <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('overseer')">
-            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">万象を知る白亜の座</div>
+            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">観察</div>
+          </div>
+          <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('irish')">
+            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">破壊</div>
+          </div>
+          <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('rivia')">
+            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">償却</div>
           </div>
           <div class="ninmu-chapter-item" onclick="openRoguelitePartySelect('sakiel')">
-            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">サキエル降臨</div>
+            <div class="ninmu-chapter-label">ROGUELITE</div><div class="ninmu-chapter-title">真実</div>
           </div>
         </div>
       </div>
@@ -4521,7 +4530,23 @@ setTenResultFooterVisible(true);
     try {
       var raw = localStorage.getItem(REMNANT_STORAGE_KEY);
       var parsed = raw ? JSON.parse(raw) : {};
-      return parsed && typeof parsed === 'object' ? parsed : {};
+      if(!parsed || typeof parsed !== 'object') parsed = {};
+
+      // 旧データ移行：初回入手分を除く重複数を心核へ変換する。
+      Object.keys(parsed).forEach(function(id){
+        var entry = parsed[id];
+        if(!entry || typeof entry !== 'object') return;
+        entry.blessingLevel = Math.min(5, Math.max(1, Number(entry.blessingLevel || 1)));
+        if(entry.coreCount == null){
+          entry.coreCount = Math.max(0, Number(entry.count || 1) - 1);
+        } else {
+          entry.coreCount = Math.max(0, Number(entry.coreCount || 0));
+        }
+        entry.count = Math.max(1, Number(entry.count || 1));
+      });
+
+      localStorage.setItem(REMNANT_STORAGE_KEY, JSON.stringify(parsed));
+      return parsed;
     } catch(e) {
       console.warn('[Remnant] load failed:', e);
       return {};
@@ -4564,6 +4589,8 @@ setTenResultFooterVisible(true);
     // 「一覧解放」は初回のみ、以降は count が増える。
     if(existing){
       existing.count = Math.max(1, Number(existing.count || 1)) + 1;
+      existing.blessingLevel = Math.min(5, Math.max(1, Number(existing.blessingLevel || 1)));
+      existing.coreCount = Math.max(0, Number(existing.coreCount || 0)) + 1;
       existing.lastAcquiredAt = now;
       existing.lastSource = meta && meta.source ? meta.source : 'unknown';
       existing.lastRunId = meta && meta.runId ? meta.runId : null;
@@ -4590,6 +4617,8 @@ setTenResultFooterVisible(true);
       acquiredAt: now,
       lastAcquiredAt: now,
       count: 1,
+      blessingLevel: 1,
+      coreCount: 0,
       source: meta && meta.source ? meta.source : 'unknown',
       runId: meta && meta.runId ? meta.runId : null,
       rank: meta && meta.rank ? meta.rank : null,
@@ -5128,6 +5157,199 @@ setTenResultFooterVisible(true);
       '</div>';
   }
 
+  function getRemnantBlessingDefForDetail(remnantId){
+    try {
+      if(typeof window.resolveRemnantBlessingById === 'function'){
+        return window.resolveRemnantBlessingById(remnantId);
+      }
+      if(typeof window.getRemnantBlessingById === 'function'){
+        return window.getRemnantBlessingById(remnantId);
+      }
+      if(window.REMNANT_BLESSINGS && window.REMNANT_BLESSINGS[remnantId]){
+        return window.REMNANT_BLESSINGS[remnantId];
+      }
+    } catch(e){
+      console.warn('[Remnant] blessing def load failed:', e);
+    }
+    return null;
+  }
+
+  function normalizeBlessingTextLabel(text, prefixes){
+    var value = String(text || '').trim();
+    if(!value) return '加護情報なし';
+    (prefixes || []).forEach(function(prefix){
+      if(value.indexOf(prefix) === 0) value = value.slice(prefix.length).trim();
+    });
+    return value || '加護情報なし';
+  }
+
+  function getRemnantBlessingProgress(remnantId){
+    var entry = ownedRemnants && ownedRemnants[remnantId] ? ownedRemnants[remnantId] : null;
+    var master = window.REMNANT_BLESSINGS && window.REMNANT_BLESSINGS[remnantId]
+      ? window.REMNANT_BLESSINGS[remnantId]
+      : null;
+    var level = Math.min(5, Math.max(1, Number(entry && entry.blessingLevel || 1)));
+    var maxLevel = Number(master && master.maxLevel || 5);
+    var nextLevel = level < maxLevel ? level + 1 : null;
+    var nextDef = nextLevel && master && master.levels ? master.levels[nextLevel] : null;
+    return {
+      level: level,
+      maxLevel: maxLevel,
+      nextLevel: nextLevel,
+      coreCount: Math.max(0, Number(entry && entry.coreCount || 0)),
+      requiredCores: Math.max(0, Number(nextDef && nextDef.requiredCores || 0)),
+      materialName: master && master.materialName ? master.materialName : 'レムナントの心核'
+    };
+  }
+
+  function upgradeRemnantBlessing(remnantId){
+    var entry = ownedRemnants && ownedRemnants[remnantId] ? ownedRemnants[remnantId] : null;
+    if(!entry){
+      if(typeof showToast === 'function') showToast('レムナントを所持していません');
+      return false;
+    }
+
+    var progress = getRemnantBlessingProgress(remnantId);
+    if(!progress.nextLevel){
+      if(typeof showToast === 'function') showToast('加護Lvは最大です');
+      return false;
+    }
+    if(progress.coreCount < progress.requiredCores){
+      if(typeof showToast === 'function') showToast(progress.materialName + 'が足りません');
+      return false;
+    }
+
+    entry.coreCount = progress.coreCount - progress.requiredCores;
+    entry.blessingLevel = progress.nextLevel;
+    ownedRemnants[remnantId] = entry;
+    saveOwnedRemnantsToLocal();
+
+    if(typeof showToast === 'function'){
+      showToast('加護をLv.' + progress.nextLevel + 'へ強化しました');
+    }
+    renderRemnantBox();
+    return true;
+  }
+
+  window.getRemnantBlessingProgress = getRemnantBlessingProgress;
+  window.upgradeRemnantBlessing = upgradeRemnantBlessing;
+
+  var remnantBlessingLongPressTimer = null;
+  var remnantBlessingLongPressTarget = null;
+
+  function ensureRemnantBlessingMaxPreview(){
+    var el = document.getElementById('remnant-blessing-max-preview');
+    if(el) return el;
+    el = document.createElement('div');
+    el.id = 'remnant-blessing-max-preview';
+    el.setAttribute('role', 'status');
+    el.innerHTML = '<div class="remnant-blessing-max-preview-label">Lv.5 MAX</div><div class="remnant-blessing-max-preview-text"></div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function showRemnantBlessingMaxPreview(target, label, text){
+    var el = ensureRemnantBlessingMaxPreview();
+    var labelEl = el.querySelector('.remnant-blessing-max-preview-label');
+    var textEl = el.querySelector('.remnant-blessing-max-preview-text');
+    if(labelEl) labelEl.textContent = 'Lv.5 MAX / ' + label;
+    if(textEl) textEl.textContent = text;
+
+    var rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;
+    var top = rect ? Math.max(76, rect.top - 84) : Math.max(76, window.innerHeight * 0.35);
+    el.style.top = top + 'px';
+    el.classList.add('show');
+    if(target) target.classList.add('is-max-previewing');
+    remnantBlessingLongPressTarget = target || null;
+  }
+
+  function hideRemnantBlessingMaxPreview(){
+    if(remnantBlessingLongPressTimer){
+      clearTimeout(remnantBlessingLongPressTimer);
+      remnantBlessingLongPressTimer = null;
+    }
+    var el = document.getElementById('remnant-blessing-max-preview');
+    if(el) el.classList.remove('show');
+    if(remnantBlessingLongPressTarget){
+      remnantBlessingLongPressTarget.classList.remove('is-max-previewing');
+      remnantBlessingLongPressTarget = null;
+    }
+  }
+
+  function startRemnantBlessingMaxPreview(event, label, text){
+    hideRemnantBlessingMaxPreview();
+    var target = event && event.currentTarget ? event.currentTarget : null;
+    remnantBlessingLongPressTimer = setTimeout(function(){
+      remnantBlessingLongPressTimer = null;
+      showRemnantBlessingMaxPreview(target, label, text);
+      if(navigator.vibrate) navigator.vibrate(18);
+    }, 520);
+  }
+
+  window.startRemnantBlessingMaxPreview = startRemnantBlessingMaxPreview;
+  window.hideRemnantBlessingMaxPreview = hideRemnantBlessingMaxPreview;
+
+  function buildOwnedRemnantBlessingDetailHTML(remnant, entry){
+    var currentDef = getRemnantBlessingDefForDetail(remnant.id);
+    var master = window.REMNANT_BLESSINGS && window.REMNANT_BLESSINGS[remnant.id]
+      ? window.REMNANT_BLESSINGS[remnant.id]
+      : null;
+
+    if(!currentDef || !master || !master.levels){
+      return '' +
+        '<div class="remnant-detail-card">' +
+          '<div class="remnant-detail-row remnant-detail-row-multiline"><span>常時</span><strong>加護情報なし</strong></div>' +
+          '<div class="remnant-detail-row remnant-detail-row-multiline"><span>INV</span><strong>加護情報なし</strong></div>' +
+        '</div>';
+    }
+
+    var progress = getRemnantBlessingProgress(remnant.id);
+    var maxDef = typeof window.resolveRemnantBlessingById === 'function'
+      ? window.resolveRemnantBlessingById(remnant.id, progress.maxLevel)
+      : currentDef;
+
+    var passiveText = normalizeBlessingTextLabel(currentDef.text && currentDef.text.passive, ['常時：', '常時:']);
+    var invText = normalizeBlessingTextLabel(currentDef.text && currentDef.text.inv, ['INV：', 'INV:', 'ＩＮＶ：', 'ＩＮＶ:']);
+    var conditionText = normalizeBlessingTextLabel(currentDef.text && currentDef.text.condition, ['INV条件：', 'INV条件:', '条件：', '条件:']);
+    var maxPassiveText = normalizeBlessingTextLabel(maxDef.text && maxDef.text.passive, ['常時：', '常時:']);
+    var maxInvText = normalizeBlessingTextLabel(maxDef.text && maxDef.text.inv, ['INV：', 'INV:', 'ＩＮＶ：', 'ＩＮＶ:']);
+    var canUpgrade = !!progress.nextLevel && progress.coreCount >= progress.requiredCores;
+
+    var upgradeHtml = progress.nextLevel
+      ? '<div class="remnant-blessing-material-row">' +
+          '<span>' + detailEscapeHTML(progress.materialName) + '</span>' +
+          '<strong class="' + (canUpgrade ? 'is-ready' : '') + '">' + progress.coreCount + ' / ' + progress.requiredCores + '</strong>' +
+        '</div>' +
+        '<button type="button" class="remnant-blessing-upgrade-btn ' + (canUpgrade ? 'ready' : '') + '" ' +
+          (canUpgrade ? 'onclick="upgradeRemnantBlessing(\'' + detailEscapeHTML(remnant.id) + '\')"' : 'disabled') + '>' +
+          '加護をLv.' + progress.nextLevel + 'へ強化' +
+        '</button>'
+      : '<div class="remnant-blessing-max">BLESSING LEVEL MAX</div>';
+
+    function longPressAttrs(label, maxText){
+      return ' class="remnant-detail-row remnant-detail-row-multiline remnant-blessing-longpress"' +
+        ' onpointerdown="startRemnantBlessingMaxPreview(event,\'' + detailEscapeHTML(label) + '\',\'' + detailEscapeHTML(maxText) + '\')"' +
+        ' onpointerup="hideRemnantBlessingMaxPreview()"' +
+        ' onpointercancel="hideRemnantBlessingMaxPreview()"' +
+        ' onpointerleave="hideRemnantBlessingMaxPreview()"' +
+        ' oncontextmenu="event.preventDefault()"';
+    }
+
+    return '' +
+      '<div class="remnant-detail-card remnant-blessing-detail-card">' +
+        '<div class="remnant-blessing-level-head">' +
+          '<span>現在の加護Lv</span>' +
+          '<strong>Lv.' + progress.level + '<small> / ' + progress.maxLevel + '</small></strong>' +
+        '</div>' +
+        '<div class="remnant-blessing-level-track" aria-label="加護レベル ' + progress.level + ' / ' + progress.maxLevel + '">' +
+          [1,2,3,4,5].map(function(lv){ return '<i class="' + (lv <= progress.level ? 'filled' : '') + '"></i>'; }).join('') +
+        '</div>' +
+        '<div' + longPressAttrs('常時', maxPassiveText) + '><span>常時<small class="remnant-blessing-hold-hint">長押しで最大</small></span><strong>' + detailEscapeHTML(passiveText) + '</strong></div>' +
+        '<div' + longPressAttrs('INV', maxInvText) + '><span>INV<small class="remnant-blessing-hold-hint">長押しで最大</small></span><strong>' + detailEscapeHTML(invText) + '</strong></div>' +
+        '<div class="remnant-detail-row remnant-detail-row-multiline"><span>INV条件</span><strong>' + detailEscapeHTML(conditionText) + '</strong></div>' +
+        '<div class="remnant-blessing-upgrade-area">' + upgradeHtml + '</div>' +
+      '</div>';
+  }
 
   function openRemnantImageFullscreen(remnantId){
     var remnant = getRemnantDefById(remnantId);
@@ -5192,10 +5414,6 @@ setTenResultFooterVisible(true);
     var entry = ownedRemnants[remnant.id] || null;
     var panelSrc = remnant.panelImg || remnant.img || 'images/unknown.webp';
     var name = owned ? remnant.name : (remnant.hiddenName || '??????');
-    var acquiredText = entry && entry.acquiredAt ? new Date(entry.acquiredAt).toLocaleDateString('ja-JP') : '-';
-    var remnantCount = entry ? Math.max(1, Number(entry.count || 1)) : 0;
-    var lastAcquiredText = entry && entry.lastAcquiredAt ? new Date(entry.lastAcquiredAt).toLocaleDateString('ja-JP') : acquiredText;
-
     document.getElementById('stat-current').textContent = getOwnedRemnantCount();
     document.getElementById('stat-max').textContent = remnants.length;
 
@@ -5218,15 +5436,7 @@ setTenResultFooterVisible(true);
     var nameHtml = '<div class="box-carousel-name ' + (owned ? '' : 'locked') + '">' + detailEscapeHTML(name) + '</div>';
 
     var detailHtml = owned
-      ? '<div class="remnant-detail-card">' +
-          '<div class="remnant-detail-row"><span>NO.</span><strong>' + String(remnant.no).padStart(2, '0') + '</strong></div>' +
-          '<div class="remnant-detail-row"><span>種別</span><strong>REMNANT</strong></div>' +
-          '<div class="remnant-detail-row"><span>入手条件</span><strong>' + detailEscapeHTML(remnant.acquireCondition || 'BOSSドロップ') + '</strong></div>' +
-          '<div class="remnant-detail-row"><span>所持数</span><strong>×' + remnantCount + '</strong></div>' +
-          '<div class="remnant-detail-row"><span>初回入手</span><strong>' + detailEscapeHTML(acquiredText) + '</strong></div>' +
-          '<div class="remnant-detail-row"><span>最終入手</span><strong>' + detailEscapeHTML(lastAcquiredText) + '</strong></div>' +
-          '<div class="remnant-detail-note">' + detailEscapeHTML(remnant.desc || '現在は一覧登録のみ。使用機能は未実装です。') + '</div>' +
-        '</div>'
+      ? buildOwnedRemnantBlessingDetailHTML(remnant, entry)
       : buildLockedRemnantDetailHTML(remnant);
 
     grid.innerHTML =
@@ -7579,12 +7789,12 @@ window.addEventListener('pagehide', function () {
 
 <script src="js/battle_range.js"></script>
 <script src="js/characters.js"></script>
-<script src="js/enemies.js?v=117-sakiel-random5"></script>
+<script src="js/enemies.js?v=118-rivia-oblivion"></script>
 <script src="js/battle.js"></script>
 <script src="js/battle_swipe.js?v=49"></script>
 
-<script src="js/stages.js?v=64-patrol-structure"></script>
-<script src="js/stage_select.js?v=70-stage-row-unified"></script>
+<script src="js/stages.js?v=65-irish-rivia-select"></script>
+<script src="js/stage_select.js?v=71-irish-rivia-select"></script>
 <script src="js/party_select.js?v=105-blessing-four-lines"></script>
 <script src="js/enemy_intro.js"></script>
 
@@ -7593,14 +7803,15 @@ window.addEventListener('pagehide', function () {
 
 <script src="js/battle_range_32.js?v=134-sakiel-random5"></script>
 <script src="js/characters_32.js"></script>
+<script src="js/remnant_blessings.js"></script>
 <script src="js/combo_32.js?v=24-combo-range-static"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=294-combo-range-static"></script>
-<script src="js/battle_32_ui.js?v=394-link-gauge-frame"></script>
+<script src="js/battle_32.js?v=295-rivia-oblivion"></script>
+<script src="js/battle_32_ui.js?v=395-rivia-preview"></script>
 
 <!-- ローグライト（新規追加） -->
 <script src="js/roguelite_options.js"></script>
-<script src="js/roguelite_run.js?v=71-debug-boss-runs"></script>
+<script src="js/roguelite_run.js?v=72-rivia-run"></script>
 <script src="js/roguelite_reward.js"></script>
 <script src="js/shinju.js?v=5-growth-thresholds"></script>
 <script src="js/roguelite_controller.js?v=81-debug-no-reward"></script>

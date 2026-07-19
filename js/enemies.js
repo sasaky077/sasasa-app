@@ -967,6 +967,7 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'rl_chaos_elite',
+  strongAttack: true, // 通常攻撃でも盤面シェイクを発生させる強敵
   name: '??????',
   element: 'chaos',
   img:       'images/enemy_02a_battle.webp',
@@ -988,6 +989,7 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'rl_logos_elite',
+  strongAttack: true, // 通常攻撃でも盤面シェイクを発生させる強敵
   name: '??????',
   element: 'logos',
   img:       'images/enemy_02b_battle.webp',
@@ -1009,6 +1011,7 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'rl_mystis_elite',
+  strongAttack: true, // 通常攻撃でも盤面シェイクを発生させる強敵
   name: '??????',
   element: 'mystis',
   img:       'images/enemy_02b_battle.webp',
@@ -1172,6 +1175,7 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'rl_sakiel_zako_elite',
+  strongAttack: true, // 通常攻撃でも盤面シェイクを発生させる強敵
   name: 'サキエルのしもべ',
   displayName: 'サキエルのしもべ',
   enemyName: 'サキエルのしもべ',
@@ -1233,6 +1237,122 @@ ENEMIES.push({
   phase: 1,
   status: [],
   statusList: [],
+});
+
+
+
+// ============================================================
+// レムナント：イリシュ（破壊）専用3戦
+// Stage 1: 近接型中ボス1体 / Stage 2: 砲撃型中ボス1体 / Stage 3: イリシュ
+// ============================================================
+ENEMIES.push({
+  id: 'rl_irish_midboss_breaker',
+  name: '破断の執行者', displayName: '破断の執行者',
+  enemyName: '破断の執行者', introName: '破断の執行者', stageIntroName: '破断の執行者',
+  element: 'chaos',
+  img: 'images/remnant_02_zako_up.webp', upImg: 'images/remnant_02_zako_up.webp',
+  battleImg: 'images/remnant_02_zako.webp', battleUpImg: 'images/remnant_02_zako_up.webp',
+  isBoss: false, isMidBoss: true,
+  // 近接・単発型。広い前方移動で接近し、周囲8マスを攻撃する。
+  attackType: 'direct_melee',
+  strongAttack: false,
+  uiScale: { battleBack: 2.0 },
+  hp: 2100, hpMax: 2100, atk: 455,
+  moveType: 'enemy_midboss_front3',
+  attackRange: 'around8',
+  randomStartPosition: false, fixedPosition: false,
+  phase: 1, status: [], statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_irish_midboss_cannon',
+  name: '崩砕の砲座', displayName: '崩砕の砲座',
+  enemyName: '崩砕の砲座', introName: '崩砕の砲座', stageIntroName: '崩砕の砲座',
+  element: 'logos',
+  img: 'images/remnant_02_zako_up.webp', upImg: 'images/remnant_02_zako_up.webp',
+  battleImg: 'images/remnant_02_zako.webp', battleUpImg: 'images/remnant_02_zako_up.webp',
+  isBoss: false, isMidBoss: true,
+  // 遠隔・貫通型。横方向へ位置を変え、同じ縦列をまとめて破壊する。
+  attackType: 'piercing_artillery',
+  strongAttack: true,
+  uiScale: { battleBack: 2.05 },
+  hp: 2550, hpMax: 2550, atk: 420,
+  moveType: 'enemy_zako_shift',
+  attackRange: 'enemy_attack_line',
+  randomStartPosition: false, fixedPosition: false,
+  phase: 1, status: [], statusList: [],
+});
+
+ENEMIES.push({
+  id: 'enemy_irish_roguelite',
+  name: 'レムナント：イリシュ', displayName: 'レムナント：イリシュ',
+  enemyName: 'レムナント：イリシュ', introName: 'レムナント：イリシュ', stageIntroName: 'レムナント：イリシュ',
+  element: 'chaos',
+  img: 'images/remnant_02_battle_up.webp', upImg: 'images/remnant_02_battle_up.webp',
+  battleImg: 'images/remnant_02_battle.webp', battleUpImg: 'images/remnant_02_battle_up.webp',
+  isBoss: true, isMidBoss: false, strongAttack: true,
+  uiScale: { battleBack: 2.2 },
+  hp: 4200, hpMax: 4200, atk: 520,
+  moveType: 'none', attackRange: null,
+  randomStartPosition: false, fixedPosition: true,
+  eriPriority: false,
+  specialActionType: 'irish_destruction_4',
+  phase: 1, status: [], statusList: [],
+});
+
+// ============================================================
+// レムナント：リヴィア（忘却）専用3戦
+// Stage 1: 忘却付与型 / Stage 2: 消失・転移型 / Stage 3: リヴィア
+// ============================================================
+ENEMIES.push({
+  id: 'rl_rivia_zako_a',
+  name: '忘却の槍使い', displayName: '忘却の槍使い',
+  enemyName: '忘却の槍使い', introName: '忘却の槍使い', stageIntroName: '忘却の槍使い',
+  element: 'mystis',
+  img: 'images/remnant_03_zako_a_up.webp', upImg: 'images/remnant_03_zako_a_up.webp',
+  battleImg: 'images/remnant_03_zako_a.webp', battleUpImg: 'images/remnant_03_zako_a_up.webp',
+  isBoss: false,
+  uiScale: { battleBack: 1.72 },
+  hp: 1250, hpMax: 1250, atk: 310,
+  moveType: 'enemy_zako_straight',
+  attackRange: 'enemy_attack_line',
+  randomStartPosition: false, fixedPosition: false,
+  specialActionType: 'rivia_forget_lancer',
+  phase: 1, status: [], statusList: [],
+});
+
+ENEMIES.push({
+  id: 'rl_rivia_zako_b',
+  name: '消失の星詠み', displayName: '消失の星詠み',
+  enemyName: '消失の星詠み', introName: '消失の星詠み', stageIntroName: '消失の星詠み',
+  element: 'logos',
+  img: 'images/remnant_03_zako_b_up.webp', upImg: 'images/remnant_03_zako_b_up.webp',
+  battleImg: 'images/remnant_03_zako_b.webp', battleUpImg: 'images/remnant_03_zako_b_up.webp',
+  isBoss: false,
+  uiScale: { battleBack: 1.78 },
+  hp: 1450, hpMax: 1450, atk: 285,
+  moveType: 'none', attackRange: null,
+  randomStartPosition: false, fixedPosition: false,
+  specialActionType: 'rivia_vanish_caster',
+  specialActionDamageRate: 0.90,
+  phase: 1, status: [], statusList: [],
+});
+
+ENEMIES.push({
+  id: 'enemy_rivia_roguelite',
+  name: 'レムナント：リヴィア', displayName: 'レムナント：リヴィア',
+  enemyName: 'レムナント：リヴィア', introName: 'レムナント：リヴィア', stageIntroName: 'レムナント：リヴィア',
+  element: 'mystis',
+  img: 'images/remnant_03_battle_up.webp', upImg: 'images/remnant_03_battle_up.webp',
+  battleImg: 'images/remnant_03_battle.webp', battleUpImg: 'images/remnant_03_battle_up.webp',
+  isBoss: true, strongAttack: true,
+  uiScale: { battleBack: 2.15 },
+  hp: 3900, hpMax: 3900, atk: 430,
+  moveType: 'none', attackRange: null,
+  randomStartPosition: false, fixedPosition: false,
+  specialActionType: 'rivia_oblivion_4',
+  specialActionDamageRate: 0.95,
+  phase: 1, status: [], statusList: [],
 });
 
 // TEST_ENEMIES を ENEMIES にマージ（getEnemyById から参照可能にする）

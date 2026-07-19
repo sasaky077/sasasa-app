@@ -7,16 +7,24 @@
   let selected = [];
   let selectedBlessingId = null;
 
-  const PARTY_BLESSINGS = [
-    {
-      id: 'remnant_01',
-      name: 'オーバーシアの加護',
-      img: 'images/remnant_01_panel.webp',
-      passive: '常時：critical率+10%',
-      inv: 'INV：発動ターンのみcritical率+100%',
-      invCondition: 'INV条件：敵を合計3体撃破'
-    }
-  ];
+  function getPartyBlessings() {
+    const defs = window.REMNANT_BLESSINGS || {};
+    return Object.keys(defs).map(id => {
+      const resolved = typeof window.resolveRemnantBlessingById === 'function'
+        ? window.resolveRemnantBlessingById(id)
+        : defs[id];
+      if (!resolved) return null;
+      return {
+        id: resolved.id,
+        name: resolved.name,
+        img: resolved.panelImg,
+        level: Number(resolved.level || 1),
+        passive: resolved.text?.passive || '',
+        inv: resolved.text?.inv || '',
+        invCondition: resolved.text?.condition || ''
+      };
+    }).filter(Boolean);
+  }
 
   function isBlessingOwned(id) {
     if (typeof window.isRemnantOwned === 'function') return !!window.isRemnantOwned(id);
@@ -2123,7 +2131,7 @@
 
 
   function getSelectedBlessing() {
-    return PARTY_BLESSINGS.find(b => b.id === selectedBlessingId) || null;
+    return getPartyBlessings().find(b => b.id === selectedBlessingId) || null;
   }
 
   function renderBlessingSelect() {
@@ -2143,7 +2151,7 @@
       el.innerHTML = `<button type="button" class="ps-blessing-slot" onclick="openPartyBlessingPicker()">
         <img class="ps-blessing-slot-img" src="${blessing.img}" alt="${blessing.name}" onerror="this.style.opacity='.2'">
         <span>
-          <span class="ps-blessing-slot-name">${blessing.name}</span>
+          <span class="ps-blessing-slot-name">${blessing.name} Lv.${blessing.level}</span>
           <span class="ps-blessing-slot-desc">
             <span>${blessing.passive}</span>
             <span>${blessing.inv}</span>
@@ -2163,13 +2171,13 @@
         <span><span class="ps-blessing-option-name">加護なし</span><br><span class="ps-blessing-option-desc">加護を授からずに出撃する</span></span>
         <span class="ps-blessing-option-check">${selectedBlessingId === null ? '✓' : ''}</span>
       </button>`,
-      ...PARTY_BLESSINGS.map(b => {
+      ...getPartyBlessings().map(b => {
         const owned = isBlessingOwned(b.id);
         const selected = selectedBlessingId === b.id;
         return `<button type="button" class="ps-blessing-option ${selected ? 'selected' : ''} ${owned ? '' : 'locked'}" ${owned ? `onclick="selectPartyBlessing('${b.id}')"` : 'disabled'}>
           <img class="ps-blessing-option-img" src="${b.img}" alt="${b.name}" onerror="this.style.opacity='.2'">
           <span>
-            <span class="ps-blessing-option-name">${b.name}${owned ? '' : '（未取得）'}</span>
+            <span class="ps-blessing-option-name">${b.name}${owned ? ` Lv.${b.level}` : '（未取得）'}</span>
             <span class="ps-blessing-option-desc">
               <span>${b.passive}</span>
               <span>${b.inv}</span>
