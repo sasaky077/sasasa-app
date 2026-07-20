@@ -87,17 +87,17 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:block!important;font-size:25px!important;font-weight:700!important;letter-spacing:.12em!important;color:#fff!important}
 </style>\n<style id="roguelite-condition-style">
 .roguelite-entry-card{position:relative!important;padding-right:12px!important;touch-action:pan-y;-webkit-user-select:none;user-select:none}
-.roguelite-card-rewards{position:absolute;left:calc(14px + 3mm);bottom:calc(12px - 1mm);display:flex;gap:3px;align-items:center;z-index:2}
+.roguelite-card-rewards{position:absolute;left:calc(14px + 3mm);bottom:calc(12px - 2mm);display:flex;gap:3px;align-items:center;z-index:2}
 .roguelite-card-reward{width:23px;height:23px;display:grid;place-items:center;flex:0 0 23px}
 .roguelite-card-reward img{width:23px;height:23px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(92,70,36,.18))}
-.roguelite-longpress-hint{position:absolute;right:9px;top:7px;bottom:auto;font-size:7px;letter-spacing:.06em;color:rgba(119,94,61,.52);white-space:nowrap}
+.roguelite-longpress-hint{position:absolute;right:9px;bottom:7px;font-size:7px;letter-spacing:.06em;color:rgba(119,94,61,.52);white-space:nowrap}
 .roguelite-entry-card.is-longpressing{filter:brightness(.96);transform:scale(.992)}
-.roguelite-condition-modal{position:fixed;inset:0;z-index:390000;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+.roguelite-condition-modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:390000;display:none;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-sizing:border-box;overflow:hidden;touch-action:none}
 .roguelite-condition-modal.show{display:flex}
 .roguelite-condition-backdrop{position:absolute;inset:0;background:rgba(26,18,8,.52);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-.roguelite-condition-sheet{position:relative;width:min(420px,100%);max-height:min(84dvh,720px);overflow-y:auto;box-sizing:border-box;padding:22px 17px 18px;border:1px solid rgba(173,139,82,.45);border-radius:12px;background:linear-gradient(165deg,#fffdf7,#f4eddf);box-shadow:0 24px 70px rgba(49,32,12,.35);color:#5d4b35;font-family:"Noto Serif JP",serif}
+.roguelite-condition-sheet{position:relative;width:min(420px,calc(100vw - 20px));max-width:100%;max-height:calc(100dvh - max(20px,env(safe-area-inset-top)) - max(20px,env(safe-area-inset-bottom)));overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-sizing:border-box;padding:22px 17px 18px;border:1px solid rgba(173,139,82,.45);border-radius:12px;background:linear-gradient(165deg,#fffdf7,#f4eddf);box-shadow:0 24px 70px rgba(49,32,12,.35);color:#5d4b35;font-family:"Noto Serif JP",serif;touch-action:pan-y}
 .roguelite-condition-sheet::before{content:"";position:absolute;inset:7px;border:1px solid rgba(181,145,82,.18);border-radius:8px;pointer-events:none}
-.roguelite-condition-close{position:absolute;right:10px;top:8px;width:34px;height:34px;border:0;background:transparent;color:#8a7559;font-size:25px;line-height:1;z-index:2}
+.roguelite-condition-close{position:sticky;float:right;right:0;top:0;margin:-14px -9px -34px 0;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,253,247,.94);color:#8a7559;font-size:27px;line-height:1;z-index:20;box-shadow:0 1px 8px rgba(49,32,12,.14);touch-action:manipulation}
 .roguelite-condition-kicker{text-align:center;font-family:"Cinzel",serif;font-size:9px;letter-spacing:.22em;color:#aa8b5e}
 .roguelite-condition-sheet h2{text-align:center;margin:6px 28px 2px;font-size:21px;letter-spacing:.12em;font-weight:600}
 .roguelite-condition-sub{text-align:center;font-size:10px;color:#a08a6c;letter-spacing:.08em}
@@ -112,7 +112,7 @@
 .roguelite-rank-reward{text-align:right;font-size:9px;line-height:1.55;color:#8a7353}
 .roguelite-rank-reward b{display:block;font-family:"Cinzel",serif;font-size:12px;color:#725b3d}
 .roguelite-condition-note{margin-top:11px;text-align:center;font-size:9px;color:#9b8668;letter-spacing:.03em}
-@media(max-width:380px){.roguelite-condition-sheet{padding:19px 13px 15px}.roguelite-rank-row{grid-template-columns:38px minmax(0,1fr) 68px}.roguelite-rank-condition{font-size:10px}.roguelite-condition-reward{min-width:94px;padding:7px}}
+@media(max-width:380px){.roguelite-condition-modal{align-items:flex-start;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}.roguelite-condition-sheet{width:calc(100vw - 16px);max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));padding:19px 13px 15px}.roguelite-condition-main-rewards{grid-template-columns:repeat(2,minmax(0,1fr))}.roguelite-rank-row{grid-template-columns:38px minmax(0,1fr) 68px;gap:5px}.roguelite-rank-condition{font-size:10px}.roguelite-condition-reward{min-width:0;padding:7px}.roguelite-condition-close{margin:-12px -6px -36px 0}}
 </style>
 </head>
 <body>
@@ -8275,8 +8275,14 @@ window.addEventListener('pagehide', function () {
   const REWARDS={S:{coin:500,core:100},A:{coin:400,core:70},B:{coin:300,core:50},C:{coin:220,core:30},D:{coin:150,core:15},E:{coin:100,core:5}};
   function rows(info){return[{rank:'S',text:info.s},{rank:'A',text:'S条件未達かつ35TURN以内にクリア'},{rank:'B',text:'36～38TURNでクリア'},{rank:'C',text:'39～41TURNでクリア'},{rank:'D',text:'42～45TURNでクリア'},{rank:'E',text:'46TURN以上でクリア'}]}
   function img(src,alt){return "<img src=\"" + src + "\" alt=\"" + alt + "\" onerror=\"this.style.display='none'\">"}
+  let previousBodyOverflow='';
+  function ensureModalPortal(){
+    const modal=document.getElementById('roguelite-condition-modal');
+    if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
+    return modal;
+  }
   function open(runId){
-    const info=RUN_INFO[runId],modal=document.getElementById('roguelite-condition-modal');if(!info||!modal)return;
+    const info=RUN_INFO[runId],modal=ensureModalPortal();if(!info||!modal)return;
     document.getElementById('roguelite-condition-title').textContent=info.title;
     document.getElementById('roguelite-condition-sub').textContent=info.sub;
     document.getElementById('roguelite-condition-main-rewards').innerHTML=[
@@ -8288,9 +8294,9 @@ window.addEventListener('pagehide', function () {
       '<div class="roguelite-condition-reward">'+img('images/item_mystis.webp','MYSTISの器')+'<span><b>MYSTISの器</b><br>抽選候補</span></div>'
     ].join('');
     document.getElementById('roguelite-condition-ranks').innerHTML=rows(info).map(function(row){const r=REWARDS[row.rank];return '<div class="roguelite-rank-row rank-'+row.rank.toLowerCase()+'"><div class="roguelite-rank-badge">'+row.rank+'</div><div class="roguelite-rank-condition">'+row.text+'</div><div class="roguelite-rank-reward"><b>'+r.coin+' COIN</b>心核 '+r.core+'%</div></div>'}).join('');
-    modal.classList.add('show');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+    const sheet=modal.querySelector('.roguelite-condition-sheet');if(sheet)sheet.scrollTop=0;previousBodyOverflow=document.body.style.overflow||'';modal.classList.add('show');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
   }
-  function close(){const m=document.getElementById('roguelite-condition-modal');if(!m)return;m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.style.overflow=''}
+  function close(){const m=document.getElementById('roguelite-condition-modal');if(!m)return;m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.style.overflow=previousBodyOverflow;previousBodyOverflow=''}
   function bind(card){
     if(!card||card.dataset.rogueliteLongpressBound==='1')return;card.dataset.rogueliteLongpressBound='1';
     let timer=null,sx=0,sy=0,opened=false;
@@ -8306,7 +8312,7 @@ window.addEventListener('pagehide', function () {
     card.addEventListener('contextmenu',e=>e.preventDefault());
     card.addEventListener('click',function(e){if(opened||Date.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();opened=false}},true);
   }
-  function setup(){document.querySelectorAll('.roguelite-entry-card').forEach(bind);document.querySelectorAll('[data-roguelite-condition-close]').forEach(el=>el.addEventListener('click',close));document.addEventListener('keydown',e=>{if(e.key==='Escape')close()})}
+  function setup(){ensureModalPortal();document.querySelectorAll('.roguelite-entry-card').forEach(bind);document.querySelectorAll('[data-roguelite-condition-close]').forEach(el=>{el.addEventListener('click',close);el.addEventListener('touchend',function(e){e.preventDefault();close()},{passive:false})});document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});document.addEventListener('click',function(e){if(e.target.closest('.bottom-nav-item,.bottom-nav button,[data-screen],.nav-item'))close()},true);window.addEventListener('pageshow',function(){const m=document.getElementById('roguelite-condition-modal');if(m&&!m.classList.contains('show'))document.body.style.overflow=''})}
   window.openRogueliteConditionModal=open;window.closeRogueliteConditionModal=close;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
