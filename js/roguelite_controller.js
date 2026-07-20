@@ -1078,12 +1078,24 @@ function _hideHud() {
 }
 
   // ── ラン結果画面 ─────────────────────────────────────────
-  function _getRankFromTurns(totalTurns) {
+  function _getRankFromTurns(totalTurns, context) {
+    const ctx = context || {};
     if (window.RogueliteRun && typeof window.RogueliteRun.getClearRank === 'function') {
-      return window.RogueliteRun.getClearRank(totalTurns);
+      return window.RogueliteRun.getClearRank(totalTurns, ctx);
     }
+
     const t = Number(totalTurns || 0);
-    if (t <= 32) return 'S';
+    const aliveCount = Math.max(0, Number(ctx.aliveCount || 0));
+    const runId = String(ctx.runId || 'default');
+    const rules = {
+      overseer: { maxTurns: 20, minAlive: 0 },
+      irish:    { maxTurns: 30, minAlive: 2 },
+      rivia:    { maxTurns: 18, minAlive: 0 },
+      sakiel:   { maxTurns: 20, minAlive: 3 },
+    };
+    const rule = rules[runId];
+    if (rule && t <= rule.maxTurns && aliveCount >= rule.minAlive) return 'S';
+    if (!rule && t <= 32) return 'S';
     if (t <= 35) return 'A';
     if (t <= 38) return 'B';
     if (t <= 41) return 'C';
@@ -1130,6 +1142,12 @@ function _hideHud() {
       name: 'オーバーシアの心核',
       img: 'images/item_overseercore.webp',
       remnantId: 'remnant_01',
+    },
+    irish: {
+      id: 'irish_core',
+      name: 'イリシュの心核',
+      img: 'images/item_irishcore.webp',
+      remnantId: 'remnant_02',
     },
     rivia: {
       id: 'rivia_core',
@@ -1383,7 +1401,7 @@ function _hideHud() {
     const isWin = result === 'win';
     const data = summary || {};
     const totalTurns = Number(data.totalTurns || 0);
-    const rank = data.rank || _getRankFromTurns(totalTurns);
+    const rank = data.rank || _getRankFromTurns(totalTurns, { runId: data.runId, aliveCount: data.aliveCount });
     const reward = isWin ? (data.reward || await _grantRunRewards(rank)) : null;
     const shinjuItem = isWin ? (data.shinjuItem || null) : null;
     const coreItem = isWin ? (data.coreItem || null) : null;
@@ -1954,10 +1972,11 @@ async function _onBattleEnd(result, payload) {
     const totalTurns = typeof window.RogueliteRun.getTotalTurns === 'function'
       ? window.RogueliteRun.getTotalTurns()
       : 0;
-    const rank = _getRankFromTurns(totalTurns);
     const runId = (window.RogueliteRun && typeof window.RogueliteRun.getRunId === 'function')
       ? window.RogueliteRun.getRunId()
       : 'default';
+    const aliveCount = Math.max(0, Number(payload && payload.aliveCount || 0));
+    const rank = _getRankFromTurns(totalTurns, { runId, aliveCount });
     const isDebugRun = window.RogueliteRun
       && typeof window.RogueliteRun.isDebugRun === 'function'
       && window.RogueliteRun.isDebugRun();
@@ -1987,11 +2006,11 @@ async function _onBattleEnd(result, payload) {
     // ボス本体・代替BOSSコインの抽選は廃止。
     // ボス固有報酬は上記 coreItem（心核）のランク別抽選だけを使用する。
 
-    window.RogueliteRun.end('win');
+    window.RogueliteRun.end('win', { aliveCount });
     _hideHud();
     const partyIds = Array.isArray(window.__ROGUELITE_LAST_PARTY_IDS__) ? window.__ROGUELITE_LAST_PARTY_IDS__ : [];
     const selectedRewards = Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) ? window.__ROGUELITE_SELECTED_REWARDS__ : ops;
-    await _showResult('win', ops, { totalTurns, rank, reward, shinjuItem, coreItem, evolutionMaterialItems, partyIds, selectedRewards });
+    await _showResult('win', ops, { totalTurns, rank, runId, aliveCount, reward, shinjuItem, coreItem, evolutionMaterialItems, partyIds, selectedRewards });
     return;
   }
 
@@ -2129,6 +2148,11 @@ _startBattle();
   // グローバル公開
   window.RogueliteController = {
     startRun,
+    // Battle32.restore() 用：保存時に失われたステージ終了コールバックを再生成する。
+    _createResumeBattleEndCallback: () => {
+      if (!window.RogueliteRun || !window.RogueliteRun.isActive()) return null;
+      return (payload) => _onBattleEnd(payload && payload.result, payload || {});
+    },
     startSakielRun: (partyIds) => startRun(partyIds, { runId: 'sakiel' }),
     mountDebugButton,
     // デバッグ用: 直接終了コールバックを呼べるようにする

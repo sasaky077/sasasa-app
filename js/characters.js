@@ -45,7 +45,7 @@ const CHARACTERS = [
     favScale: 0.80, favOffsetY: -40,
     resonanceMaterialId: 'eri_origin_wing',
     resonanceBonusProfile: 'eri_v1',
-    uiScale: {panel: 1.0,battleBack: 1.2,},    
+    uiScale: {panel: 1.0,battleBack: 1.0,},    
         combo: {
       range: 'combo_line_all',
       skill: { id: 'combo', name: '共鳴する閃光', type: 'attack', multiplier: 0.80, range: 'combo_x_all', effects: [], hitStyle: 'normal', desc: '同じ縦列上の味方スキルに反応し、X字上の敵へ追撃する。' }
@@ -157,7 +157,7 @@ skills: [
     panelImg: 'images/chara_03_panel.webp',
     favScale: 0.90, favOffsetY: -10,
     resonanceBonusProfile: 'sui_v1',
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.0},
         combo: {
       range: 'combo_x_all',
       skill: { id: 'combo', name: '星導の余光', type: 'buff', multiplier: 0, range: 'ally_all', effects: [{ type: 'critical_up', target: 'ally_all', hit: 100, duration: 1, rate: 0.10 }], hitStyle: 'support', desc: 'X字上の味方スキルに反応し、味方全体のcritical率を1ターン10%上昇する。' }
@@ -493,7 +493,7 @@ skills: [
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
     favScale: 0.85, favOffsetY: -45,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.55},
     combo: {
       range: 'combo_cross_all',
       skill: { id: 'combo', name: 'ケミカル・シナジー', type: 'buff', multiplier: 0, range: 'ally_all', effects: [{ type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.10 }], hitStyle: 'support', desc: '十字上の味方スキルに反応し、味方全体のATKを1ターン10%上昇させる。' }
@@ -789,7 +789,7 @@ skills: [
     battleBackImg: 'images/chara_13_battle_back.webp',
     panelImg: 'images/chara_13_panel.webp',
     favScale: 0.85, favOffsetY: -40,
-    uiScale: {panel: 1.0, battleBack: 1.5},
+    uiScale: {panel: 1.0, battleBack: 1.0},
     combo: {
       range: 'combo_x_1',
       skill: { id: 'combo', name: 'キャット・フォロー', type: 'attack', multiplier: 0.50, range: 'cat_snipe_ally', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方遠距離の敵へ小さな追撃を行う。' }
@@ -846,7 +846,7 @@ skills: [
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
     favScale: 0.80, favOffsetY: -50,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.0},
     combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: '無音の追い刃', type: 'attack', multiplier: 0.45, range: 'around8', effects: [], hitStyle: 'rapid', desc: '上下左右1マスの味方スキルに反応し、自身の周囲1マスの敵へ小さな追撃を行う。' }
@@ -1029,7 +1029,7 @@ skills: [
     battleBackImg: 'images/chara_17_battle_back.webp',
     panelImg: 'images/chara_17_panel.webp',
     favScale: 0.95, favOffsetY: 15,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.55},
     combo: {
       range: 'combo_line_2',
       skill: { id: 'combo', name: '聖雫の余韻', type: 'heal', multiplier: 0, range: 'self', healRate: 0.08, effects: [], hitStyle: 'heal', desc: '同じ縦列の前後2マス以内にいる味方のスキルに反応し、自身のHPを最大HPの8%回復する。' }

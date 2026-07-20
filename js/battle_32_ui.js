@@ -10115,4 +10115,43 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
  hookBattle32Start();
  }
 
+
+
+// ============================================================
+// 中断再開時のUIリセット
+// ============================================================
+window.resetBattle32UIAfterRestore = function () {
+  if (_b32CinematicRosterRestoreTimer) {
+    clearTimeout(_b32CinematicRosterRestoreTimer);
+    _b32CinematicRosterRestoreTimer = null;
+  }
+  _b32CinematicRosterHideCount = 0;
+  document.body.classList.remove('b32-cinematic-roster-hidden');
+
+  _selectedRosterId = null;
+  _rosterInfoPage = 0;
+  _resetSkillState();
+
+  document
+    .querySelectorAll('#battle32-root .b32-roster-info-panel, #b32-roster-info-close-hitbox')
+    .forEach(el => el.remove());
+
+  const actionPortal = document.getElementById('b32-action-detail-portal');
+  if (actionPortal) {
+    actionPortal.innerHTML = '';
+    actionPortal.classList.remove('show');
+    actionPortal.style.display = 'none';
+  }
+
+  ['b32-center-text', 'b32-combo-center-text'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('show', 'visible', 'b32ct-turn-danger');
+  });
+
+  if (typeof window.b32UnlockInput === 'function') {
+    window.b32UnlockInput();
+  }
+};
+
 })();

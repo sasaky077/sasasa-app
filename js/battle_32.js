@@ -1088,7 +1088,17 @@ function pickRandomBoardCells(count) {
       stunned: false,
       attackRange: def.attackRange || (def.isBoss ? 'enemy_attack_cross' : 'enemy_attack_front'),
       moveType:    def.moveType    || (def.isBoss ? 'none' : 'enemy_move_straight'),
+      // 敵ごとの柔軟な移動候補。指定時は共通MOVE_PRESETより優先する。
+      customMoveOffsets: Array.isArray(def.customMoveOffsets)
+        ? def.customMoveOffsets.map(offset => ({ dr: Number(offset.dr || 0), dc: Number(offset.dc || 0) }))
+        : null,
       uiScale:     def.uiScale    || {},
+
+      // 通常敵AI拡張（ヒット＆アウェイ等）
+      aiType: def.aiType || 'chaser',
+      retreatAfterAttack: !!def.retreatAfterAttack,
+      retreatDistance: Math.max(0, Number(def.retreatDistance || 0)),
+      retreatTarget: def.retreatTarget || 'away_from_attack_target',
 
       // 特殊BOSS制御
       eriPriority: !!def.eriPriority,
@@ -4659,6 +4669,99 @@ function doBossLineAttack(boss) {
   }
 
 
+  /**
+   * 攻撃後離脱用の移動候補をBFSで収集する。
+   * 通常のmoveTypeとは独立し、上下左右へ最大distance歩けるが、
+   * 生存ユニットのいるマスは通過・停止できない。
+   */
+  function _getEnemyRetreatCells(enemy, distance) {
+    const maxDist = Math.max(0, Number(distance || 0));
+    if (!enemy || maxDist <= 0) return [];
+
+    const occupied = new Set();
+    const units = [
+      ...(_bs.allies || []),
+      ...(_bs.enemies || []),
+      ...(_bs.summons || []),
+    ];
+    units.forEach(unit => {
+      if (!unit || unit === enemy || unit.hp <= 0) return;
+      occupied.add(`${unit.row}-${unit.col}`);
+    });
+
+    const startKey = `${enemy.row}-${enemy.col}`;
+    const visited = new Set([startKey]);
+    const queue = [{ row: enemy.row, col: enemy.col, steps: 0 }];
+    const result = [];
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+
+    while (queue.length) {
+      const cur = queue.shift();
+      if (cur.steps >= maxDist) continue;
+
+      for (const [dr, dc] of dirs) {
+        const row = cur.row + dr;
+        const col = cur.col + dc;
+        const key = `${row}-${col}`;
+        if (!BR.isValidCell(row, col) || visited.has(key) || occupied.has(key)) continue;
+        visited.add(key);
+        const next = { row, col, steps: cur.steps + 1 };
+        queue.push(next);
+        result.push(next);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * 攻撃対象から最も離れるマスへ最大指定距離だけ離脱する。
+   * 同距離なら、より多く歩けるマスを優先し、最後はランダム。
+   * 包囲や盤面端により退路がなければ離脱しない。
+   */
+  async function _retreatEnemyAfterAttack(enemy, attackedTarget) {
+    if (!enemy || enemy.hp <= 0 || !enemy.retreatAfterAttack) return false;
+    const maxDistance = Math.max(0, Number(enemy.retreatDistance || 0));
+    if (!attackedTarget || maxDistance <= 0) return false;
+
+    const candidates = _getEnemyRetreatCells(enemy, maxDistance);
+    if (!candidates.length) {
+      _log(`${enemy.name} は退路を塞がれた`);
+      return false;
+    }
+
+    const currentDistance = _distToTarget(enemy.row, enemy.col, attackedTarget);
+    const farther = candidates.filter(cell => _distToTarget(cell.row, cell.col, attackedTarget) > currentDistance);
+    if (!farther.length) {
+      _log(`${enemy.name} は退路を確保できなかった`);
+      return false;
+    }
+
+    farther.sort((a, b) => {
+      const da = _distToTarget(a.row, a.col, attackedTarget);
+      const db = _distToTarget(b.row, b.col, attackedTarget);
+      if (da !== db) return db - da;
+      if (a.steps !== b.steps) return b.steps - a.steps;
+      return Math.random() < 0.5 ? -1 : 1;
+    });
+
+    const chosen = farther[0];
+    _emit('enemyActionStep', {
+      step: 'retreat_after_attack',
+      enemy: { ...enemy },
+      from: { row: enemy.row, col: enemy.col },
+      to: { row: chosen.row, col: chosen.col },
+      target: { ...attackedTarget },
+      bs: _snapshot(),
+    });
+    enemy.row = chosen.row;
+    enemy.col = chosen.col;
+    _log(`${enemy.name} が攻撃後に${chosen.steps}マス離脱した`);
+    _renderUI();
+    await wait(B32_WAIT.move);
+    await wait(B32_WAIT.afterText);
+    return true;
+  }
+
   // ============================================================
   // サキエル専用：毎ターン5種からランダム1行動
   // ============================================================
@@ -5377,6 +5480,7 @@ function doBossLineAttack(boss) {
       _clearEnemyAttackTraceCells();
       // applyDamage 内で _checkWinLose を呼んでいるが、念のため result を確認
       if (_bs.result) return;
+      await _retreatEnemyAfterAttack(enemy, target);
       return;
     }
 
@@ -5446,6 +5550,7 @@ function doBossLineAttack(boss) {
       await wait(B32_WAIT.afterText);
       _clearEnemyAttackTraceCells();
       if (_bs.result) return;
+      await _retreatEnemyAfterAttack(enemy, target);
     }
   }   // end _runEnemySingleAction
 
@@ -5582,12 +5687,15 @@ function doBossLineAttack(boss) {
   _setTurnDangerAlert(false);
 
   const cb = _bs._rl_onBattleEnd;
+  const aliveAllies = (_bs.allies || []).filter(unit => unit && Number(unit.hp || 0) > 0);
   const payload = {
     result,
     reason: reason || _bs.loseReason || null,
     loseReason: reason || _bs.loseReason || null,
     turn: _bs.turn,
     turnLimit: null,
+    aliveCount: aliveAllies.length,
+    aliveAllyUids: aliveAllies.map(unit => unit._uid),
   };
 
   _bs._rl_onBattleEnd = null;  // 二重呼び出し防止
@@ -5683,7 +5791,11 @@ function doBossLineAttack(boss) {
     // HP0 の非ボス敵は移動なし
     if (unit.hp <= 0 && !unit.isBoss) return [];
 
-    const offsets = BR.getMoveOffsets(unit);
+    // 専用候補がある敵はそれを優先。
+    // 接近型：前後2・左右1、遠距離型：左右2・前後1などをデータ側で定義できる。
+    const offsets = Array.isArray(unit.customMoveOffsets) && unit.customMoveOffsets.length > 0
+      ? unit.customMoveOffsets
+      : BR.getMoveOffsets(unit);
     const cells   = [];
     offsets.forEach(({ dr, dc }) => {
       const row = unit.row + dr;
@@ -6226,6 +6338,38 @@ function restore(savedState, callbacks) {
 
   _bs = deepClone(savedState);
 
+  // JSON保存では関数が消えるため、ローグライト終了コールバックを再接続する。
+  const resumeBattleEnd =
+    callbacks && typeof callbacks.rogueliteOnBattleEnd === 'function'
+      ? callbacks.rogueliteOnBattleEnd
+      : callbacks && typeof callbacks.onBattleEnd === 'function'
+        ? callbacks.onBattleEnd
+        : window.RogueliteController &&
+          typeof window.RogueliteController._createResumeBattleEndCallback === 'function'
+          ? window.RogueliteController._createResumeBattleEndCallback()
+          : null;
+
+  if (typeof resumeBattleEnd === 'function') {
+    _bs._rl_onBattleEnd = resumeBattleEnd;
+  }
+
+  // 演出途中の一時状態は保存値を使わず、安定状態へ戻す。
+  _bs.activeEnemyUid = null;
+  _bs.enemyActionOrder = [];
+  _bs.enemyActionIndex = 0;
+  _bs.enemyActionTotal = 0;
+  _bs.bossWarning = false;
+  _bs.attackTraceCells = [];
+  _bs.enemyAttackTraceCells = [];
+
+  if (typeof window.resetBattle32UIAfterRestore === 'function') {
+    try {
+      window.resetBattle32UIAfterRestore();
+    } catch (e) {
+      console.warn('[Battle32] restore UI reset error:', e);
+    }
+  }
+
   // 旧保存データには combo が含まれていない場合があるため、
   // CHARACTERS_32 のマスターからキャラIDを使って復元する。
   const comboMasterList = Array.isArray(window.CHARACTERS_32) ? window.CHARACTERS_32 : [];
@@ -6237,19 +6381,41 @@ function restore(savedState, callbacks) {
     });
   }
 
-  // 再開直後は演出中ではなく、操作可能な状態に寄せる
   if (_bs.result) {
     _bs.phase = 'end';
   } else if (_bs.phase !== 'skill' && _bs.phase !== 'enemy') {
     _bs.phase = 'skill';
   }
 
-  _renderUI();
-
-  // skillフェーズなら入力可能に戻す
-  if (_bs.phase === 'skill' && !_bs.result) {
-    _unlockInput();
+  // 勝敗確定直前の中断も救済し、ステージ進行通知まで復元する。
+  if (!_bs.result) {
+    _checkWinLose();
   }
+
+  _renderUI();
+  _emit('restore', { phase: _bs.phase, bs: _snapshot() });
+  _emit('phaseChange', { phase: _bs.phase, restored: true, bs: _snapshot() });
+
+  if (_bs.result) {
+    if (typeof _bs._rl_onBattleEnd === 'function') {
+      _notifyRogueliteBattleEnd(_bs.result, _bs.loseReason || null);
+    }
+    return true;
+  }
+
+  // DOMとイベントの再構築後に、保存フェーズから進行を再始動する。
+  setTimeout(() => {
+    if (!_bs || _bs.result) return;
+
+    if (_bs.phase === 'enemy') {
+      _runEnemyTurnFlow();
+      return;
+    }
+
+    _unlockInput();
+    _renderUI();
+    _saveResume();
+  }, 0);
 
   return true;
 }

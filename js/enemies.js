@@ -504,6 +504,12 @@ const ENEMIES = [
     hp: 420, hpMax: 420,
     atk: 125,
     moveType: 'enemy_zako_straight',
+    // 遠距離型：左右2マス、前後1マス。射線を合わせながら横へ大きく位置調整する。
+    customMoveOffsets: [
+      { dr:  0, dc:-1 }, { dr:  0, dc:-2 },
+      { dr:  0, dc: 1 }, { dr:  0, dc: 2 },
+      { dr: -1, dc: 0 }, { dr:  1, dc: 0 },
+    ],
     attackRange: 'enemy_attack_line',
     fixedPosition: false,
     canMove: true,
@@ -522,6 +528,12 @@ const ENEMIES = [
     hp: 460, hpMax: 460,
     atk: 115,
     moveType: 'enemy_zako_shift',
+    // 接近型：前後2マス、左右1マス。背後の標的にも柔軟に対応する。
+    customMoveOffsets: [
+      { dr: -1, dc: 0 }, { dr: -2, dc: 0 },
+      { dr:  1, dc: 0 }, { dr:  2, dc: 0 },
+      { dr:  0, dc:-1 }, { dr:  0, dc: 1 },
+    ],
     attackRange: 'enemy_attack_cross',
     fixedPosition: false,
     canMove: true,
@@ -540,6 +552,12 @@ const ENEMIES = [
     hp: 390, hpMax: 390,
     atk: 140,
     moveType: 'enemy_zako_diag',
+    // 接近型：前後2マス、左右1マス。背後の標的にも柔軟に対応する。
+    customMoveOffsets: [
+      { dr: -1, dc: 0 }, { dr: -2, dc: 0 },
+      { dr:  1, dc: 0 }, { dr:  2, dc: 0 },
+      { dr:  0, dc:-1 }, { dr:  0, dc: 1 },
+    ],
     attackRange: 'around8',
     fixedPosition: false,
     canMove: true,
@@ -1253,12 +1271,22 @@ ENEMIES.push({
   img: 'images/remnant_02_zako_up.webp', upImg: 'images/remnant_02_zako_up.webp',
   battleImg: 'images/remnant_02_zako.webp', battleUpImg: 'images/remnant_02_zako_up.webp',
   isBoss: false, isMidBoss: true,
-  // 近接・単発型。広い前方移動で接近し、周囲8マスを攻撃する。
+  // ヒット＆アウェイ型。接近攻撃後、攻撃対象から離れる方向へ最大5マス離脱する。
   attackType: 'direct_melee',
+  aiType: 'hit_and_away',
+  retreatAfterAttack: true,
+  retreatDistance: 5,
+  retreatTarget: 'away_from_attack_target',
   strongAttack: false,
   uiScale: { battleBack: 2.0 },
   hp: 2100, hpMax: 2100, atk: 455,
   moveType: 'enemy_midboss_front3',
+  // 接近型：前後2マス、左右1マス。背後の標的にも柔軟に対応する。
+  customMoveOffsets: [
+    { dr: -1, dc: 0 }, { dr: -2, dc: 0 },
+    { dr:  1, dc: 0 }, { dr:  2, dc: 0 },
+    { dr:  0, dc:-1 }, { dr:  0, dc: 1 },
+  ],
   attackRange: 'around8',
   randomStartPosition: false, fixedPosition: false,
   phase: 1, status: [], statusList: [],
@@ -1278,6 +1306,12 @@ ENEMIES.push({
   uiScale: { battleBack: 2.05 },
   hp: 2550, hpMax: 2550, atk: 420,
   moveType: 'enemy_zako_shift',
+  // 遠距離型：左右2マス、前後1マス。射線を合わせながら横へ大きく位置調整する。
+  customMoveOffsets: [
+    { dr:  0, dc:-1 }, { dr:  0, dc:-2 },
+    { dr:  0, dc: 1 }, { dr:  0, dc: 2 },
+    { dr: -1, dc: 0 }, { dr:  1, dc: 0 },
+  ],
   attackRange: 'enemy_attack_line',
   randomStartPosition: false, fixedPosition: false,
   phase: 1, status: [], statusList: [],

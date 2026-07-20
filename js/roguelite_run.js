@@ -453,9 +453,47 @@
     return _state ? _state.stageTurns.slice() : [];
   }
 
-  function getClearRank(totalTurns) {
+  // ラン固有のSランク条件。
+  // S条件を満たさない場合は、従来のTURN基準でA以下を判定する。
+  const RUN_S_RANK_RULES = {
+    overseer: { maxTurns: 20, minAlive: 0 },
+    irish:    { maxTurns: 30, minAlive: 2 },
+    rivia:    { maxTurns: 18, minAlive: 0 },
+    sakiel:   { maxTurns: 20, minAlive: 3 },
+  };
+
+  function getClearRankConditions(runId) {
+    const id = String(runId || (_state && _state.runId) || 'default');
+    const sRule = RUN_S_RANK_RULES[id] || { maxTurns: 32, minAlive: 0 };
+    const sParts = [];
+    if (Number(sRule.minAlive || 0) > 0) sParts.push(`${Number(sRule.minAlive)}体以上生存`);
+    sParts.push(`${Number(sRule.maxTurns)}TURN以内`);
+    return [
+      { rank: 'S', condition: sParts.join('かつ') },
+      { rank: 'A', condition: 'S条件未達かつ35TURN以内' },
+      { rank: 'B', condition: '36～38TURN' },
+      { rank: 'C', condition: '39～41TURN' },
+      { rank: 'D', condition: '42～45TURN' },
+      { rank: 'E', condition: '46TURN以上' },
+    ];
+  }
+
+  function getClearRank(totalTurns, context) {
     const t = Number(totalTurns || 0);
-    if (t <= 32) return 'S';
+    const ctx = context || {};
+    const runId = String(ctx.runId || (_state && _state.runId) || 'default');
+    const aliveCount = Math.max(0, Number(ctx.aliveCount || 0));
+    const sRule = RUN_S_RANK_RULES[runId];
+
+    if (sRule) {
+      const turnOk = t <= Number(sRule.maxTurns);
+      const aliveOk = aliveCount >= Number(sRule.minAlive || 0);
+      if (turnOk && aliveOk) return 'S';
+    } else if (t <= 32) {
+      // 未設定ランは従来仕様を維持。
+      return 'S';
+    }
+
     if (t <= 35) return 'A';
     if (t <= 38) return 'B';
     if (t <= 41) return 'C';
@@ -472,8 +510,10 @@
     }
   }
 
-  function end(result) {
+  function end(result, context) {
     if (!_state) return null;
+    const ctx = context || {};
+    _state.finalAliveCount = Math.max(0, Number(ctx.aliveCount || _state.finalAliveCount || 0));
     _state.active = false;
     _state.result = result;
     const snap = JSON.parse(JSON.stringify({
@@ -485,7 +525,7 @@
       items: _state.items.map(i => ({ id: i.id, name: i.name, icon: i.icon })),
       totalTurns: _state.totalTurns || 0,
       stageTurns: _state.stageTurns ? _state.stageTurns.slice() : [],
-      clearRank: getClearRank(_state.totalTurns || 0),
+      clearRank: getClearRank(_state.totalTurns || 0, { runId: _state.runId, aliveCount: _state.finalAliveCount || 0 }),
       result,
     }));
     console.log('[RogueliteRun] ラン終了:', result, snap);
@@ -571,6 +611,7 @@
     getTotalTurns,
     getStageTurns,
     getClearRank,
+    getClearRankConditions,
     advance,
     end,
     buildBattleConfig,
