@@ -1060,6 +1060,30 @@ function pickRandomBoardCells(count) {
   }
 
   function makeEnemy(def, row, col) {
+    // イリシュ本体：低HP・高機動のヒット＆アウェイ型へ統一。
+    // データ定義側が旧設定でも、Battle32起動時に現行仕様を優先する。
+    if (def && (def.id === 'enemy_irish_roguelite' || def.specialActionType === 'irish_destruction_4')) {
+      def = {
+        ...def,
+        hp: 3000,
+        hpMax: 3000,
+        fixedPosition: false,
+        moveType: 'irish_hit_and_away',
+        allowBossMovement: true,
+        customMoveOffsets: [
+          { dr: -1, dc:  0 }, // 後方1
+          { dr:  0, dc: -1 }, // 左1
+          { dr:  0, dc:  1 }, // 右1
+          { dr:  1, dc:  0 }, // 前方1
+          { dr:  2, dc:  0 }, // 前方2
+        ],
+        aiType: 'hit_and_away',
+        retreatAfterAttack: true,
+        retreatDistance: 2,
+        retreatTarget: 'away_from_attack_target',
+      };
+    }
+
     return {
       _uid: uid(),
       id: def.id,
@@ -1092,6 +1116,7 @@ function pickRandomBoardCells(count) {
       customMoveOffsets: Array.isArray(def.customMoveOffsets)
         ? def.customMoveOffsets.map(offset => ({ dr: Number(offset.dr || 0), dc: Number(offset.dc || 0) }))
         : null,
+      allowBossMovement: !!def.allowBossMovement,
       uiScale:     def.uiScale    || {},
 
       // 通常敵AI拡張（ヒット＆アウェイ等）
@@ -1319,6 +1344,8 @@ const enemies = enemyDefs.map(def => {
         current: calcLinkMax(1),
         max: calcLinkMax(1),
         cap: 6,
+        // レヴィ「追憶抹消」など、次の味方ターン開始時に適用するLINK減少予約
+        pendingTurnStartPenalty: 0,
       },
 
       // ── ローグライト: ロスター（5体持ち込み）──
@@ -4689,6 +4716,27 @@ function doBossLineAttack(boss) {
       occupied.add(`${unit.row}-${unit.col}`);
     });
 
+    // 専用移動レンジを持つヒット＆アウェイ型は、離脱時も同じレンジだけを使う。
+    // イリシュ：後方1・左右1・前方1/2。
+    if (
+      enemy.aiType === 'hit_and_away' &&
+      Array.isArray(enemy.customMoveOffsets) &&
+      enemy.customMoveOffsets.length > 0
+    ) {
+      return enemy.customMoveOffsets
+        .map(({ dr, dc }) => ({
+          row: Number(enemy.row) + Number(dr || 0),
+          col: Number(enemy.col) + Number(dc || 0),
+          steps: Math.abs(Number(dr || 0)) + Math.abs(Number(dc || 0)),
+        }))
+        .filter(cell =>
+          cell.steps > 0 &&
+          cell.steps <= maxDist &&
+          BR.isValidCell(cell.row, cell.col) &&
+          !occupied.has(`${cell.row}-${cell.col}`)
+        );
+    }
+
     const startKey = `${enemy.row}-${enemy.col}`;
     const visited = new Set([startKey]);
     const queue = [{ row: enemy.row, col: enemy.col, steps: 0 }];
@@ -5295,8 +5343,8 @@ function doBossLineAttack(boss) {
     return shuffle(cells);
   }
 
-  async function _riviaTeleport(enemy, title) {
-    const next = _riviaEmptyCells(3)[0];
+  async function _riviaTeleport(enemy, title, plannedDestination) {
+    const next = plannedDestination || _riviaEmptyCells(3)[0];
     if (!next) return;
     await _centerTextWait(title || '消失', '姿が記録から消える', B32_WAIT.enemyAction);
     _emit('enemyVanish', { enemy:{...enemy}, bs:_snapshot() });
@@ -5307,13 +5355,47 @@ function doBossLineAttack(boss) {
     _emit('enemyReappear', { enemy:{...enemy}, bs:_snapshot() });
   }
 
-  function _riviaDiagonalCells(enemy) {
+  function _riviaDiagonalCellsAt(row, col) {
     const cells = new Set();
     [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => {
-      let r = enemy.row + dr, c = enemy.col + dc;
+      let r = Number(row) + dr, c = Number(col) + dc;
       while (BR.isValidCell(r,c)) { cells.add(`${r}-${c}`); r += dr; c += dc; }
     });
     return cells;
+  }
+
+  function _riviaDiagonalCells(enemy) {
+    return enemy ? _riviaDiagonalCellsAt(enemy.row, enemy.col) : new Set();
+  }
+
+  // ガイドと実行で同じ転移先・攻撃軌道を使うため、味方フェーズ開始前に先行決定する。
+  function _makeRiviaTeleportPlan(enemy) {
+    if (!enemy) return null;
+    const destination = _riviaEmptyCells(3)[0] || null;
+    if (!destination) return { destination:null, cells:[] };
+    return {
+      destination: { row:Number(destination.row), col:Number(destination.col) },
+      cells: Array.from(_riviaDiagonalCellsAt(destination.row, destination.col)).map(key => {
+        const [row, col] = key.split('-').map(Number);
+        return { row, col };
+      }),
+    };
+  }
+
+  function _ensureRiviaCasterPlan(enemy) {
+    if (!enemy) return null;
+    const turn = Math.max(1, Number(_bs && _bs.turn || 1));
+    const current = enemy._riviaCasterPlan;
+    if (current && Number(current.decidedTurn) === turn) return current;
+    const plan = _makeRiviaTeleportPlan(enemy) || { destination:null, cells:[] };
+    enemy._riviaCasterPlan = {
+      id:'vanish',
+      title:'虚像星芒',
+      sub:'姿を消して別地点から斜めに攻撃する',
+      ...plan,
+      decidedTurn:turn,
+    };
+    return enemy._riviaCasterPlan;
   }
 
   async function _riviaDamageCells(enemy, cells, title, rate) {
@@ -5333,13 +5415,27 @@ function doBossLineAttack(boss) {
   }
 
   async function _runRiviaVanishCaster(enemy) {
-    await _riviaTeleport(enemy, '記録消失');
-    await _riviaDamageCells(enemy, _riviaDiagonalCells(enemy), '虚像星芒', Number(enemy.specialActionDamageRate || 0.90));
+    const plan = _ensureRiviaCasterPlan(enemy);
+    enemy._riviaCasterPlan = null;
+    await _riviaTeleport(enemy, '記録消失', plan && plan.destination);
+    const cells = new Set((plan && plan.cells || []).map(c => `${c.row}-${c.col}`));
+    await _riviaDamageCells(enemy, cells.size ? cells : _riviaDiagonalCells(enemy), '虚像星芒', Number(enemy.specialActionDamageRate || 0.90));
+
+    // 次の味方フェーズ用の転移先と攻撃軌道を、行動終了時点で確定しておく。
+    const nextPlan = _makeRiviaTeleportPlan(enemy) || { destination:null, cells:[] };
+    enemy._riviaCasterPlan = {
+      id:'vanish',
+      title:'虚像星芒',
+      sub:'姿を消して別地点から斜めに攻撃する',
+      ...nextPlan,
+      decidedTurn:Math.max(1, Number(_bs && _bs.turn || 1) + 1),
+    };
+    _renderUI();
   }
 
   const RIVIA_ACTIONS = [
     { id:'forget', title:'記憶剥離', sub:'ランダムな1体が次のターン、スキルを忘れる' },
-    { id:'erase', title:'追憶抹消', sub:'味方の強化効果とLINKを消去する' },
+    { id:'erase', title:'追憶抹消', sub:'味方の強化効果を消去し、次ターン開始時のLINKを1減らす' },
     { id:'vanish', title:'存在消失', sub:'姿を消して別地点から斜めに攻撃する' },
   ];
 
@@ -5349,7 +5445,13 @@ function doBossLineAttack(boss) {
     const selected = (t % 4 === 0)
       ? { id:'blank', title:'白紙化', sub:'全員のスキル記憶とLINKを消去する' }
       : RIVIA_ACTIONS[Math.floor(Math.random() * RIVIA_ACTIONS.length)];
-    enemy._riviaNextAction = { ...selected, cells:[], decidedTurn:t };
+    const teleportPlan = selected.id === 'vanish' ? _makeRiviaTeleportPlan(enemy) : null;
+    enemy._riviaNextAction = {
+      ...selected,
+      cells: teleportPlan ? teleportPlan.cells : [],
+      destination: teleportPlan ? teleportPlan.destination : null,
+      decidedTurn:t,
+    };
     return enemy._riviaNextAction;
   }
 
@@ -5363,7 +5465,12 @@ function doBossLineAttack(boss) {
   function _initializeRiviaNextActions() {
     if (!_bs || !Array.isArray(_bs.enemies)) return;
     _bs.enemies.forEach(e => {
-      if (e && (e.id === 'enemy_rivia_roguelite' || e.specialActionType === 'rivia_oblivion_4')) _ensureRiviaNextAction(e);
+      if (!e) return;
+      if (e.id === 'enemy_rivia_roguelite' || e.specialActionType === 'rivia_oblivion_4') {
+        _ensureRiviaNextAction(e);
+      } else if (e.specialActionType === 'rivia_vanish_caster') {
+        _ensureRiviaCasterPlan(e);
+      }
     });
   }
 
@@ -5382,8 +5489,11 @@ function doBossLineAttack(boss) {
       allies.forEach(a => {
         a.statusEffects = (a.statusEffects || []).filter(e => !['atk_up','critical_up','crit_up','damage_cut','hp_up'].includes(e && e.type));
       });
-      if (_bs.link) _bs.link.current = Math.max(0, Number(_bs.link.current || 0) - 3);
-      _log('味方の強化効果とLINK 3が消去された');
+      if (_bs.link) {
+        _bs.link.pendingTurnStartPenalty =
+          Math.max(0, Number(_bs.link.pendingTurnStartPenalty || 0)) + 2;
+      }
+      _log('味方の強化効果が消去され、次ターン開始時のLINK -2が予約された');
       _renderUI(); await wait(B32_WAIT.attack);
     } else if (selected.id === 'blank') {
       await _centerTextWait('⚠️ 白紙化', selected.sub, B32_WAIT.guide);
@@ -5392,8 +5502,9 @@ function doBossLineAttack(boss) {
       _log('全員のスキル記憶とLINKが白紙化された');
       _renderUI(); await wait(B32_WAIT.attack);
     } else {
-      await _riviaTeleport(enemy, selected.title);
-      await _riviaDamageCells(enemy, _riviaDiagonalCells(enemy), '忘却星界', Number(enemy.specialActionDamageRate || 0.95));
+      await _riviaTeleport(enemy, selected.title, selected.destination);
+      const plannedCells = new Set((selected.cells || []).map(c => `${c.row}-${c.col}`));
+      await _riviaDamageCells(enemy, plannedCells.size ? plannedCells : _riviaDiagonalCells(enemy), '忘却星界', Number(enemy.specialActionDamageRate || 0.95));
     }
 
     _rollRiviaNextAction(enemy, Number(_bs && _bs.turn || 1) + 1);
@@ -5484,8 +5595,8 @@ function doBossLineAttack(boss) {
       return;
     }
 
-    // ボスは固定（射程外でも移動しない）
-    if (enemy.isBoss) {
+    // 通常ボスは固定。allowBossMovement を持つボス（イリシュ等）は射程外なら接近する。
+    if (enemy.isBoss && !enemy.allowBossMovement) {
       // await _centerTextWait(enemy.name, 'NO ACTION', B32_WAIT.enemyAction);
       return;
     }
@@ -5666,6 +5777,18 @@ function doBossLineAttack(boss) {
 
     _applyTurnStartBlessing32();
 
+    // レヴィ「追憶抹消」：発動した次の味方ターン開始時にLINKを減らす。
+    // LINK全回復とターン開始加護の処理後に適用し、現在値を0未満にはしない。
+    if (_bs.link) {
+      const pendingPenalty = Math.max(0, Math.floor(Number(_bs.link.pendingTurnStartPenalty || 0)));
+      if (pendingPenalty > 0) {
+        const before = Number(_bs.link.current || 0);
+        _bs.link.current = Math.max(0, before - pendingPenalty);
+        _bs.link.pendingTurnStartPenalty = 0;
+        _log(`追憶抹消：ターン開始時 LINK ${before} → ${_bs.link.current}`);
+      }
+    }
+
     // TODO: カード廃止後の通常移動処理をここに実装する
     // ※ SUPPORT_CARDS (cards.js) は Battle32 では参照しない。
     //   位置入替はローグライトOPの「布陣入替」として将来実装予定。
@@ -5786,8 +5909,12 @@ function doBossLineAttack(boss) {
               || _bs.enemies.find(u => u._uid === unitUid);
 
     if (!unit) return [];
-    // 敵：ボス・moveType:'none' は移動なし
-    if (unit.side === 'enemy' && (unit.isBoss || unit.moveType === 'none')) return [];
+    // 敵：通常ボス・moveType:'none' は移動なし。
+    // allowBossMovement=true のボスは専用移動レンジを使用できる。
+    if (
+      unit.side === 'enemy' &&
+      ((unit.isBoss && !unit.allowBossMovement) || unit.moveType === 'none')
+    ) return [];
     // HP0 の非ボス敵は移動なし
     if (unit.hp <= 0 && !unit.isBoss) return [];
 

@@ -1080,17 +1080,28 @@ function _hideHud() {
   // ── ラン結果画面 ─────────────────────────────────────────
   function _getRankFromTurns(totalTurns, context) {
     const ctx = context || {};
+    const t = Number(totalTurns || 0);
+    const aliveCount = Math.max(0, Number(ctx.aliveCount || 0));
+    const runId = String(ctx.runId || 'default');
+
+    // リヴィアは現行RogueliteRun側の旧18TURN条件より、この24TURN条件を優先する。
+    if (runId === 'rivia') {
+      if (t <= 24) return 'S';
+      if (t <= 35) return 'A';
+      if (t <= 38) return 'B';
+      if (t <= 41) return 'C';
+      if (t <= 45) return 'D';
+      return 'E';
+    }
+
     if (window.RogueliteRun && typeof window.RogueliteRun.getClearRank === 'function') {
       return window.RogueliteRun.getClearRank(totalTurns, ctx);
     }
 
-    const t = Number(totalTurns || 0);
-    const aliveCount = Math.max(0, Number(ctx.aliveCount || 0));
-    const runId = String(ctx.runId || 'default');
     const rules = {
       overseer: { maxTurns: 20, minAlive: 0 },
       irish:    { maxTurns: 30, minAlive: 2 },
-      rivia:    { maxTurns: 18, minAlive: 0 },
+      rivia:    { maxTurns: 24, minAlive: 0 },
       sakiel:   { maxTurns: 20, minAlive: 3 },
     };
     const rule = rules[runId];
@@ -1706,6 +1717,25 @@ function _hideHud() {
     rogueliteOnBattleEnd: (payload) => _onBattleEnd(payload.result, payload),
     battleMode: 'roguelite',
   });
+
+  // リヴィアBOSS戦：本体に雑魚2種類を1体ずつ同行させる。
+  // buildBattleConfig後に確定させ、旧roguelite_run.jsのステージ定義にも上書き対応する。
+  const currentRunId = (typeof window.RogueliteRun.getRunId === 'function')
+    ? String(window.RogueliteRun.getRunId() || '')
+    : '';
+  const isCurrentBossStage = (typeof window.RogueliteRun.isBossStage === 'function')
+    ? !!window.RogueliteRun.isBossStage()
+    : false;
+
+  if (currentRunId === 'rivia' && isCurrentBossStage) {
+    config.enemyIds = [
+      'enemy_rivia_roguelite',
+      'rl_rivia_zako_a',
+      'rl_rivia_zako_b',
+    ];
+    // enemyIdsを優先させるため、旧ステージ定義由来のインラインenemiesは解除する。
+    delete config.enemies;
+  }
 
   console.log('[RogueliteController] Battle32.start:', config);
 

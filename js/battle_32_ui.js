@@ -508,7 +508,13 @@ function isOverseerPreviewEnemy(enemy) {
 }
 
 function isPlannedActionEnemy(enemy) {
-  return isSakielPreviewEnemy(enemy) || isOverseerPreviewEnemy(enemy) || !!(enemy && (enemy.id === 'enemy_rivia_roguelite' || enemy.specialActionType === 'rivia_oblivion_4'));
+  return isSakielPreviewEnemy(enemy) ||
+    isOverseerPreviewEnemy(enemy) ||
+    !!(enemy && (
+      enemy.id === 'enemy_rivia_roguelite' ||
+      enemy.specialActionType === 'rivia_oblivion_4' ||
+      enemy.specialActionType === 'rivia_vanish_caster'
+    ));
 }
 
 function getEnemyPlannedAction(enemy) {
@@ -522,6 +528,10 @@ function getEnemyPlannedAction(enemy) {
   }
   if (enemy && (enemy.id === 'enemy_rivia_roguelite' || enemy.specialActionType === 'rivia_oblivion_4')) {
     const next = enemy._riviaNextAction;
+    return next && next.id ? next : null;
+  }
+  if (enemy && enemy.specialActionType === 'rivia_vanish_caster') {
+    const next = enemy._riviaCasterPlan;
     return next && next.id ? next : null;
   }
   return null;
@@ -1632,7 +1642,21 @@ function getUnitUiOffsetY(unit, key) {
 // UI側でmoveTypeを判定しない。
 function getEnemyMoveGuideCells(enemy, bs) {
   if (!enemy || !bs) return [];
-  if (enemy.isBoss || enemy.moveType === 'none') return [];
+
+  // リヴィア系の「消失」は通常moveTypeではなく特殊転移。
+  // 実行時に使う先行決定済みdestinationを、そのまま移動ガイドとして表示する。
+  const planned = getEnemyPlannedAction(enemy);
+  if (planned && planned.destination &&
+      Number.isFinite(Number(planned.destination.row)) &&
+      Number.isFinite(Number(planned.destination.col))) {
+    return [{
+      row: Number(planned.destination.row),
+      col: Number(planned.destination.col),
+      cellType: 'move',
+    }];
+  }
+
+  if ((enemy.isBoss && !enemy.allowBossMovement) || enemy.moveType === 'none') return [];
   if (!window.Battle32 || typeof window.Battle32.getMoveCells !== 'function') return [];
   return window.Battle32.getMoveCells(enemy._uid);
 }
@@ -6394,6 +6418,78 @@ function _onHealEvent(data) {
      if (!isTouchAssistDevice) return;
 
      const cellSize = parseFloat(getComputedStyle(root).getPropertyValue('--cell-size')) || 42;
+
+     // ------------------------------------------------------------
+     // 味方ユニットタップ fallback
+     // ------------------------------------------------------------
+     // 3D傾斜時、奥側の立ち絵はセル矩形より手前へ大きくはみ出す。
+     // .b32-unit は pointer-events:none のため、見えている立ち絵を押しても
+     // 背後の別セルや board 自体が target になり、味方選択が抜けることがある。
+     // まず通常の味方セルへ届いている場合は onclick に任せ、届いていない場合だけ
+     // 立ち絵の実表示矩形を使って該当味方を補助選択する。
+     const allyTapMode =
+       !_moveMode &&
+       !_summonMode &&
+       !(_itemMode && _itemPhase === 'cell');
+
+     if (allyTapMode) {
+       const directAllyCell = e.target && e.target.closest
+         ? e.target.closest('.b32-cell.ally-inspectable, .b32-cell.skill-selectable, .b32-cell.skill-selected')
+         : null;
+
+       if (!directAllyCell || !currentBoard.contains(directAllyCell)) {
+         const allyCells = Array.from(currentBoard.querySelectorAll(
+           '.b32-cell.ally-inspectable, .b32-cell.skill-selectable, .b32-cell.skill-selected'
+         ));
+
+         let bestAllyCell = null;
+         let bestAllyScore = Infinity;
+
+         allyCells.forEach(cell => {
+           const unitEl = cell.querySelector('.b32-unit.ally');
+           const visualEl = unitEl && (unitEl.querySelector('.b32-unit-icon') || unitEl);
+           if (!visualEl) return;
+
+           const rect = visualEl.getBoundingClientRect();
+           if (rect.width <= 0 || rect.height <= 0) return;
+
+           // 透明余白の多い画像でも隣接ユニットを奪いにくいよう、
+           // 横方向だけ少し内側へ絞った可視ヒット領域を使う。
+           const insetX = Math.min(rect.width * 0.16, cellSize * 0.22);
+           const hitLeft = rect.left + insetX;
+           const hitRight = rect.right - insetX;
+           const hitTop = rect.top;
+           const hitBottom = rect.bottom + Math.max(4, cellSize * 0.10);
+
+           const inside =
+             e.clientX >= hitLeft && e.clientX <= hitRight &&
+             e.clientY >= hitTop && e.clientY <= hitBottom;
+
+           const cx = (hitLeft + hitRight) / 2;
+           const cy = hitTop + (hitBottom - hitTop) * 0.58;
+           const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+           const score = inside ? dist * 0.20 : dist;
+
+           if (score < bestAllyScore) {
+             bestAllyScore = score;
+             bestAllyCell = cell;
+           }
+         });
+
+         // 立ち絵付近だけを補助対象にし、盤面外や隣マスへの誤吸着を防ぐ。
+         const allyThreshold = Math.max(40, cellSize * 1.12);
+         if (bestAllyCell && bestAllyScore <= allyThreshold) {
+           const onclick = bestAllyCell.getAttribute('onclick') || '';
+           const m = onclick.match(/_b32OnSkillAllyTap\('([^']+)'\)/);
+           if (m && m[1] && typeof window._b32OnSkillAllyTap === 'function') {
+             e.preventDefault();
+             e.stopPropagation();
+             window._b32OnSkillAllyTap(m[1]);
+             return;
+           }
+         }
+       }
+     }
 
      // ------------------------------------------------------------
      // 敵情報タップ fallback
