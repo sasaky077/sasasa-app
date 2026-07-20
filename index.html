@@ -8264,57 +8264,369 @@ window.addEventListener('pagehide', function () {
 <script id="roguelite-condition-script">
 (function () {
   'use strict';
-  const LONG_PRESS_MS=520,MOVE_CANCEL_PX=12;
-  let suppressClickUntil=0;
-  const RUN_INFO={
+
+  const LONG_PRESS_MS = 520;
+  const MOVE_CANCEL_PX = 12;
+  const PORTAL_ID = 'roguelite-condition-viewport-portal';
+  let suppressClickUntil = 0;
+
+  const RUN_INFO = {
     overseer:{title:'観察',sub:'レムナント：オーバーシア',coreName:'オーバーシアの心核',coreImg:'images/remnant_01_panel.webp',s:'20TURN以内にクリア'},
     irish:{title:'破壊',sub:'レムナント：イリシュ',coreName:'イリシュの心核',coreImg:'images/remnant_02_panel.webp',s:'2体以上生存かつ30TURN以内にクリア'},
     rivia:{title:'償却',sub:'レムナント：リヴィア',coreName:'リヴィアの心核',coreImg:'images/remnant_03_panel.webp',s:'18TURN以内にクリア'},
     sakiel:{title:'真実',sub:'大天使 サキエル',coreName:'サキエルの心核',coreImg:'images/remnant_04_panel.webp',s:'3体以上生存かつ20TURN以内にクリア'}
   };
-  const REWARDS={S:{coin:500,core:100},A:{coin:400,core:70},B:{coin:300,core:50},C:{coin:220,core:30},D:{coin:150,core:15},E:{coin:100,core:5}};
-  function rows(info){return[{rank:'S',text:info.s},{rank:'A',text:'S条件未達かつ35TURN以内にクリア'},{rank:'B',text:'36～38TURNでクリア'},{rank:'C',text:'39～41TURNでクリア'},{rank:'D',text:'42～45TURNでクリア'},{rank:'E',text:'46TURN以上でクリア'}]}
-  function img(src,alt){return "<img src=\"" + src + "\" alt=\"" + alt + "\" onerror=\"this.style.display='none'\">"}
-  let previousBodyOverflow='';
-  function ensureModalPortal(){
-    const modal=document.getElementById('roguelite-condition-modal');
-    if(modal&&modal.parentElement!==document.body)document.body.appendChild(modal);
-    return modal;
+
+  const REWARDS = {
+    S:{coin:500,core:100},
+    A:{coin:400,core:70},
+    B:{coin:300,core:50},
+    C:{coin:220,core:30},
+    D:{coin:150,core:15},
+    E:{coin:100,core:5}
+  };
+
+  function rows(info) {
+    return [
+      {rank:'S',text:info.s},
+      {rank:'A',text:'S条件未達かつ35TURN以内にクリア'},
+      {rank:'B',text:'36～38TURNでクリア'},
+      {rank:'C',text:'39～41TURNでクリア'},
+      {rank:'D',text:'42～45TURNでクリア'},
+      {rank:'E',text:'46TURN以上でクリア'}
+    ];
   }
-  function open(runId){
-    const info=RUN_INFO[runId],modal=ensureModalPortal();if(!info||!modal)return;
-    document.getElementById('roguelite-condition-title').textContent=info.title;
-    document.getElementById('roguelite-condition-sub').textContent=info.sub;
-    document.getElementById('roguelite-condition-main-rewards').innerHTML=[
-      '<div class="roguelite-condition-reward">'+img(info.coreImg,info.coreName)+'<span><b>心核</b><br>ランク別抽選</span></div>',
-      '<div class="roguelite-condition-reward">'+img('images/icon_coin.webp','コイン')+'<span><b>コイン</b><br>クリア報酬</span></div>',
-      '<div class="roguelite-condition-reward">'+img('images/item_kyoumeistone.webp','共鳴石')+'<span><b>共鳴石</b><br>ランク別個数</span></div>',
-      '<div class="roguelite-condition-reward">'+img('images/item_logos.webp','LOGOSの器')+'<span><b>LOGOSの器</b><br>抽選候補</span></div>',
-      '<div class="roguelite-condition-reward">'+img('images/item_chaos.webp','CHAOSの器')+'<span><b>CHAOSの器</b><br>抽選候補</span></div>',
-      '<div class="roguelite-condition-reward">'+img('images/item_mystis.webp','MYSTISの器')+'<span><b>MYSTISの器</b><br>抽選候補</span></div>'
-    ].join('');
-    document.getElementById('roguelite-condition-ranks').innerHTML=rows(info).map(function(row){const r=REWARDS[row.rank];return '<div class="roguelite-rank-row rank-'+row.rank.toLowerCase()+'"><div class="roguelite-rank-badge">'+row.rank+'</div><div class="roguelite-rank-condition">'+row.text+'</div><div class="roguelite-rank-reward"><b>'+r.coin+' COIN</b>心核 '+r.core+'%</div></div>'}).join('');
-    const sheet=modal.querySelector('.roguelite-condition-sheet');if(sheet)sheet.scrollTop=0;previousBodyOverflow=document.body.style.overflow||'';modal.classList.add('show');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
   }
-  function close(){const m=document.getElementById('roguelite-condition-modal');if(!m)return;m.classList.remove('show');m.setAttribute('aria-hidden','true');document.body.style.overflow=previousBodyOverflow;previousBodyOverflow=''}
-  function bind(card){
-    if(!card||card.dataset.rogueliteLongpressBound==='1')return;card.dataset.rogueliteLongpressBound='1';
-    let timer=null,sx=0,sy=0,opened=false;
-    function clear(){if(timer)clearTimeout(timer);timer=null;card.classList.remove('is-longpressing')}
-    function start(x,y){opened=false;sx=x;sy=y;clear();card.classList.add('is-longpressing');timer=setTimeout(function(){timer=null;opened=true;suppressClickUntil=Date.now()+800;card.classList.remove('is-longpressing');if(navigator.vibrate)navigator.vibrate(25);open(card.dataset.rogueliteRun)},LONG_PRESS_MS)}
-    function move(x,y){if(Math.abs(x-sx)>MOVE_CANCEL_PX||Math.abs(y-sy)>MOVE_CANCEL_PX)clear()}
-    card.addEventListener('touchstart',e=>{const t=e.touches&&e.touches[0];if(t)start(t.clientX,t.clientY)},{passive:true});
-    card.addEventListener('touchmove',e=>{const t=e.touches&&e.touches[0];if(t)move(t.clientX,t.clientY)},{passive:true});
-    card.addEventListener('touchend',clear,{passive:true});card.addEventListener('touchcancel',clear,{passive:true});
-    card.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')start(e.clientX,e.clientY)});
-    card.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')move(e.clientX,e.clientY)});
-    ['pointerup','pointercancel','pointerleave'].forEach(n=>card.addEventListener(n,clear));
-    card.addEventListener('contextmenu',e=>e.preventDefault());
-    card.addEventListener('click',function(e){if(opened||Date.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();opened=false}},true);
+
+  function rewardCard(src, title, sub) {
+    return '<div class="rlc-vp-reward">'
+      + '<img src="' + esc(src) + '" alt="' + esc(title) + '" onerror="this.style.display=\'none\'">'
+      + '<span><b>' + esc(title) + '</b><br>' + esc(sub) + '</span>'
+      + '</div>';
   }
-  function setup(){ensureModalPortal();document.querySelectorAll('.roguelite-entry-card').forEach(bind);document.querySelectorAll('[data-roguelite-condition-close]').forEach(el=>{el.addEventListener('click',close);el.addEventListener('touchend',function(e){e.preventDefault();close()},{passive:false})});document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});document.addEventListener('click',function(e){if(e.target.closest('.bottom-nav-item,.bottom-nav button,[data-screen],.nav-item'))close()},true);window.addEventListener('pageshow',function(){const m=document.getElementById('roguelite-condition-modal');if(m&&!m.classList.contains('show'))document.body.style.overflow=''})}
-  window.openRogueliteConditionModal=open;window.closeRogueliteConditionModal=close;
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
+
+  function removePortal() {
+    const portal = document.getElementById(PORTAL_ID);
+    if (portal) portal.remove();
+  }
+
+  function close() {
+    removePortal();
+  }
+
+  function buildPortal(info) {
+    removePortal();
+
+    const portal = document.createElement('div');
+    portal.id = PORTAL_ID;
+    portal.setAttribute('role', 'dialog');
+    portal.setAttribute('aria-modal', 'true');
+    portal.setAttribute('aria-label', 'クリア条件');
+
+    /* 重要：
+       body / .screen / .ninmu-right の座標系を一切使わず、
+       documentElement直下へ固定配置する。 */
+    portal.style.cssText = [
+      'position:fixed',
+      'left:0',
+      'top:0',
+      'right:0',
+      'bottom:0',
+      'width:100%',
+      'height:100%',
+      'height:100dvh',
+      'z-index:2147483000',
+      'display:block',
+      'overflow-x:hidden',
+      'overflow-y:auto',
+      '-webkit-overflow-scrolling:touch',
+      'overscroll-behavior:contain',
+      'touch-action:pan-y',
+      'background:rgba(26,18,8,.64)',
+      'padding:calc(env(safe-area-inset-top,0px) + 8px) 8px calc(env(safe-area-inset-bottom,0px) + 18px)',
+      'box-sizing:border-box',
+      'transform:none',
+      'margin:0'
+    ].join(';');
+
+    const rankHtml = rows(info).map(function(row) {
+      const r = REWARDS[row.rank];
+      return '<div class="rlc-vp-rank">'
+        + '<div class="rlc-vp-badge">' + row.rank + '</div>'
+        + '<div class="rlc-vp-condition">' + esc(row.text) + '</div>'
+        + '<div class="rlc-vp-rank-reward"><b>' + r.coin + ' COIN</b><span>心核 ' + r.core + '%</span></div>'
+        + '</div>';
+    }).join('');
+
+    portal.innerHTML =
+      '<div class="rlc-vp-backdrop" data-rlc-close></div>'
+      + '<section class="rlc-vp-sheet">'
+      +   '<button type="button" class="rlc-vp-close" data-rlc-close aria-label="閉じる">×</button>'
+      +   '<div class="rlc-vp-kicker">ROGUELITE CLEAR RANK</div>'
+      +   '<h2>' + esc(info.title) + '</h2>'
+      +   '<div class="rlc-vp-sub">' + esc(info.sub) + '</div>'
+      +   '<div class="rlc-vp-rewards">'
+      +     rewardCard(info.coreImg,'心核','ランク別抽選')
+      +     rewardCard('images/icon_coin.webp','コイン','クリア報酬')
+      +     rewardCard('images/item_kyoumeistone.webp','共鳴石','ランク別個数')
+      +     rewardCard('images/item_logos.webp','LOGOSの器','抽選候補')
+      +     rewardCard('images/item_chaos.webp','CHAOSの器','抽選候補')
+      +     rewardCard('images/item_mystis.webp','MYSTISの器','抽選候補')
+      +   '</div>'
+      +   '<div class="rlc-vp-ranks">' + rankHtml + '</div>'
+      +   '<div class="rlc-vp-note">心核はクリアランクに応じた確率で獲得できます。</div>'
+      + '</section>';
+
+    const style = document.createElement('style');
+    style.textContent = `
+      #${PORTAL_ID} .rlc-vp-backdrop{
+        position:fixed;inset:0;z-index:0;
+      }
+      #${PORTAL_ID} .rlc-vp-sheet{
+        position:relative;z-index:1;
+        width:calc(100% - 4px);
+        max-width:420px;
+        min-height:0;
+        margin:0 auto;
+        padding:20px 12px 18px;
+        box-sizing:border-box;
+        color:#5d4b35;
+        font-family:"Noto Serif JP",serif;
+        border:1px solid rgba(173,139,82,.48);
+        border-radius:12px;
+        background:linear-gradient(165deg,#fffdf7,#f4eddf);
+        box-shadow:0 18px 52px rgba(49,32,12,.42);
+        overflow:visible;
+        transform:none!important;
+      }
+      #${PORTAL_ID} .rlc-vp-close{
+        position:sticky;
+        top:0;
+        float:right;
+        z-index:10;
+        width:42px;height:42px;
+        margin:-12px -5px -32px 0;
+        border:1px solid rgba(150,120,75,.24);
+        border-radius:50%;
+        background:#fffdf7;
+        color:#765f42;
+        font-size:29px;
+        line-height:38px;
+        text-align:center;
+        box-shadow:0 2px 10px rgba(49,32,12,.18);
+        touch-action:manipulation;
+        -webkit-tap-highlight-color:transparent;
+      }
+      #${PORTAL_ID} .rlc-vp-kicker{
+        clear:both;text-align:center;
+        font-family:"Cinzel",serif;
+        font-size:8px;letter-spacing:.18em;color:#aa8b5e;
+        padding-top:2px;
+      }
+      #${PORTAL_ID} h2{
+        margin:5px 40px 2px;
+        text-align:center;
+        font-size:20px;
+        letter-spacing:.1em;
+        font-weight:600;
+      }
+      #${PORTAL_ID} .rlc-vp-sub{
+        text-align:center;font-size:9px;color:#a08a6c;letter-spacing:.06em;
+      }
+      #${PORTAL_ID} .rlc-vp-rewards{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:6px;
+        margin:13px 0 10px;
+      }
+      #${PORTAL_ID} .rlc-vp-reward{
+        display:flex;align-items:center;gap:6px;
+        min-width:0;padding:7px;
+        border:1px solid rgba(171,136,78,.22);
+        border-radius:8px;
+        background:rgba(255,255,255,.58);
+      }
+      #${PORTAL_ID} .rlc-vp-reward img{
+        width:27px;height:27px;object-fit:contain;flex:0 0 27px;
+      }
+      #${PORTAL_ID} .rlc-vp-reward span{
+        min-width:0;font-size:8px;line-height:1.35;
+      }
+      #${PORTAL_ID} .rlc-vp-reward b{font-size:9px}
+      #${PORTAL_ID} .rlc-vp-ranks{
+        display:flex;flex-direction:column;
+        border-top:1px solid rgba(160,125,70,.24);
+      }
+      #${PORTAL_ID} .rlc-vp-rank{
+        display:grid;
+        grid-template-columns:34px minmax(0,1fr) 66px;
+        gap:5px;
+        align-items:center;
+        padding:9px 1px;
+        border-bottom:1px solid rgba(160,125,70,.18);
+      }
+      #${PORTAL_ID} .rlc-vp-badge{
+        width:31px;height:31px;border-radius:50%;
+        display:grid;place-items:center;
+        font-family:"Cinzel",serif;
+        font-size:17px;font-weight:700;
+        border:1px solid rgba(151,117,64,.28);
+        background:rgba(255,255,255,.65);
+      }
+      #${PORTAL_ID} .rlc-vp-condition{
+        min-width:0;
+        font-size:9px;
+        line-height:1.45;
+        overflow-wrap:anywhere;
+      }
+      #${PORTAL_ID} .rlc-vp-rank-reward{
+        text-align:right;font-size:8px;line-height:1.35;color:#8a7353;
+      }
+      #${PORTAL_ID} .rlc-vp-rank-reward b{
+        display:block;font-family:"Cinzel",serif;font-size:11px;color:#725b3d;
+      }
+      #${PORTAL_ID} .rlc-vp-rank-reward span{display:block}
+      #${PORTAL_ID} .rlc-vp-note{
+        margin-top:10px;text-align:center;font-size:8px;color:#9b8668;
+      }
+      @media (max-width:340px){
+        #${PORTAL_ID}{padding-left:5px!important;padding-right:5px!important}
+        #${PORTAL_ID} .rlc-vp-sheet{width:100%;padding-left:9px;padding-right:9px}
+        #${PORTAL_ID} .rlc-vp-rank{grid-template-columns:32px minmax(0,1fr) 62px;gap:3px}
+        #${PORTAL_ID} .rlc-vp-condition{font-size:8px}
+      }
+    `;
+    portal.appendChild(style);
+
+    /* bodyではなくhtml直下へ置くことで、巡行レイアウトのtransform/
+       overflow/positioning contextから完全に分離する。 */
+    document.documentElement.appendChild(portal);
+
+    portal.querySelectorAll('[data-rlc-close]').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      });
+      el.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      }, {passive:false});
+    });
+
+    portal.scrollTop = 0;
+  }
+
+  function open(runId) {
+    const info = RUN_INFO[runId];
+    if (!info) return;
+    buildPortal(info);
+  }
+
+  function bind(card) {
+    if (!card || card.dataset.rogueliteLongpressBound === '1') return;
+    card.dataset.rogueliteLongpressBound = '1';
+
+    let timer = null;
+    let sx = 0;
+    let sy = 0;
+    let opened = false;
+
+    function clear() {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      card.classList.remove('is-longpressing');
+    }
+
+    function start(x, y) {
+      opened = false;
+      sx = x;
+      sy = y;
+      clear();
+      card.classList.add('is-longpressing');
+      timer = setTimeout(function() {
+        timer = null;
+        opened = true;
+        suppressClickUntil = Date.now() + 900;
+        card.classList.remove('is-longpressing');
+        if (navigator.vibrate) navigator.vibrate(25);
+        open(card.dataset.rogueliteRun);
+      }, LONG_PRESS_MS);
+    }
+
+    function move(x, y) {
+      if (Math.abs(x - sx) > MOVE_CANCEL_PX || Math.abs(y - sy) > MOVE_CANCEL_PX) clear();
+    }
+
+    card.addEventListener('touchstart', function(e) {
+      const t = e.touches && e.touches[0];
+      if (t) start(t.clientX, t.clientY);
+    }, {passive:true});
+
+    card.addEventListener('touchmove', function(e) {
+      const t = e.touches && e.touches[0];
+      if (t) move(t.clientX, t.clientY);
+    }, {passive:true});
+
+    card.addEventListener('touchend', clear, {passive:true});
+    card.addEventListener('touchcancel', clear, {passive:true});
+
+    card.addEventListener('pointerdown', function(e) {
+      if (e.pointerType !== 'touch') start(e.clientX, e.clientY);
+    });
+    card.addEventListener('pointermove', function(e) {
+      if (e.pointerType !== 'touch') move(e.clientX, e.clientY);
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(n) {
+      card.addEventListener(n, clear);
+    });
+
+    card.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    card.addEventListener('click', function(e) {
+      if (opened || Date.now() < suppressClickUntil) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        opened = false;
+      }
+    }, true);
+  }
+
+  function setup() {
+    /* 旧モーダルは表示対象にしない。既存HTMLは残して互換性だけ保持。 */
+    const oldModal = document.getElementById('roguelite-condition-modal');
+    if (oldModal) {
+      oldModal.classList.remove('show');
+      oldModal.setAttribute('aria-hidden','true');
+      oldModal.style.display = 'none';
+    }
+
+    document.querySelectorAll('.roguelite-entry-card').forEach(bind);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') close();
+    });
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.bottom-nav-item,.bottom-nav button,[data-screen],.nav-item')) close();
+    }, true);
+    window.addEventListener('pagehide', close);
+  }
+
+  window.openRogueliteConditionModal = open;
+  window.closeRogueliteConditionModal = close;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup, {once:true});
+  } else {
+    setup();
+  }
 })();
 </script>
 </body>
