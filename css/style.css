@@ -11424,11 +11424,12 @@ body,
 }
 
 #screen-main .home-notice-btn {
-  top: calc(var(--header-h) + 118px);
+  /* イベントバナーの直下。バナーと重ならないよう少し余白を確保 */
+  top: calc(env(safe-area-inset-top) + 202px);
 }
 
 #screen-main .shinju-home-entry {
-  top: calc(var(--header-h) + 216px);
+  top: calc(env(safe-area-inset-top) + 300px);
 }
 
 #screen-main .home-notice-btn > img,
@@ -14128,4 +14129,223 @@ body,
   font-size: 13px;
   font-weight: 700;
   line-height: 1.55;
+}
+
+
+/* Remnant blessing INV target chooser */
+.b32-blessing-target-chooser{display:none;position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:24px}
+.b32-blessing-target-chooser.show{display:flex}
+.b32-blessing-target-card{width:min(360px,92vw);background:#111;border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:18px;box-shadow:0 16px 50px rgba(0,0,0,.8)}
+.b32-blessing-target-title{font-size:16px;text-align:center;letter-spacing:.08em;margin-bottom:14px}
+.b32-blessing-target-list{display:flex;flex-direction:column;gap:8px;max-height:48vh;overflow:auto}
+.b32-blessing-target-btn,.b32-blessing-target-cancel{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;padding:12px;font-family:inherit;font-size:14px}
+.b32-blessing-target-cancel{margin-top:14px;color:#aaa;background:transparent}
+
+
+/* =========================================================
+   07-G Summon / Pickup long-press detail
+   ========================================================= */
+#screen-summon [data-gacha-longpress] {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+  position: relative;
+}
+
+#screen-summon .summon-longpress-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 4;
+  padding: 5px 9px;
+  border: 1px solid rgba(255,255,255,.34);
+  border-radius: 999px;
+  background: rgba(0,0,0,.56);
+  color: rgba(255,255,255,.92);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: .08em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.8);
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+#screen-summon [data-gacha-longpress]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(255,255,255,.18), transparent 66%);
+  opacity: 0;
+  transform: scale(.97);
+  transition: opacity .16s ease, transform .55s linear;
+}
+
+#screen-summon [data-gacha-longpress].is-longpressing::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+#detail-modal.is-gacha-pickup-preview .detail-rank {
+  color: #cba85b;
+  letter-spacing: .12em;
+  font-weight: 700;
+}
+
+#detail-modal.is-gacha-pickup-preview .modal::before {
+  content: 'PICK UP CHARACTER';
+  display: block;
+  margin: 0 0 10px;
+  color: #b99445;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-align: center;
+}
+
+@media (max-height: 700px) {
+  #screen-summon .summon-longpress-hint {
+    right: 7px;
+    bottom: 7px;
+    font-size: 8px;
+    padding: 4px 7px;
+  }
+}
+
+/* =========================================================
+   Gacha pickup detail: title/name order and image centering fix
+   ========================================================= */
+#detail-modal .gacha-pickup-title-name {
+  display: none;
+}
+
+#detail-modal.is-gacha-pickup-preview .gacha-pickup-title-name {
+  display: block;
+  margin: -2px 0 12px;
+  color: #8b7655;
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: .12em;
+  text-align: center;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.9),
+    0 2px 5px rgba(116,88,45,.16);
+}
+
+/* キャラ名は見出し直下の専用表示へ集約 */
+#detail-modal.is-gacha-pickup-preview #detail-name {
+  display: none !important;
+}
+
+/* 220pxの親から260px画像が右へはみ出していたため、親ごと260pxで中央固定 */
+#detail-modal.is-gacha-pickup-preview #detail-chara-visual {
+  width: 260px !important;
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+#detail-modal.is-gacha-pickup-preview #detail-chara-visual .detail-visual-wrap {
+  width: 260px !important;
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  flex: 0 0 auto;
+}
+
+#detail-modal.is-gacha-pickup-preview #detail-chara-visual .detail-main-img {
+  width: 260px !important;
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+
+/* =========================================================
+   神樹：奉納可能通知バッジ
+   inventory に奉納可能アイテムが1件以上ある時、
+   shinju.js が .has-items を付与して表示する。
+   ========================================================= */
+#screen-main .shinju-home-entry .shinju-home-entry-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 17px;
+  height: 17px;
+  display: none;
+  border-radius: 50%;
+  background: #d92f38;
+  border: 2px solid rgba(255, 248, 232, 0.98);
+  box-shadow:
+    0 1px 4px rgba(70, 15, 18, 0.42),
+    0 0 8px rgba(220, 45, 55, 0.42);
+  pointer-events: none;
+  z-index: 4;
+}
+
+#screen-main .shinju-home-entry.has-items .shinju-home-entry-badge {
+  display: block;
+  animation: shinju-home-notice-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes shinju-home-notice-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 1px 4px rgba(70, 15, 18, 0.42),
+      0 0 7px rgba(220, 45, 55, 0.36);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow:
+      0 1px 5px rgba(70, 15, 18, 0.48),
+      0 0 13px rgba(235, 50, 60, 0.68);
+  }
+}
+
+/* =========================================================
+   Home right icons - iPhone SE size adjustment
+   SE系の狭い画面では、お知らせ・神樹を一回り小さくする。
+   ========================================================= */
+@media (max-width: 380px) and (max-height: 700px) {
+  #screen-main .home-notice-btn,
+  #screen-main .shinju-home-entry {
+    width: 78px;
+    height: 78px;
+  }
+
+  #screen-main .shinju-home-entry .shinju-home-entry-badge {
+    top: 4px;
+    right: 4px;
+    width: 15px;
+    height: 15px;
+  }
+}
+
+
+/* =========================================================
+   Home right icons - banner-safe dynamic placement
+   JSが実測したイベントバナー下端を基準に配置するため、
+   iPhone 14以上を含む画面幅・高さ・Safe Areaの差でも重ならない。
+   ========================================================= */
+#screen-main {
+  --home-banner-bottom: calc(env(safe-area-inset-top) + 202px);
+  --home-shinju-top: calc(env(safe-area-inset-top) + 300px);
+}
+
+#screen-main .home-notice-btn {
+  top: var(--home-banner-bottom) !important;
+}
+
+#screen-main .shinju-home-entry {
+  top: var(--home-shinju-top) !important;
 }

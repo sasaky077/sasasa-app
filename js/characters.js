@@ -42,7 +42,7 @@ const CHARACTERS = [
     battleUpImg: 'images/chara_01_battle_up.webp',
     battleBackImg: 'images/chara_01_battle_back.webp',
     panelImg: 'images/chara_01_panel.webp',
-    favScale: 0.88, favOffsetY: -10,
+    favScale: 0.80, favOffsetY: -40,
     resonanceMaterialId: 'eri_origin_wing',
     resonanceBonusProfile: 'eri_v1',
     uiScale: {panel: 1.0,battleBack: 1.2,},    
@@ -155,7 +155,7 @@ skills: [
     battleImg: 'images/chara_03_battle.webp',
     battleBackImg: 'images/chara_03_battle_back.webp',
     panelImg: 'images/chara_03_panel.webp',
-    favScale: 0.95, favOffsetY: 5,
+    favScale: 0.90, favOffsetY: -10,
     resonanceBonusProfile: 'sui_v1',
     uiScale: {panel: 1.0,battleBack: 1.5},
         combo: {
@@ -223,10 +223,14 @@ skills: [
     battleUpImg: 'images/chara_04_battle_up.webp',
     battleBackImg: 'images/chara_04_battle_back.webp',
     panelImg: 'images/chara_04_panel.webp',
+    resonanceBonusConfig: {
+      3: { comboTriggerRange: 'combo_cross_all' }
+    },
+    favScale: 0.82, favOffsetY: -50,
     uiScale: {panel: 1.0,battleBack: 1.0},
         combo: {
-      range: 'combo_cross_all',
-      skill: { id: 'combo', name: 'クイック・ギルティ', type: 'attack', multiplier: 0.90, range: 'combo_line_all', effects: [], hitStyle: 'rapid_multi', hitCount: 3, desc: '十字上の味方スキルに反応し、同じ縦列上の敵へ高速追撃する。' }
+      range: 'combo_cross_1',
+      skill: { id: 'combo', name: 'クイック・ギルティ', type: 'attack', multiplier: 0.90, range: 'combo_line_all', effects: [], hitStyle: 'rapid_multi', hitCount: 3, desc: '上下左右1マスの味方スキルに反応し、同じ縦列上の敵へ高速追撃する。' }
     },
 skills: [
       { id: 's1',
@@ -280,7 +284,7 @@ skills: [
     battleImg: 'images/chara_05_battle.webp',
     battleBackImg: 'images/chara_05_battle_back.webp',
     panelImg: 'images/chara_05_panel.webp',
-    favScale: 1.0, favOffsetY: -15,
+    favScale: 0.80, favOffsetY: -45,
     uiScale: {panel: 1.0,battleBack: 1.3},
     combo: {
       range: 'combo_x_1',
@@ -339,7 +343,7 @@ skills: [
     battleImg: 'images/chara_06_battle.webp',
     battleBackImg: 'images/chara_06_battle_back.webp',
     panelImg: 'images/chara_06_panel.webp',
-    favScale: 1.0, favOffsetY: -15,
+    favScale: 0.85, favOffsetY: -45,
     resonanceBonusProfile: 'ignis_v1',
     resonanceBonusConfig: {
       2: { skillId: 's1', selfHealAtkRate: 0.20 },
@@ -409,7 +413,7 @@ skills: [
     battleUpImg: 'images/chara_07_battle_up.webp',
     battleBackImg: 'images/chara_07_battle_back.webp',
     panelImg: 'images/chara_07_panel.webp',
-    favScale: 0.85, favOffsetY: -25,
+    favScale: 0.85, favOffsetY: -40,
     resonanceBonusProfile: 'rose_v1',
     uiScale: {panel: 1.0,battleBack: 1.5},
         combo: {
@@ -488,7 +492,7 @@ skills: [
     battleUpImg: 'images/chara_08_battle_up.webp',
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
-    favScale: 0.90, favOffsetY: -35,
+    favScale: 0.85, favOffsetY: -45,
     uiScale: {panel: 1.0,battleBack: 1.5},
     combo: {
       range: 'combo_cross_all',
@@ -766,7 +770,7 @@ skills: [
  
 
   // ── id:13 ミア
-  { id: 13, name: 'ミア', rarity: 'sr',
+  { id: 13, name: 'ミア', rarity: 'r',
     element: 'mystis',
     role: '遠距離寄り',
     moveType: 'cat_step',
@@ -784,7 +788,7 @@ skills: [
     battleImg: 'images/chara_13_battle.webp',
     battleBackImg: 'images/chara_13_battle_back.webp',
     panelImg: 'images/chara_13_panel.webp',
-    favScale: 0.90, favOffsetY: -25,
+    favScale: 0.85, favOffsetY: -40,
     uiScale: {panel: 1.0, battleBack: 1.5},
     combo: {
       range: 'combo_x_1',
@@ -822,8 +826,8 @@ skills: [
         desc: '射程：前方3〜5マスの広域遠距離。近距離には当たらない。対象の敵にATK×2.75のダメージを与え、1ターンATKを20%低下させる。' }
     ]},
 
-  // ── id:14 アヤカ
-  { id: 14, name: 'アヤカ', rarity: 'r',
+  // ── id:14 アヤネ
+  { id: 14, name: 'アヤネ', rarity: 'r',
     element: 'logos',
     role: 'テクニック寄り',
     moveType: 'front_side_jump',
@@ -841,7 +845,7 @@ skills: [
     battleImg: 'images/chara_14_battle.webp',
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
-    favScale: 0.90, favOffsetY: 10,
+    favScale: 0.80, favOffsetY: -50,
     uiScale: {panel: 1.0,battleBack: 1.5},
     combo: {
       range: 'combo_cross_1',

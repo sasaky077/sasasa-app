@@ -8748,16 +8748,30 @@ if (listEl) {
 
  function getBlessingUiDef(b) {
    if (!b) return null;
-   const passivePct = Math.round(Number(b.passiveCriticalRate || 0) * 100);
-   const invPct = Math.round(Number(b.invCriticalRate || 0) * 100);
    return {
      name: `${b.name || '加護'} Lv.${Number(b.level || 1)}`,
      invName: b.invName || 'INV',
      img: b.panelImg || 'images/unknown.webp',
-     passive: `味方全員のcritical率 +${passivePct}%`,
-     condition: `敵を合計で${Number(b.invRequiredKills || 0)}体撃破`,
-     effect: `発動ターンのみ、味方全員のcritical率 +${invPct}%`
+     passive: String((b.text && b.text.passive) || '').replace(/^常時[：:]/, ''),
+     condition: String((b.text && b.text.condition) || '').replace(/^INV条件[：:]/, ''),
+     effect: String((b.text && b.text.inv) || '').replace(/^INV[：:]/, '')
    };
+ }
+
+ function _isBlessingInvReadyUi(bs, b) {
+   if (!bs || !b || b.used) return false;
+   if (b.conditionType === 'enemy_kill_count') return Number(b.killCount || 0) >= Number(b.invRequiredKills || 0);
+   if (b.conditionType === 'multi_target_attack') return !!b.conditionMet;
+   if (b.conditionType === 'lost_ally_exists') return (bs.allies || []).some(a => a && a.hp <= 0 && !a.isFixedFirst);
+   return false;
+ }
+
+ function _blessingProgressTextUi(bs, b) {
+   if (b.used) return 'USED';
+   if (b.conditionType === 'enemy_kill_count') return `${Math.min(Number(b.killCount||0), Number(b.invRequiredKills||3))} / ${Number(b.invRequiredKills||3)}`;
+   if (b.conditionType === 'multi_target_attack') return b.conditionMet ? 'READY' : `${Number(b.multiTargetMax||0)} / ${Number(b.invRequiredTargets||2)}`;
+   if (b.conditionType === 'lost_ally_exists') return _isBlessingInvReadyUi(bs,b) ? 'READY' : 'STANDBY';
+   return 'STANDBY';
  }
 
  function renderBlessingInv(bs) {
@@ -8780,14 +8794,10 @@ if (listEl) {
    }
 
    wrap.style.display = 'block';
-   const kills = Number(b.killCount || 0);
-   const need = Number(b.invRequiredKills || 3);
    const active = b.activeTurn === bs.turn;
-   // INV条件を満たした時点で縁の発光演出を開始する。
-   // 実際にINVを発動できるのは従来どおり味方のskillフェーズのみ。
-   const invReady = !b.used && kills >= need;
+   const invReady = _isBlessingInvReadyUi(bs, b);
    const canActivate = invReady && bs.phase === 'skill';
-   const stateText = active ? 'ACTIVE' : (b.used ? 'USED' : `${Math.min(kills, need)} / ${need}`);
+   const stateText = active ? 'ACTIVE' : _blessingProgressTextUi(bs, b);
 
    const iconImg = document.getElementById('b32-blessing-icon-img');
    const infoImg = document.getElementById('b32-blessing-info-img');
@@ -8835,10 +8845,44 @@ if (listEl) {
    _setBlessingInfoOpen(false);
  };
 
+ function _openBlessingTargetChooser(result) {
+   const targets = result && Array.isArray(result.targets) ? result.targets : [];
+   let overlay = document.getElementById('b32-blessing-target-chooser');
+   if (!overlay) {
+     overlay = document.createElement('div');
+     overlay.id = 'b32-blessing-target-chooser';
+     overlay.className = 'b32-blessing-target-chooser';
+     document.body.appendChild(overlay);
+   }
+   const title = result.targetType === 'lost_ally' ? '蘇生する味方を選択' : '攻撃する敵を選択';
+   overlay.innerHTML = `<div class="b32-blessing-target-card"><div class="b32-blessing-target-title">${title}</div><div class="b32-blessing-target-list"></div><button class="b32-blessing-target-cancel" type="button">キャンセル</button></div>`;
+   const list = overlay.querySelector('.b32-blessing-target-list');
+   targets.forEach(target => {
+     const btn = document.createElement('button');
+     btn.type = 'button';
+     btn.className = 'b32-blessing-target-btn';
+     btn.textContent = target.name || '対象';
+     btn.onclick = function () {
+       const ok = window.Battle32.activateBlessingInv(target._uid);
+       if (ok === true) {
+         overlay.classList.remove('show');
+         window._b32CloseBlessingInfo();
+       }
+     };
+     list.appendChild(btn);
+   });
+   overlay.querySelector('.b32-blessing-target-cancel').onclick = () => overlay.classList.remove('show');
+   overlay.classList.add('show');
+ }
+
  window._b32ActivateBlessingInv = function () {
    if (window.Battle32 && typeof window.Battle32.activateBlessingInv === 'function') {
-     const ok = window.Battle32.activateBlessingInv();
-     if (ok !== false) window._b32CloseBlessingInfo();
+     const result = window.Battle32.activateBlessingInv();
+     if (result && result.needsTarget) {
+       _openBlessingTargetChooser(result);
+     } else if (result === true) {
+       window._b32CloseBlessingInfo();
+     }
    }
  };
 

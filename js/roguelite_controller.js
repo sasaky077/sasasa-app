@@ -1131,12 +1131,6 @@ function _hideHud() {
       img: 'images/item_overseercore.webp',
       remnantId: 'remnant_01',
     },
-    irish: {
-      id: 'irish_core',
-      name: 'イリシュの心核',
-      img: 'images/item_irishcore.webp',
-      remnantId: 'remnant_02',
-    },
     rivia: {
       id: 'rivia_core',
       name: 'リヴィアの心核',

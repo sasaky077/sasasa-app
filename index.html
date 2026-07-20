@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=299-remnant-info-readability">
+  <link rel="stylesheet" href="css/style.css?v=302-home-icons-banner-safe">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -75,7 +75,17 @@
 
 
 
-</head>
+\n<style id="gacha-resonance-preview-style">
+.gacha-preview-name{font-family:"Cinzel","Noto Serif JP",serif;font-size:24px;font-weight:700;letter-spacing:.12em;text-align:center;color:#fff;margin:4px 0 12px;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.gacha-resonance-switch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:0 0 10px;position:sticky;top:0;z-index:5;padding:3px 0;background:transparent;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.gacha-resonance-tab{appearance:none;-webkit-appearance:none;min-width:0;height:30px;padding:0 2px;border:none;border-radius:0;background:transparent url("images/gacha_ui_01.webp") center/100% 100% no-repeat;color:#938269;display:flex;align-items:center;justify-content:center;font-family:"Noto Serif JP",serif;font-size:10px;font-weight:500;line-height:1;letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,255,255,.75);cursor:pointer;filter:saturate(.78) brightness(1.03);transition:transform .16s ease,filter .16s ease,color .16s ease;-webkit-tap-highlight-color:transparent}
+.gacha-resonance-tab.active{color:#74551d;font-weight:700;filter:saturate(1.32) brightness(.96) contrast(1.04) drop-shadow(0 2px 3px rgba(122,89,28,.22));transform:translateY(-1px)}
+.gacha-resonance-tab:active{transform:translateY(1px) scale(.98)}
+.gacha-resonance-tab:focus-visible{outline:1px solid rgba(185,145,62,.72);outline-offset:1px}
+.gacha-resonance-current{display:flex;flex-direction:column;gap:5px;margin:0 0 12px;padding:10px 12px;border-left:3px solid #d8b96b;background:rgba(216,185,107,.08);font-size:11px;line-height:1.65;color:#ccc}
+.gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
+#detail-modal.is-gacha-pickup-preview #detail-name{display:block!important;font-size:25px!important;font-weight:700!important;letter-spacing:.12em!important;color:#fff!important}
+</style>\n</head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
   <div class="hud-left">
@@ -269,8 +279,9 @@
 
     <!-- 選択中バナー詳細 -->
     <div class="summon-detail" id="summon-detail">
-      <div class="summon-detail-visual">
+      <div class="summon-detail-visual" id="summon-detail-visual" data-gacha-longpress="main">
         <img id="summon-detail-img" src="" alt="">
+        <div class="summon-longpress-hint" aria-hidden="true">長押しでピックアップ詳細</div>
         <div class="summon-detail-overlay">
           <div class="summon-detail-title" id="summon-detail-title"></div>
           <div class="summon-detail-desc" id="summon-detail-desc"></div>
@@ -798,6 +809,7 @@
 
 <div class="modal-overlay" id="detail-modal">
   <div class="modal">
+    <div class="gacha-pickup-title-name" id="gacha-pickup-title-name" aria-live="polite"></div>
     <div class="detail-header">
       <div id="detail-chara-visual"></div>
       <div>
@@ -862,9 +874,8 @@ document.addEventListener('touchend', function (e) {
   // 期間ごとにここを編集する（imgはimages/フォルダ内のファイル名）
   // 一旦ロジックは同じ。邂逅画面で2種類のバナーを選択できるようにする。
   // キャラクターID再採番（本番8体）:
-// 旧 01,02,07,08,12,14,17,20 → 新 01,02,03,04,05,06,07,08
 // 画像ファイル名は旧番号のまま使用する。
-const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
+const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 13,14, 15, 16, 17, ];
   const GACHA_COMMON_MATERIAL_IDS = [
     'soul_vessel_chaos',
     'soul_vessel_mystis',
@@ -1012,6 +1023,9 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
       div.type = 'button';
       div.className = 'summon-banner-card';
       div.id = 'banner-card-' + gacha.id;
+      div.dataset.gachaId = gacha.id;
+      div.dataset.gachaLongpress = 'thumbnail';
+      div.setAttribute('aria-label', (gacha.title || gacha.id || '邂逅') + '。長押しでピックアップ詳細');
       var cardTitle = gacha.thumbTitle || '';
       var imgAlt = gacha.title || gacha.id || '邂逅';
       div.innerHTML =
@@ -1065,7 +1079,15 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
     var desc  = document.getElementById('summon-detail-desc');
     var btns  = document.getElementById('summon-detail-btns');
 
-    if(img)   img.src = gacha.img;
+    if(img) {
+      img.src = gacha.img;
+      img.alt = (gacha.title || gacha.id || '邂逅') + '。長押しでピックアップキャラクター詳細';
+    }
+    var mainVisual = document.getElementById('summon-detail-visual');
+    if(mainVisual){
+      mainVisual.dataset.gachaId = gacha.id;
+      mainVisual.setAttribute('aria-label', (gacha.title || gacha.id || '邂逅') + '。長押しでピックアップキャラクター詳細');
+    }
     if(title) title.textContent = gacha.detailTitle || gacha.title || '';
     if(desc)  desc.textContent  = gacha.desc || '';
 
@@ -1102,6 +1124,111 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 14, 15, 16, 17, ];
     renderSummonBannerPager();
     updatePityUI();
   }
+
+
+  // ── ガチャバナー長押し：ピックアップキャラクター詳細 ──────────
+  var GACHA_LONGPRESS_MS = 550;
+  var GACHA_LONGPRESS_MOVE_LIMIT = 12;
+  var gachaLongPressState = null;
+  var suppressGachaBannerClickUntil = 0;
+
+  function getGachaById(gachaId){
+    return GACHA_BANNERS.find(function(gacha){ return gacha.id === gachaId; }) || null;
+  }
+
+  function openPickupCharacterDetail(gacha){
+    if(!gacha) return;
+    var chara = getCharaById(gacha.pickupCharaId);
+    if(!chara){
+      console.warn('[Gacha] ピックアップキャラクターが見つかりません:', gacha.pickupCharaId);
+      return;
+    }
+
+    showZukanCharacterDetail(chara, { gachaPreview: true });
+
+    var rank = document.getElementById('detail-rank');
+    if(rank){
+      rank.textContent = 'PICK UP / ' + String(chara.rarity || '').toUpperCase() + ' / No.' + chara.id;
+    }
+
+    var modal = document.getElementById('detail-modal');
+    if(modal) modal.classList.add('is-gacha-pickup-preview');
+  }
+
+  function clearGachaLongPressState(){
+    if(!gachaLongPressState) return;
+    clearTimeout(gachaLongPressState.timer);
+    var target = gachaLongPressState.target;
+    if(target) target.classList.remove('is-longpressing');
+    gachaLongPressState = null;
+  }
+
+  function resolveLongPressGacha(target){
+    var holder = target && target.closest ? target.closest('[data-gacha-longpress]') : null;
+    if(!holder) return null;
+    var gachaId = holder.dataset.gachaId || currentGachaId;
+    var gacha = getGachaById(gachaId);
+    return gacha ? { holder: holder, gacha: gacha } : null;
+  }
+
+  document.addEventListener('pointerdown', function(event){
+    if(event.pointerType === 'mouse' && event.button !== 0) return;
+    var resolved = resolveLongPressGacha(event.target);
+    if(!resolved) return;
+
+    clearGachaLongPressState();
+    var state = {
+      target: resolved.holder,
+      gacha: resolved.gacha,
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+      fired: false,
+      timer: null
+    };
+
+    state.target.classList.add('is-longpressing');
+    state.timer = setTimeout(function(){
+      state.fired = true;
+      suppressGachaBannerClickUntil = Date.now() + 700;
+      if(navigator.vibrate) navigator.vibrate(25);
+      openPickupCharacterDetail(state.gacha);
+      clearGachaLongPressState();
+    }, GACHA_LONGPRESS_MS);
+
+    gachaLongPressState = state;
+  }, { passive: true });
+
+  document.addEventListener('pointermove', function(event){
+    var state = gachaLongPressState;
+    if(!state || state.pointerId !== event.pointerId) return;
+    if(Math.abs(event.clientX - state.x) > GACHA_LONGPRESS_MOVE_LIMIT ||
+       Math.abs(event.clientY - state.y) > GACHA_LONGPRESS_MOVE_LIMIT){
+      clearGachaLongPressState();
+    }
+  }, { passive: true });
+
+  ['pointerup', 'pointercancel'].forEach(function(type){
+    document.addEventListener(type, function(event){
+      var state = gachaLongPressState;
+      if(!state || state.pointerId !== event.pointerId) return;
+      clearGachaLongPressState();
+    }, { passive: true });
+  });
+
+  document.addEventListener('click', function(event){
+    if(Date.now() > suppressGachaBannerClickUntil) return;
+    var holder = event.target.closest && event.target.closest('[data-gacha-longpress]');
+    if(!holder) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+
+  document.addEventListener('contextmenu', function(event){
+    var holder = event.target.closest && event.target.closest('[data-gacha-longpress]');
+    if(!holder) return;
+    event.preventDefault();
+  });
 
   (function setupSummonPagerSwipe(){
     document.addEventListener('touchstart', function(event){
@@ -1275,7 +1402,7 @@ const CHARACTER_RESONANCE_BONUSES = {
     4: { title:'審判の爪痕', summary:'コンボ威力・critical強化、ATK-10%', detail:'コンボ倍率をATK×0.80、critical率を25%へ強化し、敵のATKを10%低下させる。' }
   },
   14: {
-    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'アヤカの基礎HPとATKが4%上昇する。' },
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'アヤネの基礎HPとATKが4%上昇する。' },
     2: { title:'奇襲強化', summary:'通常スキル倍率をATK×1.15へ強化', detail:'通常スキルのダメージ倍率をATK×1.15へ強化する。' },
     3: { title:'死角拡張', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
     4: { title:'背面必殺', summary:'コンボ威力強化・背面倍率1.50倍', detail:'コンボ倍率をATK×0.60へ強化し、背面攻撃倍率を1.50倍へ上昇する。' }
@@ -4515,8 +4642,8 @@ setTenResultFooterVisible(true);
   // サキエルは No.04 として固定登録。
   var REMNANT_MASTER = [
     { no: 1, id: 'remnant_01', enemyId: 'enemy_01', name: 'レムナント：オーバーシア', img: 'images/remnant_01.webp', panelImg: 'images/remnant_01_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 2, id: 'remnant_02', enemyId: 'enemy_02', name: '未照合のレムナント', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 3, id: 'remnant_03', enemyId: 'enemy_03', name: '未照合のレムナント', img: 'images/remnant_03.webp', panelImg: 'images/remnant_03_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 2, id: 'remnant_02', enemyId: 'enemy_02', name: 'レムナント：イリシュ', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 3, id: 'remnant_03', enemyId: 'enemy_03', name: 'レムナント：リヴィア', img: 'images/remnant_03.webp', panelImg: 'images/remnant_03_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
     { no: 4, id: 'remnant_04', enemyId: 'enemy_sakiel_roguelite', name: '大天使 サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'サキエル降臨 BOSSドロップ', desc: '旧世界に残された白翼の残響。現在は記録のみで、使用機能は未実装です。' },
     { no: 5, id: 'remnant_05', enemyId: 'enemy_05', name: '未照合のレムナント', img: 'images/remnant_05.webp', panelImg: 'images/remnant_05_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
     { no: 6, id: 'remnant_06', enemyId: 'enemy_06', name: '未照合のレムナント', img: 'images/remnant_06.webp', panelImg: 'images/remnant_06_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
@@ -6190,8 +6317,19 @@ function buildDetailComboHTML(chara){
   }
 
   var effectText = getDetailSkillEffectText(skill);
-  var triggerRange = combo.range || 'combo_cross_all';
+  var triggerRange = combo.range || 'combo_cross_1';
   var attackRange = skill.range || '-';
+  var resolvedComboDesc = skill.desc || '';
+
+  // 凸でレンジが変わった際、説明文だけ旧レンジのまま残らないようにする。
+  if(resolvedComboDesc){
+    var reactionText = getDetailComboRangeLabel(triggerRange);
+    var attackText = getDetailRangeLabel(attackRange);
+    resolvedComboDesc = '反応範囲：' + reactionText + '。攻撃範囲：' + attackText + '。';
+    if(skill.type === 'attack' && Number(skill.multiplier || 0) > 0){
+      resolvedComboDesc += ' 対象の敵へATK×' + Number(skill.multiplier).toFixed(2).replace(/0+$/,'').replace(/\.$/,'') + 'の追撃を行う。';
+    }
+  }
 
   return '<div class="detail-combo-section">' +
     '<div class="detail-section-title">コンボスキル</div>' +
@@ -6234,7 +6372,10 @@ function buildDetailComboHTML(chara){
 
 function buildCharacterDetailHTML(data, options){
   options = options || {};
-  var chara = getDetailCharaDef(data);
+  // ガチャ共鳴プレビューでは、選択中の凸数を反映済みの data をそのまま使う。
+  // getDetailCharaDef(data) を通すと CHARACTERS の無凸マスターへ戻ってしまい、
+  // 反応範囲・攻撃範囲・移動型などの凸変化が表示から消えるため。
+  var chara = options.preferResolvedData === true ? data : getDetailCharaDef(data);
   var lb = data.limitBreak || 0;
   var moveType = (chara && chara.moveType) || data.moveType || 'silver';
   var canLimitBreakNow = !!options.canLimitBreak && lb < MAX_LIMIT_BREAK;
@@ -6414,45 +6555,218 @@ async function deleteCurrentChara(){
   }
 }
 
-  function showZukanCharacterDetail(chara){
-  currentDetailData = null;
+  var gachaPreviewCharacterId = null;
+  var gachaPreviewLimitBreak = 0;
 
-  document.getElementById('detail-chara-visual').innerHTML =
-    charaVisualHTML(chara, 260);
+  function cloneDetailCharacter(chara){
+    return JSON.parse(JSON.stringify(chara || {}));
+  }
 
-  document.getElementById('detail-name').textContent = chara.name;
-  document.getElementById('detail-rank').textContent = 'No.' + chara.id;
+  function applyPreviewResonanceToCharacter(chara, limitBreak){
+    var c = cloneDetailCharacter(chara);
+    var lb = Math.max(0, Math.min(MAX_LIMIT_BREAK, Number(limitBreak || 0)));
+    c.limitBreak = lb;
+    c.stats = applyLimitBreakStats(chara.stats || {}, lb, chara.rarity, chara.id);
 
-  // 通常ステータス表は使わず、detail-opts 側に集約する
-  document.getElementById('detail-stat-table').innerHTML = '';
+    var s1 = Array.isArray(c.skills) ? c.skills.find(function(skill){ return skill && skill.id === 's1'; }) : null;
+    var ult = Array.isArray(c.skills) ? c.skills.find(function(skill){ return skill && (skill.id === 'ult' || skill.isUltimate === true); }) : null;
+    var combo = c.combo && c.combo.skill ? c.combo.skill : null;
+    function comboEffect(type){
+      return combo && Array.isArray(combo.effects) ? combo.effects.find(function(e){ return e && e.type === type; }) : null;
+    }
 
-  // 図鑑側は未所持データ扱いなので、共鳴ボタンは出さない
-  document.getElementById('detail-opts').innerHTML = buildCharacterDetailHTML({
-    id: chara.id,
-    name: chara.name,
-    rarity: chara.rarity,
-    stats: chara.stats || {},
-    limitBreak: 0,
-    img: chara.img
-  }, {
-    showLimitBreakButton: false
-  });
+    // characters.js の共鳴設定にレンジ変更がある場合は、
+    // 選択中の凸数まで順番に適用してステータス表示へ反映する。
+    var resonanceConfig = c.resonanceBonusConfig || chara.resonanceBonusConfig || null;
+    if(resonanceConfig){
+      for(var resonanceLevel = 1; resonanceLevel <= lb; resonanceLevel++){
+        var levelConfig = resonanceConfig[resonanceLevel];
+        if(!levelConfig) continue;
 
-  var favBtn = document.querySelector('#detail-modal .btn-set-fav');
-  if(favBtn) favBtn.style.display = 'none';
+        if(levelConfig.comboTriggerRange && c.combo){
+          c.combo.range = levelConfig.comboTriggerRange;
+        }
+        if(levelConfig.comboSkillRange && combo){
+          combo.range = levelConfig.comboSkillRange;
+        }
+        if(levelConfig.skillRange && levelConfig.skillId && Array.isArray(c.skills)){
+          var rangeSkill = c.skills.find(function(skill){
+            return skill && skill.id === levelConfig.skillId;
+          });
+          if(rangeSkill) rangeSkill.range = levelConfig.skillRange;
+        }
+        if(levelConfig.moveType){
+          c.moveType = levelConfig.moveType;
+        }
+      }
+    }
 
-  var delBtn = document.querySelector('#detail-modal .btn-delete-chara');
-  if(delBtn) delBtn.style.display = 'none';
+    switch(Number(c.id)){
+      case 1:
+        if(lb >= 2 && s1) s1.resonanceHealLowestAtkRate = 0.35;
+        if(lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
+        if(lb >= 4 && combo) combo.resonanceTeamAtkUp = { rate:1.10, duration:1 };
+        break;
+      case 2:
+        if(lb >= 2 && s1) s1.multiplier = 0.65;
+        if(lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if(lb >= 4 && combo){ combo.multiplier = 0.30; var e2=comboEffect('stun'); if(e2) e2.hit=40; }
+        break;
+      case 3:
+        if(lb >= 1 && ult) ult.linkCost = Math.max(0, Number(ult.linkCost || 0)-1);
+        if(lb >= 2 && s1 && Array.isArray(s1.randomOptions)) s1.randomOptions.forEach(function(o){
+          if(o.effectType === 'lowest_hp_heal'){ o.rate=.70; o.label='一番HPの低い味方を最大HPの70%回復'; }
+          if(o.effectType === 'all_critical_up'){ o.rate=.20; o.label='味方全体critical率+20%'; }
+        });
+        if(lb >= 3) c.moveType = 'line_front_3_side';
+        if(lb >= 4 && c.combo) c.combo.range = 'combo_star_all';
+        break;
+      case 4:
+        if(lb >= 2 && s1){ s1.multiplier=1.70; s1.criticalRate=.75; }
+        if(lb >= 3 && c.combo) c.combo.range='combo_cross_all';
+        if(lb >= 4 && combo){ combo.multiplier=1.05; combo.resonanceSelfAtkUpOnCritical={rate:1.15,duration:1}; }
+        break;
+      case 5:
+        if(lb >= 2 && s1) s1.linkCost=2;
+        if(lb >= 3 && c.combo) c.combo.range='combo_around8';
+        if(lb >= 4 && combo){ combo.multiplier=.55; combo.resonanceNextS1Discount=1; }
+        break;
+      case 6:
+        if(lb >= 2 && s1) s1.resonanceSelfHealAtkRate=.20;
+        if(lb >= 3 && c.combo) c.combo.range='combo_cross_all';
+        if(lb >= 4 && combo) combo.range='fan_2row_3_ally';
+        break;
+      case 7:
+        if(lb >= 1 && ult) ult.linkCost=Math.max(0,Number(ult.linkCost||0)-1);
+        if(lb >= 2) c.moveType='rose_resonance_move';
+        if(lb >= 3 && c.combo) c.combo.range='combo_star_all';
+        if(lb >= 4 && combo){ var d7=comboEffect('atk_down'); if(d7)d7.rate=.85; if(!comboEffect('stun'))combo.effects.push({type:'stun',target:'enemy',hit:25,duration:1}); }
+        break;
+      case 8:
+        if(lb >= 2 && s1){ var u8=(s1.effects||[]).find(function(x){return x&&x.type==='atk_up';}); if(u8)u8.rate=1.35; if(!(s1.effects||[]).some(function(x){return x&&x.type==='critical_up';}))s1.effects.push({type:'critical_up',target:'ally_all',hit:100,rate:.10,duration:1}); }
+        if(lb >= 3 && c.combo)c.combo.range='combo_star_all';
+        if(lb >= 4 && combo){ var cu8=comboEffect('atk_up');if(cu8)cu8.rate=1.15;combo.resonanceHealLowestSourceHpRate=.10; }
+        break;
+      case 9:
+        if(lb >= 2 && s1)s1.resonanceAffectedAllyAtkUp={rate:1.10,duration:1};
+        if(lb >= 3 && c.combo)c.combo.range='combo_around8';
+        if(lb >= 4 && combo){combo.multiplier=.40;var d9=comboEffect('atk_down');if(d9)d9.rate=.90;}
+        break;
+      case 10:
+        if(lb >= 2 && s1)s1.multiplier=1.40;
+        if(lb >= 3 && c.combo)c.combo.range='combo_around8';
+        if(lb >= 4 && combo){combo.multiplier=.55;combo.resonanceDelayedUltBoost=1.10;}
+        break;
+      case 11:
+        if(lb >= 2 && s1)s1.multiplier=1.40;
+        if(lb >= 3 && c.combo)c.combo.range='combo_around8';
+        if(lb >= 4 && combo){combo.multiplier=.60;var p11=comboEffect('push_1');if(p11)p11.hit=75;}
+        break;
+      case 12:
+        if(lb >= 2 && s1){var u12=(s1.effects||[]).find(function(x){return x&&x.type==='atk_up';});if(u12)u12.rate=1.20;}
+        if(lb >= 3 && c.combo)c.combo.range='combo_line_all';
+        if(lb >= 4 && combo){var cu12=comboEffect('atk_up');if(cu12)cu12.rate=1.10;combo.resonanceLowestAllyAtkUp={rate:1.05,duration:1};}
+        break;
+      case 13:
+        if(lb >= 2 && s1){s1.multiplier=2.05;s1.criticalRate=.30;}
+        if(lb >= 3 && c.combo)c.combo.range='combo_star_all';
+        if(lb >= 4 && combo){combo.multiplier=.80;combo.criticalRate=.25;if(!comboEffect('atk_down'))combo.effects.push({type:'atk_down',target:'enemy',hit:100,duration:1,rate:.90});}
+        break;
+      case 14:
+        if(lb >= 2 && s1)s1.multiplier=1.15;
+        if(lb >= 3 && c.combo)c.combo.range='combo_around8';
+        if(lb >= 4 && combo){combo.multiplier=.60;combo.backstabMultiplier=1.50;}
+        break;
+      case 15:
+        if(lb >= 2 && s1)s1.resonanceAffectedAllyGuard={rate:.10,duration:1};
+        if(lb >= 3 && c.combo)c.combo.range='combo_around8';
+        if(lb >= 4 && combo){combo.multiplier=.50;var p15=comboEffect('push_1');if(p15)p15.hit=75;}
+        break;
+      case 16:
+        if(lb >= 2 && s1){s1.multiplier=.85;var j16=(s1.effects||[]).find(function(x){return x&&x.type==='jittai';});if(j16)j16.hit=90;}
+        if(lb >= 3 && c.combo)c.combo.range='combo_around8';
+        if(lb >= 4 && combo){combo.multiplier=.45;var cj16=comboEffect('jittai');if(cj16)cj16.hit=60;}
+        break;
+      case 17:
+        if(lb >= 2 && s1)s1.healRate=Number(s1.healRate||.35)*1.20;
+        if(lb >= 3 && c.combo)c.combo.range='combo_line_all';
+        if(lb >= 4 && combo){combo.healRate=.12;combo.resonanceHealLowestTargetHpRate=.05;}
+        break;
+    }
+    return c;
+  }
 
-  var closeBtn = document.getElementById('btn-detail-close');
-  if(closeBtn) closeBtn.style.display = 'block';
+  function buildGachaResonanceTabs(charaId, selectedLb){
+    var labels=['無凸','1凸','2凸','3凸','完凸'];
+    return '<div class="gacha-resonance-switch" role="tablist" aria-label="共鳴段階切り替え">' +
+      labels.map(function(label,lb){
+        return '<button type="button" class="gacha-resonance-tab' + (lb===selectedLb?' active':'') + '" onclick="switchGachaPreviewLimitBreak(' + lb + ')">' + label + '</button>';
+      }).join('') + '</div>';
+  }
 
-  document.getElementById('detail-modal').classList.add('active');
- }
+  function buildSelectedResonanceSummary(chara, lb){
+    if(lb <= 0) return '<div class="gacha-resonance-current"><b>無凸</b><span>共鳴効果なし</span></div>';
+    var master=getResonanceBonusMaster(chara);
+    var bonus=master && master[lb];
+    if(!bonus) return '';
+    return '<div class="gacha-resonance-current"><b>共鳴Lv.'+lb+'　'+detailEscapeHTML(bonus.title)+'</b><span>'+detailEscapeHTML(bonus.detail)+'</span></div>';
+  }
+
+  function renderGachaPreviewCharacterDetail(){
+    var base=getCharaById(gachaPreviewCharacterId);
+    if(!base)return;
+    var chara=applyPreviewResonanceToCharacter(base,gachaPreviewLimitBreak);
+    document.getElementById('detail-chara-visual').innerHTML=charaVisualHTML(chara,260);
+    document.getElementById('detail-name').textContent=chara.name;
+    var pickupTitleName=document.getElementById('gacha-pickup-title-name');
+    if(pickupTitleName) pickupTitleName.textContent=chara.name;
+    document.getElementById('detail-rank').textContent='PICK UP / '+String(chara.rarity||'').toUpperCase()+' / No.'+chara.id;
+    document.getElementById('detail-stat-table').innerHTML='';
+    document.getElementById('detail-opts').innerHTML=
+      buildGachaResonanceTabs(chara.id,gachaPreviewLimitBreak)+
+      buildSelectedResonanceSummary(chara,gachaPreviewLimitBreak)+
+      buildCharacterDetailHTML(chara,{showLimitBreakButton:false,preferResolvedData:true});
+  }
+
+  function switchGachaPreviewLimitBreak(limitBreak){
+    gachaPreviewLimitBreak=Math.max(0,Math.min(MAX_LIMIT_BREAK,Number(limitBreak||0)));
+    renderGachaPreviewCharacterDetail();
+  }
+  window.switchGachaPreviewLimitBreak=switchGachaPreviewLimitBreak;
+
+  function showZukanCharacterDetail(chara, options){
+    options=options||{};
+    currentDetailData=null;
+
+    if(options.gachaPreview){
+      gachaPreviewCharacterId=Number(chara.id);
+      gachaPreviewLimitBreak=0;
+      renderGachaPreviewCharacterDetail();
+    }else{
+      var pickupTitleName=document.getElementById('gacha-pickup-title-name');
+      if(pickupTitleName) pickupTitleName.textContent='';
+      document.getElementById('detail-chara-visual').innerHTML=charaVisualHTML(chara,260);
+      document.getElementById('detail-name').textContent=chara.name;
+      document.getElementById('detail-rank').textContent='No.'+chara.id;
+      document.getElementById('detail-stat-table').innerHTML='';
+      document.getElementById('detail-opts').innerHTML=buildCharacterDetailHTML({
+        id:chara.id,name:chara.name,rarity:chara.rarity,stats:chara.stats||{},limitBreak:0,img:chara.img
+      },{showLimitBreakButton:false});
+    }
+
+    var favBtn=document.querySelector('#detail-modal .btn-set-fav');if(favBtn)favBtn.style.display='none';
+    var delBtn=document.querySelector('#detail-modal .btn-delete-chara');if(delBtn)delBtn.style.display='none';
+    var closeBtn=document.getElementById('btn-detail-close');if(closeBtn)closeBtn.style.display='block';
+    document.getElementById('detail-modal').classList.add('active');
+  }
 
   function closeModal(id){
     var modal = document.getElementById(id);
     if(modal) modal.classList.remove('active');
+
+    if(id === 'detail-modal'){
+      modal.classList.remove('is-gacha-pickup-preview');
+    }
 
     if(id === 'detail-modal' && detailReturnToSummonAfterClose){
       restoreSummonScreenAfterSingleGacha();
@@ -7816,6 +8130,50 @@ window.addEventListener('pagehide', function () {
 <script src="js/shinju.js?v=5-growth-thresholds"></script>
 <script src="js/roguelite_controller.js?v=81-debug-no-reward"></script>
 <script src="js/roguelite_overseer_run.js?v=1"></script>
+
+<!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
+<script>
+(function () {
+  const GAP = 10;
+  const ICON_GAP = 8;
+
+  function placeHomeRightIcons() {
+    const screen = document.getElementById('screen-main');
+    const banner = document.getElementById('home-event-banner-wrap');
+    const notice = screen && screen.querySelector('.home-notice-btn');
+    const shinju = screen && screen.querySelector('.shinju-home-entry');
+    if (!screen || !banner || !notice || !shinju) return;
+
+    const screenRect = screen.getBoundingClientRect();
+    const bannerRect = banner.getBoundingClientRect();
+    const bannerBottom = Math.max(0, bannerRect.bottom - screenRect.top);
+    const noticeTop = Math.ceil(bannerBottom + GAP);
+    const noticeHeight = notice.getBoundingClientRect().height || notice.offsetHeight || 0;
+
+    screen.style.setProperty('--home-banner-bottom', noticeTop + 'px');
+    screen.style.setProperty('--home-shinju-top', Math.ceil(noticeTop + noticeHeight + ICON_GAP) + 'px');
+  }
+
+  function setupHomeIconPlacement() {
+    placeHomeRightIcons();
+    const banner = document.getElementById('home-event-banner-wrap');
+    if (banner && 'ResizeObserver' in window) {
+      new ResizeObserver(placeHomeRightIcons).observe(banner);
+    }
+    window.addEventListener('resize', placeHomeRightIcons, { passive: true });
+    window.addEventListener('orientationchange', placeHomeRightIcons, { passive: true });
+    window.addEventListener('load', placeHomeRightIcons, { once: true });
+    setTimeout(placeHomeRightIcons, 100);
+    setTimeout(placeHomeRightIcons, 500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupHomeIconPlacement, { once: true });
+  } else {
+    setupHomeIconPlacement();
+  }
+})();
+</script>
 
 </body>
 </html>

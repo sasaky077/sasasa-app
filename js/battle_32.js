@@ -203,6 +203,8 @@
       used: false,
       activeTurn: null,
       defeatedEnemyUids: [],
+      conditionMet: false,
+      multiTargetMax: 0,
     };
   }
 
@@ -899,6 +901,9 @@
   function getEffectiveAtk(unit) {
     if (!unit) return 1;
     let atk = Number(unit.atk || 1);
+    if (_bs && _bs.blessing && unit.side === 'ally') {
+      atk *= (1 + Number(_bs.blessing.passiveAtkRate || 0));
+    }
     const effects = Array.isArray(unit.statusEffects) ? unit.statusEffects : [];
 
     effects.forEach(e => {
@@ -1365,6 +1370,8 @@ const enemies = enemyDefs.map(def => {
     };
 
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
+    (_bs.allies || []).forEach(_applyBlessingHpPassive32);
+    _applyTurnStartBlessing32();
 
     // ── ローグライトOP開始時補正を適用 ──────────────────────
     // applyOnStart(_bs) は _bs を直接書き換える
@@ -1567,6 +1574,65 @@ const enemies = enemyDefs.map(def => {
 
 
 
+  let _blessingActionHitEnemyUids32 = null;
+
+  function _beginBlessingAttackTrack32() {
+    _blessingActionHitEnemyUids32 = new Set();
+  }
+
+  function _finishBlessingAttackTrack32() {
+    if (!_bs || !_bs.blessing || !_blessingActionHitEnemyUids32) {
+      _blessingActionHitEnemyUids32 = null;
+      return;
+    }
+    const blessing = _bs.blessing;
+    const count = _blessingActionHitEnemyUids32.size;
+    _blessingActionHitEnemyUids32 = null;
+    if (blessing.conditionType !== 'multi_target_attack') return;
+    blessing.multiTargetMax = Math.max(Number(blessing.multiTargetMax || 0), count);
+    if (!blessing.used && count >= Number(blessing.invRequiredTargets || 2)) {
+      blessing.conditionMet = true;
+      _log(`加護条件達成：1度の攻撃で敵${count}体にダメージ`);
+      _emit('blessingProgress', { blessing: { ...blessing }, bs: _snapshot() });
+    }
+  }
+
+  function _isBlessingReady32(blessing) {
+    if (!blessing || blessing.used) return false;
+    if (blessing.conditionType === 'enemy_kill_count') {
+      return Number(blessing.killCount || 0) >= Number(blessing.invRequiredKills || 0);
+    }
+    if (blessing.conditionType === 'multi_target_attack') return !!blessing.conditionMet;
+    if (blessing.conditionType === 'lost_ally_exists') {
+      return (_bs.allies || []).some(a => a && a.hp <= 0 && !a.isFixedFirst);
+    }
+    return false;
+  }
+
+  function _applyBlessingHpPassive32(unit) {
+    if (!unit || !_bs || !_bs.blessing || unit._blessingHpApplied) return;
+    const rate = Number(_bs.blessing.passiveHpRate || 0);
+    if (rate <= 0) return;
+    const oldMax = Number(unit.hpMax || unit.hp || 1);
+    const newMax = Math.max(1, Math.round(oldMax * (1 + rate)));
+    unit.hpMax = newMax;
+    if (unit.hp > 0) unit.hp = Math.max(1, Math.round(Number(unit.hp || oldMax) * (1 + rate)));
+    unit._blessingHpApplied = true;
+  }
+
+  function _applyTurnStartBlessing32() {
+    if (!_bs || !_bs.blessing || !_bs.link) return;
+    const blessing = _bs.blessing;
+    if (blessing.id !== 'remnant_03') return;
+    const chance = Math.max(0, Math.min(1, Number(blessing.turnStartLinkChance || 0)));
+    if (Math.random() >= chance) return;
+    const before = Number(_bs.link.current || 0);
+    _bs.link.max = Math.max(Number(_bs.link.max || 0), before + 1);
+    _bs.link.current = before + 1;
+    _log(`リヴィアの加護：ターン開始時 LINK+1`);
+    _emit('blessingPassive', { blessing: { ...blessing }, type: 'link_plus', amount: 1, bs: _snapshot() });
+  }
+
   function _syncBlessingDefeats32() {
     if (!_bs || !_bs.blessing) return;
     const blessing = _bs.blessing;
@@ -1583,19 +1649,74 @@ const enemies = enemyDefs.map(def => {
     blessing.defeatedEnemyUids = [...seen];
   }
 
-  function activateBlessingInv() {
+  function getBlessingInvTargets() {
+    if (!_bs || !_bs.blessing) return [];
+    const type = _bs.blessing.invEffectType;
+    if (type === 'single_enemy_damage') {
+      return (_bs.enemies || []).filter(e => e && e.hp > 0).map(e => ({ _uid:e._uid, name:e.name, side:'enemy', hp:e.hp, hpMax:e.hpMax }));
+    }
+    if (type === 'revive_ally') {
+      return (_bs.allies || []).filter(a => a && a.hp <= 0 && !a.isFixedFirst).map(a => ({ _uid:a._uid, name:a.name, side:'ally', hp:a.hp, hpMax:a.hpMax }));
+    }
+    return [];
+  }
+
+  function activateBlessingInv(targetUid) {
     if (!_bs || !_bs.blessing || _bs.result || _bs.phase !== 'skill') return false;
     const blessing = _bs.blessing;
     _syncBlessingDefeats32();
-    if (blessing.used) return false;
-    if (Number(blessing.killCount || 0) < Number(blessing.invRequiredKills || 0)) return false;
+    if (!_isBlessingReady32(blessing)) return false;
+
+    const effectType = blessing.invEffectType || 'critical_up';
+    let target = null;
+    if (effectType === 'single_enemy_damage') {
+      target = (_bs.enemies || []).find(e => e && e.hp > 0 && e._uid === targetUid);
+      if (!target) return { needsTarget: true, targetType: 'enemy', targets: getBlessingInvTargets() };
+    } else if (effectType === 'revive_ally') {
+      target = (_bs.allies || []).find(a => a && a.hp <= 0 && !a.isFixedFirst && a._uid === targetUid);
+      if (!target) return { needsTarget: true, targetType: 'lost_ally', targets: getBlessingInvTargets() };
+    }
+
     blessing.used = true;
-    blessing.activeTurn = _bs.turn;
+    blessing.activeTurn = effectType === 'critical_up' ? _bs.turn : null;
     const invName = blessing.invName || blessing.name || '加護';
-    const invRate = Math.round(Number(blessing.invCriticalRate || 0) * 100);
-    _log(`INV「${invName}」発動：このターン、味方全員のcritical率+${invRate}%`);
-    _emit('blessingInv', { blessing: { ...blessing }, bs: _snapshot() });
+
+    if (effectType === 'critical_up') {
+      const invRate = Math.round(Number(blessing.invCriticalRate || 0) * 100);
+      _log(`INV「${invName}」発動：このターン、味方全員のcritical率+${invRate}%`);
+    } else if (effectType === 'single_enemy_damage') {
+      const totalAtk = (_bs.allies || []).filter(a => a && a.hp > 0).reduce((sum, a) => sum + getEffectiveAtk(a), 0);
+      const damage = Math.max(1, Math.round(totalAtk * Number(blessing.invDamageRate || 0.8)));
+      applyDamage(target, damage, { name: invName, side: 'ally' }, { id:'blessing_inv', name:invName });
+      _log(`INV「${invName}」：${target.name}に${damage}ダメージ`);
+    } else if (effectType === 'all_enemy_stun') {
+      const turns = Math.max(1, Number(blessing.invStunTurns || 1));
+      (_bs.enemies || []).filter(e => e && e.hp > 0).forEach(enemy => {
+        enemy.stunned = true;
+        enemy.statusEffects = Array.isArray(enemy.statusEffects) ? enemy.statusEffects : [];
+        enemy.statusEffects.push({ type:'stun', duration:turns, sourceName:invName });
+      });
+      _log(`INV「${invName}」：盤面上の敵全員を${turns}ターンスタン`);
+    } else if (effectType === 'revive_ally') {
+      const chance = Math.max(0, Math.min(1, Number(blessing.invReviveChance || 0)));
+      if (Math.random() < chance) {
+        target.hp = Math.max(1, Math.round(Number(target.hpMax || 1) * Number(blessing.invReviveHpRate || 0.5)));
+        target.stunned = false;
+        target.statusEffects = [];
+        if (_bs.roster) {
+          const rosterEntry = _bs.roster.find(r => r && r.deployedUid === target._uid);
+          if (rosterEntry) rosterEntry.status = 'deployed';
+        }
+        _log(`INV「${invName}」成功：${target.name}が蘇生した`);
+        _emit('revive', { target:{...target}, blessing:{...blessing}, bs:_snapshot() });
+      } else {
+        _log(`INV「${invName}」失敗：${target.name}は蘇生しなかった`);
+      }
+    }
+
+    _emit('blessingInv', { blessing: { ...blessing }, target: target ? { ...target } : null, bs: _snapshot() });
     _renderUI();
+    _checkWinLose();
     _saveResume();
     return true;
   }
@@ -1785,6 +1906,9 @@ const enemies = enemyDefs.map(def => {
     }
 
     const hpBefore = Number(target.hp || 0);
+    if (_blessingActionHitEnemyUids32 && target.side === 'enemy' && source && source.side === 'ally' && dmg > 0) {
+      _blessingActionHitEnemyUids32.add(target._uid || target.id);
+    }
     target.hp = Math.max(0, target.hp - dmg);
     const hpAfter = Number(target.hp || 0);
     if (target.side === 'enemy' && hpBefore > 0 && hpAfter <= 0) _syncBlessingDefeats32();
@@ -2584,6 +2708,7 @@ function _executeDelayedAttack(action) {
     }
 
     _log(`${ally.name} が「${skill.name}」を発動！`);
+    _beginBlessingAttackTrack32();
 
     // ── 対象解決ヘルパー（スコープ内ローカル） ──
     const _enemyTargets = (rangeKey) =>
@@ -3142,6 +3267,7 @@ if (!noTargets && skill.id === 's1' && (skill.resonanceAffectedAllyAtkUp || skil
   });
 }
 
+_finishBlessingAttackTrack32();
 _emit('allyAction', { ally: { ...ally }, skill, bs: _snapshot() });
 
 // 行動権を消費（LINKも消費される）
@@ -3257,6 +3383,7 @@ return true;
       }
 
       _log(`COMBO：${ally.name} が「${comboSkill.name}」を発動！`);
+      _beginBlessingAttackTrack32();
 
       // 既存イベントを先に通知し、UI側のキャラ演出を開始可能にする。
       _emit('comboActionStart', {
@@ -3436,6 +3563,7 @@ return true;
         allyUid,
       };
     } finally {
+      _finishBlessingAttackTrack32();
       _unlockInput();
     }
   }
@@ -5431,6 +5559,8 @@ function doBossLineAttack(boss) {
       _bs.link.current = _bs.link.max;
     }
 
+    _applyTurnStartBlessing32();
+
     // TODO: カード廃止後の通常移動処理をここに実装する
     // ※ SUPPORT_CARDS (cards.js) は Battle32 では参照しない。
     //   位置入替はローグライトOPの「布陣入替」として将来実装予定。
@@ -5638,8 +5768,29 @@ function doBossLineAttack(boss) {
     const skill = ally.skills.find(s => s.id === skillId);
     if (!skill) return [];
 
-    // enemy_all / ally_all は盤面全体ではなく実ユニット位置のみをガイド表示する
-    let cells = BR.getCellsFromRange32(ally, skill.range);
+    // 設置系スキルは「通過する射程」ではなく、実際の着弾・設置予定マスを表示する。
+    // 例：ロゼは前方2マス先を中心とした横3マス、ミトは前方2マス先の1マス。
+    let cells;
+    if (skill.type === 'summon_object') {
+      const distance = Math.max(1, Number(skill.summonDistance || 2));
+      const base = _getForwardCellFromUnit(ally, distance);
+      const rawOffsets = Array.isArray(skill.summonOffsets) && skill.summonOffsets.length > 0
+        ? skill.summonOffsets
+        : [{ dr: 0, dc: 0 }];
+      const count = Math.max(1, Number(skill.summonCount || rawOffsets.length || 1));
+
+      cells = new Set();
+      rawOffsets.slice(0, count).forEach(offset => {
+        const row = Number(base.row) + Number(offset && offset.dr || 0);
+        const col = Number(base.col) + Number(offset && offset.dc || 0);
+        if (_isInsideBoard(row, col)) {
+          cells.add(`${row}-${col}`);
+        }
+      });
+    } else {
+      // enemy_all / ally_all は盤面全体ではなく実ユニット位置のみをガイド表示する
+      cells = BR.getCellsFromRange32(ally, skill.range);
+    }
 
     console.log('[B32 RangeGuide]', {
       ally: ally.name,
@@ -5785,6 +5936,7 @@ function doBossLineAttack(boss) {
     if (!_spendLink(summonCost, `${rEntry.name} 召喚`)) return false;
 
     const unit = makeAlly(rEntry.charDef, row, col);
+    _applyBlessingHpPassive32(unit);
     _applyRogueliteOptionsToUnit(unit);
     _bs.allies.push(unit);
     rEntry.status = 'deployed';
@@ -6120,6 +6272,7 @@ window.Battle32 = {
   getItems,
   useItem,
   activateBlessingInv,
+  getBlessingInvTargets,
 
   getMoveCells,
   getMovableCells,
