@@ -1218,19 +1218,14 @@ function _hideHud() {
     };
   }
 
-  // 心核の初回入手時だけ、対応するレムナント情報を解放する。
-  // 2個目以降の心核では unlockRemnantById() を呼ばないため、
-  // レムナント側の count は増やさず、心核所持数だけを蓄積する。
-  async function _unlockRemnantFromFirstCore(coreItem, { runId, rank, totalTurns } = {}) {
+  // 心核入手時は、初回解放・既所持時の加護素材加算を同じAPIへ統一する。
+  // 初回はレムナント解放（coreCountは0）、既所持ならcoreCountが+1される。
+  async function _grantCoreToRemnant(coreItem, { runId, rank, totalTurns } = {}) {
     if (!coreItem || !coreItem.dropped || !coreItem.remnantId) return null;
 
-    if (typeof window.isRemnantOwned !== 'function' || typeof window.unlockRemnantById !== 'function') {
+    if (typeof window.unlockRemnantById !== 'function') {
       console.warn('[RogueliteController] レムナント解放APIが見つかりません:', coreItem.remnantId);
       return null;
-    }
-
-    if (window.isRemnantOwned(coreItem.remnantId)) {
-      return { ok: true, unlocked: false, alreadyOwned: true, remnantId: coreItem.remnantId };
     }
 
     try {
@@ -1246,9 +1241,12 @@ function _hideHud() {
         coreItem.remnantUnlocked = true;
         coreItem.unlockedRemnantId = coreItem.remnantId;
       }
+      if (result && result.entry) {
+        coreItem.blessingCoreCount = Math.max(0, Number(result.entry.coreCount || 0));
+      }
       return result;
     } catch (err) {
-      console.warn('[RogueliteController] 心核によるレムナント解放に失敗:', err);
+      console.warn('[RogueliteController] 心核のレムナント反映に失敗:', err);
       return null;
     }
   }
@@ -2022,10 +2020,9 @@ async function _onBattleEnd(result, payload) {
       ? _rollAndGrantBossCore({ runId, rank })
       : null;
 
-    // 未解放のレムナントは、対応する心核を初めて入手した時点で情報解放する。
-    // 既に解放済みの場合は何もせず、心核所持数だけが増える。
+    // 初回はレムナントを解放し、既所持時は加護強化用coreCountへ確実に加算する。
     if (coreItem && coreItem.dropped) {
-      await _unlockRemnantFromFirstCore(coreItem, { runId, rank, totalTurns });
+      await _grantCoreToRemnant(coreItem, { runId, rank, totalTurns });
     }
 
     const evolutionMaterialItems = !isDebugRun

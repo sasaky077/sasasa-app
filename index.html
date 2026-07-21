@@ -4758,6 +4758,30 @@ setTenResultFooterVisible(true);
         entry.count = Math.max(1, Number(entry.count || 1));
       });
 
+      // 旧バグ救済：ボス報酬側だけに保存された心核を加護素材へ同期する。
+      // 初回心核で解放されたレムナントは、その1個を解放分として差し引く。
+      try {
+        var legacyCoreInventory = JSON.parse(localStorage.getItem('zeraphia_boss_cores') || '{}');
+        var coreToRemnant = {
+          overseer_core: 'remnant_01',
+          irish_core: 'remnant_02',
+          rivia_core: 'remnant_03',
+          sakiel_core: 'remnant_04'
+        };
+        Object.keys(coreToRemnant).forEach(function(coreId){
+          var remnantId = coreToRemnant[coreId];
+          var entry = parsed[remnantId];
+          if(!entry || typeof entry !== 'object') return;
+
+          var legacyCount = Math.max(0, Number(legacyCoreInventory && legacyCoreInventory[coreId] || 0));
+          var unlockCost = entry.source === 'boss_core' ? 1 : 0;
+          var recoverableCount = Math.max(0, legacyCount - unlockCost);
+          entry.coreCount = Math.max(Math.max(0, Number(entry.coreCount || 0)), recoverableCount);
+        });
+      } catch(e) {
+        console.warn('[Remnant] boss core migration failed:', e);
+      }
+
       localStorage.setItem(REMNANT_STORAGE_KEY, JSON.stringify(parsed));
       return parsed;
     } catch(e) {

@@ -845,6 +845,7 @@ skills: [
     ultImg: 'images/chara_14_cutin.webp',
     upImg: 'images/chara_14_up.webp', 
     battleImg: 'images/chara_14_battle.webp',
+    battleUpImg: 'images/chara_14_battle_up.webp',
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
     favScale: 0.80, favOffsetY: -50,
