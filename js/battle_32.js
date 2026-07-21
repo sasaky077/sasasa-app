@@ -221,6 +221,9 @@
   let _allyTurnFlowRunning = false;
   let _enemyTurnFlowRunning = false;
   let _battleFlowToken = 0;
+
+  // MAX COMBOのLINK報酬を同一コンボ連鎖内で1回だけ付与するための識別子
+  let _maxComboRewardActionId = null;
  
   // ============================================================
   // 演出ユーティリティ（UI との橋渡し）
@@ -3401,20 +3404,24 @@ return true;
 
     try {
       const generation = Number(context && context.generation || 1);
+      const comboDamageRate = Math.max(1, Number(context && context.comboDamageRate || 1));
+      const isMaxCombo = !!(context && context.isMaxCombo);
+      const comboTitle = isMaxCombo ? 'MAX COMBO!' : `${generation}COMBO!`;
+      const comboBonusText = `DAMAGE ×${comboDamageRate.toFixed(1)}`;
 
       // COMBO専用演出。
       // 通常の中央テキストは単一DOM・単一タイマーを共有しており、
       // 別演出の表示命令で上書きされるとコンボ表示だけ消えるため、専用レイヤーを優先する。
       if (typeof window.showBattle32ComboTextAsync === 'function') {
         await window.showBattle32ComboTextAsync(
-          `${generation}COMBO!`,
-          `${ally.name}「${comboSkill.name}」`,
+          comboTitle,
+          `${ally.name}「${comboSkill.name}」 / ${comboBonusText}`,
           620
         );
       } else {
         await _centerTextWait(
-          `${generation}COMBO!`,
-          `${ally.name}「${comboSkill.name}」`,
+          comboTitle,
+          `${ally.name}「${comboSkill.name}」 / ${comboBonusText}`,
           620
         );
       }
@@ -3441,18 +3448,27 @@ return true;
         // 演出後にもう一度対象を再取得
         const targets = enemyTargets(comboSkill.range);
 
+        let comboDrainTotal = 0;
+        const comboHasDrain = (comboSkill.effects || []).some(
+          effect => effect && effect.type === 'drain'
+        );
+
         for (const enemy of targets) {
           if (_bs.result) break;
 
           if (Number(comboSkill.multiplier || 0) > 0) {
             let damage = calcDamage(
               getEffectiveAtk(ally),
-              comboSkill.multiplier,
+              Number(comboSkill.multiplier || 0) * comboDamageRate,
               enemy,
               ally
             );
             damage = applyBackstabBonus(damage, ally, enemy, comboSkill);
+            const hpBeforeCombo = Number(enemy.hp || 0);
             const damageResult = applyDamage(enemy, damage, ally, comboSkill);
+            if (comboHasDrain) {
+              comboDrainTotal += Math.max(0, Math.min(damage, hpBeforeCombo));
+            }
             if (damageResult && damageResult.criticalRoll && damageResult.criticalRoll.isCritical) comboHadCritical = true;
           }
 
@@ -3466,6 +3482,10 @@ return true;
 
           affected = true;
           affectedCount += 1;
+        }
+
+        if (comboHasDrain && comboDrainTotal > 0) {
+          _applyDrainHealing(comboSkill, ally, comboDrainTotal);
         }
       } else if (stype === 'buff' || stype === 'heal') {
         const effectTarget = (comboSkill.effects || [])[0]?.target || '';
@@ -3500,6 +3520,29 @@ return true;
           affected = true;
           affectedCount += 1;
         }
+      }
+
+      // MAX COMBO報酬：同一コンボ連鎖につき1回だけLINK+2。
+      if (
+        affected &&
+        isMaxCombo &&
+        _bs.link &&
+        _maxComboRewardActionId !== Number(context && context.actionId)
+      ) {
+        const actionId = Number(context && context.actionId);
+        const linkPlus = Math.max(0, Number(context && context.maxComboLinkPlus || 2));
+        const before = Number(_bs.link.current || 0);
+        _bs.link.current = Math.min(Number(_bs.link.max || 6), before + linkPlus);
+        _maxComboRewardActionId = actionId;
+        const gained = _bs.link.current - before;
+        _log(`MAX COMBO：ダメージ×${comboDamageRate.toFixed(1)} / LINK +${gained}`);
+        _emit('maxComboBonus', {
+          comboIndex: generation,
+          damageRate: comboDamageRate,
+          linkPlus: gained,
+          bs: _snapshot(),
+        });
+        _renderUI();
       }
 
       // エリ共鳴Lv.4：コンボ発動後、味方全体のATKを1ターン10%上昇。

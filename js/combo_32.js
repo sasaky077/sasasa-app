@@ -12,6 +12,22 @@
   const BOARD_ROWS = 8;
   const BOARD_COLS = 5;
 
+  // コンボボーナス
+  // 1COMBO: 等倍 / 2COMBO: 1.3倍 / 3COMBO: 1.7倍 / 4COMBO以上: MAX 2.0倍
+  function getComboBonus(comboIndex) {
+    const count = Math.max(1, Number(comboIndex || 1));
+    if (count >= 4) {
+      return { count, damageRate: 2.0, isMax: true, linkPlus: 2 };
+    }
+    if (count === 3) {
+      return { count, damageRate: 1.7, isMax: false, linkPlus: 0 };
+    }
+    if (count === 2) {
+      return { count, damageRate: 1.3, isMax: false, linkPlus: 0 };
+    }
+    return { count, damageRate: 1.0, isMax: false, linkPlus: 0 };
+  }
+
   // コンボ反応範囲の基本形。
   // owner自身のマスは含めない。
   const RANGE_BUILDERS = {
@@ -275,6 +291,7 @@
           // 表示番号は世代番号ではなく、実際に発動したコンボの連番にする。
           // Aを起点にB・Cが同時反応した場合も、B=1COMBO / C=2COMBO の順で表示する。
           const comboIndex = ctx.comboCount + 1;
+          const comboBonus = getComboBonus(comboIndex);
 
           // 演出・ダメージ・追加効果・撃破判定まで完全にawait
           const result = await B.executeComboSkill(
@@ -285,6 +302,9 @@
               rootUid: ctx.rootUid,
               generation: comboIndex,
               comboIndex,
+              comboDamageRate: comboBonus.damageRate,
+              isMaxCombo: comboBonus.isMax,
+              maxComboLinkPlus: comboBonus.linkPlus,
               triggerUids: ctx.comboCount === 0
                 ? [root._uid]
                 : [],
@@ -363,6 +383,7 @@
     getRangeLabel,
     inRange,
     PRESETS,
+    getComboBonus,
     isRunning: () => running,
   };
 })();

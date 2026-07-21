@@ -1418,6 +1418,11 @@ function b32EffectSummary(effect) {
     case 'atk_down': return `${prefix}ATK-${rateDownText.trim() || ''}${dur ? `/${dur}` : ''}`;
     case 'stun': return `${prefix}スタン${dur ? `/${dur}` : ''}`;
     case 'heal': return `${prefix}回復`;
+    case 'drain': {
+      const drainRate = Number(effect.rate);
+      const drainPct = Number.isFinite(drainRate) ? Math.round(drainRate * 100) : 50;
+      return `与ダメージの${drainPct}%を自身回復`;
+    }
     case 'poison': return `${prefix}毒${dur ? `/${dur}` : ''}`;
     case 'jittai': return `${prefix}実体化${dur ? `/${dur}` : ''}`;
     case 'sure_hit_self': return '自身必中';
@@ -6492,55 +6497,88 @@ function _onHealEvent(data) {
      }
 
      // ------------------------------------------------------------
-     // 敵情報タップ fallback
+     // 敵タップ fallback（敵情報 / アイテム対象）
      // ------------------------------------------------------------
-     // 移動モード中は移動操作を最優先し、敵情報の補助判定は行わない。
-     // 通常時のみ、3D傾斜でセルonclickを取りこぼした場合に敵セルを補助する。
+     // 移動モード中は移動操作を最優先する。
+     // スタン・敵入替アイテムの対象選択中は enemy-inspectable が付かないため、
+     // skill-target-enemy も候補に含め、アイテム対象処理を敵情報より優先する。
      if (!_moveMode) {
+       const isItemEnemyTargetMode = !!(
+         _itemMode &&
+         _itemPhase === 'target' &&
+         _itemSlotIndex != null
+       );
+       const enemySelector = isItemEnemyTargetMode
+         ? '.b32-cell.skill-target-enemy'
+         : '.b32-cell.enemy-inspectable';
+
        const directEnemyCell = e.target && e.target.closest
-         ? e.target.closest('.b32-cell.enemy-inspectable')
+         ? e.target.closest(enemySelector)
          : null;
 
-       if (!directEnemyCell) {
-         const enemyCells = Array.from(currentBoard.querySelectorAll('.b32-cell.enemy-inspectable'));
+       // セルへ直接届いた場合は、既存onclickに任せて二重実行を防ぐ。
+       if (!directEnemyCell || !currentBoard.contains(directEnemyCell)) {
+         const enemyCells = Array.from(currentBoard.querySelectorAll(enemySelector));
          if (enemyCells.length) {
            let bestEnemy = null;
-           let bestEnemyDist = Infinity;
+           let bestEnemyScore = Infinity;
 
            enemyCells.forEach(cell => {
-             const rect = cell.getBoundingClientRect();
-             if (rect.width <= 0 || rect.height <= 0) return;
+             // 奥側ボスは立ち絵がセルから大きくはみ出すため、
+             // セル矩形に加えて敵立ち絵の実表示矩形もヒット領域として使う。
+             const unitEl = cell.querySelector('.b32-unit.enemy');
+             const visualEl = unitEl && (unitEl.querySelector('.b32-unit-icon') || unitEl);
+             const rects = [cell.getBoundingClientRect()];
+             if (visualEl) rects.push(visualEl.getBoundingClientRect());
 
-             // まず実際の表示矩形内なら、そのセルを最優先する。
-             const inside =
-               e.clientX >= rect.left && e.clientX <= rect.right &&
-               e.clientY >= rect.top && e.clientY <= rect.bottom;
+             rects.forEach((rect, index) => {
+               if (rect.width <= 0 || rect.height <= 0) return;
 
-             const cx = rect.left + rect.width / 2;
-             const cy = rect.top + rect.height / 2;
-             const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+               const insetX = index === 1 ? Math.min(rect.width * 0.12, cellSize * 0.18) : 0;
+               const left = rect.left + insetX;
+               const right = rect.right - insetX;
+               const top = rect.top;
+               const bottom = rect.bottom + (index === 1 ? Math.max(4, cellSize * 0.08) : 0);
 
-             if (inside) {
-               bestEnemy = cell;
-               bestEnemyDist = 0;
-               return;
-             }
+               const inside =
+                 e.clientX >= left && e.clientX <= right &&
+                 e.clientY >= top && e.clientY <= bottom;
 
-             if (d < bestEnemyDist) {
-               bestEnemyDist = d;
-               bestEnemy = cell;
-             }
+               const cx = (left + right) / 2;
+               const cy = top + (bottom - top) * (index === 1 ? 0.58 : 0.50);
+               const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+               const score = inside ? dist * 0.18 : dist;
+
+               if (score < bestEnemyScore) {
+                 bestEnemyScore = score;
+                 bestEnemy = cell;
+               }
+             });
            });
 
-           // 奥側セルの取りこぼしだけを補助する。以前より少し控えめな範囲。
-           const enemyThreshold = Math.max(34, cellSize * 0.92);
-           if (bestEnemy && bestEnemyDist <= enemyThreshold) {
+           // アイテム対象選択中は立ち絵タップを少し広めに補助する。
+           const enemyThreshold = isItemEnemyTargetMode
+             ? Math.max(42, cellSize * 1.15)
+             : Math.max(34, cellSize * 0.92);
+
+           if (bestEnemy && bestEnemyScore <= enemyThreshold) {
              const onclick = bestEnemy.getAttribute('onclick') || '';
-             const m = onclick.match(/_b32ShowEnemyInfo\('([^']+)'\)/);
-             if (m && m[1] && typeof window._b32ShowEnemyInfo === 'function') {
+
+             if (isItemEnemyTargetMode) {
+               const itemMatch = onclick.match(/_b32OnItemEnemyTap\('([^']+)'\)/);
+               if (itemMatch && itemMatch[1] && typeof window._b32OnItemEnemyTap === 'function') {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 window._b32OnItemEnemyTap(itemMatch[1]);
+                 return;
+               }
+             }
+
+             const infoMatch = onclick.match(/_b32ShowEnemyInfo\('([^']+)'\)/);
+             if (infoMatch && infoMatch[1] && typeof window._b32ShowEnemyInfo === 'function') {
                e.preventDefault();
                e.stopPropagation();
-               window._b32ShowEnemyInfo(m[1]);
+               window._b32ShowEnemyInfo(infoMatch[1]);
                return;
              }
            }

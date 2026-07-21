@@ -792,7 +792,7 @@ skills: [
     uiScale: {panel: 1.0, battleBack: 1.0},
     combo: {
       range: 'combo_x_1',
-      skill: { id: 'combo', name: 'キャット・フォロー', type: 'attack', multiplier: 0.50, range: 'cat_snipe_ally', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方遠距離の敵へ小さな追撃を行う。' }
+      skill: { id: 'combo', name: 'キャット・フォロー', type: 'attack', multiplier: 0.50, range: 'cat_snipe_ally', effects: [{ type: 'drain', target: 'ally_self', rate: 0.20 }], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方遠距離の敵へ小さな追撃を行う。与えたダメージの20%分、自身のHPを回復する。' }
     },
     skills: [
       { id: 's1',
@@ -805,9 +805,11 @@ skills: [
         type: 'attack',
         multiplier: 1.75,
         range: 'cat_snipe_ally',
-        effects: [],
+        effects: [
+          { type: 'drain', target: 'ally_self', rate: 0.30 }
+        ],
         hitStyle: 'rapid',
-        desc: '射程：前方3〜5マスの遠距離狙撃。近距離には当たらない。対象の敵にATK×1.75のダメージを与える。' },
+        desc: '射程：前方3〜5マスの遠距離狙撃。近距離には当たらない。対象の敵にATK×1.75のダメージを与え、与えたダメージの30%分、自身のHPを回復する。' },
 
       { id: 'ult',
         name: 'ルミニャス・シュート',
