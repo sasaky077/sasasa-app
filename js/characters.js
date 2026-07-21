@@ -876,7 +876,7 @@ skills: [
         desc: '射程：自身の周囲1マス。対象の敵にATK×1.0のダメージを与える。敵の背後から攻撃した場合、ダメージが2倍になる。' },
 
       { id: 'ult',
-        name: '暴',
+        name: '暴走',
         linkCost: 4,
         isUltimate: true,
         hit: 100,
