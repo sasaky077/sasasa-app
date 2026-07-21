@@ -956,6 +956,367 @@ document.addEventListener('touchend', function (e) {
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjY2hncWdrZWZuemxjaGl0b2V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Mjk4MDgsImV4cCI6MjA5MzEwNTgwOH0.1MFak8VVSFjo4TFNJp3b17-DR6DhSGop0Q1EB73XxeA';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // ============================================================
+  // Zeraphia クラウド引き継ぎ / Supabase同期
+  // 対象: レムナント、アイテム、神樹、進行情報
+  // ※ 所持キャラ・共鳴情報は既存 collected_characters を継続利用
+  // ============================================================
+  const ZERAPHIA_CLOUD_SYNC_VERSION = 1;
+  const ZERAPHIA_REMNANT_KEY = 'zeraphia_remnants_owned_v1';
+  const ZERAPHIA_INVENTORY_KEY = 'zeraphia_inventory_v1';
+  const ZERAPHIA_TRANSFER_PENDING_KEY = 'zeraphia_pending_transfer_v1';
+  const ZERAPHIA_TRANSFER_BACKUP_KEY = 'zeraphia_transfer_backup_v1';
+  const ZERAPHIA_MIGRATED_KEY = 'zeraphia_cloud_migrated_v1';
+
+  function _zsCurrentUserId() {
+    return String(localStorage.getItem('zukan_user_id') || '').trim();
+  }
+
+  function _zsParseJson(raw, fallback) {
+    try {
+      var value = raw ? JSON.parse(raw) : fallback;
+      return value == null ? fallback : value;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function _zsClone(value) {
+    return _zsParseJson(JSON.stringify(value == null ? null : value), value);
+  }
+
+  function _zsReadLocalObject(key) {
+    var value = _zsParseJson(localStorage.getItem(key), {});
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  }
+
+  function _zsSetLocalJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value == null ? {} : value));
+  }
+
+  function _zsCollectLocalStorageByKeyword(keywords) {
+    var result = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key) continue;
+      var lower = key.toLowerCase();
+      if (!(keywords || []).some(function(word){ return lower.indexOf(word) >= 0; })) continue;
+      var raw = localStorage.getItem(key);
+      result[key] = {
+        raw: raw,
+        parsed: _zsParseJson(raw, null)
+      };
+    }
+    return result;
+  }
+
+  function _zsRestoreLocalStorageBundle(bundle) {
+    Object.keys(bundle || {}).forEach(function(key){
+      var entry = bundle[key];
+      if (!entry || typeof entry !== 'object') return;
+      if (typeof entry.raw === 'string') {
+        localStorage.setItem(key, entry.raw);
+      } else if (entry.parsed != null) {
+        localStorage.setItem(key, JSON.stringify(entry.parsed));
+      }
+    });
+  }
+
+  function _zsGetInventoryState() {
+    var inventory = _zsReadLocalObject(ZERAPHIA_INVENTORY_KEY);
+    if (window.userProfile && window.userProfile.inventory && typeof window.userProfile.inventory === 'object') {
+      Object.keys(window.userProfile.inventory).forEach(function(id){
+        inventory[id] = Math.max(0, Number(window.userProfile.inventory[id] || 0));
+      });
+    }
+    return inventory;
+  }
+
+  function _zsApplyInventoryState(inventory) {
+    inventory = inventory && typeof inventory === 'object' ? inventory : {};
+    _zsSetLocalJson(ZERAPHIA_INVENTORY_KEY, inventory);
+    if (window.userProfile) window.userProfile.inventory = _zsClone(inventory);
+  }
+
+  function _zsGetShinjuState() {
+    var explicit = _zsReadLocalObject('zeraphia_shinju_v1');
+    return {
+      level: Math.max(1, Number(explicit.level || explicit.shinjuLevel || 1)),
+      exp: Math.max(0, Number(explicit.exp || 0)),
+      offeringCount: Math.max(0, Number(explicit.offeringCount || explicit.offering_count || 0)),
+      state: explicit,
+      localStorage: _zsCollectLocalStorageByKeyword(['shinju', '神樹'])
+    };
+  }
+
+  function _zsApplyShinjuState(payload) {
+    if (!payload || typeof payload !== 'object') return;
+    var state = payload.state && typeof payload.state === 'object' ? payload.state : payload;
+    if (state && Object.keys(state).length) _zsSetLocalJson('zeraphia_shinju_v1', state);
+    _zsRestoreLocalStorageBundle(payload.localStorage || {});
+    try {
+      window.dispatchEvent(new CustomEvent('zeraphia:shinju-cloud-loaded', { detail: state }));
+    } catch (_) {}
+  }
+
+  function mergeRemnantData(localData, cloudData) {
+    var merged = {};
+    var ids = new Set(Object.keys(localData || {}).concat(Object.keys(cloudData || {})));
+
+    ids.forEach(function(id){
+      var localEntry = localData && localData[id] ? localData[id] : null;
+      var cloudEntry = cloudData && cloudData[id] ? cloudData[id] : null;
+      if (!localEntry) { merged[id] = cloudEntry; return; }
+      if (!cloudEntry) { merged[id] = localEntry; return; }
+
+      merged[id] = Object.assign({}, localEntry, cloudEntry, {
+        count: Math.max(1, Number(localEntry.count || 1), Number(cloudEntry.count || 1)),
+        blessingLevel: Math.min(5, Math.max(1, Number(localEntry.blessingLevel || 1), Number(cloudEntry.blessingLevel || 1))),
+        coreCount: Math.max(0, Number(localEntry.coreCount || 0), Number(cloudEntry.coreCount || 0)),
+        acquiredAt: localEntry.acquiredAt || cloudEntry.acquiredAt || null,
+        lastAcquiredAt: cloudEntry.lastAcquiredAt || localEntry.lastAcquiredAt || null
+      });
+    });
+    return merged;
+  }
+
+  async function loadRemnantsFromSupabase(targetUserId) {
+    var result = await sb.from('player_remnants').select('*').eq('user_id', targetUserId);
+    if (result.error) throw result.error;
+    var remnants = {};
+    (result.data || []).forEach(function(row){
+      remnants[row.remnant_id] = {
+        id: row.remnant_id,
+        count: Math.max(1, Number(row.count || 1)),
+        blessingLevel: Math.min(5, Math.max(1, Number(row.blessing_level || 1))),
+        coreCount: Math.max(0, Number(row.core_count || 0)),
+        acquiredAt: row.acquired_at || null,
+        lastAcquiredAt: row.last_acquired_at || null
+      };
+    });
+    return remnants;
+  }
+
+  async function saveRemnantsToSupabase(remnantsOverride) {
+    var uid = _zsCurrentUserId();
+    if (!uid) throw new Error('ユーザーIDがありません');
+    var remnants = remnantsOverride || _zsReadLocalObject(ZERAPHIA_REMNANT_KEY);
+    var rows = Object.keys(remnants || {}).map(function(remnantId){
+      var entry = remnants[remnantId] || {};
+      return {
+        user_id: uid,
+        remnant_id: remnantId,
+        count: Math.max(1, Number(entry.count || 1)),
+        blessing_level: Math.min(5, Math.max(1, Number(entry.blessingLevel || 1))),
+        core_count: Math.max(0, Number(entry.coreCount || 0)),
+        acquired_at: entry.acquiredAt || null,
+        last_acquired_at: entry.lastAcquiredAt || null
+      };
+    });
+    if (!rows.length) return { ok: true, count: 0 };
+    var result = await sb.from('player_remnants').upsert(rows, { onConflict: 'user_id,remnant_id' });
+    if (result.error) throw result.error;
+    return { ok: true, count: rows.length };
+  }
+
+  async function saveInventoryToSupabase(inventoryOverride) {
+    var uid = _zsCurrentUserId();
+    if (!uid) throw new Error('ユーザーIDがありません');
+    var inventory = inventoryOverride || _zsGetInventoryState();
+    var rows = Object.keys(inventory || {}).map(function(itemId){
+      return {
+        user_id: uid,
+        item_id: itemId,
+        quantity: Math.max(0, Number(inventory[itemId] || 0))
+      };
+    });
+    if (!rows.length) return { ok: true, count: 0 };
+    var result = await sb.from('player_inventory').upsert(rows, { onConflict: 'user_id,item_id' });
+    if (result.error) throw result.error;
+    return { ok: true, count: rows.length };
+  }
+
+  async function loadInventoryFromSupabase(targetUserId) {
+    var result = await sb.from('player_inventory').select('*').eq('user_id', targetUserId);
+    if (result.error) throw result.error;
+    var inventory = {};
+    (result.data || []).forEach(function(row){
+      inventory[row.item_id] = Math.max(0, Number(row.quantity || 0));
+    });
+    if (Object.keys(inventory).length) _zsApplyInventoryState(inventory);
+    return inventory;
+  }
+
+  async function saveShinjuToSupabase(shinjuOverride) {
+    var uid = _zsCurrentUserId();
+    if (!uid) throw new Error('ユーザーIDがありません');
+    var payload = shinjuOverride || _zsGetShinjuState();
+    var row = {
+      user_id: uid,
+      level: Math.max(1, Number(payload.level || 1)),
+      exp: Math.max(0, Number(payload.exp || 0)),
+      offering_count: Math.max(0, Number(payload.offeringCount || 0)),
+      state: payload
+    };
+    var result = await sb.from('player_shinju').upsert(row, { onConflict: 'user_id' });
+    if (result.error) throw result.error;
+    return { ok: true };
+  }
+
+  async function loadShinjuFromSupabase(targetUserId) {
+    var result = await sb.from('player_shinju').select('*').eq('user_id', targetUserId).maybeSingle();
+    if (result.error) throw result.error;
+    if (!result.data) return null;
+    var payload = result.data.state || {
+      level: result.data.level,
+      exp: result.data.exp,
+      offeringCount: result.data.offering_count
+    };
+    _zsApplyShinjuState(payload);
+    return payload;
+  }
+
+  async function saveProgressToSupabase() {
+    var uid = _zsCurrentUserId();
+    if (!uid) throw new Error('ユーザーIDがありません');
+    var state = {
+      syncVersion: ZERAPHIA_CLOUD_SYNC_VERSION,
+      savedAt: new Date().toISOString(),
+      pityCount: Math.max(0, Number(localStorage.getItem('pity_count') || 0)),
+      localStorage: _zsCollectLocalStorageByKeyword([
+        'story', 'stage', 'tutorial', 'progress', 'daily', 'roguelite', 'pity'
+      ])
+    };
+    var row = {
+      user_id: uid,
+      player_level: Math.max(1, Number(window.userProfile && window.userProfile.rank || 1)),
+      player_exp: Math.max(0, Number(window.userProfile && window.userProfile.total_score || 0)),
+      story_progress: {},
+      stage_progress: {},
+      tutorial_progress: {},
+      other_state: state
+    };
+    var result = await sb.from('player_progress').upsert(row, { onConflict: 'user_id' });
+    if (result.error) throw result.error;
+    return { ok: true };
+  }
+
+  async function loadProgressFromSupabase(targetUserId) {
+    var result = await sb.from('player_progress').select('*').eq('user_id', targetUserId).maybeSingle();
+    if (result.error) throw result.error;
+    if (!result.data) return null;
+    var other = result.data.other_state || {};
+    _zsRestoreLocalStorageBundle(other.localStorage || {});
+    if (other.pityCount != null) localStorage.setItem('pity_count', String(Math.max(0, Number(other.pityCount || 0))));
+    return result.data;
+  }
+
+  async function saveAllTransferDataToSupabase() {
+    var results = await Promise.allSettled([
+      saveRemnantsToSupabase(),
+      saveInventoryToSupabase(),
+      saveShinjuToSupabase(),
+      saveProgressToSupabase()
+    ]);
+    var failed = results.filter(function(r){ return r.status === 'rejected'; });
+    if (failed.length) {
+      failed.forEach(function(r){ console.error('[CloudSync] save failed:', r.reason); });
+      throw new Error('クラウド保存の一部に失敗しました');
+    }
+    localStorage.setItem(ZERAPHIA_MIGRATED_KEY, '1');
+    return true;
+  }
+
+  async function migrateLocalDataToCloud() {
+    var uid = _zsCurrentUserId();
+    if (!uid) throw new Error('ユーザーIDがありません');
+
+    var localRemnants = _zsReadLocalObject(ZERAPHIA_REMNANT_KEY);
+    var cloudRemnants = await loadRemnantsFromSupabase(uid);
+    var mergedRemnants = mergeRemnantData(localRemnants, cloudRemnants);
+
+    if (Object.keys(mergedRemnants).length) {
+      _zsSetLocalJson(ZERAPHIA_REMNANT_KEY, mergedRemnants);
+      if (typeof ownedRemnants !== 'undefined') ownedRemnants = mergedRemnants;
+    }
+
+    await saveAllTransferDataToSupabase();
+    return true;
+  }
+
+  function _zsCreateTransferBackup() {
+    var backup = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key) backup[key] = localStorage.getItem(key);
+    }
+    sessionStorage.setItem(ZERAPHIA_TRANSFER_BACKUP_KEY, JSON.stringify(backup));
+  }
+
+  function _zsRestoreTransferBackup() {
+    var backup = _zsParseJson(sessionStorage.getItem(ZERAPHIA_TRANSFER_BACKUP_KEY), null);
+    if (!backup || typeof backup !== 'object') return false;
+    Object.keys(backup).forEach(function(key){
+      if (backup[key] == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, backup[key]);
+    });
+    return true;
+  }
+
+  async function restoreTransferDataFromCloud(targetUserId) {
+    var [cloudRemnants, inventory, shinju, progress] = await Promise.all([
+      loadRemnantsFromSupabase(targetUserId),
+      loadInventoryFromSupabase(targetUserId),
+      loadShinjuFromSupabase(targetUserId),
+      loadProgressFromSupabase(targetUserId)
+    ]);
+
+    if (Object.keys(cloudRemnants || {}).length) {
+      _zsSetLocalJson(ZERAPHIA_REMNANT_KEY, cloudRemnants);
+      if (typeof ownedRemnants !== 'undefined') ownedRemnants = cloudRemnants;
+    }
+
+    localStorage.removeItem(ZERAPHIA_TRANSFER_PENDING_KEY);
+    sessionStorage.removeItem(ZERAPHIA_TRANSFER_BACKUP_KEY);
+    localStorage.setItem('zeraphia_last_transfer_success', new Date().toISOString());
+    return { remnants: cloudRemnants, inventory: inventory, shinju: shinju, progress: progress };
+  }
+
+  async function runPendingTransferIfNeeded() {
+    if (localStorage.getItem(ZERAPHIA_TRANSFER_PENDING_KEY) !== '1') return false;
+    var uid = _zsCurrentUserId();
+    try {
+      await restoreTransferDataFromCloud(uid);
+      return true;
+    } catch (error) {
+      console.error('[CloudSync] transfer restore failed:', error);
+      _zsRestoreTransferBackup();
+      localStorage.removeItem(ZERAPHIA_TRANSFER_PENDING_KEY);
+      throw error;
+    }
+  }
+
+  var _zsCloudSaveTimer = null;
+  function scheduleCloudSave() {
+    clearTimeout(_zsCloudSaveTimer);
+    _zsCloudSaveTimer = setTimeout(function(){
+      saveAllTransferDataToSupabase().catch(function(error){
+        console.error('[CloudSync] delayed save failed:', error);
+      });
+    }, 700);
+  }
+
+  window.saveRemnantsToSupabase = saveRemnantsToSupabase;
+  window.loadRemnantsFromSupabase = loadRemnantsFromSupabase;
+  window.saveInventoryToSupabase = saveInventoryToSupabase;
+  window.loadInventoryFromSupabase = loadInventoryFromSupabase;
+  window.saveShinjuToSupabase = saveShinjuToSupabase;
+  window.loadShinjuFromSupabase = loadShinjuFromSupabase;
+  window.saveAllTransferDataToSupabase = saveAllTransferDataToSupabase;
+  window.migrateLocalDataToCloud = migrateLocalDataToCloud;
+  window.scheduleCloudSave = scheduleCloudSave;
+
+
   // ─── ガチャバナー定義 ───────────────────────────
   // 期間ごとにここを編集する（imgはimages/フォルダ内のファイル名）
   // 一旦ロジックは同じ。邂逅画面で2種類のバナーを選択できるようにする。
@@ -2651,7 +3012,11 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       rarity: chara.rarity,
       time: timeStr,
       capturedAt: row.captured_at || new Date().toISOString(),
-      db_id: row.id || null
+      db_id: row.id || null,
+      characterLevel: Math.max(1, Number(row.character_level || 1)),
+      characterExp: Math.max(0, Number(row.character_exp || 0)),
+      isFavorite: !!row.is_favorite,
+      isLocked: !!row.is_locked
     };
   }
 
@@ -2736,7 +3101,11 @@ if(openingBgm && isAudioEnabled('title_bgm')){
           rarity: chara.rarity,
           time: timeStr,
           capturedAt: row.captured_at,
-          db_id: row.id
+          db_id: row.id,
+          characterLevel: Math.max(1, Number(row.character_level || 1)),
+          characterExp: Math.max(0, Number(row.character_exp || 0)),
+          isFavorite: !!row.is_favorite,
+          isLocked: !!row.is_locked
         };
 
         box.push(entry);
@@ -2781,6 +3150,18 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       used_gachas: []
     };
   }
+  // キャラ・プロフィール読込後にクラウド引き継ぎを処理する。
+  try {
+    var didTransfer = await runPendingTransferIfNeeded();
+    if (!didTransfer) {
+      await migrateLocalDataToCloud();
+    }
+  } catch (cloudError) {
+    console.error('[CloudSync] load/migration failed:', cloudError);
+    // クラウド失敗時もローカルデータは削除しない。
+  }
+
+  window.userProfile = userProfile;
   updateZukanLimitBreakNotice();
 }
 
@@ -2795,6 +3176,10 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       stats: data.stats,
       base_stats: data.baseStats || data.stats,
       limit_break: data.limitBreak || 0,
+      character_level: Math.max(1, Number(data.characterLevel || 1)),
+      character_exp: Math.max(0, Number(data.characterExp || 0)),
+      is_favorite: !!data.isFavorite,
+      is_locked: !!data.isLocked,
       captured_at: data.capturedAt || new Date().toISOString()  // ISOタイムスタンプを使用
     };
 
@@ -4809,6 +5194,7 @@ setTenResultFooterVisible(true);
   function saveOwnedRemnantsToLocal(){
     try {
       localStorage.setItem(REMNANT_STORAGE_KEY, JSON.stringify(ownedRemnants || {}));
+      if(typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
     } catch(e) {
       console.warn('[Remnant] save failed:', e);
     }
@@ -6993,7 +7379,52 @@ function showToast(text){
     toast.classList.remove('show');
   }, 1500);
 }
-  function inputId(){ var newId=prompt('引き継ぎたいIDを入力してください：'); if(newId&&newId.trim()){ localStorage.setItem('zukan_user_id',newId.trim()); alert('IDを変更しました！ページをリロードします。'); location.reload(); } }
+  async function inputId(){
+    var newId = prompt('引き継ぎたいIDを入力してください：');
+    if(!newId || !newId.trim()) return;
+
+    var targetId = newId.trim();
+    var currentId = _zsCurrentUserId();
+    if(targetId === currentId){
+      alert('現在使用中のIDです。');
+      return;
+    }
+
+    try {
+      // 入力先にプロフィールまたは所持キャラがあるか確認する。
+      var profileResult = await sb.from('user_profiles').select('user_id').eq('user_id', targetId).limit(1);
+      if(profileResult.error) throw profileResult.error;
+
+      var characterResult = await sb.from('collected_characters').select('id').eq('user_id', targetId).limit(1);
+      if(characterResult.error) throw characterResult.error;
+
+      var exists = !!(
+        (profileResult.data && profileResult.data.length) ||
+        (characterResult.data && characterResult.data.length)
+      );
+
+      if(!exists){
+        alert('このIDの引き継ぎデータが見つかりません。IDを確認してください。');
+        return;
+      }
+
+      var ok = confirm(
+        'このIDのデータを読み込みます。\n' +
+        '現在の端末データはバックアップされ、復元成功までは削除されません。\n' +
+        '続行しますか？'
+      );
+      if(!ok) return;
+
+      _zsCreateTransferBackup();
+      localStorage.setItem('zukan_previous_user_id', currentId || '');
+      localStorage.setItem('zukan_user_id', targetId);
+      localStorage.setItem(ZERAPHIA_TRANSFER_PENDING_KEY, '1');
+      location.reload();
+    } catch(error) {
+      console.error('[CloudSync] transfer id check failed:', error);
+      alert('引き継ぎデータの確認に失敗しました。通信状況とSupabase設定を確認してください。');
+    }
+  }
   function resetData(){
     if(confirm('データを全てリセットしますか？\n図鑑・メインキャラ情報が消えます。')){
       sb.from('collected_characters').delete().eq('user_id', userId).then(function(){
