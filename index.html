@@ -1887,7 +1887,8 @@ function getLimitBreakRate(limitBreak, charaId){
 }
 
 function applyLimitBreakStats(baseStats, limitBreak, rarity, charaId){
-  var rate = getLimitBreakRate(limitBreak, charaId);
+  var lb = Math.max(0, Number(limitBreak || 0));
+  var rate = getLimitBreakRate(lb, charaId);
   var result = {};
 
   BASE_STATS.forEach(function(s){
@@ -2746,7 +2747,35 @@ function renderResultElementBadge(data){
   var box = [];          // 所持BOX：引いた全インスタンスを蓄積
   var collected = {};    // 図鑑用：character_id → 最初に引いた1件（解放済みフラグ）
   var favoriteId = null;
-  var userProfile = { 
+  const ZERAPHIA_PROFILE_CACHE_KEY = 'zeraphia_user_profile_cache_v1';
+  window._profileLoadState = 'loading';
+
+  function readProfileCache(){
+    try {
+      var cached = JSON.parse(localStorage.getItem(ZERAPHIA_PROFILE_CACHE_KEY) || 'null');
+      if(!cached || typeof cached !== 'object') return null;
+      if(!Number.isFinite(Number(cached.coin)) || !Number.isFinite(Number(cached.gem))) return null;
+      return cached;
+    } catch(e){ return null; }
+  }
+
+  function writeProfileCache(profile){
+    try {
+      if(!profile || !Number.isFinite(Number(profile.coin)) || !Number.isFinite(Number(profile.gem))) return;
+      localStorage.setItem(ZERAPHIA_PROFILE_CACHE_KEY, JSON.stringify({
+        display_name: profile.display_name || 'Player',
+        coin: Number(profile.coin),
+        gem: Number(profile.gem),
+        total_score: Number(profile.total_score || 0),
+        rank: Number(profile.rank || 1),
+        used_gachas: Array.isArray(profile.used_gachas) ? profile.used_gachas : [],
+        saved_at: new Date().toISOString()
+      }));
+    } catch(e){}
+  }
+
+  var cachedProfileAtBoot = readProfileCache();
+  var userProfile = cachedProfileAtBoot || { 
     display_name: 'Player', 
     coin: 0, 
     gem: 0, 
@@ -2930,8 +2959,14 @@ function selectChara(now, gacha) {
   });
 
 // Step2: タイトル画面（バックグラウンドでDB読み込み開始）
-window._dbLoadPromise = loadFromDB().catch(function(e){
-  console.log('DB load error:', e);
+window._dbLoadPromise = loadFromDB().then(function(){
+  window._profileLoadState = 'ready';
+  return true;
+}).catch(function(e){
+  window._profileLoadState = 'error';
+  window._profileLoadError = e;
+  console.error('DB load error:', e);
+  return false;
 });
 
 var titleScreen = document.getElementById('title-screen');
@@ -2964,7 +2999,14 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 }
 
   // 先にDB待機開始
-  await window._dbLoadPromise;
+  var dbLoadOk = await window._dbLoadPromise;
+  if(!dbLoadOk){
+    titleStarted = false;
+    titleScreen.classList.remove('closing');
+    var detail = window._profileLoadError && (window._profileLoadError.message || window._profileLoadError.details || window._profileLoadError.code);
+    alert('プレイヤーデータを読み込めませんでした。\nコイン・ガチャ石を保護するため、ゲーム開始を停止しました。\n\nSupabaseのRLS / Policy / anon権限を確認してください。' + (detail ? '\n\n詳細: ' + detail : ''));
+    return;
+  }
 
   // タイトルが消え切ってから画面切替
   setTimeout(function(){
@@ -3027,13 +3069,13 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function ensureStarterEriOwned(){
-    var eri = CHARACTERS.find(function(c){ return c.id === 1 || c.name === 'エリ'; });
+    var eri = CHARACTERS.find(function(c){ return Number(c.id) === 1 || c.name === 'エリ'; });
     if(!eri) return;
 
-    var alreadyOwned = box.some(function(b){ return b && b.id === eri.id; });
+    var alreadyOwned = box.some(function(b){ return b && Number(b.id) === Number(eri.id); });
     if(alreadyOwned){
       if(!collected[eri.id]){
-        collected[eri.id] = box.find(function(b){ return b && b.id === eri.id; });
+        collected[eri.id] = box.find(function(b){ return b && Number(b.id) === Number(eri.id); });
       }
       return;
     }
@@ -3049,15 +3091,15 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     box.push(entry);
     collected[eri.id] = entry;
 
-    var result = await sb.from('collected_characters').insert({
+    var result = await sb.from('collected_characters').upsert({
       user_id: userId,
-      character_id: eri.id,
-      rarity: eri.rarity,
+      character_id: Number(eri.id),
+      rarity: eri.rarity || 'r',
       stats: entry.stats,
       base_stats: entry.baseStats,
       limit_break: 0,
       captured_at: capturedAt
-    }).select();
+    }, { onConflict: 'user_id,character_id', ignoreDuplicates: true }).select();
 
     if(result && result.data && result.data[0]){
       entry.db_id = result.data[0].id;
@@ -3072,7 +3114,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
   if(res1.data){
     res1.data.forEach(function(row){
-      var chara = CHARACTERS.find(function(c){ return c.id === row.character_id; });
+      var chara = CHARACTERS.find(function(c){ return Number(c.id) === Number(row.character_id); });
 
       if(chara){
         // captured_at（ISO文字列）から表示用timeStrを復元
@@ -3126,8 +3168,17 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
   await ensureStarterEriOwned();
 
-  var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId);
-  var profile = (res2.data && res2.data.length > 0) ? res2.data[0] : null;
+  var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId).maybeSingle();
+  if(res2.error){
+    var cached = readProfileCache();
+    if(cached){
+      userProfile = cached;
+      window.userProfile = userProfile;
+      throw new Error('user_profiles読込失敗（端末キャッシュは保護済み）: ' + (res2.error.message || res2.error.code || 'unknown'));
+    }
+    throw new Error('user_profiles読込失敗: ' + (res2.error.message || res2.error.code || 'unknown'));
+  }
+  var profile = res2.data || null;
 
   if(profile){
     favoriteId = profile.favorite_char_id ?? profile.favorite_db_id ?? null;
@@ -3137,15 +3188,19 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     userProfile.total_score = profile.total_score ?? 0;
     userProfile.rank        = calcRank(profile.total_score ?? 0);
     userProfile.used_gachas = profile.used_gachas || [];
+    writeProfileCache(userProfile);
   } else {
-    // 新規ユーザー: デフォルト値で INSERT
-    await sb.from('user_profiles').insert({
+    // SELECT成功かつ該当行なしの場合だけ、新規ユーザーとして作成
+    var insertProfileResult = await sb.from('user_profiles').insert({
       user_id: userId,
       display_name: 'Player',
       coin: 100,
       gem: 10,
       used_gachas: []
-    });
+    }).select().single();
+    if(insertProfileResult.error){
+      throw new Error('user_profiles新規作成失敗: ' + (insertProfileResult.error.message || insertProfileResult.error.code || 'unknown'));
+    }
 
     userProfile = {
       display_name: 'Player',
@@ -3155,6 +3210,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       total_score: 0,
       used_gachas: []
     };
+    writeProfileCache(userProfile);
   }
   // キャラ・プロフィール読込後にクラウド引き継ぎを処理する。
   try {
@@ -3526,7 +3582,16 @@ div.addEventListener('click', function(){
   }
 
   async function saveProfileToDB(patch){
-    await sb.from('user_profiles').update(patch).eq('user_id', userId);
+    if(window._profileLoadState !== 'ready'){
+      throw new Error('プロフィール未読込のため保存を中止しました（0上書き防止）');
+    }
+    var result = await sb.from('user_profiles').update(patch).eq('user_id', userId).select();
+    if(result.error){
+      throw new Error('プロフィール保存失敗: ' + (result.error.message || result.error.code || 'unknown'));
+    }
+    Object.assign(userProfile, patch || {});
+    writeProfileCache(userProfile);
+    return result;
   }
 
   async function updateLastPlayed(){
@@ -3819,6 +3884,35 @@ function setTenResultFooterVisible(visible){
 
 var isSummoning = false;
 
+function recoverSummonUI(message){
+  isSummoning = false;
+  pendingSkipResults = null;
+  tenRevealWaiting = false;
+  if(tenInitialEffectTimer !== null){ clearTimeout(tenInitialEffectTimer); tenInitialEffectTimer = null; }
+  stepTimers.forEach(clearTimeout);
+  stepTimers = [];
+  clearGachaEffectTimers();
+  setSkipBtnVisible(false);
+
+  ['summon-standby','reveal-modal','ten-result-modal','summon-confirm-modal'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.remove('active','is-starting');
+  });
+  var standby = document.getElementById('summon-standby');
+  if(standby) standby.style.pointerEvents = '';
+  var guf = document.getElementById('global-user-frame');
+  if(guf) guf.style.display = '';
+  setNavVisible(true);
+  setHomeBtnVisible(true);
+  setReloadBtnVisible(true);
+  updateSummonGemUI();
+  updateMainUI();
+  if(message){
+    if(typeof showToast === 'function') showToast(message);
+    else alert(message);
+  }
+}
+
 function startSummonFromStandby(){
   if(isSummoning) return;
   isSummoning = true;
@@ -3830,7 +3924,18 @@ function startSummonFromStandby(){
   standby.classList.add('is-starting');
   standby.style.pointerEvents = 'none';
 
-normalSummon(currentSummonCount);
+var summonWatchdog = setTimeout(function(){
+  if(!isSummoning) return;
+  console.error('[Gacha] watchdog recovery: summon flow timed out');
+  recoverSummonUI('ガチャ演出の読み込みに失敗しました。結晶の状態を確認して、もう一度お試しください。');
+}, 20000);
+
+Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
+  console.error('[Gacha] summon failed:', error);
+  recoverSummonUI('ガチャ処理中にエラーが発生しました。');
+}).finally(function(){
+  clearTimeout(summonWatchdog);
+});
 
 setTimeout(function(){
   standby.classList.remove('active');
@@ -3847,9 +3952,14 @@ setTimeout(function(){
     return g.id === currentGachaId;
   });
 
+  if(!currentGacha){
+    throw new Error('選択中のガチャが見つかりません');
+  }
+
   var cost = currentGacha.cost * count;
 
   if(userProfile.gem < cost){
+    recoverSummonUI();
     document.getElementById('paywall-modal').classList.add('active');
     return;
   }
