@@ -45,7 +45,7 @@ const CHARACTERS = [
     favScale: 0.80, favOffsetY: -40,
     resonanceMaterialId: 'eri_origin_wing',
     resonanceBonusProfile: 'eri_v1',
-    uiScale: {panel: 1.0,battleBack: 1.0,},    
+    uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},    
         combo: {
       range: 'combo_line_all',
       skill: { id: 'combo', name: '共鳴する閃光', type: 'attack', multiplier: 0.80, range: 'combo_x_all', effects: [], hitStyle: 'normal', desc: '同じ縦列上の味方スキルに反応し、X字上の敵へ追撃する。' }
@@ -99,7 +99,7 @@ skills: [
     battleBackImg: 'images/chara_02_battle_back.webp',
     panelImg: 'images/chara_02_panel.webp',
     favScale: 0.85, favOffsetY: -25,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: 'スリープ・チェイン', type: 'debuff', multiplier: 0.20, range: 'around8', effects: [{ type: 'stun', target: 'enemy', hit: 25, duration: 1 }], hitStyle: 'sleep', desc: '上下左右1マスの味方スキルに反応し、周囲1マスの敵へ小ダメージを与える。25%の確率で1ターン眠り状態にする。' }
@@ -158,7 +158,7 @@ skills: [
     panelImg: 'images/chara_03_panel.webp',
     favScale: 0.90, favOffsetY: -10,
     resonanceBonusProfile: 'sui_v1',
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},
         combo: {
       range: 'combo_x_all',
       skill: { id: 'combo', name: '星導の余光', type: 'buff', multiplier: 0, range: 'ally_all', effects: [{ type: 'critical_up', target: 'ally_all', hit: 100, duration: 1, rate: 0.10 }], hitStyle: 'support', desc: 'X字上の味方スキルに反応し、味方全体のcritical率を1ターン10%上昇する。' }
@@ -225,10 +225,15 @@ skills: [
     battleBackImg: 'images/chara_04_battle_back.webp',
     panelImg: 'images/chara_04_panel.webp',
     resonanceBonusConfig: {
-      3: { comboTriggerRange: 'combo_cross_all' }
+      3: { comboTriggerRange: 'combo_cross_all' },
+      4: {
+        comboMultiplier: 1.15,
+        ultMultiplier: 3.0,
+        selfAtkUpOnCritical: { rate: 1.15, duration: 1 }
+      }
     },
     favScale: 0.82, favOffsetY: -50,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},
         combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: 'クイック・ギルティ', type: 'attack', multiplier: 0.90, range: 'combo_line_all', effects: [], hitStyle: 'rapid_multi', hitCount: 3, desc: '上下左右1マスの味方スキルに反応し、同じ縦列上の敵へ高速追撃する。' }
@@ -286,7 +291,7 @@ skills: [
     battleBackImg: 'images/chara_05_battle_back.webp',
     panelImg: 'images/chara_05_panel.webp',
     favScale: 0.80, favOffsetY: -45,
-    uiScale: {panel: 1.0,battleBack: 1.3},
+    uiScale: {panel: 1.0,battleBack: 1.3,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
       skill: { id: 'combo', name: 'トリック・アンコール', type: 'attack', multiplier: 0.40, range: 'around8', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、自身の周囲1マスへ軽い追撃を行う。' }
@@ -349,9 +354,9 @@ skills: [
     resonanceBonusConfig: {
       2: { skillId: 's1', selfHealAtkRate: 0.20 },
       3: { comboTriggerRange: 'combo_cross_all' },
-      4: { comboSkillRange: 'fan_2row_3_ally' }
+      4: { comboMultiplier: 0.70 }
     },
-    uiScale: {panel: 1.0,battleBack: 1.7},
+    uiScale: {panel: 1.0,battleBack: 1.7,battleUp: 1.0},
         combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: 'ブレイズ・リレー', type: 'attack', multiplier: 0.55, range: 'front_row_3_ally', effects: [], hitStyle: 'heavy', desc: '上下左右1マスの味方スキルに反応し、前方横3マスへ炎の追撃を行う。' }
@@ -416,7 +421,7 @@ skills: [
     panelImg: 'images/chara_07_panel.webp',
     favScale: 0.85, favOffsetY: -40,
     resonanceBonusProfile: 'rose_v1',
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
         combo: {
       range: 'combo_cross_all',
       skill: { id: 'combo', name: 'ローズ・エコー', type: 'debuff', multiplier: 0.40, range: 'combo_line_all', effects: [{ type: 'atk_down', target: 'enemy', hit: 100, duration: 1, rate: 0.90 }], hitStyle: 'sleep', desc: '十字上の味方スキルに反応し、同じ縦列上の敵へ小ダメージとATK10%低下を与える。' }
@@ -494,7 +499,7 @@ skills: [
     battleBackImg: 'images/chara_08_battle_back.webp',
     panelImg: 'images/chara_08_panel.webp',
     favScale: 0.85, favOffsetY: -45,
-    uiScale: {panel: 1.0,battleBack: 1.55},
+    uiScale: {panel: 1.0,battleBack: 1.55,battleUp: 1.0},
     combo: {
       range: 'combo_cross_all',
       skill: { id: 'combo', name: 'ケミカル・シナジー', type: 'buff', multiplier: 0, range: 'ally_all', effects: [{ type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.10 }], hitStyle: 'support', desc: '十字上の味方スキルに反応し、味方全体のATKを1ターン10%上昇させる。' }
@@ -554,7 +559,7 @@ skills: [
     battleBackImg: 'images/chara_10_battle_back.webp',
     panelImg: 'images/chara_10_panel.webp',
     favScale: 1.00, favOffsetY: 20,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
       skill: { id: 'combo', name: '私もやる～！', type: 'attack', multiplier: 0.40, range: 'diag_x_1', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、自身の斜め1マスへ小さな追撃を行う。' }
@@ -612,7 +617,7 @@ skills: [
     battleBackImg: 'images/chara_11_battle_back.webp',
     panelImg: 'images/chara_11_panel.webp',
     favScale: 0.95, favOffsetY: 5,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: '紫繰・返し刃', type: 'attack', multiplier: 0.45, range: 'front1', effects: [{ type: 'push_1', target: 'enemy', hit: 50 }], hitStyle: 'normal', desc: '上下左右1マスの味方スキルに反応し、正面1マスの敵へ追撃する。50%の確率で1マス押し出す。' }
@@ -651,68 +656,73 @@ skills: [
         desc: '射程：前方横3マス。対象の敵にATK×1.5のダメージを与える。さらに自身に2ターンの間「酔ノ想葬」を付与する。酔ノ想葬：敵から攻撃される時、その攻撃を回避し、攻撃者に隣接する空きマスへ移動してATK×1.0の反撃を行う。' }
     ]},
 
-  // ── id:12 オルフィア
-  { id: 12, name: 'オルフィア', rarity: 'r',
-    element: 'mystis',
-    role: '支援寄り',
-    moveType: 'front_side_3',
+  // ── id:12 ハヤテ
+  { id: 12, name: 'ハヤテ', rarity: 'r',
+    element: 'logos',
+    role: '速度寄り',
+    moveType: 'king_8',
     costMax: 12,
     costStart: 5,
     costRegen: 4,
     shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: 
-    { HP: 680, ATK: 240 },
-    img: 'images/chara_12.webp', 
-    cutImg: 'images/chara_12_cut.webp', 
+    stats: { HP: 540, ATK: 295 },
+    img: 'images/chara_12.webp',
+    cutImg: 'images/chara_12_cut.webp',
     ultImg: 'images/chara_12_cutin.webp',
-    upImg: 'images/chara_12_up.webp', 
+    upImg: 'images/chara_12_up.webp',
     battleImg: 'images/chara_12_battle.webp',
     battleUpImg: 'images/chara_12_battle_up.webp',
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
     favScale: 0.85, favOffsetY: -35,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    resonanceBonusConfig: {
+      2: { skillId: 's1', skillMultiplier: 1.90 },
+      3: { comboTriggerRange: 'combo_x_all' },
+      4: { hitAndAwayLinkRefund: 1, hitAndAwayLinkRefundPerTurn: 1 }
+    },
+    uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},
     combo: {
-      range: 'combo_line_2',
-      skill: { id: 'combo', name: 'アマノコダマ', type: 'buff', multiplier: 0, range: 'self', effects: [{ type: 'atk_up', target: 'ally_self', hit: 100, duration: 1, rate: 1.05 }], hitStyle: 'support', desc: '同じ縦列の前後2マス以内にいる味方のスキルに反応し、自身のATKを1ターン5%上昇させる。' }
+      range: 'combo_x_1',
+      skill: { id: 'combo', name: '閃光追駆', type: 'attack', multiplier: 0.55, range: 'front_row_3_ally', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方横3マスの敵へ高速追撃する。' }
     },
     skills: [
       {
         id: 's1',
-        name: 'アマノネイロ',
+        name: '閃駆・月穿ち',
         linkCost: 3,
         isUltimate: false,
         hit: 100,
+        criticalRate: 0.30,
+        criticalDamageRate: 1.5,
         type: 'attack',
-        multiplier: 1.2,
+        multiplier: 1.7,
         range: 'front_row_3_ally',
-        effects: [
-          { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.15 }
-        ],
-        hitStyle: 'multi',
-        desc: '射程：前方横3マス。対象の敵にATK×1.2のダメージを与え、味方全体のATKを1ターン15%上昇させる。'
+        effects: [],
+        hitStyle: 'rapid_multi',
+        hitCount: 3,
+        desc: '射程：前方横3マス。対象の敵にATK×1.7のダメージを与える。ヒットアンドアウェイモード中は、攻撃判定後に移動前の位置へ戻る。'
       },
       {
         id: 'ult',
-        name: 'ロックオブリンネ',
+        name: '黄月閃界・雷光巡行',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
-        type: 'attack',
-        multiplier: 2.6,
-        range: 'cross_large',
-        effects: [
-          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
-        ],
-        hitStyle: 'multi',
-        desc: '射程：前方大十字範囲。対象の敵にATK×2.6のダメージを与え、1ターン行動不能にする。'
+        type: 'hit_and_away_mode',
+        multiplier: 0,
+        range: 'self',
+        effects: [],
+        hitStyle: 'support',
+        modeDuration: 3,
+        moveRangeBonus: 2,
+        desc: '自身を3ターンの間ヒットアンドアウェイモードにする。モード中は移動距離が2マス増加し、通常攻撃またはSKILLの攻撃判定後、移動前の位置へ戻る。帰還ではLINKを消費しない。'
       },
     ]},
 
   // ── id:9
-  { id: 9, name: 'ヴェラ', rarity: 'r',
+  { id: 9, name: 'パトラ', rarity: 'r',
     element: 'chaos',
     role: '妨害寄り',
     moveType: 'front_side_3',
@@ -732,7 +742,7 @@ skills: [
     battleBackImg: 'images/chara_09_battle_back.webp',
     panelImg: 'images/chara_09_panel.webp',
     favScale: 1.0, favOffsetY: 10,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: '服従の余波', type: 'debuff', multiplier: 0.25, range: 'front1', effects: [{ type: 'atk_down', target: 'enemy', hit: 100, duration: 1, rate: 0.95 }], hitStyle: 'normal', desc: '上下左右1マスの味方スキルに反応し、正面1マスの敵へ小ダメージを与え、1ターンATKを5%低下させる。' }
@@ -795,7 +805,7 @@ skills: [
     battleBackImg: 'images/chara_13_battle_back.webp',
     panelImg: 'images/chara_13_panel.webp',
     favScale: 0.85, favOffsetY: -40,
-    uiScale: {panel: 1.0, battleBack: 1.0},
+    uiScale: {panel: 0.60, battleBack: 1.0,battleUp: 0.75},
     combo: {
       range: 'combo_x_1',
       skill: { id: 'combo', name: 'キャット・フォロー', type: 'attack', multiplier: 0.50, range: 'cat_snipe_ally', effects: [{ type: 'drain', target: 'ally_self', rate: 0.20 }], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方遠距離の敵へ小さな追撃を行う。与えたダメージの20%分、自身のHPを回復する。' }
@@ -855,7 +865,7 @@ skills: [
     battleBackImg: 'images/chara_14_battle_back.webp',
     panelImg: 'images/chara_14_panel.webp',
     favScale: 0.80, favOffsetY: -50,
-    uiScale: {panel: 1.0,battleBack: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 0.70},
     combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: '無音の追い刃', type: 'attack', multiplier: 0.45, range: 'around8', effects: [], hitStyle: 'rapid', desc: '上下左右1マスの味方スキルに反応し、自身の周囲1マスの敵へ小さな追撃を行う。' }
@@ -913,7 +923,7 @@ skills: [
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
     favScale: 0.90, favOffsetY: 20,
-    uiScale: {panel: 1.0,battleBack: 1.52},
+    uiScale: {panel: 1.0,battleBack: 1.52,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
       skill: { id: 'combo', name: '万象のさざ波', type: 'attack', multiplier: 0.35, range: 'front1', effects: [{ type: 'push_1', target: 'enemy', hit: 50 }], hitStyle: 'normal', desc: '斜め隣接4マスの味方スキルに反応し、正面1マスの敵へ小ダメージを与える。50%の確率で1マス押し出す。' }
@@ -973,7 +983,7 @@ skills: [
     battleBackImg: 'images/chara_16_battle_back.webp',
     panelImg: 'images/chara_16_panel.webp',
     favScale: 1.1, favOffsetY: 35,
-    uiScale: {panel: 1.0,battleBack: 1.5},
+    uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_cross_1',
       skill: { id: 'combo', name: 'シロのお手伝い', type: 'debuff', multiplier: 0.30, range: 'around8', effects: [{ type: 'jittai', target: 'enemy', hit: 40, duration: 1 }], hitStyle: 'normal', desc: '上下左右1マスの味方スキルに反応し、周囲1マスの敵へ小ダメージを与える。40%の確率で1ターン実体化させる。' }
@@ -1041,7 +1051,7 @@ skills: [
     battleBackImg: 'images/chara_17_battle_back.webp',
     panelImg: 'images/chara_17_panel.webp',
     favScale: 0.95, favOffsetY: 15,
-    uiScale: {panel: 1.0,battleBack: 1.55},
+    uiScale: {panel: 1.0,battleBack: 1.55,battleUp: 1.0},
     combo: {
       range: 'combo_line_2',
       skill: { id: 'combo', name: '聖雫の余韻', type: 'heal', multiplier: 0, range: 'self', healRate: 0.08, effects: [], hitStyle: 'heal', desc: '同じ縦列の前後2マス以内にいる味方のスキルに反応し、自身のHPを最大HPの8%回復する。' }

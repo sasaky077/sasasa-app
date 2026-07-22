@@ -5066,7 +5066,9 @@ function _injectAttackCinematicStyle() {
   max-height: 100%;
   object-fit: contain;
   image-rendering: auto;
-  transform: none !important;
+  /* characters.js の uiScale.battleUp を攻撃中アップ画像へ反映 */
+  transform: scale(var(--b32-cine-scale, 1)) !important;
+  transform-origin: center bottom;
 }
 .b32-cine-ally {
   left: max(10px, 7vw);
@@ -5676,6 +5678,19 @@ function _getCinematicImg(unit) {
  return unit.battleUpImg || unit.battleImg || unit.img || unit.panelImg || unit.portrait || unit.cutin || '';
 }
 
+function _getCinematicScale(unit) {
+ // キャラ定義をそのまま保持する形式／charDef配下に保持する形式の両方に対応。
+ const raw = unit?.uiScale?.battleUp ?? unit?.charDef?.uiScale?.battleUp ?? 1.0;
+ const scale = Number(raw);
+ // 誤入力で演出が消えたり極端に巨大化したりしないよう安全範囲へ制限。
+ return Number.isFinite(scale) ? Math.min(2.5, Math.max(0.25, scale)) : 1.0;
+}
+
+function _cinematicScaleStyle(unit, extraStyle = '') {
+ const scale = _getCinematicScale(unit);
+ return `--b32-cine-scale:${scale};${extraStyle || ''}`;
+}
+
 function _showAttackCinematic(data) {
  if (!data || !data.source || !data.target) return;
  if (!data.amount || data.amount <= 0) return;
@@ -5711,6 +5726,8 @@ function _showAttackCinematic(data) {
  // 攻撃方向は ov の enemy-attack クラスで切り替える。
  const allyImg = isAllyAttack ? sourceImg : targetImgs[0];
  const enemyImg = isAllyAttack ? targetImgs[0] : sourceImg;
+ const allyUnit = isAllyAttack ? sourceUnit : targetUnits[0];
+ const enemyUnit = isAllyAttack ? targetUnits[0] : sourceUnit;
 
  _b32AttackCinematicBusy = true;
  _b32AttackCinematicLastKey = key;
@@ -5763,10 +5780,10 @@ function _showAttackCinematic(data) {
  const targetHtml = isMultiTarget
    ? targetImgs.slice(0, 5).map((img, i) => {
        const slot = multiSlots[i % multiSlots.length];
-       const style = `--ti:${i};--cx:${slot.cx}%;--cy:${slot.cy}%;`;
+       const style = _cinematicScaleStyle(targetUnits[i], `--ti:${i};--cx:${slot.cx}%;--cy:${slot.cy}%;`);
        return `<div class="b32-cine-unit b32-cine-enemy b32-cine-target b32-cine-target-${i}" style="${style}"><img src="${img}" alt="" onerror="this.style.display='none'"></div>`;
      }).join('')
-   : `<div class="b32-cine-unit b32-cine-enemy"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>`;
+   : `<div class="b32-cine-unit b32-cine-enemy" style="${_cinematicScaleStyle(enemyUnit)}"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>`;
 
  const multiDamageHtml = isMultiTarget && !isRapidMulti
    ? targetEvents.slice(0, 5).map((ev, i) => {
@@ -5813,7 +5830,7 @@ function _showAttackCinematic(data) {
    ov.classList.add(isEnemyAttack ? 'target-ally-broken' : 'target-enemy-broken');
  }
  ov.innerHTML = `
-   <div class="b32-cine-unit b32-cine-ally"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
+   <div class="b32-cine-unit b32-cine-ally" style="${_cinematicScaleStyle(allyUnit)}"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
    ${targetHtml}
    ${isRapidMulti ? rapidHtml : (isMultiTarget ? multiDamageHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage${isCritical ? ' critical' : ''}">-${data.amount}</div>`)}
    ${isCritical ? '<div class="b32-cine-critical-label">CRITICAL</div>' : ''}

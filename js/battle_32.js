@@ -653,14 +653,15 @@
           const push = effect('push_1'); if (push) push.hit = 75;
         }
         break;
-      case 12: // オルフィア R
-        if (lb >= 2 && s1) {
-          const up = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (up) up.rate = 1.20;
-        }
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_line_all';
-        if (lb >= 4 && combo) {
-          const up = effect('atk_up'); if (up) up.rate = 1.10;
-          combo.resonanceLowestAllyAtkUp = { rate:1.05, duration:1 };
+      case 12: // ハヤテ R
+        // Lv.2：通常スキル倍率をATK×1.90へ強化
+        if (lb >= 2 && s1) s1.multiplier = 1.90;
+        // Lv.3：コンボ反応範囲を斜め隣接4マスからX字全体へ拡張
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_x_all';
+        // Lv.4：ヒットアンドアウェイ帰還成功時、1ターン1回LINK+1
+        if (lb >= 4) {
+          c.hitAndAwayLinkRefund = 1;
+          c.hitAndAwayLinkRefundPerTurn = 1;
         }
         break;
       case 13: // ミア SR
@@ -2699,6 +2700,67 @@ function _executeDelayedAttack(action) {
   }
 
   // ============================================================
+  // ハヤテ：ヒットアンドアウェイモード
+  // ============================================================
+  function _isHitAndAwayModeActive32(unit) {
+    if (!unit || !_bs) return false;
+    const untilTurn = Number(unit.hitAndAwayUntilTurn || 0);
+    return untilTurn >= Number(_bs.turn || 0);
+  }
+
+  function _activateHitAndAwayMode32(unit, skill) {
+    const duration = Math.max(1, Number(skill && skill.modeDuration || 3));
+    unit.hitAndAwayUntilTurn = Number(_bs.turn || 1) + duration - 1;
+    unit.hitAndAwayMoveBonus = Math.max(0, Number(skill && skill.moveRangeBonus || 2));
+    unit.hitAndAwayOrigin = null;
+    _log(`${unit.name} はヒットアンドアウェイモードに入った（${duration}ターン）`);
+  }
+
+  function _returnHitAndAwayUnit32(unit) {
+    if (!unit || !_isHitAndAwayModeActive32(unit)) return false;
+    const origin = unit.hitAndAwayOrigin;
+    if (!origin || Number(origin.turn) !== Number(_bs.turn)) return false;
+
+    const occupied = getAllUnits().some(other =>
+      other && other._uid !== unit._uid && other.hp > 0 &&
+      Number(other.row) === Number(origin.row) && Number(other.col) === Number(origin.col)
+    );
+    if (occupied) {
+      _log(`${unit.name}：帰還地点が塞がれているため元の位置へ戻れない`);
+      unit.hitAndAwayOrigin = null;
+      return false;
+    }
+
+    const from = { row: unit.row, col: unit.col };
+    unit.row = Number(origin.row);
+    unit.col = Number(origin.col);
+    unit.hitAndAwayOrigin = null;
+    _log(`${unit.name} が閃光とともに元の位置へ帰還した`);
+
+    // ハヤテ共鳴Lv.4：帰還成功時に1ターン1回だけLINKを回復する。
+    const refund = Math.max(0, Number(unit.hitAndAwayLinkRefund || 0));
+    const perTurn = Math.max(1, Number(unit.hitAndAwayLinkRefundPerTurn || 1));
+    const currentTurn = Number(_bs.turn || 0);
+    if (refund > 0 && _bs.link) {
+      if (Number(unit._hitAndAwayRefundTurn || -1) !== currentTurn) {
+        unit._hitAndAwayRefundTurn = currentTurn;
+        unit._hitAndAwayRefundCount = 0;
+      }
+      const used = Math.max(0, Number(unit._hitAndAwayRefundCount || 0));
+      if (used < perTurn) {
+        const before = Number(_bs.link.current || 0);
+        _bs.link.current = Math.min(Number(_bs.link.max || 6), before + refund);
+        unit._hitAndAwayRefundCount = used + 1;
+        const gained = Number(_bs.link.current || 0) - before;
+        if (gained > 0) _log(`${unit.name}：共鳴効果でLINK +${gained}`);
+      }
+    }
+
+    _emit('move', { ally: { ...unit }, from, hitAndAwayReturn: true, bs: _snapshot() });
+    return true;
+  }
+
+  // ============================================================
   // スキル実行（味方）
   // ============================================================
   async function executeAllySkill(allyUid, skillId, executionOptions) {
@@ -3159,6 +3221,17 @@ if (stype === 'repeat_skill') {
     });
   }
 
+    // ── hit_and_away_mode ───────────────────────────────────────
+    } else if (stype === 'hit_and_away_mode') {
+      _activateHitAndAwayMode32(ally, skill);
+      _emit('statusApplied', {
+        source: { ...ally },
+        target: { ...ally },
+        effect: { type: 'hit_and_away_mode', duration: Number(skill.modeDuration || 3) },
+        label: 'HIT & AWAY',
+        bs: _snapshot(),
+      });
+
     // ── buff ────────────────────────────────────────────────────
     } else if (stype === 'buff') {
       // effects の target フィールドで対象を決定
@@ -3193,6 +3266,16 @@ if (noTargets && (skill.type === 'repeat_skill' || skill.type === 'summon_object
 }
 
     ally.shinki -= (skill.shinkiCost || 0);
+
+// ハヤテ：モード中に攻撃した場合、攻撃判定完了後に移動前の位置へ帰還する。
+// ULTはモード移行のみなので帰還対象外。
+if (
+  !noTargets &&
+  !skill.isUltimate &&
+  (skill.type === 'attack' || skill.type === 'debuff')
+) {
+  _returnHitAndAwayUnit32(ally);
+}
 
 // スキル/ULTのダメージで勝敗が確定していたら、ここで終了する
 // applyDamage() 内で _checkWinLose() は既に呼ばれている
@@ -5793,7 +5876,14 @@ function doBossLineAttack(boss) {
     });
 
     // 行動フラグリセット
-    _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
+    _bs.allies.forEach(a => {
+      a.skillUsedThisTurn = false;
+      a.hitAndAwayOrigin = null;
+      if (Number(a.hitAndAwayUntilTurn || 0) < Number(_bs.turn)) {
+        a.hitAndAwayUntilTurn = 0;
+        a.hitAndAwayMoveBonus = 0;
+      }
+    });
 
     // 後方互換フラグリセット
     _bs.moveUsedThisTurn  = false;
@@ -5963,9 +6053,26 @@ function doBossLineAttack(boss) {
 
     // 専用候補がある敵はそれを優先。
     // 接近型：前後2・左右1、遠距離型：左右2・前後1などをデータ側で定義できる。
-    const offsets = Array.isArray(unit.customMoveOffsets) && unit.customMoveOffsets.length > 0
+    let offsets = Array.isArray(unit.customMoveOffsets) && unit.customMoveOffsets.length > 0
       ? unit.customMoveOffsets
       : BR.getMoveOffsets(unit);
+
+    // ハヤテ：モード中は8方向への移動距離を+2する。
+    // king_8の通常1マスに対し、最大3マス先までを移動候補に追加する。
+    if (unit.side === 'ally' && _isHitAndAwayModeActive32(unit)) {
+      const maxDistance = 1 + Math.max(0, Number(unit.hitAndAwayMoveBonus || 2));
+      const extended = [];
+      const directions = [
+        { dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 },
+        { dr:-1, dc:-1 }, { dr:-1, dc:1 }, { dr:1, dc:-1 }, { dr:1, dc:1 },
+      ];
+      directions.forEach(dir => {
+        for (let distance = 1; distance <= maxDistance; distance++) {
+          extended.push({ dr: dir.dr * distance, dc: dir.dc * distance });
+        }
+      });
+      offsets = extended;
+    }
     const cells   = [];
     offsets.forEach(({ dr, dc }) => {
       const row = unit.row + dr;
@@ -6029,6 +6136,13 @@ function doBossLineAttack(boss) {
       if (bossAtDest) {
         _log('ボスのいるマスには移動できない');
         return false;
+      }
+
+      // ハヤテ：モード中は、この移動の出発地点を帰還地点として記録する。
+      if (_isHitAndAwayModeActive32(ally)) {
+        ally.hitAndAwayOrigin = { row: ally.row, col: ally.col, turn: _bs.turn };
+      } else {
+        ally.hitAndAwayOrigin = null;
       }
 
       ally.row = toRow;

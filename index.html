@@ -1752,9 +1752,9 @@ const IGNIS_RESONANCE_BONUSES = {
     detail: 'ブレイズ・リレーの発動レンジが「上下左右1マス」から「十字上すべて」へ拡張する。'
   },
   4: {
-    title: '天裂く炎輪',
-    summary: 'コンボ効果範囲：前方横3マス → 前方2段×横3マス',
-    detail: 'ブレイズ・リレーの効果範囲が「前方横3マス」から「前方2段×横3マス」へ拡張する。'
+    title: '猛炎連鎖',
+    summary: 'コンボ倍率をATK×0.70へ強化',
+    detail: 'ブレイズ・リレーの効果範囲は前方横3マスのまま、ダメージ倍率をATK×0.70へ強化する。'
   }
 };
 window.IGNIS_RESONANCE_BONUSES = IGNIS_RESONANCE_BONUSES;
@@ -1804,7 +1804,7 @@ const CHARACTER_RESONANCE_BONUSES = {
     1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'アルノの基礎HPとATKが4%上昇する。' },
     2: { title:'高速処刑', summary:'通常スキル威力・critical率強化', detail:'ギルティの倍率をATK×1.70、critical率を75%へ強化する。' },
     3: { title:'疾走連鎖', summary:'コンボ反応範囲を十字全域へ拡張', detail:'クイック・ギルティの反応範囲を十字上すべてへ拡張する。' },
-    4: { title:'断罪加速', summary:'コンボ威力強化・critical時ATK+15%', detail:'コンボ倍率をATK×1.05へ強化し、critical発生時に自身のATKを1ターン15%上昇する。' }
+    4: { title:'断罪加速', summary:'ULT×3.0・コンボ×1.15・critical時ATK+15%', detail:'エグゼキュートをATK×3.0、コンボをATK×1.15へ強化し、critical発生時に自身のATKを1ターン15%上昇する。' }
   },
   5: {
     1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'クラリネの基礎HPとATKが4%上昇する。' },
@@ -1819,7 +1819,7 @@ const CHARACTER_RESONANCE_BONUSES = {
     4: { title:'極性触媒', summary:'コンボ反応範囲：十字 → 十字＋X字', detail:'ケミカル・シナジーの反応範囲を十字上すべてから、十字＋X字上すべてへ拡張する。' }
   },
   9: {
-    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'ヴェラの基礎HPとATKが4%上昇する。' },
+    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'パトラの基礎HPとATKが4%上昇する。' },
     2: { title:'服従補助', summary:'通常スキル対象の味方ATK+10%', detail:'通常スキルで移動させた味方のATKを1ターン10%上昇する。' },
     3: { title:'支配領域', summary:'コンボ反応範囲を周囲8マスへ拡張', detail:'コンボの反応範囲を周囲8マスへ拡張する。' },
     4: { title:'絶対服従', summary:'コンボ威力強化・敵ATK-10%', detail:'コンボ倍率をATK×0.40へ強化し、対象のATKを1ターン10%低下させる。' }
@@ -1837,10 +1837,10 @@ const CHARACTER_RESONANCE_BONUSES = {
     4: { title:'押し切り', summary:'コンボ威力強化・押し出し75%', detail:'コンボ倍率をATK×0.60へ強化し、押し出し成功率を75%へ上昇する。' }
   },
   12: {
-    1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'オルフィアの基礎HPとATKが4%上昇する。' },
-    2: { title:'祝福強化', summary:'通常スキルATK上昇量を20%へ強化', detail:'通常スキルによるATK上昇量を20%へ強化する。' },
-    3: { title:'祈りの導線', summary:'コンボ反応範囲を縦列全域へ拡張', detail:'コンボの反応範囲を同じ縦列上すべてへ拡張する。' },
-    4: { title:'重なる祝福', summary:'コンボATK+10%・最低ATK味方+5%', detail:'コンボのATK上昇量を10%へ強化し、最もATKが低い味方を追加で5%上昇する。' }
+    1: { title:'疾風の共鳴', summary:'ATKが5%上昇', detail:'ハヤテの基礎ATKが5%上昇する。' },
+    2: { title:'月穿ち強化', summary:'通常スキル倍率をATK×1.90へ強化', detail:'「閃駆・月穿ち」のダメージ倍率をATK×1.90へ強化する。' },
+    3: { title:'閃光経路拡張', summary:'コンボ反応範囲をX字全体へ拡張', detail:'コンボの反応範囲を斜め隣接4マスからX字上すべてへ拡張する。' },
+    4: { title:'雷光帰還', summary:'帰還成功時、1ターン1回LINK+1', detail:'ヒットアンドアウェイモード中、攻撃後の帰還に成功すると1ターンに1回までLINKを1回復する。' }
   },
   13: {
     1: { title:'基礎共鳴', summary:'HP・ATKが4%上昇', detail:'ミアの基礎HPとATKが4%上昇する。' },
@@ -1892,7 +1892,13 @@ function applyLimitBreakStats(baseStats, limitBreak, rarity, charaId){
 
   BASE_STATS.forEach(function(s){
     var base = baseStats[s] || 0;
-    result[s] = Math.floor(base * (1 + rate));
+    var statRate = rate;
+    // ハヤテは共鳴Lv.1の固有ボーナスとしてATKのみ+5%。
+    // Lv.2以降は従来どおり、追加の共鳴1段階ごとに+4%を加算する。
+    if(Number(charaId) === 12 && s === 'ATK' && lb > 0){
+      statRate = 0.05 + Math.max(0, lb - 1) * LIMIT_BREAK_RATE;
+    }
+    result[s] = Math.floor(base * (1 + statRate));
   });
 
   return result;
@@ -7110,6 +7116,25 @@ async function deleteCurrentChara(){
         if(levelConfig.moveType){
           c.moveType = levelConfig.moveType;
         }
+        if(levelConfig.skillMultiplier != null && levelConfig.skillId && Array.isArray(c.skills)){
+          var multiplierSkill = c.skills.find(function(skill){
+            return skill && skill.id === levelConfig.skillId;
+          });
+          if(multiplierSkill) multiplierSkill.multiplier = Number(levelConfig.skillMultiplier);
+        }
+        if(levelConfig.hitAndAwayLinkRefund != null){
+          c.hitAndAwayLinkRefund = Number(levelConfig.hitAndAwayLinkRefund);
+          c.hitAndAwayLinkRefundPerTurn = Math.max(1, Number(levelConfig.hitAndAwayLinkRefundPerTurn || 1));
+        }
+        if(levelConfig.comboMultiplier != null && combo){
+          combo.multiplier = Number(levelConfig.comboMultiplier);
+        }
+        if(levelConfig.ultMultiplier != null && ult){
+          ult.multiplier = Number(levelConfig.ultMultiplier);
+        }
+        if(levelConfig.selfAtkUpOnCritical && combo){
+          combo.resonanceSelfAtkUpOnCritical = levelConfig.selfAtkUpOnCritical;
+        }
       }
     }
 
@@ -7136,7 +7161,10 @@ async function deleteCurrentChara(){
       case 4:
         if(lb >= 2 && s1){ s1.multiplier=1.70; s1.criticalRate=.75; }
         if(lb >= 3 && c.combo) c.combo.range='combo_cross_all';
-        if(lb >= 4 && combo){ combo.multiplier=1.05; combo.resonanceSelfAtkUpOnCritical={rate:1.15,duration:1}; }
+        if(lb >= 4){
+          if(ult) ult.multiplier=3.0;
+          if(combo){ combo.multiplier=1.15; combo.resonanceSelfAtkUpOnCritical={rate:1.15,duration:1}; }
+        }
         break;
       case 5:
         if(lb >= 2 && s1) s1.linkCost=2;
@@ -7146,7 +7174,7 @@ async function deleteCurrentChara(){
       case 6:
         if(lb >= 2 && s1) s1.resonanceSelfHealAtkRate=.20;
         if(lb >= 3 && c.combo) c.combo.range='combo_cross_all';
-        if(lb >= 4 && combo) combo.range='fan_2row_3_ally';
+        if(lb >= 4 && combo) combo.multiplier=.70;
         break;
       case 7:
         if(lb >= 1 && ult) ult.linkCost=Math.max(0,Number(ult.linkCost||0)-1);
@@ -7175,9 +7203,9 @@ async function deleteCurrentChara(){
         if(lb >= 4 && combo){combo.multiplier=.60;var p11=comboEffect('push_1');if(p11)p11.hit=75;}
         break;
       case 12:
-        if(lb >= 2 && s1){var u12=(s1.effects||[]).find(function(x){return x&&x.type==='atk_up';});if(u12)u12.rate=1.20;}
-        if(lb >= 3 && c.combo)c.combo.range='combo_line_all';
-        if(lb >= 4 && combo){var cu12=comboEffect('atk_up');if(cu12)cu12.rate=1.10;combo.resonanceLowestAllyAtkUp={rate:1.05,duration:1};}
+        if(lb >= 2 && s1)s1.multiplier=1.90;
+        if(lb >= 3 && c.combo)c.combo.range='combo_x_all';
+        if(lb >= 4){c.hitAndAwayLinkRefund=1;c.hitAndAwayLinkRefundPerTurn=1;}
         break;
       case 13:
         if(lb >= 2 && s1){s1.multiplier=2.05;s1.criticalRate=.30;}
@@ -8659,7 +8687,7 @@ window.addEventListener('pagehide', function () {
 <script src="js/stories/chapter01.js"></script>
 
 <script src="js/battle_range.js"></script>
-<script src="js/characters.js"></script>
+<script src="js/characters.js?v=279-arno-ignis-balance"></script>
 <script src="js/enemies.js?v=118-rivia-oblivion"></script>
 <script src="js/battle.js"></script>
 <script src="js/battle_swipe.js?v=49"></script>
