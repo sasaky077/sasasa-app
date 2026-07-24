@@ -2646,7 +2646,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
     updateMainUI();
     if(currentZukanMainTab !== 'box') showDetail(target, false);
 
-    showToast('共鳴データを保存できませんでした。通信状態を確認してください');
+    showResonanceDiagnostic(saveError, target, beforeState);
     return;
   }
 
@@ -2670,6 +2670,101 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
   } else {
     alert('共鳴が完了しました。');
   }
+}
+
+
+function _resonanceSafeJson(value){
+  try { return JSON.stringify(value); }
+  catch(e) { return String(value); }
+}
+
+function _buildResonanceDiagnostic(error, target, beforeState){
+  var raw = error || {};
+  var cause = raw.cause || {};
+  var diagnostic = {
+    timestamp: new Date().toISOString(),
+    page: location.href,
+    online: navigator.onLine,
+    userAgent: navigator.userAgent,
+    userId: typeof userId !== 'undefined' ? userId : null,
+    target: {
+      id: target && target.id,
+      name: target && target.name,
+      db_id: target && target.db_id,
+      beforeLimitBreak: beforeState && beforeState.limitBreak,
+      attemptedLimitBreak: target && target.limitBreak,
+      rarity: target && target.rarity
+    },
+    error: {
+      name: raw.name || '',
+      message: raw.message || String(raw),
+      code: raw.code || cause.code || '',
+      details: raw.details || cause.details || '',
+      hint: raw.hint || cause.hint || '',
+      status: raw.status || cause.status || '',
+      statusText: raw.statusText || cause.statusText || ''
+    },
+    lastSupabaseResult: window.__lastResonanceSupabaseResult || null
+  };
+  return diagnostic;
+}
+
+function showResonanceDiagnostic(error, target, beforeState){
+  var diagnostic = _buildResonanceDiagnostic(error, target, beforeState);
+  window.__lastResonanceDiagnostic = diagnostic;
+  try { localStorage.setItem('zeraphia_last_resonance_diagnostic', JSON.stringify(diagnostic)); } catch(e) {}
+
+  var old = document.getElementById('resonance-diagnostic-modal');
+  if(old) old.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'resonance-diagnostic-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+
+  var panel = document.createElement('div');
+  panel.style.cssText = 'width:min(430px,100%);max-height:86dvh;overflow:auto;background:#171717;border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:18px;color:#fff;font-family:monospace;box-sizing:border-box;';
+
+  var title = document.createElement('div');
+  title.textContent = '共鳴保存エラー診断';
+  title.style.cssText = 'font-family:"Noto Serif JP",serif;font-size:18px;font-weight:700;margin-bottom:10px;color:#ff9d9d;';
+
+  var lead = document.createElement('div');
+  lead.textContent = '素材と共鳴Lvは元に戻しました。下の内容をスクリーンショットしてください。';
+  lead.style.cssText = 'font-family:"Noto Serif JP",serif;font-size:12px;line-height:1.6;color:#ddd;margin-bottom:12px;';
+
+  var pre = document.createElement('pre');
+  pre.textContent = JSON.stringify(diagnostic, null, 2);
+  pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;background:#090909;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:12px;font-size:10px;line-height:1.5;color:#d7e4ff;';
+
+  var actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+
+  var copyBtn = document.createElement('button');
+  copyBtn.textContent = '診断内容をコピー';
+  copyBtn.style.cssText = 'flex:1;padding:12px;border:0;border-radius:8px;background:#eee;color:#111;font-weight:700;';
+  copyBtn.onclick = async function(){
+    var text = JSON.stringify(diagnostic, null, 2);
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = 'コピーしました';
+    } catch(e) {
+      window.prompt('この内容をコピーしてください', text);
+    }
+  };
+
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = '閉じる';
+  closeBtn.style.cssText = 'flex:1;padding:12px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:#222;color:#fff;font-weight:700;';
+  closeBtn.onclick = function(){ overlay.remove(); };
+
+  actions.appendChild(copyBtn);
+  actions.appendChild(closeBtn);
+  panel.appendChild(title);
+  panel.appendChild(lead);
+  panel.appendChild(pre);
+  panel.appendChild(actions);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
 }
 
 async function updateLimitBreakToDB(target){
@@ -2701,12 +2796,40 @@ async function updateLimitBreakToDB(target){
       .select('id,user_id,character_id,limit_break,stats,base_stats');
   }
 
+  window.__lastResonanceSupabaseResult = {
+    userId: typeof userId !== 'undefined' ? userId : null,
+    targetId: target && target.id,
+    targetDbId: target && target.db_id,
+    data: result && result.data ? result.data : null,
+    error: result && result.error ? {
+      message: result.error.message || '',
+      code: result.error.code || '',
+      details: result.error.details || '',
+      hint: result.error.hint || ''
+    } : null,
+    status: result && result.status,
+    statusText: result && result.statusText
+  };
+
   if(result && result.error){
-    throw result.error;
+    var supabaseError = new Error(result.error.message || 'Supabase共鳴保存エラー');
+    supabaseError.name = 'SupabaseResonanceSaveError';
+    supabaseError.code = result.error.code || '';
+    supabaseError.details = result.error.details || '';
+    supabaseError.hint = result.error.hint || '';
+    supabaseError.status = result.status;
+    supabaseError.statusText = result.statusText;
+    supabaseError.cause = result.error;
+    throw supabaseError;
   }
 
   if(!result || !result.data || result.data.length === 0){
-    throw new Error('共鳴データの更新対象が見つかりません');
+    var noRowError = new Error('共鳴データの更新対象が0件でした');
+    noRowError.name = 'ResonanceUpdateZeroRowsError';
+    noRowError.details = 'userId=' + String(typeof userId !== 'undefined' ? userId : '') + ', characterId=' + String(target && target.id) + ', db_id=' + String(target && target.db_id);
+    noRowError.status = result && result.status;
+    noRowError.statusText = result && result.statusText;
+    throw noRowError;
   }
 
   // エリが誤って複数行ある場合でも、以後は更新済み行を参照する。
