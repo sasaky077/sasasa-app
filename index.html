@@ -2633,6 +2633,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
     }
   } catch(saveError) {
     console.error('[Resonance] save failed; rolling back local state:', saveError);
+    saveError.attemptedLimitBreak = Number(target.limitBreak || 0);
 
     target.limitBreak = beforeState.limitBreak;
     target.stats = beforeState.stats;
@@ -2692,7 +2693,7 @@ function _buildResonanceDiagnostic(error, target, beforeState){
       name: target && target.name,
       db_id: target && target.db_id,
       beforeLimitBreak: beforeState && beforeState.limitBreak,
-      attemptedLimitBreak: target && target.limitBreak,
+      attemptedLimitBreak: (raw && raw.attemptedLimitBreak != null) ? raw.attemptedLimitBreak : (target && target.limitBreak),
       rarity: target && target.rarity
     },
     error: {
@@ -2791,7 +2792,7 @@ async function updateLimitBreakToDB(target){
   if(Number(target.id) === 1 && (!result || result.error || !result.data || result.data.length === 0)){
     result = await sb.from('collected_characters')
       .update(payload)
-      .eq('user_id', userId)
+      .ilike('user_id', userId)
       .eq('character_id', 1)
       .select('id,user_id,character_id,limit_break,stats,base_stats');
   }
@@ -2835,6 +2836,19 @@ async function updateLimitBreakToDB(target){
   // エリが誤って複数行ある場合でも、以後は更新済み行を参照する。
   var savedRow = result.data[0];
   target.db_id = savedRow.id;
+
+  // 旧表記の行をcase-insensitive検索で拾った場合も、その場で正規IDへ寄せる。
+  if(savedRow.user_id && normalizeZeraphiaUserId(savedRow.user_id) === userId && savedRow.user_id !== userId){
+    var canonicalizeResult = await sb.from('collected_characters')
+      .update({ user_id: userId })
+      .eq('id', savedRow.id);
+    if(canonicalizeResult && canonicalizeResult.error){
+      console.warn('[Resonance] user_id canonicalize failed:', canonicalizeResult.error);
+    } else {
+      savedRow.user_id = userId;
+    }
+  }
+
   return savedRow;
 }
 
@@ -2977,8 +2991,65 @@ function renderResultElementBadge(data){
   };
   var currentResultData=null, currentDetailData=null, pendingNew=null;
   var detailReturnToSummonAfterClose = false;
-  var userId = localStorage.getItem('zukan_user_id');
-  if(!userId){ userId = 'user_' + Math.random().toString(36).slice(2,10); localStorage.setItem('zukan_user_id', userId); }
+  function normalizeZeraphiaUserId(value){
+    return String(value || '').trim().toLowerCase();
+  }
+
+  // ユーザーIDは全端末・全保存処理で小文字へ統一する。
+  // 過去版で大文字IDが保存されていても、起動時に正規化する。
+  var userId = normalizeZeraphiaUserId(localStorage.getItem('zukan_user_id'));
+  if(!userId){
+    userId = 'user_' + Math.random().toString(36).slice(2,10).toLowerCase();
+  }
+  localStorage.setItem('zukan_user_id', userId);
+
+  async function migrateLegacyUserIdCase(){
+    var canonicalId = normalizeZeraphiaUserId(userId);
+    if(!canonicalId) return;
+
+    // user_idを持つプレイヤーデータを旧大文字・混在表記から小文字へ寄せる。
+    // 既に正規IDの行があり一意制約に当たる場合は、読み込みを止めず警告だけ残す。
+    var userIdTables = [
+      'collected_characters',
+      'user_profiles',
+      'player_inventory',
+      'player_progress',
+      'player_remnants',
+      'player_shinju'
+    ];
+
+    for(var i = 0; i < userIdTables.length; i++){
+      var tableName = userIdTables[i];
+      try {
+        var migration = await sb.from(tableName)
+          .update({ user_id: canonicalId })
+          .ilike('user_id', canonicalId)
+          .neq('user_id', canonicalId);
+        if(migration && migration.error){
+          console.warn('[UserId migration] ' + tableName, migration.error);
+        }
+      } catch(e){
+        console.warn('[UserId migration] ' + tableName, e);
+      }
+    }
+
+    // フレンド情報は列名が異なるため個別に正規化する。
+    try {
+      var requesterMigration = await sb.from('friendships')
+        .update({ requester_id: canonicalId })
+        .ilike('requester_id', canonicalId)
+        .neq('requester_id', canonicalId);
+      if(requesterMigration && requesterMigration.error) console.warn('[UserId migration] friendships.requester_id', requesterMigration.error);
+    } catch(e){ console.warn('[UserId migration] friendships.requester_id', e); }
+
+    try {
+      var receiverMigration = await sb.from('friendships')
+        .update({ receiver_id: canonicalId })
+        .ilike('receiver_id', canonicalId)
+        .neq('receiver_id', canonicalId);
+      if(receiverMigration && receiverMigration.error) console.warn('[UserId migration] friendships.receiver_id', receiverMigration.error);
+    } catch(e){ console.warn('[UserId migration] friendships.receiver_id', e); }
+  }
 
   function getRate(id, h, m, isWeekday, isWeekend) {
     if(id===1)  return (isWeekday&&h>=10&&h<17)?80:(isWeekend&&h>=10&&h<17)?40:5;
@@ -3272,7 +3343,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       if(!alreadyOwnedEntry.db_id){
         var existing = await sb.from('collected_characters')
           .select('*')
-          .eq('user_id', userId)
+          .ilike('user_id', userId)
           .eq('character_id', Number(eri.id))
           .order('id', { ascending: true })
           .limit(1);
@@ -3326,6 +3397,8 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function loadFromDB(){
+  await migrateLegacyUserIdCase();
+
   var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
 
   if(res1.data){
