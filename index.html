@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=302-home-icons-banner-safe">
+  <link rel="stylesheet" href="css/style.css?v=303-image-preload-fix">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -3984,6 +3984,9 @@ setTimeout(function(){
 
   var results = createSummonResults(count, currentGacha);
 
+// 抽選結果が確定した時点で、演出に使う画像を先行ロードする。
+preloadGachaResults(results);
+
 if(count === 10){
   results.forEach(function(data){
     grantGachaResult(data);
@@ -3999,6 +4002,68 @@ if(count === 10){
 } else {
   handleSingleResult(results[0]);
 }
+}
+
+// ガチャ画像プリロード共通処理。
+// 演出開始前に画像の読み込みとデコードを完了させ、初回だけ画像が出ない事象を防ぐ。
+var gachaImagePreloadCache = new Map();
+function preloadGachaImage(src, timeoutMs){
+  timeoutMs = timeoutMs || 4000;
+  if(!src) return Promise.resolve(false);
+  if(gachaImagePreloadCache.has(src)) return gachaImagePreloadCache.get(src);
+
+  var promise = new Promise(function(resolve){
+    var img = new Image();
+    var settled = false;
+    var timer = null;
+    function finish(ok){
+      if(settled) return;
+      settled = true;
+      if(timer) clearTimeout(timer);
+      resolve(ok);
+    }
+    timer = setTimeout(function(){ finish(false); }, timeoutMs);
+    img.onload = function(){
+      if(typeof img.decode === 'function'){
+        img.decode().catch(function(){}).finally(function(){ finish(true); });
+      } else {
+        finish(true);
+      }
+    };
+    img.onerror = function(){
+      console.warn('[GACHA] image load failed:', src);
+      finish(false);
+    };
+    img.decoding = 'async';
+    img.src = src;
+    if(img.complete && img.naturalWidth > 0) finish(true);
+  });
+
+  gachaImagePreloadCache.set(src, promise);
+  return promise;
+}
+
+function getTenResultImageSrc(data){
+  if(!data) return '';
+  var isMaterial = isGachaMaterialResult(data);
+  var masterChara = (!isMaterial && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS.find(function(c){ return String(c.id) === String(data.id); })
+    : null;
+  return isMaterial
+    ? (data.img || 'images/unknown.webp')
+    : ((masterChara && masterChara.upImg) || data.upImg ||
+       (masterChara && masterChara.img) || data.img || 'images/unknown.webp');
+}
+
+function preloadGachaResults(results){
+  var urls = [];
+  (results || []).forEach(function(data){
+    if(data && data.img) urls.push(data.img); // 全画面リビール用
+    var cardImg = getTenResultImageSrc(data); // 10連カード用
+    if(cardImg) urls.push(cardImg);
+  });
+  urls = Array.from(new Set(urls.filter(Boolean)));
+  return Promise.all(urls.map(function(src){ return preloadGachaImage(src); }));
 }
 
 var currentTenResults = [];
@@ -4431,7 +4496,7 @@ function showUrWarningThenReveal(data){
   }, 1500);
 }
 
-function showNormalReveal(data){
+async function showNormalReveal(data){
   var modal = document.getElementById('reveal-modal');
   var content = document.getElementById('reveal-content');
   setRevealEncounterText(data);
@@ -4449,7 +4514,17 @@ function showNormalReveal(data){
   document.getElementById('reveal-overlay').style.background = 'rgba(248,246,239,0.84)';
   document.getElementById('reveal-particles').innerHTML = '';
 
-  document.getElementById('reveal-chara-img').src = data.img || '';
+  var revealImg = document.getElementById('reveal-chara-img');
+  var revealSrc = data.img || '';
+  revealImg.style.visibility = 'hidden';
+  if(revealSrc){
+    var revealReady = await preloadGachaImage(revealSrc);
+    if(!revealReady){
+      console.warn('[GACHA] reveal image was not ready:', revealSrc);
+    }
+  }
+  revealImg.src = revealSrc;
+  revealImg.style.visibility = revealSrc ? 'visible' : 'hidden';
   document.getElementById('reveal-name').textContent = data.name;
   document.getElementById('reveal-rarity').innerHTML = '';
 
@@ -4823,11 +4898,13 @@ function startTenInitialEffect(results){
   }, ALCHEMIA_PHASE_TIMING.reveal);
 }
 
-function startTenRevealSequence(results){
+async function startTenRevealSequence(results){
   tenRevealResults = results;
   tenRevealIndex = 0;
   tenRevealWaiting = false;
 
+  // 10連カードと全画面リビール画像をすべて準備してから開封を開始する。
+  await preloadGachaResults(results);
   buildTenResultCards(results);
 
   // 10枚開封が終わるまで下部ボタンを押せないようにする
@@ -4913,17 +4990,11 @@ function revealTenCard(index){
     ? CHARACTERS.find(function(c){ return String(c.id) === String(data.id); })
     : null;
 
-  // 10連結果はキャラなら上半身用、素材なら素材アイコンを表示する。
-  var imgSrc = isMaterial
-    ? (data.img || 'images/unknown.webp')
-    : ((masterChara && masterChara.upImg) ||
-       data.upImg ||
-       (masterChara && masterChara.img) ||
-       data.img ||
-       'images/unknown.webp');
+  // 10連結果は事前ロード済みの共通解決ロジックを使用する。
+  var imgSrc = getTenResultImageSrc(data);
 
   card.innerHTML =
-    '<img class="ten-card-img' + (isMaterial ? ' ten-card-item-img' : '') + '" src="' + imgSrc + '">' +
+    '<img class="ten-card-img' + (isMaterial ? ' ten-card-item-img' : '') + '" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
     (isMaterial ? '<div class="ten-card-item-badge">ITEM</div>' : getElementCornerIconHTML(data, 'ten-card-element-icon')) +
     '<div class="ten-card-top">' +
       '' +
@@ -8797,7 +8868,7 @@ window.addEventListener('pagehide', function () {
 <script src="js/stories/chapter01.js"></script>
 
 <script src="js/battle_range.js"></script>
-<script src="js/characters.js?v=279-arno-ignis-balance"></script>
+<script src="js/characters.js?v=281-image-preload-fix"></script>
 <script src="js/enemies.js?v=118-rivia-oblivion"></script>
 <script src="js/battle.js"></script>
 <script src="js/battle_swipe.js?v=49"></script>
@@ -8808,15 +8879,15 @@ window.addEventListener('pagehide', function () {
 <script src="js/enemy_intro.js"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=241-link-gauge-frame">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=277-image-preload-fix">
 
 <script src="js/battle_range_32.js?v=134-sakiel-random5"></script>
 <script src="js/characters_32.js"></script>
 <script src="js/remnant_blessings.js"></script>
 <script src="js/combo_32.js?v=24-combo-range-static"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=296-rivia-link-minus2"></script>
-<script src="js/battle_32_ui.js?v=395-rivia-preview"></script>
+<script src="js/battle_32.js?v=348-image-preload-fix"></script>
+<script src="js/battle_32_ui.js?v=451-image-preload-fix"></script>
 
 <!-- ローグライト（新規追加） -->
 <script src="js/roguelite_options.js"></script>

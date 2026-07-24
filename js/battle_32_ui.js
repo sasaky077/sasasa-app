@@ -5691,7 +5691,44 @@ function _cinematicScaleStyle(unit, extraStyle = '') {
  return `--b32-cine-scale:${scale};${extraStyle || ''}`;
 }
 
-function _showAttackCinematic(data) {
+// battle_up画像の読み込み完了を待ってから演出を開始する。
+// 同じURLはPromiseをキャッシュし、2回目以降は即時解決する。
+const _b32CinematicImageCache = new Map();
+function _preloadB32CinematicImage(src, timeoutMs = 3500) {
+ if (!src) return Promise.resolve(false);
+ if (_b32CinematicImageCache.has(src)) return _b32CinematicImageCache.get(src);
+
+ const promise = new Promise(resolve => {
+   const img = new Image();
+   let settled = false;
+   const finish = ok => {
+     if (settled) return;
+     settled = true;
+     clearTimeout(timer);
+     resolve(ok);
+   };
+   const timer = setTimeout(() => finish(false), timeoutMs);
+   img.onload = () => {
+     if (typeof img.decode === 'function') {
+       img.decode().catch(() => {}).finally(() => finish(true));
+     } else {
+       finish(true);
+     }
+   };
+   img.onerror = () => {
+     console.warn('[B32] cinematic image load failed:', src);
+     finish(false);
+   };
+   img.decoding = 'async';
+   img.src = src;
+   if (img.complete && img.naturalWidth > 0) finish(true);
+ });
+
+ _b32CinematicImageCache.set(src, promise);
+ return promise;
+}
+
+async function _showAttackCinematic(data) {
  if (!data || !data.source || !data.target) return;
  if (!data.amount || data.amount <= 0) return;
 
@@ -5732,6 +5769,16 @@ function _showAttackCinematic(data) {
  _b32AttackCinematicBusy = true;
  _b32AttackCinematicLastKey = key;
  _b32AttackCinematicLastAt = now;
+
+ // 演出タイマーを進める前に、表示対象画像をすべて読み込み・デコードする。
+ // 読み込み失敗時は演出を破棄し、busy状態を必ず解除する。
+ const preloadTargets = [...new Set([allyImg, enemyImg, ...targetImgs].filter(Boolean))];
+ const preloadResults = await Promise.all(preloadTargets.map(src => _preloadB32CinematicImage(src)));
+ if (preloadResults.some(ok => !ok)) {
+   _b32AttackCinematicBusy = false;
+   return;
+ }
+
  _injectAttackCinematicStyle();
 
  const isRapidMulti = data.hitStyle === 'rapid_multi';
