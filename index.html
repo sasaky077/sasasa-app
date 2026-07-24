@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=303-image-preload-fix">
+  <link rel="stylesheet" href="css/style.css?v=304-resonance-save-fix">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -2585,14 +2585,22 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
     return;
   }
 
+  // DB保存失敗時に、共鳴Lv・素材・BOX状態を元へ戻せるよう事前退避する。
+  var beforeState = {
+    limitBreak: Number(target.limitBreak || 0),
+    stats: Object.assign({}, target.stats || {}),
+    dbId: target.db_id || null,
+    evolutionMaterials: JSON.parse(JSON.stringify(evolutionMaterials || {})),
+    box: box.slice(),
+    collected: Object.assign({}, collected)
+  };
+
   if(!consumeLimitBreakRecipeMaterials(target, selectedSoulVesselId)){
     showToast('共鳴素材の消費に失敗しました');
     return;
   }
 
-  // limitBreak +1
-  target.limitBreak = (target.limitBreak || 0) + 1;
-  // stats再計算
+  target.limitBreak = beforeState.limitBreak + 1;
   target.stats = applyLimitBreakStats(
     target.baseStats,
     target.limitBreak,
@@ -2615,49 +2623,110 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
     }
   }
 
-  // DB: 対象キャラのlimit_break/stats/base_statsをUPDATE
-  await updateLimitBreakToDB(target);
+  try {
+    // エリはdb_id欠落時も user_id + character_id で保存先を解決する。
+    await updateLimitBreakToDB(target);
 
-  // DB: 通常キャラだけ素材キャラをDELETE
-  if(material){
-    await deleteMaterialFromDB(material);
+    // 通常キャラだけ素材キャラをDELETEする。
+    if(material){
+      await deleteMaterialFromDB(material);
+    }
+  } catch(saveError) {
+    console.error('[Resonance] save failed; rolling back local state:', saveError);
+
+    target.limitBreak = beforeState.limitBreak;
+    target.stats = beforeState.stats;
+    target.db_id = beforeState.dbId;
+    evolutionMaterials = beforeState.evolutionMaterials;
+    saveEvolutionMaterialsToLocal();
+    box = beforeState.box;
+    collected = beforeState.collected;
+
+    renderBox();
+    updateMainUI();
+    if(currentZukanMainTab !== 'box') showDetail(target, false);
+
+    showToast('共鳴データを保存できませんでした。通信状態を確認してください');
+    return;
   }
 
-  // UI更新
-renderBox();
-updateMainUI();
-if(currentZukanMainTab !== 'box'){
-  showDetail(target, false);
-}
+  renderBox();
+  updateMainUI();
+  if(currentZukanMainTab !== 'box'){
+    showDetail(target, false);
+  }
 
-var completeText = document.getElementById('lb-complete-text');
-if(completeText){
-  var unlockedBonus = getResonanceBonusMaster(target);
-  var unlocked = unlockedBonus && unlockedBonus[target.limitBreak];
-  completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。' +
-    (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
-}
+  var completeText = document.getElementById('lb-complete-text');
+  if(completeText){
+    var unlockedBonus = getResonanceBonusMaster(target);
+    var unlocked = unlockedBonus && unlockedBonus[target.limitBreak];
+    completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。' +
+      (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
+  }
 
-var completeModal = document.getElementById('limitbreak-complete-modal');
-if (completeModal) {
-  completeModal.classList.add('active');
-} else {
-  alert('共鳴が完了しました。');
-}
+  var completeModal = document.getElementById('limitbreak-complete-modal');
+  if (completeModal) {
+    completeModal.classList.add('active');
+  } else {
+    alert('共鳴が完了しました。');
+  }
 }
 
 async function updateLimitBreakToDB(target){
-  if(!target.db_id) return;
-  await sb.from('collected_characters').update({
-    limit_break: target.limitBreak,
-    stats: target.stats,
-    base_stats: target.baseStats
-  }).eq('id', target.db_id);
+  if(!target) throw new Error('共鳴対象がありません');
+
+  var payload = {
+    limit_break: Number(target.limitBreak || 0),
+    stats: target.stats || {},
+    base_stats: target.baseStats || target.stats || {}
+  };
+
+  var result = null;
+
+  // 通常は行IDで厳密に更新する。
+  if(target.db_id){
+    result = await sb.from('collected_characters')
+      .update(payload)
+      .eq('id', target.db_id)
+      .eq('user_id', userId)
+      .select('id,user_id,character_id,limit_break,stats,base_stats');
+  }
+
+  // エリだけは、古い端末データでdb_idが欠落／不一致でも保存先を再解決する。
+  if(Number(target.id) === 1 && (!result || result.error || !result.data || result.data.length === 0)){
+    result = await sb.from('collected_characters')
+      .update(payload)
+      .eq('user_id', userId)
+      .eq('character_id', 1)
+      .select('id,user_id,character_id,limit_break,stats,base_stats');
+  }
+
+  if(result && result.error){
+    throw result.error;
+  }
+
+  if(!result || !result.data || result.data.length === 0){
+    throw new Error('共鳴データの更新対象が見つかりません');
+  }
+
+  // エリが誤って複数行ある場合でも、以後は更新済み行を参照する。
+  var savedRow = result.data[0];
+  target.db_id = savedRow.id;
+  return savedRow;
 }
 
 async function deleteMaterialFromDB(material){
-  if(!material.db_id) return;
-  await sb.from('collected_characters').delete().eq('id', material.db_id);
+  if(!material || !material.db_id) throw new Error('共鳴素材のDB IDがありません');
+  var result = await sb.from('collected_characters')
+    .delete()
+    .eq('id', material.db_id)
+    .eq('user_id', userId)
+    .select('id');
+  if(result.error) throw result.error;
+  if(!result.data || result.data.length === 0){
+    throw new Error('共鳴素材の削除対象が見つかりません');
+  }
+  return true;
 }
 // ─────────────────────────────────────────────────
 
@@ -3072,10 +3141,34 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     var eri = CHARACTERS.find(function(c){ return Number(c.id) === 1 || c.name === 'エリ'; });
     if(!eri) return;
 
-    var alreadyOwned = box.some(function(b){ return b && Number(b.id) === Number(eri.id); });
-    if(alreadyOwned){
-      if(!collected[eri.id]){
-        collected[eri.id] = box.find(function(b){ return b && Number(b.id) === Number(eri.id); });
+    var alreadyOwnedEntry = box.find(function(b){ return b && Number(b.id) === Number(eri.id); });
+    if(alreadyOwnedEntry){
+      if(!collected[eri.id]) collected[eri.id] = alreadyOwnedEntry;
+
+      // 旧iPhoneデータなどでローカルのエリにdb_idが無い場合、DB行を再取得して紐付け直す。
+      if(!alreadyOwnedEntry.db_id){
+        var existing = await sb.from('collected_characters')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('character_id', Number(eri.id))
+          .order('id', { ascending: true })
+          .limit(1);
+
+        if(existing.error){
+          console.error('starter Eri lookup error:', existing.error);
+        } else if(existing.data && existing.data[0]){
+          var row = existing.data[0];
+          alreadyOwnedEntry.db_id = row.id;
+          alreadyOwnedEntry.limitBreak = Math.max(0, Number(row.limit_break || 0));
+          alreadyOwnedEntry.baseStats = row.base_stats || alreadyOwnedEntry.baseStats || Object.assign({}, eri.stats);
+          alreadyOwnedEntry.stats = applyLimitBreakStats(
+            alreadyOwnedEntry.baseStats,
+            alreadyOwnedEntry.limitBreak,
+            alreadyOwnedEntry.rarity || eri.rarity,
+            eri.id
+          );
+          collected[eri.id] = alreadyOwnedEntry;
+        }
       }
       return;
     }
