@@ -640,10 +640,32 @@
           const down = effect('atk_down'); if (down) down.rate = 0.90;
         }
         break;
-      case 10: // フローラ R
-        if (lb >= 2 && s1) s1.multiplier = 1.40;
+      case 10: // フローラ R（純回復・瀕死立て直し型）
+        // Lv.2：通常回復 18%→22%、瀕死時 30%→36%
+        if (lb >= 2 && s1) {
+          s1.healRate = 0.22;
+          s1.lowHpHealRate = 0.36;
+          const heal = (s1.effects || []).find(x => x && x.type === 'heal');
+          if (heal) heal.rate = 0.22;
+        }
+        // Lv.3：コンボ反応範囲を周囲8マスへ拡張
         if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceDelayedUltBoost = 1.10; }
+        // Lv.4：コンボ回復とULTの純回復量を強化
+        if (lb >= 4) {
+          if (combo) {
+            combo.healRate = 0.12;
+            combo.lowHpHealRate = 0.18;
+            const comboHeal = (combo.effects || []).find(x => x && x.type === 'heal');
+            if (comboHeal) comboHeal.rate = 0.12;
+          }
+          const ult = (c.skills || []).find(skill => skill && (skill.id === 'ult' || skill.isUltimate));
+          if (ult) {
+            ult.healRate = 0.50;
+            ult.lowHpHealRate = 0.70;
+            const ultHeal = (ult.effects || []).find(x => x && x.type === 'heal');
+            if (ultHeal) ultHeal.rate = 0.50;
+          }
+        }
         break;
       case 11: // シグレ R
         if (lb >= 2 && s1) s1.multiplier = 1.40;
@@ -653,9 +675,9 @@
           const push = effect('push_1'); if (push) push.hit = 75;
         }
         break;
-      case 12: // ハヤテ R
-        // Lv.2：通常スキル倍率をATK×1.90へ強化
-        if (lb >= 2 && s1) s1.multiplier = 1.90;
+      case 12: // ハヤテ SR
+        // Lv.2：通常スキル倍率をATK×2.10へ強化
+        if (lb >= 2 && s1) s1.multiplier = 2.10;
         // Lv.3：コンボ反応範囲を斜め隣接4マスからX字全体へ拡張
         if (lb >= 3 && c.combo) c.combo.range = 'combo_x_all';
         // Lv.4：ヒットアンドアウェイ帰還成功時、1ターン1回LINK+1
@@ -3169,7 +3191,19 @@ if (stype === 'repeat_skill') {
   } else {
     targets.forEach(a => {
       const before = a.hp;
-      const recover = Math.max(1, Math.round(a.hpMax * healRate));
+
+      // フローラ等の純回復型：一定HP以下の味方には回復率を上げる。
+      // lowHpThreshold / lowHpHealRate が未設定の既存ヒーラーには影響しない。
+      const hpRatioBeforeHeal = a.hpMax > 0 ? a.hp / a.hpMax : 1;
+      const lowHpThreshold = Number(skill.lowHpThreshold);
+      const lowHpHealRate = Number(skill.lowHpHealRate);
+      const effectiveHealRate = (
+        Number.isFinite(lowHpThreshold) &&
+        Number.isFinite(lowHpHealRate) &&
+        hpRatioBeforeHeal <= lowHpThreshold
+      ) ? lowHpHealRate : healRate;
+
+      const recover = Math.max(1, Math.round(a.hpMax * effectiveHealRate));
       a.hp = Math.min(a.hpMax, a.hp + recover);
       const actualRecover = a.hp - before;
 
@@ -3223,6 +3257,26 @@ if (stype === 'repeat_skill') {
 
     // ── hit_and_away_mode ───────────────────────────────────────
     } else if (stype === 'hit_and_away_mode') {
+      // ハヤテULT：前方広範囲を高速斬撃してから、超機動モードへ移行する。
+      const targets = _enemyTargets(skill.range);
+      if (targets.length === 0) {
+        _log(`${ally.name}：攻撃範囲内に敵はいないが、HIT & AWAYモードへ移行する`);
+      } else {
+        const { enemyEffects } = _splitSkillEffectsByTarget(skill);
+        targets.forEach(enemy => {
+          let dmg = calcDamage(getEffectiveAtk(ally), Number(skill.multiplier || 0), enemy, ally);
+          dmg = applyBackstabBonus(dmg, ally, enemy, skill);
+          if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
+            dmg = Math.round(dmg * _bs._rl_skillDmgMult);
+          }
+          if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
+            dmg = Math.round(dmg * _bs._rl_bossDmgMult);
+          }
+          applyDamage(enemy, dmg, ally, skill);
+          _applyEffects(enemyEffects, enemy, ally);
+        });
+      }
+
       _activateHitAndAwayMode32(ally, skill);
       _emit('statusApplied', {
         source: { ...ally },
@@ -6057,8 +6111,8 @@ function doBossLineAttack(boss) {
       ? unit.customMoveOffsets
       : BR.getMoveOffsets(unit);
 
-    // ハヤテ：モード中は8方向への移動距離を+2する。
-    // king_8の通常1マスに対し、最大3マス先までを移動候補に追加する。
+    // ハヤテ：モード中は8方向への移動距離を大幅に拡張する。
+    // SR版ULTでは moveRangeBonus:6 のため、king_8の通常1マスから最大7マス先まで移動可能。
     if (unit.side === 'ally' && _isHitAndAwayModeActive32(unit)) {
       const maxDistance = 1 + Math.max(0, Number(unit.hitAndAwayMoveBonus || 2));
       const extended = [];

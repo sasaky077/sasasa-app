@@ -541,15 +541,15 @@ skills: [
   // ── id:10 フローラ
   { id: 10, name: 'フローラ', rarity: 'r',
     element: 'mystis',
-    role: 'テクニック寄り',
+    role: 'ヒーラー',
     moveType: 'front2_backdiag2',
-    costMax: 14,
-    costStart: 0,
-    costRegen: 2,
+    costMax: 12,
+    costStart: 5,
+    costRegen: 3,
     shinkiMax: 4,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 640, ATK: 255 },
+    stats: { HP: 650, ATK: 210 },
     img: 'images/chara_10.webp', 
     cutImg: 'images/chara_10_cut.webp', 
     ultImg: 'images/chara_10_cutin.webp',
@@ -562,38 +562,57 @@ skills: [
     uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
-      skill: { id: 'combo', name: '私もやる～！', type: 'attack', multiplier: 0.40, range: 'diag_x_1', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、自身の斜め1マスへ小さな追撃を行う。' }
+      skill: {
+        id: 'combo',
+        name: 'ひと休みしよ～',
+        type: 'heal',
+        multiplier: 0,
+        range: 'ally_all',
+        healRate: 0.08,
+        lowHpThreshold: 0.50,
+        lowHpHealRate: 0.12,
+        effects: [{ type: 'heal', target: 'ally_lowest', hit: 100, rate: 0.08 }],
+        hitStyle: 'heal',
+        desc: '斜め隣接4マスの味方スキルに反応し、HP割合が最も低い味方1体を最大HPの8%回復する。対象のHPが50%以下なら12%回復する。'
+      }
     },
     skills: [
-      { id: 's1',
-        name: 'もう無理～',
-        linkCost: 3,
+      {
+        id: 's1',
+        name: 'みんな、休憩しよ～',
+        linkCost: 2,
         isUltimate: false,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.00,
         criticalDamageRate: 1.5,
-        type: 'attack',
-        multiplier: 1.2,
-        range: 'diag_x_1',
-        effects: [],
-        hitStyle: 'rapid',
-        desc: '射程：自身中心の斜め1マス。対象の敵にATK×1.2のダメージを与える。' },
-
-      { id: 'ult',
-        name: '明日から本気出すもん',
+        type: 'heal',
+        multiplier: 0.0,
+        healRate: 0.18,
+        lowHpThreshold: 0.50,
+        lowHpHealRate: 0.30,
+        range: 'ally_all',
+        effects: [{ type: 'heal', target: 'ally_all', hit: 100, rate: 0.18 }],
+        hitStyle: 'heal_all',
+        desc: '味方全体のHPを最大HPの18%回復する。HPが50%以下の味方は最大HPの30%回復する。防御効果を持たない代わりに、低コストで全体を立て直す。'
+      },
+      {
+        id: 'ult',
+        name: '今日は本気出すもん',
         linkCost: 5,
         isUltimate: true,
         hit: 100,
-        criticalRate: 0.10,
+        criticalRate: 0.00,
         criticalDamageRate: 1.5,
-        type: 'delayed_attack',
-        multiplier: 2.2,
-        range: 'field_cross_center',
-        effects: [],
-        hitStyle: 'multi',
-        delayTurns: 2,
-        delayedTrigger: 'allyTurnStart',
-        desc: '射程：盤面中央十字。使用から2ターン後のターン開始時、対象の敵にATK×2.2のダメージを与える。' }
+        type: 'heal',
+        multiplier: 0.0,
+        healRate: 0.42,
+        lowHpThreshold: 0.50,
+        lowHpHealRate: 0.60,
+        range: 'ally_all',
+        effects: [{ type: 'heal', target: 'ally_all', hit: 100, rate: 0.42 }],
+        hitStyle: 'heal_all',
+        desc: '味方全体のHPを最大HPの42%回復する。HPが50%以下の味方は最大HPの60%回復する。ダメージカットは付与せず、純粋な回復量に特化したULT。'
+      }
     ]},
 
   // ── id:11 シグレ
@@ -657,17 +676,17 @@ skills: [
     ]},
 
   // ── id:12 ハヤテ
-  { id: 12, name: 'ハヤテ', rarity: 'r',
+  { id: 12, name: 'ハヤテ', rarity: 'sr',
     element: 'logos',
     role: '速度寄り',
     moveType: 'king_8',
-    costMax: 12,
+    costMax: 14,
     costStart: 5,
     costRegen: 4,
     shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 540, ATK: 295 },
+    stats: { HP: 580, ATK: 305 },
     img: 'images/chara_12.webp',
     cutImg: 'images/chara_12_cut.webp',
     ultImg: 'images/chara_12_cutin.webp',
@@ -676,16 +695,16 @@ skills: [
     battleUpImg: 'images/chara_12_battle_up.webp',
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
-    favScale: 0.85, favOffsetY: -35,
+    favScale: 0.85, favOffsetY: -70,
     resonanceBonusConfig: {
-      2: { skillId: 's1', skillMultiplier: 1.90 },
+      2: { skillId: 's1', skillMultiplier: 2.10 },
       3: { comboTriggerRange: 'combo_x_all' },
       4: { hitAndAwayLinkRefund: 1, hitAndAwayLinkRefundPerTurn: 1 }
     },
     uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
-      skill: { id: 'combo', name: '閃光追駆', type: 'attack', multiplier: 0.55, range: 'front_row_3_ally', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方横3マスの敵へ高速追撃する。' }
+      skill: { id: 'combo', name: '閃光追駆', type: 'attack', multiplier: 0.65, range: 'front_row_3_ally', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方横3マスの敵へ高速追撃する。' }
     },
     skills: [
       {
@@ -694,30 +713,33 @@ skills: [
         linkCost: 3,
         isUltimate: false,
         hit: 100,
-        criticalRate: 0.30,
+        criticalRate: 0.35,
         criticalDamageRate: 1.5,
         type: 'attack',
-        multiplier: 1.7,
+        multiplier: 1.85,
         range: 'front_row_3_ally',
         effects: [],
         hitStyle: 'rapid_multi',
         hitCount: 3,
-        desc: '射程：前方横3マス。対象の敵にATK×1.7のダメージを与える。ヒットアンドアウェイモード中は、攻撃判定後に移動前の位置へ戻る。'
+        desc: '射程：前方横3マス。対象の敵にATK×1.85のダメージを与える。ヒットアンドアウェイモード中は、攻撃判定後に移動前の位置へ戻る。'
       },
       {
         id: 'ult',
         name: '黄月閃界・雷光巡行',
-        linkCost: 5,
+        linkCost: 4,
         isUltimate: true,
         hit: 100,
         type: 'hit_and_away_mode',
-        multiplier: 0,
-        range: 'self',
+        multiplier: 2.4,
+        range: 'front3_row_3_ally',
         effects: [],
-        hitStyle: 'support',
+        criticalRate: 0.40,
+        criticalDamageRate: 1.5,
+        hitStyle: 'rapid_multi',
+        hitCount: 7,
         modeDuration: 3,
-        moveRangeBonus: 2,
-        desc: '自身を3ターンの間ヒットアンドアウェイモードにする。モード中は移動距離が2マス増加し、通常攻撃またはSKILLの攻撃判定後、移動前の位置へ戻る。帰還ではLINKを消費しない。'
+        moveRangeBonus: 6,
+        desc: '射程：前方3段×横3マス。対象の敵にATK×2.4のダメージを与え、その後3ターンの間ヒットアンドアウェイモードに入る。モード中は8方向へ最大7マス移動でき、通常攻撃またはSKILLの攻撃判定後、移動前の位置へ戻る。帰還ではLINKを消費しない。'
       },
     ]},
 
@@ -902,8 +924,8 @@ skills: [
     ]},
 
 
-  // ── id:15 エテルナ
-  { id: 15, name: 'エテルナ', rarity: 'r',
+  // ── id:15 エルテナ
+  { id: 15, name: 'エルテナ', rarity: 'r',
     element: 'chaos',
   role: '妨害寄り',
   moveType: 'vertical2_frontdiag2',
@@ -922,7 +944,7 @@ skills: [
     battleUpImg: 'images/chara_15_battle_up.webp',
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
-    favScale: 0.90, favOffsetY: 20,
+    favScale: 0.90, favOffsetY: -100,
     uiScale: {panel: 1.0,battleBack: 1.52,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',

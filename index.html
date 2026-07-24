@@ -1322,7 +1322,7 @@ document.addEventListener('touchend', function (e) {
   // 一旦ロジックは同じ。邂逅画面で2種類のバナーを選択できるようにする。
   // キャラクターID再採番（本番8体）:
 // 画像ファイル名は旧番号のまま使用する。
-const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 13,14, 15, 16, 17, ];
+const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 13, 14, 15, 16, 17, ];
   const GACHA_COMMON_MATERIAL_IDS = [
     'soul_vessel_chaos',
     'soul_vessel_mystis',
@@ -1380,6 +1380,19 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 12, 13,14, 15, 16, 17, ]
       img: 'images/gacha_banner_04.webp',
       cost: 5,
       pickupCharaId: 3,
+      pickupRate: 0.05,
+      commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
+      commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
+      itemMixed: true,
+      disablePity: false,
+      disableTenGuarantee: true
+    },
+      {
+      id: 'gacha_05',
+      category: 'normal',
+      img: 'images/gacha_banner_05.webp',
+      cost: 5,
+      pickupCharaId: 12,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
