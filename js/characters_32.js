@@ -57,87 +57,67 @@
   }
 
   function convertSkillTo32(skill, character) {
-  const isUlt = !!skill.isUltimate;
+    const isUlt = !!skill.isUltimate;
 
-  // DEF / SPD 系エフェクトは撤廃。atk_down → そのまま維持、stun/heal/shieldは維持。
-  // def_up / def_down / spd_up / spd_down → atk_down に統一変換（最低限の維持）
-  const DEF_SPD_REMAP = {
-    def_up:   'atk_up',
-    def_down: 'atk_down',
-    spd_up:   null,       // 削除
-    spd_down: 'atk_down',
-  };
-  const filteredEffects = (skill.effects || [])
-    .map(e => {
-      const remapped = DEF_SPD_REMAP[e.type];
-      if (remapped === null) return null; // 削除
-      if (remapped !== undefined) return { ...e, type: remapped };
-      return e;
-    })
-    .filter(Boolean);
+    // 元スキルの全プロパティを維持してから、Battle32向けに必要な項目だけ変換する。
+    // 新しい特殊パラメータを追加しても、ここへ個別追記しない限り消える事故を防ぐ。
+    const converted = {
+      ...skill,
+      range: convertRangeTo32(skill.range),
+      target: skill.target || (skill.type === 'heal' || skill.type === 'buff' ? 'ally' : 'enemy'),
+      cost: 0,
+      linkCost: skill.linkCost,
+      shinkiCost: isUlt ? (skill.shinkiCost ?? character.shinkiMax ?? 3) : 0,
+      hit: skill.hit == null ? 100 : skill.hit,
+      isUltimate: isUlt,
+      hitStyle: skill.hitStyle || 'normal',
+      multiplier: Number(skill.multiplier || 0),
+      healRate: Number(skill.healRate || 0),
+      delayTurns: skill.delayTurns != null ? skill.delayTurns : null,
+      delayedTrigger: skill.delayedTrigger || null,
+      hitCount: skill.hitCount != null ? Number(skill.hitCount) : null,
+      pierce: !!skill.pierce,
+      randomCellCount: skill.randomCellCount || null,
+      criticalRate: skill.criticalRate,
+      criticalDamageRate: skill.criticalDamageRate,
+      targetStatus: skill.targetStatus || skill.requiredStatus || null,
+      requiredStatus: skill.requiredStatus || skill.targetStatus || null,
+      moveBonus: skill.moveBonus || null,
+      allyShiftDirection: skill.allyShiftDirection || null,
+      backstabMultiplier: skill.backstabMultiplier || null,
+      desc: skill.desc || '',
+    };
 
-  return {
-    id: skill.id,
-    name: skill.name,
-    type: skill.type,
-    range: convertRangeTo32(skill.range),
-    target: skill.target || (skill.type === 'heal' || skill.type === 'buff' ? 'ally' : 'enemy'),
+    // ネスト配列・オブジェクトは参照共有を避けて複製する。
+    converted.randomOptions = Array.isArray(skill.randomOptions)
+      ? skill.randomOptions.map(option => ({ ...option }))
+      : null;
+    converted.choiceOptions = Array.isArray(skill.choiceOptions)
+      ? skill.choiceOptions.map(option => ({ ...option }))
+      : null;
+    converted.selectedOption = skill.selectedOption ? { ...skill.selectedOption } : null;
+    converted.summonOffsets = Array.isArray(skill.summonOffsets)
+      ? skill.summonOffsets.map(offset => ({ ...offset }))
+      : null;
 
-    multiplier: skill.multiplier || 0,
-    healRate: skill.healRate || 0,
+    // DEF / SPD 系エフェクトは現行仕様へ変換する。
+    const DEF_SPD_REMAP = {
+      def_up: 'atk_up',
+      def_down: 'atk_down',
+      spd_up: null,
+      spd_down: 'atk_down',
+    };
+    converted.effects = (skill.effects || [])
+      .map(effect => {
+        const remapped = DEF_SPD_REMAP[effect.type];
+        if (remapped === null) return null;
+        if (remapped !== undefined) return { ...effect, type: remapped };
+        return { ...effect };
+      })
+      .filter(Boolean);
 
-    cost: 0,
-
-    linkCost: skill.linkCost,
-    // 通常スキルに delayTurns:0 を持たせると、Battle32側で予約攻撃と誤判定しやすい。
-    // 未指定なら null、本当に予約するスキルだけ数値を持つ。
-    delayTurns: skill.delayTurns != null ? skill.delayTurns : null,
-    delayedTrigger: skill.delayedTrigger || null,
-
-    // スイ「星読み」など、未来支援スキル用の候補を32マス版にも引き継ぐ。
-    randomOptions: Array.isArray(skill.randomOptions) ? skill.randomOptions.map(o => ({ ...o })) : null,
-    choiceOptions: Array.isArray(skill.choiceOptions) ? skill.choiceOptions.map(o => ({ ...o })) : null,
-    selectedOption: skill.selectedOption ? { ...skill.selectedOption } : null,
-
-    shinkiCost: isUlt ? (skill.shinkiCost ?? character.shinkiMax ?? 3) : 0,
-
-    hit: skill.hit == null ? 100 : skill.hit,
-    isUltimate: isUlt,
-    hitStyle: skill.hitStyle || 'normal',
-    // 多段攻撃数を32マス版へ引き継ぐ。
-    // 未指定時は battle_32.js 側の hitStyle フォールバックを使用する。
-    hitCount: skill.hitCount != null ? Number(skill.hitCount) : null,
-    pierce: !!skill.pierce,
-    randomCellCount: skill.randomCellCount || null,
-    criticalRate: skill.criticalRate,
-    criticalDamageRate: skill.criticalDamageRate,
-    targetStatus: skill.targetStatus || skill.requiredStatus || null,
-    requiredStatus: skill.requiredStatus || skill.targetStatus || null,
-    effects: filteredEffects,
-    moveBonus: skill.moveBonus || null,
-    allyShiftDirection: skill.allyShiftDirection || null,
-    backstabMultiplier: skill.backstabMultiplier || null,
-
-    // 盤面設置型スキル用
-    summonName: skill.summonName || null,
-    summonImg: skill.summonImg || null,
-    summonDuration: skill.summonDuration || 0,
-    summonDistance: skill.summonDistance || null,
-    summonCount: skill.summonCount || null,
-    summonOffsets: Array.isArray(skill.summonOffsets) ? skill.summonOffsets.map(o => ({ ...o })) : null,
-    summonRange: skill.summonRange || null,
-    summonTickMultiplier: skill.summonTickMultiplier || null,
-    summonScale: skill.summonScale || null,
-
-    // 召喚物の追加挙動
-    summonHp: skill.summonHp || null,
-    summonDrainRate: skill.summonDrainRate,
-    summonBlockEnemyProjectiles: !!skill.summonBlockEnemyProjectiles,
-    summonBlockEnemyFrontAttack: !!skill.summonBlockEnemyFrontAttack,
-
-    desc: skill.desc || '',
-  };
-}
+    return converted;
+  }
 
 
   function convertComboTo32(combo, character) {

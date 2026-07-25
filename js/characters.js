@@ -137,7 +137,7 @@ skills: [
   ]},
 
   // ── id:3 スイ
-  { id: 3, name: 'スイ', rarity: 'sr',
+  { id: 3, name: 'スイ', rarity: 'r',
     element: 'mystis',
   role: 'バランス寄り',
   moveType: 'line_front_3',
@@ -306,10 +306,11 @@ skills: [
     criticalRate: 0.10,
     criticalDamageRate: 1.5,
     type: 'repeat_skill',
+    repeatPowerRate: 0.85,
     multiplier: 0.0,
     range: 'self',
     effects: [],
-    desc: 'このターン中、直前に発動した味方の通常スキルをもう一度発動する。'
+    desc: 'このターン中、直前に発動した味方の通常スキルを85%の効果量でもう一度発動する。'
 },
 
 { id: 'ult',
@@ -340,7 +341,7 @@ skills: [
     shinkiMax: 5,
     shinkiStart: 0,
     shinkiRegen: 1,
-    stats: { HP: 600, ATK: 300 },
+    stats: { HP: 600, ATK: 285 },
     img: 'images/chara_06.webp', 
     cutImg: 'images/chara_06_cut.webp', 
     ultImg: 'images/chara_06_cutin.webp',
@@ -354,7 +355,7 @@ skills: [
     resonanceBonusConfig: {
       2: { skillId: 's1', selfHealAtkRate: 0.20 },
       3: { comboTriggerRange: 'combo_cross_all' },
-      4: { comboMultiplier: 0.70 }
+      4: { comboMultiplier: 0.65 }
     },
     uiScale: {panel: 1.0,battleBack: 1.7,battleUp: 1.0},
         combo: {
@@ -374,10 +375,10 @@ skills: [
         multiplier: 1.4,
         range: 'front_row_3_ally',
         effects: [
-          { type: 'atk_up', target: 'ally_self', hit: 100, duration: 1, rate: 1.30 }
+          { type: 'atk_up', target: 'ally_self', hit: 100, duration: 1, rate: 1.20 }
         ],
         hitStyle: 'heavy',
-        desc: '射程：前方横3マス。対象の敵にATK×1.4のダメージを与える。さらに自身のATKを2ターン30%上昇させる。'
+        desc: '射程：前方横3マス。対象の敵にATK×1.4のダメージを与える。さらに自身のATKを1ターン20%上昇させる。'
       },
 
       {
@@ -389,19 +390,19 @@ skills: [
         criticalRate: 0.5,
         criticalDamageRate: 1.5,
         type: 'attack',
-        multiplier: 3.6,
+        multiplier: 2.8,
         range: 'pierce_all',
         effects: [
           { type: 'atk_up', target: 'ally_all', hit: 100, duration: 1, rate: 1.15 }
         ],
         hitStyle: 'heavy',
-        desc: '射程：前方直線全マス。対象の敵にATK×3.6の大ダメージを与える。さらに味方全体のATKを1ターン15%上昇させる。'
+        desc: '射程：前方直線全マス。対象の敵にATK×2.8の大ダメージを与える。さらに味方全体のATKを1ターン15%上昇させる。'
       }
     ]},
 
      // ── id:7 ロゼ
   { id: 7, name: 'ロゼ', rarity: 'sr',
-    element: 'logos',
+    element: 'chaos',
     role: '盤面制圧寄り',
     moveType: 'front_back_row3',
     costMax: 10,
@@ -807,7 +808,7 @@ skills: [
  
 
   // ── id:13 ミア
-  { id: 13, name: 'ミア', rarity: 'r',
+  { id: 13, name: 'ミア', rarity: 'sr',
     element: 'mystis',
     role: '遠距離寄り',
     moveType: 'cat_step',

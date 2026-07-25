@@ -514,217 +514,13 @@
       }
     }
 
-    const s1 = Array.isArray(c.skills)
-      ? c.skills.find(skill => skill && skill.id === 's1')
-      : null;
-    const combo = c.combo && c.combo.skill ? c.combo.skill : null;
-    const effect = (type) => combo && Array.isArray(combo.effects)
-      ? combo.effects.find(e => e && e.type === type)
-      : null;
 
-    // Lv.2＝通常スキル強化 / Lv.3＝コンボ範囲強化 / Lv.4＝コンボ完成効果
-    switch (Number(c.id)) {
-      case 1: // エリ
-        if (lb >= 2 && s1) s1.resonanceHealLowestAtkRate = 0.35;
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
-        if (lb >= 4 && combo) combo.resonanceTeamAtkUp = { rate: 1.10, duration: 1 };
-        break;
-      case 2: // ネム R
-        if (lb >= 2 && s1) s1.multiplier = 0.65;
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) {
-          combo.multiplier = 0.30;
-          const e = effect('stun'); if (e) e.hit = 40;
-        }
-        break;
-      case 3: { // スイ SR
-        const ult = Array.isArray(c.skills)
-          ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
-          : null;
-
-        // Lv.1：ULT必要LINKコスト -1
-        if (lb >= 1 && ult) {
-          ult.linkCost = Math.max(0, Number(ult.linkCost || 0) - 1);
-        }
-
-        // Lv.2：通常スキルの回復を50%→70%、criticalを15%→20%へ強化
-        if (lb >= 2 && s1 && Array.isArray(s1.randomOptions)) {
-          s1.randomOptions.forEach(option => {
-            if (!option) return;
-            if (option.effectType === 'lowest_hp_heal') {
-              option.rate = 0.70;
-              option.label = '一番HPの低い味方を最大HPの70%回復';
-            }
-            if (option.effectType === 'all_critical_up') {
-              option.rate = 0.20;
-              option.label = '味方全体critical率+20%';
-            }
-          });
-        }
-
-        // Lv.3：前方直線3マス＋左右1マスへ移動範囲を拡張
-        if (lb >= 3) {
-          c.moveType = 'line_front_3_side';
-        }
-
-        // Lv.4：コンボ反応範囲をX字から十字＋X字へ拡張
-        if (lb >= 4 && c.combo) {
-          c.combo.range = 'combo_star_all';
-        }
-        break;
-      }
-      case 4: // アルノ SR
-        if (lb >= 2 && s1) { s1.multiplier = 1.70; s1.criticalRate = 0.75; }
-        if (lb >= 3 && combo) combo.range = 'combo_cross_all';
-        if (lb >= 4 && combo) { combo.multiplier = 1.05; combo.resonanceSelfAtkUpOnCritical = { rate: 1.15, duration: 1 }; }
-        break;
-      case 5: // クラリネ R
-        if (lb >= 2 && s1) s1.linkCost = 2;
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceNextS1Discount = 1; }
-        break;
-      case 6: // イグニス R
-        // Lv.2：ブレイブ・スマッシュ後、自身をATK×0.20回復
-        if (lb >= 2 && s1) s1.resonanceSelfHealAtkRate = 0.20;
-        // Lv.3：コンボ反応範囲を上下左右1マスから十字すべてへ拡張
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
-        // Lv.4：コンボ効果範囲を前方横3マスから前方2段×横3マスへ拡張
-        if (lb >= 4 && combo) combo.range = 'fan_2row_3_ally';
-        break;
-      case 7: { // ロゼ SR
-        const ult = Array.isArray(c.skills)
-          ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
-          : null;
-
-        // Lv.1：ULT必要LINKコスト -1
-        if (lb >= 1 && ult) {
-          ult.linkCost = Math.max(0, Number(ult.linkCost || 0) - 1);
-        }
-
-        // Lv.2：前方横3 + 後方横3へ移動範囲を拡張
-        if (lb >= 2) {
-          c.moveType = 'rose_resonance_move';
-        }
-
-        // Lv.3：コンボ反応範囲を十字から十字＋X字へ拡張
-        if (lb >= 3 && c.combo) {
-          c.combo.range = 'combo_star_all';
-        }
-
-        // Lv.4：コンボATK低下を15%へ強化し、25%スタンを追加
-        if (lb >= 4 && combo) {
-          const down = effect('atk_down');
-          if (down) down.rate = 0.85;
-          if (!effect('stun')) {
-            combo.effects.push({ type:'stun', target:'enemy', hit:25, duration:1 });
-          }
-        }
-        break;
-      }
-      case 8: // ミモザ SR
-        if (lb >= 2 && s1) {
-          const up = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (up) up.rate = 1.35;
-          if (!(s1.effects || []).some(x => x && x.type === 'critical_up')) s1.effects.push({ type:'critical_up', target:'ally_all', hit:100, rate:0.10, duration:1 });
-        }
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
-        if (lb >= 4 && combo) {
-          const up = effect('atk_up'); if (up) up.rate = 1.15;
-          combo.resonanceHealLowestSourceHpRate = 0.10;
-        }
-        break;
-      case 9: // ヴェラ R
-        if (lb >= 2 && s1) s1.resonanceAffectedAllyAtkUp = { rate:1.10, duration:1 };
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) {
-          combo.multiplier = 0.40;
-          const down = effect('atk_down'); if (down) down.rate = 0.90;
-        }
-        break;
-      case 10: // フローラ R（純回復・瀕死立て直し型）
-        // Lv.2：通常回復 18%→22%、瀕死時 30%→36%
-        if (lb >= 2 && s1) {
-          s1.healRate = 0.22;
-          s1.lowHpHealRate = 0.36;
-          const heal = (s1.effects || []).find(x => x && x.type === 'heal');
-          if (heal) heal.rate = 0.22;
-        }
-        // Lv.3：コンボ反応範囲を周囲8マスへ拡張
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        // Lv.4：コンボ回復とULTの純回復量を強化
-        if (lb >= 4) {
-          if (combo) {
-            combo.healRate = 0.12;
-            combo.lowHpHealRate = 0.18;
-            const comboHeal = (combo.effects || []).find(x => x && x.type === 'heal');
-            if (comboHeal) comboHeal.rate = 0.12;
-          }
-          const ult = (c.skills || []).find(skill => skill && (skill.id === 'ult' || skill.isUltimate));
-          if (ult) {
-            ult.healRate = 0.50;
-            ult.lowHpHealRate = 0.70;
-            const ultHeal = (ult.effects || []).find(x => x && x.type === 'heal');
-            if (ultHeal) ultHeal.rate = 0.50;
-          }
-        }
-        break;
-      case 11: // シグレ R
-        if (lb >= 2 && s1) s1.multiplier = 1.40;
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) {
-          combo.multiplier = 0.60;
-          const push = effect('push_1'); if (push) push.hit = 75;
-        }
-        break;
-      case 12: // ハヤテ SR
-        // Lv.2：通常スキル倍率をATK×2.10へ強化
-        if (lb >= 2 && s1) s1.multiplier = 2.10;
-        // Lv.3：コンボ反応範囲を斜め隣接4マスからX字全体へ拡張
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_x_all';
-        // Lv.4：ヒットアンドアウェイ帰還成功時、1ターン1回LINK+1
-        if (lb >= 4) {
-          c.hitAndAwayLinkRefund = 1;
-          c.hitAndAwayLinkRefundPerTurn = 1;
-        }
-        break;
-      case 13: // ミア SR
-        c.rarity = 'sr';
-        if (lb >= 2 && s1) { s1.multiplier = 2.05; s1.criticalRate = 0.30; }
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
-        if (lb >= 4 && combo) {
-          combo.multiplier = 0.80;
-          combo.criticalRate = 0.25;
-          if (!effect('atk_down')) combo.effects.push({ type:'atk_down', target:'enemy', hit:100, duration:1, rate:0.90 });
-        }
-        break;
-      case 14: // アヤカ R
-        if (lb >= 2 && s1) s1.multiplier = 1.15;
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) { combo.multiplier = 0.60; combo.backstabMultiplier = 1.50; }
-        break;
-      case 15: // エテルナ R
-        if (lb >= 2 && s1) s1.resonanceAffectedAllyGuard = { rate:0.10, duration:1 };
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) {
-          combo.multiplier = 0.50;
-          const push = effect('push_1'); if (push) push.hit = 75;
-        }
-        break;
-      case 16: // ミト R
-        if (lb >= 2 && s1) {
-          s1.multiplier = 0.85;
-          const e = (s1.effects || []).find(x => x && x.type === 'jittai'); if (e) e.hit = 90;
-        }
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
-        if (lb >= 4 && combo) {
-          combo.multiplier = 0.45;
-          const e = effect('jittai'); if (e) e.hit = 60;
-        }
-        break;
-      case 17: // アンジェ R
-        if (lb >= 2 && s1) s1.healRate = Number(s1.healRate || 0.35) * 1.20;
-        if (lb >= 3 && c.combo) c.combo.range = 'combo_line_all';
-        if (lb >= 4 && combo) { combo.healRate = 0.12; combo.resonanceHealLowestTargetHpRate = 0.05; }
-        break;
+    // キャラ固有の共鳴効果は resonance_system.js の共通適用関数へ集約。
+    // 読み込み順: character_resonance.js -> resonance_system.js -> characters_32.js -> battle_32.js
+    if (typeof window.applyCharacterResonanceToBattleDef === 'function') {
+      window.applyCharacterResonanceToBattleDef(c, lb);
+    } else {
+      console.error('[Battle32] applyCharacterResonanceToBattleDef が見つかりません。resonance_system.js の読み込み順を確認してください。');
     }
 
     return c;
@@ -2855,6 +2651,29 @@ if (stype === 'repeat_skill') {
     _log(`${ally.name}：このターン中に再現できる味方スキルがありません`);
   } else {
     const copiedSkill = deepClone(last.skill);
+    const repeatPowerRate = Math.max(0, Math.min(1, Number(skill.repeatPowerRate ?? 0.85)));
+
+    // 再発動は元スキルの効果量を一定割合に圧縮する。
+    // ダメージ・回復・吸収・毒は直接倍率化し、ATK上昇/低下は増減幅だけを倍率化する。
+    if (Number.isFinite(Number(copiedSkill.multiplier))) {
+      copiedSkill.multiplier = Number(copiedSkill.multiplier) * repeatPowerRate;
+    }
+    ['healRate', 'lowHpHealRate', 'summonTickMultiplier'].forEach(key => {
+      if (Number.isFinite(Number(copiedSkill[key]))) copiedSkill[key] = Number(copiedSkill[key]) * repeatPowerRate;
+    });
+    if (Array.isArray(copiedSkill.effects)) {
+      copiedSkill.effects = copiedSkill.effects.map(effect => {
+        if (!effect) return effect;
+        const e = { ...effect };
+        if (Number.isFinite(Number(e.rate))) {
+          const rate = Number(e.rate);
+          if (e.type === 'atk_up') e.rate = 1 + (rate - 1) * repeatPowerRate;
+          else if (e.type === 'atk_down') e.rate = 1 - (1 - rate) * repeatPowerRate;
+          else e.rate = rate * repeatPowerRate;
+        }
+        return e;
+      });
+    }
 
     // 安全対策：物真似・ULT・予約攻撃はコピーしない
     if (
@@ -2871,7 +2690,7 @@ if (stype === 'repeat_skill') {
       copiedSkill.linkCost = 0;
       copiedSkill.isUltimate = false;
 
-      _log(`${ally.name} は ${last.ownerName} の「${copiedSkill.name}」を再現した！`);
+      _log(`${ally.name} は ${last.ownerName} の「${copiedSkill.name}」を${Math.round(repeatPowerRate * 100)}%の効果量で再現した！`);
 
       // ここでは「アイムが使った」扱いにする。
       // 射程・ATK・位置はアイム基準。
