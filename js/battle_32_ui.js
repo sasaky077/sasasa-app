@@ -6349,16 +6349,25 @@ function _onStatusChangeEvent(data) {
  const isRapid = hitStyle === 'rapid';
  const isRapidMulti = hitStyle === 'rapid_multi';
 
- // 味方→敵 / 敵→味方のダメージ時に、俯瞰グリッドから一瞬アップ演出へ切り替える。
- // 味方1体が複数敵へ同時ヒットした場合は、短時間バッファして複数対象アップ演出に束ねる。
- // rapid_multi はアップ演出側で敵画像上部に5連撃を出すため、グリッド側の数値・フラッシュは出さない。
- try {
-   _queueAttackCinematic(data);
- } catch (e) {
-   // 攻撃アップ演出が壊れても、通常の盤面ヒット演出とHP更新表示は止めない。
-   console.error('[Battle32UI] attack cinematic failed', e, data);
+ // 通常攻撃ダメージは「UP演出内だけ」で表示する。
+ // 旧処理ではUP演出を開始した後も、この関数の後半でグリッド上の
+ // ヒット演出・ダメージ数字を重ねていたため、同じダメージが2段階に見えていた。
+ const isAttackCinematicTarget = !!(
+   data.source && data.target && (
+     (data.source.side === 'ally' && data.target.side === 'enemy') ||
+     (data.source.side === 'enemy' && data.target.side === 'ally')
+   )
+ );
+
+ if (isAttackCinematicTarget) {
+   try {
+     _queueAttackCinematic(data);
+     return; // グリッド側のダメージ数字・ヒット演出は行わない
+   } catch (e) {
+     // UP演出を開始できなかった場合だけ、後段のグリッド演出へフォールバックする。
+     console.error('[Battle32UI] attack cinematic failed; fallback to grid damage fx', e, data);
+   }
  }
- if (isRapidMulti) return;
 
  // shakeVariant: ULT > heavy > normal
  const shakeVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
@@ -10255,54 +10264,76 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
 
  if (window.Battle32._uiHooked) return;
 
- const originalStart = window.Battle32.start;
- window.Battle32.start = function (config, callbacks) {
-
-  // ★追加：バトル開始。UI描画を許可する
-  window.__BATTLE32_UI_ACTIVE__ = true;
-
-  _resetSkillState();
-  _hideAllScreens();
-
- // damage / heal コールバックを UI 演出に接続
- // UI演出と外部callbacks を両方呼ぶ（どちらかが undefined でも安全）
- const userCb = callbacks || {};
- 
- const uiCallbacks = {
- ...userCb,
- damage: (data) => {
- window._b32OnDamage && window._b32OnDamage(data);
- if (typeof userCb.damage === 'function') userCb.damage(data);
- },
- heal: (data) => {
- window._b32OnHeal && window._b32OnHeal(data);
- if (typeof userCb.heal === 'function') userCb.heal(data);
- },
- statusChange: (data) => {
- window._b32OnStatusChange && window._b32OnStatusChange(data);
- if (typeof userCb.statusChange === 'function') userCb.statusChange(data);
- },
- coreDamage: (data) => {
- window._b32OnCoreDamage && window._b32OnCoreDamage(data);
- if (typeof userCb.coreDamage === 'function') userCb.coreDamage(data);
- },
- };
-
- // rogueliteOnBattleEnd をラップするが、ローグライト中はここでUI掃除しない。
- // ここで共通UIを復帰させると、報酬/次ステージ移管の一瞬にステージ選択画面が見えるため、
- // Battle32の盤面を残したまま RogueliteController 側の演出・遷移管理へ渡す。
- const wrappedConfig = Object.assign({}, config);
- if (typeof wrappedConfig.rogueliteOnBattleEnd === 'function') {
-   const originalRogueliteEnd = wrappedConfig.rogueliteOnBattleEnd;
-   wrappedConfig.rogueliteOnBattleEnd = function (payload) {
-     window.__ROGUELITE_TRANSITIONING__ = true;
-     originalRogueliteEnd(payload);
+ function buildUiCallbacks(callbacks) {
+   const userCb = callbacks || {};
+   return {
+     ...userCb,
+     damage: (data) => {
+       window._b32OnDamage && window._b32OnDamage(data);
+       if (typeof userCb.damage === 'function') userCb.damage(data);
+     },
+     heal: (data) => {
+       window._b32OnHeal && window._b32OnHeal(data);
+       if (typeof userCb.heal === 'function') userCb.heal(data);
+     },
+     statusChange: (data) => {
+       window._b32OnStatusChange && window._b32OnStatusChange(data);
+       if (typeof userCb.statusChange === 'function') userCb.statusChange(data);
+     },
+     coreDamage: (data) => {
+       window._b32OnCoreDamage && window._b32OnCoreDamage(data);
+       if (typeof userCb.coreDamage === 'function') userCb.coreDamage(data);
+     },
    };
  }
 
- originalStart.call(window.Battle32, wrappedConfig, uiCallbacks);
- window.renderBattle32UI();
+ function wrapRogueliteEnd(config) {
+   const wrappedConfig = Object.assign({}, config || {});
+   if (typeof wrappedConfig.rogueliteOnBattleEnd === 'function') {
+     const originalRogueliteEnd = wrappedConfig.rogueliteOnBattleEnd;
+     wrappedConfig.rogueliteOnBattleEnd = function (payload) {
+       window.__ROGUELITE_TRANSITIONING__ = true;
+       return originalRogueliteEnd(payload);
+     };
+   }
+   return wrappedConfig;
+ }
+
+ const originalStart = window.Battle32.start;
+ window.Battle32.start = function (config, callbacks) {
+   window.__BATTLE32_UI_ACTIVE__ = true;
+   _resetSkillState();
+   _hideAllScreens();
+
+   const uiCallbacks = buildUiCallbacks(callbacks);
+   const wrappedConfig = wrapRogueliteEnd(config);
+   originalStart.call(window.Battle32, wrappedConfig, uiCallbacks);
+   window.renderBattle32UI();
  };
+
+ // startだけでなくrestoreにも同じUIコールバックを注入する。
+ // これがないと再開後のdamageイベントがUP演出へ接続されない。
+ const originalRestore = window.Battle32.restore;
+ if (typeof originalRestore === 'function') {
+   window.Battle32.restore = function (savedState, callbacks) {
+     window.__BATTLE32_UI_ACTIVE__ = true;
+     _resetSkillState();
+     _hideAllScreens();
+
+     const mergedCallbacks = Object.assign({}, callbacks || {});
+     if (savedState && savedState.isRoguelite
+         && typeof mergedCallbacks.rogueliteOnBattleEnd !== 'function'
+         && window.RogueliteController
+         && typeof window.RogueliteController._createResumeBattleEndCallback === 'function') {
+       const resumeEnd = window.RogueliteController._createResumeBattleEndCallback();
+       if (typeof resumeEnd === 'function') mergedCallbacks.rogueliteOnBattleEnd = resumeEnd;
+     }
+
+     const restored = originalRestore.call(window.Battle32, savedState, buildUiCallbacks(mergedCallbacks));
+     window.renderBattle32UI();
+     return restored;
+   };
+ }
 
  window.Battle32._uiHooked = true;
  }

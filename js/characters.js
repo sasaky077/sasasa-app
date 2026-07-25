@@ -702,7 +702,7 @@ skills: [
       3: { comboTriggerRange: 'combo_x_all' },
       4: { hitAndAwayLinkRefund: 1, hitAndAwayLinkRefundPerTurn: 1 }
     },
-    uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.25,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
       skill: { id: 'combo', name: '閃光追駆', type: 'attack', multiplier: 0.65, range: 'front_row_3_ally', effects: [], hitStyle: 'rapid', desc: '斜め隣接4マスの味方スキルに反応し、前方横3マスの敵へ高速追撃する。' }

@@ -501,6 +501,53 @@
     return 'E';
   }
 
+
+  // アプリ再起動後、Battle32の保存スナップショットからラン進行を再構築する。
+  // OPはJSON化で関数を失うため、IDからマスター定義へ戻す。
+  function restoreFromBattleState(saved) {
+    if (!saved || !saved.isRoguelite) return false;
+
+    const runId = String(saved.rogueliteRunId || 'default');
+    const runDef = getRunDef(runId);
+    if (!runDef) return false;
+
+    const rosterIds = Array.isArray(saved.roster)
+      ? saved.roster.map(r => Number(r && r.charaId)).filter(Number.isFinite)
+      : [];
+    const partyIds = normalizeRoguelitePartyIds(rosterIds);
+
+    const optionSnapshots = Array.isArray(saved.rogueliteOptions) ? saved.rogueliteOptions : [];
+    const restoredOptions = optionSnapshots.map(op => {
+      if (!op) return null;
+      if (typeof window.getOptionById === 'function' && op.id) {
+        const master = window.getOptionById(op.id);
+        if (master) return master;
+      }
+      return op;
+    }).filter(Boolean);
+
+    const maxStage = Array.isArray(runDef.stageDefs) ? runDef.stageDefs.length : 1;
+    const requestedStage = Math.max(1, Number(saved.rogueliteStageNo || 1));
+
+    _state = {
+      active: true,
+      runId: runDef.id,
+      runName: runDef.name,
+      debugOnly: runDef.debugOnly === true,
+      stageNo: Math.min(maxStage, requestedStage),
+      options: restoredOptions,
+      items: Array.isArray(saved.items) ? saved.items.map(i => ({ ...i })) : [],
+      totalTurns: Math.max(0, Number(saved.rogueliteTotalTurns || 0)),
+      stageTurns: Array.isArray(saved.rogueliteStageTurns) ? saved.rogueliteStageTurns.slice() : [],
+      partyIds,
+      blessingId: saved.blessing && saved.blessing.id ? saved.blessing.id : null,
+      result: null,
+    };
+
+    console.log('[RogueliteRun] Battle32保存状態からラン復元:', _state);
+    return true;
+  }
+
   function advance() {
     if (!_state || !_state.active) return;
     const runDef = getRunDef(_state.runId);
@@ -612,6 +659,7 @@
     getStageTurns,
     getClearRank,
     getClearRankConditions,
+    restoreFromBattleState,
     advance,
     end,
     buildBattleConfig,

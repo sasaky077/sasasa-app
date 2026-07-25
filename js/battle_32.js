@@ -217,6 +217,55 @@
   let _bs = null;   // バトルステート
   let _cb = null;   // コールバック群
 
+  // ローグライトのステージ間引き継ぎ。
+  // 現行ラン進行は各ステージで味方ユニットを新規生成するため、
+  // 前ステージでHP0になったキャラIDだけを保持し、次ステージではHP1で復帰させる。
+  const _rogueliteHp1CarryByRun32 = new Map();
+
+  function _getRogueliteRunKey32(config) {
+    if (!config) return 'default';
+    return String(config.rogueliteRunId || config.runId || 'default');
+  }
+
+  function _getRogueliteStageNo32(config) {
+    const explicit = Number(config && (config.rogueliteStageNo ?? config.stageNo));
+    if (Number.isFinite(explicit) && explicit > 0) return Math.floor(explicit);
+
+    if (window.RogueliteRun && typeof window.RogueliteRun.getStageNo === 'function') {
+      const current = Number(window.RogueliteRun.getStageNo());
+      if (Number.isFinite(current) && current > 0) return Math.floor(current);
+    }
+
+    const stageId = String(config && config.stageId || '');
+    const match = stageId.match(/(?:_|-)(\d+)$/);
+    return match ? Math.max(1, Number(match[1])) : 1;
+  }
+
+  function _prepareRogueliteHp1Carry32(config, isRogueliteMode) {
+    if (!isRogueliteMode) return new Set();
+    const runKey = _getRogueliteRunKey32(config);
+    const stageNo = _getRogueliteStageNo32(config);
+
+    // 第1ステージは新しいランとして扱い、前回ランの持越しを消す。
+    if (stageNo <= 1) _rogueliteHp1CarryByRun32.set(runKey, new Set());
+    if (!_rogueliteHp1CarryByRun32.has(runKey)) _rogueliteHp1CarryByRun32.set(runKey, new Set());
+    return _rogueliteHp1CarryByRun32.get(runKey);
+  }
+
+  function _rememberRogueliteZeroHp32() {
+    if (!_bs || !_bs.isRoguelite) return;
+    const runKey = String(_bs.rogueliteRunId || 'default');
+    const zeroHpIds = new Set();
+
+    (_bs.roster || []).forEach(entry => {
+      if (!entry) return;
+      const unit = (_bs.allies || []).find(ally => ally && ally._uid === entry.deployedUid);
+      if (unit && Number(unit.hp || 0) <= 0) zeroHpIds.add(Number(entry.charaId));
+    });
+
+    _rogueliteHp1CarryByRun32.set(runKey, zeroHpIds);
+  }
+
   // ターン演出・フェーズ進行の二重起動防止
   let _allyTurnFlowRunning = false;
   let _enemyTurnFlowRunning = false;
@@ -1100,6 +1149,7 @@ const enemies = enemyDefs.map(def => {
 
     // ── ローグライトモードのroster構築 ──
     const isRogueliteMode = config.battleMode === 'roguelite' || typeof config.rogueliteOnBattleEnd === 'function';
+    const hp1CarryIds = _prepareRogueliteHp1Carry32(config, isRogueliteMode);
     let rosterData = [];
     let initialAllies = allies;
 
@@ -1124,6 +1174,7 @@ const enemies = enemyDefs.map(def => {
 
         if (isFixedFirst) {
           const unit = makeAlly(charDef, ROGUELITE_ERI_START_POS.row, ROGUELITE_ERI_START_POS.col);
+          if (hp1CarryIds.has(Number(pid))) unit.hp = 1;
           unit.isFixedFirst = true;
           initialAllies.push(unit);
           fixedDeployedUid = unit._uid;
@@ -1138,6 +1189,7 @@ const enemies = enemyDefs.map(def => {
           status: isFixedFirst ? 'deployed' : 'standby',
           deployedUid: isFixedFirst ? fixedDeployedUid : null,
           fixedFirst: isFixedFirst,
+          stageStartHp: hp1CarryIds.has(Number(pid)) ? 1 : null,
           charDef,
         };
       }).filter(Boolean);
@@ -1147,6 +1199,8 @@ const enemies = enemyDefs.map(def => {
       turn: 1,
       phase: 'skill',
       stageId,
+      rogueliteRunId: isRogueliteMode ? _getRogueliteRunKey32(config) : null,
+      rogueliteStageNo: isRogueliteMode ? _getRogueliteStageNo32(config) : null,
       allies: initialAllies,
       enemies,
       log: [],
@@ -1385,6 +1439,13 @@ const enemies = enemyDefs.map(def => {
       summons: _bs.summons ? _bs.summons.map(u => ({ ...u, statusEffects: [...(u.statusEffects || [])] })) : [],
 
       isRoguelite: !!_bs.isRoguelite,
+      // 再開時にローグライトラン本体を再構築するための進行メタデータ
+      rogueliteRunId: _bs.rogueliteRunId || null,
+      rogueliteStageNo: Number(_bs.rogueliteStageNo || 0) || null,
+      rogueliteOptions: Array.isArray(_bs.rogueliteOptions)
+        ? _bs.rogueliteOptions.map(op => ({ ...op }))
+        : [],
+      isBossStage: !!_bs.isBossStage,
       cores: null,
       bossCore: null,
       turnLimit: null,
@@ -5816,6 +5877,10 @@ function doBossLineAttack(boss) {
   _setTurnDangerAlert(false);
 
   const cb = _bs._rl_onBattleEnd;
+
+  // 勝利時点でHP0のキャラを記録し、次ステージではHP1で復帰させる。
+  if (result === 'win') _rememberRogueliteZeroHp32();
+
   const aliveAllies = (_bs.allies || []).filter(unit => unit && Number(unit.hp || 0) > 0);
   const payload = {
     result,
@@ -6205,6 +6270,7 @@ function doBossLineAttack(boss) {
     if (!_spendLink(summonCost, `${rEntry.name} 召喚`)) return false;
 
     const unit = makeAlly(rEntry.charDef, row, col);
+    if (Number(rEntry.stageStartHp) === 1) unit.hp = 1;
     _applyBlessingHpPassive32(unit);
     _applyRogueliteOptionsToUnit(unit);
     _bs.allies.push(unit);
@@ -6494,6 +6560,19 @@ function restore(savedState, callbacks) {
   _enemyTurnFlowRunning = false;
 
   _bs = deepClone(savedState);
+
+  // アプリ再起動後は RogueliteRun のメモリ状態も消えている。
+  // Battle32の保存状態から先にランを復元し、その後で終了コールバックを再生成する。
+  if (_bs.isRoguelite && window.RogueliteRun
+      && typeof window.RogueliteRun.isActive === 'function'
+      && !window.RogueliteRun.isActive()
+      && typeof window.RogueliteRun.restoreFromBattleState === 'function') {
+    try {
+      window.RogueliteRun.restoreFromBattleState(_bs);
+    } catch (e) {
+      console.warn('[Battle32] roguelite run restore error:', e);
+    }
+  }
 
   // JSON保存では関数が消えるため、ローグライト終了コールバックを再接続する。
   const resumeBattleEnd =
