@@ -7617,7 +7617,7 @@ function b32ReturnToStageSelect() {
 }
 
 
-function b32StatusEffectBadgeList(unit) {
+function b32StatusEffectBadgeList(unit, blessing) {
  const effects = Array.isArray(unit && unit.statusEffects) ? unit.statusEffects : [];
  const passiveBuffs = Array.isArray(unit && unit.rogueliteBuffs) ? unit.rogueliteBuffs : [];
  const badges = [];
@@ -7635,6 +7635,25 @@ function b32StatusEffectBadgeList(unit) {
    if (!Number.isFinite(n)) return fallback;
    return up ? Math.round((n - 1) * 100) : Math.round((1 - n) * 100);
  };
+
+ // 加護の常時効果は、既存BUFFと同じ上昇アイコンへ統合する。
+ // INV使用後も常時効果は継続するため、used状態では消さない。
+ if (unit && unit.side !== 'enemy' && blessing) {
+   const passiveCriticalRate = Number(blessing.passiveCriticalRate || 0);
+   const passiveAtkRate = Number(blessing.passiveAtkRate || 0);
+   const passiveHpRate = Number(blessing.passiveHpRate || 0);
+
+   if (passiveCriticalRate > 0) {
+     pushBadge('buff passive', `CRI+${Math.round(passiveCriticalRate * 100)}%`, 1);
+   }
+   if (passiveAtkRate > 0) {
+     pushBadge('buff passive', `ATK+${Math.round(passiveAtkRate * 100)}%`, 2);
+   }
+   if (passiveHpRate > 0) {
+     pushBadge('buff passive', `HP+${Math.round(passiveHpRate * 100)}%`, 3);
+   }
+   // リヴィアのLINK獲得確率は味方全体のターン処理なので、個別キャラBUFFには表示しない。
+ }
 
  // ローグライト報酬などの永続補正。実数値には別途反映済みなので、ここでは表示だけ行う。
  passiveBuffs.forEach(e => {
@@ -7689,8 +7708,8 @@ function b32StatusEffectBadgeList(unit) {
  return badges.sort((a, b) => a.priority - b.priority);
 }
 
-function b32StatusEffectBadgesHtml(unit, compact) {
- const list = b32StatusEffectBadgeList(unit);
+function b32StatusEffectBadgesHtml(unit, compact, blessing) {
+ const list = b32StatusEffectBadgeList(unit, blessing);
  if (!list.length) return '';
 
  // 盤面上は効果名を並べず、バフ/デバフの有無と件数だけを要約表示する。
@@ -7708,7 +7727,9 @@ function b32StatusEffectBadgesHtml(unit, compact) {
    return parts.length ? `<div class="b32-status-summary">${parts.join('')}</div>` : '';
  }
 
- return `<div class="b32-status-badges">${list.map(b => `<span class="b32-status-badge ${b.cls}">${b32EscapeHtml(b.text)}</span>`).join('')}</div>`;
+ return `<div class="b32-status-badges">${list.map(b =>
+   `<span class="b32-status-badge ${b.cls}">${b32EscapeHtml(b.text)}</span>`
+ ).join('')}</div>`;
 }
 
  function renderUnit(u, phase) {
@@ -7722,6 +7743,14 @@ function b32StatusEffectBadgesHtml(unit, compact) {
  const _uh = (_uah[u._uid] || {});
  const isDone = u.side === 'ally' && phase === 'skill' && !!(_uh.move && _uh.skill);
 
+
+ // ハヤテ：HIT & AWAYモード中は盤面上で黄色いオーラを表示する。
+ const isHayateHaaMode =
+   u.side === 'ally' &&
+   Number(u.id || u.charaId || 0) === 12 &&
+   Number(u.hp || 0) > 0 &&
+   Number(u.hitAndAwayUntilTurn || 0) >= Number(bsCurrent && bsCurrent.turn || 0);
+
  let inner = '';
 const displayImg =
  u.battleBackImg ||
@@ -7732,6 +7761,18 @@ const displayImg =
 
 const battleBackScale = getUnitUiScale(u, 'battleBack');
 const battleBackY = getUnitUiOffsetY(u, 'battleBack');
+
+
+if (isHayateHaaMode) {
+ inner += `
+ <div class="b32-hayate-haa-aura" aria-hidden="true">
+   <span class="b32-hayate-haa-ring"></span>
+   <span class="b32-hayate-haa-flare flare-1"></span>
+   <span class="b32-hayate-haa-flare flare-2"></span>
+   <span class="b32-hayate-haa-flare flare-3"></span>
+ </div>
+ `;
+}
 
 if (displayImg) {
  inner += `
@@ -7755,7 +7796,7 @@ if (u.side === 'enemy') {
  const hpCol = hpColor(u.hp, u.hpMax);
  const elemIcon = unitElementIcon(u.element);
 
- const statusHtml = b32StatusEffectBadgesHtml(u, true);
+ const statusHtml = b32StatusEffectBadgesHtml(u, true, bsCurrent && bsCurrent.blessing);
  inner += `
   <div class="b32-unit-foot-ui">
     <div class="b32-unit-foot-main">
@@ -7773,7 +7814,7 @@ if (u.side === 'ally') {
  const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
  const elemIcon = unitElementIcon(u.element);
 
- const statusHtml = b32StatusEffectBadgesHtml(u, true);
+ const statusHtml = b32StatusEffectBadgesHtml(u, true, bsCurrent && bsCurrent.blessing);
  inner += `
   <div class="b32-unit-foot-ui">
     <div class="b32-unit-foot-main">
@@ -7831,6 +7872,7 @@ const activeEnemyClass =
 const extraCls =
  (isDone ? ' skill-done' : '') +
  (u.isBoss ? ' boss' : '') +
+ (isHayateHaaMode ? ' hayate-haa-mode' : '') +
  summonClass +
  midBossClass +
  enemyIdClass +
@@ -8524,7 +8566,7 @@ await _afterCharTurnFlow();
  // 旧バッジ用（非表示にしてあるが変数は残す）
  const shinkiDots = shinkiDotsInner;
 
- const statusBadgesHtml = b32StatusEffectBadgesHtml(ally, false);
+ const statusBadgesHtml = b32StatusEffectBadgesHtml(ally, false, bs && bs.blessing);
 
  // タップ可否：行動済みでも情報確認のためタップ可能にする。
  // 実際の行動可否はアクションボタン/決定ボタン側で制御する。
@@ -8799,7 +8841,7 @@ if (listEl) {
         : null;
       const skillDetailsHtml = b32BuildRosterSkillDetailsHtml(c, liveUnit || r.unit || c);
       const statusDetailsHtml = liveUnit
-        ? b32StatusEffectBadgesHtml(liveUnit, false)
+        ? b32StatusEffectBadgesHtml(liveUnit, false, bs && bs.blessing)
         : '';
 
       const statusLabel =
@@ -9001,6 +9043,7 @@ if (listEl) {
    }
 
    wrap.style.display = 'block';
+
    const active = b.activeTurn === bs.turn;
    const invReady = _isBlessingInvReadyUi(bs, b);
    const canActivate = invReady && bs.phase === 'skill';
@@ -9019,6 +9062,11 @@ if (listEl) {
    setText('b32-blessing-inv-action-state', stateText);
 
    iconBtn.classList.toggle('ready', invReady);
+   iconBtn.classList.add('passive-active');
+   iconBtn.title = `常時効果発動中：${def.passive}`;
+   iconBtn.style.boxShadow = invReady
+     ? '0 0 14px rgba(255,220,120,.85)'
+     : '0 0 10px rgba(100,190,255,.55)';
    iconBtn.classList.toggle('active', active);
    iconBtn.classList.toggle('used', !!b.used && !active);
 

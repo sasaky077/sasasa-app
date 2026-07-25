@@ -222,6 +222,45 @@
   // 前ステージでHP0になったキャラIDだけを保持し、次ステージではHP1で復帰させる。
   const _rogueliteHp1CarryByRun32 = new Map();
 
+  // ローグライト中の加護進捗はステージを跨いで保持する。
+  // 敵撃破数・複数体攻撃条件・INV使用済み状態が、次ステージ開始時に0へ戻る不具合を防ぐ。
+  const _rogueliteBlessingCarryByRun32 = new Map();
+
+  function _prepareRogueliteBlessing32(config, isRogueliteMode) {
+    const fresh = makeBlessingState32(config && config.blessingId || null);
+    if (!fresh || !isRogueliteMode) return fresh;
+
+    const runKey = _getRogueliteRunKey32(config);
+    const stageNo = _getRogueliteStageNo32(config);
+    if (stageNo <= 1) _rogueliteBlessingCarryByRun32.delete(runKey);
+
+    const carried = _rogueliteBlessingCarryByRun32.get(runKey);
+    if (!carried || carried.id !== fresh.id) return fresh;
+
+    return {
+      ...fresh,
+      killCount: Math.max(0, Number(carried.killCount || 0)),
+      used: !!carried.used,
+      activeTurn: null,
+      defeatedEnemyUids: [], // UIDは各ステージで再生成されるため持ち越さない
+      conditionMet: !!carried.conditionMet,
+      multiTargetMax: Math.max(0, Number(carried.multiTargetMax || 0)),
+    };
+  }
+
+  function _rememberRogueliteBlessing32() {
+    if (!_bs || !_bs.isRoguelite || !_bs.blessing) return;
+    const runKey = String(_bs.rogueliteRunId || 'default');
+    const b = _bs.blessing;
+    _rogueliteBlessingCarryByRun32.set(runKey, {
+      id: b.id,
+      killCount: Math.max(0, Number(b.killCount || 0)),
+      used: !!b.used,
+      conditionMet: !!b.conditionMet,
+      multiTargetMax: Math.max(0, Number(b.multiTargetMax || 0)),
+    });
+  }
+
   function _getRogueliteRunKey32(config) {
     if (!config) return 'default';
     return String(config.rogueliteRunId || config.runId || 'default');
@@ -1208,7 +1247,7 @@ const enemies = enemyDefs.map(def => {
       bossWarning: false,
       result: null,
       loseReason: null,
-      blessing: makeBlessingState32(config.blessingId || null),
+      blessing: _prepareRogueliteBlessing32(config, isRogueliteMode),
 
       delayedActions: [],
 
@@ -1514,6 +1553,7 @@ const enemies = enemyDefs.map(def => {
       blessing.conditionMet = true;
       _log(`加護条件達成：1度の攻撃で敵${count}体にダメージ`);
       _emit('blessingProgress', { blessing: { ...blessing }, bs: _snapshot() });
+      _rememberRogueliteBlessing32();
     }
   }
 
@@ -1565,6 +1605,7 @@ const enemies = enemyDefs.map(def => {
       blessing.killCount = Number(blessing.killCount || 0) + 1;
       _log(`加護条件：敵撃破 ${blessing.killCount} / ${blessing.invRequiredKills}`);
       _emit('blessingProgress', { blessing: { ...blessing, defeatedEnemyUids: [...seen] }, bs: _snapshot() });
+      _rememberRogueliteBlessing32();
     });
     blessing.defeatedEnemyUids = [...seen];
   }
@@ -1599,6 +1640,7 @@ const enemies = enemyDefs.map(def => {
 
     blessing.used = true;
     blessing.activeTurn = effectType === 'critical_up' ? _bs.turn : null;
+    _rememberRogueliteBlessing32();
     const invName = blessing.invName || blessing.name || '加護';
 
     if (effectType === 'critical_up') {
@@ -4185,11 +4227,21 @@ return true;
     function getEnemyAttackTargets(enemy) {
       const range = enemy.attackRange || 'enemy_attack_front';
 
-      // ロゼの茨薔薇などの設置物は、敵の正面/直線攻撃を遮る。
-      // 直線系は最初に当たった味方または遮蔽物だけを返し、後ろへ貫通させない。
+      // 正面1マスの直接攻撃だけは単体判定。
+      // 直線攻撃は複数マス攻撃として、射線上にいる味方全員を対象にする。
+      // ロゼの茨薔薇などの設置物がある場合は、その手前までを有効射線とする。
       if (range === 'enemy_attack_line') {
-        const first = _getFirstEnemyLineTarget(enemy, false);
-        return first ? [first] : [];
+        const blockers = (_bs.summons || [])
+          .filter(u => _isEnemyProjectileBlocker(u, 'enemy_attack_line'))
+          .filter(u => Number(u.col) === Number(enemy.col) && Number(u.row) > Number(enemy.row))
+          .sort((a, b) => Number(a.row) - Number(b.row));
+        const blockerRow = blockers.length ? Number(blockers[0].row) : BOARD_ROWS;
+        return (_bs.allies || []).filter(a =>
+          a && a.hp > 0 &&
+          Number(a.col) === Number(enemy.col) &&
+          Number(a.row) > Number(enemy.row) &&
+          Number(a.row) < blockerRow
+        );
       }
       if (range === 'enemy_attack_front') {
         const first = _getFirstEnemyLineTarget(enemy, true);
@@ -4320,6 +4372,30 @@ return true;
       }
 
       return _pickClosestUnit(enemy, list);
+    }
+
+
+    // 敵通常攻撃の命中方式。
+    // attackTargetMode を指定した敵はその設定を優先し、未指定時は正面1マスのみ単体、
+    // それ以外の複数マスレンジは範囲内の全味方へ命中させる。
+    function _getEnemyAttackHitTargets32(enemy, rangeTargets) {
+      const list = (rangeTargets || []).filter(t => t && t.hp > 0);
+      if (!list.length) return [];
+
+      const mode = String(enemy && enemy.attackTargetMode || '').toLowerCase();
+      if (mode === 'all') return list;
+      if (mode === 'single' || mode === 'first') {
+        const target = _pickEnemyAttackTarget(enemy, list);
+        return target ? [target] : [];
+      }
+
+      const range = String(enemy && enemy.attackRange || 'enemy_attack_front');
+      if (range === 'enemy_attack_front') {
+        const target = _pickEnemyAttackTarget(enemy, list);
+        return target ? [target] : [];
+      }
+
+      return list;
     }
 
     function _getEnemyMoveTarget(enemy) {
@@ -5615,11 +5691,9 @@ function doBossLineAttack(boss) {
     const rangeTargets = getEnemyAttackTargets(enemy);
 
     if (rangeTargets.length > 0) {
-      // 射程内に味方がいる → ボス/特殊敵はエリ優先、通常敵は最も近い味方を攻撃
-      const target = _pickEnemyAttackTarget(enemy, rangeTargets);
-      if (!target) return;
-      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
-      const targetHpBefore = Number(target.hp || 0);
+      const hitTargets = _getEnemyAttackHitTargets32(enemy, rangeTargets);
+      if (!hitTargets.length) return;
+      const primaryTarget = _pickEnemyAttackTarget(enemy, hitTargets) || hitTargets[0];
       const attackTraceCells = _getEnemyAttackTraceCells(enemy);
       _setEnemyAttackTraceCells(attackTraceCells, enemy, enemy.attackRange || 'ATTACK');
       await wait(180);
@@ -5634,24 +5708,29 @@ function doBossLineAttack(boss) {
       _emit('enemyActionStep', {
         step: 'attack',
         enemy: { ...enemy },
-        target: { ...target },
+        target: { ...primaryTarget },
+        targets: hitTargets.map(t => ({ ...t })),
         bs: _snapshot(),
       });
-      applyDamage(target, dmg, enemy);
-      if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
-        _addRiviaForget(target, 1);
-        _log(`${target.name} は次のターン、スキルを忘れる`);
-      }
-      const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
+
+      let killedAny = false;
+      hitTargets.forEach(target => {
+        const hpBefore = Number(target.hp || 0);
+        const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
+        applyDamage(target, dmg, enemy);
+        if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
+          _addRiviaForget(target, 1);
+          _log(`${target.name} は次のターン、スキルを忘れる`);
+        }
+        if (hpBefore > 0 && Number(target.hp || 0) <= 0) killedAny = true;
+      });
+
       _renderUI();
-      // 通常攻撃アップ演出は約1.18秒、BREAK時は約1.94秒。
-      // 次の敵行動が重ならないよう、ここで十分に待つ。
-      await wait(killed ? 2100 : 1300);
+      await wait(killedAny ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
       _clearEnemyAttackTraceCells();
-      // applyDamage 内で _checkWinLose を呼んでいるが、念のため result を確認
       if (_bs.result) return;
-      await _retreatEnemyAfterAttack(enemy, target);
+      await _retreatEnemyAfterAttack(enemy, primaryTarget);
       return;
     }
 
@@ -5689,10 +5768,9 @@ function doBossLineAttack(boss) {
     // 移動後に攻撃可能か再チェック
     const afterMoveTargets = getEnemyAttackTargets(enemy);
     if (afterMoveTargets.length > 0) {
-      const target = _pickEnemyAttackTarget(enemy, afterMoveTargets);
-      if (!target) return;
-      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
-      const targetHpBefore = Number(target.hp || 0);
+      const hitTargets = _getEnemyAttackHitTargets32(enemy, afterMoveTargets);
+      if (!hitTargets.length) return;
+      const primaryTarget = _pickEnemyAttackTarget(enemy, hitTargets) || hitTargets[0];
       const attackTraceCells = _getEnemyAttackTraceCells(enemy);
       _setEnemyAttackTraceCells(attackTraceCells, enemy, enemy.attackRange || 'ATTACK');
       await wait(180);
@@ -5707,21 +5785,29 @@ function doBossLineAttack(boss) {
       _emit('enemyActionStep', {
         step: 'attack_after_move',
         enemy: { ...enemy },
-        target: { ...target },
+        target: { ...primaryTarget },
+        targets: hitTargets.map(t => ({ ...t })),
         bs: _snapshot(),
       });
-      applyDamage(target, dmg, enemy);
-      if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
-        _addRiviaForget(target, 1);
-        _log(`${target.name} は次のターン、スキルを忘れる`);
-      }
-      const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
+
+      let killedAny = false;
+      hitTargets.forEach(target => {
+        const hpBefore = Number(target.hp || 0);
+        const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
+        applyDamage(target, dmg, enemy);
+        if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
+          _addRiviaForget(target, 1);
+          _log(`${target.name} は次のターン、スキルを忘れる`);
+        }
+        if (hpBefore > 0 && Number(target.hp || 0) <= 0) killedAny = true;
+      });
+
       _renderUI();
-      await wait(killed ? 2100 : 1300);
+      await wait(killedAny ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
       _clearEnemyAttackTraceCells();
       if (_bs.result) return;
-      await _retreatEnemyAfterAttack(enemy, target);
+      await _retreatEnemyAfterAttack(enemy, primaryTarget);
     }
   }   // end _runEnemySingleAction
 
@@ -5878,8 +5964,12 @@ function doBossLineAttack(boss) {
 
   const cb = _bs._rl_onBattleEnd;
 
-  // 勝利時点でHP0のキャラを記録し、次ステージではHP1で復帰させる。
-  if (result === 'win') _rememberRogueliteZeroHp32();
+  // 勝利時点でHP0のキャラと加護進捗を記録し、次ステージへ引き継ぐ。
+  if (result === 'win') {
+    _rememberRogueliteZeroHp32();
+    _syncBlessingDefeats32();
+    _rememberRogueliteBlessing32();
+  }
 
   const aliveAllies = (_bs.allies || []).filter(unit => unit && Number(unit.hp || 0) > 0);
   const payload = {

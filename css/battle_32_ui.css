@@ -10496,3 +10496,182 @@ html body.b32-blessing-info-open #b32-roster-panel {
   padding: 2px 5px !important;
   font-size: 8px !important;
 }
+
+
+/* ============================================================
+ 加護の常時効果：通常BUFF欄へ画像アイコンとして表示
+ ============================================================ */
+#battle32-root .b32-status-badge.blessing-buff {
+  min-width: 0 !important;
+  width: 18px !important;
+  height: 18px !important;
+  padding: 1px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(110, 235, 190, .72) !important;
+  background: rgba(8, 24, 24, .82) !important;
+  box-shadow:
+    0 0 7px rgba(80, 255, 180, .34),
+    inset 0 0 4px rgba(160, 255, 220, .18) !important;
+}
+
+#battle32-root .b32-party-card .b32-status-badge.blessing-buff {
+  width: 16px !important;
+  height: 16px !important;
+  flex: 0 0 16px !important;
+}
+
+#battle32-root .b32-blessing-buff-img,
+#battle32-root .b32-status-summary-chip.blessing-buff-icon img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+#battle32-root .b32-status-summary-chip.blessing-buff-icon {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  padding: 1px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+
+/* ============================================================
+   ハヤテ：HIT & AWAYモード 黄色オーラ
+   ============================================================ */
+#battle32-root .b32-unit.ally.hayate-haa-mode {
+  z-index: 7;
+}
+
+#battle32-root .b32-hayate-haa-aura {
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: calc(var(--cell-size) * 1.42);
+  height: calc(var(--cell-size) * 1.78);
+  transform: translateX(-50%);
+  transform-origin: center bottom;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+  filter: drop-shadow(0 0 5px rgba(255, 213, 54, .82))
+          drop-shadow(0 0 12px rgba(255, 172, 20, .46));
+  animation: b32HayateHaaAuraPulse 920ms ease-in-out infinite;
+}
+
+#battle32-root .b32-unit.hayate-haa-mode .b32-unit-icon {
+  position: relative;
+  z-index: 2;
+  filter:
+    drop-shadow(0 0 4px rgba(255, 232, 105, .92))
+    drop-shadow(0 0 10px rgba(255, 183, 30, .68));
+}
+
+#battle32-root .b32-hayate-haa-ring {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 82%;
+  height: 23%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 225, 92, .88);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 229, 100, .23) 0%,
+    rgba(255, 188, 25, .12) 42%,
+    transparent 72%
+  );
+  box-shadow:
+    0 0 7px rgba(255, 231, 112, .92),
+    0 0 16px rgba(255, 179, 24, .72),
+    inset 0 0 9px rgba(255, 235, 128, .48);
+  animation: b32HayateHaaRing 1.05s ease-out infinite;
+}
+
+#battle32-root .b32-hayate-haa-flare {
+  position: absolute;
+  bottom: 4%;
+  width: 24%;
+  height: 76%;
+  border-radius: 50% 50% 35% 35%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 245, 150, .10) 22%,
+    rgba(255, 207, 52, .35) 64%,
+    rgba(255, 164, 10, .05) 100%
+  );
+  filter: blur(3px);
+  opacity: .78;
+  transform-origin: center bottom;
+  mix-blend-mode: screen;
+}
+
+#battle32-root .b32-hayate-haa-flare.flare-1 {
+  left: 17%;
+  animation: b32HayateHaaFlare 820ms ease-in-out infinite alternate;
+}
+
+#battle32-root .b32-hayate-haa-flare.flare-2 {
+  left: 39%;
+  height: 92%;
+  animation: b32HayateHaaFlare 1040ms ease-in-out 120ms infinite alternate-reverse;
+}
+
+#battle32-root .b32-hayate-haa-flare.flare-3 {
+  right: 16%;
+  height: 70%;
+  animation: b32HayateHaaFlare 900ms ease-in-out 240ms infinite alternate;
+}
+
+@keyframes b32HayateHaaAuraPulse {
+  0%, 100% {
+    opacity: .70;
+    transform: translateX(-50%) scale(.96, .98);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.05, 1.02);
+  }
+}
+
+@keyframes b32HayateHaaRing {
+  0% {
+    opacity: .92;
+    transform: translateX(-50%) scale(.72);
+  }
+  75% {
+    opacity: .38;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1.25);
+  }
+}
+
+@keyframes b32HayateHaaFlare {
+  0% {
+    opacity: .38;
+    transform: translateY(4px) scale(.72, .84) skewX(-5deg);
+  }
+  100% {
+    opacity: .92;
+    transform: translateY(-4px) scale(1.08, 1.06) skewX(5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #battle32-root .b32-hayate-haa-aura,
+  #battle32-root .b32-hayate-haa-ring,
+  #battle32-root .b32-hayate-haa-flare {
+    animation: none !important;
+  }
+}
