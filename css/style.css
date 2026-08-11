@@ -14491,3 +14491,278 @@ body,
   margin: 0 0 0 -1px !important;
   align-self: center !important;
 }
+
+/* =========================================================
+   100 Login Bonus / 7日周期
+   ========================================================= */
+body.login-bonus-open {
+  overflow: hidden !important;
+}
+
+.login-bonus-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 395000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+.login-bonus-modal.show {
+  display: flex;
+}
+
+.login-bonus-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 8, 12, 0.74);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.login-bonus-sheet {
+  position: relative;
+  width: min(402px, calc(100vw - 28px));
+  max-width: 100%;
+  overflow: hidden;
+  padding: 25px 16px 18px;
+  border: 1px solid rgba(210, 190, 145, 0.45);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(226, 211, 174, 0.16), transparent 34%),
+    linear-gradient(165deg, #1b1b1b 0%, #101010 72%, #0b0b0b 100%);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(255,255,255,0.025);
+  color: #f4eee2;
+  font-family: "Noto Serif JP", serif;
+  transform: translateY(7px) scale(.985);
+  opacity: 0;
+  animation: loginBonusIn .28s ease forwards;
+}
+
+.login-bonus-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(210, 190, 145, 0.10);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.login-bonus-kicker {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  letter-spacing: .30em;
+  color: #bca875;
+}
+
+.login-bonus-sheet h2 {
+  position: relative;
+  z-index: 1;
+  margin: 7px 0 3px;
+  text-align: center;
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  color: #fffdf8;
+}
+
+.login-bonus-sub {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 17px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: rgba(235, 225, 205, .55);
+}
+
+.login-bonus-days {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.login-bonus-day {
+  position: relative;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(214, 197, 158, .15);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .035);
+  color: rgba(242, 235, 220, .72);
+}
+
+.login-bonus-day:nth-child(7) {
+  grid-column: span 2;
+}
+
+.login-bonus-day-num {
+  font-family: "Cinzel", serif;
+  font-size: 8px;
+  letter-spacing: .11em;
+  color: rgba(224, 210, 178, .48);
+}
+
+.login-bonus-day img {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 7px rgba(0,0,0,.4));
+}
+
+.login-bonus-day b {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  color: #e8dec9;
+}
+
+.login-bonus-day.is-current {
+  border-color: rgba(220, 187, 103, .72);
+  background: linear-gradient(160deg, rgba(215, 178, 91, .18), rgba(255,255,255,.035));
+  box-shadow: 0 0 18px rgba(197, 153, 58, .12), inset 0 0 12px rgba(213, 174, 83, .06);
+}
+
+.login-bonus-day.is-special {
+  background: linear-gradient(160deg, rgba(200, 164, 79, .16), rgba(72, 57, 28, .11));
+}
+
+.login-bonus-day.is-special b {
+  color: #f2d88a;
+  font-size: 15px;
+}
+
+.login-bonus-day.is-claimed {
+  opacity: .68;
+}
+
+.login-bonus-check {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(220, 190, 112, .92);
+  color: #17130b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.login-bonus-today {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(213, 194, 151, .14);
+  border-bottom: 1px solid rgba(213, 194, 151, .14);
+  background: rgba(255,255,255,.025);
+}
+
+.login-bonus-today-label {
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  letter-spacing: .17em;
+  color: #ad9562;
+}
+
+.login-bonus-today img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.login-bonus-today div {
+  display: flex;
+  flex-direction: column;
+  min-width: 58px;
+}
+
+.login-bonus-today b {
+  font-family: "Cinzel", serif;
+  font-size: 21px;
+  line-height: 1;
+  color: #f4dda0;
+}
+
+.login-bonus-today div span {
+  margin-top: 3px;
+  font-size: 9px;
+  color: rgba(239, 230, 208, .6);
+}
+
+.login-bonus-claim-btn {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: min(250px, 82%);
+  margin: 0 auto;
+  padding: 12px 16px;
+  border: 1px solid rgba(222, 193, 121, .56);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(206, 176, 103, .24), rgba(132, 104, 48, .16));
+  color: #fff9e9;
+  font-family: "Noto Serif JP", serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  cursor: pointer;
+  box-shadow: 0 5px 18px rgba(0,0,0,.28);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.login-bonus-claim-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(.99);
+}
+
+.login-bonus-claim-btn:disabled {
+  cursor: default;
+  opacity: .72;
+}
+
+.login-bonus-status {
+  position: relative;
+  z-index: 1;
+  min-height: 16px;
+  margin-top: 9px;
+  text-align: center;
+  font-size: 9px;
+  line-height: 1.5;
+  color: rgba(232, 219, 187, .72);
+}
+
+.login-bonus-sheet.is-received {
+  animation: loginBonusReceive .55s ease;
+}
+
+@keyframes loginBonusIn {
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes loginBonusReceive {
+  0%,100% { filter: brightness(1); }
+  45% { filter: brightness(1.28); }
+}
+
+@media (max-width: 380px) {
+  .login-bonus-sheet { padding: 21px 12px 15px; }
+  .login-bonus-days { gap: 5px; }
+  .login-bonus-day { min-height: 70px; }
+  .login-bonus-day img { width: 24px; height: 24px; }
+}
