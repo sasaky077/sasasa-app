@@ -6825,6 +6825,12 @@ function _onHealEvent(data) {
  });
  }
 
+ // ── レムナント05：怨念マス ──
+ const remnant05CurseCells = new Map();
+ (Array.isArray(bs.remnant05Curses) ? bs.remnant05Curses : []).forEach(curse => {
+   if (curse) remnant05CurseCells.set(`${curse.row}-${curse.col}`, curse);
+ });
+
  // ── 敵攻撃の実行導線 ──
  const enemyAttackTraceCells = new Map();
  (Array.isArray(bs.activeEnemyAttackTraceCells) ? bs.activeEnemyAttackTraceCells : []).forEach(cell => {
@@ -6930,6 +6936,7 @@ if (_selectedEnemyUid) {
  // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
  const bossDangerType = bossDangerCells.get(key);
  const enemyAttackTrace = enemyAttackTraceCells.get(key) || null;
+ const remnant05Curse = remnant05CurseCells.get(key) || null;
  const isEnemyMoveGuide = enemyMoveGuideCells.has(key);
  const enemyAttackCellType = enemyAttackGuideCells.get ? enemyAttackGuideCells.get(key) : null;
  const isEnemyAttackGuide = enemyAttackCellType === 'attack';
@@ -6957,6 +6964,7 @@ if (_selectedEnemyUid) {
  else if (bossDangerType === 'boss_warn') cls += ' boss-danger-warn';
  else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
  if (enemyAttackTrace) cls += enemyAttackTrace.hit ? ' enemy-attack-trace-hit' : ' enemy-attack-trace';
+ if (remnant05Curse) cls += ' remnant05-curse-cell';
 
  if (isEnemyMoveGuide) cls += ' enemy-move-guide';
  if (isEnemyAttackGuide) cls += ' enemy-attack-guide';
@@ -7013,6 +7021,9 @@ if (_summonMode && isSummonCell && !unit) {
   const enemyAttackTraceOverlay = enemyAttackTrace
     ? `<span class="b32-enemy-attack-trace-overlay${enemyAttackTrace.hit ? ' hit' : ''}" aria-hidden="true"><i></i><b></b></span>`
     : '';
+  const remnant05CurseOverlay = remnant05Curse
+    ? `<span class="b32-remnant05-curse-overlay" aria-hidden="true"><i></i></span>`
+    : '';
 
   // 敵情報ガイド専用オーバーレイ
   // cell の background だけだと、白背景・3D変形・ゾーン背景の上で薄く見えるため、
@@ -7062,6 +7073,7 @@ if (_summonMode && isSummonCell && !unit) {
     `<div class="${cls}" data-row="${r}" data-col="${c}" ${depthStyle} ${onclick}>` +
     enemyGuideOverlay +
     enemyAttackTraceOverlay +
+    remnant05CurseOverlay +
     skillOverlay +
     comboOverlay +
     comboSkillOverlay +
@@ -9012,6 +9024,7 @@ if (listEl) {
    if (b.conditionType === 'enemy_kill_count') return Number(b.killCount || 0) >= Number(b.invRequiredKills || 0);
    if (b.conditionType === 'multi_target_attack') return !!b.conditionMet;
    if (b.conditionType === 'lost_ally_exists') return (bs.allies || []).some(a => a && a.hp <= 0 && !a.isFixedFirst);
+   if (b.conditionType === 'ally_lost_once') return !!b.conditionMet;
    return false;
  }
 
@@ -9020,6 +9033,7 @@ if (listEl) {
    if (b.conditionType === 'enemy_kill_count') return `${Math.min(Number(b.killCount||0), Number(b.invRequiredKills||3))} / ${Number(b.invRequiredKills||3)}`;
    if (b.conditionType === 'multi_target_attack') return b.conditionMet ? 'READY' : `${Number(b.multiTargetMax||0)} / ${Number(b.invRequiredTargets||2)}`;
    if (b.conditionType === 'lost_ally_exists') return _isBlessingInvReadyUi(bs,b) ? 'READY' : 'STANDBY';
+   if (b.conditionType === 'ally_lost_once') return b.conditionMet ? 'READY' : 'STANDBY';
    return 'STANDBY';
  }
 

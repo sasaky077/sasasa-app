@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=304-resonance-save-fix">
+  <link rel="stylesheet" href="css/style.css?v=306-home-bg-layers">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -275,7 +275,7 @@
           </div>
           <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="rivia" onclick="openRoguelitePartySelect('rivia')">
             <div class="ninmu-chapter-label">ROGUELITE</div>
-            <div class="ninmu-chapter-title">償却</div>
+            <div class="ninmu-chapter-title">忘却</div>
             <div class="roguelite-card-rewards" aria-label="主な報酬">
 
               <span class="roguelite-card-reward"><img src="images/remnant_03_panel.webp" alt="レムナント心核"></span>
@@ -298,6 +298,14 @@
               <span class="roguelite-card-reward"><img src="images/item_logos.webp" alt="LOGOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_chaos.webp" alt="CHAOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_mystis.webp" alt="MYSTISの器"></span>
+            </div>
+            <div class="roguelite-longpress-hint">長押しでクリア条件</div>
+          </div>
+          <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="remnant05" onclick="openRoguelitePartySelect('remnant05')">
+            <div class="ninmu-chapter-label">ROGUELITE</div>
+            <div class="ninmu-chapter-title">執着</div>
+            <div class="roguelite-card-rewards" aria-label="主な報酬">
+              <span class="roguelite-card-reward"><img src="images/remnant_05_panel.webp" alt="レムナント05"></span>
             </div>
             <div class="roguelite-longpress-hint">長押しでクリア条件</div>
           </div>
@@ -330,6 +338,12 @@
 </div>
 
 <div id="screen-main" class="screen">
+  <!-- Home background motion: static chara_bg + three transparent animated layers -->
+  <div class="home-cloud-motion-layer" aria-hidden="true">
+    <img class="home-bg-motion-img home-bg-motion-04" src="images/chara_bg_04.webp" alt="">
+    <img class="home-bg-motion-img home-bg-motion-05" src="images/chara_bg_05.webp" alt="">
+    <img class="home-bg-motion-img home-bg-motion-06" src="images/chara_bg_06.webp" alt="">
+  </div>
   <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
     <img src="images/mail.webp" alt="お知らせ">
   </button>

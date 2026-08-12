@@ -1041,6 +1041,18 @@ function pickRandomBoardCells(count) {
       specialActionDamageRate: Number.isFinite(Number(def.specialActionDamageRate))
         ? Number(def.specialActionDamageRate)
         : 0.90,
+
+      // レムナント05「執着」専用
+      remnant05: !!def.remnant05,
+      remnant05Body: def.remnant05Body || null, // 'core' | 'clone'
+      remnant05Stage: Number(def.remnant05Stage || 0),
+      remnant05HiddenCore: !!def.remnant05HiddenCore,
+      remnant05EnableCurse: !!def.remnant05EnableCurse,
+      remnant05EnableRevive: !!def.remnant05EnableRevive,
+      remnant05RecoilRate: Number.isFinite(Number(def.remnant05RecoilRate)) ? Number(def.remnant05RecoilRate) : 0.20,
+      remnant05CurseRate: Number.isFinite(Number(def.remnant05CurseRate)) ? Number(def.remnant05CurseRate) : 0.20,
+      obsessionTargetUid: def.obsessionTargetUid || null,
+      attackTargetMode: def.attackTargetMode || null,
     };
   }
 
@@ -1285,6 +1297,11 @@ const enemies = enemyDefs.map(def => {
       // 敵スポーン設定（ステージ設定から引き継ぐ）
       enemySpawn: config.enemySpawn || null,
 
+      // レムナント05「執着」ステージ制御
+      remnant05Config: config.remnant05Config ? { ...config.remnant05Config } : null,
+      remnant05Curses: [],
+      remnant05Serial: 0,
+
       // ターン単位の行動権（後方互換用・判定には使わない）
       moveUsedThisTurn:  false,
       skillUsedThisTurn: false,
@@ -1323,6 +1340,9 @@ const enemies = enemyDefs.map(def => {
 
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
     (_bs.allies || []).forEach(_applyBlessingHpPassive32);
+
+    // レムナント05は味方の実体数に合わせて分身数を同期する。
+    _initializeRemnant05Battle();
     _applyTurnStartBlessing32();
 
     // ── ローグライトOP開始時補正を適用 ──────────────────────
@@ -1467,7 +1487,19 @@ const enemies = enemyDefs.map(def => {
       stageId: _bs.stageId,
       allies: _bs.allies.map(u => ({ ...u, statusEffects: [...u.statusEffects] })),
       // ボスはHP0後も盤面表示のため常に含める
-      enemies: _bs.enemies.map(u => ({ ...u, statusEffects: [...u.statusEffects] })),
+      enemies: _bs.enemies.map(u => {
+        const snap = { ...u, statusEffects: [...u.statusEffects] };
+        // ST3: 特攻キャラ不在時は本体も分身体と同じ表示へ偽装する。
+        if (_isRemnant05Enemy(u) && u.remnant05HiddenCore && !_hasRemnant05TrueSight()) {
+          snap.isBoss = false;
+          snap.name = 'レムナント：??????';
+          snap.displayName = snap.name;
+          snap.remnant05CoreRevealed = false;
+        } else if (_isRemnant05Enemy(u) && u.remnant05Body === 'core') {
+          snap.remnant05CoreRevealed = true;
+        }
+        return snap;
+      }),
       bossWarning: _bs.bossWarning,
       log: [..._bs.log],
       result: _bs.result,
@@ -1502,6 +1534,10 @@ const enemies = enemyDefs.map(def => {
       skillUnitUid:      _bs.skillUnitUid,
       // 敵スポーン設定
       enemySpawn:        _bs.enemySpawn || null,
+      // レムナント05：怨念マス / 本体判別表示用メタ
+      remnant05Config:    _bs.remnant05Config ? { ..._bs.remnant05Config } : null,
+      remnant05Curses:    Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses.map(c => ({ ...c })) : [],
+      remnant05TrueSight: _hasRemnant05TrueSight(),
       // 行動権管理
       actionCount:       _bs.actionCount,
       actionMax:         _bs.actionMax,
@@ -1566,6 +1602,7 @@ const enemies = enemyDefs.map(def => {
     if (blessing.conditionType === 'lost_ally_exists') {
       return (_bs.allies || []).some(a => a && a.hp <= 0 && !a.isFixedFirst);
     }
+    if (blessing.conditionType === 'ally_lost_once') return !!blessing.conditionMet;
     return false;
   }
 
@@ -1608,6 +1645,149 @@ const enemies = enemyDefs.map(def => {
       _rememberRogueliteBlessing32();
     });
     blessing.defeatedEnemyUids = [...seen];
+  }
+
+
+  // ============================================================
+  // レムの加護（remnant_05）
+  // 常時反撃 / LOST条件 / INV召喚物
+  // ============================================================
+  function _isRemBlessingActive32() {
+    return !!(_bs && _bs.blessing && _bs.blessing.id === 'remnant_05');
+  }
+
+  function _markRemBlessingLostCondition32(target) {
+    if (!_isRemBlessingActive32() || !target || target.side !== 'ally') return;
+    const blessing = _bs.blessing;
+    if (blessing.used || blessing.conditionMet) return;
+    blessing.conditionMet = true;
+    _log('レムの加護：味方のLOSTを検知。INV使用可能');
+    _emit('blessingProgress', { blessing: { ...blessing }, bs: _snapshot() });
+    _rememberRogueliteBlessing32();
+  }
+
+  function _getRemBlessingDecoys32() {
+    return (_bs && _bs.summons || []).filter(s => s && s.hp > 0 && s.isRemnant05BlessingDecoy);
+  }
+
+  function _summonRemBlessingDecoys32(blessing) {
+    if (!_bs) return [];
+    if (!_bs.summons) _bs.summons = [];
+
+    const occupied = new Set();
+    [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])].forEach(u => {
+      if (u && (u.hp > 0 || u.isBoss)) occupied.add(`${u.row}-${u.col}`);
+    });
+
+    const cells = [];
+    for (let row = 0; row < BOARD_ROWS; row++) {
+      for (let col = 0; col < BOARD_COLS; col++) {
+        if (!occupied.has(`${row}-${col}`)) cells.push({ row, col });
+      }
+    }
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cells[i], cells[j]] = [cells[j], cells[i]];
+    }
+
+    const count = Math.min(cells.length, Math.max(1, Number(blessing.invSummonCount || 3)));
+    const created = [];
+    for (let i = 0; i < count; i++) {
+      const cell = cells[i];
+      const rem = {
+        _uid: uid(),
+        id: `remnant_05_blessing_set_${i + 1}`,
+        name: 'レム',
+        side: 'summon',
+        row: cell.row,
+        col: cell.col,
+        hp: 1,
+        hpMax: 1,
+        atk: 0,
+        element: 'mystis',
+        img: blessing.summonImg || 'images/remnant_05_set.webp',
+        battleImg: blessing.summonImg || 'images/remnant_05_set.webp',
+        battleBackImg: blessing.summonImg || 'images/remnant_05_set.webp',
+        uiScale: { battleBack: 1.45 },
+        uiOffset: { battleBack: 0 },
+        statusEffects: [],
+        remainingTurns: 9999,
+        isRemnant05BlessingDecoy: true,
+        blocksEnemyProjectiles: true,
+        blocksEnemyFrontAttack: true,
+      };
+      _bs.summons.push(rem);
+      created.push(rem);
+      _emit('summonObject', { summon: { ...rem }, owner: null, skill: { id:'remnant_05_inv', name:blessing.invName }, bs: _snapshot() });
+    }
+    return created;
+  }
+
+  function _moveNearestAllyToRemCell32(rem) {
+    if (!_bs || !rem) return null;
+    const allies = (_bs.allies || []).filter(a => a && a.hp > 0);
+    if (!allies.length) return null;
+    const sorted = allies.slice().sort((a, b) => {
+      const da = Math.abs(Number(a.row) - Number(rem.row)) + Math.abs(Number(a.col) - Number(rem.col));
+      const db = Math.abs(Number(b.row) - Number(rem.row)) + Math.abs(Number(b.col) - Number(rem.col));
+      if (da !== db) return da - db;
+      return String(a._uid).localeCompare(String(b._uid));
+    });
+    const ally = sorted[0];
+    if (!ally) return null;
+    const from = { row: ally.row, col: ally.col };
+    ally.row = rem.row;
+    ally.col = rem.col;
+    _log(`レムの残影：${ally.name} を残影の位置へ引き寄せた`);
+    _emit('forcedMove', {
+      source: { _uid: rem._uid, name:'レム', side:'summon', row:rem.row, col:rem.col },
+      target: { _uid: ally._uid, name:ally.name, side:'ally', row:ally.row, col:ally.col },
+      from,
+      to: { row: ally.row, col: ally.col },
+      effectType: 'remnant_05_blessing_shift',
+      moved: Math.abs(from.row - ally.row) + Math.abs(from.col - ally.col),
+      bs: _snapshot(),
+    });
+    return ally;
+  }
+
+  function _resolveRemBlessingDecoyHit32(rem, attacker) {
+    if (!_bs || !rem || !rem.isRemnant05BlessingDecoy || rem.hp <= 0) return false;
+    rem.hp = 0;
+    _bs.summons = (_bs.summons || []).filter(s => s && s._uid !== rem._uid);
+    _log('召喚されたレムが攻撃を受け、残影となって消えた');
+
+    if (attacker && attacker.side === 'enemy' && attacker.hp > 0) {
+      attacker.statusEffects = Array.isArray(attacker.statusEffects) ? attacker.statusEffects : [];
+      attacker.statusEffects.push({ type:'stun', duration:1, appliedTurn:_bs.turn, sourceName:'レムの加護' });
+      attacker.stunned = true;
+
+      const rate = Number(_bs.blessing && _bs.blessing.invRetaliationRate || 0.20);
+      const retaliation = Math.max(1, Math.round(Number(attacker.hpMax || attacker.hp || 1) * rate));
+      _log(`レムの残影：${attacker.name} を次ターンスタン、最大HP${Math.round(rate * 100)}%の怨念反撃`);
+      applyDamage(attacker, retaliation, { name:'レムの残影', side:'ally', element:null }, {
+        id:'remnant_05_inv_counter', name:'レムの残影', canCritical:false, hitStyle:'counter'
+      });
+    }
+
+    const movedAlly = _moveNearestAllyToRemCell32(rem);
+    _emit('summonObjectExpired', { summon: { ...rem }, reason:'hit', movedAlly: movedAlly ? { ...movedAlly } : null, bs: _snapshot() });
+    _renderUI();
+    _saveResume();
+    return true;
+  }
+
+  function _applyRemBlessingPassiveReflect32(target, source, dealtDamage) {
+    if (!_isRemBlessingActive32()) return;
+    if (!target || target.side !== 'ally' || Number(dealtDamage || 0) <= 0) return;
+    if (!source || source.side !== 'enemy' || Number(source.hp || 0) <= 0) return;
+    const rate = Number(_bs.blessing.passiveReflectRate || 0.10);
+    if (rate <= 0) return;
+    const reflect = Math.max(1, Math.round(Number(source.hpMax || source.hp || 1) * rate));
+    _log(`レムの加護：${source.name} に最大HP${Math.round(rate * 100)}%の反撃`);
+    applyDamage(source, reflect, { name:'レムの加護', side:'ally', element:null }, {
+      id:'remnant_05_passive_reflect', name:'執着返し', canCritical:false, hitStyle:'counter'
+    });
   }
 
   function getBlessingInvTargets() {
@@ -1659,6 +1839,9 @@ const enemies = enemyDefs.map(def => {
         enemy.statusEffects.push({ type:'stun', duration:turns, sourceName:invName });
       });
       _log(`INV「${invName}」：盤面上の敵全員を${turns}ターンスタン`);
+    } else if (effectType === 'rem_summon_3') {
+      const created = _summonRemBlessingDecoys32(blessing);
+      _log(`INV「${invName}」：レムを${created.length}体召喚`);
     } else if (effectType === 'revive_ally') {
       const chance = Math.max(0, Math.min(1, Number(blessing.invReviveChance || 0)));
       if (Math.random() < chance) {
@@ -1834,6 +2017,13 @@ const enemies = enemyDefs.map(def => {
   // 味方・敵ともに hp を減らす（統一）
   // ============================================================
   function applyDamage(target, rawDamage, source, skill) {
+    // レム加護の召喚物は敵から1回でも攻撃を受けた時点で、威力に関係なく消える。
+    if (target && target.isRemnant05BlessingDecoy && source && source.side === 'enemy') {
+      _resolveRemBlessingDecoyHit32(target, source);
+      _checkWinLose();
+      return { amount: 0, criticalRoll: { amount:0, isCritical:false, criticalCount:0 }, hpBefore:1, hpAfter:0 };
+    }
+
     if (_tryYoiNoSousouCounter(target, source, rawDamage, skill)) {
       _checkWinLose();
       return;
@@ -1873,13 +2063,23 @@ const enemies = enemyDefs.map(def => {
     }
     target.hp = Math.max(0, target.hp - dmg);
     const hpAfter = Number(target.hp || 0);
-    if (target.side === 'enemy' && hpBefore > 0 && hpAfter <= 0) _syncBlessingDefeats32();
+    if (target.side === 'enemy' && hpBefore > 0 && hpAfter <= 0) {
+      if (_isRemnant05Enemy(target) && target.remnant05Body === 'clone' && !target._remnant05ResolvedDeath) {
+        _onRemnant05CloneDefeated(target, source);
+      }
+      _syncBlessingDefeats32();
+    }
     const isFatalDamage = hpBefore > 0 && dmg > 0 && hpAfter <= 0;
     const overkillDamage = isFatalDamage ? Math.max(0, dmg - hpBefore) : 0;
     const elementText = source ? getElementMatchText32(source.element, target.element) : '';
     const elementSuffix = elementText ? `【${elementText}】` : '';
     const criticalSuffix = criticalRoll.isCritical ? ` CRITICAL×${criticalRoll.criticalCount || 1}` : '';
     _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！${criticalSuffix}${elementSuffix}（残HP: ${target.hp}）`);
+
+    // レムの加護：味方がLOSTした事実をINV条件として記録する。
+    if (target.side === 'ally' && hpBefore > 0 && hpAfter <= 0) {
+      _markRemBlessingLostCondition32(target);
+    }
 
     // ローグライト: 味方HPが0になったらrosterをdead更新
     if (target.side === 'ally' && target.hp <= 0 && _bs.roster) {
@@ -1938,6 +2138,10 @@ const enemies = enemyDefs.map(def => {
       hitCount:    skill?.hitCount  || criticalRoll.hitCount || null,
       bs: _snapshot(),
     });
+
+    // レムの加護：味方が敵から実ダメージを受けた直後に割合反撃。
+    // 反撃側のapplyDamageは敵が対象なので再帰しない。
+    _applyRemBlessingPassiveReflect32(target, source, dmg);
 
     // ダメージ後に勝敗を即チェック
     _checkWinLose();
@@ -2469,6 +2673,12 @@ function _executeDelayedAttack(action) {
 
     _bs.summons.forEach(summon => {
       if (!summon || summon.hp <= 0) return;
+
+      // レム加護の残影は攻撃能力・ターン寿命を持たず、敵に攻撃されるまで盤面に残る。
+      if (summon.isRemnant05BlessingDecoy) {
+        survivors.push(summon);
+        return;
+      }
 
       const targets = _getEnemiesAround9(summon.row, summon.col);
       let drainTotal = 0;
@@ -4236,20 +4446,26 @@ return true;
           .filter(u => Number(u.col) === Number(enemy.col) && Number(u.row) > Number(enemy.row))
           .sort((a, b) => Number(a.row) - Number(b.row));
         const blockerRow = blockers.length ? Number(blockers[0].row) : BOARD_ROWS;
-        return (_bs.allies || []).filter(a =>
+        const targets = (_bs.allies || []).filter(a =>
           a && a.hp > 0 &&
           Number(a.col) === Number(enemy.col) &&
           Number(a.row) > Number(enemy.row) &&
           Number(a.row) < blockerRow
         );
+        // レム加護の残影は射線を受け止め、自身が攻撃対象になる。
+        if (blockers.length && blockers[0].isRemnant05BlessingDecoy) targets.push(blockers[0]);
+        return targets;
       }
       if (range === 'enemy_attack_front') {
         const first = _getFirstEnemyLineTarget(enemy, true);
         return first ? [first] : [];
       }
 
-      // 生存している味方のみ対象
-      const allies = _bs.allies.filter(a => a.hp > 0);
+      // 生存している味方＋レム加護の残影を攻撃対象候補にする。
+      const allies = [
+        ...(_bs.allies || []).filter(a => a && a.hp > 0),
+        ..._getRemBlessingDecoys32(),
+      ];
 
       // enemy_attack_* / adjacent は BattleRange32 のレンジ定義で判定
       if (range.startsWith('enemy_attack_') || range === 'adjacent') {
@@ -4339,6 +4555,355 @@ return true;
       return false;
     }
 
+
+    // ============================================================
+    // レムナント05「執着」専用システム
+    // ST1: 固執 / ST2: 怨念・復活 / ST3: 本体隠匿
+    // ============================================================
+    function _isRemnant05Enemy(enemy) {
+      return !!(enemy && (enemy.remnant05 || enemy.specialActionType === 'remnant05_obsession'));
+    }
+
+    function _getRemnant05Core() {
+      if (!_bs) return null;
+      return (_bs.enemies || []).find(e => _isRemnant05Enemy(e) && e.remnant05Body === 'core') || null;
+    }
+
+    function _hasRemnant05TrueSight() {
+      if (!_bs || !Array.isArray(_bs.allies)) return false;
+      return _bs.allies.some(a => {
+        if (!a || a.hp <= 0) return false;
+        const def = (window.CHARACTERS_32 || []).find(c => Number(c.id) === Number(a.id))
+          || (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)
+            ? CHARACTERS.find(c => Number(c.id) === Number(a.id))
+            : null);
+        return !!(
+          a.remnant05TrueSight ||
+          a.remnantSpecialty === 'remnant_05' ||
+          (def && (def.remnant05TrueSight || def.remnantSpecialty === 'remnant_05'))
+        );
+      });
+    }
+
+    function _getRemnant05LivingAllies() {
+      return (_bs && _bs.allies || []).filter(a => a && a.hp > 0);
+    }
+
+    function _getRemnant05AliveEnemies() {
+      return (_bs && _bs.enemies || []).filter(e => e && e.hp > 0 && _isRemnant05Enemy(e));
+    }
+
+    function _findFreeRemnant05Cell(preferredRow) {
+      if (!_bs) return null;
+      const occupied = new Set();
+      [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])].forEach(u => {
+        if (u && u.hp > 0) occupied.add(`${u.row}-${u.col}`);
+      });
+      const rows = [preferredRow, 1, 2, 0, 3, 4].filter((v, i, arr) => Number.isFinite(v) && arr.indexOf(v) === i);
+      for (const row of rows) {
+        for (const col of shuffle([0,1,2,3,4])) {
+          if (BR.isValidCell(row, col) && !occupied.has(`${row}-${col}`)) return { row, col };
+        }
+      }
+      for (let row = 0; row < BOARD_ROWS; row++) {
+        for (let col = 0; col < BOARD_COLS; col++) {
+          if (!occupied.has(`${row}-${col}`)) return { row, col };
+        }
+      }
+      return null;
+    }
+
+    function _makeRemnant05Clone(target) {
+      const cfg = _bs && _bs.remnant05Config;
+      if (!cfg) return null;
+      const def = (typeof getEnemyById === 'function' ? getEnemyById(cfg.cloneEnemyId || 'enemy_remnant05_clone') : null)
+        || (window.ENEMIES || []).find(e => e.id === (cfg.cloneEnemyId || 'enemy_remnant05_clone'));
+      if (!def) return null;
+      const pos = _findFreeRemnant05Cell(1);
+      if (!pos) return null;
+      const clone = makeEnemy(def, pos.row, pos.col);
+      clone.remnant05 = true;
+      clone.remnant05Body = 'clone';
+      clone.remnant05Stage = Number(cfg.stage || 1);
+      clone.remnant05HiddenCore = false;
+      clone.remnant05EnableCurse = !!cfg.enableCurse;
+      clone.remnant05EnableRevive = !!cfg.enableRevive;
+      clone.remnant05RecoilRate = Number(cfg.recoilRate || 0.20);
+      clone.remnant05CurseRate = Number(cfg.curseRate || 0.20);
+      clone.obsessionTargetUid = target ? target._uid : null;
+      if (cfg.hideCore) {
+        const core = _getRemnant05Core();
+        const hiddenHp = Math.max(1, Number(core && core.hpMax || 3600));
+        clone.hpMax = hiddenHp;
+        clone.hp = hiddenHp;
+        clone.atk = Number(core && core.atk || clone.atk);
+      }
+      clone._remnant05Serial = ++_bs.remnant05Serial;
+      return clone;
+    }
+
+    function _assignRemnant05Targets() {
+      if (!_bs || !_bs.remnant05Config) return;
+      const allies = _getRemnant05LivingAllies();
+      const enemies = _getRemnant05AliveEnemies();
+      if (!allies.length || !enemies.length) return;
+
+      // 生存対象への既存固執は維持。対象ロスト時だけ再割当。
+      const used = new Set();
+      enemies.forEach(e => {
+        const current = allies.find(a => a._uid === e.obsessionTargetUid);
+        if (current) used.add(current._uid);
+        else e.obsessionTargetUid = null;
+      });
+
+      const freeTargets = allies.filter(a => !used.has(a._uid));
+      enemies.filter(e => !e.obsessionTargetUid).forEach((e, idx) => {
+        const target = freeTargets[idx] || allies[idx % allies.length] || allies[0];
+        if (target) e.obsessionTargetUid = target._uid;
+      });
+    }
+
+    function _syncRemnant05Population() {
+      if (!_bs || !_bs.remnant05Config || _bs.result) return;
+      const allies = _getRemnant05LivingAllies();
+      if (!allies.length) return;
+
+      // 「実体＋怨念待機」を味方人数上限とする。
+      const active = _getRemnant05AliveEnemies();
+      const pending = (Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [])
+        .filter(c => c && c.revivePending).length;
+      let totalSlots = active.length + pending;
+      const cap = allies.length;
+
+      // 味方がLOSTして上限が下がった場合、余剰分身から静かに消える。本体は消さない。
+      if (totalSlots > cap) {
+        let overflow = totalSlots - cap;
+        const removable = active.filter(e => e.remnant05Body === 'clone').sort((a,b) => Number(b._remnant05Serial||0) - Number(a._remnant05Serial||0));
+        removable.forEach(clone => {
+          if (overflow <= 0) return;
+          clone.hp = 0;
+          clone._remnant05ResolvedDeath = true;
+          overflow--;
+          totalSlots--;
+          _log('執着対象を失った分身体が霧散した');
+        });
+        if (overflow > 0 && Array.isArray(_bs.remnant05Curses)) {
+          for (let i = _bs.remnant05Curses.length - 1; i >= 0 && overflow > 0; i--) {
+            if (_bs.remnant05Curses[i] && _bs.remnant05Curses[i].revivePending) {
+              _bs.remnant05Curses[i].revivePending = false;
+              overflow--;
+              totalSlots--;
+            }
+          }
+        }
+      }
+
+      while (totalSlots < cap) {
+        const already = new Set(active.map(e => e.obsessionTargetUid).filter(Boolean));
+        const target = allies.find(a => !already.has(a._uid)) || allies[totalSlots % allies.length];
+        const clone = _makeRemnant05Clone(target);
+        if (!clone) break;
+        _bs.enemies.push(clone);
+        active.push(clone);
+        totalSlots++;
+        _log(`${target ? target.name : '味方'} に執着する影が分裂した`);
+      }
+      _assignRemnant05Targets();
+    }
+
+    function _initializeRemnant05Battle() {
+      if (!_bs || !_bs.remnant05Config) return;
+      const cfg = _bs.remnant05Config;
+      _bs.remnant05Curses = [];
+      _bs.remnant05Serial = 0;
+
+      (_bs.enemies || []).forEach(e => {
+        if (!_isRemnant05Enemy(e)) return;
+        e.remnant05 = true;
+        e.remnant05Stage = Number(cfg.stage || e.remnant05Stage || 1);
+        e.remnant05EnableCurse = !!cfg.enableCurse;
+        e.remnant05EnableRevive = !!cfg.enableRevive;
+        e.remnant05RecoilRate = Number(cfg.recoilRate || 0.20);
+        e.remnant05CurseRate = Number(cfg.curseRate || 0.20);
+        if (e.remnant05Body === 'core') {
+          e.remnant05HiddenCore = !!cfg.hideCore;
+          e._remnant05Serial = ++_bs.remnant05Serial;
+        }
+      });
+
+      _assignRemnant05Targets();
+      _syncRemnant05Population();
+    }
+
+    function _getRemnant05Target(enemy) {
+      if (!_bs || !enemy) return null;
+      const target = (_bs.allies || []).find(a => a && a.hp > 0 && a._uid === enemy.obsessionTargetUid);
+      if (target) return target;
+      _assignRemnant05Targets();
+      return (_bs.allies || []).find(a => a && a.hp > 0 && a._uid === enemy.obsessionTargetUid)
+        || _pickClosestUnit(enemy, aliveAllies());
+    }
+
+    function _addRemnant05Status(target, type, duration, extra) {
+      if (!target || target.hp <= 0) return;
+      target.statusEffects = Array.isArray(target.statusEffects) ? target.statusEffects : [];
+      target.statusEffects = target.statusEffects.filter(e => !(e && e.type === type));
+      target.statusEffects.push({
+        type,
+        duration: Math.max(1, Number(duration || 1)),
+        appliedTurn: Number(_bs.turn || 1),
+        ...(extra || {}),
+      });
+      if (type === 'stun') target.stunned = true;
+    }
+
+    async function _runRemnant05Action(enemy) {
+      const target = _getRemnant05Target(enemy);
+      if (!target) return;
+
+      const lastStunTurn = Number(target._remnant05StunnedLastTurn || -99);
+      const canStun = !target.stunned && (Number(_bs.turn || 1) - lastStunTurn > 1);
+
+      // 固執対象へじわじわ接近。対象変更はLOST時以外行わない。
+      if (manhattan(enemy, target) > 1) {
+        const step = _decideEnemyMoveCell(enemy);
+        if (step) {
+          const from = { row: enemy.row, col: enemy.col };
+          enemy.row = step.row;
+          enemy.col = step.col;
+          _emit('enemyActionStep', { step:'move', enemy:{...enemy}, from, to:{row:enemy.row,col:enemy.col}, bs:_snapshot() });
+          _renderUI();
+          await wait(B32_WAIT.move);
+        }
+      }
+
+      const roll = Math.random();
+      let title, sub, rate;
+
+      if (canStun && roll < 0.28) {
+        title = '縋りつき';
+        sub = `${target.name} から離れない`;
+        rate = 0.35;
+        _addRemnant05Status(target, 'stun', 1);
+        target._remnant05StunnedLastTurn = Number(_bs.turn || 1);
+      } else if (roll < 0.62) {
+        title = '未練';
+        sub = `${target.name} の力を鈍らせる`;
+        rate = 0.45;
+        _addRemnant05Status(target, 'atk_down', 2, { rate: 0.72 });
+      } else {
+        title = '固縛';
+        sub = `${target.name} の歩みを縛る`;
+        rate = 0.40;
+        _addRemnant05Status(target, 'move_lock', 1);
+      }
+
+      await _centerTextWait(title, sub, B32_WAIT.enemyAction);
+      const dmg = calcDamage(getEffectiveAtk(enemy), rate, target, enemy);
+      applyDamage(target, dmg, enemy, { id:`remnant05_${title}`, name:title, isUltimate:false, hitStyle:'normal' });
+      _emit('statusApplied', { target:{...target}, source:{...enemy}, status:title, bs:_snapshot() });
+      _renderUI();
+      await wait(B32_WAIT.attack);
+      await wait(B32_WAIT.afterText);
+    }
+
+    function _onRemnant05CloneDefeated(target, source) {
+      if (!_bs || !target || target.remnant05Body !== 'clone') return;
+      const cfg = _bs.remnant05Config || {};
+      const row = Number(target.row), col = Number(target.col);
+
+      // 分身体を倒したプレイヤーへ最大HP割合の撃破反動。
+      if (source && source.side === 'ally' && source.hp > 0) {
+        const recoilRate = Number(target.remnant05RecoilRate || cfg.recoilRate || 0.20);
+        const recoil = Math.max(1, Math.floor(Number(source.hpMax || source.hp || 1) * recoilRate));
+        const before = Number(source.hp || 0);
+        source.hp = Math.max(0, before - recoil);
+        if (source.hp <= 0 && _bs.roster) {
+          const rEntry = _bs.roster.find(r => r && r.deployedUid === source._uid);
+          if (rEntry && rEntry.status === 'deployed') rEntry.status = 'dead';
+        }
+        _log(`執着反転：${source.name} に最大HP${Math.round(recoilRate*100)}%の怨返し`);
+        _emit('damage', {
+          source:{ _uid:target._uid, name:target.name, side:'enemy', row, col, element:target.element },
+          target:{ _uid:source._uid, name:source.name, side:'ally', row:source.row, col:source.col, element:source.element, hpBefore:before, hpAfter:source.hp, hpMax:source.hpMax, isFatal:before>0&&source.hp<=0 },
+          amount:recoil, kind:'remnant05_recoil', hpBefore:before, hpAfter:source.hp, targetHpMax:source.hpMax, isFatal:before>0&&source.hp<=0
+        });
+      }
+
+      if (cfg.enableCurse || target.remnant05EnableCurse) {
+        _bs.remnant05Curses = Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [];
+        _bs.remnant05Curses.push({
+          id:`remnant05_curse_${Date.now()}_${Math.random()}`,
+          row, col,
+          createdTurn:Number(_bs.turn || 1),
+          expireTurn:Number(_bs.turn || 1) + 1,
+          damageRate:Number(target.remnant05CurseRate || cfg.curseRate || 0.20),
+          revivePending: !!(cfg.enableRevive || target.remnant05EnableRevive),
+          obsessionTargetUid: target.obsessionTargetUid || null,
+        });
+        _log(`怨念化：${row + 1}-${col + 1} マスに未練が残った`);
+      }
+
+      // 死体は通常の敵配列から除去。復活は怨念消滅時に新個体として生成。
+      target._remnant05ResolvedDeath = true;
+    }
+
+    function _processRemnant05TurnStart() {
+      if (!_bs || !_bs.remnant05Config) return;
+      const curses = Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [];
+      const survivors = [];
+      const allies = _getRemnant05LivingAllies();
+
+      curses.forEach(curse => {
+        if (!curse) return;
+        if (Number(curse.expireTurn || 0) <= Number(_bs.turn || 1)) {
+          if (curse.revivePending && allies.length > 0) {
+            // 現在の味方人数を上限に復活。
+            const activeCount = _getRemnant05AliveEnemies().length;
+            const otherPending = curses.filter(x => x && x !== curse && x.revivePending && Number(x.expireTurn || 0) > Number(_bs.turn || 1)).length;
+            if (activeCount + otherPending < allies.length) {
+              const preferred = allies.find(a => a._uid === curse.obsessionTargetUid) || allies[0];
+              const clone = _makeRemnant05Clone(preferred);
+              if (clone) {
+                const occupied = getAllUnits().some(u => u && u.hp > 0 && u.row === curse.row && u.col === curse.col);
+                if (!occupied && BR.isValidCell(curse.row, curse.col)) {
+                  clone.row = curse.row;
+                  clone.col = curse.col;
+                }
+                _bs.enemies.push(clone);
+                _log('消えた怨念から分身体が再び立ち上がった');
+              }
+            }
+          }
+          return;
+        }
+        survivors.push(curse);
+      });
+      _bs.remnant05Curses = survivors;
+
+      // LOST等で上限が下がった場合、超過分は「次に倒れた個体から復活しない」。
+      _syncRemnant05Population();
+      _assignRemnant05Targets();
+    }
+
+    function _applyRemnant05CurseStep(unit, row, col) {
+      if (!_bs || !_bs.remnant05Config || !unit || unit.side !== 'ally' || unit.hp <= 0) return;
+      const curse = (Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [])
+        .find(c => c && Number(c.row) === Number(row) && Number(c.col) === Number(col));
+      if (!curse) return;
+      const rate = Number(curse.damageRate || 0.20);
+      const dmg = Math.max(1, Math.floor(Number(unit.hpMax || unit.hp || 1) * rate));
+      const before = Number(unit.hp || 0);
+      unit.hp = Math.max(0, before - dmg);
+      _log(`怨念を踏んだ：${unit.name} に最大HP${Math.round(rate*100)}%ダメージ`);
+      _emit('damage', {
+        source:{ _uid:'remnant05_curse', name:'怨念', side:'enemy', row, col, element:'mystis' },
+        target:{ _uid:unit._uid, name:unit.name, side:'ally', row:unit.row, col:unit.col, element:unit.element, hpBefore:before, hpAfter:unit.hp, hpMax:unit.hpMax, isFatal:before>0&&unit.hp<=0 },
+        amount:dmg, kind:'remnant05_curse', hpBefore:before, hpAfter:unit.hp, targetHpMax:unit.hpMax, isFatal:before>0&&unit.hp<=0
+      });
+      _checkWinLose();
+    }
+
     function _playEnemyStrongAttackShake(meta) {
       if (!_isStrongEnemyAttack(meta)) return false;
       if (typeof window.playBattle32EnemyStrongShake !== 'function') return false;
@@ -4364,6 +4929,11 @@ return true;
     function _pickEnemyAttackTarget(enemy, targets) {
       const list = (targets || []).filter(t => t && t.hp > 0);
       if (list.length === 0) return null;
+
+      if (_isRemnant05Enemy(enemy)) {
+        const fixed = list.find(t => t._uid === enemy.obsessionTargetUid);
+        if (fixed) return fixed;
+      }
 
       if (_isEriPriorityEnemy(enemy)) {
         const eri = getEriUnit();
@@ -4401,6 +4971,11 @@ return true;
     function _getEnemyMoveTarget(enemy) {
       const allies = aliveAllies();
       if (allies.length === 0) return null;
+
+      if (_isRemnant05Enemy(enemy)) {
+        const fixed = allies.find(a => a._uid === enemy.obsessionTargetUid);
+        if (fixed) return fixed;
+      }
 
       if (_isEriPriorityEnemy(enemy)) {
         const eri = getEriUnit();
@@ -4643,7 +5218,7 @@ function doBossLineAttack(boss) {
     // ボス予兆攻撃（行動ループより先に発動）
     if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
-      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss)) {
+      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss) && !_isRemnant05Enemy(boss)) {
         await _centerTextWait('⚠️ WARNING', 'ボスが予兆攻撃…', B32_WAIT.enemyAction);
         _doBossWarnAttack(boss, getAllUnits());
         _renderUI();
@@ -4656,7 +5231,7 @@ function doBossLineAttack(boss) {
     if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
 
-      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss)) {
+      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss) && !_isRemnant05Enemy(boss)) {
         await _centerTextWait('⚠️ SPACE SHIFT', '空間干渉：位置入れ替え', B32_WAIT.enemyAction);
 
         doBossSwapAttack(boss);
@@ -5666,6 +6241,12 @@ function doBossLineAttack(boss) {
       return;
     }
 
+    // レムナント05：各個体は担当した味方1体にのみ固執する。
+    if (_isRemnant05Enemy(enemy)) {
+      await _runRemnant05Action(enemy);
+      return;
+    }
+
     // オーバーシア本体は通常攻撃を使わず、専用4種＋6ターン必殺技を実行する。
     if (_isOverseerBoss(enemy)) {
       await _runOverseerSpecialAction(enemy);
@@ -5890,6 +6471,9 @@ function doBossLineAttack(boss) {
     _bs.turn++;
     _bs.phase = 'skill';
 
+    // 05：前ターンに残った怨念を消し、必要なら分身体を復活させる。
+    _processRemnant05TurnStart();
+
     // 神気リジェネ（生存している味方のみ）
     _bs.allies.forEach(u => {
       if (u.hp > 0) u.shinki = Math.min(u.shinkiMax, u.shinki + 1);
@@ -6070,6 +6654,7 @@ function doBossLineAttack(boss) {
               || _bs.enemies.find(u => u._uid === unitUid);
 
     if (!unit) return [];
+    if (unit.side === 'ally' && (unit.statusEffects || []).some(e => e && e.type === 'move_lock' && Number(e.duration || 0) > 0)) return [];
     // 敵：通常ボス・moveType:'none' は移動なし。
     // allowBossMovement=true のボスは専用移動レンジを使用できる。
     if (
@@ -6138,6 +6723,11 @@ function doBossLineAttack(boss) {
       if (!ally || ally.hp <= 0) return false;
       if (!_canUsePlayerAction('move', allyUid)) return false;
 
+      if ((ally.statusEffects || []).some(e => e && e.type === 'move_lock' && Number(e.duration || 0) > 0)) {
+        _log(`${ally.name} は固縛されていて移動できない`);
+        return false;
+      }
+
       const moveCells = getMoveCells(allyUid);
       const targetCell = moveCells.find(c => c.row === toRow && c.col === toCol);
 
@@ -6175,6 +6765,8 @@ function doBossLineAttack(boss) {
 
       ally.row = toRow;
       ally.col = toCol;
+      _applyRemnant05CurseStep(ally, toRow, toCol);
+      if (_bs.result) { _renderUI(); _saveResume(); return true; }
       _log(`${ally.name} が移動した`);
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
@@ -6364,10 +6956,13 @@ function doBossLineAttack(boss) {
     _applyBlessingHpPassive32(unit);
     _applyRogueliteOptionsToUnit(unit);
     _bs.allies.push(unit);
+    _applyRemnant05CurseStep(unit, row, col);
+    if (_bs.result) { _renderUI(); _saveResume(); return true; }
     rEntry.status = 'deployed';
     rEntry.deployedUid = unit._uid;
 
     _log(`${rEntry.name} が召喚された！`);
+    if (_bs.remnant05Config) _syncRemnant05Population();
     _emit('summon', { unit: { ...unit }, bs: _snapshot() });
     _renderUI();
     _saveResume();

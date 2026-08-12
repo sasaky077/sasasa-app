@@ -60,6 +60,21 @@
         5:{passiveAtkRate:0.10,passiveHpRate:0.15,invReviveChance:1.00,requiredCores:2},
       },
     },
+    remnant_05: {
+      id: 'remnant_05', remnantName: 'レム', name: 'レムの加護',
+      panelImg: 'images/remnant_05_panel.webp', materialName: 'レムの心核',
+      maxLevel: 5, conditionType: 'ally_lost_once',
+      invName: '執着の残影', invEffectType: 'rem_summon_3',
+      summonImg: 'images/remnant_05_set.webp',
+      levels: {
+        // Lvごとに常時反撃率とINV召喚数が強化される。消滅時20%反撃は全Lv共通。
+        1:{passiveReflectRate:0.06,invSummonCount:1,invRetaliationRate:0.20,requiredCores:0},
+        2:{passiveReflectRate:0.07,invSummonCount:2,invRetaliationRate:0.20,requiredCores:1},
+        3:{passiveReflectRate:0.08,invSummonCount:2,invRetaliationRate:0.20,requiredCores:1},
+        4:{passiveReflectRate:0.09,invSummonCount:3,invRetaliationRate:0.20,requiredCores:2},
+        5:{passiveReflectRate:0.10,invSummonCount:3,invRetaliationRate:0.20,requiredCores:2},
+      },
+    },
   };
 
   function clampLevel(def, level) {
@@ -101,6 +116,12 @@
           inv: `INV：LOSTした任意の味方1体を${percent(lv.invReviveChance)}%の確率で蘇生。`,
           condition: 'INV条件：味方が1体以上LOSTしている。',
         };
+      case 'remnant_05':
+        return {
+          passive: `常時：味方が敵からダメージを受けると、攻撃した敵に最大HPの${percent(lv.passiveReflectRate)}%の割合ダメージ。`,
+          inv: `INV：空きマスへレムを${Number(lv.invSummonCount || 3)}体召喚。レムが敵の攻撃を受けると消滅し、攻撃者を次ターンスタン＋最大HPの${percent(lv.invRetaliationRate)}%ダメージ＋最寄りの味方をレムの位置へ移動。`,
+          condition: 'INV条件：味方が1体以上LOSTする。',
+        };
       default:
         return {
           passive: `常時：critical率+${percent(lv.passiveCriticalRate)}%`,
@@ -135,6 +156,9 @@
       invDamageRate: Number(lv.invDamageRate || 0),
       turnStartLinkChance: Number(lv.turnStartLinkChance || 0),
       invReviveChance: Number(lv.invReviveChance || 0),
+      passiveReflectRate: Number(lv.passiveReflectRate || 0),
+      invSummonCount: Math.max(0, Number(lv.invSummonCount || 0)),
+      invRetaliationRate: Number(lv.invRetaliationRate || 0),
       requiredCores: Number(next && next.requiredCores || 0),
       nextLevel,
       text: buildBlessingText(base, lv),

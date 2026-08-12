@@ -10675,3 +10675,51 @@ html body.b32-blessing-info-open #b32-roster-panel {
     animation: none !important;
   }
 }
+
+
+/* ============================================================
+   レムナント05「執着」：怨念マス
+   ============================================================ */
+.b32-cell.remnant05-curse-cell {
+  box-shadow: inset 0 0 18px rgba(105, 20, 55, .58), 0 0 9px rgba(55, 0, 25, .35);
+}
+.b32-remnant05-curse-overlay {
+  position:absolute;
+  inset:2px;
+  z-index:8;
+  pointer-events:none;
+  overflow:hidden;
+  border-radius:3px;
+  background:
+    radial-gradient(circle at 48% 58%, rgba(135,25,65,.52), rgba(55,5,30,.26) 46%, rgba(15,0,8,.08) 74%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(190,55,95,.15) 0 2px, transparent 3px 8px);
+  animation:b32Remnant05CursePulse 1.15s ease-in-out infinite alternate;
+}
+.b32-remnant05-curse-overlay::before,
+.b32-remnant05-curse-overlay::after {
+  content:'';
+  position:absolute;
+  left:12%;
+  right:12%;
+  height:1px;
+  background:rgba(225,95,130,.45);
+  filter:blur(.4px);
+  transform:rotate(-18deg);
+  top:38%;
+}
+.b32-remnant05-curse-overlay::after {
+  transform:rotate(24deg);
+  top:64%;
+  opacity:.65;
+}
+.b32-remnant05-curse-overlay i {
+  position:absolute;
+  inset:23%;
+  border:1px solid rgba(225,85,125,.28);
+  border-radius:50%;
+  box-shadow:0 0 10px rgba(155,30,70,.55);
+}
+@keyframes b32Remnant05CursePulse {
+  from { opacity:.62; filter:brightness(.82); }
+  to   { opacity:.96; filter:brightness(1.25); }
+}

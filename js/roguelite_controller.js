@@ -1166,6 +1166,12 @@ function _hideHud() {
       img: 'images/item_riviacore.webp',
       remnantId: 'remnant_03',
     },
+    remnant05: {
+      id: 'rem_core',
+      name: 'レムの心核',
+      img: 'images/item_remcore.webp',
+      remnantId: 'remnant_05',
+    },
   });
 
   function _loadBossCoreInventory() {

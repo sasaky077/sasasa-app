@@ -61,6 +61,19 @@ const STAGES = [
     unlocked: true,
   },
 
+  {
+    id: 'stage_00_remnant05_test',
+    chapter: 0,
+    no: 5,
+    type: 'debug',
+    name: 'レムナント05戦',
+    enemyName: 'レムナント：??????',
+    difficulty: 'debug',
+    rogueliteRunId: 'remnant05',
+    reward: { exp: 0, coin: 0 },
+    unlocked: true,
+  },
+
   // ============================================================
   // CHAPTER 01 — 白糸の怪異
   // ============================================================

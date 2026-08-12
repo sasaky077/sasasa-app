@@ -596,6 +596,79 @@ const ENEMIES = [
 
 ];
 
+
+// ============================================================
+// レムナント05：執着
+// 雑魚は存在せず、05自身が味方人数に応じて分身する。
+// ST1/2 は本体可視、ST3 は本体を分身へ隠匿。
+// ============================================================
+ENEMIES.push({
+  id: 'enemy_remnant05_core',
+  name: 'レムナント：??????',
+  displayName: 'レムナント：??????',
+  enemyName: 'レムナント：??????',
+  introName: 'レムナント：??????',
+  stageIntroName: 'レムナント：??????',
+  element: 'mystis',
+  img: 'images/remnant_05_battle_up.webp',
+  upImg: 'images/remnant_05_battle_up.webp',
+  battleImg: 'images/remnant_05_battle.webp',
+  battleUpImg: 'images/remnant_05_battle_up.webp',
+  isBoss: true,
+  isMidBoss: false,
+  hp: 3600, hpMax: 3600,
+  atk: 365,
+  moveType: 'enemy_zako_diag',
+  allowBossMovement: true,
+  customMoveOffsets: [
+    { dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 },
+    { dr:-1, dc:-1 }, { dr:-1, dc:1 }, { dr:1, dc:-1 }, { dr:1, dc:1 },
+  ],
+  attackRange: 'around8',
+  fixedPosition: false,
+  randomStartPosition: false,
+  specialActionType: 'remnant05_obsession',
+  remnant05: true,
+  remnant05Body: 'core',
+  remnant05RecoilRate: 0.20,
+  remnant05CurseRate: 0.20,
+  uiScale: { battleBack: 1.75 },
+  phase: 1, status: [], statusList: [],
+});
+
+ENEMIES.push({
+  id: 'enemy_remnant05_clone',
+  name: 'レムナント：??????',
+  displayName: 'レムナント：??????',
+  enemyName: 'レムナント：??????',
+  introName: 'レムナント：??????',
+  stageIntroName: 'レムナント：??????',
+  element: 'mystis',
+  img: 'images/remnant_05_battle_up.webp',
+  upImg: 'images/remnant_05_battle_up.webp',
+  battleImg: 'images/remnant_05_battle.webp',
+  battleUpImg: 'images/remnant_05_battle_up.webp',
+  isBoss: false,
+  isMidBoss: false,
+  hp: 1500, hpMax: 1500,
+  atk: 315,
+  moveType: 'enemy_zako_diag',
+  customMoveOffsets: [
+    { dr:-1, dc:0 }, { dr:1, dc:0 }, { dr:0, dc:-1 }, { dr:0, dc:1 },
+    { dr:-1, dc:-1 }, { dr:-1, dc:1 }, { dr:1, dc:-1 }, { dr:1, dc:1 },
+  ],
+  attackRange: 'around8',
+  fixedPosition: false,
+  randomStartPosition: false,
+  specialActionType: 'remnant05_obsession',
+  remnant05: true,
+  remnant05Body: 'clone',
+  remnant05RecoilRate: 0.20,
+  remnant05CurseRate: 0.20,
+  uiScale: { battleBack: 1.75 },
+  phase: 1, status: [], statusList: [],
+});
+
 // IDで怪異データを取得（本番 + テスト両方を検索）
 function getEnemyById(id) {
   return ENEMIES.find(e => e.id === id)

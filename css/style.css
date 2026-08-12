@@ -15335,3 +15335,127 @@ body.login-bonus-open {
 .shinju-item-list {
   max-height: 54px !important;
 }
+
+/* =========================================================
+   111 Home Background / Layered Motion
+   - chara_bg.webp は #screen-main の固定背景のまま
+   - chara_bg_04 / 05 / 06 だけを独立してゆっくり動かす
+   - 既存の icon / banner / character の位置指定は一切変更しない
+   ========================================================= */
+
+#screen-main .home-cloud-motion-layer {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/*
+  3素材は chara_bg と同じ縦長キャンバス前提。
+  cover + center に揃えることで、ベース背景と同じトリミング基準にする。
+*/
+#screen-main .home-bg-motion-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform-origin: 50% 42%;
+}
+
+/* 04: 大きな雲。最もゆっくり横へ流す */
+#screen-main .home-bg-motion-04 {
+  opacity: 0.58;
+  filter: saturate(0.92) brightness(1.03);
+  animation: home-bg-drift-04 24s ease-in-out infinite alternate;
+}
+
+/* 05: 中央の光輪。位置はほぼ固定し、呼吸する程度の拡縮と微回転 */
+#screen-main .home-bg-motion-05 {
+  opacity: 0.42;
+  filter: saturate(0.95) brightness(1.06);
+  mix-blend-mode: screen;
+  animation: home-bg-drift-05 18s ease-in-out infinite alternate;
+}
+
+/* 06: 光粒・薄雲。04とは逆方向へ少しだけ流して視差を出す */
+#screen-main .home-bg-motion-06 {
+  opacity: 0.50;
+  filter: saturate(0.93) brightness(1.05);
+  mix-blend-mode: screen;
+  animation: home-bg-drift-06 20s ease-in-out infinite alternate;
+}
+
+@keyframes home-bg-drift-04 {
+  0% {
+    transform: translate3d(-18px, 4px, 0) scale(1.05);
+    opacity: 0.52;
+  }
+  50% {
+    transform: translate3d(4px, -8px, 0) scale(1.065);
+    opacity: 0.62;
+  }
+  100% {
+    transform: translate3d(20px, 2px, 0) scale(1.05);
+    opacity: 0.56;
+  }
+}
+
+@keyframes home-bg-drift-05 {
+  0% {
+    transform: translate3d(0, 2px, 0) rotate(-0.55deg) scale(1.02);
+    opacity: 0.36;
+  }
+  50% {
+    transform: translate3d(2px, -3px, 0) rotate(0.2deg) scale(1.045);
+    opacity: 0.48;
+  }
+  100% {
+    transform: translate3d(-2px, 1px, 0) rotate(0.55deg) scale(1.025);
+    opacity: 0.40;
+  }
+}
+
+@keyframes home-bg-drift-06 {
+  0% {
+    transform: translate3d(16px, -4px, 0) scale(1.035);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translate3d(-4px, 4px, 0) scale(1.05);
+    opacity: 0.56;
+  }
+  100% {
+    transform: translate3d(-18px, -1px, 0) scale(1.04);
+    opacity: 0.46;
+  }
+}
+
+/* 既存ホームUIは必ず背景アニメーションより前面。位置指定は触らない */
+#screen-main > .home-notice-btn,
+#screen-main > .home-event-banner-wrap,
+#screen-main > .shinju-home-entry,
+#screen-main > .bonus-home-entry,
+#screen-main > .favorite-area {
+  z-index: 3;
+}
+
+/* OS側で「視差効果を減らす」が有効なら静止 */
+@media (prefers-reduced-motion: reduce) {
+  #screen-main .home-bg-motion-img {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  #screen-main .home-bg-motion-04 { opacity: 0.56; }
+  #screen-main .home-bg-motion-05 { opacity: 0.40; }
+  #screen-main .home-bg-motion-06 { opacity: 0.46; }
+}
+

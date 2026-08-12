@@ -191,6 +191,77 @@
       ],
     },
 
+
+    remnant05: {
+      id: 'remnant05',
+      name: '執着',
+      subName: 'レムナント05',
+      zakoBattleStartImg: 'images/remnant_05_battle_start.webp',
+      bossBattleStartImg: 'images/remnant_05_battle_start.webp',
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: true,
+          label: 'ST1',
+          subLabel: '固執',
+          enemyIds: ['enemy_remnant05_core'],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 12,
+          remnant05Config: {
+            stage: 1,
+            cloneEnemyId: 'enemy_remnant05_clone',
+            enableCurse: false,
+            enableRevive: false,
+            hideCore: false,
+            recoilRate: 0.20,
+            curseRate: 0.20,
+          },
+        },
+        {
+          stage: 2,
+          isBoss: true,
+          label: 'ST2',
+          subLabel: '怨念',
+          enemyIds: ['enemy_remnant05_core'],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 14,
+          remnant05Config: {
+            stage: 2,
+            cloneEnemyId: 'enemy_remnant05_clone',
+            enableCurse: true,
+            enableRevive: true,
+            hideCore: false,
+            recoilRate: 0.20,
+            curseRate: 0.20,
+          },
+        },
+        {
+          stage: 3,
+          isBoss: true,
+          label: 'ST3',
+          subLabel: '本体隠匿',
+          enemyIds: ['enemy_remnant05_core'],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 16,
+          remnant05Config: {
+            stage: 3,
+            cloneEnemyId: 'enemy_remnant05_clone',
+            enableCurse: true,
+            enableRevive: true,
+            hideCore: true,
+            recoilRate: 0.20,
+            curseRate: 0.20,
+          },
+        },
+      ],
+    },
+
     debug_rivia_boss: {
       id: 'debug_rivia_boss', name: 'リヴィア戦（BOSS）', subName: 'CHAPTER 00 / DEBUG', debugOnly: true,
       bossBattleStartImg: 'images/remnant_03_battle_start.webp',
@@ -617,6 +688,7 @@
       turnLimit:         def.turnLimit          || 12,
       enemyActionMode:   def.enemyActionMode     || 'all',
       enemyActionsPerTurn: def.enemyActionsPerTurn ?? null,
+      remnant05Config: def.remnant05Config ? { ...def.remnant05Config } : null,
     });
 
     // ── 敵設定：enemyIds を優先、インライン定義（enemies）は後方互換フォールバック ──
