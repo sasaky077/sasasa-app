@@ -7365,7 +7365,7 @@ function renderEnemyQuickInfo(enemy) {
  box.className = `b32-enemy-quick-info ${guideMode ? 'is-guide-mode' : ''} ${moveActive ? 'is-move' : ''} ${attackActive ? 'is-attack' : ''}`;
  box.innerHTML = `
  <button type="button" class="b32-enemy-quick-close" onclick="_b32CloseEnemyInfo()" aria-label="閉じる">×</button>
- <div class="b32-enemy-quick-title b32-enemy-quick-drag-handle">${b32EscapeHtml(enemy.name || '??????')}<span class="b32-enemy-quick-drag-mark">↕</span></div>
+ <div class="b32-enemy-quick-title b32-enemy-quick-drag-handle">${b32EscapeHtml(enemy.name || '??????')}<span class="b32-enemy-quick-drag-mark"></span></div>
  <div class="b32-enemy-quick-mode-label">${b32EscapeHtml(modeText)}</div>
  <div class="b32-enemy-quick-statline">
    <span>HP <strong>${enemy.hp} / ${enemy.hpMax}</strong></span>

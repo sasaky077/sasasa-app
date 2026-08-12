@@ -346,11 +346,38 @@
     <img class="shinju-home-entry-icon" src="images/shinju.webp" alt="神樹">
   </button>
 
+  <!-- 各種ボーナス確認ページへの入口 -->
+  <button class="bonus-home-entry" id="bonus-home-entry" type="button" onclick="openBonusScreen()" aria-label="ボーナスを確認">
+    <img class="bonus-home-entry-icon" src="images/bonus.webp" alt="ボーナス">
+    <span class="bonus-home-entry-notice" id="bonus-home-entry-notice" aria-hidden="true"></span>
+  </button>
+
   <div class="favorite-area">
     <div id="fav-display" style="position:relative;z-index:1;">
       <div class="fav-empty">ホーム画面にプリモアを設定しよう</div>
     </div>
   </div>  
+</div>
+
+<!-- ボーナス一覧 -->
+<div id="screen-bonus" class="screen bonus-screen">
+  <div class="header bonus-screen-header">
+    <button type="button" class="back-btn bonus-back-btn" onclick="showMainTab('main')">‹ 戻る</button>
+    <div class="header-title">ボーナス</div>
+    <div></div>
+  </div>
+
+  <div class="bonus-screen-scroll screen-scroll">
+    <section class="bonus-page-intro">
+      <div class="bonus-page-kicker">REWARD ARCHIVE</div>
+      <h2>受取状況</h2>
+      <p>現在利用できるボーナスと受取状況を確認できます。</p>
+    </section>
+
+    <div id="bonus-page-list" class="bonus-page-list">
+      <div class="bonus-page-loading">読み込み中...</div>
+    </div>
+  </div>
 </div>
 
 <div id="screen-summon" class="screen">
@@ -8081,16 +8108,20 @@ window.addEventListener('pagehide', function () {
     const banner = document.getElementById('home-event-banner-wrap');
     const notice = screen && screen.querySelector('.home-notice-btn');
     const shinju = screen && screen.querySelector('.shinju-home-entry');
-    if (!screen || !banner || !notice || !shinju) return;
+    const bonus = screen && screen.querySelector('.bonus-home-entry');
+    if (!screen || !banner || !notice || !shinju || !bonus) return;
 
     const screenRect = screen.getBoundingClientRect();
     const bannerRect = banner.getBoundingClientRect();
     const bannerBottom = Math.max(0, bannerRect.bottom - screenRect.top);
     const noticeTop = Math.ceil(bannerBottom + GAP);
     const noticeHeight = notice.getBoundingClientRect().height || notice.offsetHeight || 0;
+    const shinjuTop = Math.ceil(noticeTop + noticeHeight + ICON_GAP);
+    const shinjuHeight = shinju.getBoundingClientRect().height || shinju.offsetHeight || 0;
 
     screen.style.setProperty('--home-banner-bottom', noticeTop + 'px');
-    screen.style.setProperty('--home-shinju-top', Math.ceil(noticeTop + noticeHeight + ICON_GAP) + 'px');
+    screen.style.setProperty('--home-shinju-top', shinjuTop + 'px');
+    screen.style.setProperty('--home-bonus-top', Math.ceil(shinjuTop + shinjuHeight + ICON_GAP) + 'px');
   }
 
   function setupHomeIconPlacement() {

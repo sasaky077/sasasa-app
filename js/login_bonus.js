@@ -133,6 +133,7 @@
     if(!state) return false;
 
     var today = getJstDateString();
+    updateBonusHomeNotice(state.last_login_bonus_date !== today);
     if(state.last_login_bonus_date === today) return false;
 
     var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
@@ -168,6 +169,8 @@
         status.textContent = '本日のログインボーナスは受け取り済みです。';
         btn.textContent = '受け取り済み';
         renderDays(day, true);
+        updateBonusHomeNotice(false);
+        if(document.getElementById('screen-bonus') && document.getElementById('screen-bonus').classList.contains('active')) renderBonusPage();
         setTimeout(closeModal, 1200);
         return;
       }
@@ -181,6 +184,8 @@
 
       if(typeof window.updateMainUI === 'function') window.updateMainUI();
       if(typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
+      updateBonusHomeNotice(false);
+      if(document.getElementById('screen-bonus') && document.getElementById('screen-bonus').classList.contains('active')) renderBonusPage();
 
       renderDays(day, true);
       root.querySelector('#login-bonus-reward').textContent = '×' + Number(row.reward_gem || REWARDS[day - 1]);
@@ -208,7 +213,114 @@
     }
   }
 
+
+  async function renderBonusPage(){
+    var list = document.getElementById('bonus-page-list');
+    if(!list) return;
+
+    list.innerHTML = '<div class="bonus-page-loading">読み込み中...</div>';
+
+    try {
+      var state = await fetchState();
+      if(!state){
+        list.innerHTML = '<div class="bonus-page-error">ログイン情報を取得できません。</div>';
+        return;
+      }
+
+      var today = getJstDateString();
+      var claimedToday = state.last_login_bonus_date === today;
+      var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
+      var displayDay = claimedToday ? Math.max(1, lastDay) : ((lastDay % 7) + 1);
+      var html = '';
+
+      html += '<section class="bonus-page-card">';
+      html +=   '<div class="bonus-card-head">';
+      html +=     '<div class="bonus-card-title-wrap"><small>DAILY RESONANCE</small><h3>ログインボーナス</h3></div>';
+      html +=     '<div class="bonus-card-state' + (claimedToday ? ' is-claimed' : '') + '">' + (claimedToday ? '本日受取済み' : '受取可能') + '</div>';
+      html +=   '</div>';
+      html +=   '<div class="bonus-login-days">';
+
+      for(var i = 1; i <= 7; i++){
+        var cls = ['bonus-login-day'];
+        if(i === displayDay) cls.push('is-current');
+        if(claimedToday && i === displayDay) cls.push('is-claimed');
+        if(i === 7) cls.push('is-special');
+        html += '<div class="' + cls.join(' ') + '">'
+          + '<span>DAY ' + i + '</span>'
+          + '<img src="images/icon_gem.webp" alt="ガチャ石">'
+          + '<b>×' + REWARDS[i - 1] + '</b>'
+          + '</div>';
+      }
+
+      html +=   '</div>';
+      html +=   '<div class="bonus-card-foot">';
+      html +=     '<div class="bonus-card-note">毎日 0:00（JST）更新<br>7日間でガチャ石 合計50個</div>';
+      html +=     '<button type="button" class="bonus-card-action" onclick="openLoginBonusFromBonusPage()"' + (claimedToday ? ' disabled' : '') + '>' + (claimedToday ? '受取済み' : '受け取る') + '</button>';
+      html +=   '</div>';
+      html += '</section>';
+
+      list.innerHTML = html;
+      updateBonusHomeNotice(!claimedToday);
+    } catch(error) {
+      console.error('[LoginBonus] bonus page render failed:', error);
+      list.innerHTML = '<div class="bonus-page-error">ボーナス状況の取得に失敗しました。</div>';
+    }
+  }
+
+  function updateBonusHomeNotice(hasUnclaimed){
+    var btn = document.getElementById('bonus-home-entry');
+    if(!btn) return;
+    btn.classList.toggle('has-unclaimed', !!hasUnclaimed);
+  }
+
+  async function refreshBonusHomeNotice(){
+    try {
+      if(window._profileLoadState !== 'ready') return;
+      var state = await fetchState();
+      if(!state) return;
+      updateBonusHomeNotice(state.last_login_bonus_date !== getJstDateString());
+    } catch (_) {}
+  }
+
+  async function openBonusScreen(){
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    var screen = document.getElementById('screen-bonus');
+    if(!screen) return;
+    screen.classList.add('active');
+
+    var guf = document.getElementById('global-user-frame');
+    if(guf){
+      guf.classList.remove('hidden');
+      guf.classList.add('hud-dark');
+      guf.style.display = '';
+    }
+
+    if(typeof window.setNavVisible === 'function') window.setNavVisible(true);
+    var mainNav = document.getElementById('bnav-main');
+    document.querySelectorAll('.bottom-nav-item').forEach(function(el){ el.classList.remove('active'); });
+    if(mainNav) mainNav.classList.add('active');
+    if(typeof window.updateHeaderHeight === 'function') window.updateHeaderHeight();
+
+    await renderBonusPage();
+  }
+
+  async function openLoginBonusFromBonusPage(){
+    var state = await fetchState();
+    if(!state) return;
+    var today = getJstDateString();
+    if(state.last_login_bonus_date === today){
+      await renderBonusPage();
+      return;
+    }
+    var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
+    showModal((lastDay % 7) + 1);
+  }
+
   window.openLoginBonusIfNeeded = openLoginBonusIfNeeded;
   window.claimLoginBonus = claimLoginBonus;
   window.closeLoginBonus = closeModal;
+  window.openBonusScreen = openBonusScreen;
+  window.renderBonusPage = renderBonusPage;
+  window.openLoginBonusFromBonusPage = openLoginBonusFromBonusPage;
+  window.refreshBonusHomeNotice = refreshBonusHomeNotice;
 })();
