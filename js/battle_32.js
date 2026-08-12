@@ -4781,18 +4781,18 @@ return true;
       let title, sub, rate;
 
       if (canStun && roll < 0.28) {
-        title = '縋りつき';
+        title = 'クリング';
         sub = `${target.name} から離れない`;
         rate = 0.35;
         _addRemnant05Status(target, 'stun', 1);
         target._remnant05StunnedLastTurn = Number(_bs.turn || 1);
       } else if (roll < 0.62) {
-        title = '未練';
+        title = 'グラッジ';
         sub = `${target.name} の力を鈍らせる`;
         rate = 0.45;
         _addRemnant05Status(target, 'atk_down', 2, { rate: 0.72 });
       } else {
-        title = '固縛';
+        title = 'バインド';
         sub = `${target.name} の歩みを縛る`;
         rate = 0.40;
         _addRemnant05Status(target, 'move_lock', 1);

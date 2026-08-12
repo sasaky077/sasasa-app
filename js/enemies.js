@@ -604,11 +604,11 @@ const ENEMIES = [
 // ============================================================
 ENEMIES.push({
   id: 'enemy_remnant05_core',
-  name: 'レムナント：??????',
-  displayName: 'レムナント：??????',
-  enemyName: 'レムナント：??????',
-  introName: 'レムナント：??????',
-  stageIntroName: 'レムナント：??????',
+  name: 'レムナント：レム',
+  displayName: 'レムナント：レム',
+  enemyName: 'レムナント：レム',
+  introName: 'レムナント：レム',
+  stageIntroName: 'レムナント：レム',
   element: 'mystis',
   img: 'images/remnant_05_battle_up.webp',
   upImg: 'images/remnant_05_battle_up.webp',

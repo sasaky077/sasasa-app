@@ -15472,10 +15472,10 @@ body.login-bonus-open {
 .roguelite-entry-card > :not(.roguelite-card-boss-art){position:relative;z-index:2}
 .roguelite-card-boss-art{position:absolute;right:12px;top:0;bottom:0;width:118px;height:100%;display:flex;align-items:stretch;justify-content:center;pointer-events:none;z-index:1;opacity:.15;mix-blend-mode:multiply;filter:grayscale(.06) saturate(.72) brightness(1.02)}
 .roguelite-card-boss-art img{width:100%;height:100%;display:block;object-fit:cover;object-position:center top}
-.roguelite-card-rewards{position:absolute;left:calc(14px + 3mm);bottom:calc(12px - 1mm);display:flex;gap:3px;align-items:center;z-index:2}
+.roguelite-card-rewards{position:absolute!important;left:calc(14px + 3mm)!important;right:auto!important;top:auto!important;bottom:6px!important;display:flex;gap:3px;align-items:center;z-index:2}
 .roguelite-card-reward{width:23px;height:23px;display:grid;place-items:center;flex:0 0 23px}
 .roguelite-card-reward img{width:23px;height:23px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(92,70,36,.18))}
-.roguelite-longpress-hint{position:absolute;left:calc(14px + 3mm);bottom:28px;font-size:7.5px;font-weight:500;letter-spacing:.06em;color:rgba(104,78,45,.74);white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.68);z-index:2}
+.roguelite-longpress-hint{position:absolute!important;left:auto!important;right:12px!important;top:14px!important;bottom:auto!important;font-size:7.5px;font-weight:500;letter-spacing:.06em;color:rgba(104,78,45,.74);white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.68);text-align:right;z-index:2}
 .roguelite-entry-card.is-longpressing{filter:brightness(.96);transform:scale(.992)}
 .roguelite-condition-modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:390000;display:none;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-sizing:border-box;overflow:hidden;touch-action:none}
 .roguelite-condition-modal.show{display:flex}
