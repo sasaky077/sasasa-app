@@ -13214,6 +13214,12 @@ body,
 #screen-ninmu .ninmu-detail-rewards span { width:34px; height:34px; display:grid; place-items:center; border:1px solid rgba(143,113,64,.32); background:rgba(255,255,255,.45); color:#aa7e26; font-size:18px; }
 #screen-ninmu .ninmu-chapter-list { display:flex; flex-direction:column; gap:8px; }
 #screen-ninmu .ninmu-chapter-item { display:flex !important; flex-direction:column; justify-content:center; align-items:flex-start !important; gap:6px; }
+
+/* 特別巡行だけ専用カード背景を使用 */
+#screen-ninmu #ninmu-panel-special .ninmu-chapter-item {
+  background: url("../images/junkou_special.webp") center / 100% 100% no-repeat !important;
+}
+
 #screen-ninmu .ninmu-chapter-label { color:#a3834e !important; font-size:8px !important; letter-spacing:.18em !important; }
 #screen-ninmu .ninmu-chapter-title { color:#443827 !important; font-size:15px !important; }
 @media (max-height:740px) {
@@ -15459,3 +15465,36 @@ body.login-bonus-open {
   #screen-main .home-bg-motion-06 { opacity: 0.46; }
 }
 
+/* =========================================================
+   108 ROGUELITEカード / クリア条件モーダル
+   ========================================================= */
+.roguelite-entry-card{position:relative!important;padding-right:12px!important;touch-action:pan-y;-webkit-user-select:none;user-select:none;overflow:hidden}
+.roguelite-entry-card > :not(.roguelite-card-boss-art){position:relative;z-index:2}
+.roguelite-card-boss-art{position:absolute;right:12px;top:0;bottom:0;width:118px;height:100%;display:flex;align-items:stretch;justify-content:center;pointer-events:none;z-index:1;opacity:.15;mix-blend-mode:multiply;filter:grayscale(.06) saturate(.72) brightness(1.02)}
+.roguelite-card-boss-art img{width:100%;height:100%;display:block;object-fit:cover;object-position:center top}
+.roguelite-card-rewards{position:absolute;left:calc(14px + 3mm);bottom:calc(12px - 1mm);display:flex;gap:3px;align-items:center;z-index:2}
+.roguelite-card-reward{width:23px;height:23px;display:grid;place-items:center;flex:0 0 23px}
+.roguelite-card-reward img{width:23px;height:23px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(92,70,36,.18))}
+.roguelite-longpress-hint{position:absolute;left:calc(14px + 3mm);bottom:28px;font-size:7.5px;font-weight:500;letter-spacing:.06em;color:rgba(104,78,45,.74);white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.68);z-index:2}
+.roguelite-entry-card.is-longpressing{filter:brightness(.96);transform:scale(.992)}
+.roguelite-condition-modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:390000;display:none;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-sizing:border-box;overflow:hidden;touch-action:none}
+.roguelite-condition-modal.show{display:flex}
+.roguelite-condition-backdrop{position:absolute;inset:0;background:rgba(26,18,8,.52);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.roguelite-condition-sheet{position:relative;width:min(420px,calc(100vw - 20px));max-width:100%;max-height:calc(100dvh - max(20px,env(safe-area-inset-top)) - max(20px,env(safe-area-inset-bottom)));overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-sizing:border-box;padding:22px 17px 18px;border:1px solid rgba(173,139,82,.45);border-radius:12px;background:linear-gradient(165deg,#fffdf7,#f4eddf);box-shadow:0 24px 70px rgba(49,32,12,.35);color:#5d4b35;font-family:"Noto Serif JP",serif;touch-action:pan-y}
+.roguelite-condition-sheet::before{content:"";position:absolute;inset:7px;border:1px solid rgba(181,145,82,.18);border-radius:8px;pointer-events:none}
+.roguelite-condition-close{position:sticky;float:right;right:0;top:0;margin:-14px -9px -34px 0;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,253,247,.94);color:#8a7559;font-size:27px;line-height:1;z-index:20;box-shadow:0 1px 8px rgba(49,32,12,.14);touch-action:manipulation}
+.roguelite-condition-kicker{text-align:center;font-family:"Cinzel",serif;font-size:9px;letter-spacing:.22em;color:#aa8b5e}
+.roguelite-condition-sheet h2{text-align:center;margin:6px 28px 2px;font-size:21px;letter-spacing:.12em;font-weight:600}
+.roguelite-condition-sub{text-align:center;font-size:10px;color:#a08a6c;letter-spacing:.08em}
+.roguelite-condition-main-rewards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:15px 0 12px}
+.roguelite-condition-reward{display:flex;align-items:center;gap:6px;min-width:0;padding:7px 8px;border:1px solid rgba(171,136,78,.22);background:rgba(255,255,255,.54);border-radius:8px;font-size:11px}
+.roguelite-condition-reward img{width:28px;height:28px;object-fit:contain;flex-shrink:0}.roguelite-condition-reward span{font-size:9px;line-height:1.35}.roguelite-condition-reward b{font-size:10px}
+.roguelite-condition-ranks{display:flex;flex-direction:column;border-top:1px solid rgba(160,125,70,.24)}
+.roguelite-rank-row{display:grid;grid-template-columns:42px minmax(0,1fr) 76px;gap:8px;align-items:center;padding:10px 3px;border-bottom:1px solid rgba(160,125,70,.18)}
+.roguelite-rank-badge{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:"Cinzel",serif;font-size:19px;font-weight:700;border:1px solid rgba(151,117,64,.28);background:rgba(255,255,255,.58)}
+.roguelite-rank-row.rank-s .roguelite-rank-badge{color:#8f671e;border-color:rgba(187,139,39,.55);box-shadow:0 0 13px rgba(194,146,42,.18)}
+.roguelite-rank-condition{font-size:11px;line-height:1.55}
+.roguelite-rank-reward{text-align:right;font-size:9px;line-height:1.55;color:#8a7353}
+.roguelite-rank-reward b{display:block;font-family:"Cinzel",serif;font-size:12px;color:#725b3d}
+.roguelite-condition-note{margin-top:11px;text-align:center;font-size:9px;color:#9b8668;letter-spacing:.03em}
+@media(max-width:380px){.roguelite-condition-modal{align-items:flex-start;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}.roguelite-condition-sheet{width:calc(100vw - 16px);max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));padding:19px 13px 15px}.roguelite-condition-main-rewards{grid-template-columns:repeat(2,minmax(0,1fr))}.roguelite-rank-row{grid-template-columns:38px minmax(0,1fr) 68px;gap:5px}.roguelite-rank-condition{font-size:10px}.roguelite-condition-reward{min-width:0;padding:7px}.roguelite-condition-close{margin:-12px -6px -36px 0}}
