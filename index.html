@@ -4481,14 +4481,14 @@ setTenResultFooterVisible(true);
   // レムナント一覧マスター。今後8体まで登録予定。
   // サキエルは No.04 として固定登録。
   var REMNANT_MASTER = [
-    { no: 1, id: 'remnant_01', enemyId: 'enemy_01', name: 'レムナント：オーバーシア', img: 'images/remnant_01.webp', panelImg: 'images/remnant_01_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 2, id: 'remnant_02', enemyId: 'enemy_02', name: 'レムナント：イリシュ', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 3, id: 'remnant_03', enemyId: 'enemy_03', name: 'レムナント：リヴィア', img: 'images/remnant_03.webp', panelImg: 'images/remnant_03_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 4, id: 'remnant_04', enemyId: 'enemy_sakiel_roguelite', name: '大天使 サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'サキエル降臨 BOSSドロップ', desc: '旧世界に残された白翼の残響。現在は記録のみで、使用機能は未実装です。' },
-    { no: 5, id: 'remnant_05', enemyId: 'enemy_05', name: '未照合のレムナント', img: 'images/remnant_05.webp', panelImg: 'images/remnant_05_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 6, id: 'remnant_06', enemyId: 'enemy_06', name: '未照合のレムナント', img: 'images/remnant_06.webp', panelImg: 'images/remnant_06_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 7, id: 'remnant_07', enemyId: 'enemy_07', name: '未照合のレムナント', img: 'images/remnant_07.webp', panelImg: 'images/remnant_07_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 8, id: 'remnant_08', enemyId: 'enemy_08', name: '未照合のレムナント', img: 'images/remnant_08.webp', panelImg: 'images/remnant_08_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' }
+    { no: 1, id: 'remnant_01', enemyId: 'enemy_overseer_roguelite', legacyEnemyIds: ['enemy_01'], name: 'レムナント：オーバーシア', img: 'images/remnant_01.webp', panelImg: 'images/remnant_01_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 2, id: 'remnant_02', enemyId: 'enemy_irish_roguelite', legacyEnemyIds: ['enemy_02'], name: 'レムナント：イリシュ', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 3, id: 'remnant_03', enemyId: 'enemy_rivia_roguelite', legacyEnemyIds: ['enemy_03'], name: 'レムナント：リヴィア', img: 'images/remnant_03.webp', panelImg: 'images/remnant_03_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 4, id: 'remnant_04', enemyId: 'enemy_sakiel_roguelite', legacyEnemyIds: [], name: 'レムナント：サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 5, id: 'remnant_05', enemyId: 'enemy_remnant05_core', legacyEnemyIds: ['enemy_05'], name: 'レムナント：レム', img: 'images/remnant_05.webp', panelImg: 'images/remnant_05_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 6, id: 'remnant_06', enemyId: 'enemy_remnant06_core', legacyEnemyIds: ['enemy_06'], name: '未照合のレムナント', img: 'images/remnant_06.webp', panelImg: 'images/remnant_06_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 7, id: 'remnant_07', enemyId: 'enemy_remnant07_core', legacyEnemyIds: ['enemy_07'], name: '未照合のレムナント', img: 'images/remnant_07.webp', panelImg: 'images/remnant_07_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 8, id: 'remnant_08', enemyId: 'enemy_remnant08_core', legacyEnemyIds: ['enemy_08'], name: '未照合のレムナント', img: 'images/remnant_08.webp', panelImg: 'images/remnant_08_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' }
   ];
 
   var ownedRemnants = loadOwnedRemnantsFromLocal();
@@ -4574,7 +4574,11 @@ setTenResultFooterVisible(true);
   }
 
   function getRemnantDefById(id){
-    return getAllRemnantDefs().find(function(r){ return r.id === id || r.enemyId === id; }) || null;
+    return getAllRemnantDefs().find(function(r){
+      return r.id === id
+        || r.enemyId === id
+        || (Array.isArray(r.legacyEnemyIds) && r.legacyEnemyIds.indexOf(id) >= 0);
+    }) || null;
   }
 
   function isRemnantOwned(id){

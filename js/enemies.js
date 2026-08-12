@@ -638,11 +638,11 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'enemy_remnant05_clone',
-  name: 'レムナント：??????',
-  displayName: 'レムナント：??????',
-  enemyName: 'レムナント：??????',
-  introName: 'レムナント：??????',
-  stageIntroName: 'レムナント：??????',
+  name: 'レムナント：レム',
+  displayName: 'レムナント：レム',
+  enemyName: 'レムナント：レム',
+  introName: 'レムナント：レム',
+  stageIntroName: 'レムナント：レム',
   element: 'mystis',
   img: 'images/remnant_05_battle_up.webp',
   upImg: 'images/remnant_05_battle_up.webp',
@@ -1296,11 +1296,11 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'enemy_sakiel_roguelite',
-  name: '大天使 サキエル',
-  displayName: '大天使 サキエル',
-  enemyName: '大天使 サキエル',
-  introName: '大天使 サキエル',
-  stageIntroName: '大天使 サキエル',
+  name: 'レムナント：サキエル',
+  displayName: 'レムナント：サキエル',
+  enemyName: 'レムナント：サキエル',
+  introName: 'レムナント：サキエル',
+  stageIntroName: 'レムナント：サキエル',
   element: 'mystis',
   // ステージ入り演出用（添付2枚目）
   img:         'images/remnant_04_battle_up.webp',
@@ -1408,8 +1408,8 @@ ENEMIES.push({
 });
 
 // ============================================================
-// レムナント：レヴィ（忘却）専用3戦
-// Stage 1: 忘却付与型 / Stage 2: 消失・転移型 / Stage 3: レヴィ
+// レムナント：リヴィア（忘却）専用3戦
+// Stage 1: 忘却付与型 / Stage 2: 消失・転移型 / Stage 3: リヴィア
 // ============================================================
 ENEMIES.push({
   id: 'rl_rivia_zako_a',
@@ -1447,8 +1447,8 @@ ENEMIES.push({
 
 ENEMIES.push({
   id: 'enemy_rivia_roguelite',
-  name: 'レムナント：レヴィ', displayName: 'レムナント：レヴィ',
-  enemyName: 'レムナント：レヴィ', introName: 'レムナント：レヴィ', stageIntroName: 'レムナント：レヴィ',
+  name: 'レムナント：リヴィア', displayName: 'レムナント：リヴィア',
+  enemyName: 'レムナント：リヴィア', introName: 'レムナント：リヴィア', stageIntroName: 'レムナント：リヴィア',
   element: 'mystis',
   img: 'images/remnant_03_battle_up.webp', upImg: 'images/remnant_03_battle_up.webp',
   battleImg: 'images/remnant_03_battle.webp', battleUpImg: 'images/remnant_03_battle_up.webp',

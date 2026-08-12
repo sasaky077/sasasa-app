@@ -6,8 +6,8 @@
 // ── 公開API ─────────────────────────────────────────────────
 //   RogueliteRun.start(partyIds)   : ランを開始（partyIds は選択キャラ ID 配列）
 //   RogueliteRun.isActive()        : ラン中かどうか
-//   RogueliteRun.getStageNo()      : 現在ステージ番号（1〜4）
-//   RogueliteRun.isBossStage()     : 4ステージ目かどうか
+//   RogueliteRun.getStageNo()      : 現在ステージ番号（ラン定義に応じて可変）
+//   RogueliteRun.isBossStage()     : 現在ステージがBOSSかどうか
 //   RogueliteRun.getStageDef()     : 現ステージ定義オブジェクト
 //   RogueliteRun.getOptions()      : 保持中のOPオブジェクト配列
 //   RogueliteRun.addOption(op)     : OPを追加（最大3つ）
@@ -196,65 +196,26 @@
       id: 'remnant05',
       name: '執着',
       subName: 'レムナント05',
-      zakoBattleStartImg: 'images/remnant_05_battle_start.webp',
+      // レムナント05は道中なしのBOSS単戦。旧ST2/ST3は使用しない。
       bossBattleStartImg: 'images/remnant_05_battle_start.webp',
       stageDefs: [
         {
           stage: 1,
           isBoss: true,
-          label: 'ST1',
-          subLabel: '固執',
+          label: 'BOSS',
+          subLabel: 'レムナント：レム',
           enemyIds: ['enemy_remnant05_core'],
           enemyRandomStartPosition: false,
           enemyActionMode: 'all',
           enemyActionsPerTurn: null,
           turnLimit: 12,
+          // 旧ST1のバランス・ギミックをそのまま正式BOSS戦として使用する。
           remnant05Config: {
             stage: 1,
             cloneEnemyId: 'enemy_remnant05_clone',
             enableCurse: false,
             enableRevive: false,
             hideCore: false,
-            recoilRate: 0.20,
-            curseRate: 0.20,
-          },
-        },
-        {
-          stage: 2,
-          isBoss: true,
-          label: 'ST2',
-          subLabel: '怨念',
-          enemyIds: ['enemy_remnant05_core'],
-          enemyRandomStartPosition: false,
-          enemyActionMode: 'all',
-          enemyActionsPerTurn: null,
-          turnLimit: 14,
-          remnant05Config: {
-            stage: 2,
-            cloneEnemyId: 'enemy_remnant05_clone',
-            enableCurse: true,
-            enableRevive: true,
-            hideCore: false,
-            recoilRate: 0.20,
-            curseRate: 0.20,
-          },
-        },
-        {
-          stage: 3,
-          isBoss: true,
-          label: 'ST3',
-          subLabel: '本体隠匿',
-          enemyIds: ['enemy_remnant05_core'],
-          enemyRandomStartPosition: false,
-          enemyActionMode: 'all',
-          enemyActionsPerTurn: null,
-          turnLimit: 16,
-          remnant05Config: {
-            stage: 3,
-            cloneEnemyId: 'enemy_remnant05_clone',
-            enableCurse: true,
-            enableRevive: true,
-            hideCore: true,
             recoilRate: 0.20,
             curseRate: 0.20,
           },

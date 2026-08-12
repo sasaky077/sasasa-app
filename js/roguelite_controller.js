@@ -1847,7 +1847,19 @@ function _hideHud() {
   function _waitStageClear(stageNo) {
   return new Promise(resolve => {
     let done = false;
-    const current = Math.max(1, Math.min(4, Number(stageNo || 1)));
+
+    // ランごとのstageDefs数を正として扱う。1戦構成のレムナント05にも対応する。
+    const runDef = window.RogueliteRun && typeof window.RogueliteRun.getCurrentRunDef === 'function'
+      ? window.RogueliteRun.getCurrentRunDef()
+      : null;
+    const defs = Array.isArray(runDef && runDef.stageDefs) && runDef.stageDefs.length
+      ? runDef.stageDefs
+      : [{}];
+    const maxStage = defs.length;
+    const current = Math.max(1, Math.min(maxStage, Number(stageNo || 1)));
+    const currentDef = defs[current - 1] || {};
+    const isFinalStage = current >= maxStage;
+    const clearTitle = currentDef.isBoss ? 'BOSS CLEAR' : `STAGE ${current} CLEAR`;
 
     const old = document.getElementById('rl-stage-clear-overlay');
     if (old) old.remove();
@@ -1855,8 +1867,8 @@ function _hideHud() {
     const ov = document.createElement('div');
     ov.id = 'rl-stage-clear-overlay';
     ov.innerHTML = `
-      <div class="rl-stage-clear-title">STAGE ${current} CLEAR</div>
-      <div class="rl-stage-clear-sub">${current >= 4 ? 'RUN COMPLETE' : 'REWARD SELECT'}</div>
+      <div class="rl-stage-clear-title">${clearTitle}</div>
+      <div class="rl-stage-clear-sub">${isFinalStage ? 'RUN COMPLETE' : 'REWARD SELECT'}</div>
       <div class="rl-stage-clear-progress">
         ${_makeStageProgressHtml(current, 'rl-stage-clear')}
       </div>

@@ -1074,7 +1074,7 @@ skills: [
     battleBackImg: 'images/chara_17_battle_back.webp',
     panelImg: 'images/chara_17_panel.webp',
     favScale: 0.95, favOffsetY: 15,
-    uiScale: {panel: 1.0,battleBack: 1.55,battleUp: 1.0},
+    uiScale: {panel: 1.0,battleBack: 1.55,battleUp: 0.80},
     combo: {
       range: 'combo_line_2',
       skill: { id: 'combo', name: '聖雫の余韻', type: 'heal', multiplier: 0, range: 'self', healRate: 0.08, effects: [], hitStyle: 'heal', desc: '同じ縦列の前後2マス以内にいる味方のスキルに反応し、自身のHPを最大HPの8%回復する。' }

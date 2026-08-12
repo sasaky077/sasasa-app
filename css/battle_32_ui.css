@@ -10723,3 +10723,121 @@ html body.b32-blessing-info-open #b32-roster-panel {
   from { opacity:.62; filter:brightness(.82); }
   to   { opacity:.96; filter:brightness(1.25); }
 }
+
+/* ============================================================
+   REMNANT BOSS POSITION / SHADOW TUNING
+   ------------------------------------------------------------
+   ボスだけを個別調整するための最終上書き。
+   enemy-id-* クラスは battle_32_ui.js が自動付与する。
+
+   主な調整値:
+     --boss-offset-y      : ボス画像の上下位置（+ = 下、- = 上）
+     --boss-shadow-y      : 足元影の上下位置
+     --boss-shadow-width  : 足元影の横幅
+     --boss-shadow-height : 足元影の高さ
+     --boss-shadow-opacity: 足元影の濃さ
+     --boss-shadow-blur   : 足元影のぼかし
+   ============================================================ */
+
+/* ボス共通フォールバック：既存の雑魚位置には触れず、ボス画像だけ約2mm下げる */
+#battle32-root .b32-unit.enemy.boss {
+  --boss-offset-y: 2mm;
+  --boss-shadow-y: 1mm;
+  --boss-shadow-width: 92%;
+  --boss-shadow-height: 18%;
+  --boss-shadow-opacity: .24;
+  --boss-shadow-blur: 3px;
+}
+
+/* レムナント01：オーバーシア */
+#battle32-root .b32-unit.enemy.boss.enemy-id-enemy_overseer_roguelite,
+#battle32-root .b32-unit.enemy.boss.enemy-id-enemy_01 {
+  --boss-offset-y: 2mm;
+  --boss-shadow-y: 1mm;
+  --boss-shadow-width: 96%;
+  --boss-shadow-height: 18%;
+  --boss-shadow-opacity: .24;
+  --boss-shadow-blur: 3px;
+}
+
+/* レムナント02：イリシュ */
+#battle32-root .b32-unit.enemy.boss.enemy-id-enemy_irish_roguelite {
+  --boss-offset-y: 2mm;
+  --boss-shadow-y: 1mm;
+  --boss-shadow-width: 94%;
+  --boss-shadow-height: 18%;
+  --boss-shadow-opacity: .24;
+  --boss-shadow-blur: 3px;
+}
+
+/* レムナント03：リヴィア / レヴィ */
+#battle32-root .b32-unit.enemy.boss.enemy-id-enemy_rivia_roguelite {
+  --boss-offset-y: 2mm;
+  --boss-shadow-y: 1mm;
+  --boss-shadow-width: 92%;
+  --boss-shadow-height: 18%;
+  --boss-shadow-opacity: .24;
+  --boss-shadow-blur: 3px;
+}
+
+/* レムナント04：サキエル */
+#battle32-root .b32-unit.enemy.boss.enemy-id-enemy_sakiel_roguelite {
+  --boss-offset-y: 2mm;
+  --boss-shadow-y: 1mm;
+  --boss-shadow-width: 98%;
+  --boss-shadow-height: 19%;
+  --boss-shadow-opacity: .24;
+  --boss-shadow-blur: 3px;
+}
+
+/* レムナント05：レム */
+#battle32-root .b32-unit.enemy.boss.enemy-id-enemy_remnant05_core {
+  --boss-offset-y: 2mm;
+  --boss-shadow-y: 1mm;
+  --boss-shadow-width: 90%;
+  --boss-shadow-height: 17%;
+  --boss-shadow-opacity: .24;
+  --boss-shadow-blur: 3px;
+}
+
+/* 画像の個別Y補正。既存 uiOffset(battleBackY) があれば加算する */
+#battle32-root .b32-unit.enemy.boss .b32-unit-icon {
+  transform:
+    translateY(calc(var(--unit-offset-y, 0px) + var(--boss-offset-y, 0px)))
+    scale(var(--unit-scale, 1))
+    translateZ(1px) !important;
+  transform-origin: center bottom !important;
+
+  /* 浮いて見えやすい下方向の強いドロップシャドウを弱める */
+  filter:
+    drop-shadow(0 2px 2px rgba(50,48,57,.16))
+    drop-shadow(0 1px 0 rgba(255,255,255,.42))
+    brightness(1.025) contrast(1.025) !important;
+}
+
+/* 旧ボス用の大きな白い楕円光を、足元に接地する薄い影へ置換 */
+#battle32-root .b32-unit.enemy.boss::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 50% !important;
+  bottom: var(--boss-shadow-y, 0px) !important;
+  width: var(--boss-shadow-width, 92%) !important;
+  height: var(--boss-shadow-height, 18%) !important;
+  border-radius: 50% !important;
+  transform: translateX(-50%) !important;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(45,40,52,.50) 0%,
+    rgba(66,58,72,.24) 42%,
+    rgba(66,58,72,0) 74%
+  ) !important;
+  opacity: var(--boss-shadow-opacity, .24) !important;
+  filter: blur(var(--boss-shadow-blur, 3px)) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+#battle32-root .b32-unit.enemy.boss .b32-unit-icon {
+  position: relative !important;
+  z-index: 1 !important;
+}
