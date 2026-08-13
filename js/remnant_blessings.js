@@ -10,7 +10,7 @@
   const REMNANT_BLESSINGS = {
     remnant_01: {
       id: 'remnant_01', remnantName: 'オーバーシア', name: 'オーバーシアの加護',
-      panelImg: 'images/remnant_01_panel.webp', materialName: 'オーバーシアの心核',
+      panelImg: 'images/remnant_01_panel.webp', cutinImg: 'images/remnant_01_cutin.webp', materialName: 'オーバーシアの心核',
       maxLevel: 5, conditionType: 'enemy_kill_count', invRequiredKills: 3,
       invName: '万象観測', invEffectType: 'critical_up', invDurationTurns: 1,
       levels: {
@@ -23,7 +23,7 @@
     },
     remnant_02: {
       id: 'remnant_02', remnantName: 'イリシュ', name: 'イリシュの加護',
-      panelImg: 'images/remnant_02_panel.webp', materialName: 'イリシュの心核',
+      panelImg: 'images/remnant_02_panel.webp', cutinImg: 'images/remnant_02_cutin.webp', materialName: 'イリシュの心核',
       maxLevel: 5, conditionType: 'multi_target_attack', invRequiredTargets: 2,
       invName: '壊滅衝動', invEffectType: 'single_enemy_damage',
       levels: {
@@ -36,7 +36,7 @@
     },
     remnant_03: {
       id: 'remnant_03', remnantName: 'リヴィア', name: 'リヴィアの加護',
-      panelImg: 'images/remnant_03_panel.webp', materialName: 'リヴィアの心核',
+      panelImg: 'images/remnant_03_panel.webp', cutinImg: 'images/remnant_03_cutin.webp', materialName: 'リヴィアの心核',
       maxLevel: 5, conditionType: 'enemy_kill_count', invRequiredKills: 3,
       invName: '償却の静止', invEffectType: 'all_enemy_stun', invStunTurns: 1,
       levels: {
@@ -49,7 +49,7 @@
     },
     remnant_04: {
       id: 'remnant_04', remnantName: 'サキエル', name: 'サキエルの加護',
-      panelImg: 'images/remnant_04_panel.webp', materialName: 'サキエルの心核',
+      panelImg: 'images/remnant_04_panel.webp', cutinImg: 'images/remnant_04_cutin.webp', materialName: 'サキエルの心核',
       maxLevel: 5, conditionType: 'lost_ally_exists',
       invName: '真実の再臨', invEffectType: 'revive_ally', invReviveHpRate: 0.50,
       levels: {
@@ -62,7 +62,7 @@
     },
     remnant_05: {
       id: 'remnant_05', remnantName: 'レム', name: 'レムの加護',
-      panelImg: 'images/remnant_05_panel.webp', materialName: 'レムの心核',
+      panelImg: 'images/remnant_05_panel.webp', cutinImg: 'images/remnant_05_cutin.webp', materialName: 'レムの心核',
       maxLevel: 5, conditionType: 'ally_lost_once',
       invName: '執着の残影', invEffectType: 'rem_summon_3',
       summonImg: 'images/remnant_05_set.webp',

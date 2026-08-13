@@ -1005,7 +1005,7 @@ skills: [
     battleUpImg: 'images/chara_16_battle_up.webp',
     battleBackImg: 'images/chara_16_battle_back.webp',
     panelImg: 'images/chara_16_panel.webp',
-    favScale: 1.1, favOffsetY: 35,
+    favScale: 0.90, favOffsetY: -40,
     uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_cross_1',

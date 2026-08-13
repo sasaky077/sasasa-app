@@ -1316,8 +1316,8 @@ const enemies = enemyDefs.map(def => {
       roster: rosterData,
       deployLimit: 4,
 
-      // ── ローグライト: アイテム2枠 ──
-      items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 2) : [],
+      // ── ローグライト: アイテム3枠 ──
+      items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 3) : [],
 
       // コア概念は廃止。敗北条件はエリのロストのみ。
       // ターン制限は廃止。早いほどスコアが高く、遅くてもタイムオーバー敗北にはしない。
@@ -2868,7 +2868,8 @@ function _executeDelayedAttack(action) {
   }
 
   // ============================================================
-  // ハヤテ：ヒットアンドアウェイモード
+  // ハヤテ：月光モード
+  // 内部プロパティ hitAndAway* は既存セーブ互換のため名称を維持する。
   // ============================================================
   function _isHitAndAwayModeActive32(unit) {
     if (!unit || !_bs) return false;
@@ -2881,7 +2882,15 @@ function _executeDelayedAttack(action) {
     unit.hitAndAwayUntilTurn = Number(_bs.turn || 1) + duration - 1;
     unit.hitAndAwayMoveBonus = Math.max(0, Number(skill && skill.moveRangeBonus || 2));
     unit.hitAndAwayOrigin = null;
-    _log(`${unit.name} はヒットアンドアウェイモードに入った（${duration}ターン）`);
+    _log(`${unit.name} は月光モードに入った（${duration}ターン）`);
+    _emit('moonModeChange', {
+      active: true,
+      source: { ...unit },
+      target: { ...unit },
+      label: '月光モード',
+      duration,
+      bs: _snapshot(),
+    });
   }
 
   function _returnHitAndAwayUnit32(unit) {
@@ -3429,7 +3438,7 @@ if (stype === 'repeat_skill') {
       // ハヤテULT：前方広範囲を高速斬撃してから、超機動モードへ移行する。
       const targets = _enemyTargets(skill.range);
       if (targets.length === 0) {
-        _log(`${ally.name}：攻撃範囲内に敵はいないが、HIT & AWAYモードへ移行する`);
+        _log(`${ally.name}：攻撃範囲内に敵はいないが、月光モードへ移行する`);
       } else {
         const { enemyEffects } = _splitSkillEffectsByTarget(skill);
         targets.forEach(enemy => {
@@ -3451,7 +3460,7 @@ if (stype === 'repeat_skill') {
         source: { ...ally },
         target: { ...ally },
         effect: { type: 'hit_and_away_mode', duration: Number(skill.modeDuration || 3) },
-        label: 'HIT & AWAY',
+        label: '月光モード',
         bs: _snapshot(),
       });
 
@@ -3814,14 +3823,44 @@ return true;
             );
 
             if (!hasExplicitHealEffect) {
-              const amount = Math.max(
-                1,
-                Math.round(
-                  getEffectiveAtk(ally) *
-                  Number(comboSkill.healRate || comboSkill.multiplier || 0.25)
-                )
-              );
-              target.hp = Math.min(target.hpMax, target.hp + amount);
+              // コンボ回復は healRate を「対象の最大HP割合」として扱う。
+              // 例: アンジェ healRate: 0.08 → 最大HPの8%回復。
+              const healRate = Number(comboSkill.healRate || comboSkill.multiplier || 0.25);
+              const before = Number(target.hp || 0);
+              const hpMax = Math.max(1, Number(target.hpMax || target.hp || 1));
+              const recover = Math.max(1, Math.round(hpMax * healRate));
+
+              target.hp = Math.min(hpMax, before + recover);
+              const actualRecover = Math.max(0, Number(target.hp || 0) - before);
+
+              if (actualRecover > 0) {
+                _log(`COMBO：${target.name} の HP が ${actualRecover} 回復！（残HP: ${target.hp}）`);
+                _emit('heal', {
+                  source: {
+                    _uid: ally._uid,
+                    name: ally.name,
+                    side: ally.side,
+                    row: ally.row,
+                    col: ally.col
+                  },
+                  target: {
+                    _uid: target._uid,
+                    name: target.name,
+                    side: target.side,
+                    row: target.row,
+                    col: target.col
+                  },
+                  amount: actualRecover,
+                  kind: 'combo_heal',
+                  skillId: comboSkill.id || null,
+                  skillName: comboSkill.name || null,
+                  isUltimate: false,
+                  hitStyle: comboSkill.hitStyle || 'heal',
+                  bs: _snapshot(),
+                });
+              } else {
+                _log(`COMBO：${target.name} は既にHP満タンです`);
+              }
             }
           }
 
@@ -6523,9 +6562,22 @@ function doBossLineAttack(boss) {
     _bs.allies.forEach(a => {
       a.skillUsedThisTurn = false;
       a.hitAndAwayOrigin = null;
-      if (Number(a.hitAndAwayUntilTurn || 0) < Number(_bs.turn)) {
+      if (Number(a.hitAndAwayUntilTurn || 0) > 0 &&
+          Number(a.hitAndAwayUntilTurn || 0) < Number(_bs.turn)) {
+        // 月光モード終了。状態を落としてからUIへ変身解除イベントを通知する。
         a.hitAndAwayUntilTurn = 0;
         a.hitAndAwayMoveBonus = 0;
+        if (Number(a.id || a.charaId || 0) === 12 && a.hp > 0) {
+          _log(`${a.name} の月光モードが解除された`);
+          _emit('moonModeChange', {
+            active: false,
+            source: { ...a },
+            target: { ...a },
+            label: '月光モード解除',
+            duration: 0,
+            bs: _snapshot(),
+          });
+        }
       }
     });
 

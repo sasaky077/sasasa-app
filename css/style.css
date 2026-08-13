@@ -482,53 +482,11 @@ body {
    ========================================================= */
 
 #screen-main {
-  background-image: url("../images/chara_bg.webp");
-  background-size: cover;
-  background-position: center;
+  /* 完成版背景は使わず、空・建物・エフェクトを独立レイヤー化 */
+  background: #f3efe7;
   position: relative;
   padding-top: 0;
-}
-
-#screen-main::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 0;
-  pointer-events: none;
-}
-
-#screen-main::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255,255,255,0.12), transparent 28%),
-    linear-gradient(120deg, transparent 35%, rgba(255,255,255,0.08) 50%, transparent 65%);
-  mix-blend-mode: screen;
-  animation: main-light-move 7s ease-in-out infinite;
-}
-
-@keyframes main-light-move {
-  0%,100% {
-    transform:
-      translateX(-20px)
-      translateY(0px)
-      scale(1.02);
-
-    opacity: 0.22;
-  }
-
-  50% {
-    transform:
-      translateX(24px)
-      translateY(-14px)
-      scale(1.08);
-
-    opacity: 0.42;
-  }
+  overflow: hidden;
 }
 
 #screen-main > * {
@@ -15343,126 +15301,84 @@ body.login-bonus-open {
 }
 
 /* =========================================================
-   111 Home Background / Layered Motion
-   - chara_bg.webp は #screen-main の固定背景のまま
-   - chara_bg_04 / 05 / 06 だけを独立してゆっくり動かす
-   - 既存の icon / banner / character の位置指定は一切変更しない
+   111 Home Background / Sky Loop
+   使用する背景画像は以下の2つだけ
+   - chara_bg_sky.webp      : 横ループ
+   - chara_bg_building.webp : 固定前景
    ========================================================= */
 
-#screen-main .home-cloud-motion-layer {
+/* 空全体を左から右へ止まらずループ。 */
+#screen-main .home-sky-scroll-layer {
   position: absolute !important;
   inset: 0 !important;
-  z-index: 1 !important;
+  z-index: 0 !important;
   overflow: hidden;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+  background: #f3efe7;
 }
 
-/*
-  3素材は chara_bg と同じ縦長キャンバス前提。
-  cover + center に揃えることで、ベース背景と同じトリミング基準にする。
-*/
-#screen-main .home-bg-motion-img {
+#screen-main .home-sky-scroll-track {
   position: absolute;
-  inset: 0;
+  inset: 0 auto 0 0;
+  height: 100%;
+  width: max-content;
+  display: flex;
+  align-items: stretch;
+  will-change: transform;
+  animation: home-sky-scroll-ltr 380s linear infinite;
+}
+
+#screen-main .home-sky-scroll-img {
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+#screen-main .home-sky-scroll-img-mirror {
+  transform: scaleX(-1);
+}
+
+@keyframes home-sky-scroll-ltr {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+/* 建物・床は固定。透過部分から動く空が見える。 */
+#screen-main .home-bg-building {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
   width: 100%;
   height: 100%;
   max-width: none;
   object-fit: cover;
   object-position: center;
   pointer-events: none;
-  will-change: transform, opacity;
-  transform-origin: 50% 42%;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* 04: 大きな雲。最もゆっくり横へ流す */
-#screen-main .home-bg-motion-04 {
-  opacity: 0.58;
-  filter: saturate(0.92) brightness(1.03);
-  animation: home-bg-drift-04 24s ease-in-out infinite alternate;
-}
-
-/* 05: 中央の光輪。位置はほぼ固定し、呼吸する程度の拡縮と微回転 */
-#screen-main .home-bg-motion-05 {
-  opacity: 0.42;
-  filter: saturate(0.95) brightness(1.06);
-  mix-blend-mode: screen;
-  animation: home-bg-drift-05 18s ease-in-out infinite alternate;
-}
-
-/* 06: 光粒・薄雲。04とは逆方向へ少しだけ流して視差を出す */
-#screen-main .home-bg-motion-06 {
-  opacity: 0.50;
-  filter: saturate(0.93) brightness(1.05);
-  mix-blend-mode: screen;
-  animation: home-bg-drift-06 20s ease-in-out infinite alternate;
-}
-
-@keyframes home-bg-drift-04 {
-  0% {
-    transform: translate3d(-18px, 4px, 0) scale(1.05);
-    opacity: 0.52;
-  }
-  50% {
-    transform: translate3d(4px, -8px, 0) scale(1.065);
-    opacity: 0.62;
-  }
-  100% {
-    transform: translate3d(20px, 2px, 0) scale(1.05);
-    opacity: 0.56;
-  }
-}
-
-@keyframes home-bg-drift-05 {
-  0% {
-    transform: translate3d(0, 2px, 0) rotate(-0.55deg) scale(1.02);
-    opacity: 0.36;
-  }
-  50% {
-    transform: translate3d(2px, -3px, 0) rotate(0.2deg) scale(1.045);
-    opacity: 0.48;
-  }
-  100% {
-    transform: translate3d(-2px, 1px, 0) rotate(0.55deg) scale(1.025);
-    opacity: 0.40;
-  }
-}
-
-@keyframes home-bg-drift-06 {
-  0% {
-    transform: translate3d(16px, -4px, 0) scale(1.035);
-    opacity: 0.42;
-  }
-  50% {
-    transform: translate3d(-4px, 4px, 0) scale(1.05);
-    opacity: 0.56;
-  }
-  100% {
-    transform: translate3d(-18px, -1px, 0) scale(1.04);
-    opacity: 0.46;
-  }
-}
-
-/* 既存ホームUIは必ず背景アニメーションより前面。位置指定は触らない */
+/* キャラ / ホームUIは背景2レイヤーより前面。 */
 #screen-main > .home-notice-btn,
 #screen-main > .home-event-banner-wrap,
 #screen-main > .shinju-home-entry,
 #screen-main > .bonus-home-entry,
 #screen-main > .favorite-area {
-  z-index: 3;
+  z-index: 2;
 }
 
-/* OS側で「視差効果を減らす」が有効なら静止 */
 @media (prefers-reduced-motion: reduce) {
-  #screen-main .home-bg-motion-img {
+  #screen-main .home-sky-scroll-track {
     animation: none !important;
-    transform: none !important;
+    transform: translate3d(-50%, 0, 0);
   }
-
-  #screen-main .home-bg-motion-04 { opacity: 0.56; }
-  #screen-main .home-bg-motion-05 { opacity: 0.40; }
-  #screen-main .home-bg-motion-06 { opacity: 0.46; }
 }
 
 /* =========================================================
@@ -15530,4 +15446,164 @@ body.login-bonus-open {
 /* 巡行：上級 → テスト間の余白を、前回より約2mm狭める */
 #screen-ninmu #ninmu-panel-daily .ninmu-test-btn-test-entry {
   margin-top: 8.5px !important;
+}
+
+
+/* =========================================================
+   Login Bonus Modal - Home visible / White Gold Beige Theme
+   2026-08-14
+   - ホーム背景をぼかさない
+   - 白 / 金 / ベージュ基調
+   ========================================================= */
+
+/* 背景は見せたまま。blurは完全に使わない */
+.login-bonus-backdrop {
+  background: rgba(255, 252, 244, .16) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* モーダル本体 */
+.login-bonus-sheet {
+  border: 1px solid rgba(177, 139, 70, .42) !important;
+  background:
+    radial-gradient(circle at 50% -8%, rgba(231, 199, 129, .28), transparent 38%),
+    linear-gradient(160deg, rgba(255,255,255,.985) 0%, rgba(252,247,236,.985) 58%, rgba(241,229,207,.985) 100%) !important;
+  box-shadow:
+    0 18px 48px rgba(92, 68, 33, .20),
+    0 2px 8px rgba(92, 68, 33, .08),
+    inset 0 1px 0 rgba(255,255,255,.98) !important;
+  color: #675235 !important;
+}
+
+.login-bonus-sheet::before {
+  border-color: rgba(177, 139, 70, .18) !important;
+}
+
+.login-bonus-kicker {
+  color: #b58a3a !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.9);
+}
+
+.login-bonus-sheet h2 {
+  color: #70562e !important;
+  text-shadow: none !important;
+}
+
+.login-bonus-sub {
+  color: #9a815e !important;
+}
+
+/* 7日分カード */
+.login-bonus-day {
+  border-color: rgba(183, 145, 75, .24) !important;
+  background: rgba(255,255,255,.64) !important;
+  color: #796444 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.96);
+}
+
+.login-bonus-day-num {
+  color: #9d835c !important;
+}
+
+.login-bonus-day img {
+  filter: drop-shadow(0 3px 7px rgba(132, 99, 40, .13)) !important;
+}
+
+.login-bonus-day b {
+  color: #8a6527 !important;
+}
+
+.login-bonus-day.is-current {
+  border-color: rgba(191, 144, 48, .66) !important;
+  background:
+    linear-gradient(180deg, rgba(252,239,205,.88), rgba(255,252,244,.92)) !important;
+  box-shadow:
+    0 3px 12px rgba(141, 101, 30, .08),
+    inset 0 0 18px rgba(209, 169, 80, .12) !important;
+}
+
+.login-bonus-day.is-special {
+  background:
+    linear-gradient(160deg, rgba(248,227,178,.78), rgba(255,251,240,.92)) !important;
+}
+
+.login-bonus-day.is-special b {
+  color: #a66f12 !important;
+}
+
+.login-bonus-day.is-claimed {
+  opacity: .66;
+}
+
+.login-bonus-check {
+  background: linear-gradient(180deg, #ddbb69, #bd8730) !important;
+  color: #fffdf7 !important;
+  border: 1px solid rgba(255,255,255,.82);
+  box-shadow: 0 2px 7px rgba(125, 84, 21, .18);
+}
+
+/* TODAYエリア */
+.login-bonus-today {
+  border-top-color: rgba(183,145,75,.22) !important;
+  border-bottom-color: rgba(183,145,75,.22) !important;
+  background:
+    linear-gradient(90deg, transparent, rgba(222,190,121,.12), transparent) !important;
+}
+
+.login-bonus-today-label {
+  color: #aa7c2c !important;
+}
+
+.login-bonus-today b {
+  color: #9a6b1e !important;
+  text-shadow: 0 1px 0 #fff;
+}
+
+.login-bonus-today div span {
+  color: #9c8767 !important;
+}
+
+/* 受け取るボタン */
+.login-bonus-claim-btn {
+  border-color: rgba(179, 137, 61, .52) !important;
+  background:
+    linear-gradient(180deg, #fffdf7 0%, #f6e8c6 55%, #ead5a6 100%) !important;
+  color: #806022 !important;
+  box-shadow:
+    0 5px 14px rgba(112, 79, 27, .11),
+    inset 0 1px 0 rgba(255,255,255,.98) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.9);
+}
+
+.login-bonus-claim-btn:active:not(:disabled) {
+  background:
+    linear-gradient(180deg, #f7ead0 0%, #ead6a9 100%) !important;
+}
+
+.login-bonus-claim-btn:disabled {
+  color: #9a896d !important;
+  background: linear-gradient(180deg, #faf6ed, #eee5d6) !important;
+}
+
+.login-bonus-status {
+  color: #8f754f !important;
+}
+
+/* 受取完了時も暗色化せず、金色の一瞬の輝きだけにする */
+@keyframes loginBonusReceive {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow:
+      0 18px 48px rgba(92, 68, 33, .20),
+      0 2px 8px rgba(92, 68, 33, .08),
+      inset 0 1px 0 rgba(255,255,255,.98);
+  }
+  45% {
+    filter: brightness(1.06);
+    box-shadow:
+      0 18px 52px rgba(160, 117, 39, .24),
+      0 0 28px rgba(222, 184, 94, .30),
+      inset 0 0 24px rgba(255, 237, 183, .34);
+  }
 }

@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=306-home-bg-layers">
+  <link rel="stylesheet" href="css/style.css?v=308-home-bg-2assets">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -306,12 +306,17 @@
 </div>
 
 <div id="screen-main" class="screen">
-  <!-- Home background motion: static chara_bg + three transparent animated layers -->
-  <div class="home-cloud-motion-layer" aria-hidden="true">
-    <img class="home-bg-motion-img home-bg-motion-04" src="images/chara_bg_04.webp" alt="">
-    <img class="home-bg-motion-img home-bg-motion-05" src="images/chara_bg_05.webp" alt="">
-    <img class="home-bg-motion-img home-bg-motion-06" src="images/chara_bg_06.webp" alt="">
+  <!-- Home background: moving sky -> static transparent building -->
+  <div class="home-sky-scroll-layer" aria-hidden="true">
+    <div class="home-sky-scroll-track">
+      <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="">
+      <img class="home-sky-scroll-img home-sky-scroll-img-mirror" src="images/chara_bg_sky.webp" alt="">
+      <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="">
+      <img class="home-sky-scroll-img home-sky-scroll-img-mirror" src="images/chara_bg_sky.webp" alt="">
+    </div>
   </div>
+
+  <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true">
   <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
     <img src="images/mail.webp" alt="お知らせ">
   </button>

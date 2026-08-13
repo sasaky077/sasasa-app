@@ -337,45 +337,44 @@ function _clearActionModesKeepUnit(uid) {
 // ============================================================
 // アイテムパネル位置調整
 // ============================================================
-// #b32-item-panel は body 直下 fixed のため、#battle32-root 配下のCSSだけでは
-// ロスター（キャラパネル）の上へ積み上げにくい。
-// iPhone14/SE系では「グリッド → item → キャラパネル」の順に見えるよう、
-// ロスター実測位置を基準にアイテム欄を配置する。
+// ITEM DOCK は盤面そのものを一切動かさず、盤面左下の外側へ独立配置する。
+// #b32-item-panel は body 直下 fixed のままなので、戦闘ロジック・盤面サイズ・
+// ロスター・LINK・加護のレイアウトには触れない。
 function _positionItemPanel() {
   const el = document.getElementById('b32-item-panel');
   if (!el) return;
 
+  const board = document.getElementById('b32-board');
   const root = document.getElementById(ROOT_ID);
-  const roster = document.getElementById('b32-roster-panel');
-  const isPhoneNarrow = !!(root && (root.classList.contains('b32-vp-iphone14') || root.classList.contains('b32-vp-se')));
+  if (!board || !root) return;
 
-  if (!isPhoneNarrow) {
-    el.style.left = 'auto';
-    el.style.right = '8px';
-    el.style.transform = 'none';
-    el.style.bottom = 'calc(270px + env(safe-area-inset-bottom, 0px))';
-    el.style.flexDirection = 'column';
-    return;
-  }
+  const br = board.getBoundingClientRect();
+  const er = el.getBoundingClientRect();
 
-  // iPhone14/SE系：キャラパネルの直上、中央寄せ。
-  // roster がまだ未計測の瞬間だけCSS変数のフォールバックを使う。
-  let bottomPx = null;
-  if (roster && getComputedStyle(roster).display !== 'none') {
-    const rr = roster.getBoundingClientRect();
-    if (rr.height > 0 && rr.top > 0) {
-      // item の下端を roster 上端の少し上に置く。
-      bottomPx = Math.max(0, window.innerHeight - rr.top + 6);
-    }
-  }
+  // PCでbodyが430px幅に制限されるケースも含め、実際のBattle32ルート範囲内に収める。
+  const rr = root.getBoundingClientRect();
+  const viewLeft = Number.isFinite(rr.left) ? rr.left : 0;
+  const viewRight = Number.isFinite(rr.right) ? rr.right : window.innerWidth;
 
-  el.style.left = '50%';
+  const panelW = Math.max(52, er.width || el.offsetWidth || 52);
+  const panelH = Math.max(52, er.height || el.offsetHeight || 52);
+
+  // 盤面左端から8px空けて外側へ。
+  // 左端に余裕がない端末では画面内6pxを最低ラインにして、盤面には影響させない。
+  let leftPx = br.left - panelW - 8;
+  leftPx = Math.max(viewLeft + 6, Math.min(leftPx, viewRight - panelW - 6));
+
+  // 赤枠で示した盤面左下の余白へ、下揃えで縦置き。
+  // 最大3枠になっても上方向へ伸びるだけなのでロスターを押し下げない。
+  let topPx = br.bottom - panelH;
+  topPx = Math.max(rr.top + 6, Math.min(topPx, rr.bottom - panelH - 6));
+
+  el.style.left = `${Math.round(leftPx)}px`;
   el.style.right = 'auto';
-  el.style.transform = 'translateX(-50%)';
-  el.style.bottom = bottomPx != null
-    ? `${bottomPx}px`
-    : 'calc(var(--b32-actions-h, 74px) + 96px + 10px + env(safe-area-inset-bottom, 0px))';
-  el.style.flexDirection = 'row';
+  el.style.top = `${Math.round(topPx)}px`;
+  el.style.bottom = 'auto';
+  el.style.transform = 'none';
+  el.style.flexDirection = 'column';
 }
 
 // ============================================================
@@ -6455,10 +6454,44 @@ function _onHealEvent(data) {
  }, 240);
 }
 
+// ハヤテ：月光モード ON/OFF の瞬間だけ「ピカーン」変身エフェクトを出す。
+function _onHayateMoonModeChange(data) {
+ if (!data || !data.target) return;
+
+ // 先に再描画し、白い閃光の下でユニット画像を切り替える。
+ if (typeof window.renderBattle32UI === 'function') {
+   window.renderBattle32UI();
+ }
+
+ const pos = _getUnitScreenPos(data.target);
+ if (!pos) return;
+
+ const fx = document.createElement('div');
+ fx.className = `b32-hayate-moon-transform-fx ${data.active ? 'enter' : 'exit'}`;
+ fx.style.left = `${pos.x}px`;
+ fx.style.top = `${pos.y}px`;
+ fx.innerHTML = `
+   <span class="b32-hayate-moon-transform-burst"></span>
+   <span class="b32-hayate-moon-transform-ring ring-1"></span>
+   <span class="b32-hayate-moon-transform-ring ring-2"></span>
+   <span class="b32-hayate-moon-transform-ray ray-1"></span>
+   <span class="b32-hayate-moon-transform-ray ray-2"></span>
+   <span class="b32-hayate-moon-transform-ray ray-3"></span>
+   <span class="b32-hayate-moon-transform-ray ray-4"></span>
+   <span class="b32-hayate-moon-transform-label">${data.active ? '月光モード' : '月光解除'}</span>
+ `;
+ document.body.appendChild(fx);
+
+ setTimeout(() => {
+   if (fx.parentNode) fx.parentNode.removeChild(fx);
+ }, 920);
+}
+
  // 公開：hookBattle32Start から呼べるように
  window._b32OnDamage = _onDamageEvent;
  window._b32OnHeal = _onHealEvent;
  window._b32OnStatusChange = _onStatusChangeEvent;
+ window._b32OnHayateMoonModeChange = _onHayateMoonModeChange;
  window._b32OnCoreDamage = _showCoreDamageEvent;
 
  window._b32EndSkill = function () {
@@ -7777,8 +7810,8 @@ function b32StatusEffectBadgesHtml(unit, compact, blessing) {
  const isDone = u.side === 'ally' && phase === 'skill' && !!(_uh.move && _uh.skill);
 
 
- // ハヤテ：HIT & AWAYモード中は盤面上で黄色いオーラを表示する。
- const isHayateHaaMode =
+ // ハヤテ：月光モード中は専用ユニット画像＋月光オーラを表示する。
+ const isHayateMoonMode =
    u.side === 'ally' &&
    Number(u.id || u.charaId || 0) === 12 &&
    Number(u.hp || 0) > 0 &&
@@ -7786,6 +7819,7 @@ function b32StatusEffectBadgesHtml(unit, compact, blessing) {
 
  let inner = '';
 const displayImg =
+ (isHayateMoonMode ? 'images/chara_12_battle_back_moon.webp' : null) ||
  u.battleBackImg ||
  u.battleBack ||
  u.img ||
@@ -7796,7 +7830,7 @@ const battleBackScale = getUnitUiScale(u, 'battleBack');
 const battleBackY = getUnitUiOffsetY(u, 'battleBack');
 
 
-if (isHayateHaaMode) {
+if (isHayateMoonMode) {
  inner += `
  <div class="b32-hayate-haa-aura" aria-hidden="true">
    <span class="b32-hayate-haa-ring"></span>
@@ -7905,7 +7939,7 @@ const activeEnemyClass =
 const extraCls =
  (isDone ? ' skill-done' : '') +
  (u.isBoss ? ' boss' : '') +
- (isHayateHaaMode ? ' hayate-haa-mode' : '') +
+ (isHayateMoonMode ? ' hayate-haa-mode hayate-moon-mode' : '') +
  summonClass +
  midBossClass +
  enemyIdClass +
@@ -9030,10 +9064,14 @@ if (listEl) {
 
  function getBlessingUiDef(b) {
    if (!b) return null;
+   const blessingId = String(b.id || '');
    return {
      name: `${b.name || '加護'} Lv.${Number(b.level || 1)}`,
      invName: b.invName || 'INV',
      img: b.panelImg || 'images/unknown.webp',
+     // remnant_01 ～ remnant_08 は同じ命名規則で自動解決。
+     // マスターデータ側に cutinImg があればそちらを優先する。
+     cutinImg: b.cutinImg || (blessingId ? `images/${blessingId}_cutin.webp` : ''),
      passive: String((b.text && b.text.passive) || '').replace(/^常時[：:]/, ''),
      condition: String((b.text && b.text.condition) || '').replace(/^INV条件[：:]/, ''),
      effect: String((b.text && b.text.inv) || '').replace(/^INV[：:]/, '')
@@ -9135,6 +9173,127 @@ if (listEl) {
    _setBlessingInfoOpen(false);
  };
 
+ // ============================================================
+ // Remnant加護 INV カットイン
+ // 暗転 → 横からカットイン → INV + 技名 → 白フラッシュ → 効果発動
+ // ============================================================
+ let _b32BlessingInvCutinRunning = false;
+ const _b32BlessingCutinImageCache = new Map();
+
+ function _preloadBlessingInvCutin(src, timeoutMs = 2600) {
+   if (!src) return Promise.resolve(false);
+   if (_b32BlessingCutinImageCache.has(src)) {
+     return _b32BlessingCutinImageCache.get(src);
+   }
+
+   const promise = new Promise(resolve => {
+     const img = new Image();
+     let settled = false;
+     const finish = ok => {
+       if (settled) return;
+       settled = true;
+       clearTimeout(timer);
+       resolve(ok);
+     };
+     const timer = setTimeout(() => finish(false), timeoutMs);
+     img.onload = () => {
+       if (typeof img.decode === 'function') {
+         img.decode().catch(() => {}).finally(() => finish(true));
+       } else {
+         finish(true);
+       }
+     };
+     img.onerror = () => {
+       console.warn('[Battle32UI] blessing INV cutin image load failed:', src);
+       finish(false);
+     };
+     img.decoding = 'async';
+     img.src = src;
+     if (img.complete && img.naturalWidth > 0) finish(true);
+   });
+
+   _b32BlessingCutinImageCache.set(src, promise);
+   return promise;
+ }
+
+ function _removeBlessingInvCutin() {
+   const old = document.getElementById('b32-blessing-inv-cutin');
+   if (old) old.remove();
+   document.body.classList.remove('b32-blessing-inv-cutin-open');
+ }
+
+ async function _showBlessingInvCutin(blessing) {
+   if (!blessing || _b32BlessingInvCutinRunning) return false;
+
+   const def = getBlessingUiDef(blessing);
+   if (!def) return false;
+
+   _b32BlessingInvCutinRunning = true;
+   _removeBlessingInvCutin();
+
+   const src = def.cutinImg || '';
+   await _preloadBlessingInvCutin(src);
+
+   const overlay = document.createElement('div');
+   overlay.id = 'b32-blessing-inv-cutin';
+   overlay.className = 'b32-blessing-inv-cutin';
+   overlay.setAttribute('aria-hidden', 'true');
+
+   overlay.innerHTML = `
+     <div class="b32-blessing-inv-cutin-dark"></div>
+     <div class="b32-blessing-inv-cutin-streaks" aria-hidden="true"></div>
+     <div class="b32-blessing-inv-cutin-art-wrap">
+       ${src ? `<img class="b32-blessing-inv-cutin-art" src="${src}" alt="">` : ''}
+     </div>
+     <div class="b32-blessing-inv-cutin-copy">
+       <div class="b32-blessing-inv-cutin-kicker">INV</div>
+       <div class="b32-blessing-inv-cutin-name">${b32EscapeHtml(def.invName || 'INV')}</div>
+       <div class="b32-blessing-inv-cutin-remnant">${b32EscapeHtml(blessing.remnantName || blessing.name || '')}</div>
+     </div>
+     <div class="b32-blessing-inv-cutin-flash" aria-hidden="true"></div>
+   `;
+
+   document.body.appendChild(overlay);
+   document.body.classList.add('b32-blessing-inv-cutin-open');
+
+   // DOM反映後に開始クラスを付けることで毎回アニメーションを確実に再生する。
+   requestAnimationFrame(() => {
+     requestAnimationFrame(() => overlay.classList.add('play'));
+   });
+
+   // 白フラッシュのピーク直後に解決。
+   // 呼び出し側はこの await 後に実際のINV効果を発動する。
+   await new Promise(resolve => setTimeout(resolve, 1640));
+
+   overlay.classList.add('finish');
+   await new Promise(resolve => setTimeout(resolve, 180));
+   _removeBlessingInvCutin();
+   _b32BlessingInvCutinRunning = false;
+   return true;
+ }
+
+ async function _executeBlessingInvAfterCutin(targetUid) {
+   if (_b32BlessingInvCutinRunning) return false;
+   if (!window.Battle32 || typeof window.Battle32.activateBlessingInv !== 'function') return false;
+
+   const bs = _bs();
+   const blessing = bs && bs.blessing;
+   if (!blessing) return false;
+
+   window._b32CloseBlessingInfo();
+   const chooser = document.getElementById('b32-blessing-target-chooser');
+   if (chooser) chooser.classList.remove('show');
+
+   await _showBlessingInvCutin(blessing);
+
+   // カットイン終了後に初めて本体効果を発動。
+   const result = window.Battle32.activateBlessingInv(targetUid);
+   if (result === true && typeof window.renderBattle32UI === 'function') {
+     window.renderBattle32UI();
+   }
+   return result;
+ }
+
  function _openBlessingTargetChooser(result) {
    const targets = result && Array.isArray(result.targets) ? result.targets : [];
    let overlay = document.getElementById('b32-blessing-target-chooser');
@@ -9144,36 +9303,54 @@ if (listEl) {
      overlay.className = 'b32-blessing-target-chooser';
      document.body.appendChild(overlay);
    }
+
    const title = result.targetType === 'lost_ally' ? '蘇生する味方を選択' : '攻撃する敵を選択';
    overlay.innerHTML = `<div class="b32-blessing-target-card"><div class="b32-blessing-target-title">${title}</div><div class="b32-blessing-target-list"></div><button class="b32-blessing-target-cancel" type="button">キャンセル</button></div>`;
+
    const list = overlay.querySelector('.b32-blessing-target-list');
    targets.forEach(target => {
      const btn = document.createElement('button');
      btn.type = 'button';
      btn.className = 'b32-blessing-target-btn';
      btn.textContent = target.name || '対象';
-     btn.onclick = function () {
-       const ok = window.Battle32.activateBlessingInv(target._uid);
-       if (ok === true) {
-         overlay.classList.remove('show');
-         window._b32CloseBlessingInfo();
-       }
+     btn.onclick = async function () {
+       if (_b32BlessingInvCutinRunning) return;
+       overlay.classList.remove('show');
+       await _executeBlessingInvAfterCutin(target._uid);
      };
      list.appendChild(btn);
    });
+
    overlay.querySelector('.b32-blessing-target-cancel').onclick = () => overlay.classList.remove('show');
    overlay.classList.add('show');
  }
 
- window._b32ActivateBlessingInv = function () {
-   if (window.Battle32 && typeof window.Battle32.activateBlessingInv === 'function') {
-     const result = window.Battle32.activateBlessingInv();
-     if (result && result.needsTarget) {
-       _openBlessingTargetChooser(result);
-     } else if (result === true) {
-       window._b32CloseBlessingInfo();
-     }
+ window._b32ActivateBlessingInv = async function () {
+   if (_b32BlessingInvCutinRunning) return;
+   if (!window.Battle32 || typeof window.Battle32.activateBlessingInv !== 'function') return;
+
+   const bs = _bs();
+   const blessing = bs && bs.blessing;
+   if (!blessing) return;
+
+   // 対象指定型は「対象選択 → カットイン → 効果」の順。
+   // 先に activateBlessingInv() を呼ぶと対象不要型では即発動してしまうため、
+   // UI側で effectType を見て対象選択の要否だけ判断する。
+   const effectType = blessing.invEffectType || 'critical_up';
+   if (effectType === 'single_enemy_damage' || effectType === 'revive_ally') {
+     const targets = typeof window.Battle32.getBlessingInvTargets === 'function'
+       ? window.Battle32.getBlessingInvTargets()
+       : [];
+
+     _openBlessingTargetChooser({
+       needsTarget: true,
+       targetType: effectType === 'revive_ally' ? 'lost_ally' : 'enemy',
+       targets
+     });
+     return;
    }
+
+   await _executeBlessingInvAfterCutin();
  };
 
  function renderButtons(bs) {
@@ -9672,26 +9849,31 @@ let ultGaugeHtml = '';
  }
 
 // ============================================================
-// アイテム2枠パネル（ローグライト専用）
+// アイテム3枠パネル（ローグライト専用）
 // ============================================================
-function _getRogueliteItemIcon(item) {
-  if (!item) return '📦';
-  if (item.type === 'heal') return '💊';
-  if (item.type === 'move_ally') return '🌀';
-  if (item.type === 'swap_ally') return '🔄';
-  if (item.type === 'swap_enemy') return '🌀';
-  if (item.type === 'link_recover') return '🔗';
-  if (item.type === 'shinki_max') return '🔥';
-  if (item.type === 'enemy_hp_cut_all') return '☄️';
-  if (item.type === 'guard') return '🛡️';
-  if (item.type === 'stun_enemy') return '⚡';
-  return '📦';
+function _getRogueliteItemAsset(item) {
+  const empty = { src: 'images/item_battle_empty.webp', alt: 'EMPTY', empty: true };
+  if (!item) return empty;
+
+  if (item.type === 'heal') {
+    return { src: 'images/item_battle_hp.webp', alt: item.name || 'HP HEAL' };
+  }
+  if (item.type === 'link_recover') {
+    return { src: 'images/item_battle_link.webp', alt: item.name || 'LINK HEAL' };
+  }
+  if (item.type === 'swap_ally' || item.type === 'move_ally' || item.type === 'swap_enemy') {
+    return { src: 'images/item_battle_switch.webp', alt: item.name || 'SWAP' };
+  }
+
+  // 既定外アイテムも Empty ではなく既知アイコンに寄せるより、
+  // まずは枠レイアウトを崩さないことを優先して Empty 扱いにする。
+  return empty;
 }
 
 function renderItemPanel(bs) {
   let el = document.getElementById('b32-item-panel');
 
-  // ★追加：バトルUIが終了済み、またはローグライト外、または戦闘終了済みなら作らない/消す
+  // バトルUIが終了済み、またはローグライト外、または戦闘終了済みなら作らない/消す
   if (
     window.__BATTLE32_UI_ACTIVE__ === false ||
     !bs ||
@@ -9702,80 +9884,78 @@ function renderItemPanel(bs) {
     return;
   }
 
-  const items = bs.items || [];
+  const items = Array.isArray(bs.items) ? bs.items : [];
 
-  // アイテム未所持ならパネル自体を出さない。
-  // 空スロットだけの固定UIが、iPhone14系で召喚/移動マス選択を邪魔していたため。
-  if (!items.some(Boolean)) {
-    if (el) el.remove();
-    return;
-  }
-
-  // ★ここから下で初めて作る
   if (!el) {
     el = document.createElement('div');
     el.id = 'b32-item-panel';
     document.body.appendChild(el);
   }
 
-  const root = document.getElementById(ROOT_ID);
-  const isPhoneNarrow = !!(root && (root.classList.contains('b32-vp-iphone14') || root.classList.contains('b32-vp-se')));
-
-  // body直下のfixed UIなので、CSSの親セレクタに頼らずJSで配置を同期する。
-  // iPhone14系では「グリッド → item → キャラパネル」の順に見えるよう、
-  // ロスター直上に横置きする。詳細なbottom値は _positionItemPanel() で実測補正。
+  // 土台画像は使わず、各スロット画像そのものを縦に並べる。
+  // これで「枠画像とアイコン位置を合わせる」問題を根本的に無くす。
   el.style.cssText = [
     'position:fixed',
-    isPhoneNarrow ? 'left:50%' : 'right:8px',
-    isPhoneNarrow ? 'right:auto' : 'left:auto',
-    isPhoneNarrow ? 'transform:translateX(-50%)' : 'transform:none',
-    isPhoneNarrow
-      ? 'bottom:calc(var(--b32-actions-h, 74px) + 96px + 10px + env(safe-area-inset-bottom, 0px))'
-      : 'bottom:calc(270px + env(safe-area-inset-bottom, 0px))',
+    'left:6px',
+    'right:auto',
+    'top:auto',
+    'bottom:auto',
+    'transform:none',
     'z-index:3000001',
+    'width:72px',
     'display:flex',
-    isPhoneNarrow ? 'flex-direction:row' : 'flex-direction:column',
-    'gap:4px',
+    'flex-direction:column',
+    'align-items:center',
+    'justify-content:flex-start',
+    'gap:6px',
+    'background:transparent',
+    'box-shadow:none',
     'pointer-events:none',
+    'overflow:visible',
   ].join(';');
 
   requestAnimationFrame(_positionItemPanel);
 
-  const slots = [0, 1].map(i => {
-    const item = items[i];
-    if (!item) {
-      return `<div style="
-        width:52px;height:52px;border-radius:0;
-        pointer-events:none;
-        border:1px dashed rgba(100,80,200,.25);
-        background:rgba(20,15,40,.4);
-        display:flex;align-items:center;justify-content:center;
-        font-size:10px;color:rgba(100,80,160,.35);
-      ">—</div>`;
-    }
+  const slots = [0, 1, 2].map(i => {
+    const item = items[i] || null;
+    const isRealItem = !!item;
+    const asset = _getRogueliteItemAsset(item);
+    const linkCost = isRealItem ? Number(item.linkCost != null ? item.linkCost : 1) : 0;
+    const canUse = !!(
+      isRealItem &&
+      bs.phase === 'skill' &&
+      !bs.result &&
+      bs.link &&
+      Number(bs.link.current || 0) >= linkCost &&
+      !item.used
+    );
+    const isActive = isRealItem && _itemMode && _itemSlotIndex === i;
 
-    const linkCost = item.linkCost != null ? item.linkCost : 1;
-    const canUse = bs.phase === 'skill' && !bs.result && bs.link && bs.link.current >= linkCost && !item.used;
-    const isActive = _itemMode && _itemSlotIndex === i;
+    const classes = [
+      'b32-item-dock-slot',
+      isRealItem ? 'has-item' : 'is-empty',
+      canUse ? 'is-usable' : 'is-disabled',
+      isActive ? 'is-active' : ''
+    ].filter(Boolean).join(' ');
 
-    return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
-      width:52px;min-height:52px;border-radius:0;padding:4px;
-      pointer-events:${canUse ? 'auto' : 'none'};
-      border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
-      background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
-      opacity:${canUse ? '1' : '0.45'};
-      cursor:${canUse ? 'pointer' : 'default'};
-      display:flex;flex-direction:column;align-items:center;gap:2px;
-      box-shadow:${isActive ? '0 0 10px rgba(200,160,80,.4)' : 'none'};
-    ">
-      <div style="font-size:16px;line-height:1;">${_getRogueliteItemIcon(item)}</div>
-      <div style="font-size:7px;color:rgba(220,190,120,.8);text-align:center;line-height:1.2;">${item.name}</div>
-      <div style="font-size:7px;color:rgba(140,110,200,.7);">L${linkCost}</div>
+    const title = isRealItem
+      ? `${item.name || 'ITEM'}${item.desc ? '｜' + item.desc : ''}`
+      : 'EMPTY';
+
+    return `<div
+      class="${classes}"
+      ${canUse ? `onclick="_b32OnItemTap(${i})"` : ''}
+      title="${title.replace(/"/g, '&quot;')}"
+      style="pointer-events:${canUse ? 'auto' : 'none'};cursor:${canUse ? 'pointer' : 'default'};"
+    >
+      <img class="b32-item-slot-art" src="${asset.src}" alt="${asset.alt || title}">
+      ${isRealItem ? `<div class="b32-item-cost-badge">L${linkCost}</div>` : ''}
     </div>`;
   }).join('');
 
   el.innerHTML = slots;
 }
+
 
  // ============================================================
  // 召喚マスのハイライト（renderBoard内で参照）
@@ -10362,6 +10542,10 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
      statusChange: (data) => {
        window._b32OnStatusChange && window._b32OnStatusChange(data);
        if (typeof userCb.statusChange === 'function') userCb.statusChange(data);
+     },
+     moonModeChange: (data) => {
+       window._b32OnHayateMoonModeChange && window._b32OnHayateMoonModeChange(data);
+       if (typeof userCb.moonModeChange === 'function') userCb.moonModeChange(data);
      },
      coreDamage: (data) => {
        window._b32OnCoreDamage && window._b32OnCoreDamage(data);

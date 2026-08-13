@@ -1,5 +1,5 @@
 // enemy_intro.js
-// 怪異登場演出：黒フェード → イラストドーン → グリッチ → 白フラッシュ → バトル遷移
+// 残穢登場演出：黒フェード → イラストドーン → グリッチ → 白フラッシュ → バトル遷移
 
 (function () {
 
@@ -18,7 +18,7 @@
     ].join(';');
 
     el.innerHTML = `
-      <!-- 怪異イラスト -->
+      <!-- 残穢イラスト -->
       <img id="ei-img" src="" alt=""
         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.01s;">
 
@@ -48,7 +48,7 @@
         font-size:11px;letter-spacing:4px;
         color:rgba(232,228,220,0);
         transition:color 1s ease 0.4s;
-      ">怪異が顕現した</div>
+      ">残穢が顕現した</div>
 
       <!-- グリッチレイヤー -->
       <div id="ei-glitch" style="
@@ -116,7 +116,7 @@
     // 旧実装では #ei-name の初期HTML「??????」を変更していなかったため、
     // enemyData.name が正しく渡っていてもステージ入り演出では常に ?????? のままだった。
     name.textContent = introName || '??????';
-    sub.textContent = introSubText || '怪異が顕現した';
+    sub.textContent = introSubText || '残穢が顕現した';
 
     img.style.opacity = '0';
     img.style.transform = 'scale(1.08)';
@@ -248,7 +248,7 @@
       || opt.enemyUpImg
       || 'images/enemy_01.webp';
     const introName = _resolveIntroName(introEnemy, opt);
-    const introSub = (introEnemy && (introEnemy.introSub || introEnemy.subText)) || opt.introSubText || '怪異が顕現した';
+    const introSub = (introEnemy && (introEnemy.introSub || introEnemy.subText)) || opt.introSubText || '残穢が顕現した';
 
     console.log('[EnemyIntro] display:', { introName, img, introEnemy, opt });
 
@@ -312,7 +312,7 @@
     };
     runIntro(DUMMY_ENEMY.img, () => {
       startBattle(DUMMY_PARTY, DUMMY_ENEMY);
-    }, DUMMY_ENEMY.name, '怪異が顕現した');
+    }, DUMMY_ENEMY.name, '残穢が顕現した');
   };
 
   // party_select.jsのconfirmPartySelectから呼ぶ用にpartyを保存

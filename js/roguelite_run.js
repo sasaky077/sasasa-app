@@ -28,6 +28,35 @@
     return [ROGUELITE_FIXED_FIRST_CHARA_ID, ...rest].slice(0, 4);
   }
 
+  const TEST_START_ITEMS = [
+    {
+      id: 'test_heal_potion',
+      name: '応急霊薬',
+      type: 'heal',
+      target: 'ally',
+      value: 0.30,
+      linkCost: 1,
+      desc: '味方単体のHPを最大HPの30%回復',
+    },
+    {
+      id: 'test_swap_scroll',
+      name: '転位符',
+      type: 'swap_ally',
+      target: 'ally',
+      linkCost: 1,
+      desc: '味方2体の位置を入れ替える',
+    },
+    {
+      id: 'test_link_crystal',
+      name: 'リンク結晶',
+      type: 'link_recover',
+      target: 'instant',
+      value: 3,
+      linkCost: 0,
+      desc: 'LINKを3回復',
+    },
+  ];
+
   // ── ラン定義 ──────────────────────────────────────────
   // 1つ目: 既存ローグライトラン
   // 2つ目: サキエル降臨（雑魚3戦 → サキエル）
@@ -393,7 +422,7 @@
       debugOnly: runDef.debugOnly === true,
       stageNo:  1,
       options:  [],   // 取得済みOP オブジェクト（passive）
-      items:    [],   // 取得済みアイテム（最大2枠）
+      items:    [],   // 取得済みアイテム（最大3枠）
       totalTurns: 0,  // ラン通算クリアターン数
       stageTurns: [], // 各ステージのクリアターン履歴
       partyIds: normalizeRoguelitePartyIds(partyIds),
@@ -406,6 +435,13 @@
 
   function start(partyIds, runId, blessingId) {
     _state = _newState(partyIds, runId, blessingId);
+
+    // デイリー「テスト」専用:
+    // 開始時のみ、検証用の3アイテムを最初から所持させる。
+    if (_state && _state.runId === 'test' && (!_state.items || !_state.items.length)) {
+      _state.items = TEST_START_ITEMS.map(item => ({ ...item }));
+    }
+
     console.log('[RogueliteRun] ラン開始', { partyIds, runId: _state.runId, state: _state });
     return _state;
   }
@@ -445,8 +481,8 @@
     const kind = op.rewardKind || 'passive';
 
     if (kind === 'item' && op.item) {
-      if (_state.items.length >= 2) {
-        console.warn('[RogueliteRun] アイテム枠が満杯（最大2）:', op.item.name);
+      if (_state.items.length >= 3) {
+        console.warn('[RogueliteRun] アイテム枠が満杯（最大3）:', op.item.name);
         return;
       }
       _state.items.push({ ...op.item });
@@ -488,7 +524,7 @@
   function setItems(items) {
     if (!_state || !_state.active) return;
     _state.items = Array.isArray(items)
-      ? items.filter(Boolean).slice(0, 2).map(item => ({ ...item }))
+      ? items.filter(Boolean).slice(0, 3).map(item => ({ ...item }))
       : [];
   }
 
