@@ -354,22 +354,40 @@
   box-shadow: 0 0 18px rgba(255,220,120,.75);
   animation: rlRunVictoryLine 1500ms ease-out both;
 }
-.rl-run-victory-title {
+.rl-run-victory-title-wrap {
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transform: translateX(.08em);
+  opacity: 0;
+  animation: rlRunVictoryTitle 2300ms cubic-bezier(.16,1,.3,1) both;
+}
+.rl-run-victory-title {
   font-family: "Noto Serif JP", "Cinzel", serif;
   font-size: clamp(2rem, 10vw, 4.2rem);
   font-weight: 900;
-  letter-spacing: .34em;
+  letter-spacing: .18em;
   color: #fff3b0;
+  -webkit-text-stroke: .5px rgba(45,20,0,.42);
   text-shadow:
-    0 0 8px rgba(255,255,255,.82),
-    0 0 24px rgba(255,214,96,.92),
-    0 0 64px rgba(130,75,255,.72),
-    0 3px 8px rgba(0,0,0,.98);
-  transform: translateX(.17em);
-  opacity: 0;
-  animation: rlRunVictoryTitle 2300ms cubic-bezier(.16,1,.3,1) both;
+    0 0 2px rgba(255,255,255,.45),
+    0 0 10px rgba(255,214,96,.40),
+    0 2px 6px rgba(0,0,0,.92);
+  line-height: 1.08;
+  white-space: nowrap;
+}
+.rl-run-victory-subtitle {
+  font-family: "Cinzel", serif;
+  font-size: clamp(.68rem, 3vw, 1rem);
+  font-weight: 700;
+  letter-spacing: .22em;
+  color: rgba(255,244,198,.88);
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
+  white-space: nowrap;
 }
 .b32-unit.enemy.boss.rl-boss-vanish,
 .b32-unit.enemy.midboss.rl-boss-vanish,
@@ -399,10 +417,10 @@
   100% { opacity: 0; transform: scaleX(1.15); }
 }
 @keyframes rlRunVictoryTitle {
-  0% { opacity: 0; transform: translateX(.17em) scale(.86); filter: blur(6px); }
-  18% { opacity: 1; transform: translateX(.17em) scale(1.05); filter: blur(0); }
-  70% { opacity: 1; transform: translateX(.17em) scale(1); }
-  100% { opacity: 0; transform: translateX(.17em) scale(1.08); filter: blur(4px); }
+  0% { opacity: 0; transform: translateX(.08em) scale(.94); }
+  18% { opacity: 1; transform: translateX(.08em) scale(1.03); }
+  70% { opacity: 1; transform: translateX(.08em) scale(1); }
+  100% { opacity: 0; transform: translateX(.08em) scale(1.04); }
 }
 
 /* ── リッチ版ラン結果 ── */
@@ -995,9 +1013,12 @@ function _makeStageProgressHtml(stageNo, baseClass) {
   const runDef = window.RogueliteRun && typeof window.RogueliteRun.getCurrentRunDef === 'function'
     ? window.RogueliteRun.getCurrentRunDef()
     : null;
+  const fallbackCount = window.RogueliteRun && typeof window.RogueliteRun.getStageCount === 'function'
+    ? Math.max(1, Number(window.RogueliteRun.getStageCount() || 1))
+    : Math.max(1, Number(stageNo || 1));
   const defs = Array.isArray(runDef && runDef.stageDefs) && runDef.stageDefs.length
     ? runDef.stageDefs
-    : [{}, {}, {}, { isBoss: true }];
+    : Array.from({ length: fallbackCount }, (_, i) => ({ isBoss: i === fallbackCount - 1 }));
 
   const maxStage = defs.length;
   const current = Math.max(1, Math.min(maxStage, Number(stageNo || 1)));
@@ -1436,6 +1457,12 @@ function _hideHud() {
     const dropHtml = isWin ? _buildResultDropHtml({ reward, shinjuItem, coreItem, evolutionMaterialItems: data.evolutionMaterialItems }) : '';
     const buildHtml = _buildResultBuildHtml(selectedRewards);
 
+    // ラン定義を正として総ステージ数を取得する。
+    // これにより 1戦・3戦・4戦など、各ランの構成変更へ自動追従する。
+    const stageCount = window.RogueliteRun && typeof window.RogueliteRun.getStageCount === 'function'
+      ? Math.max(1, Number(window.RogueliteRun.getStageCount() || 1))
+      : 1;
+
     ov.innerHTML = isWin ? `
       <div class="rl-result-panel rich rl-result-panel-compact">
         <div class="rl-result-score-head">
@@ -1452,7 +1479,7 @@ function _hideHud() {
           </div>
           <div class="rl-result-stat">
             <div class="rl-result-stat-label">STAGE</div>
-            <div class="rl-result-stat-value">4/4</div>
+            <div class="rl-result-stat-value">${stageCount}/${stageCount}</div>
           </div>
           <div class="rl-result-stat">
             <div class="rl-result-stat-label">GRADE</div>
@@ -1502,7 +1529,10 @@ function _hideHud() {
       fx.id = 'rl-run-victory-fx';
       fx.innerHTML = `
         <div class="rl-run-victory-line"></div>
-        <div class="rl-run-victory-title">殲 滅 完 了</div>
+        <div class="rl-run-victory-title-wrap">
+          <div class="rl-run-victory-title">還浄完了</div>
+          <div class="rl-run-victory-subtitle">EXPURGE COMPLETE</div>
+        </div>
       `;
       document.body.appendChild(fx);
 
@@ -2075,10 +2105,15 @@ async function _onBattleEnd(result, payload) {
   console.log('[RogueliteController] getRandomOptions:', window.getRandomOptions);
   console.log('[RogueliteController] excludeIds:', excludeIds);
 
+  const currentRunDef = window.RogueliteRun && typeof window.RogueliteRun.getCurrentRunDef === 'function'
+    ? window.RogueliteRun.getCurrentRunDef()
+    : null;
+
   window.RogueliteReward.show({
     currentStage,
     currentOptions,
     excludeIds,
+    stageDefs: Array.isArray(currentRunDef && currentRunDef.stageDefs) ? currentRunDef.stageDefs : [],
     onSelect: (selectedOp) => {
       console.log('[RogueliteController] 報酬選択 onSelect fired:', selectedOp);
 

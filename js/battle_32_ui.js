@@ -82,6 +82,25 @@ let _itemTargetUid = null;
  // ============================================================
  function initial(name) { return (name || '?')[0]; }
 
+ function b32UnitFootprintCells(unit) {
+  if (!unit) return [];
+  const offsets = Array.isArray(unit.footprintOffsets) && unit.footprintOffsets.length > 0
+    ? unit.footprintOffsets
+    : [{ dr: 0, dc: 0 }];
+  const cells = [];
+  const seen = new Set();
+  offsets.forEach(offset => {
+    const row = Number(unit.row) + Number(offset && offset.dr || 0);
+    const col = Number(unit.col) + Number(offset && offset.dc || 0);
+    if (!Number.isFinite(row) || !Number.isFinite(col) || row < 0 || row >= 8 || col < 0 || col >= 5) return;
+    const key = `${row}-${col}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    cells.push({ row, col, key });
+  });
+  return cells;
+ }
+
  function hpColor(hp, hpMax) {
  const r = hp / hpMax;
  if (r > 0.6) return '#5ad48a';
@@ -445,7 +464,7 @@ function _positionBlessingIcon() {
        [
          ...(rawBs.allies || []).filter(u => u.hp > 0),
          ...(rawBs.enemies || []).filter(u => u.hp > 0 || u.isBoss),
-       ].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
+       ].forEach(u => { b32UnitFootprintCells(u).forEach(cell => { unitMap[cell.key] = u; }); });
 
        cellsSet.forEach(key => {
          const unit = unitMap[key] || null;
@@ -777,7 +796,7 @@ function b32ComboSkillRangeCells(ally, bs) {
     ...((bs && bs.allies) || []).filter(u => u && u.hp > 0),
     ...((bs && bs.enemies) || []).filter(u => u && (u.hp > 0 || u.isBoss)),
   ].forEach(u => {
-    unitMap[`${u.row}-${u.col}`] = u;
+    b32UnitFootprintCells(u).forEach(cell => { unitMap[cell.key] = u; });
   });
 
   keys.forEach(key => {
@@ -6741,7 +6760,7 @@ function _onHealEvent(data) {
  ...bs.allies.filter(u => u.hp > 0),
  ...bs.enemies.filter(u => u.hp > 0 || u.isBoss),
  ...(bs.summons || []).filter(u => u && u.hp > 0),
- ].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
+ ].forEach(u => { b32UnitFootprintCells(u).forEach(cell => { unitMap[cell.key] = u; }); });
 
  // ── スキルフェーズ用ハイライト ──
  let skillSelectableUids = new Set();
@@ -7078,7 +7097,9 @@ if (_summonMode && isSummonCell && !unit) {
     comboOverlay +
     comboSkillOverlay +
     summonOverlay +
-    (unit ? renderUnit(unit, bs.phase) : renderCore(r, c, bs)) +
+    (unit && Number(unit.row) === r && Number(unit.col) === c
+      ? renderUnit(unit, bs.phase)
+      : (!unit ? renderCore(r, c, bs) : '')) +
     `</div>`
   );
  }

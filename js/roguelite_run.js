@@ -223,6 +223,30 @@
       ],
     },
 
+
+
+    test: {
+      id: 'test',
+      name: 'テスト',
+      subName: '9マス大型敵テスト',
+      // debugOnlyにはしない：通常のランクリア報酬（Coin / EXP等）を受け取る。
+      // 心核は roguelite_controller.js の ROGUELITE_CORE_DEFS に test を定義しないことで落ちない。
+      bossBattleStartImg: 'images/testenemy_battle_start.webp',
+      stageDefs: [
+        {
+          stage: 1,
+          isBoss: true,
+          label: 'TEST',
+          subLabel: 'テスト',
+          enemyIds: ['enemy_test_9cell'],
+          enemyRandomStartPosition: false,
+          enemyActionMode: 'all',
+          enemyActionsPerTurn: null,
+          turnLimit: 12,
+        },
+      ],
+    },
+
     debug_rivia_boss: {
       id: 'debug_rivia_boss', name: 'リヴィア戦（BOSS）', subName: 'CHAPTER 00 / DEBUG', debugOnly: true,
       bossBattleStartImg: 'images/remnant_03_battle_start.webp',

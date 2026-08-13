@@ -176,7 +176,6 @@
                 <span class="ninmu-daily-reward"><img src="images/item_wing.webp" alt="原初の翼環"><b>×1</b></span>
               </span>
             </span>
-            <span class="ninmu-stage-action">挑戦する</span>
           </button>
           <button class="ninmu-test-btn ninmu-test-btn-repeat" onclick="dailyNodeClear('intermediate')">
             <span class="ninmu-stage-mark">✥</span>
@@ -186,7 +185,6 @@
                 <span class="ninmu-daily-reward"><img src="images/item_kyoumeistone.webp" alt="共鳴石"><b>×1</b></span>
               </span>
             </span>
-            <span class="ninmu-stage-action">挑戦する</span>
           </button>
           <button class="ninmu-test-btn ninmu-test-btn-ex" onclick="dailyNodeClear('advanced')">
             <span class="ninmu-stage-mark">✥</span>
@@ -196,23 +194,15 @@
                 <span class="ninmu-daily-reward"><img src="images/icon_gem.webp" alt="ガチャ石"><b>×5</b></span>
               </span>
             </span>
-            <span class="ninmu-stage-action">挑戦する</span>
           </button>
         </div>
 
-        <section class="ninmu-detail-card" aria-label="選択中巡行の詳細">
-          <div class="ninmu-detail-visual" aria-hidden="true"></div>
-          <div class="ninmu-detail-copy">
-            <div class="ninmu-detail-head">
-              <h3>デイリー巡行</h3><span>推奨Lv. 1</span>
-            </div>
-            <p>毎日訪れる、小さな試練の巡礼。<br>静けさの中に、確かな成長のきざしを見出そう。</p>
-            <div class="ninmu-detail-reward-title">獲得可能アイテム</div>
-            <div class="ninmu-detail-rewards" aria-label="獲得可能アイテム">
-              <span>◈</span><span>◇</span><span>✿</span><span>●</span>
-            </div>
-          </div>
-        </section>
+        <button class="ninmu-test-btn ninmu-test-btn-test-entry" onclick="openRoguelitePartySelect('test')" aria-label="テストステージ">
+          <span class="ninmu-stage-mark">✥</span>
+          <span class="ninmu-stage-copy">
+            <span class="ninmu-test-btn-title">テスト</span>
+          </span>
+        </button>
       </div>
 
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
@@ -8065,32 +8055,32 @@ window.addEventListener('pagehide', function () {
 
 <script src="js/battle_range.js"></script>
 <script src="js/characters.js?v=281-image-preload-fix"></script>
-<script src="js/enemies.js?v=118-rivia-oblivion"></script>
+<script src="js/enemies.js?v=119-test-9cell"></script>
 <script src="js/battle.js"></script>
 <script src="js/battle_swipe.js?v=49"></script>
 
-<script src="js/stages.js?v=65-irish-rivia-select"></script>
-<script src="js/stage_select.js?v=71-irish-rivia-select"></script>
+<script src="js/stages.js?v=66-test-9cell"></script>
+<script src="js/stage_select.js?v=72-test-daily-entry"></script>
 <script src="js/party_select.js?v=105-blessing-four-lines"></script>
 <script src="js/enemy_intro.js"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=277-image-preload-fix">
 
-<script src="js/battle_range_32.js?v=134-sakiel-random5"></script>
+<script src="js/battle_range_32.js?v=135-test-9cell"></script>
 <script src="js/characters_32.js"></script>
 <script src="js/remnant_blessings.js"></script>
 <script src="js/combo_32.js?v=24-combo-range-static"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=348-image-preload-fix"></script>
-<script src="js/battle_32_ui.js?v=451-image-preload-fix"></script>
+<script src="js/battle_32.js?v=349-test-9cell"></script>
+<script src="js/battle_32_ui.js?v=452-test-9cell"></script>
 
 <!-- ローグライト（新規追加） -->
 <script src="js/roguelite_options.js"></script>
-<script src="js/roguelite_run.js?v=72-rivia-run"></script>
+<script src="js/roguelite_run.js?v=73-test-run"></script>
 <script src="js/roguelite_reward.js"></script>
 <script src="js/shinju.js?v=5-growth-thresholds"></script>
-<script src="js/roguelite_controller.js?v=82-rivia-two-mobs-rank24"></script>
+<script src="js/roguelite_controller.js?v=83-test-run"></script>
 <script src="js/roguelite_overseer_run.js?v=1"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->

@@ -1462,5 +1462,57 @@ ENEMIES.push({
   phase: 1, status: [], statusList: [],
 });
 
+
+
+// ============================================================
+// 特別巡行：テスト（9マス占有・HP1）
+// 中央3×3を1体で占有する大型敵。footprintOffsets は Battle32 側で
+// 移動不可セル・スキル当たり判定・敵タップ判定として扱う。
+// ============================================================
+TEST_ENEMIES.push({
+  id: 'enemy_test_9cell',
+  name: 'テスト',
+  displayName: 'テスト',
+  enemyName: 'テスト',
+  introName: 'テスト',
+  stageIntroName: 'テスト',
+  element: 'chaos',
+
+  img: 'images/testenemy_battle.webp',
+  upImg: 'images/testenemy_battle_up.webp',
+  battleImg: 'images/testenemy_battle.webp',
+  battleUpImg: 'images/testenemy_battle_up.webp',
+
+  isBoss: true,
+  hp: 1,
+  hpMax: 1,
+  atk: 1,
+
+  // anchor は3×3の下中央。rows 2-4 / cols 1-3 を占有する。
+  startPosition: { row: 4, col: 2 },
+  footprintOffsets: [
+    { dr:-2, dc:-1 }, { dr:-2, dc:0 }, { dr:-2, dc:1 },
+    { dr:-1, dc:-1 }, { dr:-1, dc:0 }, { dr:-1, dc:1 },
+    { dr: 0, dc:-1 }, { dr: 0, dc:0 }, { dr: 0, dc:1 },
+  ],
+
+  fixedPosition: true,
+  canMove: false,
+  moveType: 'none',
+  attackRange: 'none',
+  enemyActionMode: 'all',
+
+  // 3×3に見合う大型表示。画像はanchorセルから上方向へ広がる。
+  uiScale: { battleBack: 2.45, battleUp: 0.90 },
+  uiOffset: { battleBack: { y: 0 } },
+
+  status: [],
+  statusList: [],
+  actionPattern: [
+    { turn: 1, action: '待機', type: 'wait', desc: 'テスト用。何もしない。' },
+  ],
+  actionIdx: 0,
+});
+
 // TEST_ENEMIES を ENEMIES にマージ（getEnemyById から参照可能にする）
 ENEMIES.push(...TEST_ENEMIES);

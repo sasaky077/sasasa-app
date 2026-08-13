@@ -15498,3 +15498,36 @@ body.login-bonus-open {
 .roguelite-rank-reward b{display:block;font-family:"Cinzel",serif;font-size:12px;color:#725b3d}
 .roguelite-condition-note{margin-top:11px;text-align:center;font-size:9px;color:#9b8668;letter-spacing:.03em}
 @media(max-width:380px){.roguelite-condition-modal{align-items:flex-start;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}.roguelite-condition-sheet{width:calc(100vw - 16px);max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom)));padding:19px 13px 15px}.roguelite-condition-main-rewards{grid-template-columns:repeat(2,minmax(0,1fr))}.roguelite-rank-row{grid-template-columns:38px minmax(0,1fr) 68px;gap:5px}.roguelite-rank-condition{font-size:10px}.roguelite-condition-reward{min-width:0;padding:7px}.roguelite-condition-close{margin:-12px -6px -36px 0}}
+
+
+/* =========================================================
+   巡行：テスト入口
+   デイリー巡行カードと同じ意匠。カード全体をタップ領域にする。
+   個別の「挑戦する」ボタン・TESTバッジ・左画像窓は置かない。
+   ========================================================= */
+#screen-ninmu #ninmu-panel-daily .ninmu-test-btn-test-entry {
+  margin-top: 10px;
+}
+
+#screen-ninmu #ninmu-panel-daily .ninmu-test-btn-test-entry .ninmu-stage-copy {
+  min-height: 48px;
+  justify-content: center;
+}
+
+#screen-ninmu #ninmu-panel-daily .ninmu-test-btn-test-entry .ninmu-test-btn-title {
+  margin: 0;
+}
+
+
+
+/* 巡行：各デイリーカードはカード全体をタップ領域にするため、
+   右端の「挑戦する」表示は使わない。 */
+#screen-ninmu #ninmu-panel-daily .ninmu-stage-action {
+  display: none !important;
+}
+
+
+/* 巡行：上級 → テスト間の余白を、前回より約2mm狭める */
+#screen-ninmu #ninmu-panel-daily .ninmu-test-btn-test-entry {
+  margin-top: 8.5px !important;
+}

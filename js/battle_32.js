@@ -863,6 +863,37 @@ function pickRandomBoardCells(count) {
   return shuffled.slice(0, Math.max(0, Number(count || 0)));
 }
 
+  // 大型ユニットの占有セルを返す。未指定ユニットは従来どおり1マス。
+  function getUnitFootprintCells32(unit) {
+    if (!unit) return [];
+    const offsets = Array.isArray(unit.footprintOffsets) && unit.footprintOffsets.length > 0
+      ? unit.footprintOffsets
+      : [{ dr: 0, dc: 0 }];
+    const seen = new Set();
+    const cells = [];
+    offsets.forEach(offset => {
+      const row = Number(unit.row) + Number(offset && offset.dr || 0);
+      const col = Number(unit.col) + Number(offset && offset.dc || 0);
+      if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+      if (row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS) return;
+      const key = `${row}-${col}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      cells.push({ row, col, key });
+    });
+    return cells;
+  }
+
+  function unitOccupiesCell32(unit, row, col) {
+    const key = `${Number(row)}-${Number(col)}`;
+    return getUnitFootprintCells32(unit).some(cell => cell.key === key);
+  }
+
+  function unitIntersectsCells32(unit, cellKeys) {
+    if (!unit || !cellKeys || typeof cellKeys.has !== 'function') return false;
+    return getUnitFootprintCells32(unit).some(cell => cellKeys.has(cell.key));
+  }
+
   function getAllUnits() {
     if (!_bs) return [];
     return [
@@ -1028,6 +1059,12 @@ function pickRandomBoardCells(count) {
         : null,
       allowBossMovement: !!def.allowBossMovement,
       uiScale:     def.uiScale    || {},
+      uiOffset:    def.uiOffset   || {},
+
+      // 大型敵の複数マス占有。当たり判定・移動阻害は helper 経由で同一ユニットへ集約する。
+      footprintOffsets: Array.isArray(def.footprintOffsets) && def.footprintOffsets.length > 0
+        ? def.footprintOffsets.map(offset => ({ dr: Number(offset.dr || 0), dc: Number(offset.dc || 0) }))
+        : [{ dr: 0, dc: 0 }],
 
       // 通常敵AI拡張（ヒット＆アウェイ等）
       aiType: def.aiType || 'chaser',
@@ -3628,11 +3665,14 @@ return true;
           .map(cell => `${cell.row}-${cell.col}`)
       );
       return (units || []).filter(unit =>
-        unit && keys.has(`${unit.row}-${unit.col}`)
+        unit && unit.hp > 0 && unitIntersectsCells32(unit, keys)
       );
     }
 
-    return BR.getUnitsFromRange32(owner, rangeId, units);
+    const keys = BR.getCellsFromRange32(owner, rangeId);
+    return (units || []).filter(unit =>
+      unit && unit.hp > 0 && unitIntersectsCells32(unit, keys)
+    );
   }
 
   async function executeComboSkill(allyUid, comboSkill, context) {
@@ -6693,13 +6733,13 @@ function doBossLineAttack(boss) {
 
       if (!BR.isValidCell(row, col)) return;
 
-      const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
+      const occupant = getAllUnits().find(u => u.hp > 0 && unitOccupiesCell32(u, row, col));
 
       // 駒取り廃止：敵味方問わず、ユニットがいるマスには移動不可
       if (occupant) return;
 
       // ボスのいるマスは進入禁止（HP0後の核露出状態も含む）
-      const bossOnCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
+      const bossOnCell = _bs.enemies.find(e => e.isBoss && unitOccupiesCell32(e, row, col));
       if (bossOnCell) return;
 
       cells.push({
@@ -6741,8 +6781,7 @@ function doBossLineAttack(boss) {
         u &&
         u._uid !== ally._uid &&
         u.hp > 0 &&
-        u.row === toRow &&
-        u.col === toCol
+        unitOccupiesCell32(u, toRow, toCol)
       );
       if (occupant) {
         _log('ユニットがいるマスには移動できない');
@@ -6750,7 +6789,7 @@ function doBossLineAttack(boss) {
       }
 
       // 念のための直叩き対策：ボスマスへの移動を最終ガード
-      const bossAtDest = _bs.enemies.find(e => e.isBoss && e.row === toRow && e.col === toCol);
+      const bossAtDest = _bs.enemies.find(e => e.isBoss && unitOccupiesCell32(e, toRow, toCol));
       if (bossAtDest) {
         _log('ボスのいるマスには移動できない');
         return false;
@@ -6822,7 +6861,7 @@ function doBossLineAttack(boss) {
       cells = new Set(
         _bs.enemies
           .filter(u => u.hp > 0)
-          .map(u => `${u.row}-${u.col}`)
+          .flatMap(u => getUnitFootprintCells32(u).map(cell => cell.key))
       );
     } else if (isAllyRangeAll && ['heal', 'buff'].includes(skill.type)) {
       cells = new Set(
@@ -6839,7 +6878,7 @@ function doBossLineAttack(boss) {
       ..._bs.allies.filter(u => u.hp > 0),
       ..._bs.enemies.filter(u => u.hp > 0 || u.isBoss),
     ].forEach(u => {
-      unitMap[`${u.row}-${u.col}`] = u;
+      getUnitFootprintCells32(u).forEach(cell => { unitMap[cell.key] = u; });
     });
 
     const isEnemySkill = ['attack', 'debuff'].includes(skill.type);
@@ -6899,7 +6938,7 @@ function doBossLineAttack(boss) {
   // マス占有チェック
   function _isOccupied(row, col) {
     const allUnits = [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])];
-    return allUnits.some(u => (u.hp > 0 || u.isBoss) && u.row === row && u.col === col);
+    return allUnits.some(u => (u.hp > 0 || u.isBoss) && unitOccupiesCell32(u, row, col));
   }
 
   // 召喚可能なrosterエントリ一覧

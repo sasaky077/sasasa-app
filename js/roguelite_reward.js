@@ -7,6 +7,7 @@
 //   RogueliteReward.show({
 //     currentStage   : 1,          // クリアしたステージ番号
 //     currentOptions : [],         // 現在保持OP配列（表示用）
+//     stageDefs      : [],         // 現在ランのステージ定義（プログレス表示用）
 //     excludeIds     : [],         // 既取得OPのid配列（重複排除）
 //     onSelect       : (op) => {}  // 選択後コールバック（op = null のこともある）
 //   });
@@ -326,18 +327,27 @@
   }
 
   // ── DOM構築 ────────────────────────────────────────────────
-  function _buildOverlay(choices, currentStage, currentOptions) {
+  function _buildOverlay(choices, currentStage, currentOptions, stageDefs) {
     const RL = { common: 'コモン', rare: 'レア', epic: 'エピック' };
-    const STAGE_LABELS = ['S1', 'S2', 'S3', 'BOSS'];
 
-    // ステージプログレス
-    const pipsHtml = [1,2,3,4].map((n, i) => {
-      const cls  = n < currentStage ? 'done' : n === currentStage ? 'active' : '';
-      const sep  = i < 3 ? '<div class="rl-rw-pip-sep"></div>' : '';
+    // ラン定義を正としてステージプログレスを生成する。
+    // 1戦・3戦・4戦など、ランごとの stageDefs.length に自動追従する。
+    const defs = Array.isArray(stageDefs) && stageDefs.length
+      ? stageDefs
+      : Array.from({ length: Math.max(1, Number(currentStage || 1)) }, (_, i) => ({
+          stage: i + 1,
+          isBoss: i === Math.max(1, Number(currentStage || 1)) - 1,
+        }));
+
+    const pipsHtml = defs.map((def, i) => {
+      const n = i + 1;
+      const cls = n < currentStage ? 'done' : n === currentStage ? 'active' : '';
+      const sep = i < defs.length - 1 ? '<div class="rl-rw-pip-sep"></div>' : '';
+      const label = def && def.isBoss ? 'BOSS' : `S${Number(def && def.stage || n)}`;
       return `
         <div class="rl-rw-pip ${cls}">
           <div class="rl-rw-pip-bar"></div>
-          <div class="rl-rw-pip-label">${STAGE_LABELS[i]}</div>
+          <div class="rl-rw-pip-label">${label}</div>
         </div>${sep}
       `;
     }).join('');
@@ -465,7 +475,7 @@
   let _overlay  = null;
   let _callback = null;
 
-  function show({ onSelect, excludeIds, currentStage, currentOptions } = {}) {
+  function show({ onSelect, excludeIds, currentStage, currentOptions, stageDefs } = {}) {
   console.log('[RogueliteReward] show called', {
     onSelect,
     excludeIds,
@@ -490,7 +500,7 @@
     return;
   }
 
-  _overlay = _buildOverlay(choices, currentStage || 1, currentOptions || []);
+  _overlay = _buildOverlay(choices, currentStage || 1, currentOptions || [], stageDefs || []);
 
   console.log('[RogueliteReward] overlay built:', _overlay);
 
