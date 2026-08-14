@@ -140,11 +140,6 @@
   let pointerActive = false;
   let pointerX = 0;
   let pointerY = 0;
-
-  // スマホでは指そのものが自機/被弾コアを隠してしまうため、
-  // タッチ操作時だけ「指より少し上」を実際の移動先にする。
-  // マウス操作ではオフセットしない。
-  const TOUCH_CONTROL_OFFSET_Y = 76;
   let lastTapAt = 0;
   let lastTapX = 0;
   let lastTapY = 0;
@@ -156,6 +151,11 @@
   const SWITCH_SWIPE_AXIS_RATIO = 1.45;
   const ULT_DOUBLE_TAP_MS = 320;
   const ULT_DOUBLE_TAP_DISTANCE = 72;
+
+  // スマホ操作時、指がキャラクター(と被弾判定コア)を隠してしまう対策。
+  // 指の実際の接地点より、キャラクターを上にずらして表示する。
+  // マウス/ペン操作では正確な1:1追従のままにするため、touchの時だけ適用する。
+  const TOUCH_Y_OFFSET = 78;
 
   // ULTゲージ獲得量の全体倍率。
   // 0.5 = 従来の約2倍の命中数が必要。
@@ -2352,15 +2352,11 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const r = arena.getBoundingClientRect();
-
-    const isTouchLike =
-      e.pointerType === 'touch' ||
-      e.pointerType === 'pen';
-
-    const touchOffsetY = isTouchLike ? TOUCH_CONTROL_OFFSET_Y : 0;
-
+    // touch操作の時だけ、指の実際の接地点よりキャラクターを上にずらす。
+    // マウス/ペンはそのまま(1:1追従)にする。
+    const yOffset = e.pointerType === 'touch' ? TOUCH_Y_OFFSET : 0;
     pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
-    pointerY = clamp(e.clientY - r.top - touchOffsetY, 34, r.height - 38);
+    pointerY = clamp(e.clientY - r.top - yOffset, 34, r.height - 38);
   }
 
   window.selectShootingCharacter = function (id) {
