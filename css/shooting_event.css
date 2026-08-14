@@ -12,19 +12,34 @@
 .shooting-arena{position:absolute;inset:72px 0 72px;overflow:hidden;touch-action:none;cursor:crosshair}
 .shooting-start-copy{position:absolute;z-index:40;left:50%;top:54%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 20px;border:1px solid rgba(158,128,76,.28);background:rgba(255,253,247,.74);backdrop-filter:blur(4px);box-shadow:0 10px 30px rgba(88,66,36,.08);transition:opacity .35s ease}.shooting-start-copy.hide{opacity:0;pointer-events:none}.shooting-start-copy b{font-family:"Cinzel",serif;letter-spacing:.25em;font-size:18px;color:#79613e}.shooting-start-copy span{font-size:10px;color:#76674f}.shooting-start-copy small{font-size:9px;color:#9a896c}
 .shooting-player,.shooting-boss{position:absolute;left:0;top:0;will-change:transform;pointer-events:none}
-.shooting-player{z-index:12;width:74px;height:126px;display:flex;align-items:center;justify-content:center}.shooting-player img{position:relative;z-index:2;display:block;max-width:70px;max-height:122px;object-fit:contain;filter:none}.shooting-player-aura{display:none!important}.shooting-player.damaged{animation:shootingDamage .25s steps(2) 4}.shooting-boss{z-index:9;width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 10px 10px rgba(63,48,32,.20));opacity:.96}
+.shooting-player{z-index:12;width:74px;height:126px;display:flex;align-items:center;justify-content:center}.shooting-player img{position:relative;z-index:2;display:block;max-width:70px;max-height:122px;object-fit:contain;filter:none;transform:scale(var(--unit-scale,1));transform-origin:center center}.shooting-player-aura{display:none!important}.shooting-player.damaged{animation:shootingDamage .25s steps(2) 4}.shooting-boss{z-index:9;width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 10px 10px rgba(63,48,32,.20));opacity:.96}
 .shooting-boss.hit-flash{animation:shootingBossHitFlash .18s steps(2, jump-none)}
 .shooting-boss.burst-hit{animation:shootingBossBurstHit .42s steps(3, jump-none)}
 @keyframes shootingBossHitFlash{0%,100%{filter:drop-shadow(0 10px 10px rgba(63,48,32,.20)) brightness(1);opacity:.96}40%,70%{filter:sepia(1) saturate(8) hue-rotate(318deg) brightness(1.18) drop-shadow(0 0 16px rgba(210,45,45,.92));opacity:1}}
 @keyframes shootingBossBurstHit{0%,100%{filter:drop-shadow(0 10px 10px rgba(63,48,32,.20)) brightness(1);opacity:.96}20%,45%,70%{filter:sepia(1) saturate(10) hue-rotate(315deg) brightness(1.28) drop-shadow(0 0 24px rgba(225,42,42,.98));opacity:1}32%,58%,82%{filter:brightness(.45) sepia(1) saturate(7) hue-rotate(320deg) drop-shadow(0 0 14px rgba(170,25,25,.88));opacity:.72}}
-.shooting-player-core{position:absolute;z-index:8;left:50%;top:var(--core-top,38%);width:9px;height:9px;transform:translate(-50%,-50%) rotate(45deg);background:rgba(177,52,64,.94);box-shadow:0 0 3px rgba(255,255,255,.95),0 0 8px rgba(195,57,72,.90),0 0 13px rgba(151,36,52,.42);border:1px solid rgba(255,236,226,.9);animation:shootingCorePulse .75s ease-in-out infinite alternate;pointer-events:none}.shooting-player-core::before,.shooting-player-core::after{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.shooting-player-core::before{left:-4.5px;top:0}.shooting-player-core::after{left:0;top:-4.5px}@keyframes shootingCorePulse{from{scale:.88;filter:brightness(.95)}to{scale:1.12;filter:brightness(1.24)}}
+.shooting-player-core{position:absolute;z-index:8;left:50%;top:var(--core-top,38%);width:9px;height:9px;transform:translate(-50%,-50%);border-radius:50%;background:#d51f2f;border:1px solid rgba(255,255,255,.96);box-shadow:0 0 2px rgba(255,255,255,.95),0 0 6px rgba(213,31,47,.88);pointer-events:none}.shooting-player-core::before,.shooting-player-core::after{content:none!important}
 @keyframes shootingDamage{50%{opacity:.18}}
 .shooting-bullet,.shooting-enemy-bullet{position:absolute;left:0;top:0;z-index:10;display:block;will-change:transform;pointer-events:none}.shooting-bullet{width:4px;height:22px;border-radius:999px;background:linear-gradient(180deg,#fff,#e9d297 45%,#a9884c);box-shadow:0 0 8px rgba(255,233,167,.95),0 0 16px rgba(196,155,76,.45)}.shooting-enemy-bullet{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle,#fff 0 12%,#8f759d 35%,#45394d 72%,transparent 74%);box-shadow:0 0 8px rgba(85,60,100,.55)}
 .shooting-hit{position:absolute;left:0;top:0;z-index:16;width:26px;height:26px;border:1px solid rgba(194,153,74,.75);border-radius:50%;box-shadow:0 0 14px rgba(232,194,115,.76);animation:shootingHit .28s ease-out forwards;pointer-events:none}.shooting-hit.big{width:110px;height:110px;border-width:2px;box-shadow:0 0 40px rgba(255,229,155,.92),inset 0 0 30px rgba(255,255,255,.82)}
 @keyframes shootingHit{from{opacity:1;scale:.35}to{opacity:0;scale:1.65}}
 .shooting-footer{height:72px;position:absolute;z-index:22;bottom:0;left:0;right:0;display:flex;align-items:center;padding:9px 16px;background:linear-gradient(0deg,rgba(255,253,248,.97),rgba(249,244,233,.82));border-top:1px solid rgba(155,129,82,.30)}.shooting-player-hud{display:flex;flex-direction:column;gap:6px}.shooting-player-name{font-size:11px;letter-spacing:.16em;color:#65543a}.shooting-hearts{display:flex;align-items:center;gap:9px;height:18px}.shooting-hearts i{position:relative;display:block;width:14px;height:14px;transform:rotate(45deg);border-radius:2px;background:#c65a62;box-shadow:0 0 7px rgba(182,63,73,.32);transition:opacity .2s ease,filter .2s ease,transform .2s ease}.shooting-hearts i::before,.shooting-hearts i::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:inherit}.shooting-hearts i::before{left:-7px;top:0}.shooting-hearts i::after{left:0;top:-7px}.shooting-hearts i.off{opacity:.14;filter:grayscale(1);box-shadow:none;transform:rotate(45deg) scale(.86)}.shooting-hearts i.on{opacity:1}
 .shooting-burst{position:relative;margin-left:auto;width:118px;height:42px;overflow:hidden;border:1px solid rgba(153,123,68,.55);background:rgba(255,255,255,.62);color:#6c5735;font-family:"Cinzel",serif;letter-spacing:.16em;cursor:pointer}.shooting-burst span{position:relative;z-index:2}.shooting-burst i{position:absolute;z-index:1;left:0;bottom:0;top:0;width:0;background:linear-gradient(90deg,rgba(214,184,115,.24),rgba(191,151,72,.45));transition:width .12s linear}.shooting-burst:disabled{opacity:.62;cursor:default}.shooting-burst:not(:disabled){box-shadow:0 0 17px rgba(192,152,74,.33);animation:shootingBurstReady 1.1s ease-in-out infinite alternate}@keyframes shootingBurstReady{to{border-color:#c19b53;box-shadow:0 0 24px rgba(211,171,91,.58)}}
-.shooting-result{position:absolute;z-index:70;inset:0;display:none;align-items:center;justify-content:center;background:rgba(248,244,235,.78);backdrop-filter:blur(6px)}.shooting-result.show{display:flex}.shooting-result-card{width:min(360px,84vw);padding:32px 24px;text-align:center;border:1px solid rgba(154,125,74,.45);background:rgba(255,253,247,.94);box-shadow:0 22px 70px rgba(78,59,31,.17)}.shooting-result-card>span{font-family:"Cinzel",serif;font-size:9px;letter-spacing:.24em;color:#a18858}.shooting-result-card>strong{display:block;margin-top:7px;font-family:"Cinzel",serif;font-size:28px;font-weight:500;letter-spacing:.22em;color:#665132}.shooting-result-card>div{margin:17px 0 22px;font-family:"Cinzel",serif;font-size:11px;letter-spacing:.13em;color:#8e7750}.shooting-result-card button{display:block;width:100%;height:42px;margin-top:9px;border:1px solid rgba(145,113,60,.52);background:#9f8250;color:#fffdf8;font-family:"Noto Serif JP",serif;letter-spacing:.14em}.shooting-result-card button.sub{background:transparent;color:#756344}
+.shooting-result{position:absolute;z-index:70;inset:0;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(248,244,235,.82);backdrop-filter:blur(7px)}.shooting-result.show{display:flex}.shooting-result-card{width:min(360px,88vw);padding:28px 24px 22px;text-align:center;border:1px solid rgba(154,125,74,.42);background:linear-gradient(180deg,rgba(255,253,247,.97),rgba(247,240,226,.96));box-shadow:0 22px 70px rgba(78,59,31,.17),inset 0 0 0 1px rgba(255,255,255,.74)}.shooting-result-card>span{font-family:"Cinzel",serif;font-size:9px;letter-spacing:.26em;color:#a18858}.shooting-result-card>strong{display:block;margin-top:6px;font-family:"Cinzel",serif;font-size:24px;font-weight:500;letter-spacing:.24em;color:#665132}.shooting-result-rank-wrap{margin:18px 0 16px}.shooting-result-rank-wrap small{display:block;font-family:"Cinzel",serif;font-size:9px;letter-spacing:.26em;color:#aa9674}.shooting-result-rank{display:block;margin-top:2px;font-family:"Cinzel",serif;font-size:86px;font-weight:500;line-height:.92;color:#b18b45;text-shadow:0 2px 0 rgba(255,255,255,.86),0 8px 24px rgba(112,82,35,.12)}.shooting-result-rank[data-rank="S"]{font-size:94px;color:#c59b3e;text-shadow:0 2px 0 #fff,0 0 18px rgba(205,165,74,.38),0 12px 28px rgba(105,73,24,.13)}.shooting-result-rank[data-rank="A"]{color:#b38d4b}.shooting-result-rank[data-rank="B"]{color:#8e8068}.shooting-result-rank[data-rank="C"],.shooting-result-rank[data-rank="D"],.shooting-result-rank[data-rank="E"]{color:#8b8070}.shooting-result-stats{display:grid;grid-template-columns:1fr 1fr;margin:0 0 20px;border-top:1px solid rgba(154,125,74,.18);border-bottom:1px solid rgba(154,125,74,.18)}.shooting-result-stats>div{padding:11px 8px}.shooting-result-stats>div+div{border-left:1px solid rgba(154,125,74,.18)}.shooting-result-stats span{display:block;font-family:"Cinzel",serif;font-size:8px;letter-spacing:.18em;color:#a18d6a}.shooting-result-stats strong{display:block;margin-top:5px;font-family:"Cinzel",serif;font-size:19px;font-weight:500;letter-spacing:.08em;color:#6f5937;font-variant-numeric:tabular-nums}.shooting-result-actions{margin:0}.shooting-result-card button{display:block;width:100%;height:42px;margin-top:9px;border:1px solid rgba(145,113,60,.52);background:#9f8250;color:#fffdf8;font-family:"Noto Serif JP",serif;letter-spacing:.14em}.shooting-result-card button.sub{background:transparent;color:#756344}
+
+.shooting-result-breakdown{margin:-8px 0 18px;border-top:1px solid rgba(154,125,74,.18)}
+.shooting-result-detail-row{min-height:58px;display:grid;grid-template-columns:76px minmax(0,1fr) 38px;align-items:center;column-gap:7px;padding:8px 2px;border-bottom:1px solid rgba(154,125,74,.14);text-align:left}
+.shooting-result-detail-label{font-size:11px;letter-spacing:.06em;color:#796747;white-space:nowrap}
+.shooting-result-detail-row>strong{width:38px;text-align:right;font-family:"Cinzel",serif;font-size:13px;font-weight:500;color:#685437;font-variant-numeric:tabular-nums;white-space:nowrap}
+.shooting-result-member-list{display:grid;grid-template-columns:repeat(3,56px);align-items:center;justify-content:center;column-gap:9px;min-width:0}
+.shooting-result-member{position:relative;display:grid;grid-template-columns:28px 24px;align-items:center;column-gap:4px;width:56px;min-width:56px}
+.shooting-result-member img{width:28px;height:28px;object-fit:cover;object-position:center;border-radius:50%;border:1px solid rgba(152,123,70,.30);background:rgba(255,255,255,.68)}
+.shooting-result-member b{display:block;width:24px;text-align:left;font-size:10.5px;font-weight:500;color:#786444;white-space:nowrap;font-variant-numeric:tabular-nums;overflow:visible}
+.shooting-result-member.down img{filter:grayscale(1);opacity:.35}
+.shooting-result-member.down b{color:#a0927c}
+.shooting-result-time-row{grid-template-columns:1fr auto;min-height:42px}
+.shooting-result-time-row>strong{width:auto;margin-right:28px;font-size:17px;text-align:right}
+@media (max-height:700px){.shooting-result{padding:10px}.shooting-result-card{max-height:96vh;overflow:auto;padding:17px 18px 14px}.shooting-result-rank-wrap{margin:8px 0}.shooting-result-rank{font-size:62px}.shooting-result-rank[data-rank="S"]{font-size:68px}.shooting-result-detail-row{min-height:50px}.shooting-result-member-list{grid-template-columns:repeat(3,52px);column-gap:7px}.shooting-result-member{grid-template-columns:26px 22px;width:52px;min-width:52px}.shooting-result-member img{width:26px;height:26px}.shooting-result-member b{width:22px;font-size:9.5px}.shooting-result-card button{height:38px}}
+
 #shooting-event-root.burst-flash .shooting-wash{animation:shootingFlash .35s ease-out}@keyframes shootingFlash{0%{background:rgba(255,255,255,.96)}100%{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08) 45%,rgba(244,239,227,.26))}}
 /* Special Event card */
 #ninmu-panel-special .shooting-entry-card{position:relative;overflow:hidden;border-color:rgba(164,131,74,.42);background:linear-gradient(105deg,rgba(255,253,247,.86),rgba(242,231,207,.72));box-shadow:inset 0 0 0 1px rgba(255,255,255,.44)}
@@ -58,8 +73,8 @@
 @keyframes shootingBossPhaseChange{0%{filter:brightness(1);transform:translate3d(var(--boss-x,0),var(--boss-y,0),0) translate(-50%,-50%) scale(1)}25%{filter:sepia(1) saturate(8) hue-rotate(315deg) brightness(1.7) drop-shadow(0 0 26px rgba(220,50,45,.85));transform:translate3d(var(--boss-x,0),var(--boss-y,0),0) translate(-50%,-50%) scale(1.1)}100%{filter:drop-shadow(0 10px 10px rgba(63,48,32,.20));transform:translate3d(var(--boss-x,0),var(--boss-y,0),0) translate(-50%,-50%) scale(1)}}
 #shooting-event-root.boss-phase-flash .shooting-wash{animation:shootingPhaseFlash .62s ease-out}
 @keyframes shootingPhaseFlash{0%{background:rgba(255,215,205,.45)}30%{background:rgba(255,245,238,.28)}100%{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08) 45%,rgba(244,239,227,.26))}}
-#shooting-event-root[data-boss-phase="2"] .shooting-enemy-bullet{box-shadow:0 0 10px rgba(104,65,120,.66)}
-#shooting-event-root[data-boss-phase="3"] .shooting-enemy-bullet{box-shadow:0 0 12px rgba(126,55,103,.78),0 0 20px rgba(110,44,90,.25)}
+#shooting-event-root[data-boss-phase="2"] .shooting-enemy-bullet{box-shadow:0 0 0 1px rgba(198,182,228,.18),0 0 12px rgba(126,88,164,.34),0 0 24px rgba(93,58,138,.22)!important}
+#shooting-event-root[data-boss-phase="3"] .shooting-enemy-bullet{box-shadow:0 0 0 1px rgba(222,178,212,.18),0 0 12px rgba(174,78,136,.42),0 0 24px rgba(126,49,102,.28),0 0 34px rgba(85,28,67,.18)!important}
 
 
 /* ===== SINGLE GAUGE / STOCK SYSTEM ===== */
@@ -180,16 +195,12 @@
 }
 
 /* Character body sizes. Eri keeps the current compact size. */
-.shooting-player[data-character="ayane"] img{
-  max-width:72px;
-  max-height:122px;
-}
-.shooting-player[data-character="hayate"]{
-  width:96px;
-}
-.shooting-player[data-character="hayate"] img{
-  max-width:94px;
-  max-height:112px;
+/* ===== SHOOTING CHARACTER SIZE =====
+   Strategyと同じ characters.js -> uiScale.battleBack を --unit-scale に流し込む。
+   キャラ個別の大きさ調整はCSSではなく characters.js 側で行う。 */
+.shooting-player[data-character-id] img{
+  transform:scale(var(--unit-scale,1));
+  transform-origin:center center;
 }
 
 /* Hayate: many, wide, light shots. */
@@ -223,11 +234,7 @@
   .shooting-character-portrait img{max-height:108px}
   .shooting-character-option em{font-size:7px}
 }
-@media (min-width:700px){
-  .shooting-player[data-character="ayane"] img{max-width:78px;max-height:136px}
-  .shooting-player[data-character="hayate"]{width:106px}
-  .shooting-player[data-character="hayate"] img{max-width:104px;max-height:126px}
-}
+
 
 /* ===== CHARACTER SELECT: panel artwork ===== */
 .shooting-character-portrait{
@@ -1016,4 +1023,1429 @@
 #shooting-event-root:has(.shooting-result.show) .shooting-footer,
 #shooting-event-root:has(.shooting-result.show) .shooting-switch-rail {
   display:none !important;
+}
+
+
+/* ===== COMBO COUNTER / NEM ===== */
+.shooting-combo{
+  position:absolute;
+  z-index:22;
+  top:18px;
+  left:16px;
+  display:none;
+  flex-direction:column;
+  align-items:flex-start;
+  pointer-events:none;
+  text-shadow:0 1px 4px rgba(255,255,255,.96),0 2px 12px rgba(70,53,34,.16);
+  transform-origin:left center;
+}
+.shooting-combo strong{
+  font-family:"Cinzel",serif;
+  font-size:clamp(28px,8vw,44px);
+  font-weight:500;
+  line-height:.9;
+  letter-spacing:.01em;
+  color:#6e5939;
+  font-variant-numeric:tabular-nums;
+}
+.shooting-combo span{
+  margin-top:5px;
+  padding-left:2px;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.28em;
+  color:#a28657;
+}
+.shooting-combo.pulse{animation:shootingComboPulse .2s ease-out}
+.shooting-combo.milestone strong{color:#7e668f;text-shadow:0 0 12px rgba(139,111,161,.48),0 1px 4px rgba(255,255,255,.98)}
+@keyframes shootingComboPulse{0%{transform:scale(1)}45%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+.shooting-bullet-nem{
+  background:radial-gradient(circle at 50% 30%,#fff 0 18%,#d8c9ef 38%,#8e73ad 72%,rgba(92,70,119,.12) 100%)!important;
+  box-shadow:0 0 8px rgba(132,102,164,.68),0 0 15px rgba(174,145,201,.28)!important;
+}
+.shooting-boss.nem-stunned{
+  animation:shootingNemStun .72s ease-in-out infinite alternate!important;
+  filter:saturate(.65) brightness(1.08) drop-shadow(0 0 12px rgba(130,103,160,.78)) drop-shadow(0 0 24px rgba(164,139,191,.34))!important;
+}
+.shooting-boss.nem-stunned::after{content:''}
+@keyframes shootingNemStun{
+  from{opacity:.88;filter:saturate(.6) brightness(1.04) drop-shadow(0 0 9px rgba(120,93,150,.65))}
+  to{opacity:1;filter:saturate(.72) brightness(1.18) drop-shadow(0 0 18px rgba(145,115,178,.92))}
+}
+#shooting-event-root.nem-stun-active .shooting-boss-hud::after{
+  content:'STUN';
+  display:block;
+  margin-top:4px;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.24em;
+  color:#806495;
+  text-shadow:0 1px 3px rgba(255,255,255,.95);
+}
+#shooting-event-root.ult-flash-nem .shooting-wash{animation:shootingNemUltFlash .5s ease-out}
+@keyframes shootingNemUltFlash{
+  0%{background:rgba(224,210,240,.72)}
+  34%{background:rgba(250,246,255,.54)}
+  100%{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08) 45%,rgba(244,239,227,.26))}
+}
+
+/* ===== PATCH: keep party start button fixed below roster ===== */
+.shooting-character-select{
+  overflow:hidden;
+  padding:12px 10px 76px;
+}
+.shooting-party-select-card{
+  max-height:100%;
+  margin:0 auto;
+  padding-bottom:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+}
+.shooting-character-start{
+  position:absolute;
+  z-index:82;
+  left:18px;
+  right:18px;
+  bottom:12px;
+  width:auto;
+  margin:0;
+}
+@media(max-width:480px){
+  .shooting-character-select{padding:8px 8px 72px}
+  .shooting-character-start{left:14px;right:14px;bottom:10px}
+}
+
+/* ===== SHOOTING ROSTER OWNERSHIP ===== */
+.shooting-character-option.locked,
+.shooting-character-option:disabled{
+  cursor:default;
+  opacity:.46;
+  filter:grayscale(.72) saturate(.45);
+  background:linear-gradient(180deg,rgba(241,239,233,.88),rgba(225,221,211,.84));
+  border-color:rgba(118,108,92,.18);
+  box-shadow:none;
+}
+.shooting-character-option.locked .shooting-character-portrait{position:relative}
+.shooting-character-option.locked .shooting-character-portrait::after{
+  content:'LOCK';
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  padding:4px 8px;
+  border:1px solid rgba(95,82,61,.42);
+  background:rgba(247,244,236,.82);
+  color:#72644e;
+  font-family:"Cinzel",serif;
+  font-size:7px;
+  letter-spacing:.18em;
+}
+.shooting-character-option.locked img{filter:grayscale(1) brightness(.86);opacity:.54}
+.shooting-character-option.locked:active,.shooting-character-option:disabled:active{transform:none}
+
+
+/* ===== PARTY SELECT: match strategy layout / roster-only scrolling ===== */
+.shooting-character-select{
+  display:none;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  padding:0;
+  overflow:hidden;
+  background:rgba(246,241,230,.98);
+}
+.shooting-character-select.show{display:flex}
+
+.shooting-party-select-card{
+  position:relative;
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  width:min(390px,100%);
+  min-height:0;
+  max-height:100%;
+  margin:0 auto;
+  padding:0;
+  overflow:hidden;
+  border:0;
+  background:#fffdf8;
+  box-shadow:none;
+}
+
+.shooting-party-select-head,
+.shooting-party-slots,
+.shooting-party-blessing,
+.shooting-party-actions{
+  flex:0 0 auto;
+}
+
+.shooting-party-select-head{
+  padding:15px 14px 8px;
+  background:rgba(255,253,248,.96);
+  border-bottom:1px solid rgba(176,139,71,.18);
+}
+.shooting-party-select-head>strong{font-size:16px}
+
+.shooting-party-slots{
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:10px 14px 9px;
+  background:rgba(247,239,225,.78);
+  border-bottom:1px solid rgba(176,139,71,.18);
+}
+.shooting-party-slot{height:auto;aspect-ratio:1/1;max-height:104px}
+
+.shooting-party-blessing{
+  padding:0 14px 10px;
+  background:rgba(255,253,248,.96);
+  border-bottom:1px solid rgba(176,139,71,.18);
+}
+.shooting-party-section-head{padding:8px 0 6px}
+.shooting-party-blessing-current{min-height:60px;padding:6px 8px}
+.shooting-party-blessing-plus{width:50px;height:50px;flex:0 0 50px}
+
+/* Only this area scrolls. Header / slots / blessing / footer stay fixed. */
+.shooting-character-grid.shooting-party-roster{
+  display:grid;
+  flex:1 1 auto;
+  min-height:0;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-content:start;
+  gap:6px;
+  padding:8px 10px 10px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  -ms-touch-action:pan-y;
+  pointer-events:auto;
+  background:rgba(247,243,234,.86);
+}
+.shooting-party-roster .shooting-character-option{
+  min-width:0;
+  padding:3px;
+  border-radius:8px;
+}
+.shooting-party-roster .shooting-character-portrait{
+  width:100%;
+  height:auto;
+  aspect-ratio:1/1;
+  margin:0 0 3px;
+  border-radius:6px;
+  object-fit:cover;
+}
+.shooting-party-roster .shooting-character-option b{display:block;padding:1px 0 2px;font-size:8px;line-height:1.25}
+
+.shooting-party-actions{
+  position:relative;
+  z-index:84;
+  display:flex;
+  gap:10px;
+  padding:10px 14px max(12px,env(safe-area-inset-bottom,12px));
+  background:rgba(255,252,246,.98);
+  border-top:1px solid rgba(176,139,71,.24);
+  box-shadow:0 -7px 20px rgba(99,73,31,.06);
+}
+.shooting-party-cancel,
+.shooting-character-start{
+  position:relative;
+  inset:auto;
+  bottom:auto;
+  left:auto;
+  right:auto;
+  height:44px;
+  margin:0;
+  border-radius:11px;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  cursor:pointer;
+}
+.shooting-party-cancel{
+  flex:1;
+  border:1px solid rgba(151,119,66,.30);
+  background:#f7efe2;
+  color:#806c4f;
+  letter-spacing:.10em;
+}
+.shooting-party-cancel:active{background:#eee0cc}
+.shooting-character-start{
+  flex:2;
+  width:auto;
+  border:1px solid rgba(161,121,48,.68);
+  background:linear-gradient(180deg,#cfaa61 0%,#b7893e 100%);
+  color:#fffdf7;
+  font-weight:600;
+  letter-spacing:.16em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 4px 12px rgba(145,102,32,.18);
+  text-shadow:0 1px 2px rgba(93,62,16,.45);
+}
+.shooting-character-start::before,
+.shooting-character-start::after{content:none}
+.shooting-character-start:disabled{
+  opacity:.38;
+  border-color:rgba(161,121,48,.30);
+  background:linear-gradient(180deg,#d9c9ac 0%,#c8b696 100%);
+  color:#fffdf7;
+}
+.shooting-character-start:not(:disabled):active{
+  transform:none;
+  background:linear-gradient(180deg,#bf974e 0%,#a77b35 100%);
+}
+
+@media(max-width:480px){
+  .shooting-character-select{padding:0}
+  .shooting-party-select-card{width:100%}
+  .shooting-party-select-head{padding:13px 12px 7px}
+  .shooting-party-slots{padding:9px 12px 8px;gap:8px}
+  .shooting-party-blessing{padding:0 12px 8px}
+  .shooting-character-grid.shooting-party-roster{padding:7px 9px 9px;gap:5px}
+  .shooting-party-actions{padding:9px 12px max(10px,env(safe-area-inset-bottom,10px))}
+  .shooting-party-cancel,.shooting-character-start{height:43px}
+}
+
+
+/* CHAPTER 01 normal shooting stages */
+.shooting-mission-hud{position:absolute;z-index:26;top:56px;left:12px;right:12px;display:none;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;min-height:42px;padding:6px 10px;box-sizing:border-box;background:rgba(252,249,241,.90);border:1px solid rgba(164,135,82,.25);box-shadow:0 5px 18px rgba(75,57,34,.08);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);pointer-events:none}
+.shooting-mission-hud span{font-family:"Cinzel","Times New Roman",serif;font-size:7px;letter-spacing:.14em;color:#ae8950;white-space:nowrap}
+.shooting-mission-hud strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:500;color:#64543d}
+.shooting-mission-hud b{font-family:"Cinzel","Times New Roman",serif;font-size:9px;font-weight:500;color:#8c6c3d;white-space:nowrap;font-variant-numeric:tabular-nums}
+.shooting-normal-enemy-layer,.shooting-collectible-layer{position:absolute;inset:0;z-index:9;pointer-events:none;overflow:hidden}
+.shooting-collectible-layer{z-index:13}
+.shooting-mini-enemy{position:absolute;width:66px;height:66px;object-fit:contain;transform:translate(-50%,-50%);transform-origin:center;filter:drop-shadow(0 5px 8px rgba(68,61,52,.18));transition:opacity .18s ease,filter .08s ease,transform .18s ease;user-select:none;-webkit-user-drag:none}
+.shooting-mini-enemy.spawning{opacity:0;transform:translate(-50%,-50%) scale(.55)}
+.shooting-mini-enemy.hit-flash{filter:brightness(1.65) sepia(.22) drop-shadow(0 0 9px rgba(255,116,90,.62))}
+.shooting-mini-enemy.defeated{opacity:0;transform:translate(-50%,-50%) scale(1.3) rotate(18deg);filter:brightness(1.8) blur(2px)}
+.shooting-mini-enemy-bullet{width:8px;height:8px;border-radius:50%;background:rgba(202,103,89,.92);box-shadow:0 0 0 1px rgba(255,244,235,.75),0 0 8px rgba(194,74,61,.52)}
+.shooting-mission-item{position:absolute;width:30px;height:30px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 50% 44%,rgba(255,255,255,.96) 0 20%,rgba(222,196,136,.42) 22% 48%,rgba(180,142,73,.08) 50% 100%);border:1px solid rgba(179,139,71,.38);box-shadow:0 0 13px rgba(209,174,104,.38);animation:shooting-mission-item-float 1.45s ease-in-out infinite alternate}
+.shooting-mission-item i{position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(160,121,57,.68);background:rgba(255,251,237,.9)}
+@keyframes shooting-mission-item-float{from{margin-top:-3px}to{margin-top:3px}}
+#shooting-event-root.normal-stage-clear .shooting-arena::after{content:"MISSION COMPLETE";position:absolute;z-index:90;left:0;right:0;top:44%;text-align:center;font-family:"Cinzel","Times New Roman",serif;font-size:20px;letter-spacing:.17em;color:#9b773f;text-shadow:0 1px 0 #fff,0 0 18px rgba(255,255,255,.92);animation:shooting-normal-clear-in .7s ease both;pointer-events:none}
+@keyframes shooting-normal-clear-in{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+@media(max-width:420px){.shooting-mission-hud{left:8px;right:8px;gap:6px;padding:6px 8px}.shooting-mission-hud span{font-size:6px}.shooting-mission-hud strong{font-size:9px}.shooting-mission-hud b{font-size:8px}.shooting-mini-enemy{width:60px;height:60px}}
+
+
+/* ============================================================
+   CH01 UI FIX
+   1) Party footer uses the battle-footer reserved space too.
+   2) Mission HUD and COMBO never overlap.
+   3) Battle-only MISSION COMPLETE never leaks into RESULT.
+   ============================================================ */
+
+/* The party selector lives inside .shooting-arena, whose bottom is 72px above
+   the viewport for the battle HUD. During party select that battle HUD is hidden,
+   so extend the selector into that reserved space. */
+#shooting-event-root .shooting-character-select.show{
+  bottom:-72px !important;
+}
+#shooting-event-root .shooting-character-select.show .shooting-party-select-card{
+  max-height:calc(100% + 72px) !important;
+}
+#shooting-event-root .shooting-character-select.show .shooting-party-actions{
+  padding-bottom:max(8px,env(safe-area-inset-bottom,8px)) !important;
+}
+
+/* Normal-stage mission bar occupies roughly root Y=56..100.
+   Arena begins at Y=72, so the old combo top:18px landed directly underneath it. */
+#shooting-event-root[data-battle-type="normal"] .shooting-combo{
+  top:42px !important;
+}
+
+/* RESULT is a separate state: hide every battle-only overlay explicitly. */
+#shooting-event-root:has(.shooting-result.show) .shooting-mission-hud,
+#shooting-event-root:has(.shooting-result.show) .shooting-combo{
+  display:none !important;
+}
+#shooting-event-root:has(.shooting-result.show) .shooting-arena::after{
+  content:none !important;
+  display:none !important;
+}
+
+@media(max-width:420px){
+  #shooting-event-root .shooting-character-select.show{
+    bottom:-72px !important;
+  }
+  #shooting-event-root[data-battle-type="normal"] .shooting-combo{
+    top:42px !important;
+  }
+}
+
+/* ============================================================
+   PARTY SELECT FINAL LAYOUT FIX 2026-08-14
+   - Completely hide the battle/stage artwork while editing party
+   - Keep only roster scrolling
+   - Keep battle start footer always visible
+   ============================================================ */
+
+/* Party select occupies every pixel below the 72px special-event header. */
+#shooting-event-root .shooting-arena:has(.shooting-character-select.show){
+  overflow:visible;
+}
+
+#shooting-event-root .shooting-character-select.show{
+  top:0 !important;
+  right:0 !important;
+  bottom:-72px !important;
+  left:0 !important;
+  padding:0 !important;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+  overflow:hidden !important;
+  background:#fffdf8 !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* Never let the stage artwork show through the party screen. */
+#shooting-event-root:has(.shooting-character-select.show) .shooting-bg,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-wash,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-boss-hud,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-mission-hud,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-start-copy,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-countdown,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-player,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-boss,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-normal-enemy-layer,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-collectible-layer,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-combo{
+  visibility:hidden !important;
+}
+
+/* The previous calc(100% + 72px) made the card taller than its selector and
+   could push the action buttons below the viewport. */
+#shooting-event-root .shooting-character-select.show .shooting-party-select-card{
+  flex:1 1 auto !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  background:#fffdf8 !important;
+}
+
+/* Header / selected party / blessing stay fixed. Only this roster scrolls. */
+#shooting-event-root .shooting-character-select.show .shooting-character-grid.shooting-party-roster{
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding-bottom:14px !important;
+  background:#f7f3ea !important;
+}
+
+/* Fixed-looking opaque action footer at the bottom of the party screen. */
+#shooting-event-root .shooting-character-select.show .shooting-party-actions{
+  position:relative !important;
+  z-index:120 !important;
+  flex:0 0 auto !important;
+  min-height:70px !important;
+  padding:10px 14px max(12px,env(safe-area-inset-bottom,12px)) !important;
+  background:#fffdf8 !important;
+  border-top:1px solid rgba(176,139,71,.28) !important;
+  box-shadow:0 -8px 22px rgba(99,73,31,.08) !important;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-character-start{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  height:46px !important;
+  opacity:1;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-character-start:disabled{
+  opacity:.42 !important;
+}
+
+@media(max-width:420px){
+  #shooting-event-root .shooting-character-select.show .shooting-party-actions{
+    min-height:66px !important;
+    padding:9px 12px max(10px,env(safe-area-inset-bottom,10px)) !important;
+  }
+  #shooting-event-root .shooting-character-select.show .shooting-character-start,
+  #shooting-event-root .shooting-character-select.show .shooting-party-cancel{
+    height:44px !important;
+  }
+}
+
+
+/* =========================================================
+   CHAPTER 02 - 暴力 / MINI_02
+   ========================================================= */
+.shooting-mini-enemy.violence-warning{
+  filter:brightness(1.18) sepia(.12) drop-shadow(0 0 11px rgba(177,56,44,.56));
+  animation:shootingViolenceWarning .18s ease-in-out infinite alternate;
+}
+.shooting-mini-enemy.violence-dash{
+  filter:brightness(1.16) contrast(1.06) drop-shadow(0 0 15px rgba(154,49,40,.62));
+}
+.shooting-violence-heavy{
+  width:18px!important;
+  height:18px!important;
+  background:radial-gradient(circle at 38% 34%,rgba(255,244,234,.82) 0 12%,rgba(224,116,95,.84) 18% 38%,rgba(128,52,45,.76) 46% 68%,rgba(38,20,20,.22) 72% 100%)!important;
+  box-shadow:0 0 0 1px rgba(255,235,226,.22),0 0 12px rgba(207,85,67,.34),0 0 24px rgba(122,41,35,.20)!important;
+  opacity:.94;
+}
+.shooting-violence-pressure{
+  width:12px!important;
+  height:12px!important;
+  background:radial-gradient(circle at 38% 34%,rgba(255,240,233,.78) 0 10%,rgba(214,95,79,.82) 18% 36%,rgba(106,43,39,.72) 48% 70%,rgba(34,16,16,.18) 74% 100%)!important;
+  box-shadow:0 0 0 1px rgba(255,231,222,.20),0 0 10px rgba(177,63,53,.30),0 0 20px rgba(108,35,32,.16)!important;
+  opacity:.92;
+}
+.shooting-violence-boss-heavy{
+  width:22px!important;
+  height:22px!important;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,rgba(255,246,237,.84) 0 10%,rgba(226,108,90,.88) 18% 36%,rgba(126,48,43,.80) 46% 68%,rgba(38,18,19,.20) 72% 100%)!important;
+  box-shadow:0 0 0 1px rgba(255,233,225,.20),0 0 14px rgba(206,78,64,.36),0 0 28px rgba(116,34,34,.22)!important;
+  opacity:.95;
+}
+@keyframes shootingViolenceWarning{
+  from{
+    transform:translate3d(var(--unit-x),var(--unit-y),0) translate(-50%,-50%) scale(var(--enemy-scale,1));
+  }
+  to{
+    transform:translate3d(var(--unit-x),var(--unit-y),0) translate(-50%,-50%) scale(calc(var(--enemy-scale,1) * 1.08));
+  }
+}
+
+
+/* CHAPTER 02 - 強敵撃破を明確に見せる */
+.shooting-mini-enemy.violence-defeated{
+  opacity:0;
+  transform:translate(-50%,-68%) scale(1.18) rotate(7deg);
+  filter:brightness(2.25) saturate(.45) blur(2px) drop-shadow(0 0 20px rgba(173,65,53,.72));
+  transition:opacity .56s ease-out, transform .56s cubic-bezier(.18,.72,.24,1), filter .56s ease-out!important;
+}
+
+
+/* =========================================================
+   雑魚敵 共通HPバー
+   ========================================================= */
+.shooting-mini-enemy-hp{
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:19;
+  width:54px;
+  height:5px;
+  padding:1px;
+  border:1px solid rgba(89,72,49,.38);
+  background:rgba(255,253,247,.82);
+  box-shadow:0 1px 4px rgba(55,41,26,.18);
+  pointer-events:none;
+  opacity:.92;
+  will-change:transform;
+}
+.shooting-mini-enemy-hp i{
+  display:block;
+  width:100%;
+  height:100%;
+  transform-origin:left center;
+  transform:scaleX(1);
+  background:linear-gradient(90deg,#79a866,#a8c879);
+  transition:transform .12s linear,filter .14s ease,background .18s ease;
+}
+.shooting-mini-enemy-hp.low i{
+  background:linear-gradient(90deg,#b65e52,#df8975);
+}
+.shooting-mini-enemy-hp.hit{
+  animation:shootingMiniHpHit .18s ease-out;
+}
+.shooting-mini-enemy-hp.defeated{
+  opacity:0;
+  transition:opacity .18s ease-out;
+}
+@keyframes shootingMiniHpHit{
+  0%{filter:brightness(1)}
+  45%{filter:brightness(1.85)}
+  100%{filter:brightness(1)}
+}
+
+/* CHAPTER 02の強敵は少しだけ太くして視認性を上げる */
+.shooting-mini-enemy.violence-warning + .shooting-mini-enemy-hp{
+  opacity:1;
+}
+
+
+/* =========================================================
+   個別ユニットサイズ調整
+   Scale is applied inside positionUnit() after translation.
+   This prevents enemy x/y positions from being multiplied by uiScale.
+   ========================================================= */
+.shooting-mini-enemy,
+.shooting-boss{
+  transform-origin:center center;
+}
+
+
+/* =========================================================
+   ARNO - Orbit shot / 5 sec damage aura
+   ========================================================= */
+.shooting-bullet-arno{
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.98),rgba(192,174,239,.95) 42%,rgba(100,82,175,.92) 100%)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.78),
+    0 0 9px rgba(162,139,225,.92),
+    0 0 18px rgba(126,102,200,.42)!important;
+}
+.shooting-bullet-arno::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:18px;
+  border:1px solid rgba(184,164,232,.42);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+
+.shooting-arno-aura{
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:15;
+  width:118px;
+  height:118px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  pointer-events:none;
+  border:1px solid rgba(190,174,229,.40);
+  box-shadow:
+    inset 0 0 18px rgba(172,151,220,.14),
+    0 0 20px rgba(159,137,215,.22);
+  animation:shootingArnoAuraPulse 1.15s ease-in-out infinite alternate;
+}
+.shooting-arno-aura::before,
+.shooting-arno-aura::after,
+.shooting-arno-aura i,
+.shooting-arno-aura b,
+.shooting-arno-aura span{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:9px;
+  height:9px;
+  margin:-4.5px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.98),rgba(190,166,235,.90) 46%,rgba(113,87,184,.08) 72%);
+  box-shadow:0 0 10px rgba(164,136,224,.78);
+  transform-origin:4.5px 4.5px;
+}
+.shooting-arno-aura::before{animation:shootingArnoOrbitA 1.05s linear infinite}
+.shooting-arno-aura::after{animation:shootingArnoOrbitB 1.42s linear infinite}
+.shooting-arno-aura i{animation:shootingArnoOrbitC .88s linear infinite}
+.shooting-arno-aura b{animation:shootingArnoOrbitD 1.72s linear infinite}
+.shooting-arno-aura span{animation:shootingArnoOrbitE 1.18s linear infinite}
+
+#shooting-event-root.arno-aura-cast .shooting-arena{
+  animation:shootingArnoCastFlash .55s ease-out;
+}
+
+@keyframes shootingArnoAuraPulse{
+  from{opacity:.62;filter:brightness(.96)}
+  to{opacity:1;filter:brightness(1.17)}
+}
+@keyframes shootingArnoOrbitA{
+  from{transform:rotate(0deg) translateX(52px) rotate(0deg)}
+  to{transform:rotate(360deg) translateX(52px) rotate(-360deg)}
+}
+@keyframes shootingArnoOrbitB{
+  from{transform:rotate(90deg) translateX(43px) rotate(-90deg)}
+  to{transform:rotate(-270deg) translateX(43px) rotate(270deg)}
+}
+@keyframes shootingArnoOrbitC{
+  from{transform:rotate(180deg) translateX(57px) rotate(-180deg)}
+  to{transform:rotate(540deg) translateX(57px) rotate(-540deg)}
+}
+@keyframes shootingArnoOrbitD{
+  from{transform:rotate(260deg) translateX(36px) rotate(-260deg)}
+  to{transform:rotate(-100deg) translateX(36px) rotate(100deg)}
+}
+@keyframes shootingArnoOrbitE{
+  from{transform:rotate(320deg) translateX(48px) rotate(-320deg)}
+  to{transform:rotate(680deg) translateX(48px) rotate(-680deg)}
+}
+@keyframes shootingArnoCastFlash{
+  0%{filter:brightness(1)}
+  28%{filter:brightness(1.22) saturate(.92)}
+  100%{filter:brightness(1)}
+}
+
+
+/* =========================================================
+   Player bullet colors by attribute
+   MYSTIS = blue / LOGOS = green / CHAOS = red
+   ========================================================= */
+.shooting-bullet-mystis{
+  background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.98),rgba(140,196,255,.96) 42%,rgba(54,105,210,.96) 100%)!important;
+  box-shadow:0 0 0 1px rgba(235,247,255,.80),0 0 10px rgba(87,153,242,.92),0 0 18px rgba(75,126,219,.42)!important;
+}
+.shooting-bullet-logos{
+  background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.98),rgba(155,230,170,.96) 42%,rgba(52,153,83,.96) 100%)!important;
+  box-shadow:0 0 0 1px rgba(239,255,242,.80),0 0 10px rgba(89,191,112,.92),0 0 18px rgba(64,154,86,.42)!important;
+}
+.shooting-bullet-chaos{
+  background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.98),rgba(255,156,146,.96) 42%,rgba(196,52,46,.96) 100%)!important;
+  box-shadow:0 0 0 1px rgba(255,239,235,.80),0 0 10px rgba(225,88,74,.92),0 0 18px rgba(188,57,49,.42)!important;
+}
+
+/* Arno keeps the orbit-ring shape, but its core/glow color follows the attribute class. */
+.shooting-bullet-arno.shooting-bullet-mystis::after{border-color:rgba(121,180,245,.46)}
+.shooting-bullet-arno.shooting-bullet-logos::after{border-color:rgba(111,205,132,.46)}
+.shooting-bullet-arno.shooting-bullet-chaos::after{border-color:rgba(224,107,95,.46)}
+
+
+/* =========================================================
+   Multi-element player bullets
+   ========================================================= */
+.shooting-bullet-mystis-logos{
+  background:linear-gradient(135deg,#4f9fe8 0 46%,#69c77d 54% 100%)!important;
+  box-shadow:0 0 0 1px rgba(242,252,255,.82),-3px 0 10px rgba(73,145,228,.72),3px 0 10px rgba(78,181,105,.72)!important;
+}
+.shooting-bullet-mystis-chaos{
+  background:linear-gradient(135deg,#4f9fe8 0 46%,#d55a50 54% 100%)!important;
+  box-shadow:0 0 0 1px rgba(250,245,255,.82),-3px 0 10px rgba(73,145,228,.72),3px 0 10px rgba(211,74,65,.72)!important;
+}
+.shooting-bullet-logos-chaos{
+  background:linear-gradient(135deg,#69c77d 0 46%,#d55a50 54% 100%)!important;
+  box-shadow:0 0 0 1px rgba(247,255,245,.82),-3px 0 10px rgba(78,181,105,.72),3px 0 10px rgba(211,74,65,.72)!important;
+}
+
+
+/* =========================================================
+   SUI - straight 2-line / clock countdown ULT
+   ========================================================= */
+.shooting-bullet-sui{
+  width:7px!important;
+  height:16px!important;
+  border-radius:50% 50% 42% 42%;
+}
+
+/* 大きなローマ数字: 中央から拡大しながらフェードアウト */
+.shooting-sui-clock-mark{
+  position:absolute;
+  z-index:96;
+  left:50%;
+  top:47%;
+  transform:translate(-50%,-50%) scale(.42);
+  transform-origin:center;
+  pointer-events:none;
+  opacity:0;
+  color:rgba(236,248,255,.98);
+  font-family:"Cinzel","Times New Roman",serif;
+  font-size:clamp(86px,27vw,180px);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:.02em;
+  text-shadow:
+    0 0 2px rgba(255,255,255,.98),
+    0 0 18px rgba(91,166,232,.78),
+    0 0 42px rgba(64,125,212,.42);
+  filter:blur(.4px);
+}
+.shooting-sui-clock-mark.show{
+  animation:shootingSuiClockMark .90s cubic-bezier(.12,.62,.2,1) both;
+}
+
+.shooting-sui-clock-burst{
+  position:absolute;
+  z-index:94;
+  left:50%;
+  top:48%;
+  width:60px;
+  height:60px;
+  transform:translate(-50%,-50%) scale(.2);
+  border-radius:50%;
+  opacity:0;
+  pointer-events:none;
+  border:2px solid rgba(226,246,255,.88);
+  box-shadow:
+    0 0 18px rgba(104,179,243,.84),
+    0 0 70px rgba(70,132,219,.55);
+}
+.shooting-sui-clock-burst::before,
+.shooting-sui-clock-burst::after,
+.shooting-sui-clock-burst i,
+.shooting-sui-clock-burst b{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:2px;
+  height:44px;
+  transform-origin:50% 0;
+  background:linear-gradient(to bottom,rgba(255,255,255,.95),rgba(99,166,232,.05));
+}
+.shooting-sui-clock-burst::after{transform:rotate(90deg)}
+.shooting-sui-clock-burst i{transform:rotate(45deg)}
+.shooting-sui-clock-burst b{transform:rotate(-45deg)}
+.shooting-sui-clock-burst.show{
+  animation:shootingSuiClockBurst .82s ease-out both;
+}
+
+#shooting-event-root.sui-clock-detonate .shooting-arena{
+  animation:shootingSuiDetonateFlash .72s ease-out;
+}
+
+@keyframes shootingSuiClockMark{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.42);
+    filter:blur(3px);
+  }
+  16%{
+    opacity:1;
+  }
+  68%{
+    opacity:.90;
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.55);
+    filter:blur(.5px);
+  }
+}
+
+@keyframes shootingSuiClockBurst{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.2) rotate(0deg);
+  }
+  18%{opacity:1}
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(8.6) rotate(135deg);
+  }
+}
+
+@keyframes shootingSuiDetonateFlash{
+  0%{filter:brightness(1)}
+  15%{filter:brightness(1.55) saturate(.8)}
+  38%{filter:brightness(1.16)}
+  100%{filter:brightness(1)}
+}
+
+
+/* =========================================================
+   CLARINE - 4 line orbit / decoy barrage
+   ========================================================= */
+.shooting-bullet-clarine{
+  width:8px!important;
+  height:8px!important;
+  border-radius:50%;
+}
+.shooting-bullet-clarine::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:14px;
+  height:14px;
+  border:1px solid rgba(230,178,200,.34);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+.shooting-bullet-clarine-decoy{
+  width:8px!important;
+  height:8px!important;
+  border-radius:2px 50% 50% 50%;
+  transform:rotate(45deg);
+  background:radial-gradient(
+    circle at 38% 34%,
+    rgba(255,255,255,.99) 0 24%,
+    rgba(234,225,255,.98) 26% 52%,
+    rgba(179,157,229,.92) 54% 78%,
+    rgba(132,109,199,.28) 80% 100%
+  )!important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.78),
+    0 0 8px rgba(207,189,249,.95),
+    0 0 16px rgba(169,143,226,.62)!important;
+  filter:brightness(1.08);
+}
+.shooting-bullet-clarine-decoy::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:3px;
+  transform:translate(-74%,-50%) rotate(-45deg);
+  transform-origin:right center;
+  border-radius:999px;
+  background:linear-gradient(
+    90deg,
+    rgba(202,184,243,0),
+    rgba(226,215,255,.68),
+    rgba(255,255,255,.92)
+  );
+  filter:blur(.4px);
+  opacity:.82;
+}
+.shooting-clarine-decoy{
+  position:absolute;
+  z-index:22;
+  width:66px;
+  height:auto;
+  opacity:0;
+  filter:drop-shadow(0 6px 12px rgba(111,86,146,.25));
+  pointer-events:none;
+}
+.shooting-clarine-decoy.show{
+  opacity:1;
+  transition:opacity .28s ease-out, transform .28s ease-out;
+}
+.shooting-clarine-decoy.hit{
+  animation:shootingClarineDecoyHit .12s ease-out;
+}
+.shooting-clarine-decoy.defeated{
+  opacity:0;
+  transform:translate(-50%,-50%) scale(1.28);
+  filter:brightness(1.55) saturate(1.1) blur(1px) drop-shadow(0 0 18px rgba(226,132,152,.62));
+  transition:opacity .52s ease-out, transform .52s ease-out, filter .52s ease-out;
+}
+.shooting-clarine-decoy.expired{
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.94);
+  transition:opacity .24s ease-out, transform .24s ease-out;
+}
+.shooting-clarine-decoy-burst{
+  position:absolute;
+  z-index:24;
+  left:0;
+  top:0;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  opacity:0;
+  pointer-events:none;
+  border:2px solid rgba(255,238,244,.88);
+  box-shadow:0 0 18px rgba(232,133,153,.58),0 0 48px rgba(193,102,141,.32);
+}
+.shooting-clarine-decoy-burst::before,
+.shooting-clarine-decoy-burst::after,
+.shooting-clarine-decoy-burst i,
+.shooting-clarine-decoy-burst b,
+.shooting-clarine-decoy-burst span{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:2px;
+  height:30px;
+  margin-top:-15px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.95),rgba(227,136,156,.06));
+  transform-origin:50% 100%;
+}
+.shooting-clarine-decoy-burst::before{transform:translateX(-50%) rotate(0deg)}
+.shooting-clarine-decoy-burst::after{transform:translateX(-50%) rotate(72deg)}
+.shooting-clarine-decoy-burst i{transform:translateX(-50%) rotate(144deg)}
+.shooting-clarine-decoy-burst b{transform:translateX(-50%) rotate(216deg)}
+.shooting-clarine-decoy-burst span{transform:translateX(-50%) rotate(288deg)}
+.shooting-clarine-decoy-burst.show{
+  animation:shootingClarineBurst .72s ease-out both;
+}
+@keyframes shootingClarineDecoyHit{
+  from{filter:brightness(1)}
+  50%{filter:brightness(1.7)}
+  to{filter:brightness(1)}
+}
+@keyframes shootingClarineBurst{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.25);
+  }
+  18%{opacity:1}
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(5.8);
+  }
+}
+
+
+/* =========================================================
+   Projectile readability: allied decoy vs hostile bullets
+   ========================================================= */
+/* Enemy bullets: less pellet-like, more like translucent dark energy orbs. */
+.shooting-enemy-bullet{
+  width:12px!important;
+  height:12px!important;
+  border-radius:50%;
+  background:radial-gradient(
+    circle at 40% 36%,
+    rgba(255,246,255,.82) 0 10%,
+    rgba(189,157,192,.72) 14% 24%,
+    rgba(101,79,101,.68) 32% 54%,
+    rgba(34,26,33,.58) 60% 74%,
+    rgba(14,10,14,.18) 76% 100%
+  )!important;
+  box-shadow:
+    0 0 0 1px rgba(214,188,216,.18),
+    0 0 8px rgba(166,120,179,.28),
+    0 0 16px rgba(97,60,110,.28),
+    0 0 26px rgba(50,30,58,.18)!important;
+  backdrop-filter:blur(.3px);
+  opacity:.9;
+}
+.shooting-enemy-bullet::before{
+  content:'';
+  position:absolute;
+  inset:-6px;
+  border-radius:50%;
+  background:radial-gradient(
+    circle,
+    rgba(158,110,173,.16) 0 28%,
+    rgba(112,70,126,.10) 36% 54%,
+    rgba(52,29,59,.03) 62% 100%
+  );
+  filter:blur(3px);
+  pointer-events:none;
+}
+.shooting-enemy-bullet::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:4px;
+  margin:-2px 0 0 -2px;
+  border-radius:50%;
+  background:rgba(255,248,255,.62);
+  box-shadow:0 0 6px rgba(255,241,255,.44);
+  pointer-events:none;
+}
+.shooting-mini-enemy-bullet{
+  width:10px!important;
+  height:10px!important;
+  border-radius:50%;
+  background:radial-gradient(
+    circle at 38% 34%,
+    rgba(255,240,235,.76) 0 10%,
+    rgba(214,122,132,.72) 16% 26%,
+    rgba(114,54,62,.72) 34% 56%,
+    rgba(30,18,22,.56) 62% 76%,
+    rgba(12,10,12,.14) 78% 100%
+  )!important;
+  box-shadow:
+    0 0 0 1px rgba(226,171,177,.18),
+    0 0 8px rgba(190,81,95,.28),
+    0 0 16px rgba(124,48,59,.22),
+    0 0 24px rgba(50,16,20,.16)!important;
+  opacity:.92;
+}
+.shooting-mini-enemy-bullet::before{
+  content:'';
+  position:absolute;
+  inset:-5px;
+  border-radius:50%;
+  background:radial-gradient(
+    circle,
+    rgba(208,102,118,.15) 0 30%,
+    rgba(136,55,71,.08) 40% 58%,
+    rgba(54,19,26,.02) 66% 100%
+  );
+  filter:blur(3px);
+  pointer-events:none;
+}
+.shooting-mini-enemy-bullet::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:3px;
+  height:3px;
+  margin:-1.5px 0 0 -1.5px;
+  border-radius:50%;
+  background:rgba(255,243,240,.56);
+  box-shadow:0 0 5px rgba(255,228,228,.36);
+  pointer-events:none;
+}
+
+
+/* =========================================================
+   IGNIS - continuous laser / fire wheel / burn
+   ========================================================= */
+.shooting-ignis-laser{
+  position:absolute;
+  z-index:13;
+  width:var(--ignis-laser-width,12px);
+  transform:translateX(-50%) translateY(-100%);
+  transform-origin:50% 100%;
+  pointer-events:none;
+  opacity:0;
+  border-radius:999px;
+  background:linear-gradient(
+    to top,
+    rgba(255,248,222,.98) 0%,
+    rgba(255,188,72,.98) 22%,
+    rgba(239,76,39,.96) 62%,
+    rgba(180,35,25,.10) 100%
+  );
+  box-shadow:
+    0 0 5px rgba(255,245,213,.98),
+    0 0 13px rgba(255,141,49,.96),
+    0 0 27px rgba(220,55,32,.65);
+  transition:opacity .06s linear;
+}
+.shooting-ignis-laser.active{
+  opacity:1;
+}
+.shooting-ignis-laser i,
+.shooting-ignis-laser b{
+  position:absolute;
+  content:'';
+  left:50%;
+  top:0;
+  bottom:0;
+  transform:translateX(-50%);
+  border-radius:999px;
+}
+.shooting-ignis-laser i{
+  width:32%;
+  background:rgba(255,255,245,.94);
+  filter:blur(.2px);
+}
+.shooting-ignis-laser b{
+  width:220%;
+  background:rgba(255,93,38,.12);
+  filter:blur(8px);
+}
+
+.shooting-ignis-fire-wheel{
+  position:absolute;
+  z-index:23;
+  border-radius:50%;
+  pointer-events:none;
+  opacity:0;
+  border:10px solid rgba(255,123,37,.84);
+  box-shadow:
+    inset 0 0 12px rgba(255,245,209,.92),
+    0 0 12px rgba(255,210,86,.92),
+    0 0 28px rgba(235,79,28,.82),
+    0 0 48px rgba(175,41,22,.54);
+  animation:shootingIgnisWheelSpin 2.2s linear infinite, shootingIgnisWheelFloat 1.8s ease-in-out infinite alternate;
+}
+.shooting-ignis-fire-wheel::before,
+.shooting-ignis-fire-wheel::after,
+.shooting-ignis-fire-wheel i,
+.shooting-ignis-fire-wheel b,
+.shooting-ignis-fire-wheel span{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:38px;
+  margin-left:-9px;
+  margin-top:-19px;
+  border-radius:50% 50% 42% 42%;
+  transform-origin:50% 50%;
+  background:linear-gradient(to top,rgba(194,39,24,.06),rgba(255,101,29,.88),rgba(255,235,133,.98));
+  filter:blur(.6px);
+}
+.shooting-ignis-fire-wheel::before{transform:rotate(0deg) translateY(-55px)}
+.shooting-ignis-fire-wheel::after{transform:rotate(72deg) translateY(-55px)}
+.shooting-ignis-fire-wheel i{transform:rotate(144deg) translateY(-55px)}
+.shooting-ignis-fire-wheel b{transform:rotate(216deg) translateY(-55px)}
+.shooting-ignis-fire-wheel span{transform:rotate(288deg) translateY(-55px)}
+.shooting-ignis-fire-wheel.active{opacity:1}
+.shooting-ignis-fire-wheel.fade{
+  opacity:0;
+  filter:blur(2px) brightness(.9);
+  transition:opacity .42s ease-out, filter .42s ease-out;
+}
+
+.ignis-burning{
+  filter:brightness(1.18) saturate(1.18) drop-shadow(0 0 9px rgba(237,79,35,.72))!important;
+}
+.shooting-ignis-burn{
+  position:absolute;
+  display:block;
+  z-index:80;
+  left:0;
+  top:0;
+  width:92px;
+  height:148px;
+  pointer-events:none;
+  opacity:.88;
+  object-fit:contain;
+  transform-origin:50% 72%;
+  scale:1;
+  rotate:0deg;
+  filter:
+    drop-shadow(0 0 10px rgba(255,118,36,.62))
+    drop-shadow(0 0 22px rgba(230,64,27,.34));
+  animation:shootingIgnisBurnFlicker .52s ease-in-out infinite alternate;
+}
+.shooting-ignis-burn.fade{
+  opacity:0;
+  filter:
+    blur(1px)
+    drop-shadow(0 0 6px rgba(255,118,36,.35));
+  transition:opacity .16s ease-out, filter .16s ease-out;
+}
+
+@keyframes shootingIgnisWheelSpin{
+  from{rotate:0deg}
+  to{rotate:360deg}
+}
+@keyframes shootingIgnisBurnFlicker{
+  from{
+    opacity:.74;
+    filter:
+      brightness(.96)
+      drop-shadow(0 0 8px rgba(255,118,36,.54))
+      drop-shadow(0 0 18px rgba(230,64,27,.26));
+  }
+  to{
+    opacity:1;
+    filter:
+      brightness(1.10)
+      drop-shadow(0 0 14px rgba(255,140,52,.74))
+      drop-shadow(0 0 30px rgba(231,72,29,.40));
+  }
+}
+
+
+@keyframes shootingIgnisWheelFloat{
+  from{filter:brightness(.96) saturate(1.02)}
+  to{filter:brightness(1.10) saturate(1.12)}
+}
+
+
+.shooting-ignis-burn{
+  animation:
+    shootingIgnisBurnFlicker .52s ease-in-out infinite alternate,
+    shootingIgnisBurnSway 1.05s ease-in-out infinite alternate;
+}
+
+@keyframes shootingIgnisBurnSway{
+  from{
+    scale:.96 1.00;
+    rotate:-1.5deg;
+  }
+  to{
+    scale:1.04 1.08;
+    rotate:1.5deg;
+  }
+}
+
+
+/* =========================================================
+   ROSE - seed splash / healing flower
+   ========================================================= */
+.shooting-bullet-rose-seed{
+  width:8px!important;
+  height:12px!important;
+  border-radius:52% 52% 46% 46%;
+  background:radial-gradient(circle at 42% 30%,rgba(255,232,238,.98) 0 18%,rgba(255,118,146,.96) 26% 56%,rgba(227,62,83,.92) 62% 82%,rgba(148,22,36,.84) 84% 100%)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,229,236,.78),
+    0 0 8px rgba(243,94,131,.62),
+    0 0 16px rgba(169,34,50,.34)!important;
+}
+.shooting-bullet-rose-heart{
+  z-index:32!important;
+  width:14px!important;
+  height:14px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  border-radius:0;
+  /* この要素(外側)は位置決め専用の土台。JSのtransform(位置移動)以外は何も持たせない。 */
+}
+/* ハートの見た目(色・グロー・回転・疑似要素オフセット)はすべて内側のspanだけで完結させる。
+   外側の position-transform と、この内側要素の rotate が完全に別のtransformコンテキスト
+   になるため、「同じ要素に位置移動と回転を同時適用する」ことによる描画ズレが起こり得ない。 */
+.shooting-rose-heart-shape{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:14px;
+  height:14px;
+  margin:-7px 0 0 -7px;
+  background:linear-gradient(135deg,rgba(255,196,225,.98),rgba(255,112,162,.96));
+  box-shadow:0 0 0 1px rgba(255,240,247,.72),0 0 10px rgba(255,143,188,.78);
+  border-radius:3px;
+  transform:rotate(45deg);
+  transform-origin:center center;
+  pointer-events:none;
+}
+.shooting-rose-heart-shape::before,
+.shooting-rose-heart-shape::after{
+  content:'';
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:inherit;
+}
+.shooting-rose-heart-shape::before{left:-7px;top:0}
+.shooting-rose-heart-shape::after{left:0;top:-7px}
+
+.shooting-rose-flower{
+  position:absolute;
+  z-index:26;
+  width:168px;
+  height:168px;
+  pointer-events:none;
+  opacity:0;
+  scale:.74;
+  transform-origin:center center;
+}
+.shooting-rose-flower.show{
+  opacity:1;
+  scale:1;
+  transition:opacity .26s ease-out, scale .42s cubic-bezier(.15,.72,.18,1.02);
+}
+.shooting-rose-flower.fade{
+  opacity:0;
+  scale:.92;
+  transition:opacity .22s ease-out, scale .22s ease-out;
+}
+.shooting-rose-flower > img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  filter:drop-shadow(0 0 14px rgba(255,172,205,.48));
+}
+.shooting-rose-flower-aura{
+  position:absolute;
+  inset:26px;
+  border-radius:50%;
+  box-shadow:0 0 0 2px rgba(255,216,234,.32),0 0 20px rgba(255,162,201,.38),0 0 44px rgba(255,124,186,.20);
+  animation:shootingRoseFlowerAura 1.25s ease-out infinite;
+}
+@keyframes shootingRoseFlowerAura{
+  0%{opacity:.18;scale:.82}
+  55%{opacity:.55}
+  100%{opacity:0;scale:1.22}
+}
+
+
+/* ============================================================
+   ULT CUT-IN
+   - 1秒間、アリーナ全面にキャラ専用カットイン
+   - JS側で戦場更新を完全停止し、終了後にULT効果を実行
+   ============================================================ */
+.shooting-ult-cutin{
+  position:absolute;
+  inset:0;
+  z-index:180;
+  overflow:hidden;
+  pointer-events:none;
+  opacity:0;
+  background:rgba(248,244,238,.56);
+}
+.shooting-ult-cutin.show{
+  opacity:1;
+  transition:opacity .08s linear;
+}
+.shooting-ult-cutin.out{
+  opacity:0;
+  transition:opacity .12s ease-out;
+}
+.shooting-ult-cutin-image{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:100%;
+  height:auto;
+  max-width:100%;
+  max-height:none;
+  object-fit:contain;
+  object-position:center center;
+  transform:translate(-50%,-50%) scale(1.02);
+  filter:saturate(.96) contrast(1.02) brightness(1.02);
+  opacity:.82;
+  animation:shootingUltCutinImage 1s cubic-bezier(.18,.72,.24,1) both;
+}
+.shooting-ult-cutin::before{
+  content:'';
+  position:absolute;
+  z-index:2;
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.28),transparent 20%,transparent 80%,rgba(255,255,255,.18)),
+    linear-gradient(180deg,rgba(255,255,255,.12),transparent 34%,rgba(35,25,45,.12));
+  pointer-events:none;
+}
+.shooting-ult-cutin-label{
+  position:absolute;
+  z-index:4;
+  left:18px;
+  right:18px;
+  bottom:16px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  color:#fff;
+  text-shadow:0 1px 8px rgba(30,20,35,.62);
+  animation:shootingUltCutinLabel .9s ease-out both;
+}
+.shooting-ult-cutin-label span{
+  font-family:"Cinzel","Times New Roman",serif;
+  font-size:10px;
+  letter-spacing:.34em;
+  color:rgba(255,255,255,.90);
+}
+.shooting-ult-cutin-label strong{
+  max-width:92%;
+  font-size:22px;
+  line-height:1.15;
+  font-weight:600;
+  letter-spacing:.08em;
+  color:rgba(255,255,255,.97);
+}
+.shooting-ult-cutin-flash{
+  position:absolute;
+  z-index:3;
+  inset:-20%;
+  opacity:0;
+  background:linear-gradient(115deg,transparent 34%,rgba(255,255,255,.78) 48%,rgba(255,255,255,.12) 58%,transparent 70%);
+  transform:translateX(-70%);
+  animation:shootingUltCutinFlash .62s ease-out .08s both;
+}
+#shooting-event-root.ult-cutin-active .shooting-footer,
+#shooting-event-root.ult-cutin-active .shooting-hud,
+#shooting-event-root.ult-cutin-active .shooting-boss-hud,
+#shooting-event-root.ult-cutin-active .shooting-mission-hud{
+  filter:brightness(.72);
+}
+@media (min-width:700px){
+  .shooting-ult-cutin-label{
+    left:26px;
+    right:26px;
+    bottom:22px;
+  }
+  .shooting-ult-cutin-label strong{
+    font-size:26px;
+  }
+}
+@keyframes shootingUltCutinLabel{
+  0%{opacity:0;transform:translateY(10px)}
+  18%{opacity:1}
+  100%{opacity:1;transform:translateY(0)}
+}
+@keyframes shootingUltCutinImage{
+  0%{transform:translate(-50%,-50%) scale(1.055) translateX(8px);filter:saturate(.82) contrast(.96) brightness(1.18)}
+  16%{transform:translate(-50%,-50%) scale(1.03) translateX(0)}
+  100%{transform:translate(-50%,-50%) scale(1.01) translateX(-3px);filter:saturate(1) contrast(1.03) brightness(1)}
+}
+@keyframes shootingUltCutinFlash{
+  0%{opacity:0;transform:translateX(-70%)}
+  18%{opacity:.95}
+  72%{opacity:.35}
+  100%{opacity:0;transform:translateX(72%)}
 }

@@ -45,9 +45,19 @@
   }
 
   function getStoryStages(chapter) {
-    if (typeof getStagesByChapter === 'function') return getStagesByChapter(chapter);
-    if (typeof STAGES !== 'undefined') return STAGES.filter(s => s.chapter === chapter);
-    return [];
+    if (!window.ShootingStages || typeof window.ShootingStages.getShootingStagesByChapter !== 'function') {
+      return [];
+    }
+    return window.ShootingStages.getShootingStagesByChapter(Number(chapter)) || [];
+  }
+
+  function isShootingStoryStageUnlocked(stage) {
+    if (!stage) return false;
+    const chapterStages = getStoryStages(stage.chapter);
+    const index = chapterStages.findIndex(s => s && s.id === stage.id);
+    if (index <= 0) return true;
+    const prev = chapterStages[index - 1];
+    return !!(prev && isStoryStageCleared(prev.id));
   }
 
   function isStoryChapterCleared(chapter) {
@@ -57,8 +67,10 @@
 
   function isStoryChapterUnlocked(chapter) {
     chapter = Number(chapter);
-    if (chapter <= STORY_CHAPTER_MIN) return true;
-    if (chapter > STORY_CHAPTER_MAX) return false;
+    if (chapter < STORY_CHAPTER_MIN || chapter > STORY_CHAPTER_MAX) return false;
+    const currentStages = getStoryStages(chapter);
+    if (!currentStages.length) return false;
+    if (chapter === STORY_CHAPTER_MIN) return true;
     return isStoryChapterCleared(chapter - 1);
   }
 
@@ -103,6 +115,16 @@
   window.isStoryChapterUnlocked = isStoryChapterUnlocked;
   window.isStoryChapterCleared = isStoryChapterCleared;
   window.markStoryStageCleared = markStoryStageCleared;
+
+  // shooting_event.js 内部モジュールの非同期ロード完了後に再描画。
+  (function waitForShootingStoryMaster(attempt) {
+    if (window.ShootingStages) {
+      renderStoryChapterList();
+      return;
+    }
+    if ((attempt || 0) >= 50) return;
+    setTimeout(() => waitForShootingStoryMaster((attempt || 0) + 1), 100);
+  })(0);
 
   // Storyタブが開かれた時に最新の解放状態を反映するため、
   // DOM構築後とタブ操作後に再描画する。
@@ -331,6 +353,56 @@
     if (!list) return;
     list.innerHTML = '';
 
+    // ============================================================
+    // STORY = SHOOTING
+    // ============================================================
+    if (typeof chapter === 'number' && chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) {
+      if (!window.ShootingStages) {
+        list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.45);font-size:12px;padding:42px 0;letter-spacing:2px;">SHOOTING DATA LOADING...</div>';
+        setTimeout(() => {
+          const modal = document.getElementById('stage-select-modal');
+          if (modal && modal.style.display !== 'none') renderList(chapter);
+        }, 120);
+        return;
+      }
+
+      const stages = getStoryStages(chapter);
+      if (!stages.length) {
+        list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.3);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
+        return;
+      }
+
+      stages.forEach(stageDef => {
+        const unlocked = isShootingStoryStageUnlocked(stageDef);
+        const cleared = isStoryStageCleared(stageDef.id);
+        const isBoss = stageDef.type === 'boss';
+        const badgeLabel = isBoss ? 'BOSS' : 'MISSION';
+        const badgeColor = isBoss ? 'rgba(180,60,180,.85)' : 'rgba(200,180,80,.85)';
+        const missionText = stageDef.mission?.text || (isBoss ? 'BOSSを撃破' : '敵を撃破');
+
+        const card = document.createElement('div');
+        card.className = 'ss-card' + (unlocked ? '' : ' locked');
+        if (cleared) card.classList.add('story-cleared');
+
+        card.innerHTML = `
+          <div class="ss-card-no">${String(stageDef.stageNo || 0).padStart(2, '0')}</div>
+          <div class="ss-card-body">
+            <div class="ss-card-name">${stageDef.name || 'STAGE'}${cleared ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
+            <div class="ss-card-meta">
+              <div class="ss-card-enemy">${missionText}</div>
+            </div>
+          </div>
+          <div class="ss-diff-badge" style="color:${badgeColor};border-color:${badgeColor.replace('.85', '.4')}">${badgeLabel}</div>
+          ${unlocked ? '<div class="ss-card-arrow">›</div>' : '<div class="ss-lock-icon">🔒</div>'}
+        `;
+
+        if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef);
+        list.appendChild(card);
+      });
+      return;
+    }
+
+
     // ── 特別巡行用ローグライト一覧 ──
     // CHAPTER 00はSTAGESに定義したBOSS単戦だけを表示する。
     if (chapter === 'roguelite') {
@@ -455,7 +527,34 @@
   window.openRoguelitePartySelect = _openRoguelitePartySelect;
 
   // ============================================================
-  // ステージ選択
+  // STORY（SHOOTING）ステージ選択
+  // ============================================================
+  function onShootingStoryStageTap(stage) {
+    if (!stage || !stage.id) return;
+    closeStageSelect();
+
+    setTimeout(() => {
+      if (typeof window.openShootingStage === 'function') {
+        window.openShootingStage(stage.id);
+        return;
+      }
+
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries++;
+        if (typeof window.openShootingStage === 'function') {
+          clearInterval(timer);
+          window.openShootingStage(stage.id);
+        } else if (tries >= 30) {
+          clearInterval(timer);
+          alert('シューティングモジュールを読み込めませんでした');
+        }
+      }, 100);
+    }, 350);
+  }
+
+  // ============================================================
+  // 旧ストラテジー側ステージ選択（コードは保持・STORY導線からは使用しない）
   // ============================================================
   function onStageTap(stage) {
     if (stage && stage.rogueliteRunId) {
@@ -606,67 +705,14 @@ if (guf) {
 
 
   // ============================================================
-  // STORY CLEAR AUTO RECORD
-  // Battle32.start(config, callbacks) の result をラップして勝利時に記録。
+  // STORY CLEAR AUTO RECORD — SHOOTING
   // ============================================================
-  function hookStoryBattleResult() {
-    if (!window.Battle32 || typeof window.Battle32.start !== 'function') {
-      setTimeout(hookStoryBattleResult, 100);
-      return;
-    }
-    if (window.Battle32.__storyProgressHooked) return;
-
-    const originalStart = window.Battle32.start;
-    window.Battle32.start = function(config, callbacks) {
-      const cfg = config || {};
-      const stage = cfg.stageId && typeof getStageById === 'function' ? getStageById(cfg.stageId) : null;
-      const isStory = !!(stage && Number(stage.chapter) >= STORY_CHAPTER_MIN && Number(stage.chapter) <= STORY_CHAPTER_MAX);
-      const userCallbacks = callbacks || {};
-      const wrappedCallbacks = Object.assign({}, userCallbacks);
-      const originalResult = userCallbacks.result;
-
-      wrappedCallbacks.result = function(data) {
-        const result = (typeof data === 'string') ? data : (data && data.result);
-        if (isStory && result === 'win') {
-          markStoryStageCleared(stage.id);
-        }
-        if (typeof originalResult === 'function') return originalResult.apply(this, arguments);
-      };
-
-      return originalStart.call(this, cfg, wrappedCallbacks);
-    };
-    window.Battle32.__storyProgressHooked = true;
-  }
-
-  hookStoryBattleResult();
+  window.addEventListener('shooting-stage-result', function (event) {
+    const detail = event && event.detail ? event.detail : {};
+    if (!detail.win || !detail.stageId) return;
+    markStoryStageCleared(detail.stageId);
+    renderStoryChapterList();
+  });
 
 
-
-  // ============================================================
-  // STORY BOSS（ローグライトラン）クリア進捗フック
-  // ============================================================
-  function hookStoryBossRogueliteProgress(){
-    if (!window.RogueliteRun || typeof window.RogueliteRun.end !== 'function') {
-      setTimeout(hookStoryBossRogueliteProgress, 100);
-      return;
-    }
-    if (window.RogueliteRun.__storyBossProgressHooked) return;
-
-    const originalEnd = window.RogueliteRun.end.bind(window.RogueliteRun);
-    window.RogueliteRun.end = function(result){
-      const ctx = window.__STORY_BOSS_ROGUELITE_CONTEXT__;
-      const ret = originalEnd.apply(window.RogueliteRun, arguments);
-
-      if (ctx) {
-        if (result === 'win' && ctx.stageId) {
-          markStoryStageCleared(ctx.stageId);
-          renderStoryChapterList();
-        }
-        window.__STORY_BOSS_ROGUELITE_CONTEXT__ = null;
-      }
-      return ret;
-    };
-    window.RogueliteRun.__storyBossProgressHooked = true;
-  }
-  hookStoryBossRogueliteProgress();
 })();
