@@ -139,9 +139,41 @@
     arena.addEventListener('pointercancel', onPointerUp, { passive: false });
     const switchRail = root.querySelector('#shooting-switch-rail');
     if (switchRail) {
-      ['pointerdown','pointermove','pointerup','pointercancel','click'].forEach(type => {
+      // スマホでは click まで待つと、指が数px動いただけでタップがキャンセルされることがある。
+      // キャラチェンジは pointerdown の瞬間に確定させ、操作感を優先する。
+      switchRail.addEventListener('pointerdown', ev => {
+        ev.stopPropagation();
+
+        const btn = ev.target && ev.target.closest
+          ? ev.target.closest('.shooting-switch-btn')
+          : null;
+
+        if (!btn || btn.disabled) return;
+
+        const id = Number(btn.getAttribute('data-switch-id'));
+        if (!Number.isFinite(id)) return;
+
+        ev.preventDefault();
+
+        // 直後に生成されるclickで二重切り替えされないようフラグを付与。
+        switchRail.dataset.suppressClick = '1';
+        window.switchShootingCharacter(id);
+
+        window.setTimeout(() => {
+          if (switchRail) delete switchRail.dataset.suppressClick;
+        }, 420);
+      }, { passive: false });
+
+      ['pointermove','pointerup','pointercancel'].forEach(type => {
         switchRail.addEventListener(type, ev => ev.stopPropagation(), { passive: false });
       });
+
+      switchRail.addEventListener('click', ev => {
+        ev.stopPropagation();
+        if (switchRail.dataset.suppressClick === '1') {
+          ev.preventDefault();
+        }
+      }, { passive: false });
     }
     return root;
   }

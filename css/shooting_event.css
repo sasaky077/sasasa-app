@@ -2449,3 +2449,47 @@
   72%{opacity:.35}
   100%{opacity:0;transform:translateX(72%)}
 }
+
+
+/* ============================================================
+   SWITCH BUTTON TOUCH RESPONSE
+   - visual size is mostly preserved
+   - touch target is widened with an invisible hit area
+   - pointerdown handles switching immediately on mobile
+   ============================================================ */
+.shooting-switch-btn{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.shooting-switch-btn::before{
+  content:'';
+  position:absolute;
+  z-index:6;
+  inset:-10px -10px -10px -14px;
+  background:transparent;
+  pointer-events:auto;
+}
+.shooting-switch-btn > *{
+  pointer-events:none;
+}
+.shooting-switch-btn:active{
+  transform:scale(.96);
+  filter:brightness(.96);
+}
+@media (max-width:480px){
+  .shooting-switch-rail{
+    gap:12px;
+    padding:10px 4px 10px 14px;
+    margin-right:-4px;
+  }
+  .shooting-switch-btn{
+    width:62px;
+    height:62px;
+    min-height:62px;
+    overflow:visible;
+  }
+  .shooting-switch-btn img{
+    width:58px;
+    height:58px;
+  }
+}
