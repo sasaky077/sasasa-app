@@ -1,9 +1,9 @@
 // party_select.js
-// 出撃メンバー3体選択画面（配置なし）
+// 出撃メンバー選択画面（エリ固定・最大4体・1〜4体出撃・加護選択）
 
 (function () {
 
-  // selected: { charaId }[]  通常最大3件 / ローグライト最大4件
+  // selected: { charaId }[]  全モード共通：エリ固定・最大4体・1体から出撃可能
   let selected = [];
   let selectedBlessingId = null;
 
@@ -34,7 +34,7 @@
     } catch (_) { return false; }
   }
 
-  // ローグライト専用：主人公エリは1st固定
+  // 全モード共通：主人公エリは先頭固定
   const ROGUELITE_FIXED_FIRST_CHARA_ID = 1;
 
   let currentEnemyRef = 'enemy_01';
@@ -44,22 +44,15 @@
     return currentBattleOptions && currentBattleOptions.battleMode === 'roguelite';
   }
 
-  // 本番ローグライト、またはDEBUGでローグライト編成だけ再現する場合。
-  // forceRogueliteLayout はラン進行を開始せず、エリ固定＋任意3体の編成・初期配置だけを共有する。
-  function _usesRoguelitePartyLayout() {
-    return !!(currentBattleOptions && (
-      currentBattleOptions.battleMode === 'roguelite' ||
-      currentBattleOptions.forceRogueliteLayout === true
-    ));
-  }
+  // 編成ルールは全モード共通。ローグライトかどうかは報酬・連戦進行だけの差にする。
+  function _usesRoguelitePartyLayout() { return true; }
 
-  function _maxPartySize() { return _usesRoguelitePartyLayout() ? 4 : 3; }
-  function _minPartySize() { return _usesRoguelitePartyLayout() ? 4 : 3; }
+  function _maxPartySize() { return 4; }
+  function _minPartySize() { return 1; }
   function _isFixedFirstChara(charaId) {
-    return _usesRoguelitePartyLayout() && Number(charaId) === ROGUELITE_FIXED_FIRST_CHARA_ID;
+    return Number(charaId) === ROGUELITE_FIXED_FIRST_CHARA_ID;
   }
   function _ensureRogueliteFixedFirst() {
-    if (!_usesRoguelitePartyLayout()) return;
 
     // エリを必ず先頭に置き、重複があれば除去する。
     selected = selected.filter(s => Number(s.charaId) !== ROGUELITE_FIXED_FIRST_CHARA_ID);
@@ -233,7 +226,7 @@
     el.innerHTML = `
       <div class="ps-header">
         <div class="ps-title">パーティ編成</div>
-        <div class="ps-sub" id="ps-sub-text">3人選択 · 連れていくキャラを選んでください</div>
+        <div class="ps-sub" id="ps-sub-text">最大4人 · エリ固定 · 1人から出撃可能</div>
       </div>
 
       <div class="ps-slots-wrap">
@@ -307,6 +300,8 @@
       }
 
 
+
+      .ps-slot-remove-placeholder { opacity:0; pointer-events:none; }
       .ps-blessing-wrap {
         flex-shrink: 0;
         padding: 8px 14px 10px;
@@ -1240,9 +1235,7 @@
     // サブテキスト更新
     const subEl = document.getElementById('ps-sub-text');
     if (subEl) {
-      subEl.textContent = _usesRoguelitePartyLayout()
-        ? '2体目以降のキャラを選んでください。'
-        : '3人選択 · 連れていくキャラを選んでください';
+      subEl.textContent = '最大4人 · エリ固定 · 1人から出撃可能';
     }
 
     const SLOT_LABELS = _getSlotLabels();
@@ -1257,8 +1250,8 @@
             <div class="ps-slot-box">
               <img class="ps-slot-img" src="${imgSrc}" onerror="this.style.opacity='0'">
               ${chara && unitElementIcon(chara.element) ? `<img class="ps-slot-element-icon" src="${unitElementIcon(chara.element)}" alt="${unitElementLabel(chara.element)}" title="${unitElementLabel(chara.element)}" onerror="this.style.display='none'">` : ''}
-              <div class="ps-slot-chara-name">${entry.fixed ? '1st · ' : ''}${name}</div>
-              ${entry.fixed ? '<div class="ps-slot-lock">LOCK</div>' : '<div class="ps-slot-remove">✕</div>'}
+              <div class="ps-slot-chara-name">${name}</div>
+              ${entry.fixed ? '<div class="ps-slot-remove ps-slot-remove-placeholder" aria-hidden="true"></div>' : '<div class="ps-slot-remove">✕</div>'}
             </div>
           </div>
         `;
@@ -1283,7 +1276,7 @@
       if (entry) setupSlotCard(slot, entry, idx);
     });
 
-    // 戦闘開始ボタン：通常は3体必須 / ローグライトは1体以上で有効化
+    // 戦闘開始ボタン：エリ1体だけでも出撃可能
     const btn = document.getElementById('ps-btn-start');
     const minSize = _minPartySize();
     if (btn) btn.disabled = selected.length < minSize;
@@ -1385,8 +1378,8 @@
     list.innerHTML = '';
 
     // 表示順はキャラクターIDの昇順。
-    // ローグライトでは主人公エリは1st固定枠にだけ表示し、選択候補一覧からは除外する。
-    // そのため候補一覧は 02,03,04,05 / 06,07,08,09 ... の順で並ぶ。
+    // 主人公エリは固定枠にだけ表示し、選択候補一覧からは除外する。
+    // そのため候補一覧はエリ以外をID順で並べる。
     const chars = (typeof CHARACTERS !== 'undefined' ? CHARACTERS : [])
       .filter(c => !(_usesRoguelitePartyLayout() && Number(c.id) === ROGUELITE_FIXED_FIRST_CHARA_ID))
       .slice()

@@ -4,6 +4,114 @@
 
 (function () {
 
+  // ============================================================
+  // STORY CHAPTER PROGRESSION
+  // CHAPTER 01 から順に解放。前章4ステージ全クリアで次章を解放。
+  // ============================================================
+  const STORY_CHAPTER_MIN = 1;
+  const STORY_CHAPTER_MAX = 8;
+  const STORY_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
+  const STORY_CHAPTER_TITLES = {
+    1: '未定', 2: '未定', 3: '未定', 4: '未定',
+    5: '未定', 6: '未定', 7: '未定', 8: '未定'
+  };
+
+  function getStoryClearMap() {
+    try {
+      const raw = localStorage.getItem(STORY_CLEAR_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function saveStoryClearMap(map) {
+    try { localStorage.setItem(STORY_CLEAR_KEY, JSON.stringify(map || {})); } catch (_) {}
+  }
+
+  function isStoryStageCleared(stageId) {
+    if (!stageId) return false;
+    return !!getStoryClearMap()[stageId];
+  }
+
+  function markStoryStageCleared(stageId) {
+    if (!stageId) return;
+    const map = getStoryClearMap();
+    if (map[stageId]) return;
+    map[stageId] = true;
+    saveStoryClearMap(map);
+    renderStoryChapterList();
+  }
+
+  function getStoryStages(chapter) {
+    if (typeof getStagesByChapter === 'function') return getStagesByChapter(chapter);
+    if (typeof STAGES !== 'undefined') return STAGES.filter(s => s.chapter === chapter);
+    return [];
+  }
+
+  function isStoryChapterCleared(chapter) {
+    const stages = getStoryStages(chapter).filter(s => s && s.chapter === chapter && s.type !== 'debug');
+    return stages.length > 0 && stages.every(s => isStoryStageCleared(s.id));
+  }
+
+  function isStoryChapterUnlocked(chapter) {
+    chapter = Number(chapter);
+    if (chapter <= STORY_CHAPTER_MIN) return true;
+    if (chapter > STORY_CHAPTER_MAX) return false;
+    return isStoryChapterCleared(chapter - 1);
+  }
+
+  function showStoryLockedMessage() {
+    if (typeof showToast === 'function') {
+      showToast('解放されていません');
+    } else {
+      alert('解放されていません');
+    }
+  }
+
+  function renderStoryChapterList() {
+    const list = document.getElementById('story-chapter-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    for (let chapter = STORY_CHAPTER_MIN; chapter <= STORY_CHAPTER_MAX; chapter++) {
+      const unlocked = isStoryChapterUnlocked(chapter);
+      const item = document.createElement('div');
+      item.className = 'ninmu-chapter-item story-chapter-item' + (unlocked ? '' : ' story-chapter-locked');
+      item.setAttribute('role', 'button');
+      item.setAttribute('aria-label', unlocked
+        ? `CHAPTER ${String(chapter).padStart(2, '0')} ${STORY_CHAPTER_TITLES[chapter] || '未定'}`
+        : `CHAPTER ${String(chapter).padStart(2, '0')} 未解放`);
+
+      item.innerHTML =
+        '<div class="ninmu-chapter-label">CHAPTER:' + String(chapter).padStart(2, '0') + '</div>' +
+        '<div class="ninmu-chapter-title">' + (unlocked ? (STORY_CHAPTER_TITLES[chapter] || '未定') : '???') + '</div>';
+
+      item.addEventListener('click', () => {
+        if (!isStoryChapterUnlocked(chapter)) {
+          showStoryLockedMessage();
+          return;
+        }
+        window.openStageSelect(chapter);
+      });
+      list.appendChild(item);
+    }
+  }
+
+  window.renderStoryChapterList = renderStoryChapterList;
+  window.isStoryChapterUnlocked = isStoryChapterUnlocked;
+  window.isStoryChapterCleared = isStoryChapterCleared;
+  window.markStoryStageCleared = markStoryStageCleared;
+
+  // Storyタブが開かれた時に最新の解放状態を反映するため、
+  // DOM構築後とタブ操作後に再描画する。
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderStoryChapterList);
+  } else {
+    setTimeout(renderStoryChapterList, 0);
+  }
+
   const DIFFICULTY_LABEL = {
     easy:      'EASY',
     normal:    'NORMAL',
@@ -290,6 +398,7 @@
     stages.forEach(stage => {
       const card = document.createElement('div');
       card.className = 'ss-card' + (!stage.unlocked ? ' locked' : '');
+      if (stage.chapter >= 1 && stage.chapter <= 8 && isStoryStageCleared(stage.id)) card.classList.add('story-cleared');
 
       const diffColor  = DIFFICULTY_COLOR[stage.difficulty]  || DIFFICULTY_COLOR.normal;
       const diffLabel  = DIFFICULTY_LABEL[stage.difficulty]  || 'NORMAL';
@@ -300,7 +409,7 @@
       card.innerHTML = `
         <div class="ss-card-no">${String(stage.no).padStart(2, '0')}</div>
         <div class="ss-card-body">
-          <div class="ss-card-name">${stage.name}</div>
+          <div class="ss-card-name">${stage.name}${isStoryStageCleared(stage.id) ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
           <div class="ss-card-meta">
             <div class="ss-card-enemy">${stage.enemyName}</div>
             ${rewardText ? `<div class="ss-card-reward">${rewardText}</div>` : ''}
@@ -350,6 +459,20 @@
   // ============================================================
   function onStageTap(stage) {
     if (stage && stage.rogueliteRunId) {
+      // CHAPTER06〜08は対応ローグライトランがまだ未実装のため、誤って別BOSSを起動しない。
+      if (stage.rogueliteRunReady === false) {
+        alert('このBOSSステージは準備中です');
+        return;
+      }
+      // STORYの各CHAPTER 04(BOSS)は、特別巡行と同じローグライトランを使用する。
+      // 勝利した場合に、このstory stageをCLEARとして記録できるようコンテキストを保持。
+      if (Number(stage.chapter) >= STORY_CHAPTER_MIN && Number(stage.chapter) <= STORY_CHAPTER_MAX) {
+        window.__STORY_BOSS_ROGUELITE_CONTEXT__ = {
+          stageId: stage.id,
+          chapter: Number(stage.chapter),
+          runId: stage.rogueliteRunId,
+        };
+      }
       _openRoguelitePartySelect(stage.rogueliteRunId);
       return;
     }
@@ -365,6 +488,11 @@
         };
         if (stage.useBattle32 === true) {
           battleOptions.battleMode = '32';
+
+          // Battle32の戦闘ルールは全モード共通。
+          // エリ固定・最大4人編成、LINK、ロスター、召喚などは常に有効。
+          // ローグライトとの差はラン進行・戦闘後報酬の有無。
+          battleOptions.useRogueliteBattleRules = true;
 
           // enemyIds を明示的に battleOptions にも持たせる
           // openPartySelect → Battle32.start(config) の config.enemyIds に渡るようにする
@@ -424,6 +552,11 @@
   window.openStageSelect = function (chapter) {
   chapter = chapter ?? 1;
 
+  if (typeof chapter === 'number' && chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX && !isStoryChapterUnlocked(chapter)) {
+    showStoryLockedMessage();
+    return;
+  }
+
   buildModal();
 
     const el = document.getElementById('stage-select-modal');
@@ -471,4 +604,69 @@ if (guf) {
     }, 350);
   };
 
+
+  // ============================================================
+  // STORY CLEAR AUTO RECORD
+  // Battle32.start(config, callbacks) の result をラップして勝利時に記録。
+  // ============================================================
+  function hookStoryBattleResult() {
+    if (!window.Battle32 || typeof window.Battle32.start !== 'function') {
+      setTimeout(hookStoryBattleResult, 100);
+      return;
+    }
+    if (window.Battle32.__storyProgressHooked) return;
+
+    const originalStart = window.Battle32.start;
+    window.Battle32.start = function(config, callbacks) {
+      const cfg = config || {};
+      const stage = cfg.stageId && typeof getStageById === 'function' ? getStageById(cfg.stageId) : null;
+      const isStory = !!(stage && Number(stage.chapter) >= STORY_CHAPTER_MIN && Number(stage.chapter) <= STORY_CHAPTER_MAX);
+      const userCallbacks = callbacks || {};
+      const wrappedCallbacks = Object.assign({}, userCallbacks);
+      const originalResult = userCallbacks.result;
+
+      wrappedCallbacks.result = function(data) {
+        const result = (typeof data === 'string') ? data : (data && data.result);
+        if (isStory && result === 'win') {
+          markStoryStageCleared(stage.id);
+        }
+        if (typeof originalResult === 'function') return originalResult.apply(this, arguments);
+      };
+
+      return originalStart.call(this, cfg, wrappedCallbacks);
+    };
+    window.Battle32.__storyProgressHooked = true;
+  }
+
+  hookStoryBattleResult();
+
+
+
+  // ============================================================
+  // STORY BOSS（ローグライトラン）クリア進捗フック
+  // ============================================================
+  function hookStoryBossRogueliteProgress(){
+    if (!window.RogueliteRun || typeof window.RogueliteRun.end !== 'function') {
+      setTimeout(hookStoryBossRogueliteProgress, 100);
+      return;
+    }
+    if (window.RogueliteRun.__storyBossProgressHooked) return;
+
+    const originalEnd = window.RogueliteRun.end.bind(window.RogueliteRun);
+    window.RogueliteRun.end = function(result){
+      const ctx = window.__STORY_BOSS_ROGUELITE_CONTEXT__;
+      const ret = originalEnd.apply(window.RogueliteRun, arguments);
+
+      if (ctx) {
+        if (result === 'win' && ctx.stageId) {
+          markStoryStageCleared(ctx.stageId);
+          renderStoryChapterList();
+        }
+        window.__STORY_BOSS_ROGUELITE_CONTEXT__ = null;
+      }
+      return ret;
+    };
+    window.RogueliteRun.__storyBossProgressHooked = true;
+  }
+  hookStoryBossRogueliteProgress();
 })();

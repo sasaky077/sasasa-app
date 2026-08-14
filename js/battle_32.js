@@ -217,94 +217,6 @@
   let _bs = null;   // バトルステート
   let _cb = null;   // コールバック群
 
-  // ローグライトのステージ間引き継ぎ。
-  // 現行ラン進行は各ステージで味方ユニットを新規生成するため、
-  // 前ステージでHP0になったキャラIDだけを保持し、次ステージではHP1で復帰させる。
-  const _rogueliteHp1CarryByRun32 = new Map();
-
-  // ローグライト中の加護進捗はステージを跨いで保持する。
-  // 敵撃破数・複数体攻撃条件・INV使用済み状態が、次ステージ開始時に0へ戻る不具合を防ぐ。
-  const _rogueliteBlessingCarryByRun32 = new Map();
-
-  function _prepareRogueliteBlessing32(config, isRogueliteMode) {
-    const fresh = makeBlessingState32(config && config.blessingId || null);
-    if (!fresh || !isRogueliteMode) return fresh;
-
-    const runKey = _getRogueliteRunKey32(config);
-    const stageNo = _getRogueliteStageNo32(config);
-    if (stageNo <= 1) _rogueliteBlessingCarryByRun32.delete(runKey);
-
-    const carried = _rogueliteBlessingCarryByRun32.get(runKey);
-    if (!carried || carried.id !== fresh.id) return fresh;
-
-    return {
-      ...fresh,
-      killCount: Math.max(0, Number(carried.killCount || 0)),
-      used: !!carried.used,
-      activeTurn: null,
-      defeatedEnemyUids: [], // UIDは各ステージで再生成されるため持ち越さない
-      conditionMet: !!carried.conditionMet,
-      multiTargetMax: Math.max(0, Number(carried.multiTargetMax || 0)),
-    };
-  }
-
-  function _rememberRogueliteBlessing32() {
-    if (!_bs || !_bs.isRoguelite || !_bs.blessing) return;
-    const runKey = String(_bs.rogueliteRunId || 'default');
-    const b = _bs.blessing;
-    _rogueliteBlessingCarryByRun32.set(runKey, {
-      id: b.id,
-      killCount: Math.max(0, Number(b.killCount || 0)),
-      used: !!b.used,
-      conditionMet: !!b.conditionMet,
-      multiTargetMax: Math.max(0, Number(b.multiTargetMax || 0)),
-    });
-  }
-
-  function _getRogueliteRunKey32(config) {
-    if (!config) return 'default';
-    return String(config.rogueliteRunId || config.runId || 'default');
-  }
-
-  function _getRogueliteStageNo32(config) {
-    const explicit = Number(config && (config.rogueliteStageNo ?? config.stageNo));
-    if (Number.isFinite(explicit) && explicit > 0) return Math.floor(explicit);
-
-    if (window.RogueliteRun && typeof window.RogueliteRun.getStageNo === 'function') {
-      const current = Number(window.RogueliteRun.getStageNo());
-      if (Number.isFinite(current) && current > 0) return Math.floor(current);
-    }
-
-    const stageId = String(config && config.stageId || '');
-    const match = stageId.match(/(?:_|-)(\d+)$/);
-    return match ? Math.max(1, Number(match[1])) : 1;
-  }
-
-  function _prepareRogueliteHp1Carry32(config, isRogueliteMode) {
-    if (!isRogueliteMode) return new Set();
-    const runKey = _getRogueliteRunKey32(config);
-    const stageNo = _getRogueliteStageNo32(config);
-
-    // 第1ステージは新しいランとして扱い、前回ランの持越しを消す。
-    if (stageNo <= 1) _rogueliteHp1CarryByRun32.set(runKey, new Set());
-    if (!_rogueliteHp1CarryByRun32.has(runKey)) _rogueliteHp1CarryByRun32.set(runKey, new Set());
-    return _rogueliteHp1CarryByRun32.get(runKey);
-  }
-
-  function _rememberRogueliteZeroHp32() {
-    if (!_bs || !_bs.isRoguelite) return;
-    const runKey = String(_bs.rogueliteRunId || 'default');
-    const zeroHpIds = new Set();
-
-    (_bs.roster || []).forEach(entry => {
-      if (!entry) return;
-      const unit = (_bs.allies || []).find(ally => ally && ally._uid === entry.deployedUid);
-      if (unit && Number(unit.hp || 0) <= 0) zeroHpIds.add(Number(entry.charaId));
-    });
-
-    _rogueliteHp1CarryByRun32.set(runKey, zeroHpIds);
-  }
-
   // ターン演出・フェーズ進行の二重起動防止
   let _allyTurnFlowRunning = false;
   let _enemyTurnFlowRunning = false;
@@ -602,13 +514,195 @@
       }
     }
 
+    const s1 = Array.isArray(c.skills)
+      ? c.skills.find(skill => skill && skill.id === 's1')
+      : null;
+    const combo = c.combo && c.combo.skill ? c.combo.skill : null;
+    const effect = (type) => combo && Array.isArray(combo.effects)
+      ? combo.effects.find(e => e && e.type === type)
+      : null;
 
-    // キャラ固有の共鳴効果は resonance_system.js の共通適用関数へ集約。
-    // 読み込み順: character_resonance.js -> resonance_system.js -> characters_32.js -> battle_32.js
-    if (typeof window.applyCharacterResonanceToBattleDef === 'function') {
-      window.applyCharacterResonanceToBattleDef(c, lb);
-    } else {
-      console.error('[Battle32] applyCharacterResonanceToBattleDef が見つかりません。resonance_system.js の読み込み順を確認してください。');
+    // Lv.2＝通常スキル強化 / Lv.3＝コンボ範囲強化 / Lv.4＝コンボ完成効果
+    switch (Number(c.id)) {
+      case 1: // エリ
+        if (lb >= 2 && s1) s1.resonanceHealLowestAtkRate = 0.35;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
+        if (lb >= 4 && combo) combo.resonanceTeamAtkUp = { rate: 1.10, duration: 1 };
+        break;
+      case 2: // ネム R
+        if (lb >= 2 && s1) s1.multiplier = 0.65;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.30;
+          const e = effect('stun'); if (e) e.hit = 40;
+        }
+        break;
+      case 3: { // スイ SR
+        const ult = Array.isArray(c.skills)
+          ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
+          : null;
+
+        // Lv.1：ULT必要LINKコスト -1
+        if (lb >= 1 && ult) {
+          ult.linkCost = Math.max(0, Number(ult.linkCost || 0) - 1);
+        }
+
+        // Lv.2：通常スキルの回復を50%→70%、criticalを15%→20%へ強化
+        if (lb >= 2 && s1 && Array.isArray(s1.randomOptions)) {
+          s1.randomOptions.forEach(option => {
+            if (!option) return;
+            if (option.effectType === 'lowest_hp_heal') {
+              option.rate = 0.70;
+              option.label = '一番HPの低い味方を最大HPの70%回復';
+            }
+            if (option.effectType === 'all_critical_up') {
+              option.rate = 0.20;
+              option.label = '味方全体critical率+20%';
+            }
+          });
+        }
+
+        // Lv.3：前方直線3マス＋左右1マスへ移動範囲を拡張
+        if (lb >= 3) {
+          c.moveType = 'line_front_3_side';
+        }
+
+        // Lv.4：コンボ反応範囲をX字から十字＋X字へ拡張
+        if (lb >= 4 && c.combo) {
+          c.combo.range = 'combo_star_all';
+        }
+        break;
+      }
+      case 4: // アルノ SR
+        if (lb >= 2 && s1) { s1.multiplier = 1.70; s1.criticalRate = 0.75; }
+        if (lb >= 3 && combo) combo.range = 'combo_cross_all';
+        if (lb >= 4 && combo) { combo.multiplier = 1.05; combo.resonanceSelfAtkUpOnCritical = { rate: 1.15, duration: 1 }; }
+        break;
+      case 5: // クラリネ R
+        if (lb >= 2 && s1) s1.linkCost = 2;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceNextS1Discount = 1; }
+        break;
+      case 6: // イグニス R
+        // Lv.2：ブレイブ・スマッシュ後、自身をATK×0.20回復
+        if (lb >= 2 && s1) s1.resonanceSelfHealAtkRate = 0.20;
+        // Lv.3：コンボ反応範囲を上下左右1マスから十字すべてへ拡張
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_cross_all';
+        // Lv.4：コンボ効果範囲を前方横3マスから前方2段×横3マスへ拡張
+        if (lb >= 4 && combo) combo.range = 'fan_2row_3_ally';
+        break;
+      case 7: { // ロゼ SR
+        const ult = Array.isArray(c.skills)
+          ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
+          : null;
+
+        // Lv.1：ULT必要LINKコスト -1
+        if (lb >= 1 && ult) {
+          ult.linkCost = Math.max(0, Number(ult.linkCost || 0) - 1);
+        }
+
+        // Lv.2：前方横3 + 後方横3へ移動範囲を拡張
+        if (lb >= 2) {
+          c.moveType = 'rose_resonance_move';
+        }
+
+        // Lv.3：コンボ反応範囲を十字から十字＋X字へ拡張
+        if (lb >= 3 && c.combo) {
+          c.combo.range = 'combo_star_all';
+        }
+
+        // Lv.4：コンボATK低下を15%へ強化し、25%スタンを追加
+        if (lb >= 4 && combo) {
+          const down = effect('atk_down');
+          if (down) down.rate = 0.85;
+          if (!effect('stun')) {
+            combo.effects.push({ type:'stun', target:'enemy', hit:25, duration:1 });
+          }
+        }
+        break;
+      }
+      case 8: // ミモザ SR
+        if (lb >= 2 && s1) {
+          const up = (s1.effects || []).find(x => x && x.type === 'atk_up'); if (up) up.rate = 1.35;
+          if (!(s1.effects || []).some(x => x && x.type === 'critical_up')) s1.effects.push({ type:'critical_up', target:'ally_all', hit:100, rate:0.10, duration:1 });
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
+        if (lb >= 4 && combo) {
+          const up = effect('atk_up'); if (up) up.rate = 1.15;
+          combo.resonanceHealLowestSourceHpRate = 0.10;
+        }
+        break;
+      case 9: // ヴェラ R
+        if (lb >= 2 && s1) s1.resonanceAffectedAllyAtkUp = { rate:1.10, duration:1 };
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.40;
+          const down = effect('atk_down'); if (down) down.rate = 0.90;
+        }
+        break;
+      case 10: // フローラ R
+        if (lb >= 2 && s1) s1.multiplier = 1.40;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceDelayedUltBoost = 1.10; }
+        break;
+      case 11: // シグレ R
+        if (lb >= 2 && s1) s1.multiplier = 1.40;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.60;
+          const push = effect('push_1'); if (push) push.hit = 75;
+        }
+        break;
+      case 12: // ハヤテ R
+        // Lv.2：通常スキル倍率をATK×1.90へ強化
+        if (lb >= 2 && s1) s1.multiplier = 1.90;
+        // Lv.3：コンボ反応範囲を斜め隣接4マスからX字全体へ拡張
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_x_all';
+        // Lv.4：ヒットアンドアウェイ帰還成功時、1ターン1回LINK+1
+        if (lb >= 4) {
+          c.hitAndAwayLinkRefund = 1;
+          c.hitAndAwayLinkRefundPerTurn = 1;
+        }
+        break;
+      case 13: // ミア SR
+        c.rarity = 'sr';
+        if (lb >= 2 && s1) { s1.multiplier = 2.05; s1.criticalRate = 0.30; }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_star_all';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.80;
+          combo.criticalRate = 0.25;
+          if (!effect('atk_down')) combo.effects.push({ type:'atk_down', target:'enemy', hit:100, duration:1, rate:0.90 });
+        }
+        break;
+      case 14: // アヤカ R
+        if (lb >= 2 && s1) s1.multiplier = 1.15;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) { combo.multiplier = 0.60; combo.backstabMultiplier = 1.50; }
+        break;
+      case 15: // エテルナ R
+        if (lb >= 2 && s1) s1.resonanceAffectedAllyGuard = { rate:0.10, duration:1 };
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.50;
+          const push = effect('push_1'); if (push) push.hit = 75;
+        }
+        break;
+      case 16: // ミト R
+        if (lb >= 2 && s1) {
+          s1.multiplier = 0.85;
+          const e = (s1.effects || []).find(x => x && x.type === 'jittai'); if (e) e.hit = 90;
+        }
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
+        if (lb >= 4 && combo) {
+          combo.multiplier = 0.45;
+          const e = effect('jittai'); if (e) e.hit = 60;
+        }
+        break;
+      case 17: // アンジェ R
+        if (lb >= 2 && s1) s1.healRate = Number(s1.healRate || 0.35) * 1.20;
+        if (lb >= 3 && c.combo) c.combo.range = 'combo_line_all';
+        if (lb >= 4 && combo) { combo.healRate = 0.12; combo.resonanceHealLowestTargetHpRate = 0.05; }
+        break;
     }
 
     return c;
@@ -863,37 +957,6 @@ function pickRandomBoardCells(count) {
   return shuffled.slice(0, Math.max(0, Number(count || 0)));
 }
 
-  // 大型ユニットの占有セルを返す。未指定ユニットは従来どおり1マス。
-  function getUnitFootprintCells32(unit) {
-    if (!unit) return [];
-    const offsets = Array.isArray(unit.footprintOffsets) && unit.footprintOffsets.length > 0
-      ? unit.footprintOffsets
-      : [{ dr: 0, dc: 0 }];
-    const seen = new Set();
-    const cells = [];
-    offsets.forEach(offset => {
-      const row = Number(unit.row) + Number(offset && offset.dr || 0);
-      const col = Number(unit.col) + Number(offset && offset.dc || 0);
-      if (!Number.isFinite(row) || !Number.isFinite(col)) return;
-      if (row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS) return;
-      const key = `${row}-${col}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      cells.push({ row, col, key });
-    });
-    return cells;
-  }
-
-  function unitOccupiesCell32(unit, row, col) {
-    const key = `${Number(row)}-${Number(col)}`;
-    return getUnitFootprintCells32(unit).some(cell => cell.key === key);
-  }
-
-  function unitIntersectsCells32(unit, cellKeys) {
-    if (!unit || !cellKeys || typeof cellKeys.has !== 'function') return false;
-    return getUnitFootprintCells32(unit).some(cell => cellKeys.has(cell.key));
-  }
-
   function getAllUnits() {
     if (!_bs) return [];
     return [
@@ -1059,12 +1122,6 @@ function pickRandomBoardCells(count) {
         : null,
       allowBossMovement: !!def.allowBossMovement,
       uiScale:     def.uiScale    || {},
-      uiOffset:    def.uiOffset   || {},
-
-      // 大型敵の複数マス占有。当たり判定・移動阻害は helper 経由で同一ユニットへ集約する。
-      footprintOffsets: Array.isArray(def.footprintOffsets) && def.footprintOffsets.length > 0
-        ? def.footprintOffsets.map(offset => ({ dr: Number(offset.dr || 0), dc: Number(offset.dc || 0) }))
-        : [{ dr: 0, dc: 0 }],
 
       // 通常敵AI拡張（ヒット＆アウェイ等）
       aiType: def.aiType || 'chaser',
@@ -1078,18 +1135,6 @@ function pickRandomBoardCells(count) {
       specialActionDamageRate: Number.isFinite(Number(def.specialActionDamageRate))
         ? Number(def.specialActionDamageRate)
         : 0.90,
-
-      // レムナント05「執着」専用
-      remnant05: !!def.remnant05,
-      remnant05Body: def.remnant05Body || null, // 'core' | 'clone'
-      remnant05Stage: Number(def.remnant05Stage || 0),
-      remnant05HiddenCore: !!def.remnant05HiddenCore,
-      remnant05EnableCurse: !!def.remnant05EnableCurse,
-      remnant05EnableRevive: !!def.remnant05EnableRevive,
-      remnant05RecoilRate: Number.isFinite(Number(def.remnant05RecoilRate)) ? Number(def.remnant05RecoilRate) : 0.20,
-      remnant05CurseRate: Number.isFinite(Number(def.remnant05CurseRate)) ? Number(def.remnant05CurseRate) : 0.20,
-      obsessionTargetUid: def.obsessionTargetUid || null,
-      attackTargetMode: def.attackTargetMode || null,
     };
   }
 
@@ -1237,11 +1282,13 @@ const enemies = enemyDefs.map(def => {
 
     // ── ローグライトモードのroster構築 ──
     const isRogueliteMode = config.battleMode === 'roguelite' || typeof config.rogueliteOnBattleEnd === 'function';
-    const hp1CarryIds = _prepareRogueliteHp1Carry32(config, isRogueliteMode);
+    // Battle32の戦闘ルールは全モード共通：エリ固定＋4人ロスター/LINK/召喚。
+    // isRogueliteMode は連戦・報酬などラン進行の有無だけを表す。
+    const useRogueliteBattleRules = true;
     let rosterData = [];
     let initialAllies = allies;
 
-    if (isRogueliteMode && config.partyIds && config.partyIds.length > 0) {
+    if (useRogueliteBattleRules && config.partyIds && config.partyIds.length > 0) {
       // ローグライト：エリは1st固定で、味方コアの前に初期配置済み。
       // 2〜4枠目だけ召喚対象として待機させる。
       const allChars32 = allChars;
@@ -1262,7 +1309,6 @@ const enemies = enemyDefs.map(def => {
 
         if (isFixedFirst) {
           const unit = makeAlly(charDef, ROGUELITE_ERI_START_POS.row, ROGUELITE_ERI_START_POS.col);
-          if (hp1CarryIds.has(Number(pid))) unit.hp = 1;
           unit.isFixedFirst = true;
           initialAllies.push(unit);
           fixedDeployedUid = unit._uid;
@@ -1277,7 +1323,6 @@ const enemies = enemyDefs.map(def => {
           status: isFixedFirst ? 'deployed' : 'standby',
           deployedUid: isFixedFirst ? fixedDeployedUid : null,
           fixedFirst: isFixedFirst,
-          stageStartHp: hp1CarryIds.has(Number(pid)) ? 1 : null,
           charDef,
         };
       }).filter(Boolean);
@@ -1287,8 +1332,6 @@ const enemies = enemyDefs.map(def => {
       turn: 1,
       phase: 'skill',
       stageId,
-      rogueliteRunId: isRogueliteMode ? _getRogueliteRunKey32(config) : null,
-      rogueliteStageNo: isRogueliteMode ? _getRogueliteStageNo32(config) : null,
       allies: initialAllies,
       enemies,
       log: [],
@@ -1296,7 +1339,7 @@ const enemies = enemyDefs.map(def => {
       bossWarning: false,
       result: null,
       loseReason: null,
-      blessing: _prepareRogueliteBlessing32(config, isRogueliteMode),
+      blessing: makeBlessingState32(config.blessingId || null),
 
       delayedActions: [],
 
@@ -1316,8 +1359,8 @@ const enemies = enemyDefs.map(def => {
       roster: rosterData,
       deployLimit: 4,
 
-      // ── ローグライト: アイテム3枠 ──
-      items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 3) : [],
+      // ── ローグライト: アイテム2枠 ──
+      items: Array.isArray(config.rogueliteItems) ? config.rogueliteItems.slice(0, 2) : [],
 
       // コア概念は廃止。敗北条件はエリのロストのみ。
       // ターン制限は廃止。早いほどスコアが高く、遅くてもタイムオーバー敗北にはしない。
@@ -1333,11 +1376,6 @@ const enemies = enemyDefs.map(def => {
 
       // 敵スポーン設定（ステージ設定から引き継ぐ）
       enemySpawn: config.enemySpawn || null,
-
-      // レムナント05「執着」ステージ制御
-      remnant05Config: config.remnant05Config ? { ...config.remnant05Config } : null,
-      remnant05Curses: [],
-      remnant05Serial: 0,
 
       // ターン単位の行動権（後方互換用・判定には使わない）
       moveUsedThisTurn:  false,
@@ -1357,6 +1395,8 @@ const enemies = enemyDefs.map(def => {
       // ── ローグライト専用フィールド ──────────────────────────
       // isRoguelite: ローグライトランとして起動されたか（UI分岐の判定に使う）
       isRoguelite:          isRogueliteMode,
+      // STORY通常戦でも4人ロスター/LINK/召喚を共通利用するための独立フラグ
+      useRogueliteBattleRules: useRogueliteBattleRules,
       // rogueliteOptions: 保持中の強化OPオブジェクト配列
       rogueliteOptions:     Array.isArray(config.rogueliteOptions) ? config.rogueliteOptions : [],
       // isBossStage: ボス戦かどうか（霊装OP等の判定用）
@@ -1377,9 +1417,6 @@ const enemies = enemyDefs.map(def => {
 
     _bs.allies.forEach(a => { a.skillUsedThisTurn = false; });
     (_bs.allies || []).forEach(_applyBlessingHpPassive32);
-
-    // レムナント05は味方の実体数に合わせて分身数を同期する。
-    _initializeRemnant05Battle();
     _applyTurnStartBlessing32();
 
     // ── ローグライトOP開始時補正を適用 ──────────────────────
@@ -1524,19 +1561,7 @@ const enemies = enemyDefs.map(def => {
       stageId: _bs.stageId,
       allies: _bs.allies.map(u => ({ ...u, statusEffects: [...u.statusEffects] })),
       // ボスはHP0後も盤面表示のため常に含める
-      enemies: _bs.enemies.map(u => {
-        const snap = { ...u, statusEffects: [...u.statusEffects] };
-        // ST3: 特攻キャラ不在時は本体も分身体と同じ表示へ偽装する。
-        if (_isRemnant05Enemy(u) && u.remnant05HiddenCore && !_hasRemnant05TrueSight()) {
-          snap.isBoss = false;
-          snap.name = 'レムナント：??????';
-          snap.displayName = snap.name;
-          snap.remnant05CoreRevealed = false;
-        } else if (_isRemnant05Enemy(u) && u.remnant05Body === 'core') {
-          snap.remnant05CoreRevealed = true;
-        }
-        return snap;
-      }),
+      enemies: _bs.enemies.map(u => ({ ...u, statusEffects: [...u.statusEffects] })),
       bossWarning: _bs.bossWarning,
       log: [..._bs.log],
       result: _bs.result,
@@ -1547,13 +1572,7 @@ const enemies = enemyDefs.map(def => {
       summons: _bs.summons ? _bs.summons.map(u => ({ ...u, statusEffects: [...(u.statusEffects || [])] })) : [],
 
       isRoguelite: !!_bs.isRoguelite,
-      // 再開時にローグライトラン本体を再構築するための進行メタデータ
-      rogueliteRunId: _bs.rogueliteRunId || null,
-      rogueliteStageNo: Number(_bs.rogueliteStageNo || 0) || null,
-      rogueliteOptions: Array.isArray(_bs.rogueliteOptions)
-        ? _bs.rogueliteOptions.map(op => ({ ...op }))
-        : [],
-      isBossStage: !!_bs.isBossStage,
+      useRogueliteBattleRules: !!_bs.useRogueliteBattleRules,
       cores: null,
       bossCore: null,
       turnLimit: null,
@@ -1571,10 +1590,6 @@ const enemies = enemyDefs.map(def => {
       skillUnitUid:      _bs.skillUnitUid,
       // 敵スポーン設定
       enemySpawn:        _bs.enemySpawn || null,
-      // レムナント05：怨念マス / 本体判別表示用メタ
-      remnant05Config:    _bs.remnant05Config ? { ..._bs.remnant05Config } : null,
-      remnant05Curses:    Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses.map(c => ({ ...c })) : [],
-      remnant05TrueSight: _hasRemnant05TrueSight(),
       // 行動権管理
       actionCount:       _bs.actionCount,
       actionMax:         _bs.actionMax,
@@ -1626,7 +1641,6 @@ const enemies = enemyDefs.map(def => {
       blessing.conditionMet = true;
       _log(`加護条件達成：1度の攻撃で敵${count}体にダメージ`);
       _emit('blessingProgress', { blessing: { ...blessing }, bs: _snapshot() });
-      _rememberRogueliteBlessing32();
     }
   }
 
@@ -1639,7 +1653,6 @@ const enemies = enemyDefs.map(def => {
     if (blessing.conditionType === 'lost_ally_exists') {
       return (_bs.allies || []).some(a => a && a.hp <= 0 && !a.isFixedFirst);
     }
-    if (blessing.conditionType === 'ally_lost_once') return !!blessing.conditionMet;
     return false;
   }
 
@@ -1679,152 +1692,8 @@ const enemies = enemyDefs.map(def => {
       blessing.killCount = Number(blessing.killCount || 0) + 1;
       _log(`加護条件：敵撃破 ${blessing.killCount} / ${blessing.invRequiredKills}`);
       _emit('blessingProgress', { blessing: { ...blessing, defeatedEnemyUids: [...seen] }, bs: _snapshot() });
-      _rememberRogueliteBlessing32();
     });
     blessing.defeatedEnemyUids = [...seen];
-  }
-
-
-  // ============================================================
-  // レムの加護（remnant_05）
-  // 常時反撃 / LOST条件 / INV召喚物
-  // ============================================================
-  function _isRemBlessingActive32() {
-    return !!(_bs && _bs.blessing && _bs.blessing.id === 'remnant_05');
-  }
-
-  function _markRemBlessingLostCondition32(target) {
-    if (!_isRemBlessingActive32() || !target || target.side !== 'ally') return;
-    const blessing = _bs.blessing;
-    if (blessing.used || blessing.conditionMet) return;
-    blessing.conditionMet = true;
-    _log('レムの加護：味方のLOSTを検知。INV使用可能');
-    _emit('blessingProgress', { blessing: { ...blessing }, bs: _snapshot() });
-    _rememberRogueliteBlessing32();
-  }
-
-  function _getRemBlessingDecoys32() {
-    return (_bs && _bs.summons || []).filter(s => s && s.hp > 0 && s.isRemnant05BlessingDecoy);
-  }
-
-  function _summonRemBlessingDecoys32(blessing) {
-    if (!_bs) return [];
-    if (!_bs.summons) _bs.summons = [];
-
-    const occupied = new Set();
-    [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])].forEach(u => {
-      if (u && (u.hp > 0 || u.isBoss)) occupied.add(`${u.row}-${u.col}`);
-    });
-
-    const cells = [];
-    for (let row = 0; row < BOARD_ROWS; row++) {
-      for (let col = 0; col < BOARD_COLS; col++) {
-        if (!occupied.has(`${row}-${col}`)) cells.push({ row, col });
-      }
-    }
-    for (let i = cells.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [cells[i], cells[j]] = [cells[j], cells[i]];
-    }
-
-    const count = Math.min(cells.length, Math.max(1, Number(blessing.invSummonCount || 3)));
-    const created = [];
-    for (let i = 0; i < count; i++) {
-      const cell = cells[i];
-      const rem = {
-        _uid: uid(),
-        id: `remnant_05_blessing_set_${i + 1}`,
-        name: 'レム',
-        side: 'summon',
-        row: cell.row,
-        col: cell.col,
-        hp: 1,
-        hpMax: 1,
-        atk: 0,
-        element: 'mystis',
-        img: blessing.summonImg || 'images/remnant_05_set.webp',
-        battleImg: blessing.summonImg || 'images/remnant_05_set.webp',
-        battleBackImg: blessing.summonImg || 'images/remnant_05_set.webp',
-        uiScale: { battleBack: 1.45 },
-        uiOffset: { battleBack: 0 },
-        statusEffects: [],
-        remainingTurns: 9999,
-        isRemnant05BlessingDecoy: true,
-        blocksEnemyProjectiles: true,
-        blocksEnemyFrontAttack: true,
-      };
-      _bs.summons.push(rem);
-      created.push(rem);
-      _emit('summonObject', { summon: { ...rem }, owner: null, skill: { id:'remnant_05_inv', name:blessing.invName }, bs: _snapshot() });
-    }
-    return created;
-  }
-
-  function _moveNearestAllyToRemCell32(rem) {
-    if (!_bs || !rem) return null;
-    const allies = (_bs.allies || []).filter(a => a && a.hp > 0);
-    if (!allies.length) return null;
-    const sorted = allies.slice().sort((a, b) => {
-      const da = Math.abs(Number(a.row) - Number(rem.row)) + Math.abs(Number(a.col) - Number(rem.col));
-      const db = Math.abs(Number(b.row) - Number(rem.row)) + Math.abs(Number(b.col) - Number(rem.col));
-      if (da !== db) return da - db;
-      return String(a._uid).localeCompare(String(b._uid));
-    });
-    const ally = sorted[0];
-    if (!ally) return null;
-    const from = { row: ally.row, col: ally.col };
-    ally.row = rem.row;
-    ally.col = rem.col;
-    _log(`レムの残影：${ally.name} を残影の位置へ引き寄せた`);
-    _emit('forcedMove', {
-      source: { _uid: rem._uid, name:'レム', side:'summon', row:rem.row, col:rem.col },
-      target: { _uid: ally._uid, name:ally.name, side:'ally', row:ally.row, col:ally.col },
-      from,
-      to: { row: ally.row, col: ally.col },
-      effectType: 'remnant_05_blessing_shift',
-      moved: Math.abs(from.row - ally.row) + Math.abs(from.col - ally.col),
-      bs: _snapshot(),
-    });
-    return ally;
-  }
-
-  function _resolveRemBlessingDecoyHit32(rem, attacker) {
-    if (!_bs || !rem || !rem.isRemnant05BlessingDecoy || rem.hp <= 0) return false;
-    rem.hp = 0;
-    _bs.summons = (_bs.summons || []).filter(s => s && s._uid !== rem._uid);
-    _log('召喚されたレムが攻撃を受け、残影となって消えた');
-
-    if (attacker && attacker.side === 'enemy' && attacker.hp > 0) {
-      attacker.statusEffects = Array.isArray(attacker.statusEffects) ? attacker.statusEffects : [];
-      attacker.statusEffects.push({ type:'stun', duration:1, appliedTurn:_bs.turn, sourceName:'レムの加護' });
-      attacker.stunned = true;
-
-      const rate = Number(_bs.blessing && _bs.blessing.invRetaliationRate || 0.20);
-      const retaliation = Math.max(1, Math.round(Number(attacker.hpMax || attacker.hp || 1) * rate));
-      _log(`レムの残影：${attacker.name} を次ターンスタン、最大HP${Math.round(rate * 100)}%の怨念反撃`);
-      applyDamage(attacker, retaliation, { name:'レムの残影', side:'ally', element:null }, {
-        id:'remnant_05_inv_counter', name:'レムの残影', canCritical:false, hitStyle:'counter'
-      });
-    }
-
-    const movedAlly = _moveNearestAllyToRemCell32(rem);
-    _emit('summonObjectExpired', { summon: { ...rem }, reason:'hit', movedAlly: movedAlly ? { ...movedAlly } : null, bs: _snapshot() });
-    _renderUI();
-    _saveResume();
-    return true;
-  }
-
-  function _applyRemBlessingPassiveReflect32(target, source, dealtDamage) {
-    if (!_isRemBlessingActive32()) return;
-    if (!target || target.side !== 'ally' || Number(dealtDamage || 0) <= 0) return;
-    if (!source || source.side !== 'enemy' || Number(source.hp || 0) <= 0) return;
-    const rate = Number(_bs.blessing.passiveReflectRate || 0.10);
-    if (rate <= 0) return;
-    const reflect = Math.max(1, Math.round(Number(source.hpMax || source.hp || 1) * rate));
-    _log(`レムの加護：${source.name} に最大HP${Math.round(rate * 100)}%の反撃`);
-    applyDamage(source, reflect, { name:'レムの加護', side:'ally', element:null }, {
-      id:'remnant_05_passive_reflect', name:'執着返し', canCritical:false, hitStyle:'counter'
-    });
   }
 
   function getBlessingInvTargets() {
@@ -1857,7 +1726,6 @@ const enemies = enemyDefs.map(def => {
 
     blessing.used = true;
     blessing.activeTurn = effectType === 'critical_up' ? _bs.turn : null;
-    _rememberRogueliteBlessing32();
     const invName = blessing.invName || blessing.name || '加護';
 
     if (effectType === 'critical_up') {
@@ -1876,9 +1744,6 @@ const enemies = enemyDefs.map(def => {
         enemy.statusEffects.push({ type:'stun', duration:turns, sourceName:invName });
       });
       _log(`INV「${invName}」：盤面上の敵全員を${turns}ターンスタン`);
-    } else if (effectType === 'rem_summon_3') {
-      const created = _summonRemBlessingDecoys32(blessing);
-      _log(`INV「${invName}」：レムを${created.length}体召喚`);
     } else if (effectType === 'revive_ally') {
       const chance = Math.max(0, Math.min(1, Number(blessing.invReviveChance || 0)));
       if (Math.random() < chance) {
@@ -2054,13 +1919,6 @@ const enemies = enemyDefs.map(def => {
   // 味方・敵ともに hp を減らす（統一）
   // ============================================================
   function applyDamage(target, rawDamage, source, skill) {
-    // レム加護の召喚物は敵から1回でも攻撃を受けた時点で、威力に関係なく消える。
-    if (target && target.isRemnant05BlessingDecoy && source && source.side === 'enemy') {
-      _resolveRemBlessingDecoyHit32(target, source);
-      _checkWinLose();
-      return { amount: 0, criticalRoll: { amount:0, isCritical:false, criticalCount:0 }, hpBefore:1, hpAfter:0 };
-    }
-
     if (_tryYoiNoSousouCounter(target, source, rawDamage, skill)) {
       _checkWinLose();
       return;
@@ -2100,23 +1958,13 @@ const enemies = enemyDefs.map(def => {
     }
     target.hp = Math.max(0, target.hp - dmg);
     const hpAfter = Number(target.hp || 0);
-    if (target.side === 'enemy' && hpBefore > 0 && hpAfter <= 0) {
-      if (_isRemnant05Enemy(target) && target.remnant05Body === 'clone' && !target._remnant05ResolvedDeath) {
-        _onRemnant05CloneDefeated(target, source);
-      }
-      _syncBlessingDefeats32();
-    }
+    if (target.side === 'enemy' && hpBefore > 0 && hpAfter <= 0) _syncBlessingDefeats32();
     const isFatalDamage = hpBefore > 0 && dmg > 0 && hpAfter <= 0;
     const overkillDamage = isFatalDamage ? Math.max(0, dmg - hpBefore) : 0;
     const elementText = source ? getElementMatchText32(source.element, target.element) : '';
     const elementSuffix = elementText ? `【${elementText}】` : '';
     const criticalSuffix = criticalRoll.isCritical ? ` CRITICAL×${criticalRoll.criticalCount || 1}` : '';
     _log(`${source ? source.name : '？'} → ${target.name} に ${dmg} ダメージ！${criticalSuffix}${elementSuffix}（残HP: ${target.hp}）`);
-
-    // レムの加護：味方がLOSTした事実をINV条件として記録する。
-    if (target.side === 'ally' && hpBefore > 0 && hpAfter <= 0) {
-      _markRemBlessingLostCondition32(target);
-    }
 
     // ローグライト: 味方HPが0になったらrosterをdead更新
     if (target.side === 'ally' && target.hp <= 0 && _bs.roster) {
@@ -2175,10 +2023,6 @@ const enemies = enemyDefs.map(def => {
       hitCount:    skill?.hitCount  || criticalRoll.hitCount || null,
       bs: _snapshot(),
     });
-
-    // レムの加護：味方が敵から実ダメージを受けた直後に割合反撃。
-    // 反撃側のapplyDamageは敵が対象なので再帰しない。
-    _applyRemBlessingPassiveReflect32(target, source, dmg);
 
     // ダメージ後に勝敗を即チェック
     _checkWinLose();
@@ -2711,12 +2555,6 @@ function _executeDelayedAttack(action) {
     _bs.summons.forEach(summon => {
       if (!summon || summon.hp <= 0) return;
 
-      // レム加護の残影は攻撃能力・ターン寿命を持たず、敵に攻撃されるまで盤面に残る。
-      if (summon.isRemnant05BlessingDecoy) {
-        survivors.push(summon);
-        return;
-      }
-
       const targets = _getEnemiesAround9(summon.row, summon.col);
       let drainTotal = 0;
 
@@ -2868,8 +2706,7 @@ function _executeDelayedAttack(action) {
   }
 
   // ============================================================
-  // ハヤテ：月光モード
-  // 内部プロパティ hitAndAway* は既存セーブ互換のため名称を維持する。
+  // ハヤテ：ヒットアンドアウェイモード
   // ============================================================
   function _isHitAndAwayModeActive32(unit) {
     if (!unit || !_bs) return false;
@@ -2882,15 +2719,7 @@ function _executeDelayedAttack(action) {
     unit.hitAndAwayUntilTurn = Number(_bs.turn || 1) + duration - 1;
     unit.hitAndAwayMoveBonus = Math.max(0, Number(skill && skill.moveRangeBonus || 2));
     unit.hitAndAwayOrigin = null;
-    _log(`${unit.name} は月光モードに入った（${duration}ターン）`);
-    _emit('moonModeChange', {
-      active: true,
-      source: { ...unit },
-      target: { ...unit },
-      label: '月光モード',
-      duration,
-      bs: _snapshot(),
-    });
+    _log(`${unit.name} はヒットアンドアウェイモードに入った（${duration}ターン）`);
   }
 
   function _returnHitAndAwayUnit32(unit) {
@@ -3010,29 +2839,6 @@ if (stype === 'repeat_skill') {
     _log(`${ally.name}：このターン中に再現できる味方スキルがありません`);
   } else {
     const copiedSkill = deepClone(last.skill);
-    const repeatPowerRate = Math.max(0, Math.min(1, Number(skill.repeatPowerRate ?? 0.85)));
-
-    // 再発動は元スキルの効果量を一定割合に圧縮する。
-    // ダメージ・回復・吸収・毒は直接倍率化し、ATK上昇/低下は増減幅だけを倍率化する。
-    if (Number.isFinite(Number(copiedSkill.multiplier))) {
-      copiedSkill.multiplier = Number(copiedSkill.multiplier) * repeatPowerRate;
-    }
-    ['healRate', 'lowHpHealRate', 'summonTickMultiplier'].forEach(key => {
-      if (Number.isFinite(Number(copiedSkill[key]))) copiedSkill[key] = Number(copiedSkill[key]) * repeatPowerRate;
-    });
-    if (Array.isArray(copiedSkill.effects)) {
-      copiedSkill.effects = copiedSkill.effects.map(effect => {
-        if (!effect) return effect;
-        const e = { ...effect };
-        if (Number.isFinite(Number(e.rate))) {
-          const rate = Number(e.rate);
-          if (e.type === 'atk_up') e.rate = 1 + (rate - 1) * repeatPowerRate;
-          else if (e.type === 'atk_down') e.rate = 1 - (1 - rate) * repeatPowerRate;
-          else e.rate = rate * repeatPowerRate;
-        }
-        return e;
-      });
-    }
 
     // 安全対策：物真似・ULT・予約攻撃はコピーしない
     if (
@@ -3049,7 +2855,7 @@ if (stype === 'repeat_skill') {
       copiedSkill.linkCost = 0;
       copiedSkill.isUltimate = false;
 
-      _log(`${ally.name} は ${last.ownerName} の「${copiedSkill.name}」を${Math.round(repeatPowerRate * 100)}%の効果量で再現した！`);
+      _log(`${ally.name} は ${last.ownerName} の「${copiedSkill.name}」を再現した！`);
 
       // ここでは「アイムが使った」扱いにする。
       // 射程・ATK・位置はアイム基準。
@@ -3369,19 +3175,7 @@ if (stype === 'repeat_skill') {
   } else {
     targets.forEach(a => {
       const before = a.hp;
-
-      // フローラ等の純回復型：一定HP以下の味方には回復率を上げる。
-      // lowHpThreshold / lowHpHealRate が未設定の既存ヒーラーには影響しない。
-      const hpRatioBeforeHeal = a.hpMax > 0 ? a.hp / a.hpMax : 1;
-      const lowHpThreshold = Number(skill.lowHpThreshold);
-      const lowHpHealRate = Number(skill.lowHpHealRate);
-      const effectiveHealRate = (
-        Number.isFinite(lowHpThreshold) &&
-        Number.isFinite(lowHpHealRate) &&
-        hpRatioBeforeHeal <= lowHpThreshold
-      ) ? lowHpHealRate : healRate;
-
-      const recover = Math.max(1, Math.round(a.hpMax * effectiveHealRate));
+      const recover = Math.max(1, Math.round(a.hpMax * healRate));
       a.hp = Math.min(a.hpMax, a.hp + recover);
       const actualRecover = a.hp - before;
 
@@ -3435,32 +3229,12 @@ if (stype === 'repeat_skill') {
 
     // ── hit_and_away_mode ───────────────────────────────────────
     } else if (stype === 'hit_and_away_mode') {
-      // ハヤテULT：前方広範囲を高速斬撃してから、超機動モードへ移行する。
-      const targets = _enemyTargets(skill.range);
-      if (targets.length === 0) {
-        _log(`${ally.name}：攻撃範囲内に敵はいないが、月光モードへ移行する`);
-      } else {
-        const { enemyEffects } = _splitSkillEffectsByTarget(skill);
-        targets.forEach(enemy => {
-          let dmg = calcDamage(getEffectiveAtk(ally), Number(skill.multiplier || 0), enemy, ally);
-          dmg = applyBackstabBonus(dmg, ally, enemy, skill);
-          if (_bs._rl_skillDmgMult && _bs._rl_skillDmgMult !== 1.0) {
-            dmg = Math.round(dmg * _bs._rl_skillDmgMult);
-          }
-          if (enemy.isBoss && _bs._rl_bossDmgMult && _bs._rl_bossDmgMult !== 1.0) {
-            dmg = Math.round(dmg * _bs._rl_bossDmgMult);
-          }
-          applyDamage(enemy, dmg, ally, skill);
-          _applyEffects(enemyEffects, enemy, ally);
-        });
-      }
-
       _activateHitAndAwayMode32(ally, skill);
       _emit('statusApplied', {
         source: { ...ally },
         target: { ...ally },
         effect: { type: 'hit_and_away_mode', duration: Number(skill.modeDuration || 3) },
-        label: '月光モード',
+        label: 'HIT & AWAY',
         bs: _snapshot(),
       });
 
@@ -3674,14 +3448,11 @@ return true;
           .map(cell => `${cell.row}-${cell.col}`)
       );
       return (units || []).filter(unit =>
-        unit && unit.hp > 0 && unitIntersectsCells32(unit, keys)
+        unit && keys.has(`${unit.row}-${unit.col}`)
       );
     }
 
-    const keys = BR.getCellsFromRange32(owner, rangeId);
-    return (units || []).filter(unit =>
-      unit && unit.hp > 0 && unitIntersectsCells32(unit, keys)
-    );
+    return BR.getUnitsFromRange32(owner, rangeId, units);
   }
 
   async function executeComboSkill(allyUid, comboSkill, context) {
@@ -3823,44 +3594,14 @@ return true;
             );
 
             if (!hasExplicitHealEffect) {
-              // コンボ回復は healRate を「対象の最大HP割合」として扱う。
-              // 例: アンジェ healRate: 0.08 → 最大HPの8%回復。
-              const healRate = Number(comboSkill.healRate || comboSkill.multiplier || 0.25);
-              const before = Number(target.hp || 0);
-              const hpMax = Math.max(1, Number(target.hpMax || target.hp || 1));
-              const recover = Math.max(1, Math.round(hpMax * healRate));
-
-              target.hp = Math.min(hpMax, before + recover);
-              const actualRecover = Math.max(0, Number(target.hp || 0) - before);
-
-              if (actualRecover > 0) {
-                _log(`COMBO：${target.name} の HP が ${actualRecover} 回復！（残HP: ${target.hp}）`);
-                _emit('heal', {
-                  source: {
-                    _uid: ally._uid,
-                    name: ally.name,
-                    side: ally.side,
-                    row: ally.row,
-                    col: ally.col
-                  },
-                  target: {
-                    _uid: target._uid,
-                    name: target.name,
-                    side: target.side,
-                    row: target.row,
-                    col: target.col
-                  },
-                  amount: actualRecover,
-                  kind: 'combo_heal',
-                  skillId: comboSkill.id || null,
-                  skillName: comboSkill.name || null,
-                  isUltimate: false,
-                  hitStyle: comboSkill.hitStyle || 'heal',
-                  bs: _snapshot(),
-                });
-              } else {
-                _log(`COMBO：${target.name} は既にHP満タンです`);
-              }
+              const amount = Math.max(
+                1,
+                Math.round(
+                  getEffectiveAtk(ally) *
+                  Number(comboSkill.healRate || comboSkill.multiplier || 0.25)
+                )
+              );
+              target.hp = Math.min(target.hpMax, target.hp + amount);
             }
           }
 
@@ -4516,35 +4257,19 @@ return true;
     function getEnemyAttackTargets(enemy) {
       const range = enemy.attackRange || 'enemy_attack_front';
 
-      // 正面1マスの直接攻撃だけは単体判定。
-      // 直線攻撃は複数マス攻撃として、射線上にいる味方全員を対象にする。
-      // ロゼの茨薔薇などの設置物がある場合は、その手前までを有効射線とする。
+      // ロゼの茨薔薇などの設置物は、敵の正面/直線攻撃を遮る。
+      // 直線系は最初に当たった味方または遮蔽物だけを返し、後ろへ貫通させない。
       if (range === 'enemy_attack_line') {
-        const blockers = (_bs.summons || [])
-          .filter(u => _isEnemyProjectileBlocker(u, 'enemy_attack_line'))
-          .filter(u => Number(u.col) === Number(enemy.col) && Number(u.row) > Number(enemy.row))
-          .sort((a, b) => Number(a.row) - Number(b.row));
-        const blockerRow = blockers.length ? Number(blockers[0].row) : BOARD_ROWS;
-        const targets = (_bs.allies || []).filter(a =>
-          a && a.hp > 0 &&
-          Number(a.col) === Number(enemy.col) &&
-          Number(a.row) > Number(enemy.row) &&
-          Number(a.row) < blockerRow
-        );
-        // レム加護の残影は射線を受け止め、自身が攻撃対象になる。
-        if (blockers.length && blockers[0].isRemnant05BlessingDecoy) targets.push(blockers[0]);
-        return targets;
+        const first = _getFirstEnemyLineTarget(enemy, false);
+        return first ? [first] : [];
       }
       if (range === 'enemy_attack_front') {
         const first = _getFirstEnemyLineTarget(enemy, true);
         return first ? [first] : [];
       }
 
-      // 生存している味方＋レム加護の残影を攻撃対象候補にする。
-      const allies = [
-        ...(_bs.allies || []).filter(a => a && a.hp > 0),
-        ..._getRemBlessingDecoys32(),
-      ];
+      // 生存している味方のみ対象
+      const allies = _bs.allies.filter(a => a.hp > 0);
 
       // enemy_attack_* / adjacent は BattleRange32 のレンジ定義で判定
       if (range.startsWith('enemy_attack_') || range === 'adjacent') {
@@ -4634,355 +4359,6 @@ return true;
       return false;
     }
 
-
-    // ============================================================
-    // レムナント05「執着」専用システム
-    // ST1: 固執 / ST2: 怨念・復活 / ST3: 本体隠匿
-    // ============================================================
-    function _isRemnant05Enemy(enemy) {
-      return !!(enemy && (enemy.remnant05 || enemy.specialActionType === 'remnant05_obsession'));
-    }
-
-    function _getRemnant05Core() {
-      if (!_bs) return null;
-      return (_bs.enemies || []).find(e => _isRemnant05Enemy(e) && e.remnant05Body === 'core') || null;
-    }
-
-    function _hasRemnant05TrueSight() {
-      if (!_bs || !Array.isArray(_bs.allies)) return false;
-      return _bs.allies.some(a => {
-        if (!a || a.hp <= 0) return false;
-        const def = (window.CHARACTERS_32 || []).find(c => Number(c.id) === Number(a.id))
-          || (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)
-            ? CHARACTERS.find(c => Number(c.id) === Number(a.id))
-            : null);
-        return !!(
-          a.remnant05TrueSight ||
-          a.remnantSpecialty === 'remnant_05' ||
-          (def && (def.remnant05TrueSight || def.remnantSpecialty === 'remnant_05'))
-        );
-      });
-    }
-
-    function _getRemnant05LivingAllies() {
-      return (_bs && _bs.allies || []).filter(a => a && a.hp > 0);
-    }
-
-    function _getRemnant05AliveEnemies() {
-      return (_bs && _bs.enemies || []).filter(e => e && e.hp > 0 && _isRemnant05Enemy(e));
-    }
-
-    function _findFreeRemnant05Cell(preferredRow) {
-      if (!_bs) return null;
-      const occupied = new Set();
-      [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])].forEach(u => {
-        if (u && u.hp > 0) occupied.add(`${u.row}-${u.col}`);
-      });
-      const rows = [preferredRow, 1, 2, 0, 3, 4].filter((v, i, arr) => Number.isFinite(v) && arr.indexOf(v) === i);
-      for (const row of rows) {
-        for (const col of shuffle([0,1,2,3,4])) {
-          if (BR.isValidCell(row, col) && !occupied.has(`${row}-${col}`)) return { row, col };
-        }
-      }
-      for (let row = 0; row < BOARD_ROWS; row++) {
-        for (let col = 0; col < BOARD_COLS; col++) {
-          if (!occupied.has(`${row}-${col}`)) return { row, col };
-        }
-      }
-      return null;
-    }
-
-    function _makeRemnant05Clone(target) {
-      const cfg = _bs && _bs.remnant05Config;
-      if (!cfg) return null;
-      const def = (typeof getEnemyById === 'function' ? getEnemyById(cfg.cloneEnemyId || 'enemy_remnant05_clone') : null)
-        || (window.ENEMIES || []).find(e => e.id === (cfg.cloneEnemyId || 'enemy_remnant05_clone'));
-      if (!def) return null;
-      const pos = _findFreeRemnant05Cell(1);
-      if (!pos) return null;
-      const clone = makeEnemy(def, pos.row, pos.col);
-      clone.remnant05 = true;
-      clone.remnant05Body = 'clone';
-      clone.remnant05Stage = Number(cfg.stage || 1);
-      clone.remnant05HiddenCore = false;
-      clone.remnant05EnableCurse = !!cfg.enableCurse;
-      clone.remnant05EnableRevive = !!cfg.enableRevive;
-      clone.remnant05RecoilRate = Number(cfg.recoilRate || 0.20);
-      clone.remnant05CurseRate = Number(cfg.curseRate || 0.20);
-      clone.obsessionTargetUid = target ? target._uid : null;
-      if (cfg.hideCore) {
-        const core = _getRemnant05Core();
-        const hiddenHp = Math.max(1, Number(core && core.hpMax || 3600));
-        clone.hpMax = hiddenHp;
-        clone.hp = hiddenHp;
-        clone.atk = Number(core && core.atk || clone.atk);
-      }
-      clone._remnant05Serial = ++_bs.remnant05Serial;
-      return clone;
-    }
-
-    function _assignRemnant05Targets() {
-      if (!_bs || !_bs.remnant05Config) return;
-      const allies = _getRemnant05LivingAllies();
-      const enemies = _getRemnant05AliveEnemies();
-      if (!allies.length || !enemies.length) return;
-
-      // 生存対象への既存固執は維持。対象ロスト時だけ再割当。
-      const used = new Set();
-      enemies.forEach(e => {
-        const current = allies.find(a => a._uid === e.obsessionTargetUid);
-        if (current) used.add(current._uid);
-        else e.obsessionTargetUid = null;
-      });
-
-      const freeTargets = allies.filter(a => !used.has(a._uid));
-      enemies.filter(e => !e.obsessionTargetUid).forEach((e, idx) => {
-        const target = freeTargets[idx] || allies[idx % allies.length] || allies[0];
-        if (target) e.obsessionTargetUid = target._uid;
-      });
-    }
-
-    function _syncRemnant05Population() {
-      if (!_bs || !_bs.remnant05Config || _bs.result) return;
-      const allies = _getRemnant05LivingAllies();
-      if (!allies.length) return;
-
-      // 「実体＋怨念待機」を味方人数上限とする。
-      const active = _getRemnant05AliveEnemies();
-      const pending = (Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [])
-        .filter(c => c && c.revivePending).length;
-      let totalSlots = active.length + pending;
-      const cap = allies.length;
-
-      // 味方がLOSTして上限が下がった場合、余剰分身から静かに消える。本体は消さない。
-      if (totalSlots > cap) {
-        let overflow = totalSlots - cap;
-        const removable = active.filter(e => e.remnant05Body === 'clone').sort((a,b) => Number(b._remnant05Serial||0) - Number(a._remnant05Serial||0));
-        removable.forEach(clone => {
-          if (overflow <= 0) return;
-          clone.hp = 0;
-          clone._remnant05ResolvedDeath = true;
-          overflow--;
-          totalSlots--;
-          _log('執着対象を失った分身体が霧散した');
-        });
-        if (overflow > 0 && Array.isArray(_bs.remnant05Curses)) {
-          for (let i = _bs.remnant05Curses.length - 1; i >= 0 && overflow > 0; i--) {
-            if (_bs.remnant05Curses[i] && _bs.remnant05Curses[i].revivePending) {
-              _bs.remnant05Curses[i].revivePending = false;
-              overflow--;
-              totalSlots--;
-            }
-          }
-        }
-      }
-
-      while (totalSlots < cap) {
-        const already = new Set(active.map(e => e.obsessionTargetUid).filter(Boolean));
-        const target = allies.find(a => !already.has(a._uid)) || allies[totalSlots % allies.length];
-        const clone = _makeRemnant05Clone(target);
-        if (!clone) break;
-        _bs.enemies.push(clone);
-        active.push(clone);
-        totalSlots++;
-        _log(`${target ? target.name : '味方'} に執着する影が分裂した`);
-      }
-      _assignRemnant05Targets();
-    }
-
-    function _initializeRemnant05Battle() {
-      if (!_bs || !_bs.remnant05Config) return;
-      const cfg = _bs.remnant05Config;
-      _bs.remnant05Curses = [];
-      _bs.remnant05Serial = 0;
-
-      (_bs.enemies || []).forEach(e => {
-        if (!_isRemnant05Enemy(e)) return;
-        e.remnant05 = true;
-        e.remnant05Stage = Number(cfg.stage || e.remnant05Stage || 1);
-        e.remnant05EnableCurse = !!cfg.enableCurse;
-        e.remnant05EnableRevive = !!cfg.enableRevive;
-        e.remnant05RecoilRate = Number(cfg.recoilRate || 0.20);
-        e.remnant05CurseRate = Number(cfg.curseRate || 0.20);
-        if (e.remnant05Body === 'core') {
-          e.remnant05HiddenCore = !!cfg.hideCore;
-          e._remnant05Serial = ++_bs.remnant05Serial;
-        }
-      });
-
-      _assignRemnant05Targets();
-      _syncRemnant05Population();
-    }
-
-    function _getRemnant05Target(enemy) {
-      if (!_bs || !enemy) return null;
-      const target = (_bs.allies || []).find(a => a && a.hp > 0 && a._uid === enemy.obsessionTargetUid);
-      if (target) return target;
-      _assignRemnant05Targets();
-      return (_bs.allies || []).find(a => a && a.hp > 0 && a._uid === enemy.obsessionTargetUid)
-        || _pickClosestUnit(enemy, aliveAllies());
-    }
-
-    function _addRemnant05Status(target, type, duration, extra) {
-      if (!target || target.hp <= 0) return;
-      target.statusEffects = Array.isArray(target.statusEffects) ? target.statusEffects : [];
-      target.statusEffects = target.statusEffects.filter(e => !(e && e.type === type));
-      target.statusEffects.push({
-        type,
-        duration: Math.max(1, Number(duration || 1)),
-        appliedTurn: Number(_bs.turn || 1),
-        ...(extra || {}),
-      });
-      if (type === 'stun') target.stunned = true;
-    }
-
-    async function _runRemnant05Action(enemy) {
-      const target = _getRemnant05Target(enemy);
-      if (!target) return;
-
-      const lastStunTurn = Number(target._remnant05StunnedLastTurn || -99);
-      const canStun = !target.stunned && (Number(_bs.turn || 1) - lastStunTurn > 1);
-
-      // 固執対象へじわじわ接近。対象変更はLOST時以外行わない。
-      if (manhattan(enemy, target) > 1) {
-        const step = _decideEnemyMoveCell(enemy);
-        if (step) {
-          const from = { row: enemy.row, col: enemy.col };
-          enemy.row = step.row;
-          enemy.col = step.col;
-          _emit('enemyActionStep', { step:'move', enemy:{...enemy}, from, to:{row:enemy.row,col:enemy.col}, bs:_snapshot() });
-          _renderUI();
-          await wait(B32_WAIT.move);
-        }
-      }
-
-      const roll = Math.random();
-      let title, sub, rate;
-
-      if (canStun && roll < 0.28) {
-        title = 'クリング';
-        sub = `${target.name} から離れない`;
-        rate = 0.35;
-        _addRemnant05Status(target, 'stun', 1);
-        target._remnant05StunnedLastTurn = Number(_bs.turn || 1);
-      } else if (roll < 0.62) {
-        title = 'グラッジ';
-        sub = `${target.name} の力を鈍らせる`;
-        rate = 0.45;
-        _addRemnant05Status(target, 'atk_down', 2, { rate: 0.72 });
-      } else {
-        title = 'バインド';
-        sub = `${target.name} の歩みを縛る`;
-        rate = 0.40;
-        _addRemnant05Status(target, 'move_lock', 1);
-      }
-
-      await _centerTextWait(title, sub, B32_WAIT.enemyAction);
-      const dmg = calcDamage(getEffectiveAtk(enemy), rate, target, enemy);
-      applyDamage(target, dmg, enemy, { id:`remnant05_${title}`, name:title, isUltimate:false, hitStyle:'normal' });
-      _emit('statusApplied', { target:{...target}, source:{...enemy}, status:title, bs:_snapshot() });
-      _renderUI();
-      await wait(B32_WAIT.attack);
-      await wait(B32_WAIT.afterText);
-    }
-
-    function _onRemnant05CloneDefeated(target, source) {
-      if (!_bs || !target || target.remnant05Body !== 'clone') return;
-      const cfg = _bs.remnant05Config || {};
-      const row = Number(target.row), col = Number(target.col);
-
-      // 分身体を倒したプレイヤーへ最大HP割合の撃破反動。
-      if (source && source.side === 'ally' && source.hp > 0) {
-        const recoilRate = Number(target.remnant05RecoilRate || cfg.recoilRate || 0.20);
-        const recoil = Math.max(1, Math.floor(Number(source.hpMax || source.hp || 1) * recoilRate));
-        const before = Number(source.hp || 0);
-        source.hp = Math.max(0, before - recoil);
-        if (source.hp <= 0 && _bs.roster) {
-          const rEntry = _bs.roster.find(r => r && r.deployedUid === source._uid);
-          if (rEntry && rEntry.status === 'deployed') rEntry.status = 'dead';
-        }
-        _log(`執着反転：${source.name} に最大HP${Math.round(recoilRate*100)}%の怨返し`);
-        _emit('damage', {
-          source:{ _uid:target._uid, name:target.name, side:'enemy', row, col, element:target.element },
-          target:{ _uid:source._uid, name:source.name, side:'ally', row:source.row, col:source.col, element:source.element, hpBefore:before, hpAfter:source.hp, hpMax:source.hpMax, isFatal:before>0&&source.hp<=0 },
-          amount:recoil, kind:'remnant05_recoil', hpBefore:before, hpAfter:source.hp, targetHpMax:source.hpMax, isFatal:before>0&&source.hp<=0
-        });
-      }
-
-      if (cfg.enableCurse || target.remnant05EnableCurse) {
-        _bs.remnant05Curses = Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [];
-        _bs.remnant05Curses.push({
-          id:`remnant05_curse_${Date.now()}_${Math.random()}`,
-          row, col,
-          createdTurn:Number(_bs.turn || 1),
-          expireTurn:Number(_bs.turn || 1) + 1,
-          damageRate:Number(target.remnant05CurseRate || cfg.curseRate || 0.20),
-          revivePending: !!(cfg.enableRevive || target.remnant05EnableRevive),
-          obsessionTargetUid: target.obsessionTargetUid || null,
-        });
-        _log(`怨念化：${row + 1}-${col + 1} マスに未練が残った`);
-      }
-
-      // 死体は通常の敵配列から除去。復活は怨念消滅時に新個体として生成。
-      target._remnant05ResolvedDeath = true;
-    }
-
-    function _processRemnant05TurnStart() {
-      if (!_bs || !_bs.remnant05Config) return;
-      const curses = Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [];
-      const survivors = [];
-      const allies = _getRemnant05LivingAllies();
-
-      curses.forEach(curse => {
-        if (!curse) return;
-        if (Number(curse.expireTurn || 0) <= Number(_bs.turn || 1)) {
-          if (curse.revivePending && allies.length > 0) {
-            // 現在の味方人数を上限に復活。
-            const activeCount = _getRemnant05AliveEnemies().length;
-            const otherPending = curses.filter(x => x && x !== curse && x.revivePending && Number(x.expireTurn || 0) > Number(_bs.turn || 1)).length;
-            if (activeCount + otherPending < allies.length) {
-              const preferred = allies.find(a => a._uid === curse.obsessionTargetUid) || allies[0];
-              const clone = _makeRemnant05Clone(preferred);
-              if (clone) {
-                const occupied = getAllUnits().some(u => u && u.hp > 0 && u.row === curse.row && u.col === curse.col);
-                if (!occupied && BR.isValidCell(curse.row, curse.col)) {
-                  clone.row = curse.row;
-                  clone.col = curse.col;
-                }
-                _bs.enemies.push(clone);
-                _log('消えた怨念から分身体が再び立ち上がった');
-              }
-            }
-          }
-          return;
-        }
-        survivors.push(curse);
-      });
-      _bs.remnant05Curses = survivors;
-
-      // LOST等で上限が下がった場合、超過分は「次に倒れた個体から復活しない」。
-      _syncRemnant05Population();
-      _assignRemnant05Targets();
-    }
-
-    function _applyRemnant05CurseStep(unit, row, col) {
-      if (!_bs || !_bs.remnant05Config || !unit || unit.side !== 'ally' || unit.hp <= 0) return;
-      const curse = (Array.isArray(_bs.remnant05Curses) ? _bs.remnant05Curses : [])
-        .find(c => c && Number(c.row) === Number(row) && Number(c.col) === Number(col));
-      if (!curse) return;
-      const rate = Number(curse.damageRate || 0.20);
-      const dmg = Math.max(1, Math.floor(Number(unit.hpMax || unit.hp || 1) * rate));
-      const before = Number(unit.hp || 0);
-      unit.hp = Math.max(0, before - dmg);
-      _log(`怨念を踏んだ：${unit.name} に最大HP${Math.round(rate*100)}%ダメージ`);
-      _emit('damage', {
-        source:{ _uid:'remnant05_curse', name:'怨念', side:'enemy', row, col, element:'mystis' },
-        target:{ _uid:unit._uid, name:unit.name, side:'ally', row:unit.row, col:unit.col, element:unit.element, hpBefore:before, hpAfter:unit.hp, hpMax:unit.hpMax, isFatal:before>0&&unit.hp<=0 },
-        amount:dmg, kind:'remnant05_curse', hpBefore:before, hpAfter:unit.hp, targetHpMax:unit.hpMax, isFatal:before>0&&unit.hp<=0
-      });
-      _checkWinLose();
-    }
-
     function _playEnemyStrongAttackShake(meta) {
       if (!_isStrongEnemyAttack(meta)) return false;
       if (typeof window.playBattle32EnemyStrongShake !== 'function') return false;
@@ -5009,11 +4385,6 @@ return true;
       const list = (targets || []).filter(t => t && t.hp > 0);
       if (list.length === 0) return null;
 
-      if (_isRemnant05Enemy(enemy)) {
-        const fixed = list.find(t => t._uid === enemy.obsessionTargetUid);
-        if (fixed) return fixed;
-      }
-
       if (_isEriPriorityEnemy(enemy)) {
         const eri = getEriUnit();
         const eriInRange = eri && eri.hp > 0 && list.some(t => t._uid === eri._uid);
@@ -5023,38 +4394,9 @@ return true;
       return _pickClosestUnit(enemy, list);
     }
 
-
-    // 敵通常攻撃の命中方式。
-    // attackTargetMode を指定した敵はその設定を優先し、未指定時は正面1マスのみ単体、
-    // それ以外の複数マスレンジは範囲内の全味方へ命中させる。
-    function _getEnemyAttackHitTargets32(enemy, rangeTargets) {
-      const list = (rangeTargets || []).filter(t => t && t.hp > 0);
-      if (!list.length) return [];
-
-      const mode = String(enemy && enemy.attackTargetMode || '').toLowerCase();
-      if (mode === 'all') return list;
-      if (mode === 'single' || mode === 'first') {
-        const target = _pickEnemyAttackTarget(enemy, list);
-        return target ? [target] : [];
-      }
-
-      const range = String(enemy && enemy.attackRange || 'enemy_attack_front');
-      if (range === 'enemy_attack_front') {
-        const target = _pickEnemyAttackTarget(enemy, list);
-        return target ? [target] : [];
-      }
-
-      return list;
-    }
-
     function _getEnemyMoveTarget(enemy) {
       const allies = aliveAllies();
       if (allies.length === 0) return null;
-
-      if (_isRemnant05Enemy(enemy)) {
-        const fixed = allies.find(a => a._uid === enemy.obsessionTargetUid);
-        if (fixed) return fixed;
-      }
 
       if (_isEriPriorityEnemy(enemy)) {
         const eri = getEriUnit();
@@ -5297,7 +4639,7 @@ function doBossLineAttack(boss) {
     // ボス予兆攻撃（行動ループより先に発動）
     if (_bs.turn % BOSS_WARN_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
-      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss) && !_isRemnant05Enemy(boss)) {
+      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss)) {
         await _centerTextWait('⚠️ WARNING', 'ボスが予兆攻撃…', B32_WAIT.enemyAction);
         _doBossWarnAttack(boss, getAllUnits());
         _renderUI();
@@ -5310,7 +4652,7 @@ function doBossLineAttack(boss) {
     if (_bs.turn % BOSS_SWAP_INTERVAL === 0) {
       const boss = _bs.enemies.find(u => u.isBoss && u.hp > 0);
 
-      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss) && !_isRemnant05Enemy(boss)) {
+      if (boss && !_isSakielBoss(boss) && !_isOverseerBoss(boss)) {
         await _centerTextWait('⚠️ SPACE SHIFT', '空間干渉：位置入れ替え', B32_WAIT.enemyAction);
 
         doBossSwapAttack(boss);
@@ -6320,12 +5662,6 @@ function doBossLineAttack(boss) {
       return;
     }
 
-    // レムナント05：各個体は担当した味方1体にのみ固執する。
-    if (_isRemnant05Enemy(enemy)) {
-      await _runRemnant05Action(enemy);
-      return;
-    }
-
     // オーバーシア本体は通常攻撃を使わず、専用4種＋6ターン必殺技を実行する。
     if (_isOverseerBoss(enemy)) {
       await _runOverseerSpecialAction(enemy);
@@ -6351,9 +5687,11 @@ function doBossLineAttack(boss) {
     const rangeTargets = getEnemyAttackTargets(enemy);
 
     if (rangeTargets.length > 0) {
-      const hitTargets = _getEnemyAttackHitTargets32(enemy, rangeTargets);
-      if (!hitTargets.length) return;
-      const primaryTarget = _pickEnemyAttackTarget(enemy, hitTargets) || hitTargets[0];
+      // 射程内に味方がいる → ボス/特殊敵はエリ優先、通常敵は最も近い味方を攻撃
+      const target = _pickEnemyAttackTarget(enemy, rangeTargets);
+      if (!target) return;
+      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
+      const targetHpBefore = Number(target.hp || 0);
       const attackTraceCells = _getEnemyAttackTraceCells(enemy);
       _setEnemyAttackTraceCells(attackTraceCells, enemy, enemy.attackRange || 'ATTACK');
       await wait(180);
@@ -6368,29 +5706,24 @@ function doBossLineAttack(boss) {
       _emit('enemyActionStep', {
         step: 'attack',
         enemy: { ...enemy },
-        target: { ...primaryTarget },
-        targets: hitTargets.map(t => ({ ...t })),
+        target: { ...target },
         bs: _snapshot(),
       });
-
-      let killedAny = false;
-      hitTargets.forEach(target => {
-        const hpBefore = Number(target.hp || 0);
-        const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
-        applyDamage(target, dmg, enemy);
-        if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
-          _addRiviaForget(target, 1);
-          _log(`${target.name} は次のターン、スキルを忘れる`);
-        }
-        if (hpBefore > 0 && Number(target.hp || 0) <= 0) killedAny = true;
-      });
-
+      applyDamage(target, dmg, enemy);
+      if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
+        _addRiviaForget(target, 1);
+        _log(`${target.name} は次のターン、スキルを忘れる`);
+      }
+      const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
       _renderUI();
-      await wait(killedAny ? 2100 : 1300);
+      // 通常攻撃アップ演出は約1.18秒、BREAK時は約1.94秒。
+      // 次の敵行動が重ならないよう、ここで十分に待つ。
+      await wait(killed ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
       _clearEnemyAttackTraceCells();
+      // applyDamage 内で _checkWinLose を呼んでいるが、念のため result を確認
       if (_bs.result) return;
-      await _retreatEnemyAfterAttack(enemy, primaryTarget);
+      await _retreatEnemyAfterAttack(enemy, target);
       return;
     }
 
@@ -6428,9 +5761,10 @@ function doBossLineAttack(boss) {
     // 移動後に攻撃可能か再チェック
     const afterMoveTargets = getEnemyAttackTargets(enemy);
     if (afterMoveTargets.length > 0) {
-      const hitTargets = _getEnemyAttackHitTargets32(enemy, afterMoveTargets);
-      if (!hitTargets.length) return;
-      const primaryTarget = _pickEnemyAttackTarget(enemy, hitTargets) || hitTargets[0];
+      const target = _pickEnemyAttackTarget(enemy, afterMoveTargets);
+      if (!target) return;
+      const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
+      const targetHpBefore = Number(target.hp || 0);
       const attackTraceCells = _getEnemyAttackTraceCells(enemy);
       _setEnemyAttackTraceCells(attackTraceCells, enemy, enemy.attackRange || 'ATTACK');
       await wait(180);
@@ -6445,29 +5779,21 @@ function doBossLineAttack(boss) {
       _emit('enemyActionStep', {
         step: 'attack_after_move',
         enemy: { ...enemy },
-        target: { ...primaryTarget },
-        targets: hitTargets.map(t => ({ ...t })),
+        target: { ...target },
         bs: _snapshot(),
       });
-
-      let killedAny = false;
-      hitTargets.forEach(target => {
-        const hpBefore = Number(target.hp || 0);
-        const dmg = calcDamage(getEffectiveAtk(enemy), 1.0, target, enemy);
-        applyDamage(target, dmg, enemy);
-        if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
-          _addRiviaForget(target, 1);
-          _log(`${target.name} は次のターン、スキルを忘れる`);
-        }
-        if (hpBefore > 0 && Number(target.hp || 0) <= 0) killedAny = true;
-      });
-
+      applyDamage(target, dmg, enemy);
+      if (enemy.specialActionType === 'rivia_forget_lancer' && target.hp > 0) {
+        _addRiviaForget(target, 1);
+        _log(`${target.name} は次のターン、スキルを忘れる`);
+      }
+      const killed = targetHpBefore > 0 && Number(target.hp || 0) <= 0;
       _renderUI();
-      await wait(killedAny ? 2100 : 1300);
+      await wait(killed ? 2100 : 1300);
       await wait(B32_WAIT.afterText);
       _clearEnemyAttackTraceCells();
       if (_bs.result) return;
-      await _retreatEnemyAfterAttack(enemy, primaryTarget);
+      await _retreatEnemyAfterAttack(enemy, target);
     }
   }   // end _runEnemySingleAction
 
@@ -6550,9 +5876,6 @@ function doBossLineAttack(boss) {
     _bs.turn++;
     _bs.phase = 'skill';
 
-    // 05：前ターンに残った怨念を消し、必要なら分身体を復活させる。
-    _processRemnant05TurnStart();
-
     // 神気リジェネ（生存している味方のみ）
     _bs.allies.forEach(u => {
       if (u.hp > 0) u.shinki = Math.min(u.shinkiMax, u.shinki + 1);
@@ -6562,22 +5885,9 @@ function doBossLineAttack(boss) {
     _bs.allies.forEach(a => {
       a.skillUsedThisTurn = false;
       a.hitAndAwayOrigin = null;
-      if (Number(a.hitAndAwayUntilTurn || 0) > 0 &&
-          Number(a.hitAndAwayUntilTurn || 0) < Number(_bs.turn)) {
-        // 月光モード終了。状態を落としてからUIへ変身解除イベントを通知する。
+      if (Number(a.hitAndAwayUntilTurn || 0) < Number(_bs.turn)) {
         a.hitAndAwayUntilTurn = 0;
         a.hitAndAwayMoveBonus = 0;
-        if (Number(a.id || a.charaId || 0) === 12 && a.hp > 0) {
-          _log(`${a.name} の月光モードが解除された`);
-          _emit('moonModeChange', {
-            active: false,
-            source: { ...a },
-            target: { ...a },
-            label: '月光モード解除',
-            duration: 0,
-            bs: _snapshot(),
-          });
-        }
       }
     });
 
@@ -6639,14 +5949,6 @@ function doBossLineAttack(boss) {
   _setTurnDangerAlert(false);
 
   const cb = _bs._rl_onBattleEnd;
-
-  // 勝利時点でHP0のキャラと加護進捗を記録し、次ステージへ引き継ぐ。
-  if (result === 'win') {
-    _rememberRogueliteZeroHp32();
-    _syncBlessingDefeats32();
-    _rememberRogueliteBlessing32();
-  }
-
   const aliveAllies = (_bs.allies || []).filter(unit => unit && Number(unit.hp || 0) > 0);
   const payload = {
     result,
@@ -6746,7 +6048,6 @@ function doBossLineAttack(boss) {
               || _bs.enemies.find(u => u._uid === unitUid);
 
     if (!unit) return [];
-    if (unit.side === 'ally' && (unit.statusEffects || []).some(e => e && e.type === 'move_lock' && Number(e.duration || 0) > 0)) return [];
     // 敵：通常ボス・moveType:'none' は移動なし。
     // allowBossMovement=true のボスは専用移動レンジを使用できる。
     if (
@@ -6762,8 +6063,8 @@ function doBossLineAttack(boss) {
       ? unit.customMoveOffsets
       : BR.getMoveOffsets(unit);
 
-    // ハヤテ：モード中は8方向への移動距離を大幅に拡張する。
-    // SR版ULTでは moveRangeBonus:6 のため、king_8の通常1マスから最大7マス先まで移動可能。
+    // ハヤテ：モード中は8方向への移動距離を+2する。
+    // king_8の通常1マスに対し、最大3マス先までを移動候補に追加する。
     if (unit.side === 'ally' && _isHitAndAwayModeActive32(unit)) {
       const maxDistance = 1 + Math.max(0, Number(unit.hitAndAwayMoveBonus || 2));
       const extended = [];
@@ -6785,13 +6086,13 @@ function doBossLineAttack(boss) {
 
       if (!BR.isValidCell(row, col)) return;
 
-      const occupant = getAllUnits().find(u => u.hp > 0 && unitOccupiesCell32(u, row, col));
+      const occupant = getAllUnits().find(u => u.hp > 0 && u.row === row && u.col === col);
 
       // 駒取り廃止：敵味方問わず、ユニットがいるマスには移動不可
       if (occupant) return;
 
       // ボスのいるマスは進入禁止（HP0後の核露出状態も含む）
-      const bossOnCell = _bs.enemies.find(e => e.isBoss && unitOccupiesCell32(e, row, col));
+      const bossOnCell = _bs.enemies.find(e => e.isBoss && e.row === row && e.col === col);
       if (bossOnCell) return;
 
       cells.push({
@@ -6815,11 +6116,6 @@ function doBossLineAttack(boss) {
       if (!ally || ally.hp <= 0) return false;
       if (!_canUsePlayerAction('move', allyUid)) return false;
 
-      if ((ally.statusEffects || []).some(e => e && e.type === 'move_lock' && Number(e.duration || 0) > 0)) {
-        _log(`${ally.name} は固縛されていて移動できない`);
-        return false;
-      }
-
       const moveCells = getMoveCells(allyUid);
       const targetCell = moveCells.find(c => c.row === toRow && c.col === toCol);
 
@@ -6833,7 +6129,8 @@ function doBossLineAttack(boss) {
         u &&
         u._uid !== ally._uid &&
         u.hp > 0 &&
-        unitOccupiesCell32(u, toRow, toCol)
+        u.row === toRow &&
+        u.col === toCol
       );
       if (occupant) {
         _log('ユニットがいるマスには移動できない');
@@ -6841,7 +6138,7 @@ function doBossLineAttack(boss) {
       }
 
       // 念のための直叩き対策：ボスマスへの移動を最終ガード
-      const bossAtDest = _bs.enemies.find(e => e.isBoss && unitOccupiesCell32(e, toRow, toCol));
+      const bossAtDest = _bs.enemies.find(e => e.isBoss && e.row === toRow && e.col === toCol);
       if (bossAtDest) {
         _log('ボスのいるマスには移動できない');
         return false;
@@ -6856,8 +6153,6 @@ function doBossLineAttack(boss) {
 
       ally.row = toRow;
       ally.col = toCol;
-      _applyRemnant05CurseStep(ally, toRow, toCol);
-      if (_bs.result) { _renderUI(); _saveResume(); return true; }
       _log(`${ally.name} が移動した`);
       _emit('move', { ally: { ...ally }, bs: _snapshot() });
 
@@ -6913,7 +6208,7 @@ function doBossLineAttack(boss) {
       cells = new Set(
         _bs.enemies
           .filter(u => u.hp > 0)
-          .flatMap(u => getUnitFootprintCells32(u).map(cell => cell.key))
+          .map(u => `${u.row}-${u.col}`)
       );
     } else if (isAllyRangeAll && ['heal', 'buff'].includes(skill.type)) {
       cells = new Set(
@@ -6930,7 +6225,7 @@ function doBossLineAttack(boss) {
       ..._bs.allies.filter(u => u.hp > 0),
       ..._bs.enemies.filter(u => u.hp > 0 || u.isBoss),
     ].forEach(u => {
-      getUnitFootprintCells32(u).forEach(cell => { unitMap[cell.key] = u; });
+      unitMap[`${u.row}-${u.col}`] = u;
     });
 
     const isEnemySkill = ['attack', 'debuff'].includes(skill.type);
@@ -6990,7 +6285,7 @@ function doBossLineAttack(boss) {
   // マス占有チェック
   function _isOccupied(row, col) {
     const allUnits = [...(_bs.allies || []), ...(_bs.enemies || []), ...(_bs.summons || [])];
-    return allUnits.some(u => (u.hp > 0 || u.isBoss) && unitOccupiesCell32(u, row, col));
+    return allUnits.some(u => (u.hp > 0 || u.isBoss) && u.row === row && u.col === col);
   }
 
   // 召喚可能なrosterエントリ一覧
@@ -7043,17 +6338,13 @@ function doBossLineAttack(boss) {
     if (!_spendLink(summonCost, `${rEntry.name} 召喚`)) return false;
 
     const unit = makeAlly(rEntry.charDef, row, col);
-    if (Number(rEntry.stageStartHp) === 1) unit.hp = 1;
     _applyBlessingHpPassive32(unit);
     _applyRogueliteOptionsToUnit(unit);
     _bs.allies.push(unit);
-    _applyRemnant05CurseStep(unit, row, col);
-    if (_bs.result) { _renderUI(); _saveResume(); return true; }
     rEntry.status = 'deployed';
     rEntry.deployedUid = unit._uid;
 
     _log(`${rEntry.name} が召喚された！`);
-    if (_bs.remnant05Config) _syncRemnant05Population();
     _emit('summon', { unit: { ...unit }, bs: _snapshot() });
     _renderUI();
     _saveResume();
@@ -7336,19 +6627,6 @@ function restore(savedState, callbacks) {
   _enemyTurnFlowRunning = false;
 
   _bs = deepClone(savedState);
-
-  // アプリ再起動後は RogueliteRun のメモリ状態も消えている。
-  // Battle32の保存状態から先にランを復元し、その後で終了コールバックを再生成する。
-  if (_bs.isRoguelite && window.RogueliteRun
-      && typeof window.RogueliteRun.isActive === 'function'
-      && !window.RogueliteRun.isActive()
-      && typeof window.RogueliteRun.restoreFromBattleState === 'function') {
-    try {
-      window.RogueliteRun.restoreFromBattleState(_bs);
-    } catch (e) {
-      console.warn('[Battle32] roguelite run restore error:', e);
-    }
-  }
 
   // JSON保存では関数が消えるため、ローグライト終了コールバックを再接続する。
   const resumeBattleEnd =

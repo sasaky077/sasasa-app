@@ -15607,3 +15607,276 @@ body.login-bonus-open {
       inset 0 0 24px rgba(255, 237, 183, .34);
   }
 }
+
+/* =========================================================
+   111 Primoa detail pull-up sheet
+   - 詳細ウインドウを上へ引くとキャラ画像が縮小
+   - 指を離すと通常 / 展開の2段階へスナップ
+   - レムナントには適用しない
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view {
+  --primoa-sheet-progress: 0;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual {
+  transform-origin: 50% 100%;
+  will-change: width, max-width;
+}
+
+/* レアリティバッジもキャラ画像と同じ進捗で縮小する。
+   width を直接縮め、right/bottom を固定して画像右下へ張り付かせる。 */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge {
+  transform: none;
+  transform-origin: 100% 100%;
+  right: 2px;
+  bottom: 2px;
+  will-change: width, right, bottom;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-animating .box-carousel-visual,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-animating .box-carousel-rarity-badge,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-animating .box-carousel-name,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-animating .box-carousel-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-animating .box-carousel-detail-scroll {
+  transition:
+    width .32s cubic-bezier(.22,.78,.24,1),
+    max-width .32s cubic-bezier(.22,.78,.24,1),
+    transform .32s cubic-bezier(.22,.78,.24,1),
+    margin .32s cubic-bezier(.22,.78,.24,1),
+    padding .32s cubic-bezier(.22,.78,.24,1),
+    flex-basis .32s cubic-bezier(.22,.78,.24,1);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-dragging .box-carousel-visual,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-dragging .box-carousel-rarity-badge,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-dragging .box-carousel-name,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-dragging .box-carousel-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-dragging .box-carousel-detail-scroll {
+  transition: none !important;
+}
+
+/* 情報ウインドウ上端の「掴める」サイン */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-sheet-handle {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  width: min(100%, 340px);
+  height: 18px;
+  margin: -2px auto 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(to bottom, rgba(250,247,239,.92), rgba(250,247,239,.54), transparent);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-sheet-handle span {
+  display: block;
+  width: 46px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(137, 111, 70, .34);
+  box-shadow: 0 1px 0 rgba(255,255,255,.78), 0 2px 6px rgba(92,68,35,.08);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail-scroll {
+  overscroll-behavior-y: contain;
+}
+
+/* 展開後は名前周辺を少しだけ圧縮し、情報領域をさらに確保 */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-expanded .box-carousel-name {
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+  font-size: 14px;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-expanded .box-carousel-fixed {
+  padding-bottom: 4px !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.is-sheet-expanded .box-carousel-detail-scroll {
+  padding-top: 4px !important;
+}
+
+/* 小さい端末では展開時の画像をさらに少しコンパクトに見せる */
+@media (max-height: 700px) {
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-sheet-handle {
+    height: 16px;
+  }
+}
+
+
+/* =========================================================
+   STORY CHAPTER PROGRESSION / 4-stage chapter
+   ========================================================= */
+#ninmu-panel-story .story-chapter-locked {
+  opacity: .58;
+  filter: grayscale(.42) saturate(.58);
+  cursor: pointer;
+}
+#ninmu-panel-story .story-chapter-locked .ninmu-chapter-title {
+  letter-spacing: .22em;
+  color: rgba(105, 92, 72, .55) !important;
+}
+#stage-select-modal .ss-story-clear {
+  font-family: "Cinzel", serif;
+  font-size: 8px;
+  letter-spacing: .12em;
+  color: rgba(145, 118, 63, .72);
+  vertical-align: middle;
+}
+#stage-select-modal .ss-card.story-cleared::after {
+  content: '✓';
+  position: absolute;
+  right: 42px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  color: rgba(145, 118, 63, .52);
+  pointer-events: none;
+}
+
+/* ============================================================
+   PARTY SELECT — WHITE / GOLD / BEIGE THEME
+   ============================================================ */
+#party-select-modal {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(205,174,108,.18), transparent 34%),
+    linear-gradient(180deg, #fffdf8 0%, #f8f1e5 52%, #efe3d0 100%) !important;
+  color: #4a4034 !important;
+}
+#party-select-modal .ps-header {
+  background: rgba(255,253,248,.94) !important;
+  border-bottom: 1px solid rgba(176,139,71,.28) !important;
+  box-shadow: 0 5px 18px rgba(112,88,45,.06) !important;
+}
+#party-select-modal .ps-title {
+  color: #806633 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.9) !important;
+}
+#party-select-modal .ps-sub {
+  color: rgba(94,75,48,.58) !important;
+}
+#party-select-modal .ps-slots-wrap {
+  background: rgba(247,239,225,.76) !important;
+  border-bottom: 1px solid rgba(176,139,71,.22) !important;
+}
+#party-select-modal .ps-slot-box,
+#party-select-modal .ps-chara-img-wrap {
+  background: rgba(255,255,255,.76) !important;
+  border-color: rgba(165,129,63,.24) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.72), 0 3px 12px rgba(102,78,36,.06) !important;
+}
+#party-select-modal .ps-slot.filled .ps-slot-box,
+#party-select-modal .ps-chara-card.selected .ps-chara-img-wrap {
+  border-color: rgba(177,136,55,.82) !important;
+  box-shadow: 0 0 0 2px rgba(218,183,112,.20), 0 5px 16px rgba(119,88,29,.14) !important;
+}
+#party-select-modal .ps-slot-empty-label {
+  color: rgba(131,103,61,.42) !important;
+}
+#party-select-modal .ps-slot-empty-plus {
+  color: #b38d48 !important;
+}
+#party-select-modal .ps-slot-chara-name {
+  color: #fffdf8 !important;
+  background: linear-gradient(to top, rgba(86,63,30,.82), rgba(86,63,30,.32), transparent) !important;
+  text-shadow: 0 1px 2px rgba(45,31,15,.6) !important;
+}
+#party-select-modal .ps-slot-remove {
+  background: rgba(255,252,245,.92) !important;
+  color: #9d7440 !important;
+  border: 1px solid rgba(157,116,64,.3) !important;
+}
+#party-select-modal .ps-list-wrap {
+  background: transparent !important;
+}
+#party-select-modal .ps-chara-name {
+  color: rgba(76,60,39,.76) !important;
+}
+#party-select-modal .ps-chara-check {
+  background: rgba(191,153,75,.24) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(81,56,18,.55) !important;
+}
+#party-select-modal .ps-footer {
+  background: rgba(255,252,246,.95) !important;
+  border-top: 1px solid rgba(176,139,71,.26) !important;
+  box-shadow: 0 -7px 20px rgba(99,73,31,.06) !important;
+}
+#party-select-modal .ps-btn-cancel {
+  border-color: rgba(151,119,66,.30) !important;
+  background: #f7efe2 !important;
+  color: #806c4f !important;
+}
+#party-select-modal .ps-btn-cancel:active {
+  background: #eee0cc !important;
+}
+#party-select-modal .ps-btn-start {
+  border-color: rgba(161,121,48,.68) !important;
+  background: linear-gradient(180deg, #cfaa61 0%, #b7893e 100%) !important;
+  color: #fffdf7 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 4px 12px rgba(145,102,32,.18) !important;
+  text-shadow: 0 1px 2px rgba(93,62,16,.45) !important;
+}
+#party-select-modal .ps-btn-start:disabled {
+  opacity: .38 !important;
+  background: linear-gradient(180deg, #d9c9ac 0%, #c8b696 100%) !important;
+}
+#party-select-modal .ps-btn-start:not(:disabled):active {
+  background: linear-gradient(180deg, #bf974e 0%, #a77b35 100%) !important;
+}
+
+/* character detail sheet */
+.ps-detail-popup {
+  background: rgba(74,59,39,.34) !important;
+  backdrop-filter: blur(5px) !important;
+}
+.ps-detail-box {
+  background: linear-gradient(180deg, #fffdf9 0%, #f7efe3 100%) !important;
+  color: #4e4234 !important;
+  border-top: 1px solid rgba(177,137,68,.34) !important;
+  box-shadow: 0 -12px 34px rgba(73,52,21,.16) !important;
+}
+.ps-detail-hero {
+  border-bottom-color: rgba(167,128,62,.22) !important;
+}
+.ps-detail-img {
+  border: 1px solid rgba(173,134,67,.32) !important;
+  background: #fff !important;
+  box-shadow: 0 4px 14px rgba(97,73,36,.10) !important;
+}
+.ps-detail-name,
+.ps-detail-stat-val,
+.ps-detail-skill-name,
+.ps-detail-move-name {
+  color: #57452d !important;
+}
+.ps-detail-stat-label,
+.ps-detail-skill-desc,
+.ps-detail-move-desc,
+.ps-detail-move-meta {
+  color: rgba(88,70,47,.68) !important;
+}
+.ps-detail-stats,
+.ps-detail-skill,
+.ps-detail-move-card {
+  background: rgba(255,255,255,.64) !important;
+  border-color: rgba(168,130,66,.20) !important;
+}
+.ps-detail-skills-title,
+.ps-detail-move-title {
+  color: #9a783f !important;
+  border-color: rgba(170,132,66,.24) !important;
+}
+.ps-detail-close {
+  background: #f2e7d5 !important;
+  color: #806a48 !important;
+  border-color: rgba(151,119,66,.28) !important;
+}
+.ps-detail-close:active {
+  background: #e8d8bf !important;
+}

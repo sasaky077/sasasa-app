@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=308-home-bg-2assets">
+  <link rel="stylesheet" href="css/style.css?v=311-home-bg-mirror-ltr-320">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -86,6 +86,7 @@
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:block!important;font-size:25px!important;font-weight:700!important;letter-spacing:.12em!important;color:#fff!important}
 </style>\n
+  <link rel="stylesheet" href="css/shooting_event.css?v=2">
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -207,6 +208,11 @@
 
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list">
+          <div class="ninmu-chapter-item shooting-entry-card" onclick="openShootingEvent()" role="button" tabindex="0" aria-label="SPECIAL EVENT 銃撃戦">
+            <div class="ninmu-chapter-label">SPECIAL EVENT</div>
+            <div class="ninmu-chapter-title">銃撃戦</div>
+            <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_01_panel.webp" alt=""></div>
+          </div>
           <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="overseer" onclick="openRoguelitePartySelect('overseer')">
             <div class="ninmu-chapter-label">ROGUELITE</div>
             <div class="ninmu-chapter-title">観察</div>
@@ -294,11 +300,8 @@
       </div>
 
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
-        <div class="ninmu-chapter-list">
-          <div class="ninmu-chapter-item ninmu-chapter-debug" onclick="openStageSelect(0)"><div class="ninmu-chapter-label">CHAPTER:00</div><div class="ninmu-chapter-title">DEBUG</div></div>
-          <div class="ninmu-chapter-item" onclick="openStageSelect(1)"><div class="ninmu-chapter-label">CHAPTER:01</div><div class="ninmu-chapter-title">知恵</div></div>
-          <div class="ninmu-chapter-item" onclick="openStageSelect(2)"><div class="ninmu-chapter-label">CHAPTER:02</div><div class="ninmu-chapter-title">破壊</div></div>
-          <div class="ninmu-chapter-item" onclick="openStageSelect(3)"><div class="ninmu-chapter-label">CHAPTER:03</div><div class="ninmu-chapter-title">忘却</div></div>
+        <div class="ninmu-chapter-list" id="story-chapter-list">
+          <!-- CHAPTER 01〜08 は stage_select.js の進捗ロジックで描画 -->
         </div>
       </div>
     </div>
@@ -5073,6 +5076,7 @@ setTenResultFooterVisible(true);
           '<div class="box-carousel-separator"></div>' +
         '</div>' +
         '<div class="box-carousel-detail-scroll">' +
+          '<div class="box-carousel-sheet-handle" aria-hidden="true"><span></span></div>' +
           '<div class="box-carousel-detail">' +
             (owned ? '<button class="box-carousel-home-btn box-carousel-home-btn-in-detail" onclick="setHomeCharacterFromDetail()">ホーム画面に設定</button>' : '') +
             detailHtml +
@@ -5081,6 +5085,170 @@ setTenResultFooterVisible(true);
       '</div>';
 
     setupBoxCarouselSwipe();
+    setupPrimoaDetailSheet();
+  }
+
+  // ── プリモア一覧：詳細ウインドウを上下ドラッグで拡張 ──────────────
+  // 初期状態はキャラ画像を大きく表示し、詳細欄を上へ引くと画像が縮小して
+  // 情報領域が広がる。指を離すと「通常 / 展開」の2段階へスナップする。
+  function setupPrimoaDetailSheet(){
+    var view = document.querySelector('#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view');
+    if(!view) return;
+
+    var scroller = view.querySelector('.box-carousel-detail-scroll');
+    var visual = view.querySelector('.box-carousel-visual');
+    var handle = view.querySelector('.box-carousel-sheet-handle');
+    if(!scroller || !visual) return;
+
+    var baseSize = Math.round(visual.getBoundingClientRect().width || 216);
+    var compactSize = Math.max(88, Math.min(104, Math.round(baseSize * 0.46)));
+    var maxTravel = Math.max(96, Math.min(150, baseSize - compactSize));
+    var progress = 0;
+    var startProgress = 0;
+    var startY = 0;
+    var lastY = 0;
+    var lastTime = 0;
+    var velocityY = 0;
+    var dragging = false;
+    var tracking = false;
+
+    function clamp(v){ return Math.max(0, Math.min(1, v)); }
+
+    function applyProgress(next, animate){
+      progress = clamp(next);
+      var size = baseSize + (compactSize - baseSize) * progress;
+
+      view.classList.toggle('is-sheet-dragging', !animate);
+      view.classList.toggle('is-sheet-animating', !!animate);
+      visual.style.width = size.toFixed(1) + 'px';
+      visual.style.maxWidth = size.toFixed(1) + 'px';
+      view.style.setProperty('--primoa-sheet-progress', progress.toFixed(4));
+
+      // キャラ画像の縮小に合わせてレアリティバッジも連動縮小する。
+      // transform:scale ではなく width 自体を縮め、right/bottom を固定することで
+      // 縮小後もバッジが画像の右下角から離れないようにする。
+      var rarityBadge = visual.querySelector('.box-carousel-rarity-badge');
+      if(rarityBadge){
+        if(!rarityBadge.dataset.primoaBaseWidth){
+          rarityBadge.dataset.primoaBaseWidth = rarityBadge.getBoundingClientRect().width.toFixed(2);
+        }
+        var badgeBaseWidth = parseFloat(rarityBadge.dataset.primoaBaseWidth) || 58;
+        var badgeScale = 1 + (0.46 - 1) * progress;
+        rarityBadge.style.transform = 'none';
+        rarityBadge.style.width = (badgeBaseWidth * badgeScale).toFixed(1) + 'px';
+        rarityBadge.style.right = '2px';
+        rarityBadge.style.bottom = '2px';
+      }
+
+      if(progress > 0.92){
+        view.classList.add('is-sheet-expanded');
+      } else if(progress < 0.08){
+        view.classList.remove('is-sheet-expanded');
+      }
+
+      if(animate){
+        window.setTimeout(function(){
+          view.classList.remove('is-sheet-animating');
+        }, 360);
+      }
+    }
+
+    function snap(open){
+      applyProgress(open ? 1 : 0, true);
+      if(!open && scroller.scrollTop < 4) scroller.scrollTop = 0;
+    }
+
+    function begin(y){
+      tracking = true;
+      dragging = false;
+      startY = lastY = y;
+      startProgress = progress;
+      lastTime = performance.now();
+      velocityY = 0;
+    }
+
+    function move(y, e){
+      if(!tracking) return;
+      var dy = y - startY;
+      var now = performance.now();
+      var dt = Math.max(8, now - lastTime);
+      velocityY = (y - lastY) / dt;
+      lastY = y;
+      lastTime = now;
+
+      // 通常状態では上方向ドラッグで展開。
+      // 展開状態では詳細欄が一番上にいる時だけ下方向ドラッグで閉じる。
+      if(!dragging){
+        var wantsOpen = progress < 0.995 && dy < -6;
+        var wantsClose = progress > 0.005 && scroller.scrollTop <= 1 && dy > 6;
+        if(!(wantsOpen || wantsClose)) return;
+        dragging = true;
+        view.classList.add('is-sheet-dragging');
+        view.classList.remove('is-sheet-animating');
+      }
+
+      if(e && e.cancelable) e.preventDefault();
+      var next = startProgress - (dy / maxTravel);
+      applyProgress(next, false);
+    }
+
+    function end(){
+      if(!tracking) return;
+      tracking = false;
+
+      if(!dragging){
+        view.classList.remove('is-sheet-dragging');
+        return;
+      }
+      dragging = false;
+
+      // フリック方向を少し優先しつつ、中央より手前で吸着させる。
+      var flingOpen = velocityY < -0.35;
+      var flingClose = velocityY > 0.35;
+      var open = flingOpen ? true : (flingClose ? false : progress >= 0.42);
+      snap(open);
+    }
+
+    scroller.addEventListener('touchstart', function(e){
+      if(!e.touches || e.touches.length !== 1) return;
+      begin(e.touches[0].clientY);
+    }, { passive: true });
+
+    scroller.addEventListener('touchmove', function(e){
+      if(!e.touches || e.touches.length !== 1) return;
+      move(e.touches[0].clientY, e);
+    }, { passive: false });
+
+    scroller.addEventListener('touchend', end, { passive: true });
+    scroller.addEventListener('touchcancel', end, { passive: true });
+
+    // PC確認用：ハンドルをマウスでドラッグしても同じ動作にする。
+    if(handle){
+      handle.addEventListener('mousedown', function(e){
+        if(e.button !== 0) return;
+        e.preventDefault();
+        begin(e.clientY);
+
+        function onMove(ev){ move(ev.clientY, ev); }
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          end();
+        }
+        document.addEventListener('mousemove', onMove, { passive: false });
+        document.addEventListener('mouseup', onUp, { passive: true });
+      });
+
+      // ハンドルをタップ/クリックした場合も開閉できる。
+      handle.addEventListener('click', function(){
+        if(dragging) return;
+        snap(progress < 0.5);
+      });
+    }
+
+    // レンダリング直後は必ず従来サイズから開始。
+    applyProgress(0, false);
+    requestAnimationFrame(function(){ view.classList.remove('is-sheet-dragging'); });
   }
 
   function setupBoxCarouselSwipe(){
@@ -8064,9 +8232,9 @@ window.addEventListener('pagehide', function () {
 <script src="js/battle.js"></script>
 <script src="js/battle_swipe.js?v=49"></script>
 
-<script src="js/stages.js?v=66-test-9cell"></script>
-<script src="js/stage_select.js?v=72-test-daily-entry"></script>
-<script src="js/party_select.js?v=105-blessing-four-lines"></script>
+<script src="js/stages.js?v=story-common-battle-1"></script>
+<script src="js/stage_select.js?v=story-common-battle-1"></script>
+<script src="js/party_select.js?v=story-four-party-1"></script>
 <script src="js/enemy_intro.js"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
@@ -8077,8 +8245,8 @@ window.addEventListener('pagehide', function () {
 <script src="js/remnant_blessings.js"></script>
 <script src="js/combo_32.js?v=24-combo-range-static"></script>
 <script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=349-test-9cell"></script>
-<script src="js/battle_32_ui.js?v=452-test-9cell"></script>
+<script src="js/battle_32.js?v=story-common-rules-1"></script>
+<script src="js/battle_32_ui.js?v=story-common-rules-1"></script>
 
 <!-- ローグライト（新規追加） -->
 <script src="js/roguelite_options.js"></script>
@@ -8505,5 +8673,6 @@ window.addEventListener('pagehide', function () {
   }
 })();
 </script>
+<script src="js/shooting_event.js?v=2"></script>
 </body>
 </html>

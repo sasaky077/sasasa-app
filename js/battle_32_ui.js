@@ -14,7 +14,6 @@
  // ============================================================
  const ROOT_ID = 'battle32-root';
  const STYLE_ID = 'battle32-ui-style';
- const SUMMON_LINK_COST = 6; // UI fallback. 実コストはBattle32.getLinkCostForAction('summon')を優先
 
  const PHASE_LABEL = {
  skill: 'SKILL PHASE',
@@ -35,20 +34,7 @@
  let _selSkillAllyUid = null; // スキル使用キャラ（移動後に改めて選択）
  let _selSkillId = null;
  let _selActionAllyUid = null; // 行動選択メニューを表示中の味方キャラ
- let _selectedEnemyUid = null; // 敵情報表示・移動/攻撃ガイド対象
- let _selectedEnemyGuideMode = null; // null | 'move' | 'attack'
-
- // 敵情報パネルのドラッグ位置（バトル中だけ保持）
- let _enemyQuickInfoPos = null; // { x, y } viewport px
- let _enemyQuickInfoDragging = false;
-
- // コンボ説明パネルのドラッグ位置（バトル中だけ保持）
- let _comboInspectPos = null; // { x, y } viewport px
- let _comboInspectDragging = false;
- let _comboInspectDismissedUid = null; // 旧コンボ説明互換
- let _comboRangeAllyUid = null; // 盤面タップで表示するコンボ反応/効果レンジ
- let _rosterInfoPage = 0; // 0:SKILL / 1:ULT / 2:COMBO
- let _rosterInfoTouchStartX = null;
+ let _selectedEnemyUid = null; // 敵情報表示・移動ガイド対象
 
 // ============================================================
 // ステート — 召喚 / アイテム操作
@@ -69,37 +55,20 @@ let _itemTargetUid = null;
  _selSkillId = null;
  _moveMode = false;
  _selActionAllyUid = null;
- _selectedEnemyUid = null;
- _selectedEnemyGuideMode = null;
 
  _selectedRosterId = null;
 
- _closeSkillDetailLayers();
+ const box = document.getElementById('b32-skill-detail-box');
+ if (box) {
+ box.style.display = 'none';
+ box.classList.remove('show');
+ }
  }
 
  // ============================================================
  // ヘルパー
  // ============================================================
  function initial(name) { return (name || '?')[0]; }
-
- function b32UnitFootprintCells(unit) {
-  if (!unit) return [];
-  const offsets = Array.isArray(unit.footprintOffsets) && unit.footprintOffsets.length > 0
-    ? unit.footprintOffsets
-    : [{ dr: 0, dc: 0 }];
-  const cells = [];
-  const seen = new Set();
-  offsets.forEach(offset => {
-    const row = Number(unit.row) + Number(offset && offset.dr || 0);
-    const col = Number(unit.col) + Number(offset && offset.dc || 0);
-    if (!Number.isFinite(row) || !Number.isFinite(col) || row < 0 || row >= 8 || col < 0 || col >= 5) return;
-    const key = `${row}-${col}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    cells.push({ row, col, key });
-  });
-  return cells;
- }
 
  function hpColor(hp, hpMax) {
  const r = hp / hpMax;
@@ -112,79 +81,8 @@ let _itemTargetUid = null;
  return window.Battle32 && window.Battle32.getState ? window.Battle32.getState() : null;
  }
 
- // ============================================================
- // スキル詳細レイヤー
- // ============================================================
- // #b32-roster-panel は body 直下 fixed + 高い z-index で描画されるため、
- // #battle32-root 配下のままだとスキル詳細がキャラパネルの背面に回る。
- // スキル詳細だけ body 直下へ移動し、独立した前面レイヤーとして扱う。
- function _ensureSkillDetailLayer() {
-   const box = document.getElementById('b32-skill-detail-box');
-   if (!box) return null;
-
-   if (box.parentElement !== document.body) {
-     document.body.appendChild(box);
-   }
-
-   return box;
- }
-
- // ============================================================
- // スキル詳細ポータル — body 直下に固定レイヤーとして描画する
- // #b32-roster-panel より確実に前面に出すため body 直下に置く
- // ============================================================
- function _ensureActionDetailPortal() {
-   let el = document.getElementById('b32-action-detail-portal');
-   if (!el) {
-     el = document.createElement('div');
-     el.id = 'b32-action-detail-portal';
-     document.body.appendChild(el);
-   }
-   return el;
- }
-
- function _positionActionDetailPortal() {
-   const el = document.getElementById('b32-action-detail-portal');
-   if (!el) return;
-
-   const root = document.getElementById(ROOT_ID);
-   const actions = document.getElementById('b32-actions');
-   const isSE = !!(root && root.classList.contains('b32-vp-se'));
-
-   // スキル/ULT詳細は「下の余白」を使う。
-   // 以前は CSS の !important bottom が勝ち、SEでグリッド下段に被っていたため、
-   // JS 側も !important 付きでアクションボタン直上へ吸着させる。
-   let bottomPx = isSE ? 4 : 6;
-   if (actions && getComputedStyle(actions).display !== 'none') {
-     bottomPx += actions.offsetHeight || 0;
-   }
-
-   el.classList.toggle('is-se', isSE);
-   el.style.setProperty('bottom', `${Math.max(4, bottomPx)}px`, 'important');
-   el.style.setProperty('left', '50%', 'important');
-   el.style.setProperty('transform', 'translateX(-50%)', 'important');
- }
-
- function _hideActionDetailPortal() {
-   const el = document.getElementById('b32-action-detail-portal');
-   if (el) {
-     el.innerHTML = '';
-     el.classList.remove('show');
-     el.style.display = 'none';
-   }
- }
-
-
- // スキル/ULT関連の詳細レイヤーを一括で閉じる。
- // 画面切替時に前のモーダルがbody直下へ残るのを防ぐ。
- function _closeSkillDetailLayers() {
-   _hideActionDetailPortal();
-
-   const box = document.getElementById('b32-skill-detail-box');
-   if (box) {
-     box.style.display = 'none';
-     box.classList.remove('show');
-   }
+ function _usesRogueliteBattleRules(bs) {
+   return !!(bs && (bs.isRoguelite || bs.useRogueliteBattleRules));
  }
 
  // ============================================================
@@ -214,35 +112,13 @@ let _itemTargetUid = null;
  }
 
  function _getSkillLinkCostForUnit(bs, allyUid, skill) {
-  if (!skill) return 0;
-
-  if (window.Battle32 && typeof window.Battle32.getLinkCostForAction === 'function') {
-    const type = skill.isUltimate ? 'ult' : 'skill';
-    const n = Number(window.Battle32.getLinkCostForAction(type, allyUid, skill.id));
-
-    // 99などの異常値・使用不可用ダミー値は、表示上は本来のコストに戻す
-    if (Number.isFinite(n) && n >= 0 && n < 90) {
-      return n;
-    }
-  }
-
-  return _getSkillLinkCost(skill);
-}
-
-
-
- function _getSummonLinkCostForRoster(bs, rosterEntry) {
-   if (!rosterEntry) return SUMMON_LINK_COST;
-
+   if (!skill) return 0;
    if (window.Battle32 && typeof window.Battle32.getLinkCostForAction === 'function') {
-     const n = Number(window.Battle32.getLinkCostForAction('summon', rosterEntry.rosterId));
-     if (Number.isFinite(n) && n >= 0) return n;
+     const type = skill.isUltimate ? 'ult' : 'skill';
+     const n = Number(window.Battle32.getLinkCostForAction(type, allyUid, skill.id));
+     if (Number.isFinite(n)) return Math.max(0, n);
    }
-
-   // battle_32.js 側の定義に合わせた後方互換。現行キャラは基本URなので実質6。
-   const rarity = String(rosterEntry.rarity || rosterEntry.charDef?.rarity || '').toLowerCase();
-   const byRarity = { r: 4, sr: 5, ur: 6 };
-   return byRarity[rarity] || SUMMON_LINK_COST;
+   return _getSkillLinkCost(skill);
  }
 
  function _getNormalSkillLinkRange(ally) {
@@ -257,62 +133,13 @@ let _itemTargetUid = null;
  }
 
 
- const UNIT_ACTION_MAX_PER_TURN = 2;
-
  /**
-  * ユニットのターン内行動数を返す。
-  * 現仕様：1キャラ最大2行動、移動1回 + スキル/ULT1回まで。
-  */
- function _getUnitActionCount(bs, unitUid) {
-   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
-   const explicit = Number(h.actionCount);
-   if (Number.isFinite(explicit) && explicit > 0) return explicit;
-
-   // 後方互換：古い保存データ用
-   let count = 0;
-   if (h.move) count += 1;
-   if (h.skill || h.ult || h.skillOrUlt) count += 1;
-   if (h.unitActionDone && count === 0) count = UNIT_ACTION_MAX_PER_TURN;
-   return count;
- }
-
- /**
-  * ユニットがこのターンまだ追加行動できるか。
+  * ユニットがこのターンまだ駒アクション（移動/スキル/ULT）をしていないか
+  * unitActionDone フラグで一元管理
   */
  function _unitCanAct(bs, unitUid) {
    const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
-   return !h.unitActionDone && _getUnitActionCount(bs, unitUid) < UNIT_ACTION_MAX_PER_TURN;
- }
-
- function _unitCanMoveNow(bs, unitUid) {
-   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
-   return _unitCanAct(bs, unitUid) && !h.move;
- }
-
- function _unitCanUseSkillActionNow(bs, unitUid) {
-   const h = (bs && bs.unitActionHistory && bs.unitActionHistory[unitUid]) || {};
-   return _unitCanAct(bs, unitUid) && !(h.skill || h.ult || h.skillOrUlt);
- }
-
- /**
-  * 実際にスキル/ULTを発動できるか。
-  * 情報表示・スキル内容確認は行動上限到達後も許可し、
-  * 発動だけをこの判定で止める。
-  */
- function _canUseSkillNow(bs, ally, skill) {
-   if (!bs || bs.result || bs.phase !== 'skill') return false;
-   if (!ally || ally.hp <= 0 || !skill) return false;
-   if (!_unitCanUseSkillActionNow(bs, ally._uid)) return false;
-
-   const linkCost = _getSkillLinkCostForUnit(bs, ally._uid, skill);
-   if (!_canActByLink(bs, linkCost)) return false;
-
-   const shinkiCost = skill.isUltimate
-     ? (skill.shinkiCost || ally.shinkiMax || 3)
-     : (skill.shinkiCost || 0);
-   if ((ally.shinki || 0) < shinkiCost) return false;
-
-   return true;
+   return !h.unitActionDone;
  }
 
  function _getActiveActionAllyUid() {
@@ -334,156 +161,13 @@ function _clearActionModesKeepUnit(uid) {
   _itemTargetUid = null;
 }
 
-// ============================================================
-// アイテムパネル位置調整
-// ============================================================
-// ITEM DOCK は盤面そのものを一切動かさず、盤面左下の外側へ独立配置する。
-// #b32-item-panel は body 直下 fixed のままなので、戦闘ロジック・盤面サイズ・
-// ロスター・LINK・加護のレイアウトには触れない。
-function _positionItemPanel() {
-  const el = document.getElementById('b32-item-panel');
-  if (!el) return;
-
-  const board = document.getElementById('b32-board');
-  const root = document.getElementById(ROOT_ID);
-  if (!board || !root) return;
-
-  const br = board.getBoundingClientRect();
-  const er = el.getBoundingClientRect();
-
-  // PCでbodyが430px幅に制限されるケースも含め、実際のBattle32ルート範囲内に収める。
-  const rr = root.getBoundingClientRect();
-  const viewLeft = Number.isFinite(rr.left) ? rr.left : 0;
-  const viewRight = Number.isFinite(rr.right) ? rr.right : window.innerWidth;
-
-  const panelW = Math.max(52, er.width || el.offsetWidth || 52);
-  const panelH = Math.max(52, er.height || el.offsetHeight || 52);
-
-  // 盤面左端から8px空けて外側へ。
-  // 左端に余裕がない端末では画面内6pxを最低ラインにして、盤面には影響させない。
-  let leftPx = br.left - panelW - 8;
-  leftPx = Math.max(viewLeft + 6, Math.min(leftPx, viewRight - panelW - 6));
-
-  // 赤枠で示した盤面左下の余白へ、下揃えで縦置き。
-  // 最大3枠になっても上方向へ伸びるだけなのでロスターを押し下げない。
-  let topPx = br.bottom - panelH;
-  topPx = Math.max(rr.top + 6, Math.min(topPx, rr.bottom - panelH - 6));
-
-  el.style.left = `${Math.round(leftPx)}px`;
-  el.style.right = 'auto';
-  el.style.top = `${Math.round(topPx)}px`;
-  el.style.bottom = 'auto';
-  el.style.transform = 'none';
-  el.style.flexDirection = 'column';
-}
-
-// ============================================================
-// Remnant加護アイコン位置調整
-// キャラパネルの実測上端を基準に、その直上へ配置して重なりを防ぐ。
-// ============================================================
-function _positionBlessingIcon() {
-  const wrap = document.getElementById('b32-blessing-inv-wrap');
-  if (!wrap || getComputedStyle(wrap).display === 'none') return;
-
-  const roster = document.getElementById('b32-roster-panel');
-  if (roster && getComputedStyle(roster).display !== 'none') {
-    const rr = roster.getBoundingClientRect();
-    if (rr.height > 0 && rr.top > 0) {
-      const bottomPx = Math.max(0, window.innerHeight - rr.top + 8);
-      wrap.style.setProperty('bottom', `${bottomPx}px`, 'important');
-      return;
-    }
-  }
-
-  wrap.style.removeProperty('bottom');
-}
-
- // ============================================================
- // repeat_skill（リプレイ）用：コピー元スキルを解決するヘルパー
- // UI表示専用。実際の発動処理は battle_32.js 側が担う。
- // ============================================================
- function resolvePreviewSkillForRangeGuide(skill) {
-   if (!skill || skill.type !== 'repeat_skill') return skill;
-
-   // getBS() で _bs に直接アクセス（lastAllySkillThisTurn はスナップショット外）
-   const rawBs = window.Battle32 && typeof window.Battle32.getBS === 'function'
-     ? window.Battle32.getBS()
-     : null;
-   const last = rawBs && rawBs.lastAllySkillThisTurn;
-
-   if (!last || !last.skill) return null; // コピー元なし → ガイド非表示
-
-   const copied = last.skill;
-
-   // コピー不可スキルはプレビューしない
-   if (
-     copied.type === 'repeat_skill' ||
-     copied.type === 'delayed_attack' ||
-     copied.isUltimate
-   ) {
-     return skill; // フォールバック：self のまま
-   }
-
-   console.log('[B32 RepeatSkill Preview]', {
-     user: null,
-     repeatSkill: skill.name,
-     copiedFrom: last.ownerName,
-     copiedSkill: copied.name,
-     range: copied.range,
-     type: copied.type,
-   });
-
-   return copied;
- }
-
  // cellType 付き Map を返す: key = "row-col", value = cellType
  function _skillRangeCells(allyUid, skillId) {
-   if (!window.Battle32 || !window.Battle32.getSkillRangeCells) return new Map();
-
-   // ── repeat_skill（リプレイ）の場合はUI側でレンジを差し替える ──
-   const rawBs = typeof window.Battle32.getBS === 'function' ? window.Battle32.getBS() : null;
-   const ally = rawBs && rawBs.allies.find(u => u._uid === allyUid);
-   const skill = ally && ally.skills.find(s => s.id === skillId);
-
-   if (skill && skill.type === 'repeat_skill' && window.BattleRange32) {
-     const previewSkill = resolvePreviewSkillForRangeGuide(skill);
-
-     // コピー元なし → 空Map（ガイドなし）
-     if (!previewSkill) return new Map();
-
-     // コピー元あり → アイムの位置を起点に previewSkill.range でセル計算
-     if (previewSkill !== skill) {
-       const cellsSet = window.BattleRange32.getCellsFromRange32(ally, previewSkill.range);
-       const map = new Map();
-       const isEnemySkill = ['attack', 'debuff'].includes(previewSkill.type);
-       const isAllySkill  = ['heal', 'buff', 'ally_reposition'].includes(previewSkill.type);
-
-       // unitMap（セル種別判定用）
-       const unitMap = {};
-       [
-         ...(rawBs.allies || []).filter(u => u.hp > 0),
-         ...(rawBs.enemies || []).filter(u => u.hp > 0 || u.isBoss),
-       ].forEach(u => { b32UnitFootprintCells(u).forEach(cell => { unitMap[cell.key] = u; }); });
-
-       cellsSet.forEach(key => {
-         const unit = unitMap[key] || null;
-         let cellType = 'range';
-         if (unit) {
-           if (isEnemySkill && unit.side === 'enemy' && unit.hp > 0) cellType = 'target_enemy';
-           else if (isAllySkill && unit.side === 'ally' && unit.hp > 0) cellType = 'target_ally';
-         }
-         map.set(key, cellType);
-       });
-       return map;
-     }
-     // previewSkill === skill（コピー不可 → self のまま通常ルートへ）
-   }
-
-   // 通常スキル：既存ルート
-   const cells = window.Battle32.getSkillRangeCells(allyUid, skillId);
-   const map = new Map();
-   cells.forEach(c => map.set(`${c.row}-${c.col}`, c.cellType || 'range'));
-   return map;
+ if (!window.Battle32 || !window.Battle32.getSkillRangeCells) return new Map();
+ const cells = window.Battle32.getSkillRangeCells(allyUid, skillId);
+ const map = new Map();
+ cells.forEach(c => map.set(`${c.row}-${c.col}`, c.cellType || 'range'));
+ return map;
  }
 
  function enemyMoveLabel(moveType) {
@@ -494,8 +178,6 @@ function _positionBlessingIcon() {
  enemy_move_diag: '斜行型',
  enemy_zako_diag: '斜行型',
  enemy_move_random: 'ランダム移動',
- enemy_zako_shift: 'シフト型',
- enemy_midboss_front3: '前方制圧型',
  };
  return map[moveType] || moveType || '不明';
 }
@@ -510,1148 +192,6 @@ function enemyAttackLabel(attackRange) {
  return map[attackRange] || attackRange || '不明';
 }
 
-function isSakielPreviewEnemy(enemy) {
-  return !!(enemy && (
-    enemy.id === 'enemy_sakiel_roguelite' ||
-    enemy.specialActionType === 'sakiel_random_5'
-  ));
-}
-
-function isOverseerPreviewEnemy(enemy) {
-  return !!(enemy && (
-    enemy.id === 'enemy_overseer_roguelite' ||
-    enemy.id === 'enemy_01' ||
-    enemy.specialActionType === 'overseer_random_4_ult6'
-  ));
-}
-
-function isPlannedActionEnemy(enemy) {
-  return isSakielPreviewEnemy(enemy) ||
-    isOverseerPreviewEnemy(enemy) ||
-    !!(enemy && (
-      enemy.id === 'enemy_rivia_roguelite' ||
-      enemy.specialActionType === 'rivia_oblivion_4' ||
-      enemy.specialActionType === 'rivia_vanish_caster'
-    ));
-}
-
-function getEnemyPlannedAction(enemy) {
-  if (isSakielPreviewEnemy(enemy)) {
-    const next = enemy && enemy._sakielNextAction;
-    return next && next.id ? next : null;
-  }
-  if (isOverseerPreviewEnemy(enemy)) {
-    const next = enemy && enemy._overseerNextAction;
-    return next && next.id ? next : null;
-  }
-  if (enemy && (enemy.id === 'enemy_rivia_roguelite' || enemy.specialActionType === 'rivia_oblivion_4')) {
-    const next = enemy._riviaNextAction;
-    return next && next.id ? next : null;
-  }
-  if (enemy && enemy.specialActionType === 'rivia_vanish_caster') {
-    const next = enemy._riviaCasterPlan;
-    return next && next.id ? next : null;
-  }
-  return null;
-}
-
-function enemyAttackDisplayLabel(enemy) {
-  const next = getEnemyPlannedAction(enemy);
-  if (next) return `次回：${next.title || '特殊行動'}`;
-  if (isPlannedActionEnemy(enemy)) return '次回行動を決定中';
-  return enemyAttackLabel(enemy && enemy.attackRange);
-}
-
-const B32_ELEMENT_LABELS = {
-  logos: 'ロゴス',
-  chaos: 'ケイオス',
-  mystis: 'ミスティス',
-};
-
-const B32_ELEMENT_ORDER = ['logos', 'mystis', 'chaos'];
-
-function normalizeUnitElements(element) {
-  if (window.Battle32 && typeof window.Battle32.normalizeElements === 'function') {
-    const list = window.Battle32.normalizeElements(element);
-    if (Array.isArray(list) && list.length) return list;
-  }
-
-  if (Array.isArray(element)) {
-    return [...new Set(element.map(v => String(v || '').trim()).filter(Boolean))]
-      .filter(v => B32_ELEMENT_LABELS[v]);
-  }
-
-  if (typeof element === 'string') {
-    const raw = element.trim();
-    if (!raw) return [];
-    const parts = raw
-      .split(/[+,\s/|]+|_/)
-      .map(v => v.trim())
-      .filter(Boolean)
-      .filter(v => B32_ELEMENT_LABELS[v]);
-    if (parts.length) return [...new Set(parts)];
-    return B32_ELEMENT_LABELS[raw] ? [raw] : [];
-  }
-
-  return [];
-}
-
-function unitElementKey(element) {
-  if (window.Battle32 && typeof window.Battle32.getElementKey === 'function') {
-    const key = window.Battle32.getElementKey(element);
-    if (key) return key;
-  }
-
-  const list = normalizeUnitElements(element);
-  return B32_ELEMENT_ORDER
-    .filter(e => list.includes(e))
-    .join('_');
-}
-
-function unitElementLabel(element) {
-  if (window.Battle32 && typeof window.Battle32.getElementLabel === 'function') {
-    return window.Battle32.getElementLabel(element);
-  }
-
-  const list = normalizeUnitElements(element);
-  if (!list.length) return element || '無属性';
-  return B32_ELEMENT_ORDER
-    .filter(e => list.includes(e))
-    .map(e => B32_ELEMENT_LABELS[e])
-    .join('+');
-}
-
-function unitElementIcon(element) {
-  const key = unitElementKey(element);
-  const map = {
-    chaos:  'images/icon_chaos.webp',
-    logos:  'images/icon_logos.webp',
-    mystis: 'images/icon_mystis.webp',
-
-    logos_mystis: 'images/icon_logos_mystis.webp',
-    logos_chaos: 'images/icon_logos_chaos.webp',
-    mystis_chaos: 'images/icon_mystis_chaos.webp',
-    logos_mystis_chaos: 'images/icon_logos_mystis_chaos.webp',
-  };
-  return map[key] || '';
-}
-
-function unitElementClass(element) {
-  const key = unitElementKey(element);
-  return key || 'none';
-}
-
-
-function b32EscapeHtml(v) {
-  return String(v ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function b32SkillTypeLabel(skill) {
-  const map = {
-    attack: '攻撃',
-    heal: '回復',
-    buff: '強化',
-    debuff: '弱体',
-    repeat_skill: '再演',
-    delayed_attack: '予約攻撃',
-    random_cell_attack: 'ランダム攻撃',
-    summon_object: '召喚',
-    ally_reposition: '位置移動'
-  };
-  return map[skill?.type] || skill?.type || '—';
-}
-
-function b32RangeLabel(range) {
-  const map = {
-    self: '自身',
-    ally_all: '味方全体',
-    enemy_all: '敵全体',
-    front1: '前方1マス',
-    front2: '前方2マス',
-    front3: '前方3マス',
-    pierce3: '前方直線3マス',
-    around8: '周囲1マス',
-    around24: '周囲2マス',
-    diag_x_1: 'X字1マス',
-    diag_x_2: 'X字2マス',
-    side_lr: '左右1マス',
-    field_all: '盤面全体',
-    field_cross_center: '中央十字',
-    fan_2row_3_ally: '前方扇状',
-    front_row_3_ally: '前方横3マス',
-    front_and_side_3_ally: '前方1・左右1マス',
-    super_but_night_6: '前方特殊範囲',
-    front_line_all_ally: '前方同列すべて',
-    combo_line_all: '直線上すべて',
-    combo_cross_all: '十字すべて',
-    combo_x_all: 'X字すべて',
-    combo_star_all: '十字＋X字すべて',
-    combo_around8: '周囲8マス'
-  };
-  return map[range] || range || '—';
-}
-
-
-
-function b32ResolveComboDef(ally) {
-  if (!ally) return null;
-  if (ally.combo && ally.combo.skill) return ally.combo;
-
-  const list = Array.isArray(window.CHARACTERS)
-    ? window.CHARACTERS
-    : (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS) ? CHARACTERS : []);
-
-  const master = list.find(c =>
-    (ally.id != null && c.id === ally.id) ||
-    (ally.charaId != null && c.id === ally.charaId) ||
-    (ally.name && c.name === ally.name)
-  );
-
-  return master && master.combo && master.combo.skill ? master.combo : null;
-}
-
-function b32ComboRangeCells(ally) {
-  const map = new Map();
-  const combo = b32ResolveComboDef(ally);
-  if (!ally || !combo || !combo.skill) return map;
-
-  let cells = [];
-  if (window.Combo32 && typeof window.Combo32.getRangeCells === 'function') {
-    cells = window.Combo32.getRangeCells(ally, combo.range);
-  } else {
-    const id = combo.range;
-    if (id === 'combo_line_all') {
-      for (let row = 0; row < 8; row++) {
-        if (row !== ally.row) cells.push({ row, col: ally.col });
-      }
-    } else if (id === 'combo_cross_all') {
-      for (let row = 0; row < 8; row++) {
-        if (row !== ally.row) cells.push({ row, col: ally.col });
-      }
-      for (let col = 0; col < 5; col++) {
-        if (col !== ally.col) cells.push({ row: ally.row, col });
-      }
-    } else if (id === 'combo_x_all') {
-      [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc]) => {
-        let row = ally.row + dr, col = ally.col + dc;
-        while (row >= 0 && row < 8 && col >= 0 && col < 5) {
-          cells.push({ row, col });
-          row += dr; col += dc;
-        }
-      });
-    } else {
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          if (!dr && !dc) continue;
-          const row = ally.row + dr, col = ally.col + dc;
-          if (row >= 0 && row < 8 && col >= 0 && col < 5) cells.push({ row, col });
-        }
-      }
-    }
-  }
-
-  cells.forEach(c => map.set(`${c.row}-${c.col}`, 'combo-range'));
-  return map;
-}
-
-
-function b32ComboSkillRangeCells(ally, bs) {
-  const map = new Map();
-  const combo = b32ResolveComboDef(ally);
-  const comboSkill = combo && combo.skill;
-  if (!ally || !comboSkill || !comboSkill.range) return map;
-  if (!window.BattleRange32 || typeof window.BattleRange32.getCellsFromRange32 !== 'function') {
-    return map;
-  }
-
-  let keys = null;
-
-  // コンボ専用4レンジはCombo32の同一計算を使う。
-  if (
-    window.Combo32 &&
-    typeof window.Combo32.getRangeCells === 'function' &&
-    ['combo_line_all', 'combo_cross_all', 'combo_x_all', 'combo_star_all', 'combo_around8'].includes(comboSkill.range)
-  ) {
-    keys = new Set(
-      window.Combo32.getRangeCells(ally, comboSkill.range)
-        .map(cell => `${cell.row}-${cell.col}`)
-    );
-  } else {
-    keys = window.BattleRange32.getCellsFromRange32(ally, comboSkill.range);
-  }
-
-  if (!keys || typeof keys.forEach !== 'function') return map;
-
-  const isEnemyEffect = ['attack', 'debuff'].includes(comboSkill.type);
-  const isAllyEffect = ['heal', 'buff', 'ally_reposition'].includes(comboSkill.type);
-
-  const unitMap = {};
-  [
-    ...((bs && bs.allies) || []).filter(u => u && u.hp > 0),
-    ...((bs && bs.enemies) || []).filter(u => u && (u.hp > 0 || u.isBoss)),
-  ].forEach(u => {
-    b32UnitFootprintCells(u).forEach(cell => { unitMap[cell.key] = u; });
-  });
-
-  keys.forEach(key => {
-    const unit = unitMap[key] || null;
-    let cellType = 'range';
-
-    if (unit) {
-      if (isEnemyEffect && unit.side === 'enemy' && unit.hp > 0) {
-        cellType = 'target_enemy';
-      } else if (isAllyEffect && unit.side === 'ally' && unit.hp > 0) {
-        cellType = 'target_ally';
-      }
-    }
-
-    map.set(key, cellType);
-  });
-
-  return map;
-}
-
-function b32ComboRangeLabel(rangeId) {
-  if (window.Combo32 && typeof window.Combo32.getRangeLabel === 'function') {
-    return window.Combo32.getRangeLabel(rangeId);
-  }
-  const labels = {
-    combo_line_all: '直線上すべて',
-    combo_cross_all: '十字すべて',
-    combo_x_all: 'X字すべて',
-    combo_star_all: '十字＋X字すべて',
-    combo_around8: '周囲8マス',
-    combo_cross_4: '十字すべて',
-    combo_front_4: '直線上すべて',
-    combo_diagonal_4: 'X字すべて',
-    combo_star_all: '十字＋X字すべて',
-  };
-  return labels[rangeId] || rangeId || '—';
-}
-
-function b32BuildComboSummaryHtml(ally) {
-  const combo = ally && ally.combo;
-  const skill = combo && combo.skill;
-  if (!skill) return '';
-
-  const multiplier = Number(skill.multiplier || 0);
-  const damageText = multiplier > 0 ? `ATK×${multiplier}` : 'ダメージなし';
-  const effects = (skill.effects || []).map(b32EffectSummary).filter(Boolean).join(' / ');
-  const rangeText = b32RangeLabel(skill.range);
-  const triggerRange = b32ComboRangeLabel(combo.range);
-
-  return `
-    <div class="b32-combo-inspect-head b32-combo-inspect-drag-handle">
-      <span class="b32-combo-inspect-kicker">COMBO SKILL</span>
-      <span class="b32-combo-inspect-owner">${b32EscapeHtml(ally.name || '')}</span>
-      <button type="button"
-              class="b32-combo-inspect-close"
-              aria-label="コンボ説明を閉じる"
-              onclick="event.preventDefault();event.stopPropagation();closeBattle32ComboInspect();">×</button>
-    </div>
-    <div class="b32-combo-inspect-name">${b32EscapeHtml(skill.name || 'COMBO')}</div>
-    <div class="b32-combo-inspect-meta">
-      <span>発動範囲：${b32EscapeHtml(triggerRange)}</span>
-      <span>効果範囲：${b32EscapeHtml(rangeText)}</span>
-      <span>${b32EscapeHtml(damageText)}</span>
-      ${effects ? `<span>${b32EscapeHtml(effects)}</span>` : ''}
-    </div>
-    <div class="b32-combo-inspect-desc">${b32EscapeHtml(skill.desc || 'コンボレンジ内の味方がスキルまたはULTを使用すると発動する。')}</div>
-    <div class="b32-combo-inspect-legend">
-      <span class="trigger"><i></i>紫：発動レンジ</span>
-      <span class="effect"><i></i>金：コンボ射程</span>
-    </div>
-  `;
-}
-
-function _ensureComboInspectStyle() {
-  if (document.getElementById('b32-combo-inspect-style')) return;
-  const style = document.createElement('style');
-  style.id = 'b32-combo-inspect-style';
-  style.textContent = `
-    .b32-cell.combo-range {
-      position: relative;
-    }
-    .b32-combo-range-overlay {
-      position: absolute;
-      inset: 2px;
-      z-index: 24;
-      pointer-events: none;
-      box-sizing: border-box;
-      border: 2px solid rgba(155, 92, 255, .96);
-      border-radius: 4px;
-      background:
-        radial-gradient(circle at 50% 50%,
-          rgba(202,166,255,.34) 0%,
-          rgba(142,78,242,.22) 48%,
-          rgba(112,52,210,.12) 70%,
-          transparent 78%);
-      box-shadow:
-        inset 0 0 12px rgba(170,105,255,.42),
-        0 0 10px rgba(137,70,240,.48);
-      animation: b32ComboRangePulse 1.15s ease-in-out infinite;
-    }
-
-    /* コンボスキルの効果射程：金色。
-       紫の発動レンジと重なっても見えるよう inset を内側へずらす。 */
-    .b32-combo-skill-range-overlay {
-      position: absolute;
-      inset: 7px;
-      z-index: 25;
-      pointer-events: none;
-      box-sizing: border-box;
-      border: 2px solid rgba(255, 196, 76, .96);
-      border-radius: 3px;
-      background:
-        radial-gradient(circle at 50% 50%,
-          rgba(255,224,135,.30) 0%,
-          rgba(255,183,55,.17) 50%,
-          rgba(245,140,25,.08) 72%,
-          transparent 80%);
-      box-shadow:
-        inset 0 0 9px rgba(255,203,92,.35),
-        0 0 8px rgba(255,165,35,.44);
-      animation: b32ComboSkillRangePulse 1.25s ease-in-out infinite;
-    }
-    .b32-combo-skill-range-overlay::after {
-      content: '✦';
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      color: rgba(255,205,88,1);
-      font-size: clamp(10px, 3vw, 15px);
-      line-height: 1;
-      font-weight: 800;
-      text-shadow:
-        0 0 4px rgba(255,255,230,.94),
-        0 0 9px rgba(255,170,30,.96);
-    }
-    .b32-combo-skill-range-overlay.target_enemy {
-      border-color: rgba(255,118,70,.98);
-      background:
-        radial-gradient(circle at 50% 50%,
-          rgba(255,175,90,.35) 0%,
-          rgba(255,89,50,.20) 55%,
-          rgba(180,35,20,.09) 74%,
-          transparent 82%);
-      box-shadow:
-        inset 0 0 10px rgba(255,98,55,.40),
-        0 0 10px rgba(255,75,40,.52);
-    }
-    .b32-combo-skill-range-overlay.target_ally {
-      border-color: rgba(255,225,110,.98);
-    }
-    .b32-cell:has(.b32-unit) .b32-combo-skill-range-overlay::after {
-      top: 15%;
-      font-size: 10px;
-    }
-    @keyframes b32ComboSkillRangePulse {
-      0%,100% { opacity:.78; filter:brightness(.96); }
-      50% { opacity:1; filter:brightness(1.18); }
-    }
-
-    .b32-combo-range-overlay::after {
-      content: '◇';
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      color: rgba(166, 101, 255, 1);
-      font-size: clamp(14px, 4vw, 20px);
-      line-height: 1;
-      font-weight: 800;
-      text-shadow:
-        0 0 5px rgba(255,255,255,.92),
-        0 0 10px rgba(142,75,255,1);
-    }
-    .b32-cell.combo-range:has(.b32-unit) .b32-combo-range-overlay::after {
-      top: 15%;
-      font-size: 12px;
-    }
-    @keyframes b32ComboRangePulse {
-      0%,100% { filter: brightness(.95); }
-      50% { filter: brightness(1.18); }
-    }
-    #b32-combo-inspect {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: auto;
-      z-index: 4000000 !important;
-      width: min(94vw, 520px);
-      box-sizing: border-box;
-      padding: 10px 12px 9px;
-      border: 1px solid rgba(150,95,245,.48);
-      border-radius: 10px;
-      background: linear-gradient(155deg, rgba(25,14,45,.95), rgba(10,7,24,.96));
-      box-shadow: 0 10px 28px rgba(18,7,35,.46), 0 0 24px rgba(126,65,225,.18);
-      color: #efe9ff;
-      pointer-events: auto;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    #b32-combo-inspect * {
-      box-sizing: border-box;
-    }
-    #b32-combo-inspect .b32-combo-inspect-name,
-    #b32-combo-inspect .b32-combo-inspect-meta,
-    #b32-combo-inspect .b32-combo-inspect-desc {
-      pointer-events: none;
-    }
-    .b32-combo-inspect-head {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      margin-bottom:3px;
-      position:relative;
-      padding-right:34px;
-    }
-    .b32-combo-inspect-drag-handle {
-      cursor:grab;
-      touch-action:none;
-      -webkit-tap-highlight-color:transparent;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    #b32-combo-inspect.is-dragging .b32-combo-inspect-drag-handle,
-    .b32-combo-inspect-drag-handle:active {
-      cursor:grabbing;
-    }
-    .b32-combo-inspect-close {
-      position:absolute;
-      right:0;
-      top:50%;
-      transform:translateY(-50%);
-      width:28px;
-      height:28px;
-      padding:0;
-      border-radius:50%;
-      border:1px solid rgba(210,185,255,.34);
-      background:rgba(18,10,38,.88);
-      color:rgba(245,238,255,.94);
-      font-size:18px;
-      line-height:26px;
-      text-align:center;
-      cursor:pointer;
-      pointer-events:auto;
-      touch-action:manipulation;
-      z-index:4;
-      box-shadow:0 0 10px rgba(130,70,235,.20);
-    }
-    .b32-combo-inspect-close:active {
-      transform:translateY(-50%) scale(.92);
-      background:rgba(90,45,150,.72);
-    }
-    #b32-combo-inspect.is-dragging {
-      transition:none !important;
-      opacity:.97;
-    }
-    .b32-combo-inspect-kicker {
-      font-family:"Cinzel",serif;
-      font-size:10px;
-      font-weight:700;
-      letter-spacing:.16em;
-      color:#c8a7ff;
-    }
-    .b32-combo-inspect-owner {
-      font-size:10px;
-      color:rgba(235,225,255,.62);
-    }
-    .b32-combo-inspect-name {
-      font-size:14px;
-      font-weight:800;
-      letter-spacing:.04em;
-      color:#fff;
-      margin-bottom:5px;
-    }
-    .b32-combo-inspect-meta {
-      display:flex;
-      flex-wrap:wrap;
-      gap:4px 8px;
-      margin-bottom:5px;
-    }
-    .b32-combo-inspect-meta span {
-      font-size:9px;
-      color:#d9c8ff;
-      background:rgba(147,91,235,.12);
-      border:1px solid rgba(160,108,245,.18);
-      border-radius:999px;
-      padding:2px 6px;
-    }
-    .b32-combo-inspect-desc {
-      font-size:10px;
-      line-height:1.45;
-      color:rgba(240,234,255,.78);
-    }
-    .b32-combo-inspect-legend {
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-top:6px;
-      font-size:9px;
-      color:rgba(240,234,255,.65);
-    }
-    .b32-combo-inspect-legend span {
-      display:flex;
-      align-items:center;
-      gap:4px;
-    }
-    .b32-combo-inspect-legend i {
-      display:inline-block;
-      width:8px;
-      height:8px;
-      border-radius:2px;
-      box-sizing:border-box;
-    }
-    .b32-combo-inspect-legend .trigger i {
-      border:1.5px solid rgba(155,92,255,.98);
-      box-shadow:0 0 5px rgba(145,82,255,.55);
-    }
-    .b32-combo-inspect-legend .effect i {
-      border:1.5px solid rgba(255,196,76,.98);
-      box-shadow:0 0 5px rgba(255,165,35,.55);
-    }
-    #battle32-root.b32-vp-se #b32-combo-inspect {
-      padding:7px 9px;
-      width:min(96vw, 500px);
-    }
-    #battle32-root.b32-vp-se .b32-combo-inspect-desc {
-      font-size:9px;
-      line-height:1.3;
-    }
-
-    /* 最終上書き：ローグライトキャラパネル(z-index:3000000)より前面 */
-    html body #b32-combo-inspect {
-      position: fixed !important;
-      z-index: 4000000 !important;
-      isolation: isolate !important;
-      pointer-events: auto !important;
-    }
-
-    /* バトル演出はコンボウインドウより常に前面 */
-    html body #b32-center-text,
-    html body .b32-skill-name-burst,
-    html body #b32-ult-cutin,
-    html body .b32-ult-cutin,
-    html body #b32-damage-layer,
-    html body .b32-damage-popup {
-      z-index: 5000000 !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-
-
-function _getComboInspectViewportBounds() {
-  const vv = window.visualViewport;
-  return {
-    offsetLeft: vv ? vv.offsetLeft : 0,
-    offsetTop: vv ? vv.offsetTop : 0,
-    width: vv ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 0),
-    height: vv ? vv.height : (window.innerHeight || document.documentElement.clientHeight || 0),
-  };
-}
-
-function _clampComboInspectPosWithSize(pos, size) {
-  const view = _getComboInspectViewportBounds();
-  const margin = 8;
-  const width = Math.max(80, Number(size?.width || 320));
-  const height = Math.max(40, Number(size?.height || 100));
-  const minX = view.offsetLeft + margin;
-  const minY = view.offsetTop + margin;
-  const maxX = Math.max(minX, view.offsetLeft + view.width - width - margin);
-  const maxY = Math.max(minY, view.offsetTop + view.height - height - margin);
-
-  return {
-    x: Math.min(Math.max(Number(pos?.x || 0), minX), maxX),
-    y: Math.min(Math.max(Number(pos?.y || 0), minY), maxY),
-  };
-}
-
-function _setComboInspectLeftTop(el, pos) {
-  if (!el || !pos) return;
-  el.style.setProperty('position', 'fixed', 'important');
-  el.style.setProperty('z-index', '4000000', 'important');
-  el.style.setProperty('isolation', 'isolate', 'important');
-  el.style.setProperty('left', `${pos.x}px`, 'important');
-  el.style.setProperty('top', `${pos.y}px`, 'important');
-  el.style.setProperty('right', 'auto', 'important');
-  el.style.setProperty('bottom', 'auto', 'important');
-  el.style.setProperty('transform', 'none', 'important');
-}
-
-function _applyComboInspectPos(el, pos) {
-  if (!el || !pos) return;
-  const rect = el.getBoundingClientRect();
-  const p = _clampComboInspectPosWithSize(pos, rect);
-  _comboInspectPos = p;
-  _setComboInspectLeftTop(el, p);
-}
-
-let _comboInspectViewportWatchReady = false;
-
-function _installComboInspectViewportWatch() {
-  if (_comboInspectViewportWatchReady) return;
-  _comboInspectViewportWatchReady = true;
-
-  const reposition = () => {
-    const el = document.getElementById('b32-combo-inspect');
-    if (!el || !_comboInspectPos || _comboInspectDragging) return;
-    _applyComboInspectPos(el, _comboInspectPos);
-  };
-
-  window.addEventListener('resize', reposition, { passive: true });
-  window.addEventListener('orientationchange', reposition, { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', reposition, { passive: true });
-    window.visualViewport.addEventListener('scroll', reposition, { passive: true });
-  }
-}
-
-function _installComboInspectDrag(el) {
-  if (!el || el.dataset.dragReady === '1') return;
-
-  const handle = el.querySelector('.b32-combo-inspect-drag-handle') || el;
-  el.dataset.dragReady = '1';
-
-  handle.addEventListener('pointerdown', (e) => {
-    if (e.target && e.target.closest && e.target.closest('.b32-combo-inspect-close')) return;
-    if (e.button != null && e.button !== 0) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const rect = el.getBoundingClientRect();
-    const start = {
-      pointerId: e.pointerId,
-      sx: e.clientX,
-      sy: e.clientY,
-      x: rect.left,
-      y: rect.top,
-      size: {
-        width: rect.width || el.offsetWidth || 320,
-        height: rect.height || el.offsetHeight || 100,
-      },
-    };
-
-    _comboInspectDragging = true;
-    el.classList.add('is-dragging');
-    el.style.transition = 'none';
-    el.style.willChange = 'left, top';
-    el.style.transform = 'none';
-
-    try {
-      handle.setPointerCapture(e.pointerId);
-    } catch (err) {}
-
-    function onMove(ev) {
-      if (ev.pointerId !== start.pointerId) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-
-      const p = _clampComboInspectPosWithSize({
-        x: start.x + (ev.clientX - start.sx),
-        y: start.y + (ev.clientY - start.sy),
-      }, start.size);
-
-      _comboInspectPos = p;
-      _setComboInspectLeftTop(el, p);
-    }
-
-    function onEnd(ev) {
-      if (ev.pointerId !== start.pointerId) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', onEnd);
-      handle.removeEventListener('pointercancel', onEnd);
-
-      try {
-        handle.releasePointerCapture(start.pointerId);
-      } catch (err) {}
-
-      el.classList.remove('is-dragging');
-      el.style.willChange = '';
-      el.style.transition = '';
-
-      setTimeout(() => {
-        _comboInspectDragging = false;
-      }, 0);
-    }
-
-    handle.addEventListener('pointermove', onMove, { passive:false });
-    handle.addEventListener('pointerup', onEnd, { passive:false });
-    handle.addEventListener('pointercancel', onEnd, { passive:false });
-  }, { passive:false });
-}
-
-function _positionComboInspect() {
-  const el = document.getElementById('b32-combo-inspect');
-  if (!el) return;
-
-  // 一度ドラッグした後も、キャラパネル位置が変わるたびに再クランプする。
-  if (_comboInspectPos) {
-    _applyComboInspectPos(el, _comboInspectPos);
-    return;
-  }
-
-  const roster = document.getElementById('b32-roster-panel');
-  const actions = document.getElementById('b32-actions');
-  const vv = window.visualViewport || null;
-  const viewportHeight = vv ? vv.height : (window.innerHeight || document.documentElement.clientHeight || 0);
-  const viewportTop = vv ? vv.offsetTop : 0;
-
-  let bottomPx = 8;
-  if (roster && getComputedStyle(roster).display !== 'none') {
-    const rect = roster.getBoundingClientRect();
-    if (rect.height > 0 && rect.top > viewportTop) {
-      bottomPx = Math.max(8, viewportHeight + viewportTop - rect.top + 8);
-    }
-  } else if (actions && getComputedStyle(actions).display !== 'none') {
-    const rect = actions.getBoundingClientRect();
-    bottomPx = Math.max(8, viewportHeight + viewportTop - rect.top + 8);
-  }
-
-  el.style.setProperty('bottom', `${bottomPx}px`, 'important');
-  el.style.setProperty('top', 'auto', 'important');
-}
-
-function closeBattle32ComboInspect() {
-  const el = document.getElementById('b32-combo-inspect');
-  const bs = _bs();
-  const uid = _selActionAllyUid || null;
-  _comboInspectDismissedUid = uid;
-  if (el) el.remove();
-}
-window.closeBattle32ComboInspect = closeBattle32ComboInspect;
-
-function renderComboInspect(bs) {
-  _ensureComboInspectStyle();
-
-  let el = document.getElementById('b32-combo-inspect');
-  const shouldShow = !!(
-    bs &&
-    bs.phase === 'skill' &&
-    !bs.result &&
-    _selActionAllyUid &&
-    !_moveMode &&
-    !_selSkillAllyUid &&
-    !_selSkillId &&
-    !_summonMode &&
-    !_itemMode &&
-    !_b32InputLocked
-  );
-
-  const ally = shouldShow
-    ? (bs.allies || []).find(u => u._uid === _selActionAllyUid && u.hp > 0)
-    : null;
-
-  // 別キャラを選択したら、×で閉じた状態を解除する。
-  if (ally && _comboInspectDismissedUid && _comboInspectDismissedUid !== ally._uid) {
-    _comboInspectDismissedUid = null;
-  }
-
-  if (!ally || !ally.combo || !ally.combo.skill || _comboInspectDismissedUid === ally._uid) {
-    if (el) el.remove();
-    return;
-  }
-
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'b32-combo-inspect';
-
-    // ローグライトのキャラパネルは body 直下・z-index:3000000。
-    // 敵情報ウインドウと同じく body 直下の独立最前面レイヤーとして強制する。
-    el.style.setProperty('position', 'fixed', 'important');
-    el.style.setProperty('z-index', '4000000', 'important');
-    el.style.setProperty('isolation', 'isolate', 'important');
-    el.style.setProperty('pointer-events', 'auto', 'important');
-
-    document.body.appendChild(el);
-  } else {
-    // 外部CSSや再描画で上書きされた場合も毎回復元する。
-    el.style.setProperty('position', 'fixed', 'important');
-    el.style.setProperty('z-index', '4000000', 'important');
-    el.style.setProperty('isolation', 'isolate', 'important');
-    el.style.setProperty('pointer-events', 'auto', 'important');
-  }
-
-  // DOM順でもキャラパネルより後ろに来るよう、body末尾へ移動する。
-  // appendChild済み要素を再appendすると末尾へ移動する。
-  if (el.parentElement !== document.body || el !== document.body.lastElementChild) {
-    document.body.appendChild(el);
-  }
-
-  el.innerHTML = b32BuildComboSummaryHtml(ally);
-  // innerHTML更新後はハンドルが作り直されるため、毎回ドラッグ設定を再装着する。
-  el.dataset.dragReady = '';
-  _installComboInspectViewportWatch();
-  _installComboInspectDrag(el);
-  _positionComboInspect();
-  requestAnimationFrame(_positionComboInspect);
-}
-
-
-function b32PercentTextFromRate(rate) {
-  const n = Number(rate);
-  if (!Number.isFinite(n)) return '';
-  if (n > 1) return `${Math.round((n - 1) * 100)}%`;
-  return `${Math.round(n * 100)}%`;
-}
-
-function b32EffectTargetLabel(target) {
-  const map = {
-    ally_self: '自身',
-    ally_all: '味方全体',
-    ally: '味方',
-    enemy: '敵',
-    target: '対象',
-  };
-  return map[target] || '';
-}
-
-function b32EffectSummary(effect) {
-  if (!effect) return '';
-  const target = b32EffectTargetLabel(effect.target);
-  const dur = effect.duration ? `${effect.duration}T` : '';
-  const rate = Number(effect.rate);
-  const rateUpText = Number.isFinite(rate) ? ` ${Math.round((rate - 1) * 100)}%` : '';
-  const rateDownText = Number.isFinite(rate) ? ` ${Math.round((1 - rate) * 100)}%` : '';
-
-  const prefix = target ? `${target}` : '';
-  switch (effect.type) {
-    case 'atk_up': return `${prefix}ATK+${rateUpText.trim() || ''}${dur ? `/${dur}` : ''}`;
-    case 'atk_down': return `${prefix}ATK-${rateDownText.trim() || ''}${dur ? `/${dur}` : ''}`;
-    case 'stun': return `${prefix}スタン${dur ? `/${dur}` : ''}`;
-    case 'heal': return `${prefix}回復`;
-    case 'drain': {
-      const drainRate = Number(effect.rate);
-      const drainPct = Number.isFinite(drainRate) ? Math.round(drainRate * 100) : 50;
-      return `与ダメージの${drainPct}%を自身回復`;
-    }
-    case 'poison': return `${prefix}毒${dur ? `/${dur}` : ''}`;
-    case 'jittai': return `${prefix}実体化${dur ? `/${dur}` : ''}`;
-    case 'sure_hit_self': return '自身必中';
-    case 'sure_hit_team': return '味方全体必中';
-    case 'pull_1': return '引き寄せ1';
-    case 'pull_2': return '引き寄せ2';
-    case 'push_1': return '押し出し1';
-    case 'push_2': return '押し出し2';
-    case 'push_3': return '押し出し3';
-    case 'shift_right_1': return '右移動1';
-    case 'shift_right_2': return '右移動2';
-    case 'shift_left_1': return '左移動1';
-    case 'shift_left_2': return '左移動2';
-    case 'ally_shift_right_down': return '味方を右下へ移動';
-    case 'ally_shift_left_down': return '味方を左下へ移動';
-    default: return effect.type || '';
-  }
-}
-
-function b32FindMasterSkillDef(skill, ally) {
-  if (!skill) return null;
-
-  let chara = null;
-  const idCandidates = [
-    ally?.charId,
-    ally?.charaId,
-    ally?.characterId,
-    ally?.baseId,
-    ally?.id,
-    skill?.charId,
-    skill?.charaId,
-    skill?.characterId,
-  ].filter(v => v != null);
-
-  for (const id of idCandidates) {
-    if (typeof getCharaById === 'function') {
-      chara = getCharaById(id);
-    }
-    if (!chara && window.getCharaById) {
-      chara = window.getCharaById(id);
-    }
-    if (chara) break;
-  }
-
-  const list = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
-    ? CHARACTERS
-    : (Array.isArray(window.CHARACTERS) ? window.CHARACTERS : []);
-
-  if (!chara && list.length) {
-    chara = list.find(c => idCandidates.some(id => String(c.id) === String(id))) || null;
-  }
-
-  if (!chara && ally?.name && list.length) {
-    chara = list.find(c => c.name === ally.name) || null;
-  }
-
-  const skills = Array.isArray(chara?.skills) ? chara.skills : [];
-  return skills.find(s => s.id === skill.id) || skills.find(s => s.name === skill.name) || null;
-}
-
-function b32GetSkillFieldFromMaster(skill, ally, key, fallbackValue) {
-  const masterSkill = b32FindMasterSkillDef(skill, ally);
-  if (masterSkill && masterSkill[key] != null) return masterSkill[key];
-  if (skill && skill[key] != null) return skill[key];
-  return fallbackValue;
-}
-
-function b32FormatPercentRate(value, fallbackText = '0%') {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallbackText;
-  const pct = n <= 1 ? n * 100 : n;
-  return `${Math.round(pct)}%`;
-}
-
-function b32BuildCompactSkillSummaryHtml(skill, ally) {
-  if (!skill) return '';
-
-  const linkCost = ally
-    ? _getSkillLinkCostForUnit(_bs(), ally._uid, skill)
-    : _getSkillLinkCost(skill);
-
-  const multiplier = Number(skill.multiplier || 0);
-  const multiplierText = multiplier > 0 ? `ATK×${multiplier}` : 'ダメージなし';
-
-  // Battle32.getState() 側の ally.skills は、戦闘用に整形されたスキル情報で、
-  // criticalRate が欠落または 0 初期化される場合がある。
-  // 表示値は characters.js のスキル定義を正として引き直す。
-  const criticalRate = b32GetSkillFieldFromMaster(skill, ally, 'criticalRate', 0);
-  const criticalText = b32FormatPercentRate(criticalRate, '0%');
-
-  const effects = Array.isArray(skill.effects)
-    ? skill.effects.map(b32EffectSummary).filter(Boolean)
-    : [];
-  const effectText = effects.length ? effects.join(' / ') : 'なし';
-
-  return `
-    <div class="b32-action-detail-summary b32-action-detail-summary-grid">
-      <div class="b32-action-detail-summary-item">
-        <span>攻撃倍率：</span><strong>${b32EscapeHtml(multiplierText)}</strong>
-      </div>
-      <div class="b32-action-detail-summary-item">
-        <span>critical率：</span><strong>${b32EscapeHtml(criticalText)}</strong>
-      </div>
-      <div class="b32-action-detail-summary-item">
-        <span>追加効果：</span><strong>${b32EscapeHtml(effectText)}</strong>
-      </div>
-      <div class="b32-action-detail-summary-item">
-        <span>消費LINK：</span><strong>${b32EscapeHtml(String(linkCost))}</strong>
-      </div>
-    </div>
-  `;
-}
-
-function b32BuildSkillDetailHtml(skill, ally) {
-  if (!skill) return '';
-
-  const linkCost = _getSkillLinkCostForUnit(_bs(), ally?._uid, skill);
-  const shinkiCost = skill.isUltimate ? (skill.shinkiCost || ally?.shinkiMax || 3) : (skill.shinkiCost || 0);
-  const powerText = Number(skill.multiplier || 0) > 0 ? `ATK×${skill.multiplier}` : 'ダメージなし';
-  const hitText = skill.hit != null ? `${skill.hit}%` : '100%';
-  const desc = skill.desc || '説明なし';
-  const badge = skill.isUltimate ? 'ULT' : 'SKILL';
-
-  return `
-    <div class="b32-roster-skill-detail ${skill.isUltimate ? 'is-ult' : 'is-skill'}">
-      <div class="b32-roster-skill-detail-head">
-        <span class="b32-roster-skill-badge">${badge}</span>
-        <strong>${b32EscapeHtml(skill.name || '—')}</strong>
-      </div>
-      <div class="b32-roster-skill-detail-meta">
-        <span>LINK ${linkCost}</span>
-        ${skill.isUltimate ? `<span>神気 ${shinkiCost}</span>` : ''}
-        <span>${b32EscapeHtml(b32SkillTypeLabel(skill))}</span>
-        <span>${b32EscapeHtml(b32RangeLabel(skill.range))}</span>
-        <span>命中 ${hitText}</span>
-        <span>${powerText}</span>
-      </div>
-      <div class="b32-roster-skill-detail-desc">${b32EscapeHtml(desc)}</div>
-    </div>
-  `;
-}
-
-function b32BuildComboDetailHtml(chara, ally) {
-  const combo = chara?.combo || ally?.combo;
-  const skill = combo?.skill;
-  if (!skill) return '<div class="b32-roster-skill-empty">コンボスキル情報なし</div>';
-
-  const powerText = Number(skill.multiplier || 0) > 0 ? `ATK×${skill.multiplier}` : 'ダメージなし';
-  const effects = (skill.effects || []).map(b32EffectSummary).filter(Boolean).join(' / ');
-  return `
-    <div class="b32-roster-skill-detail is-combo">
-      <div class="b32-roster-skill-detail-head">
-        <span class="b32-roster-skill-badge">COMBO</span>
-        <strong>${b32EscapeHtml(skill.name || '—')}</strong>
-      </div>
-      <div class="b32-roster-skill-detail-meta">
-        <span>発動範囲 ${b32EscapeHtml(b32ComboRangeLabel(combo.range))}</span>
-        <span>効果範囲 ${b32EscapeHtml(b32RangeLabel(skill.range))}</span>
-        <span>${b32EscapeHtml(b32SkillTypeLabel(skill))}</span>
-        <span>${b32EscapeHtml(powerText)}</span>
-        ${effects ? `<span>${b32EscapeHtml(effects)}</span>` : ''}
-      </div>
-      <div class="b32-roster-skill-detail-desc">${b32EscapeHtml(skill.desc || '説明なし')}</div>
-    </div>`;
-}
-
-function b32BuildRosterSkillDetailsHtml(chara, ally) {
-  const skills = Array.isArray(chara?.skills) ? chara.skills : [];
-  const normalSkills = skills.filter(s => !s.isUltimate);
-  const ultSkills = skills.filter(s => s.isUltimate);
-  const pages = [
-    { label: 'SKILL', body: normalSkills.length ? normalSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('') : '<div class="b32-roster-skill-empty">スキル情報なし</div>' },
-    { label: 'ULT', body: ultSkills.length ? ultSkills.map(s => b32BuildSkillDetailHtml(s, ally)).join('') : '<div class="b32-roster-skill-empty">ULT情報なし</div>' },
-    { label: 'COMBO', body: b32BuildComboDetailHtml(chara, ally) },
-  ];
-  const page = Math.max(0, Math.min(2, Number(_rosterInfoPage) || 0));
-  return `
-    <div class="b32-roster-skill-pager" ontouchstart="_b32RosterInfoTouchStart(event)" ontouchend="_b32RosterInfoTouchEnd(event)">
-      <button type="button" class="b32-roster-page-arrow prev" onclick="_b32ChangeRosterInfoPage(-1,event)" aria-label="前の説明">‹</button>
-      <div class="b32-roster-page-viewport">
-        <div class="b32-roster-skill-detail-list">${pages[page].body}</div>
-        <div class="b32-roster-page-dots">${pages.map((_,i)=>`<button type="button" class="${i===page?'active':''}" onclick="_b32SetRosterInfoPage(${i},event)" aria-label="${pages[i].label}"></button>`).join('')}</div>
-      </div>
-      <button type="button" class="b32-roster-page-arrow next" onclick="_b32ChangeRosterInfoPage(1,event)" aria-label="次の説明">›</button>
-    </div>`;
-}
-
-window._b32SetRosterInfoPage = function(page, event) {
-  if (event) { event.preventDefault(); event.stopPropagation(); }
-  _rosterInfoPage = (Number(page) + 3) % 3;
-  renderBattle32UI();
-};
-window._b32ChangeRosterInfoPage = function(delta, event) {
-  if (event) { event.preventDefault(); event.stopPropagation(); }
-  _rosterInfoPage = (_rosterInfoPage + Number(delta || 0) + 3) % 3;
-  renderBattle32UI();
-};
-window._b32RosterInfoTouchStart = function(event) {
-  const t = event?.changedTouches?.[0] || event?.touches?.[0];
-  _rosterInfoTouchStartX = t ? t.clientX : null;
-};
-window._b32RosterInfoTouchEnd = function(event) {
-  const t = event?.changedTouches?.[0];
-  if (_rosterInfoTouchStartX == null || !t) return;
-  const dx = t.clientX - _rosterInfoTouchStartX;
-  _rosterInfoTouchStartX = null;
-  if (Math.abs(dx) < 36) return;
-  _rosterInfoPage = (_rosterInfoPage + (dx < 0 ? 1 : -1) + 3) % 3;
-  renderBattle32UI();
-};
-
 function getUnitUiScale(unit, key) {
  return unit?.uiScale?.[key] || 1;
 }
@@ -1660,116 +200,56 @@ function getUnitUiOffsetY(unit, key) {
  return unit?.uiOffset?.[`${key}Y`] || 0;
 }
 
-// [enemy movement unified] 薄いラッパー。
-// 移動候補の計算は Battle32.getMoveCells() に完全委譲。
-// UI側でmoveTypeを判定しない。
 function getEnemyMoveGuideCells(enemy, bs) {
-  if (!enemy || !bs) return [];
+ if (!enemy || !bs) return [];
 
-  // リヴィア系の「消失」は通常moveTypeではなく特殊転移。
-  // 実行時に使う先行決定済みdestinationを、そのまま移動ガイドとして表示する。
-  const planned = getEnemyPlannedAction(enemy);
-  if (planned && planned.destination &&
-      Number.isFinite(Number(planned.destination.row)) &&
-      Number.isFinite(Number(planned.destination.col))) {
-    return [{
-      row: Number(planned.destination.row),
-      col: Number(planned.destination.col),
-      cellType: 'move',
-    }];
-  }
+ const occupied = new Set();
 
-  if ((enemy.isBoss && !enemy.allowBossMovement) || enemy.moveType === 'none') return [];
-  if (!window.Battle32 || typeof window.Battle32.getMoveCells !== 'function') return [];
-  return window.Battle32.getMoveCells(enemy._uid);
-}
+ [...(bs.allies || []), ...(bs.enemies || [])].forEach(u => {
+ if (!u || u._uid === enemy._uid) return;
+ if (u.hp <= 0 && !u.isBoss) return;
+ occupied.add(`${u.row}-${u.col}`);
+ });
 
-function getEnemyAttackGuideCells(enemy, bs) {
-  if (!enemy || !bs || !window.BattleRange32) return [];
+ const cells = [];
 
-  // サキエルは固定attackRangeではなく、先行決定済みの次回行動を表示する。
-  const planned = getEnemyPlannedAction(enemy);
-  if (planned) {
-    const allyMap = {};
-    (bs.allies || [])
-      .filter(u => u && u.hp > 0)
-      .forEach(u => { allyMap[`${u.row}-${u.col}`] = u; });
+ function addCell(row, col) {
+ if (row < 0 || row >= 8 || col < 0 || col >= 5) return;
+ const key = `${row}-${col}`;
+ if (occupied.has(key)) return;
 
-    return (planned.cells || []).map(cell => {
-      const key = `${cell.row}-${cell.col}`;
-      return {
-        row: Number(cell.row),
-        col: Number(cell.col),
-        cellType: allyMap[key] ? 'target_ally' : 'attack',
-        targetUid: allyMap[key] ? allyMap[key]._uid : null,
-      };
-    }).filter(cell => Number.isFinite(cell.row) && Number.isFinite(cell.col));
-  }
+ // 自陣コアには入らない想定
+ if (bs.cores?.ally && row === bs.cores.ally.row && col === bs.cores.ally.col) return;
 
-  if (isPlannedActionEnemy(enemy)) return [];
+ cells.push({ row, col });
+ }
 
-  const range = enemy.attackRange || 'enemy_attack_front';
-  let keys = new Set();
+ switch (enemy.moveType) {
+ case 'enemy_move_straight':
+ case 'enemy_zako_straight':
+ // 敵は下方向へ進む想定
+ addCell(enemy.row + 1, enemy.col);
+ break;
 
-  // 通常の enemy_attack_* / adjacent / field 系は BattleRange32 に委譲。
-  if (typeof range === 'string' && /^manhattan_(\d+)$/.test(range)) {
-    const dist = Number(/^manhattan_(\d+)$/.exec(range)[1]);
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 5; c++) {
-        const d = Math.abs(r - enemy.row) + Math.abs(c - enemy.col);
-        if (d > 0 && d <= dist) keys.add(`${r}-${c}`);
-      }
-    }
-  } else {
-    keys = window.BattleRange32.getCellsFromRange32(enemy, range);
-  }
+ case 'enemy_move_diag':
+ case 'enemy_zako_diag':
+ addCell(enemy.row + 1, enemy.col - 1);
+ addCell(enemy.row + 1, enemy.col + 1);
+ break;
 
-  const allyMap = {};
-  (bs.allies || [])
-    .filter(u => u && u.hp > 0)
-    .forEach(u => { allyMap[`${u.row}-${u.col}`] = u; });
+ case 'enemy_move_random':
+ addCell(enemy.row + 1, enemy.col);
+ addCell(enemy.row - 1, enemy.col);
+ addCell(enemy.row, enemy.col - 1);
+ addCell(enemy.row, enemy.col + 1);
+ break;
 
-  const cells = [];
-  keys.forEach(key => {
-    const [row, col] = String(key).split('-').map(Number);
-    if (!Number.isFinite(row) || !Number.isFinite(col)) return;
-    cells.push({
-      row,
-      col,
-      cellType: allyMap[key] ? 'target_ally' : 'attack',
-      targetUid: allyMap[key] ? allyMap[key]._uid : null,
-    });
-  });
-  return cells;
-}
+ case 'none':
+ default:
+ break;
+ }
 
-// ============================================================
-// ローグライト: 味方対象アイテムの判定
-// ============================================================
-function b32IsAllyTargetItem(item) {
-  if (!item) return false;
-  if (item.target === 'ally_all') return false;
-  return [
-    'heal',
-    'move_ally',
-    'shinki_max',
-    'guard',
-    'swap_ally',
-    'critical_up',
-    'crit_up',
-    'atk_up',
-    'hp_up',
-  ].includes(item.type);
-}
-
-function b32GetActiveItem(bs) {
-  if (!_itemMode || !bs || !bs.items || _itemSlotIndex == null) return null;
-  return bs.items[_itemSlotIndex] || null;
-}
-
-function b32IsAllyItemTargetMode(bs) {
-  const item = b32GetActiveItem(bs);
-  return !!(_itemMode && _itemPhase === 'target' && b32IsAllyTargetItem(item));
+ return cells;
 }
 
 function showEnemyInfo(enemy) {
@@ -1788,17 +268,10 @@ function showEnemyInfo(enemy) {
  <span>ATK</span><strong>${enemy.atk}</strong>
  </div>
  <div class="b32-enemy-info-row">
- <span>属性</span>
- <strong class="b32-enemy-info-element">
-   ${unitElementIcon(enemy.element) ? `<img class="b32-info-element-icon" src="${unitElementIcon(enemy.element)}" alt="" onerror="this.style.display='none'">` : ''}
-   ${unitElementLabel(enemy.element)}
- </strong>
- </div>
- <div class="b32-enemy-info-row">
  <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
  </div>
  <div class="b32-enemy-info-row">
- <span>攻撃</span><strong>${b32EscapeHtml(enemyAttackDisplayLabel(enemy))}</strong>
+ <span>攻撃</span><strong>${enemyAttackLabel(enemy.attackRange)}</strong>
  </div>
  <button class="b32-enemy-info-close">閉じる</button>
  </div>
@@ -1823,44 +296,11 @@ window._b32ShowEnemyInfo = function (enemyUid) {
 
  if (!enemy) return;
 
- // 敵タップ時は情報パネルを開く。ガイドは「移動」「攻撃」ボタンで切り替える。
- if (_selectedEnemyUid !== enemyUid) {
-   _selectedEnemyUid = enemyUid;
-   _selectedEnemyGuideMode = null;
- } else {
-   // 同じ敵を再タップした場合は、情報表示を維持してガイドだけ解除する。
-   _selectedEnemyGuideMode = null;
- }
+ // 同じ敵をもう一度タップしたら解除
+ _selectedEnemyUid = (_selectedEnemyUid === enemyUid) ? null : enemyUid;
 
  window.renderBattle32UI();
-};
-
-window._b32EnemyGuide = function (mode) {
- const bs = _bs();
- if (!bs || !_selectedEnemyUid) return;
- if (mode !== 'move' && mode !== 'attack') return;
-
- _selectedEnemyGuideMode = (_selectedEnemyGuideMode === mode) ? null : mode;
- window.renderBattle32UI();
-};
-
-window._b32CloseEnemyInfo = function () {
- _selectedEnemyUid = null;
- _selectedEnemyGuideMode = null;
- const enemyInfo = document.getElementById('b32-enemy-info-overlay');
- if (enemyInfo) enemyInfo.remove();
- const enemyQuick = document.getElementById('b32-enemy-quick-info');
- if (enemyQuick) enemyQuick.remove();
- window.renderBattle32UI();
-};
-
-
-window._b32ResetEnemyInfoPanelPosition = function () {
-  _enemyQuickInfoPos = null;
-  const box = document.getElementById('b32-enemy-quick-info');
-  if (box) _positionEnemyQuickInfoPanel(box);
-};
- 
+}; 
 
  // ============================================================
  // CSS
@@ -2079,7 +519,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  flex-direction: column;
  align-items: center;
  justify-content: center;
- border-radius: 0;
+ border-radius: 9px;
  border: 1px solid rgba(255,255,255,.12);
  background: rgba(255,255,255,.05);
  color: rgba(232,228,220,.85);
@@ -2243,138 +683,96 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  }
 }
 
-/* ── ULT専用カットイン：横帯レイアウト ── */
+/* ── ULT専用カットイン ── */
 .b32-ult-cutin {
  position: fixed;
  inset: 0;
  z-index: 1000000;
  pointer-events: none;
  overflow: hidden;
-
- /* 背景は暗くしすぎない */
  background:
- radial-gradient(circle at 55% 48%, rgba(255,240,190,.06), transparent 46%),
- linear-gradient(180deg, rgba(0,0,0,.72), rgba(6,8,18,.36), rgba(0,0,0,.76));
-
+ radial-gradient(circle at 70% 45%, rgba(255,230,170,.20), transparent 34%),
+ linear-gradient(180deg, rgba(0,0,0,.88), rgba(4,6,14,.72), rgba(0,0,0,.90));
  animation: b32UltCutinWrap 1900ms ease-out forwards;
 }
 
-/* 画像：中央の横帯いっぱいに明るく表示 */
 .b32-ult-cutin-img {
  position: absolute;
  left: 50%;
- top: 50%;
+ top: 46%;
 
  width: 100vw;
  min-width: 100vw;
  height: auto;
  max-width: none;
 
- object-fit: cover;
- object-position: center center;
-
+ object-fit: fill; /* 実質効かないが置いてもOK */
  transform: translate(-50%, -50%);
- opacity: 1;
 
- /* ULT画像の視認性を最優先。暗幕より前で明るく強く出す */
+ opacity: .98;
  filter:
- brightness(1.18)
+ brightness(1.08)
  contrast(1.16)
  saturate(1.06)
- drop-shadow(0 4px 18px rgba(0,0,0,.72));
+ drop-shadow(0 0 22px rgba(255,230,170,.28));
 
  animation: b32UltCutinImgSlide 1700ms cubic-bezier(.18,.82,.22,1) forwards;
 }
 
-/* 画像の上に乗る暗幕：薄めに変更 */
 .b32-ult-cutin-shade {
  position: absolute;
  inset: 0;
-
- /* 上下だけ締めて、中央画像は暗くしすぎない */
  background:
- linear-gradient(180deg,
-   rgba(0,0,0,.62) 0%,
-   rgba(0,0,0,.06) 24%,
-   rgba(0,0,0,.00) 50%,
-   rgba(0,0,0,.06) 74%,
-   rgba(0,0,0,.66) 100%
- ),
- linear-gradient(90deg,
-   rgba(0,0,0,.20) 0%,
-   rgba(0,0,0,.00) 34%,
-   rgba(0,0,0,.00) 70%,
-   rgba(0,0,0,.18) 100%
- );
+ linear-gradient(90deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.24) 36%, rgba(0,0,0,.10) 70%, rgba(0,0,0,.62) 100%),
+ linear-gradient(180deg, rgba(0,0,0,.40) 0%, transparent 42%, rgba(0,0,0,.70) 100%);
 }
 
-/* 上の ULTIMATE */
 .b32-ult-cutin-label {
  position: absolute;
  left: 22px;
- top: 21%;
-
+ bottom: 82px;
  font-family: 'Cinzel', serif;
- font-size: 12px !important;
- letter-spacing: 7px !important;
- color: rgba(255,235,170,.98) !important;
-
+ font-size: 11px;
+ letter-spacing: 5px;
+ color: rgba(255,220,150,.88);
  text-shadow:
- 0 0 6px rgba(255,255,255,.9),
- 0 0 18px rgba(255,220,120,.95),
- 0 2px 4px rgba(0,0,0,1) !important;
-
+ 0 0 10px rgba(255,210,120,.7),
+ 0 2px 4px rgba(0,0,0,1);
  animation: b32UltTextIn 1900ms ease-out forwards;
 }
 
-/* 中央の区切り線：画像帯の上に置く */
-.b32-ult-cutin-line {
- position: absolute;
- left: 0;
- top: 30%;
- width: 100%;
- height: 1px;
-
- background: linear-gradient(
- 90deg,
- transparent,
- rgba(255,245,210,.95),
- transparent
- );
-
- box-shadow:
- 0 0 12px rgba(255,230,170,.8),
- 0 0 28px rgba(255,160,70,.4);
-
- transform: none;
- opacity: .9;
- animation: b32UltLine 1900ms ease-out forwards;
-}
-
-/* 下のスキル名：画像の左下 */
 .b32-ult-cutin-name {
  position: absolute;
  left: 22px;
- bottom: 15%;
-
+ bottom: 42px;
  max-width: 88vw;
-
  font-family: 'Noto Serif JP', serif;
- font-size: clamp(26px, 8vw, 46px);
+ font-size: clamp(28px, 9vw, 52px);
  font-weight: 800;
  letter-spacing: 6px;
- line-height: 1.05;
-
+ line-height: 1;
  color: #fff4c8;
- text-align: left;
-
  text-shadow:
- 0 0 8px rgba(255,255,255,.95),
- 0 0 26px rgba(255,190,70,.90),
- 0 0 58px rgba(255,120,40,.45),
+ 0 0 8px rgba(255,255,255,.92),
+ 0 0 28px rgba(255,190,70,.82),
+ 0 0 60px rgba(255,120,40,.44),
  0 3px 6px rgba(0,0,0,1);
-
  animation: b32UltTextIn 1900ms ease-out forwards;
+}
+
+.b32-ult-cutin-line {
+ position: absolute;
+ left: -20%;
+ top: 50%;
+ width: 140%;
+ height: 2px;
+ background: linear-gradient(90deg, transparent, rgba(255,245,210,.95), transparent);
+ box-shadow:
+ 0 0 14px rgba(255,230,170,.9),
+ 0 0 34px rgba(255,160,70,.5);
+ transform: rotate(-8deg);
+ opacity: 0;
+ animation: b32UltLine 1900ms ease-out forwards;
 }
 
 .b32-ult-white-flash {
@@ -2385,7 +783,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  background: white;
  opacity: 0;
  animation: b32UltWhiteFlash 1900ms ease-out forwards;
- mix-blend-mode: normal;
 }
 
 @keyframes b32UltCutinWrap {
@@ -2422,22 +819,22 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  0% {
  opacity: 0;
  transform: translate(-70%, -50%);
- filter: brightness(1.10) contrast(1.12) saturate(1.04);
+ filter: brightness(1.02);
  }
  14% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.18) contrast(1.16) saturate(1.06);
+ filter: brightness(1.08) contrast(1.16) saturate(1.06);
  }
  76% {
  opacity: .98;
  transform: translate(-50%, -50%);
- filter: brightness(1.18) contrast(1.16) saturate(1.06);
+ filter: brightness(1.08) contrast(1.14);
  }
  100% {
  opacity: 0;
  transform: translate(-68%, -50%);
- filter: brightness(1.08) contrast(1.10) saturate(1.03);
+ filter: brightness(1.04);
  }
 }
 
@@ -2485,7 +882,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  opacity: 0;
  }
  76% {
- opacity: .16;
+ opacity: .72;
  }
  86% {
  opacity: 0;
@@ -2555,35 +952,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  0 0 10px rgba(255,200,60,.95),
  0 0 24px rgba(255,140,40,.80),
  0 1px 4px rgba(0,0,0,.95) !important;
-}
-
-/* ── CRITICAL ダメージ数値 ── */
-.b32-float-number.damage.critical {
- font-size: 28px !important;
- color: #fff6c4 !important;
- letter-spacing: .06em;
- text-shadow:
- 0 0 10px rgba(255,255,255,.95),
- 0 0 24px rgba(255,220,80,.95),
- 0 0 42px rgba(255,120,40,.72),
- 0 2px 5px rgba(0,0,0,1) !important;
-}
-.b32-float-number.damage.critical::before {
- content: 'CRITICAL';
- position: absolute;
- left: 50%;
- top: -18px;
- transform: translateX(-50%);
- font-family: "Cinzel", "Noto Serif JP", serif;
- font-size: 10px;
- font-weight: 900;
- letter-spacing: .12em;
- color: #fff1a8;
- text-shadow:
- 0 0 8px rgba(255,255,255,.9),
- 0 0 18px rgba(255,200,60,.85),
- 0 1px 3px rgba(0,0,0,1);
- white-space: nowrap;
 }
 
 /* ── ULT ヒールナンバー：大きめ ── */
@@ -2757,42 +1125,25 @@ window._b32ResetEnemyInfoPanelPosition = function () {
   }
 
  /* ── パーティパネル HP バー ── */
- /* HPブロック全体：数値が右上、バーが直下 */
- .b32-party-hp-block {
- width: 100%;
- display: flex;
- flex-direction: column;
- align-items: flex-end; /* 数値を右寄せ */
- gap: 1px;
- }
- .b32-party-hp-num {
- font-family: 'Cinzel', serif;
- font-size: 9px;
- letter-spacing: .5px;
- color: rgba(232,228,220,.72);
- line-height: 1.2;
- text-align: right;
- white-space: nowrap;
- }
  .b32-party-hp-bar-wrap {
  width: 100%;
  height: 4px;
  border-radius: 2px;
  background: rgba(0,0,0,.45);
  overflow: hidden;
+ margin: 3px 0 1px;
  }
  .b32-party-hp-bar {
  height: 100%;
  border-radius: 2px;
  transition: width .25s ease;
  }
- /* 旧クラス（後方互換） */
  .b32-party-hp-text {
  font-family: 'Cinzel', serif;
  font-size: 9px;
  letter-spacing: .5px;
  color: rgba(232,228,220,.65);
- text-align: right;
+ text-align: center;
  line-height: 1.2;
  }
  .b32-party-hp-max {
@@ -2817,60 +1168,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  color: #ff6060;
  text-shadow: 0 0 8px rgba(255,60,60,.8), 0 1px 3px rgba(0,0,0,.9);
  }
-
- .b32-float-number.damage.weak {
- font-size: 24px !important;
- color: #ffd84a !important;
- text-shadow:
- 0 0 10px rgba(255,220,80,.95),
- 0 0 24px rgba(255,160,40,.75),
- 0 1px 4px rgba(0,0,0,.95) !important;
-}
-
-.b32-float-number.damage.resist {
- font-size: 14px !important;
- color: #9aa8bd !important;
- opacity: .85;
- text-shadow:
- 0 0 8px rgba(120,150,210,.65),
- 0 1px 3px rgba(0,0,0,.95) !important;
-}
-
-.b32-element-match-text {
- position: fixed;
- z-index: 1000000;
- pointer-events: none;
- font-family: 'Cinzel', serif;
- font-weight: 900;
- letter-spacing: 2px;
- transform: translate(-50%, -50%);
- animation: b32ElementMatchPop 720ms ease-out forwards;
-}
-
-.b32-element-match-text.weak {
- font-size: 22px;
- color: #ffe680;
- text-shadow:
- 0 0 8px rgba(255,255,255,.95),
- 0 0 18px rgba(255,210,80,.9),
- 0 0 34px rgba(255,120,40,.6),
- 0 2px 4px rgba(0,0,0,.95);
-}
-
-.b32-element-match-text.resist {
- font-size: 16px;
- color: #aeb8c8;
- text-shadow:
- 0 0 8px rgba(160,180,220,.65),
- 0 2px 4px rgba(0,0,0,.95);
-}
-
-@keyframes b32ElementMatchPop {
- 0% { opacity: 0; transform: translate(-50%, -40%) scale(.75); }
- 18% { opacity: 1; transform: translate(-50%, -70%) scale(1.18); }
- 62% { opacity: 1; transform: translate(-50%, -88%) scale(1); }
- 100% { opacity: 0; transform: translate(-50%, -112%) scale(.92); }
-}
  .b32-float-number.damage.boss {
  font-size: 22px;
  color: #ff9020;
@@ -3033,7 +1330,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  /* ── HP セクション：カード最下部 ── */
  .b32-party-hp-section {
  width: 100%;
- margin-top: 2px;
+ margin-top: 3px;
  }
 
  /* ── 自陣コア画像 ── */
@@ -3044,16 +1341,14 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  display: flex;
  align-items: center;
  justify-content: center;
- /* board の rotateX(38deg) を相殺する基本値。
-  * 実際の上書きは battle_32_ui.css の .b32-core-object ルールで行う */
- transform: rotateX(-38deg);
+ transform: rotateX(-50deg);
  transform-origin: center center;
  pointer-events: none;
 }
 
 .b32-core-img {
- width: 100%;
- height: 100%;
+ width: 115%;
+ height: 115%;
  object-fit: contain;
  filter:
  drop-shadow(0 0 6px rgba(80, 240, 255, .75))
@@ -3194,40 +1489,12 @@ window._b32ResetEnemyInfoPanelPosition = function () {
 }
 
 @keyframes b32CoreObjectHit {
- 0%   { transform: translate(-50%, -50%) rotateX(-38deg) translateX(0)    scale(1); }
- 15%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(-5px) scale(1.12); }
- 30%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(6px)  scale(1.08); }
- 48%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(-4px) scale(1.10); }
- 70%  { transform: translate(-50%, -50%) rotateX(-38deg) translateX(2px)  scale(1.04); }
- 100% { transform: translate(-50%, -50%) rotateX(-38deg) translateX(0)    scale(1); }
-}
-
-
-.b32-unit.enemy.active-enemy-action {
-  filter: drop-shadow(0 0 10px rgba(255,215,120,.95)) drop-shadow(0 0 18px rgba(255,100,80,.55));
-  animation: b32EnemyActionPulse 720ms ease-in-out infinite;
-  z-index: 9;
-}
-.b32-unit.enemy.active-enemy-action::after {
-  content: 'ACTION';
-  position: absolute;
-  left: 50%;
-  top: -12px;
-  transform: translateX(-50%) rotateX(-38deg);
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.72);
-  border: 1px solid rgba(255,220,140,.65);
-  color: rgba(255,236,175,.96);
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  letter-spacing: .12em;
-  text-shadow: 0 0 8px rgba(255,180,90,.82);
-  pointer-events: none;
-}
-@keyframes b32EnemyActionPulse {
-  0%, 100% { transform: translateX(-50%) rotateX(-38deg) scale(1); }
-  50% { transform: translateX(-50%) rotateX(-38deg) scale(1.06); }
+ 0% { transform: rotateX(-50deg) translateX(0) scale(1); }
+ 15% { transform: rotateX(-50deg) translateX(-5px) scale(1.12); }
+ 30% { transform: rotateX(-50deg) translateX(6px) scale(1.08); }
+ 48% { transform: rotateX(-50deg) translateX(-4px) scale(1.10); }
+ 70% { transform: rotateX(-50deg) translateX(2px) scale(1.04); }
+ 100% { transform: rotateX(-50deg) translateX(0) scale(1); }
 }
 
 #b32-enemy-info-overlay {
@@ -3317,86 +1584,28 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  text-shadow: 0 0 6px rgba(80,160,255,.8);
 }
 
-
-.b32-cell.enemy-attack-guide {
- background:
- radial-gradient(circle at center, rgba(255, 120, 110, .30), transparent 62%),
- rgba(90, 24, 28, .26) !important;
- border-color: rgba(255, 125, 125, .76) !important;
- box-shadow:
- inset 0 0 14px rgba(255, 80, 80, .24),
- 0 0 16px rgba(255, 70, 70, .28) !important;
-}
-
-.b32-cell.enemy-attack-guide::after {
- content: 'ATK';
- position: absolute;
- left: 50%;
- top: 3px;
- transform: translateX(-50%);
- font-family: 'Cinzel', serif;
- font-size: 7px;
- letter-spacing: 1px;
- color: rgba(255, 190, 180, .96);
- pointer-events: none;
- text-shadow: 0 0 6px rgba(255,80,80,.88);
-}
-
-.b32-cell.enemy-attack-target {
- background:
- radial-gradient(circle at center, rgba(255, 235, 150, .34), transparent 58%),
- rgba(110, 50, 20, .30) !important;
- border-color: rgba(255, 220, 120, .86) !important;
- box-shadow:
- inset 0 0 14px rgba(255, 210, 100, .30),
- 0 0 18px rgba(255, 170, 80, .34) !important;
-}
-
-.b32-cell.enemy-attack-target::after {
- content: 'TARGET';
- position: absolute;
- left: 50%;
- top: 3px;
- transform: translateX(-50%);
- font-family: 'Cinzel', serif;
- font-size: 7px;
- letter-spacing: 1px;
- color: rgba(255, 235, 170, .98);
- pointer-events: none;
- text-shadow: 0 0 7px rgba(255,120,80,.92);
-}
-
 #b32-enemy-quick-info,
 .b32-enemy-quick-info {
  position: fixed;
- left: auto;
- top: auto;
- right: auto;
- bottom: auto;
- transform: none !important;
+ left: 50%;
+ top: calc(env(safe-area-inset-top, 0px) + 76px);
+ transform: translateX(-50%) !important;
  z-index: 3000000;
 
- width: min(320px, calc(100vw - 28px));
- padding: 9px 11px 10px;
- border-radius: 12px;
+ width: min(230px, 86vw);
+ padding: 8px 10px;
+ border-radius: 10px;
 
- background: rgba(10, 8, 16, .94);
+ background: rgba(10, 8, 16, .92);
  border: 1px solid rgba(220,120,120,.38);
- box-shadow: 0 0 18px rgba(180,40,40,.24), 0 10px 24px rgba(0,0,0,.46);
+ box-shadow: 0 0 18px rgba(180,40,40,.26), 0 10px 24px rgba(0,0,0,.45);
 
  color: #e8e4dc;
  font-family: "Noto Serif JP", serif;
- pointer-events: auto;
+ pointer-events: none;
 
  transform-style: flat;
  backface-visibility: hidden;
- transition: opacity .16s ease, left .12s ease, top .12s ease;
-}
-
-.b32-enemy-quick-info.is-guide-mode {
- width: min(300px, calc(100vw - 34px));
- padding: 7px 9px 8px;
- opacity: .92;
 }
 
 .b32-enemy-quick-title {
@@ -3406,35 +1615,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  color: #ffb0b0;
  text-align: center;
  margin-bottom: 4px;
- white-space: nowrap;
- overflow: hidden;
- text-overflow: ellipsis;
-}
-
-.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-title {
- font-size: 10px;
- margin-bottom: 2px;
- color: rgba(255,190,190,.82);
-}
-
-.b32-enemy-quick-mode-label {
- display: none;
- margin-bottom: 4px;
- text-align: center;
- font-size: 10px;
- letter-spacing: .12em;
- color: rgba(232,228,220,.78);
-}
-.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-mode-label {
- display: block;
-}
-.b32-enemy-quick-info.is-guide-mode.is-move .b32-enemy-quick-mode-label {
- color: rgba(185,225,255,.98);
- text-shadow: 0 0 8px rgba(80,160,255,.38);
-}
-.b32-enemy-quick-info.is-guide-mode.is-attack .b32-enemy-quick-mode-label {
- color: rgba(255,220,205,.98);
- text-shadow: 0 0 8px rgba(255,80,70,.38);
 }
 
 .b32-enemy-quick-row {
@@ -3450,107 +1630,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
 
 .b32-enemy-quick-row strong {
  color: #fff0d0;
-}
-
-.b32-enemy-quick-statline {
- display: flex;
- justify-content: space-between;
- gap: 8px;
- font-size: 10px;
- line-height: 1.45;
- color: rgba(232,228,220,.58);
-}
-
-.b32-enemy-quick-statline strong {
- color: #fff0d0;
-}
-
-.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-statline {
- display: none;
-}
-
-.b32-enemy-quick-actions {
- display: grid;
- grid-template-columns: 1fr 1fr auto;
- gap: 6px;
- margin-top: 8px;
-}
-
-.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-actions {
- margin-top: 4px;
-}
-
-.b32-enemy-quick-btn,
-.b32-enemy-quick-close {
- min-height: 28px;
- border-radius: 999px;
- border: 1px solid rgba(255,255,255,.14);
- background: rgba(255,255,255,.06);
- color: rgba(232,228,220,.88);
- font-family: "Noto Serif JP", serif;
- font-size: 11px;
- letter-spacing: .08em;
- cursor: pointer;
- pointer-events: auto;
- touch-action: manipulation;
- -webkit-tap-highlight-color: transparent;
-}
-
-.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-btn,
-.b32-enemy-quick-info.is-guide-mode .b32-enemy-quick-close {
- min-height: 26px;
- font-size: 10px;
-}
-
-.b32-enemy-quick-btn.active.move {
- border-color: rgba(120,190,255,.75);
- background: rgba(70,150,255,.20);
- color: rgba(185,225,255,.98);
- box-shadow: 0 0 12px rgba(80,160,255,.25);
-}
-
-.b32-enemy-quick-btn.active.attack {
- border-color: rgba(255,150,130,.76);
- background: rgba(255,80,70,.18);
- color: rgba(255,220,205,.98);
- box-shadow: 0 0 12px rgba(255,80,70,.25);
-}
-
-.b32-enemy-quick-close {
- width: 34px;
- padding: 0;
-}
-
-
-/* ── ロスター情報 閉じるボタン：タップ優先 ── */
-#battle32-root .b32-roster-info-panel {
- position: fixed !important;
- pointer-events: auto !important;
-}
-#battle32-root .b32-roster-info-close {
- position: absolute !important;
- top: 6px !important;
- right: 6px !important;
- z-index: 3000010 !important;
- pointer-events: auto !important;
- touch-action: manipulation !important;
- -webkit-tap-highlight-color: transparent;
- width: 28px !important;
- height: 28px !important;
- border-radius: 999px !important;
- border: 1px solid rgba(255,255,255,.22) !important;
- background: rgba(0,0,0,.68) !important;
- color: rgba(232,228,220,.96) !important;
- font-size: 18px !important;
- line-height: 1 !important;
- display: flex !important;
- align-items: center !important;
- justify-content: center !important;
- cursor: pointer !important;
-}
-#battle32-root .b32-roster-info-close:active {
- transform: scale(.92);
- background: rgba(255,255,255,.14) !important;
 }
 
 /* ── Battle右上メニュー ── */
@@ -3610,91 +1689,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
 .b32-battle-menu-item.danger {
  color: #ffb0b0;
  border-color: rgba(255,90,90,.22);
-}
-
-
-/* ============================================================
-   Enemy info guide clarity update
-   - 敵タップ可能表示の紫リングは非表示
-   - 移動範囲は青、攻撃範囲は赤、攻撃対象は橙で明確化
-   ============================================================ */
-.b32-cell.enemy-inspectable::after {
-  content: none !important;
-  display: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-.b32-cell.enemy-move-guide {
-  background:
-    linear-gradient(145deg, rgba(60,190,255,.46), rgba(10,80,135,.34)),
-    rgba(20,120,190,.30) !important;
-  border-color: rgba(70,205,255,.98) !important;
-  box-shadow:
-    inset 0 0 18px rgba(60,205,255,.42),
-    0 0 18px rgba(40,175,255,.48),
-    0 0 0 2px rgba(70,205,255,.52) !important;
-}
-.b32-cell.enemy-move-guide::after {
-  content: 'MOVE' !important;
-  position: absolute;
-  left: 50%;
-  top: 3px;
-  transform: translateX(-50%);
-  z-index: 8;
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  letter-spacing: 1px;
-  color: rgba(230,250,255,.98);
-  pointer-events: none;
-  text-shadow: 0 0 7px rgba(0,120,255,.95), 0 1px 2px rgba(0,0,0,.55);
-}
-.b32-cell.enemy-attack-guide {
-  background:
-    linear-gradient(145deg, rgba(255,90,80,.48), rgba(120,22,28,.36)),
-    rgba(180,42,45,.28) !important;
-  border-color: rgba(255,95,92,.98) !important;
-  box-shadow:
-    inset 0 0 18px rgba(255,70,70,.42),
-    0 0 18px rgba(255,50,50,.44),
-    0 0 0 2px rgba(255,90,90,.46) !important;
-}
-.b32-cell.enemy-attack-guide::after {
-  content: 'ATK' !important;
-  position: absolute;
-  left: 50%;
-  top: 3px;
-  transform: translateX(-50%);
-  z-index: 8;
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  letter-spacing: 1px;
-  color: rgba(255,245,240,.98);
-  pointer-events: none;
-  text-shadow: 0 0 7px rgba(255,30,30,.98), 0 1px 2px rgba(0,0,0,.55);
-}
-.b32-cell.enemy-attack-target {
-  background:
-    linear-gradient(145deg, rgba(255,200,72,.58), rgba(190,70,18,.38)),
-    rgba(240,130,28,.34) !important;
-  border-color: rgba(255,220,95,.98) !important;
-  box-shadow:
-    inset 0 0 20px rgba(255,210,80,.48),
-    0 0 20px rgba(255,140,40,.52),
-    0 0 0 2px rgba(255,210,90,.60) !important;
-}
-.b32-cell.enemy-attack-target::after {
-  content: 'TARGET' !important;
-  position: absolute;
-  left: 50%;
-  top: 3px;
-  transform: translateX(-50%);
-  z-index: 8;
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  letter-spacing: 1px;
-  color: rgba(70,30,0,.95);
-  pointer-events: none;
-  text-shadow: 0 0 6px rgba(255,255,200,.95), 0 1px 2px rgba(255,255,255,.55);
 }
 
  `;
@@ -4252,68 +2246,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  `;
  document.head.appendChild(menuStyle);
  }
-
- // ── 属性アイコン CSS ──
- if (!document.getElementById('b32-element-icon-style')) {
-   const elemStyle = document.createElement('style');
-   elemStyle.id = 'b32-element-icon-style';
-   elemStyle.textContent = `
-     /* 盤面ユニット上の属性アイコン */
-     .b32-element-icon {
-       position: absolute;
-       top: 2px;
-       right: 2px;
-       width: 18px;
-       height: 18px;
-       object-fit: contain;
-       z-index: 8;
-       border-radius: 50%;
-       filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
-       pointer-events: none;
-     }
-     .b32-cell .b32-element-icon {
-       width: clamp(14px, calc(var(--cell-size, 52px) * 0.32), 22px);
-       height: clamp(14px, calc(var(--cell-size, 52px) * 0.32), 22px);
-     }
-     .b32-unit.midboss .b32-element-icon,
-     .b32-unit.enemy-id-enemy_01 .b32-element-icon {
-       width: 22px;
-       height: 22px;
-     }
-
-     /* 味方カード（下部パネル）の属性アイコン */
-     .b32-party-img-wrap {
-       position: relative;
-     }
-     .b32-party-element-icon {
-       position: absolute;
-       top: 3px;
-       left: 4px;
-       width: 16px;
-       height: 16px;
-       object-fit: contain;
-       border-radius: 50%;
-       z-index: 8;
-       filter: drop-shadow(0 1px 2px rgba(0,0,0,.85));
-       pointer-events: none;
-     }
-
-     /* 敵情報ウィンドウの属性行 */
-     .b32-enemy-info-element {
-       display: inline-flex;
-       align-items: center;
-       gap: 6px;
-     }
-     .b32-info-element-icon {
-       width: 20px;
-       height: 20px;
-       object-fit: contain;
-       border-radius: 50%;
-       filter: drop-shadow(0 1px 2px rgba(0,0,0,.75));
-     }
-   `;
-   document.head.appendChild(elemStyle);
- }
  }
 
  // ============================================================
@@ -4346,53 +2278,6 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  <span id="b32-stage-id-right"></span>
  </div>
  </div>
-<div id="b32-blessing-inv-wrap" style="display:none">
-  <button id="b32-blessing-icon-btn" type="button" onclick="_b32ToggleBlessingInfo(event)" aria-label="加護情報を表示">
-    <span class="b32-blessing-icon-ring">
-      <img id="b32-blessing-icon-img" src="images/remnant_01_panel.webp" alt="オーバーシアの加護">
-    </span>
-  </button>
-</div>
-
-<div id="b32-blessing-info-overlay" aria-hidden="true" onclick="_b32CloseBlessingInfo(event)">
-  <section id="b32-blessing-info-panel" role="dialog" aria-modal="true" aria-label="加護情報" onclick="event.stopPropagation()">
-    <button id="b32-blessing-info-close" type="button" onclick="_b32CloseBlessingInfo()" aria-label="閉じる">×</button>
-    <div class="b32-blessing-info-head">
-      <span class="b32-blessing-info-portrait">
-        <img id="b32-blessing-info-img" src="images/remnant_01_panel.webp" alt="">
-      </span>
-      <div class="b32-blessing-info-titlebox">
-        <span class="b32-blessing-info-kicker">BLESSING</span>
-        <strong id="b32-blessing-info-name">オーバーシアの加護</strong>
-        <span id="b32-blessing-info-progress">INV 0 / 3</span>
-      </div>
-    </div>
-    <div class="b32-blessing-info-body">
-      <div class="b32-blessing-info-row">
-        <span class="b32-blessing-info-label">常時能力</span>
-        <p id="b32-blessing-info-passive">味方全員のcritical率 +10%</p>
-      </div>
-      <div class="b32-blessing-info-row">
-        <span class="b32-blessing-info-label">INV条件</span>
-        <p id="b32-blessing-info-condition">敵を合計で3体撃破</p>
-      </div>
-      <div class="b32-blessing-info-row">
-        <span class="b32-blessing-info-label">INV効果</span>
-        <p id="b32-blessing-info-effect">発動ターンのみ、味方全員のcritical率 +100%</p>
-      </div>
-    </div>
-    <button id="b32-blessing-inv-btn" type="button" onclick="_b32ActivateBlessingInv()">
-      <span class="b32-blessing-inv-kicker">INV</span>
-      <span class="b32-blessing-inv-name">万象観測</span>
-      <span class="b32-blessing-inv-action-state" id="b32-blessing-inv-action-state">0 / 3</span>
-    </button>
-  </section>
-</div>
-
- <div id="rl-hud" aria-label="Roguelite Stage Progress"></div>
-
- <!-- 上部メッセージバー：ステージ進捗の直下に表示 -->
- <div id="b32-bottom-guide"></div>
 
  <div id="b32-hint-bar"></div>
 
@@ -4418,11 +2303,14 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  <div id="b32-scroll">
  <div id="b32-board-wrap">
  <div id="b32-board"></div>
+ <div class="b32-zone-label" style="top:0">ENEMY</div>
+ <div class="b32-zone-label" style="bottom:0">ALLY</div>
  </div>
 
  <div id="b32-log-wrap"><div id="b32-log"></div></div>
 
  <div id="b32-bottom-area">
+ <div id="b32-bottom-guide"></div>
 
  <!-- パーティステータス：常時表示 -->
  <div id="b32-party-status"></div>
@@ -4453,6 +2341,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
       <span class="b32-bottom-action-icon">✦</span>
       <span class="b32-bottom-action-label">召喚</span>
     </span>
+    <span class="b32-bottom-action-cost">LINK <span id="b32-btn-summon-cost">-</span></span>
     <span class="b32-bottom-action-sub" id="b32-btn-summon-sub">待機選択</span>
   </button>
 
@@ -4469,6 +2358,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
       <span class="b32-bottom-action-icon">✦</span>
       <span class="b32-bottom-action-label">スキル</span>
     </span>
+    <span class="b32-bottom-action-cost">LINK <span id="b32-btn-skill-cost">2</span></span>
   </button>
 
   <button id="b32-btn-ult" class="b32-bottom-action ult" type="button" onclick="_b32OnActionUltTap()">
@@ -4476,6 +2366,7 @@ window._b32ResetEnemyInfoPanelPosition = function () {
       <span class="b32-bottom-action-icon">✧</span>
       <span class="b32-bottom-action-label">ULT</span>
     </span>
+    <span class="b32-bottom-action-cost">LINK <span id="b32-btn-ult-cost">3</span></span>
   </button>
 
   <button id="b32-btn-end-skill" class="b32-bottom-action end" type="button" onclick="_b32OnActionEndTap()">
@@ -4517,279 +2408,64 @@ window._b32ResetEnemyInfoPanelPosition = function () {
  window.b32UnlockInput = function () { _b32InputLocked = false; };
 
  let _centerTextTimer = null;
-let _centerTextTimer2 = null;
-let _centerTextRaf = null;
-let _centerTextSeq = 0;
+ let _centerTextTimer2 = null;
 
-window.showBattle32CenterText = function (main, sub, duration) {
-  const seq = ++_centerTextSeq;
+ window.showBattle32CenterText = function (main, sub, duration) {
+ // 既存タイマーを全クリア
+ if (_centerTextTimer) { clearTimeout(_centerTextTimer); _centerTextTimer = null; }
+ if (_centerTextTimer2) { clearTimeout(_centerTextTimer2); _centerTextTimer2 = null; }
 
-  // 既存タイマーを全クリア
-  if (_centerTextTimer) {
-    clearTimeout(_centerTextTimer);
-    _centerTextTimer = null;
-  }
+ // スタイルを確実に注入済みにする
+ if (!document.getElementById('b32-center-text-style')) injectStyle();
 
-  if (_centerTextTimer2) {
-    clearTimeout(_centerTextTimer2);
-    _centerTextTimer2 = null;
-  }
+ let el = document.getElementById('b32-center-text');
+ if (!el) {
+ el = document.createElement('div');
+ el.id = 'b32-center-text';
+ document.body.appendChild(el);
+ }
 
-  // iPhone Safari対策：前回のrequestAnimationFrameも必ずキャンセル
-  if (_centerTextRaf) {
-    cancelAnimationFrame(_centerTextRaf);
-    _centerTextRaf = null;
-  }
+ // クラスだけで状態を制御する（style.opacity 直接操作はしない）
+ el.classList.remove('b32ct-visible');
+ el.classList.add('b32ct-hidden');
 
-  // スタイルを確実に注入済みにする
-  if (!document.getElementById('b32-center-text-style')) injectStyle();
+ el.innerHTML = `
+ <div class="b32ct-main">${main}</div>
+ ${sub ? `<div class="b32ct-sub">${sub}</div>` : ''}
+ `;
 
-  let el = document.getElementById('b32-center-text');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'b32-center-text';
-    el.style.display = 'none';
-    el.style.visibility = 'hidden';
-    document.body.appendChild(el);
-  }
+ // レイアウト確定 → 次フレームで visible へ（transition が確実に走る）
+ void el.offsetWidth;
 
-  el.classList.remove('b32ct-visible');
-  el.classList.add('b32ct-hidden');
-  el.style.display = 'flex';
-  el.style.visibility = 'visible';
+ requestAnimationFrame(() => {
+ el.classList.remove('b32ct-hidden');
+ el.classList.add('b32ct-visible');
+ });
 
-  el.innerHTML = `
-    <div class="b32ct-main">${main}</div>
-    ${sub ? `<div class="b32ct-sub">${sub}</div>` : ''}
-  `;
+ // duration 後にフェードアウト開始
+ const exitDuration = 900; // CSSの transition 900ms に合わせる
+ _centerTextTimer = setTimeout(() => {
+ el.classList.remove('b32ct-visible');
+ el.classList.add('b32ct-hidden');
 
-  void el.offsetWidth;
+ _centerTextTimer2 = setTimeout(() => {
+ el.innerHTML = '';
+ el.classList.remove('b32ct-hidden');
+ _centerTextTimer2 = null;
+ }, exitDuration);
 
-  _centerTextRaf = requestAnimationFrame(() => {
-    // 古い表示命令なら無視
-    if (seq !== _centerTextSeq) return;
+ _centerTextTimer = null;
+ }, duration || 1200);
+ };
 
-    el.classList.remove('b32ct-hidden');
-    el.classList.add('b32ct-visible');
-    _centerTextRaf = null;
-  });
-
-  // CSSのtransitionが220msなので、少し余裕を見て300ms
-  const exitDuration = 300;
-
-  _centerTextTimer = setTimeout(() => {
-    if (seq !== _centerTextSeq) return;
-
-    el.classList.remove('b32ct-visible');
-    el.classList.add('b32ct-hidden');
-
-    _centerTextTimer2 = setTimeout(() => {
-      if (seq !== _centerTextSeq) return;
-
-      el.innerHTML = '';
-      el.classList.remove('b32ct-visible', 'b32ct-hidden', 'b32ct-turn-danger');
-      el.style.display = 'none';
-      el.style.visibility = 'hidden';
-      _centerTextTimer2 = null;
-    }, exitDuration);
-
-    _centerTextTimer = null;
-  }, duration || 1200);
-};
-
-window.showBattle32CenterTextAsync = function (main, sub, duration) {
-  return new Promise(resolve => {
-    window.showBattle32CenterText(main, sub, duration);
-
-    // duration + exitDuration + 余裕
-    setTimeout(resolve, (duration || 1200) + 350);
-  });
-};
-
-
-// ============================================================
-// 攻撃・コンボ演出中の下部キャラパネル表示制御
-// 複数演出が連続・重複しても途中で再表示されないよう参照カウントで管理する。
-// ============================================================
-let _b32CinematicRosterHideCount = 0;
-let _b32CinematicRosterRestoreTimer = null;
-
-function _setBattle32CinematicRosterHidden(hidden) {
-  if (_b32CinematicRosterRestoreTimer) {
-    clearTimeout(_b32CinematicRosterRestoreTimer);
-    _b32CinematicRosterRestoreTimer = null;
-  }
-
-  if (hidden) {
-    _b32CinematicRosterHideCount += 1;
-
-    // 攻撃・ULT・COMBO演出開始時は、キャラ情報ウインドウも完全に閉じる。
-    // 一時的に隠すだけでは演出終了後に再表示されるため、選択状態も解除する。
-    _selectedRosterId = null;
-    _rosterInfoPage = 0;
-
-    document
-      .querySelectorAll('#battle32-root .b32-roster-info-panel')
-      .forEach(el => el.remove());
-
-    const rosterInfoHitbox = document.getElementById('b32-roster-info-close-hitbox');
-    if (rosterInfoHitbox) rosterInfoHitbox.remove();
-
-    _closeSkillDetailLayers();
-    document.body.classList.add('b32-cinematic-roster-hidden');
-    return;
-  }
-
-  _b32CinematicRosterHideCount = Math.max(0, _b32CinematicRosterHideCount - 1);
-  if (_b32CinematicRosterHideCount > 0) return;
-
-  // COMBO表示終了直後に攻撃アップ演出が始まる場合の一瞬の再表示を防ぐ。
-  _b32CinematicRosterRestoreTimer = setTimeout(() => {
-    if (_b32CinematicRosterHideCount === 0) {
-      document.body.classList.remove('b32-cinematic-roster-hidden');
-    }
-    _b32CinematicRosterRestoreTimer = null;
-  }, 140);
-}
-
-// ============================================================
-// COMBO専用中央演出
-// 通常中央テキストとはDOM・タイマーを分離し、TURN/PHASE表示との競合を防ぐ。
-// ============================================================
-let _comboTextTimer = null;
-let _comboTextTimer2 = null;
-let _comboTextRaf = null;
-let _comboTextSeq = 0;
-
-function _ensureBattle32ComboTextStyle() {
-  if (document.getElementById('b32-combo-text-style')) return;
-
-  const style = document.createElement('style');
-  style.id = 'b32-combo-text-style';
-  style.textContent = `
-    html body #b32-combo-text {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 5100000 !important;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      pointer-events: none !important;
-      opacity: 0;
-      visibility: hidden;
-      transform: translate3d(0, 10px, 0) scale(.92);
-      transition:
-        opacity 180ms ease,
-        transform 260ms cubic-bezier(.16, 1, .3, 1),
-        visibility 0s linear 280ms;
-      isolation: isolate;
-    }
-    html body #b32-combo-text.b32combo-visible {
-      opacity: 1 !important;
-      visibility: visible !important;
-      transform: translate3d(0, 0, 0) scale(1) !important;
-      transition-delay: 0s;
-    }
-    html body #b32-combo-text::before {
-      content: '';
-      position: absolute;
-      inset: 24% 0;
-      background: radial-gradient(ellipse at center,
-        rgba(245, 218, 126, .22) 0%,
-        rgba(35, 24, 8, .56) 38%,
-        transparent 76%);
-      pointer-events: none;
-    }
-    html body #b32-combo-text .b32combo-main,
-    html body #b32-combo-text .b32combo-sub {
-      position: relative;
-      z-index: 1;
-      white-space: nowrap;
-    }
-    html body #b32-combo-text .b32combo-main {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(32px, 9vw, 58px);
-      font-weight: 800;
-      letter-spacing: 7px;
-      color: #fff1a8;
-      text-shadow:
-        0 0 7px rgba(255,255,255,.9),
-        0 0 20px rgba(255,214,80,.95),
-        0 0 52px rgba(255,145,20,.72),
-        0 3px 5px rgba(0,0,0,1);
-    }
-    html body #b32-combo-text .b32combo-sub {
-      font-family: 'Noto Serif JP', serif;
-      font-size: clamp(12px, 3.4vw, 18px);
-      font-weight: 700;
-      letter-spacing: 3px;
-      color: rgba(255,248,220,.94);
-      text-shadow: 0 0 12px rgba(255,190,70,.75), 0 2px 4px rgba(0,0,0,1);
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-window.showBattle32ComboTextAsync = function (main, sub, duration) {
-  _setBattle32CinematicRosterHidden(true);
-  const showDuration = Number(duration || 620);
-  const seq = ++_comboTextSeq;
-
-  if (_comboTextTimer) clearTimeout(_comboTextTimer);
-  if (_comboTextTimer2) clearTimeout(_comboTextTimer2);
-  if (_comboTextRaf) cancelAnimationFrame(_comboTextRaf);
-  _comboTextTimer = null;
-  _comboTextTimer2 = null;
-  _comboTextRaf = null;
-
-  _ensureBattle32ComboTextStyle();
-
-  let el = document.getElementById('b32-combo-text');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'b32-combo-text';
-    document.body.appendChild(el);
-  }
-
-  el.classList.remove('b32combo-visible');
-  el.innerHTML = `
-    <div class="b32combo-main">${main}</div>
-    ${sub ? `<div class="b32combo-sub">${sub}</div>` : ''}
-  `;
-
-  // 2フレームに分け、iOS Safariでも初期状態から確実に遷移させる。
-  return new Promise(resolve => {
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      _setBattle32CinematicRosterHidden(false);
-      resolve();
-    };
-
-    _comboTextRaf = requestAnimationFrame(() => {
-      _comboTextRaf = requestAnimationFrame(() => {
-        if (seq !== _comboTextSeq) return finish();
-        el.classList.add('b32combo-visible');
-        _comboTextRaf = null;
-
-        _comboTextTimer = setTimeout(() => {
-          if (seq !== _comboTextSeq) return finish();
-          el.classList.remove('b32combo-visible');
-          _comboTextTimer = null;
-
-          _comboTextTimer2 = setTimeout(() => {
-            if (seq === _comboTextSeq) el.innerHTML = '';
-            _comboTextTimer2 = null;
-            finish();
-          }, 300);
-        }, showDuration);
-      });
-    });
-  });
-};
+ // await 可能バージョン：テキストが完全に消えるまで Promise を返す
+ window.showBattle32CenterTextAsync = function (main, sub, duration) {
+ return new Promise(resolve => {
+ window.showBattle32CenterText(main, sub, duration);
+ // duration(表示) + exitDuration(900ms) + 50ms余裕
+ setTimeout(resolve, (duration || 1200) + 950);
+ });
+ };
 
  // ============================================================
  // ダメージ・回復 演出
@@ -4827,25 +2503,13 @@ window.showBattle32ComboTextAsync = function (main, sub, duration) {
 
  // ── 味方：HP増減は必ず下部パネル側に表示 ──
 
- // 1) 3人パーティカード（通常バトル）
+ // 1) 3人パーティカード
  const card = document.querySelector(`.b32-party-card[data-uid="${unitInfo._uid}"]`);
  const cardRect = _validRect(card);
  if (cardRect) {
  return {
  x: cardRect.left + cardRect.width * 0.5,
  y: cardRect.top + cardRect.height * 0.22,
- };
- }
-
- // 1.5) ローグライト用ロスターカード
- // ローグライトでは #b32-party-status を描画せず、#b32-roster-panel 側がキャラパネルになるため、
- // deployedUid と一致するロスターカードを優先してダメージ/回復数値の表示先にする。
- const rosterCard = document.querySelector(`.b32-roster-card[data-deployed-uid="${unitInfo._uid}"]`);
- const rosterRect = _validRect(rosterCard);
- if (rosterRect) {
- return {
- x: rosterRect.left + rosterRect.width * 0.5,
- y: rosterRect.top + rosterRect.height * 0.18,
  };
  }
 
@@ -4895,63 +2559,22 @@ window.showBattle32ComboTextAsync = function (main, sub, duration) {
 }
 
  // フロートナンバーを表示
- // フロートナンバーを表示
-function _showFloatNumber(unitInfo, amount, kind, isUlt, elementMatch, offset, isCritical) {
+ function _showFloatNumber(unitInfo, amount, kind, isUlt) {
  const pos = _getUnitScreenPos(unitInfo);
  if (!pos) return;
-
- const ox = offset && Number.isFinite(Number(offset.x)) ? Number(offset.x) : 0;
- const oy = offset && Number.isFinite(Number(offset.y)) ? Number(offset.y) : 0;
 
  const el = document.createElement('div');
  const sign = kind === 'heal' ? '+' : '-';
  const isBoss = unitInfo.side === 'enemy' && amount > 500;
  const ultCls = isUlt ? ' ult' : '';
- const criticalCls = (kind === 'damage' && isCritical) ? ' critical' : '';
-
- // 属性相性クラス
- let elementCls = '';
- if (kind === 'damage') {
-   if (elementMatch === '有利') elementCls = ' weak';
-   if (elementMatch === '不利') elementCls = ' resist';
- }
-
- el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}${elementCls}${criticalCls}`;
+ el.className = `b32-float-number ${kind}${isBoss ? ' boss' : ''}${ultCls}`;
  el.textContent = `${sign}${amount}`;
- el.style.left = `${pos.x + ox}px`;
- el.style.top = `${pos.y + oy}px`;
-
- document.body.appendChild(el);
-
- setTimeout(() => {
-   if (el.parentNode) el.parentNode.removeChild(el);
- }, 1000);
-}
-
-// 属性相性テキストを表示
-function _showElementMatchText(unitInfo, elementMatch) {
- if (!elementMatch) return;
-
- const isWeak = elementMatch === '有利';
- const isResist = elementMatch === '不利';
- if (!isWeak && !isResist) return;
-
- const pos = _getUnitScreenPos(unitInfo);
- if (!pos) return;
-
- const el = document.createElement('div');
- el.className = `b32-element-match-text ${isWeak ? 'weak' : 'resist'}`;
- el.textContent = isWeak ? 'WEAK!' : 'RESIST';
-
  el.style.left = `${pos.x}px`;
- el.style.top = `${pos.y - 20}px`;
-
+ el.style.top = `${pos.y}px`;
  document.body.appendChild(el);
 
- setTimeout(() => {
-   if (el.parentNode) el.parentNode.removeChild(el);
- }, 760);
-}
+ setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
+ }
 
  function _showSkillNameBurst(skillName, charImg) {
  if (!skillName) return Promise.resolve();
@@ -4991,931 +2614,9 @@ function _showElementMatchText(unitInfo, elementMatch) {
  });
 }
 
-
-// ============================================================
-// 攻撃アップ演出：味方と敵を大きく見せてからヒットさせる
-// damage イベント後に表示するため、HP計算は Battle32 側で完了済み。
-// ============================================================
-let _b32AttackCinematicBusy = false;
-let _b32AttackCinematicLastKey = '';
-let _b32AttackCinematicLastAt = 0;
-
-// 同一スキルで複数体へ同時ヒットした damage イベントを、
-// アップ演出上は1つの「複数対象攻撃」として束ねる。
-let _b32PendingAttackCinematic = null;
-let _b32PendingAttackCinematicTimer = null;
-
-// コンボ連鎖用：damageイベントから起動する攻撃アップ演出が
-// 完全に終了するまで待つ。これにより次のCOMBO表示・攻撃演出と重ならない。
-window.waitForBattle32AttackCinematicIdle = function (timeoutMs) {
-  const timeout = Math.max(500, Number(timeoutMs || 6000));
-  const startedAt = Date.now();
-
-  return new Promise(resolve => {
-    const poll = () => {
-      const pending = !!_b32PendingAttackCinematic || !!_b32PendingAttackCinematicTimer;
-      const overlay = !!document.getElementById('b32-attack-cinematic');
-      const busy = !!_b32AttackCinematicBusy || pending || overlay;
-
-      if (!busy || Date.now() - startedAt >= timeout) {
-        resolve();
-        return;
-      }
-      setTimeout(poll, 40);
-    };
-
-    // damageイベントの45ms集約タイマーが登録される猶予を確保する。
-    setTimeout(poll, 60);
-  });
-};
-
-function _injectAttackCinematicStyle() {
- if (document.getElementById('b32-attack-cinematic-style')) return;
- const s = document.createElement('style');
- s.id = 'b32-attack-cinematic-style';
- s.textContent = `
-#b32-attack-cinematic {
-  position: fixed;
-  inset: 0;
-  z-index: 999999;
-  pointer-events: none;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 62% 34%, rgba(255,255,255,.18), transparent 30%),
-    radial-gradient(circle at 30% 62%, rgba(120,190,255,.10), transparent 34%),
-    linear-gradient(180deg, rgba(8,6,18,.42), rgba(0,0,0,.74));
-  backdrop-filter: blur(6px) saturate(1.10);
-  -webkit-backdrop-filter: blur(6px) saturate(1.10);
-  opacity: 0;
-  animation: b32CineInOut 1120ms ease forwards;
-}
-#b32-attack-cinematic::before {
-  content: '';
-  position: absolute;
-  left: -10%;
-  right: -10%;
-  top: 48%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255,235,190,.92), rgba(255,255,255,.96), rgba(255,235,190,.92), transparent);
-  box-shadow: 0 0 24px rgba(255,235,190,.72), 0 0 54px rgba(255,255,255,.38);
-  transform: rotate(-18deg) scaleX(0);
-  transform-origin: 36% 50%;
-  animation: b32CineLine 1120ms ease forwards;
-}
-#b32-attack-cinematic::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: clamp(126px, 22vh, 210px);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
-  opacity: .65;
-}
-.b32-cine-unit {
-  position: absolute;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  filter: drop-shadow(0 18px 26px rgba(0,0,0,.72));
-}
-.b32-cine-unit img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  image-rendering: auto;
-  /* characters.js の uiScale.battleUp を攻撃中アップ画像へ反映 */
-  transform: scale(var(--b32-cine-scale, 1)) !important;
-  transform-origin: center bottom;
-}
-.b32-cine-ally {
-  left: max(10px, 7vw);
-  bottom: clamp(132px, 24vh, 220px);
-  width: min(44vw, 270px);
-  height: min(48vh, 390px);
-  transform: translate(-28px, 18px) scale(.92);
-  z-index: 2;
-  animation: b32CineAlly 1120ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-.b32-cine-enemy {
-  right: max(10px, 8vw);
-  top: clamp(50px, 10vh, 92px);
-  width: min(42vw, 250px);
-  height: min(44vh, 360px);
-  transform: translate(28px, -14px) scale(.92);
-  z-index: 1;
-  animation: b32CineEnemy 1120ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-.b32-cine-impact {
-  position: absolute;
-  left: 63%;
-  top: 38%;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.95);
-  box-shadow: 0 0 20px rgba(255,255,255,.95), 0 0 80px rgba(255,210,120,.72);
-  transform: translate(-50%, -50%) scale(.1);
-  opacity: 0;
-  animation: b32CineImpact 1120ms ease forwards;
-}
-.b32-cine-damage {
-  position: absolute;
-  left: 63%;
-  top: 31%;
-  transform: translate(-50%, -50%) scale(.72);
-  color: #fff2d2;
-  font-family: "Cinzel", "Noto Serif JP", serif;
-  font-weight: 900;
-  font-size: clamp(30px, 10vw, 64px);
-  letter-spacing: .04em;
-  text-shadow:
-    0 0 8px rgba(255,255,255,.95),
-    0 0 24px rgba(255,210,110,.92),
-    0 4px 16px rgba(0,0,0,1);
-  opacity: 0;
-  animation: b32CineDamage 1120ms ease forwards;
-}
-.b32-cine-damage.critical {
-  color: #fff6b6;
-  font-size: clamp(38px, 12vw, 76px);
-  text-shadow:
-    0 0 10px rgba(255,255,255,1),
-    0 0 28px rgba(255,220,80,.98),
-    0 0 58px rgba(255,116,38,.78),
-    0 5px 18px rgba(0,0,0,1);
-}
-.b32-cine-critical-label {
-  position: absolute;
-  left: 63%;
-  top: 20%;
-  transform: translate(-50%, -50%) scale(.7);
-  color: #fff0a8;
-  font-family: "Cinzel", "Noto Serif JP", serif;
-  font-weight: 900;
-  font-size: clamp(18px, 5.8vw, 38px);
-  letter-spacing: .15em;
-  text-shadow:
-    0 0 8px rgba(255,255,255,.95),
-    0 0 24px rgba(255,220,80,.92),
-    0 3px 12px rgba(0,0,0,1);
-  opacity: 0;
-  animation: b32CineCritical 1120ms ease forwards;
-  pointer-events: none;
-}
-.b32-cine-rapid-hit.critical {
-  color: #fff5af;
-  font-size: clamp(21px, 6vw, 40px);
-  text-shadow:
-    0 0 8px rgba(255,255,255,.95),
-    0 0 22px rgba(255,220,80,.92),
-    0 3px 10px rgba(0,0,0,1);
-}
-.b32-cine-rapid-hit.critical::before {
-  content: 'CRIT';
-  position: absolute;
-  left: 50%;
-  top: -12px;
-  transform: translateX(-50%);
-  font-family: "Cinzel", "Noto Serif JP", serif;
-  font-size: 9px;
-  letter-spacing: .12em;
-  color: #fff0a8;
-}
-@keyframes b32CineCritical {
-  0%, 14% { opacity: 0; transform: translate(-50%, -50%) scale(.55); filter: blur(2px); }
-  28% { opacity: 1; transform: translate(-50%, -50%) scale(1.14); filter: blur(0); }
-  52% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -58%) scale(.94); }
-}
-.b32-cine-skill {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(96px, 18vh, 168px);
-  transform: translateX(-50%);
-  padding: 7px 14px;
-  border: 1px solid rgba(232,200,122,.42);
-  border-radius: 999px;
-  background: rgba(9,7,18,.62);
-  color: rgba(255,245,215,.92);
-  font-family: "Noto Serif JP", serif;
-  font-weight: 800;
-  font-size: clamp(12px, 3.3vw, 16px);
-  letter-spacing: .12em;
-  white-space: nowrap;
-  opacity: 0;
-  animation: b32CineSkill 1120ms ease forwards;
-}
-@keyframes b32CineInOut {
-  0% { opacity: 0; }
-  10%, 82% { opacity: 1; }
-  100% { opacity: 0; }
-}
-@keyframes b32CineLine {
-  0%, 28% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
-  44% { transform: rotate(-18deg) scaleX(1); opacity: 1; }
-  70%, 100% { transform: rotate(-18deg) scaleX(1.08); opacity: 0; }
-}
-@keyframes b32CineAlly {
-  0% { opacity: 0; transform: translate(-42px, 28px) scale(.86); }
-  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
-  38% { transform: translate(18px, -18px) scale(1.04); }
-  50% { transform: translate(42px, -40px) scale(1.10); filter: drop-shadow(0 0 26px rgba(255,235,180,.72)); }
-  78% { opacity: 1; transform: translate(28px, -26px) scale(1.03); }
-  100% { opacity: 0; transform: translate(28px, -26px) scale(1); }
-}
-@keyframes b32CineEnemy {
-  0% { opacity: 0; transform: translate(42px, -28px) scale(.86); }
-  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
-  42% { transform: translate(-8px, 6px) scale(1.02); }
-  50% { transform: translate(-26px, 18px) scale(1.05) rotate(-1.5deg); filter: drop-shadow(0 0 28px rgba(255,255,255,.66)); }
-  78% { opacity: 1; transform: translate(-16px, 12px) scale(1.02); }
-  100% { opacity: 0; transform: translate(-16px, 12px) scale(1); }
-}
-@keyframes b32CineImpact {
-  0%, 40% { opacity: 0; transform: translate(-50%, -50%) scale(.1); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(5.8); }
-  72%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(9); }
-}
-@keyframes b32CineDamage {
-  0%, 48% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
-  56% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
-  80% { opacity: 1; transform: translate(-50%, -64%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -86%) scale(.96); }
-}
-@keyframes b32CineSkill {
-  0%, 8% { opacity: 0; transform: translate(-50%, 8px); }
-  22%, 78% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -8px); }
-}
-
-/* ── 複数対象攻撃：敵を複数並べ、各対象に着弾・ダメージを出す ── */
-#b32-attack-cinematic.multi-target::before {
-  height: 3px;
-  transform-origin: 34% 50%;
-  box-shadow:
-    0 0 30px rgba(255,235,190,.88),
-    0 0 84px rgba(255,255,255,.46);
-}
-#b32-attack-cinematic.multi-target .b32-cine-enemy.b32-cine-target {
-  right: auto;
-  top: auto;
-  left: var(--cx);
-  top: var(--cy);
-  width: min(30vw, 176px);
-  height: min(34vh, 286px);
-  transform: translate(-50%, 0) scale(.86);
-  z-index: calc(3 + var(--ti));
-  animation: b32CineEnemyMulti 1120ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-#b32-attack-cinematic.multi-target .b32-cine-enemy.b32-cine-target img {
-  filter: drop-shadow(0 15px 22px rgba(0,0,0,.72));
-}
-#b32-attack-cinematic.multi-target .b32-cine-impact-multi {
-  left: var(--mx);
-  top: var(--my);
-}
-#b32-attack-cinematic.multi-target .b32-cine-damage-multi {
-  left: var(--mx);
-  top: calc(var(--my) - 7%);
-  font-size: clamp(24px, 7.2vw, 48px);
-}
-#b32-attack-cinematic.multi-target .b32-cine-damage-multi.critical {
-  font-size: clamp(30px, 8.4vw, 58px);
-}
-.b32-cine-mini-break {
-  position: absolute;
-  left: 50%;
-  top: 92%;
-  transform: translateX(-50%);
-  display: block;
-  color: #fff;
-  font-family: "Cinzel", "Noto Serif JP", serif;
-  font-size: clamp(11px, 3.2vw, 18px);
-  font-weight: 900;
-  letter-spacing: .13em;
-  text-shadow:
-    0 0 8px rgba(255,255,255,.96),
-    0 0 22px rgba(255,70,90,.92),
-    0 3px 10px rgba(0,0,0,1);
-}
-#b32-attack-cinematic.multi-target .b32-cine-critical-label {
-  left: 50%;
-  top: 15%;
-}
-@keyframes b32CineEnemyMulti {
-  0% { opacity: 0; transform: translate(-38%, -16px) scale(.78); }
-  16% { opacity: 1; transform: translate(-50%, 0) scale(.88); }
-  42% { transform: translate(calc(-50% - 8px), 6px) scale(.94); }
-  50% { transform: translate(calc(-50% - 22px), 18px) scale(.98) rotate(-1.5deg); filter: drop-shadow(0 0 26px rgba(255,255,255,.66)); }
-  78% { opacity: 1; transform: translate(calc(-50% - 14px), 12px) scale(.94); }
-  100% { opacity: 0; transform: translate(calc(-50% - 14px), 12px) scale(.92); }
-}
-
-/* ── 敵→味方 攻撃時：配置は同じ（敵★右上 / 味方☆左下）、動きと着弾位置だけ反転 ── */
-#b32-attack-cinematic.enemy-attack::before {
-  transform-origin: 64% 50%;
-  animation-name: b32CineLineEnemy;
-}
-#b32-attack-cinematic.enemy-attack .b32-cine-enemy {
-  z-index: 2;
-  animation: b32CineEnemyAttack 1120ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-#b32-attack-cinematic.enemy-attack .b32-cine-ally {
-  z-index: 1;
-  animation: b32CineAllyHit 1120ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-#b32-attack-cinematic.enemy-attack .b32-cine-impact {
-  left: 35%;
-  top: 62%;
-  box-shadow: 0 0 20px rgba(255,255,255,.95), 0 0 80px rgba(255,70,90,.62);
-}
-#b32-attack-cinematic.enemy-attack .b32-cine-damage {
-  left: 35%;
-  top: 53%;
-  color: #ffd8d8;
-  text-shadow:
-    0 0 8px rgba(255,255,255,.95),
-    0 0 24px rgba(255,80,95,.92),
-    0 4px 16px rgba(0,0,0,1);
-}
-#b32-attack-cinematic.enemy-attack .b32-cine-skill {
-  border-color: rgba(255,120,130,.38);
-  color: rgba(255,225,225,.94);
-}
-
-
-/* ── 致死ダメージ時：BREAK → 対象がゆっくり消えるフィニッシュ演出 ── */
-#b32-attack-cinematic.fatal-break {
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,.26), transparent 28%),
-    radial-gradient(circle at 63% 34%, rgba(255,80,90,.18), transparent 32%),
-    radial-gradient(circle at 30% 62%, rgba(120,190,255,.10), transparent 34%),
-    linear-gradient(180deg, rgba(12,6,18,.54), rgba(0,0,0,.84));
-  animation: b32CineFatalInOut 1880ms ease forwards;
-}
-#b32-attack-cinematic.fatal-break::before {
-  height: 3px;
-  box-shadow:
-    0 0 34px rgba(255,255,255,.90),
-    0 0 86px rgba(255,80,95,.70),
-    0 0 120px rgba(255,225,170,.35);
-  animation: b32CineFatalLine 1880ms ease forwards;
-}
-#b32-attack-cinematic.fatal-break .b32-cine-impact {
-  box-shadow:
-    0 0 26px rgba(255,255,255,.98),
-    0 0 96px rgba(255,80,95,.82),
-    0 0 150px rgba(255,220,140,.50);
-  animation: b32CineFatalImpact 1880ms ease forwards;
-}
-#b32-attack-cinematic.fatal-break .b32-cine-damage {
-  color: #fff7e8;
-  text-shadow:
-    0 0 10px rgba(255,255,255,1),
-    0 0 30px rgba(255,90,100,.98),
-    0 0 62px rgba(255,220,130,.72),
-    0 4px 18px rgba(0,0,0,1);
-  animation: b32CineFatalDamage 1880ms ease forwards;
-}
-.b32-cine-break-label {
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  transform: translate(-50%, -50%) scale(.72);
-  color: rgba(255,255,255,.98);
-  font-family: "Cinzel", "Noto Serif JP", serif;
-  font-weight: 900;
-  font-size: clamp(42px, 14vw, 92px);
-  letter-spacing: .12em;
-  text-shadow:
-    0 0 10px rgba(255,255,255,.98),
-    0 0 34px rgba(255,70,90,.98),
-    0 0 76px rgba(255,220,130,.72),
-    0 5px 18px rgba(0,0,0,1);
-  opacity: 0;
-  z-index: 8;
-  animation: b32CineBreakLabel 1880ms ease forwards;
-}
-.b32-cine-break-sub {
-  position: absolute;
-  left: 50%;
-  top: calc(42% + clamp(42px, 10vw, 72px));
-  transform: translate(-50%, -50%);
-  padding: 5px 12px;
-  border: 1px solid rgba(255,210,210,.42);
-  border-radius: 999px;
-  background: rgba(20,4,10,.48);
-  color: rgba(255,225,225,.92);
-  font-family: "Noto Serif JP", serif;
-  font-size: clamp(11px, 3.2vw, 15px);
-  font-weight: 800;
-  letter-spacing: .18em;
-  opacity: 0;
-  z-index: 8;
-  animation: b32CineBreakSub 1880ms ease forwards;
-}
-.b32-cine-break-particle {
-  position: absolute;
-  left: var(--px, 60%);
-  top: var(--py, 35%);
-  width: var(--ps, 6px);
-  height: var(--ps, 6px);
-  border-radius: 999px;
-  background: rgba(255,245,220,.96);
-  box-shadow: 0 0 12px rgba(255,255,255,.95), 0 0 28px rgba(255,80,95,.72);
-  opacity: 0;
-  z-index: 7;
-  animation: b32CineBreakParticle 1880ms ease-out forwards;
-  animation-delay: var(--pd, 0ms);
-}
-#b32-attack-cinematic.target-enemy-broken .b32-cine-enemy img,
-#b32-attack-cinematic.target-ally-broken .b32-cine-ally img {
-  animation: b32CineTargetDissolve 1880ms ease forwards;
-}
-#b32-attack-cinematic.target-enemy-broken .b32-cine-enemy::after,
-#b32-attack-cinematic.target-ally-broken .b32-cine-ally::after {
-  content: '';
-  position: absolute;
-  inset: 8% 10%;
-  background:
-    linear-gradient(120deg, transparent 0 42%, rgba(255,255,255,.88) 49%, transparent 56% 100%),
-    radial-gradient(circle at 50% 50%, rgba(255,90,100,.42), transparent 58%);
-  mix-blend-mode: screen;
-  opacity: 0;
-  filter: blur(.4px);
-  animation: b32CineTargetCrack 1880ms ease forwards;
-}
-#b32-attack-cinematic.rapid-multi.fatal-break {
-  animation: b32CineFatalRapidInOut 3340ms ease forwards;
-}
-#b32-attack-cinematic.rapid-multi.fatal-break::before {
-  animation: b32CineFatalRapidLine 3340ms ease forwards;
-}
-#b32-attack-cinematic.rapid-multi.fatal-break .b32-cine-break-label,
-#b32-attack-cinematic.rapid-multi.fatal-break .b32-cine-break-sub {
-  animation-duration: 3340ms;
-}
-#b32-attack-cinematic.rapid-multi.target-enemy-broken .b32-cine-enemy img,
-#b32-attack-cinematic.rapid-multi.target-ally-broken .b32-cine-ally img,
-#b32-attack-cinematic.rapid-multi.target-enemy-broken .b32-cine-enemy::after,
-#b32-attack-cinematic.rapid-multi.target-ally-broken .b32-cine-ally::after {
-  animation-duration: 3340ms;
-}
-@keyframes b32CineFatalInOut { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes b32CineFatalLine {
-  0%, 24% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
-  40% { transform: rotate(-18deg) scaleX(1.12); opacity: 1; }
-  58% { transform: rotate(-18deg) scaleX(1.25); opacity: .55; }
-  100% { transform: rotate(-18deg) scaleX(1.35); opacity: 0; }
-}
-@keyframes b32CineFatalImpact {
-  0%, 36% { opacity: 0; transform: translate(-50%, -50%) scale(.1); }
-  48% { opacity: 1; transform: translate(-50%, -50%) scale(7.2); }
-  68%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(12); }
-}
-@keyframes b32CineFatalDamage {
-  0%, 42% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
-  64% { opacity: .78; transform: translate(-50%, -64%) scale(1.02); }
-  86%, 100% { opacity: 0; transform: translate(-50%, -102%) scale(.86); }
-}
-@keyframes b32CineBreakLabel {
-  0%, 48% { opacity: 0; transform: translate(-50%, -50%) scale(.62); letter-spacing: .24em; }
-  56% { opacity: 1; transform: translate(-50%, -50%) scale(1.10); letter-spacing: .12em; }
-  72% { opacity: .96; transform: translate(-50%, -50%) scale(1); }
-  92%, 100% { opacity: 0; transform: translate(-50%, -54%) scale(1.08); }
-}
-@keyframes b32CineBreakSub {
-  0%, 56% { opacity: 0; transform: translate(-50%, -44%) scale(.9); }
-  66%, 84% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -68%) scale(.96); }
-}
-@keyframes b32CineBreakParticle {
-  0%, 48% { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
-  56% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, -80px))) scale(.15); }
-}
-@keyframes b32CineTargetDissolve {
-  0%, 46% { opacity: 1; filter: brightness(1) saturate(1) drop-shadow(0 18px 26px rgba(0,0,0,.72)); transform: translateY(0) scale(1); }
-  56% { opacity: 1; filter: brightness(2.2) saturate(0.8) drop-shadow(0 0 34px rgba(255,255,255,.92)); transform: translateY(-2px) scale(1.03); }
-  76% { opacity: .58; filter: brightness(1.55) grayscale(.45) blur(.4px) drop-shadow(0 0 28px rgba(255,100,120,.72)); transform: translateY(-14px) scale(.98); }
-  100% { opacity: 0; filter: brightness(2.4) grayscale(1) blur(3px) drop-shadow(0 0 42px rgba(255,255,255,.80)); transform: translateY(-44px) scale(.86); }
-}
-@keyframes b32CineTargetCrack {
-  0%, 43% { opacity: 0; transform: scale(.86) rotate(-4deg); }
-  54% { opacity: .95; transform: scale(1.04) rotate(-4deg); }
-  76% { opacity: .36; transform: scale(1.10) rotate(-4deg); }
-  100% { opacity: 0; transform: scale(1.20) rotate(-4deg); }
-}
-@keyframes b32CineFatalRapidInOut { 0% { opacity: 0; } 6%, 92% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes b32CineFatalRapidLine {
-  0%, 8% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
-  16%, 58% { transform: rotate(-18deg) scaleX(1.04); opacity: .82; }
-  72% { transform: rotate(-18deg) scaleX(1.24); opacity: .72; }
-  100% { transform: rotate(-18deg) scaleX(1.36); opacity: 0; }
-}
-
-/* ── アルノなどの高速多段用：アップ中の敵画像上部に0.4秒ごとにばらけて着弾 ── */
-#b32-attack-cinematic.rapid-multi {
-  animation: b32CineInOutRapid 2600ms ease forwards;
-}
-#b32-attack-cinematic.rapid-multi::before {
-  animation: b32CineRapidLine 2600ms ease forwards;
-}
-#b32-attack-cinematic.rapid-multi .b32-cine-ally {
-  animation: b32CineAllyRapid 2600ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-#b32-attack-cinematic.rapid-multi .b32-cine-enemy {
-  animation: b32CineEnemyRapid 2600ms cubic-bezier(.2,.8,.2,1) forwards;
-}
-#b32-attack-cinematic.rapid-multi .b32-cine-skill {
-  animation: b32CineSkillRapid 2600ms ease forwards;
-}
-.b32-cine-rapid-hit {
-  position: absolute;
-  left: var(--rx, 64%);
-  top: var(--ry, 26%);
-  transform: translate(-50%, -50%) scale(.62);
-  color: #fff2d2;
-  font-family: "Cinzel", "Noto Serif JP", serif;
-  font-weight: 900;
-  font-size: clamp(20px, 6.6vw, 42px);
-  letter-spacing: .04em;
-  text-shadow:
-    0 0 7px rgba(255,255,255,.96),
-    0 0 20px rgba(255,220,120,.92),
-    0 4px 14px rgba(0,0,0,1);
-  opacity: 0;
-  z-index: 5;
-  animation: b32CineRapidDamage 620ms ease forwards;
-  animation-delay: var(--delay, 0ms);
-}
-.b32-cine-rapid-flash {
-  position: absolute;
-  left: var(--rx, 64%);
-  top: var(--ry, 26%);
-  width: clamp(46px, 13vw, 84px);
-  height: clamp(14px, 4vw, 22px);
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.98), rgba(255,222,140,.92), transparent);
-  box-shadow:
-    0 0 18px rgba(255,255,255,.96),
-    0 0 42px rgba(255,210,120,.78);
-  opacity: 0;
-  z-index: 4;
-  transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(.12);
-  animation: b32CineRapidFlash 340ms ease-out forwards;
-  animation-delay: var(--delay, 0ms);
-}
-.b32-cine-rapid-burst {
-  position: absolute;
-  left: var(--rx, 64%);
-  top: var(--ry, 26%);
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.92);
-  box-shadow: 0 0 16px rgba(255,255,255,.92), 0 0 42px rgba(255,210,100,.70);
-  opacity: 0;
-  z-index: 3;
-  transform: translate(-50%, -50%) scale(.1);
-  animation: b32CineRapidBurst 380ms ease-out forwards;
-  animation-delay: var(--delay, 0ms);
-}
-@keyframes b32CineInOutRapid {
-  0% { opacity: 0; }
-  7%, 88% { opacity: 1; }
-  100% { opacity: 0; }
-}
-@keyframes b32CineRapidLine {
-  0%, 10% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
-  18%, 76% { transform: rotate(-18deg) scaleX(1.04); opacity: .82; }
-  100% { transform: rotate(-18deg) scaleX(1.10); opacity: 0; }
-}
-@keyframes b32CineAllyRapid {
-  0% { opacity: 0; transform: translate(-42px, 28px) scale(.86); }
-  10% { opacity: 1; transform: translate(0, 0) scale(.96); }
-  22% { transform: translate(36px, -36px) scale(1.08); filter: drop-shadow(0 0 24px rgba(255,235,180,.72)); }
-  32% { transform: translate(22px, -24px) scale(1.03); }
-  42% { transform: translate(42px, -42px) scale(1.09); }
-  52% { transform: translate(24px, -26px) scale(1.04); }
-  62% { transform: translate(44px, -42px) scale(1.10); }
-  76% { opacity: 1; transform: translate(30px, -28px) scale(1.03); }
-  100% { opacity: 0; transform: translate(30px, -28px) scale(1); }
-}
-@keyframes b32CineEnemyRapid {
-  0% { opacity: 0; transform: translate(42px, -28px) scale(.86); }
-  10% { opacity: 1; transform: translate(0, 0) scale(.96); }
-  20% { transform: translate(-8px, 4px) scale(1.01) rotate(-.6deg); }
-  30% { transform: translate(6px, -3px) scale(1.00) rotate(.5deg); }
-  40% { transform: translate(-10px, 5px) scale(1.02) rotate(-.8deg); }
-  50% { transform: translate(7px, -4px) scale(1.00) rotate(.6deg); }
-  60% { transform: translate(-12px, 6px) scale(1.03) rotate(-1deg); filter: drop-shadow(0 0 28px rgba(255,255,255,.66)); }
-  80% { opacity: 1; transform: translate(-8px, 4px) scale(1.01); }
-  100% { opacity: 0; transform: translate(-8px, 4px) scale(1); }
-}
-@keyframes b32CineRapidDamage {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
-  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
-  58% { opacity: 1; transform: translate(-50%, -74%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -105%) scale(.94); }
-}
-@keyframes b32CineRapidFlash {
-  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(.10); }
-  35% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(1.12); }
-  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot, -18deg)) scaleX(1.50); }
-}
-@keyframes b32CineRapidBurst {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.1); }
-  36% { opacity: .95; transform: translate(-50%, -50%) scale(3.8); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(6.4); }
-}
-@keyframes b32CineSkillRapid {
-  0%, 5% { opacity: 0; transform: translate(-50%, 8px); }
-  14%, 82% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -8px); }
-}
-@keyframes b32CineLineEnemy {
-  0%, 28% { transform: rotate(-18deg) scaleX(0); opacity: 0; }
-  44% { transform: rotate(-18deg) scaleX(1); opacity: 1; }
-  70%, 100% { transform: rotate(-18deg) scaleX(1.08); opacity: 0; }
-}
-@keyframes b32CineEnemyAttack {
-  0% { opacity: 0; transform: translate(42px, -28px) scale(.86); }
-  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
-  38% { transform: translate(-10px, 10px) scale(1.03); }
-  50% { transform: translate(-42px, 40px) scale(1.10); filter: drop-shadow(0 0 28px rgba(255,130,130,.70)); }
-  78% { opacity: 1; transform: translate(-30px, 26px) scale(1.03); }
-  100% { opacity: 0; transform: translate(-30px, 26px) scale(1); }
-}
-@keyframes b32CineAllyHit {
-  0% { opacity: 0; transform: translate(-42px, 28px) scale(.86); }
-  16% { opacity: 1; transform: translate(0, 0) scale(.96); }
-  42% { transform: translate(4px, -4px) scale(1.00); }
-  50% { transform: translate(-18px, 14px) scale(1.04) rotate(1.2deg); filter: drop-shadow(0 0 28px rgba(255,210,210,.62)); }
-  78% { opacity: 1; transform: translate(-10px, 8px) scale(1.01); }
-  100% { opacity: 0; transform: translate(-10px, 8px) scale(1); }
-}
-@media (max-width: 420px) {
-  .b32-cine-ally {
-    left: max(6px, 6vw);
-    bottom: clamp(122px, 23vh, 190px);
-    width: 46vw;
-    height: 45vh;
-  }
-  .b32-cine-enemy {
-    right: max(6px, 6vw);
-    top: clamp(44px, 9vh, 78px);
-    width: 44vw;
-    height: 40vh;
-  }
-  .b32-cine-impact { left: 64%; top: 36%; }
-  .b32-cine-damage { left: 64%; top: 29%; }
-  .b32-cine-skill {
-    bottom: clamp(88px, 17vh, 148px);
-    max-width: 86vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
- `;
- document.head.appendChild(s);
-}
-
-function _findCinematicUnit(bs, info) {
- if (!bs || !info) return null;
- const list = info.side === 'ally' ? (bs.allies || []) : (bs.enemies || []);
- return list.find(u => u._uid === info._uid) || null;
-}
-
-function _getCinematicImg(unit) {
- if (!unit) return '';
- // 攻撃アップ演出では通常UI用の upImg を使わない。
- // 専用画像がなければ、盤面用画像へ安全にフォールバックする。
- return unit.battleUpImg || unit.battleImg || unit.img || unit.panelImg || unit.portrait || unit.cutin || '';
-}
-
-function _getCinematicScale(unit) {
- // キャラ定義をそのまま保持する形式／charDef配下に保持する形式の両方に対応。
- const raw = unit?.uiScale?.battleUp ?? unit?.charDef?.uiScale?.battleUp ?? 1.0;
- const scale = Number(raw);
- // 誤入力で演出が消えたり極端に巨大化したりしないよう安全範囲へ制限。
- return Number.isFinite(scale) ? Math.min(2.5, Math.max(0.25, scale)) : 1.0;
-}
-
-function _cinematicScaleStyle(unit, extraStyle = '') {
- const scale = _getCinematicScale(unit);
- return `--b32-cine-scale:${scale};${extraStyle || ''}`;
-}
-
-// battle_up画像の読み込み完了を待ってから演出を開始する。
-// 同じURLはPromiseをキャッシュし、2回目以降は即時解決する。
-const _b32CinematicImageCache = new Map();
-function _preloadB32CinematicImage(src, timeoutMs = 3500) {
- if (!src) return Promise.resolve(false);
- if (_b32CinematicImageCache.has(src)) return _b32CinematicImageCache.get(src);
-
- const promise = new Promise(resolve => {
-   const img = new Image();
-   let settled = false;
-   const finish = ok => {
-     if (settled) return;
-     settled = true;
-     clearTimeout(timer);
-     resolve(ok);
-   };
-   const timer = setTimeout(() => finish(false), timeoutMs);
-   img.onload = () => {
-     if (typeof img.decode === 'function') {
-       img.decode().catch(() => {}).finally(() => finish(true));
-     } else {
-       finish(true);
-     }
-   };
-   img.onerror = () => {
-     console.warn('[B32] cinematic image load failed:', src);
-     finish(false);
-   };
-   img.decoding = 'async';
-   img.src = src;
-   if (img.complete && img.naturalWidth > 0) finish(true);
- });
-
- _b32CinematicImageCache.set(src, promise);
- return promise;
-}
-
-async function _showAttackCinematic(data) {
- if (!data || !data.source || !data.target) return;
- if (!data.amount || data.amount <= 0) return;
-
- const isAllyAttack = data.source.side === 'ally' && data.target.side === 'enemy';
- const isEnemyAttack = data.source.side === 'enemy' && data.target.side === 'ally';
- if (!isAllyAttack && !isEnemyAttack) return;
-
- const targetEvents = Array.isArray(data.targetEvents) && data.targetEvents.length
-   ? data.targetEvents.filter(ev => ev && ev.target && Number(ev.amount || 0) > 0)
-   : [data];
- if (!targetEvents.length) return;
-
- const isMultiTarget = isAllyAttack && targetEvents.length > 1;
-
- const now = Date.now();
- const key = `${data.source._uid || ''}:${isMultiTarget ? 'multi' : data.target._uid || ''}:${data.skillId || 'attack'}`;
- if (_b32AttackCinematicBusy) return;
- if (_b32AttackCinematicLastKey === key && now - _b32AttackCinematicLastAt < 900) return;
-
- const bs = data.bs || _bs();
- const sourceUnit = _findCinematicUnit(bs, data.source);
- const sourceImg = _getCinematicImg(sourceUnit);
- const targetUnits = targetEvents
-   .map(ev => _findCinematicUnit(bs, ev.target))
-   .filter(Boolean);
- const targetImgs = targetUnits
-   .map(u => _getCinematicImg(u))
-   .filter(Boolean);
- if (!sourceImg || !targetImgs.length) return;
-
- // 表示位置は固定：味方☆は左下、敵★は右上。
- // 攻撃方向は ov の enemy-attack クラスで切り替える。
- const allyImg = isAllyAttack ? sourceImg : targetImgs[0];
- const enemyImg = isAllyAttack ? targetImgs[0] : sourceImg;
- const allyUnit = isAllyAttack ? sourceUnit : targetUnits[0];
- const enemyUnit = isAllyAttack ? targetUnits[0] : sourceUnit;
-
- _b32AttackCinematicBusy = true;
- _b32AttackCinematicLastKey = key;
- _b32AttackCinematicLastAt = now;
-
- // 演出タイマーを進める前に、表示対象画像をすべて読み込み・デコードする。
- // 読み込み失敗時は演出を破棄し、busy状態を必ず解除する。
- const preloadTargets = [...new Set([allyImg, enemyImg, ...targetImgs].filter(Boolean))];
- const preloadResults = await Promise.all(preloadTargets.map(src => _preloadB32CinematicImage(src)));
- if (preloadResults.some(ok => !ok)) {
-   _b32AttackCinematicBusy = false;
-   return;
- }
-
- _injectAttackCinematicStyle();
-
- const isRapidMulti = data.hitStyle === 'rapid_multi';
- const isCritical = !!(data.isCritical || data.criticalCount > 0 || targetEvents.some(ev => ev.isCritical || ev.criticalCount > 0));
- const criticalHits = Array.isArray(data.criticalHits) ? data.criticalHits : [];
- const isFatal = !!(
-   data.isFatal ||
-   data.target?.isFatal ||
-   targetEvents.some(ev => ev.isFatal || ev.target?.isFatal ||
-     (Number(ev.hpBefore || ev.target?.hpBefore || 0) > 0 && Number(ev.hpAfter ?? ev.target?.hpAfter ?? 1) <= 0)) ||
-   (Number(data.hpBefore || data.target?.hpBefore || 0) > 0 && Number(data.hpAfter ?? data.target?.hpAfter ?? 1) <= 0)
- );
- const rapidCount = Math.min(8, Math.max(4, Math.floor(Number(data.hitCount || 5))));
- const rapidParts = isRapidMulti
-   ? (criticalHits.length ? criticalHits.map(h => Math.max(0, Math.floor(Number(h.amount || 0)))) : _splitDamageAmount(data.amount, rapidCount))
-   : [];
- const rapidPos = [
-   { x: 62, y: 24, rot: -23 },
-   { x: 70, y: 18, rot:  18 },
-   { x: 66, y: 31, rot: -12 },
-   { x: 58, y: 20, rot:  24 },
-   { x: 72, y: 28, rot: -30 },
-   { x: 61, y: 15, rot:  12 },
-   { x: 68, y: 23, rot: -18 },
-   { x: 74, y: 17, rot:  22 },
- ];
- const rapidHtml = isRapidMulti ? rapidParts.map((amount, i) => {
-   const p = rapidPos[i % rapidPos.length];
-   const delay = 300 + i * 400; // 0.4秒ごとに順番表示
-   const style = `--rx:${p.x}%;--ry:${p.y}%;--delay:${delay}ms;--rot:${p.rot}deg;`;
-   const isHitCritical = !!(criticalHits[i] && criticalHits[i].isCritical);
-   return `
-     <div class="b32-cine-rapid-flash" style="${style}"></div>
-     <div class="b32-cine-rapid-burst" style="${style}"></div>
-     <div class="b32-cine-rapid-hit${isHitCritical ? ' critical' : ''}" style="${style}">-${amount}</div>
-   `;
- }).join('') : '';
-
- const multiSlots = [
-   { cx: 61, cy: 8,  mx: 61, my: 36 },
-   { cx: 78, cy: 17, mx: 78, my: 45 },
-   { cx: 52, cy: 24, mx: 52, my: 52 },
-   { cx: 86, cy: 5,  mx: 86, my: 33 },
-   { cx: 68, cy: 31, mx: 68, my: 59 },
- ];
- const targetHtml = isMultiTarget
-   ? targetImgs.slice(0, 5).map((img, i) => {
-       const slot = multiSlots[i % multiSlots.length];
-       const style = _cinematicScaleStyle(targetUnits[i], `--ti:${i};--cx:${slot.cx}%;--cy:${slot.cy}%;`);
-       return `<div class="b32-cine-unit b32-cine-enemy b32-cine-target b32-cine-target-${i}" style="${style}"><img src="${img}" alt="" onerror="this.style.display='none'"></div>`;
-     }).join('')
-   : `<div class="b32-cine-unit b32-cine-enemy" style="${_cinematicScaleStyle(enemyUnit)}"><img src="${enemyImg}" alt="" onerror="this.style.display='none'"></div>`;
-
- const multiDamageHtml = isMultiTarget && !isRapidMulti
-   ? targetEvents.slice(0, 5).map((ev, i) => {
-       const slot = multiSlots[i % multiSlots.length];
-       const amount = Math.max(0, Math.floor(Number(ev.amount || 0)));
-       const evCritical = !!(ev.isCritical || ev.criticalCount > 0);
-       const evFatal = !!(ev.isFatal || ev.target?.isFatal ||
-         (Number(ev.hpBefore || ev.target?.hpBefore || 0) > 0 && Number(ev.hpAfter ?? ev.target?.hpAfter ?? 1) <= 0));
-       const style = `--mx:${slot.mx}%;--my:${slot.my}%;`;
-       return `
-         <div class="b32-cine-impact b32-cine-impact-multi" style="${style}"></div>
-         <div class="b32-cine-damage b32-cine-damage-multi${evCritical ? ' critical' : ''}" style="${style}">-${amount}${evFatal ? '<span class="b32-cine-mini-break">BREAK</span>' : ''}</div>
-       `;
-     }).join('')
-   : '';
-
- const breakParticleHtml = isFatal ? Array.from({ length: 14 }, (_, i) => {
-   const baseX = isEnemyAttack ? 36 : (isMultiTarget ? 68 : 64);
-   const baseY = isEnemyAttack ? 58 : (isMultiTarget ? 44 : 34);
-   const dxList = [-72, 58, -42, 84, -18, 30, -92, 70, -58, 48, -24, 94, -80, 20];
-   const dyList = [-96, -72, -122, -48, -142, -92, -38, -118, -76, -154, -110, -62, -132, -44];
-   const pxList = [-8, 6, -3, 9, 2, -6, 10, -10, 4, -4, 8, -9, 1, 5];
-   const pyList = [-5, 2, -8, 6, 0, -4, 5, -2, 7, -7, 3, -1, -6, 4];
-   const px = baseX + pxList[i];
-   const py = baseY + pyList[i];
-   const size = 4 + (i % 4) * 2;
-   const delay = (isRapidMulti ? 2060 : 820) + (i % 5) * 34;
-   return `<span class="b32-cine-break-particle" style="--px:${px}%;--py:${py}%;--tx:${dxList[i]}px;--ty:${dyList[i]}px;--ps:${size}px;--pd:${delay}ms;"></span>`;
- }).join('') : '';
- const breakHtml = isFatal ? `
-   <div class="b32-cine-break-label">BREAK</div>
-   <div class="b32-cine-break-sub">${isEnemyAttack ? 'ALLY LOST' : (isMultiTarget ? 'ENEMIES VANISHED' : 'ENEMY VANISHED')}</div>
-   ${breakParticleHtml}
- ` : '';
-
- const ov = document.createElement('div');
- ov.id = 'b32-attack-cinematic';
- if (isEnemyAttack) ov.classList.add('enemy-attack');
- if (isMultiTarget) ov.classList.add('multi-target');
- if (isRapidMulti) ov.classList.add('rapid-multi');
- if (isCritical) ov.classList.add('critical');
- if (isFatal) {
-   ov.classList.add('fatal-break');
-   ov.classList.add(isEnemyAttack ? 'target-ally-broken' : 'target-enemy-broken');
- }
- ov.innerHTML = `
-   <div class="b32-cine-unit b32-cine-ally" style="${_cinematicScaleStyle(allyUnit)}"><img src="${allyImg}" alt="" onerror="this.style.display='none'"></div>
-   ${targetHtml}
-   ${isRapidMulti ? rapidHtml : (isMultiTarget ? multiDamageHtml : `<div class="b32-cine-impact"></div><div class="b32-cine-damage${isCritical ? ' critical' : ''}">-${data.amount}</div>`)}
-   ${isCritical ? '<div class="b32-cine-critical-label">CRITICAL</div>' : ''}
-   ${breakHtml}
-   <div class="b32-cine-skill">${data.skillName || (isEnemyAttack ? 'ENEMY ATTACK' : 'ATTACK')}</div>
- `;
- _setBattle32CinematicRosterHidden(true);
- document.body.appendChild(ov);
-
- setTimeout(() => {
-   if (ov.parentNode) ov.parentNode.removeChild(ov);
-   _b32AttackCinematicBusy = false;
-   _setBattle32CinematicRosterHidden(false);
- }, isRapidMulti ? (isFatal ? 3420 : 2680) : (isFatal ? 1940 : 1180));
-}
-
 function _showUltCutin(skillName, cutinImg) {
  if (!skillName) skillName = 'ULT';
 
- _setBattle32CinematicRosterHidden(true);
  return new Promise(resolve => {
  const wrap = document.createElement('div');
  wrap.className = 'b32-ult-cutin';
@@ -5941,7 +2642,6 @@ function _showUltCutin(skillName, cutinImg) {
  setTimeout(() => {
  if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
  if (flash.parentNode) flash.parentNode.removeChild(flash);
- _setBattle32CinematicRosterHidden(false);
  resolve();
  }, 1920);
  });
@@ -5965,67 +2665,6 @@ function _showScreenShake(variant) {
  root.classList.remove(cls);
  }, dur);
 }
-
-// ============================================================
-// 敵の強攻撃：盤面シェイク
-// battle_32.js から window.playBattle32EnemyStrongShake() を呼ぶ。
-// ============================================================
-function _ensureEnemyStrongShakeStyle() {
- const STYLE_ID = 'b32-enemy-strong-shake-style';
- if (document.getElementById(STYLE_ID)) return;
- const style = document.createElement('style');
- style.id = STYLE_ID;
- style.textContent = `
-@keyframes b32EnemyStrongBoardShake {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  12% { transform: translate3d(-6px, 2px, 0); }
-  25% { transform: translate3d(5px, -3px, 0); }
-  38% { transform: translate3d(-4px, 3px, 0); }
-  52% { transform: translate3d(4px, -2px, 0); }
-  68% { transform: translate3d(-3px, 1px, 0); }
-  84% { transform: translate3d(2px, -1px, 0); }
-}
-@keyframes b32EnemyUltimateBoardShake {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  8% { transform: translate3d(-9px, 3px, 0); }
-  18% { transform: translate3d(8px, -4px, 0); }
-  30% { transform: translate3d(-7px, 4px, 0); }
-  44% { transform: translate3d(6px, -3px, 0); }
-  58% { transform: translate3d(-5px, 2px, 0); }
-  72% { transform: translate3d(4px, -2px, 0); }
-  86% { transform: translate3d(-2px, 1px, 0); }
-}
-#b32-board-wrap.b32-enemy-strong-shake {
-  animation: b32EnemyStrongBoardShake 360ms ease-out both;
-  will-change: transform;
-}
-#b32-board-wrap.b32-enemy-ultimate-shake {
-  animation: b32EnemyUltimateBoardShake 520ms ease-out both;
-  will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-  #b32-board-wrap.b32-enemy-strong-shake,
-  #b32-board-wrap.b32-enemy-ultimate-shake {
-    animation-duration: 1ms !important;
-  }
-}`;
- document.head.appendChild(style);
-}
-
-window.playBattle32EnemyStrongShake = function (variant) {
- _ensureEnemyStrongShakeStyle();
- const boardWrap = document.getElementById('b32-board-wrap');
- if (!boardWrap) return false;
- const cls = variant === 'ultimate'
-   ? 'b32-enemy-ultimate-shake'
-   : 'b32-enemy-strong-shake';
- const duration = variant === 'ultimate' ? 540 : 380;
- boardWrap.classList.remove('b32-enemy-strong-shake', 'b32-enemy-ultimate-shake');
- void boardWrap.offsetWidth;
- boardWrap.classList.add(cls);
- window.setTimeout(() => boardWrap.classList.remove(cls), duration);
- return true;
-};
 
 function _getCoreScreenPos(core) {
  if (!core) return null;
@@ -6116,9 +2755,6 @@ function _getTargetElement(unitInfo) {
  const card = document.querySelector(`.b32-party-card[data-uid="${unitInfo._uid}"]`);
  if (_validRect(card)) return card;
 
- const rosterCard = document.querySelector(`.b32-roster-card[data-deployed-uid="${unitInfo._uid}"]`);
- if (_validRect(rosterCard)) return rosterCard;
-
  const actionCard = document.querySelector(`.b32-action-char-card[data-uid="${unitInfo._uid}"]`);
  if (_validRect(actionCard)) return actionCard;
 
@@ -6162,12 +2798,9 @@ function _showImpactRing(unitInfo, kind, variant) {
 }
 
 // 斜めヒットスラッシュ
-function _showHitSlash(unitInfo, variant, isMulti, offset) {
+function _showHitSlash(unitInfo, variant, isMulti) {
  const pos = _getUnitScreenPos(unitInfo);
  if (!pos) return;
-
- const baseOx = offset && Number.isFinite(Number(offset.x)) ? Number(offset.x) : 0;
- const baseOy = offset && Number.isFinite(Number(offset.y)) ? Number(offset.y) : 0;
 
  // slashCount: multi は2本、他は1本
  const count = isMulti ? 2 : 1;
@@ -6182,8 +2815,8 @@ function _showHitSlash(unitInfo, variant, isMulti, offset) {
  // 複数本の場合はわずかにズラす
  const ox = i * 12 - (count - 1) * 6;
  const oy = i * 8 - (count - 1) * 4;
- el.style.left = `${pos.x + baseOx + ox}px`;
- el.style.top = `${pos.y + baseOy + oy}px`;
+ el.style.left = `${pos.x + ox}px`;
+ el.style.top = `${pos.y + oy}px`;
 
  // 2本目は少し遅延
  const delay = i * 80;
@@ -6223,13 +2856,8 @@ function _showImpactShake(unitInfo) {
  if (_validRect(card)) {
  el = card;
  } else {
- const rosterCard = document.querySelector(`.b32-roster-card[data-deployed-uid="${unitInfo._uid}"]`);
- if (_validRect(rosterCard)) {
- el = rosterCard;
- } else {
  const ac = document.querySelector(`.b32-action-char-card[data-uid="${unitInfo._uid}"]`);
  if (_validRect(ac)) el = ac;
- }
  }
  }
  if (!el) return;
@@ -6239,124 +2867,6 @@ function _showImpactShake(unitInfo) {
  }
 
  // damage / heal イベントハンドラ（Battle32 callbacks から呼ばれる）
- function _splitDamageAmount(total, count) {
-   const safeTotal = Math.max(0, Math.floor(Number(total || 0)));
-   const safeCount = Math.max(1, Math.floor(Number(count || 1)));
-   const base = Math.floor(safeTotal / safeCount);
-   const rest = safeTotal % safeCount;
-   return Array.from({ length: safeCount }, (_, i) => base + (i < rest ? 1 : 0));
- }
-
- function _getRapidMultiHitOffset(index, count) {
-   // 敵セルの上部に、同じ場所へ重ならないよう散らす。
-   // 5hit: 左上 → 右上 → 中央上 → 右中上 → 左中上 の順で「パンパンパン」と出る。
-   const presets = [
-     { x: -26, y: -20 },
-     { x:  22, y: -34 },
-     { x:  -6, y: -50 },
-     { x:  30, y: -18 },
-     { x: -18, y: -38 },
-     { x:  10, y: -62 },
-     { x: -34, y: -30 },
-     { x:  36, y: -44 },
-   ];
-   if (count <= presets.length) return presets[index % presets.length];
-   const angle = -Math.PI + (Math.PI * 0.9 * index / Math.max(1, count - 1));
-   return {
-     x: Math.round(Math.cos(angle) * 34),
-     y: Math.round(-38 + Math.sin(angle) * 18),
-   };
- }
-
- function _getAttackCinematicGroupKey(data) {
-   if (!data || !data.source || !data.target) return '';
-   const isAllyAttack = data.source.side === 'ally' && data.target.side === 'enemy';
-   // 今回束ねたいのは「味方1体 → 敵複数体」の同時攻撃。
-   // 敵攻撃や回復、特殊イベントは従来通り1体ずつ扱う。
-   if (!isAllyAttack) return '';
-   return [
-     data.source._uid || '',
-     data.skillId || data.skillName || 'attack',
-     data.isUltimate ? 'ult' : 'skill',
-     data.hitStyle || 'normal',
-   ].join(':');
- }
-
- function _queueAttackCinematic(data) {
-   const key = _getAttackCinematicGroupKey(data);
-   if (!key) {
-     _showAttackCinematic(data);
-     return;
-   }
-
-   if (!_b32PendingAttackCinematic || _b32PendingAttackCinematic.key !== key) {
-     if (_b32PendingAttackCinematicTimer) {
-       clearTimeout(_b32PendingAttackCinematicTimer);
-       _b32PendingAttackCinematicTimer = null;
-     }
-     _b32PendingAttackCinematic = { key, items: [] };
-   }
-
-   _b32PendingAttackCinematic.items.push(data);
-
-   // applyDamage が targets.forEach 内で連続発火するため、短い猶予で同時ヒット分をまとめる。
-   if (_b32PendingAttackCinematicTimer) clearTimeout(_b32PendingAttackCinematicTimer);
-   _b32PendingAttackCinematicTimer = setTimeout(() => {
-     const pending = _b32PendingAttackCinematic;
-     _b32PendingAttackCinematic = null;
-     _b32PendingAttackCinematicTimer = null;
-     if (!pending || !pending.items.length) return;
-
-     if (pending.items.length === 1) {
-       _showAttackCinematic(pending.items[0]);
-       return;
-     }
-
-     const first = pending.items[0];
-     const totalAmount = pending.items.reduce((sum, ev) => sum + Math.max(0, Number(ev.amount || 0)), 0);
-     _showAttackCinematic({
-       ...first,
-       amount: Math.floor(totalAmount),
-       targetEvents: pending.items,
-       multiTargetCount: pending.items.length,
-       isCritical: pending.items.some(ev => ev.isCritical || ev.criticalCount > 0),
-       isFatal: pending.items.some(ev => ev.isFatal || ev.target?.isFatal ||
-         (Number(ev.hpBefore || ev.target?.hpBefore || 0) > 0 && Number(ev.hpAfter ?? ev.target?.hpAfter ?? 1) <= 0)),
-     });
-   }, 45);
- }
-
-
-function _showStatusChangeFx(data) {
- if (!data || !data.target) return;
- const pos = _getUnitScreenPos(data.target);
- if (!pos) return;
- const tone = data.tone || 'status';
- const label = data.label || (data.effect && data.effect.type) || 'STATUS';
-
- const el = document.createElement('div');
- el.className = `b32-status-change-pop ${tone}`;
- el.textContent = label;
- el.style.left = `${pos.x}px`;
- el.style.top = `${pos.y - 18}px`;
- document.body.appendChild(el);
-
- const ring = document.createElement('div');
- ring.className = `b32-status-change-ring ${tone}`;
- ring.style.left = `${pos.x}px`;
- ring.style.top = `${pos.y}px`;
- document.body.appendChild(ring);
-
- setTimeout(() => {
-   if (el.parentNode) el.parentNode.removeChild(el);
-   if (ring.parentNode) ring.parentNode.removeChild(ring);
- }, 1150);
-}
-
-function _onStatusChangeEvent(data) {
- _showStatusChangeFx(data);
-}
-
  function _onDamageEvent(data) {
  if (!data || !data.target) return;
 
@@ -6365,63 +2875,15 @@ function _onStatusChangeEvent(data) {
  const isMulti = hitStyle === 'multi';
  const isHeavy = hitStyle === 'heavy';
  const isRapid = hitStyle === 'rapid';
- const isRapidMulti = hitStyle === 'rapid_multi';
-
- // 通常攻撃ダメージは「UP演出内だけ」で表示する。
- // 旧処理ではUP演出を開始した後も、この関数の後半でグリッド上の
- // ヒット演出・ダメージ数字を重ねていたため、同じダメージが2段階に見えていた。
- const isAttackCinematicTarget = !!(
-   data.source && data.target && (
-     (data.source.side === 'ally' && data.target.side === 'enemy') ||
-     (data.source.side === 'enemy' && data.target.side === 'ally')
-   )
- );
-
- if (isAttackCinematicTarget) {
-   try {
-     _queueAttackCinematic(data);
-     return; // グリッド側のダメージ数字・ヒット演出は行わない
-   } catch (e) {
-     // UP演出を開始できなかった場合だけ、後段のグリッド演出へフォールバックする。
-     console.error('[Battle32UI] attack cinematic failed; fallback to grid damage fx', e, data);
-   }
- }
 
  // shakeVariant: ULT > heavy > normal
  const shakeVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
 
  // slashVariant: ULT スラッシュクラス (ult/heavy/rapid/'' のどれか)
- const slashVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : (isRapid || isRapidMulti) ? 'rapid' : '';
+ const slashVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : isRapid ? 'rapid' : '';
 
  // ringVariant: ULT/heavy で大きく
  const ringVariant = isUlt ? 'ult' : isHeavy ? 'heavy' : '';
-
- if (isRapidMulti) {
-   const hitCount = Math.min(8, Math.max(4, Math.floor(Number(data.hitCount || 5))));
-   const parts = _splitDamageAmount(data.amount, hitCount);
-
-   parts.forEach((amount, i) => {
-     const hitDelay = 90 + i * 200; // 0.2秒ごとに順番に発生
-     const offset = _getRapidMultiHitOffset(i, hitCount);
-
-     setTimeout(() => {
-       if (i === 0) _showScreenShake(shakeVariant);
-       _showHitSlash(data.target, slashVariant, false, offset);
-       _showImpactShake(data.target);
-       _showHitFlash(data.target, 'damage');
-       if (i === 0 || i === Math.floor(hitCount / 2)) {
-         _showImpactRing(data.target, 'damage', ringVariant);
-       }
-     }, hitDelay);
-
-     setTimeout(() => {
-       _showFloatNumber(data.target, amount, 'damage', false, data.elementMatch, offset, !!(data.criticalHits && data.criticalHits[i] && data.criticalHits[i].isCritical));
-       if (i === hitCount - 1) _showElementMatchText(data.target, data.elementMatch);
-     }, hitDelay + 45);
-   });
-
-   return;
- }
 
  // スキル名表示の直後に「当たった感」が来るよう、少し溜める
  setTimeout(() => {
@@ -6434,10 +2896,9 @@ function _onStatusChangeEvent(data) {
 
  // 数値は衝撃より少し後に出す
  setTimeout(() => {
- _showFloatNumber(data.target, data.amount, 'damage', isUlt, data.elementMatch, null, !!data.isCritical);
- _showElementMatchText(data.target, data.elementMatch);
-}, 240);
- }
+ _showFloatNumber(data.target, data.amount, 'damage', isUlt);
+ }, 240);
+}
 
 function _onHealEvent(data) {
  if (!data || !data.target) return;
@@ -6454,44 +2915,9 @@ function _onHealEvent(data) {
  }, 240);
 }
 
-// ハヤテ：月光モード ON/OFF の瞬間だけ「ピカーン」変身エフェクトを出す。
-function _onHayateMoonModeChange(data) {
- if (!data || !data.target) return;
-
- // 先に再描画し、白い閃光の下でユニット画像を切り替える。
- if (typeof window.renderBattle32UI === 'function') {
-   window.renderBattle32UI();
- }
-
- const pos = _getUnitScreenPos(data.target);
- if (!pos) return;
-
- const fx = document.createElement('div');
- fx.className = `b32-hayate-moon-transform-fx ${data.active ? 'enter' : 'exit'}`;
- fx.style.left = `${pos.x}px`;
- fx.style.top = `${pos.y}px`;
- fx.innerHTML = `
-   <span class="b32-hayate-moon-transform-burst"></span>
-   <span class="b32-hayate-moon-transform-ring ring-1"></span>
-   <span class="b32-hayate-moon-transform-ring ring-2"></span>
-   <span class="b32-hayate-moon-transform-ray ray-1"></span>
-   <span class="b32-hayate-moon-transform-ray ray-2"></span>
-   <span class="b32-hayate-moon-transform-ray ray-3"></span>
-   <span class="b32-hayate-moon-transform-ray ray-4"></span>
-   <span class="b32-hayate-moon-transform-label">${data.active ? '月光モード' : '月光解除'}</span>
- `;
- document.body.appendChild(fx);
-
- setTimeout(() => {
-   if (fx.parentNode) fx.parentNode.removeChild(fx);
- }, 920);
-}
-
  // 公開：hookBattle32Start から呼べるように
  window._b32OnDamage = _onDamageEvent;
  window._b32OnHeal = _onHealEvent;
- window._b32OnStatusChange = _onStatusChangeEvent;
- window._b32OnHayateMoonModeChange = _onHayateMoonModeChange;
  window._b32OnCoreDamage = _showCoreDamageEvent;
 
  window._b32EndSkill = function () {
@@ -6514,272 +2940,6 @@ function _onHayateMoonModeChange(data) {
  };
 
  // ============================================================
- // スマホ向け：盤面全体でタップを拾うフォールバック
- // ------------------------------------------------------------
- // iPhone SE / iPhone14 では 3D傾斜により、奥側グリッドの
- // DOMヒット判定がシビアになる。さらに、上段セルは pointerup の
- // target が #b32-board にならないケースがあるため、document capture で
- // 画面座標から最寄りの .movable セルを解決する。
- // 通常のセル onclick は残すため、既存操作は壊さない。
- // ============================================================
- function installBattle32BoardPointerFallback() {
-   const board = document.getElementById('b32-board');
-   if (!board) return;
-
-   // 旧版は board にだけ listener を付けていたため、SE上段で event が
-   // board まで来ないケースを拾えなかった。document に1回だけ付ける。
-   if (document.documentElement.dataset.b32MovePointerFallbackInstalled === '1') return;
-   document.documentElement.dataset.b32MovePointerFallbackInstalled = '1';
-
-   document.addEventListener('pointerup', function (e) {
-     if (_b32InputLocked) return;
-
-     const root = document.getElementById(ROOT_ID);
-     const currentBoard = document.getElementById('b32-board');
-     if (!root || !currentBoard) return;
-
-     const isTouchAssistDevice =
-       root.classList.contains('b32-vp-se') ||
-       root.classList.contains('b32-vp-iphone14') ||
-       (root.clientWidth <= 430 && root.clientHeight <= 940);
-
-     // PC/大型画面では余計な横取りをしない。
-     // iPhone SE / iPhone14 系だけ、奥側グリッドの取りこぼしを補助する。
-     if (!isTouchAssistDevice) return;
-
-     const cellSize = parseFloat(getComputedStyle(root).getPropertyValue('--cell-size')) || 42;
-
-     // ------------------------------------------------------------
-     // 味方ユニットタップ fallback
-     // ------------------------------------------------------------
-     // 3D傾斜時、奥側の立ち絵はセル矩形より手前へ大きくはみ出す。
-     // .b32-unit は pointer-events:none のため、見えている立ち絵を押しても
-     // 背後の別セルや board 自体が target になり、味方選択が抜けることがある。
-     // まず通常の味方セルへ届いている場合は onclick に任せ、届いていない場合だけ
-     // 立ち絵の実表示矩形を使って該当味方を補助選択する。
-     const allyTapMode =
-       !_moveMode &&
-       !_summonMode &&
-       !(_itemMode && _itemPhase === 'cell');
-
-     if (allyTapMode) {
-       const directAllyCell = e.target && e.target.closest
-         ? e.target.closest('.b32-cell.ally-inspectable, .b32-cell.skill-selectable, .b32-cell.skill-selected')
-         : null;
-
-       if (!directAllyCell || !currentBoard.contains(directAllyCell)) {
-         const allyCells = Array.from(currentBoard.querySelectorAll(
-           '.b32-cell.ally-inspectable, .b32-cell.skill-selectable, .b32-cell.skill-selected'
-         ));
-
-         let bestAllyCell = null;
-         let bestAllyScore = Infinity;
-
-         allyCells.forEach(cell => {
-           const unitEl = cell.querySelector('.b32-unit.ally');
-           const visualEl = unitEl && (unitEl.querySelector('.b32-unit-icon') || unitEl);
-           if (!visualEl) return;
-
-           const rect = visualEl.getBoundingClientRect();
-           if (rect.width <= 0 || rect.height <= 0) return;
-
-           // 透明余白の多い画像でも隣接ユニットを奪いにくいよう、
-           // 横方向だけ少し内側へ絞った可視ヒット領域を使う。
-           const insetX = Math.min(rect.width * 0.16, cellSize * 0.22);
-           const hitLeft = rect.left + insetX;
-           const hitRight = rect.right - insetX;
-           const hitTop = rect.top;
-           const hitBottom = rect.bottom + Math.max(4, cellSize * 0.10);
-
-           const inside =
-             e.clientX >= hitLeft && e.clientX <= hitRight &&
-             e.clientY >= hitTop && e.clientY <= hitBottom;
-
-           const cx = (hitLeft + hitRight) / 2;
-           const cy = hitTop + (hitBottom - hitTop) * 0.58;
-           const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-           const score = inside ? dist * 0.20 : dist;
-
-           if (score < bestAllyScore) {
-             bestAllyScore = score;
-             bestAllyCell = cell;
-           }
-         });
-
-         // 立ち絵付近だけを補助対象にし、盤面外や隣マスへの誤吸着を防ぐ。
-         const allyThreshold = Math.max(40, cellSize * 1.12);
-         if (bestAllyCell && bestAllyScore <= allyThreshold) {
-           const onclick = bestAllyCell.getAttribute('onclick') || '';
-           const m = onclick.match(/_b32OnSkillAllyTap\('([^']+)'\)/);
-           if (m && m[1] && typeof window._b32OnSkillAllyTap === 'function') {
-             e.preventDefault();
-             e.stopPropagation();
-             window._b32OnSkillAllyTap(m[1]);
-             return;
-           }
-         }
-       }
-     }
-
-     // ------------------------------------------------------------
-     // 敵タップ fallback（敵情報 / アイテム対象）
-     // ------------------------------------------------------------
-     // 移動モード中は移動操作を最優先する。
-     // スタン・敵入替アイテムの対象選択中は enemy-inspectable が付かないため、
-     // skill-target-enemy も候補に含め、アイテム対象処理を敵情報より優先する。
-     if (!_moveMode) {
-       const isItemEnemyTargetMode = !!(
-         _itemMode &&
-         _itemPhase === 'target' &&
-         _itemSlotIndex != null
-       );
-       const enemySelector = isItemEnemyTargetMode
-         ? '.b32-cell.skill-target-enemy'
-         : '.b32-cell.enemy-inspectable';
-
-       const directEnemyCell = e.target && e.target.closest
-         ? e.target.closest(enemySelector)
-         : null;
-
-       // セルへ直接届いた場合は、既存onclickに任せて二重実行を防ぐ。
-       if (!directEnemyCell || !currentBoard.contains(directEnemyCell)) {
-         const enemyCells = Array.from(currentBoard.querySelectorAll(enemySelector));
-         if (enemyCells.length) {
-           let bestEnemy = null;
-           let bestEnemyScore = Infinity;
-
-           enemyCells.forEach(cell => {
-             // 奥側ボスは立ち絵がセルから大きくはみ出すため、
-             // セル矩形に加えて敵立ち絵の実表示矩形もヒット領域として使う。
-             const unitEl = cell.querySelector('.b32-unit.enemy');
-             const visualEl = unitEl && (unitEl.querySelector('.b32-unit-icon') || unitEl);
-             const rects = [cell.getBoundingClientRect()];
-             if (visualEl) rects.push(visualEl.getBoundingClientRect());
-
-             rects.forEach((rect, index) => {
-               if (rect.width <= 0 || rect.height <= 0) return;
-
-               const insetX = index === 1 ? Math.min(rect.width * 0.12, cellSize * 0.18) : 0;
-               const left = rect.left + insetX;
-               const right = rect.right - insetX;
-               const top = rect.top;
-               const bottom = rect.bottom + (index === 1 ? Math.max(4, cellSize * 0.08) : 0);
-
-               const inside =
-                 e.clientX >= left && e.clientX <= right &&
-                 e.clientY >= top && e.clientY <= bottom;
-
-               const cx = (left + right) / 2;
-               const cy = top + (bottom - top) * (index === 1 ? 0.58 : 0.50);
-               const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-               const score = inside ? dist * 0.18 : dist;
-
-               if (score < bestEnemyScore) {
-                 bestEnemyScore = score;
-                 bestEnemy = cell;
-               }
-             });
-           });
-
-           // アイテム対象選択中は立ち絵タップを少し広めに補助する。
-           const enemyThreshold = isItemEnemyTargetMode
-             ? Math.max(42, cellSize * 1.15)
-             : Math.max(34, cellSize * 0.92);
-
-           if (bestEnemy && bestEnemyScore <= enemyThreshold) {
-             const onclick = bestEnemy.getAttribute('onclick') || '';
-
-             if (isItemEnemyTargetMode) {
-               const itemMatch = onclick.match(/_b32OnItemEnemyTap\('([^']+)'\)/);
-               if (itemMatch && itemMatch[1] && typeof window._b32OnItemEnemyTap === 'function') {
-                 e.preventDefault();
-                 e.stopPropagation();
-                 window._b32OnItemEnemyTap(itemMatch[1]);
-                 return;
-               }
-             }
-
-             const infoMatch = onclick.match(/_b32ShowEnemyInfo\('([^']+)'\)/);
-             if (infoMatch && infoMatch[1] && typeof window._b32ShowEnemyInfo === 'function') {
-               e.preventDefault();
-               e.stopPropagation();
-               window._b32ShowEnemyInfo(infoMatch[1]);
-               return;
-             }
-           }
-         }
-       }
-     }
-
-     // ------------------------------------------------------------
-     // 移動先タップ fallback
-     // ------------------------------------------------------------
-     if (!_moveMode || !_selMoveAllyUid) return;
-
-     // 通常どおりセル自体へイベントが届いている場合は、各セルのonclickへ任せる。
-     // capture段階で先に移動させるとclickとの二重実行になるため、ここでは何もしない。
-     const directCell = e.target && e.target.closest
-       ? e.target.closest('.b32-cell')
-       : null;
-     if (directCell && currentBoard.contains(directCell)) return;
-
-     // iOSの3D盤面でtargetがboard等になった場合だけ、画面座標から
-     // 「実際に押された1マス」を特定する。
-     // 最寄りの移動可能マスへ吸着させる処理は行わない。
-     const allCells = Array.from(currentBoard.querySelectorAll('.b32-cell'));
-     if (!allCells.length) return;
-
-     let hitCell = null;
-
-     // まずブラウザの実ヒット結果を優先する。
-     if (typeof document.elementsFromPoint === 'function') {
-       const stack = document.elementsFromPoint(e.clientX, e.clientY);
-       for (const el of stack) {
-         const cell = el && el.closest ? el.closest('.b32-cell') : null;
-         if (cell && currentBoard.contains(cell)) {
-           hitCell = cell;
-           break;
-         }
-       }
-     }
-
-     // elementsFromPointで拾えないiOS向けに、各セルの実表示矩形内だけを判定する。
-     // 複数矩形が重なる場合は、中心が最も近いセルを採用する。
-     if (!hitCell) {
-       let bestDist = Infinity;
-       allCells.forEach(cell => {
-         const rect = cell.getBoundingClientRect();
-         if (rect.width <= 0 || rect.height <= 0) return;
-         if (
-           e.clientX < rect.left || e.clientX > rect.right ||
-           e.clientY < rect.top || e.clientY > rect.bottom
-         ) return;
-
-         const cx = rect.left + rect.width / 2;
-         const cy = rect.top + rect.height / 2;
-         const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-         if (dist < bestDist) {
-           bestDist = dist;
-           hitCell = cell;
-         }
-       });
-     }
-
-     // 押したマスそのものが移動可能でなければ何もしない。
-     // 隣の移動可能マスへ自動補正しない。
-     if (!hitCell || !hitCell.classList.contains('movable')) return;
-
-     const r = Number(hitCell.dataset.row);
-     const c = Number(hitCell.dataset.col);
-     if (Number.isFinite(r) && Number.isFinite(c)) {
-       e.preventDefault();
-       e.stopPropagation();
-       window._b32OnMoveCellTap(r, c);
-     }
-   }, true);
- }
-
- // ============================================================
  // ボード描画
  // ============================================================
  function renderBoard(bs) {
@@ -6792,36 +2952,21 @@ function _onHayateMoonModeChange(data) {
  [
  ...bs.allies.filter(u => u.hp > 0),
  ...bs.enemies.filter(u => u.hp > 0 || u.isBoss),
- ...(bs.summons || []).filter(u => u && u.hp > 0),
- ].forEach(u => { b32UnitFootprintCells(u).forEach(cell => { unitMap[cell.key] = u; }); });
+ ].forEach(u => { unitMap[`${u.row}-${u.col}`] = u; });
 
  // ── スキルフェーズ用ハイライト ──
  let skillSelectableUids = new Set();
  let skillRangeCells = new Map(); // key:'row-col', value:cellType
- let comboRangeCells = new Map(); // key:'row-col', selected ally combo trigger range
- let comboSkillRangeCells = new Map(); // key:'row-col', selected ally combo skill effect range
  let movableCells = new Set(); // 通常移動マス
  let captureCells = new Set(); // 駒取りマス
 
  if (bs.phase === 'skill') {
- // 盤面タップで選択中の味方は、行動選択状態に関係なくコンボ反応範囲と効果範囲を表示する。
- if (_comboRangeAllyUid) {
-   const selectedComboAlly = (bs.allies || []).find(u =>
-     u._uid === _comboRangeAllyUid && u.hp > 0
-   );
-   if (selectedComboAlly && b32ResolveComboDef(selectedComboAlly)) {
-     comboRangeCells = b32ComboRangeCells(selectedComboAlly);
-     comboSkillRangeCells = b32ComboSkillRangeCells(selectedComboAlly, bs);
-   } else if (!selectedComboAlly) {
-     _comboRangeAllyUid = null;
-   }
- }
-
- // ── LINK + キャラ別行動履歴で行動可否を判定 ──
- const canAct = !bs.result && bs.phase === 'skill';
- // 現仕様：1キャラ最大2行動。移動1回 + スキル/ULT1回まで。
- const canMoveUnit  = (uid) => canAct && _unitCanMoveNow(bs, uid) && _canActByLink(bs, 1);
- const canSkillUnit = (uid) => canAct && _unitCanUseSkillActionNow(bs, uid);
+ // ── LINK + unitActionDone で行動可否を判定 ──
+ const canAct = !bs.result && _canActByLink(bs, 1);
+ const _history = bs.unitActionHistory || {};
+ // 駒アクション（移動/スキル/ULT）は1ターン1回 → unitActionDone で一元管理
+ const canMoveUnit  = (uid) => canAct && !(_history[uid] || {}).unitActionDone;
+ const canSkillUnit = (uid) => canAct && !(_history[uid] || {}).unitActionDone;
 
  if (_moveMode && _selMoveAllyUid) {
  // ── 移動先マス選択中 ──
@@ -6839,8 +2984,7 @@ function _onHayateMoonModeChange(data) {
 
  } else if (_selSkillAllyUid) {
  // ── スキルキャラ選択済み ──
- // 行動上限到達後でも、スキル確認用に射程だけは表示する。
- if (_selSkillId) {
+ if (canSkillUnit(_selSkillAllyUid) && _selSkillId) {
  skillRangeCells = _skillRangeCells(_selSkillAllyUid, _selSkillId);
  }
 
@@ -6877,21 +3021,8 @@ function _onHayateMoonModeChange(data) {
  });
  }
 
- // ── レムナント05：怨念マス ──
- const remnant05CurseCells = new Map();
- (Array.isArray(bs.remnant05Curses) ? bs.remnant05Curses : []).forEach(curse => {
-   if (curse) remnant05CurseCells.set(`${curse.row}-${curse.col}`, curse);
- });
-
- // ── 敵攻撃の実行導線 ──
- const enemyAttackTraceCells = new Map();
- (Array.isArray(bs.activeEnemyAttackTraceCells) ? bs.activeEnemyAttackTraceCells : []).forEach(cell => {
-   if (cell) enemyAttackTraceCells.set(`${cell.row}-${cell.col}`, cell);
- });
-
- // ── 敵タップ時の情報ガイド ──
-let enemyMoveGuideCells = new Set();
-let enemyAttackGuideCells = new Map(); // key:'row-col', value:'attack' | 'target_ally'
+ // ── 敵タップ時の移動ガイド ──
+let enemyGuideCells = new Set();
 let selectedEnemy = null;
 
 if (_selectedEnemyUid) {
@@ -6901,18 +3032,11 @@ if (_selectedEnemyUid) {
  );
 
  if (selectedEnemy) {
-   if (_selectedEnemyGuideMode === 'move') {
-     getEnemyMoveGuideCells(selectedEnemy, bs).forEach(c => {
-       enemyMoveGuideCells.add(`${c.row}-${c.col}`);
-     });
-   } else if (_selectedEnemyGuideMode === 'attack') {
-     getEnemyAttackGuideCells(selectedEnemy, bs).forEach(c => {
-       enemyAttackGuideCells.set(`${c.row}-${c.col}`, c.cellType || 'attack');
-     });
-   }
+ getEnemyMoveGuideCells(selectedEnemy, bs).forEach(c => {
+ enemyGuideCells.add(`${c.row}-${c.col}`);
+ });
  } else {
-   _selectedEnemyUid = null;
-   _selectedEnemyGuideMode = null;
+ _selectedEnemyUid = null;
  }
 }
 
@@ -6922,8 +3046,7 @@ if (_selectedEnemyUid) {
  // ── ローグライト: アイテム対象（転位符の移動先マス）──
  // _itemPhase === 'cell' のとき: 盤面の空きマスをクリック可能にする
  let itemCellTargets = new Set();
- const activeItem = (_itemMode && bs.items && _itemSlotIndex != null) ? bs.items[_itemSlotIndex] : null;
- if (_itemMode && activeItem && activeItem.type === 'move_ally' && _itemPhase === 'cell' && _itemTargetUid) {
+ if (_itemMode && _itemPhase === 'cell' && _itemTargetUid) {
    for (let r = 0; r < 8; r++) {
      for (let c = 0; c < 5; c++) {
        const key = `${r}-${c}`;
@@ -6945,69 +3068,24 @@ if (_selectedEnemyUid) {
  const isDivider = r === 4;
 
  const isSkillSelectable = unit && unit.side === 'ally' && skillSelectableUids.has(unit._uid);
- // 行動済みでも情報確認のため、通常待機中は生存味方をタップ可能にする
- const isAllyInspectable = !!(
-   unit &&
-   unit.side === 'ally' &&
-   unit.hp > 0 &&
-   bs.phase === 'skill' &&
-   !bs.result &&
-   !_moveMode &&
-   !_selSkillAllyUid &&
-   !_selSkillId &&
-   !_summonMode &&
-   !_itemMode
- );
-
- // 各種選択中でも敵はタップ可能にする。
- // 目的：敵の移動可能マス・簡易情報を見ながら、召喚位置/移動先/スキル使用判断ができるようにする。
- // 対象：通常待機中、移動先選択中、召喚マス選択中、スキル/ULT確認・実行画面。
- // ※ アイテム使用中は対象選択と競合しやすいため既存操作を優先する。
- const isEnemyInspectable = !!(
-   unit &&
-   unit.side === 'enemy' &&
-   (unit.hp > 0 || unit.isBoss) &&
-   bs.phase === 'skill' &&
-   !bs.result &&
-   !_itemMode
- );
  // 移動対象または スキル対象として選択中のキャラを盤面ハイライト
  const isSkillSelected = unit && bs.phase === 'skill' && (
- unit._uid === _selActionAllyUid ||
  unit._uid === _selSkillAllyUid ||
  (unit._uid === _selMoveAllyUid && _moveMode)
  );
  // skillRangeCells は Map<"row-col", cellType>
  const skillCellType = skillRangeCells.get ? skillRangeCells.get(key) : null;
- const isComboRange = comboRangeCells.has(key);
- const comboSkillCellType = comboSkillRangeCells.get
-   ? comboSkillRangeCells.get(key)
-   : null;
  const isMovable = movableCells.has(key);
  const isCapture = captureCells.has(key);
  // 危険エリア種別（'boss_line' | 'boss_warn' | 'boss_normal' | undefined）
  const bossDangerType = bossDangerCells.get(key);
- const enemyAttackTrace = enemyAttackTraceCells.get(key) || null;
- const remnant05Curse = remnant05CurseCells.get(key) || null;
- const isEnemyMoveGuide = enemyMoveGuideCells.has(key);
- const enemyAttackCellType = enemyAttackGuideCells.get ? enemyAttackGuideCells.get(key) : null;
- const isEnemyAttackGuide = enemyAttackCellType === 'attack';
- const isEnemyAttackTarget = enemyAttackCellType === 'target_ally';
+ const isEnemyMoveGuide = enemyGuideCells.has(key);
  // ローグライト: 召喚マス
  const isSummonCell = summonCells.has(key);
  // ローグライト: アイテム対象（転位符移動先）
  const isItemCell = itemCellTargets.has(key);
- // ローグライト: アイテム対象ユニット
- const isItemAllyTarget = !!(
-   _itemMode && activeItem && _itemPhase === 'target' &&
-   unit && unit.side === 'ally' && unit.hp > 0 &&
-   b32IsAllyTargetItem(activeItem)
- );
- const isItemEnemyTarget = !!(
-   _itemMode && activeItem && _itemPhase === 'target' &&
-   unit && unit.side === 'enemy' && unit.hp > 0 &&
-   ['stun_enemy', 'swap_enemy'].includes(activeItem.type)
- );
+ // ローグライト: アイテム対象の味方（heal/転位符）
+ const isItemAllyTarget = _itemMode && _itemPhase === 'target' && unit && unit.side === 'ally' && unit.hp > 0;
 
  let cls = `b32-cell ${zoneClass}`;
  if (isDivider) cls += ' row-divider';
@@ -7015,15 +3093,13 @@ if (_selectedEnemyUid) {
  if (bossDangerType === 'boss_line') cls += ' boss-danger-line';
  else if (bossDangerType === 'boss_warn') cls += ' boss-danger-warn';
  else if (bossDangerType === 'boss_normal') cls += ' boss-danger-normal';
- if (enemyAttackTrace) cls += enemyAttackTrace.hit ? ' enemy-attack-trace-hit' : ' enemy-attack-trace';
- if (remnant05Curse) cls += ' remnant05-curse-cell';
 
  if (isEnemyMoveGuide) cls += ' enemy-move-guide';
- if (isEnemyAttackGuide) cls += ' enemy-attack-guide';
- if (isEnemyAttackTarget) cls += ' enemy-attack-target';
+ // コアがあるセルにフラグ付与（filter/animation からコア表示を保護するため）
+ if (bs.cores?.ally && r === bs.cores.ally.row && c === bs.cores.ally.col) {
+ cls += ' has-core';
+ }
  if (isSkillSelectable) cls += ' skill-selectable';
- if (isAllyInspectable) cls += ' ally-inspectable';
- if (isEnemyInspectable) cls += ' enemy-inspectable';
  if (isSkillSelected) cls += ' skill-selected';
  if (isMovable) cls += ' movable';
  if (isCapture) cls += ' move-capture';
@@ -7031,15 +3107,12 @@ if (_selectedEnemyUid) {
  if (skillCellType === 'target_enemy') cls += ' skill-target-enemy';
  else if (skillCellType === 'target_ally') cls += ' skill-target-ally';
  else if (skillCellType === 'range') cls += ' skill-range';
- if (isComboRange) cls += ' combo-range';
- if (comboSkillCellType) cls += ' combo-skill-range';
  // 召喚マス
  if (isSummonCell) cls += ' summon-cell';
  // アイテム移動先マス
  if (isItemCell) cls += ' item-cell-target';
- // アイテム対象味方/敵
+ // アイテム対象味方
  if (isItemAllyTarget) cls += ' skill-target-ally';
- if (isItemEnemyTarget) cls += ' skill-target-enemy';
 
  // クリックハンドラ
 let onclick = '';
@@ -7050,9 +3123,6 @@ if (_summonMode && isSummonCell && !unit) {
 } else if (_itemMode && isItemAllyTarget && _itemPhase === 'target') {
  onclick = `onclick="_b32OnItemAllyTap('${unit._uid}')"`;
 
-} else if (_itemMode && isItemEnemyTarget && _itemPhase === 'target') {
- onclick = `onclick="_b32OnItemEnemyTap('${unit._uid}')"`;
-
 } else if (_itemMode && isItemCell && _itemPhase === 'cell') {
  onclick = `onclick="_b32OnItemCellTap(${r},${c})"`;
 
@@ -7060,397 +3130,71 @@ if (_summonMode && isSummonCell && !unit) {
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
 } else if (isCapture) {
- // 移動先として選択可能な敵マスは、敵情報より移動操作を優先する。
  onclick = `onclick="_b32OnMoveCellTap(${r},${c})"`;
 
-} else if (isEnemyInspectable) {
- // 敵情報は、その敵が立っているセル内を直接タップした時だけ表示する。
- onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
-
-} else if (isAllyInspectable || isSkillSelectable || isSkillSelected) {
+} else if (isSkillSelectable || isSkillSelected) {
  onclick = `onclick="_b32OnSkillAllyTap('${unit._uid}')"`;
+
+} else if (
+ unit &&
+ unit.side === 'enemy' &&
+ !bs.result &&
+ !_moveMode &&
+ !_selSkillAllyUid &&
+ !_selSkillId &&
+ !_summonMode &&
+ !_itemMode
+) {
+ onclick = `onclick="_b32ShowEnemyInfo('${unit._uid}')"`;
 }
-  const enemyAttackTraceOverlay = enemyAttackTrace
-    ? `<span class="b32-enemy-attack-trace-overlay${enemyAttackTrace.hit ? ' hit' : ''}" aria-hidden="true"><i></i><b></b></span>`
-    : '';
-  const remnant05CurseOverlay = remnant05Curse
-    ? `<span class="b32-remnant05-curse-overlay" aria-hidden="true"><i></i></span>`
-    : '';
-
-  // 敵情報ガイド専用オーバーレイ
-  // cell の background だけだと、白背景・3D変形・ゾーン背景の上で薄く見えるため、
-  // スキルレンジと同じく専用spanを置いて視認性を担保する。
-  let enemyGuideOverlay = '';
-  if (isEnemyMoveGuide) {
-    enemyGuideOverlay = '<span class="b32-enemy-guide-overlay move"></span>';
-  } else if (isEnemyAttackTarget) {
-    enemyGuideOverlay = '<span class="b32-enemy-guide-overlay target_ally"></span>';
-  } else if (isEnemyAttackGuide) {
-    enemyGuideOverlay = '<span class="b32-enemy-guide-overlay attack"></span>';
-  }
-
   // スキルレンジオーバーレイ（背景CSSが !important 上書きされても視認できる専用span）
   const skillOverlay = skillCellType
     ? `<span class="b32-skill-range-overlay ${skillCellType}"></span>`
     : '';
-  // コンボレンジはセル背景ではなく専用オーバーレイで描画する。
-  // 盤面の3D変形・ゾーン背景・!important指定の影響を受けない。
-  const comboOverlay = isComboRange
-    ? `<span class="b32-combo-range-overlay" aria-hidden="true"></span>`
-    : '';
-
-  // コンボスキルそのものの射程。紫の発動レンジとは別色（金）で表示する。
-  const comboSkillOverlay = comboSkillCellType
-    ? `<span class="b32-combo-skill-range-overlay ${comboSkillCellType}" aria-hidden="true"></span>`
-    : '';
-
   // 召喚マスオーバーレイ
   const summonOverlay = isSummonCell && !unit
     ? `<span style="position:absolute;top:2px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:rgba(120,180,255,.9);text-shadow:0 0 6px rgba(80,160,255,.8);pointer-events:none;">SUMMON</span>`
     : '';
 
-  // iOS実機向け：3D rotateXを使わずに奥行きを出すため、
-  // 行ごとに横幅と中央寄せ量を持たせる。
-  // CSS側でスマホ時のみ参照するため、通常表示/ロジックには影響しない。
-  const rootForCell = document.getElementById(ROOT_ID);
-  const cellPx = rootForCell
-    ? (parseFloat(getComputedStyle(rootForCell).getPropertyValue('--cell-size')) || 40)
-    : 40;
-  const rowScale = Math.max(0.76, Math.min(1.00, 0.78 + r * 0.034));
-  const rowInvScale = 1 / rowScale;
-  const cellShift = (2 - c) * (1 - rowScale) * cellPx * 0.72;
-  const depthStyle = `style="--b32-row-scale:${rowScale.toFixed(3)};--b32-row-inv-scale:${rowInvScale.toFixed(3)};--b32-cell-shift:${cellShift.toFixed(2)}px;"`;
-
   cells.push(
-    `<div class="${cls}" data-row="${r}" data-col="${c}" ${depthStyle} ${onclick}>` +
-    enemyGuideOverlay +
-    enemyAttackTraceOverlay +
-    remnant05CurseOverlay +
+    `<div class="${cls}" data-row="${r}" data-col="${c}" ${onclick}>` +
     skillOverlay +
-    comboOverlay +
-    comboSkillOverlay +
     summonOverlay +
-    (unit && Number(unit.row) === r && Number(unit.col) === c
-      ? renderUnit(unit, bs.phase)
-      : (!unit ? renderCore(r, c, bs) : '')) +
+    (unit ? renderUnit(unit, bs.phase) : renderCore(r, c, bs)) +
     `</div>`
   );
  }
  }
 
  board.innerHTML = cells.join('');
- installBattle32BoardPointerFallback();
 
  renderEnemyQuickInfo(selectedEnemy);
  
  }
 
- function _getViewportBoundsForEnemyInfo() {
-   const vv = window.visualViewport || null;
-   const width = vv ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 0);
-   const height = vv ? vv.height : (window.innerHeight || document.documentElement.clientHeight || 0);
-   const offsetLeft = vv ? vv.offsetLeft : 0;
-   const offsetTop = vv ? vv.offsetTop : 0;
-   return { width, height, offsetLeft, offsetTop };
- }
-
- function _clampEnemyQuickInfoPosWithSize(pos, size) {
-   const p = pos || { x: 0, y: 0 };
-   const b = _getViewportBoundsForEnemyInfo();
-   const w = Math.max(80, Number(size && size.width) || 300);
-   const h = Math.max(40, Number(size && size.height) || 120);
-   const margin = 8;
-
-   const minX = b.offsetLeft + margin;
-   const maxX = b.offsetLeft + Math.max(margin, b.width - w - margin);
-   const minY = b.offsetTop + margin;
-   const maxY = b.offsetTop + Math.max(margin, b.height - h - margin);
-
-   return {
-     x: Math.min(Math.max(Number(p.x || 0), minX), maxX),
-     y: Math.min(Math.max(Number(p.y || 0), minY), maxY),
-   };
- }
-
- function _clampEnemyQuickInfoPos(pos, box) {
-   const rect = box ? box.getBoundingClientRect() : { width: 300, height: 120 };
-   return _clampEnemyQuickInfoPosWithSize(pos, rect);
- }
-
- function _setEnemyQuickInfoLeftTop(box, pos) {
-   if (!box || !pos) return;
-   box.style.left = `${pos.x}px`;
-   box.style.top = `${pos.y}px`;
-   box.style.right = 'auto';
-   box.style.bottom = 'auto';
-   box.style.transform = 'none';
- }
-
- function _applyEnemyQuickInfoPos(box, pos) {
-   if (!box || !pos) return;
-   const p = _clampEnemyQuickInfoPos(pos, box);
-   _enemyQuickInfoPos = p;
-   _setEnemyQuickInfoLeftTop(box, p);
- }
-
- function _ensureEnemyQuickInfoDragStyle() {
-   if (document.getElementById('b32-enemy-quick-drag-style')) return;
-   const style = document.createElement('style');
-   style.id = 'b32-enemy-quick-drag-style';
-   style.textContent = `
-.b32-enemy-quick-info {
-  user-select: none;
-  -webkit-user-select: none;
-}
-.b32-enemy-quick-drag-handle {
-  cursor: grab;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-  padding: 2px 18px 2px 18px;
-  margin: -2px -4px 4px;
-  position: relative;
-}
-.b32-enemy-quick-drag-handle:active,
-.b32-enemy-quick-info.is-dragging .b32-enemy-quick-drag-handle {
-  cursor: grabbing;
-}
-.b32-enemy-quick-drag-mark {
-  position: absolute;
-  right: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  line-height: 1;
-  letter-spacing: 0;
-  opacity: .42;
-  pointer-events: none;
-}
-.b32-enemy-quick-info.is-dragging {
-  transition: none !important;
-  opacity: .96;
-}
-`;
-   document.head.appendChild(style);
- }
-
- function _installEnemyQuickInfoDrag(box) {
-   if (!box || box.dataset.dragReady === '1') return;
-   _ensureEnemyQuickInfoDragStyle();
-
-   const handle = box.querySelector('.b32-enemy-quick-drag-handle') || box;
-   box.dataset.dragReady = '1';
-
-   handle.addEventListener('pointerdown', (e) => {
-     if (e.button != null && e.button !== 0) return;
-
-     e.preventDefault();
-     e.stopPropagation();
-
-     // 追従遅れ対策：
-     // ドラッグ開始時にだけサイズ・境界を確定し、移動中は getBoundingClientRect() を呼ばない。
-     // 座標は安定版と同じ left/top のみ。transform は使わない。
-     const rect = box.getBoundingClientRect();
-     const start = {
-       pointerId: e.pointerId,
-       sx: e.clientX,
-       sy: e.clientY,
-       x: rect.left,
-       y: rect.top,
-       size: {
-         width: rect.width || box.offsetWidth || 300,
-         height: rect.height || box.offsetHeight || 120,
-       },
-       moved: false,
-     };
-
-     _enemyQuickInfoDragging = true;
-     box.classList.add('is-dragging');
-     box.style.transition = 'none';
-     box.style.willChange = 'left, top';
-     box.style.transform = 'none';
-
-     try {
-       handle.setPointerCapture(e.pointerId);
-     } catch (err) {}
-
-     function onMove(ev) {
-       if (ev.pointerId !== start.pointerId) return;
-       ev.preventDefault();
-       ev.stopPropagation();
-
-       const dx = ev.clientX - start.sx;
-       const dy = ev.clientY - start.sy;
-       // 敵情報パネルのドラッグ開始感度。旧3pxから半分の1.5pxへ短縮。
-       if (Math.abs(dx) + Math.abs(dy) > 1.5) start.moved = true;
-
-       const p = _clampEnemyQuickInfoPosWithSize({
-         x: start.x + dx,
-         y: start.y + dy,
-       }, start.size);
-
-       _enemyQuickInfoPos = p;
-       _setEnemyQuickInfoLeftTop(box, p);
-     }
-
-     function onEnd(ev) {
-       if (ev.pointerId !== start.pointerId) return;
-       ev.preventDefault();
-       ev.stopPropagation();
-
-       handle.removeEventListener('pointermove', onMove);
-       handle.removeEventListener('pointerup', onEnd);
-       handle.removeEventListener('pointercancel', onEnd);
-
-       try {
-         handle.releasePointerCapture(start.pointerId);
-       } catch (err) {}
-
-       box.classList.remove('is-dragging');
-       box.style.willChange = '';
-       box.style.transition = '';
-
-       setTimeout(() => { _enemyQuickInfoDragging = false; }, 0);
-     }
-
-     handle.addEventListener('pointermove', onMove, { passive: false });
-     handle.addEventListener('pointerup', onEnd, { passive: false });
-     handle.addEventListener('pointercancel', onEnd, { passive: false });
-   }, { passive: false });
- }
-
- function _positionEnemyQuickInfoPanel(box) {
- if (!box) return;
-
- // ドラッグ済みの場合は、保存位置を最優先する。
- if (_enemyQuickInfoPos) {
-   _applyEnemyQuickInfoPos(box, _enemyQuickInfoPos);
-   return;
- }
-
- // 敵情報パネルはグリッド上段を隠さないよう、味方カードの直上へ逃がす。
- // 中央寄せの translateX(-50%) はドラッグ量と競合して左へ吸われるため使わない。
- // 初期位置も left/top のpxで確定し、以後のドラッグも同じ座標系で扱う。
- const roster = document.getElementById('b32-roster-panel');
- const root = document.getElementById(ROOT_ID);
- let bottomPx = null;
-
- if (roster && getComputedStyle(roster).display !== 'none') {
-   const rr = roster.getBoundingClientRect();
-   if (rr.height > 0 && rr.top > 0) {
-     bottomPx = Math.max(8, window.innerHeight - rr.top + 8);
-   }
- }
-
- if (bottomPx == null) {
-   const actions = document.getElementById('b32-actions');
-   if (actions && getComputedStyle(actions).display !== 'none') {
-     const ar = actions.getBoundingClientRect();
-     if (ar.height > 0 && ar.top > 0) {
-       bottomPx = Math.max(8, window.innerHeight - ar.top + 96);
-     }
-   }
- }
-
- if (bottomPx == null && root) {
-   bottomPx = root.classList.contains('b32-vp-se')
-     ? 162
-     : 186;
- }
-
- const view = _getViewportBoundsForEnemyInfo();
- const rect = box.getBoundingClientRect();
- const w = Math.max(80, rect.width || 300);
- const h = Math.max(40, rect.height || 120);
- const targetX = view.offsetLeft + Math.max(8, (view.width - w) / 2);
- const targetY = bottomPx != null
-   ? view.offsetTop + view.height - bottomPx - h
-   : view.offsetTop + 24;
-
- _applyEnemyQuickInfoPos(box, { x: targetX, y: targetY });
-}
-
-function ensureSakielPreviewStyle() {
-  if (document.getElementById('b32-sakiel-preview-style')) return;
-  const style = document.createElement('style');
-  style.id = 'b32-sakiel-preview-style';
-  style.textContent = `
-    .b32-enemy-quick-next-action {
-      margin: 7px 0 2px;
-      padding: 7px 9px;
-      border: 1px solid rgba(214,177,112,.34);
-      border-radius: 9px;
-      background: rgba(92,45,33,.22);
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 2px 8px;
-      text-align: left;
-    }
-    .b32-enemy-quick-next-action span {
-      color: rgba(238,218,190,.58);
-      font-size: .58rem;
-      letter-spacing: .08em;
-    }
-    .b32-enemy-quick-next-action strong {
-      color: #ffd6b8;
-      font-size: .72rem;
-      text-align: right;
-    }
-    .b32-enemy-quick-next-action small {
-      grid-column: 1 / -1;
-      color: rgba(245,230,215,.72);
-      font-size: .61rem;
-      line-height: 1.45;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function renderEnemyQuickInfo(enemy) {
-  ensureSakielPreviewStyle();
+ function renderEnemyQuickInfo(enemy) {
  let box = document.getElementById('b32-enemy-quick-info');
  if (box) box.remove();
 
  if (!enemy) return;
 
- const moveActive = _selectedEnemyGuideMode === 'move';
- const attackActive = _selectedEnemyGuideMode === 'attack';
- const guideMode = moveActive || attackActive;
- const plannedAction = getEnemyPlannedAction(enemy);
- const isRandomTargetPreview = !!(plannedAction && plannedAction.isRandomTarget);
- const modeText = moveActive
-   ? '移動範囲表示中'
-   : attackActive
-     ? (isRandomTargetPreview ? '次回行動の効果表示中' : '次回攻撃範囲表示中')
-     : '';
- const plannedDetailHtml = plannedAction
-   ? `<div class="b32-enemy-quick-next-action"><span>次回行動</span><strong>${b32EscapeHtml(plannedAction.title || '特殊行動')}</strong><small>${b32EscapeHtml(plannedAction.guideText || plannedAction.sub || '')}</small></div>`
-   : '';
-
  box = document.createElement('div');
  box.id = 'b32-enemy-quick-info';
- box.className = `b32-enemy-quick-info ${guideMode ? 'is-guide-mode' : ''} ${moveActive ? 'is-move' : ''} ${attackActive ? 'is-attack' : ''}`;
+ box.className = 'b32-enemy-quick-info';
  box.innerHTML = `
- <button type="button" class="b32-enemy-quick-close" onclick="_b32CloseEnemyInfo()" aria-label="閉じる">×</button>
- <div class="b32-enemy-quick-title b32-enemy-quick-drag-handle">${b32EscapeHtml(enemy.name || '??????')}<span class="b32-enemy-quick-drag-mark"></span></div>
- <div class="b32-enemy-quick-mode-label">${b32EscapeHtml(modeText)}</div>
- <div class="b32-enemy-quick-statline">
-   <span>HP <strong>${enemy.hp} / ${enemy.hpMax}</strong></span>
-   <span>ATK <strong>${enemy.atk}</strong></span>
+ <div class="b32-enemy-quick-title">${enemy.name || '??????'}</div>
+ <div class="b32-enemy-quick-row">
+ <span>HP</span><strong>${enemy.hp} / ${enemy.hpMax}</strong>
  </div>
- <div class="b32-enemy-quick-statline">
-   <span>移動 <strong>${b32EscapeHtml(enemyMoveLabel(enemy.moveType))}</strong></span>
-   <span>攻撃 <strong>${b32EscapeHtml(enemyAttackDisplayLabel(enemy))}</strong></span>
+ <div class="b32-enemy-quick-row">
+ <span>ATK</span><strong>${enemy.atk}</strong>
  </div>
- ${plannedDetailHtml}
- <div class="b32-enemy-quick-actions">
-   <button type="button" class="b32-enemy-quick-btn ${moveActive ? 'active move' : ''}" onclick="_b32EnemyGuide('move')">移動</button>
-   <button type="button" class="b32-enemy-quick-btn ${attackActive ? 'active attack' : ''}" onclick="_b32EnemyGuide('attack')">攻撃</button>
+ <div class="b32-enemy-quick-row">
+ <span>移動</span><strong>${enemyMoveLabel(enemy.moveType)}</strong>
  </div>
  `;
 
  document.body.appendChild(box);
- _installEnemyQuickInfoDrag(box);
- _positionEnemyQuickInfoPanel(box);
 }
 
 function renderBattleMenu(bs) {
@@ -7460,11 +3204,7 @@ function renderBattleMenu(bs) {
  menu = document.createElement('div');
  menu.id = 'b32-battle-menu';
  menu.innerHTML = `
- <button id="b32-battle-menu-btn" type="button" aria-label="バトルメニュー" title="メニュー">
- <span class="b32-menu-line" aria-hidden="true"></span>
- <span class="b32-menu-line" aria-hidden="true"></span>
- <span class="b32-menu-line" aria-hidden="true"></span>
- </button>
+ <button id="b32-battle-menu-btn" type="button">MENU</button>
  <div id="b32-battle-menu-panel">
  <button class="b32-battle-menu-item" type="button" data-action="restart">
  やり直す
@@ -7501,11 +3241,7 @@ function renderBattleMenu(bs) {
  }
 
  if (action === 'stage') {
- const currentBs = _bs();
- const msg = currentBs && currentBs.isRoguelite
-   ? 'ローグライトを中断して巡行画面に戻りますか？'
-   : 'バトルを中断してステージ選択に戻りますか？';
- if (!confirm(msg)) return;
+ if (!confirm('バトルを中断してステージ選択に戻りますか？')) return;
  b32ReturnToStageSelect();
  return;
  }
@@ -7537,289 +3273,86 @@ function b32RestartBattle() {
  location.reload();
 }
 
-function _b32CleanupBattleAndRogueliteOverlays(restoreCommonUi) {
-  if (typeof window.cleanupBattle32Overlays === 'function') {
-    window.cleanupBattle32Overlays({ restoreCommonUi: !!restoreCommonUi });
-  }
-
-  // cleanupBattle32Overlays で消し漏れがあっても、ここで必ず消す
-  [
-    'battle32-root',
-    'b32-link-bar',
-    'b32-roster-panel',
-    'b32-item-panel',
-    'b32-roster-info-close-hitbox',
-    'b32-enemy-info-overlay',
-    'b32-enemy-quick-info',
-    'b32-battle-menu',
-    'b32-center-text',
-    'b32-combo-text',
-    'b32-turn-danger-frame',
-    'b32-result-overlay',
-    'rl-victory-wait-layer',
-    'rl-transition-shield',
-    'rl-stage-clear-overlay',
-    'rl-stage-fail-overlay',
-    'rl-run-result-overlay',
-    'rl-run-victory-fx',
-    'b32-action-detail-portal'
-  ].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    if (id === 'battle32-root') {
-      el.style.display = 'none';
-    } else {
-      el.remove();
-    }
-  });
-
-  _enemyQuickInfoPos = null;
-  _enemyQuickInfoDragging = false;
-  window.__BATTLE32_UI_ACTIVE__ = false;
-  window.__ROGUELITE_TRANSITIONING__ = false;
-}
-
-function _b32RestoreCommonUi() {
-  const nav = document.getElementById('bottom-nav-shared');
-  if (nav) nav.style.display = '';
-
-  const guf = document.getElementById('global-user-frame');
-  if (guf) {
-    guf.classList.remove('hidden');
-    guf.style.display = '';
-  }
-}
-
-function _b32OpenRogueliteMain() {
-  // ローグライト中断時は CHAPTER01 のステージ選択ではなく、巡行メインへ戻す。
-  // 画面系の関数名はプロジェクト側の実装差分を吸収するため、存在するものだけ呼ぶ。
-  ['stage-select-modal', 'party-select-modal', 'enemy-intro-root', 'battle-root'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-
-  const openers = [
-    window.openExplore,
-    window.showExplore,
-    window.openExploration,
-    window.showExploration,
-    window.openExploreScreen,
-    window.showExploreScreen,
-    window.openMainExplore,
-    window.showMainExplore,
-  ];
-
-  for (const fn of openers) {
-    if (typeof fn === 'function') {
-      try {
-        fn();
-        _b32RestoreCommonUi();
-        if (typeof window.updateMainUI === 'function') window.updateMainUI();
-        return;
-      } catch (e) {
-        console.warn('[Battle32UI] 巡行画面復帰関数の呼び出しに失敗:', e);
-      }
-    }
-  }
-
-  const explore = document.getElementById('explore-root') || document.getElementById('explore-screen');
-  if (explore) {
-    explore.classList.remove('hidden');
-    explore.style.display = '';
-  }
-
-  _b32RestoreCommonUi();
-  if (typeof window.updateMainUI === 'function') window.updateMainUI();
-}
-
 function b32ReturnToStageSelect() {
-  const bs = _bs();
-  const isRoguelite = !!(bs && bs.isRoguelite);
+ const bs = _bs();
 
-  // ローグライト中ならラン終了し、ステージ選択ではなく巡行メインへ戻す
-  if (isRoguelite) {
-    if (window.RogueliteRun) {
-      window.RogueliteRun.end('lose');
-    }
-    if (typeof window.clearBattle32ResumeState === 'function') {
-      window.clearBattle32ResumeState();
-    }
+ // ローグライト中ならランを終了
+ if (bs && bs.isRoguelite && window.RogueliteRun) {
+ window.RogueliteRun.end('lose');
+ }
 
-    _b32CleanupBattleAndRogueliteOverlays(true);
-    _b32OpenRogueliteMain();
-    return;
-  }
+ // Battle32だけ閉じる
+ const root = document.getElementById('battle32-root');
+ if (root) root.style.display = 'none';
 
-  // 通常バトルのみ、戻り先チャプターを決めてステージ選択へ戻す
-  let chapter = 1;
+ const info = document.getElementById('b32-enemy-quick-info');
+ if (info) info.remove();
 
-  if (bs && bs.returnChapter != null) {
-    chapter = bs.returnChapter;
-  } else if (bs && bs.stageId && typeof STAGES !== 'undefined') {
-    const st = STAGES.find(s => s.id === bs.stageId);
-    if (st && st.chapter != null) chapter = st.chapter;
-  }
+ const menu = document.getElementById('b32-battle-menu');
+ if (menu) menu.remove();
 
-  _b32CleanupBattleAndRogueliteOverlays(false);
+ // 既存のステージ選択へ戻す処理があるなら優先
+ if (typeof window.openStageSelect === 'function') {
+ window.openStageSelect();
+ return;
+ }
 
-  // ステージ選択へ戻す
-  if (typeof window.openStageSelect === 'function') {
-    window.openStageSelect(chapter);
-    return;
-  }
+ if (typeof window.showStageSelect === 'function') {
+ window.showStageSelect();
+ return;
+ }
 
-  if (typeof window.showStageSelect === 'function') {
-    window.showStageSelect(chapter);
-    return;
-  }
+ // 最後の手段：既存closeBattle32UIを使う
+ if (typeof window.closeBattle32UI === 'function') {
+ window.closeBattle32UI();
+ return;
+ }
 
-  console.warn('[Battle32UI] ステージ選択へ戻る関数が見つかりません');
+ console.warn('[Battle32UI] ステージ選択へ戻る関数が見つかりません');
 }
 
  function renderCore(row, col, bs) {
- // コア概念廃止：盤面にはコアを描画しない
+ const cores = bs.cores;
+ if (!cores) return '';
+
+ // 自陣コアのみ表示
+ if (cores.ally && row === cores.ally.row && col === cores.ally.col) {
+ const stability = cores.ally.stability ?? 3;
+
+ let img = 'images/battle_core_100.webp';
+ if (stability <= 1) {
+ img = 'images/battle_core_30.webp';
+ } else if (stability === 2) {
+ img = 'images/battle_core_60.webp';
+ }
+
+ return `
+ <div class="b32-core-object stability-${stability}">
+ <img class="b32-core-img" src="${img}" alt="CORE" onerror="this.style.display='none'">
+ </div>
+ `;
+ }
+
  return '';
-}
-
-
-function b32StatusEffectBadgeList(unit, blessing) {
- const effects = Array.isArray(unit && unit.statusEffects) ? unit.statusEffects : [];
- const passiveBuffs = Array.isArray(unit && unit.rogueliteBuffs) ? unit.rogueliteBuffs : [];
- const badges = [];
- const pushBadge = (cls, text, priority = 50) => {
-   if (text && !badges.some(b => b.text === text)) badges.push({ cls, text, priority });
- };
- const fmtDur = (e) => e && e.duration ? `${e.duration}T` : '';
- const fmtPctFromAdd = (value, fallback) => {
-   const n = Number(value);
-   if (!Number.isFinite(n)) return fallback;
-   return Math.round((n <= 1 ? n : n / 100) * 100);
- };
- const fmtPctFromMultiplier = (value, fallback, up = true) => {
-   const n = Number(value);
-   if (!Number.isFinite(n)) return fallback;
-   return up ? Math.round((n - 1) * 100) : Math.round((1 - n) * 100);
- };
-
- // 加護の常時効果は、既存BUFFと同じ上昇アイコンへ統合する。
- // INV使用後も常時効果は継続するため、used状態では消さない。
- if (unit && unit.side !== 'enemy' && blessing) {
-   const passiveCriticalRate = Number(blessing.passiveCriticalRate || 0);
-   const passiveAtkRate = Number(blessing.passiveAtkRate || 0);
-   const passiveHpRate = Number(blessing.passiveHpRate || 0);
-
-   if (passiveCriticalRate > 0) {
-     pushBadge('buff passive', `CRI+${Math.round(passiveCriticalRate * 100)}%`, 1);
-   }
-   if (passiveAtkRate > 0) {
-     pushBadge('buff passive', `ATK+${Math.round(passiveAtkRate * 100)}%`, 2);
-   }
-   if (passiveHpRate > 0) {
-     pushBadge('buff passive', `HP+${Math.round(passiveHpRate * 100)}%`, 3);
-   }
-   // リヴィアのLINK獲得確率は味方全体のターン処理なので、個別キャラBUFFには表示しない。
- }
-
- // ローグライト報酬などの永続補正。実数値には別途反映済みなので、ここでは表示だけ行う。
- passiveBuffs.forEach(e => {
-   if (!e) return;
-   const rate = Number(e.rate);
-   const type = e.type || e.kind;
-   if (type === 'roguelite_atk_up' || type === 'atk_bonus' || type === 'atk_up_passive') {
-     pushBadge('buff passive', `ATK+${fmtPctFromAdd(rate, 10)}%`, 10);
-   } else if (type === 'roguelite_hp_up' || type === 'hp_bonus' || type === 'hp_up_passive') {
-     pushBadge('buff passive', `HP+${fmtPctFromAdd(rate, 10)}%`, 11);
-   } else if (type === 'roguelite_critical_up' || type === 'critical_bonus' || type === 'crit_bonus') {
-     pushBadge('buff passive', `CRI+${fmtPctFromAdd(rate, 10)}%`, 12);
-   }
- });
-
- effects.forEach(e => {
-   if (!e) return;
-   const dur = fmtDur(e);
-   const rate = Number(e.rate);
-   if (e.type === 'atk_up') {
-     const pct = fmtPctFromMultiplier(rate, 50, true);
-     pushBadge('buff', `ATK+${pct}%${dur ? ` ${dur}` : ''}`, 20);
-   } else if (e.type === 'atk_down') {
-     const pct = fmtPctFromMultiplier(rate, 30, false);
-     pushBadge('debuff', `ATK-${pct}%${dur ? ` ${dur}` : ''}`, 21);
-   } else if (e.type === 'critical_up' || e.type === 'crit_up') {
-     const pct = fmtPctFromAdd(e.rate != null ? e.rate : e.amount, 20);
-     pushBadge('buff', `CRI+${pct}%${dur ? ` ${dur}` : ''}`, 22);
-   } else if (e.type === 'critical_down' || e.type === 'crit_down') {
-     const pct = fmtPctFromAdd(e.rate != null ? e.rate : e.amount, 20);
-     pushBadge('debuff', `CRI-${pct}%${dur ? ` ${dur}` : ''}`, 23);
-   } else if (e.type === 'hp_up') {
-     const pct = fmtPctFromAdd(e.rate != null ? e.rate : e.amount, 20);
-     pushBadge('buff', `HP+${pct}%${dur ? ` ${dur}` : ''}`, 24);
-   } else if (e.type === 'damage_cut') {
-     const pct = Number.isFinite(rate) ? Math.round(rate * 100) : 50;
-     pushBadge('buff', `DMG-${pct}%${dur ? ` ${dur}` : ''}`, 25);
-   } else if (e.type === 'skill_forget') {
-     pushBadge('debuff', `忘却${dur ? ` ${dur}` : ''}`, 39);
-   } else if (e.type === 'poison') {
-     pushBadge('debuff', `毒${dur ? ` ${dur}` : ''}`, 40);
-   } else if (e.type === 'yoi_no_sousou') {
-     pushBadge('buff', `反撃${dur ? ` ${dur}` : ''}`, 30);
-   }
- });
-
- if (unit && (unit.stunned || effects.some(e => e && e.type === 'stun'))) {
-   const stun = effects.find(e => e && e.type === 'stun');
-   pushBadge('debuff', `STUN${stun && stun.duration ? ` ${stun.duration}T` : ''}`, 5);
- }
-
- return badges.sort((a, b) => a.priority - b.priority);
-}
-
-function b32StatusEffectBadgesHtml(unit, compact, blessing) {
- const list = b32StatusEffectBadgeList(unit, blessing);
- if (!list.length) return '';
-
- // 盤面上は効果名を並べず、バフ/デバフの有無と件数だけを要約表示する。
- // 詳細な効果名・効果量・残りターンはキャラ情報側（compact=false）で確認する。
- if (compact) {
-   const buffCount = list.filter(b => String(b.cls || '').split(/\s+/).includes('buff')).length;
-   const debuffCount = list.filter(b => String(b.cls || '').split(/\s+/).includes('debuff')).length;
-   const parts = [];
-   if (buffCount > 0) {
-     parts.push(`<span class="b32-status-summary-chip buff" aria-label="バフ${buffCount}件"><span class="mark">▲</span>${buffCount > 1 ? `<span class="count">${buffCount}</span>` : ''}</span>`);
-   }
-   if (debuffCount > 0) {
-     parts.push(`<span class="b32-status-summary-chip debuff" aria-label="デバフ${debuffCount}件"><span class="mark">▼</span>${debuffCount > 1 ? `<span class="count">${debuffCount}</span>` : ''}</span>`);
-   }
-   return parts.length ? `<div class="b32-status-summary">${parts.join('')}</div>` : '';
- }
-
- return `<div class="b32-status-badges">${list.map(b =>
-   `<span class="b32-status-badge ${b.cls}">${b32EscapeHtml(b.text)}</span>`
- ).join('')}</div>`;
 }
 
  function renderUnit(u, phase) {
  // 生存判定：味方・敵ともに hp で統一
+ // ただしボスは HP0 後も盤面に残る（核露出状態）
  const bsCurrent = _bs();
+ const bossExposed = u.isBoss && bsCurrent?.bossCore?.exposed;
 
- const dead = u.hp <= 0;
+ const dead = u.side === 'ally'
+ ? (u.hp <= 0)
+ : (u.hp <= 0 && !bossExposed); // ボス核露出中は dead 扱いしない
 
  // 両方の行動（move + skill）を使い切ったキャラを done 扱い
  const _uah = (bsCurrent && bsCurrent.unitActionHistory || {});
  const _uh = (_uah[u._uid] || {});
  const isDone = u.side === 'ally' && phase === 'skill' && !!(_uh.move && _uh.skill);
 
-
- // ハヤテ：月光モード中は専用ユニット画像＋月光オーラを表示する。
- const isHayateMoonMode =
-   u.side === 'ally' &&
-   Number(u.id || u.charaId || 0) === 12 &&
-   Number(u.hp || 0) > 0 &&
-   Number(u.hitAndAwayUntilTurn || 0) >= Number(bsCurrent && bsCurrent.turn || 0);
-
  let inner = '';
 const displayImg =
- (isHayateMoonMode ? 'images/chara_12_battle_back_moon.webp' : null) ||
  u.battleBackImg ||
  u.battleBack ||
  u.img ||
@@ -7828,18 +3361,6 @@ const displayImg =
 
 const battleBackScale = getUnitUiScale(u, 'battleBack');
 const battleBackY = getUnitUiOffsetY(u, 'battleBack');
-
-
-if (isHayateMoonMode) {
- inner += `
- <div class="b32-hayate-haa-aura" aria-hidden="true">
-   <span class="b32-hayate-haa-ring"></span>
-   <span class="b32-hayate-haa-flare flare-1"></span>
-   <span class="b32-hayate-haa-flare flare-2"></span>
-   <span class="b32-hayate-haa-flare flare-3"></span>
- </div>
- `;
-}
 
 if (displayImg) {
  inner += `
@@ -7858,42 +3379,11 @@ inner += `<div class="b32-unit-name">${u.name}</div>`;
 
  // 敵のみ HP バーを出力（味方は HP バー廃止）
  // ボスは核露出後もバーを表示（HP0で0%表示になる）
-if (u.side === 'enemy') {
+ if (u.side === 'enemy') {
  const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
  const hpCol = hpColor(u.hp, u.hpMax);
- const elemIcon = unitElementIcon(u.element);
-
- const statusHtml = b32StatusEffectBadgesHtml(u, true, bsCurrent && bsCurrent.blessing);
- inner += `
-  <div class="b32-unit-foot-ui">
-    <div class="b32-unit-foot-main">
-      <div class="b32-hp-bar-wrap">
-        <div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div>
-      </div>
-      ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
-    </div>
-    ${statusHtml}
-  </div>
- `;
-}
-
-if (u.side === 'ally') {
- const hpPct = Math.max(0, Math.round((u.hp / u.hpMax) * 100));
- const elemIcon = unitElementIcon(u.element);
-
- const statusHtml = b32StatusEffectBadgesHtml(u, true, bsCurrent && bsCurrent.blessing);
- inner += `
-  <div class="b32-unit-foot-ui">
-    <div class="b32-unit-foot-main">
-      <div class="b32-hp-bar-wrap">
-        <div class="b32-hp-bar" style="width:${hpPct}%"></div>
-      </div>
-      ${elemIcon ? `<img class="b32-foot-element-icon b32-foot-element-icon-${unitElementClass(u.element)}" src="${elemIcon}" alt="${unitElementLabel(u.element)}" title="${unitElementLabel(u.element)}" onerror="this.style.display='none'">` : ''}
-    </div>
-    ${statusHtml}
-  </div>
- `;
-}
+ inner += `<div class="b32-hp-bar-wrap"><div class="b32-hp-bar" style="width:${hpPct}%;background:${hpCol}"></div></div>`;
+ }
 
  if (u.side === 'ally') {
  const dots = Array.from({ length: u.shinkiMax }, (_, i) =>
@@ -7902,6 +3392,11 @@ if (u.side === 'ally') {
  inner += `<div class="b32-shinki-dots">${dots}</div>`;
  }
  if (u.isBoss) inner += `<div class="b32-boss-badge">BOSS</div>`;
+ // 核露出中はバッジを追加表示
+ if (bossExposed) {
+ const bc = bsCurrent.bossCore;
+ inner += `<div class="b32-boss-badge" style="top:14px;background:rgba(180,80,220,.9)">CORE ${bc.capture}/${bc.captureMax}</div>`;
+ }
  if (isDone) inner += `<div class="b32-unit-done-mark">✓</div>`;
 
  // ── スタン判定 ──
@@ -7929,21 +3424,11 @@ const enemyIdClass = u.side === 'enemy' && u.id
 
 const stunnedClass = isStunned ? ' is-stunned' : '';
 
-const summonClass = u.side === 'summon' ? ' summon' : '';
-
-const activeEnemyClass =
- u.side === 'enemy' && bsCurrent && bsCurrent.activeEnemyUid === u._uid
-   ? ' active-enemy-action'
-   : '';
-
 const extraCls =
  (isDone ? ' skill-done' : '') +
  (u.isBoss ? ' boss' : '') +
- (isHayateMoonMode ? ' hayate-haa-mode hayate-moon-mode' : '') +
- summonClass +
  midBossClass +
- enemyIdClass +
- activeEnemyClass;
+ enemyIdClass;
 
 return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunnedClass}">${inner}</div>`;
  }
@@ -7955,69 +3440,38 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  // 盤面上の味方をタップ（スキルフェーズ）→ 行動選択メニューを表示
  window._b32OnSkillAllyTap = async function (allyUid) {
  if (_b32InputLocked) return;
+ // 移動先選択中はキャラタップを無視する
+ if (_moveMode && _selMoveAllyUid) return;
  const bs = _bs();
  if (!bs || bs.phase !== 'skill' || bs.result) return;
 
  const ally = bs.allies.find(u => u._uid === allyUid);
  if (!ally || ally.hp <= 0) return;
 
- // アイテムの味方対象選択中は、盤面/キャラパネルの味方タップをアイテム使用として扱う。
- // これにより、HP回復・神気MAX・ガード等をグリッドではなくキャラパネルから確実に使える。
- if (b32IsAllyItemTargetMode(bs)) {
-   if (typeof window._b32OnItemAllyTap === 'function') {
-     window._b32OnItemAllyTap(allyUid);
-   }
-   return;
- }
+ const canAct = _canActByLink(bs, 1);
+ if (!canAct) return;
 
  const history = bs.unitActionHistory || {};
  const unitHistory = history[allyUid] || {};
- // actionCount: 1キャラ最大2行動。移動1回 + スキル/ULT1回まで。
- // 行動上限到達後でも、情報確認・スキル確認のために選択は許可する。
- // 実際の移動/スキル/ULT発動は各アクション側で個別に止める。
+ // unitActionDone: 駒アクション（移動/スキル/ULT）済みフラグ
  const unitActionDone = !!unitHistory.unitActionDone;
 
- const wasTargetSelecting = !!(
-   _moveMode ||
-   _selMoveAllyUid ||
-   _selSkillAllyUid ||
-   _selSkillId ||
-   _summonMode ||
-   _itemMode
- );
+ // 駒アクション済みかつLINKも尽きていれば何もしない
+ if (unitActionDone) return;
 
- // 盤面上の同じキャラをもう一度タップしたら、コンボ反応レンジと効果範囲を閉じる。
- // 初回タップでは従来の行動選択を維持しつつ、レンジだけを表示する。
- if (_comboRangeAllyUid === allyUid && !wasTargetSelecting) {
-   _comboRangeAllyUid = null;
-   _selActionAllyUid = null;
-   renderBattle32UI();
-   return;
+ // 同じキャラを再タップしたらメニューを閉じる
+ if (_selActionAllyUid === allyUid && !_moveMode && !_selSkillAllyUid) {
+ _selActionAllyUid = null;
+ renderBattle32UI();
+ return;
  }
- _comboRangeAllyUid = allyUid;
 
- // 現在の選択モードをすべて解除して、タップしたキャラの行動選択メニューへ切り替える。
+ // 行動選択メニューを表示
  _selActionAllyUid = allyUid;
  _selMoveAllyUid = null;
  _selSkillAllyUid = null;
  _selSkillId = null;
  _moveMode = false;
-
- _summonMode = false;
- _summonRosterId = null;
- _selectedRosterId = null;
-
- _itemMode = false;
- _itemSlotIndex = null;
- _itemPhase = null;
- _itemTargetUid = null;
-
- _selectedEnemyUid = null;
- _selectedEnemyGuideMode = null;
-
- _hideActionDetailPortal();
- const rosterHitbox = document.getElementById('b32-roster-info-close-hitbox');
- if (rosterHitbox && rosterHitbox.parentNode) rosterHitbox.parentNode.removeChild(rosterHitbox);
 
  renderBattle32UI();
  };
@@ -8031,7 +3485,6 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
  _selSkillAllyUid = null;
  _selSkillId = null;
  _moveMode = false;
- _closeSkillDetailLayers();
  renderBattle32UI();
  };
 
@@ -8051,7 +3504,7 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
   const unitHistory = history[uid] || {};
 
   const canAct = _canActByLink(bs, 1);
-  if (!canAct || !_unitCanMoveNow(bs, uid)) return;
+  if (!canAct || unitHistory.unitActionDone) return;
 
   _selMoveAllyUid = uid;
   _selSkillAllyUid = null;
@@ -8059,17 +3512,12 @@ return `<div class="b32-unit ${u.side}${dead ? ' dead' : ''}${extraCls}${stunned
   _selActionAllyUid = null;
   _moveMode = true;
 
-  // 移動可能マスとコンボレンジが重ならないよう、
-  // 移動モードへ入った時点でコンボレンジ選択を解除する。
-  _comboRangeAllyUid = null;
-
   _summonMode = false;
   _itemMode = false;
   _itemSlotIndex = null;
   _itemPhase = null;
   _itemTargetUid = null;
 
-  _closeSkillDetailLayers();
   renderBattle32UI();
 };
 
@@ -8085,21 +3533,12 @@ window._b32OnActionSkillTap = function () {
   const ally = (bs.allies || []).find(u => u._uid === uid);
   if (!ally || ally.hp <= 0) return;
 
-  const normalSkills = (ally.skills || []).filter(s => !s.isUltimate);
-  if (!normalSkills.length) return;
+  const history = bs.unitActionHistory || {};
+  const unitHistory = history[uid] || {};
 
-  // SKILL画面またはスキル詳細を表示中にSKILLをもう一度押した場合は、
-  // すべて閉じて未選択状態へ戻す。
-  if (_selSkillAllyUid === uid) {
-    _selSkillAllyUid = null;
-    _selSkillId = null;
-    _selMoveAllyUid = null;
-    _selActionAllyUid = null;
-    _moveMode = false;
-    _closeSkillDetailLayers();
-    renderBattle32UI();
-    return;
-  }
+  const normalSkills = (ally.skills || []).filter(s => !s.isUltimate);
+  const canUseAnySkill = normalSkills.some(s => _canActByLink(bs, _getSkillLinkCostForUnit(bs, uid, s)) && ((s.shinkiCost || 0) <= (ally.shinki || 0)));
+  if (!canUseAnySkill || unitHistory.unitActionDone) return;
 
   _selSkillAllyUid = uid;
   _selSkillId = null;
@@ -8113,8 +3552,6 @@ window._b32OnActionSkillTap = function () {
   _itemPhase = null;
   _itemTargetUid = null;
 
-  // 別画面からSKILLへ移る前に、現在開いている詳細を必ず閉じる。
-  _closeSkillDetailLayers();
   renderBattle32UI();
 };
 
@@ -8136,8 +3573,12 @@ window._b32OnActionUltTap = function () {
   const history = bs.unitActionHistory || {};
   const unitHistory = history[uid] || {};
 
-  // 行動済み・LINK不足・神気不足でも、ULT情報の確認だけは許可する。
-  // 発動可否はスキル詳細の決定ボタンと _b32ConfirmSkill 側で制御する。
+  const ultLinkCost = _getSkillLinkCostForUnit(bs, uid, ultSkill);
+  const canActUlt = _canActByLink(bs, ultLinkCost);
+  const unitDone = !!unitHistory.unitActionDone;
+  const shinkiCost = ultSkill.shinkiCost || ally.shinkiMax || 3;
+
+  if (!canActUlt || unitDone || ally.shinki < shinkiCost) return;
 
   _selSkillAllyUid = uid;
   _selSkillId = ultSkill.id;
@@ -8151,80 +3592,23 @@ window._b32OnActionUltTap = function () {
   _itemPhase = null;
   _itemTargetUid = null;
 
-  // SKILLなど別画面の詳細を閉じてからULTを開く。
-  _closeSkillDetailLayers();
   renderBattle32UI();
 };
 
- // ============================================================
- // ターン移行前に詳細系UIを一括クローズする
- // ============================================================
- function _closeBattle32DetailPanelsBeforeTurnChange() {
-   // UI内部状態をリセット
-   _resetSkillState();
-
-   // 敵選択・召喚・アイテム状態も解除
-   _selectedEnemyUid = null;
-   _selectedEnemyGuideMode = null;
-   _summonMode = false;
-   _summonRosterId = null;
-   _itemMode = false;
-   _itemSlotIndex = null;
-   _itemPhase = null;
-   _itemTargetUid = null;
-
-   // スキル詳細ボックスを明示的に閉じる
-   const skillBox = document.getElementById('b32-skill-detail-box');
-   if (skillBox) {
-     skillBox.style.display = 'none';
-     skillBox.classList.remove('show');
-   }
-
-   // ロスター詳細パネルを明示的に削除
-   document
-     .querySelectorAll('#battle32-root .b32-roster-info-panel')
-     .forEach(el => el.remove());
-
-   // ロスター詳細の閉じる用ヒットボックスも削除
-   const rosterHitbox = document.getElementById('b32-roster-info-close-hitbox');
-   if (rosterHitbox) rosterHitbox.remove();
-
-   // 敵情報系も残らないよう削除
-   const enemyInfo = document.getElementById('b32-enemy-info-overlay');
-   if (enemyInfo) enemyInfo.remove();
-   const enemyQuick = document.getElementById('b32-enemy-quick-info');
-   if (enemyQuick) enemyQuick.remove();
- }
-
- window._b32OnActionEndTap = async function () {
+ window._b32OnActionEndTap = function () {
  if (_b32InputLocked) return;
  const bs = _bs();
  if (!bs || bs.result || bs.phase !== 'skill') return;
 
- // スマホの二重タップ・二重click対策
- _b32InputLocked = true;
-
- // 詳細系UIを先に閉じる
- _closeBattle32DetailPanelsBeforeTurnChange();
-
- // 閉じた状態を一度描画する
- renderBattle32UI();
-
- // 1フレーム待って DOM 反映後に敵ターンへ移る
- if (typeof _wait === 'function') {
-   await _wait(60);
- } else {
-   await new Promise(resolve => requestAnimationFrame(resolve));
- }
+ _resetSkillState();
 
  if (window.Battle32 && typeof window.Battle32.endSkillPhase === 'function') {
    window.Battle32.endSkillPhase();
  } else if (window.Battle32 && typeof window.Battle32.endCharTurn === 'function') {
+   // 後方互換フォールバック
    window.Battle32.endCharTurn();
- } else {
-   _b32InputLocked = false;
  }
-};
+ };
 
  // 移動可能マスをタップ
  window._b32OnMoveCellTap = async function (row, col) {
@@ -8296,7 +3680,12 @@ window._b32OnSkillChipClick = function (event, allyUid, skillId) {
  // スキルを選んだら、ボトムUIを詳細画面へ切り替える
  _selSkillId = skillId;
 
- _closeSkillDetailLayers();
+ const box = document.getElementById('b32-skill-detail-box');
+ if (box) {
+ box.style.display = 'none';
+ box.classList.remove('show');
+ }
+
  renderBattle32UI();
 };
 
@@ -8311,84 +3700,14 @@ window._b32CancelSkillDetail = function (event) {
  // 詳細画面を閉じて、スキル選択画面へ戻す
  _selSkillId = null;
 
- _closeSkillDetailLayers();
+ const box = document.getElementById('b32-skill-detail-box');
+ if (box) {
+ box.style.display = 'none';
+ box.classList.remove('show');
+ }
+
  renderBattle32UI();
 };
-
-
-// ============================================================
-// 選択式支援ULT（スイ「星環の約束」など）
-// ============================================================
-function _b32GetChoiceOptions(skill) {
-  if (!skill) return [];
-  if (Array.isArray(skill.choiceOptions) && skill.choiceOptions.length) {
-    return skill.choiceOptions.map(option => ({ ...option }));
-  }
-
-  // 戦闘用データ変換時に choiceOptions が欠落した場合の復元。
-  const type = String(skill.type || '').toLowerCase();
-  const name = String(skill.name || '');
-  if (type === 'delayed_choice_support' || name.includes('星環')) {
-    return [
-      { effectType: 'link_plus_2', label: 'LINK+2', amount: 2 },
-      { effectType: 'all_critical_up', label: '味方全体critical率+50%', rate: 0.50, duration: 1 },
-      { effectType: 'all_guard', label: '味方全体ガード（ダメージ70%カット）', rate: 0.70, duration: 1 },
-    ];
-  }
-  return [];
-}
-
-function _b32ChooseDelayedSupportOption(skill) {
-  const options = _b32GetChoiceOptions(skill);
-  if (!options.length) return Promise.resolve(null);
-
-  return new Promise(resolve => {
-    const old = document.getElementById('b32-choice-support-overlay');
-    if (old) old.remove();
-
-    const overlay = document.createElement('div');
-    overlay.id = 'b32-choice-support-overlay';
-    overlay.innerHTML = `
-      <div class="b32-choice-support-modal" role="dialog" aria-modal="true" aria-label="ULT効果選択">
-        <div class="b32-choice-support-kicker">ULT EFFECT</div>
-        <div class="b32-choice-support-title">発動する効果を選択</div>
-        <div class="b32-choice-support-skill">${b32EscapeHtml(skill.name || 'ULT')}</div>
-        <div class="b32-choice-support-list">
-          ${options.map((option, index) => `
-            <button type="button" class="b32-choice-support-option" data-index="${index}">
-              <span class="b32-choice-support-number">0${index + 1}</span>
-              <span class="b32-choice-support-label">${b32EscapeHtml(option.label || '効果')}</span>
-            </button>
-          `).join('')}
-        </div>
-        <button type="button" class="b32-choice-support-cancel">キャンセル</button>
-      </div>`;
-
-    const finish = value => {
-      overlay.remove();
-      resolve(value);
-    };
-
-    overlay.querySelectorAll('.b32-choice-support-option').forEach(button => {
-      button.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const index = Number(button.dataset.index);
-        finish(options[index] ? { ...options[index] } : null);
-      });
-    });
-    overlay.querySelector('.b32-choice-support-cancel')?.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      finish(null);
-    });
-    overlay.addEventListener('click', event => {
-      if (event.target === overlay) finish(null);
-    });
-
-    document.body.appendChild(overlay);
-  });
-}
 
  function _b32ShowSkillDetail(allyUid, skillId) {
  const bs = _bs();
@@ -8400,7 +3719,7 @@ function _b32ChooseDelayedSupportOption(skill) {
  const skill = ally.skills.find(s => s.id === skillId);
  if (!skill) return;
 
- const box = _ensureSkillDetailLayer();
+ const box = document.getElementById('b32-skill-detail-box');
  const name = document.getElementById('b32-skill-detail-name');
  const desc = document.getElementById('b32-skill-detail-desc');
  const meta = document.getElementById('b32-skill-detail-meta');
@@ -8449,38 +3768,8 @@ const skillNow = allyNow && allyNow.skills
  ? allyNow.skills.find(s => s.id === skillId)
  : null;
 
-// 行動済み・LINK不足・神気不足の場合は、情報確認のみで発動しない。
-if (!_canUseSkillNow(bs, allyNow, skillNow)) {
-  const guide = document.getElementById('b32-bottom-guide');
-  if (guide) guide.textContent = 'このキャラはこのターン行動済み、またはコスト不足です。';
-  return;
-}
-
-// 選択式支援ULTは、消費・演出開始前に効果を選ばせる。
-// キャンセル時はLINK・神気・行動回数を一切消費しない。
-let selectedChoiceOption = null;
-const choiceOptions = _b32GetChoiceOptions(skillNow);
-if (choiceOptions.length > 0) {
-  selectedChoiceOption = await _b32ChooseDelayedSupportOption(skillNow);
-  if (!selectedChoiceOption) {
-    renderBattle32UI();
-    return;
-  }
-}
-
-// 入力ロックして、スキル/ULT演出中はコンボウインドウとレンジを退避する。
-// 発動開始時点で詳細画面と選択状態を先に消し、演出後にモーダルが残らないようにする。
+// 入力ロックして、スキル名をボワァン表示
 _b32InputLocked = true;
-_closeSkillDetailLayers();
-_selSkillId = null;
-_selSkillAllyUid = null;
-_selMoveAllyUid = null;
-_selActionAllyUid = null;
-_moveMode = false;
-const comboInspectDuringAction = document.getElementById('b32-combo-inspect');
-if (comboInspectDuringAction) comboInspectDuringAction.remove();
-renderBattle32UI();
-
 const charImg =
  allyNow?.panelImg ||
  allyNow?.panel ||
@@ -8500,44 +3789,27 @@ if (skillNow?.isUltimate) {
  null;
 
  await _showUltCutin(skillNow ? skillNow.name : 'ULT', ultImg);
+} else {
+ await _showSkillNameBurst(skillNow ? skillNow.name : 'SKILL', charImg);
 }
 
-// 通常スキルはスキル名カットインを挟まず、すぐ攻撃アップ演出へ入る。
-// ULTのみ専用カットインを表示してから実行する。
-await _wait(skillNow?.isUltimate ? 60 : 0);
+// 少しだけ溜めてから実行
+await _wait(60);
 
-let ok = false;
-try {
-  ok = await window.Battle32.executeAllySkill(allyUid, skillId, { selectedOption: selectedChoiceOption });
-} catch (e) {
-  console.error('[Battle32UI] executeAllySkill crashed', e, { allyUid, skillId, skillName: skillNow && skillNow.name });
-  // applyDamage後のUI演出コールバックなどで例外が出た場合でも、
-  // 内部状態のHPだけ更新済みのことがあるため、必ず再描画して見える化する。
-  renderBattle32UI();
-  _b32InputLocked = false;
-  return;
-}
+const ok = window.Battle32.executeAllySkill(allyUid, skillId);
 if (!ok) {
-  console.warn('[Battle32UI] executeAllySkill failed');
-  renderBattle32UI();
-  _b32InputLocked = false;
-  return;
+ console.warn('[Battle32UI] executeAllySkill failed');
+ _b32InputLocked = false;
+ return;
 }
 
 _resetSkillState();
 renderBattle32UI();
 
-// 勝敗確定していたら、ターン終了演出に進まない
-const bsAfterSkill = _bs();
-if (bsAfterSkill && bsAfterSkill.result) {
-  _b32InputLocked = true;
-  return;
-}
+// ダメージ・回復演出を見せるための待ち
+await _wait(skillNow?.isUltimate ? 1200 : 850);
 
-// 通常攻撃とコンボチェーンはBattle32側で完全同期済み。
-// 最後のポップアップを見せる短い余韻だけ置く。
-await _wait(skillNow?.isUltimate ? 520 : 380);
-
+// キャラのターン終了演出
 await window.showBattle32CenterTextAsync('ターン終了', '', 700);
 
 await _afterCharTurnFlow();
@@ -8555,11 +3827,11 @@ await _afterCharTurnFlow();
  if (typeof window.Battle32.endCharTurn === 'function') {
  window.Battle32.endCharTurn(allyUid);
  }
-
- // 詳細系UIを先に閉じてから描画
- _closeBattle32DetailPanelsBeforeTurnChange();
+ _resetSkillState();
  _b32InputLocked = true;
  renderBattle32UI();
+
+ await window.showBattle32CenterTextAsync('ターン終了', '', 900);
 
  await _afterCharTurnFlow();
  };
@@ -8605,18 +3877,19 @@ await _afterCharTurnFlow();
  // 移動対象として選択中 or スキルキャラとして選択中ならハイライト
  const selected = ally._uid === _selMoveAllyUid || ally._uid === _selSkillAllyUid;
 
- // レアリティ表示は廃止。カード左上には属性アイコンを表示する。
-
  // HP バー＋数値表示（下部キャラパネル専用：バー色はCSS固定）
  const hpPct = ally.hpMax > 0 ? Math.max(0, Math.round((ally.hp / ally.hpMax) * 100)) : 0;
  const hpHtml = `
- <div class="b32-party-hp-block">
-   <div class="b32-party-hp-num">
-     ${ally.hp}<span class="b32-party-hp-max">/${ally.hpMax}</span>
-   </div>
-   <div class="b32-party-hp-bar-wrap">
-     <div class="b32-party-hp-bar" style="width:${hpPct}%"></div>
-   </div>
+ <div class="b32-party-hp-row">
+ <span class="b32-party-hp-label">HP</span>
+ <div class="b32-party-hp-area">
+ <div class="b32-party-hp-text">
+ ${ally.hp}<span class="b32-party-hp-max"> / ${ally.hpMax}</span>
+ </div>
+ <div class="b32-party-hp-bar-wrap">
+ <div class="b32-party-hp-bar" style="width:${hpPct}%"></div>
+ </div>
+ </div>
  </div>
  `;
 
@@ -8633,15 +3906,12 @@ await _afterCharTurnFlow();
  // 旧バッジ用（非表示にしてあるが変数は残す）
  const shinkiDots = shinkiDotsInner;
 
- const statusBadgesHtml = b32StatusEffectBadgesHtml(ally, false, bs && bs.blessing);
-
- // タップ可否：行動済みでも情報確認のためタップ可能にする。
- // 実際の行動可否はアクションボタン/決定ボタン側で制御する。
- const itemTargetMode = b32IsAllyItemTargetMode(bs) && !dead && ally.hp > 0;
- const tappable = !dead && bs.phase === 'skill' && !bs.result;
- const onclickAttr = itemTargetMode
-   ? `onclick="_b32OnItemAllyTap('${ally._uid}')"`
-   : (tappable ? `onclick="_b32OnSkillAllyTap('${ally._uid}')"` : '');
+ // タップ可否：unitActionDoneが立っていなければタップ可（LINK 1以上必要）
+ const _canActNow = !bs.result && _canActByLink(bs, 1);
+ const _uh2 = (bs.unitActionHistory || {})[ally._uid] || {};
+ const tappable = !dead && bs.phase === 'skill'
+   && _canActNow && !_uh2.unitActionDone;
+ const onclickAttr = tappable ? `onclick="_b32OnSkillAllyTap('${ally._uid}')"` : '';
 
  return `
  <div class="b32-party-card${dead ? ' dead' : ''}${done ? ' done' : ''}${selected ? ' selected' : ''}"
@@ -8661,7 +3931,6 @@ await _afterCharTurnFlow();
  onerror="this.style.display='none'"
 >`
  : `<div class="b32-party-initial">${initial(ally.name)}</div>`}
- ${unitElementIcon(ally.element) ? `<img class="b32-party-element-icon b32-party-element-icon-${unitElementClass(ally.element)}" src="${unitElementIcon(ally.element)}" alt="${unitElementLabel(ally.element)}" title="${unitElementLabel(ally.element)}" onerror="this.style.display='none'">` : ''}
  </div>
  <div class="b32-party-name">${ally.name}</div>
  <!-- HP バー＋数値：カード下部 -->
@@ -8669,11 +3938,8 @@ await _afterCharTurnFlow();
  <!-- 神気：HPの下に横並び -->
  ${shinkiRow}
  ${dead ? `<div class="b32-party-return">RETURN</div>` : ''}
- ${statusBadgesHtml}
  ${(!!ally.stunned || (Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'stun')))
  ? `<div class="b32-party-status-badge stun">⚡STUN</div>` : ''}
- ${(Array.isArray(ally.statusEffects) && ally.statusEffects.some(e => e.type === 'yoi_no_sousou'))
- ? `<div class="b32-party-status-badge yoi">酔ノ想葬</div>` : ''}
  </div>
  `;
  }).join('');
@@ -8689,13 +3955,9 @@ await _afterCharTurnFlow();
 
  const rosterPanelEl = document.getElementById('b32-roster-panel');
  const itemPanelEl = document.getElementById('b32-item-panel');
- const rootEl = document.getElementById(ROOT_ID);
- const isSkillChoiceOpen = !!(bs && bs.phase === 'skill' && _selSkillAllyUid && !_moveMode && !_summonMode && !_itemMode);
- if (rootEl) rootEl.classList.toggle('b32-skill-choice-open', isSkillChoiceOpen);
- skillPanel.classList.toggle('b32-skill-choice-open', isSkillChoiceOpen);
 
  // ローグライト時は b32-party-status パネルを非表示
- if (bs.isRoguelite) {
+ if (_usesRogueliteBattleRules(bs)) {
    const ps = document.getElementById('b32-party-status');
    if (ps) ps.style.setProperty('display', 'none', 'important');
  }
@@ -8718,17 +3980,9 @@ await _afterCharTurnFlow();
  // アイテムモード中はガイドを変える
  if (_itemMode) {
    const item = bs.items && bs.items[_itemSlotIndex];
-   if (guideEl) {
-     if (_itemPhase === 'cell') {
-       guideEl.textContent = '転位先のマスをタップしてください。';
-     } else if (item && (item.type === 'swap_ally' || item.type === 'swap_enemy') && _itemTargetUid) {
-       guideEl.textContent = `${item.name}：2体目を選んでください。`;
-     } else if (b32IsAllyTargetItem(item)) {
-       guideEl.textContent = `${item ? item.name : 'アイテム'}：対象のキャラパネルをタップしてください。`;
-     } else {
-       guideEl.textContent = `${item ? item.name : 'アイテム'}の対象を選んでください。`;
-     }
-   }
+   if (guideEl) guideEl.textContent = _itemPhase === 'cell'
+     ? '転位先のマスをタップしてください。'
+     : `${item ? item.name : 'アイテム'}の対象を選んでください。`;
    const charaNameEl = document.getElementById('b32-skill-chara-name');
    if (charaNameEl) charaNameEl.textContent = '';
    const listEl = document.getElementById('b32-skill-list');
@@ -8763,8 +4017,8 @@ await _afterCharTurnFlow();
     return;
   }
 
-  if (rosterPanelEl) rosterPanelEl.style.setProperty('display', 'none', 'important');
-  if (itemPanelEl) itemPanelEl.style.setProperty('display', 'none', 'important');
+  if (rosterPanelEl) rosterPanelEl.style.display = 'none';
+  if (itemPanelEl) itemPanelEl.style.display = 'none';
 
   // スキル選択中はパーティカードを隠す
   const partyStatusEl = document.getElementById('b32-party-status');
@@ -8787,30 +4041,24 @@ await _afterCharTurnFlow();
  const selectedSkill = ally.skills.find(s => s.id === _selSkillId);
  if (!selectedSkill) {
  _selSkillId = null;
- _hideActionDetailPortal();
  renderBattle32UI();
  return;
  }
 
- const compactSummaryHtml = b32BuildCompactSkillSummaryHtml(selectedSkill, ally);
+ const metaParts = [];
+ metaParts.push(`LINK ${_getSkillLinkCostForUnit(bs, ally._uid, selectedSkill)}`);
+ if ((selectedSkill.shinkiCost || 0) > 0) metaParts.push(`神気 ${selectedSkill.shinkiCost}`);
+ if (selectedSkill.multiplier) metaParts.push(`倍率 ${selectedSkill.multiplier}`);
+ if (selectedSkill.range) metaParts.push(`射程 ${selectedSkill.range}`);
 
- listEl.innerHTML = '';
-
- const portal = _ensureActionDetailPortal();
- portal.style.display = 'block';
- portal.classList.add('show');
- _positionActionDetailPortal();
-
- const canConfirmSkill = _canUseSkillNow(bs, ally, selectedSkill);
- const confirmDisabledAttr = canConfirmSkill ? '' : 'disabled aria-disabled="true"';
- const confirmDisabledCls = canConfirmSkill ? '' : ' disabled';
-
- portal.innerHTML = `
- <div class="b32-action-detail-panel b32-action-detail-panel-compact">
- <div class="b32-action-detail-title">${b32EscapeHtml(selectedSkill.name || 'SKILL')}</div>
- ${compactSummaryHtml}
+ listEl.innerHTML = `
+ ${floatingButtonsHtml}
+ <div class="b32-action-detail-panel">
+ <div class="b32-action-detail-title">${selectedSkill.name || 'SKILL'}</div>
+ <div class="b32-action-detail-desc">${selectedSkill.desc || '説明はまだありません。'}</div>
+ <div class="b32-action-detail-meta">${metaParts.join('　/　')}</div>
  <div class="b32-action-detail-buttons">
- <button type="button" class="b32-action-detail-btn confirm${confirmDisabledCls}" ${confirmDisabledAttr} onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">${canConfirmSkill ? '決定' : '確認のみ'}</button>
+ <button type="button" class="b32-action-detail-btn confirm" onclick="_b32ConfirmSkill('${ally._uid}','${selectedSkill.id}')">決定</button>
  <button type="button" class="b32-action-detail-btn cancel" onclick="_b32CancelSkillDetail(event)">キャンセル</button>
  </div>
  </div>
@@ -8819,7 +4067,6 @@ await _afterCharTurnFlow();
  }
 
  // 通常スキル選択画面
- _hideActionDetailPortal();
  const normalSkillChips = [];
  ally.skills
  .filter(skill => !skill.isUltimate)
@@ -8827,10 +4074,12 @@ await _afterCharTurnFlow();
  .forEach(skill => {
  const shinki = skill.shinkiCost || 0;
  const linkCost = _getSkillLinkCostForUnit(bs, ally._uid, skill);
- const canUseThisSkill = _canUseSkillNow(bs, ally, skill);
- const unusableCls = canUseThisSkill ? '' : ' is-unusable';
+ const _canSkill = !bs.result && _canActByLink(bs, linkCost)
+   && !((bs.unitActionHistory || {})[ally._uid] || {}).unitActionDone;
+ const cantUse = !_canSkill || (shinki > ally.shinki);
+ const disabledCls = cantUse ? ' disabled' : '';
  normalSkillChips.push(
- `<button type="button" class="b32-bottom-skill-btn${unusableCls}" ${canUseThisSkill ? '' : 'aria-disabled="true"'} onclick="_b32OnSkillChipClick(event,'${ally._uid}','${skill.id}')"><span>${skill.name}</span><small>LINK ${linkCost}</small></button>`
+ `<button type="button" class="b32-bottom-skill-btn${disabledCls}" ${cantUse ? 'disabled' : ''} onclick="_b32OnSkillChipClick(event,'${ally._uid}','${skill.id}')"><span>${skill.name}</span><small>LINK ${linkCost}</small></button>`
  );
  });
  while (normalSkillChips.length < 3) {
@@ -8866,21 +4115,20 @@ await _afterCharTurnFlow();
 
 } else {
   // ── キャラ選択待ち（移動 / スキル どちらでも選択可） ──
-  _hideActionDetailPortal();
-  if (bs.isRoguelite) {
-    if (rosterPanelEl) rosterPanelEl.style.setProperty('display', 'flex', 'important');
-    if (itemPanelEl) itemPanelEl.style.setProperty('display', 'flex', 'important');
+  if (_usesRogueliteBattleRules(bs)) {
+    if (rosterPanelEl) rosterPanelEl.style.display = 'flex';
+    if (itemPanelEl) itemPanelEl.style.display = 'flex';
   }
 
-  // ローグライト通常待機時の案内文は表示しない（盤面視認性を優先）。
-  const guideText = bs.isRoguelite
-    ? ''
+  const _linkCurrent = bs.link ? bs.link.current : 99;
+  const guideText = _usesRogueliteBattleRules(bs)
+    ? `盤面のキャラをタップ　残LINK: ${_linkCurrent}`
     : '行動するキャラを選択してください。';
 
  if (guideEl) guideEl.textContent = guideText;
 
  // 3人分のキャラカードを必ず表示（通常バトルのみ）
- if (!bs.isRoguelite) {
+ if (!_usesRogueliteBattleRules(bs)) {
    const partyStatusEl = document.getElementById('b32-party-status');
    if (partyStatusEl) partyStatusEl.style.removeProperty('display');
  }
@@ -8891,25 +4139,21 @@ await _afterCharTurnFlow();
 const listEl = document.getElementById('b32-skill-list');
 
 if (listEl) {
-  if (bs.isRoguelite && _selectedRosterId) {
+  if (_usesRogueliteBattleRules(bs) && _selectedRosterId) {
     const r = (bs.roster || []).find(x => x.rosterId === _selectedRosterId);
 
     if (r) {
       const c = r.charDef || {};
       const img = c.panelImg || c.upImg || c.img || '';
-      const cost = _getSummonLinkCostForRoster(bs, r);
+      const rarity = (r.rarity || c.rarity || 'r').toUpperCase();
+      const cost = r.summonCost || 1;
 
       const hp = c.hp || c.stats?.HP || 0;
       const atk = c.atk || c.stats?.ATK || 0;
       const role = c.role || '—';
 
-      const liveUnit = r.deployedUid
-        ? (bs.allies || []).find(u => u && u._uid === r.deployedUid)
-        : null;
-      const skillDetailsHtml = b32BuildRosterSkillDetailsHtml(c, liveUnit || r.unit || c);
-      const statusDetailsHtml = liveUnit
-        ? b32StatusEffectBadgesHtml(liveUnit, false, bs && bs.blessing)
-        : '';
+      const firstSkill = (c.skills || []).find(s => !s.isUltimate);
+      const ultSkill = (c.skills || []).find(s => s.isUltimate);
 
       const statusLabel =
         r.status === 'standby' ? '召喚可能' :
@@ -8918,34 +4162,43 @@ if (listEl) {
         r.status || '—';
 
       listEl.innerHTML = `
-  <div class="b32-roster-info-panel">
-    <div class="b32-roster-info-card">
-      <div class="b32-roster-info-img-wrap">
-        ${img
-          ? `<img class="b32-roster-info-img" src="${img}" alt="" onerror="this.style.display='none'">`
-          : `<div class="b32-roster-info-initial">${initial(r.name)}</div>`
-        }
-      </div>
-    </div>
+        <div class="b32-roster-info-panel">
+          <div class="b32-roster-info-card">
+            <div class="b32-roster-info-rarity">${rarity}</div>
+            <div class="b32-roster-info-img-wrap">
+              ${img
+                ? `<img class="b32-roster-info-img" src="${img}" alt="" onerror="this.style.display='none'">`
+                : `<div class="b32-roster-info-initial">${initial(r.name)}</div>`
+              }
+            </div>
+          </div>
 
-    <div class="b32-roster-info-main">
-      <div class="b32-roster-info-title">
-  <span class="name">${r.name || c.name || 'UNKNOWN'}</span>
-</div>
-      <div class="b32-roster-info-role">
-        ${role}　/　HP ${hp}　ATK ${atk}
-      </div>
+          <div class="b32-roster-info-main">
+            <div class="b32-roster-info-title">
+              <span class="name">${r.name || c.name || 'UNKNOWN'}</span>
+              <span class="cost">召喚LINK ${cost}</span>
+            </div>
 
-      ${skillDetailsHtml}
+            <div class="b32-roster-info-role">
+              ${role}　/　HP ${hp}　ATK ${atk}
+            </div>
 
-      ${statusDetailsHtml ? `<div class="b32-roster-info-effect-section"><div class="b32-roster-info-effect-title">STATUS EFFECT</div>${statusDetailsHtml}</div>` : ''}
+            <div class="b32-roster-info-desc">
+              ${c.desc || firstSkill?.desc || '戦闘に参加する祓い手。'}
+            </div>
 
-      <div class="b32-roster-info-status">
-        ${statusLabel}
-      </div>
-    </div>
-  </div>
-`;
+            <div class="b32-roster-info-skill">
+              <span>スキル</span>
+              <strong>${firstSkill ? firstSkill.name : '—'}</strong>
+              <em>${firstSkill ? firstSkill.desc || '' : ''}</em>
+            </div>
+
+            <div class="b32-roster-info-status">
+              ${statusLabel}
+            </div>
+          </div>
+        </div>
+      `;
     } else {
       listEl.innerHTML = '';
     }
@@ -9014,14 +4267,7 @@ if (listEl) {
 
  if (stageIdEl) stageIdEl.textContent = bs.stageId || '01';
  if (turnNumLarge) turnNumLarge.textContent = bs.turn || 1;
-
- // ターン制限廃止：ヘッダーは現在ターンのみ表示する。
- const turnSlashEl = document.getElementById('b32-turn-slash');
- if (turnSlashEl) turnSlashEl.style.display = 'none';
- if (turnMaxEl) {
-   turnMaxEl.textContent = '';
-   turnMaxEl.style.display = 'none';
- }
+ if (turnMaxEl) turnMaxEl.textContent = bs.turnLimit || '—';
 
  // フェーズバッジ：文字だけ残して色付けを最小限に
  if (phaseBadge) {
@@ -9032,9 +4278,28 @@ if (listEl) {
  }
 
  function renderCoreStatus(bs) {
- // コア概念・ターン制限廃止：下部の残TURN表示は使わない
  const subEl = document.getElementById('b32-bottom-sub');
- if (subEl) subEl.textContent = '';
+ if (!subEl || !bs.cores) return;
+
+ // 味方操作中・敵ターン中は、操作案内テキストを優先する
+ if (bs.phase === 'skill' || bs.phase === 'enemy') return;
+
+ const ally = bs.cores.ally;
+ const bc = bs.bossCore;
+
+ let bossCoreText;
+ if (!bc) {
+ bossCoreText = '—';
+ } else if (bc.captured) {
+ bossCoreText = '固定済';
+ } else if (bc.exposed) {
+ bossCoreText = `露出 ${bc.capture}/${bc.captureMax}`;
+ } else {
+ bossCoreText = '未露出';
+ }
+
+ subEl.textContent =
+ `自コア ${ally.stability}/${ally.stabilityMax}　神性核 ${bossCoreText}　残TURN ${Math.max(0, bs.turnLimit - bs.turn + 1)}`;
 }
 
  function renderBossHp(bs) {
@@ -9045,9 +4310,11 @@ if (listEl) {
 
  if (!box || !nameEl || !barEl || !textEl) return;
 
- const boss = (bs.enemies || []).find(e => e.isBoss && e.hp > 0);
+ // ボスは HP0 後も核露出状態で表示する
+ const boss = (bs.enemies || []).find(e => e.isBoss);
+ const bossExposed = bs.bossCore?.exposed;
 
- if (!boss) {
+ if (!boss || (!bossExposed && boss.hp <= 0)) {
  box.style.display = 'none';
  return;
  }
@@ -9056,302 +4323,17 @@ if (listEl) {
  const hpPct = Math.max(0, Math.min(100, Math.round((boss.hp / hpMax) * 100)));
 
  box.style.display = 'block';
+ // 核露出後は名前に状態を付加
+ if (bossExposed) {
+ const bc = bs.bossCore;
+ nameEl.textContent = `${boss.name || 'BOSS'} ▸ 神性核露出`;
+ textEl.textContent = `干渉 ${bc.capture}/${bc.captureMax}`;
+ } else {
  nameEl.textContent = boss.name || 'BOSS';
  textEl.textContent = `${boss.hp.toLocaleString()} / ${hpMax.toLocaleString()}`;
+ }
  barEl.style.width = hpPct + '%';
  }
-
-
- function getBlessingUiDef(b) {
-   if (!b) return null;
-   const blessingId = String(b.id || '');
-   return {
-     name: `${b.name || '加護'} Lv.${Number(b.level || 1)}`,
-     invName: b.invName || 'INV',
-     img: b.panelImg || 'images/unknown.webp',
-     // remnant_01 ～ remnant_08 は同じ命名規則で自動解決。
-     // マスターデータ側に cutinImg があればそちらを優先する。
-     cutinImg: b.cutinImg || (blessingId ? `images/${blessingId}_cutin.webp` : ''),
-     passive: String((b.text && b.text.passive) || '').replace(/^常時[：:]/, ''),
-     condition: String((b.text && b.text.condition) || '').replace(/^INV条件[：:]/, ''),
-     effect: String((b.text && b.text.inv) || '').replace(/^INV[：:]/, '')
-   };
- }
-
- function _isBlessingInvReadyUi(bs, b) {
-   if (!bs || !b || b.used) return false;
-   if (b.conditionType === 'enemy_kill_count') return Number(b.killCount || 0) >= Number(b.invRequiredKills || 0);
-   if (b.conditionType === 'multi_target_attack') return !!b.conditionMet;
-   if (b.conditionType === 'lost_ally_exists') return (bs.allies || []).some(a => a && a.hp <= 0 && !a.isFixedFirst);
-   if (b.conditionType === 'ally_lost_once') return !!b.conditionMet;
-   return false;
- }
-
- function _blessingProgressTextUi(bs, b) {
-   if (b.used) return 'USED';
-   if (b.conditionType === 'enemy_kill_count') return `${Math.min(Number(b.killCount||0), Number(b.invRequiredKills||3))} / ${Number(b.invRequiredKills||3)}`;
-   if (b.conditionType === 'multi_target_attack') return b.conditionMet ? 'READY' : `${Number(b.multiTargetMax||0)} / ${Number(b.invRequiredTargets||2)}`;
-   if (b.conditionType === 'lost_ally_exists') return _isBlessingInvReadyUi(bs,b) ? 'READY' : 'STANDBY';
-   if (b.conditionType === 'ally_lost_once') return b.conditionMet ? 'READY' : 'STANDBY';
-   return 'STANDBY';
- }
-
- function renderBlessingInv(bs) {
-   const wrap = document.getElementById('b32-blessing-inv-wrap');
-   const iconBtn = document.getElementById('b32-blessing-icon-btn');
-   const invBtn = document.getElementById('b32-blessing-inv-btn');
-    const actionState = document.getElementById('b32-blessing-inv-action-state');
-   const overlay = document.getElementById('b32-blessing-info-overlay');
-   if (!wrap || !iconBtn || !invBtn || !actionState) return;
-
-   const b = bs && bs.blessing;
-   const def = getBlessingUiDef(b);
-   if (!b || !def || bs.result) {
-     wrap.style.display = 'none';
-     if (overlay) {
-       overlay.classList.remove('show');
-       overlay.setAttribute('aria-hidden', 'true');
-     }
-     return;
-   }
-
-   wrap.style.display = 'block';
-
-   const active = b.activeTurn === bs.turn;
-   const invReady = _isBlessingInvReadyUi(bs, b);
-   const canActivate = invReady && bs.phase === 'skill';
-   const stateText = active ? 'ACTIVE' : _blessingProgressTextUi(bs, b);
-
-   const iconImg = document.getElementById('b32-blessing-icon-img');
-   const infoImg = document.getElementById('b32-blessing-info-img');
-   if (iconImg) { iconImg.src = def.img; iconImg.alt = def.name; }
-   if (infoImg) { infoImg.src = def.img; infoImg.alt = def.name; }
-   const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-   setText('b32-blessing-info-name', def.name);
-   setText('b32-blessing-info-passive', def.passive);
-   setText('b32-blessing-info-condition', def.condition);
-   setText('b32-blessing-info-effect', def.effect);
-   setText('b32-blessing-info-progress', `INV ${stateText}`);
-   setText('b32-blessing-inv-action-state', stateText);
-
-   iconBtn.classList.toggle('ready', invReady);
-   iconBtn.classList.add('passive-active');
-   iconBtn.title = `常時効果発動中：${def.passive}`;
-   iconBtn.style.boxShadow = invReady
-     ? '0 0 14px rgba(255,220,120,.85)'
-     : '0 0 10px rgba(100,190,255,.55)';
-   iconBtn.classList.toggle('active', active);
-   iconBtn.classList.toggle('used', !!b.used && !active);
-
-   invBtn.disabled = !canActivate;
-   invBtn.classList.toggle('ready', canActivate);
-   invBtn.classList.toggle('active', active);
-   invBtn.classList.toggle('used', !!b.used && !active);
- }
-
- function _setBlessingInfoOpen(open) {
-   const overlay = document.getElementById('b32-blessing-info-overlay');
-   if (!overlay) return;
-
-   overlay.classList.toggle('show', open);
-   overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
-
-   // 加護詳細を開いている間は、body直下のキャラパネルを隠す。
-   // 詳細パネルの下部がキャラパネルに覆われるのを防ぎ、閉じたら自動復帰する。
-   document.body.classList.toggle('b32-blessing-info-open', open);
- }
-
- window._b32ToggleBlessingInfo = function (event) {
-   if (event) event.stopPropagation();
-   const overlay = document.getElementById('b32-blessing-info-overlay');
-   if (!overlay) return;
-   _setBlessingInfoOpen(!overlay.classList.contains('show'));
- };
-
- window._b32CloseBlessingInfo = function (event) {
-   if (event && event.target && event.currentTarget && event.target !== event.currentTarget) return;
-   _setBlessingInfoOpen(false);
- };
-
- // ============================================================
- // Remnant加護 INV カットイン
- // 暗転 → 横からカットイン → INV + 技名 → 白フラッシュ → 効果発動
- // ============================================================
- let _b32BlessingInvCutinRunning = false;
- const _b32BlessingCutinImageCache = new Map();
-
- function _preloadBlessingInvCutin(src, timeoutMs = 2600) {
-   if (!src) return Promise.resolve(false);
-   if (_b32BlessingCutinImageCache.has(src)) {
-     return _b32BlessingCutinImageCache.get(src);
-   }
-
-   const promise = new Promise(resolve => {
-     const img = new Image();
-     let settled = false;
-     const finish = ok => {
-       if (settled) return;
-       settled = true;
-       clearTimeout(timer);
-       resolve(ok);
-     };
-     const timer = setTimeout(() => finish(false), timeoutMs);
-     img.onload = () => {
-       if (typeof img.decode === 'function') {
-         img.decode().catch(() => {}).finally(() => finish(true));
-       } else {
-         finish(true);
-       }
-     };
-     img.onerror = () => {
-       console.warn('[Battle32UI] blessing INV cutin image load failed:', src);
-       finish(false);
-     };
-     img.decoding = 'async';
-     img.src = src;
-     if (img.complete && img.naturalWidth > 0) finish(true);
-   });
-
-   _b32BlessingCutinImageCache.set(src, promise);
-   return promise;
- }
-
- function _removeBlessingInvCutin() {
-   const old = document.getElementById('b32-blessing-inv-cutin');
-   if (old) old.remove();
-   document.body.classList.remove('b32-blessing-inv-cutin-open');
- }
-
- async function _showBlessingInvCutin(blessing) {
-   if (!blessing || _b32BlessingInvCutinRunning) return false;
-
-   const def = getBlessingUiDef(blessing);
-   if (!def) return false;
-
-   _b32BlessingInvCutinRunning = true;
-   _removeBlessingInvCutin();
-
-   const src = def.cutinImg || '';
-   await _preloadBlessingInvCutin(src);
-
-   const overlay = document.createElement('div');
-   overlay.id = 'b32-blessing-inv-cutin';
-   overlay.className = 'b32-blessing-inv-cutin';
-   overlay.setAttribute('aria-hidden', 'true');
-
-   overlay.innerHTML = `
-     <div class="b32-blessing-inv-cutin-dark"></div>
-     <div class="b32-blessing-inv-cutin-streaks" aria-hidden="true"></div>
-     <div class="b32-blessing-inv-cutin-art-wrap">
-       ${src ? `<img class="b32-blessing-inv-cutin-art" src="${src}" alt="">` : ''}
-     </div>
-     <div class="b32-blessing-inv-cutin-copy">
-       <div class="b32-blessing-inv-cutin-kicker">INV</div>
-       <div class="b32-blessing-inv-cutin-name">${b32EscapeHtml(def.invName || 'INV')}</div>
-       <div class="b32-blessing-inv-cutin-remnant">${b32EscapeHtml(blessing.remnantName || blessing.name || '')}</div>
-     </div>
-     <div class="b32-blessing-inv-cutin-flash" aria-hidden="true"></div>
-   `;
-
-   document.body.appendChild(overlay);
-   document.body.classList.add('b32-blessing-inv-cutin-open');
-
-   // DOM反映後に開始クラスを付けることで毎回アニメーションを確実に再生する。
-   requestAnimationFrame(() => {
-     requestAnimationFrame(() => overlay.classList.add('play'));
-   });
-
-   // 白フラッシュのピーク直後に解決。
-   // 呼び出し側はこの await 後に実際のINV効果を発動する。
-   await new Promise(resolve => setTimeout(resolve, 1640));
-
-   overlay.classList.add('finish');
-   await new Promise(resolve => setTimeout(resolve, 180));
-   _removeBlessingInvCutin();
-   _b32BlessingInvCutinRunning = false;
-   return true;
- }
-
- async function _executeBlessingInvAfterCutin(targetUid) {
-   if (_b32BlessingInvCutinRunning) return false;
-   if (!window.Battle32 || typeof window.Battle32.activateBlessingInv !== 'function') return false;
-
-   const bs = _bs();
-   const blessing = bs && bs.blessing;
-   if (!blessing) return false;
-
-   window._b32CloseBlessingInfo();
-   const chooser = document.getElementById('b32-blessing-target-chooser');
-   if (chooser) chooser.classList.remove('show');
-
-   await _showBlessingInvCutin(blessing);
-
-   // カットイン終了後に初めて本体効果を発動。
-   const result = window.Battle32.activateBlessingInv(targetUid);
-   if (result === true && typeof window.renderBattle32UI === 'function') {
-     window.renderBattle32UI();
-   }
-   return result;
- }
-
- function _openBlessingTargetChooser(result) {
-   const targets = result && Array.isArray(result.targets) ? result.targets : [];
-   let overlay = document.getElementById('b32-blessing-target-chooser');
-   if (!overlay) {
-     overlay = document.createElement('div');
-     overlay.id = 'b32-blessing-target-chooser';
-     overlay.className = 'b32-blessing-target-chooser';
-     document.body.appendChild(overlay);
-   }
-
-   const title = result.targetType === 'lost_ally' ? '蘇生する味方を選択' : '攻撃する敵を選択';
-   overlay.innerHTML = `<div class="b32-blessing-target-card"><div class="b32-blessing-target-title">${title}</div><div class="b32-blessing-target-list"></div><button class="b32-blessing-target-cancel" type="button">キャンセル</button></div>`;
-
-   const list = overlay.querySelector('.b32-blessing-target-list');
-   targets.forEach(target => {
-     const btn = document.createElement('button');
-     btn.type = 'button';
-     btn.className = 'b32-blessing-target-btn';
-     btn.textContent = target.name || '対象';
-     btn.onclick = async function () {
-       if (_b32BlessingInvCutinRunning) return;
-       overlay.classList.remove('show');
-       await _executeBlessingInvAfterCutin(target._uid);
-     };
-     list.appendChild(btn);
-   });
-
-   overlay.querySelector('.b32-blessing-target-cancel').onclick = () => overlay.classList.remove('show');
-   overlay.classList.add('show');
- }
-
- window._b32ActivateBlessingInv = async function () {
-   if (_b32BlessingInvCutinRunning) return;
-   if (!window.Battle32 || typeof window.Battle32.activateBlessingInv !== 'function') return;
-
-   const bs = _bs();
-   const blessing = bs && bs.blessing;
-   if (!blessing) return;
-
-   // 対象指定型は「対象選択 → カットイン → 効果」の順。
-   // 先に activateBlessingInv() を呼ぶと対象不要型では即発動してしまうため、
-   // UI側で effectType を見て対象選択の要否だけ判断する。
-   const effectType = blessing.invEffectType || 'critical_up';
-   if (effectType === 'single_enemy_damage' || effectType === 'revive_ally') {
-     const targets = typeof window.Battle32.getBlessingInvTargets === 'function'
-       ? window.Battle32.getBlessingInvTargets()
-       : [];
-
-     _openBlessingTargetChooser({
-       needsTarget: true,
-       targetType: effectType === 'revive_ally' ? 'lost_ally' : 'enemy',
-       targets
-     });
-     return;
-   }
-
-   await _executeBlessingInvAfterCutin();
- };
 
  function renderButtons(bs) {
  const summonBtn = document.getElementById('b32-btn-summon');
@@ -9359,7 +4341,10 @@ if (listEl) {
  const skillBtn  = document.getElementById('b32-btn-skill');
  const ultBtn    = document.getElementById('b32-btn-ult');
  const endBtn    = document.getElementById('b32-btn-end-skill');
+ const summonCostEl = document.getElementById('b32-btn-summon-cost');
  const summonSubEl  = document.getElementById('b32-btn-summon-sub');
+ const skillCostEl  = document.getElementById('b32-btn-skill-cost');
+ const ultCostEl    = document.getElementById('b32-btn-ult-cost');
 
  const inSkillPhase = !!bs && bs.phase === 'skill' && !bs.result;
 
@@ -9377,35 +4362,56 @@ if (listEl) {
    && selectedAlly.hp > 0
    && _unitCanAct(bs, selectedAlly._uid);
 
- const canMove  = inSkillPhase && !!selectedAlly && selectedAlly.hp > 0 && _unitCanMoveNow(bs, selectedAlly._uid) && _canActByLink(bs, 1);
+ const canMove  = inSkillPhase && unitCanAct && _canActByLink(bs, 1);
  const normalSkillsForCost = selectedAlly ? (selectedAlly.skills || []).filter(s => !s.isUltimate) : [];
- // スキル/ULTボタンは「確認用」として行動済みでも開ける。
- // 発動可否はスキル詳細の決定ボタンで止める。
- const canSkill = inSkillPhase && !!selectedAlly && selectedAlly.hp > 0 && normalSkillsForCost.length > 0;
+ const canSkill = inSkillPhase && unitCanAct && normalSkillsForCost.some(s =>
+   _canActByLink(bs, _getSkillLinkCostForUnit(bs, selectedAlly._uid, s)) &&
+   ((s.shinkiCost || 0) <= (selectedAlly.shinki || 0))
+ );
 
  let canUlt = false;
+ let ultCostText = '-';
  if (selectedAlly) {
    const ultSkill = (selectedAlly.skills || []).find(s => s.isUltimate);
-   canUlt = inSkillPhase && selectedAlly.hp > 0 && !!ultSkill;
+   if (ultSkill) {
+     const ultLinkCost = _getSkillLinkCostForUnit(bs, selectedAlly._uid, ultSkill);
+     ultCostText = String(ultLinkCost);
+     const shinkiCost = ultSkill.shinkiCost || selectedAlly.shinkiMax || 3;
+     canUlt = inSkillPhase
+       && unitCanAct
+       && _canActByLink(bs, ultLinkCost)
+       && selectedAlly.shinki >= shinkiCost;
+   }
  }
+
+ if (skillCostEl) skillCostEl.textContent = selectedAlly ? _getNormalSkillLinkRange(selectedAlly) : '2';
+ if (ultCostEl) ultCostEl.textContent = ultCostText === '-' ? '3' : ultCostText;
 
  // 召喚可否
  let canSummon = false;
+ let summonCostText = '-';
  let summonSubText = '待機選択';
 
- if (bs && bs.isRoguelite) {
+ if (_usesRogueliteBattleRules(bs)) {
    const roster = bs.roster || [];
+   const aliveAllies = (bs.allies || []).filter(a => a.hp > 0).length;
+   const deployLimit = bs.deployLimit || 4;
    const standby = roster.filter(r => r.status === 'standby');
 
-   if (_summonRosterId) {
+   if (aliveAllies >= deployLimit) {
+     summonSubText = `${aliveAllies}/${deployLimit}`;
+   } else if (_summonRosterId) {
      const selectedRoster = roster.find(r => r.rosterId === _summonRosterId);
      if (selectedRoster) {
-       const cost = _getSummonLinkCostForRoster(bs, selectedRoster);
+       const cost = Number(selectedRoster.summonCost || 1);
+       summonCostText = String(cost);
        summonSubText = _summonMode ? '位置選択中' : '召喚可能';
        canSummon = inSkillPhase && _canActByLink(bs, cost);
      }
    } else if (standby.length > 0) {
-     const affordable = standby.some(r => _canActByLink(bs, _getSummonLinkCostForRoster(bs, r)));
+     const affordable = standby.some(r => _canActByLink(bs, Number(r.summonCost || 1)));
+     const minCost = Math.min(...standby.map(r => Number(r.summonCost || 1)));
+     summonCostText = String(minCost);
      summonSubText = '待機選択';
      canSummon = inSkillPhase && affordable;
    } else {
@@ -9415,6 +4421,7 @@ if (listEl) {
    summonSubText = 'ROGUE';
  }
 
+ if (summonCostEl) summonCostEl.textContent = summonCostText;
  if (summonSubEl) summonSubEl.textContent = summonSubText;
 
  function setBtn(btn, enabled, active) {
@@ -9479,268 +4486,151 @@ if (listEl) {
  }
  }
 
-// ============================================================
-// 公開: renderBattle32UI()
-// ============================================================
-window.renderBattle32UI = function () {
-
-  // ★ 追加：バトルUI終了後の再描画を完全に止める
-  if (window.__BATTLE32_UI_ACTIVE__ === false) {
-    const root = document.getElementById(ROOT_ID);
-    if (root) root.style.display = 'none';
-
-    [
-      'b32-link-bar',
-      'b32-roster-panel',
-      'b32-item-panel',
-      'b32-roster-info-close-hitbox',
-      'b32-enemy-info-overlay',
-      'b32-enemy-quick-info',
-      'b32-action-detail-portal',
-      'b32-combo-inspect'
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.remove();
-    });
-
-    return;
-  }
-
-  const bs = _bs();
-  if (!bs) {
-    console.warn('[Battle32UI] Battle32.getState() が null。Battle32.start() を先に呼んでください。');
-    return;
-  }
+ // ============================================================
+ // 公開: renderBattle32UI()
+ // ============================================================
+ window.renderBattle32UI = function () {
+ const bs = _bs();
+ if (!bs) {
+ console.warn('[Battle32UI] Battle32.getState() が null。Battle32.start() を先に呼んでください。');
+ return;
+ }
 
  buildRoot();
 
-const root = document.getElementById(ROOT_ID);
-if (!root) return;
+ const root = document.getElementById(ROOT_ID);
 
-applyBattle32ViewportClass(root);
+ // ローグライト遷移中は、古いBATTLE END画面を再表示しない
+ if (
+ window.__ROGUELITE_TRANSITIONING__ &&
+ _usesRogueliteBattleRules(bs) &&
+ (bs.result || bs.phase === 'end')
+ ) {
+ if (root) root.style.display = 'none';
+ return;
+ }
 
-// ローグライト遷移中は、古いBATTLE END画面を再表示しない
-  if (
-    window.__ROGUELITE_TRANSITIONING__ &&
-    bs.isRoguelite &&
-    (bs.result || bs.phase === 'end')
-  ) {
-    if (root) root.style.display = 'none';
+ if (root) {
+ root.style.display = 'flex';
+ delete root.dataset.rlHidden;
+ }
 
-    // ★ ここにも保険で追加してOK
-    ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.remove();
-    });
-
-    return;
-  }
-
-  if (root) {
-    root.style.display = 'flex';
-    delete root.dataset.rlHidden;
-  }
-
-  // ローグライト進捗バーは battle32-root の通常フローに差し込む。
-  // RogueliteController.startRun() は Battle32 DOM 生成前にも呼ばれるため、
-  // renderBattle32UI() 側からも毎回同期して表示漏れを防ぐ。
-  if (bs.isRoguelite && window.RogueliteController && typeof window.RogueliteController._updateHud === 'function') {
-    window.RogueliteController._updateHud();
-  } else if (window.RogueliteController && typeof window.RogueliteController._hideHud === 'function') {
-    window.RogueliteController._hideHud();
-  }
-
-  renderHeader(bs);
-  renderHintBar(bs);
-  renderBossHp(bs);
-  renderBoard(bs);
-
-  if (bs.isRoguelite) {
-    renderLinkBar(bs);
-    renderRoster(bs);
-    renderItemPanel(bs);
-    renderBlessingInv(bs);
-  } else {
-    renderPartyStatus(bs);
-    renderBlessingInv(bs);
-  }
-
-  renderLog(bs);
-  renderBottomArea(bs);
-  renderButtons(bs);
-  renderActionMenu(bs);
-  // コンボ説明はキャラパネル内の3ページ目へ統合
-  const oldComboInspect = document.getElementById('b32-combo-inspect');
-  if (oldComboInspect) oldComboInspect.remove();
-  renderResult(bs);
-  renderBattleMenu(bs);
-
-  requestAnimationFrame(() => {
-    fitBattle32Layout();
-    _syncRosterInfoCloseHitbox();
-  });
+ renderHeader(bs);
+ renderHintBar(bs);
+ renderBossHp(bs);
+ renderBoard(bs);
+ if (_usesRogueliteBattleRules(bs)) {
+   renderLinkBar(bs);
+   renderRoster(bs);
+   renderItemPanel(bs);
+ } else {
+   renderPartyStatus(bs);
+ }
+ renderLog(bs);
+ renderBottomArea(bs);
+ renderButtons(bs);
+ renderActionMenu(bs);
+ renderResult(bs);
+ renderBattleMenu(bs);
+ 
+ requestAnimationFrame(fitBattle32Layout);
 };
-
-function applyBattle32ViewportClass(root) {
-  if (!root) return;
-
-  const w = window.innerWidth || document.documentElement.clientWidth || 0;
-  // screen.height は物理画面高さ（アドレスバーの影響を受けない）
-  // innerHeight はSafariでアドレスバー展開中に小さくなるため使わない
-  const sh = window.screen ? window.screen.height : 0;
-
-  root.classList.remove('b32-vp-se', 'b32-vp-iphone14');
-
-  // SE系：物理画面が低い端末（SE第3世代 = 667pt）
-  if (w <= 390 && sh <= 700) {
-    root.classList.add('b32-vp-se');
-    return;
-  }
-
-  // iPhone14系以上：幅430以下の通常スマホ
-  if (w <= 430) {
-    root.classList.add('b32-vp-iphone14');
-  }
-}
 
  // ============================================================
  // LINK バー描画（ローグライト専用）
  // ============================================================
  function renderLinkBar(bs) {
-  let el = document.getElementById('b32-link-bar');
-
-  if (
-    window.__BATTLE32_UI_ACTIVE__ === false ||
-    !bs ||
-    !bs.link ||
-    !bs.isRoguelite ||
-    bs.result
-  ) {
-    if (el) el.remove();
-    return;
-  }
-
+   let el = document.getElementById('b32-link-bar');
    if (!el) {
      el = document.createElement('div');
      el.id = 'b32-link-bar';
      el.style.cssText = [
   'position:fixed',
-  // 右側、アイテム置き場の少し上あたり
-  'right:10px',
-  'top:calc(env(safe-area-inset-top, 0px) + 150px)',
+  'top:92px',
+  'left:8px',
+  'right:8px',
   'z-index:3000000',
-
-  // 縦レイアウト（位置は既存維持。見た目だけ白UI用へ）
   'display:flex',
   'flex-direction:column',
   'align-items:center',
-  'justify-content:flex-start',
-  'gap:2px',
-
-  // 表示幅だけLINK表記に合わせる
-  'width:34px',
-  'padding:0',
-  'box-sizing:border-box',
-
-  // 外側は透明。白いピルは内側要素で描画する
-  'background:transparent',
-  'border:0',
-  'border-radius:0',
-  'box-shadow:none',
-
+  'gap:3px',
+  'padding:6px 12px 4px',
+  'background:rgba(6,4,18,.72)',
+  'border:1px solid rgba(100,80,200,.25)',
+  'border-radius:8px',
   'pointer-events:none',
 ].join(';');
 
      document.body.appendChild(el);
    }
+   if (!bs || !bs.link) { el.style.display = 'none'; return; }
    el.style.display = 'flex';
 
    const { current, max } = bs.link;
-   const linkCurrent = Number(current || 0);
-   const linkMax = Number(max || 6);
-   const diamonds = Array.from({ length: linkMax }, (_, i) => {
-  const filled = i < linkCurrent;
-  return `
-    <div class="b32-link-stone-slot ${filled ? 'filled' : 'empty'}" aria-hidden="true">
-      <img class="b32-link-stone" src="images/link_gauge.webp" alt="">
-    </div>`;
-}).join('');
+   const diamonds = Array.from({ length: 6 }, (_, i) => {
+     const filled = i < current;
+     return `<div style="
+       width:14px;height:14px;
+       transform:rotate(45deg);
+       border:1.5px solid ${filled ? 'rgba(140,100,255,.9)' : 'rgba(100,80,200,.3)'};
+       background:${filled ? 'rgba(120,80,240,.7)' : 'rgba(30,20,60,.4)'};
+       box-shadow:${filled ? '0 0 6px rgba(120,80,240,.6)' : 'none'};
+       transition:background .2s,border-color .2s;
+     "></div>`;
+   }).join('');
 
    el.innerHTML = `
-  <div class="b32-link-frame">
-    <div class="b32-link-content">
-      <div class="b32-link-label">LINK</div>
-      <div class="b32-link-count">${linkCurrent}<span>/</span>${linkMax}</div>
-      <div class="b32-link-stones">
-        ${diamonds}
-      </div>
-    </div>
-  </div>
-`;
+     <div style="display:flex;align-items:center;gap:6px;">
+       <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:rgba(160,130,255,.7);">LINK</span>
+       <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:rgba(180,150,255,.9);">${current}<span style="font-size:9px;color:rgba(120,100,200,.6);">/${max}</span></span>
+       <div style="display:flex;gap:3px;align-items:center;">${diamonds}</div>
+     </div>
+     <div style="font-size:8px;letter-spacing:1px;color:rgba(120,100,200,.45);font-family:'Noto Serif JP',serif;">毎ターン全回復 · LINKがある限り行動可能</div>
+   `;
  }
 
  // ============================================================
  // roster 5体表示（ローグライト専用）
  // ============================================================
  function renderRoster(bs) {
-  let el = document.getElementById('b32-roster-panel');
-
-  if (
-    window.__BATTLE32_UI_ACTIVE__ === false ||
-    !bs ||
-    !bs.isRoguelite ||
-    bs.result
-  ) {
-    if (el) el.remove();
-    return;
-  }
-
+   let el = document.getElementById('b32-roster-panel');
    if (!el) {
      el = document.createElement('div');
      el.id = 'b32-roster-panel';
     el.style.cssText = [
   'position:fixed',
-  'bottom:calc(124px + env(safe-area-inset-bottom, 0px))',
-  'left:50%',
-  'right:auto',
-  'transform:translateX(-50%)',
-  'width:min(calc(100vw - 16px), 420px)',
+  'bottom:calc(86px + env(safe-area-inset-bottom, 0px))',
+  'left:0',
+  'right:0',
   'z-index:3000000',
   'display:flex',
-  'justify-content:space-between',
-  'align-items:center',
-  'gap:5px',
-  'padding:0',
-  'background:transparent',
-  'border-top:none',
-  'overflow:visible',
+  'gap:4px',
+  'padding:6px 8px',
+  'background:rgba(6,4,18,.92)',
+  'border-top:1px solid rgba(100,80,200,.25)',
+  'overflow-x:auto',
   '-webkit-overflow-scrolling:touch',
 ].join(';');
-
      document.body.appendChild(el);
    }
+   if (!bs || !bs.roster || !_usesRogueliteBattleRules(bs)) { el.style.display = 'none'; return; }
    el.style.display = 'flex';
 
-      el.innerHTML = bs.roster.map(r => {
+   const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
+   const atLimit = aliveCount >= (bs.deployLimit || 4);
+   const RARITY_COLOR = { r: '#c0c0c0', sr: '#ffd700', ur: '#ff80ff' };
+
+   el.innerHTML = bs.roster.map(r => {
      const isStandby = r.status === 'standby';
      const isDeployed = r.status === 'deployed';
      const isDead = r.status === 'dead';
-     const linkCost = _getSummonLinkCostForRoster(bs, r);
-     const canSummon = isStandby && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
-    const isActionSelected =
-  isDeployed &&
-  r.deployedUid &&
-  (
-    _selActionAllyUid === r.deployedUid ||
-    _selMoveAllyUid === r.deployedUid ||
-    _selSkillAllyUid === r.deployedUid
-  );
+     const linkCost = r.summonCost || 1;
+     const canSummon = isStandby && !atLimit && (bs.link && bs.link.current >= linkCost) && bs.phase === 'skill' && !bs.result;
+     const isSummonSelected =
+      (_summonMode && _summonRosterId === r.rosterId) ||
+      (!_summonMode && _selectedRosterId === r.rosterId);
 
-const isSummonSelected =
-  isActionSelected ||
-  (_summonMode && _summonRosterId === r.rosterId) ||
-  (!_summonMode && _selectedRosterId === r.rosterId) ||
-  (_itemMode && r.deployedUid && _itemTargetUid === r.deployedUid);
+     const rarColor = RARITY_COLOR[r.rarity] || '#c0c0c0';
 
      let statusLabel = '';
      let statusColor = '';
@@ -9749,213 +4639,92 @@ const isSummonSelected =
      else { statusLabel = `LINK ${linkCost}`; statusColor = 'rgba(140,110,255,.8)'; }
 
      const img = r.charDef && (r.charDef.panelImg || r.charDef.upImg || r.charDef.img || '');
-     const element = r.charDef && r.charDef.element;
-     const elementIcon = unitElementIcon(element);
-     const elementLabel = unitElementLabel(element);
-     const elementClass = unitElementClass(element);
 
-     // HP表示：deployed は実測HP、standby は最大HP/最大HP、dead は0/最大HP
-     let hpBarHtml = '';
-     let hpTextHtml = '';
-     const hpMax = (r.charDef && Number(r.charDef.hp)) || 0;
-
-// ULTゲージ表示：deployed は実測shinki、standby/dead は0扱い
-let ultGaugeHtml = '';
-{
-  let shinkiCurrent = 0;
-  let shinkiMax = Number(r.charDef?.shinkiMax || 0);
-
-  if (isDeployed && r.deployedUid) {
-    const deployedUnit = (bs.allies || []).find(a => a._uid === r.deployedUid);
-    if (deployedUnit) {
-      shinkiCurrent = Math.max(0, Number(deployedUnit.shinki || 0));
-      shinkiMax = Math.max(shinkiMax, Number(deployedUnit.shinkiMax || 0));
-    }
-  }
-
-  if (shinkiMax > 0) {
-    const dots = Array.from({ length: shinkiMax }, (_, i) =>
-      `<span class="b32-roster-ult-dot${i < shinkiCurrent ? ' filled' : ''}"></span>`
-    ).join('');
-
-    ultGaugeHtml = `
-      <div class="b32-roster-ult-row" aria-label="ULT ${shinkiCurrent}/${shinkiMax}">
-        ${dots}
-      </div>
-    `;
-  }
-}
-
-     if (hpMax > 0) {
-       let hpCurrent = hpMax;
-       let hpTextClass = 'standby';
-       let hpTextStr = `${hpMax}/${hpMax}`;
-
-       if (isDeployed && r.deployedUid) {
-         const deployedUnit = (bs.allies || []).find(a => a._uid === r.deployedUid);
-         if (deployedUnit) {
-           hpCurrent = Math.max(0, Number(deployedUnit.hp) || 0);
-           hpTextStr = `${hpCurrent}/${hpMax}`;
-           hpTextClass = '';
-         }
-       } else if (isDead) {
-         hpCurrent = 0;
-         hpTextStr = `0/${hpMax}`;
-         hpTextClass = 'dead';
-       }
-
-       const hpPct = Math.max(0, Math.min(100, Math.round((hpCurrent / hpMax) * 100)));
-       hpTextHtml = `<div class="b32-roster-hp-text ${hpTextClass}">${hpTextStr}</div>`;
-       hpBarHtml = `<div class="b32-roster-hp-bar-wrap"><div class="b32-roster-hp-bar" style="width:${hpPct}%"></div></div>`;
-     }
-
-     const isItemTargetCard = !!(
-       isDeployed &&
-       r.deployedUid &&
-       b32IsAllyItemTargetMode(bs)
-     );
-     const rosterClick = isItemTargetCard
-       ? `_b32OnItemAllyTap('${r.deployedUid}')`
-       : `_b32OnRosterTap('${r.rosterId}')`;
-
-     return `<div class="b32-roster-card"
-       data-roster-id="${r.rosterId}"
-       data-deployed-uid="${r.deployedUid || ''}"
-       onclick="${rosterClick}"
+     return `<div onclick="_b32OnRosterTap('${r.rosterId}')"
        style="
-         flex:0 0 82px;width:82px;min-width:82px;max-width:82px;
+         flex-shrink:0;width:56px;
          display:flex;flex-direction:column;align-items:center;gap:2px;
-         cursor:${(canSummon || isDeployed || isItemTargetCard) ? 'pointer' : 'default'};
-         border-radius:0;padding:4px 2px;
+         cursor:${canSummon ? 'pointer' : 'default'};
+         border-radius:8px;padding:4px 2px;
          border:1.5px solid ${isSummonSelected ? 'rgba(140,100,255,.9)' : isStandby ? 'rgba(100,80,200,.4)' : 'rgba(60,50,100,.3)'};
          background:${isSummonSelected ? 'rgba(80,40,180,.3)' : 'rgba(20,15,40,.6)'};
-         opacity:${isDead ? '0.4' : '1'};
+         opacity:${isDead ? '0.4' : isDeployed ? '0.7' : '1'};
          transition:border-color .15s,background .15s;
          box-shadow:${isSummonSelected ? '0 0 12px rgba(120,80,255,.5)' : 'none'};
        ">
-       <div class="b32-roster-img-wrap">
-         ${elementIcon ? `<img class="b32-roster-element-icon b32-roster-element-icon-${elementClass}" src="${elementIcon}" alt="${elementLabel}" title="${elementLabel}" onerror="this.style.display='none'">` : ''}
-         ${img ? `<img class="b32-roster-img" src="${img}" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
+       <div style="font-size:7px;letter-spacing:1px;color:${rarColor};font-family:'Cinzel',serif;">${r.rarity.toUpperCase()}</div>
+       <div style="width:40px;height:40px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+         ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;object-position:top center;" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(200,180,255,.5);">${(r.name||'?')[0]}</div>`}
        </div>
-       <div style="font-size:8px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
-       <div style="font-size:8px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
-       ${hpTextHtml}
-       ${hpBarHtml}
-       ${ultGaugeHtml}
-
+       <div style="font-size:7px;color:rgba(220,210,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;">${r.name}</div>
+       <div style="font-size:7px;color:${statusColor};letter-spacing:.5px;">${statusLabel}</div>
      </div>`;
    }).join('');
 
+   // 盤面出撃数表示
+   const countEl = `<div style="flex-shrink:0;width:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+     <div style="font-family:'Cinzel',serif;font-size:9px;color:rgba(140,110,200,.6);">出撃</div>
+     <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:${atLimit ? 'rgba(255,100,100,.8)' : 'rgba(160,130,255,.9)'};">${aliveCount}/${bs.deployLimit || 4}</div>
+     <div style="font-size:7px;color:rgba(100,80,160,.5);">${atLimit ? '上限' : '人'}</div>
+   </div>`;
+   el.innerHTML = countEl + el.innerHTML;
  }
 
-// ============================================================
-// アイテム3枠パネル（ローグライト専用）
-// ============================================================
-function _getRogueliteItemAsset(item) {
-  const empty = { src: 'images/item_battle_empty.webp', alt: 'EMPTY', empty: true };
-  if (!item) return empty;
+ // ============================================================
+ // アイテム2枠パネル（ローグライト専用）
+ // ============================================================
+ function renderItemPanel(bs) {
+   let el = document.getElementById('b32-item-panel');
+   if (!el) {
+     el = document.createElement('div');
+     el.id = 'b32-item-panel';
+     el.style.cssText = [
+  'position:fixed',
+  'right:8px',
+  'bottom:calc(170px + env(safe-area-inset-bottom, 0px))',
+  'z-index:3000001',
+  'display:flex',
+  'flex-direction:column',
+  'gap:4px',
+].join(';');
 
-  if (item.type === 'heal') {
-    return { src: 'images/item_battle_hp.webp', alt: item.name || 'HP HEAL' };
-  }
-  if (item.type === 'link_recover') {
-    return { src: 'images/item_battle_link.webp', alt: item.name || 'LINK HEAL' };
-  }
-  if (item.type === 'swap_ally' || item.type === 'move_ally' || item.type === 'swap_enemy') {
-    return { src: 'images/item_battle_switch.webp', alt: item.name || 'SWAP' };
-  }
+     document.body.appendChild(el);
+   }
+   if (!bs || !_usesRogueliteBattleRules(bs)) { el.style.display = 'none'; return; }
+   el.style.display = 'flex';
 
-  // 既定外アイテムも Empty ではなく既知アイコンに寄せるより、
-  // まずは枠レイアウトを崩さないことを優先して Empty 扱いにする。
-  return empty;
-}
+   const items = bs.items || [];
+   const slots = [0, 1].map(i => {
+     const item = items[i];
+     if (!item) {
+       return `<div style="
+         width:52px;height:52px;border-radius:8px;
+         border:1px dashed rgba(100,80,200,.25);
+         background:rgba(20,15,40,.4);
+         display:flex;align-items:center;justify-content:center;
+         font-size:10px;color:rgba(100,80,160,.35);
+       ">—</div>`;
+     }
+     const linkCost = item.linkCost != null ? item.linkCost : 1;
+     const canUse = bs.phase === 'skill' && !bs.result && bs.link && bs.link.current >= linkCost && !item.used;
+     const isActive = _itemMode && _itemSlotIndex === i;
+     return `<div onclick="${canUse ? `_b32OnItemTap(${i})` : ''}" title="${item.desc || ''}" style="
+       width:52px;min-height:52px;border-radius:8px;padding:4px;
+       border:1.5px solid ${isActive ? 'rgba(200,160,80,.9)' : 'rgba(160,120,60,.4)'};
+       background:${isActive ? 'rgba(80,60,20,.5)' : 'rgba(20,15,40,.7)'};
+       opacity:${canUse ? '1' : '0.45'};
+       cursor:${canUse ? 'pointer' : 'default'};
+       display:flex;flex-direction:column;align-items:center;gap:2px;
+       box-shadow:${isActive ? '0 0 10px rgba(200,160,80,.4)' : 'none'};
+     ">
+       <div style="font-size:16px;line-height:1;">${item.id === 'heal_small' ? '💊' : item.id === 'reposition' ? '🌀' : '📦'}</div>
+       <div style="font-size:7px;color:rgba(220,190,120,.8);text-align:center;line-height:1.2;">${item.name}</div>
+       <div style="font-size:7px;color:rgba(140,110,200,.7);">L${linkCost}</div>
+     </div>`;
+   }).join('');
 
-function renderItemPanel(bs) {
-  let el = document.getElementById('b32-item-panel');
-
-  // バトルUIが終了済み、またはローグライト外、または戦闘終了済みなら作らない/消す
-  if (
-    window.__BATTLE32_UI_ACTIVE__ === false ||
-    !bs ||
-    !bs.isRoguelite ||
-    bs.result
-  ) {
-    if (el) el.remove();
-    return;
-  }
-
-  const items = Array.isArray(bs.items) ? bs.items : [];
-
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'b32-item-panel';
-    document.body.appendChild(el);
-  }
-
-  // 土台画像は使わず、各スロット画像そのものを縦に並べる。
-  // これで「枠画像とアイコン位置を合わせる」問題を根本的に無くす。
-  el.style.cssText = [
-    'position:fixed',
-    'left:6px',
-    'right:auto',
-    'top:auto',
-    'bottom:auto',
-    'transform:none',
-    'z-index:3000001',
-    'width:72px',
-    'display:flex',
-    'flex-direction:column',
-    'align-items:center',
-    'justify-content:flex-start',
-    'gap:6px',
-    'background:transparent',
-    'box-shadow:none',
-    'pointer-events:none',
-    'overflow:visible',
-  ].join(';');
-
-  requestAnimationFrame(_positionItemPanel);
-
-  const slots = [0, 1, 2].map(i => {
-    const item = items[i] || null;
-    const isRealItem = !!item;
-    const asset = _getRogueliteItemAsset(item);
-    const linkCost = isRealItem ? Number(item.linkCost != null ? item.linkCost : 1) : 0;
-    const canUse = !!(
-      isRealItem &&
-      bs.phase === 'skill' &&
-      !bs.result &&
-      bs.link &&
-      Number(bs.link.current || 0) >= linkCost &&
-      !item.used
-    );
-    const isActive = isRealItem && _itemMode && _itemSlotIndex === i;
-
-    const classes = [
-      'b32-item-dock-slot',
-      isRealItem ? 'has-item' : 'is-empty',
-      canUse ? 'is-usable' : 'is-disabled',
-      isActive ? 'is-active' : ''
-    ].filter(Boolean).join(' ');
-
-    const title = isRealItem
-      ? `${item.name || 'ITEM'}${item.desc ? '｜' + item.desc : ''}`
-      : 'EMPTY';
-
-    return `<div
-      class="${classes}"
-      ${canUse ? `onclick="_b32OnItemTap(${i})"` : ''}
-      title="${title.replace(/"/g, '&quot;')}"
-      style="pointer-events:${canUse ? 'auto' : 'none'};cursor:${canUse ? 'pointer' : 'default'};"
-    >
-      <img class="b32-item-slot-art" src="${asset.src}" alt="${asset.alt || title}">
-      ${isRealItem ? `<div class="b32-item-cost-badge">L${linkCost}</div>` : ''}
-    </div>`;
-  }).join('');
-
-  el.innerHTML = slots;
-}
-
+   el.innerHTML = slots;
+ }
 
  // ============================================================
  // 召喚マスのハイライト（renderBoard内で参照）
@@ -9976,7 +4745,7 @@ window._b32OnBottomSummonTap = function () {
 
   const bs = _bs();
   if (!bs || bs.result || bs.phase !== 'skill') return;
-  if (!bs.isRoguelite) return;
+  if (!_usesRogueliteBattleRules(bs)) return;
 
   if (!_summonRosterId) {
     const guide = document.getElementById('b32-bottom-guide');
@@ -9992,7 +4761,15 @@ window._b32OnBottomSummonTap = function () {
     return;
   }
 
-  const cost = _getSummonLinkCostForRoster(bs, r);
+  const aliveCount = (bs.allies || []).filter(a => a.hp > 0).length;
+  const deployLimit = bs.deployLimit || 4;
+  if (aliveCount >= deployLimit) {
+    const guide = document.getElementById('b32-bottom-guide');
+    if (guide) guide.textContent = '最大出撃数に到達しています。';
+    return;
+  }
+
+  const cost = Number(r.summonCost || 1);
   if (!_canActByLink(bs, cost)) {
     const guide = document.getElementById('b32-bottom-guide');
     if (guide) guide.textContent = 'LINKが不足しています。';
@@ -10011,12 +4788,6 @@ window._b32OnBottomSummonTap = function () {
   _itemPhase = null;
   _itemTargetUid = null;
 
-  // 召喚ボタンを押した時点でキャラ詳細は閉じる。
-  // ここで _selectedRosterId を残すと、召喚完了後の再描画で詳細が再表示される。
-  _selectedRosterId = null;
-  const hitbox = document.getElementById('b32-roster-info-close-hitbox');
-  if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
-
   // 召喚位置選択へ
   _summonMode = true;
 
@@ -10030,72 +4801,12 @@ window._b32OnRosterTap = function(rosterId) {
   if (_b32InputLocked) return;
 
   const bs = _bs();
-  if (!bs || !bs.isRoguelite) return;
+  if (!bs || !_usesRogueliteBattleRules(bs)) return;
 
-  const roster = bs.roster || [];
-  const r = roster.find(x => x.rosterId === rosterId);
-  if (!r) return;
-
-  // 同じキャラパネルをもう一度タップした場合は詳細を閉じる。
-  // 待機キャラでは召喚候補状態も同時に解除する。
-  if (_selectedRosterId === rosterId) {
-    _selectedRosterId = null;
-    _rosterInfoPage = 0;
-    if (_summonRosterId === rosterId) _summonRosterId = null;
-    _summonMode = false;
-
-    // 同じ出撃中キャラのパネルを再タップした場合は、
-    // 詳細ウインドウだけでなく下部アクション選択も完全に解除する。
-    if (r.status === 'deployed' && r.deployedUid) {
-      _selActionAllyUid = null;
-      _selMoveAllyUid = null;
-      _selSkillAllyUid = null;
-      _selSkillId = null;
-      _moveMode = false;
-      _comboRangeAllyUid = null;
-      _closeSkillDetailLayers();
-    }
-
-    renderBattle32UI();
-    return;
-  }
-
-  // 出撃中キャラなら、盤面上の味方タップと同じ扱いにする。
-  // ただしアイテムの味方対象選択中は、キャラパネルタップをアイテム使用に優先ルーティングする。
-  if (r.status === 'deployed' && r.deployedUid) {
-    if (b32IsAllyItemTargetMode(bs)) {
-      if (typeof window._b32OnItemAllyTap === 'function') {
-        window._b32OnItemAllyTap(r.deployedUid);
-      }
-      return;
-    }
-
-    _selectedRosterId = rosterId;
-    _summonRosterId = null;
-    _summonMode = false;
-
-    _itemMode = false;
-    _itemSlotIndex = null;
-    _itemPhase = null;
-    _itemTargetUid = null;
-
-    // 出撃中キャラのパネルをタップしたら、
-    // 詳細ウインドウを開くと同時に移動・スキル・ULTを操作可能にする。
-    _selActionAllyUid = r.deployedUid;
-    _selMoveAllyUid = null;
-    _selSkillAllyUid = null;
-    _selSkillId = null;
-    _moveMode = false;
-    _comboRangeAllyUid = null;
-    _rosterInfoPage = 0;
-    _closeSkillDetailLayers();
-    renderBattle32UI();
-    return;
-  }
-
-  // 待機中・死亡中は従来通り、情報表示／召喚候補選択
+  // キャラ情報表示用に選択
   _selectedRosterId = rosterId;
-  _rosterInfoPage = 0;
+
+  // 召喚候補としても保持
   _summonRosterId = rosterId;
 
   // ただし即召喚モードには入らない
@@ -10116,34 +4827,6 @@ window._b32OnRosterTap = function(rosterId) {
   renderBattle32UI();
 };
 
-function _closeRosterInfoHard(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (typeof event.stopImmediatePropagation === 'function') {
-      event.stopImmediatePropagation();
-    }
-  }
-
-  _selectedRosterId = null;
-  _rosterInfoPage = 0;
-
-  const hitbox = document.getElementById('b32-roster-info-close-hitbox');
-  if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
-
-  renderBattle32UI();
-}
-
-window._b32CloseRosterInfo = _closeRosterInfoHard;
-
-function _syncRosterInfoCloseHitbox() {
-  // 閉じる操作は「同じキャラパネルを再タップ」に統一。
-  // 旧版で body 直下に生成した×ボタンが残っていれば除去する。
-  const hitbox = document.getElementById('b32-roster-info-close-hitbox');
-  if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
-}
-
-
  // 召喚マスタップ
  window._b32OnSummonCellTap = async function(row, col) {
    if (_b32InputLocked) return;
@@ -10154,12 +4837,6 @@ function _syncRosterInfoCloseHitbox() {
    if (ok) {
      _summonMode = false;
      _summonRosterId = null;
-
-     // 召喚完了後は盤面確認を優先する。
-     // 召喚前に選んでいた待機キャラの詳細を再表示しない。
-     _selectedRosterId = null;
-     const hitbox = document.getElementById('b32-roster-info-close-hitbox');
-     if (hitbox && hitbox.parentNode) hitbox.parentNode.removeChild(hitbox);
    }
    renderBattle32UI();
  };
@@ -10178,26 +4855,13 @@ function _syncRosterInfoCloseHitbox() {
      _itemSlotIndex = null;
      _itemPhase = null;
      _itemTargetUid = null;
-     renderBattle32UI();
-     return;
-   }
-
-   _resetSkillState();
-   _itemMode = true;
-   _itemSlotIndex = slotIndex;
-   _itemTargetUid = null;
-
-   if (item.target === 'instant' || item.target === 'ally_all' || item.type === 'link_recover' || item.type === 'enemy_hp_cut_all') {
-     const ok = window.Battle32.useItem(_itemSlotIndex, {});
-     _itemMode = false;
-     _itemSlotIndex = null;
-     _itemPhase = null;
+   } else {
+     _resetSkillState();
+     _itemMode = true;
+     _itemSlotIndex = slotIndex;
+     _itemPhase = 'target';
      _itemTargetUid = null;
-     renderBattle32UI();
-     return;
    }
-
-   _itemPhase = 'target';
    renderBattle32UI();
  };
 
@@ -10210,69 +4874,19 @@ function _syncRosterInfoCloseHitbox() {
    const item = bs.items[_itemSlotIndex];
    if (!item) return;
 
-   if (item.type === 'heal' || item.type === 'shinki_max' || item.type === 'guard') {
+   if (item.type === 'heal') {
+     // 即時使用
      const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
      if (ok) {
        _itemMode = false;
        _itemSlotIndex = null;
        _itemPhase = null;
-       _itemTargetUid = null;
      }
      renderBattle32UI();
    } else if (item.type === 'move_ally') {
+     // 転位符: 対象選択 → マス選択へ
      _itemTargetUid = uid;
      _itemPhase = 'cell';
-     renderBattle32UI();
-   } else if (item.type === 'swap_ally') {
-     if (!_itemTargetUid) {
-       _itemTargetUid = uid;
-       _itemPhase = 'target';
-       renderBattle32UI();
-       return;
-     }
-     const ok = window.Battle32.useItem(_itemSlotIndex, { targetAUid: _itemTargetUid, targetBUid: uid });
-     if (ok) {
-       _itemMode = false;
-       _itemSlotIndex = null;
-       _itemPhase = null;
-       _itemTargetUid = null;
-     }
-     renderBattle32UI();
-   }
- };
-
- // アイテム対象の敵タップ
- window._b32OnItemEnemyTap = function(uid) {
-   if (_b32InputLocked) return;
-   if (!_itemMode || _itemSlotIndex == null) return;
-   const bs = _bs();
-   if (!bs) return;
-   const item = bs.items[_itemSlotIndex];
-   if (!item) return;
-
-   if (item.type === 'stun_enemy') {
-     const ok = window.Battle32.useItem(_itemSlotIndex, { targetUid: uid });
-     if (ok) {
-       _itemMode = false;
-       _itemSlotIndex = null;
-       _itemPhase = null;
-       _itemTargetUid = null;
-     }
-     renderBattle32UI();
-   } else if (item.type === 'swap_enemy') {
-     if (!_itemTargetUid) {
-       _itemTargetUid = uid;
-       _itemPhase = 'target';
-       renderBattle32UI();
-       return;
-     }
-     const ok = window.Battle32.useItem(_itemSlotIndex, { targetAUid: _itemTargetUid, targetBUid: uid });
-     if (ok) {
-       _itemMode = false;
-       _itemSlotIndex = null;
-       _itemPhase = null;
-       _itemTargetUid = null;
-     }
      renderBattle32UI();
    }
  };
@@ -10307,10 +4921,6 @@ function _syncRosterInfoCloseHitbox() {
  // ============================================================
  function fitBattle32Layout() {
  const root = document.getElementById(ROOT_ID);
- // レイアウト計算前に必ず viewport クラスを再判定する
- // Safariではアドレスバーの展開/収縮でinnerHeightが変わるため
- applyBattle32ViewportClass(root);
-
  const header = document.getElementById('b32-header');
  const hint = document.getElementById('b32-hint-bar');
  const actions = document.getElementById('b32-actions'); // 消していてもOKにする
@@ -10321,7 +4931,6 @@ function _syncRosterInfoCloseHitbox() {
 
  const rootH = root.clientHeight;
  const rootW = root.clientWidth;
- const isSELike = root.classList.contains('b32-vp-se') || (rootW <= 390 && rootH <= 700);
 
  const hintVisible = hint && getComputedStyle(hint).display !== 'none';
  const hintH = hintVisible ? hint.offsetHeight : 0;
@@ -10329,180 +4938,81 @@ function _syncRosterInfoCloseHitbox() {
  const bossHpVisible = bossHp && getComputedStyle(bossHp).display !== 'none';
  const bossHpH = bossHpVisible ? bossHp.offsetHeight : 0;
 
- const rlHud = document.getElementById('rl-hud');
- const rlHudVisible = rlHud && getComputedStyle(rlHud).display !== 'none';
- const rlHudH = rlHudVisible ? rlHud.offsetHeight : 0;
-
  const actionsVisible = actions && getComputedStyle(actions).display !== 'none';
- // actionsH はフロー計算では 0 扱い（position:fixed になったため）
- // ただし後段の --b32-actions-h 計算で使うため別途取得する
- const actionsHFlow = 0; // fixed なのでフロー高さには含めない
+ const actionsH = actionsVisible ? actions.offsetHeight : 0;
 
- const isCompact = rootW <= 390 && rootH <= 700;
-const isIphone14Like = root.classList.contains('b32-vp-iphone14');
-
-// iPhone SE系は盤面が小さくなりすぎるため、下部UIをCSSで圧縮しつつ
-// 盤面計算にも少し余裕を持たせる。14系には影響させない。
-const seBoardBoostH = isSELike ? 104 : 0;
-const reservedExtra = isCompact ? 0 : (isIphone14Like ? 20 : 20);
-
-const reservedH =
+ const reservedH =
  header.offsetHeight +
- rlHudH +
  hintH +
  bossHpH +
- actionsHFlow +
+ actionsH +
  bottom.offsetHeight +
- reservedExtra;
+ (rootW <= 390 && rootH <= 700 ? 4 : 20);
 
  // ローグライト時は roster + link-bar の高さも予約
  const rosterEl = document.getElementById('b32-roster-panel');
  const linkBarEl = document.getElementById('b32-link-bar');
- // style.display はインラインのみ参照するため getComputedStyle を使う
- const rosterH = (rosterEl && getComputedStyle(rosterEl).display !== 'none') ? rosterEl.offsetHeight : 0;
- const linkBarH = (linkBarEl && getComputedStyle(linkBarEl).display !== 'none') ? linkBarEl.offsetHeight : 0;
+ const rosterH = (rosterEl && rosterEl.style.display !== 'none') ? rosterEl.offsetHeight : 0;
+ const linkBarH = (linkBarEl && linkBarEl.style.display !== 'none') ? linkBarEl.offsetHeight : 0;
 
  const reservedHFinal = reservedH + rosterH + linkBarH;
 
  const boardAvailW = Math.max(240, rootW - 24);
- const boardAvailH = Math.max(200, rootH - reservedHFinal + seBoardBoostH);
+ const boardAvailH = Math.max(200, rootH - reservedHFinal);
 
  const gap = 3;
  const cellByW = Math.floor((boardAvailW - gap * 4) / 5);
  const cellByH = Math.floor((boardAvailH - gap * 7) / 8);
 
-// 端末別セルサイズ。
-// SE系はタップできるだけでなく、ゲーム性を保つため最低38pxを確保する。
-// 赤丸で確認された「盤面下〜キャラカード上」の余白を盤面拡大に使うため、
-// SEのみ上限を45pxまで引き上げる。14系には影響させない。
-const minCell = isSELike ? 38 : (isCompact ? 30 : 28);
-const maxCell = isSELike ? 45 : (isCompact ? 42 : (isIphone14Like ? 80 : 72));
+ const isCompact = rootW <= 390 && rootH <= 700;
+ const minCell = isCompact ? 24 : 28;
+ const maxCell = isCompact ? 48 : 72;
 
-let cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
+ const cellSize = Math.max(minCell, Math.min(maxCell, cellByW, cellByH));
+ root.style.setProperty('--cell-size', `${cellSize}px`);
 
-// iPhone SE系：38〜45pxの範囲に固定。盤面の可読性を優先する。
-if (isSELike) {
-  cellSize = Math.max(38, Math.min(45, cellSize));
-} else if (isCompact) {
-  cellSize = Math.max(30, Math.min(42, cellSize));
-}
-
-// 通常～縦長スマホ：SEより広い表示領域を盤面へ使う。
-// 50pxを基準にし、十分に高い端末では最大52pxまで拡張する。
-// LINKゲージは右端fixedのため、盤面の横幅計算には含めない。
-if (isIphone14Like) {
-  const tallPhoneCell = rootH >= 880 ? 52 : 50;
-  cellSize = Math.max(cellSize, tallPhoneCell);
-  cellSize = Math.min(cellSize, 52);
-}
-
-root.style.setProperty('--cell-size', `${cellSize}px`);
-
- // ── safe-area-inset-bottom を取得 ──────────────────────────
+ // ── 丸ボタン群 bottom 基準を動的更新 ──────────────────────
+ // キャラパネル (#b32-bottom-area) の実測高さ + 余白(12px) を
+ // --b32-panel-h にセット。safe-area-inset-bottom は
+ // ダミー要素で env() を読み出して加算する。
  let safeBottom = 0;
  try {
-   const probe = document.createElement('div');
-   probe.style.cssText =
-     'position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
-   document.body.appendChild(probe);
-   safeBottom = probe.offsetHeight || 0;
-   document.body.removeChild(probe);
+ const probe = document.createElement('div');
+ probe.style.cssText =
+ 'position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden';
+ document.body.appendChild(probe);
+ safeBottom = probe.offsetHeight || 0;
+ document.body.removeChild(probe);
  } catch (_) { safeBottom = 0; }
 
- // ── #b32-actions の高さを CSS変数 --b32-actions-h にセット ──
- // actions は position:fixed になったのでフロー計算に含まれない。
- // #b32-scroll の padding-bottom はこの変数で確保する（CSS側参照）。
- const actionsEl = document.getElementById('b32-actions');
- const actionsH = (actionsEl && getComputedStyle(actionsEl).display !== 'none')
-   ? actionsEl.offsetHeight : 0;
- root.style.setProperty('--b32-actions-h', `${actionsH + safeBottom}px`);
- // スキル詳細は body 直下へ移動するため、CSS変数を body にも同期する
- document.body.style.setProperty('--b32-actions-h', `${actionsH + safeBottom}px`);
-
- // ── #b32-roster-panel の bottom を actions の上に積む ───────
- // roster-panel（ローグライト5キャラパネル）は body 直下 fixed。
- // actions の高さ + safe-area + 4px の余白で積み上げる。
- const rosterPanelEl2 = document.getElementById('b32-roster-panel');
- if (rosterPanelEl2) {
-   rosterPanelEl2.style.bottom = `${actionsH + safeBottom + 4}px`;
- }
-
- // ── itemパネル／加護アイコンをロスター直上へ同期 ──────────
- _positionItemPanel();
- _positionBlessingIcon();
- _positionActionDetailPortal();
- _positionComboInspect();
-
- // ── --b32-panel-h（後方互換：丸ボタン等が参照） ────────────
- const panelH = actionsH + safeBottom + 12;
+ const panelH = bottom.offsetHeight + safeBottom + 12;
  root.style.setProperty('--b32-panel-h', `${panelH}px`);
 }
 
  window.addEventListener('resize', () => {
- requestAnimationFrame(() => {
-   fitBattle32Layout();
-   _syncRosterInfoCloseHitbox();
- });
+ requestAnimationFrame(fitBattle32Layout);
  });
 
  // ============================================================
+ // 公開: closeBattle32UI()
  // ============================================================
- // 公開: cleanupBattle32Overlays()
- // closeBattle32UI() とローグライト終了の両方から呼ぶ共通掃除関数
- // ============================================================
- window.cleanupBattle32Overlays = function (options) {
-
-   // ★追加：バトルUIは終了済み。以後 renderBattle32UI() が呼ばれても再生成させない
-   window.__BATTLE32_UI_ACTIVE__ = false;
-
-   options = options || {};
-   const restoreCommonUi = options.restoreCommonUi !== false;
-
-   _resetSkillState();
-
-   const root = document.getElementById(ROOT_ID);
-   if (root) root.style.display = 'none';
-
-   // body直下に生成されるローグライトUIは remove() で完全除去
-[
-  'b32-link-bar',
-  'b32-roster-panel',
-  'b32-item-panel',
-  'b32-roster-info-close-hitbox',
-  'b32-enemy-info-overlay',
-  'b32-enemy-quick-info',
-  'b32-battle-menu',
-  'b32-center-text',
-  'b32-combo-text',
-  'b32-turn-danger-frame',
-  'b32-result-overlay',
-  'rl-victory-wait-layer',
-  'b32-action-detail-portal',
-  'b32-combo-inspect'
-].forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.remove();
-});
-
-   if (restoreCommonUi) {
-     const nav = document.getElementById('bottom-nav-shared');
-     if (nav) nav.style.display = '';
-
-     const guf = document.getElementById('global-user-frame');
-     if (guf) {
-       guf.classList.remove('hidden');
-       guf.style.display = '';
-     }
-
-     const explore = document.getElementById('explore-root') || document.getElementById('explore-screen');
-     if (explore) explore.style.display = '';
-   }
- };
-
- // 公開: closeBattle32UI() — cleanupBattle32Overlays の薄いラッパー
  window.closeBattle32UI = function () {
-   window.cleanupBattle32Overlays({ restoreCommonUi: true });
+ _resetSkillState();
+ const root = document.getElementById(ROOT_ID);
+ if (root) root.style.display = 'none';
+
+ // ローグライト専用UI要素を非表示
+ ['b32-link-bar', 'b32-roster-panel', 'b32-item-panel'].forEach(id => {
+   const el = document.getElementById(id);
+   if (el) el.style.display = 'none';
+ });
+
+ const nav = document.getElementById('bottom-nav-shared');
+ if (nav) nav.style.display = '';
+ const guf = document.getElementById('global-user-frame');
+ if (guf) guf.style.display = '';
+ const explore = document.getElementById('explore-root') || document.getElementById('explore-screen');
+ if (explore) explore.style.display = '';
  };
 
  // ============================================================
@@ -10527,80 +5037,32 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
 
  if (window.Battle32._uiHooked) return;
 
- function buildUiCallbacks(callbacks) {
-   const userCb = callbacks || {};
-   return {
-     ...userCb,
-     damage: (data) => {
-       window._b32OnDamage && window._b32OnDamage(data);
-       if (typeof userCb.damage === 'function') userCb.damage(data);
-     },
-     heal: (data) => {
-       window._b32OnHeal && window._b32OnHeal(data);
-       if (typeof userCb.heal === 'function') userCb.heal(data);
-     },
-     statusChange: (data) => {
-       window._b32OnStatusChange && window._b32OnStatusChange(data);
-       if (typeof userCb.statusChange === 'function') userCb.statusChange(data);
-     },
-     moonModeChange: (data) => {
-       window._b32OnHayateMoonModeChange && window._b32OnHayateMoonModeChange(data);
-       if (typeof userCb.moonModeChange === 'function') userCb.moonModeChange(data);
-     },
-     coreDamage: (data) => {
-       window._b32OnCoreDamage && window._b32OnCoreDamage(data);
-       if (typeof userCb.coreDamage === 'function') userCb.coreDamage(data);
-     },
-   };
- }
-
- function wrapRogueliteEnd(config) {
-   const wrappedConfig = Object.assign({}, config || {});
-   if (typeof wrappedConfig.rogueliteOnBattleEnd === 'function') {
-     const originalRogueliteEnd = wrappedConfig.rogueliteOnBattleEnd;
-     wrappedConfig.rogueliteOnBattleEnd = function (payload) {
-       window.__ROGUELITE_TRANSITIONING__ = true;
-       return originalRogueliteEnd(payload);
-     };
-   }
-   return wrappedConfig;
- }
-
  const originalStart = window.Battle32.start;
  window.Battle32.start = function (config, callbacks) {
-   window.__BATTLE32_UI_ACTIVE__ = true;
-   _resetSkillState();
-   _hideAllScreens();
-
-   const uiCallbacks = buildUiCallbacks(callbacks);
-   const wrappedConfig = wrapRogueliteEnd(config);
-   originalStart.call(window.Battle32, wrappedConfig, uiCallbacks);
-   window.renderBattle32UI();
+ _resetSkillState();
+ _hideAllScreens();
+ // damage / heal コールバックを UI 演出に接続
+ // UI演出と外部callbacks を両方呼ぶ（どちらかが undefined でも安全）
+ const userCb = callbacks || {};
+ 
+ const uiCallbacks = {
+ ...userCb,
+ damage: (data) => {
+ window._b32OnDamage && window._b32OnDamage(data);
+ if (typeof userCb.damage === 'function') userCb.damage(data);
+ },
+ heal: (data) => {
+ window._b32OnHeal && window._b32OnHeal(data);
+ if (typeof userCb.heal === 'function') userCb.heal(data);
+ },
+ coreDamage: (data) => {
+ window._b32OnCoreDamage && window._b32OnCoreDamage(data);
+ if (typeof userCb.coreDamage === 'function') userCb.coreDamage(data);
+ },
  };
-
- // startだけでなくrestoreにも同じUIコールバックを注入する。
- // これがないと再開後のdamageイベントがUP演出へ接続されない。
- const originalRestore = window.Battle32.restore;
- if (typeof originalRestore === 'function') {
-   window.Battle32.restore = function (savedState, callbacks) {
-     window.__BATTLE32_UI_ACTIVE__ = true;
-     _resetSkillState();
-     _hideAllScreens();
-
-     const mergedCallbacks = Object.assign({}, callbacks || {});
-     if (savedState && savedState.isRoguelite
-         && typeof mergedCallbacks.rogueliteOnBattleEnd !== 'function'
-         && window.RogueliteController
-         && typeof window.RogueliteController._createResumeBattleEndCallback === 'function') {
-       const resumeEnd = window.RogueliteController._createResumeBattleEndCallback();
-       if (typeof resumeEnd === 'function') mergedCallbacks.rogueliteOnBattleEnd = resumeEnd;
-     }
-
-     const restored = originalRestore.call(window.Battle32, savedState, buildUiCallbacks(mergedCallbacks));
-     window.renderBattle32UI();
-     return restored;
-   };
- }
+ originalStart.call(window.Battle32, config, uiCallbacks);
+ window.renderBattle32UI();
+ };
 
  window.Battle32._uiHooked = true;
  }
@@ -10610,44 +5072,5 @@ root.style.setProperty('--cell-size', `${cellSize}px`);
  } else {
  hookBattle32Start();
  }
-
-
-
-// ============================================================
-// 中断再開時のUIリセット
-// ============================================================
-window.resetBattle32UIAfterRestore = function () {
-  if (_b32CinematicRosterRestoreTimer) {
-    clearTimeout(_b32CinematicRosterRestoreTimer);
-    _b32CinematicRosterRestoreTimer = null;
-  }
-  _b32CinematicRosterHideCount = 0;
-  document.body.classList.remove('b32-cinematic-roster-hidden');
-
-  _selectedRosterId = null;
-  _rosterInfoPage = 0;
-  _resetSkillState();
-
-  document
-    .querySelectorAll('#battle32-root .b32-roster-info-panel, #b32-roster-info-close-hitbox')
-    .forEach(el => el.remove());
-
-  const actionPortal = document.getElementById('b32-action-detail-portal');
-  if (actionPortal) {
-    actionPortal.innerHTML = '';
-    actionPortal.classList.remove('show');
-    actionPortal.style.display = 'none';
-  }
-
-  ['b32-center-text', 'b32-combo-center-text'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('show', 'visible', 'b32ct-turn-danger');
-  });
-
-  if (typeof window.b32UnlockInput === 'function') {
-    window.b32UnlockInput();
-  }
-};
 
 })();
