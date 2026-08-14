@@ -157,7 +157,7 @@
       image: 'images/chara_14_battle_back.webp',
       panelImage: 'images/chara_14_panel.webp',
       cutinImage: 'images/chara_14_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.70, battleUp: 0.7 },
+      uiScale: { panel: 1.0, battleBack: 0.80, battleUp: 0.7 },
     },
     15: {
       id: 15, name: 'エルテナ',

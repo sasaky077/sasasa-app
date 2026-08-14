@@ -140,6 +140,11 @@
   let pointerActive = false;
   let pointerX = 0;
   let pointerY = 0;
+
+  // スマホでは指そのものが自機/被弾コアを隠してしまうため、
+  // タッチ操作時だけ「指より少し上」を実際の移動先にする。
+  // マウス操作ではオフセットしない。
+  const TOUCH_CONTROL_OFFSET_Y = 76;
   let lastTapAt = 0;
   let lastTapX = 0;
   let lastTapY = 0;
@@ -2347,8 +2352,15 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const r = arena.getBoundingClientRect();
+
+    const isTouchLike =
+      e.pointerType === 'touch' ||
+      e.pointerType === 'pen';
+
+    const touchOffsetY = isTouchLike ? TOUCH_CONTROL_OFFSET_Y : 0;
+
     pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
-    pointerY = clamp(e.clientY - r.top, 34, r.height - 38);
+    pointerY = clamp(e.clientY - r.top - touchOffsetY, 34, r.height - 38);
   }
 
   window.selectShootingCharacter = function (id) {
