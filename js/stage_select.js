@@ -341,6 +341,34 @@
         font-size: 14px;
         color: rgba(232,228,220,.2);
       }
+
+      .ss-roguelite-preparing {
+        min-height: 52vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        text-align: center;
+      }
+      .ss-roguelite-preparing-en {
+        font-family: "Cinzel", serif;
+        font-size: 11px;
+        letter-spacing: .32em;
+        color: rgba(190,170,255,.42);
+        margin-bottom: 18px;
+      }
+      .ss-roguelite-preparing-main {
+        font-size: 15px;
+        letter-spacing: .12em;
+        color: rgba(232,228,220,.82);
+      }
+      .ss-roguelite-preparing-sub {
+        margin-top: 10px;
+        font-size: 11px;
+        letter-spacing: .08em;
+        color: rgba(232,228,220,.35);
+      }
     `;
     document.body.appendChild(s);
   }
@@ -403,60 +431,19 @@
     }
 
 
-    // ── 特別巡行用ローグライト一覧 ──
-    // CHAPTER 00はSTAGESに定義したBOSS単戦だけを表示する。
+    // ── 特別巡行用ローグライト ──
+    // 現在は非公開。カード一覧自体を出さず、準備中表示だけにする。
     if (chapter === 'roguelite') {
-      const runs = [
-        {
-          id: 'overseer',
-          icon: '◉',
-          name: '万象を知る白亜の座',
-          meta: '全3戦 · レムナント：オーバーシア',
-          color: 'rgba(140,80,255,.9)',
-        },
-        {
-          id: 'sakiel',
-          icon: '✦',
-          name: 'サキエル降臨',
-          meta: '雑魚3戦 → Stage 4 サキエル',
-          color: 'rgba(230,220,255,.92)',
-        },
-        {
-          id: 'irish',
-          icon: '◆',
-          name: '無へ還す破壊の座',
-          meta: '中ボス2戦 → Stage 3 レムナント：イリシュ',
-          color: 'rgba(230,120,105,.92)',
-        },
-        {
-          id: 'rivia',
-          icon: '◇',
-          name: '記憶を失くす白き座',
-          meta: '眷属2戦 → Stage 3 レムナント：リヴィア',
-          color: 'rgba(205,195,245,.92)',
-        },
-      ];
-
-      runs.forEach(run => {
-        const rlCard = document.createElement('div');
-        rlCard.className = 'ss-card';
-        rlCard.classList.add('ss-card-roguelite');
-        rlCard.innerHTML = `
-          <div class="ss-card-no" style="border-color:rgba(140,80,255,.35);color:${run.color}">${run.icon}</div>
-          <div class="ss-card-body">
-            <div class="ss-card-name" style="color:rgba(232,228,220,.92)">${run.name}</div>
-            <div class="ss-card-meta">
-              <div class="ss-card-enemy" style="color:rgba(190,170,255,.55)">${run.meta}</div>
-            </div>
-          </div>
-          <div class="ss-diff-badge" style="color:rgba(140,80,255,.9);border-color:rgba(140,80,255,.4)">ROGUELITE</div>
-          <div class="ss-card-arrow">›</div>
-        `;
-        rlCard.onclick = () => _openRoguelitePartySelect(run.id);
-        list.appendChild(rlCard);
-      });
+      list.innerHTML = `
+        <div class="ss-roguelite-preparing">
+          <div class="ss-roguelite-preparing-en">ROGUELITE</div>
+          <div class="ss-roguelite-preparing-main">このコンテンツは準備中です</div>
+          <div class="ss-roguelite-preparing-sub">現在はシューティングのみプレイできます</div>
+        </div>
+      `;
       return;
     }
+
 
     const stages = (typeof getStagesByChapter === 'function')
       ? getStagesByChapter(chapter)
@@ -506,22 +493,14 @@
   // ローグライト：パーティ選択を開く（battleMode:'roguelite' を渡す）
   // ============================================================
   function _openRoguelitePartySelect(runId) {
-    const selectedRunId = runId || 'default';
-    window.__ROGUELITE_PENDING_RUN_ID__ = selectedRunId;
-    closeStageSelect();
-    setTimeout(() => {
-      if (typeof window.openPartySelect === 'function') {
-        window.openPartySelect(null, {
-          battleMode: 'roguelite',
-          rogueliteRunId: selectedRunId,
-        });
-      } else {
-        // party_select がない場合はデフォルトパーティで即起動
-        if (window.RogueliteController) {
-          window.RogueliteController.startRun([8, 12, 7], { runId: selectedRunId });
-        }
-      }
-    }, 350);
+    // 非公開期間中の最終防衛ライン。
+    // HTML・ホームバナー・旧ステージ定義など、どこから呼ばれても開始しない。
+    if (typeof showToast === 'function') {
+      showToast('このコンテンツは準備中です');
+    } else {
+      alert('このコンテンツは準備中です');
+    }
+    return false;
   }
 
   window.openRoguelitePartySelect = _openRoguelitePartySelect;
@@ -558,6 +537,12 @@
   // ============================================================
   function onStageTap(stage) {
     if (stage && stage.rogueliteRunId) {
+      // ローグライトは現在すべて非公開。
+      _openRoguelitePartySelect(stage.rogueliteRunId);
+      return;
+    }
+
+    /* legacy roguelite branch disabled
       // CHAPTER06〜08は対応ローグライトランがまだ未実装のため、誤って別BOSSを起動しない。
       if (stage.rogueliteRunReady === false) {
         alert('このBOSSステージは準備中です');
@@ -574,8 +559,7 @@
       }
       _openRoguelitePartySelect(stage.rogueliteRunId);
       return;
-    }
-
+    */
     closeStageSelect();
     // 少し間を置いてから編成モーダルへ
     setTimeout(() => {

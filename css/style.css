@@ -15899,3 +15899,35 @@ body.login-bonus-open {
     max-width: 200px;
   }
 }
+
+
+/* =========================================================
+   ROGUELITE CLOSED / SHOOTING ONLY
+   ========================================================= */
+.roguelite-disabled-entry {
+  position: relative;
+  cursor: default !important;
+  filter: grayscale(.72) brightness(.68);
+  opacity: .72;
+}
+.roguelite-disabled-entry::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(4,4,7,.18);
+  pointer-events: none;
+}
+.roguelite-disabled-entry .roguelite-card-rewards {
+  opacity: .28;
+}
+.roguelite-disabled-entry .roguelite-longpress-hint {
+  display: none !important;
+}
+.roguelite-disabled-badge {
+  position: relative;
+  z-index: 4;
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: rgba(235,230,240,.68);
+}

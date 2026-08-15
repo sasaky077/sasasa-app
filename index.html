@@ -198,7 +198,7 @@
           </button>
         </div>
 
-        <button class="ninmu-test-btn ninmu-test-btn-test-entry" onclick="openRoguelitePartySelect('test')" aria-label="テストステージ">
+        <button class="ninmu-test-btn ninmu-test-btn-test-entry roguelite-disabled-entry" onclick="showRoguelitePreparing(event)" aria-label="テストステージ 準備中">
           <span class="ninmu-stage-mark">✥</span>
           <span class="ninmu-stage-copy">
             <span class="ninmu-test-btn-title">テスト</span>
@@ -213,7 +213,7 @@
             <div class="ninmu-chapter-title">銃撃戦</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_01_panel.webp" alt=""></div>
           </div>
-          <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="overseer" onclick="openRoguelitePartySelect('overseer')">
+          <div class="ninmu-chapter-item roguelite-entry-card roguelite-disabled-entry" data-roguelite-run="overseer" onclick="showRoguelitePreparing(event)">
             <div class="ninmu-chapter-label">ROGUELITE</div>
             <div class="ninmu-chapter-title">観察</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_01_panel.webp" alt=""></div>
@@ -225,9 +225,9 @@
               <span class="roguelite-card-reward"><img src="images/item_chaos.webp" alt="CHAOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_mystis.webp" alt="MYSTISの器"></span>
             </div>
-            <div class="roguelite-longpress-hint">長押しでクリア条件</div>
+            <div class="roguelite-disabled-badge">このコンテンツは準備中です</div>
           </div>
-          <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="irish" onclick="openRoguelitePartySelect('irish')">
+          <div class="ninmu-chapter-item roguelite-entry-card roguelite-disabled-entry" data-roguelite-run="irish" onclick="showRoguelitePreparing(event)">
             <div class="ninmu-chapter-label">ROGUELITE</div>
             <div class="ninmu-chapter-title">破壊</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_02_panel.webp" alt=""></div>
@@ -239,9 +239,9 @@
               <span class="roguelite-card-reward"><img src="images/item_chaos.webp" alt="CHAOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_mystis.webp" alt="MYSTISの器"></span>
             </div>
-            <div class="roguelite-longpress-hint">長押しでクリア条件</div>
+            <div class="roguelite-disabled-badge">このコンテンツは準備中です</div>
           </div>
-          <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="rivia" onclick="openRoguelitePartySelect('rivia')">
+          <div class="ninmu-chapter-item roguelite-entry-card roguelite-disabled-entry" data-roguelite-run="rivia" onclick="showRoguelitePreparing(event)">
             <div class="ninmu-chapter-label">ROGUELITE</div>
             <div class="ninmu-chapter-title">忘却</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_03_panel.webp" alt=""></div>
@@ -253,9 +253,9 @@
               <span class="roguelite-card-reward"><img src="images/item_chaos.webp" alt="CHAOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_mystis.webp" alt="MYSTISの器"></span>
             </div>
-            <div class="roguelite-longpress-hint">長押しでクリア条件</div>
+            <div class="roguelite-disabled-badge">このコンテンツは準備中です</div>
           </div>
-          <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="sakiel" onclick="openRoguelitePartySelect('sakiel')">
+          <div class="ninmu-chapter-item roguelite-entry-card roguelite-disabled-entry" data-roguelite-run="sakiel" onclick="showRoguelitePreparing(event)">
             <div class="ninmu-chapter-label">ROGUELITE</div>
             <div class="ninmu-chapter-title">真実</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_04_panel.webp" alt=""></div>
@@ -267,9 +267,9 @@
               <span class="roguelite-card-reward"><img src="images/item_chaos.webp" alt="CHAOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_mystis.webp" alt="MYSTISの器"></span>
             </div>
-            <div class="roguelite-longpress-hint">長押しでクリア条件</div>
+            <div class="roguelite-disabled-badge">このコンテンツは準備中です</div>
           </div>
-          <div class="ninmu-chapter-item roguelite-entry-card" data-roguelite-run="remnant05" onclick="openRoguelitePartySelect('remnant05')">
+          <div class="ninmu-chapter-item roguelite-entry-card roguelite-disabled-entry" data-roguelite-run="remnant05" onclick="showRoguelitePreparing(event)">
             <div class="ninmu-chapter-label">ROGUELITE</div>
             <div class="ninmu-chapter-title">執着</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/remnant_05_panel.webp" alt=""></div>
@@ -281,7 +281,7 @@
               <span class="roguelite-card-reward"><img src="images/item_chaos.webp" alt="CHAOSの器"></span>
               <span class="roguelite-card-reward"><img src="images/item_mystis.webp" alt="MYSTISの器"></span>
             </div>
-            <div class="roguelite-longpress-hint">長押しでクリア条件</div>
+            <div class="roguelite-disabled-badge">このコンテンツは準備中です</div>
           </div>
         </div>
       </div>
@@ -7197,33 +7197,27 @@ function initHomeBannerSwipe(){
 }
 
 
+// ローグライトは現在非公開。どの旧導線から呼ばれてもここで止める。
+function showRoguelitePreparing(event){
+  if(event){
+    if(typeof event.preventDefault === 'function') event.preventDefault();
+    if(typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+  if(typeof showToast === 'function'){
+    showToast('このコンテンツは準備中です');
+  } else {
+    alert('このコンテンツは準備中です');
+  }
+  return false;
+}
+
 // ホームイベントバナー「サキエル降臨」から、サキエルローグライトへ直接遷移
 function openSakielRogueliteFromHome(){
-  // 背面表示は巡行 > 特別巡行に合わせておく
-  if (typeof showMainTab === 'function') {
-    showMainTab('ninmu');
-  }
-  if (typeof switchNinmuCat === 'function') {
-    switchNinmuCat('special');
-  }
-
-  // stage_select.js の _openRoguelitePartySelect('sakiel') と同等の処理
-  window.__ROGUELITE_PENDING_RUN_ID__ = 'sakiel';
-
-  setTimeout(function(){
-    if (typeof window.openPartySelect === 'function') {
-      window.openPartySelect(null, {
-        battleMode: 'roguelite',
-        rogueliteRunId: 'sakiel'
-      });
-      return;
-    }
-
-    // party_select が未読込・未実装の場合のフォールバック
-    if (window.RogueliteController && typeof window.RogueliteController.startRun === 'function') {
-      window.RogueliteController.startRun([8, 12, 7], { runId: 'sakiel' });
-    }
-  }, 350);
+  // ローグライト公開停止中。ホームバナー経由でも起動させない。
+  if(typeof showMainTab === 'function') showMainTab('ninmu');
+  if(typeof switchNinmuCat === 'function') switchNinmuCat('special');
+  showRoguelitePreparing();
+  return false;
 }
 
 function openHomeBanner(index){
@@ -8724,7 +8718,7 @@ window.addEventListener('pagehide', function () {
       oldModal.style.display = 'none';
     }
 
-    document.querySelectorAll('.roguelite-entry-card').forEach(bind);
+    document.querySelectorAll('.roguelite-entry-card:not(.roguelite-disabled-entry)').forEach(bind);
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') close();
     });
