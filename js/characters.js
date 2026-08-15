@@ -137,7 +137,7 @@ skills: [
   ]},
 
   // ── id:3 スイ
-  { id: 3, name: 'スイ', rarity: 'r',
+  { id: 3, name: 'スイ', rarity: 'sr',
     element: 'mystis',
   role: 'バランス寄り',
   moveType: 'line_front_3',
@@ -808,7 +808,7 @@ skills: [
  
 
   // ── id:13 ミア
-  { id: 13, name: 'ミア', rarity: 'sr',
+  { id: 13, name: 'ミア', rarity: 'r',
     element: 'mystis',
     role: '遠距離寄り',
     moveType: 'cat_step',

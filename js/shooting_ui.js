@@ -20,8 +20,8 @@
         <header class="shooting-hud">
           <button class="shooting-back" type="button" onclick="closeShootingEvent()" aria-label="戻る">‹</button>
           <div class="shooting-hud-title">
-            <span>SPECIAL EVENT</span>
-            <strong>無貌の天使</strong>
+            <span id="shooting-hud-kicker">SPECIAL EVENT</span>
+            <strong id="shooting-hud-stage-title">無貌の天使<i id="shooting-hud-difficulty" style="display:none"></i></strong>
           </div>
           <div class="shooting-score" id="shooting-score">SCORE 000000</div>
         </header>
@@ -58,10 +58,10 @@
               </div>
               <div class="shooting-party-slots" id="shooting-party-slots"></div>
               <div class="shooting-party-blessing">
-                <div class="shooting-party-section-head"><span>加護</span><small>任意 · 1つまで</small></div>
-                <button type="button" class="shooting-party-blessing-current" id="shooting-party-blessing-current" onclick="toggleShootingBlessingPicker()">
-                  <span class="shooting-party-blessing-plus">＋</span>
-                  <span><b id="shooting-party-blessing-name">加護を選択</b><small>タップしてレムナントを選択</small></span>
+                <div class="shooting-party-section-head"><span>加護</span><small>未実装</small></div>
+                <button type="button" class="shooting-party-blessing-current disabled" id="shooting-party-blessing-current" onclick="toggleShootingBlessingPicker()">
+                  <span class="shooting-party-blessing-plus">－</span>
+                  <span><b id="shooting-party-blessing-name">未実装の機能です</b><small>現在準備中</small></span>
                 </button>
                 <div class="shooting-party-blessing-picker" id="shooting-party-blessing-picker"></div>
               </div>
@@ -86,6 +86,8 @@
           <div id="${PLAYER_ID}" class="shooting-player" data-character-id="1">
             <img id="shooting-player-image" src="${SHOOTING_CHARACTERS[CHARACTER_ID.ERI].image}" alt="エリ" draggable="false">
             <span class="shooting-player-aura"></span>
+            <span class="shooting-player-buff-ring" aria-hidden="true"></span>
+            <div class="shooting-player-buff-badges" id="shooting-player-buff-badges" aria-hidden="true"></div>
             <span id="shooting-player-core" class="shooting-player-core" aria-label="被弾判定コア"></span>
           </div>
           <div class="shooting-switch-rail" id="shooting-switch-rail" aria-label="キャラクター切り替え"></div>

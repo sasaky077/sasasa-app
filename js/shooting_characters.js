@@ -27,6 +27,51 @@
   });
 
   // ============================================================
+  // シューティング専用レアリティ格差
+  // ============================================================
+  // Strategy側 characters.js の rarity フィールドを、実行時参照ではなく
+  // ここに直接複製する（本ファイルはStrategy側を一切読み込まない方針のため）。
+  // 本編でレアリティ変更があった場合はこのマップも合わせて更新すること。
+  //   SR: エリ / スイ / アルノ / ロゼ / ミモザ / ハヤテ
+  //   R : それ以外全員（ミアは後日Rへ格下げ済み）
+  const SHOOTING_RARITY = Object.freeze({
+    1: 'sr',   // エリ
+    2: 'r',    // ネム
+    3: 'sr',   // スイ
+    4: 'sr',   // アルノ
+    5: 'r',    // クラリネ
+    6: 'r',    // イグニス
+    7: 'sr',   // ロゼ
+    8: 'sr',   // ミモザ
+    9: 'r',    // パトラ
+    10: 'r',   // フローラ
+    11: 'r',   // シグレ
+    12: 'sr',  // ハヤテ
+    13: 'r',   // ミア
+    14: 'r',   // アヤネ
+    15: 'r',   // エルテナ
+    16: 'r',   // ミト
+    17: 'r',   // アンジェ
+  });
+
+  // R はSRに対して基本性能(HP/ATK)を20%落とす。
+  // 通常射撃威力・ULTゲージ効率などはATK経由でそのまま連動するため、
+  // ここを直せば連射数やshotPowerRateなど武器固有チューニングを個別に触らずに
+  // レアリティ格差だけを一括調整できる。
+  const RARITY_STAT_MULTIPLIER = Object.freeze({
+    sr: 1.0,
+    r: 0.8,
+  });
+
+  function getShootingRarity(id) {
+    return SHOOTING_RARITY[Number(id)] || 'r';
+  }
+
+  function getShootingRarityMultiplier(id) {
+    return RARITY_STAT_MULTIPLIER[getShootingRarity(id)] ?? 1.0;
+  }
+
+  // ============================================================
   // SHOOTING専用キャラクターマスター
   // ============================================================
   // Strategy側 characters.js とは完全に独立。
@@ -196,6 +241,15 @@
     const master = getShootingCharacterMaster(profile.id);
     if (!master) return null;
 
+    const rarity = getShootingRarity(master.id);
+    const rarityMultiplier = getShootingRarityMultiplier(master.id);
+
+    // hp/atkが個体側(profile)で明示指定されていない限りmasterの値を基準にし、
+    // そこへレアリティ倍率をかけてから丸める。
+    // resonance(共鳴)の加算は、この確定済みhp/atkの上に別途適用される。
+    const baseHp = Number(profile.hp ?? master.hp);
+    const baseAtk = Number(profile.atk ?? master.atk);
+
     return {
       ...profile,
       id: master.id,
@@ -204,8 +258,9 @@
       image: profile.image || master.image,
       panelImage: profile.panelImage || master.panelImage || master.image,
       cutinImage: profile.cutinImage || master.cutinImage || '',
-      hp: Number(profile.hp ?? master.hp),
-      atk: Number(profile.atk ?? master.atk),
+      rarity,
+      hp: Math.round(baseHp * rarityMultiplier),
+      atk: Math.round(baseAtk * rarityMultiplier),
       uiScale: profile.uiScale || master.uiScale || {},
     };
   }
@@ -593,6 +648,43 @@
     coreTop: '38%',
   });
 
+  SHOOTING_CHARACTERS[CHARACTER_ID.MIMOSA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.MIMOSA,
+    effectKey: 'mimosa',
+    label: 'SPREAD / ITEM SUPPORT',
+    description: '0.7秒ごとに5WAYの拡散弾を放つ（エルテナと同系統の弾種）。ULTは盤面にATK UP・HP回復・無敵の恩恵アイテムを3つ設置し、拾ったキャラだけに効果が宿る。',
+    ultName: 'ミモザの贈り物',
+    ultType: 'mimosa_item_spawn',
+    moveSpeed: 400,
+
+    // ---- 通常ショット：5WAY拡散（エルテナと同弾種・同系統チューニング） ----
+    shotType: 'spread',
+    shotStyle: 'eltena',
+    fireRate: 700,
+    bulletSpeed: 610,
+    shotPowerRate: 0.185,
+    shotCount: 5,
+    shotAngleStep: 0.12,
+    shotOffsetY: 44,
+
+    // SRの他キャラ(エリ/スイ/アルノ/ロゼ/ハヤテ)平均DPS(約293)に寄せた値。
+    burstDamage: 0,
+    burstNeed: 30,
+    ultGainPerHit: 0.84,
+    coreTop: '38%',
+
+    // ---- ULT：恩恵アイテム設置 ----
+    // 3つとも固定の異なる効果（ATK UP / HP回復 / 無敵）。ランダム位置に設置され、
+    // 拾うまでフィールドに残り続ける。効果は拾ったキャラのみに適用され、
+    // 交代先・ベンチのキャラには一切引き継がれない（shooting_core.js側でmember単位管理）。
+    itemCount: 3,
+    itemAtkMultiplier: 1.3,
+    itemAtkDurationMs: 10000,
+    itemHealPercent: 0.30,
+    itemInvincibleDurationMs: 3000,
+  });
+
   // ============================================================
   // 所持判定
   // ============================================================
@@ -655,9 +747,13 @@
     CHARACTER_ID,
     SHOOTING_CHARACTER_MASTER,
     SHOOTING_CHARACTERS,
+    SHOOTING_RARITY,
+    RARITY_STAT_MULTIPLIER,
     PARTY_SIZE: 3,
     SWITCH_COOLDOWN_MS: 5000,
     getShootingCharacterMaster,
+    getShootingRarity,
+    getShootingRarityMultiplier,
     getOwnedShootingInstance,
     isShootingCharacterOwned,
     getShootingRosterHtml,

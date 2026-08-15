@@ -200,6 +200,90 @@
     return Math.max(0, Number(readLocalShootingHighScores()[stageId] || 0));
   }
 
+  const SHOOTING_STAGE_RECORD_STORAGE_KEY = 'zeraphia_shooting_stage_records_v1';
+  const SHOOTING_RANK_VALUE = Object.freeze({ E: 0, D: 1, C: 2, B: 3, A: 4, S: 5 });
+
+  function readLocalShootingStageRecords() {
+    try {
+      const raw = window.localStorage.getItem(SHOOTING_STAGE_RECORD_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function normalizeShootingStageRecord(raw) {
+    const highScore = Math.max(0, Number(raw && raw.highScore || 0));
+    const bestRank = String(raw && raw.bestRank || '').trim().toUpperCase();
+    return {
+      cleared: !!(raw && raw.cleared),
+      bestRank: Object.prototype.hasOwnProperty.call(SHOOTING_RANK_VALUE, bestRank) ? bestRank : '',
+      highScore,
+    };
+  }
+
+  function getShootingRankValue(rank) {
+    const key = String(rank || '').trim().toUpperCase();
+    return Object.prototype.hasOwnProperty.call(SHOOTING_RANK_VALUE, key) ? SHOOTING_RANK_VALUE[key] : -1;
+  }
+
+  function writeLocalShootingStageRecord(stageId, payload = {}) {
+    if (!stageId) return normalizeShootingStageRecord(null);
+    const map = readLocalShootingStageRecords();
+    const current = normalizeShootingStageRecord(map[stageId]);
+    const next = {
+      cleared: current.cleared || !!payload.win,
+      bestRank: current.bestRank,
+      highScore: Math.max(current.highScore, Math.max(0, Number(payload.score || 0))),
+    };
+
+    const incomingRank = String(payload.rank || '').trim().toUpperCase();
+    if (payload.win && getShootingRankValue(incomingRank) >= 0 && getShootingRankValue(incomingRank) > getShootingRankValue(current.bestRank)) {
+      next.bestRank = incomingRank;
+    }
+
+    map[stageId] = next;
+    try { window.localStorage.setItem(SHOOTING_STAGE_RECORD_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
+    return next;
+  }
+
+  function getLocalShootingStageRecord(stageId) {
+    if (!stageId) return normalizeShootingStageRecord(null);
+    return normalizeShootingStageRecord(readLocalShootingStageRecords()[stageId]);
+  }
+
+  function getShootingStageRecordSummary(stageId) {
+    const stage = typeof getShootingStage === 'function' ? getShootingStage(stageId) : null;
+    const record = getLocalShootingStageRecord(stageId);
+    const highScore = Math.max(record.highScore, getLocalShootingHighScore(stageId));
+
+    // 旧特別巡行データは HIGH SCORE だけ残っていて、cleared / bestRank が未保存のことがある。
+    // eventId を持つステージは highScore > 0 をクリア済みとして扱い、RANK を復元する。
+    const inferredCleared = !!record.cleared || (!!stage?.eventId && highScore > 0);
+    const derivedRank = record.bestRank || (
+      inferredCleared && highScore > 0
+        ? getResultRank(highScore, true)
+        : ''
+    );
+
+    // 旧記録から復元できた情報は新形式へ一度だけ移行する。
+    if ((!record.cleared && inferredCleared) || (!record.bestRank && derivedRank)) {
+      writeLocalShootingStageRecord(stageId, {
+        win: inferredCleared,
+        rank: derivedRank,
+        score: highScore,
+      });
+    }
+
+    return {
+      stageId: String(stageId || ''),
+      cleared: inferredCleared,
+      bestRank: derivedRank,
+      highScore,
+    };
+  }
+
   function formatShootingScore(value) {
     return String(Math.max(0, Math.floor(Number(value || 0)))).padStart(6, '0');
   }
@@ -392,6 +476,12 @@
   let pointerIsTouch = false;
   let pointerX = 0;
   let pointerY = 0;
+  // Pointer movement is relative to the player's position at drag start.
+  // This prevents tapping a distant point from teleporting the character there.
+  let pointerStartClientX = 0;
+  let pointerStartClientY = 0;
+  let pointerStartPlayerX = 0;
+  let pointerStartPlayerY = 0;
   let lastTapAt = 0;
   let lastTapX = 0;
   let lastTapY = 0;
@@ -470,6 +560,12 @@
   }
 
   function renderShootingBlessingPicker() {
+    // シューティング版では加護は未実装のため無効化中。
+    // ボタンの表示(shooting_ui.js側の静的HTML)を上書きしないよう、ここでは何もしない。
+    // 実装が入ったら、このガードだけ外せば元の描画ロジックが復帰する。
+    return;
+
+    /* eslint-disable no-unreachable */
     const picker = document.getElementById('shooting-party-blessing-picker');
     const name = document.getElementById('shooting-party-blessing-name');
     if (!picker) return;
@@ -480,12 +576,13 @@
     picker.innerHTML = rows.map(b => `<button type="button" class="shooting-blessing-option ${String(selectedBlessingId || '') === b.id ? 'selected' : ''}" onclick="selectShootingBlessing('${b.id.replace(/'/g, "\\'")}')">
       ${b.img ? `<img src="${b.img}" alt="" draggable="false">` : '<span>＋</span>'}<b>${b.name}</b>
     </button>`).join('');
+    /* eslint-enable no-unreachable */
   }
 
   window.toggleShootingBlessingPicker = function() {
-    const picker = document.getElementById('shooting-party-blessing-picker');
-    if (!picker) return;
-    picker.classList.toggle('show');
+    // シューティング版では加護の効果が未実装のため、選択UIそのものを
+    // 一時的に無効化する。ピッカーは開かず、通知だけ出す。
+    showShootingNotImplementedNotice('加護');
   };
   window.selectShootingBlessing = function(id) {
     selectedBlessingId = id || null;
@@ -596,6 +693,7 @@
       normalLastSpawnAt: -9999,
       normalEnemyStunUntil: 0,
       collectibles: [],
+      mimosaItems: [],
       boss: {
         x: 0, y: 42,
         hp: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
@@ -635,6 +733,7 @@
         return `<button type="button" class="shooting-switch-btn" data-switch-id="${m.id}" onclick="switchShootingCharacter(${m.id})">
           <span class="shooting-switch-ult-ring" aria-hidden="true"></span>
           <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
+          <span class="shooting-switch-buff-badge" aria-hidden="true"></span>
           <span class="shooting-switch-name">${c.name}</span>
           <span class="shooting-switch-hp"><i></i></span>
           <small class="shooting-switch-status"></small>
@@ -642,6 +741,7 @@
       }).join('');
     }
     const remain = Math.max(0, (state.switchReadyAt || 0) - performance.now());
+    const now = performance.now();
     rail.querySelectorAll('.shooting-switch-btn').forEach(btn => {
       const id = Number(btn.getAttribute('data-switch-id'));
       const m = getPartyMember(id);
@@ -661,6 +761,17 @@
       btn.classList.toggle('cooling', cooling && !dead);
       const status = btn.querySelector('.shooting-switch-status');
       if (status) status.textContent = dead ? 'DOWN' : cooling ? `${(remain / 1000).toFixed(1)}s` : (m.burst >= c.burstNeed ? 'ULT READY' : 'CHANGE');
+
+      // ミモザの恩恵アイテム効果は、控え中でも「まだ効いているか」が
+      // 見た目で分かるよう小さいバッジで表示する(交代しても他人には移らない)。
+      const isInvincible = now < (m.invincibleUntil || 0);
+      const hasAtkBuff = now < (m.atkBuffUntil || 0);
+      btn.classList.toggle('has-invincible-buff', isInvincible);
+      btn.classList.toggle('has-atk-buff', !isInvincible && hasAtkBuff);
+      const buffBadge = btn.querySelector('.shooting-switch-buff-badge');
+      if (buffBadge) {
+        buffBadge.textContent = isInvincible ? '無敵' : hasAtkBuff ? 'ATK' : '';
+      }
     });
   }
 
@@ -687,12 +798,8 @@
     state.lastShotAt = -9999;
     applySelectedCharacterToUi();
 
-    // キャラ差し替え後も移動入力を途切れさせない。
-    // 同じ指でアリーナをドラッグ中なら、その最新位置を即維持する。
-    if (pointerActive && pointerIsTouch && state && state.player) {
-      state.player.x = pointerX;
-      state.player.y = pointerY;
-    }
+    // キャラ差し替え後もドラッグ目標は維持するが、現在座標へ瞬間移動はさせない。
+    // updateMovement側でキャラ固有のmoveSpeedに従って追従する。
 
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -766,6 +873,59 @@
     }
   }
 
+  // ============================================================
+  // 時限バフ / 無敵の統一ステータス取得
+  // ============================================================
+  // 「無敵」「ATK UP」など時限で発生するプレイヤーバフは、発生源(ミモザの
+  // アイテム、ハヤテの月光モードなど)がどれだけ増えても、自機のリング演出・
+  // 頭上バッジ・切り替えボタンのバフアイコンに"自動的に"反映されるよう、
+  // 判定をこの関数だけに集約する。
+  //
+  // 今後、新しいキャラのULTなどで時限の無敵/ATK UPを追加する場合：
+  //   - member単位で完結する効果 → member.invincibleUntil / member.atkBuffUntil
+  //     （+ member.atkBuffMultiplier）をそのまま使えば、この関数を触らずに
+  //     自動でUI反映される。
+  //   - state単位（ハヤテの月光モードのように「このキャラがアクティブな間だけ」
+  //     成立する効果）→ 下のinvincibleSources / atkBuffSources 配列に
+  //     1エントリ追記するだけでよい。
+  //
+  // 将来「HP吸収UP」「被ダメージ軽減」等の別種バフを追加する場合も、
+  // 同じ形（sources配列 + Math.max/優先順位で1つに絞る）を踏襲すること。
+  function getPlayerBuffStatus(member, chara, now) {
+    if (!member) {
+      return { invincibleLeft: 0, atkBuffLeft: 0, atkBuffMultiplier: 1 };
+    }
+
+    // ---- 無敵：発生源が増えたらここに1行足すだけでよい ----
+    const invincibleSources = [
+      (member.invincibleUntil || 0) - now, // ミモザ「ミモザの贈り物」
+      chara && chara.id === CHARACTER_ID.HAYATE
+        ? (state.hayateMoonlightUntil || 0) - now // ハヤテ「雷光巡行」月光モード
+        : -Infinity,
+    ];
+    const invincibleLeft = Math.max(0, ...invincibleSources);
+
+    // ---- ATK UP：発生源が増えたらここに1エントリ足すだけでよい ----
+    // { left: 残りms, multiplier: 表示用倍率 } の配列から、残り時間が最大のものを採用する。
+    const atkBuffSources = [
+      { left: (member.atkBuffUntil || 0) - now, multiplier: Number(member.atkBuffMultiplier || 1.3) }, // ミモザのアイテム
+      {
+        left: chara && chara.id === CHARACTER_ID.HAYATE ? (state.hayateMoonlightUntil || 0) - now : -Infinity,
+        multiplier: Number((chara && chara.moonlightPowerMultiplier) || 1.85), // ハヤテ自身の月光モードATK UP
+      },
+    ].filter(entry => entry.left > 0);
+
+    let atkBuffLeft = 0;
+    let atkBuffMultiplier = 1;
+    if (atkBuffSources.length) {
+      const best = atkBuffSources.reduce((a, b) => (b.left > a.left ? b : a));
+      atkBuffLeft = best.left;
+      atkBuffMultiplier = best.multiplier;
+    }
+
+    return { invincibleLeft, atkBuffLeft, atkBuffMultiplier };
+  }
+
   function renderHud() {
     if (!state) return;
     const bossBar = document.getElementById('shooting-boss-bar');
@@ -814,9 +974,8 @@
         const m = selectedStage.mission || {};
         const total = Number(getNormalBattleConfig().totalEnemies || 0);
         if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
-          missionProgress.textContent = getNormalBattleConfig().infiniteEnemies
-            ? `ITEM ${state.collectedItems}/${Number(m.target || 3)}`
-            : `ITEM ${state.collectedItems}/${Number(m.target || 3)}　ENEMY ${state.normalDefeated}/${total}`;
+          // アイテム収集ミッションは、敵撃破数を勝利条件に含めない。
+          missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
           const left = Math.max(0, Number(m.targetSeconds || 60) - (performance.now() - state.startedAt) / 1000);
           missionProgress.textContent = `${left.toFixed(1)}秒　ENEMY ${state.normalDefeated}/${total}`;
@@ -834,6 +993,39 @@
       if (hpText) hpText.textContent = `${Math.ceil(member.hp)} / ${member.hpMax}`;
       if (hpBar) hpBar.style.width = `${clamp(member.hp / member.hpMax, 0, 1) * 100}%`;
     }
+
+    // 無敵・ATK UPの時限バフを自機に分かりやすく可視化する。
+    // 発生源の判定はgetPlayerBuffStatusに集約済み。ここでは結果を表示に反映するだけ。
+    const nowHud = performance.now();
+    const playerEl = document.getElementById(PLAYER_ID);
+    const buffBadges = document.getElementById('shooting-player-buff-badges');
+    if (member && playerEl) {
+      const buffStatus = getPlayerBuffStatus(member, chara, nowHud);
+      const invincibleLeft = buffStatus.invincibleLeft;
+      const atkBuffLeft = buffStatus.atkBuffLeft;
+      const isInvincible = invincibleLeft > 0;
+      const hasAtkBuff = atkBuffLeft > 0;
+
+      playerEl.classList.toggle('shooting-invincible-active', isInvincible);
+      playerEl.classList.toggle('shooting-atk-buff-active', hasAtkBuff);
+
+      if (buffBadges) {
+        const badges = [];
+        if (isInvincible) {
+          badges.push(`<span class="shooting-player-buff-badge invincible">無敵 ${(invincibleLeft / 1000).toFixed(1)}s</span>`);
+        }
+        if (hasAtkBuff) {
+          const mult = buffStatus.atkBuffMultiplier.toFixed(1);
+          badges.push(`<span class="shooting-player-buff-badge atk">ATK×${mult} ${(atkBuffLeft / 1000).toFixed(1)}s</span>`);
+        }
+        buffBadges.innerHTML = badges.join('');
+        buffBadges.setAttribute('aria-hidden', badges.length ? 'false' : 'true');
+      }
+    } else if (playerEl) {
+      playerEl.classList.remove('shooting-invincible-active', 'shooting-atk-buff-active');
+      if (buffBadges) { buffBadges.innerHTML = ''; buffBadges.setAttribute('aria-hidden', 'true'); }
+    }
+
     const pct = member ? clamp(member.burst / chara.burstNeed, 0, 1) : 0;
     const ultReady =
       pct >= 1 &&
@@ -921,6 +1113,47 @@
     const el = document.createElement('div');
     el.className = `shooting-ult-ready-notice ${c.id || ''}`;
     el.innerHTML = `<span>ULT READY</span><strong>ULT 発動可能</strong><small>ダブルタップで発動</small>`;
+    root.appendChild(el);
+
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => el.classList.add('hide'), 1250);
+    setTimeout(() => el.remove(), 1650);
+  }
+
+  // ミモザのULTアイテム取得時など、画面中央に短時間テキストを出すための共通演出。
+  // showUltReadyNoticeと同じHTML構造・タイミング・アニメーションクラスを流用し、
+  // デザインを統一する。
+  function showShootingItemEffectNotice(label, detail) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root || !state || state.ended) return;
+
+    const old = root.querySelector('.shooting-item-effect-notice');
+    if (old) old.remove();
+
+    const el = document.createElement('div');
+    el.className = 'shooting-item-effect-notice';
+    el.innerHTML = `<span>ITEM GET</span><strong>${label}</strong><small>${detail}</small>`;
+    root.appendChild(el);
+
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => el.classList.add('hide'), 1250);
+    setTimeout(() => el.remove(), 1650);
+  }
+
+  // 未実装機能をタップした際の共通ブロック通知。
+  // showShootingItemEffectNoticeと同じHTML構造・アニメーションを流用し、
+  // デザインを統一する。今後別の未実装機能を同様にブロックしたい場合は
+  // showShootingNotImplementedNotice('機能名') を呼ぶだけでよい。
+  function showShootingNotImplementedNotice(featureLabel) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+
+    const old = root.querySelector('.shooting-item-effect-notice');
+    if (old) old.remove();
+
+    const el = document.createElement('div');
+    el.className = 'shooting-item-effect-notice not-implemented';
+    el.innerHTML = `<span>NOT AVAILABLE</span><strong>${featureLabel}</strong><small>未実装の機能です</small>`;
     root.appendChild(el);
 
     requestAnimationFrame(() => el.classList.add('show'));
@@ -1152,11 +1385,20 @@
       ? Number(c.moonlightPowerMultiplier || 1)
       : 1;
 
+    // ミモザのATK UPアイテムは、取得した瞬間のアクティブキャラ(member)にのみ
+    // 紐づく一時バフ。交代すると効果は外れ、他キャラには一切影響しない。
+    const activeMember = getActiveMember();
+    const itemAtkBuffMultiplier =
+      activeMember && now < (activeMember.atkBuffUntil || 0)
+        ? Number(activeMember.atkBuffMultiplier || 1)
+        : 1;
+
     const effectiveFireRate = Number(c.fireRate || 170) * fireRateMultiplier;
     const effectivePower =
       Number(c.atk || 0) *
       Number(c.shotPowerRate || 0.095) *
-      powerMultiplier;
+      powerMultiplier *
+      itemAtkBuffMultiplier;
 
     if (now - state.lastShotAt < effectiveFireRate) return;
 
@@ -1840,11 +2082,9 @@
       }
       state.missionComplete = allDefeated;
     } else if (mission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
-      // 無限湧き収集ステージは、敵全滅という概念を持たない。
-      // 指定数のアイテム取得だけで即クリア。
-      state.missionComplete = !!cfg.infiniteEnemies
-        ? state.collectedItems >= Number(mission.target || 3)
-        : allDefeated && state.collectedItems >= Number(mission.target || 3);
+      // アイテム収集ミッションは敵全滅を要求しない。
+      // 指定数のアイテムを取得した瞬間にクリア。
+      state.missionComplete = state.collectedItems >= Number(mission.target || 3);
     } else {
       state.missionComplete = allDefeated;
     }
@@ -1937,8 +2177,10 @@
     if (!state) return;
     (state.normalEnemies || []).forEach(enemy => enemy?.el?.remove());
     (state.collectibles || []).forEach(item => item?.el?.remove());
+    (state.mimosaItems || []).forEach(item => item?.el?.remove());
     state.normalEnemies = [];
     state.collectibles = [];
+    state.mimosaItems = [];
     const layer = document.getElementById('shooting-normal-enemy-layer');
     if (layer) layer.innerHTML = '';
     const items = document.getElementById('shooting-collectible-layer');
@@ -2540,16 +2782,16 @@
     const maxY = h - 38;
 
     if (pointerActive) {
-      if (pointerIsTouch) {
-        // スマホは「指でキャラを掴んでいる」操作感を優先。
-        // lerp追従だとULT/キャラチェンジ後に100〜200msほど遅れて見え、
-        // 指からキャラが離れたような感触になるため、touch時は1:1追従。
-        state.player.x = pointerX;
-        state.player.y = pointerY;
-      } else {
-        // PCマウスは従来の少し滑らかな追従を維持。
-        state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
-        state.player.y += (pointerY - state.player.y) * Math.min(1, dt * 18);
+      // ポインタ位置は移動目標にするだけで座標を直接代入しない。
+      // 遠い場所を触ったり素早くドラッグしても、キャラ固有のmoveSpeed以上では動けない。
+      const pdx = pointerX - state.player.x;
+      const pdy = pointerY - state.player.y;
+      const distance = Math.hypot(pdx, pdy);
+      if (distance > 0.01) {
+        const maxStep = Math.max(0, Number(c.moveSpeed || 0)) * dt;
+        const step = Math.min(distance, maxStep);
+        state.player.x += pdx / distance * step;
+        state.player.y += pdy / distance * step;
       }
     } else {
       let dx = 0, dy = 0;
@@ -2869,6 +3111,10 @@
     if (!state || state.ended || state.koTransition) return;
     const member = getActiveMember();
     if (!member) return;
+    // ミモザの無敵アイテム効果中は被弾自体をなかったことにする
+    // (コンボも被弾回数もダメージも一切発生させない)。
+    // 効果は取得したmemberにのみ紐づくため、交代先には影響しない。
+    if (now < (member.invincibleUntil || 0)) return;
     // COMBOは時間経過では切れない。プレイヤーが被弾した瞬間だけ0へ戻す。
     resetCombo();
     member.hitCount = (member.hitCount || 0) + 1;
@@ -3018,12 +3264,8 @@
         root.classList.remove('ult-cutin-active');
         prevTs = performance.now();
 
-        // カットイン中に指が動いていた場合、再開1フレーム目で最新位置へ復帰。
-        // touch操作のみ。PCマウスの滑らかさは維持する。
-        if (pointerActive && pointerIsTouch && state && state.player) {
-          state.player.x = pointerX;
-          state.player.y = pointerY;
-        }
+        // カットイン中に指が動いていても座標は直接書き換えない。
+        // 再開後はmoveSpeed以内で最新のドラッグ目標へ追従する。
 
         if (typeof onComplete === 'function') onComplete();
       }, 120);
@@ -3248,6 +3490,122 @@
     createEltenaBlackHole(c);
   }
 
+  // ============================================================
+  // ミモザ：ミモザの贈り物
+  // ============================================================
+  // 盤面のランダム位置に恩恵アイテムを3つ設置する。
+  // 3つは常に固定の異なる効果（ATK UP / HP回復 / 無敵）で、拾うまで
+  // フィールドに残り続ける（連続でULTを使えば未回収分に積み上がる）。
+  // 効果は「拾った瞬間にアクティブだったmember」だけに紐づき、
+  // 交代先やベンチのキャラには一切引き継がれない。
+  function useMimosaUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey);
+    ultScreenFlash('ult-flash-mimosa');
+    spawnMimosaItems(c);
+    state.ultLockUntil = performance.now() + 300;
+    renderHud();
+  }
+
+  function spawnMimosaItems(c) {
+    if (!state) return;
+    const arena = document.getElementById('shooting-arena');
+    const layer = document.getElementById('shooting-collectible-layer');
+    if (!arena || !layer) return;
+
+    const w = arena.clientWidth;
+    const h = arena.clientHeight;
+
+    const defs = [
+      {
+        kind: 'atk',
+        cls: 'mimosa-item-atk',
+        label: 'ATK UP',
+        detail: `ATK ×${Number(c.itemAtkMultiplier || 1.3).toFixed(1)} / ${Math.round(Number(c.itemAtkDurationMs || 10000) / 1000)}秒`,
+        atkBuffMultiplier: Number(c.itemAtkMultiplier || 1.3),
+        atkBuffDurationMs: Number(c.itemAtkDurationMs || 10000),
+      },
+      {
+        kind: 'heal',
+        cls: 'mimosa-item-heal',
+        label: 'HP HEAL',
+        detail: `HP ${Math.round(Number(c.itemHealPercent || 0.30) * 100)}%回復`,
+        healPercent: Number(c.itemHealPercent || 0.30),
+      },
+      {
+        kind: 'invincible',
+        cls: 'mimosa-item-invincible',
+        label: 'INVINCIBLE',
+        detail: `${Math.round(Number(c.itemInvincibleDurationMs || 3000) / 1000)}秒無敵`,
+        invincibleDurationMs: Number(c.itemInvincibleDurationMs || 3000),
+      },
+    ];
+
+    defs.forEach(def => {
+      const el = document.createElement('div');
+      el.className = `shooting-mimosa-item ${def.cls}`;
+      el.innerHTML = '<i></i>';
+      layer.appendChild(el);
+
+      // 盤面内のランダム位置。HUDや自機初期位置に極端に近づかない範囲に収める。
+      const x = w * (0.16 + Math.random() * 0.68);
+      const y = h * (0.22 + Math.random() * 0.48);
+
+      const item = {
+        uid: `mimosa_${def.kind}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        el, x, y,
+        kind: def.kind,
+        label: def.label,
+        detail: def.detail,
+        atkBuffMultiplier: def.atkBuffMultiplier,
+        atkBuffDurationMs: def.atkBuffDurationMs,
+        healPercent: def.healPercent,
+        invincibleDurationMs: def.invincibleDurationMs,
+      };
+      state.mimosaItems.push(item);
+      positionUnit(el, x, y);
+    });
+  }
+
+  function updateMimosaItems() {
+    if (!state || !state.mimosaItems || !state.mimosaItems.length) return;
+    const playerCore = document.getElementById('shooting-player-core');
+    if (!playerCore) return;
+    const coreRect = playerCore.getBoundingClientRect();
+
+    state.mimosaItems = state.mimosaItems.filter(item => {
+      if (!item || !item.el) return false;
+      if (rectsHit(item.el.getBoundingClientRect(), coreRect, -5, -3)) {
+        applyMimosaItemEffect(item, performance.now());
+        item.el.remove();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function applyMimosaItemEffect(item, now) {
+    if (!item) return;
+    // 取得した瞬間にアクティブだったmemberだけに効果を紐づける。
+    // このmemberオブジェクトはパーティ内の特定キャラID専用の実体なので、
+    // 交代しても他メンバーのmemberオブジェクトへは一切波及しない。
+    const member = getActiveMember();
+    if (!member) return;
+
+    if (item.kind === 'atk') {
+      member.atkBuffMultiplier = Number(item.atkBuffMultiplier || 1.3);
+      member.atkBuffUntil = now + Number(item.atkBuffDurationMs || 10000);
+    } else if (item.kind === 'heal') {
+      const healAmount = Math.round(Number(member.hpMax || 0) * Number(item.healPercent || 0.30));
+      member.hp = Math.min(member.hpMax, member.hp + healAmount);
+    } else if (item.kind === 'invincible') {
+      member.invincibleUntil = now + Number(item.invincibleDurationMs || 3000);
+    }
+
+    showShootingItemEffectNotice(item.label, item.detail);
+    renderHud();
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
 
@@ -3305,6 +3663,7 @@
     updateFacelessStageMechanics(ts);
     updateArnoAura(ts);
     updateCollectibles(dt);
+    updateMimosaItems();
     if (isNormalBattle()) evaluateNormalMission(ts);
     renderHud();
     if (!state.ended) rafId = requestAnimationFrame(gameLoop);
@@ -3455,7 +3814,36 @@
 
   function openFacelessStage(stageId) {
     closeFacelessStageSelect();
+    window.__shootingReturnContext = { type: 'facelessSelect' };
     window.openShootingEvent({ stageId: String(stageId || '') });
+  }
+
+  function buildFacelessStageRow(stageId, no, title, conditionText, waveText) {
+    const record = getShootingStageRecordSummary(stageId);
+    const clearStateClass = record.cleared ? 'is-cleared' : 'is-uncleared';
+    const clearStateText = record.cleared ? 'CLEAR' : 'MISSION';
+    const rankValue = record.bestRank || '—';
+    const rankClass = record.bestRank ? `rank-${record.bestRank.toLowerCase()}` : 'rank-none';
+    const highScoreText = record.highScore > 0 ? formatShootingScore(record.highScore) : '------';
+
+    return `
+      <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${stageId}')">
+        <div class="shooting-special-stage-no shooting-faceless-stage-no">${no}</div>
+        <div class="shooting-special-stage-main shooting-faceless-stage-main">
+          <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+            <strong>${title}</strong>
+            <div class="shooting-special-stage-status-set">
+              <span class="shooting-special-stage-clear-state ${clearStateClass}">${clearStateText}</span>
+              <span class="shooting-special-stage-rank-chip ${rankClass}"><small>RANK</small><b>${rankValue}</b></span>
+            </div>
+          </div>
+          <div class="shooting-special-stage-condition shooting-faceless-stage-condition">${conditionText}</div>
+          <div class="shooting-special-stage-meta-row">
+            <div class="shooting-special-stage-wave shooting-faceless-stage-wave">${waveText}</div>
+            <div class="shooting-special-stage-high-score"><span>HIGH SCORE</span><b>${highScoreText}</b></div>
+          </div>
+        </div>
+      </button>`;
   }
 
   function showFacelessStageSelect() {
@@ -3471,27 +3859,8 @@
         </div>
 
         <div class="shooting-special-stage-list shooting-faceless-stage-list">
-          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_ADVANCED}')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>上級</strong>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
-              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
-            </div>
-          </button>
-
-          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_SUPER}')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>最上級</strong>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
-              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
-            </div>
-          </button>
+          ${buildFacelessStageRow(SHOOTING_STAGE_ID.FACELESS_ADVANCED, '01', '上級', 'クリア条件：フェイスレスを撃破', '総WAVE2')}
+          ${buildFacelessStageRow(SHOOTING_STAGE_ID.FACELESS_SUPER, '02', '最上級', 'クリア条件：フェイスレスを撃破', '総WAVE2')}
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -3664,8 +4033,24 @@
     const clearTime = document.getElementById('shooting-result-clear-time');
     const rankLetter = getResultRank(state.score, win);
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
+    const finishedStageId = state.stageId || (selectedStage && selectedStage.id) || '';
+    const stageRecord = writeLocalShootingStageRecord(finishedStageId, {
+      win: !!win,
+      rank: rankLetter,
+      score: Number(state.score || 0),
+    });
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     void submitShootingHighScore(state.score);
+    try {
+      window.dispatchEvent(new CustomEvent('shooting-stage-record-updated', {
+        detail: {
+          stageId: finishedStageId,
+          cleared: !!stageRecord.cleared,
+          bestRank: stageRecord.bestRank || '',
+          highScore: Math.max(Number(stageRecord.highScore || 0), getLocalShootingHighScore(finishedStageId)),
+        }
+      }));
+    } catch (_) {}
     // STORY進捗へシューティング結果を通知。
     try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
@@ -3712,6 +4097,25 @@
     setBattleHudVisible(false);
   }
 
+  function beginPointerDrag(e, now) {
+    pointerActive = true;
+    pointerIsTouch = isTouchLikePointer(e);
+
+    pointerStartClientX = e.clientX;
+    pointerStartClientY = e.clientY;
+    pointerStartPlayerX = state && state.player ? state.player.x : 0;
+    pointerStartPlayerY = state && state.player ? state.player.y : 0;
+
+    // タップした瞬間は現在位置を目標にするため、離れた地点を触っても移動しない。
+    pointerX = pointerStartPlayerX;
+    pointerY = pointerStartPlayerY;
+
+    swipeStartX = e.clientX;
+    swipeStartY = e.clientY;
+    swipeStartAt = now;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+
   function onPointerDown(e) {
     if (!state || state.ended || state.countdown || state.finishing || state.paused) return;
 
@@ -3723,24 +4127,11 @@
       (now - lastTapAt) <= ULT_DOUBLE_TAP_MS &&
       Math.hypot(dx, dy) <= ULT_DOUBLE_TAP_DISTANCE;
 
+    beginPointerDrag(e, now);
+
     if (isDoubleTap) {
       lastTapAt = 0;
       if (isUltReady()) {
-        // ULT発動時も現在のタッチを「移動入力として生きたまま」にする。
-        // ここでreturnするため、通常のpointerActive=true処理より先に明示的に再設定する。
-        pointerActive = true;
-        pointerIsTouch = isTouchLikePointer(e);
-
-        swipeStartX = e.clientX;
-        swipeStartY = e.clientY;
-        swipeStartAt = now;
-
-        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
-
-        // カットイン中もonPointerMoveで最新位置を更新できるよう、
-        // 発動時点の指位置を先に同期してからULTへ入る。
-        updatePointer(e);
-
         window.useShootingBurst();
         e.preventDefault();
         return;
@@ -3751,25 +4142,15 @@
       lastTapY = e.clientY;
     }
 
-    pointerActive = true;
-    pointerIsTouch = isTouchLikePointer(e);
-
-    swipeStartX = e.clientX;
-    swipeStartY = e.clientY;
-    swipeStartAt = now;
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
-    updatePointer(e);
     e.preventDefault();
   }
+
   function onPointerMove(e) {
     if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
-
-    // ultCutinActive中でもここは止めない。
-    // ゲーム本体は停止していても指位置だけは更新し続け、
-    // カットイン終了直後に同じ指へ即追従させる。
     updatePointer(e);
     e.preventDefault();
   }
+
   function onPointerUp(e) {
     const wasActive = pointerActive;
     pointerActive = false;
@@ -3787,7 +4168,6 @@
 
       if (isFlick) {
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
-        // Right flick -> upper bench / Left flick -> lower bench.
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
       }
@@ -3795,16 +4175,18 @@
 
     e.preventDefault();
   }
+
   function updatePointer(e) {
     const arena = document.getElementById('shooting-arena');
-    if (!arena) return;
-    const r = arena.getBoundingClientRect();
-    // touch系操作の時だけ、指の実際の接地点よりキャラクターを上にずらす。
-    // pointerTypeが空になるWebViewもあるため、pointerIsTouch / coarse判定も使う。
-    const touchLike = pointerIsTouch || isTouchLikePointer(e);
-    const yOffset = touchLike ? TOUCH_Y_OFFSET : 0;
-    pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
-    pointerY = clamp(e.clientY - r.top - yOffset, 34, r.height - 38);
+    if (!arena || !state || !state.player) return;
+
+    // ドラッグ開始時のプレイヤー位置 + 指の移動量。
+    // pointerdownだけでは差分0なので、タップ先への瞬間移動は起こらない。
+    const dx = e.clientX - pointerStartClientX;
+    const dy = e.clientY - pointerStartClientY;
+
+    pointerX = clamp(pointerStartPlayerX + dx, 30, arena.clientWidth - 30);
+    pointerY = clamp(pointerStartPlayerY + dy, 34, arena.clientHeight - 38);
   }
 
   window.selectShootingCharacter = function (id) {
@@ -4123,6 +4505,9 @@
   };
 
   window.closeShootingEvent = function () {
+    const returnContext = window.__shootingReturnContext || null;
+    window.__shootingReturnContext = null;
+
     closeFacelessStageSelect();
     clearUltTimers();
     if (state) {
@@ -4158,6 +4543,17 @@
     });
     setCommonUiVisible(false);
     state = null;
+
+    // 「戻る」は巡行トップではなく、実際に一つ前にいた画面へ戻す。
+    // STORYなら元CHAPTERのステージ一覧、特別巡行なら難易度選択へ復帰。
+    if (returnContext && returnContext.type === 'storyChapter') {
+      const chapter = Number(returnContext.chapter || 1);
+      if (typeof window.openStageSelect === 'function') {
+        window.setTimeout(() => window.openStageSelect(chapter), 0);
+      }
+    } else if (returnContext && returnContext.type === 'facelessSelect') {
+      window.setTimeout(() => showFacelessStageSelect(), 0);
+    }
   };
 
   function clearUltTimers() {
@@ -5476,6 +5872,7 @@
     else if (c.ultType === 'precision_beam') useAyaneUlt(c);
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
+    else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else useEriUlt(c);
 
     renderHud();
@@ -5497,6 +5894,13 @@
     playUltCutin(c, () => executeCharacterUlt(c));
     renderHud();
   };
+
+  // ステージ一覧画面から参照できる公開API。
+  // CHAPTER側の一覧画面でもこの関数群を使えば、同じ記録表示を適用できる。
+  window.getShootingStageRecordSummary = getShootingStageRecordSummary;
+  window.getShootingStageHighScoreLocal = getLocalShootingHighScore;
+  window.readLocalShootingStageRecords = readLocalShootingStageRecords;
+  window.formatShootingStageScore = formatShootingScore;
 
   window.addEventListener('keydown', e => {
     keys[e.key] = true;

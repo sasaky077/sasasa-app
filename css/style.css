@@ -17962,3 +17962,138 @@ body.login-bonus-open {
     opacity: 0;
   }
 }
+
+
+/* =========================================================
+   111 STORYシューティング：クリアランク / ハイスコア
+   既存の淡い紙面デザインを崩さず、右端へ小さく記録を添える。
+   ========================================================= */
+#stage-select-modal .ss-card-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+#stage-select-modal .ss-card-name-row .ss-diff-badge {
+  margin-left: auto;
+  opacity: .74;
+}
+#stage-select-modal .ss-stage-record {
+  flex: 0 0 82px;
+  min-width: 82px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+  padding-left: 7px;
+  border-left: 1px solid rgba(126,105,70,.10);
+  font-family: "Cinzel","Noto Serif JP",serif;
+  line-height: 1;
+  white-space: nowrap;
+}
+#stage-select-modal .ss-stage-record-rank,
+#stage-select-modal .ss-stage-record-score {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+#stage-select-modal .ss-stage-record span {
+  font-size: 6px;
+  letter-spacing: .13em;
+  color: rgba(113,96,70,.48);
+}
+#stage-select-modal .ss-stage-record-rank b {
+  min-width: 14px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  color: #85735b;
+}
+#stage-select-modal .ss-stage-record-rank.rank-s b { color: #b88b2f; }
+#stage-select-modal .ss-stage-record-rank.rank-a b { color: #a77f3c; }
+#stage-select-modal .ss-stage-record-rank.rank-b b { color: #88735d; }
+#stage-select-modal .ss-stage-record-rank.rank-c b,
+#stage-select-modal .ss-stage-record-rank.rank-d b,
+#stage-select-modal .ss-stage-record-rank.rank-e b { color: #7c7469; }
+#stage-select-modal .ss-stage-record-rank.rank-none b { color: rgba(112,101,83,.34); }
+#stage-select-modal .ss-stage-record-score b {
+  text-align: right;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  color: rgba(91,75,51,.78);
+  font-variant-numeric: tabular-nums;
+}
+#stage-select-modal .ss-card.story-cleared::after {
+  display: none !important;
+}
+@media (max-width: 390px) {
+  #stage-select-modal .ss-card {
+    gap: 9px !important;
+    padding-left: 14px !important;
+    padding-right: 12px !important;
+  }
+  #stage-select-modal .ss-card-no {
+    width: 30px !important;
+  }
+  #stage-select-modal .ss-stage-record {
+    flex-basis: 76px;
+    min-width: 76px;
+    padding-left: 5px;
+  }
+  #stage-select-modal .ss-stage-record span { font-size: 5.5px; }
+  #stage-select-modal .ss-stage-record-score b { font-size: 8px; }
+}
+
+
+/* =========================================================
+   112 STORYシューティング：MISSION/BOSS表記を削除し、
+   ランク / ハイスコアの視認性を優先した版
+   ========================================================= */
+#stage-select-modal .ss-story-shooting-card{
+  gap: 10px;
+}
+#stage-select-modal .ss-story-shooting-card .ss-card-body{
+  flex: 1 1 auto;
+}
+#stage-select-modal .ss-story-shooting-card .ss-card-name-row{
+  display:block;
+}
+#stage-select-modal .ss-story-shooting-card .ss-stage-record{
+  flex: 0 0 112px;
+  min-width: 112px;
+  gap: 8px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(126,105,70,.14);
+}
+#stage-select-modal .ss-story-shooting-card .ss-stage-record span{
+  font-size: 7px;
+  letter-spacing: .14em;
+}
+#stage-select-modal .ss-story-shooting-card .ss-stage-record-rank b{
+  font-size: 15px;
+}
+#stage-select-modal .ss-story-shooting-card .ss-stage-record-score b{
+  font-size: 11px;
+}
+#stage-select-modal .ss-story-shooting-card .ss-card-arrow,
+#stage-select-modal .ss-story-shooting-card .ss-lock-icon{
+  align-self: center;
+}
+@media (max-width: 390px) {
+  #stage-select-modal .ss-story-shooting-card .ss-stage-record{
+    flex-basis: 100px;
+    min-width: 100px;
+    padding-left: 8px;
+  }
+  #stage-select-modal .ss-story-shooting-card .ss-stage-record-rank b{
+    font-size: 14px;
+  }
+  #stage-select-modal .ss-story-shooting-card .ss-stage-record-score b{
+    font-size: 10px;
+  }
+}

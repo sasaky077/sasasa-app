@@ -61,6 +61,97 @@
     return !!getStoryClearMap()[stageId];
   }
 
+  const SHOOTING_STAGE_RECORD_KEY = 'zeraphia_shooting_stage_records_v1';
+  const SHOOTING_HIGH_SCORE_KEY = 'zeraphia_shooting_high_scores_v1';
+
+  function getStoryShootingRecord(stageId) {
+    const id = String(stageId || '');
+    if (!id) return { cleared: false, bestRank: '', highScore: 0 };
+
+    // shooting_core.js がロード済みなら共通APIを正として使う。
+    if (typeof window.getShootingStageRecordSummary === 'function') {
+      try {
+        const record = window.getShootingStageRecordSummary(id) || {};
+        const cleared = isStoryStageCleared(id) || !!record.cleared;
+        const highScore = Math.max(0, Number(record.highScore || 0));
+        const storedRank = String(record.bestRank || '').toUpperCase();
+        return {
+          cleared,
+          bestRank: storedRank || (cleared && highScore > 0 ? getStoryRankFromScore(highScore) : ''),
+          highScore,
+        };
+      } catch (_) {}
+    }
+
+    // stage_select.js は shooting_event.js より先に読み込まれるため、
+    // 初回表示だけは localStorage から同じキーを直接参照できるようにする。
+    let records = {};
+    let scores = {};
+    try {
+      records = JSON.parse(localStorage.getItem(SHOOTING_STAGE_RECORD_KEY) || '{}') || {};
+    } catch (_) {}
+    try {
+      scores = JSON.parse(localStorage.getItem(SHOOTING_HIGH_SCORE_KEY) || '{}') || {};
+    } catch (_) {}
+
+    const raw = records[id] || {};
+    const cleared = isStoryStageCleared(id) || !!raw.cleared;
+    const highScore = Math.max(0, Number(raw.highScore || 0), Number(scores[id] || 0));
+    const storedRank = String(raw.bestRank || '').toUpperCase();
+
+    // 旧バージョンではクリア済み/ハイスコアだけ保存され、RANK自体は未保存だった。
+    // クリア済みが確認できるステージに限り、既存HIGH SCOREから現在の閾値で復元する。
+    const derivedRank = storedRank || (cleared && highScore > 0 ? getStoryRankFromScore(highScore) : '');
+
+    // 復元できた場合は新しい記録領域にも移行して、次回以降は通常の保存値として扱う。
+    if (!storedRank && derivedRank) {
+      try {
+        records[id] = {
+          ...raw,
+          cleared: true,
+          bestRank: derivedRank,
+          highScore,
+        };
+        localStorage.setItem(SHOOTING_STAGE_RECORD_KEY, JSON.stringify(records));
+      } catch (_) {}
+    }
+
+    return {
+      cleared,
+      bestRank: derivedRank,
+      highScore,
+    };
+  }
+
+  function getStoryRankFromScore(score) {
+    const value = Math.max(0, Number(score || 0));
+    if (value >= 24000) return 'S';
+    if (value >= 20000) return 'A';
+    if (value >= 16000) return 'B';
+    if (value >= 12000) return 'C';
+    if (value >= 8000) return 'D';
+    return 'E';
+  }
+
+  function formatStoryShootingScore(value) {
+    const score = Math.max(0, Math.floor(Number(value || 0)));
+    return score > 0 ? String(score).padStart(6, '0') : '------';
+  }
+
+  function buildStoryRecordHtml(record) {
+    const rank = record.bestRank || '—';
+    const rankClass = record.bestRank ? ` rank-${record.bestRank.toLowerCase()}` : ' rank-none';
+    return `
+      <div class="ss-stage-record" aria-label="ベスト記録">
+        <div class="ss-stage-record-rank${rankClass}">
+          <span>RANK</span><b>${rank}</b>
+        </div>
+        <div class="ss-stage-record-score">
+          <span>HIGH SCORE</span><b>${formatStoryShootingScore(record.highScore)}</b>
+        </div>
+      </div>`;
+  }
+
   function markStoryStageCleared(stageId) {
     if (!stageId) return;
     const map = getStoryClearMap();
@@ -428,14 +519,13 @@
 
       stages.forEach(stageDef => {
         const unlocked = isShootingStoryStageUnlocked(stageDef);
-        const cleared = isStoryStageCleared(stageDef.id);
+        const record = getStoryShootingRecord(stageDef.id);
+        const cleared = record.cleared;
         const isBoss = stageDef.type === 'boss';
-        const badgeLabel = isBoss ? 'BOSS' : 'MISSION';
-        const badgeColor = isBoss ? 'rgba(180,60,180,.85)' : 'rgba(200,180,80,.85)';
         const missionText = stageDef.mission?.text || (isBoss ? 'BOSSを撃破' : '敵を撃破');
 
         const card = document.createElement('div');
-        card.className = 'ss-card' + (unlocked ? '' : ' locked');
+        card.className = 'ss-card ss-story-shooting-card' + (unlocked ? '' : ' locked');
         if (cleared) card.classList.add('story-cleared');
 
         const stageNo = Number(stageDef.stageNo || stageDef.no || 0);
@@ -447,12 +537,14 @@
         card.innerHTML = `
           <div class="ss-card-no">${String(stageNo).padStart(2, '0')}</div>
           <div class="ss-card-body">
-            <div class="ss-card-name">${displayStageName}${cleared ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
+            <div class="ss-card-name-row">
+              <div class="ss-card-name">${displayStageName}${cleared ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
+            </div>
             <div class="ss-card-meta">
               <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
             </div>
           </div>
-          <div class="ss-diff-badge" style="color:${badgeColor};border-color:${badgeColor.replace('.85', '.4')}">${badgeLabel}</div>
+          ${buildStoryRecordHtml(record)}
           ${unlocked ? '<div class="ss-card-arrow">›</div>' : '<div class="ss-lock-icon">🔒</div>'}
         `;
 
@@ -521,6 +613,13 @@
     });
   }
 
+  window.addEventListener('shooting-stage-record-updated', () => {
+    const modal = document.getElementById('stage-select-modal');
+    if (!modal || modal.style.display === 'none') return;
+    const chapter = Number(modal.dataset.chapter || 0);
+    if (chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) renderList(chapter);
+  });
+
   // ============================================================
   // ローグライト：パーティ選択を開く（battleMode:'roguelite' を渡す）
   // ============================================================
@@ -554,6 +653,12 @@
       }
       // closeStageSelect() は呼ばない。nav/HUDの復帰を挟まず、
       // 同じJSタスク内でshooting側がそのまま表示制御を引き継ぐ。
+      // 編成画面/結果画面から「戻る」を押した時に、直前のCHAPTER一覧へ戻せるよう
+      // 呼び出し元CHAPTERを明示的に保持する。
+      window.__shootingReturnContext = {
+        type: 'storyChapter',
+        chapter: Number(stage.chapter || 1),
+      };
       window.openShootingStage(stage.id);
     };
 
@@ -698,6 +803,7 @@
     }
 
     renderList(chapter);
+    el.dataset.chapter = String(chapter);
 
     el.style.display = 'flex';
     void el.offsetWidth;

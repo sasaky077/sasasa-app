@@ -959,6 +959,18 @@
 .shooting-party-blessing{padding:0 12px 10px;background:#fffdf8;border-bottom:1px solid rgba(151,126,83,.12)}
 .shooting-party-section-head{display:flex;justify-content:space-between;align-items:center;padding:8px 0 6px;color:#8a6635}.shooting-party-section-head span{font-size:13px;letter-spacing:.16em}.shooting-party-section-head small{font-size:8px;color:#c1ad8b}
 .shooting-party-blessing-current{display:flex;width:100%;align-items:center;gap:10px;padding:9px;border:1px solid rgba(151,126,83,.20);border-radius:10px;background:#fffefa;color:#6d5838;text-align:left;font-family:"Noto Serif JP",serif}.shooting-party-blessing-plus{display:flex;width:48px;height:48px;align-items:center;justify-content:center;border:1px dashed rgba(151,126,83,.32);border-radius:7px;font-size:24px;color:#b69767}.shooting-party-blessing-current b{display:block;font-size:11px;font-weight:600}.shooting-party-blessing-current small{display:block;margin-top:4px;font-size:8px;color:#ac9a7b}
+.shooting-party-blessing-current.disabled{cursor:not-allowed;background:rgba(240,237,229,.75);border-style:dashed;filter:grayscale(.55);opacity:.72}
+.shooting-party-blessing-current.disabled .shooting-party-blessing-plus{color:#a8a196;border-color:rgba(160,150,130,.35)}
+.shooting-party-blessing-current.disabled b{color:#8a8172}
+.shooting-item-effect-notice.not-implemented{
+  border-top-color:rgba(150,150,150,.6);
+  border-bottom-color:rgba(150,150,150,.6);
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(240,240,240,.94) 18%,rgba(230,230,230,.96) 50%,rgba(240,240,240,.94) 82%,rgba(255,255,255,0));
+  box-shadow:0 0 30px rgba(120,120,120,.18);
+}
+.shooting-item-effect-notice.not-implemented span{color:#7a7a7a}
+.shooting-item-effect-notice.not-implemented strong{color:#4a4a4a;text-shadow:0 1px 0 rgba(255,255,255,.9)}
+.shooting-item-effect-notice.not-implemented small{color:#8a8a8a}
 .shooting-party-blessing-picker{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}.shooting-party-blessing-picker.show{display:grid}.shooting-blessing-option{min-width:0;padding:6px 4px;border:1px solid rgba(151,126,83,.18);border-radius:8px;background:#fbf7ef;color:#725b38;font-family:"Noto Serif JP",serif}.shooting-blessing-option img,.shooting-blessing-option>span{display:flex;width:42px;height:42px;margin:0 auto 4px;align-items:center;justify-content:center;object-fit:cover;border-radius:6px;background:#fff;font-size:20px}.shooting-blessing-option b{display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.shooting-blessing-option.selected{border-color:#c69b4e;background:#f5ead2}
 .shooting-party-roster{grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 12px;background:#f7f3ea}.shooting-party-roster .shooting-character-option{padding:5px;border-radius:9px}.shooting-party-roster .shooting-character-portrait{height:98px;margin:0 0 4px;border-radius:6px}.shooting-party-roster .shooting-character-option b{font-size:10px}.shooting-party-roster .shooting-character-option small{min-height:0;font-size:6px}.shooting-party-roster .shooting-character-option.selected{box-shadow:inset 0 0 0 2px rgba(194,148,65,.54)}
 .shooting-character-start{
@@ -1322,6 +1334,191 @@
 .shooting-mission-item i{position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(160,121,57,.68);background:rgba(255,251,237,.9)}
 @keyframes shooting-mission-item-float{from{margin-top:-3px}to{margin-top:3px}}
 @media(max-width:420px){.shooting-mission-hud{left:8px;right:8px;gap:6px;padding:6px 8px}.shooting-mission-hud span{font-size:6px}.shooting-mission-hud strong{font-size:9px}.shooting-mission-hud b{font-size:8px}.shooting-mini-enemy{width:60px;height:60px}}
+
+/* ============================================================
+   ミモザ「ミモザの贈り物」ULTアイテム
+   拾うまでフィールドに残り続けるため、既存のミッションアイテムより
+   一回り大きく・色分けして視認性を上げる。
+   ============================================================ */
+.shooting-mimosa-item{position:absolute;width:38px;height:38px;transform:translate(-50%,-50%);border-radius:50%;animation:shooting-mission-item-float 1.6s ease-in-out infinite alternate;z-index:14}
+.shooting-mimosa-item i{position:absolute;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%) rotate(45deg)}
+.shooting-mimosa-item.mimosa-item-atk{background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.96) 0 18%,rgba(255,150,110,.55) 22% 50%,rgba(210,90,60,.10) 52% 100%);border:1px solid rgba(210,100,70,.55);box-shadow:0 0 14px rgba(230,110,75,.45)}
+.shooting-mimosa-item.mimosa-item-atk i{border:1px solid rgba(180,80,55,.7);background:rgba(255,236,228,.92)}
+.shooting-mimosa-item.mimosa-item-heal{background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.96) 0 18%,rgba(130,215,150,.55) 22% 50%,rgba(60,150,90,.10) 52% 100%);border:1px solid rgba(80,170,110,.55);box-shadow:0 0 14px rgba(100,200,140,.45)}
+.shooting-mimosa-item.mimosa-item-heal i{border:1px solid rgba(60,140,90,.7);background:rgba(228,250,235,.92)}
+.shooting-mimosa-item.mimosa-item-invincible{background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.96) 0 18%,rgba(180,160,255,.55) 22% 50%,rgba(110,90,210,.10) 52% 100%);border:1px solid rgba(130,110,220,.55);box-shadow:0 0 14px rgba(150,130,235,.45)}
+.shooting-mimosa-item.mimosa-item-invincible i{border:1px solid rgba(100,80,190,.7);background:rgba(236,232,255,.92)}
+
+/* ミモザのアイテム取得テキスト。shooting-ult-ready-noticeと同じ構造・
+   アニメーションクラスを流用してデザインを統一する。 */
+.shooting-item-effect-notice{
+  position:absolute;
+  z-index:95;
+  left:50%;
+  top:48%;
+  width:min(330px,78vw);
+  padding:14px 18px 13px;
+  text-align:center;
+  pointer-events:none;
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.88);
+  border-top:1px solid rgba(178,139,65,.72);
+  border-bottom:1px solid rgba(178,139,65,.72);
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,251,232,.94) 18%,rgba(255,248,214,.96) 50%,rgba(255,251,232,.94) 82%,rgba(255,255,255,0));
+  box-shadow:0 0 30px rgba(219,178,76,.22);
+}
+.shooting-item-effect-notice.show{
+  animation:shootingUltReadyNotice 1.55s cubic-bezier(.2,.8,.25,1) forwards;
+}
+.shooting-item-effect-notice span{
+  display:block;
+  font-family:"Cinzel",serif;
+  font-size:10px;
+  letter-spacing:.32em;
+  color:#a47b31;
+}
+.shooting-item-effect-notice strong{
+  display:block;
+  margin-top:3px;
+  font-family:"Noto Serif JP",serif;
+  font-size:20px;
+  font-weight:600;
+  letter-spacing:.12em;
+  color:#5f4a27;
+  text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 12px rgba(255,213,103,.38);
+}
+.shooting-item-effect-notice small{
+  display:block;
+  margin-top:5px;
+  font-size:9px;
+  letter-spacing:.16em;
+  color:#9a835b;
+}
+
+#shooting-event-root.ult-flash-mimosa .shooting-wash{animation:shootingMimosaUltFlash .5s ease-out}
+@keyframes shootingMimosaUltFlash{
+  0%{background:rgba(255,214,196,.72)}
+  34%{background:rgba(255,246,240,.54)}
+  100%{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08) 45%,rgba(244,239,227,.26))}
+}
+
+/* ============================================================
+   ミモザの恩恵アイテム効果の可視化
+   「誰が」「どの効果を」「あと何秒」持っているかを一目で分かるようにする。
+   ============================================================ */
+
+/* 自機まわりのリング。無敵中は強く目立つ金色の回転シールド、
+   ATK UPだけの時はオレンジの控えめなグロー。 */
+.shooting-player{position:relative}
+.shooting-player-buff-ring{
+  display:none;
+  position:absolute;
+  z-index:6;
+  left:50%;
+  top:52%;
+  width:96px;
+  height:96px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  pointer-events:none;
+}
+.shooting-player.shooting-invincible-active .shooting-player-buff-ring{
+  display:block;
+  border:3px dashed rgba(255,213,90,.92);
+  box-shadow:0 0 18px rgba(255,213,90,.65),0 0 36px rgba(255,213,90,.35),inset 0 0 14px rgba(255,238,170,.5);
+  animation:shootingInvincibleRingSpin 1.1s linear infinite,shootingInvincibleRingPulse 0.6s ease-in-out infinite alternate;
+}
+.shooting-player.shooting-atk-buff-active:not(.shooting-invincible-active) .shooting-player-buff-ring{
+  display:block;
+  width:88px;
+  height:88px;
+  border:2px solid rgba(255,140,90,.75);
+  box-shadow:0 0 12px rgba(255,140,90,.5),inset 0 0 10px rgba(255,180,140,.35);
+  animation:shootingAtkRingPulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes shootingInvincibleRingSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes shootingInvincibleRingPulse{from{opacity:.75;filter:brightness(1)}to{opacity:1;filter:brightness(1.25)}}
+@keyframes shootingAtkRingPulse{from{opacity:.6}to{opacity:1}}
+
+/* 自機と一緒に少し揺れる被弾無敵時の全体演出（画像自体もうっすら光らせる） */
+.shooting-player.shooting-invincible-active img{
+  filter:drop-shadow(0 0 6px rgba(255,221,130,.85)) brightness(1.08);
+}
+
+/* 自機上のカウントダウンバッジ */
+.shooting-player-buff-badges{
+  position:absolute;
+  z-index:16;
+  left:50%;
+  top:-30px;
+  transform:translateX(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.shooting-player-buff-badge{
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.04em;
+  padding:2px 7px;
+  border-radius:999px;
+  color:#fff;
+  text-shadow:0 1px 1px rgba(0,0,0,.35);
+}
+.shooting-player-buff-badge.invincible{
+  background:linear-gradient(90deg,#e8b23a,#ffd766);
+  box-shadow:0 0 8px rgba(255,213,90,.7);
+}
+.shooting-player-buff-badge.atk{
+  background:linear-gradient(90deg,#e0713a,#ff9a5c);
+  box-shadow:0 0 8px rgba(255,140,90,.55);
+}
+
+/* 控えキャラのアイコンにも、効果が残っていることが分かるバッジを付ける。
+   「交代しても他人には移らない」ことが視覚的にも伝わるよう、
+   効果を持つ本人のサムネイルにだけ表示される。 */
+.shooting-switch-buff-badge{
+  display:none;
+  position:absolute;
+  z-index:6;
+  right:-2px;
+  top:-2px;
+  min-width:16px;
+  height:16px;
+  padding:0 3px;
+  border-radius:999px;
+  font-size:8px;
+  font-weight:700;
+  line-height:16px;
+  text-align:center;
+  color:#fff;
+  text-shadow:0 1px 1px rgba(0,0,0,.35);
+}
+.shooting-switch-btn.has-invincible-buff .shooting-switch-buff-badge{
+  display:block;
+  background:linear-gradient(90deg,#e8b23a,#ffd766);
+  box-shadow:0 0 6px rgba(255,213,90,.75);
+  animation:shootingAtkRingPulse 0.7s ease-in-out infinite alternate;
+}
+.shooting-switch-btn.has-atk-buff .shooting-switch-buff-badge{
+  display:block;
+  background:linear-gradient(90deg,#e0713a,#ff9a5c);
+  box-shadow:0 0 6px rgba(255,140,90,.6);
+}
+.shooting-switch-btn.has-invincible-buff{box-shadow:0 0 0 2px rgba(255,213,90,.85)}
+.shooting-switch-btn.has-atk-buff{box-shadow:0 0 0 2px rgba(255,140,90,.7)}
+
+@media(max-width:420px){
+  .shooting-player-buff-ring{width:78px;height:78px}
+  .shooting-player-buff-badges{top:-24px}
+  .shooting-player-buff-badge{font-size:8px;padding:1px 6px}
+}
+
+
 
 
 /* ============================================================
@@ -5080,4 +5277,79 @@
   #shooting-event-root .shooting-hud-title > strong{font-size:15px}
   #shooting-event-root .shooting-high-score-label{font-size:12px}
   #shooting-event-root .shooting-high-score-value{font-size:14px}
+}
+
+
+/* ============================================================
+   SPECIAL STAGE RECORDS — CLEAR / RANK / HIGH SCORE
+   CHAPTER一覧と同じ淡い金・ベージュの情報密度に統一。
+   ============================================================ */
+.shooting-special-stage-status-set{
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+}
+.shooting-special-stage-clear-state{
+  font-family:"Cinzel",serif;
+  font-size:7px;
+  letter-spacing:.18em;
+  color:rgba(125,105,70,.52);
+}
+.shooting-special-stage-clear-state.is-cleared{
+  color:#ad8537;
+}
+.shooting-special-stage-rank-chip{
+  display:inline-flex;
+  align-items:baseline;
+  gap:4px;
+  padding-left:7px;
+  border-left:1px solid rgba(126,105,70,.12);
+  font-family:"Cinzel",serif;
+}
+.shooting-special-stage-rank-chip small{
+  font-size:6px;
+  letter-spacing:.12em;
+  color:rgba(112,96,70,.48);
+}
+.shooting-special-stage-rank-chip b{
+  min-width:11px;
+  text-align:right;
+  font-size:12px;
+  font-weight:600;
+  color:#85735b;
+}
+.shooting-special-stage-rank-chip.rank-s b{color:#b88b2f}
+.shooting-special-stage-rank-chip.rank-a b{color:#a77f3c}
+.shooting-special-stage-rank-chip.rank-b b{color:#88735d}
+.shooting-special-stage-rank-chip.rank-c b,
+.shooting-special-stage-rank-chip.rank-d b,
+.shooting-special-stage-rank-chip.rank-e b{color:#7c7469}
+.shooting-special-stage-rank-chip.rank-none b{color:rgba(112,101,83,.34)}
+.shooting-special-stage-meta-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:4px;
+}
+.shooting-special-stage-high-score{
+  margin-left:auto;
+  display:inline-flex;
+  align-items:baseline;
+  gap:6px;
+  font-family:"Cinzel",serif;
+  white-space:nowrap;
+}
+.shooting-special-stage-high-score span{
+  font-size:6px;
+  letter-spacing:.13em;
+  color:rgba(113,96,70,.48);
+}
+.shooting-special-stage-high-score b{
+  font-size:9px;
+  font-weight:500;
+  letter-spacing:.08em;
+  color:rgba(91,75,51,.78);
+  font-variant-numeric:tabular-nums;
 }
