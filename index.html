@@ -97,12 +97,11 @@
     </div>
     <div class="hud-info">
       <div class="hud-name" id="hud-name">Player</div>
-      <div class="hud-id" id="hud-id"></div>
+      <span class="hud-exp-text" id="hud-exp-text">0 / 1000</span>
       <div class="hud-exp-row">
         <div class="hud-exp-bg">
           <div class="hud-exp-fill" id="hud-exp-fill" style="width:0%"></div>
         </div>
-        <span class="hud-exp-text" id="hud-exp-text">0 / 1000</span>
       </div>
     </div>
   </div>
@@ -164,9 +163,10 @@
     <div class="testplay-guide-lead">一応こんな感じ(👇)で遊んでみて。</div>
 
     <div class="testplay-guide-text">
-      ゲームは「巡行」から「ストーリー」か、特別巡行の「フェイスレス降臨」をプレイしてみて。<br>
-      勝てなかったらガチャ回してキャラゲットして頑張ってみて。<br>
-      石がなかったら右上の+ボタンから購入して。<br>
+      とりあえずゲームは「巡行」から「ストーリー」進めるか、特別巡行の「フェイスレス降臨」をプレイしてみて。<br>
+      勝てなかったら、ガチャ回してキャラゲットして頑張って。<br>
+      キャラはまだ実装途中だから今後バランス直していく予定。
+      石がなかったら右上の+ボタンから購入できる。<br>
       <span class="testplay-guide-note">（お金は取られないから安心して）</span>
     </div>
 
@@ -4398,9 +4398,6 @@ setTenResultFooterVisible(true);
 
     var nameEl = document.getElementById('hud-name');
     if(nameEl) nameEl.textContent = userProfile.display_name || 'Player';
-
-    var idEl = document.getElementById('hud-id');
-    if(idEl) idEl.textContent = 'ID: ' + userId;
 
     var exp = calcExpProgress(userProfile.total_score || 0);
     var fillEl = document.getElementById('hud-exp-fill');
