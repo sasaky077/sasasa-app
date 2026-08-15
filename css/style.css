@@ -15902,32 +15902,95 @@ body.login-bonus-open {
 
 
 /* =========================================================
-   ROGUELITE CLOSED / SHOOTING ONLY
+   iPhone / Safari FIX — 10連結果画面の上下見切れ対策
    ========================================================= */
-.roguelite-disabled-entry {
-  position: relative;
-  cursor: default !important;
-  filter: grayscale(.72) brightness(.68);
-  opacity: .72;
+
+/*
+  原因:
+  1) 共通 .modal-overlay に padding:20px がある
+  2) その内側の10連モーダルが width:100vw / height:100vh
+  3) iOS Safariでは 100vh が実表示領域とズレる場合がある
+  → 中央配置された100vh要素が上下にはみ出し、overflow:hiddenで切れる
+
+  対応:
+  - 10連結果だけ親overlayの20px余白を撤去
+  - 100vhではなく dynamic viewport (100dvh) を使用
+  - safe-areaはグリッド上端 / フッター下端の内側余白として確保
+*/
+
+#ten-result-modal.modal-overlay {
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  overflow: hidden !important;
 }
-.roguelite-disabled-entry::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(4,4,7,.18);
-  pointer-events: none;
+
+/* 古いiOS向けfallback → 対応端末では100dvhが最終的に優先される */
+@supports not (height: 100dvh) {
+  #ten-result-modal.modal-overlay {
+    height: -webkit-fill-available !important;
+    min-height: -webkit-fill-available !important;
+  }
 }
-.roguelite-disabled-entry .roguelite-card-rewards {
-  opacity: .28;
+
+#ten-result-modal .modal,
+#ten-result-modal .ten-result-modal-inner {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
 }
-.roguelite-disabled-entry .roguelite-longpress-hint {
-  display: none !important;
+
+/* 10枚のカード部分だけが残り高さを使う */
+#ten-result-modal .ten-result-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+
+  /* ノッチ / Dynamic Islandぶんを画面内側に確保 */
+  padding:
+    max(10px, env(safe-area-inset-top))
+    8px
+    8px !important;
+  box-sizing: border-box !important;
 }
-.roguelite-disabled-badge {
-  position: relative;
-  z-index: 4;
-  margin-top: 8px;
-  font-size: 10px;
-  letter-spacing: .08em;
-  color: rgba(235,230,240,.68);
+
+/* ホームインジケータぶんを画面内側に確保 */
+#ten-result-modal .ten-result-footer {
+  flex: 0 0 auto !important;
+  padding:
+    10px
+    16px
+    max(10px, calc(env(safe-area-inset-bottom) + 6px)) !important;
+  box-sizing: border-box !important;
+}
+
+/* 縦が特に狭い表示領域ではボタンを少しだけ圧縮してカード領域を確保 */
+@media (max-height: 700px) {
+  #ten-result-modal .ten-result-footer {
+    gap: 6px !important;
+    padding-top: 6px !important;
+  }
+
+  #ten-result-modal .ten-result-again-btn,
+  #ten-result-modal .ten-result-close-btn {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
 }
