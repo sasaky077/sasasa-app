@@ -40,7 +40,7 @@
       image: 'images/chara_01_battle_back.webp',
       panelImage: 'images/chara_01_panel.webp',
       cutinImage: 'images/chara_01_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
     },
     2: {
       id: 2, name: 'ネム',
@@ -256,7 +256,7 @@
   // ============================================================
   // SHOOTING専用戦闘プロフィール
   // ============================================================
-  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 14アヤネ
+  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 14アヤネ / 15エルテナ
   // その他13人：現時点ではエリ性能を継承
   const SHOOTING_CHARACTERS = {};
 
@@ -551,6 +551,42 @@
     ultGainPerHit: 1.100,
     coreTop: '37%',
     shotOffsetY: 42,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.ELTENA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.ELTENA,
+    effectKey: 'eltena',
+    label: 'GRAVITY / CONTROL',
+    description: '0.7秒ごとに巨大な3WAY弾を放つ。ULTは敵陣上端にブラックホールを生成し、8秒間すべての敵を吸引する。',
+    ultName: '事象の地平',
+    ultType: 'eltena_black_hole',
+    moveSpeed: 395,
+
+    // ---- 通常ショット：巨大3WAY ----
+    fireRate: 700,
+    bulletSpeed: 610,
+    shotPowerRate: 0.150,
+    shotType: 'spread',
+    shotCount: 3,
+    shotAngleStep: 0.235,
+    shotStyle: 'eltena',
+    shotOffsetY: 44,
+
+    // 3発命中時は高め、拡散で1〜2発命中なら標準火力になる想定。
+    burstDamage: 0,
+    burstNeed: 30,
+    ultGainPerHit: 1.40,
+
+    // ---- ULT：ブラックホール ----
+    blackHoleTravelSpeed: 760,
+    blackHoleDurationMs: 8000,
+    blackHoleSize: 154,
+    blackHolePullStrength: 11.5,
+    blackHoleTargetY: 104,
+    blackHoleEnemyStopRadius: 10,
+    blackHoleBossStopRadius: 18,
+    coreTop: '38%',
   });
 
   // ============================================================

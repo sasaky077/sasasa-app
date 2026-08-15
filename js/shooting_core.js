@@ -138,6 +138,7 @@
   let prevTs = 0;
   let keys = Object.create(null);
   let pointerActive = false;
+  let pointerIsTouch = false;
   let pointerX = 0;
   let pointerY = 0;
   let lastTapAt = 0;
@@ -151,6 +152,18 @@
   const SWITCH_SWIPE_AXIS_RATIO = 1.45;
   const ULT_DOUBLE_TAP_MS = 320;
   const ULT_DOUBLE_TAP_DISTANCE = 72;
+
+  function isTouchLikePointer(e) {
+    return !!(
+      e && (
+        e.pointerType === 'touch' ||
+        e.pointerType === 'pen' ||
+        ((navigator.maxTouchPoints || 0) > 0 &&
+         window.matchMedia &&
+         window.matchMedia('(pointer: coarse)').matches)
+      )
+    );
+  }
 
   // スマホ操作時、指がキャラクター(と被弾判定コア)を隠してしまう対策。
   // 指の実際の接地点より、キャラクターを上にずらして表示する。
@@ -313,6 +326,7 @@
       ignisFireWheel: null,
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFlower: null, roseHeartSeq: 0,
+      eltenaBlackHole: null,
       ultTimerIds: [], bossGrabUntil: 0, bossStunUntil: 0, lastShotAt: -9999, lastBossShotAt: -9999, shotIndex: 0,
       startedAt: performance.now(), clearTimeMs: 0,
     };
@@ -379,6 +393,14 @@
     state.player.invulnUntil = Math.max(state.player.invulnUntil || 0, now + 260);
     state.lastShotAt = -9999;
     applySelectedCharacterToUi();
+
+    // キャラ差し替え後も移動入力を途切れさせない。
+    // 同じ指でアリーナをドラッグ中なら、その最新位置を即維持する。
+    if (pointerActive && pointerIsTouch && state && state.player) {
+      state.player.x = pointerX;
+      state.player.y = pointerY;
+    }
+
     const player = document.getElementById(PLAYER_ID);
     if (player) {
       player.classList.remove('character-swap');
@@ -1286,6 +1308,37 @@
       if (!enemy || !enemy.el) return;
       const def = enemy.def || {};
 
+      // エルテナULT吸引中は通常の移動AIを止める。
+      // 旧実装ではこの後の通常AIが毎フレーム baseX/baseY から位置を再計算し、
+      // ブラックホール側の吸引移動を実質リセットしていたため、
+      // 「移動ロックは掛かるが吸い込まれない敵」が発生していた。
+      const activeBlackHole =
+        state.eltenaBlackHole &&
+        state.eltenaBlackHole.phase === 'active' &&
+        now < Number(state.eltenaBlackHole.activeUntil || 0);
+
+      if (activeBlackHole) {
+        // 攻撃も止め、吸引中は位置更新をブラックホール処理だけに一元化する。
+        enemy.dashVx = 0;
+        enemy.dashVy = 0;
+        if (enemy.attackState === 'dash') {
+          enemy.attackState = 'idle';
+          enemy.el.classList.remove('violence-dash');
+        }
+        return;
+      }
+
+      // アヤネULTで掴まれている敵だけを個別拘束する。
+      // global stunではなく、命中した敵だけ7秒間停止。
+      if (now < Number(enemy.ayaneGrabUntil || 0)) {
+        enemy.dashVx = 0;
+        enemy.dashVy = 0;
+        enemy.attackState = 'idle';
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
+
       if (def.behavior === 'mini_violence_v1' && enemy.attackState === 'dash') {
         enemy.x += enemy.dashVx * dt;
         enemy.y += enemy.dashVy * dt;
@@ -1394,6 +1447,14 @@
       setTimeout(() => enemy.el && enemy.el.classList.remove('hit-flash'), 140);
     }
     if (enemy.hp > 0) return;
+
+    // アヤネ拘束中に撃破された場合、残っている拘束演出を即掃除。
+    enemy.ayaneGrabUntil = 0;
+    if (enemy.ayaneGrabMarker) {
+      enemy.ayaneGrabMarker.remove();
+      enemy.ayaneGrabMarker = null;
+    }
+    if (enemy.el) enemy.el.classList.remove('ayane-grabbed', 'ayane-multi-grabbed');
 
     state.normalDefeated++;
     state.score += Number(enemy.def?.scoreValue || 650);
@@ -1768,8 +1829,17 @@
     const maxY = h - 38;
 
     if (pointerActive) {
-      state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 12);
-      state.player.y += (pointerY - state.player.y) * Math.min(1, dt * 12);
+      if (pointerIsTouch) {
+        // スマホは「指でキャラを掴んでいる」操作感を優先。
+        // lerp追従だとULT/キャラチェンジ後に100〜200msほど遅れて見え、
+        // 指からキャラが離れたような感触になるため、touch時は1:1追従。
+        state.player.x = pointerX;
+        state.player.y = pointerY;
+      } else {
+        // PCマウスは従来の少し滑らかな追従を維持。
+        state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
+        state.player.y += (pointerY - state.player.y) * Math.min(1, dt * 18);
+      }
     } else {
       let dx = 0, dy = 0;
       if (keys.ArrowLeft || keys.a || keys.A) dx -= 1;
@@ -1892,16 +1962,51 @@
       if (p.y < -20 || p.x < -20 || p.x > w + 20) { p.el.remove(); return false; }
       const r = p.el.getBoundingClientRect();
       let normalTarget = null;
+      let normalTargets = null;
       const hitBoss = !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
+
       if (isNormalBattle()) {
-        normalTarget = state.normalEnemies.find(enemy => enemy && enemy.el && enemy.hp > 0 && rectsHit(r, enemy.el.getBoundingClientRect(), 0, 13));
+        const blackHoleMultiHit =
+          state.eltenaBlackHole &&
+          state.eltenaBlackHole.phase === 'active' &&
+          now < Number(state.eltenaBlackHole.activeUntil || 0);
+
+        if (blackHoleMultiHit) {
+          // エルテナULT中だけ、同じ弾判定に重なっている敵を全件取得する。
+          // 離れた敵を貫通するのではなく、ブラックホールで密集した敵群への同時ヒット。
+          normalTargets = state.normalEnemies.filter(enemy =>
+            enemy && enemy.el && enemy.hp > 0 &&
+            rectsHit(r, enemy.el.getBoundingClientRect(), 0, 13)
+          );
+          normalTarget = normalTargets[0] || null;
+        } else {
+          // 通常時は従来どおり、1発につき最初に当たった敵1体だけ。
+          normalTarget = state.normalEnemies.find(enemy =>
+            enemy && enemy.el && enemy.hp > 0 &&
+            rectsHit(r, enemy.el.getBoundingClientRect(), 0, 13)
+          );
+        }
       }
+
       if (normalTarget || hitBoss) {
         const ownerId = p.ownerId || state.activeCharacterId;
         const chara = SHOOTING_CHARACTERS[ownerId] || getCurrentCharacter();
         const member = getPartyMember(ownerId) || getActiveMember();
+
+        let hitCount = 1;
+
         if (normalTarget) {
-          damageNormalEnemy(normalTarget, p.damage, now, false);
+          const targetsToDamage =
+            Array.isArray(normalTargets) && normalTargets.length
+              ? normalTargets
+              : [normalTarget];
+
+          hitCount = targetsToDamage.length;
+
+          targetsToDamage.forEach(enemy => {
+            damageNormalEnemy(enemy, p.damage, now, false);
+          });
+
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
         } else {
           state.boss.hp = Math.max(0, state.boss.hp - p.damage);
@@ -1911,10 +2016,13 @@
           flashBossHit(false);
           if (state.boss.hp <= 0) beginBossDefeat();
         }
-        state.shotsHit++;
+
+        state.shotsHit += hitCount;
 
         if (!p.noComboGain) {
-          registerComboHit(ownerId, now);
+          for (let i = 0; i < hitCount; i++) {
+            registerComboHit(ownerId, now);
+          }
         }
 
         const ownerMoonlightBlocked =
@@ -1923,7 +2031,8 @@
 
         if (!p.noUltGain && !ownerMoonlightBlocked) {
           const baseGain = Number.isFinite(chara.ultGainPerHit) ? chara.ultGainPerHit : 1;
-          const gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER;
+          const gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER * hitCount;
+
           if (member) {
             const wasReady = member.burst >= chara.burstNeed;
             member.burst = Math.min(chara.burstNeed, member.burst + gain);
@@ -1933,6 +2042,7 @@
             }
           }
         }
+
         p.el.remove();
         return false;
       }
@@ -2170,9 +2280,208 @@
         root.classList.remove('ult-cutin-active');
         prevTs = performance.now();
 
+        // カットイン中に指が動いていた場合、再開1フレーム目で最新位置へ復帰。
+        // touch操作のみ。PCマウスの滑らかさは維持する。
+        if (pointerActive && pointerIsTouch && state && state.player) {
+          state.player.x = pointerX;
+          state.player.y = pointerY;
+        }
+
         if (typeof onComplete === 'function') onComplete();
       }, 120);
     }, ULT_CUTIN_DURATION_MS);
+  }
+
+
+  function clearEltenaBlackHole() {
+    if (!state) return;
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy) return;
+      if (enemy.el) enemy.el.classList.remove('eltena-pulled');
+      if (enemy.hpEl) enemy.hpEl.classList.remove('eltena-pulled');
+    });
+
+    if (state.eltenaBlackHole) {
+      const bh = state.eltenaBlackHole;
+      if (bh.el && bh.el.isConnected) bh.el.remove();
+    }
+    state.eltenaBlackHole = null;
+    document.getElementById(ROOT_ID)?.classList.remove('eltena-black-hole-active');
+  }
+
+  function createEltenaBlackHole(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    clearEltenaBlackHole();
+
+    const arena = document.getElementById('shooting-arena');
+    const root = document.getElementById(ROOT_ID);
+    if (!arena) return;
+
+    const now = performance.now();
+    const startX = Number(state.player.x || arena.clientWidth * .5);
+    const startY = Number(state.player.y || arena.clientHeight * .72);
+
+    // ブラックホール本体が画面端で見切れないよう、半径＋余白ぶん内側へ着弾させる。
+    const holeSize = Number(c.blackHoleSize || 154);
+    const holeRadius = holeSize * .5;
+    const safeMargin = holeRadius + 16;
+    const targetX = clamp(startX, safeMargin, arena.clientWidth - safeMargin);
+    const requestedTargetY = Number(c.blackHoleTargetY || 104);
+    const targetY = clamp(
+      Math.max(requestedTargetY, safeMargin),
+      safeMargin,
+      Math.max(safeMargin, arena.clientHeight * .28)
+    );
+
+    const distance = Math.max(1, Math.hypot(targetX - startX, targetY - startY));
+    const travelMs = Math.max(260, distance / Math.max(120, Number(c.blackHoleTravelSpeed || 760)) * 1000);
+
+    const el = document.createElement('div');
+    el.className = 'shooting-eltena-black-hole traveling';
+    el.setAttribute('aria-hidden', 'true');
+    el.style.setProperty('--eltena-bh-size', `${Number(c.blackHoleSize || 154)}px`);
+    el.innerHTML = '<i></i><b></b><span></span>';
+    arena.appendChild(el);
+    positionUnit(el, startX, startY);
+
+    state.eltenaBlackHole = {
+      el,
+      ownerId: c.id,
+      phase: 'travel',
+      x: startX,
+      y: startY,
+      startX,
+      startY,
+      targetX,
+      targetY,
+      launchedAt: now,
+      travelMs,
+      activeFrom: 0,
+      activeUntil: 0,
+      durationMs: Number(c.blackHoleDurationMs || 8000),
+      pullStrength: Number(c.blackHolePullStrength || 11.5),
+      enemyStopRadius: Number(c.blackHoleEnemyStopRadius || 10),
+      bossStopRadius: Number(c.blackHoleBossStopRadius || 18),
+    };
+
+    if (root) {
+      root.classList.remove('eltena-black-hole-cast');
+      void root.offsetWidth;
+      root.classList.add('eltena-black-hole-cast');
+      setTimeout(() => root.classList.remove('eltena-black-hole-cast'), 520);
+    }
+  }
+
+  function pullPointTowardBlackHole(obj, bh, dt, stopRadius, bounds) {
+    if (!obj || !bh) return;
+    const dx = bh.x - Number(obj.x || 0);
+    const dy = bh.y - Number(obj.y || 0);
+    const dist = Math.max(0.001, Math.hypot(dx, dy));
+
+    if (dist <= stopRadius) return;
+
+    // ブラックホール中心へ強く収束。
+    // stopRadiusは「外周」ではなく中心付近のごく小さな重なり幅として使う。
+    const follow = 1 - Math.exp(-Math.max(0.1, bh.pullStrength) * dt);
+
+    // 距離が遠いほど大きく引き、中心付近では自然に減速。
+    // 1フレーム最低移動量も持たせて、敵AIの移動に負けないようにする。
+    const desired = Math.max(0, dist - stopRadius);
+    const minStep = Math.min(desired, 180 * dt);
+    const move = Math.min(desired, Math.max(dist * follow, minStep));
+
+    obj.x += dx / dist * move;
+    obj.y += dy / dist * move;
+
+    if (bounds) {
+      obj.x = clamp(obj.x, bounds.minX, bounds.maxX);
+      obj.y = clamp(obj.y, bounds.minY, bounds.maxY);
+    }
+  }
+
+  function updateEltenaBlackHole(dt, now) {
+    if (!state || !state.eltenaBlackHole) return;
+
+    const bh = state.eltenaBlackHole;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !bh.el || !bh.el.isConnected) {
+      clearEltenaBlackHole();
+      return;
+    }
+
+    if (bh.phase === 'travel') {
+      const p = clamp((now - bh.launchedAt) / Math.max(1, bh.travelMs), 0, 1);
+      // 少し加速して敵側の壁へ飛ぶ。
+      const eased = 1 - Math.pow(1 - p, 3);
+      bh.x = bh.startX + (bh.targetX - bh.startX) * eased;
+      bh.y = bh.startY + (bh.targetY - bh.startY) * eased;
+      positionUnit(bh.el, bh.x, bh.y);
+
+      if (p >= 1) {
+        bh.phase = 'active';
+        bh.x = bh.targetX;
+        bh.y = bh.targetY;
+        bh.activeFrom = now;
+        bh.activeUntil = now + bh.durationMs;
+        bh.el.classList.remove('traveling');
+        bh.el.classList.add('active');
+        document.getElementById(ROOT_ID)?.classList.add('eltena-black-hole-active');
+        positionUnit(bh.el, bh.x, bh.y);
+      }
+      return;
+    }
+
+    if (now >= bh.activeUntil) {
+      bh.el.classList.add('ending');
+      document.getElementById(ROOT_ID)?.classList.remove('eltena-black-hole-active');
+
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy) return;
+        if (enemy.el) enemy.el.classList.remove('eltena-pulled');
+        if (enemy.hpEl) enemy.hpEl.classList.remove('eltena-pulled');
+        positionMiniEnemyHp(enemy);
+      });
+
+      const doomed = bh.el;
+      state.eltenaBlackHole = null;
+      setTimeout(() => doomed.isConnected && doomed.remove(), 320);
+      return;
+    }
+
+    const w = arena.clientWidth;
+    const h = arena.clientHeight;
+
+    // 通常敵は全員吸引。ダメージは一切与えない。
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      pullPointTowardBlackHole(enemy, bh, dt, bh.enemyStopRadius, {
+        minX: 34, maxX: w - 34, minY: 42, maxY: h - 46
+      });
+      // baseX/baseY は書き換えない。
+      // ここを書き換えるとULT終了後も敵の通常待機位置が画面上部に固定されてしまう。
+      enemy.el.classList.add('eltena-pulled');
+      if (enemy.hpEl) enemy.hpEl.classList.add('eltena-pulled');
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+    });
+
+    // ボスも「すべての敵」に含めて吸引する。
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      pullPointTowardBlackHole(state.boss, bh, dt, bh.bossStopRadius, {
+        minX: 54, maxX: w - 54, minY: 52, maxY: h * .74
+      });
+      const bossEl = document.getElementById(BOSS_ID);
+      if (bossEl) positionUnit(bossEl, state.boss.x, state.boss.y);
+    }
+  }
+
+  function useEltenaUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey);
+    ultScreenFlash('ult-flash-eltena');
+    createEltenaBlackHole(c);
   }
 
   function gameLoop(ts) {
@@ -2212,6 +2521,11 @@
         fireBoss(ts);
       }
     }
+
+    // エルテナULTは通常の敵移動が終わった後に吸引を適用。
+    // これによりAIの横移動よりブラックホールの集敵を優先する。
+    updateEltenaBlackHole(dt, ts);
+
     // 敵の位置更新後にプレイヤーとの直接接触を判定する。
     updateEnemyContactCollisions(ts);
     updateProjectiles(dt, ts);
@@ -2331,6 +2645,7 @@
     if (comboForResult) comboForResult.style.display = 'none';
     state.running = false;
     cancelAnimationFrame(rafId);
+    clearEltenaBlackHole();
     clearProjectiles();
     clearNormalBattleObjects();
     document.getElementById(BOSS_ID)?.classList.remove('nem-stunned');
@@ -2410,7 +2725,21 @@
     if (isDoubleTap) {
       lastTapAt = 0;
       if (isUltReady()) {
-        pointerActive = false;
+        // ULT発動時も現在のタッチを「移動入力として生きたまま」にする。
+        // ここでreturnするため、通常のpointerActive=true処理より先に明示的に再設定する。
+        pointerActive = true;
+        pointerIsTouch = isTouchLikePointer(e);
+
+        swipeStartX = e.clientX;
+        swipeStartY = e.clientY;
+        swipeStartAt = now;
+
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+
+        // カットイン中もonPointerMoveで最新位置を更新できるよう、
+        // 発動時点の指位置を先に同期してからULTへ入る。
+        updatePointer(e);
+
         window.useShootingBurst();
         e.preventDefault();
         return;
@@ -2422,6 +2751,8 @@
     }
 
     pointerActive = true;
+    pointerIsTouch = isTouchLikePointer(e);
+
     swipeStartX = e.clientX;
     swipeStartY = e.clientY;
     swipeStartAt = now;
@@ -2431,12 +2762,17 @@
   }
   function onPointerMove(e) {
     if (!pointerActive || !state || state.ended || state.countdown || state.finishing) return;
+
+    // ultCutinActive中でもここは止めない。
+    // ゲーム本体は停止していても指位置だけは更新し続け、
+    // カットイン終了直後に同じ指へ即追従させる。
     updatePointer(e);
     e.preventDefault();
   }
   function onPointerUp(e) {
     const wasActive = pointerActive;
     pointerActive = false;
+    pointerIsTouch = false;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
 
     if (wasActive && state && !state.ended && !state.countdown && !state.finishing && !state.koTransition) {
@@ -2462,9 +2798,10 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const r = arena.getBoundingClientRect();
-    // touch操作の時だけ、指の実際の接地点よりキャラクターを上にずらす。
-    // マウス/ペンはそのまま(1:1追従)にする。
-    const yOffset = e.pointerType === 'touch' ? TOUCH_Y_OFFSET : 0;
+    // touch系操作の時だけ、指の実際の接地点よりキャラクターを上にずらす。
+    // pointerTypeが空になるWebViewもあるため、pointerIsTouch / coarse判定も使う。
+    const touchLike = pointerIsTouch || isTouchLikePointer(e);
+    const yOffset = touchLike ? TOUCH_Y_OFFSET : 0;
     pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
     pointerY = clamp(e.clientY - r.top - yOffset, 34, r.height - 38);
   }
@@ -2482,6 +2819,7 @@
   window.startSelectedShootingCharacter = function () {
     if (selectedPartyIds.length !== PARTY_SIZE || !selectedPartyIds.every(isShootingCharacterOwned)) return;
     selectedCharacterId = selectedPartyIds[0];
+    clearEltenaBlackHole();
     resetState();
     clearProjectiles();
     clearNormalBattleObjects();
@@ -2546,6 +2884,7 @@
     root.style.display = 'block';
     root.classList.add('open');
     root.setAttribute('aria-hidden', 'false');
+    clearEltenaBlackHole();
     resetState();
     clearProjectiles();
     const result = document.getElementById('shooting-result');
@@ -2575,6 +2914,7 @@
   window.restartShootingEvent = function () {
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
+    clearEltenaBlackHole();
     resetState();
     clearProjectiles();
     clearNormalBattleObjects();
@@ -2598,9 +2938,11 @@
     clearUltTimers();
     if (state) { state.running = false; state.ended = true; state.countdown = false; state.finishing = false; }
     cancelAnimationFrame(rafId);
+    clearEltenaBlackHole();
     clearProjectiles();
     clearNormalBattleObjects();
     pointerActive = false;
+    pointerIsTouch = false;
     keys = Object.create(null);
     lastTapAt = 0;
     const root = document.getElementById(ROOT_ID);
@@ -2761,54 +3103,81 @@
 
       const arena = document.getElementById('shooting-arena');
       const root = document.getElementById(ROOT_ID);
-      const targets = (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0);
+      const livingTargets = (state.normalEnemies || [])
+        .filter(enemy => enemy && enemy.el && enemy.hp > 0);
 
-      // 通常ステージでも黒手演出を出す。
-      // これまでnormalBattle分岐ではダメージだけ処理してreturnしていたため、
-      // ボス戦で見えていた「黒手が伸びて掴む」演出が完全に省略されていた。
-      const target = targets
-        .slice()
-        .sort((a, b) => {
-          const da = Math.hypot((a.x || 0) - state.player.x, (a.y || 0) - state.player.y);
-          const db = Math.hypot((b.x || 0) - state.player.x, (b.y || 0) - state.player.y);
-          return da - db;
-        })[0];
-
-      if (!arena || !target) {
-        state.ultLockUntil = performance.now() + 800;
-        pushUltTimer(() => {
-          const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3.5);
-          applyUltDamage(damage, true);
-        }, 420);
+      if (!arena || !livingTargets.length) {
+        state.ultLockUntil = performance.now() + 420;
         return;
       }
 
       const now = performance.now();
       const STRIKE_DELAY = 620;
-      const HOLD_DURATION = 900;
-
-      state.ultLockUntil = now + STRIKE_DELAY + HOLD_DURATION + 220;
-      state.normalEnemyStunUntil = Math.max(
-        state.normalEnemyStunUntil || 0,
-        now + STRIKE_DELAY + HOLD_DURATION
-      );
+      const GRAB_DURATION = 7000;
+      const RELEASE_DELAY = STRIKE_DELAY + GRAB_DURATION;
 
       const startX = state.player.x;
       const startY = Math.max(24, state.player.y - 18);
-      const endX = target.x;
-      const endY = Math.max(24, target.y + 10);
-      const dx = endX - startX;
-      const dy = endY - startY;
-      const distance = Math.max(80, Math.hypot(dx, dy));
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      // 最寄りの敵を「主目標」にして射線方向を決める。
+      const primary = livingTargets
+        .slice()
+        .sort((a, b) => {
+          const da = Math.hypot((a.x || 0) - startX, (a.y || 0) - startY);
+          const db = Math.hypot((b.x || 0) - startX, (b.y || 0) - startY);
+          return da - db;
+        })[0];
+
+      const aimDx = Number(primary.x || 0) - startX;
+      const aimDy = Number(primary.y || 0) - startY;
+      const aimLen = Math.max(1, Math.hypot(aimDx, aimDy));
+      const ux = aimDx / aimLen;
+      const uy = aimDy / aimLen;
+
+      // 黒手は主目標で止めず、その方向へ画面外まで伸びる。
+      // 射線上に複数の敵が並んでいれば、全員を同時に掴む。
+      const rayLength = Math.hypot(arena.clientWidth, arena.clientHeight) * 1.25;
+      const endX = startX + ux * rayLength;
+      const endY = startY + uy * rayLength;
+
+      // 「当たった」の判定幅。黒手の見た目に合わせてやや太め。
+      const HIT_HALF_WIDTH = 74;
+
+      function distanceToAyaneRay(enemy) {
+        const ex = Number(enemy.x || 0) - startX;
+        const ey = Number(enemy.y || 0) - startY;
+        const along = ex * ux + ey * uy;
+        if (along < 0 || along > rayLength) return { along, side: Infinity };
+        const side = Math.abs(ex * uy - ey * ux);
+        return { along, side };
+      }
+
+      let hitTargets = livingTargets
+        .map(enemy => ({ enemy, ...distanceToAyaneRay(enemy) }))
+        .filter(v => v.side <= HIT_HALF_WIDTH)
+        .sort((a, b) => a.along - b.along)
+        .map(v => v.enemy);
+
+      // 主目標は必ず掴む。端数・DOM位置差で主目標だけ漏れるのを防止。
+      if (!hitTargets.includes(primary)) hitTargets.unshift(primary);
+
+      // 同一敵の重複を防止。
+      hitTargets = Array.from(new Set(hitTargets));
+
+      // アヤネ自身は黒手が命中するまでだけ通常射撃停止。
+      // 命中後は7秒拘束中でも通常攻撃・キャラチェンジ可能。
+      state.ultLockUntil = now + STRIKE_DELAY + 120;
+
+      const visualDistance = Math.max(100, rayLength);
+      const angle = Math.atan2(uy, ux) * 180 / Math.PI;
 
       const fx = document.createElement('div');
-      fx.className = 'shooting-ayane-blackhand-ult';
+      fx.className = 'shooting-ayane-blackhand-ult shooting-ayane-blackhand-multi';
       fx.style.setProperty('--ayane-start-x', `${startX}px`);
       fx.style.setProperty('--ayane-start-y', `${startY}px`);
       fx.style.setProperty('--ayane-end-x', `${endX}px`);
       fx.style.setProperty('--ayane-end-y', `${endY}px`);
-      fx.style.setProperty('--ayane-distance', `${distance}px`);
+      fx.style.setProperty('--ayane-distance', `${visualDistance}px`);
       fx.style.setProperty('--ayane-angle', `${angle}deg`);
       fx.innerHTML = `
         <div class="shooting-ayane-blackhand-aura"></div>
@@ -2825,55 +3194,102 @@
         <div class="shooting-ayane-blackhand-afterimage a2"></div>
         <div class="shooting-ayane-blackhand-afterimage a3"></div>
         <div class="shooting-ayane-blackhand-impact"></div>
-        <div class="shooting-ayane-blackhand-grip-ring r1"></div>
-        <div class="shooting-ayane-blackhand-grip-ring r2"></div>
-        <div class="shooting-ayane-blackhand-grip-ring r3"></div>
-        <div class="shooting-ayane-blackhand-smoke s1"></div>
-        <div class="shooting-ayane-blackhand-smoke s2"></div>
-        <div class="shooting-ayane-blackhand-smoke s3"></div>
-        <div class="shooting-ayane-blackhand-smoke s4"></div>
       `;
       arena.appendChild(fx);
 
       if (root) root.classList.add('ayane-rampage-active');
 
       pushUltTimer(() => fx.classList.add('charge'), 90);
-
       pushUltTimer(() => {
+        if (!fx.isConnected) return;
         fx.classList.add('strike');
         if (root) root.classList.add('ayane-rampage-shake');
       }, 300);
 
       pushUltTimer(() => {
-        if (!fx.isConnected) return;
+        if (!state || !fx.isConnected) return;
 
         fx.classList.add('hit', 'grab');
 
-        const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3.5);
-        applyUltDamage(damage, true);
+        const grabUntil = performance.now() + GRAB_DURATION;
+        const totalDamage =
+          Number(c.atk || 0) *
+          Number(c.ultDamageAtkMultiplier || 3.5);
+        const initialDamage = totalDamage * 0.18;
+        const tickCount = 28; // 250ms × 28 = 7秒
+        const tickDamage = (totalDamage - initialDamage) / tickCount;
 
-        if (target.el) {
-          target.el.classList.add('hit-flash');
-          setTimeout(() => target.el && target.el.classList.remove('hit-flash'), 260);
-        }
+        // 命中した敵を全員、個別に7秒拘束。
+        hitTargets.forEach((enemy, index) => {
+          if (!enemy || enemy.hp <= 0 || !enemy.el) return;
 
-        createHit(endX, endY, true);
+          enemy.ayaneGrabUntil = grabUntil;
+          enemy.el.classList.add('ayane-grabbed', 'ayane-multi-grabbed');
+
+          // 各敵の位置に個別の拘束リングを表示。
+          const marker = document.createElement('div');
+          marker.className = 'shooting-ayane-multi-grip';
+          marker.dataset.enemyUid = String(enemy.uid || index);
+          arena.appendChild(marker);
+          positionUnit(marker, enemy.x, enemy.y);
+          enemy.ayaneGrabMarker = marker;
+
+          createHit(enemy.x, enemy.y, true);
+          damageNormalEnemy(enemy, initialDamage, performance.now(), true);
+
+          // 7秒間に残りダメージを分割。
+          for (let i = 1; i <= tickCount; i++) {
+            pushUltTimer(() => {
+              if (!state || state.ended || !enemy || enemy.hp <= 0) return;
+              damageNormalEnemy(enemy, tickDamage, performance.now(), false);
+
+              // 敵が倒れた場合は拘束マーカーを即消す。
+              if (enemy.hp <= 0 && enemy.ayaneGrabMarker) {
+                enemy.ayaneGrabMarker.remove();
+                enemy.ayaneGrabMarker = null;
+                enemy.ayaneGrabUntil = 0;
+              }
+            }, i * 250);
+          }
+        });
+
+        // 命中成立後はアヤネ通常攻撃を即再開。
+        state.ultLockUntil = performance.now() + 120;
+        state.lastShotAt = performance.now();
+
+        renderHud();
       }, STRIKE_DELAY);
 
       pushUltTimer(() => {
-        if (!fx.isConnected) return;
+        hitTargets.forEach(enemy => {
+          if (!enemy) return;
+          enemy.ayaneGrabUntil = 0;
+          if (enemy.el) enemy.el.classList.remove('ayane-grabbed', 'ayane-multi-grabbed');
+          if (enemy.ayaneGrabMarker) {
+            enemy.ayaneGrabMarker.classList.add('release');
+            const marker = enemy.ayaneGrabMarker;
+            enemy.ayaneGrabMarker = null;
+            setTimeout(() => marker.isConnected && marker.remove(), 280);
+          }
+        });
+
         fx.classList.remove('grab');
-        fx.classList.add('release', 'fade');
+        fx.classList.add('release');
         if (root) root.classList.remove('ayane-rampage-shake');
-      }, STRIKE_DELAY + HOLD_DURATION);
+        renderHud();
+      }, RELEASE_DELAY);
 
       pushUltTimer(() => {
-        if (fx.isConnected) fx.remove();
+        fx.classList.add('fade');
         if (root) {
           root.classList.remove('ayane-rampage-shake');
           root.classList.remove('ayane-rampage-active');
         }
-      }, STRIKE_DELAY + HOLD_DURATION + 380);
+      }, RELEASE_DELAY + 240);
+
+      pushUltTimer(() => {
+        if (fx.isConnected) fx.remove();
+      }, RELEASE_DELAY + 700);
 
       return;
     }
@@ -3847,6 +4263,7 @@
     else if (c.ultType === 'arno_aura') useArnoUlt(c);
     else if (c.ultType === 'speed_storm') useHayateUlt(c);
     else if (c.ultType === 'precision_beam') useAyaneUlt(c);
+    else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else useEriUlt(c);
 

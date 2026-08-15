@@ -106,10 +106,6 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-
-        // 合計HP 9,000。
-        // 実戦DPSを約180〜200HP/秒で見ると純粋な削り時間は45〜50秒前後。
-        // 回避・狙い直し・敵の出現待ちを含め、余裕を持たせて90秒に設定。
         targetSeconds: 90,
         text: '90秒以内にクリア',
       }),
@@ -211,10 +207,6 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-
-        // 合計HP 16,000。
-        // 実戦DPSを約180〜200HP/秒で見ると純粋な削り時間は80〜89秒前後。
-        // 高火力の敵を避けながら戦うロスを大きめに見て150秒に設定。
         targetSeconds: 150,
         text: '150秒以内に強敵を撃破',
       }),

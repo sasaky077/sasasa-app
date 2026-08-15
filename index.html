@@ -2942,6 +2942,13 @@ function setTenResultFooterVisible(visible){
       console.log('ガチャ中のため画面遷移をブロック:', name);
       return;
     }
+
+    // BGMはホーム画面専用。
+    // 画面遷移開始時点でホーム以外なら即停止する。
+    if(name !== 'main' && typeof stopBgm === 'function'){
+      stopBgm();
+    }
+
     var guf = document.getElementById('global-user-frame');
 
     if(guf){
@@ -2958,6 +2965,7 @@ function setTenResultFooterVisible(visible){
       var gufN = document.getElementById('global-user-frame');
       if(gufN) gufN.classList.add('hud-dark');
       updateHeaderHeight();
+      if(typeof syncMainBgmToHome === 'function') syncMainBgmToHome();
       return;
     }
 
@@ -2971,6 +2979,7 @@ function setTenResultFooterVisible(visible){
       if(gufS) gufS.classList.add('hud-dark');
       renderSummonBanners();
       updateHeaderHeight();
+      if(typeof syncMainBgmToHome === 'function') syncMainBgmToHome();
       return;
     }
 
@@ -2997,6 +3006,11 @@ function setTenResultFooterVisible(visible){
     setNavVisible(true);
     setBnavActive(name);
     updateHeaderHeight();
+
+    // 遷移完了後にホームだけBGMを許可。
+    if(typeof syncMainBgmToHome === 'function'){
+      syncMainBgmToHome();
+    }
   }
 
    function summonAction(count){
@@ -7350,9 +7364,20 @@ function changeBgmVolume(value){
   applyBgmVolume();
 }
 
+function isHomeScreenActive(){
+  var home = document.getElementById('screen-main');
+  return !!(home && home.classList.contains('active'));
+}
+
 function playBgm(){
   var bgm = document.getElementById('bgm');
   if(!bgm) return;
+
+  // 通常BGMはホーム画面以外では絶対に再生しない。
+  if(!isHomeScreenActive()){
+    bgm.pause();
+    return;
+  }
 
   applyBgmVolume();
 
@@ -7367,6 +7392,11 @@ function stopBgm(){
   var bgm = document.getElementById('bgm');
   if(!bgm) return;
 
+  if(bgmFadeInterval){
+    clearInterval(bgmFadeInterval);
+    bgmFadeInterval = null;
+  }
+
   bgm.pause();
 }
 
@@ -7376,6 +7406,14 @@ function fadeInBgm(){
 
   if(bgmFadeInterval){
     clearInterval(bgmFadeInterval);
+    bgmFadeInterval = null;
+  }
+
+  // ガチャ終了などからfadeInBgm()が呼ばれても、
+  // ホーム以外ではBGMを復帰させない。
+  if(!isHomeScreenActive()){
+    bgm.pause();
+    return;
   }
 
   var target = bgmVolume / 100;
@@ -7403,9 +7441,42 @@ function fadeInBgm(){
   }, 100);
 }
 
+function syncMainBgmToHome(){
+  if(isHomeScreenActive()){
+    if(isAudioEnabled('main_bgm')){
+      playBgm();
+    } else {
+      stopBgm();
+    }
+  } else {
+    stopBgm();
+  }
+}
+
+// showMainTab()を通らない画面切替にも対応。
+// .screen のactive変更を監視し、ホーム以外になった瞬間にBGMを止める。
+function initHomeOnlyBgmGuard(){
+  var screens = document.querySelectorAll('.screen');
+  if(!screens.length) return;
+
+  var observer = new MutationObserver(function(){
+    syncMainBgmToHome();
+  });
+
+  screens.forEach(function(screen){
+    observer.observe(screen, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  });
+
+  syncMainBgmToHome();
+}
+
 window.addEventListener('load', function(){
   updateBgmUI();
   applyBgmVolume();
+  initHomeOnlyBgmGuard();
 });  
 
 function updateHeaderHeight() {
