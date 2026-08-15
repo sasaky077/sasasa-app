@@ -76,7 +76,7 @@
     return;
   }
 
-  const { CHARACTER_ID, SHOOTING_CHARACTERS, PARTY_SIZE, SWITCH_COOLDOWN_MS, isShootingCharacterOwned, getShootingRosterHtml } = CharacterModule;
+  const { CHARACTER_ID, SHOOTING_CHARACTERS, PARTY_SIZE, SWITCH_COOLDOWN_MS, isShootingCharacterOwned, getShootingRosterHtml, getOwnedShootingInstance } = CharacterModule;
   const { DEFAULT_SHOOTING_ENEMY_ID, getShootingEnemy } = EnemyModule;
   const { SHOOTING_STAGE_ID, SHOOTING_MISSION_TYPE, getShootingStage } = StageModule;
 
@@ -105,6 +105,50 @@
     }
     return enemy;
   }
+
+
+  function isFacelessStage() {
+    return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
+  }
+
+  function isStoryShootingStage() {
+    return !!(
+      selectedStage &&
+      /^shooting_ch\d{2}_\d{2}$/i.test(String(selectedStage.id || ''))
+    );
+  }
+
+  function ensureStoryEriLeader() {
+    if (!isStoryShootingStage()) return;
+    selectedPartyIds = selectedPartyIds.filter(id => Number(id) !== Number(CHARACTER_ID.ERI));
+    if (isShootingCharacterOwned(CHARACTER_ID.ERI)) {
+      selectedPartyIds.unshift(Number(CHARACTER_ID.ERI));
+    }
+    selectedPartyIds = selectedPartyIds.slice(0, PARTY_SIZE);
+  }
+
+  function isShootingPartyReady() {
+    if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
+    if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
+    if (isStoryShootingStage()) {
+      return Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
+    }
+    return true;
+  }
+
+  function getFacelessConfig() {
+    return isFacelessStage() ? selectedStage.faceless : null;
+  }
+
+  function getFacelessWaveHp(wave) {
+    const cfg = getFacelessConfig();
+    const values = cfg && Array.isArray(cfg.waveHp) ? cfg.waveHp : [7600, 19000];
+    return Number(values[Math.max(0, Number(wave || 1) - 1)] || 7600);
+  }
+
+  function getFacelessObjectHp() {
+    return Number(getFacelessConfig()?.objectHp || 950);
+  }
   let BOSS = getCurrentShootingEnemy();
 
   function refreshShootingRoster() {
@@ -118,9 +162,216 @@
   let selectedPartyIds = [];
   let selectedBlessingId = null; // UI selection only. Shooting effects are not wired yet.
 
+  const SHOOTING_UI_LAYOUT_STORAGE_KEY = 'zeraphia_shooting_ui_layout_type';
+  let shootingUiLayoutType = 1;
+
+  // Stage high score: local cache + Supabase RPC.
+  // The local cache keeps the UI usable even before the SQL patch is applied.
+  const SHOOTING_HIGH_SCORE_STORAGE_KEY = 'zeraphia_shooting_high_scores_v1';
+  let selectedStageHighScore = 0;
+
+  function getShootingUserId() {
+    try {
+      return String(window.localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function readLocalShootingHighScores() {
+    try {
+      const raw = window.localStorage.getItem(SHOOTING_HIGH_SCORE_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function writeLocalShootingHighScore(stageId, score) {
+    if (!stageId) return;
+    const map = readLocalShootingHighScores();
+    const next = Math.max(Number(map[stageId] || 0), Math.max(0, Number(score || 0)));
+    map[stageId] = next;
+    try { window.localStorage.setItem(SHOOTING_HIGH_SCORE_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
+  }
+
+  function getLocalShootingHighScore(stageId) {
+    return Math.max(0, Number(readLocalShootingHighScores()[stageId] || 0));
+  }
+
+  function formatShootingScore(value) {
+    return String(Math.max(0, Math.floor(Number(value || 0)))).padStart(6, '0');
+  }
+
+  function setShootingStageHeader(inBattle) {
+    const title = document.getElementById('shooting-hud-stage-title');
+    const difficulty = document.getElementById('shooting-hud-difficulty');
+    const kicker = document.getElementById('shooting-hud-kicker');
+    const score = document.getElementById('shooting-score');
+
+    const isSpecialEvent = !!selectedStage?.eventId;
+    // STORYでは内部マスターの固有名（朝・呼吸・邂逅・旅立ち等）をヘッダーに出さない。
+    // ステージ選択画面と表記を揃え、「ステージ1〜4」で統一する。
+    const stageTitle = isSpecialEvent
+      ? (selectedStage?.eventTitle || selectedStage?.name || BOSS?.displayName || BOSS?.name || 'STAGE')
+      : `ステージ${Number(selectedStage?.stageNo || 1)}`;
+    const difficultyLabel = isSpecialEvent ? (selectedStage?.difficultyLabel || '') : '';
+
+    if (kicker) kicker.textContent = isSpecialEvent ? 'SPECIAL EVENT' : `CHAPTER ${String(selectedStage?.chapter || 1).padStart(2, '0')}`;
+    if (title) {
+      // Keep the difficulty badge node while replacing the title text.
+      title.childNodes.forEach(node => { if (node.nodeType === Node.TEXT_NODE) node.remove(); });
+      title.insertBefore(document.createTextNode(stageTitle + (difficultyLabel ? ' ' : '')), title.firstChild);
+    }
+    if (difficulty) {
+      difficulty.textContent = difficultyLabel ? `― ${difficultyLabel} ―` : '';
+      difficulty.style.display = difficultyLabel ? 'inline' : 'none';
+    }
+    if (score) {
+      if (inBattle) {
+        score.textContent = `SCORE ${formatShootingScore(state?.score || 0)}`;
+      } else {
+        score.innerHTML = `<span class="shooting-high-score-label">HIGH SCORE</span><strong class="shooting-high-score-value">${formatShootingScore(selectedStageHighScore)}</strong>`;
+      }
+      score.classList.toggle('is-high-score', !inBattle);
+    }
+  }
+
+  async function loadShootingHighScore() {
+    const stageId = selectedStage?.id || '';
+    if (!stageId) return 0;
+
+    selectedStageHighScore = getLocalShootingHighScore(stageId);
+    setShootingStageHeader(false);
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    if (!sb || typeof sb.rpc !== 'function' || !userId) return selectedStageHighScore;
+
+    try {
+      const result = await sb.rpc('get_shooting_high_score', {
+        p_user_id: userId,
+        p_stage_id: stageId
+      });
+      if (result?.error) throw result.error;
+      const cloudScore = Math.max(0, Number(result?.data || 0));
+      selectedStageHighScore = Math.max(selectedStageHighScore, cloudScore);
+      writeLocalShootingHighScore(stageId, selectedStageHighScore);
+      const root = document.getElementById(ROOT_ID);
+      if (root && !root.classList.contains('battle-hud-visible')) setShootingStageHeader(false);
+    } catch (err) {
+      console.warn('[shooting] high score load skipped:', err?.message || err);
+    }
+    return selectedStageHighScore;
+  }
+
+  async function submitShootingHighScore(value) {
+    const stageId = selectedStage?.id || state?.stageId || '';
+    const scoreValue = Math.max(0, Math.floor(Number(value || 0)));
+    if (!stageId) return;
+
+    if (scoreValue > getLocalShootingHighScore(stageId)) writeLocalShootingHighScore(stageId, scoreValue);
+    selectedStageHighScore = Math.max(selectedStageHighScore, scoreValue);
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    if (!sb || typeof sb.rpc !== 'function' || !userId) return;
+
+    try {
+      const result = await sb.rpc('submit_shooting_high_score', {
+        p_user_id: userId,
+        p_stage_id: stageId,
+        p_score: scoreValue
+      });
+      if (result?.error) throw result.error;
+      const cloudScore = Math.max(0, Number(result?.data || 0));
+      selectedStageHighScore = Math.max(selectedStageHighScore, cloudScore);
+      writeLocalShootingHighScore(stageId, selectedStageHighScore);
+    } catch (err) {
+      console.warn('[shooting] high score save skipped:', err?.message || err);
+    }
+  }
+
+  function normalizeShootingUiLayoutType(value) {
+    return Number(value) === 2 ? 2 : 1;
+  }
+
+  function loadShootingUiLayoutType() {
+    try {
+      return normalizeShootingUiLayoutType(window.localStorage.getItem(SHOOTING_UI_LAYOUT_STORAGE_KEY));
+    } catch (_) {
+      return 1;
+    }
+  }
+
+  function saveShootingUiLayoutType(type) {
+    try {
+      window.localStorage.setItem(SHOOTING_UI_LAYOUT_STORAGE_KEY, String(normalizeShootingUiLayoutType(type)));
+    } catch (_) {}
+  }
+
+  function applyShootingUiLayout(type) {
+    shootingUiLayoutType = normalizeShootingUiLayoutType(type);
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    root.classList.remove('ui-type-1', 'ui-type-2');
+    root.classList.add(`ui-type-${shootingUiLayoutType}`);
+    const label = document.getElementById('shooting-ui-layout-label');
+    if (label) label.textContent = 'UI切替';
+    const toggleBtn = document.getElementById('shooting-ui-layout-btn');
+    if (toggleBtn) {
+      const nextType = shootingUiLayoutType === 1 ? 2 : 1;
+      toggleBtn.setAttribute('data-ui-type', String(shootingUiLayoutType));
+      toggleBtn.setAttribute('aria-label', `UI表示切替 現在タイプ${shootingUiLayoutType} / タップでタイプ${nextType}`);
+      toggleBtn.title = `UI切替（現在 TYPE ${shootingUiLayoutType}）`;
+    }
+  }
+
+  window.toggleShootingUiLayout = function () {
+    const nextType = shootingUiLayoutType === 1 ? 2 : 1;
+    applyShootingUiLayout(nextType);
+    saveShootingUiLayoutType(nextType);
+  };
+
+  shootingUiLayoutType = loadShootingUiLayoutType();
+
+  function getShootingResonanceLevel(id) {
+    try {
+      const owned = typeof getOwnedShootingInstance === 'function'
+        ? getOwnedShootingInstance(Number(id))
+        : null;
+      return Math.max(0, Number(
+        owned && (owned.limitBreak != null ? owned.limitBreak : owned.limit_break) || 0
+      ));
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function buildResonatedCharacterProfile(id) {
+    const base = SHOOTING_CHARACTERS[Number(id)] || SHOOTING_CHARACTERS[CHARACTER_ID.ERI];
+    const lb = getShootingResonanceLevel(id);
+    if (typeof window.applyShootingResonanceToProfile === 'function') {
+      return window.applyShootingResonanceToProfile(base, lb) || base;
+    }
+    if (window.ShootingResonance && typeof window.ShootingResonance.applyToProfile === 'function') {
+      return window.ShootingResonance.applyToProfile(base, lb) || base;
+    }
+    return base;
+  }
+
+  function getBattleCharacter(id) {
+    const numericId = Number(id);
+    if (state && state.characterProfiles && state.characterProfiles[numericId]) {
+      return state.characterProfiles[numericId];
+    }
+    return buildResonatedCharacterProfile(numericId);
+  }
+
   function getCurrentCharacter() {
     const id = state && state.activeCharacterId ? state.activeCharacterId : selectedCharacterId;
-    return SHOOTING_CHARACTERS[Number(id)] || SHOOTING_CHARACTERS[CHARACTER_ID.ERI];
+    return getBattleCharacter(id);
   }
 
   function getActiveMember() {
@@ -203,10 +454,18 @@
     wrap.innerHTML = Array.from({ length: PARTY_SIZE }, (_, i) => {
       const id = selectedPartyIds[i];
       if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="空きスロット"><span>${i + 1}</span><b>＋</b></button>`;
-      const c = SHOOTING_CHARACTERS[id];
-      return `<button type="button" class="shooting-party-slot filled" onclick="removeShootingPartyCharacter(${id})" aria-label="${c.name}を外す">
-        <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small><i>×</i>
-      </button>`;
+      const c = buildResonatedCharacterProfile(id);
+      const fixedStoryEri =
+        isStoryShootingStage() &&
+        i === 0 &&
+        Number(id) === Number(CHARACTER_ID.ERI);
+      return fixedStoryEri
+        ? `<button type="button" class="shooting-party-slot filled fixed" aria-label="${c.name}・ストーリー固定枠">
+            <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small>
+          </button>`
+        : `<button type="button" class="shooting-party-slot filled" onclick="removeShootingPartyCharacter(${id})" aria-label="${c.name}を外す">
+            <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small><i>×</i>
+          </button>`;
     }).join('');
   }
 
@@ -235,13 +494,16 @@
   };
   window.removeShootingPartyCharacter = function(id) {
     id = Number(id);
+    if (isStoryShootingStage() && id === Number(CHARACTER_ID.ERI)) return;
     const idx = selectedPartyIds.indexOf(id);
     if (idx >= 0) selectedPartyIds.splice(idx, 1);
+    if (isStoryShootingStage()) ensureStoryEriLeader();
     selectedCharacterId = selectedPartyIds[0] || CHARACTER_ID.ERI;
     applySelectedCharacterToUi();
   };
 
   function applySelectedCharacterToUi() {
+    if (isStoryShootingStage()) ensureStoryEriLeader();
     const c = getCurrentCharacter();
     const player = document.getElementById(PLAYER_ID);
     const img = document.getElementById('shooting-player-image');
@@ -268,10 +530,18 @@
     });
     renderShootingPartySlots();
     renderShootingBlessingPicker();
+    const ruleText = document.getElementById('shooting-party-rule-text');
+    if (ruleText) {
+      ruleText.textContent = isStoryShootingStage()
+        ? '最大3人 · エリ固定 · 1人から出撃可能'
+        : '最大3人 · 1人から出撃可能';
+    }
+
     const startBtn = document.getElementById('shooting-character-start');
     if (startBtn) {
-      startBtn.disabled = selectedPartyIds.length !== PARTY_SIZE;
-      startBtn.textContent = selectedPartyIds.length === PARTY_SIZE ? '戦闘開始' : `あと ${PARTY_SIZE - selectedPartyIds.length}人 選択`;
+      const ready = isShootingPartyReady();
+      startBtn.disabled = !ready;
+      startBtn.textContent = ready ? '戦闘開始' : 'あと 1人 選択';
     }
     renderSwitchRail(true);
   }
@@ -281,17 +551,35 @@
   function setCommonUiVisible(open) { UIModule.setCommonUiVisible(open); }
 
   function resetState() {
-    if (selectedPartyIds.length !== PARTY_SIZE) {
-      selectedPartyIds = Object.keys(SHOOTING_CHARACTERS).map(Number).filter(isShootingCharacterOwned).slice(0, PARTY_SIZE);
-    }
-    selectedCharacterId = selectedPartyIds[0] || CHARACTER_ID.ERI;
+    selectedPartyIds = selectedPartyIds
+      .map(Number)
+      .filter((id, index, arr) =>
+        arr.indexOf(id) === index &&
+        !!SHOOTING_CHARACTERS[id] &&
+        isShootingCharacterOwned(id)
+      )
+      .slice(0, PARTY_SIZE);
+
+    if (isStoryShootingStage()) ensureStoryEriLeader();
+
+    selectedCharacterId =
+      selectedPartyIds[0] ||
+      Object.keys(SHOOTING_CHARACTERS).map(Number).find(isShootingCharacterOwned) ||
+      CHARACTER_ID.ERI;
+
+    const resolvedProfiles = Object.create(null);
+    selectedPartyIds.forEach(id => {
+      resolvedProfiles[Number(id)] = buildResonatedCharacterProfile(id);
+    });
+
     state = {
+      characterProfiles: resolvedProfiles,
       running: false, ended: false, finishing: false, countdown: true,
       phaseTransition: false, koTransition: false,
       activeCharacterId: selectedCharacterId,
       switchReadyAt: 0,
       party: selectedPartyIds.map(id => {
-        const c = SHOOTING_CHARACTERS[id];
+        const c = resolvedProfiles[Number(id)] || buildResonatedCharacterProfile(id);
         return { id, hp: c.hp, hpMax: c.hp, burst: 0, ultReadyNotified: false, hitCount: 0, ultUseCount: 0 };
       }),
       player: { x: 0, y: 0, invulnUntil: 0 },
@@ -310,16 +598,21 @@
       collectibles: [],
       boss: {
         x: 0, y: 42,
-        hp: Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
-        hpMax: Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
-        gaugeHp: Number(BOSS.gaugeHp || BOSS.hp || 1),
-        gauges: Number(BOSS.gauges || 1),
+        hp: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
+        hpMax: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
+        gaugeHp: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1),
+        gauges: isFacelessStage() ? 1 : Number(BOSS.gauges || 1),
         phase: 1
       },
+      facelessWave: isFacelessStage() ? 1 : 0,
+      facelessSummonTriggered: false,
+      facelessObjects: [],
+      facelessObjectSeq: 0,
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
       ultCutinActive: false, ultCutinTimer: 0, skipNextUltCut: false,
+      paused: false, pauseStartedAt: 0,
       arnoAuraUntil: 0, arnoAuraNextTickAt: 0, arnoAuraOwnerId: 0,
       clarineDecoys: [], clarineDecoySeq: 0,
       ignisLaserEl: null, ignisLaserHideAt: 0,
@@ -338,7 +631,7 @@
     const others = state.party.filter(m => m.id !== state.activeCharacterId);
     if (rebuild || rail.children.length !== others.length) {
       rail.innerHTML = others.map(m => {
-        const c = SHOOTING_CHARACTERS[m.id];
+        const c = getBattleCharacter(m.id);
         return `<button type="button" class="shooting-switch-btn" data-switch-id="${m.id}" onclick="switchShootingCharacter(${m.id})">
           <span class="shooting-switch-ult-ring" aria-hidden="true"></span>
           <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
@@ -353,7 +646,7 @@
       const id = Number(btn.getAttribute('data-switch-id'));
       const m = getPartyMember(id);
       if (!m) return;
-      const c = SHOOTING_CHARACTERS[id];
+      const c = getBattleCharacter(id);
       const hp = btn.querySelector('.shooting-switch-hp i');
       if (hp) hp.style.width = `${clamp(m.hp / m.hpMax, 0, 1) * 100}%`;
       // Bench ULT gauge: the circular ring around each switch button mirrors that member's own ULT charge.
@@ -463,6 +756,13 @@
       state.ignisLaserEl = null;
       state.ignisFireWheel = null;
       state.roseFlower = null;
+      if (Array.isArray(state.facelessObjects)) {
+        state.facelessObjects.forEach(obj => {
+          obj?.el?.remove();
+          obj?.hpEl?.remove();
+        });
+        state.facelessObjects = [];
+      }
     }
   }
 
@@ -475,9 +775,8 @@
     const comboCount = document.getElementById('shooting-combo-count');
     const hpText = document.getElementById('shooting-player-hp-text');
     const hpBar = document.querySelector('#shooting-player-hp-bar i');
-    const burst = document.getElementById('shooting-burst');
+    const gaugeWrap = document.getElementById('shooting-ult-side');
     const gauge = document.getElementById('shooting-burst-gauge');
-    const ultLabel = document.getElementById('shooting-ult-label');
 
     const gaugeHp = state.boss.gaugeHp;
     const phase = state.boss.phase || 1;
@@ -489,8 +788,18 @@
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
       bossBar.classList.add(`phase-${phase}`);
     }
-    if (bossPhase) bossPhase.textContent = `PHASE ${phase} / ${state.boss.gauges}`;
-    if (score) score.textContent = `SCORE ${String(state.score).padStart(6, '0')}`;
+    if (bossPhase) {
+      bossPhase.textContent = isFacelessStage()
+        ? `WAVE ${state.facelessWave || 1} / 2`
+        : `PHASE ${phase} / ${state.boss.gauges}`;
+    }
+    if (score) {
+      const root = document.getElementById(ROOT_ID);
+      if (root?.classList.contains('battle-hud-visible')) {
+        score.textContent = `SCORE ${formatShootingScore(state.score)}`;
+        score.classList.remove('is-high-score');
+      }
+    }
     const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
     const missionHud = document.getElementById('shooting-mission-hud');
     if (bossHud) bossHud.style.display = isNormalBattle() ? 'none' : '';
@@ -525,10 +834,21 @@
       if (hpText) hpText.textContent = `${Math.ceil(member.hp)} / ${member.hpMax}`;
       if (hpBar) hpBar.style.width = `${clamp(member.hp / member.hpMax, 0, 1) * 100}%`;
     }
-    if (ultLabel) ultLabel.textContent = 'ULT';
     const pct = member ? clamp(member.burst / chara.burstNeed, 0, 1) : 0;
-    if (gauge) gauge.style.width = `${pct * 100}%`;
-    if (burst) burst.disabled = pct < 1 || state.ended || state.phaseTransition || state.koTransition || performance.now() < (state.ultLockUntil || 0);
+    const ultReady =
+      pct >= 1 &&
+      !state.ended &&
+      !state.phaseTransition &&
+      !state.koTransition &&
+      performance.now() >= (state.ultLockUntil || 0);
+
+    if (gauge) gauge.style.setProperty('--ult-fill', String(pct));
+    if (gaugeWrap) gaugeWrap.classList.toggle('is-ready', ultReady);
+
+    if (member && !ultReady && pct < 1) {
+      member.ultReadyNotified = false;
+    }
+
     renderSwitchRail(false);
   }
 
@@ -650,7 +970,7 @@
     return '';
   }
 
-  function createArnoOrbitProjectile(c, now) {
+  function createArnoOrbitProjectile(c, now, damage) {
     const startY = state.player.y - c.shotOffsetY;
     const attrClass = getCharacterBulletClass(c);
     const p = makeProjectile(
@@ -659,7 +979,7 @@
       startY,
       0,
       -Number(c.bulletSpeed || 455),
-      Number(c.power || 3),
+      Number(damage ?? (Number(c.atk || 0) * Number(c.shotPowerRate || 0.095))),
       c.id
     );
     if (!p) return null;
@@ -735,6 +1055,17 @@
       return candidates[0] || null;
     }
 
+    if (isFacelessStage()) {
+      const obj = (state.facelessObjects || [])
+        .filter(o =>
+          o && o.hp > 0 &&
+          Math.abs(Number(o.x || 0) - x) <= hitWidth &&
+          Number(o.y || 0) < startY
+        )
+        .sort((a, b) => Number(b.y || 0) - Number(a.y || 0))[0];
+      if (obj) return { isFacelessObject: true, object: obj, x: obj.x, y: obj.y };
+    }
+
     if (
       state.boss && state.boss.hp > 0 &&
       Math.abs(Number(state.boss.x || 0) - x) <= hitWidth &&
@@ -770,9 +1101,14 @@
     const damage = Number(c.atk || 0) * Number(c.laserDamageAtkRate || 0.105);
     const member = getPartyMember(c.id);
 
-    if (target.isBoss) {
-      state.boss.hp = Math.max(0, state.boss.hp - damage);
+    if (target.isFacelessObject && target.object) {
+      damageFacelessObject(target.object, damage, now);
+      state.score += Math.round(damage * 60);
+    } else if (target.isBoss) {
+      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       createHit(state.boss.x, state.boss.y, false);
+      showBossDamageNumber(appliedDamage, false);
       flashBossHit(false);
       state.score += Math.round(damage * 100);
       updateBossPhase();
@@ -792,7 +1128,9 @@
       member.burst = Math.min(c.burstNeed, member.burst + gain);
       if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
         member.ultReadyNotified = true;
-        if (c.id === state.activeCharacterId) showUltReadyNotice();
+        if (c.id === state.activeCharacterId) {
+          showShootingUltFullChargeNotice();
+        }
       }
     }
   }
@@ -842,7 +1180,7 @@
     // ----------------------------------------------------------
     if (c.shotType === 'orbit_forward') {
       for (let i = 0; i < shotCount; i++) {
-        const p = createArnoOrbitProjectile(c, now);
+        const p = createArnoOrbitProjectile(c, now, effectivePower);
         if (!p) continue;
 
         p.orbitPhase =
@@ -1437,14 +1775,13 @@
 
   function damageNormalEnemy(enemy, amount, now, big) {
     if (!enemy || enemy.hp <= 0) return;
-    enemy.hp = Math.max(0, enemy.hp - Number(amount || 0));
+    const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
+    enemy.hp = Math.max(0, enemy.hp - appliedDamage);
     renderMiniEnemyHp(enemy, true);
     createHit(enemy.x, enemy.y, !!big);
+    showDamageNumber(enemy.x, enemy.y, appliedDamage, 'enemy', !!big);
     if (enemy.el) {
-      enemy.el.classList.remove('hit-flash');
-      void enemy.el.offsetWidth;
-      enemy.el.classList.add('hit-flash');
-      setTimeout(() => enemy.el && enemy.el.classList.remove('hit-flash'), 140);
+      sustainHitFeedback(enemy.el, big ? 210 : 145);
     }
     if (enemy.hp > 0) return;
 
@@ -1514,6 +1851,69 @@
     if (state.missionComplete) beginNormalStageClear();
   }
 
+  function showStageClearSequence(onComplete) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    root.querySelectorAll('.shooting-clear-condition-achieved').forEach(el => el.remove());
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-clear-condition-achieved';
+    overlay.setAttribute('aria-live', 'assertive');
+    overlay.innerHTML = `
+      <div class="shooting-clear-condition-achieved-line"></div>
+      <div class="shooting-clear-condition-achieved-copy">
+        <strong></strong>
+      </div>
+      <div class="shooting-clear-condition-achieved-line"></div>
+    `;
+
+    root.appendChild(overlay);
+
+    const copy = overlay.querySelector('strong');
+    const steps = [
+      { text: 'クリア条件達成', phase: 'condition-phase', hold: 1320 },
+      { text: 'STAGE CLEAR', phase: 'stage-clear-phase', hold: 1480 }
+    ];
+    let index = 0;
+
+    const finish = () => {
+      overlay.classList.add('sequence-out');
+      setTimeout(() => {
+        overlay.remove();
+        if (typeof onComplete === 'function') onComplete();
+      }, 620);
+    };
+
+    const showStep = () => {
+      if (!overlay.isConnected || !copy) return finish();
+      const step = steps[index];
+
+      overlay.classList.remove('condition-phase', 'stage-clear-phase', 'step-out');
+      overlay.classList.add(step.phase, 'show');
+      copy.textContent = step.text;
+      copy.classList.remove('ceremony-pop');
+      void copy.offsetWidth;
+      copy.classList.add('ceremony-pop');
+
+      setTimeout(() => {
+        if (!overlay.isConnected) return;
+        overlay.classList.add('step-out');
+
+        setTimeout(() => {
+          index += 1;
+          if (index < steps.length) showStep();
+          else finish();
+        }, 360);
+      }, step.hold);
+    };
+
+    requestAnimationFrame(showStep);
+  }
+
   function beginNormalStageClear() {
     if (!state || state.ended || state.finishing) return;
     state.finishing = true;
@@ -1522,13 +1922,15 @@
     clearEnemyBulletsOnly();
     renderHud();
     document.getElementById(ROOT_ID)?.classList.add('normal-stage-clear');
-    setTimeout(() => {
+
+    // 全通常ステージ共通：クリア条件達成 → STAGE CLEAR → RESULT。
+    showStageClearSequence(() => {
       if (!state || state.ended) return;
       const root = document.getElementById(ROOT_ID);
       if (root) root.classList.remove('normal-stage-clear');
       state.finishing = false;
       endGame(true);
-    }, 900);
+    });
   }
 
   function clearNormalBattleObjects() {
@@ -1687,7 +2089,253 @@
     }
   }
 
+
+  function showFacelessBattleCut(title, sub) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    root.querySelectorAll('.shooting-faceless-battle-cut').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'shooting-faceless-battle-cut';
+    el.innerHTML = `<small>${sub || 'FACELESS'}</small><strong>${title || '無貌の天使'}</strong>`;
+    root.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => el.classList.add('out'), 650);
+    setTimeout(() => el.remove(), 1050);
+  }
+
+  function spawnFacelessObject(x, y, ways) {
+    if (!state || !isFacelessStage()) return null;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    const el = document.createElement('img');
+    el.className = 'shooting-faceless-object';
+    el.src = 'images/enemy_faceless_battle_object.webp';
+    el.alt = '仮面';
+    el.draggable = false;
+    arena.appendChild(el);
+
+    const hpEl = document.createElement('div');
+    hpEl.className = 'shooting-faceless-object-hp';
+    hpEl.innerHTML = '<i></i>';
+    arena.appendChild(hpEl);
+
+    const hp = getFacelessObjectHp();
+    const obj = {
+      id: ++state.facelessObjectSeq,
+      el, hpEl,
+      x, y,
+      hp, hpMax: hp,
+      ways: Number(ways || 2),
+      vx: (state.facelessObjectSeq % 2 ? 1 : -1) * 58,
+      lastShotAt: -9999,
+    };
+    state.facelessObjects.push(obj);
+    positionUnit(el, x, y);
+    positionUnit(hpEl, x, y + 56);
+    return obj;
+  }
+
+  function damageFacelessObject(obj, damage, now) {
+    if (!obj || obj.hp <= 0) return;
+    const appliedDamage = Math.min(obj.hp, Math.max(0, Number(damage || 0)));
+    obj.hp = Math.max(0, obj.hp - appliedDamage);
+    createHit(obj.x, obj.y, false);
+    showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', false);
+    if (obj.el) sustainHitFeedback(obj.el, 145);
+    const fill = obj.hpEl?.querySelector('i');
+    if (fill) fill.style.width = `${clamp(obj.hp / obj.hpMax, 0, 1) * 100}%`;
+    if (obj.hp <= 0) {
+      obj.el?.classList.add('defeated');
+      setTimeout(() => {
+        obj.el?.remove();
+        obj.hpEl?.remove();
+      }, 180);
+    }
+  }
+
+  function fireFacelessObject(obj, now) {
+    if (!obj || obj.hp <= 0 || now - obj.lastShotAt < 850) return;
+    obj.lastShotAt = now;
+    const dx = state.player.x - obj.x;
+    const dy = state.player.y - obj.y;
+    const base = Math.atan2(dy, dx);
+    const offsets = obj.ways >= 3 ? [-0.22, 0, 0.22] : [-0.15, 0.15];
+    offsets.forEach(offset => {
+      const a = base + offset;
+      const speed = obj.ways >= 3 ? 230 : 215;
+      state.enemyBullets.push(makeProjectile(
+        'shooting-enemy-bullet shooting-faceless-object-bullet',
+        obj.x, obj.y + 22,
+        Math.cos(a) * speed,
+        Math.sin(a) * speed,
+        obj.ways >= 3 ? 125 : 105
+      ));
+    });
+  }
+
+  function updateFacelessObjects(dt, now) {
+    if (!state || !isFacelessStage() || !Array.isArray(state.facelessObjects)) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = arena.clientWidth;
+
+    const activeBlackHole =
+      state.eltenaBlackHole &&
+      state.eltenaBlackHole.phase === 'active' &&
+      now < Number(state.eltenaBlackHole.activeUntil || 0);
+
+    state.facelessObjects = state.facelessObjects.filter(obj => {
+      if (!obj || obj.hp <= 0) return false;
+
+      // ブラックホール中はOBJECT側の横移動/攻撃AIを止め、
+      // 吸引処理だけに座標更新を一元化する。
+      if (activeBlackHole) {
+        positionUnit(obj.el, obj.x, obj.y);
+        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        return true;
+      }
+
+      obj.x += obj.vx * dt;
+      const minX = 72;
+      const maxX = Math.max(minX + 40, w - 72);
+      if (obj.x <= minX || obj.x >= maxX) {
+        obj.x = clamp(obj.x, minX, maxX);
+        obj.vx *= -1;
+      }
+      positionUnit(obj.el, obj.x, obj.y);
+      positionUnit(obj.hpEl, obj.x, obj.y + 56);
+      fireFacelessObject(obj, now);
+      return true;
+    });
+  }
+
+  function beginFacelessObjectSummon(count, ways) {
+    if (!state || state.ended || state.finishing || state.phaseTransition) return;
+    state.facelessSummonTriggered = true;
+    state.phaseTransition = true;
+    clearEnemyBulletsOnly();
+    showFacelessBattleCut('仮面顕現', `${count} OBJECT`);
+
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing || !isFacelessStage()) return;
+      const arena = document.getElementById('shooting-arena');
+      if (!arena) return;
+      const w = arena.clientWidth;
+      const h = arena.clientHeight;
+      const y = h * 0.46;
+      if (count <= 1) {
+        spawnFacelessObject(w * 0.5, y, ways);
+      } else {
+        spawnFacelessObject(w * 0.34, y, ways);
+        spawnFacelessObject(w * 0.66, y, ways);
+      }
+      state.phaseTransition = false;
+      state.lastBossShotAt = performance.now();
+      state.lastShotAt = performance.now();
+      renderHud();
+    }, 850);
+  }
+
+  function updateFacelessStageMechanics(now) {
+    if (!state || !isFacelessStage() || state.ended || state.finishing) return;
+    const wave = Number(state.facelessWave || 1);
+    const ratio = state.boss.hpMax > 0 ? state.boss.hp / state.boss.hpMax : 1;
+    if (!state.facelessSummonTriggered && ratio <= 0.5 && state.boss.hp > 0) {
+      const cfg = getFacelessConfig();
+      const counts = Array.isArray(cfg?.waveObjectCount) ? cfg.waveObjectCount : [1, 2];
+      beginFacelessObjectSummon(Number(counts[wave - 1] || (wave === 1 ? 1 : 2)), Number(cfg?.objectWays || 2));
+    }
+  }
+
+  function beginFacelessWave2() {
+    if (!state || !isFacelessStage() || Number(state.facelessWave || 1) !== 1) return false;
+    state.phaseTransition = true;
+    clearEnemyBulletsOnly();
+    state.facelessObjects.forEach(obj => { obj?.el?.remove(); obj?.hpEl?.remove(); });
+    state.facelessObjects = [];
+    state.facelessWave = 2;
+    state.facelessSummonTriggered = false;
+
+    const hp = getFacelessWaveHp(2);
+    state.boss.hp = hp;
+    state.boss.hpMax = hp;
+    state.boss.gaugeHp = hp;
+    state.boss.gauges = 1;
+    state.boss.phase = 1;
+
+    showFacelessBattleCut('WAVE 2', selectedStage?.difficultyLabel || 'SPECIAL EVENT');
+    renderHud();
+
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing || !isFacelessStage()) return;
+      state.phaseTransition = false;
+      state.lastBossShotAt = performance.now();
+      state.lastShotAt = performance.now();
+      renderHud();
+    }, 1200);
+    return true;
+  }
+
+  function fireFacelessBoss(now) {
+    if (!state || !isFacelessStage()) return;
+    const cfg = getFacelessConfig();
+    const wave = Number(state.facelessWave || 1);
+    const mode = Array.isArray(cfg?.waveBarrage) ? cfg.waveBarrage[wave - 1] : 'medium';
+
+    let fireRate = 900;
+    let offsets = [-0.18, 0, 0.18];
+    let speed = 215;
+    let damage = 125;
+
+    if (mode === 'medium') {
+      fireRate = 690;
+      offsets = [-0.34, -0.17, 0, 0.17, 0.34];
+      speed = 225;
+      damage = 140;
+    } else if (mode === 'dense') {
+      fireRate = 500;
+      offsets = [-0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48];
+      speed = 238;
+      damage = 150;
+    }
+
+    if (now - state.lastBossShotAt < fireRate) return;
+    state.lastBossShotAt = now;
+
+    const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+    offsets.forEach(offset => {
+      const a = base + offset;
+      state.enemyBullets.push(makeProjectile(
+        'shooting-enemy-bullet shooting-faceless-bullet',
+        state.boss.x, state.boss.y + 38,
+        Math.cos(a) * speed,
+        Math.sin(a) * speed,
+        damage
+      ));
+    });
+
+    // 超上級wave2のみ、ときどき薄い円形弾を混ぜて「濃い」にする。
+    if (mode === 'dense' && Math.floor(now / fireRate) % 3 === 0) {
+      const start = now * 0.0022;
+      for (let i = 0; i < 10; i++) {
+        const a = start + Math.PI * 2 * i / 10;
+        state.enemyBullets.push(makeProjectile(
+          'shooting-enemy-bullet shooting-faceless-bullet',
+          state.boss.x, state.boss.y + 24,
+          Math.cos(a) * 185,
+          Math.sin(a) * 185,
+          115
+        ));
+      }
+    }
+  }
+
   function fireBoss(now) {
+    if (BOSS && BOSS.behavior === 'faceless_event_v1') {
+      fireFacelessBoss(now);
+      return;
+    }
     if (BOSS && BOSS.behavior === 'violence_v1') {
       fireViolenceBoss(now);
       return;
@@ -1737,7 +2385,7 @@
   }
 
   function updateBossPhase() {
-    if (!state || state.boss.hp <= 0) return;
+    if (!state || state.boss.hp <= 0 || isFacelessStage()) return;
     const previous = state.boss.phase || 1;
     const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
     const nextPhase = 4 - remainingGauges; // 3→phase1 / 2→phase2 / 1→phase3
@@ -1803,14 +2451,77 @@
     setTimeout(() => el.remove(), 280);
   }
 
+  const sustainedHitTimers = new WeakMap();
+
+  // 連射時に毎回animationをリスタートすると点滅が追いつかず、
+  // 「当たっているのか分からない」状態になるため、
+  // 命中が続いている間はクラスを維持して連続パルスさせる。
+  function sustainHitFeedback(el, durationMs = 130) {
+    if (!el || !el.isConnected) return;
+
+    if (!el.classList.contains('shooting-hit-sustained')) {
+      el.classList.add('shooting-hit-sustained');
+    }
+
+    const oldTimer = sustainedHitTimers.get(el);
+    if (oldTimer) clearTimeout(oldTimer);
+
+    const timer = setTimeout(() => {
+      if (el && el.isConnected) el.classList.remove('shooting-hit-sustained');
+      sustainedHitTimers.delete(el);
+    }, Math.max(90, Number(durationMs || 130)));
+
+    sustainedHitTimers.set(el, timer);
+  }
+
+  function showDamageNumber(x, y, amount, kind = 'enemy', big = false) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const value = Math.max(0, Math.round(Number(amount || 0)));
+    if (!value) return;
+
+    const el = document.createElement('span');
+    el.className =
+      'shooting-damage-number ' +
+      (kind === 'player' ? 'to-player' : 'to-enemy') +
+      (big ? ' big' : '');
+
+    el.textContent = String(value);
+
+    // 同じ場所に数値が積み重ならないよう、命中位置周辺へランダム分散。
+    const spreadX = kind === 'player' ? 38 : 52;
+    const spreadY = kind === 'player' ? 28 : 40;
+    const offsetX = (Math.random() - 0.5) * spreadX;
+    const offsetY = -12 + (Math.random() - 0.5) * spreadY;
+
+    arena.appendChild(el);
+    positionUnit(el, Number(x || 0) + offsetX, Number(y || 0) + offsetY);
+
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => el.classList.add('out'), big ? 620 : 460);
+    setTimeout(() => el.remove(), big ? 900 : 720);
+  }
+
+  function showBossDamageNumber(amount, big = false) {
+    if (!state || !state.boss) return;
+    showDamageNumber(state.boss.x, state.boss.y, amount, 'enemy', big);
+  }
+
   function flashBossHit(big) {
     const boss = document.getElementById(BOSS_ID);
     if (!boss) return;
-    const cls = big ? 'burst-hit' : 'hit-flash';
-    boss.classList.remove('hit-flash', 'burst-hit');
+
+    if (!big) {
+      sustainHitFeedback(boss, 150);
+      return;
+    }
+
+    // 大技だけは従来の強い単発フラッシュを残す。
+    boss.classList.remove('burst-hit');
     void boss.offsetWidth;
-    boss.classList.add(cls);
-    setTimeout(() => boss.classList.remove(cls), big ? 420 : 180);
+    boss.classList.add('burst-hit');
+    setTimeout(() => boss.classList.remove('burst-hit'), 420);
   }
 
   function updateMovement(dt, now) {
@@ -1858,7 +2569,15 @@
     const t = (now - state.startedAt) / 1000;
     const bossGrabbed = now < (state.bossGrabUntil || 0);
     const bossStunned = now < (state.bossStunUntil || 0);
-    if (!isNormalBattle() && !bossGrabbed && !bossStunned) {
+    const bossBlackHolePulled =
+      state.eltenaBlackHole &&
+      state.eltenaBlackHole.phase === 'active' &&
+      now < Number(state.eltenaBlackHole.activeUntil || 0);
+
+    // ブラックホール吸引中は大型BOSSの通常移動AIも停止。
+    // これを止めないとフェイスレス等のAIが毎フレーム座標を上書きして
+    // 吸引が見た目上ほぼ無効になっていた。
+    if (!isNormalBattle() && !bossGrabbed && !bossStunned && !bossBlackHolePulled) {
       if (BOSS && BOSS.behavior === 'violence_v1') {
         const phase = state.boss.phase || 1;
         const follow = phase === 1 ? .018 : phase === 2 ? .028 : phase === 3 ? .042 : .042;
@@ -1933,7 +2652,7 @@
           : null;
 
         if (hitBossHeart || hitNormalHeart) {
-          const rose = SHOOTING_CHARACTERS[CHARACTER_ID.ROSE];
+          const rose = getBattleCharacter(CHARACTER_ID.ROSE);
           const heartDamage =
             Number(rose?.atk || 0) *
             Number(rose?.flowerHeartDamageAtkRate || 0.30);
@@ -1942,9 +2661,11 @@
             damageNormalEnemy(hitNormalHeart, heartDamage, now, false);
             state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
           } else if (hitBossHeart && state.boss) {
-            state.boss.hp = Math.max(0, state.boss.hp - heartDamage);
+            const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(heartDamage || 0)));
+            state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
             updateBossPhase();
             createHit(p.x, p.y, false);
+            showBossDamageNumber(appliedDamage, false);
             flashBossHit(false);
             if (state.boss.hp <= 0) beginBossDefeat();
           }
@@ -1963,7 +2684,13 @@
       const r = p.el.getBoundingClientRect();
       let normalTarget = null;
       let normalTargets = null;
-      const hitBoss = !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
+      const facelessObjectTarget = isFacelessStage()
+        ? (state.facelessObjects || []).find(obj =>
+            obj && obj.el && obj.hp > 0 &&
+            rectsHit(r, obj.el.getBoundingClientRect(), 0, 10)
+          )
+        : null;
+      const hitBoss = !facelessObjectTarget && !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
 
       if (isNormalBattle()) {
         const blackHoleMultiHit =
@@ -1988,14 +2715,17 @@
         }
       }
 
-      if (normalTarget || hitBoss) {
+      if (facelessObjectTarget || normalTarget || hitBoss) {
         const ownerId = p.ownerId || state.activeCharacterId;
-        const chara = SHOOTING_CHARACTERS[ownerId] || getCurrentCharacter();
+        const chara = getBattleCharacter(ownerId) || getCurrentCharacter();
         const member = getPartyMember(ownerId) || getActiveMember();
 
         let hitCount = 1;
 
-        if (normalTarget) {
+        if (facelessObjectTarget) {
+          damageFacelessObject(facelessObjectTarget, p.damage, now);
+          state.score += 80;
+        } else if (normalTarget) {
           const targetsToDamage =
             Array.isArray(normalTargets) && normalTargets.length
               ? normalTargets
@@ -2009,10 +2739,12 @@
 
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
         } else {
-          state.boss.hp = Math.max(0, state.boss.hp - p.damage);
+          const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(p.damage || 0)));
+          state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
           state.score += 120;
           createHit(p.x, p.y, false);
+          showBossDamageNumber(appliedDamage, false);
           flashBossHit(false);
           if (state.boss.hp <= 0) beginBossDefeat();
         }
@@ -2038,7 +2770,9 @@
             member.burst = Math.min(chara.burstNeed, member.burst + gain);
             if (!wasReady && member.burst >= chara.burstNeed && !member.ultReadyNotified) {
               member.ultReadyNotified = true;
-              if (ownerId === state.activeCharacterId) showUltReadyNotice();
+              if (ownerId === state.activeCharacterId) {
+                showShootingUltFullChargeNotice();
+              }
             }
           }
         }
@@ -2139,7 +2873,10 @@
     resetCombo();
     member.hitCount = (member.hitCount || 0) + 1;
     state.totalHitsTaken = (state.totalHitsTaken || 0) + 1;
-    member.hp = Math.max(0, member.hp - (Number.isFinite(amount) ? amount : BOSS.bulletDamage));
+    const incomingDamage = Number.isFinite(amount) ? Number(amount) : Number(BOSS.bulletDamage || 0);
+    const appliedDamage = Math.min(member.hp, Math.max(0, incomingDamage));
+    member.hp = Math.max(0, member.hp - appliedDamage);
+    showDamageNumber(state.player.x, state.player.y, appliedDamage, 'player', false);
     if (isNormalBattle()) evaluateNormalMission(now);
     state.player.invulnUntil = now + 1150;
     const player = document.getElementById(PLAYER_ID);
@@ -2147,6 +2884,7 @@
       player.classList.remove('damaged');
       void player.offsetWidth;
       player.classList.add('damaged');
+      sustainHitFeedback(player, 220);
     }
     renderHud();
     if (member.hp <= 0) beginPlayerDefeat();
@@ -2301,6 +3039,11 @@
       if (enemy.el) enemy.el.classList.remove('eltena-pulled');
       if (enemy.hpEl) enemy.hpEl.classList.remove('eltena-pulled');
     });
+    (state.facelessObjects || []).forEach(obj => {
+      if (obj?.el) obj.el.classList.remove('eltena-pulled');
+      if (obj?.hpEl) obj.hpEl.classList.remove('eltena-pulled');
+    });
+    document.getElementById(BOSS_ID)?.classList.remove('eltena-pulled');
 
     if (state.eltenaBlackHole) {
       const bh = state.eltenaBlackHole;
@@ -2443,6 +3186,11 @@
         if (enemy.hpEl) enemy.hpEl.classList.remove('eltena-pulled');
         positionMiniEnemyHp(enemy);
       });
+      (state.facelessObjects || []).forEach(obj => {
+        if (obj?.el) obj.el.classList.remove('eltena-pulled');
+        if (obj?.hpEl) obj.hpEl.classList.remove('eltena-pulled');
+      });
+      document.getElementById(BOSS_ID)?.classList.remove('eltena-pulled');
 
       const doomed = bh.el;
       state.eltenaBlackHole = null;
@@ -2467,13 +3215,29 @@
       positionMiniEnemyHp(enemy);
     });
 
+    // SPECIAL EVENTのHP付きOBJECTも敵として吸引対象。
+    // 大型/小型/召喚物を問わず、戦闘フィールド上の敵を同じ重力場で扱う。
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj || !obj.el || obj.hp <= 0) return;
+      pullPointTowardBlackHole(obj, bh, dt, bh.enemyStopRadius, {
+        minX: 34, maxX: w - 34, minY: 42, maxY: h - 46
+      });
+      obj.el.classList.add('eltena-pulled');
+      if (obj.hpEl) obj.hpEl.classList.add('eltena-pulled');
+      positionUnit(obj.el, obj.x, obj.y);
+      positionUnit(obj.hpEl, obj.x, obj.y + 56);
+    });
+
     // ボスも「すべての敵」に含めて吸引する。
     if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
       pullPointTowardBlackHole(state.boss, bh, dt, bh.bossStopRadius, {
         minX: 54, maxX: w - 54, minY: 52, maxY: h * .74
       });
       const bossEl = document.getElementById(BOSS_ID);
-      if (bossEl) positionUnit(bossEl, state.boss.x, state.boss.y);
+      if (bossEl) {
+        bossEl.classList.add('eltena-pulled');
+        positionUnit(bossEl, state.boss.x, state.boss.y);
+      }
     }
   }
 
@@ -2486,6 +3250,14 @@
 
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
+
+    if (state.paused) {
+      // メニュー表示中はゲーム進行を完全停止。
+      // RAFだけ継続して、復帰時のdtジャンプを防ぐ。
+      prevTs = ts;
+      rafId = requestAnimationFrame(gameLoop);
+      return;
+    }
 
     if (state.ultCutinActive) {
       // ULTカットイン中はプレイヤー・敵・弾・DoT・召喚物を含めて完全停止。
@@ -2528,13 +3300,206 @@
 
     // 敵の位置更新後にプレイヤーとの直接接触を判定する。
     updateEnemyContactCollisions(ts);
+    updateFacelessObjects(dt, ts);
     updateProjectiles(dt, ts);
+    updateFacelessStageMechanics(ts);
     updateArnoAura(ts);
     updateCollectibles(dt);
     if (isNormalBattle()) evaluateNormalMission(ts);
     renderHud();
     if (!state.ended) rafId = requestAnimationFrame(gameLoop);
   }
+
+
+  function getBossIntroMeta() {
+    if (!selectedStage || selectedStage.type !== 'boss' || !BOSS) return null;
+
+    const battleImage = String(BOSS.image || '');
+    const fileName = battleImage.split('/').pop() || '';
+    const lower = fileName.toLowerCase();
+
+    // ファイル名を基準にイントロ画像・名称を判定。
+    // battle画像とbattle_start画像を同じ命名規則に統一する。
+    let introImage = '';
+    if (/_battle\.(webp|png|jpg|jpeg)$/i.test(battleImage)) {
+      introImage = battleImage.replace(/_battle\.(webp|png|jpg|jpeg)$/i, '_battle_start.$1');
+    } else if (selectedStage.introImage) {
+      introImage = String(selectedStage.introImage);
+    }
+
+    const meta = {
+      image: introImage,
+      kicker: 'BOSS ENCOUNTER',
+      title: BOSS.name || 'BOSS',
+      sub: '',
+      key: lower,
+    };
+
+    if (lower.includes('remnant_01')) {
+      meta.kicker = 'REMNANT 01';
+      meta.title = 'オーバーシア';
+      meta.sub = 'OVERSEER';
+    } else if (lower.includes('remnant_02')) {
+      meta.kicker = 'REMNANT 02';
+      meta.title = 'イリシュ';
+      meta.sub = 'IRISH';
+    } else if (lower.includes('remnant_03')) {
+      meta.kicker = 'REMNANT 03';
+      meta.title = 'リヴィア';
+      meta.sub = 'RIVIA';
+    } else if (lower.includes('remnant_04')) {
+      meta.kicker = 'REMNANT 04';
+      meta.title = 'サキエル';
+      meta.sub = 'SAKIEL';
+    } else if (lower.includes('faceless')) {
+      meta.kicker = 'SPECIAL EVENT';
+      meta.title = '無貌の天使';
+      meta.sub = selectedStage.difficultyLabel || 'FACELESS';
+      meta.image = selectedStage.introImage || 'images/enemy_faceless_battle_start.webp';
+    } else {
+      meta.sub = selectedStage.mission?.text || '';
+    }
+
+    return meta.image ? meta : null;
+  }
+
+  function playBossStageIntro(onComplete) {
+    const meta = getBossIntroMeta();
+
+    // 通常ステージは従来通り、そのままカウントダウンへ。
+    if (!meta) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    const root = document.getElementById(ROOT_ID);
+    if (!root) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    root.querySelectorAll('.shooting-boss-intro').forEach(el => el.remove());
+
+    const intro = document.createElement('div');
+    intro.className = 'shooting-boss-intro';
+    intro.setAttribute('aria-hidden', 'true');
+    intro.innerHTML = `
+      <div class="shooting-boss-intro-media">
+        <img class="shooting-boss-intro-image" src="${meta.image}" alt="">
+        <div class="shooting-boss-intro-glitch g1"></div>
+        <div class="shooting-boss-intro-glitch g2"></div>
+        <div class="shooting-boss-intro-glitch g3"></div>
+      </div>
+      <div class="shooting-boss-intro-vignette"></div>
+      <div class="shooting-boss-intro-noise"></div>
+      <div class="shooting-boss-intro-scan"></div>
+      <div class="shooting-boss-intro-flash"></div>
+      <div class="shooting-boss-intro-copy">
+        <small>${meta.kicker}</small>
+        <strong>${meta.title}</strong>
+        <span>${meta.sub || ''}</span>
+      </div>
+      <div class="shooting-boss-intro-line line-a"></div>
+      <div class="shooting-boss-intro-line line-b"></div>
+    `;
+
+    root.appendChild(intro);
+
+    // 背景画像と同じ画像をglitch stripにも使用。
+    intro.querySelectorAll('.shooting-boss-intro-glitch').forEach(glitch => {
+      glitch.style.backgroundImage = `url("${meta.image}")`;
+    });
+
+    requestAnimationFrame(() => {
+      intro.classList.add('show', 'shake-entry');
+    });
+
+    // 登場直後：画面全体へ短い衝撃。長く揺らさず、余韻だけ残す。
+    setTimeout(() => {
+      if (intro.isConnected) intro.classList.remove('shake-entry');
+    }, 430);
+
+    // タイトルが立ち上がる瞬間に二度目の小さなシェイク。
+    setTimeout(() => {
+      if (intro.isConnected) intro.classList.add('shake-title');
+    }, 650);
+
+    // 中盤で一瞬だけ強めのノイズ/glitchを出す。
+    setTimeout(() => {
+      if (intro.isConnected) intro.classList.add('glitch-burst');
+    }, 720);
+
+    setTimeout(() => {
+      if (intro.isConnected) intro.classList.remove('shake-title');
+    }, 1010);
+
+    setTimeout(() => {
+      if (intro.isConnected) intro.classList.remove('glitch-burst');
+    }, 1050);
+
+    // タイトルを少し長めに残し、余韻を保ったままゆっくり戦闘画面へ溶かす。
+    setTimeout(() => {
+      if (intro.isConnected) intro.classList.add('out');
+    }, 2750);
+
+    // フェードが完全に抜けてから READY カウントダウンへ。
+    setTimeout(() => {
+      intro.remove();
+      if (typeof onComplete === 'function') onComplete();
+    }, 3650);
+  }
+
+  function closeFacelessStageSelect() {
+    document.getElementById('shooting-faceless-stage-select')?.remove();
+  }
+
+  function openFacelessStage(stageId) {
+    closeFacelessStageSelect();
+    window.openShootingEvent({ stageId: String(stageId || '') });
+  }
+
+  function showFacelessStageSelect() {
+    closeFacelessStageSelect();
+    const overlay = document.createElement('div');
+    overlay.id = 'shooting-faceless-stage-select';
+    overlay.className = 'shooting-special-stage-select shooting-faceless-stage-select';
+    overlay.innerHTML = `
+      <div class="shooting-special-stage-page shooting-faceless-stage-page">
+        <div class="shooting-special-stage-header shooting-faceless-stage-header">
+          <button type="button" class="shooting-special-stage-back shooting-faceless-stage-back" onclick="closeFacelessStageSelect()" aria-label="戻る">＜戻る</button>
+          <div class="shooting-special-stage-title shooting-faceless-stage-title">無貌の天使</div>
+        </div>
+
+        <div class="shooting-special-stage-list shooting-faceless-stage-list">
+          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_ADVANCED}')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>上級</strong>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
+              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
+            </div>
+          </button>
+
+          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_SUPER}')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>最上級</strong>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
+              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
+            </div>
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
+  window.closeFacelessStageSelect = closeFacelessStageSelect;
+  window.openFacelessStage = openFacelessStage;
 
   function runStartCountdown() {
     const countdown = document.getElementById('shooting-countdown');
@@ -2544,29 +3509,50 @@
     state.countdown = true;
     state.running = false;
     if (copy) copy.classList.add('hide');
+
+    countdown.classList.remove('ready-phase', 'number-phase', 'start-phase');
     countdown.classList.add('show');
     countdown.setAttribute('aria-hidden', 'false');
 
-    const values = ['3', '2', '1'];
+    const span = countdown.querySelector('span');
+    const sequence = [
+      { text:'ARE YOU READY', phase:'ready-phase', hold:1250 },
+      { text:'3',             phase:'number-phase', hold:850 },
+      { text:'2',             phase:'number-phase', hold:850 },
+      { text:'1',             phase:'number-phase', hold:850 },
+      { text:'START',         phase:'start-phase', hold:1050 }
+    ];
+
     let i = 0;
-    const tick = () => {
-      if (!state || state.ended) return;
-      const span = countdown.querySelector('span');
-      if (span) {
-        span.textContent = values[i];
-        span.classList.remove('pop');
-        void span.offsetWidth;
-        span.classList.add('pop');
-      }
+
+    const showStep = () => {
+      if (!state || state.ended || !span) return;
+
+      const step = sequence[i];
+      countdown.classList.remove('ready-phase', 'number-phase', 'start-phase');
+      countdown.classList.add(step.phase);
+
+      span.textContent = step.text;
+      span.classList.remove('pop', 'ready-pop', 'start-pop');
+      void span.offsetWidth;
+
+      if (step.phase === 'ready-phase') span.classList.add('ready-pop');
+      else if (step.phase === 'start-phase') span.classList.add('start-pop');
+      else span.classList.add('pop');
+
       i += 1;
-      if (i < values.length) {
-        setTimeout(tick, 720);
+
+      if (i < sequence.length) {
+        setTimeout(showStep, step.hold);
         return;
       }
+
+      // STARTの文字を少し残してから操作開始。
       setTimeout(() => {
         if (!state || state.ended) return;
-        countdown.classList.remove('show');
+        countdown.classList.remove('show', 'ready-phase', 'number-phase', 'start-phase');
         countdown.setAttribute('aria-hidden', 'true');
+
         state.countdown = false;
         state.running = true;
         state.startedAt = performance.now();
@@ -2574,13 +3560,19 @@
         state.lastBossShotAt = -9999;
         prevTs = performance.now();
         rafId = requestAnimationFrame(gameLoop);
-      }, 650);
+      }, step.hold);
     };
-    tick();
+
+    // 戦闘画面が見えた直後に一拍置いて開始。
+    setTimeout(showStep, 260);
   }
 
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+    if (isFacelessStage() && Number(state.facelessWave || 1) === 1) {
+      beginFacelessWave2();
+      return;
+    }
     state.finishing = true;
     state.running = false;
     cancelAnimationFrame(rafId);
@@ -2588,6 +3580,9 @@
     // 撃破した瞬間に弾を止め、少し余韻を残してからリザルトへ。
     clearProjectiles();
     renderHud();
+
+    // 全BOSSステージ共通：撃破エフェクトの余韻後、勝利セレモニーへ。
+    // フェイスレスWAVE1では上の分岐でreturnするため誤表示しない。
 
     const boss = document.getElementById(BOSS_ID);
     const root = document.getElementById(ROOT_ID);
@@ -2609,9 +3604,12 @@
 
     setTimeout(() => {
       if (!state || state.ended) return;
-      state.finishing = false;
-      endGame(true);
-    }, 1850);
+      showStageClearSequence(() => {
+        if (!state || state.ended) return;
+        state.finishing = false;
+        endGame(true);
+      });
+    }, 1050);
   }
 
 
@@ -2638,6 +3636,7 @@
     const rootForResult = document.getElementById(ROOT_ID);
     if (rootForResult) {
       rootForResult.classList.remove('normal-stage-clear', 'mission-item-get');
+      rootForResult.querySelectorAll('.shooting-clear-condition-achieved').forEach(el => el.remove());
     }
     const missionHudForResult = document.getElementById('shooting-mission-hud');
     if (missionHudForResult) missionHudForResult.style.display = 'none';
@@ -2665,6 +3664,8 @@
     const clearTime = document.getElementById('shooting-result-clear-time');
     const rankLetter = getResultRank(state.score, win);
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
+    // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
+    void submitShootingHighScore(state.score);
     // STORY進捗へシューティング結果を通知。
     try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
@@ -2685,10 +3686,10 @@
     const totalUlts = state.party.reduce((sum, m) => sum + (m.ultUseCount || 0), 0);
     const survivors = state.party.filter(m => m.hp > 0);
     const resultMemberHtml = (m, value, suffix, markDown) => {
-      const c = SHOOTING_CHARACTERS[m.id];
+      const c = getBattleCharacter(m.id);
       return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${c.panelImage || c.image}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
     };
-    if (kicker) kicker.textContent = win ? (isNormalBattle() ? 'MISSION COMPLETE' : 'REMNANT PURIFIED') : 'MISSION FAILED';
+    if (kicker) kicker.textContent = win ? '' : 'MISSION FAILED';
     if (title) title.textContent = 'RESULT';
     if (score) score.textContent = String(state.score).padStart(6, '0');
     if (combo) combo.textContent = String(state.maxCombo || 0);
@@ -2712,7 +3713,7 @@
   }
 
   function onPointerDown(e) {
-    if (!state || state.ended || state.countdown || state.finishing) return;
+    if (!state || state.ended || state.countdown || state.finishing || state.paused) return;
 
     const now = performance.now();
     const dx = e.clientX - lastTapX;
@@ -2761,7 +3762,7 @@
     e.preventDefault();
   }
   function onPointerMove(e) {
-    if (!pointerActive || !state || state.ended || state.countdown || state.finishing) return;
+    if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
 
     // ultCutinActive中でもここは止めない。
     // ゲーム本体は停止していても指位置だけは更新し続け、
@@ -2809,15 +3810,185 @@
   window.selectShootingCharacter = function (id) {
     id = Number(id);
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
+
+    if (isStoryShootingStage() && id === Number(CHARACTER_ID.ERI)) {
+      ensureStoryEriLeader();
+      selectedCharacterId = Number(CHARACTER_ID.ERI);
+      applySelectedCharacterToUi();
+      return;
+    }
+
     const idx = selectedPartyIds.indexOf(id);
     if (idx >= 0) selectedPartyIds.splice(idx, 1);
     else if (selectedPartyIds.length < PARTY_SIZE) selectedPartyIds.push(id);
+
+    if (isStoryShootingStage()) ensureStoryEriLeader();
     selectedCharacterId = selectedPartyIds[0] || id;
     applySelectedCharacterToUi();
   };
 
+
+
+  function showShootingUltFullChargeNotice() {
+    const el = document.getElementById('shooting-ult-full-notice');
+    if (!el) return;
+
+    el.classList.remove('show');
+    el.setAttribute('aria-hidden', 'false');
+
+    // アニメーションを毎回確実に再スタート
+    void el.offsetWidth;
+    el.classList.add('show');
+
+    window.clearTimeout(el.__hideTimer);
+    el.__hideTimer = window.setTimeout(() => {
+      el.classList.remove('show');
+      el.setAttribute('aria-hidden', 'true');
+    }, 2350);
+  }
+
+  function setShootingHeaderMenuMode(inBattle) {
+    const btn = document.querySelector(`#${ROOT_ID} .shooting-back`);
+    if (!btn) return;
+
+    // バトル中は左上ボタンを完全に消す。
+    // 一時停止メニューは右下のMENUボタンから開く。
+    if (inBattle) {
+      btn.classList.remove('is-menu');
+      btn.classList.add('is-battle-hidden');
+      btn.textContent = '＜戻る';
+      btn.setAttribute('aria-label', '戻る');
+      btn.setAttribute('onclick', 'closeShootingEvent()');
+    } else {
+      btn.classList.remove('is-menu', 'is-battle-hidden');
+      btn.textContent = '＜戻る';
+      btn.setAttribute('aria-label', '戻る');
+      btn.setAttribute('onclick', 'closeShootingEvent()');
+    }
+    setShootingStageHeader(!!inBattle);
+  }
+
+  function ensureShootingPauseMenu() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return null;
+
+    let menu = root.querySelector('#shooting-pause-menu');
+    if (menu) return menu;
+
+    menu = document.createElement('div');
+    menu.id = 'shooting-pause-menu';
+    menu.className = 'shooting-pause-menu';
+    menu.setAttribute('aria-hidden', 'true');
+    menu.innerHTML = `
+      <div class="shooting-pause-backdrop" aria-hidden="true"></div>
+      <section class="shooting-pause-card" role="dialog" aria-modal="true" aria-labelledby="shooting-pause-title">
+        <div class="shooting-pause-kicker">PAUSE</div>
+        <h2 id="shooting-pause-title">メニュー</h2>
+        <div class="shooting-pause-divider"></div>
+        <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
+        <button type="button" class="shooting-pause-action" onclick="restartShootingStageFromPause()">最初からやり直す</button>
+        <button type="button" class="shooting-pause-action shooting-pause-close" onclick="closeShootingPauseMenu()">閉じる</button>
+      </section>
+    `;
+    root.appendChild(menu);
+    return menu;
+  }
+
+  function shiftPausedTimestamps(target, deltaMs, seen) {
+    if (!target || typeof target !== 'object' || !deltaMs) return;
+    seen = seen || new Set();
+    if (seen.has(target)) return;
+    seen.add(target);
+
+    Object.keys(target).forEach(key => {
+      const value = target[key];
+
+      if (
+        typeof value === 'number' &&
+        value > 0 &&
+        (/(At|Until)$/.test(key) || key === 'startedAt')
+      ) {
+        target[key] = value + deltaMs;
+        return;
+      }
+
+      if (value && typeof value === 'object') {
+        shiftPausedTimestamps(value, deltaMs, seen);
+      }
+    });
+  }
+
+  function resumeShootingFromPause(shiftTime) {
+    if (!state || !state.paused) return;
+
+    const now = performance.now();
+    const pausedFor = Math.max(0, now - Number(state.pauseStartedAt || now));
+
+    if (shiftTime !== false && pausedFor > 0) {
+      // 攻撃間隔・バフ/デバフ残り時間・クリアタイム等が
+      // PAUSE中に勝手に進まないよう、絶対時刻を停止時間分ずらす。
+      shiftPausedTimestamps(state, pausedFor);
+    }
+
+    state.paused = false;
+    state.pauseStartedAt = 0;
+    prevTs = now;
+    keys = Object.create(null);
+    pointerActive = false;
+    pointerIsTouch = false;
+  }
+
+  window.openShootingPauseMenu = function () {
+    if (!state || state.ended || state.finishing || state.countdown) return;
+
+    const menu = ensureShootingPauseMenu();
+    if (!menu || state.paused) return;
+
+    state.paused = true;
+    state.pauseStartedAt = performance.now();
+    pointerActive = false;
+    pointerIsTouch = false;
+    keys = Object.create(null);
+
+    menu.classList.add('show');
+    menu.setAttribute('aria-hidden', 'false');
+  };
+
+  window.closeShootingPauseMenu = function () {
+    const menu = document.getElementById('shooting-pause-menu');
+    if (menu) {
+      menu.classList.remove('show');
+      menu.setAttribute('aria-hidden', 'true');
+    }
+    resumeShootingFromPause(true);
+  };
+
+  window.restartShootingStageFromPause = function () {
+    const menu = document.getElementById('shooting-pause-menu');
+    if (menu) {
+      menu.classList.remove('show');
+      menu.setAttribute('aria-hidden', 'true');
+    }
+    resumeShootingFromPause(false);
+    window.restartShootingEvent();
+  };
+
+  window.exitShootingStageFromPause = function () {
+    const menu = document.getElementById('shooting-pause-menu');
+    if (menu) {
+      menu.classList.remove('show');
+      menu.setAttribute('aria-hidden', 'true');
+    }
+    if (state) {
+      state.paused = false;
+      state.pauseStartedAt = 0;
+    }
+    window.closeShootingEvent();
+  };
+
   window.startSelectedShootingCharacter = function () {
-    if (selectedPartyIds.length !== PARTY_SIZE || !selectedPartyIds.every(isShootingCharacterOwned)) return;
+    if (isStoryShootingStage()) ensureStoryEriLeader();
+    if (!isShootingPartyReady()) return;
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
@@ -2826,6 +3997,9 @@
     applySelectedCharacterToUi();
     setCharacterSelectVisible(false);
     setBattleHudVisible(true);
+    applyShootingUiLayout(shootingUiLayoutType);
+    setShootingHeaderMenuMode(true);
+    ensureShootingPauseMenu();
 
     const root = document.getElementById(ROOT_ID);
     const result = document.getElementById('shooting-result');
@@ -2842,7 +4016,7 @@
     requestAnimationFrame(() => {
       placeInitialUnits();
       renderHud();
-      runStartCountdown();
+      playBossStageIntro(runStartCountdown);
     });
   };
 
@@ -2859,9 +4033,8 @@
     const hasExplicitStage = !!(options && options.stageId);
     const hasExplicitEnemy = !!(options && options.enemyId);
     if (!hasExplicitStage && !hasExplicitEnemy) {
-      selectedStageId = SHOOTING_STAGE_ID.CH01_04;
-      selectedStage = getShootingStage(selectedStageId);
-      selectedEnemyId = DEFAULT_SHOOTING_ENEMY_ID;
+      showFacelessStageSelect();
+      return;
     }
 
     resolveSelectedStage(options || {});
@@ -2879,6 +4052,7 @@
     }
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
     root.setAttribute('data-battle-type', selectedStage ? selectedStage.type : 'boss');
+    applyShootingUiLayout(shootingUiLayoutType);
 
     setCommonUiVisible(true);
     root.style.display = 'block';
@@ -2899,9 +4073,20 @@
     root.setAttribute('data-boss-phase', '1');
     selectedPartyIds = [];
     selectedBlessingId = null;
+    selectedStageHighScore = getLocalShootingHighScore(selectedStage?.id || '');
+    setShootingHeaderMenuMode(false);
+    void loadShootingHighScore();
+    ensureShootingPauseMenu();
     refreshShootingRoster();
+
     const firstOwned = Object.keys(SHOOTING_CHARACTERS).map(Number).find(isShootingCharacterOwned);
-    selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
+    if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
+      selectedPartyIds = [Number(CHARACTER_ID.ERI)];
+      selectedCharacterId = Number(CHARACTER_ID.ERI);
+    } else {
+      selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
+    }
+
     applySelectedCharacterToUi();
     setCharacterSelectVisible(true);
     setBattleHudVisible(false);
@@ -2916,11 +4101,14 @@
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();
     resetState();
+    setShootingHeaderMenuMode(true);
+    ensureShootingPauseMenu();
     clearProjectiles();
     clearNormalBattleObjects();
     applySelectedCharacterToUi();
     setCharacterSelectVisible(false);
     setBattleHudVisible(true);
+    applyShootingUiLayout(shootingUiLayoutType);
     const result = document.getElementById('shooting-result');
     if (result) { result.classList.remove('show'); result.setAttribute('aria-hidden', 'true'); }
     const boss = document.getElementById(BOSS_ID);
@@ -2931,12 +4119,20 @@
     root.setAttribute('data-boss-phase', '1');
     placeInitialUnits();
     renderHud();
-    runStartCountdown();
+    playBossStageIntro(runStartCountdown);
   };
 
   window.closeShootingEvent = function () {
+    closeFacelessStageSelect();
     clearUltTimers();
-    if (state) { state.running = false; state.ended = true; state.countdown = false; state.finishing = false; }
+    if (state) {
+      state.running = false;
+      state.ended = true;
+      state.countdown = false;
+      state.finishing = false;
+      state.paused = false;
+      state.pauseStartedAt = 0;
+    }
     cancelAnimationFrame(rafId);
     clearEltenaBlackHole();
     clearProjectiles();
@@ -3017,9 +4213,11 @@
       renderHud();
       return;
     }
-    state.boss.hp = Math.max(0, state.boss.hp - amount);
+    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(amount || 0)));
+    state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     updateBossPhase();
     createHit(state.boss.x, state.boss.y, !!big);
+    showBossDamageNumber(appliedDamage, !!big);
     flashBossHit(true);
     state.score += Math.round(amount * 100);
     renderHud();
@@ -3039,7 +4237,10 @@
     state.ultLockUntil = performance.now() + 900;
     renderHud();
     pushUltTimer(() => {
-      applyUltDamage(c.burstDamage + 8, true);
+      const damage =
+        Number(c.atk || 0) *
+        Number(c.ultDamageAtkMultiplier || 2.8);
+      applyUltDamage(damage, true);
       renderHud();
     }, 420);
   }
@@ -3434,8 +4635,10 @@
 
       // 掴んだ瞬間の初撃。ゲージ段階更新は拘束終了時にまとめる。
       if (state && !state.ended && !state.finishing) {
-        state.boss.hp = Math.max(0, state.boss.hp - initialDamage);
+        const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(initialDamage || 0)));
+        state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
         createHit(state.boss.x, state.boss.y, true);
+        showBossDamageNumber(appliedDamage, true);
         flashBossHit(true);
         state.score += Math.round(initialDamage * 100);
         renderHud();
@@ -3445,7 +4648,9 @@
       for (let i = 1; i <= tickCount; i++) {
         pushUltTimer(() => {
           if (!state || state.ended || state.finishing || state.boss.hp <= 0) return;
-          state.boss.hp = Math.max(0, state.boss.hp - tickDamage);
+          const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(tickDamage || 0)));
+          state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+          showBossDamageNumber(appliedDamage, false);
           state.score += Math.round(tickDamage * 100);
           if (i % 2 === 0) {
             createHit(state.boss.x + (Math.random() - .5) * 26, state.boss.y + (Math.random() - .5) * 20, false);
@@ -3545,7 +4750,7 @@
     if (!state || now >= (state.arnoAuraUntil || 0)) return;
     if (now < (state.arnoAuraNextTickAt || 0)) return;
 
-    const c = SHOOTING_CHARACTERS[state.arnoAuraOwnerId] || SHOOTING_CHARACTERS[CHARACTER_ID.ARNO];
+    const c = getBattleCharacter(state.arnoAuraOwnerId || CHARACTER_ID.ARNO);
     const tickMs = Number(c?.auraTickMs || 250);
     const damage = Number(c?.auraTickDamage || 1.8);
     state.arnoAuraNextTickAt = now + tickMs;
@@ -3561,7 +4766,9 @@
     }
 
     if (!state.boss || state.boss.hp <= 0) return;
-    state.boss.hp = Math.max(0, state.boss.hp - damage);
+    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+    state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+    showBossDamageNumber(appliedDamage, false);
     state.score += Math.round(damage * 100);
     createHit(
       state.boss.x + (Math.random() - .5) * 32,
@@ -3648,7 +4855,7 @@
   function updateRoseFlower(now) {
     if (!state || !state.roseFlower) return;
     const flower = state.roseFlower;
-    const c = SHOOTING_CHARACTERS[CHARACTER_ID.ROSE];
+    const c = getBattleCharacter(CHARACTER_ID.ROSE);
     if (!c) return;
 
     if (!flower.el || !flower.el.isConnected || now >= flower.endAt) {
@@ -3763,7 +4970,7 @@
 
   function updateIgnisBurns(now) {
     if (!state) return;
-    const c = SHOOTING_CHARACTERS[CHARACTER_ID.IGNIS];
+    const c = getBattleCharacter(CHARACTER_ID.IGNIS);
     if (!c) return;
 
     const tickMs = Number(c.burnTickMs || 1000);
@@ -3807,8 +5014,10 @@
 
     if (state.boss && state.boss.hp > 0 && now >= Number(state.ignisBossBurnNextTickAt || 0)) {
       state.ignisBossBurnNextTickAt = now + tickMs;
-      state.boss.hp = Math.max(0, state.boss.hp - damage);
+      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       createHit(state.boss.x, state.boss.y, true);
+      showBossDamageNumber(appliedDamage, true);
       flashBossHit(true);
       state.score += Math.round(damage * 100);
       updateBossPhase();
@@ -3829,7 +5038,7 @@
   function updateIgnisFireWheel(now) {
     if (!state || !state.ignisFireWheel) return;
     const wheel = state.ignisFireWheel;
-    const c = SHOOTING_CHARACTERS[CHARACTER_ID.IGNIS];
+    const c = getBattleCharacter(CHARACTER_ID.IGNIS);
     if (!c) return;
 
     if (now >= wheel.endAt) {
@@ -3930,7 +5139,7 @@
   }
 
   function getClarineDecoyConfig() {
-    return SHOOTING_CHARACTERS[CHARACTER_ID.CLARINE] || {};
+    return getBattleCharacter(CHARACTER_ID.CLARINE) || {};
   }
 
   function removeClarineDecoy(decoy, expired) {
@@ -3978,9 +5187,11 @@
     if (!state.boss || state.boss.hp <= 0) return;
     const dist = Math.hypot((state.boss.x || 0) - x, (state.boss.y || 0) - y);
     if (dist > radius + 20) return;
-    state.boss.hp = Math.max(0, state.boss.hp - damage);
+    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+    state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     updateBossPhase();
     createHit(x, y, true);
+    showBossDamageNumber(appliedDamage, true);
     flashBossHit(true);
     state.score += Math.round(damage * 100);
     renderHud();

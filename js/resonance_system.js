@@ -1,71 +1,71 @@
-// Zeraphia 共鳴モジュール
-// index.html から分離。読み込み順: character_resonance.js -> resonance_system.js -> resonance_ui.js
+// Zeraphia Shooting 共鳴システム
+// Strategy / Battle32 / LINK / moveType / combo / range に依存しない。
+// 読み込み順: shooting_resonance.js -> resonance_system.js -> resonance_ui.js
 
-function getLimitBreakRate(limitBreak, charaId){
-  var lb = Math.max(0, Number(limitBreak || 0));
-
-  // エリはLv1で+5%、以降は従来どおり1Lvごとに+4%。
-  if(Number(charaId) === 1 && lb > 0){
-    return 0.05 + Math.max(0, lb - 1) * LIMIT_BREAK_RATE;
+(function ensureShootingResonanceReady(){
+  if(!window.ShootingResonance){
+    console.error('[Resonance] shooting_resonance.js が先に必要です');
   }
+})();
 
-  return lb * LIMIT_BREAK_RATE;
-}
+var MAX_LIMIT_BREAK = window.ShootingResonance ? window.ShootingResonance.MAX_LEVEL : 4;
+var EVOLUTION_MATERIAL_STORAGE_KEY = window.ShootingResonance
+  ? window.ShootingResonance.MATERIAL_STORAGE_KEY
+  : 'zeraphia_evolution_materials_v1';
+var EVOLUTION_MATERIAL_MASTER = window.ShootingResonance
+  ? window.ShootingResonance.MATERIAL_MASTER
+  : {};
 
+// 既存BOX/DBデータは limitBreak / baseStats / stats を維持する。
+// 表示用HP/ATKも、シューティング共鳴マスターと同じ定義から算出する。
 function applyLimitBreakStats(baseStats, limitBreak, rarity, charaId){
-  var lb = Math.max(0, Number(limitBreak || 0));
-  var rate = getLimitBreakRate(lb, charaId);
-  var result = {};
+  var base = baseStats || {};
+  var source = {
+    id: Number(charaId || 0),
+    hp: Number(base.HP || base.hp || 0),
+    atk: Number(base.ATK || base.atk || 0)
+  };
 
-  BASE_STATS.forEach(function(s){
-    var base = baseStats[s] || 0;
-    var statRate = rate;
-    // ハヤテは共鳴Lv.1の固有ボーナスとしてATKのみ+5%。
-    // Lv.2以降は従来どおり、追加の共鳴1段階ごとに+4%を加算する。
-    if(Number(charaId) === 12 && s === 'ATK' && lb > 0){
-      statRate = 0.05 + Math.max(0, lb - 1) * LIMIT_BREAK_RATE;
-    }
-    result[s] = Math.floor(base * (1 + statRate));
-  });
-
-  return result;
-}
-
-function getResonanceBonusMaster(target){
-  if(!target) return null;
-
-  var charaId = Number(target.id);
-  var charaDef = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
-    ? CHARACTERS.find(function(c){ return Number(c.id) === charaId; })
-    : null;
-  var profile = target.resonanceBonusProfile || (charaDef && charaDef.resonanceBonusProfile) || '';
-
-  if(profile === 'eri_v1' || charaId === 1) return ERI_RESONANCE_BONUSES;
-  if(profile === 'ignis_v1' || charaId === 6) return IGNIS_RESONANCE_BONUSES;
-  if(profile === 'rose_v1' || charaId === 7) return ROSE_RESONANCE_BONUSES;
-  return CHARACTER_RESONANCE_BONUSES[charaId] || null;
-}
-
-
-function getCharacterResonanceConfig(target){
-  if(!target) return null;
-  var charaId = Number(target.id != null ? target.id : target.charaId);
-  var charaDef = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
-    ? CHARACTERS.find(function(c){ return Number(c.id) === charaId; })
-    : null;
-  if(!charaDef) return null;
+  var applied = (window.ShootingResonance && typeof window.ShootingResonance.applyToProfile === 'function')
+    ? window.ShootingResonance.applyToProfile(source, limitBreak)
+    : source;
 
   return {
-    profile: charaDef.resonanceBonusProfile || '',
-    limitBreak: Math.max(0, Number(target.limitBreak != null ? target.limitBreak : target.limit_break || 0)),
-    config: (typeof getCharacterResonanceEffects === 'function')
-      ? getCharacterResonanceEffects(charaId)
-      : ((typeof CHARACTER_RESONANCE_EFFECTS !== 'undefined' && CHARACTER_RESONANCE_EFFECTS)
-        ? CHARACTER_RESONANCE_EFFECTS[charaId] || null
-        : null)
+    HP: Math.max(0, Math.floor(Number(applied && applied.hp || 0))),
+    ATK: Math.max(0, Math.floor(Number(applied && applied.atk || 0)))
+  };
+}
+
+// UI互換API。正本は shooting_resonance.js の BONUS_MASTER。
+function getResonanceBonusMaster(target){
+  if(!target || !window.ShootingResonance) return null;
+  return window.ShootingResonance.getBonusMaster(Number(target.id != null ? target.id : target.charaId));
+}
+
+// 戦闘側へ渡す共鳴設定もシューティングプロフィールのみ。
+function getCharacterResonanceConfig(target){
+  if(!target || !window.ShootingResonance) return null;
+  var charaId = Number(target.id != null ? target.id : target.charaId);
+  var lb = Math.max(0, Number(target.limitBreak != null ? target.limitBreak : target.limit_break || 0));
+
+  return {
+    characterId: charaId,
+    limitBreak: lb,
+    bonuses: window.ShootingResonance.getUnlockedBonuses(charaId, lb)
   };
 }
 window.getCharacterResonanceConfig = getCharacterResonanceConfig;
+
+// shooting_core.js から利用する共通API。
+// baseProfileを破壊せず、共鳴適用済みプロフィールを返す。
+function applyShootingResonanceToProfile(baseProfile, limitBreak){
+  if(!baseProfile) return null;
+  if(!window.ShootingResonance || typeof window.ShootingResonance.applyToProfile !== 'function'){
+    return Object.assign({}, baseProfile);
+  }
+  return window.ShootingResonance.applyToProfile(baseProfile, limitBreak);
+}
+window.applyShootingResonanceToProfile = applyShootingResonanceToProfile;
 
 var evolutionMaterials = loadEvolutionMaterialsFromLocal();
 
@@ -270,23 +270,10 @@ function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
   return true;
 }
 
-function rollEvolutionMaterialDropFromRoguelite(meta){
-  meta = meta || {};
-  var rank = String(meta.rank || 'B').toUpperCase();
-  var stoneCount = ({ S: 3, A: 3, B: 2, C: 2, D: 1, E: 1 })[rank] || 1;
-  var elements = ['logos', 'chaos', 'mystis'];
-  var vesselElement = elements[Math.floor(Math.random() * elements.length)];
-  var drops = [];
-  drops.push(addEvolutionMaterial('kyoumei_stone', stoneCount));
-  drops.push(addEvolutionMaterial('soul_vessel_' + vesselElement, 1));
-  return drops.filter(Boolean);
-}
-
-// 外部JS（ローグライト結果など）から付与できるよう公開
+// 強化素材API（ガチャ・ログインボーナス・イベント報酬などから利用可能）
 window.EVOLUTION_MATERIAL_MASTER = EVOLUTION_MATERIAL_MASTER;
 window.getEvolutionMaterialCount = getEvolutionMaterialCount;
 window.addEvolutionMaterial = addEvolutionMaterial;
-window.grantEvolutionMaterialDropFromRoguelite = rollEvolutionMaterialDropFromRoguelite;
 
 function isGachaMaterialResult(data){
   return !!(data && (data.resultKind === 'material' || data.materialId));
@@ -348,7 +335,7 @@ function getAutoLimitBreakMaterial(target){
   if(!materials.length) return null;
 
   // 手動選択を省略するため、素材候補は自動選択する。
-  // 育成済み個体をなるべく残すため、共鳴Lvが低い個体を優先して消費する。
+  // 育成済み個体をなるべく残すため、強化Lvが低い個体を優先して消費する。
   materials.sort(function(a, b){
     var lbA = Number(a.limitBreak || 0);
     var lbB = Number(b.limitBreak || 0);
@@ -368,16 +355,16 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
   var currentLb = target.limitBreak || 0;
 
   if(currentLb >= MAX_LIMIT_BREAK){
-    showToast('共鳴LvはすでにMAXです');
+    showToast('限界突破LvはすでにMAXです');
     return;
   }
 
   if(!getLimitBreakMaterialStatus(target, selectedSoulVesselId).canLimitBreak){
-    showToast('共鳴素材が不足しています');
+    showToast('限界突破素材が不足しています');
     return;
   }
 
-  // DB保存失敗時に、共鳴Lv・素材・BOX状態を元へ戻せるよう事前退避する。
+  // DB保存失敗時に、強化Lv・素材・BOX状態を元へ戻せるよう事前退避する。
   var beforeState = {
     limitBreak: Number(target.limitBreak || 0),
     stats: Object.assign({}, target.stats || {}),
@@ -388,7 +375,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
   };
 
   if(!consumeLimitBreakRecipeMaterials(target, selectedSoulVesselId)){
-    showToast('共鳴素材の消費に失敗しました');
+    showToast('限界突破素材の消費に失敗しました');
     return;
   }
 
@@ -453,7 +440,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
   if(completeText){
     var unlockedBonus = getResonanceBonusMaster(target);
     var unlocked = unlockedBonus && unlockedBonus[target.limitBreak];
-    completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。' +
+    completeText.textContent = '限界突破Lvが ' + target.limitBreak + ' になりました。' +
       (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
   }
 
@@ -461,7 +448,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
   if (completeModal) {
     completeModal.classList.add('active');
   } else {
-    alert('共鳴が完了しました。');
+    alert('限界突破が完了しました。');
   }
 }
 
@@ -552,7 +539,7 @@ async function updateLimitBreakToDB(target){
 }
 
 async function deleteMaterialFromDB(material){
-  if(!material || !material.db_id) throw new Error('共鳴素材のDB IDがありません');
+  if(!material || !material.db_id) throw new Error('限界突破素材のDB IDがありません');
   var result = await sb.from('collected_characters')
     .delete()
     .eq('id', material.db_id)
@@ -560,128 +547,7 @@ async function deleteMaterialFromDB(material){
     .select('id');
   if(result.error) throw result.error;
   if(!result.data || result.data.length === 0){
-    throw new Error('共鳴素材の削除対象が見つかりません');
+    throw new Error('限界突破素材の削除対象が見つかりません');
   }
   return true;
 }
-
-// ============================================================
-// バトル用共鳴効果の共通適用
-// character_resonance.js の CHARACTER_RESONANCE_EFFECTS を宣言的に適用する。
-// キャラID別switchを持たず、共鳴仕様の正本を1ファイルに統一する。
-// ============================================================
-function _getResonanceSkill32(characterDef, skillId){
-  if(!characterDef || !Array.isArray(characterDef.skills)) return null;
-  if(skillId === 'ult'){
-    return characterDef.skills.find(function(skill){
-      return skill && (skill.id === 'ult' || skill.isUltimate === true);
-    }) || null;
-  }
-  return characterDef.skills.find(function(skill){ return skill && skill.id === skillId; }) || null;
-}
-
-function _assignResonanceValues32(target, values){
-  if(!target || !values) return;
-  Object.keys(values).forEach(function(key){
-    var value = values[key];
-    if(value && typeof value === 'object'){
-      target[key] = JSON.parse(JSON.stringify(value));
-    } else {
-      target[key] = value;
-    }
-  });
-}
-
-function _findResonanceEffect32(skill, effectType){
-  return skill && Array.isArray(skill.effects)
-    ? skill.effects.find(function(effect){ return effect && effect.type === effectType; }) || null
-    : null;
-}
-
-function _applyResonanceOperation32(characterDef, operation){
-  if(!characterDef || !operation) return;
-  var comboTrigger = characterDef.combo || null;
-  var comboSkill = comboTrigger && comboTrigger.skill ? comboTrigger.skill : null;
-  var skill = operation.skillId ? _getResonanceSkill32(characterDef, operation.skillId) : null;
-
-  switch(operation.type){
-    case 'characterSet':
-      _assignResonanceValues32(characterDef, operation.values);
-      break;
-    case 'skillSet':
-      _assignResonanceValues32(skill, operation.values);
-      break;
-    case 'skillScale':
-      if(skill && operation.field){
-        var base = Number(skill[operation.field]);
-        if(!Number.isFinite(base)) base = Number(operation.fallback || 0);
-        skill[operation.field] = base * Number(operation.multiplier || 1);
-      }
-      break;
-    case 'skillLinkCostDelta':
-      if(skill){
-        var min = Number.isFinite(Number(operation.min)) ? Number(operation.min) : 0;
-        skill.linkCost = Math.max(min, Number(skill.linkCost || 0) + Number(operation.delta || 0));
-      }
-      break;
-    case 'comboTriggerSet':
-      _assignResonanceValues32(comboTrigger, operation.values);
-      break;
-    case 'comboSkillSet':
-      _assignResonanceValues32(comboSkill, operation.values);
-      break;
-    case 'skillEffectSet': {
-      var skillEffect = _findResonanceEffect32(skill, operation.effectType);
-      _assignResonanceValues32(skillEffect, operation.values);
-      break;
-    }
-    case 'comboEffectSet': {
-      var comboEffect = _findResonanceEffect32(comboSkill, operation.effectType);
-      _assignResonanceValues32(comboEffect, operation.values);
-      break;
-    }
-    case 'comboEffectAddIfMissing':
-      if(comboSkill){
-        if(!Array.isArray(comboSkill.effects)) comboSkill.effects = [];
-        if(!_findResonanceEffect32(comboSkill, operation.effectType) && operation.effect){
-          comboSkill.effects.push(JSON.parse(JSON.stringify(operation.effect)));
-        }
-      }
-      break;
-    case 'skillOptionSet':
-      if(skill && operation.optionList && Array.isArray(skill[operation.optionList])){
-        var option = skill[operation.optionList].find(function(item){
-          return item && item.effectType === operation.effectType;
-        });
-        _assignResonanceValues32(option, operation.values);
-      }
-      break;
-  }
-}
-
-function applyCharacterResonanceToBattleDef(characterDef, limitBreak){
-  if(!characterDef) return characterDef;
-
-  var lb = Math.max(0, Number(limitBreak != null ? limitBreak : (characterDef.limitBreak || 0)));
-  characterDef.limitBreak = lb;
-
-  var master = (typeof getCharacterResonanceEffects === 'function')
-    ? getCharacterResonanceEffects(characterDef.id)
-    : ((typeof CHARACTER_RESONANCE_EFFECTS !== 'undefined' && CHARACTER_RESONANCE_EFFECTS)
-      ? CHARACTER_RESONANCE_EFFECTS[Number(characterDef.id)]
-      : null);
-
-  if(!master || lb <= 0) return characterDef;
-
-  for(var level = 1; level <= lb; level++){
-    var operations = master[level];
-    if(!Array.isArray(operations)) continue;
-    operations.forEach(function(operation){
-      _applyResonanceOperation32(characterDef, operation);
-    });
-  }
-
-  return characterDef;
-}
-window.applyCharacterResonanceToBattleDef = applyCharacterResonanceToBattleDef;
-

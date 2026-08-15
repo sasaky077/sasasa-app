@@ -234,7 +234,11 @@
     shotAngleStep: 0,      // 角度差(rad)。parallelでは通常0
     shotStyle: 'normal',   // CSS演出キー
 
-    burstDamage: 18,
+    // ---- ULT / 駆け巡る閃光 ----
+    // エリ本人と、固有性能未実装でERI_BASE_PROFILEを継承するキャラ共通。
+    // 固定ダメージではなく現在ATKを参照する。
+    ultDamageAtkMultiplier: 2.8,
+
     burstNeed: 28,
     ultGainPerHit: 0.476,
     coreTop: '38%',
@@ -277,7 +281,7 @@
     id: CHARACTER_ID.SUI,
     effectKey: 'sui',
     label: 'CLOCK / DELAY BURST',
-    description: 'シンプルな2ライン射撃。ULTは時計のカウント後、3秒後に大回復と弾幕消去と大ダメージを同時発動する。',
+    description: 'シンプルな2ライン射撃。ULTは4秒の時計カウント後、大回復・弾幕消去・大ダメージを同時発動する。',
     ultName: '星環の約束',
     ultType: 'sui_clock_burst',
     moveSpeed: 420,
@@ -616,21 +620,6 @@
       }
     } catch (_) {}
 
-    // ---- ローグライト凍結時のフォールバック（既存挙動には影響しない）----
-    // 上の3つ(getRepresentativeOwnedInstance / collected / box)が
-    // 「そもそも定義すら存在しない」場合だけ、ローグライトが凍結/未読込の
-    // スタンドアロン環境とみなし、シューティング内蔵の解放リストにフォールバックする。
-    // ローグライトが生きている環境では、このいずれかが必ず定義されているため
-    // この分岐には入らず、今までと完全に同じ挙動になる。
-    try {
-      const roguelitePresent =
-        (typeof getRepresentativeOwnedInstance === 'function') ||
-        (typeof collected !== 'undefined') ||
-        (typeof box !== 'undefined');
-      if (!roguelitePresent) {
-        return { id, standalone: true };
-      }
-    } catch (_) {}
 
     return null;
   }

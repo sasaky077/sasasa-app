@@ -21,7 +21,7 @@
           <button class="shooting-back" type="button" onclick="closeShootingEvent()" aria-label="戻る">‹</button>
           <div class="shooting-hud-title">
             <span>SPECIAL EVENT</span>
-            <strong>銃撃戦</strong>
+            <strong>無貌の天使</strong>
           </div>
           <div class="shooting-score" id="shooting-score">SCORE 000000</div>
         </header>
@@ -38,11 +38,23 @@
 
         <div class="shooting-arena" id="shooting-arena">
           <div class="shooting-combo" id="shooting-combo" aria-live="polite"><strong id="shooting-combo-count">0</strong><span>COMBO</span></div>
+          <div class="shooting-ult-side" id="shooting-ult-side" aria-label="ULTゲージ">
+            <div class="shooting-ult-side-copy" aria-hidden="true">
+              <span>U L T I M A T E&nbsp;&nbsp;&nbsp;G A U G E</span>
+            </div>
+            <div class="shooting-ult-side-track">
+              <i id="shooting-burst-gauge"></i>
+            </div>
+          </div>
+          <div class="shooting-ult-full-notice" id="shooting-ult-full-notice" aria-live="polite" aria-hidden="true">
+            <span>ULT FULL CHARGE</span>
+            <small>ダブルタップでULTスキルの使用が可能</small>
+          </div>
           <div class="shooting-character-select" id="shooting-character-select" aria-hidden="false">
             <div class="shooting-character-select-card shooting-party-select-card">
               <div class="shooting-party-select-head">
                 <strong>パーティ編成</strong>
-                <small>最大3人 · 3人選択で出撃</small>
+                <small id="shooting-party-rule-text">最大3人 · 1人から出撃可能</small>
               </div>
               <div class="shooting-party-slots" id="shooting-party-slots"></div>
               <div class="shooting-party-blessing">
@@ -84,9 +96,14 @@
             <div class="shooting-player-hud-top"><div class="shooting-player-name" id="shooting-player-name">エリ</div><div class="shooting-player-hp-text" id="shooting-player-hp-text">670 / 670</div></div>
             <div class="shooting-player-hp-bar" id="shooting-player-hp-bar"><i></i></div>
           </div>
-          <button class="shooting-burst" id="shooting-burst" type="button" onclick="useShootingBurst()" disabled>
-            <span id="shooting-ult-label">ULT</span><i id="shooting-burst-gauge"></i>
-          </button>
+          <div class="shooting-battle-controls">
+            <button class="shooting-ui-layout-btn" id="shooting-ui-layout-btn" type="button" onclick="toggleShootingUiLayout()" aria-label="UI表示切替">
+              <span id="shooting-ui-layout-label">UI切替</span>
+            </button>
+            <button class="shooting-battle-menu-btn" id="shooting-battle-menu-btn" type="button" onclick="openShootingPauseMenu()" aria-label="一時停止メニュー">
+              <span>MENU</span>
+            </button>
+          </div>
         </footer>
 
         <div class="shooting-result" id="shooting-result" aria-hidden="true">

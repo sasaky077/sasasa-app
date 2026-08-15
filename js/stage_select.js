@@ -12,9 +12,35 @@
   const STORY_CHAPTER_MAX = 8;
   const STORY_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
   const STORY_CHAPTER_TITLES = {
-    1: '未定', 2: '未定', 3: '未定', 4: '未定',
-    5: '未定', 6: '未定', 7: '未定', 8: '未定'
+    1: '目覚めの朝',
+    2: 'ディストラクション',
+    3: '失われたもの',
+    4: '嘘と真実',
+    5: '未定',
+    6: '未定',
+    7: '未定',
+    8: '未定'
   };
+
+  // STORY表示用クリア条件。
+  // ステージ固有タイトルは使わず、画面上では「ステージ1〜4」で統一する。
+  const STORY_STAGE_CONDITIONS = {
+    'shooting_ch01_01': 'アイテムを3つ拾得',
+    'shooting_ch01_02': '90秒以内に敵をすべて撃破',
+    'shooting_ch01_03': '被弾3回以内に敵をすべて撃破',
+    'shooting_ch01_04': 'オーバーシアを撃破',
+
+    'shooting_ch02_01': '敵をすべて撃破',
+    'shooting_ch02_02': '150秒以内に敵をすべて撃破',
+    'shooting_ch02_03': '被弾2回以内に敵をすべて撃破',
+    'shooting_ch02_04': 'イリシュを撃破',
+
+    'shooting_ch03_01': 'アイテムを3つ拾得',
+    'shooting_ch03_02': 'アイテムを3つ拾得',
+    'shooting_ch03_03': 'アイテムを3つ拾得',
+    'shooting_ch03_04': 'リヴィアを撃破',
+  };
+
 
   function getStoryClearMap() {
     try {
@@ -412,12 +438,18 @@
         card.className = 'ss-card' + (unlocked ? '' : ' locked');
         if (cleared) card.classList.add('story-cleared');
 
+        const stageNo = Number(stageDef.stageNo || stageDef.no || 0);
+        const displayStageName = 'ステージ' + stageNo;
+        const displayCondition =
+          STORY_STAGE_CONDITIONS[stageDef.id] ||
+          missionText;
+
         card.innerHTML = `
-          <div class="ss-card-no">${String(stageDef.stageNo || 0).padStart(2, '0')}</div>
+          <div class="ss-card-no">${String(stageNo).padStart(2, '0')}</div>
           <div class="ss-card-body">
-            <div class="ss-card-name">${stageDef.name || 'STAGE'}${cleared ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
+            <div class="ss-card-name">${displayStageName}${cleared ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
             <div class="ss-card-meta">
-              <div class="ss-card-enemy">${missionText}</div>
+              <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
             </div>
           </div>
           <div class="ss-diff-badge" style="color:${badgeColor};border-color:${badgeColor.replace('.85', '.4')}">${badgeLabel}</div>
@@ -510,26 +542,39 @@
   // ============================================================
   function onShootingStoryStageTap(stage) {
     if (!stage || !stage.id) return;
-    closeStageSelect();
 
-    setTimeout(() => {
-      if (typeof window.openShootingStage === 'function') {
-        window.openShootingStage(stage.id);
-        return;
+    // STORY → 編成画面は中間画面を1フレームも見せず直結する。
+    // 旧実装は closeStageSelect() の350msフェード中に背面の「巡行」が露出していた。
+    const openStageDirect = () => {
+      const modal = document.getElementById('stage-select-modal');
+      if (modal) {
+        modal.style.transition = 'none';
+        modal.style.opacity = '0';
+        modal.style.display = 'none';
       }
+      // closeStageSelect() は呼ばない。nav/HUDの復帰を挟まず、
+      // 同じJSタスク内でshooting側がそのまま表示制御を引き継ぐ。
+      window.openShootingStage(stage.id);
+    };
 
-      let tries = 0;
-      const timer = setInterval(() => {
-        tries++;
-        if (typeof window.openShootingStage === 'function') {
-          clearInterval(timer);
-          window.openShootingStage(stage.id);
-        } else if (tries >= 30) {
-          clearInterval(timer);
-          alert('シューティングモジュールを読み込めませんでした');
-        }
-      }, 100);
-    }, 350);
+    if (typeof window.openShootingStage === 'function') {
+      openStageDirect();
+      return;
+    }
+
+    // モジュールがまだ準備中なら、ステージ選択画面を残したまま待つ。
+    // 準備できた瞬間に直接切り替えるため、巡行トップは露出しない。
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      if (typeof window.openShootingStage === 'function') {
+        clearInterval(timer);
+        openStageDirect();
+      } else if (tries >= 30) {
+        clearInterval(timer);
+        alert('シューティングモジュールを読み込めませんでした');
+      }
+    }, 100);
   }
 
   // ============================================================

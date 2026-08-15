@@ -10,8 +10,8 @@ window.NOTICE_ITEMS = [
   {
     id: 'notice_sakiel_001',
     date: '2XXX.06.29',
-    title: 'サキエル降臨 開催',
-    body: '特別巡行に「サキエル降臨」が追加されました。',
+    title: 'フェイスレス降臨 開催',
+    body: '特別巡行に「フェイスレス降臨」が追加されました。',
     hidden: false
   },
 
@@ -19,7 +19,7 @@ window.NOTICE_ITEMS = [
     id: 'notice_002',
     date: '2XXX.05.28',
     title: '邂逅情報更新',
-    body: '新プリモアがリリースされました。',
+    body: '新たなキャラがリリースされました。',
     hidden: false
   }
 ];

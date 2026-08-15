@@ -2933,7 +2933,7 @@ canvas {
   opacity: 0;
   pointer-events: none;
   transition: 0.3s;
-  z-index: 999;
+  z-index: 200001;
 }
 
 #toast.show {
@@ -15930,4 +15930,2035 @@ body.login-bonus-open {
   font-size: 10px;
   letter-spacing: .08em;
   color: rgba(235,230,240,.68);
+}
+
+
+/* =========================================================
+   TEST PLAY — TITLE後 強制お知らせ
+   ========================================================= */
+.testplay-notice {
+  position: fixed;
+  inset: 0;
+  z-index: 360;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    22px
+    max(24px, env(safe-area-inset-bottom));
+  background: rgba(8, 8, 10, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.testplay-notice.active {
+  display: flex;
+}
+
+.testplay-notice-panel {
+  width: min(100%, 360px);
+  padding: 30px 24px 22px;
+  border: 1px solid rgba(190, 158, 91, 0.42);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(210, 181, 118, 0.11), transparent 38%),
+    linear-gradient(180deg, rgba(250, 247, 239, 0.98), rgba(237, 230, 214, 0.98));
+  color: #2a251d;
+  box-shadow:
+    0 18px 54px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255,255,255,0.68);
+  text-align: center;
+}
+
+.testplay-notice-kicker {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: .32em;
+  color: rgba(139, 104, 45, 0.62);
+  margin-bottom: 10px;
+}
+
+.testplay-notice-title {
+  font-family: "Noto Serif JP", serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #54411f;
+}
+
+.testplay-notice-text {
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.9;
+  letter-spacing: .04em;
+  color: rgba(42, 37, 29, 0.78);
+}
+
+.testplay-notice-btn {
+  width: 100%;
+  margin-top: 24px;
+  min-height: 46px;
+  border: 1px solid rgba(158, 121, 57, 0.52);
+  background: rgba(255,255,255,0.58);
+  color: #604c28;
+  font-family: "Noto Serif JP", serif;
+  font-size: 14px;
+  letter-spacing: .18em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.testplay-notice-btn:active {
+  transform: translateY(1px);
+  background: rgba(228, 214, 180, 0.68);
+}
+
+.testplay-notice-btn:focus,
+.testplay-guide-close:focus {
+  outline: none;
+}
+
+@media (max-height: 680px) {
+  .testplay-notice-panel {
+    padding-top: 24px;
+    padding-bottom: 18px;
+  }
+
+  .testplay-notice-title {
+    font-size: 20px;
+  }
+
+  .testplay-notice-text {
+    margin-top: 14px;
+    line-height: 1.7;
+  }
+
+  .testplay-notice-btn {
+    margin-top: 18px;
+  }
+}
+
+
+/* =========================================================
+   TEST PLAY NOTICE — 2択ボタン上品化
+   ========================================================= */
+.testplay-notice-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.testplay-notice-actions .testplay-notice-btn {
+  width: 100%;
+  margin-top: 0 !important;
+  min-height: 42px;
+  padding: 10px 8px;
+  border-radius: 2px;
+  font-family: "Noto Serif JP", serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    transform .12s ease;
+}
+
+/* 「わかりました」：控えめ */
+.testplay-notice-btn-subtle {
+  border: 1px solid rgba(155, 124, 66, 0.38);
+  background: rgba(206, 184, 134, 0.12);
+  color: rgba(100, 76, 36, 0.88);
+}
+
+/* 「協力します」：少しだけ金を効かせるが、主張しすぎない */
+.testplay-notice-btn-accent {
+  border: 1px solid rgba(155, 124, 66, 0.38);
+  background: rgba(206, 184, 134, 0.12);
+  color: rgba(100, 76, 36, 0.88);
+}
+
+.testplay-notice-actions .testplay-notice-btn:active {
+  transform: translateY(1px);
+}
+
+.testplay-notice-btn-subtle:active {
+  background: rgba(206, 184, 134, 0.22);
+}
+
+.testplay-notice-btn-accent:active {
+  background: rgba(206, 184, 134, 0.22);
+}
+
+@media (max-width: 340px) {
+  .testplay-notice-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   TEST PLAY GUIDE — 1段目回答後の遊び方案内
+   ========================================================= */
+.testplay-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 361;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    20px
+    max(24px, env(safe-area-inset-bottom));
+  background: rgba(8, 8, 10, 0.74);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.testplay-guide.active {
+  display: flex;
+}
+
+.testplay-guide-panel {
+  width: min(100%, 390px);
+  max-height: min(82dvh, 620px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 28px 24px 22px;
+  box-sizing: border-box;
+  border: 1px solid rgba(190, 158, 91, 0.38);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(210, 181, 118, 0.10), transparent 34%),
+    linear-gradient(180deg, rgba(250, 247, 239, 0.985), rgba(238, 231, 216, 0.985));
+  color: #2a251d;
+  box-shadow:
+    0 18px 54px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255,255,255,0.62);
+}
+
+.testplay-guide-title {
+  text-align: center;
+  font-family: "Noto Serif JP", serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #55421f;
+}
+
+.testplay-guide-lead {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(42,37,29,.70);
+}
+
+.testplay-guide-text {
+  margin-top: 22px;
+  font-size: 13px;
+  line-height: 2;
+  letter-spacing: .02em;
+  color: rgba(42,37,29,.84);
+}
+
+.testplay-guide-note {
+  color: rgba(116, 84, 35, .78);
+}
+
+.testplay-guide-skip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  margin-top: 22px;
+  font-size: 12px;
+  color: rgba(42,37,29,.65);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.testplay-guide-skip input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #9a7b43;
+}
+
+.testplay-guide-close {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 20px;
+  padding: 10px 12px;
+  border: 1px solid rgba(155,124,66,.34);
+  border-radius: 2px;
+  background: rgba(206,184,134,.10);
+  color: rgba(95,72,34,.88);
+  font-family: "Noto Serif JP", serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  box-shadow: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.testplay-guide-close:active {
+  transform: translateY(1px);
+  background: rgba(206,184,134,.20);
+}
+
+@media (max-height: 680px) {
+  .testplay-guide-panel {
+    max-height: calc(100dvh - 36px);
+    padding-top: 22px;
+    padding-bottom: 18px;
+  }
+
+  .testplay-guide-text {
+    margin-top: 16px;
+    line-height: 1.75;
+  }
+
+  .testplay-guide-skip {
+    margin-top: 16px;
+  }
+
+  .testplay-guide-close {
+    margin-top: 16px;
+  }
+}
+
+
+/* =========================================================
+   2026-08-16
+   巡行 / 設定 スクロール修正
+   iOS Safari / PWA の fixed body + flex/grid 内スクロール対策
+   ========================================================= */
+
+/* 画面自身は固定高。スクロールは必ず内部コンテナへ委譲する。 */
+#screen-ninmu.active,
+#screen-setting.active {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 巡行：
+   旧 .ninmu-layout の height:100% が残っていると、
+   ヘッダー分を含めて100%を確保してしまい、
+   右カラムのスクロール領域が正しく縮まらない端末がある。
+   flex:1 + height:0 で「残り高さ」に確実に拘束する。 */
+#screen-ninmu .ninmu-layout {
+  flex: 1 1 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+#screen-ninmu .ninmu-right {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y !important;
+  pointer-events: auto !important;
+  scrollbar-width: thin;
+}
+
+/* 左カテゴリも画面高が足りない時だけ縦スクロール可能にする。 */
+#screen-ninmu .ninmu-left {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: visible !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+}
+
+/* 設定：
+   flex子のスクロール領域を height:0 にすることで、
+   body/html が position:fixed でも確実に内部スクロールさせる。 */
+#screen-setting .screen-scroll {
+  flex: 1 1 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y !important;
+  pointer-events: auto !important;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important;
+}
+
+/* iOSでスクロール開始時に子要素のタップ判定へ吸われにくくする */
+#screen-ninmu .ninmu-right *,
+#screen-setting .screen-scroll * {
+  touch-action: pan-y manipulation;
+}
+
+
+/* =========================================================
+   SHOOTING専用 プリモア詳細 / 共鳴
+   ========================================================= */
+.detail-shooting-section {
+  margin-top: 12px;
+}
+
+.detail-shooting-card {
+  padding: 12px 13px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 10px;
+}
+
+.detail-shooting-card.detail-shooting-ult {
+  border-color: rgba(218,190,118,0.24);
+  background:
+    linear-gradient(135deg, rgba(218,190,118,0.07), rgba(255,255,255,0.025));
+}
+
+.detail-shooting-name {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.94);
+}
+
+.detail-shooting-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.detail-shooting-grid .detail-status-row {
+  min-height: 34px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+}
+
+.detail-shooting-grid .detail-status-row:last-child {
+  border-bottom: 0;
+}
+
+.detail-shooting-desc {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: rgba(255,255,255,.64);
+}
+
+.detail-shooting-ult-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.detail-shooting-ult-head strong {
+  font-size: 14px;
+  font-family: "Noto Serif JP", serif;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.95);
+}
+
+.detail-shooting-resonance .lb-bonus-box {
+  margin-top: 0;
+}
+
+.detail-shooting-resonance .lb-bonus-box-title {
+  letter-spacing: .16em;
+}
+
+/* Strategy用の移動盤面/コンボ情報は新しいプリモア詳細では使用しない。 */
+#detail-modal .detail-move-preview-row,
+#detail-modal .detail-combo-section {
+  display: none;
+}
+
+
+/* =========================================================
+   Primoa Shooting Detail Panel Opaque Readability Fix
+   - 情報パネルが透けすぎて見えない問題を修正
+   - ベージュ / 白 / 金ベースで統一
+   ========================================================= */
+#screen-zukan.is-primoa-mode .box-carousel-detail,
+#screen-zukan.is-primoa-mode .box-carousel-detail-scroll,
+#screen-zukan.is-primoa-mode #detail-modal .modal,
+#detail-modal .modal {
+  color: #5f4b35 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-section,
+#detail-modal .detail-shooting-section {
+  margin-top: 14px;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-card,
+#detail-modal .detail-shooting-card {
+  background:
+    linear-gradient(180deg,
+      rgba(250, 246, 238, 0.985) 0%,
+      rgba(244, 237, 226, 0.975) 100%) !important;
+  border: 1px solid rgba(188, 160, 112, 0.34) !important;
+  box-shadow:
+    0 10px 22px rgba(117, 92, 54, 0.10),
+    0 0 0 1px rgba(255,255,255,0.70) inset !important;
+  border-radius: 12px !important;
+  color: #5f4b35 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-card.detail-shooting-ult,
+#detail-modal .detail-shooting-card.detail-shooting-ult {
+  background:
+    linear-gradient(180deg,
+      rgba(253, 250, 244, 0.99) 0%,
+      rgba(245, 237, 223, 0.98) 100%) !important;
+  border-color: rgba(202, 170, 113, 0.46) !important;
+  box-shadow:
+    0 12px 24px rgba(117, 92, 54, 0.12),
+    0 0 0 1px rgba(255,255,255,0.72) inset,
+    0 0 0 1px rgba(215, 188, 138, 0.18) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-name,
+#screen-zukan.is-primoa-mode .detail-shooting-ult-head strong,
+#detail-modal .detail-shooting-name,
+#detail-modal .detail-shooting-ult-head strong {
+  color: #5a4530 !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-desc,
+#detail-modal .detail-shooting-desc {
+  color: rgba(95, 75, 53, 0.82) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-grid .detail-status-row,
+#detail-modal .detail-shooting-grid .detail-status-row {
+  border-bottom: 1px solid rgba(188, 160, 112, 0.18) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-grid .detail-status-row:last-child,
+#detail-modal .detail-shooting-grid .detail-status-row:last-child {
+  border-bottom: 0 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-skill-badge,
+#detail-modal .detail-skill-badge {
+  background: linear-gradient(180deg, rgba(214, 189, 145, 0.24), rgba(229, 212, 181, 0.16)) !important;
+  border-color: rgba(181, 147, 93, 0.30) !important;
+  color: #7a6040 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-box,
+#detail-modal .detail-shooting-resonance .lb-bonus-box,
+#screen-zukan.is-primoa-mode .detail-lb-section,
+#detail-modal .detail-lb-section {
+  background:
+    linear-gradient(180deg,
+      rgba(249, 245, 237, 0.985) 0%,
+      rgba(242, 235, 223, 0.975) 100%) !important;
+  border-color: rgba(188, 160, 112, 0.30) !important;
+  box-shadow:
+    0 10px 22px rgba(117, 92, 54, 0.09),
+    0 0 0 1px rgba(255,255,255,0.68) inset !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-section-title,
+#screen-zukan.is-primoa-mode .detail-status-label,
+#screen-zukan.is-primoa-mode .detail-lb-label,
+#screen-zukan.is-primoa-mode .detail-lb-info,
+#screen-zukan.is-primoa-mode .lb-bonus-box-title,
+#screen-zukan.is-primoa-mode .lb-next-bonus-label,
+#detail-modal .detail-section-title,
+#detail-modal .detail-status-label,
+#detail-modal .detail-lb-label,
+#detail-modal .detail-lb-info,
+#detail-modal .lb-bonus-box-title,
+#detail-modal .lb-next-bonus-label {
+  color: rgba(114, 88, 55, 0.82) !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-status-val,
+#screen-zukan.is-primoa-mode .detail-lb-title,
+#screen-zukan.is-primoa-mode .detail-lb-val,
+#screen-zukan.is-primoa-mode .lb-bonus-box,
+#detail-modal .detail-status-val,
+#detail-modal .detail-lb-title,
+#detail-modal .detail-lb-val,
+#detail-modal .lb-bonus-box {
+  color: #5a4530 !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-ready-badge,
+#detail-modal .detail-lb-ready-badge {
+  background: rgba(201, 170, 113, 0.16) !important;
+  color: #8b6840 !important;
+  border-color: rgba(188, 160, 112, 0.32) !important;
+}
+
+
+/* =========================================================
+   Primoa Shooting Detail Readability Rework v2
+   - 項目ごとの箱をやめ、見出しと文字コントラストで整理
+   - 共鳴項目の可読性を全面改善
+   ========================================================= */
+#screen-zukan.is-primoa-mode .box-carousel-detail-scroll,
+#detail-modal .box-carousel-detail-scroll {
+  padding: 14px 12px calc(74px + env(safe-area-inset-bottom)) !important;
+}
+
+#screen-zukan.is-primoa-mode .box-carousel-detail,
+#detail-modal .box-carousel-detail {
+  width: min(100%, 352px) !important;
+  padding: 16px 16px 18px !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, rgba(252,249,243,0.96), rgba(245,238,227,0.96)) !important;
+  border: 1px solid rgba(197,170,122,0.28) !important;
+  box-shadow: 0 14px 30px rgba(110,88,56,0.10), 0 0 0 1px rgba(255,255,255,0.72) inset !important;
+  color: #58452f !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-section,
+#screen-zukan.is-primoa-mode .detail-shooting-card,
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-box,
+#detail-modal .detail-lb-section,
+#detail-modal .detail-shooting-card,
+#detail-modal .detail-shooting-resonance .lb-bonus-box {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-section,
+#screen-zukan.is-primoa-mode .detail-shooting-resonance,
+#screen-zukan.is-primoa-mode .detail-lb-section,
+#detail-modal .detail-shooting-section,
+#detail-modal .detail-shooting-resonance,
+#detail-modal .detail-lb-section {
+  margin-top: 16px !important;
+  margin-bottom: 0 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-section-title,
+#detail-modal .detail-section-title {
+  display: block !important;
+  margin: 0 0 10px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(190,161,114,0.32) !important;
+  color: #8a6841 !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: .18em !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-row,
+#screen-zukan.is-primoa-mode .detail-shooting-grid .detail-status-row,
+#detail-modal .detail-lb-row,
+#detail-modal .detail-shooting-grid .detail-status-row {
+  padding: 8px 0 !important;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(190,161,114,0.16) !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-row:last-child,
+#screen-zukan.is-primoa-mode .detail-shooting-grid .detail-status-row:last-child,
+#detail-modal .detail-lb-row:last-child,
+#detail-modal .detail-shooting-grid .detail-status-row:last-child {
+  border-bottom: 0 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-label,
+#screen-zukan.is-primoa-mode .detail-status-label,
+#screen-zukan.is-primoa-mode .detail-lb-info,
+#screen-zukan.is-primoa-mode .lb-bonus-box-title,
+#detail-modal .detail-lb-label,
+#detail-modal .detail-status-label,
+#detail-modal .detail-lb-info,
+#detail-modal .lb-bonus-box-title {
+  color: #8a6841 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-status-val,
+#screen-zukan.is-primoa-mode .detail-lb-title,
+#screen-zukan.is-primoa-mode .detail-lb-val,
+#screen-zukan.is-primoa-mode .detail-shooting-name,
+#screen-zukan.is-primoa-mode .detail-shooting-ult-head strong,
+#detail-modal .detail-status-val,
+#detail-modal .detail-lb-title,
+#detail-modal .detail-lb-val,
+#detail-modal .detail-shooting-name,
+#detail-modal .detail-shooting-ult-head strong {
+  color: #4f3b28 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-lb-val,
+#detail-modal .detail-lb-val {
+  color: #8c6b42 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-desc,
+#screen-zukan.is-primoa-mode .detail-type-row,
+#screen-zukan.is-primoa-mode .detail-type-val,
+#detail-modal .detail-shooting-desc,
+#detail-modal .detail-type-row,
+#detail-modal .detail-type-val {
+  color: rgba(89, 69, 46, 0.88) !important;
+  font-size: 12px !important;
+  line-height: 1.75 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-skill-badge,
+#detail-modal .detail-skill-badge {
+  background: rgba(201,170,113,0.14) !important;
+  border: 1px solid rgba(190,161,114,0.34) !important;
+  color: #8a6841 !important;
+}
+
+/* 共鳴一覧を完全に見やすくする */
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-box-title,
+#detail-modal .detail-shooting-resonance .lb-bonus-box-title {
+  margin: 0 0 6px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(190,161,114,0.32) !important;
+  font-size: 13px !important;
+  font-family: "Cinzel", "Noto Serif JP", serif !important;
+  letter-spacing: .16em !important;
+  color: #8a6841 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row,
+#detail-modal .detail-shooting-resonance .lb-bonus-row {
+  display: grid !important;
+  grid-template-columns: 46px 1fr auto !important;
+  gap: 10px !important;
+  min-height: 0 !important;
+  padding: 10px 0 !important;
+  margin: 0 !important;
+  border-top: 1px solid rgba(190,161,114,0.14) !important;
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row:first-of-type,
+#detail-modal .detail-shooting-resonance .lb-bonus-row:first-of-type {
+  border-top: 0 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.next,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.next {
+  padding-left: 8px !important;
+  border-left: 3px solid rgba(201,170,113,0.56) !important;
+  background: rgba(201,170,113,0.07) !important;
+  border-radius: 0 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.locked,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.locked {
+  opacity: 1 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-level,
+#detail-modal .detail-shooting-resonance .lb-bonus-level {
+  color: #a07a49 !important;
+  font-family: "Cinzel", serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-title,
+#detail-modal .detail-shooting-resonance .lb-bonus-title {
+  color: #4f3b28 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  margin-bottom: 3px !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-summary,
+#detail-modal .detail-shooting-resonance .lb-bonus-summary {
+  color: rgba(89, 69, 46, 0.86) !important;
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-state,
+#detail-modal .detail-shooting-resonance .lb-bonus-state {
+  color: #8a6841 !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.unlocked .lb-bonus-level,
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.unlocked .lb-bonus-state,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.unlocked .lb-bonus-level,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.unlocked .lb-bonus-state {
+  color: #7b633c !important;
+}
+
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-level,
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-title,
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-summary,
+#screen-zukan.is-primoa-mode .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-state,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-level,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-title,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-summary,
+#detail-modal .detail-shooting-resonance .lb-bonus-row.locked .lb-bonus-state {
+  color: rgba(110, 92, 68, 0.72) !important;
+}
+
+
+/* =========================================================
+   Primoa quick resonance button + mobile viewport clipping fix
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0 8px;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: min(100%, 220px);
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(174, 138, 66, 0.58);
+  background: linear-gradient(180deg, rgba(252,248,232,0.98), rgba(232,215,166,0.98));
+  color: #6e5320;
+  font-family: "Noto Serif JP", serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 6px 14px rgba(131, 104, 50, 0.12), inset 0 1px 0 rgba(255,255,255,0.82);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn:active {
+  transform: scale(0.985);
+  filter: brightness(0.97);
+}
+
+@media (max-width: 499px) {
+  html,
+  body {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .global-user-frame,
+  .bottom-nav,
+  #splash,
+  #title-screen,
+  #loading,
+  #story-root,
+  .screen,
+  .screen-scroll {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  #screen-zukan,
+  #screen-zukan .screen-scroll,
+  #box-grid.box-carousel,
+  #box-grid.box-carousel .box-carousel-view,
+  #box-grid.box-carousel .box-carousel-fixed,
+  #box-grid.box-carousel .box-carousel-detail-scroll,
+  #box-grid.box-carousel .box-carousel-detail,
+  #box-grid.box-carousel .box-carousel-visual-row {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+}
+
+
+/* Primoa fixed action layout cleanup */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0 10px;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  width: min(100%, 270px);
+  min-height: 48px;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(174, 138, 66, 0.58);
+  background: linear-gradient(180deg, rgba(252,248,232,0.98), rgba(232,215,166,0.98));
+  color: #6e5320;
+  font-family: "Noto Serif JP", serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 6px 14px rgba(131, 104, 50, 0.12), inset 0 1px 0 rgba(255,255,255,0.82);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn.is-disabled {
+  background: linear-gradient(180deg, rgba(250, 225, 232, 0.95), rgba(242, 183, 196, 0.92));
+  color: #8b4c5d;
+  border-color: rgba(214, 145, 165, 0.62);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn.is-max {
+  background: linear-gradient(180deg, rgba(243,243,243,0.98), rgba(225,225,225,0.95));
+  color: #7a7467;
+  border-color: rgba(172,168,157,0.58);
+  cursor: default;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-in-detail {
+  display: none !important;
+}
+
+/* =========================================================
+   Primoa fixed action refinement: vertical + elegant
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 0 12px;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 270px);
+  min-height: 48px;
+  margin: 0;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-family: "Noto Serif JP", serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow:
+    0 6px 16px rgba(143, 116, 64, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed:active,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn:active {
+  transform: scale(0.985);
+  filter: brightness(0.985);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed {
+  border: 1px solid rgba(178, 140, 58, 0.56);
+  background: linear-gradient(180deg, rgba(250, 244, 223, 0.98), rgba(233, 214, 159, 0.98));
+  color: #6a5120;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  border: 1px solid rgba(186, 154, 93, 0.48);
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(243, 235, 214, 0.98));
+  color: #705838;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn.is-ready {
+  border-color: rgba(178, 140, 58, 0.56);
+  background: linear-gradient(180deg, rgba(250, 244, 223, 0.98), rgba(233, 214, 159, 0.98));
+  color: #6a5120;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn.is-disabled {
+  border-color: rgba(202, 170, 138, 0.42);
+  background: linear-gradient(180deg, rgba(250, 243, 238, 0.97), rgba(239, 225, 214, 0.96));
+  color: #8c705d;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn.is-max {
+  border-color: rgba(179, 170, 150, 0.44);
+  background: linear-gradient(180deg, rgba(246, 244, 240, 0.98), rgba(230, 226, 218, 0.96));
+  color: #7c7569;
+  cursor: default;
+}
+
+
+/* =========================================================
+   Primoa fixed area + detail scroll layout fix
+   - legacy 100px grid padding removed in index.html
+   - default area: image -> name -> home -> 強化 -> separator
+   - always reserve a usable information scroll viewport
+   ========================================================= */
+#screen-zukan.is-primoa-mode #box-grid.box-carousel {
+  padding-bottom: 0 !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail-scroll {
+  flex: 1 1 112px !important;
+  min-height: 92px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding-top: 4px !important;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail {
+  min-height: 100% !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+  gap: 9px !important;
+  padding: 6px 0 9px !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  min-height: 42px !important;
+  width: min(100%, 270px) !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+}
+
+/* The old normalization forced 216px even on short devices.
+   Override it here so the detail area never collapses. */
+@media (max-height: 800px) {
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual-row .box-carousel-visual {
+    width: 188px !important;
+    max-width: 188px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-name {
+    margin: 3px 0 5px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+    gap: 7px !important;
+    padding: 5px 0 7px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed,
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+    min-height: 40px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+}
+
+@media (max-height: 720px) {
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual-row .box-carousel-visual {
+    width: 168px !important;
+    max-width: 168px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-limitbreak-jump {
+    margin-top: 1px !important;
+    margin-bottom: 4px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+    gap: 6px !important;
+    padding: 4px 0 6px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed,
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+    min-height: 38px !important;
+    font-size: 12px !important;
+  }
+
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail-scroll {
+    min-height: 96px !important;
+  }
+}
+
+
+/* =========================================================
+   Primoa actions v315
+   - list: [レベルアップ][限界突破] horizontally
+   - home setting moved to fullscreen character image viewer
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  width: min(100%, 304px) !important;
+  margin: 0 auto !important;
+  padding: 8px 0 10px !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-home-btn-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-quick-lb-btn {
+  display: none !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 8px;
+  border-radius: 9px;
+  border: 1px solid rgba(185, 153, 94, 0.48);
+  background: linear-gradient(180deg, rgba(255, 252, 244, 0.99), rgba(240, 229, 201, 0.98));
+  color: #6c5228;
+  font-family: "Noto Serif JP", serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: .06em;
+  text-align: center;
+  box-shadow:
+    0 4px 10px rgba(122, 94, 48, .08),
+    inset 0 1px 0 rgba(255,255,255,.92);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn:active {
+  transform: translateY(1px);
+  filter: brightness(.98);
+  box-shadow:
+    0 2px 6px rgba(122, 94, 48, .08),
+    inset 0 1px 0 rgba(255,255,255,.88);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-levelup-btn {
+  background: linear-gradient(180deg, rgba(253,250,242,.99), rgba(244,237,221,.98));
+  color: #79664c;
+  border-color: rgba(190,170,135,.44);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-limitbreak-btn.is-ready {
+  background: linear-gradient(180deg, rgba(250,243,220,.99), rgba(230,207,148,.98));
+  color: #684b17;
+  border-color: rgba(177,137,57,.58);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-limitbreak-btn.is-disabled {
+  background: linear-gradient(180deg, rgba(250,247,240,.98), rgba(237,230,215,.97));
+  color: #88765f;
+  border-color: rgba(190,170,140,.38);
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-limitbreak-btn.is-max {
+  background: linear-gradient(180deg, rgba(245,243,238,.98), rgba(229,225,217,.97));
+  color: #817a6d;
+  border-color: rgba(176,170,159,.40);
+  cursor: default;
+}
+
+.primor-fullscreen-home-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-top: 14px;
+  min-width: min(78vw, 250px);
+  min-height: 42px;
+  padding: 9px 18px;
+  border: 1px solid rgba(216, 189, 127, .62);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255,252,241,.96), rgba(231,211,163,.94));
+  color: #5f461a;
+  font-family: "Noto Serif JP", serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.88);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.primor-fullscreen-home-btn:active {
+  transform: translateY(1px);
+  filter: brightness(.98);
+}
+
+/* Viewerにボタンを追加した分、画像の最大高を少しだけ抑えて安全に収める。 */
+.primor-fullscreen-img {
+  max-height: calc(100dvh - 178px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
+
+/* =========================================================
+   Primoa scroll v316
+   - 最下部をbottom-navに隠さない
+   - 上半分の画像/名前領域でも縦スワイプでシートを展開可能
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail-scroll {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+  scroll-padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail::after {
+  content: "";
+  display: block;
+  height: 18px;
+  width: 100%;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual-row,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-name {
+  touch-action: pan-y !important;
+}
+
+/* ボタン自体はタップを優先する */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-fixed-actions button,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-arrow {
+  touch-action: manipulation !important;
+}
+
+@media (max-height: 720px) {
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-detail-scroll {
+    padding-bottom: calc(138px + env(safe-area-inset-bottom)) !important;
+    scroll-padding-bottom: calc(138px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* =========================================================
+   Bottom nav readability patch
+   - icon / label gap: + about 2mm (7-8px)
+   - active label stays readable over selected-item glow
+   ========================================================= */
+.bottom-nav-item{
+  overflow:visible;
+}
+
+.bottom-nav-label{
+  position:relative;
+  z-index:3;
+  margin-top:6px !important;
+  padding-bottom:5px !important;
+  line-height:1.05;
+}
+
+.bottom-nav-item.active .bottom-nav-label{
+  position:relative;
+  z-index:4;
+  color:#59421f !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 5px rgba(255,250,232,.92) !important;
+}
+
+/* active背景・発光は文字より後ろへ */
+.bottom-nav-item.active::before{
+  z-index:0;
+}
+.bottom-nav-item img{
+  position:relative;
+  z-index:2;
+}
+
+@media (max-width:380px), (max-height:700px){
+  .bottom-nav-label{
+    margin-top:5px !important;
+    padding-bottom:4px !important;
+  }
+  .bottom-nav-item.active .bottom-nav-label{
+    color:#59421f !important;
+  }
+}
+
+
+/* =========================================================
+   Bottom nav label size fine tuning
+   ========================================================= */
+.bottom-nav-label{
+  font-size:11.5px !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  .bottom-nav-label{
+    font-size:11px !important;
+  }
+}
+
+
+/* =========================================================
+   Unified content headers — centered titles / left back button
+   ========================================================= */
+
+/* Standard content headings: always optically centered on screen. */
+.screen > .header,
+.screen .header {
+  position: fixed;
+}
+
+.screen .header-title,
+#screen-ninmu .header-title,
+#screen-zukan .header-title,
+#screen-summon .header-title,
+#screen-setting .header-title,
+#screen-bonus .header-title {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  width: calc(100% - 150px) !important;
+  max-width: 250px;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  text-align: center !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Decorative underline remains centered below the title. */
+#screen-ninmu .header-title::after,
+#screen-zukan .header-title::after,
+#screen-summon .header-title::after,
+#screen-setting .header-title::after {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Bonus: same left-side text back button used throughout the game. */
+#screen-bonus .bonus-back-btn,
+.bonus-screen-header .bonus-back-btn {
+  position: absolute !important;
+  top: 50% !important;
+  left: 18px !important;
+  right: auto !important;
+  transform: translateY(-50%) !important;
+  min-width: auto !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #8a7651 !important;
+  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: .04em !important;
+  text-shadow: none !important;
+  z-index: 3;
+}
+
+#screen-bonus .bonus-back-btn:active,
+.bonus-screen-header .bonus-back-btn:active {
+  opacity: .62;
+}
+
+/* Bonus title is centered and no longer competes with the back button. */
+#screen-bonus .bonus-screen-header .header-title {
+  color: #8b6728 !important;
+  text-shadow: none !important;
+}
+
+/* Keep right-side controls usable while title remains truly centered. */
+#screen-zukan #zukan-header-back,
+#screen-zukan .zukan-header-switch {
+  position: relative;
+  z-index: 3;
+}
+
+@media (max-width: 380px), (max-height: 700px) {
+  .screen .header-title,
+  #screen-ninmu .header-title,
+  #screen-zukan .header-title,
+  #screen-summon .header-title,
+  #screen-setting .header-title,
+  #screen-bonus .header-title {
+    width: calc(100% - 132px) !important;
+    max-width: 220px;
+  }
+  #screen-bonus .bonus-back-btn,
+  .bonus-screen-header .bonus-back-btn {
+    left: 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+
+/* =========================================================
+   Home banner swipe/autoplay robustness
+   - vertical page gesture remains native
+   - horizontal pointer gesture is reserved for banner paging
+   ========================================================= */
+#home-event-banner-wrap,
+#home-event-banner-wrap .home-event-banner-item{
+  touch-action: pan-y !important;
+}
+#home-event-banner-track{
+  transform: translate3d(0,0,0);
+  backface-visibility:hidden;
+}
+
+
+/* =========================================================
+   Shinju Offering Experience v2
+   - resource cards removed
+   - floating genesis aura + absorption animation
+   - compact no-scroll lower UI
+   - unified top-left back button
+   ========================================================= */
+#shinju-overlay .shinju-panel{
+  overflow:hidden !important;
+}
+
+#shinju-overlay .shinju-close{
+  position:absolute !important;
+  z-index:40 !important;
+  top:calc(env(safe-area-inset-top) + 14px) !important;
+  left:18px !important;
+  right:auto !important;
+  width:auto !important;
+  height:32px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#8a7651 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:14px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  letter-spacing:.04em !important;
+  text-shadow:0 1px 7px rgba(255,255,255,.86) !important;
+}
+#shinju-overlay .shinju-close:active{
+  opacity:.62 !important;
+  transform:none !important;
+}
+
+#shinju-overlay .shinju-aura-field{
+  position:absolute;
+  z-index:12;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+#shinju-overlay .shinju-aura-orb{
+  position:absolute;
+  left:var(--aura-x);
+  top:var(--aura-y);
+  width:92px;
+  height:92px;
+  margin:-46px 0 0 -46px;
+  opacity:.88;
+  transform:translate3d(0,0,0) scale(var(--aura-scale));
+  transform-origin:center;
+  filter:
+    drop-shadow(0 0 8px rgba(255,240,170,.46))
+    drop-shadow(0 0 18px rgba(255,224,125,.22));
+  animation:shinjuAuraDrift 4.2s ease-in-out var(--aura-delay) infinite alternate;
+  will-change:transform,opacity,filter;
+}
+#shinju-overlay .shinju-aura-orb img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  opacity:.92;
+  animation:shinjuAuraBreath 3.1s ease-in-out var(--aura-delay) infinite alternate;
+}
+
+@keyframes shinjuAuraDrift{
+  0%{transform:translate3d(-4px,4px,0) scale(var(--aura-scale)) rotate(-2deg);opacity:.68}
+  50%{transform:translate3d(5px,-7px,0) scale(calc(var(--aura-scale) * 1.05)) rotate(2deg);opacity:.94}
+  100%{transform:translate3d(-2px,-12px,0) scale(var(--aura-scale)) rotate(-1deg);opacity:.78}
+}
+@keyframes shinjuAuraBreath{
+  from{filter:brightness(.94) saturate(.94);opacity:.74}
+  to{filter:brightness(1.16) saturate(1.06);opacity:1}
+}
+
+#shinju-overlay .shinju-aura-orb.is-offering{
+  animation:shinjuAuraOffer .72s cubic-bezier(.55,.03,.20,1) var(--offer-delay) forwards !important;
+}
+#shinju-overlay .shinju-aura-orb.is-offering img{
+  animation:none !important;
+}
+@keyframes shinjuAuraOffer{
+  0%{
+    transform:translate3d(0,0,0) scale(var(--aura-scale)) rotate(0deg);
+    opacity:.92;
+    filter:drop-shadow(0 0 10px rgba(255,239,171,.62)) drop-shadow(0 0 20px rgba(255,214,99,.28));
+  }
+  46%{
+    opacity:1;
+    filter:brightness(1.35) drop-shadow(0 0 16px rgba(255,247,198,.92)) drop-shadow(0 0 30px rgba(239,190,65,.48));
+  }
+  100%{
+    transform:translate3d(var(--offer-x),var(--offer-y),0) scale(.03) rotate(28deg);
+    opacity:0;
+    filter:brightness(1.65) blur(2px) drop-shadow(0 0 22px rgba(255,244,179,.94));
+  }
+}
+
+#shinju-overlay .shinju-content{
+  position:absolute !important;
+  z-index:20 !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  height:auto !important;
+  min-height:94px !important;
+  max-height:none !important;
+  overflow:hidden !important;
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom)) !important;
+  background:linear-gradient(180deg,rgba(255,253,247,.58),rgba(248,242,228,.88)) !important;
+  border-top:1px solid rgba(169,136,74,.18) !important;
+  box-shadow:0 -8px 24px rgba(84,64,34,.06) !important;
+  backdrop-filter:blur(7px) saturate(1.04) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(1.04) !important;
+}
+#shinju-overlay .shinju-lore{
+  margin:0 0 8px !important;
+  font-size:9px !important;
+  line-height:1.45 !important;
+  text-align:center !important;
+  color:rgba(84,72,52,.62) !important;
+}
+#shinju-overlay .shinju-offering-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:42px;
+}
+#shinju-overlay .shinju-offering-state{
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  color:#766143;
+  white-space:nowrap;
+}
+#shinju-overlay .shinju-offering-label{
+  font-size:10px;
+  letter-spacing:.10em;
+  color:rgba(92,77,56,.70);
+}
+#shinju-overlay #shinju-pending-count{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:15px;
+  font-weight:500;
+  color:#8b6b30;
+}
+#shinju-overlay #shinju-pending-exp{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:9px;
+  letter-spacing:.06em;
+  color:rgba(139,107,48,.60);
+}
+#shinju-overlay .shinju-offer-all{
+  flex:0 0 auto;
+  min-width:106px;
+  height:38px;
+  padding:0 15px !important;
+  border:1px solid rgba(160,124,58,.30) !important;
+  border-radius:999px !important;
+  background:linear-gradient(180deg,rgba(255,253,246,.90),rgba(247,236,211,.86)) !important;
+  color:#806238 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  letter-spacing:.08em !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.76),0 3px 12px rgba(103,76,33,.06) !important;
+}
+#shinju-overlay .shinju-offer-all:disabled{
+  opacity:.40 !important;
+  filter:grayscale(.25);
+}
+#shinju-overlay[data-offering="1"] .shinju-offer-all{
+  pointer-events:none;
+}
+
+#shinju-overlay .shinju-progress-fill{
+  transition:width .72s cubic-bezier(.22,.61,.36,1) !important;
+}
+#shinju-overlay.shinju-gauge-receive .shinju-progress-bg{
+  animation:shinjuGaugeReceive .72s ease-out;
+}
+#shinju-overlay.shinju-gauge-receive .shinju-progress-fill{
+  filter:brightness(1.16) saturate(1.12);
+  box-shadow:0 0 8px rgba(255,231,143,.58),0 0 15px rgba(189,224,245,.34);
+}
+@keyframes shinjuGaugeReceive{
+  0%{box-shadow:0 0 0 rgba(255,235,155,0)}
+  32%{box-shadow:0 0 11px rgba(255,239,169,.78),0 0 24px rgba(255,219,111,.34)}
+  100%{box-shadow:0 1px 8px rgba(255,255,255,.34)}
+}
+
+/* 旧資源一覧は完全撤去 */
+#shinju-overlay .shinju-items-head,
+#shinju-overlay .shinju-item-list,
+#shinju-overlay .shinju-item-card,
+#shinju-overlay .shinju-item-empty{
+  display:none !important;
+}
+
+@media(max-width:380px), (max-height:700px){
+  #shinju-overlay .shinju-close{
+    top:calc(env(safe-area-inset-top) + 11px) !important;
+    left:15px !important;
+    font-size:13px !important;
+  }
+  #shinju-overlay .shinju-aura-orb{
+    width:82px;
+    height:82px;
+    margin:-41px 0 0 -41px;
+  }
+  #shinju-overlay .shinju-content{
+    min-height:88px !important;
+    padding:10px 15px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+  #shinju-overlay .shinju-lore{margin-bottom:6px !important;font-size:8px !important}
+  #shinju-overlay .shinju-offering-bar{gap:8px}
+  #shinju-overlay .shinju-offering-label{font-size:9px}
+  #shinju-overlay #shinju-pending-count{font-size:14px}
+  #shinju-overlay #shinju-pending-exp{font-size:8px}
+  #shinju-overlay .shinju-offer-all{min-width:96px;height:36px;padding:0 12px !important;font-size:10px !important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  #shinju-overlay .shinju-aura-orb,
+  #shinju-overlay .shinju-aura-orb img{
+    animation:none !important;
+  }
+}
+
+
+/* ============================================================
+   2026-08-16 Scroll stability final patch
+   - 設定 / 巡行
+   - fixed html/body + fixed header 環境でも縦スクロールを確保
+   ============================================================ */
+
+/* 画面はviewportに固定し、コンテンツ領域の実高さを明示する。 */
+#screen-ninmu.active,
+#screen-setting.active {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  touch-action: pan-y !important;
+}
+
+/* 巡行：ヘッダー下〜ボトムナビ上までを実スクロール領域として確保。 */
+#screen-ninmu .ninmu-layout {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: calc(100dvh - var(--header-h) - var(--page-header-h, 64px)) !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - var(--header-h) - var(--page-header-h, 64px)) !important;
+  overflow: hidden !important;
+}
+
+#screen-ninmu .ninmu-right,
+#screen-ninmu .ninmu-left {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+}
+
+#screen-ninmu .ninmu-right {
+  height: 100% !important;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 設定：screen-scroll自身に明示的な高さを与える。 */
+#screen-setting .screen-scroll {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: calc(100dvh - var(--header-h) - var(--page-header-h, 64px)) !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - var(--header-h) - var(--page-header-h, 64px)) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 子要素が縦スワイプを奪わないようにする。 */
+#screen-ninmu .ninmu-right,
+#screen-ninmu .ninmu-right *,
+#screen-setting .screen-scroll,
+#screen-setting .screen-scroll * {
+  touch-action: pan-y !important;
+}
+
+
+/* =========================================================
+   2026-08-16 Gacha PICKUP visibility fix
+   - result card pickup = visible gold aura, no text badge
+   - summon skip = brown text only
+   ========================================================= */
+
+/* PICK UP文字・バッジは完全非表示 */
+#reveal-pickup-badge,
+.ten-card-pickup-badge {
+  display: none !important;
+}
+
+/* 10連結果：PICK UPは外周発光で明確に識別 */
+.ten-result-card.is-pickup {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: visible !important;
+  border-color: rgba(205, 164, 72, 0.98) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 247, 218, 0.96),
+    0 0 12px rgba(226, 186, 88, 0.52),
+    0 0 28px rgba(226, 186, 88, 0.26),
+    0 12px 24px rgba(102, 74, 21, 0.22),
+    inset 0 0 0 1px rgba(255,255,255,0.74),
+    inset 0 0 22px rgba(239, 215, 150, 0.16) !important;
+  animation: tenPickupCardPulse 4.2s ease-in-out infinite !important;
+}
+
+/* ふわっとした金色のオーラ */
+.ten-result-card.is-pickup::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: -8px !important;
+  z-index: 5 !important;
+  pointer-events: none !important;
+  border-radius: 14px !important;
+  opacity: 0.95 !important;
+  mix-blend-mode: screen !important;
+  filter: blur(7px) !important;
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255,250,232,0.52) 0%, rgba(255,237,188,0.30) 18%, rgba(255,227,156,0.10) 34%, rgba(255,227,156,0) 50%),
+    radial-gradient(circle at 72% 34%, rgba(255,247,216,0.34) 0%, rgba(244,216,140,0.18) 20%, rgba(244,216,140,0) 44%),
+    radial-gradient(circle at 54% 78%, rgba(255,243,206,0.28) 0%, rgba(236,204,129,0.14) 18%, rgba(236,204,129,0) 42%) !important;
+  animation: tenPickupAuraFloat 4.8s ease-in-out infinite !important;
+}
+
+/* 金色の内周リング。カード画像を邪魔しない細さ */
+.ten-result-card.is-pickup::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 2px !important;
+  z-index: 7 !important;
+  pointer-events: none !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(236, 201, 113, 0.82) !important;
+  background: transparent !important;
+  box-shadow:
+    inset 0 0 10px rgba(255, 244, 207, 0.32),
+    0 0 8px rgba(239, 204, 113, 0.22) !important;
+  opacity: 1 !important;
+}
+
+.ten-result-card.is-pickup .ten-card-img {
+  filter: brightness(1.045) saturate(1.04) !important;
+}
+
+.ten-result-card.is-pickup .ten-card-element-icon {
+  filter:
+    drop-shadow(0 0 7px rgba(255,255,255,0.88))
+    drop-shadow(0 0 11px rgba(230,195,106,0.62))
+    drop-shadow(0 2px 4px rgba(60,48,30,0.34)) !important;
+}
+
+@keyframes tenPickupCardPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 247, 218, 0.92),
+      0 0 10px rgba(226, 186, 88, 0.34),
+      0 0 20px rgba(226, 186, 88, 0.18),
+      0 12px 24px rgba(102, 74, 21, 0.20),
+      inset 0 0 0 1px rgba(255,255,255,0.72),
+      inset 0 0 16px rgba(239, 215, 150, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 251, 231, 1),
+      0 0 18px rgba(235, 196, 96, 0.72),
+      0 0 38px rgba(235, 196, 96, 0.34),
+      0 12px 26px rgba(102, 74, 21, 0.26),
+      inset 0 0 0 1px rgba(255,255,255,0.82),
+      inset 0 0 26px rgba(244, 222, 160, 0.20);
+  }
+}
+
+@keyframes tenPickupAuraFloat {
+  0%, 100% {
+    transform: translate3d(-2px, -1px, 0) scale(0.985);
+    opacity: 0.58;
+  }
+  25% {
+    transform: translate3d(3px, -3px, 0) scale(1.01);
+    opacity: 0.86;
+  }
+  50% {
+    transform: translate3d(1px, 2px, 0) scale(1.03);
+    opacity: 0.98;
+  }
+  75% {
+    transform: translate3d(-3px, 3px, 0) scale(1.005);
+    opacity: 0.74;
+  }
+}
+
+/* 単体PICK UP演出も文字なし、周囲の光だけ */
+#reveal-modal.is-pickup #reveal-chara-img {
+  border-color: rgba(205, 168, 83, 0.72) !important;
+  box-shadow:
+    0 20px 52px rgba(64,54,36,0.20),
+    0 0 42px rgba(255,255,255,0.96),
+    0 0 84px rgba(228,199,127,0.58),
+    0 0 118px rgba(255,239,198,0.38),
+    0 0 0 1px rgba(255,248,228,0.60) inset !important;
+}
+
+/* 右下スキップ：白ではなく、背景に馴染むブラウン文字 */
+.standby-skip-btn {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;
+  color: rgba(111, 82, 39, 0.94) !important;
+  font-family: 'Cinzel', 'Noto Serif JP', serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,0.90),
+    0 0 7px rgba(255,250,235,0.78) !important;
+  opacity: 0.86 !important;
+  animation: summonSkipBrownPulse 1.8s ease-in-out infinite !important;
+}
+
+@keyframes summonSkipBrownPulse {
+  0%, 100% { opacity: 0.48; }
+  50% { opacity: 1; }
+}
+
+
+/* =========================================================
+   2026-08-16 PICK UP aura DOM animation
+   疑似要素ではなく実DOMを動かして、確実に視認できるゆらぎにする
+   ========================================================= */
+
+.ten-result-card.is-pickup {
+  overflow: hidden !important;
+  animation: tenPickupBreath 3.2s ease-in-out infinite !important;
+  will-change: box-shadow;
+}
+
+/* ぼわぁっと揺れる金色オーラ */
+.ten-card-pickup-aura {
+  position: absolute;
+  inset: -18% -28%;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: 45%;
+  opacity: 0.72;
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  background:
+    radial-gradient(ellipse at 28% 30%,
+      rgba(255, 252, 236, 0.94) 0%,
+      rgba(255, 237, 185, 0.58) 19%,
+      rgba(234, 194, 96, 0.20) 38%,
+      rgba(234, 194, 96, 0) 58%),
+    radial-gradient(ellipse at 74% 64%,
+      rgba(255, 247, 216, 0.72) 0%,
+      rgba(242, 210, 131, 0.34) 22%,
+      rgba(242, 210, 131, 0) 52%);
+  transform-origin: center;
+  animation: tenPickupAuraWander 3.6s ease-in-out infinite !important;
+  will-change: transform, opacity;
+}
+
+/* ときどき横切る柔らかい光 */
+.ten-card-pickup-glint {
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  left: -55%;
+  width: 42%;
+  z-index: 8;
+  pointer-events: none;
+  opacity: 0;
+  transform: skewX(-12deg);
+  filter: blur(3px);
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,248,218,0.10) 18%,
+      rgba(255,250,224,0.72) 50%,
+      rgba(255,248,218,0.10) 82%,
+      rgba(255,255,255,0) 100%);
+  animation: tenPickupGlintMove 4.4s ease-in-out infinite !important;
+  will-change: left, opacity;
+}
+
+/* 画像やラベルはオーラより前面。ただしglintはさらに上 */
+.ten-result-card.is-pickup .ten-card-img {
+  z-index: 4 !important;
+}
+.ten-result-card.is-pickup .ten-card-bottom,
+.ten-result-card.is-pickup .ten-card-element-icon,
+.ten-result-card.is-pickup .ten-card-new-badge {
+  z-index: 10 !important;
+}
+
+/* 既存の::afterアニメは競合させない */
+.ten-result-card.is-pickup::after {
+  animation: none !important;
+  opacity: 0.18 !important;
+}
+
+/* 呼吸するような外周発光 */
+@keyframes tenPickupBreath {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255,247,218,0.92),
+      0 0 8px rgba(226,186,88,0.36),
+      0 0 18px rgba(226,186,88,0.18),
+      0 10px 22px rgba(102,74,21,0.20),
+      inset 0 0 0 1px rgba(255,255,255,0.72) !important;
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255,252,235,1),
+      0 0 18px rgba(235,196,96,0.88),
+      0 0 36px rgba(235,196,96,0.44),
+      0 12px 25px rgba(102,74,21,0.26),
+      inset 0 0 16px rgba(255,240,195,0.28) !important;
+  }
+}
+
+/* 見て分かる程度に、左右上下へゆっくり漂わせる */
+@keyframes tenPickupAuraWander {
+  0%, 100% {
+    transform: translate3d(-7px, -4px, 0) scale(0.92) rotate(-2deg);
+    opacity: 0.42;
+  }
+  25% {
+    transform: translate3d(7px, -7px, 0) scale(1.02) rotate(2deg);
+    opacity: 0.78;
+  }
+  52% {
+    transform: translate3d(5px, 6px, 0) scale(1.10) rotate(0deg);
+    opacity: 0.98;
+  }
+  76% {
+    transform: translate3d(-6px, 5px, 0) scale(1.00) rotate(-3deg);
+    opacity: 0.68;
+  }
+}
+
+@keyframes tenPickupGlintMove {
+  0%, 14% {
+    left: -55%;
+    opacity: 0;
+  }
+  24% {
+    opacity: 0.18;
+  }
+  48% {
+    opacity: 0.86;
+  }
+  68% {
+    left: 118%;
+    opacity: 0.18;
+  }
+  76%, 100% {
+    left: 118%;
+    opacity: 0;
+  }
 }

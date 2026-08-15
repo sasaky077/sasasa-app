@@ -6,8 +6,8 @@
 .shooting-bg{position:absolute;inset:0;background:url('../images/battle_bg_01.webp') center/cover no-repeat;filter:brightness(1.04) saturate(.88) contrast(.96);opacity:.64;transform:scale(1.02)}
 .shooting-wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08) 45%,rgba(244,239,227,.26));pointer-events:none}
 .shooting-hud{height:72px;padding:12px 16px;position:absolute;z-index:20;left:0;right:0;top:0;display:flex;align-items:center;border-bottom:1px solid rgba(150,124,75,.28);background:linear-gradient(180deg,rgba(255,253,247,.92),rgba(248,243,231,.72),rgba(248,243,231,0));backdrop-filter:blur(3px)}
-.shooting-back{width:38px;height:38px;border-radius:50%;border:1px solid rgba(152,125,74,.5);background:rgba(255,255,255,.7);color:#806a43;font-size:30px;line-height:30px;font-family:serif;cursor:pointer}
-.shooting-hud-title{margin-left:12px;display:flex;flex-direction:column;line-height:1.1;letter-spacing:.08em}.shooting-hud-title span{font-size:8px;color:#a1885a;letter-spacing:.22em}.shooting-hud-title strong{font-size:15px;font-weight:500;margin-top:3px;color:#514530}.shooting-score{margin-left:auto;font-family:"Cinzel",serif;font-size:10px;letter-spacing:.14em;color:#826d47}
+.shooting-back{display:inline-flex;align-items:center;justify-content:flex-start;min-width:auto;height:32px;padding:0 4px 0 0;border:0;background:transparent;color:#8a7651;font-size:14px;line-height:1;font-family:"Noto Serif JP",serif;font-weight:500;letter-spacing:.06em;cursor:pointer}.shooting-back:hover{opacity:.82}
+.shooting-hud-title{margin-left:8px;display:flex;flex-direction:column;line-height:1.1;letter-spacing:.08em}.shooting-hud-title span{font-size:8px;color:#a1885a;letter-spacing:.22em}.shooting-hud-title strong{font-size:15px;font-weight:500;margin-top:3px;color:#514530}.shooting-score{margin-left:auto;font-family:"Cinzel",serif;font-size:12px;letter-spacing:.16em;color:#826d47}
 .shooting-boss-hud{position:absolute;z-index:18;top:82px;left:50%;transform:translateX(-50%);width:min(76vw,440px);text-align:center}.shooting-boss-name{font-size:9px;letter-spacing:.14em;color:#6e5a3b;text-shadow:0 1px 3px rgba(255,255,255,.95)}.shooting-boss-bar{height:8px;margin-top:6px;background:rgba(255,255,255,.58);border:1px solid rgba(92,76,56,.28);overflow:hidden;box-shadow:0 1px 6px rgba(71,53,31,.12)}.shooting-boss-bar i{position:relative;display:block;width:100%;height:100%;overflow:hidden}.shooting-boss-bar i::before{content:'';position:absolute;inset:0;transform-origin:left center;transform:scaleX(calc(var(--gauge-fill, 1)));transition:transform .12s linear,background .28s ease;box-shadow:inset 0 0 6px rgba(255,255,255,.32)}.shooting-boss-bar.phase-1 i::before{background:linear-gradient(90deg,#4e9b62,#72bf79,#a7d99d)}.shooting-boss-bar.phase-2 i::before{background:linear-gradient(90deg,#477ba8,#63a0d1,#9bc8e7)}.shooting-boss-bar.phase-3 i::before{background:linear-gradient(90deg,#a84a4a,#cf5c55,#ec9380)}.shooting-boss-phase{margin-top:4px;font-family:"Cinzel",serif;font-size:8px;letter-spacing:.18em;color:#8d7348}
 .shooting-arena{position:absolute;inset:72px 0 72px;overflow:hidden;touch-action:none;cursor:crosshair}
 .shooting-start-copy{position:absolute;z-index:40;left:50%;top:54%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 20px;border:1px solid rgba(158,128,76,.28);background:rgba(255,253,247,.74);backdrop-filter:blur(4px);box-shadow:0 10px 30px rgba(88,66,36,.08);transition:opacity .35s ease}.shooting-start-copy.hide{opacity:0;pointer-events:none}.shooting-start-copy b{font-family:"Cinzel",serif;letter-spacing:.25em;font-size:18px;color:#79613e}.shooting-start-copy span{font-size:10px;color:#76674f}.shooting-start-copy small{font-size:9px;color:#9a896c}
@@ -52,7 +52,7 @@
 .shooting-countdown{position:absolute;z-index:58;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;background:radial-gradient(circle at center,rgba(255,253,246,.18),rgba(255,253,246,0) 42%)}
 .shooting-countdown.show{display:flex}
 .shooting-countdown span{font-family:"Cinzel",serif;font-size:clamp(74px,20vw,122px);font-weight:500;line-height:1;color:#765d36;letter-spacing:.02em;text-shadow:0 2px 0 rgba(255,255,255,.95),0 0 18px rgba(214,180,112,.6),0 12px 36px rgba(80,58,28,.18);opacity:0}
-.shooting-countdown span.pop{animation:shootingCountdownPop .66s cubic-bezier(.16,.84,.32,1) both}
+.shooting-countdown span.pop{animation:shootingCountdownPop .80s cubic-bezier(.16,.84,.32,1) both}
 @keyframes shootingCountdownPop{0%{opacity:0;transform:scale(1.55);filter:blur(5px)}22%{opacity:1;transform:scale(1);filter:blur(0)}72%{opacity:1;transform:scale(.95)}100%{opacity:0;transform:scale(.78);filter:blur(2px)}}
 
 /* ===== BOSS DEFEAT SEQUENCE ===== */
@@ -1321,8 +1321,6 @@
 .shooting-mission-item{position:absolute;width:30px;height:30px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 50% 44%,rgba(255,255,255,.96) 0 20%,rgba(222,196,136,.42) 22% 48%,rgba(180,142,73,.08) 50% 100%);border:1px solid rgba(179,139,71,.38);box-shadow:0 0 13px rgba(209,174,104,.38);animation:shooting-mission-item-float 1.45s ease-in-out infinite alternate}
 .shooting-mission-item i{position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(160,121,57,.68);background:rgba(255,251,237,.9)}
 @keyframes shooting-mission-item-float{from{margin-top:-3px}to{margin-top:3px}}
-#shooting-event-root.normal-stage-clear .shooting-arena::after{content:"MISSION COMPLETE";position:absolute;z-index:90;left:0;right:0;top:44%;text-align:center;font-family:"Cinzel","Times New Roman",serif;font-size:20px;letter-spacing:.17em;color:#9b773f;text-shadow:0 1px 0 #fff,0 0 18px rgba(255,255,255,.92);animation:shooting-normal-clear-in .7s ease both;pointer-events:none}
-@keyframes shooting-normal-clear-in{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 @media(max-width:420px){.shooting-mission-hud{left:8px;right:8px;gap:6px;padding:6px 8px}.shooting-mission-hud span{font-size:6px}.shooting-mission-hud strong{font-size:9px}.shooting-mission-hud b{font-size:8px}.shooting-mini-enemy{width:60px;height:60px}}
 
 
@@ -2675,4 +2673,2411 @@
 .shooting-mini-enemy-hp.eltena-pulled{
   z-index:4;
   transition:none !important;
+}
+
+
+/* ============================================================
+   SPECIAL EVENT「無貌の天使」
+   ステージ選択画面（ストーリーと同系デザイン）
+   ============================================================ */
+.shooting-faceless-stage-select{
+  position:fixed;inset:0;z-index:240100;
+  background:#f6f3eb;
+  color:#5b5448;
+  font-family:"Noto Serif JP",serif;
+  opacity:0;transition:opacity .18s ease;
+}
+.shooting-faceless-stage-select.show{opacity:1}
+.shooting-faceless-stage-select::before{
+  content:"";
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 20% 88%, rgba(216,206,186,.20), transparent 18%),
+    radial-gradient(circle at 82% 16%, rgba(225,217,200,.18), transparent 20%),
+    linear-gradient(180deg, rgba(255,255,255,.52), rgba(246,243,235,.96));
+  pointer-events:none;
+}
+.shooting-faceless-stage-page{
+  position:relative;
+  width:min(100%, 430px);
+  height:100%;
+  margin:0 auto;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.78), rgba(247,244,236,.96)),
+    #f6f3eb;
+  overflow:hidden;
+  box-shadow:0 0 0 1px rgba(194,181,158,.28) inset;
+}
+.shooting-faceless-stage-page::after{
+  content:"";
+  position:absolute;left:0;right:0;bottom:0;height:34%;
+  background:
+    radial-gradient(circle at 14% 86%, rgba(216,206,186,.15), transparent 25%),
+    radial-gradient(circle at 78% 72%, rgba(228,220,204,.18), transparent 24%);
+  pointer-events:none;
+}
+
+.shooting-faceless-stage-header{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:68px;
+  padding:0 16px;
+  border-bottom:1px solid rgba(205,194,173,.42);
+  background:rgba(250,248,242,.95);
+}
+.shooting-faceless-stage-back{
+  position:absolute;left:14px;top:50%;
+  transform:translateY(-50%);
+  appearance:none;border:none;background:none;
+  color:#6f6658;
+  font-size:14px;letter-spacing:.06em;
+  padding:8px 10px;cursor:pointer;
+}
+.shooting-faceless-stage-title{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:19px;
+  letter-spacing:.22em;
+  color:#6f7590;
+}
+
+.shooting-faceless-stage-list{
+  position:relative;
+  padding-top:0;
+}
+.shooting-faceless-stage-row{
+  appearance:none;
+  width:100%;
+  display:grid;
+  grid-template-columns:38px 1fr;
+  align-items:center;
+  gap:14px;
+  min-height:76px;
+  margin:0;
+  padding:14px 18px;
+  border:0;
+  border-bottom:1px solid rgba(115,99,70,.16);
+  border-radius:0;
+  background:rgba(255,255,255,.62);
+  box-shadow:none;
+  text-align:left;
+  color:#27344f;
+  cursor:pointer;
+  transform:none;
+}
+.shooting-faceless-stage-row:active{
+  background:rgba(224,211,181,.34);
+  border-color:rgba(115,99,70,.16);
+  transform:none;
+}
+.shooting-faceless-stage-no{
+  width:38px;
+  height:auto;
+  min-height:0;
+  padding:0;
+  font-family:"Cinzel",serif;
+  font-size:10px;
+  letter-spacing:.14em;
+  color:rgba(64,76,99,.50);
+}
+.shooting-faceless-stage-main{
+  min-width:0;
+}
+.shooting-faceless-stage-name-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.shooting-faceless-stage-name-row strong{
+  color:#27344f;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:.08em;
+}
+.shooting-faceless-stage-condition,
+.shooting-faceless-stage-wave{
+  margin-top:4px;
+  color:rgba(70,82,105,.58);
+  font-size:9px;
+  letter-spacing:.14em;
+  line-height:1.45;
+}
+
+.shooting-faceless-intro{
+  position:absolute;inset:0;z-index:110;overflow:hidden;
+  background:#e9e9e7;opacity:0;transition:opacity .28s ease;
+  pointer-events:none;
+}
+.shooting-faceless-intro.show{opacity:1}
+.shooting-faceless-intro.out{opacity:0}
+.shooting-faceless-intro img{
+  width:100%;height:100%;object-fit:cover;
+  filter:saturate(.72) contrast(.92) brightness(1.04);
+  transform:scale(1.035);
+}
+.shooting-faceless-intro::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(10,13,18,.16) 62%,rgba(8,10,14,.62));
+}
+.shooting-faceless-intro>div{
+  position:absolute;z-index:2;left:0;right:0;bottom:10%;text-align:center;color:#fff;
+  text-shadow:0 2px 14px rgba(0,0,0,.64);
+}
+.shooting-faceless-intro small{display:block;font-family:"Cinzel",serif;font-size:9px;letter-spacing:.32em}
+.shooting-faceless-intro strong{display:block;margin-top:7px;font-size:27px;font-weight:500;letter-spacing:.18em}
+.shooting-faceless-intro span{display:block;margin-top:7px;font-size:12px;letter-spacing:.2em}
+
+.shooting-faceless-battle-cut{
+  position:absolute;z-index:105;left:50%;top:44%;
+  transform:translate(-50%,-50%) scale(.96);
+  min-width:210px;padding:14px 24px;text-align:center;
+  border-top:1px solid rgba(255,255,255,.72);
+  border-bottom:1px solid rgba(255,255,255,.72);
+  background:linear-gradient(90deg,transparent,rgba(35,38,44,.72),transparent);
+  color:#fff;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;
+  text-shadow:0 2px 10px rgba(0,0,0,.75);
+}
+.shooting-faceless-battle-cut.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.shooting-faceless-battle-cut.out{opacity:0}
+.shooting-faceless-battle-cut small{display:block;font-family:"Cinzel",serif;font-size:8px;letter-spacing:.28em}
+.shooting-faceless-battle-cut strong{display:block;margin-top:5px;font-size:19px;font-weight:500;letter-spacing:.14em}
+
+.shooting-faceless-object{
+  position:absolute;z-index:10;width:78px;height:78px;object-fit:contain;
+  filter:drop-shadow(0 7px 8px rgba(25,28,34,.24));
+  pointer-events:none;will-change:transform;
+}
+.shooting-faceless-object.hit-flash{filter:brightness(1.7) drop-shadow(0 7px 8px rgba(25,28,34,.24))}
+.shooting-faceless-object.defeated{opacity:0;transform:scale(.55)!important;transition:opacity .18s ease,transform .18s ease}
+.shooting-faceless-object-hp{
+  position:absolute;z-index:11;width:66px;height:5px;overflow:hidden;
+  border:1px solid rgba(58,60,66,.32);background:rgba(255,255,255,.72);
+  pointer-events:none;
+}
+.shooting-faceless-object-hp i{
+  display:block;width:100%;height:100%;background:linear-gradient(90deg,#737984,#b5bbc3);
+  transition:width .1s linear;
+}
+.shooting-faceless-object-bullet{filter:saturate(.3) brightness(1.05)}
+.shooting-faceless-bullet{filter:saturate(.45)}
+
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss{
+  width:150px;height:190px;
+}
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-bg{
+  filter:brightness(.92) saturate(.54) contrast(.98);
+}
+
+
+/* ============================================================
+   ALL STAGES — クリア条件達成
+   通常 / BOSS / SPECIAL EVENT 共通
+   ============================================================ */
+.shooting-clear-condition-achieved {
+  position: absolute;
+  z-index: 145;
+  left: 0;
+  right: 0;
+  top: 46%;
+  transform: translateY(-50%);
+  display: grid;
+  grid-template-columns: minmax(18px, 1fr) auto minmax(18px, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 20px 16px;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(248, 246, 239, 0),
+      rgba(248, 246, 239, .88) 18%,
+      rgba(248, 246, 239, .96) 50%,
+      rgba(248, 246, 239, .88) 82%,
+      rgba(248, 246, 239, 0)
+    );
+  filter: blur(1px);
+  transition:
+    opacity .20s ease,
+    filter .24s ease,
+    transform .24s ease;
+}
+
+.shooting-clear-condition-achieved.show {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(-50%) scale(1);
+}
+
+.shooting-clear-condition-achieved.out {
+  opacity: 0;
+  filter: blur(2px);
+  transform: translateY(-50%) scale(1.015);
+}
+
+.shooting-clear-condition-achieved-line {
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(166, 137, 82, 0),
+      rgba(166, 137, 82, .48)
+    );
+}
+
+.shooting-clear-condition-achieved-line:last-child {
+  transform: scaleX(-1);
+}
+
+.shooting-clear-condition-achieved-copy {
+  min-width: 180px;
+  text-align: center;
+  color: #514731;
+  text-shadow: 0 1px 0 rgba(255,255,255,.85);
+}
+
+.shooting-clear-condition-achieved-copy small {
+  display: block;
+  margin-bottom: 5px;
+  font-family: "Cinzel", serif;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .30em;
+  color: rgba(151, 119, 60, .72);
+}
+
+.shooting-clear-condition-achieved-copy strong {
+  display: block;
+  font-family: "Noto Serif JP", serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: .16em;
+  color: #55452b;
+}
+
+@media (max-width: 360px) {
+  .shooting-clear-condition-achieved {
+    gap: 9px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .shooting-clear-condition-achieved-copy {
+    min-width: 165px;
+  }
+
+  .shooting-clear-condition-achieved-copy strong {
+    font-size: 18px;
+  }
+}
+
+
+/* ============================================================
+   ALL STAGES — RAPID HIT FEEDBACK
+   連射中は命中が続く限り敵画像の反応を維持する
+   ============================================================ */
+.shooting-boss.shooting-hit-sustained,
+.shooting-mini-enemy.shooting-hit-sustained,
+.shooting-faceless-object.shooting-hit-sustained {
+  animation: shootingSustainedEnemyHit .11s steps(2, jump-none) infinite !important;
+}
+
+@keyframes shootingSustainedEnemyHit {
+  0%,100% {
+    filter:
+      brightness(1)
+      saturate(1)
+      drop-shadow(0 8px 10px rgba(60,45,32,.18));
+  }
+  50% {
+    filter:
+      sepia(.65)
+      saturate(3.6)
+      hue-rotate(322deg)
+      brightness(1.48)
+      contrast(1.08)
+      drop-shadow(0 0 10px rgba(218,58,58,.82))
+      drop-shadow(0 0 3px rgba(255,255,255,.95));
+  }
+}
+
+.shooting-player.shooting-hit-sustained {
+  animation: shootingSustainedPlayerHit .13s steps(2, jump-none) infinite !important;
+}
+
+@keyframes shootingSustainedPlayerHit {
+  0%,100% { filter:brightness(1); }
+  50% {
+    filter:
+      brightness(1.55)
+      saturate(1.65)
+      drop-shadow(0 0 8px rgba(210,45,55,.75));
+  }
+}
+
+
+/* ============================================================
+   ALL STAGES — FLOATING DAMAGE NUMBERS
+   ============================================================ */
+.shooting-damage-number {
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:48;
+  min-width:18px;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:10px;
+  font-weight:700;
+  line-height:1;
+  text-align:center;
+  letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;
+
+  opacity:0;
+  transform:
+    translate3d(-50%,-50%,0)
+    translateY(2px)
+    scale(.86);
+  transition:
+    opacity .10s ease,
+    transform .12s ease;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.72),
+    0 0 3px rgba(0,0,0,.36);
+  will-change:transform,opacity;
+}
+
+.shooting-damage-number.to-enemy {
+  color:#fff8e8;
+  text-shadow:
+    0 1px 2px rgba(65,37,25,.92),
+    0 0 5px rgba(187,75,57,.55);
+}
+
+.shooting-damage-number.to-player {
+  color:#ff8c92;
+  text-shadow:
+    0 1px 2px rgba(54,8,13,.95),
+    0 0 5px rgba(194,31,47,.62);
+}
+
+.shooting-damage-number.big {
+  font-size:14px;
+  color:#ffe8aa;
+}
+
+.shooting-damage-number.show {
+  opacity:.96;
+  transform:
+    translate3d(-50%,-50%,0)
+    translateY(-5px)
+    scale(1);
+}
+
+.shooting-damage-number.out {
+  opacity:0;
+  transform:
+    translate3d(-50%,-50%,0)
+    translateY(-22px)
+    scale(.98);
+}
+
+
+/* ============================================================
+   ELTENA — ALL ENEMY TYPES PULL SYNC
+   ============================================================ */
+.shooting-boss.eltena-pulled,
+.shooting-faceless-object.eltena-pulled {
+  transition:opacity .18s ease,filter .08s ease !important;
+  will-change:transform;
+}
+
+.shooting-faceless-object-hp.eltena-pulled {
+  transition:none !important;
+}
+
+
+/* ============================================================
+   ALL BOSS STAGES — RICH BOSS INTRO
+   STORY + SPECIAL EVENT 共通
+   ============================================================ */
+.shooting-boss-intro {
+  position:absolute;
+  inset:0;
+  z-index:132;
+  overflow:hidden;
+  pointer-events:none;
+  background:#e8e7e4;
+  opacity:0;
+  transform:translateZ(0);
+  transition:opacity .24s ease;
+}
+
+.shooting-boss-intro.show {
+  opacity:1;
+}
+
+.shooting-boss-intro-media {
+  position:absolute;
+  inset:-2%;
+  overflow:hidden;
+  background:#e9e8e5;
+}
+
+.shooting-boss-intro-image {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  filter:
+    saturate(.72)
+    contrast(.96)
+    brightness(1.02);
+  transform:scale(1.055);
+  animation:shootingBossIntroCamera 2.85s cubic-bezier(.16,.72,.24,1) forwards;
+  will-change:transform,filter;
+}
+
+@keyframes shootingBossIntroCamera {
+  0% {
+    transform:scale(1.09) translate3d(0, 1.2%, 0);
+    filter:saturate(.48) contrast(1.08) brightness(.88) blur(1.5px);
+  }
+  22% {
+    filter:saturate(.64) contrast(1) brightness(1.03) blur(0);
+  }
+  100% {
+    transform:scale(1.025) translate3d(0, -1%, 0);
+    filter:saturate(.78) contrast(.96) brightness(1.06) blur(0);
+  }
+}
+
+/* 画面端を落として中央のボス絵へ視線を寄せる */
+.shooting-boss-intro-vignette {
+  position:absolute;
+  inset:0;
+  z-index:3;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0) 30%, rgba(38,40,45,.12) 76%, rgba(13,15,19,.50) 118%),
+    linear-gradient(180deg, rgba(255,255,255,.10), transparent 36%, rgba(12,14,18,.48));
+}
+
+/* SVG/外部画像なしのフィルムグレイン */
+.shooting-boss-intro-noise {
+  position:absolute;
+  inset:-35%;
+  z-index:5;
+  opacity:.12;
+  mix-blend-mode:multiply;
+  background:
+    repeating-radial-gradient(circle at 27% 36%, rgba(0,0,0,.30) 0 1px, transparent 1px 4px),
+    repeating-radial-gradient(circle at 73% 64%, rgba(255,255,255,.42) 0 1px, transparent 1px 5px);
+  background-size:7px 9px, 11px 13px;
+  animation:shootingBossNoise .16s steps(2,end) infinite;
+}
+
+@keyframes shootingBossNoise {
+  0%   { transform:translate3d(-1.5%, -1%, 0); }
+  25%  { transform:translate3d(1%, 1.5%, 0); }
+  50%  { transform:translate3d(-.5%, 1%, 0); }
+  75%  { transform:translate3d(1.5%, -.5%, 0); }
+  100% { transform:translate3d(0, 0, 0); }
+}
+
+/* 薄い走査線 */
+.shooting-boss-intro-scan {
+  position:absolute;
+  inset:0;
+  z-index:6;
+  opacity:.18;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255,255,255,.14) 0px,
+      rgba(255,255,255,.14) 1px,
+      rgba(40,44,52,.05) 2px,
+      transparent 4px
+    );
+  animation:shootingBossScan 1.25s linear infinite;
+}
+
+@keyframes shootingBossScan {
+  from { transform:translateY(-8px); }
+  to   { transform:translateY(8px); }
+}
+
+/* 横ズレグリッチ：同じintro画像を細い帯だけ再描画 */
+.shooting-boss-intro-glitch {
+  position:absolute;
+  left:0;
+  right:0;
+  z-index:2;
+  opacity:0;
+  background-size:cover;
+  background-position:center;
+  filter:contrast(1.08) brightness(1.12);
+  pointer-events:none;
+}
+
+.shooting-boss-intro-glitch.g1 { top:22%; height:7%; }
+.shooting-boss-intro-glitch.g2 { top:48%; height:4%; }
+.shooting-boss-intro-glitch.g3 { top:69%; height:6%; }
+
+.shooting-boss-intro.glitch-burst .shooting-boss-intro-glitch.g1 {
+  opacity:.58;
+  transform:translateX(-9px);
+}
+.shooting-boss-intro.glitch-burst .shooting-boss-intro-glitch.g2 {
+  opacity:.44;
+  transform:translateX(12px);
+}
+.shooting-boss-intro.glitch-burst .shooting-boss-intro-glitch.g3 {
+  opacity:.36;
+  transform:translateX(-6px);
+}
+
+.shooting-boss-intro.glitch-burst .shooting-boss-intro-image {
+  filter:saturate(.28) contrast(1.18) brightness(1.14);
+}
+
+/* 開始時の白フラッシュ + 終了時の白抜け */
+.shooting-boss-intro-flash {
+  position:absolute;
+  inset:0;
+  z-index:10;
+  background:#fff;
+  opacity:1;
+  animation:shootingBossIntroFlash 2.85s ease forwards;
+}
+
+@keyframes shootingBossIntroFlash {
+  0%   { opacity:1; }
+  8%   { opacity:.15; }
+  12%  { opacity:.58; }
+  18%  { opacity:0; }
+  78%  { opacity:0; }
+  100% { opacity:.0; }
+}
+
+.shooting-boss-intro-copy {
+  position:absolute;
+  z-index:12;
+  left:0;
+  right:0;
+  bottom:9.5%;
+  padding:0 28px;
+  text-align:center;
+  color:#fff;
+  opacity:0;
+  transform:translateY(12px);
+  animation:shootingBossIntroCopy 2.55s ease forwards;
+  text-shadow:
+    0 2px 16px rgba(0,0,0,.82),
+    0 0 3px rgba(0,0,0,.72);
+}
+
+@keyframes shootingBossIntroCopy {
+  0%,22% {
+    opacity:0;
+    transform:translateY(12px);
+    letter-spacing:.22em;
+  }
+  38%,82% {
+    opacity:1;
+    transform:translateY(0);
+  }
+  100% {
+    opacity:.88;
+    transform:translateY(-2px);
+  }
+}
+
+.shooting-boss-intro-copy small {
+  display:block;
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.34em;
+  color:rgba(255,255,255,.82);
+}
+
+.shooting-boss-intro-copy strong {
+  display:block;
+  margin-top:8px;
+  font-family:"Noto Serif JP",serif;
+  font-size:27px;
+  font-weight:500;
+  line-height:1.35;
+  letter-spacing:.17em;
+}
+
+.shooting-boss-intro-copy span {
+  display:block;
+  min-height:14px;
+  margin-top:7px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:9px;
+  letter-spacing:.25em;
+  color:rgba(255,255,255,.75);
+}
+
+.shooting-boss-intro-line {
+  position:absolute;
+  z-index:11;
+  left:50%;
+  width:0;
+  height:1px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.82), transparent);
+  animation:shootingBossIntroLine 2.4s ease forwards;
+}
+
+.shooting-boss-intro-line.line-a { bottom:7.3%; }
+.shooting-boss-intro-line.line-b { bottom:18.8%; opacity:.42; }
+
+@keyframes shootingBossIntroLine {
+  0%,25% { width:0; opacity:0; }
+  42%,85% { width:72%; opacity:.7; }
+  100% { width:48%; opacity:.16; }
+}
+
+.shooting-boss-intro.out {
+  opacity:0;
+  filter:brightness(1.035);
+  transition:opacity .88s cubic-bezier(.22,.61,.36,1), filter .88s ease;
+}
+
+.shooting-boss-intro.out .shooting-boss-intro-image {
+  transform:scale(1.072);
+  filter:saturate(.66) contrast(.94) brightness(1.08) blur(.35px);
+  transition:transform 1.05s cubic-bezier(.22,.61,.36,1), filter .9s ease;
+}
+
+.shooting-boss-intro.out .shooting-boss-intro-copy,
+.shooting-boss-intro.out .shooting-boss-intro-line {
+  opacity:0;
+  transform:translateY(-4px);
+  transition:opacity .56s ease, transform .72s ease;
+}
+
+.shooting-boss-intro.out .shooting-boss-intro-flash {
+  animation:none;
+  opacity:.18;
+  transition:opacity .76s ease;
+}
+
+@media (max-height:700px) {
+  .shooting-boss-intro-copy {
+    bottom:8%;
+  }
+  .shooting-boss-intro-copy strong {
+    font-size:23px;
+  }
+  .shooting-boss-intro-line.line-a { bottom:6%; }
+  .shooting-boss-intro-line.line-b { bottom:18%; }
+}
+
+
+/* ============================================================
+   BOSS INTRO — cinematic impact shake
+   短い衝撃だけを2回入れ、常時揺れによる安っぽさを避ける。
+   ============================================================ */
+.shooting-boss-intro.shake-entry{
+  animation:shootingBossIntroShakeEntry .42s cubic-bezier(.12,.74,.2,1) both;
+}
+
+@keyframes shootingBossIntroShakeEntry{
+  0%   { transform:translate3d(0,0,0) scale(1); }
+  12%  { transform:translate3d(-5px,2px,0) scale(1.006); }
+  24%  { transform:translate3d(4px,-3px,0) scale(1.004); }
+  38%  { transform:translate3d(-3px,2px,0) scale(1.003); }
+  54%  { transform:translate3d(2px,-1px,0) scale(1.002); }
+  72%  { transform:translate3d(-1px,1px,0) scale(1.001); }
+  100% { transform:translate3d(0,0,0) scale(1); }
+}
+
+.shooting-boss-intro.shake-title{
+  animation:shootingBossIntroShakeTitle .34s cubic-bezier(.22,.72,.24,1) both;
+}
+
+@keyframes shootingBossIntroShakeTitle{
+  0%   { transform:translate3d(0,0,0); }
+  18%  { transform:translate3d(3px,-1px,0); }
+  36%  { transform:translate3d(-3px,1px,0); }
+  55%  { transform:translate3d(2px,0,0); }
+  75%  { transform:translate3d(-1px,0,0); }
+  100% { transform:translate3d(0,0,0); }
+}
+
+/* シェイク時だけ画像側にもごく僅かなズレを重ね、レイヤー感を出す */
+.shooting-boss-intro.shake-entry .shooting-boss-intro-media{
+  animation:shootingBossIntroMediaKick .42s cubic-bezier(.12,.74,.2,1) both;
+}
+@keyframes shootingBossIntroMediaKick{
+  0%,100% { transform:translate3d(0,0,0); }
+  20% { transform:translate3d(2px,-1px,0); }
+  42% { transform:translate3d(-2px,1px,0); }
+  66% { transform:translate3d(1px,0,0); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .shooting-boss-intro.shake-entry,
+  .shooting-boss-intro.shake-title,
+  .shooting-boss-intro.shake-entry .shooting-boss-intro-media{
+    animation:none !important;
+  }
+}
+
+
+/* ============================================================
+   SPECIAL EVENT stage selector — shared typography foundation
+   今後追加する特別巡行ステージも、この generic class を付けるだけで
+   明朝系フォントが自動適用される。
+   ============================================================ */
+.shooting-special-stage-select,
+.shooting-special-stage-select button,
+.shooting-special-stage-back,
+.shooting-special-stage-row,
+.shooting-special-stage-main,
+.shooting-special-stage-name-row,
+.shooting-special-stage-name-row strong,
+.shooting-special-stage-condition,
+.shooting-special-stage-wave {
+  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif !important;
+  font-synthesis: none;
+}
+
+.shooting-special-stage-title {
+  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif !important;
+  font-weight: 400;
+}
+
+.shooting-special-stage-no {
+  font-family: "Cinzel", "Times New Roman", serif !important;
+}
+
+/*
+  Compatibility:
+  既存の無貌の天使は旧クラスも維持しているため、
+  レイアウトCSSを壊さず generic class を共通基盤として利用できる。
+*/
+
+
+/* ============================================================
+   Party actions — quieter / more elegant start button
+   ============================================================ */
+#shooting-event-root .shooting-character-select.show .shooting-party-actions{
+  gap:10px !important;
+  background:rgba(255,253,248,.985) !important;
+  border-top:1px solid rgba(160,128,72,.18) !important;
+  box-shadow:0 -5px 18px rgba(94,70,32,.045) !important;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-party-cancel,
+#shooting-event-root .shooting-character-select.show .shooting-character-start{
+  border-radius:8px !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-weight:500 !important;
+  text-shadow:none !important;
+  box-shadow:none !important;
+  letter-spacing:.14em !important;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-party-cancel{
+  border:1px solid rgba(144,116,72,.26) !important;
+  background:#fbf8f1 !important;
+  color:#8a775a !important;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-character-start{
+  border:1px solid rgba(174,135,68,.42) !important;
+  background:linear-gradient(180deg,#fffdf8 0%,#f7edd8 100%) !important;
+  color:#806337 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.78),0 2px 8px rgba(116,85,37,.055) !important;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-character-start:not(:disabled):active{
+  background:#f3e6cd !important;
+  transform:translateY(1px) !important;
+}
+
+#shooting-event-root .shooting-character-select.show .shooting-character-start:disabled{
+  opacity:.42 !important;
+  background:#f4f0e8 !important;
+  border-color:rgba(147,129,99,.20) !important;
+  color:#aaa08f !important;
+}
+
+/* ============================================================
+   In-battle top-left menu button
+   ============================================================ */
+#shooting-event-root .shooting-back.is-menu{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:38px;
+  height:38px;
+  padding:0 0 3px;
+  border:1px solid rgba(152,125,74,.38);
+  border-radius:50%;
+  background:rgba(255,255,255,.72);
+  color:#806a43;
+  font-family:"Cinzel",serif;
+  font-size:22px;
+  font-weight:400;
+  line-height:1;
+  letter-spacing:-.08em;
+  box-shadow:0 2px 8px rgba(89,66,31,.05);
+}
+
+/* ============================================================
+   Battle pause menu
+   ============================================================ */
+.shooting-pause-menu{
+  position:absolute;
+  inset:0;
+  z-index:1000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  pointer-events:none;
+}
+
+.shooting-pause-menu.show{
+  display:flex;
+  pointer-events:auto;
+}
+
+.shooting-pause-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(239,235,225,.70);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+
+.shooting-pause-card{
+  position:relative;
+  z-index:1;
+  width:min(320px,88vw);
+  padding:27px 24px 23px;
+  border:1px solid rgba(157,128,77,.28);
+  border-radius:4px;
+  background:rgba(255,253,248,.975);
+  box-shadow:0 18px 48px rgba(84,61,29,.12),inset 0 0 0 1px rgba(255,255,255,.9);
+  text-align:center;
+  color:#67543a;
+  font-family:"Noto Serif JP",serif;
+}
+
+.shooting-pause-kicker{
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:.30em;
+  color:#b09a73;
+}
+
+.shooting-pause-card h2{
+  margin:6px 0 13px;
+  font-size:18px;
+  font-weight:500;
+  letter-spacing:.16em;
+  color:#695437;
+}
+
+.shooting-pause-divider{
+  width:38px;
+  height:1px;
+  margin:0 auto 17px;
+  background:rgba(181,145,81,.46);
+}
+
+.shooting-pause-action{
+  display:block;
+  width:100%;
+  min-height:48px;
+  margin:8px 0 0;
+  padding:10px 14px;
+  border:1px solid rgba(151,124,81,.24);
+  border-radius:5px;
+  background:#fffdfa;
+  color:#6e5a3d;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.09em;
+  box-shadow:none;
+}
+
+.shooting-pause-action:active{
+  background:#f3eadc;
+}
+
+.shooting-pause-action.shooting-pause-exit{
+  color:#88655d;
+  border-color:rgba(157,109,99,.24);
+}
+
+.shooting-pause-action.shooting-pause-close{
+  margin-top:14px;
+  border-color:transparent;
+  background:transparent;
+  color:#9a896c;
+  min-height:38px;
+}
+
+
+/* ============================================================
+   Battle HUD v2 — right-bottom MENU + left vertical ULT gauge
+   ============================================================ */
+
+/* バトル中の左上ボタンは使わない */
+#shooting-event-root .shooting-back.is-battle-hidden{
+  display:none !important;
+}
+
+/* 旧ULTボタンは完全に非表示（古いDOMが一瞬残る場合の保険） */
+#shooting-event-root .shooting-burst{
+  display:none !important;
+}
+
+/* 右下 MENU */
+#shooting-event-root .shooting-battle-menu-btn{
+  margin-left:auto;
+  width:104px;
+  height:42px;
+  border:1px solid rgba(154,125,73,.42);
+  border-radius:2px;
+  background:linear-gradient(180deg,rgba(255,254,250,.96),rgba(247,240,226,.94));
+  color:#7a6543;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.82),0 2px 8px rgba(94,68,29,.05);
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:.20em;
+  text-indent:.20em;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#shooting-event-root .shooting-battle-menu-btn:active{
+  background:#f2e8d6;
+  transform:translateY(1px);
+}
+
+/* 左側の縦型ULTゲージ */
+#shooting-event-root .shooting-ult-side{
+  position:absolute;
+  z-index:24;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  width:28px;
+  height:222px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  pointer-events:none;
+  opacity:.96;
+}
+
+#shooting-event-root .shooting-ult-side-label{
+  order:2;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  font-weight:500;
+  letter-spacing:.18em;
+  writing-mode:vertical-rl;
+  color:#9c8357;
+  text-shadow:0 1px 0 rgba(255,255,255,.88);
+}
+
+#shooting-event-root .shooting-ult-side-track{
+  order:1;
+  position:relative;
+  width:10px;
+  height:182px;
+  overflow:hidden;
+  border:1px solid rgba(154,123,68,.54);
+  background:rgba(255,253,247,.62);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.56),
+    0 2px 8px rgba(91,66,29,.07);
+}
+
+#shooting-event-root .shooting-ult-side-track::before,
+#shooting-event-root .shooting-ult-side-track::after{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:50%;
+  width:4px;
+  height:1px;
+  transform:translateX(-50%);
+  background:rgba(150,119,63,.42);
+  pointer-events:none;
+}
+#shooting-event-root .shooting-ult-side-track::before{top:33.333%}
+#shooting-event-root .shooting-ult-side-track::after{top:66.666%}
+
+#shooting-event-root #shooting-burst-gauge{
+  position:absolute;
+  z-index:1;
+  left:0;
+  right:0;
+  bottom:0;
+  width:100% !important;
+  height:100%;
+  transform-origin:center bottom;
+  transform:scaleY(var(--ult-fill,0));
+  transition:transform .12s linear;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(251,235,179,.98) 0%,
+      rgba(218,185,105,.96) 42%,
+      rgba(176,132,57,.98) 100%
+    );
+  box-shadow:
+    inset 0 0 5px rgba(255,255,255,.46),
+    0 0 8px rgba(199,159,78,.18);
+}
+
+/* MAX時：派手すぎない呼吸する光 */
+#shooting-event-root .shooting-ult-side.is-ready .shooting-ult-side-track{
+  animation:shootingUltGaugeReady 1.55s ease-in-out infinite;
+}
+#shooting-event-root .shooting-ult-side.is-ready #shooting-burst-gauge{
+  background:
+    linear-gradient(
+      180deg,
+      #fff3c9 0%,
+      #e4bd69 38%,
+      #b98938 100%
+    );
+}
+#shooting-event-root .shooting-ult-side.is-ready .shooting-ult-side-label{
+  color:#aa8137;
+  animation:shootingUltLabelReady 1.55s ease-in-out infinite;
+}
+
+@keyframes shootingUltGaugeReady{
+  0%,100%{
+    border-color:rgba(171,132,61,.62);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.62),
+      0 0 5px rgba(202,159,73,.14);
+  }
+  50%{
+    border-color:rgba(199,157,73,.92);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.78),
+      0 0 12px rgba(207,164,77,.40),
+      0 0 22px rgba(207,164,77,.16);
+  }
+}
+
+@keyframes shootingUltLabelReady{
+  0%,100%{opacity:.72}
+  50%{opacity:1}
+}
+
+@media (max-height:720px){
+  #shooting-event-root .shooting-ult-side{
+    height:190px;
+  }
+  #shooting-event-root .shooting-ult-side-track{
+    height:150px;
+  }
+}
+
+
+/* ============================================================
+   ULT gauge refinement v3
+   ============================================================ */
+
+#shooting-event-root .shooting-ult-side{
+  left:16px;
+  top:52%;
+  width:92px;
+  height:348px;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+}
+
+#shooting-event-root .shooting-ult-side-track{
+  order:1;
+  width:16px;
+  height:318px;
+  flex:0 0 16px;
+  border-width:1px;
+  border-color:rgba(159,124,62,.62);
+  background:rgba(255,252,244,.60);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.60),
+    0 3px 12px rgba(94,68,27,.10);
+}
+
+#shooting-event-root .shooting-ult-side-track::before,
+#shooting-event-root .shooting-ult-side-track::after{
+  width:8px;
+  background:rgba(147,112,51,.42);
+}
+
+#shooting-event-root .shooting-ult-side-copy{
+  order:2;
+  height:318px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:12px;
+  color:#9b8155;
+  pointer-events:none;
+}
+
+#shooting-event-root .shooting-ult-side-copy span{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  font-weight:500;
+  letter-spacing:.18em;
+  color:#8f754a;
+  text-shadow:0 1px 0 rgba(255,255,255,.92);
+}
+
+#shooting-event-root .shooting-ult-side-copy b{
+  writing-mode:vertical-rl;
+  text-orientation:upright;
+  font-family:"Cinzel",serif;
+  font-size:7px;
+  line-height:1;
+  letter-spacing:.07em;
+  font-weight:400;
+  color:#b09156;
+  opacity:.82;
+}
+
+#shooting-event-root .shooting-ult-side-label{
+  display:none !important;
+}
+
+#shooting-event-root #shooting-burst-gauge{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,244,205,.98) 0%,
+      rgba(229,195,110,.98) 38%,
+      rgba(191,143,55,.99) 72%,
+      rgba(151,106,34,.99) 100%
+    );
+  box-shadow:
+    inset 0 0 7px rgba(255,255,255,.54),
+    0 0 10px rgba(202,159,72,.22);
+}
+
+/* FULL時はより明確に脈動 */
+#shooting-event-root .shooting-ult-side.is-ready{
+  animation:shootingUltWholePulse 1.12s ease-in-out infinite;
+}
+
+#shooting-event-root .shooting-ult-side.is-ready .shooting-ult-side-track{
+  animation:shootingUltGaugeReadyStrong 1.12s ease-in-out infinite;
+}
+
+#shooting-event-root .shooting-ult-side.is-ready #shooting-burst-gauge{
+  background:
+    linear-gradient(
+      180deg,
+      #fff8d8 0%,
+      #f0cd74 34%,
+      #d49a38 72%,
+      #a96f1f 100%
+    );
+  box-shadow:
+    inset 0 0 9px rgba(255,255,255,.72),
+    0 0 12px rgba(225,180,78,.50),
+    0 0 26px rgba(225,180,78,.28);
+}
+
+#shooting-event-root .shooting-ult-side.is-ready .shooting-ult-side-copy{
+  animation:shootingUltCopyReady 1.12s ease-in-out infinite;
+}
+
+@keyframes shootingUltGaugeReadyStrong{
+  0%,100%{
+    border-color:rgba(174,132,55,.66);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.64),
+      0 0 8px rgba(210,162,65,.22);
+    filter:brightness(1);
+  }
+  50%{
+    border-color:rgba(229,184,85,.98);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.86),
+      0 0 18px rgba(226,180,77,.72),
+      0 0 34px rgba(226,180,77,.34);
+    filter:brightness(1.12);
+  }
+}
+
+@keyframes shootingUltWholePulse{
+  0%,100%{transform:translateY(-50%) scale(1)}
+  50%{transform:translateY(-50%) scale(1.025)}
+}
+
+@keyframes shootingUltCopyReady{
+  0%,100%{opacity:.74;filter:brightness(1)}
+  50%{opacity:1;filter:brightness(1.18)}
+}
+
+/* FULL CHARGE notification */
+#shooting-event-root .shooting-ult-full-notice{
+  position:absolute;
+  z-index:60;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%) scale(.96);
+  width:max-content;
+  max-width:84vw;
+  padding:10px 22px 11px;
+  border-top:1px solid rgba(192,150,70,.44);
+  border-bottom:1px solid rgba(192,150,70,.44);
+  background:linear-gradient(
+    90deg,
+    rgba(255,253,247,0) 0%,
+    rgba(255,253,247,.90) 18%,
+    rgba(255,250,236,.96) 50%,
+    rgba(255,253,247,.90) 82%,
+    rgba(255,253,247,0) 100%
+  );
+  color:#9f762e;
+  font-family:"Cinzel",serif;
+  font-size:16px;
+  font-weight:600;
+  letter-spacing:.18em;
+  text-indent:.18em;
+  text-shadow:0 1px 0 #fff,0 0 10px rgba(211,165,75,.22);
+  opacity:0;
+  pointer-events:none;
+}
+
+#shooting-event-root .shooting-ult-full-notice.show{
+  animation:shootingUltFullNotice 1.65s ease both;
+}
+
+@keyframes shootingUltFullNotice{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.92);
+    filter:blur(4px) brightness(1.3);
+  }
+  18%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1.03);
+    filter:blur(0) brightness(1.08);
+  }
+  45%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
+    filter:brightness(1);
+  }
+  78%{
+    opacity:.96;
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.01);
+    filter:blur(1px);
+  }
+}
+
+@media (max-height:720px){
+  #shooting-event-root .shooting-ult-side{
+    height:302px;
+  }
+  #shooting-event-root .shooting-ult-side-track,
+  #shooting-event-root .shooting-ult-side-copy{
+    height:272px;
+  }
+}
+
+
+/* ============================================================
+   ULT gauge v4 — clearer label / stronger FULL pulse
+   ============================================================ */
+#shooting-event-root .shooting-ult-side{
+  width:112px;
+}
+
+#shooting-event-root .shooting-ult-side-copy{
+  position:relative;
+  order:2;
+  width:34px;
+  height:318px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  opacity:1;
+}
+
+#shooting-event-root .shooting-ult-side-copy span{
+  display:block;
+  width:170px;
+  white-space:nowrap;
+  writing-mode:horizontal-tb;
+  text-orientation:mixed;
+  transform:rotate(90deg);
+  transform-origin:center center;
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  font-weight:600;
+  line-height:1;
+  letter-spacing:.20em;
+  color:#806437;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 6px rgba(255,249,231,.90);
+}
+
+#shooting-event-root .shooting-ult-side-copy b{
+  display:none !important;
+}
+
+/* FULL時はゲージ本体・ラベルともに明確な脈動 */
+#shooting-event-root .shooting-ult-side.is-ready{
+  animation:shootingUltWholePulseV4 .88s ease-in-out infinite;
+}
+
+#shooting-event-root .shooting-ult-side.is-ready .shooting-ult-side-track{
+  animation:shootingUltGaugeReadyV4 .88s ease-in-out infinite;
+}
+
+#shooting-event-root .shooting-ult-side.is-ready .shooting-ult-side-copy span{
+  animation:shootingUltLabelReadyV4 .88s ease-in-out infinite;
+}
+
+@keyframes shootingUltWholePulseV4{
+  0%,100%{transform:translateY(-50%) scale(1)}
+  50%{transform:translateY(-50%) scale(1.045)}
+}
+
+@keyframes shootingUltGaugeReadyV4{
+  0%,100%{
+    border-color:rgba(178,136,55,.72);
+    filter:brightness(1);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.72),
+      0 0 10px rgba(214,164,62,.30),
+      0 0 18px rgba(214,164,62,.12);
+  }
+  50%{
+    border-color:rgba(244,202,101,1);
+    filter:brightness(1.24);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.94),
+      0 0 20px rgba(238,190,77,.88),
+      0 0 42px rgba(238,190,77,.48),
+      0 0 62px rgba(238,190,77,.18);
+  }
+}
+
+@keyframes shootingUltLabelReadyV4{
+  0%,100%{
+    color:#8d6b32;
+    opacity:.78;
+    text-shadow:0 1px 0 #fff,0 0 6px rgba(218,173,78,.22);
+  }
+  50%{
+    color:#b07d24;
+    opacity:1;
+    text-shadow:
+      0 1px 0 #fff,
+      0 0 9px rgba(230,181,78,.66),
+      0 0 18px rgba(230,181,78,.28);
+  }
+}
+
+/* FULL CHARGE通知を一段わかりやすく */
+#shooting-event-root .shooting-ult-full-notice{
+  z-index:90;
+  padding:13px 28px 14px;
+  font-size:17px;
+  font-weight:600;
+  letter-spacing:.20em;
+  color:#9a6a1f;
+  border-top-color:rgba(201,157,67,.62);
+  border-bottom-color:rgba(201,157,67,.62);
+  box-shadow:0 0 28px rgba(218,173,80,.12);
+}
+
+#shooting-event-root .shooting-ult-full-notice.show{
+  animation:shootingUltFullNoticeV4 1.8s ease both;
+}
+
+@keyframes shootingUltFullNoticeV4{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.88);
+    filter:blur(5px) brightness(1.45);
+  }
+  16%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1.07);
+    filter:blur(0) brightness(1.18);
+  }
+  32%{
+    transform:translate(-50%,-50%) scale(.995);
+  }
+  48%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1.02);
+    filter:brightness(1.05);
+  }
+  78%{opacity:1}
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.02);
+    filter:blur(1px);
+  }
+}
+
+@media (max-height:720px){
+  #shooting-event-root .shooting-ult-side-copy{
+    height:272px;
+  }
+}
+
+
+/* ============================================================
+   ULT gauge v5 - tighter label and richer full notice
+   ============================================================ */
+#shooting-event-root .shooting-ult-side{
+  width:92px;
+  gap:0 !important;
+}
+
+#shooting-event-root .shooting-ult-side-copy{
+  width:20px;
+  margin-left:-6px;
+  padding:0;
+}
+
+#shooting-event-root .shooting-ult-side-copy span{
+  font-size:10px;
+  letter-spacing:.16em;
+  color:#7f6333;
+}
+
+#shooting-event-root .shooting-ult-full-notice{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-width:min(88vw, 440px);
+  padding:16px 30px 18px;
+}
+
+#shooting-event-root .shooting-ult-full-notice span{
+  display:block;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:18px;
+  font-weight:700;
+  line-height:1.1;
+  letter-spacing:.16em;
+  text-indent:.16em;
+  color:#9a6a1f;
+  text-shadow:0 1px 0 #fff,0 0 10px rgba(211,165,75,.22);
+}
+
+#shooting-event-root .shooting-ult-full-notice small{
+  display:block;
+  font-family:"Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
+  font-size:11px;
+  font-weight:600;
+  line-height:1.55;
+  letter-spacing:.08em;
+  color:#87673a;
+  text-align:center;
+  text-shadow:0 1px 0 rgba(255,255,255,.94);
+}
+
+#shooting-event-root .shooting-ult-full-notice.show{
+  animation:shootingUltFullNoticeV5 2.35s ease both;
+}
+
+@keyframes shootingUltFullNoticeV5{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.86);
+    filter:blur(6px) brightness(1.55);
+  }
+  14%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1.08);
+    filter:blur(0) brightness(1.22);
+  }
+  28%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
+    filter:brightness(1.06);
+  }
+  74%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
+    filter:brightness(1);
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.02);
+    filter:blur(1px);
+  }
+}
+
+
+/* ULT gauge v6 - label spacing micro adjustment */
+#shooting-event-root .shooting-ult-side-copy{
+  margin-left:2px !important;
+}
+#shooting-event-root .shooting-ult-side-copy span{
+  letter-spacing:0 !important;
+}
+
+
+/* ============================================================
+   Battle UI real-time mirror switch (TYPE 1 / TYPE 2)
+   ============================================================ */
+#shooting-event-root .shooting-footer{
+  justify-content:space-between;
+  gap:12px;
+}
+#shooting-event-root .shooting-battle-controls{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex:0 0 auto;
+}
+#shooting-event-root .shooting-battle-menu-btn,
+#shooting-event-root .shooting-ui-layout-btn{
+  margin-left:0 !important;
+  min-width:92px;
+  height:42px;
+  padding:0 14px;
+  border:1px solid rgba(154,125,73,.42);
+  border-radius:2px;
+  background:linear-gradient(180deg,rgba(255,254,250,.96),rgba(247,240,226,.94));
+  color:#7a6543;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.82),0 2px 8px rgba(94,68,29,.05);
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.18em;
+  text-indent:.18em;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#shooting-event-root .shooting-ui-layout-btn{
+  min-width:96px;
+}
+#shooting-event-root .shooting-battle-menu-btn:active,
+#shooting-event-root .shooting-ui-layout-btn:active{
+  background:#f2e8d6;
+  transform:translateY(1px);
+}
+#shooting-event-root .shooting-ui-layout-btn span,
+#shooting-event-root .shooting-battle-menu-btn span{
+  pointer-events:none;
+}
+#shooting-event-root.ui-type-1 .shooting-ult-side{
+  left:16px;
+  right:auto;
+  flex-direction:row;
+}
+#shooting-event-root.ui-type-1 .shooting-switch-rail{
+  left:auto;
+  right:12px;
+  align-items:flex-end;
+}
+#shooting-event-root.ui-type-1 .shooting-footer{
+  flex-direction:row;
+}
+#shooting-event-root.ui-type-1 .shooting-battle-controls{
+  flex-direction:row;
+}
+#shooting-event-root.ui-type-1 .shooting-player-hud{
+  align-items:flex-start;
+  text-align:left;
+}
+#shooting-event-root.ui-type-2 .shooting-ult-side{
+  left:auto;
+  right:16px;
+  flex-direction:row-reverse;
+}
+#shooting-event-root.ui-type-2 .shooting-switch-rail{
+  left:12px;
+  right:auto;
+  align-items:flex-start;
+}
+#shooting-event-root.ui-type-2 .shooting-footer{
+  flex-direction:row-reverse;
+}
+#shooting-event-root.ui-type-2 .shooting-battle-controls{
+  flex-direction:row-reverse;
+}
+#shooting-event-root.ui-type-2 .shooting-player-hud{
+  align-items:flex-end;
+  text-align:right;
+}
+#shooting-event-root.ui-type-2 .shooting-player-hud-top{
+  justify-content:flex-end;
+}
+#shooting-event-root.ui-type-2 .shooting-player-hp-bar{
+  margin-left:auto;
+}
+@media (max-width:480px){
+  #shooting-event-root .shooting-battle-controls{gap:6px}
+  #shooting-event-root .shooting-battle-menu-btn,
+  #shooting-event-root .shooting-ui-layout-btn{min-width:82px;height:40px;padding:0 10px;font-size:11px}
+  #shooting-event-root.ui-type-1 .shooting-switch-rail{right:9px}
+  #shooting-event-root.ui-type-2 .shooting-switch-rail{left:9px}
+  #shooting-event-root.ui-type-1 .shooting-ult-side{left:12px}
+  #shooting-event-root.ui-type-2 .shooting-ult-side{right:12px}
+}
+
+
+/* ============================================================
+   Battle footer responsive safety v2
+   - no horizontal clipping on narrow devices
+   - MENU / UI切替 use the same footprint
+   ============================================================ */
+#shooting-event-root .shooting-footer{
+  height:calc(72px + env(safe-area-inset-bottom, 0px));
+  min-width:0;
+  width:100%;
+  padding:9px max(10px, env(safe-area-inset-right, 0px)) calc(9px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+  gap:8px;
+  overflow:hidden;
+}
+
+#shooting-event-root .shooting-player-hud{
+  flex:1 1 auto;
+  min-width:0 !important;
+  width:auto !important;
+  max-width:none;
+}
+
+#shooting-event-root .shooting-player-hud-top{
+  width:100%;
+  min-width:0;
+  gap:6px;
+}
+
+#shooting-event-root .shooting-player-name{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+#shooting-event-root .shooting-player-hp-text{
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+
+#shooting-event-root .shooting-player-hp-bar{
+  width:100% !important;
+  max-width:230px;
+}
+
+#shooting-event-root .shooting-battle-controls{
+  flex:0 0 auto;
+  min-width:0;
+  gap:6px;
+}
+
+#shooting-event-root .shooting-battle-menu-btn,
+#shooting-event-root .shooting-ui-layout-btn{
+  box-sizing:border-box;
+  flex:0 0 84px;
+  width:84px;
+  min-width:84px;
+  max-width:84px;
+  height:42px;
+  padding:0 6px;
+  font-size:11px;
+  letter-spacing:.14em;
+  text-indent:.14em;
+  white-space:nowrap;
+}
+
+#shooting-event-root.ui-type-2 .shooting-player-hud-top{
+  justify-content:space-between;
+  flex-direction:row-reverse;
+}
+
+#shooting-event-root.ui-type-2 .shooting-player-hp-bar{
+  margin-left:auto;
+  margin-right:0;
+}
+
+/* Arena bottom tracks the safe-area-aware footer height. */
+#shooting-event-root .shooting-arena{
+  bottom:calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Narrow phones: buttons remain equal, HP area yields first. */
+@media (max-width:390px){
+  #shooting-event-root .shooting-footer{
+    padding-left:8px;
+    padding-right:8px;
+    gap:6px;
+  }
+  #shooting-event-root .shooting-battle-controls{gap:5px}
+  #shooting-event-root .shooting-battle-menu-btn,
+  #shooting-event-root .shooting-ui-layout-btn{
+    flex-basis:78px;
+    width:78px;
+    min-width:78px;
+    max-width:78px;
+    height:40px;
+    padding:0 4px;
+    font-size:10px;
+    letter-spacing:.11em;
+    text-indent:.11em;
+  }
+  #shooting-event-root .shooting-player-name{font-size:10px}
+  #shooting-event-root .shooting-player-hp-text{font-size:7px}
+}
+
+/* Very narrow legacy devices: preserve both controls without overflow. */
+@media (max-width:340px){
+  #shooting-event-root .shooting-footer{padding-left:6px;padding-right:6px;gap:4px}
+  #shooting-event-root .shooting-battle-controls{gap:4px}
+  #shooting-event-root .shooting-battle-menu-btn,
+  #shooting-event-root .shooting-ui-layout-btn{
+    flex-basis:70px;
+    width:70px;
+    min-width:70px;
+    max-width:70px;
+    height:38px;
+    font-size:9px;
+    letter-spacing:.08em;
+    text-indent:.08em;
+  }
+}
+
+/* ============================================================
+   PATCH: translucent battle overlay UI
+   - Keep player / enemy bullets visible behind ULT gauge and switch buttons.
+   - Preserve borders, HP bars and ULT rings for readability.
+   ============================================================ */
+
+/* ULT gauge: make the track and filled portion translucent. */
+#shooting-event-root .shooting-ult-side-track{
+  background:rgba(255,252,244,.14) !important;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+#shooting-event-root #shooting-burst-gauge{
+  opacity:.42;
+}
+
+/* Character switch buttons: let the battle field show through the portrait/background. */
+#shooting-event-root .shooting-switch-btn:not(.dead){
+  background:rgba(255,253,248,.18) !important;
+  box-shadow:0 4px 12px rgba(58,42,23,.11);
+}
+#shooting-event-root .shooting-switch-btn:not(.dead) img{
+  opacity:.42;
+}
+
+/* Cooldown veil was fairly opaque; keep the state visible without hiding bullets completely. */
+#shooting-event-root .shooting-switch-btn.cooling::after{
+  background:rgba(235,230,219,.16) !important;
+}
+
+/* ============================================================
+   Bench ULT ring readability patch
+   - Reduce the gold impression while charging.
+   - Make the current charge ring easier to distinguish from FULL.
+   ============================================================ */
+#shooting-event-root .shooting-switch-ult-ring{
+  z-index:2;
+  inset:-6px;
+  background:conic-gradient(
+    #72bfff calc(var(--ult-ring-fill) * 1turn),
+    rgba(86,96,112,.24) 0
+  ) !important;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  filter:drop-shadow(0 0 2px rgba(70,124,188,.26));
+  opacity:.98;
+}
+#shooting-event-root .shooting-switch-btn img{
+  position:relative;
+  z-index:1;
+}
+#shooting-event-root .shooting-switch-btn.ult-ready .shooting-switch-ult-ring{
+  background:conic-gradient(#f3cc62 1turn,#f3cc62 1turn) !important;
+  filter:drop-shadow(0 0 6px rgba(239,191,70,.96)) drop-shadow(0 0 12px rgba(239,191,70,.46));
+  animation:shootingBenchUltReadyStrong .72s ease-in-out infinite alternate;
+}
+@keyframes shootingBenchUltReadyStrong{
+  0%{transform:scale(1);opacity:.95}
+  100%{transform:scale(1.06);opacity:1}
+}
+#shooting-event-root .shooting-switch-btn.dead .shooting-switch-ult-ring{
+  opacity:.22;
+  animation:none;
+  filter:none;
+}
+
+/* ============================================================
+   Bench ULT ring luxury finish
+   - Keep blue charging / gold FULL color language.
+   - Add multi-tone metallic/glass gradients and restrained bloom.
+   ============================================================ */
+#shooting-event-root .shooting-switch-ult-ring{
+  background:conic-gradient(
+    from -90deg,
+    #dff6ff 0turn,
+    #9edcff calc(var(--ult-ring-fill) * .18turn),
+    #5aa9e7 calc(var(--ult-ring-fill) * .46turn),
+    #2f79bd calc(var(--ult-ring-fill) * .72turn),
+    #8fd4ff calc(var(--ult-ring-fill) * .92turn),
+    #d7f2ff calc(var(--ult-ring-fill) * 1turn),
+    rgba(109,120,134,.22) 0
+  ) !important;
+  filter:
+    drop-shadow(0 0 1px rgba(236,249,255,.95))
+    drop-shadow(0 0 4px rgba(82,153,216,.28))
+    drop-shadow(0 2px 4px rgba(34,53,74,.18));
+}
+
+/* A subtle glass sheen travelling over the ring without becoming flashy. */
+#shooting-event-root .shooting-switch-ult-ring::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  pointer-events:none;
+  background:linear-gradient(
+    135deg,
+    rgba(255,255,255,.72) 0%,
+    rgba(255,255,255,.12) 24%,
+    rgba(255,255,255,0) 48%,
+    rgba(255,255,255,.18) 76%,
+    rgba(255,255,255,.52) 100%
+  );
+  opacity:.34;
+}
+
+#shooting-event-root .shooting-switch-btn.ult-ready .shooting-switch-ult-ring{
+  background:conic-gradient(
+    from -90deg,
+    #fff7d7 0turn,
+    #f6df9a .14turn,
+    #d9ae48 .38turn,
+    #b67a23 .62turn,
+    #e4bd5a .82turn,
+    #fff0b3 1turn
+  ) !important;
+  filter:
+    drop-shadow(0 0 1px rgba(255,250,226,1))
+    drop-shadow(0 0 5px rgba(229,181,72,.56))
+    drop-shadow(0 0 12px rgba(206,145,40,.24))
+    drop-shadow(0 3px 5px rgba(89,61,19,.20));
+  animation:shootingBenchUltReadyLuxury .92s ease-in-out infinite alternate;
+}
+
+#shooting-event-root .shooting-switch-btn.ult-ready .shooting-switch-ult-ring::after{
+  opacity:.52;
+  background:linear-gradient(
+    135deg,
+    rgba(255,255,255,.92) 0%,
+    rgba(255,249,218,.20) 24%,
+    rgba(255,255,255,0) 49%,
+    rgba(255,239,180,.20) 76%,
+    rgba(255,255,255,.72) 100%
+  );
+}
+
+@keyframes shootingBenchUltReadyLuxury{
+  0%{
+    transform:scale(1);
+    filter:
+      drop-shadow(0 0 1px rgba(255,250,226,1))
+      drop-shadow(0 0 4px rgba(229,181,72,.46))
+      drop-shadow(0 0 9px rgba(206,145,40,.20))
+      drop-shadow(0 3px 5px rgba(89,61,19,.18));
+  }
+  100%{
+    transform:scale(1.045);
+    filter:
+      drop-shadow(0 0 2px rgba(255,252,235,1))
+      drop-shadow(0 0 7px rgba(237,194,88,.72))
+      drop-shadow(0 0 16px rgba(212,154,47,.30))
+      drop-shadow(0 3px 6px rgba(89,61,19,.20));
+  }
+}
+
+
+/* ============================================================
+   Shooting header — difficulty badge / high score
+   ============================================================ */
+#shooting-event-root .shooting-hud-title strong{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+#shooting-event-root #shooting-hud-difficulty{
+  display:none;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:none;
+  box-shadow:none;
+  color:rgba(143,109,50,.78);
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  font-weight:400;
+  line-height:1;
+  letter-spacing:.06em;
+  white-space:nowrap;
+}
+#shooting-event-root .shooting-score.is-high-score{
+  color:#9a7536;
+  font-weight:600;
+  text-shadow:0 1px 0 rgba(255,255,255,.90);
+}
+@media(max-width:380px){
+  #shooting-event-root .shooting-hud-title{margin-left:8px}
+  #shooting-event-root .shooting-hud-title strong{font-size:13px;gap:5px}
+  #shooting-event-root #shooting-hud-difficulty{font-size:8px}
+  #shooting-event-root .shooting-score{font-size:8px;letter-spacing:.10em}
+}
+
+
+/* ============================================================
+   BATTLE START CEREMONY — ARE YOU READY / 3 / 2 / 1 / START
+   ============================================================ */
+#shooting-event-root .shooting-countdown{
+  z-index:58;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(255,253,246,.28) 0%,rgba(255,253,246,.10) 28%,rgba(255,253,246,0) 58%);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+
+#shooting-event-root .shooting-countdown::before,
+#shooting-event-root .shooting-countdown::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  width:min(62vw,270px);
+  height:1px;
+  transform:translateX(-50%) scaleX(0);
+  transform-origin:center;
+  background:linear-gradient(90deg,transparent,rgba(174,135,65,.64),transparent);
+  opacity:0;
+  pointer-events:none;
+}
+#shooting-event-root .shooting-countdown::before{top:43%}
+#shooting-event-root .shooting-countdown::after{bottom:43%}
+
+#shooting-event-root .shooting-countdown.ready-phase::before,
+#shooting-event-root .shooting-countdown.ready-phase::after,
+#shooting-event-root .shooting-countdown.start-phase::before,
+#shooting-event-root .shooting-countdown.start-phase::after{
+  animation:shootingReadyLine 1.18s cubic-bezier(.22,.61,.36,1) both;
+}
+
+#shooting-event-root .shooting-countdown span{
+  position:relative;
+  z-index:1;
+  min-width:280px;
+  text-align:center;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-weight:500;
+  color:#715936;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 18px rgba(223,191,122,.42),
+    0 12px 34px rgba(72,51,25,.13);
+}
+
+#shooting-event-root .shooting-countdown.ready-phase span{
+  font-size:clamp(17px,5.5vw,25px);
+  letter-spacing:.24em;
+  text-indent:.24em;
+}
+
+#shooting-event-root .shooting-countdown.number-phase span{
+  font-size:clamp(76px,21vw,124px);
+  letter-spacing:.01em;
+  text-indent:0;
+}
+
+#shooting-event-root .shooting-countdown.start-phase span{
+  font-size:clamp(28px,8vw,42px);
+  font-weight:600;
+  letter-spacing:.28em;
+  text-indent:.28em;
+  color:#9a6c22;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 12px rgba(232,190,89,.60),
+    0 0 28px rgba(213,159,56,.30),
+    0 14px 34px rgba(72,51,25,.12);
+}
+
+#shooting-event-root .shooting-countdown span.ready-pop{
+  animation:shootingReadyCopy 1.18s cubic-bezier(.22,.61,.36,1) both;
+}
+#shooting-event-root .shooting-countdown span.start-pop{
+  animation:shootingStartCopy .98s cubic-bezier(.16,.84,.32,1) both;
+}
+
+@keyframes shootingReadyCopy{
+  0%{opacity:0;transform:translateY(7px) scale(.985);filter:blur(3px)}
+  24%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+  72%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-4px) scale(1.01);filter:blur(1.5px)}
+}
+@keyframes shootingReadyLine{
+  0%{opacity:0;transform:translateX(-50%) scaleX(0)}
+  28%{opacity:.78;transform:translateX(-50%) scaleX(1)}
+  72%{opacity:.54;transform:translateX(-50%) scaleX(.92)}
+  100%{opacity:0;transform:translateX(-50%) scaleX(.45)}
+}
+@keyframes shootingStartCopy{
+  0%{opacity:0;transform:scale(1.42);filter:blur(5px);letter-spacing:.42em}
+  24%{opacity:1;transform:scale(1);filter:blur(0)}
+  68%{opacity:1;transform:scale(1.015)}
+  100%{opacity:0;transform:scale(.94);filter:blur(1px)}
+}
+
+
+/* ============================================================
+   ALL STAGES — VICTORY CEREMONY
+   クリア条件達成 → STAGE CLEAR → RESULT
+   ARE YOU READY と同じ「浮かぶ / ピント / 余韻 / 消える」演出言語。
+   ============================================================ */
+#shooting-event-root .shooting-clear-condition-achieved{
+  position:absolute;
+  z-index:148;
+  left:0;
+  right:0;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  grid-template-columns:minmax(18px,1fr) auto minmax(18px,1fr);
+  align-items:center;
+  gap:14px;
+  padding:28px 16px;
+  pointer-events:none;
+  opacity:0;
+  background:radial-gradient(circle at 50% 50%,rgba(255,253,246,.24) 0%,rgba(255,253,246,.08) 35%,rgba(255,253,246,0) 68%);
+  filter:none;
+  transition:opacity .22s ease;
+}
+#shooting-event-root .shooting-clear-condition-achieved.show{opacity:1;filter:none;transform:translateY(-50%)}
+#shooting-event-root .shooting-clear-condition-achieved.step-out{opacity:1;filter:none;transform:translateY(-50%)}
+#shooting-event-root .shooting-clear-condition-achieved.sequence-out{opacity:0;transition:opacity .58s ease}
+
+#shooting-event-root .shooting-clear-condition-achieved-line{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(174,135,65,.62));
+  opacity:0;
+  transform:scaleX(0);
+  transform-origin:right center;
+}
+#shooting-event-root .shooting-clear-condition-achieved-line:last-child{
+  transform:scaleX(0) scaleX(-1);
+  transform-origin:left center;
+}
+#shooting-event-root .shooting-clear-condition-achieved.condition-phase .shooting-clear-condition-achieved-line,
+#shooting-event-root .shooting-clear-condition-achieved.stage-clear-phase .shooting-clear-condition-achieved-line{
+  animation:shootingVictoryLine 1.22s cubic-bezier(.22,.61,.36,1) both;
+}
+
+#shooting-event-root .shooting-clear-condition-achieved-copy{
+  min-width:190px;
+  text-align:center;
+  text-shadow:none;
+}
+#shooting-event-root .shooting-clear-condition-achieved-copy small{display:none!important}
+#shooting-event-root .shooting-clear-condition-achieved-copy strong{
+  display:block;
+  margin:0;
+  font-weight:500;
+  white-space:nowrap;
+  text-shadow:0 1px 0 rgba(255,255,255,.98),0 0 18px rgba(223,191,122,.36),0 12px 34px rgba(72,51,25,.11);
+}
+#shooting-event-root .shooting-clear-condition-achieved.condition-phase strong{
+  font-family:"Noto Serif JP",serif;
+  font-size:clamp(18px,5.7vw,25px);
+  letter-spacing:.18em;
+  text-indent:.18em;
+  color:#665238;
+}
+#shooting-event-root .shooting-clear-condition-achieved.stage-clear-phase strong{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:clamp(25px,7.6vw,38px);
+  font-weight:600;
+  letter-spacing:.24em;
+  text-indent:.24em;
+  color:#946923;
+  text-shadow:0 1px 0 rgba(255,255,255,1),0 0 12px rgba(232,190,89,.54),0 0 27px rgba(213,159,56,.24),0 14px 34px rgba(72,51,25,.10);
+}
+#shooting-event-root .shooting-clear-condition-achieved-copy strong.ceremony-pop{
+  animation:shootingVictoryCopy 1.20s cubic-bezier(.22,.61,.36,1) both;
+}
+#shooting-event-root .shooting-clear-condition-achieved.stage-clear-phase .shooting-clear-condition-achieved-copy strong.ceremony-pop{
+  animation:shootingStageClearCopy 1.34s cubic-bezier(.16,.84,.32,1) both;
+}
+
+@keyframes shootingVictoryCopy{
+  0%{opacity:0;transform:translateY(7px) scale(.985);filter:blur(3px)}
+  24%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+  72%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+  100%{opacity:0;transform:translateY(-4px) scale(1.01);filter:blur(1.5px)}
+}
+@keyframes shootingStageClearCopy{
+  0%{opacity:0;transform:scale(1.22);filter:blur(4px);letter-spacing:.34em}
+  22%{opacity:1;transform:scale(1);filter:blur(0)}
+  72%{opacity:1;transform:scale(1.012);filter:blur(0)}
+  100%{opacity:0;transform:scale(.97);filter:blur(1.2px)}
+}
+@keyframes shootingVictoryLine{
+  0%{opacity:0;transform:scaleX(0)}
+  28%{opacity:.76;transform:scaleX(1)}
+  72%{opacity:.50;transform:scaleX(.92)}
+  100%{opacity:0;transform:scaleX(.42)}
+}
+#shooting-event-root .shooting-clear-condition-achieved-line:last-child{
+  animation-direction:normal;
+}
+
+@media(max-width:360px){
+  #shooting-event-root .shooting-clear-condition-achieved{gap:9px;padding-left:10px;padding-right:10px}
+  #shooting-event-root .shooting-clear-condition-achieved-copy{min-width:170px}
+}
+
+
+/* ============================================================
+   Unified back button / high score readability
+   ============================================================ */
+#shooting-event-root .shooting-hud{
+  gap:8px;
+}
+
+#shooting-event-root .shooting-back,
+#shooting-event-root .shooting-special-stage-back{
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  width:auto;
+  min-width:auto;
+  height:32px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:#8a7651;
+  font-family:"Noto Serif JP",serif;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:.04em;
+  line-height:1;
+  text-decoration:none;
+}
+#shooting-event-root .shooting-back:active,
+#shooting-event-root .shooting-special-stage-back:active{
+  opacity:.65;
+  transform:none;
+}
+#shooting-event-root .shooting-faceless-stage-header{
+  align-items:center;
+}
+#shooting-event-root .shooting-faceless-stage-title{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:calc(100% - 160px);
+  text-align:center;
+  pointer-events:none;
+}
+#shooting-event-root .shooting-score{
+  font-size:12px;
+  letter-spacing:.16em;
+}
+#shooting-event-root .shooting-score.is-high-score{
+  font-size:13px;
+  letter-spacing:.16em;
+  color:#9a7536;
+  font-weight:600;
+  text-shadow:0 1px 0 rgba(255,255,255,.90);
+}
+@media(max-width:380px){
+  #shooting-event-root .shooting-back,
+  #shooting-event-root .shooting-special-stage-back{font-size:13px}
+  #shooting-event-root .shooting-score{font-size:11px;letter-spacing:.12em}
+  #shooting-event-root .shooting-score.is-high-score{font-size:12px}
+}
+
+
+/* ============================================================
+   Responsive shooting top header — stable on narrow/wide devices
+   ============================================================ */
+#shooting-event-root .shooting-hud{
+  display:grid !important;
+  grid-template-columns:max-content minmax(0,1fr) max-content;
+  align-items:center;
+  column-gap:clamp(6px,2.4vw,12px);
+  height:72px;
+  padding:10px clamp(10px,3.8vw,16px) 11px;
+}
+
+#shooting-event-root .shooting-back{
+  grid-column:1;
+  margin:0;
+  flex:none;
+  white-space:nowrap;
+  font-size:clamp(11px,3.35vw,14px);
+  letter-spacing:.02em;
+}
+
+#shooting-event-root .shooting-hud-title{
+  grid-column:2;
+  min-width:0;
+  margin:0 !important;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.08;
+  overflow:hidden;
+}
+#shooting-event-root .shooting-hud-title > span{
+  display:block;
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:clamp(6px,1.9vw,8px);
+  letter-spacing:clamp(.13em,.6vw,.22em);
+}
+#shooting-event-root .shooting-hud-title > strong{
+  width:100%;
+  min-width:0;
+  margin-top:4px;
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:clamp(3px,1vw,6px);
+  overflow:hidden;
+  white-space:nowrap;
+  font-size:clamp(12px,3.65vw,15px);
+  letter-spacing:clamp(.03em,.35vw,.08em);
+}
+#shooting-event-root #shooting-hud-difficulty{
+  flex:0 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:clip;
+  white-space:nowrap;
+  font-size:clamp(6px,2vw,9px);
+  letter-spacing:.02em;
+}
+
+#shooting-event-root .shooting-score{
+  grid-column:3;
+  min-width:0;
+  margin:0 !important;
+  justify-self:end;
+  text-align:right;
+  white-space:nowrap;
+  font-size:clamp(9px,2.65vw,12px);
+  letter-spacing:clamp(.08em,.45vw,.14em);
+  font-variant-numeric:tabular-nums;
+}
+#shooting-event-root .shooting-score.is-high-score{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:2px;
+  min-width:clamp(76px,23vw,108px);
+  font-size:inherit;
+  line-height:1;
+}
+#shooting-event-root .shooting-high-score-label{
+  display:block;
+  font-family:"Cinzel",serif;
+  font-size:clamp(9px,2.75vw,12px);
+  font-weight:600;
+  line-height:1;
+  letter-spacing:clamp(.09em,.5vw,.16em);
+  white-space:nowrap;
+}
+#shooting-event-root .shooting-high-score-value{
+  display:block;
+  margin-top:2px;
+  font-family:"Cinzel",serif;
+  font-size:clamp(11px,3.15vw,14px);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:clamp(.15em,.75vw,.24em);
+  color:#8f6b31;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+
+/* かなり狭い端末では中央を優先しつつ、左右を一段だけ縮小 */
+@media(max-width:340px){
+  #shooting-event-root .shooting-hud{
+    column-gap:5px;
+    padding-left:8px;
+    padding-right:8px;
+  }
+  #shooting-event-root .shooting-back{font-size:11px}
+  #shooting-event-root .shooting-score.is-high-score{min-width:72px}
+  #shooting-event-root .shooting-high-score-label{font-size:8px;letter-spacing:.07em}
+  #shooting-event-root .shooting-high-score-value{font-size:11px;letter-spacing:.12em}
+  #shooting-event-root .shooting-hud-title > strong{font-size:12px;gap:2px}
+  #shooting-event-root #shooting-hud-difficulty{font-size:6px}
+}
+
+/* 横幅に余裕がある端末では少しだけ堂々と見せる */
+@media(min-width:410px){
+  #shooting-event-root .shooting-hud{
+    grid-template-columns:minmax(54px,max-content) minmax(0,1fr) minmax(102px,max-content);
+  }
+  #shooting-event-root .shooting-hud-title > strong{font-size:15px}
+  #shooting-event-root .shooting-high-score-label{font-size:12px}
+  #shooting-event-root .shooting-high-score-value{font-size:14px}
 }

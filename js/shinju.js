@@ -183,10 +183,31 @@
 
   function offerAllItems() {
     const state = readState();
-    const ids = state.inventory.map(item => item.id);
-    let last = null;
-    ids.forEach(id => { last = offerItem(id); });
-    return last || { ok: false, reason: 'empty', state: getViewState(readState()) };
+    if (!state.inventory.length) {
+      return { ok: false, reason: 'empty', state: getViewState(state) };
+    }
+
+    const before = getViewState(state);
+    const items = state.inventory.slice();
+    const totalExp = items.reduce((sum, item) => sum + Math.max(0, Number(item && item.exp || 0)), 0);
+    const offeredAt = new Date().toISOString();
+
+    state.inventory = [];
+    state.exp = Math.max(0, Number(state.exp || 0) + totalExp);
+    state.offeredItems.push(...items.map(item => Object.assign({}, item, { offeredAt })));
+
+    const saved = saveState(state);
+    const after = getViewState(saved);
+
+    return {
+      ok: true,
+      items,
+      totalExp,
+      before,
+      after,
+      levelUp: after.stage > before.stage,
+      reachedMax: after.isMax && !before.isMax,
+    };
   }
 
   function escapeHtml(str) {
@@ -206,10 +227,11 @@
     ov.id = 'shinju-overlay';
     ov.innerHTML = `
       <div class="shinju-panel" role="dialog" aria-modal="true" aria-label="アルケミア創世進捗">
-        <button class="shinju-close" type="button" onclick="closeShinjuScreen()">×</button>
+        <button class="shinju-close" type="button" onclick="closeShinjuScreen()">＜戻る</button>
         <div class="shinju-visual-wrap">
           <img class="shinju-visual" id="shinju-visual" src="images/shinju_01.webp" alt="神樹">
           <div class="shinju-visual-glow"></div>
+          <div class="shinju-aura-field" id="shinju-aura-field" aria-hidden="true"></div>
           <div class="shinju-hero-info" aria-label="神樹の成長情報">
             <div class="shinju-stage" id="shinju-stage"></div>
             <div class="shinju-progress-box">
@@ -223,11 +245,14 @@
         </div>
         <div class="shinju-content">
           <div class="shinju-lore" id="shinju-lore"></div>
-          <div class="shinju-items-head">
-            <span>奉納可能な創世資源</span>
-            <button class="shinju-offer-all" type="button" onclick="ShinjuProgress.offerAllFromUI()">すべて奉納</button>
+          <div class="shinju-offering-bar" id="shinju-offering-bar">
+            <div class="shinju-offering-state">
+              <span class="shinju-offering-label">奉納可能</span>
+              <strong id="shinju-pending-count">0</strong>
+              <small id="shinju-pending-exp"></small>
+            </div>
+            <button class="shinju-offer-all" id="shinju-offer-all" type="button" onclick="ShinjuProgress.offerAllFromUI()">すべて奉納</button>
           </div>
-          <div class="shinju-item-list" id="shinju-item-list"></div>
         </div>
       </div>
     `;
@@ -258,6 +283,71 @@
     box.classList.toggle('is-clear', s.isMax);
   }
 
+  const SHINJU_AURA_POSITIONS = [
+    { x: 19, y: 18, s: .58, d: 0.0 },
+    { x: 73, y: 21, s: .50, d: .7 },
+    { x: 35, y: 29, s: .42, d: 1.1 },
+    { x: 83, y: 36, s: .38, d: .3 },
+    { x: 14, y: 39, s: .40, d: 1.5 },
+    { x: 58, y: 14, s: .34, d: 1.9 },
+    { x: 54, y: 34, s: .30, d: .9 },
+  ];
+
+  function renderAuraField(ov, state) {
+    const field = ov.querySelector('#shinju-aura-field');
+    if (!field) return;
+
+    const count = Math.min(SHINJU_AURA_POSITIONS.length, Math.max(0, Number(state.pendingItemCount || 0)));
+    field.classList.toggle('is-empty', count === 0);
+
+    field.innerHTML = SHINJU_AURA_POSITIONS.slice(0, count).map((pos, index) => `
+      <span class="shinju-aura-orb" data-aura-index="${index}"
+        style="--aura-x:${pos.x}%;--aura-y:${pos.y}%;--aura-scale:${pos.s};--aura-delay:${pos.d}s">
+        <img src="images/shinju_aura.webp" alt="">
+      </span>
+    `).join('');
+  }
+
+  function updateOfferingMeta(ov, state) {
+    const count = ov.querySelector('#shinju-pending-count');
+    const exp = ov.querySelector('#shinju-pending-exp');
+    const btn = ov.querySelector('#shinju-offer-all');
+    const totalExp = (state.inventory || []).reduce((sum, item) => sum + Math.max(0, Number(item && item.exp || 0)), 0);
+
+    if (count) count.textContent = state.pendingItemCount > 0 ? `×${state.pendingItemCount}` : 'なし';
+    if (exp) exp.textContent = state.pendingItemCount > 0 ? `創世EXP +${totalExp}` : '';
+    if (btn) {
+      btn.disabled = state.pendingItemCount <= 0 || !!ov.dataset.offering;
+      btn.textContent = state.pendingItemCount > 0 ? 'すべて奉納' : '奉納する資源なし';
+    }
+  }
+
+  function animateAuraOffering(ov) {
+    const auras = Array.from(ov.querySelectorAll('.shinju-aura-orb'));
+    const target = ov.querySelector('.shinju-progress-bg');
+    if (!auras.length || !target) return Promise.resolve();
+
+    const targetRect = target.getBoundingClientRect();
+    const targetX = targetRect.left + targetRect.width * .5;
+    const targetY = targetRect.top + targetRect.height * .5;
+
+    ov.classList.add('is-offering');
+
+    auras.forEach((aura, index) => {
+      const rect = aura.getBoundingClientRect();
+      const x = targetX - (rect.left + rect.width * .5);
+      const y = targetY - (rect.top + rect.height * .5);
+      aura.style.setProperty('--offer-x', `${x}px`);
+      aura.style.setProperty('--offer-y', `${y}px`);
+      aura.style.setProperty('--offer-delay', `${index * 90}ms`);
+      void aura.offsetWidth;
+      aura.classList.add('is-offering');
+    });
+
+    const totalMs = 760 + Math.max(0, auras.length - 1) * 90;
+    return new Promise(resolve => setTimeout(resolve, totalMs));
+  }
+
   function renderOverlay() {
     const ov = ensureOverlay();
     const s = getViewState();
@@ -267,12 +357,10 @@
     const expPercent = ov.querySelector('#shinju-exp-percent');
     const fill = ov.querySelector('#shinju-progress-fill');
     const lore = ov.querySelector('#shinju-lore');
-    const list = ov.querySelector('#shinju-item-list');
 
     if (img) {
       img.src = s.imageSrc;
       img.onerror = function () {
-        // 01〜04の画像が未配置の場合は、添付済みのMAX画像を暫定表示する。
         this.onerror = null;
         this.src = 'images/shinju_05.webp';
       };
@@ -287,23 +375,8 @@
         : '創世資源を奉納すると、アルケミアの創世が進む。';
     }
 
-    if (list) {
-      if (!s.inventory.length) {
-        list.innerHTML = '<div class="shinju-item-empty">奉納できる創世資源はありません。</div>';
-      } else {
-        list.innerHTML = s.inventory.map(item => `
-          <div class="shinju-item-card">
-            <div class="shinju-item-icon">✦</div>
-            <div class="shinju-item-body">
-              <div class="shinju-item-name">${escapeHtml(item.name)}</div>
-              <div class="shinju-item-desc">${escapeHtml(item.desc || item.bossName || '')}</div>
-              <div class="shinju-item-exp">神樹EXP +${Number(item.exp || 0)}</div>
-            </div>
-            <button class="shinju-offer-btn" type="button" onclick="ShinjuProgress.offerFromUI('${escapeHtml(item.id)}')">奉納</button>
-          </div>
-        `).join('');
-      }
-    }
+    renderAuraField(ov, s);
+    updateOfferingMeta(ov, s);
   }
 
   function openShinjuScreen() {
@@ -333,7 +406,7 @@
       showTinyToast(`神樹が成長した：${result.after.stage} / 5`);
       return;
     }
-    showTinyToast(`${result.item.name}を奉納した`);
+    showTinyToast(result.totalExp ? `創世資源を奉納した　EXP +${result.totalExp}` : `${result.item.name}を奉納した`);
   }
 
   function showTinyToast(text) {
@@ -378,13 +451,75 @@
     return result;
   }
 
-  function offerAllFromUI() {
+  async function offerAllFromUI() {
+    const ov = ensureOverlay();
+    const before = getViewState();
+    if (!before.inventory.length) {
+      showTinyToast('奉納できる創世資源がありません');
+      return { ok: false, reason: 'empty', state: before };
+    }
+    if (ov.dataset.offering === '1') return { ok: false, reason: 'busy', state: before };
+
+    ov.dataset.offering = '1';
+    updateOfferingMeta(ov, before);
+
+    await animateAuraOffering(ov);
+
     const result = offerAllItems();
     if (!result.ok) {
-      showTinyToast('奉納できる創世資源がありません');
+      delete ov.dataset.offering;
+      renderOverlay();
       return result;
     }
-    showOfferFeedback(result);
+
+    // EXPは吸い込み完了後に初めて反映し、ゲージの伸びを見せる。
+    const stage = ov.querySelector('#shinju-stage');
+    const expLabel = ov.querySelector('#shinju-exp-label');
+    const expPercent = ov.querySelector('#shinju-exp-percent');
+    const fill = ov.querySelector('#shinju-progress-fill');
+
+    const applyAfterLabels = () => {
+      if (stage) stage.textContent = `${result.after.stageLabel}　${result.after.stage} / ${result.after.maxStage}`;
+      if (expLabel) expLabel.textContent = result.after.isMax
+        ? `創世EXP ${result.after.exp} / ${result.after.totalRequiredExp}`
+        : `創世EXP ${result.after.exp} / ${result.after.nextStageExp}`;
+      if (expPercent) expPercent.textContent = result.after.isMax ? 'MAX' : `${Math.round(result.after.progress)}%`;
+    };
+
+    if (fill) {
+      fill.style.width = `${result.before.progress}%`;
+      void fill.offsetWidth;
+
+      if (result.levelUp) {
+        // 段階をまたぐ時は、まず現在ゲージを100%まで満たしてから
+        // 新しい段階のゲージへ切り替える。減って見える演出を防ぐ。
+        requestAnimationFrame(() => { fill.style.width = '100%'; });
+        setTimeout(() => {
+          applyAfterLabels();
+          fill.style.transition = 'none';
+          fill.style.width = '0%';
+          void fill.offsetWidth;
+          fill.style.transition = '';
+          requestAnimationFrame(() => { fill.style.width = `${result.after.progress}%`; });
+        }, 520);
+      } else {
+        applyAfterLabels();
+        requestAnimationFrame(() => { fill.style.width = `${result.after.progress}%`; });
+      }
+    } else {
+      applyAfterLabels();
+    }
+
+    ov.classList.add('shinju-gauge-receive');
+    setTimeout(() => ov.classList.remove('shinju-gauge-receive'), result.levelUp ? 1250 : 760);
+
+    setTimeout(() => {
+      delete ov.dataset.offering;
+      ov.classList.remove('is-offering');
+      renderOverlay();
+      showOfferFeedback(result);
+    }, result.levelUp ? 1320 : 820);
+
     return result;
   }
 

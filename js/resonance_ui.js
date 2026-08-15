@@ -18,17 +18,13 @@ function buildResonanceBonusHTML(target){
     return '<div class="lb-bonus-row ' + state + '">' +
       '<div class="lb-bonus-level">Lv.' + level + '</div>' +
       '<div class="lb-bonus-body">' +
-        '<div class="lb-bonus-title">' + escapeHtml(bonus.title) + '</div>' +
         '<div class="lb-bonus-summary">' + escapeHtml(bonus.summary) + '</div>' +
       '</div>' +
       '<div class="lb-bonus-state">' + stateLabel + '</div>' +
     '</div>';
   }).join('');
 
-  return '<div class="lb-bonus-box">' +
-    '<div class="lb-bonus-box-title">RESONANCE BONUS</div>' +
-    rows +
-  '</div>';
+  return '<div class="lb-bonus-box">' + rows + '</div>';
 }
 
 // 戦闘側から共鳴プロファイル／段階別設定を参照するための共通API。
@@ -39,8 +35,8 @@ function buildNextResonanceBonusHTML(target, nextLb){
   if(!bonus) return '';
 
   return '<div class="lb-next-bonus">' +
-    '<div class="lb-next-bonus-label">今回解放されるボーナス</div>' +
-    '<div class="lb-next-bonus-title">Lv.' + nextLb + '　' + escapeHtml(bonus.title) + '</div>' +
+    '<div class="lb-next-bonus-label">今回解放される限界突破効果</div>' +
+    '<div class="lb-next-bonus-title">Lv.' + nextLb + '　' + escapeHtml(bonus.summary) + '</div>' +
     '<div class="lb-next-bonus-detail">' + escapeHtml(bonus.detail) + '</div>' +
   '</div>';
 }
@@ -77,7 +73,7 @@ function getLimitBreakLackList(target){
 
   if(recipe.specialMaterialId){
     var specialDef = getEvolutionMaterialDef(recipe.specialMaterialId);
-    pushLack(specialDef ? specialDef.name : '専用共鳴素材', status.specialMaterialOwned, recipe.specialMaterialCount);
+    pushLack(specialDef ? specialDef.name : '専用限界突破素材', status.specialMaterialOwned, recipe.specialMaterialCount);
   } else {
     pushLack(target && target.name ? target.name : '同キャラ', status.sameCharaOwned, recipe.sameChara);
   }
@@ -164,7 +160,7 @@ function buildLimitBreakRecipeHTML(target){
       : '<span>✦</span>';
     firstMaterialRow = row(
       specialIcon,
-      specialDef ? specialDef.name : '専用共鳴素材',
+      specialDef ? specialDef.name : '専用限界突破素材',
       status.specialMaterialOwned,
       recipe.specialMaterialCount
     );
@@ -199,11 +195,11 @@ function openLimitBreakModal(target){
   listEl.innerHTML = recipeHtml;
 
   if((target.limitBreak || 0) >= MAX_LIMIT_BREAK){
-    listEl.innerHTML += '<div class="lb-no-material">共鳴LvはすでにMAXです</div>';
+    listEl.innerHTML += '<div class="lb-no-material">限界突破LvはすでにMAXです</div>';
   } else if(status.canLimitBreak){
     listEl.innerHTML +=
       '<div class="lb-execute-area">' +
-        '<button type="button" class="btn-pay lb-execute-btn" onclick="confirmLimitBreak()">共鳴実行</button>' +
+        '<button type="button" class="btn-pay lb-execute-btn" onclick="confirmLimitBreak()">限界突破</button>' +
         '<div class="lb-execute-note">' +
           (status.recipe.specialMaterialId
             ? 'エリ専用素材「原初の翼環」を1個消費します'
@@ -241,7 +237,7 @@ function confirmLimitBreak(materialDbId){
 
   var status = getLimitBreakMaterialStatus(target, selectedLimitBreakSoulVesselId);
   if(!status.canLimitBreak){
-    showToast('共鳴素材が不足しています');
+    showToast('限界突破素材が不足しています');
     return;
   }
 
@@ -256,14 +252,14 @@ function confirmLimitBreak(materialDbId){
   var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
   var materialName = mat && mat.name ? mat.name : (target.name || '同キャラ');
   var firstConsumeName = recipe.specialMaterialId
-    ? ((getEvolutionMaterialDef(recipe.specialMaterialId) || {}).name || '専用共鳴素材')
+    ? ((getEvolutionMaterialDef(recipe.specialMaterialId) || {}).name || '専用限界突破素材')
     : materialName;
   var firstConsumeCount = recipe.specialMaterialId
     ? recipe.specialMaterialCount
     : 1;
 
   document.getElementById('lb-confirm-text').innerHTML =
-    '<div class="lb-confirm-message">共鳴を実行しますか？</div>' +
+    '<div class="lb-confirm-message">限界突破を実行しますか？</div>' +
     buildNextResonanceBonusHTML(target, afterLb) +
     '<div class="lb-confirm-consume-box">' +
       '<div class="lb-confirm-consume-title">消失する素材</div>' +
@@ -280,7 +276,7 @@ function confirmLimitBreak(materialDbId){
         '<span class="lb-confirm-consume-count">× ' + recipe.stoneCount + '</span>' +
       '</div>' +
     '</div>' +
-    '<div class="lb-confirm-level"><span>共鳴Lv</span><strong>' + beforeLb + ' → ' + afterLb + '</strong></div>' +
+    '<div class="lb-confirm-level"><span>限界突破Lv</span><strong>' + beforeLb + ' → ' + afterLb + '</strong></div>' +
     '<div class="lb-confirm-warning">上記の素材は実行後に元へ戻せません。</div>';
 
   var okBtn = document.getElementById('lb-confirm-ok-btn');
@@ -351,7 +347,7 @@ function showResonanceDiagnostic(error, target, beforeState){
   title.style.cssText = 'font-family:"Noto Serif JP",serif;font-size:18px;font-weight:700;margin-bottom:10px;color:#ff9d9d;';
 
   var lead = document.createElement('div');
-  lead.textContent = '素材と共鳴Lvは元に戻しました。下の内容をスクリーンショットしてください。';
+  lead.textContent = '素材と限界突破Lvは元に戻しました。下の内容をスクリーンショットしてください。';
   lead.style.cssText = 'font-family:"Noto Serif JP",serif;font-size:12px;line-height:1.6;color:#ddd;margin-bottom:12px;';
 
   var pre = document.createElement('pre');

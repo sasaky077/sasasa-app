@@ -41,6 +41,9 @@
     CH03_02: 'shooting_ch03_02',
     CH03_03: 'shooting_ch03_03',
     CH03_04: 'shooting_ch03_04',
+
+    FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
+    FACELESS_SUPER: 'shooting_event_faceless_super',
   });
 
   // ============================================================
@@ -385,6 +388,65 @@
         text: 'REMNANT 03「天墜」を浄化',
       }),
 
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // SPECIAL EVENT - 無貌の天使
+    // 「照射◯秒」は現行プレイ感の基準DPSを約190としてHP化。
+    // wave1: 約40秒 → 7,600 / wave2: 約100秒 → 19,000
+    // object: 約5秒 → 950
+    // ============================================================
+    [SHOOTING_STAGE_ID.FACELESS_ADVANCED]: Object.freeze({
+      id: SHOOTING_STAGE_ID.FACELESS_ADVANCED,
+      chapter: 0,
+      stageNo: 1,
+      eventId: 'faceless',
+      eventTitle: '無貌の天使',
+      difficultyLabel: '上級',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/enemy_faceless_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'フェイスレスを撃破',
+      }),
+      faceless: Object.freeze({
+        difficulty: 'advanced',
+        waveHp: Object.freeze([7600, 19000]),
+        waveBarrage: Object.freeze(['light', 'medium']),
+        objectHp: 950,
+        objectWays: 2,
+        waveObjectCount: Object.freeze([1, 2]),
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.FACELESS_SUPER]: Object.freeze({
+      id: SHOOTING_STAGE_ID.FACELESS_SUPER,
+      chapter: 0,
+      stageNo: 2,
+      eventId: 'faceless',
+      eventTitle: '無貌の天使',
+      difficultyLabel: '最上級',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/enemy_faceless_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'フェイスレスを撃破',
+      }),
+      faceless: Object.freeze({
+        difficulty: 'super',
+        waveHp: Object.freeze([7600, 19000]),
+        waveBarrage: Object.freeze(['medium', 'dense']),
+        objectHp: 950,
+        objectWays: 3,
+        waveObjectCount: Object.freeze([1, 2]),
+      }),
       playable: true,
     }),
 

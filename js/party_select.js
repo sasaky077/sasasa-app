@@ -254,18 +254,6 @@
         </button>
       </div>
 
-      <div class="ps-blessing-picker" id="ps-blessing-picker" aria-hidden="true">
-        <div class="ps-blessing-picker-panel">
-          <div class="ps-blessing-picker-head">
-            <div>
-              <div class="ps-blessing-picker-title">加護選択</div>
-              <div class="ps-blessing-picker-sub">授かる加護を1つ選択</div>
-            </div>
-            <button type="button" class="ps-blessing-picker-close" onclick="closePartyBlessingPicker()">×</button>
-          </div>
-          <div class="ps-blessing-picker-list" id="ps-blessing-picker-list"></div>
-        </div>
-      </div>
     `;
 
     document.body.appendChild(el);
@@ -357,7 +345,7 @@
         align-items:center; justify-content:center; padding:18px;
         background:rgba(25,20,14,.72); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
       }
-      .ps-blessing-picker.open { display:flex; }
+      .ps-blessing-picker.open { display:none !important; }
       .ps-blessing-picker-panel {
         width:min(390px,100%); max-height:82vh; overflow:hidden;
         border-radius:16px; border:1px solid rgba(151,113,54,.32);
@@ -2128,83 +2116,72 @@
   }
 
   function renderBlessingSelect() {
+    selectedBlessingId = null;
     const el = document.getElementById('ps-blessing-list');
     if (!el) return;
-    const blessing = getSelectedBlessing();
 
-    if (!blessing) {
-      el.innerHTML = `<button type="button" class="ps-blessing-slot empty" onclick="openPartyBlessingPicker()">
-        <span class="ps-blessing-slot-placeholder" aria-hidden="true"></span>
-        <span>
-          <span class="ps-blessing-slot-name">加護を選択</span>
-          <span class="ps-blessing-slot-empty-text">タップしてレムナントを選択</span>
-        </span>
-      </button>`;
-    } else {
-      el.innerHTML = `<button type="button" class="ps-blessing-slot" onclick="openPartyBlessingPicker()">
-        <img class="ps-blessing-slot-img" src="${blessing.img}" alt="${blessing.name}" onerror="this.style.opacity='.2'">
-        <span>
-          <span class="ps-blessing-slot-name">${blessing.name} Lv.${blessing.level}</span>
-          <span class="ps-blessing-slot-desc">
-            <span>${blessing.passive}</span>
-            <span>${blessing.inv}</span>
-            <span>${blessing.invCondition}</span>
-          </span>
-        </span>
-      </button>`;
+    el.innerHTML = `<button type="button" class="ps-blessing-slot empty" id="ps-blessing-unimplemented">
+      <span class="ps-blessing-slot-placeholder" aria-hidden="true"></span>
+      <span>
+        <span class="ps-blessing-slot-name">加護を選択</span>
+        <span class="ps-blessing-slot-empty-text">タップして加護を選択</span>
+      </span>
+    </button>`;
+
+    const btn = el.querySelector('#ps-blessing-unimplemented');
+    if (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        showPartyUnimplementedNotice();
+        return false;
+      }, true);
     }
   }
 
   function renderBlessingPicker() {
-    const el = document.getElementById('ps-blessing-picker-list');
-    if (!el) return;
-
-    const rows = [
-      `<button type="button" class="ps-blessing-option none ${selectedBlessingId === null ? 'selected' : ''}" onclick="selectPartyBlessing(null)">
-        <span><span class="ps-blessing-option-name">加護なし</span><br><span class="ps-blessing-option-desc">加護を授からずに出撃する</span></span>
-        <span class="ps-blessing-option-check">${selectedBlessingId === null ? '✓' : ''}</span>
-      </button>`,
-      ...getPartyBlessings().map(b => {
-        const owned = isBlessingOwned(b.id);
-        const selected = selectedBlessingId === b.id;
-        return `<button type="button" class="ps-blessing-option ${selected ? 'selected' : ''} ${owned ? '' : 'locked'}" ${owned ? `onclick="selectPartyBlessing('${b.id}')"` : 'disabled'}>
-          <img class="ps-blessing-option-img" src="${b.img}" alt="${b.name}" onerror="this.style.opacity='.2'">
-          <span>
-            <span class="ps-blessing-option-name">${b.name}${owned ? ` Lv.${b.level}` : '（未取得）'}</span>
-            <span class="ps-blessing-option-desc">
-              <span>${b.passive}</span>
-              <span>${b.inv}</span>
-              <span>${b.invCondition}</span>
-            </span>
-          </span>
-          <span class="ps-blessing-option-check">${selected ? '✓' : ''}</span>
-        </button>`;
-      })
-    ];
-    el.innerHTML = rows.join('');
+    // 未実装。ピッカーは生成しない。
   }
 
+  window.showPartyUnimplementedNotice = function() {
+    selectedBlessingId = null;
+
+    if (typeof window.showUnimplementedFeatureNotice === 'function') {
+      window.showUnimplementedFeatureNotice();
+      return false;
+    }
+    if (typeof window.showToast === 'function') {
+      window.showToast('機能が未実装です');
+      return false;
+    }
+
+    const toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = '機能が未実装です';
+      toast.classList.remove('show');
+      void toast.offsetWidth;
+      toast.classList.add('show');
+      clearTimeout(window.__partyUnimplementedToastTimer);
+      window.__partyUnimplementedToastTimer = setTimeout(function(){
+        toast.classList.remove('show');
+      }, 1500);
+    }
+    return false;
+  };
+
   window.openPartyBlessingPicker = function() {
-    renderBlessingPicker();
-    const picker = document.getElementById('ps-blessing-picker');
-    if (!picker) return;
-    picker.classList.add('open');
-    picker.setAttribute('aria-hidden', 'false');
+    return window.showPartyUnimplementedNotice();
   };
 
   window.closePartyBlessingPicker = function() {
-    const picker = document.getElementById('ps-blessing-picker');
-    if (!picker) return;
-    picker.classList.remove('open');
-    picker.setAttribute('aria-hidden', 'true');
+    return false;
   };
 
-  window.selectPartyBlessing = function(id) {
-    if (id && !isBlessingOwned(id)) return;
-    selectedBlessingId = id || null;
+  window.selectPartyBlessing = function() {
+    selectedBlessingId = null;
     renderBlessingSelect();
-    renderBlessingPicker();
-    closePartyBlessingPicker();
+    return window.showPartyUnimplementedNotice();
   };
 
 

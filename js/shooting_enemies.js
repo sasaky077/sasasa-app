@@ -21,6 +21,9 @@
     REMNANT_06: 'shooting_remnant_06',
     REMNANT_07: 'shooting_remnant_07',
     REMNANT_08: 'shooting_remnant_08',
+
+    // SPECIAL EVENT bosses
+    FACELESS: 'shooting_faceless',
   });
 
   // ============================================================
@@ -192,6 +195,30 @@
       behavior: 'barrage_v1',
       uiScale: 1.18,
     }),
+
+    // ------------------------------------------------------------
+    // SPECIAL EVENT - 無貌の天使
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.FACELESS]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.FACELESS,
+      kind: 'boss',
+      implemented: true,
+      name: 'フェイスレス',
+      displayName: 'FACELESS　無貌の天使',
+      image: 'images/enemy_faceless_battle.webp',
+
+      // 実HPはステージ側のfaceless.waveHpでwaveごとに上書きする。
+      gaugeHp: 7600,
+      gauges: 1,
+
+      bulletSpeed: 225,
+      fireRate: 820,
+      bulletDamage: 145,
+
+      behavior: 'faceless_event_v1',
+      uiScale: 1.28,
+    }),
+
     [SHOOTING_ENEMY_ID.REMNANT_04]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_04,
       kind: 'boss',
