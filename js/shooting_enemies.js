@@ -93,7 +93,8 @@
       name: '星護の残穢',
       displayName: '星護の残穢',
       image: 'images/enemy_mini_03_battle.webp',
-      hp: 1800,
+      // CH03通常敵。弾幕は濃いが、撃破テンポは軽めにする。
+      hp: 1400,
       bulletDamage: 105,
       bulletSpeed: 220,
       fireRate: 1220,

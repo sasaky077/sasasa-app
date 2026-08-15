@@ -15880,3 +15880,22 @@ body.login-bonus-open {
 .ps-detail-close:active {
   background: #e8d8bf !important;
 }
+
+
+/* ============================================================
+   Primoa carousel image size normalization
+   初回/キャラ切替後で画像サイズが変わらないようにする。
+   ============================================================ */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual-row .box-carousel-visual {
+  flex: 0 0 auto;
+  width: 216px;
+  max-width: 216px;
+  aspect-ratio: 1 / 1;
+}
+
+@media (max-width: 330px) {
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual-row .box-carousel-visual {
+    width: 200px;
+    max-width: 200px;
+  }
+}

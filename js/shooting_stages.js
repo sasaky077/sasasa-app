@@ -106,8 +106,12 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-        targetSeconds: 60,
-        text: '60秒以内にクリア',
+
+        // 合計HP 9,000。
+        // 実戦DPSを約180〜200HP/秒で見ると純粋な削り時間は45〜50秒前後。
+        // 回避・狙い直し・敵の出現待ちを含め、余裕を持たせて90秒に設定。
+        targetSeconds: 90,
+        text: '90秒以内にクリア',
       }),
 
       playable: true,
@@ -207,8 +211,12 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-        targetSeconds: 90,
-        text: '90秒以内に強敵を撃破',
+
+        // 合計HP 16,000。
+        // 実戦DPSを約180〜200HP/秒で見ると純粋な削り時間は80〜89秒前後。
+        // 高火力の敵を避けながら戦うロスを大きめに見て150秒に設定。
+        targetSeconds: 150,
+        text: '150秒以内に強敵を撃破',
       }),
 
       playable: true,
@@ -278,15 +286,23 @@
         SHOOTING_ENEMY_ID.MINI_03,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 9,
+        infiniteEnemies: true,
         maxActive: 2,
-        spawnIntervalMs: 880,
+        spawnIntervalMs: 980,
+        itemDropRate: 0.80,
+
+        // CH03-01: 弱
+        enemyHp: 900,
+        enemyBulletDamage: 75,
+        enemyBulletSpeed: 190,
+        enemyFireRate: 1450,
+        barrageLevel: 1,
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
-        target: 4,
-        text: 'アイテムを4個拾ってクリア',
+        target: 3,
+        text: 'アイテムを3個拾ってクリア',
       }),
 
       playable: true,
@@ -304,15 +320,23 @@
         SHOOTING_ENEMY_ID.MINI_03,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 11,
+        infiniteEnemies: true,
         maxActive: 2,
-        spawnIntervalMs: 800,
+        spawnIntervalMs: 850,
+        itemDropRate: 0.80,
+
+        // CH03-02: 中
+        enemyHp: 1200,
+        enemyBulletDamage: 95,
+        enemyBulletSpeed: 215,
+        enemyFireRate: 1230,
+        barrageLevel: 2,
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
-        target: 5,
-        text: 'アイテムを5個拾ってクリア',
+        target: 3,
+        text: 'アイテムを3個拾ってクリア',
       }),
 
       playable: true,
@@ -330,15 +354,23 @@
         SHOOTING_ENEMY_ID.MINI_03,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 13,
+        infiniteEnemies: true,
         maxActive: 3,
         spawnIntervalMs: 760,
+        itemDropRate: 0.80,
+
+        // CH03-03: 強
+        enemyHp: 1500,
+        enemyBulletDamage: 115,
+        enemyBulletSpeed: 235,
+        enemyFireRate: 1080,
+        barrageLevel: 3,
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
-        target: 6,
-        text: 'アイテムを6個拾ってクリア',
+        target: 3,
+        text: 'アイテムを3個拾ってクリア',
       }),
 
       playable: true,

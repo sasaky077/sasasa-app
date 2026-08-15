@@ -71,6 +71,36 @@
         const calls = queuedOpenArgs.splice(0);
         calls.forEach(args => window.openShootingEvent(...args));
       }
+      ensureStandaloneEntryButton();
     })
     .catch(err => console.error('[shooting] module load failed', err));
+
+  // ---- スタンドアロン起動ボタンのフォールバック（既存挙動には影響しない）----
+  // ローグライト側の任務画面(#ninmu-panel-special)に用意されている
+  // 「.shooting-entry-card」ボタンが既に存在する場合は何もしない。
+  // ローグライトが凍結/削除されていてこのボタンがDOMに一つも無い時だけ、
+  // 画面右下に最低限の起動ボタンを自前で追加する。
+  function ensureStandaloneEntryButton() {
+    try {
+      if (document.querySelector('.shooting-entry-card')) return;
+      if (document.getElementById('shooting-standalone-entry')) return;
+
+      const btn = document.createElement('button');
+      btn.id = 'shooting-standalone-entry';
+      btn.type = 'button';
+      btn.textContent = 'SPECIAL EVENT 銃撃戦';
+      btn.style.cssText = [
+        'position:fixed', 'right:16px', 'bottom:16px', 'z-index:9999',
+        'padding:12px 20px', 'border-radius:999px',
+        'border:1px solid rgba(160,126,66,.52)',
+        'background:linear-gradient(180deg,#fffefa,#f1e5ca)',
+        'color:#715a37', 'font-size:13px', 'letter-spacing:.05em',
+        'box-shadow:0 8px 20px rgba(0,0,0,.18)', 'cursor:pointer',
+      ].join(';');
+      btn.addEventListener('click', () => {
+        if (typeof window.openShootingEvent === 'function') window.openShootingEvent();
+      });
+      document.body.appendChild(btn);
+    } catch (_) {}
+  }
 })();

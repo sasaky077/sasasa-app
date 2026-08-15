@@ -483,7 +483,9 @@
         const m = selectedStage.mission || {};
         const total = Number(getNormalBattleConfig().totalEnemies || 0);
         if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
-          missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}　ENEMY ${state.normalDefeated}/${total}`;
+          missionProgress.textContent = getNormalBattleConfig().infiniteEnemies
+            ? `ITEM ${state.collectedItems}/${Number(m.target || 3)}`
+            : `ITEM ${state.collectedItems}/${Number(m.target || 3)}　ENEMY ${state.normalDefeated}/${total}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
           const left = Math.max(0, Number(m.targetSeconds || 60) - (performance.now() - state.startedAt) / 1000);
           missionProgress.textContent = `${left.toFixed(1)}秒　ENEMY ${state.normalDefeated}/${total}`;
@@ -1001,11 +1003,17 @@
     const lanes = [w * .20, w * .40, w * .60, w * .80];
     const x = lanes[lane] + (Math.random() - .5) * Math.min(28, w * .06);
     const y = Math.max(92, h * (.16 + (state.normalSpawned % 2) * .075));
+    const cfg = getNormalBattleConfig();
+    const stageEnemyHp = Number(cfg.enemyHp);
+    const enemyHp = Number.isFinite(stageEnemyHp)
+      ? stageEnemyHp
+      : Number(enemyDef.hp || 18);
+
     const enemy = {
       uid: `mini_${Date.now()}_${state.normalSpawned}_${Math.random().toString(36).slice(2,6)}`,
       def: enemyDef, el, hpEl: hpWrap, x, y, baseX: x, baseY: y,
-      hp: Number(enemyDef.hp || 18),
-      hpMax: Number(enemyDef.hp || 18),
+      hp: enemyHp,
+      hpMax: enemyHp,
       spawnedAt: now,
       lastShotAt: now + Math.random() * 500,
       phaseSeed: Math.random() * Math.PI * 2,
@@ -1027,10 +1035,14 @@
   function spawnNormalEnemies(now) {
     if (!isNormalBattle() || state.finishing || state.ended) return;
     const cfg = getNormalBattleConfig();
+    const infiniteEnemies = !!cfg.infiniteEnemies;
     const total = Number(cfg.totalEnemies || 7);
     const maxActive = Number(cfg.maxActive || 2);
     const interval = Number(cfg.spawnIntervalMs || 900);
-    if (state.normalSpawned >= total || state.normalEnemies.length >= maxActive) return;
+
+    // CH03などの無限湧きステージでは、撃破数ではスポーンを止めない。
+    // ミッション達成まで常にmaxActiveを補充する。
+    if ((!infiniteEnemies && state.normalSpawned >= total) || state.normalEnemies.length >= maxActive) return;
     if (now - state.normalLastSpawnAt < interval) return;
     const enemyId = selectedStage && selectedStage.enemyIds && selectedStage.enemyIds[0];
     const def = getShootingEnemy(enemyId);
@@ -1115,49 +1127,129 @@
     }
 
     if (def.behavior === 'mini_barrage_v1') {
-      if (now - enemy.lastShotAt < Number(def.fireRate || 1220)) return;
+      const cfg = getNormalBattleConfig();
+      const level = Math.max(1, Math.min(3, Number(cfg.barrageLevel || 2)));
+      const fireRate = Number(cfg.enemyFireRate || def.fireRate || 1220);
+
+      if (now - enemy.lastShotAt < fireRate) return;
       enemy.lastShotAt = now;
 
       const dx = state.player.x - enemy.x;
       const dy = state.player.y - enemy.y;
       const baseAngle = Math.atan2(dy, dx);
-      const speed = Number(def.bulletSpeed || 220);
+      const speed = Number(cfg.enemyBulletSpeed || def.bulletSpeed || 220);
+      const damage = Number(cfg.enemyBulletDamage || def.bulletDamage || 105);
+
+      if (level === 1) {
+        // CH03-01 弱:
+        // 3WAY → 5WAY。正面中心で、弾間隔も広い。
+        const pattern = enemy.actionIndex % 2;
+
+        if (pattern === 0) {
+          [-0.28, 0, 0.28].forEach(offset => {
+            shootNormalEnemyProjectile(
+              enemy,
+              baseAngle + offset,
+              speed,
+              damage,
+              'shooting-enemy-bullet shooting-mini-enemy-bullet'
+            );
+          });
+        } else {
+          [-0.42, -0.21, 0, 0.21, 0.42].forEach(offset => {
+            shootNormalEnemyProjectile(
+              enemy,
+              baseAngle + offset,
+              speed * 0.94,
+              damage,
+              'shooting-enemy-bullet shooting-mini-enemy-bullet'
+            );
+          });
+        }
+
+        enemy.actionIndex = (enemy.actionIndex + 1) % 2;
+        return;
+      }
+
+      if (level === 2) {
+        // CH03-02 中:
+        // 5WAY → 揺れる7WAY → 8発リング。
+        const pattern = enemy.actionIndex % 3;
+
+        if (pattern === 0) {
+          [-0.42, -0.21, 0, 0.21, 0.42].forEach(offset => {
+            shootNormalEnemyProjectile(
+              enemy,
+              baseAngle + offset,
+              speed,
+              damage,
+              'shooting-enemy-bullet shooting-mini-enemy-bullet'
+            );
+          });
+        } else if (pattern === 1) {
+          const phaseOffset = Math.sin((enemy.phaseSeed || 0) + now * 0.0028) * 0.12;
+          [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach(offset => {
+            shootNormalEnemyProjectile(
+              enemy,
+              baseAngle + offset + phaseOffset,
+              speed * 0.96,
+              damage,
+              'shooting-enemy-bullet shooting-mini-enemy-bullet'
+            );
+          });
+        } else {
+          const startAngle = (enemy.phaseSeed || 0) + now * 0.0018;
+          for (let i = 0; i < 8; i++) {
+            const angle = startAngle + (Math.PI * 2 * i / 8);
+            shootNormalEnemyProjectile(
+              enemy,
+              angle,
+              speed * 0.80,
+              Math.max(1, damage - 10),
+              'shooting-enemy-bullet shooting-mini-enemy-bullet'
+            );
+          }
+        }
+
+        enemy.actionIndex = (enemy.actionIndex + 1) % 3;
+        return;
+      }
+
+      // CH03-03 強:
+      // 7WAY → 回転9WAY → 12発リング。
+      // BOSS前の最終練習として、通路を読む必要がある密度にする。
       const pattern = enemy.actionIndex % 3;
 
       if (pattern === 0) {
-        // 5WAYの素直な扇状弾。まず避けるリズムを作る。
-        [-0.42, -0.21, 0, 0.21, 0.42].forEach(offset => {
+        [-0.57, -0.38, -0.19, 0, 0.19, 0.38, 0.57].forEach(offset => {
           shootNormalEnemyProjectile(
             enemy,
             baseAngle + offset,
             speed,
-            Number(def.bulletDamage || 105),
+            damage,
             'shooting-enemy-bullet shooting-mini-enemy-bullet'
           );
         });
       } else if (pattern === 1) {
-        // 少し回転した7WAY。前回とズラして通路を狭める。
-        const phaseOffset = Math.sin((enemy.phaseSeed || 0) + now * 0.0032) * 0.18;
-        [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach(offset => {
+        const phaseOffset = Math.sin((enemy.phaseSeed || 0) + now * 0.0035) * 0.20;
+        [-0.72, -0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54, 0.72].forEach(offset => {
           shootNormalEnemyProjectile(
             enemy,
             baseAngle + offset + phaseOffset,
-            speed * 0.96,
-            Number(def.bulletDamage || 105),
+            speed * 1.02,
+            damage,
             'shooting-enemy-bullet shooting-mini-enemy-bullet'
           );
         });
       } else {
-        // 薄いリング。全周だが数は抑え、見た目ほど理不尽になりすぎないようにする。
-        const start = (enemy.phaseSeed || 0) + now * 0.0022;
-        const count = 10;
-        for (let i = 0; i < count; i++) {
-          const angle = start + (Math.PI * 2 * i / count);
+        const startAngle = (enemy.phaseSeed || 0) + now * 0.0027;
+        for (let i = 0; i < 12; i++) {
+          const angle = startAngle + (Math.PI * 2 * i / 12);
           shootNormalEnemyProjectile(
             enemy,
             angle,
-            speed * 0.82,
-            Math.max(80, Number(def.bulletDamage || 105) - 10),
+            speed * 0.86,
+            Math.max(1, damage - 12),
             'shooting-enemy-bullet shooting-mini-enemy-bullet'
           );
         }
@@ -1237,11 +1329,25 @@
 
   function shouldDropMissionItem(defeatedNo) {
     if (!selectedStage || selectedStage.mission?.type !== SHOOTING_MISSION_TYPE.COLLECT_ITEM) return false;
+
     const target = Number(selectedStage.mission.target || 3);
     if (state.collectedItems + state.collectibles.length >= target) return false;
-    const total = Number(getNormalBattleConfig().totalEnemies || 7);
-    const milestones = Array.from({length: target}, (_, i) => Math.max(1, Math.round(total * (i + 1) / (target + 1))));
-    return milestones.includes(defeatedNo) || defeatedNo >= total - (target - state.collectedItems - state.collectibles.length);
+
+    const cfg = getNormalBattleConfig();
+    const configuredDropRate = Number(cfg.itemDropRate);
+
+    // CH03: 敵撃破時に80%抽選など、ステージ設定の確率ドロップを使用。
+    if (Number.isFinite(configuredDropRate)) {
+      return Math.random() < clamp(configuredDropRate, 0, 1);
+    }
+
+    // 既存CHAPTERの収集ステージは従来の保証ドロップ方式を維持。
+    const total = Number(cfg.totalEnemies || 7);
+    const milestones = Array.from({length: target}, (_, i) =>
+      Math.max(1, Math.round(total * (i + 1) / (target + 1)))
+    );
+    return milestones.includes(defeatedNo) ||
+      defeatedNo >= total - (target - state.collectedItems - state.collectibles.length);
   }
 
   function spawnMissionItem(x, y) {
@@ -1336,7 +1442,11 @@
       }
       state.missionComplete = allDefeated;
     } else if (mission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
-      state.missionComplete = allDefeated && state.collectedItems >= Number(mission.target || 3);
+      // 無限湧き収集ステージは、敵全滅という概念を持たない。
+      // 指定数のアイテム取得だけで即クリア。
+      state.missionComplete = !!cfg.infiniteEnemies
+        ? state.collectedItems >= Number(mission.target || 3)
+        : allDefeated && state.collectedItems >= Number(mission.target || 3);
     } else {
       state.missionComplete = allDefeated;
     }

@@ -580,6 +580,22 @@
       }
     } catch (_) {}
 
+    // ---- ローグライト凍結時のフォールバック（既存挙動には影響しない）----
+    // 上の3つ(getRepresentativeOwnedInstance / collected / box)が
+    // 「そもそも定義すら存在しない」場合だけ、ローグライトが凍結/未読込の
+    // スタンドアロン環境とみなし、シューティング内蔵の解放リストにフォールバックする。
+    // ローグライトが生きている環境では、このいずれかが必ず定義されているため
+    // この分岐には入らず、今までと完全に同じ挙動になる。
+    try {
+      const roguelitePresent =
+        (typeof getRepresentativeOwnedInstance === 'function') ||
+        (typeof collected !== 'undefined') ||
+        (typeof box !== 'undefined');
+      if (!roguelitePresent) {
+        return { id, standalone: true };
+      }
+    } catch (_) {}
+
     return null;
   }
 
