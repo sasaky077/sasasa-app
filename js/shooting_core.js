@@ -390,13 +390,15 @@
   let keys = Object.create(null);
   let pointerActive = false;
   let pointerIsTouch = false;
+  let activePointerId = null;
   let pointerX = 0;
   let pointerY = 0;
-  let activePointerId = null;
-  let pointerDragStartClientX = 0;
-  let pointerDragStartClientY = 0;
-  let pointerDragStartPlayerX = 0;
-  let pointerDragStartPlayerY = 0;
+  let dragStartClientX = 0;
+  let dragStartClientY = 0;
+  let dragStartPlayerX = 0;
+  let dragStartPlayerY = 0;
+  let lastPointerClientX = 0;
+  let lastPointerClientY = 0;
   let lastTapAt = 0;
   let lastTapX = 0;
   let lastTapY = 0;
@@ -706,8 +708,10 @@
     state.lastShotAt = -9999;
     applySelectedCharacterToUi();
 
-    // キャラ差し替え時もpointer目標へ直接スナップさせない。
-    // updateMovement側の速度制限で自然に追従を継続する。
+    // iPhone対策:
+    // キャラ切替時に「指の座標へ即代入」すると、再描画タイミング次第でワープに見える。
+    // 現在のキャラ位置を新しいドラッグ基準へ取り直すだけにする。
+    rebaseTouchDragToPlayer();
 
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -2670,14 +2674,18 @@
 
     if (pointerActive) {
       if (pointerIsTouch) {
-        // タッチ操作も1フレーム直代入は禁止。
-        // 目標位置までmoveSpeedの範囲で移動させ、ULT復帰・キャラ切替時も
-        // 大きく位置が飛ばないようにする。
+        // iPhone / タッチ操作:
+        // 目標座標へ1フレームで代入せず、最大追従速度を設ける。
+        // これによりSafariが一瞬だけ大きな座標差を返してもワープしない。
         const dx = pointerX - state.player.x;
         const dy = pointerY - state.player.y;
         const dist = Math.hypot(dx, dy);
+
         if (dist > 0.001) {
-          const maxStep = Math.max(1, Number(c.moveSpeed || 300)) * dt;
+          // 操作感を損ねない程度に通常moveSpeedより速く追従するが、
+          // 1フレーム瞬間移動は絶対にしない。
+          const followSpeed = Math.max(Number(c.moveSpeed || 0) * 2.2, 720);
+          const maxStep = Math.max(1, followSpeed * dt);
           const step = Math.min(dist, maxStep);
           state.player.x += dx / dist * step;
           state.player.y += dy / dist * step;
@@ -3228,8 +3236,9 @@
         root.classList.remove('ult-cutin-active');
         prevTs = performance.now();
 
-        // カットイン復帰時も最新pointer位置へ直接代入しない。
-        // 再開後のupdateMovementで速度制限付き追従を続ける。
+        // カットイン終了時も指位置へ即ワープさせず、
+        // 現在位置から相対ドラッグを継続する。
+        rebaseTouchDragToPlayer();
 
         if (typeof onComplete === 'function') onComplete();
       }, 120);
@@ -4039,22 +4048,51 @@
     setBattleHudVisible(false);
   }
 
-  function beginRelativePointerDrag(e) {
-    if (!state || !state.player) return;
-    activePointerId = e.pointerId;
-    pointerDragStartClientX = e.clientX;
-    pointerDragStartClientY = e.clientY;
-    pointerDragStartPlayerX = Number(state.player.x || 0);
-    pointerDragStartPlayerY = Number(state.player.y || 0);
+  function rebaseTouchDragToPlayer() {
+    if (!pointerActive || !pointerIsTouch || !state || !state.player) return;
 
-    // 指を置いた瞬間はキャラを一切動かさない。
-    // 以降は「タッチ開始地点から指が動いた差分」だけをキャラ位置へ加える。
-    pointerX = pointerDragStartPlayerX;
-    pointerY = pointerDragStartPlayerY;
+    dragStartClientX = lastPointerClientX;
+    dragStartClientY = lastPointerClientY;
+    dragStartPlayerX = state.player.x;
+    dragStartPlayerY = state.player.y;
+    pointerX = state.player.x;
+    pointerY = state.player.y;
+  }
+
+  function beginTouchDrag(e) {
+    if (!state || !state.player) return;
+
+    pointerActive = true;
+    pointerIsTouch = true;
+    activePointerId = e.pointerId;
+
+    lastPointerClientX = e.clientX;
+    lastPointerClientY = e.clientY;
+    dragStartClientX = e.clientX;
+    dragStartClientY = e.clientY;
+
+    // 重要:
+    // 指を置いた座標ではなく「その瞬間のキャラ位置」を移動目標にする。
+    // これで画面の離れた場所をタップしてもキャラは1pxもワープしない。
+    dragStartPlayerX = state.player.x;
+    dragStartPlayerY = state.player.y;
+    pointerX = state.player.x;
+    pointerY = state.player.y;
   }
 
   function onPointerDown(e) {
     if (!state || state.ended || state.countdown || state.finishing || state.paused) return;
+
+    const touchLike = isTouchLikePointer(e);
+
+    // すでに別の指で操作中なら、その指以外のpointerdownは移動入力に使わない。
+    if (
+      pointerActive &&
+      activePointerId !== null &&
+      e.pointerId !== activePointerId
+    ) {
+      return;
+    }
 
     const now = performance.now();
     const dx = e.clientX - lastTapX;
@@ -4064,25 +4102,29 @@
       (now - lastTapAt) <= ULT_DOUBLE_TAP_MS &&
       Math.hypot(dx, dy) <= ULT_DOUBLE_TAP_DISTANCE;
 
+    if (touchLike) {
+      beginTouchDrag(e);
+    } else {
+      pointerActive = true;
+      pointerIsTouch = false;
+      activePointerId = e.pointerId;
+      lastPointerClientX = e.clientX;
+      lastPointerClientY = e.clientY;
+      updatePointer(e);
+    }
+
+    swipeStartX = e.clientX;
+    swipeStartY = e.clientY;
+    swipeStartAt = now;
+
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+
     if (isDoubleTap) {
       lastTapAt = 0;
+
       if (isUltReady()) {
-        // ULT発動時も現在のタッチを「移動入力として生きたまま」にする。
-        // ここでreturnするため、通常のpointerActive=true処理より先に明示的に再設定する。
-        pointerActive = true;
-        pointerIsTouch = isTouchLikePointer(e);
-        beginRelativePointerDrag(e);
-
-        swipeStartX = e.clientX;
-        swipeStartY = e.clientY;
-        swipeStartAt = now;
-
-        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
-
-        // ULT開始時もタッチ地点へのスナップは禁止。
-        // ここでは現在位置を基準として固定し、move以降の差分だけ追従させる。
-        updatePointer(e);
-
+        // ULT発動時も「現在のキャラ位置」をドラッグ基準に維持。
+        // 指の絶対座標へ同期しない。
         window.useShootingBurst();
         e.preventDefault();
         return;
@@ -4093,33 +4135,30 @@
       lastTapY = e.clientY;
     }
 
-    pointerActive = true;
-    pointerIsTouch = isTouchLikePointer(e);
-    beginRelativePointerDrag(e);
-
-    swipeStartX = e.clientX;
-    swipeStartY = e.clientY;
-    swipeStartAt = now;
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
-    updatePointer(e);
     e.preventDefault();
   }
+
   function onPointerMove(e) {
     if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-    // ultCutinActive中でもここは止めない。
-    // ゲーム本体は停止していても指位置だけは更新し続け、
-    // カットイン終了直後に同じ指へ即追従させる。
+    lastPointerClientX = e.clientX;
+    lastPointerClientY = e.clientY;
+
+    // ultCutinActive中でも入力基準だけ更新する。
     updatePointer(e);
     e.preventDefault();
   }
+
   function onPointerUp(e) {
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
     const wasActive = pointerActive;
+
     pointerActive = false;
     pointerIsTouch = false;
     activePointerId = null;
+
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
 
     if (wasActive && state && !state.ended && !state.countdown && !state.finishing && !state.koTransition) {
@@ -4133,7 +4172,6 @@
 
       if (isFlick) {
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
-        // Right flick -> upper bench / Left flick -> lower bench.
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
       }
@@ -4141,24 +4179,36 @@
 
     e.preventDefault();
   }
+
   function updatePointer(e) {
     const arena = document.getElementById('shooting-arena');
-    if (!arena) return;
+    if (!arena || !state || !state.player) return;
+
     const r = arena.getBoundingClientRect();
     const touchLike = pointerIsTouch || isTouchLikePointer(e);
 
     if (touchLike) {
-      // スマホは絶対座標へ吸着させない。
-      // タッチ開始時のキャラ位置 + 指の移動量で目標位置を作るため、
-      // 画面のどこに指を置いてもキャラが瞬間移動しない。
-      const dx = e.clientX - pointerDragStartClientX;
-      const dy = e.clientY - pointerDragStartClientY;
-      pointerX = clamp(pointerDragStartPlayerX + dx, 30, r.width - 30);
-      pointerY = clamp(pointerDragStartPlayerY + dy, 34, r.height - 38);
+      // iPhoneでは絶対座標に追従させない。
+      // touchstartから動いた「差分」だけを、touchstart時点のキャラ位置へ足す。
+      const deltaX = e.clientX - dragStartClientX;
+      const deltaY = e.clientY - dragStartClientY;
+
+      pointerX = clamp(
+        dragStartPlayerX + deltaX,
+        30,
+        r.width - 30
+      );
+
+      pointerY = clamp(
+        dragStartPlayerY + deltaY,
+        34,
+        r.height - 38
+      );
+
       return;
     }
 
-    // PCマウスは従来どおりカーソル座標へ追従。
+    // PCマウスは従来どおり絶対座標へ追従。
     pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
     pointerY = clamp(e.clientY - r.top, 34, r.height - 38);
   }
@@ -4292,7 +4342,6 @@
     keys = Object.create(null);
     pointerActive = false;
     pointerIsTouch = false;
-    activePointerId = null;
   }
 
   window.openShootingPauseMenu = function () {
@@ -4305,7 +4354,6 @@
     state.pauseStartedAt = performance.now();
     pointerActive = false;
     pointerIsTouch = false;
-    activePointerId = null;
     keys = Object.create(null);
 
     menu.classList.add('show');
@@ -4503,7 +4551,6 @@
     clearNormalBattleObjects();
     pointerActive = false;
     pointerIsTouch = false;
-    activePointerId = null;
     keys = Object.create(null);
     lastTapAt = 0;
     const root = document.getElementById(ROOT_ID);

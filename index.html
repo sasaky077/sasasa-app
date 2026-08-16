@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-1154-notice-inline-v5">
+  <meta name="sasaphia-build" content="20260816-story-ch01-ios-v2">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -144,7 +144,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-1154-notice-inline-v5';
+  var BUILD = '20260816-story-ch01-ios-v2';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3396,6 +3396,12 @@ div.addEventListener('click', function(){
       if(btn)   btn.classList.toggle('active', active);
       if(panel) panel.style.display = active ? '' : 'none';
     });
+
+    // iPhoneでは初期ロード中に章一覧が先に描画される場合があるため、
+    // STORYタブを開くたびに現在の解放状態で再描画する。
+    if (cat === 'story' && typeof window.renderStoryChapterList === 'function') {
+      window.renderStoryChapterList();
+    }
   }
 
   function calcRank(score){
@@ -8880,7 +8886,7 @@ window.addEventListener('pagehide', function () {
 <script src="js/battle_swipe.js?v=20260816-1120-r2"></script>
 
 <script src="js/stages.js?v=20260816-1120-r2"></script>
-<script src="js/stage_select.js?v=20260816-1120-r2"></script>
+<script src="js/stage_select.js?v=20260816-story-ch01-ios-v2"></script>
 <script src="js/party_select.js?v=20260816-1120-r2"></script>
 <script src="js/enemy_intro.js?v=20260816-1120-r2"></script>
 
@@ -9320,6 +9326,6 @@ window.addEventListener('pagehide', function () {
   }
 })();
 </script>
-<script src="js/shooting_event.js?v=20260816-1120-r2"></script>
+<script src="js/shooting_event.js?v=20260816-iphone-relative-drag-v3"></script>
 </body>
 </html>

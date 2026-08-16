@@ -185,9 +185,16 @@
   function isStoryChapterUnlocked(chapter) {
     chapter = Number(chapter);
     if (chapter < STORY_CHAPTER_MIN || chapter > STORY_CHAPTER_MAX) return false;
+
+    // CHAPTER 01 はゲーム開始時から常時解放。
+    // iPhone では shooting_event.js → ShootingStages の初期化が遅れることがあり、
+    // 先に getStoryStages(1) を確認すると一瞬だけ空配列になって「???」表示になる。
+    // ステージマスターのロード状態には依存させない。
+    if (chapter === STORY_CHAPTER_MIN) return true;
+
     const currentStages = getStoryStages(chapter);
     if (!currentStages.length) return false;
-    if (chapter === STORY_CHAPTER_MIN) return true;
+
     return isStoryChapterCleared(chapter - 1);
   }
 
@@ -233,23 +240,46 @@
   window.isStoryChapterCleared = isStoryChapterCleared;
   window.markStoryStageCleared = markStoryStageCleared;
 
-  // shooting_event.js 内部モジュールの非同期ロード完了後に再描画。
-  (function waitForShootingStoryMaster(attempt) {
+  // shooting_event.js 内部モジュールは非同期ロード。
+  // iPhone / PWA では初期化が5秒以上遅れるケースもあるため、
+  // 固定50回で監視を打ち切らず、ShootingStages が利用可能になるまで再描画を待つ。
+  let storyMasterWatchTimer = 0;
+
+  function refreshStoryChapterListWhenReady() {
+    // CHAPTER 01 は ShootingStages 未ロードでも正しく表示できるので、まず即描画。
+    renderStoryChapterList();
+
     if (window.ShootingStages) {
+      if (storyMasterWatchTimer) {
+        clearInterval(storyMasterWatchTimer);
+        storyMasterWatchTimer = 0;
+      }
+      // ステージ情報が揃った状態でもう一度描画し、CHAPTER 02以降も最新化。
       renderStoryChapterList();
       return;
     }
-    if ((attempt || 0) >= 50) return;
-    setTimeout(() => waitForShootingStoryMaster((attempt || 0) + 1), 100);
-  })(0);
 
-  // Storyタブが開かれた時に最新の解放状態を反映するため、
-  // DOM構築後とタブ操作後に再描画する。
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderStoryChapterList);
-  } else {
-    setTimeout(renderStoryChapterList, 0);
+    if (storyMasterWatchTimer) return;
+
+    storyMasterWatchTimer = setInterval(() => {
+      if (!window.ShootingStages) return;
+      clearInterval(storyMasterWatchTimer);
+      storyMasterWatchTimer = 0;
+      renderStoryChapterList();
+    }, 250);
   }
+
+  // Storyタブを開いた時やSafari/PWAへ復帰した時にも必ず最新状態へ更新。
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refreshStoryChapterListWhenReady);
+  } else {
+    setTimeout(refreshStoryChapterListWhenReady, 0);
+  }
+
+  window.addEventListener('pageshow', refreshStoryChapterListWhenReady);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshStoryChapterListWhenReady();
+  });
 
   const DIFFICULTY_LABEL = {
     easy:      'EASY',
