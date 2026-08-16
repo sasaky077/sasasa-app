@@ -19306,3 +19306,164 @@ body.login-bonus-open {
   pointer-events: none;
 }
 
+
+/* =========================================================
+   120 キャラ図鑑：2階層式（一覧 → 個別情報）
+   ========================================================= */
+#screen-zukan.is-primoa-index #zukan-sub-box{
+  padding-top:8px;
+}
+#screen-zukan.is-primoa-index #zukan-stats{
+  margin:8px 14px 10px;
+}
+#screen-zukan.is-primoa-index #box-grid.primoa-index-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  align-content:start;
+  gap:10px 5px;
+  padding:0 10px calc(112px + env(safe-area-inset-bottom));
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+.primoa-index-card{
+  appearance:none;
+  -webkit-appearance:none;
+  min-width:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#5d503e;
+  font-family:"Noto Serif JP",serif;
+  cursor:pointer;
+  text-align:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.primoa-index-card:active{
+  transform:scale(.96);
+}
+.primoa-index-image-wrap{
+  position:relative;
+  display:block;
+  width:100%;
+  aspect-ratio:1/1;
+  overflow:hidden;
+  background:rgba(255,253,247,.52);
+  border:1px solid rgba(133,107,67,.20);
+  box-shadow:0 3px 10px rgba(85,63,30,.08);
+}
+.primoa-index-image{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center top;
+  transition:filter .18s ease,opacity .18s ease,transform .18s ease;
+}
+.primoa-index-card.is-unowned .primoa-index-image{
+  filter:grayscale(1) saturate(0) brightness(.55) contrast(.9);
+  opacity:.68;
+}
+.primoa-index-card.is-unowned .primoa-index-image-wrap{
+  background:rgba(35,35,35,.12);
+  border-color:rgba(80,76,69,.22);
+}
+.primoa-index-no{
+  position:absolute;
+  left:3px;
+  bottom:2px;
+  z-index:2;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  line-height:1;
+  letter-spacing:.06em;
+  color:rgba(255,255,255,.92);
+  text-shadow:0 1px 3px rgba(0,0,0,.9);
+}
+.primoa-index-name{
+  display:block;
+  min-width:0;
+  margin-top:4px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px;
+  line-height:1.25;
+  letter-spacing:.01em;
+}
+.primoa-index-card.is-unowned .primoa-index-name{
+  color:rgba(73,67,59,.55);
+}
+
+/* 個別ページでは一覧用COLLECTION表示を隠し、従来の育成/詳細UIへ集中させる */
+#screen-zukan.is-primoa-detail #zukan-stats{
+  display:none!important;
+}
+#screen-zukan.is-primoa-detail #zukan-sub-box{
+  padding-top:0;
+  height:100%;
+}
+#screen-zukan.is-primoa-detail #box-grid.primoa-detail-page{
+  padding-bottom:0!important;
+}
+#screen-zukan.is-primoa-detail .primoa-detail-single{
+  justify-content:center;
+}
+.primoa-detail-unowned-img{
+  filter:grayscale(1) saturate(0) brightness(.62) contrast(.92);
+  opacity:.82;
+}
+.primoa-detail-unowned-label{
+  position:absolute;
+  left:8px;
+  top:8px;
+  z-index:8;
+  padding:3px 7px;
+  border:1px solid rgba(95,83,64,.26);
+  background:rgba(246,242,232,.82);
+  color:rgba(81,70,54,.72);
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  letter-spacing:.08em;
+}
+
+/* 個別情報画面の左上戻る */
+#screen-zukan #zukan-detail-back{
+  position:absolute!important;
+  left:16px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  z-index:3;
+}
+#screen-zukan .zukan-detail-back-btn{
+  appearance:none;
+  -webkit-appearance:none;
+  border:0;
+  background:transparent;
+  color:#8a6a32;
+  text-shadow:0 1px 0 rgba(255,255,255,.72);
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.04em;
+  padding:6px 4px 6px 0;
+  cursor:pointer;
+}
+#screen-zukan .zukan-detail-back-btn:active{opacity:.62}
+#screen-zukan.is-primoa-detail .header-title{
+  left:50%;
+  transform:translateX(-50%);
+  font-size:18px;
+}
+
+@media (max-width:350px){
+  #screen-zukan.is-primoa-index #box-grid.primoa-index-grid{
+    gap:8px 4px;
+    padding-left:7px;
+    padding-right:7px;
+  }
+  .primoa-index-name{font-size:8px}
+}
+
+/* v2: キャラ図鑑ではキャラクターIDを表示しない */
+#screen-zukan .primoa-index-no{display:none!important;}
+#screen-zukan.is-primoa-detail .box-carousel-count{display:none!important;}

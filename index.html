@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-notice-badge-display-v10">
+  <meta name="sasaphia-build" content="20260816-zukan-two-level-v11">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -29,7 +29,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=20260816-notice-unread-fix-v9">
+  <link rel="stylesheet" href="css/style.css?v=20260816-zukan-two-level-v11">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -144,7 +144,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-notice-badge-display-v10';
+  var BUILD = '20260816-zukan-two-level-v11';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -531,7 +531,7 @@
 
 <div id="screen-zukan" class="screen is-primoa-mode">
   <div class="header">
-    <div></div>
+    <div id="zukan-detail-back" class="zukan-detail-back" style="display:none"></div>
     <div class="header-title" id="zukan-header-title">キャラ一覧</div>
     <div id="zukan-header-back" style="display:none"></div>
   </div>
@@ -5222,6 +5222,7 @@ setTenResultFooterVisible(true);
   // キャラ/レムナント一覧：ボトムナビ「キャラ」押下時は一覧を直接表示する
   // 既存のキャラ一覧レイアウトは変更せず、レムナントは同じカルーセルUIを別モードで描画する。
   var currentZukanMainTab = 'box';
+  var currentZukanDetailCharaId = null;
   var currentRemnantCarouselIndex = 0;
   var REMNANT_STORAGE_KEY = 'zeraphia_remnants_owned_v1';
 
@@ -5506,26 +5507,43 @@ setTenResultFooterVisible(true);
 
   function updateZukanHeaderForMode(){
     var headerBack = document.getElementById('zukan-header-back');
+    var detailBack = document.getElementById('zukan-detail-back');
     var headerTitle = document.getElementById('zukan-header-title');
     var zukanScreen = document.getElementById('screen-zukan');
+    var isDetail = currentZukanMainTab === 'box' && currentZukanDetailCharaId != null;
 
-    // キャラ／レムナントで背景と装飾を切り替えるため、画面モードを明示する。
     if(zukanScreen){
       zukanScreen.classList.toggle('is-primoa-mode', currentZukanMainTab !== 'remnant');
       zukanScreen.classList.toggle('is-remnant-mode', currentZukanMainTab === 'remnant');
+      zukanScreen.classList.toggle('is-primoa-index', currentZukanMainTab === 'box' && !isDetail);
+      zukanScreen.classList.toggle('is-primoa-detail', isDetail);
     }
 
     if(headerTitle){
-      headerTitle.textContent = currentZukanMainTab === 'remnant' ? 'レムナント一覧' : 'キャラ一覧';
+      if(currentZukanMainTab === 'remnant') headerTitle.textContent = 'レムナント一覧';
+      else headerTitle.textContent = isDetail ? 'キャラ詳細' : 'キャラ一覧';
       headerTitle.classList.remove('header-title-indented');
     }
 
-    // 既存レイアウトを崩さないため、切替UIはヘッダー右側の空き枠だけに置く。
+    // 個別ページだけ左上に「戻る」。図鑑トップへ1階層だけ戻す。
+    if(detailBack){
+      detailBack.style.display = isDetail ? 'block' : 'none';
+      detailBack.innerHTML = isDetail
+        ? '<button class="zukan-detail-back-btn" type="button" onclick="closeZukanCharacterDetail()">＜戻る</button>'
+        : '';
+    }
+
+    // レムナント入口は図鑑トップの右上だけに表示。個別ページには置かない。
     if(headerBack){
-      headerBack.style.display = 'block';
-      headerBack.innerHTML = currentZukanMainTab === 'remnant'
-        ? '<button class="zukan-header-switch" type="button" onclick="switchZukanMainTab(\'box\')">キャラ</button>'
-        : '<button class="zukan-header-switch" type="button" onclick="showUnimplementedFeatureNotice()">レムナント</button>';
+      if(isDetail){
+        headerBack.style.display = 'none';
+        headerBack.innerHTML = '';
+      } else {
+        headerBack.style.display = 'block';
+        headerBack.innerHTML = currentZukanMainTab === 'remnant'
+          ? '<button class="zukan-header-switch" type="button" onclick="switchZukanMainTab(\'box\')">キャラ</button>'
+          : '<button class="zukan-header-switch" type="button" onclick="showUnimplementedFeatureNotice()">レムナント</button>';
+      }
     }
   }
 
@@ -5535,6 +5553,7 @@ setTenResultFooterVisible(true);
       return;
     }
     currentZukanMainTab = 'box';
+    currentZukanDetailCharaId = null;
 
     var subBox = document.getElementById('zukan-sub-box');
     var zukanGrid = document.getElementById('zukan-grid');
@@ -5562,7 +5581,8 @@ setTenResultFooterVisible(true);
     }
     currentZukanMainTab = 'box';
     updateZukanHeaderForMode();
-    renderBox();
+    if(currentZukanDetailCharaId != null) renderBoxDetail(currentZukanDetailCharaId);
+    else renderBox();
   }
 
   // ── キャラ一覧：キャラ単位カルーセル ──────────────────────────
@@ -5761,83 +5781,134 @@ setTenResultFooterVisible(true);
       '" aria-label="レアリティ ' + label + '">';
   }
 
+  function getZukanIndexPanelSrc(chara){
+    return (chara && (chara.panelImg || chara.img || chara.upImg)) || 'images/unknown.webp';
+  }
+
+  function openZukanCharacterDetail(charaId){
+    var id = Number(charaId);
+    var chars = getAllBoxCharaDefs();
+    var index = chars.findIndex(function(chara){ return Number(chara.id) === id; });
+    if(index < 0) return;
+
+    currentBoxCarouselIndex = index;
+    currentZukanDetailCharaId = id;
+    updateZukanHeaderForMode();
+    renderBoxDetail(id);
+
+    var scroll = document.querySelector('#screen-zukan .screen-scroll');
+    if(scroll) scroll.scrollTop = 0;
+  }
+
+  function closeZukanCharacterDetail(){
+    currentZukanDetailCharaId = null;
+    currentDetailData = null;
+    updateZukanHeaderForMode();
+    renderBox();
+
+    var scroll = document.querySelector('#screen-zukan .screen-scroll');
+    if(scroll) scroll.scrollTop = 0;
+  }
+
+  // 1階層目：全17キャラを並べる図鑑。
+  // 未所持もタップでき、個別情報は確認可能。所持状態だけカラー/グレーで区別する。
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
 
+    currentZukanDetailCharaId = null;
     var chars = getAllBoxCharaDefs();
-    grid.className = 'zukan-grid box-carousel';
+    grid.className = 'zukan-grid primoa-index-grid';
     grid.innerHTML = '';
-
-    if(!chars.length){
-      grid.innerHTML = '<div class="box-carousel-empty">キャラクター情報がありません</div>';
-      document.getElementById('stat-current').textContent = '0';
-      document.getElementById('stat-max').textContent = '0';
-      updateZukanLimitBreakNotice();
-      return;
-    }
-
-    normalizeBoxCarouselIndex();
-    var chara = chars[currentBoxCarouselIndex];
-    var ownedList = getOwnedInstancesByCharaId(chara.id);
-    var owned = ownedList.length > 0;
-    var displayData = owned ? getRepresentativeOwnedInstance(chara.id) : null;
-    var panelSrc = chara.panelImg || chara.img || 'images/unknown.webp';
-    var lb = displayData ? (displayData.limitBreak || 0) : 0;
-    var canLimitBreak = owned && getLimitBreakMaterialStatus(displayData).canLimitBreak;
-
-    currentDetailData = displayData || null;
 
     document.getElementById('stat-current').textContent = getOwnedUniqueCharaCount();
     document.getElementById('stat-max').textContent = chars.length;
     updateZukanLimitBreakNotice();
+    updateZukanHeaderForMode();
 
-    var headerHtml =
-      '<div class="box-carousel-count">' +
-        '<span>' + (currentBoxCarouselIndex + 1) + '</span>' +
-        '<span class="box-carousel-count-slash"> / </span>' +
-        '<span>' + chars.length + '</span>' +
-      '</div>' +
-      buildBoxLimitBreakNoticeHTML(chara);
-
-    var visualHtml;
-    var nameHtml;
-    var detailHtml;
-
-    if(owned){
-      visualHtml =
-        '<div class="box-carousel-visual owned is-clickable" onclick="openPrimorImageFullscreen(' + chara.id + ')" role="button" aria-label="キャラ画像を全画面表示">' +
-          '<img class="box-carousel-img" src="' + panelSrc + '" alt="' + detailEscapeHTML(chara.name || displayData.name || '') + '">' +
-          getPrimorRarityBadgeHTML(chara, displayData) +
-          '<div class="box-carousel-zoom-hint">画像をタップで拡大</div>' +
-        '</div>';
-      nameHtml = '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || displayData.name || '') + '</div>';
-      detailHtml = buildCharacterDetailHTML(Object.assign({}, displayData, {
-        id: chara.id,
-        name: chara.name,
-        rarity: displayData.rarity || chara.rarity,
-        element: displayData.element || chara.element,
-        role: chara.role,
-        moveType: chara.moveType,
-        stats: displayData.stats || chara.stats || {},
-        baseStats: displayData.baseStats || chara.stats || {},
-        limitBreak: lb,
-        img: chara.img,
-        panelImg: chara.panelImg
-      }), {
-        showLimitBreakButton: false,
-        ownedCount: ownedList.length,
-        canLimitBreak: canLimitBreak
-      });
-    } else {
-      visualHtml =
-        '<div class="box-carousel-visual locked">' +
-          '<img class="box-carousel-img box-carousel-silhouette" src="' + panelSrc + '">' +
-          '<div class="box-carousel-locked-label">LOCKED</div>' +
-        '</div>';
-      nameHtml = '<div class="box-carousel-name locked">？？？</div>';
-      detailHtml = buildLockedBoxDetailHTML(chara);
+    if(!chars.length){
+      grid.innerHTML = '<div class="box-carousel-empty">キャラクター情報がありません</div>';
+      return;
     }
+
+    grid.innerHTML = chars.map(function(chara){
+      var owned = getOwnedInstancesByCharaId(chara.id).length > 0;
+      var no = String(chara.id || 0).padStart(2, '0');
+      var panelSrc = getZukanIndexPanelSrc(chara);
+      var name = chara.name || ('ID ' + no);
+
+      return '' +
+        '<button class="primoa-index-card ' + (owned ? 'is-owned' : 'is-unowned') + '" type="button" onclick="openZukanCharacterDetail(' + Number(chara.id) + ')" aria-label="' + detailEscapeHTML(name) + ' の情報を見る">' +
+          '<span class="primoa-index-image-wrap">' +
+            '<img class="primoa-index-image" src="' + panelSrc + '" alt="' + detailEscapeHTML(name) + '">' +
+          '</span>' +
+          '<span class="primoa-index-name">' + detailEscapeHTML(name) + '</span>' +
+        '</button>';
+    }).join('');
+  }
+
+  // 2階層目：従来のキャラ詳細。左右矢印と横スワイプ切替は廃止する。
+  function renderBoxDetail(charaId){
+    var grid = document.getElementById('box-grid');
+    if(!grid) return;
+
+    var chars = getAllBoxCharaDefs();
+    var id = Number(charaId);
+    var index = chars.findIndex(function(chara){ return Number(chara.id) === id; });
+    if(index < 0){ closeZukanCharacterDetail(); return; }
+
+    currentBoxCarouselIndex = index;
+    currentZukanDetailCharaId = id;
+
+    var chara = chars[index];
+    var ownedList = getOwnedInstancesByCharaId(chara.id);
+    var owned = ownedList.length > 0;
+    var representative = owned ? getRepresentativeOwnedInstance(chara.id) : null;
+    var displayData = representative || {
+      id: chara.id,
+      name: chara.name,
+      rarity: chara.rarity,
+      element: chara.element,
+      stats: chara.stats || {},
+      baseStats: chara.stats || {},
+      limitBreak: 0,
+      img: chara.img,
+      panelImg: chara.panelImg
+    };
+    var panelSrc = getZukanIndexPanelSrc(chara);
+    var lb = representative ? (representative.limitBreak || 0) : 0;
+    var canLimitBreak = owned && getLimitBreakMaterialStatus(representative).canLimitBreak;
+
+    currentDetailData = representative || null;
+    grid.className = 'zukan-grid box-carousel primoa-detail-page';
+    updateZukanHeaderForMode();
+    updateZukanLimitBreakNotice();
+
+    var visualHtml =
+      '<div class="box-carousel-visual owned ' + (owned ? 'is-clickable' : 'is-reference-only') + '" ' +
+        (owned ? ('onclick="openPrimorImageFullscreen(' + chara.id + ')" role="button" aria-label="キャラ画像を全画面表示"') : '') + '>' +
+        '<img class="box-carousel-img ' + (owned ? '' : 'primoa-detail-unowned-img') + '" src="' + panelSrc + '" alt="' + detailEscapeHTML(chara.name || '') + '">' +
+        getPrimorRarityBadgeHTML(chara, displayData) +
+        (owned ? '<div class="box-carousel-zoom-hint">画像をタップで拡大</div>' : '<div class="primoa-detail-unowned-label">未所持</div>') +
+      '</div>';
+
+    var detailHtml = buildCharacterDetailHTML(Object.assign({}, displayData, {
+      id: chara.id,
+      name: chara.name,
+      rarity: displayData.rarity || chara.rarity,
+      element: displayData.element || chara.element,
+      role: chara.role,
+      moveType: chara.moveType,
+      stats: displayData.stats || chara.stats || {},
+      baseStats: displayData.baseStats || chara.stats || {},
+      limitBreak: lb,
+      img: chara.img,
+      panelImg: chara.panelImg
+    }), {
+      showLimitBreakButton: false,
+      ownedCount: ownedList.length,
+      canLimitBreak: canLimitBreak
+    });
 
     var fixedActionsHtml = '';
     if(owned){
@@ -5858,27 +5929,20 @@ setTenResultFooterVisible(true);
     }
 
     grid.innerHTML =
-      '<div class="box-carousel-view ' + (owned ? 'is-owned' : 'is-locked') + '">' +
+      '<div class="box-carousel-view ' + (owned ? 'is-owned' : 'is-unowned-reference') + '">' +
         '<div class="box-carousel-fixed">' +
-          headerHtml +
-          '<div class="box-carousel-visual-row">' +
-            '<button class="box-carousel-arrow box-carousel-prev" onclick="moveBoxCarousel(-1)" aria-label="前のキャラ">‹</button>' +
-            visualHtml +
-            '<button class="box-carousel-arrow box-carousel-next" onclick="moveBoxCarousel(1)" aria-label="次のキャラ">›</button>' +
-          '</div>' +
-          nameHtml +
+          '<div class="box-carousel-visual-row primoa-detail-single">' + visualHtml + '</div>' +
+          '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || '') + '</div>' +
           '<div class="box-carousel-separator"></div>' +
           fixedActionsHtml +
         '</div>' +
         '<div class="box-carousel-detail-scroll">' +
           '<div class="box-carousel-sheet-handle" aria-hidden="true"><span></span></div>' +
-          '<div class="box-carousel-detail">' +
-            detailHtml +
-          '</div>' +
+          '<div class="box-carousel-detail">' + detailHtml + '</div>' +
         '</div>' +
       '</div>';
 
-    setupBoxCarouselSwipe();
+    // 詳細シートの縦操作は維持。左右スワイプによるキャラ切替は呼ばない。
     setupPrimoaDetailSheet();
   }
 
