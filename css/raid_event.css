@@ -63,6 +63,38 @@
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-result-raid-row{border-top:1px solid rgba(132,111,65,.24);margin-top:5px;padding-top:8px}
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] #shooting-result-raid-damage{color:#806d43;font-family:"Cinzel",serif}
 
+/* RAID限定：弾の見た目を極限まで軽量化する。
+   通常の敵弾/雑魚弾はグラデーション+4層box-shadow+backdrop-filter+
+   擬似要素2つ(::before の blur(3px) ハロー、::after の追加glow)という
+   かなり重い作りになっており、レイドは弾数も戦闘時間も他ステージより
+   長いためGPU負荷が突出しやすい。見た目より処理落ち対策を優先し、
+   単色フラットな円だけに削ぎ落とす(box-shadow/filter/擬似要素を全撤去)。
+   他ステージの見た目には一切影響しない。 */
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-mini-enemy-bullet{
+  background:#5c4a63!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-enemy-bullet::after,
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-mini-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-mini-enemy-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+/* フェーズ2/3限定の追加グロー上書きも無効化する。 */
+#shooting-event-root[data-shooting-stage="shooting_raid_test"][data-boss-phase="2"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage="shooting_raid_test"][data-boss-phase="3"] .shooting-enemy-bullet{
+  box-shadow:none!important;
+}
+/* 自機弾も、既に軽量だが念のためglowだけ完全撤去して統一する。 */
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-bullet{
+  box-shadow:none!important;
+}
+
 /* RAID MEMBERS - home character panel */
 .daily-raid-member{padding:8px 8px 8px 58px;min-height:88px;display:flex;flex-direction:column;justify-content:center}
 .daily-raid-member-no{position:absolute;left:8px;top:6px;z-index:3}
