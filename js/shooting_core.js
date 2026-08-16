@@ -2078,7 +2078,8 @@
           });
         } else {
           // 突進：予兆後、プレイヤーの現在位置へ一気に踏み込む。
-          const speed = Number(def.chargeSpeed || 520);
+          const stageChargeSpeed = Number(selectedStage?.normalBattle?.chargeSpeed || 0);
+          const speed = stageChargeSpeed > 0 ? stageChargeSpeed : Number(def.chargeSpeed || 520);
           enemy.dashVx = Math.cos(baseAngle) * speed;
           enemy.dashVy = Math.sin(baseAngle) * speed;
           enemy.dashUntil = now + 520;

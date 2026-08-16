@@ -233,6 +233,8 @@
         totalEnemies: 3,
         maxActive: 2,
         spawnIntervalMs: 1450,
+        // CH02-3だけ突進を少し見切りやすくする。
+        chargeSpeed: 470,
       }),
 
       mission: Object.freeze({
