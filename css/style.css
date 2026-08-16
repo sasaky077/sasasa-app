@@ -20221,3 +20221,101 @@ body:has(#screen-friend.active) .bottom-nav .bottom-nav-item.active img{
     margin-top:3.5%;
   }
 }
+
+
+/* =========================================================
+   Home side icons - unified 500x500 assets
+   4素材を同一キャンバス・同一余白で作り直したため、個別スケール補正を解除。
+   ボタン外寸・画像表示率も4つ完全統一する。
+   ========================================================= */
+#screen-main .home-notice-btn,
+#screen-main .shinju-home-entry,
+#screen-main .bonus-home-entry,
+#screen-main .friend-home-entry{
+  width:clamp(88px,22vw,98px) !important;
+  height:clamp(88px,22vw,98px) !important;
+}
+
+#screen-main .home-notice-btn > img,
+#screen-main .shinju-home-entry-icon,
+#screen-main .bonus-home-entry-icon,
+#screen-main .friend-home-entry-icon{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:none;
+  filter:drop-shadow(0 5px 7px rgba(68,51,24,.24));
+}
+
+#screen-main .home-notice-btn:active > img,
+#screen-main .shinju-home-entry:active .shinju-home-entry-icon,
+#screen-main .bonus-home-entry:active .bonus-home-entry-icon,
+#screen-main .friend-home-entry:active .friend-home-entry-icon{
+  transform:scale(.94);
+}
+
+/* SE等でも4つを同じ外寸にする */
+@media (max-width:380px) and (max-height:700px){
+  #screen-main .home-notice-btn,
+  #screen-main .shinju-home-entry,
+  #screen-main .bonus-home-entry,
+  #screen-main .friend-home-entry{
+    width:84px !important;
+    height:84px !important;
+  }
+
+  #screen-main .home-notice-btn > img,
+  #screen-main .shinju-home-entry-icon,
+  #screen-main .bonus-home-entry-icon,
+  #screen-main .friend-home-entry-icon{
+    width:100% !important;
+    height:100% !important;
+    margin:0 !important;
+  }
+}
+
+
+/* =========================================================
+   Home side icons - background blend tuning
+   アンティークシルバー素材を背景の淡い水彩に馴染ませる。
+   4アイコンの見え寸は共通のまま、少しだけ引いてコントラストを抑える。
+   ========================================================= */
+#screen-main .home-notice-btn > img,
+#screen-main .shinju-home-entry-icon,
+#screen-main .bonus-home-entry-icon,
+#screen-main .friend-home-entry-icon{
+  width:94% !important;
+  height:94% !important;
+  margin:3% auto 0 !important;
+  opacity:.96;
+  filter:
+    saturate(.88)
+    contrast(.92)
+    brightness(1.04)
+    drop-shadow(0 3px 5px rgba(78,64,45,.14)) !important;
+}
+
+/* タップ時も柔らかい質感を維持 */
+#screen-main .home-notice-btn:active > img,
+#screen-main .shinju-home-entry:active .shinju-home-entry-icon,
+#screen-main .bonus-home-entry:active .bonus-home-entry-icon,
+#screen-main .friend-home-entry:active .friend-home-entry-icon{
+  transform:scale(.95);
+  opacity:.92;
+}
+
+/* SE等でも同じ見え寸・同じ馴染ませ方 */
+@media (max-width:380px) and (max-height:700px){
+  #screen-main .home-notice-btn > img,
+  #screen-main .shinju-home-entry-icon,
+  #screen-main .bonus-home-entry-icon,
+  #screen-main .friend-home-entry-icon{
+    width:94% !important;
+    height:94% !important;
+    margin:3% auto 0 !important;
+  }
+}
