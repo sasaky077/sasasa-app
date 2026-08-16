@@ -2,6 +2,10 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="sasaphia-build" content="20260816-1116-r1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -11,13 +15,13 @@
   <title>Sasaphia</title>
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=20260816-1116-r1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -25,7 +29,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=336-notice-badge-contrast">
+  <link rel="stylesheet" href="css/style.css?v=20260816-1116-r1">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -86,7 +90,7 @@
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:block!important;font-size:25px!important;font-weight:700!important;letter-spacing:.12em!important;color:#fff!important}
 </style>\n
-  <link rel="stylesheet" href="css/shooting_event.css?v=9-stage-records-ui">
+  <link rel="stylesheet" href="css/shooting_event.css?v=20260816-1116-r1">
 
 <style id="testplay-guide-readable-steps">
 .testplay-guide-steps{
@@ -136,6 +140,21 @@
   .testplay-guide-step-note{font-size:11px;padding-left:26px}
 }
 </style>
+
+
+<script>
+(function(){
+  var BUILD = '20260816-1116-r1';
+  try {
+    var url = new URL(location.href);
+    if (url.searchParams.get('build') !== BUILD) {
+      url.searchParams.set('build', BUILD);
+      history.replaceState(null, '', url.toString());
+    }
+    localStorage.setItem('sasaphia_build_version', BUILD);
+  } catch (e) {}
+})();
+</script>
 
 </head>
 <body>
@@ -409,7 +428,6 @@
   <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true">
   <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
     <img src="images/mail.webp" alt="お知らせ">
-    <span class="home-notice-badge" aria-hidden="true"></span>
   </button>
 
   <!-- メイン上部イベントバナー -->
@@ -1024,12 +1042,12 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=2"></script>
-<script src="js/notices.js?v=2-firstplay-gift"></script>
+<script src="js/home_banners.js?v=20260816-1116-r1"></script>
+<script src="js/notices.js?v=20260816-1116-r1"></script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=2-upgrade-label"></script>
-<script src="js/resonance_system.js?v=11-upgrade-label"></script>
-<script src="js/resonance_ui.js?v=8-upgrade-label"></script>
+<script src="js/shooting_resonance.js?v=20260816-1116-r1"></script>
+<script src="js/resonance_system.js?v=20260816-1116-r1"></script>
+<script src="js/resonance_ui.js?v=20260816-1116-r1"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -8316,43 +8334,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=1"></script>
+<script src="js/asset_loader.js?v=20260816-1116-r1"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=2-opening-sequence"></script>
+<script src="js/login_bonus.js?v=20260816-1116-r1"></script>
 
-<script src="js/story_engine.js"></script>
-<script src="js/stories/chapter01.js"></script>
+<script src="js/story_engine.js?v=20260816-1116-r1"></script>
+<script src="js/stories/chapter01.js?v=20260816-1116-r1"></script>
 
-<script src="js/battle_range.js"></script>
-<script src="js/characters.js?v=281-image-preload-fix"></script>
-<script src="js/enemies.js?v=119-test-9cell"></script>
-<script src="js/battle.js"></script>
-<script src="js/battle_swipe.js?v=49"></script>
+<script src="js/battle_range.js?v=20260816-1116-r1"></script>
+<script src="js/characters.js?v=20260816-1116-r1"></script>
+<script src="js/enemies.js?v=20260816-1116-r1"></script>
+<script src="js/battle.js?v=20260816-1116-r1"></script>
+<script src="js/battle_swipe.js?v=20260816-1116-r1"></script>
 
-<script src="js/stages.js?v=story-common-battle-1"></script>
-<script src="js/stage_select.js?v=return-to-chapter-v1"></script>
-<script src="js/party_select.js?v=20260816-blessing-unimplemented-final"></script>
-<script src="js/enemy_intro.js"></script>
+<script src="js/stages.js?v=20260816-1116-r1"></script>
+<script src="js/stage_select.js?v=20260816-1116-r1"></script>
+<script src="js/party_select.js?v=20260816-1116-r1"></script>
+<script src="js/enemy_intro.js?v=20260816-1116-r1"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=277-image-preload-fix">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260816-1116-r1">
 
-<script src="js/battle_range_32.js?v=135-test-9cell"></script>
-<script src="js/characters_32.js"></script>
-<script src="js/remnant_blessings.js"></script>
-<script src="js/combo_32.js?v=24-combo-range-static"></script>
-<script src="js/cards.js"></script>
-<script src="js/battle_32.js?v=story-common-rules-1"></script>
-<script src="js/battle_32_ui.js?v=story-common-rules-1"></script>
+<script src="js/battle_range_32.js?v=20260816-1116-r1"></script>
+<script src="js/characters_32.js?v=20260816-1116-r1"></script>
+<script src="js/remnant_blessings.js?v=20260816-1116-r1"></script>
+<script src="js/combo_32.js?v=20260816-1116-r1"></script>
+<script src="js/cards.js?v=20260816-1116-r1"></script>
+<script src="js/battle_32.js?v=20260816-1116-r1"></script>
+<script src="js/battle_32_ui.js?v=20260816-1116-r1"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js"></script>
-<script src="js/roguelite_run.js?v=73-test-run"></script>
-<script src="js/roguelite_reward.js"></script>
-<script src="js/shinju.js?v=5-growth-thresholds"></script>
-<script src="js/roguelite_controller.js?v=83-test-run"></script>
-<script src="js/roguelite_overseer_run.js?v=1"></script>
+<script src="js/roguelite_options.js?v=20260816-1116-r1"></script>
+<script src="js/roguelite_run.js?v=20260816-1116-r1"></script>
+<script src="js/roguelite_reward.js?v=20260816-1116-r1"></script>
+<script src="js/shinju.js?v=20260816-1116-r1"></script>
+<script src="js/roguelite_controller.js?v=20260816-1116-r1"></script>
+<script src="js/roguelite_overseer_run.js?v=20260816-1116-r1"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -8771,6 +8789,6 @@ window.addEventListener('pagehide', function () {
   }
 })();
 </script>
-<script src="js/shooting_event.js?v=20260816-return-to-stage-select-v1"></script>
+<script src="js/shooting_event.js?v=20260816-1116-r1"></script>
 </body>
 </html>
