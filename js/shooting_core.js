@@ -386,6 +386,7 @@
 
   let state = null;
   let rafId = 0;
+  let countdownMoveRafId = 0;
   let prevTs = 0;
   let keys = Object.create(null);
   let pointerActive = false;
@@ -3837,10 +3838,38 @@
   window.closeFacelessStageSelect = closeFacelessStageSelect;
   window.openFacelessStage = openFacelessStage;
 
+  function stopCountdownMovementLoop() {
+    if (countdownMoveRafId) {
+      cancelAnimationFrame(countdownMoveRafId);
+      countdownMoveRafId = 0;
+    }
+  }
+
+  function countdownMovementLoop(ts) {
+    if (!state || state.ended || state.finishing || !state.countdown) {
+      countdownMoveRafId = 0;
+      return;
+    }
+
+    // カウントダウン中は「プレイヤー移動だけ」を動かす。
+    // 敵・弾・自動射撃・ミッション時間・DoT等は一切開始しない。
+    const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
+    prevTs = ts;
+
+    if (!state.paused && !state.koTransition) {
+      updateMovement(dt, ts);
+    }
+
+    renderHud();
+    countdownMoveRafId = requestAnimationFrame(countdownMovementLoop);
+  }
+
   function runStartCountdown() {
     const countdown = document.getElementById('shooting-countdown');
     const copy = document.getElementById('shooting-start-copy');
     if (!state || !countdown) return;
+
+    stopCountdownMovementLoop();
 
     state.countdown = true;
     state.running = false;
@@ -3852,12 +3881,17 @@
 
     const span = countdown.querySelector('span');
     const sequence = [
-      { text:'ARE YOU READY', phase:'ready-phase', hold:1250 },
+      { text:'ARE YOU READY', phase:'ready-phase',  hold:1250 },
       { text:'3',             phase:'number-phase', hold:850 },
       { text:'2',             phase:'number-phase', hold:850 },
       { text:'1',             phase:'number-phase', hold:850 },
-      { text:'START',         phase:'start-phase', hold:1050 }
+      { text:'START',         phase:'start-phase',  hold:1050 }
     ];
+
+    // 「ARE YOU READY」表示前からキャラを掴めるよう、
+    // 戦闘ロジックとは独立した移動専用RAFを先に開始する。
+    prevTs = performance.now();
+    countdownMoveRafId = requestAnimationFrame(countdownMovementLoop);
 
     let i = 0;
 
@@ -3876,6 +3910,27 @@
       else if (step.phase === 'start-phase') span.classList.add('start-pop');
       else span.classList.add('pop');
 
+      // STARTが表示された「その瞬間」に戦闘開始。
+      // ここから初めて自動ショット・敵行動・時間計測を開始する。
+      if (step.phase === 'start-phase' && state.countdown) {
+        stopCountdownMovementLoop();
+
+        state.countdown = false;
+        state.running = true;
+        state.startedAt = performance.now();
+        state.lastShotAt = -9999;
+        state.lastBossShotAt = -9999;
+
+        // カウントダウン中から指を置いたままでも、
+        // 現在位置を基準に相対ドラッグをそのまま継続する。
+        rebaseTouchDragToPlayer();
+
+        prevTs = performance.now();
+        if (rafId) cancelAnimationFrame(rafId);
+    stopCountdownMovementLoop();
+        rafId = requestAnimationFrame(gameLoop);
+      }
+
       i += 1;
 
       if (i < sequence.length) {
@@ -3883,19 +3938,12 @@
         return;
       }
 
-      // STARTの文字を少し残してから操作開始。
+      // START表示中にはすでに戦闘は進行中。
+      // 文字だけ指定時間残してから消す。
       setTimeout(() => {
         if (!state || state.ended) return;
         countdown.classList.remove('show', 'ready-phase', 'number-phase', 'start-phase');
         countdown.setAttribute('aria-hidden', 'true');
-
-        state.countdown = false;
-        state.running = true;
-        state.startedAt = performance.now();
-        state.lastShotAt = -9999;
-        state.lastBossShotAt = -9999;
-        prevTs = performance.now();
-        rafId = requestAnimationFrame(gameLoop);
       }, step.hold);
     };
 
@@ -4081,7 +4129,7 @@
   }
 
   function onPointerDown(e) {
-    if (!state || state.ended || state.countdown || state.finishing || state.paused) return;
+    if (!state || state.ended || state.finishing || state.paused) return;
 
     const touchLike = isTouchLikePointer(e);
 
@@ -4122,7 +4170,7 @@
     if (isDoubleTap) {
       lastTapAt = 0;
 
-      if (isUltReady()) {
+      if (!state.countdown && isUltReady()) {
         // ULT発動時も「現在のキャラ位置」をドラッグ基準に維持。
         // 指の絶対座標へ同期しない。
         window.useShootingBurst();
@@ -4139,7 +4187,7 @@
   }
 
   function onPointerMove(e) {
-    if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
+    if (!pointerActive || !state || state.ended || state.finishing || state.paused) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
     lastPointerClientX = e.clientX;
