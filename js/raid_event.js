@@ -1,4 +1,4 @@
-// 20260816-notification-resetfix-v42
+// 20260817-raid-3attempt-best-v43
 (function(){
   'use strict';
 
@@ -88,7 +88,9 @@
               (hasHp && hp <= 0)
             )
           );
-          raidReady = !!(status && me && !me.attempt_started_at && !cleared);
+          const attempts = Math.max(0, Math.min(3, n(me && me.attempt_count)));
+          const inBattle = !!(me && me.attempt_started_at && !me.attempt_finished_at);
+          raidReady = !!(status && me && attempts < 3 && !inBattle && !cleared);
         }
       } catch(err) {
         // レイド未作成・RPC一時失敗時はフレンド申請通知だけ生かす。
@@ -205,7 +207,7 @@
         <header class="daily-raid-head">
           <button type="button" onclick="closeDailyRaid()" aria-label="戻る">‹</button>
           <div class="daily-raid-head-title"><small>DAILY RAID</small><strong>ザ・テスト</strong></div>
-          <div class="daily-raid-head-rule"><span>1 DAY</span><b>1 ATTEMPT</b></div>
+          <div class="daily-raid-head-rule"><span>1 DAY</span><b>3 ATTEMPTS</b></div>
         </header>
 
         <main class="daily-raid-body">
@@ -245,15 +247,15 @@
           <section class="daily-raid-rule">
             <div class="daily-raid-rule-title"><small>BATTLE RULE</small></div>
             <div class="daily-raid-rule-grid">
-              <div><b>01</b><span>1人1日1回</span></div>
+              <div><b>01</b><span>1人1日3回・BEST採用</span></div>
               <div><b>02</b><span>全滅または180秒で終了</span></div>
-              <div><b>03</b><span>与ダメージを4人で共有</span></div>
+              <div><b>03</b><span>3回目終了時にBESTを共有HPへ反映</span></div>
             </div>
           </section>
         </main>
 
         <footer class="daily-raid-actions">
-          <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b>01 / 01</b></div>
+          <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b id="daily-raid-attempt-count">0 / 3</b></div>
           <button type="button" id="daily-raid-start" onclick="startDailyRaidBattle()"><span>RAID BATTLE</span><b>挑戦する</b></button>
         </footer>
       </div>`;
@@ -268,39 +270,54 @@
     const cleared = !!(status && status.status === 'cleared') || hp <= 0;
     const me = status && status.me || {};
     const admin = isAdmin();
-    const attempted = !!me.attempt_started_at;
-    const finished = !!me.attempt_finished_at;
+    const attemptCount = Math.max(0, Math.min(3, n(me.attempt_count)));
+    const inBattle = !!me.attempt_started_at && !me.attempt_finished_at;
+    const allFinished = attemptCount >= 3 && !!me.attempt_finished_at;
+    const bestDamage = n(me.best_damage);
     const members = Array.isArray(status && status.members) ? status.members : [];
     const hpText = root.querySelector('#daily-raid-hptext');
     const fill = root.querySelector('#daily-raid-hpfill');
     const stat = root.querySelector('#daily-raid-status');
     const count = root.querySelector('#daily-raid-member-count');
     const list = root.querySelector('#daily-raid-member-list');
+    const attemptEl = root.querySelector('#daily-raid-attempt-count');
     const start = root.querySelector('#daily-raid-start');
     if(hpText) hpText.textContent = `${fmt(hp)} / ${fmt(maxHp)}`;
     if(fill) fill.style.transform = `scaleX(${Math.max(0,Math.min(1,hp/maxHp))})`;
     if(count) count.textContent = `${members.length} / 4`;
+    if(attemptEl) attemptEl.textContent = admin ? '∞ / 3' : `${attemptCount} / 3`;
     if(stat) {
-      stat.textContent = admin ? 'ADMIN TEST · 挑戦回数/共有HPともに非反映' : (cleared ? 'RAID CLEAR' : finished ? `本日の挑戦完了 · ${fmt(me.damage)} DAMAGE` : attempted ? '挑戦中' : '挑戦可能');
-      stat.setAttribute('data-state', admin ? 'admin' : cleared ? 'clear' : finished ? 'done' : attempted ? 'active' : 'ready');
+      if(admin) stat.textContent = 'ADMIN TEST · 挑戦回数/共有HPともに非反映';
+      else if(cleared) stat.textContent = 'RAID CLEAR';
+      else if(allFinished) stat.textContent = `本日のBEST確定 · ${fmt(bestDamage)} DAMAGE`;
+      else if(inBattle) stat.textContent = `${attemptCount} / 3 挑戦中`;
+      else if(attemptCount > 0) stat.textContent = `${attemptCount} / 3 完了 · 暫定BEST ${fmt(bestDamage)} DAMAGE`;
+      else stat.textContent = '挑戦可能 · 3回中BESTを採用';
+      stat.setAttribute('data-state', admin ? 'admin' : cleared ? 'clear' : allFinished ? 'done' : inBattle ? 'active' : 'ready');
     }
     if(list) {
       const myId = uid();
       const rows = members.map(m => {
         const mine = String(m.user_id||'') === myId;
-        const started = !!m.attempt_started_at;
-        const done = !!m.attempt_finished_at;
-        const state = done ? 'PLAYED' : started ? 'IN BATTLE' : 'READY';
-        const damageText = done ? fmt(m.damage) : '—';
+        const attempts = Math.max(0, Math.min(3, n(m.attempt_count)));
+        const active = !!m.attempt_started_at && !m.attempt_finished_at;
+        const done = attempts >= 3 && !!m.attempt_finished_at;
+        const best = n(m.best_damage);
+        const state = done ? 'BEST LOCKED' : active ? `${attempts}/3 IN BATTLE` : attempts > 0 ? `${attempts}/3 READY` : 'READY';
+        const damageText = best > 0 ? fmt(best) : '—';
         const panel = m.panel_src ? `<img class="daily-raid-member-panel" src="${esc(m.panel_src)}" alt="">` : '<div class="daily-raid-member-panel daily-raid-member-panel-empty"></div>';
-        return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${started&&!done?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name || m.user_id || 'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>DMG</span><b>${esc(damageText)}</b></div></div></div>`;
+        return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${active?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name || m.user_id || 'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>BEST</span><b>${esc(damageText)}</b></div></div></div>`;
       });
       while(rows.length < 4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-mark">＋</div><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>フレンド枠</small></div><b>OPEN</b></div>');
       list.innerHTML = rows.join('');
     }
     if(start) {
-      start.disabled = admin ? false : (cleared || attempted);
-      start.innerHTML = admin ? '<span>ADMIN TEST</span><b>テスト挑戦</b>' : (cleared ? '<span>DAILY RAID</span><b>RAID CLEAR</b>' : attempted ? '<span>TODAY\'S ATTEMPT</span><b>本日は挑戦済み</b>' : '<span>RAID BATTLE</span><b>挑戦する</b>');
+      start.disabled = admin ? false : (cleared || inBattle || attemptCount >= 3);
+      if(admin) start.innerHTML = '<span>ADMIN TEST</span><b>テスト挑戦</b>';
+      else if(cleared) start.innerHTML = '<span>DAILY RAID</span><b>RAID CLEAR</b>';
+      else if(inBattle) start.innerHTML = '<span>TODAY\'S ATTEMPT</span><b>挑戦中</b>';
+      else if(attemptCount >= 3) start.innerHTML = '<span>BEST DAMAGE LOCKED</span><b>本日の3回終了</b>';
+      else start.innerHTML = `<span>RAID BATTLE</span><b>${attemptCount + 1}回目に挑戦</b>`;
     }
   }
 
@@ -341,7 +358,7 @@
         const maxHp = n(status && status.max_hp) || 100000;
         begun = { ok:true, raid_id:status && status.raid_id || 'admin-test', raid_date:status && status.raid_date || '', max_hp:maxHp, current_hp:maxHp, admin_test:true };
       } else {
-        // USER MODE: 開始時に挑戦権を消費。途中離脱→再挑戦を防ぐ。
+        // USER MODE: 1日3回。開始時にその回数を消費し、3回目終了時にBESTだけ共有HPへ反映。
         begun = normalizeStatus(await rpc('begin_daily_raid_attempt',{p_user_id:uid()}));
         currentStatus = begun;
         if(!begun || begun.ok === false) throw new Error((begun && begun.message) || '本日は挑戦できません');
