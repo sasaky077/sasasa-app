@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-friend-home-entry-v12">
+  <meta name="sasaphia-build" content="20260816-friend-rich-v17">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -29,7 +29,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=20260816-friend-home-entry-v12">
+  <link rel="stylesheet" href="css/style.css?v=20260816-friend-rich-v17">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -144,7 +144,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-friend-home-entry-v12';
+  var BUILD = '20260816-friend-rich-v17';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3227,20 +3227,20 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   function getFriendLoginText(profile){
-    if(!profile) return 'ログイン --';
-    var totalDays = Number(profile.total_login_days ?? profile.login_days);
-    if(Number.isFinite(totalDays) && totalDays >= 0){
-      return 'ログイン ' + Math.floor(totalDays) + '日';
-    }
-    if(profile.last_played){
-      var diff = Date.now() - new Date(profile.last_played).getTime();
-      if(Number.isFinite(diff) && diff >= 0){
-        var days = Math.floor(diff / 86400000);
-        if(days <= 0) return '最終ログイン 今日';
-        return '最終ログイン ' + days + '日前';
-      }
-    }
-    return 'ログイン --';
+    if(!profile || !profile.last_played) return '最終プレイ --';
+
+    var t = new Date(profile.last_played).getTime();
+    if(!Number.isFinite(t)) return '最終プレイ --';
+
+    var diff = Math.max(0, Date.now() - t);
+    var min = Math.floor(diff / 60000);
+    var hour = Math.floor(diff / 3600000);
+    var day = Math.floor(diff / 86400000);
+
+    if(min < 1) return '最終プレイ たった今';
+    if(min < 60) return '最終プレイ ' + min + '分前';
+    if(hour < 24) return '最終プレイ ' + hour + '時間前';
+    return '最終プレイ ' + day + '日前';
   }
 
   async function getFriendHighScoreSummary(fid){
@@ -3388,11 +3388,10 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     var panelSrc = favorite.panelSrc;
     var highScore = await getFriendHighScoreSummary(fid);
     var highScoreLabel = highScore.score
-      ? (getFriendStageLabel(highScore.stageId) + '  ' + formatFriendScore(highScore.score))
-      : 'HISCORE --';
+      ? ('HIGH SCORE ' + formatFriendScore(highScore.score) + ' / ' + getFriendStageLabel(highScore.stageId))
+      : 'HIGH SCORE --';
 
-    var div = document.createElement('button');
-    div.type = 'button';
+    var div = document.createElement('div');
     div.className = 'friend-card friend-card-compact';
 
     var panelHtml = panelSrc
@@ -3410,18 +3409,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
           '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
           '<span class="friend-card-highscore">' + detailEscapeHTML(highScoreLabel) + '</span>' +
         '</span>' +
-      '</span>' +
-      '<span class="friend-card-chevron">›</span>';
-
-    div.addEventListener('click', function(){
-      if(favorite.detailData){
-        showFriendDetail(favorite.detailData, name);
-      }
-    });
-    if(!favorite.detailData){
-      div.classList.add('is-no-favorite');
-      div.setAttribute('aria-disabled', 'true');
-    }
+      '</span>';
 
     return div;
   }

@@ -19846,3 +19846,320 @@ body.login-bonus-open {
   padding-left:10px;
   padding-right:10px;
 }
+
+
+/* =========================================================
+   124 Friend Card Final: information-only
+   ========================================================= */
+#screen-friend .friend-card-compact{
+  cursor:default;
+}
+#screen-friend .friend-card-compact:active{
+  transform:none;
+  opacity:1;
+}
+#screen-friend .friend-card-chevron{
+  display:none !important;
+}
+
+
+/* =========================================================
+   125 Friend Screen Rich Theme
+   - 金 / 白 / ベージュ基調
+   - 既存構造は変えず、フレンド画面だけ上書き
+   ========================================================= */
+#screen-friend{
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,.58) 0%, rgba(255,255,255,0) 42%),
+    linear-gradient(180deg, #f7f2e7 0%, #f1ebdf 46%, #eee6d8 100%);
+  color:#5f4f39;
+}
+#screen-friend .header{
+  background:linear-gradient(180deg, rgba(250,246,239,.98) 0%, rgba(244,236,224,.98) 100%) !important;
+  border-bottom:1px solid rgba(173,141,84,.28);
+  box-shadow:0 5px 16px rgba(125,97,50,.06);
+}
+#screen-friend .header-title{
+  left:50%;
+  transform:translateX(-50%);
+  color:#8d6a2d;
+  font-size:22px;
+  letter-spacing:.16em;
+  text-shadow:0 1px 0 rgba(255,255,255,.82);
+}
+#screen-friend .header > div:first-child,
+#screen-friend .header > div:last-child{
+  width:40px;
+}
+#screen-friend .screen-scroll{
+  padding:18px 18px calc(104px + env(safe-area-inset-bottom));
+}
+
+#screen-friend .friend-section{
+  position:relative;
+  margin:0 0 16px;
+  padding:14px 14px 12px;
+  border:1px solid rgba(183,152,97,.22);
+  border-radius:18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(248,243,235,.88) 100%);
+  box-shadow:
+    0 6px 20px rgba(106,83,45,.05),
+    inset 0 1px 0 rgba(255,255,255,.75);
+}
+#screen-friend .friend-section::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:18px;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(222,196,148,.20) 0%, rgba(222,196,148,0) 20%);
+}
+#screen-friend .friend-section-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+  color:#8f6d35;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+#screen-friend .friend-section-title::before{
+  content:"";
+  width:20px;
+  height:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(185,151,89,0) 0%, rgba(185,151,89,.95) 100%);
+}
+
+#screen-friend .friend-list-empty{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:76px;
+  border:1px solid rgba(185,151,89,.14);
+  border-radius:14px;
+  background:rgba(255,255,255,.52);
+  color:rgba(121,99,64,.72);
+  font-size:13px;
+}
+
+#screen-friend #friend-requests-list .friend-req-card{
+  border:1px solid rgba(185,151,89,.16);
+  border-radius:14px;
+  background:rgba(255,255,255,.70);
+  box-shadow:0 4px 12px rgba(88,68,33,.04);
+}
+#screen-friend .friend-req-name{
+  color:#6e5935;
+  font-weight:700;
+}
+#screen-friend .friend-req-accept,
+#screen-friend .friend-req-decline{
+  border-radius:10px;
+  font-family:"Noto Serif JP",serif;
+  font-weight:600;
+  letter-spacing:.03em;
+  box-shadow:0 3px 8px rgba(108,83,42,.07);
+}
+#screen-friend .friend-req-accept{
+  background:linear-gradient(180deg, #d8bf87 0%, #c8a96e 100%);
+  border:1px solid rgba(154,119,56,.30);
+  color:#fffdf8;
+}
+#screen-friend .friend-req-decline{
+  background:linear-gradient(180deg, #faf8f4 0%, #efe8dc 100%);
+  border:1px solid rgba(185,151,89,.24);
+  color:#8b6b35;
+}
+
+#screen-friend .friend-add-box{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border:1px solid rgba(185,151,89,.16);
+  border-radius:16px;
+  background:rgba(255,255,255,.60);
+}
+#screen-friend .friend-add-input{
+  height:38px;
+  border:1px solid rgba(193,164,111,.30);
+  border-radius:13px;
+  background:linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(248,244,238,.98) 100%);
+  color:#6b593c;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.90);
+}
+#screen-friend .friend-add-input::placeholder{
+  color:rgba(122,103,74,.52);
+}
+#screen-friend .friend-add-input:focus{
+  border-color:rgba(191,153,84,.60);
+  box-shadow:0 0 0 3px rgba(208,180,122,.14);
+  background:#fffdfa;
+}
+#screen-friend .friend-add-btn{
+  min-width:64px;
+  height:38px;
+  border:none;
+  border-radius:13px;
+  background:linear-gradient(180deg, #e2ca93 0%, #cfae6d 100%);
+  color:#fffdfa;
+  font-family:"Noto Serif JP",serif;
+  font-weight:700;
+  letter-spacing:.08em;
+  box-shadow:
+    0 5px 12px rgba(144,108,41,.12),
+    inset 0 1px 0 rgba(255,255,255,.35);
+}
+#screen-friend .friend-add-btn:active{
+  transform:translateY(1px);
+}
+#screen-friend #friend-my-id{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.65);
+  border:1px solid rgba(190,156,95,.18);
+  color:#8a6a32;
+}
+
+#screen-friend .friend-search-card-with-panel{
+  min-height:78px;
+  padding:10px;
+  border:1px solid rgba(188,154,92,.18);
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.84) 0%, rgba(247,241,233,.92) 100%);
+  box-shadow:0 5px 14px rgba(102,80,43,.05);
+}
+#screen-friend .friend-search-panel{
+  width:56px;
+  height:56px;
+  flex-basis:56px;
+  border-radius:12px;
+  border:1px solid rgba(185,151,89,.18);
+  background:linear-gradient(180deg, #fffdfa 0%, #eee5d7 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+#screen-friend .friend-search-card-name{
+  color:#5d4b33;
+  font-size:14px;
+  font-weight:700;
+}
+#screen-friend .friend-search-card-id{
+  margin-top:4px;
+  color:rgba(110,91,58,.64);
+  font-size:11px;
+}
+#screen-friend .friend-search-card-with-panel .friend-search-send-btn{
+  min-width:88px;
+  height:36px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(180deg, #e1c98f 0%, #cba760 100%);
+  color:#fffdf8;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.04em;
+  box-shadow:0 5px 12px rgba(144,108,41,.10);
+}
+#screen-friend .friend-search-card-with-panel .friend-search-send-btn:disabled{
+  background:linear-gradient(180deg, #f3eee6 0%, #e6dece 100%);
+  color:rgba(129,111,83,.72);
+  box-shadow:none;
+}
+
+#screen-friend .friend-card-compact{
+  min-height:76px;
+  height:auto;
+  gap:11px;
+  padding:10px 12px 10px 9px;
+  margin:0 0 10px;
+  border:1px solid rgba(185,151,89,.18);
+  border-radius:16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(248,243,235,.96) 100%);
+  box-shadow:
+    0 6px 18px rgba(105,81,43,.06),
+    inset 0 1px 0 rgba(255,255,255,.88);
+}
+#screen-friend .friend-card-compact::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:4px;
+  border-radius:16px 0 0 16px;
+  background:linear-gradient(180deg, rgba(215,185,123,.92) 0%, rgba(192,153,78,.75) 100%);
+}
+#screen-friend .friend-card-compact{
+  position:relative;
+  overflow:hidden;
+}
+#screen-friend .friend-card-panel{
+  flex:0 0 58px;
+  width:58px;
+  height:58px;
+  border-radius:12px;
+  border:1px solid rgba(191,155,91,.20);
+  background:linear-gradient(180deg, #fffefa 0%, #efe6d8 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.84);
+}
+#screen-friend .friend-card-body{
+  gap:8px;
+}
+#screen-friend .friend-card-name{
+  font-size:16px;
+  color:#5f4a2f !important;
+  letter-spacing:.02em;
+}
+#screen-friend .friend-card-rank{
+  font-size:10px;
+  color:#9a7a42;
+  letter-spacing:.12em;
+}
+#screen-friend .friend-card-bottomline{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  font-size:10px;
+  color:rgba(97,80,52,.70);
+  line-height:1.2;
+}
+#screen-friend .friend-card-login{
+  color:rgba(97,80,52,.74);
+}
+#screen-friend .friend-card-highscore{
+  text-align:left;
+  color:#b28a42;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:10px;
+  letter-spacing:.03em;
+  max-width:100%;
+}
+
+/* 下ナビとのトーン差をやわらげる */
+#screen-friend ~ .bottom-nav,
+body:has(#screen-friend.active) .bottom-nav{
+  background:linear-gradient(180deg, rgba(246,240,232,.98) 0%, rgba(237,227,212,.98) 100%);
+  border-top:1px solid rgba(186,151,89,.22);
+}
+body:has(#screen-friend.active) .bottom-nav .bottom-nav-label{
+  color:rgba(126,104,68,.74);
+}
+body:has(#screen-friend.active) .bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  color:#8e6c34;
+}
+body:has(#screen-friend.active) .bottom-nav .bottom-nav-item img{
+  filter:brightness(.66) sepia(.18) saturate(.55);
+}
+body:has(#screen-friend.active) .bottom-nav .bottom-nav-item.active img{
+  filter:brightness(.96) sepia(.36) saturate(.95);
+}
