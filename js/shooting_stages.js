@@ -44,6 +44,7 @@
 
     FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
     FACELESS_SUPER: 'shooting_event_faceless_super',
+    RAID_TEST: 'shooting_raid_test',
   });
 
   // ============================================================
@@ -446,6 +447,36 @@
         objectHp: 950,
         objectWays: 3,
         waveObjectCount: Object.freeze([1, 2]),
+      }),
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // DAILY RAID - ザ・テスト
+    // 共有HP 100,000 / 最大4人 / 1日1回。
+    // 実際の残HPはSupabaseのraidContextからshooting_core側で上書きする。
+    // ============================================================
+    [SHOOTING_STAGE_ID.RAID_TEST]: Object.freeze({
+      id: SHOOTING_STAGE_ID.RAID_TEST,
+      chapter: 0,
+      stageNo: 1,
+      eventId: 'raid',
+      eventTitle: 'ザ・テスト',
+      difficultyLabel: 'DAILY RAID',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.RAID_TEST]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '共有HPを削れ',
+      }),
+      raid: Object.freeze({
+        bossId: 'the_test',
+        maxHp: 100000,
+        maxPlayers: 4,
+        attemptsPerDay: 1,
+        timeLimitSeconds: 180,
       }),
       playable: true,
     }),

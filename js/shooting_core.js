@@ -111,6 +111,69 @@
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
   }
 
+  function isRaidStage() {
+    return !!(selectedStage && selectedStage.eventId === 'raid' && selectedStage.raid);
+  }
+
+  function getBattleTimeLimitSeconds() {
+    if (!selectedStage) return 0;
+    const explicit = Number(selectedStage.timeLimitSeconds || 0);
+    if (explicit > 0) return explicit;
+    if (isRaidStage()) {
+      const raidLimit = Number(selectedStage.raid?.timeLimitSeconds || 0);
+      if (raidLimit > 0) return raidLimit;
+    }
+    const mission = selectedStage.mission || {};
+    if (mission.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
+      return Math.max(0, Number(mission.targetSeconds || 0));
+    }
+    return 0;
+  }
+
+  function getBattleTimeLeft(now) {
+    const limit = getBattleTimeLimitSeconds();
+    if (!limit || !state) return 0;
+    return Math.max(0, limit - (Number(now || performance.now()) - Number(state.startedAt || performance.now())) / 1000);
+  }
+
+  function formatBattleTimer(seconds) {
+    const safe = Math.max(0, Number(seconds || 0));
+    const whole = Math.ceil(safe);
+    const min = Math.floor(whole / 60);
+    const sec = whole % 60;
+    return `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function updateBattleTimer(now) {
+    const wrap = document.getElementById('shooting-battle-timer');
+    const value = document.getElementById('shooting-battle-timer-value');
+    if (!wrap || !value) return;
+    const limit = getBattleTimeLimitSeconds();
+    const visible = !!(limit > 0 && state && !state.ended && !state.countdown);
+    wrap.classList.toggle('show', visible);
+    wrap.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    if (!visible) return;
+    const left = getBattleTimeLeft(now);
+    value.textContent = formatBattleTimer(left);
+    wrap.classList.toggle('is-warning', left <= 30 && left > 10);
+    wrap.classList.toggle('is-danger', left <= 10);
+  }
+
+  function checkBattleTimeLimit(now) {
+    const limit = getBattleTimeLimitSeconds();
+    if (!limit || !state || state.ended || state.finishing || state.countdown) return false;
+    if (getBattleTimeLeft(now) > 0) return false;
+    state.missionFailed = true;
+    endGame(false);
+    return true;
+  }
+
+  function getRaidStartingHp() {
+    const remoteHp = Number(selectedRaidContext && selectedRaidContext.currentHp);
+    if (Number.isFinite(remoteHp) && remoteHp > 0) return remoteHp;
+    return Number(selectedStage && selectedStage.raid && selectedStage.raid.maxHp) || 100000;
+  }
+
   function isStoryShootingStage() {
     return !!(
       selectedStage &&
@@ -161,6 +224,7 @@
   let selectedCharacterId = CHARACTER_ID.ERI;
   let selectedPartyIds = [];
   let selectedBlessingId = null; // UI selection only. Shooting effects are not wired yet.
+  let selectedRaidContext = null; // DAILY RAID: Supabaseで確定した当日の共有HP/attempt情報
 
   const SHOOTING_UI_LAYOUT_STORAGE_KEY = 'zeraphia_shooting_ui_layout_type';
   let shootingUiLayoutType = 1;
@@ -607,12 +671,15 @@
       mimosaItems: [],
       boss: {
         x: 0, y: 42,
-        hp: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
-        hpMax: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1),
-        gaugeHp: isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1),
-        gauges: isFacelessStage() ? 1 : Number(BOSS.gauges || 1),
+        hp: isRaidStage() ? getRaidStartingHp() : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1)),
+        hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1)),
+        gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1)),
+        gauges: isRaidStage() ? 3 : (isFacelessStage() ? 1 : Number(BOSS.gauges || 1)),
         phase: 1
       },
+      raidInitialHp: isRaidStage() ? getRaidStartingHp() : 0,
+      raidDamageDealt: 0,
+      raidAttemptFinished: false,
       facelessWave: isFacelessStage() ? 1 : 0,
       facelessSummonTriggered: false,
       facelessObjects: [],
@@ -639,6 +706,11 @@
       ultTimerIds: [], bossGrabUntil: 0, bossStunUntil: 0, lastShotAt: -9999, lastBossShotAt: -9999, shotIndex: 0,
       startedAt: performance.now(), clearTimeMs: 0,
     };
+
+    if (isRaidStage() && state.boss) {
+      const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
+      state.boss.phase = Math.max(1, Math.min(3, 4 - remainingGauges));
+    }
   }
 
   function renderSwitchRail(rebuild) {
@@ -851,6 +923,7 @@
 
   function renderHud() {
     if (!state) return;
+    updateBattleTimer(performance.now());
     const bossBar = document.getElementById('shooting-boss-bar');
     const bossGauge = bossBar ? bossBar.querySelector('i') : null;
     const bossPhase = document.getElementById('shooting-boss-phase');
@@ -900,8 +973,7 @@
           // アイテム収集ミッションは、敵撃破数を勝利条件に含めない。
           missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
-          const left = Math.max(0, Number(m.targetSeconds || 60) - (performance.now() - state.startedAt) / 1000);
-          missionProgress.textContent = `${left.toFixed(1)}秒　ENEMY ${state.normalDefeated}/${total}`;
+          missionProgress.textContent = `ENEMY ${state.normalDefeated}/${total}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.MAX_HITS_TAKEN) {
           missionProgress.textContent = `被弾 ${state.totalHitsTaken}/${Number(m.maxHits || 3)}　ENEMY ${state.normalDefeated}/${total}`;
         } else {
@@ -3952,6 +4024,8 @@
       return;
     }
 
+    if (checkBattleTimeLimit(ts)) return;
+
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
     prevTs = ts;
     if (!state.koTransition) updateMovement(dt, ts);
@@ -4395,6 +4469,11 @@
     }
     const missionHudForResult = document.getElementById('shooting-mission-hud');
     if (missionHudForResult) missionHudForResult.style.display = 'none';
+    const battleTimerForResult = document.getElementById('shooting-battle-timer');
+    if (battleTimerForResult) {
+      battleTimerForResult.classList.remove('show','is-warning','is-danger');
+      battleTimerForResult.setAttribute('aria-hidden','true');
+    }
     const comboForResult = document.getElementById('shooting-combo');
     if (comboForResult) comboForResult.style.display = 'none';
     state.running = false;
@@ -4417,8 +4496,26 @@
     const survivorDetails = document.getElementById('shooting-result-survivor-details');
     const survivorTotal = document.getElementById('shooting-result-survivor-total');
     const clearTime = document.getElementById('shooting-result-clear-time');
+    const raidRow = document.getElementById('shooting-result-raid-row');
+    const raidDamageEl = document.getElementById('shooting-result-raid-damage');
+    const retryBtn = document.getElementById('shooting-result-retry');
     const rankLetter = getResultRank(state.score, win);
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
+
+    if (isRaidStage()) {
+      state.raidDamageDealt = Math.max(0, Math.floor(Number(state.raidInitialHp || 0) - Number(state.boss && state.boss.hp || 0)));
+      if (raidRow) raidRow.style.display = '';
+      if (raidDamageEl) raidDamageEl.textContent = state.raidDamageDealt.toLocaleString('ja-JP');
+      if (retryBtn) retryBtn.style.display = 'none';
+      if (!state.raidAttemptFinished && window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
+        state.raidAttemptFinished = true;
+        void window.RaidEvent.finishAttempt(state.raidDamageDealt, { bossDefeated: !!win });
+      }
+    } else {
+      if (raidRow) raidRow.style.display = 'none';
+      if (retryBtn) retryBtn.style.display = '';
+    }
+
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     void submitShootingHighScore(state.score);
     // STORY進捗へシューティング結果を通知。
@@ -4873,6 +4970,7 @@
     }
 
     resolveSelectedStage(options || {});
+    selectedRaidContext = options && options.raidContext ? { ...options.raidContext } : null;
     BOSS = getCurrentShootingEnemy();
 
     // パーティ選択中に、その後のバトル画像・ULT・敵画像を先読みしておく。
@@ -4938,6 +5036,10 @@
   };
 
   window.restartShootingEvent = function () {
+    if (isRaidStage()) {
+      alert('DAILY RAIDは1日1回のみ挑戦できます。');
+      return;
+    }
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();
@@ -4975,6 +5077,15 @@
     const returningToFacelessStageSelect = !!(
       returnContext && returnContext.type === 'facelessStageSelect'
     );
+    const returningToRaidLobby = !!(returnContext && returnContext.type === 'raidLobby');
+
+    // 戦闘途中で戻った場合も、その日の挑戦は消費済み。
+    // そこまでに与えたダメージだけを確定してリトライ抜けを防ぐ。
+    if (isRaidStage() && state && !state.raidAttemptFinished && window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
+      state.raidDamageDealt = Math.max(0, Math.floor(Number(state.raidInitialHp || 0) - Number(state.boss && state.boss.hp || 0)));
+      state.raidAttemptFinished = true;
+      void window.RaidEvent.finishAttempt(state.raidDamageDealt, { aborted: true });
+    }
 
     // ④パーティ編成 → ③無貌の天使 の戻りだけは、先に③を最前面へ完成表示する。
     // その後で④のshooting rootを破棄することで、背面の②特別巡行を一瞬も見せない。
@@ -5021,9 +5132,17 @@
     // 直前画面を復元する。
     if (returningToFacelessStageSelect) {
       // ③はroot削除前にすでに描画済み。
+      selectedRaidContext = null;
       return;
     }
 
+    if (returningToRaidLobby) {
+      selectedRaidContext = null;
+      if (typeof window.openDailyRaid === 'function') window.openDailyRaid({ immediate: true, refresh: true });
+      return;
+    }
+
+    selectedRaidContext = null;
     if (returnContext && returnContext.type === 'storyChapter') {
       const chapter = Number(returnContext.chapter || 1);
       if (typeof window.openStageSelect === 'function') {

@@ -5682,3 +5682,26 @@
   0%,100%{filter:brightness(.92);}
   50%{filter:brightness(1.28);}
 }
+
+/* ============================================================
+   LIMITED BATTLE TIMER v1
+   制限時間のあるステージだけ戦闘中に常時表示。
+   ============================================================ */
+.shooting-battle-timer{
+  position:absolute;z-index:39;top:80px;right:13px;
+  min-width:74px;height:38px;padding:4px 9px 3px;
+  display:none;flex-direction:column;align-items:flex-end;justify-content:center;
+  border-right:2px solid rgba(139,111,61,.46);
+  background:linear-gradient(90deg,rgba(251,248,239,0),rgba(251,248,239,.64));
+  pointer-events:none;text-shadow:0 1px 0 rgba(255,255,255,.94);
+}
+.shooting-battle-timer.show{display:flex}
+.shooting-battle-timer small{font-family:"Cinzel",serif;font-size:6px;line-height:1;letter-spacing:.25em;color:#9d8962}
+.shooting-battle-timer strong{font-family:"Cinzel",serif;font-size:18px;line-height:1.05;letter-spacing:.08em;font-weight:600;color:#665436;font-variant-numeric:tabular-nums}
+.shooting-battle-timer.is-warning{border-right-color:rgba(172,112,49,.76)}
+.shooting-battle-timer.is-warning strong{color:#9d632f}
+.shooting-battle-timer.is-danger{border-right-color:rgba(163,50,43,.88);animation:shootingTimerDangerPulse .62s ease-in-out infinite alternate}
+.shooting-battle-timer.is-danger strong{color:#a23f37}
+@keyframes shootingTimerDangerPulse{from{opacity:.62;transform:scale(1)}to{opacity:1;transform:scale(1.045)}}
+#shooting-event-root:has(.shooting-character-select.show) .shooting-battle-timer,
+#shooting-event-root:not(.battle-hud-visible) .shooting-battle-timer{display:none!important}

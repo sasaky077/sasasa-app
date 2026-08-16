@@ -30,6 +30,9 @@
           <div class="shooting-boss-name">${BOSS.displayName || BOSS.name}</div>
           <div class="shooting-boss-bar phase-1" id="shooting-boss-bar"><i></i></div><div class="shooting-boss-phase" id="shooting-boss-phase">PHASE 1 / ${BOSS.gauges}</div>
         </section>
+        <div class="shooting-battle-timer" id="shooting-battle-timer" aria-live="polite" aria-hidden="true">
+          <small>TIME</small><strong id="shooting-battle-timer-value">00:00</strong>
+        </div>
         <section class="shooting-mission-hud" id="shooting-mission-hud" aria-live="polite">
           <span id="shooting-stage-label">CHAPTER 01</span>
           <strong id="shooting-mission-text">MISSION</strong>
@@ -140,9 +143,13 @@
                 <span class="shooting-result-detail-label">クリアタイム</span>
                 <strong id="shooting-result-clear-time">0.00秒</strong>
               </div>
+              <div class="shooting-result-detail-row shooting-result-raid-row" id="shooting-result-raid-row" style="display:none">
+                <span class="shooting-result-detail-label">RAID DAMAGE</span>
+                <strong id="shooting-result-raid-damage">0</strong>
+              </div>
             </div>
             <div class="shooting-result-actions">
-              <button type="button" onclick="restartShootingEvent()">RETRY</button>
+              <button type="button" id="shooting-result-retry" onclick="restartShootingEvent()">RETRY</button>
               <button type="button" class="sub" onclick="closeShootingEvent()">戻る</button>
             </div>
           </div>

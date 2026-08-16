@@ -24,6 +24,7 @@
 
     // SPECIAL EVENT bosses
     FACELESS: 'shooting_faceless',
+    RAID_TEST: 'shooting_raid_test',
   });
 
   // ============================================================
@@ -217,6 +218,28 @@
 
       behavior: 'faceless_event_v1',
       uiScale: 1.28,
+    }),
+
+
+    // ------------------------------------------------------------
+    // DAILY RAID - ザ・テスト
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.RAID_TEST]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RAID_TEST,
+      kind: 'boss',
+      implemented: true,
+      name: 'ザ・テスト',
+      displayName: 'RAID ENEMY　ザ・テスト',
+      image: 'images/raid_enemy_01.webp',
+
+      // 共有HPはSupabaseの日次レイド値で上書き。
+      gaugeHp: 33334,
+      gauges: 3,
+      bulletSpeed: 248,
+      fireRate: 820,
+      bulletDamage: 190,
+      behavior: 'barrage_v1',
+      uiScale: 1.12,
     }),
 
     [SHOOTING_ENEMY_ID.REMNANT_04]: Object.freeze({

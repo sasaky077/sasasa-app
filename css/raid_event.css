@@ -1,0 +1,122 @@
+/* Sasaphia DAILY RAID - premium lobby v4 */
+.raid-friend-section{padding-top:10px}
+.raid-entry-card.raid-entry-banner{
+  width:100%;
+  display:block;
+  padding:0;
+  border:1px solid rgba(179,151,96,.24);
+  border-radius:10px;
+  background:#f4f0e7;
+  overflow:hidden;
+  cursor:pointer;
+  line-height:0;
+  position:relative;
+  box-shadow:0 9px 24px rgba(75,61,38,.14),0 1px 0 rgba(255,255,255,.92) inset;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .14s ease,box-shadow .14s ease,filter .14s ease;
+}
+.raid-entry-card.raid-entry-banner::before,
+.raid-entry-card.raid-entry-banner::after{content:none!important;display:none!important}
+.raid-entry-card.raid-entry-banner img{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:2048 / 682;
+  object-fit:cover;
+  object-position:center;
+  pointer-events:none;
+}
+.raid-entry-card.raid-entry-banner:active{
+  transform:scale(.985);
+  box-shadow:0 5px 14px rgba(75,61,38,.13);
+  filter:brightness(.97);
+}
+
+
+#daily-raid-root{display:none;position:fixed;inset:0;z-index:240500;background:#0d100e;color:#eee9dd;opacity:0;transition:opacity .18s ease;font-family:"Noto Serif JP",serif;overflow:hidden}
+#daily-raid-root.show{opacity:1}
+.daily-raid-page{width:min(100%,430px);height:100%;margin:0 auto;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg,#151a16 0%,#0d100e 42%,#11120f 100%);box-shadow:0 0 70px rgba(0,0,0,.48)}
+.daily-raid-page::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(205,182,123,.035) 1px,transparent 1px),linear-gradient(rgba(205,182,123,.025) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(180deg,#000,transparent 58%);pointer-events:none}
+.daily-raid-head{height:72px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(203,181,126,.16);flex:0 0 auto;position:relative;z-index:3;background:linear-gradient(180deg,rgba(24,29,25,.98),rgba(17,21,18,.91))}
+.daily-raid-head button{border:0;background:transparent;color:#cfc5ad;font-size:28px;width:28px;height:40px;line-height:1;cursor:pointer}.daily-raid-head-title{display:flex;flex-direction:column;gap:2px}.daily-raid-head-title small{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.3em;color:#c7ad72}.daily-raid-head-title strong{font-size:16px;font-weight:500;letter-spacing:.11em;color:#f0eadc}.daily-raid-head-rule{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-family:"Cinzel",serif}.daily-raid-head-rule span{font-size:7px;letter-spacing:.18em;color:#777f73}.daily-raid-head-rule b{font-size:8px;letter-spacing:.14em;color:#c5b37f;font-weight:500}
+.daily-raid-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 15px 126px;position:relative;z-index:1;-webkit-overflow-scrolling:touch}
+.daily-raid-hero{height:292px;position:relative;margin:0 -15px;border-bottom:1px solid rgba(198,175,116,.14);overflow:hidden;background:radial-gradient(circle at 50% 42%,rgba(86,128,82,.19),transparent 30%),linear-gradient(180deg,rgba(35,44,36,.54),rgba(10,13,11,.22))}
+.daily-raid-hero-halo{position:absolute;left:50%;top:48%;width:230px;height:230px;transform:translate(-50%,-50%);border:1px solid rgba(190,166,107,.15);border-radius:50%;box-shadow:0 0 0 28px rgba(190,166,107,.018),0 0 0 58px rgba(190,166,107,.012),0 0 62px rgba(68,117,68,.16)}
+.daily-raid-hero-halo::before,.daily-raid-hero-halo::after{content:"";position:absolute;inset:20px;border:1px solid rgba(175,154,103,.10);transform:rotate(45deg)}.daily-raid-hero-halo::after{inset:47px;transform:rotate(22deg)}
+.daily-raid-hero-lines{position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.8%,rgba(203,183,126,.10) 50%,transparent 50.2%),linear-gradient(0deg,transparent 49.8%,rgba(203,183,126,.06) 50%,transparent 50.2%);opacity:.7}
+.daily-raid-hero-rank{position:absolute;top:18px;right:15px;display:flex;flex-direction:column;align-items:flex-end;z-index:2}.daily-raid-hero-rank span{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.26em;color:#8b927f}.daily-raid-hero-rank b{font-family:"Cinzel",serif;font-size:9px;letter-spacing:.16em;color:#c4ad73;font-weight:500;margin-top:3px}
+.daily-raid-hero img{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:336px;height:278px;object-fit:contain;filter:drop-shadow(0 18px 20px rgba(0,0,0,.62));z-index:1}
+.daily-raid-hero-copy{position:absolute;left:16px;bottom:37px;display:flex;flex-direction:column;z-index:2;text-shadow:0 2px 8px #090b09}.daily-raid-hero-copy small{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.3em;color:#c5ae76}.daily-raid-hero-copy strong{font-family:"Cinzel",serif;font-size:28px;font-weight:500;letter-spacing:.10em;line-height:1.05;color:#f1ecdf}.daily-raid-hero-copy span{font-size:10px;color:#aaa795;letter-spacing:.12em;margin-top:4px}
+.daily-raid-hero-message{position:absolute;left:16px;right:16px;bottom:12px;text-align:right;font-size:9px;letter-spacing:.05em;color:#8f9185;z-index:2}
+.daily-raid-hpbox{padding:17px 0 15px;border-bottom:1px solid rgba(202,180,122,.09)}.daily-raid-hphead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}.daily-raid-hphead>div{display:flex;flex-direction:column}.daily-raid-hphead small{font-family:"Cinzel",serif;font-size:8px;letter-spacing:.22em;color:#c7ad71}.daily-raid-hphead span{font-size:8px;color:#777c70;margin-top:2px}.daily-raid-hphead>strong{font-family:"Cinzel",serif;font-size:15px;font-weight:500;letter-spacing:.04em;color:#eee6d5}
+.daily-raid-hpbar{height:11px;margin-top:9px;background:#262a24;border:1px solid rgba(218,198,145,.15);overflow:hidden;position:relative;box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}.daily-raid-hpbar i{display:block;width:100%;height:100%;transform-origin:left;background:linear-gradient(90deg,#47714f,#789366,#c1b36e);transition:transform .35s ease;position:relative}.daily-raid-hpbar i::after{content:"";position:absolute;inset:1px;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 46%)}.daily-raid-hpbar>span{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),rgba(9,12,10,.55) 25%);pointer-events:none}
+.daily-raid-hpmeta{display:flex;justify-content:space-between;align-items:center;margin-top:7px}.daily-raid-hpmeta>b{font-family:"Cinzel",serif;font-size:8px;letter-spacing:.11em;color:#9ca390;font-weight:500}.daily-raid-hpmeta>span{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.12em;color:#62685f}.daily-raid-status[data-state="clear"]{color:#d4be78!important}.daily-raid-status[data-state="admin"]{color:#8dbd8f!important}
+.daily-raid-section-title{display:flex;justify-content:space-between;align-items:flex-end;margin:16px 0 9px}.daily-raid-section-title>div{display:flex;flex-direction:column}.daily-raid-section-title small{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.25em;color:#747b70}.daily-raid-section-title span{font-family:"Cinzel",serif;font-size:11px;letter-spacing:.16em;color:#e5ded0}.daily-raid-section-title>b{font-family:"Cinzel",serif;font-size:9px;letter-spacing:.12em;color:#a99668;font-weight:500}
+.daily-raid-member-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.daily-raid-member{min-height:84px;border:1px solid rgba(197,176,119,.13);background:linear-gradient(145deg,rgba(33,39,34,.84),rgba(19,23,20,.86));position:relative;padding:11px 9px 8px;overflow:hidden}.daily-raid-member::after{content:"";position:absolute;right:-18px;bottom:-24px;width:70px;height:70px;border:1px solid rgba(190,167,110,.06);transform:rotate(45deg)}.daily-raid-member-no{display:block;font-family:"Cinzel",serif;font-size:6px;letter-spacing:.18em;color:#777d70}.daily-raid-member-mark{position:absolute;right:9px;top:8px;width:25px;height:25px;border:1px solid rgba(196,174,116,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ad9b6c;font-size:12px}.daily-raid-member-copy{display:flex;flex-direction:column;margin-top:12px;min-width:0}.daily-raid-member-copy strong{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e7e0d2}.daily-raid-member-copy small{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.04em;color:#80867b;margin-top:3px}.daily-raid-member>b{display:block;margin-top:7px;font-family:"Cinzel",serif;font-size:6px;letter-spacing:.14em;color:#7d8479;font-weight:500}.daily-raid-member.is-me{border-color:rgba(203,181,120,.29);background:linear-gradient(145deg,rgba(50,51,37,.88),rgba(25,30,24,.9));box-shadow:inset 2px 0 0 rgba(193,169,105,.55)}.daily-raid-member.is-me .daily-raid-member-no,.daily-raid-member.is-me>b{color:#c5ad72}.daily-raid-member.is-done .daily-raid-member-mark{color:#bfb071}.daily-raid-member.is-empty{opacity:.38;border-style:dashed}
+.daily-raid-rule{margin-top:18px;padding:14px 12px;border:1px solid rgba(196,174,116,.12);background:linear-gradient(135deg,rgba(31,35,31,.60),rgba(16,19,17,.54))}.daily-raid-rule-title{display:flex;flex-direction:column}.daily-raid-rule-title small{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.23em;color:#7e8378}.daily-raid-rule-title strong{font-size:12px;font-weight:500;letter-spacing:.06em;color:#dcd5c6;margin-top:2px}.daily-raid-rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.daily-raid-rule-grid>div{min-height:55px;border-top:1px solid rgba(199,177,117,.13);padding-top:7px;display:flex;flex-direction:column;gap:5px}.daily-raid-rule-grid b{font-family:"Cinzel",serif;font-size:8px;color:#ad9863;font-weight:500}.daily-raid-rule-grid span{font-size:8px;line-height:1.45;color:#8d9087}
+.daily-raid-actions{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,430px);padding:18px 15px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(13,16,14,0),rgba(13,16,14,.95) 22%,#0d100e 52%);display:flex;align-items:flex-end;gap:10px;z-index:6}.daily-raid-attempt-copy{width:94px;flex:0 0 94px;padding-bottom:7px;display:flex;flex-direction:column}.daily-raid-attempt-copy small{font-family:"Cinzel",serif;font-size:6px;letter-spacing:.15em;color:#70766d}.daily-raid-attempt-copy b{font-family:"Cinzel",serif;font-size:13px;color:#c0ae7c;font-weight:500;margin-top:2px}.daily-raid-actions button{flex:1;height:55px;border:1px solid rgba(202,180,119,.42);background:linear-gradient(180deg,#414630,#282d22);color:#f1ecdf;font-family:"Noto Serif JP",serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 5px 18px rgba(0,0,0,.22);cursor:pointer}.daily-raid-actions button span{font-family:"Cinzel",serif;font-size:7px;letter-spacing:.22em;color:#cbb77c}.daily-raid-actions button b{font-size:13px;font-weight:500;letter-spacing:.13em}.daily-raid-actions button:disabled{opacity:.38;filter:grayscale(.55)}
+
+/* RAID battle */
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-boss{width:205px;height:176px;filter:drop-shadow(0 12px 13px rgba(25,33,24,.36))}
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-boss-name{color:#65593d;font-weight:700;letter-spacing:.13em}
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-result-raid-row{border-top:1px solid rgba(132,111,65,.24);margin-top:5px;padding-top:8px}
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] #shooting-result-raid-damage{color:#806d43;font-family:"Cinzel",serif}
+
+/* RAID MEMBERS - home character panel */
+.daily-raid-member{padding:8px 8px 8px 58px;min-height:88px;display:flex;flex-direction:column;justify-content:center}
+.daily-raid-member-no{position:absolute;left:8px;top:6px;z-index:3}
+.daily-raid-member-panel{position:absolute;left:8px;bottom:8px;width:42px;height:58px;object-fit:cover;object-position:center top;border:1px solid rgba(205,184,126,.22);background:rgba(9,12,10,.72);box-shadow:0 3px 12px rgba(0,0,0,.24);filter:saturate(.88) contrast(1.03)}
+.daily-raid-member-panel-empty{background:linear-gradient(145deg,rgba(77,82,72,.22),rgba(20,24,21,.28))}
+.daily-raid-member-copy{margin-top:4px}
+.daily-raid-member>b{margin-top:6px}
+.daily-raid-member.is-me .daily-raid-member-panel{border-color:rgba(213,190,125,.48);box-shadow:0 0 0 1px rgba(198,171,99,.10),0 4px 14px rgba(0,0,0,.28)}
+.daily-raid-member.is-empty{padding-left:58px}
+.daily-raid-member.is-empty::before{content:'+';position:absolute;left:8px;bottom:8px;width:42px;height:58px;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(194,174,119,.22);color:rgba(194,174,119,.42);font-family:"Cinzel",serif;font-size:18px}
+.daily-raid-member-mark{display:none}
+.daily-raid-rule-title strong{display:none!important}
+
+
+/* RAID MEMBERS - played damage emphasis */
+.daily-raid-member-copy{justify-content:center}
+.daily-raid-member-state{display:block;font-family:"Cinzel",serif;font-size:6px!important;line-height:1;letter-spacing:.16em!important;margin-top:5px!important;color:#8e9588!important}
+.daily-raid-member.is-done .daily-raid-member-state{color:#c8b174!important}
+.daily-raid-member.is-active .daily-raid-member-state{color:#c5ad72!important}
+.daily-raid-member-damage{display:flex;align-items:baseline;gap:5px;margin-top:5px;min-width:0;white-space:nowrap}
+.daily-raid-member-damage span{font-family:"Cinzel",serif;font-size:7px;line-height:1;letter-spacing:.13em;color:#777f74}
+.daily-raid-member-damage b{font-family:"Cinzel",serif;font-size:17px;line-height:1;font-weight:600;letter-spacing:-.025em;color:#eee6d5;text-shadow:0 1px 8px rgba(0,0,0,.32)}
+.daily-raid-member.is-done .daily-raid-member-damage b{color:#dbc17f}
+.daily-raid-member.is-me .daily-raid-member-damage b{font-size:18px}
+.daily-raid-member.is-empty .daily-raid-member-damage{display:none}
+
+
+/* HOME FRIEND ICON - unread / raid-ready notification */
+#screen-main .friend-home-entry .friend-notice-dot{
+  position:absolute;
+  top:5px;
+  right:7px;
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:#e33434;
+  border:2px solid #fff8ec;
+  box-shadow:0 2px 7px rgba(80,0,0,.38),0 0 0 1px rgba(125,24,24,.18);
+  z-index:12;
+  opacity:0;
+  transform:scale(.55);
+  pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease;
+}
+#screen-main .friend-home-entry .friend-notice-dot.show{
+  opacity:1;
+  transform:scale(1);
+}
+#screen-main .friend-home-entry.has-friend-notice .friend-notice-dot.show{
+  animation:friendNoticePulse 2.2s ease-in-out infinite;
+}
+@keyframes friendNoticePulse{
+  0%,72%,100%{transform:scale(1);box-shadow:0 2px 7px rgba(80,0,0,.38),0 0 0 1px rgba(125,24,24,.18)}
+  82%{transform:scale(1.15);box-shadow:0 2px 9px rgba(80,0,0,.42),0 0 0 5px rgba(227,52,52,.12)}
+}
+@media (max-width:380px),(max-height:700px){
+  #screen-main .friend-home-entry .friend-notice-dot{top:4px;right:5px;width:14px;height:14px}
+}

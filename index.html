@@ -90,7 +90,9 @@
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:block!important;font-size:25px!important;font-weight:700!important;letter-spacing:.12em!important;color:#fff!important}
 </style>\n
-  <link rel="stylesheet" href="css/shooting_event.css?v=20260816-faceless-mask-fix-v2">
+  <link rel="stylesheet" href="css/shooting_event.css?v=20260816-raid-rich-v4">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260816-raid-rich-v4">
+  <link rel="stylesheet" href="css/admin_mode.css?v=20260816-admin-v2">
 
 <style id="testplay-guide-readable-steps">
 .testplay-guide-steps{
@@ -569,6 +571,13 @@
   </div>
   <div class="screen-scroll">
 
+    <!-- DAILY RAID -->
+    <div class="friend-section raid-friend-section">
+      <button class="raid-entry-card raid-entry-banner" type="button" onclick="openDailyRaid()" aria-label="デイリーレイドバトルを開く">
+        <img src="images/raid_banner_01.webp" alt="DAILY RAID BATTLE">
+      </button>
+    </div>
+
     <!-- 申請受信 -->
     <div class="friend-section">
       <div class="friend-section-title">フレンド申請</div>
@@ -719,7 +728,7 @@
     <img src="images/btmnv_recruit.webp" alt="邂逅">
     <span class="bottom-nav-label">邂逅</span>
   </div>
-  <div class="bottom-nav-item" id="bnav-setting" onclick="showMainTab('setting')">
+  <div class="bottom-nav-item" id="bnav-setting" onclick="handleSettingsNavTap(event)">
     <img src="images/btmnv_settings.webp" alt="設定">
     <span class="bottom-nav-label">設定</span>
   </div>
@@ -9558,6 +9567,8 @@ window.addEventListener('pagehide', function () {
   }
 })();
 </script>
-<script src="js/shooting_event.js?v=20260816-navigation-back-no-flash-v2"></script>
+<script src="js/shooting_event.js?v=20260816-raid-rich-v4"></script>
+<script src="js/admin_mode.js?v=20260816-admin-v2"></script>
+<script src="js/raid_event.js?v=20260816-raid-rich-v4"></script>
 </body>
 </html>
