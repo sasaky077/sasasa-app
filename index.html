@@ -25,7 +25,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=327-stage-records-ui-tune2">
+  <link rel="stylesheet" href="css/style.css?v=336-notice-badge-contrast">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -87,6 +87,56 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:block!important;font-size:25px!important;font-weight:700!important;letter-spacing:.12em!important;color:#fff!important}
 </style>\n
   <link rel="stylesheet" href="css/shooting_event.css?v=9-stage-records-ui">
+
+<style id="testplay-guide-readable-steps">
+.testplay-guide-steps{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  text-align:left;
+  line-height:1.6;
+}
+.testplay-guide-step{
+  padding:0;
+}
+.testplay-guide-step-head{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  color:#6f5735;
+}
+.testplay-guide-step-no{
+  flex:0 0 auto;
+  width:20px;
+  height:20px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(174,143,83,.38);
+  border-radius:50%;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:10px;
+  color:#ad8845;
+}
+.testplay-guide-step-title{
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+.testplay-guide-step-note{
+  margin-top:4px;
+  padding-left:28px;
+  font-size:11.5px;
+  line-height:1.65;
+  color:rgba(95,82,63,.74);
+}
+@media (max-width:350px){
+  .testplay-guide-steps{gap:12px}
+  .testplay-guide-step-title{font-size:12.5px}
+  .testplay-guide-step-note{font-size:11px;padding-left:26px}
+}
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -142,32 +192,64 @@
 
 <!-- テストプレイ期間 強制お知らせ -->
 <div id="testplay-notice" class="testplay-notice" aria-hidden="true">
+  <img class="testplay-navi-character testplay-navi-character-notice" src="images/opening_navi_1.webp" alt="" aria-hidden="true">
   <div class="testplay-notice-panel" role="dialog" aria-modal="true" aria-labelledby="testplay-notice-title">
     <div class="testplay-notice-kicker">TEST PLAY</div>
-    <div class="testplay-notice-title" id="testplay-notice-title">テスト版配信中</div>
+    <div class="testplay-notice-title" id="testplay-notice-title">テスト版配信中やで</div>
     <div class="testplay-notice-text">
-      おもろくないとことか、<br>
-      バグ見つけたら教えてちょうだい。
+      <span class="testplay-notice-line">レイアウトの崩れや画面の見切れ、</span>
+      <span class="testplay-notice-line">バグを見つけたら教えてほしいやで。</span>
     </div>
     <div class="testplay-notice-actions" role="group" aria-label="回答">
-      <button type="button" class="testplay-notice-btn testplay-notice-btn-subtle" onclick="closeTestplayNotice(event)">わかりました</button>
-      <button type="button" class="testplay-notice-btn testplay-notice-btn-accent" onclick="closeTestplayNotice(event)">協力します</button>
+      <button type="button" class="testplay-notice-btn testplay-notice-btn-subtle" onclick="closeTestplayNotice(event)">わかったやで</button>
+      <button type="button" class="testplay-notice-btn testplay-notice-btn-accent" onclick="closeTestplayNotice(event)">協力するやで</button>
     </div>
   </div>
 </div>
 
 <!-- テストプレイ案内：回答後に続けて表示 -->
 <div id="testplay-guide" class="testplay-guide" aria-hidden="true">
+  <img class="testplay-navi-character testplay-navi-character-guide" src="images/opening_navi_2.webp" alt="" aria-hidden="true">
   <div class="testplay-guide-panel" role="dialog" aria-modal="true" aria-labelledby="testplay-guide-title">
-    <div class="testplay-guide-title" id="testplay-guide-title">ありがとう</div>
-    <div class="testplay-guide-lead">一応こんな感じ(👇)で遊んでみて。</div>
+    <div class="testplay-guide-title" id="testplay-guide-title">ありがとやで</div>
+    <div class="testplay-guide-lead">こんな感じに遊んでみてほしいやで</div>
 
-    <div class="testplay-guide-text">
-      とりあえずゲームは「巡行」から「ストーリー」進めるか、特別巡行の「フェイスレス降臨」をプレイしてみて。<br>
-      勝てなかったら、ガチャ回してキャラゲットして頑張って。<br>
-      キャラはまだ実装途中だから今後バランス直していく予定。
-      石がなかったら右上の+ボタンから購入できる。<br>
-      <span class="testplay-guide-note">（お金は取られないから安心して）</span>
+    <div class="testplay-guide-text testplay-guide-steps">
+      <button type="button" class="testplay-install-guide-entry" onclick="openInstallGuide(event)">
+        <span class="testplay-guide-step-no">1</span>
+        <span class="testplay-install-guide-entry-copy">
+          <b>ホーム画面に追加する</b>
+          <small>アイコンからいつでもSasaphiaを遊べるようにするやで</small>
+        </span>
+        <span class="testplay-install-guide-entry-arrow">›</span>
+      </button>
+
+      <div class="testplay-guide-step">
+        <div class="testplay-guide-step-head">
+          <span class="testplay-guide-step-no">2</span>
+          <span class="testplay-guide-step-title">右上の＋ボタンから課金石を購入</span>
+        </div>
+        <div class="testplay-guide-step-note">お金は取られないから安心してほしいやで。</div>
+      </div>
+
+      <div class="testplay-guide-step">
+        <div class="testplay-guide-step-head">
+          <span class="testplay-guide-step-no">3</span>
+          <span class="testplay-guide-step-title">ガチャを回してキャラを増やす</span>
+        </div>
+        <div class="testplay-guide-step-note">ピックアップキャラを2～3体くらい引いてみるやで。</div>
+      </div>
+
+      <div class="testplay-guide-step">
+        <div class="testplay-guide-step-head">
+          <span class="testplay-guide-step-no">4</span>
+          <span class="testplay-guide-step-title">バトルを遊んでみる</span>
+        </div>
+        <div class="testplay-guide-step-note">
+          「巡行」→「ストーリー」を進めるか、<br>
+          特別巡行の「フェイスレス降臨」を遊んでみるやで。
+        </div>
+      </div>
     </div>
 
     <label class="testplay-guide-skip">
@@ -177,6 +259,43 @@
 
     <button type="button" class="testplay-guide-close" onclick="closeTestplayGuide(event)">はじめる</button>
   </div>
+</div>
+
+<!-- ホーム画面追加ガイド -->
+<div id="install-guide-modal" class="install-guide-modal" aria-hidden="true">
+  <div class="install-guide-backdrop" onclick="closeInstallGuide(event)"></div>
+
+  <section class="install-guide-sheet" role="dialog" aria-modal="true" aria-labelledby="install-guide-title">
+    <div class="install-guide-header">
+      <div>
+        <div class="install-guide-kicker">ADD TO HOME SCREEN</div>
+        <div class="install-guide-title" id="install-guide-title">ホーム画面に追加</div>
+      </div>
+      <button type="button" class="install-guide-close" onclick="closeInstallGuide(event)" aria-label="閉じる">×</button>
+    </div>
+
+    <div class="install-guide-progress">
+      <span id="install-guide-progress-current">1</span>
+      <span class="install-guide-progress-sep">/</span>
+      <span>6</span>
+    </div>
+
+    <div class="install-guide-visual-wrap">
+      <img id="install-guide-image" class="install-guide-image" src="images/pwa_step1.png" alt="">
+    </div>
+
+    <div class="install-guide-copy">
+      <div class="install-guide-step-title" id="install-guide-step-title"></div>
+      <div class="install-guide-step-text" id="install-guide-step-text"></div>
+    </div>
+
+    <div class="install-guide-dots" id="install-guide-dots" aria-hidden="true"></div>
+
+    <div class="install-guide-actions">
+      <button type="button" class="install-guide-action install-guide-action-sub" id="install-guide-prev" onclick="moveInstallGuide(-1)">戻る</button>
+      <button type="button" class="install-guide-action install-guide-action-main" id="install-guide-next" onclick="moveInstallGuide(1)">次へ</button>
+    </div>
+  </section>
 </div>
 
 <div id="loading">
@@ -290,6 +409,7 @@
   <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true">
   <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
     <img src="images/mail.webp" alt="お知らせ">
+    <span class="home-notice-badge" aria-hidden="true"></span>
   </button>
 
   <!-- メイン上部イベントバナー -->
@@ -368,7 +488,7 @@
         </span>
         <span class="pity-num"><span id="pity-current">0</span> / 100</span>
       </div>
-      <div class="pity-note">天井到達：ピックアップ対象から1体を選択して獲得可能</div>
+      <div class="pity-note">天井到達：ピックアップ対象排出確定</div>
     </div>
 
   </div>
@@ -659,10 +779,13 @@
 <!-- 結晶ショップモーダル -->
 <div class="modal-overlay" id="shop-modal">
   <div class="modal shop-modal-inner">
-    <button class="modal-close-btn" onclick="closeModal('shop-modal')">×</button>
     <div class="shop-header">
-      <div class="shop-title">結晶を購入</div>
-      <div class="shop-subtitle">現在の所持数：<img src="images/icon_gem.webp" class="shop-gem-icon" onerror="this.style.display='none'"><span id="shop-current-gem">0</span> 個</div>
+      <div class="shop-header-main">
+        <div class="shop-kicker">CRYSTAL SHOP</div>
+        <div class="shop-title">結晶を購入</div>
+        <div class="shop-subtitle">現在の所持数：<img src="images/icon_gem.webp" class="shop-gem-icon" onerror="this.style.display='none'"><span id="shop-current-gem">0</span> 個</div>
+      </div>
+      <button class="modal-close-btn shop-close-btn" onclick="closeModal('shop-modal')" aria-label="閉じる">×</button>
     </div>
     <div class="shop-list">
       <button class="shop-item" onclick="confirmPurchase(0)">
@@ -902,7 +1025,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/home_banners.js?v=2"></script>
-<script src="js/notices.js?v=1"></script>
+<script src="js/notices.js?v=2-firstplay-gift"></script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
 <script src="js/shooting_resonance.js?v=2-upgrade-label"></script>
 <script src="js/resonance_system.js?v=11-upgrade-label"></script>
@@ -2143,14 +2266,6 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       return;
     }
 
-    // 1日1回のログインボーナス。中断バトルが無い場合だけ表示する。
-    if (typeof window.openLoginBonusIfNeeded === 'function') {
-      setTimeout(function(){
-        window.openLoginBonusIfNeeded().catch(function(error){
-          console.error('[LoginBonus] open failed:', error);
-        });
-      }, 350);
-    }
 
   }, 2000);
 }
@@ -2998,6 +3113,15 @@ function setTenResultFooterVisible(visible){
       if(name === 'zukan') switchZukanMainTab('box');
       if(name === 'friend') loadFriendScreen();
       document.getElementById('screen-'+name).classList.add('active');
+
+      // 邂逅へ入った時点でガチャ関連画像を裏で先読み。
+      if(name === 'summon' && window.GameAssets){
+        var summonWarmUrls = [];
+        try { window.GameAssets.collectFromObject(window.GACHA_BANNERS || GACHA_BANNERS, summonWarmUrls); } catch(_){}
+        try { window.GameAssets.collectFromObject(window.CHARACTERS || CHARACTERS, summonWarmUrls); } catch(_){}
+        window.GameAssets.many(summonWarmUrls, { timeout: 7000 });
+      }
+
       setHomeBtnVisible(true);
       setReloadBtnVisible(true);
       if(guf2) guf2.classList.add('hud-dark');
@@ -3177,8 +3301,23 @@ setTimeout(function(){
 
   var results = createSummonResults(count, currentGacha);
 
-// 抽選結果が確定した時点で、演出に使う画像を先行ロードする。
-preloadGachaResults(results);
+// 抽選結果が確定した時点で、演出に使う画像を読み込み・decodeまで完了させる。
+// ここを待たずに演出を開始すると、初回だけキャラ画像が空になる端末がある。
+if(window.GameAssets){
+  var gachaAssetUrls = [];
+  results.forEach(function(data){
+    if(data && data.img) gachaAssetUrls.push(data.img);
+    var cardSrc = getTenResultImageSrc(data);
+    if(cardSrc) gachaAssetUrls.push(cardSrc);
+  });
+  await window.GameAssets.many(gachaAssetUrls, {
+    timeout: 7000,
+    blocking: true,
+    loadingDelay: 300
+  });
+} else {
+  await preloadGachaResults(results);
+}
 
 if(count === 10){
   results.forEach(function(data){
@@ -3203,6 +3342,9 @@ var gachaImagePreloadCache = new Map();
 function preloadGachaImage(src, timeoutMs){
   timeoutMs = timeoutMs || 4000;
   if(!src) return Promise.resolve(false);
+  if(window.GameAssets && typeof window.GameAssets.image === 'function'){
+    return window.GameAssets.image(src, { timeout: timeoutMs });
+  }
   if(gachaImagePreloadCache.has(src)) return gachaImagePreloadCache.get(src);
 
   var promise = new Promise(function(resolve){
@@ -6887,6 +7029,113 @@ document.getElementById('detail-modal').addEventListener('click', function(e){
   }
 });
 
+
+var installGuideSteps = [
+  {
+    image: 'images/pwa_step1.png',
+    title: 'LINEから開いた場合',
+    text: '右下の「…」をタップして「ブラウザで開く」を選ぶやで。Safariで直接開いている場合は、この手順は飛ばしてOKやで。'
+  },
+  {
+    image: 'images/pwa_step2.png',
+    title: 'Safariの「…」をタップ',
+    text: '画面右下にある「…」をタップするやで。'
+  },
+  {
+    image: 'images/pwa_step3.png',
+    title: '「共有」をタップ',
+    text: '表示されたメニューから「共有」をタップするやで。'
+  },
+  {
+    image: 'images/pwa_step4.png',
+    title: '「ホーム画面に追加」をタップ',
+    text: '共有メニューを下にスクロールして「ホーム画面に追加」を選ぶやで。'
+  },
+  {
+    image: 'images/pwa_step5.png',
+    title: 'Webアプリとして追加',
+    text: '「Webアプリとして開く」をONのまま、右上の「追加」をタップするやで。'
+  },
+  {
+    image: 'images/pwa_step6.png',
+    title: '追加完了',
+    text: 'ホーム画面に「Sasaphia」のアイコンが追加されたら完了やで。次からはこのアイコンをタップすればすぐ遊べるやで。'
+  }
+];
+var installGuideIndex = 0;
+
+function renderInstallGuide(){
+  var step = installGuideSteps[installGuideIndex];
+  if(!step) return;
+
+  var image = document.getElementById('install-guide-image');
+  var title = document.getElementById('install-guide-step-title');
+  var text = document.getElementById('install-guide-step-text');
+  var current = document.getElementById('install-guide-progress-current');
+  var prev = document.getElementById('install-guide-prev');
+  var next = document.getElementById('install-guide-next');
+  var dots = document.getElementById('install-guide-dots');
+
+  if(image){
+    image.src = step.image;
+    image.alt = 'ホーム画面追加手順 ' + (installGuideIndex + 1);
+  }
+  if(title) title.textContent = step.title;
+  if(text) text.textContent = step.text;
+  if(current) current.textContent = String(installGuideIndex + 1);
+  if(prev) prev.disabled = installGuideIndex === 0;
+  if(next) next.textContent = installGuideIndex === installGuideSteps.length - 1 ? '完了' : '次へ';
+
+  if(dots){
+    dots.innerHTML = installGuideSteps.map(function(_, i){
+      return '<span class="' + (i === installGuideIndex ? 'active' : '') + '"></span>';
+    }).join('');
+  }
+}
+
+function openInstallGuide(event){
+  if(event){
+    if(typeof event.preventDefault === 'function') event.preventDefault();
+    if(typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+
+  installGuideIndex = 0;
+  renderInstallGuide();
+
+  var modal = document.getElementById('install-guide-modal');
+  if(!modal) return;
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeInstallGuide(event){
+  if(event){
+    if(typeof event.preventDefault === 'function') event.preventDefault();
+    if(typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+
+  var modal = document.getElementById('install-guide-modal');
+  if(!modal) return;
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function moveInstallGuide(delta){
+  var nextIndex = installGuideIndex + Number(delta || 0);
+
+  if(nextIndex >= installGuideSteps.length){
+    closeInstallGuide();
+    return;
+  }
+
+  installGuideIndex = Math.max(0, Math.min(installGuideSteps.length - 1, nextIndex));
+  renderInstallGuide();
+}
+
+window.openInstallGuide = openInstallGuide;
+window.closeInstallGuide = closeInstallGuide;
+window.moveInstallGuide = moveInstallGuide;
+
 function showTestplayNotice(){
   var notice = document.getElementById('testplay-notice');
   if(!notice) return;
@@ -6955,11 +7204,42 @@ function closeTestplayGuide(event){
   resumeHomeAfterTestplayGuide();
 }
 
-function resumeHomeAfterTestplayGuide(){
+function finalizeHomeAfterOpeningSequence(){
   if(typeof setNavVisible === 'function') setNavVisible(true);
   if(typeof setBnavActive === 'function') setBnavActive('main');
   if(typeof setHomeBtnVisible === 'function') setHomeBtnVisible(false);
   if(typeof setReloadBtnVisible === 'function') setReloadBtnVisible(true);
+}
+
+async function resumeHomeAfterTestplayGuide(){
+  // 起動順を固定：
+  // TITLE → TEST PLAY → GUIDE → LOGIN BONUS → HOME
+  // ログインボーナス確認中もホーム操作は解放しない。
+  if(typeof setNavVisible === 'function') setNavVisible(false);
+
+  if(typeof window.openLoginBonusIfNeeded !== 'function'){
+    finalizeHomeAfterOpeningSequence();
+    return;
+  }
+
+  try{
+    var opened = await window.openLoginBonusIfNeeded();
+
+    // 本日受取済み等でログインボーナスが開かなければ即ホームへ。
+    if(!opened){
+      finalizeHomeAfterOpeningSequence();
+      return;
+    }
+
+    // 実際にモーダルが開いた場合は、閉じてからホーム操作を解放。
+    window.addEventListener('zeraphia-login-bonus-closed', function onLoginBonusClosed(){
+      window.removeEventListener('zeraphia-login-bonus-closed', onLoginBonusClosed);
+      finalizeHomeAfterOpeningSequence();
+    }, { once:true });
+  }catch(error){
+    console.error('[LoginBonus] open after testplay failed:', error);
+    finalizeHomeAfterOpeningSequence();
+  }
 }
 
 window.showTestplayNotice = showTestplayNotice;
@@ -8035,8 +8315,11 @@ window.addEventListener('pagehide', function () {
   </div>
 </div>
 
+<!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
+<script src="js/asset_loader.js?v=1"></script>
+
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=1"></script>
+<script src="js/login_bonus.js?v=2-opening-sequence"></script>
 
 <script src="js/story_engine.js"></script>
 <script src="js/stories/chapter01.js"></script>

@@ -107,9 +107,24 @@
 
   function closeModal(){
     if(!modal) return;
+    var wasOpen = modal.classList.contains('show');
     modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('login-bonus-open');
+
+    // 起動導線側へ「ログインボーナス表示完了」を通知。
+    // TEST PLAY → LOGIN BONUS → HOME の順序制御に使用する。
+    if(wasOpen){
+      try{
+        window.dispatchEvent(new CustomEvent('zeraphia-login-bonus-closed'));
+      }catch(_){
+        try{
+          var event = document.createEvent('Event');
+          event.initEvent('zeraphia-login-bonus-closed', false, false);
+          window.dispatchEvent(event);
+        }catch(__){}
+      }
+    }
   }
 
   async function fetchState(){

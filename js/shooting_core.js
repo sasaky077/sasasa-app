@@ -200,90 +200,6 @@
     return Math.max(0, Number(readLocalShootingHighScores()[stageId] || 0));
   }
 
-  const SHOOTING_STAGE_RECORD_STORAGE_KEY = 'zeraphia_shooting_stage_records_v1';
-  const SHOOTING_RANK_VALUE = Object.freeze({ E: 0, D: 1, C: 2, B: 3, A: 4, S: 5 });
-
-  function readLocalShootingStageRecords() {
-    try {
-      const raw = window.localStorage.getItem(SHOOTING_STAGE_RECORD_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : {};
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function normalizeShootingStageRecord(raw) {
-    const highScore = Math.max(0, Number(raw && raw.highScore || 0));
-    const bestRank = String(raw && raw.bestRank || '').trim().toUpperCase();
-    return {
-      cleared: !!(raw && raw.cleared),
-      bestRank: Object.prototype.hasOwnProperty.call(SHOOTING_RANK_VALUE, bestRank) ? bestRank : '',
-      highScore,
-    };
-  }
-
-  function getShootingRankValue(rank) {
-    const key = String(rank || '').trim().toUpperCase();
-    return Object.prototype.hasOwnProperty.call(SHOOTING_RANK_VALUE, key) ? SHOOTING_RANK_VALUE[key] : -1;
-  }
-
-  function writeLocalShootingStageRecord(stageId, payload = {}) {
-    if (!stageId) return normalizeShootingStageRecord(null);
-    const map = readLocalShootingStageRecords();
-    const current = normalizeShootingStageRecord(map[stageId]);
-    const next = {
-      cleared: current.cleared || !!payload.win,
-      bestRank: current.bestRank,
-      highScore: Math.max(current.highScore, Math.max(0, Number(payload.score || 0))),
-    };
-
-    const incomingRank = String(payload.rank || '').trim().toUpperCase();
-    if (payload.win && getShootingRankValue(incomingRank) >= 0 && getShootingRankValue(incomingRank) > getShootingRankValue(current.bestRank)) {
-      next.bestRank = incomingRank;
-    }
-
-    map[stageId] = next;
-    try { window.localStorage.setItem(SHOOTING_STAGE_RECORD_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
-    return next;
-  }
-
-  function getLocalShootingStageRecord(stageId) {
-    if (!stageId) return normalizeShootingStageRecord(null);
-    return normalizeShootingStageRecord(readLocalShootingStageRecords()[stageId]);
-  }
-
-  function getShootingStageRecordSummary(stageId) {
-    const stage = typeof getShootingStage === 'function' ? getShootingStage(stageId) : null;
-    const record = getLocalShootingStageRecord(stageId);
-    const highScore = Math.max(record.highScore, getLocalShootingHighScore(stageId));
-
-    // 旧特別巡行データは HIGH SCORE だけ残っていて、cleared / bestRank が未保存のことがある。
-    // eventId を持つステージは highScore > 0 をクリア済みとして扱い、RANK を復元する。
-    const inferredCleared = !!record.cleared || (!!stage?.eventId && highScore > 0);
-    const derivedRank = record.bestRank || (
-      inferredCleared && highScore > 0
-        ? getResultRank(highScore, true)
-        : ''
-    );
-
-    // 旧記録から復元できた情報は新形式へ一度だけ移行する。
-    if ((!record.cleared && inferredCleared) || (!record.bestRank && derivedRank)) {
-      writeLocalShootingStageRecord(stageId, {
-        win: inferredCleared,
-        rank: derivedRank,
-        score: highScore,
-      });
-    }
-
-    return {
-      stageId: String(stageId || ''),
-      cleared: inferredCleared,
-      bestRank: derivedRank,
-      highScore,
-    };
-  }
-
   function formatShootingScore(value) {
     return String(Math.max(0, Math.floor(Number(value || 0)))).padStart(6, '0');
   }
@@ -476,12 +392,6 @@
   let pointerIsTouch = false;
   let pointerX = 0;
   let pointerY = 0;
-  // Pointer movement is relative to the player's position at drag start.
-  // This prevents tapping a distant point from teleporting the character there.
-  let pointerStartClientX = 0;
-  let pointerStartClientY = 0;
-  let pointerStartPlayerX = 0;
-  let pointerStartPlayerY = 0;
   let lastTapAt = 0;
   let lastTapX = 0;
   let lastTapY = 0;
@@ -560,12 +470,6 @@
   }
 
   function renderShootingBlessingPicker() {
-    // シューティング版では加護は未実装のため無効化中。
-    // ボタンの表示(shooting_ui.js側の静的HTML)を上書きしないよう、ここでは何もしない。
-    // 実装が入ったら、このガードだけ外せば元の描画ロジックが復帰する。
-    return;
-
-    /* eslint-disable no-unreachable */
     const picker = document.getElementById('shooting-party-blessing-picker');
     const name = document.getElementById('shooting-party-blessing-name');
     if (!picker) return;
@@ -576,13 +480,12 @@
     picker.innerHTML = rows.map(b => `<button type="button" class="shooting-blessing-option ${String(selectedBlessingId || '') === b.id ? 'selected' : ''}" onclick="selectShootingBlessing('${b.id.replace(/'/g, "\\'")}')">
       ${b.img ? `<img src="${b.img}" alt="" draggable="false">` : '<span>＋</span>'}<b>${b.name}</b>
     </button>`).join('');
-    /* eslint-enable no-unreachable */
   }
 
   window.toggleShootingBlessingPicker = function() {
-    // シューティング版では加護の効果が未実装のため、選択UIそのものを
-    // 一時的に無効化する。ピッカーは開かず、通知だけ出す。
-    showShootingNotImplementedNotice('加護');
+    const picker = document.getElementById('shooting-party-blessing-picker');
+    if (!picker) return;
+    picker.classList.toggle('show');
   };
   window.selectShootingBlessing = function(id) {
     selectedBlessingId = id || null;
@@ -798,8 +701,12 @@
     state.lastShotAt = -9999;
     applySelectedCharacterToUi();
 
-    // キャラ差し替え後もドラッグ目標は維持するが、現在座標へ瞬間移動はさせない。
-    // updateMovement側でキャラ固有のmoveSpeedに従って追従する。
+    // キャラ差し替え後も移動入力を途切れさせない。
+    // 同じ指でアリーナをドラッグ中なら、その最新位置を即維持する。
+    if (pointerActive && pointerIsTouch && state && state.player) {
+      state.player.x = pointerX;
+      state.player.y = pointerY;
+    }
 
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -1133,27 +1040,6 @@
     const el = document.createElement('div');
     el.className = 'shooting-item-effect-notice';
     el.innerHTML = `<span>ITEM GET</span><strong>${label}</strong><small>${detail}</small>`;
-    root.appendChild(el);
-
-    requestAnimationFrame(() => el.classList.add('show'));
-    setTimeout(() => el.classList.add('hide'), 1250);
-    setTimeout(() => el.remove(), 1650);
-  }
-
-  // 未実装機能をタップした際の共通ブロック通知。
-  // showShootingItemEffectNoticeと同じHTML構造・アニメーションを流用し、
-  // デザインを統一する。今後別の未実装機能を同様にブロックしたい場合は
-  // showShootingNotImplementedNotice('機能名') を呼ぶだけでよい。
-  function showShootingNotImplementedNotice(featureLabel) {
-    const root = document.getElementById(ROOT_ID);
-    if (!root) return;
-
-    const old = root.querySelector('.shooting-item-effect-notice');
-    if (old) old.remove();
-
-    const el = document.createElement('div');
-    el.className = 'shooting-item-effect-notice not-implemented';
-    el.innerHTML = `<span>NOT AVAILABLE</span><strong>${featureLabel}</strong><small>未実装の機能です</small>`;
     root.appendChild(el);
 
     requestAnimationFrame(() => el.classList.add('show'));
@@ -2782,16 +2668,16 @@
     const maxY = h - 38;
 
     if (pointerActive) {
-      // ポインタ位置は移動目標にするだけで座標を直接代入しない。
-      // 遠い場所を触ったり素早くドラッグしても、キャラ固有のmoveSpeed以上では動けない。
-      const pdx = pointerX - state.player.x;
-      const pdy = pointerY - state.player.y;
-      const distance = Math.hypot(pdx, pdy);
-      if (distance > 0.01) {
-        const maxStep = Math.max(0, Number(c.moveSpeed || 0)) * dt;
-        const step = Math.min(distance, maxStep);
-        state.player.x += pdx / distance * step;
-        state.player.y += pdy / distance * step;
+      if (pointerIsTouch) {
+        // スマホは「指でキャラを掴んでいる」操作感を優先。
+        // lerp追従だとULT/キャラチェンジ後に100〜200msほど遅れて見え、
+        // 指からキャラが離れたような感触になるため、touch時は1:1追従。
+        state.player.x = pointerX;
+        state.player.y = pointerY;
+      } else {
+        // PCマウスは従来の少し滑らかな追従を維持。
+        state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
+        state.player.y += (pointerY - state.player.y) * Math.min(1, dt * 18);
       }
     } else {
       let dx = 0, dy = 0;
@@ -3192,6 +3078,53 @@
 
   const ULT_CUTIN_DURATION_MS = 1000;
 
+  function preloadShootingImage(src, timeoutMs = 7000, blocking = false) {
+    if (!src) return Promise.resolve(false);
+    if (window.GameAssets && typeof window.GameAssets.image === 'function') {
+      return window.GameAssets.image(src, {
+        timeout: timeoutMs,
+        blocking: blocking,
+        loadingDelay: 300
+      });
+    }
+    return new Promise(resolve => {
+      const img = new Image();
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        resolve(false);
+      }, timeoutMs);
+      const finish = ok => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(!!ok);
+      };
+      img.onload = () => {
+        if (typeof img.decode === 'function') {
+          img.decode().catch(() => {}).finally(() => finish(true));
+        } else {
+          finish(true);
+        }
+      };
+      img.onerror = () => finish(false);
+      img.src = src;
+      if (img.complete && img.naturalWidth > 0) finish(true);
+    });
+  }
+
+  function warmShootingAssets() {
+    if (!window.GameAssets) return;
+    const urls = [];
+
+    // キャラ画像・パネル・ULTは戦闘中に高確率で使うため先読み。
+    // 敵/ステージマスター全件は、未実装画像参照が混ざる可能性があるので読まない。
+    try { window.GameAssets.collectFromObject(window.ShootingCharacters, urls); } catch (_) {}
+
+    window.GameAssets.many(urls, { timeout: 7000, quiet: true });
+  }
+
   function clearUltCutin() {
     const root = document.getElementById(ROOT_ID);
     if (state && state.ultCutinTimer) {
@@ -3205,7 +3138,7 @@
     }
   }
 
-  function playUltCutin(c, onComplete) {
+  async function playUltCutin(c, onComplete) {
     if (!state || state.ended || state.finishing) return;
 
     clearUltCutin();
@@ -3217,13 +3150,19 @@
       return;
     }
 
+    const cutinSrc = c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
+    await preloadShootingImage(cutinSrc, 7000, true);
+
+    // ロード待ち中に戦闘終了/画面遷移した場合は演出を作らない。
+    if (!state || state.ended || state.finishing || !document.getElementById(ROOT_ID)) return;
+
     const wrap = document.createElement('div');
     wrap.className = 'shooting-ult-cutin';
     wrap.setAttribute('aria-hidden', 'true');
 
     const img = document.createElement('img');
     img.className = 'shooting-ult-cutin-image';
-    img.src = c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
+    img.src = cutinSrc;
     img.alt = '';
     img.draggable = false;
 
@@ -3264,8 +3203,12 @@
         root.classList.remove('ult-cutin-active');
         prevTs = performance.now();
 
-        // カットイン中に指が動いていても座標は直接書き換えない。
-        // 再開後はmoveSpeed以内で最新のドラッグ目標へ追従する。
+        // カットイン中に指が動いていた場合、再開1フレーム目で最新位置へ復帰。
+        // touch操作のみ。PCマウスの滑らかさは維持する。
+        if (pointerActive && pointerIsTouch && state && state.player) {
+          state.player.x = pointerX;
+          state.player.y = pointerY;
+        }
 
         if (typeof onComplete === 'function') onComplete();
       }, 120);
@@ -3722,7 +3665,7 @@
     return meta.image ? meta : null;
   }
 
-  function playBossStageIntro(onComplete) {
+  async function playBossStageIntro(onComplete) {
     const meta = getBossIntroMeta();
 
     // 通常ステージは従来通り、そのままカウントダウンへ。
@@ -3736,6 +3679,10 @@
       if (typeof onComplete === 'function') onComplete();
       return;
     }
+
+    await preloadShootingImage(meta.image, 7000, true);
+
+    if (!document.getElementById(ROOT_ID) || !state || state.ended) return;
 
     root.querySelectorAll('.shooting-boss-intro').forEach(el => el.remove());
 
@@ -3814,36 +3761,7 @@
 
   function openFacelessStage(stageId) {
     closeFacelessStageSelect();
-    window.__shootingReturnContext = { type: 'facelessSelect' };
     window.openShootingEvent({ stageId: String(stageId || '') });
-  }
-
-  function buildFacelessStageRow(stageId, no, title, conditionText, waveText) {
-    const record = getShootingStageRecordSummary(stageId);
-    const clearStateClass = record.cleared ? 'is-cleared' : 'is-uncleared';
-    const clearStateText = record.cleared ? 'CLEAR' : 'MISSION';
-    const rankValue = record.bestRank || '—';
-    const rankClass = record.bestRank ? `rank-${record.bestRank.toLowerCase()}` : 'rank-none';
-    const highScoreText = record.highScore > 0 ? formatShootingScore(record.highScore) : '------';
-
-    return `
-      <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${stageId}')">
-        <div class="shooting-special-stage-no shooting-faceless-stage-no">${no}</div>
-        <div class="shooting-special-stage-main shooting-faceless-stage-main">
-          <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-            <strong>${title}</strong>
-            <div class="shooting-special-stage-status-set">
-              <span class="shooting-special-stage-clear-state ${clearStateClass}">${clearStateText}</span>
-              <span class="shooting-special-stage-rank-chip ${rankClass}"><small>RANK</small><b>${rankValue}</b></span>
-            </div>
-          </div>
-          <div class="shooting-special-stage-condition shooting-faceless-stage-condition">${conditionText}</div>
-          <div class="shooting-special-stage-meta-row">
-            <div class="shooting-special-stage-wave shooting-faceless-stage-wave">${waveText}</div>
-            <div class="shooting-special-stage-high-score"><span>HIGH SCORE</span><b>${highScoreText}</b></div>
-          </div>
-        </div>
-      </button>`;
   }
 
   function showFacelessStageSelect() {
@@ -3859,8 +3777,27 @@
         </div>
 
         <div class="shooting-special-stage-list shooting-faceless-stage-list">
-          ${buildFacelessStageRow(SHOOTING_STAGE_ID.FACELESS_ADVANCED, '01', '上級', 'クリア条件：フェイスレスを撃破', '総WAVE2')}
-          ${buildFacelessStageRow(SHOOTING_STAGE_ID.FACELESS_SUPER, '02', '最上級', 'クリア条件：フェイスレスを撃破', '総WAVE2')}
+          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_ADVANCED}')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>上級</strong>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
+              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
+            </div>
+          </button>
+
+          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_SUPER}')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>最上級</strong>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
+              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
+            </div>
+          </button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -4033,24 +3970,8 @@
     const clearTime = document.getElementById('shooting-result-clear-time');
     const rankLetter = getResultRank(state.score, win);
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
-    const finishedStageId = state.stageId || (selectedStage && selectedStage.id) || '';
-    const stageRecord = writeLocalShootingStageRecord(finishedStageId, {
-      win: !!win,
-      rank: rankLetter,
-      score: Number(state.score || 0),
-    });
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     void submitShootingHighScore(state.score);
-    try {
-      window.dispatchEvent(new CustomEvent('shooting-stage-record-updated', {
-        detail: {
-          stageId: finishedStageId,
-          cleared: !!stageRecord.cleared,
-          bestRank: stageRecord.bestRank || '',
-          highScore: Math.max(Number(stageRecord.highScore || 0), getLocalShootingHighScore(finishedStageId)),
-        }
-      }));
-    } catch (_) {}
     // STORY進捗へシューティング結果を通知。
     try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
@@ -4097,25 +4018,6 @@
     setBattleHudVisible(false);
   }
 
-  function beginPointerDrag(e, now) {
-    pointerActive = true;
-    pointerIsTouch = isTouchLikePointer(e);
-
-    pointerStartClientX = e.clientX;
-    pointerStartClientY = e.clientY;
-    pointerStartPlayerX = state && state.player ? state.player.x : 0;
-    pointerStartPlayerY = state && state.player ? state.player.y : 0;
-
-    // タップした瞬間は現在位置を目標にするため、離れた地点を触っても移動しない。
-    pointerX = pointerStartPlayerX;
-    pointerY = pointerStartPlayerY;
-
-    swipeStartX = e.clientX;
-    swipeStartY = e.clientY;
-    swipeStartAt = now;
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
-  }
-
   function onPointerDown(e) {
     if (!state || state.ended || state.countdown || state.finishing || state.paused) return;
 
@@ -4127,11 +4029,24 @@
       (now - lastTapAt) <= ULT_DOUBLE_TAP_MS &&
       Math.hypot(dx, dy) <= ULT_DOUBLE_TAP_DISTANCE;
 
-    beginPointerDrag(e, now);
-
     if (isDoubleTap) {
       lastTapAt = 0;
       if (isUltReady()) {
+        // ULT発動時も現在のタッチを「移動入力として生きたまま」にする。
+        // ここでreturnするため、通常のpointerActive=true処理より先に明示的に再設定する。
+        pointerActive = true;
+        pointerIsTouch = isTouchLikePointer(e);
+
+        swipeStartX = e.clientX;
+        swipeStartY = e.clientY;
+        swipeStartAt = now;
+
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+
+        // カットイン中もonPointerMoveで最新位置を更新できるよう、
+        // 発動時点の指位置を先に同期してからULTへ入る。
+        updatePointer(e);
+
         window.useShootingBurst();
         e.preventDefault();
         return;
@@ -4142,15 +4057,25 @@
       lastTapY = e.clientY;
     }
 
-    e.preventDefault();
-  }
+    pointerActive = true;
+    pointerIsTouch = isTouchLikePointer(e);
 
-  function onPointerMove(e) {
-    if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
+    swipeStartX = e.clientX;
+    swipeStartY = e.clientY;
+    swipeStartAt = now;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
     updatePointer(e);
     e.preventDefault();
   }
+  function onPointerMove(e) {
+    if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
 
+    // ultCutinActive中でもここは止めない。
+    // ゲーム本体は停止していても指位置だけは更新し続け、
+    // カットイン終了直後に同じ指へ即追従させる。
+    updatePointer(e);
+    e.preventDefault();
+  }
   function onPointerUp(e) {
     const wasActive = pointerActive;
     pointerActive = false;
@@ -4168,6 +4093,7 @@
 
       if (isFlick) {
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
+        // Right flick -> upper bench / Left flick -> lower bench.
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
       }
@@ -4175,18 +4101,16 @@
 
     e.preventDefault();
   }
-
   function updatePointer(e) {
     const arena = document.getElementById('shooting-arena');
-    if (!arena || !state || !state.player) return;
-
-    // ドラッグ開始時のプレイヤー位置 + 指の移動量。
-    // pointerdownだけでは差分0なので、タップ先への瞬間移動は起こらない。
-    const dx = e.clientX - pointerStartClientX;
-    const dy = e.clientY - pointerStartClientY;
-
-    pointerX = clamp(pointerStartPlayerX + dx, 30, arena.clientWidth - 30);
-    pointerY = clamp(pointerStartPlayerY + dy, 34, arena.clientHeight - 38);
+    if (!arena) return;
+    const r = arena.getBoundingClientRect();
+    // touch系操作の時だけ、指の実際の接地点よりキャラクターを上にずらす。
+    // pointerTypeが空になるWebViewもあるため、pointerIsTouch / coarse判定も使う。
+    const touchLike = pointerIsTouch || isTouchLikePointer(e);
+    const yOffset = touchLike ? TOUCH_Y_OFFSET : 0;
+    pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
+    pointerY = clamp(e.clientY - r.top - yOffset, 34, r.height - 38);
   }
 
   window.selectShootingCharacter = function (id) {
@@ -4421,12 +4345,18 @@
 
     resolveSelectedStage(options || {});
     BOSS = getCurrentShootingEnemy();
+
+    // パーティ選択中に、その後のバトル画像・ULT・敵画像を先読みしておく。
+    warmShootingAssets();
     const root = UIModule.buildRoot({
       ROOT_ID, PLAYER_ID, BOSS_ID, BOSS, SHOOTING_CHARACTERS, CHARACTER_ID,
       getShootingRosterHtml, onPointerDown, onPointerMove, onPointerUp
     });
     const bossImage = document.getElementById(BOSS_ID);
     if (bossImage) {
+      if (BOSS.image) void preloadShootingImage(BOSS.image, 7000);
+      const introMeta = getBossIntroMeta();
+      if (introMeta && introMeta.image) void preloadShootingImage(introMeta.image, 7000);
       bossImage.src = BOSS.image || '';
       bossImage.alt = BOSS.name || '';
       bossImage.style.setProperty('--enemy-scale', String(Number(BOSS.uiScale || 1)));
@@ -4505,9 +4435,6 @@
   };
 
   window.closeShootingEvent = function () {
-    const returnContext = window.__shootingReturnContext || null;
-    window.__shootingReturnContext = null;
-
     closeFacelessStageSelect();
     clearUltTimers();
     if (state) {
@@ -4543,17 +4470,6 @@
     });
     setCommonUiVisible(false);
     state = null;
-
-    // 「戻る」は巡行トップではなく、実際に一つ前にいた画面へ戻す。
-    // STORYなら元CHAPTERのステージ一覧、特別巡行なら難易度選択へ復帰。
-    if (returnContext && returnContext.type === 'storyChapter') {
-      const chapter = Number(returnContext.chapter || 1);
-      if (typeof window.openStageSelect === 'function') {
-        window.setTimeout(() => window.openStageSelect(chapter), 0);
-      }
-    } else if (returnContext && returnContext.type === 'facelessSelect') {
-      window.setTimeout(() => showFacelessStageSelect(), 0);
-    }
   };
 
   function clearUltTimers() {
@@ -5894,13 +5810,6 @@
     playUltCutin(c, () => executeCharacterUlt(c));
     renderHud();
   };
-
-  // ステージ一覧画面から参照できる公開API。
-  // CHAPTER側の一覧画面でもこの関数群を使えば、同じ記録表示を適用できる。
-  window.getShootingStageRecordSummary = getShootingStageRecordSummary;
-  window.getShootingStageHighScoreLocal = getLocalShootingHighScore;
-  window.readLocalShootingStageRecords = readLocalShootingStageRecords;
-  window.formatShootingStageScore = formatShootingScore;
 
   window.addEventListener('keydown', e => {
     keys[e.key] = true;

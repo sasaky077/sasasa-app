@@ -18097,3 +18097,791 @@ body.login-bonus-open {
     font-size: 10px;
   }
 }
+
+
+/* =========================================================
+   ELEGANT CRYSTAL SHOP MODAL
+   ========================================================= */
+#shop-modal{
+  background: rgba(22,18,13,.42) !important;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+#shop-modal .shop-modal-inner{
+  width: min(100%, 338px);
+  max-width: 338px;
+  padding: 0 !important;
+  color: #7b6643 !important;
+  background:
+    linear-gradient(180deg, rgba(255,252,247,.98) 0%, rgba(247,242,232,.98) 100%) !important;
+  border: 1px solid rgba(199,176,129,.52) !important;
+  border-radius: 24px !important;
+  box-shadow:
+    0 18px 40px rgba(75,57,29,.18),
+    0 2px 10px rgba(255,255,255,.6),
+    inset 0 1px 0 rgba(255,255,255,.72) !important;
+  overflow: hidden;
+}
+
+#shop-modal .shop-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(205,186,144,.36);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.70) 0%, rgba(247,239,225,.64) 100%);
+  text-align:left;
+}
+
+#shop-modal .shop-header-main{
+  min-width:0;
+  flex:1 1 auto;
+}
+
+#shop-modal .shop-kicker{
+  margin-bottom: 5px;
+  font-family: "Cinzel","Noto Serif JP",serif;
+  font-size: 10px;
+  letter-spacing: .20em;
+  color: rgba(168,136,71,.82);
+}
+
+#shop-modal .shop-title{
+  margin: 0 0 6px;
+  font-family:"Noto Serif JP",serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1.1;
+  color: #c8a246 !important;
+}
+
+#shop-modal .shop-subtitle{
+  justify-content:flex-start;
+  gap: 5px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(130,114,82,.82) !important;
+}
+
+#shop-modal .shop-gem-icon{
+  width: 15px;
+  height: 15px;
+}
+
+#shop-modal .shop-close-btn{
+  position: static !important;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  border: 1px solid rgba(168,148,110,.28);
+  border-radius: 999px;
+  background: rgba(115,104,88,.92);
+  color: rgba(255,255,255,.92);
+  font-size: 16px;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(92,73,47,.18);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+#shop-modal .shop-close-btn:active{
+  transform: translateY(1px) scale(.97);
+}
+
+#shop-modal .shop-list{
+  padding: 12px 12px 8px;
+  max-height: 56vh;
+  gap: 10px;
+  background: transparent;
+}
+
+#shop-modal .shop-item{
+  min-height: 70px;
+  padding: 14px 15px;
+  margin: 0;
+  border: 1px solid rgba(205,186,144,.28);
+  border-radius: 18px;
+  border-bottom-width: 1px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.72) 0%, rgba(248,243,235,.92) 100%);
+  color: #8f6e28;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8),
+    0 3px 10px rgba(179,156,110,.08);
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+#shop-modal .shop-item:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 6px 14px rgba(179,156,110,.14);
+}
+
+#shop-modal .shop-item:active{
+  transform: translateY(1px) scale(.995);
+  background: linear-gradient(180deg, rgba(250,244,232,.96) 0%, rgba(243,234,216,.98) 100%);
+}
+
+#shop-modal .shop-item-popular{
+  background:
+    linear-gradient(180deg, rgba(255,250,241,.96) 0%, rgba(248,239,220,.98) 100%);
+}
+
+#shop-modal .shop-item-best{
+  background:
+    linear-gradient(180deg, rgba(255,251,236,.98) 0%, rgba(248,236,204,.98) 100%);
+  border-color: rgba(201,171,89,.42);
+}
+
+
+
+
+#shop-modal .shop-item-left{
+  gap: 10px;
+  padding-top: 0;
+}
+
+#shop-modal .shop-item-gem-icon{
+  width: 20px;
+  height: 20px;
+  opacity: 1;
+  filter: drop-shadow(0 1px 2px rgba(255,255,255,.55));
+}
+
+#shop-modal .shop-item-count{
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: #c79c34 !important;
+}
+
+#shop-modal .shop-item-right{
+  gap: 3px;
+}
+
+#shop-modal .shop-item-price{
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: #c79c34 !important;
+}
+
+#shop-modal .shop-item-unit{
+  font-size: 10px;
+  color: rgba(136,118,88,.76) !important;
+  letter-spacing: .02em;
+}
+
+#shop-modal .shop-note{
+  padding: 11px 18px 14px;
+  border-top: 1px solid rgba(205,186,144,.28);
+  background: rgba(255,255,255,.38);
+  font-size: 10px;
+  line-height: 1.5;
+  color: rgba(142,125,96,.78) !important;
+  letter-spacing: .02em;
+}
+
+@media (max-width: 390px){
+  #shop-modal .shop-modal-inner{ width:min(100%, 332px); }
+  #shop-modal .shop-title{ font-size: 22px; }
+  #shop-modal .shop-item{ padding: 13px 14px; min-height: 66px; }
+  #shop-modal .shop-item-count,
+  #shop-modal .shop-item-price{ font-size: 16px; }
+}
+
+
+/* =========================================================
+   TEST PLAY — NAVIGATION CHARACTER
+   opening_navi.webp を右下のガイド役として配置
+   ========================================================= */
+.testplay-notice,
+.testplay-guide{
+  overflow:hidden;
+}
+
+.testplay-notice-panel,
+.testplay-guide-panel{
+  position:relative;
+  z-index:3;
+}
+
+/* キャラはUI操作を一切奪わない */
+.testplay-navi-character{
+  position:absolute;
+  z-index:4;
+  right:max(-8px, calc((100vw - 430px) / 2 - 8px));
+  bottom:max(-10px, calc(env(safe-area-inset-bottom) - 6px));
+  width:clamp(132px, 36vw, 164px);
+  height:auto;
+  object-fit:contain;
+  object-position:right bottom;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+  filter:
+    drop-shadow(0 9px 18px rgba(63,49,31,.17))
+    drop-shadow(0 1px 0 rgba(255,255,255,.6));
+}
+
+/* 1枚目は少し控えめ。下半身を画面外へ逃がして「案内役が覗く」感じ */
+.testplay-navi-character-notice{
+  width:clamp(128px, 34vw, 154px);
+  right:max(-10px, calc((100vw - 430px) / 2 - 10px));
+  bottom:-8px;
+}
+
+/* 2枚目は案内役として少し存在感を上げる */
+.testplay-navi-character-guide{
+  width:clamp(142px, 38vw, 174px);
+  right:max(-12px, calc((100vw - 430px) / 2 - 12px));
+  bottom:-9px;
+}
+
+/* 右下のキャラとボタンが完全に重ならないよう、パネルをほんの少し上へ */
+.testplay-notice-panel{
+  transform:translateY(-18px);
+}
+
+.testplay-guide-panel{
+  transform:translateY(-14px);
+}
+
+/* キャラが重なる右下だけ、ボタン文字の視認性を守る */
+.testplay-notice-actions,
+.testplay-guide-close,
+.testplay-guide-skip{
+  position:relative;
+  z-index:5;
+}
+
+@media (max-width: 360px){
+  .testplay-navi-character-notice{
+    width:124px;
+    right:-18px;
+  }
+  .testplay-navi-character-guide{
+    width:136px;
+    right:-20px;
+  }
+  .testplay-notice-panel{
+    transform:translateY(-20px);
+  }
+  .testplay-guide-panel{
+    transform:translateY(-18px);
+  }
+}
+
+@media (max-height: 680px){
+  .testplay-navi-character{
+    width:126px;
+    right:-14px;
+    bottom:-12px;
+  }
+  .testplay-guide-panel,
+  .testplay-notice-panel{
+    transform:translateY(-8px);
+  }
+}
+
+
+/* =========================================================
+   TEST PLAY NAVI v2 — larger + per-screen character
+   1画面目: opening_navi_1.webp
+   2画面目: opening_navi_2.webp
+   ========================================================= */
+.testplay-navi-character-notice{
+  width:clamp(228px, 62vw, 288px) !important;
+  right:max(6px, calc((100vw - 430px) / 2 + 6px)) !important;
+  bottom:-26px !important;
+}
+
+.testplay-navi-character-guide{
+  width:clamp(240px, 66vw, 304px) !important;
+  right:max(2px, calc((100vw - 430px) / 2 + 2px)) !important;
+  bottom:-28px !important;
+}
+
+/* キャラを大きくした分、本文と主要ボタンを少し上へ逃がす */
+.testplay-notice-panel{
+  transform:translateY(-54px) !important;
+}
+
+.testplay-guide-panel{
+  transform:translateY(-46px) !important;
+}
+
+@media (max-width:360px){
+  .testplay-navi-character-notice{
+    width:206px !important;
+    right:4px !important;
+  }
+  .testplay-navi-character-guide{
+    width:220px !important;
+    right:0px !important;
+  }
+  .testplay-notice-panel{
+    transform:translateY(-24px) !important;
+  }
+  .testplay-guide-panel{
+    transform:translateY(-42px) !important;
+  }
+}
+
+@media (max-height:680px){
+  .testplay-navi-character-notice{
+    width:188px !important;
+    right:2px !important;
+    bottom:-24px !important;
+  }
+  .testplay-navi-character-guide{
+    width:200px !important;
+    right:-2px !important;
+    bottom:-18px !important;
+  }
+}
+
+
+/* =========================================================
+   TEST PLAY READABILITY v2
+   1画面目は短い案内、2画面目は説明文として組版を分離
+   ========================================================= */
+.testplay-notice-text,
+.testplay-guide-lead,
+.testplay-guide-text{
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: strict;
+}
+
+/* 1画面目：短文なので中央で2ブロック。
+   ブラウザに長文を好き勝手に折らせない。 */
+.testplay-notice-text{
+  max-width: 310px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.75 !important;
+  letter-spacing: .025em !important;
+}
+
+.testplay-notice-line{
+  display: block;
+}
+
+.testplay-notice-line + .testplay-notice-line{
+  margin-top: .22em;
+}
+
+/* 2画面目：説明文は左揃え。段落の意味が視線で追えるようにする。 */
+.testplay-guide-text{
+  text-align: left;
+  line-height: 1.78 !important;
+  letter-spacing: .01em !important;
+}
+
+.testplay-guide-text p{
+  margin: 0;
+  padding: 0;
+}
+
+.testplay-guide-text p + p{
+  margin-top: .76em;
+}
+
+.testplay-nowrap{
+  white-space: nowrap;
+}
+
+/* 横幅が狭い端末だけ、無理にnowrapを維持せず自然な改行を許可。 */
+@media (max-width: 350px){
+  .testplay-nowrap{
+    white-space: normal;
+  }
+
+  .testplay-notice-text{
+    font-size: 13px !important;
+    max-width: 280px;
+  }
+
+  .testplay-guide-text{
+    font-size: 12.5px !important;
+    line-height: 1.72 !important;
+  }
+}
+
+
+/* =========================================================
+   TEST PLAY NAVI SIZE TUNE
+   1画面目 / 2画面目で同じサイズに統一
+   さらに一回り大きく
+   ========================================================= */
+.testplay-navi-character-notice,
+.testplay-navi-character-guide{
+  width: clamp(260px, 70vw, 328px) !important;
+  bottom: -28px !important;
+}
+
+.testplay-navi-character-notice{
+  right: max(0px, calc((100vw - 430px) / 2 + 0px)) !important;
+}
+
+.testplay-navi-character-guide{
+  right: max(0px, calc((100vw - 430px) / 2 + 0px)) !important;
+}
+
+@media (max-width: 360px){
+  .testplay-navi-character-notice,
+  .testplay-navi-character-guide{
+    width: 236px !important;
+    right: -4px !important;
+    bottom: -26px !important;
+  }
+}
+
+@media (max-height: 680px){
+  .testplay-navi-character-notice,
+  .testplay-navi-character-guide{
+    width: 214px !important;
+    right: -2px !important;
+    bottom: -22px !important;
+  }
+}
+
+
+/* =========================================================
+   TEST PLAY — ADD TO HOME SCREEN GUIDE
+   ========================================================= */
+.testplay-install-guide-entry{
+  appearance:none;
+  -webkit-appearance:none;
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:2px;
+  padding:10px 11px;
+  border:1px solid rgba(178,145,83,.26);
+  border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,252,246,.92),rgba(246,238,223,.78));
+  color:#6f5735;
+  text-align:left;
+  font-family:"Noto Serif JP",serif;
+  cursor:pointer;
+}
+
+.testplay-install-guide-entry-copy{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.testplay-install-guide-entry-copy b{
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+
+.testplay-install-guide-entry-copy small{
+  font-size:10.5px;
+  line-height:1.5;
+  color:rgba(95,82,63,.66);
+}
+
+.testplay-install-guide-entry-arrow{
+  flex:0 0 auto;
+  font-size:20px;
+  color:rgba(154,120,62,.66);
+}
+
+.install-guide-modal{
+  position:fixed;
+  inset:0;
+  z-index:12050;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+
+.install-guide-modal.active{
+  display:flex;
+}
+
+.install-guide-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(24,20,15,.72);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+
+.install-guide-sheet{
+  position:relative;
+  z-index:1;
+  width:min(100%,370px);
+  max-height:calc(100dvh - 28px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid rgba(197,174,128,.48);
+  border-radius:20px;
+  background:linear-gradient(180deg,#fffdf8 0%,#f7f0e5 100%);
+  box-shadow:0 20px 50px rgba(30,23,14,.28);
+  color:#6e5839;
+}
+
+.install-guide-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:15px 16px 10px;
+}
+
+.install-guide-kicker{
+  margin-bottom:3px;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.20em;
+  color:rgba(175,139,70,.78);
+}
+
+.install-guide-title{
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:.04em;
+}
+
+.install-guide-close{
+  width:28px;
+  height:28px;
+  border:1px solid rgba(165,141,101,.26);
+  border-radius:50%;
+  background:rgba(110,95,74,.92);
+  color:#fff;
+  font-size:16px;
+  line-height:1;
+}
+
+.install-guide-progress{
+  padding:0 16px 8px;
+  font-family:"Cinzel",serif;
+  font-size:10px;
+  letter-spacing:.12em;
+  color:rgba(124,102,69,.58);
+}
+
+.install-guide-progress-sep{
+  margin:0 3px;
+}
+
+.install-guide-visual-wrap{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 12px;
+  overflow:hidden;
+}
+
+.install-guide-image{
+  display:block;
+  width:auto;
+  max-width:100%;
+  max-height:43dvh;
+  object-fit:contain;
+  border:1px solid rgba(183,160,118,.22);
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(86,65,34,.10);
+}
+
+.install-guide-copy{
+  padding:11px 16px 8px;
+}
+
+.install-guide-step-title{
+  margin-bottom:5px;
+  font-size:14px;
+  font-weight:700;
+  color:#755a34;
+}
+
+.install-guide-step-text{
+  font-size:11.5px;
+  line-height:1.68;
+  color:rgba(87,74,56,.76);
+  word-break:normal;
+  line-break:strict;
+}
+
+.install-guide-dots{
+  display:flex;
+  justify-content:center;
+  gap:5px;
+  padding:2px 0 10px;
+}
+
+.install-guide-dots span{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:rgba(151,126,82,.20);
+}
+
+.install-guide-dots span.active{
+  background:#b58c3c;
+}
+
+.install-guide-actions{
+  display:grid;
+  grid-template-columns:1fr 1.7fr;
+  gap:8px;
+  padding:0 12px calc(12px + env(safe-area-inset-bottom));
+}
+
+.install-guide-action{
+  height:42px;
+  border-radius:10px;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  letter-spacing:.04em;
+}
+
+.install-guide-action-sub{
+  border:1px solid rgba(177,149,95,.30);
+  background:rgba(255,255,255,.50);
+  color:#8b7554;
+}
+
+.install-guide-action-sub:disabled{
+  opacity:.35;
+}
+
+.install-guide-action-main{
+  border:1px solid rgba(185,148,73,.42);
+  background:linear-gradient(180deg,#fffaf0 0%,#f3e6ca 100%);
+  color:#96702c;
+}
+
+@media(max-width:350px){
+  .install-guide-modal{ padding:10px; }
+  .install-guide-sheet{ max-height:calc(100dvh - 18px); }
+  .install-guide-image{ max-height:40dvh; }
+  .install-guide-step-text{ font-size:11px; }
+}
+
+
+/* =========================================================
+   iPhone 14 / small-height fix — 10連結果を100dvh内に完全収納
+   ========================================================= */
+#ten-result-modal{
+  padding:0 !important;
+  align-items:stretch !important;
+  justify-content:stretch !important;
+  overflow:hidden !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+}
+
+#ten-result-modal .modal,
+#ten-result-modal .ten-result-modal-inner{
+  width:100% !important;
+  max-width:none !important;
+  height:100dvh !important;
+  min-height:0 !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+/* 5×2のカード領域は残り高さいっぱいを使い、必ず縮められるようにする */
+#ten-result-modal .ten-result-grid{
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  overflow:hidden !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(2,minmax(0,1fr)) !important;
+  padding:
+    calc(env(safe-area-inset-top) + 6px)
+    6px
+    6px !important;
+  gap:5px !important;
+}
+
+#ten-result-modal .ten-result-card{
+  min-width:0 !important;
+  min-height:0 !important;
+  width:100% !important;
+  height:100% !important;
+}
+
+/* 下部操作はカード領域を押し出さず、必要最小限の高さにする */
+#ten-result-modal .ten-result-footer{
+  flex:0 0 auto !important;
+  padding:
+    8px
+    10px
+    calc(8px + env(safe-area-inset-bottom)) !important;
+  gap:7px !important;
+}
+
+#ten-result-modal .ten-result-again-btn,
+#ten-result-modal .ten-result-close-btn{
+  min-height:38px !important;
+  padding:9px 10px !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  border-radius:9px !important;
+}
+
+/* iPhone14相当（667px前後）ではさらに縦を節約 */
+@media (max-height:700px){
+  #ten-result-modal .ten-result-grid{
+    padding:
+      calc(env(safe-area-inset-top) + 4px)
+      5px
+      4px !important;
+    gap:4px !important;
+  }
+
+  #ten-result-modal .ten-result-footer{
+    padding:
+      6px
+      8px
+      calc(6px + env(safe-area-inset-bottom)) !important;
+    gap:5px !important;
+  }
+
+  #ten-result-modal .ten-result-again-btn,
+  #ten-result-modal .ten-result-close-btn{
+    min-height:34px !important;
+    padding:7px 8px !important;
+    font-size:11px !important;
+  }
+
+  #ten-result-modal .ten-card-name{
+    font-size:7px !important;
+  }
+
+  #ten-result-modal .ten-card-element-icon{
+    width:19px !important;
+    height:19px !important;
+  }
+}
