@@ -7993,39 +7993,26 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
     }
   }
   async function resetData(){
+    var resetUserId = userId || (typeof _zsCurrentUserId === 'function'
+      ? _zsCurrentUserId()
+      : localStorage.getItem('zukan_user_id'));
+
     if(!confirm(
-      'データを全てリセットしますか？\n' +
-      'キャラ・ステージ進捗・所持品・神樹・レムナント等のプレイデータが初期化されます。'
+      'この端末のプレイデータをリセットしますか？\n\n' +
+      'Supabase上のデータは削除されません。\n' +
+      '現在のIDをあとで入力すれば、この状態に戻すことができます。\n\n' +
+      '復元用ID：' + (resetUserId || '取得できません') + '\n\n' +
+      '※復元する場合は、このIDを必ず控えてください。'
     )){
       return;
     }
 
-    var resetUserId = userId || (typeof _zsCurrentUserId === 'function' ? _zsCurrentUserId() : localStorage.getItem('zukan_user_id'));
-
     try {
-      // 子データ → プロフィールの順で削除。
-      // ステージ進捗は player_progress にも保存されるため、ここを必ず削除する。
-      var resetTables = [
-        'player_progress',
-        'player_inventory',
-        'player_remnants',
-        'player_shinju',
-        'collected_characters',
-        'user_profiles'
-      ];
+      // B仕様：
+      // Supabase側の user_profiles / collected_characters / 進捗 / 所持品などは
+      // 一切削除しない。現在のIDもクラウド上ではそのまま存続させる。
+      // 端末側だけ切り離して初期状態にし、あとから「IDを入力して引き継ぐ」で復元可能にする。
 
-      if(resetUserId){
-        for(var i = 0; i < resetTables.length; i++){
-          var tableName = resetTables[i];
-          var result = await sb.from(tableName).delete().eq('user_id', resetUserId);
-          if(result && result.error){
-            throw new Error(tableName + ': ' + result.error.message);
-          }
-        }
-      }
-
-      // localStorage に残るゲーム進捗も完全に消す。
-      // 音量など端末設定は残し、プレイデータだけを初期化する。
       var exactResetKeys = [
         'zukan_user_id',
         'zukan_previous_user_id',
@@ -8034,8 +8021,6 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
         'zeraphia_remnants_owned_v1',
         'zeraphia_evolution_materials_v1',
         'hide_testplay_guide',
-        // 「全リセット」ではお知らせ既読状態も初期化する。
-        // これが残ると新規状態でもホームのお知らせ赤ドットが復活しない。
         'sasaphia_notice_read_ids_v1',
         'sasaphia_notice_read_ids_v2'
       ];
@@ -8068,7 +8053,6 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
         if(!key) continue;
         var lower = key.toLowerCase();
 
-        // ユーザー/クラウド移行情報も、新規状態を作り直すため削除。
         var isGamePrefix =
           lower.indexOf('zeraphia_') === 0 ||
           lower.indexOf('zukan_') === 0;
@@ -8077,10 +8061,7 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
           return lower.indexOf(word) !== -1;
         });
 
-        // 音量・BGM/SE設定は保持する。
-        // ※テストプレイ案内(hide_testplay_guide)はここでは保持しない。
-        //   データリセットは「初回状態に戻す」操作なので、案内の
-        //   「次から表示しない」フラグもリセット対象に含める。
+        // 音量・BGM/SE設定は端末設定として保持。
         var isPreference =
           lower.indexOf('audio') !== -1 ||
           lower.indexOf('volume') !== -1 ||
@@ -8098,11 +8079,16 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
 
       pityCount = 0;
 
-      alert('プレイデータをリセットしました！');
+      alert(
+        'この端末のデータをリセットしました。\n' +
+        'クラウドデータは保存されています。\n\n' +
+        '復元する場合は設定の「IDを入力して引き継ぐ」から\n' +
+        (resetUserId || '以前のID') + ' を入力してください。'
+      );
       location.reload();
     } catch(error) {
       console.error('[ResetData] failed:', error);
-      alert('データリセットに失敗しました。\n' + (error && error.message ? error.message : '通信状況を確認してください。'));
+      alert('端末データのリセットに失敗しました。\n' + (error && error.message ? error.message : 'もう一度お試しください。'));
     }
   }
 
