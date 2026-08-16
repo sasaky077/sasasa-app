@@ -392,6 +392,11 @@
   let pointerIsTouch = false;
   let pointerX = 0;
   let pointerY = 0;
+  let activePointerId = null;
+  let pointerDragStartClientX = 0;
+  let pointerDragStartClientY = 0;
+  let pointerDragStartPlayerX = 0;
+  let pointerDragStartPlayerY = 0;
   let lastTapAt = 0;
   let lastTapX = 0;
   let lastTapY = 0;
@@ -701,12 +706,8 @@
     state.lastShotAt = -9999;
     applySelectedCharacterToUi();
 
-    // キャラ差し替え後も移動入力を途切れさせない。
-    // 同じ指でアリーナをドラッグ中なら、その最新位置を即維持する。
-    if (pointerActive && pointerIsTouch && state && state.player) {
-      state.player.x = pointerX;
-      state.player.y = pointerY;
-    }
+    // キャラ差し替え時もpointer目標へ直接スナップさせない。
+    // updateMovement側の速度制限で自然に追従を継続する。
 
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -2669,11 +2670,18 @@
 
     if (pointerActive) {
       if (pointerIsTouch) {
-        // スマホは「指でキャラを掴んでいる」操作感を優先。
-        // lerp追従だとULT/キャラチェンジ後に100〜200msほど遅れて見え、
-        // 指からキャラが離れたような感触になるため、touch時は1:1追従。
-        state.player.x = pointerX;
-        state.player.y = pointerY;
+        // タッチ操作も1フレーム直代入は禁止。
+        // 目標位置までmoveSpeedの範囲で移動させ、ULT復帰・キャラ切替時も
+        // 大きく位置が飛ばないようにする。
+        const dx = pointerX - state.player.x;
+        const dy = pointerY - state.player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0.001) {
+          const maxStep = Math.max(1, Number(c.moveSpeed || 300)) * dt;
+          const step = Math.min(dist, maxStep);
+          state.player.x += dx / dist * step;
+          state.player.y += dy / dist * step;
+        }
       } else {
         // PCマウスは従来の少し滑らかな追従を維持。
         state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
@@ -3220,12 +3228,8 @@
         root.classList.remove('ult-cutin-active');
         prevTs = performance.now();
 
-        // カットイン中に指が動いていた場合、再開1フレーム目で最新位置へ復帰。
-        // touch操作のみ。PCマウスの滑らかさは維持する。
-        if (pointerActive && pointerIsTouch && state && state.player) {
-          state.player.x = pointerX;
-          state.player.y = pointerY;
-        }
+        // カットイン復帰時も最新pointer位置へ直接代入しない。
+        // 再開後のupdateMovementで速度制限付き追従を続ける。
 
         if (typeof onComplete === 'function') onComplete();
       }, 120);
@@ -4035,6 +4039,20 @@
     setBattleHudVisible(false);
   }
 
+  function beginRelativePointerDrag(e) {
+    if (!state || !state.player) return;
+    activePointerId = e.pointerId;
+    pointerDragStartClientX = e.clientX;
+    pointerDragStartClientY = e.clientY;
+    pointerDragStartPlayerX = Number(state.player.x || 0);
+    pointerDragStartPlayerY = Number(state.player.y || 0);
+
+    // 指を置いた瞬間はキャラを一切動かさない。
+    // 以降は「タッチ開始地点から指が動いた差分」だけをキャラ位置へ加える。
+    pointerX = pointerDragStartPlayerX;
+    pointerY = pointerDragStartPlayerY;
+  }
+
   function onPointerDown(e) {
     if (!state || state.ended || state.countdown || state.finishing || state.paused) return;
 
@@ -4053,6 +4071,7 @@
         // ここでreturnするため、通常のpointerActive=true処理より先に明示的に再設定する。
         pointerActive = true;
         pointerIsTouch = isTouchLikePointer(e);
+        beginRelativePointerDrag(e);
 
         swipeStartX = e.clientX;
         swipeStartY = e.clientY;
@@ -4060,8 +4079,8 @@
 
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
 
-        // カットイン中もonPointerMoveで最新位置を更新できるよう、
-        // 発動時点の指位置を先に同期してからULTへ入る。
+        // ULT開始時もタッチ地点へのスナップは禁止。
+        // ここでは現在位置を基準として固定し、move以降の差分だけ追従させる。
         updatePointer(e);
 
         window.useShootingBurst();
@@ -4076,6 +4095,7 @@
 
     pointerActive = true;
     pointerIsTouch = isTouchLikePointer(e);
+    beginRelativePointerDrag(e);
 
     swipeStartX = e.clientX;
     swipeStartY = e.clientY;
@@ -4086,6 +4106,7 @@
   }
   function onPointerMove(e) {
     if (!pointerActive || !state || state.ended || state.countdown || state.finishing || state.paused) return;
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
     // ultCutinActive中でもここは止めない。
     // ゲーム本体は停止していても指位置だけは更新し続け、
@@ -4094,9 +4115,11 @@
     e.preventDefault();
   }
   function onPointerUp(e) {
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
     const wasActive = pointerActive;
     pointerActive = false;
     pointerIsTouch = false;
+    activePointerId = null;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
 
     if (wasActive && state && !state.ended && !state.countdown && !state.finishing && !state.koTransition) {
@@ -4122,12 +4145,22 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const r = arena.getBoundingClientRect();
-    // touch系操作の時だけ、指の実際の接地点よりキャラクターを上にずらす。
-    // pointerTypeが空になるWebViewもあるため、pointerIsTouch / coarse判定も使う。
     const touchLike = pointerIsTouch || isTouchLikePointer(e);
-    const yOffset = touchLike ? TOUCH_Y_OFFSET : 0;
+
+    if (touchLike) {
+      // スマホは絶対座標へ吸着させない。
+      // タッチ開始時のキャラ位置 + 指の移動量で目標位置を作るため、
+      // 画面のどこに指を置いてもキャラが瞬間移動しない。
+      const dx = e.clientX - pointerDragStartClientX;
+      const dy = e.clientY - pointerDragStartClientY;
+      pointerX = clamp(pointerDragStartPlayerX + dx, 30, r.width - 30);
+      pointerY = clamp(pointerDragStartPlayerY + dy, 34, r.height - 38);
+      return;
+    }
+
+    // PCマウスは従来どおりカーソル座標へ追従。
     pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
-    pointerY = clamp(e.clientY - r.top - yOffset, 34, r.height - 38);
+    pointerY = clamp(e.clientY - r.top, 34, r.height - 38);
   }
 
   window.selectShootingCharacter = function (id) {
@@ -4259,6 +4292,7 @@
     keys = Object.create(null);
     pointerActive = false;
     pointerIsTouch = false;
+    activePointerId = null;
   }
 
   window.openShootingPauseMenu = function () {
@@ -4271,6 +4305,7 @@
     state.pauseStartedAt = performance.now();
     pointerActive = false;
     pointerIsTouch = false;
+    activePointerId = null;
     keys = Object.create(null);
 
     menu.classList.add('show');
@@ -4468,6 +4503,7 @@
     clearNormalBattleObjects();
     pointerActive = false;
     pointerIsTouch = false;
+    activePointerId = null;
     keys = Object.create(null);
     lastTapAt = 0;
     const root = document.getElementById(ROOT_ID);
