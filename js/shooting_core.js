@@ -1,4 +1,4 @@
-// 20260816-ayane-normal-ult-visual-fix-v34
+// 20260816-resume-decline-discard-v35
 // Zeraphia SPECIAL EVENT - 銃撃戦 prototype
 // DOM-based shooting battle core. Character definitions and UI shell are split into separate modules.
 (function () {
@@ -649,7 +649,12 @@
     if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
 
     const label = snapshot.raidContext ? '中断したDAILY RAIDがあります。\n途中から再開しますか？' : '中断したバトルがあります。\n途中から再開しますか？';
-    if (!window.confirm(label)) return false;
+    if (!window.confirm(label)) {
+      // 「いいえ」を選んだ中断データは明示的に破棄する。
+      // 残したままだと次回起動時にも同じ再開確認が繰り返し表示される。
+      clearShootingResumeState();
+      return false;
+    }
 
     window.__shootingReturnContext = snapshot.returnContext || (snapshot.raidContext ? { type: 'raidLobby' } : null);
     window.openShootingEvent({
