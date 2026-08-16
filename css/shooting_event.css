@@ -6001,3 +6001,99 @@
 
 
 /* CLAUDE PERF BASE + RAID CAP v27: core-side bullet caps are in shooting_core.js */
+
+
+/* ============================================================
+   TEST-CHAN / id:50
+   3WAY green laser + ULT BLACK SHIP
+   ============================================================ */
+.shooting-bullet-testchan{
+  width:8px!important;
+  height:38px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#effff3 0%,#83f5a0 22%,#22ba58 72%,#0b6d32 100%)!important;
+  box-shadow:0 0 5px rgba(60,238,111,.72),0 0 12px rgba(33,183,82,.34)!important;
+}
+.shooting-bullet-testchan::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:1px;
+  width:2px;
+  height:34px;
+  transform:translateX(-50%);
+  border-radius:999px;
+  background:rgba(244,255,247,.92);
+}
+.shooting-testchan-blackship-beam{
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:11;
+  width:62px;
+  height:200px;
+  pointer-events:none;
+  transform-origin:center bottom;
+  opacity:.96;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(27,166,72,.16) 8%,
+      rgba(70,242,116,.72) 24%,
+      rgba(239,255,242,.98) 44%,
+      #fff 50%,
+      rgba(239,255,242,.98) 56%,
+      rgba(70,242,116,.72) 76%,
+      rgba(27,166,72,.16) 92%,
+      transparent 100%);
+  box-shadow:0 0 18px rgba(40,222,94,.66),0 0 38px rgba(24,166,69,.38);
+  will-change:transform,height;
+  animation:testchanBlackShipPulse .15s ease-in-out infinite alternate;
+}
+.shooting-testchan-blackship-beam i{
+  position:absolute;
+  inset:0 42%;
+  background:#f7fff8;
+  box-shadow:0 0 12px rgba(255,255,255,.95);
+}
+.shooting-testchan-blackship-beam.ending{opacity:0;transition:opacity .18s ease}
+@keyframes testchanBlackShipPulse{
+  from{filter:brightness(.95)}
+  to{filter:brightness(1.15)}
+}
+
+
+/* =========================================================
+   DAILY RAID - green linear laser
+   ========================================================= */
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-raid-green-laser{
+  width:54px!important;
+  height:5px!important;
+  border-radius:999px!important;
+  background:linear-gradient(90deg,rgba(184,255,208,0),rgba(106,255,158,.72) 18%,#eaffef 50%,rgba(72,238,132,.90) 78%,rgba(74,236,132,0))!important;
+  box-shadow:0 0 4px rgba(223,255,232,.95),0 0 10px rgba(70,244,135,.82),0 0 20px rgba(34,199,104,.52)!important;
+  opacity:.96!important;
+  transform-origin:50% 50%;
+}
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-raid-green-laser::before{
+  content:''!important;
+  position:absolute!important;
+  inset:-3px -8px!important;
+  border-radius:999px!important;
+  background:linear-gradient(90deg,transparent,rgba(76,255,143,.24),transparent)!important;
+  filter:blur(3px)!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-raid-green-laser::after{
+  content:''!important;
+  position:absolute!important;
+  left:12%!important;
+  right:12%!important;
+  top:50%!important;
+  width:auto!important;
+  height:1px!important;
+  margin:0!important;
+  transform:translateY(-50%)!important;
+  border-radius:999px!important;
+  background:rgba(245,255,248,.96)!important;
+  box-shadow:0 0 5px rgba(240,255,245,.95)!important;
+}

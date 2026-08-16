@@ -191,7 +191,7 @@
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
     document.write('<link rel="stylesheet" href="css/shooting_event.css?v=' + Date.now() + '">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260817-raid-3attempt-best-v43">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260817-testchan-raid-reward-v45">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260817-admin-pointerdown-tap-v6">
 
 <style id="testplay-guide-readable-steps">
@@ -1215,7 +1215,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/home_banners.js?v=20260816-ch02-04-irishu-force-refresh-v37"></script>
-<script id="sasaphia-notices-inline-v5">
+<script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
 // =========================================================
@@ -1225,6 +1225,14 @@
 // =========================================================
 
 window.NOTICE_ITEMS = [
+  {
+    id: 'notice_daily_raid_3attempts_20260817',
+    date: '2026.08.17',
+    title: 'レイドが1日3回挑戦できるようになりました！',
+    body: 'デイリーレイドの挑戦回数を、1日1回から1日3回に変更しました。3回のうち最も高いスコアが記録として採用されます。見た目を犠牲に軽量化したので、たぶん動きます。',
+    hidden: false
+  },
+
   {
     id: 'notice_first_play_thanks_001',
     date: '2XXX.08.16',
@@ -1379,6 +1387,17 @@ window.NOTICE_ITEMS = [
         min-width:0!important;
         height:34px!important;
         overflow:hidden!important;
+      }
+
+      .notice-reward-character-icon{
+        display:block!important;
+        flex:0 0 42px!important;
+        width:42px!important;height:42px!important;
+        border-radius:8px!important;
+        object-fit:cover!important;
+        object-position:center top!important;
+        border:1px solid rgba(77,163,96,.30)!important;
+        background:#172419!important;
       }
       .notice-reward-icon-fixed{
         display:block!important;
@@ -1547,8 +1566,64 @@ window.NOTICE_ITEMS = [
     return window.userProfile || null;
   }
 
+  const RAID_TEST_REWARD_NOTICE_ID = 'notice_daily_raid_clear_testchan_reward';
+
+  function getCurrentUserIdForNotice() {
+    return String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
+  }
+
+  function upsertRaidTestRewardNotice(status) {
+    const items = window.NOTICE_ITEMS || (window.NOTICE_ITEMS = []);
+    const pos = items.findIndex(item => item && item.id === RAID_TEST_REWARD_NOTICE_ID);
+
+    if (!status || status.eligible !== true) {
+      if (pos >= 0) items.splice(pos, 1);
+      return;
+    }
+
+    const rewardNotice = {
+      id: RAID_TEST_REWARD_NOTICE_ID,
+      date: status.raid_date ? String(status.raid_date).replace(/-/g,'.') : '2026.08.17',
+      title: 'DAILY RAID CLEAR 報酬',
+      body: 'ザ・テスト討伐への参加報酬として「テストちゃん」1体をプレゼントします。',
+      reward: {
+        type: 'character',
+        characterId: 50,
+        characterName: 'テストちゃん',
+        image: 'images/chara_50_panel.webp',
+        claimed: status.claimed === true
+      },
+      hidden: false
+    };
+
+    if (pos >= 0) items[pos] = rewardNotice;
+    else items.unshift(rewardNotice);
+  }
+
+  async function refreshRaidClearRewardNotice() {
+    const client = window.zsSupabase || null;
+    const userId = getCurrentUserIdForNotice();
+    if (!client || typeof client.rpc !== 'function' || !userId) return null;
+
+    try {
+      const res = await client.rpc('get_daily_raid_test_reward_status', { p_user_id:userId });
+      if (res && res.error) throw res.error;
+      const status = res ? res.data : null;
+      upsertRaidTestRewardNotice(status);
+      updateNoticeBadge();
+      return status;
+    } catch (error) {
+      console.warn('[RaidRewardNotice] status check skipped:', error && (error.message || error));
+      return null;
+    }
+  }
+
+  window.refreshRaidClearRewardNotice = refreshRaidClearRewardNotice;
+
   function isRewardClaimed(item) {
-    if (!item || !item.reward || !item.reward.claimId) return false;
+    if (!item || !item.reward) return false;
+    if (item.reward.type === 'character') return item.reward.claimed === true;
+    if (!item.reward.claimId) return false;
     const profile = getProfile();
     const used = profile && Array.isArray(profile.used_gachas) ? profile.used_gachas : [];
     return used.includes(item.reward.claimId);
@@ -1560,6 +1635,26 @@ window.NOTICE_ITEMS = [
     const reward = item.reward;
     const amount = Math.max(0, Number(reward.amount || 0));
     const claimed = isRewardClaimed(item);
+
+    if (reward.type === 'character') {
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <img class="notice-reward-character-icon" src="${escapeHtml(reward.image || 'images/chara_50_panel.webp')}" alt="">
+            <div class="notice-reward-copy">
+              <span class="notice-reward-label">レイドクリア報酬</span>
+              <strong>${escapeHtml(reward.characterName || 'テストちゃん')} ×1</strong>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id || '')}"
+            ${claimed ? 'disabled' : ''}
+          >${claimed ? '受取済み' : '受け取る'}</button>
+        </div>
+      `;
+    }
 
     if (reward.type !== 'gem' || amount <= 0) return '';
 
@@ -1606,6 +1701,74 @@ window.NOTICE_ITEMS = [
     }
 
     const reward = item.reward;
+
+    if (reward.type === 'character') {
+      if (button) {
+        button.disabled = true;
+        button.textContent = '受取中...';
+      }
+
+      try {
+        const client = window.zsSupabase || null;
+        const userId = getCurrentUserIdForNotice();
+        if (!client || typeof client.rpc !== 'function' || !userId) {
+          throw new Error('Supabaseへ接続できません');
+        }
+
+        const res = await client.rpc('claim_daily_raid_test_reward', { p_user_id:userId });
+        if (res && res.error) throw res.error;
+        const result = res ? res.data : null;
+        if (!result || result.ok === false) {
+          throw new Error((result && result.message) || '報酬を受け取れませんでした');
+        }
+
+        // 受け取った直後から図鑑・編成・シューティング編成で使用可能にする。
+        try {
+          const chara = typeof getCharaById === 'function' ? getCharaById(50) : null;
+          if (chara) {
+            const now = new Date();
+            const entry = typeof createCharaSummonData === 'function'
+              ? createCharaSummonData(chara, now)
+              : {
+                  id:50, name:'テストちゃん', rarity:'sr',
+                  stats:{HP:620,ATK:285}, baseStats:{HP:620,ATK:285},
+                  capturedAt:now.toISOString()
+                };
+            if (result.character_row_id) entry.db_id = result.character_row_id;
+            if (typeof box !== 'undefined' && Array.isArray(box) && !box.some(x => x && Number(x.db_id) === Number(entry.db_id))) {
+              box.push(entry);
+            }
+            if (typeof collected !== 'undefined' && collected && !collected[50]) {
+              collected[50] = entry;
+            }
+          }
+        } catch (syncError) {
+          console.warn('[RaidRewardNotice] local character sync skipped:', syncError);
+        }
+
+        item.reward.claimed = true;
+        if (typeof window.showToast === 'function') {
+          window.showToast('テストちゃん ×1 を受け取ったやで！');
+        }
+        if (typeof renderZukan === 'function') {
+          try { renderZukan(); } catch(_){}
+        }
+        renderNoticeList();
+        updateNoticeBadge();
+        return;
+      } catch (error) {
+        console.error('[RaidRewardNotice] claim failed:', error);
+        if (typeof window.showToast === 'function') {
+          window.showToast(error && error.message ? error.message : '受け取りに失敗したやで');
+        }
+        if (button) {
+          button.disabled = false;
+          button.textContent = '受け取る';
+        }
+        return;
+      }
+    }
+
     const amount = Math.max(0, Number(reward.amount || 0));
     if (reward.type !== 'gem' || amount <= 0) return;
 
@@ -1760,12 +1923,13 @@ window.NOTICE_ITEMS = [
     badge.setAttribute('aria-hidden', hasNotice ? 'false' : 'true');
   }
 
-  window.openNoticeModal = function (event) {
+  window.openNoticeModal = async function (event) {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
     }
 
+    await refreshRaidClearRewardNotice();
     ensureNoticeModal();
     renderNoticeList();
 
@@ -1779,6 +1943,10 @@ window.NOTICE_ITEMS = [
   };
 
   window.refreshNoticeBadge = updateNoticeBadge;
+
+  window.addEventListener('sasaphia-daily-raid-cleared', function(){
+    refreshRaidClearRewardNotice();
+  });
 
   window.closeNoticeModal = function () {
     const modal = document.getElementById('notice-modal');
@@ -9515,14 +9683,14 @@ window.addEventListener('pagehide', function () {
 <script src="js/stories/chapter01.js?v=20260816-1120-r2"></script>
 
 <script src="js/battle_range.js?v=20260816-1120-r2"></script>
-<script src="js/characters.js?v=20260816-1120-r2"></script>
+<script src="js/characters.js?v=20260817-testchan-home-cut-v46"></script>
 <script src="js/enemies.js?v=20260816-1120-r2"></script>
 <script src="js/battle.js?v=20260816-1120-r2"></script>
 <script src="js/battle_swipe.js?v=20260816-1120-r2"></script>
 
 <script src="js/stages.js?v=20260816-1120-r2"></script>
 <script src="js/stage_select.js?v=20260816-story-ch01-ios-v2"></script>
-<script src="js/party_select.js?v=20260816-party-longpress-v21"></script>
+<script src="js/party_select.js?v=20260817-testchan-raid-reward-v45"></script>
 <script src="js/enemy_intro.js?v=20260816-1120-r2"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
@@ -9981,8 +10149,8 @@ window.reloadSasaphiaApp = function(event){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=20260817-bullet-hell-test-v44"></script>
+<script src="js/shooting_event.js?v=20260817-testchan-raid-reward-v45"></script>
 <script src="js/admin_mode.js?v=20260817-admin-pointerdown-tap-v6"></script>
-<script src="js/raid_event.js?v=20260817-raid-3attempt-best-v43"></script>
+<script src="js/raid_event.js?v=20260817-testchan-raid-reward-v45"></script>
 </body>
 </html>

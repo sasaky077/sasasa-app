@@ -231,7 +231,7 @@
       implemented: true,
       name: 'ザ・テスト',
       displayName: 'RAID ENEMY　ザ・テスト',
-      image: 'images/raid_enemy_01.webp',
+      image: 'images/raid_enemy_01_battle.webp',
 
       // 共有HPはSupabaseの日次レイド値で上書き。
       gaugeHp: 33334,

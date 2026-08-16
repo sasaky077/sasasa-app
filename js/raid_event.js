@@ -1,4 +1,4 @@
-// 20260817-raid-3attempt-best-v43
+// 20260817-testchan-raid-reward-v45
 (function(){
   'use strict';
 
@@ -221,7 +221,7 @@
               <strong>THE TEST</strong>
               <span>ザ・テスト</span>
             </div>
-            <div class="daily-raid-hero-message">最大4人で、ひとつの脅威を削り切れ。</div>
+            <div class="daily-raid-hero-message">これは、神々への試験だ。</div>
           </section>
 
           <section class="daily-raid-hpbox">
@@ -391,6 +391,12 @@
         const result = normalizeStatus(await rpc('submit_daily_raid_damage',{ p_user_id:uid(), p_damage:n(damage) }));
         currentStatus=result;
         refreshFriendHomeNotice();
+        if(result && (result.status === 'cleared' || n(result.current_hp) <= 0)){
+          try { window.dispatchEvent(new CustomEvent('sasaphia-daily-raid-cleared', { detail:result })); } catch(_){}
+          if(typeof window.refreshRaidClearRewardNotice === 'function'){
+            try { window.refreshRaidClearRewardNotice(); } catch(_){}
+          }
+        }
         const root=document.getElementById('daily-raid-root');
         if(root && root.getAttribute('aria-hidden')==='false' && result) render(result);
         return result;

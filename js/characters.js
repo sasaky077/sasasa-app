@@ -1118,8 +1118,72 @@ skills: [
         desc: '味方全体のHPを最大HPの28%回復し、1ターン被ダメージを50%カットする。高火力ステージの敵フェーズを受け切るための防御型ULT。'
       }
     ]}
-  ];
+,
+  // ── id:50 テストちゃん（DAILY RAIDクリア報酬）
+  { id: 50, name: 'テストちゃん', rarity: 'sr',
+    element: 'logos',
+    role: '高火力レーザー',
+    moveType: 'cross_1',
+    costMax: 14,
+    costStart: 5,
+    costRegen: 3,
+    shinkiMax: 5,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 620, ATK: 285 },
+    img: 'images/chara_50.webp',
+    cutImg: 'images/chara_50_cut.webp',
+    ultImg: 'images/chara_50_cutin.webp',
+    upImg: 'images/chara_50.webp',
+    battleImg: 'images/chara_50.webp',
+    battleUpImg: 'images/chara_50.webp',
+    battleBackImg: 'images/chara_50_battle_back.webp',
+    panelImg: 'images/chara_50_panel.webp',
+    favScale: 0.90, favOffsetY: -20,
+    uiScale: {panel: 1.0,battleBack: 1.25,battleUp: 1.0},
+    combo: {
+      range: 'combo_line_all',
+      skill: {
+        id: 'combo', name: 'グリーン・トレース', type: 'attack',
+        multiplier: 0.75, range: 'front3', effects: [], hitStyle: 'normal',
+        desc: '同列の味方スキルに反応し、前方へ追撃する。'
+      }
+    },
+    skills: [
+      {
+        id: 's1',
+        name: 'トライ・レーザー',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        criticalRate: 0.10,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 1.6,
+        range: 'front3',
+        effects: [],
+        hitStyle: 'multi',
+        desc: '前方へ3WAYレーザーを照射し、対象へATK×1.6のダメージを与える。'
+      },
+      {
+        id: 'ult',
+        name: 'ブラックシップ',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        criticalRate: 0.10,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 4.5,
+        range: 'front_all',
+        effects: [],
+        hitStyle: 'multi',
+        desc: '正面へ極太レーザーを照射する高威力ULT。追加効果は持たない。'
+      }
+    ]
+  }
 
+  ];
 function getCharaById(id) {
   return CHARACTERS.find(c => c.id === id) || null;
 }

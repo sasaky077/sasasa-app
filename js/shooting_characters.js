@@ -24,6 +24,7 @@
     ELTENA: 15,
     MITO: 16,
     ANGE: 17,
+    TESTCHAN: 50,
   });
 
   // ============================================================
@@ -52,6 +53,7 @@
     15: 'r',   // エルテナ
     16: 'r',   // ミト
     17: 'r',   // アンジェ
+    50: 'sr',  // テストちゃん
   });
 
   // R はSRに対して基本性能(HP/ATK)を20%落とす。
@@ -230,6 +232,15 @@
       panelImage: 'images/chara_17_panel.webp',
       cutinImage: 'images/chara_17_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 1.55, battleUp: 0.8 },
+    },
+    50: {
+      id: 50, name: 'テストちゃん',
+      element: 'logos',
+      hp: 620, atk: 285,
+      image: 'images/chara_50_battle_back.webp',
+      panelImage: 'images/chara_50_panel.webp',
+      cutinImage: 'images/chara_50_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.25, battleUp: 1.0 },
     },
   });
 
@@ -687,6 +698,39 @@
     itemHealPercent: 0.30,
     itemInvincibleDurationMs: 3000,
   });
+
+  // ============================================================
+  // テストちゃん：DAILY RAIDクリア報酬
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.TESTCHAN,
+    effectKey: 'testchan',
+    label: 'TRI-LASER / BLACK SHIP',
+    description: '3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
+    ultName: 'ブラックシップ',
+    ultType: 'testchan_black_ship',
+    moveSpeed: 415,
+    fireRate: 250,
+    bulletSpeed: 920,
+    shotPowerRate: 0.075,
+
+    shotType: 'spread',
+    shotCount: 3,
+    shotAngleStep: 0.115,
+    shotStyle: 'testchan',
+
+    burstNeed: 32,
+    ultGainPerHit: 0.42,
+    coreTop: '38%',
+    shotOffsetY: 38,
+
+    ultBeamDurationMs: 5000,
+    ultBeamTickMs: 250,
+    ultBeamTickAtkMultiplier: 0.35,
+    ultBeamWidth: 62,
+  });
+
 
   // ============================================================
   // 所持判定

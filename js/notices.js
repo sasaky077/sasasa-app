@@ -8,6 +8,14 @@
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_daily_raid_3attempts_20260817',
+    date: '2026.08.17',
+    title: 'レイドが1日3回挑戦できるようになりました！',
+    body: 'デイリーレイドの挑戦回数を、1日1回から1日3回に変更しました。3回のうち最も高いスコアが記録として採用されます。見た目を犠牲に軽量化したので、たぶん動きます。クリアしたらテストちゃんもらえます！',
+    hidden: false
+  },
+
+  {
     id: 'notice_first_play_thanks_001',
     date: '2XXX.08.16',
     title: '初プレイの感謝！',

@@ -1143,6 +1143,9 @@
     if (isEnemyUnit) {
       el.style.transform =
         `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(var(--enemy-scale,1))`;
+    } else if (el.classList.contains('shooting-raid-green-laser')) {
+      el.style.transform =
+        `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(var(--raid-laser-angle,0rad))`;
     } else {
       el.style.transform =
         `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
@@ -1152,7 +1155,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
@@ -2683,6 +2686,29 @@
     });
   }
 
+  function fireRaidGreenLaser(now, baseAngle, speed) {
+    if (!state || !isRaidStage()) return;
+
+    // 通常弾幕の隙間に差し込む中威力レーザー。
+    // WARNING級ではなく、見て避けられる細い直線弾として扱う。
+    const phase = Math.max(1, Math.min(3, Number(state.boss?.phase || 1)));
+    const sway = Math.sin(now * 0.0017) * 0.16;
+    const offset = phase >= 3 ? (state.boss.patternTick % 2 ? -0.22 : 0.22) : sway;
+    const angle = baseAngle + offset;
+    const laserSpeed = Math.max(360, Number(speed || 248) * 1.62);
+    const projectile = makeProjectile(
+      'shooting-enemy-bullet shooting-raid-green-laser',
+      state.boss.x, state.boss.y + 40,
+      Math.cos(angle) * laserSpeed,
+      Math.sin(angle) * laserSpeed,
+      ENEMY_FIXED_DAMAGE.RAID_LASER
+    );
+    if (!projectile) return;
+    projectile.el.style.setProperty('--raid-laser-angle', `${angle}rad`);
+    projectile.raidLaser = true;
+    state.enemyBullets.push(projectile);
+  }
+
   function fireBarrageBoss(now) {
     const phase = state.boss.phase || 1;
     const interval = phase === 1 ? 860 : phase === 2 ? 690 : 540;
@@ -2695,6 +2721,12 @@
     const speed = Number(BOSS.bulletSpeed || 248);
     state.boss.patternTick = (state.boss.patternTick || 0) + 1;
     const tick = state.boss.patternTick;
+
+    // DAILY RAIDのみ、通常弾幕4セットに1回ほど緑の直線レーザーを混ぜる。
+    // フェーズが進むほど弾幕間隔自体が短くなるため、自然にレーザー頻度も少し上がる。
+    if (isRaidStage() && tick % 4 === 0) {
+      fireRaidGreenLaser(now, baseAngle, speed);
+    }
 
     if (phase === 1) {
       // 7WAYの主弾 + たまに小リング
@@ -3077,6 +3109,7 @@
   const ENEMY_FIXED_DAMAGE = Object.freeze({
     NORMAL: 110,
     BOSS: 240,
+    RAID_LASER: 300,
     BOSS_HEAVY: 350,
     LETHAL: 999999,
   });
@@ -3085,6 +3118,7 @@
     const el = projectile && projectile.el;
     if (!el) return 'raw';
     if (el.classList.contains('shooting-danger-bullet')) return 'lethal';
+    if (el.classList.contains('shooting-raid-green-laser')) return 'raid-laser';
     if (el.classList.contains('shooting-mini-enemy-bullet')) return 'normal';
     if (el.classList.contains('shooting-violence-boss-heavy')) return 'boss-heavy';
     if (el.classList.contains('shooting-enemy-bullet')) return 'boss';
@@ -3104,6 +3138,7 @@
 
     let damage = 0;
     if (attackType === 'normal') damage = ENEMY_FIXED_DAMAGE.NORMAL;
+    else if (attackType === 'raid-laser') damage = ENEMY_FIXED_DAMAGE.RAID_LASER;
     else if (attackType === 'boss-heavy') damage = ENEMY_FIXED_DAMAGE.BOSS_HEAVY;
     else if (attackType === 'boss') damage = ENEMY_FIXED_DAMAGE.BOSS;
     else damage = Math.max(0, Number(amount || 0));
@@ -7045,6 +7080,124 @@
     syncArnoAuraVisuals(now);
   }
 
+  // ============================================================
+  // テストちゃん：ブラックシップ
+  // 正面へ5秒間の極太レーザー。敵弾消去・スタン等の追加効果なし。
+  // ============================================================
+  function applyTestChanBeamTick(c, now) {
+    if (!state || state.ended || state.finishing) return;
+    const beamWidth = Math.max(30, Number(c.ultBeamWidth || 62));
+    const half = beamWidth * 0.5;
+    const px = Number(state.player.x || 0);
+    const py = Number(state.player.y || 0);
+    const damage = Number(c.atk || 0) * Number(c.ultBeamTickAtkMultiplier || 0.35);
+
+    if (isNormalBattle()) {
+      const targets = (state.normalEnemies || []).filter(enemy =>
+        enemy && enemy.el && enemy.hp > 0 &&
+        Number(enemy.y || 0) < py &&
+        Math.abs(Number(enemy.x || 0) - px) <= half + 28
+      );
+      targets.forEach(enemy => damageNormalEnemy(enemy, damage, now, false));
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      state.score += Math.round(damage * 30 * Math.max(1, targets.length));
+      evaluateNormalMission(now);
+      renderHud();
+      return;
+    }
+
+    // SPECIAL EVENTのHP付きオブジェクトも、レーザー正面にいれば攻撃。
+    if (isFacelessStage()) {
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || !obj.el || obj.hp <= 0) return;
+        if (Number(obj.y || 0) >= py) return;
+        if (Math.abs(Number(obj.x || 0) - px) > half + 30) return;
+        damageFacelessObject(obj, damage, now);
+      });
+    }
+
+    if (!state.boss || state.boss.hp <= 0) return;
+    if (Number(state.boss.y || 0) >= py) return;
+    if (Math.abs(Number(state.boss.x || 0) - px) > half + 48) return;
+
+    const applied = Math.min(state.boss.hp, Math.max(0, damage));
+    state.boss.hp = Math.max(0, state.boss.hp - applied);
+    updateBossPhase();
+    state.score += Math.round(applied * 100);
+
+    // 5秒持続ULTなので数字・HIT演出は毎tick出さず軽量化。
+    if (!isRaidStage() || shouldRenderRaidBossHitVisual(now, 'hit')) {
+      createHit(state.boss.x, state.boss.y, false);
+      flashBossHit(false);
+    }
+    if (!isRaidStage() || shouldRenderRaidBossHitVisual(now, 'number')) {
+      showBossDamageNumber(applied, false);
+    }
+
+    renderHud();
+    if (state.boss.hp <= 0) beginBossDefeat();
+  }
+
+  function useTestChanUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    showUltCut(c.ultName, c.effectKey);
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    if (!root || !arena) return;
+
+    root.classList.remove('testchan-blackship-active');
+    void root.offsetWidth;
+    root.classList.add('testchan-blackship-active');
+
+    const old = arena.querySelector('.shooting-testchan-blackship-beam');
+    if (old) old.remove();
+
+    const beam = document.createElement('div');
+    beam.className = 'shooting-testchan-blackship-beam';
+    beam.innerHTML = '<i></i>';
+    arena.appendChild(beam);
+
+    const duration = Math.max(1000, Number(c.ultBeamDurationMs || 5000));
+    const tickMs = Math.max(100, Number(c.ultBeamTickMs || 250));
+    const started = performance.now();
+    const until = started + duration;
+    const token = (state.testchanUltToken || 0) + 1;
+    state.testchanUltToken = token;
+    state.ultLockUntil = until;
+
+    let nextDamageAt = started;
+
+    const frame = (now) => {
+      if (!state || state.testchanUltToken !== token || state.ended || state.finishing || now >= until) {
+        beam.classList.add('ending');
+        root.classList.remove('testchan-blackship-active');
+        setTimeout(() => beam.isConnected && beam.remove(), 180);
+        renderHud();
+        return;
+      }
+
+      const x = Number(state.player.x || 0);
+      const y = Math.max(0, Number(state.player.y || 0));
+      const width = Math.max(30, Number(c.ultBeamWidth || 62));
+      beam.style.width = `${width}px`;
+      beam.style.height = `${Math.max(24, y)}px`;
+      beam.style.transform = `translate3d(${x - width / 2}px,0,0)`;
+
+      if (now >= nextDamageAt) {
+        applyTestChanBeamTick(c, now);
+        nextDamageAt += tickMs;
+        if (nextDamageAt < now - tickMs) nextDamageAt = now + tickMs;
+      }
+
+      requestAnimationFrame(frame);
+    };
+
+    requestAnimationFrame(frame);
+    renderHud();
+  }
+
+
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
     if (performance.now() < (state.ultLockUntil || 0)) return false;
@@ -7066,6 +7219,7 @@
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
+    else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
     else useEriUlt(c);
 
     renderHud();
