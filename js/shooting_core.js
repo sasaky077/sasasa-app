@@ -6979,5 +6979,36 @@
   window.addEventListener('resize', () => {
     if (state && state.running && !state.ended) placeInitialUnits();
   });
-  setTimeout(() => { tryRestoreShootingBattle(); }, 0);
+  // 復元チェックは所持キャラ判定(collected)に依存する。
+  // window._dbLoadPromiseは、index.html側のinit()がスプラッシュタップ後の
+  // Step2に到達して初めて代入される。ページ読み込み直後(スプラッシュ表示中)は
+  // まだこの変数自体が存在しないため、「あれば待つ」だけでは不十分で、
+  // 存在するようになるまでポーリングして待つ必要がある。
+  function waitForShootingDbLoad(timeoutMs = 20000) {
+    return new Promise(resolve => {
+      const startedAt = performance.now();
+      (function poll() {
+        if (window._dbLoadPromise && typeof window._dbLoadPromise.then === 'function') {
+          window._dbLoadPromise.then(resolve, resolve);
+          return;
+        }
+        if (performance.now() - startedAt > timeoutMs) {
+          // タイムアウトしても復元チェック自体は諦めず、ベストエフォートで進む。
+          resolve();
+          return;
+        }
+        setTimeout(poll, 120);
+      })();
+    });
+  }
+
+  async function tryRestoreShootingBattleWhenReady() {
+    try {
+      await waitForShootingDbLoad();
+    } catch (_) {
+      // DB読み込みが失敗した場合でも、復元チェック自体はベストエフォートで試みる。
+    }
+    tryRestoreShootingBattle();
+  }
+  setTimeout(() => { tryRestoreShootingBattleWhenReady(); }, 0);
 })();

@@ -7553,7 +7553,8 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
         'pity_count',
         'zeraphia_story_stage_clears_v1',
         'zeraphia_remnants_owned_v1',
-        'zeraphia_evolution_materials_v1'
+        'zeraphia_evolution_materials_v1',
+        'hide_testplay_guide'
       ];
 
       exactResetKeys.forEach(function(key){
@@ -7592,13 +7593,15 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
           return lower.indexOf(word) !== -1;
         });
 
-        // 音量・BGM/SE設定、テストプレイ案内設定などは保持する。
+        // 音量・BGM/SE設定は保持する。
+        // ※テストプレイ案内(hide_testplay_guide)はここでは保持しない。
+        //   データリセットは「初回状態に戻す」操作なので、案内の
+        //   「次から表示しない」フラグもリセット対象に含める。
         var isPreference =
           lower.indexOf('audio') !== -1 ||
           lower.indexOf('volume') !== -1 ||
           lower.indexOf('bgm') !== -1 ||
-          lower.indexOf('se_') !== -1 ||
-          lower.indexOf('testplay') !== -1;
+          lower.indexOf('se_') !== -1;
 
         if((isGamePrefix || isGameplayKey) && !isPreference){
           keysToRemove.push(key);
@@ -8057,6 +8060,13 @@ window.closeInstallGuide = closeInstallGuide;
 window.moveInstallGuide = moveInstallGuide;
 
 function showTestplayNotice(){
+  // 「次から表示しない」がONなら、お知らせ→案内の両方をまとめてスキップする。
+  // 初回プレイ(フラグ未設定)では必ず両方表示される。
+  if(localStorage.getItem('hide_testplay_guide') === '1'){
+    resumeHomeAfterTestplayGuide();
+    return;
+  }
+
   var notice = document.getElementById('testplay-notice');
   if(!notice) return;
 
