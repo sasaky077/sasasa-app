@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = 'sasaphia_admin_mode_v1';
   const TAP_REQUIRED = 7;
-  const TAP_WINDOW_MS = 3200;
+  const TAP_WINDOW_MS = 5000;
   let tapCount = 0;
   let lastTapAt = 0;
   let verifying = false;
@@ -265,12 +265,16 @@
     el.__timer=setTimeout(()=>el.classList.remove('show'),1600);
   }
 
-  function handleSettingsNavTap(){
+  function handleSettingsNavTap(event){
+    // 設定ボタン自身のonclickだけで7タップ判定する。
+    // document側のイベント監視に依存しないため、iPhone/PWAでも確実に数える。
     if(typeof window.showMainTab === 'function') window.showMainTab('setting');
+
     const now = Date.now();
     if(now - lastTapAt > TAP_WINDOW_MS) tapCount = 0;
     lastTapAt = now;
     tapCount++;
+
     if(tapCount >= TAP_REQUIRED){
       tapCount = 0;
       if(isEnabled()) openAdminPanel();
@@ -279,27 +283,31 @@
   }
 
   function bindSettingsNavTap(){
+    // v6: onclick(click)は素早い連続タップだと一部取りこぼす端末があるため、
+    // pointerdownで確実に数える方式に変更(このプロジェクトの他画面
+    // ─シューティングのキャラ切り替え等─でも同じ理由でpointerdown化して
+    // 解決した実績があるため踏襲する)。
     const btn = document.getElementById('bnav-setting');
-    if(!btn || btn.dataset.adminTapBound === '1') return;
-    btn.dataset.adminTapBound = '1';
+    if(!btn || btn.dataset.tapBound === '1') return;
+    btn.dataset.tapBound = '1';
 
-    // 既存の画面遷移はそのまま残し、ADMIN用タップ数だけ横取りせずに加算する。
-    // onclick属性を書き換えないため、通常の設定ボタン挙動を壊さない。
-    btn.addEventListener('click', function(){
-      const now = Date.now();
-      if(now - lastTapAt > TAP_WINDOW_MS) tapCount = 0;
-      lastTapAt = now;
-      tapCount++;
-      if(tapCount >= TAP_REQUIRED){
-        tapCount = 0;
-        if(isEnabled()) openAdminPanel();
-        else openAuth();
-      }
-    });
+    btn.addEventListener('pointerdown', function(ev){
+      handleSettingsNavTap(ev);
+      // 直後に発生するclick(inline onclick)による二重カウントを防ぐ。
+      btn.dataset.suppressClick = '1';
+      setTimeout(function(){ delete btn.dataset.suppressClick; }, 400);
+    }, { passive: true });
+  }
+
+  function handleSettingsNavTapClick(event){
+    // pointerdown側で既に処理済みなら、続けて発生するclickは無視する。
+    const btn = document.getElementById('bnav-setting');
+    if(btn && btn.dataset.suppressClick === '1') return;
+    handleSettingsNavTap(event);
   }
 
   window.SasaphiaAdmin = { isEnabled, setEnabled, openAuth, openPanel:openAdminPanel };
-  window.handleSettingsNavTap = handleSettingsNavTap;
+  window.handleSettingsNavTap = handleSettingsNavTapClick;
 
   function bootAdminMode(){
     syncUi();

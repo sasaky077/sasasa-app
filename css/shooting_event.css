@@ -3084,6 +3084,45 @@
   filter:brightness(.92) saturate(.54) contrast(.98);
 }
 
+/* SPECIAL EVENT「無貌の天使」(advanced/super共通)限定：
+   弾・召喚オブジェクトの見た目を極限まで軽量化する。
+   通常の敵弾スタイルに加え、.shooting-faceless-bullet /
+   .shooting-faceless-object-bullet が独自の多層box-shadowを
+   !important で重ねており、さらに召喚オブジェクト本体
+   (.shooting-faceless-object、最大3体同時出現)にもdrop-shadowが
+   常時かかっていた。見た目より処理落ち対策を優先し、
+   単色フラット・影なしまで削ぎ落とす。他ステージには影響しない。 */
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-mini-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object-bullet{
+  background:#5c4a63!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-enemy-bullet::after,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-mini-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-mini-enemy-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"][data-boss-phase="2"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"][data-boss-phase="3"] .shooting-enemy-bullet{
+  box-shadow:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-bullet{
+  box-shadow:none!important;
+}
+/* 召喚オブジェクト(マスク)本体のdrop-shadowも撤去。最大3体同時表示。 */
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object.hit-flash{
+  filter:none!important;
+}
+
 
 /* ============================================================
    ALL STAGES — クリア条件達成
