@@ -3077,6 +3077,23 @@
 
 
   const ULT_CUTIN_DURATION_MS = 1000;
+  const AYANE_ULT_HAND_OPEN_SRC = 'images/ayane_ult_hand_open.webp';
+  const AYANE_ULT_HAND_CLOSE_SRC = 'images/ayane_ult_hand_close.webp';
+
+  function getAyaneBlackhandHtml(extraHtml = '') {
+    return `
+      <div class="shooting-ayane-blackhand-aura"></div>
+      <div class="shooting-ayane-blackhand-shot">
+        <img class="hand-open" src="${AYANE_ULT_HAND_OPEN_SRC}" alt="">
+        <img class="hand-close" src="${AYANE_ULT_HAND_CLOSE_SRC}" alt="">
+      </div>
+      <div class="shooting-ayane-blackhand-afterimage a1"></div>
+      <div class="shooting-ayane-blackhand-afterimage a2"></div>
+      <div class="shooting-ayane-blackhand-afterimage a3"></div>
+      <div class="shooting-ayane-blackhand-impact"></div>
+      ${extraHtml}
+    `;
+  }
 
   function preloadShootingImage(src, timeoutMs = 7000, blocking = false) {
     if (!src) return Promise.resolve(false);
@@ -4609,6 +4626,8 @@
   }
 
   function useAyaneUlt(c) {
+    preloadShootingImage(AYANE_ULT_HAND_OPEN_SRC);
+    preloadShootingImage(AYANE_ULT_HAND_CLOSE_SRC);
     if (isNormalBattle()) {
       showUltCut(c.ultName, c.effectKey);
       ultScreenFlash('ult-flash-ayane');
@@ -4692,22 +4711,7 @@
       fx.style.setProperty('--ayane-end-y', `${endY}px`);
       fx.style.setProperty('--ayane-distance', `${visualDistance}px`);
       fx.style.setProperty('--ayane-angle', `${angle}deg`);
-      fx.innerHTML = `
-        <div class="shooting-ayane-blackhand-aura"></div>
-        <div class="shooting-ayane-blackhand-arm">
-          <i class="shooting-ayane-blackhand-vein v1"></i>
-          <i class="shooting-ayane-blackhand-vein v2"></i>
-          <i class="shooting-ayane-blackhand-vein v3"></i>
-        </div>
-        <div class="shooting-ayane-blackhand-claw">
-          <i class="finger f1"></i><i class="finger f2"></i><i class="finger f3"></i><i class="finger f4"></i><i class="finger f5"></i>
-          <b class="palm"></b>
-        </div>
-        <div class="shooting-ayane-blackhand-afterimage a1"></div>
-        <div class="shooting-ayane-blackhand-afterimage a2"></div>
-        <div class="shooting-ayane-blackhand-afterimage a3"></div>
-        <div class="shooting-ayane-blackhand-impact"></div>
-      `;
+      fx.innerHTML = getAyaneBlackhandHtml();
       arena.appendChild(fx);
 
       if (root) root.classList.add('ayane-rampage-active');
@@ -4716,13 +4720,13 @@
       pushUltTimer(() => {
         if (!fx.isConnected) return;
         fx.classList.add('strike');
-        if (root) root.classList.add('ayane-rampage-shake');
       }, 300);
 
       pushUltTimer(() => {
         if (!state || !fx.isConnected) return;
 
         fx.classList.add('hit', 'grab');
+        if (root) root.classList.add('ayane-rampage-shake');
 
         const grabUntil = performance.now() + GRAB_DURATION;
         const totalDamage =
@@ -4847,21 +4851,7 @@
     fx.style.setProperty('--ayane-end-y', `${endY}px`);
     fx.style.setProperty('--ayane-distance', `${distance}px`);
     fx.style.setProperty('--ayane-angle', `${angle}deg`);
-    fx.innerHTML = `
-      <div class="shooting-ayane-blackhand-aura"></div>
-      <div class="shooting-ayane-blackhand-arm">
-        <i class="shooting-ayane-blackhand-vein v1"></i>
-        <i class="shooting-ayane-blackhand-vein v2"></i>
-        <i class="shooting-ayane-blackhand-vein v3"></i>
-      </div>
-      <div class="shooting-ayane-blackhand-claw">
-        <i class="finger f1"></i><i class="finger f2"></i><i class="finger f3"></i><i class="finger f4"></i><i class="finger f5"></i>
-        <b class="palm"></b>
-      </div>
-      <div class="shooting-ayane-blackhand-afterimage a1"></div>
-      <div class="shooting-ayane-blackhand-afterimage a2"></div>
-      <div class="shooting-ayane-blackhand-afterimage a3"></div>
-      <div class="shooting-ayane-blackhand-impact"></div>
+    fx.innerHTML = getAyaneBlackhandHtml(`
       <div class="shooting-ayane-blackhand-grip-ring r1"></div>
       <div class="shooting-ayane-blackhand-grip-ring r2"></div>
       <div class="shooting-ayane-blackhand-grip-ring r3"></div>
@@ -4869,7 +4859,7 @@
       <div class="shooting-ayane-blackhand-smoke s2"></div>
       <div class="shooting-ayane-blackhand-smoke s3"></div>
       <div class="shooting-ayane-blackhand-smoke s4"></div>
-    `;
+    `);
     arena.appendChild(fx);
 
     if (root) root.classList.add('ayane-rampage-active');
@@ -4879,18 +4869,17 @@
 
     pushUltTimer(() => {
       fx.classList.add('strike');
-      if (root) root.classList.add('ayane-rampage-shake');
     }, 520);
 
     pushUltTimer(() => {
       // 見た目と当たり判定を一致させる。
       // 黒手の実DOMとボス画像の実DOMが重なっているかを最優先で判定する。
-      const clawEl = fx.querySelector('.shooting-ayane-blackhand-claw');
-      const clawRect = clawEl ? clawEl.getBoundingClientRect() : null;
+      const impactEl = fx.querySelector('.shooting-ayane-blackhand-impact');
+      const impactRect = impactEl ? impactEl.getBoundingClientRect() : null;
       const bossRect = bossEl ? bossEl.getBoundingClientRect() : null;
 
       const visualHit =
-        !!(clawRect && bossRect && rectsHit(clawRect, bossRect, -16, -10));
+        !!(impactRect && bossRect && rectsHit(impactRect, bossRect, -6, -6));
 
       // DOM取得不能時の保険。突進中はボスを固定しているため、
       // 到達点との距離でも十分一致する。
@@ -4927,6 +4916,7 @@
       state.lastShotAt = performance.now();
       clearEnemyBulletsOnly();
       fx.classList.add('grab');
+      if (root) root.classList.add('ayane-rampage-shake');
 
       if (bossEl) {
         bossEl.classList.add('ayane-grabbed');

@@ -7,7 +7,7 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = '20260816-asset-loader-v1';
+  const MODULE_VERSION = '20260816-ayane-blackhand-image-v2';
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
     queuedOpenArgs.push(args);
