@@ -105,6 +105,30 @@
   box-shadow:none!important;
 }
 
+/* CHAPTER03-03「交差」限定：弾の見た目を極限まで軽量化する。
+   MINI_03(mini_barrage_v1)はinfiniteEnemiesの通常ステージで、
+   常時複数体が濃い弾幕を出し続けるため、他の弾幕ボスと同様に
+   グラデーション+box-shadow+backdrop-filter+擬似要素を全部撤去する。
+   通常ステージ(ボスフェーズなし)なのでphase別の上書きは不要。 */
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-mini-enemy-bullet{
+  background:#5c4a63!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-enemy-bullet::after,
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-mini-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-mini-enemy-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-bullet{
+  box-shadow:none!important;
+}
+
 
 /* SPECIAL STAGE「超弾幕」限定：見た目を徹底的に簡素化する。
    このステージ自体がパフォーマンス検証用のストレステストなので、
