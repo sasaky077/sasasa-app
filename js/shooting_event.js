@@ -7,7 +7,7 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = '20260816-latest-collect-softlock-fix-v29';
+  const MODULE_VERSION = '20260816-battle-resume-reload-v30';
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
     queuedOpenArgs.push(args);

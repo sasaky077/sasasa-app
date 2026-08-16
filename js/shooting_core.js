@@ -451,6 +451,223 @@
   let state = null;
   let rafId = 0;
   let countdownMoveRafId = 0;
+
+  // ============================================================
+  // Shooting battle resume / crash recovery
+  // ============================================================
+  const SHOOTING_RESUME_KEY = 'sasaphia_shooting_resume_v1';
+  const SHOOTING_RESUME_VERSION = '20260816-resume-v1';
+  const SHOOTING_RESUME_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  let suppressShootingResumeSave = false;
+
+  function getRemainingMs(until, now) {
+    return Math.max(0, Number(until || 0) - Number(now || performance.now()));
+  }
+
+  function buildShootingResumeSnapshot(reason) {
+    if (!state || state.ended || state.finishing) return null;
+    // 編成画面だけ開いている状態は「戦闘途中」ではないので保存しない。
+    if (!state.running && !state.countdown && !state.paused) return null;
+
+    const now = performance.now();
+    const elapsedMs = state.countdown
+      ? Math.max(0, Number(state.resumeElapsedMsPending || 0))
+      : Math.max(0, now - Number(state.startedAt || now));
+
+    return {
+      version: SHOOTING_RESUME_VERSION,
+      savedAt: Date.now(),
+      reason: String(reason || ''),
+      stageId: String(state.stageId || selectedStage?.id || ''),
+      raidContext: selectedRaidContext ? { ...selectedRaidContext } : null,
+      returnContext: window.__shootingReturnContext ? { ...window.__shootingReturnContext } : null,
+      selectedPartyIds: state.party.map(m => Number(m.id)),
+      selectedCharacterId: Number(state.activeCharacterId || selectedCharacterId || 0),
+      selectedBlessingId: selectedBlessingId || null,
+      elapsedMs,
+      player: { x: Number(state.player?.x || 0), y: Number(state.player?.y || 0) },
+      party: state.party.map(m => ({
+        id: Number(m.id),
+        hp: Number(m.hp || 0),
+        hpMax: Number(m.hpMax || 0),
+        burst: Number(m.burst || 0),
+        hitCount: Number(m.hitCount || 0),
+        ultUseCount: Number(m.ultUseCount || 0),
+        invincibleLeftMs: getRemainingMs(m.invincibleUntil, now),
+        atkBuffLeftMs: getRemainingMs(m.atkBuffUntil, now),
+        atkBuffMultiplier: Number(m.atkBuffMultiplier || 1.3),
+      })),
+      boss: state.boss ? {
+        hp: Number(state.boss.hp || 0),
+        hpMax: Number(state.boss.hpMax || 0),
+        gaugeHp: Number(state.boss.gaugeHp || 0),
+        gauges: Number(state.boss.gauges || 1),
+        phase: Number(state.boss.phase || 1),
+      } : null,
+      score: Number(state.score || 0),
+      shotsHit: Number(state.shotsHit || 0),
+      combo: Number(state.combo || 0),
+      maxCombo: Number(state.maxCombo || 0),
+      collectedItems: Number(state.collectedItems || 0),
+      totalHitsTaken: Number(state.totalHitsTaken || 0),
+      normalDefeated: Number(state.normalDefeated || 0),
+      normalSpawned: Number(state.normalSpawned || 0),
+      facelessWave: Number(state.facelessWave || 0),
+      raidInitialHp: Number(state.raidInitialHp || 0),
+      raidDamageDealt: Number(state.raidDamageDealt || 0),
+    };
+  }
+
+  function saveShootingResumeState(reason) {
+    if (suppressShootingResumeSave) return false;
+    try {
+      const snapshot = buildShootingResumeSnapshot(reason);
+      if (!snapshot) return false;
+      localStorage.setItem(SHOOTING_RESUME_KEY, JSON.stringify(snapshot));
+      return true;
+    } catch (err) {
+      console.warn('[shooting] resume save failed', err);
+      return false;
+    }
+  }
+
+  function clearShootingResumeState() {
+    try { localStorage.removeItem(SHOOTING_RESUME_KEY); } catch (_) {}
+  }
+
+  function readShootingResumeState() {
+    try {
+      const raw = localStorage.getItem(SHOOTING_RESUME_KEY);
+      if (!raw) return null;
+      const snapshot = JSON.parse(raw);
+      if (!snapshot || snapshot.version !== SHOOTING_RESUME_VERSION || !snapshot.stageId) {
+        clearShootingResumeState();
+        return null;
+      }
+      if (Date.now() - Number(snapshot.savedAt || 0) > SHOOTING_RESUME_MAX_AGE_MS) {
+        clearShootingResumeState();
+        return null;
+      }
+      return snapshot;
+    } catch (_) {
+      clearShootingResumeState();
+      return null;
+    }
+  }
+
+  function applyShootingResumeSnapshot(snapshot) {
+    if (!snapshot || !state) return false;
+    const now = performance.now();
+
+    selectedPartyIds = Array.isArray(snapshot.selectedPartyIds)
+      ? snapshot.selectedPartyIds.map(Number).filter(id => SHOOTING_CHARACTERS[id] && isShootingCharacterOwned(id)).slice(0, PARTY_SIZE)
+      : [];
+    if (isStoryShootingStage()) ensureStoryEriLeader();
+    if (!selectedPartyIds.length) return false;
+
+    selectedCharacterId = selectedPartyIds.includes(Number(snapshot.selectedCharacterId))
+      ? Number(snapshot.selectedCharacterId)
+      : selectedPartyIds[0];
+    selectedBlessingId = snapshot.selectedBlessingId || null;
+
+    // 現行マスター/共鳴値でstateの骨格を作り直してから、保存値だけ重ねる。
+    resetState();
+    state.activeCharacterId = selectedCharacterId;
+    state.resumeElapsedMsPending = Math.max(0, Number(snapshot.elapsedMs || 0));
+    state.score = Math.max(0, Number(snapshot.score || 0));
+    state.shotsHit = Math.max(0, Number(snapshot.shotsHit || 0));
+    state.combo = Math.max(0, Number(snapshot.combo || 0));
+    state.maxCombo = Math.max(state.combo, Number(snapshot.maxCombo || 0));
+    state.collectedItems = Math.max(0, Number(snapshot.collectedItems || 0));
+    state.totalHitsTaken = Math.max(0, Number(snapshot.totalHitsTaken || 0));
+    state.normalDefeated = Math.max(0, Number(snapshot.normalDefeated || 0));
+    // 画面上の敵は安全のため復元しない。倒した数を起点に残り敵を再スポーンする。
+    state.normalSpawned = state.normalDefeated;
+    state.facelessWave = Math.max(state.facelessWave || 0, Number(snapshot.facelessWave || 0));
+
+    if (snapshot.boss && state.boss) {
+      state.boss.hp = Math.max(0, Math.min(Number(snapshot.boss.hpMax || state.boss.hpMax), Number(snapshot.boss.hp || 0)));
+      state.boss.hpMax = Math.max(1, Number(snapshot.boss.hpMax || state.boss.hpMax));
+      state.boss.gaugeHp = Math.max(1, Number(snapshot.boss.gaugeHp || state.boss.gaugeHp));
+      state.boss.gauges = Math.max(1, Number(snapshot.boss.gauges || state.boss.gauges));
+      state.boss.phase = Math.max(1, Math.min(state.boss.gauges, Number(snapshot.boss.phase || 1)));
+    }
+
+    if (isRaidStage()) {
+      state.raidInitialHp = Math.max(Number(snapshot.raidInitialHp || 0), Number(state.boss?.hp || 0));
+      state.raidDamageDealt = Math.max(0, Number(snapshot.raidDamageDealt || 0));
+      state.raidAttemptFinished = false;
+    }
+
+    const savedParty = new Map((snapshot.party || []).map(m => [Number(m.id), m]));
+    state.party.forEach(member => {
+      const saved = savedParty.get(Number(member.id));
+      if (!saved) return;
+      member.hpMax = Math.max(1, Number(saved.hpMax || member.hpMax));
+      member.hp = Math.max(0, Math.min(member.hpMax, Number(saved.hp || 0)));
+      member.burst = Math.max(0, Number(saved.burst || 0));
+      member.hitCount = Math.max(0, Number(saved.hitCount || 0));
+      member.ultUseCount = Math.max(0, Number(saved.ultUseCount || 0));
+      if (Number(saved.invincibleLeftMs || 0) > 0) member.invincibleUntil = now + Number(saved.invincibleLeftMs);
+      if (Number(saved.atkBuffLeftMs || 0) > 0) {
+        member.atkBuffUntil = now + Number(saved.atkBuffLeftMs);
+        member.atkBuffMultiplier = Number(saved.atkBuffMultiplier || 1.3);
+      }
+    });
+
+    applySelectedCharacterToUi();
+    clearProjectiles();
+    clearNormalBattleObjects();
+    setCharacterSelectVisible(false);
+    setBattleHudVisible(true);
+    setShootingHeaderMenuMode(true);
+    ensureShootingPauseMenu();
+
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.setAttribute('data-boss-phase', String(state.boss?.phase || 1));
+    placeInitialUnits();
+    if (snapshot.player && state.player) {
+      const arena = document.getElementById('shooting-arena');
+      const w = arena?.clientWidth || 360;
+      const h = arena?.clientHeight || 640;
+      state.player.x = clamp(Number(snapshot.player.x || w * .5), 24, Math.max(24, w - 24));
+      state.player.y = clamp(Number(snapshot.player.y || h * .82), 40, Math.max(40, h - 40));
+      positionUnit(document.getElementById(PLAYER_ID), state.player.x, state.player.y);
+    }
+    renderHud();
+
+    // 保存データは再開開始後も更新される。再開中に再度落ちても続きから戻れる。
+    runStartCountdown();
+    return true;
+  }
+
+  function tryRestoreShootingBattle() {
+    const snapshot = readShootingResumeState();
+    if (!snapshot) return false;
+    // すでにシューティング画面を開いている場合は自動介入しない。
+    if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
+
+    const label = snapshot.raidContext ? '中断したDAILY RAIDがあります。\n途中から再開しますか？' : '中断したバトルがあります。\n途中から再開しますか？';
+    if (!window.confirm(label)) return false;
+
+    window.__shootingReturnContext = snapshot.returnContext || (snapshot.raidContext ? { type: 'raidLobby' } : null);
+    window.openShootingEvent({
+      stageId: snapshot.stageId,
+      raidContext: snapshot.raidContext || null,
+      resumeSnapshot: snapshot,
+    });
+    return true;
+  }
+
+  // ハードクラッシュ対策としてpagehideだけに頼らず、戦闘中は定期保存する。
+  setInterval(() => saveShootingResumeState('interval'), 1500);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveShootingResumeState('visibilitychange');
+  });
+  window.addEventListener('pagehide', () => saveShootingResumeState('pagehide'));
+
+  window.saveShootingResumeState = saveShootingResumeState;
+  window.clearShootingResumeState = clearShootingResumeState;
   let prevTs = 0;
   let keys = Object.create(null);
   let pointerActive = false;
@@ -4623,7 +4840,9 @@
 
         state.countdown = false;
         state.running = true;
-        state.startedAt = performance.now();
+        const resumeElapsedMs = Math.max(0, Number(state.resumeElapsedMsPending || 0));
+        state.startedAt = performance.now() - resumeElapsedMs;
+        state.resumeElapsedMsPending = 0;
         state.lastShotAt = -9999;
         state.lastBossShotAt = -9999;
 
@@ -4709,6 +4928,9 @@
 
   function endGame(win) {
     if (!state || state.ended) return;
+    // 通常戦はRESULT確定時点で復帰データを削除。
+    // RAIDはfinishAttemptのSupabase確定が終わるまで復帰データを残す。
+    if (!isRaidStage()) clearShootingResumeState();
     state.ended = true;
 
     // GAME OVERは戦闘画面専用。RESULTへ持ち越さない。
@@ -4762,7 +4984,13 @@
       if (retryBtn) retryBtn.style.display = 'none';
       if (!state.raidAttemptFinished && window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
         state.raidAttemptFinished = true;
-        void window.RaidEvent.finishAttempt(state.raidDamageDealt, { bossDefeated: !!win });
+        const finishPromise = window.RaidEvent.finishAttempt(state.raidDamageDealt, { bossDefeated: !!win });
+        Promise.resolve(finishPromise)
+          .then(() => clearShootingResumeState())
+          .catch(err => {
+            // 通信失敗時は復帰データを残し、次回起動で同じ挑戦を再開できるようにする。
+            console.warn('[shooting] raid finish failed; resume snapshot kept', err);
+          });
       }
     } else {
       if (raidRow) raidRow.style.display = 'none';
@@ -5280,6 +5508,20 @@
     }
 
     applySelectedCharacterToUi();
+
+    if (options && options.resumeSnapshot) {
+      requestAnimationFrame(() => {
+        if (!applyShootingResumeSnapshot(options.resumeSnapshot)) {
+          clearShootingResumeState();
+          setCharacterSelectVisible(true);
+          setBattleHudVisible(false);
+          placeInitialUnits();
+          renderHud();
+        }
+      });
+      return;
+    }
+
     setCharacterSelectVisible(true);
     setBattleHudVisible(false);
     requestAnimationFrame(() => {
@@ -5322,6 +5564,10 @@
   };
 
   window.closeShootingEvent = function () {
+    // 明示的に「戻る/退出」した場合は中断復帰対象にしない。
+    suppressShootingResumeSave = true;
+    clearShootingResumeState();
+
     // 戻る先は「この画面を開いた直前の画面」。
     // 先に退避してからクリアし、古い戻り先が次回起動へ残らないようにする。
     const returnContext = window.__shootingReturnContext || null;
@@ -5381,6 +5627,7 @@
     });
     setCommonUiVisible(false);
     state = null;
+    suppressShootingResumeSave = false;
 
     // 直前画面を復元する。
     if (returningToFacelessStageSelect) {
@@ -6732,4 +6979,5 @@
   window.addEventListener('resize', () => {
     if (state && state.running && !state.ended) placeInitialUnits();
   });
+  setTimeout(() => { tryRestoreShootingBattle(); }, 0);
 })();
