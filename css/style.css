@@ -19478,7 +19478,8 @@ body.login-bonus-open {
   position: absolute;
   left: 10px;
   right: auto;
-  top: calc(env(safe-area-inset-top) + 300px);
+  /* ボーナス→フレンドの間隔を、右側のお知らせ→神樹と揃える */
+  top: calc(env(safe-area-inset-top) + 259px); /* 約5mm上へ */
   width: clamp(88px, 22vw, 98px);
   height: clamp(88px, 22vw, 98px);
   padding: 0;
@@ -19494,8 +19495,10 @@ body.login-bonus-open {
 }
 #screen-main .friend-home-entry-icon {
   display: block;
-  width: 100%;
-  height: 100%;
+  /* 元画像の絵柄占有率が他アイコンより大きいため、見た目サイズを統一 */
+  width: 84%;
+  height: 84%;
+  margin: 8% auto 0;
   object-fit: contain;
   filter: drop-shadow(0 5px 7px rgba(68, 51, 24, 0.24));
   transition: transform 0.18s ease, filter 0.18s ease;
@@ -19509,4 +19512,18 @@ body.login-bonus-open {
     width: 84px;
     height: 84px;
   }
+}
+
+
+/* =========================================================
+   Bonus Screen Header Center Fix
+   - ボーナス画面だけ見出しを中央固定
+   ========================================================= */
+#screen-bonus .bonus-screen-header .header-title{
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:auto !important;
+  text-align:center !important;
+  white-space:nowrap;
 }
