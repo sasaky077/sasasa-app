@@ -559,13 +559,14 @@
     id: CHARACTER_ID.HAYATE,
     effectKey: 'hayate',
     label: 'SPEED / WIDE',
-    description: '高速移動・高連射の5WAY型。ULTは敵弾を全消去し、3.5秒間無敵。さらに連射間隔を45%に短縮（約2.22倍速）し、通常弾威力を185%に強化する。',
+    description: '高速移動・5WAY射撃型。ULTは敵弾を全消去し、3.5秒間無敵。さらに連射間隔を60%に短縮（約1.67倍速）し、通常弾威力を247%に強化する。',
     ultName: '黄月閃界・雷光巡行',
     ultType: 'speed_storm',
     moveSpeed: 560,
-    fireRate: 92,
+    // 端末負荷軽減：旧92ms→125ms。5WAYは維持し、1発威力を補正して通常DPSをほぼ維持。
+    fireRate: 125,
     bulletSpeed: 900,
-    shotPowerRate: 0.021,
+    shotPowerRate: 0.0285,
 
     // ---- 通常ショット設定 ----
     shotType: 'spread',
@@ -575,12 +576,14 @@
 
     // ---- ULT中の射撃補正 ----
     moonlightImage: 'images/chara_12_battle_back_moon.webp',
-    moonlightFireRateMultiplier: 0.45,
-    moonlightPowerMultiplier: 1.85,
+    // ULT中も弾生成数を抑えつつ、総DPSは旧設定とほぼ同等。
+    moonlightFireRateMultiplier: 0.60,
+    moonlightPowerMultiplier: 2.47,
 
     burstDamage: 15,
     burstNeed: 34,
-    ultGainPerHit: 0.1564,
+    // 発射頻度低下分を補正し、ULTゲージの平均充填速度も旧設定に寄せる。
+    ultGainPerHit: 0.2125,
     coreTop: '34%',
   });
 

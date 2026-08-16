@@ -476,6 +476,16 @@
   const ULT_DOUBLE_TAP_MS = 320;
   const ULT_DOUBLE_TAP_DISTANCE = 72;
 
+  // ============================================================
+  // Performance safety guard
+  // ============================================================
+  // 通常プレイの弾幕量・難易度には一切干渉しない。
+  // DOM敵弾が異常な数まで積み上がった場合だけ、端末フリーズを避けるため
+  // 古い「通常敵弾」を整理する最後の安全装置。WARNING系の危険弾は保護する。
+  const ENEMY_BULLET_HARD_LIMIT = 520;
+  const ENEMY_BULLET_RECOVERY_TARGET = 460;
+  let lastEnemyBulletGuardLogAt = 0;
+
   function isTouchLikePointer(e) {
     return !!(
       e && (
@@ -1144,6 +1154,46 @@
     const p = { el, x, y, vx, vy, damage: damage || 1, ownerId: ownerId || null };
     positionUnit(el, x, y);
     return p;
+  }
+
+  function isProtectedEnemyProjectile(p) {
+    if (!p) return false;
+    if (p.dangerRicochet || p.dangerDrift) return true;
+    const el = p.el;
+    if (!el || !el.classList) return false;
+    // 将来WARNING弾のクラス名が増えても、danger / warning を含むものは保護する。
+    const cls = String(el.className || '').toLowerCase();
+    return cls.includes('danger') || cls.includes('warning');
+  }
+
+  function enforceEnemyBulletSafetyLimit(now) {
+    if (!state || !Array.isArray(state.enemyBullets)) return;
+    const current = state.enemyBullets.length;
+    if (current <= ENEMY_BULLET_HARD_LIMIT) return;
+
+    let removeNeeded = Math.max(0, current - ENEMY_BULLET_RECOVERY_TARGET);
+    let removed = 0;
+    const kept = [];
+
+    // enemyBulletsは生成順にpushされるため、先頭から整理すると古い通常弾から消える。
+    // 危険弾は上限超過時でも残し、ゲーム固有ギミックを壊さない。
+    for (const p of state.enemyBullets) {
+      if (removeNeeded > 0 && p && p.el && !isProtectedEnemyProjectile(p)) {
+        p.el.remove();
+        removeNeeded--;
+        removed++;
+        continue;
+      }
+      kept.push(p);
+    }
+
+    state.enemyBullets = kept;
+
+    // テスト時に発動有無を追えるよう、最大5秒に1回だけconsoleへ記録。
+    if (removed > 0 && now - lastEnemyBulletGuardLogAt >= 5000) {
+      lastEnemyBulletGuardLogAt = now;
+      console.warn(`[shooting] enemy bullet safety guard: ${current} -> ${state.enemyBullets.length}`);
+    }
   }
 
   function getCharacterElements(c) {
@@ -3097,6 +3147,9 @@
   }
 
   function updateProjectiles(dt, now) {
+    // 通常は何もしない。敵弾が異常増殖した時だけ、当たり判定を回す前に負荷を戻す。
+    enforceEnemyBulletSafetyLimit(now);
+
     const arena = document.getElementById('shooting-arena');
     const boss = document.getElementById(BOSS_ID);
     const player = document.getElementById(PLAYER_ID);
