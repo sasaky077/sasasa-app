@@ -20319,3 +20319,96 @@ body:has(#screen-friend.active) .bottom-nav .bottom-nav-item.active img{
     margin:3% auto 0 !important;
   }
 }
+
+
+/* =========================================================
+   2026-08-16 SCROLL STABILITY FIX v15
+   巡行 / 設定のスクロール領域を flex-height 依存から切り離す。
+   既存の height:0 / calc(100dvh...) 競合を最終定義で無効化。
+   ========================================================= */
+
+/* 画面そのものは viewport に固定し、内部だけをスクロールさせる */
+#screen-ninmu,
+#screen-setting {
+  position: relative !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+/* 巡行：
+   ヘッダー下〜ボトムナビ手前までをレイアウト領域として直接確保。
+   flex の height:0 / 100% 計算に依存しない。 */
+#screen-ninmu .ninmu-layout {
+  position: absolute !important;
+  top: calc(var(--header-h) + var(--page-header-h, 64px)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#screen-ninmu .ninmu-right {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important;
+}
+
+#screen-ninmu .ninmu-left {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+}
+
+/* 設定：
+   screen-scroll をヘッダー下から画面下まで absolute で確保。
+   内容量に関係なくこの要素自身が必ずスクロールコンテナになる。 */
+#screen-setting .screen-scroll {
+  position: absolute !important;
+  top: calc(var(--header-h) + var(--page-header-h, 64px)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex: none !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+  box-sizing: border-box !important;
+}
+
+/* 縦スワイプを子要素側で塞がない */
+#screen-ninmu .ninmu-right,
+#screen-ninmu .ninmu-right *,
+#screen-setting .screen-scroll,
+#screen-setting .screen-scroll * {
+  touch-action: pan-y !important;
+}
+
+/* range は横操作を必要とするので例外 */
+#screen-setting input[type="range"] {
+  touch-action: pan-x !important;
+}
+
