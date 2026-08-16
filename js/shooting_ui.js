@@ -174,6 +174,11 @@
                 <strong id="shooting-result-raid-damage">0</strong>
               </div>
             </div>
+            <section class="shooting-result-rewards" id="shooting-result-rewards" aria-label="クリア報酬">
+              <div class="shooting-result-reward-head"><span>REWARD</span><strong>報酬</strong></div>
+              <div class="shooting-result-reward-list" id="shooting-result-reward-list"></div>
+              <small class="shooting-result-reward-note" id="shooting-result-reward-note"></small>
+            </section>
             <div class="shooting-result-actions">
               <button type="button" id="shooting-result-retry" onclick="restartShootingEvent()">RETRY</button>
               <button type="button" class="sub" onclick="closeShootingEvent()">戻る</button>

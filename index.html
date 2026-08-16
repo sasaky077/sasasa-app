@@ -4028,44 +4028,16 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     showToast((isFirstClear ? '初回クリア！ ' : '') + '+' + exp + ' EXP');
   }
 
-  // デイリー巡行クリア報酬
-  // 初級：原初の翼環×1 / 中級：共鳴石×1 / 上級：ガチャ石×5
+  // デイリー巡行は現在準備中。
+  // 旧ボタンや旧デバッグ呼び出しから呼ばれても、
+  // EXP・素材・ジェム等は一切付与せず、準備中表示だけで終了する。
   async function dailyNodeClear(level) {
-    var defs = {
-      beginner: {
-        nodeId: 'daily_beginner', difficulty: 'normal', materialId: 'eri_origin_wing',
-        rewardName: '原初の翼環', count: 1
-      },
-      intermediate: {
-        nodeId: 'daily_intermediate', difficulty: 'hard', materialId: 'kyoumei_stone',
-        rewardName: '共鳴石', count: 1
-      },
-      advanced: {
-        nodeId: 'daily_advanced', difficulty: 'hard', gem: 5,
-        rewardName: 'ガチャ石', count: 5
-      }
-    };
-
-    var def = defs[level];
-    if(!def) return;
-
-    await onNodeClear(def.nodeId, def.difficulty, 'S', true);
-
-    if(def.materialId && typeof addEvolutionMaterial === 'function'){
-      var reward = addEvolutionMaterial(def.materialId, def.count);
-      if(reward){
-        showToast(def.rewardName + ' ×' + def.count + ' を獲得（所持：' + reward.total + '）');
-      }
-      return;
+    if (typeof showToast === 'function') {
+      showToast('準備中');
+    } else {
+      alert('準備中');
     }
-
-    if(def.gem){
-      userProfile.gem = Number(userProfile.gem || 0) + def.gem;
-      await saveProfileToDB({ gem: userProfile.gem, last_played: new Date().toISOString() });
-      updateMainUI();
-      if(typeof updateSummonGemUI === 'function') updateSummonGemUI();
-      showToast(def.rewardName + ' ×' + def.gem + ' を獲得（所持：' + userProfile.gem + '）');
-    }
+    return false;
   }
 
   // 旧デバッグ呼び出し互換

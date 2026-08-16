@@ -5116,6 +5116,243 @@
     return hit ? hit.rank : 'E';
   }
 
+  // ============================================================
+  // Clear rewards - STORY / SPECIAL EVENT / DAILY RAID
+  // ============================================================
+  // 神核はシューティングの通常クリア報酬には含めない。
+  // REWARDは「プレイヤーEXP + 神樹の栄養 + 進化素材 + ジェム」で構成する。
+  const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
+    Object.freeze({ id: 'kyoumei_stone', name: '共鳴石', image: 'images/item_kyoumeistone.webp' }),
+    Object.freeze({ id: 'soul_vessel_logos', name: 'LOGOSの器', image: 'images/item_logos.webp' }),
+    Object.freeze({ id: 'soul_vessel_chaos', name: 'CHAOSの器', image: 'images/item_chaos.webp' }),
+    Object.freeze({ id: 'soul_vessel_mystis', name: 'MYSTISの器', image: 'images/item_mystis.webp' }),
+  ]);
+
+  function getShootingClearRewardPlan() {
+    const stage = selectedStage || {};
+
+    // 神樹の栄養は1個あたりの栄養値だけステージ種別で変える。
+    // ドロップ「個数」はステージ種別ではなく最終スコアだけで決める。
+    if (isRaidStage()) {
+      return { nutritionExp: 150 };
+    }
+
+    if (isFacelessStage() || stage.eventId === 'bullet_hell_test') {
+      const superDifficulty = stage.faceless && stage.faceless.difficulty === 'super';
+      return { nutritionExp: superDifficulty ? 120 : 80 };
+    }
+
+    const chapter = Math.max(1, Number(stage.chapter || 1));
+    const bossBonus = stage.type === 'boss' ? 1 : 0;
+    return { nutritionExp: 30 + chapter * 10 + bossBonus * 20 };
+  }
+
+  function getShootingRewardCountRange(score) {
+    const value = Math.max(0, Number(score || 0));
+    if (value >= 1000000) return { min: 12, max: 12, label: '1,000,000+' };
+    if (value >= 500000) return { min: 7, max: 8, label: '500,000–999,999' };
+    if (value >= 300000) return { min: 4, max: 6, label: '300,000–499,999' };
+    if (value >= 100000) return { min: 2, max: 4, label: '100,000–299,999' };
+    return { min: 1, max: 2, label: '0–99,999' };
+  }
+
+  function rollShootingRewardCount(range) {
+    const min = Math.max(1, Math.floor(Number(range && range.min || 1)));
+    const max = Math.max(min, Math.floor(Number(range && range.max || min)));
+    if (min === max) return min;
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  function pickShootingEvolutionReward() {
+    const pool = SHOOTING_EVOLUTION_REWARD_POOL;
+    return pool[Math.floor(Math.random() * pool.length)] || pool[0];
+  }
+
+  function getShootingPlayerExpDifficulty() {
+    const stage = selectedStage || {};
+    if (isRaidStage()) return 'boss';
+    if (isFacelessStage()) {
+      return stage.faceless && stage.faceless.difficulty === 'super' ? 'boss' : 'hard';
+    }
+    if (stage.eventId === 'bullet_hell_test') return 'hard';
+    if (stage.type === 'boss') return 'boss';
+    return 'normal';
+  }
+
+  function getShootingPlayerExpReward() {
+    const difficulty = getShootingPlayerExpDifficulty();
+    const rank = getResultRank(state && state.score, true);
+
+    // 本体の巡行EXP計算をそのまま流用する。
+    // シューティングはクリア自体を報酬条件とし、周回でも通常倍率で付与する。
+    if (typeof window.calcNodeExp === 'function') {
+      try {
+        return Math.max(1, Math.floor(Number(window.calcNodeExp(difficulty, rank, true) || 0)));
+      } catch (err) {
+        console.warn('[shooting reward] player exp calculation failed', err);
+      }
+    }
+
+    // index側APIが未初期化でも報酬を欠損させないフォールバック。
+    const base = difficulty === 'boss' ? 1000 : difficulty === 'hard' ? 500 : 250;
+    const rankMul = rank === 'S' ? 1.5 : rank === 'A' ? 1.2 : rank === 'C' ? 0.7 : 1.0;
+    return Math.max(1, Math.floor(base * rankMul));
+  }
+
+  function grantPlayerExpReward(amount) {
+    const exp = Math.max(0, Math.floor(Number(amount || 0)));
+    if (!exp) return false;
+
+    if (typeof window.addTotalScore === 'function') {
+      Promise.resolve(window.addTotalScore(exp)).catch(err => {
+        console.warn('[shooting reward] player exp save failed', err);
+      });
+      return true;
+    }
+
+    // 通常はaddTotalScoreを使う。未初期化時だけ端末上の値を最低限更新する。
+    if (window.userProfile) {
+      window.userProfile.total_score = Math.max(0, Number(window.userProfile.total_score || 0)) + exp;
+      if (typeof window.updateMainUI === 'function') window.updateMainUI();
+      if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+      return true;
+    }
+    return false;
+  }
+
+  function grantShinjuNutrition(exp, count) {
+    const nutritionExp = Math.max(1, Math.floor(Number(exp || 1)));
+    const amount = Math.max(1, Math.floor(Number(count || 1)));
+    const baseRunId = `shooting:${String(selectedStage && selectedStage.id || 'unknown')}:${Date.now()}`;
+
+    if (window.ShinjuProgress && typeof window.ShinjuProgress.grantBossItem === 'function') {
+      for (let i = 0; i < amount; i++) {
+        window.ShinjuProgress.grantBossItem({
+          bossId: 'shooting_clear_reward',
+          bossName: selectedStage && (selectedStage.eventTitle || selectedStage.name) || 'SHOOTING',
+          runId: `${baseRunId}:${i + 1}`,
+          itemName: '神樹の栄養',
+          exp: nutritionExp,
+          rank: '',
+        });
+      }
+      return true;
+    }
+
+    // shinju.jsの読込順が変わった場合でも報酬を失わない最低限の互換保存。
+    try {
+      const key = 'zeraphia_shinju_progress_v1';
+      const raw = localStorage.getItem(key);
+      const saved = raw ? JSON.parse(raw) : {};
+      saved.inventory = Array.isArray(saved.inventory) ? saved.inventory : [];
+      for (let i = 0; i < amount; i++) {
+        saved.inventory.push({
+          id: `shinju_item_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}_${i}`,
+          bossId: 'shooting_clear_reward', bossName: 'SHOOTING', runId: `${baseRunId}:${i + 1}`,
+          name: '神樹の栄養', exp: nutritionExp, rank: '', obtainedAt: new Date().toISOString(),
+        });
+      }
+      saved.exp = Math.max(0, Number(saved.exp || 0));
+      saved.offeredItems = Array.isArray(saved.offeredItems) ? saved.offeredItems : [];
+      saved.gameClearSeen = !!saved.gameClearSeen;
+      saved.updatedAt = new Date().toISOString();
+      localStorage.setItem(key, JSON.stringify(saved));
+      return true;
+    } catch (err) {
+      console.warn('[shooting reward] shinju nutrition save failed', err);
+      return false;
+    }
+  }
+
+  function grantEvolutionReward(material, count) {
+    const amount = Math.max(1, Math.floor(Number(count || 1)));
+    try {
+      if (typeof window.addEvolutionMaterial === 'function') {
+        const result = window.addEvolutionMaterial(material.id, amount);
+        if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+        return result || true;
+      }
+    } catch (err) {
+      console.warn('[shooting reward] evolution material save failed', err);
+    }
+    return false;
+  }
+
+  function grantGemReward(amount) {
+    const count = Math.max(0, Math.floor(Number(amount || 0)));
+    if (!count || !window.userProfile) return false;
+
+    const before = Math.max(0, Number(window.userProfile.gem || 0));
+    const next = before + count;
+    window.userProfile.gem = next;
+
+    if (typeof window.updateMainUI === 'function') window.updateMainUI();
+    if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
+
+    if (typeof window.saveProfileToDB === 'function') {
+      Promise.resolve(window.saveProfileToDB({ gem: next, last_played: new Date().toISOString() }))
+        .catch(err => {
+          console.warn('[shooting reward] gem cloud save failed', err);
+          // クラウド保存に失敗しても端末上のプレイ直後表示は維持。次の同期機会で再保存する。
+          if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+        });
+    }
+    return true;
+  }
+
+  function buildAndGrantShootingClearRewards() {
+    if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
+    state.clearRewardsGranted = true;
+
+    const plan = getShootingClearRewardPlan();
+    const material = pickShootingEvolutionReward();
+    const range = getShootingRewardCountRange(state.score);
+    const playerExp = getShootingPlayerExpReward();
+    const nutritionCount = rollShootingRewardCount(range);
+    const materialCount = rollShootingRewardCount(range);
+    const gemCount = rollShootingRewardCount(range);
+    const drops = [
+      { type: 'exp', name: 'プレイヤーEXP', amount: playerExp, detail: 'プレイヤーレベル経験値', image: '', amountPrefix: '+' },
+      { type: 'shinju', name: '神樹の栄養', amount: nutritionCount, detail: `1個あたり栄養値 +${plan.nutritionExp}`, image: 'images/shinju_01.webp' },
+      { type: 'material', name: material.name, amount: materialCount, detail: '進化素材', image: material.image, materialId: material.id },
+      { type: 'gem', name: 'ジェム', amount: gemCount, detail: '召喚・ショップ用', image: 'images/icon_gem.webp' },
+    ];
+
+    grantPlayerExpReward(playerExp);
+    grantShinjuNutrition(plan.nutritionExp, nutritionCount);
+    grantEvolutionReward(material, materialCount);
+    grantGemReward(gemCount);
+
+    state.clearRewardScoreRange = range;
+    state.clearRewards = drops;
+    return drops;
+  }
+
+  function renderShootingClearRewards(win) {
+    const section = document.getElementById('shooting-result-rewards');
+    const list = document.getElementById('shooting-result-reward-list');
+    const note = document.getElementById('shooting-result-reward-note');
+    if (!section || !list) return;
+
+    if (!win) {
+      section.style.display = 'none';
+      list.innerHTML = '';
+      if (note) note.textContent = '';
+      return;
+    }
+
+    const drops = buildAndGrantShootingClearRewards();
+    section.style.display = '';
+    list.innerHTML = drops.map(drop => `
+      <div class="shooting-result-reward-item shooting-result-reward-${drop.type}">
+        <span class="shooting-result-reward-icon">${drop.image ? `<img src="${drop.image}" alt="">` : '<b>EXP</b>'}</span>
+        <span class="shooting-result-reward-copy"><b>${drop.name}</b><small>${drop.detail}</small></span>
+        <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
+      </div>
+    `).join('');
+    if (note) note.textContent = `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`;
+  }
+
   function endGame(win) {
     if (!state || state.ended) return;
     // 通常戦はRESULT確定時点で復帰データを削除。
@@ -5227,6 +5464,7 @@
       rank.textContent = rankLetter;
       rank.setAttribute('data-rank', rankLetter);
     }
+    renderShootingClearRewards(!!win);
     if (result) {
       result.classList.add('show');
       result.setAttribute('aria-hidden', 'false');
