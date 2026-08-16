@@ -485,17 +485,44 @@
   const ENEMY_BULLET_HARD_LIMIT = 520;
   const ENEMY_BULLET_RECOVERY_TARGET = 460;
 
-  // DAILY RAIDだけは長時間戦になるため、DOM敵弾が増えすぎる前に通常弾生成を抑える。
+  // DAILY RAIDだけは長時間戦になるため、DOM敵弾を段階別に制限する。
   // WARNING / danger系はこの制限対象外。
-  const RAID_ENEMY_BULLET_SOFT_LIMIT = 240;
-  const RAID_ENEMY_BULLET_HARD_LIMIT = 300;
-  const RAID_ENEMY_BULLET_RECOVERY_TARGET = 260;
+  // phase2以降はスマホ/PWAのフリーズ・強制終了回避を優先。
+  const RAID_ENEMY_BULLET_LIMITS = Object.freeze({
+    1: Object.freeze({ soft: 220, hard: 270, recovery: 230 }),
+    2: Object.freeze({ soft: 170, hard: 205, recovery: 175 }),
+    3: Object.freeze({ soft: 150, hard: 185, recovery: 155 }),
+  });
+
+  function getRaidEnemyBulletLimits() {
+    const phase = Math.max(
+      1,
+      Math.min(3, Number(state && state.boss && state.boss.phase || 1))
+    );
+    return RAID_ENEMY_BULLET_LIMITS[phase] || RAID_ENEMY_BULLET_LIMITS[1];
+  }
+
   let lastEnemyBulletGuardLogAt = 0;
 
   // 自機弾側にも同じ安全装置を用意する。複数キャラの高速射撃が重なった場合の
   // 保険で、通常プレイのDPS/弾数バランスには影響しない値に設定している。
+  // レイドはenemyBulletsと同じ考え方でフェーズが進むほど絞る。
   const PLAYER_BULLET_HARD_LIMIT = 400;
   const PLAYER_BULLET_RECOVERY_TARGET = 340;
+  const RAID_PLAYER_BULLET_LIMITS = Object.freeze({
+    1: Object.freeze({ hard: 300, recovery: 250 }),
+    2: Object.freeze({ hard: 230, recovery: 190 }),
+    3: Object.freeze({ hard: 200, recovery: 165 }),
+  });
+
+  function getRaidPlayerBulletLimits() {
+    const phase = Math.max(
+      1,
+      Math.min(3, Number(state && state.boss && state.boss.phase || 1))
+    );
+    return RAID_PLAYER_BULLET_LIMITS[phase] || RAID_PLAYER_BULLET_LIMITS[1];
+  }
+
   let lastPlayerBulletGuardLogAt = 0;
 
   function isTouchLikePointer(e) {
@@ -1214,8 +1241,9 @@
   function enforceEnemyBulletSafetyLimit(now) {
     if (!state || !Array.isArray(state.enemyBullets)) return;
     const current = state.enemyBullets.length;
-    const hardLimit = isRaidStage() ? RAID_ENEMY_BULLET_HARD_LIMIT : ENEMY_BULLET_HARD_LIMIT;
-    const recoveryTarget = isRaidStage() ? RAID_ENEMY_BULLET_RECOVERY_TARGET : ENEMY_BULLET_RECOVERY_TARGET;
+    const raidLimits = isRaidStage() ? getRaidEnemyBulletLimits() : null;
+    const hardLimit = raidLimits ? raidLimits.hard : ENEMY_BULLET_HARD_LIMIT;
+    const recoveryTarget = raidLimits ? raidLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET;
     if (current <= hardLimit) return;
 
     let removeNeeded = Math.max(0, current - recoveryTarget);
@@ -1246,9 +1274,12 @@
   function enforcePlayerBulletSafetyLimit(now) {
     if (!state || !Array.isArray(state.bullets)) return;
     const current = state.bullets.length;
-    if (current <= PLAYER_BULLET_HARD_LIMIT) return;
+    const raidLimits = isRaidStage() ? getRaidPlayerBulletLimits() : null;
+    const hardLimit = raidLimits ? raidLimits.hard : PLAYER_BULLET_HARD_LIMIT;
+    const recoveryTarget = raidLimits ? raidLimits.recovery : PLAYER_BULLET_RECOVERY_TARGET;
+    if (current <= hardLimit) return;
 
-    let removeNeeded = Math.max(0, current - PLAYER_BULLET_RECOVERY_TARGET);
+    let removeNeeded = Math.max(0, current - recoveryTarget);
     let removed = 0;
     const kept = [];
 
@@ -1750,13 +1781,20 @@
   function spawnNormalEnemies(now) {
     if (!isNormalBattle() || state.finishing || state.ended) return;
     const cfg = getNormalBattleConfig();
-    const infiniteEnemies = !!cfg.infiniteEnemies;
+
+    // アイテム収集ミッションは、必要数を拾うまで敵が枯渇しないよう保証する。
+    // ステージ設定が有限敵でも、収集未達成の間だけは補充を継続する。
+    const collectMissionActive =
+      state.mission &&
+      state.mission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM &&
+      state.collectedItems < Number(state.mission.target || 3);
+
+    const infiniteEnemies = !!cfg.infiniteEnemies || collectMissionActive;
     const total = Number(cfg.totalEnemies || 7);
     const maxActive = Number(cfg.maxActive || 2);
     const interval = Number(cfg.spawnIntervalMs || 900);
 
-    // CH03などの無限湧きステージでは、撃破数ではスポーンを止めない。
-    // ミッション達成まで常にmaxActiveを補充する。
+    // 無限湧き、または未達成の収集ミッションでは撃破数でスポーンを止めない。
     if ((!infiniteEnemies && state.normalSpawned >= total) || state.normalEnemies.length >= maxActive) return;
     if (now - state.normalLastSpawnAt < interval) return;
     const enemyId = selectedStage && selectedStage.enemyIds && selectedStage.enemyIds[0];
@@ -2111,12 +2149,18 @@
   function updateCollectibles(dt) {
     if (!isNormalBattle() || !state.collectibles.length) return;
     const playerCore = document.getElementById('shooting-player-core');
-    if (!playerCore) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!playerCore || !arena) return;
+
     const coreRect = playerCore.getBoundingClientRect();
+    const arenaHeight = Number(arena.clientHeight || 0);
+
     state.collectibles = state.collectibles.filter(item => {
       if (!item || !item.el) return false;
+
       item.y += 16 * dt;
       positionUnit(item.el, item.x, item.y);
+
       if (rectsHit(item.el.getBoundingClientRect(), coreRect, -5, -3)) {
         item.el.remove();
         state.collectedItems++;
@@ -2124,6 +2168,14 @@
         evaluateNormalMission(performance.now());
         return false;
       }
+
+      // 取り逃したアイテムは画面外へ出た時点で破棄する。
+      // state.collectiblesにも残さないことで、次の敵から再ドロップ可能にする。
+      if (arenaHeight > 0 && item.y > arenaHeight + 40) {
+        item.el.remove();
+        return false;
+      }
+
       return true;
     });
   }
@@ -2921,11 +2973,14 @@
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
 
-    // DAILY RAID第2段階軽量化:
-    // 通常敵弾が一定数を超えたフレームだけ通常射撃の新規生成を止める。
-    // 既存弾はそのまま動き、弾数が減れば自動的に射撃を再開する。
-    if (isRaidStage() && getRaidOrdinaryEnemyBulletCount() >= RAID_ENEMY_BULLET_SOFT_LIMIT) {
-      return;
+    // DAILY RAID 段階別軽量化:
+    // 通常弾だけを段階別soft limitで止める。
+    // WARNING / danger攻撃はこの判定より先に処理済みなので維持される。
+    if (isRaidStage()) {
+      const raidLimits = getRaidEnemyBulletLimits();
+      if (getRaidOrdinaryEnemyBulletCount() >= raidLimits.soft) {
+        return;
+      }
     }
 
     if (BOSS && BOSS.behavior === 'faceless_event_v1') {
@@ -3112,15 +3167,22 @@
     if (!isRaidStage() || !state) return true;
 
     const t = Number(now || performance.now());
+    const phase = Math.max(
+      1,
+      Math.min(3, Number(state.boss && state.boss.phase || 1))
+    );
+
     if (kind === 'number') {
-      const interval = 150; // ダメージ数字は最大約6.7回/秒
+      // 後半ほどDOM生成頻度を落とす。ゲーム上のダメージ値は間引かない。
+      const interval = phase === 1 ? 170 : phase === 2 ? 240 : 280;
       const last = Number(state.raidLastBossDamageNumberAt || 0);
       if (t - last < interval) return false;
       state.raidLastBossDamageNumberAt = t;
       return true;
     }
 
-    const interval = 80; // HIT/flashは最大12.5回/秒
+    // ボスHIT/flashも後半ほど抑制。命中判定・コンボ・ULT加算には影響しない。
+    const interval = phase === 1 ? 95 : phase === 2 ? 130 : 150;
     const last = Number(state.raidLastBossHitVisualAt || 0);
     if (t - last < interval) return false;
     state.raidLastBossHitVisualAt = t;
@@ -6053,8 +6115,6 @@
     const y = arena.clientHeight * 0.48;
     positionUnit(flower, x, y);
     requestAnimationFrame(() => flower.classList.add('show'));
-    // scale transition(.42s)が収まった後の最終サイズで1回だけ実測する。
-    setTimeout(() => measureUnitSize(state.roseFlower), 440);
 
     const now = performance.now();
     state.roseFlower = {
@@ -6064,6 +6124,8 @@
       endAt: now + Number(c.flowerDurationMs || 5200),
       nextEmitAt: now + 180,
     };
+    // scale transition(.42s)が収まった後の最終サイズで1回だけ実測する。
+    setTimeout(() => measureUnitSize(state.roseFlower), 440);
     state.ultLockUntil = now + 260;
   }
 
