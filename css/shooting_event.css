@@ -6097,3 +6097,27 @@
   background:rgba(245,255,248,.96)!important;
   box-shadow:0 0 5px rgba(240,255,245,.95)!important;
 }
+
+
+/* =========================================================
+   GLOBAL WARNING BULLET - flat red
+   WARNING攻撃は通常の弾色・軽量化指定より優先して赤単色に固定。
+   発光/ぼかし/擬似要素は使わず、軽量化を維持する。
+   ========================================================= */
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet{
+  background:#e33434!important;
+  border-color:#ffb0a8!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet::before,
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet::after,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet::before,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet::after{
+  content:none!important;
+  display:none!important;
+}
