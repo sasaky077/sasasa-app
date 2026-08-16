@@ -7,7 +7,7 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = '20260816-resume-db-race-fix-v32';
+  const MODULE_VERSION = '20260816-ch01-overseer-nerf-v33';
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
     queuedOpenArgs.push(args);

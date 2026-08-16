@@ -1,3 +1,4 @@
+// 20260816-ch01-overseer-nerf-v33
 // Zeraphia SPECIAL EVENT - 銃撃戦 prototype
 // DOM-based shooting battle core. Character definitions and UI shell are split into separate modules.
 (function () {
@@ -3077,7 +3078,20 @@
 
   function getBossDangerInterval() {
     const phase = Math.max(1, Number(state?.boss?.phase || 1));
-    // フェーズが進むほど大技の頻度を上げる。初回は十分な猶予を取る。
+
+    // CHAPTER01-04 オーバーシアだけはWAVE2/3の危険攻撃頻度も
+    // 通常弾と同じく1段階ずつ弱体化する。
+    if (
+      selectedStage &&
+      selectedStage.id === SHOOTING_STAGE_ID.CH01_04 &&
+      BOSS &&
+      BOSS.behavior === 'overseer_v1'
+    ) {
+      if (phase >= 3) return 7600; // 旧WAVE2相当
+      return 9000;                 // WAVE1 / WAVE2
+    }
+
+    // その他のBOSSは従来値を維持。
     if (phase >= 3) return 6200;
     if (phase === 2) return 7600;
     return 9000;
@@ -3214,7 +3228,12 @@
     }
 
     const phase = state.boss.phase || 1;
-    const fireRates = { 1: 760, 2: 560, 3: 390 };
+
+    // CHAPTER01-04 オーバーシア難易度調整:
+    // WAVE1は従来維持。
+    // WAVE2は旧WAVE1相当、WAVE3は旧WAVE2相当に1段階ずつ弱体化。
+    // HP / ダメージ自体は変えず、弾数・連射間隔・弾速で避けやすくする。
+    const fireRates = { 1: 760, 2: 760, 3: 560 };
     if (now - state.lastBossShotAt < fireRates[phase]) return;
     state.lastBossShotAt = now;
 
@@ -3223,10 +3242,10 @@
     const baseAngle = Math.atan2(dy, dx);
     const patterns = {
       1: [-0.22, 0, 0.22],
-      2: [-0.34, -0.17, 0, 0.17, 0.34],
-      3: [-0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48],
+      2: [-0.22, 0, 0.22],
+      3: [-0.34, -0.17, 0, 0.17, 0.34],
     };
-    const speed = BOSS.bulletSpeed * (phase === 1 ? 1 : phase === 2 ? 1.08 : 1.16);
+    const speed = BOSS.bulletSpeed * (phase <= 2 ? 1 : 1.08);
     patterns[phase].forEach(offset => {
       const a = baseAngle + offset;
       state.enemyBullets.push(makeProjectile(
@@ -3238,18 +3257,8 @@
       ));
     });
 
-    if (phase === 3 && Math.floor(now / fireRates[phase]) % 2 === 0) {
-      [-0.9, 0.9].forEach(offset => {
-        const a = baseAngle + offset;
-        state.enemyBullets.push(makeProjectile(
-          'shooting-enemy-bullet',
-          state.boss.x, state.boss.y + 36,
-          Math.cos(a) * speed * 0.92,
-          Math.sin(a) * speed * 0.92,
-          1
-        ));
-      });
-    }
+    // 旧WAVE3にだけ存在した追加の左右弾は撤廃。
+    // 新WAVE3は旧WAVE2相当の5WAYまでに留める。
   }
 
   function updateBossPhase() {
