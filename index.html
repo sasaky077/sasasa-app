@@ -3860,9 +3860,74 @@ if(openingBgm && isAudioEnabled('title_bgm')){
           '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
           '<span class="friend-card-highscore">' + detailEscapeHTML(highScoreLabel) + '</span>' +
         '</span>' +
-      '</span>';
+      '</span>' +
+      '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>';
 
     return div;
+  }
+
+  function closeRemoveFriendConfirm(){
+    var ov = document.getElementById('friend-remove-confirm');
+    if(!ov) return;
+    ov.classList.remove('show');
+    setTimeout(function(){
+      if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
+    }, 160);
+  }
+
+  function confirmRemoveFriend(friendId){
+    var old = document.getElementById('friend-remove-confirm');
+    if(old) old.remove();
+
+    var ov = document.createElement('div');
+    ov.id = 'friend-remove-confirm';
+    ov.className = 'friend-remove-confirm';
+    ov.innerHTML =
+      '<div class="friend-remove-confirm-backdrop" onclick="closeRemoveFriendConfirm()"></div>' +
+      '<section class="friend-remove-confirm-card" role="dialog" aria-modal="true" aria-labelledby="friend-remove-confirm-title">' +
+        '<div class="friend-remove-confirm-kicker">FRIEND</div>' +
+        '<div class="friend-remove-confirm-title" id="friend-remove-confirm-title">本当にフレンドを解除しますか？</div>' +
+        '<div class="friend-remove-confirm-actions">' +
+          '<button type="button" class="friend-remove-confirm-no" onclick="closeRemoveFriendConfirm()">いいえ</button>' +
+          '<button type="button" class="friend-remove-confirm-yes" onclick="removeFriendConfirmed(\'' + detailEscapeHTML(friendId) + '\')">はい</button>' +
+        '</div>' +
+      '</section>';
+
+    document.body.appendChild(ov);
+    requestAnimationFrame(function(){ ov.classList.add('show'); });
+  }
+
+  async function removeFriendConfirmed(friendId){
+    var targetId = String(friendId || '').trim();
+    if(!targetId) return;
+
+    var yesBtn = document.querySelector('#friend-remove-confirm .friend-remove-confirm-yes');
+    if(yesBtn){
+      yesBtn.disabled = true;
+      yesBtn.textContent = '解除中...';
+    }
+
+    try {
+      var res = await sb.from('friendships')
+        .delete()
+        .or('and(requester_id.eq.' + userId + ',receiver_id.eq.' + targetId + '),and(requester_id.eq.' + targetId + ',receiver_id.eq.' + userId + ')');
+
+      if(res && res.error) throw res.error;
+
+      closeRemoveFriendConfirm();
+      await loadFriendScreen();
+      if(typeof refreshHomeNotifications === 'function') refreshHomeNotifications();
+      if(typeof refreshFriendHomeNotice === 'function') refreshFriendHomeNotice();
+      if(typeof showToast === 'function') showToast('フレンドを解除しました');
+    } catch(err) {
+      console.error('[Friend] remove failed:', err);
+      if(yesBtn){
+        yesBtn.disabled = false;
+        yesBtn.textContent = 'はい';
+      }
+      if(typeof showToast === 'function') showToast('フレンド解除に失敗しました');
+      else alert('フレンド解除に失敗しました');
+    }
   }
 
   async function searchFriendById(){

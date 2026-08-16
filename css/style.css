@@ -20723,3 +20723,102 @@ body {
     height:5px;
   }
 }
+
+
+/* =========================================================
+   Friend remove / confirm
+   ========================================================= */
+#screen-friend .friend-remove-btn{
+  flex:0 0 auto;
+  min-width:48px;
+  height:30px;
+  margin-left:auto;
+  padding:0 10px;
+  border:1px solid rgba(174,82,82,.30);
+  border-radius:8px;
+  background:rgba(170,68,68,.06);
+  color:#a35a5a;
+  font-family:"Noto Serif JP",serif;
+  font-size:10px;
+  letter-spacing:.08em;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#screen-friend .friend-remove-btn:active{
+  transform:scale(.96);
+  background:rgba(170,68,68,.12);
+}
+
+.friend-remove-confirm{
+  position:fixed;
+  inset:0;
+  z-index:270000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .16s ease;
+}
+.friend-remove-confirm.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.friend-remove-confirm-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(28,24,19,.36);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+.friend-remove-confirm-card{
+  position:relative;
+  z-index:1;
+  width:min(330px,92vw);
+  padding:24px 20px 18px;
+  border:1px solid rgba(157,126,73,.24);
+  border-radius:14px;
+  background:#faf6ed;
+  box-shadow:0 18px 48px rgba(64,45,20,.18);
+  text-align:center;
+}
+.friend-remove-confirm-kicker{
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.24em;
+  color:#a08a63;
+}
+.friend-remove-confirm-title{
+  margin-top:8px;
+  color:#5f4c31;
+  font-size:14px;
+  font-weight:600;
+  line-height:1.6;
+}
+.friend-remove-confirm-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:20px;
+}
+.friend-remove-confirm-actions button{
+  height:42px;
+  border-radius:9px;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  cursor:pointer;
+}
+.friend-remove-confirm-no{
+  border:1px solid rgba(141,116,77,.28);
+  background:#fffdf7;
+  color:#756344;
+}
+.friend-remove-confirm-yes{
+  border:1px solid rgba(159,66,66,.42);
+  background:#a85757;
+  color:#fffaf7;
+}
+.friend-remove-confirm-yes:disabled{
+  opacity:.55;
+}
