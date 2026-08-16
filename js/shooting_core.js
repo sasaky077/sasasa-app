@@ -3532,15 +3532,42 @@
     // 吸引が見た目上ほぼ無効になっていた。
     if (!isNormalBattle() && !bossGrabbed && !bossStunned && !bossBlackHolePulled) {
       if (BOSS && BOSS.behavior === 'violence_v1') {
-        const phase = state.boss.phase || 1;
-        const follow = phase === 1 ? .018 : phase === 2 ? .028 : phase === 3 ? .042 : .042;
-        const targetX = clamp(state.player.x, 58, w - 58);
-        const targetY = clamp(state.player.y - (phase === 3 ? 90 : 145), 62, h * .72);
-        state.boss.x += (targetX - state.boss.x) * Math.min(1, follow * 60 * dt);
-        state.boss.y += (targetY - state.boss.y) * Math.min(1, follow * 42 * dt);
-        // 微妙な横揺れだけ残し、「追われている」圧を優先する。
-        state.boss.x = clamp(state.boss.x + Math.sin(t * 1.15) * .7, 54, w - 54);
-        state.boss.y = clamp(state.boss.y, 56, h * .74);
+        // CH02-4 イリシュ:
+        // 普段は画面上部で圧を掛けるだけにし、プレイヤーを直接追い回さない。
+        // 一定周期でだけ、画面中央付近までゆっくり押し潰すように前進し、
+        // その後は同じくらいゆっくり上部へ戻る。
+        // どのフェーズでも画面中央(50%)より下へは進ませない。
+        const cycleMs = 12000;
+        const approachMs = 3200;
+        const holdMs = 900;
+        const returnMs = 3400;
+        const cycleAt = ((now - Number(state.startedAt || now)) % cycleMs + cycleMs) % cycleMs;
+
+        const restY = Math.max(62, h * .18);
+        const pressY = Math.min(h * .48, Math.max(restY + 80, h * .46));
+
+        let targetY = restY;
+        if (cycleAt < approachMs) {
+          const p = clamp(cycleAt / approachMs, 0, 1);
+          const eased = p * p * (3 - 2 * p);
+          targetY = restY + (pressY - restY) * eased;
+        } else if (cycleAt < approachMs + holdMs) {
+          targetY = pressY;
+        } else if (cycleAt < approachMs + holdMs + returnMs) {
+          const p = clamp((cycleAt - approachMs - holdMs) / returnMs, 0, 1);
+          const eased = p * p * (3 - 2 * p);
+          targetY = pressY + (restY - pressY) * eased;
+        }
+
+        // 横方向も追尾しすぎず、ゆっくりプレイヤー側へ寄る程度。
+        const targetX = clamp(w * .5 + (state.player.x - w * .5) * .28, 58, w - 58);
+        const followX = .010;
+        const followY = .016;
+        state.boss.x += (targetX - state.boss.x) * Math.min(1, followX * 60 * dt);
+        state.boss.y += (targetY - state.boss.y) * Math.min(1, followY * 60 * dt);
+
+        state.boss.x = clamp(state.boss.x + Math.sin(t * .82) * .35, 54, w - 54);
+        state.boss.y = clamp(state.boss.y, 56, h * .48);
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
         const phase = state.boss.phase || 1;
         const xAmp = phase === 1 ? w * 0.22 : phase === 2 ? w * 0.28 : w * 0.32;
