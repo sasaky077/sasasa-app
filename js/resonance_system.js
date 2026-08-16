@@ -1,3 +1,4 @@
+// 20260816-limitbreak-material-db-resolve-v44
 // Zeraphia Shooting 共鳴システム
 // Strategy / Battle32 / LINK / moveType / combo / range に依存しない。
 // 読み込み順: shooting_resonance.js -> resonance_system.js -> resonance_ui.js
@@ -337,6 +338,12 @@ function getAutoLimitBreakMaterial(target){
   // 手動選択を省略するため、素材候補は自動選択する。
   // 育成済み個体をなるべく残すため、強化Lvが低い個体を優先して消費する。
   materials.sort(function(a, b){
+    // DB IDが付いている素材を優先し、ガチャ保存中の一時オブジェクトを
+    // なるべく素材に選ばない。
+    var persistedA = a && a.db_id ? 0 : 1;
+    var persistedB = b && b.db_id ? 0 : 1;
+    if(persistedA !== persistedB) return persistedA - persistedB;
+
     var lbA = Number(a.limitBreak || 0);
     var lbB = Number(b.limitBreak || 0);
     if(lbA !== lbB) return lbA - lbB;
@@ -408,7 +415,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
 
     // 通常キャラだけ素材キャラをDELETEする。
     if(material){
-      await deleteMaterialFromDB(material);
+      await deleteMaterialFromDB(material, target);
     }
   } catch(saveError) {
     console.error('[Resonance] save failed; rolling back local state:', saveError);
@@ -538,16 +545,74 @@ async function updateLimitBreakToDB(target){
   return savedRow;
 }
 
-async function deleteMaterialFromDB(material){
-  if(!material || !material.db_id) throw new Error('限界突破素材のDB IDがありません');
+async function deleteMaterialFromDB(material, target){
+  if(!material) throw new Error('限界突破素材がありません');
+
+  var materialDbId = material.db_id || null;
+
+  // ガチャ直後など、BOXには存在するが非同期INSERTの反映前で db_id が
+  // まだ入っていない素材があり得る。その場合はSupabase上の同キャラ行を
+  // 再検索して素材行を解決する。
+  if(!materialDbId){
+    var charaId = Number(material.id || 0);
+    if(!charaId) throw new Error('限界突破素材のキャラIDがありません');
+
+    var query = sb.from('collected_characters')
+      .select('id,user_id,character_id,limit_break,captured_at')
+      .eq('user_id', userId)
+      .eq('character_id', charaId);
+
+    // 強化対象そのものは絶対に素材候補へ入れない。
+    if(target && target.db_id){
+      query = query.neq('id', target.db_id);
+    }
+
+    var lookup = await query
+      .order('limit_break', { ascending:true, nullsFirst:true })
+      .order('id', { ascending:true })
+      .limit(20);
+
+    if(lookup && lookup.error) throw lookup.error;
+
+    var candidates = (lookup && Array.isArray(lookup.data)) ? lookup.data : [];
+
+    // capturedAtが一致する行があれば最優先。なければ従来の自動選択と同様、
+    // 限界突破Lvが低い個体→DB IDが若い個体の順で1体だけ消費する。
+    var capturedAt = material.capturedAt || material.captured_at || '';
+    var resolved = null;
+    if(capturedAt){
+      resolved = candidates.find(function(row){
+        return String(row && row.captured_at || '') === String(capturedAt);
+      }) || null;
+    }
+    if(!resolved && candidates.length){
+      resolved = candidates[0];
+    }
+
+    if(!resolved || !resolved.id){
+      var missing = new Error('限界突破素材のDB行を再解決できませんでした');
+      missing.name = 'LimitBreakMaterialResolveError';
+      missing.details = 'userId=' + String(userId) +
+        ', characterId=' + String(charaId) +
+        ', targetDbId=' + String(target && target.db_id || '') +
+        ', localMaterialDbId=' + String(material.db_id || '');
+      throw missing;
+    }
+
+    materialDbId = resolved.id;
+    material.db_id = resolved.id;
+  }
+
   var result = await sb.from('collected_characters')
     .delete()
-    .eq('id', material.db_id)
+    .eq('id', materialDbId)
     .eq('user_id', userId)
     .select('id');
-  if(result.error) throw result.error;
-  if(!result.data || result.data.length === 0){
+
+  if(result && result.error) throw result.error;
+  if(!result || !result.data || result.data.length === 0){
     throw new Error('限界突破素材の削除対象が見つかりません');
   }
+
   return true;
 }
