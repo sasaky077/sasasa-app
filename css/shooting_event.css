@@ -106,6 +106,41 @@
 }
 
 
+/* SPECIAL STAGE「超弾幕」限定：見た目を徹底的に簡素化する。
+   このステージ自体がパフォーマンス検証用のストレステストなので、
+   他ステージ以上に容赦なく削る。弾は完全な単色フラット、
+   ボス本体のdrop-shadowも撤去、背景演出も最小限にする。 */
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-mini-enemy-bullet{
+  background:#4a4a4a!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-enemy-bullet::after,
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-mini-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-mini-enemy-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"][data-boss-phase="2"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"][data-boss-phase="3"] .shooting-enemy-bullet{
+  box-shadow:none!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-bullet{
+  box-shadow:none!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss{
+  filter:none!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-bg{
+  filter:none!important;
+}
+
+
 /* ===== SINGLE GAUGE / STOCK SYSTEM ===== */
 #shooting-event-root.boss-phase-pause .shooting-boss{filter:brightness(1.15) drop-shadow(0 0 18px rgba(220,185,115,.48))}
 #shooting-event-root.boss-phase-pause .shooting-boss-phase::after{content:"  ·  BREAK";color:#a28b63}

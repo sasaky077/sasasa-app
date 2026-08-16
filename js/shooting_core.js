@@ -2626,6 +2626,63 @@
     });
   }
 
+  // ============================================================
+  // 超弾幕（STRESS TEST）専用の発射ロジック。
+  // barrage_v1(REMNANT_03/レイド共用)には手を入れず、完全に独立させる。
+  // 狙いはパターンの見栄えではなく「弾の絶対数」で負荷を測ること。
+  // なので構造はあえて単純な同心円+扇形の組み合わせだけにしている。
+  // WAVE(=state.boss.phase)が進むほど、間隔を詰めて弾数を増やす。
+  // ENEMY_BULLET_HARD_LIMIT(既存の安全装置)が最終的な歯止めになる。
+  // ============================================================
+  function fireBulletHellTest(now) {
+    const phase = state.boss.phase || 1;
+
+    // WAVE1から既に高密度。WAVE3でさらに詰める。
+    const interval = phase === 1 ? 260 : phase === 2 ? 190 : 130;
+    if (now - state.lastBossShotAt < interval) return;
+    state.lastBossShotAt = now;
+
+    const speed = Number(BOSS.bulletSpeed || 230);
+    const damage = Number(BOSS.bulletDamage || 180);
+    const originX = state.boss.x;
+    const originY = state.boss.y + 40;
+
+    // 同心円リング：WAVEごとに弾数を増やす。
+    const ringCounts = { 1: 16, 2: 22, 3: 30 };
+    const ringCount = ringCounts[phase] || ringCounts[3];
+    const spin = now * (phase === 1 ? 0.0016 : phase === 2 ? 0.0022 : 0.0030);
+    for (let i = 0; i < ringCount; i++) {
+      const a = spin + (Math.PI * 2 * i / ringCount);
+      state.enemyBullets.push(makeProjectile(
+        'shooting-enemy-bullet',
+        originX, originY,
+        Math.cos(a) * speed,
+        Math.sin(a) * speed,
+        damage
+      ));
+    }
+
+    // 自機狙いの追加扇形：WAVEが進むほど本数を増やす。
+    const dx = state.player.x - state.boss.x;
+    const dy = state.player.y - state.boss.y;
+    const baseAngle = Math.atan2(dy, dx);
+    const fanOffsets = {
+      1: [-0.3, -0.1, 0.1, 0.3],
+      2: [-0.4, -0.24, -0.08, 0.08, 0.24, 0.4],
+      3: [-0.5, -0.36, -0.22, -0.08, 0.08, 0.22, 0.36, 0.5],
+    };
+    (fanOffsets[phase] || fanOffsets[3]).forEach(offset => {
+      const a = baseAngle + offset;
+      state.enemyBullets.push(makeProjectile(
+        'shooting-enemy-bullet',
+        originX, originY,
+        Math.cos(a) * speed * 1.15,
+        Math.sin(a) * speed * 1.15,
+        damage
+      ));
+    });
+  }
+
   function fireBarrageBoss(now) {
     const phase = state.boss.phase || 1;
     const interval = phase === 1 ? 860 : phase === 2 ? 690 : 540;
@@ -3230,6 +3287,10 @@
     }
     if (BOSS && BOSS.behavior === 'barrage_v1') {
       fireBarrageBoss(now);
+      return;
+    }
+    if (BOSS && BOSS.behavior === 'bullet_hell_test_v1') {
+      fireBulletHellTest(now);
       return;
     }
 

@@ -25,6 +25,7 @@
     // SPECIAL EVENT bosses
     FACELESS: 'shooting_faceless',
     RAID_TEST: 'shooting_raid_test',
+    BULLET_HELL_TEST: 'shooting_bullet_hell_test',
   });
 
   // ============================================================
@@ -240,6 +241,34 @@
       bulletDamage: 190,
       behavior: 'barrage_v1',
       uiScale: 1.12,
+    }),
+
+
+    // ------------------------------------------------------------
+    // SPECIAL STAGE - 超弾幕（パフォーマンス検証用ストレステスト）
+    // 見た目は徹底的に簡素化し、弾数の生値だけで重さを測る想定。
+    // 4発被弾で撃破される想定のダメージ値(bulletDamage)にしてある。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.BULLET_HELL_TEST]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.BULLET_HELL_TEST,
+      kind: 'boss',
+      implemented: true,
+      name: 'テストエネミー',
+      displayName: 'SPECIAL STAGE　超弾幕',
+      image: 'images/testenemy_battle_up.webp',
+
+      // WAVE(フェーズ)3段。各段のHPは軽め＝早く弾幕密度が上がる方を優先。
+      gaugeHp: 5000,
+      gauges: 3,
+
+      bulletSpeed: 230,
+      fireRate: 300,
+      // 標準HP帯(エリ670前後)を基準に「4発で撃破」相当。
+      // キャラのHPにより多少前後する点は許容。
+      bulletDamage: 180,
+
+      behavior: 'bullet_hell_test_v1',
+      uiScale: 1.0,
     }),
 
     [SHOOTING_ENEMY_ID.REMNANT_04]: Object.freeze({

@@ -45,6 +45,7 @@
     FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
+    BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
   });
 
   // ============================================================
@@ -449,6 +450,30 @@
         objectHp: 950,
         objectWays: 3,
         waveObjectCount: Object.freeze([1, 2]),
+      }),
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // SPECIAL STAGE - 超弾幕
+    // パフォーマンス検証用のストレステストステージ。
+    // 見た目は極限まで簡素化(装飾なし)。WAVE1から高密度、WAVE3でさらに濃く。
+    // 1発被弾での即死はなし(4発被弾で撃破される想定のダメージ値)。
+    // ============================================================
+    [SHOOTING_STAGE_ID.BULLET_HELL_TEST]: Object.freeze({
+      id: SHOOTING_STAGE_ID.BULLET_HELL_TEST,
+      chapter: 0,
+      stageNo: 3,
+      eventId: 'bullet_hell_test',
+      eventTitle: '超弾幕',
+      difficultyLabel: 'STRESS TEST',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '超弾幕を耐えきれ',
       }),
       playable: true,
     }),
