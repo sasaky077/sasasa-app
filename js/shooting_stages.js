@@ -230,15 +230,15 @@
         SHOOTING_ENEMY_ID.MINI_02,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 5,
+        totalEnemies: 3,
         maxActive: 2,
         spawnIntervalMs: 1450,
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.MAX_HITS_TAKEN,
-        maxHits: 2,
-        text: '被弾2回以内でクリア',
+        maxHits: 3,
+        text: '被弾3回以内でクリア',
       }),
 
       playable: true,
