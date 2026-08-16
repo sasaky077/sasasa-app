@@ -20174,3 +20174,50 @@ body:has(#screen-friend.active) .bottom-nav .bottom-nav-item.active img{
 #screen-main .friend-home-entry{
   top:var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) !important;
 }
+
+
+/* =========================================================
+   Home side icons - visual size normalization
+   各アイコン素材の余白量と縦横比が異なるため、見た目サイズを個別補正する。
+   クリック領域はボタン外寸のまま、絵柄だけを揃える。
+   ========================================================= */
+#screen-main .bonus-home-entry-icon,
+#screen-main .friend-home-entry-icon,
+#screen-main .home-notice-btn > img,
+#screen-main .shinju-home-entry-icon{
+  display:block;
+  object-fit:contain;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* ボーナスは元素材の横幅がやや細いので少し大きめ */
+#screen-main .bonus-home-entry-icon{
+  width:108%;
+  height:108%;
+  margin-top:-4%;
+}
+
+/* フレンド / お知らせ / 神樹はほぼ同じ見え寸に揃える */
+#screen-main .friend-home-entry-icon,
+#screen-main .home-notice-btn > img,
+#screen-main .shinju-home-entry-icon{
+  width:93%;
+  height:93%;
+  margin-top:3.5%;
+}
+
+@media (max-width: 380px) and (max-height: 700px) {
+  #screen-main .bonus-home-entry-icon{
+    width:108%;
+    height:108%;
+    margin-top:-4%;
+  }
+  #screen-main .friend-home-entry-icon,
+  #screen-main .home-notice-btn > img,
+  #screen-main .shinju-home-entry-icon{
+    width:93%;
+    height:93%;
+    margin-top:3.5%;
+  }
+}
