@@ -3210,105 +3210,218 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   var RARITY_COLOR_MAP = { r:'#c0c0c0', sr:'#ffd700', ur:'#ffffff' };
   var RARITY_STAR_MAP  = { r:'★☆☆', sr:'★★☆', ur:'★★★' };
 
+  const FRIEND_SCORE_STAGE_IDS = [
+    'shooting_ch01_01','shooting_ch01_02','shooting_ch01_03','shooting_ch01_04',
+    'shooting_ch02_01','shooting_ch02_02','shooting_ch02_03','shooting_ch02_04',
+    'shooting_ch03_01','shooting_ch03_02','shooting_ch03_03','shooting_ch03_04'
+  ];
+
+  function getFriendStageLabel(stageId){
+    var m = String(stageId || '').match(/shooting_ch(\d{2})_(\d{2})/);
+    return m ? ('CHAPTER ' + m[1] + '-' + m[2]) : (stageId || '--');
+  }
+
+  function formatFriendScore(value){
+    var n = Math.max(0, Math.floor(Number(value || 0)));
+    return n ? n.toLocaleString('ja-JP') : '--';
+  }
+
+  function getFriendLoginText(profile){
+    if(!profile) return 'ログイン --';
+    var totalDays = Number(profile.total_login_days ?? profile.login_days);
+    if(Number.isFinite(totalDays) && totalDays >= 0){
+      return 'ログイン ' + Math.floor(totalDays) + '日';
+    }
+    if(profile.last_played){
+      var diff = Date.now() - new Date(profile.last_played).getTime();
+      if(Number.isFinite(diff) && diff >= 0){
+        var days = Math.floor(diff / 86400000);
+        if(days <= 0) return '最終ログイン 今日';
+        return '最終ログイン ' + days + '日前';
+      }
+    }
+    return 'ログイン --';
+  }
+
+  async function getFriendHighScoreSummary(fid){
+    if(!sb || typeof sb.rpc !== 'function'){
+      return { stageId:'', score:0 };
+    }
+    try {
+      var rows = await Promise.all(FRIEND_SCORE_STAGE_IDS.map(async function(stageId){
+        try {
+          var res = await sb.rpc('get_shooting_high_score', {
+            p_user_id: fid,
+            p_stage_id: stageId
+          });
+          if(res && res.error) throw res.error;
+          return { stageId:stageId, score:Math.max(0, Number(res && res.data || 0)) };
+        } catch(_){
+          return { stageId:stageId, score:0 };
+        }
+      }));
+      rows.sort(function(a,b){ return b.score - a.score; });
+      return rows[0] || { stageId:'', score:0 };
+    } catch(_){
+      return { stageId:'', score:0 };
+    }
+  }
+
+  function closeFriendProfileDetail(){
+    var ov = document.getElementById('friend-profile-detail');
+    if(!ov) return;
+    ov.classList.remove('show');
+    setTimeout(function(){ if(ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 180);
+  }
+
+  function openFriendProfileDetail(data){
+    var old = document.getElementById('friend-profile-detail');
+    if(old) old.remove();
+
+    var panelHtml = data.panelSrc
+      ? '<img class="friend-profile-panel-img" src="' + data.panelSrc + '" alt="">'
+      : '<div class="friend-profile-panel-empty">NO CHARACTER</div>';
+
+    var charName = data.charaName || 'ホームキャラ未設定';
+    var scoreStage = data.highScore && data.highScore.score
+      ? getFriendStageLabel(data.highScore.stageId)
+      : '--';
+    var scoreValue = data.highScore && data.highScore.score
+      ? formatFriendScore(data.highScore.score)
+      : '--';
+
+    var ov = document.createElement('div');
+    ov.id = 'friend-profile-detail';
+    ov.className = 'friend-profile-detail';
+    ov.innerHTML =
+      '<div class="friend-profile-detail-backdrop" onclick="closeFriendProfileDetail()"></div>' +
+      '<section class="friend-profile-detail-sheet" role="dialog" aria-modal="true">' +
+        '<div class="friend-profile-detail-head">' +
+          '<button type="button" class="friend-profile-detail-back" onclick="closeFriendProfileDetail()">＜戻る</button>' +
+          '<div class="friend-profile-detail-title">戦友詳細</div>' +
+          '<div></div>' +
+        '</div>' +
+        '<div class="friend-profile-detail-scroll">' +
+          '<div class="friend-profile-hero">' +
+            '<div class="friend-profile-panel">' + panelHtml + '</div>' +
+            '<div class="friend-profile-main">' +
+              '<div class="friend-profile-name">' + detailEscapeHTML(data.name || '') + '</div>' +
+              '<div class="friend-profile-rank">RANK ' + Number(data.rank || 1) + '</div>' +
+              '<div class="friend-profile-chara-name">' + detailEscapeHTML(charName) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="friend-profile-info-grid">' +
+            '<div class="friend-profile-info-card"><span>LOGIN</span><strong>' + detailEscapeHTML(data.loginText || 'ログイン --') + '</strong></div>' +
+            '<div class="friend-profile-info-card friend-profile-score-card"><span>HISCORE</span><strong>' + detailEscapeHTML(scoreValue) + '</strong><small>' + detailEscapeHTML(scoreStage) + '</small></div>' +
+          '</div>' +
+        '</div>' +
+      '</section>';
+
+    document.body.appendChild(ov);
+    requestAnimationFrame(function(){ ov.classList.add('show'); });
+  }
+
+  async function getFriendFavoriteCharacter(profile){
+    var favData = null;
+    var chara = null;
+    var favoriteDbId = profile ? (profile.favorite_db_id ?? null) : null;
+    var favoriteCharId = profile ? (profile.favorite_char_id ?? null) : null;
+
+    if(favoriteDbId){
+      try {
+        var favRes = await sb.from('collected_characters').select('*').eq('id', favoriteDbId).maybeSingle();
+        favData = favRes && favRes.data ? favRes.data : null;
+        if(favData){
+          chara = CHARACTERS.find(function(ch){
+            return Number(ch.id) === Number(favData.character_id);
+          }) || null;
+        }
+      } catch(_){}
+    }
+
+    if(!chara && favoriteCharId != null){
+      chara = CHARACTERS.find(function(ch){
+        return Number(ch.id) === Number(favoriteCharId);
+      }) || null;
+    }
+
+    // お気に入り未設定時は、ホーム画面と同じく主人公エリをデフォルト表示にする
+    if(!chara){
+      chara = CHARACTERS.find(function(ch){
+        return ch && (Number(ch.id) === 1 || ch.name === 'エリ');
+      }) || null;
+      favData = null;
+    }
+
+    if(!chara) return { chara:null, favData:null, detailData:null, panelSrc:'' };
+
+    var detailData = Object.assign({}, chara, favData || {}, {
+      id: chara.id,
+      name: chara.name,
+      img: chara.img,
+      cutImg: chara.cutImg,
+      panelImg: chara.panelImg,
+      stats: (favData && favData.stats) || chara.stats || {},
+      rarity: (favData && favData.rarity) || chara.rarity
+    });
+
+    return {
+      chara: chara,
+      favData: favData,
+      detailData: detailData,
+      panelSrc: chara.panelImg || chara.img || ''
+    };
+  }
+
   async function buildFriendCard(fid){
-    // プロフィール取得
     var pRes = await sb.from('user_profiles').select('*').eq('user_id', fid);
     var profile = (pRes.data && pRes.data[0]) ? pRes.data[0] : null;
     var name = profile ? (profile.display_name || fid) : fid;
-    var rank = profile ? (profile.rank || 1) : 1;
-    var lastPlayed = profile && profile.last_played
-      ? new Date(profile.last_played).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})
-      : '不明';
+    var rank = profile
+      ? (typeof calcRank === 'function' ? calcRank(profile.total_score || 0) : (profile.rank || 1))
+      : 1;
+    var loginText = getFriendLoginText(profile);
 
-    // 収集数
-    var colRes = await sb.from('collected_characters').select('id', {count:'exact'}).eq('user_id', fid);
-    var colCount = colRes.count || 0;
+    // ホーム画面に設定中のキャラ
+    var favorite = await getFriendFavoriteCharacter(profile);
+    var chara = favorite.chara;
+    var panelSrc = favorite.panelSrc;
+    var highScore = await getFriendHighScoreSummary(fid);
+    var highScoreLabel = highScore.score
+      ? (getFriendStageLabel(highScore.stageId) + '  ' + formatFriendScore(highScore.score))
+      : 'HISCORE --';
 
-    // メインキャラデータ取得
-    var favData = null;
-    var chara = null;
-    if(profile && profile.favorite_db_id){
+    var div = document.createElement('button');
+    div.type = 'button';
+    div.className = 'friend-card friend-card-compact';
 
-  var favRes = await sb
-    .from('collected_characters')
-    .select('*')
-    .eq('id', profile.favorite_db_id);
+    var panelHtml = panelSrc
+      ? '<img src="' + panelSrc + '" class="friend-card-panel-img" alt="">'
+      : '<div class="friend-card-panel-empty">—</div>';
 
-  favData = (favRes.data && favRes.data[0])
-    ? favRes.data[0]
-    : null;
+    div.innerHTML =
+      '<span class="friend-card-panel">' + panelHtml + '</span>' +
+      '<span class="friend-card-body">' +
+        '<span class="friend-card-topline">' +
+          '<strong class="friend-card-name">' + detailEscapeHTML(name) + '</strong>' +
+          '<b class="friend-card-rank">RANK ' + Number(rank || 1) + '</b>' +
+        '</span>' +
+        '<span class="friend-card-bottomline">' +
+          '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
+          '<span class="friend-card-highscore">' + detailEscapeHTML(highScoreLabel) + '</span>' +
+        '</span>' +
+      '</span>' +
+      '<span class="friend-card-chevron">›</span>';
 
-  if(favData){
-    chara = CHARACTERS.find(function(ch){
-      return ch.id === favData.character_id;
-    });
-  }
-}
-
-    var div = document.createElement('div');
-    div.className = 'friend-card';
-
-    // ── メインキャラ表示エリア ──
-    var charaSection = '';
-    if(favData && chara){
-      var rarityColor = RARITY_COLOR_MAP[favData.rarity] || '#aaa';
-      var rarityStar  = RARITY_STAR_MAP[favData.rarity]  || '';
-
-      // キャラ画像 (cutImg or img)
-      var charaImgHTML = '';
-
-      if(chara.img){
-       charaImgHTML = '<img src="'+chara.img+'" class="friend-icon-img">';
-      } else {
-       charaImgHTML = '<div class="friend-icon-empty">'+'</div>';
+    div.addEventListener('click', function(){
+      if(favorite.detailData){
+        showFriendDetail(favorite.detailData, name);
       }
-
-      charaSection =
-  '<div class="friend-list-left">' +
-    charaImgHTML +
-    '<div class="friend-chara-caption" style="color:'+rarityColor+'">' +
-      chara.name + ' ' + rarityStar +
-    '</div>' +
-  '</div>';
-
-    } else {
-      charaSection = '<div class="friend-list-empty" style="padding:12px 0">メインキャラ未設定</div>';
+    });
+    if(!favorite.detailData){
+      div.classList.add('is-no-favorite');
+      div.setAttribute('aria-disabled', 'true');
     }
-
-   div.innerHTML =
-  '<div class="friend-list-layout">' +
-    charaSection +
-    '<div class="friend-list-main">' +
-      '<div class="friend-card-name">'+name+'</div>' +
-      '<div class="friend-card-meta">最終プレイ: '+lastPlayed+'</div>' +
-      '<div class="friend-card-stats">' +
-        '<span class="friend-stat-chip">Rank '+rank+'</span>' +
-        '<span class="friend-stat-chip">収集数 '+colCount+' / '+CHARACTERS.length+'</span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="friend-list-right">' +
-'</div>' +
-'</div>';
-
-// フレンドカードタップでメインキャラ詳細表示
-div.addEventListener('click', function(){
-  if(!favData || !chara){
-    alert('このフレンドはメインキャラ未設定です');
-    return;
-  }
-
-  var friendCharaData = {
-  id: chara.id,
-  name: chara.name,
-  img: chara.img,
-  cutImg: chara.cutImg,
-  stats: favData.stats || chara.stats || {},
-  rarity: favData.rarity || chara.rarity,
-  time: favData.captured_at
-};
-
-  showFriendDetail(friendCharaData, name);
-});
 
     return div;
   }
@@ -3336,6 +3449,10 @@ div.addEventListener('click', function(){
     }
     var profile = check.data[0];
     var name = profile.display_name || targetId;
+    var favorite = await getFriendFavoriteCharacter(profile);
+    var searchPanelHtml = favorite.panelSrc
+      ? '<img class="friend-search-panel-img" src="' + favorite.panelSrc + '" alt="">'
+      : '<div class="friend-search-panel-empty">—</div>';
 
     // 既存関係チェック
     var existing = await sb.from('friendships').select('*')
@@ -3353,9 +3470,12 @@ div.addEventListener('click', function(){
     }
 
     resultEl.innerHTML =
-      '<div class="friend-search-card">' +
-        '<div class="friend-search-card-name">'+name+'</div>' +
-        '<div class="friend-search-card-id">ID: '+targetId+'</div>' +
+      '<div class="friend-search-card friend-search-card-with-panel">' +
+        '<div class="friend-search-panel">' + searchPanelHtml + '</div>' +
+        '<div class="friend-search-main">' +
+          '<div class="friend-search-card-name">' + detailEscapeHTML(name) + '</div>' +
+          '<div class="friend-search-card-id">ID: ' + detailEscapeHTML(targetId) + '</div>' +
+        '</div>' +
         '<button class="friend-search-send-btn" '+(btnDisabled?'disabled':'')+' onclick="sendFriendRequest(\'' + targetId + '\')">'+btnLabel+'</button>' +
       '</div>';
   }

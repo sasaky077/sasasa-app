@@ -19527,3 +19527,322 @@ body.login-bonus-open {
   text-align:center !important;
   white-space:nowrap;
 }
+
+
+/* =========================================================
+   122 Friend List Compact Cards / Friend Detail
+   ========================================================= */
+#screen-friend .friend-card-compact{
+  width:100%;
+  min-height:66px;
+  height:66px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:6px 10px 6px 7px;
+  margin:0 0 7px;
+  border:1px solid rgba(145,116,67,.18);
+  border-radius:7px;
+  background:rgba(255,253,247,.78);
+  box-shadow:0 2px 8px rgba(72,54,27,.06);
+  color:#4b4640;
+  text-align:left;
+  font-family:"Noto Serif JP",serif;
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+}
+#screen-friend .friend-card-compact:active{transform:scale(.99);opacity:.88}
+.friend-card-panel{
+  flex:0 0 52px;
+  width:52px;
+  height:52px;
+  overflow:hidden;
+  border:1px solid rgba(151,119,66,.22);
+  background:rgba(237,231,216,.72);
+}
+.friend-card-panel-img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center top;
+}
+.friend-card-panel-empty{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:rgba(91,79,60,.35);
+}
+.friend-card-body{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:7px;
+}
+.friend-card-topline,
+.friend-card-bottomline{
+  min-width:0;
+  display:flex;
+  align-items:center;
+}
+.friend-card-topline{gap:8px}
+#screen-friend .friend-card-name{
+  min-width:0;
+  flex:1 1 auto;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.03em;
+  color:#4b4640!important;
+}
+.friend-card-rank{
+  flex:0 0 auto;
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:.08em;
+  color:#8a6a32;
+  font-weight:600;
+}
+.friend-card-bottomline{
+  justify-content:space-between;
+  gap:8px;
+  font-size:8.5px;
+  line-height:1;
+  color:rgba(75,70,64,.58);
+}
+.friend-card-login{flex:0 0 auto;white-space:nowrap}
+.friend-card-highscore{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:right;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  letter-spacing:.02em;
+}
+.friend-card-chevron{
+  flex:0 0 auto;
+  color:#aa8b50;
+  font-size:20px;
+  line-height:1;
+  margin-left:1px;
+}
+
+/* タップ後の詳細は広く使う */
+.friend-profile-detail{
+  position:fixed;
+  inset:0;
+  z-index:260000;
+  display:flex;
+  justify-content:center;
+  align-items:stretch;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease;
+}
+.friend-profile-detail.show{opacity:1;pointer-events:auto}
+.friend-profile-detail-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(42,35,25,.26);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+.friend-profile-detail-sheet{
+  position:relative;
+  z-index:1;
+  width:min(430px,100%);
+  height:100dvh;
+  background:#f7f2e8;
+  overflow:hidden;
+  box-shadow:0 0 28px rgba(58,43,20,.18);
+}
+.friend-profile-detail-head{
+  height:64px;
+  display:grid;
+  grid-template-columns:80px 1fr 80px;
+  align-items:center;
+  padding:0 14px;
+  border-bottom:1px solid rgba(145,116,67,.16);
+  background:rgba(255,253,247,.94);
+}
+.friend-profile-detail-back{
+  border:0;
+  background:transparent;
+  color:#8a6a32;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:600;
+  text-align:left;
+  cursor:pointer;
+}
+.friend-profile-detail-title{
+  text-align:center;
+  font-size:18px;
+  font-weight:600;
+  color:#6e5730;
+  letter-spacing:.08em;
+}
+.friend-profile-detail-scroll{
+  height:calc(100dvh - 64px);
+  overflow-y:auto;
+  padding:18px 18px calc(40px + env(safe-area-inset-bottom));
+}
+.friend-profile-hero{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:14px;
+  background:rgba(255,253,247,.72);
+  border:1px solid rgba(145,116,67,.17);
+}
+.friend-profile-panel{
+  flex:0 0 112px;
+  width:112px;
+  height:112px;
+  overflow:hidden;
+  border:1px solid rgba(145,116,67,.22);
+  background:rgba(237,231,216,.7);
+}
+.friend-profile-panel-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center top;
+}
+.friend-profile-panel-empty{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  color:rgba(75,70,64,.35);
+}
+.friend-profile-main{min-width:0}
+.friend-profile-name{
+  font-size:19px;
+  font-weight:700;
+  color:#4b4640;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.friend-profile-rank{
+  margin-top:7px;
+  font-family:"Cinzel",serif;
+  font-size:11px;
+  letter-spacing:.12em;
+  color:#9a793d;
+}
+.friend-profile-chara-name{
+  margin-top:14px;
+  font-size:11px;
+  color:rgba(75,70,64,.64);
+}
+.friend-profile-info-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:14px;
+}
+.friend-profile-info-card{
+  min-height:92px;
+  padding:13px;
+  border:1px solid rgba(145,116,67,.17);
+  background:rgba(255,253,247,.68);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.friend-profile-info-card>span{
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:.16em;
+  color:#a3854f;
+}
+.friend-profile-info-card>strong{
+  margin-top:8px;
+  font-size:13px;
+  color:#4b4640;
+  font-weight:600;
+}
+.friend-profile-score-card>strong{
+  font-family:"Cinzel",serif;
+  font-size:18px;
+}
+.friend-profile-info-card>small{
+  margin-top:5px;
+  font-size:9px;
+  color:rgba(75,70,64,.55);
+}
+
+
+/* =========================================================
+   123 Friend Card Tap / Search Result Panel
+   ========================================================= */
+#screen-friend .friend-card-compact.is-no-favorite{
+  cursor:default;
+}
+#screen-friend .friend-card-compact.is-no-favorite:active{
+  transform:none;
+  opacity:1;
+}
+#screen-friend .friend-card-compact.is-no-favorite .friend-card-chevron{
+  opacity:.22;
+}
+
+#screen-friend .friend-search-card-with-panel{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:68px;
+  padding:8px;
+}
+#screen-friend .friend-search-panel{
+  flex:0 0 52px;
+  width:52px;
+  height:52px;
+  overflow:hidden;
+  border:1px solid rgba(145,116,67,.20);
+  background:rgba(237,231,216,.72);
+}
+#screen-friend .friend-search-panel-img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center top;
+}
+#screen-friend .friend-search-panel-empty{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:rgba(75,70,64,.34);
+}
+#screen-friend .friend-search-main{
+  flex:1 1 auto;
+  min-width:0;
+}
+#screen-friend .friend-search-card-with-panel .friend-search-card-name{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#screen-friend .friend-search-card-with-panel .friend-search-send-btn{
+  flex:0 0 auto;
+  width:auto;
+  min-width:82px;
+  padding-left:10px;
+  padding-right:10px;
+}
