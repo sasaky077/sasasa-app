@@ -5657,13 +5657,13 @@
 #shooting-event-root .shooting-game-over-notice.show{
   opacity:1;
   transform:translate(-50%,-50%) scale(1);
-  animation:shootingGameOverIn 1.35s ease-out both;
+  animation:shootingGameOverIn 2.35s ease-out both;
 }
 @keyframes shootingGameOverIn{
   0%{opacity:0;transform:translate(-50%,-50%) scale(.88);letter-spacing:.32em}
   14%{opacity:1;transform:translate(-50%,-50%) scale(1.025)}
-  28%,82%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:.96;transform:translate(-50%,-50%) scale(1)}
+  20%,78%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(.985)}
 }
 
 /* ===== SUPER FACELESS WARNING RICOCHET ===== */
@@ -5671,4 +5671,14 @@
 @keyframes shootingDangerRicochet{
   0%{filter:brightness(2.2) saturate(1.45);transform:translate3d(var(--unit-x,0),var(--unit-y,0),0) translate(-50%,-50%) scale(1.28)}
   100%{filter:none;transform:translate3d(var(--unit-x,0),var(--unit-y,0),0) translate(-50%,-50%) scale(1)}
+}
+
+
+/* CH03-04 リヴィア：8秒漂流する即死弾 */
+#shooting-event-root .shooting-livia-danger-drift{
+  animation:shootingLiviaDangerDriftPulse 1.15s ease-in-out infinite;
+}
+@keyframes shootingLiviaDangerDriftPulse{
+  0%,100%{filter:brightness(.92);}
+  50%{filter:brightness(1.28);}
 }

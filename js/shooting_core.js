@@ -623,6 +623,7 @@
       bossMotionBlendDurationMs: 420,
       // BOSS大技（WARNING付き即死弾）制御
       nextBossDangerAt: 0, bossDangerExecuteAt: 0, bossDangerWarningEl: null,
+      bossDangerPatternIndex: 0,
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
@@ -2549,6 +2550,10 @@
     return !!(isFacelessStage() && getFacelessConfig()?.difficulty === 'super');
   }
 
+  function isChapter03BossStage() {
+    return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH03_04);
+  }
+
   function resolveIncomingDamage(member, amount, attackType) {
     if (attackType === 'lethal') return ENEMY_FIXED_DAMAGE.LETHAL;
 
@@ -2557,6 +2562,10 @@
     else if (attackType === 'boss-heavy') damage = ENEMY_FIXED_DAMAGE.BOSS_HEAVY;
     else if (attackType === 'boss') damage = ENEMY_FIXED_DAMAGE.BOSS;
     else damage = Math.max(0, Number(amount || 0));
+
+    // CHAPTER03-04はCHAPTER02より一段上のBOSS戦として通常被弾も強化。
+    // BOSS通常弾 240 → 300（1.25倍）。密度の高さと合わせて難度差を作る。
+    if (isChapter03BossStage()) damage *= 1.25;
 
     // フェイスレス最上級のみ、即死攻撃以外の基本攻撃力を1.3倍。
     // 固定ダメージ制は維持し、高HPキャラの耐久メリットも残す。
@@ -2604,27 +2613,75 @@
       const dy = state.player.y - state.boss.y;
       const angle = Math.atan2(dy, dx);
       const speed = Math.max(325, Number(BOSS.bulletSpeed || 240) * 1.38);
-      const dangerOffsets = isFacelessSuperDifficulty() ? [-0.34, 0, 0.34] : [0];
-      dangerOffsets.forEach(offset => {
-        const shotAngle = angle + offset;
-        const projectile = makeProjectile(
-          'shooting-enemy-bullet shooting-danger-bullet',
-          state.boss.x, state.boss.y + 38,
-          Math.cos(shotAngle) * speed,
-          Math.sin(shotAngle) * speed,
-          999999
-        );
-        if (!projectile) return;
 
-        // 最上級WARNING弾だけ壁反射を有効化。
-        // 1・2回目は反射し、3回目の壁接触で消滅する。
-        if (isFacelessSuperDifficulty()) {
-          projectile.dangerRicochet = true;
-          projectile.dangerWallHits = 0;
-          projectile.dangerMaxReflections = 2;
+      if (isChapter03BossStage()) {
+        // リヴィア（CH03-04）の即死攻撃は2種類を順番に繰り返す。
+        // ① 2WAY + 壁2反射
+        // ② 4発の即死弾が8秒間、戦場をゆらゆら漂う
+        const pattern = Number(state.bossDangerPatternIndex || 0) % 2;
+        state.bossDangerPatternIndex = Number(state.bossDangerPatternIndex || 0) + 1;
+
+        if (pattern === 0) {
+          [-0.22, 0.22].forEach(offset => {
+            const shotAngle = angle + offset;
+            const projectile = makeProjectile(
+              'shooting-enemy-bullet shooting-danger-bullet shooting-livia-danger-ricochet',
+              state.boss.x, state.boss.y + 38,
+              Math.cos(shotAngle) * speed,
+              Math.sin(shotAngle) * speed,
+              999999
+            );
+            if (!projectile) return;
+            projectile.dangerRicochet = true;
+            projectile.dangerWallHits = 0;
+            projectile.dangerMaxReflections = 2;
+            state.enemyBullets.push(projectile);
+          });
+        } else {
+          const driftSpeed = 138;
+          const driftOffsets = [-1.05, -0.35, 0.35, 1.05];
+          driftOffsets.forEach((offset, index) => {
+            const heading = angle + offset;
+            const projectile = makeProjectile(
+              'shooting-enemy-bullet shooting-danger-bullet shooting-livia-danger-drift',
+              state.boss.x, state.boss.y + 38,
+              Math.cos(heading) * driftSpeed,
+              Math.sin(heading) * driftSpeed,
+              999999
+            );
+            if (!projectile) return;
+            projectile.dangerDrift = true;
+            projectile.dangerExpireAt = now + 8000;
+            projectile.dangerDriftSpeed = driftSpeed;
+            projectile.dangerDriftHeading = heading;
+            projectile.dangerDriftPhase = index * 1.7 + now * 0.0007;
+            projectile.dangerDriftTurnRate = 0.78;
+            state.enemyBullets.push(projectile);
+          });
         }
-        state.enemyBullets.push(projectile);
-      });
+      } else {
+        const dangerOffsets = isFacelessSuperDifficulty() ? [-0.34, 0, 0.34] : [0];
+        dangerOffsets.forEach(offset => {
+          const shotAngle = angle + offset;
+          const projectile = makeProjectile(
+            'shooting-enemy-bullet shooting-danger-bullet',
+            state.boss.x, state.boss.y + 38,
+            Math.cos(shotAngle) * speed,
+            Math.sin(shotAngle) * speed,
+            999999
+          );
+          if (!projectile) return;
+
+          // 最上級WARNING弾だけ壁反射を有効化。
+          // 1・2回目は反射し、3回目の壁接触で消滅する。
+          if (isFacelessSuperDifficulty()) {
+            projectile.dangerRicochet = true;
+            projectile.dangerWallHits = 0;
+            projectile.dangerMaxReflections = 2;
+          }
+          state.enemyBullets.push(projectile);
+        });
+      }
 
       removeBossDangerWarning();
       state.bossDangerExecuteAt = 0;
@@ -3147,7 +3204,41 @@
 
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
+
+      // リヴィアの漂流即死弾。8秒で消え、ゆるく蛇行しながら戦場内を漂う。
+      if (p.dangerDrift) {
+        if (now >= Number(p.dangerExpireAt || 0)) {
+          p.el.remove();
+          return false;
+        }
+        const phase = Number(p.dangerDriftPhase || 0);
+        const turnRate = Number(p.dangerDriftTurnRate || 0.78);
+        const wobble =
+          Math.sin(now * 0.00135 + phase) * 0.86 +
+          Math.sin(now * 0.00215 + phase * 1.37) * 0.34;
+        p.dangerDriftHeading = Number(p.dangerDriftHeading || Math.atan2(p.vy, p.vx)) + wobble * turnRate * dt;
+        const driftSpeed = Number(p.dangerDriftSpeed || 138);
+        p.vx = Math.cos(p.dangerDriftHeading) * driftSpeed;
+        p.vy = Math.sin(p.dangerDriftHeading) * driftSpeed;
+      }
+
       p.x += p.vx * dt; p.y += p.vy * dt;
+
+      // リヴィアの漂流弾は8秒間フィールド内に残すため、壁では消さずに反射する。
+      if (p.dangerDrift) {
+        const margin = 10;
+        const hitLeft = p.x <= margin;
+        const hitRight = p.x >= w - margin;
+        const hitTop = p.y <= margin;
+        const hitBottom = p.y >= h - margin;
+        if (hitLeft || hitRight || hitTop || hitBottom) {
+          if (hitLeft || hitRight) p.vx *= -1;
+          if (hitTop || hitBottom) p.vy *= -1;
+          p.x = Math.min(w - margin, Math.max(margin, p.x));
+          p.y = Math.min(h - margin, Math.max(margin, p.y));
+          p.dangerDriftHeading = Math.atan2(p.vy, p.vx);
+        }
+      }
 
       // 最上級のWARNING危険弾はアリーナ壁で跳ね返る。
       // 1回目・2回目は反射、3回目の壁接触で消滅。
@@ -3178,7 +3269,7 @@
       }
 
       positionUnit(p.el, p.x, p.y);
-      if (!p.dangerRicochet && (p.y > h + 30 || p.x < -30 || p.x > w + 30 || p.y < -30)) { p.el.remove(); return false; }
+      if (!p.dangerRicochet && !p.dangerDrift && (p.y > h + 30 || p.x < -30 || p.x > w + 30 || p.y < -30)) { p.el.remove(); return false; }
       const r = p.el.getBoundingClientRect();
 
       // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
@@ -3321,11 +3412,13 @@
         root.classList.add('player-defeat-flash');
       }
       createHit(state.player.x, state.player.y, true);
+      // GAME OVERを戦闘画面上でしっかり見せてからRESULTへ遷移する。
+      // プレイヤー消滅演出(1.45秒)の後にも少し余韻を残す。
       setTimeout(() => {
         if (!state || state.ended) return;
         state.finishing = false;
         endGame(false);
-      }, 1500);
+      }, 2600);
       return;
     }
 
@@ -4050,15 +4143,25 @@
   }
 
   function openFacelessStage(stageId) {
+    // 「無貌の天使」ステージ一覧 → パーティ編成へ進んだことを保持。
+    // 編成画面の「戻る」は、特別巡行トップではなく直前のステージ一覧へ戻す。
+    window.__shootingReturnContext = { type: 'facelessStageSelect' };
     closeFacelessStageSelect();
     window.openShootingEvent({ stageId: String(stageId || '') });
   }
 
-  function showFacelessStageSelect() {
+  function showFacelessStageSelect(options = {}) {
     closeFacelessStageSelect();
+    const immediate = !!(options && options.immediate);
     const overlay = document.createElement('div');
     overlay.id = 'shooting-faceless-stage-select';
     overlay.className = 'shooting-special-stage-select shooting-faceless-stage-select';
+    if (immediate) {
+      // 編成画面から戻る時は、下層の「特別巡行」が1フレームでも露出しないよう
+      // DOMへ載せる前から完全表示状態にしておく。
+      overlay.classList.add('show');
+      overlay.style.transition = 'none';
+    }
     overlay.innerHTML = `
       <div class="shooting-special-stage-page shooting-faceless-stage-page">
         <div class="shooting-special-stage-header shooting-faceless-stage-header">
@@ -4091,7 +4194,12 @@
         </div>
       </div>`;
     document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add('show'));
+    if (!immediate) {
+      requestAnimationFrame(() => overlay.classList.add('show'));
+    } else {
+      // 次フレーム以降は通常のtransition定義へ戻す。
+      requestAnimationFrame(() => { if (overlay.isConnected) overlay.style.transition = ''; });
+    }
   }
 
   window.closeFacelessStageSelect = closeFacelessStageSelect;
@@ -4275,6 +4383,9 @@
   function endGame(win) {
     if (!state || state.ended) return;
     state.ended = true;
+
+    // GAME OVERは戦闘画面専用。RESULTへ持ち越さない。
+    document.querySelectorAll('.shooting-game-over-notice').forEach(el => el.remove());
 
     // RESULTへ切り替える前に、戦闘中だけの演出/HUD状態を確実に解除する。
     const rootForResult = document.getElementById(ROOT_ID);
@@ -4856,7 +4967,22 @@
   };
 
   window.closeShootingEvent = function () {
-    closeFacelessStageSelect();
+    // 戻る先は「この画面を開いた直前の画面」。
+    // 先に退避してからクリアし、古い戻り先が次回起動へ残らないようにする。
+    const returnContext = window.__shootingReturnContext || null;
+    window.__shootingReturnContext = null;
+
+    const returningToFacelessStageSelect = !!(
+      returnContext && returnContext.type === 'facelessStageSelect'
+    );
+
+    // ④パーティ編成 → ③無貌の天使 の戻りだけは、先に③を最前面へ完成表示する。
+    // その後で④のshooting rootを破棄することで、背面の②特別巡行を一瞬も見せない。
+    if (returningToFacelessStageSelect) {
+      showFacelessStageSelect({ immediate: true });
+    } else {
+      closeFacelessStageSelect();
+    }
     clearUltTimers();
     if (state) {
       state.running = false;
@@ -4891,6 +5017,19 @@
     });
     setCommonUiVisible(false);
     state = null;
+
+    // 直前画面を復元する。
+    if (returningToFacelessStageSelect) {
+      // ③はroot削除前にすでに描画済み。
+      return;
+    }
+
+    if (returnContext && returnContext.type === 'storyChapter') {
+      const chapter = Number(returnContext.chapter || 1);
+      if (typeof window.openStageSelect === 'function') {
+        window.openStageSelect(chapter);
+      }
+    }
   };
 
   function clearUltTimers() {
