@@ -484,7 +484,19 @@
   // 古い「通常敵弾」を整理する最後の安全装置。WARNING系の危険弾は保護する。
   const ENEMY_BULLET_HARD_LIMIT = 520;
   const ENEMY_BULLET_RECOVERY_TARGET = 460;
+
+  // DAILY RAIDだけは長時間戦になるため、DOM敵弾が増えすぎる前に通常弾生成を抑える。
+  // WARNING / danger系はこの制限対象外。
+  const RAID_ENEMY_BULLET_SOFT_LIMIT = 240;
+  const RAID_ENEMY_BULLET_HARD_LIMIT = 300;
+  const RAID_ENEMY_BULLET_RECOVERY_TARGET = 260;
   let lastEnemyBulletGuardLogAt = 0;
+
+  // 自機弾側にも同じ安全装置を用意する。複数キャラの高速射撃が重なった場合の
+  // 保険で、通常プレイのDPS/弾数バランスには影響しない値に設定している。
+  const PLAYER_BULLET_HARD_LIMIT = 400;
+  const PLAYER_BULLET_RECOVERY_TARGET = 340;
+  let lastPlayerBulletGuardLogAt = 0;
 
   function isTouchLikePointer(e) {
     return !!(
@@ -519,6 +531,36 @@
       a.bottom - ia < b.top + ib ||
       a.top + ia > b.bottom - ib
     );
+  }
+
+  // ============================================================
+  // パフォーマンス対策：当たり判定の脱DOM化
+  // ============================================================
+  // 弾・敵・デコイは元々 x/y をJS側の数値として持っており、DOMはそれを
+  // 描画しているだけ(positionUnit)。にもかかわらず毎フレームの当たり判定で
+  // el.getBoundingClientRect() を呼ぶと、弾の数×敵の数に比例して
+  // 強制レイアウト計算が走り、弾幕が濃くなるほど重くなっていた。
+  //
+  // サイズ(幅/高さ)は生成時に一度だけ実測してキャッシュ(_hw/_hh)し、
+  // 毎フレームは x/y の数値計算だけでrectsHitと同じ形の矩形を作る。
+  // rectsHitはただの数値比較なので、DOM由来かどうかは問わない。
+  function measureUnitSize(entry) {
+    if (!entry || !entry.el) return;
+    const r = entry.el.getBoundingClientRect();
+    entry._hw = r.width / 2;
+    entry._hh = r.height / 2;
+  }
+
+  // arenaRectはフレーム内で使い回す(呼び出し側で1回だけ取得する想定)。
+  // x/yはarena基準のローカル座標なので、getBoundingClientRect()と同じ
+  // ビューポート座標系に変換してから比較できるようにする。
+  // これにより、まだ数値化していない他の当たり判定(ボス等)ともそのまま混在できる。
+  function getUnitRect(entry, arenaRect) {
+    const hw = Number(entry && entry._hw) || 0;
+    const hh = Number(entry && entry._hh) || 0;
+    const x = arenaRect.left + Number(entry.x || 0);
+    const y = arenaRect.top + Number(entry.y || 0);
+    return { left: x - hw, right: x + hw, top: y - hh, bottom: y + hh };
   }
 
   function getShootingBlessingDefs() {
@@ -690,6 +732,8 @@
       raidInitialHp: isRaidStage() ? getRaidStartingHp() : 0,
       raidDamageDealt: 0,
       raidAttemptFinished: false,
+      raidLastBossHitVisualAt: 0,
+      raidLastBossDamageNumberAt: 0,
       facelessWave: isFacelessStage() ? 1 : 0,
       facelessSummonTriggered: false,
       facelessObjects: [],
@@ -1153,6 +1197,7 @@
     arena.appendChild(el);
     const p = { el, x, y, vx, vy, damage: damage || 1, ownerId: ownerId || null };
     positionUnit(el, x, y);
+    measureUnitSize(p);
     return p;
   }
 
@@ -1169,9 +1214,11 @@
   function enforceEnemyBulletSafetyLimit(now) {
     if (!state || !Array.isArray(state.enemyBullets)) return;
     const current = state.enemyBullets.length;
-    if (current <= ENEMY_BULLET_HARD_LIMIT) return;
+    const hardLimit = isRaidStage() ? RAID_ENEMY_BULLET_HARD_LIMIT : ENEMY_BULLET_HARD_LIMIT;
+    const recoveryTarget = isRaidStage() ? RAID_ENEMY_BULLET_RECOVERY_TARGET : ENEMY_BULLET_RECOVERY_TARGET;
+    if (current <= hardLimit) return;
 
-    let removeNeeded = Math.max(0, current - ENEMY_BULLET_RECOVERY_TARGET);
+    let removeNeeded = Math.max(0, current - recoveryTarget);
     let removed = 0;
     const kept = [];
 
@@ -1194,6 +1241,43 @@
       lastEnemyBulletGuardLogAt = now;
       console.warn(`[shooting] enemy bullet safety guard: ${current} -> ${state.enemyBullets.length}`);
     }
+  }
+
+  function enforcePlayerBulletSafetyLimit(now) {
+    if (!state || !Array.isArray(state.bullets)) return;
+    const current = state.bullets.length;
+    if (current <= PLAYER_BULLET_HARD_LIMIT) return;
+
+    let removeNeeded = Math.max(0, current - PLAYER_BULLET_RECOVERY_TARGET);
+    let removed = 0;
+    const kept = [];
+
+    // state.bulletsも生成順にpushされるため、古い自機弾から間引く。
+    for (const p of state.bullets) {
+      if (removeNeeded > 0 && p && p.el) {
+        p.el.remove();
+        removeNeeded--;
+        removed++;
+        continue;
+      }
+      kept.push(p);
+    }
+
+    state.bullets = kept;
+
+    if (removed > 0 && now - lastPlayerBulletGuardLogAt >= 5000) {
+      lastPlayerBulletGuardLogAt = now;
+      console.warn(`[shooting] player bullet safety guard: ${current} -> ${state.bullets.length}`);
+    }
+  }
+
+  function getRaidOrdinaryEnemyBulletCount() {
+    if (!state || !Array.isArray(state.enemyBullets)) return 0;
+    let count = 0;
+    for (const p of state.enemyBullets) {
+      if (p && p.el && !isProtectedEnemyProjectile(p)) count++;
+    }
+    return count;
   }
 
   function getCharacterElements(c) {
@@ -1654,7 +1738,12 @@
     positionUnit(el, x, y);
     positionMiniEnemyHp(enemy);
     renderMiniEnemyHp(enemy);
-    requestAnimationFrame(() => el.classList.remove('spawning'));
+    requestAnimationFrame(() => {
+      el.classList.remove('spawning');
+      // spawningクラス除去後(最終的な--enemy-scale込みの見た目)でサイズを実測してキャッシュする。
+      // ここでのgetBoundingClientRect呼び出しは生成時に1回だけなので、毎フレームのコストにはならない。
+      measureUnitSize(enemy);
+    });
     return enemy;
   }
 
@@ -2399,6 +2488,7 @@
     state.facelessObjects.push(obj);
     positionUnit(el, x, y);
     positionUnit(hpEl, x, y + 56);
+    measureUnitSize(obj);
 
     // 無貌専用：召喚直後の1発目を確実に出す。
     // Safari/iPhoneで最初のAI更新が遅れても、仮面が無反応に見えないようにする。
@@ -2828,7 +2918,16 @@
   }
 
   function fireBoss(now) {
+    // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
+
+    // DAILY RAID第2段階軽量化:
+    // 通常敵弾が一定数を超えたフレームだけ通常射撃の新規生成を止める。
+    // 既存弾はそのまま動き、弾数が減れば自動的に射撃を再開する。
+    if (isRaidStage() && getRaidOrdinaryEnemyBulletCount() >= RAID_ENEMY_BULLET_SOFT_LIMIT) {
+      return;
+    }
+
     if (BOSS && BOSS.behavior === 'faceless_event_v1') {
       fireFacelessBoss(now);
       return;
@@ -3003,6 +3102,31 @@
     setTimeout(() => el.remove(), big ? 900 : 720);
   }
 
+  // ============================================================
+  // DAILY RAID performance: hit visual throttling
+  // ============================================================
+  // レイドは長時間・高HPのため、通常弾1発ごとにHITエフェクト/数字/フラッシュを
+  // DOM生成すると端末負荷が大きい。ゲーム上のダメージ・コンボ・ULT加算は一切
+  // 間引かず、視覚演出だけ頻度制限する。
+  function shouldRenderRaidBossHitVisual(now, kind = 'hit') {
+    if (!isRaidStage() || !state) return true;
+
+    const t = Number(now || performance.now());
+    if (kind === 'number') {
+      const interval = 150; // ダメージ数字は最大約6.7回/秒
+      const last = Number(state.raidLastBossDamageNumberAt || 0);
+      if (t - last < interval) return false;
+      state.raidLastBossDamageNumberAt = t;
+      return true;
+    }
+
+    const interval = 80; // HIT/flashは最大12.5回/秒
+    const last = Number(state.raidLastBossHitVisualAt || 0);
+    if (t - last < interval) return false;
+    state.raidLastBossHitVisualAt = t;
+    return true;
+  }
+
   function showBossDamageNumber(amount, big = false) {
     if (!state || !state.boss) return;
     showDamageNumber(state.boss.x, state.boss.y, amount, 'enemy', big);
@@ -3147,8 +3271,9 @@
   }
 
   function updateProjectiles(dt, now) {
-    // 通常は何もしない。敵弾が異常増殖した時だけ、当たり判定を回す前に負荷を戻す。
+    // 通常は何もしない。弾が異常増殖した時だけ、当たり判定を回す前に負荷を戻す。
     enforceEnemyBulletSafetyLimit(now);
+    enforcePlayerBulletSafetyLimit(now);
 
     const arena = document.getElementById('shooting-arena');
     const boss = document.getElementById(BOSS_ID);
@@ -3160,6 +3285,7 @@
     const h = arena.clientHeight;
     const bossRect = boss && !isNormalBattle() ? boss.getBoundingClientRect() : null;
     const playerCoreRect = playerCore.getBoundingClientRect();
+    const arenaRect = arena.getBoundingClientRect();
 
     state.bullets = state.bullets.filter(p => {
       if (!p || !p.el) return false;
@@ -3177,7 +3303,7 @@
           return false;
         }
 
-        const r = p.el.getBoundingClientRect();
+        const r = getUnitRect(p, arenaRect);
         const playerRect = player.getBoundingClientRect();
 
         // 味方(現状はアクティブなプレイヤー)に当たると回復。
@@ -3192,7 +3318,7 @@
         // ハートによるダメージではULTゲージを一切増やさない。
         const hitBossHeart = !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 16);
         const hitNormalHeart = isNormalBattle()
-          ? state.normalEnemies.find(enemy => enemy && enemy.el && enemy.hp > 0 && rectsHit(r, enemy.el.getBoundingClientRect(), 0, 10))
+          ? state.normalEnemies.find(enemy => enemy && enemy.el && enemy.hp > 0 && rectsHit(r, getUnitRect(enemy, arenaRect), 0, 10))
           : null;
 
         if (hitBossHeart || hitNormalHeart) {
@@ -3208,9 +3334,13 @@
             const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(heartDamage || 0)));
             state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
             updateBossPhase();
-            createHit(p.x, p.y, false);
-            showBossDamageNumber(appliedDamage, false);
-            flashBossHit(false);
+            if (shouldRenderRaidBossHitVisual(now, 'hit')) {
+              createHit(p.x, p.y, false);
+              flashBossHit(false);
+            }
+            if (shouldRenderRaidBossHitVisual(now, 'number')) {
+              showBossDamageNumber(appliedDamage, false);
+            }
             if (state.boss.hp <= 0) beginBossDefeat();
           }
 
@@ -3225,13 +3355,13 @@
       }
 
       if (p.y < -20 || p.x < -20 || p.x > w + 20) { p.el.remove(); return false; }
-      const r = p.el.getBoundingClientRect();
+      const r = getUnitRect(p, arenaRect);
       let normalTarget = null;
       let normalTargets = null;
       const facelessObjectTarget = isFacelessStage()
         ? (state.facelessObjects || []).find(obj =>
             obj && obj.el && obj.hp > 0 &&
-            rectsHit(r, obj.el.getBoundingClientRect(), 0, 10)
+            rectsHit(r, getUnitRect(obj, arenaRect), 0, 10)
           )
         : null;
       const hitBoss = !facelessObjectTarget && !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
@@ -3247,14 +3377,14 @@
           // 離れた敵を貫通するのではなく、ブラックホールで密集した敵群への同時ヒット。
           normalTargets = state.normalEnemies.filter(enemy =>
             enemy && enemy.el && enemy.hp > 0 &&
-            rectsHit(r, enemy.el.getBoundingClientRect(), 0, 13)
+            rectsHit(r, getUnitRect(enemy, arenaRect), 0, 13)
           );
           normalTarget = normalTargets[0] || null;
         } else {
           // 通常時は従来どおり、1発につき最初に当たった敵1体だけ。
           normalTarget = state.normalEnemies.find(enemy =>
             enemy && enemy.el && enemy.hp > 0 &&
-            rectsHit(r, enemy.el.getBoundingClientRect(), 0, 13)
+            rectsHit(r, getUnitRect(enemy, arenaRect), 0, 13)
           );
         }
       }
@@ -3287,9 +3417,15 @@
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
           state.score += 120;
-          createHit(p.x, p.y, false);
-          showBossDamageNumber(appliedDamage, false);
-          flashBossHit(false);
+          // DAILY RAIDでは実ダメージ処理は全弾そのまま。
+          // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
+          if (shouldRenderRaidBossHitVisual(now, 'hit')) {
+            createHit(p.x, p.y, false);
+            flashBossHit(false);
+          }
+          if (shouldRenderRaidBossHitVisual(now, 'number')) {
+            showBossDamageNumber(appliedDamage, false);
+          }
           if (state.boss.hp <= 0) beginBossDefeat();
         }
 
@@ -3395,13 +3531,13 @@
 
       positionUnit(p.el, p.x, p.y);
       if (!p.dangerRicochet && !p.dangerDrift && (p.y > h + 30 || p.x < -30 || p.x > w + 30 || p.y < -30)) { p.el.remove(); return false; }
-      const r = p.el.getBoundingClientRect();
+      const r = getUnitRect(p, arenaRect);
 
       // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
       // 花自体にはHPを持たせず、敵弾は接触した時点で消滅。
       const roseFlower = state.roseFlower;
       if (roseFlower && roseFlower.el && roseFlower.el.isConnected) {
-        const flowerRect = roseFlower.el.getBoundingClientRect();
+        const flowerRect = getUnitRect(roseFlower, arenaRect);
         if (rectsHit(r, flowerRect, 0, 28)) {
           p.el.remove();
           return false;
@@ -3409,7 +3545,7 @@
       }
 
       const hitDecoy = (state.clarineDecoys || []).find(decoy =>
-        decoy && decoy.el && rectsHit(r, decoy.el.getBoundingClientRect(), 12, 8)
+        decoy && decoy.el && rectsHit(r, getUnitRect(decoy, arenaRect), 12, 8)
       );
       if (hitDecoy) {
         const c = getClarineDecoyConfig();
@@ -3452,12 +3588,14 @@
     const player = document.getElementById(PLAYER_ID);
     if (!player) return;
     const playerRect = player.getBoundingClientRect();
+    const arenaRectForContact = document.getElementById('shooting-arena')?.getBoundingClientRect();
+    if (!arenaRectForContact) return;
 
     if (isNormalBattle()) {
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
         // 画像の透明余白で早すぎる接触にならないよう、双方を少し内側へ絞る。
-        return rectsHit(playerRect, enemy.el.getBoundingClientRect(), 14, 9);
+        return rectsHit(playerRect, getUnitRect(enemy, arenaRectForContact), 14, 9);
       });
       if (hitEnemy) {
         damagePlayer(now, Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85, 'normal');
@@ -5915,6 +6053,8 @@
     const y = arena.clientHeight * 0.48;
     positionUnit(flower, x, y);
     requestAnimationFrame(() => flower.classList.add('show'));
+    // scale transition(.42s)が収まった後の最終サイズで1回だけ実測する。
+    setTimeout(() => measureUnitSize(state.roseFlower), 440);
 
     const now = performance.now();
     state.roseFlower = {
@@ -6283,6 +6423,12 @@
 
     positionUnit(el, decoy.x, decoy.y);
     requestAnimationFrame(() => el.classList.add('show'));
+    // height:autoで画像の実サイズに依存するため、ロード完了後に1回だけ実測する。
+    if (el.complete) {
+      measureUnitSize(decoy);
+    } else {
+      el.addEventListener('load', () => measureUnitSize(decoy), { once: true });
+    }
     return decoy;
   }
 

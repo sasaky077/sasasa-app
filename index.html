@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-home-icons-blend-v21">
+  <meta name="sasaphia-build" content="20260816-party-info-panel-v25">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -161,7 +161,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-home-icons-blend-v21';
+  var BUILD = '20260816-party-info-panel-v25';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -7089,6 +7089,54 @@ function buildCharacterDetailHTML(data, options){
   document.getElementById('detail-modal').classList.add('active');
 }
 
+/* SHOOTING PARTY DETAIL BRIDGE v23
+   シューティング側のキャラIDを、既存のキャラ詳細UIへ接続する。 */
+window.openShootingPartyCharacterDetail = function(charaId){
+  var id = Number(charaId || 0);
+  if(!id) return false;
+
+  var master = (typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
+    ? CHARACTERS.find(function(c){ return c && Number(c.id) === id; })
+    : null;
+
+  if(!master) return false;
+
+  var owned = (typeof getRepresentativeOwnedInstance === 'function')
+    ? getRepresentativeOwnedInstance(id)
+    : null;
+
+  // 詳細側はIDからShootingCharactersの性能を解決するため、
+  // ここでは所持個体の共鳴Lv・画像などをStrategyマスターへ重ねればよい。
+  var data = Object.assign({}, master, owned || {}, {
+    id: master.id,
+    name: master.name,
+    img: master.img,
+    panelImg: master.panelImg,
+    limitBreak: Number((owned && owned.limitBreak) || 0)
+  });
+
+  showDetail(data, false);
+
+  var modal = document.getElementById('detail-modal');
+  if(!modal) return false;
+
+  // shooting-event-root(z-index:240000)より前へ。
+  modal.classList.add('is-shooting-party-detail');
+  modal.style.zIndex = '260000';
+
+  // 編成中は確認専用。削除・ホーム変更は出さない。
+  var favBtn = modal.querySelector('.btn-set-fav');
+  if(favBtn) favBtn.style.display = 'none';
+
+  var delBtn = modal.querySelector('.btn-delete-chara');
+  if(delBtn) delBtn.style.display = 'none';
+
+  var closeBtn = document.getElementById('btn-detail-close');
+  if(closeBtn) closeBtn.style.display = 'block';
+
+  return true;
+};
+
 // キャラ画像 全画面拡大ビュー
 function openCharaImageViewer(src){
   if(!src) return;
@@ -7242,8 +7290,10 @@ async function deleteCurrentChara(){
     var modal = document.getElementById(id);
     if(modal) modal.classList.remove('active');
 
-    if(id === 'detail-modal'){
+    if(id === 'detail-modal' && modal){
       modal.classList.remove('is-gacha-pickup-preview');
+      modal.classList.remove('is-shooting-party-detail');
+      modal.style.removeProperty('z-index');
     }
 
     if(id === 'detail-modal' && detailReturnToSummonAfterClose){
@@ -9147,7 +9197,7 @@ window.addEventListener('pagehide', function () {
 
 <script src="js/stages.js?v=20260816-1120-r2"></script>
 <script src="js/stage_select.js?v=20260816-story-ch01-ios-v2"></script>
-<script src="js/party_select.js?v=20260816-1120-r2"></script>
+<script src="js/party_select.js?v=20260816-party-longpress-v21"></script>
 <script src="js/enemy_intro.js?v=20260816-1120-r2"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
@@ -9586,7 +9636,7 @@ window.addEventListener('pagehide', function () {
   }
 })();
 </script>
-<script src="js/shooting_event.js?v=20260816-raid-rich-v4"></script>
+<script src="js/shooting_event.js?v=20260816-party-info-panel-v25"></script>
 <script src="js/admin_mode.js?v=20260816-admin-v2"></script>
 <script src="js/raid_event.js?v=20260816-raid-rich-v4"></script>
 </body>

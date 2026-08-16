@@ -258,6 +258,7 @@
 
     document.body.appendChild(el);
     injectStyle();
+    setupPartyLongPressDelegation();
   }
 
   // ============================================================
@@ -402,6 +403,9 @@
         justify-content: center;
       }
       .ps-slot {
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
         flex: 1;
         max-width: 110px;
         display: flex;
@@ -503,6 +507,9 @@
         padding-bottom: 8px;
       }
       .ps-chara-card {
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1284,77 +1291,111 @@
 
   // スロット：タップで解除、長押しでキャラ詳細を表示
   // エリ固定枠はタップ解除不可。ただし長押しで能力確認は可能。
+  // スロット：タップで解除、長押しでキャラ詳細を表示
+  // タッチ端末はTouch Events、PCはPointer Eventsを使い分ける。
+  // エリ固定枠はタップ解除不可。ただし長押しで能力確認は可能。
   function setupSlotCard(slot, entry, idx) {
     if (!slot || !entry) return;
 
     let pressTimer = null;
-    let pressing = false;
+    let active = false;
     let longPressed = false;
     let startX = 0;
     let startY = 0;
 
-    const start = (e) => {
-      const touch = e.touches ? e.touches[0] : e;
-      if (!touch) return;
+    const HOLD_MS = 400;
+    const MOVE_CANCEL_PX = 24;
 
-      startX = touch.clientX;
-      startY = touch.clientY;
-      pressing = true;
+    const clearTimer = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+
+    const cancelPress = () => {
+      clearTimer();
+      active = false;
+      slot.classList.remove('pressing');
+    };
+
+    const beginPress = (x, y) => {
+      clearTimer();
+      startX = Number(x || 0);
+      startY = Number(y || 0);
+      active = true;
       longPressed = false;
       slot.classList.add('pressing');
 
       pressTimer = setTimeout(() => {
+        if (!active) return;
         longPressed = true;
-        pressing = false;
-        pressTimer = null;
+        clearTimer();
+        active = false;
         slot.classList.remove('pressing');
         showCharaDetail(entry.charaId);
-      }, 500);
+      }, HOLD_MS);
     };
 
-    const move = (e) => {
-      if (!pressing) return;
-      const touch = e.touches ? e.touches[0] : e;
-      if (!touch) return;
-
-      const dx = Math.abs(touch.clientX - startX);
-      const dy = Math.abs(touch.clientY - startY);
-      if (dx > 6 || dy > 6) cancel();
-    };
-
-    const cancel = () => {
-      slot.classList.remove('pressing');
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
+    const movePress = (x, y) => {
+      if (!active) return;
+      if (
+        Math.abs(Number(x || 0) - startX) > MOVE_CANCEL_PX ||
+        Math.abs(Number(y || 0) - startY) > MOVE_CANCEL_PX
+      ) {
+        cancelPress();
       }
-      pressing = false;
     };
 
-    const end = () => {
-      slot.classList.remove('pressing');
+    const finishPress = () => {
+      const shortTap = active && !longPressed;
+      cancelPress();
 
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-
-        if (pressing && !longPressed && !entry.fixed) {
-          window._psRemoveSlot(idx);
-        }
+      if (shortTap && !entry.fixed) {
+        window._psRemoveSlot(idx);
       }
 
-      pressing = false;
+      // 長押し直後のclick/contextmenu等に短押し処理を引き継がない。
       setTimeout(() => { longPressed = false; }, 0);
     };
 
-    slot.addEventListener('touchstart', start, {passive: true});
-    slot.addEventListener('touchmove', move, {passive: true});
-    slot.addEventListener('touchend', end);
-    slot.addEventListener('touchcancel', cancel);
-    slot.addEventListener('mousedown', start);
-    slot.addEventListener('mousemove', move);
-    slot.addEventListener('mouseup', end);
-    slot.addEventListener('mouseleave', cancel);
+    // iPhone / Android: Touch Eventsを直接使う。
+    slot.addEventListener('touchstart', e => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      beginPress(t.clientX, t.clientY);
+    }, { passive: true });
+
+    slot.addEventListener('touchmove', e => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      movePress(t.clientX, t.clientY);
+    }, { passive: true });
+
+    slot.addEventListener('touchend', finishPress, { passive: true });
+    slot.addEventListener('touchcancel', cancelPress, { passive: true });
+
+    // PC / pen。touchでは上のTouch Eventsだけを使い、二重発火を防ぐ。
+    slot.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'touch') return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      beginPress(e.clientX, e.clientY);
+    });
+    slot.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return;
+      movePress(e.clientX, e.clientY);
+    });
+    slot.addEventListener('pointerup', e => {
+      if (e.pointerType === 'touch') return;
+      finishPress();
+    });
+    slot.addEventListener('pointercancel', e => {
+      if (e.pointerType === 'touch') return;
+      cancelPress();
+    });
+
+    // OS標準の長押しメニューが出て詳細表示を邪魔しないようにする。
+    slot.addEventListener('contextmenu', e => e.preventDefault());
   }
 
   // ============================================================
@@ -1403,52 +1444,222 @@
   // ============================================================
 
   // タップ→選択、長押し→詳細
-  function setupCharaCard(card, chara) {
-    let pressTimer = null;
-    let pressing = false;
-    let startX = 0;
-    let startY = 0;
+  // タップ→選択、長押し→詳細
+  // スマホはTouch Eventsを優先し、Pointer Eventsとの疑似二重発火を避ける。
 
-    const start = (e) => {
-      const touch = e.touches ? e.touches[0] : e;
-      startX = touch.clientX;
-      startY = touch.clientY;
-      pressing = true;
-      card.classList.add('pressing');
-      pressTimer = setTimeout(() => {
-        pressing = false;
-        card.classList.remove('pressing');
-        showCharaDetail(chara.id);
-      }, 500);
+  // ============================================================
+  // PARTY LONG PRESS DELEGATION v21
+  // ============================================================
+  // 一覧は選択のたびに再描画されるため、モーダル本体でも長押しを監視する。
+  // 個別カードのイベントがブラウザ都合で失われても、ここが最後の保険になる。
+  let partyDelegatedPressTimer = null;
+  let partyDelegatedPressTarget = null;
+  let partyDelegatedStartX = 0;
+  let partyDelegatedStartY = 0;
+  let partyDelegatedLongPressed = false;
+
+  function clearPartyDelegatedPress() {
+    if (partyDelegatedPressTimer) {
+      clearTimeout(partyDelegatedPressTimer);
+      partyDelegatedPressTimer = null;
+    }
+    partyDelegatedPressTarget = null;
+  }
+
+  function setupPartyLongPressDelegation() {
+    const modal = document.getElementById('party-select-modal');
+    if (!modal || modal.dataset.longPressDelegation === '1') return;
+    modal.dataset.longPressDelegation = '1';
+
+    const HOLD_MS = 420;
+    const MOVE_LIMIT = 26;
+
+    const getCard = target => target && target.closest
+      ? target.closest('.ps-chara-card, .ps-slot.filled')
+      : null;
+
+    const getCharaId = card => {
+      if (!card) return 0;
+      const explicit = Number(card.dataset.charaId || 0);
+      if (explicit) return explicit;
+
+      // slot側はrenderSlotsでdata属性が無い旧DOMにも対応
+      const img = card.querySelector('img[data-chara-id]');
+      return Number(img && img.dataset.charaId || 0);
     };
-    const move = (e) => {
-      if (!pressing) return;
-      const touch = e.touches ? e.touches[0] : e;
-      const dx = Math.abs(touch.clientX - startX);
-      const dy = Math.abs(touch.clientY - startY);
-      if (dx > 6 || dy > 6) { cancel(); }
+
+    const begin = (target, x, y) => {
+      const card = getCard(target);
+      if (!card || card.classList.contains('not-owned')) return;
+
+      clearPartyDelegatedPress();
+      partyDelegatedPressTarget = card;
+      partyDelegatedStartX = Number(x || 0);
+      partyDelegatedStartY = Number(y || 0);
+      partyDelegatedLongPressed = false;
+
+      partyDelegatedPressTimer = setTimeout(() => {
+        const current = partyDelegatedPressTarget;
+        if (!current) return;
+        const charaId = getCharaId(current);
+        clearPartyDelegatedPress();
+        if (!charaId) return;
+
+        partyDelegatedLongPressed = true;
+        showCharaDetail(charaId);
+      }, HOLD_MS);
     };
-    const cancel = () => {
-      card.classList.remove('pressing');
-      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-      pressing = false;
-    };
-    const end = () => {
-      card.classList.remove('pressing');
-      if (pressTimer) {
-        clearTimeout(pressTimer); pressTimer = null;
-        if (pressing) { pressing = false; onCharaTap(chara.id); }
+
+    const move = (x, y) => {
+      if (!partyDelegatedPressTarget) return;
+      if (
+        Math.abs(Number(x || 0) - partyDelegatedStartX) > MOVE_LIMIT ||
+        Math.abs(Number(y || 0) - partyDelegatedStartY) > MOVE_LIMIT
+      ) {
+        clearPartyDelegatedPress();
       }
     };
 
-    card.addEventListener('touchstart', start, {passive: true});
-    card.addEventListener('touchmove', move, {passive: true});
-    card.addEventListener('touchend', end);
-    card.addEventListener('touchcancel', cancel);
-    card.addEventListener('mousedown', start);
-    card.addEventListener('mousemove', move);
-    card.addEventListener('mouseup', end);
-    card.addEventListener('mouseleave', cancel);
+    modal.addEventListener('touchstart', e => {
+      const t = e.touches && e.touches[0];
+      if (t) begin(e.target, t.clientX, t.clientY);
+    }, { passive: true, capture: true });
+
+    modal.addEventListener('touchmove', e => {
+      const t = e.touches && e.touches[0];
+      if (t) move(t.clientX, t.clientY);
+    }, { passive: true, capture: true });
+
+    modal.addEventListener('touchend', () => {
+      clearPartyDelegatedPress();
+      setTimeout(() => { partyDelegatedLongPressed = false; }, 0);
+    }, { passive: true, capture: true });
+
+    modal.addEventListener('touchcancel', clearPartyDelegatedPress, { passive: true, capture: true });
+
+    modal.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'touch') return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      begin(e.target, e.clientX, e.clientY);
+    }, true);
+
+    modal.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return;
+      move(e.clientX, e.clientY);
+    }, true);
+
+    modal.addEventListener('pointerup', e => {
+      if (e.pointerType === 'touch') return;
+      clearPartyDelegatedPress();
+      setTimeout(() => { partyDelegatedLongPressed = false; }, 0);
+    }, true);
+
+    modal.addEventListener('contextmenu', e => {
+      if (getCard(e.target)) e.preventDefault();
+    }, true);
+  }
+
+
+  function setupCharaCard(card, chara) {
+    if (!card || !chara) return;
+
+    let pressTimer = null;
+    let active = false;
+    let longPressed = false;
+    let startX = 0;
+    let startY = 0;
+
+    const HOLD_MS = 400;
+    const MOVE_CANCEL_PX = 24;
+
+    const clearTimer = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+
+    const cancelPress = () => {
+      clearTimer();
+      active = false;
+      card.classList.remove('pressing');
+    };
+
+    const beginPress = (x, y) => {
+      clearTimer();
+      startX = Number(x || 0);
+      startY = Number(y || 0);
+      active = true;
+      longPressed = false;
+      card.classList.add('pressing');
+
+      pressTimer = setTimeout(() => {
+        if (!active) return;
+        longPressed = true;
+        clearTimer();
+        active = false;
+        card.classList.remove('pressing');
+        showCharaDetail(chara.id);
+      }, HOLD_MS);
+    };
+
+    const movePress = (x, y) => {
+      if (!active) return;
+      if (
+        Math.abs(Number(x || 0) - startX) > MOVE_CANCEL_PX ||
+        Math.abs(Number(y || 0) - startY) > MOVE_CANCEL_PX
+      ) {
+        // スクロール開始時は長押しだけをキャンセル。スクロール自体は止めない。
+        cancelPress();
+      }
+    };
+
+    const finishPress = () => {
+      const shortTap = active && !longPressed;
+      cancelPress();
+
+      if (shortTap) {
+        onCharaTap(chara.id);
+      }
+
+      setTimeout(() => { longPressed = false; }, 0);
+    };
+
+    card.addEventListener('touchstart', e => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      beginPress(t.clientX, t.clientY);
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      movePress(t.clientX, t.clientY);
+    }, { passive: true });
+
+    card.addEventListener('touchend', finishPress, { passive: true });
+    card.addEventListener('touchcancel', cancelPress, { passive: true });
+
+    // PC / penのみ。touchはTouch Events側だけで処理する。
+    card.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'touch') return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      beginPress(e.clientX, e.clientY);
+    });
+    card.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return;
+      movePress(e.clientX, e.clientY);
+    });
+    card.addEventListener('pointerup', e => {
+      if (e.pointerType === 'touch') return;
+      finishPress();
+    });
+    card.addEventListener('pointercancel', e => {
+      if (e.pointerType === 'touch') return;
+      cancelPress();
+    });
+
+    card.addEventListener('contextmenu', e => e.preventDefault());
   }
 
   function buildSkillMetaText(sk) {
@@ -2080,12 +2291,27 @@
       <button class="ps-detail-close" onclick="closeCharaDetail()">閉じる</button>
     `;
 
-    requestAnimationFrame(() => popup.classList.add('active'));
+    // パーティ編成モーダル(z-index:150000)だけでなく、シューティング画面
+    // (z-index:240000)より確実に前面へ出す必要があるため、既存の最上位帯
+    // (260000)に合わせる。
+    popup.style.zIndex = '260000';
+    popup.style.display = 'flex';
+    // reflowを1回挟み、iOS Safariでもactive反映を確実にする。
+    void popup.offsetWidth;
+    popup.classList.add('active');
   }
+
+  // シューティング画面など、別ファイル(IIFEの外)からも同じ詳細モーダルを
+  // 呼び出せるようにグローバル公開する。closeCharaDetailは元々公開済み。
+  window.showCharaDetail = showCharaDetail;
 
   window.closeCharaDetail = function () {
     const p = document.getElementById('ps-chara-detail-popup');
-    if (p) p.classList.remove('active');
+    if (!p) return;
+    p.classList.remove('active');
+    setTimeout(() => {
+      if (!p.classList.contains('active')) p.style.display = 'none';
+    }, 220);
   };
 
   // キャラタップ：空き枠に追加、選択済みなら解除（左詰め）

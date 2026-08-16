@@ -729,22 +729,30 @@
       .map(c => {
         const owned = isShootingCharacterOwned(c.id);
         return `
-          <button type="button"
-                  class="shooting-character-option${owned ? '' : ' locked'}"
-                  data-character-id="${c.id}"
-                  onclick="selectShootingCharacter(${c.id})"
-                  ${owned ? '' : 'disabled aria-disabled="true"'}>
-            <span class="shooting-character-portrait">
-              <img src="${c.panelImage || c.image}"
-                   alt="${owned ? c.name : '未所持'}"
-                   draggable="false">
-            </span>
-            <b>${owned ? c.name : '????'}</b>
-          </button>`;
+          <div class="shooting-character-option-wrap${owned ? '' : ' locked'}" data-character-wrap-id="${c.id}">
+            <button type="button"
+                    class="shooting-character-option${owned ? '' : ' locked'}"
+                    data-character-id="${c.id}"
+                    onclick="selectShootingCharacter(${c.id})"
+                    ${owned ? '' : 'disabled aria-disabled="true"'}>
+              <span class="shooting-character-portrait">
+                <img src="${c.panelImage || c.image}"
+                     alt="${owned ? c.name : '未所持'}"
+                     draggable="false">
+              </span>
+              <b>${owned ? c.name : '????'}</b>
+            </button>
+            ${owned ? `
+            <button type="button"
+                    class="shooting-character-info-button"
+                    data-info-character-id="${c.id}"
+                    aria-label="${c.name}の詳細を見る"
+                    onclick="event.preventDefault();event.stopPropagation();openShootingCharacterInfo(${c.id});">i</button>
+            ` : ''}
+          </div>`;
       })
       .join('');
   }
-
 
   window.ShootingCharacters = Object.freeze({
     CHARACTER_ID,

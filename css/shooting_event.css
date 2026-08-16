@@ -952,6 +952,7 @@
 .shooting-item-effect-notice.not-implemented small{color:#8a8a8a}
 .shooting-party-blessing-picker{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}.shooting-party-blessing-picker.show{display:grid}.shooting-blessing-option{min-width:0;padding:6px 4px;border:1px solid rgba(151,126,83,.18);border-radius:8px;background:#fbf7ef;color:#725b38;font-family:"Noto Serif JP",serif}.shooting-blessing-option img,.shooting-blessing-option>span{display:flex;width:42px;height:42px;margin:0 auto 4px;align-items:center;justify-content:center;object-fit:cover;border-radius:6px;background:#fff;font-size:20px}.shooting-blessing-option b{display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.shooting-blessing-option.selected{border-color:#c69b4e;background:#f5ead2}
 .shooting-party-roster{grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 12px;background:#f7f3ea}.shooting-party-roster .shooting-character-option{padding:5px;border-radius:9px}.shooting-party-roster .shooting-character-portrait{height:98px;margin:0 0 4px;border-radius:6px}.shooting-party-roster .shooting-character-option b{font-size:10px}.shooting-party-roster .shooting-character-option small{min-height:0;font-size:6px}.shooting-party-roster .shooting-character-option.selected{box-shadow:inset 0 0 0 2px rgba(194,148,65,.54)}
+
 .shooting-character-start{
   position:absolute;left:18px;right:18px;bottom:14px;width:auto;height:48px;
   border:1px solid rgba(166,132,76,.58);border-radius:8px;
@@ -5705,3 +5706,168 @@
 @keyframes shootingTimerDangerPulse{from{opacity:.62;transform:scale(1)}to{opacity:1;transform:scale(1.045)}}
 #shooting-event-root:has(.shooting-character-select.show) .shooting-battle-timer,
 #shooting-event-root:not(.battle-hud-visible) .shooting-battle-timer{display:none!important}
+
+
+
+
+
+
+/* PARTY SELECT: independent info button + in-shooting detail panel v25 */
+.shooting-party-roster .shooting-character-option-wrap{
+  position:relative;
+  min-width:0;
+}
+.shooting-party-roster .shooting-character-option-wrap .shooting-character-option{
+  width:100%;
+  height:100%;
+}
+.shooting-party-roster .shooting-character-info-button{
+  position:absolute;
+  z-index:20;
+  top:8px;
+  right:8px;
+  width:28px;
+  height:28px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(126,100,57,.56);
+  border-radius:50%;
+  background:rgba(255,253,247,.97);
+  color:#725735;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:15px;
+  font-weight:700;
+  line-height:1;
+  box-shadow:0 2px 8px rgba(74,53,24,.22);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  cursor:pointer;
+}
+.shooting-party-roster .shooting-character-info-button:active{
+  transform:scale(.9);
+  background:#efe0bc;
+}
+
+.shooting-character-info-overlay{
+  display:none;
+  position:absolute;
+  inset:0;
+  z-index:120;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  background:rgba(238,233,222,.84);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  opacity:0;
+  transition:opacity .16s ease;
+}
+.shooting-character-info-overlay.show{opacity:1}
+.shooting-character-info-panel{
+  position:relative;
+  width:min(350px,92vw);
+  max-height:82vh;
+  overflow-y:auto;
+  padding:20px 18px 18px;
+  border:1px solid rgba(151,121,69,.34);
+  border-radius:12px;
+  background:linear-gradient(180deg,#fffdf8,#f4ecdd);
+  color:#55442e;
+  box-shadow:0 20px 60px rgba(72,52,27,.22);
+}
+.shooting-character-info-close{
+  position:absolute;
+  z-index:2;
+  right:10px;
+  top:8px;
+  width:34px;
+  height:34px;
+  border:0;
+  background:transparent;
+  color:#806947;
+  font-size:25px;
+  line-height:1;
+}
+.shooting-character-info-head{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding-right:28px;
+}
+.shooting-character-info-head img{
+  width:88px;
+  height:88px;
+  flex:0 0 88px;
+  object-fit:cover;
+  object-position:center;
+  border:1px solid rgba(151,121,69,.22);
+  border-radius:8px;
+  background:#f7f3ea;
+}
+.shooting-character-info-head>div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+}
+.shooting-character-info-head small,
+.shooting-character-info-section small{
+  font-family:"Cinzel",serif;
+  font-size:7px;
+  letter-spacing:.18em;
+  color:#9c8051;
+}
+.shooting-character-info-head strong{
+  margin-top:4px;
+  font-size:18px;
+  font-weight:600;
+  letter-spacing:.08em;
+  color:#57452d;
+}
+.shooting-character-info-stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:15px;
+}
+.shooting-character-info-stats>div{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  padding:9px 11px;
+  border:1px solid rgba(151,121,69,.16);
+  border-radius:8px;
+  background:rgba(255,255,255,.55);
+}
+.shooting-character-info-stats span{
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.14em;
+  color:#92774b;
+}
+.shooting-character-info-stats b{
+  font-family:"Cinzel",serif;
+  font-size:16px;
+  color:#55432b;
+}
+.shooting-character-info-section{
+  margin-top:10px;
+  padding:11px 12px;
+  border:1px solid rgba(151,121,69,.14);
+  border-radius:8px;
+  background:rgba(255,255,255,.5);
+}
+.shooting-character-info-section strong{
+  display:block;
+  margin-top:4px;
+  font-size:11px;
+  font-weight:600;
+  color:#604c31;
+}
+.shooting-character-info-section p{
+  margin-top:6px;
+  font-size:10px;
+  line-height:1.7;
+  color:#79684f;
+}

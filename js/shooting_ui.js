@@ -111,6 +111,32 @@
           </div>
         </footer>
 
+        <div class="shooting-character-info-overlay" id="shooting-character-info-overlay" aria-hidden="true">
+          <div class="shooting-character-info-panel" role="dialog" aria-modal="true" aria-labelledby="shooting-character-info-name">
+            <button type="button" class="shooting-character-info-close" onclick="closeShootingCharacterInfo()" aria-label="閉じる">×</button>
+            <div class="shooting-character-info-head">
+              <img id="shooting-character-info-image" src="" alt="">
+              <div>
+                <small id="shooting-character-info-label">CHARACTER</small>
+                <strong id="shooting-character-info-name">-</strong>
+              </div>
+            </div>
+            <div class="shooting-character-info-stats">
+              <div><span>HP</span><b id="shooting-character-info-hp">-</b></div>
+              <div><span>ATK</span><b id="shooting-character-info-atk">-</b></div>
+            </div>
+            <div class="shooting-character-info-section">
+              <small>NORMAL</small>
+              <strong id="shooting-character-info-normal">-</strong>
+            </div>
+            <div class="shooting-character-info-section">
+              <small>ULTIMATE</small>
+              <strong id="shooting-character-info-ult">-</strong>
+              <p id="shooting-character-info-desc">-</p>
+            </div>
+          </div>
+        </div>
+
         <div class="shooting-result" id="shooting-result" aria-hidden="true">
           <div class="shooting-result-card">
             <span id="shooting-result-kicker">SPECIAL EVENT</span>
@@ -201,6 +227,20 @@
         }
       }, { passive: false });
     }
+
+    // キャラ情報ボタンは親のキャラ選択buttonとは完全分離。
+    // inline onclickでopenShootingCharacterInfo()を直接呼ぶ。
+    const roster = root.querySelector('.shooting-party-roster');
+    if (roster) {
+      roster.addEventListener('pointerdown', ev => {
+        const info = ev.target && ev.target.closest
+          ? ev.target.closest('.shooting-character-info-button')
+          : null;
+        if (!info) return;
+        ev.stopPropagation();
+      }, { passive: true });
+    }
+
     return root;
   }
 
@@ -238,6 +278,80 @@
       if (frame) frame.style.display = savedFrameDisplay == null ? '' : savedFrameDisplay;
     }
   }
+
+
+  function getShootingInfoProfile(charaId) {
+    try {
+      const api = window.ShootingCharacters;
+      const map = api && api.SHOOTING_CHARACTERS;
+      return map && map[Number(charaId)] ? map[Number(charaId)] : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getShotTypeText(profile) {
+    if (!profile) return '-';
+    const labels = {
+      parallel: '平行射撃',
+      spread: '拡散射撃',
+      orbit_forward: '円環軌道射撃',
+      laser: '連続レーザー',
+      rose_seed_splash: '種子拡散射撃',
+      precision: '精密射撃'
+    };
+    const type = labels[String(profile.shotType || '')] || '標準射撃';
+    const count = profile.shotType === 'laser' ? '' : ` / ${Number(profile.shotCount || 1)}発`;
+    return `${type}${count}`;
+  }
+
+  function openShootingCharacterInfo(charaId) {
+    const profile = getShootingInfoProfile(charaId);
+    const overlay = document.getElementById('shooting-character-info-overlay');
+    if (!profile || !overlay) return false;
+
+    const image = document.getElementById('shooting-character-info-image');
+    const label = document.getElementById('shooting-character-info-label');
+    const name = document.getElementById('shooting-character-info-name');
+    const hp = document.getElementById('shooting-character-info-hp');
+    const atk = document.getElementById('shooting-character-info-atk');
+    const normal = document.getElementById('shooting-character-info-normal');
+    const ult = document.getElementById('shooting-character-info-ult');
+    const desc = document.getElementById('shooting-character-info-desc');
+
+    if (image) {
+      image.src = profile.panelImage || profile.image || '';
+      image.alt = profile.name || '';
+    }
+    if (label) label.textContent = profile.label || 'CHARACTER';
+    if (name) name.textContent = profile.name || '-';
+    if (hp) hp.textContent = String(Math.floor(Number(profile.hp || 0)));
+    if (atk) atk.textContent = String(Math.floor(Number(profile.atk || 0)));
+    if (normal) normal.textContent = getShotTypeText(profile);
+    if (ult) ult.textContent = profile.ultName || 'ULTIMATE';
+    if (desc) desc.textContent = profile.description || '';
+
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    return true;
+  }
+
+  function closeShootingCharacterInfo() {
+    const overlay = document.getElementById('shooting-character-info-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    window.setTimeout(() => {
+      if (overlay.getAttribute('aria-hidden') === 'true') {
+        overlay.style.display = 'none';
+      }
+    }, 160);
+  }
+
+  window.openShootingCharacterInfo = openShootingCharacterInfo;
+  window.closeShootingCharacterInfo = closeShootingCharacterInfo;
+
 
   window.ShootingUI = Object.freeze({
     buildRoot,
