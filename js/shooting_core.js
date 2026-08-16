@@ -617,6 +617,10 @@
       facelessSummonTriggered: false,
       facelessObjects: [],
       facelessObjectSeq: 0,
+      bossMotionBlendFromX: 0,
+      bossMotionBlendFromY: 0,
+      bossMotionBlendStartedAt: 0,
+      bossMotionBlendDurationMs: 420,
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
@@ -696,7 +700,7 @@
 
   window.switchShootingCharacter = function(id, forced) {
     id = Number(id);
-    if (!state || state.ended || state.finishing || state.countdown || state.koTransition) return;
+    if (!state || state.ended || state.finishing || state.koTransition) return;
     const member = getPartyMember(id);
     if (!member || member.hp <= 0 || id === state.activeCharacterId) return;
     const now = performance.now();
@@ -711,8 +715,9 @@
 
     // iPhone対策:
     // キャラ切替時に「指の座標へ即代入」すると、再描画タイミング次第でワープに見える。
-    // 現在のキャラ位置を新しいドラッグ基準へ取り直すだけにする。
-    rebaseTouchDragToPlayer();
+    // キャラチェンジ時は移動目標を保持したままドラッグ基準だけ更新する。
+    // 指を離さず操作している時の「一瞬止まる」感覚をなくす。
+    rebaseTouchDragToPlayer(true);
 
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -768,7 +773,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut').forEach(el => el.remove());
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
@@ -2267,6 +2272,13 @@
     state.facelessObjects.push(obj);
     positionUnit(el, x, y);
     positionUnit(hpEl, x, y + 56);
+
+    // 無貌専用：召喚直後の1発目を確実に出す。
+    // Safari/iPhoneで最初のAI更新が遅れても、仮面が無反応に見えないようにする。
+    const spawnNow = performance.now();
+    obj.lastShotAt = -999999;
+    fireFacelessObject(obj, spawnNow);
+
     return obj;
   }
 
@@ -2289,22 +2301,58 @@
   }
 
   function fireFacelessObject(obj, now) {
-    if (!obj || obj.hp <= 0 || now - obj.lastShotAt < 850) return;
+    if (!state || !obj || obj.hp <= 0 || !obj.el) return;
+
+    const fireInterval = obj.ways >= 3 ? 720 : 820;
+    if (now - Number(obj.lastShotAt || 0) < fireInterval) return;
     obj.lastShotAt = now;
-    const dx = state.player.x - obj.x;
-    const dy = state.player.y - obj.y;
-    const base = Math.atan2(dy, dx);
-    const offsets = obj.ways >= 3 ? [-0.22, 0, 0.22] : [-0.15, 0.15];
-    offsets.forEach(offset => {
-      const a = base + offset;
-      const speed = obj.ways >= 3 ? 230 : 215;
-      state.enemyBullets.push(makeProjectile(
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    // 内部座標(obj.x / obj.y)から発射位置を推測しない。
+    // 実際に描画されている仮面DOMの矩形を取得し、
+    // その「見た目上の下端」を発射口として使う。
+    const arenaRect = arena.getBoundingClientRect();
+    const maskRect = obj.el.getBoundingClientRect();
+
+    const left = maskRect.left - arenaRect.left;
+    const right = maskRect.right - arenaRect.left;
+    const center = (left + right) * 0.5;
+
+    // 弾の中心が仮面に埋まって見えないよう、下端より少し下へ出す。
+    const muzzleY = maskRect.bottom - arenaRect.top + 5;
+
+    const width = Math.max(1, right - left);
+    const leftMuzzleX = left + width * 0.28;
+    const rightMuzzleX = left + width * 0.72;
+
+    const speed = obj.ways >= 3 ? 230 : 215;
+    const damage = obj.ways >= 3 ? 125 : 105;
+
+    const shots = obj.ways >= 3
+      ? [
+          // 3WAY: 仮面の左下 / 中央下 / 右下
+          { x: leftMuzzleX,  y: muzzleY, angle: Math.PI / 2 + 0.30 },
+          { x: center,       y: muzzleY, angle: Math.PI / 2 },
+          { x: rightMuzzleX, y: muzzleY, angle: Math.PI / 2 - 0.30 },
+        ]
+      : [
+          // 2WAY: 仮面の左下 / 右下
+          { x: leftMuzzleX,  y: muzzleY, angle: Math.PI / 2 + 0.24 },
+          { x: rightMuzzleX, y: muzzleY, angle: Math.PI / 2 - 0.24 },
+        ];
+
+    shots.forEach(shot => {
+      const projectile = makeProjectile(
         'shooting-enemy-bullet shooting-faceless-object-bullet',
-        obj.x, obj.y + 22,
-        Math.cos(a) * speed,
-        Math.sin(a) * speed,
-        obj.ways >= 3 ? 125 : 105
-      ));
+        shot.x,
+        shot.y,
+        Math.cos(shot.angle) * speed,
+        Math.sin(shot.angle) * speed,
+        damage
+      );
+      if (projectile) state.enemyBullets.push(projectile);
     });
   }
 
@@ -2357,7 +2405,9 @@
       if (!arena) return;
       const w = arena.clientWidth;
       const h = arena.clientHeight;
-      const y = h * 0.46;
+      // 無貌専用：仮面は画面中央付近に顕現させる。
+      // 旧0.46はiPhone縦長画面で下寄りに見えたため上へ補正。
+      const y = h * 0.28;
       if (count <= 1) {
         spawnFacelessObject(w * 0.5, y, ways);
       } else {
@@ -2658,7 +2708,7 @@
     setTimeout(() => boss.classList.remove('burst-hit'), 420);
   }
 
-  function updateMovement(dt, now) {
+  function updateMovement(dt, now, playerOnly = false) {
     const arena = document.getElementById('shooting-arena');
     const player = document.getElementById(PLAYER_ID);
     const boss = document.getElementById(BOSS_ID);
@@ -2711,6 +2761,14 @@
     state.player.x = clamp(state.player.x, marginX, w - marginX);
     state.player.y = clamp(state.player.y, minY, maxY);
 
+    // カウントダウン中は本当にプレイヤー移動だけ。
+    // ボスAIをここで止めることで、START時に周期運動の位相がリセットされても
+    // 「カクッ」と位置が飛んだように見えないようにする。
+    if (playerOnly) {
+      positionUnit(player, state.player.x, state.player.y);
+      return;
+    }
+
     const t = (now - state.startedAt) / 1000;
     const bossGrabbed = now < (state.bossGrabUntil || 0);
     const bossStunned = now < (state.bossStunUntil || 0);
@@ -2718,6 +2776,22 @@
       state.eltenaBlackHole &&
       state.eltenaBlackHole.phase === 'active' &&
       now < Number(state.eltenaBlackHole.activeUntil || 0);
+
+    const applyBossStartBlend = (targetX, targetY) => {
+      const startedAt = Number(state.bossMotionBlendStartedAt || 0);
+      const duration = Math.max(1, Number(state.bossMotionBlendDurationMs || 420));
+      if (!startedAt || now >= startedAt + duration) {
+        return { x: targetX, y: targetY };
+      }
+
+      const raw = clamp((now - startedAt) / duration, 0, 1);
+      // smoothstep: 開始/終了の速度を0寄りにして視覚的な段差をなくす。
+      const eased = raw * raw * (3 - 2 * raw);
+      return {
+        x: Number(state.bossMotionBlendFromX || targetX) + (targetX - Number(state.bossMotionBlendFromX || targetX)) * eased,
+        y: Number(state.bossMotionBlendFromY || targetY) + (targetY - Number(state.bossMotionBlendFromY || targetY)) * eased,
+      };
+    };
 
     // ブラックホール吸引中は大型BOSSの通常移動AIも停止。
     // これを止めないとフェイスレス等のAIが毎フレーム座標を上書きして
@@ -2738,11 +2812,17 @@
         const xAmp = phase === 1 ? w * 0.22 : phase === 2 ? w * 0.28 : w * 0.32;
         const centerFollow = phase === 3 ? 0.18 : 0.10;
         const playerInfluence = (state.player.x - w * 0.5) * centerFollow;
-        state.boss.x = clamp(w * 0.5 + playerInfluence + Math.sin(t * (0.86 + phase * 0.08)) * xAmp, 56, w - 56);
-        state.boss.y = Math.max(58, h * (phase === 3 ? 0.16 : 0.18) + Math.sin(t * (1.35 + phase * 0.18)) * (phase === 3 ? 18 : 12));
+        const targetX = clamp(w * 0.5 + playerInfluence + Math.sin(t * (0.86 + phase * 0.08)) * xAmp, 56, w - 56);
+        const targetY = Math.max(58, h * (phase === 3 ? 0.16 : 0.18) + Math.sin(t * (1.35 + phase * 0.18)) * (phase === 3 ? 18 : 12));
+        const blended = applyBossStartBlend(targetX, targetY);
+        state.boss.x = blended.x;
+        state.boss.y = blended.y;
       } else {
-        state.boss.x = w * 0.5 + Math.sin(t * 0.92) * w * 0.30;
-        state.boss.y = Math.max(56, h * 0.17 + Math.sin(t * 1.7) * 12);
+        const targetX = w * 0.5 + Math.sin(t * 0.92) * w * 0.30;
+        const targetY = Math.max(56, h * 0.17 + Math.sin(t * 1.7) * 12);
+        const blended = applyBossStartBlend(targetX, targetY);
+        state.boss.x = blended.x;
+        state.boss.y = blended.y;
       }
     }
 
@@ -3857,7 +3937,7 @@
     prevTs = ts;
 
     if (!state.paused && !state.koTransition) {
-      updateMovement(dt, ts);
+      updateMovement(dt, ts, true);
     }
 
     renderHud();
@@ -3920,6 +4000,12 @@
         state.startedAt = performance.now();
         state.lastShotAt = -9999;
         state.lastBossShotAt = -9999;
+
+        // START直前の実座標から戦闘AIの軌道へ短くブレンドする。
+        // 1フレームで軌道座標へ切り替えないため、ボス開始時のカクつきを抑える。
+        state.bossMotionBlendFromX = Number(state.boss?.x || 0);
+        state.bossMotionBlendFromY = Number(state.boss?.y || 0);
+        state.bossMotionBlendStartedAt = state.startedAt;
 
         // カウントダウン中から指を置いたままでも、
         // 現在位置を基準に相対ドラッグをそのまま継続する。
@@ -4096,11 +4182,21 @@
     setBattleHudVisible(false);
   }
 
-  function rebaseTouchDragToPlayer() {
+  function rebaseTouchDragToPlayer(preserveTarget = false) {
     if (!pointerActive || !pointerIsTouch || !state || !state.player) return;
 
     dragStartClientX = lastPointerClientX;
     dragStartClientY = lastPointerClientY;
+
+    if (preserveTarget) {
+      // キャラチェンジ中も、指が向かっている「現在の移動目標」を捨てない。
+      // 同じ指位置で次のpointermoveが来てもtargetが変わらないため、
+      // 一瞬ブレーキが掛かったような操作感を防ぐ。
+      dragStartPlayerX = pointerX;
+      dragStartPlayerY = pointerY;
+      return;
+    }
+
     dragStartPlayerX = state.player.x;
     dragStartPlayerY = state.player.y;
     pointerX = state.player.x;
@@ -4209,7 +4305,7 @@
 
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
 
-    if (wasActive && state && !state.ended && !state.countdown && !state.finishing && !state.koTransition) {
+    if (wasActive && state && !state.ended && !state.finishing && !state.koTransition) {
       const elapsed = performance.now() - swipeStartAt;
       const dx = e.clientX - swipeStartX;
       const dy = e.clientY - swipeStartY;
@@ -4560,10 +4656,13 @@
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();
+
+    // RETRY前の旧stateが生きているうちに無貌OBJECT/弾を先に掃除する。
+    // さらにclearProjectiles自体もDOM直指定で消すため、画像だけ残るゴーストを防ぐ。
+    clearProjectiles();
     resetState();
     setShootingHeaderMenuMode(true);
     ensureShootingPauseMenu();
-    clearProjectiles();
     clearNormalBattleObjects();
     applySelectedCharacterToUi();
     setCharacterSelectVisible(false);
