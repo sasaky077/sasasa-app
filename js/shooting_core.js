@@ -1,4 +1,4 @@
-// 20260816-ch01-overseer-nerf-v33
+// 20260816-ayane-normal-ult-visual-fix-v34
 // Zeraphia SPECIAL EVENT - 銃撃戦 prototype
 // DOM-based shooting battle core. Character definitions and UI shell are split into separate modules.
 (function () {
@@ -5871,15 +5871,29 @@
       // 命中後は7秒拘束中でも通常攻撃・キャラチェンジ可能。
       state.ultLockUntil = now + STRIKE_DELAY + 120;
 
-      const visualDistance = Math.max(100, rayLength);
+      // 当たり判定の射線は従来どおり画面外まで伸ばすが、
+      // 黒手画像そのものまで rayLength で描くと、掌が画面外へ飛び出して
+      // 腕だけ見える状態になる。
+      // 見た目は「実際に掴んだ敵のうち一番遠い個体」までで止める。
+      const hitProjections = hitTargets
+        .map(enemy => distanceToAyaneRay(enemy).along)
+        .filter(v => Number.isFinite(v) && v >= 0);
+      const farthestHitAlong = hitProjections.length
+        ? Math.max(...hitProjections)
+        : Math.max(80, aimLen);
+
+      // 掌画像が敵の中心を少し包む程度だけ先へ伸ばす。
+      const visualDistance = Math.max(100, farthestHitAlong + 34);
+      const visualEndX = startX + ux * visualDistance;
+      const visualEndY = startY + uy * visualDistance;
       const angle = Math.atan2(uy, ux) * 180 / Math.PI;
 
       const fx = document.createElement('div');
       fx.className = 'shooting-ayane-blackhand-ult shooting-ayane-blackhand-multi';
       fx.style.setProperty('--ayane-start-x', `${startX}px`);
       fx.style.setProperty('--ayane-start-y', `${startY}px`);
-      fx.style.setProperty('--ayane-end-x', `${endX}px`);
-      fx.style.setProperty('--ayane-end-y', `${endY}px`);
+      fx.style.setProperty('--ayane-end-x', `${visualEndX}px`);
+      fx.style.setProperty('--ayane-end-y', `${visualEndY}px`);
       fx.style.setProperty('--ayane-distance', `${visualDistance}px`);
       fx.style.setProperty('--ayane-angle', `${angle}deg`);
       fx.innerHTML = getAyaneBlackhandHtml();
