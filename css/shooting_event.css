@@ -6067,12 +6067,12 @@
    DAILY RAID - green linear laser
    ========================================================= */
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-raid-green-laser{
-  width:54px!important;
+  width:270px!important;
   height:5px!important;
   border-radius:999px!important;
-  background:linear-gradient(90deg,rgba(184,255,208,0),rgba(106,255,158,.72) 18%,#eaffef 50%,rgba(72,238,132,.90) 78%,rgba(74,236,132,0))!important;
-  box-shadow:0 0 4px rgba(223,255,232,.95),0 0 10px rgba(70,244,135,.82),0 0 20px rgba(34,199,104,.52)!important;
-  opacity:.96!important;
+  background:linear-gradient(90deg,rgba(88,255,145,0),rgba(67,255,126,.88) 10%,#eaffef 50%,rgba(50,244,112,.96) 90%,rgba(62,255,127,0))!important;
+  box-shadow:0 0 5px rgba(226,255,234,.98),0 0 13px rgba(54,255,126,.90),0 0 26px rgba(24,205,94,.62)!important;
+  opacity:.98!important;
   transform-origin:50% 50%;
 }
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-raid-green-laser::before{
