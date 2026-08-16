@@ -72,7 +72,7 @@
    他ステージの見た目には一切影響しない。 */
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-enemy-bullet,
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-mini-enemy-bullet{
-  background:#5c4a63!important;
+  background:#35e86f!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
@@ -92,6 +92,13 @@
 }
 /* 自機弾も、既に軽量だが念のためglowだけ完全撤去して統一する。 */
 #shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-bullet{
+  box-shadow:none!important;
+}
+
+/* RAID WARNING弾だけは通常弾の緑色軽量化より優先して赤に固定する。 */
+#shooting-event-root[data-shooting-stage="shooting_raid_test"] .shooting-enemy-bullet.shooting-danger-bullet{
+  background:#e33434!important;
+  border-color:#ffb0a8!important;
   box-shadow:none!important;
 }
 

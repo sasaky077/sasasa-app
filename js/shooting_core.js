@@ -813,6 +813,54 @@
     return { left: x - hw, right: x + hw, top: y - hh, bottom: y + hh };
   }
 
+  // レイド直線レーザー専用の回転込み当たり判定。
+  // 通常の矩形判定だと、270pxの棒を回転させても
+  // 「横向き270pxの透明な矩形」のまま判定されてしまうため、
+  // 見えている棒の線分とプレイヤーの赤コアが実際に重なった時だけ命中させる。
+  function raidLaserHitsPlayerCore(projectile, playerCoreRect, arenaRect) {
+    if (!projectile || !projectile.raidLaser || !playerCoreRect || !arenaRect) return false;
+
+    const cx = arenaRect.left + Number(projectile.x || 0);
+    const cy = arenaRect.top + Number(projectile.y || 0);
+    const angle = Math.atan2(Number(projectile.vy || 0), Number(projectile.vx || 0));
+
+    const halfLength = Math.max(1, Number(projectile._hw || 135));
+    const halfThickness = Math.max(1, Number(projectile._hh || 2.5));
+
+    const dx = Math.cos(angle) * halfLength;
+    const dy = Math.sin(angle) * halfLength;
+    const ax = cx - dx;
+    const ay = cy - dy;
+    const bx = cx + dx;
+    const by = cy + dy;
+
+    const px = (playerCoreRect.left + playerCoreRect.right) * 0.5;
+    const py = (playerCoreRect.top + playerCoreRect.bottom) * 0.5;
+
+    const abx = bx - ax;
+    const aby = by - ay;
+    const abLenSq = abx * abx + aby * aby || 1;
+    const t = Math.max(0, Math.min(1, ((px - ax) * abx + (py - ay) * aby) / abLenSq));
+    const nearestX = ax + abx * t;
+    const nearestY = ay + aby * t;
+
+    const distX = px - nearestX;
+    const distY = py - nearestY;
+    const distanceSq = distX * distX + distY * distY;
+
+    // 赤コア自体の半径を加味。見た目上、棒がコアに触れた時だけヒット。
+    const coreRadius = Math.max(
+      1,
+      Math.min(
+        (playerCoreRect.right - playerCoreRect.left) * 0.5,
+        (playerCoreRect.bottom - playerCoreRect.top) * 0.5
+      )
+    );
+    const hitRadius = halfThickness + coreRadius;
+
+    return distanceSq <= hitRadius * hitRadius;
+  }
+
   function getShootingBlessingDefs() {
     const defs = Array.isArray(window.REMNANT_BLESSINGS) ? window.REMNANT_BLESSINGS : [];
     return defs.filter(Boolean).map((b, i) => ({
@@ -3984,7 +4032,11 @@
       const moonlightInvulnerable = getCurrentCharacter().id === CHARACTER_ID.HAYATE && now < (state.hayateMoonlightUntil || 0);
       if (!moonlightInvulnerable && now >= state.player.invulnUntil) {
         // 被弾判定はキャラクター画像全体ではなく、胸元の可視コアだけ。
-        if (rectsHit(r, playerCoreRect, 0, 1)) {
+        const hitPlayerCore = p.raidLaser
+          ? raidLaserHitsPlayerCore(p, playerCoreRect, arenaRect)
+          : rectsHit(r, playerCoreRect, 0, 1);
+
+        if (hitPlayerCore) {
           p.el.remove();
           damagePlayer(now, p.damage, classifyIncomingAttack(p));
           return false;
