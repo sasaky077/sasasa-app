@@ -20483,3 +20483,184 @@ body {
     max-height: 100dvh;
   }
 }
+
+
+/* =========================================================
+   Zukan Limit Break Status v45
+   - 名前下に4段階の凸状況を静かなシャンパンゴールドで表示
+   - 完凸のみ淡い発光で格を出す
+   ========================================================= */
+.primoa-index-lb{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  height:10px;
+  margin-top:2px;
+  pointer-events:none;
+}
+
+.primoa-index-lb-dot{
+  position:relative;
+  display:block;
+  width:6px;
+  height:6px;
+  border-radius:1px;
+  box-sizing:border-box;
+  transform:rotate(45deg);
+  transition:
+    background-color .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease;
+}
+
+.primoa-index-lb-dot.is-empty{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(142,112,60,.48);
+  box-shadow:
+    inset 0 0 0 .5px rgba(255,255,255,.30);
+}
+
+.primoa-index-lb-dot.is-filled{
+  border:1px solid rgba(141,101,32,.72);
+  background:
+    linear-gradient(135deg,
+      #fff9e8 0%,
+      #e8ca83 36%,
+      #bd8c38 68%,
+      #8e652a 100%);
+  box-shadow:
+    0 1px 2px rgba(83,58,20,.20),
+    inset 1px 1px 0 rgba(255,255,255,.55);
+}
+
+.primoa-index-lb-unowned{
+  opacity:0;
+}
+
+/* 完凸：派手に点滅させず、金属の反射のようにゆっくり発光 */
+.primoa-index-card.is-max-limitbreak .primoa-index-image-wrap{
+  border-color:rgba(190,150,73,.72);
+  box-shadow:
+    0 3px 11px rgba(85,63,30,.10),
+    0 0 0 1px rgba(222,189,116,.20),
+    0 0 12px rgba(204,161,76,.20);
+  animation:primoaMaxLimitBreakGlow 3.6s ease-in-out infinite;
+}
+
+.primoa-index-card.is-max-limitbreak .primoa-index-image-wrap::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:3;
+  pointer-events:none;
+  border:1px solid rgba(255,235,183,.38);
+  box-shadow:
+    inset 0 0 10px rgba(255,226,155,.10);
+}
+
+.primoa-index-card.is-max-limitbreak .primoa-index-lb-dot.is-filled{
+  border-color:rgba(188,145,59,.92);
+  background:
+    linear-gradient(135deg,
+      #fffdf4 0%,
+      #f3dc9b 30%,
+      #d6a84e 66%,
+      #9d6c25 100%);
+  box-shadow:
+    0 0 5px rgba(236,207,137,.44),
+    0 1px 2px rgba(83,58,20,.20),
+    inset 1px 1px 0 rgba(255,255,255,.72);
+  animation:primoaMaxDiamondRainbow 4.8s linear infinite;
+}
+
+@keyframes primoaMaxDiamondRainbow{
+  0%{
+    filter:brightness(1.06) hue-rotate(0deg);
+    box-shadow:
+      0 0 4px rgba(255,105,105,.42),
+      0 0 9px rgba(255,175,95,.24),
+      0 1px 2px rgba(83,58,20,.20),
+      inset 1px 1px 0 rgba(255,255,255,.72);
+  }
+  20%{
+    filter:brightness(1.10) hue-rotate(0deg);
+    box-shadow:
+      0 0 4px rgba(255,220,95,.46),
+      0 0 9px rgba(175,235,105,.26),
+      0 1px 2px rgba(83,58,20,.20),
+      inset 1px 1px 0 rgba(255,255,255,.74);
+  }
+  40%{
+    filter:brightness(1.12) hue-rotate(0deg);
+    box-shadow:
+      0 0 4px rgba(95,230,170,.48),
+      0 0 9px rgba(90,205,255,.28),
+      0 1px 2px rgba(83,58,20,.20),
+      inset 1px 1px 0 rgba(255,255,255,.76);
+  }
+  60%{
+    filter:brightness(1.12) hue-rotate(0deg);
+    box-shadow:
+      0 0 4px rgba(100,175,255,.50),
+      0 0 9px rgba(150,120,255,.30),
+      0 1px 2px rgba(83,58,20,.20),
+      inset 1px 1px 0 rgba(255,255,255,.76);
+  }
+  80%{
+    filter:brightness(1.10) hue-rotate(0deg);
+    box-shadow:
+      0 0 4px rgba(225,115,255,.48),
+      0 0 9px rgba(255,115,175,.28),
+      0 1px 2px rgba(83,58,20,.20),
+      inset 1px 1px 0 rgba(255,255,255,.74);
+  }
+  100%{
+    filter:brightness(1.06) hue-rotate(0deg);
+    box-shadow:
+      0 0 4px rgba(255,105,105,.42),
+      0 0 9px rgba(255,175,95,.24),
+      0 1px 2px rgba(83,58,20,.20),
+      inset 1px 1px 0 rgba(255,255,255,.72);
+  }
+}
+
+.primoa-index-card.is-max-limitbreak .primoa-index-name{
+  color:#745725;
+  text-shadow:0 1px 0 rgba(255,255,255,.72);
+}
+
+@keyframes primoaMaxLimitBreakGlow{
+  0%,100%{
+    box-shadow:
+      0 3px 11px rgba(85,63,30,.10),
+      0 0 0 1px rgba(222,189,116,.16),
+      0 0 9px rgba(204,161,76,.14);
+  }
+  50%{
+    box-shadow:
+      0 3px 11px rgba(85,63,30,.10),
+      0 0 0 1px rgba(236,203,128,.30),
+      0 0 15px rgba(204,161,76,.30);
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .primoa-index-card.is-max-limitbreak .primoa-index-image-wrap,
+  .primoa-index-card.is-max-limitbreak .primoa-index-lb-dot.is-filled{
+    animation:none;
+  }
+}
+
+@media (max-width:350px){
+  .primoa-index-lb{
+    gap:2.5px;
+    margin-top:1px;
+  }
+  .primoa-index-lb-dot{
+    width:5px;
+    height:5px;
+  }
+}

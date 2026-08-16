@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-limitbreak-material-db-resolve-v44">
+  <meta name="sasaphia-build" content="20260816-zukan-limitbreak-display-v45">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -44,7 +44,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=20260816-notification-repair-v41">
+  <link rel="stylesheet" href="css/style.css?v=20260816-zukan-limitbreak-display-v45">
 
 
   <style id="remnant-locked-silhouette-style">
@@ -161,7 +161,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-limitbreak-material-db-resolve-v44';
+  var BUILD = '20260816-zukan-limitbreak-display-v45';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -6073,17 +6073,29 @@ setTenResultFooterVisible(true);
         representative &&
         getLimitBreakMaterialStatus(representative).canLimitBreak
       );
+      var lbMax = (typeof MAX_LIMIT_BREAK !== 'undefined' && MAX_LIMIT_BREAK > 0) ? Number(MAX_LIMIT_BREAK) : 4;
+      var lb = representative ? Math.max(0, Math.min(lbMax, Number(representative.limitBreak || 0))) : 0;
+      var isMaxLimitBreak = owned && lb >= lbMax;
+      var limitBreakDots = '';
+      if(owned){
+        for(var dotIndex = 1; dotIndex <= lbMax; dotIndex++){
+          limitBreakDots += '<span class="primoa-index-lb-dot ' + (dotIndex <= lb ? 'is-filled' : 'is-empty') + '"></span>';
+        }
+      }
+
       var no = String(chara.id || 0).padStart(2, '0');
       var panelSrc = getZukanIndexPanelSrc(chara);
       var name = chara.name || ('ID ' + no);
+      var lbAria = owned ? ('・限界突破 ' + lb + '/' + lbMax) : '・未所持';
 
       return '' +
-        '<button class="primoa-index-card ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + '" type="button" onclick="openZukanCharacterDetail(' + Number(chara.id) + ')" aria-label="' + detailEscapeHTML(name) + ' の情報を見る">' +
+        '<button class="primoa-index-card ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + '" type="button" onclick="openZukanCharacterDetail(' + Number(chara.id) + ')" aria-label="' + detailEscapeHTML(name + lbAria) + '">' +
           (canLimitBreak ? '<span class="primoa-index-limitbreak-dot" aria-label="強化可能"></span>' : '') +
           '<span class="primoa-index-image-wrap">' +
             '<img class="primoa-index-image" src="' + panelSrc + '" alt="' + detailEscapeHTML(name) + '">' +
           '</span>' +
           '<span class="primoa-index-name">' + detailEscapeHTML(name) + '</span>' +
+          (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
         '</button>';
     }).join('');
   }
