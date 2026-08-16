@@ -18603,6 +18603,65 @@ body.login-bonus-open {
   color:rgba(154,120,62,.66);
 }
 
+.testplay-install-guide-entry{
+  position:relative;
+  border-color:rgba(177,132,50,.52);
+  box-shadow:
+    0 5px 16px rgba(111,82,36,.10),
+    inset 0 0 0 1px rgba(255,255,255,.48);
+  animation:testplayInstallGuideAttention 1.8s ease-in-out infinite;
+}
+
+.testplay-install-guide-entry::before{
+  content:"まずは①を確認";
+  position:absolute;
+  top:-9px;
+  right:10px;
+  padding:2px 8px 3px;
+  border-radius:999px;
+  background:#8d6b31;
+  color:#fffaf0;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.06em;
+  line-height:1.35;
+  box-shadow:0 2px 7px rgba(76,54,20,.18);
+  pointer-events:none;
+}
+
+.testplay-install-guide-entry-cta{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  margin-top:4px;
+  color:#8a6426;
+  font-family:"Noto Serif JP",serif;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.05em;
+  line-height:1.2;
+}
+
+.testplay-install-guide-entry:active{
+  transform:scale(.985);
+  animation:none;
+}
+
+@keyframes testplayInstallGuideAttention{
+  0%,100%{
+    box-shadow:
+      0 5px 16px rgba(111,82,36,.10),
+      0 0 0 0 rgba(178,137,61,0),
+      inset 0 0 0 1px rgba(255,255,255,.48);
+  }
+  50%{
+    box-shadow:
+      0 6px 18px rgba(111,82,36,.15),
+      0 0 0 4px rgba(178,137,61,.12),
+      inset 0 0 0 1px rgba(255,255,255,.60);
+  }
+}
+
 .install-guide-modal{
   position:fixed;
   inset:0;
