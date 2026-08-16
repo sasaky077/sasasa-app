@@ -1,3 +1,4 @@
+// 20260816-notification-resetfix-v42
 (function(){
   'use strict';
 
@@ -72,12 +73,21 @@
       }
 
       try {
-        const res = await client.rpc('get_daily_raid_status', { p_user_id:userId });
+        // ホーム通知は「状態を見るだけ」ではなく、本日のレイドを必要なら生成してから判定する。
+        // データリセット直後の新規ユーザーでも、ホーム到達時点で挑戦可能通知を出せる。
+        const res = await client.rpc('get_or_create_daily_raid', { p_user_id:userId });
         if(res && !res.error){
           const status = normalizeStatus(res.data);
           const me = status && status.me || null;
-          const hp = n(status && status.current_hp);
-          const cleared = !!(status && status.status === 'cleared') || hp <= 0;
+          const hasHp = !!(status && status.current_hp != null);
+          const hp = hasHp ? n(status.current_hp) : null;
+          const cleared = !!(
+            status &&
+            (
+              status.status === 'cleared' ||
+              (hasHp && hp <= 0)
+            )
+          );
           raidReady = !!(status && me && !me.attempt_started_at && !cleared);
         }
       } catch(err) {
@@ -381,9 +391,23 @@
 
   function setupFriendHomeNotice(){
     ensureFriendNoticeDot();
-    // userId / Supabase の初期化完了を少し待って初回確認。
-    setTimeout(refreshFriendHomeNotice, 900);
-    setTimeout(refreshFriendHomeNotice, 3500);
+
+    // タイマーだけに依存せず、アプリ側DB初期化の完了後に必ず再確認する。
+    try {
+      const dbReady = window._dbLoadPromise;
+      if(dbReady && typeof dbReady.then === 'function'){
+        Promise.resolve(dbReady)
+          .catch(()=>null)
+          .then(()=>refreshFriendHomeNotice());
+      }
+    } catch(err) {
+      console.warn('[friend notice] db-ready hook skipped', err && (err.message || err));
+    }
+
+    // 初期化タイミング差への保険。
+    setTimeout(refreshFriendHomeNotice, 500);
+    setTimeout(refreshFriendHomeNotice, 1800);
+    setTimeout(refreshFriendHomeNotice, 5000);
 
     // 外から戻った時は、新しい申請や他ユーザーによるレイド作成を即反映。
     window.addEventListener('focus', refreshFriendHomeNotice);
