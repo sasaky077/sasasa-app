@@ -247,9 +247,9 @@
           <section class="daily-raid-rule">
             <div class="daily-raid-rule-title"><small>BATTLE RULE</small></div>
             <div class="daily-raid-rule-grid">
-              <div><b>01</b><span>1人1日3回・BEST採用</span></div>
-              <div><b>02</b><span>全滅または180秒で終了</span></div>
-              <div><b>03</b><span>3回目終了時にBESTを共有HPへ反映</span></div>
+              <div><b>01</b><span>1人につき1日3回チャレンジ・BESTダメージを採用</span></div>
+              <div><b>02</b><span>全滅または180秒経過で終了</span></div>
+              <div><b>03</b><span>3回目終了時にBESTダメージを共有HPから差し引く</span></div>
             </div>
           </section>
         </main>
