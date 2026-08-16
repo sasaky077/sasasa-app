@@ -19478,8 +19478,8 @@ body.login-bonus-open {
   position: absolute;
   left: 10px;
   right: auto;
-  /* ボーナス→フレンドの間隔を、右側のお知らせ→神樹と揃える */
-  top: calc(env(safe-area-inset-top) + 259px); /* 約5mm上へ */
+  /* 神樹と同じ実測位置を使う。端末高/Safe Area/バナー実寸の差を吸収 */
+  top: var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) !important;
   width: clamp(88px, 22vw, 98px);
   height: clamp(88px, 22vw, 98px);
   padding: 0;
@@ -20162,4 +20162,15 @@ body:has(#screen-friend.active) .bottom-nav .bottom-nav-item img{
 }
 body:has(#screen-friend.active) .bottom-nav .bottom-nav-item.active img{
   filter:brightness(.96) sepia(.36) saturate(.95);
+}
+
+
+/* =========================================================
+   Home Friend Entry - responsive alignment safeguard
+   フレンドは神樹と同じY座標変数を必ず使用する。
+   JSがイベントバナー実寸から --home-shinju-top を更新するため、
+   iPhone SE / 14 / Safe Area差で縦位置が分離しない。
+   ========================================================= */
+#screen-main .friend-home-entry{
+  top:var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) !important;
 }
