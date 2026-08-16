@@ -295,7 +295,13 @@
     }
     if (score) {
       if (inBattle) {
-        score.textContent = `SCORE ${formatShootingScore(state?.score || 0)}`;
+        if (isRaidStage() && state?.boss) {
+          const raidHp = Math.max(0, Math.floor(Number(state.boss.hp || 0)));
+          const raidMaxHp = Math.max(1, Math.floor(Number(state.boss.hpMax || selectedRaidContext?.maxHp || 100000)));
+          score.textContent = `HP ${raidHp.toLocaleString('ja-JP')} / ${raidMaxHp.toLocaleString('ja-JP')}`;
+        } else {
+          score.textContent = `SCORE ${formatShootingScore(state?.score || 0)}`;
+        }
       } else {
         score.innerHTML = `<span class="shooting-high-score-label">HIGH SCORE</span><strong class="shooting-high-score-value">${formatShootingScore(selectedStageHighScore)}</strong>`;
       }
@@ -1307,7 +1313,13 @@
     if (score) {
       const root = document.getElementById(ROOT_ID);
       if (root?.classList.contains('battle-hud-visible')) {
-        score.textContent = `SCORE ${formatShootingScore(state.score)}`;
+        if (isRaidStage()) {
+          const raidHp = Math.max(0, Math.floor(Number(state.boss?.hp || 0)));
+          const raidMaxHp = Math.max(1, Math.floor(Number(state.boss?.hpMax || selectedRaidContext?.maxHp || 100000)));
+          score.textContent = `HP ${raidHp.toLocaleString('ja-JP')} / ${raidMaxHp.toLocaleString('ja-JP')}`;
+        } else {
+          score.textContent = `SCORE ${formatShootingScore(state.score)}`;
+        }
         score.classList.remove('is-high-score');
       }
     }
