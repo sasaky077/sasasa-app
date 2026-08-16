@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-zukan-limitbreak-display-v45">
+  <meta name="sasaphia-build" content="20260816-opening-nav-no-flicker-v52">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -44,10 +44,87 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=20260816-zukan-limitbreak-display-v45">
+  <!-- iPhone/PWA first-paint: full CSS download前でも黒画面ではなくスプラッシュを即表示 -->
+  <style id="sasaphia-critical-startup-v48">
+    html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
+    body{position:fixed;inset:0}
+    #splash{
+      position:fixed;inset:0;z-index:400;
+      display:flex;align-items:center;justify-content:center;
+      background:#000;opacity:1;
+    }
+    #splash img{display:block;width:90%;max-width:480px;height:auto}
+    #title-screen{display:none}
+    #loading{position:fixed;inset:0;z-index:200;background:#0f0f0f}
+    .screen{display:none}
+    #bottom-nav-shared{
+      position:fixed;
+      left:0;right:0;bottom:0;
+      z-index:50;
+      display:flex;
+      align-items:center;
+      justify-content:space-around;
+      min-height:calc(76px + env(safe-area-inset-bottom));
+      padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+      background:linear-gradient(180deg,rgba(249,246,237,.99),rgba(231,220,198,.99));
+      border-top:1px solid rgba(147,111,48,.52);
+    }
+    #bottom-nav-shared .bottom-nav-item{
+      flex:1;
+      min-height:64px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+    #bottom-nav-shared .bottom-nav-item img{
+      display:block;
+      width:42px;
+      height:42px;
+      object-fit:contain;
+    }
+    #bottom-nav-shared .bottom-nav-label{
+      display:block;
+      margin-top:6px;
+      font:11.5px/1.05 "Noto Serif JP",serif;
+      color:rgba(83,65,38,.82);
+    }
+  </style>
+  <link rel="preload" as="image" href="images/splash.png" fetchpriority="high">
+  <link rel="preload" as="image" href="images/title.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="images/btmnv_missions.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="images/btmnv_party.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="images/btmnv_home.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="images/btmnv_recruit.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="images/btmnv_settings.webp" fetchpriority="high">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
+  <!-- 大きいstyle.cssでFirst Paintを止めない。スプラッシュ表示中に並列ロードする -->
+  <link id="sasaphia-main-style"
+        rel="preload"
+        as="style"
+        href="css/style.css?v=20260816-opening-nav-no-flicker-v52"
+        onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260816-opening-nav-no-flicker-v52"></noscript>
+  <script>
+  window._sasaphiaMainStyleReady = new Promise(function(resolve){
+    var done = false;
+    function finish(){
+      if(done) return;
+      done = true;
+      resolve(true);
+    }
+    var link = document.getElementById('sasaphia-main-style');
+    if(link && (link.dataset.ready === '1' || link.rel === 'stylesheet')) finish();
+    window.addEventListener('sasaphia-main-style-ready', finish, { once:true });
+    setTimeout(function(){
+      // 通常はlink.onloadで解除。5秒を超えた場合だけ非常用フォールバック。
+      finish();
+    }, 5000);
+  });
+  </script>
 
-  <style id="remnant-locked-silhouette-style">
+<style id="remnant-locked-silhouette-style">
     /* ===== Remnant LOCK silhouette implementation (simple silhouette only) ===== */
     .remnant-carousel .box-carousel-view.is-locked .box-carousel-visual.remnant-locked {
       position: relative;
@@ -161,7 +238,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-zukan-limitbreak-display-v45';
+  var BUILD = '20260816-opening-nav-no-flicker-v52';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -256,17 +333,17 @@
   <img src="images/splash.png" alt="SaSaSa App" onerror="this.style.display='none'">  
 </div>
 
-<audio id="bgm" src="audio/bgm_main2.mp3" loop preload="auto"></audio>
-<audio id="bgm-opening" src="audio/bgm_opening.mp3" loop preload="auto"></audio>
-<audio id="se-gacha_crack" src="audio/gacha_crack.mp3" preload="auto"></audio>
-<audio id="se-gacha_break" src="audio/gacha_break.mp3" preload="auto"></audio>
-<audio id="se-ten_gacha_open" src="audio/ten_gacha_open.mp3" preload="auto"></audio>
-<audio id="se-fullscreen_impact" src="audio/gacha_fullscreen_after.mp3" preload="auto"></audio>
-<audio id="se-tap_ur" src="audio/gacha_tap_ur.mp3" preload="auto"></audio>
-<audio id="se-ur_black" src="audio/gacha_ur_black.mp3" preload="auto"></audio>
-<audio id="story-wind"  src="audio/wind_01.mp3" loop preload="auto"></audio>
-<audio id="story-noise-se-1"  src="audio/radio_noise.mp3" preload="auto"></audio>
-<audio id="story-noise-se-2"  src="audio/radio_noise2.mp3" preload="auto"></audio>
+<audio id="bgm" src="audio/bgm_main2.mp3" loop preload="metadata"></audio>
+<audio id="bgm-opening" src="audio/bgm_opening.mp3" loop preload="metadata"></audio>
+<audio id="se-gacha_crack" src="audio/gacha_crack.mp3" preload="none"></audio>
+<audio id="se-gacha_break" src="audio/gacha_break.mp3" preload="none"></audio>
+<audio id="se-ten_gacha_open" src="audio/ten_gacha_open.mp3" preload="none"></audio>
+<audio id="se-fullscreen_impact" src="audio/gacha_fullscreen_after.mp3" preload="none"></audio>
+<audio id="se-tap_ur" src="audio/gacha_tap_ur.mp3" preload="none"></audio>
+<audio id="se-ur_black" src="audio/gacha_ur_black.mp3" preload="none"></audio>
+<audio id="story-wind"  src="audio/wind_01.mp3" loop preload="none"></audio>
+<audio id="story-noise-se-1"  src="audio/radio_noise.mp3" preload="none"></audio>
+<audio id="story-noise-se-2"  src="audio/radio_noise2.mp3" preload="none"></audio>
 <div id="glitch-noise"></div>
 
 <div id="title-screen" onclick="startFromTitle()">
@@ -487,14 +564,14 @@
   <!-- Home background: moving sky -> static transparent building -->
   <div class="home-sky-scroll-layer" aria-hidden="true">
     <div class="home-sky-scroll-track">
-      <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="">
+      <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="" decoding="async" fetchpriority="high">
       <img class="home-sky-scroll-img home-sky-scroll-img-mirror" src="images/chara_bg_sky.webp" alt="">
       <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="">
       <img class="home-sky-scroll-img home-sky-scroll-img-mirror" src="images/chara_bg_sky.webp" alt="">
     </div>
   </div>
 
-  <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true">
+  <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
   <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
     <img src="images/mail.webp" alt="お知らせ">
     <span class="home-notice-badge" aria-hidden="true"></span>
@@ -779,24 +856,24 @@
 <!-- 共有ボトムナビ（fixed固定） -->
 <nav class="bottom-nav" id="bottom-nav-shared">
   <div class="bottom-nav-item" id="bnav-ninmu" onclick="showMainTab('ninmu')">
-    <img src="images/btmnv_missions.webp" alt="巡行">
+    <img src="images/btmnv_missions.webp" alt="巡行" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">巡行</span>
   </div>
   <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
     <span class="bottom-nav-notice" id="bnav-zukan-notice" style="display:none"></span>
-    <img src="images/btmnv_party.webp" alt="キャラ">
+    <img src="images/btmnv_party.webp" alt="キャラ" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">キャラ</span>
   </div>
   <div class="bottom-nav-item" id="bnav-main" onclick="showMainTab('main')">
-    <img src="images/btmnv_home.webp" alt="ホーム">
+    <img src="images/btmnv_home.webp" alt="ホーム" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">ホーム</span>
   </div>
   <div class="bottom-nav-item" id="bnav-summon" onclick="showMainTab('summon')">
-    <img src="images/btmnv_recruit.webp" alt="邂逅">
+    <img src="images/btmnv_recruit.webp" alt="邂逅" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">邂逅</span>
   </div>
   <div class="bottom-nav-item" id="bnav-setting" onclick="handleSettingsNavTap(event)">
-    <img src="images/btmnv_settings.webp" alt="設定">
+    <img src="images/btmnv_settings.webp" alt="設定" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">設定</span>
   </div>
 </nav>
@@ -2662,6 +2739,9 @@ function renderResultElementBadge(data){
     var canonicalId = normalizeZeraphiaUserId(userId);
     if(!canonicalId) return;
 
+    var migrationKey = 'sasaphia_userid_case_migrated_v1_' + canonicalId;
+    if(localStorage.getItem(migrationKey) === '1') return;
+
     // user_idを持つプレイヤーデータを旧大文字・混在表記から小文字へ寄せる。
     // 既に正規IDの行があり一意制約に当たる場合は、読み込みを止めず警告だけ残す。
     var userIdTables = [
@@ -2704,6 +2784,9 @@ function renderResultElementBadge(data){
         .neq('receiver_id', canonicalId);
       if(receiverMigration && receiverMigration.error) console.warn('[UserId migration] friendships.receiver_id', receiverMigration.error);
     } catch(e){ console.warn('[UserId migration] friendships.receiver_id', e); }
+
+    // 一度完了した端末では、以後8本のUPDATE確認を起動時に繰り返さない。
+    localStorage.setItem(migrationKey, '1');
   }
 
   function getRate(id, h, m, isWeekday, isWeekend) {
@@ -2844,17 +2927,80 @@ function selectChara(now, gacha) {
      : '';
 
    if(chara.cutImg) {
-     return '<img src="'+chara.cutImg+'" class="fav-cut-img'+urClass+'"'+styleAttr+'>';
+     return '<img src="'+chara.cutImg+'" class="fav-cut-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+'>';
    }
 
    if(chara.img) {
-     return '<img src="'+chara.img+'" class="fav-img'+urClass+'"'+styleAttr+'>';
+     return '<img src="'+chara.img+'" class="fav-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+'>';
    }
 
    return '<div style="width:120px;height:120px;background:#111;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px">未実装</div>';
   }
 
+  function waitForBottomNavAssets(){
+    var nav = document.getElementById('bottom-nav-shared');
+    if(!nav) return Promise.resolve(true);
+
+    var images = Array.from(nav.querySelectorAll('img'));
+    if(!images.length) return Promise.resolve(true);
+
+    return Promise.all(images.map(function(img){
+      // 既にロード済みならdecodeだけ待つ。
+      if(img.complete && img.naturalWidth > 0){
+        if(typeof img.decode === 'function'){
+          return img.decode().catch(function(){ return true; });
+        }
+        return Promise.resolve(true);
+      }
+
+      return new Promise(function(resolve){
+        var done = false;
+        function finish(){
+          if(done) return;
+          done = true;
+          if(typeof img.decode === 'function'){
+            img.decode().catch(function(){}).finally(resolve);
+          } else {
+            resolve(true);
+          }
+        }
+        img.addEventListener('load', finish, { once:true });
+        img.addEventListener('error', finish, { once:true });
+        // 画像1枚の失敗で起動全体を止めない。
+        setTimeout(finish, 2500);
+      });
+    })).then(function(){ return true; });
+  }
+
   async function init(){
+  // ボトムナビの5アイコンもスプラッシュ中に先読み・decode。
+  if(!window._bottomNavAssetsReady){
+    window._bottomNavAssetsReady = waitForBottomNavAssets();
+  }
+
+  // DBはスプラッシュ表示中から先行ロード。ユーザー操作待ち時間を通信時間に充てる。
+  if(!window._dbLoadPromise){
+    window._profileLoadState = 'loading';
+    window._dbLoadPromise = loadFromDB().then(function(){
+      window._profileLoadState = 'ready';
+
+      // タイトルの裏でホームDOMを先に作り、キャラ画像の取得/デコードを開始する。
+      try {
+        updateSummonGemUI();
+        updateMainUI();
+      } catch(e) {
+        console.warn('[Startup] home prerender skipped:', e);
+      }
+
+      return true;
+    }).catch(function(e){
+      window._profileLoadState = 'error';
+      window._profileLoadError = e;
+      console.error('DB load error:', e);
+      return false;
+    });
+  }
+
   // Step1: スプラッシュ（タップで進む）
   await new Promise(function(resolve){
     var splash = document.getElementById('splash');
@@ -2868,25 +3014,18 @@ function selectChara(now, gacha) {
 }
       } catch(e){}
 
-      splash.style.opacity = '0';
-      setTimeout(function(){
-        splash.style.display = 'none';
-        resolve();
-      }, 800);
+      Promise.resolve(window._sasaphiaMainStyleReady).finally(function(){
+        splash.style.opacity = '0';
+        // 通信待ちではなく、演出としての余韻を残す。
+        setTimeout(function(){
+          splash.style.display = 'none';
+          resolve();
+        }, 700);
+      });
     }, { once: true });
   });
 
-// Step2: タイトル画面（バックグラウンドでDB読み込み開始）
-window._dbLoadPromise = loadFromDB().then(function(){
-  window._profileLoadState = 'ready';
-  return true;
-}).catch(function(e){
-  window._profileLoadState = 'error';
-  window._profileLoadError = e;
-  console.error('DB load error:', e);
-  return false;
-});
-
+// Step2: タイトル画面（DBはスプラッシュ表示中から既に先行ロード中）
 var titleScreen = document.getElementById('title-screen');
 titleScreen.style.display = 'flex';
 
@@ -2926,37 +3065,55 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     return;
   }
 
-  // タイトルが消え切ってから画面切替
+  // タイトルで画面を覆っている間に、ホームとボトムナビを完成させる。
+  // タイトルを先に消すと iPhone で「ホーム → 後からナビ」に見えるため、
+  // 最後にタイトルだけ外す。
   setTimeout(function(){
-    titleScreen.style.display = 'none';
-
-    document.getElementById('loading').style.display = 'none';
-
+    var loadingScreen = document.getElementById('loading');
     var mainScreen = document.getElementById('screen-main');
-    mainScreen.classList.add('active');
+    var bottomNav = document.getElementById('bottom-nav-shared');
+
+    if(loadingScreen) loadingScreen.style.display = 'none';
+
+    // 1. 先にホームDOMを完成
+    if(mainScreen) mainScreen.classList.add('active');
     updateHeaderHeight();
-
-    setReloadBtnVisible(true);
-
-    if(isAudioEnabled('main_bgm')) fadeInBgm();
-    if(typeof setBnavActive==='function') setBnavActive('main');
-
-    // タイトル通過後、ホーム操作前にテスト版お知らせを毎回強制表示。
-    setTimeout(function(){
-      showTestplayNotice();
-    }, 80);
-
     updateSummonGemUI();
     updateMainUI();
-    refreshHomeNotifications();
 
-    // Battle32 中断バトルの復元確認（ホーム表示後に実行）
-    if (checkBattle32Resume()) {
-      return;
-    }
+    // 2. 先にボトムナビを表示し、HOMEをactiveにする
+    if(bottomNav) bottomNav.style.display = '';
+    if(typeof setBnavActive === 'function') setBnavActive('main');
+    if(typeof setNavVisible === 'function') setNavVisible(true);
+    setReloadBtnVisible(true);
 
+    // 3. ナビ画像のdecode完了までタイトルで隠す。
+    //    DOMだけでなく5枚のアイコン自体が描画可能になってから公開する。
+    var navReady = window._bottomNavAssetsReady || waitForBottomNavAssets();
+    Promise.race([
+      Promise.resolve(navReady),
+      new Promise(function(resolve){ setTimeout(resolve, 2600); })
+    ]).finally(function(){
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          titleScreen.style.display = 'none';
 
-  }, 2000);
+          if(isAudioEnabled('main_bgm')) fadeInBgm();
+          refreshHomeNotifications();
+
+          // タイトル通過後、ホーム操作前にテスト版お知らせを毎回強制表示。
+          setTimeout(function(){
+            showTestplayNotice();
+          }, 80);
+
+          // Battle32 中断バトルの復元確認（ホーム表示後に実行）
+          if (checkBattle32Resume()) {
+            return;
+          }
+        });
+      });
+    });
+  }, 700);
 }
 
   function buildOwnedEntryFromChara(chara, row){
@@ -3085,9 +3242,24 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function loadFromDB(){
-  await migrateLegacyUserIdCase();
+  // 旧ID大文字/小文字差は ilike で読めるため、重い正規化UPDATEは起動を塞がず裏で処理する。
+  Promise.resolve().then(function(){
+    return migrateLegacyUserIdCase();
+  }).catch(function(e){
+    console.warn('[UserId migration] background migration skipped:', e);
+  });
 
-  var res1 = await sb.from('collected_characters').select('*').eq('user_id', userId);
+  // キャラとプロフィールは互いに独立なので並列取得。
+  var startupResults = await Promise.all([
+    sb.from('collected_characters').select('*').ilike('user_id', userId),
+    sb.from('user_profiles').select('*').ilike('user_id', userId).maybeSingle()
+  ]);
+  var res1 = startupResults[0];
+  var res2 = startupResults[1];
+
+  if(res1 && res1.error){
+    throw new Error('collected_characters読込失敗: ' + (res1.error.message || res1.error.code || 'unknown'));
+  }
 
   if(res1.data){
     res1.data.forEach(function(row){
@@ -3145,7 +3317,6 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
   await ensureStarterEriOwned();
 
-  var res2 = await sb.from('user_profiles').select('*').eq('user_id', userId).maybeSingle();
   if(res2.error){
     var cached = readProfileCache();
     if(cached){
@@ -3195,15 +3366,20 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     };
     writeProfileCache(userProfile);
   }
-  // キャラ・プロフィール読込後にクラウド引き継ぎを処理する。
-  try {
-    var didTransfer = await runPendingTransferIfNeeded();
-    if (!didTransfer) {
-      await migrateLocalDataToCloud();
+  // 明示的な引き継ぎ待ちだけは整合性保護のため起動前に完了させる。
+  // 通常のローカル→クラウド移行はホーム表示を止めずバックグラウンドへ。
+  if(localStorage.getItem(ZERAPHIA_TRANSFER_PENDING_KEY) === '1'){
+    try {
+      await runPendingTransferIfNeeded();
+    } catch (cloudError) {
+      console.error('[CloudSync] transfer restore failed:', cloudError);
     }
-  } catch (cloudError) {
-    console.error('[CloudSync] load/migration failed:', cloudError);
-    // クラウド失敗時もローカルデータは削除しない。
+  } else {
+    setTimeout(function(){
+      migrateLocalDataToCloud().catch(function(cloudError){
+        console.error('[CloudSync] background migration failed:', cloudError);
+      });
+    }, 1200);
   }
 
   window.userProfile = userProfile;
@@ -7727,6 +7903,14 @@ function renderHomeEventBanners(){
     var img = document.createElement('img');
     img.src = banner.img;
     img.alt = banner.alt || banner.title || 'イベントバナー';
+    img.decoding = 'async';
+    if(index === 0){
+      img.loading = 'eager';
+      try { img.fetchPriority = 'high'; } catch(_){}
+    } else {
+      img.loading = 'lazy';
+      try { img.fetchPriority = 'low'; } catch(_){}
+    }
     btn.appendChild(img);
 
     track.appendChild(btn);
@@ -8123,7 +8307,7 @@ window.moveInstallGuide = moveInstallGuide;
 
 function showTestplayNotice(){
   // 「次から表示しない」がONなら、お知らせ→案内の両方をまとめてスキップする。
-  // 初回プレイ(フラグ未設定)では必ず両方表示される。
+  // この経路ではホーム＋ナビを既に表示済みなので、ナビ表示状態を触らない。
   if(localStorage.getItem('hide_testplay_guide') === '1'){
     resumeHomeAfterTestplayGuide();
     return;
@@ -8204,11 +8388,11 @@ function finalizeHomeAfterOpeningSequence(){
 }
 
 async function resumeHomeAfterTestplayGuide(){
-  // 起動順を固定：
-  // TITLE → TEST PLAY → GUIDE → LOGIN BONUS → HOME
-  // ログインボーナス確認中もホーム操作は解放しない。
-  if(typeof setNavVisible === 'function') setNavVisible(false);
-
+  // HOMEはすでにタイトル裏で完成済み。
+  // ログインボーナスの有無を確認するだけの間にナビを隠すと、
+  // iPhoneで「ホーム＋ナビ → ナビだけ一瞬消える → 再表示」が見える。
+  // そのため通常ホーム状態は維持し、実際にログインボーナスが開く場合だけ
+  // モーダル側の表示制御に任せる。
   if(typeof window.openLoginBonusIfNeeded !== 'function'){
     finalizeHomeAfterOpeningSequence();
     return;
@@ -8217,13 +8401,14 @@ async function resumeHomeAfterTestplayGuide(){
   try{
     var opened = await window.openLoginBonusIfNeeded();
 
-    // 本日受取済み等でログインボーナスが開かなければ即ホームへ。
+    // 本日受取済み等でログインボーナスが開かなければ、
+    // ナビには一切触れず、そのまま完成済みホームを維持。
     if(!opened){
       finalizeHomeAfterOpeningSequence();
       return;
     }
 
-    // 実際にモーダルが開いた場合は、閉じてからホーム操作を解放。
+    // 実際にモーダルが開いた場合だけ、閉じたタイミングでHOME状態を再確定。
     window.addEventListener('zeraphia-login-bonus-closed', function onLoginBonusClosed(){
       window.removeEventListener('zeraphia-login-bonus-closed', onLoginBonusClosed);
       finalizeHomeAfterOpeningSequence();
