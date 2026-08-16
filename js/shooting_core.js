@@ -621,6 +621,8 @@
       bossMotionBlendFromY: 0,
       bossMotionBlendStartedAt: 0,
       bossMotionBlendDurationMs: 420,
+      // BOSS大技（WARNING付き即死弾）制御
+      nextBossDangerAt: 0, bossDangerExecuteAt: 0, bossDangerWarningEl: null,
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
@@ -773,7 +775,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
@@ -781,6 +783,8 @@
       state.ignisLaserEl = null;
       state.ignisFireWheel = null;
       state.roseFlower = null;
+      state.bossDangerWarningEl = null;
+      state.bossDangerExecuteAt = 0;
       if (Array.isArray(state.facelessObjects)) {
         state.facelessObjects.forEach(obj => {
           obj?.el?.remove();
@@ -2515,7 +2519,137 @@
     }
   }
 
+  // ============================================================
+  // Enemy damage tuning / BOSS WARNING attack
+  // ============================================================
+  // Enemy damage is intentionally FIXED so high-HP characters gain real survivability.
+  // Balance target around the current roster:
+  //   normal enemy: 110      -> roughly 5-6 hits for standard HP, more for high-HP units
+  //   boss normal:  240      -> roughly 2-3 hits
+  //   boss heavy:   350      -> roughly 2 hits
+  //   WARNING:      999999   -> guaranteed 1 hit DOWN
+  const ENEMY_FIXED_DAMAGE = Object.freeze({
+    NORMAL: 110,
+    BOSS: 240,
+    BOSS_HEAVY: 350,
+    LETHAL: 999999,
+  });
+
+  function classifyIncomingAttack(projectile) {
+    const el = projectile && projectile.el;
+    if (!el) return 'raw';
+    if (el.classList.contains('shooting-danger-bullet')) return 'lethal';
+    if (el.classList.contains('shooting-mini-enemy-bullet')) return 'normal';
+    if (el.classList.contains('shooting-violence-boss-heavy')) return 'boss-heavy';
+    if (el.classList.contains('shooting-enemy-bullet')) return 'boss';
+    return 'raw';
+  }
+
+  function isFacelessSuperDifficulty() {
+    return !!(isFacelessStage() && getFacelessConfig()?.difficulty === 'super');
+  }
+
+  function resolveIncomingDamage(member, amount, attackType) {
+    if (attackType === 'lethal') return ENEMY_FIXED_DAMAGE.LETHAL;
+
+    let damage = 0;
+    if (attackType === 'normal') damage = ENEMY_FIXED_DAMAGE.NORMAL;
+    else if (attackType === 'boss-heavy') damage = ENEMY_FIXED_DAMAGE.BOSS_HEAVY;
+    else if (attackType === 'boss') damage = ENEMY_FIXED_DAMAGE.BOSS;
+    else damage = Math.max(0, Number(amount || 0));
+
+    // フェイスレス最上級のみ、即死攻撃以外の基本攻撃力を1.3倍。
+    // 固定ダメージ制は維持し、高HPキャラの耐久メリットも残す。
+    if (isFacelessSuperDifficulty()) damage *= 1.3;
+    return Math.round(damage);
+  }
+
+  function removeBossDangerWarning() {
+    if (!state) return;
+    const el = state.bossDangerWarningEl;
+    if (el && el.isConnected) el.remove();
+    state.bossDangerWarningEl = null;
+    document.getElementById(ROOT_ID)?.classList.remove('boss-danger-active');
+  }
+
+  function showBossDangerWarning() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state) return;
+    removeBossDangerWarning();
+    const el = document.createElement('div');
+    el.className = 'shooting-boss-danger-warning';
+    el.innerHTML = '<span>WARNING</span><strong>DANGER ATTACK</strong><small>一撃でDOWN ─ 回避せよ</small>';
+    arena.appendChild(el);
+    state.bossDangerWarningEl = el;
+    document.getElementById(ROOT_ID)?.classList.add('boss-danger-active');
+    requestAnimationFrame(() => el.classList.add('show'));
+  }
+
+  function getBossDangerInterval() {
+    const phase = Math.max(1, Number(state?.boss?.phase || 1));
+    // フェーズが進むほど大技の頻度を上げる。初回は十分な猶予を取る。
+    if (phase >= 3) return 6200;
+    if (phase === 2) return 7600;
+    return 9000;
+  }
+
+  function handleBossDangerAttack(now) {
+    if (!state || isNormalBattle() || state.phaseTransition || state.koTransition) return false;
+
+    if (state.bossDangerExecuteAt > 0) {
+      // WARNING中も通常弾幕は止めない。大技の予兆と通常攻撃を同時進行させる。
+      if (now < state.bossDangerExecuteAt) return false;
+
+      const dx = state.player.x - state.boss.x;
+      const dy = state.player.y - state.boss.y;
+      const angle = Math.atan2(dy, dx);
+      const speed = Math.max(325, Number(BOSS.bulletSpeed || 240) * 1.38);
+      const dangerOffsets = isFacelessSuperDifficulty() ? [-0.34, 0, 0.34] : [0];
+      dangerOffsets.forEach(offset => {
+        const shotAngle = angle + offset;
+        const projectile = makeProjectile(
+          'shooting-enemy-bullet shooting-danger-bullet',
+          state.boss.x, state.boss.y + 38,
+          Math.cos(shotAngle) * speed,
+          Math.sin(shotAngle) * speed,
+          999999
+        );
+        if (!projectile) return;
+
+        // 最上級WARNING弾だけ壁反射を有効化。
+        // 1・2回目は反射し、3回目の壁接触で消滅する。
+        if (isFacelessSuperDifficulty()) {
+          projectile.dangerRicochet = true;
+          projectile.dangerWallHits = 0;
+          projectile.dangerMaxReflections = 2;
+        }
+        state.enemyBullets.push(projectile);
+      });
+
+      removeBossDangerWarning();
+      state.bossDangerExecuteAt = 0;
+      state.nextBossDangerAt = now + getBossDangerInterval();
+      // 大技発射フレームでも通常攻撃を止めない。
+      return false;
+    }
+
+    if (!state.nextBossDangerAt) {
+      state.nextBossDangerAt = now + 7200;
+      return false;
+    }
+
+    if (now >= state.nextBossDangerAt) {
+      state.bossDangerExecuteAt = now + 1250;
+      showBossDangerWarning();
+      // WARNING表示中も既存弾・通常射撃はそのまま継続する。
+      return false;
+    }
+
+    return false;
+  }
+
   function fireBoss(now) {
+    if (handleBossDangerAttack(now)) return;
     if (BOSS && BOSS.behavior === 'faceless_event_v1') {
       fireFacelessBoss(now);
       return;
@@ -2582,6 +2716,9 @@
   function beginBossPhaseBreak(phase) {
     if (!state || state.ended || state.finishing) return;
     state.phaseTransition = true;
+    removeBossDangerWarning();
+    state.bossDangerExecuteAt = 0;
+    state.nextBossDangerAt = performance.now() + 4200;
     state.lastBossShotAt = performance.now();
     state.lastShotAt = performance.now();
     clearProjectiles();
@@ -3011,8 +3148,37 @@
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
       p.x += p.vx * dt; p.y += p.vy * dt;
+
+      // 最上級のWARNING危険弾はアリーナ壁で跳ね返る。
+      // 1回目・2回目は反射、3回目の壁接触で消滅。
+      if (p.dangerRicochet) {
+        const margin = 7;
+        const hitLeft = p.x <= margin;
+        const hitRight = p.x >= w - margin;
+        const hitTop = p.y <= margin;
+        const hitBottom = p.y >= h - margin;
+        const touchedWall = hitLeft || hitRight || hitTop || hitBottom;
+
+        if (touchedWall) {
+          p.dangerWallHits = Number(p.dangerWallHits || 0) + 1;
+          if (p.dangerWallHits > Number(p.dangerMaxReflections || 2)) {
+            p.el.remove();
+            return false;
+          }
+
+          // 角ヒットは1回の壁接触として数えつつ、両軸を反転する。
+          if (hitLeft || hitRight) p.vx *= -1;
+          if (hitTop || hitBottom) p.vy *= -1;
+          p.x = Math.min(w - margin, Math.max(margin, p.x));
+          p.y = Math.min(h - margin, Math.max(margin, p.y));
+          p.el.classList.remove('ricochet');
+          void p.el.offsetWidth;
+          p.el.classList.add('ricochet');
+        }
+      }
+
       positionUnit(p.el, p.x, p.y);
-      if (p.y > h + 30 || p.x < -30 || p.x > w + 30 || p.y < -30) { p.el.remove(); return false; }
+      if (!p.dangerRicochet && (p.y > h + 30 || p.x < -30 || p.x > w + 30 || p.y < -30)) { p.el.remove(); return false; }
       const r = p.el.getBoundingClientRect();
 
       // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
@@ -3051,7 +3217,7 @@
         // 被弾判定はキャラクター画像全体ではなく、胸元の可視コアだけ。
         if (rectsHit(r, playerCoreRect, 0, 1)) {
           p.el.remove();
-          damagePlayer(now, p.damage);
+          damagePlayer(now, p.damage, classifyIncomingAttack(p));
           return false;
         }
       }
@@ -3078,7 +3244,7 @@
         return rectsHit(playerRect, enemy.el.getBoundingClientRect(), 14, 9);
       });
       if (hitEnemy) {
-        damagePlayer(now, Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85);
+        damagePlayer(now, Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85, 'normal');
       }
       return;
     }
@@ -3086,11 +3252,11 @@
     const boss = document.getElementById(BOSS_ID);
     if (!boss || !state.boss || state.boss.hp <= 0) return;
     if (rectsHit(playerRect, boss.getBoundingClientRect(), 14, 18)) {
-      damagePlayer(now, Number(BOSS.contactDamage || BOSS.bulletDamage) || 200);
+      damagePlayer(now, Number(BOSS.contactDamage || BOSS.bulletDamage) || 200, 'boss-heavy');
     }
   }
 
-  function damagePlayer(now, amount) {
+  function damagePlayer(now, amount, attackType) {
     if (!state || state.ended || state.koTransition) return;
     const member = getActiveMember();
     if (!member) return;
@@ -3102,7 +3268,8 @@
     resetCombo();
     member.hitCount = (member.hitCount || 0) + 1;
     state.totalHitsTaken = (state.totalHitsTaken || 0) + 1;
-    const incomingDamage = Number.isFinite(amount) ? Number(amount) : Number(BOSS.bulletDamage || 0);
+    const rawDamage = Number.isFinite(amount) ? Number(amount) : Number(BOSS.bulletDamage || 0);
+    const incomingDamage = resolveIncomingDamage(member, rawDamage, attackType || 'raw');
     const appliedDamage = Math.min(member.hp, Math.max(0, incomingDamage));
     member.hp = Math.max(0, member.hp - appliedDamage);
     showDamageNumber(state.player.x, state.player.y, appliedDamage, 'player', false);
@@ -3119,6 +3286,17 @@
     if (member.hp <= 0) beginPlayerDefeat();
   }
 
+  function showGameOverNotice() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    arena.querySelectorAll('.shooting-game-over-notice').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'shooting-game-over-notice';
+    el.textContent = 'GAME OVER';
+    arena.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+  }
+
   function beginPlayerDefeat() {
     if (!state || state.ended || state.finishing || state.koTransition) return;
     const living = state.party.filter(m => m.hp > 0 && m.id !== state.activeCharacterId);
@@ -3129,6 +3307,7 @@
       cancelAnimationFrame(rafId);
       clearProjectiles();
       renderHud();
+      showGameOverNotice();
       const player = document.getElementById(PLAYER_ID);
       const root = document.getElementById(ROOT_ID);
       if (player) {
@@ -3990,9 +4169,21 @@
       else if (step.phase === 'start-phase') span.classList.add('start-pop');
       else span.classList.add('pop');
 
-      // STARTが表示された「その瞬間」に戦闘開始。
-      // ここから初めて自動ショット・敵行動・時間計測を開始する。
-      if (step.phase === 'start-phase' && state.countdown) {
+      i += 1;
+
+      if (i < sequence.length) {
+        setTimeout(showStep, step.hold);
+        return;
+      }
+
+      // STARTはカウントダウン演出として完結させる。
+      // START表示中はまだ敵弾・自動射撃・時間計測を開始せず、
+      // 文字が消えた直後から実戦を開始する。
+      setTimeout(() => {
+        if (!state || state.ended || !state.countdown) return;
+
+        countdown.classList.remove('show', 'ready-phase', 'number-phase', 'start-phase');
+        countdown.setAttribute('aria-hidden', 'true');
         stopCountdownMovementLoop();
 
         state.countdown = false;
@@ -4001,8 +4192,7 @@
         state.lastShotAt = -9999;
         state.lastBossShotAt = -9999;
 
-        // START直前の実座標から戦闘AIの軌道へ短くブレンドする。
-        // 1フレームで軌道座標へ切り替えないため、ボス開始時のカクつきを抑える。
+        // START直後の実座標から戦闘AIの軌道へ短くブレンドする。
         state.bossMotionBlendFromX = Number(state.boss?.x || 0);
         state.bossMotionBlendFromY = Number(state.boss?.y || 0);
         state.bossMotionBlendStartedAt = state.startedAt;
@@ -4013,23 +4203,7 @@
 
         prevTs = performance.now();
         if (rafId) cancelAnimationFrame(rafId);
-    stopCountdownMovementLoop();
         rafId = requestAnimationFrame(gameLoop);
-      }
-
-      i += 1;
-
-      if (i < sequence.length) {
-        setTimeout(showStep, step.hold);
-        return;
-      }
-
-      // START表示中にはすでに戦闘は進行中。
-      // 文字だけ指定時間残してから消す。
-      setTimeout(() => {
-        if (!state || state.ended) return;
-        countdown.classList.remove('show', 'ready-phase', 'number-phase', 'start-phase');
-        countdown.setAttribute('aria-hidden', 'true');
       }, step.hold);
     };
 

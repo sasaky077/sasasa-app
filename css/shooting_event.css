@@ -642,7 +642,28 @@
   from { transform: translate(-50%,-50%) scale(.92); opacity: .50; }
   to   { transform: translate(-50%,-50%) scale(1.08); opacity: .95; }
 }
-\n\n/* Character select: selection is separate from stage start */\n.shooting-character-start{\n  display:block;\n  width:min(240px,72%);\n  height:44px;\n  margin:16px auto 0;\n  border:1px solid rgba(160,126,66,.52);\n  background:linear-gradient(180deg,#fffefa,#f1e5ca);\n  color:#715a37;\n  font-family:\"Noto Serif JP\",serif;\n  font-size:13px;\n  letter-spacing:.22em;\n  box-shadow:0 7px 18px rgba(102,76,36,.10);\n  cursor:pointer;\n}\n.shooting-character-start:active{transform:translateY(1px)}\n\n/* Safety: no shooting HUD/footer may survive after the event root is closed. */\n#shooting-event-root:not(.open) .shooting-footer{display:none!important}\n
+
+
+/* Character select: selection is separate from stage start */
+.shooting-character-start{
+  display:block;
+  width:min(240px,72%);
+  height:44px;
+  margin:16px auto 0;
+  border:1px solid rgba(160,126,66,.52);
+  background:linear-gradient(180deg,#fffefa,#f1e5ca);
+  color:#715a37;
+  font-family:"Noto Serif JP",serif;
+  font-size:13px;
+  letter-spacing:.22em;
+  box-shadow:0 7px 18px rgba(102,76,36,.10);
+  cursor:pointer;
+}
+.shooting-character-start:active{transform:translateY(1px)}
+
+/* Safety: no shooting HUD/footer may survive after the event root is closed. */
+#shooting-event-root:not(.open) .shooting-footer{display:none!important}
+
 
 /* ============================================================
    ULT READY notice — center-screen awareness cue
@@ -5319,4 +5340,335 @@
   letter-spacing:.08em;
   color:rgba(91,75,51,.78);
   font-variant-numeric:tabular-nums;
+}
+
+/* =========================================================
+   BOSS DANGER ATTACK - WARNING / one-hit DOWN projectile
+   ========================================================= */
+.shooting-boss-danger-warning{
+  position:absolute;
+  z-index:95;
+  left:50%;
+  top:48%;
+  width:min(92vw,560px);
+  transform:translate(-50%,-50%) scale(.96);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:18px 28px 16px;
+  pointer-events:none;
+  opacity:0;
+  border-top:2px solid rgba(255,72,60,.92);
+  border-bottom:2px solid rgba(255,72,60,.92);
+  background:linear-gradient(90deg,rgba(15,0,4,0),rgba(48,4,8,.90) 18%,rgba(20,0,3,.96) 50%,rgba(48,4,8,.90) 82%,rgba(15,0,4,0));
+  box-shadow:0 0 38px rgba(210,20,35,.28),inset 0 0 30px rgba(255,35,50,.10);
+  transition:opacity .12s ease,transform .12s ease;
+}
+.shooting-boss-danger-warning.show{opacity:1;transform:translate(-50%,-50%) scale(1);animation:shootingDangerWarningPulse .42s steps(2,end) infinite}
+.shooting-boss-danger-warning span{
+  font-family:"Cinzel",serif;
+  font-size:28px;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.20em;
+  color:#fff4df;
+  text-shadow:0 0 5px #fff,0 0 14px #ff6b4b,0 0 26px #ff173d;
+}
+.shooting-boss-danger-warning strong{font-family:"Cinzel",serif;font-size:12px;letter-spacing:.38em;color:#ff5968;text-shadow:0 0 10px rgba(255,20,50,.78)}
+.shooting-boss-danger-warning small{margin-top:3px;font-size:10px;letter-spacing:.12em;color:rgba(255,235,225,.90)}
+#shooting-event-root.boss-danger-active .shooting-arena::after{
+  content:'';
+  position:absolute;
+  z-index:70;
+  inset:0;
+  pointer-events:none;
+  border:3px solid rgba(255,32,50,.52);
+  box-shadow:inset 0 0 52px rgba(205,0,28,.24),inset 0 0 120px rgba(90,0,15,.12);
+  animation:shootingDangerScreenPulse .42s steps(2,end) infinite;
+}
+.shooting-danger-bullet{
+  width:34px!important;
+  height:34px!important;
+  z-index:18!important;
+  opacity:1!important;
+  border:2px solid rgba(255,225,185,.95)!important;
+  background:radial-gradient(circle at 42% 38%,#fff6cf 0 7%,#ffca58 10% 18%,#ff3b35 22% 38%,#9f001b 44% 60%,#220009 66% 78%,rgba(5,0,3,.06) 82% 100%)!important;
+  box-shadow:0 0 0 4px rgba(255,45,45,.16),0 0 16px rgba(255,210,90,.95),0 0 32px rgba(255,35,45,.92),0 0 58px rgba(170,0,30,.78)!important;
+  animation:shootingDangerBulletPulse .28s ease-in-out infinite alternate!important;
+}
+.shooting-danger-bullet::before{
+  content:''!important;
+  position:absolute!important;
+  inset:-17px!important;
+  border:2px solid rgba(255,62,55,.78)!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  box-shadow:0 0 18px rgba(255,42,48,.68),inset 0 0 15px rgba(255,118,50,.20)!important;
+  filter:none!important;
+  animation:shootingDangerRing .52s ease-out infinite!important;
+}
+.shooting-danger-bullet::after{
+  content:'!'!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:auto!important;
+  height:auto!important;
+  margin:0!important;
+  transform:translate(-50%,-53%)!important;
+  background:transparent!important;
+  color:#fff8dd!important;
+  font:900 17px/1 sans-serif!important;
+  text-shadow:0 0 4px #fff,0 0 9px #ffbc49!important;
+  box-shadow:none!important;
+}
+@keyframes shootingDangerWarningPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+@keyframes shootingDangerScreenPulse{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes shootingDangerBulletPulse{from{filter:brightness(1) saturate(1)}to{filter:brightness(1.45) saturate(1.35)}}
+@keyframes shootingDangerRing{0%{opacity:1;transform:scale(.72)}100%{opacity:0;transform:scale(1.45)}}
+
+/* ============================================================
+   Battle notices v9 — TEXT ONLY / bullet-visibility first
+   ULT activation cut-ins are intentionally NOT changed here.
+   ============================================================ */
+
+/* ULT READY: no band, no panel, no border. */
+#shooting-event-root .shooting-ult-ready-notice{
+  width:auto !important;
+  max-width:88vw !important;
+  min-width:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  filter:none;
+}
+#shooting-event-root .shooting-ult-ready-notice::before,
+#shooting-event-root .shooting-ult-ready-notice::after{
+  content:none !important;
+  display:none !important;
+}
+#shooting-event-root .shooting-ult-ready-notice.hayate,
+#shooting-event-root .shooting-ult-ready-notice.ayane{
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+#shooting-event-root .shooting-ult-ready-notice span{
+  font-size:10px;
+  font-weight:700;
+  color:#b0802f;
+  text-shadow:0 1px 2px rgba(255,255,255,.98),0 0 7px rgba(255,247,220,.92);
+}
+#shooting-event-root .shooting-ult-ready-notice strong{
+  margin-top:2px;
+  font-size:21px;
+  font-weight:700;
+  color:#57401e;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 7px rgba(255,255,255,.98),0 0 12px rgba(230,188,92,.46);
+}
+#shooting-event-root .shooting-ult-ready-notice small{
+  margin-top:3px;
+  color:#715b38;
+  font-weight:600;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 6px rgba(255,255,255,.94);
+}
+
+/* ULT FULL: text only. Keep the existing quick entrance/exit motion. */
+#shooting-event-root .shooting-ult-full-notice{
+  width:auto !important;
+  min-width:0 !important;
+  max-width:90vw !important;
+  padding:0 !important;
+  gap:3px !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+#shooting-event-root .shooting-ult-full-notice::before,
+#shooting-event-root .shooting-ult-full-notice::after{
+  content:none !important;
+  display:none !important;
+}
+#shooting-event-root .shooting-ult-full-notice span{
+  font-size:19px;
+  font-weight:800;
+  color:#a56f18;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 7px rgba(255,255,255,.98),0 0 13px rgba(225,175,70,.50);
+}
+#shooting-event-root .shooting-ult-full-notice small{
+  font-size:10px;
+  font-weight:700;
+  color:#6e5733;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 6px rgba(255,255,255,.96);
+}
+
+/* Item effect notices: text only. */
+#shooting-event-root .shooting-item-effect-notice{
+  width:auto !important;
+  max-width:88vw !important;
+  min-width:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+#shooting-event-root .shooting-item-effect-notice::before,
+#shooting-event-root .shooting-item-effect-notice::after{
+  content:none !important;
+  display:none !important;
+}
+#shooting-event-root .shooting-item-effect-notice span{
+  font-weight:700;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 7px rgba(255,255,255,.96);
+}
+#shooting-event-root .shooting-item-effect-notice strong{
+  font-weight:700;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 7px rgba(255,255,255,.98),0 0 12px rgba(226,185,92,.42);
+}
+#shooting-event-root .shooting-item-effect-notice small{
+  font-weight:600;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 6px rgba(255,255,255,.94);
+}
+
+/* Faceless wave/object announcements: text only. */
+#shooting-event-root .shooting-faceless-battle-cut{
+  min-width:0 !important;
+  width:auto !important;
+  max-width:90vw !important;
+  padding:0 !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  color:#fff !important;
+  text-shadow:0 2px 3px rgba(0,0,0,.96),0 0 8px rgba(0,0,0,.82),0 0 14px rgba(0,0,0,.55) !important;
+}
+#shooting-event-root .shooting-faceless-battle-cut::before,
+#shooting-event-root .shooting-faceless-battle-cut::after{
+  content:none !important;
+  display:none !important;
+}
+#shooting-event-root .shooting-faceless-battle-cut strong{
+  font-weight:700;
+}
+
+/* BOSS WARNING: only typography. No dark/red band and no screen-edge overlay. */
+#shooting-event-root .shooting-boss-danger-warning{
+  width:auto !important;
+  max-width:92vw !important;
+  min-width:0 !important;
+  padding:0 !important;
+  gap:2px !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+#shooting-event-root .shooting-boss-danger-warning::before,
+#shooting-event-root .shooting-boss-danger-warning::after{
+  content:none !important;
+  display:none !important;
+}
+#shooting-event-root .shooting-boss-danger-warning.show{
+  animation:shootingDangerTextOnly .72s cubic-bezier(.16,.8,.2,1) both !important;
+}
+#shooting-event-root .shooting-boss-danger-warning span{
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:.24em;
+  color:#fff6ed;
+  text-shadow:0 1px 2px rgba(80,0,8,.98),0 0 6px rgba(255,255,255,.92),0 0 13px rgba(255,67,57,.95),0 0 24px rgba(220,0,40,.78);
+}
+#shooting-event-root .shooting-boss-danger-warning strong{
+  font-size:11px;
+  font-weight:800;
+  color:#ff5262;
+  text-shadow:0 1px 2px rgba(50,0,8,.98),0 0 9px rgba(255,23,55,.88);
+}
+#shooting-event-root .shooting-boss-danger-warning small{
+  font-size:9px;
+  font-weight:700;
+  color:#fff1e8;
+  text-shadow:0 1px 3px rgba(40,0,5,1),0 0 7px rgba(120,0,16,.92);
+}
+
+/* Remove the full-screen red frame/glow. It can hide dense bullet patterns. */
+#shooting-event-root.boss-danger-active .shooting-arena::after{
+  content:none !important;
+  display:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+  animation:none !important;
+}
+
+@keyframes shootingDangerTextOnly{
+  0%{opacity:0;transform:translate(-50%,-50%) translateY(8px) scale(.94);filter:blur(4px)}
+  20%{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(1.035);filter:blur(0)}
+  42%{transform:translate(-50%,-50%) scale(1)}
+  72%{opacity:1}
+  100%{opacity:.92;transform:translate(-50%,-50%) translateY(-2px) scale(1)}
+}
+
+
+/* ===== 2026-08-16 start sequence / ULT FULL single-line patch ===== */
+#shooting-event-root .shooting-ult-full-notice,
+#shooting-event-root .shooting-ult-full-notice span{
+  white-space:nowrap!important;
+  word-break:keep-all!important;
+}
+#shooting-event-root .shooting-ult-full-notice span{
+  display:block!important;
+  width:max-content!important;
+  max-width:94vw!important;
+  font-size:clamp(16px,4.8vw,28px)!important;
+}
+/* 旧スタート案内カードは使用しない。開始演出は ARE YOU READY → 3 → 2 → 1 → START のみ。 */
+#shooting-event-root .shooting-start-copy{display:none!important;}
+
+
+/* ===== GAME OVER: battle visibility first / text only ===== */
+#shooting-event-root .shooting-game-over-notice{
+  position:absolute;
+  z-index:94;
+  left:50%;
+  top:47%;
+  transform:translate(-50%,-50%) scale(.94);
+  opacity:0;
+  pointer-events:none;
+  white-space:nowrap;
+  background:none!important;
+  border:0!important;
+  padding:0!important;
+  font-family:"Cinzel",serif;
+  font-size:clamp(34px,8vw,72px);
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.18em;
+  color:#f5eee8;
+  text-shadow:0 2px 2px rgba(38,10,12,.9),0 0 8px rgba(150,20,30,.92),0 0 22px rgba(110,0,12,.58);
+  transition:opacity .14s ease-out,transform .22s cubic-bezier(.2,.8,.2,1);
+}
+#shooting-event-root .shooting-game-over-notice.show{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+  animation:shootingGameOverIn 1.35s ease-out both;
+}
+@keyframes shootingGameOverIn{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.88);letter-spacing:.32em}
+  14%{opacity:1;transform:translate(-50%,-50%) scale(1.025)}
+  28%,82%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:.96;transform:translate(-50%,-50%) scale(1)}
+}
+
+/* ===== SUPER FACELESS WARNING RICOCHET ===== */
+.shooting-danger-bullet.ricochet{animation:shootingDangerRicochet .18s ease-out}
+@keyframes shootingDangerRicochet{
+  0%{filter:brightness(2.2) saturate(1.45);transform:translate3d(var(--unit-x,0),var(--unit-y,0),0) translate(-50%,-50%) scale(1.28)}
+  100%{filter:none;transform:translate3d(var(--unit-x,0),var(--unit-y,0),0) translate(-50%,-50%) scale(1)}
 }
