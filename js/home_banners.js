@@ -19,10 +19,10 @@ window.HOME_EVENT_BANNERS = [
     hidden: false
   },
   {
-    id: 'event_zeraphia_intro',
-    img: 'images/event_banner02.webp',
-    alt: 'Zeraphiaを知って、ゲームを100倍楽しもう',
-    actionTab: 'ninmu',
+    id: 'event_daily_raid',
+    img: 'images/raid_banner_01.webp',
+    alt: 'DAILY RAID BATTLE',
+    actionName: 'openDailyRaid',
     hidden: false
   }
 ];
