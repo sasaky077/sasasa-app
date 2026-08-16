@@ -19176,3 +19176,133 @@ body.login-bonus-open {
     font-size:12px !important;
   }
 }
+
+
+/* =========================================================
+   GACHA REVEAL — TAP TO CONTINUE
+   ボタンではなく、点滅するテキストのみ
+   ========================================================= */
+#reveal-close-btn,
+#reveal-modal.is-pickup #reveal-close-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  display: block !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  color: rgba(86, 76, 58, 0.72) !important;
+  font-family: "Noto Serif JP", serif !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.18em !important;
+  text-shadow: none !important;
+  text-decoration: none !important;
+
+  position: absolute !important;
+  left: 50% !important;
+  bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 30 !important;
+
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  -webkit-tap-highlight-color: transparent !important;
+
+  animation: gachaRevealTapBlink 1.65s ease-in-out infinite !important;
+}
+
+#reveal-close-btn:active,
+#reveal-close-btn:focus,
+#reveal-close-btn:focus-visible {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: translateX(-50%) !important;
+}
+
+@keyframes gachaRevealTapBlink {
+  0%, 100% { opacity: 0.30; }
+  50% { opacity: 0.92; }
+}
+
+
+/* =========================================================
+   NOTICE — unread/read + close interaction fix v9
+   ========================================================= */
+
+/* ×ボタンは見た目だけでなく実際にタップ可能にする */
+.notice-modal .notice-close {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  cursor: pointer !important;
+  z-index: 50 !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ホームのお知らせ未読ドット */
+#screen-main .home-notice-btn {
+  position: absolute !important;
+}
+
+#screen-main .home-notice-badge {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 13px !important;
+  height: 13px !important;
+  min-width: 13px !important;
+  min-height: 13px !important;
+  display: none;
+  border-radius: 50% !important;
+  background: #d84a42 !important;
+  border: 2px solid rgba(255,252,244,.96) !important;
+  box-shadow:
+    0 1px 4px rgba(88,34,28,.28),
+    0 0 0 1px rgba(164,52,45,.12) !important;
+  z-index: 20 !important;
+  pointer-events: none !important;
+}
+
+/* 未読カード */
+.notice-item {
+  position: relative !important;
+  cursor: pointer;
+  transition: opacity .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.notice-item.is-unread {
+  border-color: rgba(186,143,61,.34) !important;
+  background: rgba(255,252,244,.92) !important;
+}
+
+.notice-item.is-read {
+  opacity: .78;
+}
+
+.notice-unread-dot {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d84a42;
+  box-shadow: 0 0 0 2px rgba(216,74,66,.10);
+  pointer-events: none;
+}
+
