@@ -2053,6 +2053,10 @@
     // ミアは自動射撃を行わず、pointerup時のCHARGE RELEASEだけで攻撃する。
     if (c && c.shotType === 'charge_release') return;
 
+    // 通常キャラは、画面に指/ポインタを置いて操作している間だけ射撃する。
+    // 指を離した後も発射済みの弾はそのまま進み、新しい弾だけ生成しない。
+    if (!pointerActive) return;
+
     const attrBulletClass = getCharacterBulletClass(c);
     const styleClass = getCharacterShotStyleClass(c);
 

@@ -87,7 +87,7 @@
       image: 'images/chara_01_battle_back.webp',
       panelImage: 'images/chara_01_panel.webp',
       cutinImage: 'images/chara_01_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 0.95, battleUp: 1.0 },
     },
     2: {
       id: 2, name: 'ネム',
