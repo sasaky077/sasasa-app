@@ -7,7 +7,8 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = '20260817-mia-charge-release-v92';
+  const MODULE_VERSION = `20260818-force-${Date.now()}`;
+  window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
     queuedOpenArgs.push(args);
@@ -51,6 +52,7 @@
       const script = document.createElement('script');
       const moduleUrl = new URL(file, baseUrl);
       moduleUrl.searchParams.set('v', MODULE_VERSION);
+      moduleUrl.searchParams.set('cacheBust', String(Date.now()));
       script.src = moduleUrl.href;
       script.dataset.shootingModule = file;
       script.async = false;

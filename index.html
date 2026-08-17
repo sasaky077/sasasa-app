@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260816-ch02-04-irishu-force-refresh-v37">
+  <meta name="sasaphia-build" content="20260818-shooting-force-refresh-v94">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -246,7 +246,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260816-ch02-04-irishu-force-refresh-v37';
+  var BUILD = '20260818-shooting-force-refresh-v94';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1214,7 +1214,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260816-ch02-04-irishu-force-refresh-v37"></script>
+<script src="js/home_banners.js?v=20260818-shooting-force-refresh-v94"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -10173,7 +10173,11 @@ window.reloadSasaphiaApp = function(event){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=20260817-result-reward-3slots-v53"></script>
+<script>
+  // Shooting entry point: always fetch a fresh URL on every page load.
+  // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
+  document.write('<script src="js/shooting_event.js?v=' + Date.now() + '"><\/script>');
+</script>
 <script src="js/admin_mode.js?v=20260817-admin-pointerdown-tap-v6"></script>
 <script src="js/raid_event.js?v=20260817-testchan-raid-reward-v45"></script>
 </body>
