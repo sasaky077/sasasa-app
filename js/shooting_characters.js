@@ -96,7 +96,7 @@
       image: 'images/chara_02_battle_back.webp',
       panelImage: 'images/chara_02_panel.webp',
       cutinImage: 'images/chara_02_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.3, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
     },
     3: {
       id: 3, name: 'スイ',

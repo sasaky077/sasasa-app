@@ -4986,11 +4986,23 @@
       return;
     }
 
+    // iPhone/PWA安定化:
+    // 以前はカットイン画像のpreload/decodeが終わるまで戦闘ループが動き続けていた。
+    // CH03-04 phase2のような高密度弾幕では、弾DOMの更新と大型カットイン画像の
+    // decodeが同時発生し、WebKitのメモリ負荷上昇やphase状態競合を起こしやすい。
+    // ULT入力を受けた瞬間から戦闘を完全停止し、画像準備後に演出へ入る。
+    state.ultCutinActive = true;
+    root.classList.add('ult-cutin-active');
+    prevTs = performance.now();
+
     const cutinSrc = c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
     await preloadShootingImage(cutinSrc, 7000, true);
 
-    // ロード待ち中に戦闘終了/画面遷移した場合は演出を作らない。
-    if (!state || state.ended || state.finishing || !document.getElementById(ROOT_ID)) return;
+    // ロード待ち中に戦闘終了/画面遷移した場合は停止状態を必ず解除する。
+    if (!state || state.ended || state.finishing || !document.getElementById(ROOT_ID)) {
+      clearUltCutin();
+      return;
+    }
 
     const wrap = document.createElement('div');
     wrap.className = 'shooting-ult-cutin';
@@ -5014,10 +5026,7 @@
     wrap.appendChild(label);
     arena.appendChild(wrap);
 
-    state.ultCutinActive = true;
-    root.classList.add('ult-cutin-active');
-
-    // カットイン中は完全停止。再開時のdt跳ねを防ぐためprevTsも更新する。
+    // カットイン中はすでに停止済み。画像準備後もdt基準だけ更新しておく。
     prevTs = performance.now();
 
     requestAnimationFrame(() => wrap.classList.add('show'));
