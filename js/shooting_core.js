@@ -3055,8 +3055,8 @@
       state.enemyBullets.push(makeProjectile(
         'shooting-enemy-bullet shooting-violence-boss-heavy',
         state.boss.x, state.boss.y + 38,
-        Math.cos(a) * speed * 1.10,
-        Math.sin(a) * speed * 1.10,
+        Math.cos(a) * speed * 1.35,
+        Math.sin(a) * speed * 1.35,
         Number(BOSS.bulletDamage || 230)
       ));
     });
@@ -3687,6 +3687,27 @@
           projectile.sakielWarningExpireAt = now + 5000;
           state.enemyBullets.push(projectile);
         });
+      } else if (selectedStageId === SHOOTING_STAGE_ID.CH02_04) {
+        // CH02-4 イリシュ: WARNINGは2発同時。左右へ大きく散らし、別位相で不規則に漂わせる。
+        const warningSpeed = Math.max(170, Number(BOSS.bulletSpeed || 285) * .62);
+        [-0.68, 0.68].forEach((offset, index) => {
+          const heading = angle + offset;
+          const projectile = makeProjectile(
+            'shooting-enemy-bullet shooting-danger-bullet shooting-violence-warning-drift',
+            state.boss.x, state.boss.y + 38,
+            Math.cos(heading) * warningSpeed,
+            Math.sin(heading) * warningSpeed,
+            999999
+          );
+          if (!projectile) return;
+          projectile.dangerDrift = true;
+          projectile.dangerExpireAt = now + 7000;
+          projectile.dangerDriftSpeed = warningSpeed;
+          projectile.dangerDriftHeading = heading;
+          projectile.dangerDriftPhase = index === 0 ? 0 : Math.PI * 1.13;
+          projectile.dangerDriftTurnRate = 1.05;
+          state.enemyBullets.push(projectile);
+        });
       } else if (isChapter03BossStage()) {
         // リヴィア（CH03-04）の即死攻撃は2種類を順番に繰り返す。
         // ① 2WAY + 壁2反射
@@ -4230,42 +4251,40 @@
         const ch04BossOffsetY = Math.min(8, Math.max(6, h * 0.009));
         state.boss.y = Math.max(64, h * 0.17 + ch04BossOffsetY);
       } else if (BOSS && BOSS.behavior === 'violence_v1') {
-        // CH02-4 イリシュ:
-        // 普段は画面上部で圧を掛けるだけにし、プレイヤーを直接追い回さない。
-        // 一定周期でだけ、画面中央付近までゆっくり押し潰すように前進し、
-        // その後は同じくらいゆっくり上部へ戻る。
-        // どのフェーズでも画面中央(50%)より下へは進ませない。
-        const cycleMs = 12000;
-        const approachMs = 3200;
-        const holdMs = 900;
-        const returnMs = 3400;
-        const cycleAt = ((now - Number(state.startedAt || now)) % cycleMs + cycleMs) % cycleMs;
+        // CH02-4 イリシュ: 小型化した代わりに、前進時は味方側の壁ギリギリまで一気に突進する。
+        // 壁にめり込ませず、見た目上ボス下端が壁へ届く位置を端末サイズから毎回計算する。
+        const cycleMs = 9200;
+        const approachMs = 620;  // ドン：壁際まで一気に突進
+        const initialDashDelayMs = 2600; // 開始直後は突進しない。少し間を置いて初回突進。
+        const battleElapsedMs = Math.max(0, now - Number(state.startedAt || now));
+        const cycleAt = battleElapsedMs < initialDashDelayMs
+          ? -1
+          : (((battleElapsedMs - initialDashDelayMs) % cycleMs) + cycleMs) % cycleMs;
 
-        const restY = Math.max(62, h * .18);
-        const pressY = Math.min(h * .48, Math.max(restY + 80, h * .46));
+        const restY = Math.max(60, h * .17);
+        const violenceScale = Math.max(.1, Number(BOSS.uiScale || 1));
+        const bossVisualHalfH = Math.max(48, ((boss && boss.offsetHeight) || 128) * violenceScale * .5);
+        const pressY = Math.max(restY + 120, h - bossVisualHalfH - 4);
 
-        let targetY = restY;
-        if (cycleAt < approachMs) {
+        // 横は軽くプレイヤー側へ寄るだけ。追尾し続ける動きにはしない。
+        const targetX = clamp(w * .5 + (state.player.x - w * .5) * .22, 58, w - 58);
+        const followX = .014;
+        state.boss.x += (targetX - state.boss.x) * Math.min(1, followX * 60 * dt);
+
+        if (cycleAt >= 0 && cycleAt < approachMs) {
+          // ドン：短時間で壁際へ。滞在フェーズは一切作らない。
           const p = clamp(cycleAt / approachMs, 0, 1);
-          const eased = p * p * (3 - 2 * p);
-          targetY = restY + (pressY - restY) * eased;
-        } else if (cycleAt < approachMs + holdMs) {
-          targetY = pressY;
-        } else if (cycleAt < approachMs + holdMs + returnMs) {
-          const p = clamp((cycleAt - approachMs - holdMs) / returnMs, 0, 1);
-          const eased = p * p * (3 - 2 * p);
-          targetY = pressY + (restY - pressY) * eased;
+          const eased = 1 - Math.pow(1 - p, 4);
+          state.boss.y = restY + (pressY - restY) * eased;
+        } else {
+          // パッ：突進終了フレームで後方位置へ即座に戻す。
+          // 後退アニメーションも壁際滞在も行わない。
+          state.boss.y = restY;
         }
 
-        // 横方向も追尾しすぎず、ゆっくりプレイヤー側へ寄る程度。
-        const targetX = clamp(w * .5 + (state.player.x - w * .5) * .28, 58, w - 58);
-        const followX = .010;
-        const followY = .016;
-        state.boss.x += (targetX - state.boss.x) * Math.min(1, followX * 60 * dt);
-        state.boss.y += (targetY - state.boss.y) * Math.min(1, followY * 60 * dt);
-
-        state.boss.x = clamp(state.boss.x + Math.sin(t * .82) * .35, 54, w - 54);
-        state.boss.y = clamp(state.boss.y, 56, h * .48);
+        // 小さな左右揺れで静止感を消す。Yは壁際の突進上限まで許可する。
+        state.boss.x = clamp(state.boss.x + Math.sin(t * .95) * .45, 54, w - 54);
+        state.boss.y = clamp(state.boss.y, 56, pressY);
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
         const phase = state.boss.phase || 1;
         const xAmp = phase === 1 ? w * 0.22 : phase === 2 ? w * 0.28 : w * 0.32;
@@ -5581,9 +5600,10 @@
     countdown.classList.remove('chapter4-rule-phase', 'chapter4-rule-first', 'ready-phase', 'number-phase', 'start-phase');
 
     const span = countdown.querySelector('span');
-    // CHAPTER04は前回のカウントダウン文字（START）がDOMに残ったまま
-    // showされると、一瞬STARTが先に見えてしまう。表示前に必ず空にする。
-    if (isChapter04Stage() && span) {
+    // 全ステージ共通：前回のカウントダウン文字（START）がDOMに残ったまま
+    // showされると、ARE YOU READYより前に一瞬STARTが見えるため、
+    // オーバーレイを表示する前に必ず文字とアニメーションクラスを消す。
+    if (span) {
       span.textContent = '';
       span.classList.remove('pop', 'ready-pop', 'start-pop');
     }

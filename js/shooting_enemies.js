@@ -174,7 +174,7 @@
       displayName: 'REMNANT 02　暴力',
       image: 'images/remnant_02_battle.webp',
 
-      gaugeHp: 10000,
+      gaugeHp: 6000,
       gauges: 3,
 
       bulletSpeed: 285,
@@ -195,7 +195,7 @@
       displayName: 'REMNANT 03　天墜',
       image: 'images/remnant_03_battle.webp',
 
-      gaugeHp: 12000,
+      gaugeHp: 7200,
       gauges: 3,
 
       bulletSpeed: 248,
