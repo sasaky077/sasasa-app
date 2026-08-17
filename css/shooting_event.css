@@ -5710,8 +5710,8 @@
   font-size:30px;
   font-weight:900;
   letter-spacing:.24em;
-  color:#fff6ed;
-  text-shadow:0 1px 2px rgba(80,0,8,.98),0 0 6px rgba(255,255,255,.92),0 0 13px rgba(255,67,57,.95),0 0 24px rgba(220,0,40,.78);
+  color:#ff3348!important;
+  text-shadow:0 1px 2px rgba(80,0,8,.98),0 0 10px rgba(255,36,55,.92),0 0 20px rgba(210,0,30,.72)!important;
 }
 #shooting-event-root .shooting-boss-danger-warning strong{
   font-size:11px;
@@ -6150,4 +6150,220 @@
   .shooting-result-reward-item{min-height:66px;padding-top:6px;padding-bottom:5px}
   .shooting-result-reward-icon{width:27px;height:27px}
   .shooting-result-reward-icon img{max-width:27px;max-height:27px}
+}
+
+/* ============================================================
+   CHAPTER 04 - 美しい弾幕 / ultra-light colorful v2
+   単色ベタ塗りにはせず、gradientだけで華やかさを作る。
+   filter / backdrop-filter / 多重blurは使わず軽量維持。
+   WARNINGはこの配色より常に赤指定が優先される。
+   ============================================================ */
+.shooting-enemy-bullet.shooting-beautiful-bullet{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#fff7ff 0%,#a9ddff 34%,#b69cff 67%,#ffb9dd 100%);
+  border:1px solid rgba(255,255,255,.72);
+  box-shadow:0 0 4px rgba(164,190,255,.56);
+  filter:none;
+  opacity:.94;
+}
+.shooting-enemy-bullet.shooting-beautiful-wave{
+  width:9px;
+  height:9px;
+  background:linear-gradient(135deg,#faffff 0%,#98f0dc 38%,#8fc7ff 70%,#d2a8ff 100%);
+  box-shadow:0 0 4px rgba(134,224,218,.52);
+}
+.shooting-enemy-bullet.shooting-beautiful-spiral{
+  box-shadow:0 0 4px rgba(166,184,255,.58);
+}
+.shooting-enemy-bullet.shooting-beautiful-tone-1{
+  background:linear-gradient(135deg,#fff6fc 0%,#ffb4d7 42%,#c8a6ff 100%);
+}
+.shooting-enemy-bullet.shooting-beautiful-tone-2{
+  background:linear-gradient(135deg,#f7ffff 0%,#9cebdd 42%,#89c9ff 100%);
+}
+.shooting-enemy-bullet.shooting-beautiful-tone-3{
+  background:linear-gradient(135deg,#fffdf2 0%,#ffe49a 40%,#ffb9c8 72%,#c7a8ff 100%);
+}
+.shooting-enemy-bullet.shooting-beautiful-tone-4{
+  background:linear-gradient(135deg,#f8f5ff 0%,#aab8ff 38%,#b9e6ff 72%,#b8f1dc 100%);
+}
+
+/* CH04でもWARNINGだけは例外。必ず赤で固定。 */
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet{
+  background:#e33434!important;
+  border-color:#ffb0a8!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+
+/* ============================================================
+   CHAPTER 04 v52 - 超軽量・華やか・WARNING赤固定
+   ============================================================ */
+/* beautiful弾は擬似要素を完全停止。色は4系統gradientで残す。 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
+  will-change:transform;
+}
+/* ボス弾も通常弾と同じ多色ルール。単色化しない。 */
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-sakiel-bullet{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  opacity:.96;
+}
+/* WARNINGは章・phase・toneに関係なく赤。最終定義で固定する。 */
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet,
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet[class*="shooting-beautiful-tone-"],
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet{
+  background:#e33434!important;
+  background-image:none!important;
+  border:1px solid #ffb0a8!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet::before,
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+/* WARNING文字も赤系固定。 */
+#shooting-event-root .shooting-boss-danger-warning span,
+#shooting-event-root .shooting-boss-danger-warning strong{
+  color:#e33434!important;
+  border-color:#e33434!important;
+  text-shadow:none!important;
+}
+
+/* CH04は「超軽量」優先。gradientによる多色は維持し、発光shadowは切る。 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral{
+  box-shadow:none!important;
+}
+/* CH04のボス本体も常時filterを使わない。 */
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss{
+  filter:none!important;
+}
+/* CH04イントロは既存の豪華構造を使いつつ重いglitch/noise/scanを停止。 */
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-glitch,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-noise,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-scan{
+  display:none!important;
+}
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-image{
+  filter:none!important;
+  animation:shootingBossIntroCameraLite 2.85s ease-out forwards!important;
+}
+@keyframes shootingBossIntroCameraLite{
+  0%{transform:scale(1.055) translate3d(0,1%,0)}
+  100%{transform:scale(1.015) translate3d(0,-.5%,0)}
+}
+
+
+/* ============================================================
+   CHAPTER 04 v54 — TRUE ULTRA LIGHT / FLAT COLORFUL
+   1発の中を装飾しない。弾ごとに色を変えて華やかさを出す。
+   WARNINGだけは常に赤固定。
+   ============================================================ */
+
+/* CH04全敵弾：装飾処理を完全停止 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet{
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:1!important;
+}
+
+/* 1発は単純なベタ色。弾幕全体で4色を循環させる */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-1{
+  background:#ff77b7!important; /* pink */
+  background-image:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-2{
+  background:#62d9ff!important; /* cyan */
+  background-image:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-3{
+  background:#ffd85f!important; /* yellow */
+  background-image:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-4{
+  background:#a987ff!important; /* violet */
+  background-image:none!important;
+}
+
+/* 擬似要素は完全停止 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::after,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+
+/* WARNING：何があっても赤。toneクラスより後ろで固定 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet[class*="shooting-beautiful-tone-"]{
+  background:#ed2f36!important;
+  background-image:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+/* WARNING文字も赤固定 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-danger-warning,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-danger-warning span,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-danger-warning strong{
+  color:#ed2f36!important;
+  border-color:#ed2f36!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+
+/* サキエル本体：常時drop-shadow等を使わない */
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss{
+  filter:none!important;
+}
+
+/* CH04ボスイントロ：画像＋文字＋単純フェードのみ */
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-glitch,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-noise,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-scan,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-vignette,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-flash,
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-line{
+  display:none!important;
+}
+
+#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-image{
+  filter:none!important;
+  animation:shootingBossIntroCameraUltraLite 2.7s linear forwards!important;
+}
+@keyframes shootingBossIntroCameraUltraLite{
+  from{transform:scale(1.035)}
+  to{transform:scale(1.01)}
 }

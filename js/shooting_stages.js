@@ -42,6 +42,11 @@
     CH03_03: 'shooting_ch03_03',
     CH03_04: 'shooting_ch03_04',
 
+    CH04_01: 'shooting_ch04_01',
+    CH04_02: 'shooting_ch04_02',
+    CH04_03: 'shooting_ch04_03',
+    CH04_04: 'shooting_ch04_04',
+
     FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
@@ -392,6 +397,103 @@
         text: 'REMNANT 03「天墜」を浄化',
       }),
 
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // CHAPTER 04 - 美しい弾幕
+    // 密度で押すCH03とは分離し、規則性・軌跡・余白の美しさを主役にする。
+    // 01: 螺旋 / 02: 波 / 03: 螺旋と波の複合 / 04: BOSS予約枠
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH04_01]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH04_01,
+      chapter: 4,
+      stageNo: 1,
+      name: '螺旋',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_04]),
+      normalBattle: Object.freeze({
+        totalEnemies: 8,
+        maxActive: 2,
+        spawnIntervalMs: 980,
+        enemyHp: 1200,
+        enemyBulletDamage: 80,
+        enemyBulletSpeed: 185,
+        enemyFireRate: 1320,
+        beautifulLevel: 1,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH04_02]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH04_02,
+      chapter: 4,
+      stageNo: 2,
+      name: '波紋',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_04]),
+      normalBattle: Object.freeze({
+        totalEnemies: 9,
+        maxActive: 2,
+        spawnIntervalMs: 900,
+        enemyHp: 1400,
+        enemyBulletDamage: 90,
+        enemyBulletSpeed: 200,
+        enemyFireRate: 1120,
+        beautifulLevel: 2,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH04_03]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH04_03,
+      chapter: 4,
+      stageNo: 3,
+      name: '織波',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_04]),
+      normalBattle: Object.freeze({
+        totalEnemies: 10,
+        maxActive: 3,
+        spawnIntervalMs: 820,
+        enemyHp: 1600,
+        enemyBulletDamage: 100,
+        enemyBulletSpeed: 215,
+        enemyFireRate: 980,
+        beautifulLevel: 3,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH04_04]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH04_04,
+      chapter: 4,
+      stageNo: 4,
+      name: 'サキエル',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/enemy_sakiel_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_04]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'REMNANT 04を浄化',
+      }),
       playable: true,
     }),
 

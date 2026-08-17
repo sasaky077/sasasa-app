@@ -7,7 +7,7 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = '20260817-raid-battle-hp-v49';
+  const MODULE_VERSION = '20260817-ch04-full-beautiful-v52';
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
     queuedOpenArgs.push(args);

@@ -2094,13 +2094,15 @@
   }
 
   function shootNormalEnemyProjectile(enemy, angle, speed, damage, className) {
-    state.enemyBullets.push(makeProjectile(
+    const projectile = makeProjectile(
       className || 'shooting-enemy-bullet shooting-mini-enemy-bullet',
       enemy.x, enemy.y + 24,
       Math.cos(angle) * speed,
       Math.sin(angle) * speed,
       damage
-    ));
+    );
+    if (projectile) state.enemyBullets.push(projectile);
+    return projectile;
   }
 
   function fireNormalEnemy(enemy, now) {
@@ -2299,6 +2301,90 @@
       return;
     }
 
+    // CHAPTER 04: 美しい弾幕
+    // CH03のように弾数そのものを増やすのではなく、軌道の規則性を見せる。
+    if (def.behavior === 'mini_beautiful_v1') {
+      const cfg = getNormalBattleConfig();
+      const level = Math.max(1, Math.min(3, Number(cfg.beautifulLevel || 1)));
+      const fireRate = Number(cfg.enemyFireRate || def.fireRate || 1180);
+      if (now - enemy.lastShotAt < fireRate) return;
+      enemy.lastShotAt = now;
+
+      const speed = Number(cfg.enemyBulletSpeed || def.bulletSpeed || 205);
+      const damage = Number(cfg.enemyBulletDamage || def.bulletDamage || 95);
+      const pattern = enemy.actionIndex % (level >= 3 ? 2 : 1);
+
+      const spawnSpiral = (arms, reverse = false) => {
+        const originX = enemy.x;
+        const originY = enemy.y + 22;
+        const spin = (reverse ? -1 : 1) * (level === 1 ? 0.36 : 0.44);
+        const radialSpeed = speed * (level === 1 ? 0.58 : 0.64);
+        const start = (enemy.phaseSeed || 0) + now * 0.00055;
+        for (let i = 0; i < arms; i++) {
+          const a = start + Math.PI * 2 * i / arms;
+          const p = makeProjectile(
+            'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-beautiful-bullet shooting-beautiful-spiral',
+            originX, originY,
+            Math.cos(a) * radialSpeed,
+            Math.sin(a) * radialSpeed,
+            damage
+          );
+          if (!p) continue;
+          p.beautifulSpiral = true;
+          p.el.classList.add(`shooting-beautiful-tone-${(i % 4) + 1}`);
+          p.beautifulAge = 0;
+          p.beautifulOriginX = originX;
+          p.beautifulOriginY = originY;
+          p.beautifulStartAngle = a;
+          p.beautifulAngularSpeed = spin;
+          p.beautifulRadialSpeed = radialSpeed;
+          state.enemyBullets.push(p);
+        }
+      };
+
+      const spawnWave = (count, mirror = false) => {
+        const center = enemy.x;
+        const gap = level === 2 ? 18 : 16;
+        const phaseSeed = (enemy.phaseSeed || 0) + now * 0.002;
+        for (let i = 0; i < count; i++) {
+          const offset = (i - (count - 1) / 2) * gap;
+          const x = center + offset;
+          const p = makeProjectile(
+            'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-beautiful-bullet shooting-beautiful-wave',
+            x, enemy.y + 24,
+            0, speed,
+            damage
+          );
+          if (!p) continue;
+          p.beautifulWave = true;
+          p.el.classList.add(`shooting-beautiful-tone-${(i % 4) + 1}`);
+          p.beautifulAge = 0;
+          p.beautifulWaveBaseX = x;
+          p.beautifulWaveAmp = level === 2 ? 18 : 23;
+          p.beautifulWaveFreq = level === 2 ? 3.15 : 3.55;
+          p.beautifulWavePhase = phaseSeed + i * 0.72 + (mirror ? Math.PI : 0);
+          state.enemyBullets.push(p);
+        }
+      };
+
+      if (level === 1) {
+        // 6本の螺旋。毎射ごとに回転方向を反転し、花が開閉するように見せる。
+        spawnSpiral(6, (enemy.actionIndex % 2) === 1);
+      } else if (level === 2) {
+        // 等間隔の弾列が左右へ同期して揺れる「波」。
+        spawnWave(7, (enemy.actionIndex % 2) === 1);
+      } else if (pattern === 0) {
+        // 螺旋を少し細かく。密度より軌跡を読ませる。
+        spawnSpiral(8, (enemy.actionIndex % 4) >= 2);
+      } else {
+        // 9列の波。隣同士の位相をずらし、編み目のような規則性を作る。
+        spawnWave(9, (enemy.actionIndex % 4) >= 2);
+      }
+
+      enemy.actionIndex = (enemy.actionIndex + 1) % 4;
+      return;
+    }
+
     // CHAPTER 01など既存敵。
     if (now - enemy.lastShotAt < Number(def.fireRate || 1550)) return;
     enemy.lastShotAt = now;
@@ -2387,6 +2473,10 @@
         // 弾幕担当の雑魚。上空で横移動しながら、交差する角度を作る。
         enemy.x = clamp(enemy.baseX + Math.sin(age * 1.08 + enemy.phaseSeed) * Math.min(72, w * .18), 36, w - 36);
         enemy.y = Math.max(76, Math.min(h * .34, enemy.baseY)) + Math.sin(age * .76 + enemy.phaseSeed * 1.7) * 14;
+      } else if (def.behavior === 'mini_beautiful_v1') {
+        // CH04は発射源まで忙しくしない。ゆったり左右へ漂い、幾何学模様を崩さない。
+        enemy.x = clamp(enemy.baseX + Math.sin(age * .58 + enemy.phaseSeed) * Math.min(54, w * .13), 36, w - 36);
+        enemy.y = Math.max(78, Math.min(h * .30, enemy.baseY)) + Math.sin(age * .44 + enemy.phaseSeed * 1.35) * 8;
       } else {
         enemy.x = clamp(enemy.baseX + Math.sin(age * 1.25 + enemy.phaseSeed) * Math.min(58, w * .14), 36, w - 36);
         enemy.y = enemy.baseY + Math.sin(age * .9 + enemy.phaseSeed) * 8;
@@ -3193,6 +3283,10 @@
     return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH03_04);
   }
 
+  function isChapter04BossStage() {
+    return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH04_04);
+  }
+
   function resolveIncomingDamage(member, amount, attackType) {
     if (attackType === 'lethal') return ENEMY_FIXED_DAMAGE.LETHAL;
 
@@ -3358,6 +3452,108 @@
     return false;
   }
 
+  // ============================================================
+  // CHAPTER 04 BOSS - サキエル / beautiful_boss_v1
+  // ============================================================
+  // 描画負荷を抑えるため、弾DOMは既存makeProjectileを再利用し、
+  // 軌道だけ数値更新する。blur/filter/追加DOMは使わない。
+  // PHASE1: ゆったり螺旋
+  // PHASE2: 規則的ウェーブ
+  // PHASE3: 螺旋とウェーブを交互
+  function fireBeautifulBoss(now) {
+    if (!state || !BOSS) return;
+
+    const phase = Math.max(1, Number(state.boss?.phase || 1));
+    const ordinaryCount = state.enemyBullets.reduce((n, p) => {
+      if (!p || !p.el || p.el.classList.contains('shooting-danger-bullet')) return n;
+      return n + 1;
+    }, 0);
+
+    // 超軽量版の安全弁。WARNINGはhandleBossDangerAttackで先に処理されるため、
+    // この上限に達しても危険攻撃は消えない。
+    const softLimit = phase >= 3 ? 112 : 96;
+    if (ordinaryCount >= softLimit) return;
+
+    const fireRate = phase === 1 ? 920 : phase === 2 ? 860 : 780;
+    if (now - state.lastBossShotAt < fireRate) return;
+    state.lastBossShotAt = now;
+
+    const originX = Number(state.boss.x || 0);
+    const originY = Number(state.boss.y || 0) + 38;
+    state.beautifulBossPatternIndex = Number(state.beautifulBossPatternIndex || 0);
+    const patternIndex = state.beautifulBossPatternIndex++;
+
+    const addTone = (p, index) => {
+      if (!p || !p.el) return p;
+      p.el.classList.add(`shooting-beautiful-tone-${(index % 4) + 1}`);
+      return p;
+    };
+
+    const spawnSpiral = (arms, reverse) => {
+      // 「ゆったり」を優先。角速度は雑魚よりさらに低め。
+      const radialSpeed = phase === 1 ? 142 : 154;
+      const angularSpeed = (reverse ? -1 : 1) * (phase === 1 ? 0.34 : 0.42);
+      const start = now * 0.00028 + patternIndex * 0.18;
+      for (let i = 0; i < arms; i++) {
+        const a = start + Math.PI * 2 * i / arms;
+        const p = makeProjectile(
+          'shooting-enemy-bullet shooting-beautiful-bullet shooting-beautiful-spiral shooting-sakiel-bullet',
+          originX, originY,
+          Math.cos(a) * radialSpeed,
+          Math.sin(a) * radialSpeed,
+          BOSS.bulletDamage
+        );
+        if (!p) continue;
+        addTone(p, i + patternIndex);
+        p.beautifulSpiral = true;
+        p.beautifulAge = 0;
+        p.beautifulOriginX = originX;
+        p.beautifulOriginY = originY;
+        p.beautifulStartAngle = a;
+        p.beautifulAngularSpeed = angularSpeed;
+        p.beautifulRadialSpeed = radialSpeed;
+        state.enemyBullets.push(p);
+      }
+    };
+
+    const spawnWave = (count, reverse) => {
+      const gap = phase >= 3 ? 20 : 22;
+      const amp = phase >= 3 ? 28 : 24;
+      const freq = phase >= 3 ? 3.15 : 2.75;
+      const speed = phase >= 3 ? 188 : 178;
+      const phaseBase = now * 0.0012 + patternIndex * 0.34 + (reverse ? Math.PI : 0);
+      for (let i = 0; i < count; i++) {
+        const offset = (i - (count - 1) / 2) * gap;
+        const x = originX + offset;
+        const p = makeProjectile(
+          'shooting-enemy-bullet shooting-beautiful-bullet shooting-beautiful-wave shooting-sakiel-bullet',
+          x, originY,
+          0, speed,
+          BOSS.bulletDamage
+        );
+        if (!p) continue;
+        addTone(p, i + patternIndex);
+        p.beautifulWave = true;
+        p.beautifulAge = 0;
+        p.beautifulWaveBaseX = x;
+        p.beautifulWaveAmp = amp;
+        p.beautifulWaveFreq = freq;
+        p.beautifulWavePhase = phaseBase + i * 0.64;
+        state.enemyBullets.push(p);
+      }
+    };
+
+    if (phase === 1) {
+      spawnSpiral(8, (patternIndex % 2) === 1);
+    } else if (phase === 2) {
+      spawnWave(9, (patternIndex % 2) === 1);
+    } else if ((patternIndex % 2) === 0) {
+      spawnSpiral(10, (patternIndex % 4) >= 2);
+    } else {
+      spawnWave(11, (patternIndex % 4) >= 2);
+    }
+  }
+
   function fireBoss(now) {
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
@@ -3382,6 +3578,10 @@
     }
     if (BOSS && BOSS.behavior === 'barrage_v1') {
       fireBarrageBoss(now);
+      return;
+    }
+    if (BOSS && BOSS.behavior === 'beautiful_boss_v1') {
+      fireBeautifulBoss(now);
       return;
     }
     if (BOSS && BOSS.behavior === 'bullet_hell_test_v1') {
@@ -3960,7 +4160,25 @@
         p.vy = Math.sin(p.dangerDriftHeading) * driftSpeed;
       }
 
-      p.x += p.vx * dt; p.y += p.vy * dt;
+      // CH04専用の美麗弾道。
+      // spiral: 発射点から半径を増やしつつ回転するアルキメデス螺旋。
+      // wave:    下方向へ進みながらX座標だけを正弦波で揺らす。
+      if (p.beautifulSpiral) {
+        p.beautifulAge = Number(p.beautifulAge || 0) + dt;
+        const age = p.beautifulAge;
+        const radius = Number(p.beautifulRadialSpeed || 180) * age;
+        const angle = Number(p.beautifulStartAngle || 0) + Number(p.beautifulAngularSpeed || 1.2) * age;
+        p.x = Number(p.beautifulOriginX || 0) + Math.cos(angle) * radius;
+        p.y = Number(p.beautifulOriginY || 0) + Math.sin(angle) * radius;
+      } else if (p.beautifulWave) {
+        p.beautifulAge = Number(p.beautifulAge || 0) + dt;
+        p.y += p.vy * dt;
+        p.x = Number(p.beautifulWaveBaseX || p.x) +
+          Math.sin(p.beautifulAge * Number(p.beautifulWaveFreq || 4.2) + Number(p.beautifulWavePhase || 0)) *
+          Number(p.beautifulWaveAmp || 18);
+      } else {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+      }
 
       // リヴィアの漂流弾は8秒間フィールド内に残すため、壁では消さずに反射する。
       if (p.dangerDrift) {
@@ -4752,10 +4970,12 @@
     // ファイル名を基準にイントロ画像・名称を判定。
     // battle画像とbattle_start画像を同じ命名規則に統一する。
     let introImage = '';
-    if (/_battle\.(webp|png|jpg|jpeg)$/i.test(battleImage)) {
-      introImage = battleImage.replace(/_battle\.(webp|png|jpg|jpeg)$/i, '_battle_start.$1');
-    } else if (selectedStage.introImage) {
+    // ステージ側で明示したイントロ画像を最優先する。
+    // CH04-04のように専用素材が指定されている場合、命名推測で上書きしない。
+    if (selectedStage.introImage) {
       introImage = String(selectedStage.introImage);
+    } else if (/_battle\.(webp|png|jpg|jpeg)$/i.test(battleImage)) {
+      introImage = battleImage.replace(/_battle\.(webp|png|jpg|jpeg)$/i, '_battle_start.$1');
     }
 
     const meta = {
@@ -4778,7 +4998,7 @@
       meta.kicker = 'REMNANT 03';
       meta.title = 'リヴィア';
       meta.sub = 'RIVIA';
-    } else if (lower.includes('remnant_04')) {
+    } else if (lower.includes('remnant_04') || lower.includes('enemy_sakiel')) {
       meta.kicker = 'REMNANT 04';
       meta.title = 'サキエル';
       meta.sub = 'SAKIEL';

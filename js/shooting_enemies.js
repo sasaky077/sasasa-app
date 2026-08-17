@@ -113,11 +113,19 @@
       id: SHOOTING_ENEMY_ID.MINI_04,
       kind: 'normal',
       miniNo: 4,
-      implemented: false,
-      name: '残穢 04',
-      displayName: '残穢 04',
-      image: 'images/enemy_mini_04_battle.webp',
-      behavior: 'mini_04_pending',
+      implemented: true,
+      name: '流麗の残穢',
+      displayName: '流麗の残穢',
+      image: 'images/remnant_04_zako_up.webp',
+      // CH04通常敵。密度よりも軌道の美しさを優先する。
+      hp: 1500,
+      bulletDamage: 95,
+      bulletSpeed: 205,
+      fireRate: 1180,
+      moveSpeed: 40,
+      scoreValue: 1050,
+      behavior: 'mini_beautiful_v1',
+      uiScale: 1.40,
     }),
 
     [SHOOTING_ENEMY_ID.MINI_05]: Object.freeze({
@@ -275,7 +283,21 @@
       id: SHOOTING_ENEMY_ID.REMNANT_04,
       kind: 'boss',
       remnantNo: 4,
-      implemented: false,
+      implemented: true,
+      name: 'サキエル',
+      displayName: 'REMNANT 04　サキエル',
+      image: 'images/enemy_sakiel_battle.webp',
+
+      // CHAPTER04-04「美しい弾幕」本実装。
+      // 超軽量を維持しつつ、螺旋とウェーブを多色で見せる。
+      gaugeHp: 13500,
+      gauges: 3,
+      bulletSpeed: 190,
+      fireRate: 860,
+      bulletDamage: 205,
+
+      behavior: 'beautiful_boss_v1',
+      uiScale: 1.18,
     }),
     [SHOOTING_ENEMY_ID.REMNANT_05]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_05,
