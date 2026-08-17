@@ -2340,7 +2340,7 @@
    ========================================================= */
 .shooting-ignis-laser{
   position:absolute;
-  z-index:13;
+  z-index:8;
   width:var(--ignis-laser-width,12px);
   transform:translateX(-50%) translateY(-100%);
   transform-origin:50% 100%;
@@ -6605,4 +6605,48 @@
   font-size:24px!important;
   line-height:1!important;
   letter-spacing:.07em!important;
+}
+
+
+/* ============================================================
+   MIA / CHARGE RELEASE v92
+   軽量化優先：チャージ中はplayer::after 1枚のみ。
+   発射時もDOM弾は1発だけ生成する。
+   ============================================================ */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging::after{
+  content:"";
+  position:absolute;
+  z-index:7;
+  left:50%;
+  top:-10px;
+  width:30px;
+  height:30px;
+  transform:translate(-50%,-50%) scale(.58);
+  transform-origin:center;
+  border-radius:50%;
+  background:radial-gradient(circle at 42% 34%,#ffffff 0 10%,#dff7ff 18%,#8fd8f5 40%,#4f9fdb 66%,#315f9b 82%,rgba(38,77,130,.08) 100%);
+  box-shadow:0 0 7px rgba(182,232,255,.95),0 0 16px rgba(91,175,229,.78),0 0 28px rgba(70,126,205,.42),inset -4px -5px 8px rgba(35,73,139,.32);
+  opacity:.48;
+  pointer-events:none;
+  animation:miaChargeGrow 1s linear forwards;
+}
+@keyframes miaChargeGrow{
+  0%{transform:translate(-50%,-50%) scale(.58);opacity:.38}
+  55%{transform:translate(-50%,-50%) scale(1.08);opacity:.72}
+  100%{transform:translate(-50%,-50%) scale(1.55);opacity:.86}
+}
+
+#shooting-event-root .shooting-mia-charge-shot{
+  z-index:8!important;
+  border:1px solid rgba(225,248,255,.88)!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 38% 30%,#ffffff 0 9%,#e8fbff 15%,#9ce2fb 34%,#58afe4 58%,#376fb6 78%,#274e8e 92%)!important;
+  box-shadow:0 0 8px rgba(211,245,255,.96),0 0 18px rgba(103,195,239,.88),0 0 32px rgba(62,126,210,.52),inset -5px -6px 10px rgba(31,65,128,.34)!important;
+  filter:none!important;
+  opacity:.82!important;
+}
+#shooting-event-root .shooting-mia-charge-shot::before,
+#shooting-event-root .shooting-mia-charge-shot::after{
+  content:none!important;
+  display:none!important;
 }

@@ -195,7 +195,7 @@
       image: 'images/chara_13_battle_back.webp',
       panelImage: 'images/chara_13_panel.webp',
       cutinImage: 'images/chara_13_cutin.webp',
-      uiScale: { panel: 0.6, battleBack: 1.0, battleUp: 0.75 },
+      uiScale: { panel: 0.6, battleBack: 0.7, battleUp: 0.75 },
     },
     14: {
       id: 14, name: 'アヤネ',
@@ -240,7 +240,7 @@
       image: 'images/chara_50_battle_back.webp',
       panelImage: 'images/chara_50_panel.webp',
       cutinImage: 'images/chara_50_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 0.8, battleUp: 1.0 },
     },
   });
 
@@ -326,7 +326,7 @@
   // ============================================================
   // SHOOTING専用戦闘プロフィール
   // ============================================================
-  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 14アヤネ / 15エルテナ
+  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 13ミア / 14アヤネ / 15エルテナ
   // その他13人：現時点ではエリ性能を継承
   const SHOOTING_CHARACTERS = {};
 
@@ -596,6 +596,34 @@
     // 発射頻度低下分を補正し、ULTゲージの平均充填速度も旧設定に寄せる。
     ultGainPerHit: 0.2125,
     coreTop: '34%',
+  });
+
+  // ============================================================
+  // ミア：長押しCHARGE → 指を離して発射
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.MIA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.MIA,
+    effectKey: 'mia',
+    label: 'CHARGE / RELEASE',
+    description: '指を押している間チャージし、離した瞬間に肉球弾を発射する一撃型。最大1秒。威力はチャージ時間に比例するため、理論DPSは他キャラと同程度。',
+    moveSpeed: 400,
+
+    // ---- 通常ショット：リリース式チャージ ----
+    shotType: 'charge_release',
+    shotStyle: 'mia-charge',
+    fireRate: 0,                 // 自動射撃は使用しない
+    bulletSpeed: 760,
+    shotPowerRate: 1.24,         // MAX1秒で約ATK×124%。R補正後でも約293ダメージ/秒相当
+    shotCount: 1,
+    shotOffsetY: 44,
+    chargeMinMs: 120,            // 誤タップ対策。これ未満は不発
+    chargeMaxMs: 1000,
+    chargeMinSize: 30,
+    chargeMaxSize: 76,
+
+    // ULTは今回未実装。既存の暫定挙動には触れない。
+    coreTop: '38%',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.AYANE] = buildShootingCharacter({

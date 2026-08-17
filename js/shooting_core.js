@@ -1082,7 +1082,11 @@
     if (core) core.style.setProperty('--core-top', c.coreTop || '38%');
     if (name) name.textContent = c.name;
     if (startName) startName.textContent = c.name;
-    if (startType) startType.textContent = `${c.label} · 射撃は自動`;
+    if (startType) {
+      startType.textContent = c.id === CHARACTER_ID.MIA
+        ? `${c.label} · 長押し → 離して発射`
+        : `${c.label} · 射撃は自動`;
+    }
     document.querySelectorAll('.shooting-character-option').forEach(btn => {
       const id = Number(btn.getAttribute('data-character-id'));
       btn.classList.toggle('selected', selectedPartyIds.includes(id));
@@ -1201,6 +1205,7 @@
       chapter4CurtainPhase: 0,
       chapter4CurtainBulletSeq: 0,
       ultTimerIds: [], bossGrabUntil: 0, bossStunUntil: 0, lastShotAt: -9999, lastBossShotAt: -9999, shotIndex: 0,
+      miaChargeStartedAt: 0, miaChargePointerId: null,
       startedAt: performance.now(), clearTimeMs: 0,
     };
 
@@ -1286,6 +1291,7 @@
     const now = performance.now();
     if (!forced && now < (state.switchReadyAt || 0)) return;
     if (getCurrentCharacter().id === CHARACTER_ID.HAYATE) stopHayateMoonlightForSwitch();
+    if (getCurrentCharacter().id === CHARACTER_ID.MIA) clearMiaChargeState();
     state.activeCharacterId = id;
     selectedCharacterId = id;
     state.switchReadyAt = forced ? now + 800 : now + SWITCH_COOLDOWN_MS;
@@ -1954,12 +1960,99 @@
     }
   }
 
+
+  function clearMiaChargeState() {
+    if (state) {
+      state.miaChargeStartedAt = 0;
+      state.miaChargePointerId = null;
+    }
+    const player = document.getElementById(PLAYER_ID);
+    if (player) player.classList.remove('mia-charging');
+  }
+
+  function beginMiaCharge(pointerId, now) {
+    if (!state || state.ended || state.finishing || state.countdown || !state.running) return false;
+    const c = getCurrentCharacter();
+    if (!c || c.id !== CHARACTER_ID.MIA || c.shotType !== 'charge_release') return false;
+
+    state.miaChargeStartedAt = Number(now || performance.now());
+    state.miaChargePointerId = pointerId;
+    const player = document.getElementById(PLAYER_ID);
+    if (player) player.classList.add('mia-charging');
+    return true;
+  }
+
+  function releaseMiaCharge(pointerId, now) {
+    if (!state || !state.miaChargeStartedAt) return false;
+    if (state.miaChargePointerId !== null && state.miaChargePointerId !== pointerId) return false;
+
+    const startedAt = Number(state.miaChargeStartedAt || 0);
+    clearMiaChargeState();
+
+    if (state.ended || state.finishing || state.countdown || !state.running) return false;
+
+    const c = getCurrentCharacter();
+    if (!c || c.id !== CHARACTER_ID.MIA || c.shotType !== 'charge_release') return false;
+
+    const minMs = Math.max(0, Number(c.chargeMinMs || 120));
+    const maxMs = Math.max(minMs + 1, Number(c.chargeMaxMs || 1000));
+    const heldMs = Math.max(0, Number(now || performance.now()) - startedAt);
+    if (heldMs < minMs) return false;
+
+    // 威力をチャージ時間に正比例させる。
+    // 0.5秒で撃っても1.0秒MAXでも、連続して溜め直せば理論DPSはほぼ一定。
+    const chargeRatio = Math.min(1, heldMs / maxMs);
+
+    const activeMember = getActiveMember();
+    const itemAtkBuffMultiplier =
+      activeMember && Number(now || performance.now()) < (activeMember.atkBuffUntil || 0)
+        ? Number(activeMember.atkBuffMultiplier || 1)
+        : 1;
+
+    const damage =
+      Number(c.atk || 0) *
+      Number(c.shotPowerRate || 1.24) *
+      chargeRatio *
+      itemAtkBuffMultiplier;
+
+    const y = state.player.y - Number(c.shotOffsetY || 44);
+    const p = makeProjectile(
+      'shooting-bullet shooting-mia-charge-shot',
+      state.player.x,
+      y,
+      0,
+      -Number(c.bulletSpeed || 760),
+      damage,
+      c.id
+    );
+    if (!p) return false;
+
+    const minSize = Math.max(18, Number(c.chargeMinSize || 30));
+    const maxSize = Math.max(minSize, Number(c.chargeMaxSize || 76));
+    const size = minSize + (maxSize - minSize) * chargeRatio;
+    p.el.style.width = `${size}px`;
+    p.el.style.height = `${size}px`;
+    p.el.style.marginLeft = `${-size / 2}px`;
+    p.el.style.marginTop = `${-size / 2}px`;
+    p.el.style.setProperty('--mia-charge-ratio', String(chargeRatio));
+    measureUnitSize(p);
+
+    state.bullets.push(p);
+    state.shotIndex = (state.shotIndex || 0) + 1;
+    state.lastShotAt = Number(now || performance.now());
+    return true;
+  }
+
   function firePlayer(now) {
     // CHAPTER04は完全な回避専用ステージ。エリは通常射撃を一切行わない。
     // 他CHAPTER / EVENTには影響させない。
     if (isChapter04Stage()) return;
 
     const c = getCurrentCharacter();
+
+    // ミアは自動射撃を行わず、pointerup時のCHARGE RELEASEだけで攻撃する。
+    if (c && c.shotType === 'charge_release') return;
+
     const attrBulletClass = getCharacterBulletClass(c);
     const styleClass = getCharacterShotStyleClass(c);
 
@@ -6215,6 +6308,12 @@
       lastTapY = e.clientY;
     }
 
+    // ミア：移動ドラッグと同じpointerを使ってチャージ開始。
+    // DOM追加はせずplayerのCSSクラスだけで溜め演出を出す。
+    if (!state.countdown && getCurrentCharacter().id === CHARACTER_ID.MIA) {
+      beginMiaCharge(e.pointerId, now);
+    }
+
     e.preventDefault();
   }
 
@@ -6251,10 +6350,17 @@
         Math.abs(dx) >= Math.abs(dy) * SWITCH_SWIPE_AXIS_RATIO;
 
       if (isFlick) {
+        clearMiaChargeState();
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
+      } else if (e.type !== 'pointercancel' && getCurrentCharacter().id === CHARACTER_ID.MIA) {
+        releaseMiaCharge(e.pointerId, performance.now());
+      } else if (e.type === 'pointercancel') {
+        clearMiaChargeState();
       }
+    } else if (e.type === 'pointercancel') {
+      clearMiaChargeState();
     }
 
     e.preventDefault();
