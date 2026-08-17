@@ -6,7 +6,7 @@
  *    同じbuildなら次回以降はキャッシュから即返す＝毎回フルDLしない。
  *    buildが変わればCACHE_NAMEごと新規作成され、古いキャッシュはactivate時に破棄される。
  */
-const SW_BUILD = '20260818-global-ult-lightweight-v98';
+const SW_BUILD = '20260818-ch03-04-ios-stability-v99';
 const ASSET_CACHE = `sasaphia-assets-${SW_BUILD}`;
 
 self.addEventListener('install', event => {

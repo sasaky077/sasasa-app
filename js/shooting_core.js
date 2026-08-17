@@ -845,6 +845,24 @@
   const ENEMY_BULLET_HARD_LIMIT = 520;
   const ENEMY_BULLET_RECOVERY_TARGET = 460;
 
+  // CH03-4 (REMNANT 03) はwave2以降の弾幕密度が高く、iPhone/PWAで
+  // 大きい自機弾や演出が重なるとWebKitが落ちるケースがある。
+  // 見た目を崩さない範囲でphaseごとに通常敵弾の上限を絞る。
+  const CH03_04_ENEMY_BULLET_LIMITS = Object.freeze({
+    1: Object.freeze({ hard: 260, recovery: 220 }),
+    2: Object.freeze({ hard: 190, recovery: 155 }),
+    3: Object.freeze({ hard: 170, recovery: 140 }),
+  });
+
+  function isChapter03BossStage() {
+    return !!(selectedStage && String(selectedStage.id || '') === 'shooting_ch03_04');
+  }
+
+  function getChapter03BossEnemyBulletLimits() {
+    const phase = Math.max(1, Math.min(3, Number(state && state.boss && state.boss.phase || 1)));
+    return CH03_04_ENEMY_BULLET_LIMITS[phase] || CH03_04_ENEMY_BULLET_LIMITS[1];
+  }
+
   // DAILY RAIDだけは長時間戦になるため、DOM敵弾を段階別に制限する。
   // WARNING / danger系はこの制限対象外。
   // phase2以降はスマホ/PWAのフリーズ・強制終了回避を優先。
@@ -1695,8 +1713,9 @@
     if (!state || !Array.isArray(state.enemyBullets)) return;
     const current = state.enemyBullets.length;
     const raidLimits = isRaidStage() ? getRaidEnemyBulletLimits() : null;
-    const hardLimit = raidLimits ? raidLimits.hard : ENEMY_BULLET_HARD_LIMIT;
-    const recoveryTarget = raidLimits ? raidLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET;
+    const ch03BossLimits = !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
+    const hardLimit = raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT);
+    const recoveryTarget = raidLimits ? raidLimits.recovery : (ch03BossLimits ? ch03BossLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET);
     if (current <= hardLimit) return;
 
     let removeNeeded = Math.max(0, current - recoveryTarget);
@@ -2035,7 +2054,12 @@
     p.el.style.marginLeft = `${-size / 2}px`;
     p.el.style.marginTop = `${-size / 2}px`;
     p.el.style.setProperty('--mia-charge-ratio', String(chargeRatio));
-    measureUnitSize(p);
+
+    // サイズは直前にJSで確定しているためgetBoundingClientRect()による再レイアウトは不要。
+    // wave2の高密度弾幕中にここで同期レイアウトを起こすとiPhone WebKitの負荷が跳ねるため、
+    // 当たり判定用の半径を直接キャッシュする。
+    p._hw = size / 2;
+    p._hh = size / 2;
 
     state.bullets.push(p);
     state.shotIndex = (state.shotIndex || 0) + 1;
@@ -3241,6 +3265,19 @@
 
   function fireBarrageBoss(now) {
     const phase = state.boss.phase || 1;
+
+    // CH03-4だけ、wave2/3では次の一斉生成前にも軽いsoft limitをかける。
+    // 上限到達後に21〜25発を一度に追加して瞬間的にDOMが膨らむのを防ぐ。
+    if (isChapter03BossStage()) {
+      const limits = getChapter03BossEnemyBulletLimits();
+      let ordinaryCount = 0;
+      for (const p of state.enemyBullets) {
+        if (p && p.el && !isProtectedEnemyProjectile(p)) ordinaryCount++;
+      }
+      const soft = phase === 1 ? 210 : (phase === 2 ? 145 : 130);
+      if (ordinaryCount >= soft) return;
+    }
+
     const interval = phase === 1 ? 860 : phase === 2 ? 690 : 540;
     if (now - state.lastBossShotAt < interval) return;
     state.lastBossShotAt = now;
@@ -4709,7 +4746,8 @@
       }
 
       positionUnit(p.el, p.x, p.y);
-      if (!p.dangerRicochet && !p.dangerDrift && (p.y > h + 30 || p.x < -30 || p.x > w + 30 || p.y < -30)) { p.el.remove(); return false; }
+      const offscreenMargin = isChapter03BossStage() ? 10 : 30;
+      if (!p.dangerRicochet && !p.dangerDrift && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
 
       // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
