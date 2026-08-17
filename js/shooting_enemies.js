@@ -184,7 +184,9 @@
       chargeSpeed: 610,
 
       behavior: 'violence_v1',
-      uiScale: 2.0,
+      // CH02-4 突進の当たり判定が広すぎて回避不能だったため縮小。
+      // 旧: 2.0 (画面幅の大半を占め、突進を避けられなかった)
+      uiScale: 1.15,
     }),
     [SHOOTING_ENEMY_ID.REMNANT_03]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_03,

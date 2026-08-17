@@ -4788,7 +4788,11 @@
 
     const boss = document.getElementById(BOSS_ID);
     if (!boss || !state.boss || state.boss.hp <= 0) return;
-    if (rectsHit(playerRect, boss.getBoundingClientRect(), 14, 18)) {
+    // CH02-4 イリシュ(violence_v1)専用: 突進の当たり判定は画像の透明余白ぶんを
+    // 大きく差し引いて、画面幅の半分以上は必ず回避ゾーンとして残す。
+    // 他ボスの当たり判定(14, 18)は一切変更しない。
+    const bossContactInsetB = (BOSS && BOSS.behavior === 'violence_v1') ? 42 : 18;
+    if (rectsHit(playerRect, boss.getBoundingClientRect(), 14, bossContactInsetB)) {
       damagePlayer(now, Number(BOSS.contactDamage || BOSS.bulletDamage) || 200, 'boss-heavy');
     }
   }
