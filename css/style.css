@@ -15714,15 +15714,6 @@ body.login-bonus-open {
 /* =========================================================
    STORY CHAPTER PROGRESSION / 4-stage chapter
    ========================================================= */
-#ninmu-panel-story .story-chapter-locked {
-  opacity: .58;
-  filter: grayscale(.42) saturate(.58);
-  cursor: pointer;
-}
-#ninmu-panel-story .story-chapter-locked .ninmu-chapter-title {
-  letter-spacing: .22em;
-  color: rgba(105, 92, 72, .55) !important;
-}
 #stage-select-modal .ss-story-clear {
   font-family: "Cinzel", serif;
   font-size: 8px;

@@ -166,28 +166,31 @@
     renderStoryChapterList();
   }
 
-  function getStoryStages(chapter) {
+  function getStoryStages(chapter, mode = 'normal') {
     if (!window.ShootingStages || typeof window.ShootingStages.getShootingStagesByChapter !== 'function') {
       return [];
+    }
+    if (mode === 'beginner' && typeof window.ShootingStages.getBeginnerShootingStagesByChapter === 'function') {
+      return window.ShootingStages.getBeginnerShootingStagesByChapter(Number(chapter)) || [];
     }
     return window.ShootingStages.getShootingStagesByChapter(Number(chapter)) || [];
   }
 
-  function isShootingStoryStageUnlocked(stage) {
+  function isShootingStoryStageUnlocked(stage, mode = 'normal') {
     if (!stage) return false;
-    const chapterStages = getStoryStages(stage.chapter);
+    const chapterStages = getStoryStages(stage.chapter, mode);
     const index = chapterStages.findIndex(s => s && s.id === stage.id);
     if (index <= 0) return true;
     const prev = chapterStages[index - 1];
     return !!(prev && isStoryStageCleared(prev.id));
   }
 
-  function isStoryChapterCleared(chapter) {
-    const stages = getStoryStages(chapter).filter(s => s && s.chapter === chapter && s.type !== 'debug');
+  function isStoryChapterCleared(chapter, mode = 'normal') {
+    const stages = getStoryStages(chapter, mode).filter(s => s && s.chapter === chapter && s.type !== 'debug');
     return stages.length > 0 && stages.every(s => isStoryStageCleared(s.id));
   }
 
-  function isStoryChapterUnlocked(chapter) {
+  function isStoryChapterUnlocked(chapter, mode = 'normal') {
     chapter = Number(chapter);
     if (chapter < STORY_CHAPTER_MIN || chapter > STORY_CHAPTER_MAX) return false;
 
@@ -197,10 +200,10 @@
     // ステージマスターのロード状態には依存させない。
     if (chapter === STORY_CHAPTER_MIN) return true;
 
-    const currentStages = getStoryStages(chapter);
+    const currentStages = getStoryStages(chapter, mode);
     if (!currentStages.length) return false;
 
-    return isStoryChapterCleared(chapter - 1);
+    return isStoryChapterCleared(chapter - 1, mode);
   }
 
   function showStoryLockedMessage() {
@@ -211,13 +214,14 @@
     }
   }
 
-  function renderStoryChapterList() {
-    const list = document.getElementById('story-chapter-list');
+  function renderStoryChapterList(mode = 'normal') {
+    const beginner = mode === 'beginner';
+    const list = document.getElementById(beginner ? 'story-beginner-chapter-list' : 'story-chapter-list');
     if (!list) return;
     list.innerHTML = '';
 
     for (let chapter = STORY_CHAPTER_MIN; chapter <= STORY_CHAPTER_MAX; chapter++) {
-      const unlocked = isStoryChapterUnlocked(chapter);
+      const unlocked = isStoryChapterUnlocked(chapter, mode);
       const item = document.createElement('div');
       item.className = 'ninmu-chapter-item story-chapter-item' + (unlocked ? '' : ' story-chapter-locked');
       item.setAttribute('role', 'button');
@@ -230,11 +234,11 @@
         '<div class="ninmu-chapter-title">' + (unlocked ? (STORY_CHAPTER_TITLES[chapter] || '未定') : '???') + '</div>';
 
       item.addEventListener('click', () => {
-        if (!isStoryChapterUnlocked(chapter)) {
+        if (!isStoryChapterUnlocked(chapter, mode)) {
           showStoryLockedMessage();
           return;
         }
-        window.openStageSelect(chapter);
+        window.openStageSelect(chapter, mode);
       });
       list.appendChild(item);
     }
@@ -252,7 +256,8 @@
 
   function refreshStoryChapterListWhenReady() {
     // CHAPTER 01 は ShootingStages 未ロードでも正しく表示できるので、まず即描画。
-    renderStoryChapterList();
+    renderStoryChapterList('normal');
+    renderStoryChapterList('beginner');
 
     if (window.ShootingStages) {
       if (storyMasterWatchTimer) {
@@ -260,7 +265,8 @@
         storyMasterWatchTimer = 0;
       }
       // ステージ情報が揃った状態でもう一度描画し、CHAPTER 02以降も最新化。
-      renderStoryChapterList();
+      renderStoryChapterList('normal');
+      renderStoryChapterList('beginner');
       return;
     }
 
@@ -270,7 +276,8 @@
       if (!window.ShootingStages) return;
       clearInterval(storyMasterWatchTimer);
       storyMasterWatchTimer = 0;
-      renderStoryChapterList();
+      renderStoryChapterList('normal');
+      renderStoryChapterList('beginner');
     }, 250);
   }
 
@@ -528,7 +535,7 @@
   // ============================================================
   // リスト描画
   // ============================================================
-  function renderList(chapter) {
+  function renderList(chapter, mode = 'normal') {
     const list = document.getElementById('ss-list');
     if (!list) return;
     list.innerHTML = '';
@@ -541,19 +548,19 @@
         list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.45);font-size:12px;padding:42px 0;letter-spacing:2px;">SHOOTING DATA LOADING...</div>';
         setTimeout(() => {
           const modal = document.getElementById('stage-select-modal');
-          if (modal && modal.style.display !== 'none') renderList(chapter);
+          if (modal && modal.style.display !== 'none') renderList(chapter, mode);
         }, 120);
         return;
       }
 
-      const stages = getStoryStages(chapter);
+      const stages = getStoryStages(chapter, mode);
       if (!stages.length) {
         list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.3);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
         return;
       }
 
       stages.forEach(stageDef => {
-        const unlocked = isShootingStoryStageUnlocked(stageDef);
+        const unlocked = isShootingStoryStageUnlocked(stageDef, mode);
         const record = getStoryShootingRecord(stageDef.id);
         const cleared = record.cleared;
         const isBoss = stageDef.type === 'boss';
@@ -567,6 +574,7 @@
         const displayStageName = 'ステージ' + stageNo;
         const displayCondition =
           STORY_STAGE_CONDITIONS[stageDef.id] ||
+          STORY_STAGE_CONDITIONS[stageDef.baseStageId] ||
           missionText;
 
         card.innerHTML = `
@@ -583,7 +591,7 @@
           ${unlocked ? '<div class="ss-card-arrow">›</div>' : '<div class="ss-lock-icon">🔒</div>'}
         `;
 
-        if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef);
+        if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef, mode);
         list.appendChild(card);
       });
       return;
@@ -652,7 +660,8 @@
     const modal = document.getElementById('stage-select-modal');
     if (!modal || modal.style.display === 'none') return;
     const chapter = Number(modal.dataset.chapter || 0);
-    if (chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) renderList(chapter);
+    const mode = modal.dataset.storyMode === 'beginner' ? 'beginner' : 'normal';
+    if (chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) renderList(chapter, mode);
   });
 
   // ============================================================
@@ -674,7 +683,7 @@
   // ============================================================
   // STORY（SHOOTING）ステージ選択
   // ============================================================
-  function onShootingStoryStageTap(stage) {
+  function onShootingStoryStageTap(stage, mode = 'normal') {
     if (!stage || !stage.id) return;
 
     // STORY → 編成画面は中間画面を1フレームも見せず直結する。
@@ -693,6 +702,7 @@
       window.__shootingReturnContext = {
         type: 'storyChapter',
         chapter: Number(stage.chapter || 1),
+        mode: mode === 'beginner' ? 'beginner' : 'normal',
       };
       window.openShootingStage(stage.id);
     };
@@ -817,10 +827,10 @@
   // ============================================================
   // 開閉
   // ============================================================
-  window.openStageSelect = function (chapter) {
+  window.openStageSelect = function (chapter, mode = 'normal') {
   chapter = chapter ?? 1;
 
-  if (typeof chapter === 'number' && chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX && !isStoryChapterUnlocked(chapter)) {
+  if (typeof chapter === 'number' && chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX && !isStoryChapterUnlocked(chapter, mode)) {
     showStoryLockedMessage();
     return;
   }
@@ -834,11 +844,12 @@
         ? 'ROGUELITE'
         : chapter === 0
           ? '— DEBUG —'
-          : 'CHAPTER ' + String(chapter).padStart(2, '0');
+          : 'CHAPTER ' + String(chapter).padStart(2, '0') + (mode === 'beginner' ? '  初級' : '');
     }
 
-    renderList(chapter);
+    renderList(chapter, mode);
     el.dataset.chapter = String(chapter);
+    el.dataset.storyMode = mode === 'beginner' ? 'beginner' : 'normal';
 
     el.style.display = 'flex';
     void el.offsetWidth;
@@ -881,7 +892,8 @@ if (guf) {
     const detail = event && event.detail ? event.detail : {};
     if (!detail.win || !detail.stageId) return;
     markStoryStageCleared(detail.stageId);
-    renderStoryChapterList();
+    renderStoryChapterList('normal');
+    renderStoryChapterList('beginner');
   });
 
 

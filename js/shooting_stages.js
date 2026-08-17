@@ -616,8 +616,38 @@
 
   });
 
+  function toBeginnerStageId(stageId) {
+    const id = String(stageId || '');
+    if (!id) return '';
+    if (id.startsWith('shooting_beginner_')) return id;
+    return id.replace(/^shooting_/, 'shooting_beginner_');
+  }
+
+  function fromBeginnerStageId(stageId) {
+    return String(stageId || '').replace(/^shooting_beginner_/, 'shooting_');
+  }
+
+  function makeBeginnerStage(baseStage) {
+    if (!baseStage || !baseStage.id || !Number(baseStage.chapter)) return null;
+    const reduceBullets =
+      Number(baseStage.chapter) > 3 ||
+      (Number(baseStage.chapter) === 3 && Number(baseStage.stageNo || 0) >= 4);
+
+    return Object.freeze({
+      ...baseStage,
+      id: toBeginnerStageId(baseStage.id),
+      beginnerMode: true,
+      baseStageId: baseStage.id,
+      bulletQuantityMultiplier: reduceBullets ? 0.60 : 1.0,
+    });
+  }
+
   function getShootingStage(stageId) {
-    return SHOOTING_STAGES[String(stageId || '')] || null;
+    const id = String(stageId || '');
+    if (id.startsWith('shooting_beginner_')) {
+      return makeBeginnerStage(SHOOTING_STAGES[fromBeginnerStageId(id)] || null);
+    }
+    return SHOOTING_STAGES[id] || null;
   }
 
   function getShootingStagesByChapter(chapter) {
@@ -625,6 +655,12 @@
     return Object.values(SHOOTING_STAGES)
       .filter(stage => stage && Number(stage.chapter) === ch)
       .sort((a, b) => a.stageNo - b.stageNo);
+  }
+
+  function getBeginnerShootingStagesByChapter(chapter) {
+    return getShootingStagesByChapter(chapter)
+      .map(makeBeginnerStage)
+      .filter(Boolean);
   }
 
   function getShootingChapter01Stages() {
@@ -643,6 +679,9 @@
     SHOOTING_STAGES,
     getShootingStage,
     getShootingStagesByChapter,
+    getBeginnerShootingStagesByChapter,
+    toBeginnerStageId,
+    fromBeginnerStageId,
     getShootingChapter01Stages,
     getShootingStagePrimaryEnemy,
   });

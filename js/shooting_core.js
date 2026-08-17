@@ -116,6 +116,19 @@
     return !!(selectedStage && selectedStage.eventId === 'raid' && selectedStage.raid);
   }
 
+  function getStageBulletQuantityMultiplier() {
+    const value = Number(selectedStage && selectedStage.bulletQuantityMultiplier);
+    return Number.isFinite(value) && value > 0 ? Math.min(1, value) : 1;
+  }
+
+  // 初級は弾を生成後に削除せず、発射間隔を伸ばして時間あたり弾量を調整する。
+  // multiplier=0.60 → intervalを約1.667倍 → 弾量40%減。
+  function getStageAdjustedEnemyFireInterval(intervalMs) {
+    const base = Math.max(1, Number(intervalMs || 1));
+    const quantity = getStageBulletQuantityMultiplier();
+    return quantity < 1 ? base / quantity : base;
+  }
+
   function getBattleTimeLimitSeconds() {
     if (!selectedStage) return 0;
     const explicit = Number(selectedStage.timeLimitSeconds || 0);
@@ -293,12 +306,12 @@
   function isStoryShootingStage() {
     return !!(
       selectedStage &&
-      /^shooting_ch\d{2}_\d{2}$/i.test(String(selectedStage.id || ''))
+      /^shooting_(?:beginner_)?ch\d{2}_\d{2}$/i.test(String(selectedStage.id || ''))
     );
   }
 
   function isChapter04Stage() {
-    return !!(selectedStage && /^shooting_ch04_0[1-3]$/i.test(String(selectedStage.id || '')));
+    return !!(selectedStage && /^shooting_(?:beginner_)?ch04_0[1-3]$/i.test(String(selectedStage.id || '')));
   }
 
   function isChapter04BossStage() {
@@ -2787,7 +2800,7 @@
     }
 
     // CHAPTER 01など既存敵。
-    if (now - enemy.lastShotAt < Number(def.fireRate || 1550)) return;
+    if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 1550))) return;
     enemy.lastShotAt = now;
     const dx = state.player.x - enemy.x;
     const dy = state.player.y - enemy.y;
@@ -3136,7 +3149,7 @@
   function fireViolenceBoss(now) {
     const phase = state.boss.phase || 1;
     const interval = phase === 1 ? 1050 : phase === 2 ? 820 : 650;
-    if (now - state.lastBossShotAt < interval) return;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
     const dx = state.player.x - state.boss.x;
@@ -3196,7 +3209,7 @@
 
     // WAVE1から既に高密度。WAVE3でさらに詰める。
     const interval = phase === 1 ? 260 : phase === 2 ? 190 : 130;
-    if (now - state.lastBossShotAt < interval) return;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
     const speed = Number(BOSS.bulletSpeed || 230);
@@ -3279,7 +3292,7 @@
     }
 
     const interval = phase === 1 ? 860 : phase === 2 ? 690 : 540;
-    if (now - state.lastBossShotAt < interval) return;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
     const dx = state.player.x - state.boss.x;
@@ -3633,7 +3646,7 @@
       damage = 150;
     }
 
-    if (now - state.lastBossShotAt < fireRate) return;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRate)) return;
     state.lastBossShotAt = now;
 
     const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
@@ -3957,7 +3970,7 @@
 
     const curtainCfg = getChapter4CurtainConfig();
     const fireRate = curtainCfg ? Number(curtainCfg.intervalMs || 1280) : (phase === 1 ? 920 : phase === 2 ? 860 : 780);
-    if (now - state.lastBossShotAt < fireRate) return;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRate)) return;
     state.lastBossShotAt = now;
 
     if (curtainCfg) {
@@ -4083,7 +4096,7 @@
     // WAVE2は旧WAVE1相当、WAVE3は旧WAVE2相当に1段階ずつ弱体化。
     // HP / ダメージ自体は変えず、弾数・連射間隔・弾速で避けやすくする。
     const fireRates = { 1: 760, 2: 760, 3: 560 };
-    if (now - state.lastBossShotAt < fireRates[phase]) return;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRates[phase])) return;
     state.lastBossShotAt = now;
 
     const dx = state.player.x - state.boss.x;
@@ -6888,8 +6901,9 @@
     selectedRaidContext = null;
     if (returnContext && returnContext.type === 'storyChapter') {
       const chapter = Number(returnContext.chapter || 1);
+      const mode = returnContext.mode === 'beginner' ? 'beginner' : 'normal';
       if (typeof window.openStageSelect === 'function') {
-        window.openStageSelect(chapter);
+        window.openStageSelect(chapter, mode);
       }
     }
   };

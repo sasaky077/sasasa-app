@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260818-auto-update-v95';
+    var FALLBACK_BUILD = '20260818-story-beginner-v101';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -79,7 +79,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260818-auto-update-v95">
+  <meta name="sasaphia-build" content="20260818-story-beginner-v101">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -178,9 +178,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260818-auto-update-v95"
+        href="css/style.css?v=20260818-story-beginner-v101"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260818-auto-update-v95"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260818-story-beginner-v101"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -263,10 +263,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260818-auto-update-v95">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260818-story-beginner-v101">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260818-auto-update-v95">
-  <link rel="stylesheet" href="css/admin_mode.css?v=20260818-auto-update-v95">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260818-story-beginner-v101">
+  <link rel="stylesheet" href="css/admin_mode.css?v=20260818-story-beginner-v101">
 
 <style id="testplay-guide-readable-steps">
 .testplay-guide-steps{
@@ -320,7 +320,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260818-auto-update-v95';
+  var BUILD = '20260818-story-beginner-v101';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -377,6 +377,21 @@
 /* ジェム・コインを同じ高さまで上へ逃がし、右下のリロードボタンと距離を取る */
 #global-user-frame .hud-right .hud-resource{
   transform:translateY(-6px);
+}
+</style>
+
+<style id="story-lock-style-v102">
+/* 通常・初級ストーリー共通：未開放CHAPTERは同じ明度で表示 */
+#ninmu-panel-story .story-chapter-locked,
+#ninmu-panel-story-beginner .story-chapter-locked {
+  opacity: .58;
+  filter: grayscale(.42) saturate(.58);
+  cursor: pointer;
+}
+#ninmu-panel-story .story-chapter-locked .ninmu-chapter-title,
+#ninmu-panel-story-beginner .story-chapter-locked .ninmu-chapter-title {
+  letter-spacing: .22em;
+  color: rgba(105, 92, 72, .55) !important;
 }
 </style>
 </head>
@@ -567,7 +582,10 @@
         <span class="ninmu-cat-jp">特別巡行</span><span class="ninmu-cat-en">SPECIAL</span>
       </button>
       <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
-        <span class="ninmu-cat-jp">ストーリー</span><span class="ninmu-cat-en">STORY</span>
+        <span class="ninmu-cat-jp">ストーリー<br>（通常）</span><span class="ninmu-cat-en">STORY</span>
+      </button>
+      <button class="ninmu-cat-item" id="ninmu-cat-story-beginner" onclick="switchNinmuCat('story-beginner')">
+        <span class="ninmu-cat-jp">ストーリー<br>（初級）</span><span class="ninmu-cat-en">BEGINNER</span>
       </button>
     </div>
 
@@ -641,6 +659,12 @@
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
         <div class="ninmu-chapter-list" id="story-chapter-list">
           <!-- CHAPTER 01〜08 は stage_select.js の進捗ロジックで描画 -->
+        </div>
+      </div>
+
+      <div id="ninmu-panel-story-beginner" class="ninmu-panel" style="display:none">
+        <div class="ninmu-chapter-list" id="story-beginner-chapter-list">
+          <!-- 初級ストーリー：通常とはstageId/クリア状況を完全分離 -->
         </div>
       </div>
     </div>
@@ -1288,7 +1312,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260818-auto-update-v95"></script>
+<script src="js/home_banners.js?v=20260818-story-beginner-v101"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2047,9 +2071,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260818-auto-update-v95"></script>
-<script src="js/resonance_system.js?v=20260818-auto-update-v95"></script>
-<script src="js/resonance_ui.js?v=20260818-auto-update-v95"></script>
+<script src="js/shooting_resonance.js?v=20260818-story-beginner-v101"></script>
+<script src="js/resonance_system.js?v=20260818-story-beginner-v101"></script>
+<script src="js/resonance_ui.js?v=20260818-story-beginner-v101"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -4122,7 +4146,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
   // 巡行カテゴリ切り替え
   function switchNinmuCat(cat) {
-    ['daily','special','story'].forEach(function(c){
+    ['daily','special','story','story-beginner'].forEach(function(c){
       var btn   = document.getElementById('ninmu-cat-' + c);
       var panel = document.getElementById('ninmu-panel-' + c);
       var active = (c === cat);
@@ -4133,7 +4157,10 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     // iPhoneでは初期ロード中に章一覧が先に描画される場合があるため、
     // STORYタブを開くたびに現在の解放状態で再描画する。
     if (cat === 'story' && typeof window.renderStoryChapterList === 'function') {
-      window.renderStoryChapterList();
+      window.renderStoryChapterList('normal');
+    }
+    if (cat === 'story-beginner' && typeof window.renderStoryChapterList === 'function') {
+      window.renderStoryChapterList('beginner');
     }
   }
 
@@ -9772,43 +9799,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260818-auto-update-v95"></script>
+<script src="js/asset_loader.js?v=20260818-story-beginner-v101"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260818-auto-update-v95"></script>
+<script src="js/login_bonus.js?v=20260818-story-beginner-v101"></script>
 
-<script src="js/story_engine.js?v=20260818-auto-update-v95"></script>
-<script src="js/stories/chapter01.js?v=20260818-auto-update-v95"></script>
+<script src="js/story_engine.js?v=20260818-story-beginner-v101"></script>
+<script src="js/stories/chapter01.js?v=20260818-story-beginner-v101"></script>
 
-<script src="js/battle_range.js?v=20260818-auto-update-v95"></script>
-<script src="js/characters.js?v=20260818-auto-update-v95"></script>
-<script src="js/enemies.js?v=20260818-auto-update-v95"></script>
-<script src="js/battle.js?v=20260818-auto-update-v95"></script>
-<script src="js/battle_swipe.js?v=20260818-auto-update-v95"></script>
+<script src="js/battle_range.js?v=20260818-story-beginner-v101"></script>
+<script src="js/characters.js?v=20260818-story-beginner-v101"></script>
+<script src="js/enemies.js?v=20260818-story-beginner-v101"></script>
+<script src="js/battle.js?v=20260818-story-beginner-v101"></script>
+<script src="js/battle_swipe.js?v=20260818-story-beginner-v101"></script>
 
-<script src="js/stages.js?v=20260818-auto-update-v95"></script>
-<script src="js/stage_select.js?v=20260818-auto-update-v95"></script>
-<script src="js/party_select.js?v=20260818-auto-update-v95"></script>
-<script src="js/enemy_intro.js?v=20260818-auto-update-v95"></script>
+<script src="js/stages.js?v=20260818-story-beginner-v101"></script>
+<script src="js/stage_select.js?v=20260818-story-beginner-v101"></script>
+<script src="js/party_select.js?v=20260818-story-beginner-v101"></script>
+<script src="js/enemy_intro.js?v=20260818-story-beginner-v101"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260818-auto-update-v95">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260818-story-beginner-v101">
 
-<script src="js/battle_range_32.js?v=20260818-auto-update-v95"></script>
-<script src="js/characters_32.js?v=20260818-auto-update-v95"></script>
-<script src="js/remnant_blessings.js?v=20260818-auto-update-v95"></script>
-<script src="js/combo_32.js?v=20260818-auto-update-v95"></script>
-<script src="js/cards.js?v=20260818-auto-update-v95"></script>
-<script src="js/battle_32.js?v=20260818-auto-update-v95"></script>
-<script src="js/battle_32_ui.js?v=20260818-auto-update-v95"></script>
+<script src="js/battle_range_32.js?v=20260818-story-beginner-v101"></script>
+<script src="js/characters_32.js?v=20260818-story-beginner-v101"></script>
+<script src="js/remnant_blessings.js?v=20260818-story-beginner-v101"></script>
+<script src="js/combo_32.js?v=20260818-story-beginner-v101"></script>
+<script src="js/cards.js?v=20260818-story-beginner-v101"></script>
+<script src="js/battle_32.js?v=20260818-story-beginner-v101"></script>
+<script src="js/battle_32_ui.js?v=20260818-story-beginner-v101"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260818-auto-update-v95"></script>
-<script src="js/roguelite_run.js?v=20260818-auto-update-v95"></script>
-<script src="js/roguelite_reward.js?v=20260818-auto-update-v95"></script>
-<script src="js/shinju.js?v=20260818-auto-update-v95"></script>
-<script src="js/roguelite_controller.js?v=20260818-auto-update-v95"></script>
-<script src="js/roguelite_overseer_run.js?v=20260818-auto-update-v95"></script>
+<script src="js/roguelite_options.js?v=20260818-story-beginner-v101"></script>
+<script src="js/roguelite_run.js?v=20260818-story-beginner-v101"></script>
+<script src="js/roguelite_reward.js?v=20260818-story-beginner-v101"></script>
+<script src="js/shinju.js?v=20260818-story-beginner-v101"></script>
+<script src="js/roguelite_controller.js?v=20260818-story-beginner-v101"></script>
+<script src="js/roguelite_overseer_run.js?v=20260818-story-beginner-v101"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -10254,10 +10281,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260818-auto-update-v95"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260818-story-beginner-v101"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=20260818-auto-update-v95"></script>
-<script src="js/raid_event.js?v=20260818-auto-update-v95"></script>
+<script src="js/admin_mode.js?v=20260818-story-beginner-v101"></script>
+<script src="js/raid_event.js?v=20260818-story-beginner-v101"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){

@@ -6204,19 +6204,19 @@
    CHAPTER 04 v52 - 超軽量・華やか・WARNING赤固定
    ============================================================ */
 /* beautiful弾は擬似要素を完全停止。色は4系統gradientで残す。 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::before,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::after{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet::before,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet::after{
   content:none!important;
   display:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet{
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
   filter:none!important;
   will-change:transform;
 }
 /* ボス弾も通常弾と同じ多色ルール。単色化しない。 */
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-sakiel-bullet{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-sakiel-bullet{
   width:9px;
   height:9px;
   border-radius:50%;
@@ -6248,22 +6248,22 @@
 }
 
 /* CH04は「超軽量」優先。gradientによる多色は維持し、発光shadowは切る。 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-wave,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-spiral{
   box-shadow:none!important;
 }
 /* CH04のボス本体も常時filterを使わない。 */
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss{
   filter:none!important;
 }
 /* CH04イントロは既存の豪華構造を使いつつ重いglitch/noise/scanを停止。 */
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-glitch,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-noise,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-scan{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-glitch,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-noise,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-scan{
   display:none!important;
 }
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-image{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-image{
   filter:none!important;
   animation:shootingBossIntroCameraLite 2.85s ease-out forwards!important;
 }
@@ -6280,10 +6280,10 @@
    ============================================================ */
 
 /* CH04全敵弾：装飾処理を完全停止 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-wave,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-spiral,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet{
   width:9px!important;
   height:9px!important;
   border-radius:50%!important;
@@ -6296,35 +6296,35 @@
 }
 
 /* 1発は単純なベタ色。弾幕全体で4色を循環させる */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-1{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-tone-1{
   background:#ff77b7!important; /* pink */
   background-image:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-2{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-tone-2{
   background:#62d9ff!important; /* cyan */
   background-image:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-3{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-tone-3{
   background:#ffd85f!important; /* yellow */
   background-image:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-tone-4{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-tone-4{
   background:#a987ff!important; /* violet */
   background-image:none!important;
 }
 
 /* 擬似要素は完全停止 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::before,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet::after,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::before,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::after{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet::before,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet::after,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet::before,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet::after{
   content:none!important;
   display:none!important;
 }
 
 /* WARNING：何があっても赤。toneクラスより後ろで固定 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet[class*="shooting-beautiful-tone-"]{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-danger-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-danger-bullet[class*="shooting-beautiful-tone-"]{
   background:#ed2f36!important;
   background-image:none!important;
   border:0!important;
@@ -6335,9 +6335,9 @@
 }
 
 /* WARNING文字も赤固定 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-danger-warning,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-danger-warning span,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-danger-warning strong{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss-danger-warning,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss-danger-warning span,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss-danger-warning strong{
   color:#ed2f36!important;
   border-color:#ed2f36!important;
   text-shadow:none!important;
@@ -6345,21 +6345,21 @@
 }
 
 /* サキエル本体：常時drop-shadow等を使わない */
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss{
   filter:none!important;
 }
 
 /* CH04ボスイントロ：画像＋文字＋単純フェードのみ */
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-glitch,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-noise,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-scan,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-vignette,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-flash,
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-line{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-glitch,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-noise,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-scan,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-vignette,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-flash,
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-line{
   display:none!important;
 }
 
-#shooting-event-root[data-shooting-stage="shooting_ch04_04"] .shooting-boss-intro-image{
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_04"],[data-shooting-stage="shooting_beginner_ch04_04"]) .shooting-boss-intro-image{
   filter:none!important;
   animation:shootingBossIntroCameraUltraLite 2.7s linear forwards!important;
 }
@@ -6372,14 +6372,14 @@
 /* ============================================================
    CHAPTER 04 v59 — black curtain barrage + shrinking side walls
    ============================================================ */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-ch04-curtain-bullet{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-enemy-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mini-enemy-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-wave,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-spiral,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-danger-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-ch04-curtain-bullet{
   width:9px!important;
   height:9px!important;
   border-radius:50%!important;
@@ -6392,12 +6392,12 @@
   -webkit-backdrop-filter:none!important;
   opacity:1!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet::before,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet::after,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet::before,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet::after,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::before,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::after{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-enemy-bullet::before,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-enemy-bullet::after,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mini-enemy-bullet::before,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mini-enemy-bullet::after,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet::before,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet::after{
   content:none!important;
   display:none!important;
 }
@@ -6418,13 +6418,13 @@
 /* ============================================================
    CHAPTER 04 v65 — spike barrage / Eri solo / final item
    ============================================================ */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-ch04-curtain-bullet{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-enemy-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mini-enemy-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-wave,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-beautiful-spiral,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-ch04-curtain-bullet{
   width:12px!important;
   height:16px!important;
   border-radius:0!important;
@@ -6436,8 +6436,8 @@
   filter:none!important;
   opacity:1!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet,
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-warning-bullet{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-danger-bullet,
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-sakiel-warning-bullet{
   width:34px!important;
   height:34px!important;
   border-radius:50%!important;
@@ -6448,15 +6448,15 @@
   box-shadow:0 0 12px rgba(217,45,45,.36)!important;
   filter:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-character-option:not([data-character-id="1"]){
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-option:not([data-character-id="1"]){
   opacity:.22!important;
   filter:grayscale(1)!important;
   pointer-events:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-hud{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss-hud{
   display:none!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss{
   width:150px!important;
   height:150px!important;
   filter:none!important;
@@ -6506,8 +6506,8 @@
 
 
 /* CHAPTER04 v70: 全3ステージを同じサキエル静止回避戦として表示 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-hud{display:none!important}
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss{width:150px!important;height:150px!important;filter:none!important}
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss-hud{display:none!important}
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss{width:150px!important;height:150px!important;filter:none!important}
 
 /* ============================================================
    CHAPTER 04 v73 — party guard / full mission / no combo
@@ -6515,12 +6515,12 @@
    ============================================================ */
 
 /* パーティ編成：エリ固定のためキャラ一覧を半透明ホワイトブロックでガード */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-character-grid.shooting-party-roster{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-grid.shooting-party-roster{
   position:relative!important;
   overflow:hidden!important;
   isolation:isolate;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-character-grid.shooting-party-roster::after{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-grid.shooting-party-roster::after{
   content:"※エリ以外出撃不可ステージです※";
   position:absolute;
   inset:0;
@@ -6544,14 +6544,14 @@
 }
 
 /* バトル中MISSION：省略せず全文を折り返して表示 */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mission-hud{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mission-hud{
   grid-template-columns:auto minmax(0,1fr) auto!important;
   align-items:center!important;
   min-height:52px!important;
   padding-top:7px!important;
   padding-bottom:7px!important;
 }
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mission-hud strong{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mission-hud strong{
   min-width:0!important;
   overflow:visible!important;
   text-overflow:clip!important;
@@ -6563,21 +6563,21 @@
 }
 
 /* CH04は回避専用なのでCOMBO表示を完全に隠す */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-combo{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-combo{
   display:none!important;
 }
 
 
 
 /* CHAPTER04 v82: make the 3 pre-start rule lines slightly smaller, all equal size. */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-countdown.chapter4-rule-phase span{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-countdown.chapter4-rule-phase span{
   font-size:clamp(20px,5.8vw,28px)!important;
   letter-spacing:.08em!important;
   text-indent:0!important;
 }
 
 /* CHAPTER04 v82: place boss image in front of mission and other HUD text. */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-boss{
   z-index:60!important;
 }
 
@@ -6586,22 +6586,22 @@
    CHAPTER04 v84 — hide mission HUD / enlarge time limit display
    CH04 only. Other chapters/events/raid are untouched.
    ============================================================ */
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mission-hud{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mission-hud{
   display:none!important;
 }
 
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-battle-timer{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-battle-timer{
   min-width:92px!important;
   height:46px!important;
   padding:4px 10px 4px!important;
   top:78px!important;
 }
 
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-battle-timer small{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-battle-timer small{
   font-size:7px!important;
 }
 
-#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-battle-timer strong{
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-battle-timer strong{
   font-size:24px!important;
   line-height:1!important;
   letter-spacing:.07em!important;
