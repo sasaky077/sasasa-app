@@ -5352,7 +5352,7 @@
   // Clear rewards - STORY / SPECIAL EVENT / DAILY RAID
   // ============================================================
   // 神核はシューティングの通常クリア報酬には含めない。
-  // REWARDは「プレイヤーEXP + 神樹の栄養 + 進化素材 + ジェム」で構成する。
+  // REWARDは「プレイヤーEXP + 進化素材2種類」の3枠だけで構成する。
   const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
     Object.freeze({ id: 'kyoumei_stone', name: '共鳴石', image: 'images/item_kyoumeistone.webp' }),
     Object.freeze({ id: 'soul_vessel_logos', name: 'LOGOSの器', image: 'images/item_logos.webp' }),
@@ -5395,9 +5395,16 @@
     return min + Math.floor(Math.random() * (max - min + 1));
   }
 
-  function pickShootingEvolutionReward() {
-    const pool = SHOOTING_EVOLUTION_REWARD_POOL;
-    return pool[Math.floor(Math.random() * pool.length)] || pool[0];
+  function pickShootingEvolutionRewards(count = 2) {
+    const pool = Array.from(SHOOTING_EVOLUTION_REWARD_POOL);
+    const picked = [];
+    const target = Math.min(Math.max(1, Math.floor(Number(count || 2))), pool.length);
+
+    while (picked.length < target && pool.length) {
+      const index = Math.floor(Math.random() * pool.length);
+      picked.push(pool.splice(index, 1)[0]);
+    }
+    return picked;
   }
 
   function getShootingPlayerExpDifficulty() {
@@ -5536,24 +5543,27 @@
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
 
-    const plan = getShootingClearRewardPlan();
-    const material = pickShootingEvolutionReward();
     const range = getShootingRewardCountRange(state.score);
     const playerExp = getShootingPlayerExpReward();
-    const nutritionCount = rollShootingRewardCount(range);
-    const materialCount = rollShootingRewardCount(range);
-    const gemCount = rollShootingRewardCount(range);
+    const materials = pickShootingEvolutionRewards(2);
+    const materialDrops = materials.map(material => ({
+      material,
+      count: rollShootingRewardCount(range),
+    }));
     const drops = [
       { type: 'exp', name: 'プレイヤーEXP', amount: playerExp, detail: 'プレイヤーレベル経験値', image: '', amountPrefix: '+' },
-      { type: 'shinju', name: '神樹の栄養', amount: nutritionCount, detail: `1個あたり栄養値 +${plan.nutritionExp}`, image: 'images/shinju_01.webp' },
-      { type: 'material', name: material.name, amount: materialCount, detail: '進化素材', image: material.image, materialId: material.id },
-      { type: 'gem', name: 'ジェム', amount: gemCount, detail: '召喚・ショップ用', image: 'images/icon_gem.webp' },
+      ...materialDrops.map(({ material, count }) => ({
+        type: 'material',
+        name: material.name,
+        amount: count,
+        detail: '進化素材',
+        image: material.image,
+        materialId: material.id,
+      })),
     ];
 
     grantPlayerExpReward(playerExp);
-    grantShinjuNutrition(plan.nutritionExp, nutritionCount);
-    grantEvolutionReward(material, materialCount);
-    grantGemReward(gemCount);
+    materialDrops.forEach(({ material, count }) => grantEvolutionReward(material, count));
 
     state.clearRewardScoreRange = range;
     state.clearRewards = drops;

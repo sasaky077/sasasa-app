@@ -1,5 +1,5 @@
 // stage_select.js
-// 20260817-ch04-story-route-v53
+// 20260817-ch04-02-geometry-lite-v58
 // ステージ選択モーダル
 // openStageSelect(chapter) で開く → ステージ選択 → openPartySelect(enemyId) へ
 
@@ -42,7 +42,7 @@
     'shooting_ch03_04': 'リヴィアを撃破',
 
     'shooting_ch04_01': '敵をすべて撃破',
-    'shooting_ch04_02': '敵をすべて撃破',
+    'shooting_ch04_02': '60秒間、中ボスの猛攻を生き延びる',
     'shooting_ch04_03': '敵をすべて撃破',
     'shooting_ch04_04': 'サキエルを浄化',
   };
