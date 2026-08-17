@@ -7,7 +7,7 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = '20260817-result-reward-3slots-v53';
+  const MODULE_VERSION = '20260817-ch04-no-prestart-start-v83';
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
     queuedOpenArgs.push(args);

@@ -231,7 +231,7 @@
       image: 'images/chara_17_battle_back.webp',
       panelImage: 'images/chara_17_panel.webp',
       cutinImage: 'images/chara_17_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.55, battleUp: 0.8 },
+      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 0.8 },
     },
     50: {
       id: 50, name: 'テストちゃん',
@@ -240,7 +240,7 @@
       image: 'images/chara_50_battle_back.webp',
       panelImage: 'images/chara_50_panel.webp',
       cutinImage: 'images/chara_50_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.25, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
     },
   });
 

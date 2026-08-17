@@ -6367,3 +6367,242 @@
   from{transform:scale(1.035)}
   to{transform:scale(1.01)}
 }
+
+
+/* ============================================================
+   CHAPTER 04 v59 — black curtain barrage + shrinking side walls
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-ch04-curtain-bullet{
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  background:#111214!important;
+  background-image:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet::after,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet::after,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+#shooting-event-root .shooting-ch04-shrink-wall{
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:0;
+  z-index:11;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,9,10,.92),rgba(16,17,19,.98));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+}
+#shooting-event-root .shooting-ch04-shrink-wall.left{left:0;border-right:1px solid rgba(255,255,255,.08)}
+#shooting-event-root .shooting-ch04-shrink-wall.right{right:0;border-left:1px solid rgba(255,255,255,.08)}
+
+
+/* ============================================================
+   CHAPTER 04 v65 — spike barrage / Eri solo / final item
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mini-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-wave,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-beautiful-spiral,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-ch04-curtain-bullet{
+  width:12px!important;
+  height:16px!important;
+  border-radius:0!important;
+  background:#111214!important;
+  background-image:none!important;
+  border:0!important;
+  clip-path:polygon(50% 100%,0 0,100% 0)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-danger-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-sakiel-warning-bullet{
+  width:34px!important;
+  height:34px!important;
+  border-radius:50%!important;
+  background:#d92d2d!important;
+  background-image:none!important;
+  border:2px solid rgba(255,244,244,.55)!important;
+  clip-path:none!important;
+  box-shadow:0 0 12px rgba(217,45,45,.36)!important;
+  filter:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-character-option:not([data-character-id="1"]){
+  opacity:.22!important;
+  filter:grayscale(1)!important;
+  pointer-events:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-hud{
+  display:none!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss{
+  width:150px!important;
+  height:150px!important;
+  filter:none!important;
+}
+.shooting-ch04-final-item{
+  width:42px!important;
+  height:42px!important;
+  z-index:32!important;
+  animation:shootingCh04FinalItemPulse .55s ease-in-out infinite alternate!important;
+}
+@keyframes shootingCh04FinalItemPulse{
+  from{transform:translate(-50%,-50%) scale(.92)}
+  to{transform:translate(-50%,-50%) scale(1.14)}
+}
+.shooting-ch04-item-alert{
+  position:absolute;
+  z-index:48;
+  left:50%;
+  top:34%;
+  transform:translate(-50%,-50%) scale(.94);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .16s ease,transform .16s ease;
+  text-align:center;
+  text-shadow:0 2px 10px rgba(255,255,255,.9);
+}
+.shooting-ch04-item-alert.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.shooting-ch04-item-alert strong{
+  font-family:"Noto Serif JP",serif;
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:.14em;
+  color:#5d4b2f;
+  white-space:nowrap;
+}
+.shooting-ch04-item-alert b{
+  margin-top:8px;
+  font-family:"Cinzel",serif;
+  font-size:58px;
+  line-height:1;
+  font-weight:600;
+  color:#8c6b34;
+}
+
+
+/* CHAPTER04 v70: 全3ステージを同じサキエル静止回避戦として表示 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss-hud{display:none!important}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss{width:150px!important;height:150px!important;filter:none!important}
+
+/* ============================================================
+   CHAPTER 04 v73 — party guard / full mission / no combo
+   CH04 only. Other chapters/events/raid are untouched.
+   ============================================================ */
+
+/* パーティ編成：エリ固定のためキャラ一覧を半透明ホワイトブロックでガード */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-character-grid.shooting-party-roster{
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-character-grid.shooting-party-roster::after{
+  content:"※エリ以外出撃不可ステージです※";
+  position:absolute;
+  inset:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  box-sizing:border-box;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(180,160,125,.24);
+  color:#76664d;
+  font-family:"Noto Serif JP",serif;
+  font-size:13px;
+  font-weight:500;
+  line-height:1.7;
+  letter-spacing:.06em;
+  text-align:center;
+  text-shadow:0 1px 0 rgba(255,255,255,.95);
+  pointer-events:auto;
+}
+
+/* バトル中MISSION：省略せず全文を折り返して表示 */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mission-hud{
+  grid-template-columns:auto minmax(0,1fr) auto!important;
+  align-items:center!important;
+  min-height:52px!important;
+  padding-top:7px!important;
+  padding-bottom:7px!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mission-hud strong{
+  min-width:0!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+  line-height:1.45!important;
+  font-size:9px!important;
+}
+
+/* CH04は回避専用なのでCOMBO表示を完全に隠す */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-combo{
+  display:none!important;
+}
+
+
+
+/* CHAPTER04 v82: make the 3 pre-start rule lines slightly smaller, all equal size. */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-countdown.chapter4-rule-phase span{
+  font-size:clamp(20px,5.8vw,28px)!important;
+  letter-spacing:.08em!important;
+  text-indent:0!important;
+}
+
+/* CHAPTER04 v82: place boss image in front of mission and other HUD text. */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-boss{
+  z-index:60!important;
+}
+
+
+/* ============================================================
+   CHAPTER04 v84 — hide mission HUD / enlarge time limit display
+   CH04 only. Other chapters/events/raid are untouched.
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-mission-hud{
+  display:none!important;
+}
+
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-battle-timer{
+  min-width:92px!important;
+  height:46px!important;
+  padding:4px 10px 4px!important;
+  top:78px!important;
+}
+
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-battle-timer small{
+  font-size:7px!important;
+}
+
+#shooting-event-root[data-shooting-stage^="shooting_ch04_"] .shooting-battle-timer strong{
+  font-size:24px!important;
+  line-height:1!important;
+  letter-spacing:.07em!important;
+}
