@@ -1363,6 +1363,8 @@
       scoreAttackLastHudRenderAt: 0,
       scoreAttackLastBossHitVisualAt: 0,
       scoreAttackLastBossDamageNumberAt: 0,
+      scoreAttackFinalWarningShown: false,
+      scoreAttackFinalWarningFired: false,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
       ultCutinActive: false, ultCutinTimer: 0, skipNextUltCut: false,
@@ -3844,13 +3846,27 @@
         });
       }
 
-      // WARNING予告。次のボレーで赤い大玉を撃つ。
-      if (cycle === 5) {
+      // WARNING制御。
+      // 通常周期のWARNINGは残り5秒以降では一切出さない。
+      // また終盤は残り10秒で最後のWARNINGを1回だけ予告し、次ボレーで発射する。
+      const timeLeft = getBattleTimeLeft(now);
+      const inFinalWarningWindow = timeLeft <= 10 && timeLeft > 5;
+      const allowRegularWarning = timeLeft > 10;
+
+      if (allowRegularWarning && cycle === 5) {
         showBossDangerWarning();
       }
 
-      // WARNING：赤い大玉を1発。固定角度で毎回再現可能。
-      if (cycle === 6) {
+      if (inFinalWarningWindow && !state.scoreAttackFinalWarningShown) {
+        state.scoreAttackFinalWarningShown = true;
+        showBossDangerWarning();
+      }
+
+      const shouldFireRegularWarning = allowRegularWarning && cycle === 6;
+      const shouldFireFinalWarning = inFinalWarningWindow && state.scoreAttackFinalWarningShown && !state.scoreAttackFinalWarningFired;
+
+      if (shouldFireRegularWarning || shouldFireFinalWarning) {
+        if (shouldFireFinalWarning) state.scoreAttackFinalWarningFired = true;
         removeBossDangerWarning();
         const warningAngle = Math.PI / 2 + (((Math.floor(n / 8) % 5) - 2) * 0.11);
         const warningDamage = Math.max(damage, damage * Math.max(1, Number(cfg.warningDamageMultiplier || 2)));
@@ -3863,8 +3879,18 @@
         );
         if (warning) {
           warning.scoreAttackWarning = true;
+          // HARDのみWARNING大玉を6秒間、壁で無制限バウンドさせる。
+          if (String(cfg.difficulty || '').toLowerCase() === 'hard') {
+            warning.scoreAttackWarningBounceUntil = now + 6000;
+            warning.dangerRicochet = true;
+          }
           state.enemyBullets.push(warning);
         }
+      }
+
+      // LAST5秒は新規WARNINGを出さず、残っている予告表示も消す。
+      if (timeLeft <= 5) {
+        removeBossDangerWarning();
       }
 
       // 横断弾はWARNINGと同時に増やしすぎず、次ボレーに4組だけ出す。
@@ -4950,9 +4976,35 @@
     const boss = document.getElementById(BOSS_ID);
     if (!boss) return;
 
-    // SCORE ATTACKはHITリング(createHit)だけを使う。
-    // filterアニメーションの連打・強制reflowは避け、GPU負荷を増やさない。
-    if (isScoreAttackStage()) return;
+    // SCORE ATTACKはDOMを増やさず、既存ボス要素のclassだけで命中発光させる。
+    // 約9fpsに間引かれているため、通常射撃の全弾でfilterを再実行しない。
+    if (isScoreAttackStage()) {
+      if (!big) {
+        if (!visualAlreadyApproved && !shouldRenderRaidBossHitVisual(performance.now(), 'hit')) return;
+
+        // SCORE ATTACKでも通常ステージと同様に、既存ボス要素そのものを明確に反応させる。
+        // DOMを増やさない sustained feedback + 短い専用glowを併用する。
+        sustainHitFeedback(boss, 150);
+        boss.classList.remove('hit-flash', 'score-attack-hit-glow');
+        void boss.offsetWidth;
+        boss.classList.add('hit-flash', 'score-attack-hit-glow');
+
+        window.clearTimeout(boss.__scoreAttackHitGlowTimer);
+        boss.__scoreAttackHitGlowTimer = window.setTimeout(() => {
+          boss.classList.remove('hit-flash', 'score-attack-hit-glow');
+        }, 180);
+        return;
+      }
+
+      boss.classList.remove('score-attack-burst-glow');
+      void boss.offsetWidth;
+      boss.classList.add('score-attack-burst-glow');
+      window.clearTimeout(boss.__scoreAttackBurstGlowTimer);
+      boss.__scoreAttackBurstGlowTimer = window.setTimeout(() => {
+        boss.classList.remove('score-attack-burst-glow');
+      }, 420);
+      return;
+    }
 
     if (!big) {
       // SCORE ATTACKでは通常弾の外側ですでに視覚演出を間引いている箇所があるため、
@@ -5432,9 +5484,28 @@
         }
       }
 
+      // SCORE ATTACK HARDのWARNING大玉：発射から6秒間、壁で無制限バウンド。
+      if (p.scoreAttackWarningBounceUntil) {
+        if (now >= Number(p.scoreAttackWarningBounceUntil || 0)) {
+          p.el.remove();
+          return false;
+        }
+        const margin = 16;
+        const hitLeft = p.x <= margin;
+        const hitRight = p.x >= w - margin;
+        const hitTop = p.y <= margin;
+        const hitBottom = p.y >= h - margin;
+        if (hitLeft || hitRight || hitTop || hitBottom) {
+          if (hitLeft || hitRight) p.vx *= -1;
+          if (hitTop || hitBottom) p.vy *= -1;
+          p.x = Math.min(w - margin, Math.max(margin, p.x));
+          p.y = Math.min(h - margin, Math.max(margin, p.y));
+        }
+      }
+
       // 最上級のWARNING危険弾はアリーナ壁で跳ね返る。
       // 1回目・2回目は反射、3回目の壁接触で消滅。
-      if (p.dangerRicochet) {
+      if (p.dangerRicochet && !p.scoreAttackWarningBounceUntil) {
         const margin = 7;
         const hitLeft = p.x <= margin;
         const hitRight = p.x >= w - margin;
@@ -6707,12 +6778,14 @@
   // Clear rewards - STORY / SPECIAL EVENT / DAILY RAID
   // ============================================================
   // 神核はシューティングの通常クリア報酬には含めない。
-  // REWARDは「プレイヤーEXP + 進化素材2種類」の3枠だけで構成する。
+  // REWARDは『プレイヤーEXP + ランダムアイテム2種類』の3枠固定。
+  // アイテム枠は5候補から重複なしで2種類を抽選する。
   const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
-    Object.freeze({ id: 'kyoumei_stone', name: '共鳴石', image: 'images/item_kyoumeistone.webp' }),
-    Object.freeze({ id: 'soul_vessel_logos', name: 'LOGOSの器', image: 'images/item_logos.webp' }),
-    Object.freeze({ id: 'soul_vessel_chaos', name: 'CHAOSの器', image: 'images/item_chaos.webp' }),
-    Object.freeze({ id: 'soul_vessel_mystis', name: 'MYSTISの器', image: 'images/item_mystis.webp' }),
+    Object.freeze({ id: 'kyoumei_stone', name: '共鳴石', image: 'images/item_kyoumeistone.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_logos', name: 'LOGOSの器', image: 'images/item_logos.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_chaos', name: 'CHAOSの器', image: 'images/item_chaos.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_mystis', name: 'MYSTISの器', image: 'images/item_mystis.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'shinju_nutrition', name: '神樹の栄養', image: 'images/shinju.webp', rewardType: 'shinju' }),
   ]);
 
   function getShootingClearRewardPlan() {
@@ -6774,6 +6847,9 @@
   }
 
   function getShootingPlayerExpReward() {
+    // すこあた！は難易度・ランク・スコアに関係なくEXP 300固定。
+    if (isScoreAttackStage()) return 300;
+
     const difficulty = getShootingPlayerExpDifficulty();
     const rank = getResultRank(state && state.score, true);
 
@@ -6898,27 +6974,37 @@
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
 
-    const range = getShootingRewardCountRange(state.score);
+    const scoreAttackFixedReward = isScoreAttackStage();
+    const range = scoreAttackFixedReward
+      ? { min: 1, max: 1, label: 'SCORE ATTACK FIXED' }
+      : getShootingRewardCountRange(state.score);
     const playerExp = getShootingPlayerExpReward();
     const materials = pickShootingEvolutionRewards(2);
     const materialDrops = materials.map(material => ({
       material,
-      count: rollShootingRewardCount(range),
+      count: scoreAttackFixedReward ? 1 : rollShootingRewardCount(range),
     }));
+    const rewardPlan = getShootingClearRewardPlan();
     const drops = [
       { type: 'exp', name: 'プレイヤーEXP', amount: playerExp, detail: 'プレイヤーレベル経験値', image: '', amountPrefix: '+' },
       ...materialDrops.map(({ material, count }) => ({
         type: 'material',
         name: material.name,
         amount: count,
-        detail: '進化素材',
+        detail: material.rewardType === 'shinju' ? '神樹成長素材' : '進化素材',
         image: material.image,
         materialId: material.id,
       })),
     ];
 
     grantPlayerExpReward(playerExp);
-    materialDrops.forEach(({ material, count }) => grantEvolutionReward(material, count));
+    materialDrops.forEach(({ material, count }) => {
+      if (material.rewardType === 'shinju') {
+        grantShinjuNutrition(rewardPlan.nutritionExp, count);
+      } else {
+        grantEvolutionReward(material, count);
+      }
+    });
 
     state.clearRewardScoreRange = range;
     state.clearRewards = drops;
@@ -6947,7 +7033,7 @@
         <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
       </div>
     `).join('');
-    if (note) note.textContent = `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`;
+    if (note) note.textContent = isScoreAttackStage() ? 'すこあた！クリア報酬を獲得しました' : `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`;
   }
 
   function endGame(win) {
@@ -8484,9 +8570,7 @@
   function healRoseActiveCharacter(maxHpRate) {
     if (!state || !Array.isArray(state.party)) return;
 
-    // ハートを取得した瞬間に場へ出ているキャラだけを回復する。
-    // ベンチメンバーは回復しない。交代後に別キャラで取得した場合は、
-    // その時点のactiveCharacterIdに対応するキャラへ同じ5%回復を適用する。
+    // ハート取得時点で場にいるキャラだけ回復。ベンチは回復しない。
     const member = state.party.find(m => m && Number(m.id) === Number(state.activeCharacterId));
     if (!member || member.hp <= 0) return;
 

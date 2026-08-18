@@ -132,7 +132,7 @@
       image: 'images/chara_06_battle_back.webp',
       panelImage: 'images/chara_06_panel.webp',
       cutinImage: 'images/chara_06_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.7, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 1.35, battleUp: 1.0 },
     },
     7: {
       id: 7, name: 'ロゼ',
