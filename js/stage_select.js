@@ -844,7 +844,7 @@
         ? 'ROGUELITE'
         : chapter === 0
           ? '— DEBUG —'
-          : 'CHAPTER ' + String(chapter).padStart(2, '0') + (mode === 'beginner' ? '  初級' : '');
+          : 'CHAPTER ' + String(chapter).padStart(2, '0') + (mode === 'beginner' ? ' NORMAL' : ' HARD');
     }
 
     renderList(chapter, mode);
