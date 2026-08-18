@@ -6883,34 +6883,53 @@
 }
 
 
-/* =========================================================
-   SCORE ATTACK v143 - guaranteed boss hit feedback
-   実機で命中感が消えないよう、スコアタだけHITリングとボス発光を明示強化。
-   HITリングはcore側で約9fpsに間引かれ、280msで破棄される。
-   ========================================================= */
-#shooting-event-root[data-shooting-stage="shooting_score_attack_normal"] .shooting-hit,
-#shooting-event-root[data-shooting-stage="shooting_score_attack_hard"] .shooting-hit{
-  display:block!important;
-  width:32px!important;
-  height:32px!important;
-  margin:-16px 0 0 -16px!important;
-  border:2px solid rgba(255,246,210,.96)!important;
-  border-radius:50%!important;
-  background:radial-gradient(circle,rgba(255,255,255,.62) 0 18%,rgba(255,225,157,.24) 34%,rgba(255,255,255,0) 68%)!important;
-  box-shadow:0 0 10px rgba(255,244,205,.92),0 0 20px rgba(236,195,111,.62)!important;
+/* ============================================================
+   CHAPTER04 v154 — FINAL ITEM visibility / stacking fix
+   Existing CH04 rules force boss z-index:60 and final item z-index:32.
+   Keep Sakiel above normal HUD/bullets, but put mission item/alert above Sakiel.
+   ============================================================ */
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"],
+[data-shooting-stage="shooting_beginner_ch04_01"],[data-shooting-stage="shooting_beginner_ch04_02"],[data-shooting-stage="shooting_beginner_ch04_03"]) .shooting-ch04-final-item{
+  width:76px!important;
+  height:76px!important;
+  z-index:140!important;
   opacity:1!important;
+  display:block!important;
+  visibility:visible!important;
+  pointer-events:none!important;
+  border:4px solid rgba(214,196,255,1)!important;
+  background:radial-gradient(circle,rgba(255,255,255,1) 0 13%,rgba(222,205,255,1) 18% 34%,rgba(132,82,235,1) 42% 61%,rgba(65,117,255,.92) 66% 75%,rgba(74,46,205,0) 84%)!important;
+  box-shadow:0 0 14px rgba(255,255,255,1),0 0 30px rgba(185,127,255,1),0 0 58px rgba(118,74,240,1),0 0 88px rgba(59,122,255,.92)!important;
   filter:none!important;
-  animation:scoreAttackHitRingV143 .28s ease-out forwards!important;
+  animation:shootingCh04FinalItemPulseV154 .52s ease-in-out infinite alternate!important;
 }
-@keyframes scoreAttackHitRingV143{
-  0%{opacity:1;transform:translate3d(var(--x,0),var(--y,0),0) scale(.55)}
-  100%{opacity:0;transform:translate3d(var(--x,0),var(--y,0),0) scale(1.55)}
+@keyframes shootingCh04FinalItemPulseV154{
+  from{transform:translate(-50%,-50%) scale(.90)}
+  to{transform:translate(-50%,-50%) scale(1.16)}
 }
-#shooting-event-root[data-shooting-stage="shooting_score_attack_normal"] #shooting-boss.score-attack-hit-glow,
-#shooting-event-root[data-shooting-stage="shooting_score_attack_hard"] #shooting-boss.score-attack-hit-glow{
-  animation:scoreAttackBossHitGlowV143 .18s steps(2,jump-none)!important;
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"],
+[data-shooting-stage="shooting_beginner_ch04_01"],[data-shooting-stage="shooting_beginner_ch04_02"],[data-shooting-stage="shooting_beginner_ch04_03"]) .shooting-ch04-item-alert{
+  z-index:150!important;
+  top:30%!important;
+  opacity:0;
+  text-shadow:0 1px 2px rgba(255,255,255,1),0 0 10px rgba(255,255,255,1),0 0 18px rgba(132,82,235,.38)!important;
 }
-@keyframes scoreAttackBossHitGlowV143{
-  0%,100%{opacity:.96;filter:drop-shadow(0 10px 10px rgba(63,48,32,.20)) brightness(1)}
-  50%{opacity:1;filter:brightness(1.9) saturate(1.35) drop-shadow(0 0 11px rgba(255,255,255,.98)) drop-shadow(0 0 20px rgba(255,206,132,.92))}
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"],
+[data-shooting-stage="shooting_beginner_ch04_01"],[data-shooting-stage="shooting_beginner_ch04_02"],[data-shooting-stage="shooting_beginner_ch04_03"]) .shooting-ch04-item-alert.show{
+  opacity:1!important;
+  display:flex!important;
+  visibility:visible!important;
+}
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"]) .shooting-ch04-item-alert strong{
+  color:#51319d!important;
+  -webkit-text-stroke:1px rgba(255,255,255,.88);
+}
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"]) .shooting-ch04-item-alert small{
+  color:#4d3f76!important;
+  font-size:12px!important;
+  font-weight:700!important;
+}
+#shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"]) .shooting-ch04-item-alert b{
+  color:#6f45d8!important;
+  -webkit-text-stroke:1px rgba(255,255,255,.88);
 }

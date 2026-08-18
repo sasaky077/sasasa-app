@@ -335,8 +335,7 @@
   function spawnChapter4FinalItem(now) {
     if (!state || !isChapter04Stage() || state.chapter4ItemPhase) return;
     const arena = document.getElementById('shooting-arena');
-    const layer = document.getElementById('shooting-collectible-layer');
-    if (!arena || !layer) return;
+    if (!arena) return;
 
     const w = Number(arena.clientWidth || 0);
     const h = Number(arena.clientHeight || 0);
@@ -372,14 +371,14 @@
     Object.assign(el.style, {
       width: '72px',
       height: '72px',
-      zIndex: '60',
+      zIndex: '140',
       border: '3px solid rgba(211,190,255,1)',
       background: 'radial-gradient(circle, rgba(255,255,255,1) 0 14%, rgba(214,196,255,1) 20% 38%, rgba(132,82,235,.98) 44% 62%, rgba(76,126,255,.72) 66% 74%, rgba(92,61,220,0) 82%)',
       boxShadow: '0 0 14px rgba(255,255,255,1), 0 0 30px rgba(176,126,255,1), 0 0 54px rgba(112,79,238,.98), 0 0 76px rgba(73,133,255,.82)',
       opacity: '1',
       animation: 'shootingCh04ItemPulseV153 .72s ease-in-out infinite alternate'
     });
-    layer.appendChild(el);
+    arena.appendChild(el);
     positionUnit(el, x, y);
 
     state.chapter4FinalItem = { el, x, y };
@@ -6210,8 +6209,7 @@
   function spawnMimosaItems(c) {
     if (!state) return;
     const arena = document.getElementById('shooting-arena');
-    const layer = document.getElementById('shooting-collectible-layer');
-    if (!arena || !layer) return;
+    if (!arena) return;
 
     const w = arena.clientWidth;
     const h = arena.clientHeight;
