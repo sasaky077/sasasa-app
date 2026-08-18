@@ -1179,6 +1179,9 @@
         return { id, hp: c.hp, hpMax: c.hp, burst: 0, ultReadyNotified: false, hitCount: 0, ultUseCount: 0 };
       }),
       player: { x: 0, y: 0, invulnUntil: 0 },
+      mitoCompanionEl: null,
+      mitoCompanionX: 0,
+      mitoCompanionY: 0,
       battleType: selectedStage && selectedStage.type === 'normal' ? 'normal' : 'boss',
       stageId: selectedStage ? selectedStage.id : null,
       mission: selectedStage ? selectedStage.mission : null,
@@ -1359,6 +1362,7 @@
     state.boss.x = w * 0.5;
     state.boss.y = Math.max(54, h * 0.16);
     positionUnit(player, state.player.x, state.player.y);
+    updateMitoCompanion();
     positionUnit(boss, state.boss.x, state.boss.y);
   }
 
@@ -2080,6 +2084,91 @@
     return true;
   }
 
+  function ensureMitoCompanion(c) {
+    if (!state) return null;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    let el = state.mitoCompanionEl;
+    if (!el || !el.isConnected) {
+      el = document.createElement('img');
+      el.className = 'shooting-mito-companion';
+      el.alt = 'ミトの召喚獣';
+      el.draggable = false;
+      arena.appendChild(el);
+      state.mitoCompanionEl = el;
+    }
+
+    const src = String(c?.companionImage || 'images/chara_16_battle_set.webp');
+    if (el.getAttribute('src') !== src) el.src = src;
+    el.style.setProperty('--mito-companion-scale', String(Number(c?.companionScale || 1)));
+    return el;
+  }
+
+  function updateMitoCompanion() {
+    if (!state) return;
+    const c = getCurrentCharacter();
+    const el = state.mitoCompanionEl;
+
+    if (!c || Number(c.id) !== Number(CHARACTER_ID.MITO)) {
+      if (el) el.classList.remove('show');
+      return;
+    }
+
+    const arena = document.getElementById('shooting-arena');
+    const companion = ensureMitoCompanion(c);
+    if (!arena || !companion) return;
+
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
+    const offsetX = Math.max(24, Number(c.companionOffsetX || 58));
+    const offsetY = Number(c.companionOffsetY || 0);
+
+    // 画面中央より右ならミトの右、左ならミトの左。
+    // 中央ぴったりは右側を採用する。
+    const side = Number(state.player.x || 0) >= w * 0.5 ? 1 : -1;
+    const x = clamp(Number(state.player.x || 0) + side * offsetX, 24, Math.max(24, w - 24));
+    const y = clamp(Number(state.player.y || 0) + offsetY, 28, Math.max(28, h - 28));
+
+    state.mitoCompanionX = x;
+    state.mitoCompanionY = y;
+    companion.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(var(--mito-companion-scale,1))`;
+    companion.classList.add('show');
+    companion.dataset.side = side > 0 ? 'right' : 'left';
+  }
+
+  function fireMitoCompanion(c, effectivePower, bulletClass) {
+    if (!state || !c || Number(c.id) !== Number(CHARACTER_ID.MITO)) return;
+    const companion = ensureMitoCompanion(c);
+    if (!companion) return;
+
+    // 発射直前にも位置を同期して、ミトと召喚獣の弾源がずれないようにする。
+    updateMitoCompanion();
+
+    const x = Number(state.mitoCompanionX || state.player.x || 0);
+    const y = Number(state.mitoCompanionY || state.player.y || 0) - Number(c.companionShotOffsetY || c.shotOffsetY || 38);
+    const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
+    const spacing = Number(c.shotSpacing || 0);
+    const speed = Number(c.bulletSpeed || 780);
+
+    for (let i = 0; i < shotCount; i++) {
+      const offset = getCenteredShotOffset(i, shotCount, spacing);
+      const p = makeProjectile(
+        bulletClass + ' shooting-bullet-mito-companion',
+        x + offset,
+        y,
+        0,
+        -speed,
+        effectivePower,
+        c.id
+      );
+      if (p) {
+        p.mitoCompanionShot = true;
+        state.bullets.push(p);
+      }
+    }
+  }
+
   function firePlayer(now) {
     // CHAPTER04は完全な回避専用ステージ。エリは通常射撃を一切行わない。
     // 他CHAPTER / EVENTには影響させない。
@@ -2262,6 +2351,11 @@
         effectivePower,
         c.id
       ));
+    }
+
+    // ミトだけは召喚獣も同じタイミング・同じ弾速・同じ火力で支援射撃。
+    if (Number(c.id) === Number(CHARACTER_ID.MITO)) {
+      fireMitoCompanion(c, effectivePower, bulletClass);
     }
   }
 
@@ -4359,6 +4453,7 @@
     // 「カクッ」と位置が飛んだように見えないようにする。
     if (playerOnly) {
       positionUnit(player, state.player.x, state.player.y);
+      updateMitoCompanion();
       return;
     }
 
@@ -4844,7 +4939,19 @@
     // 他ボスの当たり判定(14, 18)は一切変更しない。
     const bossContactInsetB = (BOSS && BOSS.behavior === 'violence_v1') ? 42 : 18;
     if (rectsHit(playerRect, boss.getBoundingClientRect(), 14, bossContactInsetB)) {
-      damagePlayer(now, Number(BOSS.contactDamage || BOSS.bulletDamage) || 200, 'boss-heavy');
+      let bossContactDamage = Number(BOSS.contactDamage || BOSS.bulletDamage) || 200;
+
+      // 初級 CHAPTER02-STAGE04「イリシュ」限定:
+      // 突進による接触ダメージを通常版の50%にする。
+      // 通常 shooting_ch02_04 は一切変更しない。
+      if (
+        BOSS && BOSS.behavior === 'violence_v1' &&
+        selectedStage && String(selectedStage.id || '') === 'shooting_beginner_ch02_04'
+      ) {
+        bossContactDamage *= 0.5;
+      }
+
+      damagePlayer(now, bossContactDamage, 'boss-heavy');
     }
   }
 

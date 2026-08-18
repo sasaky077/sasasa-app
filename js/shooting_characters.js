@@ -728,6 +728,35 @@
   });
 
   // ============================================================
+  // ミト：召喚獣サイドカー支援
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.MITO] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.MITO,
+    effectKey: 'mito',
+    label: 'FAMILIAR / SIDECAR',
+    description: '召喚獣が常にミトの隣を追従し、ミトと同じ弾速・火力・発射間隔で同時射撃する。',
+
+    // ミト自身の通常射撃性能は従来値を維持。
+    moveSpeed: 430,
+    fireRate: 170,
+    bulletSpeed: 780,
+    shotPowerRate: 0.095,
+    shotType: 'parallel',
+    shotCount: 2,
+    shotSpacing: 18,
+    shotStyle: 'normal',
+    shotOffsetY: 38,
+
+    // 召喚獣。位置はshooting_core側で画面中央を境に左右切替。
+    companionImage: 'images/chara_16_battle_set.webp',
+    companionOffsetX: 68,
+    companionOffsetY: 2,
+    companionShotOffsetY: 30,
+    companionScale: 1.0,
+  });
+
+  // ============================================================
   // テストちゃん：DAILY RAIDクリア報酬
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({

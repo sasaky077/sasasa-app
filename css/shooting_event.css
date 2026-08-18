@@ -6650,3 +6650,27 @@
   content:none!important;
   display:none!important;
 }
+
+
+/* ============================================================
+   MITO - familiar sidecar support
+   ============================================================ */
+.shooting-mito-companion{
+  position:absolute;
+  z-index:11;
+  left:0;
+  top:0;
+  width:64px;
+  height:86px;
+  object-fit:contain;
+  object-position:center center;
+  opacity:0;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+  will-change:transform;
+  transition:opacity .12s ease;
+  filter:drop-shadow(0 5px 5px rgba(70,55,35,.12));
+}
+.shooting-mito-companion.show{opacity:1}
+.shooting-bullet-mito-companion{z-index:10}
