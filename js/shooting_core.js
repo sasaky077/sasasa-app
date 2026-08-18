@@ -4,6 +4,14 @@
 (function () {
   'use strict';
 
+  // CH04 final ITEM: CSSファイルの更新状況に依存せず、大きく脈動させる。
+  if (!document.getElementById('shooting-ch04-item-style-v152')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-ch04-item-style-v152';
+    style.textContent = '@keyframes shootingCh04ItemPulseV153{0%{transform:translate3d(var(--unit-x),var(--unit-y),0) translate(-50%,-50%) scale(.92);filter:brightness(1.05)}100%{transform:translate3d(var(--unit-x),var(--unit-y),0) translate(-50%,-50%) scale(1.16);filter:brightness(1.35)}}';
+    document.head.appendChild(style);
+  }
+
   const ROOT_ID = 'shooting-event-root';
   const PLAYER_ID = 'shooting-player';
   const BOSS_ID = 'shooting-boss';
@@ -352,15 +360,28 @@
     const x = clamp(bx + pick[0], left, right);
     const y = clamp(by + pick[1], top, bottom);
 
-    // 60秒到達瞬間は弾幕更新と重なるため、追加DOMはITEM本体1個だけに限定。
-    // 光柱/追尾矢印/動的style生成は廃止し、瞬間的なstyle recalculationを避ける。
+    // ITEMフェーズへ移行しても弾幕は止めない。
+    // 60秒生存後は、継続する弾幕を潜りながらITEMを回収するゲーム性にする。
+    state.chapter4ItemPhase = true;
+
+    // 専用CSSの読込状態に依存しないよう、ITEM本体の最低限の見た目をinlineで保証。
+    // 追加DOMは作らず、この1要素だけで大きく明るく表示する。
     const el = document.createElement('div');
     el.className = 'shooting-mission-item shooting-ch04-final-item';
     el.innerHTML = '<i></i>';
+    Object.assign(el.style, {
+      width: '72px',
+      height: '72px',
+      zIndex: '60',
+      border: '3px solid rgba(211,190,255,1)',
+      background: 'radial-gradient(circle, rgba(255,255,255,1) 0 14%, rgba(214,196,255,1) 20% 38%, rgba(132,82,235,.98) 44% 62%, rgba(76,126,255,.72) 66% 74%, rgba(92,61,220,0) 82%)',
+      boxShadow: '0 0 14px rgba(255,255,255,1), 0 0 30px rgba(176,126,255,1), 0 0 54px rgba(112,79,238,.98), 0 0 76px rgba(73,133,255,.82)',
+      opacity: '1',
+      animation: 'shootingCh04ItemPulseV153 .72s ease-in-out infinite alternate'
+    });
     layer.appendChild(el);
     positionUnit(el, x, y);
 
-    state.chapter4ItemPhase = true;
     state.chapter4FinalItem = { el, x, y };
     const timeoutSeconds = Math.max(1, Number(selectedStage?.finalItem?.timeoutSeconds || 10));
     state.chapter4ItemDeadlineAt = Number(now || performance.now()) + timeoutSeconds * 1000;
@@ -4766,6 +4787,9 @@
   }
 
   function fireBoss(now) {
+    // CH04のITEM取得フェーズ中も通常弾幕/WARNINGは継続する。
+    // 60秒生存後は、弾幕を潜りながらボス周囲のITEMを取りに行く。
+
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
 
