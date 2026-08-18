@@ -503,7 +503,7 @@
     id: CHARACTER_ID.ROSE,
     effectKey: 'rose',
     label: 'SEED / HEAL FLOWER',
-    description: '0.5秒ごとに6発のスプラッシュ弾を放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、1個につき味方HP34回復／敵へATKの30%ダメージ。',
+    description: '0.5秒ごとに6発のスプラッシュ弾を放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、取得した場のキャラのみ最大HPの5%回復／敵へATKの30%ダメージ。',
     ultName: '花園の息吹',
     ultType: 'rose_flower_heart',
     moveSpeed: 405,
@@ -530,7 +530,7 @@
     flowerHeartBurstCount: 10,
     flowerHeartSpeed: 250,
     flowerHeartLifeMs: 2200,
-    flowerHeartHealAmount: 34,
+    flowerHeartHealMaxHpRate: 0.05,
 
     // ハートが敵に当たった時のダメージ。
     // ULT由来なのでATK参照。ULTゲージは増加させない。

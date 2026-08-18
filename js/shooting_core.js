@@ -245,7 +245,7 @@
     wrap.classList.toggle('is-danger', left <= 10);
   }
 
-  function beginSurvivalStageClear() {
+  function beginSurvivalStageClear(now = performance.now()) {
     if (!state || state.ended || state.finishing) return;
     if (isNormalBattle()) {
       beginNormalStageClear();
@@ -362,7 +362,7 @@
         return false;
       }
       state.missionComplete = true;
-      beginSurvivalStageClear();
+      beginSurvivalStageClear(now);
       return true;
     }
     state.missionFailed = true;
@@ -5193,7 +5193,7 @@
 
         // 味方(現状はアクティブなプレイヤー)に当たると回復。
         if (rectsHit(r, playerRect, 0, 4)) {
-          healRoseParty(p.healAmount || 0);
+          healRoseActiveCharacter(p.healMaxHpRate || 0.05);
           p.el.remove();
           return false;
         }
@@ -8481,15 +8481,21 @@
     applyArnoAuraTick(now);
   }
 
-  function healRoseParty(amount) {
+  function healRoseActiveCharacter(maxHpRate) {
     if (!state || !Array.isArray(state.party)) return;
-    const heal = Math.max(0, Number(amount || 0));
-    if (!heal) return;
 
-    state.party.forEach(member => {
-      if (!member || member.hp <= 0) return;
-      member.hp = Math.min(member.hpMax, member.hp + heal);
-    });
+    // ハートを取得した瞬間に場へ出ているキャラだけを回復する。
+    // ベンチメンバーは回復しない。交代後に別キャラで取得した場合は、
+    // その時点のactiveCharacterIdに対応するキャラへ同じ5%回復を適用する。
+    const member = state.party.find(m => m && Number(m.id) === Number(state.activeCharacterId));
+    if (!member || member.hp <= 0) return;
+
+    const rate = Math.max(0, Number(maxHpRate || 0));
+    if (!rate) return;
+
+    const hpMax = Math.max(0, Number(member.hpMax || 0));
+    const heal = Math.max(1, Math.round(hpMax * rate));
+    member.hp = Math.min(hpMax, Number(member.hp || 0) + heal);
     renderHud();
   }
 
@@ -8539,7 +8545,7 @@
     }
 
     p.kind = 'rose_heart';
-    p.healAmount = Number(c.flowerHeartHealAmount || 34);
+    p.healMaxHpRate = Number(c.flowerHeartHealMaxHpRate || 0.05);
     p.expireAt = performance.now() + Number(c.flowerHeartLifeMs || 2200);
     p.noUltGain = true;
     p.noComboGain = true;
