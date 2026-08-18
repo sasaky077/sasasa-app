@@ -397,6 +397,14 @@
   color: rgba(105, 92, 72, .55) !important;
 }
 </style>
+
+<style id="ninmu-story-difficulty-size-v1">
+#screen-ninmu .ninmu-story-difficulty{
+  font-size:.78em;
+  font-weight:inherit;
+  letter-spacing:.04em;
+}
+</style>
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -584,11 +592,11 @@
       <button class="ninmu-cat-item" id="ninmu-cat-special" onclick="switchNinmuCat('special')">
         <span class="ninmu-cat-jp">特別巡行</span><span class="ninmu-cat-en">SPECIAL</span>
       </button>
-      <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
-        <span class="ninmu-cat-jp">ストーリー<br>（通常）</span><span class="ninmu-cat-en">STORY</span>
-      </button>
       <button class="ninmu-cat-item" id="ninmu-cat-story-beginner" onclick="switchNinmuCat('story-beginner')">
-        <span class="ninmu-cat-jp">ストーリー<br>（初級）</span><span class="ninmu-cat-en">BEGINNER</span>
+        <span class="ninmu-cat-jp">ストーリー<br><small class="ninmu-story-difficulty">（NORMAL）</small></span><span class="ninmu-cat-en">STORY</span>
+      </button>
+      <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
+        <span class="ninmu-cat-jp">ストーリー<br><small class="ninmu-story-difficulty">（HARD）</small></span><span class="ninmu-cat-en">STORY</span>
       </button>
     </div>
 
