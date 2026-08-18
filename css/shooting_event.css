@@ -6737,3 +6737,45 @@
   line-height:1.15!important;
   bottom:-16px!important;
 }
+
+
+/* =========================================================
+   SCORE ATTACK v124 - Infinite Boss HP display
+   ボスHPゲージ直下の「HP：∞」専用
+   ========================================================= */
+.shooting-boss-phase.score-attack-infinite-hp{
+  display:block;
+  margin-top:9px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:24px;
+  line-height:1;
+  font-weight:600;
+  letter-spacing:.12em;
+  color:#b89a61;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 2px 8px rgba(124,91,42,.18),
+    0 0 14px rgba(213,179,108,.14);
+  white-space:nowrap;
+  opacity:1;
+}
+
+/* 低い端末でも存在感は落としすぎない */
+@media (max-height:700px){
+  .shooting-boss-phase.score-attack-infinite-hp{
+    margin-top:7px;
+    font-size:21px;
+  }
+}
+
+
+/* =========================================================
+   SCORE ATTACK v126 - performance
+   弾数が多いステージ専用。通常ステージの見た目には影響しない。
+   ========================================================= */
+.shooting-score-attack-bullet{
+  /* 多重box-shadowは弾数分GPUコストが積み上がるため撤去 */
+  box-shadow:none!important;
+  filter:none!important;
+  contain:layout paint style;
+}

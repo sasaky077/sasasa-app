@@ -51,6 +51,8 @@
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
+    SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
+    SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
   });
 
   // ============================================================
@@ -581,6 +583,62 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: '楽園 -ノア-を耐えきれ',
+      }),
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // SCORE ATTACK - すこあた！
+    // 60秒固定タイムライン。同じ難易度では毎回同じ弾幕。
+    // NORMAL / HARD は弾道構成を共通にし、速度・被ダメージだけ変更。
+    // ============================================================
+    [SHOOTING_STAGE_ID.SCORE_ATTACK_NORMAL]: Object.freeze({
+      id: SHOOTING_STAGE_ID.SCORE_ATTACK_NORMAL,
+      chapter: 0,
+      stageNo: 20,
+      eventId: 'score_attack',
+      eventTitle: 'すこあた！',
+      difficultyLabel: 'NORMAL',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
+      survivalBoss: true,
+      timeLimitSeconds: 60,
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,
+        targetSeconds: 60,
+        text: '60秒間でハイスコアを目指せ',
+      }),
+      scoreAttack: Object.freeze({
+        difficulty: 'normal',
+        bulletSpeedMultiplier: 0.92,
+        bulletDamage: 105,
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.SCORE_ATTACK_HARD]: Object.freeze({
+      id: SHOOTING_STAGE_ID.SCORE_ATTACK_HARD,
+      chapter: 0,
+      stageNo: 21,
+      eventId: 'score_attack',
+      eventTitle: 'すこあた！',
+      difficultyLabel: 'HARD',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
+      survivalBoss: true,
+      timeLimitSeconds: 60,
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,
+        targetSeconds: 60,
+        text: '60秒間でハイスコアを目指せ',
+      }),
+      scoreAttack: Object.freeze({
+        difficulty: 'hard',
+        bulletSpeedMultiplier: 1.22,
+        bulletDamage: 165,
       }),
       playable: true,
     }),

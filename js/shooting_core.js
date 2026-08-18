@@ -116,6 +116,78 @@
     return !!(selectedStage && selectedStage.eventId === 'raid' && selectedStage.raid);
   }
 
+  function isScoreAttackStage() {
+    return !!(selectedStage && selectedStage.eventId === 'score_attack' && selectedStage.scoreAttack);
+  }
+
+  function getScoreAttackComboMultiplier(comboValue) {
+    const combo = Math.max(0, Number(comboValue || 0));
+    if (combo >= 300) return 3.0;
+    if (combo >= 200) return 2.5;
+    if (combo >= 100) return 2.0;
+    if (combo >= 50) return 1.5;
+    if (combo >= 20) return 1.2;
+    return 1.0;
+  }
+
+  function addScoreAttackDamageScore(damage) {
+    if (!state || !isScoreAttackStage()) return false;
+    const dealt = Math.max(0, Number(damage || 0));
+    if (!dealt) return true;
+    const multiplier = getScoreAttackComboMultiplier(state.combo || 0);
+    state.score += Math.round(dealt * 100 * multiplier);
+    state.scoreAttackDamageTotal = Math.max(0, Number(state.scoreAttackDamageTotal || 0) + dealt);
+    return true;
+  }
+
+  function resetScoreAttackComboOnDamage() {
+    if (!state || !isScoreAttackStage()) return;
+    state.combo = 0;
+    state.lastComboHitAt = 0;
+    pulseCombo(true);
+  }
+
+  function updateScoreAttackMovementScore(now) {
+    if (!state || !isScoreAttackStage() || !state.player) return;
+
+    const x = Number(state.player.x || 0);
+    const y = Number(state.player.y || 0);
+
+    if (!Number.isFinite(state.scoreAttackLastMoveX) || !Number.isFinite(state.scoreAttackLastMoveY)) {
+      state.scoreAttackLastMoveX = x;
+      state.scoreAttackLastMoveY = y;
+      state.scoreAttackMoveWindowStartedAt = now;
+      state.scoreAttackMoveWindowScore = 0;
+      return;
+    }
+
+    const dx = x - state.scoreAttackLastMoveX;
+    const dy = y - state.scoreAttackLastMoveY;
+    state.scoreAttackLastMoveX = x;
+    state.scoreAttackLastMoveY = y;
+
+    const distance = Math.hypot(dx, dy);
+    // 2px未満の微小なブレはスコア対象外。
+    if (distance < 2) return;
+
+    const windowMs = 1000;
+    if (!Number.isFinite(state.scoreAttackMoveWindowStartedAt) || now - state.scoreAttackMoveWindowStartedAt >= windowMs) {
+      state.scoreAttackMoveWindowStartedAt = now;
+      state.scoreAttackMoveWindowScore = 0;
+    }
+
+    // 1px = 10点。ただし1秒あたり2500点を上限にして
+    // 小刻みな往復だけで過剰に稼げないようにする。
+    const raw = Math.round(distance * 10);
+    const remaining = Math.max(0, 2500 - Number(state.scoreAttackMoveWindowScore || 0));
+    const add = Math.min(raw, remaining);
+    if (add > 0) {
+      state.score += add;
+      state.scoreAttackMoveWindowScore = Number(state.scoreAttackMoveWindowScore || 0) + add;
+      state.scoreAttackMoveDistance = Number(state.scoreAttackMoveDistance || 0) + distance;
+    }
+  }
+
   function getStageBulletQuantityMultiplier() {
     const value = Number(selectedStage && selectedStage.bulletQuantityMultiplier);
     return Number.isFinite(value) && value > 0 ? Math.min(1, value) : 1;
@@ -183,6 +255,7 @@
     state.running = false;
     cancelAnimationFrame(rafId);
     clearEnemyBulletsOnly();
+    updateScoreAttackMovementScore(now);
     renderHud();
     showStageClearSequence(() => {
       if (!state || state.ended) return;
@@ -619,6 +692,18 @@
     // 編成画面だけ開いている状態は「戦闘途中」ではないので保存しない。
     if (!state.running && !state.countdown && !state.paused) return null;
 
+    // HP0になった瞬間～交代演出中にアプリが落ちても、
+    // HP0キャラを操作キャラとして復元しない。
+    const livingParty = Array.isArray(state.party)
+      ? state.party.filter(m => m && Number(m.hp || 0) > 0)
+      : [];
+    if (!livingParty.length) return null;
+
+    const currentActive = state.party.find(m => Number(m.id) === Number(state.activeCharacterId));
+    const resumeActiveId = currentActive && Number(currentActive.hp || 0) > 0
+      ? Number(currentActive.id)
+      : Number(livingParty[0].id);
+
     const now = performance.now();
     const elapsedMs = state.countdown
       ? Math.max(0, Number(state.resumeElapsedMsPending || 0))
@@ -632,7 +717,7 @@
       raidContext: selectedRaidContext ? { ...selectedRaidContext } : null,
       returnContext: window.__shootingReturnContext ? { ...window.__shootingReturnContext } : null,
       selectedPartyIds: state.party.map(m => Number(m.id)),
-      selectedCharacterId: Number(state.activeCharacterId || selectedCharacterId || 0),
+      selectedCharacterId: resumeActiveId,
       selectedBlessingId: selectedBlessingId || null,
       elapsedMs,
       player: { x: Number(state.player?.x || 0), y: Number(state.player?.y || 0) },
@@ -671,6 +756,20 @@
   function saveShootingResumeState(reason) {
     if (suppressShootingResumeSave) return false;
     try {
+      const noLivingParty = !!(
+        state &&
+        Array.isArray(state.party) &&
+        state.party.length &&
+        state.party.every(m => !m || Number(m.hp || 0) <= 0)
+      );
+
+      // 全滅/RESULT移行が確定した時点で、過去のresumeも即破棄する。
+      // 「保存しない」だけだと直前の古いsnapshotが残り、再起動時に復活できてしまう。
+      if (state && (state.ended || state.finishing || noLivingParty)) {
+        clearShootingResumeState();
+        return false;
+      }
+
       const snapshot = buildShootingResumeSnapshot(reason);
       if (!snapshot) return false;
       localStorage.setItem(SHOOTING_RESUME_KEY, JSON.stringify(snapshot));
@@ -764,6 +863,18 @@
         member.atkBuffMultiplier = Number(saved.atkBuffMultiplier || 1.3);
       }
     });
+
+    // 復元時の最終防衛。
+    // 保存データが旧版/破損/KO直後のものでも、HP0キャラをactiveにしない。
+    const livingParty = state.party.filter(m => m && Number(m.hp || 0) > 0);
+    if (!livingParty.length) {
+      clearShootingResumeState();
+      return false;
+    }
+    const restoredActive = livingParty.find(m => Number(m.id) === Number(selectedCharacterId)) || livingParty[0];
+    selectedCharacterId = Number(restoredActive.id);
+    state.activeCharacterId = selectedCharacterId;
+    state.koTransition = false;
 
     applySelectedCharacterToUi();
     clearProjectiles();
@@ -964,6 +1075,20 @@
   // rectsHitはただの数値比較なので、DOM由来かどうかは問わない。
   function measureUnitSize(entry) {
     if (!entry || !entry.el) return;
+
+    // SCORE ATTACK弾はCSS上11px固定。
+    // 弾生成のたびにgetBoundingClientRect()を呼ぶと強制レイアウトが発生するため、
+    // 実測せず固定値を使う。大量生成時のレイアウト負荷を避ける。
+    if (
+      isScoreAttackStage() &&
+      entry.el.classList &&
+      entry.el.classList.contains('shooting-score-attack-bullet')
+    ) {
+      entry._hw = 5.5;
+      entry._hh = 5.5;
+      return;
+    }
+
     const r = entry.el.getBoundingClientRect();
     entry._hw = r.width / 2;
     entry._hh = r.height / 2;
@@ -1231,6 +1356,18 @@
       nextBossDangerAt: 0, bossDangerExecuteAt: 0, bossDangerWarningEl: null,
       bossDangerPatternIndex: 0,
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
+      scoreAttackVolleyIndex: -1,
+      scoreAttackDamageTotal: 0,
+      scoreAttackMoveDistance: 0,
+      scoreAttackLastMoveX: NaN,
+      scoreAttackLastMoveY: NaN,
+      scoreAttackMoveWindowStartedAt: 0,
+      scoreAttackMoveWindowScore: 0,
+      scoreAttackArenaWidth: 390,
+      scoreAttackArenaHeight: 700,
+      scoreAttackLastHudRenderAt: 0,
+      scoreAttackLastBossHitVisualAt: 0,
+      scoreAttackLastBossDamageNumberAt: 0,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
       ultCutinActive: false, ultCutinTimer: 0, skipNextUltCut: false,
@@ -1254,9 +1391,12 @@
     };
 
     if (selectedStage && selectedStage.survivalBoss && state.boss) {
-      state.boss.hp = 99999999;
-      state.boss.hpMax = 99999999;
-      state.boss.gaugeHp = 99999999;
+      // SCORE ATTACK等の耐久ボスは「倒す対象」ではなく、制限時間中ずっと殴る標的。
+      // 十分に大きい内部HPを持たせ、UIでは∞として扱う。
+      const survivalHp = Number.MAX_SAFE_INTEGER;
+      state.boss.hp = survivalHp;
+      state.boss.hpMax = survivalHp;
+      state.boss.gaugeHp = survivalHp;
       state.boss.gauges = 1;
       state.boss.phase = 1;
     }
@@ -1533,16 +1673,20 @@
     const phase = state.boss.phase || 1;
     const gaugeFloor = (state.boss.gauges - phase) * gaugeHp;
     const currentGaugeHp = clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
-    const amount = currentGaugeHp / gaugeHp;
+    const amount = isScoreAttackStage() ? 1 : (currentGaugeHp / gaugeHp);
     if (bossGauge) bossGauge.style.setProperty('--gauge-fill', String(amount));
     if (bossBar) {
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
       bossBar.classList.add(`phase-${phase}`);
     }
     if (bossPhase) {
-      bossPhase.textContent = isFacelessStage()
-        ? `WAVE ${state.facelessWave || 1} / 2`
-        : `PHASE ${phase} / ${state.boss.gauges}`;
+      const scoreAttack = isScoreAttackStage();
+      bossPhase.textContent = scoreAttack
+        ? 'HP：∞'
+        : (isFacelessStage()
+          ? `WAVE ${state.facelessWave || 1} / 2`
+          : `PHASE ${phase} / ${state.boss.gauges}`);
+      bossPhase.classList.toggle('score-attack-infinite-hp', scoreAttack);
     }
     if (score) {
       const root = document.getElementById(ROOT_ID);
@@ -2017,7 +2161,9 @@
       createHit(state.boss.x, state.boss.y, false);
       showBossDamageNumber(appliedDamage, false);
       flashBossHit(false);
-      state.score += Math.round(damage * 100);
+      if (!addScoreAttackDamageScore(appliedDamage)) {
+        state.score += Math.round(damage * 100);
+      }
       updateBossPhase();
       if (state.boss.hp <= 0) beginBossDefeat();
     } else {
@@ -2260,7 +2406,9 @@
     createHit(state.boss.x, state.boss.y, false);
     showBossDamageNumber(applied, false);
     flashBossHit(false);
-    state.score += Math.round(applied * 100);
+    if (!addScoreAttackDamageScore(applied)) {
+      state.score += Math.round(applied * 100);
+    }
     renderHud();
 
     if (state.boss.hp <= 0) beginBossDefeat();
@@ -3644,6 +3792,70 @@
     });
   }
 
+  // SCORE ATTACK専用固定弾幕。乱数・自機位置・BOSS HPに依存しない。
+  function fireScoreAttack(now) {
+    if (!state || !isScoreAttackStage()) return;
+    const cfg = selectedStage.scoreAttack || {};
+    const elapsed = Math.max(0, now - Number(state.startedAt || now));
+    const interval = 720;
+    const targetVolley = Math.floor(elapsed / interval);
+    if (!Number.isFinite(state.scoreAttackVolleyIndex)) state.scoreAttackVolleyIndex = -1;
+    if (targetVolley <= state.scoreAttackVolleyIndex) return;
+
+    const speed = 190 * Math.max(.5, Number(cfg.bulletSpeedMultiplier || 1));
+    const damage = Math.max(1, Number(cfg.bulletDamage || 105));
+    const originX = state.boss.x;
+    const originY = state.boss.y + 38;
+
+    while (state.scoreAttackVolleyIndex < targetVolley) {
+      state.scoreAttackVolleyIndex += 1;
+      const n = state.scoreAttackVolleyIndex;
+      const cycle = n % 8;
+      const ringCount = cycle < 3 ? 10 : cycle < 6 ? 12 : 14;
+      const start = (n % 24) * (Math.PI / 36);
+
+      for (let i = 0; i < ringCount; i++) {
+        const a = start + (Math.PI * 2 * i / ringCount);
+        const p = makeProjectile(
+          'shooting-enemy-bullet shooting-score-attack-bullet',
+          originX, originY, Math.cos(a) * speed, Math.sin(a) * speed, damage
+        );
+        if (p) state.enemyBullets.push(p);
+      }
+
+      if ((n % 2) === 1) {
+        const center = Math.PI / 2 + (((n % 6) - 2.5) * 0.055);
+        [-0.42,-0.28,-0.14,0,0.14,0.28,0.42].forEach(offset => {
+          const a = center + offset;
+          const p = makeProjectile(
+            'shooting-enemy-bullet shooting-score-attack-bullet shooting-score-attack-fan',
+            originX, originY, Math.cos(a) * speed * 1.10, Math.sin(a) * speed * 1.10, damage
+          );
+          if (p) state.enemyBullets.push(p);
+        });
+      }
+
+      if (cycle === 6) {
+        const w = Math.max(1, Number(state.scoreAttackArenaWidth || 390));
+        const h = Math.max(1, Number(state.scoreAttackArenaHeight || 700));
+        for (let i = 0; i < 7; i++) {
+          const y = Math.max(110, h * (.22 + i * .075));
+          const left = makeProjectile(
+            'shooting-enemy-bullet shooting-score-attack-bullet shooting-score-attack-cross',
+            8, y, speed * .84, speed * .16, damage
+          );
+          const right = makeProjectile(
+            'shooting-enemy-bullet shooting-score-attack-bullet shooting-score-attack-cross',
+            Math.max(8, w - 8), y, -speed * .84, speed * .16, damage
+          );
+          if (left) state.enemyBullets.push(left);
+          if (right) state.enemyBullets.push(right);
+        }
+      }
+    }
+  }
+
+
   function fireRaidGreenLaser(now, baseAngle, speed) {
     if (!state || !isRaidStage()) return;
 
@@ -4459,6 +4671,10 @@
       }
     }
 
+    if (isScoreAttackStage()) {
+      fireScoreAttack(now);
+      return;
+    }
     if (BOSS && BOSS.behavior === 'faceless_event_v1') {
       fireFacelessBoss(now);
       return;
@@ -4515,7 +4731,10 @@
   }
 
   function updateBossPhase() {
-    if (!state || state.boss.hp <= 0 || isFacelessStage()) return;
+    // SCORE ATTACKは1ゲージ固定の∞ボス。
+    // 通常BOSS用の「3ゲージ→PHASE算出」を通すと、初撃でPHASE 3扱いになり
+    // BREAK演出が発生するため、フェーズ更新自体を無効化する。
+    if (!state || state.boss.hp <= 0 || isFacelessStage() || isScoreAttackStage()) return;
     const previous = state.boss.phase || 1;
     const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
     const nextPhase = 4 - remainingGauges; // 3→phase1 / 2→phase2 / 1→phase3
@@ -4643,16 +4862,35 @@
   // DOM生成すると端末負荷が大きい。ゲーム上のダメージ・コンボ・ULT加算は一切
   // 間引かず、視覚演出だけ頻度制限する。
   function shouldRenderRaidBossHitVisual(now, kind = 'hit') {
-    if (!isRaidStage() || !state) return true;
+    if (!state) return true;
+
+    const scoreAttack = isScoreAttackStage();
+    if (!isRaidStage() && !scoreAttack) return true;
 
     const t = Number(now || performance.now());
+
+    // SCORE ATTACKは60秒間ずっとボスを殴り続けるため、
+    // 命中判定・ダメージ・コンボ・ULT加算は全件処理しつつ、
+    // DOM生成を伴うHIT/ダメージ数字だけ間引く。
+    if (scoreAttack) {
+      if (kind === 'number') {
+        const last = Number(state.scoreAttackLastBossDamageNumberAt || 0);
+        if (t - last < 180) return false;
+        state.scoreAttackLastBossDamageNumberAt = t;
+        return true;
+      }
+      const last = Number(state.scoreAttackLastBossHitVisualAt || 0);
+      if (t - last < 90) return false;
+      state.scoreAttackLastBossHitVisualAt = t;
+      return true;
+    }
+
     const phase = Math.max(
       1,
       Math.min(3, Number(state.boss && state.boss.phase || 1))
     );
 
     if (kind === 'number') {
-      // 後半ほどDOM生成頻度を落とす。ゲーム上のダメージ値は間引かない。
       const interval = phase === 1 ? 170 : phase === 2 ? 240 : 280;
       const last = Number(state.raidLastBossDamageNumberAt || 0);
       if (t - last < interval) return false;
@@ -4660,7 +4898,6 @@
       return true;
     }
 
-    // ボスHIT/flashも後半ほど抑制。命中判定・コンボ・ULT加算には影響しない。
     const interval = phase === 1 ? 95 : phase === 2 ? 130 : 150;
     const last = Number(state.raidLastBossHitVisualAt || 0);
     if (t - last < interval) return false;
@@ -4670,6 +4907,8 @@
 
   function showBossDamageNumber(amount, big = false) {
     if (!state || !state.boss) return;
+    // 通常弾以外の継続攻撃/ULTも数字DOMを大量生成しない。
+    if (isScoreAttackStage() && !big && !shouldRenderRaidBossHitVisual(performance.now(), 'number')) return;
     showDamageNumber(state.boss.x, state.boss.y, amount, 'enemy', big);
   }
 
@@ -4678,6 +4917,7 @@
     if (!boss) return;
 
     if (!big) {
+      if (isScoreAttackStage() && !shouldRenderRaidBossHitVisual(performance.now(), 'hit')) return;
       sustainHitFeedback(boss, 150);
       return;
     }
@@ -4697,6 +4937,10 @@
 
     const w = arena.clientWidth;
     const h = arena.clientHeight;
+    if (isScoreAttackStage() && state) {
+      state.scoreAttackArenaWidth = w;
+      state.scoreAttackArenaHeight = h;
+    }
     const c = getCurrentCharacter();
     // プレイヤーの中心座標を、バトルアリーナ全体まで移動可能にする。
     // 以前は敵の手前でY座標を止めていたため接触できなかった。
@@ -4993,7 +5237,9 @@
           const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(p.damage || 0)));
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
-          state.score += 120;
+          if (!addScoreAttackDamageScore(appliedDamage)) {
+            state.score += 120;
+          }
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
           if (shouldRenderRaidBossHitVisual(now, 'hit')) {
@@ -5295,8 +5541,11 @@
 
   function beginPlayerDefeat() {
     if (!state || state.ended || state.finishing || state.koTransition) return;
+    resetScoreAttackComboOnDamage();
     const living = state.party.filter(m => m.hp > 0 && m.id !== state.activeCharacterId);
     if (!living.length) {
+      // 全滅確定時点で中断データを即削除。
+      clearShootingResumeState();
       state.finishing = true;
       state.running = false;
       state.phaseTransition = false;
@@ -5328,6 +5577,12 @@
     }
 
     state.koTransition = true;
+
+    // KO演出760msの途中でアプリが終了しても、
+    // 直前の「HPが残っていた古いsnapshot」へ巻き戻らないよう即保存。
+    // buildShootingResumeSnapshot() 側で selectedCharacterId は生存キャラへ正規化される。
+    saveShootingResumeState('party-ko');
+
     clearProjectiles();
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -5920,16 +6175,31 @@
 
     // 敵の位置更新後にプレイヤーとの直接接触を判定する。
     updateEnemyContactCollisions(ts);
-    updateFacelessObjects(dt, ts);
     updateProjectiles(dt, ts);
-    updateChapter4FinalItem(ts);
-    updateFacelessStageMechanics(ts);
-    updateChapter4ShrinkWalls(ts);
+
+    // SCORE ATTACKでは無関係なイベント/CH04系の更新を毎フレーム呼ばない。
+    // キャラクター固有処理（Arno/Mimosa等）はゲーム性に関わるので維持。
+    if (!isScoreAttackStage()) {
+      updateFacelessObjects(dt, ts);
+      updateChapter4FinalItem(ts);
+      updateFacelessStageMechanics(ts);
+      updateChapter4ShrinkWalls(ts);
+      updateCollectibles(dt);
+    }
     updateArnoAura(ts);
-    updateCollectibles(dt);
     updateMimosaItems();
     if (isNormalBattle()) evaluateNormalMission(ts);
-    renderHud();
+
+    // SCORE ATTACKのHUDは20fpsで十分。ゲーム本体は60fpsのまま。
+    if (isScoreAttackStage()) {
+      if (ts - Number(state.scoreAttackLastHudRenderAt || 0) >= 50) {
+        state.scoreAttackLastHudRenderAt = ts;
+        renderHud();
+      }
+    } else {
+      renderHud();
+    }
+
     if (!state.ended) rafId = requestAnimationFrame(gameLoop);
   }
 
@@ -6668,7 +6938,8 @@
           maxCombo: Number(state.maxCombo || 0),
           clearTimeMs: Number(state.clearTimeMs || 0),
           hitsTaken: Number(state.totalHitsTaken || 0),
-          collectedItems: Number(state.collectedItems || 0)
+          collectedItems: Number(state.collectedItems || 0),
+          partyIds: Array.isArray(state.party) ? state.party.map(m => Number(m.id)).filter(Boolean) : []
         }
       }));
     } catch (_) {}
@@ -7112,6 +7383,68 @@
     return { consumed, remaining };
   }
 
+  let raidAttemptStartPending = false;
+
+  async function ensureSelectedRaidAttemptStarted() {
+    if (!isRaidStage()) return true;
+
+    if (selectedRaidContext?.adminTest) return true;
+    if (selectedRaidContext?.attemptStarted) return true;
+    if (!selectedRaidContext?.pendingAttempt) return true;
+    if (raidAttemptStartPending) return false;
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    if (!sb || typeof sb.rpc !== 'function' || !userId) {
+      const message = 'レイド挑戦権を確認できません';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return false;
+    }
+
+    raidAttemptStartPending = true;
+    try {
+      const res = await sb.rpc('begin_daily_raid_attempt_v2', { p_user_id: userId });
+      if (res && res.error) throw res.error;
+
+      let begun = res ? res.data : null;
+      if (typeof begun === 'string') {
+        try { begun = JSON.parse(begun); } catch (_) {}
+      }
+      if (!begun || begun.ok === false) {
+        throw new Error((begun && begun.message) || '本日は挑戦できません');
+      }
+
+      const hp = Math.max(0, Number(begun.current_hp || 0));
+      if (hp <= 0) throw new Error('レイドはすでに討伐されています');
+
+      // RPC成功 = この瞬間に挑戦権を消費。
+      selectedRaidContext = {
+        ...selectedRaidContext,
+        raidId: begun.raid_id || selectedRaidContext.raidId,
+        currentHp: hp,
+        maxHp: Math.max(1, Number(begun.max_hp || selectedRaidContext.maxHp || 100000)),
+        raidDate: begun.raid_date || selectedRaidContext.raidDate || '',
+        adminTest: false,
+        pendingAttempt: false,
+        attemptStarted: true
+      };
+
+      if (window.RaidEvent && typeof window.RaidEvent.refreshFriendHomeNotice === 'function') {
+        try { void window.RaidEvent.refreshFriendHomeNotice(); } catch (_) {}
+      }
+      return true;
+    } catch (err) {
+      console.error('[shooting] raid attempt start failed:', err);
+      const message = err && err.message ? err.message : 'レイド挑戦権の消費に失敗しました';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return false;
+    } finally {
+      raidAttemptStartPending = false;
+    }
+  }
+
   let specialTicketConsumePending = false;
 
   async function ensureSelectedStageTicketConsumed() {
@@ -7143,7 +7476,11 @@
   window.startSelectedShootingCharacter = async function () {
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
+
+    // レイド挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
+    if (!(await ensureSelectedRaidAttemptStarted())) return;
     if (!(await ensureSelectedStageTicketConsumed())) return;
+
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
@@ -7325,7 +7662,14 @@
 
     // 戦闘途中で戻った場合も、その日の挑戦は消費済み。
     // そこまでに与えたダメージだけを確定してリトライ抜けを防ぐ。
-    if (isRaidStage() && state && !state.raidAttemptFinished && window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
+    if (
+      isRaidStage() &&
+      selectedRaidContext?.attemptStarted &&
+      state &&
+      !state.raidAttemptFinished &&
+      window.RaidEvent &&
+      typeof window.RaidEvent.finishAttempt === 'function'
+    ) {
       state.raidDamageDealt = Math.max(0, Math.floor(Number(state.raidInitialHp || 0) - Number(state.boss && state.boss.hp || 0)));
       state.raidAttemptFinished = true;
       void window.RaidEvent.finishAttempt(state.raidDamageDealt, { aborted: true });
@@ -7456,7 +7800,9 @@
     createHit(state.boss.x, state.boss.y, !!big);
     showBossDamageNumber(appliedDamage, !!big);
     flashBossHit(true);
-    state.score += Math.round(amount * 100);
+    if (!addScoreAttackDamageScore(appliedDamage)) {
+      state.score += Math.round(amount * 100);
+    }
     renderHud();
     if (state.boss.hp <= 0) beginBossDefeat();
   }
@@ -7864,7 +8210,9 @@
         createHit(state.boss.x, state.boss.y, true);
         showBossDamageNumber(appliedDamage, true);
         flashBossHit(true);
-        state.score += Math.round(initialDamage * 100);
+        if (!addScoreAttackDamageScore(appliedDamage)) {
+          state.score += Math.round(initialDamage * 100);
+        }
         renderHud();
         if (state.boss.hp <= 0) beginBossDefeat();
       }
@@ -7875,7 +8223,9 @@
           const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(tickDamage || 0)));
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           showBossDamageNumber(appliedDamage, false);
-          state.score += Math.round(tickDamage * 100);
+          if (!addScoreAttackDamageScore(appliedDamage)) {
+            state.score += Math.round(tickDamage * 100);
+          }
           if (i % 2 === 0) {
             createHit(state.boss.x + (Math.random() - .5) * 26, state.boss.y + (Math.random() - .5) * 20, false);
             flashBossHit(false);
@@ -7993,7 +8343,9 @@
     const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
     state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     showBossDamageNumber(appliedDamage, false);
-    state.score += Math.round(damage * 100);
+    if (!addScoreAttackDamageScore(appliedDamage)) {
+      state.score += Math.round(damage * 100);
+    }
     createHit(
       state.boss.x + (Math.random() - .5) * 32,
       state.boss.y + (Math.random() - .5) * 28,
@@ -8245,7 +8597,9 @@
       createHit(state.boss.x, state.boss.y, true);
       showBossDamageNumber(appliedDamage, true);
       flashBossHit(true);
-      state.score += Math.round(damage * 100);
+      if (!addScoreAttackDamageScore(appliedDamage)) {
+        state.score += Math.round(damage * 100);
+      }
       updateBossPhase();
       if (state.boss.hp <= 0) beginBossDefeat();
     }
@@ -8419,7 +8773,9 @@
     createHit(x, y, true);
     showBossDamageNumber(appliedDamage, true);
     flashBossHit(true);
-    state.score += Math.round(damage * 100);
+    if (!addScoreAttackDamageScore(appliedDamage)) {
+      state.score += Math.round(damage * 100);
+    }
     renderHud();
     if (state.boss.hp <= 0) beginBossDefeat();
   }
@@ -8731,7 +9087,9 @@
     const applied = Math.min(state.boss.hp, Math.max(0, damage));
     state.boss.hp = Math.max(0, state.boss.hp - applied);
     updateBossPhase();
-    state.score += Math.round(applied * 100);
+    if (!addScoreAttackDamageScore(applied)) {
+      state.score += Math.round(applied * 100);
+    }
 
     // 5秒持続ULTなので数字・HIT演出は毎tick出さず軽量化。
     if (!isRaidStage() || shouldRenderRaidBossHitVisual(now, 'hit')) {

@@ -7,7 +7,10 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = `20260818-force-${Date.now()}`;
+  const MODULE_VERSION = (
+    document.querySelector('meta[name="sasaphia-build"]')?.getAttribute('content') ||
+    '20260818-score-attack-light-v126'
+  );
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
@@ -52,7 +55,6 @@
       const script = document.createElement('script');
       const moduleUrl = new URL(file, baseUrl);
       moduleUrl.searchParams.set('v', MODULE_VERSION);
-      moduleUrl.searchParams.set('cacheBust', String(Date.now()));
       script.src = moduleUrl.href;
       script.dataset.shootingModule = file;
       script.async = false;

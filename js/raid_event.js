@@ -400,23 +400,58 @@
   async function start(){
     const btn=document.getElementById('daily-raid-start'); if(btn) btn.disabled=true;
     try{
-      let begun;
+      // ロビーの「挑戦する」では挑戦回数を消費しない。
+      // ここではパーティ編成画面を開くだけ。
+      const status=currentStatus||await fetchStatus();
+      if(!status||!status.raid_id) throw new Error('レイド情報を取得できません');
+
+      const hp=n(status.current_hp);
+      const maxHp=n(status.max_hp)||100000;
+
       if(isAdmin()){
-        const status=currentStatus||await fetchStatus();
-        const maxHp=n(status&&status.max_hp)||100000;
-        begun={ok:true,raid_id:status&&status.raid_id||'admin-test',raid_date:status&&status.raid_date||'',max_hp:maxHp,current_hp:maxHp,admin_test:true};
-      }else{
-        begun=normalizeStatus(await rpc('begin_daily_raid_attempt_v2',{p_user_id:uid()}));
-        if(!begun||begun.ok===false) throw new Error(begun&&begun.message||'本日は挑戦できません');
-        currentStatus=begun; refreshFriendHomeNotice();
+        close();
+        window.__shootingReturnContext={type:'raidLobby'};
+        window.openShootingEvent({
+          stageId:STAGE_ID,
+          raidContext:{
+            raidId:status.raid_id||'admin-test',
+            currentHp:maxHp,
+            maxHp,
+            raidDate:status.raid_date||'',
+            adminTest:true,
+            pendingAttempt:false,
+            attemptStarted:true
+          }
+        });
+        return;
       }
-      const hp=n(begun.current_hp);
-      if(hp<=0&&!isAdmin()){ await open({immediate:true}); return; }
+
+      const me=status.me||{};
+      const attemptCount=Math.max(0,Math.min(3,n(me.attempt_count)));
+      const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
+      const cleared=status.status==='cleared'||hp<=0;
+
+      if(cleared) throw new Error('レイドはすでに討伐されています');
+      if(inBattle) throw new Error('現在挑戦中のレイドがあります');
+      if(attemptCount>=3) throw new Error('本日の3回の挑戦は終了しています');
+
       close();
       window.__shootingReturnContext={type:'raidLobby'};
-      window.openShootingEvent({stageId:STAGE_ID,raidContext:{raidId:begun.raid_id,currentHp:hp,maxHp:n(begun.max_hp)||100000,raidDate:begun.raid_date,adminTest:!!begun.admin_test}});
+      window.openShootingEvent({
+        stageId:STAGE_ID,
+        raidContext:{
+          raidId:status.raid_id,
+          currentHp:hp,
+          maxHp,
+          raidDate:status.raid_date||'',
+          adminTest:false,
+          pendingAttempt:true,
+          attemptStarted:false,
+          attemptCount
+        }
+      });
     }catch(err){
-      console.error('[raid] start failed',err); alert(err&&err.message?err.message:'レイドを開始できませんでした。');
+      console.error('[raid] party select open failed',err); alert(err&&err.message?err.message:'レイドを開始できませんでした。');
       if(btn) btn.disabled=false;
       try{ const status=await fetchStatus(); if(status){await hydrateMemberPanels(status);render(status);} }catch(_){ }
     }
