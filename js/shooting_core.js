@@ -974,8 +974,8 @@
   // 見た目を崩さない範囲でphaseごとに通常敵弾の上限を絞る。
   const CH03_04_ENEMY_BULLET_LIMITS = Object.freeze({
     1: Object.freeze({ hard: 260, recovery: 220 }),
-    2: Object.freeze({ hard: 190, recovery: 155 }),
-    3: Object.freeze({ hard: 170, recovery: 140 }),
+    2: Object.freeze({ hard: 120, recovery: 90 }),
+    3: Object.freeze({ hard: 110, recovery: 82 }),
   });
 
   function isChapter03BossStage() {
@@ -3952,11 +3952,11 @@
       for (const p of state.enemyBullets) {
         if (p && p.el && !isProtectedEnemyProjectile(p)) ordinaryCount++;
       }
-      const soft = phase === 1 ? 210 : (phase === 2 ? 145 : 130);
+      const soft = phase === 1 ? 210 : (phase === 2 ? 95 : 88);
       if (ordinaryCount >= soft) return;
     }
 
-    const interval = phase === 1 ? 860 : phase === 2 ? 690 : 540;
+    const interval = phase === 1 ? 860 : phase === 2 ? 760 : 650;
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
@@ -4003,7 +4003,7 @@
     }
 
     if (phase === 2) {
-      // 9WAYの厚い弾幕 + 交差リング
+      // 9WAYの厚い弾幕 + 8発交差リング。iPhone/PWA安定化のため同時DOM生成を17発に抑える。
       [-0.68, -0.51, -0.34, -0.17, 0, 0.17, 0.34, 0.51, 0.68].forEach(offset => {
         const a = baseAngle + offset;
         state.enemyBullets.push(makeProjectile(
@@ -4016,8 +4016,8 @@
       });
 
       const start = (tick % 2 === 0 ? 0 : Math.PI / 12) + now * 0.0028;
-      for (let i = 0; i < 12; i++) {
-        const a = start + (Math.PI * 2 * i / 12);
+      for (let i = 0; i < 8; i++) {
+        const a = start + (Math.PI * 2 * i / 8);
         state.enemyBullets.push(makeProjectile(
           'shooting-enemy-bullet',
           state.boss.x, state.boss.y + 28,
@@ -4029,7 +4029,7 @@
       return;
     }
 
-    // 最終段階: 11WAY + 高密度リング。しんどい弾幕。
+    // 最終段階: 11WAY + 8発高密度リング。軌道密度は維持しつつ同時DOM生成を19発に抑える。
     [-0.80, -0.64, -0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48, 0.64, 0.80].forEach(offset => {
       const a = baseAngle + offset;
       state.enemyBullets.push(makeProjectile(
@@ -4042,8 +4042,8 @@
     });
 
     const start = now * 0.0034 + (tick % 2 ? Math.PI / 18 : 0);
-    for (let i = 0; i < 14; i++) {
-      const a = start + (Math.PI * 2 * i / 14);
+    for (let i = 0; i < 8; i++) {
+      const a = start + (Math.PI * 2 * i / 8);
       state.enemyBullets.push(makeProjectile(
         'shooting-enemy-bullet',
         state.boss.x, state.boss.y + 26,
