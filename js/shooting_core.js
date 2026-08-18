@@ -1182,6 +1182,10 @@
       mitoCompanionEl: null,
       mitoCompanionX: 0,
       mitoCompanionY: 0,
+      mitoUltUntil: 0,
+      mitoUltVx: 0,
+      mitoUltVy: 0,
+      mitoUltHitAt: Object.create(null),
       battleType: selectedStage && selectedStage.type === 'normal' ? 'normal' : 'boss',
       stageId: selectedStage ? selectedStage.id : null,
       mission: selectedStage ? selectedStage.mission : null,
@@ -1294,7 +1298,7 @@
       btn.classList.toggle('dead', dead);
       btn.classList.toggle('cooling', cooling && !dead);
       const status = btn.querySelector('.shooting-switch-status');
-      if (status) status.textContent = dead ? 'DOWN' : cooling ? `${(remain / 1000).toFixed(1)}s` : (m.burst >= c.burstNeed ? 'ULT READY' : 'CHANGE');
+      if (status) status.textContent = dead ? 'DOWN' : cooling ? `${(remain / 1000).toFixed(1)}s` : 'CHANGE';
 
       // ミモザの恩恵アイテム効果は、控え中でも「まだ効いているか」が
       // 見た目で分かるよう小さいバッジで表示する(交代しても他人には移らない)。
@@ -1317,6 +1321,34 @@
     document.getElementById(PLAYER_ID)?.classList.remove('hayate-moonlight');
   }
 
+  function cleanupMitoCompanionOnSwitch(nextCharacterId) {
+    if (!state) return;
+
+    const leavingMito =
+      Number(state.activeCharacterId) === Number(CHARACTER_ID.MITO) &&
+      Number(nextCharacterId) !== Number(CHARACTER_ID.MITO);
+
+    if (!leavingMito) return;
+
+    const root = document.getElementById(ROOT_ID);
+    const companion = state.mitoCompanionEl;
+
+    // ミト以外へ交代した瞬間に召喚獣を確実に非表示化する。
+    // ULT中の交代でも犬だけフィールドに残らないよう、
+    // ミト専用の時間停止ラッシュ状態も同時に終了させる。
+    state.mitoUltUntil = 0;
+    state.mitoUltVx = 0;
+    state.mitoUltVy = 0;
+    state.mitoUltHitAt = Object.create(null);
+
+    if (root) root.classList.remove('mito-time-stop-active', 'ult-flash-mito');
+
+    if (companion) {
+      companion.classList.remove('show', 'mito-ult-rush');
+      companion.removeAttribute('data-side');
+    }
+  }
+
   window.switchShootingCharacter = function(id, forced) {
     id = Number(id);
     if (!state || state.ended || state.finishing || state.koTransition) return;
@@ -1326,12 +1358,20 @@
     if (!forced && now < (state.switchReadyAt || 0)) return;
     if (getCurrentCharacter().id === CHARACTER_ID.HAYATE) stopHayateMoonlightForSwitch();
     if (getCurrentCharacter().id === CHARACTER_ID.MIA) clearMiaChargeState();
+
+    // ミトから別キャラへ交代する時は、犬とミトULT状態をその場で破棄。
+    cleanupMitoCompanionOnSwitch(id);
+
     state.activeCharacterId = id;
     selectedCharacterId = id;
     state.switchReadyAt = forced ? now + 800 : now + SWITCH_COOLDOWN_MS;
     state.player.invulnUntil = Math.max(state.player.invulnUntil || 0, now + 260);
     state.lastShotAt = -9999;
     applySelectedCharacterToUi();
+
+    // 念のため新しいアクティブキャラ確定後にも表示状態を同期。
+    // ミト以外なら updateMitoCompanion() 側でも show を外す。
+    updateMitoCompanion();
 
     // iPhone対策:
     // キャラ切替時に「指の座標へ即代入」すると、再描画タイミング次第でワープに見える。
@@ -2107,6 +2147,11 @@
 
   function updateMitoCompanion() {
     if (!state) return;
+
+    // ULT中は召喚獣の座標をラッシュ処理側が完全管理する。
+    // 通常の「ミトの横へ追従」で毎フレーム上書きしない。
+    if (Number(state.mitoUltUntil || 0) > performance.now()) return;
+
     const c = getCurrentCharacter();
     const el = state.mitoCompanionEl;
 
@@ -2168,6 +2213,252 @@
       }
     }
   }
+
+
+  // ============================================================
+  // ミト ULT：時駆けの獣
+  // 4秒間だけ世界を停止し、召喚獣だけが高速反射移動する。
+  // 接触ダメージはフレーム依存の多重HITにならないよう、
+  // 同一対象ごとにごく短い再HIT間隔を設ける。
+  // ============================================================
+  function isMitoUltActive(now = performance.now()) {
+    return !!(state && Number(state.mitoUltUntil || 0) > Number(now || 0));
+  }
+
+  function clearMitoUltBoardBullets() {
+    if (!state) return;
+
+    // 「盤面の弾が消える」：敵弾だけでなく発射済みの自機弾も消去。
+    (state.bullets || []).forEach(p => p && p.el && p.el.remove());
+    state.bullets = [];
+    clearEnemyBulletsOnly();
+  }
+
+  function canMitoUltHit(key, now, cooldownMs) {
+    if (!state) return false;
+    const map = state.mitoUltHitAt || (state.mitoUltHitAt = Object.create(null));
+    const last = Number(map[key] || -999999);
+    if (now - last < cooldownMs) return false;
+    map[key] = now;
+    return true;
+  }
+
+  function applyMitoUltBossDamage(c, now) {
+    if (!state || !state.boss || state.boss.hp <= 0) return;
+    const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
+    const applied = Math.min(state.boss.hp, damage);
+    if (applied <= 0) return;
+
+    state.boss.hp = Math.max(0, state.boss.hp - applied);
+    updateBossPhase();
+    createHit(state.boss.x, state.boss.y, false);
+    showBossDamageNumber(applied, false);
+    flashBossHit(false);
+    state.score += Math.round(applied * 100);
+    renderHud();
+
+    if (state.boss.hp <= 0) beginBossDefeat();
+  }
+
+  function hitMitoUltTargets(c, now) {
+    if (!state || state.ended || state.finishing) return;
+
+    const x = Number(state.mitoCompanionX || 0);
+    const y = Number(state.mitoCompanionY || 0);
+    const cooldown = Math.max(60, Number(c.ultHitCooldownMs || 140));
+
+    if (isNormalBattle()) {
+      const targets = [...(state.normalEnemies || [])];
+      targets.forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        const hitRadius = 42;
+        if (Math.hypot(Number(enemy.x || 0) - x, Number(enemy.y || 0) - y) > hitRadius) return;
+
+        const key = `normal:${enemy.uid || enemy.id || 'enemy'}`;
+        if (!canMitoUltHit(key, now, cooldown)) return;
+
+        const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
+        damageNormalEnemy(enemy, damage, now, false);
+      });
+
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      evaluateNormalMission(now);
+      return;
+    }
+
+    // フェイスレスの召喚オブジェクトも「敵」として接触対象に含める。
+    if (isFacelessStage()) {
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || !obj.el || obj.hp <= 0) return;
+        if (Math.hypot(Number(obj.x || 0) - x, Number(obj.y || 0) - y) > 40) return;
+
+        const key = `faceless:${obj.uid || obj.id || 'object'}`;
+        if (!canMitoUltHit(key, now, cooldown)) return;
+
+        const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
+        damageFacelessObject(obj, damage, now);
+      });
+    }
+
+    if (!state.boss || state.boss.hp <= 0) return;
+    const bossRadius = 66;
+    if (Math.hypot(Number(state.boss.x || 0) - x, Number(state.boss.y || 0) - y) > bossRadius) return;
+
+    if (canMitoUltHit('boss', now, cooldown)) {
+      applyMitoUltBossDamage(c, now);
+    }
+  }
+
+  function freezeMitoUltWorldTimers(deltaMs) {
+    if (!state || deltaMs <= 0) return;
+
+    // バトル残り時間・敵AIの位相も4秒進めない。
+    state.startedAt = Number(state.startedAt || 0) + deltaMs;
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy) return;
+      ['spawnedAt', 'lastShotAt', 'nextActionAt', 'attackExecuteAt', 'dashUntil'].forEach(key => {
+        if (Number.isFinite(Number(enemy[key])) && Number(enemy[key]) > 0) {
+          enemy[key] = Number(enemy[key]) + deltaMs;
+        }
+      });
+    });
+
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj) return;
+      ['spawnedAt', 'lastShotAt', 'nextShotAt', 'expireAt'].forEach(key => {
+        if (Number.isFinite(Number(obj[key])) && Number(obj[key]) > 0) {
+          obj[key] = Number(obj[key]) + deltaMs;
+        }
+      });
+    });
+
+    ['nextBossDangerAt', 'bossDangerExecuteAt', 'lastBossShotAt'].forEach(key => {
+      if (Number.isFinite(Number(state[key])) && Number(state[key]) > 0) {
+        state[key] = Number(state[key]) + deltaMs;
+      }
+    });
+  }
+
+  function updateMitoUltRush(dt, now) {
+    if (!state || !isMitoUltActive(now)) return;
+
+    const c = getBattleCharacter(CHARACTER_ID.MITO) || getCurrentCharacter();
+    const arena = document.getElementById('shooting-arena');
+    const companion = ensureMitoCompanion(c);
+    if (!arena || !companion) return;
+
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
+    const marginX = 28;
+    const marginY = 34;
+
+    let x = Number(state.mitoCompanionX || w * 0.5);
+    let y = Number(state.mitoCompanionY || h * 0.6);
+    let vx = Number(state.mitoUltVx || 0);
+    let vy = Number(state.mitoUltVy || 0);
+
+    x += vx * dt;
+    y += vy * dt;
+
+    if (x <= marginX) {
+      x = marginX;
+      vx = Math.abs(vx);
+    } else if (x >= w - marginX) {
+      x = Math.max(marginX, w - marginX);
+      vx = -Math.abs(vx);
+    }
+
+    if (y <= marginY) {
+      y = marginY;
+      vy = Math.abs(vy);
+    } else if (y >= h - marginY) {
+      y = Math.max(marginY, h - marginY);
+      vy = -Math.abs(vy);
+    }
+
+    state.mitoCompanionX = x;
+    state.mitoCompanionY = y;
+    state.mitoUltVx = vx;
+    state.mitoUltVy = vy;
+
+    companion.classList.add('show', 'mito-ult-rush');
+    companion.style.transform =
+      `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(var(--mito-companion-scale,1))`;
+
+    hitMitoUltTargets(c, now);
+  }
+
+  function finishMitoUltRush() {
+    if (!state) return;
+    const root = document.getElementById(ROOT_ID);
+    const companion = state.mitoCompanionEl;
+
+    state.mitoUltUntil = 0;
+    state.mitoUltVx = 0;
+    state.mitoUltVy = 0;
+    state.mitoUltHitAt = Object.create(null);
+
+    if (root) root.classList.remove('mito-time-stop-active');
+    if (companion) companion.classList.remove('mito-ult-rush');
+
+    // ULT終了後は即座に通常のサイドカー位置へ戻す。
+    updateMitoCompanion();
+    renderHud();
+  }
+
+  function useMitoUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    showUltCut(c.ultName, c.effectKey);
+    ultScreenFlash('ult-flash-mito');
+
+    const now = performance.now();
+    const duration = Math.max(1000, Number(c.ultDurationMs || 4000));
+    const until = now + duration;
+    const speed = Math.max(300, Number(c.ultCompanionSpeed || 920));
+    const arena = document.getElementById('shooting-arena');
+    const root = document.getElementById(ROOT_ID);
+    const companion = ensureMitoCompanion(c);
+
+    // 盤面の弾をすべて消し、4秒間は通常射撃・敵行動も停止。
+    clearMitoUltBoardBullets();
+    applyBossStun(duration, 'mito_ult');
+
+    state.mitoUltUntil = until;
+    state.ultLockUntil = until;
+    state.mitoUltHitAt = Object.create(null);
+
+    if (arena) {
+      const w = Number(arena.clientWidth || 0);
+      const h = Number(arena.clientHeight || 0);
+
+      // サイドカー位置から飛び出し、斜め方向へ高速反射移動を開始。
+      state.mitoCompanionX = clamp(
+        Number(state.mitoCompanionX || state.player.x || w * 0.5),
+        28,
+        Math.max(28, w - 28)
+      );
+      state.mitoCompanionY = clamp(
+        Number(state.mitoCompanionY || state.player.y || h * 0.65),
+        34,
+        Math.max(34, h - 34)
+      );
+
+      const signX = Math.random() < 0.5 ? -1 : 1;
+      const signY = Math.random() < 0.5 ? -1 : 1;
+      const vxBase = speed * 0.78;
+      const vyBase = Math.sqrt(Math.max(0, speed * speed - vxBase * vxBase));
+      state.mitoUltVx = signX * vxBase;
+      state.mitoUltVy = signY * vyBase;
+    }
+
+    if (root) root.classList.add('mito-time-stop-active');
+    if (companion) companion.classList.add('show', 'mito-ult-rush');
+
+    renderHud();
+  }
+
 
   function firePlayer(now) {
     // CHAPTER04は完全な回避専用ステージ。エリは通常射撃を一切行わない。
@@ -5569,6 +5860,26 @@
       return;
     }
 
+    // ミトULT中は「時が止まる」。
+    // 通常の敵・弾・ステージギミックは一切更新せず、
+    // プレイヤー操作と召喚獣の高速ラッシュだけを進める。
+    if (Number(state.mitoUltUntil || 0) > 0) {
+      if (ts < Number(state.mitoUltUntil || 0)) {
+        const mitoDt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
+        prevTs = ts;
+
+        freezeMitoUltWorldTimers(mitoDt * 1000);
+        if (!state.koTransition) updateMovement(mitoDt, ts, true);
+        updateMitoUltRush(mitoDt, ts);
+        renderHud();
+
+        if (!state.ended) rafId = requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      finishMitoUltRush();
+    }
+
     if (checkBattleTimeLimit(ts)) return;
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
@@ -7051,7 +7362,7 @@
   function ultScreenFlash(className) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    root.classList.remove('ult-flash-eri','ult-flash-hayate','ult-flash-ayane','ult-flash-nem');
+    root.classList.remove('ult-flash-eri','ult-flash-hayate','ult-flash-ayane','ult-flash-nem','ult-flash-mito');
     void root.offsetWidth;
     root.classList.add(className);
     setTimeout(() => root.classList.remove(className), 700);
@@ -8446,6 +8757,7 @@
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
+    else if (c.ultType === 'mito_time_rush') useMitoUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
     else useEriUlt(c);
 

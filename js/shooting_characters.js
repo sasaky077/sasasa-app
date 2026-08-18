@@ -469,7 +469,7 @@
     shotStyle: 'ignis',
     fireRate: 95,              // レーザーのダメージ判定間隔
     laserWidth: 12,
-    laserHitWidth: 22,
+    laserHitWidth: 44,
     laserDamageAtkRate: 0.105,
     laserVisualHoldMs: 130,
 
@@ -735,7 +735,7 @@
     id: CHARACTER_ID.MITO,
     effectKey: 'mito',
     label: 'FAMILIAR / SIDECAR',
-    description: '召喚獣が常にミトの隣を追従し、ミトと同じ弾速・火力・発射間隔で同時射撃する。',
+    description: '召喚獣が常にミトの隣を追従して同時射撃。ULTは盤面の弾を消し4秒間時を止め、召喚獣が高速突撃して接触ごとにATK×30%ダメージを与える。',
 
     // ミト自身の通常射撃性能は従来値を維持。
     moveSpeed: 430,
@@ -754,6 +754,17 @@
     companionOffsetY: 2,
     companionShotOffsetY: 30,
     companionScale: 1.0,
+
+    // ---- ULT：召喚獣による4秒間の時間停止ラッシュ ----
+    // 盤面の弾を消去し、敵・ステージ進行を停止。
+    // その間だけ召喚獣がフィールド全体を高速反射移動し、
+    // 敵へ接触するたび現在ATK×30%ダメージ。
+    ultName: '時駆けの獣',
+    ultType: 'mito_time_rush',
+    ultDurationMs: 4000,
+    ultCompanionSpeed: 920,
+    ultHitAtkMultiplier: 0.30,
+    ultHitCooldownMs: 140,
   });
 
   // ============================================================

@@ -6674,3 +6674,66 @@
 }
 .shooting-mito-companion.show{opacity:1}
 .shooting-bullet-mito-companion{z-index:10}
+
+
+/* ============================================================
+   MITO ULT - TIME STOP / FAMILIAR RUSH
+   ============================================================ */
+#shooting-event-root.mito-time-stop-active .shooting-bg{
+  filter:brightness(.92) saturate(.38) contrast(1.05);
+}
+#shooting-event-root.mito-time-stop-active .shooting-wash{
+  background:linear-gradient(180deg,rgba(224,239,245,.23),rgba(235,238,244,.10) 48%,rgba(218,230,237,.20));
+}
+#shooting-event-root.mito-time-stop-active .shooting-boss,
+#shooting-event-root.mito-time-stop-active .shooting-normal-enemy{
+  filter:saturate(.42) brightness(.92) drop-shadow(0 7px 8px rgba(57,71,78,.16));
+}
+#shooting-event-root .shooting-mito-companion.mito-ult-rush{
+  z-index:17;
+  opacity:1!important;
+  transition:none!important;
+  filter:
+    brightness(1.10)
+    drop-shadow(0 0 7px rgba(225,247,255,.96))
+    drop-shadow(0 0 16px rgba(114,202,232,.68));
+}
+#shooting-event-root.ult-flash-mito::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:58;
+  pointer-events:none;
+  background:rgba(226,246,255,.32);
+  animation:mitoUltFlash .7s ease-out forwards;
+}
+@keyframes mitoUltFlash{
+  0%{opacity:0}
+  18%{opacity:1}
+  100%{opacity:0}
+}
+
+
+/* ============================================================
+   Switch rail spacing: widen gaps so cooldown text is not clipped
+   ============================================================ */
+#shooting-event-root .shooting-switch-rail{
+  gap: 16px !important;
+}
+@media(max-width:480px){
+  #shooting-event-root .shooting-switch-rail{
+    gap: 14px !important;
+  }
+}
+
+
+/* ============================================================
+   Switch status text: enlarge CHANGE / ULT READY to match cooldown
+   ============================================================ */
+#shooting-event-root .shooting-switch-status{
+  font-size:10px!important;
+  font-weight:600!important;
+  letter-spacing:.08em!important;
+  line-height:1.15!important;
+  bottom:-16px!important;
+}
