@@ -6839,122 +6839,45 @@
 
 
 /* =========================================================
-   SCORE ATTACK v138 - ULTRA LITE
-   iPhone実機で60秒完走を最優先。
-   スコアタ限定で装飾/GPUエフェクトをほぼ全停止する。
+   SCORE ATTACK v139 - BALANCED LITE
+   画面構成・背景・HUD・開始演出は他ステージと共通。
+   弾だけ単純化して描画コストを抑える。
    ========================================================= */
 #shooting-event-root:is(
   [data-shooting-stage="shooting_score_attack_normal"],
   [data-shooting-stage="shooting_score_attack_hard"]
-){
-  background:#dedede!important;
-  color:#222!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) *{
-  animation:none!important;
-  transition:none!important;
-  box-shadow:none!important;
-  text-shadow:none!important;
-  filter:none!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-stage,
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-arena{
-  background:#dedede!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-bg{
-  display:none!important;
-  background:none!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-wash{
-  display:none!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-hud{
-  background:#e8e8e8!important;
-  border-bottom:1px solid #aaa!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-boss-bar{
-  background:#bbb!important;
-  border:0!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-boss-bar i::before{
-  background:#777!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-enemy-bullet{
-  width:8px!important;
-  height:8px!important;
+) .shooting-score-attack-bullet{
+  width:14px!important;
+  height:14px!important;
   border:0!important;
   border-radius:50%!important;
-  background:#555!important;
+  background:#151515!important;
+  box-shadow:none!important;
+  filter:none!important;
   opacity:1!important;
-  contain:strict!important;
-  will-change:transform!important;
+  contain:layout paint style;
 }
 #shooting-event-root:is(
   [data-shooting-stage="shooting_score_attack_normal"],
   [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-enemy-bullet::before,
+) .shooting-score-attack-bullet::before,
 #shooting-event-root:is(
   [data-shooting-stage="shooting_score_attack_normal"],
   [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-enemy-bullet::after{
+) .shooting-score-attack-bullet::after{
   content:none!important;
   display:none!important;
 }
 #shooting-event-root:is(
   [data-shooting-stage="shooting_score_attack_normal"],
   [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-bullet{
-  width:4px!important;
-  height:14px!important;
-  border:0!important;
-  border-radius:2px!important;
-  background:#222!important;
-  contain:strict!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-hit,
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-damage-number{
-  display:none!important;
-}
-#shooting-event-root:is(
-  [data-shooting-stage="shooting_score_attack_normal"],
-  [data-shooting-stage="shooting_score_attack_hard"]
-) .shooting-boss-phase.score-attack-infinite-hp{
-  font-size:15px!important;
-  color:#444!important;
-  letter-spacing:.04em!important;
+) .shooting-score-attack-warning-bullet{
+  width:30px!important;
+  height:30px!important;
+  background:#e33434!important;
+  border:2px solid rgba(255,210,210,.95)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+  z-index:13!important;
 }

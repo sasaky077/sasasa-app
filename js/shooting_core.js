@@ -1076,16 +1076,11 @@
   function measureUnitSize(entry) {
     if (!entry || !entry.el) return;
 
-    // SCORE ATTACK弾はCSS上11px固定。
-    // 弾生成のたびにgetBoundingClientRect()を呼ぶと強制レイアウトが発生するため、
-    // 実測せず固定値を使う。大量生成時のレイアウト負荷を避ける。
-    if (
-      isScoreAttackStage() &&
-      entry.el.classList &&
-      entry.el.classList.contains('shooting-score-attack-bullet')
-    ) {
-      entry._hw = 5.5;
-      entry._hh = 5.5;
+    // SCORE ATTACK弾はCSSでサイズ固定。生成ごとのレイアウト計測を避ける。
+    if (isScoreAttackStage() && entry.el.classList && entry.el.classList.contains('shooting-score-attack-bullet')) {
+      const warning = entry.el.classList.contains('shooting-score-attack-warning-bullet');
+      entry._hw = warning ? 15 : 7;
+      entry._hh = warning ? 15 : 7;
       return;
     }
 
@@ -3802,14 +3797,14 @@
     });
   }
 
-  // SCORE ATTACK専用固定弾幕 / ULTRA LITE。
-  // 乱数・自機位置・BOSS HPに依存しない固定タイムラインは維持しつつ、
-  // 1ボレーあたりのDOM生成数を抑え、長時間プレイでも負荷を積み上げない。
+  // SCORE ATTACK専用固定弾幕 / BALANCED LITE。
+  // 見た目・通常HUD・開始メッセージは共通仕様のまま。
+  // 軽量化は「弾DOM数」「古い通常弾の整理」「固定サイズ計測」に限定する。
   function fireScoreAttack(now) {
     if (!state || !isScoreAttackStage()) return;
     const cfg = selectedStage.scoreAttack || {};
     const elapsed = Math.max(0, now - Number(state.startedAt || now));
-    const interval = Math.max(760, Number(cfg.volleyIntervalMs || 900));
+    const interval = Math.max(760, Number(cfg.volleyIntervalMs || 880));
     const targetVolley = Math.floor(elapsed / interval);
     if (!Number.isFinite(state.scoreAttackVolleyIndex)) state.scoreAttackVolleyIndex = -1;
     if (targetVolley <= state.scoreAttackVolleyIndex) return;
@@ -3823,9 +3818,10 @@
       state.scoreAttackVolleyIndex += 1;
       const n = state.scoreAttackVolleyIndex;
       const cycle = n % 8;
-      const ringCount = cycle < 3 ? 7 : cycle < 6 ? 8 : 9;
+      const ringCount = cycle < 3 ? 8 : cycle < 6 ? 9 : 10;
       const start = (n % 24) * (Math.PI / 36);
 
+      // 通常弾：黒の中玉。固定リング。
       for (let i = 0; i < ringCount; i++) {
         const a = start + (Math.PI * 2 * i / ringCount);
         const p = makeProjectile(
@@ -3835,7 +3831,7 @@
         if (p) state.enemyBullets.push(p);
       }
 
-      // 奇数ボレーの扇形も7本→5本へ削減。
+      // 奇数ボレー：5WAYの固定扇形。自機追尾にしないので毎回同じ弾幕。
       if ((n % 2) === 1) {
         const center = Math.PI / 2 + (((n % 6) - 2.5) * 0.055);
         [-0.34,-0.17,0,0.17,0.34].forEach(offset => {
@@ -3848,8 +3844,31 @@
         });
       }
 
-      // 横断弾は左右7組→4組へ削減。
+      // WARNING予告。次のボレーで赤い大玉を撃つ。
+      if (cycle === 5) {
+        showBossDangerWarning();
+      }
+
+      // WARNING：赤い大玉を1発。固定角度で毎回再現可能。
       if (cycle === 6) {
+        removeBossDangerWarning();
+        const warningAngle = Math.PI / 2 + (((Math.floor(n / 8) % 5) - 2) * 0.11);
+        const warningDamage = Math.max(damage, damage * Math.max(1, Number(cfg.warningDamageMultiplier || 2)));
+        const warning = makeProjectile(
+          'shooting-enemy-bullet shooting-danger-bullet shooting-score-attack-bullet shooting-score-attack-warning-bullet',
+          originX, originY,
+          Math.cos(warningAngle) * speed * .72,
+          Math.sin(warningAngle) * speed * .72,
+          warningDamage
+        );
+        if (warning) {
+          warning.scoreAttackWarning = true;
+          state.enemyBullets.push(warning);
+        }
+      }
+
+      // 横断弾はWARNINGと同時に増やしすぎず、次ボレーに4組だけ出す。
+      if (cycle === 7) {
         const w = Math.max(1, Number(state.scoreAttackArenaWidth || 390));
         const h = Math.max(1, Number(state.scoreAttackArenaHeight || 700));
         for (let i = 0; i < 4; i++) {
@@ -3867,7 +3886,7 @@
         }
       }
 
-      // 生成直後にも専用上限を適用し、瞬間的なDOM膨張も防ぐ。
+      // 古い通常弾だけを整理。WARNING弾はisProtectedEnemyProjectileで保護される。
       enforceEnemyBulletSafetyLimit(now);
     }
   }
@@ -4890,8 +4909,13 @@
     // 命中判定・ダメージ・コンボ・ULT加算は全件処理しつつ、
     // DOM生成を伴うHIT/ダメージ数字だけ間引く。
     if (scoreAttack) {
-      // ULTRA LITE: 命中演出DOM・数字・ボス発光は完全停止。
-      return false;
+      // SCORE ATTACKは命中感を残す。ただし60秒間の連射でDOMを増やしすぎないよう
+      // HIT演出だけ約9fpsに間引く。ダメージ数字は非表示のままにして軽量化する。
+      if (kind === 'number') return false;
+      const last = Number(state.scoreAttackLastBossHitVisualAt || 0);
+      if (t - last < 110) return false;
+      state.scoreAttackLastBossHitVisualAt = t;
+      return true;
     }
 
     const phase = Math.max(
@@ -4923,9 +4947,12 @@
   }
 
   function flashBossHit(big, visualAlreadyApproved = false) {
-    if (isScoreAttackStage()) return;
     const boss = document.getElementById(BOSS_ID);
     if (!boss) return;
+
+    // SCORE ATTACKはHITリング(createHit)だけを使う。
+    // filterアニメーションの連打・強制reflowは避け、GPU負荷を増やさない。
+    if (isScoreAttackStage()) return;
 
     if (!big) {
       // SCORE ATTACKでは通常弾の外側ですでに視覚演出を間引いている箇所があるため、
