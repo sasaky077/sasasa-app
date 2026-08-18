@@ -272,12 +272,69 @@
 
   function clearChapter4FinalItem() {
     if (!state) return;
-    if (state.chapter4FinalItem && state.chapter4FinalItem.el && state.chapter4FinalItem.el.isConnected) {
-      state.chapter4FinalItem.el.remove();
+    const item = state.chapter4FinalItem;
+    if (item) {
+      [item.el, item.beamEl, item.guideEl].forEach(el => {
+        if (el && el.isConnected) el.remove();
+      });
     }
     state.chapter4FinalItem = null;
     state.chapter4ItemDeadlineAt = 0;
     removeChapter4ItemOverlay();
+  }
+
+  function ensureChapter4ItemGuideStyles() {
+    if (document.getElementById('shooting-ch04-item-guide-style')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-ch04-item-guide-style';
+    style.textContent = `
+      @keyframes ch04ItemPulse {
+        0%,100% { transform:translate(-50%,-50%) scale(1); filter:brightness(1.15); box-shadow:0 0 12px rgba(255,242,150,.85),0 0 28px rgba(255,210,90,.48); }
+        50% { transform:translate(-50%,-50%) scale(1.28); filter:brightness(1.75); box-shadow:0 0 22px rgba(255,255,220,1),0 0 44px rgba(255,213,80,.82); }
+      }
+      @keyframes ch04ItemBeam {
+        0%,100% { opacity:.34; transform:translateX(-50%) scaleX(.78); }
+        50% { opacity:.86; transform:translateX(-50%) scaleX(1.12); }
+      }
+      @keyframes ch04ItemGuidePulse {
+        0%,100% { opacity:.72; scale:.92; }
+        50% { opacity:1; scale:1.12; }
+      }
+      .shooting-ch04-final-item.ch04-item-guided {
+        z-index:36!important;
+        animation:ch04ItemPulse .72s ease-in-out infinite!important;
+      }
+      .shooting-ch04-item-beam {
+        position:absolute; width:5px; height:190px; pointer-events:none; z-index:31;
+        background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,244,165,.82),rgba(255,215,80,.16));
+        box-shadow:0 0 12px rgba(255,231,128,.68);
+        animation:ch04ItemBeam .78s ease-in-out infinite;
+      }
+      .shooting-ch04-item-guide {
+        position:absolute; width:36px; height:36px; border-radius:50%; pointer-events:none; z-index:60;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(18,16,34,.62); border:1px solid rgba(255,240,164,.85);
+        box-shadow:0 0 12px rgba(255,221,112,.58);
+        color:#fff4a5; font-size:23px; font-weight:900; line-height:1;
+        transform-origin:50% 50%;
+        animation:ch04ItemGuidePulse .62s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function updateChapter4ItemGuide() {
+    if (!state || !state.chapter4FinalItem || !state.player) return;
+    const item = state.chapter4FinalItem;
+    if (!item.guideEl || !item.guideEl.isConnected) return;
+    const dx = Number(item.x || 0) - Number(state.player.x || 0);
+    const dy = Number(item.y || 0) - Number(state.player.y || 0);
+    const angle = Math.atan2(dy, dx);
+    const radius = 48;
+    const gx = Number(state.player.x || 0) + Math.cos(angle) * radius;
+    const gy = Number(state.player.y || 0) + Math.sin(angle) * radius;
+    positionUnit(item.guideEl, gx, gy);
+    item.guideEl.style.rotate = `${angle + Math.PI / 2}rad`;
   }
 
   function updateChapter4ItemOverlay(now) {
@@ -288,7 +345,7 @@
       if (!arena) return;
       overlay = document.createElement('div');
       overlay.className = 'shooting-ch04-item-alert';
-      overlay.innerHTML = '<strong>ITEM発生</strong><small>獲得せよ</small><b>5</b>';
+      overlay.innerHTML = '<strong>ITEM発生</strong><small>10秒以内に獲得せよ</small><b>10</b>';
       arena.appendChild(overlay);
       state.chapter4ItemOverlay = overlay;
       requestAnimationFrame(() => overlay.classList.add('show'));
@@ -315,22 +372,37 @@
     const x = left + Math.random() * Math.max(1, right - left);
     const y = top + Math.random() * Math.max(1, bottom - top);
 
+    ensureChapter4ItemGuideStyles();
+
+    const beamEl = document.createElement('div');
+    beamEl.className = 'shooting-ch04-item-beam';
+    beamEl.style.left = `${x}px`;
+    beamEl.style.top = `${Math.max(20, y - 190)}px`;
+    layer.appendChild(beamEl);
+
     const el = document.createElement('div');
-    el.className = 'shooting-mission-item shooting-ch04-final-item';
+    el.className = 'shooting-mission-item shooting-ch04-final-item ch04-item-guided';
     el.innerHTML = '<i></i>';
     layer.appendChild(el);
     positionUnit(el, x, y);
 
+    const guideEl = document.createElement('div');
+    guideEl.className = 'shooting-ch04-item-guide';
+    guideEl.textContent = '▲';
+    arena.appendChild(guideEl);
+
     state.chapter4ItemPhase = true;
-    state.chapter4FinalItem = { el, x, y };
-    const timeoutSeconds = Math.max(1, Number(selectedStage?.finalItem?.timeoutSeconds || 5));
+    state.chapter4FinalItem = { el, beamEl, guideEl, x, y };
+    const timeoutSeconds = Math.max(1, Number(selectedStage?.finalItem?.timeoutSeconds || 10));
     state.chapter4ItemDeadlineAt = Number(now || performance.now()) + timeoutSeconds * 1000;
+    updateChapter4ItemGuide();
     updateChapter4ItemOverlay(now);
   }
 
   function updateChapter4FinalItem(now) {
     if (!state || !state.chapter4ItemPhase || !state.chapter4FinalItem) return;
     updateChapter4ItemOverlay(now);
+    updateChapter4ItemGuide();
 
     const item = state.chapter4FinalItem;
     const core = document.getElementById('shooting-player-core');
