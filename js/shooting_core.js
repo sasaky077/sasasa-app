@@ -4004,10 +4004,11 @@
         );
         if (warning) {
           warning.scoreAttackWarning = true;
-          // HARDのみWARNING大玉を6秒間、壁で無制限バウンドさせる。
+          // HARDのみWARNING大玉を壁反射させる。
+          // 1回目・2回目は反射、3回目の壁接触でその場で消滅。
           if (String(cfg.difficulty || '').toLowerCase() === 'hard') {
-            warning.scoreAttackWarningBounceUntil = now + 6000;
-            warning.dangerRicochet = true;
+            warning.scoreAttackWarningBounceCount = 0;
+            warning.scoreAttackWarningBounceMax = 3;
           }
           state.enemyBullets.push(warning);
         }
@@ -5612,18 +5613,20 @@
         }
       }
 
-      // SCORE ATTACK HARDのWARNING大玉：発射から6秒間、壁で無制限バウンド。
-      if (p.scoreAttackWarningBounceUntil) {
-        if (now >= Number(p.scoreAttackWarningBounceUntil || 0)) {
-          p.el.remove();
-          return false;
-        }
+      // SCORE ATTACK HARDのWARNING大玉：壁接触を数え、3回目で消滅。
+      if (p.scoreAttackWarningBounceMax) {
         const margin = 16;
         const hitLeft = p.x <= margin;
         const hitRight = p.x >= w - margin;
         const hitTop = p.y <= margin;
         const hitBottom = p.y >= h - margin;
-        if (hitLeft || hitRight || hitTop || hitBottom) {
+        const touchedWall = hitLeft || hitRight || hitTop || hitBottom;
+        if (touchedWall) {
+          p.scoreAttackWarningBounceCount = Number(p.scoreAttackWarningBounceCount || 0) + 1;
+          if (p.scoreAttackWarningBounceCount >= Number(p.scoreAttackWarningBounceMax || 3)) {
+            p.el.remove();
+            return false;
+          }
           if (hitLeft || hitRight) p.vx *= -1;
           if (hitTop || hitBottom) p.vy *= -1;
           p.x = Math.min(w - margin, Math.max(margin, p.x));
@@ -5633,7 +5636,7 @@
 
       // 最上級のWARNING危険弾はアリーナ壁で跳ね返る。
       // 1回目・2回目は反射、3回目の壁接触で消滅。
-      if (p.dangerRicochet && !p.scoreAttackWarningBounceUntil) {
+      if (p.dangerRicochet && !p.scoreAttackWarningBounceMax) {
         const margin = 7;
         const hitLeft = p.x <= margin;
         const hitRight = p.x >= w - margin;
