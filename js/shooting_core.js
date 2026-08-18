@@ -1919,10 +1919,15 @@
   function enforceEnemyBulletSafetyLimit(now) {
     if (!state || !Array.isArray(state.enemyBullets)) return;
     const current = state.enemyBullets.length;
-    const raidLimits = isRaidStage() ? getRaidEnemyBulletLimits() : null;
-    const ch03BossLimits = !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
-    const hardLimit = raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT);
-    const recoveryTarget = raidLimits ? raidLimits.recovery : (ch03BossLimits ? ch03BossLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET);
+    const scoreCfg = isScoreAttackStage() && selectedStage && selectedStage.scoreAttack ? selectedStage.scoreAttack : null;
+    const scoreAttackLimits = scoreCfg ? {
+      hard: Math.max(30, Number(scoreCfg.maxEnemyBullets || 80)),
+      recovery: Math.max(20, Number(scoreCfg.recoverEnemyBulletsTo || 60))
+    } : null;
+    const raidLimits = !scoreAttackLimits && isRaidStage() ? getRaidEnemyBulletLimits() : null;
+    const ch03BossLimits = !scoreAttackLimits && !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
+    const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT));
+    const recoveryTarget = scoreAttackLimits ? scoreAttackLimits.recovery : (raidLimits ? raidLimits.recovery : (ch03BossLimits ? ch03BossLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET));
     if (current <= hardLimit) return;
 
     let removeNeeded = Math.max(0, current - recoveryTarget);
@@ -1953,9 +1958,14 @@
   function enforcePlayerBulletSafetyLimit(now) {
     if (!state || !Array.isArray(state.bullets)) return;
     const current = state.bullets.length;
-    const raidLimits = isRaidStage() ? getRaidPlayerBulletLimits() : null;
-    const hardLimit = raidLimits ? raidLimits.hard : PLAYER_BULLET_HARD_LIMIT;
-    const recoveryTarget = raidLimits ? raidLimits.recovery : PLAYER_BULLET_RECOVERY_TARGET;
+    const scoreCfg = isScoreAttackStage() && selectedStage && selectedStage.scoreAttack ? selectedStage.scoreAttack : null;
+    const scoreAttackLimits = scoreCfg ? {
+      hard: Math.max(24, Number(scoreCfg.maxPlayerBullets || 60)),
+      recovery: Math.max(18, Number(scoreCfg.recoverPlayerBulletsTo || 45))
+    } : null;
+    const raidLimits = !scoreAttackLimits && isRaidStage() ? getRaidPlayerBulletLimits() : null;
+    const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (raidLimits ? raidLimits.hard : PLAYER_BULLET_HARD_LIMIT);
+    const recoveryTarget = scoreAttackLimits ? scoreAttackLimits.recovery : (raidLimits ? raidLimits.recovery : PLAYER_BULLET_RECOVERY_TARGET);
     if (current <= hardLimit) return;
 
     let removeNeeded = Math.max(0, current - recoveryTarget);
@@ -3792,12 +3802,14 @@
     });
   }
 
-  // SCORE ATTACK専用固定弾幕。乱数・自機位置・BOSS HPに依存しない。
+  // SCORE ATTACK専用固定弾幕 / ULTRA LITE。
+  // 乱数・自機位置・BOSS HPに依存しない固定タイムラインは維持しつつ、
+  // 1ボレーあたりのDOM生成数を抑え、長時間プレイでも負荷を積み上げない。
   function fireScoreAttack(now) {
     if (!state || !isScoreAttackStage()) return;
     const cfg = selectedStage.scoreAttack || {};
     const elapsed = Math.max(0, now - Number(state.startedAt || now));
-    const interval = 720;
+    const interval = Math.max(760, Number(cfg.volleyIntervalMs || 900));
     const targetVolley = Math.floor(elapsed / interval);
     if (!Number.isFinite(state.scoreAttackVolleyIndex)) state.scoreAttackVolleyIndex = -1;
     if (targetVolley <= state.scoreAttackVolleyIndex) return;
@@ -3811,7 +3823,7 @@
       state.scoreAttackVolleyIndex += 1;
       const n = state.scoreAttackVolleyIndex;
       const cycle = n % 8;
-      const ringCount = cycle < 3 ? 10 : cycle < 6 ? 12 : 14;
+      const ringCount = cycle < 3 ? 7 : cycle < 6 ? 8 : 9;
       const start = (n % 24) * (Math.PI / 36);
 
       for (let i = 0; i < ringCount; i++) {
@@ -3823,9 +3835,10 @@
         if (p) state.enemyBullets.push(p);
       }
 
+      // 奇数ボレーの扇形も7本→5本へ削減。
       if ((n % 2) === 1) {
         const center = Math.PI / 2 + (((n % 6) - 2.5) * 0.055);
-        [-0.42,-0.28,-0.14,0,0.14,0.28,0.42].forEach(offset => {
+        [-0.34,-0.17,0,0.17,0.34].forEach(offset => {
           const a = center + offset;
           const p = makeProjectile(
             'shooting-enemy-bullet shooting-score-attack-bullet shooting-score-attack-fan',
@@ -3835,11 +3848,12 @@
         });
       }
 
+      // 横断弾は左右7組→4組へ削減。
       if (cycle === 6) {
         const w = Math.max(1, Number(state.scoreAttackArenaWidth || 390));
         const h = Math.max(1, Number(state.scoreAttackArenaHeight || 700));
-        for (let i = 0; i < 7; i++) {
-          const y = Math.max(110, h * (.22 + i * .075));
+        for (let i = 0; i < 4; i++) {
+          const y = Math.max(110, h * (.28 + i * .12));
           const left = makeProjectile(
             'shooting-enemy-bullet shooting-score-attack-bullet shooting-score-attack-cross',
             8, y, speed * .84, speed * .16, damage
@@ -3852,6 +3866,9 @@
           if (right) state.enemyBullets.push(right);
         }
       }
+
+      // 生成直後にも専用上限を適用し、瞬間的なDOM膨張も防ぐ。
+      enforceEnemyBulletSafetyLimit(now);
     }
   }
 
@@ -4873,16 +4890,8 @@
     // 命中判定・ダメージ・コンボ・ULT加算は全件処理しつつ、
     // DOM生成を伴うHIT/ダメージ数字だけ間引く。
     if (scoreAttack) {
-      if (kind === 'number') {
-        const last = Number(state.scoreAttackLastBossDamageNumberAt || 0);
-        if (t - last < 180) return false;
-        state.scoreAttackLastBossDamageNumberAt = t;
-        return true;
-      }
-      const last = Number(state.scoreAttackLastBossHitVisualAt || 0);
-      if (t - last < 90) return false;
-      state.scoreAttackLastBossHitVisualAt = t;
-      return true;
+      // ULTRA LITE: 命中演出DOM・数字・ボス発光は完全停止。
+      return false;
     }
 
     const phase = Math.max(
@@ -4907,12 +4916,14 @@
 
   function showBossDamageNumber(amount, big = false) {
     if (!state || !state.boss) return;
+    if (isScoreAttackStage()) return;
     // 通常弾以外の継続攻撃/ULTも数字DOMを大量生成しない。
     if (isScoreAttackStage() && !big && !shouldRenderRaidBossHitVisual(performance.now(), 'number')) return;
     showDamageNumber(state.boss.x, state.boss.y, amount, 'enemy', big);
   }
 
   function flashBossHit(big, visualAlreadyApproved = false) {
+    if (isScoreAttackStage()) return;
     const boss = document.getElementById(BOSS_ID);
     if (!boss) return;
 
@@ -6216,9 +6227,9 @@
     updateMimosaItems();
     if (isNormalBattle()) evaluateNormalMission(ts);
 
-    // SCORE ATTACKのHUDは20fpsで十分。ゲーム本体は60fpsのまま。
+    // SCORE ATTACKのHUDは10fpsに抑える。ゲーム本体の当たり判定は60fpsのまま。
     if (isScoreAttackStage()) {
-      if (ts - Number(state.scoreAttackLastHudRenderAt || 0) >= 50) {
+      if (ts - Number(state.scoreAttackLastHudRenderAt || 0) >= 100) {
         state.scoreAttackLastHudRenderAt = ts;
         renderHud();
       }

@@ -6836,3 +6836,125 @@
     filter:none;
   }
 }
+
+
+/* =========================================================
+   SCORE ATTACK v138 - ULTRA LITE
+   iPhone実機で60秒完走を最優先。
+   スコアタ限定で装飾/GPUエフェクトをほぼ全停止する。
+   ========================================================= */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+){
+  background:#dedede!important;
+  color:#222!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) *{
+  animation:none!important;
+  transition:none!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-stage,
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-arena{
+  background:#dedede!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-bg{
+  display:none!important;
+  background:none!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-wash{
+  display:none!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-hud{
+  background:#e8e8e8!important;
+  border-bottom:1px solid #aaa!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-boss-bar{
+  background:#bbb!important;
+  border:0!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-boss-bar i::before{
+  background:#777!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-enemy-bullet{
+  width:8px!important;
+  height:8px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#555!important;
+  opacity:1!important;
+  contain:strict!important;
+  will-change:transform!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-enemy-bullet::before,
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-enemy-bullet::after{
+  content:none!important;
+  display:none!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-bullet{
+  width:4px!important;
+  height:14px!important;
+  border:0!important;
+  border-radius:2px!important;
+  background:#222!important;
+  contain:strict!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-hit,
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-damage-number{
+  display:none!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_score_attack_normal"],
+  [data-shooting-stage="shooting_score_attack_hard"]
+) .shooting-boss-phase.score-attack-infinite-hp{
+  font-size:15px!important;
+  color:#444!important;
+  letter-spacing:.04em!important;
+}
