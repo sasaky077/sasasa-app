@@ -1137,7 +1137,13 @@
     if (startBtn) {
       const ready = isShootingPartyReady();
       startBtn.disabled = !ready;
-      startBtn.textContent = ready ? '戦闘開始' : 'あと 1人 選択';
+      if (!ready) {
+        startBtn.textContent = 'あと 1人 選択';
+      } else if (getSelectedStageTicketCost() > 0) {
+        startBtn.innerHTML = '戦闘開始<br><small style="font-size:.72em;font-weight:500;letter-spacing:.04em;opacity:.82">（SPECIAL TICKET×1消費）</small>';
+      } else {
+        startBtn.textContent = '戦闘開始';
+      }
     }
     renderSwitchRail(true);
   }
@@ -7071,9 +7077,73 @@
     window.closeShootingEvent();
   };
 
-  window.startSelectedShootingCharacter = function () {
+  function getSelectedStageTicketCost() {
+    return Math.max(0, Math.floor(Number(selectedStage && selectedStage.specialTicketCost || 0)));
+  }
+
+  async function consumeSelectedStageTicket() {
+    const cost = getSelectedStageTicketCost();
+    if (cost <= 0) return { consumed: true, remaining: null };
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    if (!sb || !userId) {
+      throw new Error('SPECIAL TICKETの所持数を確認できません');
+    }
+
+    const result = await sb.rpc('consume_special_stage_ticket', {
+      p_user_id: userId,
+      p_cost: cost
+    });
+    if (result && result.error) throw result.error;
+
+    const row = Array.isArray(result && result.data) ? result.data[0] : (result && result.data);
+    const consumed = !!(row && row.consumed);
+    const remaining = Math.max(0, Number(row && row.remaining_ticket || 0));
+
+    if (window.userProfile) window.userProfile.special_stage_ticket = remaining;
+    document.querySelectorAll('#special-ticket-count,[data-special-ticket-count]').forEach(el => {
+      el.textContent = String(remaining);
+    });
+    if (typeof window.refreshSpecialTicketUI === 'function') {
+      try { void window.refreshSpecialTicketUI(); } catch (_) {}
+    }
+
+    return { consumed, remaining };
+  }
+
+  let specialTicketConsumePending = false;
+
+  async function ensureSelectedStageTicketConsumed() {
+    const cost = getSelectedStageTicketCost();
+    if (cost <= 0) return true;
+    if (specialTicketConsumePending) return false;
+
+    specialTicketConsumePending = true;
+    try {
+      const result = await consumeSelectedStageTicket();
+      if (!result.consumed) {
+        const message = 'チケットを所持していません';
+        if (typeof window.showToast === 'function') window.showToast(message);
+        else alert(message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('[shooting] special ticket consume failed:', err);
+      const message = 'SPECIAL STAGE TICKETの確認に失敗しました';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return false;
+    } finally {
+      specialTicketConsumePending = false;
+    }
+  }
+
+  window.startSelectedShootingCharacter = async function () {
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
+    if (!(await ensureSelectedStageTicketConsumed())) return;
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
@@ -7204,11 +7274,12 @@
     });
   };
 
-  window.restartShootingEvent = function () {
+  window.restartShootingEvent = async function () {
     if (isRaidStage()) {
       alert('DAILY RAIDは1日1回のみ挑戦できます。');
       return;
     }
+    if (!(await ensureSelectedStageTicketConsumed())) return;
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();

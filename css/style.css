@@ -4,7 +4,8 @@
   - 元の記述順は維持（カスケード崩れ防止）
   - インデント・改行・余白を統一
   - 主要ブロックごとに見出しコメントを追加
-  - 明らかな typo のみ修正: r\nba(...) → rgba(...)
+  - 明らかな typo のみ修正: r
+ba(...) → rgba(...)
 */
 
 /* =========================================================
@@ -2935,7 +2936,7 @@ canvas {
   opacity: 0;
   pointer-events: none;
   transition: 0.3s;
-  z-index: 200001;
+  z-index: 300000;
 }
 
 #toast.show {
@@ -20813,3 +20814,11 @@ body {
 .friend-remove-confirm-yes:disabled{
   opacity:.55;
 }
+
+
+/* SPECIAL STAGE ticket */
+.shooting-special-ticket-card{position:relative;padding-bottom:46px!important}
+.special-ticket-cost{margin-top:8px;font-family:"Cinzel","Noto Serif JP",serif;font-size:10px;letter-spacing:.12em;color:#b69855}
+.special-ticket-balance{position:absolute;right:14px;bottom:12px;padding:5px 10px;border:1px solid rgba(183,151,83,.36);background:rgba(18,18,18,.72);font-size:10px;letter-spacing:.08em;color:#d8c08a}
+.special-ticket-balance b{font-family:"Cinzel",serif;font-size:14px;color:#fff}
+.login-bonus-ticket,.bonus-login-ticket{display:block;margin-top:3px;font-size:8px!important;line-height:1.15;color:#b38a39;letter-spacing:.04em}

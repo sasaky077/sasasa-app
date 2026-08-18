@@ -562,7 +562,7 @@
 
 
     // ============================================================
-    // SPECIAL STAGE - 超弾幕
+    // SPECIAL STAGE - 楽園 -ノア-
     // パフォーマンス検証用のストレステストステージ。
     // 見た目は極限まで簡素化(装飾なし)。WAVE1から高密度、WAVE3でさらに濃く。
     // 1発被弾での即死はなし(4発被弾で撃破される想定のダメージ値)。
@@ -572,14 +572,15 @@
       chapter: 0,
       stageNo: 3,
       eventId: 'bullet_hell_test',
-      eventTitle: '超弾幕',
+      eventTitle: '楽園 -ノア-',
+      specialTicketCost: 1,
       difficultyLabel: 'STRESS TEST',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: '超弾幕を耐えきれ',
+        text: '楽園 -ノア-を耐えきれ',
       }),
       playable: true,
     }),

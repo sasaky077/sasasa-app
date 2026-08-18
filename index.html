@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260818-story-mode-title-v102';
+    var FALLBACK_BUILD = '20260818-noah-toastfix-v110';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260818-story-mode-title-v102">
+  <meta name="sasaphia-build" content="20260818-noah-toastfix-v110">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260818-story-mode-title-v102"
+        href="css/style.css?v=20260818-noah-toastfix-v110"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260818-story-mode-title-v102"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260818-noah-toastfix-v110"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,10 +266,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260818-story-mode-title-v102">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260818-noah-toastfix-v110">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260818-story-mode-title-v102">
-  <link rel="stylesheet" href="css/admin_mode.css?v=20260818-story-mode-title-v102">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260818-noah-toastfix-v110">
+  <link rel="stylesheet" href="css/admin_mode.css?v=20260818-noah-toastfix-v110">
 
 <style id="testplay-guide-readable-steps">
 .testplay-guide-steps{
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260818-story-mode-title-v102';
+  var BUILD = '20260818-noah-toastfix-v110';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -647,9 +647,11 @@
             <div class="ninmu-chapter-title">無貌の天使</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/enemy_faceless_panel.webp" alt=""></div>
           </div>
-          <div class="ninmu-chapter-item shooting-entry-card" onclick="openShootingEvent({stageId:'shooting_event_bullet_hell_test'})" role="button" tabindex="0" aria-label="SPECIAL STAGE 超弾幕">
-            <div class="ninmu-chapter-label">STRESS TEST</div>
-            <div class="ninmu-chapter-title">超弾幕</div>
+          <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card" onclick="openShootingEvent({stageId:'shooting_event_bullet_hell_test'})" role="button" tabindex="0" aria-label="SPECIAL STAGE 楽園 -ノア-">
+            <div class="ninmu-chapter-label">SPECIAL STAGE</div>
+            <div class="ninmu-chapter-title">楽園 -ノア-</div>
+            <div class="special-ticket-cost">SPECIAL TICKET ×1</div>
+            <div class="special-ticket-balance">所持 <b id="special-ticket-count">--</b> 枚</div>
           </div>
         </div>
       </div>
@@ -1323,7 +1325,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/home_banners.js?v=20260818-noah-toastfix-v110"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -1338,7 +1340,7 @@ window.NOTICE_ITEMS = [
     id: 'notice_update_20260818_story_beginner_ch04_balance',
     date: '2026.08.18',
     title: 'アップデートのお知らせ',
-    body: '・各ボスステージの難易度を調整しました\n・CHAPTER04 を実装しました\n・ストーリー(初級)を実装しました\n・キャラクター性能を調整しました\n→対象キャラ：ミア、ミト',
+    body: '・各ボスステージの難易度を調整しました\n・CHAPTER04 を実装しました\n・ストーリー(初級)を実装しました\n・キャラクター性能を調整しました\n→対象キャラ：ミア、ミト、イグニス',
     hidden: false
   },
 
@@ -2090,9 +2092,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/resonance_system.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/resonance_ui.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/shooting_resonance.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/resonance_system.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/resonance_ui.js?v=20260818-noah-toastfix-v110"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3003,6 +3005,7 @@ function renderResultElementBadge(data){
         used_gachas: Array.isArray(profile.used_gachas) ? profile.used_gachas : [],
         login_bonus_day: Math.max(0, Math.min(7, Number(profile.login_bonus_day || 0))),
         last_login_bonus_date: profile.last_login_bonus_date || null,
+        special_stage_ticket: Math.max(0, Number(profile.special_stage_ticket || 0)),
         saved_at: new Date().toISOString()
       }));
     } catch(e){}
@@ -3017,7 +3020,8 @@ function renderResultElementBadge(data){
     total_score: 0,
     used_gachas: [],
     login_bonus_day: 0,
-    last_login_bonus_date: null
+    last_login_bonus_date: null,
+    special_stage_ticket: 0
   };
   var currentResultData=null, currentDetailData=null, pendingNew=null;
   var detailReturnToSummonAfterClose = false;
@@ -3636,6 +3640,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     userProfile.used_gachas = profile.used_gachas || [];
     userProfile.login_bonus_day = Math.max(0, Math.min(7, Number(profile.login_bonus_day || 0)));
     userProfile.last_login_bonus_date = profile.last_login_bonus_date || null;
+    userProfile.special_stage_ticket = Math.max(0, Number(profile.special_stage_ticket || 0));
     writeProfileCache(userProfile);
   } else {
     // SELECT成功かつ該当行なしの場合だけ、新規ユーザーとして作成
@@ -3646,7 +3651,8 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       gem: 10,
       used_gachas: [],
       login_bonus_day: 0,
-      last_login_bonus_date: null
+      last_login_bonus_date: null,
+      special_stage_ticket: 0
     }).select().single();
     if(insertProfileResult.error){
       throw new Error('user_profiles新規作成失敗: ' + (insertProfileResult.error.message || insertProfileResult.error.code || 'unknown'));
@@ -3660,7 +3666,8 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       total_score: 0,
       used_gachas: [],
       login_bonus_day: 0,
-      last_login_bonus_date: null
+      last_login_bonus_date: null,
+      special_stage_ticket: 0
     };
     writeProfileCache(userProfile);
   }
@@ -4180,6 +4187,9 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     }
     if (cat === 'story-beginner' && typeof window.renderStoryChapterList === 'function') {
       window.renderStoryChapterList('beginner');
+    }
+    if (cat === 'special' && typeof window.refreshSpecialTicketUI === 'function') {
+      void window.refreshSpecialTicketUI();
     }
   }
 
@@ -9818,43 +9828,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/asset_loader.js?v=20260818-noah-toastfix-v110"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/login_bonus.js?v=20260818-noah-toastfix-v110"></script>
 
-<script src="js/story_engine.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/stories/chapter01.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/story_engine.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/stories/chapter01.js?v=20260818-noah-toastfix-v110"></script>
 
-<script src="js/battle_range.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/characters.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/enemies.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/battle.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/battle_swipe.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/battle_range.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/characters.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/enemies.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/battle.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/battle_swipe.js?v=20260818-noah-toastfix-v110"></script>
 
-<script src="js/stages.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/stage_select.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/party_select.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/enemy_intro.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/stages.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/stage_select.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/party_select.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/enemy_intro.js?v=20260818-noah-toastfix-v110"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260818-story-mode-title-v102">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260818-noah-toastfix-v110">
 
-<script src="js/battle_range_32.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/characters_32.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/remnant_blessings.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/combo_32.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/cards.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/battle_32.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/battle_32_ui.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/battle_range_32.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/characters_32.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/remnant_blessings.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/combo_32.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/cards.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/battle_32.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/battle_32_ui.js?v=20260818-noah-toastfix-v110"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/roguelite_run.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/roguelite_reward.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/shinju.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/roguelite_controller.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/roguelite_overseer_run.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/roguelite_options.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/roguelite_run.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/roguelite_reward.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/shinju.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/roguelite_controller.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/roguelite_overseer_run.js?v=20260818-noah-toastfix-v110"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -10300,10 +10310,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260818-story-mode-title-v102"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260818-noah-toastfix-v110"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=20260818-story-mode-title-v102"></script>
-<script src="js/raid_event.js?v=20260818-story-mode-title-v102"></script>
+<script src="js/admin_mode.js?v=20260818-noah-toastfix-v110"></script>
+<script src="js/raid_event.js?v=20260818-noah-toastfix-v110"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
