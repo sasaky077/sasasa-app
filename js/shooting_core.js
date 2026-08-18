@@ -266,89 +266,57 @@
 
   function removeChapter4ItemOverlay() {
     if (!state) return;
-    if (state.chapter4ItemOverlay && state.chapter4ItemOverlay.isConnected) state.chapter4ItemOverlay.remove();
-    state.chapter4ItemOverlay = null;
+    const overlay = state.chapter4ItemOverlay;
+    if (overlay && overlay.isConnected) {
+      overlay.classList.remove('show');
+      overlay.style.display = 'none';
+    }
+    state.chapter4ItemOverlay = overlay && overlay.isConnected ? overlay : null;
+  }
+
+  function purgeChapter4ItemDom() {
+    document.querySelectorAll(
+      '.shooting-ch04-final-item,.shooting-ch04-item-beam,.shooting-ch04-item-guide,.shooting-ch04-item-alert'
+    ).forEach(el => el.remove());
   }
 
   function clearChapter4FinalItem() {
-    if (!state) return;
-    const item = state.chapter4FinalItem;
-    if (item) {
-      [item.el, item.beamEl, item.guideEl].forEach(el => {
-        if (el && el.isConnected) el.remove();
-      });
+    if (!state) {
+      purgeChapter4ItemDom();
+      return;
     }
+    const item = state.chapter4FinalItem;
+    if (item && item.el && item.el.isConnected) item.el.remove();
     state.chapter4FinalItem = null;
     state.chapter4ItemDeadlineAt = 0;
     removeChapter4ItemOverlay();
   }
 
-  function ensureChapter4ItemGuideStyles() {
-    if (document.getElementById('shooting-ch04-item-guide-style')) return;
-    const style = document.createElement('style');
-    style.id = 'shooting-ch04-item-guide-style';
-    style.textContent = `
-      @keyframes ch04ItemPulse {
-        0%,100% { transform:translate(-50%,-50%) scale(1); filter:brightness(1.15); box-shadow:0 0 12px rgba(255,242,150,.85),0 0 28px rgba(255,210,90,.48); }
-        50% { transform:translate(-50%,-50%) scale(1.28); filter:brightness(1.75); box-shadow:0 0 22px rgba(255,255,220,1),0 0 44px rgba(255,213,80,.82); }
-      }
-      @keyframes ch04ItemBeam {
-        0%,100% { opacity:.34; transform:translateX(-50%) scaleX(.78); }
-        50% { opacity:.86; transform:translateX(-50%) scaleX(1.12); }
-      }
-      @keyframes ch04ItemGuidePulse {
-        0%,100% { opacity:.72; scale:.92; }
-        50% { opacity:1; scale:1.12; }
-      }
-      .shooting-ch04-final-item.ch04-item-guided {
-        z-index:36!important;
-        animation:ch04ItemPulse .72s ease-in-out infinite!important;
-      }
-      .shooting-ch04-item-beam {
-        position:absolute; width:5px; height:190px; pointer-events:none; z-index:31;
-        background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,244,165,.82),rgba(255,215,80,.16));
-        box-shadow:0 0 12px rgba(255,231,128,.68);
-        animation:ch04ItemBeam .78s ease-in-out infinite;
-      }
-      .shooting-ch04-item-guide {
-        position:absolute; width:36px; height:36px; border-radius:50%; pointer-events:none; z-index:60;
-        display:flex; align-items:center; justify-content:center;
-        background:rgba(18,16,34,.62); border:1px solid rgba(255,240,164,.85);
-        box-shadow:0 0 12px rgba(255,221,112,.58);
-        color:#fff4a5; font-size:23px; font-weight:900; line-height:1;
-        transform-origin:50% 50%;
-        animation:ch04ItemGuidePulse .62s ease-in-out infinite;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function updateChapter4ItemGuide() {
-    if (!state || !state.chapter4FinalItem || !state.player) return;
-    const item = state.chapter4FinalItem;
-    if (!item.guideEl || !item.guideEl.isConnected) return;
-    const dx = Number(item.x || 0) - Number(state.player.x || 0);
-    const dy = Number(item.y || 0) - Number(state.player.y || 0);
-    const angle = Math.atan2(dy, dx);
-    const radius = 48;
-    const gx = Number(state.player.x || 0) + Math.cos(angle) * radius;
-    const gy = Number(state.player.y || 0) + Math.sin(angle) * radius;
-    positionUnit(item.guideEl, gx, gy);
-    item.guideEl.style.rotate = `${angle + Math.PI / 2}rad`;
+  function prepareChapter4ItemOverlay() {
+    if (!state || !isChapter04Stage()) return null;
+    let overlay = state.chapter4ItemOverlay;
+    if (overlay && overlay.isConnected) return overlay;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    overlay = arena.querySelector('.shooting-ch04-item-alert');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'shooting-ch04-item-alert';
+      overlay.innerHTML = '<strong>ITEM発生</strong><small>10秒以内に獲得せよ</small><b>10</b>';
+      overlay.style.display = 'none';
+      arena.appendChild(overlay);
+    }
+    state.chapter4ItemOverlay = overlay;
+    return overlay;
   }
 
   function updateChapter4ItemOverlay(now) {
     if (!state || !state.chapter4ItemPhase) return;
-    let overlay = state.chapter4ItemOverlay;
-    if (!overlay || !overlay.isConnected) {
-      const arena = document.getElementById('shooting-arena');
-      if (!arena) return;
-      overlay = document.createElement('div');
-      overlay.className = 'shooting-ch04-item-alert';
-      overlay.innerHTML = '<strong>ITEM発生</strong><small>10秒以内に獲得せよ</small><b>10</b>';
-      arena.appendChild(overlay);
-      state.chapter4ItemOverlay = overlay;
-      requestAnimationFrame(() => overlay.classList.add('show'));
+    const overlay = prepareChapter4ItemOverlay();
+    if (!overlay) return;
+    if (overlay.style.display === 'none') {
+      overlay.style.display = '';
+      overlay.classList.add('show');
     }
     const leftMs = Math.max(0, Number(state.chapter4ItemDeadlineAt || 0) - Number(now || performance.now()));
     const count = Math.max(1, Math.ceil(leftMs / 1000));
@@ -365,44 +333,43 @@
     const w = Number(arena.clientWidth || 0);
     const h = Number(arena.clientHeight || 0);
     const shrink = getChapter4ShrinkBounds(now, w);
-    const left = 44 + Number(shrink.left || 0);
-    const right = Math.max(left + 20, w - 44 - Number(shrink.right || 0));
-    const top = Math.max(150, h * 0.34);
-    const bottom = Math.max(top + 20, h * 0.76);
-    const x = left + Math.random() * Math.max(1, right - left);
-    const y = top + Math.random() * Math.max(1, bottom - top);
+    const left = 48 + Number(shrink.left || 0);
+    const right = Math.max(left + 20, w - 48 - Number(shrink.right || 0));
+    const top = 105;
+    const bottom = Math.max(top + 20, h * 0.62);
 
-    ensureChapter4ItemGuideStyles();
+    // ITEMはボスの現在位置を基準に、その周囲7候補のいずれかへ出現。
+    // 画面外/縮小壁の外へ出ないよう最後にclampする。
+    const bx = Number(state.boss?.x || w * 0.5);
+    const by = Number(state.boss?.y || h * 0.16);
+    const offsets = [
+      [-92, 0], [92, 0],
+      [-72, 64], [72, 64],
+      [0, 86],
+      [-66, -54], [66, -54]
+    ];
+    const pick = offsets[Math.floor(Math.random() * offsets.length)] || [0, 86];
+    const x = clamp(bx + pick[0], left, right);
+    const y = clamp(by + pick[1], top, bottom);
 
-    const beamEl = document.createElement('div');
-    beamEl.className = 'shooting-ch04-item-beam';
-    beamEl.style.left = `${x}px`;
-    beamEl.style.top = `${Math.max(20, y - 190)}px`;
-    layer.appendChild(beamEl);
-
+    // 60秒到達瞬間は弾幕更新と重なるため、追加DOMはITEM本体1個だけに限定。
+    // 光柱/追尾矢印/動的style生成は廃止し、瞬間的なstyle recalculationを避ける。
     const el = document.createElement('div');
-    el.className = 'shooting-mission-item shooting-ch04-final-item ch04-item-guided';
+    el.className = 'shooting-mission-item shooting-ch04-final-item';
     el.innerHTML = '<i></i>';
     layer.appendChild(el);
     positionUnit(el, x, y);
 
-    const guideEl = document.createElement('div');
-    guideEl.className = 'shooting-ch04-item-guide';
-    guideEl.textContent = '▲';
-    arena.appendChild(guideEl);
-
     state.chapter4ItemPhase = true;
-    state.chapter4FinalItem = { el, beamEl, guideEl, x, y };
+    state.chapter4FinalItem = { el, x, y };
     const timeoutSeconds = Math.max(1, Number(selectedStage?.finalItem?.timeoutSeconds || 10));
     state.chapter4ItemDeadlineAt = Number(now || performance.now()) + timeoutSeconds * 1000;
-    updateChapter4ItemGuide();
     updateChapter4ItemOverlay(now);
   }
 
   function updateChapter4FinalItem(now) {
     if (!state || !state.chapter4ItemPhase || !state.chapter4FinalItem) return;
     updateChapter4ItemOverlay(now);
-    updateChapter4ItemGuide();
 
     const item = state.chapter4FinalItem;
     const core = document.getElementById('shooting-player-core');
@@ -1345,6 +1312,9 @@
   function setCommonUiVisible(open) { UIModule.setCommonUiVisible(open); }
 
   function resetState() {
+    // 旧バトルのITEM表示が何らかの経路で残っていても、新state作成前にDOM側を掃除する。
+    purgeChapter4ItemDom();
+
     selectedPartyIds = selectedPartyIds
       .map(Number)
       .filter((id, index, arr) =>
@@ -1458,6 +1428,10 @@
       miaChargeStartedAt: 0, miaChargePointerId: null,
       startedAt: performance.now(), clearTimeMs: 0,
     };
+
+    // CH04のITEM告知DOMは戦闘開始前に1回だけ作成して非表示待機。
+    // 60秒到達フレームでのDOM生成を減らす。
+    if (isChapter04Stage()) prepareChapter4ItemOverlay();
 
     if (selectedStage && selectedStage.survivalBoss && state.boss) {
       // SCORE ATTACK等の耐久ボスは「倒す対象」ではなく、制限時間中ずっと殴る標的。
@@ -7876,6 +7850,11 @@
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();
+
+    // RETRY前にCH04 ITEM関連DOMを旧state参照が生きているうちに完全掃除。
+    // resetState()後では旧overlay参照を失い、ITEM発生/カウントが残留するため先に消す。
+    clearChapter4FinalItem();
+    purgeChapter4ItemDom();
 
     // RETRY前の旧stateが生きているうちに無貌OBJECT/弾を先に掃除する。
     // さらにclearProjectiles自体もDOM直指定で消すため、画像だけ残るゴーストを防ぐ。

@@ -6,7 +6,7 @@
  *    同じbuildなら次回以降はキャッシュから即返す＝毎回フルDLしない。
  *    buildが変わればCACHE_NAMEごと新規作成され、古いキャッシュはactivate時に破棄される。
  */
-const SW_BUILD = '20260819-ch04-survive-item-guide-v149';
+const SW_BUILD = '20260819-ch04-item-bossaround-retry-light-v150';
 const ASSET_CACHE = `sasaphia-assets-${SW_BUILD}`;
 
 self.addEventListener('install', event => {
