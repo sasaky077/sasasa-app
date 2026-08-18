@@ -350,25 +350,50 @@
     const bx = Number(state.boss?.x || w * 0.5);
     const by = Number(state.boss?.y || h * 0.16);
     const itemHalf = 38;
-    const safeLeft = Math.min(right, left + itemHalf + 26);
-    const safeRight = Math.max(safeLeft, right - itemHalf - 26);
+    let safeLeft = Math.min(right, left + itemHalf + 26);
+    let safeRight = Math.max(safeLeft, right - itemHalf - 26);
     const safeTop = Math.min(bottom, top + itemHalf + 20);
     const safeBottom = Math.max(safeTop, bottom - itemHalf - 20);
-    const offsets = [
-      [-92, 0], [92, 0],
-      [-72, 64], [72, 64],
-      [0, 86],
-      [-66, -54], [66, -54]
-    ];
-    const candidates = offsets
-      .map(([ox, oy]) => ({ x: bx + ox, y: by + oy }))
-      .filter(pos => pos.x >= safeLeft && pos.x <= safeRight && pos.y >= safeTop && pos.y <= safeBottom);
-    const fallback = { x: clamp(bx, safeLeft, safeRight), y: clamp(by + 86, safeTop, safeBottom) };
-    const pick = candidates.length
-      ? candidates[Math.floor(Math.random() * candidates.length)]
-      : fallback;
-    const x = clamp(pick.x, safeLeft, safeRight);
-    const y = clamp(pick.y, safeTop, safeBottom);
+
+    // CH04-2は60秒時点で左右の壁が大きく迫っているため、
+    // 通常の壁マージンだけでは安全領域が潰れてITEMが壁際に見えることがある。
+    // ITEM中心を画面中央寄り(約42%〜58%)へ追加制限して、
+    // 72〜76px級のITEM本体まで含めて壁から十分離して見えるようにする。
+    if (selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH04_02) {
+      const centerSafeLeft = w * 0.42;
+      const centerSafeRight = w * 0.58;
+      safeLeft = Math.max(safeLeft, centerSafeLeft);
+      safeRight = Math.min(safeRight, centerSafeRight);
+      if (safeRight < safeLeft) {
+        const centerX = w * 0.5;
+        safeLeft = centerX;
+        safeRight = centerX;
+      }
+    }
+    let x;
+    let y;
+    if (selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH04_02) {
+      // CH04-2だけは学習しやすいよう、ITEMをボスの真下へ固定。
+      // Xはボスと同じ、Yは約90px下。壁/画面端からは最終clampで守る。
+      x = clamp(bx, safeLeft, safeRight);
+      y = clamp(by + 90, safeTop, safeBottom);
+    } else {
+      const offsets = [
+        [-92, 0], [92, 0],
+        [-72, 64], [72, 64],
+        [0, 86],
+        [-66, -54], [66, -54]
+      ];
+      const candidates = offsets
+        .map(([ox, oy]) => ({ x: bx + ox, y: by + oy }))
+        .filter(pos => pos.x >= safeLeft && pos.x <= safeRight && pos.y >= safeTop && pos.y <= safeBottom);
+      const fallback = { x: clamp(bx, safeLeft, safeRight), y: clamp(by + 86, safeTop, safeBottom) };
+      const pick = candidates.length
+        ? candidates[Math.floor(Math.random() * candidates.length)]
+        : fallback;
+      x = clamp(pick.x, safeLeft, safeRight);
+      y = clamp(pick.y, safeTop, safeBottom);
+    }
 
     // ITEMフェーズへ移行しても弾幕は止めない。
     // 60秒生存後は、継続する弾幕を潜りながらITEMを回収するゲーム性にする。
@@ -3070,13 +3095,36 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const walls = ensureChapter4ShrinkWalls();
-    const enabled = !!(state && selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH04_02 && selectedStage.shrinkWalls && !state.ended);
+
+    // CH04-2の迫る壁は「実戦中かつ縮小開始後」だけ表示する。
+    // RETRY直後 / BOSS INTRO / カウントダウン中は、前回のinline widthも含めて完全に初期化。
+    const inActiveBattle = !!(
+      state &&
+      state.running &&
+      !state.countdown &&
+      !state.ended &&
+      !state.finishing &&
+      selectedStage &&
+      selectedStage.id === SHOOTING_STAGE_ID.CH04_02 &&
+      selectedStage.shrinkWalls
+    );
+
+    const bounds = inActiveBattle
+      ? getChapter4ShrinkBounds(now, Number(arena.clientWidth || 0))
+      : { left: 0, right: 0, progress: 0 };
+    const visible = inActiveBattle && Number(bounds.progress || 0) > 0;
+
     [walls.leftWall, walls.rightWall].forEach(el => {
       if (!el) return;
-      el.style.display = enabled ? 'block' : 'none';
+      if (!visible) {
+        el.style.display = 'none';
+        el.style.width = '0px';
+      } else {
+        el.style.display = 'block';
+      }
     });
-    if (!enabled) return;
-    const bounds = getChapter4ShrinkBounds(now, Number(arena.clientWidth || 0));
+    if (!visible) return;
+
     if (walls.leftWall) walls.leftWall.style.width = `${Math.round(bounds.left)}px`;
     if (walls.rightWall) walls.rightWall.style.width = `${Math.round(bounds.right)}px`;
   }
