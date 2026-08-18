@@ -20832,8 +20832,8 @@ body {
   right:10px;
   bottom:calc(72px + 38px + env(safe-area-inset-bottom));
   z-index:25;
-  width:clamp(88px,22vw,98px);
-  height:clamp(88px,22vw,98px);
+  width:clamp(118px,29vw,132px);
+  height:clamp(118px,29vw,132px);
   padding:0;margin:0;border:0;background:transparent;
   appearance:none;-webkit-appearance:none;cursor:pointer;overflow:visible;
   -webkit-tap-highlight-color:transparent;
@@ -20991,7 +20991,7 @@ body {
   #score-attack-root{left:50%;right:auto;width:430px;max-width:430px;transform:translateX(-50%);box-shadow:0 0 24px rgba(0,0,0,.80)}
 }
 @media (max-width:380px), (max-height:700px){
-  #screen-main .score-attack-home-entry{right:8px;bottom:calc(72px + 38px + env(safe-area-inset-bottom));width:84px;height:84px}
+  #screen-main .score-attack-home-entry{right:8px;bottom:calc(72px + 38px + env(safe-area-inset-bottom));width:112px;height:112px}
   .score-attack-scroll{padding-left:10px;padding-right:10px}
   .score-attack-hero{padding:12px 10px}
   .score-attack-hero-art{height:92px}

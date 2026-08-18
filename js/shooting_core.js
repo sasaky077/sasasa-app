@@ -4912,13 +4912,28 @@
     showDamageNumber(state.boss.x, state.boss.y, amount, 'enemy', big);
   }
 
-  function flashBossHit(big) {
+  function flashBossHit(big, visualAlreadyApproved = false) {
     const boss = document.getElementById(BOSS_ID);
     if (!boss) return;
 
     if (!big) {
-      if (isScoreAttackStage() && !shouldRenderRaidBossHitVisual(performance.now(), 'hit')) return;
+      // SCORE ATTACKでは通常弾の外側ですでに視覚演出を間引いている箇所があるため、
+      // 二重判定するとtimestamp更新直後にfalseになり、フラッシュが一切出なくなる。
+      if (isScoreAttackStage() && !visualAlreadyApproved && !shouldRenderRaidBossHitVisual(performance.now(), 'hit')) return;
+
       sustainHitFeedback(boss, 150);
+
+      // HP∞でも「攻撃が当たった」ことが明確に分かる専用グロー。
+      // DOMを増やさず既存ボス要素のclassだけで光らせるので軽量。
+      if (isScoreAttackStage()) {
+        boss.classList.remove('score-attack-hit-glow');
+        void boss.offsetWidth;
+        boss.classList.add('score-attack-hit-glow');
+        window.clearTimeout(boss.__scoreAttackHitGlowTimer);
+        boss.__scoreAttackHitGlowTimer = window.setTimeout(() => {
+          boss.classList.remove('score-attack-hit-glow');
+        }, 170);
+      }
       return;
     }
 
@@ -4926,6 +4941,17 @@
     boss.classList.remove('burst-hit');
     void boss.offsetWidth;
     boss.classList.add('burst-hit');
+
+    if (isScoreAttackStage()) {
+      boss.classList.remove('score-attack-burst-glow');
+      void boss.offsetWidth;
+      boss.classList.add('score-attack-burst-glow');
+      window.clearTimeout(boss.__scoreAttackBurstGlowTimer);
+      boss.__scoreAttackBurstGlowTimer = window.setTimeout(() => {
+        boss.classList.remove('score-attack-burst-glow');
+      }, 420);
+    }
+
     setTimeout(() => boss.classList.remove('burst-hit'), 420);
   }
 
@@ -5157,7 +5183,7 @@
             updateBossPhase();
             if (shouldRenderRaidBossHitVisual(now, 'hit')) {
               createHit(p.x, p.y, false);
-              flashBossHit(false);
+              flashBossHit(false, true);
             }
             if (shouldRenderRaidBossHitVisual(now, 'number')) {
               showBossDamageNumber(appliedDamage, false);
@@ -5244,7 +5270,7 @@
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
           if (shouldRenderRaidBossHitVisual(now, 'hit')) {
             createHit(p.x, p.y, false);
-            flashBossHit(false);
+            flashBossHit(false, true);
           }
           if (shouldRenderRaidBossHitVisual(now, 'number')) {
             showBossDamageNumber(appliedDamage, false);
@@ -6204,10 +6230,17 @@
   }
 
 
+  function getSelectedBossImage() {
+    // SCORE ATTACKだけ専用ボス画像に差し替える。
+    // 同じenemyIdを使う他ステージ（楽園 -ノア-等）の画像は変更しない。
+    if (isScoreAttackStage()) return 'images/scoata_boss.webp';
+    return String(BOSS && BOSS.image || '');
+  }
+
   function getBossIntroMeta() {
     if (!selectedStage || selectedStage.type !== 'boss' || !BOSS) return null;
 
-    const battleImage = String(BOSS.image || '');
+    const battleImage = getSelectedBossImage();
     const fileName = battleImage.split('/').pop() || '';
     const lower = fileName.toLowerCase();
 
@@ -6216,7 +6249,10 @@
     let introImage = '';
     // ステージ側で明示したイントロ画像を最優先する。
     // CH04-04のように専用素材が指定されている場合、命名推測で上書きしない。
-    if (selectedStage.introImage) {
+    if (isScoreAttackStage()) {
+      // SCORE ATTACK専用イントロ。バトル中のボス画像は従来のscoata_boss.webpを維持。
+      introImage = 'images/score_attack_intro.webp';
+    } else if (selectedStage.introImage) {
       introImage = String(selectedStage.introImage);
     } else if (/_battle\.(webp|png|jpg|jpeg)$/i.test(battleImage)) {
       introImage = battleImage.replace(/_battle\.(webp|png|jpg|jpeg)$/i, '_battle_start.$1');
@@ -6230,7 +6266,11 @@
       key: lower,
     };
 
-    if (lower.includes('remnant_01')) {
+    if (isScoreAttackStage()) {
+      meta.kicker = 'SCORE ATTACK';
+      meta.title = 'すこあちゃん';
+      meta.sub = selectedStage.difficultyLabel || '';
+    } else if (lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
       meta.title = 'オーバーシア';
       meta.sub = 'OVERSEER';
@@ -6599,9 +6639,28 @@
     { rank: 'D', score: 8000 },
   ]);
 
+  // SCORE ATTACK専用ランク基準。
+  // 通常シューティングの既存ランク基準には影響させない。
+  const SCORE_ATTACK_RANK_THRESHOLDS = Object.freeze([
+    { rank: 'S', score: 1500000 },
+    { rank: 'A', score: 1000000 },
+    { rank: 'B', score: 700000 },
+    { rank: 'C', score: 400000 },
+    { rank: 'D', score: 200000 },
+  ]);
+
   function getResultRank(score, win) {
-    if (!win) return 'E';
     const value = Number(score) || 0;
+
+    // SCORE ATTACKは全滅/時間切れなどでクリア扱いにならなくても、
+    // その時点までに稼いだスコアだけでランクを決定する。
+    if (isScoreAttackStage()) {
+      const hit = SCORE_ATTACK_RANK_THRESHOLDS.find(t => value >= t.score);
+      return hit ? hit.rank : 'E';
+    }
+
+    // 通常シューティングは従来仕様を維持。
+    if (!win) return 'E';
     const hit = RESULT_RANK_THRESHOLDS.find(t => value >= t.score);
     return hit ? hit.rank : 'E';
   }
@@ -7542,10 +7601,11 @@
     });
     const bossImage = document.getElementById(BOSS_ID);
     if (bossImage) {
-      if (BOSS.image) void preloadShootingImage(BOSS.image, 7000);
+      const selectedBossImage = getSelectedBossImage();
+      if (selectedBossImage) void preloadShootingImage(selectedBossImage, 7000);
       const introMeta = getBossIntroMeta();
-      if (introMeta && introMeta.image) void preloadShootingImage(introMeta.image, 7000);
-      bossImage.src = BOSS.image || '';
+      if (introMeta && introMeta.image && introMeta.image !== selectedBossImage) void preloadShootingImage(introMeta.image, 7000);
+      bossImage.src = selectedBossImage;
       bossImage.alt = BOSS.name || '';
       bossImage.style.setProperty('--enemy-scale', String(Number(BOSS.uiScale || 1)));
       bossImage.style.display = selectedStage && selectedStage.type === 'normal' ? 'none' : '';
@@ -7646,6 +7706,19 @@
   };
 
   window.closeShootingEvent = function () {
+    // SCORE ATTACKのRESULT画面から「戻る」を押した場合だけ、
+    // ホームではなく「すこあた！」イベント画面へ戻す。
+    // パーティ選択中のキャンセル等には影響させない。
+    const resultElBeforeClose = document.getElementById('shooting-result');
+    const returningToScoreAttackLobby = !!(
+      isScoreAttackStage() &&
+      resultElBeforeClose &&
+      (
+        resultElBeforeClose.classList.contains('show') ||
+        resultElBeforeClose.getAttribute('aria-hidden') === 'false'
+      )
+    );
+
     // 明示的に「戻る/退出」した場合は中断復帰対象にしない。
     suppressShootingResumeSave = true;
     clearShootingResumeState();
@@ -7728,6 +7801,15 @@
     if (returningToRaidLobby) {
       selectedRaidContext = null;
       if (typeof window.openDailyRaid === 'function') window.openDailyRaid({ immediate: true, refresh: true });
+      return;
+    }
+
+    if (returningToScoreAttackLobby) {
+      selectedRaidContext = null;
+      if (typeof window.openScoreAttack === 'function') {
+        // RESULT反映直後のランキングも再取得して表示する。
+        window.openScoreAttack();
+      }
       return;
     }
 

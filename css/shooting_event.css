@@ -6779,3 +6779,60 @@
   filter:none!important;
   contain:layout paint style;
 }
+
+
+/* =========================================================
+   SCORE ATTACK v133 - Boss hit feedback
+   HP∞でも命中感が分かる、軽量な光エフェクト。
+   DOM追加なし。既存ボス画像のfilterのみ短時間変更。
+   ========================================================= */
+#shooting-event-root[data-shooting-stage="shooting_score_attack_normal"] #shooting-boss.score-attack-hit-glow,
+#shooting-event-root[data-shooting-stage="shooting_score_attack_hard"] #shooting-boss.score-attack-hit-glow{
+  animation:score-attack-boss-hit-glow .17s ease-out;
+}
+
+#shooting-event-root[data-shooting-stage="shooting_score_attack_normal"] #shooting-boss.score-attack-burst-glow,
+#shooting-event-root[data-shooting-stage="shooting_score_attack_hard"] #shooting-boss.score-attack-burst-glow{
+  animation:score-attack-boss-burst-glow .42s ease-out;
+}
+
+@keyframes score-attack-boss-hit-glow{
+  0%{
+    filter:
+      brightness(1.75)
+      saturate(1.18)
+      drop-shadow(0 0 7px rgba(255,255,255,.95))
+      drop-shadow(0 0 15px rgba(255,187,236,.72));
+  }
+  45%{
+    filter:
+      brightness(1.32)
+      saturate(1.10)
+      drop-shadow(0 0 5px rgba(255,255,255,.72))
+      drop-shadow(0 0 10px rgba(204,184,255,.52));
+  }
+  100%{
+    filter:none;
+  }
+}
+
+@keyframes score-attack-boss-burst-glow{
+  0%{
+    filter:
+      brightness(2.05)
+      saturate(1.30)
+      drop-shadow(0 0 12px rgba(255,255,255,1))
+      drop-shadow(0 0 26px rgba(255,178,232,.90))
+      drop-shadow(0 0 40px rgba(177,168,255,.65));
+  }
+  55%{
+    filter:
+      brightness(1.45)
+      saturate(1.18)
+      drop-shadow(0 0 8px rgba(255,255,255,.80))
+      drop-shadow(0 0 18px rgba(210,184,255,.58));
+  }
+  100%{
+    filter:none;
+  }
+}
