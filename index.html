@@ -57,7 +57,10 @@
       .then(function(info){
         var latest = cleanBuild(info && info.build);
         if (!latest) return;
-        var current = getUrlBuild();
+        // ホーム画面(PWA)起動URLには ?build= が付かないことがある。
+        // その場合でも、このHTML自身のビルド(FALLBACK_BUILD)とserver buildが同じなら
+        // 更新扱いにせず、起動後の強制リロードを発生させない。
+        var current = getUrlBuild() || FALLBACK_BUILD;
         try { localStorage.setItem('sasaphia_latest_server_build', latest); } catch (_) {}
         if (current !== latest) {
           forceReloadTo(latest);
@@ -10301,14 +10304,11 @@ window.reloadSasaphiaApp = function(event){
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
       .then(function(reg){
         try { reg.update(); } catch (_) {}
+        // sw.js 側の activate で clients.claim() しているため、
+        // 初回登録直後にページを強制reloadする必要はない。
+        // ここでreloadすると、タイトル→ホーム到達後に突然画面が落ちたように見えるため廃止。
         if (!navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.then(function(){
-            // 初回登録直後だけ、SW制御下へ入れるため1回再読込。
-            if (!sessionStorage.getItem('sasaphia_sw_bootstrap_done')) {
-              sessionStorage.setItem('sasaphia_sw_bootstrap_done','1');
-              location.reload();
-            }
-          }).catch(function(){});
+          navigator.serviceWorker.ready.catch(function(){});
         }
       })
       .catch(function(err){ console.warn('[sasaphia] service worker registration failed', err); });
