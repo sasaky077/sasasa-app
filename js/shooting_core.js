@@ -310,7 +310,7 @@
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.className = 'shooting-ch04-item-alert';
-      overlay.innerHTML = '<strong>ITEM発生</strong><small>10秒以内に獲得せよ</small><b>10</b>';
+      overlay.innerHTML = '<strong>ITEMを取得しろ！</strong><small>10秒以内に回収</small><b>10</b>';
       overlay.style.display = 'none';
       arena.appendChild(overlay);
     }
@@ -346,18 +346,29 @@
     const bottom = Math.max(top + 20, h * 0.62);
 
     // ITEMはボスの現在位置を基準に、その周囲7候補のいずれかへ出現。
-    // 画面外/縮小壁の外へ出ないよう最後にclampする。
+    // ただし端へ寄りすぎないよう、安全領域内の候補だけを抽選する。
     const bx = Number(state.boss?.x || w * 0.5);
     const by = Number(state.boss?.y || h * 0.16);
+    const itemHalf = 38;
+    const safeLeft = Math.min(right, left + itemHalf + 26);
+    const safeRight = Math.max(safeLeft, right - itemHalf - 26);
+    const safeTop = Math.min(bottom, top + itemHalf + 20);
+    const safeBottom = Math.max(safeTop, bottom - itemHalf - 20);
     const offsets = [
       [-92, 0], [92, 0],
       [-72, 64], [72, 64],
       [0, 86],
       [-66, -54], [66, -54]
     ];
-    const pick = offsets[Math.floor(Math.random() * offsets.length)] || [0, 86];
-    const x = clamp(bx + pick[0], left, right);
-    const y = clamp(by + pick[1], top, bottom);
+    const candidates = offsets
+      .map(([ox, oy]) => ({ x: bx + ox, y: by + oy }))
+      .filter(pos => pos.x >= safeLeft && pos.x <= safeRight && pos.y >= safeTop && pos.y <= safeBottom);
+    const fallback = { x: clamp(bx, safeLeft, safeRight), y: clamp(by + 86, safeTop, safeBottom) };
+    const pick = candidates.length
+      ? candidates[Math.floor(Math.random() * candidates.length)]
+      : fallback;
+    const x = clamp(pick.x, safeLeft, safeRight);
+    const y = clamp(pick.y, safeTop, safeBottom);
 
     // ITEMフェーズへ移行しても弾幕は止めない。
     // 60秒生存後は、継続する弾幕を潜りながらITEMを回収するゲーム性にする。
