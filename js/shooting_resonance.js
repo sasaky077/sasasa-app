@@ -228,7 +228,23 @@
     }),
 
     16: genericSet('ミト'),
-    17: genericSet('アンジェ')
+    17: genericSet('アンジェ'),
+
+    50: Object.freeze({
+      1: bonus('艦砲同調', 'ATK +5%', 'テストちゃんの基礎ATKが5%上昇する。', [
+        { type:'statRate', hp:0, atk:0.05 }
+      ]),
+      2: bonus('トライ・レーザー増幅', '通常射撃ダメージ +10%', '3WAY通常射撃の1Hitダメージを10%強化する。', [
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
+      ]),
+      3: bonus('ブラックシップ同調', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
+        { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
+      ]),
+      4: bonus('ブラックシップ・フルバースト', 'ULT 7秒・1Tick ATK×45%', 'ULT「ブラックシップ」の照射時間を5秒から7秒へ延長し、0.25秒ごとのダメージをATK×35%からATK×45%へ強化する。追加効果は付与せず、純粋な火力特化を維持する。', [
+        { type:'profileSet', field:'ultBeamDurationMs', value:7000 },
+        { type:'profileSet', field:'ultBeamTickAtkMultiplier', value:0.45 }
+      ])
+    })
   });
 
   function bonus(title, summary, detail, effects) {
