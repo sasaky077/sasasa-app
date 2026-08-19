@@ -6271,7 +6271,8 @@
   function spawnMimosaItems(c) {
     if (!state) return;
     const arena = document.getElementById('shooting-arena');
-    if (!arena) return;
+    const layer = document.getElementById('shooting-collectible-layer');
+    if (!arena || !layer) return;
 
     const w = arena.clientWidth;
     const h = arena.clientHeight;
