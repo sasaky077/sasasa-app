@@ -482,6 +482,10 @@
     return !!(selectedStage && /^shooting_(?:beginner_)?ch04_0[1-3]$/i.test(String(selectedStage.id || '')));
   }
 
+  function isHorizontalControlReversed() {
+    return !!(selectedStage && selectedStage.reverseHorizontalControls);
+  }
+
   function isChapter04BossStage() {
     return !!(selectedStage && isChapter04Stage() && selectedStage.survivalBoss);
   }
@@ -3033,10 +3037,24 @@
     const enemyId = selectedStage && selectedStage.enemyIds && selectedStage.enemyIds[0];
     const def = getShootingEnemy(enemyId);
     if (!def || !def.implemented) return;
-    const enemy = createNormalEnemy(def, now);
-    if (!enemy) return;
-    state.normalEnemies.push(enemy);
-    state.normalSpawned++;
+    const spawnOne = () => {
+      const enemy = createNormalEnemy(def, now);
+      if (!enemy) return false;
+      state.normalEnemies.push(enemy);
+      state.normalSpawned++;
+      return true;
+    };
+
+    if (cfg.spawnAllAtStart && state.normalSpawned === 0) {
+      const burstCount = Math.min(total, maxActive);
+      for (let i = 0; i < burstCount; i++) {
+        if (!spawnOne()) break;
+      }
+      state.normalLastSpawnAt = now;
+      return;
+    }
+
+    if (!spawnOne()) return;
     state.normalLastSpawnAt = now;
   }
 
@@ -3244,6 +3262,63 @@
       enemy.attackState = 'telegraph';
       enemy.attackExecuteAt = now + Number(def.telegraphMs || 520);
       enemy.el.classList.add('violence-warning');
+      return;
+    }
+
+    if (def.behavior === 'mini_mirage_v1') {
+      const cfg = getNormalBattleConfig();
+      const fireRate = Number(cfg.enemyFireRate || def.fireRate || 1080);
+      const speed = Number(cfg.enemyBulletSpeed || def.bulletSpeed || 230);
+      const damage = Number(cfg.enemyBulletDamage || def.bulletDamage || 120);
+      const warningEveryMs = Math.max(0, Number(cfg.mirageWarningEveryMs || 0));
+      const telegraphMs = Math.max(350, Number(cfg.mirageWarningTelegraphMs || 700));
+
+      // CH05-2: 3体それぞれが位相をずらしてWARNINGを撃つため、危険弾が多めに来る。
+      if (warningEveryMs > 0) {
+        if (!enemy.mirageNextWarningAt) {
+          enemy.mirageNextWarningAt = now + 1700 + (enemy.actionIndex % 3) * 1150;
+        }
+        if (enemy.mirageWarningExecuteAt && now >= enemy.mirageWarningExecuteAt) {
+          enemy.mirageWarningExecuteAt = 0;
+          const dx = state.player.x - enemy.x;
+          const dy = state.player.y - enemy.y;
+          const angle = Math.atan2(dy, dx);
+          const p = shootNormalEnemyProjectile(
+            enemy,
+            angle,
+            speed * 0.82,
+            999999,
+            'shooting-enemy-bullet shooting-danger-bullet shooting-mirage-warning-bullet'
+          );
+          if (p) p.mirageWarning = true;
+          enemy.mirageNextWarningAt = now + warningEveryMs;
+          removeBossDangerWarning();
+          return;
+        }
+        if (!enemy.mirageWarningExecuteAt && now >= enemy.mirageNextWarningAt) {
+          enemy.mirageWarningExecuteAt = now + telegraphMs;
+          showBossDangerWarning();
+          return;
+        }
+      }
+
+      if (now - enemy.lastShotAt < fireRate) return;
+      enemy.lastShotAt = now;
+      const dx = state.player.x - enemy.x;
+      const dy = state.player.y - enemy.y;
+      const baseAngle = Math.atan2(dy, dx);
+      const spread = (enemy.actionIndex++ % 2) === 0
+        ? [-0.28, 0, 0.28]
+        : [-0.42, -0.21, 0, 0.21, 0.42];
+      spread.forEach(offset => {
+        shootNormalEnemyProjectile(
+          enemy,
+          baseAngle + offset,
+          speed,
+          damage,
+          'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-mirage-bullet'
+        );
+      });
       return;
     }
 
@@ -6741,6 +6816,10 @@
     if (span) {
       span.textContent = '';
       span.classList.remove('pop', 'ready-pop', 'start-pop');
+      span.style.removeProperty('animation');
+      span.style.removeProperty('opacity');
+      span.style.removeProperty('transform');
+      span.style.removeProperty('filter');
     }
 
     countdown.classList.add('show');
@@ -6750,6 +6829,11 @@
         { text:'60秒間生き残り', phase:'chapter4-rule-phase', hold:1500 },
         { text:'最後に出現する', phase:'chapter4-rule-phase', hold:1500 },
         { text:'アイテムを獲得せよ', phase:'chapter4-rule-phase', hold:1500 }
+      ] : []),
+      ...(isHorizontalControlReversed() ? [
+        // CH05: この注意文だけは4.4秒間、文字そのものを表示し続ける。
+        // ready-popを付けると1.18秒でopacity:0になるため専用フラグで固定表示する。
+        { text:'このステージでは、\n左右の操作が反転します', phase:'chapter4-rule-phase', hold:4400, holdVisible:true }
       ] : []),
       { text:'ARE YOU READY', phase:'ready-phase',  hold:1250 },
       { text:'3',             phase:'number-phase', hold:850 },
@@ -6775,11 +6859,28 @@
 
       span.textContent = step.text;
       span.classList.remove('pop', 'ready-pop', 'start-pop');
+
+      // 前ステップの固定表示指定を必ず解除してから次の演出へ。
+      span.style.removeProperty('animation');
+      span.style.removeProperty('opacity');
+      span.style.removeProperty('transform');
+      span.style.removeProperty('filter');
       void span.offsetWidth;
 
-      if (step.phase === 'chapter4-rule-phase' || step.phase === 'ready-phase') span.classList.add('ready-pop');
-      else if (step.phase === 'start-phase') span.classList.add('start-pop');
-      else span.classList.add('pop');
+      if (step.holdVisible) {
+        // 反転操作MESSAGE:
+        // 4.4秒のhold中ずっと可視状態を維持し、終了直後にARE YOU READYへ切り替える。
+        span.style.setProperty('animation', 'none', 'important');
+        span.style.setProperty('opacity', '1', 'important');
+        span.style.setProperty('transform', 'none', 'important');
+        span.style.setProperty('filter', 'none', 'important');
+      } else if (step.phase === 'chapter4-rule-phase' || step.phase === 'ready-phase') {
+        span.classList.add('ready-pop');
+      } else if (step.phase === 'start-phase') {
+        span.classList.add('start-pop');
+      } else {
+        span.classList.add('pop');
+      }
 
       i += 1;
 
@@ -7457,7 +7558,7 @@
       const deltaY = e.clientY - dragStartClientY;
 
       pointerX = clamp(
-        dragStartPlayerX + deltaX,
+        dragStartPlayerX + (isHorizontalControlReversed() ? -deltaX : deltaX),
         30,
         r.width - 30
       );
@@ -7472,7 +7573,8 @@
     }
 
     // PCマウスは従来どおり絶対座標へ追従。
-    pointerX = clamp(e.clientX - r.left, 30, r.width - 30);
+    const localX = e.clientX - r.left;
+    pointerX = clamp(isHorizontalControlReversed() ? (r.width - localX) : localX, 30, r.width - 30);
     pointerY = clamp(e.clientY - r.top, 34, r.height - 38);
   }
 

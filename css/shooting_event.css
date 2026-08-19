@@ -6555,7 +6555,7 @@
   min-width:0!important;
   overflow:visible!important;
   text-overflow:clip!important;
-  white-space:normal!important;
+  white-space:pre-line!important;
   word-break:normal!important;
   overflow-wrap:anywhere!important;
   line-height:1.45!important;
@@ -6932,4 +6932,16 @@
 #shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"]) .shooting-ch04-item-alert b{
   color:#6f45d8!important;
   -webkit-text-stroke:1px rgba(255,255,255,.88);
+}
+
+
+/* CHAPTER05 v172: reverse-control notice only — smaller and easier to read. */
+#shooting-event-root[data-shooting-stage^="shooting_ch05_"] .shooting-countdown.chapter4-rule-phase span{
+  width:min(86vw,460px)!important;
+  font-size:clamp(17px,4.6vw,23px)!important;
+  line-height:1.55!important;
+  letter-spacing:.055em!important;
+  text-indent:0!important;
+  text-align:center!important;
+  white-space:pre-line!important;
 }

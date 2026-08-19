@@ -47,6 +47,10 @@
     CH04_03: 'shooting_ch04_03',
     CH04_04: 'shooting_ch04_04',
 
+    CH05_01: 'shooting_ch05_01',
+    CH05_02: 'shooting_ch05_02',
+    CH05_03: 'shooting_ch05_03',
+
     FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
@@ -505,6 +509,83 @@
     }),
 
     // ============================================================
+    // CHAPTER 05 - 境界のマリオネット
+    // 全ステージ共通：左右操作反転。
+    // HARDを基準仕様とし、NORMALも同一仕様で提供する。
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH05_01]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH05_01,
+      chapter: 5,
+      stageNo: 1,
+      name: '境界のマリオネット',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/remnant_05_battle_start.webp',
+      reverseHorizontalControls: true,
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
+      normalBattle: Object.freeze({
+        totalEnemies: 6,
+        maxActive: 3,
+        spawnIntervalMs: 760,
+        infiniteEnemies: true,
+        enemyHp: 1100,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        target: 3,
+        text: 'アイテムを3つ取得しろ',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH05_02]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH05_02,
+      chapter: 5,
+      stageNo: 2,
+      name: '境界のマリオネット',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/remnant_05_battle_start.webp',
+      reverseHorizontalControls: true,
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
+      normalBattle: Object.freeze({
+        totalEnemies: 3,
+        maxActive: 3,
+        spawnIntervalMs: 0,
+        spawnAllAtStart: true,
+        enemyHp: 1400,
+        enemyFireRate: 940,
+        enemyBulletSpeed: 245,
+        enemyBulletDamage: 125,
+        mirageWarningEveryMs: 5200,
+        mirageWarningTelegraphMs: 700,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
+        targetSeconds: 90,
+        text: '90秒以内に敵を3体撃破しろ',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH05_03]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH05_03,
+      chapter: 5,
+      stageNo: 3,
+      name: 'レムナント：ミラージュ',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/remnant_05_battle_start.webp',
+      reverseHorizontalControls: true,
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_05]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'レムナント：ミラージュを撃破しろ',
+      }),
+      playable: true,
+    }),
+
+    // ============================================================
     // SPECIAL EVENT - 無貌の天使
     // 「照射◯秒」は現行プレイ感の基準DPSを約190としてHP化。
     // wave1: 約40秒 → 7,600 / wave2: 約100秒 → 19,000
@@ -701,8 +782,10 @@
   function makeBeginnerStage(baseStage) {
     if (!baseStage || !baseStage.id || !Number(baseStage.chapter)) return null;
     const reduceBullets =
-      Number(baseStage.chapter) > 3 ||
-      (Number(baseStage.chapter) === 3 && Number(baseStage.stageNo || 0) >= 4);
+      Number(baseStage.chapter) !== 5 && (
+        Number(baseStage.chapter) > 3 ||
+        (Number(baseStage.chapter) === 3 && Number(baseStage.stageNo || 0) >= 4)
+      );
 
     return Object.freeze({
       ...baseStage,
