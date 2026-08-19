@@ -28,7 +28,7 @@ function ensureRoot(){
 
   <section class="score-attack-ranking score-attack-ranking-first">
     <div class="score-attack-section-head">
-      <div><strong>現在のランキング</strong></div>
+      <div><strong>現在のフレンド内ランキング</strong></div>
     </div>
     <div id="score-attack-list" class="score-attack-list"><div class="score-attack-loading">読み込み中...</div></div>
   </section>
