@@ -24,5 +24,12 @@ window.HOME_EVENT_BANNERS = [
     alt: 'DAILY RAID BATTLE',
     actionName: 'openDailyRaid',
     hidden: false
+  },
+  {
+    id: 'event_wolf_implemented',
+    img: 'images/event_banner_03.webp',
+    alt: 'ウルフ実装',
+    actionName: 'openWolfGachaFromHome',
+    hidden: false
   }
 ];

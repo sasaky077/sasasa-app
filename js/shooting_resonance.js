@@ -230,6 +230,21 @@
     16: genericSet('ミト'),
     17: genericSet('アンジェ'),
 
+    18: Object.freeze({
+      1: bonus('狩狼の共鳴', 'HP・ATK +5%', 'ウルフの基礎HPとATKが5%上昇する。', [
+        { type:'statRate', hp:0.05, atk:0.05 }
+      ]),
+      2: bonus('追牙増幅', '通常射撃ダメージ +10%', 'J字ホーミング射撃の1Hitダメージを10%強化する。', [
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
+      ]),
+      3: bonus('狩場同調', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
+        { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
+      ]),
+      4: bonus('深月の領域', 'ATK UP 1.5倍 → 1.65倍', 'ULTで展開するATK UPフィールドの倍率を1.65倍へ強化する。', [
+        { type:'profileSet', field:'ultFieldAtkMultiplier', value:1.65 }
+      ])
+    }),
+
     50: Object.freeze({
       1: bonus('艦砲同調', 'ATK +5%', 'テストちゃんの基礎ATKが5%上昇する。', [
         { type:'statRate', hp:0, atk:0.05 }

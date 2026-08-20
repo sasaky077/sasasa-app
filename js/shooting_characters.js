@@ -24,6 +24,7 @@
     ELTENA: 15,
     MITO: 16,
     ANGE: 17,
+    WOLF: 18,
     TESTCHAN: 50,
   });
 
@@ -53,6 +54,7 @@
     15: 'r',   // エルテナ
     16: 'r',   // ミト
     17: 'r',   // アンジェ
+    18: 'sr',  // ウルフ
     50: 'sr',  // テストちゃん
   });
 
@@ -232,6 +234,15 @@
       panelImage: 'images/chara_17_panel.webp',
       cutinImage: 'images/chara_17_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 0.8 },
+    },
+    18: {
+      id: 18, name: 'ウルフ',
+      element: 'chaos',
+      hp: 610, atk: 300,
+      image: 'images/chara_18_battle_back.webp',
+      panelImage: 'images/chara_18_panel.webp',
+      cutinImage: 'images/chara_18_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.22, battleUp: 1.0 },
     },
     50: {
       id: 50, name: 'テストちゃん',
@@ -778,6 +789,44 @@
     ultHitAtkMultiplier: 0.30,
     ultHitCooldownMs: 140,
   });
+
+  // ============================================================
+  // ウルフ：深いJ字ホーミング / ATK UP FIELD
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.WOLF] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.WOLF,
+    effectKey: 'wolf',
+    label: 'J-HOMING / PREDATOR FIELD',
+    description: '左右2発がいったん肩より後ろへ沈み込み、深いJ字を描いてUターン。2本の軌道は同じ標的へ収束するホーミング射撃。ULTは敵弾を全消去し、中央に10秒間ATK×1.5の強化フィールドを展開する。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.5倍にする。',
+    ultName: '月喰みの狩場',
+    ultType: 'wolf_atk_field',
+    moveSpeed: 420,
+    fireRate: 285,
+    bulletSpeed: 900,
+    shotPowerRate: 0.115,
+
+    // 左右2発が後方へ沈み、J字で反転して同一点へ収束する。
+    shotType: 'wolf_j_homing',
+    shotCount: 2,
+    shotSpacing: 30,
+    shotStyle: 'wolf',
+    wolfCurveDurationMs: 430,
+    wolfRetreatDepth: 78,
+    wolfOuterOffset: 52,
+    wolfConvergeLead: 54,
+
+    burstNeed: 32,
+    ultGainPerHit: 0.44,
+    coreTop: '38%',
+    shotOffsetY: 32,
+
+    ultFieldDurationMs: 10000,
+    ultFieldAtkMultiplier: 1.5,
+    ultFieldRadius: 112,
+  });
+
 
   // ============================================================
   // テストちゃん：DAILY RAIDクリア報酬

@@ -1119,6 +1119,78 @@ skills: [
       }
     ]}
 ,
+
+  // ── id:18 ウルフ
+  { id: 18, name: 'ウルフ', rarity: 'sr',
+    element: 'chaos',
+    role: '射撃・強化',
+    moveType: 'cross_1',
+    costMax: 14,
+    costStart: 5,
+    costRegen: 3,
+    shinkiMax: 5,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 610, ATK: 300 },
+    img: 'images/chara_18.webp',
+    cutImg: 'images/chara_18_cut.webp',
+    ultImg: 'images/chara_18_cutin.webp',
+    upImg: 'images/chara_18_up.webp',
+    battleImg: 'images/chara_18.webp',
+    battleUpImg: 'images/chara_18.webp',
+    battleBackImg: 'images/chara_18_battle_back.webp',
+    panelImg: 'images/chara_18_panel.webp',
+    favScale: 1.1, favOffsetY: -10,
+    uiScale: {panel: 1.0,battleBack: 1.22,battleUp: 1.0},
+    combo: {
+      range: 'combo_line_all',
+      skill: {
+        id: 'combo',
+        name: '追牙',
+        type: 'attack',
+        multiplier: 0.85,
+        range: 'front3',
+        effects: [],
+        hitStyle: 'normal',
+        desc: '同列の味方スキルに反応し、前方の敵へ追撃する。'
+      }
+    },
+    skills: [
+      {
+        id: 's1',
+        name: 'ハウリング・ファング',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        criticalRate: 0.15,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 1.8,
+        range: 'front3',
+        effects: [],
+        hitStyle: 'multi',
+        desc: '前方の敵へATK×1.8の射撃ダメージを与える。'
+      },
+      {
+        id: 'ult',
+        name: '月喰みの狩場',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        criticalRate: 0.00,
+        criticalDamageRate: 1.5,
+        type: 'buff',
+        multiplier: 0.0,
+        range: 'ally_all',
+        effects: [
+          { type: 'atk_up', target: 'ally_all', hit: 100, duration: 2, rate: 1.50 }
+        ],
+        hitStyle: 'buff',
+        desc: '味方全体の攻撃性能を一時的に高める強化型ULT。シューティングでは敵弾を全消去し、中央に10秒間ATK×1.5の円形フィールドを展開する。'
+      }
+    ]
+  },
+
   // ── id:50 テストちゃん（DAILY RAIDクリア報酬）
   { id: 50, name: 'テストちゃん', rarity: 'sr',
     element: 'logos',

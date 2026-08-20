@@ -1478,6 +1478,7 @@
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFlower: null, roseHeartSeq: 0,
       eltenaBlackHole: null,
+      wolfAtkField: null,
       chapter4ItemPhase: false,
       chapter4FinalItem: null,
       chapter4ItemDeadlineAt: 0,
@@ -1686,7 +1687,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-wolf-atk-field,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
@@ -1694,6 +1695,7 @@
       state.ignisLaserEl = null;
       state.ignisFireWheel = null;
       state.roseFlower = null;
+      state.wolfAtkField = null;
       state.bossDangerWarningEl = null;
       state.bossDangerExecuteAt = 0;
       if (Array.isArray(state.facelessObjects)) {
@@ -1740,11 +1742,16 @@
 
     // ---- ATK UP：発生源が増えたらここに1エントリ足すだけでよい ----
     // { left: 残りms, multiplier: 表示用倍率 } の配列から、残り時間が最大のものを採用する。
+    const wolfFieldStatus = getWolfAtkFieldStatus(now);
     const atkBuffSources = [
       { left: (member.atkBuffUntil || 0) - now, multiplier: Number(member.atkBuffMultiplier || 1.3) }, // ミモザのアイテム
       {
         left: chara && chara.id === CHARACTER_ID.HAYATE ? (state.hayateMoonlightUntil || 0) - now : -Infinity,
         multiplier: Number((chara && chara.moonlightPowerMultiplier) || 1.85), // ハヤテ自身の月光モードATK UP
+      },
+      {
+        left: wolfFieldStatus.active ? wolfFieldStatus.left : -Infinity,
+        multiplier: wolfFieldStatus.multiplier,
       },
     ].filter(entry => entry.left > 0);
 
@@ -2182,6 +2189,202 @@
   function getCenteredShotOffset(index, count, spacing) {
     return (index - (count - 1) / 2) * spacing;
   }
+
+  function getWolfTargetPoint(fromX, fromY) {
+    if (!state) return null;
+
+    const candidates = [];
+
+    if (isNormalBattle()) {
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        candidates.push({ ref: enemy, x: Number(enemy.x || 0), y: Number(enemy.y || 0) });
+      });
+    } else {
+      if (isFacelessStage()) {
+        (state.facelessObjects || []).forEach(obj => {
+          if (!obj || !obj.el || obj.hp <= 0) return;
+          candidates.push({ ref: obj, x: Number(obj.x || 0), y: Number(obj.y || 0) });
+        });
+      }
+      if (state.boss && state.boss.hp > 0) {
+        candidates.push({ ref: state.boss, x: Number(state.boss.x || 0), y: Number(state.boss.y || 0) });
+      }
+    }
+
+    if (!candidates.length) return null;
+
+    candidates.sort((a, b) => {
+      const da = Math.hypot(a.x - fromX, a.y - fromY);
+      const db = Math.hypot(b.x - fromX, b.y - fromY);
+      return da - db;
+    });
+    return candidates[0];
+  }
+
+  function resolveWolfTrackedTarget(p) {
+    const tracked = p && p.wolfTargetRef;
+    if (tracked && Number(tracked.hp || 0) > 0) {
+      return { ref: tracked, x: Number(tracked.x || 0), y: Number(tracked.y || 0) };
+    }
+    const next = getWolfTargetPoint(Number(p?.x || state?.player?.x || 0), Number(p?.y || state?.player?.y || 0));
+    if (p && next) p.wolfTargetRef = next.ref;
+    return next;
+  }
+
+  function createWolfJHomingProjectile(c, side, startY, damage, bulletClass, now) {
+    const startX = Number(state.player.x || 0) + side * Number(c.shotSpacing || 30) * 0.5;
+    const p = makeProjectile(
+      bulletClass + ' shooting-bullet-wolf-j',
+      startX,
+      startY,
+      0,
+      0,
+      damage,
+      c.id
+    );
+    if (!p) return null;
+
+    const target = getWolfTargetPoint(startX, startY);
+    p.kind = 'wolf_j_homing';
+    p.wolfSide = side;
+    p.wolfStartedAt = now;
+    p.wolfCurveDurationMs = Math.max(260, Number(c.wolfCurveDurationMs || 430));
+    p.wolfRetreatDepth = Math.max(40, Number(c.wolfRetreatDepth || 78));
+    p.wolfOuterOffset = Math.max(24, Number(c.wolfOuterOffset || 52));
+    p.wolfConvergeLead = Math.max(28, Number(c.wolfConvergeLead || 54));
+    p.wolfSpeed = Math.max(360, Number(c.bulletSpeed || 900));
+    p.wolfStartX = startX;
+    p.wolfStartY = startY;
+    p.wolfTargetRef = target ? target.ref : null;
+    p.wolfCurveDone = false;
+    p.wolfCanHit = false;
+    return p;
+  }
+
+  function updateWolfJHomingProjectile(p, dt, now) {
+    const target = resolveWolfTrackedTarget(p);
+
+    if (!p.wolfCurveDone) {
+      const duration = Math.max(1, Number(p.wolfCurveDurationMs || 430));
+      const t = clamp((now - Number(p.wolfStartedAt || now)) / duration, 0, 1);
+      const side = Number(p.wolfSide || 1);
+      const sx = Number(p.wolfStartX || p.x || 0);
+      const sy = Number(p.wolfStartY || p.y || 0);
+
+      // Targetがいない場合も、画面上方の同一点へ収束する。
+      const tx = target ? Number(target.x || sx) : Number(state.player.x || sx);
+      const ty = target ? Number(target.y || 40) : 40;
+      const ex = tx;
+      const ey = ty + Number(p.wolfConvergeLead || 54);
+
+      // 深いJ字：
+      // 1) 左右へ開きながら肩より後ろまで沈む
+      // 2) 大きくUターン
+      // 3) 2発とも標的直下の同一点へ収束
+      const c1x = sx + side * Number(p.wolfOuterOffset || 52);
+      const c1y = sy + Number(p.wolfRetreatDepth || 78);
+      const c2x = ex + side * Number(p.wolfOuterOffset || 52) * 0.72;
+      const c2y = ey + Number(p.wolfRetreatDepth || 78) * 0.72;
+      const u = 1 - t;
+
+      p.x = u*u*u*sx + 3*u*u*t*c1x + 3*u*t*t*c2x + t*t*t*ex;
+      p.y = u*u*u*sy + 3*u*u*t*c1y + 3*u*t*t*c2y + t*t*t*ey;
+      p.wolfCanHit = t >= 0.94;
+
+      if (t >= 1) {
+        p.wolfCurveDone = true;
+        p.wolfCanHit = true;
+      }
+      return;
+    }
+
+    const liveTarget = resolveWolfTrackedTarget(p);
+    const tx = liveTarget ? Number(liveTarget.x || p.x) : Number(state.player.x || p.x);
+    const ty = liveTarget ? Number(liveTarget.y || 0) : -40;
+    const dx = tx - p.x;
+    const dy = ty - p.y;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const speed = Number(p.wolfSpeed || 900);
+
+    // 収束後は2発とも同じ着弾点を追う。並列では飛ばさない。
+    p.vx = dx / len * speed;
+    p.vy = dy / len * speed;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+
+  function getWolfAtkFieldStatus(now) {
+    const field = state && state.wolfAtkField;
+    if (!field || now >= Number(field.until || 0)) {
+      return { active:false, left:0, multiplier:1 };
+    }
+    const dx = Number(state.player.x || 0) - Number(field.x || 0);
+    const dy = Number(state.player.y || 0) - Number(field.y || 0);
+    const inside = Math.hypot(dx, dy) <= Number(field.radius || 0);
+    return {
+      active: inside,
+      left: Math.max(0, Number(field.until || 0) - now),
+      multiplier: inside ? Number(field.multiplier || 1.5) : 1
+    };
+  }
+
+  function updateWolfAtkField(now) {
+    if (!state || !state.wolfAtkField) return;
+    const field = state.wolfAtkField;
+    if (now < Number(field.until || 0)) return;
+    if (field.el && field.el.isConnected) {
+      field.el.classList.add('ending');
+      setTimeout(() => field.el && field.el.isConnected && field.el.remove(), 220);
+    }
+    state.wolfAtkField = null;
+  }
+
+  function useWolfUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    showUltCut(c.ultName, c.effectKey);
+    ultScreenFlash('ult-flash-wolf');
+    clearEnemyBulletsOnly();
+    // 「盤面の弾を削除」：敵弾だけでなく、発射済みの自機弾も一度リセット。
+    (state.bullets || []).forEach(p => p && p.el && p.el.remove());
+    state.bullets = [];
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const old = arena.querySelector('.shooting-wolf-atk-field');
+    if (old) old.remove();
+
+    const radius = Math.max(70, Number(c.ultFieldRadius || 112));
+    const x = arena.clientWidth * 0.5;
+    const y = arena.clientHeight * 0.5;
+    const duration = Math.max(1000, Number(c.ultFieldDurationMs || 10000));
+    const now = performance.now();
+
+    const el = document.createElement('div');
+    el.className = 'shooting-wolf-atk-field';
+    el.style.width = `${radius * 2}px`;
+    el.style.height = `${radius * 2}px`;
+    el.style.transform = `translate3d(${x - radius}px,${y - radius}px,0)`;
+    el.innerHTML = '<i></i><span>ATK UP</span>';
+    arena.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+
+    state.wolfAtkField = {
+      el,
+      x,
+      y,
+      radius,
+      multiplier: Math.max(1, Number(c.ultFieldAtkMultiplier || 1.5)),
+      until: now + duration,
+      ownerId: c.id
+    };
+    state.ultLockUntil = now + 320;
+    state.lastShotAt = -9999;
+    renderHud();
+  }
+
 
   function hideIgnisLaser() {
     if (!state || !state.ignisLaserEl) return;
@@ -2763,13 +2966,15 @@
       activeMember && now < (activeMember.atkBuffUntil || 0)
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier;
 
     const effectiveFireRate = Number(c.fireRate || 170) * fireRateMultiplier;
     const effectivePower =
       Number(c.atk || 0) *
       Number(c.shotPowerRate || 0.095) *
       powerMultiplier *
-      itemAtkBuffMultiplier;
+      itemAtkBuffMultiplier *
+      wolfFieldAtkMultiplier;
 
     if (now - state.lastShotAt < effectiveFireRate) return;
 
@@ -2837,6 +3042,20 @@
           p.kind = 'rose_seed';
           state.bullets.push(p);
         }
+      }
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // ウルフ：深いJ字ホーミング
+    // 左右2発がいったん後方へ沈み、Uターンして同じ標的へ収束。
+    // ----------------------------------------------------------
+    if (c.shotType === 'wolf_j_homing') {
+      const sides = shotCount <= 1 ? [1] : [-1, 1];
+      for (let i = 0; i < shotCount; i++) {
+        const side = sides[i] ?? (i % 2 === 0 ? -1 : 1);
+        const p = createWolfJHomingProjectile(c, side, y, effectivePower, bulletClass, now);
+        if (p) state.bullets.push(p);
       }
       return;
     }
@@ -5432,11 +5651,17 @@
       if (!p || !p.el) return false;
       if (p.kind === 'arno_orbit_forward') {
         updateArnoOrbitProjectile(p, dt);
+      } else if (p.kind === 'wolf_j_homing') {
+        updateWolfJHomingProjectile(p, dt, now);
       } else {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
       }
       positionUnit(p.el, p.x, p.y);
+
+      // J字の折り返し中は当たり判定を開始しない。
+      // 標的直下へ収束してから通常の着弾判定へ入る。
+      if (p.kind === 'wolf_j_homing' && !p.wolfCanHit) return true;
 
       if (p.kind === 'rose_heart') {
         if (p.y < -30 || p.y > h + 30 || p.x < -30 || p.x > w + 30 || now >= Number(p.expireAt || 0)) {
@@ -6491,6 +6716,7 @@
     updateIgnisFireWheel(ts);
     updateIgnisBurns(ts);
     updateRoseFlower(ts);
+    updateWolfAtkField(ts);
     if (state.ignisLaserEl && (
       getCurrentCharacter().id !== CHARACTER_ID.IGNIS ||
       ts >= Number(state.ignisLaserHideAt || 0)
@@ -8221,7 +8447,7 @@
   function ultScreenFlash(className) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    root.classList.remove('ult-flash-eri','ult-flash-hayate','ult-flash-ayane','ult-flash-nem','ult-flash-mito');
+    root.classList.remove('ult-flash-eri','ult-flash-hayate','ult-flash-ayane','ult-flash-nem','ult-flash-mito','ult-flash-wolf');
     void root.offsetWidth;
     root.classList.add(className);
     setTimeout(() => root.classList.remove(className), 700);
@@ -9635,6 +9861,7 @@
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else if (c.ultType === 'mito_time_rush') useMitoUlt(c);
+    else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
     else useEriUlt(c);
 

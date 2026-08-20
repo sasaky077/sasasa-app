@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260820-bonus-layout-fix-v177';
+    var FALLBACK_BUILD = '20260821-wolf-home-banner-v182';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260820-bonus-layout-fix-v177">
+  <meta name="sasaphia-build" content="20260821-wolf-home-banner-v182">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260820-bonus-layout-fix-v177"
+        href="css/style.css?v=20260821-wolf-home-banner-v182"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260820-bonus-layout-fix-v177"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260821-wolf-home-banner-v182"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260820-bonus-layout-fix-v177">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260821-wolf-home-banner-v182">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260820-bonus-layout-fix-v177">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260821-wolf-home-banner-v182">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260820-bonus-layout-fix-v177';
+  var BUILD = '20260821-wolf-home-banner-v182';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1328,7 +1328,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/home_banners.js?v=20260821-wolf-home-banner-v182"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2113,9 +2113,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/resonance_system.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/resonance_ui.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/shooting_resonance.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/resonance_system.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/resonance_ui.js?v=20260821-wolf-home-banner-v182"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -2593,6 +2593,19 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 13, 14, 15, 16, 17, ];
       img: 'images/gacha_banner_05.webp',
       cost: 5,
       pickupCharaId: 12,
+      pickupRate: 0.05,
+      commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
+      commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
+      itemMixed: true,
+      disablePity: false,
+      disableTenGuarantee: true
+    },
+    {
+      id: 'gacha_06',
+      category: 'normal',
+      img: 'images/gacha_banner_06.webp',
+      cost: 5,
+      pickupCharaId: 18,
       pickupRate: 0.05,
       commonCharacterIds: GACHA_COMMON_CHARACTER_IDS,
       commonMaterialIds: GACHA_COMMON_MATERIAL_IDS,
@@ -8474,6 +8487,25 @@ function openSakielRogueliteFromHome(){
   return false;
 }
 
+// ホームイベントバナー「ウルフ実装」から、ウルフのピックアップガチャへ直接遷移
+function openWolfGachaFromHome(){
+  var wolfGacha = (typeof GACHA_BANNERS !== 'undefined' && Array.isArray(GACHA_BANNERS))
+    ? GACHA_BANNERS.find(function(gacha){ return gacha.id === 'gacha_06'; })
+    : null;
+
+  if(!wolfGacha){
+    console.warn('[HomeBanner] ウルフガチャ gacha_06 が見つかりません');
+    if(typeof showMainTab === 'function') showMainTab('summon');
+    return false;
+  }
+
+  currentGachaId = wolfGacha.id;
+  if(typeof showMainTab === 'function') showMainTab('summon');
+  if(typeof renderSummonBanners === 'function') renderSummonBanners();
+  if(typeof openGachaDetail === 'function') openGachaDetail(wolfGacha);
+  return false;
+}
+
 function openHomeBanner(index){
   var banners = getHomeEventBanners().filter(function(banner){
     return banner && banner.hidden !== true;
@@ -9816,43 +9848,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/asset_loader.js?v=20260821-wolf-home-banner-v182"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/login_bonus.js?v=20260821-wolf-home-banner-v182"></script>
 
-<script src="js/story_engine.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/stories/chapter01.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/story_engine.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/stories/chapter01.js?v=20260821-wolf-home-banner-v182"></script>
 
-<script src="js/battle_range.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/characters.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/enemies.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/battle.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/battle_swipe.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/battle_range.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/characters.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/enemies.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/battle.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/battle_swipe.js?v=20260821-wolf-home-banner-v182"></script>
 
-<script src="js/stages.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/stage_select.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/party_select.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/enemy_intro.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/stages.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/stage_select.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/party_select.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/enemy_intro.js?v=20260821-wolf-home-banner-v182"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260820-bonus-layout-fix-v177">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260821-wolf-home-banner-v182">
 
-<script src="js/battle_range_32.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/characters_32.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/remnant_blessings.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/combo_32.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/cards.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/battle_32.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/battle_32_ui.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/battle_range_32.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/characters_32.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/remnant_blessings.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/combo_32.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/cards.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/battle_32.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/battle_32_ui.js?v=20260821-wolf-home-banner-v182"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/roguelite_run.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/roguelite_reward.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/shinju.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/roguelite_controller.js?v=20260820-bonus-layout-fix-v177"></script>
-<script src="js/roguelite_overseer_run.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/roguelite_options.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/roguelite_run.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/roguelite_reward.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/shinju.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/roguelite_controller.js?v=20260821-wolf-home-banner-v182"></script>
+<script src="js/roguelite_overseer_run.js?v=20260821-wolf-home-banner-v182"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -10298,10 +10330,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260820-bonus-layout-fix-v177"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260821-wolf-home-banner-v182"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/raid_event.js?v=20260821-wolf-home-banner-v182"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -10322,6 +10354,6 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260820-bonus-layout-fix-v177"></script>
+<script src="js/score_attack.js?v=20260821-wolf-home-banner-v182"></script>
 </body>
 </html>
