@@ -2084,6 +2084,8 @@ window.NOTICE_ITEMS = [
 
   window.addEventListener('sasaphia-daily-raid-cleared', function(){
     refreshRaidClearRewardNotice();
+    // DB側の報酬ステータス確定がイベント発火よりわずかに遅れるケースの保険。
+    setTimeout(refreshRaidClearRewardNotice, 700);
   });
 
   window.closeNoticeModal = function () {
@@ -4395,8 +4397,25 @@ function setTenResultFooterVisible(visible){
   function setReloadBtnVisible(visible){ /* 削除済み */ }
   
 function refreshHomeNotifications(){
+  // レイド報酬のお知らせはSupabase側のクリア状況から動的生成される。
+  // ホームへ戻るたびに先に報酬状態を再取得し、その結果で通知ドットを更新する。
+  // （raid側のカスタムイベントが取りこぼされた場合でも通知を復旧できる）
   try {
-    if(typeof window.refreshNoticeBadge === 'function'){
+    if(typeof window.refreshRaidClearRewardNotice === 'function'){
+      Promise.resolve(window.refreshRaidClearRewardNotice())
+        .catch(function(e){
+          console.warn('[raid reward notice] refresh skipped', e);
+        })
+        .finally(function(){
+          try {
+            if(typeof window.refreshNoticeBadge === 'function'){
+              window.refreshNoticeBadge();
+            }
+          } catch(e){
+            console.warn('[notice] refresh skipped', e);
+          }
+        });
+    } else if(typeof window.refreshNoticeBadge === 'function'){
       window.refreshNoticeBadge();
     }
   } catch(e){
