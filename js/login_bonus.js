@@ -306,6 +306,9 @@
   }
 
   async function renderBonusPage(){
+    // bonus一覧でも、modal用に定義しているmixed reward CSSを必ず先に生成する。
+    // これが無いと、本日受取済み等でmodalを一度も開かなかった端末では画像が原寸表示になりレイアウトが崩れる。
+    ensureModal();
     var list = document.getElementById('bonus-page-list');
     if(!list) return;
     list.innerHTML = '<div class="bonus-page-loading">読み込み中...</div>';

@@ -21696,3 +21696,88 @@ body {
     grid-template-columns:26px minmax(0,1fr) minmax(72px,auto) !important;
   }
 }
+
+/* =========================================================
+   Bonus Screen Mixed Reward Grid - permanent layout fix v177
+   ボーナス一覧はログインボーナスmodalを開いていなくても崩れないよう、
+   JS動的styleに依存せず本体CSSでサイズ/グリッドを保証する。
+   ========================================================= */
+#screen-bonus .bonus-mixed-row{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  width:100%;
+}
+#screen-bonus .bonus-mixed-day{
+  min-width:0;
+  min-height:118px;
+  padding:9px 6px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  overflow:hidden;
+  border:1px solid rgba(214,194,156,.9);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,252,247,.96),rgba(250,244,231,.92));
+}
+#screen-bonus .bonus-mixed-day.is-current{
+  box-shadow:0 0 0 2px rgba(212,178,111,.35) inset;
+}
+#screen-bonus .bonus-mixed-day.is-claimed{opacity:.72;}
+#screen-bonus .bonus-mixed-day.is-special{grid-column:span 2;}
+#screen-bonus .bonus-mixed-day > span{
+  font-size:10px;
+  letter-spacing:.12em;
+  color:#b29461;
+}
+#screen-bonus .bonus-mixed-reward{
+  width:100%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  margin-top:7px;
+}
+#screen-bonus .bonus-mixed-reward img.material{
+  display:block!important;
+  width:45px!important;
+  height:45px!important;
+  max-width:45px!important;
+  max-height:45px!important;
+  object-fit:contain!important;
+  margin:0!important;
+}
+#screen-bonus .bonus-mixed-reward img.ticket{
+  display:block!important;
+  width:138px!important;
+  height:auto!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  margin:0!important;
+}
+#screen-bonus .bonus-mixed-reward b{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:13px;
+  line-height:1;
+  color:#9b6a18;
+  font-weight:600;
+}
+#screen-bonus .bonus-mixed-reward small{
+  display:block;
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:center;
+  font-size:7.5px;
+  line-height:1.3;
+  color:#9c8767;
+}
+@media(max-width:360px){
+  #screen-bonus .bonus-mixed-day{min-height:108px;padding:8px 5px;}
+  #screen-bonus .bonus-mixed-reward img.material{width:40px!important;height:40px!important;max-width:40px!important;max-height:40px!important;}
+  #screen-bonus .bonus-mixed-reward img.ticket{width:122px!important;}
+}
