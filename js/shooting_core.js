@@ -8817,7 +8817,7 @@
       wave.classList.remove('fly');
       wave.classList.add('impact');
       if (root) root.classList.add('ayane-rampage-shake');
-      clearEnemyBulletsOnly();
+      // 五条ULTは盤面上の敵弾を消去しない。発動前から存在する弾もそのまま残す。
       createHit(endX, endY, true);
 
       const activeFrom = performance.now();
