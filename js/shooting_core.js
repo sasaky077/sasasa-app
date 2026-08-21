@@ -115,6 +115,16 @@
     return enemy;
   }
 
+  // NORMAL(初級)は shooting_beginner_* ID になるため、
+  // CH04固有ギミック判定では baseStageId を優先して本体ステージIDへ正規化する。
+  function getSelectedBaseStageId() {
+    return String((selectedStage && selectedStage.baseStageId) || (selectedStage && selectedStage.id) || '');
+  }
+
+  function isSelectedBaseStage(stageId) {
+    return getSelectedBaseStageId() === String(stageId || '');
+  }
+
 
   function isFacelessStage() {
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
@@ -359,7 +369,7 @@
     // 通常の壁マージンだけでは安全領域が潰れてITEMが壁際に見えることがある。
     // ITEM中心を画面中央寄り(約42%〜58%)へ追加制限して、
     // 72〜76px級のITEM本体まで含めて壁から十分離して見えるようにする。
-    if (selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH04_02) {
+    if (selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
       const centerSafeLeft = w * 0.42;
       const centerSafeRight = w * 0.58;
       safeLeft = Math.max(safeLeft, centerSafeLeft);
@@ -372,7 +382,7 @@
     }
     let x;
     let y;
-    if (selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH04_02) {
+    if (selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
       // CH04-2だけは学習しやすいよう、ITEMをボスの真下へ固定。
       // Xはボスと同じ、Yは約90px下。壁/画面端からは最終clampで守る。
       x = clamp(bx, safeLeft, safeRight);
@@ -3331,7 +3341,7 @@
 
   function getChapter4ShrinkBounds(now, arenaWidth) {
     const cfg = selectedStage && selectedStage.shrinkWalls;
-    if (!cfg || !state || !selectedStage || selectedStage.id !== SHOOTING_STAGE_ID.CH04_02) {
+    if (!cfg || !state || !selectedStage || !isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
       return { left: 0, right: 0, ratio: 1, progress: 0 };
     }
     const elapsed = Math.max(0, (Number(now || performance.now()) - Number(state.startedAt || performance.now())) / 1000);
@@ -3376,7 +3386,7 @@
       !state.ended &&
       !state.finishing &&
       selectedStage &&
-      selectedStage.id === SHOOTING_STAGE_ID.CH04_02 &&
+      isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02) &&
       selectedStage.shrinkWalls
     );
 

@@ -186,7 +186,14 @@
     const index = chapterStages.findIndex(s => s && s.id === stage.id);
     if (index <= 0) return true;
     const prev = chapterStages[index - 1];
-    return !!(prev && isStoryStageCleared(prev.id));
+    if (!prev) return false;
+
+    if (isStoryStageCleared(prev.id)) return true;
+
+    // 過去版でNORMALのCLEARがbaseStageId側に保存された端末を救済する。
+    if (mode === 'beginner' && prev.baseStageId && isStoryStageCleared(prev.baseStageId)) return true;
+
+    return false;
   }
 
   function isStoryChapterCleared(chapter, mode = 'normal') {
@@ -895,9 +902,21 @@ if (guf) {
   window.addEventListener('shooting-stage-result', function (event) {
     const detail = event && event.detail ? event.detail : {};
     if (!detail.win || !detail.stageId) return;
-    markStoryStageCleared(detail.stageId);
+
+    markStoryStageCleared(String(detail.stageId));
     renderStoryChapterList('normal');
     renderStoryChapterList('beginner');
+
+    // RESULT後にステージ選択DOMが残っている場合も即再描画し、
+    // 直前ステージのCLEARを次ステージの解放状態へ反映する。
+    const modal = document.getElementById('stage-select-modal');
+    if (modal) {
+      const chapter = Number(modal.dataset.chapter || 0);
+      const mode = modal.dataset.storyMode === 'beginner' ? 'beginner' : 'normal';
+      if (chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) {
+        renderList(chapter, mode);
+      }
+    }
   });
 
 

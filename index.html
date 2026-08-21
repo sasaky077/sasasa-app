@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260821-home-notice-dot-pulse-v193';
+    var FALLBACK_BUILD = '20260821-ch04-02-unlock-fix-v199';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260821-home-notice-dot-pulse-v193">
+  <meta name="sasaphia-build" content="20260821-ch04-02-unlock-fix-v199">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260821-home-notice-dot-pulse-v193"
+        href="css/style.css?v=20260821-ch04-02-unlock-fix-v199"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260821-home-notice-dot-pulse-v193"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260821-ch04-02-unlock-fix-v199"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260821-home-notice-dot-pulse-v193">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260821-ch04-02-unlock-fix-v199">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260821-home-notice-dot-pulse-v193">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260821-ch04-02-unlock-fix-v199">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260821-home-notice-dot-pulse-v193';
+  var BUILD = '20260821-ch04-02-unlock-fix-v199';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -405,6 +405,24 @@
   letter-spacing:.04em;
 }
 </style>
+
+<style id="daily-attempt-style-v195">
+  #ninmu-panel-daily .ninmu-daily-attempts{
+    display:block;
+    margin-top:5px;
+    font-size:10px;
+    letter-spacing:.08em;
+    color:rgba(110,84,45,.72);
+  }
+  #ninmu-panel-daily .daily-attempts-empty{
+    opacity:.48;
+    filter:grayscale(.35);
+  }
+  #ninmu-panel-daily .daily-attempts-empty .ninmu-daily-attempts{
+    color:rgba(145,65,65,.78);
+  }
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -603,31 +621,24 @@
     <div class="ninmu-right">
       <div id="ninmu-panel-daily" class="ninmu-panel">
         <div class="ninmu-test-area ninmu-daily-area">
-          <button class="ninmu-test-btn ninmu-test-btn-first" onclick="dailyNodeClear('beginner')">
-            <span class="ninmu-stage-mark">✥</span>
-            <span class="ninmu-stage-copy">
-              <span class="ninmu-test-btn-title">デイリー巡行（初級）</span>
-              <span class="ninmu-daily-rewards" aria-label="原初の翼環 1個">
-                <span class="ninmu-daily-reward"><img src="images/item_wing.webp" alt="原初の翼環"><b>×1</b></span>
-              </span>
-            </span>
-          </button>
-          <button class="ninmu-test-btn ninmu-test-btn-repeat" onclick="dailyNodeClear('intermediate')">
+          <button class="ninmu-test-btn ninmu-test-btn-repeat" id="daily-quest-intermediate" onclick="dailyNodeClear('intermediate')">
             <span class="ninmu-stage-mark">✥</span>
             <span class="ninmu-stage-copy">
               <span class="ninmu-test-btn-title">デイリー巡行（中級）</span>
-              <span class="ninmu-daily-rewards" aria-label="共鳴石 1個">
+              <span class="ninmu-daily-rewards" id="daily-reward-intermediate" aria-label="デイリー報酬">
                 <span class="ninmu-daily-reward"><img src="images/item_kyoumeistone.webp" alt="共鳴石"><b>×1</b></span>
               </span>
+              <span class="ninmu-daily-attempts" id="daily-attempts-intermediate">残り 1 / 1</span>
             </span>
           </button>
-          <button class="ninmu-test-btn ninmu-test-btn-ex" onclick="dailyNodeClear('advanced')">
+          <button class="ninmu-test-btn ninmu-test-btn-ex" id="daily-quest-advanced" onclick="dailyNodeClear('advanced')">
             <span class="ninmu-stage-mark">✥</span>
             <span class="ninmu-stage-copy">
               <span class="ninmu-test-btn-title">デイリー巡行（上級）</span>
-              <span class="ninmu-daily-rewards" aria-label="ガチャ石 5個">
-                <span class="ninmu-daily-reward"><img src="images/icon_gem.webp" alt="ガチャ石"><b>×5</b></span>
+              <span class="ninmu-daily-rewards" id="daily-reward-advanced" aria-label="デイリー報酬">
+                <span class="ninmu-daily-reward"><img src="images/item_kyoumeistone.webp" alt="共鳴石"><b>×2</b></span>
               </span>
+              <span class="ninmu-daily-attempts" id="daily-attempts-advanced">残り 1 / 1</span>
             </span>
           </button>
         </div>
@@ -1328,7 +1339,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/home_banners.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2113,9 +2124,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/resonance_system.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/resonance_ui.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/shooting_resonance.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/resonance_system.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/resonance_ui.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -4204,22 +4215,258 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     showToast((isFirstClear ? '初回クリア！ ' : '') + '+' + exp + ' EXP');
   }
 
-  // デイリー巡行は現在準備中。
-  // 旧ボタンや旧デバッグ呼び出しから呼ばれても、
-  // EXP・素材・ジェム等は一切付与せず、準備中表示だけで終了する。
+  // デイリー巡行本編は次段階で曜日別ステージへ接続する。
+  // この版では中級/上級のみを公開し、各難易度1日1回の挑戦制限を管理する。
   async function dailyNodeClear(level) {
-    if (typeof showToast === 'function') {
-      showToast('準備中');
-    } else {
-      alert('準備中');
+    if (level !== 'intermediate' && level !== 'advanced') return false;
+
+    var state = getDailyAttemptState(level);
+    if (state.remaining <= 0) {
+      var msg = '本日の挑戦回数を使い切りました';
+      if (typeof showToast === 'function') showToast(msg);
+      else alert(msg);
+      return false;
     }
+
+    // 現在は曜日別ステージ本体の接続前なので、ここでは回数を消費しない。
+    // 実ステージ開始成功時に window.consumeDailyQuestAttempt(level) を呼ぶ。
+    var prep = '準備中　残り ' + state.remaining + ' / ' + DAILY_ATTEMPT_MAX;
+    if (typeof showToast === 'function') showToast(prep);
+    else alert(prep);
     return false;
   }
 
   // 旧デバッグ呼び出し互換
   async function testNodeClear(isFirstClear) {
-    return dailyNodeClear(isFirstClear ? 'beginner' : 'intermediate');
+    return dailyNodeClear('intermediate');
   }
+
+  // ============================================================
+  // DAILY QUEST - 1日1回制限（中級 / 上級で個別管理）
+  // JST 0:00リセット。実ステージ開始成功時のみconsumeする。
+  // ============================================================
+  var DAILY_ATTEMPT_MAX = 1;
+  var DAILY_ATTEMPT_STORAGE_KEY = 'sasaphia_daily_quest_attempts_v1';
+
+  function getTokyoDailyDateKey() {
+    var p = getTokyoDailyDateParts();
+    return String(p.year).padStart(4,'0') + '-' +
+      String(p.month).padStart(2,'0') + '-' +
+      String(p.day).padStart(2,'0');
+  }
+
+  function loadDailyAttemptStore() {
+    try {
+      var raw = localStorage.getItem(DAILY_ATTEMPT_STORAGE_KEY);
+      var data = raw ? JSON.parse(raw) : {};
+      return data && typeof data === 'object' ? data : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function saveDailyAttemptStore(data) {
+    try {
+      localStorage.setItem(DAILY_ATTEMPT_STORAGE_KEY, JSON.stringify(data || {}));
+    } catch (_) {}
+  }
+
+  function getDailyAttemptState(level) {
+    level = level === 'advanced' ? 'advanced' : 'intermediate';
+    var key = getTokyoDailyDateKey();
+    var data = loadDailyAttemptStore();
+
+    // 日付が変わったら前日の記録を捨てて自動リセット。
+    if (data.date !== key) {
+      data = { date:key, intermediate:0, advanced:0 };
+      saveDailyAttemptStore(data);
+    }
+
+    var used = Math.max(0, Math.min(DAILY_ATTEMPT_MAX, Number(data[level] || 0)));
+    return {
+      level: level,
+      used: used,
+      remaining: Math.max(0, DAILY_ATTEMPT_MAX - used),
+      max: DAILY_ATTEMPT_MAX,
+      date: key
+    };
+  }
+
+  function consumeDailyQuestAttempt(level) {
+    if (level !== 'intermediate' && level !== 'advanced') return false;
+    var state = getDailyAttemptState(level);
+    if (state.remaining <= 0) return false;
+
+    var data = loadDailyAttemptStore();
+    data.date = state.date;
+    data[level] = state.used + 1;
+    saveDailyAttemptStore(data);
+    refreshDailyAttemptUI();
+    return true;
+  }
+
+  function refundDailyQuestAttempt(level) {
+    if (level !== 'intermediate' && level !== 'advanced') return false;
+    var state = getDailyAttemptState(level);
+    if (state.used <= 0) return false;
+
+    var data = loadDailyAttemptStore();
+    data.date = state.date;
+    data[level] = Math.max(0, state.used - 1);
+    saveDailyAttemptStore(data);
+    refreshDailyAttemptUI();
+    return true;
+  }
+
+  function refreshDailyAttemptUI() {
+    ['intermediate','advanced'].forEach(function(level){
+      var state = getDailyAttemptState(level);
+      var label = document.getElementById('daily-attempts-' + level);
+      var button = document.getElementById('daily-quest-' + level);
+
+      if (label) label.textContent = '残り ' + state.remaining + ' / ' + state.max;
+      if (button) {
+        button.classList.toggle('daily-attempts-empty', state.remaining <= 0);
+        button.setAttribute('aria-disabled', state.remaining <= 0 ? 'true' : 'false');
+      }
+    });
+  }
+
+  window.getDailyAttemptState = getDailyAttemptState;
+  window.consumeDailyQuestAttempt = consumeDailyQuestAttempt;
+  window.refundDailyQuestAttempt = refundDailyQuestAttempt;
+  window.refreshDailyAttemptUI = refreshDailyAttemptUI;
+
+  // ============================================================
+  // DAILY QUEST - 曜日別報酬表示
+  // JST(Asia/Tokyo)基準。土日は日付から決定する固定ランダム。
+  // 同じ日の途中で報酬が変わらず、全難易度で同じ素材種になる。
+  // ============================================================
+  var DAILY_WEEKDAY_REWARD_MASTER = {
+    kyoumei_stone: {
+      id: 'kyoumei_stone',
+      name: '共鳴石',
+      img: 'images/item_kyoumeistone.webp'
+    },
+    soul_vessel_chaos: {
+      id: 'soul_vessel_chaos',
+      name: '魂の器（CHAOS）',
+      img: 'images/item_chaos.webp'
+    },
+    soul_vessel_mystis: {
+      id: 'soul_vessel_mystis',
+      name: '魂の器（MYSTIS）',
+      img: 'images/item_mystis.webp'
+    },
+    soul_vessel_logos: {
+      id: 'soul_vessel_logos',
+      name: '魂の器（LOGOS）',
+      img: 'images/item_logos.webp'
+    }
+  };
+
+  function getTokyoDailyDateParts() {
+    try {
+      var parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        weekday: 'short'
+      }).formatToParts(new Date());
+      var map = {};
+      parts.forEach(function(part){ map[part.type] = part.value; });
+      return {
+        year: Number(map.year || 0),
+        month: Number(map.month || 0),
+        day: Number(map.day || 0),
+        weekday: String(map.weekday || '')
+      };
+    } catch (_) {
+      var d = new Date();
+      return {
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        day: d.getDate(),
+        weekday: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]
+      };
+    }
+  }
+
+  function getDailyWeekdayReward() {
+    var p = getTokyoDailyDateParts();
+    var fixed = {
+      Mon: 'kyoumei_stone',
+      Tue: 'soul_vessel_chaos',
+      Wed: 'soul_vessel_mystis',
+      Thu: 'soul_vessel_logos',
+      Fri: 'kyoumei_stone'
+    };
+
+    var rewardId = fixed[p.weekday];
+    var isRandomDay = p.weekday === 'Sat' || p.weekday === 'Sun';
+
+    if (!rewardId) {
+      // 土日: 4素材から日付ベースで1つ選択。0時(JST)まで固定。
+      var pool = ['kyoumei_stone','soul_vessel_chaos','soul_vessel_mystis','soul_vessel_logos'];
+      var seed = (p.year * 372 + p.month * 31 + p.day * 17 + (p.weekday === 'Sun' ? 7 : 3));
+      rewardId = pool[Math.abs(seed) % pool.length];
+    }
+
+    return {
+      reward: DAILY_WEEKDAY_REWARD_MASTER[rewardId] || DAILY_WEEKDAY_REWARD_MASTER.kyoumei_stone,
+      random: isRandomDay,
+      weekday: p.weekday
+    };
+  }
+
+  function refreshDailyWeekdayRewardUI() {
+    var info = getDailyWeekdayReward();
+    var reward = info.reward;
+    var slots = [
+      { id: 'daily-reward-intermediate', amount: 1 },
+      { id: 'daily-reward-advanced', amount: 2 }
+    ];
+
+    slots.forEach(function(slot) {
+      var wrap = document.getElementById(slot.id);
+      if (!wrap) return;
+      var img = wrap.querySelector('img');
+      var amount = wrap.querySelector('b');
+      if (img) {
+        img.src = reward.img;
+        img.alt = reward.name;
+      }
+      if (amount) amount.textContent = '×' + slot.amount;
+      wrap.setAttribute(
+        'aria-label',
+        reward.name + ' ' + slot.amount + '個' + (info.random ? '（土日ランダム）' : '')
+      );
+      wrap.dataset.dailyRewardId = reward.id;
+      wrap.dataset.dailyRewardAmount = String(slot.amount);
+    });
+
+    var panel = document.getElementById('ninmu-panel-daily');
+    if (panel) {
+      panel.dataset.dailyRewardId = reward.id;
+      panel.dataset.dailyRewardName = reward.name;
+      panel.dataset.dailyRewardRandom = info.random ? '1' : '0';
+    }
+    refreshDailyAttemptUI();
+  }
+
+  window.getDailyWeekdayReward = getDailyWeekdayReward;
+  window.refreshDailyWeekdayRewardUI = refreshDailyWeekdayRewardUI;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refreshDailyWeekdayRewardUI);
+  } else {
+    setTimeout(refreshDailyWeekdayRewardUI, 0);
+  }
+  window.addEventListener('pageshow', refreshDailyWeekdayRewardUI);
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) refreshDailyWeekdayRewardUI();
+  });
 
   // 巡行カテゴリ切り替え
   function switchNinmuCat(cat) {
@@ -4241,6 +4488,9 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     }
     if (cat === 'special' && typeof window.refreshSpecialTicketUI === 'function') {
       void window.refreshSpecialTicketUI();
+    }
+    if (cat === 'daily' && typeof window.refreshDailyWeekdayRewardUI === 'function') {
+      window.refreshDailyWeekdayRewardUI();
     }
   }
 
@@ -9864,43 +10114,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/asset_loader.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/login_bonus.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
-<script src="js/story_engine.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/stories/chapter01.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/story_engine.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/stories/chapter01.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
-<script src="js/battle_range.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/characters.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/enemies.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/battle.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/battle_swipe.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/battle_range.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/characters.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/enemies.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/battle.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/battle_swipe.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
-<script src="js/stages.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/stage_select.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/party_select.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/enemy_intro.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/stages.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/stage_select.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/party_select.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/enemy_intro.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260821-home-notice-dot-pulse-v193">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260821-ch04-02-unlock-fix-v199">
 
-<script src="js/battle_range_32.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/characters_32.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/remnant_blessings.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/combo_32.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/cards.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/battle_32.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/battle_32_ui.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/battle_range_32.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/characters_32.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/remnant_blessings.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/combo_32.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/cards.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/battle_32.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/battle_32_ui.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/roguelite_run.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/roguelite_reward.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/shinju.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/roguelite_controller.js?v=20260821-home-notice-dot-pulse-v193"></script>
-<script src="js/roguelite_overseer_run.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/roguelite_options.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/roguelite_run.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/roguelite_reward.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/shinju.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/roguelite_controller.js?v=20260821-ch04-02-unlock-fix-v199"></script>
+<script src="js/roguelite_overseer_run.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -10346,10 +10596,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260821-home-notice-dot-pulse-v193"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260821-ch04-02-unlock-fix-v199"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/raid_event.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -10370,6 +10620,6 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260821-home-notice-dot-pulse-v193"></script>
+<script src="js/score_attack.js?v=20260821-ch04-02-unlock-fix-v199"></script>
 </body>
 </html>
