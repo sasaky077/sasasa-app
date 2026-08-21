@@ -57,6 +57,7 @@
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
+    OVERSEER_AMBUSH: 'shooting_event_overseer_ambush',
   });
 
   // ============================================================
@@ -762,6 +763,47 @@
         maxPlayers: 4,
         attemptsPerDay: 1,
         timeLimitSeconds: 180,
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.OVERSEER_AMBUSH]: Object.freeze({
+      id: SHOOTING_STAGE_ID.OVERSEER_AMBUSH,
+      chapter: 0,
+      stageNo: 0,
+      name: '緊急遭遇',
+      type: 'boss',
+      eventId: 'random_ambush',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/remnant_01_blk_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.OVERSEER_AMBUSH]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'オーバーシア（亜種）を撃破',
+      }),
+      guaranteedRewards: Object.freeze([
+        Object.freeze({
+          type: 'material',
+          id: 'overseer_blk_core',
+          name: 'オーバーシア亜種の心核',
+          image: 'images/item_overseer_blk_core.webp',
+          count: 1,
+          detail: '特殊強化素材',
+        }),
+      ]),
+      ambush: Object.freeze({
+        triggerRate: 0.10,
+        waveHp: Object.freeze([5000, 8000]),
+        waveDamage: Object.freeze([350, 600]),
+        warningEveryMs: 4000,
+        warningWave1Bounces: 4,
+        minionHp: Object.freeze([800, 1500]),
+        minionFireEveryMs: 5000,
+        minionBulletSpeed: 108,
+        laserTriggerRatio: 0.10,
+        laserWarningMs: 1300,
+        laserDurationMs: 5000,
+        laserWidthRatio: 0.50,
       }),
       playable: true,
     }),

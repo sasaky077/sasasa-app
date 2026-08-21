@@ -12,6 +12,29 @@
     document.head.appendChild(style);
   }
 
+  // RANDOM AMBUSH: 軽量DOM/CSSのみ。画像以外の大型エフェクトは使わない。
+  if (!document.getElementById('shooting-random-ambush-style-v201')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-random-ambush-style-v201';
+    style.textContent = `
+      .shooting-ambush-emergency{position:absolute;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(14,3,5,.94);color:#ffe9e9;letter-spacing:.16em;text-align:center;pointer-events:auto}
+      .shooting-ambush-emergency small{font:700 11px/1.4 "Cinzel",serif;color:#d65b63;letter-spacing:.28em}
+      .shooting-ambush-emergency strong{margin-top:12px;font-size:24px;font-weight:700;text-shadow:0 0 12px rgba(210,45,55,.42)}
+      .shooting-ambush-emergency span{margin-top:8px;font-size:11px;color:rgba(255,235,235,.72)}
+      .shooting-ambush-minion{position:absolute;z-index:9;width:64px;height:64px;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:filter .05s linear,opacity .05s linear}
+      .shooting-ambush-minion.shooting-hit-sustained{filter:brightness(2.2) saturate(.35) drop-shadow(0 0 10px rgba(255,235,235,.95)) drop-shadow(0 0 18px rgba(220,62,72,.75))!important}
+      #shooting-boss.shooting-hit-sustained[data-ambush-hit="1"],#shooting-event-root[data-shooting-stage="shooting_event_overseer_ambush"] #shooting-boss.shooting-hit-sustained{filter:brightness(2.05) saturate(.55) drop-shadow(0 0 12px rgba(255,240,240,.92)) drop-shadow(0 0 22px rgba(210,48,60,.72))!important}
+      .shooting-ambush-minion-hp{position:absolute;z-index:10;width:48px;height:4px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.35);pointer-events:none}
+      .shooting-ambush-minion-hp i{display:block;height:100%;width:100%;background:#a64a50}
+      .shooting-ambush-bullet{width:9px!important;height:9px!important;background:radial-gradient(circle,#fff 0 18%,#9b3c45 38%,#351b20 72%,transparent 74%)!important;box-shadow:0 0 5px rgba(150,45,55,.45)!important}
+      .shooting-ambush-warning-bullet{width:18px!important;height:18px!important;border:2px solid rgba(255,235,235,.96)!important;background:radial-gradient(circle,#fff 0 9%,#ff4a4a 24%,#d11224 48%,#5b0710 74%,transparent 76%)!important;box-shadow:0 0 7px rgba(255,65,65,.95),0 0 15px rgba(215,20,35,.82)!important}
+      .shooting-ambush-warning-bullet::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px solid rgba(255,40,55,.62);box-shadow:0 0 8px rgba(255,30,45,.45);pointer-events:none}
+      .shooting-ambush-laser-warning{position:absolute;z-index:42;transform:translate(-50%,-100%);padding:10px 14px;background:rgba(20,4,6,.82);border:1px solid rgba(220,68,76,.62);color:#ffe6e6;font-size:15px;font-weight:700;letter-spacing:.08em;pointer-events:none;white-space:nowrap}
+      .shooting-ambush-laser{position:absolute;z-index:13;left:50%;transform:translateX(-50%);width:50%;background:linear-gradient(90deg,rgba(115,0,8,.38),rgba(255,235,235,.88) 45%,rgba(255,255,255,.95) 50%,rgba(255,235,235,.88) 55%,rgba(115,0,8,.38));box-shadow:0 0 16px rgba(210,36,45,.58);pointer-events:none;transform-origin:50% 0}
+    `;
+    document.head.appendChild(style);
+  }
+
   const ROOT_ID = 'shooting-event-root';
   const PLAYER_ID = 'shooting-player';
   const BOSS_ID = 'shooting-boss';
@@ -136,6 +159,26 @@
 
   function isScoreAttackStage() {
     return !!(selectedStage && selectedStage.eventId === 'score_attack' && selectedStage.scoreAttack);
+  }
+
+  function isAmbushStage() {
+    return !!(selectedStage && selectedStage.eventId === 'random_ambush' && selectedStage.ambush);
+  }
+
+  function getAmbushConfig() {
+    return isAmbushStage() ? selectedStage.ambush : null;
+  }
+
+  function getAmbushWaveHp(wave) {
+    const cfg = getAmbushConfig();
+    const values = cfg && Array.isArray(cfg.waveHp) ? cfg.waveHp : [5000, 8000];
+    return Math.max(1, Number(values[Math.max(0, Number(wave || 1) - 1)] || values[0] || 5000));
+  }
+
+  function getAmbushWaveDamage(wave) {
+    const cfg = getAmbushConfig();
+    const values = cfg && Array.isArray(cfg.waveDamage) ? cfg.waveDamage : [350, 600];
+    return Math.max(1, Number(values[Math.max(0, Number(wave || 1) - 1)] || values[0] || 350));
   }
 
   function getScoreAttackComboMultiplier(comboValue) {
@@ -1473,10 +1516,10 @@
       mimosaItems: [],
       boss: {
         x: 0, y: 42,
-        hp: isRaidStage() ? getRaidStartingHp() : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1)),
-        hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1)),
-        gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1)),
-        gauges: isRaidStage() ? 3 : (isFacelessStage() ? 1 : Number(BOSS.gauges || 1)),
+        hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1))),
+        hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1))),
+        gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1))),
+        gauges: isRaidStage() ? 3 : ((isFacelessStage() || isAmbushStage()) ? 1 : Number(BOSS.gauges || 1)),
         phase: 1
       },
       raidInitialHp: isRaidStage() ? getRaidStartingHp() : 0,
@@ -1488,6 +1531,19 @@
       facelessSummonTriggered: false,
       facelessObjects: [],
       facelessObjectSeq: 0,
+      ambushWave: isAmbushStage() ? 1 : 0,
+      ambushMinionSummoned: false,
+      ambushWarningLastAt: -9999,
+      ambushVolleyIndex: 0,
+      ambushLastHitRingAt: 0,
+      ambushPersistentSpawned: false,
+      ambushLaserTriggered: false,
+      ambushLaserWarningUntil: 0,
+      ambushLaserActiveUntil: 0,
+      ambushLaserEl: null,
+      ambushLaserWarningEl: null,
+      ambushLaserOriginX: 0,
+      ambushLaserOriginY: 0,
       bossMotionBlendFromX: 0,
       bossMotionBlendFromY: 0,
       bossMotionBlendStartedAt: 0,
@@ -1743,11 +1799,27 @@
       state.bossDangerWarningEl = null;
       state.bossDangerExecuteAt = 0;
       if (Array.isArray(state.facelessObjects)) {
-        state.facelessObjects.forEach(obj => {
-          obj?.el?.remove();
-          obj?.hpEl?.remove();
-        });
-        state.facelessObjects = [];
+        if (isAmbushStage()) {
+          // 乱入ステージのminiは「敵本体」なので、キャラLOST時などの
+          // 弾/一時エフェクト消去では消さない。HP・位置・攻撃タイマーも維持する。
+          // WAVE切替時だけ clearAmbushObjects() が明示的に削除する。
+          const survivors = [];
+          state.facelessObjects.forEach(obj => {
+            if (obj && obj.ambushMinion && obj.hp > 0 && obj.el && obj.el.isConnected) {
+              survivors.push(obj);
+              return;
+            }
+            obj?.el?.remove();
+            obj?.hpEl?.remove();
+          });
+          state.facelessObjects = survivors;
+        } else {
+          state.facelessObjects.forEach(obj => {
+            obj?.el?.remove();
+            obj?.hpEl?.remove();
+          });
+          state.facelessObjects = [];
+        }
       }
     }
   }
@@ -1837,9 +1909,11 @@
       const scoreAttack = isScoreAttackStage();
       bossPhase.textContent = scoreAttack
         ? 'HP：∞'
-        : (isFacelessStage()
-          ? `WAVE ${state.facelessWave || 1} / 2`
-          : `PHASE ${phase} / ${state.boss.gauges}`);
+        : (isAmbushStage()
+          ? `WAVE ${state.ambushWave || 1} / 2`
+          : (isFacelessStage()
+            ? `WAVE ${state.facelessWave || 1} / 2`
+            : `PHASE ${phase} / ${state.boss.gauges}`));
       bossPhase.classList.toggle('score-attack-infinite-hp', scoreAttack);
     }
     if (score) {
@@ -4574,9 +4648,20 @@
     if (!obj || obj.hp <= 0) return;
     const appliedDamage = Math.min(obj.hp, Math.max(0, Number(damage || 0)));
     obj.hp = Math.max(0, obj.hp - appliedDamage);
-    createHit(obj.x, obj.y, false);
-    showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', false);
-    if (obj.el) sustainHitFeedback(obj.el, 145);
+
+    // miniを含むOBJECT命中時は「当たった」と明確に分かるよう、
+    // HITリング + ダメージ数字 + 本体発光を同時に出す。
+    createHit(obj.x, obj.y, !!obj.ambushMinion);
+    showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', !!obj.ambushMinion);
+    if (obj.el) {
+      sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 145);
+      if (obj.ambushMinion) {
+        obj.el.classList.remove('ambush-hit-flash');
+        void obj.el.offsetWidth;
+        obj.el.classList.add('ambush-hit-flash');
+      }
+    }
+
     const fill = obj.hpEl?.querySelector('i');
     if (fill) fill.style.width = `${clamp(obj.hp / obj.hpMax, 0, 1) * 100}%`;
     if (obj.hp <= 0) {
@@ -4800,6 +4885,359 @@
     }
   }
 
+
+  // ============================================================
+  // RANDOM AMBUSH - オーバーシア（亜種）
+  // ============================================================
+  function clearAmbushObjects() {
+    if (!state) return;
+    (state.facelessObjects || []).forEach(obj => { obj?.el?.remove(); obj?.hpEl?.remove(); });
+    state.facelessObjects = [];
+    state.ambushLaserEl?.remove();
+    state.ambushLaserWarningEl?.remove();
+    state.ambushLaserEl = null;
+    state.ambushLaserWarningEl = null;
+  }
+
+  function spawnAmbushMinions() {
+    if (!state || !isAmbushStage() || state.ambushMinionSummoned) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    state.ambushMinionSummoned = true;
+    const w = arena.clientWidth;
+    const h = arena.clientHeight;
+    const wave = Number(state.ambushWave || 1);
+    const cfg = getAmbushConfig();
+    const hpList = cfg && Array.isArray(cfg.minionHp) ? cfg.minionHp : [800, 1500];
+    const hp = Math.max(1, Number(hpList[wave - 1] || 800));
+    const points = [{x:w*.20,y:h*.27,vx:22},{x:w*.80,y:h*.27,vx:-22}];
+
+    points.forEach((pt, idx) => {
+      const el = document.createElement('img');
+      el.className = 'shooting-ambush-minion';
+      el.src = 'images/enemy_mini_01_blk_battle.webp';
+      el.alt = 'enemy_mini';
+      el.draggable = false;
+      arena.appendChild(el);
+
+      const hpEl = document.createElement('div');
+      hpEl.className = 'shooting-ambush-minion-hp';
+      hpEl.innerHTML = '<i></i>';
+      arena.appendChild(hpEl);
+
+      const obj = {
+        id: ++state.facelessObjectSeq,
+        ambushMinion: true,
+        el, hpEl,
+        x:pt.x,y:pt.y,vx:pt.vx,
+        hp,hpMax:hp,
+        lastShotAt:performance.now() - 5200 - idx*450
+      };
+      state.facelessObjects.push(obj);
+      positionUnit(el,obj.x,obj.y);
+      positionUnit(hpEl,obj.x,obj.y+38);
+      measureUnitSize(obj);
+    });
+  }
+
+  function fireAmbushMinion(obj, now) {
+    if (!state || !obj || !obj.ambushMinion || obj.hp <= 0 || !obj.el || !obj.el.isConnected) return;
+    const cfg = getAmbushConfig();
+    const interval = Math.max(1000, Number(cfg?.minionFireEveryMs || 5000));
+    if (now - Number(obj.lastShotAt || 0) < interval) return;
+    obj.lastShotAt = now;
+
+    const damage = getAmbushWaveDamage(state.ambushWave || 1);
+    const speed = Math.max(60, Number(cfg?.minionBulletSpeed || 108));
+    const base = Math.atan2(state.player.y - obj.y, state.player.x - obj.x);
+
+    // 左右2発。低速追尾方向へ撃つ。軽量DOMのまま確実に生成する。
+    [-0.14,0.14].forEach(offset => {
+      const a = base + offset;
+      const muzzle = getAmbushEnemyMuzzle(obj, 3);
+      const p = makeProjectile(
+        'shooting-enemy-bullet shooting-ambush-bullet shooting-mini-enemy-bullet',
+        muzzle.x, muzzle.y,
+        Math.cos(a) * speed,
+        Math.sin(a) * speed,
+        damage
+      );
+      if (p) {
+        p.ambushMiniShot = true;
+        state.enemyBullets.push(p);
+      }
+    });
+  }
+
+  function fireAllAmbushMinions(now) {
+    if (!state || !isAmbushStage()) return;
+    (state.facelessObjects || []).forEach(obj => {
+      if (obj && obj.ambushMinion && obj.hp > 0) fireAmbushMinion(obj, now);
+    });
+  }
+
+  function getAmbushMinionHitRect(obj, arenaRect) {
+    if (!obj || !obj.el) return null;
+    const rect = getUnitRect(obj, arenaRect);
+    if (!rect) return null;
+
+    // 見た目64pxに対して少し広めの当たり判定。
+    // 「当てたのに抜けた」感をなくすため左右/上下を約10px拡張する。
+    const padX = 10;
+    const padY = 10;
+    return {
+      left: rect.left - padX,
+      right: rect.right + padX,
+      top: rect.top - padY,
+      bottom: rect.bottom + padY,
+      width: rect.width + padX * 2,
+      height: rect.height + padY * 2
+    };
+  }
+
+  function updateAmbushMinions(dt, now) {
+    if (!state || !isAmbushStage()) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = arena.clientWidth;
+    state.facelessObjects = (state.facelessObjects || []).filter(obj => {
+      if (!obj || !obj.ambushMinion || obj.hp <= 0) return false;
+      obj.x += Number(obj.vx || 0) * dt;
+      if (obj.x < 62 || obj.x > w-62) {
+        obj.x = clamp(obj.x,62,w-62);
+        obj.vx *= -1;
+      }
+      positionUnit(obj.el,obj.x,obj.y);
+      positionUnit(obj.hpEl,obj.x,obj.y+38);
+      fireAmbushMinion(obj,now);
+      return true;
+    });
+  }
+
+  function getAmbushEnemyMuzzle(source, yBias = 0) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return { x: Number(source?.x || 0), y: Number(source?.y || 0) + yBias };
+
+    const arenaRect = arena.getBoundingClientRect();
+    const el = source?.el || document.getElementById(BOSS_ID);
+    if (el && el.getBoundingClientRect) {
+      const r = el.getBoundingClientRect();
+      return {
+        x: (r.left + r.right) * 0.5 - arenaRect.left,
+        y: r.bottom - arenaRect.top + yBias
+      };
+    }
+    return { x: Number(source?.x || state?.boss?.x || 0), y: Number(source?.y || state?.boss?.y || 0) + yBias };
+  }
+
+  function spawnAmbushWarningPair(now, persistent) {
+    if (!state || !isAmbushStage()) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = arena.clientWidth;
+    const h = arena.clientHeight;
+    const damage = getAmbushWaveDamage(state.ambushWave || 1);
+    const bossMuzzle = getAmbushEnemyMuzzle({ el: document.getElementById(BOSS_ID), x:state.boss.x, y:state.boss.y }, 4);
+    const starts = persistent
+      ? [
+          {x:bossMuzzle.x-16,y:bossMuzzle.y,a:.72},
+          {x:bossMuzzle.x+16,y:bossMuzzle.y,a:2.42}
+        ]
+      : [
+          {x:bossMuzzle.x-18,y:bossMuzzle.y,a:.72},
+          {x:bossMuzzle.x+18,y:bossMuzzle.y,a:2.42}
+        ];
+
+    starts.forEach((s,idx) => {
+      const speed = persistent ? 92 : 175;
+      const p = makeProjectile(
+        'shooting-enemy-bullet shooting-ambush-warning-bullet',
+        s.x,s.y,Math.cos(s.a)*speed,Math.sin(s.a)*speed,damage
+      );
+      if (!p) return;
+      p.ambushBounce = true;
+      p.ambushPersistent = !!persistent;
+      p.ambushBounceCount = 0;
+      p.ambushBounceMax = persistent ? Infinity : Math.max(1,Number(getAmbushConfig()?.warningWave1Bounces || 4));
+      state.enemyBullets.push(p);
+    });
+  }
+
+  function fireAmbushBoss(now) {
+    if (!state || !isAmbushStage() || state.phaseTransition) return;
+    const wave = Number(state.ambushWave || 1);
+    const damage = getAmbushWaveDamage(wave);
+
+    // miniの攻撃更新をボスAI側からも保証する。
+    fireAllAmbushMinions(now);
+
+    // 軽量版のまま密度を大幅増加。
+    // W1: 7WAY / 0.70秒、W2: 9WAY / 0.50秒。
+    const fireRate = wave === 1 ? 700 : 500;
+    if (now - Number(state.lastBossShotAt || 0) >= fireRate) {
+      state.lastBossShotAt = now;
+      state.ambushVolleyIndex = Number(state.ambushVolleyIndex || 0) + 1;
+
+      const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+      const step = wave === 1 ? 0.19 : 0.17;
+      const count = 5;
+      const center = (count - 1) / 2;
+      // W2は交互に半ステップずらして安全地帯を固定しない。
+      const shift = wave === 2 && (state.ambushVolleyIndex % 2) ? step * 0.5 : 0;
+      const speed = wave === 1 ? 215 : 245;
+
+      for (let i = 0; i < count; i++) {
+        const a = base + (i - center) * step + shift;
+        const muzzle = getAmbushEnemyMuzzle({ el: document.getElementById(BOSS_ID), x:state.boss.x, y:state.boss.y }, 4);
+        const p = makeProjectile(
+          'shooting-enemy-bullet shooting-ambush-bullet',
+          muzzle.x, muzzle.y,
+          Math.cos(a) * speed,
+          Math.sin(a) * speed,
+          damage
+        );
+        if (p) state.enemyBullets.push(p);
+      }
+
+      // 3回に1回だけ追加の狭い追尾3WAY。DOMを増やしすぎず圧を足す。
+      if (state.ambushVolleyIndex % 3 === 0) {
+        [-0.07, 0, 0.07].forEach(offset => {
+          const a = base + offset;
+          const muzzle = getAmbushEnemyMuzzle({ el: document.getElementById(BOSS_ID), x:state.boss.x, y:state.boss.y }, 6);
+          const p = makeProjectile(
+            'shooting-enemy-bullet shooting-ambush-bullet',
+            muzzle.x, muzzle.y,
+            Math.cos(a) * (speed + 35),
+            Math.sin(a) * (speed + 35),
+            damage
+          );
+          if (p) state.enemyBullets.push(p);
+        });
+      }
+    }
+
+    if (wave === 1) {
+      const every = Math.max(1500, Number(getAmbushConfig()?.warningEveryMs || 4000));
+      if (now - Number(state.ambushWarningLastAt || -9999) >= every) {
+        state.ambushWarningLastAt = now;
+        spawnAmbushWarningPair(now, false);
+      }
+    } else if (!state.ambushPersistentSpawned) {
+      state.ambushPersistentSpawned = true;
+      spawnAmbushWarningPair(now, true);
+    }
+  }
+
+  function beginAmbushWave2() {
+    if (!state || !isAmbushStage() || Number(state.ambushWave || 1) !== 1) return false;
+    state.phaseTransition = true;
+    clearEnemyBulletsOnly();
+    clearAmbushObjects();
+    state.ambushWave = 2;
+    state.ambushMinionSummoned = false;
+    state.ambushPersistentSpawned = false;
+    state.ambushLaserTriggered = false;
+    state.ambushWarningLastAt = performance.now();
+    state.ambushVolleyIndex = 0;
+
+    const hp = getAmbushWaveHp(2);
+    state.boss.hp = hp;
+    state.boss.hpMax = hp;
+    state.boss.gaugeHp = hp;
+    state.boss.gauges = 1;
+    state.boss.phase = 1;
+    showFacelessBattleCut('WAVE 2','OVERSEER VARIANT');
+    renderHud();
+
+    setTimeout(() => {
+      if (!state || state.ended || !isAmbushStage()) return;
+      state.phaseTransition = false;
+      state.lastBossShotAt = performance.now();
+      spawnAmbushWarningPair(performance.now(),true);
+      state.ambushPersistentSpawned = true;
+    }, 1000);
+    return true;
+  }
+
+  function triggerAmbushLaser(now) {
+    if (!state || state.ambushLaserTriggered) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    state.ambushLaserTriggered = true;
+    const cfg = getAmbushConfig();
+    state.ambushLaserWarningUntil = now + Math.max(600,Number(cfg?.laserWarningMs || 1300));
+
+    const warn = document.createElement('div');
+    warn.className = 'shooting-ambush-laser-warning';
+    warn.textContent = 'WARNING　壁際に逃げろ！';
+    const warningMuzzle = getAmbushEnemyMuzzle({ el: document.getElementById(BOSS_ID), x:state.boss.x, y:state.boss.y }, -8);
+    warn.style.left = `${warningMuzzle.x}px`;
+    warn.style.top = `${Math.max(38,warningMuzzle.y)}px`;
+    arena.appendChild(warn);
+    state.ambushLaserWarningEl = warn;
+
+    setTimeout(() => {
+      if (!state || state.ended || !isAmbushStage()) return;
+      warn.remove();
+      state.ambushLaserWarningEl = null;
+      const laser = document.createElement('div');
+      laser.className = 'shooting-ambush-laser';
+      laser.style.width = `${Math.round(clamp(Number(cfg?.laserWidthRatio || .5),.2,.8)*100)}%`;
+
+      // レーザーも画面上端からではなく、実際のBOSS本体の下端を発射口にする。
+      const muzzle = getAmbushEnemyMuzzle({ el: document.getElementById(BOSS_ID), x:state.boss.x, y:state.boss.y }, 0);
+      laser.style.left = `${muzzle.x}px`;
+      laser.style.top = `${Math.max(0,muzzle.y)}px`;
+      laser.style.bottom = '0';
+
+      arena.appendChild(laser);
+      state.ambushLaserEl = laser;
+      state.ambushLaserOriginX = muzzle.x;
+      state.ambushLaserOriginY = muzzle.y;
+      state.ambushLaserActiveUntil = performance.now() + Math.max(1000,Number(cfg?.laserDurationMs || 5000));
+    }, Math.max(600,Number(cfg?.laserWarningMs || 1300)));
+  }
+
+  function updateAmbushLaser(now) {
+    if (!state || !isAmbushStage()) return;
+    if (state.ambushLaserEl && now >= Number(state.ambushLaserActiveUntil || 0)) {
+      state.ambushLaserEl.remove();
+      state.ambushLaserEl = null;
+      state.ambushLaserActiveUntil = 0;
+      return;
+    }
+    if (!state.ambushLaserEl || now >= Number(state.player.invulnUntil || 0) === false) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = arena.clientWidth;
+    const ratio = clamp(Number(getAmbushConfig()?.laserWidthRatio || .5),.2,.8);
+    const width = w * ratio;
+    const centerX = Number(state.ambushLaserOriginX || state.boss.x || w * .5);
+    const left = centerX - width * .5;
+    const right = centerX + width * .5;
+    const originY = Number(state.ambushLaserOriginY || state.boss.y || 0);
+    if (
+      state.player.x >= left &&
+      state.player.x <= right &&
+      state.player.y >= originY &&
+      now >= Number(state.player.invulnUntil || 0)
+    ) {
+      damagePlayer(now,999999,'raw');
+    }
+  }
+
+  function updateAmbushStageMechanics(dt, now) {
+    if (!state || !isAmbushStage() || state.ended || state.finishing) return;
+    updateAmbushMinions(dt,now);
+    const ratio = state.boss.hpMax > 0 ? state.boss.hp/state.boss.hpMax : 1;
+    if (!state.ambushMinionSummoned && ratio <= .5 && state.boss.hp > 0) spawnAmbushMinions();
+    if (Number(state.ambushWave || 1) === 2 && !state.ambushLaserTriggered &&
+        ratio <= Number(getAmbushConfig()?.laserTriggerRatio || .10) && state.boss.hp > 0) {
+      triggerAmbushLaser(now);
+    }
+    updateAmbushLaser(now);
+  }
+
   // ============================================================
   // Enemy damage tuning / BOSS WARNING attack
   // ============================================================
@@ -4838,6 +5276,9 @@
 
 
   function resolveIncomingDamage(member, amount, attackType) {
+    if (isAmbushStage()) {
+      return Math.max(0, Math.round(Number(amount || getAmbushWaveDamage(state?.ambushWave || 1))));
+    }
     if (attackType === 'lethal') return ENEMY_FIXED_DAMAGE.LETHAL;
 
     let damage = 0;
@@ -5178,6 +5619,10 @@
   }
 
   function fireBoss(now) {
+    if (isAmbushStage()) {
+      fireAmbushBoss(now);
+      return;
+    }
     // CH04のITEM取得フェーズ中も通常弾幕/WARNINGは継続する。
     // 60秒生存後は、弾幕を潜りながらボス周囲のITEMを取りに行く。
 
@@ -5257,7 +5702,7 @@
     // SCORE ATTACKは1ゲージ固定の∞ボス。
     // 通常BOSS用の「3ゲージ→PHASE算出」を通すと、初撃でPHASE 3扱いになり
     // BREAK演出が発生するため、フェーズ更新自体を無効化する。
-    if (!state || state.boss.hp <= 0 || isFacelessStage() || isScoreAttackStage()) return;
+    if (!state || state.boss.hp <= 0 || isFacelessStage() || isAmbushStage() || isScoreAttackStage()) return;
     const previous = state.boss.phase || 1;
     const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
     const nextPhase = 4 - remainingGauges; // 3→phase1 / 2→phase2 / 1→phase3
@@ -5294,8 +5739,15 @@
 
   function clearEnemyBulletsOnly() {
     if (!state) return;
-    state.enemyBullets.forEach(p => p && p.el && p.el.remove());
-    state.enemyBullets = [];
+    const keep = [];
+    state.enemyBullets.forEach(p => {
+      if (isAmbushStage() && p && p.ambushPersistent && p.el && p.el.isConnected) {
+        keep.push(p);
+        return;
+      }
+      p && p.el && p.el.remove();
+    });
+    state.enemyBullets = keep;
   }
 
   function flashBossPhaseChange(phase) {
@@ -5759,11 +6211,15 @@
       const r = getUnitRect(p, arenaRect);
       let normalTarget = null;
       let normalTargets = null;
-      const facelessObjectTarget = isFacelessStage()
-        ? (state.facelessObjects || []).find(obj =>
-            obj && obj.el && obj.hp > 0 &&
-            rectsHit(r, getUnitRect(obj, arenaRect), 0, 10)
-          )
+      const facelessObjectTarget = (isFacelessStage() || isAmbushStage())
+        ? (state.facelessObjects || []).find(obj => {
+            if (!obj || !obj.el || obj.hp <= 0) return false;
+            const targetRect =
+              isAmbushStage() && obj.ambushMinion
+                ? getAmbushMinionHitRect(obj, arenaRect)
+                : getUnitRect(obj, arenaRect);
+            return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 10);
+          })
         : null;
       const hitBoss = !facelessObjectTarget && !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
 
@@ -5822,7 +6278,17 @@
           }
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
-          if (shouldRenderRaidBossHitVisual(now, 'hit')) {
+          if (isAmbushStage()) {
+            // 乱入ボスは通常弾1発ごとに既存DOMを発光させる。
+            // HITリングはDOM増加を抑えるため約80msに1回だけ。
+            sustainHitFeedback(document.getElementById(BOSS_ID), 165);
+            const bossEl = document.getElementById(BOSS_ID);
+            if (bossEl) bossEl.dataset.ambushHit = '1';
+            if (now - Number(state.ambushLastHitRingAt || 0) >= 80) {
+              state.ambushLastHitRingAt = now;
+              createHit(p.x, p.y, false);
+            }
+          } else if (shouldRenderRaidBossHitVisual(now, 'hit')) {
             createHit(p.x, p.y, false);
             flashBossHit(false, true);
           }
@@ -5948,6 +6414,26 @@
         }
       }
 
+      // 乱入WARNING弾: WAVE1は4回反射後に消滅、WAVE2は無限反射。
+      if (p.ambushBounce) {
+        const margin = 11;
+        const hitLeft = p.x <= margin;
+        const hitRight = p.x >= w - margin;
+        const hitTop = p.y <= margin;
+        const hitBottom = p.y >= h - margin;
+        if (hitLeft || hitRight || hitTop || hitBottom) {
+          if (hitLeft || hitRight) p.vx *= -1;
+          if (hitTop || hitBottom) p.vy *= -1;
+          p.x = Math.min(w-margin,Math.max(margin,p.x));
+          p.y = Math.min(h-margin,Math.max(margin,p.y));
+          p.ambushBounceCount = Number(p.ambushBounceCount || 0) + 1;
+          if (!p.ambushPersistent && p.ambushBounceCount > Number(p.ambushBounceMax || 4)) {
+            p.el.remove();
+            return false;
+          }
+        }
+      }
+
       // SCORE ATTACK HARDのWARNING大玉：壁接触を数え、3回目で消滅。
       if (p.scoreAttackWarningBounceMax) {
         const margin = 16;
@@ -5999,7 +6485,7 @@
 
       positionUnit(p.el, p.x, p.y);
       const offscreenMargin = isChapter03BossStage() ? 10 : 30;
-      if (!p.dangerRicochet && !p.dangerDrift && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
+      if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
 
       // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
@@ -6041,8 +6527,14 @@
           : rectsHit(r, playerCoreRect, 0, 1);
 
         if (hitPlayerCore) {
-          p.el.remove();
           damagePlayer(now, p.damage, classifyIncomingAttack(p));
+          if (p.ambushPersistent) {
+            // WAVE2の常駐WARNINGは被弾しても消えない。
+            p.x = clamp(p.x + (p.vx >= 0 ? -18 : 18), 12, w - 12);
+            p.y = clamp(p.y + (p.vy >= 0 ? -18 : 18), 12, h - 12);
+            return true;
+          }
+          p.el.remove();
           return false;
         }
       }
@@ -6184,6 +6676,8 @@
     // buildShootingResumeSnapshot() 側で selectedCharacterId は生存キャラへ正規化される。
     saveShootingResumeState('party-ko');
 
+    // キャラLOST時は弾・一時エフェクトのみ消去。
+    // 乱入mini本体はclearProjectiles側で保持される。
     clearProjectiles();
     const player = document.getElementById(PLAYER_ID);
     if (player) {
@@ -6986,6 +7480,7 @@
     // キャラクター固有処理（Arno/Mimosa等）はゲーム性に関わるので維持。
     if (!isScoreAttackStage()) {
       updateFacelessObjects(dt, ts);
+      updateAmbushStageMechanics(dt, ts);
       updateChapter4FinalItem(ts);
       updateFacelessStageMechanics(ts);
       updateChapter4ShrinkWalls(ts);
@@ -7045,7 +7540,12 @@
       key: lower,
     };
 
-    if (isScoreAttackStage()) {
+    if (isAmbushStage()) {
+      meta.kicker = 'EMERGENCY ENCOUNTER';
+      meta.title = 'オーバーシア（亜種）';
+      meta.sub = 'OVERSEER VARIANT';
+      meta.image = selectedStage.introImage || 'images/remnant_01_blk_battle_start.webp';
+    } else if (isScoreAttackStage()) {
       meta.kicker = 'SCORE ATTACK';
       meta.title = 'すこあちゃん';
       meta.sub = selectedStage.difficultyLabel || '';
@@ -7392,6 +7892,10 @@
 
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+    if (isAmbushStage() && Number(state.ambushWave || 1) === 1) {
+      beginAmbushWave2();
+      return;
+    }
     if (isFacelessStage() && Number(state.facelessWave || 1) === 1) {
       beginFacelessWave2();
       return;
@@ -7681,6 +8185,20 @@
       count: scoreAttackFixedReward ? 1 : rollShootingRewardCount(range),
     }));
     const rewardPlan = getShootingClearRewardPlan();
+
+    // ステージ固有の確定報酬。
+    // 通常のランダム報酬プールには混ぜず、クリア時に必ず追加で付与する。
+    const guaranteedRewards = Array.isArray(selectedStage && selectedStage.guaranteedRewards)
+      ? selectedStage.guaranteedRewards.map(reward => ({
+          type: String(reward && reward.type || 'material'),
+          id: String(reward && reward.id || ''),
+          name: String(reward && reward.name || '報酬'),
+          image: String(reward && reward.image || ''),
+          count: Math.max(1, Math.floor(Number(reward && reward.count || 1))),
+          detail: String(reward && reward.detail || '確定報酬'),
+        })).filter(reward => reward.id)
+      : [];
+
     const drops = [
       { type: 'exp', name: 'プレイヤーEXP', amount: playerExp, detail: 'プレイヤーレベル経験値', image: '', amountPrefix: '+' },
       ...materialDrops.map(({ material, count }) => ({
@@ -7691,6 +8209,14 @@
         image: material.image,
         materialId: material.id,
       })),
+      ...guaranteedRewards.map(reward => ({
+        type: reward.type,
+        name: reward.name,
+        amount: reward.count,
+        detail: reward.detail,
+        image: reward.image,
+        materialId: reward.id,
+      })),
     ];
 
     grantPlayerExpReward(playerExp);
@@ -7700,6 +8226,10 @@
       } else {
         grantEvolutionReward(material, count);
       }
+    });
+
+    guaranteedRewards.forEach(reward => {
+      grantEvolutionReward({ id: reward.id }, reward.count);
     });
 
     state.clearRewardScoreRange = range;
@@ -7729,7 +8259,75 @@
         <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
       </div>
     `).join('');
-    if (note) note.textContent = isScoreAttackStage() ? 'すこあた！クリア報酬を獲得しました' : `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`;
+    if (note) {
+      note.textContent = isAmbushStage()
+        ? 'オーバーシア亜種の心核を獲得しました'
+        : (isScoreAttackStage()
+          ? 'すこあた！クリア報酬を獲得しました'
+          : `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`);
+    }
+  }
+
+
+  function startRandomAmbushFromResult() {
+    if (!state || !state.ended || isAmbushStage()) return;
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+
+    const result = document.getElementById('shooting-result');
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ambush-emergency';
+    overlay.innerHTML = '<small>EMERGENCY</small><strong>緊急事態</strong><span>オーバーシア（亜種）が出現しました</span>';
+    root.appendChild(overlay);
+
+    setTimeout(() => {
+      if (!overlay.isConnected) return;
+      overlay.remove();
+
+      resolveSelectedStage({ stageId: SHOOTING_STAGE_ID.OVERSEER_AMBUSH });
+      BOSS = getCurrentShootingEnemy();
+      clearProjectiles();
+      clearNormalBattleObjects();
+      resetState();
+
+      const boss = document.getElementById(BOSS_ID);
+      if (boss) {
+        boss.src = getSelectedBossImage();
+        boss.alt = BOSS.name || '';
+        boss.style.setProperty('--enemy-scale', String(Number(BOSS.uiScale || 1)));
+        boss.style.display = '';
+        boss.classList.remove('defeated');
+      }
+      if (result) {
+        result.classList.remove('show');
+        result.setAttribute('aria-hidden','true');
+      }
+
+      root.setAttribute('data-shooting-stage', selectedStage.id);
+      root.setAttribute('data-battle-type','boss');
+      root.setAttribute('data-boss-phase','1');
+      root.classList.remove('boss-defeat-flash','boss-phase-flash','boss-phase-pause','player-defeat-flash');
+
+      selectedCharacterId = selectedPartyIds[0] || selectedCharacterId;
+      applySelectedCharacterToUi();
+      setCharacterSelectVisible(false);
+      setBattleHudVisible(true);
+      setShootingHeaderMenuMode(true);
+      placeInitialUnits();
+      renderHud();
+      playBossStageIntro(runStartCountdown);
+    }, 1900);
+  }
+
+  function maybeQueueRandomAmbush(win) {
+    if (!win || isAmbushStage()) return;
+    const rate = 0.10;
+    if (Math.random() >= rate) return;
+    // リザルトを一度見せてから緊急警告へ。
+    setTimeout(() => {
+      if (!state || !state.ended || isAmbushStage()) return;
+      startRandomAmbushFromResult();
+    }, 1500);
   }
 
   function endGame(win) {
@@ -7851,6 +8449,7 @@
     }
     // 終了後は結果画面の裏にも戦闘HUDを残さない。
     setBattleHudVisible(false);
+    maybeQueueRandomAmbush(!!win);
   }
 
   function rebaseTouchDragToPlayer(preserveTarget = false) {

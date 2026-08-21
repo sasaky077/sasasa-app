@@ -55,6 +55,13 @@
       shortName: '聖なる盃',
       img: 'images/item_seihai.webp',
       desc: '神聖な力を湛えた進化用素材。'
+    }),
+    overseer_blk_core: Object.freeze({
+      id: 'overseer_blk_core',
+      name: 'オーバーシア亜種の心核',
+      shortName: '亜種の心核',
+      img: 'images/item_overseer_blk_core.webp',
+      desc: 'オーバーシア亜種から回収された異質な心核。今後の特殊強化に使用する素材。'
     })
   });
 

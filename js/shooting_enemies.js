@@ -26,6 +26,7 @@
     FACELESS: 'shooting_faceless',
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
+    OVERSEER_AMBUSH: 'shooting_overseer_ambush',
   });
 
   // ============================================================
@@ -324,6 +325,25 @@
       behavior: 'barrage_v1',
       uiScale: 1.20,
     }),
+    // ------------------------------------------------------------
+    // RANDOM AMBUSH - OVERSEER VARIANT
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.OVERSEER_AMBUSH]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.OVERSEER_AMBUSH,
+      kind: 'boss',
+      implemented: true,
+      name: 'オーバーシア（亜種）',
+      displayName: 'EMERGENCY　オーバーシア（亜種）',
+      image: 'images/remnant_01_blk_battle.webp',
+      gaugeHp: 2500,
+      gauges: 1,
+      bulletSpeed: 210,
+      fireRate: 920,
+      bulletDamage: 350,
+      behavior: 'overseer_ambush_v1',
+      uiScale: 1.0,
+    }),
+
     [SHOOTING_ENEMY_ID.REMNANT_06]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_06,
       kind: 'boss',

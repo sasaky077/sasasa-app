@@ -17,11 +17,9 @@ function ensureRoot(){
 
  <header class="score-attack-head">
    <button type="button" class="score-attack-back" onclick="closeScoreAttack()">‹ 戻る</button>
-   <div class="score-attack-head-title">
-     <small>SCORE ATTACK EVENT</small>
-     <strong>すこあた！</strong>
+   <div class="score-attack-head-title score-attack-head-title-logo">
+     <img class="score-attack-head-logo" src="images/score_attack_title.webp" alt="すこあた！">
    </div>
-   <div class="score-attack-head-mark" aria-hidden="true">✦</div>
  </header>
 
  <div class="score-attack-scroll">
@@ -35,29 +33,29 @@ function ensureRoot(){
 
   <section class="score-attack-mode-card">
     <div class="score-attack-mode-head">
-      <div><small>DIFFICULTY</small><strong>難易度を選択</strong></div>
+      <div><strong>難易度を選択</strong></div>
       <span>各難易度で個別ランキング</span>
     </div>
     <div class="score-attack-tabs">
       <button id="score-attack-tab-normal" class="active" onclick="setScoreAttackDifficulty('normal')">
-        <small>NORMAL</small><b>標準弾速</b>
+        <small>通常</small>
       </button>
       <button id="score-attack-tab-hard" onclick="setScoreAttackDifficulty('hard')">
-        <small>HARD</small><b>高速・高威力</b>
+        <small>高難度</small>
       </button>
     </div>
   </section>
 
   <section class="score-attack-me">
     <div class="score-attack-me-head">
-      <div><small>YOUR RECORD</small><span>MY BEST</span></div>
-      <div class="score-attack-me-badge">PERSONAL BEST</div>
+      <div><span>最高記録</span></div>
+      <div class="score-attack-me-badge">自己最高</div>
     </div>
     <strong id="score-attack-my-score">------</strong>
-    <div class="score-attack-my-party-label">BEST PARTY</div>
+    <div class="score-attack-my-party-label">最高記録編成</div>
     <div id="score-attack-my-party"></div>
     <button type="button" class="score-attack-start" onclick="startScoreAttack()">
-      <span>挑戦する</span><small>START SCORE ATTACK</small>
+      <span>挑戦する</span>
     </button>
   </section>
 
@@ -82,7 +80,7 @@ function renderRows(rows){
    return '<div class="score-attack-row'+(me?' is-me':'')+'">'+
      '<span class="score-attack-rank-no">'+rank+'</span>'+
      '<div class="score-attack-row-main">'+
-       '<b>'+esc(row.display_name||row.user_id||'Player')+(me?' <em>YOU</em>':'')+'</b>'+
+       '<b>'+esc(row.display_name||row.user_id||'Player')+(me?' <em>自分</em>':'')+'</b>'+
        partyHtml(row.party_ids,false)+
      '</div>'+
      '<strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong>'+

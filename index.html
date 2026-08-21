@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260821-ninmu-header-match-v200';
+    var FALLBACK_BUILD = '20260821-scoreattack-divider-remove-v224';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260821-ninmu-header-match-v200">
+  <meta name="sasaphia-build" content="20260821-scoreattack-divider-remove-v224">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260821-ninmu-header-match-v200"
+        href="css/style.css?v=20260821-scoreattack-divider-remove-v224"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260821-ninmu-header-match-v200"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260821-scoreattack-divider-remove-v224"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260821-ninmu-header-match-v200">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260821-scoreattack-divider-remove-v224">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260821-ninmu-header-match-v200">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260821-scoreattack-divider-remove-v224">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260821-ninmu-header-match-v200';
+  var BUILD = '20260821-scoreattack-divider-remove-v224';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1339,7 +1339,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/home_banners.js?v=20260821-scoreattack-divider-remove-v224"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2124,9 +2124,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/resonance_system.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/resonance_ui.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/shooting_resonance.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/resonance_system.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/resonance_ui.js?v=20260821-scoreattack-divider-remove-v224"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -2175,6 +2175,8 @@ document.addEventListener('touchend', function (e) {
   const ZERAPHIA_CLOUD_SYNC_VERSION = 1;
   const ZERAPHIA_REMNANT_KEY = 'zeraphia_remnants_owned_v1';
   const ZERAPHIA_INVENTORY_KEY = 'zeraphia_inventory_v1';
+  const ZERAPHIA_EVOLUTION_MATERIAL_KEY = 'zeraphia_evolution_materials_v1';
+  const ZERAPHIA_EVOLUTION_ITEM_PREFIX = 'evo:';
   const ZERAPHIA_TRANSFER_PENDING_KEY = 'zeraphia_pending_transfer_v1';
   const ZERAPHIA_TRANSFER_BACKUP_KEY = 'zeraphia_transfer_backup_v1';
   const ZERAPHIA_MIGRATED_KEY = 'zeraphia_cloud_migrated_v1';
@@ -2234,19 +2236,52 @@ document.addEventListener('touchend', function (e) {
   }
 
   function _zsGetInventoryState() {
+    // player_inventory は既存テーブルをそのまま利用。
+    // 通常inventoryは従来ID、強化素材は evo:<materialId> で名前空間を分けて保存する。
     var inventory = _zsReadLocalObject(ZERAPHIA_INVENTORY_KEY);
     if (window.userProfile && window.userProfile.inventory && typeof window.userProfile.inventory === 'object') {
       Object.keys(window.userProfile.inventory).forEach(function(id){
         inventory[id] = Math.max(0, Number(window.userProfile.inventory[id] || 0));
       });
     }
+
+    var evolutionMaterials = _zsReadLocalObject(ZERAPHIA_EVOLUTION_MATERIAL_KEY);
+    Object.keys(evolutionMaterials || {}).forEach(function(materialId){
+      var count = Math.max(0, Number(evolutionMaterials[materialId] || 0));
+      if (count > 0) inventory[ZERAPHIA_EVOLUTION_ITEM_PREFIX + materialId] = count;
+    });
+
     return inventory;
   }
 
   function _zsApplyInventoryState(inventory) {
     inventory = inventory && typeof inventory === 'object' ? inventory : {};
-    _zsSetLocalJson(ZERAPHIA_INVENTORY_KEY, inventory);
-    if (window.userProfile) window.userProfile.inventory = _zsClone(inventory);
+
+    var normalInventory = {};
+    var evolutionMaterials = {};
+
+    Object.keys(inventory).forEach(function(itemId){
+      var count = Math.max(0, Number(inventory[itemId] || 0));
+      if (itemId.indexOf(ZERAPHIA_EVOLUTION_ITEM_PREFIX) === 0) {
+        var materialId = itemId.slice(ZERAPHIA_EVOLUTION_ITEM_PREFIX.length);
+        if (materialId && count > 0) evolutionMaterials[materialId] = count;
+        return;
+      }
+      normalInventory[itemId] = count;
+    });
+
+    _zsSetLocalJson(ZERAPHIA_INVENTORY_KEY, normalInventory);
+    _zsSetLocalJson(ZERAPHIA_EVOLUTION_MATERIAL_KEY, evolutionMaterials);
+
+    if (window.userProfile) window.userProfile.inventory = _zsClone(normalInventory);
+
+    // resonance_system.js が既にロード済みなら、保存先localStorageを更新したことを通知。
+    // 実データは次回参照/再起動時にも同じstorageから復元される。
+    try {
+      window.dispatchEvent(new CustomEvent('zeraphia:evolution-materials-cloud-loaded', {
+        detail: _zsClone(evolutionMaterials)
+      }));
+    } catch (_) {}
   }
 
   function _zsGetShinjuState() {
@@ -2354,6 +2389,9 @@ document.addEventListener('touchend', function (e) {
     (result.data || []).forEach(function(row){
       inventory[row.item_id] = Math.max(0, Number(row.quantity || 0));
     });
+
+    // evo:<materialId> は _zsApplyInventoryState 内で
+    // zeraphia_evolution_materials_v1 へ戻すため、端末引継ぎでも強化素材を維持できる。
     if (Object.keys(inventory).length) _zsApplyInventoryState(inventory);
     return inventory;
   }
@@ -10114,43 +10152,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/asset_loader.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/login_bonus.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
-<script src="js/story_engine.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/stories/chapter01.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/story_engine.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/stories/chapter01.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
-<script src="js/battle_range.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/characters.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/enemies.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/battle.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/battle_swipe.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/battle_range.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/characters.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/enemies.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/battle.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/battle_swipe.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
-<script src="js/stages.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/stage_select.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/party_select.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/enemy_intro.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/stages.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/stage_select.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/party_select.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/enemy_intro.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260821-ninmu-header-match-v200">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260821-scoreattack-divider-remove-v224">
 
-<script src="js/battle_range_32.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/characters_32.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/remnant_blessings.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/combo_32.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/cards.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/battle_32.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/battle_32_ui.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/battle_range_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/characters_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/remnant_blessings.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/combo_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/cards.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/battle_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/battle_32_ui.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/roguelite_run.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/roguelite_reward.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/shinju.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/roguelite_controller.js?v=20260821-ninmu-header-match-v200"></script>
-<script src="js/roguelite_overseer_run.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/roguelite_options.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/roguelite_run.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/roguelite_reward.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/shinju.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/roguelite_controller.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/roguelite_overseer_run.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -10596,10 +10634,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260821-ninmu-header-match-v200"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260821-scoreattack-divider-remove-v224"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/raid_event.js?v=20260821-scoreattack-divider-remove-v224"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -10620,6 +10658,6 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260821-ninmu-header-match-v200"></script>
+<script src="js/score_attack.js?v=20260821-scoreattack-divider-remove-v224"></script>
 </body>
 </html>
