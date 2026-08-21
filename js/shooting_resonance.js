@@ -259,6 +259,21 @@
         { type:'profileSet', field:'ultBeamDurationMs', value:7000 },
         { type:'profileSet', field:'ultBeamTickAtkMultiplier', value:0.45 }
       ])
+    }),
+
+    51: Object.freeze({
+      1: bonus('六眼覚醒', 'HP・ATK +5%', '五条 悟の基礎HPとATKが5%上昇する。', [
+        { type:'statRate', hp:0.05, atk:0.05 }
+      ]),
+      2: bonus('紫弾深化', '通常射撃ダメージ +12%', '半透明の紫5WAYショットの1Hitダメージを12%強化する。', [
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.12 }
+      ]),
+      3: bonus('収束する茈', 'ULT吸引力 +25%', '「虚式・茈」の吸引力を25%強化し、敵をより素早く波動中心へ引き寄せる。', [
+        { type:'profileMultiply', field:'gojoPurplePullStrength', multiplier:1.25 }
+      ]),
+      4: bonus('虚式極致', 'ULT ATK×3.5 → ×4.5', '「虚式・茈」の吸引・停止時間はそのまま、継続ダメージ総量をATK×3.5からATK×4.5へ強化する。', [
+        { type:'profileSet', field:'ultDamageAtkMultiplier', value:4.5 }
+      ])
     })
   });
 

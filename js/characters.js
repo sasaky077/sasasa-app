@@ -1254,6 +1254,73 @@ skills: [
       }
     ]
   }
+,
+  // ── id:51 五条 悟
+  { id: 51, name: '五条 悟', rarity: 'sr',
+    element: 'logos',
+    role: '高火力・拘束',
+    moveType: 'cross_1',
+    costMax: 14,
+    costStart: 5,
+    costRegen: 3,
+    shinkiMax: 5,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 680, ATK: 300 },
+    img: 'images/chara_51.webp',
+    cutImg: 'images/chara_51_cut.webp',
+    ultImg: 'images/chara_51_cutin.webp',
+    upImg: 'images/chara_51_up.webp',
+    battleImg: 'images/chara_51.webp',
+    battleUpImg: 'images/chara_51_up.webp',
+    battleBackImg: 'images/chara_51_battle_back.webp',
+    panelImg: 'images/chara_51_panel.webp',
+    favScale: 0.90, favOffsetY: -30,
+    uiScale: {panel: 1.0,battleBack: 0.85,battleUp: 1.0},
+    combo: {
+      range: 'combo_line_all',
+      skill: {
+        id: 'combo', name: '紫閃', type: 'attack',
+        multiplier: 0.80, range: 'front3', effects: [], hitStyle: 'multi',
+        desc: '同列の味方スキルに反応し、前方へ紫の追撃を放つ。'
+      }
+    },
+    skills: [
+      {
+        id: 's1',
+        name: '紫弾',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        criticalRate: 0.15,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 1.7,
+        range: 'front3',
+        effects: [],
+        hitStyle: 'multi',
+        desc: '前方へ紫の5WAYショットを放ち、対象へATK×1.7のダメージを与える。'
+      },
+      {
+        id: 'ult',
+        name: '虚式・茈',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        criticalRate: 0.10,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 3.5,
+        range: 'front_all',
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+        ],
+        hitStyle: 'heavy',
+        desc: '巨大な紫のエネルギー弾を放つ高威力ULT。シューティングではアヤネのULTと同じ効果を持つ。'
+      }
+    ]
+  }
+
 
   ];
 function getCharaById(id) {

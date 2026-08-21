@@ -26,6 +26,7 @@
     ANGE: 17,
     WOLF: 18,
     TESTCHAN: 50,
+    GOJO: 51,
   });
 
   // ============================================================
@@ -56,6 +57,7 @@
     17: 'r',   // アンジェ
     18: 'sr',  // ウルフ
     50: 'sr',  // テストちゃん
+    51: 'sr',  // 五条 悟
   });
 
   // R はSRに対して基本性能(HP/ATK)を20%落とす。
@@ -252,6 +254,15 @@
       panelImage: 'images/chara_50_panel.webp',
       cutinImage: 'images/chara_50_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 0.8, battleUp: 1.0 },
+    },
+    51: {
+      id: 51, name: '五条 悟',
+      element: 'logos',
+      hp: 680, atk: 300,
+      image: 'images/chara_51_battle_back.webp',
+      panelImage: 'images/chara_51_panel.webp',
+      cutinImage: 'images/chara_51_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
     },
   });
 
@@ -860,6 +871,46 @@
     ultBeamTickAtkMultiplier: 0.35,
     ultBeamWidth: 62,
   });
+
+
+  // ============================================================
+  // 五条 悟：5WAY紫弾 / ULT「虚式・茈」
+  // アヤネULTと同じ効果・ダメージ設計を使い、演出だけ紫の気弾へ差し替える。
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.GOJO] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.GOJO,
+    effectKey: 'gojo',
+    label: 'PURPLE / FIVE-WAY',
+    description: '半透明の紫5WAYショットを放つSR火力型。ULT「虚式・茈」は紫の波動を敵へ射出し、着弾地点で巨大化。周囲の敵を中心へ吸引して停止させながら継続ダメージを与える。',
+    ultDescription: '小さな紫波動を敵へ向けて放つ。着弾すると巨大な重力波動へ変化し、約7秒間すべての敵を中心へ吸引。中心まで寄せられた敵は停止する。展開中は敵弾を消去し、各対象へ合計ATK×3.5相当の継続ダメージを与える。',
+    ultName: '虚式・茈',
+    ultType: 'gojo_purple',
+    moveSpeed: 420,
+    fireRate: 300,
+    bulletSpeed: 900,
+    shotPowerRate: 0.080,
+
+    // ---- 通常ショット：紫の5WAY ----
+    shotType: 'spread',
+    shotCount: 5,
+    shotAngleStep: 0.125,
+    shotStyle: 'gojo',
+    shotOffsetY: 42,
+
+    // ---- ULT：効果はアヤネと同一 ----
+    burstDamage: 27,
+    ultDamageAtkMultiplier: 3.5,
+    burstNeed: 24,
+    ultGainPerHit: 0.46,
+    gojoPurpleDurationMs: 7000,
+    gojoPurpleTickMs: 250,
+    gojoPurplePullStrength: 10.8,
+    gojoPurpleEnemyStopRadius: 18,
+    gojoPurpleBossStopRadius: 26,
+    coreTop: '37%',
+  });
+
 
 
   // ============================================================

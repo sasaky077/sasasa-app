@@ -1478,6 +1478,7 @@
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFlower: null, roseHeartSeq: 0,
       eltenaBlackHole: null,
+      gojoPurpleField: null,
       wolfAtkField: null,
       chapter4ItemPhase: false,
       chapter4FinalItem: null,
@@ -3795,12 +3796,9 @@
       // 旧実装ではこの後の通常AIが毎フレーム baseX/baseY から位置を再計算し、
       // ブラックホール側の吸引移動を実質リセットしていたため、
       // 「移動ロックは掛かるが吸い込まれない敵」が発生していた。
-      const activeBlackHole =
-        state.eltenaBlackHole &&
-        state.eltenaBlackHole.phase === 'active' &&
-        now < Number(state.eltenaBlackHole.activeUntil || 0);
+      const activePullField = isEnemyPullFieldActive(now);
 
-      if (activeBlackHole) {
+      if (activePullField) {
         // 攻撃も止め、吸引中は位置更新をブラックホール処理だけに一元化する。
         enemy.dashVx = 0;
         enemy.dashVy = 0;
@@ -4609,17 +4607,14 @@
     if (!arena) return;
     const w = arena.clientWidth;
 
-    const activeBlackHole =
-      state.eltenaBlackHole &&
-      state.eltenaBlackHole.phase === 'active' &&
-      now < Number(state.eltenaBlackHole.activeUntil || 0);
+    const activePullField = isEnemyPullFieldActive(now);
 
     state.facelessObjects = state.facelessObjects.filter(obj => {
       if (!obj || obj.hp <= 0) return false;
 
       // ブラックホール中はOBJECT側の横移動/攻撃AIを止め、
       // 吸引処理だけに座標更新を一元化する。
-      if (activeBlackHole) {
+      if (activePullField) {
         positionUnit(obj.el, obj.x, obj.y);
         positionUnit(obj.hpEl, obj.x, obj.y + 56);
         return true;
@@ -5540,10 +5535,7 @@
     const t = (now - state.startedAt) / 1000;
     const bossGrabbed = now < (state.bossGrabUntil || 0);
     const bossStunned = now < (state.bossStunUntil || 0);
-    const bossBlackHolePulled =
-      state.eltenaBlackHole &&
-      state.eltenaBlackHole.phase === 'active' &&
-      now < Number(state.eltenaBlackHole.activeUntil || 0);
+    const bossBlackHolePulled = isEnemyPullFieldActive(now);
 
     const applyBossStartBlend = (targetX, targetY) => {
       const startedAt = Number(state.bossMotionBlendStartedAt || 0);
@@ -6175,13 +6167,92 @@
   const AYANE_ULT_HAND_OPEN_SRC = 'images/ayane_ult_hand_open.webp';
   const AYANE_ULT_HAND_CLOSE_SRC = 'images/ayane_ult_hand_close.webp';
 
-  function getAyaneBlackhandHtml(extraHtml = '') {
+  // 五条 悟(id:51)専用エフェクト。小さい紫の波動が飛び、命中地点で巨大化して停止・振動する。
+  if (!document.getElementById('shooting-gojo-style-v2')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-gojo-style-v2';
+    style.textContent = `
+      .shooting-bullet-gojo,
+      .shooting-bullet-gojo.shooting-bullet-logos{
+        width:16px!important;height:16px!important;border-radius:50%!important;
+        opacity:.78!important;
+        background-color:rgba(140,76,255,.72)!important;
+        filter:saturate(1.18) brightness(1.04)!important;
+        background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.88) 0 10%,rgba(232,200,255,.82) 18%,rgba(181,85,255,.78) 42%,rgba(124,36,236,.70) 66%,rgba(72,10,162,.28) 100%)!important;
+        box-shadow:0 0 7px rgba(255,255,255,.72),0 0 14px rgba(201,117,255,.66),0 0 24px rgba(121,23,255,.52)!important;
+        border:1px solid rgba(255,255,255,.56)!important;
+      }
+      .shooting-gojo-purple-wave{
+        position:absolute;left:0;top:0;z-index:28;pointer-events:none;
+        width:28px;height:28px;border-radius:50%;
+        transform:translate(-50%,-50%) scale(.82);
+        transform-origin:center center;
+        background:
+          radial-gradient(circle at 36% 34%,rgba(255,255,255,.76) 0 8%,rgba(236,204,255,.64) 15%,rgba(189,92,255,.58) 38%,rgba(125,30,236,.48) 64%,rgba(52,0,115,.22) 100%);
+        box-shadow:0 0 9px rgba(255,255,255,.56),0 0 20px rgba(197,94,255,.46),0 0 38px rgba(111,22,245,.34);
+        opacity:0;
+        will-change:left,top,transform,filter;
+      }
+      .shooting-gojo-purple-wave::before,
+      .shooting-gojo-purple-wave::after{
+        content:'';position:absolute;inset:-9px;border-radius:50%;
+        border:2px solid rgba(207,142,255,.42);
+        box-shadow:0 0 16px rgba(170,79,255,.34);
+        opacity:.40;
+      }
+      .shooting-gojo-purple-wave::after{
+        inset:-17px;border-width:1px;opacity:.24;
+      }
+      .shooting-gojo-purple-wave.fly{
+        opacity:.68;
+        animation:shootingGojoWaveSpin .16s linear infinite;
+      }
+      .shooting-gojo-purple-wave.impact{
+        width:154px;height:154px;
+        opacity:.56;
+        transform:translate(-50%,-50%) scale(1);
+        background:
+          radial-gradient(circle at 38% 34%,rgba(255,255,255,.70) 0 7%,rgba(238,204,255,.56) 13%,rgba(194,93,255,.46) 34%,rgba(129,34,240,.38) 58%,rgba(58,0,128,.22) 78%,rgba(22,0,58,.08) 100%);
+        box-shadow:0 0 15px rgba(255,255,255,.44),0 0 36px rgba(213,123,255,.34),0 0 80px rgba(133,35,255,.28),0 0 120px rgba(73,0,168,.18);
+        animation:shootingGojoImpactShake .10s linear infinite, shootingGojoImpactPulse .40s ease-in-out infinite alternate;
+      }
+      .shooting-gojo-purple-wave.release{
+        animation:shootingGojoWaveRelease .36s ease-out forwards!important;
+      }
+      @keyframes shootingGojoWaveSpin{
+        0%{filter:brightness(1.05) hue-rotate(0deg);transform:translate(-50%,-50%) scale(.82)}
+        50%{filter:brightness(1.42) hue-rotate(8deg);transform:translate(-50%,-50%) scale(1.08)}
+        100%{filter:brightness(1.05) hue-rotate(0deg);transform:translate(-50%,-50%) scale(.82)}
+      }
+      @keyframes shootingGojoImpactShake{
+        0%{margin-left:-3px;margin-top:0}
+        25%{margin-left:3px;margin-top:-2px}
+        50%{margin-left:-2px;margin-top:3px}
+        75%{margin-left:2px;margin-top:1px}
+        100%{margin-left:-3px;margin-top:0}
+      }
+      @keyframes shootingGojoImpactPulse{
+        from{filter:brightness(.96) saturate(.92)}
+        to{filter:brightness(1.12) saturate(1.04)}
+      }
+      @keyframes shootingGojoWaveRelease{
+        0%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.45);filter:blur(4px)}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  function getAyaneBlackhandHtml(extraHtml = '', variant = 'ayane') {
+    const shotHtml = variant === 'gojo'
+      ? '<div class="shooting-gojo-purple-orb" aria-hidden="true"></div>'
+      : `<img class="hand-open" src="${AYANE_ULT_HAND_OPEN_SRC}" alt="">
+         <img class="hand-close" src="${AYANE_ULT_HAND_CLOSE_SRC}" alt="">`;
+
     return `
       <div class="shooting-ayane-blackhand-aura"></div>
-      <div class="shooting-ayane-blackhand-shot">
-        <img class="hand-open" src="${AYANE_ULT_HAND_OPEN_SRC}" alt="">
-        <img class="hand-close" src="${AYANE_ULT_HAND_CLOSE_SRC}" alt="">
-      </div>
+      <div class="shooting-ayane-blackhand-shot">${shotHtml}</div>
       <div class="shooting-ayane-blackhand-afterimage a1"></div>
       <div class="shooting-ayane-blackhand-afterimage a2"></div>
       <div class="shooting-ayane-blackhand-afterimage a3"></div>
@@ -6420,6 +6491,24 @@
     }
   }
 
+  function isGojoPurpleFieldActive(now = performance.now()) {
+    return !!(
+      state &&
+      state.gojoPurpleField &&
+      now < Number(state.gojoPurpleField.activeUntil || 0)
+    );
+  }
+
+  function isEnemyPullFieldActive(now = performance.now()) {
+    const eltenaActive = !!(
+      state &&
+      state.eltenaBlackHole &&
+      state.eltenaBlackHole.phase === 'active' &&
+      now < Number(state.eltenaBlackHole.activeUntil || 0)
+    );
+    return eltenaActive || isGojoPurpleFieldActive(now);
+  }
+
   function pullPointTowardBlackHole(obj, bh, dt, stopRadius, bounds) {
     if (!obj || !bh) return;
     const dx = bh.x - Number(obj.x || 0);
@@ -6541,6 +6630,111 @@
         bossEl.classList.add('eltena-pulled');
         positionUnit(bossEl, state.boss.x, state.boss.y);
       }
+    }
+  }
+
+  function clearGojoPurpleField() {
+    if (!state) return;
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy) return;
+      if (enemy.el) enemy.el.classList.remove('gojo-purple-pulled');
+      if (enemy.hpEl) enemy.hpEl.classList.remove('gojo-purple-pulled');
+    });
+    (state.facelessObjects || []).forEach(obj => {
+      if (obj?.el) obj.el.classList.remove('gojo-purple-pulled');
+      if (obj?.hpEl) obj.hpEl.classList.remove('gojo-purple-pulled');
+    });
+    document.getElementById(BOSS_ID)?.classList.remove('gojo-purple-pulled');
+
+    state.gojoPurpleField = null;
+  }
+
+  function updateGojoPurpleField(dt, now) {
+    if (!state || !state.gojoPurpleField) return;
+
+    const field = state.gojoPurpleField;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) {
+      clearGojoPurpleField();
+      return;
+    }
+
+    if (now >= Number(field.activeUntil || 0)) {
+      clearGojoPurpleField();
+      return;
+    }
+
+    const w = arena.clientWidth;
+    const h = arena.clientHeight;
+
+    // エテルナULTと同じ考え方で、全敵を波動中心へ吸引する。
+    // stopRadius以内へ入った敵はそこで停止し続ける。
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      pullPointTowardBlackHole(enemy, field, dt, field.enemyStopRadius, {
+        minX: 34, maxX: w - 34, minY: 42, maxY: h - 46
+      });
+      enemy.el.classList.add('gojo-purple-pulled');
+      if (enemy.hpEl) enemy.hpEl.classList.add('gojo-purple-pulled');
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+    });
+
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj || !obj.el || obj.hp <= 0) return;
+      pullPointTowardBlackHole(obj, field, dt, field.enemyStopRadius, {
+        minX: 34, maxX: w - 34, minY: 42, maxY: h - 46
+      });
+      obj.el.classList.add('gojo-purple-pulled');
+      if (obj.hpEl) obj.hpEl.classList.add('gojo-purple-pulled');
+      positionUnit(obj.el, obj.x, obj.y);
+      if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 56);
+    });
+
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      pullPointTowardBlackHole(state.boss, field, dt, field.bossStopRadius, {
+        minX: 54, maxX: w - 54, minY: 52, maxY: h * .74
+      });
+      const bossEl = document.getElementById(BOSS_ID);
+      if (bossEl) {
+        bossEl.classList.add('gojo-purple-pulled');
+        positionUnit(bossEl, state.boss.x, state.boss.y);
+      }
+    }
+
+    // 攻撃力を持つ重力場。展開中の全対象へ一定間隔でダメージ。
+    if (now >= Number(field.nextDamageAt || 0)) {
+      field.nextDamageAt = now + field.damageTickMs;
+      const damage = Math.max(0.1, Number(field.damagePerTick || 0));
+
+      if (isNormalBattle()) {
+        (state.normalEnemies || []).slice().forEach(enemy => {
+          if (!enemy || !enemy.el || enemy.hp <= 0) return;
+          damageNormalEnemy(enemy, damage, now, false);
+        });
+        state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+        evaluateNormalMission(now);
+      } else {
+        (state.facelessObjects || []).slice().forEach(obj => {
+          if (!obj || !obj.el || obj.hp <= 0) return;
+          damageFacelessObject(obj, damage, now);
+        });
+
+        if (state.boss && state.boss.hp > 0) {
+          const applied = Math.min(state.boss.hp, damage);
+          state.boss.hp = Math.max(0, state.boss.hp - applied);
+          showBossDamageNumber(applied, false);
+          if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+          if ((field.damagePulseIndex++ % 2) === 0) {
+            createHit(state.boss.x + (Math.random() - .5) * 22, state.boss.y + (Math.random() - .5) * 18, false);
+            flashBossHit(false);
+          }
+          updateBossPhase();
+          if (state.boss.hp <= 0) beginBossDefeat();
+        }
+      }
+      renderHud();
     }
   }
 
@@ -6739,6 +6933,7 @@
     // エルテナULTは通常の敵移動が終わった後に吸引を適用。
     // これによりAIの横移動よりブラックホールの集敵を優先する。
     updateEltenaBlackHole(dt, ts);
+    updateGojoPurpleField(dt, ts);
 
     // 敵の位置更新後にプレイヤーとの直接接触を判定する。
     updateEnemyContactCollisions(ts);
@@ -8549,9 +8744,132 @@
     renderHud();
   }
 
+  function useGojoUlt(c) {
+    showUltCut(c.ultName, c.effectKey);
+    ultScreenFlash('ult-flash-ayane');
+
+    const arena = document.getElementById('shooting-arena');
+    const root = document.getElementById(ROOT_ID);
+    if (!arena || !state) return;
+
+    clearGojoPurpleField();
+
+    const now = performance.now();
+    const TRAVEL_MS = 430;
+    const HOLD_MS = Number(c.gojoPurpleDurationMs || 7000);
+    const TICK_MS = Number(c.gojoPurpleTickMs || 250);
+    const TICK_COUNT = Math.max(1, Math.round(HOLD_MS / TICK_MS));
+    const totalDamage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3.5);
+
+    const startX = Number(state.player.x || arena.clientWidth * .5);
+    const startY = Math.max(24, Number(state.player.y || arena.clientHeight * .72) - 18);
+
+    let endX = startX;
+    let endY = Math.max(36, startY - 180);
+
+    // 最寄りの敵へ小さな波動を飛ばす。着弾後はその座標が重力場の中心になる。
+    if (isNormalBattle()) {
+      const living = (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0);
+      if (!living.length) {
+        state.ultLockUntil = now + 240;
+        return;
+      }
+      const target = living.slice().sort((a, b) => {
+        const da = Math.hypot(Number(a.x || 0) - startX, Number(a.y || 0) - startY);
+        const db = Math.hypot(Number(b.x || 0) - startX, Number(b.y || 0) - startY);
+        return da - db;
+      })[0];
+      endX = Number(target.x || startX);
+      endY = Number(target.y || endY);
+    } else if (state.boss) {
+      endX = Number(state.boss.x || startX);
+      endY = Math.max(24, Number(state.boss.y || endY) + 8);
+      state.bossGrabUntil = Math.max(Number(state.bossGrabUntil || 0), now + TRAVEL_MS + 100);
+    }
+
+    state.ultLockUntil = now + TRAVEL_MS + 100;
+    renderHud();
+
+    const wave = document.createElement('div');
+    wave.className = 'shooting-gojo-purple-wave fly';
+    wave.setAttribute('aria-hidden', 'true');
+    arena.appendChild(wave);
+    positionUnit(wave, startX, startY);
+
+    const travelStartedAt = performance.now();
+    const animateTravel = ts => {
+      if (!wave.isConnected || !state || state.ended || state.finishing) return;
+      const t = Math.max(0, Math.min(1, (ts - travelStartedAt) / TRAVEL_MS));
+      const eased = t * t * (3 - 2 * t);
+      positionUnit(
+        wave,
+        startX + (endX - startX) * eased,
+        startY + (endY - startY) * eased
+      );
+      if (t < 1) requestAnimationFrame(animateTravel);
+    };
+    requestAnimationFrame(animateTravel);
+
+    pushUltTimer(() => {
+      if (!state || state.ended || state.finishing || !wave.isConnected) return;
+
+      positionUnit(wave, endX, endY);
+      wave.classList.remove('fly');
+      wave.classList.add('impact');
+      if (root) root.classList.add('ayane-rampage-shake');
+      clearEnemyBulletsOnly();
+      createHit(endX, endY, true);
+
+      const activeFrom = performance.now();
+      const activeUntil = activeFrom + HOLD_MS;
+
+      // エテルナのブラックホールに近い吸引挙動＋攻撃力を持つ紫波動。
+      state.gojoPurpleField = {
+        x: endX,
+        y: endY,
+        activeFrom,
+        activeUntil,
+        pullStrength: Number(c.gojoPurplePullStrength || 10.8),
+        enemyStopRadius: Number(c.gojoPurpleEnemyStopRadius || 18),
+        bossStopRadius: Number(c.gojoPurpleBossStopRadius || 26),
+        damageTickMs: TICK_MS,
+        damagePerTick: totalDamage / TICK_COUNT,
+        nextDamageAt: activeFrom,
+        damagePulseIndex: 0,
+      };
+
+      // ボスの攻撃AIも停止。通常敵/SPECIAL OBJECTは isEnemyPullFieldActive() 側で停止。
+      if (!isNormalBattle()) {
+        state.bossGrabUntil = Math.max(Number(state.bossGrabUntil || 0), activeUntil);
+      }
+
+      // 着弾後は五条自身の通常射撃をすぐ再開できる。
+      state.ultLockUntil = performance.now() + 120;
+      state.lastShotAt = performance.now();
+      renderHud();
+    }, TRAVEL_MS);
+
+    pushUltTimer(() => {
+      if (!state) return;
+      clearGojoPurpleField();
+      if (!isNormalBattle()) state.bossGrabUntil = 0;
+      wave.classList.add('release');
+      if (root) root.classList.remove('ayane-rampage-shake');
+      renderHud();
+    }, TRAVEL_MS + HOLD_MS);
+
+    pushUltTimer(() => {
+      if (wave.isConnected) wave.remove();
+      if (root) root.classList.remove('ayane-rampage-shake');
+    }, TRAVEL_MS + HOLD_MS + 420);
+  }
+
   function useAyaneUlt(c) {
-    preloadShootingImage(AYANE_ULT_HAND_OPEN_SRC);
-    preloadShootingImage(AYANE_ULT_HAND_CLOSE_SRC);
+    const isGojoPurple = Number(c && c.id) === Number(CHARACTER_ID.GOJO);
+    if (!isGojoPurple) {
+      preloadShootingImage(AYANE_ULT_HAND_OPEN_SRC);
+      preloadShootingImage(AYANE_ULT_HAND_CLOSE_SRC);
+    }
     if (isNormalBattle()) {
       showUltCut(c.ultName, c.effectKey);
       ultScreenFlash('ult-flash-ayane');
@@ -8642,14 +8960,14 @@
       const angle = Math.atan2(uy, ux) * 180 / Math.PI;
 
       const fx = document.createElement('div');
-      fx.className = 'shooting-ayane-blackhand-ult shooting-ayane-blackhand-multi';
+      fx.className = 'shooting-ayane-blackhand-ult shooting-ayane-blackhand-multi' + (isGojoPurple ? ' gojo-purple-ult' : '');
       fx.style.setProperty('--ayane-start-x', `${startX}px`);
       fx.style.setProperty('--ayane-start-y', `${startY}px`);
       fx.style.setProperty('--ayane-end-x', `${visualEndX}px`);
       fx.style.setProperty('--ayane-end-y', `${visualEndY}px`);
       fx.style.setProperty('--ayane-distance', `${visualDistance}px`);
       fx.style.setProperty('--ayane-angle', `${angle}deg`);
-      fx.innerHTML = getAyaneBlackhandHtml();
+      fx.innerHTML = getAyaneBlackhandHtml('', isGojoPurple ? 'gojo' : 'ayane');
       arena.appendChild(fx);
 
       if (root) root.classList.add('ayane-rampage-active');
@@ -8782,7 +9100,7 @@
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
     const fx = document.createElement('div');
-    fx.className = 'shooting-ayane-blackhand-ult';
+    fx.className = 'shooting-ayane-blackhand-ult' + (isGojoPurple ? ' gojo-purple-ult' : '');
     fx.style.setProperty('--ayane-start-x', `${startX}px`);
     fx.style.setProperty('--ayane-start-y', `${startY}px`);
     fx.style.setProperty('--ayane-end-x', `${endX}px`);
@@ -8797,7 +9115,7 @@
       <div class="shooting-ayane-blackhand-smoke s2"></div>
       <div class="shooting-ayane-blackhand-smoke s3"></div>
       <div class="shooting-ayane-blackhand-smoke s4"></div>
-    `);
+    `, isGojoPurple ? 'gojo' : 'ayane');
     arena.appendChild(fx);
 
     if (root) root.classList.add('ayane-rampage-active');
@@ -9857,6 +10175,7 @@
     else if (c.ultType === 'arno_aura') useArnoUlt(c);
     else if (c.ultType === 'speed_storm') useHayateUlt(c);
     else if (c.ultType === 'precision_beam') useAyaneUlt(c);
+    else if (c.ultType === 'gojo_purple') useGojoUlt(c);
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
