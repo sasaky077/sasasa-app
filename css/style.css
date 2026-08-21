@@ -13046,8 +13046,10 @@ body,
   overflow: hidden;
 }
 #screen-ninmu .header {
-  background: rgba(250,247,239,.96) !important;
-  border-bottom: 1px solid rgba(155,124,67,.22);
+  background:
+    linear-gradient(180deg, rgba(250,248,241,0.98), rgba(238,232,218,0.96)) !important;
+  border-bottom: 1px solid rgba(154,124,61,0.28) !important;
+  box-shadow: 0 2px 12px rgba(85,67,31,0.08) !important;
 }
 #screen-ninmu .header-title { color:#6d583b; }
 #screen-ninmu .ninmu-layout {
