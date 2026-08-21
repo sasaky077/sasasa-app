@@ -679,6 +679,39 @@
     }
   }
 
+  // ============================================================
+  // Character usage analytics
+  // 「誰が / どのキャラを / 何回編成して出撃したか」をSupabaseへ集計保存。
+  // 1バトル開始につき、編成中の各キャラを1回ずつ加算する。
+  // RETRYは新しい出撃として再加算。中断復帰(resume)では再加算しない。
+  // ============================================================
+  async function recordShootingCharacterUsage(characterIds, stageId) {
+    const ids = Array.from(new Set(
+      (Array.isArray(characterIds) ? characterIds : [])
+        .map(Number)
+        .filter(id => Number.isInteger(id) && id > 0 && !!SHOOTING_CHARACTERS[id])
+    ));
+    if (!ids.length) return false;
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    if (!sb || typeof sb.rpc !== 'function' || !userId) return false;
+
+    try {
+      const result = await sb.rpc('record_shooting_character_usage', {
+        p_user_id: userId,
+        p_stage_id: String(stageId || ''),
+        p_character_ids: ids
+      });
+      if (result?.error) throw result.error;
+      return true;
+    } catch (err) {
+      // 統計保存失敗でゲーム開始自体を止めない。
+      console.warn('[shooting] character usage save skipped:', err?.message || err);
+      return false;
+    }
+  }
+
   function normalizeShootingUiLayoutType(value) {
     return Number(value) === 2 ? 2 : 1;
   }
@@ -8318,6 +8351,10 @@
     if (!(await ensureSelectedRaidAttemptStarted())) return;
     if (!(await ensureSelectedStageTicketConsumed())) return;
 
+    // 使用キャラランキング用。編成された各キャラを1出撃として記録。
+    // 集計保存はゲーム開始をブロックしない。
+    void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
+
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
@@ -8455,6 +8492,10 @@
       return;
     }
     if (!(await ensureSelectedStageTicketConsumed())) return;
+
+    // RETRYも新しい1出撃として使用回数へ加算。
+    void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
+
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();
