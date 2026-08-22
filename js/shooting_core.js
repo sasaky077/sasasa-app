@@ -1261,6 +1261,14 @@
   function measureUnitSize(entry) {
     if (!entry || !entry.el) return;
 
+    // Canvas描画の敵弾はDOMを持たないため、見た目と当たり判定のサイズを
+    // 数値で固定する。getBoundingClientRect()を一切呼ばない。
+    if (entry.canvasRendered) {
+      entry._hw = Number(entry.canvasHalfWidth || 5.5);
+      entry._hh = Number(entry.canvasHalfHeight || 5.5);
+      return;
+    }
+
     // SCORE ATTACK弾はCSSでサイズ固定。生成ごとのレイアウト計測を避ける。
     if (isScoreAttackStage() && entry.el.classList && entry.el.classList.contains('shooting-score-attack-bullet')) {
       const warning = entry.el.classList.contains('shooting-score-attack-warning-bullet');
@@ -1788,6 +1796,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-wolf-atk-field,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
@@ -2122,9 +2131,178 @@
     setTimeout(() => el.remove(), 1650);
   }
 
+  // ============================================================
+  // Canvas enemy bullet renderer — isolated performance trial
+  // ============================================================
+  // true: SPECIAL STAGE「楽園 -ノア-」の敵弾だけCanvas描画
+  // false: 全ステージ従来どおりDOM描画（即時ロールバック用）
+  const CANVAS_ENEMY_BULLET_TEST_ENABLED = true;
+  const ENEMY_BULLET_CANVAS_ID = 'shooting-enemy-bullet-canvas';
+
+  // 既存CSSや端末差にCanvasの可視性を左右されないよう、検証レイヤーを固定する。
+  // ボス被弾時だけ単一画像へbrightnessを掛ける処理も復旧する。
+  if (!document.getElementById('shooting-canvas-test-visual-style-v227')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-canvas-test-visual-style-v227';
+    style.textContent = `
+      #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] #shooting-enemy-bullet-canvas{
+        position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+        z-index:17!important;display:block!important;visibility:visible!important;opacity:1!important;
+        pointer-events:none!important;background:transparent!important;filter:none!important;
+        transform:none!important;mix-blend-mode:normal!important;
+      }
+      #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.hit-flash,
+      #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.burst-hit,
+      #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.shooting-hit-sustained{
+        filter:brightness(1.55) saturate(.72)!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function isCanvasEnemyBulletTestStage() {
+    return !!(
+      selectedStage &&
+      String(selectedStage.id || '') === String(SHOOTING_STAGE_ID.BULLET_HELL_TEST || '')
+    );
+  }
+
+  // 既存コードはp.el.remove() / classList.contains()を利用するため、
+  // Canvas弾にもDOM互換の最小インターフェースだけを持たせる。
+  // 実際のHTML要素は生成しない。
+  function createCanvasProjectileElement(className) {
+    const names = new Set(String(className || '').split(/\s+/).filter(Boolean));
+    const virtual = {
+      className: String(className || ''),
+      id: '',
+      style: { setProperty() {} },
+      classList: {
+        contains(name) { return names.has(name); },
+        add(...items) { items.forEach(item => names.add(item)); },
+        remove(...items) { items.forEach(item => names.delete(item)); },
+      },
+      __canvasAlive: true,
+      remove() { this.__canvasAlive = false; },
+    };
+    Object.defineProperty(virtual, 'isConnected', {
+      get() { return virtual.__canvasAlive; },
+    });
+    return virtual;
+  }
+
+  function ensureEnemyBulletCanvas() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    let canvas = document.getElementById(ENEMY_BULLET_CANVAS_ID);
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = ENEMY_BULLET_CANVAS_ID;
+      canvas.setAttribute('aria-hidden', 'true');
+      const forceStyle = (name, value) => canvas.style.setProperty(name, value, 'important');
+      forceStyle('position', 'absolute');
+      forceStyle('inset', '0');
+      forceStyle('width', '100%');
+      forceStyle('height', '100%');
+      forceStyle('z-index', '17');
+      forceStyle('display', 'block');
+      forceStyle('visibility', 'visible');
+      forceStyle('opacity', '1');
+      forceStyle('pointer-events', 'none');
+      forceStyle('background', 'transparent');
+      forceStyle('filter', 'none');
+      forceStyle('transform', 'none');
+      arena.appendChild(canvas);
+    }
+
+    const cssWidth = Math.max(1, arena.clientWidth);
+    const cssHeight = Math.max(1, arena.clientHeight);
+    // Retina端末で無制限に内部解像度を上げない。弾の輪郭を保ちつつ
+    // ピクセル数を抑えるため、最大1.5倍に制限する。
+    const dpr = Math.min(1.5, Math.max(1, Number(window.devicePixelRatio || 1)));
+    const pixelWidth = Math.round(cssWidth * dpr);
+    const pixelHeight = Math.round(cssHeight * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+      canvas.__shootingDpr = dpr;
+    }
+    return canvas;
+  }
+
+  function clearEnemyBulletCanvas() {
+    const canvas = document.getElementById(ENEMY_BULLET_CANVAS_ID);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function renderCanvasEnemyBullets() {
+    if (!CANVAS_ENEMY_BULLET_TEST_ENABLED || !isCanvasEnemyBulletTestStage()) {
+      clearEnemyBulletCanvas();
+      return;
+    }
+    const canvas = ensureEnemyBulletCanvas();
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    const dpr = Number(canvas.__shootingDpr || 1);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.imageSmoothingEnabled = false;
+
+    // 影・blur・filterは使わない。外周＋芯の2円だけで視認性を作る。
+    // 全弾で同じ描画設定を共有し、弾ごとの状態切替を最小化する。
+    const bullets = (state && state.enemyBullets) || [];
+    ctx.fillStyle = 'rgba(78,66,92,0.94)';
+    ctx.beginPath();
+    for (const p of bullets) {
+      if (!p || !p.canvasRendered) continue;
+      ctx.moveTo(Number(p.x || 0) + 5.5, Number(p.y || 0));
+      ctx.arc(Number(p.x || 0), Number(p.y || 0), 5.5, 0, Math.PI * 2);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.beginPath();
+    for (const p of bullets) {
+      if (!p || !p.canvasRendered) continue;
+      ctx.moveTo(Number(p.x || 0) + 1.65, Number(p.y || 0));
+      ctx.arc(Number(p.x || 0), Number(p.y || 0), 1.65, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+
   function makeProjectile(cls, x, y, vx, vy, damage, ownerId) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
+
+    // 最初の検証ではSPECIAL STAGE「楽園 -ノア-」の敵弾だけをCanvas化する。
+    // 既存ステージ・自機弾・WARNING弾などは従来DOMのままなので、
+    // 問題があってもこのフラグをfalseにするだけで即座に元へ戻せる。
+    if (
+      CANVAS_ENEMY_BULLET_TEST_ENABLED &&
+      isCanvasEnemyBulletTestStage() &&
+      String(cls || '').includes('shooting-enemy-bullet')
+    ) {
+      const virtualEl = createCanvasProjectileElement(cls);
+      const p = {
+        el: virtualEl,
+        x, y, vx, vy,
+        damage: damage || 1,
+        ownerId: ownerId || null,
+        canvasRendered: true,
+        canvasHalfWidth: 5.5,
+        canvasHalfHeight: 5.5,
+      };
+      measureUnitSize(p);
+      return p;
+    }
+
     const el = document.createElement('i');
     el.className = cls;
     arena.appendChild(el);
@@ -6483,7 +6661,8 @@
         }
       }
 
-      positionUnit(p.el, p.x, p.y);
+      // Canvas弾は座標データ自体が表示位置なので、DOM用style更新は不要。
+      if (!p.canvasRendered) positionUnit(p.el, p.x, p.y);
       const offscreenMargin = isChapter03BossStage() ? 10 : 30;
       if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
@@ -7475,6 +7654,8 @@
     // 敵の位置更新後にプレイヤーとの直接接触を判定する。
     updateEnemyContactCollisions(ts);
     updateProjectiles(dt, ts);
+    // 同じ更新済み座標を使って、検証ステージの敵弾だけを一枚へ描画する。
+    renderCanvasEnemyBullets();
 
     // SCORE ATTACKでは無関係なイベント/CH04系の更新を毎フレーム呼ばない。
     // キャラクター固有処理（Arno/Mimosa等）はゲーム性に関わるので維持。

@@ -657,7 +657,9 @@
       stageNo: 3,
       eventId: 'bullet_hell_test',
       eventTitle: '楽園 -ノア-',
-      specialTicketCost: 1,
+      // Canvas性能比較中は何度でも再挑戦できるよう、ノアだけ消費0。
+      // 検証終了後は1へ戻す。
+      specialTicketCost: 0,
       difficultyLabel: 'STRESS TEST',
       type: 'boss',
       background: 'images/battle_bg_01.webp',

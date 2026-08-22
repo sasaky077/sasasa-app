@@ -9,7 +9,7 @@
   const queuedOpenArgs = [];
   const MODULE_VERSION = (
     document.querySelector('meta[name="sasaphia-build"]')?.getAttribute('content') ||
-    '20260818-score-attack-light-v126'
+    '20260822-canvas-noah-render-fix-v227'
   );
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
