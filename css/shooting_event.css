@@ -6956,24 +6956,57 @@
   width:9px!important;
   height:24px!important;
   border-radius:999px!important;
+  overflow:visible!important;
   background:
-    radial-gradient(circle at 50% 18%,rgba(255,255,255,.98) 0 8%,rgba(189,165,255,.95) 19%,rgba(92,67,148,.95) 55%,rgba(28,23,38,.98) 100%)!important;
+    linear-gradient(180deg,
+      rgba(255,255,255,.99) 0 7%,
+      rgba(222,207,255,.98) 18%,
+      rgba(151,103,238,.98) 46%,
+      rgba(86,48,166,.98) 72%,
+      rgba(28,19,55,.98) 100%)!important;
   box-shadow:
-    0 0 5px rgba(203,180,255,.82),
-    0 0 12px rgba(96,66,160,.54),
-    0 0 22px rgba(45,31,73,.30)!important;
+    0 0 4px rgba(244,235,255,.92),
+    0 0 9px rgba(174,121,255,.72),
+    0 0 15px rgba(103,54,193,.38)!important;
 }
+
+/* WOLF通常弾: 軽量な紫波動。
+   blur/filter/animationは使わず、疑似要素の静的な楕円波紋だけで波動感を足す。 */
+.shooting-bullet-wolf-j::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:25px;
+  height:13px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:1px solid rgba(193,151,255,.68);
+  box-shadow:
+    0 0 0 4px rgba(137,88,224,.18),
+    0 0 0 8px rgba(102,58,190,.08);
+  pointer-events:none;
+}
+
 .shooting-bullet-wolf-j::after{
   content:"";
   position:absolute;
   left:50%;
-  top:3px;
-  width:3px;
-  height:15px;
+  top:1px;
+  width:5px;
+  height:18px;
   transform:translateX(-50%);
   border-radius:999px;
-  background:rgba(244,238,255,.88);
-  box-shadow:0 0 5px rgba(229,215,255,.72);
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.98),
+      rgba(229,213,255,.95) 26%,
+      rgba(180,132,255,.72) 62%,
+      rgba(115,66,206,.12) 100%);
+  box-shadow:
+    0 0 4px rgba(239,226,255,.88),
+    0 0 8px rgba(169,112,255,.48);
+  pointer-events:none;
 }
 
 .shooting-wolf-atk-field{
