@@ -1,4 +1,4 @@
-// 20260823-raid-daily-shared-hp-v57
+// 20260823-raid-finalize-by-raidid-v62
 (function(){
   'use strict';
 
@@ -279,7 +279,7 @@
             </section>
 
             <section class="daily-raid-hpbox">
-              <div class="daily-raid-hphead"><div><small>SHARED HP</small><span>本日の共有耐久値</span></div><strong id="daily-raid-hptext">-- / --</strong></div>
+              <div class="daily-raid-hphead"><div><small>SHARED HP</small><span>本日の共有耐久値</span></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
               <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
               <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
             </section>
@@ -537,7 +537,7 @@
     if(startBtn) startBtn.disabled=true;
 
     try{
-      const result=normalizeStatus(await rpc('finalize_daily_raid_best_now',{p_user_id:uid()}));
+      const result=normalizeStatus(await rpc('finalize_daily_raid_best_now',{p_user_id:uid(),p_raid_id:status.raid_id}));
       if(!result || result.ok===false) throw new Error(result&&result.message||'スコアを確定できませんでした');
       currentStatus=result;
       await hydrateMemberPanels(result);
