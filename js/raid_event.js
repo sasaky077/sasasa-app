@@ -1,4 +1,4 @@
-// 20260823-raid-skip-remaining-v63
+// 20260823-raid-skip-cachefix-v65
 (function(){
   'use strict';
 
@@ -686,7 +686,7 @@
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setupFriendHomeNotice,{once:true}); else setupFriendHomeNotice();
 
-  window.RaidEvent={fetchStatus,finishAttempt,finalizeBestNow,refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
+  window.RaidEvent={fetchStatus,finishAttempt,skipRemainingAttempts,refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
   window.openDailyRaid=open;
   window.closeDailyRaid=close;
   window.startDailyRaidBattle=start;
