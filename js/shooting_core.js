@@ -2327,94 +2327,86 @@
     drawCircleLayer('ch03', 'rgba(219,239,255,.99)', .43);
     drawRing('ch03', 'rgba(170,207,255,.94)', 1.08, .9);
 
-    // CH04: 宝石 / 4色。通常弾は多層円、カーテン弾は下向き結晶。
-    const ch04Palette = [
-      ['rgba(114,73,196,.28)', 'rgba(146,92,224,.97)', 'rgba(246,226,255,.99)'],
-      ['rgba(45,155,205,.27)', 'rgba(67,184,225,.97)', 'rgba(225,250,255,.99)'],
-      ['rgba(226,137,65,.27)', 'rgba(238,164,82,.98)', 'rgba(255,242,204,.99)'],
-      ['rgba(211,78,147,.26)', 'rgba(231,104,171,.97)', 'rgba(255,228,244,.99)'],
-    ];
+    // CH04: 黄色のドロップ / 流星型。
+    // DOMは増やさず、Canvas上で「尾 + 丸い芯」を3層描画する軽量モデル。
+    const ch04Bullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'ch04');
 
-    function resolvedCh04Tone(p) {
-      return Math.max(1, Math.min(4, Number(
-        p.canvasTone || (((Math.floor(Number(p.x || 0) / 34) + Math.floor(Number(p.y || 0) / 41)) % 4) + 1)
-      )));
-    }
-
-    for (let layer = 0; layer < 3; layer++) {
-      const scale = layer === 0 ? 1.48 : (layer === 1 ? 1.0 : .44);
-      for (let tone = 1; tone <= 4; tone++) {
-        ctx.fillStyle = ch04Palette[tone - 1][layer];
-        ctx.beginPath();
-        for (const p of bullets) {
-          if (!p || !p.canvasRendered || p.canvasKind !== 'ch04' || p.canvasCurtain) continue;
-          if (resolvedCh04Tone(p) !== tone) continue;
-          const radius = Number(p.canvasRadius || 6.2) * scale;
-          const x = Number(p.x || 0);
-          const y = Number(p.y || 0);
-          ctx.moveTo(x + radius, y);
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-        }
-        ctx.fill();
-      }
-    }
-    for (let tone = 1; tone <= 4; tone++) {
-      ctx.strokeStyle = ch04Palette[tone - 1][2];
-      ctx.lineWidth = .9;
+    function drawCh04MeteorFill(color, headScale, tailScale, widthScale, headOnly) {
+      ctx.fillStyle = color;
       ctx.beginPath();
-      for (const p of bullets) {
-        if (!p || !p.canvasRendered || p.canvasKind !== 'ch04' || p.canvasCurtain) continue;
-        if (resolvedCh04Tone(p) !== tone) continue;
-        const r = Number(p.canvasRadius || 6.2) * 1.05;
-        const x = Number(p.x || 0), y = Number(p.y || 0);
+      for (const p of ch04Bullets) {
+        const x = Number(p.x || 0);
+        const y = Number(p.y || 0);
+        const base = Number(p.canvasRadius || 6.2);
+        const vx = Number(p.vx || 0);
+        const vy = Number(p.vy || (p.canvasCurtain ? 1 : 0));
+        const len = Math.hypot(vx, vy) || 1;
+        const ux = vx / len;
+        const uy = vy / len || 1;
+        const head = base * headScale;
+
+        if (!headOnly) {
+          const tail = base * (p.canvasCurtain ? tailScale * 1.25 : tailScale);
+          const halfW = base * (p.canvasCurtain ? widthScale * 0.88 : widthScale);
+          const bx = x - ux * head * 0.28;
+          const by = y - uy * head * 0.28;
+          const tx = x - ux * tail;
+          const ty = y - uy * tail;
+          const px = -uy * halfW;
+          const py = ux * halfW;
+
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(bx + px, by + py);
+          ctx.lineTo(bx - px, by - py);
+          ctx.closePath();
+        }
+
+        ctx.moveTo(x + head, y);
+        ctx.arc(x, y, head, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    }
+
+    function drawCh04MeteorRing(color, headScale, width) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      for (const p of ch04Bullets) {
+        const x = Number(p.x || 0);
+        const y = Number(p.y || 0);
+        const r = Number(p.canvasRadius || 6.2) * headScale;
         ctx.moveTo(x + r, y);
         ctx.arc(x, y, r, 0, Math.PI * 2);
       }
       ctx.stroke();
     }
 
-    // CH04-2/3 「弾の壁」: 1発を3枚の三角形で描くだけなので軽い。
-    // 半透明の横ラインを束ねて、個々の弾が一枚のカーテンに見えるようにする。
-    const curtainBullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'ch04' && p.canvasCurtain);
+    // 通常弾・カーテン弾の両方を黄色系の流星ドロップに統一。
+    drawCh04MeteorFill('rgba(158,112,15,.16)', 1.10, 2.18, .72, false);
+    drawCh04MeteorFill('rgba(255,209,74,.98)', .92, 1.55, .54, false);
+    drawCh04MeteorFill('rgba(255,247,199,.98)', .40, .0, .0, true);
+    drawCh04MeteorRing('rgba(255,231,141,.92)', .98, .9);
+
+    // CH04-2/3「弾の壁」は、帯だけ残して「▼」ではなく雨のような流星壁にする。
+    const curtainBullets = ch04Bullets.filter(p => p.canvasCurtain);
     if (curtainBullets.length) {
       const ys = [];
       for (const p of curtainBullets) ys.push(Number(p.y || 0));
       const avgY = ys.reduce((a,b)=>a+b,0) / Math.max(1, ys.length);
 
-      ctx.strokeStyle = 'rgba(194,151,235,.13)';
-      ctx.lineWidth = 7;
+      ctx.strokeStyle = 'rgba(255,215,110,.11)';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(0, avgY - 4);
-      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 4);
+      ctx.moveTo(0, avgY - 3);
+      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 3);
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(232,214,255,.22)';
+      ctx.strokeStyle = 'rgba(255,244,196,.20)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, avgY - 4);
-      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 4);
+      ctx.moveTo(0, avgY - 3);
+      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 3);
       ctx.stroke();
-
-      for (let layer = 0; layer < 3; layer++) {
-        for (let tone = 1; tone <= 4; tone++) {
-          ctx.fillStyle = ch04Palette[tone - 1][layer];
-          ctx.beginPath();
-          for (const p of curtainBullets) {
-            if (resolvedCh04Tone(p) !== tone) continue;
-            const x = Number(p.x || 0);
-            const y = Number(p.y || 0);
-            const base = Number(p.canvasRadius || 6.2);
-            const scale = layer === 0 ? 1.55 : (layer === 1 ? 1.08 : .54);
-            const hw = base * .78 * scale;
-            const hh = base * 1.35 * scale;
-            ctx.moveTo(x, y + hh);
-            ctx.lineTo(x - hw, y - hh * .58);
-            ctx.lineTo(x + hw, y - hh * .58);
-            ctx.closePath();
-          }
-          ctx.fill();
-        }
-      }
     }
 
     // CH05: 幻影 / 青緑 + 紫。二重輪郭の半透明感。
