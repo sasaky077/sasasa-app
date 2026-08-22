@@ -1,4 +1,4 @@
-// 20260823-raid-finalize-by-raidid-v62
+// 20260823-raid-skip-remaining-v63
 (function(){
   'use strict';
 
@@ -207,7 +207,7 @@
         opacity:.38!important;
       }
 
-      /* 確定ボタンが出ない状態ではバトル開始を2列分使う */
+      /* スキップボタンが出ない状態ではバトル開始を2列分使う */
       #daily-raid-root .daily-raid-actions:not(.can-finalize-early) #daily-raid-start{
         grid-column:1 / -1!important;
       }
@@ -301,7 +301,7 @@
           <footer class="daily-raid-actions">
             <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b id="daily-raid-attempt-count">0 / 3</b></div>
             <button type="button" id="daily-raid-finalize-best" class="daily-raid-finalize-best" hidden>
-              <span>LOCK BEST SCORE</span><b>このスコアで確定する</b>
+              <span>SKIP REMAINING</span><b>残り挑戦をスキップ</b>
             </button>
             <button type="button" id="daily-raid-start"><span>RAID BATTLE</span><b>挑戦する</b></button>
           </footer>
@@ -317,7 +317,7 @@
     root.querySelector('#daily-raid-recruit-btn').addEventListener('click',startRecruiting);
     root.querySelector('#daily-raid-join-btn').addEventListener('click',showJoinList);
     root.querySelector('#daily-raid-start').addEventListener('click',start);
-    root.querySelector('#daily-raid-finalize-best').addEventListener('click',finalizeBestNow);
+    root.querySelector('#daily-raid-finalize-best').addEventListener('click',skipRemainingAttempts);
     root.querySelector('#daily-raid-recruit-cancel').addEventListener('click',cancelRecruitment);
     return root;
   }
@@ -478,7 +478,7 @@
       finalizeBtn.hidden=!canFinalizeEarly;
       finalizeBtn.disabled=!canFinalizeEarly;
       if(canFinalizeEarly){
-        finalizeBtn.innerHTML=`<span>BEST ${fmt(bestDamage)} DAMAGE</span><b>現在スコアで確定</b>`;
+        finalizeBtn.innerHTML=`<span>${3-attemptCount} ATTEMPT LEFT</span><b>残り挑戦をスキップ</b>`;
       }
     }
 
@@ -509,7 +509,7 @@
     setTimeout(()=>{ if(root.getAttribute('aria-hidden')==='true') root.style.display='none'; },180);
   }
 
-  async function finalizeBestNow(){
+  async function skipRemainingAttempts(){
     const status=currentStatus||await fetchStatus();
     if(!status||!status.raid_id) return;
 
@@ -520,14 +520,16 @@
     const cleared=status.status==='cleared'||n(status.current_hp)<=0;
 
     if(cleared){ alert('レイドはすでに討伐されています。'); return; }
-    if(inBattle){ alert('挑戦中はスコアを確定できません。'); return; }
-    if(attemptCount<=0){ alert('1回以上挑戦してから確定してください。'); return; }
+    if(inBattle){ alert('挑戦中は残り挑戦をスキップできません。'); return; }
+    if(attemptCount<=0){ alert('1回以上挑戦してから使用してください。'); return; }
     if(attemptCount>=3){ return; }
 
     const remaining=Math.max(0,3-attemptCount);
     const ok=confirm(
-      `現在スコア ${fmt(bestDamage)} DAMAGE で確定します。\n\n`+
-      `現在スコアで確定する場合、残り${remaining}回の挑戦権を失います。\n\nOK？`
+      `残り${remaining}回の挑戦をスキップします。\n\n`+
+      `スキップした挑戦は 0 DAMAGE として処理されます。\n`+
+      `3回目終了時の既存処理で、現在のBEST ${fmt(bestDamage)} DAMAGE が共有HPへ反映されます。\n\n`+
+      `この操作は取り消せません。\n\nOK？`
     );
     if(!ok) return;
 
@@ -537,26 +539,55 @@
     if(startBtn) startBtn.disabled=true;
 
     try{
-      const result=normalizeStatus(await rpc('finalize_daily_raid_best_now',{p_user_id:uid(),p_raid_id:status.raid_id}));
-      if(!result || result.ok===false) throw new Error(result&&result.message||'スコアを確定できませんでした');
+      let result=status;
+
+      // 新しい「確定RPC」は使わない。
+      // 普通の挑戦と同じ既存ルートを、0 DAMAGEで残回数ぶん繰り返す。
+      for(let i=attemptCount;i<3;i++){
+        const begun=normalizeStatus(await rpc('begin_daily_raid_attempt_v2',{p_user_id:uid()}));
+        if(!begun || begun.ok===false){
+          throw new Error(begun&&begun.message||'残り挑戦の開始処理に失敗しました');
+        }
+
+        result=normalizeStatus(await rpc('submit_daily_raid_damage_v2',{
+          p_user_id:uid(),
+          p_damage:0
+        }));
+        if(!result || result.ok===false){
+          throw new Error(result&&result.message||'残り挑戦のスキップ処理に失敗しました');
+        }
+
+        currentStatus=result;
+
+        if(result.status==='cleared'||n(result.current_hp)<=0) break;
+      }
+
+      const latest=await fetchStatus();
+      if(latest) result=latest;
       currentStatus=result;
-      await hydrateMemberPanels(result);
-      render(result);
+
+      if(result){
+        await hydrateMemberPanels(result);
+        render(result);
+      }
       refreshFriendHomeNotice();
 
-      if(result.status==='cleared'||n(result.current_hp)<=0){
+      if(result&&(result.status==='cleared'||n(result.current_hp)<=0)){
         try{ window.dispatchEvent(new CustomEvent('sasaphia-daily-raid-cleared',{detail:result})); }catch(_){}
         if(typeof window.refreshRaidClearRewardNotice==='function'){
           try{ window.refreshRaidClearRewardNotice(); }catch(_){}
         }
       }
     }catch(err){
-      console.error('[raid] early best finalize failed',err);
-      alert(err&&err.message?err.message:'スコアを確定できませんでした。');
+      console.error('[raid] skip remaining attempts failed',err);
+      alert(err&&err.message?err.message:'残り挑戦をスキップできませんでした。');
       try{
         const latest=await fetchStatus();
         if(latest){ await hydrateMemberPanels(latest); render(latest); }
       }catch(_){}
+    }finally{
+      if(btn) btn.disabled=false;
+      if(startBtn) startBtn.disabled=false;
     }
   }
 

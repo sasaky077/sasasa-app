@@ -9,7 +9,7 @@
   const queuedOpenArgs = [];
   const MODULE_VERSION = (
     document.querySelector('meta[name="sasaphia-build"]')?.getAttribute('content') ||
-    '20260823-raid-finalize-by-raidid-v62'
+    '20260823-raid-skip-remaining-v63'
   );
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
