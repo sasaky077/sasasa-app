@@ -443,19 +443,20 @@
     let x;
     let y;
     if (selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
-      // CH04-2: 最終縮小状態でもITEMを必ず可動レーン内へ出す。
+      // CH04-2: ITEMは「ボスの真下」に固定する。
+      // ただし迫る壁の外へ出ないよう、現在の可動レーン内にだけclampする。
       const liveLeft = Number(shrink.left || 0);
       const liveRight = Math.max(liveLeft, w - Number(shrink.right || 0));
-      const laneCenterX = (liveLeft + liveRight) * 0.5;
       const itemMargin = itemHalf + 18;
       const laneSafeLeft = Math.min(liveRight, liveLeft + itemMargin);
       const laneSafeRight = Math.max(laneSafeLeft, liveRight - itemMargin);
 
-      x = clamp(laneCenterX, laneSafeLeft, laneSafeRight);
+      // 位置決めは中央固定ではなく、現在のボスXを優先する。
+      x = clamp(bx, laneSafeLeft, laneSafeRight);
 
-      // プレイヤーからも取りに行ける縦位置へ寄せる。
+      // Yは常にボスの真下。プレイヤーが届かない高さにならないよう少しだけ上限をかける。
       const playerY = Number(state.player?.y || h * 0.62);
-      const targetY = Math.min(by + 110, playerY - 70);
+      const targetY = Math.min(by + 96, playerY - 64);
       y = clamp(targetY, safeTop, safeBottom);
     } else {
       const offsets = [
