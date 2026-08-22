@@ -255,7 +255,17 @@
 
   function getStageBulletQuantityMultiplier() {
     const value = Number(selectedStage && selectedStage.bulletQuantityMultiplier);
-    return Number.isFinite(value) && value > 0 ? Math.min(1, value) : 1;
+    let quantity = Number.isFinite(value) && value > 0 ? Math.min(1, value) : 1;
+
+    // CH04-2 HARD（通常版。BEGINNERではない方）のみ弾幕量を10%軽減。
+    // 発射後に弾を間引かず、発射間隔側で調整するので軽い。
+    const stageId = String(selectedStage && selectedStage.id || '');
+    const isChapter42Hard =
+      isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02) &&
+      !stageId.startsWith('shooting_beginner_');
+
+    if (isChapter42Hard) quantity *= 0.90;
+    return Math.max(0.05, Math.min(1, quantity));
   }
 
   // 初級は弾を生成後に削除せず、発射間隔を伸ばして時間あたり弾量を調整する。
@@ -319,6 +329,9 @@
     state.finishing = true;
     state.running = false;
     cancelAnimationFrame(rafId);
+
+    // CLEAR演出へ入った時点でCH04-2の壁を解除する。
+    updateChapter4ShrinkWalls(now);
     clearEnemyBulletsOnly();
     updateScoreAttackMovementScore(now);
     renderHud();
@@ -430,10 +443,20 @@
     let x;
     let y;
     if (selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
-      // CH04-2だけは学習しやすいよう、ITEMをボスの真下へ固定。
-      // Xはボスと同じ、Yは約90px下。壁/画面端からは最終clampで守る。
-      x = clamp(bx, safeLeft, safeRight);
-      y = clamp(by + 90, safeTop, safeBottom);
+      // CH04-2: 最終縮小状態でもITEMを必ず可動レーン内へ出す。
+      const liveLeft = Number(shrink.left || 0);
+      const liveRight = Math.max(liveLeft, w - Number(shrink.right || 0));
+      const laneCenterX = (liveLeft + liveRight) * 0.5;
+      const itemMargin = itemHalf + 18;
+      const laneSafeLeft = Math.min(liveRight, liveLeft + itemMargin);
+      const laneSafeRight = Math.max(laneSafeLeft, liveRight - itemMargin);
+
+      x = clamp(laneCenterX, laneSafeLeft, laneSafeRight);
+
+      // プレイヤーからも取りに行ける縦位置へ寄せる。
+      const playerY = Number(state.player?.y || h * 0.62);
+      const targetY = Math.min(by + 110, playerY - 70);
+      y = clamp(targetY, safeTop, safeBottom);
     } else {
       const offsets = [
         [-92, 0], [92, 0],
@@ -8834,6 +8857,20 @@
 
   function endGame(win) {
     if (!state || state.ended) return;
+
+    // CH04専用ギミックはRESULTへ持ち越さない。
+    clearChapter4FinalItem();
+    purgeChapter4ItemDom();
+
+    // 迫る壁もRESULTへ残さず、即座に初期幅へ戻す。
+    const ch04ArenaForResult = document.getElementById('shooting-arena');
+    if (ch04ArenaForResult) {
+      ch04ArenaForResult.querySelectorAll('.shooting-ch04-shrink-wall').forEach(el => {
+        el.style.display = 'none';
+        el.style.width = '0px';
+      });
+    }
+
     // 通常戦はRESULT確定時点で復帰データを削除。
     // RAIDはfinishAttemptのSupabase確定が終わるまで復帰データを残す。
     if (!isRaidStage()) clearShootingResumeState();
@@ -9620,6 +9657,10 @@
     // さらにclearProjectiles自体もDOM直指定で消すため、画像だけ残るゴーストを防ぐ。
     clearProjectiles();
     resetState();
+
+    // RETRY時は前回の縮小幅を必ず破棄して0pxへ戻す。
+    updateChapter4ShrinkWalls(performance.now());
+
     setShootingHeaderMenuMode(true);
     ensureShootingPauseMenu();
     clearNormalBattleObjects();
