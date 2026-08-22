@@ -407,8 +407,11 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
 
-    const w = Number(arena.clientWidth || 0);
-    const h = Number(arena.clientHeight || 0);
+    // iOS/PWAではタイマー切替の瞬間にclientWidth/clientHeightが一時的に0を返すことがある。
+    // ITEM座標決定では実表示サイズ(getBoundingClientRect)を優先し、0px座標への誤配置を防ぐ。
+    const arenaRect = arena.getBoundingClientRect();
+    const w = Math.max(1, Number(arenaRect.width || arena.clientWidth || 360));
+    const h = Math.max(1, Number(arenaRect.height || arena.clientHeight || 640));
     const shrink = getChapter4ShrinkBounds(now, w);
     const left = 48 + Number(shrink.left || 0);
     const right = Math.max(left + 20, w - 48 - Number(shrink.right || 0));
@@ -417,8 +420,16 @@
 
     // ITEMはボスの現在位置を基準に、その周囲7候補のいずれかへ出現。
     // ただし端へ寄りすぎないよう、安全領域内の候補だけを抽選する。
-    const bx = Number(state.boss?.x || w * 0.5);
-    const by = Number(state.boss?.y || h * 0.16);
+    // ITEM出現時だけDOM実座標を1回取得する。
+    // state.boss座標ではなく「画面に実際に描画されているボス中心」を最優先にする。
+    const bossElForItem = document.getElementById(BOSS_ID);
+    const bossRectForItem = bossElForItem ? bossElForItem.getBoundingClientRect() : null;
+    const bx = bossRectForItem && bossRectForItem.width > 0
+      ? (bossRectForItem.left + bossRectForItem.width * 0.5 - arenaRect.left)
+      : Number(state.boss?.x || w * 0.5);
+    const by = bossRectForItem && bossRectForItem.height > 0
+      ? (bossRectForItem.top + bossRectForItem.height * 0.5 - arenaRect.top)
+      : Number(state.boss?.y || h * 0.16);
     const itemHalf = 38;
     let safeLeft = Math.min(right, left + itemHalf + 26);
     let safeRight = Math.max(safeLeft, right - itemHalf - 26);
@@ -443,21 +454,31 @@
     let x;
     let y;
     if (selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
-      // CH04-2: ITEMは「ボスの真下」に固定する。
-      // ただし迫る壁の外へ出ないよう、現在の可動レーン内にだけclampする。
-      const liveLeft = Number(shrink.left || 0);
-      const liveRight = Math.max(liveLeft, w - Number(shrink.right || 0));
-      const itemMargin = itemHalf + 18;
-      const laneSafeLeft = Math.min(liveRight, liveLeft + itemMargin);
-      const laneSafeRight = Math.max(laneSafeLeft, liveRight - itemMargin);
+      // CH04-2: 「画面上のボス中心」の真下へ固定。
+      // 左右壁の実表示幅も参照し、ITEM本体(72px)が壁へ入らない位置にだけ補正する。
+      const leftWallEl = arena.querySelector('.shooting-ch04-shrink-wall.left');
+      const rightWallEl = arena.querySelector('.shooting-ch04-shrink-wall.right');
+      const leftWallRect = leftWallEl && leftWallEl.style.display !== 'none'
+        ? leftWallEl.getBoundingClientRect() : null;
+      const rightWallRect = rightWallEl && rightWallEl.style.display !== 'none'
+        ? rightWallEl.getBoundingClientRect() : null;
 
-      // 位置決めは中央固定ではなく、現在のボスXを優先する。
+      const actualLeftInset = leftWallRect && leftWallRect.width > 0
+        ? Math.max(0, leftWallRect.right - arenaRect.left)
+        : Number(shrink.left || 0);
+      const actualRightInset = rightWallRect && rightWallRect.width > 0
+        ? Math.max(0, arenaRect.right - rightWallRect.left)
+        : Number(shrink.right || 0);
+
+      const itemMargin = itemHalf + 12;
+      const laneSafeLeft = actualLeftInset + itemMargin;
+      const laneSafeRight = Math.max(laneSafeLeft, w - actualRightInset - itemMargin);
+
+      // 原則ボスXそのまま。壁に入る場合だけ最小限補正。
       x = clamp(bx, laneSafeLeft, laneSafeRight);
 
-      // Yは常にボスの真下。プレイヤーが届かない高さにならないよう少しだけ上限をかける。
-      const playerY = Number(state.player?.y || h * 0.62);
-      const targetY = Math.min(by + 96, playerY - 64);
-      y = clamp(targetY, safeTop, safeBottom);
+      // ボスの約96px下。縦方向のみ取得しやすさのため安全域へclamp。
+      y = clamp(by + 96, safeTop, safeBottom);
     } else {
       const offsets = [
         [-92, 0], [92, 0],
@@ -503,6 +524,28 @@
     state.chapter4ItemDeadlineAt = Number(now || performance.now()) + timeoutSeconds * 1000;
     updateChapter4ItemOverlay(now);
   }
+
+  // 開発確認用: CH04-2を60秒到達状態にしてITEMを即出現させる。
+  // UIからは呼ばれず、コンソールから明示実行した時だけ動く。
+  window.debugChapter42ItemNow = function () {
+    if (!state || !selectedStage || !isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
+      console.warn('[CH04-2 DEBUG] CHAPTER04-2を開いて戦闘開始後に実行してください');
+      return false;
+    }
+    const now = performance.now();
+    state.startedAt = now - 60000;
+    state.countdown = false;
+    state.running = true;
+    state.ended = false;
+    state.finishing = false;
+    updateChapter4ShrinkWalls(now);
+    clearChapter4FinalItem();
+    purgeChapter4ItemDom();
+    state.chapter4ItemPhase = false;
+    spawnChapter4FinalItem(now);
+    console.info('[CH04-2 DEBUG] 60秒時点の壁 + ITEMを即時再現しました');
+    return true;
+  };
 
   function updateChapter4FinalItem(now) {
     if (!state || !state.chapter4ItemPhase || !state.chapter4FinalItem) return;
