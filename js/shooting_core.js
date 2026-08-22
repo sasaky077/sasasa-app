@@ -2134,18 +2134,18 @@
   // ============================================================
   // Canvas enemy bullet renderer — isolated performance trial
   // ============================================================
-  // true: SPECIAL STAGE「楽園 -ノア-」の敵弾だけCanvas描画
+  // true: 「楽園 -ノア-」「フェイスレス」「すこ☆あた」の敵弾だけCanvas描画
   // false: 全ステージ従来どおりDOM描画（即時ロールバック用）
   const CANVAS_ENEMY_BULLET_TEST_ENABLED = true;
   const ENEMY_BULLET_CANVAS_ID = 'shooting-enemy-bullet-canvas';
 
   // 既存CSSや端末差にCanvasの可視性を左右されないよう、検証レイヤーを固定する。
   // ボス被弾時だけ単一画像へbrightnessを掛ける処理も復旧する。
-  if (!document.getElementById('shooting-canvas-test-visual-style-v227')) {
+  if (!document.getElementById('shooting-canvas-test-visual-style-v229')) {
     const style = document.createElement('style');
-    style.id = 'shooting-canvas-test-visual-style-v227';
+    style.id = 'shooting-canvas-test-visual-style-v229';
     style.textContent = `
-      #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] #shooting-enemy-bullet-canvas{
+      #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"]) #shooting-enemy-bullet-canvas{
         position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
         z-index:17!important;display:block!important;visibility:visible!important;opacity:1!important;
         pointer-events:none!important;background:transparent!important;filter:none!important;
@@ -2156,6 +2156,11 @@
       #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.shooting-hit-sustained{
         filter:brightness(1.55) saturate(.72)!important;
       }
+      #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.hit-flash,
+      #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.burst-hit,
+      #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.shooting-hit-sustained{
+        filter:brightness(1.55) saturate(.72)!important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -2163,7 +2168,11 @@
   function isCanvasEnemyBulletTestStage() {
     return !!(
       selectedStage &&
-      String(selectedStage.id || '') === String(SHOOTING_STAGE_ID.BULLET_HELL_TEST || '')
+      (
+        String(selectedStage.id || '') === String(SHOOTING_STAGE_ID.BULLET_HELL_TEST || '') ||
+        isFacelessStage() ||
+        isScoreAttackStage()
+      )
     );
   }
 
@@ -2256,23 +2265,35 @@
     ctx.imageSmoothingEnabled = false;
 
     // 影・blur・filterは使わない。外周＋芯の2円だけで視認性を作る。
-    // 全弾で同じ描画設定を共有し、弾ごとの状態切替を最小化する。
+    // 通常弾・仮面弾・WARNINGを種類ごとに一括描画する。
     const bullets = (state && state.enemyBullets) || [];
-    ctx.fillStyle = 'rgba(78,66,92,0.94)';
-    ctx.beginPath();
-    for (const p of bullets) {
-      if (!p || !p.canvasRendered) continue;
-      ctx.moveTo(Number(p.x || 0) + 5.5, Number(p.y || 0));
-      ctx.arc(Number(p.x || 0), Number(p.y || 0), 5.5, 0, Math.PI * 2);
+
+    function drawOuter(kind, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (const p of bullets) {
+        if (!p || !p.canvasRendered || p.canvasKind !== kind) continue;
+        const radius = Number(p.canvasRadius || 5.5);
+        const x = Number(p.x || 0);
+        const y = Number(p.y || 0);
+        ctx.moveTo(x + radius, y);
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+      }
+      ctx.fill();
     }
-    ctx.fill();
+
+    drawOuter('normal', 'rgba(78,66,92,0.94)');
+    drawOuter('score', 'rgba(21,21,21,0.98)');
+    drawOuter('faceless-object', 'rgba(82,55,104,0.97)');
+    drawOuter('danger', 'rgba(227,52,52,0.98)');
 
     ctx.fillStyle = 'rgba(255,255,255,0.96)';
     ctx.beginPath();
     for (const p of bullets) {
       if (!p || !p.canvasRendered) continue;
-      ctx.moveTo(Number(p.x || 0) + 1.65, Number(p.y || 0));
-      ctx.arc(Number(p.x || 0), Number(p.y || 0), 1.65, 0, Math.PI * 2);
+      const coreRadius = p.canvasKind === 'danger' ? 4 : (p.canvasKind === 'faceless-object' ? 2.1 : (p.canvasKind === 'score' ? 1.25 : 1.65));
+      ctx.moveTo(Number(p.x || 0) + coreRadius, Number(p.y || 0));
+      ctx.arc(Number(p.x || 0), Number(p.y || 0), coreRadius, 0, Math.PI * 2);
     }
     ctx.fill();
   }
@@ -2289,15 +2310,22 @@
       isCanvasEnemyBulletTestStage() &&
       String(cls || '').includes('shooting-enemy-bullet')
     ) {
-      const virtualEl = createCanvasProjectileElement(cls);
+      const className = String(cls || '');
+      const virtualEl = createCanvasProjectileElement(className);
+      const isDanger = className.includes('shooting-danger-bullet');
+      const isFacelessObjectBullet = className.includes('shooting-faceless-object-bullet');
+      const isScoreAttackBullet = className.includes('shooting-score-attack-bullet');
+      const radius = isDanger ? (isScoreAttackBullet ? 15 : 17) : (isFacelessObjectBullet ? 7 : (isScoreAttackBullet ? 7 : 5.5));
       const p = {
         el: virtualEl,
         x, y, vx, vy,
         damage: damage || 1,
         ownerId: ownerId || null,
         canvasRendered: true,
-        canvasHalfWidth: 5.5,
-        canvasHalfHeight: 5.5,
+        canvasKind: isDanger ? 'danger' : (isFacelessObjectBullet ? 'faceless-object' : (isScoreAttackBullet ? 'score' : 'normal')),
+        canvasRadius: radius,
+        canvasHalfWidth: radius,
+        canvasHalfHeight: radius,
       };
       measureUnitSize(p);
       return p;
