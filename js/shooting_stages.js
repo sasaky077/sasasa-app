@@ -663,10 +663,11 @@
       difficultyLabel: 'STRESS TEST',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
+      introImage: 'images/nore_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.NOAH]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: '楽園 -ノア-を耐えきれ',
+        text: '理想郷：ノアを撃破',
       }),
       playable: true,
     }),

@@ -26,6 +26,7 @@
     FACELESS: 'shooting_faceless',
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
+    NOAH: 'shooting_noah',
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
   });
 
@@ -287,6 +288,31 @@
 
       behavior: 'bullet_hell_test_v1',
       uiScale: 1.0,
+    }),
+
+
+    // ------------------------------------------------------------
+    // SPECIAL STAGE - 楽園 -ノア-
+    // スコアアタック用テスト敵とは分離した専用BOSS。
+    // 弾幕ロジックは既存 bullet_hell_test_v1 を流用する。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.NOAH]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.NOAH,
+      kind: 'boss',
+      implemented: true,
+      name: '理想郷：ノア',
+      displayName: 'SPECIAL STAGE　理想郷：ノア',
+      image: 'images/nore_battle.webp',
+
+      gaugeHp: 5000,
+      gauges: 3,
+
+      bulletSpeed: 230,
+      fireRate: 300,
+      bulletDamage: 180,
+
+      behavior: 'bullet_hell_test_v1',
+      uiScale: 1.12,
     }),
 
     [SHOOTING_ENEMY_ID.REMNANT_04]: Object.freeze({

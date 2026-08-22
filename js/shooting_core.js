@@ -161,6 +161,10 @@
     return !!(selectedStage && selectedStage.eventId === 'score_attack' && selectedStage.scoreAttack);
   }
 
+  function isNoahStage() {
+    return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.BULLET_HELL_TEST);
+  }
+
   function isAmbushStage() {
     return !!(selectedStage && selectedStage.eventId === 'random_ambush' && selectedStage.ambush);
   }
@@ -2134,18 +2138,18 @@
   // ============================================================
   // Canvas enemy bullet renderer — isolated performance trial
   // ============================================================
-  // true: 「楽園 -ノア-」「フェイスレス」「すこ☆あた」の敵弾だけCanvas描画
+  // true: 「楽園 -ノア-」「フェイスレス」「すこ☆あた」「DAILY RAID」「CHAPTER04」の敵弾をCanvas描画
   // false: 全ステージ従来どおりDOM描画（即時ロールバック用）
   const CANVAS_ENEMY_BULLET_TEST_ENABLED = true;
   const ENEMY_BULLET_CANVAS_ID = 'shooting-enemy-bullet-canvas';
 
   // 既存CSSや端末差にCanvasの可視性を左右されないよう、検証レイヤーを固定する。
   // ボス被弾時だけ単一画像へbrightnessを掛ける処理も復旧する。
-  if (!document.getElementById('shooting-canvas-test-visual-style-v229')) {
+  if (!document.getElementById('shooting-canvas-test-visual-style-v230')) {
     const style = document.createElement('style');
-    style.id = 'shooting-canvas-test-visual-style-v229';
+    style.id = 'shooting-canvas-test-visual-style-v230';
     style.textContent = `
-      #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"]) #shooting-enemy-bullet-canvas{
+      #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"],[data-shooting-stage="shooting_raid_test"],[data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) #shooting-enemy-bullet-canvas{
         position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
         z-index:17!important;display:block!important;visibility:visible!important;opacity:1!important;
         pointer-events:none!important;background:transparent!important;filter:none!important;
@@ -2165,13 +2169,23 @@
     document.head.appendChild(style);
   }
 
+  function getCanvasStoryChapter() {
+    if (!selectedStage) return 0;
+    const chapter = Number(selectedStage.chapter || 0);
+    if (chapter >= 1 && chapter <= 5) return chapter;
+    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-5])_/i);
+    return m ? Number(m[1] || 0) : 0;
+  }
+
   function isCanvasEnemyBulletTestStage() {
     return !!(
       selectedStage &&
       (
         String(selectedStage.id || '') === String(SHOOTING_STAGE_ID.BULLET_HELL_TEST || '') ||
         isFacelessStage() ||
-        isScoreAttackStage()
+        isScoreAttackStage() ||
+        isRaidStage() ||
+        getCanvasStoryChapter() > 0
       )
     );
   }
@@ -2264,16 +2278,14 @@
     ctx.globalCompositeOperation = 'source-over';
     ctx.imageSmoothingEnabled = false;
 
-    // 影・blur・filterは使わない。外周＋芯の2円だけで視認性を作る。
-    // 通常弾・仮面弾・WARNINGを種類ごとに一括描画する。
     const bullets = (state && state.enemyBullets) || [];
 
-    function drawOuter(kind, color) {
+    function drawCircleLayer(kind, color, scale) {
       ctx.fillStyle = color;
       ctx.beginPath();
       for (const p of bullets) {
-        if (!p || !p.canvasRendered || p.canvasKind !== kind) continue;
-        const radius = Number(p.canvasRadius || 5.5);
+        if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
+        const radius = Number(p.canvasRadius || 5.5) * scale;
         const x = Number(p.x || 0);
         const y = Number(p.y || 0);
         ctx.moveTo(x + radius, y);
@@ -2282,20 +2294,209 @@
       ctx.fill();
     }
 
-    drawOuter('normal', 'rgba(78,66,92,0.94)');
-    drawOuter('score', 'rgba(21,21,21,0.98)');
-    drawOuter('faceless-object', 'rgba(82,55,104,0.97)');
-    drawOuter('danger', 'rgba(227,52,52,0.98)');
+    function drawRing(kind, color, scale, width) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      for (const p of bullets) {
+        if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
+        const radius = Number(p.canvasRadius || 5.5) * scale;
+        const x = Number(p.x || 0);
+        const y = Number(p.y || 0);
+        ctx.moveTo(x + radius, y);
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+    }
 
-    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    // CH01: 神聖 / 象牙 + 金。柔らかい外輪と白い芯。
+    drawCircleLayer('ch01', 'rgba(205,164,72,.24)', 1.55);
+    drawCircleLayer('ch01', 'rgba(231,194,103,.97)', 1.00);
+    drawCircleLayer('ch01', 'rgba(255,250,224,.99)', .42);
+    drawRing('ch01', 'rgba(255,238,178,.92)', 1.05, .9);
+
+    // CH02: 暴力 / 深紅 + 灼熱橙。重さが見える太い外殻。
+    drawCircleLayer('ch02', 'rgba(122,24,32,.30)', 1.62);
+    drawCircleLayer('ch02', 'rgba(199,47,48,.98)', 1.00);
+    drawCircleLayer('ch02', 'rgba(255,178,83,.98)', .46);
+    drawRing('ch02', 'rgba(255,218,157,.88)', 1.04, 1.0);
+
+    // CH03: 星護 / 青紫 + 星光。冷たい外輪と白い中心。
+    drawCircleLayer('ch03', 'rgba(71,66,181,.28)', 1.58);
+    drawCircleLayer('ch03', 'rgba(91,119,221,.98)', 1.00);
+    drawCircleLayer('ch03', 'rgba(219,239,255,.99)', .43);
+    drawRing('ch03', 'rgba(170,207,255,.94)', 1.08, .9);
+
+    // CH04: 宝石 / 4色。通常弾は多層円、カーテン弾は下向き結晶。
+    const ch04Palette = [
+      ['rgba(114,73,196,.28)', 'rgba(146,92,224,.97)', 'rgba(246,226,255,.99)'],
+      ['rgba(45,155,205,.27)', 'rgba(67,184,225,.97)', 'rgba(225,250,255,.99)'],
+      ['rgba(226,137,65,.27)', 'rgba(238,164,82,.98)', 'rgba(255,242,204,.99)'],
+      ['rgba(211,78,147,.26)', 'rgba(231,104,171,.97)', 'rgba(255,228,244,.99)'],
+    ];
+
+    function resolvedCh04Tone(p) {
+      return Math.max(1, Math.min(4, Number(
+        p.canvasTone || (((Math.floor(Number(p.x || 0) / 34) + Math.floor(Number(p.y || 0) / 41)) % 4) + 1)
+      )));
+    }
+
+    for (let layer = 0; layer < 3; layer++) {
+      const scale = layer === 0 ? 1.48 : (layer === 1 ? 1.0 : .44);
+      for (let tone = 1; tone <= 4; tone++) {
+        ctx.fillStyle = ch04Palette[tone - 1][layer];
+        ctx.beginPath();
+        for (const p of bullets) {
+          if (!p || !p.canvasRendered || p.canvasKind !== 'ch04' || p.canvasCurtain) continue;
+          if (resolvedCh04Tone(p) !== tone) continue;
+          const radius = Number(p.canvasRadius || 6.2) * scale;
+          const x = Number(p.x || 0);
+          const y = Number(p.y || 0);
+          ctx.moveTo(x + radius, y);
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+        }
+        ctx.fill();
+      }
+    }
+    for (let tone = 1; tone <= 4; tone++) {
+      ctx.strokeStyle = ch04Palette[tone - 1][2];
+      ctx.lineWidth = .9;
+      ctx.beginPath();
+      for (const p of bullets) {
+        if (!p || !p.canvasRendered || p.canvasKind !== 'ch04' || p.canvasCurtain) continue;
+        if (resolvedCh04Tone(p) !== tone) continue;
+        const r = Number(p.canvasRadius || 6.2) * 1.05;
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+    }
+
+    // CH04-2/3 「弾の壁」: 1発を3枚の三角形で描くだけなので軽い。
+    // 半透明の横ラインを束ねて、個々の弾が一枚のカーテンに見えるようにする。
+    const curtainBullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'ch04' && p.canvasCurtain);
+    if (curtainBullets.length) {
+      const ys = [];
+      for (const p of curtainBullets) ys.push(Number(p.y || 0));
+      const avgY = ys.reduce((a,b)=>a+b,0) / Math.max(1, ys.length);
+
+      ctx.strokeStyle = 'rgba(194,151,235,.13)';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(0, avgY - 4);
+      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 4);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(232,214,255,.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, avgY - 4);
+      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 4);
+      ctx.stroke();
+
+      for (let layer = 0; layer < 3; layer++) {
+        for (let tone = 1; tone <= 4; tone++) {
+          ctx.fillStyle = ch04Palette[tone - 1][layer];
+          ctx.beginPath();
+          for (const p of curtainBullets) {
+            if (resolvedCh04Tone(p) !== tone) continue;
+            const x = Number(p.x || 0);
+            const y = Number(p.y || 0);
+            const base = Number(p.canvasRadius || 6.2);
+            const scale = layer === 0 ? 1.55 : (layer === 1 ? 1.08 : .54);
+            const hw = base * .78 * scale;
+            const hh = base * 1.35 * scale;
+            ctx.moveTo(x, y + hh);
+            ctx.lineTo(x - hw, y - hh * .58);
+            ctx.lineTo(x + hw, y - hh * .58);
+            ctx.closePath();
+          }
+          ctx.fill();
+        }
+      }
+    }
+
+    // CH05: 幻影 / 青緑 + 紫。二重輪郭の半透明感。
+    drawCircleLayer('ch05', 'rgba(71,198,195,.20)', 1.72);
+    drawCircleLayer('ch05', 'rgba(101,92,190,.91)', 1.08);
+    drawCircleLayer('ch05', 'rgba(191,249,239,.97)', .41);
+    drawRing('ch05', 'rgba(112,223,216,.80)', 1.38, .8);
+    drawRing('ch05', 'rgba(224,211,255,.86)', .82, .7);
+
+    // SCORE ATTACK: 通常弾はピンク。
+    drawCircleLayer('score', 'rgba(237,63,151,.25)', 1.48);
+    drawCircleLayer('score', 'rgba(244,86,166,.99)', 1.00);
+    drawCircleLayer('score', 'rgba(255,225,243,.99)', .38);
+
+    // NOAH: 薄紫 + 白芯。重いblurは使わず、多層円 + 外輪だけで神秘感を出す。
+    drawCircleLayer('noah', 'rgba(80,56,164,.18)', 1.78);
+    drawCircleLayer('noah', 'rgba(128,103,228,.95)', 1.06);
+    drawCircleLayer('noah', 'rgba(244,239,255,.98)', .44);
+    drawRing('noah', 'rgba(197,184,255,.92)', 1.14, .95);
+    drawRing('noah', 'rgba(255,255,255,.55)', .72, .65);
+
+    // FACELESS: 黒い弾を潰さず見せるため、黒芯 + 濃灰殻 + 淡い輪郭の多層構成。
+    // blur/shadowは使わずCanvasの円だけで立体感を出す。
+    drawCircleLayer('faceless', 'rgba(8,8,10,.34)', 1.62);
+    drawCircleLayer('faceless', 'rgba(18,18,22,.99)', 1.08);
+    drawCircleLayer('faceless', 'rgba(3,3,5,1)', .66);
+    drawCircleLayer('faceless', 'rgba(198,198,210,.88)', .19);
+    drawRing('faceless', 'rgba(105,105,118,.92)', 1.10, .95);
+
+    // 仮面オブジェクト由来の弾は少し大きく、銀縁を強める。
+    drawCircleLayer('faceless-object', 'rgba(5,5,8,.36)', 1.72);
+    drawCircleLayer('faceless-object', 'rgba(22,22,28,.99)', 1.12);
+    drawCircleLayer('faceless-object', 'rgba(2,2,4,1)', .69);
+    drawCircleLayer('faceless-object', 'rgba(224,224,232,.92)', .18);
+    drawRing('faceless-object', 'rgba(138,138,152,.94)', 1.13, 1.05);
+
+    // その他の通常Canvas弾。
+    drawCircleLayer('normal', 'rgba(78,66,92,.94)', 1.00);
+
+    // RAID: 緑の単色塗りから、軽量な多層エネルギー弾へ。
+    // 影/blurなし、円4層 + 細いリングだけなのでDOMも描画負荷も増やさない。
+    drawCircleLayer('raid', 'rgba(12,82,32,.22)', 1.72);
+    drawCircleLayer('raid', 'rgba(34,190,88,.98)', 1.08);
+    drawCircleLayer('raid', 'rgba(206,255,218,.98)', .44);
+    drawRing('raid', 'rgba(128,241,158,.90)', 1.14, .95);
+
+    // WARNINGは全ステージ共通で赤。通常パレットより後に描いて最優先。
+    drawCircleLayer('danger', 'rgba(104,0,8,.33)', 1.35);
+    drawCircleLayer('danger', 'rgba(225,36,48,.99)', 1.00);
+    drawCircleLayer('danger', 'rgba(255,227,227,.99)', .32);
+    drawRing('danger', 'rgba(255,123,123,.96)', 1.08, 1.2);
+
+    // RAID laser
+    ctx.lineCap = 'round';
     ctx.beginPath();
     for (const p of bullets) {
-      if (!p || !p.canvasRendered) continue;
-      const coreRadius = p.canvasKind === 'danger' ? 4 : (p.canvasKind === 'faceless-object' ? 2.1 : (p.canvasKind === 'score' ? 1.25 : 1.65));
-      ctx.moveTo(Number(p.x || 0) + coreRadius, Number(p.y || 0));
-      ctx.arc(Number(p.x || 0), Number(p.y || 0), coreRadius, 0, Math.PI * 2);
+      if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
+      const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
+      const dx = Math.cos(angle) * 135;
+      const dy = Math.sin(angle) * 135;
+      const x = Number(p.x || 0), y = Number(p.y || 0);
+      ctx.moveTo(x - dx, y - dy);
+      ctx.lineTo(x + dx, y + dy);
     }
-    ctx.fill();
+    ctx.strokeStyle = 'rgba(55,221,103,.45)';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (const p of bullets) {
+      if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
+      const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
+      const dx = Math.cos(angle) * 135;
+      const dy = Math.sin(angle) * 135;
+      const x = Number(p.x || 0), y = Number(p.y || 0);
+      ctx.moveTo(x - dx, y - dy);
+      ctx.lineTo(x + dx, y + dy);
+    }
+    ctx.strokeStyle = 'rgba(238,255,243,.98)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.lineCap = 'butt';
   }
 
   function makeProjectile(cls, x, y, vx, vy, damage, ownerId) {
@@ -2315,17 +2516,42 @@
       const isDanger = className.includes('shooting-danger-bullet');
       const isFacelessObjectBullet = className.includes('shooting-faceless-object-bullet');
       const isScoreAttackBullet = className.includes('shooting-score-attack-bullet');
-      const radius = isDanger ? (isScoreAttackBullet ? 15 : 17) : (isFacelessObjectBullet ? 7 : (isScoreAttackBullet ? 7 : 5.5));
+      const isRaidLaser = className.includes('shooting-raid-green-laser');
+      const isRaidBullet = isRaidStage();
+      const storyChapter = getCanvasStoryChapter();
+      const isCurtainBullet = className.includes('shooting-ch04-curtain-bullet');
+      const isHeavyBullet = className.includes('shooting-violence-heavy');
+      const radius = isDanger
+        ? (isScoreAttackBullet ? 15 : 17)
+        : (isFacelessObjectBullet
+          ? 7
+          : (isScoreAttackBullet
+            ? 7
+            : (isRaidBullet ? 6.2 : (storyChapter === 2 && isHeavyBullet ? 8.4 : (storyChapter === 4 ? 6.2 : 5.8)))));
+      const canvasKind = isDanger
+        ? 'danger'
+        : (isFacelessObjectBullet
+          ? 'faceless-object'
+          : (isScoreAttackBullet
+            ? 'score'
+            : (isRaidLaser
+              ? 'raid-laser'
+              : (isRaidBullet
+                ? 'raid'
+                : (isNoahStage()
+                  ? 'noah'
+                  : (isFacelessStage() ? 'faceless' : (storyChapter ? `ch0${storyChapter}` : 'normal')))))));
       const p = {
         el: virtualEl,
         x, y, vx, vy,
         damage: damage || 1,
         ownerId: ownerId || null,
         canvasRendered: true,
-        canvasKind: isDanger ? 'danger' : (isFacelessObjectBullet ? 'faceless-object' : (isScoreAttackBullet ? 'score' : 'normal')),
+        canvasKind,
         canvasRadius: radius,
-        canvasHalfWidth: radius,
-        canvasHalfHeight: radius,
+        canvasCurtain: isCurtainBullet,
+        canvasHalfWidth: isRaidLaser ? 135 : radius,
+        canvasHalfHeight: isRaidLaser ? 2.5 : radius,
       };
       measureUnitSize(p);
       return p;
@@ -2358,10 +2584,11 @@
       hard: Math.max(30, Number(scoreCfg.maxEnemyBullets || 80)),
       recovery: Math.max(20, Number(scoreCfg.recoverEnemyBulletsTo || 60))
     } : null;
-    const raidLimits = !scoreAttackLimits && isRaidStage() ? getRaidEnemyBulletLimits() : null;
-    const ch03BossLimits = !scoreAttackLimits && !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
-    const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT));
-    const recoveryTarget = scoreAttackLimits ? scoreAttackLimits.recovery : (raidLimits ? raidLimits.recovery : (ch03BossLimits ? ch03BossLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET));
+    const noahLimits = !scoreAttackLimits && isNoahStage() ? { hard: 90, recovery: 64 } : null;
+    const raidLimits = !scoreAttackLimits && !noahLimits && isRaidStage() ? getRaidEnemyBulletLimits() : null;
+    const ch03BossLimits = !scoreAttackLimits && !noahLimits && !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
+    const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (noahLimits ? noahLimits.hard : (raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT)));
+    const recoveryTarget = scoreAttackLimits ? scoreAttackLimits.recovery : (noahLimits ? noahLimits.recovery : (raidLimits ? raidLimits.recovery : (ch03BossLimits ? ch03BossLimits.recovery : ENEMY_BULLET_RECOVERY_TARGET)));
     if (current <= hardLimit) return;
 
     let removeNeeded = Math.max(0, current - recoveryTarget);
@@ -3732,6 +3959,7 @@
         if (!p) return;
         // 縦落ちに固定せず、緩い横揺れを加える。
         p.chapter4CurtainDrift = true;
+        p.canvasTone = ((i + rowIndex * 2) % 4) + 1;
         p.chapter4CurtainBaseX = x;
         p.chapter4CurtainAge = 0;
         p.chapter4CurtainAmp = 10 + Math.random() * 7;
@@ -4035,6 +4263,7 @@
           if (!p) continue;
           p.beautifulSpiral = true;
           p.el.classList.add(`shooting-beautiful-tone-${(i % 4) + 1}`);
+          p.canvasTone = (i % 4) + 1;
           p.beautifulAge = 0;
           p.beautifulOriginX = originX;
           p.beautifulOriginY = originY;
@@ -4061,6 +4290,7 @@
           if (!p) continue;
           p.beautifulWave = true;
           p.el.classList.add(`shooting-beautiful-tone-${(i % 4) + 1}`);
+          p.canvasTone = (i % 4) + 1;
           p.beautifulAge = 0;
           p.beautifulWaveBaseX = x;
           p.beautifulWaveAmp = level === 2 ? 18 : 23;
@@ -4492,16 +4722,71 @@
   // ============================================================
   function fireBulletHellTest(now) {
     const phase = state.boss.phase || 1;
-
-    // WAVE1から既に高密度。WAVE3でさらに詰める。
-    const interval = phase === 1 ? 260 : phase === 2 ? 190 : 130;
-    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
-    state.lastBossShotAt = now;
-
     const speed = Number(BOSS.bulletSpeed || 230);
     const damage = Number(BOSS.bulletDamage || 180);
     const originX = state.boss.x;
     const originY = state.boss.y + 40;
+
+    // 理想郷：ノア専用。
+    // 高負荷な同心円乱射ではなく、少ない発数で密度感が出る二重らせんへ変更する。
+    if (isNoahStage()) {
+      const interval = phase === 1 ? 280 : (phase === 2 ? 220 : 170);
+      if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
+      state.lastBossShotAt = now;
+
+      const step = Number(state.noahSpiralStep || 0);
+      const baseSpin = step * (phase === 1 ? 0.29 : (phase === 2 ? 0.34 : 0.40));
+      const armCount = phase === 1 ? 2 : (phase === 2 ? 4 : 6);
+      const pairStep = (Math.PI * 2) / armCount;
+      const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 1.00 : 1.08);
+      const twist = phase === 1 ? 0.0 : (phase === 2 ? 0.10 : 0.16);
+
+      for (let i = 0; i < armCount; i++) {
+        const a = baseSpin + pairStep * i + (i % 2 === 0 ? twist : -twist);
+        const p = makeProjectile(
+          'shooting-enemy-bullet',
+          originX, originY,
+          Math.cos(a) * speed * speedMul,
+          Math.sin(a) * speed * speedMul,
+          damage
+        );
+        if (p) {
+          p.canvasRadius = phase === 3 ? 6.4 : 5.9;
+          state.enemyBullets.push(p);
+        }
+      }
+
+      // 数ボレーごとに、渦の中心から少量の追尾弾を添えて回避方向をずらす。
+      state.noahSpiralStep = step + 1;
+      const extraEvery = phase === 1 ? 4 : 3;
+      if ((state.noahSpiralStep % extraEvery) === 0) {
+        const dx = state.player.x - state.boss.x;
+        const dy = state.player.y - state.boss.y;
+        const aim = Math.atan2(dy, dx);
+        const offsets = phase === 3 ? [-0.18, 0.18] : [0];
+        offsets.forEach(offset => {
+          const a = aim + offset;
+          const p = makeProjectile(
+            'shooting-enemy-bullet',
+            originX, originY,
+            Math.cos(a) * speed * 0.92,
+            Math.sin(a) * speed * 0.92,
+            damage
+          );
+          if (p) {
+            p.canvasRadius = 5.4;
+            state.enemyBullets.push(p);
+          }
+        });
+      }
+      return;
+    }
+
+    // 超弾幕テスト本来の挙動は残す。
+    // WAVE1から既に高密度。WAVE3でさらに詰める。
+    const interval = phase === 1 ? 260 : phase === 2 ? 190 : 130;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
+    state.lastBossShotAt = now;
 
     // 同心円リング：WAVEごとに弾数を増やす。
     const ringCounts = { 1: 16, 2: 22, 3: 30 };
@@ -5756,6 +6041,7 @@
     const addTone = (p, index) => {
       if (!p || !p.el) return p;
       p.el.classList.add(`shooting-beautiful-tone-${(index % 4) + 1}`);
+      p.canvasTone = (index % 4) + 1;
       return p;
     };
 
@@ -6258,7 +6544,11 @@
     // これを止めないとフェイスレス等のAIが毎フレーム座標を上書きして
     // 吸引が見た目上ほぼ無効になっていた。
     if (!isNormalBattle() && !bossGrabbed && !bossStunned && !bossBlackHolePulled) {
-      if (isChapter04BossStage()) {
+      if (isNoahStage()) {
+        // 理想郷：ノアは敵側センターライン上に鎮座し、一切巡回しない。
+        state.boss.x = w * 0.5;
+        state.boss.y = Math.max(70, h * 0.18);
+      } else if (isChapter04BossStage()) {
         // サキエルは敵側中央に鎮座。プレイヤー追尾・左右移動をしない。
         state.boss.x = w * 0.5;
         // CH04 only: device-height based offset. About 2mm lower on common phone sizes,
@@ -6317,6 +6607,12 @@
         state.boss.x = blended.x;
         state.boss.y = blended.y;
       }
+    }
+
+    // ノアだけは掴み/スタン/吸引の状態に関係なく座標を最終固定する。
+    if (isNoahStage() && !isNormalBattle()) {
+      state.boss.x = w * 0.5;
+      state.boss.y = Math.max(70, h * 0.18);
     }
 
     positionUnit(player, state.player.x, state.player.y);
@@ -7758,6 +8054,11 @@
       meta.kicker = 'SCORE ATTACK';
       meta.title = 'すこあちゃん';
       meta.sub = selectedStage.difficultyLabel || '';
+    } else if (isNoahStage()) {
+      meta.kicker = 'SPECIAL STAGE';
+      meta.title = '理想郷：ノア';
+      meta.sub = '楽園 -ノア-';
+      meta.image = selectedStage.introImage || 'images/nore_battle_start.webp';
     } else if (lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
       meta.title = 'オーバーシア';

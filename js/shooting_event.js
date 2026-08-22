@@ -9,7 +9,7 @@
   const queuedOpenArgs = [];
   const MODULE_VERSION = (
     document.querySelector('meta[name="sasaphia-build"]')?.getAttribute('content') ||
-    '20260822-canvas-scoreattack-v229'
+    '20260823-raid-rich-lightweight-v60'
   );
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 

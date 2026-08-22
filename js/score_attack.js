@@ -38,22 +38,15 @@ function ensureRoot(){
     </div>
     <div class="score-attack-tabs">
       <button id="score-attack-tab-normal" class="active" onclick="setScoreAttackDifficulty('normal')">
-        <small>通常</small>
+        <small>NORMAL</small>
       </button>
       <button id="score-attack-tab-hard" onclick="setScoreAttackDifficulty('hard')">
-        <small>高難度</small>
+        <small>HARD</small>
       </button>
     </div>
   </section>
 
-  <section class="score-attack-me">
-    <div class="score-attack-me-head">
-      <div><span>最高記録</span></div>
-      <div class="score-attack-me-badge">自己最高</div>
-    </div>
-    <strong id="score-attack-my-score">------</strong>
-    <div class="score-attack-my-party-label">最高記録編成</div>
-    <div id="score-attack-my-party"></div>
+  <section class="score-attack-me score-attack-start-only">
     <button type="button" class="score-attack-start" onclick="startScoreAttack()">
       <span>挑戦する</span>
     </button>
@@ -66,8 +59,6 @@ async function fetchRanking(){const sb=window.zsSupabase,userId=uid();if(!sb||ty
 function renderRows(rows){
  const r=ensureRoot(),myId=uid(),list=r.querySelector('#score-attack-list');
  const mine=rows.find(x=>String(x.user_id||'').toLowerCase()===myId)||null;
- r.querySelector('#score-attack-my-score').textContent=mine&&Number(mine.best_score||0)>0?Number(mine.best_score).toLocaleString('ja-JP'):'------';
- r.querySelector('#score-attack-my-party').innerHTML=mine?partyHtml(mine.party_ids,false):partyHtml([],false);
 
  if(!rows.length){
    list.innerHTML='<div class="score-attack-empty">まだ記録がありません</div>';

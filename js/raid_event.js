@@ -1,4 +1,4 @@
-// 20260817-raid-recruit-join-cancel-v52
+// 20260823-raid-daily-shared-hp-v57
 (function(){
   'use strict';
 
@@ -130,7 +130,103 @@
     return status;
   }
 
+  function ensureEarlyFinalizeStyle(){
+    if(document.getElementById('daily-raid-early-finalize-style-v54')) return;
+    const style=document.createElement('style');
+    style.id='daily-raid-early-finalize-style-v54';
+    style.textContent=`
+      #daily-raid-root .daily-raid-actions{
+        display:grid!important;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+        grid-template-rows:auto 46px!important;
+        gap:7px!important;
+        align-items:stretch!important;
+        padding-top:7px!important;
+      }
+      #daily-raid-root .daily-raid-attempt-copy{
+        grid-column:1 / -1!important;
+        grid-row:1!important;
+        min-width:0!important;
+        margin:0!important;
+      }
+      #daily-raid-root #daily-raid-start,
+      #daily-raid-root #daily-raid-finalize-best{
+        position:static!important;
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        height:46px!important;
+        min-height:46px!important;
+        margin:0!important;
+        padding:5px 7px!important;
+        border-radius:0!important;
+        transform:none!important;
+      }
+      #daily-raid-root #daily-raid-start{
+        grid-column:1!important;
+        grid-row:2!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best{
+        grid-column:2!important;
+        grid-row:2!important;
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:center!important;
+        justify-content:center!important;
+        border:1px solid rgba(132,157,105,.55)!important;
+        background:linear-gradient(180deg,rgba(88,98,67,.94),rgba(62,71,48,.98))!important;
+        color:#f5efce!important;
+        font-family:"Noto Serif JP",serif!important;
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best[hidden]{
+        display:none!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best span,
+      #daily-raid-root #daily-raid-start span{
+        display:block!important;
+        margin:0 0 3px!important;
+        font-family:"Cinzel",serif!important;
+        font-size:6px!important;
+        line-height:1!important;
+        letter-spacing:.16em!important;
+        opacity:.72!important;
+        white-space:nowrap!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best b,
+      #daily-raid-root #daily-raid-start b{
+        display:block!important;
+        margin:0!important;
+        font-size:11px!important;
+        line-height:1.12!important;
+        font-weight:700!important;
+        letter-spacing:.04em!important;
+        white-space:nowrap!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best:disabled{
+        opacity:.38!important;
+      }
+
+      /* 確定ボタンが出ない状態ではバトル開始を2列分使う */
+      #daily-raid-root .daily-raid-actions:not(.can-finalize-early) #daily-raid-start{
+        grid-column:1 / -1!important;
+      }
+
+      @media (max-width:380px){
+        #daily-raid-root .daily-raid-actions{
+          gap:5px!important;
+        }
+        #daily-raid-root #daily-raid-finalize-best b,
+        #daily-raid-root #daily-raid-start b{
+          font-size:10px!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function ensureRoot(){
+    ensureEarlyFinalizeStyle();
     let root=document.getElementById('daily-raid-root');
     if(root) return root;
     root=document.createElement('div');
@@ -183,7 +279,7 @@
             </section>
 
             <section class="daily-raid-hpbox">
-              <div class="daily-raid-hphead"><div><small>SHARED HP</small><span>本日の共有耐久値</span></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
+              <div class="daily-raid-hphead"><div><small>SHARED HP</small><span>本日の共有耐久値</span></div><strong id="daily-raid-hptext">-- / --</strong></div>
               <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
               <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
             </section>
@@ -204,6 +300,9 @@
           </main>
           <footer class="daily-raid-actions">
             <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b id="daily-raid-attempt-count">0 / 3</b></div>
+            <button type="button" id="daily-raid-finalize-best" class="daily-raid-finalize-best" hidden>
+              <span>LOCK BEST SCORE</span><b>このスコアで確定する</b>
+            </button>
             <button type="button" id="daily-raid-start"><span>RAID BATTLE</span><b>挑戦する</b></button>
           </footer>
         </div>
@@ -218,6 +317,7 @@
     root.querySelector('#daily-raid-recruit-btn').addEventListener('click',startRecruiting);
     root.querySelector('#daily-raid-join-btn').addEventListener('click',showJoinList);
     root.querySelector('#daily-raid-start').addEventListener('click',start);
+    root.querySelector('#daily-raid-finalize-best').addEventListener('click',finalizeBestNow);
     root.querySelector('#daily-raid-recruit-cancel').addEventListener('click',cancelRecruitment);
     return root;
   }
@@ -370,13 +470,25 @@
     while(rows.length<4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>フレンド枠</small></div><b>OPEN</b></div>');
     list.innerHTML=rows.join('');
 
+    const finalizeBtn=root.querySelector('#daily-raid-finalize-best');
+    const actions=root.querySelector('.daily-raid-actions');
+    const canFinalizeEarly=!admin && !cleared && !inBattle && attemptCount>0 && attemptCount<3;
+    if(actions) actions.classList.toggle('can-finalize-early',canFinalizeEarly);
+    if(finalizeBtn){
+      finalizeBtn.hidden=!canFinalizeEarly;
+      finalizeBtn.disabled=!canFinalizeEarly;
+      if(canFinalizeEarly){
+        finalizeBtn.innerHTML=`<span>BEST ${fmt(bestDamage)} DAMAGE</span><b>現在スコアで確定</b>`;
+      }
+    }
+
     const start=root.querySelector('#daily-raid-start');
     start.disabled=admin?false:(cleared||inBattle||attemptCount>=3);
     if(admin) start.innerHTML='<span>ADMIN TEST</span><b>テスト挑戦</b>';
     else if(cleared) start.innerHTML='<span>DAILY RAID</span><b>RAID CLEAR</b>';
     else if(inBattle) start.innerHTML='<span>TODAY\'S ATTEMPT</span><b>挑戦中</b>';
     else if(attemptCount>=3) start.innerHTML='<span>BEST DAMAGE LOCKED</span><b>本日の3回終了</b>';
-    else start.innerHTML=`<span>RAID BATTLE</span><b>${attemptCount+1}回目に挑戦</b>`;
+    else start.innerHTML=`<span>${attemptCount+1} / 3 ATTEMPT</span><b>バトル開始</b>`;
   }
 
   async function open(options){
@@ -395,6 +507,57 @@
     const root=document.getElementById('daily-raid-root'); if(!root) return;
     root.classList.remove('show'); root.setAttribute('aria-hidden','true');
     setTimeout(()=>{ if(root.getAttribute('aria-hidden')==='true') root.style.display='none'; },180);
+  }
+
+  async function finalizeBestNow(){
+    const status=currentStatus||await fetchStatus();
+    if(!status||!status.raid_id) return;
+
+    const me=status.me||{};
+    const attemptCount=Math.max(0,Math.min(3,n(me.attempt_count)));
+    const bestDamage=n(me.best_damage);
+    const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
+    const cleared=status.status==='cleared'||n(status.current_hp)<=0;
+
+    if(cleared){ alert('レイドはすでに討伐されています。'); return; }
+    if(inBattle){ alert('挑戦中はスコアを確定できません。'); return; }
+    if(attemptCount<=0){ alert('1回以上挑戦してから確定してください。'); return; }
+    if(attemptCount>=3){ return; }
+
+    const remaining=Math.max(0,3-attemptCount);
+    const ok=confirm(
+      `現在スコア ${fmt(bestDamage)} DAMAGE で確定します。\n\n`+
+      `現在スコアで確定する場合、残り${remaining}回の挑戦権を失います。\n\nOK？`
+    );
+    if(!ok) return;
+
+    const btn=document.getElementById('daily-raid-finalize-best');
+    const startBtn=document.getElementById('daily-raid-start');
+    if(btn) btn.disabled=true;
+    if(startBtn) startBtn.disabled=true;
+
+    try{
+      const result=normalizeStatus(await rpc('finalize_daily_raid_best_now',{p_user_id:uid()}));
+      if(!result || result.ok===false) throw new Error(result&&result.message||'スコアを確定できませんでした');
+      currentStatus=result;
+      await hydrateMemberPanels(result);
+      render(result);
+      refreshFriendHomeNotice();
+
+      if(result.status==='cleared'||n(result.current_hp)<=0){
+        try{ window.dispatchEvent(new CustomEvent('sasaphia-daily-raid-cleared',{detail:result})); }catch(_){}
+        if(typeof window.refreshRaidClearRewardNotice==='function'){
+          try{ window.refreshRaidClearRewardNotice(); }catch(_){}
+        }
+      }
+    }catch(err){
+      console.error('[raid] early best finalize failed',err);
+      alert(err&&err.message?err.message:'スコアを確定できませんでした。');
+      try{
+        const latest=await fetchStatus();
+        if(latest){ await hydrateMemberPanels(latest); render(latest); }
+      }catch(_){}
+    }
   }
 
   async function start(){
@@ -492,7 +655,7 @@
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setupFriendHomeNotice,{once:true}); else setupFriendHomeNotice();
 
-  window.RaidEvent={fetchStatus,finishAttempt,refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
+  window.RaidEvent={fetchStatus,finishAttempt,finalizeBestNow,refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
   window.openDailyRaid=open;
   window.closeDailyRaid=close;
   window.startDailyRaidBattle=start;
