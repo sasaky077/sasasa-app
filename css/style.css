@@ -20819,10 +20819,32 @@ body {
 
 
 /* SPECIAL STAGE ticket */
-.shooting-special-ticket-card{position:relative;padding-bottom:46px!important}
+.shooting-special-ticket-card{position:relative;padding-bottom:18px!important}
 .special-ticket-cost{margin-top:8px;font-family:"Cinzel","Noto Serif JP",serif;font-size:10px;letter-spacing:.12em;color:#b69855}
-.special-ticket-balance{position:absolute;right:14px;bottom:12px;padding:5px 10px;border:1px solid rgba(183,151,83,.36);background:rgba(18,18,18,.72);font-size:10px;letter-spacing:.08em;color:#d8c08a}
-.special-ticket-balance b{font-family:"Cinzel",serif;font-size:14px;color:#fff}
+.special-ticket-balance{
+  position:absolute;
+  right:14px;
+  top:13px;
+  bottom:auto;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  line-height:1;
+  letter-spacing:.07em;
+  color:rgba(117,91,48,.72);
+  text-shadow:0 1px 0 rgba(255,255,255,.72);
+  white-space:nowrap;
+}
+.special-ticket-balance b{
+  margin-left:4px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:600;
+  color:#88682f;
+}
 .login-bonus-ticket,.bonus-login-ticket{display:block;margin-top:3px;font-size:8px!important;line-height:1.15;color:#b38a39;letter-spacing:.04em}
 
 /* =========================================================
@@ -22917,4 +22939,1843 @@ body {
   #score-attack-root .score-attack-me.score-attack-start-only .score-attack-start{
     height:30px !important;
   }
+}
+
+
+/* ============================================================
+   LIMIT BREAK v79 — bulk upgrade + power-up cut-in
+   ============================================================ */
+.lb-execute-area{
+  display:grid!important;
+  gap:8px!important;
+}
+.lb-execute-bulk-btn{
+  min-height:58px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:linear-gradient(180deg,#a77a2f,#6f4a17)!important;
+  border:1px solid rgba(225,191,119,.92)!important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 8px 24px rgba(111,74,23,.22)!important;
+}
+.lb-execute-bulk-btn small{
+  display:block;
+  font-size:9px;
+  letter-spacing:.18em;
+  opacity:.8;
+}
+.lb-execute-bulk-btn strong{
+  display:block;
+  margin-top:3px;
+  font-family:"Cinzel",serif;
+  font-size:18px;
+  letter-spacing:.12em;
+}
+.lb-execute-single-btn{
+  min-height:40px!important;
+  background:rgba(126,101,59,.72)!important;
+}
+.lb-bulk-confirm-hero{
+  margin:12px 0;
+  min-height:118px;
+  display:grid;
+  grid-template-columns:92px 1fr;
+  gap:12px;
+  align-items:center;
+  padding:10px;
+  overflow:hidden;
+  border:1px solid rgba(145,111,52,.28);
+  background:linear-gradient(135deg,rgba(246,231,193,.58),rgba(255,255,255,.72));
+}
+.lb-bulk-confirm-hero img{
+  width:92px;
+  height:112px;
+  object-fit:contain;
+  object-position:center;
+  filter:drop-shadow(0 7px 10px rgba(75,51,18,.18));
+}
+.lb-bulk-confirm-hero div{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+}
+.lb-bulk-confirm-hero small{
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.2em;
+  color:#a07a39;
+}
+.lb-bulk-confirm-hero strong{
+  margin-top:5px;
+  font-family:"Cinzel",serif;
+  font-size:19px;
+  color:#654717;
+}
+.lb-bulk-confirm-hero span{
+  margin-top:5px;
+  font-size:10px;
+  color:#87704a;
+}
+
+.lb-powerup-effect{
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  display:none;
+  overflow:hidden;
+  align-items:center;
+  justify-content:center;
+  background:#f8f6f1;
+  pointer-events:none;
+}
+.lb-powerup-effect.show{
+  display:flex;
+  animation:lbPowerupWhole 2.35s ease both;
+}
+.lb-powerup-bg{
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 50% 48%,rgba(255,233,168,.52),transparent 24%),
+    radial-gradient(circle at 50% 50%,rgba(223,194,132,.34),transparent 52%),
+    linear-gradient(180deg,#fffdf8,#f3efe6);
+}
+.lb-powerup-rays{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:120vmax;
+  height:120vmax;
+  transform:translate(-50%,-50%);
+  background:repeating-conic-gradient(from 0deg,rgba(255,224,142,.18) 0 2deg,transparent 2deg 12deg);
+  animation:lbPowerupRays 2.35s linear both;
+}
+.lb-powerup-ring{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:220px;
+  height:220px;
+  border:1px solid rgba(255,221,139,.72);
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.35);
+  box-shadow:0 0 28px rgba(255,196,76,.38),inset 0 0 22px rgba(255,239,188,.2);
+  opacity:0;
+}
+.lb-powerup-effect.show .ring-a{animation:lbPowerupRing 1.15s .3s ease-out both}
+.lb-powerup-effect.show .ring-b{animation:lbPowerupRing 1.35s .55s ease-out both}
+.lb-powerup-image-wrap{
+  position:absolute;
+  inset:5% 0 17%;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  z-index:3;
+}
+.lb-powerup-image-wrap img{
+  width:min(92vw,500px);
+  height:100%;
+  object-fit:contain;
+  object-position:center bottom;
+  opacity:0;
+  transform:translateY(22px) scale(.92);
+  filter:brightness(.9) drop-shadow(0 16px 25px rgba(80,58,24,.22));
+}
+.lb-powerup-effect.show .lb-powerup-image-wrap img{
+  animation:lbPowerupCharacter 2.2s .08s cubic-bezier(.16,.8,.2,1) both;
+}
+.lb-powerup-flash{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  background:#fff6d9;
+  opacity:0;
+}
+.lb-powerup-effect.show .lb-powerup-flash{
+  animation:lbPowerupFlash 1.55s .52s ease-out both;
+}
+.lb-powerup-copy{
+  position:absolute;
+  z-index:5;
+  left:0;
+  right:0;
+  bottom:9%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  color:#fff7dc;
+  text-shadow:0 2px 8px rgba(90,67,29,.38),0 0 12px rgba(230,180,75,.26);
+  opacity:0;
+  transform:translateY(12px);
+}
+.lb-powerup-effect.show .lb-powerup-copy{
+  animation:lbPowerupCopy 1.45s .68s ease-out both;
+}
+.lb-powerup-copy small{
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:.42em;
+  color:#dbbb70;
+}
+.lb-powerup-copy strong{
+  margin-top:5px;
+  font-family:"Cinzel",serif;
+  font-size:clamp(28px,8vw,42px);
+  letter-spacing:.12em;
+}
+.lb-powerup-copy span{
+  margin-top:7px;
+  font-size:14px;
+  letter-spacing:.18em;
+}
+.lb-powerup-copy b{
+  margin-top:7px;
+  font-family:"Cinzel",serif;
+  font-size:18px;
+  letter-spacing:.12em;
+  color:#f3d486;
+}
+@keyframes lbPowerupWhole{
+  0%{opacity:0}
+  8%,88%{opacity:1}
+  100%{opacity:0}
+}
+@keyframes lbPowerupRays{
+  0%{transform:translate(-50%,-50%) rotate(0deg) scale(.7);opacity:0}
+  25%{opacity:1}
+  100%{transform:translate(-50%,-50%) rotate(22deg) scale(1.1);opacity:.28}
+}
+@keyframes lbPowerupRing{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.28)}
+  22%{opacity:.9}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}
+}
+@keyframes lbPowerupCharacter{
+  0%{opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.72)}
+  25%{opacity:1;transform:translateY(0) scale(1);filter:brightness(.98)}
+  48%{filter:brightness(1.8) drop-shadow(0 0 24px rgba(255,221,135,.72))}
+  65%,100%{opacity:1;transform:translateY(0) scale(1.035);filter:brightness(1.04) drop-shadow(0 0 16px rgba(255,205,95,.30))}
+}
+@keyframes lbPowerupFlash{
+  0%,30%{opacity:0}
+  38%{opacity:.82}
+  46%{opacity:0}
+  55%{opacity:.42}
+  72%,100%{opacity:0}
+}
+@keyframes lbPowerupCopy{
+  0%{opacity:0;transform:translateY(12px)}
+  25%,82%{opacity:1;transform:translateY(0)}
+  100%{opacity:0;transform:translateY(-5px)}
+}
+
+
+/* ============================================================
+   LIMIT BREAK v80 — button parity / readability
+   ============================================================ */
+.lb-execute-area{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:10px!important;
+}
+
+.lb-execute-btn,
+.lb-execute-bulk-btn,
+.lb-execute-single-btn{
+  width:100%!important;
+  min-height:54px!important;
+  height:54px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 16px!important;
+  border-radius:14px!important;
+  font-family:"Noto Serif JP",serif!important;
+  font-size:15px!important;
+  font-weight:700!important;
+  line-height:1!important;
+  letter-spacing:.06em!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  text-shadow:none!important;
+}
+
+.lb-execute-bulk-btn{
+  background:linear-gradient(180deg,#a87824,#875b14)!important;
+  color:#fffaf0!important;
+  border:1px solid #b98932!important;
+  box-shadow:0 4px 12px rgba(93,61,15,.16)!important;
+}
+
+.lb-execute-single-btn{
+  background:#8a7651!important;
+  color:#fffdf8!important;
+  border:1px solid #9d875f!important;
+  box-shadow:0 4px 12px rgba(76,59,35,.12)!important;
+}
+
+.lb-execute-note{
+  margin-top:2px!important;
+  color:#77664a!important;
+  font-size:10px!important;
+  line-height:1.5!important;
+  text-align:center!important;
+  opacity:1!important;
+}
+
+/* 確認画面上部：金文字＋白背景をやめ、濃い茶系でコントラストを確保 */
+.lb-confirm-message-strong{
+  color:#4d3d29!important;
+  font-weight:700!important;
+  font-size:15px!important;
+  letter-spacing:.04em!important;
+  text-shadow:none!important;
+}
+
+.lb-bulk-confirm-hero-strong{
+  background:#f3ead8!important;
+  border:1px solid rgba(115,83,34,.34)!important;
+  box-shadow:none!important;
+}
+.lb-bulk-confirm-hero-strong small{
+  color:#745522!important;
+  font-weight:700!important;
+}
+.lb-bulk-confirm-hero-strong strong{
+  color:#3f3121!important;
+  text-shadow:none!important;
+}
+.lb-bulk-confirm-hero-strong span{
+  color:#5f5039!important;
+  font-weight:600!important;
+}
+
+/* 単発側の「今回解放される効果」も白/金の低コントラストを解消 */
+.lb-next-bonus{
+  background:#f3ead8!important;
+  border:1px solid rgba(115,83,34,.30)!important;
+  color:#403321!important;
+  box-shadow:none!important;
+}
+.lb-next-bonus-label{
+  color:#6e542a!important;
+  font-weight:700!important;
+}
+.lb-next-bonus-title{
+  color:#3c3020!important;
+  font-weight:700!important;
+  text-shadow:none!important;
+}
+.lb-next-bonus-detail{
+  color:#5d4d37!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+
+
+/* ============================================================
+   LIMIT BREAK v81 — readability / Mincho / no confirm image
+   ============================================================ */
+
+/* 1枚目の2ボタン：文字コントラストを強化 */
+.lb-execute-bulk-btn{
+  background:#9f6d16!important;
+  color:#fffdf6!important;
+  border:1px solid #b17c22!important;
+  text-shadow:0 1px 1px rgba(74,46,7,.42)!important;
+}
+.lb-execute-single-btn{
+  background:#786748!important;
+  color:#fffdf8!important;
+  border:1px solid #8f7a56!important;
+  text-shadow:0 1px 1px rgba(58,44,25,.34)!important;
+}
+.lb-execute-bulk-btn,
+.lb-execute-single-btn{
+  font-family:"Noto Serif JP",serif!important;
+  font-size:15px!important;
+  font-weight:700!important;
+  letter-spacing:.05em!important;
+  opacity:1!important;
+}
+
+/* 確認モーダル内を明朝へ統一 */
+#limitbreak-confirm-modal,
+#limitbreak-confirm-modal *,
+#limitbreak-modal,
+#limitbreak-modal *{
+  font-family:"Noto Serif JP",serif!important;
+}
+
+/* 一括確認上部：キャラ画像を使わず、文字だけで中央構成 */
+.lb-bulk-confirm-hero.no-image{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:110px!important;
+  grid-template-columns:none!important;
+  padding:14px 18px!important;
+}
+.lb-bulk-confirm-hero.no-image img{
+  display:none!important;
+}
+.lb-bulk-confirm-hero.no-image > div{
+  width:100%!important;
+  align-items:center!important;
+  text-align:center!important;
+}
+.lb-bulk-confirm-hero.no-image small{
+  font-family:"Cinzel","Noto Serif JP",serif!important;
+  color:#745522!important;
+}
+.lb-bulk-confirm-hero.no-image strong{
+  font-family:"Noto Serif JP",serif!important;
+  font-size:22px!important;
+  letter-spacing:.04em!important;
+}
+.lb-bulk-confirm-hero.no-image span{
+  margin-top:8px!important;
+  font-family:"Noto Serif JP",serif!important;
+  font-size:12px!important;
+  color:#58462d!important;
+}
+
+/* 一括確認の実行ボタンも明朝＆見やすく */
+#lb-confirm-ok-btn{
+  font-family:"Noto Serif JP",serif!important;
+  font-weight:700!important;
+  color:#3c2a10!important;
+  text-shadow:none!important;
+}
+
+
+/* ============================================================
+   LIMIT BREAK v82 — bulk confirmation effect list
+   ============================================================ */
+.lb-bulk-effect-list{
+  width:100%;
+  margin-top:12px;
+  display:grid;
+  gap:7px;
+}
+.lb-bulk-effect-row{
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr);
+  align-items:start;
+  gap:8px;
+  padding-top:7px;
+  border-top:1px solid rgba(105,77,35,.16);
+  text-align:left;
+}
+.lb-bulk-effect-row:first-child{
+  border-top:0;
+  padding-top:0;
+}
+.lb-bulk-effect-row strong{
+  font-family:"Noto Serif JP",serif!important;
+  font-size:12px!important;
+  color:#5d451f!important;
+  letter-spacing:.03em!important;
+}
+.lb-bulk-effect-row span{
+  font-family:"Noto Serif JP",serif!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+  color:#463726!important;
+  font-weight:500!important;
+  letter-spacing:.02em!important;
+}
+
+
+/* ============================================================
+   LIMIT BREAK v83 — bulk confirmation matches single layout
+   ============================================================ */
+
+/* 一括側も通常1段階強化の「今回解放される限界突破効果」と同じカードを使う */
+.lb-bulk-next-bonus{
+  margin:12px 0!important;
+  padding:12px 14px!important;
+  text-align:left!important;
+}
+.lb-bulk-next-bonus .lb-next-bonus-label{
+  margin-bottom:7px!important;
+  font-size:10px!important;
+  line-height:1.35!important;
+  letter-spacing:.04em!important;
+}
+.lb-bulk-next-row{
+  padding:7px 0!important;
+  border-top:1px solid rgba(115,83,34,.13)!important;
+}
+.lb-bulk-next-row:first-of-type{
+  border-top:0!important;
+  padding-top:2px!important;
+}
+.lb-bulk-next-row .lb-next-bonus-title{
+  margin:0!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+  letter-spacing:.01em!important;
+}
+.lb-bulk-next-row .lb-next-bonus-detail{
+  margin-top:3px!important;
+  font-size:9px!important;
+  line-height:1.5!important;
+  letter-spacing:0!important;
+}
+
+/* v81/v82の大きい一括専用ヒーローは確認画面では使用しない */
+.lb-bulk-confirm-hero{
+  display:none!important;
+}
+
+/* 一括でも通常強化と同じLv変化ブロックのサイズ感 */
+#limitbreak-confirm-modal .lb-confirm-level{
+  font-family:"Noto Serif JP",serif!important;
+}
+#limitbreak-confirm-modal .lb-confirm-level span{
+  font-size:11px!important;
+}
+#limitbreak-confirm-modal .lb-confirm-level strong{
+  font-family:"Noto Serif JP",serif!important;
+  font-size:15px!important;
+  letter-spacing:.03em!important;
+}
+
+
+/* ============================================================
+   LIMIT BREAK v84 — confirmation fits one screen
+   一括/単発共通: キャンセルまで画面内。情報過多時は3段階目以降のみスクロール。
+   ============================================================ */
+
+#limitbreak-confirm-modal{
+  overflow:hidden!important;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    12px
+    max(12px, env(safe-area-inset-bottom))!important;
+}
+
+#limitbreak-confirm-modal .modal-content,
+#limitbreak-confirm-modal .modal-card,
+#limitbreak-confirm-modal .modal-inner{
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;
+  overflow:hidden!important;
+}
+
+/* 実際の確認カード本体を縦flexにして、外側スクロールを発生させない */
+#limitbreak-confirm-modal > div,
+#limitbreak-confirm-modal .modal-box{
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;
+}
+
+/* 確認画面の余白を詰める */
+#limitbreak-confirm-modal .lb-confirm-message{
+  margin:0 0 8px!important;
+  font-size:14px!important;
+  line-height:1.35!important;
+}
+
+#limitbreak-confirm-modal .lb-next-bonus{
+  margin:8px 0!important;
+  padding:9px 12px!important;
+}
+
+#limitbreak-confirm-modal .lb-next-bonus-label{
+  margin-bottom:5px!important;
+  font-size:9px!important;
+}
+
+#limitbreak-confirm-modal .lb-next-bonus-title{
+  font-size:11.5px!important;
+  line-height:1.35!important;
+}
+
+#limitbreak-confirm-modal .lb-next-bonus-detail{
+  margin-top:2px!important;
+  font-size:8.5px!important;
+  line-height:1.35!important;
+}
+
+#limitbreak-confirm-modal .lb-bulk-next-row{
+  padding:5px 0!important;
+}
+
+#limitbreak-confirm-modal .lb-confirm-consume-box{
+  margin:8px 0!important;
+}
+
+#limitbreak-confirm-modal .lb-confirm-consume-title{
+  min-height:27px!important;
+  padding:6px 10px!important;
+  font-size:10px!important;
+}
+
+#limitbreak-confirm-modal .lb-confirm-consume-row{
+  min-height:34px!important;
+  padding:7px 10px!important;
+}
+
+#limitbreak-confirm-modal .lb-confirm-consume-name,
+#limitbreak-confirm-modal .lb-confirm-consume-count{
+  font-size:11px!important;
+}
+
+#limitbreak-confirm-modal .lb-confirm-level{
+  min-height:42px!important;
+  margin:7px 0!important;
+  padding:8px 10px!important;
+}
+
+#limitbreak-confirm-modal .lb-confirm-warning{
+  margin:5px 0 8px!important;
+  font-size:8.5px!important;
+  line-height:1.35!important;
+}
+
+#limitbreak-confirm-modal #lb-confirm-ok-btn{
+  min-height:46px!important;
+  height:46px!important;
+  margin-top:6px!important;
+  font-size:14px!important;
+}
+
+#limitbreak-confirm-modal .modal-cancel-btn,
+#limitbreak-confirm-modal .btn-cancel,
+#limitbreak-confirm-modal button:last-child{
+  min-height:38px!important;
+  margin-top:5px!important;
+  font-size:13px!important;
+}
+
+/* 一括3段階目以降のみ内部スクロール */
+.lb-bulk-next-scroll{
+  max-height:92px!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+  margin-top:4px!important;
+  padding-right:4px!important;
+  border-top:1px solid rgba(115,83,34,.13)!important;
+}
+
+.lb-bulk-next-scroll .lb-bulk-next-row:first-child{
+  border-top:0!important;
+}
+
+.lb-bulk-next-scroll::-webkit-scrollbar{
+  width:3px;
+}
+.lb-bulk-next-scroll::-webkit-scrollbar-thumb{
+  background:rgba(112,82,40,.28);
+  border-radius:999px;
+}
+
+/* 低い端末ではさらに少し詰める */
+@media (max-height:700px){
+  #limitbreak-confirm-modal{
+    padding:8px!important;
+  }
+  #limitbreak-confirm-modal .lb-next-bonus{
+    margin:6px 0!important;
+    padding:7px 10px!important;
+  }
+  #limitbreak-confirm-modal .lb-confirm-consume-row{
+    min-height:31px!important;
+    padding:5px 9px!important;
+  }
+  #limitbreak-confirm-modal .lb-confirm-level{
+    min-height:38px!important;
+    margin:5px 0!important;
+    padding:6px 9px!important;
+  }
+  #limitbreak-confirm-modal #lb-confirm-ok-btn{
+    min-height:42px!important;
+    height:42px!important;
+  }
+  .lb-bulk-next-scroll{
+    max-height:72px!important;
+  }
+}
+
+
+/* ============================================================
+   LIMIT BREAK v85 — primary action text contrast
+   ============================================================ */
+.lb-execute-bulk-btn,
+.lb-execute-single-btn{
+  color:#fffaf0!important;
+  -webkit-text-fill-color:#fffaf0!important;
+  text-shadow:0 1px 2px rgba(48,30,8,.55)!important;
+  opacity:1!important;
+}
+
+.lb-execute-bulk-btn:disabled,
+.lb-execute-single-btn:disabled{
+  color:rgba(255,250,240,.72)!important;
+  -webkit-text-fill-color:rgba(255,250,240,.72)!important;
+}
+
+
+/* ============================================================
+   LIMIT BREAK v87 — strengthen modal fit without scroll
+   強化する画面(素材一覧＋効果一覧＋ボタン)を1画面に収める
+   ============================================================ */
+
+/* モーダル全体の上下余白を少し圧縮 */
+#limitbreak-modal{
+  overflow:hidden!important;
+  padding:
+    max(10px, env(safe-area-inset-top))
+    12px
+    max(10px, env(safe-area-inset-bottom))!important;
+}
+
+/* カード本体を画面内に収める */
+#limitbreak-modal .modal-content,
+#limitbreak-modal .modal-card,
+#limitbreak-modal .modal-inner,
+#limitbreak-modal > div,
+#limitbreak-modal .modal-box{
+  max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;
+  overflow:hidden!important;
+}
+
+/* タイトル・説明 */
+#limitbreak-modal h2,
+#limitbreak-modal .modal-title{
+  margin-bottom:8px!important;
+}
+#limitbreak-modal .lb-description,
+#limitbreak-modal .lb-desc,
+#limitbreak-modal .modal-lead{
+  margin-bottom:8px!important;
+  font-size:11px!important;
+  line-height:1.5!important;
+}
+
+/* セクション間余白 */
+#limitbreak-modal .lb-materials-box,
+#limitbreak-modal .lb-list-wrap,
+#limitbreak-modal .lb-stage-list,
+#limitbreak-modal .lb-panel{
+  margin-top:8px!important;
+  margin-bottom:8px!important;
+}
+
+/* 必要素材ボックスを圧縮 */
+#limitbreak-modal .lb-materials-box,
+#limitbreak-modal .lb-materials{
+  padding:10px 12px!important;
+  border-radius:14px!important;
+}
+#limitbreak-modal .lb-materials-title{
+  margin-bottom:6px!important;
+  font-size:11px!important;
+}
+#limitbreak-modal .lb-material-row{
+  min-height:38px!important;
+  padding:5px 0!important;
+  gap:8px!important;
+}
+#limitbreak-modal .lb-material-row img,
+#limitbreak-modal .lb-material-icon{
+  width:28px!important;
+  height:28px!important;
+}
+#limitbreak-modal .lb-material-name{
+  font-size:11px!important;
+  line-height:1.35!important;
+}
+#limitbreak-modal .lb-material-count{
+  font-size:11px!important;
+  line-height:1.35!important;
+}
+
+/* 効果一覧カード圧縮 */
+#limitbreak-modal .lb-list-wrap,
+#limitbreak-modal .lb-stage-list{
+  padding:10px 10px!important;
+  border-radius:14px!important;
+}
+#limitbreak-modal .lb-stage-row{
+  min-height:48px!important;
+  padding:7px 8px!important;
+}
+#limitbreak-modal .lb-stage-row + .lb-stage-row{
+  margin-top:2px!important;
+}
+#limitbreak-modal .lb-stage-label{
+  font-size:11px!important;
+  min-width:36px!important;
+}
+#limitbreak-modal .lb-stage-effect,
+#limitbreak-modal .lb-stage-desc{
+  font-size:10.5px!important;
+  line-height:1.4!important;
+}
+#limitbreak-modal .lb-stage-badge,
+#limitbreak-modal .lb-stage-state,
+#limitbreak-modal .lb-unlock-pill{
+  min-width:64px!important;
+  height:28px!important;
+  padding:0 10px!important;
+  font-size:10px!important;
+  border-radius:999px!important;
+}
+
+/* アクションボタンエリアを小さくしても視認性確保 */
+#limitbreak-modal .lb-execute-area{
+  gap:8px!important;
+  margin-top:10px!important;
+}
+#limitbreak-modal .lb-execute-btn,
+#limitbreak-modal .lb-execute-bulk-btn,
+#limitbreak-modal .lb-execute-single-btn{
+  min-height:48px!important;
+  height:48px!important;
+  font-size:14px!important;
+}
+#limitbreak-modal .lb-execute-note{
+  margin-top:0!important;
+  font-size:9px!important;
+  line-height:1.35!important;
+}
+
+/* キャンセルまで確実に見えるよう下部も少し圧縮 */
+#limitbreak-modal .modal-cancel-btn,
+#limitbreak-modal .btn-cancel,
+#limitbreak-modal button:last-child{
+  min-height:36px!important;
+  margin-top:6px!important;
+  font-size:13px!important;
+}
+
+/* 画面高さが低い端末向けの追加圧縮 */
+@media (max-height: 760px){
+  #limitbreak-modal{
+    padding:8px 10px!important;
+  }
+  #limitbreak-modal .lb-materials-box,
+  #limitbreak-modal .lb-materials{
+    padding:8px 10px!important;
+  }
+  #limitbreak-modal .lb-material-row{
+    min-height:34px!important;
+    padding:4px 0!important;
+  }
+  #limitbreak-modal .lb-material-row img,
+  #limitbreak-modal .lb-material-icon{
+    width:24px!important;
+    height:24px!important;
+  }
+  #limitbreak-modal .lb-list-wrap,
+  #limitbreak-modal .lb-stage-list{
+    padding:8px!important;
+  }
+  #limitbreak-modal .lb-stage-row{
+    min-height:44px!important;
+    padding:6px!important;
+  }
+  #limitbreak-modal .lb-stage-effect,
+  #limitbreak-modal .lb-stage-desc{
+    font-size:10px!important;
+  }
+  #limitbreak-modal .lb-stage-badge,
+  #limitbreak-modal .lb-stage-state,
+  #limitbreak-modal .lb-unlock-pill{
+    min-width:60px!important;
+    height:26px!important;
+    font-size:9px!important;
+  }
+  #limitbreak-modal .lb-execute-btn,
+  #limitbreak-modal .lb-execute-bulk-btn,
+  #limitbreak-modal .lb-execute-single-btn{
+    min-height:44px!important;
+    height:44px!important;
+    font-size:13.5px!important;
+  }
+  #limitbreak-modal .modal-cancel-btn,
+  #limitbreak-modal .btn-cancel,
+  #limitbreak-modal button:last-child{
+    min-height:34px!important;
+    font-size:12.5px!important;
+  }
+}
+
+
+/* ============================================================
+   LIMIT BREAK v88 — TRUE one-screen strengthen layout
+   v87では実DOM(class名)と一部selectorが噛み合っていなかったため、
+   実際の lb-recipe-* / lb-bonus-* を直接圧縮する。
+   ============================================================ */
+
+/* 画面を最大限使う */
+#limitbreak-modal{
+  padding:
+    max(6px, env(safe-area-inset-top))
+    8px
+    max(6px, env(safe-area-inset-bottom))!important;
+}
+
+#limitbreak-modal .modal{
+  width:min(94vw,390px)!important;
+  height:min(96dvh,760px)!important;
+  max-height:96dvh!important;
+  overflow:hidden!important;
+}
+
+#limitbreak-modal .modal-inner{
+  height:100%!important;
+  min-height:0!important;
+  padding:12px 12px 9px!important;
+  overflow:hidden!important;
+}
+
+/* タイトル・説明を詰める */
+#limitbreak-modal .modal h2{
+  margin:0 0 3px!important;
+  font-size:17px!important;
+  line-height:1.25!important;
+}
+
+#limitbreak-modal .lb-modal-desc{
+  margin:0 0 7px!important;
+  font-size:9.5px!important;
+  line-height:1.4!important;
+}
+
+/* 中身はスクロールさせず、全要素を同一画面に収める */
+#limitbreak-modal .lb-material-list{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  padding:0 2px 4px!important;
+}
+
+/* ===== 必要素材 ===== */
+#limitbreak-modal .lb-recipe-box{
+  margin:0 0 7px!important;
+  padding:7px 9px!important;
+  border-radius:11px!important;
+}
+
+#limitbreak-modal .lb-recipe-title{
+  margin:0 0 3px!important;
+  font-size:10.5px!important;
+  line-height:1.25!important;
+}
+
+#limitbreak-modal .lb-recipe-row{
+  grid-template-columns:28px minmax(0,1fr) auto!important;
+  gap:6px!important;
+  min-height:31px!important;
+  padding:3px 0!important;
+}
+
+#limitbreak-modal .lb-recipe-icon{
+  width:24px!important;
+  height:24px!important;
+}
+
+#limitbreak-modal .lb-recipe-icon img{
+  width:24px!important;
+  height:24px!important;
+}
+
+#limitbreak-modal .lb-recipe-name{
+  font-size:10.5px!important;
+  line-height:1.25!important;
+}
+
+#limitbreak-modal .lb-recipe-count{
+  font-size:10.5px!important;
+  line-height:1.2!important;
+}
+
+/* ===== Lv.1〜4 効果一覧 ===== */
+#limitbreak-modal .lb-bonus-box{
+  margin:0 0 7px!important;
+  padding:7px 9px!important;
+  border-radius:11px!important;
+}
+
+#limitbreak-modal .lb-bonus-box-title{
+  margin:0 0 3px!important;
+  font-size:8.5px!important;
+  line-height:1.2!important;
+}
+
+#limitbreak-modal .lb-bonus-row{
+  grid-template-columns:36px minmax(0,1fr) auto!important;
+  gap:5px!important;
+  min-height:39px!important;
+  padding:4px 3px!important;
+}
+
+#limitbreak-modal .lb-bonus-row.next{
+  margin:1px 0!important;
+  min-height:41px!important;
+  padding:4px 5px!important;
+  border-radius:8px!important;
+}
+
+#limitbreak-modal .lb-bonus-level{
+  font-size:9.5px!important;
+}
+
+#limitbreak-modal .lb-bonus-title{
+  margin:0!important;
+  font-size:10px!important;
+  line-height:1.25!important;
+}
+
+/* 現在の画面では summary が本文として見えているためこちらも圧縮 */
+#limitbreak-modal .lb-bonus-summary{
+  margin:0!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+}
+
+#limitbreak-modal .lb-bonus-state{
+  min-width:52px!important;
+  min-height:23px!important;
+  padding:3px 6px!important;
+  font-size:8px!important;
+}
+
+/* ===== 実行ボタン ===== */
+#limitbreak-modal .lb-execute-area{
+  margin-top:6px!important;
+  gap:6px!important;
+}
+
+#limitbreak-modal .lb-execute-btn,
+#limitbreak-modal .lb-execute-bulk-btn,
+#limitbreak-modal .lb-execute-single-btn{
+  width:100%!important;
+  min-height:40px!important;
+  height:40px!important;
+  padding:0 12px!important;
+  border-radius:11px!important;
+  font-size:12.5px!important;
+}
+
+#limitbreak-modal .lb-execute-note{
+  margin:0!important;
+  font-size:8px!important;
+  line-height:1.25!important;
+}
+
+/* キャンセルも必ず最下部に固定して見える */
+#limitbreak-modal .btn-cancel-txt{
+  flex:0 0 auto!important;
+  min-height:31px!important;
+  margin:0!important;
+  padding:7px 8px 2px!important;
+  font-size:12px!important;
+  line-height:1.2!important;
+}
+
+/* さらに縦が小さい端末 */
+@media (max-height:720px){
+  #limitbreak-modal .modal{
+    height:97dvh!important;
+    max-height:97dvh!important;
+  }
+
+  #limitbreak-modal .modal-inner{
+    padding:9px 10px 7px!important;
+  }
+
+  #limitbreak-modal .lb-modal-desc{
+    margin-bottom:5px!important;
+    font-size:9px!important;
+  }
+
+  #limitbreak-modal .lb-recipe-box{
+    margin-bottom:5px!important;
+    padding:5px 8px!important;
+  }
+
+  #limitbreak-modal .lb-recipe-row{
+    min-height:28px!important;
+    padding:2px 0!important;
+  }
+
+  #limitbreak-modal .lb-recipe-icon,
+  #limitbreak-modal .lb-recipe-icon img{
+    width:21px!important;
+    height:21px!important;
+  }
+
+  #limitbreak-modal .lb-bonus-box{
+    margin-bottom:5px!important;
+    padding:5px 7px!important;
+  }
+
+  #limitbreak-modal .lb-bonus-row{
+    min-height:35px!important;
+    padding:3px 2px!important;
+  }
+
+  #limitbreak-modal .lb-bonus-row.next{
+    min-height:37px!important;
+    padding:3px 4px!important;
+  }
+
+  #limitbreak-modal .lb-execute-btn,
+  #limitbreak-modal .lb-execute-bulk-btn,
+  #limitbreak-modal .lb-execute-single-btn{
+    min-height:37px!important;
+    height:37px!important;
+    font-size:12px!important;
+  }
+
+  #limitbreak-modal .btn-cancel-txt{
+    min-height:28px!important;
+    padding-top:5px!important;
+  }
+}
+
+
+/* ============================================================
+   LIMIT BREAK v89 — seamless transition into power-up effect
+   決定直後に白カバーを表示し、キャラ一覧の瞬間表示を防ぐ。
+   ============================================================ */
+.lb-powerup-effect.preparing{
+  display:flex!important;
+  opacity:1!important;
+  background:#f8f6f1!important;
+  pointer-events:auto!important;
+}
+.lb-powerup-effect.preparing .lb-powerup-bg{
+  opacity:1!important;
+}
+.lb-powerup-effect.preparing .lb-powerup-rays,
+.lb-powerup-effect.preparing .lb-powerup-ring,
+.lb-powerup-effect.preparing .lb-powerup-image-wrap,
+.lb-powerup-effect.preparing .lb-powerup-flash,
+.lb-powerup-effect.preparing .lb-powerup-copy{
+  opacity:0!important;
+}
+.lb-powerup-effect.preparing::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:34px;
+  height:34px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:1px solid rgba(159,109,22,.20);
+  box-shadow:0 0 0 10px rgba(184,136,51,.05),0 0 28px rgba(184,136,51,.12);
+  animation:lbPreparingPulse .8s ease-in-out infinite alternate;
+}
+@keyframes lbPreparingPulse{
+  from{transform:translate(-50%,-50%) scale(.78);opacity:.35}
+  to{transform:translate(-50%,-50%) scale(1.08);opacity:.72}
+}
+
+
+/* ============================================================
+   TEN GACHA RESULT v90 — footer buttons horizontal 50 / 50
+   ============================================================ */
+#ten-result-modal .ten-result-footer{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:8px!important;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom))!important;
+  align-items:stretch!important;
+}
+
+#ten-result-modal .ten-result-again-btn,
+#ten-result-modal .ten-result-close-btn{
+  width:100%!important;
+  min-width:0!important;
+  height:46px!important;
+  min-height:46px!important;
+  margin:0!important;
+  padding:7px 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:10px!important;
+  font-size:11px!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+  font-family:"Noto Serif JP",serif!important;
+}
+
+#ten-result-modal .ten-result-again-btn{
+  gap:4px!important;
+}
+
+#ten-result-modal .ten-result-again-btn .btn-gacha-gem-icon{
+  width:14px!important;
+  height:14px!important;
+  flex:0 0 14px!important;
+}
+
+
+/* ============================================================
+   TEN GACHA RESULT v91 — button order / retry button 2 lines
+   ============================================================ */
+
+/* 左: 戻る / 右: もう一度10回引く */
+#ten-result-modal .ten-result-close-btn{
+  grid-column:1!important;
+  grid-row:1!important;
+}
+
+#ten-result-modal .ten-result-again-btn{
+  grid-column:2!important;
+  grid-row:1!important;
+  white-space:normal!important;
+  flex-direction:column!important;
+  gap:1px!important;
+  text-align:center!important;
+  line-height:1.2!important;
+}
+
+#ten-result-modal .ten-result-again-btn .btn-gacha-gem-icon{
+  width:14px!important;
+  height:14px!important;
+  flex:0 0 14px!important;
+  margin-right:2px!important;
+}
+
+#ten-result-modal .ten-result-again-btn .btn-gacha-costline{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
+  white-space:nowrap!important;
+}
+
+#ten-result-modal .ten-result-again-btn .btn-gacha-mainline{
+  display:block!important;
+  white-space:nowrap!important;
+}
+
+
+/* ============================================================
+   SPECIAL STAGE: 楽園 -ノア- / 9 PIECE PANEL v98
+   ============================================================ */
+.noah-piece-overlay{
+  position:fixed;
+  inset:0;
+  z-index:145000;
+  display:none;
+  align-items:stretch;
+  justify-content:center;
+  background:rgba(238,233,223,.94);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.noah-piece-overlay.active{display:flex}
+
+.noah-piece-screen{
+  position:relative;
+  width:100%;
+  max-width:430px;
+  height:100dvh;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  background:
+    radial-gradient(circle at 50% 12%,rgba(255,255,255,.98),rgba(246,241,231,.96) 44%,rgba(232,224,210,.96));
+  color:#59482e;
+  font-family:"Noto Serif JP",serif;
+}
+.noah-piece-head{
+  flex:0 0 auto;
+  padding:max(18px,env(safe-area-inset-top)) 18px 10px;
+  display:grid;
+  grid-template-columns:64px 1fr 64px;
+  align-items:center;
+  border-bottom:1px solid rgba(125,95,46,.16);
+  background:rgba(255,253,247,.76);
+}
+.noah-piece-back{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#8b6d3b;
+  font:500 12px/1 "Noto Serif JP",serif;
+  text-align:left;
+  padding:8px 0;
+}
+.noah-piece-title{
+  text-align:center;
+}
+.noah-piece-title small{
+  display:block;
+  margin-bottom:3px;
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.25em;
+  color:#b39357;
+}
+.noah-piece-title strong{
+  display:block;
+  font-size:18px;
+  font-weight:500;
+  letter-spacing:.12em;
+  color:#5e4827;
+}
+.noah-piece-ticket{
+  text-align:right;
+  font-size:9px;
+  line-height:1.3;
+  color:#8b744d;
+  white-space:nowrap;
+}
+.noah-piece-ticket b{
+  margin-left:3px;
+  font-family:"Cinzel",serif;
+  font-size:13px;
+  color:#6e5125;
+}
+
+.noah-piece-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:14px 18px 18px;
+}
+.noah-piece-lead{
+  margin-bottom:10px;
+  text-align:center;
+}
+.noah-piece-lead .en{
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.25em;
+  color:#b29762;
+}
+.noah-piece-lead h2{
+  margin-top:3px;
+  font-size:15px;
+  font-weight:500;
+  letter-spacing:.12em;
+  color:#604b2c;
+}
+.noah-piece-lead p{
+  margin-top:5px;
+  font-size:9.5px;
+  line-height:1.55;
+  color:rgba(91,72,44,.62);
+}
+
+.noah-piece-progress{
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:7px;
+  margin-bottom:10px;
+}
+.noah-piece-progress strong{
+  font-family:"Cinzel",serif;
+  font-size:24px;
+  font-weight:500;
+  color:#6e542a;
+}
+.noah-piece-progress span{
+  font-family:"Cinzel",serif;
+  font-size:11px;
+  color:#aa8c57;
+}
+.noah-piece-progress-label{
+  font-size:9px!important;
+  font-family:"Noto Serif JP",serif!important;
+  letter-spacing:.08em;
+}
+
+.noah-puzzle-frame{
+  position:relative;
+  width:min(100%,340px);
+  aspect-ratio:1 / 1;
+  margin:0 auto;
+  padding:5px;
+  border:1px solid rgba(154,119,59,.34);
+  background:rgba(255,255,255,.56);
+  box-shadow:
+    0 10px 30px rgba(80,61,29,.12),
+    inset 0 0 0 1px rgba(255,255,255,.8);
+}
+.noah-puzzle-grid{
+  width:100%;
+  height:100%;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  gap:2px;
+  overflow:hidden;
+  background:rgba(85,67,99,.16);
+}
+.noah-puzzle-piece{
+  position:relative;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  background-image:url("../images/nore.webp");
+  background-repeat:no-repeat;
+  background-size:300% 300%;
+  opacity:1;
+  transition:opacity .35s ease,filter .35s ease,transform .35s ease;
+}
+.noah-puzzle-piece.locked{
+  background-image:
+    linear-gradient(145deg,rgba(231,227,235,.98),rgba(198,193,211,.98));
+}
+.noah-puzzle-piece.locked::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,.52),transparent 33%),
+    linear-gradient(135deg,transparent 49%,rgba(118,100,140,.10) 50%,transparent 51%);
+}
+.noah-puzzle-piece.locked::after{
+  content:"✦";
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  color:rgba(105,87,127,.30);
+  font-family:"Cinzel",serif;
+  font-size:16px;
+}
+.noah-puzzle-piece.open{
+  animation:noahPieceOpen .55s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes noahPieceOpen{
+  0%{opacity:0;filter:brightness(2.2);transform:scale(.92)}
+  100%{opacity:1;filter:brightness(1);transform:scale(1)}
+}
+
+.noah-piece-note{
+  margin:10px auto 0;
+  max-width:340px;
+  text-align:center;
+  font-size:9px;
+  line-height:1.55;
+  color:rgba(89,70,42,.58);
+}
+.noah-piece-actions{
+  flex:0 0 auto;
+  padding:10px 18px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid rgba(125,95,46,.15);
+  background:rgba(255,253,247,.92);
+}
+.noah-piece-challenge{
+  width:100%;
+  min-height:54px;
+  border:1px solid rgba(170,128,49,.62);
+  border-radius:12px;
+  background:linear-gradient(180deg,#c29a4b,#9c742b);
+  color:#fffdf7;
+  box-shadow:0 6px 18px rgba(105,74,24,.16);
+  font-family:"Noto Serif JP",serif;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.05em;
+  text-shadow:0 1px 2px rgba(63,42,9,.45);
+}
+.noah-piece-challenge small{
+  display:block;
+  margin-bottom:2px;
+  font-size:8px;
+  font-weight:400;
+  letter-spacing:.10em;
+  opacity:.82;
+}
+.noah-piece-challenge:disabled{
+  background:#b9ad96;
+  border-color:#c7bda9;
+  color:rgba(255,255,255,.72);
+  box-shadow:none;
+  text-shadow:none;
+}
+.noah-piece-complete{
+  display:none;
+  margin-top:8px;
+  text-align:center;
+  font-size:10px;
+  letter-spacing:.08em;
+  color:#786032;
+}
+.noah-piece-complete.show{display:block}
+
+@media(max-height:700px){
+  .noah-piece-body{padding-top:9px}
+  .noah-piece-lead p{display:none}
+  .noah-piece-progress{margin-bottom:6px}
+  .noah-puzzle-frame{width:min(100%,300px)}
+  .noah-piece-actions{padding-top:7px}
+  .noah-piece-challenge{min-height:46px}
+}
+
+
+/* ============================================================
+   Noah special stage card watermark v100
+   ============================================================ */
+.noah-stage-entry-card{
+  position:relative;
+  overflow:hidden;
+}
+.noah-stage-entry-card::before{
+  content:"";
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  width:92px;
+  height:92px;
+  background-image:url("../images/noah_stage_watermark.webp");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  opacity:.18;
+  pointer-events:none;
+  filter:grayscale(.08) brightness(1.05) saturate(.9);
+}
+.noah-stage-entry-card > *{
+  position:relative;
+  z-index:1;
+}
+.noah-stage-entry-card .special-ticket-balance{
+  right:14px;
+  top:10px;
+}
+@media (max-width:390px){
+  .noah-stage-entry-card::before{
+    width:84px;
+    height:84px;
+    right:8px;
+    opacity:.16;
+  }
+}
+
+
+/* ============================================================
+   Noah stage watermark tune v101
+   ・透かしを大きく、カード高さに合わせる
+   ・所持枚数を右上へ
+   ・説明文は非表示（HTML側でも削除）
+   ============================================================ */
+.noah-stage-entry-card{
+  min-height:108px;
+}
+
+.noah-stage-entry-card::before{
+  right:2px;
+  top:50%;
+  transform:translateY(-50%);
+  width:122px;
+  height:122px;
+  opacity:.22;
+  background-position:center right;
+  background-size:contain;
+}
+
+.noah-stage-entry-card .ninmu-chapter-title{
+  padding-right:108px;
+}
+
+.noah-stage-entry-card .special-ticket-balance{
+  right:12px;
+  top:9px;
+  bottom:auto;
+  z-index:2;
+  text-align:right;
+  color:rgba(111,85,43,.76);
+  text-shadow:0 1px 0 rgba(255,255,255,.86);
+}
+
+.noah-stage-entry-card .special-ticket-balance b{
+  color:#80602c;
+}
+
+.noah-stage-entry-card .special-ticket-cost{
+  display:none!important;
+}
+
+@media (max-width:390px){
+  .noah-stage-entry-card{
+    min-height:102px;
+  }
+  .noah-stage-entry-card::before{
+    width:112px;
+    height:112px;
+    right:0;
+    opacity:.2;
+  }
+  .noah-stage-entry-card .ninmu-chapter-title{
+    padding-right:98px;
+  }
+}
+
+
+/* ============================================================
+   Noah stage watermark tune v102
+   ・所持枚数をさらに右へ
+   ・透かしを下まで埋めてカード内の空きをなくす
+   ============================================================ */
+.noah-stage-entry-card::before{
+  right:-2px!important;
+  top:50%!important;
+  width:126px!important;
+  height:100%!important;
+  min-height:100%!important;
+  transform:translateY(-50%)!important;
+  background-size:auto 100%!important;
+  background-position:right center!important;
+}
+
+.noah-stage-entry-card .special-ticket-balance{
+  right:6px!important;
+  top:8px!important;
+}
+
+@media (max-width:390px){
+  .noah-stage-entry-card::before{
+    right:-2px!important;
+    width:118px!important;
+    height:100%!important;
+    min-height:100%!important;
+    background-size:auto 100%!important;
+  }
+  .noah-stage-entry-card .special-ticket-balance{
+    right:5px!important;
+  }
+}
+
+
+/* ============================================================
+   Noah stage ticket count position v103
+   ・端末差を抑えるためカード右端基準 + clamp で横位置を調整
+   ・約8mmぶん右へ寄せた見た目
+   ============================================================ */
+.noah-stage-entry-card .special-ticket-balance{
+  right:clamp(-22px,-5.6vw,-16px)!important;
+  top:8px!important;
+  z-index:3!important;
+}
+
+/* 文字だけはカード外へ切れないよう、右側に余白を少し確保 */
+.noah-stage-entry-card{
+  padding-right:18px!important;
+}
+
+@media (max-width:390px){
+  .noah-stage-entry-card .special-ticket-balance{
+    right:clamp(-20px,-5.2vw,-15px)!important;
+  }
+}
+
+
+/* ============================================================
+   Noah piece button layout v104
+   ・ボタンをフッターではなくパズル下に配置
+   ・文言を2行に変更
+   ============================================================ */
+.noah-piece-body{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.noah-piece-note{
+  margin:10px auto 12px;
+}
+.noah-piece-actions{
+  width:min(100%,340px);
+  margin:0 auto 0;
+  padding:0;
+  border-top:0;
+  background:transparent;
+}
+.noah-piece-challenge{
+  min-height:72px;
+  padding:10px 12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  text-align:center;
+}
+.noah-piece-challenge-main{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.45;
+  letter-spacing:.05em;
+}
+.noah-piece-challenge-sub{
+  display:block;
+  font-size:10px;
+  font-weight:400;
+  line-height:1.35;
+  letter-spacing:.04em;
+  opacity:.92;
+}
+.noah-piece-complete{
+  margin-top:8px;
+}
+@media(max-height:700px){
+  .noah-piece-actions{
+    width:min(100%,300px);
+  }
+  .noah-piece-challenge{
+    min-height:66px;
+    padding:8px 10px;
+  }
+  .noah-piece-challenge-main{
+    font-size:12px;
+  }
+  .noah-piece-challenge-sub{
+    font-size:9px;
+  }
+}
+
+
+/* ============================================================
+   Noah ticket count under challenge button v105
+   ============================================================ */
+.noah-piece-ticket-status{
+  margin-top:7px;
+  text-align:center;
+  font-family:"Noto Serif JP",serif;
+  font-size:10px;
+  line-height:1.4;
+  letter-spacing:.04em;
+  color:rgba(93,72,42,.66);
+}
+.noah-piece-ticket-status b{
+  margin:0 2px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:11px;
+  font-weight:600;
+  color:#70552c;
+}
+
+
+/* ============================================================
+   Noah 9-piece complete popup v108
+   ============================================================ */
+.noah-complete-popup{
+  position:fixed;
+  inset:0;
+  z-index:190000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  font-family:"Noto Serif JP",serif;
+}
+.noah-complete-popup.show{display:flex}
+.noah-complete-popup-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(239,235,226,.86);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.noah-complete-popup-card{
+  position:relative;
+  z-index:1;
+  width:min(86vw,340px);
+  padding:16px 16px 14px;
+  border:1px solid rgba(153,117,57,.34);
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 50% 22%,rgba(255,255,255,.99),rgba(249,245,236,.97) 54%,rgba(236,228,214,.96));
+  box-shadow:
+    0 18px 45px rgba(77,58,28,.20),
+    inset 0 0 0 1px rgba(255,255,255,.8);
+  text-align:center;
+  color:#5b472d;
+  animation:noahCompletePopupIn .5s cubic-bezier(.16,.84,.25,1) both;
+}
+.noah-complete-popup-kicker{
+  font-family:"Cinzel",serif;
+  font-size:8px;
+  letter-spacing:.28em;
+  color:#a5854d;
+}
+.noah-complete-popup-image-wrap{
+  position:relative;
+  width:156px;
+  height:156px;
+  margin:11px auto 10px;
+  overflow:hidden;
+  border:1px solid rgba(151,116,58,.20);
+  border-radius:12px;
+  background:rgba(255,255,255,.58);
+  box-shadow:0 8px 20px rgba(86,62,28,.12);
+}
+.noah-complete-popup-image-wrap::before{
+  content:"";
+  position:absolute;
+  inset:-32%;
+  z-index:0;
+  background:repeating-conic-gradient(
+    from 0deg,
+    rgba(205,164,80,.12) 0deg 6deg,
+    transparent 6deg 18deg
+  );
+  animation:noahCompleteGlowRotate 7s linear infinite;
+}
+.noah-complete-popup-image{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.noah-complete-popup-title{
+  margin-top:4px;
+  font-size:15px;
+  font-weight:600;
+  line-height:1.7;
+  letter-spacing:.04em;
+  color:#4f3c24;
+}
+.noah-complete-popup-close{
+  width:100%;
+  min-height:42px;
+  margin-top:13px;
+  border:1px solid rgba(160,120,52,.52);
+  border-radius:10px;
+  background:linear-gradient(180deg,#b98d3d,#8e6625);
+  color:#fffdf8;
+  font-family:"Noto Serif JP",serif;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.08em;
+}
+@keyframes noahCompletePopupIn{
+  0%{opacity:0;transform:translateY(12px) scale(.94);filter:brightness(1.35)}
+  65%{opacity:1;transform:translateY(-2px) scale(1.015)}
+  100%{opacity:1;transform:translateY(0) scale(1);filter:brightness(1)}
+}
+@keyframes noahCompleteGlowRotate{
+  to{transform:rotate(360deg)}
+}
+
+
+/* ============================================================
+   Noah complete popup v109
+   パネル画像背面の放射エフェクトを削除
+   ============================================================ */
+.noah-complete-popup-image-wrap::before{
+  content:none!important;
+  display:none!important;
+  animation:none!important;
 }

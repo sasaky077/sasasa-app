@@ -1321,6 +1321,78 @@ skills: [
     ]
   }
 
+,
+  // ── id:52 ノア（理想郷 -ノア- 9欠片完成報酬）
+  { id: 52, name: 'ノア', rarity: 'sr',
+    element: 'logos',
+    role: '時止め・追尾射撃',
+    moveType: 'cross_1',
+    costMax: 15,
+    costStart: 6,
+    costRegen: 3,
+    shinkiMax: 5,
+    shinkiStart: 0,
+    shinkiRegen: 1,
+    stats: { HP: 650, ATK: 305 },
+    img: 'images/chara_52_cut.webp',
+    cutImg: 'images/chara_52_cutin.webp',
+    ultImg: 'images/chara_52_cutin.webp',
+    upImg: 'images/chara_52_panel.webp',
+    battleImg: 'images/chara_52.webp',
+    battleUpImg: 'images/chara_52_panel.webp',
+    battleBackImg: 'images/chara_52_battle_back.webp',
+    panelImg: 'images/chara_52_panel.webp',
+    favScale: 0.78, favOffsetY: -24,
+    uiScale: {panel: 1.0,battleBack: 0.92,battleUp: 1.0},
+    combo: {
+      range: 'combo_line_all',
+      skill: {
+        id: 'combo',
+        name: '理想の残光',
+        type: 'attack',
+        multiplier: 0.90,
+        range: 'front_all',
+        effects: [],
+        hitStyle: 'multi',
+        desc: '同列の味方スキルに反応し、前方へ灰白色の追尾光を放つ。'
+      }
+    },
+    skills: [
+      {
+        id: 's1',
+        name: '灰白の星路',
+        linkCost: 3,
+        isUltimate: false,
+        hit: 100,
+        criticalRate: 0.15,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 1.9,
+        range: 'front_all',
+        effects: [],
+        hitStyle: 'multi',
+        desc: '中心光条と追尾する灰白の波動弾で前方の敵を攻撃する。'
+      },
+      {
+        id: 'ult',
+        name: '理想郷の静止',
+        linkCost: 5,
+        isUltimate: true,
+        hit: 100,
+        criticalRate: 0.10,
+        criticalDamageRate: 1.5,
+        type: 'attack',
+        multiplier: 4.0,
+        range: 'front_all',
+        effects: [
+          { type: 'stun', target: 'enemy', hit: 100, duration: 1 }
+        ],
+        hitStyle: 'multi',
+        desc: '盤面の敵弾を消し去り、敵全体の移動を停止。8拍子×2周の16連落雷をランダムな敵へ叩き込み、落雷を受けた敵を終了後1.5秒間スタンさせる。'
+      }
+    ]
+  }
+
 
   ];
 function getCharaById(id) {

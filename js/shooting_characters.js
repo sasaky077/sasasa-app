@@ -27,6 +27,7 @@
     WOLF: 18,
     TESTCHAN: 50,
     GOJO: 51,
+    NOAH: 52,
   });
 
   // ============================================================
@@ -58,6 +59,7 @@
     18: 'sr',  // ウルフ
     50: 'sr',  // テストちゃん
     51: 'sr',  // 五条 悟
+    52: 'sr',  // ノア
   });
 
   // R はSRに対して基本性能(HP/ATK)を20%落とす。
@@ -154,7 +156,7 @@
       image: 'images/chara_08_battle_back.webp',
       panelImage: 'images/chara_08_panel.webp',
       cutinImage: 'images/chara_08_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.55, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 1.45, battleUp: 1.0 },
     },
     9: {
       id: 9, name: 'パトラ',
@@ -263,6 +265,15 @@
       panelImage: 'images/chara_51_panel.webp',
       cutinImage: 'images/chara_51_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
+    },
+    52: {
+      id: 52, name: 'ノア',
+      element: 'logos',
+      hp: 650, atk: 305,
+      image: 'images/chara_52_battle_back.webp',
+      panelImage: 'images/chara_52_panel.webp',
+      cutinImage: 'images/chara_52_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.55, battleUp: 1.0 },
     },
   });
 
@@ -836,6 +847,52 @@
     ultFieldDurationMs: 10000,
     ultFieldAtkMultiplier: 1.5,
     ultFieldRadius: 112,
+  });
+
+
+  // ============================================================
+  // ノア：灰白レーザー + 2WAY追尾 / 5秒時止め50連撃
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.NOAH] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.NOAH,
+    effectKey: 'noah',
+    label: 'LASER / HOMING / TIME STOP',
+    description: '中心へ細い灰白レーザーを照射し、その周囲から2発の灰白波動弾を放つトップクラスの複合射撃型。ULTは盤面の弾幕を消去し、敵の動きを止めながら無数の灰白波動弾を降り注がせる。',
+    ultDescription: '発動した瞬間に盤面の敵弾をすべて消去し、盤面上の敵全体の移動を停止。8拍子を間を置かず2周、合計16発の落雷をランダムな敵へ叩き込む。各落雷で画面が揺れ、落雷を受けた敵は終了後1.5秒間スタンする。',
+    ultName: '理想郷の静止',
+    ultType: 'noah_time_homing',
+    moveSpeed: 420,
+
+    // 中心レーザー：イグニスより1Hit威力を抑えた細身レーザー
+    shotType: 'noah_hybrid',
+    shotStyle: 'noah',
+    fireRate: 110,
+    laserWidth: 10,
+    laserHitWidth: 38,
+    laserDamageAtkRate: 0.065,
+    laserVisualHoldMs: 145,
+
+    // 周囲2発：ウルフより1Hit威力を抑えた波動ホーミング弾
+    shotCount: 2,
+    shotSpacing: 28,
+    shotPowerRate: 0.070,
+    bulletSpeed: 860,
+    wolfCurveDurationMs: 360,
+    wolfRetreatDepth: 52,
+    wolfOuterOffset: 42,
+    wolfConvergeLead: 44,
+
+    burstNeed: 34,
+    ultGainPerHit: 0.36,
+    coreTop: '38%',
+    shotOffsetY: 38,
+
+    // ULT：16拍子で16連続落雷。総倍率はATK×5.6相当。
+    noahUltHitCount: 16,
+    noahUltHitAtkMultiplier: 0.35,
+    noahUltBeatMs: 540,
+    noahUltParalyzeMs: 1500,
   });
 
 

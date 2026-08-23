@@ -485,35 +485,26 @@
       name: 'サキエル',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
+      timeLimitSeconds: 60,
       introImage: 'images/enemy_sakiel_battle.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_04]),
-      bossGaugeHp: 6000,
-      bossGauges: 2,
-      bossTotalHp: 10000,
-      chapter43Boss: Object.freeze({
-        waveHp: Object.freeze([4000, 6000]),
-        ways: 10,
-        spreadRad: 1.34,
-        slowBeats: 4,
-        slowBeatMs: 520,
-        fastBeats: 8,
-        fastBeatMs: 235,
-        cyclePauseMs: 520,
-        wave1SealRatio: 0.50,
-        dodgeSeconds: 20,
-        warningTelegraphMs: 700,
-        warningEveryMsWave1: 6500,
-        warningEveryMsWave2: 5600,
-        warningBouncesWave1: 2,
-        warningBouncesWave2: 3,
-        wave2CountdownRatio: 0.50,
-        collapseSeconds: 45,
-        collapseMinWidthRatio: 0.20,
+      chapter4Curtain: Object.freeze({
+        intervalMs: 570,
+        speed: 132,
+        gap: 32,
+        rowGapY: 21,
+        columnsTop: 10,
+        columnsBottom: 9,
       }),
+      finalItem: Object.freeze({ timeoutSeconds: 10 }),
       eriOnly: true,
+      survivalBoss: true,
+      dangerEveryMs: 10000,
+      dangerWays: 2,
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: '全2WAVE　サキエルを撃破せよ',
+        type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,
+        targetSeconds: 60,
+        text: '60秒生存後、10秒以内に出現アイテムを取得せよ',
       }),
       playable: true,
     }),
@@ -655,7 +646,7 @@
 
 
     // ============================================================
-    // SPECIAL STAGE - 楽園 -ノア-
+    // SPECIAL STAGE - 理想郷 -ノア-
     // パフォーマンス検証用のストレステストステージ。
     // 見た目は極限まで簡素化(装飾なし)。WAVE1から高密度、WAVE3でさらに濃く。
     // 1発被弾での即死はなし(4発被弾で撃破される想定のダメージ値)。
@@ -665,17 +656,16 @@
       chapter: 0,
       stageNo: 3,
       eventId: 'bullet_hell_test',
-      eventTitle: '楽園 -ノア-',
-      // Canvas性能比較中は何度でも再挑戦できるよう、ノアだけ消費0。
-      // 検証終了後は1へ戻す。
-      specialTicketCost: 0,
+      eventTitle: '理想郷 -ノア-',
+      // 戦闘開始時にSPECIAL STAGE TICKETを1枚消費。
+      specialTicketCost: 1,
       difficultyLabel: 'STRESS TEST',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: '楽園 -ノア-を耐えきれ',
+        text: '理想郷 -ノア-を耐えきれ',
       }),
       playable: true,
     }),

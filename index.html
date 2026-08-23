@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260823-ch04-3-seal-countdown-v78';
+    var FALLBACK_BUILD = '20260824-noah-ult-phasefix-v119';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260823-ch04-3-seal-countdown-v78">
+  <meta name="sasaphia-build" content="20260824-noah-ult-phasefix-v119">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260823-ch04-3-seal-countdown-v78"
+        href="css/style.css?v=20260824-noah-ult-phasefix-v119"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260823-ch04-3-seal-countdown-v78"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260824-noah-ult-phasefix-v119"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260823-ch04-3-seal-countdown-v78">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260824-noah-ult-phasefix-v119">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260823-ch04-3-seal-countdown-v78">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260824-noah-ult-phasefix-v119">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260823-ch04-3-seal-countdown-v78';
+  var BUILD = '20260824-noah-ult-phasefix-v119';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -398,13 +398,6 @@
 }
 </style>
 
-<style id="ninmu-story-difficulty-size-v1">
-#screen-ninmu .ninmu-story-difficulty{
-  font-size:.78em;
-  font-weight:inherit;
-  letter-spacing:.04em;
-}
-</style>
 
 <style id="daily-attempt-style-v195">
   #ninmu-panel-daily .ninmu-daily-attempts{
@@ -610,11 +603,8 @@
       <button class="ninmu-cat-item" id="ninmu-cat-special" onclick="switchNinmuCat('special')">
         <span class="ninmu-cat-jp">特別巡行</span><span class="ninmu-cat-en">SPECIAL</span>
       </button>
-      <button class="ninmu-cat-item" id="ninmu-cat-story-beginner" onclick="switchNinmuCat('story-beginner')">
-        <span class="ninmu-cat-jp">ストーリー<br><small class="ninmu-story-difficulty">（NORMAL）</small></span><span class="ninmu-cat-en">STORY</span>
-      </button>
       <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
-        <span class="ninmu-cat-jp">ストーリー<br><small class="ninmu-story-difficulty">（HARD）</small></span><span class="ninmu-cat-en">STORY</span>
+        <span class="ninmu-cat-jp">ストーリー</span><span class="ninmu-cat-en">STORY</span>
       </button>
     </div>
 
@@ -643,12 +633,6 @@
           </button>
         </div>
 
-        <button class="ninmu-test-btn ninmu-test-btn-test-entry roguelite-disabled-entry" onclick="showRoguelitePreparing(event)" aria-label="テストステージ 準備中">
-          <span class="ninmu-stage-mark">✥</span>
-          <span class="ninmu-stage-copy">
-            <span class="ninmu-test-btn-title">テスト</span>
-          </span>
-        </button>
       </div>
 
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
@@ -658,11 +642,10 @@
             <div class="ninmu-chapter-title">無貌の天使</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/enemy_faceless_panel.webp" alt=""></div>
           </div>
-          <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card" onclick="openShootingEvent({stageId:'shooting_event_bullet_hell_test'})" role="button" tabindex="0" aria-label="SPECIAL STAGE 楽園 -ノア-">
+          <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece role="button" tabindex="0" aria-label="SPECIAL STAGE 理想郷 -ノア-">
             <div class="ninmu-chapter-label">SPECIAL STAGE</div>
-            <div class="ninmu-chapter-title">楽園 -ノア-</div>
-            <div class="special-ticket-cost">CANVAS TEST・チケット消費なし</div>
-            <div class="special-ticket-balance">所持 <b id="special-ticket-count">--</b> 枚</div>
+            <div class="ninmu-chapter-title">理想郷 -ノア-</div>
+                        <div class="special-ticket-balance">所持枚数 <b id="special-ticket-count">--</b>枚</div>
           </div>
         </div>
       </div>
@@ -686,11 +669,6 @@
         </div>
       </div>
 
-      <div id="ninmu-panel-story-beginner" class="ninmu-panel" style="display:none">
-        <div class="ninmu-chapter-list" id="story-beginner-chapter-list">
-          <!-- 初級ストーリー：通常とはstageId/クリア状況を完全分離 -->
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -1339,7 +1317,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/home_banners.js?v=20260824-noah-ult-phasefix-v119"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2124,9 +2102,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/resonance_system.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/resonance_ui.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/shooting_resonance.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/resonance_system.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/resonance_ui.js?v=20260824-noah-ult-phasefix-v119"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -4508,7 +4486,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
 
   // 巡行カテゴリ切り替え
   function switchNinmuCat(cat) {
-    ['daily','special','story','story-beginner'].forEach(function(c){
+    ['daily','special','story'].forEach(function(c){
       var btn   = document.getElementById('ninmu-cat-' + c);
       var panel = document.getElementById('ninmu-panel-' + c);
       var active = (c === cat);
@@ -4520,9 +4498,6 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     // STORYタブを開くたびに現在の解放状態で再描画する。
     if (cat === 'story' && typeof window.renderStoryChapterList === 'function') {
       window.renderStoryChapterList('normal');
-    }
-    if (cat === 'story-beginner' && typeof window.renderStoryChapterList === 'function') {
-      window.renderStoryChapterList('beginner');
     }
     if (cat === 'special' && typeof window.refreshSpecialTicketUI === 'function') {
       void window.refreshSpecialTicketUI();
@@ -4708,7 +4683,9 @@ function setTenResultFooterVisible(visible){
   var footer = document.querySelector('#ten-result-modal .ten-result-footer');
   if(!footer) return;
 
-  footer.style.display = visible ? '' : 'none';
+  // CSS側に display:grid!important があるため、通常の inline display:none では隠せない。
+  // JS側も important 指定で明示的に上書きする。
+  footer.style.setProperty('display', visible ? 'grid' : 'none', 'important');
 }
   function setHomeBtnVisible(visible){ /* 削除済み */ }
   function setReloadBtnVisible(visible){ /* 削除済み */ }
@@ -6083,6 +6060,51 @@ function getTenFrameImage(rarity){
   return '';
 }
 
+function waitForTenResultCardsReady(results, callback){
+  var startedAt = performance.now();
+
+  function isReady(){
+    if(!Array.isArray(results) || results.length === 0) return true;
+
+    for(var i = 0; i < results.length; i++){
+      var card = document.getElementById('ten-card-' + i);
+      if(!card) return false;
+      if(card.classList.contains('ten-card-hidden')) return false;
+
+      var img = card.querySelector('.ten-card-img');
+      if(img && (!img.complete || img.naturalWidth <= 0)) return false;
+    }
+    return true;
+  }
+
+  function check(){
+    if(isReady()){
+      // DOM描画が1フレーム完了してから少しだけ余韻を置いてボタンを出す。
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          setTimeout(function(){
+            setTenResultFooterVisible(true);
+            if(typeof callback === 'function') callback();
+          }, 180);
+        });
+      });
+      return;
+    }
+
+    // 画像エラー等で永久に出ないことだけ防止。通常はここまで来ない。
+    if(performance.now() - startedAt > 5000){
+      console.warn('[Gacha] ten-result footer readiness timeout; showing footer as fallback');
+      setTenResultFooterVisible(true);
+      if(typeof callback === 'function') callback();
+      return;
+    }
+
+    setTimeout(check, 60);
+  }
+
+  check();
+}
+
 function showTenResult(results){
 
   // DOMを作り直さず開封済みカードをそのまま流用する
@@ -6109,10 +6131,12 @@ function showTenResult(results){
   });
 
   document.getElementById('ten-result-modal').classList.add('active');
-setNavVisible(false);
+  setNavVisible(false);
 
-// 10枚すべて開封後にだけ下部ボタンを出す
-setTenResultFooterVisible(true);
+  // showTenResult到達時点でも、最後のカード画像の描画が完了するまではボタンを隠す。
+  // 10枚すべてが「開封済み + 画像描画済み」になった後だけ表示する。
+  setTenResultFooterVisible(false);
+  waitForTenResultCardsReady(results);
 
   }
 
@@ -6740,7 +6764,9 @@ setTenResultFooterVisible(true);
       if(!chara || chara.id == null) return false;
 
       var ownedList = getOwnedInstancesByCharaId(chara.id);
-      if(ownedList.length < 2) return false;
+      var isUniqueNoah = Number(chara.id) === 52;
+      if(!isUniqueNoah && ownedList.length < 2) return false;
+      if(isUniqueNoah && ownedList.length < 1) return false;
 
       var representative = getRepresentativeOwnedInstance(chara.id);
       if(!representative) return false;
@@ -10152,43 +10178,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/asset_loader.js?v=20260824-noah-ult-phasefix-v119"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/login_bonus.js?v=20260824-noah-ult-phasefix-v119"></script>
 
-<script src="js/story_engine.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/stories/chapter01.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/story_engine.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/stories/chapter01.js?v=20260824-noah-ult-phasefix-v119"></script>
 
-<script src="js/battle_range.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/characters.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/enemies.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/battle.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/battle_swipe.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/battle_range.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/characters.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/enemies.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/battle.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/battle_swipe.js?v=20260824-noah-ult-phasefix-v119"></script>
 
-<script src="js/stages.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/stage_select.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/party_select.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/enemy_intro.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/stages.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/stage_select.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/party_select.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/enemy_intro.js?v=20260824-noah-ult-phasefix-v119"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260821-scoreattack-divider-remove-v224">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260824-noah-ult-phasefix-v119">
 
-<script src="js/battle_range_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/characters_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/remnant_blessings.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/combo_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/cards.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/battle_32.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/battle_32_ui.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/battle_range_32.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/characters_32.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/remnant_blessings.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/combo_32.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/cards.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/battle_32.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/battle_32_ui.js?v=20260824-noah-ult-phasefix-v119"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/roguelite_run.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/roguelite_reward.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/shinju.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/roguelite_controller.js?v=20260821-scoreattack-divider-remove-v224"></script>
-<script src="js/roguelite_overseer_run.js?v=20260821-scoreattack-divider-remove-v224"></script>
+<script src="js/roguelite_options.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/roguelite_run.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/roguelite_reward.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/shinju.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/roguelite_controller.js?v=20260824-noah-ult-phasefix-v119"></script>
+<script src="js/roguelite_overseer_run.js?v=20260824-noah-ult-phasefix-v119"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -10634,10 +10660,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260823-ch04-3-seal-countdown-v78"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260824-noah-ult-phasefix-v119"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260823-ch04-3-seal-countdown-v78"></script>
+<script src="js/raid_event.js?v=20260824-noah-ult-phasefix-v119"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -10658,6 +10684,392 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260823-ch04-3-seal-countdown-v78"></script>
+<script src="js/score_attack.js?v=20260824-noah-ult-phasefix-v119"></script>
+
+<script id="ten-gacha-retry-two-line-v97">
+(function(){
+  function applyTenGachaRetryTwoLine(){
+    var btn = document.querySelector('#ten-result-modal .ten-result-again-btn');
+    if(!btn || btn.dataset.v91Applied === '1') return;
+
+    var icon = btn.querySelector('img, .btn-gacha-gem-icon');
+    var text = (btn.textContent || '').replace(/\s+/g,' ').trim();
+    if (!/もう一度10回引く/.test(text)) return;
+
+    btn.dataset.v91Applied = '1';
+    btn.textContent = '';
+
+    var costLine = document.createElement('span');
+    costLine.className = 'btn-gacha-costline';
+
+    if (icon) {
+      var clonedIcon = icon.cloneNode(true);
+      clonedIcon.classList.add('btn-gacha-gem-icon');
+      costLine.appendChild(clonedIcon);
+    } else {
+      var diamond = document.createElement('span');
+      diamond.textContent = '♦';
+      costLine.appendChild(diamond);
+    }
+
+    var costText = document.createElement('span');
+    costText.textContent = '50消費で';
+    costLine.appendChild(costText);
+
+    var mainLine = document.createElement('span');
+    mainLine.className = 'btn-gacha-mainline';
+    mainLine.textContent = 'もう一度10回引く';
+
+    btn.appendChild(costLine);
+    btn.appendChild(mainLine);
+  }
+
+  document.addEventListener('click', function(){
+    setTimeout(applyTenGachaRetryTwoLine, 0);
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', function(){
+    // document.dispatchEvent(new Event('click')) は使わない。
+    // Document は closest() を持たないため、他のclick listenerで例外になる。
+    setTimeout(applyTenGachaRetryTwoLine, 500);
+  });
+})();
+</script>
+<script id="noah-piece-inline-v99">
+// noah_piece.js
+(function(){
+  'use strict';
+
+  const PIECE_KEY = 'sasaphia_noah_piece_count_v1';
+  const MAX_PIECES = 9;
+  const STAGE_ID = 'shooting_event_bullet_hell_test';
+
+  function clampPieceCount(value){
+    const n = Math.floor(Number(value || 0));
+    return Math.max(0, Math.min(MAX_PIECES, Number.isFinite(n) ? n : 0));
+  }
+
+  function getNoahPieceCount(){
+    try {
+      return clampPieceCount(localStorage.getItem(PIECE_KEY));
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function saveNoahPieceCount(value){
+    const count = clampPieceCount(value);
+    try { localStorage.setItem(PIECE_KEY, String(count)); } catch (_) {}
+    renderNoahPiecePanel();
+    return count;
+  }
+
+  function getSpecialTicketCount(){
+    const profileValue = Number(window.userProfile && window.userProfile.special_stage_ticket);
+    if (Number.isFinite(profileValue)) return Math.max(0, Math.floor(profileValue));
+
+    const el = document.getElementById('special-ticket-count');
+    const domValue = Number(el && el.textContent);
+    return Number.isFinite(domValue) ? Math.max(0, Math.floor(domValue)) : 0;
+  }
+
+  function buildPanel(){
+    if (document.getElementById('noah-piece-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'noah-piece-overlay';
+    overlay.className = 'noah-piece-overlay';
+    overlay.setAttribute('aria-hidden','true');
+
+    const pieceHtml = Array.from({length:9}, (_, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const x = col * 50;
+      const y = row * 50;
+      return '<div class="noah-puzzle-piece locked" data-noah-piece="' + (i + 1) + '" ' +
+        'style="background-position:' + x + '% ' + y + '%"></div>';
+    }).join('');
+
+    overlay.innerHTML =
+      '<section class="noah-piece-screen" role="dialog" aria-modal="true" aria-labelledby="noah-piece-title">' +
+        '<header class="noah-piece-head">' +
+          '<button type="button" class="noah-piece-back" onclick="closeNoahPiecePanel()">‹ 戻る</button>' +
+          '<div class="noah-piece-title">' +
+            '<small>SPECIAL STAGE</small>' +
+            '<strong id="noah-piece-title">理想郷 -ノア-</strong>' +
+          '</div>' +
+          '<div class="noah-piece-ticket">所持枚数 <b id="noah-piece-ticket-count">0</b>枚</div>' +
+        '</header>' +
+        '<div class="noah-piece-body">' +
+          '<div class="noah-piece-lead">' +
+            '<div class="en">FRAGMENTS OF PARADISE</div>' +
+            '<h2>理想郷を完成させる</h2>' +
+            '<p>ノアを打ち破り、欠片を集める。<br>9つの欠片が揃ったとき、ひとつの姿が完成する。</p>' +
+          '</div>' +
+          '<div class="noah-piece-progress">' +
+            '<span class="noah-piece-progress-label">完成状況</span>' +
+            '<strong id="noah-piece-progress-now">0</strong><span>/ 9</span>' +
+          '</div>' +
+          '<div class="noah-puzzle-frame">' +
+            '<div class="noah-puzzle-grid" id="noah-puzzle-grid">' + pieceHtml + '</div>' +
+          '</div>' +
+          '<div class="noah-piece-note">ステージクリアごとに、ノアの欠片を1つ獲得できます。</div>' +
+          '<div class="noah-piece-actions">' +
+            '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">' +
+              '<span class="noah-piece-challenge-main">理想郷 -ノア- に挑戦する</span>' +
+              '<span class="noah-piece-challenge-sub">（チケットを1枚消費）</span>' +
+            '</button>' +
+            '<div class="noah-piece-ticket-status">チケット所持枚数：<b id="noah-piece-ticket-status-count">0</b>枚</div>' +
+            '<div class="noah-piece-complete" id="noah-piece-complete">ノアの欠片がすべて揃いました。</div>' +
+          '</div>' +
+        '</div>' +
+      '</section>';
+
+    document.body.appendChild(overlay);
+  }
+
+  function renderNoahPiecePanel(){
+    buildPanel();
+    const count = getNoahPieceCount();
+    const ticket = getSpecialTicketCount();
+
+    const progress = document.getElementById('noah-piece-progress-now');
+    if (progress) progress.textContent = String(count);
+
+    const ticketEl = document.getElementById('noah-piece-ticket-count');
+    if (ticketEl) ticketEl.textContent = String(ticket);
+
+    document.querySelectorAll('[data-noah-piece]').forEach(function(el){
+      const pieceNo = Number(el.getAttribute('data-noah-piece') || 0);
+      const open = pieceNo <= count;
+      el.classList.toggle('locked', !open);
+      el.classList.toggle('open', open);
+    });
+
+    const button = document.getElementById('noah-piece-challenge');
+    if (button) {
+      button.disabled = false;
+      const sub = button.querySelector('.noah-piece-challenge-sub');
+      if (sub) sub.textContent = '（チケットを1枚消費）';
+    }
+
+    const ticketStatus = document.getElementById('noah-piece-ticket-status-count');
+    if (ticketStatus) ticketStatus.textContent = String(ticket);
+
+    const complete = document.getElementById('noah-piece-complete');
+    if (complete) complete.classList.toggle('show', count >= MAX_PIECES);
+  }
+
+  function openNoahPiecePanel(){
+    buildPanel();
+    if (typeof window.refreshSpecialTicketUI === 'function') {
+      try {
+        const p = window.refreshSpecialTicketUI();
+        if (p && typeof p.then === 'function') {
+          p.finally(renderNoahPiecePanel);
+        }
+      } catch (_) {}
+    }
+    renderNoahPiecePanel();
+
+    const overlay = document.getElementById('noah-piece-overlay');
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden','false');
+  }
+
+  function closeNoahPiecePanel(){
+    const overlay = document.getElementById('noah-piece-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden','true');
+  }
+
+  function challengeNoahSpecialStage(){
+    const ticket = getSpecialTicketCount();
+    if (ticket < 1) {
+      if (typeof window.showToast === 'function') window.showToast('チケットを所持していません');
+      else alert('チケットを所持していません');
+      return;
+    }
+
+    closeNoahPiecePanel();
+
+    // 現在のノア戦は既存シューティングステージへ接続する。
+    // チケット消費はシューティング側の「戦闘開始」処理で行う設計。
+    if (typeof window.openShootingEvent === 'function') {
+      window.openShootingEvent({ stageId: STAGE_ID });
+    } else {
+      console.error('[NoahPiece] openShootingEvent is not available');
+    }
+  }
+
+  // クリア報酬接続用API。今回はプレイアブル化までは行わない。
+  function addNoahPiece(amount){
+    const before = getNoahPieceCount();
+    return saveNoahPieceCount(before + Math.max(1, Math.floor(Number(amount || 1))));
+  }
+
+  window.getNoahPieceCount = getNoahPieceCount;
+  window.setNoahPieceCount = saveNoahPieceCount;
+  window.addNoahPiece = addNoahPiece;
+  window.renderNoahPiecePanel = renderNoahPiecePanel;
+  window.openNoahPiecePanel = openNoahPiecePanel;
+  window.closeNoahPiecePanel = closeNoahPiecePanel;
+  window.challengeNoahSpecialStage = challengeNoahSpecialStage;
+
+  function ensureNoahCompletePopup(){
+    var existing = document.getElementById('noah-complete-popup');
+    if (existing) return existing;
+
+    var popup = document.createElement('div');
+    popup.id = 'noah-complete-popup';
+    popup.className = 'noah-complete-popup';
+    popup.setAttribute('aria-hidden', 'true');
+    popup.innerHTML =
+      '<div class="noah-complete-popup-backdrop"></div>' +
+      '<section class="noah-complete-popup-card" role="dialog" aria-modal="true" aria-labelledby="noah-complete-popup-title">' +
+        '<div class="noah-complete-popup-kicker">CHARACTER UNLOCKED</div>' +
+        '<div class="noah-complete-popup-image-wrap">' +
+          '<img class="noah-complete-popup-image" src="images/chara_52_panel.webp" alt="ノア">' +
+        '</div>' +
+        '<div class="noah-complete-popup-title" id="noah-complete-popup-title">プレイキャラ：ノアを入手しました。</div>' +
+        '<button type="button" class="noah-complete-popup-close" onclick="closeNoahCompletePopup()">OK</button>' +
+      '</section>';
+
+    document.body.appendChild(popup);
+    return popup;
+  }
+
+  function showNoahCompletePopup(){
+    var popup = ensureNoahCompletePopup();
+    popup.classList.remove('show');
+    popup.setAttribute('aria-hidden', 'false');
+    void popup.offsetWidth;
+    popup.classList.add('show');
+  }
+
+  function closeNoahCompletePopup(){
+    var popup = document.getElementById('noah-complete-popup');
+    if (!popup) return;
+    popup.classList.remove('show');
+    popup.setAttribute('aria-hidden', 'true');
+  }
+
+  window.showNoahCompletePopup = showNoahCompletePopup;
+  window.closeNoahCompletePopup = closeNoahCompletePopup;
+  window.testNoahCompletePopup = showNoahCompletePopup;
+
+  async function grantNoahPlayable(){
+    const NOAH_ID = 52;
+
+    try {
+      if (typeof getRepresentativeOwnedInstance === 'function') {
+        const existing = getRepresentativeOwnedInstance(NOAH_ID);
+        if (existing) return existing;
+      }
+    } catch (_) {}
+
+    const chara = (typeof getCharaById === 'function') ? getCharaById(NOAH_ID) : null;
+    if (!chara) {
+      console.error('[NoahUnlock] character master id=52 not found');
+      return null;
+    }
+
+    const now = new Date();
+    const entry = (typeof createCharaSummonData === 'function')
+      ? createCharaSummonData(chara, now)
+      : {
+          id:NOAH_ID,
+          name:'ノア',
+          rarity:'sr',
+          element:'logos',
+          stats:{HP:650,ATK:305},
+          baseStats:{HP:650,ATK:305},
+          limitBreak:0,
+          characterLevel:1,
+          characterExp:0,
+          capturedAt:now.toISOString()
+        };
+
+    // 9欠片完成報酬は一度だけ所持BOXへ追加。
+    if (typeof box !== 'undefined' && Array.isArray(box)) {
+      const duplicate = box.some(function(x){ return x && Number(x.id) === NOAH_ID; });
+      if (!duplicate) box.push(entry);
+    }
+    if (typeof collected !== 'undefined' && collected) {
+      collected[NOAH_ID] = collected[NOAH_ID] || entry;
+    }
+
+    try {
+      if (typeof saveToDB === 'function' && !entry.db_id) {
+        await saveToDB(entry);
+      }
+    } catch (saveErr) {
+      console.error('[NoahUnlock] DB save failed:', saveErr);
+    }
+
+    try { if (typeof renderBox === 'function') renderBox(); } catch (_) {}
+    try { if (typeof updateMainUI === 'function') updateMainUI(); } catch (_) {}
+    try { if (typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice(); } catch (_) {}
+    try { if (typeof window.refreshShootingRoster === 'function') window.refreshShootingRoster(); } catch (_) {}
+
+    return entry;
+  }
+
+  window.grantNoahPlayable = grantNoahPlayable;
+
+  async function handleNoahStageResult(event){
+    const detail = event && event.detail ? event.detail : null;
+    if (!detail || detail.stageId !== STAGE_ID || !detail.win) return;
+
+    const before = getNoahPieceCount();
+    if (before >= MAX_PIECES) return;
+
+    const after = addNoahPiece(1);
+
+    if (after >= MAX_PIECES) {
+      await grantNoahPlayable();
+      showNoahCompletePopup();
+    } else if (after > before) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('ノアの欠片を1つ獲得しました');
+      }
+    }
+  }
+
+  function handleNoahEntryActivation(event){
+    var target = event && event.target;
+    if(!target || typeof target.closest !== 'function') return;
+    var entry = target.closest('[data-open-noah-piece]');
+    if(!entry) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openNoahPiecePanel();
+  }
+
+  document.addEventListener('click', handleNoahEntryActivation, true);
+  document.addEventListener('keydown', function(event){
+    if(event.key !== 'Enter' && event.key !== ' ') return;
+    handleNoahEntryActivation(event);
+  }, true);
+
+  window.addEventListener('pageshow', function(){
+    if (document.getElementById('noah-piece-overlay')) renderNoahPiecePanel();
+    if (getNoahPieceCount() >= MAX_PIECES) {
+      try { void grantNoahPlayable(); } catch (_) {}
+    }
+  });
+
+  // v109以前ですでに9/9になっているユーザーも、更新後に所持へ同期。
+  if (getNoahPieceCount() >= MAX_PIECES) {
+    setTimeout(function(){
+      try { void grantNoahPlayable(); } catch (_) {}
+    }, 500);
+  }
+
+  window.addEventListener('shooting-stage-result', handleNoahStageResult);
+})();
+
+</script>
 </body>
 </html>

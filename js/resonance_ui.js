@@ -178,6 +178,197 @@ function buildLimitBreakRecipeHTML(target){
 }
 
 
+
+function getLimitBreakCutImage(target){
+  if(!target) return '';
+  if(target.cutImg) return target.cutImg;
+  var idText = String(Number(target.id || 0)).padStart(2, '0');
+  return 'images/chara_' + idText + '_cut.webp';
+}
+
+function ensureLimitBreakPowerupEffect(){
+  var old = document.getElementById('limitbreak-powerup-effect');
+  if(old) return old;
+
+  var el = document.createElement('div');
+  el.id = 'limitbreak-powerup-effect';
+  el.className = 'lb-powerup-effect';
+  el.innerHTML =
+    '<div class="lb-powerup-bg"></div>' +
+    '<div class="lb-powerup-rays"></div>' +
+    '<div class="lb-powerup-ring ring-a"></div>' +
+    '<div class="lb-powerup-ring ring-b"></div>' +
+    '<div class="lb-powerup-image-wrap"><img id="lb-powerup-cut" alt=""></div>' +
+    '<div class="lb-powerup-flash"></div>' +
+    '<div class="lb-powerup-copy">' +
+      '<small>RESONANCE</small>' +
+      '<strong>LIMIT BREAK</strong>' +
+      '<span id="lb-powerup-name"></span>' +
+      '<b id="lb-powerup-level"></b>' +
+    '</div>';
+  document.body.appendChild(el);
+  return el;
+}
+
+
+function beginLimitBreakTransitionCover(){
+  var el = ensureLimitBreakPowerupEffect();
+  el.classList.remove('show');
+  el.classList.add('preparing');
+  return el;
+}
+
+function endLimitBreakTransitionCover(){
+  var el = document.getElementById('limitbreak-powerup-effect');
+  if(!el) return;
+  el.classList.remove('preparing');
+}
+
+function playLimitBreakPowerupEffect(target, fromLb, toLb){
+  return new Promise(function(resolve){
+    var el = ensureLimitBreakPowerupEffect();
+    el.classList.remove('preparing');
+    var img = document.getElementById('lb-powerup-cut');
+    var name = document.getElementById('lb-powerup-name');
+    var level = document.getElementById('lb-powerup-level');
+
+    if(img){
+      img.src = getLimitBreakCutImage(target);
+      img.onerror = function(){
+        this.onerror = null;
+        this.src = target && (target.upImg || target.img || target.panelImg) || '';
+      };
+    }
+    if(name) name.textContent = target && target.name ? target.name : '';
+    if(level) level.textContent = 'Lv.' + Number(fromLb || 0) + '  →  Lv.' + Number(toLb || 0);
+
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+
+    setTimeout(function(){
+      el.classList.remove('show');
+      resolve();
+    }, 2350);
+  });
+}
+
+function buildBulkLimitBreakSummaryHTML(target, plan){
+  if(!plan || !plan.count) return '';
+  var isEri = Number(target && target.id) === 1;
+  var isNoah = Number(target && target.id) === 52;
+  var stoneTotal = plan.steps.reduce(function(sum, step){ return sum + Number(step.stoneCount || 0); }, 0);
+  var vesselCounts = {};
+  plan.steps.forEach(function(step){
+    vesselCounts[step.soulVesselId] = Number(vesselCounts[step.soulVesselId] || 0) + 1;
+  });
+
+  var materialRows = [];
+  if(isEri){
+    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">原初の翼環</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
+  } else if(!isNoah) {
+    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(target.name || '同キャラ') + '</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
+  }
+
+  Object.keys(vesselCounts).forEach(function(id){
+    var def = getEvolutionMaterialDef(id);
+    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(def ? def.name : '魂の器') + '</span><span class="lb-confirm-consume-count">× ' + vesselCounts[id] + '</span></div>');
+  });
+  materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">共鳴石</span><span class="lb-confirm-consume-count">× ' + stoneTotal + '</span></div>');
+
+  var bonusMaster = getResonanceBonusMaster(target) || {};
+  function buildEffectRow(step, extra){
+    var bonus = bonusMaster[step.toLb] || {};
+    var summary = bonus.summary || bonus.title || '限界突破効果';
+    var detail = bonus.detail || '';
+    return '<div class="lb-bulk-next-row' + (extra ? ' lb-bulk-next-row-extra' : '') + '">' +
+      '<div class="lb-next-bonus-title">Lv.' + step.toLb + '　' + escapeHtml(summary) + '</div>' +
+      (detail ? '<div class="lb-next-bonus-detail">' + escapeHtml(detail) + '</div>' : '') +
+    '</div>';
+  }
+
+  var fixedEffectRows = plan.steps.slice(0, 2).map(function(step){
+    return buildEffectRow(step, false);
+  }).join('');
+  var extraEffectRows = plan.steps.slice(2).map(function(step){
+    return buildEffectRow(step, true);
+  }).join('');
+
+  return '<div class="lb-confirm-message lb-confirm-message-strong">一括限界突破を実行しますか？</div>' +
+    '<div class="lb-next-bonus lb-bulk-next-bonus">' +
+      '<div class="lb-next-bonus-label">今回解放される限界突破効果</div>' +
+      '<div class="lb-bulk-next-fixed">' + fixedEffectRows + '</div>' +
+      (extraEffectRows ? '<div class="lb-bulk-next-scroll">' + extraEffectRows + '</div>' : '') +
+    '</div>' +
+    '<div class="lb-confirm-consume-box"><div class="lb-confirm-consume-title">消費素材一覧</div>' +
+      materialRows.join('') +
+    '</div>' +
+    '<div class="lb-confirm-level"><span>限界突破Lv</span><strong>' + plan.fromLb + ' → ' + plan.toLb + '</strong></div>' +
+    '<div class="lb-confirm-warning">実行後に消費素材を元へ戻すことはできません。</div>';
+}
+
+function confirmBulkLimitBreak(){
+  var target = currentDetailData;
+  if(!target) return;
+
+  var plan = getBulkLimitBreakPlan(target, selectedLimitBreakSoulVesselId);
+  if(!plan || !plan.canExecute){
+    showToast('一括で限界突破できる素材がありません');
+    return;
+  }
+
+  document.getElementById('lb-confirm-text').innerHTML = buildBulkLimitBreakSummaryHTML(target, plan);
+
+  var okBtn = document.getElementById('lb-confirm-ok-btn');
+  okBtn.textContent = 'Lv.' + plan.toLb + ' まで一括強化';
+  okBtn.onclick = async function(){
+    okBtn.disabled = true;
+
+    // 一括強化も決定直後から演出カバーを表示し、キャラ一覧への瞬間復帰を隠す。
+    beginLimitBreakTransitionCover();
+    closeModal('limitbreak-confirm-modal');
+    closeLimitBreakModal();
+
+    var fromLb = Number(target.limitBreak || 0);
+    var completed = 0;
+
+    for(var i = 0; i < plan.steps.length; i++){
+      var step = plan.steps[i];
+      var material = (Number(target.id) === 1 || Number(target.id) === 52) ? null : getAutoLimitBreakMaterial(target);
+      var ok = await executeLimitBreak(target, material, step.soulVesselId, { silent:true, bulk:true });
+      if(!ok) break;
+      completed++;
+    }
+
+    if(completed > 0){
+      await playLimitBreakPowerupEffect(target, fromLb, Number(target.limitBreak || 0));
+
+      // 演出が終わってから背後画面を最新状態へ更新する。
+      renderBox();
+      updateMainUI();
+      if(currentZukanMainTab !== 'box') showDetail(target, false);
+      updateZukanLimitBreakNotice();
+
+      var completeText = document.getElementById('lb-complete-text');
+      if(completeText){
+        completeText.style.whiteSpace = 'pre-line';
+        completeText.textContent = completed + '段階の一括限界突破が完了しました。\n限界突破Lvが ' +
+          Number(target.limitBreak || 0) + ' になりました。';
+      }
+      var completeModal = document.getElementById('limitbreak-complete-modal');
+      if(completeModal) completeModal.classList.add('active');
+    } else {
+      endLimitBreakTransitionCover();
+    }
+
+    okBtn.disabled = false;
+  };
+
+  document.getElementById('limitbreak-confirm-modal').classList.add('active');
+}
+window.confirmBulkLimitBreak = confirmBulkLimitBreak;
+
+
 function openLimitBreakModal(target){
   if(!target) return;
   var listEl = document.getElementById('lb-material-list');
@@ -197,13 +388,19 @@ function openLimitBreakModal(target){
   if((target.limitBreak || 0) >= MAX_LIMIT_BREAK){
     listEl.innerHTML += '<div class="lb-no-material">限界突破LvはすでにMAXです</div>';
   } else if(status.canLimitBreak){
+    var bulkPlan = getBulkLimitBreakPlan(target, selectedLimitBreakSoulVesselId);
     listEl.innerHTML +=
       '<div class="lb-execute-area">' +
-        '<button type="button" class="btn-pay lb-execute-btn" onclick="confirmLimitBreak()">限界突破</button>' +
+        (bulkPlan && bulkPlan.count >= 2
+          ? '<button type="button" class="btn-pay lb-execute-btn lb-execute-bulk-btn" onclick="confirmBulkLimitBreak()">' +
+              '一気に限界突破する' +
+            '</button>'
+          : '') +
+        '<button type="button" class="btn-pay lb-execute-btn lb-execute-single-btn" onclick="confirmLimitBreak()">1Lvだけ突破する</button>' +
         '<div class="lb-execute-note">' +
           (status.recipe.specialMaterialId
-            ? 'エリ専用素材「原初の翼環」を1個消費します'
-            : '同キャラ素材は自動で1体消費されます') +
+            ? 'エリ専用素材「原初の翼環」を消費します'
+            : '同キャラ素材は自動で消費されます') +
         '</div>' +
       '</div>';
   } else {
@@ -222,9 +419,10 @@ function confirmLimitBreak(materialDbId){
   if(!target) return;
 
   var isEri = Number(target.id) === 1;
+  var isNoah = Number(target.id) === 52;
   var mat = null;
 
-  if(!isEri){
+  if(!isEri && !isNoah){
     mat = materialDbId
       ? box.find(function(b){ return b.db_id === materialDbId; })
       : getAutoLimitBreakMaterial(target);
@@ -259,7 +457,7 @@ function confirmLimitBreak(materialDbId){
     : 1;
 
   document.getElementById('lb-confirm-text').innerHTML =
-    '<div class="lb-confirm-message">限界突破を実行しますか？</div>' +
+    '<div class="lb-confirm-message lb-confirm-message-strong">限界突破を実行しますか？</div>' +
     buildNextResonanceBonusHTML(target, afterLb) +
     '<div class="lb-confirm-consume-box">' +
       '<div class="lb-confirm-consume-title">消失する素材</div>' +
@@ -281,10 +479,40 @@ function confirmLimitBreak(materialDbId){
 
   var okBtn = document.getElementById('lb-confirm-ok-btn');
   okBtn.textContent = 'はい';
-  okBtn.onclick = function(){
+  okBtn.onclick = async function(){
+    okBtn.disabled = true;
+
+    // 決定直後に白い演出カバーを先に出す。
+    // 背後のキャラ一覧を1フレームでも見せず、そのまま強化演出へ繋ぐ。
+    beginLimitBreakTransitionCover();
     closeModal('limitbreak-confirm-modal');
     closeLimitBreakModal();
-    executeLimitBreak(target, mat, selectedLimitBreakSoulVesselId);
+
+    var fromLbForEffect = Number(target.limitBreak || 0);
+    var ok = await executeLimitBreak(target, mat, selectedLimitBreakSoulVesselId, { silent:true });
+    if(ok){
+      await playLimitBreakPowerupEffect(target, fromLbForEffect, Number(target.limitBreak || 0));
+
+      // 演出終了後に一覧/詳細を更新する。
+      renderBox();
+      updateMainUI();
+      if(currentZukanMainTab !== 'box') showDetail(target, false);
+      updateZukanLimitBreakNotice();
+
+      var completeText = document.getElementById('lb-complete-text');
+      if(completeText){
+        var unlockedBonus = getResonanceBonusMaster(target);
+        var unlocked = unlockedBonus && unlockedBonus[target.limitBreak];
+        completeText.style.whiteSpace = 'pre-line';
+        completeText.textContent = '限界突破Lvが ' + target.limitBreak + ' になりました。' +
+          (unlocked ? '\n「' + unlocked.title + '」を解放しました。' : '');
+      }
+      var completeModal = document.getElementById('limitbreak-complete-modal');
+      if(completeModal) completeModal.classList.add('active');
+    } else {
+      endLimitBreakTransitionCover();
+    }
+    okBtn.disabled = false;
   };
 
   document.getElementById('limitbreak-confirm-modal').classList.add('active');

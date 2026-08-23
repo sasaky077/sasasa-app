@@ -190,10 +190,11 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
   });
   var selectedVesselId = resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
   var isEri = !!(target && Number(target.id) === 1);
+  var isNoah = !!(target && Number(target.id) === 52);
 
   return {
     nextLb: nextLb,
-    sameChara: isEri ? 0 : 1,
+    sameChara: (isEri || isNoah) ? 0 : 1,
     specialMaterialId: isEri ? 'eri_origin_wing' : '',
     specialMaterialCount: isEri ? 1 : 0,
     soulVesselId: selectedVesselId,
@@ -245,6 +246,72 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
       stoneOwned >= recipe.stoneCount
   };
 }
+
+
+
+// 一括限界突破で「今ある素材だけで何段階まで上げられるか」を事前計算する。
+// 実データは変更せず、同キャラ / 専用素材 / 魂の器 / 共鳴石を段階ごとにシミュレート。
+function getBulkLimitBreakPlan(target, preferredSoulVesselId){
+  if(!target) return { steps:[], fromLb:0, toLb:0, canExecute:false };
+
+  var fromLb = Math.max(0, Number(target.limitBreak || 0));
+  var isEri = Number(target.id) === 1;
+  var isNoah = Number(target.id) === 52;
+  var sameRemain = (isEri || isNoah) ? 999999 : getSameCharaMaterials(target).length;
+  var specialRemain = getEvolutionMaterialCount('eri_origin_wing');
+  var stoneRemain = getEvolutionMaterialCount('kyoumei_stone');
+
+  var vesselIds = getSoulVesselMaterialIdsByElement(target.element);
+  var vesselRemain = {};
+  vesselIds.forEach(function(id){ vesselRemain[id] = getEvolutionMaterialCount(id); });
+
+  var preferred = resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
+  var steps = [];
+  var level = fromLb;
+
+  while(level < MAX_LIMIT_BREAK){
+    var nextLb = level + 1;
+    var vesselId = '';
+
+    // 現在選択中の魂の器を優先。足りなければ同属性候補へ自動で切替。
+    if(preferred && vesselIds.indexOf(preferred) !== -1 && Number(vesselRemain[preferred] || 0) >= 1){
+      vesselId = preferred;
+    } else {
+      vesselId = vesselIds.find(function(id){ return Number(vesselRemain[id] || 0) >= 1; }) || '';
+    }
+
+    var canStep =
+      (isEri ? specialRemain >= 1 : (isNoah ? true : sameRemain >= 1)) &&
+      !!vesselId &&
+      stoneRemain >= nextLb;
+
+    if(!canStep) break;
+
+    steps.push({
+      fromLb: level,
+      toLb: nextLb,
+      soulVesselId: vesselId,
+      stoneCount: nextLb,
+      sameCharaCount: (isEri || isNoah) ? 0 : 1,
+      specialMaterialCount: isEri ? 1 : 0
+    });
+
+    if(isEri) specialRemain -= 1;
+    else if(!isNoah) sameRemain -= 1;
+    vesselRemain[vesselId] = Math.max(0, Number(vesselRemain[vesselId] || 0) - 1);
+    stoneRemain -= nextLb;
+    level = nextLb;
+  }
+
+  return {
+    steps: steps,
+    fromLb: fromLb,
+    toLb: level,
+    canExecute: steps.length > 0,
+    count: steps.length
+  };
+}
+window.getBulkLimitBreakPlan = getBulkLimitBreakPlan;
 
 
 function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
@@ -353,22 +420,26 @@ function getAutoLimitBreakMaterial(target){
 }
 
 
-async function executeLimitBreak(target, material, selectedSoulVesselId){
+async function executeLimitBreak(target, material, selectedSoulVesselId, options){
 
-  if(!target) return;
+  options = options || {};
+  var silent = !!options.silent;
+
+  if(!target) return false;
   var isEri = Number(target.id) === 1;
-  if(!isEri && !material) return;
+  var isNoah = Number(target.id) === 52;
+  if(!isEri && !isNoah && !material) return false;
 
   var currentLb = target.limitBreak || 0;
 
   if(currentLb >= MAX_LIMIT_BREAK){
     showToast('限界突破LvはすでにMAXです');
-    return;
+    return false;
   }
 
   if(!getLimitBreakMaterialStatus(target, selectedSoulVesselId).canLimitBreak){
     showToast('限界突破素材が不足しています');
-    return;
+    return false;
   }
 
   // DB保存失敗時に、強化Lv・素材・BOX状態を元へ戻せるよう事前退避する。
@@ -383,7 +454,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
 
   if(!consumeLimitBreakRecipeMaterials(target, selectedSoulVesselId)){
     showToast('限界突破素材の消費に失敗しました');
-    return;
+    return false;
   }
 
   target.limitBreak = beforeState.limitBreak + 1;
@@ -434,13 +505,15 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
     if(currentZukanMainTab !== 'box') showDetail(target, false);
 
     showResonanceDiagnostic(saveError, target, beforeState);
-    return;
+    return false;
   }
 
-  renderBox();
-  updateMainUI();
-  if(currentZukanMainTab !== 'box'){
-    showDetail(target, false);
+  if(!silent){
+    renderBox();
+    updateMainUI();
+    if(currentZukanMainTab !== 'box'){
+      showDetail(target, false);
+    }
   }
 
   var completeText = document.getElementById('lb-complete-text');
@@ -451,12 +524,15 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
       (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
   }
 
-  var completeModal = document.getElementById('limitbreak-complete-modal');
-  if (completeModal) {
-    completeModal.classList.add('active');
-  } else {
-    alert('限界突破が完了しました。');
+  if(!silent){
+    var completeModal = document.getElementById('limitbreak-complete-modal');
+    if (completeModal) {
+      completeModal.classList.add('active');
+    } else {
+      alert('限界突破が完了しました。');
+    }
   }
+  return true;
 }
 
 

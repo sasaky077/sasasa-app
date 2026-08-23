@@ -4,6 +4,132 @@
 (function () {
   'use strict';
 
+  // ウルフ / ノア：波動ホーミング弾 + ノアULT専用の軽量DOMエフェクト
+  if (!document.getElementById('shooting-noah-wave-style-v112')) {
+    const noahStyle = document.createElement('style');
+    noahStyle.id = 'shooting-noah-wave-style-v112';
+    noahStyle.textContent = `
+      /* ウルフ / ノア共通：丸い光弾ではなく、前方へ圧縮された波動弾 */
+      .shooting-bullet-wolf-j{
+        width:24px!important;
+        height:14px!important;
+        margin:-7px 0 0 -12px!important;
+        border-radius:50%!important;
+        overflow:visible!important;
+        background:
+          radial-gradient(ellipse at 58% 50%,rgba(255,255,255,.98) 0 12%,rgba(235,230,248,.92) 13% 24%,rgba(126,94,165,.80) 38%,rgba(79,51,111,.34) 58%,transparent 72%)!important;
+        box-shadow:
+          0 0 7px rgba(225,209,245,.90),
+          -8px 0 12px rgba(121,82,159,.42)!important;
+        filter:none!important;
+      }
+      .shooting-bullet-wolf-j::before{
+        content:"";
+        position:absolute;
+        left:-7px;right:3px;top:2px;bottom:2px;
+        border:1px solid rgba(220,203,242,.68);
+        border-radius:50%;
+        transform:scaleX(1.18);
+        opacity:.72;
+        box-shadow:0 0 5px rgba(174,139,207,.45);
+      }
+      .shooting-bullet-wolf-j::after{
+        content:"";
+        position:absolute;
+        left:-13px;top:50%;
+        width:16px;height:6px;
+        transform:translateY(-50%);
+        border-radius:50%;
+        background:linear-gradient(90deg,transparent,rgba(157,117,190,.20),rgba(231,220,246,.76));
+        filter:blur(.4px);
+      }
+
+      /* ノア通常ホーミングは同形状の灰白波動 */
+      .shooting-bullet-noah.shooting-bullet-wolf-j{
+        background:
+          radial-gradient(ellipse at 58% 50%,#fff 0 12%,#eeeef1 13% 26%,#b3b5bc 38%,rgba(105,108,118,.34) 58%,transparent 72%)!important;
+        box-shadow:
+          0 0 8px rgba(240,240,244,.96),
+          -8px 0 13px rgba(145,147,157,.46)!important;
+        filter:saturate(.08)!important;
+      }
+      .shooting-bullet-noah.shooting-bullet-wolf-j::before{
+        border-color:rgba(228,229,234,.78);
+        box-shadow:0 0 6px rgba(184,186,196,.55);
+      }
+      .shooting-bullet-noah.shooting-bullet-wolf-j::after{
+        background:linear-gradient(90deg,transparent,rgba(131,134,144,.22),rgba(242,242,245,.84));
+      }
+
+      .shooting-noah-laser i{
+        background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(250,250,252,.98),rgba(184,186,194,.88),rgba(255,255,255,.15))!important;
+        box-shadow:0 0 8px rgba(235,236,241,.95),0 0 18px rgba(143,145,156,.58)!important;
+      }
+      .shooting-noah-laser b{
+        background:rgba(255,255,255,.92)!important;
+        box-shadow:0 0 11px rgba(208,210,219,.82)!important;
+      }
+
+      /* ノアULT：落雷。縦の閃光 + 着弾リング */
+      .shooting-noah-lightning{
+        position:absolute;
+        left:0;top:0;
+        z-index:48;
+        width:10px;
+        pointer-events:none;
+        transform-origin:50% 100%;
+        opacity:0;
+      }
+      .shooting-noah-lightning::before{
+        content:"";
+        position:absolute;
+        left:50%;top:0;bottom:0;
+        width:5px;
+        transform:translateX(-50%) skewX(-7deg);
+        background:linear-gradient(180deg,
+          rgba(255,255,255,0),
+          rgba(255,255,255,.98) 8%,
+          rgba(220,221,226,.98) 28%,
+          rgba(255,255,255,1) 55%,
+          rgba(174,177,187,.96) 78%,
+          rgba(255,255,255,.25));
+        box-shadow:
+          0 0 7px rgba(255,255,255,1),
+          0 0 16px rgba(203,205,215,.95),
+          0 0 30px rgba(138,142,154,.72);
+        clip-path:polygon(48% 0,100% 0,60% 19%,92% 21%,49% 43%,88% 45%,24% 100%,39% 61%,0 60%,42% 37%,12% 35%,55% 17%);
+      }
+      .shooting-noah-lightning::after{
+        content:"";
+        position:absolute;
+        left:50%;bottom:-10px;
+        width:58px;height:22px;
+        transform:translateX(-50%);
+        border-radius:50%;
+        border:2px solid rgba(230,231,236,.9);
+        box-shadow:
+          0 0 10px rgba(255,255,255,.95),
+          0 0 24px rgba(150,153,165,.72);
+        background:radial-gradient(ellipse,rgba(255,255,255,.72),rgba(180,183,194,.18) 48%,transparent 72%);
+      }
+      .shooting-noah-lightning.strike{
+        animation:noahLightningStrike .22s ease-out both;
+      }
+      @keyframes noahLightningStrike{
+        0%{opacity:0;filter:brightness(2.2)}
+        12%{opacity:1;filter:brightness(2.5)}
+        42%{opacity:.95;filter:brightness(1.65)}
+        100%{opacity:0;filter:brightness(1)}
+      }
+      #shooting-event-root.noah-paralyze-active .shooting-arena{
+        filter:saturate(.25) brightness(1.04);
+      }
+
+    `;
+    document.head.appendChild(noahStyle);
+  }
+
+
   // CH04 final ITEM: CSSファイルの更新状況に依存せず、大きく脈動させる。
   if (!document.getElementById('shooting-ch04-item-style-v152')) {
     const style = document.createElement('style');
@@ -1747,7 +1873,7 @@
     const startType = document.getElementById('shooting-start-type');
     if (player) {
       player.setAttribute('data-character-id', String(c.id));
-      const battleBackScale = Number(c.uiScale?.battleBack || 1);
+      const battleBackScale = Number(c.id === CHARACTER_ID.NOAH ? 1.45 : (c.uiScale?.battleBack || 1));
       player.style.setProperty('--unit-scale', String(battleBackScale));
     }
     if (img) {
@@ -2146,7 +2272,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-wolf-atk-field,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -3321,6 +3447,7 @@
       arena.appendChild(el);
       state.ignisLaserEl = el;
     }
+    el.classList.toggle('shooting-noah-laser', String(c && c.effectKey || '') === 'noah');
     el.style.setProperty('--ignis-laser-width', `${Number(c.laserWidth || 12)}px`);
     return el;
   }
@@ -3902,6 +4029,21 @@
     const y = state.player.y - Number(c.shotOffsetY || 38);
     const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
     const bulletClass = 'shooting-bullet' + styleClass + attrBulletClass;
+
+    // ----------------------------------------------------------
+    // ノア：中心レーザー + 周囲2発の追尾弾
+    // ----------------------------------------------------------
+    if (c.shotType === 'noah_hybrid') {
+      fireIgnisLaser(c, now);
+
+      const sides = shotCount <= 1 ? [1] : [-1, 1];
+      for (let i = 0; i < shotCount; i++) {
+        const side = sides[i] ?? (i % 2 === 0 ? -1 : 1);
+        const p = createWolfJHomingProjectile(c, side, y, effectivePower, bulletClass, now);
+        if (p) state.bullets.push(p);
+      }
+      return;
+    }
 
     // ----------------------------------------------------------
     // イグニス：連続レーザー
@@ -4724,6 +4866,16 @@
     state.normalEnemies.forEach(enemy => {
       if (!enemy || !enemy.el) return;
       const def = enemy.def || {};
+
+      // ノアULT後：落雷を受けた敵だけスタン。
+      if (now < Number(enemy.noahStunUntil || 0)) {
+        enemy.dashVx = 0;
+        enemy.dashVy = 0;
+        enemy.attackState = 'idle';
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
 
       // エルテナULT吸引中は通常の移動AIを止める。
       // 旧実装ではこの後の通常AIが毎フレーム baseX/baseY から位置を再計算し、
@@ -8363,6 +8515,28 @@
       return;
     }
 
+    // ノアULT落雷中：盤面上の敵全体の移動・攻撃を停止。
+    // ステージ時間と新規スポーン判定だけは進める。
+    if (Number(state.noahMovementFreezeUntil || 0) > 0) {
+      if (ts < Number(state.noahMovementFreezeUntil || 0)) {
+        if (checkBattleTimeLimit(ts)) return;
+
+        const noahFreezeDt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
+        prevTs = ts;
+
+        if (!state.koTransition) updateMovement(noahFreezeDt, ts, true);
+
+        if (isNormalBattle()) {
+          spawnNormalEnemies(ts);
+        }
+
+        renderHud();
+        if (!state.ended) rafId = requestAnimationFrame(gameLoop);
+        return;
+      }
+      state.noahMovementFreezeUntil = 0;
+    }
+
     // ミトULT中は「時が止まる」。
     // 通常の敵・弾・ステージギミックは一切更新せず、
     // プレイヤー操作と召喚獣の高速ラッシュだけを進める。
@@ -8394,7 +8568,7 @@
     updateRoseFlower(ts);
     updateWolfAtkField(ts);
     if (state.ignisLaserEl && (
-      getCurrentCharacter().id !== CHARACTER_ID.IGNIS ||
+      !['laser','noah_hybrid'].includes(String(getCurrentCharacter()?.shotType || '')) ||
       ts >= Number(state.ignisLaserHideAt || 0)
     )) {
       hideIgnisLaser();
@@ -11783,6 +11957,262 @@
   }
 
 
+  // ============================================================
+  // ノア ULT：理想郷の静止
+  // 発動直後に盤面の敵弾を完全削除。
+  // 8拍×2セットの16落雷 -> 終了後に敵を感電停止。
+  // ============================================================
+  function getNoahUltTargets() {
+    if (!state) return [];
+    const list = [];
+
+    if (isNormalBattle()) {
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        list.push({ kind:'normal', ref:enemy, x:Number(enemy.x || 0), y:Number(enemy.y || 0) });
+      });
+      return list;
+    }
+
+    if (isFacelessStage()) {
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || !obj.el || obj.hp <= 0) return;
+        list.push({ kind:'faceless', ref:obj, x:Number(obj.x || 0), y:Number(obj.y || 0) });
+      });
+    }
+
+    if (state.boss && state.boss.hp > 0) {
+      list.push({ kind:'boss', ref:state.boss, x:Number(state.boss.x || 0), y:Number(state.boss.y || 0) });
+    }
+    return list;
+  }
+
+  function clearNoahUltEnemyBarrage() {
+    if (!state) return;
+
+    // state配列を例外なく空にする。乱入用persistent弾もノアULTでは消す。
+    (state.enemyBullets || []).forEach(p => {
+      try { p && p.el && p.el.remove(); } catch (_) {}
+    });
+    state.enemyBullets = [];
+
+    // Canvas描画弾も即時クリア。
+    clearEnemyBulletCanvas();
+
+    // state管理外の警告弾・レーザー等もその場で除去する。
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      arena.querySelectorAll(
+        '.shooting-enemy-bullet,' +
+        '.shooting-raid-green-laser,' +
+        '.shooting-boss-danger-warning,' +
+        '.shooting-ambush-warning-bullet,' +
+        '.shooting-ch04-curtain-bullet'
+      ).forEach(el => el.remove());
+    }
+
+    removeBossDangerWarning();
+    state.bossDangerExecuteAt = 0;
+    state.lastBossShotAt = performance.now();
+  }
+
+  function clearNoahUltPlayerShots() {
+    if (!state) return;
+
+    // 発動時点で画面上に存在する自機弾を全部消す。
+    (state.bullets || []).forEach(p => {
+      try { p && p.el && p.el.remove(); } catch (_) {}
+    });
+    state.bullets = [];
+
+    // ノアの中心レーザーも即座に消す。
+    hideIgnisLaser();
+
+    // 次にショット再開した瞬間、待ち時間なしで撃てるようにする。
+    state.lastShotAt = -Infinity;
+  }
+
+  function applyNoahUltHit(c, target, now) {
+    if (!state || state.ended || state.finishing || !target) return;
+
+    const damage = Math.max(0, Number(c.atk || 0) * Number(c.noahUltHitAtkMultiplier || 0.35));
+
+    if (target.kind === 'normal' && target.ref && target.ref.hp > 0) {
+      damageNormalEnemy(target.ref, damage, now, false);
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      evaluateNormalMission(now);
+    } else if (target.kind === 'faceless' && target.ref && target.ref.hp > 0) {
+      damageFacelessObject(target.ref, damage, now);
+    } else if (target.kind === 'boss' && state.boss && state.boss.hp > 0) {
+      const applied = Math.min(state.boss.hp, damage);
+      if (applied <= 0) return;
+      state.boss.hp = Math.max(0, state.boss.hp - applied);
+      createHit(state.boss.x, state.boss.y, true);
+      showBossDamageNumber(applied, false);
+      flashBossHit(false);
+      if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+      updateBossPhase();
+      if (state.boss.hp <= 0) beginBossDefeat();
+    }
+
+    state.shotsHit = Number(state.shotsHit || 0) + 1;
+    registerComboHit(c.id, now);
+    renderHud();
+  }
+
+  function shakeNoahLightning() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+
+    if (typeof root.animate === 'function') {
+      root.animate([
+        { transform:'translate3d(0,0,0)' },
+        { transform:'translate3d(-5px,2px,0)' },
+        { transform:'translate3d(6px,-3px,0)' },
+        { transform:'translate3d(-4px,3px,0)' },
+        { transform:'translate3d(3px,-1px,0)' },
+        { transform:'translate3d(0,0,0)' }
+      ], { duration:150, easing:'ease-out' });
+      return;
+    }
+
+    root.classList.remove('ayane-rampage-shake');
+    void root.offsetWidth;
+    root.classList.add('ayane-rampage-shake');
+    setTimeout(() => root.classList.remove('ayane-rampage-shake'), 150);
+  }
+
+  function spawnNoahLightning(c) {
+    if (!state || state.ended || state.finishing) return false;
+
+    // 毎落雷ごとに最新の盤面からランダム選択。
+    // 途中でスポーンした敵も次の落雷から対象になる。
+    const targets = getNoahUltTargets();
+    if (!targets.length) return false;
+    const target = targets.length === 1
+      ? targets[0]
+      : targets[Math.floor(Math.random() * targets.length)];
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) {
+      applyNoahUltHit(c, target, performance.now());
+      shakeNoahLightning();
+      return true;
+    }
+
+    const tx = clamp(Number(target.x || arena.clientWidth * .5), 10, Math.max(10, arena.clientWidth - 10));
+    const ty = clamp(Number(target.y || arena.clientHeight * .35), 20, Math.max(20, arena.clientHeight - 20));
+    const jitterX = (Math.random() - .5) * 34;
+
+    const bolt = document.createElement('div');
+    bolt.className = 'shooting-noah-lightning strike';
+    bolt.style.left = `${tx + jitterX}px`;
+    bolt.style.top = '0px';
+    bolt.style.height = `${Math.max(54, ty)}px`;
+    arena.appendChild(bolt);
+
+    // 落雷を受けた敵を記録。ULT終了後、この敵だけ1.5秒スタン。
+    state.noahUltHitTargets = Array.isArray(state.noahUltHitTargets) ? state.noahUltHitTargets : [];
+    if (!state.noahUltHitTargets.some(t => t && t.kind === target.kind && t.ref === target.ref)) {
+      state.noahUltHitTargets.push(target);
+    }
+
+    // 落雷の瞬間にダメージ + シェイク。
+    applyNoahUltHit(c, target, performance.now());
+    shakeNoahLightning();
+
+    setTimeout(() => bolt.remove(), 260);
+    return true;
+  }
+
+  function applyNoahTargetStuns(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    const duration = Math.max(300, Number(c.noahUltParalyzeMs || 1500));
+    const now = performance.now();
+    const until = now + duration;
+    const refs = Array.isArray(state.noahUltHitTargets) ? state.noahUltHitTargets : [];
+
+    refs.forEach(target => {
+      if (!target || !target.ref) return;
+      // 敵オブジェクト単位のスタンだけを付与。
+      // player / party / movement state には一切触れない。
+      target.ref.noahStunUntil = Math.max(Number(target.ref.noahStunUntil || 0), until);
+    });
+
+    if (refs.some(t => t && t.kind === 'boss')) {
+      applyBossStun(duration, 'noah_ult');
+    }
+
+    renderHud();
+  }
+
+
+  function finishNoahUlt() {
+    if (!state) return;
+
+    // 16発目の落雷が終わった瞬間に、ULT中の全体停止を完全解除。
+    // この後の1.5秒スタンは「落雷を受けた敵だけ」に残し、
+    // プレイヤー（ノア）は通常どおり移動・射撃できる。
+    state.noahMovementFreezeUntil = 0;
+    state.noahUltActive = false;
+
+    // ここからは「敵だけスタン」のフェーズ。
+    // ULTロックを解除し、ノアは即座に移動・通常射撃へ復帰する。
+    state.ultLockUntil = 0;
+    state.lastShotAt = -Infinity;
+
+    state.noahUltToken = Number(state.noahUltToken || 0) + 1;
+    renderHud();
+  }
+
+  function useNoahUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    showUltCut(c.ultName, c.effectKey);
+
+    // ULT発動フレームで盤面をリセット。
+    // 敵弾だけでなく、ノア自身が発射済みの弾・レーザーも全部消す。
+    clearNoahUltEnemyBarrage();
+    clearNoahUltPlayerShots();
+
+    const beatMs = c.id === CHARACTER_ID.NOAH
+      ? 540
+      : Math.max(70, Number(c.noahUltBeatMs || 135));
+    const hitCount = 16;
+    const token = Number(state.noahUltToken || 0) + 1;
+    state.noahUltToken = token;
+    state.noahUltActive = true;
+    state.noahUltHitTargets = [];
+
+    // 8拍子を間を置かず2周 = 合計16発。
+    const times = Array.from({ length: hitCount }, (_, i) => i * beatMs);
+
+    // 16発を撃ち切るまで盤面上の敵全体の移動・攻撃を停止。
+    // 新規スポーン判定は止めない。
+    state.noahMovementFreezeUntil = performance.now() + (hitCount - 1) * beatMs + 220;
+
+    times.forEach((delay, i) => {
+      pushUltTimer(() => {
+        if (!state || state.ended || state.finishing || Number(state.noahUltToken || 0) !== token) return;
+        spawnNoahLightning(c);
+
+        if (i === hitCount - 1) {
+          // 最後の一撃後、実際に落雷を受けた敵だけ1.5秒スタン。
+          applyNoahTargetStuns(c);
+          finishNoahUlt();
+        }
+      }, delay);
+    });
+
+    // プレイヤー側のULTロックは「16発目が落ちるまで」だけ。
+    // その後の1.5秒スタン中はノアが通常射撃できる。
+    const lightningMs = (hitCount - 1) * beatMs + 220;
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), performance.now() + lightningMs);
+    renderHud();
+  }
+
+
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
     if (isChapter04Stage() && !isChapter43BossStage()) return false;
@@ -11809,6 +12239,7 @@
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else if (c.ultType === 'mito_time_rush') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
+    else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
     else useEriUlt(c);
 

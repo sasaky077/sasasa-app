@@ -281,6 +281,22 @@
       4: bonus('虚式極致', 'ULT ATK×3.5 → ×4.5', '「虚式・茈」の吸引・停止時間はそのまま、継続ダメージ総量をATK×3.5からATK×4.5へ強化する。', [
         { type:'profileSet', field:'ultDamageAtkMultiplier', value:4.5 }
       ])
+    }),
+
+    52: Object.freeze({
+      1: bonus('理想の共鳴', 'HP・ATK +5%', 'ノアの基礎HPとATKが5%上昇する。', [
+        { type:'statRate', hp:0.05, atk:0.05 }
+      ]),
+      2: bonus('灰白星路', 'レーザー・波動弾 +10%', '通常射撃の中心レーザーと2発の波動ホーミング弾をそれぞれ10%強化する。', [
+        { type:'profileMultiply', field:'laserDamageAtkRate', multiplier:1.10 },
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
+      ]),
+      3: bonus('停止世界の残光', '落雷ダメージ +15%', '16発の落雷それぞれのダメージを15%強化する。', [
+        { type:'profileMultiply', field:'noahUltHitAtkMultiplier', multiplier:1.15 }
+      ]),
+      4: bonus('完成された理想郷', 'スタン 1.5秒 → 2.2秒', '落雷を受けた敵に発生するスタン時間を2.2秒へ延長する。', [
+        { type:'profileSet', field:'noahUltParalyzeMs', value:2200 }
+      ])
     })
   });
 
