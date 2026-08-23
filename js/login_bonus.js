@@ -318,7 +318,7 @@
       var today = getJstDateString();
       var claimedToday = state.last_login_bonus_date === today;
       var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
-      var displayDay = claimedToday ? Math.max(1, lastDay) : ((lastDay % 7) + 1);
+      var nextDay = (lastDay % 7) + 1;
       var html = '';
       html += '<section class="bonus-page-card">';
       html +=   '<div class="bonus-card-head">';
@@ -329,11 +329,19 @@
       for(var i = 1; i <= 7; i++){
         var reward = getReward(i);
         var cls = ['bonus-mixed-day'];
-        if(i === displayDay) cls.push('is-current');
-        if(claimedToday && i === displayDay) cls.push('is-claimed');
+        var isNext = (i === nextDay);
+        var isTodayClaimed = (claimedToday && i === lastDay);
+
+        if(isNext) cls.push('is-next');
+        if(isTodayClaimed) cls.push('is-today-claimed');
         if(i === 7) cls.push('is-special');
+
         html += '<div class="' + cls.join(' ') + '">'
-          + '<span>DAY ' + i + '</span>'
+          + '<div class="bonus-day-head">'
+            + '<span class="bonus-day-label"><em>DAY</em><b>' + i + '</b></span>'
+          + '</div>'
+          + (isTodayClaimed ? '<i class="bonus-day-mark bonus-day-mark-claimed" aria-hidden="true">本日受取済み</i>' : '')
+          + (isNext ? '<i class="bonus-day-mark bonus-day-mark-next" aria-hidden="true">NEXT</i>' : '')
           + '<div class="bonus-mixed-reward">'
             + '<img src="' + reward.image + '" alt="' + reward.name + '" class="' + (reward.type === 'ticket' ? 'ticket' : 'material') + '">'
             + '<b>×' + reward.qty + '</b>'

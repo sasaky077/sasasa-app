@@ -24779,3 +24779,977 @@ body {
   display:none!important;
   animation:none!important;
 }
+
+
+/* =========================================================
+   v120 Bonus screen - no scroll / current day emphasis
+   ・ボーナス画面は1画面内で完結
+   ・文字を増やさず、現在DAYだけ視覚的に強調
+   ========================================================= */
+
+/* このページだけスクロール禁止。下部ナビの上までを表示領域として使う */
+#screen-bonus{
+  overflow:hidden!important;
+}
+
+#screen-bonus .bonus-screen-scroll{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  padding:12px 16px calc(78px + env(safe-area-inset-bottom))!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+/* 画面上の説明ブロックは省略。タイトル「ボーナス」とカードだけで完結させる */
+#screen-bonus .bonus-page-intro{
+  display:none!important;
+}
+
+#screen-bonus .bonus-page-list{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:0!important;
+}
+
+#screen-bonus .bonus-page-card{
+  flex:0 1 auto!important;
+  width:100%!important;
+  max-height:100%!important;
+  padding:12px 12px 10px!important;
+  overflow:hidden!important;
+}
+
+#screen-bonus .bonus-card-head{
+  margin-bottom:9px!important;
+}
+
+#screen-bonus .bonus-card-title-wrap small{
+  font-size:7.5px!important;
+  margin-bottom:2px!important;
+}
+
+#screen-bonus .bonus-card-title-wrap h3{
+  font-size:17px!important;
+}
+
+#screen-bonus .bonus-card-state{
+  padding:4px 7px!important;
+  font-size:8.5px!important;
+}
+
+/* 7日分を高さを抑えて1画面へ */
+#screen-bonus .bonus-mixed-row{
+  gap:7px!important;
+}
+
+#screen-bonus .bonus-mixed-day{
+  position:relative!important;
+  min-height:104px!important;
+  padding:7px 5px 7px!important;
+  overflow:visible!important;
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease!important;
+}
+
+#screen-bonus .bonus-mixed-reward{
+  gap:2px!important;
+  margin-top:5px!important;
+}
+
+#screen-bonus .bonus-mixed-reward img.material{
+  width:40px!important;
+  height:40px!important;
+  max-width:40px!important;
+  max-height:40px!important;
+}
+
+#screen-bonus .bonus-mixed-reward img.ticket{
+  width:124px!important;
+}
+
+#screen-bonus .bonus-mixed-reward b{
+  font-size:12px!important;
+}
+
+/* 今日：文字を追加せず「金の枠・光・少し浮く」で一目で分かる */
+#screen-bonus .bonus-mixed-day.is-current{
+  z-index:3!important;
+  opacity:1!important;
+  transform:translateY(-3px) scale(1.025)!important;
+  border:2px solid rgba(190,137,34,.92)!important;
+  background:
+    radial-gradient(circle at 50% 34%,rgba(255,244,196,.82),transparent 58%),
+    linear-gradient(180deg,#fff8dc 0%,#f4dfaa 100%)!important;
+  box-shadow:
+    0 0 0 2px rgba(255,252,238,.98) inset,
+    0 0 0 3px rgba(206,157,55,.22),
+    0 7px 16px rgba(148,100,26,.20),
+    0 0 20px rgba(220,176,76,.30)!important;
+  filter:saturate(1.08) brightness(1.025)!important;
+}
+
+/* 上部の小さな光点だけでCURRENT感を出す。文字は増やさない */
+#screen-bonus .bonus-mixed-day.is-current::before{
+  content:""!important;
+  position:absolute!important;
+  top:-5px!important;
+  left:50%!important;
+  width:8px!important;
+  height:8px!important;
+  transform:translateX(-50%) rotate(45deg)!important;
+  background:#d7a33d!important;
+  border:2px solid #fffaf0!important;
+  box-shadow:0 0 8px rgba(202,145,34,.62)!important;
+  z-index:4!important;
+}
+
+/* 受取済みでも「今日」だけは薄くしない */
+#screen-bonus .bonus-mixed-day.is-current.is-claimed{
+  opacity:1!important;
+}
+
+/* 今日以外をほんの少し引かせる */
+#screen-bonus .bonus-mixed-day:not(.is-current){
+  filter:saturate(.88) brightness(.985)!important;
+}
+
+/* フッターも圧縮して下部ナビまでに収める */
+#screen-bonus .bonus-card-foot{
+  margin-top:9px!important;
+  gap:8px!important;
+}
+
+#screen-bonus .bonus-card-note{
+  font-size:8px!important;
+  line-height:1.45!important;
+}
+
+#screen-bonus .bonus-card-action{
+  min-width:88px!important;
+  padding:8px 10px!important;
+  font-size:9.5px!important;
+}
+
+/* 縦が短い端末ではさらに少しだけ圧縮 */
+@media (max-height:700px){
+  #screen-bonus .bonus-screen-scroll{
+    padding-top:8px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+  #screen-bonus .bonus-page-card{
+    padding:10px 10px 8px!important;
+  }
+  #screen-bonus .bonus-card-head{
+    margin-bottom:6px!important;
+  }
+  #screen-bonus .bonus-mixed-row{
+    gap:5px!important;
+  }
+  #screen-bonus .bonus-mixed-day{
+    min-height:92px!important;
+    padding:6px 4px!important;
+  }
+  #screen-bonus .bonus-mixed-reward img.material{
+    width:35px!important;
+    height:35px!important;
+    max-width:35px!important;
+    max-height:35px!important;
+  }
+  #screen-bonus .bonus-mixed-reward img.ticket{
+    width:108px!important;
+  }
+  #screen-bonus .bonus-card-foot{
+    margin-top:6px!important;
+  }
+  #screen-bonus .bonus-card-note{
+    font-size:7.5px!important;
+    line-height:1.35!important;
+  }
+}
+
+
+/* =========================================================
+   v121 Bonus screen - claimed checkmarks + NEXT marker
+   ========================================================= */
+
+/* 旧 is-current ベースではなく、取得済みチェックとNEXTで状態を見せる */
+#screen-bonus .bonus-mixed-day{
+  position:relative!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-claimed{
+  opacity:1!important;
+  filter:none!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(245,241,233,.96) 100%)!important;
+  box-shadow:
+    0 0 0 1px rgba(216,206,186,.8) inset,
+    0 2px 8px rgba(104,90,62,.06)!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-claimed .bonus-mixed-reward{
+  opacity:.74!important;
+}
+
+#screen-bonus .bonus-mixed-day .bonus-day-check{
+  position:absolute!important;
+  top:7px!important;
+  right:7px!important;
+  width:18px!important;
+  height:18px!important;
+  border-radius:999px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-style:normal!important;
+  font-size:12px!important;
+  line-height:1!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#d8ba69 0%,#bc8a2b 100%)!important;
+  box-shadow:0 2px 6px rgba(141,101,28,.22)!important;
+  z-index:4!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-next{
+  z-index:3!important;
+  opacity:1!important;
+  transform:translateY(-3px) scale(1.025)!important;
+  border:2px solid rgba(190,137,34,.92)!important;
+  background:
+    radial-gradient(circle at 50% 34%,rgba(255,244,196,.82),transparent 58%),
+    linear-gradient(180deg,#fff8dc 0%,#f4dfaa 100%)!important;
+  box-shadow:
+    0 0 0 2px rgba(255,252,238,.98) inset,
+    0 0 0 3px rgba(206,157,55,.22),
+    0 7px 16px rgba(148,100,26,.20),
+    0 0 20px rgba(220,176,76,.30)!important;
+  filter:saturate(1.08) brightness(1.025)!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-next .bonus-day-next{
+  position:absolute!important;
+  top:7px!important;
+  right:7px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:30px!important;
+  height:16px!important;
+  padding:0 6px!important;
+  border-radius:999px!important;
+  font-style:normal!important;
+  font-size:8px!important;
+  font-weight:700!important;
+  letter-spacing:.08em!important;
+  color:#fffdf6!important;
+  background:linear-gradient(180deg,#d5ac58 0%,#b98229 100%)!important;
+  box-shadow:0 2px 6px rgba(141,101,28,.22)!important;
+  z-index:5!important;
+}
+
+#screen-bonus .bonus-mixed-day:not(.is-next):not(.is-claimed){
+  filter:saturate(.88) brightness(.985)!important;
+}
+
+/* 旧current用の擬似装飾は使わない */
+#screen-bonus .bonus-mixed-day.is-current::before{
+  display:none!important;
+}
+
+@media (max-height:700px){
+  #screen-bonus .bonus-mixed-day .bonus-day-check{
+    top:6px!important;
+    right:6px!important;
+    width:16px!important;
+    height:16px!important;
+    font-size:11px!important;
+  }
+  #screen-bonus .bonus-mixed-day.is-next .bonus-day-next{
+    top:6px!important;
+    right:6px!important;
+    min-width:28px!important;
+    height:15px!important;
+    font-size:7.5px!important;
+  }
+}
+
+
+/* =========================================================
+   v122 Login Bonus rich layout polish
+   ・カードを上品に
+   ・DAYラベルをしっかり見せる
+   ・NEXT / 受取済みを雑に見せない
+   ========================================================= */
+
+#screen-bonus .bonus-page-card{
+  border:1px solid rgba(224,211,184,.95)!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,252,.86) 0%,rgba(251,247,239,.95) 100%)!important;
+  box-shadow:
+    0 0 0 4px rgba(248,243,233,.9) inset,
+    0 6px 18px rgba(90,72,42,.05)!important;
+}
+
+#screen-bonus .bonus-card-head{
+  align-items:center!important;
+  padding-bottom:8px!important;
+  border-bottom:1px solid rgba(226,215,190,.72)!important;
+}
+
+#screen-bonus .bonus-card-state{
+  background:linear-gradient(180deg,#fbf7ef 0%,#f1e6d0 100%)!important;
+  border:1px solid rgba(214,194,156,.82)!important;
+  color:#a48856!important;
+  box-shadow:0 1px 4px rgba(101,79,45,.06)!important;
+}
+
+/* 全体グリッド */
+#screen-bonus .bonus-mixed-row{
+  gap:8px!important;
+  margin-top:10px!important;
+}
+
+#screen-bonus .bonus-mixed-day{
+  position:relative!important;
+  min-height:106px!important;
+  padding:8px 6px 7px!important;
+  border:1px solid rgba(215,197,163,.92)!important;
+  border-radius:13px!important;
+  background:
+    linear-gradient(180deg,rgba(255,254,250,.98) 0%,rgba(250,244,233,.96) 100%)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,252,244,.82) inset,
+    0 4px 10px rgba(98,75,43,.045)!important;
+  overflow:hidden!important;
+}
+
+/* DAYラベルのための専用ヘッダ */
+#screen-bonus .bonus-day-head{
+  position:relative!important;
+  width:100%!important;
+  min-height:17px!important;
+  margin-bottom:5px!important;
+  padding:0 40px 0 2px!important;
+  box-sizing:border-box!important;
+}
+
+#screen-bonus .bonus-day-label{
+  display:block!important;
+  width:100%!important;
+  text-align:center!important;
+  font-size:10px!important;
+  line-height:1.1!important;
+  letter-spacing:.14em!important;
+  color:#b0915d!important;
+  font-family:"Cinzel","Noto Serif JP",serif!important;
+}
+
+/* 旧 span 直接指定より新ヘッダを優先 */
+#screen-bonus .bonus-mixed-day > span{
+  display:none!important;
+}
+
+#screen-bonus .bonus-mixed-reward{
+  gap:3px!important;
+  margin-top:2px!important;
+}
+
+#screen-bonus .bonus-mixed-reward img.material{
+  width:42px!important;
+  height:42px!important;
+  max-width:42px!important;
+  max-height:42px!important;
+  filter:drop-shadow(0 3px 5px rgba(118,96,58,.09))!important;
+}
+
+#screen-bonus .bonus-mixed-reward img.ticket{
+  width:128px!important;
+  filter:drop-shadow(0 4px 8px rgba(118,96,58,.08))!important;
+}
+
+#screen-bonus .bonus-mixed-reward b{
+  font-size:12.5px!important;
+  color:#a2701f!important;
+  letter-spacing:.02em!important;
+}
+
+#screen-bonus .bonus-mixed-reward small{
+  font-size:7.2px!important;
+  line-height:1.28!important;
+  color:#a28e70!important;
+}
+
+/* 受け取り済み：チェックは右上メダリオンのみ。カード自体は上品に残す */
+#screen-bonus .bonus-mixed-day.is-claimed{
+  opacity:1!important;
+  filter:saturate(.92)!important;
+  background:
+    linear-gradient(180deg,rgba(255,254,251,.98) 0%,rgba(247,241,229,.97) 100%)!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-claimed .bonus-mixed-reward{
+  opacity:.82!important;
+}
+
+#screen-bonus .bonus-day-check{
+  position:absolute!important;
+  top:-1px!important;
+  right:0!important;
+  width:18px!important;
+  height:18px!important;
+  border-radius:999px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-style:normal!important;
+  font-size:11px!important;
+  line-height:1!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#d5b86c 0%,#b9862e 100%)!important;
+  border:1px solid rgba(255,247,223,.95)!important;
+  box-shadow:
+    0 2px 5px rgba(144,101,32,.16),
+    0 0 0 1px rgba(194,154,73,.18)!important;
+  z-index:4!important;
+}
+
+/* NEXT：DAYラベルを消さず、右上の細いタブで美しく表示 */
+#screen-bonus .bonus-mixed-day.is-next{
+  z-index:3!important;
+  transform:translateY(-2px)!important;
+  border:1px solid rgba(197,143,42,.95)!important;
+  background:
+    radial-gradient(circle at 50% 18%,rgba(255,246,214,.92),transparent 45%),
+    linear-gradient(180deg,#fffaf0 0%,#f5e0a8 100%)!important;
+  box-shadow:
+    0 0 0 2px rgba(255,250,235,.98) inset,
+    0 0 0 1px rgba(214,174,98,.26),
+    0 8px 16px rgba(171,123,34,.14),
+    0 0 18px rgba(221,182,97,.18)!important;
+  filter:none!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-next .bonus-day-label{
+  color:#9c7321!important;
+  font-weight:700!important;
+}
+
+#screen-bonus .bonus-day-next{
+  position:absolute!important;
+  top:-1px!important;
+  right:0!important;
+  min-width:34px!important;
+  height:17px!important;
+  padding:0 7px!important;
+  border-radius:999px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-style:normal!important;
+  font-size:8px!important;
+  font-weight:700!important;
+  line-height:1!important;
+  letter-spacing:.12em!important;
+  color:#fffaf0!important;
+  background:linear-gradient(180deg,#d8b15f 0%,#bc852b 100%)!important;
+  border:1px solid rgba(255,247,223,.95)!important;
+  box-shadow:0 2px 5px rgba(144,101,32,.16)!important;
+  z-index:5!important;
+}
+
+#screen-bonus .bonus-mixed-day:not(.is-next):not(.is-claimed){
+  filter:saturate(.94) brightness(.995)!important;
+}
+
+/* 7日目チケットを少しリッチに見せる */
+#screen-bonus .bonus-mixed-day.is-special{
+  justify-content:flex-start!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{
+  gap:4px!important;
+}
+
+#screen-bonus .bonus-card-foot{
+  margin-top:8px!important;
+  padding-top:7px!important;
+  border-top:1px solid rgba(226,215,190,.72)!important;
+  align-items:flex-end!important;
+}
+
+#screen-bonus .bonus-card-note{
+  font-size:7.8px!important;
+  line-height:1.42!important;
+  color:#9b8b6d!important;
+}
+
+#screen-bonus .bonus-card-action{
+  background:linear-gradient(180deg,#f7f0de 0%,#eadbc0 100%)!important;
+  border:1px solid rgba(214,194,156,.82)!important;
+  color:#b29d76!important;
+  box-shadow:none!important;
+}
+
+@media (max-height:700px){
+  #screen-bonus .bonus-mixed-day{
+    min-height:94px!important;
+    padding:7px 5px 6px!important;
+  }
+  #screen-bonus .bonus-day-head{
+    min-height:16px!important;
+    margin-bottom:3px!important;
+    padding-right:38px!important;
+  }
+  #screen-bonus .bonus-day-label{
+    font-size:9px!important;
+  }
+  #screen-bonus .bonus-mixed-reward img.material{
+    width:36px!important;
+    height:36px!important;
+    max-width:36px!important;
+    max-height:36px!important;
+  }
+  #screen-bonus .bonus-mixed-reward img.ticket{
+    width:112px!important;
+  }
+  #screen-bonus .bonus-mixed-reward b{
+    font-size:11.5px!important;
+  }
+  #screen-bonus .bonus-day-check{
+    width:16px!important;
+    height:16px!important;
+    font-size:10px!important;
+  }
+  #screen-bonus .bonus-day-next{
+    min-width:30px!important;
+    height:15px!important;
+    font-size:7px!important;
+    padding:0 6px!important;
+  }
+}
+
+
+/* =========================================================
+   v123 Login Bonus marker unification
+   受取済み=[本日受取済み] / 次の報酬=[NEXT] / その他は無印
+   ========================================================= */
+
+/* 旧チェック表現を完全に使わない */
+#screen-bonus .bonus-day-check,
+#screen-bonus .bonus-day-next{
+  display:none!important;
+}
+
+/* 過去に受け取ったカードは見た目を特別扱いしない */
+#screen-bonus .bonus-mixed-day.is-claimed{
+  opacity:1!important;
+  filter:none!important;
+  background:
+    linear-gradient(180deg,rgba(255,254,250,.98) 0%,rgba(250,244,233,.96) 100%)!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-claimed .bonus-mixed-reward{
+  opacity:1!important;
+}
+
+/* マーカー共通 */
+#screen-bonus .bonus-day-mark{
+  position:absolute!important;
+  top:-1px!important;
+  right:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  height:17px!important;
+  padding:0 7px!important;
+  border-radius:999px!important;
+  font-style:normal!important;
+  font-size:8px!important;
+  font-weight:700!important;
+  line-height:1!important;
+  letter-spacing:.08em!important;
+  border:1px solid rgba(255,247,223,.95)!important;
+  box-shadow:0 2px 5px rgba(144,101,32,.16)!important;
+  z-index:5!important;
+  white-space:nowrap!important;
+}
+
+/* [本日受取済み] */
+#screen-bonus .bonus-day-mark-claimed{
+  min-width:58px!important;
+  color:#fffaf0!important;
+  background:linear-gradient(180deg,#cbb388 0%,#ad8d5b 100%)!important;
+}
+
+/* [NEXT] */
+#screen-bonus .bonus-day-mark-next{
+  min-width:34px!important;
+  letter-spacing:.12em!important;
+  color:#fffaf0!important;
+  background:linear-gradient(180deg,#d8b15f 0%,#bc852b 100%)!important;
+}
+
+/* 本日受取済みカードは少しだけ落ち着いた上品さ */
+#screen-bonus .bonus-mixed-day.is-today-claimed{
+  background:
+    linear-gradient(180deg,rgba(255,254,251,.98) 0%,rgba(247,241,229,.97) 100%)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,252,244,.82) inset,
+    0 4px 10px rgba(98,75,43,.045)!important;
+}
+
+/* NEXTのみ少し強調 */
+#screen-bonus .bonus-mixed-day.is-next{
+  z-index:3!important;
+  transform:translateY(-2px)!important;
+  border:1px solid rgba(197,143,42,.95)!important;
+  background:
+    radial-gradient(circle at 50% 18%,rgba(255,246,214,.92),transparent 45%),
+    linear-gradient(180deg,#fffaf0 0%,#f5e0a8 100%)!important;
+  box-shadow:
+    0 0 0 2px rgba(255,250,235,.98) inset,
+    0 0 0 1px rgba(214,174,98,.26),
+    0 8px 16px rgba(171,123,34,.14),
+    0 0 18px rgba(221,182,97,.18)!important;
+  filter:none!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-next .bonus-day-label{
+  color:#9c7321!important;
+  font-weight:700!important;
+}
+
+@media (max-height:700px){
+  #screen-bonus .bonus-day-mark{
+    height:15px!important;
+    font-size:7px!important;
+    padding:0 6px!important;
+  }
+  #screen-bonus .bonus-day-mark-claimed{
+    min-width:50px!important;
+  }
+  #screen-bonus .bonus-day-mark-next{
+    min-width:30px!important;
+  }
+}
+
+
+/* =========================================================
+   v124 Login Bonus polish
+   ・受取済みカードを視覚的に薄く
+   ・DAY / 数字を右上で統一（DAY改行N）
+   ========================================================= */
+
+/* DAYヘッダは全カード共通で右上配置 */
+#screen-bonus .bonus-day-head{
+  position:absolute!important;
+  top:7px!important;
+  right:7px!important;
+  left:auto!important;
+  width:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:flex-end!important;
+  z-index:6!important;
+  pointer-events:none!important;
+}
+
+#screen-bonus .bonus-day-label{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  justify-content:flex-start!important;
+  width:auto!important;
+  min-width:26px!important;
+  text-align:right!important;
+  font-family:"Cinzel","Noto Serif JP",serif!important;
+  color:#b0915d!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+}
+
+#screen-bonus .bonus-day-label em{
+  display:block!important;
+  font-style:normal!important;
+  font-size:8px!important;
+  line-height:1!important;
+  letter-spacing:.16em!important;
+  font-weight:500!important;
+}
+
+#screen-bonus .bonus-day-label b{
+  display:block!important;
+  margin-top:2px!important;
+  font-size:11px!important;
+  line-height:1!important;
+  font-weight:600!important;
+  letter-spacing:.02em!important;
+}
+
+/* 報酬部分はDAY表示と干渉しないよう上を少し空ける */
+#screen-bonus .bonus-mixed-reward{
+  margin-top:18px!important;
+}
+
+/* NEXT / 本日受取済みはDAYの左側へ置く */
+#screen-bonus .bonus-day-mark{
+  position:absolute!important;
+  top:0!important;
+  right:34px!important;
+}
+
+#screen-bonus .bonus-day-mark-claimed{
+  right:34px!important;
+}
+
+#screen-bonus .bonus-day-mark-next{
+  right:34px!important;
+}
+
+/* 受取済み報酬は一目で分かる程度に薄くする */
+#screen-bonus .bonus-mixed-day.is-today-claimed{
+  opacity:.64!important;
+  filter:saturate(.72) brightness(.985)!important;
+  background:
+    linear-gradient(180deg,rgba(248,246,240,.94) 0%,rgba(239,234,224,.92) 100%)!important;
+  border-color:rgba(194,181,157,.72)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.62) inset,
+    0 2px 7px rgba(92,79,58,.035)!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-today-claimed .bonus-mixed-reward{
+  opacity:.72!important;
+  filter:grayscale(.16)!important;
+}
+
+/* 「本日受取済み」マーク自体は読める濃さを維持 */
+#screen-bonus .bonus-mixed-day.is-today-claimed .bonus-day-mark-claimed{
+  opacity:1!important;
+  filter:none!important;
+  background:linear-gradient(180deg,#b9aa91 0%,#97866d 100%)!important;
+}
+
+/* NEXTカードはDAY表記も同じ右上位置 */
+#screen-bonus .bonus-mixed-day.is-next .bonus-day-label{
+  color:#9c7321!important;
+}
+
+/* DAY7だけ特別な配置にならないよう完全統一 */
+#screen-bonus .bonus-mixed-day.is-special .bonus-day-head{
+  top:7px!important;
+  right:7px!important;
+  left:auto!important;
+}
+
+#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{
+  margin-top:18px!important;
+}
+
+@media (max-height:700px){
+  #screen-bonus .bonus-day-head{
+    top:6px!important;
+    right:6px!important;
+  }
+  #screen-bonus .bonus-day-label em{
+    font-size:7.5px!important;
+  }
+  #screen-bonus .bonus-day-label b{
+    font-size:10px!important;
+    margin-top:1px!important;
+  }
+  #screen-bonus .bonus-day-mark,
+  #screen-bonus .bonus-day-mark-claimed,
+  #screen-bonus .bonus-day-mark-next{
+    right:31px!important;
+  }
+  #screen-bonus .bonus-mixed-reward,
+  #screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{
+    margin-top:16px!important;
+  }
+}
+
+
+/* =========================================================
+   v125 Login Bonus DAY position only
+   DAY表記を全カード左上へ統一
+   ========================================================= */
+#screen-bonus .bonus-day-head{
+  left:7px!important;
+  right:auto!important;
+  justify-content:flex-start!important;
+}
+
+#screen-bonus .bonus-day-label{
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+
+/* NEXT / 本日受取済みは右上のまま維持 */
+#screen-bonus .bonus-day-mark,
+#screen-bonus .bonus-day-mark-claimed,
+#screen-bonus .bonus-day-mark-next{
+  right:7px!important;
+  left:auto!important;
+}
+
+/* DAY7も同じ左上位置 */
+#screen-bonus .bonus-mixed-day.is-special .bonus-day-head{
+  left:7px!important;
+  right:auto!important;
+}
+
+@media (max-height:700px){
+  #screen-bonus .bonus-day-head{
+    left:6px!important;
+    right:auto!important;
+  }
+
+  #screen-bonus .bonus-day-mark,
+  #screen-bonus .bonus-day-mark-claimed,
+  #screen-bonus .bonus-day-mark-next{
+    right:6px!important;
+    left:auto!important;
+  }
+
+  #screen-bonus .bonus-mixed-day.is-special .bonus-day-head{
+    left:6px!important;
+    right:auto!important;
+  }
+}
+
+
+/* =========================================================
+   v126 Login Bonus badge layout fix
+   DAY = 左上 / NEXT・本日受取済み = 右上
+   ========================================================= */
+
+/* カードをバッジの基準にする */
+#screen-bonus .bonus-mixed-day{
+  position:relative!important;
+  padding-top:10px!important;
+}
+
+/* DAYは左上。DAY7も完全に同じ位置 */
+#screen-bonus .bonus-day-head,
+#screen-bonus .bonus-mixed-day.is-special .bonus-day-head{
+  position:absolute!important;
+  top:8px!important;
+  left:8px!important;
+  right:auto!important;
+  width:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  display:block!important;
+  z-index:4!important;
+  pointer-events:none!important;
+}
+
+#screen-bonus .bonus-day-label{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  min-width:24px!important;
+  width:auto!important;
+  text-align:left!important;
+  color:#b0915d!important;
+  font-family:"Cinzel","Noto Serif JP",serif!important;
+  line-height:1!important;
+}
+
+#screen-bonus .bonus-day-label em{
+  display:block!important;
+  font-style:normal!important;
+  font-size:8px!important;
+  line-height:1!important;
+  letter-spacing:.15em!important;
+  font-weight:500!important;
+}
+
+#screen-bonus .bonus-day-label b{
+  display:block!important;
+  margin-top:2px!important;
+  font-size:11px!important;
+  line-height:1!important;
+  font-weight:600!important;
+  letter-spacing:.02em!important;
+}
+
+/* バッジはDAYヘッダとは独立してカード右上へ */
+#screen-bonus .bonus-day-mark,
+#screen-bonus .bonus-day-mark-claimed,
+#screen-bonus .bonus-day-mark-next{
+  position:absolute!important;
+  top:8px!important;
+  right:8px!important;
+  left:auto!important;
+  transform:none!important;
+  margin:0!important;
+  z-index:7!important;
+}
+
+/* NEXTは小さく上品に */
+#screen-bonus .bonus-day-mark-next{
+  min-width:36px!important;
+  height:17px!important;
+  padding:0 7px!important;
+  border-radius:999px!important;
+  font-size:7.5px!important;
+  letter-spacing:.12em!important;
+}
+
+/* 本日受取済みは横長でもカード内に綺麗に収める */
+#screen-bonus .bonus-day-mark-claimed{
+  min-width:64px!important;
+  height:17px!important;
+  padding:0 7px!important;
+  border-radius:999px!important;
+  font-size:7px!important;
+  letter-spacing:.04em!important;
+}
+
+/* 上部ラベルと報酬画像の間に十分な呼吸を作る */
+#screen-bonus .bonus-mixed-reward,
+#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{
+  margin-top:21px!important;
+}
+
+/* NEXTカードのDAYも左上を維持 */
+#screen-bonus .bonus-mixed-day.is-next .bonus-day-label{
+  color:#9c7321!important;
+  font-weight:700!important;
+}
+
+/* 短い画面でも左右の役割を崩さない */
+@media (max-height:700px){
+  #screen-bonus .bonus-day-head,
+  #screen-bonus .bonus-mixed-day.is-special .bonus-day-head{
+    top:7px!important;
+    left:7px!important;
+    right:auto!important;
+  }
+
+  #screen-bonus .bonus-day-mark,
+  #screen-bonus .bonus-day-mark-claimed,
+  #screen-bonus .bonus-day-mark-next{
+    top:7px!important;
+    right:7px!important;
+    left:auto!important;
+  }
+
+  #screen-bonus .bonus-mixed-reward,
+  #screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{
+    margin-top:19px!important;
+  }
+}
