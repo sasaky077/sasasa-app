@@ -430,7 +430,7 @@
     const by = bossRectForItem && bossRectForItem.height > 0
       ? (bossRectForItem.top + bossRectForItem.height * 0.5 - arenaRect.top)
       : Number(state.boss?.y || h * 0.16);
-    const itemHalf = 38;
+    const itemHalf = 18;
     let safeLeft = Math.min(right, left + itemHalf + 26);
     let safeRight = Math.max(safeLeft, right - itemHalf - 26);
     const safeTop = Math.min(bottom, top + itemHalf + 20);
@@ -478,7 +478,7 @@
       x = clamp(bx, laneSafeLeft, laneSafeRight);
 
       // ボスの約96px下。縦方向のみ取得しやすさのため安全域へclamp。
-      y = clamp(by + 96, safeTop, safeBottom);
+      y = clamp(by + 70, safeTop, safeBottom);
     } else {
       const offsets = [
         [-92, 0], [92, 0],
@@ -507,8 +507,8 @@
     el.className = 'shooting-mission-item shooting-ch04-final-item';
     el.innerHTML = '<i></i>';
     Object.assign(el.style, {
-      width: '72px',
-      height: '72px',
+      width: '36px',
+      height: '36px',
       zIndex: '140',
       border: '3px solid rgba(211,190,255,1)',
       background: 'radial-gradient(circle, rgba(255,255,255,1) 0 14%, rgba(214,196,255,1) 20% 38%, rgba(132,82,235,.98) 44% 62%, rgba(76,126,255,.72) 66% 74%, rgba(92,61,220,0) 82%)',
@@ -569,6 +569,241 @@
     }
   }
 
+  function clearChapter43RestoreItem() {
+    if (!state) return;
+    if (state.chapter43RestoreItem?.el) state.chapter43RestoreItem.el.remove();
+    state.chapter43RestoreItem = null;
+  }
+
+  function ensureChapter43SealCountdown() {
+    if (!state || !isChapter43BossStage()) return null;
+    if (state.chapter43SealCountdownEl?.isConnected) return state.chapter43SealCountdownEl;
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    const el = document.createElement('div');
+    el.className = 'shooting-ch43-seal-countdown';
+    Object.assign(el.style, {
+      position:'absolute',
+      left:'50%',
+      top:'25%',
+      transform:'translate(-50%,-50%)',
+      zIndex:'92',
+      minWidth:'240px',
+      padding:'8px 14px',
+      textAlign:'center',
+      color:'#6f5630',
+      background:'rgba(255,251,241,.86)',
+      border:'1px solid rgba(151,113,54,.36)',
+      boxShadow:'0 4px 18px rgba(70,48,20,.14)',
+      fontFamily:'"Noto Serif JP",serif',
+      fontSize:'16px',
+      fontWeight:'700',
+      letterSpacing:'.06em',
+      pointerEvents:'none',
+      whiteSpace:'nowrap'
+    });
+    arena.appendChild(el);
+    state.chapter43SealCountdownEl = el;
+    return el;
+  }
+
+  function clearChapter43SealCountdown() {
+    if (!state) return;
+    if (state.chapter43SealCountdownEl) state.chapter43SealCountdownEl.remove();
+    state.chapter43SealCountdownEl = null;
+  }
+
+  function clearChapter43Countdown() {
+    if (!state) return;
+    if (state.chapter43CountdownEl) state.chapter43CountdownEl.remove();
+    state.chapter43CountdownEl = null;
+  }
+
+  function clearPlayerBulletsOnly() {
+    if (!state) return;
+    (state.bullets || []).forEach(p => p?.el?.remove());
+    state.bullets = [];
+  }
+
+  function spawnChapter43RestoreItem() {
+    if (!state || !isChapter43BossStage() || state.chapter43RestoreItemSpawned) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const el = document.createElement('div');
+    el.className = 'shooting-mission-item shooting-ch04-final-item shooting-ch43-restore-item';
+    el.innerHTML = '<i></i>';
+    Object.assign(el.style, { width:'36px', height:'36px', zIndex:'145', pointerEvents:'none' });
+
+    const x = Number(state.boss?.x || arena.clientWidth * .5);
+    const y = clamp(Number(state.boss?.y || arena.clientHeight * .18) + 74, 90, arena.clientHeight * .58);
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+
+    state.chapter43RestoreItem = { el, x, y };
+    state.chapter43RestoreItemSpawned = true;
+    showShootingItemEffectNotice('ITEMを取得しろ！', 'SHOT / ULT を取り戻せ');
+  }
+
+  function updateChapter43RestoreItem() {
+    if (!state?.chapter43RestoreItem || !state.chapter43AttackSealed) return;
+    const item = state.chapter43RestoreItem;
+    const coreEl = document.getElementById('shooting-player-core') || document.getElementById(PLAYER_ID);
+    if (!item.el?.isConnected || !coreEl) return;
+
+    if (rectsHit(item.el.getBoundingClientRect(), coreEl.getBoundingClientRect(), -4, -3)) {
+      clearChapter43RestoreItem();
+      clearChapter43SealCountdown();
+      state.chapter43AttackSealed = false;
+      state.chapter43SealHp = 0;
+      state.lastShotAt = -9999;
+      showShootingItemEffectNotice('SHOT / ULT 復活', '攻撃を再開せよ');
+      renderHud();
+    }
+  }
+
+  function ensureChapter43Countdown() {
+    if (!state || !isChapter43BossStage()) return null;
+    if (state.chapter43CountdownEl?.isConnected) return state.chapter43CountdownEl;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    const el = document.createElement('div');
+    el.className = 'shooting-ch43-countdown';
+    Object.assign(el.style, {
+      position:'absolute', left:'50%', top:'18%', transform:'translate(-50%,-50%)',
+      zIndex:'85', color:'#fff3ce', fontSize:'28px', fontWeight:'900',
+      letterSpacing:'.08em', textShadow:'0 0 8px rgba(255,190,70,.85),0 2px 4px rgba(0,0,0,.75)',
+      pointerEvents:'none', whiteSpace:'nowrap'
+    });
+    arena.appendChild(el);
+    state.chapter43CountdownEl = el;
+    return el;
+  }
+
+  function startChapter43Wave1Seal(now) {
+    const cfg = getChapter43Config();
+    if (!state || !cfg || state.chapter43Wave1SealTriggered) return;
+    state.chapter43Wave1SealTriggered = true;
+    state.chapter43AttackSealed = true;
+    state.chapter43SealHp = Number(state.boss.hp || 0);
+    state.chapter43DodgeEndsAt = now + Number(cfg.dodgeSeconds || 20) * 1000;
+    state.chapter43RestoreItemSpawned = false;
+    clearPlayerBulletsOnly();
+    const sealCountdownEl = ensureChapter43SealCountdown();
+    if (sealCountdownEl) sealCountdownEl.textContent = `攻撃封印中　残り${Math.ceil(Number(cfg.dodgeSeconds || 20))}秒`;
+    showShootingItemEffectNotice('SHOT / ULT 封印', `${Number(cfg.dodgeSeconds || 20)}秒間 回避せよ`);
+  }
+
+  function startChapter43Wave2Countdown(now) {
+    const cfg = getChapter43Config();
+    if (!state || !cfg || state.chapter43Wave2CountdownTriggered) return;
+    state.chapter43Wave2CountdownTriggered = true;
+    state.chapter43CollapseStartedAt = now;
+    state.chapter43CollapseDeadlineAt = now + Number(cfg.collapseSeconds || 45) * 1000;
+    ensureChapter43Countdown();
+    showShootingItemEffectNotice('45秒以内に倒しきれ', '壁が迫る');
+    updateChapter4ShrinkWalls(now);
+  }
+
+  function updateChapter43Mechanics(now) {
+    if (!state || !isChapter43BossStage() || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) return;
+    const cfg = getChapter43Config();
+    if (!cfg) return;
+
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const localHp = getChapter43WaveCurrentHp();
+    const localMaxHp = getChapter43WaveMaxHp(phase);
+    const localRatio = localHp / Math.max(1, localMaxHp);
+
+    if (phase === 1 && !state.chapter43Wave1SealTriggered && localRatio <= Number(cfg.wave1SealRatio || .5)) {
+      startChapter43Wave1Seal(now);
+    }
+
+    if (state.chapter43AttackSealed && Number(state.chapter43SealHp || 0) > 0) {
+      state.boss.hp = Number(state.chapter43SealHp);
+
+      const sealLeftMs = Math.max(0, Number(state.chapter43DodgeEndsAt || 0) - now);
+      const sealCountdownEl = ensureChapter43SealCountdown();
+      if (sealCountdownEl) {
+        if (!state.chapter43RestoreItemSpawned) {
+          sealCountdownEl.textContent = `攻撃封印中　残り${Math.ceil(sealLeftMs / 1000)}秒`;
+        } else {
+          sealCountdownEl.textContent = '攻撃封印中　ITEMを取得しろ！';
+        }
+      }
+
+      if (sealLeftMs <= 0 && !state.chapter43RestoreItemSpawned) {
+        spawnChapter43RestoreItem();
+      }
+      updateChapter43RestoreItem();
+    }
+
+    if (phase === 2 && !state.chapter43Wave2CountdownTriggered && localRatio <= Number(cfg.wave2CountdownRatio || .5)) {
+      startChapter43Wave2Countdown(now);
+    }
+
+    if (state.chapter43Wave2CountdownTriggered) {
+      const left = Math.max(0, Number(state.chapter43CollapseDeadlineAt || 0) - now);
+      const el = ensureChapter43Countdown();
+      if (el) el.textContent = `LIMIT ${Math.ceil(left / 1000)}`;
+      if (left <= 0 && state.boss.hp > 0) {
+        state.missionFailed = true;
+        clearChapter43Countdown();
+        endGame(false);
+      }
+    }
+  }
+
+  function fireChapter43TenWay(now) {
+    if (!state || !BOSS || !isChapter43BossStage()) return;
+    const cfg = getChapter43Config();
+    if (!cfg) return;
+
+    if (!state.chapter43RhythmNextAt) state.chapter43RhythmNextAt = now + 500;
+    if (now < state.chapter43RhythmNextAt) return;
+
+    const step = Math.max(0, Number(state.chapter43RhythmStep || 0));
+    const ways = Math.max(2, Number(cfg.ways || 10));
+    const spread = Math.max(.2, Number(cfg.spreadRad || 1.34));
+    const aimedAngle = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+
+    // 毎回同じ10WAYの軌道をなぞると固定安置ができるため、
+    // fan全体の向き・各弾角度・速度を小さくランダム化する。
+    // 4拍/8拍というリズムと10WAYの本数自体は維持する。
+    const fanDrift = (Math.random() - .5) * 0.34;
+    const beatSwing = Math.sin((step + 1) * 1.73) * 0.055;
+    const baseAngle = aimedAngle + fanDrift + beatSwing;
+    const baseSpeed = Math.max(145, Number(BOSS.bulletSpeed || 190));
+
+    for (let i = 0; i < ways; i++) {
+      const t = i / (ways - 1);
+      const angleJitter = (Math.random() - .5) * 0.095;
+      const a = baseAngle + (t - .5) * spread + angleJitter;
+      const speed = baseSpeed * (0.88 + Math.random() * 0.24);
+      const spawnJitterX = (Math.random() - .5) * 18;
+      const p = makeProjectile(
+        'shooting-enemy-bullet shooting-sakiel-bullet shooting-beautiful-bullet',
+        state.boss.x + spawnJitterX, state.boss.y + 38,
+        Math.cos(a) * speed, Math.sin(a) * speed,
+        BOSS.bulletDamage
+      );
+      if (p) {
+        p.canvasKind = 'ch04';
+        state.enemyBullets.push(p);
+      }
+    }
+
+    const slow = Number(cfg.slowBeats || 4);
+    const fast = Number(cfg.fastBeats || 8);
+    const cycle = slow + fast;
+    let delay = step < slow ? Number(cfg.slowBeatMs || 520) : Number(cfg.fastBeatMs || 235);
+    if (step === cycle - 1) delay += Number(cfg.cyclePauseMs || 520);
+    state.chapter43RhythmStep = (step + 1) % cycle;
+    state.chapter43RhythmNextAt = now + Math.max(90, delay);
+  }
+
   function checkBattleTimeLimit(now) {
     const limit = getBattleTimeLimitSeconds();
     if (!limit || !state || state.ended || state.finishing || state.countdown) return false;
@@ -610,13 +845,38 @@
     return !!(selectedStage && selectedStage.reverseHorizontalControls);
   }
 
+  function isChapter43BossStage() {
+    return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_03) && selectedStage.chapter43Boss);
+  }
+
+  function getChapter43Config() {
+    return isChapter43BossStage() ? selectedStage.chapter43Boss : null;
+  }
+
+  function getChapter43WaveMaxHp(wave) {
+    const cfg = getChapter43Config();
+    const values = cfg && Array.isArray(cfg.waveHp) ? cfg.waveHp : [4000, 6000];
+    const index = Math.max(0, Math.min(values.length - 1, Number(wave || 1) - 1));
+    return Math.max(1, Number(values[index] || (index === 0 ? 4000 : 6000)));
+  }
+
+  function getChapter43WaveCurrentHp() {
+    if (!state?.boss || !isChapter43BossStage()) return 0;
+    const phase = Math.max(1, Math.min(2, Number(state.boss.phase || 1)));
+    if (phase === 1) {
+      return clamp(Number(state.boss.hp || 0) - getChapter43WaveMaxHp(2), 0, getChapter43WaveMaxHp(1));
+    }
+    return clamp(Number(state.boss.hp || 0), 0, getChapter43WaveMaxHp(2));
+  }
+
   function isChapter04BossStage() {
-    return !!(selectedStage && isChapter04Stage() && selectedStage.survivalBoss);
+    return !!(selectedStage && isChapter04Stage() && (selectedStage.survivalBoss || selectedStage.chapter43Boss));
   }
 
   function ensureStoryEriLeader() {
     if (!isStoryShootingStage()) return;
-    if (isChapter04Stage()) {
+    // CH04-1/2は従来どおりエリ単独。CH04-3はエリ固定 + 最大2人追加。
+    if (isChapter04Stage() && !isChapter43BossStage()) {
       selectedPartyIds = isShootingCharacterOwned(CHARACTER_ID.ERI) ? [Number(CHARACTER_ID.ERI)] : [];
       return;
     }
@@ -630,7 +890,7 @@
   function isShootingPartyReady() {
     if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
-    if (isChapter04Stage()) {
+    if (isChapter04Stage() && !isChapter43BossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
     if (isStoryShootingStage()) {
@@ -1425,7 +1685,7 @@
   function renderShootingPartySlots() {
     const wrap = document.getElementById('shooting-party-slots');
     if (!wrap) return;
-    wrap.innerHTML = Array.from({ length: isChapter04Stage() ? 1 : PARTY_SIZE }, (_, i) => {
+    wrap.innerHTML = Array.from({ length: (isChapter04Stage() && !isChapter43BossStage()) ? 1 : PARTY_SIZE }, (_, i) => {
       const id = selectedPartyIds[i];
       if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="空きスロット"><span>${i + 1}</span><b>＋</b></button>`;
       const c = buildResonatedCharacterProfile(id);
@@ -1510,7 +1770,7 @@
     renderShootingBlessingPicker();
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      ruleText.textContent = isChapter04Stage()
+      ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage())
         ? 'CHAPTER 04 · エリのみ出撃可能'
         : (isStoryShootingStage()
           ? '最大3人 · エリ固定 · 1人から出撃可能'
@@ -1561,6 +1821,13 @@
       resolvedProfiles[Number(id)] = buildResonatedCharacterProfile(id);
     });
 
+    const stageBossGaugeHp = Math.max(1, Number(selectedStage?.bossGaugeHp || BOSS.gaugeHp || BOSS.hp || 1));
+    const stageBossGauges = Math.max(1, Math.floor(Number(selectedStage?.bossGauges || BOSS.gauges || 1)));
+    const stageBossTotalHp = Math.max(
+      1,
+      Number(selectedStage?.bossTotalHp || (stageBossGaugeHp * stageBossGauges))
+    );
+
     state = {
       characterProfiles: resolvedProfiles,
       running: false, ended: false, finishing: false, countdown: true,
@@ -1595,10 +1862,10 @@
       mimosaItems: [],
       boss: {
         x: 0, y: 42,
-        hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1))),
-        hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1) * Number(BOSS.gauges || 1))),
-        gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : Number(BOSS.gaugeHp || BOSS.hp || 1))),
-        gauges: isRaidStage() ? 3 : ((isFacelessStage() || isAmbushStage()) ? 1 : Number(BOSS.gauges || 1)),
+        hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
+        hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
+        gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
+        gauges: isRaidStage() ? 3 : ((isFacelessStage() || isAmbushStage()) ? 1 : stageBossGauges),
         phase: 1
       },
       raidInitialHp: isRaidStage() ? getRaidStartingHp() : 0,
@@ -1664,6 +1931,19 @@
       chapter4ItemOverlay: null,
       chapter4CurtainPhase: 0,
       chapter4CurtainBulletSeq: 0,
+      chapter43RhythmStep: 0,
+      chapter43RhythmNextAt: 0,
+      chapter43Wave1SealTriggered: false,
+      chapter43AttackSealed: false,
+      chapter43SealHp: 0,
+      chapter43DodgeEndsAt: 0,
+      chapter43RestoreItemSpawned: false,
+      chapter43RestoreItem: null,
+      chapter43SealCountdownEl: null,
+      chapter43Wave2CountdownTriggered: false,
+      chapter43CollapseStartedAt: 0,
+      chapter43CollapseDeadlineAt: 0,
+      chapter43CountdownEl: null,
       ultTimerIds: [], bossGrabUntil: 0, bossStunUntil: 0, lastShotAt: -9999, lastBossShotAt: -9999, shotIndex: 0,
       miaChargeStartedAt: 0, miaChargePointerId: null,
       startedAt: performance.now(), clearTimeMs: 0,
@@ -1978,8 +2258,10 @@
     const gaugeHp = state.boss.gaugeHp;
     const phase = state.boss.phase || 1;
     const gaugeFloor = (state.boss.gauges - phase) * gaugeHp;
-    const currentGaugeHp = clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
-    const amount = isScoreAttackStage() ? 1 : (currentGaugeHp / gaugeHp);
+    const normalCurrentGaugeHp = clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
+    const currentGaugeHp = isChapter43BossStage() ? getChapter43WaveCurrentHp() : normalCurrentGaugeHp;
+    const currentGaugeMaxHp = isChapter43BossStage() ? getChapter43WaveMaxHp(phase) : gaugeHp;
+    const amount = isScoreAttackStage() ? 1 : (currentGaugeHp / Math.max(1, currentGaugeMaxHp));
     if (bossGauge) bossGauge.style.setProperty('--gauge-fill', String(amount));
     if (bossBar) {
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
@@ -1993,7 +2275,9 @@
           ? `WAVE ${state.ambushWave || 1} / 2`
           : (isFacelessStage()
             ? `WAVE ${state.facelessWave || 1} / 2`
-            : `PHASE ${phase} / ${state.boss.gauges}`));
+            : (isChapter43BossStage()
+              ? `WAVE ${phase} / 2　HP ${Math.ceil(getChapter43WaveCurrentHp())} / ${getChapter43WaveMaxHp(phase)}`
+              : `PHASE ${phase} / ${state.boss.gauges}`)));
       bossPhase.classList.toggle('score-attack-infinite-hp', scoreAttack);
     }
     if (score) {
@@ -2025,7 +2309,18 @@
       if (missionProgress) {
         const m = selectedStage.mission || {};
         const total = Number(getNormalBattleConfig().totalEnemies || 0);
-        if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
+        if (isChapter43BossStage()) {
+          const now43 = performance.now();
+          if (state.chapter43AttackSealed && !state.chapter43RestoreItemSpawned) {
+            missionProgress.textContent = `DODGE ${Math.max(0, Math.ceil((state.chapter43DodgeEndsAt - now43) / 1000))}s`;
+          } else if (state.chapter43AttackSealed) {
+            missionProgress.textContent = 'ITEMを取得しろ！';
+          } else if (state.chapter43Wave2CountdownTriggered) {
+            missionProgress.textContent = `LIMIT ${Math.max(0, Math.ceil((state.chapter43CollapseDeadlineAt - now43) / 1000))}s`;
+          } else {
+            missionProgress.textContent = `WAVE ${state.boss.phase || 1} / 2`;
+          }
+        } else if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
           // アイテム収集ミッションは、敵撃破数を勝利条件に含めない。
           missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
@@ -2047,7 +2342,7 @@
     if (comboCount) comboCount.textContent = String(state.combo || 0);
     const member = getActiveMember();
     const chara = getCurrentCharacter();
-    if (isChapter04Stage() && member) {
+    if (isChapter04Stage() && !isChapter43BossStage() && member) {
       member.burst = 0;
       member.ultReadyNotified = false;
     }
@@ -2231,6 +2526,19 @@
       #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.burst-hit,
       #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.shooting-hit-sustained{
         filter:brightness(1.55) saturate(.72)!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  if (!document.getElementById('shooting-ch43-hit-style-v75')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-ch43-hit-style-v75';
+    style.textContent = `
+      #shooting-event-root[data-shooting-stage="shooting_ch04_03"] #shooting-boss.chapter43-hit-flash,
+      #shooting-event-root[data-shooting-stage="shooting_ch04_03"] #shooting-boss.shooting-hit-sustained{
+        filter:brightness(1.75) saturate(.62) drop-shadow(0 0 9px rgba(255,244,198,.92)) drop-shadow(0 0 18px rgba(255,188,92,.58))!important;
       }
     `;
     document.head.appendChild(style);
@@ -3100,7 +3408,7 @@
     state.shotsHit++;
     registerComboHit(c.id, now);
 
-    if (member && !isChapter04Stage()) {
+    if (member && (!isChapter04Stage() || isChapter43BossStage()) && !state?.chapter43AttackSealed) {
       const baseGain = Number.isFinite(c.ultGainPerHit) ? c.ultGainPerHit : 0.3;
       const gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER;
       const wasReady = member.burst >= c.burstNeed;
@@ -3541,9 +3849,9 @@
 
 
   function firePlayer(now) {
-    // CHAPTER04は完全な回避専用ステージ。エリは通常射撃を一切行わない。
-    // 他CHAPTER / EVENTには影響させない。
-    if (isChapter04Stage()) return;
+    // CH04-1/2は回避専用。CH04-3のみ通常射撃あり。
+    if (isChapter04Stage() && !isChapter43BossStage()) return;
+    if (isChapter43BossStage() && state?.chapter43AttackSealed) return;
 
     const c = getCurrentCharacter();
 
@@ -3906,18 +4214,31 @@
   }
 
   function getChapter4ShrinkBounds(now, arenaWidth) {
-    const cfg = selectedStage && selectedStage.shrinkWalls;
-    if (!cfg || !state || !selectedStage || !isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
-      return { left: 0, right: 0, ratio: 1, progress: 0 };
+    if (!state || !selectedStage) return { left:0, right:0, ratio:1, progress:0 };
+
+    if (isChapter43BossStage() && state.chapter43Wave2CountdownTriggered) {
+      const cfg43 = getChapter43Config();
+      const start = Number(state.chapter43CollapseStartedAt || now);
+      const end = Math.max(start + 1000, Number(state.chapter43CollapseDeadlineAt || start + 45000));
+      const minWidthRatio = clamp(Number(cfg43?.collapseMinWidthRatio || .20), .16, 1);
+      const progress = clamp((Number(now) - start) / (end - start), 0, 1);
+      const ratio = 1 - (1 - minWidthRatio) * progress;
+      const inset = Math.max(0, arenaWidth * (1 - ratio) * .5);
+      return { left:inset, right:inset, ratio, progress };
+    }
+
+    const cfg = selectedStage.shrinkWalls;
+    if (!cfg || !isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02)) {
+      return { left:0, right:0, ratio:1, progress:0 };
     }
     const elapsed = Math.max(0, (Number(now || performance.now()) - Number(state.startedAt || performance.now())) / 1000);
     const startAt = Math.max(0, Number(cfg.startAtSeconds || 0));
-    const endAt = Math.max(startAt + 0.001, Number(cfg.endAtSeconds || getBattleTimeLimitSeconds() || 60));
-    const minWidthRatio = clamp(Number(cfg.minWidthRatio || 0.5), 0.2, 1);
+    const endAt = Math.max(startAt + .001, Number(cfg.endAtSeconds || getBattleTimeLimitSeconds() || 60));
+    const minWidthRatio = clamp(Number(cfg.minWidthRatio || .5), .2, 1);
     const progress = elapsed <= startAt ? 0 : clamp((elapsed - startAt) / (endAt - startAt), 0, 1);
     const ratio = 1 - (1 - minWidthRatio) * progress;
-    const inset = Math.max(0, arenaWidth * (1 - ratio) * 0.5);
-    return { left: inset, right: inset, ratio, progress };
+    const inset = Math.max(0, arenaWidth * (1 - ratio) * .5);
+    return { left:inset, right:inset, ratio, progress };
   }
 
   function ensureChapter4ShrinkWalls() {
@@ -5894,6 +6215,13 @@
 
   function getBossDangerInterval() {
     const phase = Math.max(1, Number(state?.boss?.phase || 1));
+    if (isChapter43BossStage()) {
+      const cfg = getChapter43Config();
+      const every = Number(state?.boss?.phase || 1) >= 2
+        ? Number(cfg?.warningEveryMsWave2 || 5600)
+        : Number(cfg?.warningEveryMsWave1 || 6500);
+      return Math.max(1000, every - Number(cfg?.warningTelegraphMs || 700));
+    }
     if (isChapter04BossStage()) return Math.max(1000, Number(selectedStage?.dangerEveryMs || 10000) - 700); // WARNING表示0.7秒を含め弾発射は10秒周期
 
     // CHAPTER01-04 オーバーシアだけはWAVE2/3の危険攻撃頻度も
@@ -5926,9 +6254,29 @@
       const angle = Math.atan2(dy, dx);
       const speed = Math.max(325, Number(BOSS.bulletSpeed || 240) * 1.38);
 
-      if (isChapter04BossStage()) {
-        // サキエル: CH04全3ステージでWARNING弾は10秒周期・2発固定・反射なし。
-        // 5秒だけゆっくりゆらゆら漂い、その後消える。
+      if (isChapter43BossStage()) {
+        const cfg43 = getChapter43Config();
+        const wave43 = Math.max(1, Number(state.boss.phase || 1));
+        const bounces = wave43 >= 2
+          ? Number(cfg43?.warningBouncesWave2 || 3)
+          : Number(cfg43?.warningBouncesWave1 || 2);
+        const shotAngle = angle + ((Number(state.bossDangerPatternIndex || 0) % 2) ? .18 : -.18);
+        state.bossDangerPatternIndex = Number(state.bossDangerPatternIndex || 0) + 1;
+        const warningSpeed = Math.max(250, Number(BOSS.bulletSpeed || 190) * 1.38);
+        const projectile = makeProjectile(
+          'shooting-enemy-bullet shooting-danger-bullet shooting-sakiel-warning-bullet',
+          state.boss.x, state.boss.y + 38,
+          Math.cos(shotAngle) * warningSpeed,
+          Math.sin(shotAngle) * warningSpeed,
+          999999
+        );
+        if (projectile) {
+          projectile.dangerRicochet = true;
+          projectile.dangerWallHits = 0;
+          projectile.dangerMaxReflections = bounces;
+          state.enemyBullets.push(projectile);
+        }
+      } else if (isChapter04BossStage()) {
         [-0.52, 0.52].forEach((offset, idx) => {
           const shotAngle = angle + offset;
           const projectile = makeProjectile(
@@ -6051,7 +6399,11 @@
     }
 
     if (now >= state.nextBossDangerAt) {
-      state.bossDangerExecuteAt = now + (isChapter04BossStage() ? 700 : 1250);
+      state.bossDangerExecuteAt = now + (
+        isChapter43BossStage()
+          ? Number(getChapter43Config()?.warningTelegraphMs || 700)
+          : (isChapter04BossStage() ? 700 : 1250)
+      );
       showBossDangerWarning();
       // WARNING表示中も既存弾・通常射撃はそのまま継続する。
       return false;
@@ -6070,6 +6422,11 @@
   // PHASE3: 螺旋とウェーブを交互
   function fireBeautifulBoss(now) {
     if (!state || !BOSS) return;
+
+    if (isChapter43BossStage()) {
+      fireChapter43TenWay(now);
+      return;
+    }
 
     const phase = Math.max(1, Number(state.boss?.phase || 1));
     const ordinaryCount = state.enemyBullets.reduce((n, p) => {
@@ -6256,7 +6613,7 @@
     if (!state || state.boss.hp <= 0 || isFacelessStage() || isAmbushStage() || isScoreAttackStage()) return;
     const previous = state.boss.phase || 1;
     const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
-    const nextPhase = 4 - remainingGauges; // 3→phase1 / 2→phase2 / 1→phase3
+    const nextPhase = Math.max(1, Math.min(state.boss.gauges, state.boss.gauges - remainingGauges + 1));
     if (nextPhase !== previous) {
       state.boss.phase = nextPhase;
       beginBossPhaseBreak(nextPhase);
@@ -6269,9 +6626,18 @@
     removeBossDangerWarning();
     state.bossDangerExecuteAt = 0;
     state.nextBossDangerAt = performance.now() + 4200;
+    if (isChapter43BossStage()) {
+      state.chapter43RhythmStep = 0;
+      state.chapter43RhythmNextAt = performance.now() + 900;
+    }
     state.lastBossShotAt = performance.now();
     state.lastShotAt = performance.now();
     clearProjectiles();
+    if (isChapter43BossStage() && phase >= 2) {
+      clearChapter43RestoreItem();
+      clearChapter43SealCountdown();
+      state.chapter43AttackSealed = false;
+    }
     flashBossPhaseChange(phase);
     renderHud();
 
@@ -6477,6 +6843,16 @@
 
       sustainHitFeedback(boss, 150);
 
+      if (isChapter43BossStage()) {
+        boss.classList.remove('chapter43-hit-flash');
+        void boss.offsetWidth;
+        boss.classList.add('chapter43-hit-flash');
+        window.clearTimeout(boss.__chapter43HitTimer);
+        boss.__chapter43HitTimer = window.setTimeout(() => {
+          boss.classList.remove('chapter43-hit-flash');
+        }, 150);
+      }
+
       // HP∞でも「攻撃が当たった」ことが明確に分かる専用グロー。
       // DOMを増やさず既存ボス要素のclassだけで光らせるので軽量。
       if (isScoreAttackStage()) {
@@ -6492,6 +6868,13 @@
     }
 
     // 大技だけは従来の強い単発フラッシュを残す。
+    if (isChapter43BossStage()) {
+      boss.classList.remove('chapter43-hit-flash');
+      void boss.offsetWidth;
+      boss.classList.add('chapter43-hit-flash');
+      window.clearTimeout(boss.__chapter43HitTimer);
+      boss.__chapter43HitTimer = window.setTimeout(() => boss.classList.remove('chapter43-hit-flash'), 260);
+    }
     boss.classList.remove('burst-hit');
     void boss.offsetWidth;
     boss.classList.add('burst-hit');
@@ -6871,7 +7254,7 @@
           Number(ownerId) === CHARACTER_ID.HAYATE &&
           now < (state.hayateMoonlightUntil || 0);
 
-        if (!isChapter04Stage() && !p.noUltGain && !ownerMoonlightBlocked) {
+        if ((!isChapter04Stage() || isChapter43BossStage()) && !state?.chapter43AttackSealed && !p.noUltGain && !ownerMoonlightBlocked) {
           const baseGain = Number.isFinite(chara.ultGainPerHit) ? chara.ultGainPerHit : 1;
           const gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER * hitCount;
 
@@ -8046,6 +8429,7 @@
       updateFacelessObjects(dt, ts);
       updateAmbushStageMechanics(dt, ts);
       updateChapter4FinalItem(ts);
+      updateChapter43Mechanics(ts);
       updateFacelessStageMechanics(ts);
       updateChapter4ShrinkWalls(ts);
       updateCollectibles(dt);
@@ -8358,11 +8742,14 @@
     countdown.classList.add('show');
     countdown.setAttribute('aria-hidden', 'false');
     const sequence = [
-      ...(isChapter04Stage() ? [
+      ...(isChapter43BossStage() ? [
+        { text:'全2WAVE', phase:'chapter4-rule-phase', hold:1400 },
+        { text:'サキエルを撃破せよ', phase:'chapter4-rule-phase', hold:1800 }
+      ] : (isChapter04Stage() ? [
         { text:'60秒間生き残り', phase:'chapter4-rule-phase', hold:1500 },
         { text:'最後に出現する', phase:'chapter4-rule-phase', hold:1500 },
         { text:'アイテムを獲得せよ', phase:'chapter4-rule-phase', hold:1500 }
-      ] : []),
+      ] : [])),
       ...(isHorizontalControlReversed() ? [
         // CH05: この注意文だけは4.4秒間、文字そのものを表示し続ける。
         // ready-popを付けると1.18秒でopacity:0になるため専用フラグで固定表示する。
@@ -8905,6 +9292,9 @@
     // CH04専用ギミックはRESULTへ持ち越さない。
     clearChapter4FinalItem();
     purgeChapter4ItemDom();
+    clearChapter43RestoreItem();
+    clearChapter43SealCountdown();
+    clearChapter43Countdown();
 
     // 迫る壁もRESULTへ残さず、即座に初期幅へ戻す。
     const ch04ArenaForResult = document.getElementById('shooting-arena');
@@ -9228,7 +9618,7 @@
     id = Number(id);
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
 
-    if (isChapter04Stage() && id !== Number(CHARACTER_ID.ERI)) {
+    if (isChapter04Stage() && !isChapter43BossStage() && id !== Number(CHARACTER_ID.ERI)) {
       ensureStoryEriLeader();
       selectedCharacterId = Number(CHARACTER_ID.ERI);
       applySelectedCharacterToUi();
@@ -11395,7 +11785,8 @@
 
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
-    if (isChapter04Stage()) return false;
+    if (isChapter04Stage() && !isChapter43BossStage()) return false;
+    if (isChapter43BossStage() && state.chapter43AttackSealed) return false;
     if (performance.now() < (state.ultLockUntil || 0)) return false;
     const c = getCurrentCharacter();
     const member = getActiveMember();

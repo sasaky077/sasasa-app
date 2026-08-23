@@ -6462,8 +6462,8 @@
   filter:none!important;
 }
 .shooting-ch04-final-item{
-  width:42px!important;
-  height:42px!important;
+  width:36px!important;
+  height:36px!important;
   z-index:32!important;
   animation:shootingCh04FinalItemPulse .55s ease-in-out infinite alternate!important;
 }
@@ -6890,8 +6890,8 @@
    ============================================================ */
 #shooting-event-root:is([data-shooting-stage="shooting_ch04_01"],[data-shooting-stage="shooting_ch04_02"],[data-shooting-stage="shooting_ch04_03"],
 [data-shooting-stage="shooting_beginner_ch04_01"],[data-shooting-stage="shooting_beginner_ch04_02"],[data-shooting-stage="shooting_beginner_ch04_03"]) .shooting-ch04-final-item{
-  width:76px!important;
-  height:76px!important;
+  width:36px!important;
+  height:36px!important;
   z-index:140!important;
   opacity:1!important;
   display:block!important;
@@ -7124,4 +7124,69 @@
 #shooting-event-root[data-shooting-stage="shooting_ch04_03"] #shooting-enemy-bullet-canvas,
 #shooting-event-root[data-shooting-stage="shooting_beginner_ch04_03"] #shooting-enemy-bullet-canvas{
   opacity:1!important;
+}
+
+
+/* ============================================================
+   CHAPTER04-3 v76 — normal party / boss HUD override
+   CH04-1/2 keep the old Eri-only guard.
+   ============================================================ */
+
+/* CH04-3は通常シューティング化したため、キャラ一覧ガードを解除 */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-character-grid.shooting-party-roster{
+  overflow:auto!important;
+  isolation:auto!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-character-grid.shooting-party-roster::after{
+  content:none!important;
+  display:none!important;
+  pointer-events:none!important;
+}
+
+/* CH04-3はボスHPを使う通常戦なのでBOSS HUDを復活 */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-boss-hud{
+  display:block!important;
+}
+
+/* CH04-3は通常SHOT/ULTありなのでCOMBOも復活 */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-combo{
+  display:block!important;
+}
+
+
+/* ============================================================
+   CHAPTER04-3 v77 — unlock non-Eri party buttons
+   Old CH04 CSS forced every non-Eri option to opacity:.22 +
+   grayscale + pointer-events:none. CH04-3 is now a normal
+   3-member battle, so explicitly restore those properties.
+   ============================================================ */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-character-option:not([data-character-id="1"]){
+  opacity:1!important;
+  filter:none!important;
+  pointer-events:auto!important;
+}
+
+/* 未所持キャラだけは従来どおり選択不可 */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-character-option.locked{
+  opacity:.22!important;
+  filter:grayscale(1)!important;
+  pointer-events:none!important;
 }
