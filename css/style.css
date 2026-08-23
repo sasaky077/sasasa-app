@@ -25753,3 +25753,57 @@ body {
     margin-top:19px!important;
   }
 }
+
+/* =========================================================
+   127 キャラ一覧：縦スクロール修正
+   - 一覧グリッド自身ではなく screen-scroll をスクロール領域にする
+   - 下部ナビに隠れない余白を維持
+   ========================================================= */
+#screen-zukan.is-primoa-index .screen-scroll {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y !important;
+}
+
+#screen-zukan.is-primoa-index #box-grid.primoa-index-grid {
+  overflow: visible !important;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+}
+
+
+/* =========================================================
+   128 キャラ一覧：縦スクロール根本修正
+   - 旧カルーセル用 #zukan-sub-box { height:100%; overflow:hidden; } が
+     一覧全体を画面高で切っていたため、一覧モードだけ解除する
+   - screen-scroll を唯一の縦スクロール領域として維持
+   ========================================================= */
+#screen-zukan.is-primoa-index .screen-scroll {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  pointer-events: auto !important;
+}
+
+#screen-zukan.is-primoa-index #zukan-sub-box {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+#screen-zukan.is-primoa-index #box-grid.primoa-index-grid {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  touch-action: pan-y !important;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+}
+
+#screen-zukan.is-primoa-index #box-grid.primoa-index-grid * {
+  touch-action: pan-y manipulation;
+}
