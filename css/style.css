@@ -25807,3 +25807,96 @@ body {
 #screen-zukan.is-primoa-index #box-grid.primoa-index-grid * {
   touch-action: pan-y manipulation;
 }
+
+
+/* =========================================================
+   129 邂逅：スクロールなし・1画面固定
+   - ヘッダーと下部ナビの間だけを使用
+   - ガチャ画面内の縦スクロールを完全停止
+   ========================================================= */
+#screen-summon{
+  overflow:hidden!important;
+}
+
+#screen-summon .summon-layout{
+  flex:1 1 0!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  touch-action:manipulation!important;
+  padding:
+    8px
+    8px
+    calc(78px + env(safe-area-inset-bottom))
+    8px!important;
+}
+
+#screen-summon .summon-detail{
+  min-height:0!important;
+  height:100%!important;
+  overflow:hidden!important;
+  padding-bottom:0!important;
+  gap:6px!important;
+}
+
+#screen-summon .summon-detail-visual{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+#screen-summon .summon-detail-visual img{
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+}
+
+#screen-summon .summon-banner-list{
+  flex:0 0 auto!important;
+  overflow:hidden!important;
+  -webkit-overflow-scrolling:auto!important;
+  touch-action:manipulation!important;
+}
+
+#screen-summon .summon-detail-btns,
+#screen-summon .pity-counter,
+#screen-summon .pity-note{
+  flex:0 0 auto!important;
+}
+
+/* 縦が短い端末でもスクロールを発生させず収める */
+@media (max-height:700px){
+  #screen-summon .summon-layout{
+    padding:
+      6px
+      7px
+      calc(70px + env(safe-area-inset-bottom))
+      7px!important;
+  }
+
+  #screen-summon .summon-detail{
+    gap:5px!important;
+  }
+
+  #screen-summon .summon-detail-btns{
+    gap:6px!important;
+  }
+
+  #screen-summon .btn-gacha{
+    min-height:50px!important;
+    padding:7px 5px!important;
+  }
+
+  #screen-summon .pity-counter{
+    padding-top:3px!important;
+    padding-bottom:3px!important;
+  }
+
+  #screen-summon .pity-note{
+    padding-bottom:2px!important;
+  }
+}

@@ -11,54 +11,45 @@
     noahStyle.textContent = `
       /* ウルフ / ノア共通：丸い光弾ではなく、前方へ圧縮された波動弾 */
       .shooting-bullet-wolf-j{
-        width:24px!important;
-        height:14px!important;
-        margin:-7px 0 0 -12px!important;
+        width:18px!important;
+        height:18px!important;
+        margin:-9px 0 0 -9px!important;
         border-radius:50%!important;
         overflow:visible!important;
-        background:
-          radial-gradient(ellipse at 58% 50%,rgba(255,255,255,.98) 0 12%,rgba(235,230,248,.92) 13% 24%,rgba(126,94,165,.80) 38%,rgba(79,51,111,.34) 58%,transparent 72%)!important;
-        box-shadow:
-          0 0 7px rgba(225,209,245,.90),
-          -8px 0 12px rgba(121,82,159,.42)!important;
+        background:radial-gradient(circle at 50% 50%,rgba(255,255,255,1) 0 18%,rgba(245,237,255,.98) 19% 33%,rgba(182,136,231,.96) 45%,rgba(118,73,176,.80) 62%,rgba(68,35,109,.24) 76%,transparent 78%)!important;
+        box-shadow:0 0 6px rgba(255,248,255,.96),0 0 12px rgba(185,140,230,.88),0 0 18px rgba(109,69,165,.42)!important;
         filter:none!important;
       }
       .shooting-bullet-wolf-j::before{
         content:"";
         position:absolute;
-        left:-7px;right:3px;top:2px;bottom:2px;
-        border:1px solid rgba(220,203,242,.68);
+        inset:-4px;
         border-radius:50%;
-        transform:scaleX(1.18);
-        opacity:.72;
-        box-shadow:0 0 5px rgba(174,139,207,.45);
+        border:1.5px solid rgba(232,214,251,.84);
+        box-shadow:0 0 6px rgba(244,235,255,.82), inset 0 0 5px rgba(188,141,231,.40);
+        opacity:.95;
       }
       .shooting-bullet-wolf-j::after{
         content:"";
         position:absolute;
-        left:-13px;top:50%;
-        width:16px;height:6px;
-        transform:translateY(-50%);
+        inset:-8px;
         border-radius:50%;
-        background:linear-gradient(90deg,transparent,rgba(157,117,190,.20),rgba(231,220,246,.76));
-        filter:blur(.4px);
+        background:radial-gradient(circle,rgba(178,131,227,.28) 0 28%,rgba(132,84,192,.14) 45%,transparent 72%);
+        filter:blur(1px);
       }
 
-      /* ノア通常ホーミングは同形状の灰白波動 */
+      /* ノア通常ホーミングは丸い灰白光弾 */
       .shooting-bullet-noah.shooting-bullet-wolf-j{
-        background:
-          radial-gradient(ellipse at 58% 50%,#fff 0 12%,#eeeef1 13% 26%,#b3b5bc 38%,rgba(105,108,118,.34) 58%,transparent 72%)!important;
-        box-shadow:
-          0 0 8px rgba(240,240,244,.96),
-          -8px 0 13px rgba(145,147,157,.46)!important;
+        background:radial-gradient(circle at 50% 50%,rgba(255,255,255,1) 0 18%,rgba(244,244,247,.98) 19% 34%,rgba(201,203,210,.96) 46%,rgba(130,133,144,.80) 63%,rgba(80,83,94,.22) 76%,transparent 78%)!important;
+        box-shadow:0 0 7px rgba(247,247,250,.98),0 0 13px rgba(204,205,213,.86),0 0 18px rgba(132,135,145,.38)!important;
         filter:saturate(.08)!important;
       }
       .shooting-bullet-noah.shooting-bullet-wolf-j::before{
-        border-color:rgba(228,229,234,.78);
-        box-shadow:0 0 6px rgba(184,186,196,.55);
+        border-color:rgba(230,231,236,.86);
+        box-shadow:0 0 6px rgba(235,236,241,.88), inset 0 0 5px rgba(188,191,201,.32);
       }
       .shooting-bullet-noah.shooting-bullet-wolf-j::after{
-        background:linear-gradient(90deg,transparent,rgba(131,134,144,.22),rgba(242,242,245,.84));
+        background:radial-gradient(circle,rgba(214,216,223,.25) 0 28%,rgba(146,149,160,.12) 45%,transparent 72%);
       }
 
       .shooting-noah-laser i{
