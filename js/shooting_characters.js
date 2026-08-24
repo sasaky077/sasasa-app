@@ -867,7 +867,7 @@
     // 中心レーザー：イグニスより1Hit威力を抑えた細身レーザー
     shotType: 'noah_hybrid',
     shotStyle: 'noah',
-    fireRate: 110,
+    fireRate: 285,
     laserWidth: 10,
     laserHitWidth: 38,
     laserDamageAtkRate: 0.065,

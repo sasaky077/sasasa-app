@@ -6953,27 +6953,34 @@
    ============================================================ */
 .shooting-bullet-wolf,
 .shooting-bullet-wolf-j{
-  width:9px!important;
-  height:24px!important;
-  border-radius:999px!important;
+  width:18px!important;
+  height:18px!important;
+  min-width:18px!important;
+  min-height:18px!important;
+  max-width:18px!important;
+  max-height:18px!important;
+  margin:-9px 0 0 -9px!important;
+  border-radius:50%!important;
   background:
-    radial-gradient(circle at 50% 18%,rgba(255,255,255,.98) 0 8%,rgba(189,165,255,.95) 19%,rgba(92,67,148,.95) 55%,rgba(28,23,38,.98) 100%)!important;
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,.99) 0 18%,rgba(229,214,255,.96) 19% 34%,rgba(149,108,207,.94) 48%,rgba(88,56,143,.78) 65%,rgba(36,25,57,.20) 77%,transparent 79%)!important;
   box-shadow:
-    0 0 5px rgba(203,180,255,.82),
-    0 0 12px rgba(96,66,160,.54),
-    0 0 22px rgba(45,31,73,.30)!important;
+    0 0 6px rgba(225,210,255,.88),
+    0 0 12px rgba(128,87,191,.58),
+    0 0 18px rgba(70,42,112,.30)!important;
 }
 .shooting-bullet-wolf-j::after{
   content:"";
   position:absolute;
-  left:50%;
-  top:3px;
-  width:3px;
-  height:15px;
-  transform:translateX(-50%);
-  border-radius:999px;
-  background:rgba(244,238,255,.88);
-  box-shadow:0 0 5px rgba(229,215,255,.72);
+  left:-8px!important;
+  right:-8px!important;
+  top:-8px!important;
+  bottom:-8px!important;
+  width:auto!important;
+  height:auto!important;
+  transform:none!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle,rgba(178,131,227,.28) 0 28%,rgba(132,84,192,.14) 45%,transparent 72%)!important;
+  box-shadow:none!important;
 }
 
 .shooting-wolf-atk-field{
@@ -7189,4 +7196,21 @@
   opacity:.22!important;
   filter:grayscale(1)!important;
   pointer-events:none!important;
+}
+
+
+/* ============================================================
+   v133 FACELESS 仮面 被弾演出
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"]
+.shooting-faceless-object.faceless-hit-flash{
+  filter:
+    brightness(2.15)
+    saturate(.55)
+    drop-shadow(0 0 10px rgba(255,255,255,.95))
+    drop-shadow(0 0 18px rgba(195,185,215,.80))!important;
+  transform:
+    translate3d(var(--unit-x),var(--unit-y),0)
+    translate(-50%,-50%)
+    scale(1.08)!important;
 }

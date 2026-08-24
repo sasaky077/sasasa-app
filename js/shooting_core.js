@@ -9,10 +9,14 @@
     const noahStyle = document.createElement('style');
     noahStyle.id = 'shooting-noah-wave-style-v112';
     noahStyle.textContent = `
-      /* ウルフ / ノア共通：丸い光弾ではなく、前方へ圧縮された波動弾 */
+      /* ウルフ / ノア共通：真円のホーミング光弾 */
       .shooting-bullet-wolf-j{
         width:18px!important;
         height:18px!important;
+        min-width:18px!important;
+        min-height:18px!important;
+        max-width:18px!important;
+        max-height:18px!important;
         margin:-9px 0 0 -9px!important;
         border-radius:50%!important;
         overflow:visible!important;
@@ -23,18 +27,32 @@
       .shooting-bullet-wolf-j::before{
         content:"";
         position:absolute;
-        inset:-4px;
-        border-radius:50%;
+        left:-4px!important;
+        right:-4px!important;
+        top:-4px!important;
+        bottom:-4px!important;
+        width:auto!important;
+        height:auto!important;
+        transform:none!important;
+        border-radius:50%!important;
         border:1.5px solid rgba(232,214,251,.84);
+        background:transparent!important;
         box-shadow:0 0 6px rgba(244,235,255,.82), inset 0 0 5px rgba(188,141,231,.40);
         opacity:.95;
       }
       .shooting-bullet-wolf-j::after{
         content:"";
         position:absolute;
-        inset:-8px;
-        border-radius:50%;
-        background:radial-gradient(circle,rgba(178,131,227,.28) 0 28%,rgba(132,84,192,.14) 45%,transparent 72%);
+        left:-8px!important;
+        right:-8px!important;
+        top:-8px!important;
+        bottom:-8px!important;
+        width:auto!important;
+        height:auto!important;
+        transform:none!important;
+        border-radius:50%!important;
+        background:radial-gradient(circle,rgba(178,131,227,.28) 0 28%,rgba(132,84,192,.14) 45%,transparent 72%)!important;
+        box-shadow:none!important;
         filter:blur(1px);
       }
 
@@ -3237,11 +3255,22 @@
       });
     } else {
       if (isFacelessStage()) {
-        (state.facelessObjects || []).forEach(obj => {
-          if (!obj || !obj.el || obj.hp <= 0) return;
-          candidates.push({ ref: obj, x: Number(obj.x || 0), y: Number(obj.y || 0) });
-        });
+        const masks = (state.facelessObjects || [])
+          .filter(obj => obj && obj.el && obj.hp > 0)
+          .map(obj => ({ ref: obj, x: Number(obj.x || 0), y: Number(obj.y || 0) }));
+
+        // 仮面が顕現中は、ホーミングはBOSS本体へ吸われず仮面を最優先で追う。
+        // これによりBOSS中心で弾が滞留する状態を防ぐ。
+        if (masks.length) {
+          masks.sort((a, b) => {
+            const da = Math.hypot(a.x - fromX, a.y - fromY);
+            const db = Math.hypot(b.x - fromX, b.y - fromY);
+            return da - db;
+          });
+          return masks[0];
+        }
       }
+
       if (state.boss && state.boss.hp > 0) {
         candidates.push({ ref: state.boss, x: Number(state.boss.x || 0), y: Number(state.boss.y || 0) });
       }
@@ -3259,9 +3288,22 @@
 
   function resolveWolfTrackedTarget(p) {
     const tracked = p && p.wolfTargetRef;
+
+    // FACELESSで仮面が顕現したら、BOSSを追っていた既存弾も仮面へ再ロックする。
+    if (isFacelessStage()) {
+      const masksAlive = (state.facelessObjects || []).some(obj => obj && obj.el && obj.hp > 0);
+      const trackedIsBoss = tracked && tracked === state.boss;
+      if (masksAlive && trackedIsBoss) {
+        const nextMask = getWolfTargetPoint(Number(p?.x || state?.player?.x || 0), Number(p?.y || state?.player?.y || 0));
+        if (p && nextMask) p.wolfTargetRef = nextMask.ref;
+        return nextMask;
+      }
+    }
+
     if (tracked && Number(tracked.hp || 0) > 0) {
       return { ref: tracked, x: Number(tracked.x || 0), y: Number(tracked.y || 0) };
     }
+
     const next = getWolfTargetPoint(Number(p?.x || state?.player?.x || 0), Number(p?.y || state?.player?.y || 0));
     if (p && next) p.wolfTargetRef = next.ref;
     return next;
@@ -5668,8 +5710,17 @@
     createHit(obj.x, obj.y, !!obj.ambushMinion);
     showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', !!obj.ambushMinion);
     if (obj.el) {
-      sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 145);
-      if (obj.ambushMinion) {
+      sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 175);
+
+      // 仮面は1発ごとにフラッシュを再発火させ、命中が視覚で分かるようにする。
+      if (!obj.ambushMinion) {
+        obj.el.classList.remove('faceless-hit-flash');
+        void obj.el.offsetWidth;
+        obj.el.classList.add('faceless-hit-flash');
+        window.setTimeout(() => {
+          if (obj.el && obj.el.isConnected) obj.el.classList.remove('faceless-hit-flash');
+        }, 150);
+      } else {
         obj.el.classList.remove('ambush-hit-flash');
         void obj.el.offsetWidth;
         obj.el.classList.add('ambush-hit-flash');
@@ -7301,11 +7352,25 @@
       const facelessObjectTarget = (isFacelessStage() || isAmbushStage())
         ? (state.facelessObjects || []).find(obj => {
             if (!obj || !obj.el || obj.hp <= 0) return false;
-            const targetRect =
-              isAmbushStage() && obj.ambushMinion
-                ? getAmbushMinionHitRect(obj, arenaRect)
-                : getUnitRect(obj, arenaRect);
-            return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 10);
+            let targetRect = null;
+            if (isAmbushStage() && obj.ambushMinion) {
+              targetRect = getAmbushMinionHitRect(obj, arenaRect);
+            } else if (isFacelessStage()) {
+              // 仮面はCSS上 78x78。画像ロード直後のgetBoundingClientRect()が0でも
+              // 当たり判定を失わないよう、ゲーム座標から固定サイズで作る。
+              const cx = arenaRect.left + Number(obj.x || 0);
+              const cy = arenaRect.top + Number(obj.y || 0);
+              const half = 39;
+              targetRect = {
+                left: cx - half,
+                right: cx + half,
+                top: cy - half,
+                bottom: cy + half
+              };
+            } else {
+              targetRect = getUnitRect(obj, arenaRect);
+            }
+            return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 12);
           })
         : null;
       const hitBoss = !facelessObjectTarget && !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
