@@ -3144,6 +3144,78 @@ function renderResultElementBadge(data){
   }
   localStorage.setItem('zukan_user_id', userId);
 
+  // Supabase Auth UUID と既存のゲーム内ユーザーIDを user_profiles で紐付ける。
+  // 既存の zukan_user_id はフレンド検索等で使う公開IDとして維持する。
+  async function bindAuthToCurrentUserProfile(){
+    try {
+      var authUser = await window.zsAuthReady;
+      if(!authUser || !authUser.id){
+        console.warn('[AuthBind] auth user unavailable');
+        return { ok:false, reason:'no_auth_user' };
+      }
+
+      var current = await sb.from('user_profiles')
+        .select('user_id, auth_uid')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if(current.error) throw current.error;
+
+      // profile作成前なら、loadFromDB内の新規作成後にもう一度呼ばれる。
+      if(!current.data){
+        return { ok:false, reason:'profile_not_found' };
+      }
+
+      if(current.data.auth_uid){
+        if(String(current.data.auth_uid) !== String(authUser.id)){
+          console.error(
+            '[AuthBind] conflict: this game user id is already linked to another auth user',
+            { user_id:userId, auth_uid:current.data.auth_uid, current_auth_uid:authUser.id }
+          );
+          return { ok:false, reason:'auth_conflict' };
+        }
+
+        console.log('[AuthBind] existing link:', userId, '->', authUser.id);
+        return { ok:true, alreadyLinked:true };
+      }
+
+      var updated = await sb.from('user_profiles')
+        .update({ auth_uid: authUser.id })
+        .eq('user_id', userId)
+        .is('auth_uid', null)
+        .select('user_id, auth_uid')
+        .maybeSingle();
+
+      if(updated.error) throw updated.error;
+
+      if(!updated.data){
+        // 同時更新などで0件だった場合は再確認する。
+        var recheck = await sb.from('user_profiles')
+          .select('user_id, auth_uid')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if(recheck.error) throw recheck.error;
+
+        if(recheck.data && String(recheck.data.auth_uid || '') === String(authUser.id)){
+          console.log('[AuthBind] existing link after recheck:', userId, '->', authUser.id);
+          return { ok:true, alreadyLinked:true };
+        }
+
+        return { ok:false, reason:'not_updated' };
+      }
+
+      console.log('[AuthBind] linked:', userId, '->', authUser.id);
+      return { ok:true, alreadyLinked:false };
+    } catch(error) {
+      // β移行中は紐付け失敗だけでゲーム全体を止めない。
+      console.error('[AuthBind] failed:', error);
+      return { ok:false, reason:'error', error:error };
+    }
+  }
+
+  window.bindAuthToCurrentUserProfile = bindAuthToCurrentUserProfile;
+
   async function migrateLegacyUserIdCase(){
     var canonicalId = normalizeZeraphiaUserId(userId);
     if(!canonicalId) return;
@@ -3778,6 +3850,11 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     };
     writeProfileCache(userProfile);
   }
+
+  // profileの読込/新規作成が完了した時点でAuth所有者を紐付ける。
+  // 失敗してもβ移行中は既存ゲーム進行を止めない。
+  await bindAuthToCurrentUserProfile();
+
   // 明示的な引き継ぎ待ちだけは整合性保護のため起動前に完了させる。
   // 通常のローカル→クラウド移行はホーム表示を止めずバックグラウンドへ。
   if(localStorage.getItem(ZERAPHIA_TRANSFER_PENDING_KEY) === '1'){
