@@ -2145,6 +2145,36 @@ document.addEventListener('touchend', function (e) {
   // 外部機能JS（ログインボーナス等）から既存Supabase接続を再利用
   window.zsSupabase = sb;
 
+  // Supabase Auth: 無料β版向けの匿名認証。
+  // 既存の zukan_user_id はまだ変更せず、まずは認証セッションだけ裏で確立する。
+  async function ensureAnonymousAuth() {
+    try {
+      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      if (sessionData.session?.user) {
+        console.log('[Auth] existing user:', sessionData.session.user.id);
+        return sessionData.session.user;
+      }
+
+      const { data, error } = await sb.auth.signInAnonymously();
+
+      if (error) throw error;
+
+      console.log('[Auth] anonymous user created:', data.user?.id);
+      return data.user;
+    } catch (error) {
+      console.error('[Auth] anonymous sign-in failed:', error);
+
+      // β版ではAuth失敗だけでゲーム全体を止めない。
+      return null;
+    }
+  }
+
+  // 他の処理から必要に応じて await できるようにPromiseを公開する。
+  window.zsAuthReady = ensureAnonymousAuth();
+
   // ============================================================
   // Zeraphia クラウド引き継ぎ / Supabase同期
   // 対象: レムナント、アイテム、神樹、進行情報
