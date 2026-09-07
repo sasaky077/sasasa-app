@@ -892,14 +892,31 @@
     </div>
   </div>
   <div class="setting-section">
-    <div class="setting-section-title">データ引き継ぎ</div>
-    <div class="setting-row" onclick="copyId()">
-      <span class="setting-row-label">IDをコピー</span>
+    <div class="setting-section-title">アカウント</div>
+
+    <div class="setting-row" onclick="openAccountProtection()">
+      <span class="setting-row-label">アカウント保護</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span class="setting-row-sub" id="account-protection-status">確認中...</span>
+        <span class="setting-row-arrow">›</span>
+      </span>
+    </div>
+
+    <div class="setting-row" onclick="openDataTransfer()">
+      <span class="setting-row-label">データ引継ぎ</span>
       <span class="setting-row-arrow">›</span>
     </div>
-    <div class="setting-row" onclick="inputId()">
-      <span class="setting-row-label">IDを入力して引き継ぐ</span>
-      <span class="setting-row-arrow">›</span>
+
+    <div class="setting-row" onclick="copyId()">
+      <span class="setting-row-label">ユーザーID</span>
+      <span style="display:flex;align-items:center;gap:8px;min-width:0">
+        <span class="setting-row-sub" id="setting-user-id" style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">-</span>
+        <span class="setting-row-arrow">›</span>
+      </span>
+    </div>
+
+    <div style="padding:8px 14px 12px;font-size:11px;line-height:1.65;color:rgba(95,82,63,.72)">
+      機種変更・端末故障に備える場合は、アカウント保護からメールアドレスを登録してください。
     </div>
   </div>
   <div class="setting-section">
@@ -3144,6 +3161,61 @@ function renderResultElementBadge(data){
   }
   localStorage.setItem('zukan_user_id', userId);
 
+  async function restoreGameUserFromAuthenticatedOwner(){
+    try {
+      var authUser = await window.zsAuthReady;
+      if(!authUser || !authUser.id){
+        return { ok:false, reason:'no_auth_user' };
+      }
+
+      var owned = await sb.from('user_profiles')
+        .select('user_id, auth_uid')
+        .eq('auth_uid', authUser.id)
+        .maybeSingle();
+
+      if(owned.error) throw owned.error;
+
+      if(!owned.data || !owned.data.user_id){
+        return { ok:false, reason:'no_linked_profile' };
+      }
+
+      var ownedUserId = normalizeZeraphiaUserId(owned.data.user_id);
+      if(!ownedUserId){
+        return { ok:false, reason:'invalid_user_id' };
+      }
+
+      if(ownedUserId !== userId){
+        var previousUserId = userId;
+        userId = ownedUserId;
+        localStorage.setItem('zukan_user_id', userId);
+
+        console.log(
+          '[EmailTransfer] restored game user:',
+          previousUserId,
+          '->',
+          userId,
+          'auth:',
+          authUser.id
+        );
+      } else {
+        console.log('[AuthRestore] linked game user confirmed:', userId, '->', authUser.id);
+      }
+
+      if(localStorage.getItem('sasaphia_email_transfer_pending') === '1'){
+        localStorage.removeItem('sasaphia_email_transfer_pending');
+        localStorage.removeItem('sasaphia_email_transfer_email');
+        localStorage.setItem('sasaphia_email_transfer_completed', '1');
+      }
+
+      return { ok:true, user_id:userId, auth_uid:authUser.id };
+    } catch(error) {
+      console.error('[EmailTransfer] restore failed:', error);
+      return { ok:false, reason:'error', error:error };
+    }
+  }
+
+  window.restoreGameUserFromAuthenticatedOwner = restoreGameUserFromAuthenticatedOwner;
+
   // Supabase Auth UUID と既存のゲーム内ユーザーIDを user_profiles で紐付ける。
   // 既存の zukan_user_id はフレンド検索等で使う公開IDとして維持する。
   async function bindAuthToCurrentUserProfile(){
@@ -3454,6 +3526,13 @@ function selectChara(now, gacha) {
   }
 
   async function init(){
+  if(localStorage.getItem('sasaphia_email_transfer_completed') === '1'){
+    localStorage.removeItem('sasaphia_email_transfer_completed');
+    setTimeout(function(){
+      alert('データ引継ぎが完了しました。\n\n元のSasaphiaデータを読み込みました。');
+    }, 700);
+  }
+
   // ボトムナビの5アイコンもスプラッシュ中に先読み・decode。
   if(!window._bottomNavAssetsReady){
     window._bottomNavAssetsReady = waitForBottomNavAssets();
@@ -3462,7 +3541,9 @@ function selectChara(now, gacha) {
   // DBはスプラッシュ表示中から先行ロード。ユーザー操作待ち時間を通信時間に充てる。
   if(!window._dbLoadPromise){
     window._profileLoadState = 'loading';
-    window._dbLoadPromise = loadFromDB().then(function(){
+    window._dbLoadPromise = restoreGameUserFromAuthenticatedOwner()
+      .then(function(){ return loadFromDB(); })
+      .then(function(){
       window._profileLoadState = 'ready';
 
       // タイトルの裏でホームDOMを先に作り、キャラ画像の取得/デコードを開始する。
@@ -8429,6 +8510,219 @@ if(scr){
 }
 
 }
+async function openDataTransfer(){
+  var email = prompt(
+    'データ引継ぎ\n\n' +
+    '以前の端末で「アカウント保護」に登録したメールアドレスを入力してください。\n\n' +
+    '登録メールアドレス：'
+  );
+
+  if(!email || !email.trim()) return;
+  email = email.trim().toLowerCase();
+
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    alert('メールアドレスの形式を確認してください。');
+    return;
+  }
+
+  var ok = confirm(
+    'このメールアドレスに本人確認メールを送信します。\n\n' +
+    email + '\n\n' +
+    'メール内のリンクから認証すると、元のSasaphiaデータを復元します。'
+  );
+  if(!ok) return;
+
+  try {
+    try {
+      await sb.auth.signOut({ scope:'local' });
+    } catch(signOutError) {
+      console.warn('[EmailTransfer] local sign-out skipped:', signOutError);
+    }
+
+    var redirectTo = window.location.origin + window.location.pathname;
+
+    var result = await sb.auth.signInWithOtp({
+      email: email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: redirectTo
+      }
+    });
+
+    if(result.error) throw result.error;
+
+    localStorage.setItem('sasaphia_email_transfer_pending', '1');
+    localStorage.setItem('sasaphia_email_transfer_email', email);
+
+    console.log('[EmailTransfer] verification email requested:', email);
+
+    alert(
+      '本人確認メールを送信しました。\n\n' +
+      email + '\n\n' +
+      'メール内のリンクを、この端末・このブラウザで開いてください。\n' +
+      '認証後、元のゲームデータへ自動で切り替わります。'
+    );
+  } catch(error) {
+    console.error('[EmailTransfer] request failed:', error);
+
+    localStorage.removeItem('sasaphia_email_transfer_pending');
+    localStorage.removeItem('sasaphia_email_transfer_email');
+
+    var message = error && error.message ? error.message : '';
+    alert(
+      'データ引継ぎメールの送信に失敗しました。\n\n' +
+      (message || '登録済みメールアドレスか確認して、もう一度お試しください。')
+    );
+  }
+}
+window.openDataTransfer = openDataTransfer;
+
+async function refreshAccountProtectionStatus(){
+  var statusEl = document.getElementById('account-protection-status');
+  var idEl = document.getElementById('setting-user-id');
+
+  if(idEl) idEl.textContent = userId || '-';
+
+  try {
+    var authUser = await window.zsAuthReady;
+    if(!authUser || !authUser.id){
+      if(statusEl) statusEl.textContent = '確認できません';
+      return null;
+    }
+
+    // getUser()でサーバー側の最新Auth情報を確認する。
+    var current = await sb.auth.getUser();
+    if(current.error) throw current.error;
+
+    var u = current.data && current.data.user ? current.data.user : authUser;
+    var email = String(u && u.email || '').trim();
+    var confirmed = !!(
+      u && (
+        u.email_confirmed_at ||
+        u.confirmed_at ||
+        (u.identities || []).some(function(identity){
+          return identity && identity.provider === 'email';
+        })
+      )
+    );
+
+    if(statusEl){
+      if(email && confirmed){
+        statusEl.textContent = '保護済み ✓';
+      } else if(email){
+        statusEl.textContent = 'メール確認待ち';
+      } else {
+        statusEl.textContent = '未設定';
+      }
+    }
+
+    return { user:u, email:email, confirmed:confirmed };
+  } catch(error) {
+    console.error('[AccountProtection] status failed:', error);
+    if(statusEl) statusEl.textContent = '確認できません';
+    return null;
+  }
+}
+
+async function openAccountProtection(){
+  var state = await refreshAccountProtectionStatus();
+  if(!state || !state.user){
+    alert('アカウント情報を確認できませんでした。通信状況を確認してもう一度お試しください。');
+    return;
+  }
+
+  if(state.email && state.confirmed){
+    alert(
+      'アカウントは保護されています。\n\n' +
+      '登録メール：' + state.email + '\n' +
+      'ユーザーID：' + userId + '\n\n' +
+      '機種変更時は、設定の「データ引継ぎ」からこのメールアドレスで本人確認してください。'
+    );
+    return;
+  }
+
+  if(state.email && !state.confirmed){
+    alert(
+      '確認メールを送信済みです。\n\n' +
+      state.email + '\n\n' +
+      '受信したメールから確認を完了してください。\n' +
+      '確認後、この画面を開き直すと状態が更新されます。'
+    );
+    return;
+  }
+
+  var email = prompt(
+    '機種変更・端末故障に備えてメールアドレスを登録します。\n\n' +
+    '登録するメールアドレスを入力してください：'
+  );
+
+  if(!email || !email.trim()) return;
+  email = email.trim().toLowerCase();
+
+  // 軽い入力チェック。最終検証はSupabase側に任せる。
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    alert('メールアドレスの形式を確認してください。');
+    return;
+  }
+
+  var ok = confirm(
+    'このメールアドレスをSasaphiaのデータ保護用に登録します。\n\n' +
+    email + '\n\n' +
+    '確認メールが届くので、メール内の案内に従って登録を完了してください。'
+  );
+  if(!ok) return;
+
+  try {
+    var result = await sb.auth.updateUser({ email: email });
+    if(result.error) throw result.error;
+
+    console.log('[AccountProtection] confirmation email requested:', email);
+
+    var statusEl = document.getElementById('account-protection-status');
+    if(statusEl) statusEl.textContent = 'メール確認待ち';
+
+    alert(
+      '確認メールを送信しました。\n\n' +
+      email + '\n\n' +
+      'メール内の案内に従って登録を完了してください。'
+    );
+
+    // 少し待ってからサーバー側状態も再取得。
+    setTimeout(function(){
+      refreshAccountProtectionStatus().catch(function(){});
+    }, 1200);
+  } catch(error) {
+    console.error('[AccountProtection] email link failed:', error);
+
+    var message = error && error.message ? error.message : '';
+    if(/already|registered|exists|taken/i.test(message)){
+      alert(
+        'このメールアドレスはすでに別のSasaphiaアカウントで使用されている可能性があります。\n' +
+        '別のメールアドレスを使用するか、今後追加する「メールで引き継ぎ」を利用してください。'
+      );
+    } else {
+      alert('メールアドレスの登録に失敗しました。\n' + (message || 'もう一度お試しください。'));
+    }
+  }
+}
+
+window.refreshAccountProtectionStatus = refreshAccountProtectionStatus;
+window.openAccountProtection = openAccountProtection;
+
+// Auth状態が変わったら設定画面の表示も追従する。
+try {
+  sb.auth.onAuthStateChange(function(){
+    setTimeout(function(){
+      refreshAccountProtectionStatus().catch(function(){});
+    }, 0);
+  });
+} catch (_) {}
+
+// 初回表示用
+setTimeout(function(){
+  refreshAccountProtectionStatus().catch(function(){});
+}, 0);
+
 async function copyId(){
   try {
     await navigator.clipboard.writeText(userId);
@@ -8488,51 +8782,13 @@ function showUnimplementedFeatureNotice(){
 window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
 
   async function inputId(){
-    var newId = prompt('引き継ぎたいIDを入力してください：');
-    if(!newId || !newId.trim()) return;
-
-    var targetId = newId.trim();
-    var currentId = _zsCurrentUserId();
-    if(targetId === currentId){
-      alert('現在使用中のIDです。');
-      return;
-    }
-
-    try {
-      // 入力先にプロフィールまたは所持キャラがあるか確認する。
-      var profileResult = await sb.from('user_profiles').select('user_id').eq('user_id', targetId).limit(1);
-      if(profileResult.error) throw profileResult.error;
-
-      var characterResult = await sb.from('collected_characters').select('id').eq('user_id', targetId).limit(1);
-      if(characterResult.error) throw characterResult.error;
-
-      var exists = !!(
-        (profileResult.data && profileResult.data.length) ||
-        (characterResult.data && characterResult.data.length)
-      );
-
-      if(!exists){
-        alert('このIDの引き継ぎデータが見つかりません。IDを確認してください。');
-        return;
-      }
-
-      var ok = confirm(
-        'このIDのデータを読み込みます。\n' +
-        '現在の端末データはバックアップされ、復元成功までは削除されません。\n' +
-        '続行しますか？'
-      );
-      if(!ok) return;
-
-      _zsCreateTransferBackup();
-      localStorage.setItem('zukan_previous_user_id', currentId || '');
-      localStorage.setItem('zukan_user_id', targetId);
-      localStorage.setItem(ZERAPHIA_TRANSFER_PENDING_KEY, '1');
-      location.reload();
-    } catch(error) {
-      console.error('[CloudSync] transfer id check failed:', error);
-      alert('引き継ぎデータの確認に失敗しました。通信状況とSupabase設定を確認してください。');
-    }
-  }
+  console.warn('[LegacyTransfer] blocked: ID-only transfer is disabled');
+  alert(
+    'IDだけでのデータ引き継ぎは、安全性向上のため廃止しました。\n\n' +
+    '機種変更・端末故障に備える場合は、設定の「アカウント保護」からメールアドレスを登録してください。'
+  );
+  return false;
+}
   async function resetData(){
     var resetUserId = userId || (typeof _zsCurrentUserId === 'function'
       ? _zsCurrentUserId()
