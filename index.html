@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260824-faceless-mask-homing-fix-v133';
+    var FALLBACK_BUILD = '20260907-security-beta-v134';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260824-faceless-mask-homing-fix-v133">
+  <meta name="sasaphia-build" content="20260907-security-beta-v134">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260824-faceless-mask-homing-fix-v133"
+        href="css/style.css?v=20260907-security-beta-v134"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260824-faceless-mask-homing-fix-v133"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260907-security-beta-v134"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260824-faceless-mask-homing-fix-v133">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260907-security-beta-v134">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260824-faceless-mask-homing-fix-v133">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260907-security-beta-v134">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260824-faceless-mask-homing-fix-v133';
+  var BUILD = '20260907-security-beta-v134';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1334,7 +1334,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/home_banners.js?v=20260907-security-beta-v134"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2119,9 +2119,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/resonance_system.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/resonance_ui.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/shooting_resonance.js?v=20260907-security-beta-v134"></script>
+<script src="js/resonance_system.js?v=20260907-security-beta-v134"></script>
+<script src="js/resonance_ui.js?v=20260907-security-beta-v134"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3877,11 +3877,6 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     });
   }
 
-  await bindAuthToCurrentUserProfile();
-
-
-  await ensureStarterEriOwned();
-
   if(res2.error){
     var cached = readProfileCache();
     if(cached){
@@ -3943,8 +3938,9 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   // profileの読込/新規作成が完了した時点でAuth所有者を紐付ける。
-  // 失敗してもβ移行中は既存ゲーム進行を止めない。
+  // その後に初期キャラのエリを付与する。RLS所有者判定が通る順番にする。
   await bindAuthToCurrentUserProfile();
+  await ensureStarterEriOwned();
 
   // 明示的な引き継ぎ待ちだけは整合性保護のため起動前に完了させる。
   // 通常のローカル→クラウド移行はホーム表示を止めずバックグラウンドへ。
@@ -8804,21 +8800,37 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
       ? _zsCurrentUserId()
       : localStorage.getItem('zukan_user_id'));
 
+    var resetEmail = '';
+    try {
+      var currentAuth = await sb.auth.getUser();
+      resetEmail = String(
+        currentAuth &&
+        currentAuth.data &&
+        currentAuth.data.user &&
+        currentAuth.data.user.email || ''
+      ).trim();
+    } catch(_) {}
+
+    var recoveryText = resetEmail
+      ? 'このアカウントはメールアドレスで保護されています。\nリセット後も「データ引継ぎ」から復元できます。'
+      : 'このアカウントはメール保護されていません。\nリセットすると、この端末から元データへ戻れなくなる可能性があります。';
+
     if(!confirm(
-      'この端末のプレイデータをリセットしますか？\n\n' +
-      'Supabase上のデータは削除されません。\n' +
-      '現在のIDをあとで入力すれば、この状態に戻すことができます。\n\n' +
-      '復元用ID：' + (resetUserId || '取得できません') + '\n\n' +
-      '※復元する場合は、このIDを必ず控えてください。'
+      'この端末のプレイデータをリセットして、新しいアカウントで開始しますか？\n\n' +
+      'Supabase上の現在のクラウドデータ自体は削除されません。\n\n' +
+      recoveryText + '\n\n' +
+      '現在のユーザーID：' + (resetUserId || '取得できません')
     )){
       return;
     }
 
     try {
-      // B仕様：
-      // Supabase側の user_profiles / collected_characters / 進捗 / 所持品などは
-      // 一切削除しない。現在のIDもクラウド上ではそのまま存続させる。
-      // 端末側だけ切り離して初期状態にし、あとから「IDを入力して引き継ぐ」で復元可能にする。
+      // 現在のSupabase Authセッションも端末から切り離す。
+      // これをしないと、再読込時に auth_uid から元の user_id が自動復元されてしまう。
+      var signOutResult = await sb.auth.signOut({ scope:'local' });
+      if(signOutResult && signOutResult.error){
+        throw signOutResult.error;
+      }
 
       var exactResetKeys = [
         'zukan_user_id',
@@ -8829,7 +8841,10 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
         'zeraphia_evolution_materials_v1',
         'hide_testplay_guide',
         'sasaphia_notice_read_ids_v1',
-        'sasaphia_notice_read_ids_v2'
+        'sasaphia_notice_read_ids_v2',
+        'sasaphia_email_transfer_pending',
+        'sasaphia_email_transfer_email',
+        'sasaphia_email_transfer_completed'
       ];
 
       exactResetKeys.forEach(function(key){
@@ -8888,9 +8903,10 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
 
       alert(
         'この端末のデータをリセットしました。\n' +
-        'クラウドデータは保存されています。\n\n' +
-        '復元する場合は設定の「IDを入力して引き継ぐ」から\n' +
-        (resetUserId || '以前のID') + ' を入力してください。'
+        '新しいアカウントで再開します。\n\n' +
+        (resetEmail
+          ? '元データへ戻す場合は、設定の「データ引継ぎ」から登録メールアドレスで本人確認してください。'
+          : '元アカウントはメール保護されていないため、復元できない場合があります。')
       );
       location.reload();
     } catch(error) {
@@ -10551,43 +10567,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/asset_loader.js?v=20260907-security-beta-v134"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/login_bonus.js?v=20260907-security-beta-v134"></script>
 
-<script src="js/story_engine.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/stories/chapter01.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/story_engine.js?v=20260907-security-beta-v134"></script>
+<script src="js/stories/chapter01.js?v=20260907-security-beta-v134"></script>
 
-<script src="js/battle_range.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/characters.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/enemies.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/battle.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/battle_swipe.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/battle_range.js?v=20260907-security-beta-v134"></script>
+<script src="js/characters.js?v=20260907-security-beta-v134"></script>
+<script src="js/enemies.js?v=20260907-security-beta-v134"></script>
+<script src="js/battle.js?v=20260907-security-beta-v134"></script>
+<script src="js/battle_swipe.js?v=20260907-security-beta-v134"></script>
 
-<script src="js/stages.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/stage_select.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/party_select.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/enemy_intro.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/stages.js?v=20260907-security-beta-v134"></script>
+<script src="js/stage_select.js?v=20260907-security-beta-v134"></script>
+<script src="js/party_select.js?v=20260907-security-beta-v134"></script>
+<script src="js/enemy_intro.js?v=20260907-security-beta-v134"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260824-faceless-mask-homing-fix-v133">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260907-security-beta-v134">
 
-<script src="js/battle_range_32.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/characters_32.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/remnant_blessings.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/combo_32.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/cards.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/battle_32.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/battle_32_ui.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/battle_range_32.js?v=20260907-security-beta-v134"></script>
+<script src="js/characters_32.js?v=20260907-security-beta-v134"></script>
+<script src="js/remnant_blessings.js?v=20260907-security-beta-v134"></script>
+<script src="js/combo_32.js?v=20260907-security-beta-v134"></script>
+<script src="js/cards.js?v=20260907-security-beta-v134"></script>
+<script src="js/battle_32.js?v=20260907-security-beta-v134"></script>
+<script src="js/battle_32_ui.js?v=20260907-security-beta-v134"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/roguelite_run.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/roguelite_reward.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/shinju.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/roguelite_controller.js?v=20260824-faceless-mask-homing-fix-v133"></script>
-<script src="js/roguelite_overseer_run.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/roguelite_options.js?v=20260907-security-beta-v134"></script>
+<script src="js/roguelite_run.js?v=20260907-security-beta-v134"></script>
+<script src="js/roguelite_reward.js?v=20260907-security-beta-v134"></script>
+<script src="js/shinju.js?v=20260907-security-beta-v134"></script>
+<script src="js/roguelite_controller.js?v=20260907-security-beta-v134"></script>
+<script src="js/roguelite_overseer_run.js?v=20260907-security-beta-v134"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11033,10 +11049,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260824-faceless-mask-homing-fix-v133"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260907-security-beta-v134"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/raid_event.js?v=20260907-security-beta-v134"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11057,7 +11073,7 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260824-faceless-mask-homing-fix-v133"></script>
+<script src="js/score_attack.js?v=20260907-security-beta-v134"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

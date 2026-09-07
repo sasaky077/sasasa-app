@@ -3,7 +3,7 @@
 'use strict';
 const STAGES={normal:'shooting_score_attack_normal',hard:'shooting_score_attack_hard'};
 const PANEL_MAP={"1": "images/chara_01_panel.webp", "2": "images/chara_02_panel.webp", "3": "images/chara_03_panel.webp", "4": "images/chara_04_panel.webp", "5": "images/chara_05_panel.webp", "6": "images/chara_06_panel.webp", "7": "images/chara_07_panel.webp", "8": "images/chara_08_panel.webp", "9": "images/chara_09_panel.webp", "10": "images/chara_10_panel.webp", "11": "images/chara_11_panel.webp", "12": "images/chara_12_panel.webp", "13": "images/chara_13_panel.webp", "14": "images/chara_14_panel.webp", "15": "images/chara_15_panel.webp", "16": "images/chara_16_panel.webp", "17": "images/chara_17_panel.webp", "50": "images/chara_50_panel.webp"};
-let currentDifficulty='normal',root=null,loading=false;
+let currentDifficulty='normal',root=null,loading=false,currentAttemptId=null;
 function uid(){return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase();}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function panelSrc(id){id=Number(id||0);try{const m=window.ShootingCharacters&&window.ShootingCharacters.SHOOTING_CHARACTER_MASTER;if(m&&m[id]&&m[id].panelImage)return m[id].panelImage;}catch(_){}return PANEL_MAP[id]||'';}
@@ -82,7 +82,63 @@ async function refresh(){if(loading)return;loading=true;const r=ensureRoot();r.q
 window.openScoreAttack=function(){const r=ensureRoot();r.classList.add('show');r.setAttribute('aria-hidden','false');if(window.setNavVisible)setNavVisible(false);if(window.setHomeBtnVisible)setHomeBtnVisible(false);if(window.setReloadBtnVisible)setReloadBtnVisible(false);refresh();};
 window.closeScoreAttack=function(){const r=ensureRoot();r.classList.remove('show');r.setAttribute('aria-hidden','true');if(window.setNavVisible)setNavVisible(true);if(window.setHomeBtnVisible)setHomeBtnVisible(false);if(window.setReloadBtnVisible)setReloadBtnVisible(true);};
 window.setScoreAttackDifficulty=function(d){currentDifficulty=d==='hard'?'hard':'normal';const r=ensureRoot();r.querySelector('#score-attack-tab-normal').classList.toggle('active',currentDifficulty==='normal');r.querySelector('#score-attack-tab-hard').classList.toggle('active',currentDifficulty==='hard');refresh();};
-window.startScoreAttack=function(){const stageId=STAGES[currentDifficulty];closeScoreAttack();if(typeof window.openShootingEvent==='function')window.openShootingEvent({stageId});};
-window.ScoreAttack={async submitResult(detail){if(!detail||!String(detail.stageId||'').startsWith('shooting_score_attack_'))return;const sb=window.zsSupabase,userId=uid();if(!sb||typeof sb.rpc!=='function'||!userId)return;const difficulty=String(detail.stageId).endsWith('_hard')?'hard':'normal';try{const res=await sb.rpc('submit_score_attack_result',{p_user_id:userId,p_difficulty:difficulty,p_score:Math.max(0,Math.floor(Number(detail.score||0))),p_party_ids:(Array.isArray(detail.partyIds)?detail.partyIds:[]).map(Number).filter(Boolean)});if(res&&res.error)throw res.error;}catch(err){console.error('[ScoreAttack] submit failed',err);}},refresh};
+window.startScoreAttack=async function(){
+  const stageId=STAGES[currentDifficulty];
+  const sb=window.zsSupabase;
+  if(!sb||typeof sb.rpc!=='function'){
+    alert('通信準備ができていません。もう一度お試しください。');
+    return;
+  }
+
+  try{
+    const res=await sb.rpc('begin_score_attack_attempt',{
+      p_difficulty:currentDifficulty,
+      p_party_ids:[]
+    });
+    if(res&&res.error)throw res.error;
+
+    const data=res&&res.data;
+    const attemptId=data&&data.attempt_id;
+    if(!attemptId)throw new Error('attempt_id was not returned');
+
+    currentAttemptId=String(attemptId);
+    console.log('[ScoreAttack] attempt started:',currentAttemptId);
+
+    closeScoreAttack();
+    if(typeof window.openShootingEvent==='function'){
+      window.openShootingEvent({stageId});
+    }
+  }catch(err){
+    console.error('[ScoreAttack] begin attempt failed',err);
+    alert('スコアアタックを開始できませんでした。通信状況を確認してもう一度お試しください。');
+  }
+};
+window.ScoreAttack={
+  async submitResult(detail){
+    if(!detail||!String(detail.stageId||'').startsWith('shooting_score_attack_'))return;
+
+    const sb=window.zsSupabase;
+    const attemptId=currentAttemptId;
+
+    if(!sb||typeof sb.rpc!=='function'||!attemptId){
+      console.error('[ScoreAttack] finish blocked: attempt_id is missing');
+      return;
+    }
+
+    try{
+      const res=await sb.rpc('finish_score_attack_attempt',{
+        p_attempt_id:attemptId,
+        p_score:Math.max(0,Math.floor(Number(detail.score||0)))
+      });
+      if(res&&res.error)throw res.error;
+
+      console.log('[ScoreAttack] attempt finished:',attemptId,res&&res.data);
+      currentAttemptId=null;
+    }catch(err){
+      console.error('[ScoreAttack] finish attempt failed',err);
+    }
+  },
+  refresh
+};
 window.addEventListener('shooting-stage-result',ev=>{const d=ev&&ev.detail;if(d&&String(d.stageId||'').startsWith('shooting_score_attack_'))void window.ScoreAttack.submitResult(d);});
 })();
