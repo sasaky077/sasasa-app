@@ -3877,6 +3877,9 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     });
   }
 
+  await bindAuthToCurrentUserProfile();
+
+
   await ensureStarterEriOwned();
 
   if(res2.error){
@@ -3903,9 +3906,16 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     userProfile.special_stage_ticket = Math.max(0, Number(profile.special_stage_ticket || 0));
     writeProfileCache(userProfile);
   } else {
-    // SELECT成功かつ該当行なしの場合だけ、新規ユーザーとして作成
+    // SELECT成功かつ該当行なしの場合だけ、新規ユーザーとして作成。
+    // user_profiles の RLS を通すため、Auth UUID を初回INSERT時から保存する。
+    var authUserForProfile = await window.zsAuthReady;
+    if(!authUserForProfile || !authUserForProfile.id){
+      throw new Error('user_profiles新規作成失敗: Supabase Authユーザーを確認できません');
+    }
+
     var insertProfileResult = await sb.from('user_profiles').insert({
       user_id: userId,
+      auth_uid: authUserForProfile.id,
       display_name: 'Player',
       coin: 100,
       gem: 10,
