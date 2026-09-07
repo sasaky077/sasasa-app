@@ -2,28 +2,52 @@
 (function(){
   'use strict';
 
-  const PIECE_KEY = 'sasaphia_noah_piece_count_v1';
+  const PIECE_KEY = 'sasaphia_noah_piece_count_v1'; // 表示キャッシュのみ
   const MAX_PIECES = 9;
   const STAGE_ID = 'shooting_event_bullet_hell_test';
+
+  let serverPieceCount = null;
+  let finishPending = false;
 
   function clampPieceCount(value){
     const n = Math.floor(Number(value || 0));
     return Math.max(0, Math.min(MAX_PIECES, Number.isFinite(n) ? n : 0));
   }
 
-  function getNoahPieceCount(){
-    try {
-      return clampPieceCount(localStorage.getItem(PIECE_KEY));
-    } catch (_) {
-      return 0;
-    }
+  function getCachedPieceCount(){
+    try { return clampPieceCount(localStorage.getItem(PIECE_KEY)); }
+    catch (_) { return 0; }
   }
 
-  function saveNoahPieceCount(value){
+  function getNoahPieceCount(){
+    return serverPieceCount == null ? getCachedPieceCount() : clampPieceCount(serverPieceCount);
+  }
+
+  function setDisplayPieceCount(value){
     const count = clampPieceCount(value);
+    serverPieceCount = count;
     try { localStorage.setItem(PIECE_KEY, String(count)); } catch (_) {}
     renderNoahPiecePanel();
     return count;
+  }
+
+  async function refreshNoahProgress(){
+    const sb = window.zsSupabase;
+    const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
+    if (!sb || !userId) return getNoahPieceCount();
+
+    try {
+      const res = await sb.from('noah_progress')
+        .select('piece_count')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (res && res.error) throw res.error;
+      setDisplayPieceCount(res && res.data ? res.data.piece_count : 0);
+    } catch (err) {
+      console.warn('[NoahPiece] progress load failed:', err);
+    }
+    return getNoahPieceCount();
   }
 
   function getSpecialTicketCount(){
@@ -109,26 +133,25 @@
 
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
-      button.disabled = ticket < 1;
-      button.querySelector('small').textContent = ticket < 1
-        ? 'SPECIAL STAGE TICKET がありません'
-        : 'SPECIAL STAGE TICKET ×1';
+      button.disabled = ticket < 1 || count >= MAX_PIECES;
+      const small = button.querySelector('small');
+      if (small) {
+        small.textContent = count >= MAX_PIECES
+          ? 'ノア解放済み'
+          : (ticket < 1 ? 'SPECIAL STAGE TICKET がありません' : 'SPECIAL STAGE TICKET ×1');
+      }
     }
 
     const complete = document.getElementById('noah-piece-complete');
     if (complete) complete.classList.toggle('show', count >= MAX_PIECES);
   }
 
-  function openNoahPiecePanel(){
+  async function openNoahPiecePanel(){
     buildPanel();
     if (typeof window.refreshSpecialTicketUI === 'function') {
-      try {
-        const p = window.refreshSpecialTicketUI();
-        if (p && typeof p.then === 'function') {
-          p.finally(renderNoahPiecePanel);
-        }
-      } catch (_) {}
+      try { await window.refreshSpecialTicketUI(); } catch (_) {}
     }
+    await refreshNoahProgress();
     renderNoahPiecePanel();
 
     const overlay = document.getElementById('noah-piece-overlay');
@@ -153,8 +176,6 @@
 
     closeNoahPiecePanel();
 
-    // 現在のノア戦は既存シューティングステージへ接続する。
-    // チケット消費はシューティング側の「戦闘開始」処理で行う設計。
     if (typeof window.openShootingEvent === 'function') {
       window.openShootingEvent({ stageId: STAGE_ID });
     } else {
@@ -162,21 +183,120 @@
     }
   }
 
-  // クリア報酬接続用API。今回はプレイアブル化までは行わない。
-  function addNoahPiece(amount){
-    const before = getNoahPieceCount();
-    return saveNoahPieceCount(before + Math.max(1, Math.floor(Number(amount || 1))));
+  async function syncUnlockedNoahToLocal(characterRowId){
+    if (!characterRowId) return;
+    try {
+      const sb = window.zsSupabase;
+      if (!sb) return;
+
+      const rowRes = await sb.from('collected_characters')
+        .select('*')
+        .eq('id', Number(characterRowId))
+        .maybeSingle();
+      if (rowRes && rowRes.error) throw rowRes.error;
+      const row = rowRes && rowRes.data;
+      if (!row) return;
+
+      const chara = typeof getCharaById === 'function' ? getCharaById(52) : null;
+      if (!chara) return;
+
+      const entry = typeof buildOwnedEntryFromChara === 'function'
+        ? buildOwnedEntryFromChara(chara, row)
+        : (typeof createCharaSummonData === 'function'
+            ? createCharaSummonData(chara, new Date(row.captured_at || Date.now()))
+            : null);
+
+      if (!entry) return;
+      entry.db_id = row.id;
+
+      if (typeof box !== 'undefined' && Array.isArray(box) &&
+          !box.some(x => x && Number(x.db_id) === Number(entry.db_id))) {
+        box.push(entry);
+      }
+      if (typeof collected !== 'undefined' && collected) {
+        collected[52] = collected[52] || entry;
+      }
+
+      try { if (typeof renderBox === 'function') renderBox(); } catch (_) {}
+      try { if (typeof updateMainUI === 'function') updateMainUI(); } catch (_) {}
+      try { if (typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice(); } catch (_) {}
+      try { if (typeof window.refreshShootingRoster === 'function') window.refreshShootingRoster(); } catch (_) {}
+    } catch (err) {
+      console.warn('[NoahPiece] local Noah sync failed:', err);
+    }
+  }
+
+  async function finishNoahClear(){
+    if (finishPending) return;
+
+    const attemptId = String(window.__noahAttemptId || '');
+    if (!attemptId) {
+      console.warn('[NoahPiece] no attempt id; clear reward skipped');
+      return;
+    }
+
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') return;
+
+    finishPending = true;
+    try {
+      const res = await sb.rpc('finish_noah_attempt', { p_attempt_id: attemptId });
+      if (res && res.error) throw res.error;
+
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      if (!data || data.ok === false) {
+        throw new Error((data && data.message) || 'ノアの欠片を受け取れませんでした');
+      }
+
+      window.__noahAttemptId = null;
+      const before = getNoahPieceCount();
+      const after = setDisplayPieceCount(data.piece_count);
+
+      if (data.unlocked_noah) {
+        await syncUnlockedNoahToLocal(data.character_row_id);
+        if (typeof window.showNoahCompletePopup === 'function') {
+          try { window.showNoahCompletePopup(); } catch (_) {}
+        } else if (typeof window.showToast === 'function') {
+          window.showToast('ノアが解放されました');
+        }
+      } else if (after > before && typeof window.showToast === 'function') {
+        window.showToast('ノアの欠片を1つ獲得しました');
+      }
+    } catch (err) {
+      console.error('[NoahPiece] finish attempt failed:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(err && err.message ? err.message : 'ノアの欠片の受取に失敗しました');
+      }
+    } finally {
+      finishPending = false;
+    }
+  }
+
+  function handleShootingStageResult(event){
+    const detail = event && event.detail ? event.detail : null;
+    if (!detail || detail.stageId !== STAGE_ID) return;
+
+    if (detail.win) {
+      void finishNoahClear();
+    } else {
+      // 敗北したattemptは報酬に使わず、次の挑戦では新しいattemptを発行する。
+      window.__noahAttemptId = null;
+    }
   }
 
   window.getNoahPieceCount = getNoahPieceCount;
-  window.setNoahPieceCount = saveNoahPieceCount;
-  window.addNoahPiece = addNoahPiece;
+  window.setNoahPieceCount = setDisplayPieceCount;
+  window.refreshNoahProgress = refreshNoahProgress;
   window.renderNoahPiecePanel = renderNoahPiecePanel;
   window.openNoahPiecePanel = openNoahPiecePanel;
   window.closeNoahPiecePanel = closeNoahPiecePanel;
   window.challengeNoahSpecialStage = challengeNoahSpecialStage;
 
+  window.addEventListener('shooting-stage-result', handleShootingStageResult);
   window.addEventListener('pageshow', function(){
-    if (document.getElementById('noah-piece-overlay')) renderNoahPiecePanel();
+    void refreshNoahProgress();
   });
 })();

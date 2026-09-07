@@ -10127,6 +10127,46 @@
     }
   }
 
+  let noahAttemptStartPending = false;
+
+  async function ensureSelectedNoahAttemptStarted() {
+    if (!isNoahStage()) return true;
+    if (noahAttemptStartPending) return false;
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    if (!sb || typeof sb.rpc !== 'function' || !userId) {
+      const message = 'ノア挑戦情報を作成できません';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return false;
+    }
+
+    noahAttemptStartPending = true;
+    try {
+      const res = await sb.rpc('begin_noah_attempt');
+      if (res && res.error) throw res.error;
+
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      const attemptId = data && data.attempt_id ? String(data.attempt_id) : '';
+      if (!attemptId) throw new Error('ノア挑戦IDを取得できません');
+
+      window.__noahAttemptId = attemptId;
+      return true;
+    } catch (err) {
+      console.error('[shooting] noah attempt start failed:', err);
+      const message = err && err.message ? err.message : 'ノア挑戦情報の作成に失敗しました';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return false;
+    } finally {
+      noahAttemptStartPending = false;
+    }
+  }
+
   let specialTicketConsumePending = false;
 
   async function ensureSelectedStageTicketConsumed() {
@@ -10162,6 +10202,7 @@
     // レイド挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
     if (!(await ensureSelectedRaidAttemptStarted())) return;
     if (!(await ensureSelectedStageTicketConsumed())) return;
+    if (!(await ensureSelectedNoahAttemptStarted())) return;
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
     // 集計保存はゲーム開始をブロックしない。
@@ -10304,6 +10345,7 @@
       return;
     }
     if (!(await ensureSelectedStageTicketConsumed())) return;
+    if (!(await ensureSelectedNoahAttemptStarted())) return;
 
     // RETRYも新しい1出撃として使用回数へ加算。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');

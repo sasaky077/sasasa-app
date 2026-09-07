@@ -1922,25 +1922,30 @@ window.NOTICE_ITEMS = [
     }
 
     try {
-      const profile = window.userProfile;
-      const used = Array.isArray(profile.used_gachas) ? profile.used_gachas.slice() : [];
-
-      // 二重クリック・再受取対策。
-      if (used.includes(reward.claimId)) {
-        renderNoticeList();
-        return;
+      const client = window.zsSupabase || null;
+      if (!client || typeof client.rpc !== 'function') {
+        throw new Error('Supabaseへ接続できません');
       }
 
-      const nextGem = Math.max(0, Number(profile.gem || 0)) + amount;
+      const res = await client.rpc('claim_notice_reward', {
+        p_claim_id: reward.claimId
+      });
+      if (res && res.error) throw res.error;
+
+      let result = res ? res.data : null;
+      if (typeof result === 'string') {
+        try { result = JSON.parse(result); } catch (_) {}
+      }
+      if (!result || result.ok === false) {
+        throw new Error((result && result.message) || '報酬を受け取れませんでした');
+      }
+
+      const profile = window.userProfile;
+      const nextGem = Math.max(0, Number(result.gem || 0));
+      const used = Array.isArray(profile.used_gachas) ? profile.used_gachas.slice() : [];
       const nextUsed = Array.from(new Set(used.concat(reward.claimId)));
 
-      await window.saveProfileToDB({
-        gem: nextGem,
-        used_gachas: nextUsed,
-        last_played: new Date().toISOString()
-      });
-
-      // saveProfileToDB 内でも userProfile は更新されるが、念のため参照を同期。
+      // DB側の正式な結果をローカル表示へ同期。
       window.userProfile.gem = nextGem;
       window.userProfile.used_gachas = nextUsed;
 
@@ -1948,7 +1953,9 @@ window.NOTICE_ITEMS = [
       if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
       if (typeof window.showToast === 'function') {
-        window.showToast('結晶 ×' + amount + ' を受け取ったやで！');
+        window.showToast(result.already_claimed
+          ? 'この報酬は受取済みやで'
+          : ('結晶 ×' + amount + ' を受け取ったやで！'));
       }
 
       renderNoticeList();
@@ -2486,9 +2493,11 @@ document.addEventListener('touchend', function (e) {
   }
 
   async function saveAllTransferDataToSupabase() {
+    // player_inventory はサーバー権威に変更。
+    // ローカル状態をそのままDBへupsertすると改ざん可能になるため、
+    // クラウド一括保存の対象から外す。
     var results = await Promise.allSettled([
       saveRemnantsToSupabase(),
-      saveInventoryToSupabase(),
       saveShinjuToSupabase(),
       saveProgressToSupabase()
     ]);
@@ -3300,7 +3309,9 @@ function renderResultElementBadge(data){
     var userIdTables = [
       'collected_characters',
       'user_profiles',
-      'player_inventory',
+      // player_inventory はサーバー権威化済み。
+      // authenticated から直接UPDATE権限を剥がしているため、
+      // 旧ID表記のクライアント側補正対象から外す。
       'player_progress',
       'player_remnants',
       'player_shinju'
@@ -3772,32 +3783,43 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       return;
     }
 
-    var capturedAt = new Date().toISOString();
-    var entry = buildOwnedEntryFromChara(eri, {
-      captured_at: capturedAt,
-      base_stats: Object.assign({}, eri.stats),
-      stats: Object.assign({}, eri.stats),
-      limit_break: 0
-    });
+    // 初期キャラ付与はSupabase RPC側で行う。
+    // クライアントから collected_characters へ直接INSERTしない。
+    var grantResult = await sb.rpc('ensure_starter_eri');
 
-    var result = await sb.from('collected_characters').insert({
-      user_id: userId,
-      character_id: Number(eri.id),
-      rarity: eri.rarity || 'r',
-      stats: entry.stats,
-      base_stats: entry.baseStats,
-      limit_break: 0,
-      captured_at: capturedAt
-    }).select();
-
-    if(result && result.error){
-      console.error('starter Eri insert error:', result.error);
+    if(grantResult && grantResult.error){
+      console.error('starter Eri RPC error:', grantResult.error);
       return;
     }
 
-    if(result && result.data && result.data[0]){
-      entry.db_id = result.data[0].id;
+    var grantData = grantResult ? grantResult.data : null;
+    var rowId = grantData && grantData.character_row_id
+      ? Number(grantData.character_row_id)
+      : null;
+
+    if(!rowId){
+      console.error('starter Eri RPC returned no character_row_id');
+      return;
     }
+
+    // DB側で作成された正式な行を読み直して、ローカル表示へ反映する。
+    var rowResult = await sb.from('collected_characters')
+      .select('*')
+      .eq('id', rowId)
+      .maybeSingle();
+
+    if(rowResult && rowResult.error){
+      console.error('starter Eri reload error:', rowResult.error);
+      return;
+    }
+
+    if(!rowResult || !rowResult.data){
+      console.error('starter Eri row not found after RPC');
+      return;
+    }
+
+    var entry = buildOwnedEntryFromChara(eri, rowResult.data);
+    entry.db_id = rowResult.data.id;
 
     box.push(entry);
     collected[eri.id] = entry;
@@ -5162,7 +5184,33 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
     return;
   }
 
-  userProfile.gem -= cost;
+  // ガチャ料金はクライアント値を信用せず、Supabase側の gacha_master から決定する。
+  // ブラウザは「どのガチャを何回引くか」だけをRPCへ渡す。
+  var drawResult = await sb.rpc('draw_gacha', {
+    p_gacha_id: currentGacha.id,
+    p_count: count
+  });
+
+  if(drawResult && drawResult.error){
+    var drawMessage = String(drawResult.error.message || '');
+    if(drawMessage.indexOf('not enough gems') >= 0){
+      recoverSummonUI();
+      document.getElementById('paywall-modal').classList.add('active');
+      return;
+    }
+    if(drawMessage.indexOf('gacha not available') >= 0){
+      throw new Error('このガチャは現在利用できません');
+    }
+    throw drawResult.error;
+  }
+
+  var drawData = drawResult && drawResult.data;
+  if(!drawData || drawData.ok !== true || !Number.isFinite(Number(drawData.gem))){
+    throw new Error('ガチャ開始結果を確認できませんでした');
+  }
+
+  // DB側で確定した残高だけをローカル表示へ反映する。
+  userProfile.gem = Number(drawData.gem);
 
   if(currentGacha && currentGacha.category === 'once'){
     userProfile.used_gachas = userProfile.used_gachas || [];
@@ -5171,8 +5219,9 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
     }
   }
 
+  // used_gachas は現段階では既存保存経路を維持。
+  // gem はRPCで既に確定済みなので、ここからは送らない。
   await saveProfileToDB({
-    gem: userProfile.gem,
     used_gachas: userProfile.used_gachas
   });
 
@@ -5180,7 +5229,51 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
   updateSummonGemUI();
   updateMainUI();
 
-  var results = createSummonResults(count, currentGacha);
+  // 当選結果はSupabase側の draw_gacha() が決定する。
+  // ブラウザ側では、返されたIDを既存の表示用データへ変換するだけにする。
+  var rawResults = Array.isArray(drawData.results) ? drawData.results : [];
+  if(rawResults.length !== count){
+    throw new Error('ガチャ抽選結果の件数が不正です');
+  }
+
+  var results = rawResults.map(function(raw){
+    var now = new Date();
+    var timeStr =
+      (now.getMonth()+1) + '/' + now.getDate() + ' ' +
+      now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+
+    if(raw && raw.type === 'material'){
+      var materialData = getGachaMaterialRewardData(
+        String(raw.id),
+        1,
+        timeStr,
+        now.toISOString()
+      );
+      materialData.isPickup = !!raw.pickup;
+      return materialData;
+    }
+
+    if(raw && raw.type === 'character'){
+      var chara = getCharaById(Number(raw.id));
+      if(!chara){
+        throw new Error('Supabaseから未知のキャラクターIDが返されました: ' + raw.id);
+      }
+      var charaData = createCharaSummonData(chara, now, timeStr);
+      charaData.isPickup = !!raw.pickup;
+      charaData.db_id = raw.character_row_id != null ? Number(raw.character_row_id) : null;
+      return charaData;
+    }
+
+    throw new Error('Supabaseから不正なガチャ結果が返されました');
+  });
+
+  assignNewFlags(results);
+
+  // 素材は draw_gacha RPC 内で既に player_inventory へ付与済み。
+  // 演出前にSupabaseから再読込して、ローカルの素材所持数を同期する。
+  if(results.some(function(data){ return isGachaMaterialResult(data); })){
+    await loadInventoryFromSupabase(userId);
+  }
 
 // 抽選結果が確定した時点で、演出に使う画像を読み込み・decodeまで完了させる。
 // ここを待たずに演出を開始すると、初回だけキャラ画像が空になる端末がある。
@@ -5202,7 +5295,11 @@ if(window.GameAssets){
 
 if(count === 10){
   results.forEach(function(data){
-    grantGachaResult(data);
+    // 素材・キャラともSupabase側で付与済み。
+    // クライアントはローカル表示だけ同期する。
+    if(!isGachaMaterialResult(data)){
+      registerServerGrantedCharacter(data);
+    }
   });
 
   // UR確定音（30%の確率）、70%は無音
@@ -5500,9 +5597,41 @@ function createOneSummonData(currentGacha){
 }
 
 
+// draw_gacha RPC で既に付与済みのキャラを、ブラウザ表示へ反映するだけ。
+// normalSummon の外側に置き、単発/10連どちらからも参照できるようにする。
+function registerServerGrantedCharacter(data){
+  if(!data || isGachaMaterialResult(data)) return;
+  if(!data.db_id){
+    throw new Error('キャラ付与結果のDB行IDを確認できません');
+  }
+
+  if(!Array.isArray(box)) box = [];
+  var already = box.some(function(entry){
+    return entry && Number(entry.db_id) === Number(data.db_id);
+  });
+  if(!already) box.push(data);
+
+  var key = String(data.id);
+  if(!collected[key]) collected[key] = data;
+
+  try { renderBox(); } catch(_){}
+  try { updateMainUI(); } catch(_){}
+  try { updateZukanLimitBreakNotice(); } catch(_){}
+  try {
+    if(typeof window.refreshShootingRoster === 'function'){
+      window.refreshShootingRoster();
+    }
+  } catch(_){}
+}
+
+
 function handleSingleResult(data){
   setNavVisible(false);
-  grantGachaResult(data);
+  // 素材・キャラともSupabase側で付与済み。
+  // キャラはDB保存せず、ローカル表示だけ同期する。
+  if(!isGachaMaterialResult(data)){
+    registerServerGrantedCharacter(data);
+  }
   showReveal(data, false);
 }
 
@@ -6540,17 +6669,19 @@ function showTenResult(results){
 
   async function executePurchase() {
     if(pendingPurchaseIndex === null) return;
-    var plan = SHOP_PLANS[pendingPurchaseIndex];
     pendingPurchaseIndex = null;
     closeModal('shop-confirm-modal');
-    userProfile.gem += plan.count;
-    await saveProfileToDB({ gem: userProfile.gem, last_played: new Date().toISOString() });
-    updateMainUI();
-    updateSummonGemUI();
-    showToast('💎 ' + plan.count + ' 個を獲得しました！');
+
+    // ベータ版では実課金API未実装のため、クライアントだけで結晶を増やす仮処理を停止。
+    // 本番課金は決済検証後にサーバー側RPC/Edge Function等から付与する。
+    if (typeof showToast === 'function') {
+      showToast('結晶ショップは現在準備中です');
+    } else {
+      alert('結晶ショップは現在準備中です');
+    }
   }
 
-  // 本番課金実装時はexecutePurchaseの中身を課金APIに差し替える
+  // 本番課金実装時は、決済検証済みのサーバー処理へ接続する。
 
   // キャラ/レムナント一覧：ボトムナビ「キャラ」押下時は一覧を直接表示する
   // 既存のキャラ一覧レイアウトは変更せず、レムナントは同じカルーセルUIを別モードで描画する。
@@ -11390,11 +11521,28 @@ window.reloadSasaphiaApp = function(event){
     }
 
     try {
-      if (typeof saveToDB === 'function' && !entry.db_id) {
-        await saveToDB(entry);
+      if (!entry.db_id) {
+        var client = window.zsSupabase || null;
+        if (!client || typeof client.rpc !== 'function') {
+          throw new Error('Supabaseへ接続できません');
+        }
+
+        var rpcResult = await client.rpc('claim_noah_unlock');
+        if (rpcResult && rpcResult.error) throw rpcResult.error;
+
+        var rpcData = rpcResult ? rpcResult.data : null;
+        var rowId = rpcData && rpcData.character_row_id
+          ? Number(rpcData.character_row_id)
+          : null;
+
+        if (!rowId) {
+          throw new Error('ノア付与結果のDB行IDを確認できません');
+        }
+
+        entry.db_id = rowId;
       }
     } catch (saveErr) {
-      console.error('[NoahUnlock] DB save failed:', saveErr);
+      console.error('[NoahUnlock] RPC grant failed:', saveErr);
     }
 
     try { if (typeof renderBox === 'function') renderBox(); } catch (_) {}
@@ -11444,21 +11592,14 @@ window.reloadSasaphiaApp = function(event){
 
   window.addEventListener('pageshow', function(){
     if (document.getElementById('noah-piece-overlay')) renderNoahPiecePanel();
-    if (getNoahPieceCount() >= MAX_PIECES) {
-      try { void grantNoahPlayable(); } catch (_) {}
-    }
   });
 
-  // v109以前ですでに9/9になっているユーザーも、更新後に所持へ同期。
-  if (getNoahPieceCount() >= MAX_PIECES) {
-    setTimeout(function(){
-      try { void grantNoahPlayable(); } catch (_) {}
-    }, 500);
-  }
+  // ノアの解放判定・付与はSupabase側 finish_noah_attempt() に一本化。
 
-  window.addEventListener('shooting-stage-result', handleNoahStageResult);
+  // Noah clear reward is handled by js/noah_piece.js via finish_noah_attempt().
 })();
 
 </script>
+<script src="js/noah_piece.js?v=20260907-noah-server-flow"></script>
 </body>
 </html>
