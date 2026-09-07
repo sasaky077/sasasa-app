@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260907-security-beta-v134';
+    var FALLBACK_BUILD = '20260908-security-beta-v135';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260907-security-beta-v134">
+  <meta name="sasaphia-build" content="20260908-security-beta-v135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260907-security-beta-v134"
+        href="css/style.css?v=20260908-security-beta-v135"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260907-security-beta-v134"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-security-beta-v135"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260907-security-beta-v134">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-security-beta-v135">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260907-security-beta-v134">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260908-security-beta-v135">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260907-security-beta-v134';
+  var BUILD = '20260908-security-beta-v135';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1334,7 +1334,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260907-security-beta-v134"></script>
+<script src="js/home_banners.js?v=20260908-security-beta-v135"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2126,9 +2126,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260907-security-beta-v134"></script>
-<script src="js/resonance_system.js?v=20260907-security-beta-v134"></script>
-<script src="js/resonance_ui.js?v=20260907-security-beta-v134"></script>
+<script src="js/shooting_resonance.js?v=20260908-security-beta-v135"></script>
+<script src="js/resonance_system.js?v=20260908-security-beta-v135"></script>
+<script src="js/resonance_ui.js?v=20260908-security-beta-v135"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3826,6 +3826,42 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function loadFromDB(){
+  // 起動直後は匿名Authのセッション確立を明示的に待ってからDBへ進む。
+  // signInAnonymously直後の一瞬だけPostgREST側が未認証扱いになる競合を避ける。
+  var authUserForBoot = await window.zsAuthReady;
+  if(!authUserForBoot || !authUserForBoot.id){
+    throw new Error('Supabase Authセッションを確立できませんでした');
+  }
+
+  var bootSession = null;
+  for(var bootTry = 0; bootTry < 5; bootTry++){
+    var bootSessionResult = await sb.auth.getSession();
+    if(bootSessionResult && bootSessionResult.data && bootSessionResult.data.session){
+      bootSession = bootSessionResult.data.session;
+      break;
+    }
+    await new Promise(function(resolve){ setTimeout(resolve, 180); });
+  }
+  if(!bootSession){
+    throw new Error('Supabase Authセッションの反映待ちがタイムアウトしました');
+  }
+
+  // プロフィール確定もSELECTより先にRPCへ一本化。
+  // 既存Authなら既存user_idを返し、新規Authなら安全な初期値で作成する。
+  var bootProfileResult = await sb.rpc('ensure_user_profile', {
+    p_user_id: userId
+  });
+  if(bootProfileResult && bootProfileResult.error){
+    throw new Error('user_profiles確定失敗: ' + (bootProfileResult.error.message || bootProfileResult.error.code || 'unknown'));
+  }
+  if(bootProfileResult && bootProfileResult.data && bootProfileResult.data.user_id){
+    var bootUserId = normalizeZeraphiaUserId(bootProfileResult.data.user_id);
+    if(bootUserId && bootUserId !== userId){
+      userId = bootUserId;
+      localStorage.setItem('zukan_user_id', userId);
+    }
+  }
+
   // 旧ID大文字/小文字差は ilike で読めるため、重い正規化UPDATEは起動を塞がず裏で処理する。
   Promise.resolve().then(function(){
     return migrateLegacyUserIdCase();
@@ -3923,40 +3959,8 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     userProfile.special_stage_ticket = Math.max(0, Number(profile.special_stage_ticket || 0));
     writeProfileCache(userProfile);
   } else {
-    // SELECT成功かつ該当行なしの場合だけ、新規ユーザーとして作成。
-    // user_profiles の RLS を通すため、Auth UUID を初回INSERT時から保存する。
-    var authUserForProfile = await window.zsAuthReady;
-    if(!authUserForProfile || !authUserForProfile.id){
-      throw new Error('user_profiles新規作成失敗: Supabase Authユーザーを確認できません');
-    }
-
-    var insertProfileResult = await sb.from('user_profiles').insert({
-      user_id: userId,
-      auth_uid: authUserForProfile.id,
-      display_name: 'Player',
-      coin: 100,
-      gem: 10,
-      used_gachas: [],
-      login_bonus_day: 0,
-      last_login_bonus_date: null,
-      special_stage_ticket: 0
-    }).select().single();
-    if(insertProfileResult.error){
-      throw new Error('user_profiles新規作成失敗: ' + (insertProfileResult.error.message || insertProfileResult.error.code || 'unknown'));
-    }
-
-    userProfile = {
-      display_name: 'Player',
-      coin: 100,
-      gem: 10,
-      rank: 1,
-      total_score: 0,
-      used_gachas: [],
-      login_bonus_day: 0,
-      last_login_bonus_date: null,
-      special_stage_ticket: 0
-    };
-    writeProfileCache(userProfile);
+    // ensure_user_profile成功後にSELECTで見つからない場合は、二重作成せず起動エラーとして止める。
+    throw new Error('user_profiles確定後の読込に失敗しました');
   }
 
   // profileの読込/新規作成が完了した時点でAuth所有者を紐付ける。
@@ -10698,43 +10702,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260907-security-beta-v134"></script>
+<script src="js/asset_loader.js?v=20260908-security-beta-v135"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260907-security-beta-v134"></script>
+<script src="js/login_bonus.js?v=20260908-security-beta-v135"></script>
 
-<script src="js/story_engine.js?v=20260907-security-beta-v134"></script>
-<script src="js/stories/chapter01.js?v=20260907-security-beta-v134"></script>
+<script src="js/story_engine.js?v=20260908-security-beta-v135"></script>
+<script src="js/stories/chapter01.js?v=20260908-security-beta-v135"></script>
 
-<script src="js/battle_range.js?v=20260907-security-beta-v134"></script>
-<script src="js/characters.js?v=20260907-security-beta-v134"></script>
-<script src="js/enemies.js?v=20260907-security-beta-v134"></script>
-<script src="js/battle.js?v=20260907-security-beta-v134"></script>
-<script src="js/battle_swipe.js?v=20260907-security-beta-v134"></script>
+<script src="js/battle_range.js?v=20260908-security-beta-v135"></script>
+<script src="js/characters.js?v=20260908-security-beta-v135"></script>
+<script src="js/enemies.js?v=20260908-security-beta-v135"></script>
+<script src="js/battle.js?v=20260908-security-beta-v135"></script>
+<script src="js/battle_swipe.js?v=20260908-security-beta-v135"></script>
 
-<script src="js/stages.js?v=20260907-security-beta-v134"></script>
-<script src="js/stage_select.js?v=20260907-security-beta-v134"></script>
-<script src="js/party_select.js?v=20260907-security-beta-v134"></script>
-<script src="js/enemy_intro.js?v=20260907-security-beta-v134"></script>
+<script src="js/stages.js?v=20260908-security-beta-v135"></script>
+<script src="js/stage_select.js?v=20260908-security-beta-v135"></script>
+<script src="js/party_select.js?v=20260908-security-beta-v135"></script>
+<script src="js/enemy_intro.js?v=20260908-security-beta-v135"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260907-security-beta-v134">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-security-beta-v135">
 
-<script src="js/battle_range_32.js?v=20260907-security-beta-v134"></script>
-<script src="js/characters_32.js?v=20260907-security-beta-v134"></script>
-<script src="js/remnant_blessings.js?v=20260907-security-beta-v134"></script>
-<script src="js/combo_32.js?v=20260907-security-beta-v134"></script>
-<script src="js/cards.js?v=20260907-security-beta-v134"></script>
-<script src="js/battle_32.js?v=20260907-security-beta-v134"></script>
-<script src="js/battle_32_ui.js?v=20260907-security-beta-v134"></script>
+<script src="js/battle_range_32.js?v=20260908-security-beta-v135"></script>
+<script src="js/characters_32.js?v=20260908-security-beta-v135"></script>
+<script src="js/remnant_blessings.js?v=20260908-security-beta-v135"></script>
+<script src="js/combo_32.js?v=20260908-security-beta-v135"></script>
+<script src="js/cards.js?v=20260908-security-beta-v135"></script>
+<script src="js/battle_32.js?v=20260908-security-beta-v135"></script>
+<script src="js/battle_32_ui.js?v=20260908-security-beta-v135"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260907-security-beta-v134"></script>
-<script src="js/roguelite_run.js?v=20260907-security-beta-v134"></script>
-<script src="js/roguelite_reward.js?v=20260907-security-beta-v134"></script>
-<script src="js/shinju.js?v=20260907-security-beta-v134"></script>
-<script src="js/roguelite_controller.js?v=20260907-security-beta-v134"></script>
-<script src="js/roguelite_overseer_run.js?v=20260907-security-beta-v134"></script>
+<script src="js/roguelite_options.js?v=20260908-security-beta-v135"></script>
+<script src="js/roguelite_run.js?v=20260908-security-beta-v135"></script>
+<script src="js/roguelite_reward.js?v=20260908-security-beta-v135"></script>
+<script src="js/shinju.js?v=20260908-security-beta-v135"></script>
+<script src="js/roguelite_controller.js?v=20260908-security-beta-v135"></script>
+<script src="js/roguelite_overseer_run.js?v=20260908-security-beta-v135"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11180,10 +11184,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260907-security-beta-v134"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260908-security-beta-v135"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260907-security-beta-v134"></script>
+<script src="js/raid_event.js?v=20260908-security-beta-v135"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11204,7 +11208,7 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260907-security-beta-v134"></script>
+<script src="js/score_attack.js?v=20260908-security-beta-v135"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
