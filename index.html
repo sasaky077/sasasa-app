@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260908-security-beta-v136';
+    var FALLBACK_BUILD = '20260908-testplay-end-v137';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260908-security-beta-v136">
+  <meta name="sasaphia-build" content="20260908-testplay-end-v137">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260908-security-beta-v136"
+        href="css/style.css?v=20260908-testplay-end-v137"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-security-beta-v136"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-testplay-end-v137"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-security-beta-v136">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-testplay-end-v137">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260908-security-beta-v136">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260908-testplay-end-v137">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-guide-readable-steps">
@@ -323,7 +323,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260908-security-beta-v136';
+  var BUILD = '20260908-testplay-end-v137';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -474,17 +474,17 @@
 <div id="testplay-notice" class="testplay-notice" aria-hidden="true">
   <img class="testplay-navi-character testplay-navi-character-notice" src="images/opening_navi_1.webp" alt="" aria-hidden="true">
   <div class="testplay-notice-panel" role="dialog" aria-modal="true" aria-labelledby="testplay-notice-title">
-    <div class="testplay-notice-kicker">TEST PLAY</div>
-    <div class="testplay-notice-title" id="testplay-notice-title">テストプレイやで</div>
+    <div class="testplay-notice-kicker">TEST PLAY COMPLETE</div>
+    <div class="testplay-notice-title" id="testplay-notice-title">テストプレイ版終了のお知らせ</div>
     <div class="testplay-notice-text">
-      <span class="testplay-notice-line">レイアウトの崩れや画面の見切れ、</span>
-      <span class="testplay-notice-line">バグを見つけたら教えてほしいやで。</span>
-    　<span class="testplay-notice-line">名前の変更とか音のON/OFFは</span>
-      <span class="testplay-notice-line">ホーム画面右下の設定からできるやで。</span>
+      <span class="testplay-notice-line">テストプレイへのご協力、ありがとうございました。</span>
+      <span class="testplay-notice-line">9月8日をもって、テストプレイ版は終了しました。</span>
+      <span class="testplay-notice-line">現在、本格公開に向けてβ版を準備中です。</span>
+      <span class="testplay-notice-line">これまでのプレイデータは、β版移行に伴いリセットされる場合があります。</span>
+      <span class="testplay-notice-line">次のSasaphiaで、またお会いしましょう。</span>
     </div>
-    <div class="testplay-notice-actions" role="group" aria-label="回答">
-      <button type="button" class="testplay-notice-btn testplay-notice-btn-subtle" onclick="closeTestplayNotice(event)">わかったやで</button>
-      <button type="button" class="testplay-notice-btn testplay-notice-btn-accent" onclick="closeTestplayNotice(event)">協力するやで</button>
+    <div class="testplay-notice-actions" role="group" aria-label="確認">
+      <button type="button" class="testplay-notice-btn testplay-notice-btn-accent" onclick="closeTestplayNotice(event)">確認</button>
     </div>
   </div>
 </div>
@@ -1334,7 +1334,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260908-security-beta-v136"></script>
+<script src="js/home_banners.js?v=20260908-testplay-end-v137"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2126,9 +2126,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260908-security-beta-v136"></script>
-<script src="js/resonance_system.js?v=20260908-security-beta-v136"></script>
-<script src="js/resonance_ui.js?v=20260908-security-beta-v136"></script>
+<script src="js/shooting_resonance.js?v=20260908-testplay-end-v137"></script>
+<script src="js/resonance_system.js?v=20260908-testplay-end-v137"></script>
+<script src="js/resonance_ui.js?v=20260908-testplay-end-v137"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -10768,43 +10768,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260908-security-beta-v136"></script>
+<script src="js/asset_loader.js?v=20260908-testplay-end-v137"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260908-security-beta-v136"></script>
+<script src="js/login_bonus.js?v=20260908-testplay-end-v137"></script>
 
-<script src="js/story_engine.js?v=20260908-security-beta-v136"></script>
-<script src="js/stories/chapter01.js?v=20260908-security-beta-v136"></script>
+<script src="js/story_engine.js?v=20260908-testplay-end-v137"></script>
+<script src="js/stories/chapter01.js?v=20260908-testplay-end-v137"></script>
 
-<script src="js/battle_range.js?v=20260908-security-beta-v136"></script>
-<script src="js/characters.js?v=20260908-security-beta-v136"></script>
-<script src="js/enemies.js?v=20260908-security-beta-v136"></script>
-<script src="js/battle.js?v=20260908-security-beta-v136"></script>
-<script src="js/battle_swipe.js?v=20260908-security-beta-v136"></script>
+<script src="js/battle_range.js?v=20260908-testplay-end-v137"></script>
+<script src="js/characters.js?v=20260908-testplay-end-v137"></script>
+<script src="js/enemies.js?v=20260908-testplay-end-v137"></script>
+<script src="js/battle.js?v=20260908-testplay-end-v137"></script>
+<script src="js/battle_swipe.js?v=20260908-testplay-end-v137"></script>
 
-<script src="js/stages.js?v=20260908-security-beta-v136"></script>
-<script src="js/stage_select.js?v=20260908-security-beta-v136"></script>
-<script src="js/party_select.js?v=20260908-security-beta-v136"></script>
-<script src="js/enemy_intro.js?v=20260908-security-beta-v136"></script>
+<script src="js/stages.js?v=20260908-testplay-end-v137"></script>
+<script src="js/stage_select.js?v=20260908-testplay-end-v137"></script>
+<script src="js/party_select.js?v=20260908-testplay-end-v137"></script>
+<script src="js/enemy_intro.js?v=20260908-testplay-end-v137"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-security-beta-v136">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-testplay-end-v137">
 
-<script src="js/battle_range_32.js?v=20260908-security-beta-v136"></script>
-<script src="js/characters_32.js?v=20260908-security-beta-v136"></script>
-<script src="js/remnant_blessings.js?v=20260908-security-beta-v136"></script>
-<script src="js/combo_32.js?v=20260908-security-beta-v136"></script>
-<script src="js/cards.js?v=20260908-security-beta-v136"></script>
-<script src="js/battle_32.js?v=20260908-security-beta-v136"></script>
-<script src="js/battle_32_ui.js?v=20260908-security-beta-v136"></script>
+<script src="js/battle_range_32.js?v=20260908-testplay-end-v137"></script>
+<script src="js/characters_32.js?v=20260908-testplay-end-v137"></script>
+<script src="js/remnant_blessings.js?v=20260908-testplay-end-v137"></script>
+<script src="js/combo_32.js?v=20260908-testplay-end-v137"></script>
+<script src="js/cards.js?v=20260908-testplay-end-v137"></script>
+<script src="js/battle_32.js?v=20260908-testplay-end-v137"></script>
+<script src="js/battle_32_ui.js?v=20260908-testplay-end-v137"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260908-security-beta-v136"></script>
-<script src="js/roguelite_run.js?v=20260908-security-beta-v136"></script>
-<script src="js/roguelite_reward.js?v=20260908-security-beta-v136"></script>
-<script src="js/shinju.js?v=20260908-security-beta-v136"></script>
-<script src="js/roguelite_controller.js?v=20260908-security-beta-v136"></script>
-<script src="js/roguelite_overseer_run.js?v=20260908-security-beta-v136"></script>
+<script src="js/roguelite_options.js?v=20260908-testplay-end-v137"></script>
+<script src="js/roguelite_run.js?v=20260908-testplay-end-v137"></script>
+<script src="js/roguelite_reward.js?v=20260908-testplay-end-v137"></script>
+<script src="js/shinju.js?v=20260908-testplay-end-v137"></script>
+<script src="js/roguelite_controller.js?v=20260908-testplay-end-v137"></script>
+<script src="js/roguelite_overseer_run.js?v=20260908-testplay-end-v137"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11250,10 +11250,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260908-security-beta-v136"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260908-testplay-end-v137"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260908-security-beta-v136"></script>
+<script src="js/raid_event.js?v=20260908-testplay-end-v137"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11274,7 +11274,7 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260908-security-beta-v136"></script>
+<script src="js/score_attack.js?v=20260908-testplay-end-v137"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
