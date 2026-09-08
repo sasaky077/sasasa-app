@@ -26331,3 +26331,7 @@ body {
 #title-screen.closing #title-loading-progress{
   opacity:0;
 }
+
+
+/* v160 staged startup loader */
+#title-tap-hint{ white-space:nowrap; }

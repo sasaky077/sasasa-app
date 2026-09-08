@@ -12,9 +12,9 @@
 
 window.HOME_EVENT_BANNERS = [
   {
-    id: 'event_sachiel',
-    img: 'images/event_banner01.webp',
-    alt: 'サキエル降臨',
+    id: 'event_faceless',
+    img: 'images/home_banner_faceless_v1.webp',
+    alt: 'フェイスレス降臨',
     actionName: 'openSakielRogueliteFromHome',
     hidden: false
   },

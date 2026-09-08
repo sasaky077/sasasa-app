@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260909-title-loading-progress-v159';
+    var FALLBACK_BUILD = '20260909-home-carousel-no-clone-v165';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260909-title-loading-progress-v159">
+  <meta name="sasaphia-build" content="20260909-home-carousel-no-clone-v165">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260909-title-loading-progress-v159"
+        href="css/style.css?v=20260909-home-carousel-no-clone-v165"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260909-title-loading-progress-v159"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260909-home-carousel-no-clone-v165"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260909-title-loading-progress-v159">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260909-home-carousel-no-clone-v165">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260909-title-loading-progress-v159">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260909-home-carousel-no-clone-v165">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260909-title-loading-progress-v159';
+  var BUILD = '20260909-home-carousel-no-clone-v165';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1311,7 +1311,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/home_banners.js?v=20260909-home-carousel-no-clone-v165"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2127,9 +2127,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/resonance_system.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/resonance_ui.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/shooting_resonance.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/resonance_system.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/resonance_ui.js?v=20260909-home-carousel-no-clone-v165"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3538,107 +3538,226 @@ function selectChara(now, gacha) {
   }
 
 
-  function preloadImageForStartup(src){
-    if(!src) return Promise.resolve(true);
+  function startupSleep(ms){
+    return new Promise(function(resolve){ setTimeout(resolve, ms); });
+  }
 
-    return new Promise(function(resolve){
-      var img = new Image();
-      var finished = false;
-      var timer = null;
+  async function preloadImageForStartup(src, retries){
+    if(!src) return { ok:true, src:src };
+    var maxRetries = (typeof retries === 'number') ? retries : 2;
 
-      function finish(){
-        if(finished) return;
-        finished = true;
-        if(timer) clearTimeout(timer);
-        resolve(true);
-      }
+    for(var attempt = 0; attempt <= maxRetries; attempt++){
+      var result = await new Promise(function(resolve){
+        var img = new Image();
+        var finished = false;
+        var timer = null;
 
-      img.decoding = 'async';
-      img.onload = function(){
-        if(typeof img.decode === 'function'){
-          img.decode().catch(function(){}).finally(finish);
-        } else {
-          finish();
+        function done(ok){
+          if(finished) return;
+          finished = true;
+          if(timer) clearTimeout(timer);
+          resolve({ ok:!!ok, src:src });
         }
-      };
-      img.onerror = finish;
-      timer = setTimeout(finish, 3500);
-      img.src = src;
 
-      if(img.complete && img.naturalWidth > 0){
-        if(typeof img.decode === 'function'){
-          img.decode().catch(function(){}).finally(finish);
-        } else {
-          finish();
+        img.decoding = 'async';
+        try { img.fetchPriority = 'high'; } catch(_){}
+
+        img.onload = async function(){
+          if(!(img.naturalWidth > 0 && img.naturalHeight > 0)){
+            done(false);
+            return;
+          }
+          if(typeof img.decode === 'function'){
+            try { await img.decode(); } catch(_){}
+          }
+          done(img.naturalWidth > 0 && img.naturalHeight > 0);
+        };
+        img.onerror = function(){ done(false); };
+        timer = setTimeout(function(){ done(false); }, 3200);
+        img.src = src;
+
+        if(img.complete){
+          if(img.naturalWidth > 0){
+            if(typeof img.decode === 'function'){
+              img.decode().catch(function(){}).finally(function(){
+                done(img.naturalWidth > 0 && img.naturalHeight > 0);
+              });
+            } else {
+              done(true);
+            }
+          } else if(img.naturalWidth === 0){
+            // complete=true でも壊れた画像は成功扱いしない。
+          }
         }
-      }
+      });
+
+      if(result.ok) return result;
+      if(attempt < maxRetries) await startupSleep(180 + attempt * 180);
+    }
+
+    return { ok:false, src:src };
+  }
+
+  function normalizeStartupAsset(src){
+    if(!src) return '';
+    try { return new URL(src, location.href).href; }
+    catch(_) { return src; }
+  }
+
+  function uniqueStartupAssets(list){
+    var seen = Object.create(null);
+    return (list || []).map(normalizeStartupAsset).filter(function(src){
+      if(!src || seen[src]) return false;
+      seen[src] = true;
+      return true;
     });
   }
 
-  function collectStartupAssetUrls(){
-    var urls = [];
-    var seen = Object.create(null);
+  function collectStartupAssetGroups(){
+    var common = [];
+    var homeCore = [];
+    var homeBanners = [];
+    var summonBanners = [];
 
-    function add(src){
-      if(!src) return;
-      try {
-        var normalized = new URL(src, location.href).href;
-        if(seen[normalized]) return;
-        seen[normalized] = true;
-        urls.push(normalized);
-      } catch(_){
-        if(!seen[src]){
-          seen[src] = true;
-          urls.push(src);
-        }
-      }
+    function addFrom(root, selector, target){
+      if(!root) return;
+      root.querySelectorAll(selector || 'img').forEach(function(img){
+        var src = img.currentSrc || img.getAttribute('src');
+        if(src) target.push(src);
+      });
     }
 
-    ['screen-main', 'screen-summon', 'bottom-nav-shared'].forEach(function(id){
-      var root = document.getElementById(id);
-      if(!root) return;
-      root.querySelectorAll('img').forEach(function(img){
-        add(img.currentSrc || img.getAttribute('src'));
-      });
-    });
+    var nav = document.getElementById('bottom-nav-shared');
+    addFrom(nav, 'img', common);
+    common.push('images/icon_gem.webp', 'images/icon_coin.webp');
 
-    // 邂逅バナーは一部がまだDOMに出ていない場合があるので開催中分を明示的に追加。
+    var main = document.getElementById('screen-main');
+    if(main){
+      // ホームバナー以外のキャラ・ショートカット等を先に読む。
+      main.querySelectorAll('img').forEach(function(img){
+        var src = img.currentSrc || img.getAttribute('src');
+        if(!src) return;
+        if(img.closest && img.closest('#home-event-banner-wrap')) homeBanners.push(src);
+        else homeCore.push(src);
+      });
+    }
+
+    // DOM未生成・lazy対象でも漏れないよう、設定配列から明示追加。
     try {
-      getVisibleGachaBanners().forEach(function(gacha){
-        if(gacha && gacha.img) add(gacha.img);
+      getHomeEventBanners().filter(function(b){ return b && b.hidden !== true; }).forEach(function(b){
+        if(b.img) homeBanners.push(b.img);
       });
     } catch(_){}
 
-    add('images/icon_gem.webp');
-    add('images/icon_coin.webp');
+    var summon = document.getElementById('screen-summon');
+    addFrom(summon, 'img', summonBanners);
+    try {
+      getVisibleGachaBanners().forEach(function(gacha){
+        if(gacha && gacha.img) summonBanners.push(gacha.img);
+      });
+    } catch(_){}
 
-    return urls;
+    return [
+      { name:'UI',        from:30, to:45, urls:uniqueStartupAssets(common) },
+      { name:'HOME',      from:45, to:68, urls:uniqueStartupAssets(homeCore) },
+      { name:'BANNERS',   from:68, to:84, urls:uniqueStartupAssets(homeBanners) },
+      { name:'ENCOUNTER', from:84, to:96, urls:uniqueStartupAssets(summonBanners) }
+    ];
   }
 
-  async function waitForStartupAssets(onProgress){
-    // タイトルの裏で初期画面DOMを完成させてから、必要画像をロード＋decodeする。
+  function setTitleLoadingStage(stage){
+    var hint = document.getElementById('title-tap-hint');
+    if(!hint) return;
+    hint.textContent = stage ? ('NOW LOADING · ' + stage) : 'NOW LOADING';
+  }
+
+  async function loadStartupAssetGroup(group){
+    var urls = group && group.urls ? group.urls : [];
+    var from = Number(group.from || 0);
+    var to = Number(group.to || from);
+    var total = urls.length;
+    var failed = [];
+
+    setTitleLoadingStage(group.name || '');
+    if(!total){
+      setTitleLoadingProgress(to);
+      return failed;
+    }
+
+    // iPhone Safariへの同時リクエスト集中を避けるため、2本ずつ段階ロード。
+    var completed = 0;
+    for(var i = 0; i < urls.length; i += 2){
+      var batch = urls.slice(i, i + 2);
+      var results = await Promise.all(batch.map(function(src){
+        return preloadImageForStartup(src, 2);
+      }));
+
+      results.forEach(function(result){
+        completed += 1;
+        if(!result || !result.ok) failed.push(result ? result.src : '');
+        var ratio = completed / total;
+        setTitleLoadingProgress(from + (to - from) * ratio);
+      });
+
+      // バッチ間に短い余白を入れ、Safariのdecode/描画キューを詰まらせない。
+      await new Promise(function(resolve){ requestAnimationFrame(resolve); });
+    }
+
+    return failed;
+  }
+
+  async function repairStartupDomImages(){
+    var roots = ['screen-main', 'screen-summon', 'bottom-nav-shared'];
+    var broken = [];
+    roots.forEach(function(id){
+      var root = document.getElementById(id);
+      if(!root) return;
+      root.querySelectorAll('img').forEach(function(img){
+        if(img.complete && img.naturalWidth === 0){
+          var src = img.getAttribute('src');
+          if(src) broken.push({ img:img, src:src });
+        }
+      });
+    });
+
+    for(var item of broken){
+      var result = await preloadImageForStartup(item.src, 1);
+      if(result && result.ok){
+        // preload成功後に実DOMへ同URLを再設定し、Safariに再描画を促す。
+        item.img.removeAttribute('src');
+        await startupSleep(20);
+        item.img.src = item.src;
+      }
+    }
+    return broken.length;
+  }
+
+  async function waitForStartupAssets(){
+    // タイトルの裏で初期DOMを一度完成させる。
     try {
       updateSummonGemUI();
       updateMainUI();
+      if(typeof renderHomeEventBanners === 'function') renderHomeEventBanners();
       renderSummonBanners();
     } catch(e) {
       console.warn('[StartupAssets] prerender skipped:', e);
     }
 
-    var urls = collectStartupAssetUrls();
-    var total = urls.length;
-    var done = 0;
+    var groups = collectStartupAssetGroups();
+    var failed = [];
+    for(var group of groups){
+      var groupFailed = await loadStartupAssetGroup(group);
+      failed = failed.concat(groupFailed);
+    }
 
-    if(typeof onProgress === 'function') onProgress(done, total);
-    if(!total) return true;
+    setTitleLoadingStage('FINAL CHECK');
+    await repairStartupDomImages();
+    setTitleLoadingProgress(98);
 
-    await Promise.all(urls.map(function(src){
-      return preloadImageForStartup(src).finally(function(){
-        done += 1;
-        if(typeof onProgress === 'function') onProgress(done, total);
-      });
-    }));
-    return true;
+    if(failed.length){
+      console.warn('[StartupAssets] failed after retries:', failed);
+    }
+    return { ok: failed.length === 0, failed: failed };
   }
 
   function setTitleLoadingProgress(percent){
@@ -3803,22 +3922,20 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   if(typeof setNavVisible === 'function') setNavVisible(true);
   setReloadBtnVisible(true);
 
-  // iPhoneでの白抜け対策：初期表示に必要な画像をロード＋decode完了までタイトルで隠す。
-  // 1枚の失敗で永遠に止まらないよう、全体は最大5秒で解放する。
+  // iPhone Safari向け：画像群を段階的にロードする。
+  // UI → ホーム → ホームバナー → 邂逅の順に読み、各画像は成功判定＋再試行する。
+  // 全体の安全弁だけ12秒にし、通常は各段階の完了時点でそのまま進む。
   var startupAssetsReady = Promise.all([
     window._bottomNavAssetsReady || waitForBottomNavAssets(),
-    waitForStartupAssets(function(done, total){
-      // DB完了を30%、画像群を30〜95%として進捗表示する。
-      var ratio = total > 0 ? (done / total) : 1;
-      setTitleLoadingProgress(30 + ratio * 65);
-    })
+    waitForStartupAssets()
   ]);
 
   await Promise.race([
     startupAssetsReady,
-    new Promise(function(resolve){ setTimeout(resolve, 5000); })
+    new Promise(function(resolve){ setTimeout(resolve, 12000); })
   ]);
 
+  setTitleLoadingStage('FINAL CHECK');
   setTitleLoadingProgress(98);
 
   // 画像が描画可能になった次の描画フレームまで待ってからタイトルをフェードアウト。
@@ -9337,13 +9454,18 @@ function renderHomeEventBanners(){
     img.src = banner.img;
     img.alt = banner.alt || banner.title || 'イベントバナー';
     img.decoding = 'async';
-    if(index === 0){
-      img.loading = 'eager';
-      try { img.fetchPriority = 'high'; } catch(_){}
-    } else {
-      img.loading = 'lazy';
-      try { img.fetchPriority = 'low'; } catch(_){}
-    }
+    img.loading = 'eager';
+    try { img.fetchPriority = (index === 0 ? 'high' : 'auto'); } catch(_){}
+
+    // iOS Safari/PWA: transformed carousel + lazy image can remain blank.
+    // Retry once with a cache-busting query if the real DOM image fails.
+    img.addEventListener('error', function(){
+      if(img.dataset.retryDone === '1') return;
+      img.dataset.retryDone = '1';
+      var baseSrc = banner.img;
+      var sep = baseSrc.indexOf('?') >= 0 ? '&' : '?';
+      img.src = baseSrc + sep + 'retry=' + Date.now();
+    }, { once:false });
     btn.appendChild(img);
 
     track.appendChild(btn);
@@ -9403,20 +9525,11 @@ function updateHomeBannerDots(){
 }
 
 function normalizeHomeBannerPosition(){
-  if(homeBannerTotal <= 1) return;
-
-  if(homeBannerPosition <= 0){
-    homeBannerPosition = homeBannerTotal;
-    setHomeBannerTransform(false);
-  } else if(homeBannerPosition >= homeBannerTotal + 1){
-    homeBannerPosition = 1;
-    setHomeBannerTransform(false);
-  }
+  // v165: cloneを使わないため正規化不要
 }
 
 function finishHomeBannerMove(){
   clearHomeBannerUnlockTimer();
-  normalizeHomeBannerPosition();
   homeBannerAnimating = false;
 }
 
@@ -9426,9 +9539,7 @@ function scheduleHomeBannerAuto(){
 
   homeBannerAutoTimer = setTimeout(function(){
     homeBannerAutoTimer = null;
-    if(document.hidden){
-      return;
-    }
+    if(document.hidden) return;
     if(homeBannerDragging || homeBannerAnimating){
       scheduleHomeBannerAuto();
       return;
@@ -9442,39 +9553,30 @@ function initHomeBannerInfinite(){
   var track = document.getElementById('home-event-banner-track');
   if(!track) return;
 
-  // renderHomeEventBanners() 後の「実体」だけを対象にする。
+  // v165:
+  // iOS SafariでcloneNodeした先頭/末尾スライドが空描画になるケースを避けるため、
+  // クローン方式を廃止して実体3枚だけでカルーセルを構成する。
   var originals = Array.from(track.querySelectorAll('.home-event-banner-item:not(.home-banner-clone)'));
+
+  // 旧build由来のcloneが残っていても除去
+  track.querySelectorAll('.home-banner-clone').forEach(function(el){ el.remove(); });
+  track.dataset.infiniteReady = '0';
+
   homeBannerTotal = originals.length;
-
-  if(homeBannerTotal <= 1){
-    homeBannerPosition = 0;
-    homeBannerRealIndex = 0;
-    setHomeBannerTransform(false);
-    updateHomeBannerDots();
-    return;
-  }
-
-  if(track.dataset.infiniteReady !== '1'){
-    var firstClone = originals[0].cloneNode(true);
-    var lastClone = originals[homeBannerTotal - 1].cloneNode(true);
-    firstClone.classList.add('home-banner-clone');
-    lastClone.classList.add('home-banner-clone');
-    track.insertBefore(lastClone, originals[0]);
-    track.appendChild(firstClone);
-    track.dataset.infiniteReady = '1';
-  }
-
   homeBannerRealIndex = 0;
-  homeBannerPosition = 1;
+  homeBannerPosition = 0;
   homeBannerAnimating = false;
+
   setHomeBannerTransform(false);
   updateHomeBannerDots();
 
-  // transitionend は通常時の解除。WebView等で発火しない場合は moveHomeBanner の fallback が解除する。
-  track.addEventListener('transitionend', function(e){
-    if(e && e.propertyName && e.propertyName !== 'transform') return;
-    finishHomeBannerMove();
-  });
+  if(track.dataset.transitionReady !== '1'){
+    track.addEventListener('transitionend', function(e){
+      if(e && e.propertyName && e.propertyName !== 'transform') return;
+      finishHomeBannerMove();
+    });
+    track.dataset.transitionReady = '1';
+  }
 }
 
 function moveHomeBanner(dir){
@@ -9482,12 +9584,11 @@ function moveHomeBanner(dir){
   if(homeBannerAnimating) return false;
 
   homeBannerAnimating = true;
-  homeBannerPosition += dir;
   homeBannerRealIndex = (homeBannerRealIndex + dir + homeBannerTotal) % homeBannerTotal;
+  homeBannerPosition = homeBannerRealIndex;
   updateHomeBannerDots();
   setHomeBannerTransform(true);
 
-  // transitionend が欠落しても必ず解除する。
   clearHomeBannerUnlockTimer();
   homeBannerUnlockTimer = setTimeout(function(){
     finishHomeBannerMove();
@@ -10944,43 +11045,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/asset_loader.js?v=20260909-home-carousel-no-clone-v165"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/login_bonus.js?v=20260909-home-carousel-no-clone-v165"></script>
 
-<script src="js/story_engine.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/stories/chapter01.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/story_engine.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/stories/chapter01.js?v=20260909-home-carousel-no-clone-v165"></script>
 
-<script src="js/battle_range.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/characters.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/enemies.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/battle.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/battle_swipe.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/battle_range.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/characters.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/enemies.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/battle.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/battle_swipe.js?v=20260909-home-carousel-no-clone-v165"></script>
 
-<script src="js/stages.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/stage_select.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/party_select.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/enemy_intro.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/stages.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/stage_select.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/party_select.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/enemy_intro.js?v=20260909-home-carousel-no-clone-v165"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260909-title-loading-progress-v159">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260909-home-carousel-no-clone-v165">
 
-<script src="js/battle_range_32.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/characters_32.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/remnant_blessings.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/combo_32.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/cards.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/battle_32.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/battle_32_ui.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/battle_range_32.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/characters_32.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/remnant_blessings.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/combo_32.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/cards.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/battle_32.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/battle_32_ui.js?v=20260909-home-carousel-no-clone-v165"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/roguelite_run.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/roguelite_reward.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/shinju.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/roguelite_controller.js?v=20260909-title-loading-progress-v159"></script>
-<script src="js/roguelite_overseer_run.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/roguelite_options.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/roguelite_run.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/roguelite_reward.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/shinju.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/roguelite_controller.js?v=20260909-home-carousel-no-clone-v165"></script>
+<script src="js/roguelite_overseer_run.js?v=20260909-home-carousel-no-clone-v165"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11422,10 +11523,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260909-title-loading-progress-v159"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260909-home-carousel-no-clone-v165"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/raid_event.js?v=20260909-home-carousel-no-clone-v165"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11446,7 +11547,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260909-title-loading-progress-v159"></script>
+<script src="js/score_attack.js?v=20260909-home-carousel-no-clone-v165"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
