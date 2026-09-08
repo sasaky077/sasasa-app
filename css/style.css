@@ -26276,3 +26276,58 @@ body {
 #title-screen.closing{
   pointer-events:none;
 }
+
+
+/* =========================================================
+   v159 Title loading progress
+   ========================================================= */
+#title-screen #title-tap-hint{
+  margin-top:34px;
+  font-size:12px;
+  letter-spacing:3px;
+}
+#title-loading-progress{
+  width:min(220px, 64vw);
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:7px;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .18s ease;
+  position:relative;
+  z-index:2;
+  pointer-events:none;
+}
+#title-loading-progress.active{
+  opacity:1;
+  visibility:visible;
+}
+.title-loading-track{
+  width:100%;
+  height:3px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(93,77,54,.13);
+  box-shadow:inset 0 0 0 1px rgba(93,77,54,.06);
+}
+#title-loading-fill{
+  width:0;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(184,151,90,.72), rgba(126,99,54,.92));
+  transition:width .18s ease-out;
+}
+#title-loading-percent{
+  min-width:42px;
+  text-align:center;
+  color:rgba(76,62,44,.62);
+  font-family:"Cinzel", serif;
+  font-size:10px;
+  letter-spacing:1.4px;
+  font-variant-numeric:tabular-nums;
+}
+#title-screen.closing #title-loading-progress{
+  opacity:0;
+}
