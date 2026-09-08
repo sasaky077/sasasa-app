@@ -26265,3 +26265,14 @@ body {
   letter-spacing:.9px !important;
   white-space:nowrap;
 }
+
+
+/* =========================================================
+   v158 Title Startup Asset Gate
+   ========================================================= */
+#title-screen #title-tap-hint{
+  min-height:20px;
+}
+#title-screen.closing{
+  pointer-events:none;
+}
