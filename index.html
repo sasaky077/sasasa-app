@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260908-title-return-fix-v149';
+    var FALLBACK_BUILD = '20260908-user-rank-label-v154';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260908-title-return-fix-v149">
+  <meta name="sasaphia-build" content="20260908-user-rank-label-v154">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260908-title-return-fix-v149"
+        href="css/style.css?v=20260908-user-rank-label-v154"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-title-return-fix-v149"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-user-rank-label-v154"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-title-return-fix-v149">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-user-rank-label-v154">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260908-title-return-fix-v149">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260908-user-rank-label-v154">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260908-title-return-fix-v149';
+  var BUILD = '20260908-user-rank-label-v154';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -389,7 +389,7 @@
   <div class="global-user-frame" id="global-user-frame">
   <div class="hud-left">
     <div class="hud-lv-circle">
-      <span class="hud-lv-label">Lv.</span>
+      <span class="hud-lv-label">RANK</span>
       <span class="hud-lv-num" id="hud-lv-num">1</span>
     </div>
     <div class="hud-info">
@@ -678,6 +678,7 @@
   <!-- フレンド：ホーム左側、ボーナスの下 -->
   <button class="friend-home-entry" id="friend-home-entry" type="button" onclick="showMainTab('friend')" aria-label="フレンドへ移動">
     <img class="friend-home-entry-icon" src="images/friend_icon.webp" alt="フレンド">
+    <span class="friend-notice-dot" aria-hidden="true"></span>
   </button>
   <button class="score-attack-home-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="すこあた！へ移動">
     <img src="images/score_atack.webp" alt="すこあた！">
@@ -1306,7 +1307,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/home_banners.js?v=20260908-user-rank-label-v154"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2029,21 +2030,31 @@ window.NOTICE_ITEMS = [
     const visibleNotices = getVisibleNotices();
     const readIds = new Set(getReadNoticeIds());
 
-    const hasUnreadNotice = visibleNotices.some(function (item) {
-      return item.id && !readIds.has(item.id);
-    });
+    // 「未読」または「報酬未受取」のお知らせを1件として数える。
+    // 同じお知らせが未読かつ未受取でも二重加算しない。
+    const attentionCount = visibleNotices.reduce(function (count, item) {
+      if (!item || !item.id) return count;
+      const isUnread = !readIds.has(item.id);
+      const hasUnclaimedReward = !!(item.reward && !isRewardClaimed(item));
+      return count + ((isUnread || hasUnclaimedReward) ? 1 : 0);
+    }, 0);
 
-    // 報酬付きお知らせは、既読になっていても未受取なら通知を残す。
-    // データリセット直後の「初プレイの感謝！」も確実にホームへ通知する。
-    const hasUnclaimedReward = visibleNotices.some(function (item) {
-      return !!(item && item.reward && !isRewardClaimed(item));
-    });
+    const hasNotice = attentionCount > 0;
+    const displayCount = attentionCount > 99 ? '99+' : String(attentionCount);
 
-    const hasNotice = hasUnreadNotice || hasUnclaimedReward;
-
+    badge.textContent = hasNotice ? displayCount : '';
     badge.classList.toggle('show', hasNotice);
-    badge.style.display = hasNotice ? 'block' : 'none';
+    badge.style.display = hasNotice ? 'flex' : 'none';
     badge.setAttribute('aria-hidden', hasNotice ? 'false' : 'true');
+
+    const noticeButton = badge.closest('.home-notice-btn');
+    if (noticeButton) {
+      noticeButton.classList.toggle('has-unread', hasNotice);
+      noticeButton.setAttribute(
+        'aria-label',
+        hasNotice ? ('お知らせ、未確認' + attentionCount + '件') : 'お知らせ'
+      );
+    }
   }
 
   window.openNoticeModal = async function (event) {
@@ -2098,9 +2109,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/resonance_system.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/resonance_ui.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/shooting_resonance.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/resonance_system.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/resonance_ui.js?v=20260908-user-rank-label-v154"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -4086,11 +4097,32 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     if(reqRes.data && reqRes.data.length > 0){
       reqList.innerHTML = '';
       for(var req of reqRes.data){
-        var name = await getDisplayName(req.requester_id);
+        var profileRes = await sb.from('user_profiles').select('*').eq('user_id', req.requester_id).maybeSingle();
+        var profile = profileRes && profileRes.data ? profileRes.data : null;
+        var name = profile ? (profile.display_name || req.requester_id) : await getDisplayName(req.requester_id);
+        var rank = profile
+          ? (typeof calcRank === 'function' ? calcRank(profile.total_score || 0) : (profile.rank || 1))
+          : 1;
+        var favorite = await getFriendFavoriteCharacter(profile);
+        // フレンド申請カードの画像は必ず chara_XX_panel を使用する
+        var reqCharaId = favorite && favorite.chara ? Number(favorite.chara.id || 0) : 0;
+        var reqIconSrc = reqCharaId
+          ? ('images/chara_' + String(reqCharaId).padStart(2, '0') + '_panel.webp')
+          : '';
+        var reqIconHtml = reqIconSrc
+          ? '<img class="friend-req-avatar-img" src="' + reqIconSrc + '" alt="">'
+          : '<div class="friend-req-avatar-empty">—</div>';
+
         var div = document.createElement('div');
         div.className = 'friend-req-card';
         div.innerHTML =
-          '<div><div class="friend-req-name">'+name+'</div><div style="font-size:11px;color:#666;margin-top:2px">'+req.requester_id+'</div></div>' +
+          '<div class="friend-req-summary">' +
+            '<div class="friend-req-avatar">' + reqIconHtml + '</div>' +
+            '<div class="friend-req-meta">' +
+              '<div class="friend-req-name">' + detailEscapeHTML(name) + '</div>' +
+              '<div class="friend-req-rank">RANK ' + Number(rank || 1) + '</div>' +
+            '</div>' +
+          '</div>' +
           '<div class="friend-req-btns">' +
             '<button class="friend-req-accept" onclick="acceptFriend('+req.id+')">承認</button>' +
             '<button class="friend-req-decline" onclick="declineFriend('+req.id+')">拒否</button>' +
@@ -10743,43 +10775,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/asset_loader.js?v=20260908-user-rank-label-v154"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/login_bonus.js?v=20260908-user-rank-label-v154"></script>
 
-<script src="js/story_engine.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/stories/chapter01.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/story_engine.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/stories/chapter01.js?v=20260908-user-rank-label-v154"></script>
 
-<script src="js/battle_range.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/characters.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/enemies.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/battle.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/battle_swipe.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/battle_range.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/characters.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/enemies.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/battle.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/battle_swipe.js?v=20260908-user-rank-label-v154"></script>
 
-<script src="js/stages.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/stage_select.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/party_select.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/enemy_intro.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/stages.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/stage_select.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/party_select.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/enemy_intro.js?v=20260908-user-rank-label-v154"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-title-return-fix-v149">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-user-rank-label-v154">
 
-<script src="js/battle_range_32.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/characters_32.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/remnant_blessings.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/combo_32.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/cards.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/battle_32.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/battle_32_ui.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/battle_range_32.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/characters_32.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/remnant_blessings.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/combo_32.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/cards.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/battle_32.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/battle_32_ui.js?v=20260908-user-rank-label-v154"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/roguelite_run.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/roguelite_reward.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/shinju.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/roguelite_controller.js?v=20260908-title-return-fix-v149"></script>
-<script src="js/roguelite_overseer_run.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/roguelite_options.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/roguelite_run.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/roguelite_reward.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/shinju.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/roguelite_controller.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/roguelite_overseer_run.js?v=20260908-user-rank-label-v154"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11221,10 +11253,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260908-title-return-fix-v149"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260908-user-rank-label-v154"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/raid_event.js?v=20260908-user-rank-label-v154"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11245,7 +11277,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/score_attack.js?v=20260908-user-rank-label-v154"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

@@ -40,14 +40,18 @@
     }
     return dot;
   }
-  function setFriendNotice(active,reasons){
+  function setFriendNotice(count,reasons){
     const btn=document.getElementById('friend-home-entry');
     const dot=ensureFriendNoticeDot();
     if(!btn || !dot) return;
-    btn.classList.toggle('has-friend-notice',!!active);
-    dot.classList.toggle('show',!!active);
+    const noticeCount=Math.max(0,Math.floor(Number(count||0)));
+    const active=noticeCount>0;
+    btn.classList.toggle('has-friend-notice',active);
+    dot.classList.toggle('show',active);
+    dot.textContent=active?(noticeCount>99?'99+':String(noticeCount)):'';
+    dot.setAttribute('aria-hidden',active?'false':'true');
     btn.dataset.noticeReason=(Array.isArray(reasons)?reasons:[]).filter(Boolean).join(',');
-    btn.setAttribute('aria-label',active?'フレンドへ移動（新着あり）':'フレンドへ移動');
+    btn.setAttribute('aria-label',active?('フレンドへ移動、要確認'+noticeCount+'件'):'フレンドへ移動');
   }
 
   async function refreshFriendHomeNotice(){
@@ -55,11 +59,12 @@
     friendNoticeRefreshPromise=(async()=>{
       const client=sb(), userId=uid();
       ensureFriendNoticeDot();
-      if(!client || !userId){ setFriendNotice(false,[]); return {pendingFriend:false,raidReady:false}; }
-      let pendingFriend=false, raidReady=false;
+      if(!client || !userId){ setFriendNotice(0,[]); return {pendingFriend:false,pendingFriendCount:0,raidReady:false}; }
+      let pendingFriend=false, pendingFriendCount=0, raidReady=false;
       try{
-        const req=await client.from('friendships').select('id').eq('receiver_id',userId).eq('status','pending').limit(1);
-        pendingFriend=!!(req && !req.error && Array.isArray(req.data) && req.data.length);
+        const req=await client.from('friendships').select('id').eq('receiver_id',userId).eq('status','pending');
+        pendingFriendCount=(req && !req.error && Array.isArray(req.data)) ? req.data.length : 0;
+        pendingFriend=pendingFriendCount>0;
       }catch(err){ console.warn('[friend notice] request check skipped',err&&err.message||err); }
       try{
         const mine=normalizeStatus(await rpc('get_my_daily_raid_room',{p_user_id:userId}));
@@ -78,8 +83,9 @@
       const reasons=[];
       if(pendingFriend) reasons.push('friend-request');
       if(raidReady) reasons.push('raid-ready');
-      setFriendNotice(pendingFriend||raidReady,reasons);
-      return {pendingFriend,raidReady};
+      const noticeCount=pendingFriendCount+(raidReady?1:0);
+      setFriendNotice(noticeCount,reasons);
+      return {pendingFriend,pendingFriendCount,raidReady,noticeCount};
     })().finally(()=>{ friendNoticeRefreshPromise=null; });
     return friendNoticeRefreshPromise;
   }

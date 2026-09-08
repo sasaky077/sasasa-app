@@ -366,7 +366,14 @@
   function updateBonusHomeNotice(hasUnclaimed){
     var btn = document.getElementById('bonus-home-entry');
     if(!btn) return;
-    btn.classList.toggle('has-unclaimed', !!hasUnclaimed);
+    var badge = document.getElementById('bonus-home-entry-notice');
+    var count = hasUnclaimed ? 1 : 0;
+    btn.classList.toggle('has-unclaimed', count > 0);
+    if(badge){
+      badge.textContent = count > 0 ? String(count) : '';
+      badge.setAttribute('aria-hidden', count > 0 ? 'false' : 'true');
+    }
+    btn.setAttribute('aria-label', count > 0 ? ('ボーナスを確認、未受取' + count + '件') : 'ボーナスを確認');
   }
 
   async function refreshBonusHomeNotice(){

@@ -279,6 +279,12 @@
     const itemText = s.pendingItemCount > 0 ? `奉納待ち ${s.pendingItemCount}` : '奉納待ちなし';
     box.setAttribute('aria-label', `神樹へ移動。${label}。${itemText}`);
     box.title = `神樹へ / ${label} / ${itemText}`;
+    const badge = box.querySelector('.shinju-home-entry-badge');
+    if (badge) {
+      const count = Math.max(0, Number(s.pendingItemCount || 0));
+      badge.textContent = count > 99 ? '99+' : (count > 0 ? String(count) : '');
+      badge.setAttribute('aria-hidden', count > 0 ? 'false' : 'true');
+    }
     box.classList.toggle('has-items', s.pendingItemCount > 0);
     box.classList.toggle('is-clear', s.isMax);
   }

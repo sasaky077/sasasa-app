@@ -20008,17 +20008,76 @@ body.login-bonus-open {
 }
 
 #screen-friend #friend-requests-list .friend-req-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
   border:1px solid rgba(185,151,89,.16);
   border-radius:14px;
   background:rgba(255,255,255,.70);
   box-shadow:0 4px 12px rgba(88,68,33,.04);
 }
+#screen-friend .friend-req-summary{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:1 1 auto;
+}
+#screen-friend .friend-req-avatar{
+  width:56px;
+  height:56px;
+  flex:0 0 56px;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid rgba(185,151,89,.18);
+  background:linear-gradient(180deg, #fffdfa 0%, #eee5d7 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+#screen-friend .friend-req-avatar-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+#screen-friend .friend-req-avatar-empty{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:rgba(126,103,66,.55);
+  font-size:18px;
+}
+#screen-friend .friend-req-meta{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+}
 #screen-friend .friend-req-name{
   color:#6e5935;
   font-weight:700;
+  line-height:1.2;
+}
+#screen-friend .friend-req-rank{
+  color:rgba(118,95,59,.72);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+#screen-friend .friend-req-btns{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:0 0 auto;
 }
 #screen-friend .friend-req-accept,
 #screen-friend .friend-req-decline{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   border-radius:10px;
   font-family:"Noto Serif JP",serif;
   font-weight:600;
@@ -20115,8 +20174,16 @@ body.login-bonus-open {
   font-size:11px;
 }
 #screen-friend .friend-search-card-with-panel .friend-search-send-btn{
-  min-width:88px;
-  height:36px;
+  min-width:104px;
+  min-height:40px;
+  padding:0 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.35;
+  white-space:normal;
+  word-break:keep-all;
   border:none;
   border-radius:12px;
   background:linear-gradient(180deg, #e1c98f 0%, #cba760 100%);
@@ -26083,4 +26150,118 @@ body {
   .global-user-frame .hud-resource { padding-left: 5px !important; padding-right: 6px !important; gap: 4px !important; }
   .global-user-frame .hud-res-val { min-width: 24px !important; font-size: 12px !important; }
   .global-user-frame .hud-res-icon { width: 16px !important; height: 16px !important; min-width: 16px !important; }
+}
+
+
+/* =========================================================
+   v150 Home notice badge - unread count
+   お知らせは赤ドットではなく、要確認件数を白文字で表示する。
+   ========================================================= */
+#screen-main .home-notice-badge {
+  top: 5px !important;
+  right: 5px !important;
+  width: auto !important;
+  height: 19px !important;
+  min-width: 19px !important;
+  min-height: 19px !important;
+  padding: 0 5px !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  border-radius: 999px !important;
+  background: #d84a42 !important;
+  border: 2px solid rgba(255,252,244,.98) !important;
+  color: #fff !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(80,20,18,.28);
+}
+
+#screen-main .home-notice-badge.show {
+  display: flex !important;
+}
+
+@media (max-width:380px) and (max-height:700px) {
+  #screen-main .home-notice-badge {
+    width: auto !important;
+    height: 19px !important;
+    min-width: 19px !important;
+    min-height: 19px !important;
+  }
+}
+
+/* =========================================================
+   v152 Friend request card and request button alignment tune
+   お知らせ / 神樹 / フレンド / ボーナスを赤バッジ＋白文字で統一。
+   ========================================================= */
+#screen-main .home-notice-badge,
+#screen-main .shinju-home-entry .shinju-home-entry-badge,
+#screen-main .friend-home-entry .friend-notice-dot,
+#screen-main .bonus-home-entry-notice {
+  position: absolute !important;
+  top: 5px !important;
+  right: 5px !important;
+  width: auto !important;
+  height: 19px !important;
+  min-width: 19px !important;
+  min-height: 19px !important;
+  padding: 0 5px !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  border-radius: 999px !important;
+  background: #d84a42 !important;
+  border: 2px solid rgba(255,252,244,.98) !important;
+  color: #fff !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(80,20,18,.28);
+  pointer-events: none !important;
+  z-index: 8 !important;
+}
+
+#screen-main .home-notice-badge.show,
+#screen-main .shinju-home-entry.has-items .shinju-home-entry-badge,
+#screen-main .friend-home-entry.has-friend-notice .friend-notice-dot,
+#screen-main .bonus-home-entry.has-unclaimed .bonus-home-entry-notice {
+  display: flex !important;
+  animation: home-count-badge-pulse-v151 1.8s ease-in-out infinite !important;
+}
+
+@keyframes home-count-badge-pulse-v151 {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@media (max-width:380px) and (max-height:700px) {
+  #screen-main .home-notice-badge,
+  #screen-main .shinju-home-entry .shinju-home-entry-badge,
+  #screen-main .friend-home-entry .friend-notice-dot,
+  #screen-main .bonus-home-entry-notice {
+    width: auto !important;
+    height: 19px !important;
+    min-width: 19px !important;
+    min-height: 19px !important;
+  }
+}
+
+/* =========================================================
+   v154 User rank label
+   ========================================================= */
+.global-user-frame .hud-lv-label{
+  font-size:8px !important;
+  letter-spacing:.9px !important;
+  white-space:nowrap;
 }
