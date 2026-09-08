@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260908-user-rank-label-v154';
+    var FALLBACK_BUILD = '20260908-notice-claim-state-fix-v157';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260908-user-rank-label-v154">
+  <meta name="sasaphia-build" content="20260908-notice-claim-state-fix-v157">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260908-user-rank-label-v154"
+        href="css/style.css?v=20260908-notice-claim-state-fix-v157"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-user-rank-label-v154"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-notice-claim-state-fix-v157"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-user-rank-label-v154">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-notice-claim-state-fix-v157">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260908-user-rank-label-v154">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260908-notice-claim-state-fix-v157">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260908-user-rank-label-v154';
+  var BUILD = '20260908-notice-claim-state-fix-v157';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -460,17 +460,17 @@
 <div id="testplay-guide" class="testplay-guide" aria-hidden="true">
   <img class="testplay-navi-character testplay-navi-character-guide" src="images/opening_navi_2.webp" alt="" aria-hidden="true">
   <div class="testplay-guide-panel" role="dialog" aria-modal="true" aria-labelledby="testplay-guide-title">
-    <div class="testplay-guide-title" id="testplay-guide-title">ありがとやで</div>
-    <div class="testplay-guide-lead">こんな感じに遊んでみてほしいやで</div>
+    <div class="testplay-guide-title" id="testplay-guide-title">ありがとうございます</div>
+    <div class="testplay-guide-lead">このように遊んでみてください</div>
     <div class="testplay-guide-lead">androidスマホではテストできてないから</div>
-    <div class="testplay-guide-lead">うまく動かなかったらごめんやで</div>
+    <div class="testplay-guide-lead">うまく動かない場合は申し訳ありません</div>
 
     <div class="testplay-guide-text testplay-guide-steps">
       <button type="button" class="testplay-install-guide-entry" onclick="openInstallGuide(event)">
         <span class="testplay-guide-step-no">1</span>
         <span class="testplay-install-guide-entry-copy">
           <b>ホーム画面に追加する</b>
-          <small>アイコンからいつでもSasaphiaを遊べるようにするやで</small>
+          <small>アイコンからいつでもSasaphiaを遊べるようにできます</small>
           <span class="testplay-install-guide-entry-cta">タップして確認 ▶</span>
         </span>
         <span class="testplay-install-guide-entry-arrow">›</span>
@@ -481,7 +481,7 @@
           <span class="testplay-guide-step-no">2</span>
           <span class="testplay-guide-step-title">右上の＋ボタンから課金石を購入</span>
         </div>
-        <div class="testplay-guide-step-note">お金は取られないから安心してほしいやで。</div>
+        <div class="testplay-guide-step-note">料金は発生しませんので、ご安心ください。</div>
       </div>
 
       <div class="testplay-guide-step">
@@ -489,7 +489,7 @@
           <span class="testplay-guide-step-no">3</span>
           <span class="testplay-guide-step-title">ガチャを回してキャラを増やす</span>
         </div>
-        <div class="testplay-guide-step-note">ピックアップキャラを2～3体くらい引いてみるやで。</div>
+        <div class="testplay-guide-step-note">ピックアップキャラを2～3体ほど引いてみてください。</div>
       </div>
 
       <div class="testplay-guide-step">
@@ -499,7 +499,7 @@
         </div>
         <div class="testplay-guide-step-note">
           「巡行」→「ストーリー」を進めるか、<br>
-          特別巡行の「フェイスレス降臨」を遊んでみるやで。
+          特別巡行の「フェイスレス降臨」を遊んでみてください。
         </div>
       </div>
     </div>
@@ -1307,7 +1307,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/home_banners.js?v=20260908-notice-claim-state-fix-v157"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -1319,69 +1319,22 @@
 
 window.NOTICE_ITEMS = [
   {
-    id: 'notice_update_20260820_ch05_ult_limitbreak_friends',
-    date: '2026.08.20',
-    title: 'アップデートのお知らせ',
-    body: '・ミモザのULTが発動しないバグを修正しました\n・CHAPTER05 鏡界のマリオネット を実装しました\n・キャラ詳細でのULTの説明を詳細化しました\n・テストちゃんの限界突破を実装しました\n・既存ユーザー全員を相互フレンド状態に変更しました',
-    hidden: false
-  },
-
-  {
-    id: 'notice_update_20260819_score_attack',
-    date: '2026.08.19',
-    title: 'アップデートのお知らせ',
-    body: '・スコアアタックコンテンツ「すこあた！」を追加\n→弾幕固定型のステージで高得点を目指してください\n　フレンドと競い、TOPを目指そう！',
-    hidden: false
-  },
-
-  {
-    id: 'notice_update_20260818_story_beginner_ch04_balance',
-    date: '2026.08.18',
-    title: 'アップデートのお知らせ',
-    body: '・各ボスステージの難易度を調整しました\n・CHAPTER04 を実装しました\n・ストーリー(初級)を実装しました\n・キャラクター性能を調整しました\n→対象キャラ：ミア、ミト、イグニス',
-    hidden: false
-  },
-
-  {
-    id: 'notice_daily_raid_3attempts_20260817',
-    date: '2026.08.17',
-    title: 'レイドが1日3回挑戦できるようになりました！',
-    body: 'デイリーレイドの挑戦回数を、1日1回から1日3回に変更しました。3回のうち最も高いスコアが記録として採用されます。見た目を犠牲に軽量化したので、たぶん動きます。',
-    hidden: false
-  },
-
-  {
-    id: 'notice_first_play_thanks_001',
-    date: '2XXX.08.16',
-    title: '初プレイの感謝！',
-    body: 'Sasaphiaを遊んでくれてありがとうやで。初プレイの感謝を込めて、結晶300個をプレゼントするやで。',
+    id: 'notice_beta_thanks_20260908',
+    date: '2026.09.08',
+    title: 'ベータ版プレイへの感謝',
+    body: 'ベータ版をプレイいただいた皆様に感謝を込めて、結晶300個をプレゼントします。',
     reward: {
       type: 'gem',
       amount: 300,
       claimId: 'notice_reward_firstplay_300'
     },
     hidden: false
-  },
-
-  {
-    id: 'notice_sakiel_001',
-    date: '2XXX.06.29',
-    title: 'フェイスレス降臨 開催',
-    body: '特別巡行に「フェイスレス降臨」が追加されました。',
-    hidden: false
-  },
-
-  {
-    id: 'notice_002',
-    date: '2XXX.05.28',
-    title: '邂逅情報更新',
-    body: '新たなキャラがリリースされました。',
-    hidden: false
   }
 ];
 
 (function () {
   const NOTICE_READ_KEY = 'sasaphia_notice_read_ids_v2';
+  const NOTICE_CLAIMED_KEY = 'sasaphia_notice_claimed_ids_v1';
 
   function ensureNoticeRuntimeStyle() {
     if (document.getElementById('sasaphia-notice-inline-style-v5')) return;
@@ -1737,10 +1690,61 @@ window.NOTICE_ITEMS = [
 
   window.refreshRaidClearRewardNotice = refreshRaidClearRewardNotice;
 
+  function getLocallyClaimedNoticeIds() {
+    try {
+      const raw = localStorage.getItem(NOTICE_CLAIMED_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function markNoticeRewardClaimedLocally(claimId) {
+    if (!claimId) return;
+    try {
+      const ids = getLocallyClaimedNoticeIds();
+      if (!ids.includes(claimId)) ids.push(claimId);
+      localStorage.setItem(NOTICE_CLAIMED_KEY, JSON.stringify(Array.from(new Set(ids))));
+    } catch (_) {}
+  }
+
+  async function syncNoticeRewardClaimStatus() {
+    const client = window.zsSupabase || null;
+    if (!client || typeof client.rpc !== 'function') return;
+
+    const rewardItems = getVisibleNotices().filter(function(item){
+      return item && item.reward && item.reward.type === 'gem' && item.reward.claimId;
+    });
+    if (!rewardItems.length) return;
+
+    for (const item of rewardItems) {
+      try {
+        const res = await client.rpc('is_notice_reward_claimed', {
+          p_claim_id: item.reward.claimId
+        });
+        if (res && res.error) throw res.error;
+        if (res && res.data === true) {
+          item.reward.claimed = true;
+          markNoticeRewardClaimedLocally(item.reward.claimId);
+        }
+      } catch (error) {
+        // DB関数未反映時でも、従来のローカル判定でゲーム自体は継続できる。
+        console.warn('[NoticeReward] claim status sync skipped:', error && (error.message || error));
+        return;
+      }
+    }
+  }
+
   function isRewardClaimed(item) {
     if (!item || !item.reward) return false;
     if (item.reward.type === 'character') return item.reward.claimed === true;
     if (!item.reward.claimId) return false;
+    if (item.reward.claimed === true) return true;
+
+    const locallyClaimed = getLocallyClaimedNoticeIds();
+    if (locallyClaimed.includes(item.reward.claimId)) return true;
+
     const profile = getProfile();
     const used = profile && Array.isArray(profile.used_gachas) ? profile.used_gachas : [];
     return used.includes(item.reward.claimId);
@@ -1807,7 +1811,7 @@ window.NOTICE_ITEMS = [
 
     if (window._profileLoadState !== 'ready' || !window.userProfile) {
       if (typeof window.showToast === 'function') {
-        window.showToast('プロフィール読込後にもう一度試してほしいやで');
+        window.showToast('プロフィールの読み込み後に、もう一度お試しください');
       }
       return;
     }
@@ -1865,7 +1869,7 @@ window.NOTICE_ITEMS = [
 
         item.reward.claimed = true;
         if (typeof window.showToast === 'function') {
-          window.showToast('テストちゃん ×1 を受け取ったやで！');
+          window.showToast('テストちゃん ×1 を受け取りました！');
         }
         if (typeof renderZukan === 'function') {
           try { renderZukan(); } catch(_){}
@@ -1876,7 +1880,7 @@ window.NOTICE_ITEMS = [
       } catch (error) {
         console.error('[RaidRewardNotice] claim failed:', error);
         if (typeof window.showToast === 'function') {
-          window.showToast(error && error.message ? error.message : '受け取りに失敗したやで');
+          window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
         }
         if (button) {
           button.disabled = false;
@@ -1913,6 +1917,10 @@ window.NOTICE_ITEMS = [
         throw new Error((result && result.message) || '報酬を受け取れませんでした');
       }
 
+      // DBが「受取済み」と返した場合も正式な受取済み状態として保持する。
+      reward.claimed = true;
+      markNoticeRewardClaimedLocally(reward.claimId);
+
       const profile = window.userProfile;
       const nextGem = Math.max(0, Number(result.gem || 0));
       const used = Array.isArray(profile.used_gachas) ? profile.used_gachas.slice() : [];
@@ -1927,8 +1935,8 @@ window.NOTICE_ITEMS = [
 
       if (typeof window.showToast === 'function') {
         window.showToast(result.already_claimed
-          ? 'この報酬は受取済みやで'
-          : ('結晶 ×' + amount + ' を受け取ったやで！'));
+          ? 'この報酬は受取済みです'
+          : ('結晶 ×' + amount + ' を受け取りました！'));
       }
 
       renderNoticeList();
@@ -1936,7 +1944,7 @@ window.NOTICE_ITEMS = [
     } catch (error) {
       console.error('[NoticeReward] claim failed:', error);
       if (typeof window.showToast === 'function') {
-        window.showToast('受け取りに失敗したやで。もう一度試してほしいやで');
+        window.showToast('受け取りに失敗しました。もう一度お試しください');
       }
       renderNoticeList();
     }
@@ -2064,6 +2072,7 @@ window.NOTICE_ITEMS = [
     }
 
     await refreshRaidClearRewardNotice();
+    await syncNoticeRewardClaimStatus();
     ensureNoticeModal();
     renderNoticeList();
 
@@ -2076,7 +2085,10 @@ window.NOTICE_ITEMS = [
     updateNoticeBadge();
   };
 
-  window.refreshNoticeBadge = updateNoticeBadge;
+  window.refreshNoticeBadge = async function () {
+    await syncNoticeRewardClaimStatus();
+    updateNoticeBadge();
+  };
 
   window.addEventListener('sasaphia-daily-raid-cleared', function(){
     refreshRaidClearRewardNotice();
@@ -2103,15 +2115,17 @@ window.NOTICE_ITEMS = [
 
   window.addEventListener('focus', updateNoticeBadge);
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') updateNoticeBadge();
+    if (document.visibilityState === 'visible') {
+      syncNoticeRewardClaimStatus().finally(updateNoticeBadge);
+    }
   });
 })();
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/resonance_system.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/resonance_ui.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/shooting_resonance.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/resonance_system.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/resonance_ui.js?v=20260908-notice-claim-state-fix-v157"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -9486,32 +9500,32 @@ var installGuideSteps = [
   {
     image: 'images/pwa_step1.png',
     title: 'LINEから開いた場合',
-    text: '右下の「…」をタップして「ブラウザで開く」を選ぶやで。Safariで直接開いている場合は、この手順は飛ばしてOKやで。'
+    text: '右下の「…」をタップして「ブラウザで開く」を選んでください。Safariで直接開いている場合は、この手順は飛ばして問題ありません。'
   },
   {
     image: 'images/pwa_step2.png',
     title: 'Safariの「…」をタップ',
-    text: '画面右下にある「…」をタップするやで。'
+    text: '画面右下にある「…」をタップしてください。'
   },
   {
     image: 'images/pwa_step3.png',
     title: '「共有」をタップ',
-    text: '表示されたメニューから「共有」をタップするやで。'
+    text: '表示されたメニューから「共有」をタップしてください。'
   },
   {
     image: 'images/pwa_step4.png',
     title: '「ホーム画面に追加」をタップ',
-    text: '共有メニューを下にスクロールして「ホーム画面に追加」を選ぶやで。'
+    text: '共有メニューを下にスクロールして「ホーム画面に追加」を選んでください。'
   },
   {
     image: 'images/pwa_step5.png',
     title: 'Webアプリとして追加',
-    text: '「Webアプリとして開く」をONのまま、右上の「追加」をタップするやで。'
+    text: '「Webアプリとして開く」をONのまま、右上の「追加」をタップしてください。'
   },
   {
     image: 'images/pwa_step6.png',
     title: '追加完了',
-    text: 'ホーム画面に「Sasaphia」のアイコンが追加されたら完了やで。次からはこのアイコンをタップすればすぐ遊べるやで。'
+    text: 'ホーム画面に「Sasaphia」のアイコンが追加されたら完了です。次回からは、このアイコンをタップするとすぐに遊べます。'
   }
 ];
 var installGuideIndex = 0;
@@ -10775,43 +10789,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/asset_loader.js?v=20260908-notice-claim-state-fix-v157"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/login_bonus.js?v=20260908-notice-claim-state-fix-v157"></script>
 
-<script src="js/story_engine.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/stories/chapter01.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/story_engine.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/stories/chapter01.js?v=20260908-notice-claim-state-fix-v157"></script>
 
-<script src="js/battle_range.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/characters.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/enemies.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/battle.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/battle_swipe.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/battle_range.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/characters.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/enemies.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/battle.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/battle_swipe.js?v=20260908-notice-claim-state-fix-v157"></script>
 
-<script src="js/stages.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/stage_select.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/party_select.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/enemy_intro.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/stages.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/stage_select.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/party_select.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/enemy_intro.js?v=20260908-notice-claim-state-fix-v157"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-user-rank-label-v154">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-notice-claim-state-fix-v157">
 
-<script src="js/battle_range_32.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/characters_32.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/remnant_blessings.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/combo_32.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/cards.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/battle_32.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/battle_32_ui.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/battle_range_32.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/characters_32.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/remnant_blessings.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/combo_32.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/cards.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/battle_32.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/battle_32_ui.js?v=20260908-notice-claim-state-fix-v157"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/roguelite_run.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/roguelite_reward.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/shinju.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/roguelite_controller.js?v=20260908-user-rank-label-v154"></script>
-<script src="js/roguelite_overseer_run.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/roguelite_options.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/roguelite_run.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/roguelite_reward.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/shinju.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/roguelite_controller.js?v=20260908-notice-claim-state-fix-v157"></script>
+<script src="js/roguelite_overseer_run.js?v=20260908-notice-claim-state-fix-v157"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11253,10 +11267,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260908-user-rank-label-v154"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260908-notice-claim-state-fix-v157"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/raid_event.js?v=20260908-notice-claim-state-fix-v157"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11277,7 +11291,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260908-user-rank-label-v154"></script>
+<script src="js/score_attack.js?v=20260908-notice-claim-state-fix-v157"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
