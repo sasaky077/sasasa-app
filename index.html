@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260908-testplay-end-v140';
+    var FALLBACK_BUILD = '20260908-title-return-fix-v149';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260908-testplay-end-v140">
+  <meta name="sasaphia-build" content="20260908-title-return-fix-v149">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260908-testplay-end-v140"
+        href="css/style.css?v=20260908-title-return-fix-v149"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-testplay-end-v140"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260908-title-return-fix-v149"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-testplay-end-v140">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260908-title-return-fix-v149">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260908-testplay-end-v140">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260908-title-return-fix-v149">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260908-testplay-end-v140';
+  var BUILD = '20260908-title-return-fix-v149';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -350,52 +350,6 @@
 </script>
 
 
-<style id="sasaphia-reload-style-v31">
-#sasaphia-reload-btn{
-  position:absolute;
-  z-index:4;
-  right:8px;
-  bottom:8px;
-  width:22px;height:22px;min-width:22px;padding:0;margin:0;
-  display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid rgba(157,126,77,.58);border-radius:50%;
-  background:
-    radial-gradient(circle at 36% 30%,rgba(255,251,239,.98),rgba(235,222,198,.98) 68%,rgba(219,201,171,.98));
-  color:#6f5432;
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.48),
-    0 1px 4px rgba(88,66,36,.16),
-    0 0 6px rgba(173,133,64,.10);
-  text-shadow:0 1px 0 rgba(255,255,255,.65);
-  font:500 14px/1 "Cinzel","Noto Serif JP",serif;
-  cursor:pointer;
-  pointer-events:auto;
-  -webkit-tap-highlight-color:transparent;
-  touch-action:manipulation;
-  transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;
-}
-#sasaphia-reload-btn:hover{
-  filter:brightness(1.08);
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.58),
-    0 1px 5px rgba(88,66,36,.20),
-    0 0 8px rgba(173,133,64,.14);
-}
-#sasaphia-reload-btn:active{
-  transform:rotate(32deg) scale(.92);
-  filter:brightness(.94);
-}
-
-/* 右上リソースを少し上へ詰め、リロードとの縦バランスを整える */
-#global-user-frame .hud-right{
-  transform:translateY(-4px);
-}
-
-/* ジェム・コインを同じ高さまで上へ逃がし、右下のリロードボタンと距離を取る */
-#global-user-frame .hud-right .hud-resource{
-  transform:translateY(-6px);
-}
-</style>
 
 <style id="story-lock-style-v102">
 /* 通常・初級ストーリー共通：未開放CHAPTERは同じ明度で表示 */
@@ -459,7 +413,6 @@
       <span class="hud-res-val" id="user-coin">0</span>
     </div>
   </div>
-  <button type="button" id="sasaphia-reload-btn" onclick="reloadSasaphiaApp(event)" aria-label="アプリを再読み込み" title="再読み込み">↻</button>
 </div>
 
 <div id="splash" style="cursor:pointer">
@@ -935,6 +888,10 @@
   </div>
   <div class="setting-section">
     <div class="setting-section-title">その他</div>
+    <div class="setting-row" onclick="returnToTitleScreen()">
+      <span class="setting-row-label">タイトル画面に戻る</span>
+      <span class="setting-row-arrow">›</span>
+    </div>
     <div class="setting-row" onclick="toggleAudioSetting('title_bgm')">
   <span class="setting-row-label">タイトル画面BGM</span>
   <span class="setting-row-sub" id="title-bgm-status">ON</span>
@@ -1327,6 +1284,7 @@
 
 <div class="modal-overlay" id="detail-modal">
   <div class="modal">
+    <button class="modal-close-btn detail-modal-close-x" type="button" aria-label="閉じる" onclick="event.stopPropagation(); closeModal('detail-modal')">×</button>
     <div class="gacha-pickup-title-name" id="gacha-pickup-title-name" aria-live="polite"></div>
     <div class="detail-header">
       <div id="detail-chara-visual"></div>
@@ -1348,7 +1306,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260908-testplay-end-v140"></script>
+<script src="js/home_banners.js?v=20260908-title-return-fix-v149"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2140,9 +2098,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260908-testplay-end-v140"></script>
-<script src="js/resonance_system.js?v=20260908-testplay-end-v140"></script>
-<script src="js/resonance_ui.js?v=20260908-testplay-end-v140"></script>
+<script src="js/shooting_resonance.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/resonance_system.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/resonance_ui.js?v=20260908-title-return-fix-v149"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3591,6 +3549,17 @@ function selectChara(now, gacha) {
   // Step1: スプラッシュ（タップで進む）
   await new Promise(function(resolve){
     var splash = document.getElementById('splash');
+
+    // 設定の「タイトル画面に戻る」は実リロードを行うが、
+    // その場合だけスプラッシュを飛ばして直接タイトルへ戻す。
+    if(sessionStorage.getItem('sasaphia_return_to_title') === '1'){
+      sessionStorage.removeItem('sasaphia_return_to_title');
+      splash.style.display = 'none';
+      splash.style.opacity = '0';
+      resolve();
+      return;
+    }
+
     splash.style.cursor = 'pointer';
     splash.addEventListener('click', function(){
       try {
@@ -4526,9 +4495,11 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function onNodeClear(nodeId, difficulty, clearRank, isFirstClear) {
-    var exp = calcNodeExp(difficulty, clearRank, isFirstClear);
-    await addTotalScore(exp);
-    showToast((isFirstClear ? '初回クリア！ ' : '') + '+' + exp + ' EXP');
+    // v144: 旧クライアント直書きEXP経路は廃止。
+    // 現行の正規報酬は各プレイ用RPCから付与する。
+    console.warn('[EXP] legacy onNodeClear reward path is disabled:', nodeId);
+    if (typeof showToast === 'function') showToast('この報酬経路は準備中です');
+    return false;
   }
 
   // デイリー巡行本編は次段階で曜日別ステージへ接続する。
@@ -4837,21 +4808,10 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function addTotalScore(score){
-    userProfile.total_score += score;
-    var newRank = calcRank(userProfile.total_score);
-    var rankUp = newRank > userProfile.rank;
-    userProfile.rank = newRank;
-    await saveProfileToDB({
-      total_score: userProfile.total_score,
-      rank: userProfile.rank,
-      last_played: new Date().toISOString()
-    });
-    updateMainUI();
-    if(rankUp){
-      setTimeout(function(){
-        showRankUpToast(userProfile.rank);
-      }, 2000);
-    }
+    // v144: total_score / rank はサーバーRPCのみ更新可。
+    // 古い外部JSがこの関数を呼んでもDBへ直接書き込まない。
+    console.warn('[EXP] direct addTotalScore is disabled:', score);
+    throw new Error('EXP直接更新は廃止されました');
   }
 
   // ローグライト等の外部JSから既存EXP/保存処理を呼べるよう明示公開
@@ -5237,15 +5197,9 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
   clearTimeout(summonWatchdog);
 });
 
-// 10連は、画像プリロードやDB保存に時間がかかっても下のガチャ画面を露出させない。
-  // 実際の演出（reveal-modal）が表示された瞬間に standby を外す。
-  if(currentSummonCount !== 10){
-    setTimeout(function(){
-      standby.classList.remove('active');
-      standby.classList.remove('is-starting');
-      standby.style.pointerEvents = '';
-    }, 400);
-  }
+// 単発・10連とも、RPC/画像プリロード中は standby を維持する。
+  // reveal-modal が実際に前面へ出たタイミングで standby を外すことで、
+  // ガチャバナー画面が一瞬露出するフラッシュを防ぐ。
 
 }
 
@@ -5838,7 +5792,11 @@ function setRevealEncounterText(data){
 
     setTimeout(function(){
       var standby = document.getElementById('summon-standby');
-      if(standby) standby.classList.remove('active');
+      if(standby){
+        standby.classList.remove('active');
+        standby.classList.remove('is-starting');
+        standby.style.pointerEvents = '';
+      }
     }, 50);
 
     clearGachaEffectTimers();
@@ -6106,7 +6064,11 @@ function finalGachaFlash(callback){
     detailReturnToSummonAfterClose = false;
 
     var standby = document.getElementById('summon-standby');
-    if(standby) standby.classList.remove('active');
+    if(standby){
+      standby.classList.remove('active');
+      standby.classList.remove('is-starting');
+      standby.style.pointerEvents = '';
+    }
 
     resetSummonResult();
 
@@ -10781,43 +10743,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260908-testplay-end-v140"></script>
+<script src="js/asset_loader.js?v=20260908-title-return-fix-v149"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260908-testplay-end-v140"></script>
+<script src="js/login_bonus.js?v=20260908-title-return-fix-v149"></script>
 
-<script src="js/story_engine.js?v=20260908-testplay-end-v140"></script>
-<script src="js/stories/chapter01.js?v=20260908-testplay-end-v140"></script>
+<script src="js/story_engine.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/stories/chapter01.js?v=20260908-title-return-fix-v149"></script>
 
-<script src="js/battle_range.js?v=20260908-testplay-end-v140"></script>
-<script src="js/characters.js?v=20260908-testplay-end-v140"></script>
-<script src="js/enemies.js?v=20260908-testplay-end-v140"></script>
-<script src="js/battle.js?v=20260908-testplay-end-v140"></script>
-<script src="js/battle_swipe.js?v=20260908-testplay-end-v140"></script>
+<script src="js/battle_range.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/characters.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/enemies.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/battle.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/battle_swipe.js?v=20260908-title-return-fix-v149"></script>
 
-<script src="js/stages.js?v=20260908-testplay-end-v140"></script>
-<script src="js/stage_select.js?v=20260908-testplay-end-v140"></script>
-<script src="js/party_select.js?v=20260908-testplay-end-v140"></script>
-<script src="js/enemy_intro.js?v=20260908-testplay-end-v140"></script>
+<script src="js/stages.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/stage_select.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/party_select.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/enemy_intro.js?v=20260908-title-return-fix-v149"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-testplay-end-v140">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260908-title-return-fix-v149">
 
-<script src="js/battle_range_32.js?v=20260908-testplay-end-v140"></script>
-<script src="js/characters_32.js?v=20260908-testplay-end-v140"></script>
-<script src="js/remnant_blessings.js?v=20260908-testplay-end-v140"></script>
-<script src="js/combo_32.js?v=20260908-testplay-end-v140"></script>
-<script src="js/cards.js?v=20260908-testplay-end-v140"></script>
-<script src="js/battle_32.js?v=20260908-testplay-end-v140"></script>
-<script src="js/battle_32_ui.js?v=20260908-testplay-end-v140"></script>
+<script src="js/battle_range_32.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/characters_32.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/remnant_blessings.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/combo_32.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/cards.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/battle_32.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/battle_32_ui.js?v=20260908-title-return-fix-v149"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260908-testplay-end-v140"></script>
-<script src="js/roguelite_run.js?v=20260908-testplay-end-v140"></script>
-<script src="js/roguelite_reward.js?v=20260908-testplay-end-v140"></script>
-<script src="js/shinju.js?v=20260908-testplay-end-v140"></script>
-<script src="js/roguelite_controller.js?v=20260908-testplay-end-v140"></script>
-<script src="js/roguelite_overseer_run.js?v=20260908-testplay-end-v140"></script>
+<script src="js/roguelite_options.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/roguelite_run.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/roguelite_reward.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/shinju.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/roguelite_controller.js?v=20260908-title-return-fix-v149"></script>
+<script src="js/roguelite_overseer_run.js?v=20260908-title-return-fix-v149"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11236,23 +11198,19 @@ window.addEventListener('pagehide', function () {
   }
 })();
 </script>
-<script id="sasaphia-app-reload-v31">
-window.reloadSasaphiaApp = function(event){
-  if(event){ event.preventDefault(); event.stopPropagation(); }
-
-  const ok = window.confirm(
-    'アプリを再読み込みしますか？\n\nバトル中の場合は、途中経過を保存してから再読み込みします。'
-  );
+<script id="sasaphia-return-title-v148">
+window.returnToTitleScreen = function(){
+  const ok = window.confirm('タイトル画面に戻りますか？\n\nアプリを再読み込みしてタイトル画面へ戻ります。');
   if(!ok) return;
 
   try {
     if(typeof window.saveShootingResumeState === 'function'){
-      window.saveShootingResumeState('manual-app-reload');
+      window.saveShootingResumeState('return-to-title');
     }
   } catch(_) {}
 
-  // キャッシュを無理に全削除せず、現在のURLを通常再読込する。
-  // shooting_event側のMODULE_VERSIONで更新モジュールはcache-bustされる。
+  try { sessionStorage.setItem('sasaphia_return_to_title', '1'); } catch(_) {}
+
   if (typeof window.forceSasaphiaLatestBuild === 'function') {
     window.forceSasaphiaLatestBuild();
     return;
@@ -11263,10 +11221,10 @@ window.reloadSasaphiaApp = function(event){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260908-testplay-end-v140"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260908-title-return-fix-v149"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260908-testplay-end-v140"></script>
+<script src="js/raid_event.js?v=20260908-title-return-fix-v149"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11287,7 +11245,7 @@ window.reloadSasaphiaApp = function(event){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260908-testplay-end-v140"></script>
+<script src="js/score_attack.js?v=20260908-title-return-fix-v149"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

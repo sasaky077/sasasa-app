@@ -1281,36 +1281,82 @@ function _hideHud() {
   // 心核所持数の参照API（素材一覧などから利用可能）
   window.getRogueliteBossCoreInventory = _loadBossCoreInventory;
 
-  async function _grantRunRewards(rank) {
-    const coin = _coinByRank(rank);
-    const exp = _calcRunExp(rank);
+  const SERVER_REWARD_RUN_IDS = new Set(['overseer', 'irish', 'rivia', 'remnant05', 'sakiel']);
 
-    try {
-      if (window.userProfile) {
-        window.userProfile.coin = Number(window.userProfile.coin || 0) + coin;
-      }
+  async function _beginServerRun(runId) {
+    const normalizedRunId = String(runId || '').trim().toLowerCase();
+    window.__ROGUELITE_SERVER_RUN_TOKEN__ = null;
+    window.__ROGUELITE_SERVER_RUN_ID__ = null;
 
-      if (typeof window.addTotalScore === 'function') {
-        await window.addTotalScore(exp);
-      } else if (window.userProfile) {
-        window.userProfile.total_score = Number(window.userProfile.total_score || 0) + exp;
-      }
-
-      if (typeof window.saveProfileToDB === 'function' && window.userProfile) {
-        await window.saveProfileToDB({
-          coin: window.userProfile.coin,
-          total_score: window.userProfile.total_score,
-          rank: window.userProfile.rank,
-          last_played: new Date().toISOString(),
-        });
-      }
-
-      if (typeof window.updateMainUI === 'function') window.updateMainUI();
-    } catch (err) {
-      console.warn('[RogueliteController] 報酬付与に失敗:', err);
+    if (!SERVER_REWARD_RUN_IDS.has(normalizedRunId)) {
+      return { managed: false, runId: normalizedRunId };
     }
 
-    return { coin, exp };
+    if (!window.zsSupabase || typeof window.zsSupabase.rpc !== 'function') {
+      throw new Error('Supabase RPC is unavailable');
+    }
+
+    const result = await window.zsSupabase.rpc('begin_roguelite_run', {
+      p_run_id: normalizedRunId,
+    });
+
+    if (!result || result.error || !result.data || !result.data.run_token) {
+      const message = result && result.error
+        ? (result.error.message || result.error.code || 'unknown')
+        : 'run token was not returned';
+      throw new Error('ローグライト開始登録失敗: ' + message);
+    }
+
+    window.__ROGUELITE_SERVER_RUN_TOKEN__ = String(result.data.run_token);
+    window.__ROGUELITE_SERVER_RUN_ID__ = normalizedRunId;
+    return { managed: true, runId: normalizedRunId, runToken: window.__ROGUELITE_SERVER_RUN_TOKEN__ };
+  }
+
+  async function _grantRunRewards(rank) {
+    const runToken = window.__ROGUELITE_SERVER_RUN_TOKEN__ || null;
+    const serverRunId = String(window.__ROGUELITE_SERVER_RUN_ID__ || '').toLowerCase();
+
+    // 正式ローグライトはSupabase側を報酬の唯一の権威とする。
+    if (runToken && SERVER_REWARD_RUN_IDS.has(serverRunId)) {
+      if (!window.zsSupabase || typeof window.zsSupabase.rpc !== 'function') {
+        throw new Error('Supabase RPC is unavailable');
+      }
+
+      const result = await window.zsSupabase.rpc('claim_roguelite_run_reward', {
+        p_run_token: runToken,
+        p_rank: String(rank || 'E').toUpperCase(),
+      });
+
+      if (!result || result.error || !result.data || result.data.ok !== true) {
+        const message = result && result.error
+          ? (result.error.message || result.error.code || 'unknown')
+          : 'reward response was invalid';
+        throw new Error('ローグライト報酬受取失敗: ' + message);
+      }
+
+      const data = result.data;
+      if (window.userProfile) {
+        window.userProfile.coin = Number(data.coin || 0);
+        window.userProfile.total_score = Number(data.total_score || 0);
+        window.userProfile.rank = Number(data.player_rank || 1);
+      }
+      if (typeof window.updateMainUI === 'function') window.updateMainUI();
+
+      // 同じクライアントからの誤再送を避ける。DB側でも二重受取は拒否される。
+      window.__ROGUELITE_SERVER_RUN_TOKEN__ = null;
+      window.__ROGUELITE_SERVER_RUN_ID__ = null;
+
+      return {
+        coin: Number(data.coin_reward || 0),
+        exp: Number(data.exp_reward || 0),
+        server: true,
+      };
+    }
+
+    // サーバー管理対象外の test / debug ランでは永続報酬を付与しない。
+    // coin / total_score / rank のクライアント直書き経路を残さない。
+    console.warn('[RogueliteController] unmanaged run reward skipped:', serverRunId || 'unknown');
+    return { coin: 0, exp: 0, server: false, skipped: true };
   }
 
   function _escapeResultHtml(v) {
@@ -2026,6 +2072,8 @@ async function _onBattleEnd(result, payload) {
 
     const ops = window.RogueliteRun.getOptions();
     window.RogueliteRun.end('lose');
+    window.__ROGUELITE_SERVER_RUN_TOKEN__ = null;
+    window.__ROGUELITE_SERVER_RUN_ID__ = null;
     _hideHud();
     await _showResult('lose', ops, { selectedRewards: Array.isArray(window.__ROGUELITE_SELECTED_REWARDS__) ? window.__ROGUELITE_SELECTED_REWARDS__ : ops });
     return;
@@ -2161,7 +2209,7 @@ async function _onBattleEnd(result, payload) {
    * party_select.js の confirmPartySelect() 等から呼ぶ
    * @param {number[]} partyIds - 選択済みキャラ ID 配列
    */
-  function startRun(partyIds, runOptions) {
+  async function startRun(partyIds, runOptions) {
     _injectStyles();
 
     const blessingId = (runOptions && typeof runOptions === 'object') ? (runOptions.blessingId || null) : null;
@@ -2179,13 +2227,27 @@ async function _onBattleEnd(result, payload) {
       window.RogueliteRun.end('lose'); // 既存ランを中断
     }
 
+    // 正式ランは戦闘開始前にサーバー発行run_tokenを確保する。
+    try {
+      await _beginServerRun(runId);
+    } catch (err) {
+      console.error('[RogueliteController] サーバーラン開始失敗:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast('通信エラーのためローグライトを開始できませんでした');
+      } else {
+        alert('通信エラーのためローグライトを開始できませんでした。');
+      }
+      return false;
+    }
+
     const rlPartyIds = Array.isArray(partyIds) ? partyIds.map(Number).filter(Number.isFinite) : [];
     window.__ROGUELITE_LAST_PARTY_IDS__ = [1, ...rlPartyIds.filter(id => id !== 1)].slice(0, 4);
 
     window.RogueliteRun.start(partyIds || [], runId, blessingId);
-_showTransitionShield('RUN START');
-_hideHud();
-_startBattle();
+    _showTransitionShield('RUN START');
+    _hideHud();
+    _startBattle();
+    return true;
   }
 
   // ── 公開: デバッグボタンを画面に固定表示 ────────────────

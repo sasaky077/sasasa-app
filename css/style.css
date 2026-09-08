@@ -25900,3 +25900,187 @@ body {
     padding-bottom:2px!important;
   }
 }
+
+
+/* =========================================================
+   v146 Character Detail Modal Polish
+   - 明確な右上×ボタン
+   - 背景をぼかして詳細カードへ視線を集中
+   - 単発ガチャ / 10連結果 / 通常詳細で共通適用
+   ========================================================= */
+#detail-modal.modal-overlay {
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 241, 207, 0.18) 0%, rgba(49, 39, 28, 0.30) 42%, rgba(18, 15, 13, 0.68) 100%) !important;
+  backdrop-filter: blur(10px) saturate(0.86) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(0.86) !important;
+  padding: 18px !important;
+}
+
+#detail-modal > .modal {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.985) 0%, rgba(252,248,240,0.975) 100%) !important;
+  border: 1px solid rgba(190, 157, 92, 0.28) !important;
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.34),
+    0 8px 24px rgba(82,59,28,0.14),
+    0 0 0 1px rgba(255,255,255,0.72) inset !important;
+  border-radius: 24px !important;
+  position: relative !important;
+}
+
+#detail-modal .detail-modal-close-x {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: -6px -2px -36px 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(157, 124, 65, 0.34);
+  background: rgba(255, 252, 246, 0.94);
+  color: #6f5a39;
+  font-family: Arial, sans-serif;
+  font-size: 25px;
+  font-weight: 300;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 60;
+  box-shadow:
+    0 7px 18px rgba(69, 49, 23, 0.16),
+    0 0 0 1px rgba(255,255,255,0.72) inset;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#detail-modal .detail-modal-close-x:active {
+  transform: scale(0.92);
+  background: rgba(244, 235, 218, 0.98);
+}
+
+#detail-modal #detail-chara-visual .detail-main-img {
+  box-shadow:
+    0 18px 32px rgba(52, 40, 24, 0.24),
+    0 4px 12px rgba(52, 40, 24, 0.12) !important;
+}
+\n\n/* =========================================================
+   v147 Detail close / repeat single gacha fix
+   ========================================================= */
+#detail-modal > .modal {
+  position: relative !important;
+}
+
+#detail-modal .detail-modal-close-x,
+#detail-modal .modal-close-btn.detail-modal-close-x {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  left: auto !important;
+  bottom: auto !important;
+  float: none !important;
+  margin: 0 !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(157,124,65,0.34) !important;
+  background: rgba(255,252,246,0.96) !important;
+  color: #6f5a39 !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 25px !important;
+  font-weight: 300 !important;
+  line-height: 38px !important;
+  text-align: center !important;
+  display: block !important;
+  z-index: 999 !important;
+  box-shadow: 0 7px 18px rgba(69,49,23,0.18) !important;
+  transform: none !important;
+}
+
+#detail-modal .detail-modal-close-x:active {
+  transform: scale(0.92) !important;
+}
+
+
+/* =========================================================
+   v148 HUD stability / reload button removal
+   - HUDを固定2カラム化し、資源表示のtransform依存を廃止
+   - 画面再描画・フォント読込時の位置ズレを抑制
+   ========================================================= */
+.global-user-frame,
+.global-user-frame.hud-dark {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  min-height: var(--header-h) !important;
+  height: var(--header-h) !important;
+  padding-top: calc(env(safe-area-inset-top) + 8px) !important;
+  padding-right: 12px !important;
+  padding-bottom: 8px !important;
+  padding-left: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.global-user-frame .hud-left {
+  min-width: 0 !important;
+  width: auto !important;
+  flex: none !important;
+  align-self: center !important;
+}
+
+.global-user-frame .hud-info {
+  min-width: 0 !important;
+}
+
+.global-user-frame .hud-name,
+.global-user-frame .hud-exp-text {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.global-user-frame .hud-exp-bg {
+  width: clamp(86px, 26vw, 140px) !important;
+  max-width: 100% !important;
+}
+
+.global-user-frame .hud-right {
+  position: static !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  align-self: center !important;
+  gap: 5px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+.global-user-frame .hud-right .hud-resource {
+  transform: none !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+#sasaphia-reload-btn {
+  display: none !important;
+}
+
+@media (max-width: 390px) {
+  .global-user-frame .hud-lv-circle {
+    width: 46px !important;
+    height: 46px !important;
+  }
+  .global-user-frame .hud-left { gap: 7px !important; }
+  .global-user-frame .hud-resource { padding-left: 5px !important; padding-right: 6px !important; gap: 4px !important; }
+  .global-user-frame .hud-res-val { min-width: 24px !important; font-size: 12px !important; }
+  .global-user-frame .hud-res-icon { width: 16px !important; height: 16px !important; min-width: 16px !important; }
+}

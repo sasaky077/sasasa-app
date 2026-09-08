@@ -1323,6 +1323,7 @@
   }
 
   let state = null;
+  let shootingRunToken = null;
   let rafId = 0;
   let countdownMoveRafId = 0;
 
@@ -9255,25 +9256,51 @@
     return Math.max(1, Math.floor(base * rankMul));
   }
 
-  function grantPlayerExpReward(amount) {
-    const exp = Math.max(0, Math.floor(Number(amount || 0)));
-    if (!exp) return false;
+  async function grantPlayerExpReward(amount) {
+    const previewExp = Math.max(0, Math.floor(Number(amount || 0)));
+    if (!previewExp || !shootingRunToken) return false;
 
-    if (typeof window.addTotalScore === 'function') {
-      Promise.resolve(window.addTotalScore(exp)).catch(err => {
-        console.warn('[shooting reward] player exp save failed', err);
+    const sb = window.zsSupabase || window.sb;
+    if (!sb || typeof sb.rpc !== 'function') {
+      console.warn('[shooting reward] Supabase RPC is unavailable');
+      return false;
+    }
+
+    const difficulty = getShootingPlayerExpDifficulty();
+    const clearRank = getResultRank(state && state.score, true);
+
+    try {
+      const result = await sb.rpc('claim_shooting_reward', {
+        p_run_token: shootingRunToken,
+        p_difficulty: difficulty,
+        p_clear_rank: clearRank,
+        // SHOOTINGは周回でも通常倍率で付与する現行仕様。
+        p_is_first_clear: true,
       });
-      return true;
-    }
 
-    // 通常はaddTotalScoreを使う。未初期化時だけ端末上の値を最低限更新する。
-    if (window.userProfile) {
-      window.userProfile.total_score = Math.max(0, Number(window.userProfile.total_score || 0)) + exp;
+      if (result && result.error) throw result.error;
+      if (!result || !result.data || result.data.ok !== true) {
+        throw new Error('shooting reward claim failed');
+      }
+
+      const serverExp = Math.max(0, Math.floor(Number(result.data.exp_reward || 0)));
+      if (window.userProfile) {
+        window.userProfile.total_score = Math.max(0, Number(result.data.total_score || window.userProfile.total_score || 0));
+        window.userProfile.rank = Math.max(1, Number(result.data.player_rank || window.userProfile.rank || 1));
+      }
+      if (state && Array.isArray(state.clearRewards)) {
+        const expDrop = state.clearRewards.find(drop => drop && drop.type === 'exp');
+        if (expDrop) expDrop.amount = serverExp;
+      }
+      const expAmountEl = document.querySelector('.shooting-result-reward-exp strong');
+      if (expAmountEl) expAmountEl.textContent = `+${serverExp}`;
       if (typeof window.updateMainUI === 'function') window.updateMainUI();
-      if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+      shootingRunToken = null;
       return true;
+    } catch (err) {
+      console.warn('[shooting reward] server exp claim failed', err);
+      return false;
     }
-    return false;
   }
 
   function grantShinjuNutrition(exp, count) {
@@ -9405,7 +9432,7 @@
       })),
     ];
 
-    grantPlayerExpReward(playerExp);
+    void grantPlayerExpReward(playerExp);
     materialDrops.forEach(({ material, count }) => {
       if (material.rewardType === 'shinju') {
         grantShinjuNutrition(rewardPlan.nutritionExp, count);
@@ -10198,6 +10225,26 @@
   window.startSelectedShootingCharacter = async function () {
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
+
+    // EXP報酬用のサーバーrun tokenを戦闘開始時に発行する。
+    // 以降のクリアEXPはこのtokenを1回だけ使用して受け取る。
+    try {
+      const sb = window.zsSupabase || window.sb;
+      if (!sb || typeof sb.rpc !== 'function') throw new Error('Supabase RPC is unavailable');
+      const runResult = await sb.rpc('begin_shooting_run', {
+        p_stage_id: String(selectedStage?.id || '')
+      });
+      if (runResult && runResult.error) throw runResult.error;
+      const token = runResult && runResult.data && runResult.data.run_token;
+      if (!token) throw new Error('shooting run token was not issued');
+      shootingRunToken = token;
+    } catch (err) {
+      console.error('[shooting] begin_shooting_run failed:', err);
+      const message = '戦闘開始の認証に失敗しました。通信状態を確認してください。';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return;
+    }
 
     // レイド挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
     if (!(await ensureSelectedRaidAttemptStarted())) return;
