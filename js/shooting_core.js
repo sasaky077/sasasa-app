@@ -1642,6 +1642,11 @@
   let swipeStartX = 0;
   let swipeStartY = 0;
   let swipeStartAt = 0;
+
+  // v182: iOS Safari PointerEvent断線対策
+  let nativeTouchActive = false;
+  let activeTouchIdentifier = null;
+
   const SWITCH_SWIPE_MIN_X = 78;
   const SWITCH_SWIPE_MAX_MS = 260;
   const SWITCH_SWIPE_AXIS_RATIO = 1.45;
@@ -10019,6 +10024,13 @@
   function onPointerUp(e) {
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
+    // iOS Safariでは、指を離していないのにpointercancelが来ることがある。
+    // Touch Events側で同じ指が生存している間は操作終了にしない。
+    if (e.type === 'pointercancel' && nativeTouchActive) {
+      try { e.preventDefault(); } catch (_) {}
+      return;
+    }
+
     const wasActive = pointerActive;
 
     pointerActive = false;
@@ -10051,6 +10063,134 @@
     }
 
     e.preventDefault();
+  }
+
+  function findActiveTouch(list) {
+    if (!list) return null;
+    for (let i = 0; i < list.length; i += 1) {
+      const t = list[i];
+      if (activeTouchIdentifier === null || t.identifier === activeTouchIdentifier) return t;
+    }
+    return null;
+  }
+
+  function onNativeTouchStart(e) {
+    if (!state || state.ended || state.finishing || state.paused) return;
+    if (!e.touches || !e.touches.length || nativeTouchActive) return;
+
+    const t = (e.changedTouches && e.changedTouches.length)
+      ? e.changedTouches[0]
+      : e.touches[0];
+    if (!t) return;
+
+    nativeTouchActive = true;
+    activeTouchIdentifier = t.identifier;
+
+    // PointerEventが未開始/途中で切れていた場合はここで入力状態を復元。
+    if (!pointerActive) {
+      pointerActive = true;
+      pointerIsTouch = true;
+      activePointerId = null;
+
+      lastPointerClientX = t.clientX;
+      lastPointerClientY = t.clientY;
+      dragStartClientX = t.clientX;
+      dragStartClientY = t.clientY;
+      dragStartPlayerX = state.player.x;
+      dragStartPlayerY = state.player.y;
+      pointerX = state.player.x;
+      pointerY = state.player.y;
+
+      swipeStartX = t.clientX;
+      swipeStartY = t.clientY;
+      swipeStartAt = performance.now();
+    }
+
+    try { e.preventDefault(); } catch (_) {}
+  }
+
+  function onNativeTouchMove(e) {
+    if (!nativeTouchActive || !state || state.ended || state.finishing || state.paused) return;
+
+    const t = findActiveTouch(e.touches);
+    if (!t) return;
+
+    // Pointer Eventsがpointercancelで切れていても、touchmoveで即復旧。
+    if (!pointerActive) {
+      pointerActive = true;
+      pointerIsTouch = true;
+      activePointerId = null;
+      dragStartClientX = t.clientX;
+      dragStartClientY = t.clientY;
+      dragStartPlayerX = state.player.x;
+      dragStartPlayerY = state.player.y;
+    }
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const r = arena.getBoundingClientRect();
+
+    const deltaX = t.clientX - dragStartClientX;
+    const deltaY = t.clientY - dragStartClientY;
+
+    pointerX = clamp(
+      dragStartPlayerX + (isHorizontalControlReversed() ? -deltaX : deltaX),
+      30,
+      r.width - 30
+    );
+    pointerY = clamp(
+      dragStartPlayerY + deltaY,
+      34,
+      r.height - 38
+    );
+
+    lastPointerClientX = t.clientX;
+    lastPointerClientY = t.clientY;
+
+    try { e.preventDefault(); } catch (_) {}
+  }
+
+  function onNativeTouchEnd(e) {
+    if (!nativeTouchActive) return;
+
+    let stillAlive = false;
+    if (e.touches) {
+      for (let i = 0; i < e.touches.length; i += 1) {
+        if (e.touches[i].identifier === activeTouchIdentifier) {
+          stillAlive = true;
+          break;
+        }
+      }
+    }
+
+    if (stillAlive) {
+      try { e.preventDefault(); } catch (_) {}
+      return;
+    }
+
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+
+    // 物理的なtouchendを確認した時だけ操作終了。
+    pointerActive = false;
+    pointerIsTouch = false;
+    activePointerId = null;
+
+    if (getCurrentCharacter && getCurrentCharacter().id === CHARACTER_ID.MIA) {
+      clearMiaChargeState();
+    }
+
+    try { e.preventDefault(); } catch (_) {}
+  }
+
+  function onNativeTouchCancel(e) {
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    pointerActive = false;
+    pointerIsTouch = false;
+    activePointerId = null;
+    clearMiaChargeState();
+    try { e.preventDefault(); } catch (_) {}
   }
 
   function updatePointer(e) {
@@ -10511,7 +10651,14 @@
     warmShootingAssets();
     const root = UIModule.buildRoot({
       ROOT_ID, PLAYER_ID, BOSS_ID, BOSS, SHOOTING_CHARACTERS, CHARACTER_ID,
-      getShootingRosterHtml, onPointerDown, onPointerMove, onPointerUp
+      getShootingRosterHtml,
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onNativeTouchStart,
+      onNativeTouchMove,
+      onNativeTouchEnd,
+      onNativeTouchCancel
     });
     const bossImage = document.getElementById(BOSS_ID);
     if (bossImage) {

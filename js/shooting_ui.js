@@ -5,7 +5,12 @@
   let savedFrameDisplay = null;
 
   function buildRoot(options) {
-    const { ROOT_ID, PLAYER_ID, BOSS_ID, BOSS, SHOOTING_CHARACTERS, CHARACTER_ID, getShootingRosterHtml, onPointerDown, onPointerMove, onPointerUp } = options;
+    const {
+      ROOT_ID, PLAYER_ID, BOSS_ID, BOSS, SHOOTING_CHARACTERS, CHARACTER_ID,
+      getShootingRosterHtml,
+      onPointerDown, onPointerMove, onPointerUp,
+      onNativeTouchStart, onNativeTouchMove, onNativeTouchEnd, onNativeTouchCancel
+    } = options;
     let root = document.getElementById(ROOT_ID);
     if (root) return root;
 
@@ -194,6 +199,15 @@
     arena.addEventListener('pointermove', onPointerMove, { passive: false });
     arena.addEventListener('pointerup', onPointerUp, { passive: false });
     arena.addEventListener('pointercancel', onPointerUp, { passive: false });
+
+    // iOS Safari/PWAではPointer Eventsが実タッチ中でもcancelされることがある。
+    // Touch Eventsを並行監視し、実際のtouchendまで操作を維持する。
+    if (typeof onNativeTouchStart === 'function') {
+      arena.addEventListener('touchstart', onNativeTouchStart, { passive: false });
+      arena.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+      arena.addEventListener('touchend', onNativeTouchEnd, { passive: false });
+      arena.addEventListener('touchcancel', onNativeTouchCancel, { passive: false });
+    }
     const switchRail = root.querySelector('#shooting-switch-rail');
     if (switchRail) {
       // スマホでは click まで待つと、指が数px動いただけでタップがキャンセルされることがある。
