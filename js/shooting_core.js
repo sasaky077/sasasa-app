@@ -1171,30 +1171,55 @@
     return selectedStageHighScore;
   }
 
-  async function submitShootingHighScore(value) {
+  // v172: result submission is bound to one server-issued run token.
+  // The server verifies account ownership, stage, elapsed time and token reuse,
+  // then consumes the run. A retry therefore requires a fresh run token.
+  async function submitShootingHighScore(value, win = false) {
     const stageId = selectedStage?.id || state?.stageId || '';
     const scoreValue = Math.max(0, Math.floor(Number(value || 0)));
-    if (!stageId) return;
+    if (!stageId) return null;
 
+    // Local display remains responsive; cloud ranking is server-confirmed below.
     if (scoreValue > getLocalShootingHighScore(stageId)) writeLocalShootingHighScore(stageId, scoreValue);
     selectedStageHighScore = Math.max(selectedStageHighScore, scoreValue);
 
     const sb = window.zsSupabase;
     const userId = getShootingUserId();
-    if (!sb || typeof sb.rpc !== 'function' || !userId) return;
+    if (!sb || typeof sb.rpc !== 'function' || !userId) return null;
 
     try {
-      const result = await sb.rpc('submit_shooting_high_score', {
+      const runToken = (state && state.secureRunToken) || await beginSecureShootingRun();
+      if (!runToken) throw new Error('secure shooting run token is unavailable');
+
+      const result = await sb.rpc('finish_secure_shooting_run', {
         p_user_id: userId,
-        p_stage_id: stageId,
-        p_score: scoreValue
+        p_run_token: runToken,
+        p_score: scoreValue,
+        p_win: !!win
       });
       if (result?.error) throw result.error;
-      const cloudScore = Math.max(0, Number(result?.data || 0));
+
+      const row = Array.isArray(result?.data) ? result.data[0] : result?.data;
+      const cloudScore = Math.max(0, Number(row?.high_score || 0));
       selectedStageHighScore = Math.max(selectedStageHighScore, cloudScore);
       writeLocalShootingHighScore(stageId, selectedStageHighScore);
+
+      const gem = Number(row?.gem);
+      if (Number.isFinite(gem) && window.userProfile) {
+        window.userProfile.gem = Math.max(0, gem);
+        if (typeof window.updateMainUI === 'function') window.updateMainUI();
+        if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
+      }
+
+      return {
+        highScore: cloudScore,
+        firstClearClaimed: !!row?.first_clear_claimed,
+        firstClearAmount: Math.max(0, Number(row?.first_clear_amount || 0)),
+        gem: Number.isFinite(gem) ? Math.max(0, gem) : null
+      };
     } catch (err) {
-      console.warn('[shooting] high score save skipped:', err?.message || err);
+      console.warn('[shooting] secure result save skipped:', err?.message || err);
+      return null;
     }
   }
 
@@ -1323,7 +1348,6 @@
   }
 
   let state = null;
-  let shootingRunToken = null;
   let rafId = 0;
   let countdownMoveRafId = 0;
 
@@ -9256,51 +9280,25 @@
     return Math.max(1, Math.floor(base * rankMul));
   }
 
-  async function grantPlayerExpReward(amount) {
-    const previewExp = Math.max(0, Math.floor(Number(amount || 0)));
-    if (!previewExp || !shootingRunToken) return false;
+  function grantPlayerExpReward(amount) {
+    const exp = Math.max(0, Math.floor(Number(amount || 0)));
+    if (!exp) return false;
 
-    const sb = window.zsSupabase || window.sb;
-    if (!sb || typeof sb.rpc !== 'function') {
-      console.warn('[shooting reward] Supabase RPC is unavailable');
-      return false;
-    }
-
-    const difficulty = getShootingPlayerExpDifficulty();
-    const clearRank = getResultRank(state && state.score, true);
-
-    try {
-      const result = await sb.rpc('claim_shooting_reward', {
-        p_run_token: shootingRunToken,
-        p_difficulty: difficulty,
-        p_clear_rank: clearRank,
-        // SHOOTINGは周回でも通常倍率で付与する現行仕様。
-        p_is_first_clear: true,
+    if (typeof window.addTotalScore === 'function') {
+      Promise.resolve(window.addTotalScore(exp)).catch(err => {
+        console.warn('[shooting reward] player exp save failed', err);
       });
-
-      if (result && result.error) throw result.error;
-      if (!result || !result.data || result.data.ok !== true) {
-        throw new Error('shooting reward claim failed');
-      }
-
-      const serverExp = Math.max(0, Math.floor(Number(result.data.exp_reward || 0)));
-      if (window.userProfile) {
-        window.userProfile.total_score = Math.max(0, Number(result.data.total_score || window.userProfile.total_score || 0));
-        window.userProfile.rank = Math.max(1, Number(result.data.player_rank || window.userProfile.rank || 1));
-      }
-      if (state && Array.isArray(state.clearRewards)) {
-        const expDrop = state.clearRewards.find(drop => drop && drop.type === 'exp');
-        if (expDrop) expDrop.amount = serverExp;
-      }
-      const expAmountEl = document.querySelector('.shooting-result-reward-exp strong');
-      if (expAmountEl) expAmountEl.textContent = `+${serverExp}`;
-      if (typeof window.updateMainUI === 'function') window.updateMainUI();
-      shootingRunToken = null;
       return true;
-    } catch (err) {
-      console.warn('[shooting reward] server exp claim failed', err);
-      return false;
     }
+
+    // 通常はaddTotalScoreを使う。未初期化時だけ端末上の値を最低限更新する。
+    if (window.userProfile) {
+      window.userProfile.total_score = Math.max(0, Number(window.userProfile.total_score || 0)) + exp;
+      if (typeof window.updateMainUI === 'function') window.updateMainUI();
+      if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+      return true;
+    }
+    return false;
   }
 
   function grantShinjuNutrition(exp, count) {
@@ -9383,6 +9381,100 @@
     return true;
   }
 
+  const SHOOTING_FIRST_CLEAR_GEM_AMOUNT = 5;
+
+  // v163: first-clear gem reward must be tied to a server-issued shooting run.
+  // A stage_id alone is no longer enough to claim gems from the console.
+  async function beginSecureShootingRun() {
+    if (!state || !state.stageId) return null;
+    if (state.secureRunToken) return state.secureRunToken;
+    if (state.secureRunPromise) return state.secureRunPromise;
+
+    const stageId = String(state.stageId || '').trim();
+    const userId = getShootingUserId();
+    const sb = window.zsSupabase;
+    if (!stageId || !userId || !sb || typeof sb.rpc !== 'function') return null;
+
+    state.secureRunPromise = (async () => {
+      const result = await sb.rpc('begin_secure_shooting_run', {
+        p_user_id: userId,
+        p_stage_id: stageId,
+      });
+      if (result && result.error) throw result.error;
+      const row = Array.isArray(result && result.data) ? result.data[0] : (result && result.data);
+      const token = String(row && row.run_token || '').trim();
+      if (!token) throw new Error('shooting run token was not issued');
+      if (state && String(state.stageId || '') === stageId) state.secureRunToken = token;
+      return token;
+    })().catch(err => {
+      console.warn('[shooting security] run begin failed:', err && (err.message || err));
+      return null;
+    }).finally(() => {
+      if (state) state.secureRunPromise = null;
+    });
+
+    return state.secureRunPromise;
+  }
+
+  async function claimShootingFirstClearGemReward() {
+    if (!state || !state.stageId) return { claimed: false, amount: 0, gem: null };
+    if (state.firstClearGemPromise) return state.firstClearGemPromise;
+
+    const stageId = String(state.stageId || '').trim();
+    const userId = getShootingUserId();
+    const sb = window.zsSupabase;
+
+    state.firstClearGemPromise = (async () => {
+      if (!stageId || !userId || !sb || typeof sb.rpc !== 'function') {
+        return { claimed: false, amount: 0, gem: null };
+      }
+
+      const runToken = state.secureRunToken || await beginSecureShootingRun();
+      if (!runToken) return { claimed: false, amount: 0, gem: null };
+
+      const result = await sb.rpc('claim_shooting_first_clear_reward', {
+        p_user_id: userId,
+        p_run_token: runToken,
+      });
+      if (result && result.error) throw result.error;
+
+      const row = Array.isArray(result && result.data)
+        ? result.data[0]
+        : (result && result.data);
+      const claimed = !!(row && row.claimed);
+      const amount = Math.max(0, Number(row && row.amount || 0));
+      const gem = Number(row && row.gem);
+
+      // 結晶残高はサーバーRPCの確定値を正として反映する。
+      if (Number.isFinite(gem) && window.userProfile) {
+        window.userProfile.gem = Math.max(0, gem);
+        if (typeof window.updateMainUI === 'function') window.updateMainUI();
+        if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
+      }
+
+      return {
+        claimed,
+        amount: claimed ? Math.max(1, amount || SHOOTING_FIRST_CLEAR_GEM_AMOUNT) : 0,
+        gem: Number.isFinite(gem) ? Math.max(0, gem) : null,
+      };
+    })().catch(err => {
+      console.warn('[shooting reward] first clear gem claim failed:', err && (err.message || err));
+      return { claimed: false, amount: 0, gem: null, error: true };
+    });
+
+    return state.firstClearGemPromise;
+  }
+
+  function buildShootingRewardItemHtml(drop) {
+    return `
+      <div class="shooting-result-reward-item shooting-result-reward-${drop.type}">
+        <span class="shooting-result-reward-icon">${drop.image ? `<img src="${drop.image}" alt="">` : '<b>EXP</b>'}</span>
+        <span class="shooting-result-reward-copy"><b>${drop.name}</b><small>${drop.detail}</small></span>
+        <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
+      </div>
+    `;
+  }
+
   function buildAndGrantShootingClearRewards() {
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
@@ -9432,7 +9524,7 @@
       })),
     ];
 
-    void grantPlayerExpReward(playerExp);
+    grantPlayerExpReward(playerExp);
     materialDrops.forEach(({ material, count }) => {
       if (material.rewardType === 'shinju') {
         grantShinjuNutrition(rewardPlan.nutritionExp, count);
@@ -9465,19 +9557,38 @@
 
     const drops = buildAndGrantShootingClearRewards();
     section.style.display = '';
-    list.innerHTML = drops.map(drop => `
-      <div class="shooting-result-reward-item shooting-result-reward-${drop.type}">
-        <span class="shooting-result-reward-icon">${drop.image ? `<img src="${drop.image}" alt="">` : '<b>EXP</b>'}</span>
-        <span class="shooting-result-reward-copy"><b>${drop.name}</b><small>${drop.detail}</small></span>
-        <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
-      </div>
-    `).join('');
+    list.innerHTML = drops.map(buildShootingRewardItemHtml).join('');
     if (note) {
       note.textContent = isAmbushStage()
         ? 'オーバーシア亜種の心核を獲得しました'
         : (isScoreAttackStage()
           ? 'すこあた！クリア報酬を獲得しました'
           : `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`);
+    }
+
+    // v172: 初回クリア結晶も、同じrun tokenを確定する結果RPCから受け取る。
+    // score保存と初回報酬を別々のクライアント申告にしない。
+    if (!state.firstClearGemRenderStarted) {
+      state.firstClearGemRenderStarted = true;
+      const finalizePromise = state.secureFinalizePromise
+        || submitShootingHighScore(state.score, true);
+      void Promise.resolve(finalizePromise).then(finalized => {
+        if (!finalized || !finalized.firstClearClaimed || !finalized.firstClearAmount) return;
+        const gemDrop = {
+          type: 'gem',
+          name: '結晶',
+          amount: finalized.firstClearAmount,
+          detail: '初回クリア報酬',
+          image: 'images/icon_gem.webp',
+        };
+        state.clearRewards = Array.isArray(state.clearRewards)
+          ? [...state.clearRewards, gemDrop]
+          : [gemDrop];
+        if (list && list.isConnected) {
+          list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(gemDrop));
+        }
+        if (note && note.isConnected) note.textContent = '初回クリア報酬として結晶 ×5 を獲得しました';
+      });
     }
   }
 
@@ -9502,6 +9613,8 @@
       clearProjectiles();
       clearNormalBattleObjects();
       resetState();
+      // EMERGENCY ambush is a different stage_id, so it needs its own secure run token.
+      void beginSecureShootingRun();
 
       const boss = document.getElementById(BOSS_ID);
       if (boss) {
@@ -9632,7 +9745,8 @@
     }
 
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
-    void submitShootingHighScore(state.score);
+    // v172: score/result is accepted only against this battle's server run token.
+    state.secureFinalizePromise = submitShootingHighScore(state.score, !!win);
     // STORY進捗へシューティング結果を通知。
     try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
@@ -10226,26 +10340,6 @@
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
 
-    // EXP報酬用のサーバーrun tokenを戦闘開始時に発行する。
-    // 以降のクリアEXPはこのtokenを1回だけ使用して受け取る。
-    try {
-      const sb = window.zsSupabase || window.sb;
-      if (!sb || typeof sb.rpc !== 'function') throw new Error('Supabase RPC is unavailable');
-      const runResult = await sb.rpc('begin_shooting_run', {
-        p_stage_id: String(selectedStage?.id || '')
-      });
-      if (runResult && runResult.error) throw runResult.error;
-      const token = runResult && runResult.data && runResult.data.run_token;
-      if (!token) throw new Error('shooting run token was not issued');
-      shootingRunToken = token;
-    } catch (err) {
-      console.error('[shooting] begin_shooting_run failed:', err);
-      const message = '戦闘開始の認証に失敗しました。通信状態を確認してください。';
-      if (typeof window.showToast === 'function') window.showToast(message);
-      else alert(message);
-      return;
-    }
-
     // レイド挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
     if (!(await ensureSelectedRaidAttemptStarted())) return;
     if (!(await ensureSelectedStageTicketConsumed())) return;
@@ -10258,6 +10352,8 @@
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
+    // v163: issue/restore a server-side run token before battle can produce a first-clear reward.
+    void beginSecureShootingRun();
     clearProjectiles();
     updateChapter4ShrinkWalls(performance.now());
     clearNormalBattleObjects();
@@ -10410,6 +10506,8 @@
     // さらにclearProjectiles自体もDOM直指定で消すため、画像だけ残るゴーストを防ぐ。
     clearProjectiles();
     resetState();
+    // RETRY is a fresh client battle state; obtain a valid server run token again.
+    void beginSecureShootingRun();
 
     // RETRY時は前回の縮小幅を必ず破棄して0pxへ戻す。
     updateChapter4ShrinkWalls(performance.now());

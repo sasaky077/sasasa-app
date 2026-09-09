@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260909-home-carousel-forward-loop-v166';
+    var FALLBACK_BUILD = '20260910-friendship-rpc-hardening-v176';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260909-home-carousel-forward-loop-v166">
+  <meta name="sasaphia-build" content="20260910-friendship-rpc-hardening-v176">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260909-home-carousel-forward-loop-v166"
+        href="css/style.css?v=20260910-friendship-rpc-hardening-v176"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260909-home-carousel-forward-loop-v166"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260910-friendship-rpc-hardening-v176"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260909-home-carousel-forward-loop-v166">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260910-friendship-rpc-hardening-v176">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260909-home-carousel-forward-loop-v166">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260910-friendship-rpc-hardening-v176">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260909-home-carousel-forward-loop-v166';
+  var BUILD = '20260910-friendship-rpc-hardening-v176';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1311,7 +1311,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/home_banners.js?v=20260910-friendship-rpc-hardening-v176"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2127,9 +2127,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/resonance_system.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/resonance_ui.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/shooting_resonance.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/resonance_system.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/resonance_ui.js?v=20260910-friendship-rpc-hardening-v176"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3236,59 +3236,24 @@ function renderResultElementBadge(data){
         return { ok:false, reason:'no_auth_user' };
       }
 
-      var current = await sb.from('user_profiles')
-        .select('user_id, auth_uid')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // v164: auth_uid はブラウザから直接UPDATEしない。
+      // SECURITY DEFINER RPC側で auth.uid() と対象プロフィールを照合して紐付ける。
+      var bindResult = await sb.rpc('bind_auth_to_user_profile', {
+        p_user_id: userId
+      });
 
-      if(current.error) throw current.error;
+      if(bindResult.error) throw bindResult.error;
 
-      // profile作成前なら、loadFromDB内の新規作成後にもう一度呼ばれる。
-      if(!current.data){
-        return { ok:false, reason:'profile_not_found' };
+      var data = Array.isArray(bindResult.data) ? bindResult.data[0] : bindResult.data;
+      if(!data || data.ok !== true){
+        return { ok:false, reason:(data && data.reason) || 'not_updated' };
       }
 
-      if(current.data.auth_uid){
-        if(String(current.data.auth_uid) !== String(authUser.id)){
-          console.error(
-            '[AuthBind] conflict: this game user id is already linked to another auth user',
-            { user_id:userId, auth_uid:current.data.auth_uid, current_auth_uid:authUser.id }
-          );
-          return { ok:false, reason:'auth_conflict' };
-        }
-
-        console.log('[AuthBind] existing link:', userId, '->', authUser.id);
-        return { ok:true, alreadyLinked:true };
-      }
-
-      var updated = await sb.from('user_profiles')
-        .update({ auth_uid: authUser.id })
-        .eq('user_id', userId)
-        .is('auth_uid', null)
-        .select('user_id, auth_uid')
-        .maybeSingle();
-
-      if(updated.error) throw updated.error;
-
-      if(!updated.data){
-        // 同時更新などで0件だった場合は再確認する。
-        var recheck = await sb.from('user_profiles')
-          .select('user_id, auth_uid')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        if(recheck.error) throw recheck.error;
-
-        if(recheck.data && String(recheck.data.auth_uid || '') === String(authUser.id)){
-          console.log('[AuthBind] existing link after recheck:', userId, '->', authUser.id);
-          return { ok:true, alreadyLinked:true };
-        }
-
-        return { ok:false, reason:'not_updated' };
-      }
-
-      console.log('[AuthBind] linked:', userId, '->', authUser.id);
-      return { ok:true, alreadyLinked:false };
+      console.log(
+        data.already_linked ? '[AuthBind] existing link:' : '[AuthBind] linked:',
+        userId, '->', authUser.id
+      );
+      return { ok:true, alreadyLinked:!!data.already_linked };
     } catch(error) {
       // β移行中は紐付け失敗だけでゲーム全体を止めない。
       console.error('[AuthBind] failed:', error);
@@ -3333,22 +3298,8 @@ function renderResultElementBadge(data){
       }
     }
 
-    // フレンド情報は列名が異なるため個別に正規化する。
-    try {
-      var requesterMigration = await sb.from('friendships')
-        .update({ requester_id: canonicalId })
-        .ilike('requester_id', canonicalId)
-        .neq('requester_id', canonicalId);
-      if(requesterMigration && requesterMigration.error) console.warn('[UserId migration] friendships.requester_id', requesterMigration.error);
-    } catch(e){ console.warn('[UserId migration] friendships.requester_id', e); }
-
-    try {
-      var receiverMigration = await sb.from('friendships')
-        .update({ receiver_id: canonicalId })
-        .ilike('receiver_id', canonicalId)
-        .neq('receiver_id', canonicalId);
-      if(receiverMigration && receiverMigration.error) console.warn('[UserId migration] friendships.receiver_id', receiverMigration.error);
-    } catch(e){ console.warn('[UserId migration] friendships.receiver_id', e); }
+    // v176: friendships はRPC権威化済み。
+    // クライアントから requester_id / receiver_id を直接UPDATEしない。
 
     // 一度完了した端末では、以後8本のUPDATE確認を起動時に繰り返さない。
     localStorage.setItem(migrationKey, '1');
@@ -3737,7 +3688,17 @@ function selectChara(now, gacha) {
     try {
       updateSummonGemUI();
       updateMainUI();
-      if(typeof renderHomeEventBanners === 'function') renderHomeEventBanners();
+
+      // Home banner is already rendered and infinite-loop clones are initialized
+      // during normal boot. Re-rendering here removes those clones while leaving
+      // the track at -100%, which makes the first banner appear to be missing.
+      // Only render as a fallback when the track is genuinely empty.
+      var homeBannerTrack = document.getElementById('home-event-banner-track');
+      if(typeof renderHomeEventBanners === 'function' && homeBannerTrack && !homeBannerTrack.children.length){
+        renderHomeEventBanners();
+        if(typeof initHomeBannerInfinite === 'function') initHomeBannerInfinite();
+      }
+
       renderSummonBanners();
     } catch(e) {
       console.warn('[StartupAssets] prerender skipped:', e);
@@ -4698,9 +4659,9 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     }
 
     try {
-      var res = await sb.from('friendships')
-        .delete()
-        .or('and(requester_id.eq.' + userId + ',receiver_id.eq.' + targetId + '),and(requester_id.eq.' + targetId + ',receiver_id.eq.' + userId + ')');
+      var res = await sb.rpc('remove_friend_secure', {
+        p_friend_id: targetId
+      });
 
       if(res && res.error) throw res.error;
 
@@ -4775,23 +4736,52 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   async function sendFriendRequest(targetId){
-    await sb.from('friendships').insert({ requester_id: userId, receiver_id: targetId, status: 'pending' });
-    // ボタンを申請済みに更新
-    var resultEl = document.getElementById('friend-search-result');
-    var btn = resultEl ? resultEl.querySelector('.friend-search-send-btn') : null;
-    if(btn){ btn.textContent = '申請しました ✓'; btn.disabled = true; }
+    try {
+      var res = await sb.rpc('send_friend_request_secure', {
+        p_receiver_id: String(targetId || '').trim()
+      });
+      if(res && res.error) throw res.error;
+
+      // ボタンを申請済みに更新
+      var resultEl = document.getElementById('friend-search-result');
+      var btn = resultEl ? resultEl.querySelector('.friend-search-send-btn') : null;
+      if(btn){ btn.textContent = '申請しました ✓'; btn.disabled = true; }
+      if(typeof refreshHomeNotifications === 'function') refreshHomeNotifications();
+    } catch(err) {
+      console.error('[Friend] request failed:', err);
+      if(typeof showToast === 'function') showToast('フレンド申請に失敗しました');
+      else alert('フレンド申請に失敗しました');
+    }
   }
 
   async function acceptFriend(friendshipId){
-    await sb.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
-    await loadFriendScreen();
-    refreshHomeNotifications();
+    try {
+      var res = await sb.rpc('accept_friend_request_secure', {
+        p_friendship_id: Number(friendshipId)
+      });
+      if(res && res.error) throw res.error;
+      await loadFriendScreen();
+      refreshHomeNotifications();
+    } catch(err) {
+      console.error('[Friend] accept failed:', err);
+      if(typeof showToast === 'function') showToast('フレンド承認に失敗しました');
+      else alert('フレンド承認に失敗しました');
+    }
   }
 
   async function declineFriend(friendshipId){
-    await sb.from('friendships').delete().eq('id', friendshipId);
-    await loadFriendScreen();
-    refreshHomeNotifications();
+    try {
+      var res = await sb.rpc('decline_friend_request_secure', {
+        p_friendship_id: Number(friendshipId)
+      });
+      if(res && res.error) throw res.error;
+      await loadFriendScreen();
+      refreshHomeNotifications();
+    } catch(err) {
+      console.error('[Friend] decline failed:', err);
+      if(typeof showToast === 'function') showToast('フレンド申請の拒否に失敗しました');
+      else alert('フレンド申請の拒否に失敗しました');
+    }
   }
   // ──────────────────────────────────────────
 
@@ -5568,18 +5558,20 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
   // DB側で確定した残高だけをローカル表示へ反映する。
   userProfile.gem = Number(drawData.gem);
 
+  // v173:
+  // ガチャ結果・結晶残高・利用済み判定は draw_gacha RPC 側を正とする。
+  // used_gachas はクライアントから直接 UPDATE できないよう v165 で封鎖済みのため、
+  // ここで user_profiles を保存しない。通常ガチャでもこの保存を呼んでいたことが
+  // 「permission denied for table user_profiles」の原因だった。
+  //
+  // 将来1回限定ガチャを再実装する場合も、used_gachas の確定は draw_gacha RPC 側で行う。
   if(currentGacha && currentGacha.category === 'once'){
     userProfile.used_gachas = userProfile.used_gachas || [];
     if(!userProfile.used_gachas.includes(currentGachaId)){
+      // 表示上だけ即時反映。DBの正本はRPC側。
       userProfile.used_gachas.push(currentGachaId);
     }
   }
-
-  // used_gachas は現段階では既存保存経路を維持。
-  // gem はRPCで既に確定済みなので、ここからは送らない。
-  await saveProfileToDB({
-    used_gachas: userProfile.used_gachas
-  });
 
   renderSummonBanners();
   updateSummonGemUI();
@@ -9454,18 +9446,13 @@ function renderHomeEventBanners(){
     img.src = banner.img;
     img.alt = banner.alt || banner.title || 'イベントバナー';
     img.decoding = 'async';
-    img.loading = 'eager';
-    try { img.fetchPriority = (index === 0 ? 'high' : 'auto'); } catch(_){}
-
-    // iOS Safari/PWA: transformed carousel + lazy image can remain blank.
-    // Retry once with a cache-busting query if the real DOM image fails.
-    img.addEventListener('error', function(){
-      if(img.dataset.retryDone === '1') return;
-      img.dataset.retryDone = '1';
-      var baseSrc = banner.img;
-      var sep = baseSrc.indexOf('?') >= 0 ? '&' : '?';
-      img.src = baseSrc + sep + 'retry=' + Date.now();
-    }, { once:false });
+    if(index === 0){
+      img.loading = 'eager';
+      try { img.fetchPriority = 'high'; } catch(_){}
+    } else {
+      img.loading = 'lazy';
+      try { img.fetchPriority = 'low'; } catch(_){}
+    }
     btn.appendChild(img);
 
     track.appendChild(btn);
@@ -9476,18 +9463,16 @@ function renderHomeEventBanners(){
   });
 
   homeBannerRealIndex = 0;
-  homeBannerPosition = 0;
+  homeBannerPosition = banners.length > 1 ? 1 : 0;
   homeBannerTotal = banners.length;
 }
 
 /* =========================================================
-   Home Event Banner Swipe - Infinite Loop v166
-   - cloneNodeは使わない
-   - 実体のDOM要素を移動して、見た目は常に同方向へループ
+   Home Event Banner Swipe - Infinite Loop
    ========================================================= */
 
-var homeBannerRealIndex = 0;
-var homeBannerPosition = 0;
+var homeBannerRealIndex = 0;   // 実際のバナー番号 0,1,2...
+var homeBannerPosition = 1;    // track上の位置。先頭にクローンを置くので1開始
 var homeBannerStartX = 0;
 var homeBannerStartY = 0;
 var homeBannerDragging = false;
@@ -9495,7 +9480,6 @@ var homeBannerTotal = 0;
 var homeBannerAnimating = false;
 var homeBannerAutoTimer = null;
 var homeBannerUnlockTimer = null;
-var homeBannerPendingDir = 0;
 var HOME_BANNER_AUTO_INTERVAL_MS = 5000;
 var HOME_BANNER_TRANSITION_MS = 320;
 
@@ -9513,13 +9497,11 @@ function clearHomeBannerUnlockTimer(){
   }
 }
 
-function setHomeBannerTrackTransform(percent, withTransition){
+function setHomeBannerTransform(withTransition){
   var track = document.getElementById('home-event-banner-track');
   if(!track) return;
-  track.style.transition = withTransition
-    ? ('transform ' + HOME_BANNER_TRANSITION_MS + 'ms ease')
-    : 'none';
-  track.style.transform = 'translate3d(' + percent + '%,0,0)';
+  track.style.transition = withTransition ? ('transform ' + HOME_BANNER_TRANSITION_MS + 'ms ease') : 'none';
+  track.style.transform = 'translate3d(' + (-100 * homeBannerPosition) + '%,0,0)';
 }
 
 function updateHomeBannerDots(){
@@ -9529,29 +9511,21 @@ function updateHomeBannerDots(){
   });
 }
 
+function normalizeHomeBannerPosition(){
+  if(homeBannerTotal <= 1) return;
+
+  if(homeBannerPosition <= 0){
+    homeBannerPosition = homeBannerTotal;
+    setHomeBannerTransform(false);
+  } else if(homeBannerPosition >= homeBannerTotal + 1){
+    homeBannerPosition = 1;
+    setHomeBannerTransform(false);
+  }
+}
+
 function finishHomeBannerMove(){
-  var track = document.getElementById('home-event-banner-track');
-  if(!track){
-    homeBannerPendingDir = 0;
-    homeBannerAnimating = false;
-    clearHomeBannerUnlockTimer();
-    return;
-  }
-
   clearHomeBannerUnlockTimer();
-
-  // 右方向(次へ)は、移動完了後に先頭の「実体」を末尾へ回す。
-  // transformを0へ瞬時に戻しても、表示中のバナーは同じなので見た目は飛ばない。
-  if(homeBannerPendingDir > 0){
-    var first = track.firstElementChild;
-    if(first) track.appendChild(first);
-    setHomeBannerTrackTransform(0, false);
-  }
-
-  // 左方向(前へ)は移動前に末尾要素を先頭へ移しているため、
-  // 終了時はtransform=0のままでよい。
-  homeBannerPosition = 0;
-  homeBannerPendingDir = 0;
+  normalizeHomeBannerPosition();
   homeBannerAnimating = false;
 }
 
@@ -9561,13 +9535,13 @@ function scheduleHomeBannerAuto(){
 
   homeBannerAutoTimer = setTimeout(function(){
     homeBannerAutoTimer = null;
-    if(document.hidden) return;
+    if(document.hidden){
+      return;
+    }
     if(homeBannerDragging || homeBannerAnimating){
       scheduleHomeBannerAuto();
       return;
     }
-
-    // 自動送りは常に同じ方向
     moveHomeBanner(1);
     scheduleHomeBannerAuto();
   }, HOME_BANNER_AUTO_INTERVAL_MS);
@@ -9577,66 +9551,56 @@ function initHomeBannerInfinite(){
   var track = document.getElementById('home-event-banner-track');
   if(!track) return;
 
-  // 旧buildのクローンが残っていても削除。
-  track.querySelectorAll('.home-banner-clone').forEach(function(el){ el.remove(); });
+  // renderHomeEventBanners() 後の「実体」だけを対象にする。
+  var originals = Array.from(track.querySelectorAll('.home-event-banner-item:not(.home-banner-clone)'));
+  homeBannerTotal = originals.length;
 
-  homeBannerTotal = track.querySelectorAll('.home-event-banner-item').length;
+  if(homeBannerTotal <= 1){
+    homeBannerPosition = 0;
+    homeBannerRealIndex = 0;
+    setHomeBannerTransform(false);
+    updateHomeBannerDots();
+    return;
+  }
+
+  if(track.dataset.infiniteReady !== '1'){
+    var firstClone = originals[0].cloneNode(true);
+    var lastClone = originals[homeBannerTotal - 1].cloneNode(true);
+    firstClone.classList.add('home-banner-clone');
+    lastClone.classList.add('home-banner-clone');
+    track.insertBefore(lastClone, originals[0]);
+    track.appendChild(firstClone);
+    track.dataset.infiniteReady = '1';
+  }
+
   homeBannerRealIndex = 0;
-  homeBannerPosition = 0;
-  homeBannerPendingDir = 0;
+  homeBannerPosition = 1;
   homeBannerAnimating = false;
-
-  setHomeBannerTrackTransform(0, false);
+  setHomeBannerTransform(false);
   updateHomeBannerDots();
 
-  if(track.dataset.transitionReady !== '1'){
-    track.addEventListener('transitionend', function(e){
-      if(e && e.propertyName && e.propertyName !== 'transform') return;
-      if(!homeBannerAnimating) return;
-      finishHomeBannerMove();
-    });
-    track.dataset.transitionReady = '1';
-  }
+  // transitionend は通常時の解除。WebView等で発火しない場合は moveHomeBanner の fallback が解除する。
+  track.addEventListener('transitionend', function(e){
+    if(e && e.propertyName && e.propertyName !== 'transform') return;
+    finishHomeBannerMove();
+  });
 }
 
 function moveHomeBanner(dir){
   if(homeBannerTotal <= 1) return false;
   if(homeBannerAnimating) return false;
 
-  var track = document.getElementById('home-event-banner-track');
-  if(!track) return false;
-
-  dir = dir < 0 ? -1 : 1;
   homeBannerAnimating = true;
-  homeBannerPendingDir = dir;
+  homeBannerPosition += dir;
+  homeBannerRealIndex = (homeBannerRealIndex + dir + homeBannerTotal) % homeBannerTotal;
+  updateHomeBannerDots();
+  setHomeBannerTransform(true);
 
-  if(dir > 0){
-    // A B C → 左へ1枚分アニメーション → B C A に並べ替え → transform 0
-    homeBannerRealIndex = (homeBannerRealIndex + 1) % homeBannerTotal;
-    updateHomeBannerDots();
-
-    // レイアウト計算を挟んで、Safariでもtransition開始を確実にする。
-    setHomeBannerTrackTransform(0, false);
-    void track.offsetWidth;
-    setHomeBannerTrackTransform(-100, true);
-  } else {
-    // A B C → C A B に先に並べ替え、Aが見える位置(-100%)から0%へ戻す。
-    var last = track.lastElementChild;
-    if(last) track.insertBefore(last, track.firstElementChild);
-
-    setHomeBannerTrackTransform(-100, false);
-    void track.offsetWidth;
-
-    homeBannerRealIndex = (homeBannerRealIndex - 1 + homeBannerTotal) % homeBannerTotal;
-    updateHomeBannerDots();
-    setHomeBannerTrackTransform(0, true);
-  }
-
-  // iOS WebViewでtransitionendが欠けても必ず解除。
+  // transitionend が欠落しても必ず解除する。
   clearHomeBannerUnlockTimer();
   homeBannerUnlockTimer = setTimeout(function(){
-    if(homeBannerAnimating) finishHomeBannerMove();
-  }, HOME_BANNER_TRANSITION_MS + 140);
+    finishHomeBannerMove();
+  }, HOME_BANNER_TRANSITION_MS + 100);
 
   return true;
 }
@@ -9676,8 +9640,10 @@ function initHomeBannerSwipe(){
     var diffX = e.clientX - homeBannerStartX;
     var diffY = e.clientY - homeBannerStartY;
 
+    // 横方向が明確な時だけページ送り。
     if(Math.abs(diffX) >= 35 && Math.abs(diffX) > Math.abs(diffY) * 1.15){
       moveHomeBanner(diffX < 0 ? 1 : -1);
+      // スワイプ後の click 誤発火を抑止。
       wrap.dataset.justSwiped = '1';
       setTimeout(function(){ wrap.dataset.justSwiped = '0'; }, 350);
     }
@@ -9691,6 +9657,7 @@ function initHomeBannerSwipe(){
     scheduleHomeBannerAuto();
   });
 
+  // スワイプ直後に子buttonのclickが発生して画面遷移しないようにする。
   wrap.addEventListener('click', function(e){
     if(wrap.dataset.justSwiped === '1'){
       e.preventDefault();
@@ -11086,43 +11053,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/asset_loader.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/login_bonus.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
-<script src="js/story_engine.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/stories/chapter01.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/story_engine.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/stories/chapter01.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
-<script src="js/battle_range.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/characters.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/enemies.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/battle.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/battle_swipe.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/battle_range.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/characters.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/enemies.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/battle.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/battle_swipe.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
-<script src="js/stages.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/stage_select.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/party_select.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/enemy_intro.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/stages.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/stage_select.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/party_select.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/enemy_intro.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260909-home-carousel-forward-loop-v166">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260910-friendship-rpc-hardening-v176">
 
-<script src="js/battle_range_32.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/characters_32.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/remnant_blessings.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/combo_32.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/cards.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/battle_32.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/battle_32_ui.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/battle_range_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/characters_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/remnant_blessings.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/combo_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/cards.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/battle_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/battle_32_ui.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/roguelite_run.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/roguelite_reward.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/shinju.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/roguelite_controller.js?v=20260909-home-carousel-forward-loop-v166"></script>
-<script src="js/roguelite_overseer_run.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/roguelite_options.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/roguelite_run.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/roguelite_reward.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/shinju.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/roguelite_controller.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/roguelite_overseer_run.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11564,10 +11531,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260909-home-carousel-forward-loop-v166"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260910-friendship-rpc-hardening-v176"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/raid_event.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11588,7 +11555,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260909-home-carousel-forward-loop-v166"></script>
+<script src="js/score_attack.js?v=20260910-friendship-rpc-hardening-v176"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

@@ -26335,3 +26335,35 @@ body {
 
 /* v160 staged startup loader */
 #title-tap-hint{ white-space:nowrap; }
+
+/* =========================================================
+   v161 SHOOTING STAGE CLEAR STATUS
+   クリア済みステージを一目で判別できるよう強調
+   ========================================================= */
+#stage-select-modal .ss-card.story-cleared {
+  background: linear-gradient(90deg, rgba(171, 140, 72, .11), rgba(255,255,255,.018) 46%, transparent 100%) !important;
+  box-shadow: inset 3px 0 0 rgba(157, 126, 61, .58), inset 0 0 0 1px rgba(157, 126, 61, .13) !important;
+}
+#stage-select-modal .ss-story-clear {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 1px;
+  border: 1px solid rgba(157, 126, 61, .40);
+  border-radius: 999px;
+  background: rgba(157, 126, 61, .10);
+  color: rgba(112, 84, 33, .92) !important;
+  font-family: "Cinzel", serif;
+  font-size: 8px !important;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .12em;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+#stage-select-modal .ss-story-clear::before {
+  content: '✓';
+  font-family: sans-serif;
+  font-size: 9px;
+  line-height: 1;
+}

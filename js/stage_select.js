@@ -592,7 +592,7 @@
           <div class="ss-card-no">${String(stageNo).padStart(2, '0')}</div>
           <div class="ss-card-body">
             <div class="ss-card-name-row">
-              <div class="ss-card-name">${displayStageName}${cleared ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
+              <div class="ss-card-name">${displayStageName}${cleared ? '　<span class="ss-story-clear" aria-label="クリア済み">CLEAR</span>' : ''}</div>
             </div>
             <div class="ss-card-meta">
               <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
@@ -646,7 +646,7 @@
       card.innerHTML = `
         <div class="ss-card-no">${String(stage.no).padStart(2, '0')}</div>
         <div class="ss-card-body">
-          <div class="ss-card-name">${stage.name}${isStoryStageCleared(stage.id) ? '　<span class="ss-story-clear">CLEAR</span>' : ''}</div>
+          <div class="ss-card-name">${stage.name}${isStoryStageCleared(stage.id) ? '　<span class="ss-story-clear" aria-label="クリア済み">CLEAR</span>' : ''}</div>
           <div class="ss-card-meta">
             <div class="ss-card-enemy">${stage.enemyName}</div>
             ${rewardText ? `<div class="ss-card-reward">${rewardText}</div>` : ''}
