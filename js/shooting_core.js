@@ -9926,8 +9926,25 @@
     pointerY = state.player.y;
   }
 
+  function isShootingUiInteractionTarget(target) {
+    if (!target || typeof target.closest !== 'function') return false;
+    return !!target.closest(
+      '.shooting-character-select, ' +
+      '.shooting-result, ' +
+      '.shooting-character-info-modal, ' +
+      '.shooting-switch-rail, ' +
+      '.shooting-footer, ' +
+      'button, a, input, select, textarea'
+    );
+  }
+
   function onPointerDown(e) {
     if (!state || state.ended || state.finishing || state.paused) return;
+
+    // v183:
+    // arenaの中にはパーティ選択UIも存在する。
+    // UI操作をバトル移動入力として横取りしない。
+    if (isShootingUiInteractionTarget(e.target)) return;
 
     const touchLike = isTouchLikePointer(e);
 
@@ -10076,6 +10093,10 @@
 
   function onNativeTouchStart(e) {
     if (!state || state.ended || state.finishing || state.paused) return;
+
+    // パーティ選択/ボタン/RESULT上のタッチは、スクロールやクリックを優先。
+    if (isShootingUiInteractionTarget(e.target)) return;
+
     if (!e.touches || !e.touches.length || nativeTouchActive) return;
 
     const t = (e.changedTouches && e.changedTouches.length)
