@@ -7212,22 +7212,13 @@
 
     if (pointerActive) {
       if (pointerIsTouch) {
-        // iPhone / タッチ操作:
-        // 目標座標へ1フレームで代入せず、最大追従速度を設ける。
-        // これによりSafariが一瞬だけ大きな座標差を返してもワープしない。
-        const dx = pointerX - state.player.x;
-        const dy = pointerY - state.player.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist > 0.001) {
-          // 操作感を損ねない程度に通常moveSpeedより速く追従するが、
-          // 1フレーム瞬間移動は絶対にしない。
-          const followSpeed = Math.max(Number(c.moveSpeed || 0) * 2.2, 720);
-          const maxStep = Math.max(1, followSpeed * dt);
-          const step = Math.min(dist, maxStep);
-          state.player.x += dx / dist * step;
-          state.player.y += dy / dist * step;
-        }
+        // v181:
+        // タッチ中は指の移動量に1:1で追従する。
+        // v173～v180の最大追従速度(最低720px/s)方式では、
+        // 指を速く動かした時にキャラが追いつけず「指についてこない」感触が出ていた。
+        // 異常座標対策はonPointerMove側の単発スパイク除外で行う。
+        state.player.x = pointerX;
+        state.player.y = pointerY;
       } else {
         // PCマウスは従来の少し滑らかな追従を維持。
         state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
@@ -9997,6 +9988,25 @@
   function onPointerMove(e) {
     if (!pointerActive || !state || state.ended || state.finishing || state.paused) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
+    // v181:
+    // iOS/Safariで極まれに発生する単発の異常座標だけを弾く。
+    // 通常の素早いドラッグはそのまま1:1で反映する。
+    if (pointerIsTouch && Number.isFinite(lastPointerClientX) && Number.isFinite(lastPointerClientY)) {
+      const jump = Math.hypot(
+        Number(e.clientX) - Number(lastPointerClientX),
+        Number(e.clientY) - Number(lastPointerClientY)
+      );
+      const arena = document.getElementById('shooting-arena');
+      const rect = arena ? arena.getBoundingClientRect() : null;
+      const diagonal = rect ? Math.hypot(rect.width, rect.height) : 600;
+      const rejectDistance = Math.max(180, diagonal * 0.55);
+
+      if (Number.isFinite(jump) && jump > rejectDistance) {
+        e.preventDefault();
+        return;
+      }
+    }
 
     lastPointerClientX = e.clientX;
     lastPointerClientY = e.clientY;
