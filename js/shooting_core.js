@@ -244,6 +244,10 @@
   }
 
   const { CHARACTER_ID, SHOOTING_CHARACTERS, PARTY_SIZE, SWITCH_COOLDOWN_MS, isShootingCharacterOwned, getShootingRosterHtml, getOwnedShootingInstance } = CharacterModule;
+
+  // v177: 公開停止キャラクター。性能コードは将来の差し替え用に残すが、UI/編成から除外する。
+  const HIDDEN_SHOOTING_CHARACTER_IDS = new Set([51]);
+  const isPublicShootingCharacterId = (id) => !HIDDEN_SHOOTING_CHARACTER_IDS.has(Number(id));
   const { DEFAULT_SHOOTING_ENEMY_ID, getShootingEnemy } = EnemyModule;
   const { SHOOTING_STAGE_ID, SHOOTING_MISSION_TYPE, getShootingStage } = StageModule;
 
@@ -1053,7 +1057,15 @@
     const roster = document.querySelector('.shooting-party-roster');
     if (!roster) return;
     roster.innerHTML = getShootingRosterHtml();
-    selectedPartyIds = selectedPartyIds.filter(id => isShootingCharacterOwned(id));
+
+    // 非公開キャラクターは、ShootingCharacters側に定義が残っていても表示しない。
+    HIDDEN_SHOOTING_CHARACTER_IDS.forEach(id => {
+      roster.querySelectorAll('[data-character-id="' + id + '"]').forEach(el => el.remove());
+    });
+
+    selectedPartyIds = selectedPartyIds.filter(id =>
+      isPublicShootingCharacterId(id) && isShootingCharacterOwned(id)
+    );
   }
 
   let selectedCharacterId = CHARACTER_ID.ERI;
@@ -1233,7 +1245,7 @@
     const ids = Array.from(new Set(
       (Array.isArray(characterIds) ? characterIds : [])
         .map(Number)
-        .filter(id => Number.isInteger(id) && id > 0 && !!SHOOTING_CHARACTERS[id])
+        .filter(id => Number.isInteger(id) && id > 0 && isPublicShootingCharacterId(id) && !!SHOOTING_CHARACTERS[id])
     ));
     if (!ids.length) return false;
 
@@ -1965,6 +1977,7 @@
       .filter((id, index, arr) =>
         arr.indexOf(id) === index &&
         !!SHOOTING_CHARACTERS[id] &&
+        isPublicShootingCharacterId(id) &&
         isShootingCharacterOwned(id)
       )
       .slice(0, PARTY_SIZE);
@@ -1973,7 +1986,7 @@
 
     selectedCharacterId =
       selectedPartyIds[0] ||
-      Object.keys(SHOOTING_CHARACTERS).map(Number).find(isShootingCharacterOwned) ||
+      Object.keys(SHOOTING_CHARACTERS).map(Number).find(id => isPublicShootingCharacterId(id) && isShootingCharacterOwned(id)) ||
       CHARACTER_ID.ERI;
 
     const resolvedProfiles = Object.create(null);
@@ -2583,9 +2596,31 @@
     const now = performance.now();
     if (isNormalBattle()) {
       // ネムのスタンは「これから行う敵の攻撃」を止めるだけ。
-      // すでに発射済みの敵弾まで消してしまうと、通常射撃の30COMBOごとに
-      // 画面上の敵弾が着弾前に突然消えるため、既存弾は残す。
-      state.normalEnemyStunUntil = Math.max(state.normalEnemyStunUntil || 0, now + durationMs);
+      // 既に発射済みの弾は残すが、新規弾生成はmakeProjectile側でも遮断する。
+      const nextUntil = Math.max(state.normalEnemyStunUntil || 0, now + durationMs);
+      state.normalEnemyStunUntil = nextUntil;
+
+      // スタン解除時に全敵の射撃タイマーが「期限切れ」扱いになって
+      // 一斉射撃しないよう、再開基準時刻を揃え直す。
+      const expectedUntil = nextUntil;
+      setTimeout(() => {
+        if (!state || state.ended || state.finishing) return;
+        if (state.normalEnemyStunUntil !== expectedUntil) return;
+        if (performance.now() + 8 < expectedUntil) return;
+
+        state.normalEnemyStunUntil = 0;
+        const resumedAt = performance.now();
+        (state.normalEnemies || []).forEach((enemy, index) => {
+          if (!enemy || enemy.hp <= 0) return;
+          enemy.lastShotAt = resumedAt;
+          if (Number(enemy.nextActionAt || 0) < resumedAt) {
+            enemy.nextActionAt = resumedAt + 260 + index * 70;
+          }
+          if (enemy.attackState === 'telegraph' && Number(enemy.attackExecuteAt || 0) < resumedAt) {
+            enemy.attackExecuteAt = resumedAt + 260 + index * 70;
+          }
+        });
+      }, Math.max(0, nextUntil - now) + 30);
       return;
     }
     if (state.boss.hp <= 0) return;
@@ -3026,9 +3061,30 @@
     ctx.lineCap = 'butt';
   }
 
+  // v178:
+  // スタン/時間停止中は敵AI本体だけでなく「新しい敵弾の生成」も止める。
+  // setTimeout系・OBJECT系・ステージギミック系の発射処理はgameLoop外から
+  // makeProjectileへ到達することがあるため、最終入口でも必ず止める。
+  function isEnemyProjectileSpawnSuppressed(now = performance.now()) {
+    if (!state || state.ended || state.finishing) return false;
+    if (Number(state.mitoUltUntil || 0) > Number(now || 0)) return true;
+    if (isNormalBattle()) {
+      return Number(now || 0) < Number(state.normalEnemyStunUntil || 0);
+    }
+    return Number(now || 0) < Number(state.bossStunUntil || 0);
+  }
+
   function makeProjectile(cls, x, y, vx, vy, damage, ownerId) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
+
+    const classNameForGuard = String(cls || '');
+    if (
+      classNameForGuard.includes('shooting-enemy-bullet') &&
+      isEnemyProjectileSpawnSuppressed(performance.now())
+    ) {
+      return null;
+    }
 
     // 最初の検証ではSPECIAL STAGE「楽園 -ノア-」の敵弾だけをCanvas化する。
     // 既存ステージ・自機弾・WARNING弾などは従来DOMのままなので、
@@ -3971,6 +4027,27 @@
     state.mitoUltVx = 0;
     state.mitoUltVy = 0;
     state.mitoUltHitAt = Object.create(null);
+
+    // 時間停止中に期限だけ過ぎた発射タイマーを、解除直後にまとめて消化させない。
+    const resumedAt = performance.now();
+    state.lastBossShotAt = resumedAt;
+    (state.normalEnemies || []).forEach((enemy, index) => {
+      if (!enemy || enemy.hp <= 0) return;
+      enemy.lastShotAt = resumedAt;
+      if (Number(enemy.nextActionAt || 0) < resumedAt) {
+        enemy.nextActionAt = resumedAt + 260 + index * 70;
+      }
+      if (enemy.attackState === 'telegraph' && Number(enemy.attackExecuteAt || 0) < resumedAt) {
+        enemy.attackExecuteAt = resumedAt + 260 + index * 70;
+      }
+    });
+    (state.facelessObjects || []).forEach((obj, index) => {
+      if (!obj || obj.hp <= 0) return;
+      obj.lastShotAt = resumedAt + index * 70;
+      if (Number(obj.nextShotAt || 0) < resumedAt) {
+        obj.nextShotAt = resumedAt + 300 + index * 70;
+      }
+    });
 
     if (root) root.classList.remove('mito-time-stop-active');
     if (companion) companion.classList.remove('mito-ult-rush');
@@ -9466,6 +9543,21 @@
   }
 
   function buildShootingRewardItemHtml(drop) {
+    const isFirstClear = String(drop?.detail || '') === '初回クリア報酬';
+
+    if (isFirstClear) {
+      return `
+        <div class="shooting-result-first-clear-bar">
+          <span class="shooting-result-first-clear-label">初回クリア報酬</span>
+          <span class="shooting-result-first-clear-main">
+            ${drop.image ? `<img src="${drop.image}" alt="">` : ''}
+            <b>${drop.name}</b>
+            <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
+          </span>
+        </div>
+      `;
+    }
+
     return `
       <div class="shooting-result-reward-item shooting-result-reward-${drop.type}">
         <span class="shooting-result-reward-icon">${drop.image ? `<img src="${drop.image}" alt="">` : '<b>EXP</b>'}</span>
@@ -9587,7 +9679,7 @@
         if (list && list.isConnected) {
           list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(gemDrop));
         }
-        if (note && note.isConnected) note.textContent = '初回クリア報酬として結晶 ×5 を獲得しました';
+        if (note && note.isConnected) note.textContent = '';
       });
     }
   }
@@ -9987,6 +10079,7 @@
 
   window.selectShootingCharacter = function (id) {
     id = Number(id);
+    if (!isPublicShootingCharacterId(id)) return;
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
 
     if (isChapter04Stage() && !isChapter43BossStage() && id !== Number(CHARACTER_ID.ERI)) {
@@ -10451,7 +10544,7 @@
     ensureShootingPauseMenu();
     refreshShootingRoster();
 
-    const firstOwned = Object.keys(SHOOTING_CHARACTERS).map(Number).find(isShootingCharacterOwned);
+    const firstOwned = Object.keys(SHOOTING_CHARACTERS).map(Number).find(id => isPublicShootingCharacterId(id) && isShootingCharacterOwned(id));
     if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
       selectedPartyIds = [Number(CHARACTER_ID.ERI)];
       selectedCharacterId = Number(CHARACTER_ID.ERI);

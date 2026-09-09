@@ -1256,7 +1256,7 @@ skills: [
   }
 ,
   // ── id:51 五条 悟
-  { id: 51, name: '五条 悟', rarity: 'sr',
+  { id: 51, name: '五条 悟', rarity: 'sr', hidden: true,
     element: 'logos',
     role: '高火力・拘束',
     moveType: 'cross_1',

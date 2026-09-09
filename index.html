@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260910-friendship-rpc-hardening-v176';
+    var FALLBACK_BUILD = '20260910-result-fit-v180';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260910-friendship-rpc-hardening-v176">
+  <meta name="sasaphia-build" content="20260910-result-fit-v180">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260910-friendship-rpc-hardening-v176"
+        href="css/style.css?v=20260910-result-fit-v180"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260910-friendship-rpc-hardening-v176"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260910-result-fit-v180"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260910-friendship-rpc-hardening-v176">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260910-result-fit-v180">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260910-friendship-rpc-hardening-v176">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260910-result-fit-v180">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260910-friendship-rpc-hardening-v176';
+  var BUILD = '20260910-result-fit-v180';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -383,6 +383,190 @@
     color:rgba(145,65,65,.78);
   }
 </style>
+
+
+  <style id="v179-first-clear-reward-bar">
+    /* v179: 4個目の初回クリア報酬だけ、縦幅を使わない全幅バー表示 */
+    .shooting-result-reward-list{
+      align-items:stretch;
+    }
+    .shooting-result-first-clear-bar{
+      grid-column:1 / -1;
+      width:100%;
+      box-sizing:border-box;
+      min-height:42px;
+      margin-top:2px;
+      padding:6px 11px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid rgba(166,141,96,.25);
+      background:linear-gradient(90deg,rgba(255,253,247,.98),rgba(247,240,226,.92));
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);
+    }
+    .shooting-result-first-clear-label{
+      flex:0 0 auto;
+      font-size:7px;
+      letter-spacing:.24em;
+      color:#a68a61;
+      white-space:nowrap;
+    }
+    .shooting-result-first-clear-main{
+      min-width:0;
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:6px;
+      color:#5f5445;
+      white-space:nowrap;
+    }
+    .shooting-result-first-clear-main img{
+      width:20px;
+      height:20px;
+      object-fit:contain;
+      flex:0 0 auto;
+    }
+    .shooting-result-first-clear-main b{
+      font-size:11px;
+      font-weight:500;
+    }
+    .shooting-result-first-clear-main strong{
+      font-size:13px;
+      font-weight:600;
+      color:#7d684a;
+    }
+  </style>
+
+
+  <style id="v180-result-fit">
+    /* v180: RESULTをより多くの端末で1画面内に収めるための微調整 */
+    .shooting-result-panel{
+      max-height:100dvh;
+      overflow:hidden;
+    }
+
+    .shooting-result-rank{
+      transform:scale(.90);
+      transform-origin:center top;
+      margin-bottom:-6px;
+    }
+
+    .shooting-result-stats{
+      margin-top:-3px;
+    }
+
+    .shooting-result-stat-row{
+      min-height:34px;
+      padding-top:3px;
+      padding-bottom:3px;
+    }
+
+    .shooting-result-time-row{
+      min-height:38px;
+      padding-top:4px;
+      padding-bottom:4px;
+    }
+
+    .shooting-result-reward-section{
+      margin-top:8px;
+    }
+
+    .shooting-result-reward-list{
+      gap:7px;
+    }
+
+    .shooting-result-reward-item{
+      min-height:80px;
+      padding-top:8px;
+      padding-bottom:8px;
+    }
+
+    .shooting-result-first-clear-bar{
+      min-height:38px;
+      padding-top:5px;
+      padding-bottom:5px;
+      margin-top:0;
+    }
+
+    .shooting-result-first-clear-label{
+      font-size:7px;
+      letter-spacing:.12em;
+    }
+
+    .shooting-result-note{
+      display:none !important;
+    }
+
+    .shooting-result-actions{
+      margin-top:8px;
+      gap:6px;
+    }
+
+    .shooting-result-actions button{
+      min-height:42px;
+    }
+
+    @media (max-height: 740px){
+      .shooting-result-rank{
+        transform:scale(.84);
+        margin-bottom:-10px;
+      }
+      .shooting-result-stat-row{
+        min-height:31px;
+        padding-top:2px;
+        padding-bottom:2px;
+      }
+      .shooting-result-time-row{
+        min-height:34px;
+      }
+      .shooting-result-reward-item{
+        min-height:72px;
+        padding-top:6px;
+        padding-bottom:6px;
+      }
+      .shooting-result-first-clear-bar{
+        min-height:34px;
+        padding-top:4px;
+        padding-bottom:4px;
+      }
+      .shooting-result-actions button{
+        min-height:38px;
+      }
+    }
+
+    @media (max-height: 680px){
+      .shooting-result-rank{
+        transform:scale(.78);
+        margin-bottom:-15px;
+      }
+      .shooting-result-stat-row{
+        min-height:28px;
+      }
+      .shooting-result-time-row{
+        min-height:31px;
+      }
+      .shooting-result-reward-section{
+        margin-top:5px;
+      }
+      .shooting-result-reward-list{
+        gap:5px;
+      }
+      .shooting-result-reward-item{
+        min-height:66px;
+      }
+      .shooting-result-first-clear-bar{
+        min-height:32px;
+      }
+      .shooting-result-actions{
+        margin-top:5px;
+      }
+      .shooting-result-actions button{
+        min-height:36px;
+      }
+    }
+  </style>
 
 </head>
 <body>
@@ -1311,7 +1495,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/home_banners.js?v=20260910-result-fit-v180"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2127,9 +2311,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/resonance_system.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/resonance_ui.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/shooting_resonance.js?v=20260910-result-fit-v180"></script>
+<script src="js/resonance_system.js?v=20260910-result-fit-v180"></script>
+<script src="js/resonance_ui.js?v=20260910-result-fit-v180"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -2703,6 +2887,7 @@ const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 13, 14, 15, 16, 17, ];
     {
       id: 'gacha_07',
       category: 'normal',
+      hidden: true, // v177: 版権キャラクター公開停止
       img: 'images/gacha_banner_07.webp',
       cost: 5,
       pickupCharaId: 51,
@@ -3334,6 +3519,9 @@ function isGachaExcludedChara(c){
 
 // ガチャのフィルター条件を判定する共通関数
 function matchesGachaFilter(c, gacha) {
+  // v177: 非公開キャラクターは、どのガチャからも排出しない。
+  if (!c || c.hidden === true || Number(c.id) === 51) return false;
+
   // 主人公エリはガチャから排出しない
   if (isGachaExcludedChara(c)) return false;
 
@@ -4192,7 +4380,8 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     res1.data.forEach(function(row){
       var chara = CHARACTERS.find(function(c){ return Number(c.id) === Number(row.character_id); });
 
-      if(chara){
+      if(chara && chara.hidden !== true && Number(chara.id) !== 51){
+        // v177: 非公開キャラクターは既存所持データがあっても画面へ読み込まない。
         // captured_at（ISO文字列）から表示用timeStrを復元
         var timeStr = '';
         if(row.captured_at){
@@ -6959,7 +7148,12 @@ function showTenResult(results){
       }
     }
     var zukanSub = document.getElementById('zukan-sub');
-    if(zukanSub) zukanSub.textContent = box.length + ' / ' + CHARACTERS.length;
+    if(zukanSub){
+      var publicCharacterCount = CHARACTERS.filter(function(c){
+        return c && c.hidden !== true && Number(c.id) !== 51;
+      }).length;
+      zukanSub.textContent = box.length + ' / ' + publicCharacterCount;
+    }
 
     // HUD更新
     var lv = userProfile.rank || 1;
@@ -7409,7 +7603,9 @@ function showTenResult(results){
   var currentBoxCarouselIndex = 0;
 
   function getAllBoxCharaDefs(){
-    return CHARACTERS.slice().sort(function(a, b){
+    return CHARACTERS.filter(function(c){
+      return c && c.hidden !== true && Number(c.id) !== 51;
+    }).slice().sort(function(a, b){
       return (a.id || 0) - (b.id || 0);
     });
   }
@@ -8431,8 +8627,8 @@ function showTenResult(results){
   grid.innerHTML = '';
 
   var targetChars = CHARACTERS.filter(function(c){
-  return c.pool === 'survivor';
-});
+    return c && c.pool === 'survivor' && c.hidden !== true && Number(c.id) !== 51;
+  });
 
   targetChars.forEach(function(c){
     var isOwned = !!collected[c.id];
@@ -11053,43 +11249,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/asset_loader.js?v=20260910-result-fit-v180"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/login_bonus.js?v=20260910-result-fit-v180"></script>
 
-<script src="js/story_engine.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/stories/chapter01.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/story_engine.js?v=20260910-result-fit-v180"></script>
+<script src="js/stories/chapter01.js?v=20260910-result-fit-v180"></script>
 
-<script src="js/battle_range.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/characters.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/enemies.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/battle.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/battle_swipe.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/battle_range.js?v=20260910-result-fit-v180"></script>
+<script src="js/characters.js?v=20260910-result-fit-v180"></script>
+<script src="js/enemies.js?v=20260910-result-fit-v180"></script>
+<script src="js/battle.js?v=20260910-result-fit-v180"></script>
+<script src="js/battle_swipe.js?v=20260910-result-fit-v180"></script>
 
-<script src="js/stages.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/stage_select.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/party_select.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/enemy_intro.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/stages.js?v=20260910-result-fit-v180"></script>
+<script src="js/stage_select.js?v=20260910-result-fit-v180"></script>
+<script src="js/party_select.js?v=20260910-result-fit-v180"></script>
+<script src="js/enemy_intro.js?v=20260910-result-fit-v180"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260910-friendship-rpc-hardening-v176">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260910-result-fit-v180">
 
-<script src="js/battle_range_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/characters_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/remnant_blessings.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/combo_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/cards.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/battle_32.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/battle_32_ui.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/battle_range_32.js?v=20260910-result-fit-v180"></script>
+<script src="js/characters_32.js?v=20260910-result-fit-v180"></script>
+<script src="js/remnant_blessings.js?v=20260910-result-fit-v180"></script>
+<script src="js/combo_32.js?v=20260910-result-fit-v180"></script>
+<script src="js/cards.js?v=20260910-result-fit-v180"></script>
+<script src="js/battle_32.js?v=20260910-result-fit-v180"></script>
+<script src="js/battle_32_ui.js?v=20260910-result-fit-v180"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/roguelite_run.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/roguelite_reward.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/shinju.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/roguelite_controller.js?v=20260910-friendship-rpc-hardening-v176"></script>
-<script src="js/roguelite_overseer_run.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/roguelite_options.js?v=20260910-result-fit-v180"></script>
+<script src="js/roguelite_run.js?v=20260910-result-fit-v180"></script>
+<script src="js/roguelite_reward.js?v=20260910-result-fit-v180"></script>
+<script src="js/shinju.js?v=20260910-result-fit-v180"></script>
+<script src="js/roguelite_controller.js?v=20260910-result-fit-v180"></script>
+<script src="js/roguelite_overseer_run.js?v=20260910-result-fit-v180"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11531,10 +11727,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260910-friendship-rpc-hardening-v176"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260910-result-fit-v180"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/raid_event.js?v=20260910-result-fit-v180"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11555,7 +11751,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260910-friendship-rpc-hardening-v176"></script>
+<script src="js/score_attack.js?v=20260910-result-fit-v180"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
