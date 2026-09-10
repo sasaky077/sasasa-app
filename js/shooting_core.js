@@ -2072,7 +2072,7 @@
       bossMotionBlendFromY: 0,
       bossMotionBlendStartedAt: 0,
       bossMotionBlendDurationMs: 420,
-      // BOSS大技（WARNING付き即死弾）制御
+      // BOSS大技（WARNING付き高威力攻撃）制御
       nextBossDangerAt: 0, bossDangerExecuteAt: 0, bossDangerWarningEl: null,
       bossDangerPatternIndex: 0,
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
@@ -6341,7 +6341,7 @@
 
     const warn = document.createElement('div');
     warn.className = 'shooting-ambush-laser-warning';
-    warn.textContent = 'WARNING　壁際に逃げろ！';
+    warn.textContent = 'CHARGED SHOT　強化弾';
     const warningMuzzle = getAmbushEnemyMuzzle({ el: document.getElementById(BOSS_ID), x:state.boss.x, y:state.boss.y }, -8);
     warn.style.left = `${warningMuzzle.x}px`;
     warn.style.top = `${Math.max(38,warningMuzzle.y)}px`;
@@ -6394,7 +6394,12 @@
       state.player.y >= originY &&
       now >= Number(state.player.invulnUntil || 0)
     ) {
-      damagePlayer(now,999999,'raw');
+      // v184: 乱入WAVE2終盤攻撃は即死ではなく、
+      // そのWAVEの通常弾ダメージの2倍に抑える。
+      // v185: オーバーシア亜種WAVE2終盤の強化弾は600固定。
+      // 通常弾400との差は1.5倍に留め、即死級にはしない。
+      const heavyDamage = 600;
+      damagePlayer(now, heavyDamage, 'raw');
     }
   }
 
