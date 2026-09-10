@@ -2,7 +2,7 @@
 // characters.js
 // ★ 正式仕様（設計整理 2025）
 //   - stats は HP / ATK のみ
-//   - element は 'logos' / 'mystis' / 'chaos'、または ['logos','chaos'] のような複属性に対応
+//   - element は 'aqua' / 'fire' / 'dark' / 'light' / 'wood' の5属性
 //   - Battle32 / Roguelite は DEF / SPD を使用しない
 //   - effect type に def_* / spd_* は使用しない
 //   - ダメージ式は ATK × multiplier
@@ -24,7 +24,7 @@ const CHARACTERS = [
 
   // ── id:1 エリ
   { id: 1, name: 'エリ', rarity: 'sr',
-    element: ['mystis', 'logos'],
+    element: 'light',
     role: 'バランス寄り',
     moveType: 'cross_1',
     costMax: 14,
@@ -80,7 +80,7 @@ skills: [
 
   // ── id:2 ネム
   { id: 2, name: 'ネム', rarity: 'r',
-    element: 'chaos',
+    element: 'dark',
   role: '妨害寄り',
   moveType: 'front_back_row3',
     costMax: 10,
@@ -138,7 +138,7 @@ skills: [
 
   // ── id:3 スイ
   { id: 3, name: 'スイ', rarity: 'sr',
-    element: 'mystis',
+    element: 'aqua',
   role: 'バランス寄り',
   moveType: 'line_front_3',
     costMax: 10,
@@ -206,7 +206,7 @@ skills: [
      // ── id:4 アルノ
   { id: 4, 
   name: 'アルノ', rarity: 'sr',
-    element: 'chaos',
+    element: 'fire',
   role: '速度寄り',
   moveType: 'front_back_frontdiag',
     costMax: 14,
@@ -272,7 +272,7 @@ skills: [
 
   // ── id:5 クラリネ
   { id: 5, name: 'クラリネ', rarity: 'r',
- element: 'chaos',
+ element: 'dark',
     role: 'テクニック寄り',
     moveType: 'king_8',
     costMax: 14,
@@ -332,7 +332,7 @@ skills: [
 
   // ── id:6 イグニス
   { id: 6, name: 'イグニス', rarity: 'r',
-    element: 'chaos',
+    element: 'fire',
     role: '火力寄り',
     moveType: 'front_back_frontdiag',
     costMax: 12,
@@ -402,7 +402,7 @@ skills: [
 
      // ── id:7 ロゼ
   { id: 7, name: 'ロゼ', rarity: 'sr',
-    element: 'chaos',
+    element: 'wood',
     role: '盤面制圧寄り',
     moveType: 'front_back_row3',
     costMax: 10,
@@ -481,7 +481,7 @@ skills: [
 
      // ── id:08 ミモザ
   { id: 8, name: 'ミモザ', rarity: 'sr',
-    element: 'logos',
+    element: 'wood',
     role: '支援寄り',
     moveType: 'front_back_row3',
     costMax: 10,
@@ -541,7 +541,7 @@ skills: [
 
   // ── id:10 フローラ
   { id: 10, name: 'フローラ', rarity: 'r',
-    element: 'mystis',
+    element: 'light',
     role: 'ヒーラー',
     moveType: 'front2_backdiag2',
     costMax: 12,
@@ -618,7 +618,7 @@ skills: [
 
   // ── id:11 シグレ
   { id: 11, name: 'シグレ', rarity: 'r',
-    element: 'logos',
+    element: 'dark',
   role: 'テクニック寄り',
   moveType: 'front_side_3',
     costMax: 10,
@@ -678,7 +678,7 @@ skills: [
 
   // ── id:12 ハヤテ
   { id: 12, name: 'ハヤテ', rarity: 'sr',
-    element: 'logos',
+    element: 'light',
     role: '速度寄り',
     moveType: 'king_8',
     costMax: 14,
@@ -746,7 +746,7 @@ skills: [
 
   // ── id:9
   { id: 9, name: 'パトラ', rarity: 'r',
-    element: 'chaos',
+    element: 'dark',
     role: '妨害寄り',
     moveType: 'front_side_3',
     costMax: 14,
@@ -809,7 +809,7 @@ skills: [
 
   // ── id:13 ミア
   { id: 13, name: 'ミア', rarity: 'r',
-    element: 'mystis',
+    element: 'aqua',
     role: '遠距離寄り',
     moveType: 'cat_step',
     costMax: 12,
@@ -869,7 +869,7 @@ skills: [
 
   // ── id:14 アヤネ
   { id: 14, name: 'アヤネ', rarity: 'r',
-    element: 'logos',
+    element: 'fire',
     role: 'テクニック寄り',
     moveType: 'front_side_jump',
     costMax: 12,
@@ -927,7 +927,7 @@ skills: [
 
   // ── id:15 エルテナ
   { id: 15, name: 'エルテナ', rarity: 'r',
-    element: 'chaos',
+    element: 'dark',
   role: '妨害寄り',
   moveType: 'vertical2_frontdiag2',
     costMax: 12,
@@ -987,7 +987,7 @@ skills: [
 
   // ── id:16 ミト
   { id: 16, name: 'ミト', rarity: 'r',
-    element: 'mystis',
+    element: 'aqua',
     role: '耐久寄り',
     moveType: 'silver',
     costMax: 14,
@@ -1055,7 +1055,7 @@ skills: [
  
   // ── id:17 アンジェ
   { id: 17, name: 'アンジェ', rarity: 'r',
-    element: 'logos',
+    element: 'light',
     role: 'ヒーラー',
     moveType: 'silver',
     costMax: 14,
@@ -1122,7 +1122,7 @@ skills: [
 
   // ── id:18 ウルフ
   { id: 18, name: 'ウルフ', rarity: 'sr',
-    element: 'chaos',
+    element: 'fire',
     role: '射撃・強化',
     moveType: 'cross_1',
     costMax: 14,
@@ -1193,7 +1193,7 @@ skills: [
 
   // ── id:50 テストちゃん（DAILY RAIDクリア報酬）
   { id: 50, name: 'テストちゃん', rarity: 'sr',
-    element: 'logos',
+    element: 'wood',
     role: '高火力レーザー',
     moveType: 'cross_1',
     costMax: 14,
@@ -1257,7 +1257,7 @@ skills: [
 ,
   // ── id:51 五条 悟
   { id: 51, name: '五条 悟', rarity: 'sr', hidden: true,
-    element: 'logos',
+    element: 'dark',
     role: '高火力・拘束',
     moveType: 'cross_1',
     costMax: 14,
@@ -1324,7 +1324,7 @@ skills: [
 ,
   // ── id:52 ノア（理想郷 -ノア- 9欠片完成報酬）
   { id: 52, name: 'ノア', rarity: 'sr',
-    element: 'logos',
+    element: 'light',
     role: '時止め・追尾射撃',
     moveType: 'cross_1',
     costMax: 15,

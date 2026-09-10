@@ -88,7 +88,7 @@
   const SHOOTING_CHARACTER_MASTER = Object.freeze({
     1: {
       id: 1, name: 'エリ',
-      element: ['mystis', 'logos'],
+      element: 'light',
       hp: 670, atk: 235,
       image: 'images/chara_01_battle_back.webp',
       panelImage: 'images/chara_01_panel.webp',
@@ -97,7 +97,7 @@
     },
     2: {
       id: 2, name: 'ネム',
-      element: 'chaos',
+      element: 'dark',
       hp: 560, atk: 270,
       image: 'images/chara_02_battle_back.webp',
       panelImage: 'images/chara_02_panel.webp',
@@ -106,7 +106,7 @@
     },
     3: {
       id: 3, name: 'スイ',
-      element: 'mystis',
+      element: 'aqua',
       hp: 600, atk: 250,
       image: 'images/chara_03_battle_back.webp',
       panelImage: 'images/chara_03_panel.webp',
@@ -115,7 +115,7 @@
     },
     4: {
       id: 4, name: 'アルノ',
-      element: 'chaos',
+      element: 'fire',
       hp: 500, atk: 300,
       image: 'images/chara_04_battle_back.webp',
       panelImage: 'images/chara_04_panel.webp',
@@ -124,7 +124,7 @@
     },
     5: {
       id: 5, name: 'クラリネ',
-      element: 'chaos',
+      element: 'dark',
       hp: 580, atk: 280,
       image: 'images/chara_05_battle_back.webp',
       panelImage: 'images/chara_05_panel.webp',
@@ -133,7 +133,7 @@
     },
     6: {
       id: 6, name: 'イグニス',
-      element: 'chaos',
+      element: 'fire',
       hp: 600, atk: 285,
       image: 'images/chara_06_battle_back.webp',
       panelImage: 'images/chara_06_panel.webp',
@@ -142,7 +142,7 @@
     },
     7: {
       id: 7, name: 'ロゼ',
-      element: 'chaos',
+      element: 'wood',
       hp: 680, atk: 230,
       image: 'images/chara_07_battle_back.webp',
       panelImage: 'images/chara_07_panel.webp',
@@ -151,7 +151,7 @@
     },
     8: {
       id: 8, name: 'ミモザ',
-      element: 'logos',
+      element: 'wood',
       hp: 700, atk: 220,
       image: 'images/chara_08_battle_back.webp',
       panelImage: 'images/chara_08_panel.webp',
@@ -160,7 +160,7 @@
     },
     9: {
       id: 9, name: 'パトラ',
-      element: 'chaos',
+      element: 'dark',
       hp: 590, atk: 275,
       image: 'images/chara_09_battle_back.webp',
       panelImage: 'images/chara_09_panel.webp',
@@ -169,7 +169,7 @@
     },
     10: {
       id: 10, name: 'フローラ',
-      element: 'mystis',
+      element: 'light',
       hp: 650, atk: 210,
       image: 'images/chara_10_battle_back.webp',
       panelImage: 'images/chara_10_panel.webp',
@@ -178,7 +178,7 @@
     },
     11: {
       id: 11, name: 'シグレ',
-      element: 'logos',
+      element: 'dark',
       hp: 500, atk: 200,
       image: 'images/chara_11_battle_back.webp',
       panelImage: 'images/chara_11_panel.webp',
@@ -187,7 +187,7 @@
     },
     12: {
       id: 12, name: 'ハヤテ',
-      element: 'logos',
+      element: 'dark',
       hp: 580, atk: 305,
       image: 'images/chara_12_battle_back.webp',
       panelImage: 'images/chara_12_panel.webp',
@@ -196,7 +196,7 @@
     },
     13: {
       id: 13, name: 'ミア',
-      element: 'mystis',
+      element: 'aqua',
       hp: 540, atk: 295,
       image: 'images/chara_13_battle_back.webp',
       panelImage: 'images/chara_13_panel.webp',
@@ -205,7 +205,7 @@
     },
     14: {
       id: 14, name: 'アヤネ',
-      element: 'logos',
+      element: 'fire',
       hp: 740, atk: 225,
       image: 'images/chara_14_battle_back.webp',
       panelImage: 'images/chara_14_panel.webp',
@@ -214,7 +214,7 @@
     },
     15: {
       id: 15, name: 'エルテナ',
-      element: 'chaos',
+      element: 'dark',
       hp: 560, atk: 290,
       image: 'images/chara_15_battle_back.webp',
       panelImage: 'images/chara_15_panel.webp',
@@ -223,7 +223,7 @@
     },
     16: {
       id: 16, name: 'ミト',
-      element: 'mystis',
+      element: 'aqua',
       hp: 700, atk: 245,
       image: 'images/chara_16_battle_back.webp',
       panelImage: 'images/chara_16_panel.webp',
@@ -232,7 +232,7 @@
     },
     17: {
       id: 17, name: 'アンジェ',
-      element: 'logos',
+      element: 'light',
       hp: 720, atk: 190,
       image: 'images/chara_17_battle_back.webp',
       panelImage: 'images/chara_17_panel.webp',
@@ -241,7 +241,7 @@
     },
     18: {
       id: 18, name: 'ウルフ',
-      element: 'chaos',
+      element: 'fire',
       hp: 610, atk: 300,
       image: 'images/chara_18_battle_back.webp',
       panelImage: 'images/chara_18_panel.webp',
@@ -250,7 +250,7 @@
     },
     50: {
       id: 50, name: 'テストちゃん',
-      element: 'logos',
+      element: 'wood',
       hp: 620, atk: 285,
       image: 'images/chara_50_battle_back.webp',
       panelImage: 'images/chara_50_panel.webp',
@@ -259,7 +259,7 @@
     },
     51: {
       id: 51, name: '五条 悟',
-      element: 'logos',
+      element: 'dark',
       hp: 680, atk: 300,
       image: 'images/chara_51_battle_back.webp',
       panelImage: 'images/chara_51_panel.webp',
@@ -268,7 +268,7 @@
     },
     52: {
       id: 52, name: 'ノア',
-      element: 'logos',
+      element: 'light',
       hp: 650, atk: 305,
       image: 'images/chara_52_battle_back.webp',
       panelImage: 'images/chara_52_panel.webp',

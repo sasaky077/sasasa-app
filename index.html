@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260910-overseer-damage-tuning-v185';
+    var FALLBACK_BUILD = '20260911-pity-gauge-simple-v198';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260910-overseer-damage-tuning-v185">
+  <meta name="sasaphia-build" content="20260911-pity-gauge-simple-v198">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -181,9 +181,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260910-overseer-damage-tuning-v185"
+        href="css/style.css?v=20260911-pity-gauge-simple-v198"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260910-overseer-damage-tuning-v185"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260911-pity-gauge-simple-v198"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -266,9 +266,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260910-overseer-damage-tuning-v185">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260911-pity-gauge-simple-v198">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260910-overseer-damage-tuning-v185">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260911-pity-gauge-simple-v198">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -337,7 +337,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260910-overseer-damage-tuning-v185';
+  var BUILD = '20260911-pity-gauge-simple-v198';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -1514,7 +1514,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/home_banners.js?v=20260911-pity-gauge-simple-v198"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2330,9 +2330,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/resonance_system.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/resonance_ui.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/shooting_resonance.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/resonance_system.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/resonance_ui.js?v=20260911-pity-gauge-simple-v198"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -2811,9 +2811,11 @@ document.addEventListener('touchend', function (e) {
 // 画像ファイル名は旧番号のまま使用する。
 const GACHA_COMMON_CHARACTER_IDS = [2, 5, 6, 9, 10, 11, 13, 14, 15, 16, 17, ];
   const GACHA_COMMON_MATERIAL_IDS = [
-    'soul_vessel_chaos',
-    'soul_vessel_mystis',
-    'soul_vessel_logos',
+    'soul_vessel_fire',
+    'soul_vessel_aqua',
+    'soul_vessel_wood',
+    'soul_vessel_dark',
+    'soul_vessel_light',
     'seihai',
     'kyoumei_stone'
   ];
@@ -3245,26 +3247,22 @@ const RARITY_BOX_IMAGE = {
 };
 
 const ELEMENT_ICON_IMAGE = {
-  logos:  "images/icon_logos.webp",
-  mystis: "images/icon_mystis.webp",
-  chaos:  "images/icon_chaos.webp",
-  logos_mystis: "images/icon_logos_mystis.webp",
-  logos_chaos: "images/icon_logos_chaos.webp",
-  mystis_chaos: "images/icon_mystis_chaos.webp",
-  logos_mystis_chaos: "images/icon_logos_mystis_chaos.webp"
+  aqua:  "images/type_aqua.webp",
+  fire:  "images/type_fire.webp",
+  dark:  "images/type_dark.webp",
+  light: "images/type_light.webp",
+  wood:  "images/type_wood.webp"
 };
 
 const ELEMENT_LABEL = {
-  logos:  "LOGOS",
-  mystis: "MYSTIS",
-  chaos:  "CHAOS",
-  logos_mystis: "LOGOS / MYSTIS",
-  logos_chaos: "LOGOS / CHAOS",
-  mystis_chaos: "MYSTIS / CHAOS",
-  logos_mystis_chaos: "LOGOS / MYSTIS / CHAOS"
+  aqua:  "AQUA",
+  fire:  "FIRE",
+  dark:  "DARK",
+  light: "LIGHT",
+  wood:  "WOOD"
 };
 
-const ELEMENT_ORDER = ['logos', 'mystis', 'chaos'];
+const ELEMENT_ORDER = ['aqua', 'fire', 'dark', 'light', 'wood'];
 
 function normalizeElementList(element){
   if(Array.isArray(element)){
@@ -5151,20 +5149,30 @@ if(openingBgm && isAudioEnabled('title_bgm')){
       name: '共鳴石',
       img: 'images/item_kyoumeistone.webp'
     },
-    soul_vessel_chaos: {
-      id: 'soul_vessel_chaos',
-      name: '魂の器（CHAOS）',
-      img: 'images/item_chaos.webp'
+    soul_vessel_fire: {
+      id: 'soul_vessel_fire',
+      name: '魂の器(火)',
+      img: 'images/item_soul_vessel_fire.webp'
     },
-    soul_vessel_mystis: {
-      id: 'soul_vessel_mystis',
-      name: '魂の器（MYSTIS）',
-      img: 'images/item_mystis.webp'
+    soul_vessel_aqua: {
+      id: 'soul_vessel_aqua',
+      name: '魂の器(水)',
+      img: 'images/item_soul_vessel_aqua.webp'
     },
-    soul_vessel_logos: {
-      id: 'soul_vessel_logos',
-      name: '魂の器（LOGOS）',
-      img: 'images/item_logos.webp'
+    soul_vessel_wood: {
+      id: 'soul_vessel_wood',
+      name: '魂の器(木)',
+      img: 'images/item_soul_vessel_wood.webp'
+    },
+    soul_vessel_dark: {
+      id: 'soul_vessel_dark',
+      name: '魂の器(闇)',
+      img: 'images/item_soul_vessel_dark.webp'
+    },
+    soul_vessel_light: {
+      id: 'soul_vessel_light',
+      name: '魂の器(光)',
+      img: 'images/item_soul_vessel_light.webp'
     }
   };
 
@@ -5200,18 +5208,19 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     var p = getTokyoDailyDateParts();
     var fixed = {
       Mon: 'kyoumei_stone',
-      Tue: 'soul_vessel_chaos',
-      Wed: 'soul_vessel_mystis',
-      Thu: 'soul_vessel_logos',
-      Fri: 'kyoumei_stone'
+      Tue: 'soul_vessel_fire',
+      Wed: 'soul_vessel_aqua',
+      Thu: 'soul_vessel_wood',
+      Fri: 'soul_vessel_light',
+      Sat: 'soul_vessel_dark'
     };
 
     var rewardId = fixed[p.weekday];
-    var isRandomDay = p.weekday === 'Sat' || p.weekday === 'Sun';
+    var isRandomDay = p.weekday === 'Sun';
 
     if (!rewardId) {
-      // 土日: 4素材から日付ベースで1つ選択。0時(JST)まで固定。
-      var pool = ['kyoumei_stone','soul_vessel_chaos','soul_vessel_mystis','soul_vessel_logos'];
+      // 日曜: 共鳴石＋5属性の魂の器から日付ベースで1つ選択。0時(JST)まで固定。
+      var pool = ['kyoumei_stone','soul_vessel_fire','soul_vessel_aqua','soul_vessel_wood','soul_vessel_dark','soul_vessel_light'];
       var seed = (p.year * 372 + p.month * 31 + p.day * 17 + (p.weekday === 'Sun' ? 7 : 3));
       rewardId = pool[Math.abs(seed) % pool.length];
     }
@@ -5805,6 +5814,9 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
         timeStr,
         now.toISOString()
       );
+      if(!materialData){
+        throw new Error('未知のガチャ素材IDが返されました: ' + raw.id);
+      }
       materialData.isPickup = !!raw.pickup;
       return materialData;
     }
@@ -6305,6 +6317,7 @@ function setRevealEncounterText(data){
     modal.classList.add('active');
     modal.classList.toggle('reveal-is-new', data.isNew === true);
     modal.classList.toggle('reveal-is-known', data.isNew !== true);
+    modal.classList.toggle('is-material-result', isGachaMaterialResult(data));
     applyRevealPickupState(data);
     setRevealEncounterText(data);
 
@@ -8733,7 +8746,7 @@ function resolveDetailShootingProfile(data){
     name: applied.name || data.name || '',
     img: portrait,
     panelImg: applied.panelImage || data.panelImg || portrait,
-    element: applied.element != null ? applied.element : data.element,
+    element: data.element != null ? data.element : applied.element,
     limitBreak: lb,
     stats: {
       HP: Math.floor(Number(applied.hp || 0)),
@@ -9544,6 +9557,7 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
         'hide_testplay_guide',
         'sasaphia_notice_read_ids_v1',
         'sasaphia_notice_read_ids_v2',
+        'sasaphia_notice_claimed_ids_v1',
         'sasaphia_email_transfer_pending',
         'sasaphia_email_transfer_email',
         'sasaphia_email_transfer_completed'
@@ -11268,43 +11282,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/asset_loader.js?v=20260911-pity-gauge-simple-v198"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/login_bonus.js?v=20260911-pity-gauge-simple-v198"></script>
 
-<script src="js/story_engine.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/stories/chapter01.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/story_engine.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/stories/chapter01.js?v=20260911-pity-gauge-simple-v198"></script>
 
-<script src="js/battle_range.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/characters.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/enemies.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/battle.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/battle_swipe.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/battle_range.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/characters.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/enemies.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/battle.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/battle_swipe.js?v=20260911-pity-gauge-simple-v198"></script>
 
-<script src="js/stages.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/stage_select.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/party_select.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/enemy_intro.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/stages.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/stage_select.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/party_select.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/enemy_intro.js?v=20260911-pity-gauge-simple-v198"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260910-overseer-damage-tuning-v185">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260911-pity-gauge-simple-v198">
 
-<script src="js/battle_range_32.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/characters_32.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/remnant_blessings.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/combo_32.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/cards.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/battle_32.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/battle_32_ui.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/battle_range_32.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/characters_32.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/remnant_blessings.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/combo_32.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/cards.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/battle_32.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/battle_32_ui.js?v=20260911-pity-gauge-simple-v198"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/roguelite_run.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/roguelite_reward.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/shinju.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/roguelite_controller.js?v=20260910-overseer-damage-tuning-v185"></script>
-<script src="js/roguelite_overseer_run.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/roguelite_options.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/roguelite_run.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/roguelite_reward.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/shinju.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/roguelite_controller.js?v=20260911-pity-gauge-simple-v198"></script>
+<script src="js/roguelite_overseer_run.js?v=20260911-pity-gauge-simple-v198"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -11471,9 +11485,11 @@ window.addEventListener('pagehide', function () {
       +     rewardCard(info.coreImg,'心核','ランク別抽選')
       +     rewardCard('images/icon_coin.webp','コイン','クリア報酬')
       +     rewardCard('images/item_kyoumeistone.webp','共鳴石','ランク別個数')
-      +     rewardCard('images/item_logos.webp','LOGOSの器','抽選候補')
-      +     rewardCard('images/item_chaos.webp','CHAOSの器','抽選候補')
-      +     rewardCard('images/item_mystis.webp','MYSTISの器','抽選候補')
+      +     rewardCard('images/item_soul_vessel_fire.webp','魂の器(火)','抽選候補')
+      +     rewardCard('images/item_soul_vessel_aqua.webp','魂の器(水)','抽選候補')
+      +     rewardCard('images/item_soul_vessel_wood.webp','魂の器(木)','抽選候補')
+      +     rewardCard('images/item_soul_vessel_dark.webp','魂の器(闇)','抽選候補')
+      +     rewardCard('images/item_soul_vessel_light.webp','魂の器(光)','抽選候補')
       +   '</div>'
       +   '<div class="rlc-vp-ranks">' + rankHtml + '</div>'
       +   '<div class="rlc-vp-note">心核はクリアランクに応じた確率で獲得できます。</div>'
@@ -11746,10 +11762,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260910-overseer-damage-tuning-v185"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260911-pity-gauge-simple-v198"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/raid_event.js?v=20260911-pity-gauge-simple-v198"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -11770,7 +11786,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260910-overseer-damage-tuning-v185"></script>
+<script src="js/score_attack.js?v=20260911-pity-gauge-simple-v198"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -12068,7 +12084,7 @@ window.returnToTitleScreen = function(){
           id:NOAH_ID,
           name:'ノア',
           rarity:'sr',
-          element:'logos',
+          element:'light',
           stats:{HP:650,ATK:305},
           baseStats:{HP:650,ATK:305},
           limitBreak:0,
