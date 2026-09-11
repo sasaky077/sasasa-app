@@ -1933,6 +1933,7 @@
     }
     if (core) core.style.setProperty('--core-top', c.coreTop || '38%');
     if (name) name.textContent = c.name;
+    renderActivePlayerElementIcon();
     if (startName) startName.textContent = c.name;
     if (startType) {
       startType.textContent = c.id === CHARACTER_ID.MIA
@@ -2040,6 +2041,11 @@
       mimosaItems: [],
       boss: {
         x: 0, y: 42,
+        element: normalizeCombatElement(
+          BOSS?.element ||
+          selectedStage?.bossElement ||
+          selectedStage?.element
+        ),
         hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
@@ -2158,6 +2164,7 @@
         return `<button type="button" class="shooting-switch-btn" data-switch-id="${m.id}" onclick="switchShootingCharacter(${m.id})">
           <span class="shooting-switch-ult-ring" aria-hidden="true"></span>
           <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
+          <img class="shooting-switch-element-icon" src="" alt="" aria-hidden="true" draggable="false">
           <span class="shooting-switch-buff-badge" aria-hidden="true"></span>
           <span class="shooting-switch-name">${c.name}</span>
           <span class="shooting-switch-hp"><i></i></span>
@@ -2174,6 +2181,18 @@
       const c = getBattleCharacter(id);
       const hp = btn.querySelector('.shooting-switch-hp i');
       if (hp) hp.style.width = `${clamp(m.hp / m.hpMax, 0, 1) * 100}%`;
+
+      const elementIcon = btn.querySelector('.shooting-switch-element-icon');
+      if (elementIcon) {
+        const iconSrc = getCombatElementIcon(c && c.element);
+        if (iconSrc) {
+          if (elementIcon.getAttribute('src') !== iconSrc) elementIcon.src = iconSrc;
+          elementIcon.style.display = '';
+        } else {
+          elementIcon.style.display = 'none';
+        }
+      }
+
       // Bench ULT gauge: the circular ring around each switch button mirrors that member's own ULT charge.
       const ultRing = btn.querySelector('.shooting-switch-ult-ring');
       const ultPct = clamp(m.burst / c.burstNeed, 0, 1);
@@ -2430,6 +2449,7 @@
     const comboCount = document.getElementById('shooting-combo-count');
     const hpText = document.getElementById('shooting-player-hp-text');
     const hpBar = document.querySelector('#shooting-player-hp-bar i');
+    renderActivePlayerElementIcon();
     const gaugeWrap = document.getElementById('shooting-ult-side');
     const gauge = document.getElementById('shooting-burst-gauge');
 
@@ -2472,6 +2492,7 @@
       }
     }
     const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
+    renderBossElementIcon();
     const missionHud = document.getElementById('shooting-mission-hud');
     // v72: CHAPTER04だけはBOSS形式でもMISSION HUDを表示する。
     // 他BOSS / EVENT / RAIDの表示条件は従来どおり変更しない。
@@ -3267,17 +3288,136 @@
   function getCharacterBulletClass(c) {
     const elements = getCharacterElements(c);
 
-    const hasMystis = elements.some(v => v === 'mystis' || v === 'ミスティス');
-    const hasLogos = elements.some(v => v === 'logos' || v === 'ロゴス');
-    const hasChaos = elements.some(v => v === 'chaos' || v === 'カオス');
-
-    if (hasMystis && hasLogos) return ' shooting-bullet-mystis-logos';
-    if (hasMystis && hasChaos) return ' shooting-bullet-mystis-chaos';
-    if (hasLogos && hasChaos) return ' shooting-bullet-logos-chaos';
-    if (hasMystis) return ' shooting-bullet-mystis';
-    if (hasLogos) return ' shooting-bullet-logos';
-    if (hasChaos) return ' shooting-bullet-chaos';
+    if (elements.some(v => v === 'fire' || v === '火')) return ' shooting-bullet-fire';
+    if (elements.some(v => v === 'aqua' || v === 'water' || v === '水')) return ' shooting-bullet-aqua';
+    if (elements.some(v => v === 'wood' || v === '木')) return ' shooting-bullet-wood';
+    if (elements.some(v => v === 'dark' || v === '闇')) return ' shooting-bullet-dark';
+    if (elements.some(v => v === 'light' || v === '光')) return ' shooting-bullet-light';
     return '';
+  }
+
+  // ============================================================
+  // v211: 5属性ダメージ補正
+  // AQUA > FIRE > WOOD > AQUA
+  // LIGHT <-> DARK は相互弱点
+  // 有利 1.30 / 不利 0.70 / その他 1.00
+  // ============================================================
+  const ELEMENT_DAMAGE_RATE = Object.freeze({
+    strong: 1.30,
+    weak: 0.70,
+    neutral: 1.00,
+  });
+
+  function normalizeCombatElement(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'neutral' || raw === 'none' || raw === '無' || raw === '無属性') return 'neutral';
+    if (raw === 'aqua' || raw === 'water' || raw === '水') return 'aqua';
+    if (raw === 'fire' || raw === '火') return 'fire';
+    if (raw === 'wood' || raw === '木') return 'wood';
+    if (raw === 'dark' || raw === '闇') return 'dark';
+    if (raw === 'light' || raw === '光') return 'light';
+    return '';
+  }
+
+  const COMBAT_ELEMENT_ICON_IMAGE = Object.freeze({
+    neutral: 'images/type_neutral.webp',
+    aqua: 'images/type_aqua.webp',
+    fire: 'images/type_fire.webp',
+    wood: 'images/type_wood.webp',
+    dark: 'images/type_dark.webp',
+    light: 'images/type_light.webp',
+  });
+
+  function getCombatElementIcon(element) {
+    const key = normalizeCombatElement(element);
+    return COMBAT_ELEMENT_ICON_IMAGE[key] || '';
+  }
+
+  function setEnemyHpElementIcon(holder, element, className) {
+    if (!holder) return;
+    const iconSrc = getCombatElementIcon(element);
+    let icon = holder.querySelector(`.${className}`);
+    if (!iconSrc) {
+      if (icon) icon.style.display = 'none';
+      return;
+    }
+    if (!icon) {
+      icon = document.createElement('img');
+      icon.className = className;
+      icon.alt = '';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.draggable = false;
+      holder.appendChild(icon);
+    }
+    if (icon.getAttribute('src') !== iconSrc) icon.src = iconSrc;
+    icon.style.display = '';
+  }
+
+  function renderBossElementIcon() {
+    const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
+    if (!bossHud || !state || !state.boss) return;
+    setEnemyHpElementIcon(
+      bossHud,
+      state.boss.element,
+      'shooting-boss-element-icon'
+    );
+  }
+
+  function renderActivePlayerElementIcon() {
+    const iconEl = document.getElementById('shooting-player-element-icon');
+    if (!iconEl) return;
+    const activeId = state?.activeCharacterId || selectedCharacterId;
+    const c = activeId ? getBattleCharacter(activeId) : getCurrentCharacter();
+    const iconSrc = getCombatElementIcon(c && c.element);
+    if (!iconSrc) {
+      iconEl.style.display = 'none';
+      return;
+    }
+    if (iconEl.getAttribute('src') !== iconSrc) iconEl.src = iconSrc;
+    iconEl.style.display = '';
+  }
+
+  function getElementDamageMultiplier(attackElement, targetElement) {
+    const atk = normalizeCombatElement(attackElement);
+    const def = normalizeCombatElement(targetElement);
+    if (!atk || !def || atk === def) return ELEMENT_DAMAGE_RATE.neutral;
+
+    // NEUTRAL has no advantage or disadvantage against anything.
+    if (atk === 'neutral' || def === 'neutral') return ELEMENT_DAMAGE_RATE.neutral;
+
+    // 三すくみ：水 > 火 > 木 > 水
+    const strongAgainst = {
+      aqua: 'fire',
+      fire: 'wood',
+      wood: 'aqua',
+    };
+    if (strongAgainst[atk] === def) return ELEMENT_DAMAGE_RATE.strong;
+    if (strongAgainst[def] === atk) return ELEMENT_DAMAGE_RATE.weak;
+
+    // 光と闇は、お互いに弱点を突く。
+    if (
+      (atk === 'light' && def === 'dark') ||
+      (atk === 'dark' && def === 'light')
+    ) {
+      return ELEMENT_DAMAGE_RATE.strong;
+    }
+
+    return ELEMENT_DAMAGE_RATE.neutral;
+  }
+
+  function getCombatTargetElement(target, fallbackElement) {
+    if (!target) return normalizeCombatElement(fallbackElement);
+    return normalizeCombatElement(
+      target.element ||
+      target.def?.element ||
+      target.enemyElement ||
+      fallbackElement
+    );
+  }
+
+  function applyElementDamage(amount, attackElement, targetElement) {
+    const base = Math.max(0, Number(amount || 0));
+    return base * getElementDamageMultiplier(attackElement, targetElement);
   }
 
   function createArnoOrbitProjectile(c, now, damage) {
@@ -3567,6 +3707,17 @@
       state.ignisLaserEl = el;
     }
     el.classList.toggle('shooting-noah-laser', String(c && c.effectKey || '') === 'noah');
+
+    ['fire','aqua','wood','dark','light'].forEach(function(elementName){
+      el.classList.remove('shooting-bullet-' + elementName);
+    });
+    const laserElementSource = (c && c.laserElement)
+      ? { element: c.laserElement }
+      : c;
+    const laserElementClass = getCharacterBulletClass(laserElementSource).trim();
+    if (laserElementClass) el.classList.add(laserElementClass);
+    el.dataset.element = String((c && c.laserElement) || (c && c.element) || '');
+
     el.style.setProperty('--ignis-laser-width', `${Number(c.laserWidth || 12)}px`);
     return el;
   }
@@ -3630,13 +3781,21 @@
     if (!target) return;
 
     const damage = Number(c.atk || 0) * Number(c.laserDamageAtkRate || 0.105);
+    const laserAttackElement = normalizeCombatElement(
+      (c && c.laserElement) || (c && c.element)
+    );
+    if (el) el.dataset.attackElement = laserAttackElement;
     const member = getPartyMember(c.id);
 
     if (target.isFacelessObject && target.object) {
-      damageFacelessObject(target.object, damage, now);
-      state.score += Math.round(damage * 60);
+      const targetElement = getCombatTargetElement(target.object, state.boss?.element);
+      const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
+      damageFacelessObject(target.object, finalDamage, now);
+      state.score += Math.round(finalDamage * 60);
     } else if (target.isBoss) {
-      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+      const targetElement = getCombatTargetElement(state.boss);
+      const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
+      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       createHit(state.boss.x, state.boss.y, false);
       showBossDamageNumber(appliedDamage, false);
@@ -3647,7 +3806,9 @@
       updateBossPhase();
       if (state.boss.hp <= 0) beginBossDefeat();
     } else {
-      damageNormalEnemy(target, damage, now, false);
+      const targetElement = getCombatTargetElement(target);
+      const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
+      damageNormalEnemy(target, finalDamage, now, false);
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
     }
 
@@ -3673,9 +3834,16 @@
     if (state) {
       state.miaChargeStartedAt = 0;
       state.miaChargePointerId = null;
+      if (state.miaChargeMaxTimer) {
+        clearTimeout(state.miaChargeMaxTimer);
+        state.miaChargeMaxTimer = null;
+      }
     }
     const player = document.getElementById(PLAYER_ID);
-    if (player) player.classList.remove('mia-charging');
+    if (player) {
+      player.classList.remove('mia-charging');
+      player.classList.remove('mia-charge-max');
+    }
   }
 
   function beginMiaCharge(pointerId, now) {
@@ -3683,10 +3851,34 @@
     const c = getCurrentCharacter();
     if (!c || c.id !== CHARACTER_ID.MIA || c.shotType !== 'charge_release') return false;
 
-    state.miaChargeStartedAt = Number(now || performance.now());
+    const startedAt = Number(now || performance.now());
+    state.miaChargeStartedAt = startedAt;
     state.miaChargePointerId = pointerId;
+
+    if (state.miaChargeMaxTimer) {
+      clearTimeout(state.miaChargeMaxTimer);
+      state.miaChargeMaxTimer = null;
+    }
+
     const player = document.getElementById(PLAYER_ID);
-    if (player) player.classList.add('mia-charging');
+    if (player) {
+      player.classList.add('mia-charging');
+      player.classList.remove('mia-charge-max');
+    }
+
+    const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+    state.miaChargeMaxTimer = setTimeout(() => {
+      if (!state || Number(state.miaChargeStartedAt || 0) !== startedAt) return;
+      if (state.ended || state.finishing || state.countdown || !state.running) return;
+      const current = getCurrentCharacter();
+      if (!current || current.id !== CHARACTER_ID.MIA || current.shotType !== 'charge_release') return;
+      const currentPlayer = document.getElementById(PLAYER_ID);
+      if (currentPlayer && currentPlayer.classList.contains('mia-charging')) {
+        currentPlayer.classList.add('mia-charge-max');
+      }
+      state.miaChargeMaxTimer = null;
+    }, maxMs);
+
     return true;
   }
 
@@ -3725,7 +3917,7 @@
 
     const y = state.player.y - Number(c.shotOffsetY || 44);
     const p = makeProjectile(
-      'shooting-bullet shooting-mia-charge-shot',
+      'shooting-bullet shooting-mia-charge-shot' + getCharacterBulletClass(c),
       state.player.x,
       y,
       0,
@@ -4174,13 +4366,29 @@
     // ノア：中心レーザー + 周囲2発の追尾弾
     // ----------------------------------------------------------
     if (c.shotType === 'noah_hybrid') {
+      // LIGHT：イグニス同等の連続レーザー。
+      // fireRate(95ms) < laserVisualHoldMs(130ms) のため表示が途切れない。
       fireIgnisLaser(c, now);
 
-      const sides = shotCount <= 1 ? [1] : [-1, 1];
-      for (let i = 0; i < shotCount; i++) {
-        const side = sides[i] ?? (i % 2 === 0 ? -1 : 1);
-        const p = createWolfJHomingProjectile(c, side, y, effectivePower, bulletClass, now);
-        if (p) state.bullets.push(p);
+      // FIRE：ホーミング弾はレーザーとは独立した従来周期で発射。
+      const homingFireRate = Math.max(1, Number(c.homingFireRate || 285));
+      if (now - Number(state.lastNoahHomingAt || -9999) >= homingFireRate) {
+        state.lastNoahHomingAt = now;
+
+        const homingElement = String(c.homingElement || 'fire').toLowerCase();
+        const homingElementClass = getCharacterBulletClass({ element: homingElement });
+        const homingBulletClass = 'shooting-bullet' + styleClass + homingElementClass;
+
+        const sides = shotCount <= 1 ? [1] : [-1, 1];
+        for (let i = 0; i < shotCount; i++) {
+          const side = sides[i] ?? (i % 2 === 0 ? -1 : 1);
+          const p = createWolfJHomingProjectile(c, side, y, effectivePower, homingBulletClass, now);
+          if (p) {
+            p.element = homingElement;
+            p.attackElement = homingElement;
+            state.bullets.push(p);
+          }
+        }
       }
       return;
     }
@@ -4344,6 +4552,15 @@
     return (selectedStage && selectedStage.normalBattle) || {};
   }
 
+  function getBossAddsConfig() {
+    return (selectedStage && selectedStage.bossAdds) || null;
+  }
+
+  function hasBossAdds() {
+    const cfg = getBossAddsConfig();
+    return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
+  }
+
   function positionMiniEnemyHp(enemy) {
     if (!enemy || !enemy.hpEl) return;
 
@@ -4352,9 +4569,16 @@
     // Base mobile enemy box is about 60px tall.
     // Keep the HP bar just above the visible unit as uiScale changes.
     const hpOffsetY = 30 * scale + 9;
+    const hpY = enemy.y - hpOffsetY;
 
     enemy.hpEl.style.transform =
-      `translate3d(${enemy.x}px,${enemy.y - hpOffsetY}px,0) translate(-50%,-50%)`;
+      `translate3d(${enemy.x}px,${hpY}px,0) translate(-50%,-50%)`;
+
+    if (enemy.elementEl) {
+      const iconX = enemy.x - 43;
+      enemy.elementEl.style.transform =
+        `translate3d(${iconX}px,${hpY}px,0) translate(-50%,-50%)`;
+    }
   }
 
   function renderMiniEnemyHp(enemy, flash) {
@@ -4396,6 +4620,24 @@
     hpWrap.innerHTML = '<i></i>';
     layer.appendChild(hpWrap);
 
+    // 属性アイコンはHPバーと同じレイヤーの独立DOMとして配置する。
+    const enemyElement = normalizeCombatElement(
+      enemyDef.element ||
+      selectedStage?.enemyElement ||
+      selectedStage?.element
+    );
+    let elementEl = null;
+    const elementIconSrc = getCombatElementIcon(enemyElement);
+    if (elementIconSrc) {
+      elementEl = document.createElement('img');
+      elementEl.className = 'shooting-mini-enemy-element-icon';
+      elementEl.src = elementIconSrc;
+      elementEl.alt = '';
+      elementEl.setAttribute('aria-hidden', 'true');
+      elementEl.draggable = false;
+      layer.appendChild(elementEl);
+    }
+
     const lane = state.normalSpawned % 4;
     const lanes = [w * .20, w * .40, w * .60, w * .80];
     const x = lanes[lane] + (Math.random() - .5) * Math.min(28, w * .06);
@@ -4408,7 +4650,8 @@
 
     const enemy = {
       uid: `mini_${Date.now()}_${state.normalSpawned}_${Math.random().toString(36).slice(2,6)}`,
-      def: enemyDef, el, hpEl: hpWrap, x, y, baseX: x, baseY: y,
+      def: enemyDef, el, hpEl: hpWrap, elementEl, x, y, baseX: x, baseY: y,
+      element: enemyElement,
       hp: enemyHp,
       hpMax: enemyHp,
       spawnedAt: now,
@@ -4453,10 +4696,17 @@
     // 無限湧き、または未達成の収集ミッションでは撃破数でスポーンを止めない。
     if ((!infiniteEnemies && state.normalSpawned >= total) || state.normalEnemies.length >= maxActive) return;
     if (now - state.normalLastSpawnAt < interval) return;
-    const enemyId = selectedStage && selectedStage.enemyIds && selectedStage.enemyIds[0];
-    const def = getShootingEnemy(enemyId);
-    if (!def || !def.implemented) return;
+    const enemyIds = (
+      selectedStage &&
+      Array.isArray(selectedStage.enemyIds) &&
+      selectedStage.enemyIds.length
+    ) ? selectedStage.enemyIds : [];
+    if (!enemyIds.length) return;
+
     const spawnOne = () => {
+      const enemyId = enemyIds[state.normalSpawned % enemyIds.length];
+      const def = getShootingEnemy(enemyId);
+      if (!def || !def.implemented) return false;
       const enemy = createNormalEnemy(def, now);
       if (!enemy) return false;
       state.normalEnemies.push(enemy);
@@ -4474,6 +4724,33 @@
     }
 
     if (!spawnOne()) return;
+    state.normalLastSpawnAt = now;
+  }
+
+  function spawnBossAdds(now) {
+    if (isNormalBattle() || !hasBossAdds() || state.finishing || state.ended) return;
+
+    const cfg = getBossAddsConfig();
+    const total = Math.max(0, Number(cfg.totalEnemies || 0));
+    const maxActive = Math.max(1, Number(cfg.maxActive || 1));
+    const interval = Math.max(500, Number(cfg.spawnIntervalMs || 7000));
+    const startDelay = Math.max(0, Number(cfg.startDelayMs || 0));
+
+    if (total > 0 && state.normalSpawned >= total) return;
+    if (state.normalEnemies.length >= maxActive) return;
+    if (now - state.startedAt < startDelay) return;
+    if (now - state.normalLastSpawnAt < interval) return;
+
+    const enemyIds = cfg.enemyIds;
+    const enemyId = enemyIds[state.normalSpawned % enemyIds.length];
+    const def = getShootingEnemy(enemyId);
+    if (!def || !def.implemented || def.kind !== 'normal') return;
+
+    const enemy = createNormalEnemy(def, now);
+    if (!enemy) return;
+
+    state.normalEnemies.push(enemy);
+    state.normalSpawned++;
     state.normalLastSpawnAt = now;
   }
 
@@ -4638,6 +4915,77 @@
   function fireNormalEnemy(enemy, now) {
     if (!enemy || !enemy.el || now < (state.normalEnemyStunUntil || 0)) return;
     const def = enemy.def || {};
+
+    // v212 generic elemental angels
+    if (def.behavior === 'generic_element_shot_v1') {
+      const fireRate = Number(def.fireRate || 1280);
+      if (now - enemy.lastShotAt < fireRate) return;
+      enemy.lastShotAt = now;
+
+      const dx = state.player.x - enemy.x;
+      const dy = state.player.y - enemy.y;
+      const angle = Math.atan2(dy, dx);
+      const element = normalizeCombatElement(def.element);
+      shootNormalEnemyProjectile(
+        enemy,
+        angle,
+        Number(def.bulletSpeed || 215),
+        Number(def.bulletDamage || 90),
+        `shooting-enemy-bullet shooting-mini-enemy-bullet shooting-generic-zako-shot shooting-enemy-element-${element || 'neutral'}`
+      );
+      return;
+    }
+
+    if (def.behavior === 'generic_element_laser_v1') {
+      const fireRate = Number(def.fireRate || 2050);
+      if (now - enemy.lastShotAt < fireRate) return;
+      enemy.lastShotAt = now;
+
+      const element = normalizeCombatElement(def.element);
+      const p = makeProjectile(
+        `shooting-enemy-bullet shooting-mini-enemy-bullet shooting-generic-zako-laser shooting-enemy-element-${element || 'neutral'}`,
+        enemy.x,
+        enemy.y + 42,
+        0,
+        Number(def.laserSpeed || 540),
+        Number(def.laserDamage || 145)
+      );
+      if (p) {
+        p.genericZakoLaser = true;
+        p._hw = 5;
+        p._hh = 46;
+        state.enemyBullets.push(p);
+      }
+      return;
+    }
+
+    // v218 FIRE CHARGE: warning -> lock direction -> straight dash.
+    if (def.behavior === 'generic_element_charge_v1') {
+      if (enemy.attackState === 'telegraph') {
+        if (now < enemy.attackExecuteAt) return;
+
+        enemy.el.classList.remove('generic-charge-warning');
+        const dx = state.player.x - enemy.x;
+        const dy = state.player.y - enemy.y;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        const speed = Math.max(120, Number(def.chargeSpeed || 500));
+
+        enemy.dashVx = (dx / len) * speed;
+        enemy.dashVy = (dy / len) * speed;
+        enemy.dashUntil = now + Math.max(280, Number(def.chargeDurationMs || 620));
+        enemy.attackState = 'dash';
+        enemy.el.classList.add('generic-charge-dash');
+        return;
+      }
+
+      if (enemy.attackState === 'dash') return;
+      if (now < (enemy.nextActionAt || 0)) return;
+
+      enemy.attackState = 'telegraph';
+      enemy.attackExecuteAt = now + Math.max(350, Number(def.telegraphMs || 760));
+      enemy.el.classList.add('generic-charge-warning');
+      return;
+    }
 
     // CHAPTER 02: 暴威の残穢
     // 「重撃 → 圧力弾 → 突進」を繰り返し、弾幕ではなく個の圧力を作る。
@@ -4997,7 +5345,7 @@
   }
 
   function updateNormalEnemies(dt, now) {
-    if (!isNormalBattle()) return;
+    if (!isNormalBattle() && !hasBossAdds()) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const w = arena.clientWidth;
@@ -5029,8 +5377,9 @@
         enemy.dashVy = 0;
         if (enemy.attackState === 'dash') {
           enemy.attackState = 'idle';
-          enemy.el.classList.remove('violence-dash');
+          enemy.el.classList.remove('violence-dash', 'generic-charge-dash');
         }
+        enemy.el.classList.remove('generic-charge-warning');
         return;
       }
 
@@ -5042,6 +5391,33 @@
         enemy.attackState = 'idle';
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
+        return;
+      }
+
+      if (def.behavior === 'generic_element_charge_v1' && enemy.attackState === 'dash') {
+        enemy.x += enemy.dashVx * dt;
+        enemy.y += enemy.dashVy * dt;
+
+        // Do not clamp during the dash itself: let the unit visibly commit to the line.
+        // End the charge either by timer or once it reaches the arena margins.
+        const outOfBounds =
+          enemy.x < 28 || enemy.x > w - 28 ||
+          enemy.y < 42 || enemy.y > h - 42;
+
+        enemy.x = clamp(enemy.x, 28, w - 28);
+        enemy.y = clamp(enemy.y, 42, h - 42);
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+
+        if (now >= enemy.dashUntil || outOfBounds) {
+          enemy.attackState = 'idle';
+          enemy.dashVx = 0;
+          enemy.dashVy = 0;
+          enemy.nextActionAt = now + Math.max(700, Number(def.fireRate || 1650));
+          enemy.baseX = enemy.x;
+          enemy.baseY = clamp(enemy.y, 78, Math.max(90, h * .40));
+          enemy.el.classList.remove('generic-charge-dash');
+        }
         return;
       }
 
@@ -5066,7 +5442,32 @@
 
       const age = (now - enemy.spawnedAt) / 1000;
 
-      if (def.behavior === 'mini_violence_v1') {
+      if (def.behavior === 'generic_element_laser_v1') {
+        enemy.x = clamp(
+          enemy.baseX + Math.sin(age * .42 + enemy.phaseSeed) * Math.min(34, w * .08),
+          36,
+          w - 36
+        );
+        enemy.y = Math.max(78, Math.min(h * .29, enemy.baseY)) +
+          Math.sin(age * .34 + enemy.phaseSeed) * 6;
+      } else if (def.behavior === 'generic_element_shot_v1') {
+        enemy.x = clamp(
+          enemy.baseX + Math.sin(age * .92 + enemy.phaseSeed) * Math.min(54, w * .13),
+          36,
+          w - 36
+        );
+        enemy.y = Math.max(80, Math.min(h * .32, enemy.baseY)) +
+          Math.sin(age * .66 + enemy.phaseSeed * 1.3) * 10;
+      } else if (def.behavior === 'generic_element_charge_v1') {
+        // CHARGE type stays comparatively still so the warning and dash direction are readable.
+        enemy.x = clamp(
+          enemy.baseX + Math.sin(age * .48 + enemy.phaseSeed) * Math.min(26, w * .06),
+          36,
+          w - 36
+        );
+        enemy.y = Math.max(82, Math.min(h * .30, enemy.baseY)) +
+          Math.sin(age * .38 + enemy.phaseSeed * 1.15) * 6;
+      } else if (def.behavior === 'mini_violence_v1') {
         // 強敵は細かく漂わず、重くゆっくりと位置を変える。
         const targetBaseY = Math.max(84, Math.min(h * .34, enemy.baseY));
         enemy.x = clamp(enemy.baseX + Math.sin(age * .62 + enemy.phaseSeed) * Math.min(38, w * .09), 36, w - 36);
@@ -5187,7 +5588,13 @@
       const isViolenceEnemy = enemy.def && enemy.def.behavior === 'mini_violence_v1';
 
       // CHAPTER 02の強敵は、倒したことが分かるように撃破演出を強化。
-      old.classList.remove('hit-flash', 'violence-warning', 'violence-dash');
+      old.classList.remove(
+        'hit-flash',
+        'violence-warning',
+        'violence-dash',
+        'generic-charge-warning',
+        'generic-charge-dash'
+      );
       old.classList.add('defeated');
       if (isViolenceEnemy) old.classList.add('violence-defeated');
 
@@ -5198,9 +5605,15 @@
       oldHp.classList.add('defeated');
       setTimeout(() => oldHp.remove(), 220);
     }
+    if (enemy.elementEl) {
+      const oldElement = enemy.elementEl;
+      oldElement.classList.add('defeated');
+      setTimeout(() => oldElement.remove(), 220);
+    }
     removeIgnisBurnVisual(String(enemy.uid || 'enemy'));
     enemy.el = null;
     enemy.hpEl = null;
+    enemy.elementEl = null;
     evaluateNormalMission(now);
   }
 
@@ -6991,7 +7404,36 @@
     }
   }
 
+  function createMiaWaterHit(x, y, big) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const el = document.createElement('i');
+    el.className = 'shooting-mia-water-hit' + (big ? ' big' : '');
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+
+    const core = document.createElement('b');
+    core.className = 'core';
+    el.appendChild(core);
+
+    const ripple1 = document.createElement('u');
+    ripple1.className = 'ripple ripple-1';
+    el.appendChild(ripple1);
+
+    const ripple2 = document.createElement('u');
+    ripple2.className = 'ripple ripple-2';
+    el.appendChild(ripple2);
+
+    setTimeout(() => el.remove(), big ? 440 : 400);
+  }
+
   function createHit(x, y, big) {
+    if (state && state.nextHitEffect === 'mia_water') {
+      state.nextHitEffect = null;
+      createMiaWaterHit(x, y, big);
+      return;
+    }
+
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const el = document.createElement('i');
@@ -7022,6 +7464,10 @@
     }, Math.max(90, Number(durationMs || 130)));
 
     sustainedHitTimers.set(el, timer);
+  }
+
+  function isMiaChargeProjectile(p) {
+    return !!(p && p.el && p.el.classList && p.el.classList.contains('shooting-mia-charge-shot'));
   }
 
   function showDamageNumber(x, y, amount, kind = 'enemy', big = false) {
@@ -7411,7 +7857,7 @@
         // この分岐は通常弾のコンボ/ULT加算処理へ進まないため、
         // ハートによるダメージではULTゲージを一切増やさない。
         const hitBossHeart = !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 16);
-        const hitNormalHeart = isNormalBattle()
+        const hitNormalHeart = (isNormalBattle() || hasBossAdds())
           ? state.normalEnemies.find(enemy => enemy && enemy.el && enemy.hp > 0 && rectsHit(r, getUnitRect(enemy, arenaRect), 0, 10))
           : null;
 
@@ -7478,7 +7924,7 @@
         : null;
       const hitBoss = !facelessObjectTarget && !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 22);
 
-      if (isNormalBattle()) {
+      if (isNormalBattle() || hasBossAdds()) {
         const blackHoleMultiHit =
           state.eltenaBlackHole &&
           state.eltenaBlackHole.phase === 'active' &&
@@ -7509,7 +7955,16 @@
         let hitCount = 1;
 
         if (facelessObjectTarget) {
-          damageFacelessObject(facelessObjectTarget, p.damage, now);
+          if (isMiaChargeProjectile(p)) state.nextHitEffect = 'mia_water';
+          const attackElement = normalizeCombatElement(
+            p.attackElement || p.element || chara.element
+          );
+          const targetElement = getCombatTargetElement(
+            facelessObjectTarget,
+            state.boss?.element
+          );
+          const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
+          damageFacelessObject(facelessObjectTarget, finalDamage, now);
           state.score += 80;
         } else if (normalTarget) {
           const targetsToDamage =
@@ -7520,12 +7975,30 @@
           hitCount = targetsToDamage.length;
 
           targetsToDamage.forEach(enemy => {
-            damageNormalEnemy(enemy, p.damage, now, false);
+            if (isMiaChargeProjectile(p)) state.nextHitEffect = 'mia_water';
+            const attackElement = normalizeCombatElement(
+              p.attackElement || p.element || chara.element
+            );
+            const targetElement = getCombatTargetElement(enemy);
+            const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
+            damageNormalEnemy(enemy, finalDamage, now, false);
           });
 
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
         } else {
-          const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(p.damage || 0)));
+          const attackElement = normalizeCombatElement(
+            p.attackElement || p.element || chara.element
+          );
+          const targetElement = getCombatTargetElement(state.boss);
+          const elementAdjustedDamage = applyElementDamage(
+            p.damage,
+            attackElement,
+            targetElement
+          );
+          const appliedDamage = Math.min(
+            state.boss.hp,
+            Math.max(0, Number(elementAdjustedDamage || 0))
+          );
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
           if (!addScoreAttackDamageScore(appliedDamage)) {
@@ -7541,10 +8014,18 @@
             if (bossEl) bossEl.dataset.ambushHit = '1';
             if (now - Number(state.ambushLastHitRingAt || 0) >= 80) {
               state.ambushLastHitRingAt = now;
-              createHit(p.x, p.y, false);
+              if (isMiaChargeProjectile(p)) {
+                createMiaWaterHit(p.x, p.y, false);
+              } else {
+                createHit(p.x, p.y, false);
+              }
             }
           } else if (shouldRenderRaidBossHitVisual(now, 'hit')) {
-            createHit(p.x, p.y, false);
+            if (isMiaChargeProjectile(p)) {
+              createMiaWaterHit(p.x, p.y, false);
+            } else {
+              createHit(p.x, p.y, false);
+            }
             flashBossHit(false, true);
           }
           if (shouldRenderRaidBossHitVisual(now, 'number')) {
@@ -7815,6 +8296,11 @@
     if (isNormalBattle()) {
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
+        // Dedicated CHARGE zako only deals contact damage while actually dashing.
+        if (
+          enemy.def?.behavior === 'generic_element_charge_v1' &&
+          enemy.attackState !== 'dash'
+        ) return false;
         // 画像の透明余白で早すぎる接触にならないよう、双方を少し内側へ絞る。
         return rectsHit(playerRect, getUnitRect(enemy, arenaRectForContact), 14, 9);
       });
@@ -8740,8 +9226,14 @@
       if (isNormalBattle()) {
         spawnNormalEnemies(ts);
         updateNormalEnemies(dt, ts);
-      } else if (!bossGrabbed && !bossStunned) {
-        fireBoss(ts);
+      } else {
+        if (hasBossAdds()) {
+          spawnBossAdds(ts);
+          updateNormalEnemies(dt, ts);
+        }
+        if (!bossGrabbed && !bossStunned) {
+          fireBoss(ts);
+        }
       }
     }
 
@@ -9271,11 +9763,11 @@
   // アイテム枠は5候補から重複なしで2種類を抽選する。
   const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
     Object.freeze({ id: 'kyoumei_stone', name: '共鳴石', image: 'images/item_kyoumeistone.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'soul_vessel_fire', name: '魂の器(火)', image: 'images/item_soul_vessel_fire.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'soul_vessel_aqua', name: '魂の器(水)', image: 'images/item_soul_vessel_aqua.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'soul_vessel_wood', name: '魂の器(木)', image: 'images/item_soul_vessel_wood.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'soul_vessel_dark', name: '魂の器(闇)', image: 'images/item_soul_vessel_dark.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'soul_vessel_light', name: '魂の器(光)', image: 'images/item_soul_vessel_light.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_fire', name: '魂の器(火)', image: 'images/type_fire.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_aqua', name: '魂の器(水)', image: 'images/type_aqua.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_wood', name: '魂の器(木)', image: 'images/type_wood.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_dark', name: '魂の器(闇)', image: 'images/type_dark.webp', rewardType: 'evolution' }),
+    Object.freeze({ id: 'soul_vessel_light', name: '魂の器(光)', image: 'images/type_light.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'shinju_nutrition', name: '神樹の栄養', image: 'images/shinju.webp', rewardType: 'shinju' }),
   ]);
 
@@ -12824,4 +13316,638 @@
     tryRestoreShootingBattle();
   }
   setTimeout(() => { tryRestoreShootingBattleWhenReady(); }, 0);
+
+  // ============================================================
+  // v199: 5属性ショットカラー
+  // FIRE=RED / AQUA=BLUE / WOOD=GREEN / DARK=PURPLE / LIGHT=YELLOW
+  // 形状やショットタイプは維持し、通常攻撃の色味だけ属性へ統一する。
+  // ============================================================
+  if (!document.getElementById('shooting-five-element-shot-style-v199')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-five-element-shot-style-v199';
+    style.textContent = `
+      .shooting-bullet.shooting-bullet-fire{
+        background:radial-gradient(circle at 38% 34%,#fff 0 10%,#ffd8cf 18%,#ff6654 42%,#e52b23 67%,rgba(123,9,8,.30) 100%)!important;
+        border-color:rgba(255,225,217,.88)!important;
+        box-shadow:0 0 7px rgba(255,245,240,.92),0 0 14px rgba(255,77,59,.86),0 0 24px rgba(205,25,20,.56)!important;
+      }
+      .shooting-bullet.shooting-bullet-aqua{
+        background:radial-gradient(circle at 38% 34%,#fff 0 10%,#d8f4ff 18%,#49b8ff 42%,#1476db 67%,rgba(6,52,125,.30) 100%)!important;
+        border-color:rgba(216,244,255,.90)!important;
+        box-shadow:0 0 7px rgba(242,251,255,.94),0 0 14px rgba(57,172,255,.86),0 0 24px rgba(21,104,214,.56)!important;
+      }
+      .shooting-bullet.shooting-bullet-wood{
+        background:radial-gradient(circle at 38% 34%,#fff 0 10%,#e6ffd6 18%,#7ed957 42%,#2e9f3f 67%,rgba(17,92,38,.30) 100%)!important;
+        border-color:rgba(229,255,214,.90)!important;
+        box-shadow:0 0 7px rgba(247,255,242,.94),0 0 14px rgba(100,214,79,.86),0 0 24px rgba(38,139,55,.56)!important;
+      }
+      .shooting-bullet.shooting-bullet-dark{
+        background:radial-gradient(circle at 38% 34%,#fff 0 10%,#eadbff 18%,#aa67ee 42%,#6928b8 67%,rgba(53,12,103,.34) 100%)!important;
+        border-color:rgba(234,219,255,.90)!important;
+        box-shadow:0 0 7px rgba(251,247,255,.94),0 0 14px rgba(166,91,233,.86),0 0 24px rgba(100,37,177,.58)!important;
+      }
+      .shooting-bullet.shooting-bullet-light{
+        background:radial-gradient(circle at 38% 34%,#fff 0 10%,#fff9cf 18%,#ffe56b 42%,#e9b91f 67%,rgba(155,109,5,.28) 100%)!important;
+        border-color:rgba(255,250,210,.92)!important;
+        box-shadow:0 0 7px rgba(255,255,244,.98),0 0 14px rgba(255,225,83,.90),0 0 24px rgba(224,178,31,.56)!important;
+      }
+
+      /* 円形・特殊形状ショットの外周も属性色へ寄せる */
+      .shooting-bullet.shooting-bullet-fire::before{border-color:rgba(255,111,92,.82)!important;box-shadow:0 0 8px rgba(255,62,46,.58)!important}
+      .shooting-bullet.shooting-bullet-aqua::before{border-color:rgba(83,190,255,.84)!important;box-shadow:0 0 8px rgba(41,149,255,.58)!important}
+      .shooting-bullet.shooting-bullet-wood::before{border-color:rgba(126,221,94,.84)!important;box-shadow:0 0 8px rgba(63,184,69,.58)!important}
+      .shooting-bullet.shooting-bullet-dark::before{border-color:rgba(179,108,239,.84)!important;box-shadow:0 0 8px rgba(123,54,204,.60)!important}
+      .shooting-bullet.shooting-bullet-light::before{border-color:rgba(255,231,105,.88)!important;box-shadow:0 0 8px rgba(236,191,37,.60)!important}
+
+      .shooting-bullet.shooting-bullet-fire::after{background:radial-gradient(circle,rgba(255,78,59,.34),rgba(206,27,24,.14) 46%,transparent 72%)!important}
+      .shooting-bullet.shooting-bullet-aqua::after{background:radial-gradient(circle,rgba(62,177,255,.34),rgba(26,104,211,.14) 46%,transparent 72%)!important}
+      .shooting-bullet.shooting-bullet-wood::after{background:radial-gradient(circle,rgba(110,214,80,.34),rgba(42,142,52,.14) 46%,transparent 72%)!important}
+      .shooting-bullet.shooting-bullet-dark::after{background:radial-gradient(circle,rgba(164,91,230,.34),rgba(98,37,171,.16) 46%,transparent 72%)!important}
+      .shooting-bullet.shooting-bullet-light::after{background:radial-gradient(circle,rgba(255,226,80,.34),rgba(220,170,24,.14) 46%,transparent 72%)!important}
+
+      /* イグニス / ノア系レーザー。形は維持し色だけ属性連動 */
+      .shooting-ignis-laser.shooting-bullet-fire i{
+        background:linear-gradient(90deg,rgba(255,72,54,.10),#ff4938,#fff,#ff4938,rgba(255,72,54,.10))!important;
+        box-shadow:0 0 8px rgba(255,96,75,.96),0 0 18px rgba(223,40,30,.72)!important;
+      }
+      .shooting-ignis-laser.shooting-bullet-aqua i{
+        background:linear-gradient(90deg,rgba(40,155,255,.10),#2d9fff,#fff,#2d9fff,rgba(40,155,255,.10))!important;
+        box-shadow:0 0 8px rgba(74,181,255,.96),0 0 18px rgba(28,108,214,.72)!important;
+      }
+      .shooting-ignis-laser.shooting-bullet-wood i{
+        background:linear-gradient(90deg,rgba(72,182,65,.10),#58c84e,#fff,#58c84e,rgba(72,182,65,.10))!important;
+        box-shadow:0 0 8px rgba(106,216,88,.96),0 0 18px rgba(40,139,53,.72)!important;
+      }
+      .shooting-ignis-laser.shooting-bullet-dark i{
+        background:linear-gradient(90deg,rgba(128,54,201,.10),#9f59df,#fff,#9f59df,rgba(128,54,201,.10))!important;
+        box-shadow:0 0 8px rgba(179,111,235,.96),0 0 18px rgba(97,36,170,.74)!important;
+      }
+      .shooting-ignis-laser.shooting-bullet-light i{
+        background:linear-gradient(90deg,rgba(225,185,38,.10),#f6cf3c,#fff,#f6cf3c,rgba(225,185,38,.10))!important;
+        box-shadow:0 0 8px rgba(255,228,102,.98),0 0 18px rgba(211,160,18,.72)!important;
+      }
+
+      .shooting-ignis-laser.shooting-bullet-fire b{background:#fff3ef!important;box-shadow:0 0 11px rgba(255,87,67,.86)!important}
+      .shooting-ignis-laser.shooting-bullet-aqua b{background:#eef9ff!important;box-shadow:0 0 11px rgba(67,170,255,.86)!important}
+      .shooting-ignis-laser.shooting-bullet-wood b{background:#f0ffe9!important;box-shadow:0 0 11px rgba(91,199,74,.86)!important}
+      .shooting-ignis-laser.shooting-bullet-dark b{background:#f6efff!important;box-shadow:0 0 11px rgba(156,82,219,.86)!important}
+      .shooting-ignis-laser.shooting-bullet-light b{background:#fffceb!important;box-shadow:0 0 11px rgba(240,195,45,.88)!important}
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  // ============================================================
+  // v201: エルテナ / ミモザ系ショットの見た目改善
+  // - 丸いボール感を弱める
+  // - 輪郭線を消して半透明の気弾 / オーラ感を強める
+  // - shotStyle 'eltena' を使う弾すべてに適用
+  //   (エルテナ=dark, ミモザ=wood)
+  // ============================================================
+  if (!document.getElementById('shooting-eltena-aura-style-v201')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-eltena-aura-style-v201';
+    style.textContent = `
+      .shooting-bullet.shooting-bullet-eltena{
+        width:16px!important;
+        height:26px!important;
+        min-width:16px!important;
+        min-height:26px!important;
+        max-width:16px!important;
+        max-height:26px!important;
+        border-radius:50% 50% 46% 46% / 34% 34% 66% 66%!important;
+        overflow:visible!important;
+        opacity:.84!important;
+        border:0!important;
+        outline:none!important;
+        filter:saturate(1.04) blur(.15px)!important;
+      }
+
+      .shooting-bullet.shooting-bullet-eltena::before,
+      .shooting-bullet.shooting-bullet-eltena::after{
+        content:"";
+        position:absolute;
+        pointer-events:none;
+        border:0!important;
+        box-shadow:none!important;
+      }
+
+      /* -------- ミモザ(木) -------- */
+      .shooting-bullet.shooting-bullet-eltena.shooting-bullet-wood{
+        background:
+          radial-gradient(ellipse at 50% 30%,
+            rgba(255,255,255,.92) 0 11%,
+            rgba(237,255,229,.76) 15%,
+            rgba(158,233,127,.42) 34%,
+            rgba(85,189,77,.20) 55%,
+            rgba(40,121,46,.08) 72%,
+            transparent 84%)!important;
+        box-shadow:
+          0 0 8px rgba(249,255,246,.54),
+          0 0 18px rgba(103,214,86,.34),
+          0 0 28px rgba(52,157,61,.16)!important;
+      }
+      .shooting-bullet.shooting-bullet-eltena.shooting-bullet-wood::before{
+        left:-4px!important; right:-4px!important;
+        top:-3px!important; bottom:-8px!important;
+        border-radius:50%;
+        background:
+          radial-gradient(ellipse at 50% 38%,
+            rgba(237,255,229,.44) 0 16%,
+            rgba(148,228,120,.30) 30%,
+            rgba(72,176,69,.14) 52%,
+            transparent 76%)!important;
+        filter:blur(2.2px);
+        opacity:.92;
+      }
+      .shooting-bullet.shooting-bullet-eltena.shooting-bullet-wood::after{
+        left:-9px!important; right:-9px!important;
+        top:-6px!important; bottom:-13px!important;
+        border-radius:50%;
+        background:
+          radial-gradient(ellipse at 50% 58%,
+            rgba(120,217,94,.20) 0 24%,
+            rgba(73,170,68,.10) 42%,
+            transparent 76%)!important;
+        filter:blur(6px);
+        opacity:.72;
+      }
+
+      /* -------- エルテナ(闇) -------- */
+      .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark{
+        background:
+          radial-gradient(ellipse at 50% 30%,
+            rgba(255,255,255,.90) 0 10%,
+            rgba(244,231,255,.74) 14%,
+            rgba(184,128,238,.40) 34%,
+            rgba(116,60,190,.20) 56%,
+            rgba(58,18,116,.09) 73%,
+            transparent 84%)!important;
+        box-shadow:
+          0 0 8px rgba(252,248,255,.52),
+          0 0 18px rgba(176,108,239,.34),
+          0 0 28px rgba(103,40,182,.16)!important;
+      }
+      .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark::before{
+        left:-4px!important; right:-4px!important;
+        top:-3px!important; bottom:-8px!important;
+        border-radius:50%;
+        background:
+          radial-gradient(ellipse at 50% 38%,
+            rgba(241,229,255,.42) 0 16%,
+            rgba(176,118,235,.28) 31%,
+            rgba(104,48,179,.14) 52%,
+            transparent 76%)!important;
+        filter:blur(2.2px);
+        opacity:.92;
+      }
+      .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark::after{
+        left:-9px!important; right:-9px!important;
+        top:-6px!important; bottom:-13px!important;
+        border-radius:50%;
+        background:
+          radial-gradient(ellipse at 50% 58%,
+            rgba(170,106,236,.20) 0 24%,
+            rgba(99,43,173,.10) 42%,
+            transparent 76%)!important;
+        filter:blur(6px);
+        opacity:.72;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  // ============================================================
+  // v202: ミアのチャージショット見た目改善
+  // - ボール感を抑えて水/気弾っぽいオーラ表現へ
+  // - 輪郭を柔らかくし、透明感と発光を強化
+  // ============================================================
+  if (!document.getElementById('shooting-mia-charge-aura-style-v202')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-mia-charge-aura-style-v202';
+    style.textContent = `
+      .shooting-bullet.shooting-mia-charge-shot{
+        border:0!important;
+        outline:none!important;
+        border-radius:50%!important;
+        overflow:visible!important;
+        opacity:.88!important;
+        filter:saturate(1.05) blur(.2px)!important;
+        animation:shootingMiaChargePulse .46s ease-in-out infinite alternate;
+      }
+
+      .shooting-bullet.shooting-mia-charge-shot::before,
+      .shooting-bullet.shooting-mia-charge-shot::after{
+        content:"";
+        position:absolute;
+        pointer-events:none;
+        border:0!important;
+        box-shadow:none!important;
+        border-radius:50%!important;
+      }
+
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua{
+        background:
+          radial-gradient(circle at 48% 34%,
+            rgba(255,255,255,.96) 0 10%,
+            rgba(231,249,255,.82) 16%,
+            rgba(161,229,255,.46) 36%,
+            rgba(75,177,242,.22) 58%,
+            rgba(18,101,185,.10) 74%,
+            transparent 86%)!important;
+        box-shadow:
+          0 0 10px rgba(249,254,255,.60),
+          0 0 22px rgba(102,206,255,.38),
+          0 0 36px rgba(38,138,225,.18)!important;
+      }
+
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::before{
+        left:-8%!important;
+        right:-8%!important;
+        top:-8%!important;
+        bottom:-14%!important;
+        background:
+          radial-gradient(circle at 50% 42%,
+            rgba(221,248,255,.40) 0 20%,
+            rgba(132,220,255,.26) 34%,
+            rgba(48,163,230,.12) 56%,
+            transparent 78%)!important;
+        filter:blur(3px);
+        opacity:.94;
+      }
+
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::after{
+        left:-20%!important;
+        right:-20%!important;
+        top:-16%!important;
+        bottom:-24%!important;
+        background:
+          radial-gradient(circle at 50% 58%,
+            rgba(122,220,255,.16) 0 28%,
+            rgba(50,163,232,.10) 42%,
+            transparent 74%)!important;
+        filter:blur(8px);
+        opacity:.78;
+      }
+
+      /* もし将来属性変更しても破綻しにくい汎用ベース */
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-fire{
+        background:radial-gradient(circle at 48% 34%,rgba(255,255,255,.95) 0 10%,rgba(255,233,226,.80) 16%,rgba(255,138,110,.42) 36%,rgba(232,69,47,.20) 58%,rgba(139,21,8,.08) 74%,transparent 86%)!important;
+        box-shadow:0 0 10px rgba(255,250,248,.60),0 0 22px rgba(255,107,85,.34),0 0 36px rgba(213,43,27,.16)!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-wood{
+        background:radial-gradient(circle at 48% 34%,rgba(255,255,255,.95) 0 10%,rgba(239,255,234,.80) 16%,rgba(151,232,126,.42) 36%,rgba(76,181,73,.20) 58%,rgba(23,116,32,.08) 74%,transparent 86%)!important;
+        box-shadow:0 0 10px rgba(250,255,248,.60),0 0 22px rgba(108,214,92,.34),0 0 36px rgba(46,150,52,.16)!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark{
+        background:radial-gradient(circle at 48% 34%,rgba(255,255,255,.95) 0 10%,rgba(245,237,255,.80) 16%,rgba(191,141,241,.42) 36%,rgba(118,66,190,.20) 58%,rgba(54,17,116,.08) 74%,transparent 86%)!important;
+        box-shadow:0 0 10px rgba(252,249,255,.60),0 0 22px rgba(167,101,235,.34),0 0 36px rgba(97,39,176,.16)!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-light{
+        background:radial-gradient(circle at 48% 34%,rgba(255,255,255,.96) 0 10%,rgba(255,251,226,.84) 16%,rgba(255,230,124,.44) 36%,rgba(237,183,43,.20) 58%,rgba(153,105,6,.08) 74%,transparent 86%)!important;
+        box-shadow:0 0 10px rgba(255,255,248,.64),0 0 22px rgba(255,220,95,.36),0 0 36px rgba(225,173,24,.16)!important;
+      }
+
+      @keyframes shootingMiaChargePulse{
+        from{
+          filter:saturate(1.00) brightness(.98) blur(.2px);
+          transform:translate(-50%,-50%) scale(calc(0.985 + var(--mia-charge-ratio, .5) * 0.02));
+        }
+        to{
+          filter:saturate(1.08) brightness(1.05) blur(.2px);
+          transform:translate(-50%,-50%) scale(calc(1.01 + var(--mia-charge-ratio, .5) * 0.03));
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  // ============================================================
+  // v203: ミアのチャージ弾 着弾エフェクトを水っぽく
+  // ============================================================
+  if (!document.getElementById('shooting-mia-water-hit-style-v203')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-mia-water-hit-style-v203';
+    style.textContent = `
+      .shooting-mia-water-hit{
+        position:absolute;
+        left:0; top:0;
+        width:58px; height:58px;
+        z-index:34;
+        pointer-events:none;
+        transform:translate(-50%,-50%);
+        opacity:0;
+        animation:shootingMiaWaterBurst .40s ease-out forwards;
+        will-change:transform,opacity,filter;
+      }
+      .shooting-mia-water-hit.big{
+        width:84px; height:84px;
+        animation-duration:.44s;
+      }
+      .shooting-mia-water-hit .core,
+      .shooting-mia-water-hit .ripple{
+        position:absolute;
+        left:50%; top:50%;
+        transform:translate(-50%,-50%);
+        border-radius:50%;
+        pointer-events:none;
+      }
+      .shooting-mia-water-hit .core{
+        width:36%; height:36%;
+        background:
+          radial-gradient(circle,
+            rgba(255,255,255,.96) 0 18%,
+            rgba(217,247,255,.82) 25%,
+            rgba(111,213,255,.40) 52%,
+            rgba(48,157,231,.10) 74%,
+            transparent 84%);
+        box-shadow:
+          0 0 10px rgba(255,255,255,.56),
+          0 0 20px rgba(105,206,255,.30);
+        animation:shootingMiaWaterCore .40s ease-out forwards;
+      }
+      .shooting-mia-water-hit .ripple{
+        width:50%; height:50%;
+        border:2px solid rgba(178,233,255,.78);
+        box-shadow:
+          0 0 10px rgba(112,213,255,.20),
+          inset 0 0 8px rgba(255,255,255,.10);
+        opacity:.88;
+      }
+      .shooting-mia-water-hit .ripple-1{
+        animation:shootingMiaWaterRipple1 .40s ease-out forwards;
+      }
+      .shooting-mia-water-hit .ripple-2{
+        width:34%; height:34%;
+        border-color:rgba(226,249,255,.92);
+        opacity:.76;
+        animation:shootingMiaWaterRipple2 .40s ease-out forwards;
+      }
+
+      @keyframes shootingMiaWaterBurst{
+        0%{
+          opacity:.22;
+          filter:brightness(1.05) saturate(1.00);
+        }
+        18%{
+          opacity:1;
+          filter:brightness(1.16) saturate(1.08);
+        }
+        100%{
+          opacity:0;
+          filter:brightness(.98) saturate(.94);
+        }
+      }
+      @keyframes shootingMiaWaterCore{
+        0%{transform:translate(-50%,-50%) scale(.40); opacity:.96; filter:blur(0)}
+        40%{transform:translate(-50%,-50%) scale(1.02); opacity:.62; filter:blur(.2px)}
+        100%{transform:translate(-50%,-50%) scale(1.22); opacity:0; filter:blur(1px)}
+      }
+      @keyframes shootingMiaWaterRipple1{
+        0%{transform:translate(-50%,-50%) scale(.36); opacity:.92}
+        55%{transform:translate(-50%,-50%) scale(1.12); opacity:.68}
+        100%{transform:translate(-50%,-50%) scale(1.72); opacity:0; border-width:1px}
+      }
+      @keyframes shootingMiaWaterRipple2{
+        0%{transform:translate(-50%,-50%) scale(.28); opacity:.86}
+        40%{transform:translate(-50%,-50%) scale(.82); opacity:.54}
+        100%{transform:translate(-50%,-50%) scale(1.46); opacity:0; border-width:1px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  // ============================================================
+  // v204: ミア通常ショット(チャージ弾)の見た目をさらに改善
+  // - ボール感を弱め、気弾/水のオーラ感を強化
+  // - 発射後の軌跡を見やすくするため、常時テールを表示
+  // - transformアニメをやめて、視認性重視の発光パルスへ変更
+  // ============================================================
+  if (!document.getElementById('shooting-mia-shot-trail-style-v204')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-mia-shot-trail-style-v204';
+    style.textContent = `
+      .shooting-bullet.shooting-mia-charge-shot{
+        border:0!important;
+        outline:none!important;
+        overflow:visible!important;
+        opacity:.96!important;
+        border-radius:56% 56% 46% 46% / 44% 44% 56% 56%!important;
+        filter:saturate(1.10)!important;
+        animation:shootingMiaChargeAuraPulse .34s ease-in-out infinite alternate!important;
+        will-change:opacity,filter,box-shadow!important;
+      }
+
+      /* AQUA本体。真円を避けてコア+水気のある縦長気弾へ */
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua{
+        background:
+          radial-gradient(ellipse at 50% 28%,
+            rgba(255,255,255,.98) 0 12%,
+            rgba(232,250,255,.94) 14%,
+            rgba(162,229,255,.58) 34%,
+            rgba(74,177,242,.28) 56%,
+            rgba(23,105,194,.12) 74%,
+            transparent 86%)!important;
+        box-shadow:
+          0 0 12px rgba(250,255,255,.72),
+          0 0 26px rgba(110,211,255,.48),
+          0 0 42px rgba(39,140,231,.22)!important;
+      }
+
+      /* 前方コア。輪郭線ではなく、柔らかい水の芯 */
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::before{
+        content:"";
+        position:absolute;
+        left:18%!important;
+        top:10%!important;
+        width:64%!important;
+        height:66%!important;
+        border:0!important;
+        border-radius:50% 50% 46% 46% / 38% 38% 62% 62%!important;
+        background:
+          radial-gradient(ellipse at 50% 22%,
+            rgba(255,255,255,.98) 0 18%,
+            rgba(221,248,255,.82) 26%,
+            rgba(121,219,255,.34) 58%,
+            transparent 82%)!important;
+        filter:blur(.5px);
+        opacity:.98!important;
+        box-shadow:none!important;
+      }
+
+      /* 後方テール。敵に当たるまで軌道が見えるように長めの尾を常時表示 */
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::after{
+        content:"";
+        position:absolute;
+        left:50%!important;
+        top:44%!important;
+        width:84%!important;
+        height:168%!important;
+        transform:translateX(-50%)!important;
+        transform-origin:50% 0%!important;
+        border:0!important;
+        border-radius:48% 48% 62% 62% / 22% 22% 78% 78%!important;
+        background:
+          linear-gradient(to bottom,
+            rgba(193,241,255,.72) 0%,
+            rgba(126,221,255,.46) 22%,
+            rgba(77,183,241,.28) 48%,
+            rgba(36,143,225,.15) 70%,
+            rgba(18,107,197,.05) 86%,
+            transparent 100%)!important;
+        filter:blur(4px);
+        opacity:.92!important;
+        box-shadow:
+          0 8px 18px rgba(96,204,255,.20),
+          0 18px 28px rgba(52,159,233,.10)!important;
+        pointer-events:none;
+      }
+
+      /* 将来他属性になっても破綻しないよう、他属性にも最低限のテールを付与 */
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-fire::after,
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-wood::after,
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark::after,
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-light::after{
+        content:"";
+        position:absolute;
+        left:50%!important;
+        top:46%!important;
+        width:82%!important;
+        height:156%!important;
+        transform:translateX(-50%)!important;
+        border:0!important;
+        border-radius:48% 48% 62% 62% / 22% 22% 78% 78%!important;
+        filter:blur(4px);
+        opacity:.88!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-fire::after{
+        background:linear-gradient(to bottom,rgba(255,218,208,.66) 0%,rgba(255,128,97,.38) 28%,rgba(224,61,41,.18) 66%,transparent 100%)!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-wood::after{
+        background:linear-gradient(to bottom,rgba(237,255,228,.66) 0%,rgba(145,225,120,.38) 28%,rgba(63,172,72,.18) 66%,transparent 100%)!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark::after{
+        background:linear-gradient(to bottom,rgba(245,236,255,.66) 0%,rgba(181,121,239,.38) 28%,rgba(102,42,180,.18) 66%,transparent 100%)!important;
+      }
+      .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-light::after{
+        background:linear-gradient(to bottom,rgba(255,252,230,.70) 0%,rgba(255,228,118,.42) 28%,rgba(232,185,36,.18) 66%,transparent 100%)!important;
+      }
+
+      @keyframes shootingMiaChargeAuraPulse{
+        from{
+          opacity:.92;
+          filter:saturate(1.04) brightness(.98);
+        }
+        to{
+          opacity:.98;
+          filter:saturate(1.12) brightness(1.06);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+
+  // ============================================================
+  // v205: ミアのチャージ弾をさらにソフトな水オーラ表現へ
+  // - 球体感をさらに削る
+  // - 輪郭線 / リング感を明確に殺す
+  // - 本体を半透明化し、コアと尾だけで見せる
+  // ============================================================
+  if (!document.getElementById('shooting-mia-shot-soft-aura-style-v205')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-mia-shot-soft-aura-style-v205';
+    style.textContent = `
+      /* 本体は極力透明にして、ボール感の原因を消す */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua{
+        background:transparent!important;
+        border:0!important;
+        outline:none!important;
+        box-shadow:none!important;
+        opacity:1!important;
+        overflow:visible!important;
+        border-radius:48% 48% 56% 56% / 24% 24% 76% 76%!important;
+        filter:none!important;
+        animation:none!important;
+      }
+
+      /* generic aqua装飾の輪郭/外周リングを完全に上書き */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot::before,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot::after,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::before,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::after{
+        content:"";
+        position:absolute;
+        pointer-events:none;
+        border:0!important;
+        outline:none!important;
+        box-shadow:none!important;
+      }
+
+      /* 水の芯。小さめ・上寄り・輪郭なし */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::before{
+        left:23%!important;
+        top:7%!important;
+        width:54%!important;
+        height:54%!important;
+        border-radius:50% 50% 46% 46% / 36% 36% 64% 64%!important;
+        background:
+          radial-gradient(ellipse at 50% 24%,
+            rgba(255,255,255,.98) 0 20%,
+            rgba(232,250,255,.92) 25%,
+            rgba(169,232,255,.55) 47%,
+            rgba(86,189,245,.20) 68%,
+            rgba(32,122,214,.04) 80%,
+            transparent 100%)!important;
+        filter:blur(.65px)!important;
+        opacity:.96!important;
+      }
+
+      /* 長い水オーラの尾。これを主役にして軌道を見せる */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua::after{
+        left:50%!important;
+        top:22%!important;
+        width:108%!important;
+        height:250%!important;
+        transform:translateX(-50%)!important;
+        transform-origin:50% 0%!important;
+        border-radius:44% 44% 68% 68% / 10% 10% 90% 90%!important;
+        background:
+          linear-gradient(to bottom,
+            rgba(244,253,255,.92) 0%,
+            rgba(197,241,255,.72) 10%,
+            rgba(129,220,255,.44) 28%,
+            rgba(74,181,242,.24) 52%,
+            rgba(36,144,229,.11) 74%,
+            rgba(17,106,198,.03) 88%,
+            transparent 100%)!important;
+        filter:blur(6px)!important;
+        opacity:.90!important;
+      }
+
+      /* 補助オーラ。尾の周囲に薄い霧感を足す */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-aqua{
+        box-shadow:
+          0 -4px 10px rgba(243,252,255,.34),
+          0 6px 22px rgba(123,216,255,.24),
+          0 18px 34px rgba(58,165,235,.12)!important;
+      }
+
+      /* 他属性に将来変わってもリング感を消した状態を維持 */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-fire,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-wood,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark,
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-light{
+        background:transparent!important;
+        border:0!important;
+        outline:none!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
 })();

@@ -103,7 +103,13 @@
 
         <footer class="shooting-footer">
           <div class="shooting-player-hud">
-            <div class="shooting-player-hud-top"><div class="shooting-player-name" id="shooting-player-name">エリ</div><div class="shooting-player-hp-text" id="shooting-player-hp-text">670 / 670</div></div>
+            <div class="shooting-player-hud-top">
+              <div class="shooting-player-name-wrap">
+                <img class="shooting-player-element-icon" id="shooting-player-element-icon" src="images/type_light.webp" alt="" aria-hidden="true" draggable="false">
+                <div class="shooting-player-name" id="shooting-player-name">エリ</div>
+              </div>
+              <div class="shooting-player-hp-text" id="shooting-player-hp-text">670 / 670</div>
+            </div>
             <div class="shooting-player-hp-bar" id="shooting-player-hp-bar"><i></i></div>
           </div>
           <div class="shooting-battle-controls">

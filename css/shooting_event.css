@@ -6623,10 +6623,22 @@
   height:30px;
   transform:translate(-50%,-50%) scale(.58);
   transform-origin:center;
-  border-radius:50%;
-  background:radial-gradient(circle at 42% 34%,#ffffff 0 10%,#dff7ff 18%,#8fd8f5 40%,#4f9fdb 66%,#315f9b 82%,rgba(38,77,130,.08) 100%);
-  box-shadow:0 0 7px rgba(182,232,255,.95),0 0 16px rgba(91,175,229,.78),0 0 28px rgba(70,126,205,.42),inset -4px -5px 8px rgba(35,73,139,.32);
-  opacity:.48;
+  border:0!important;
+  outline:none!important;
+  border-radius:48% 48% 56% 56% / 24% 24% 76% 76%!important;
+  background:
+    radial-gradient(ellipse at 50% 20%,
+      rgba(255,255,255,.96) 0 18%,
+      rgba(232,250,255,.86) 24%,
+      rgba(167,233,255,.34) 42%,
+      rgba(88,191,245,.12) 60%,
+      rgba(35,127,217,.02) 76%,
+      transparent 100%)!important;
+  box-shadow:
+    0 -2px 8px rgba(246,253,255,.30),
+    0 7px 18px rgba(121,219,255,.18),
+    0 18px 28px rgba(63,166,238,.10)!important;
+  opacity:.54;
   pointer-events:none;
   animation:miaChargeGrow 1s linear forwards;
 }
@@ -6635,20 +6647,73 @@
   55%{transform:translate(-50%,-50%) scale(1.08);opacity:.72}
   100%{transform:translate(-50%,-50%) scale(1.55);opacity:.86}
 }
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging{
+  overflow:visible!important;
+}
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging::before{
+  content:"";
+  position:absolute;
+  z-index:6;
+  left:50%;
+  top:-4px;
+  width:18px;
+  height:54px;
+  transform:translateX(-50%);
+  border-radius:44% 44% 68% 68% / 10% 10% 90% 90%;
+  background:linear-gradient(to bottom,
+    rgba(244,253,255,.78) 0%,
+    rgba(197,241,255,.48) 18%,
+    rgba(129,220,255,.28) 40%,
+    rgba(74,181,242,.12) 65%,
+    rgba(36,144,229,.04) 82%,
+    transparent 100%);
+  filter:blur(5px);
+  opacity:.72;
+  pointer-events:none;
+}
 
 #shooting-event-root .shooting-mia-charge-shot{
   z-index:8!important;
-  border:1px solid rgba(225,248,255,.88)!important;
-  border-radius:50%!important;
-  background:radial-gradient(circle at 38% 30%,#ffffff 0 9%,#e8fbff 15%,#9ce2fb 34%,#58afe4 58%,#376fb6 78%,#274e8e 92%)!important;
-  box-shadow:0 0 8px rgba(211,245,255,.96),0 0 18px rgba(103,195,239,.88),0 0 32px rgba(62,126,210,.52),inset -5px -6px 10px rgba(31,65,128,.34)!important;
+  border:0!important;
+  outline:none!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border-radius:48% 48% 56% 56% / 24% 24% 76% 76%!important;
+  box-shadow:0 -4px 10px rgba(243,252,255,.34),0 6px 22px rgba(123,216,255,.24),0 18px 34px rgba(58,165,235,.12)!important;
   filter:none!important;
-  opacity:.82!important;
+  opacity:.96!important;
 }
 #shooting-event-root .shooting-mia-charge-shot::before,
 #shooting-event-root .shooting-mia-charge-shot::after{
-  content:none!important;
-  display:none!important;
+  content:""!important;
+  display:block!important;
+  position:absolute;
+  pointer-events:none;
+  border:0!important;
+  outline:none!important;
+  box-shadow:none!important;
+}
+#shooting-event-root .shooting-mia-charge-shot::before{
+  left:23%!important;
+  top:7%!important;
+  width:54%!important;
+  height:54%!important;
+  border-radius:50% 50% 46% 46% / 36% 36% 64% 64%!important;
+  background:radial-gradient(ellipse at 50% 24%,rgba(255,255,255,.98) 0 20%,rgba(232,250,255,.92) 25%,rgba(169,232,255,.55) 47%,rgba(86,189,245,.20) 68%,rgba(32,122,214,.04) 80%,transparent 100%)!important;
+  filter:blur(.65px)!important;
+  opacity:.96!important;
+}
+#shooting-event-root .shooting-mia-charge-shot::after{
+  left:50%!important;
+  top:22%!important;
+  width:108%!important;
+  height:250%!important;
+  transform:translateX(-50%)!important;
+  transform-origin:50% 0%!important;
+  border-radius:44% 44% 68% 68% / 10% 10% 90% 90%!important;
+  background:linear-gradient(to bottom,rgba(244,253,255,.92) 0%,rgba(197,241,255,.72) 10%,rgba(129,220,255,.44) 28%,rgba(74,181,242,.24) 52%,rgba(36,144,229,.11) 74%,rgba(17,106,198,.03) 88%,transparent 100%)!important;
+  filter:blur(6px)!important;
+  opacity:.90!important;
 }
 
 
@@ -7213,4 +7278,506 @@
     translate3d(var(--unit-x),var(--unit-y),0)
     translate(-50%,-50%)
     scale(1.08)!important;
+}
+
+
+/* v207 hard override: make both charge preview and released shot clearly aura-like */
+#shooting-event-root .shooting-mia-charge-shot{
+  background:transparent!important;
+  border:0!important;
+  outline:none!important;
+  border-radius:48% 48% 56% 56% / 24% 24% 76% 76%!important;
+  box-shadow:0 -4px 10px rgba(243,252,255,.34),0 6px 22px rgba(123,216,255,.24),0 18px 34px rgba(58,165,235,.12)!important;
+}
+#shooting-event-root .shooting-mia-charge-shot::before{
+  content:""!important;
+  display:block!important;
+}
+#shooting-event-root .shooting-mia-charge-shot::after{
+  content:""!important;
+  display:block!important;
+}
+
+
+/* ============================================================
+   v208 MIA MAX CHARGE READY PULSE
+   1秒溜め切ったら .mia-charge-max を付与して
+   視覚的に「MAXまで溜まった」と分かる脈動へ切替。
+   ============================================================ */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging.mia-charge-max::after{
+  opacity:.96!important;
+  animation:miaChargeMaxPulse .58s ease-in-out infinite alternate!important;
+  box-shadow:
+    0 -4px 12px rgba(255,255,255,.42),
+    0 0 16px rgba(224,248,255,.30),
+    0 10px 24px rgba(132,225,255,.28),
+    0 24px 44px rgba(72,179,244,.20)!important;
+  background:
+    radial-gradient(ellipse at 50% 18%,
+      rgba(255,255,255,.98) 0 18%,
+      rgba(237,251,255,.92) 24%,
+      rgba(196,239,255,.54) 44%,
+      rgba(117,210,255,.20) 63%,
+      rgba(57,154,235,.06) 78%,
+      transparent 100%)!important;
+}
+
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging.mia-charge-max::before{
+  opacity:.90!important;
+  animation:miaChargeMaxTailPulse .58s ease-in-out infinite alternate!important;
+  filter:blur(5px) brightness(1.08)!important;
+  background:linear-gradient(to bottom,
+    rgba(250,254,255,.92) 0%,
+    rgba(217,246,255,.64) 18%,
+    rgba(143,225,255,.36) 42%,
+    rgba(76,184,243,.18) 68%,
+    rgba(36,144,229,.06) 84%,
+    transparent 100%)!important;
+}
+
+/* プレイヤー本体にも控えめなハイライト */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging.mia-charge-max{
+  filter:drop-shadow(0 0 6px rgba(216,247,255,.22)) drop-shadow(0 0 12px rgba(105,201,255,.12))!important;
+}
+
+@keyframes miaChargeMaxPulse{
+  0%{
+    transform:translate(-50%,-50%) scale(1.48);
+    opacity:.82;
+    filter:saturate(1.00) brightness(.98);
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1.72);
+    opacity:1;
+    filter:saturate(1.14) brightness(1.12);
+  }
+}
+
+@keyframes miaChargeMaxTailPulse{
+  0%{
+    transform:translateX(-50%) scaleY(.95);
+    opacity:.62;
+  }
+  100%{
+    transform:translateX(-50%) scaleY(1.10);
+    opacity:.96;
+  }
+}
+
+
+/* ============================================================
+   v209 MIA RELEASE SHOT — rounded aura orb
+   MAX CHARGE pulse(v208) is unchanged.
+   Released shot is a little rounder, while keeping soft edges.
+   ============================================================ */
+#shooting-event-root .shooting-mia-charge-shot{
+  border-radius:50%!important;
+  background:transparent!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:
+    0 0 10px rgba(238,251,255,.24),
+    0 0 22px rgba(119,216,255,.22),
+    0 4px 34px rgba(53,158,233,.12)!important;
+}
+
+/* Soft circular water-energy core */
+#shooting-event-root .shooting-mia-charge-shot::before{
+  content:""!important;
+  display:block!important;
+  left:14%!important;
+  top:14%!important;
+  width:72%!important;
+  height:72%!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 46% 38%,
+      rgba(255,255,255,.98) 0 15%,
+      rgba(234,250,255,.88) 20%,
+      rgba(169,232,255,.52) 42%,
+      rgba(89,191,245,.22) 62%,
+      rgba(35,128,217,.05) 78%,
+      transparent 100%)!important;
+  filter:blur(1px)!important;
+  opacity:.94!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+/* Round outer aura with only a faint downward wake */
+#shooting-event-root .shooting-mia-charge-shot::after{
+  content:""!important;
+  display:block!important;
+  left:50%!important;
+  top:50%!important;
+  width:132%!important;
+  height:148%!important;
+  transform:translate(-50%,-42%)!important;
+  transform-origin:center!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(ellipse at 50% 42%,
+      rgba(229,249,255,.40) 0 24%,
+      rgba(143,226,255,.26) 38%,
+      rgba(73,182,242,.13) 57%,
+      rgba(35,137,221,.05) 72%,
+      transparent 88%)!important;
+  filter:blur(6px)!important;
+  opacity:.88!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+
+/* ============================================================
+   v210 MIA CHARGING — round aura growing larger while charging
+   Released shot styling remains as-is.
+   This only reworks the "during charge" visual.
+   ============================================================ */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging{
+  overflow:visible!important;
+}
+
+/* Core orb: rounded, soft, and clearly grows while charging */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:7!important;
+  left:50%!important;
+  top:-9px!important;
+  width:36px!important;
+  height:36px!important;
+  transform:translate(-50%,-50%) scale(.46)!important;
+  transform-origin:center center!important;
+  border:0!important;
+  outline:none!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 46% 36%,
+      rgba(255,255,255,.98) 0 14%,
+      rgba(237,251,255,.90) 20%,
+      rgba(180,236,255,.54) 40%,
+      rgba(101,201,248,.22) 61%,
+      rgba(45,143,227,.06) 78%,
+      transparent 100%)!important;
+  box-shadow:
+    0 0 10px rgba(246,253,255,.42),
+    0 0 24px rgba(125,220,255,.26),
+    0 0 40px rgba(62,164,238,.14)!important;
+  opacity:.42!important;
+  pointer-events:none!important;
+  animation:miaChargeRoundGrow 1s linear forwards!important;
+}
+
+/* Outer halo: also grows, but softer and larger */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:6!important;
+  left:50%!important;
+  top:-9px!important;
+  width:64px!important;
+  height:64px!important;
+  transform:translate(-50%,-50%) scale(.32)!important;
+  transform-origin:center center!important;
+  border:0!important;
+  outline:none!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle,
+      rgba(239,251,255,.26) 0 22%,
+      rgba(168,233,255,.18) 34%,
+      rgba(94,193,246,.10) 52%,
+      rgba(45,145,228,.04) 68%,
+      transparent 84%)!important;
+  filter:blur(7px)!important;
+  box-shadow:none!important;
+  opacity:.30!important;
+  pointer-events:none!important;
+  animation:miaChargeRoundHaloGrow 1s linear forwards!important;
+}
+
+@keyframes miaChargeRoundGrow{
+  0%{
+    transform:translate(-50%,-50%) scale(.46);
+    opacity:.34;
+    filter:saturate(.98) brightness(.98);
+  }
+  55%{
+    transform:translate(-50%,-50%) scale(1.06);
+    opacity:.66;
+    filter:saturate(1.05) brightness(1.02);
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1.54);
+    opacity:.92;
+    filter:saturate(1.12) brightness(1.08);
+  }
+}
+
+@keyframes miaChargeRoundHaloGrow{
+  0%{
+    transform:translate(-50%,-50%) scale(.32);
+    opacity:.18;
+  }
+  55%{
+    transform:translate(-50%,-50%) scale(.92);
+    opacity:.34;
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1.36);
+    opacity:.52;
+  }
+}
+
+/* MAX到達後の脈動も、尾ではなく"丸いオーラ"が脈動する方向に寄せる */
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging.mia-charge-max::after{
+  border-radius:50%!important;
+  opacity:.98!important;
+  animation:miaChargeRoundMaxPulse .58s ease-in-out infinite alternate!important;
+  background:
+    radial-gradient(circle at 46% 36%,
+      rgba(255,255,255,.99) 0 14%,
+      rgba(241,252,255,.94) 20%,
+      rgba(196,239,255,.58) 42%,
+      rgba(118,211,255,.24) 62%,
+      rgba(57,154,235,.08) 79%,
+      transparent 100%)!important;
+  box-shadow:
+    0 0 12px rgba(255,255,255,.48),
+    0 0 22px rgba(224,248,255,.34),
+    0 0 36px rgba(132,225,255,.26),
+    0 0 52px rgba(72,179,244,.18)!important;
+}
+
+#shooting-event-root .shooting-player[data-character-id="13"].mia-charging.mia-charge-max::before{
+  border-radius:50%!important;
+  opacity:.84!important;
+  animation:miaChargeRoundMaxHaloPulse .58s ease-in-out infinite alternate!important;
+  filter:blur(9px) brightness(1.08)!important;
+  background:
+    radial-gradient(circle,
+      rgba(246,253,255,.26) 0 26%,
+      rgba(191,239,255,.20) 40%,
+      rgba(127,213,255,.12) 58%,
+      rgba(58,162,238,.05) 74%,
+      transparent 88%)!important;
+}
+
+@keyframes miaChargeRoundMaxPulse{
+  0%{
+    transform:translate(-50%,-50%) scale(1.50);
+    opacity:.84;
+    filter:saturate(1.00) brightness(.98);
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1.76);
+    opacity:1;
+    filter:saturate(1.14) brightness(1.12);
+  }
+}
+
+@keyframes miaChargeRoundMaxHaloPulse{
+  0%{
+    transform:translate(-50%,-50%) scale(1.18);
+    opacity:.52;
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1.46);
+    opacity:.88;
+  }
+}
+
+
+/* ============================================================
+   v212 GENERIC ELEMENTAL ZAKO
+   ============================================================ */
+#shooting-event-root .shooting-generic-zako-shot{
+  width:12px!important;height:12px!important;border-radius:50%!important;border:0!important;outline:0!important;
+}
+#shooting-event-root .shooting-generic-zako-laser{
+  width:10px!important;height:92px!important;border-radius:999px!important;border:0!important;outline:0!important;opacity:.92!important;
+}
+#shooting-event-root .shooting-enemy-element-aqua.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 16%,#9de7ff 30%,#3c9fe0 68%,rgba(38,105,183,.12) 100%)!important;box-shadow:0 0 8px rgba(112,211,255,.72)!important}
+#shooting-event-root .shooting-enemy-element-aqua.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(255,255,255,.98),#9ce8ff 22%,#48afe8 64%,rgba(42,123,210,.20))!important;box-shadow:0 0 7px rgba(109,211,255,.82),0 0 16px rgba(61,157,226,.42)!important}
+#shooting-event-root .shooting-enemy-element-fire.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 14%,#ffd09b 28%,#ef673f 66%,rgba(187,42,25,.10) 100%)!important;box-shadow:0 0 8px rgba(255,115,72,.72)!important}
+#shooting-event-root .shooting-enemy-element-fire.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(255,249,234,.98),#ffbf76 22%,#ed5e35 64%,rgba(179,39,22,.20))!important;box-shadow:0 0 7px rgba(255,124,75,.82),0 0 16px rgba(229,69,42,.42)!important}
+#shooting-event-root .shooting-enemy-element-wood.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 14%,#d9efad 28%,#7da557 66%,rgba(65,98,43,.10) 100%)!important;box-shadow:0 0 8px rgba(147,190,91,.70)!important}
+#shooting-event-root .shooting-enemy-element-wood.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(251,255,240,.98),#d7ecaa 22%,#7fa45a 64%,rgba(64,99,43,.20))!important;box-shadow:0 0 7px rgba(154,194,99,.80),0 0 16px rgba(101,139,69,.40)!important}
+#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 12%,#c9a6ed 27%,#71459f 64%,rgba(54,31,88,.12) 100%)!important;box-shadow:0 0 8px rgba(133,79,190,.76)!important}
+#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(250,243,255,.98),#c79ce9 22%,#7445a3 64%,rgba(55,31,90,.22))!important;box-shadow:0 0 7px rgba(146,91,202,.84),0 0 16px rgba(97,54,153,.44)!important}
+#shooting-event-root .shooting-enemy-element-light.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 18%,#fff3af 34%,#eacb62 68%,rgba(191,152,38,.10) 100%)!important;box-shadow:0 0 8px rgba(247,219,109,.76)!important}
+#shooting-event-root .shooting-enemy-element-light.shooting-generic-zako-laser{background:linear-gradient(180deg,#fff 0%,#fff5bd 24%,#efd46f 66%,rgba(194,159,45,.18))!important;box-shadow:0 0 7px rgba(255,231,128,.86),0 0 16px rgba(229,193,77,.44)!important}
+
+
+/* ============================================================
+   v214 ENEMY ELEMENT ICON — HP bar left
+   ============================================================ */
+
+/* Normal enemy: icon is attached to the HP bar and moves with it. */
+#shooting-event-root .shooting-mini-enemy-hp{
+  overflow:visible!important;
+}
+#shooting-event-root .shooting-mini-enemy-element-icon{
+  position:absolute;
+  left:-22px;
+  top:50%;
+  width:17px;
+  height:17px;
+  transform:translateY(-50%);
+  object-fit:contain;
+  border-radius:50%;
+  pointer-events:none;
+  filter:drop-shadow(0 1px 2px rgba(55,41,26,.24));
+}
+
+/* Boss: icon sits immediately to the left of the boss HP bar. */
+#shooting-event-root .shooting-boss-hud{
+  overflow:visible;
+}
+#shooting-event-root .shooting-boss-element-icon{
+  position:absolute;
+  left:-31px;
+  top:13px;
+  width:24px;
+  height:24px;
+  object-fit:contain;
+  border-radius:50%;
+  pointer-events:none;
+  filter:drop-shadow(0 1px 3px rgba(55,41,26,.26));
+}
+
+@media (max-width:480px){
+  #shooting-event-root .shooting-boss-element-icon{
+    left:-27px;
+    width:21px;
+    height:21px;
+    top:15px;
+  }
+  #shooting-event-root .shooting-mini-enemy-element-icon{
+    left:-20px;
+    width:16px;
+    height:16px;
+  }
+}
+
+
+/* ============================================================
+   v216 MINI ENEMY ELEMENT ICON FIX
+   ============================================================ */
+#shooting-event-root .shooting-mini-enemy-element-icon{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  z-index:20!important;
+  width:18px!important;
+  height:18px!important;
+  min-width:18px!important;
+  min-height:18px!important;
+  max-width:18px!important;
+  max-height:18px!important;
+  object-fit:contain!important;
+  border-radius:50%!important;
+  pointer-events:none!important;
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  filter:drop-shadow(0 1px 2px rgba(55,41,26,.30))!important;
+  will-change:transform;
+}
+#shooting-event-root .shooting-mini-enemy-element-icon.defeated{
+  opacity:0!important;
+  transition:opacity .18s ease-out!important;
+}
+
+
+/* ============================================================
+   v217 ALLY ELEMENT BATTLE UI
+   Active player: icon next to name in footer
+   Bench members: icon on each CHANGE portrait
+   ============================================================ */
+#shooting-event-root .shooting-player-name-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+
+#shooting-event-root .shooting-player-element-icon{
+  width:16px;
+  height:16px;
+  min-width:16px;
+  min-height:16px;
+  object-fit:contain;
+  border-radius:50%;
+  display:block;
+  filter:drop-shadow(0 1px 2px rgba(55,41,26,.24));
+}
+
+#shooting-event-root .shooting-switch-element-icon{
+  position:absolute;
+  left:-4px;
+  top:-4px;
+  z-index:4;
+  width:18px;
+  height:18px;
+  object-fit:contain;
+  border-radius:50%;
+  background:rgba(255,252,246,.96);
+  box-shadow:0 1px 4px rgba(55,41,26,.18);
+  pointer-events:none;
+}
+
+@media (max-width:480px){
+  #shooting-event-root .shooting-player-element-icon{
+    width:15px;
+    height:15px;
+    min-width:15px;
+    min-height:15px;
+  }
+  #shooting-event-root .shooting-switch-element-icon{
+    left:-3px;
+    top:-3px;
+    width:16px;
+    height:16px;
+  }
+}
+
+
+/* ============================================================
+   v218 FIRE CHARGE ZAKO
+   ============================================================ */
+#shooting-event-root .shooting-mini-enemy.generic-charge-warning{
+  animation:shootingGenericChargeWarning .18s ease-in-out infinite alternate;
+  filter:
+    brightness(1.18)
+    saturate(1.16)
+    drop-shadow(0 0 8px rgba(235,86,42,.70))
+    drop-shadow(0 0 18px rgba(231,128,54,.36));
+}
+
+#shooting-event-root .shooting-mini-enemy.generic-charge-dash{
+  filter:
+    brightness(1.12)
+    saturate(1.20)
+    drop-shadow(0 0 10px rgba(255,96,43,.82))
+    drop-shadow(0 0 22px rgba(233,91,37,.46));
+}
+
+@keyframes shootingGenericChargeWarning{
+  from{
+    filter:
+      brightness(1.02)
+      saturate(1.06)
+      drop-shadow(0 0 4px rgba(232,102,51,.30));
+  }
+  to{
+    filter:
+      brightness(1.30)
+      saturate(1.25)
+      drop-shadow(0 0 10px rgba(255,84,36,.88))
+      drop-shadow(0 0 22px rgba(236,126,48,.44));
+  }
 }

@@ -858,22 +858,28 @@
     id: CHARACTER_ID.NOAH,
     effectKey: 'noah',
     label: 'LASER / HOMING / TIME STOP',
-    description: '中心へ細い灰白レーザーを照射し、その周囲から2発の灰白波動弾を放つトップクラスの複合射撃型。ULTは盤面の弾幕を消去し、敵の動きを止めながら無数の灰白波動弾を降り注がせる。',
+    description: '中心へLIGHT属性の連続レーザーを照射し、その周囲からFIRE属性の2発の追尾弾を放つ複合射撃型。ULTは盤面の弾幕を消去し、敵の動きを止めながら無数の灰白波動弾を降り注がせる。',
     ultDescription: '発動した瞬間に盤面の敵弾をすべて消去し、盤面上の敵全体の移動を停止。8拍子を間を置かず2周、合計16発の落雷をランダムな敵へ叩き込む。各落雷で画面が揺れ、落雷を受けた敵は終了後1.5秒間スタンする。',
     ultName: '理想郷の静止',
     ultType: 'noah_time_homing',
     moveSpeed: 420,
 
-    // 中心レーザー：イグニスより1Hit威力を抑えた細身レーザー
+    // 中心レーザー：LIGHT属性。イグニスと同じ連続レーザー仕様。
+    // 判定間隔 / 幅 / 当たり幅 / 見た目保持時間はイグニスと同一。
+    // 1Hit威力だけ少し抑える。
     shotType: 'noah_hybrid',
     shotStyle: 'noah',
-    fireRate: 285,
-    laserWidth: 10,
-    laserHitWidth: 38,
-    laserDamageAtkRate: 0.065,
-    laserVisualHoldMs: 145,
+    fireRate: 95,
+    laserElement: 'light',
+    laserWidth: 12,
+    laserHitWidth: 44,
+    laserDamageAtkRate: 0.085,
+    laserVisualHoldMs: 130,
 
-    // 周囲2発：ウルフより1Hit威力を抑えた波動ホーミング弾
+    // 周囲2発：FIRE属性ホーミング弾。
+    // レーザーとは別タイマーで従来どおり285ms間隔。
+    homingElement: 'fire',
+    homingFireRate: 285,
     shotCount: 2,
     shotSpacing: 28,
     shotPowerRate: 0.070,

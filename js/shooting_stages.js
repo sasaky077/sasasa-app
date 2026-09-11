@@ -188,8 +188,9 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
+      // 属性導入：まずはFIRE / SHOTだけを見せる。
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.MINI_02,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
@@ -213,8 +214,10 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
+      // FIRE / SHOTに、突進型CHARGEを追加。
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.MINI_02,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 4,
@@ -239,8 +242,11 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
+      // FIREの3攻撃タイプを1体ずつ体験させる。
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.MINI_02,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
@@ -270,6 +276,21 @@
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.REMNANT_02,
       ]),
+
+      // BOSS戦ではFIRE主体の援軍にLIGHTを少量混ぜる。
+      // 4体中3体FIRE / 1体LIGHT = 75% / 25%。
+      bossAdds: Object.freeze({
+        enemyIds: Object.freeze([
+          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
+          SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
+          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
+          SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
+        ]),
+        totalEnemies: 4,
+        maxActive: 1,
+        startDelayMs: 4500,
+        spawnIntervalMs: 7000,
+      }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,

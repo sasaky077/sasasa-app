@@ -12,6 +12,19 @@
     MINI_04: 'shooting_mini_04',
     MINI_05: 'shooting_mini_05',
 
+    // Generic elemental angels
+    ZAKO_AQUA_SHOT: 'zako_aqua_shot',
+    ZAKO_AQUA_LASER: 'zako_aqua_laser',
+    ZAKO_FIRE_SHOT: 'zako_fire_shot',
+    ZAKO_FIRE_LASER: 'zako_fire_laser',
+    ZAKO_FIRE_CHARGE: 'zako_fire_charge',
+    ZAKO_WOOD_SHOT: 'zako_wood_shot',
+    ZAKO_WOOD_LASER: 'zako_wood_laser',
+    ZAKO_DARK_SHOT: 'zako_dark_shot',
+    ZAKO_DARK_LASER: 'zako_dark_laser',
+    ZAKO_LIGHT_SHOT: 'zako_light_shot',
+    ZAKO_LIGHT_LASER: 'zako_light_laser',
+
     // Remnant bosses
     REMNANT_01: 'shooting_remnant_01',
     REMNANT_02: 'shooting_remnant_02',
@@ -46,6 +59,98 @@
     // ------------------------------------------------------------
     // NORMAL ENEMIES
     // ------------------------------------------------------------
+
+    // ============================================================
+    // GENERIC ELEMENTAL ANGELS
+    // 5 attributes x SHOT/LASER = 10 reusable zako.
+    // FIRE also has a dedicated CHARGE attacker.
+    // ============================================================
+    [SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, kind: 'normal', implemented: true,
+      name: '水属性天使・SHOT', displayName: 'AQUA ANGEL / SHOT',
+      element: 'aqua', attackType: 'shot', image: 'images/zako_aqua_shot.webp',
+      hp: 1300, bulletDamage: 90, bulletSpeed: 215, fireRate: 1280,
+      moveSpeed: 42, scoreValue: 800, behavior: 'generic_element_shot_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER, kind: 'normal', implemented: true,
+      name: '水属性天使・LASER', displayName: 'AQUA ANGEL / LASER',
+      element: 'aqua', attackType: 'laser', image: 'images/zako_aqua_laser.webp',
+      hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
+      moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, kind: 'normal', implemented: true,
+      name: '火属性天使・SHOT', displayName: 'FIRE ANGEL / SHOT',
+      element: 'fire', attackType: 'shot', image: 'images/zako_fire_shot.webp',
+      hp: 1300, bulletDamage: 90, bulletSpeed: 215, fireRate: 1280,
+      moveSpeed: 42, scoreValue: 800, behavior: 'generic_element_shot_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER, kind: 'normal', implemented: true,
+      name: '火属性天使・LASER', displayName: 'FIRE ANGEL / LASER',
+      element: 'fire', attackType: 'laser', image: 'images/zako_fire_laser.webp',
+      hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
+      moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE, kind: 'normal', implemented: true,
+      name: '火属性天使・CHARGE', displayName: 'FIRE ANGEL / CHARGE',
+      element: 'fire', attackType: 'charge', image: 'images/zako_fire_charge.webp',
+      hp: 1900,
+      contactDamage: 180,
+      chargeSpeed: 500,
+      chargeDurationMs: 620,
+      telegraphMs: 760,
+      fireRate: 1650,
+      moveSpeed: 28,
+      scoreValue: 1050,
+      behavior: 'generic_element_charge_v1',
+      uiScale: 1.12,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT, kind: 'normal', implemented: true,
+      name: '木属性天使・SHOT', displayName: 'WOOD ANGEL / SHOT',
+      element: 'wood', attackType: 'shot', image: 'images/zako_wood_shot.webp',
+      hp: 1300, bulletDamage: 90, bulletSpeed: 215, fireRate: 1280,
+      moveSpeed: 42, scoreValue: 800, behavior: 'generic_element_shot_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER, kind: 'normal', implemented: true,
+      name: '木属性天使・LASER', displayName: 'WOOD ANGEL / LASER',
+      element: 'wood', attackType: 'laser', image: 'images/zako_wood_laser.webp',
+      hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
+      moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, kind: 'normal', implemented: true,
+      name: '闇属性天使・SHOT', displayName: 'DARK ANGEL / SHOT',
+      element: 'dark', attackType: 'shot', image: 'images/zako_dark_shot.webp',
+      hp: 1300, bulletDamage: 90, bulletSpeed: 215, fireRate: 1280,
+      moveSpeed: 42, scoreValue: 800, behavior: 'generic_element_shot_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_DARK_LASER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_DARK_LASER, kind: 'normal', implemented: true,
+      name: '闇属性天使・LASER', displayName: 'DARK ANGEL / LASER',
+      element: 'dark', attackType: 'laser', image: 'images/zako_dark_laser.webp',
+      hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
+      moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT, kind: 'normal', implemented: true,
+      name: '光属性天使・SHOT', displayName: 'LIGHT ANGEL / SHOT',
+      element: 'light', attackType: 'shot', image: 'images/zako_light_shot.webp',
+      hp: 1300, bulletDamage: 90, bulletSpeed: 215, fireRate: 1280,
+      moveSpeed: 42, scoreValue: 800, behavior: 'generic_element_shot_v1', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER, kind: 'normal', implemented: true,
+      name: '光属性天使・LASER', displayName: 'LIGHT ANGEL / LASER',
+      element: 'light', attackType: 'laser', image: 'images/zako_light_laser.webp',
+      hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
+      moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+
     [SHOOTING_ENEMY_ID.MINI_01]: Object.freeze({
       id: SHOOTING_ENEMY_ID.MINI_01,
       kind: 'normal',
@@ -54,6 +159,7 @@
       name: '観測眼の残穢',
       displayName: '観測眼の残穢',
       image: 'images/enemy_mini_01_battle.webp',
+      element: 'neutral',
       hp: 1000,
       bulletDamage: 85,
       bulletSpeed: 185,
@@ -159,6 +265,7 @@
       name: 'オーバーシア',
       displayName: 'REMNANT 01　オーバーシア',
       image: 'images/remnant_01_battle.webp',
+      element: 'neutral',
 
       gaugeHp: 7500,
       gauges: 3,
@@ -182,6 +289,7 @@
       name: '暴力',
       displayName: 'REMNANT 02　暴力',
       image: 'images/remnant_02_battle.webp',
+      element: 'fire',
 
       gaugeHp: 6000,
       gauges: 3,
