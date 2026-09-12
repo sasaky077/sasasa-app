@@ -423,7 +423,7 @@ function getEnemyCellsFromAllyRange(chara, range) {
           <div class="bt-enemy-hp-txt" id="bt-enemy-hp-txt"></div>
         </div>
         <div class="bt-enemy-preview-panel" id="bt-enemy-preview-panel" style="display:none"></div>
-        <button class="bt-menu-btn" id="bt-menu-btn" onclick="openBattleMenu()">MENU</button>
+        <button class="bt-menu-btn" id="bt-menu-btn" onclick="openBattleMenu()" aria-label="メニュー" title="メニュー"><span class="sasaphia-menu-glyph" aria-hidden="true">☰</span></button>
       </div>
 
       <!-- 行動順トグル -->
@@ -6491,7 +6491,7 @@ bs.enemies.forEach((e, i) => {
       popup.className = 'bt-detail-popup';
       popup.innerHTML = `
         <div class="bt-detail-box">
-          <div class="bt-detail-title">BATTLE MENU</div>
+          <div class="bt-detail-title" aria-label="バトルメニュー"><span class="sasaphia-menu-heading-icon" aria-hidden="true">☰</span></div>
           <div class="bt-battle-menu-actions">
             <button class="bt-result-btn" onclick="restartBattleFromMenu()">やり直し</button>
             <button class="bt-result-btn bt-result-btn-sub" onclick="returnToHomeFromMenu()">ホームに戻る</button>

@@ -3204,7 +3204,7 @@ function renderBattleMenu(bs) {
  menu = document.createElement('div');
  menu.id = 'b32-battle-menu';
  menu.innerHTML = `
- <button id="b32-battle-menu-btn" type="button">MENU</button>
+ <button id="b32-battle-menu-btn" type="button" aria-label="メニュー" title="メニュー"><span class="sasaphia-menu-glyph" aria-hidden="true">☰</span></button>
  <div id="b32-battle-menu-panel">
  <button class="b32-battle-menu-item" type="button" data-action="restart">
  やり直す

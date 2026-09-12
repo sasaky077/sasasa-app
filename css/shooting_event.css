@@ -7120,27 +7120,27 @@
 
 
 /* =========================================================
-   GOJO id:51 - translucent PURPLE 5WAY override
-   LOGOS属性の緑色より必ず優先する。
+   SHURI id:19 - crimson moon 5WAY override
+   DARK属性の通常色より優先して、紅黒の気弾へ寄せる。
    ========================================================= */
 .shooting-bullet-gojo,
 .shooting-bullet-gojo.shooting-bullet-logos{
   width:16px!important;
   height:16px!important;
   border-radius:50%!important;
-  opacity:.76!important;
+  opacity:.74!important;
   background:radial-gradient(circle at 38% 34%,
-    rgba(255,255,255,.86) 0 9%,
-    rgba(229,194,255,.80) 17%,
-    rgba(180,82,255,.74) 42%,
-    rgba(119,31,232,.66) 68%,
-    rgba(61,5,142,.24) 100%)!important;
+    rgba(255,245,247,.90) 0 9%,
+    rgba(236,162,178,.80) 17%,
+    rgba(180,44,74,.72) 42%,
+    rgba(92,12,29,.62) 68%,
+    rgba(22,0,8,.20) 100%)!important;
   box-shadow:
-    0 0 6px rgba(255,255,255,.68),
-    0 0 14px rgba(197,103,255,.64),
-    0 0 24px rgba(112,20,238,.48)!important;
-  border:1px solid rgba(255,255,255,.50)!important;
-  filter:saturate(1.18) brightness(1.04)!important;
+    0 0 6px rgba(255,243,246,.60),
+    0 0 14px rgba(191,64,93,.42),
+    0 0 24px rgba(84,9,25,.28)!important;
+  border:1px solid rgba(255,236,240,.42)!important;
+  filter:saturate(1.08) brightness(1.02)!important;
 }
 
 
@@ -7780,4 +7780,119 @@
       drop-shadow(0 0 10px rgba(255,84,36,.88))
       drop-shadow(0 0 22px rgba(236,126,48,.44));
   }
+}
+
+
+/* ============================================================
+   v222 DAILY STAGE SELECT
+   巡行 > デイリー巡行 > 中級/上級 > パーティ選択
+   ============================================================ */
+.shooting-daily-stage-header{
+  position:relative;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+}
+
+.shooting-daily-stage-header .shooting-faceless-stage-back{
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+}
+
+.shooting-daily-stage-subtitle{
+  margin-top:1px;
+  color:#9a8158;
+  font-family:"Noto Serif JP",serif;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.08em;
+  line-height:1.25;
+}
+
+.shooting-daily-stage-row{
+  min-height:112px;
+}
+
+.shooting-daily-stage-row.is-exhausted{
+  opacity:.48;
+  filter:saturate(.55);
+}
+
+.shooting-daily-stage-row.is-exhausted:active{
+  transform:none;
+}
+
+.shooting-daily-stage-remaining{
+  margin-left:auto;
+  color:#8c7350;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+
+.shooting-daily-stage-reward{
+  margin-top:9px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.shooting-daily-stage-reward-label{
+  color:#9b835e;
+  font-size:9px;
+  letter-spacing:.12em;
+}
+
+.shooting-daily-stage-reward-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  min-height:auto;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.shooting-daily-stage-reward-chip img{
+  width:28px;
+  height:28px;
+  object-fit:contain;
+  flex:0 0 auto;
+  filter:none;
+}
+
+.shooting-daily-stage-reward-chip b{
+  min-width:auto;
+  padding:0;
+  color:#7c6238;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  text-align:left;
+  white-space:nowrap;
+}
+
+@media (max-width:480px){
+  .shooting-daily-stage-row{
+    min-height:106px;
+  }
+  .shooting-daily-stage-reward{
+    margin-top:7px;
+  }
+}
+
+
+/* ============================================================
+   v224 BATTLE UI
+   待機キャラの属性アイコンは表示しない。操作中キャラのみ表示。
+   ============================================================ */
+#shooting-event-root .shooting-switch-element-icon{
+  display:none!important;
 }

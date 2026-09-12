@@ -104,7 +104,7 @@
       ])
     }),
 
-    2: Object.freeze({
+    26: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -119,7 +119,7 @@
       ])
     }),
 
-    3: Object.freeze({
+    31: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -134,7 +134,7 @@
       ])
     }),
 
-    4: Object.freeze({
+    20: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -149,7 +149,7 @@
       ])
     }),
 
-    5: Object.freeze({
+    27: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -181,7 +181,7 @@
       ])
     }),
 
-    7: Object.freeze({
+    9: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -196,13 +196,12 @@
         { type:'profileMultiply', field:'flowerHeartDamageAtkRate', multiplier:1.25 }
       ])
     }),
+    28: genericSet('ミモザ'),
+    16: genericSet('パトラ'),
+    15: genericSet('フローラ'),
+    13: genericSet('シグレ'),
 
-    8: genericSet('ミモザ'),
-    9: genericSet('パトラ'),
-    10: genericSet('フローラ'),
-    11: genericSet('シグレ'),
-
-    12: Object.freeze({
+    4: Object.freeze({
       1: bonus('疾風の共鳴', 'ATK +5%', '基礎ATKが5%上昇する。', [
         { type:'statRate', hp:0, atk:0.05 }
       ]),
@@ -216,10 +215,9 @@
         { type:'profileMultiply', field:'moonlightFireRateMultiplier', multiplier:0.85 }
       ])
     }),
+    14: genericSet('ミア'),
 
-    13: genericSet('ミア'),
-
-    14: Object.freeze({
+    11: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -234,7 +232,7 @@
       ])
     }),
 
-    15: Object.freeze({
+    29: Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
@@ -249,11 +247,10 @@
         { type:'profileMultiply', field:'blackHolePullStrength', multiplier:1.20 }
       ])
     }),
+    7: genericSet('ミト'),
+    21: genericSet('アンジェ'),
 
-    16: genericSet('ミト'),
-    17: genericSet('アンジェ'),
-
-    18: Object.freeze({
+    2: Object.freeze({
       1: bonus('狩狼の共鳴', 'HP・ATK +5%', 'ウルフの基礎HPとATKが5%上昇する。', [
         { type:'statRate', hp:0.05, atk:0.05 }
       ]),
@@ -284,17 +281,17 @@
       ])
     }),
 
-    51: Object.freeze({
-      1: bonus('六眼覚醒', 'HP・ATK +5%', '五条 悟の基礎HPとATKが5%上昇する。', [
+    8: Object.freeze({
+      1: bonus('紅月覚醒', 'HP・ATK +5%', 'シュリの基礎HPとATKが5%上昇する。', [
         { type:'statRate', hp:0.05, atk:0.05 }
       ]),
-      2: bonus('紫弾深化', '通常射撃ダメージ +12%', '半透明の紫5WAYショットの1Hitダメージを12%強化する。', [
+      2: bonus('緋月深化', '通常射撃ダメージ +12%', '紅黒の5WAY気弾の1Hitダメージを12%強化する。', [
         { type:'profileMultiply', field:'shotPowerRate', multiplier:1.12 }
       ]),
-      3: bonus('収束する茈', 'ULT吸引力 +25%', '「虚式・茈」の吸引力を25%強化し、敵をより素早く波動中心へ引き寄せる。', [
+      3: bonus('彼岸収束', 'ULT吸引力 +25%', '「彼岸残月」の吸引力を25%強化し、敵をより素早く波動中心へ引き寄せる。', [
         { type:'profileMultiply', field:'gojoPurplePullStrength', multiplier:1.25 }
       ]),
-      4: bonus('虚式極致', 'ULT ATK×3.5 → ×4.5', '「虚式・茈」の吸引・停止時間はそのまま、継続ダメージ総量をATK×3.5からATK×4.5へ強化する。', [
+      4: bonus('残月極致', 'ULT ATK×3.5 → ×4.5', '「彼岸残月」の吸引・停止時間はそのまま、継続ダメージ総量をATK×3.5からATK×4.5へ強化する。', [
         { type:'profileSet', field:'ultDamageAtkMultiplier', value:4.5 }
       ])
     }),

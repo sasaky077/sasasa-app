@@ -117,7 +117,7 @@
               <span id="shooting-ui-layout-label">UI切替</span>
             </button>
             <button class="shooting-battle-menu-btn" id="shooting-battle-menu-btn" type="button" onclick="openShootingPauseMenu()" aria-label="一時停止メニュー">
-              <span>MENU</span>
+              <span class="sasaphia-menu-glyph" aria-hidden="true">☰</span>
             </button>
           </div>
         </footer>

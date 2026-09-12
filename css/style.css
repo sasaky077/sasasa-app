@@ -26536,3 +26536,4045 @@ body {
   font-size: 10px !important;
   color: rgba(92,72,39,.58) !important;
 }
+
+
+/* =========================================================
+   v227 CHARACTER INDEX - name readability
+   明るい立ち絵・背景でも名前が消えないように固定。
+   ========================================================= */
+#screen-zukan.is-primoa-index .primoa-index-name{
+  color:#4f402f !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 3px rgba(255,252,244,.82) !important;
+  background:rgba(250,247,239,.72);
+  border-radius:2px;
+  padding:1px 2px;
+  box-sizing:border-box;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned .primoa-index-name{
+  color:rgba(62,56,48,.72) !important;
+  background:rgba(247,244,236,.68);
+}
+
+#screen-zukan.is-primoa-index .primoa-index-card.is-max-limitbreak .primoa-index-name{
+  color:#6a4d1f !important;
+}
+\n\n/* =========================================================
+   v235 CHARACTER INDEX - stronger element tint
+   属性はカード背景色のみで示す。レアリティバッジは表示しない。
+   LIGHT は金系、NEUTRAL は無彩色グレーで明確に分離する。
+   ========================================================= */
+#screen-zukan.is-primoa-index .primoa-index-card{
+  --primoa-element-base: rgba(112,108,101,.14);
+  --primoa-element-edge: rgba(96,92,86,.30);
+}
+#screen-zukan.is-primoa-index .primoa-index-card.element-fire{
+  --primoa-element-base: rgba(207,78,55,.23);
+  --primoa-element-edge: rgba(184,55,42,.42);
+}
+#screen-zukan.is-primoa-index .primoa-index-card.element-aqua{
+  --primoa-element-base: rgba(61,143,196,.23);
+  --primoa-element-edge: rgba(43,117,177,.40);
+}
+#screen-zukan.is-primoa-index .primoa-index-card.element-wood{
+  --primoa-element-base: rgba(91,151,82,.23);
+  --primoa-element-edge: rgba(65,126,67,.40);
+}
+#screen-zukan.is-primoa-index .primoa-index-card.element-light{
+  --primoa-element-base: rgba(232,190,60,.27);
+  --primoa-element-edge: rgba(206,151,33,.46);
+}
+#screen-zukan.is-primoa-index .primoa-index-card.element-dark{
+  --primoa-element-base: rgba(101,72,145,.25);
+  --primoa-element-edge: rgba(76,52,119,.44);
+}
+#screen-zukan.is-primoa-index .primoa-index-card.element-neutral{
+  --primoa-element-base: rgba(92,98,103,.20);
+  --primoa-element-edge: rgba(70,76,82,.38);
+}
+
+#screen-zukan.is-primoa-index .primoa-index-image-wrap{
+  isolation:isolate;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.62),var(--primoa-element-base)) !important;
+  border-color:var(--primoa-element-edge) !important;
+  box-shadow:
+    inset 0 -12px 20px var(--primoa-element-base),
+    0 3px 10px rgba(85,63,30,.08) !important;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-image-wrap::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:linear-gradient(
+    180deg,
+    transparent 12%,
+    var(--primoa-element-base) 58%,
+    var(--primoa-element-edge) 116%
+  );
+  opacity:.76;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-image{
+  position:relative;
+  z-index:0;
+}
+
+/* 未所持でも属性判別は残す。シルエット化との両立のため少しだけ減衰。 */
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned .primoa-index-image-wrap::before{
+  opacity:.58;
+}
+
+
+/* =========================================================
+   v236 CHARACTER INDEX - element background only
+   属性色は画像の背面だけに表示し、キャラクター画像には一切重ねない。
+   ========================================================= */
+#screen-zukan.is-primoa-index .primoa-index-image-wrap{
+  isolation:isolate;
+  background:var(--primoa-element-base) !important;
+  border-color:rgba(145,128,98,.22) !important;
+  box-shadow:0 3px 10px rgba(85,63,30,.08) !important;
+}
+#screen-zukan.is-primoa-index .primoa-index-image-wrap::before,
+#screen-zukan.is-primoa-index .primoa-index-image-wrap::after{
+  content:none !important;
+  display:none !important;
+  background:none !important;
+}
+#screen-zukan.is-primoa-index .primoa-index-image{
+  position:relative;
+  z-index:1;
+  opacity:1;
+  mix-blend-mode:normal !important;
+}
+/* 未所持の既存シルエット処理は維持。属性オーバーレイだけ無効化。 */
+
+/* =========================================================
+   v237 CHARACTER INDEX - MENU / filter / sort
+   右上レムナント入口をMENUへ置換し、属性・レアリティで絞り込み/並び替え。
+   ========================================================= */
+#screen-zukan .zukan-filter-menu-button{
+  position:relative;
+  min-width:58px;
+  letter-spacing:.10em;
+}
+#screen-zukan .zukan-filter-menu-button.is-filtered::after{
+  content:"";
+  position:absolute;
+  top:4px;
+  right:5px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#b98a35;
+  box-shadow:0 0 0 2px rgba(255,250,238,.82);
+}
+.zukan-filter-menu-layer{
+  position:fixed;
+  inset:0;
+  z-index:12020;
+  background:rgba(55,45,31,.12);
+  -webkit-tap-highlight-color:transparent;
+}
+.zukan-filter-popover{
+  position:absolute;
+  top:calc(var(--header-h) + var(--page-header-h, 64px) - 2px);
+  right:max(10px, calc((100vw - min(100vw, 430px))/2 + 10px));
+  width:min(300px, calc(100vw - 20px));
+  padding:14px 14px 12px;
+  border:1px solid rgba(151,119,66,.30);
+  border-radius:4px;
+  background:rgba(250,247,239,.985);
+  box-shadow:0 12px 28px rgba(72,54,29,.20), inset 0 0 0 1px rgba(255,255,255,.70);
+  color:#5b4932;
+  font-family:"Noto Serif JP",serif;
+}
+.zukan-filter-section + .zukan-filter-section{
+  margin-top:13px;
+  padding-top:11px;
+  border-top:1px solid rgba(153,128,88,.18);
+}
+.zukan-filter-section-title{
+  margin-bottom:7px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.16em;
+  color:#8a6a35;
+}
+.zukan-filter-chip-grid{
+  display:grid;
+  gap:6px;
+}
+.zukan-filter-element-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.zukan-filter-rarity-grid,
+.zukan-filter-sort-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.zukan-filter-chip{
+  appearance:none;
+  -webkit-appearance:none;
+  min-width:0;
+  height:30px;
+  padding:0 4px;
+  border:1px solid rgba(140,118,82,.22);
+  border-radius:3px;
+  background:rgba(255,255,255,.58);
+  color:#75644e;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.03em;
+  cursor:pointer;
+}
+.zukan-filter-chip.active{
+  border-color:rgba(151,111,48,.68);
+  background:#f3ead8;
+  color:#65491e;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.68), 0 2px 5px rgba(95,68,29,.08);
+}
+.zukan-filter-chip.element-fire.active{background:rgba(207,78,55,.18);border-color:rgba(184,55,42,.45);}
+.zukan-filter-chip.element-aqua.active{background:rgba(61,143,196,.18);border-color:rgba(43,117,177,.42);}
+.zukan-filter-chip.element-wood.active{background:rgba(91,151,82,.18);border-color:rgba(65,126,67,.42);}
+.zukan-filter-chip.element-light.active{background:rgba(232,190,60,.21);border-color:rgba(206,151,33,.48);}
+.zukan-filter-chip.element-dark.active{background:rgba(101,72,145,.18);border-color:rgba(76,52,119,.42);}
+.zukan-filter-chip.element-neutral.active{background:rgba(92,98,103,.15);border-color:rgba(70,76,82,.38);}
+.zukan-filter-chip.rarity-sr.active{background:linear-gradient(120deg,rgba(255,247,213,.95),rgba(239,219,164,.78),rgba(255,250,232,.94));}
+.zukan-filter-chip.rarity-r.active{background:rgba(226,218,204,.72);}
+.zukan-filter-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid rgba(153,128,88,.18);
+}
+.zukan-filter-action{
+  appearance:none;
+  -webkit-appearance:none;
+  height:34px;
+  border-radius:3px;
+  font-family:"Noto Serif JP",serif;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.10em;
+  cursor:pointer;
+}
+.zukan-filter-reset{
+  border:1px solid rgba(140,118,82,.24);
+  background:rgba(255,255,255,.58);
+  color:rgba(103,83,55,.72);
+}
+.zukan-filter-apply{
+  border:1px solid rgba(151,111,48,.56);
+  background:linear-gradient(180deg,#f5ecd9,#ead8b7);
+  color:#65491e;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.65);
+}
+.zukan-filter-chip:active,
+.zukan-filter-action:active{
+  transform:scale(.97);
+}
+.primoa-filter-empty{
+  grid-column:1/-1;
+  padding:46px 12px;
+  text-align:center;
+  color:rgba(91,75,54,.54);
+  font-size:11px;
+  letter-spacing:.05em;
+}
+@media (max-width:360px){
+  .zukan-filter-popover{right:8px;width:calc(100vw - 16px);padding:12px;}
+  .zukan-filter-element-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+  .zukan-filter-chip{font-size:8.5px;}
+}
+
+
+/* =========================================================
+   v239 CHARACTER INDEX - vertical element gradient
+   属性色は背景レイヤーだけ。上は明るく、下へ向かって属性色を強める。
+   キャラクター画像にはオーバーレイしない。
+   ========================================================= */
+#screen-zukan.is-primoa-index .primoa-index-image-wrap{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.88) 0%,
+      rgba(255,255,255,.52) 34%,
+      var(--primoa-element-base) 72%,
+      var(--primoa-element-edge) 100%
+    ) !important;
+  border-color:rgba(145,128,98,.22) !important;
+  box-shadow:0 3px 10px rgba(85,63,30,.08) !important;
+}
+#screen-zukan.is-primoa-index .primoa-index-image-wrap::before,
+#screen-zukan.is-primoa-index .primoa-index-image-wrap::after{
+  content:none !important;
+  display:none !important;
+  background:none !important;
+}
+#screen-zukan.is-primoa-index .primoa-index-image{
+  position:relative;
+  z-index:1;
+  opacity:1;
+  mix-blend-mode:normal !important;
+}
+
+
+/* =========================================================
+   v240 GLOBAL MENU ICON
+   文字の MENU / メニュー を使わず、メニュートリガーは三本線で統一。
+   ========================================================= */
+.sasaphia-menu-glyph{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:1em;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:21px;
+  font-weight:400;
+  line-height:1;
+  letter-spacing:0;
+  transform:scaleX(1.08);
+  transform-origin:center;
+}
+#screen-zukan .zukan-filter-menu-button{
+  min-width:42px;
+  padding-left:9px;
+  padding-right:9px;
+  letter-spacing:0;
+}
+#screen-zukan .zukan-filter-menu-button .sasaphia-menu-glyph{
+  font-size:20px;
+}
+.sasaphia-menu-heading-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:22px;
+  font-weight:400;
+  line-height:1;
+  letter-spacing:0;
+}
+
+/* =========================================================
+   v241 CHARACTER LEVEL UP
+   ========================================================= */
+#character-levelup-modal{
+  z-index:265000;
+}
+#character-levelup-modal .character-levelup-modal-inner{
+  width:min(92vw,390px);
+  max-height:min(86dvh,720px);
+  overflow-y:auto;
+  padding:22px 18px 18px;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fffdf8 0%,#f5efe4 100%);
+  border:1px solid rgba(158,128,78,.30);
+  box-shadow:0 20px 60px rgba(35,25,12,.34);
+  color:#5f513d;
+}
+.character-levelup-head{
+  text-align:center;
+  padding:2px 28px 14px;
+  border-bottom:1px solid rgba(150,122,79,.16);
+}
+.character-levelup-kicker{
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:.28em;
+  color:#b0915f;
+  margin-bottom:5px;
+}
+.character-levelup-head h2{
+  margin:0;
+  font-size:19px;
+  font-weight:600;
+  letter-spacing:.08em;
+  color:#55462f;
+}
+.character-levelup-level{
+  margin-top:8px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:20px;
+  font-weight:700;
+  color:#8a682d;
+}
+.character-levelup-exp{
+  margin-top:3px;
+  font-size:10px;
+  color:rgba(82,67,46,.64);
+  letter-spacing:.04em;
+}
+.character-levelup-materials{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-top:14px;
+}
+.chara-level-material-row{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-height:58px;
+  padding:8px 9px;
+  background:rgba(255,255,255,.62);
+  border:1px solid rgba(145,118,73,.15);
+  border-radius:6px;
+}
+.chara-level-material-icon{
+  width:38px;
+  height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  font-family:"Cinzel",serif;
+  font-size:11px;
+  font-weight:700;
+  color:#fff;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 2px 7px rgba(72,55,31,.15);
+}
+.chara-level-material-icon.tone-small{background:linear-gradient(145deg,#9caaad,#65777b)}
+.chara-level-material-icon.tone-medium{background:linear-gradient(145deg,#b99a58,#85672e)}
+.chara-level-material-icon.tone-large{background:linear-gradient(145deg,#9d7db4,#624c79)}
+.chara-level-material-info{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.chara-level-material-info strong{
+  font-size:12px;
+  font-weight:600;
+  color:#594a35;
+}
+.chara-level-material-info span{
+  font-size:9.5px;
+  color:rgba(91,73,49,.60);
+  white-space:nowrap;
+}
+.chara-level-material-stepper{
+  display:grid;
+  grid-template-columns:28px 30px 28px;
+  align-items:center;
+  justify-items:center;
+  gap:2px;
+}
+.chara-level-material-stepper button{
+  appearance:none;
+  width:28px;
+  height:28px;
+  border:1px solid rgba(142,112,66,.26);
+  border-radius:50%;
+  background:#fffdf8;
+  color:#775a2b;
+  font-size:16px;
+  line-height:1;
+}
+.chara-level-material-stepper button:disabled{
+  opacity:.28;
+}
+.chara-level-material-stepper span{
+  font-family:"Cinzel",serif;
+  font-size:12px;
+  color:#5f5038;
+}
+.character-levelup-max-btn{
+  appearance:none;
+  width:100%;
+  height:34px;
+  margin-top:10px;
+  border:1px solid rgba(166,126,56,.35);
+  border-radius:5px;
+  background:rgba(234,216,180,.34);
+  color:#7b5a24;
+  font-family:"Noto Serif JP",serif;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.10em;
+}
+.character-levelup-max-btn:disabled{opacity:.38}
+.character-levelup-summary{
+  margin-top:12px;
+  padding:11px 12px;
+  border-top:1px solid rgba(150,122,79,.16);
+  border-bottom:1px solid rgba(150,122,79,.16);
+  background:rgba(255,255,255,.36);
+}
+.character-levelup-target{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+}
+.character-levelup-target span{
+  font-size:10px;
+  color:rgba(89,72,49,.60);
+}
+.character-levelup-target strong{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:16px;
+  color:#75551f;
+}
+.character-levelup-target small{
+  display:block;
+  margin-left:auto;
+  font-size:8px;
+  color:#a36755;
+}
+.character-levelup-cost{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:8px;
+  font-size:10px;
+  color:#6b5a40;
+}
+.character-levelup-cost b{
+  color:#795a27;
+  font-weight:700;
+}
+#character-levelup-modal.is-coin-short .character-levelup-cost span:last-child,
+#character-levelup-modal.is-coin-short .character-levelup-cost span:last-child b{
+  color:#a75145;
+}
+.character-levelup-actions{
+  display:grid;
+  grid-template-columns:1fr 1.25fr;
+  gap:8px;
+  margin-top:14px;
+}
+.character-levelup-actions button{
+  appearance:none;
+  height:40px;
+  border-radius:5px;
+  font-family:"Noto Serif JP",serif;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.08em;
+}
+.character-levelup-cancel{
+  border:1px solid rgba(123,106,79,.20);
+  background:rgba(255,255,255,.50);
+  color:#75664f;
+}
+.character-levelup-execute{
+  border:1px solid rgba(156,113,45,.50);
+  background:linear-gradient(180deg,#ead9b8,#d9bc84);
+  color:#5d4218;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.58);
+}
+.character-levelup-execute:disabled{
+  opacity:.40;
+  filter:grayscale(.35);
+}
+@media(max-width:350px){
+  #character-levelup-modal .character-levelup-modal-inner{padding-left:12px;padding-right:12px}
+  .chara-level-material-row{grid-template-columns:36px minmax(0,1fr) auto;gap:7px;padding-left:7px;padding-right:7px}
+  .chara-level-material-icon{width:34px;height:34px}
+  .chara-level-material-stepper{grid-template-columns:25px 26px 25px}
+  .chara-level-material-stepper button{width:25px;height:25px}
+  .chara-level-material-info span{font-size:9px}
+}
+
+
+/* =========================================================
+   v246 Character growth notification dots
+   レベルアップ / 限界突破を独立判定し、実行可能なボタンだけ通知。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn{
+  position:relative;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-notice-dot{
+  position:absolute;
+  top:5px;
+  right:6px;
+  z-index:3;
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#e33b3b;
+  border:1.5px solid rgba(255,255,255,.96);
+  box-shadow:
+    0 1px 3px rgba(75,25,18,.28),
+    0 0 0 2px rgba(227,59,59,.10);
+  pointer-events:none;
+  animation:character-growth-dot-pulse-v246 1.8s ease-in-out infinite;
+}
+@keyframes character-growth-dot-pulse-v246{
+  0%,100%{ transform:scale(1); box-shadow:0 1px 3px rgba(75,25,18,.28),0 0 0 2px rgba(227,59,59,.10); }
+  50%{ transform:scale(1.10); box-shadow:0 1px 4px rgba(75,25,18,.32),0 0 0 4px rgba(227,59,59,.06); }
+}
+
+
+/* =========================================================
+   v247 Growth notice visibility fix
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn.has-growth-notice{
+  position:relative !important;
+  overflow:visible !important;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn.has-growth-notice .box-carousel-action-notice-dot{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  top:4px !important;
+  right:5px !important;
+  z-index:20 !important;
+}
+
+
+/* =========================================================
+   v248 GLOBAL INTERACTION LOCK
+   PC: 右クリック/ドラッグ/選択を抑止
+   iOS/Android: 長押し時の画像保存・選択・コールアウトを抑止
+   入力欄だけは通常操作を維持する。
+   ========================================================= */
+html,
+body,
+button,
+a,
+img,
+canvas,
+svg,
+div,
+span,
+section,
+article,
+header,
+footer,
+nav,
+main,
+label {
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+
+img,
+svg,
+canvas {
+  -webkit-user-drag:none !important;
+  user-drag:none !important;
+  pointer-events:auto;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+[contenteditable=""] {
+  -webkit-touch-callout:default !important;
+  -webkit-user-select:text !important;
+  user-select:text !important;
+}
+
+
+/* =========================================================
+   v251 LEVEL UP - close button visual
+   黒丸を廃止し、育成画面の淡い金・生成りトーンへ統一。
+   ========================================================= */
+#character-levelup-modal .modal-close-btn{
+  top:11px !important;
+  right:11px !important;
+  width:32px !important;
+  height:32px !important;
+  border:1px solid rgba(167,137,84,.28) !important;
+  border-radius:999px !important;
+  background:rgba(255,252,244,.94) !important;
+  color:rgba(123,94,48,.78) !important;
+  font-size:18px !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+  box-shadow:0 2px 8px rgba(102,77,38,.08) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+#character-levelup-modal .modal-close-btn:active{
+  transform:scale(.95) !important;
+  background:rgba(246,235,211,.96) !important;
+}
+
+
+/* =========================================================
+   v252 CHARACTER DETAIL - rarity badge contrast
+   サイズ・位置は維持したまま、背景との境界だけ少し拾う。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge{
+  opacity:.94 !important;
+  filter:
+    saturate(.94)
+    brightness(1.035)
+    drop-shadow(0 0 2px rgba(255,253,246,.98))
+    drop-shadow(0 0 4px rgba(255,249,232,.72))
+    drop-shadow(0 1px 2px rgba(141,108,51,.20))
+    drop-shadow(0 3px 5px rgba(84,62,28,.16)) !important;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge.rarity-r{
+  opacity:.90 !important;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge.rarity-sr{
+  opacity:.98 !important;
+}
+
+
+/* =========================================================
+   v253 CHARACTER DETAIL - rarity badge shadow boost
+   サイズ・位置は維持。バッジの輪郭を少し強める。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge{
+  opacity:.98 !important;
+  filter:
+    saturate(.98)
+    brightness(1.05)
+    drop-shadow(0 0 2px rgba(255,255,255,.98))
+    drop-shadow(0 0 5px rgba(255,252,240,.82))
+    drop-shadow(0 2px 3px rgba(112,82,36,.30))
+    drop-shadow(0 5px 8px rgba(70,48,20,.22)) !important;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge.rarity-r{
+  opacity:.94 !important;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge.rarity-sr{
+  opacity:1 !important;
+}
+
+
+/* =========================================================
+   v254 CHARACTER DETAIL - rarity badge sticker shadow
+   サイズ・位置は維持。暗めの影で「貼ってある」感じを出す。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge{
+  opacity:1 !important;
+  filter:
+    saturate(1)
+    brightness(1.03)
+    drop-shadow(0 1px 1px rgba(255,255,255,.22))
+    drop-shadow(0 2px 2px rgba(64,45,22,.30))
+    drop-shadow(0 4px 4px rgba(50,34,16,.28))
+    drop-shadow(1px 6px 7px rgba(38,26,13,.18)) !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge.rarity-r{
+  opacity:.98 !important;
+  filter:
+    saturate(.95)
+    brightness(1.01)
+    drop-shadow(0 1px 1px rgba(255,255,255,.16))
+    drop-shadow(0 2px 2px rgba(58,51,44,.34))
+    drop-shadow(0 4px 5px rgba(43,38,33,.28))
+    drop-shadow(1px 6px 7px rgba(35,31,27,.18)) !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge.rarity-sr{
+  opacity:1 !important;
+  filter:
+    saturate(1.02)
+    brightness(1.04)
+    drop-shadow(0 1px 1px rgba(255,255,255,.22))
+    drop-shadow(0 2px 2px rgba(104,72,25,.36))
+    drop-shadow(0 4px 5px rgba(79,52,18,.30))
+    drop-shadow(1px 6px 8px rgba(60,39,13,.20)) !important;
+}
+
+
+/* =========================================================
+   v255 CHARACTER DETAIL - rarity badge size +20%
+   R / SR 共通で表示サイズのみ20%拡大。位置・影・素材はそのまま。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge{
+  width:clamp(60px, 18vw, 76.8px) !important;
+}
+@media (max-width:420px){
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge{
+    width:clamp(55.2px, 16.8vw, 69.6px) !important;
+  }
+}
+@media (max-width:360px){
+  #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-rarity-badge{
+    width:clamp(50.4px, 15.6vw, 64.8px) !important;
+  }
+}
+
+
+/* =========================================================
+   v256 CHARACTER DETAIL - elemental background gradient
+   一覧画面と同じく、人物画像には色をかけず背景側だけで属性を示唆。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view{
+  --detail-element-soft: rgba(125,125,125,.07);
+  --detail-element-deep: rgba(110,110,110,.12);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,253,248,.92) 0%,
+      rgba(255,252,245,.72) 22%,
+      var(--detail-element-soft) 62%,
+      var(--detail-element-deep) 100%
+    ) !important;
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-fire{
+  --detail-element-soft:rgba(190,91,72,.11);
+  --detail-element-deep:rgba(165,70,55,.18);
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-aqua{
+  --detail-element-soft:rgba(79,145,187,.11);
+  --detail-element-deep:rgba(58,124,170,.18);
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-wood{
+  --detail-element-soft:rgba(99,145,94,.11);
+  --detail-element-deep:rgba(73,123,72,.18);
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-light{
+  --detail-element-soft:rgba(214,176,78,.13);
+  --detail-element-deep:rgba(189,145,47,.20);
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-dark{
+  --detail-element-soft:rgba(113,88,143,.12);
+  --detail-element-deep:rgba(83,63,112,.19);
+}
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-neutral{
+  --detail-element-soft:rgba(118,118,118,.065);
+  --detail-element-deep:rgba(94,94,94,.12);
+}
+
+/* =========================================================
+   v256 FULLSCREEN CHARACTER VIEWER - parchment / alchemia
+   黒いフレームを廃止。生成り + 属性の淡いグラデーションへ。
+   ========================================================= */
+#primor-fullscreen-viewer{
+  --viewer-element-soft:rgba(125,125,125,.08);
+  --viewer-element-deep:rgba(110,110,110,.14);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,.94) 0 16%, rgba(255,252,243,.78) 42%, transparent 67%),
+    linear-gradient(180deg, #f9f5eb 0%, #eee4d1 100%) !important;
+  color:#675234;
+}
+#primor-fullscreen-viewer.element-fire{
+  --viewer-element-soft:rgba(190,91,72,.12);
+  --viewer-element-deep:rgba(164,67,52,.19);
+}
+#primor-fullscreen-viewer.element-aqua{
+  --viewer-element-soft:rgba(79,145,187,.12);
+  --viewer-element-deep:rgba(55,119,165,.19);
+}
+#primor-fullscreen-viewer.element-wood{
+  --viewer-element-soft:rgba(99,145,94,.12);
+  --viewer-element-deep:rgba(72,119,70,.19);
+}
+#primor-fullscreen-viewer.element-light{
+  --viewer-element-soft:rgba(214,176,78,.14);
+  --viewer-element-deep:rgba(187,143,45,.20);
+}
+#primor-fullscreen-viewer.element-dark{
+  --viewer-element-soft:rgba(113,88,143,.13);
+  --viewer-element-deep:rgba(83,62,112,.20);
+}
+#primor-fullscreen-viewer.element-neutral{
+  --viewer-element-soft:rgba(118,118,118,.07);
+  --viewer-element-deep:rgba(94,94,94,.13);
+}
+#primor-fullscreen-viewer .primor-fullscreen-bg{
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.90) 0%, rgba(255,252,244,.54) 34%, transparent 63%),
+    linear-gradient(180deg, rgba(255,255,255,.18) 0%, var(--viewer-element-soft) 58%, var(--viewer-element-deep) 100%) !important;
+}
+#primor-fullscreen-viewer .primor-fullscreen-content::before{
+  content:"";
+  position:absolute;
+  inset:16px 12px;
+  pointer-events:none;
+  border:1px solid rgba(168,134,76,.20);
+  border-radius:18px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.55),
+    inset 0 0 36px rgba(154,122,70,.045);
+}
+#primor-fullscreen-viewer .primor-fullscreen-img{
+  padding:5px;
+  box-sizing:border-box;
+  background:rgba(255,253,247,.70);
+  border:1px solid rgba(170,137,80,.24);
+  box-shadow:
+    0 12px 28px rgba(92,69,37,.16),
+    0 3px 8px rgba(92,69,37,.10),
+    inset 0 0 0 1px rgba(255,255,255,.72);
+  filter:none !important;
+}
+#primor-fullscreen-viewer .primor-fullscreen-name{
+  color:#6f5735 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.84) !important;
+}
+#primor-fullscreen-viewer .primor-fullscreen-close{
+  border:1px solid rgba(164,132,77,.30) !important;
+  background:rgba(255,252,244,.90) !important;
+  color:#7e6035 !important;
+  box-shadow:0 3px 10px rgba(89,65,31,.10) !important;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+#primor-fullscreen-viewer .primor-fullscreen-home-btn{
+  border-color:rgba(183,145,76,.42) !important;
+  background:linear-gradient(180deg,rgba(255,253,247,.95),rgba(229,211,171,.90)) !important;
+  color:#654a20 !important;
+  box-shadow:
+    0 6px 16px rgba(100,75,38,.12),
+    inset 0 1px 0 rgba(255,255,255,.90) !important;
+}
+
+
+/* =========================================================
+   v257 CHARACTER DETAIL PANEL - elemental gradient inside frame
+   フレーム内の台座背景だけを属性色にする。
+   キャラクター画像自体にはオーバーレイ・blendを一切かけない。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual{
+  --panel-element-top:rgba(255,255,255,.94);
+  --panel-element-mid:rgba(130,130,130,.08);
+  --panel-element-bottom:rgba(105,105,105,.16);
+  background:
+    linear-gradient(
+      180deg,
+      var(--panel-element-top) 0%,
+      rgba(255,255,255,.82) 28%,
+      var(--panel-element-mid) 67%,
+      var(--panel-element-bottom) 100%
+    ) !important;
+}
+
+/* FIRE */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-fire{
+  --panel-element-mid:rgba(205,94,70,.16);
+  --panel-element-bottom:rgba(177,65,49,.28);
+}
+
+/* AQUA */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-aqua{
+  --panel-element-mid:rgba(78,151,196,.16);
+  --panel-element-bottom:rgba(53,123,173,.27);
+}
+
+/* WOOD */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-wood{
+  --panel-element-mid:rgba(100,151,91,.16);
+  --panel-element-bottom:rgba(72,123,68,.27);
+}
+
+/* LIGHT */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-light{
+  --panel-element-mid:rgba(222,181,74,.18);
+  --panel-element-bottom:rgba(194,145,43,.29);
+}
+
+/* DARK */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-dark{
+  --panel-element-mid:rgba(119,87,151,.17);
+  --panel-element-bottom:rgba(83,58,113,.29);
+}
+
+/* NEUTRAL */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-neutral{
+  --panel-element-mid:rgba(118,118,118,.085);
+  --panel-element-bottom:rgba(92,92,92,.16);
+}
+
+/* 人物は常に通常描画。背景色を人物に被せない。 */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual .box-carousel-img{
+  position:relative;
+  z-index:1;
+  background:transparent !important;
+  mix-blend-mode:normal !important;
+  filter:none;
+}
+
+/* フレームは既存どおり最前面。 */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual::after{
+  z-index:6;
+}
+
+
+/* =========================================================
+   v258 FULLSCREEN CHARACTER VIEWER
+   拡大表示では属性別カラーを使わず、全キャラ共通の生成り背景に統一。
+   ========================================================= */
+#primor-fullscreen-viewer,
+#primor-fullscreen-viewer.element-fire,
+#primor-fullscreen-viewer.element-aqua,
+#primor-fullscreen-viewer.element-wood,
+#primor-fullscreen-viewer.element-light,
+#primor-fullscreen-viewer.element-dark,
+#primor-fullscreen-viewer.element-neutral{
+  --viewer-element-soft:rgba(178,154,118,.08) !important;
+  --viewer-element-deep:rgba(150,126,93,.12) !important;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,.95) 0 18%, rgba(255,252,244,.80) 44%, transparent 69%),
+    linear-gradient(180deg, #fbf8f1 0%, #eee4d4 100%) !important;
+}
+
+#primor-fullscreen-viewer .primor-fullscreen-bg{
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.90) 0%, rgba(255,252,244,.54) 36%, transparent 64%),
+    linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(214,195,164,.08) 58%, rgba(183,158,122,.12) 100%) !important;
+}
+
+
+/* =========================================================
+   v260 GACHA BANNER - IMAGE ONLY
+   ガチャバナー上へHTML/CSSで文字を重ねない。
+   タイトル・説明・排出率などの文字はバナー画像自体へ含める。
+   ========================================================= */
+#screen-summon .summon-detail-overlay,
+#screen-summon .summon-detail-title,
+#screen-summon .summon-detail-desc,
+#screen-summon .summon-longpress-hint,
+#screen-summon .banner-desc-overlay,
+#screen-summon .banner-card-title{
+  display:none !important;
+}
+#screen-summon .summon-detail-visual::before,
+#screen-summon .summon-detail-visual::after,
+#screen-summon .summon-banner-card::before,
+#screen-summon .summon-banner-card::after{
+  content:none !important;
+}
+
+
+/* =========================================================
+   v261 邂逅 - FULLSCREEN BANNER TEST
+   01 = 恒常 / 02 = 限定
+   バナーを画面全面へ敷き、左右切替・天井・召喚ボタンを重ねる。
+   ========================================================= */
+#screen-summon{
+  position:relative!important;
+  overflow:hidden!important;
+  background:#eee7da!important;
+}
+#screen-summon > .header{
+  display:none!important;
+}
+#screen-summon .summon-layout{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:hidden!important;
+}
+#screen-summon .summon-detail{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  gap:0!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#screen-summon .summon-detail::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:2!important;
+  inset:auto 0 0 0!important;
+  height:34%!important;
+  pointer-events:none!important;
+  background:linear-gradient(180deg,rgba(18,13,10,0) 0%,rgba(35,25,17,.10) 22%,rgba(26,19,14,.38) 70%,rgba(20,15,11,.54) 100%)!important;
+}
+#screen-summon .summon-detail-visual{
+  position:absolute!important;
+  z-index:1!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#eee7da!important;
+  box-shadow:none!important;
+}
+#screen-summon .summon-detail-visual img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:100%!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* 左右ガチャ切替 */
+#screen-summon .summon-banner-list{
+  position:absolute!important;
+  z-index:12!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  margin:0!important;
+  display:block!important;
+  pointer-events:none!important;
+  overflow:visible!important;
+  background:transparent!important;
+}
+#screen-summon .summon-banner-arrow{
+  pointer-events:auto!important;
+  position:absolute!important;
+  top:48%!important;
+  transform:translateY(-50%)!important;
+  width:42px!important;
+  height:64px!important;
+  min-width:42px!important;
+  padding:0!important;
+  margin:0!important;
+  border:1px solid rgba(255,247,230,.50)!important;
+  border-radius:11px!important;
+  background:rgba(246,238,222,.68)!important;
+  color:#6b5336!important;
+  font-family:Georgia,serif!important;
+  font-size:42px!important;
+  font-weight:400!important;
+  line-height:56px!important;
+  text-align:center!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.85)!important;
+  box-shadow:0 5px 18px rgba(38,27,18,.18),inset 0 1px 0 rgba(255,255,255,.72)!important;
+  backdrop-filter:blur(7px)!important;
+  -webkit-backdrop-filter:blur(7px)!important;
+}
+#screen-summon .summon-banner-arrow-prev{ left:10px!important; }
+#screen-summon .summon-banner-arrow-next{ right:10px!important; }
+
+/* 天井ゲージをバナー上へ */
+#screen-summon .pity-counter{
+  position:absolute!important;
+  z-index:14!important;
+  left:16px!important;
+  right:16px!important;
+  bottom:calc(158px + env(safe-area-inset-bottom))!important;
+  width:auto!important;
+  min-height:38px!important;
+  margin:0!important;
+  padding:7px 11px!important;
+  border:1px solid rgba(244,230,200,.46)!important;
+  border-radius:10px!important;
+  background:rgba(248,242,231,.82)!important;
+  box-shadow:0 6px 18px rgba(36,27,20,.16)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+#screen-summon .pity-note{
+  position:absolute!important;
+  z-index:14!important;
+  left:18px!important;
+  right:18px!important;
+  bottom:calc(137px + env(safe-area-inset-bottom))!important;
+  margin:0!important;
+  padding:0!important;
+  color:rgba(255,250,241,.92)!important;
+  font-size:10px!important;
+  text-align:right!important;
+  text-shadow:0 1px 4px rgba(25,18,13,.75)!important;
+}
+
+/* 召喚ボタンをバナー最下部へ */
+#screen-summon .summon-detail-btns{
+  position:absolute!important;
+  z-index:15!important;
+  left:14px!important;
+  right:14px!important;
+  bottom:calc(76px + env(safe-area-inset-bottom))!important;
+  width:auto!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:9px!important;
+}
+#screen-summon .btn-gacha{
+  min-height:56px!important;
+  border-radius:11px!important;
+  box-shadow:0 7px 18px rgba(31,23,17,.22)!important;
+}
+
+/* 小さい端末でもUI同士が衝突しない */
+@media (max-height:700px){
+  #screen-summon .summon-banner-arrow{ top:45%!important; height:56px!important; }
+  #screen-summon .pity-counter{ bottom:calc(148px + env(safe-area-inset-bottom))!important; }
+  #screen-summon .pity-note{ bottom:calc(128px + env(safe-area-inset-bottom))!important; }
+  #screen-summon .summon-detail-btns{ bottom:calc(69px + env(safe-area-inset-bottom))!important; }
+  #screen-summon .btn-gacha{ min-height:52px!important; }
+}
+
+
+/* =========================================================
+   v262 GACHA FULLSCREEN - controls raised
+   天井ゲージと召喚ボタンを上へ移動。
+   下部ナビとの距離を確保する。
+   ========================================================= */
+#screen-summon .pity-counter{
+  bottom:calc(206px + env(safe-area-inset-bottom)) !important;
+}
+#screen-summon .pity-note{
+  bottom:calc(185px + env(safe-area-inset-bottom)) !important;
+}
+#screen-summon .summon-detail-btns{
+  bottom:calc(124px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-height:700px){
+  #screen-summon .pity-counter{
+    bottom:calc(198px + env(safe-area-inset-bottom)) !important;
+  }
+  #screen-summon .pity-note{
+    bottom:calc(178px + env(safe-area-inset-bottom)) !important;
+  }
+  #screen-summon .summon-detail-btns{
+    bottom:calc(119px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* =========================================================
+   v264 GACHA SCREEN - centered translucent title panel
+   ========================================================= */
+#screen-summon .summon-center-title-card{
+  position:absolute;
+  left:50%;
+  top:66%;
+  transform:translate(-50%,-50%);
+  z-index:8;
+  min-width:min(60vw,220px);
+  max-width:min(72vw,280px);
+  padding:15px 22px 17px;
+  box-sizing:border-box;
+  text-align:center;
+  border:1px solid rgba(179,143,73,.48);
+  border-radius:3px;
+  background:linear-gradient(180deg,rgba(255,253,242,.74),rgba(239,232,207,.62));
+  box-shadow:
+    0 8px 24px rgba(52,37,17,.16),
+    inset 0 1px 0 rgba(255,255,255,.82);
+  backdrop-filter:blur(7px) saturate(.9);
+  -webkit-backdrop-filter:blur(7px) saturate(.9);
+  pointer-events:none;
+}
+#screen-summon .summon-center-title-card::before{
+  content:"";
+  position:absolute;
+  left:18%;
+  right:18%;
+  bottom:10px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(158,120,55,.38),transparent);
+}
+#screen-summon .summon-center-title-en{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:11px;
+  line-height:1.1;
+  letter-spacing:.10em;
+  color:rgba(80,62,36,.88);
+  margin-bottom:10px;
+  text-shadow:0 1px 0 rgba(255,255,255,.72);
+}
+#screen-summon .summon-center-title-jp{
+  font-family:"Noto Serif JP",serif;
+  font-size:21px;
+  line-height:1.2;
+  letter-spacing:.08em;
+  font-weight:600;
+  color:#4b3820;
+  padding-bottom:8px;
+  text-shadow:0 1px 0 rgba(255,255,255,.76);
+}
+
+/* switch arrows aligned to the title panel */
+#screen-summon .summon-banner-arrow{
+  top:66% !important;
+  transform:translateY(-50%) !important;
+  z-index:9 !important;
+  width:42px !important;
+  height:52px !important;
+  border-radius:10px !important;
+  border:1px solid rgba(168,132,68,.30) !important;
+  background:rgba(255,251,239,.62) !important;
+  color:#765a2d !important;
+  box-shadow:
+    0 5px 16px rgba(55,39,18,.13),
+    inset 0 1px 0 rgba(255,255,255,.76) !important;
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+  font-size:31px !important;
+}
+
+/* mockに近い縦配置 */
+#screen-summon .pity-counter{
+  bottom:calc(198px + env(safe-area-inset-bottom)) !important;
+}
+#screen-summon .pity-note{
+  bottom:calc(177px + env(safe-area-inset-bottom)) !important;
+}
+#screen-summon .summon-detail-btns{
+  bottom:calc(112px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-width:380px){
+  #screen-summon .summon-center-title-card{
+    top:65%;
+    min-width:min(61vw,210px);
+    padding:13px 18px 15px;
+  }
+  #screen-summon .summon-center-title-en{font-size:10px;}
+  #screen-summon .summon-center-title-jp{font-size:19px;}
+  #screen-summon .summon-banner-arrow{
+    top:65% !important;
+    width:38px !important;
+    height:48px !important;
+  }
+}
+
+
+/* =========================================================
+   v265 GACHA SCREEN - raise controls / bare arrows
+   中央カード・天井・召喚ボタンをさらに上へ。
+   左右切替は枠/背景を廃止し、縁取り+影だけで背景から浮かせる。
+   ========================================================= */
+
+/* 中央タイトルを少し上へ */
+#screen-summon .summon-center-title-card{
+  top:61.5% !important;
+}
+
+/* 左右切替：背景・フレームなし */
+#screen-summon .summon-banner-arrow{
+  top:61.5% !important;
+  width:48px !important;
+  height:62px !important;
+  padding:0 !important;
+  border:none !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  color:#f3e2a9 !important;
+  font-size:42px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  text-shadow:
+    0 2px 1px rgba(57,38,11,.95),
+    0 0 3px rgba(57,38,11,.88),
+    0 0 8px rgba(255,245,206,.48),
+    0 4px 10px rgba(0,0,0,.42) !important;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.30));
+}
+
+/* hover/activeでも箱を出さない */
+#screen-summon .summon-banner-arrow:hover,
+#screen-summon .summon-banner-arrow:focus,
+#screen-summon .summon-banner-arrow:active{
+  border:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* 下部UI全体を上へ。ボトムナビとの隙間を明確に確保 */
+#screen-summon .pity-counter{
+  bottom:calc(236px + env(safe-area-inset-bottom)) !important;
+}
+#screen-summon .pity-note{
+  bottom:calc(215px + env(safe-area-inset-bottom)) !important;
+}
+#screen-summon .summon-detail-btns{
+  bottom:calc(146px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-width:380px){
+  #screen-summon .summon-center-title-card{
+    top:60.5% !important;
+  }
+  #screen-summon .summon-banner-arrow{
+    top:60.5% !important;
+    width:44px !important;
+    height:58px !important;
+    font-size:39px !important;
+  }
+}
+
+@media (max-height:700px){
+  #screen-summon .pity-counter{
+    bottom:calc(226px + env(safe-area-inset-bottom)) !important;
+  }
+  #screen-summon .pity-note{
+    bottom:calc(206px + env(safe-area-inset-bottom)) !important;
+  }
+  #screen-summon .summon-detail-btns{
+    bottom:calc(141px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+
+/* =========================================================
+   v266 GACHA POOL DETAIL
+   中央ガラスカードを入口に、排出対象と提供割合を確認できる。
+   ========================================================= */
+#screen-summon .summon-center-title-card{
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+  pointer-events:auto !important;
+  color:inherit;
+}
+#screen-summon .summon-center-title-card:active{
+  transform:translate(-50%,-50%) scale(.985) !important;
+}
+#screen-summon .summon-center-title-more{
+  margin-top:4px;
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  line-height:1;
+  letter-spacing:.08em;
+  color:rgba(97,75,42,.62);
+}
+body.is-gacha-pool-detail-open{
+  overflow:hidden !important;
+}
+.gacha-pool-detail-modal{
+  position:fixed;
+  inset:0;
+  z-index:600000;
+  display:none;
+}
+.gacha-pool-detail-modal.is-open{
+  display:block;
+}
+.gacha-pool-detail-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(44,34,23,.42);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+.gacha-pool-detail-sheet{
+  position:absolute;
+  left:50%;
+  top:calc(env(safe-area-inset-top) + 18px);
+  bottom:calc(env(safe-area-inset-bottom) + 18px);
+  transform:translateX(-50%);
+  width:min(calc(100vw - 28px),430px);
+  box-sizing:border-box;
+  overflow:hidden;
+  border:1px solid rgba(177,141,74,.38);
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 50% 0%,rgba(255,255,255,.96),rgba(255,252,244,.80) 26%,transparent 55%),
+    linear-gradient(180deg,#fbf8ef 0%,#eee3d0 100%);
+  box-shadow:
+    0 22px 64px rgba(48,34,18,.28),
+    inset 0 0 0 1px rgba(255,255,255,.72);
+  padding:24px 14px 18px;
+  display:flex;
+  flex-direction:column;
+}
+.gacha-pool-detail-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  z-index:2;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(161,127,69,.26);
+  border-radius:50%;
+  background:rgba(255,252,244,.72);
+  color:#775b34;
+  font-size:25px;
+  line-height:34px;
+  box-shadow:0 3px 10px rgba(67,48,23,.10);
+}
+.gacha-pool-detail-kicker{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:9px;
+  letter-spacing:.20em;
+  text-align:center;
+  color:#b18b49;
+}
+.gacha-pool-detail-title{
+  margin:4px 46px 0;
+  font-family:"Noto Serif JP",serif;
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-align:center;
+  color:#5e4829;
+}
+.gacha-pool-detail-subtitle{
+  margin-top:3px;
+  font-family:"Noto Serif JP",serif;
+  font-size:11px;
+  letter-spacing:.12em;
+  text-align:center;
+  color:rgba(91,69,39,.58);
+}
+.gacha-pool-rate-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin:16px 0 12px;
+}
+.gacha-pool-rate-box{
+  min-width:0;
+  padding:9px 4px 8px;
+  border:1px solid rgba(174,140,78,.22);
+  background:rgba(255,255,255,.48);
+  text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65);
+}
+.gacha-pool-rate-box span{
+  display:block;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:9px;
+  letter-spacing:.06em;
+  color:rgba(92,71,42,.64);
+}
+.gacha-pool-rate-box b{
+  display:block;
+  margin-top:2px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:17px;
+  font-weight:600;
+  color:#72552c;
+}
+.gacha-pool-detail-content{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  padding:1px 3px 16px;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.gacha-pool-section{
+  margin-top:10px;
+}
+.gacha-pool-section:first-child{margin-top:0}
+.gacha-pool-section-head{
+  position:sticky;
+  top:0;
+  z-index:1;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 10px;
+  border-bottom:1px solid rgba(166,128,65,.22);
+  background:rgba(244,236,218,.94);
+  font-family:"Cinzel","Noto Serif JP",serif;
+  color:#72552f;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.gacha-pool-section-head span{
+  font-size:10px;
+  letter-spacing:.10em;
+}
+.gacha-pool-section-head b{
+  font-size:12px;
+  font-weight:600;
+}
+.gacha-pool-section-list{
+  background:rgba(255,255,255,.30);
+}
+.gacha-pool-entry{
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:6px 8px;
+  border-bottom:1px solid rgba(158,129,82,.11);
+}
+.gacha-pool-entry:last-child{border-bottom:none}
+.gacha-pool-entry-img{
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  object-fit:cover;
+  border:1px solid rgba(160,127,70,.22);
+  background:rgba(255,255,255,.62);
+  box-shadow:0 2px 5px rgba(70,50,23,.08);
+}
+.gacha-pool-entry.is-material .gacha-pool-entry-img{
+  object-fit:contain;
+  padding:3px;
+  box-sizing:border-box;
+}
+.gacha-pool-entry-main{
+  min-width:0;
+  flex:1 1 auto;
+}
+.gacha-pool-entry-name{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  color:#58452d;
+}
+.gacha-pool-entry-meta{
+  margin-top:2px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:8px;
+  letter-spacing:.08em;
+  color:rgba(97,76,48,.50);
+}
+.gacha-pool-limited{
+  flex:0 0 auto;
+  padding:2px 5px;
+  border:1px solid rgba(161,84,67,.28);
+  background:rgba(178,72,57,.07);
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:7px;
+  letter-spacing:.06em;
+  color:#9b5546;
+}
+.gacha-pool-entry-rate{
+  flex:0 0 64px;
+  text-align:right;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:11px;
+  color:#72552f;
+}
+.gacha-pool-detail-note{
+  flex:0 0 auto;
+  padding:10px 3px 0;
+  border-top:1px solid rgba(161,126,68,.15);
+  font-size:9px;
+  line-height:1.55;
+  color:rgba(83,68,49,.58);
+}
+
+
+/* =========================================================
+   v267 GACHA - responsive fixed stack
+   vh比率で各UIを置かず、ボトムナビからの距離で積み上げる。
+   iPhone SE等の低い画面でもタイトル/天井/召喚ボタンが重ならない。
+   ========================================================= */
+#screen-summon{
+  --gacha-nav-clearance:calc(78px + env(safe-area-inset-bottom));
+  --gacha-actions-bottom:calc(var(--gacha-nav-clearance) + 30px);
+  --gacha-pity-note-bottom:calc(var(--gacha-actions-bottom) + 74px);
+  --gacha-pity-bottom:calc(var(--gacha-pity-note-bottom) + 22px);
+  --gacha-title-bottom:calc(var(--gacha-pity-bottom) + 58px);
+}
+
+#screen-summon .summon-detail-btns{
+  bottom:var(--gacha-actions-bottom) !important;
+}
+#screen-summon .pity-note{
+  bottom:var(--gacha-pity-note-bottom) !important;
+}
+#screen-summon .pity-counter{
+  bottom:var(--gacha-pity-bottom) !important;
+}
+#screen-summon .summon-center-title-card{
+  top:auto !important;
+  bottom:var(--gacha-title-bottom) !important;
+  transform:translateX(-50%) !important;
+}
+#screen-summon .summon-center-title-card:active{
+  transform:translateX(-50%) scale(.985) !important;
+}
+#screen-summon .summon-banner-arrow{
+  top:auto !important;
+  bottom:calc(var(--gacha-title-bottom) + 12px) !important;
+  transform:none !important;
+}
+
+/* 小型端末では各部品そのものを少し圧縮し、位置関係は維持する */
+@media (max-height:700px){
+  #screen-summon{
+    --gacha-nav-clearance:calc(72px + env(safe-area-inset-bottom));
+    --gacha-actions-bottom:calc(var(--gacha-nav-clearance) + 24px);
+    --gacha-pity-note-bottom:calc(var(--gacha-actions-bottom) + 66px);
+    --gacha-pity-bottom:calc(var(--gacha-pity-note-bottom) + 20px);
+    --gacha-title-bottom:calc(var(--gacha-pity-bottom) + 50px);
+  }
+  #screen-summon .summon-center-title-card{
+    min-width:min(58vw,205px) !important;
+    padding:11px 16px 12px !important;
+  }
+  #screen-summon .summon-center-title-en{
+    margin-bottom:6px !important;
+    font-size:9px !important;
+  }
+  #screen-summon .summon-center-title-jp{
+    padding-bottom:5px !important;
+    font-size:18px !important;
+  }
+  #screen-summon .summon-center-title-more{
+    font-size:8px !important;
+  }
+  #screen-summon .summon-banner-arrow{
+    bottom:calc(var(--gacha-title-bottom) + 5px) !important;
+    font-size:36px !important;
+    height:48px !important;
+  }
+  #screen-summon .summon-detail-btns{
+    min-height:54px !important;
+  }
+}
+
+/* 横幅が狭い端末でもボタン・中央カードを画面内へ固定 */
+@media (max-width:375px){
+  #screen-summon .summon-detail-btns{
+    left:12px !important;
+    right:12px !important;
+    width:auto !important;
+    gap:7px !important;
+  }
+  #screen-summon .btn-gacha{
+    min-width:0 !important;
+    padding-left:8px !important;
+    padding-right:8px !important;
+  }
+  #screen-summon .summon-center-title-card{
+    width:min(58vw,205px) !important;
+    min-width:0 !important;
+    max-width:none !important;
+  }
+}
+
+/* 提供割合の分類見出し */
+.gacha-pool-section-head em{
+  font-style:normal;
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  letter-spacing:.03em;
+  opacity:.72;
+}
+.gacha-pool-empty{
+  padding:13px 10px;
+  text-align:center;
+  font-family:"Noto Serif JP",serif;
+  font-size:10px;
+  color:rgba(91,73,51,.48);
+  background:rgba(255,255,255,.20);
+}
+
+
+/* =========================================================
+   v268 GACHA POOL - tap character for ability detail
+   ========================================================= */
+.gacha-pool-entry.is-character{
+  width:100%;
+  appearance:none;
+  -webkit-appearance:none;
+  border-left:0;
+  border-right:0;
+  border-top:0;
+  border-radius:0;
+  font:inherit;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+  background:transparent;
+}
+.gacha-pool-entry.is-character:active{
+  background:rgba(185,148,79,.08);
+}
+.gacha-pool-entry-chevron{
+  flex:0 0 14px;
+  margin-left:1px;
+  font-family:"Noto Serif JP",serif;
+  font-size:22px;
+  line-height:1;
+  color:rgba(127,96,49,.42);
+}
+
+/* 個別行のLIMITEDバッジは使用しない */
+.gacha-pool-limited{
+  display:none !important;
+}
+
+/* ガチャ提供割合から開く能力画面 */
+#detail-modal.is-gacha-pool-preview{
+  z-index:600100 !important;
+}
+
+
+/* =========================================================
+   v269 GACHA POOL - section headings scroll normally
+   提供割合の各カテゴリ見出しをsticky解除。
+   ========================================================= */
+.gacha-pool-section-head{
+  position:static !important;
+  top:auto !important;
+  z-index:auto !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+
+/* =========================================================
+   v270 GACHA CHARACTER DETAIL
+   名前をブラウン系へ、右下レアリティバッジ追加、
+   ガチャプレビューは選択中の凸段階における最大Lv想定。
+   ========================================================= */
+
+/* ガチャ詳細のキャラ名：白文字を廃止 */
+#detail-modal.is-gacha-pickup-preview #gacha-pickup-title-name,
+#detail-modal.is-gacha-pool-preview #gacha-pickup-title-name,
+#detail-modal.is-gacha-pickup-preview #detail-name,
+#detail-modal.is-gacha-pool-preview #detail-name{
+  color:#5b4328 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.82) !important;
+}
+
+/* 既存のガチャ用タイトル名も見やすいブラウンへ */
+#detail-modal .gacha-pickup-title-name{
+  color:#5b4328 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.82) !important;
+}
+
+/* キャラ画像 + レアリティバッジ */
+#detail-modal .gacha-preview-visual-wrap{
+  position:relative;
+  display:inline-block;
+  line-height:0;
+}
+#detail-modal .gacha-preview-visual-wrap .chara-visual-wrap{
+  position:relative;
+  z-index:1;
+}
+#detail-modal .gacha-preview-rarity-badge{
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  z-index:8;
+  width:clamp(56px,17vw,72px);
+  height:auto;
+  pointer-events:none;
+  filter:
+    drop-shadow(0 1px 1px rgba(255,255,255,.22))
+    drop-shadow(0 2px 2px rgba(64,45,22,.32))
+    drop-shadow(0 4px 5px rgba(50,34,16,.26));
+}
+
+/* 詳細モーダル内の名前表示を隠す旧指定より優先 */
+#detail-modal.is-gacha-pickup-preview #detail-name,
+#detail-modal.is-gacha-pool-preview #detail-name{
+  display:block !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:21px !important;
+  font-weight:600 !important;
+  letter-spacing:.10em !important;
+  margin-top:8px !important;
+}
+
+
+/* =========================================================
+   v271 GACHA CHARACTER DETAIL
+   画像下の重複した名前 / rarity / No. 表示を非表示。
+   上部のキャラ名だけを残す。
+   ========================================================= */
+#detail-modal.is-gacha-pickup-preview #detail-name,
+#detail-modal.is-gacha-pool-preview #detail-name,
+#detail-modal.is-gacha-pickup-preview #detail-rank,
+#detail-modal.is-gacha-pool-preview #detail-rank{
+  display:none !important;
+}
+
+/* =========================================================
+   v271 GACHA SCREEN - stronger bottom clearance / responsive
+   下部ナビと召喚ボタンの間隔を広げ、
+   高さの異なる画面でも下から順に積み上がる構成を維持する。
+   ========================================================= */
+#screen-summon{
+  --gacha-bottom-nav-h:calc(78px + env(safe-area-inset-bottom));
+  --gacha-bottom-gap:38px;
+  --gacha-actions-bottom:calc(var(--gacha-bottom-nav-h) + var(--gacha-bottom-gap));
+  --gacha-actions-h:58px;
+  --gacha-pity-note-bottom:calc(var(--gacha-actions-bottom) + var(--gacha-actions-h) + 12px);
+  --gacha-pity-bottom:calc(var(--gacha-pity-note-bottom) + 24px);
+  --gacha-title-bottom:calc(var(--gacha-pity-bottom) + 58px);
+}
+
+#screen-summon .summon-detail-btns{
+  bottom:var(--gacha-actions-bottom) !important;
+}
+#screen-summon .pity-note{
+  bottom:var(--gacha-pity-note-bottom) !important;
+}
+#screen-summon .pity-counter{
+  bottom:var(--gacha-pity-bottom) !important;
+}
+#screen-summon .summon-center-title-card{
+  top:auto !important;
+  bottom:var(--gacha-title-bottom) !important;
+  transform:translateX(-50%) !important;
+}
+#screen-summon .summon-center-title-card:active{
+  transform:translateX(-50%) scale(.985) !important;
+}
+#screen-summon .summon-banner-arrow{
+  top:auto !important;
+  bottom:calc(var(--gacha-title-bottom) + 10px) !important;
+  transform:none !important;
+}
+
+/* iPhone SE 等、高さが短い端末 */
+@media (max-height:700px){
+  #screen-summon{
+    --gacha-bottom-nav-h:calc(70px + env(safe-area-inset-bottom));
+    --gacha-bottom-gap:30px;
+    --gacha-actions-h:52px;
+    --gacha-pity-note-bottom:calc(var(--gacha-actions-bottom) + var(--gacha-actions-h) + 9px);
+    --gacha-pity-bottom:calc(var(--gacha-pity-note-bottom) + 21px);
+    --gacha-title-bottom:calc(var(--gacha-pity-bottom) + 48px);
+  }
+
+  #screen-summon .summon-detail-btns{
+    left:10px !important;
+    right:10px !important;
+    width:auto !important;
+    gap:6px !important;
+  }
+
+  #screen-summon .btn-gacha{
+    min-height:50px !important;
+    padding-top:6px !important;
+    padding-bottom:6px !important;
+  }
+
+  #screen-summon .summon-center-title-card{
+    width:min(58vw,198px) !important;
+    min-width:0 !important;
+    padding:10px 14px 11px !important;
+  }
+
+  #screen-summon .summon-center-title-en{
+    margin-bottom:5px !important;
+    font-size:9px !important;
+  }
+
+  #screen-summon .summon-center-title-jp{
+    padding-bottom:4px !important;
+    font-size:17px !important;
+  }
+
+  #screen-summon .summon-center-title-more{
+    font-size:7.5px !important;
+  }
+
+  #screen-summon .summon-banner-arrow{
+    bottom:calc(var(--gacha-title-bottom) + 2px) !important;
+    height:44px !important;
+    font-size:34px !important;
+  }
+}
+
+/* さらに低い画面ではUIの高さだけ圧縮し、位置関係は固定 */
+@media (max-height:620px){
+  #screen-summon{
+    --gacha-bottom-nav-h:calc(66px + env(safe-area-inset-bottom));
+    --gacha-bottom-gap:24px;
+    --gacha-actions-h:48px;
+    --gacha-pity-note-bottom:calc(var(--gacha-actions-bottom) + var(--gacha-actions-h) + 7px);
+    --gacha-pity-bottom:calc(var(--gacha-pity-note-bottom) + 19px);
+    --gacha-title-bottom:calc(var(--gacha-pity-bottom) + 42px);
+  }
+
+  #screen-summon .btn-gacha{
+    min-height:46px !important;
+  }
+
+  #screen-summon .summon-center-title-card{
+    width:min(56vw,188px) !important;
+    padding:8px 12px 9px !important;
+  }
+
+  #screen-summon .summon-center-title-jp{
+    font-size:16px !important;
+  }
+}
+
+/* 狭い横幅でも左右余白を確保 */
+@media (max-width:360px){
+  #screen-summon{
+    --gacha-bottom-gap:28px;
+  }
+  #screen-summon .summon-detail-btns{
+    left:8px !important;
+    right:8px !important;
+  }
+}
+
+
+/* =========================================================
+   v272 GACHA SCREEN - larger bottom breathing room
+   ボトムナビと召喚ボタンの間隔を約3倍へ。
+   下から積み上げる構造は維持するため、天井/タイトルも連動して上がる。
+   ========================================================= */
+#screen-summon{
+  --gacha-bottom-gap:112px !important;
+}
+
+/* iPhone SEなど短い画面では、崩れ防止のため圧縮しつつ大きめの余白を維持 */
+@media (max-height:700px){
+  #screen-summon{
+    --gacha-bottom-gap:82px !important;
+  }
+}
+
+@media (max-height:620px){
+  #screen-summon{
+    --gacha-bottom-gap:64px !important;
+  }
+}
+
+@media (max-width:360px){
+  #screen-summon{
+    --gacha-bottom-gap:76px !important;
+  }
+}
+
+@media (max-width:360px) and (max-height:620px){
+  #screen-summon{
+    --gacha-bottom-gap:58px !important;
+  }
+}
+
+
+/* =========================================================
+   v273 GACHA PITY
+   天井は、そのガチャのSRプールから1体確定。
+   注記は半透明プレートで背景から分離。
+   ========================================================= */
+#screen-summon .pity-note{
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:max-content !important;
+  max-width:calc(100vw - 44px) !important;
+  min-height:24px !important;
+  padding:4px 12px 5px !important;
+  box-sizing:border-box !important;
+  border:1px solid rgba(155,119,59,.22) !important;
+  border-radius:999px !important;
+  background:rgba(255,251,239,.78) !important;
+  color:#6a4f2c !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  line-height:1.35 !important;
+  letter-spacing:.03em !important;
+  text-align:center !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.82) !important;
+  box-shadow:
+    0 3px 12px rgba(57,39,17,.12),
+    inset 0 1px 0 rgba(255,255,255,.72) !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+  white-space:nowrap !important;
+  z-index:12 !important;
+}
+
+@media (max-width:360px){
+  #screen-summon .pity-note{
+    max-width:calc(100vw - 28px) !important;
+    padding-left:9px !important;
+    padding-right:9px !important;
+    font-size:9px !important;
+  }
+}
+
+
+/* =========================================================
+   v275 GACHA ARROWS
+   左右矢印を少し上へ寄せ、浮きすぎる影を弱める。
+   中央タイトルと同じ高さに馴染ませる。
+   ========================================================= */
+#screen-summon .summon-banner-arrow{
+  bottom:calc(var(--gacha-title-bottom) + 24px) !important;
+  color:#e9d596 !important;
+  text-shadow:
+    0 1px 1px rgba(66,45,17,.88),
+    0 0 2px rgba(66,45,17,.68),
+    0 2px 5px rgba(0,0,0,.22) !important;
+  filter:none !important;
+  opacity:.96 !important;
+}
+
+@media (max-height:700px){
+  #screen-summon .summon-banner-arrow{
+    bottom:calc(var(--gacha-title-bottom) + 16px) !important;
+  }
+}
+
+@media (max-height:620px){
+  #screen-summon .summon-banner-arrow{
+    bottom:calc(var(--gacha-title-bottom) + 12px) !important;
+  }
+}
+
+
+/* =========================================================
+   v276 GACHA PITY NOTE
+   楕円ピル型を廃止。
+   左右へ薄くフェードする横長バーに変更し、画面へ馴染ませる。
+   ========================================================= */
+#screen-summon .pity-note{
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:min(78vw,320px) !important;
+  max-width:calc(100vw - 36px) !important;
+  min-height:22px !important;
+  padding:4px 20px 5px !important;
+  box-sizing:border-box !important;
+  border:none !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,251,239,0) 0%,
+      rgba(255,251,239,.38) 13%,
+      rgba(255,251,239,.74) 28%,
+      rgba(255,251,239,.82) 50%,
+      rgba(255,251,239,.74) 72%,
+      rgba(255,251,239,.38) 87%,
+      rgba(255,251,239,0) 100%
+    ) !important;
+  color:#6a4f2c !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  line-height:1.35 !important;
+  letter-spacing:.03em !important;
+  text-align:center !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.78) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+  white-space:nowrap !important;
+  z-index:12 !important;
+}
+
+/* バー中央にだけごく薄い上下罫線。左右へフェード */
+#screen-summon .pity-note::before,
+#screen-summon .pity-note::after{
+  content:"";
+  position:absolute;
+  left:10%;
+  right:10%;
+  height:1px;
+  pointer-events:none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(151,114,55,0) 0%,
+      rgba(151,114,55,.18) 22%,
+      rgba(151,114,55,.28) 50%,
+      rgba(151,114,55,.18) 78%,
+      rgba(151,114,55,0) 100%
+    );
+}
+#screen-summon .pity-note::before{ top:0; }
+#screen-summon .pity-note::after{ bottom:0; }
+
+@media (max-width:360px){
+  #screen-summon .pity-note{
+    width:min(84vw,292px) !important;
+    max-width:calc(100vw - 24px) !important;
+    padding-left:14px !important;
+    padding-right:14px !important;
+    font-size:9px !important;
+  }
+}
+
+
+/* =========================================================
+   v277 GACHA BUTTONS - about two sizes smaller
+   1回 / 10回ボタンを全体的に一回り以上コンパクト化。
+   ========================================================= */
+#screen-summon .summon-detail-btns{
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:min(86vw,350px) !important;
+  gap:8px !important;
+}
+
+#screen-summon .btn-gacha{
+  min-height:46px !important;
+  height:auto !important;
+  padding:6px 10px !important;
+  border-radius:4px !important;
+}
+
+#screen-summon .btn-gacha-label{
+  font-size:17px !important;
+  line-height:1.05 !important;
+}
+
+#screen-summon .btn-gacha-cost{
+  margin-top:2px !important;
+  font-size:10px !important;
+  line-height:1 !important;
+}
+
+#screen-summon .btn-gacha-gem-icon{
+  width:13px !important;
+  height:13px !important;
+}
+
+/* 小型端末ではさらに少しだけ圧縮 */
+@media (max-width:375px), (max-height:700px){
+  #screen-summon .summon-detail-btns{
+    width:min(84vw,326px) !important;
+    gap:6px !important;
+  }
+  #screen-summon .btn-gacha{
+    min-height:42px !important;
+    padding:5px 8px !important;
+  }
+  #screen-summon .btn-gacha-label{
+    font-size:15px !important;
+  }
+  #screen-summon .btn-gacha-cost{
+    font-size:9px !important;
+  }
+}
+
+
+/* =========================================================
+   v278 GACHA PITY NOTE - clean text only
+   背景バー/ぼかし/罫線を完全撤去。
+   文字だけを置き、背景に応じてごく薄い影で可読性を確保。
+   ========================================================= */
+#screen-summon .pity-note{
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:auto !important;
+  max-width:calc(100vw - 36px) !important;
+  min-height:0 !important;
+  padding:0 !important;
+  border:none !important;
+  border-radius:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  color:#6b5130 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  line-height:1.35 !important;
+  letter-spacing:.03em !important;
+  text-align:center !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 0 4px rgba(255,249,235,.62) !important;
+  white-space:nowrap !important;
+  z-index:12 !important;
+}
+
+#screen-summon .pity-note::before,
+#screen-summon .pity-note::after{
+  content:none !important;
+  display:none !important;
+}
+
+@media (max-width:360px){
+  #screen-summon .pity-note{
+    max-width:calc(100vw - 24px) !important;
+    font-size:9px !important;
+  }
+}
+
+
+/* =========================================================
+   v279 GLOBAL USER FRAME
+   - 横EXPバーを廃止し、RANK円周へ進捗を内包
+   - 資源表示を楕円ピルからクールなフラットHUDへ
+   - ヘッダー高は既存のまま
+   ========================================================= */
+
+/* --- Rank ring --- */
+.global-user-frame .hud-lv-circle{
+  --rank-exp:0deg;
+  position:relative !important;
+  width:50px !important;
+  height:50px !important;
+  flex:0 0 50px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    conic-gradient(
+      from -90deg,
+      #b98b35 0deg,
+      #e1c56f var(--rank-exp),
+      rgba(139,112,68,.18) var(--rank-exp),
+      rgba(139,112,68,.18) 360deg
+    ) !important;
+  box-shadow:
+    0 2px 7px rgba(92,67,28,.13),
+    0 0 0 1px rgba(160,124,58,.16) !important;
+}
+
+/* inner ivory disc creates a thin circular EXP gauge */
+.global-user-frame .hud-lv-circle::before{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 38% 28%, rgba(255,255,255,.98), rgba(249,244,232,.98) 58%, rgba(232,220,194,.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.74),
+    inset 0 0 0 2px rgba(155,119,54,.10);
+  z-index:0;
+}
+
+/* subtle outer engraving */
+.global-user-frame .hud-lv-circle::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:50%;
+  border:1px solid rgba(152,116,52,.26);
+  pointer-events:none;
+}
+
+.global-user-frame .hud-lv-core{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  line-height:1;
+}
+
+.global-user-frame .hud-lv-label{
+  font-size:7px !important;
+  letter-spacing:.12em !important;
+  color:rgba(112,83,43,.72) !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.78) !important;
+}
+
+.global-user-frame .hud-lv-num{
+  font-size:20px !important;
+  font-weight:600 !important;
+  color:#594226 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.82) !important;
+}
+
+/* horizontal EXP UI removed */
+.global-user-frame .hud-exp-text,
+.global-user-frame .hud-exp-row,
+.global-user-frame .hud-exp-bg,
+.global-user-frame .hud-exp-fill{
+  display:none !important;
+}
+
+.global-user-frame .hud-left{
+  gap:9px !important;
+}
+
+.global-user-frame .hud-info{
+  justify-content:center !important;
+  gap:0 !important;
+}
+
+.global-user-frame .hud-name{
+  font-size:15px !important;
+  line-height:1 !important;
+  letter-spacing:.11em !important;
+  color:#5c4528 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.88) !important;
+}
+
+/* --- Resources: remove pill frames, make them larger + sharper --- */
+.global-user-frame .hud-right{
+  gap:13px !important;
+}
+
+.global-user-frame .hud-resource{
+  position:relative !important;
+  min-width:74px !important;
+  height:32px !important;
+  padding:2px 3px 3px !important;
+  gap:6px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* thin architectural underline; no enclosing capsule */
+.global-user-frame .hud-resource::after{
+  content:"";
+  position:absolute;
+  left:5px;
+  right:5px;
+  bottom:1px;
+  height:1px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(151,116,55,.18) 14%,
+      rgba(151,116,55,.48) 50%,
+      rgba(151,116,55,.18) 86%,
+      transparent 100%
+    );
+}
+
+.global-user-frame .hud-resource::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-1px;
+  width:20px;
+  height:3px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,rgba(194,158,82,.42),transparent);
+  filter:blur(.2px);
+}
+
+.global-user-frame .hud-res-icon{
+  width:21px !important;
+  height:21px !important;
+  min-width:21px !important;
+  filter:drop-shadow(0 2px 2px rgba(74,55,28,.12));
+}
+
+.global-user-frame .hud-res-val{
+  min-width:30px !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  letter-spacing:.04em !important;
+  color:#594226 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.88) !important;
+}
+
+/* plus becomes a small line-control, not a circle pill */
+.global-user-frame .hud-gem-plus-btn{
+  width:19px !important;
+  min-width:19px !important;
+  height:19px !important;
+  min-height:19px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#96713b !important;
+  font-size:17px !important;
+  font-weight:400 !important;
+  line-height:18px !important;
+  box-shadow:none !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.86) !important;
+}
+
+/* Keep the same overall header height; only internal density changes. */
+.global-user-frame{
+  min-height:var(--header-h) !important;
+  box-sizing:border-box !important;
+}
+
+@media (max-width:360px){
+  .global-user-frame .hud-lv-circle{
+    width:47px !important;
+    height:47px !important;
+    flex-basis:47px !important;
+  }
+  .global-user-frame .hud-right{
+    gap:7px !important;
+  }
+  .global-user-frame .hud-resource{
+    min-width:65px !important;
+    gap:4px !important;
+  }
+  .global-user-frame .hud-res-icon{
+    width:19px !important;
+    height:19px !important;
+    min-width:19px !important;
+  }
+  .global-user-frame .hud-res-val{
+    min-width:25px !important;
+    font-size:12px !important;
+  }
+  .global-user-frame .hud-name{
+    font-size:13px !important;
+  }
+}
+
+
+/* =========================================================
+   v280 GLOBAL USER FRAME
+   RANK文字を拡大。
+   ヘッダー高を変えず、RANK経験値リングを可能な限り大型化。
+   ========================================================= */
+.global-user-frame .hud-lv-circle{
+  width:58px !important;
+  height:58px !important;
+  flex:0 0 58px !important;
+}
+
+/* 外周リングをより端まで使う */
+.global-user-frame .hud-lv-circle::before{
+  inset:3px !important;
+}
+.global-user-frame .hud-lv-circle::after{
+  inset:-1px !important;
+}
+
+/* RANKラベルを明確に大きく */
+.global-user-frame .hud-lv-label{
+  font-size:9px !important;
+  letter-spacing:.13em !important;
+  font-weight:600 !important;
+}
+
+/* 数字とのバランスも少し調整 */
+.global-user-frame .hud-lv-num{
+  font-size:21px !important;
+  margin-top:1px !important;
+}
+
+/* 大型化分だけ左側の余白を詰め、ヘッダー全高は維持 */
+.global-user-frame .hud-left{
+  gap:7px !important;
+}
+.global-user-frame{
+  padding-top:calc(env(safe-area-inset-top) + 5px) !important;
+  padding-bottom:5px !important;
+}
+
+/* 小型端末でもリングをできるだけ大きく維持 */
+@media (max-width:360px){
+  .global-user-frame .hud-lv-circle{
+    width:54px !important;
+    height:54px !important;
+    flex-basis:54px !important;
+  }
+  .global-user-frame .hud-lv-label{
+    font-size:8px !important;
+  }
+  .global-user-frame .hud-lv-num{
+    font-size:20px !important;
+  }
+}
+
+
+/* =========================================================
+   v281 SHOOTING RESULT REWARD
+   横3カードを廃止し、報酬を縦リスト表示。
+   EXP / COINは確定、追加アイテム最大3枠。
+   ========================================================= */
+.shooting-result-reward-list{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:0 !important;
+  width:100% !important;
+}
+
+.shooting-result-reward-item{
+  min-height:34px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  padding:6px 5px !important;
+  display:grid !important;
+  grid-template-columns:28px minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:8px !important;
+  border:0 !important;
+  border-bottom:1px solid rgba(154,125,74,.14) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  text-align:left !important;
+}
+
+.shooting-result-reward-item:last-child{
+  border-bottom:0 !important;
+}
+
+.shooting-result-reward-icon{
+  width:26px !important;
+  height:26px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+.shooting-result-reward-icon img{
+  width:24px !important;
+  height:24px !important;
+  object-fit:contain !important;
+}
+
+.shooting-result-reward-icon > b{
+  font-family:"Cinzel",serif !important;
+  font-size:10px !important;
+  color:#8a6841 !important;
+}
+
+.shooting-result-reward-copy{
+  min-width:0 !important;
+  display:block !important;
+}
+
+.shooting-result-reward-copy > b{
+  display:block !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  color:#5d4931 !important;
+}
+
+.shooting-result-reward-copy > small{
+  display:none !important;
+}
+
+.shooting-result-reward-item > strong{
+  margin:0 !important;
+  min-width:54px !important;
+  text-align:right !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:12px !important;
+  color:#80643b !important;
+}
+
+@media (max-height:700px){
+  .shooting-result-reward-item{
+    min-height:30px !important;
+    padding-top:4px !important;
+    padding-bottom:4px !important;
+  }
+  .shooting-result-reward-icon{
+    width:23px !important;
+    height:23px !important;
+  }
+  .shooting-result-reward-icon img{
+    width:21px !important;
+    height:21px !important;
+  }
+}
+
+
+/* =========================================================
+   v282 SHOOTING RESULT - fixed fullscreen / no scroll
+   EXP + COIN + item x3 = 最大5報酬でも1画面内に収める。
+   ========================================================= */
+
+/* Result itself always occupies the viewport and never scrolls. */
+#shooting-result,
+#shooting-result.show{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  touch-action:none !important;
+  box-sizing:border-box !important;
+}
+
+/* The result card is a fixed-height flex stack. */
+#shooting-result .shooting-result-panel{
+  width:min(calc(100vw - 20px),430px) !important;
+  height:calc(100dvh - 18px) !important;
+  max-height:calc(100dvh - 18px) !important;
+  min-height:0 !important;
+  margin:9px auto !important;
+  padding:14px 18px 12px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+/* Upper result info stays compact and must not steal reward space. */
+#shooting-result .shooting-result-rank{
+  flex:0 0 auto !important;
+  transform:scale(.84) !important;
+  transform-origin:center top !important;
+  margin-bottom:-12px !important;
+}
+
+#shooting-result .shooting-result-stats{
+  flex:0 0 auto !important;
+  margin-top:-4px !important;
+}
+
+#shooting-result .shooting-result-stat-row{
+  min-height:28px !important;
+  padding-top:2px !important;
+  padding-bottom:2px !important;
+}
+
+#shooting-result .shooting-result-time-row{
+  min-height:31px !important;
+  padding-top:2px !important;
+  padding-bottom:2px !important;
+}
+
+/* Reward section is allowed up to exactly five compact rows. */
+#shooting-result .shooting-result-reward-section{
+  flex:0 1 auto !important;
+  min-height:0 !important;
+  margin-top:5px !important;
+}
+
+#shooting-result .shooting-result-reward-list{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:0 !important;
+  max-height:160px !important;
+  overflow:hidden !important;
+}
+
+#shooting-result .shooting-result-reward-item{
+  flex:0 0 30px !important;
+  min-height:30px !important;
+  height:30px !important;
+  padding:3px 5px !important;
+  box-sizing:border-box !important;
+}
+
+#shooting-result .shooting-result-reward-icon{
+  width:22px !important;
+  height:22px !important;
+}
+
+#shooting-result .shooting-result-reward-icon img{
+  width:20px !important;
+  height:20px !important;
+}
+
+#shooting-result .shooting-result-reward-copy > b{
+  font-size:11px !important;
+}
+
+#shooting-result .shooting-result-reward-item > strong{
+  font-size:11px !important;
+}
+
+/* First-clear strip is compact when present. */
+#shooting-result .shooting-result-first-clear-bar{
+  flex:0 0 auto !important;
+  min-height:28px !important;
+  padding:3px 8px !important;
+  margin-top:2px !important;
+}
+
+/* Footer buttons always remain visible. */
+#shooting-result .shooting-result-actions{
+  flex:0 0 auto !important;
+  margin-top:auto !important;
+  padding-top:7px !important;
+  gap:6px !important;
+}
+
+#shooting-result .shooting-result-actions button{
+  min-height:36px !important;
+  height:36px !important;
+}
+
+#shooting-result .shooting-result-note{
+  display:none !important;
+}
+
+/* iPhone SE / short viewport: tighten further without scrolling. */
+@media (max-height:650px){
+  #shooting-result .shooting-result-panel{
+    width:min(calc(100vw - 12px),430px) !important;
+    height:calc(100dvh - 10px) !important;
+    max-height:calc(100dvh - 10px) !important;
+    margin:5px auto !important;
+    padding:9px 14px 8px !important;
+  }
+
+  #shooting-result .shooting-result-rank{
+    transform:scale(.73) !important;
+    margin-bottom:-20px !important;
+  }
+
+  #shooting-result .shooting-result-stat-row{
+    min-height:24px !important;
+    padding-top:1px !important;
+    padding-bottom:1px !important;
+  }
+
+  #shooting-result .shooting-result-time-row{
+    min-height:26px !important;
+  }
+
+  #shooting-result .shooting-result-reward-section{
+    margin-top:3px !important;
+  }
+
+  #shooting-result .shooting-result-reward-list{
+    max-height:135px !important;
+  }
+
+  #shooting-result .shooting-result-reward-item{
+    flex-basis:27px !important;
+    min-height:27px !important;
+    height:27px !important;
+    padding-top:2px !important;
+    padding-bottom:2px !important;
+  }
+
+  #shooting-result .shooting-result-first-clear-bar{
+    min-height:25px !important;
+    padding-top:2px !important;
+    padding-bottom:2px !important;
+  }
+
+  #shooting-result .shooting-result-actions{
+    padding-top:4px !important;
+    gap:4px !important;
+  }
+
+  #shooting-result .shooting-result-actions button{
+    min-height:32px !important;
+    height:32px !important;
+  }
+}
+
+/* Extra-short landscape-ish/small devices: preserve full-screen fit. */
+@media (max-height:580px){
+  #shooting-result .shooting-result-panel{
+    padding-top:6px !important;
+    padding-bottom:6px !important;
+  }
+
+  #shooting-result .shooting-result-rank{
+    transform:scale(.66) !important;
+    margin-bottom:-25px !important;
+  }
+
+  #shooting-result .shooting-result-stat-row{
+    min-height:22px !important;
+  }
+
+  #shooting-result .shooting-result-time-row{
+    min-height:23px !important;
+  }
+
+  #shooting-result .shooting-result-reward-list{
+    max-height:120px !important;
+  }
+
+  #shooting-result .shooting-result-reward-item{
+    flex-basis:24px !important;
+    min-height:24px !important;
+    height:24px !important;
+  }
+
+  #shooting-result .shooting-result-reward-icon,
+  #shooting-result .shooting-result-reward-icon img{
+    width:18px !important;
+    height:18px !important;
+  }
+
+  #shooting-result .shooting-result-actions button{
+    min-height:30px !important;
+    height:30px !important;
+  }
+}
+
+
+/* =========================================================
+   v283 RESULT REWARD
+   EXP / COIN are guaranteed fixed rewards.
+   SCOREに応じた説明文は完全削除。
+   ========================================================= */
+#shooting-result .shooting-result-note,
+#shooting-result #shooting-result-reward-note,
+#shooting-result .shooting-result-reward-note{
+  display:none !important;
+  height:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+}
+
+#shooting-result .shooting-result-reward-coin .shooting-result-reward-icon img{
+  width:21px !important;
+  height:21px !important;
+  object-fit:contain !important;
+}
+
+#shooting-result .shooting-result-reward-exp,
+#shooting-result .shooting-result-reward-coin{
+  font-weight:600 !important;
+}
+
+
+/* =========================================================
+   v288 RANK EXP RING
+   12時位置を起点に、経験値が時計回りに蓄積する。
+   ========================================================= */
+.global-user-frame .hud-lv-circle{
+  background:
+    conic-gradient(
+      from 0deg,
+      #b98b35 0deg,
+      #e1c56f var(--rank-exp),
+      rgba(139,112,68,.18) var(--rank-exp),
+      rgba(139,112,68,.18) 360deg
+    ) !important;
+  transform:rotate(-90deg) !important;
+}
+
+.global-user-frame .hud-lv-core{
+  transform:rotate(90deg) !important;
+}
+
+.global-user-frame .hud-lv-circle::before,
+.global-user-frame .hud-lv-circle::after{
+  transform:none !important;
+}
+
+
+/* =========================================================
+   v289 RANK EXP RING direction fix
+   CSS conic-gradient の 0deg は12時位置。
+   円自体を回転させず、0deg起点で時計回りに進捗を描く。
+   ========================================================= */
+.global-user-frame .hud-lv-circle{
+  transform:none !important;
+  background:
+    conic-gradient(
+      from 0deg,
+      #b98b35 0deg,
+      #e1c56f var(--rank-exp),
+      rgba(139,112,68,.18) var(--rank-exp),
+      rgba(139,112,68,.18) 360deg
+    ) !important;
+}
+
+.global-user-frame .hud-lv-core{
+  transform:none !important;
+}
+
+
+/* =========================================================
+   v290 CRYSTAL SHOP
+   6商品 + 注記まで、スクロールなしで1画面に収める。
+   ========================================================= */
+#shop-modal{
+  align-items:center !important;
+  justify-content:center !important;
+  padding:
+    max(8px, env(safe-area-inset-top))
+    10px
+    max(8px, env(safe-area-inset-bottom)) !important;
+}
+
+#shop-modal .shop-modal-inner{
+  width:min(calc(100vw - 20px), 338px) !important;
+  max-width:338px !important;
+  height:auto !important;
+  max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+
+#shop-modal .shop-header{
+  flex:0 0 auto !important;
+  padding:14px 16px 11px !important;
+}
+
+#shop-modal .shop-kicker{
+  margin-bottom:3px !important;
+  font-size:9px !important;
+}
+
+#shop-modal .shop-title{
+  margin-bottom:4px !important;
+  font-size:21px !important;
+}
+
+#shop-modal .shop-subtitle{
+  font-size:11px !important;
+  line-height:1.25 !important;
+}
+
+#shop-modal .shop-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:hidden !important;
+  padding:9px 12px 7px !important;
+  gap:7px !important;
+}
+
+#shop-modal .shop-item{
+  flex:1 1 0 !important;
+  min-height:52px !important;
+  max-height:62px !important;
+  padding:8px 13px !important;
+  border-radius:18px !important;
+}
+
+#shop-modal .shop-item-gem-icon{
+  width:19px !important;
+  height:19px !important;
+}
+
+#shop-modal .shop-item-count{
+  font-size:16px !important;
+}
+
+#shop-modal .shop-item-price{
+  font-size:16px !important;
+}
+
+#shop-modal .shop-item-unit{
+  font-size:9px !important;
+}
+
+#shop-modal .shop-note{
+  flex:0 0 auto !important;
+  padding:8px 14px 10px !important;
+  font-size:9px !important;
+  line-height:1.3 !important;
+}
+
+/* iPhone SE級の低い画面でも6商品すべて表示 */
+@media (max-height:650px){
+  #shop-modal .shop-modal-inner{
+    width:min(calc(100vw - 14px), 332px) !important;
+    max-height:calc(100dvh - 10px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    border-radius:20px !important;
+  }
+
+  #shop-modal .shop-header{
+    padding:10px 14px 8px !important;
+  }
+
+  #shop-modal .shop-kicker{
+    margin-bottom:2px !important;
+    font-size:8px !important;
+  }
+
+  #shop-modal .shop-title{
+    margin-bottom:2px !important;
+    font-size:19px !important;
+  }
+
+  #shop-modal .shop-subtitle{
+    font-size:10px !important;
+  }
+
+  #shop-modal .shop-close-btn{
+    width:26px !important;
+    height:26px !important;
+    font-size:15px !important;
+  }
+
+  #shop-modal .shop-list{
+    padding:6px 10px 5px !important;
+    gap:5px !important;
+  }
+
+  #shop-modal .shop-item{
+    min-height:43px !important;
+    max-height:50px !important;
+    padding:5px 11px !important;
+    border-radius:15px !important;
+  }
+
+  #shop-modal .shop-item-left{
+    gap:7px !important;
+  }
+
+  #shop-modal .shop-item-gem-icon{
+    width:17px !important;
+    height:17px !important;
+  }
+
+  #shop-modal .shop-item-count,
+  #shop-modal .shop-item-price{
+    font-size:14px !important;
+  }
+
+  #shop-modal .shop-item-unit{
+    font-size:8px !important;
+  }
+
+  #shop-modal .shop-note{
+    padding:6px 10px 7px !important;
+    font-size:8px !important;
+    line-height:1.2 !important;
+  }
+}
+
+@media (max-height:570px){
+  #shop-modal .shop-header{
+    padding:7px 12px 6px !important;
+  }
+
+  #shop-modal .shop-kicker{
+    display:none !important;
+  }
+
+  #shop-modal .shop-title{
+    font-size:17px !important;
+  }
+
+  #shop-modal .shop-list{
+    padding:4px 9px !important;
+    gap:4px !important;
+  }
+
+  #shop-modal .shop-item{
+    min-height:39px !important;
+    max-height:44px !important;
+    padding:4px 10px !important;
+  }
+
+  #shop-modal .shop-note{
+    padding:5px 9px 6px !important;
+    font-size:7px !important;
+  }
+}
+
+
+/* =========================================================
+   v297 GACHA AURA SEQUENCE
+   無色でじわっと出現 → ぼわっと発色 → 発光状態を維持
+   全画面リビールのレイアウトには触れない独立レイヤー。
+   ========================================================= */
+#gacha-aura-overlay{
+  position:fixed;
+  inset:0;
+  z-index:99990;
+  pointer-events:none;
+  overflow:hidden;
+  contain:layout paint style;
+}
+
+.gacha-aura{
+  position:absolute;
+  left:var(--aura-x,50%);
+  top:var(--aura-y,35%);
+  width:88px;
+  height:88px;
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.72);
+  filter:blur(7px) saturate(0);
+  transition:
+    opacity .48s ease,
+    transform .65s cubic-bezier(.16,.68,.23,1),
+    filter .65s ease;
+}
+
+.gacha-aura-halo,
+.gacha-aura-core,
+.gacha-aura-spark{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  transition:
+    background .32s ease,
+    box-shadow .32s ease,
+    opacity .32s ease,
+    transform .38s cubic-bezier(.16,.72,.22,1),
+    filter .38s ease;
+}
+
+/* 無色状態 */
+.gacha-aura-halo{
+  background:radial-gradient(circle,
+    rgba(255,255,255,.72) 0%,
+    rgba(236,234,226,.46) 34%,
+    rgba(192,190,183,.18) 58%,
+    transparent 76%);
+  filter:blur(12px);
+  opacity:.78;
+}
+
+.gacha-aura-core{
+  inset:22%;
+  background:radial-gradient(circle,
+    rgba(255,255,255,.95) 0%,
+    rgba(229,227,220,.64) 45%,
+    rgba(187,185,178,.18) 78%,
+    transparent 100%);
+  filter:blur(4px);
+}
+
+.gacha-aura-spark{
+  inset:44%;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 0 8px rgba(255,255,255,.66);
+}
+
+/* 全部いっぺんに、無色でじわっと出現 */
+#gacha-aura-overlay.is-neutral-visible .gacha-aura{
+  opacity:.94;
+  transform:translate(-50%,-50%) scale(1);
+  filter:blur(0) saturate(0);
+}
+
+/* 発色時だけ一度ボワッと膨らみ、その後その色で維持 */
+.gacha-aura.is-colored{
+  filter:blur(0) saturate(1);
+  animation:gachaAuraColorBloom 520ms cubic-bezier(.14,.72,.22,1) both;
+}
+
+/* ITEM = 銀 */
+.gacha-aura.omen-silver.is-colored .gacha-aura-halo{
+  background:radial-gradient(circle,
+    rgba(250,252,255,.98) 0%,
+    rgba(183,194,208,.82) 30%,
+    rgba(112,126,145,.40) 58%,
+    transparent 77%);
+  box-shadow:0 0 18px rgba(139,153,172,.42);
+}
+.gacha-aura.omen-silver.is-colored .gacha-aura-core{
+  background:radial-gradient(circle,
+    #fff 0%,
+    #dce3eb 34%,
+    rgba(112,128,150,.78) 68%,
+    transparent 100%);
+}
+.gacha-aura.omen-silver.is-colored .gacha-aura-spark{
+  background:#fff;
+  box-shadow:
+    0 0 9px rgba(255,255,255,.96),
+    0 0 18px rgba(141,156,177,.68);
+}
+
+/* R = 金 */
+.gacha-aura.omen-gold.is-colored .gacha-aura-halo{
+  background:radial-gradient(circle,
+    rgba(255,248,211,.99) 0%,
+    rgba(235,194,91,.86) 30%,
+    rgba(186,128,28,.42) 58%,
+    transparent 77%);
+  box-shadow:0 0 20px rgba(213,159,50,.48);
+}
+.gacha-aura.omen-gold.is-colored .gacha-aura-core{
+  background:radial-gradient(circle,
+    #fffdf2 0%,
+    #f0d17d 34%,
+    rgba(201,145,39,.82) 68%,
+    transparent 100%);
+}
+.gacha-aura.omen-gold.is-colored .gacha-aura-spark{
+  background:#fff7cf;
+  box-shadow:
+    0 0 10px rgba(255,248,213,.98),
+    0 0 20px rgba(223,172,66,.80);
+}
+
+/* SR = 虹 */
+.gacha-aura.omen-rainbow.is-colored .gacha-aura-halo{
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(222,119,169,.84),
+      rgba(141,108,218,.88),
+      rgba(86,169,224,.88),
+      rgba(87,194,159,.86),
+      rgba(230,188,84,.88),
+      rgba(222,119,169,.84)
+    );
+  filter:blur(13px);
+  opacity:.90;
+  box-shadow:
+    0 0 20px rgba(119,99,213,.44),
+    0 0 30px rgba(78,163,214,.28);
+}
+.gacha-aura.omen-rainbow.is-colored .gacha-aura-core{
+  background:radial-gradient(circle,
+    #fff 0%,
+    rgba(244,233,255,.98) 22%,
+    rgba(125,109,221,.78) 44%,
+    rgba(78,170,220,.68) 59%,
+    rgba(228,179,82,.60) 75%,
+    transparent 100%);
+}
+.gacha-aura.omen-rainbow.is-colored .gacha-aura-spark{
+  background:#fff;
+  box-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 22px rgba(122,101,219,.82),
+    0 0 30px rgba(78,165,214,.52);
+}
+
+@keyframes gachaAuraColorBloom{
+  0%{
+    transform:translate(-50%,-50%) scale(1);
+  }
+  44%{
+    transform:translate(-50%,-50%) scale(1.26);
+  }
+  100%{
+    transform:translate(-50%,-50%) scale(1.08);
+  }
+}
+
+@media (max-width:380px){
+  .gacha-aura{
+    width:76px;
+    height:76px;
+  }
+}
+
+
+/* =========================================================
+   v298 AURA COLOR SEPARATION
+   ITEM=銀 / R=金 / SR=虹 を明確化。
+   結果オープン時にはJS側でオーラを消す。
+   ========================================================= */
+
+/* 発色後はグレー化を完全解除 */
+#gacha-aura-overlay .gacha-aura.is-colored{
+  filter:none !important;
+  opacity:1 !important;
+}
+
+/* 銀：青みを帯びたメタリックシルバー */
+#gacha-aura-overlay .gacha-aura.omen-silver.is-colored .gacha-aura-halo{
+  background:radial-gradient(circle,
+    rgba(255,255,255,1) 0%,
+    rgba(224,234,246,.98) 20%,
+    rgba(167,184,207,.92) 40%,
+    rgba(101,121,149,.68) 61%,
+    rgba(73,92,119,.22) 74%,
+    transparent 82%) !important;
+  box-shadow:
+    0 0 14px rgba(255,255,255,.95),
+    0 0 28px rgba(135,157,188,.82),
+    0 0 42px rgba(82,105,138,.42) !important;
+  opacity:1 !important;
+}
+#gacha-aura-overlay .gacha-aura.omen-silver.is-colored .gacha-aura-core{
+  background:radial-gradient(circle,
+    #ffffff 0%,
+    #edf4fb 24%,
+    #c7d5e5 48%,
+    #8097b5 72%,
+    transparent 100%) !important;
+}
+#gacha-aura-overlay .gacha-aura.omen-silver.is-colored .gacha-aura-spark{
+  background:#ffffff !important;
+  box-shadow:
+    0 0 10px #ffffff,
+    0 0 22px rgba(183,202,225,.95),
+    0 0 34px rgba(111,137,172,.62) !important;
+}
+
+/* 金：はっきりしたアンバーゴールド */
+#gacha-aura-overlay .gacha-aura.omen-gold.is-colored .gacha-aura-halo{
+  background:radial-gradient(circle,
+    rgba(255,255,244,1) 0%,
+    rgba(255,230,132,.99) 20%,
+    rgba(231,178,54,.96) 41%,
+    rgba(191,127,19,.74) 61%,
+    rgba(137,83,7,.25) 74%,
+    transparent 82%) !important;
+  box-shadow:
+    0 0 14px rgba(255,250,215,.98),
+    0 0 30px rgba(235,183,58,.88),
+    0 0 44px rgba(185,118,16,.48) !important;
+  opacity:1 !important;
+}
+#gacha-aura-overlay .gacha-aura.omen-gold.is-colored .gacha-aura-core{
+  background:radial-gradient(circle,
+    #fffef1 0%,
+    #ffe58b 25%,
+    #e7b23b 50%,
+    #b97812 74%,
+    transparent 100%) !important;
+}
+#gacha-aura-overlay .gacha-aura.omen-gold.is-colored .gacha-aura-spark{
+  background:#fffbe2 !important;
+  box-shadow:
+    0 0 10px #fff9cc,
+    0 0 24px rgba(244,196,74,.98),
+    0 0 36px rgba(200,133,20,.72) !important;
+}
+
+/* 虹：多色が一目で分かるようリング状に発色 */
+#gacha-aura-overlay .gacha-aura.omen-rainbow.is-colored .gacha-aura-halo{
+  background:
+    radial-gradient(circle at center,
+      rgba(255,255,255,.98) 0 14%,
+      rgba(255,255,255,.44) 15% 24%,
+      transparent 42%),
+    conic-gradient(
+      from 0deg,
+      #ff6f9f 0deg,
+      #b778ff 55deg,
+      #5aa8ff 115deg,
+      #55d5b2 175deg,
+      #f4d34f 235deg,
+      #ff9a4f 295deg,
+      #ff6f9f 360deg) !important;
+  box-shadow:
+    0 0 15px rgba(255,255,255,.98),
+    0 0 31px rgba(139,104,226,.70),
+    0 0 46px rgba(82,176,222,.48) !important;
+  filter:blur(10px) !important;
+  opacity:1 !important;
+}
+#gacha-aura-overlay .gacha-aura.omen-rainbow.is-colored .gacha-aura-core{
+  background:
+    radial-gradient(circle,
+      #ffffff 0%,
+      #f9f0ff 20%,
+      #c893ff 39%,
+      #69baff 55%,
+      #62d4af 69%,
+      #f2ce5b 82%,
+      transparent 100%) !important;
+}
+#gacha-aura-overlay .gacha-aura.omen-rainbow.is-colored .gacha-aura-spark{
+  background:#ffffff !important;
+  box-shadow:
+    0 0 11px #ffffff,
+    0 0 22px rgba(195,137,255,.98),
+    0 0 34px rgba(92,183,255,.90),
+    0 0 46px rgba(92,214,173,.58) !important;
+}
+
+
+/* =========================================================
+   v299 10-PULL SR SHIMMER RESTORE
+   SRキャラの「煌めき」を専用レイヤーで復元。
+   ガチャ予告オーラ/全画面リビールとは独立。
+   ========================================================= */
+#ten-result-modal .ten-result-card{
+  position:relative !important;
+  overflow:hidden !important;
+}
+
+#ten-result-modal .ten-card-sr-shimmer{
+  position:absolute;
+  inset:0;
+  z-index:9;
+  pointer-events:none;
+  overflow:hidden;
+  border-radius:inherit;
+}
+
+#ten-result-modal .ten-card-sr-shimmer::before{
+  content:"";
+  position:absolute;
+  top:-18%;
+  bottom:-18%;
+  left:-62%;
+  width:34%;
+  opacity:0;
+  transform:skewX(-16deg);
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.12) 20%,
+    rgba(255,248,224,.88) 48%,
+    rgba(255,255,255,.96) 54%,
+    rgba(244,224,255,.72) 61%,
+    rgba(255,255,255,.10) 82%,
+    rgba(255,255,255,0) 100%
+  );
+  filter:blur(2.5px);
+  mix-blend-mode:screen;
+  animation:tenSrShimmerSweep 2.8s ease-in-out infinite;
+}
+
+#ten-result-modal .ten-card-sr-shimmer::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  opacity:.72;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,.95) 0 1px, transparent 2px),
+    radial-gradient(circle at 78% 18%, rgba(255,242,195,.92) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 72%, rgba(226,218,255,.92) 0 1px, transparent 2px),
+    radial-gradient(circle at 28% 76%, rgba(255,255,255,.90) 0 1px, transparent 2px);
+  animation:tenSrSparklePulse 1.9s ease-in-out infinite;
+}
+
+#ten-result-modal .ten-result-card.rarity-sr{
+  box-shadow:
+    0 8px 20px rgba(146,113,44,.22),
+    0 0 16px rgba(223,195,122,.26),
+    0 0 28px rgba(243,229,181,.16),
+    inset 0 0 0 1px rgba(255,255,255,.70) !important;
+}
+
+@keyframes tenSrShimmerSweep{
+  0%,14%{
+    left:-62%;
+    opacity:0;
+  }
+  24%{
+    opacity:.28;
+  }
+  46%{
+    opacity:1;
+  }
+  67%{
+    left:126%;
+    opacity:.22;
+  }
+  76%,100%{
+    left:126%;
+    opacity:0;
+  }
+}
+
+@keyframes tenSrSparklePulse{
+  0%,100%{
+    opacity:.34;
+    filter:drop-shadow(0 0 2px rgba(255,255,255,.42));
+  }
+  50%{
+    opacity:.92;
+    filter:
+      drop-shadow(0 0 4px rgba(255,255,255,.92))
+      drop-shadow(0 0 7px rgba(232,213,255,.52));
+  }
+}
+
+
+/* =========================================================
+   v300 10-PULL SR FRAME EMPHASIS + NEW BADGE POSITION
+   SRは外周の発光で高レア感を強調。
+   NEWは右上へ寄せ、左上の属性アイコンと干渉させない。
+   ========================================================= */
+
+/* SRカード外周の高レア発光 */
+#ten-result-modal .ten-result-card.rarity-sr{
+  border-color:rgba(223,190,103,.96) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,249,224,.95),
+    0 0 8px rgba(255,241,181,.86),
+    0 0 18px rgba(228,190,91,.66),
+    0 0 30px rgba(225,190,105,.34),
+    0 9px 20px rgba(112,83,31,.18),
+    inset 0 0 0 1px rgba(255,255,255,.78) !important;
+  animation:tenSrFrameGlow 2.5s ease-in-out infinite !important;
+}
+
+/* 内側にも細い発光縁を追加 */
+#ten-result-modal .ten-result-card.rarity-sr .ten-card-sr-shimmer{
+  inset:1px !important;
+  border:1px solid rgba(255,239,181,.54);
+  box-shadow:
+    inset 0 0 10px rgba(255,245,207,.26),
+    inset 0 0 18px rgba(239,219,160,.12);
+}
+
+/* SRだけ、ごく薄い四隅の光 */
+#ten-result-modal .ten-result-card.rarity-sr .ten-card-sr-shimmer{
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255,251,226,.62) 0, rgba(255,239,181,.14) 14%, transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(255,251,226,.52) 0, rgba(255,239,181,.12) 14%, transparent 30%),
+    radial-gradient(circle at 0% 100%, rgba(255,251,226,.44) 0, rgba(255,239,181,.10) 14%, transparent 30%),
+    radial-gradient(circle at 100% 100%, rgba(255,251,226,.50) 0, rgba(255,239,181,.12) 14%, transparent 30%);
+}
+
+@keyframes tenSrFrameGlow{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(255,249,224,.90),
+      0 0 7px rgba(255,241,181,.72),
+      0 0 16px rgba(228,190,91,.54),
+      0 0 26px rgba(225,190,105,.26),
+      0 9px 20px rgba(112,83,31,.16),
+      inset 0 0 0 1px rgba(255,255,255,.76) !important;
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(255,252,236,1),
+      0 0 11px rgba(255,244,194,.98),
+      0 0 24px rgba(235,199,104,.82),
+      0 0 38px rgba(226,190,98,.44),
+      0 9px 22px rgba(112,83,31,.20),
+      inset 0 0 8px rgba(255,247,217,.32) !important;
+  }
+}
+
+/* NEWを右上へ。属性アイコンは左上のまま */
+#ten-result-modal .ten-card-new-badge{
+  top:6px !important;
+  left:auto !important;
+  right:5px !important;
+  transform:none !important;
+  z-index:12 !important;
+  max-width:calc(100% - 34px);
+  padding:1px 5px !important;
+  font-size:7px !important;
+  letter-spacing:1.1px !important;
+}
+
+/* 狭い端末ではさらにコンパクトに */
+@media (max-width:360px){
+  #ten-result-modal .ten-card-new-badge{
+    top:5px !important;
+    right:3px !important;
+    padding:1px 4px !important;
+    font-size:6px !important;
+    letter-spacing:.9px !important;
+  }
+}
+
+
+/* =========================================================
+   v301 10-PULL RARITY FRAME COLORS
+   ITEM = current neutral
+   R    = gold frame, no effect
+   SR   = rainbow frame + glow/shimmer
+   ========================================================= */
+
+/* ITEM: keep existing look. No override needed beyond explicitly cancelling rarity styling if mixed data occurs. */
+#ten-result-modal .ten-result-card.is-material{
+  animation:none !important;
+}
+
+/* R = gold frame, static only */
+#ten-result-modal .ten-result-card.rarity-r:not(.is-material){
+  border-color:#d5ad55 !important;
+  box-shadow:
+    0 0 0 1px rgba(255,246,213,.72),
+    0 7px 16px rgba(91,66,22,.15),
+    inset 0 0 0 1px rgba(255,255,255,.62) !important;
+  animation:none !important;
+}
+
+#ten-result-modal .ten-result-card.rarity-r:not(.is-material)::before{
+  opacity:.96 !important;
+  filter:none !important;
+}
+
+/* SR = rainbow frame. Glow remains animated. */
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material){
+  border-color:transparent !important;
+  background:
+    linear-gradient(#fbfaf6,#fbfaf6) padding-box,
+    conic-gradient(
+      from 0deg,
+      #ef8cae,
+      #b48df2,
+      #74b9ef,
+      #74d7ba,
+      #e8d064,
+      #efa06d,
+      #ef8cae
+    ) border-box !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.84),
+    0 0 10px rgba(184,141,241,.54),
+    0 0 18px rgba(102,179,231,.42),
+    0 0 28px rgba(223,193,91,.26),
+    0 8px 18px rgba(77,61,38,.16),
+    inset 0 0 0 1px rgba(255,255,255,.72) !important;
+  animation:tenSrRainbowFrameGlow 2.4s ease-in-out infinite !important;
+}
+
+/* Inner rainbow edge, preserving existing shimmer sweep */
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material) .ten-card-sr-shimmer{
+  border:1px solid transparent !important;
+  background:
+    linear-gradient(transparent,transparent) padding-box,
+    conic-gradient(
+      from 0deg,
+      rgba(239,140,174,.78),
+      rgba(180,141,242,.74),
+      rgba(116,185,239,.74),
+      rgba(116,215,186,.72),
+      rgba(232,208,100,.74),
+      rgba(239,160,109,.74),
+      rgba(239,140,174,.78)
+    ) border-box !important;
+  box-shadow:
+    inset 0 0 12px rgba(255,255,255,.20),
+    inset 0 0 20px rgba(190,168,240,.10) !important;
+}
+
+@keyframes tenSrRainbowFrameGlow{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.80),
+      0 0 8px rgba(184,141,241,.42),
+      0 0 15px rgba(102,179,231,.32),
+      0 0 23px rgba(223,193,91,.18),
+      0 8px 18px rgba(77,61,38,.14),
+      inset 0 0 0 1px rgba(255,255,255,.70) !important;
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.98),
+      0 0 13px rgba(190,148,247,.74),
+      0 0 24px rgba(105,190,239,.58),
+      0 0 34px rgba(233,205,101,.32),
+      0 8px 20px rgba(77,61,38,.16),
+      inset 0 0 8px rgba(255,255,255,.28) !important;
+  }
+}
+
+
+/* =========================================================
+   v302 SR RAINBOW BORDER ONLY
+   - ITEM: existing appearance
+   - R: gold frame, no effect
+   - SR: rainbow border + outer glow only
+   - character artwork remains completely unobscured
+   ========================================================= */
+
+/* R: gold static frame */
+#ten-result-modal .ten-result-card.rarity-r:not(.is-material){
+  border:1px solid #d3ad58 !important;
+  background:#fbfaf6 !important;
+  box-shadow:
+    0 0 0 1px rgba(255,247,218,.66),
+    0 7px 16px rgba(91,66,22,.14),
+    inset 0 0 0 1px rgba(255,255,255,.62) !important;
+  animation:none !important;
+}
+
+/* SR: remove rainbow fill from the card body */
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material){
+  position:relative !important;
+  border:2px solid transparent !important;
+  background:
+    linear-gradient(#fbfaf6,#fbfaf6) padding-box,
+    conic-gradient(
+      from 0deg,
+      #ef88ac,
+      #b88df2,
+      #75bdf0,
+      #79d7bc,
+      #ead36a,
+      #efa06e,
+      #ef88ac
+    ) border-box !important;
+  box-shadow:
+    0 0 8px rgba(185,145,244,.50),
+    0 0 16px rgba(103,184,234,.38),
+    0 0 25px rgba(228,199,98,.22),
+    0 8px 18px rgba(76,60,38,.14) !important;
+  animation:tenSrBorderGlowV302 2.4s ease-in-out infinite !important;
+  overflow:hidden !important;
+}
+
+/* Dedicated shimmer layer must NOT paint the whole card.
+   Keep only sweep/spark effects; clear any previous rainbow background. */
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material) .ten-card-sr-shimmer{
+  inset:2px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  z-index:9 !important;
+  pointer-events:none !important;
+}
+
+/* Ensure the artwork is above any decorative border layer and remains untouched */
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material) .ten-card-img{
+  z-index:4 !important;
+  filter:brightness(1.02) saturate(1.00) !important;
+}
+
+/* Keep NEW / element / labels clearly above the shimmer */
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material) .ten-card-new-badge,
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material) .ten-card-element-icon,
+#ten-result-modal .ten-result-card.rarity-sr:not(.is-material) .ten-card-bottom{
+  z-index:12 !important;
+}
+
+@keyframes tenSrBorderGlowV302{
+  0%,100%{
+    box-shadow:
+      0 0 7px rgba(184,141,241,.42),
+      0 0 14px rgba(102,179,231,.30),
+      0 0 21px rgba(223,193,91,.16),
+      0 8px 18px rgba(76,60,38,.13) !important;
+  }
+  50%{
+    box-shadow:
+      0 0 11px rgba(190,148,247,.72),
+      0 0 21px rgba(105,190,239,.52),
+      0 0 30px rgba(233,205,101,.28),
+      0 8px 20px rgba(76,60,38,.15) !important;
+  }
+}
+
+
+/* =========================================================
+   v305 AURA RING ANCHOR
+   召喚演出の外周リングと同じ正方形基準へ固定。
+   端末の縦横比が変わっても、配置は真円のまま。
+   ========================================================= */
+#gacha-aura-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:99990 !important;
+  pointer-events:none !important;
+  overflow:hidden !important;
+}
+
+#gacha-aura-overlay .gacha-aura-ring-stage{
+  position:absolute;
+  left:50%;
+  top:42%;
+  width:min(88vw,380px);
+  height:min(88vw,380px);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+/* オーラはリング上の座標へ配置。画面全体の%は使わない。 */
+#gacha-aura-overlay .gacha-aura{
+  position:absolute !important;
+  width:64px !important;
+  height:64px !important;
+  margin:0 !important;
+  transform:translate(-50%,-50%) scale(.72);
+}
+
+/* 既存の出現/発色アニメーションは維持 */
+#gacha-aura-overlay.is-neutral-visible .gacha-aura{
+  opacity:.94;
+  transform:translate(-50%,-50%) scale(1);
+}
+
+/* 狭い端末でもリング比率は同じ。オーラだけ少し小さくする。 */
+@media (max-width:380px){
+  #gacha-aura-overlay .gacha-aura{
+    width:58px !important;
+    height:58px !important;
+  }
+}
+
+
+
+
+/* =========================================================
+   v318 Detail modal overlay close button
+   - ×はスクロール領域の外（#detail-modal直下）へ移動
+   - モーダル本文をスクロールしても位置が1pxも動かない
+   - 凸タブはsticky解除し、本文と一緒にスクロール
+   ========================================================= */
+
+/* 凸ボタン列は画面に残さない。通常コンテンツとして一緒に流す。 */
+#detail-modal .gacha-resonance-switch {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+}
+
+/* ×はモーダルのスクロール要素ではなくoverlay基準で固定。 */
+#detail-modal > .detail-modal-close-x,
+#detail-modal > .modal-close-btn.detail-modal-close-x {
+  position: absolute !important;
+  top: calc(6vh + 12px) !important;
+  right: max(
+    30px,
+    calc((100vw - min(400px, calc(100vw - 36px))) / 2 + 12px)
+  ) !important;
+  left: auto !important;
+  bottom: auto !important;
+
+  margin: 0 !important;
+  float: none !important;
+
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 !important;
+
+  border-radius: 50% !important;
+  border: 1px solid rgba(157,124,65,.34) !important;
+  background: rgba(255,252,246,.97) !important;
+  color: #6f5a39 !important;
+
+  font-family: Arial, sans-serif !important;
+  font-size: 25px !important;
+  font-weight: 300 !important;
+  line-height: 38px !important;
+  text-align: center !important;
+
+  display: block !important;
+  z-index: 7000 !important;
+  box-shadow: 0 7px 18px rgba(69,49,23,.18) !important;
+  transform: none !important;
+
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#detail-modal > .detail-modal-close-x:active,
+#detail-modal > .modal-close-btn.detail-modal-close-x:active {
+  transform: scale(.92) !important;
+}
+
+/* 画面が低い端末ではmodal上端が6vhより下がりにくいので少し詰める。 */
+@media (max-height: 700px) {
+  #detail-modal > .detail-modal-close-x,
+  #detail-modal > .modal-close-btn.detail-modal-close-x {
+    top: calc(4vh + 12px) !important;
+  }
+}
+
+
+
+
+/* =========================================================
+   v320 GACHA NAVIGATION — TRANSLUCENT GOLD-BROWN TRIANGLE
+   背景に溶ける薄い金茶の三角形。ボタン感を消して上品に。
+   ========================================================= */
+#screen-summon .summon-banner-arrow{
+  width:40px !important;
+  height:52px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  color:transparent !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  text-shadow:none !important;
+  filter:none !important;
+  opacity:1 !important;
+
+  -webkit-tap-highlight-color:transparent !important;
+  transition:
+    opacity .18s ease,
+    transform .18s ease !important;
+}
+
+/* 文字ではなく、CSSの塗り三角形 */
+#screen-summon .summon-banner-arrow::before{
+  content:"" !important;
+  display:block !important;
+  width:0 !important;
+  height:0 !important;
+
+  border-top:8px solid transparent !important;
+  border-bottom:8px solid transparent !important;
+
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.72))
+    drop-shadow(0 1px 3px rgba(84,54,24,.14)) !important;
+
+  pointer-events:none !important;
+}
+
+/* LEFT */
+#screen-summon .summon-banner-arrow-prev{
+  left:14px !important;
+}
+#screen-summon .summon-banner-arrow-prev::before{
+  border-right:11px solid rgba(148,105,45,.58) !important;
+  border-left:0 !important;
+}
+
+/* RIGHT */
+#screen-summon .summon-banner-arrow-next{
+  right:14px !important;
+}
+#screen-summon .summon-banner-arrow-next::before{
+  border-left:11px solid rgba(148,105,45,.58) !important;
+  border-right:0 !important;
+}
+
+/* hover/focusは少しだけ濃く。常時ギラつかせない */
+#screen-summon .summon-banner-arrow:hover::before,
+#screen-summon .summon-banner-arrow:focus-visible::before{
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.80))
+    drop-shadow(0 1px 4px rgba(84,54,24,.18))
+    brightness(.96) !important;
+}
+
+#screen-summon .summon-banner-arrow:focus-visible{
+  outline:none !important;
+}
+
+#screen-summon .summon-banner-arrow:active{
+  transform:scale(.91) !important;
+  opacity:.72 !important;
+}
+
+@media (max-width:360px){
+  #screen-summon .summon-banner-arrow-prev{
+    left:8px !important;
+  }
+  #screen-summon .summon-banner-arrow-next{
+    right:8px !important;
+  }
+  #screen-summon .summon-banner-arrow::before{
+    border-top-width:7px !important;
+    border-bottom-width:7px !important;
+  }
+  #screen-summon .summon-banner-arrow-prev::before{
+    border-right-width:10px !important;
+  }
+  #screen-summon .summon-banner-arrow-next::before{
+    border-left-width:10px !important;
+  }
+}
+
+
+/* =========================================================
+   v322 CHARACTER DETAIL - rarity badge synchronized shrink
+   画像縮小と同じタイミングでR/SRバッジも違和感なく縮小。
+   実サイズはJSがinline !importantで連動制御する。
+   ========================================================= */
+#box-grid.box-carousel:not(.remnant-carousel)
+.box-carousel-view.is-sheet-animating
+.box-carousel-rarity-badge {
+  transition:
+    width .32s cubic-bezier(.22,.78,.24,1),
+    right .32s cubic-bezier(.22,.78,.24,1),
+    bottom .32s cubic-bezier(.22,.78,.24,1) !important;
+}

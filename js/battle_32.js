@@ -537,7 +537,7 @@
           const e = effect('stun'); if (e) e.hit = 40;
         }
         break;
-      case 3: { // スイ SR
+      case 3: { // スゥ SR
         const ult = Array.isArray(c.skills)
           ? c.skills.find(skill => skill && (skill.id === 'ult' || skill.isUltimate === true))
           : null;
@@ -640,7 +640,7 @@
           const down = effect('atk_down'); if (down) down.rate = 0.90;
         }
         break;
-      case 10: // フローラ R
+      case 10: // ソフィア R
         if (lb >= 2 && s1) s1.multiplier = 1.40;
         if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
         if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceDelayedUltBoost = 1.10; }
@@ -2332,7 +2332,7 @@ async function _executeDelayedSupport(action) {
 
   _renderUI();
 
-  const owner = action.ownerName || 'スイ';
+  const owner = action.ownerName || 'スゥ';
   const skill = action.skillName || '星読みの予兆';
   const label = result && result.label ? result.label : _formatDelayedSupportOptionLabel(option);
   const detail = result && result.detail ? result.detail : label;
@@ -2672,7 +2672,7 @@ function _executeDelayedAttack(action) {
     if (!skill) return false;
     const t = String(skill.type || '').toLowerCase();
 
-    // スイ系の未来支援は攻撃ではないため、別ルートで処理する。
+    // スゥ系の未来支援は攻撃ではないため、別ルートで処理する。
     if (_isDelayedSupportSkill(skill)) return false;
 
     const delayedAttackTypes = new Set([
@@ -2692,7 +2692,7 @@ function _executeDelayedAttack(action) {
   }
 
   // 予約支援系スキル判定。
-  // 例：スイ「星読みの予兆」= 次の味方ターン開始時にランダム支援が発動。
+  // 例：スゥ「星読みの予兆」= 次の味方ターン開始時にランダム支援が発動。
   function _isDelayedSupportSkill(skill) {
     if (!skill) return false;
     const t = String(skill.type || '').toLowerCase();

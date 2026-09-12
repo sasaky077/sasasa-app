@@ -428,6 +428,12 @@ function getAutoLimitBreakMaterial(target){
     var lbA = Number(a.limitBreak || 0);
     var lbB = Number(b.limitBreak || 0);
     if(lbA !== lbB) return lbA - lbB;
+
+    // レベル育成済み個体を素材にしないよう、同凸なら低Lvを優先する。
+    var lvA = Math.max(1, Number(a.characterLevel || 1));
+    var lvB = Math.max(1, Number(b.characterLevel || 1));
+    if(lvA !== lvB) return lvA - lvB;
+
     return String(a.db_id || '').localeCompare(String(b.db_id || ''));
   });
   return materials[0];
@@ -472,12 +478,20 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
   }
 
   target.limitBreak = beforeState.limitBreak + 1;
-  target.stats = applyLimitBreakStats(
+  var resonatedStats = applyLimitBreakStats(
     target.baseStats,
     target.limitBreak,
     target.rarity,
     target.id
   );
+  target.stats = (window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats === 'function')
+    ? window.CharacterLeveling.applyToStats(
+        resonatedStats,
+        target.rarity,
+        target.limitBreak,
+        Math.max(1, Number(target.characterLevel || 1))
+      )
+    : resonatedStats;
 
   // 通常キャラのみ、同キャラ素材をBOXから削除する。
   // エリは専用アイテムを消費するため、キャラクターは削除しない。

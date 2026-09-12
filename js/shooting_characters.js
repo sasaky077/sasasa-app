@@ -8,26 +8,40 @@
 
   const CHARACTER_ID = Object.freeze({
     ERI: 1,
-    NEM: 2,
-    SUI: 3,
-    ARNO: 4,
-    CLARINE: 5,
+    NEM: 26,
+    SUI: 31,
+    ARNO: 20,
+    CLARINE: 27,
     IGNIS: 6,
-    ROSE: 7,
-    MIMOSA: 8,
-    PATRA: 9,
-    FLORA: 10,
-    SHIGURE: 11,
-    HAYATE: 12,
-    MIA: 13,
-    AYANE: 14,
-    ELTENA: 15,
-    MITO: 16,
-    ANGE: 17,
-    WOLF: 18,
+    ROSE: 9,
+    MIMOSA: 28,
+    PATRA: 16,
+    FLORA: 15,
+    SHIGURE: 13,
+    HAYATE: 4,
+    MIA: 14,
+    AYANE: 11,
+    ELTENA: 29,
+    MITO: 7,
+    ANGE: 21,
+    WOLF: 2,
     TESTCHAN: 50,
-    GOJO: 51,
+    SHURI: 8,
+    SERA: 23,
+    RYUNE: 25,
+    KAINA: 17,
+    REISIA: 30,
+    NOEL: 24,
+    IONA: 22,
+    ELSIA: 12,
+    FIA: 5,
+    RAGNA: 19,
+    RIZE: 3,
+    SHION: 18,
+    ORION: 10,
     NOAH: 52,
+    IVERNA: 32,
+    REI: 33,
   });
 
   // ============================================================
@@ -36,33 +50,49 @@
   // Strategy側 characters.js の rarity フィールドを、実行時参照ではなく
   // ここに直接複製する（本ファイルはStrategy側を一切読み込まない方針のため）。
   // 本編でレアリティ変更があった場合はこのマップも合わせて更新すること。
-  //   SR: エリ / スイ / アルノ / ロゼ / ミモザ / ハヤテ
-  //   R : それ以外全員（ミアは後日Rへ格下げ済み）
+  // v306 Gacha SR:
+  //   限定: イヴェルナ / スゥ / ロゼ / シュリ / ハヤテ
+  //   恒常: ウルフ / レイ / ミモザ / アヤネ / ミト
+  //   ネム / クラリネはRへ移行。エリ・テストちゃん・ノアは別枠SR。
   const SHOOTING_RARITY = Object.freeze({
-    1: 'sr',   // エリ
-    2: 'r',    // ネム
-    3: 'sr',   // スイ
-    4: 'sr',   // アルノ
-    5: 'r',    // クラリネ
-    6: 'r',    // イグニス
-    7: 'sr',   // ロゼ
-    8: 'sr',   // ミモザ
-    9: 'r',    // パトラ
-    10: 'r',   // フローラ
-    11: 'r',   // シグレ
-    12: 'sr',  // ハヤテ
-    13: 'r',   // ミア
-    14: 'r',   // アヤネ
-    15: 'r',   // エルテナ
-    16: 'r',   // ミト
-    17: 'r',   // アンジェ
-    18: 'sr',  // ウルフ
+    1: 'sr',  // エリ
+    26: 'r',   // ネム
+    31: 'sr',  // スゥ
+    20: 'r',  // アルノ
+    27: 'r',   // クラリネ
+    6: 'r',  // イグニス
+    9: 'sr',  // ロゼ
+    28: 'sr',  // ミモザ
+    16: 'r',  // パトラ
+    15: 'r',  // ソフィア
+    13: 'r',  // シグレ
+    4: 'sr',  // ハヤテ
+    14: 'r',  // ミア
+    11: 'sr',  // アヤネ
+    29: 'r',  // エルテナ
+    7: 'sr',  // ミト
+    21: 'r',  // アンジェ
+    2: 'sr',  // ウルフ
+    8: 'sr',  // シュリ
+    23: 'r',  // セレナ
+    25: 'r',  // リュネ
+    17: 'r',  // アイナ
+    30: 'r',  // リズ
+    24: 'r',  // ノエル
+    22: 'r',  // ベロニカ
+    12: 'r',  // シイナ
+    5: 'r',  // ジグ
+    19: 'r',  // ラグナ
+    3: 'r',  // リゼ
+    18: 'r',  // シオン
+    10: 'r',  // オリオン
     50: 'sr',  // テストちゃん
-    51: 'sr',  // 五条 悟
     52: 'sr',  // ノア
+    32: 'sr',  // イヴェルナ
+    33: 'sr',  // レイ
   });
 
-  // R はSRに対して基本性能(HP/ATK)を20%落とす。
+  // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
   // 通常射撃威力・ULTゲージ効率などはATK経由でそのまま連動するため、
   // ここを直せば連射数やshotPowerRateなど武器固有チューニングを個別に触らずに
   // レアリティ格差だけを一括調整できる。
@@ -88,47 +118,47 @@
   const SHOOTING_CHARACTER_MASTER = Object.freeze({
     1: {
       id: 1, name: 'エリ',
-      element: 'light',
+      element: 'neutral',
       hp: 670, atk: 235,
       image: 'images/chara_01_battle_back.webp',
       panelImage: 'images/chara_01_panel.webp',
       cutinImage: 'images/chara_01_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 0.95, battleUp: 1.0 },
     },
-    2: {
-      id: 2, name: 'ネム',
-      element: 'dark',
+    26: {
+      id: 26, name: 'ネム',
+      element: 'light',
       hp: 560, atk: 270,
-      image: 'images/chara_02_battle_back.webp',
-      panelImage: 'images/chara_02_panel.webp',
-      cutinImage: 'images/chara_02_cutin.webp',
+      image: 'images/chara_26_battle_back.webp',
+      panelImage: 'images/chara_26_panel.webp',
+      cutinImage: 'images/chara_26_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
     },
-    3: {
-      id: 3, name: 'スイ',
+    31: {
+      id: 31, name: 'スゥ',
       element: 'aqua',
       hp: 600, atk: 250,
-      image: 'images/chara_03_battle_back.webp',
-      panelImage: 'images/chara_03_panel.webp',
-      cutinImage: 'images/chara_03_cutin.webp',
+      image: 'images/chara_31_battle_back.webp',
+      panelImage: 'images/chara_31_panel.webp',
+      cutinImage: 'images/chara_31_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 0.75, battleUp: 1.0 },
     },
-    4: {
-      id: 4, name: 'アルノ',
+    20: {
+      id: 20, name: 'アルノ',
       element: 'fire',
       hp: 500, atk: 300,
-      image: 'images/chara_04_battle_back.webp',
-      panelImage: 'images/chara_04_panel.webp',
-      cutinImage: 'images/chara_04_cutin.webp',
+      image: 'images/chara_20_battle_back.webp',
+      panelImage: 'images/chara_20_panel.webp',
+      cutinImage: 'images/chara_20_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
     },
-    5: {
-      id: 5, name: 'クラリネ',
+    27: {
+      id: 27, name: 'クラリネ',
       element: 'dark',
       hp: 580, atk: 280,
-      image: 'images/chara_05_battle_back.webp',
-      panelImage: 'images/chara_05_panel.webp',
-      cutinImage: 'images/chara_05_cutin.webp',
+      image: 'images/chara_27_battle_back.webp',
+      panelImage: 'images/chara_27_panel.webp',
+      cutinImage: 'images/chara_27_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 1.3, battleUp: 1.0 },
     },
     6: {
@@ -140,113 +170,239 @@
       cutinImage: 'images/chara_06_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 1.35, battleUp: 1.0 },
     },
-    7: {
-      id: 7, name: 'ロゼ',
+    9: {
+      id: 9, name: 'ロゼ',
       element: 'wood',
       hp: 680, atk: 230,
-      image: 'images/chara_07_battle_back.webp',
-      panelImage: 'images/chara_07_panel.webp',
-      cutinImage: 'images/chara_07_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.2, battleUp: 1.0 },
-    },
-    8: {
-      id: 8, name: 'ミモザ',
-      element: 'wood',
-      hp: 700, atk: 220,
-      image: 'images/chara_08_battle_back.webp',
-      panelImage: 'images/chara_08_panel.webp',
-      cutinImage: 'images/chara_08_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.45, battleUp: 1.0 },
-    },
-    9: {
-      id: 9, name: 'パトラ',
-      element: 'dark',
-      hp: 590, atk: 275,
       image: 'images/chara_09_battle_back.webp',
       panelImage: 'images/chara_09_panel.webp',
       cutinImage: 'images/chara_09_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+      uiScale: { panel: 1.0, battleBack: 1.2, battleUp: 1.0 },
     },
-    10: {
-      id: 10, name: 'フローラ',
-      element: 'light',
-      hp: 650, atk: 210,
-      image: 'images/chara_10_battle_back.webp',
-      panelImage: 'images/chara_10_panel.webp',
-      cutinImage: 'images/chara_10_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
-    },
-    11: {
-      id: 11, name: 'シグレ',
-      element: 'dark',
-      hp: 500, atk: 200,
-      image: 'images/chara_11_battle_back.webp',
-      panelImage: 'images/chara_11_panel.webp',
-      cutinImage: 'images/chara_11_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
-    },
-    12: {
-      id: 12, name: 'ハヤテ',
-      element: 'dark',
-      hp: 580, atk: 305,
-      image: 'images/chara_12_battle_back.webp',
-      panelImage: 'images/chara_12_panel.webp',
-      cutinImage: 'images/chara_12_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
-    },
-    13: {
-      id: 13, name: 'ミア',
-      element: 'aqua',
-      hp: 540, atk: 295,
-      image: 'images/chara_13_battle_back.webp',
-      panelImage: 'images/chara_13_panel.webp',
-      cutinImage: 'images/chara_13_cutin.webp',
-      uiScale: { panel: 0.6, battleBack: 0.7, battleUp: 0.75 },
-    },
-    14: {
-      id: 14, name: 'アヤネ',
-      element: 'fire',
-      hp: 740, atk: 225,
-      image: 'images/chara_14_battle_back.webp',
-      panelImage: 'images/chara_14_panel.webp',
-      cutinImage: 'images/chara_14_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.70, battleUp: 0.7 },
-    },
-    15: {
-      id: 15, name: 'エルテナ',
-      element: 'dark',
-      hp: 560, atk: 290,
-      image: 'images/chara_15_battle_back.webp',
-      panelImage: 'images/chara_15_panel.webp',
-      cutinImage: 'images/chara_15_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.25, battleUp: 1.0 },
+    28: {
+      id: 28, name: 'ミモザ',
+      element: 'wood',
+      hp: 700, atk: 220,
+      image: 'images/chara_28_battle_back.webp',
+      panelImage: 'images/chara_28_panel.webp',
+      cutinImage: 'images/chara_28_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.45, battleUp: 1.0 },
     },
     16: {
-      id: 16, name: 'ミト',
-      element: 'aqua',
-      hp: 700, atk: 245,
+      id: 16, name: 'パトラ',
+      element: 'dark',
+      hp: 590, atk: 275,
       image: 'images/chara_16_battle_back.webp',
       panelImage: 'images/chara_16_panel.webp',
       cutinImage: 'images/chara_16_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
     },
-    17: {
-      id: 17, name: 'アンジェ',
+    15: {
+      id: 15, name: 'ソフィア',
+      element: 'light',
+      hp: 650, atk: 210,
+      image: 'images/chara_15_battle_back.webp',
+      panelImage: 'images/chara_15_panel.webp',
+      cutinImage: 'images/chara_15_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    },
+    13: {
+      id: 13, name: 'シグレ',
+      element: 'dark',
+      hp: 500, atk: 200,
+      image: 'images/chara_13_battle_back.webp',
+      panelImage: 'images/chara_13_panel.webp',
+      cutinImage: 'images/chara_13_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    },
+    4: {
+      id: 4, name: 'ハヤテ',
+      element: 'light',
+      hp: 580, atk: 305,
+      image: 'images/chara_04_battle_back.webp',
+      panelImage: 'images/chara_04_panel.webp',
+      cutinImage: 'images/chara_04_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+    },
+    14: {
+      id: 14, name: 'ミア',
+      element: 'aqua',
+      hp: 540, atk: 295,
+      image: 'images/chara_14_battle_back.webp',
+      panelImage: 'images/chara_14_panel.webp',
+      cutinImage: 'images/chara_14_cutin.webp',
+      uiScale: { panel: 0.6, battleBack: 0.7, battleUp: 0.75 },
+    },
+    11: {
+      id: 11, name: 'アヤネ',
+      element: 'dark',
+      hp: 740, atk: 225,
+      image: 'images/chara_11_battle_back.webp',
+      panelImage: 'images/chara_11_panel.webp',
+      cutinImage: 'images/chara_11_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 0.70, battleUp: 0.7 },
+    },
+    29: {
+      id: 29, name: 'エルテナ',
+      element: 'wood',
+      hp: 560, atk: 290,
+      image: 'images/chara_29_battle_back.webp',
+      panelImage: 'images/chara_29_panel.webp',
+      cutinImage: 'images/chara_29_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.25, battleUp: 1.0 },
+    },
+    7: {
+      id: 7, name: 'ミト',
+      element: 'light',
+      hp: 700, atk: 245,
+      image: 'images/chara_07_battle_back.webp',
+      panelImage: 'images/chara_07_panel.webp',
+      cutinImage: 'images/chara_07_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    },
+    21: {
+      id: 21, name: 'アンジェ',
       element: 'light',
       hp: 720, atk: 190,
+      image: 'images/chara_21_battle_back.webp',
+      panelImage: 'images/chara_21_panel.webp',
+      cutinImage: 'images/chara_21_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 0.8 },
+    },
+    2: {
+      id: 2, name: 'ウルフ',
+      element: 'fire',
+      hp: 610, atk: 300,
+      image: 'images/chara_02_battle_back.webp',
+      panelImage: 'images/chara_02_panel.webp',
+      cutinImage: 'images/chara_02_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.22, battleUp: 1.0 },
+    },
+    23: {
+      id: 23, name: 'セレナ',
+      element: 'wood',
+      hp: 600, atk: 250,
+      image: 'images/chara_23_battle_back.webp',
+      panelImage: 'images/chara_23_panel.webp',
+      cutinImage: 'images/chara_23_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    25: {
+      id: 25, name: 'リュネ',
+      element: 'aqua',
+      hp: 600, atk: 250,
+      image: 'images/chara_25_battle_back.webp',
+      panelImage: 'images/chara_25_panel.webp',
+      cutinImage: 'images/chara_25_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    17: {
+      id: 17, name: 'アイナ',
+      element: 'fire',
+      hp: 600, atk: 250,
       image: 'images/chara_17_battle_back.webp',
       panelImage: 'images/chara_17_panel.webp',
       cutinImage: 'images/chara_17_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 0.8 },
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    30: {
+      id: 30, name: 'リズ',
+      element: 'aqua',
+      hp: 600, atk: 250,
+      image: 'images/chara_30_battle_back.webp',
+      panelImage: 'images/chara_30_panel.webp',
+      cutinImage: 'images/chara_30_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    24: {
+      id: 24, name: 'ノエル',
+      element: 'light',
+      hp: 600, atk: 250,
+      image: 'images/chara_24_battle_back.webp',
+      panelImage: 'images/chara_24_panel.webp',
+      cutinImage: 'images/chara_24_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    22: {
+      id: 22, name: 'ベロニカ',
+      element: 'aqua',
+      hp: 600, atk: 250,
+      image: 'images/chara_22_battle_back.webp',
+      panelImage: 'images/chara_22_panel.webp',
+      cutinImage: 'images/chara_22_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    12: {
+      id: 12, name: 'シイナ',
+      element: 'dark',
+      hp: 600, atk: 250,
+      image: 'images/chara_12_battle_back.webp',
+      panelImage: 'images/chara_12_panel.webp',
+      cutinImage: 'images/chara_12_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    5: {
+      id: 5, name: 'ジグ',
+      element: 'wood',
+      hp: 600, atk: 250,
+      image: 'images/chara_05_battle_back.webp',
+      panelImage: 'images/chara_05_panel.webp',
+      cutinImage: 'images/chara_05_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    19: {
+      id: 19, name: 'ラグナ',
+      element: 'fire',
+      hp: 600, atk: 250,
+      image: 'images/chara_19_battle_back.webp',
+      panelImage: 'images/chara_19_panel.webp',
+      cutinImage: 'images/chara_19_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    3: {
+      id: 3, name: 'リゼ',
+      element: 'wood',
+      hp: 600, atk: 250,
+      image: 'images/chara_03_battle_back.webp',
+      panelImage: 'images/chara_03_panel.webp',
+      cutinImage: 'images/chara_03_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
     },
     18: {
-      id: 18, name: 'ウルフ',
-      element: 'fire',
-      hp: 610, atk: 300,
+      id: 18, name: 'シオン',
+      element: 'dark',
+      hp: 600, atk: 250,
       image: 'images/chara_18_battle_back.webp',
       panelImage: 'images/chara_18_panel.webp',
       cutinImage: 'images/chara_18_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.22, battleUp: 1.0 },
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    10: {
+      id: 10, name: 'オリオン',
+      element: 'light',
+      hp: 600, atk: 250,
+      image: 'images/chara_10_battle_back.webp',
+      panelImage: 'images/chara_10_panel.webp',
+      cutinImage: 'images/chara_10_cutin.webp',
+      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    },
+    32: {
+      id: 32, name: 'イヴェルナ',
+      element: 'fire',
+      hp: 620, atk: 300,
+      image: 'images/chara_32_battle_back.webp',
+      panelImage: 'images/chara_32_panel.webp',
+      cutinImage: 'images/chara_32_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+    },
+    33: {
+      id: 33, name: 'レイ',
+      element: 'aqua',
+      hp: 650, atk: 255,
+      image: 'images/chara_33_battle_back.webp',
+      panelImage: 'images/chara_33_panel.webp',
+      cutinImage: 'images/chara_33_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
     },
     50: {
       id: 50, name: 'テストちゃん',
@@ -257,14 +413,14 @@
       cutinImage: 'images/chara_50_cutin.webp',
       uiScale: { panel: 1.0, battleBack: 0.8, battleUp: 1.0 },
     },
-    51: {
-      id: 51, name: '五条 悟',
+    8: {
+      id: 8, name: 'シュリ',
       element: 'dark',
       hp: 680, atk: 300,
-      image: 'images/chara_51_battle_back.webp',
-      panelImage: 'images/chara_51_panel.webp',
-      cutinImage: 'images/chara_51_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
+      image: 'images/chara_08_battle_back.webp',
+      panelImage: 'images/chara_08_panel.webp',
+      cutinImage: 'images/chara_08_cutin.webp',
+      uiScale: { panel: 1.0, battleBack: 0.90, battleUp: 1.0 },
     },
     52: {
       id: 52, name: 'ノア',
@@ -305,6 +461,11 @@
       rarity,
       hp: Math.round(baseHp * rarityMultiplier),
       atk: Math.round(baseAtk * rarityMultiplier),
+
+      // v321: 移動速度はキャラ差を廃止。全キャラ400固定。
+      // 個別profileにmoveSpeedが残っていてもここで必ず400へ統一する。
+      moveSpeed: 400,
+
       uiScale: profile.uiScale || master.uiScale || {},
     };
   }
@@ -322,7 +483,7 @@
     ultDescription: '発動時に画面内の敵弾をすべて消去し、敵を約1秒間停止させる。0.42秒後に敵全体へATK×2.8のダメージを与える。',
     ultName: '駆け巡る閃光',
     ultType: 'balance_flash',
-    moveSpeed: 430,
+    moveSpeed: 400,
     fireRate: 170,
     bulletSpeed: 780,
     shotPowerRate: 0.095,
@@ -385,7 +546,7 @@
     ultDescription: '発動から4秒後に効果発動。操作中キャラのHPを100%まで回復し、画面内の敵弾をすべて消去、さらに敵へATK×3.0のダメージを与える。',
     ultName: '星環の約束',
     ultType: 'sui_clock_burst',
-    moveSpeed: 420,
+    moveSpeed: 400,
     fireRate: 170,
     bulletSpeed: 800,
     shotPowerRate: 0.095,
@@ -421,7 +582,7 @@
     ultDescription: '発動時に画面内の敵弾をすべて消去し、5秒間攻撃オーラを展開。0.25秒ごとに固定1.8ダメージを与える（最大36ダメージ/1体）。',
     ultName: '環流',
     ultType: 'arno_aura',
-    moveSpeed: 405,
+    moveSpeed: 400,
     fireRate: 185,
     bulletSpeed: 455,
     shotPowerRate: 0.105,
@@ -455,7 +616,7 @@
     ultDescription: 'HP520のデコイを2体、6秒間召喚する。各デコイは約0.21秒ごとに4発の全方位弾（1発固定1.2ダメージ）を放つ。敵弾で破壊された場合、周囲へATK×2.2の爆発ダメージを与える。',
     ultName: '空想遊戯',
     ultType: 'clarine_decoy',
-    moveSpeed: 410,
+    moveSpeed: 400,
     fireRate: 178,
     bulletSpeed: 430,
     shotPowerRate: 0.050,
@@ -488,7 +649,7 @@
     decoyExplosionRadius: 124,
     decoyExplosionDamageMultiplier: 2.2,
     decoyYMaxRatio: 0.47,
-    decoyImage: 'images/chara_05_battle_decoy.webp',
+    decoyImage: 'images/chara_27_battle_decoy.webp',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.IGNIS] = buildShootingCharacter({
@@ -500,7 +661,7 @@
     ultDescription: '火炎車を3.5秒間展開。接触した敵を5秒間燃焼状態にし、1秒ごとにATK×30%のダメージを与える（合計ATK×150%）。',
     ultName: '火炎車',
     ultType: 'ignis_fire_wheel',
-    moveSpeed: 390,
+    moveSpeed: 400,
 
     // ---- 通常ショット / 連続レーザー ----
     shotType: 'laser',
@@ -545,7 +706,7 @@
     ultDescription: '中央に大花を5.2秒間展開して敵弾を遮断。0.24秒ごとにハートを10個放つ。ハートを取得すると、その時点で操作中のキャラの最大HPを5%回復。敵に命中した場合はATK×30%のダメージを与える。',
     ultName: '花園の息吹',
     ultType: 'rose_flower_heart',
-    moveSpeed: 405,
+    moveSpeed: 400,
 
     // ---- 通常ショット ----
     shotType: 'rose_seed_splash',
@@ -563,7 +724,7 @@
     shotOffsetY: 40,
 
     // ---- ULT / 花 ----
-    flowerImage: 'images/chara_07_battle_flower.webp',
+    flowerImage: 'images/chara_09_battle_flower.webp',
     flowerDurationMs: 5200,
     flowerHeartIntervalMs: 240,
     flowerHeartBurstCount: 10,
@@ -588,7 +749,7 @@
     ultDescription: '敵の行動を5秒間完全停止させる。ULT自体にダメージはなく、停止中も通常射撃で攻撃できる。',
     ultName: 'どりいむたいむ',
     ultType: 'nem_stun',
-    moveSpeed: 410,
+    moveSpeed: 400,
     fireRate: 155,
     bulletSpeed: 820,
     shotPowerRate: 0.090,
@@ -614,7 +775,7 @@
     ultDescription: '発動時に画面内の敵弾をすべて消去し、3.5秒間完全無敵になる。さらに通常射撃の間隔を60%に短縮（約1.67倍速）し、通常弾威力を247%に強化する。',
     ultName: '黄月閃界・雷光巡行',
     ultType: 'speed_storm',
-    moveSpeed: 560,
+    moveSpeed: 400,
     // 端末負荷軽減：旧92ms→125ms。5WAYは維持し、1発威力を補正して通常DPSをほぼ維持。
     fireRate: 125,
     bulletSpeed: 900,
@@ -627,7 +788,7 @@
     shotStyle: 'hayate',
 
     // ---- ULT中の射撃補正 ----
-    moonlightImage: 'images/chara_12_battle_back_moon.webp',
+    moonlightImage: 'images/chara_04_battle_back_moon.webp',
     // ULT中も弾生成数を抑えつつ、総DPSは旧設定とほぼ同等。
     moonlightFireRateMultiplier: 0.60,
     moonlightPowerMultiplier: 2.47,
@@ -676,7 +837,7 @@
     ultDescription: '発動時に画面内の敵弾をすべて消去。前方へ黒手を伸ばし、射線上の敵を同時に約7秒間拘束する。各対象へ合計ATK×3.5のダメージを分割して与え、拘束成立後は通常射撃をすぐ再開できる。',
     ultName: '暴走',
     ultType: 'precision_beam',
-    moveSpeed: 360,
+    moveSpeed: 400,
     fireRate: 275,
     bulletSpeed: 980,
     shotPowerRate: 0.315,
@@ -705,7 +866,7 @@
     ultDescription: '正面にブラックホールを射出し、敵陣で8秒間展開する。範囲内の通常敵・大型敵・ボスを中心へ吸引・拘束する。ULT自体のダメージは0。',
     ultName: '事象の地平',
     ultType: 'eltena_black_hole',
-    moveSpeed: 395,
+    moveSpeed: 400,
 
     // ---- 通常ショット：巨大3WAY ----
     fireRate: 700,
@@ -754,7 +915,7 @@
     shotAngleStep: 0.12,
     shotOffsetY: 44,
 
-    // SRの他キャラ(エリ/スイ/アルノ/ロゼ/ハヤテ)平均DPS(約293)に寄せた値。
+    // SRの他キャラ(エリ/スゥ/アルノ/ロゼ/ハヤテ)平均DPS(約293)に寄せた値。
     burstDamage: 0,
     burstNeed: 30,
     ultGainPerHit: 0.84,
@@ -783,7 +944,7 @@
     ultDescription: '発動時に画面内の敵弾をすべて消去し、4秒間、敵とステージ進行を停止する。その間、召喚獣がフィールドを高速突撃し、敵へ接触するたびATK×30%のダメージを与える。同一対象への再ヒット間隔は約0.14秒。',
 
     // ミト自身の通常射撃性能は従来値を維持。
-    moveSpeed: 430,
+    moveSpeed: 400,
     fireRate: 170,
     bulletSpeed: 780,
     shotPowerRate: 0.095,
@@ -794,7 +955,7 @@
     shotOffsetY: 38,
 
     // 召喚獣。位置はshooting_core側で画面中央を境に左右切替。
-    companionImage: 'images/chara_16_battle_set.webp',
+    companionImage: 'images/chara_07_battle_set.webp',
     companionOffsetX: 68,
     companionOffsetY: 2,
     companionShotOffsetY: 30,
@@ -824,7 +985,7 @@
     ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.5倍にする。',
     ultName: '月喰みの狩場',
     ultType: 'wolf_atk_field',
-    moveSpeed: 420,
+    moveSpeed: 400,
     fireRate: 285,
     bulletSpeed: 900,
     shotPowerRate: 0.115,
@@ -853,6 +1014,176 @@
   // ============================================================
   // ノア：灰白レーザー + 2WAY追尾 / 5秒時止め50連撃
   // ============================================================
+
+  // ============================================================
+  // v228: Release roster IDs 20-31
+  // ULT名・最終数値は未確定。ここでは通常ショットを正式ロールへ合わせ、
+  // ULT構成は basic + addons のメタデータとして先行実装する。
+  // ============================================================
+  const NEW_ROSTER_COMMON = Object.freeze({
+    moveSpeed: 400,
+    burstNeed: 30,
+    coreTop: '38%',
+    shotOffsetY: 40,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.SERA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SERA, effectKey: 'sera',
+    label: 'ORBIT / SUMMON', description: '2発の円環軌道ショット。ULTは植物系召喚物を設置するR召喚型。',
+    shotType: 'orbit_forward', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
+    orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
+    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.RYUNE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RYUNE, effectKey: 'ryune',
+    label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。',
+    shotType: 'laser', shotStyle: 'ryune', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
+    ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.KAINA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.KAINA, effectKey: 'kaina',
+    label: 'CHARGE / FIRE', description: '長押しで溜め、離して撃つRチャージ型。単発威力を高めに設定。',
+    shotType: 'charge_release', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
+    chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
+    ultBaseType: 'delay', ultAddons: ['damage'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.REISIA, effectKey: 'reisia',
+    label: 'HOMING / AQUA', description: '2発の追尾弾が敵を狙うRホーミング型。',
+    shotType: 'homing', shotCount: 2, shotSpacing: 28, fireRate: 500, bulletSpeed: 640, shotPowerRate: 0.14,
+    homingTurnRate: 8.0, ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
+    label: 'SPLASH / ITEM', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは支援アイテムを少数出現させる。',
+    shotType: 'splash', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    ultBaseType: 'item_summon', ultAddons: [], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.IONA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.IONA, effectKey: 'iona',
+    label: 'PRECISION / CONTROL', description: '単発の高威力精密射撃。ULTは短時間停止＋弾消し。',
+    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 980, shotPowerRate: 0.44,
+    ultBaseType: 'control', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.ELSIA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ELSIA, effectKey: 'elsia',
+    label: 'ORBIT / DEBUFF FIELD', description: '2発の円環軌道ショット。ULTは敵弱体化フィールドを展開。',
+    shotType: 'orbit_forward', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
+    orbitRadius: 32, orbitAngularSpeed: 11.8, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
+    ultBaseType: 'field', ultAddons: ['enemy_debuff'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.FIA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.FIA, effectKey: 'fia',
+    label: 'LASER / WOOD', description: '細い高密度レーザーを照射するRレーザー型。',
+    shotType: 'laser', shotStyle: 'fia', fireRate: 100, laserWidth: 9, laserHitWidth: 30, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
+    ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RAGNA, effectKey: 'ragna',
+    label: 'SPLASH / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは広範囲BURST。',
+    shotType: 'splash', shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27, splashRadius: 82, splashDamageRate: 0.58,
+    ultBaseType: 'burst', ultAddons: ['damage'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
+    label: 'SPLASH / DOT', description: '小範囲へ広がるRスプラッシュ型。ULTは継続ダメージ＋微回復。',
+    shotType: 'splash', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 78, splashDamageRate: 0.55,
+    ultBaseType: 'dot', ultAddons: ['heal'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.SHION] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SHION, effectKey: 'shion',
+    label: 'PRECISION / DELAY', description: '高威力の単発精密射撃。ULTは時間差攻撃＋弱体化。',
+    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 980, shotPowerRate: 0.44,
+    ultBaseType: 'delay', ultAddons: ['damage','enemy_debuff'], ultType: 'prototype_generic',
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
+    label: 'PRECISION / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
+    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 990, shotPowerRate: 0.44,
+    ultBaseType: 'burst', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
+  });
+
+  // v306: 限定SR FIRE / LASER
+  SHOOTING_CHARACTERS[CHARACTER_ID.IVERNA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.IVERNA,
+    effectKey: 'iverna',
+    label: 'LASER / FIRE',
+    description: '細い紅色レーザーを連続照射する限定SRレーザー型。',
+    ultDescription: '高密度の紅光を前方へ集中照射する。',
+    ultName: '終端紅閃',
+    ultType: 'laser_burst',
+    moveSpeed: 400,
+    shotType: 'laser',
+    shotStyle: 'iverna',
+    fireRate: 95,
+    laserWidth: 11,
+    laserHitWidth: 40,
+    laserDamageAtkRate: 0.090,
+    laserVisualHoldMs: 130,
+    burstDamage: 0,
+    burstNeed: 32,
+    ultGainPerHit: 0.70,
+    coreTop: '39%',
+    shotOffsetY: 40,
+  });
+
+  // v313: 限定SR AQUA
+  // 通常ショットはウルフと同じ「深いJ字2発ホーミング」。
+  // ULTはブラックホールを展開し、吸引・拘束しながら継続ダメージ。
+  SHOOTING_CHARACTERS[CHARACTER_ID.REI] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.REI,
+    effectKey: 'rei',
+    label: 'J-HOMING / BLACK HOLE',
+    description: 'ウルフと同じ深いJ字軌道の2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、すべての敵を吸引・拘束しながら継続ダメージを与える。',
+    ultDescription: '敵陣へブラックホールを射出し、7秒間展開。通常敵・大型敵・ボスを中心へ吸引して拘束し、展開中に合計ATK×3.5相当の継続ダメージを与える。',
+    ultName: '深淵水界',
+    ultType: 'eltena_black_hole',
+    moveSpeed: 400,
+
+    // ---- 通常ショット：ウルフと完全に同じ挙動 ----
+    fireRate: 285,
+    bulletSpeed: 900,
+    shotPowerRate: 0.115,
+    shotType: 'wolf_j_homing',
+    shotCount: 2,
+    shotSpacing: 30,
+    shotStyle: 'wolf',
+    wolfCurveDurationMs: 430,
+    wolfRetreatDepth: 78,
+    wolfOuterOffset: 52,
+    wolfConvergeLead: 54,
+
+    burstDamage: 0,
+    burstNeed: 32,
+    ultGainPerHit: 0.44,
+    coreTop: '38%',
+    shotOffsetY: 32,
+
+    // ---- ULT：ブラックホール + 継続ダメージ ----
+    blackHoleTravelSpeed: 760,
+    blackHoleDurationMs: 7000,
+    blackHoleSize: 164,
+    blackHolePullStrength: 11.8,
+    blackHoleTargetY: 112,
+    blackHoleEnemyStopRadius: 10,
+    blackHoleBossStopRadius: 18,
+    blackHoleDamageAtkMultiplier: 3.5,
+    blackHoleDamageTickMs: 250,
+  });
+
   SHOOTING_CHARACTERS[CHARACTER_ID.NOAH] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.NOAH,
@@ -862,7 +1193,7 @@
     ultDescription: '発動した瞬間に盤面の敵弾をすべて消去し、盤面上の敵全体の移動を停止。8拍子を間を置かず2周、合計16発の落雷をランダムな敵へ叩き込む。各落雷で画面が揺れ、落雷を受けた敵は終了後1.5秒間スタンする。',
     ultName: '理想郷の静止',
     ultType: 'noah_time_homing',
-    moveSpeed: 420,
+    moveSpeed: 400,
 
     // 中心レーザー：LIGHT属性。イグニスと同じ連続レーザー仕様。
     // 判定間隔 / 幅 / 当たり幅 / 見た目保持時間はイグニスと同一。
@@ -914,7 +1245,7 @@
     ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
     ultName: 'ブラックシップ',
     ultType: 'testchan_black_ship',
-    moveSpeed: 415,
+    moveSpeed: 400,
     fireRate: 250,
     bulletSpeed: 920,
     shotPowerRate: 0.075,
@@ -937,31 +1268,31 @@
 
 
   // ============================================================
-  // 五条 悟：5WAY紫弾 / ULT「虚式・茈」
-  // アヤネULTと同じ効果・ダメージ設計を使い、演出だけ紫の気弾へ差し替える。
+  // シュリ：紅黒5WAY気弾 / ULT「彼岸残月」
+  // 既存性能は維持しつつ、IDを19へ変更。
   // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.GOJO] = buildShootingCharacter({
+  SHOOTING_CHARACTERS[CHARACTER_ID.SHURI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
-    id: CHARACTER_ID.GOJO,
+    id: CHARACTER_ID.SHURI,
     effectKey: 'gojo',
-    label: 'PURPLE / FIVE-WAY',
-    description: '半透明の紫5WAYショットを放つSR火力型。ULT「虚式・茈」は紫の波動を敵へ射出し、着弾地点で巨大化。周囲の敵を中心へ吸引して停止させながら継続ダメージを与える。',
-    ultDescription: '小さな紫波動を敵へ向けて放つ。着弾すると巨大な重力波動へ変化し、約7秒間すべての敵を中心へ吸引。中心まで寄せられた敵は停止する。盤面上の敵弾は消去せず残り続け、各対象へ合計ATK×3.5相当の継続ダメージを与える。',
-    ultName: '虚式・茈',
+    label: 'CRIMSON MOON / FIVE-WAY',
+    description: '淡い紅黒の5WAY気弾を放つSR火力型。ULT「彼岸残月」は血色の波動を敵へ射出し、着弾地点で巨大化。周囲の敵を中心へ吸引して停止させながら継続ダメージを与える。',
+    ultDescription: '小さな紅黒の波動を敵へ向けて放つ。着弾すると巨大な血月の瘴気場へ変化し、約7秒間すべての敵を中心へ吸引。中心まで寄せられた敵は停止する。盤面上の敵弾は消去せず残り続け、各対象へ合計ATK×3.5相当の継続ダメージを与える。',
+    ultName: '彼岸残月',
     ultType: 'gojo_purple',
-    moveSpeed: 420,
+    moveSpeed: 400,
     fireRate: 300,
     bulletSpeed: 900,
     shotPowerRate: 0.080,
 
-    // ---- 通常ショット：紫の5WAY ----
+    // ---- 通常ショット：紅黒の5WAY ----
     shotType: 'spread',
     shotCount: 5,
     shotAngleStep: 0.125,
     shotStyle: 'gojo',
     shotOffsetY: 42,
 
-    // ---- ULT：効果はアヤネと同一 ----
+    // ---- ULT：効果は旧五条枠と同一 ----
     burstDamage: 27,
     ultDamageAtkMultiplier: 3.5,
     burstNeed: 24,

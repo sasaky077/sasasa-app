@@ -246,7 +246,7 @@
   const { CHARACTER_ID, SHOOTING_CHARACTERS, PARTY_SIZE, SWITCH_COOLDOWN_MS, isShootingCharacterOwned, getShootingRosterHtml, getOwnedShootingInstance } = CharacterModule;
 
   // v177: 公開停止キャラクター。性能コードは将来の差し替え用に残すが、UI/編成から除外する。
-  const HIDDEN_SHOOTING_CHARACTER_IDS = new Set([51]);
+  const HIDDEN_SHOOTING_CHARACTER_IDS = new Set([]);
   const isPublicShootingCharacterId = (id) => !HIDDEN_SHOOTING_CHARACTER_IDS.has(Number(id));
   const { DEFAULT_SHOOTING_ENEMY_ID, getShootingEnemy } = EnemyModule;
   const { SHOOTING_STAGE_ID, SHOOTING_MISSION_TYPE, getShootingStage } = StageModule;
@@ -298,6 +298,14 @@
 
   function isScoreAttackStage() {
     return !!(selectedStage && selectedStage.eventId === 'score_attack' && selectedStage.scoreAttack);
+  }
+
+  function isDailyQuestStage() {
+    return !!(selectedStage && selectedStage.dailyQuest);
+  }
+
+  function getDailyQuestConfig() {
+    return isDailyQuestStage() ? selectedStage.dailyQuest : null;
   }
 
   function isNoahStage() {
@@ -1219,9 +1227,43 @@
       const gem = Number(row?.gem);
       if (Number.isFinite(gem) && window.userProfile) {
         window.userProfile.gem = Math.max(0, gem);
-        if (typeof window.updateMainUI === 'function') window.updateMainUI();
-        if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
       }
+
+      // v287: EXP/coin are server-authoritative.
+      // finish RPC成功後、DBの確定プロフィールを読み直してHUDへ反映する。
+      try {
+        const profileRes = await sb
+          .from('user_profiles')
+          .select('total_score,rank,coin,gem')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (profileRes?.error) throw profileRes.error;
+        const profile = profileRes?.data;
+        if (profile && window.userProfile) {
+          if (Number.isFinite(Number(profile.total_score))) {
+            window.userProfile.total_score = Math.max(0, Number(profile.total_score));
+          }
+          if (Number.isFinite(Number(profile.rank))) {
+            window.userProfile.rank = Math.max(1, Number(profile.rank));
+          }
+          if (Number.isFinite(Number(profile.coin))) {
+            window.userProfile.coin = Math.max(0, Number(profile.coin));
+          }
+          if (Number.isFinite(Number(profile.gem))) {
+            window.userProfile.gem = Math.max(0, Number(profile.gem));
+          }
+        }
+      } catch (profileErr) {
+        console.warn('[shooting reward] profile refresh skipped:', profileErr?.message || profileErr);
+      }
+
+      if (typeof window.refreshProfileHud === 'function') {
+        window.refreshProfileHud();
+      } else if (typeof window.updateMainUI === 'function') {
+        window.updateMainUI();
+      }
+      if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
       return {
         highScore: cloudScore,
@@ -1325,15 +1367,31 @@
   }
 
   function buildResonatedCharacterProfile(id) {
-    const base = SHOOTING_CHARACTERS[Number(id)] || SHOOTING_CHARACTERS[CHARACTER_ID.ERI];
-    const lb = getShootingResonanceLevel(id);
+    const numericId = Number(id);
+    const base = SHOOTING_CHARACTERS[numericId] || SHOOTING_CHARACTERS[CHARACTER_ID.ERI];
+    const lb = getShootingResonanceLevel(numericId);
+    let profile = base;
+
     if (typeof window.applyShootingResonanceToProfile === 'function') {
-      return window.applyShootingResonanceToProfile(base, lb) || base;
+      profile = window.applyShootingResonanceToProfile(base, lb) || base;
+    } else if (window.ShootingResonance && typeof window.ShootingResonance.applyToProfile === 'function') {
+      profile = window.ShootingResonance.applyToProfile(base, lb) || base;
     }
-    if (window.ShootingResonance && typeof window.ShootingResonance.applyToProfile === 'function') {
-      return window.ShootingResonance.applyToProfile(base, lb) || base;
-    }
-    return base;
+
+    // レベル育成は共鳴適用後のHP/ATKへ乗せる。
+    // 弾速・移動速度・射撃間隔などには影響させない。
+    try {
+      const owned = typeof getOwnedShootingInstance === 'function'
+        ? getOwnedShootingInstance(numericId)
+        : null;
+      const level = Math.max(1, Number(owned && (owned.characterLevel != null ? owned.characterLevel : owned.character_level) || 1));
+      const rarity = (owned && owned.rarity) || profile.rarity || base.rarity || 'r';
+      if (window.CharacterLeveling && typeof window.CharacterLeveling.applyToProfile === 'function') {
+        profile = window.CharacterLeveling.applyToProfile(profile, rarity, lb, level) || profile;
+      }
+    } catch (_) {}
+
+    return profile;
   }
 
   function getBattleCharacter(id) {
@@ -1936,7 +1994,7 @@
     renderActivePlayerElementIcon();
     if (startName) startName.textContent = c.name;
     if (startType) {
-      startType.textContent = c.id === CHARACTER_ID.MIA
+      startType.textContent = c.shotType === 'charge_release'
         ? `${c.label} · 長押し → 離して発射`
         : `${c.label} · 射撃は自動`;
     }
@@ -2164,7 +2222,6 @@
         return `<button type="button" class="shooting-switch-btn" data-switch-id="${m.id}" onclick="switchShootingCharacter(${m.id})">
           <span class="shooting-switch-ult-ring" aria-hidden="true"></span>
           <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
-          <img class="shooting-switch-element-icon" src="" alt="" aria-hidden="true" draggable="false">
           <span class="shooting-switch-buff-badge" aria-hidden="true"></span>
           <span class="shooting-switch-name">${c.name}</span>
           <span class="shooting-switch-hp"><i></i></span>
@@ -2181,17 +2238,6 @@
       const c = getBattleCharacter(id);
       const hp = btn.querySelector('.shooting-switch-hp i');
       if (hp) hp.style.width = `${clamp(m.hp / m.hpMax, 0, 1) * 100}%`;
-
-      const elementIcon = btn.querySelector('.shooting-switch-element-icon');
-      if (elementIcon) {
-        const iconSrc = getCombatElementIcon(c && c.element);
-        if (iconSrc) {
-          if (elementIcon.getAttribute('src') !== iconSrc) elementIcon.src = iconSrc;
-          elementIcon.style.display = '';
-        } else {
-          elementIcon.style.display = 'none';
-        }
-      }
 
       // Bench ULT gauge: the circular ring around each switch button mirrors that member's own ULT charge.
       const ultRing = btn.querySelector('.shooting-switch-ult-ring');
@@ -2263,7 +2309,7 @@
     const now = performance.now();
     if (!forced && now < (state.switchReadyAt || 0)) return;
     if (getCurrentCharacter().id === CHARACTER_ID.HAYATE) stopHayateMoonlightForSwitch();
-    if (getCurrentCharacter().id === CHARACTER_ID.MIA) clearMiaChargeState();
+    if (getCurrentCharacter().shotType === 'charge_release') clearMiaChargeState();
 
     // ミトから別キャラへ交代する時は、犬とミトULT状態をその場で破棄。
     cleanupMitoCompanionOnSwitch(id);
@@ -3758,6 +3804,38 @@
     return null;
   }
 
+
+  function createGenericHomingProjectile(c, side, startY, damage, bulletClass) {
+    const startX = Number(state.player.x || 0) + side * Number(c.shotSpacing || 28) * 0.5;
+    const speed = Math.max(260, Number(c.bulletSpeed || 640));
+    const p = makeProjectile(bulletClass + ' shooting-bullet-homing', startX, startY, 0, -speed, damage, c.id);
+    if (!p) return null;
+    p.kind = 'generic_homing';
+    p.homingSpeed = speed;
+    p.homingTurnRate = Math.max(1, Number(c.homingTurnRate || 7));
+    return p;
+  }
+
+  function updateGenericHomingProjectile(p, dt) {
+    const target = getWolfTargetPoint(Number(p.x || 0), Number(p.y || 0));
+    const speed = Math.max(260, Number(p.homingSpeed || 640));
+    if (target) {
+      const dx = Number(target.x || p.x) - Number(p.x || 0);
+      const dy = Number(target.y || 0) - Number(p.y || 0);
+      const len = Math.max(1, Math.hypot(dx, dy));
+      const tx = dx / len * speed;
+      const ty = dy / len * speed;
+      const t = Math.min(1, Math.max(0, Number(p.homingTurnRate || 7) * dt));
+      p.vx += (tx - p.vx) * t;
+      p.vy += (ty - p.vy) * t;
+      const v = Math.max(1, Math.hypot(p.vx, p.vy));
+      p.vx = p.vx / v * speed;
+      p.vy = p.vy / v * speed;
+    }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+
   function fireIgnisLaser(c, now) {
     if (!state) return;
 
@@ -3849,7 +3927,7 @@
   function beginMiaCharge(pointerId, now) {
     if (!state || state.ended || state.finishing || state.countdown || !state.running) return false;
     const c = getCurrentCharacter();
-    if (!c || c.id !== CHARACTER_ID.MIA || c.shotType !== 'charge_release') return false;
+    if (!c || c.shotType !== 'charge_release') return false;
 
     const startedAt = Number(now || performance.now());
     state.miaChargeStartedAt = startedAt;
@@ -3871,7 +3949,7 @@
       if (!state || Number(state.miaChargeStartedAt || 0) !== startedAt) return;
       if (state.ended || state.finishing || state.countdown || !state.running) return;
       const current = getCurrentCharacter();
-      if (!current || current.id !== CHARACTER_ID.MIA || current.shotType !== 'charge_release') return;
+      if (!current || current.shotType !== 'charge_release') return;
       const currentPlayer = document.getElementById(PLAYER_ID);
       if (currentPlayer && currentPlayer.classList.contains('mia-charging')) {
         currentPlayer.classList.add('mia-charge-max');
@@ -3892,7 +3970,7 @@
     if (state.ended || state.finishing || state.countdown || !state.running) return false;
 
     const c = getCurrentCharacter();
-    if (!c || c.id !== CHARACTER_ID.MIA || c.shotType !== 'charge_release') return false;
+    if (!c || c.shotType !== 'charge_release') return false;
 
     const minMs = Math.max(0, Number(c.chargeMinMs || 120));
     const maxMs = Math.max(minMs + 1, Number(c.chargeMaxMs || 1000));
@@ -3963,7 +4041,7 @@
       state.mitoCompanionEl = el;
     }
 
-    const src = String(c?.companionImage || 'images/chara_16_battle_set.webp');
+    const src = String(c?.companionImage || 'images/chara_07_battle_set.webp');
     if (el.getAttribute('src') !== src) el.src = src;
     el.style.setProperty('--mito-companion-scale', String(Number(c?.companionScale || 1)));
     return el;
@@ -4464,6 +4542,41 @@
         const side = sides[i] ?? (i % 2 === 0 ? -1 : 1);
         const p = createWolfJHomingProjectile(c, side, y, effectivePower, bulletClass, now);
         if (p) state.bullets.push(p);
+      }
+      return;
+    }
+
+
+    // ----------------------------------------------------------
+    // 汎用ホーミング
+    // ----------------------------------------------------------
+    if (c.shotType === 'homing') {
+      const sides = shotCount <= 1 ? [0] : Array.from({ length: shotCount }, (_, i) => i - (shotCount - 1) / 2);
+      for (let i = 0; i < shotCount; i++) {
+        const p = createGenericHomingProjectile(c, sides[i], y, effectivePower, bulletClass);
+        if (p) state.bullets.push(p);
+      }
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // 汎用スプラッシュ：単発着弾 + 周囲へ減衰ダメージ
+    // ----------------------------------------------------------
+    if (c.shotType === 'splash') {
+      const p = makeProjectile(
+        bulletClass + ' shooting-bullet-splash',
+        state.player.x,
+        y,
+        0,
+        -Number(c.bulletSpeed || 660),
+        effectivePower,
+        c.id
+      );
+      if (p) {
+        p.kind = 'generic_splash';
+        p.splashRadius = Math.max(30, Number(c.splashRadius || 76));
+        p.splashDamageRate = Math.max(0, Number(c.splashDamageRate || 0.55));
+        state.bullets.push(p);
       }
       return;
     }
@@ -7827,6 +7940,8 @@
         updateArnoOrbitProjectile(p, dt);
       } else if (p.kind === 'wolf_j_homing') {
         updateWolfJHomingProjectile(p, dt, now);
+      } else if (p.kind === 'generic_homing') {
+        updateGenericHomingProjectile(p, dt);
       } else {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
@@ -7983,6 +8098,19 @@
             const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
             damageNormalEnemy(enemy, finalDamage, now, false);
           });
+
+          if (p.kind === 'generic_splash' && normalTarget) {
+            const radius = Math.max(30, Number(p.splashRadius || 76));
+            const rate = Math.max(0, Number(p.splashDamageRate || 0.55));
+            const attackElement = normalizeCombatElement(p.attackElement || p.element || chara.element);
+            state.normalEnemies.forEach(enemy => {
+              if (!enemy || enemy === normalTarget || enemy.hp <= 0) return;
+              if (Math.hypot(Number(enemy.x || 0) - Number(normalTarget.x || 0), Number(enemy.y || 0) - Number(normalTarget.y || 0)) > radius) return;
+              const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, getCombatTargetElement(enemy));
+              damageNormalEnemy(enemy, splashDamage, now, false);
+            });
+            createHit(Number(normalTarget.x || p.x), Number(normalTarget.y || p.y), false);
+          }
 
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
         } else {
@@ -8446,7 +8574,7 @@
   const AYANE_ULT_HAND_OPEN_SRC = 'images/ayane_ult_hand_open.webp';
   const AYANE_ULT_HAND_CLOSE_SRC = 'images/ayane_ult_hand_close.webp';
 
-  // 五条 悟(id:51)専用エフェクト。小さい紫の波動が飛び、命中地点で巨大化して停止・振動する。
+  // シュリ(id:19)専用エフェクト。紅黒の波動が飛び、命中地点で巨大化して停止・振動する。
   if (!document.getElementById('shooting-gojo-style-v2')) {
     const style = document.createElement('style');
     style.id = 'shooting-gojo-style-v2';
@@ -8454,12 +8582,12 @@
       .shooting-bullet-gojo,
       .shooting-bullet-gojo.shooting-bullet-logos{
         width:16px!important;height:16px!important;border-radius:50%!important;
-        opacity:.78!important;
-        background-color:rgba(140,76,255,.72)!important;
-        filter:saturate(1.18) brightness(1.04)!important;
-        background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.88) 0 10%,rgba(232,200,255,.82) 18%,rgba(181,85,255,.78) 42%,rgba(124,36,236,.70) 66%,rgba(72,10,162,.28) 100%)!important;
-        box-shadow:0 0 7px rgba(255,255,255,.72),0 0 14px rgba(201,117,255,.66),0 0 24px rgba(121,23,255,.52)!important;
-        border:1px solid rgba(255,255,255,.56)!important;
+        opacity:.74!important;
+        background-color:rgba(154,32,52,.72)!important;
+        filter:saturate(1.08) brightness(1.02)!important;
+        background:radial-gradient(circle at 38% 34%,rgba(255,244,246,.90) 0 9%,rgba(232,152,170,.82) 18%,rgba(176,40,68,.74) 42%,rgba(86,10,26,.62) 68%,rgba(20,0,8,.20) 100%)!important;
+        box-shadow:0 0 7px rgba(255,242,245,.66),0 0 14px rgba(196,66,96,.52),0 0 24px rgba(88,8,27,.34)!important;
+        border:1px solid rgba(255,233,238,.44)!important;
       }
       .shooting-gojo-purple-wave{
         position:absolute;left:0;top:0;z-index:28;pointer-events:none;
@@ -8467,41 +8595,41 @@
         transform:translate(-50%,-50%) scale(.82);
         transform-origin:center center;
         background:
-          radial-gradient(circle at 36% 34%,rgba(255,255,255,.76) 0 8%,rgba(236,204,255,.64) 15%,rgba(189,92,255,.58) 38%,rgba(125,30,236,.48) 64%,rgba(52,0,115,.22) 100%);
-        box-shadow:0 0 9px rgba(255,255,255,.56),0 0 20px rgba(197,94,255,.46),0 0 38px rgba(111,22,245,.34);
+          radial-gradient(circle at 36% 34%,rgba(255,247,248,.78) 0 8%,rgba(238,168,184,.64) 15%,rgba(181,46,77,.58) 38%,rgba(92,11,29,.46) 64%,rgba(26,0,10,.22) 100%);
+        box-shadow:0 0 9px rgba(255,244,246,.52),0 0 20px rgba(196,66,96,.34),0 0 38px rgba(78,6,22,.24);
         opacity:0;
         will-change:left,top,transform,filter;
       }
       .shooting-gojo-purple-wave::before,
       .shooting-gojo-purple-wave::after{
         content:'';position:absolute;inset:-9px;border-radius:50%;
-        border:2px solid rgba(207,142,255,.42);
-        box-shadow:0 0 16px rgba(170,79,255,.34);
-        opacity:.40;
+        border:2px solid rgba(210,108,130,.34);
+        box-shadow:0 0 16px rgba(140,34,54,.26);
+        opacity:.34;
       }
       .shooting-gojo-purple-wave::after{
-        inset:-17px;border-width:1px;opacity:.24;
+        inset:-17px;border-width:1px;opacity:.22;
       }
       .shooting-gojo-purple-wave.fly{
-        opacity:.68;
+        opacity:.66;
         animation:shootingGojoWaveSpin .16s linear infinite;
       }
       .shooting-gojo-purple-wave.impact{
         width:154px;height:154px;
-        opacity:.56;
+        opacity:.54;
         transform:translate(-50%,-50%) scale(1);
         background:
-          radial-gradient(circle at 38% 34%,rgba(255,255,255,.70) 0 7%,rgba(238,204,255,.56) 13%,rgba(194,93,255,.46) 34%,rgba(129,34,240,.38) 58%,rgba(58,0,128,.22) 78%,rgba(22,0,58,.08) 100%);
-        box-shadow:0 0 15px rgba(255,255,255,.44),0 0 36px rgba(213,123,255,.34),0 0 80px rgba(133,35,255,.28),0 0 120px rgba(73,0,168,.18);
+          radial-gradient(circle at 38% 34%,rgba(255,245,247,.66) 0 7%,rgba(240,174,188,.46) 13%,rgba(182,48,78,.40) 34%,rgba(92,10,28,.28) 58%,rgba(26,0,10,.14) 78%,rgba(10,0,4,.05) 100%);
+        box-shadow:0 0 15px rgba(255,244,246,.34),0 0 36px rgba(182,51,81,.24),0 0 80px rgba(82,8,25,.18),0 0 120px rgba(30,0,10,.12);
         animation:shootingGojoImpactShake .10s linear infinite, shootingGojoImpactPulse .40s ease-in-out infinite alternate;
       }
       .shooting-gojo-purple-wave.release{
         animation:shootingGojoWaveRelease .36s ease-out forwards!important;
       }
       @keyframes shootingGojoWaveSpin{
-        0%{filter:brightness(1.05) hue-rotate(0deg);transform:translate(-50%,-50%) scale(.82)}
-        50%{filter:brightness(1.42) hue-rotate(8deg);transform:translate(-50%,-50%) scale(1.08)}
-        100%{filter:brightness(1.05) hue-rotate(0deg);transform:translate(-50%,-50%) scale(.82)}
+        0%{filter:brightness(1.02) saturate(.96);transform:translate(-50%,-50%) scale(.82)}
+        50%{filter:brightness(1.24) saturate(1.08);transform:translate(-50%,-50%) scale(1.08)}
+        100%{filter:brightness(1.02) saturate(.96);transform:translate(-50%,-50%) scale(.82)}
       }
       @keyframes shootingGojoImpactShake{
         0%{margin-left:-3px;margin-top:0}
@@ -8760,6 +8888,13 @@
       pullStrength: Number(c.blackHolePullStrength || 11.5),
       enemyStopRadius: Number(c.blackHoleEnemyStopRadius || 10),
       bossStopRadius: Number(c.blackHoleBossStopRadius || 18),
+
+      // v313: キャラ定義側で指定した場合のみブラックホールにDoTを持たせる。
+      // 未指定のエルテナは従来どおりダメージ0のまま。
+      damageAtkMultiplier: Math.max(0, Number(c.blackHoleDamageAtkMultiplier || 0)),
+      damageTickMs: Math.max(100, Number(c.blackHoleDamageTickMs || 250)),
+      nextDamageAt: 0,
+      damagePulseIndex: 0,
     };
 
     if (root) {
@@ -8839,6 +8974,7 @@
         bh.y = bh.targetY;
         bh.activeFrom = now;
         bh.activeUntil = now + bh.durationMs;
+        bh.nextDamageAt = now;
         bh.el.classList.remove('traveling');
         bh.el.classList.add('active');
         document.getElementById(ROOT_ID)?.classList.add('eltena-black-hole-active');
@@ -8872,7 +9008,55 @@
     const w = arena.clientWidth;
     const h = arena.clientHeight;
 
-    // 通常敵は全員吸引。ダメージは一切与えない。
+    // v313: blackHoleDamageAtkMultiplier が設定されたキャラだけ継続ダメージ。
+    // multiplier は「ULT全時間での合計ATK倍率」として扱う。
+    if (bh.damageAtkMultiplier > 0 && now >= Number(bh.nextDamageAt || 0)) {
+      const tickMs = Math.max(100, Number(bh.damageTickMs || 250));
+      const totalTicks = Math.max(1, Math.ceil(Number(bh.durationMs || 1) / tickMs));
+      const owner = SHOOTING_CHARACTERS && SHOOTING_CHARACTERS[Number(bh.ownerId)];
+      const ownerAtk = Math.max(0, Number(owner?.atk || getCurrentCharacter()?.atk || 0));
+      const damage = ownerAtk * Number(bh.damageAtkMultiplier || 0) / totalTicks;
+
+      // フレーム落ちでも多重tickを一気に処理せず、次tickを現在時刻基準で予約。
+      bh.nextDamageAt = now + tickMs;
+      bh.damagePulseIndex = Number(bh.damagePulseIndex || 0) + 1;
+
+      if (damage > 0) {
+        (state.normalEnemies || []).forEach(enemy => {
+          if (!enemy || !enemy.el || enemy.hp <= 0) return;
+          damageNormalEnemy(enemy, damage, now, false);
+        });
+        state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+        if (isNormalBattle()) evaluateNormalMission(now);
+
+        (state.facelessObjects || []).forEach(obj => {
+          if (!obj || !obj.el || obj.hp <= 0) return;
+          damageFacelessObject(obj, damage, now);
+        });
+
+        if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+          const applied = Math.min(state.boss.hp, Math.max(0, damage));
+          state.boss.hp = Math.max(0, state.boss.hp - applied);
+          if ((bh.damagePulseIndex % 2) === 1) {
+            createHit(
+              state.boss.x + (Math.random() - .5) * 22,
+              state.boss.y + (Math.random() - .5) * 18,
+              false
+            );
+            flashBossHit(false);
+          }
+          if (!isRaidStage() || shouldRenderRaidBossHitVisual(now, 'number')) {
+            showBossDamageNumber(applied, false);
+          }
+          if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+          updateBossPhase();
+          if (state.boss.hp <= 0) beginBossDefeat();
+        }
+        renderHud();
+      }
+    }
+
+    // 通常敵は全員吸引。ダメージはキャラ定義で指定された場合のみ発生。
     (state.normalEnemies || []).forEach(enemy => {
       if (!enemy || !enemy.el || enemy.hp <= 0) return;
       pullPointTowardBlackHole(enemy, bh, dt, bh.enemyStopRadius, {
@@ -9445,6 +9629,214 @@
     }, 3650);
   }
 
+
+  function closeDailyStageSelect() {
+    document.getElementById('shooting-daily-stage-select')?.remove();
+  }
+
+  function getDailyWeekdayKey() {
+    let weekday = '';
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Tokyo',
+        weekday: 'short',
+      }).formatToParts(new Date());
+      weekday = String(parts.find(part => part.type === 'weekday')?.value || '');
+    } catch (_) {
+      weekday = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+    }
+
+    return {
+      Mon: 'mon',
+      Tue: 'tue',
+      Wed: 'wed',
+      Thu: 'thu',
+      Fri: 'fri',
+      Sat: 'sat',
+      Sun: 'sun',
+    }[weekday] || 'sun';
+  }
+
+  function getDailyStageId(level) {
+    const normalizedLevel = level === 'advanced' ? 'advanced' : 'intermediate';
+    return `shooting_daily_${getDailyWeekdayKey()}_${normalizedLevel}`;
+  }
+
+  function getDailySelectRewardInfo() {
+    if (typeof window.getDailyWeekdayReward === 'function') {
+      const info = window.getDailyWeekdayReward();
+      if (info && info.reward) return info;
+    }
+    return {
+      reward: {
+        id: 'kyoumei_stone',
+        name: '共鳴石',
+        img: 'images/item_kyoumeistone.webp',
+      },
+      random: false,
+      weekday: '',
+    };
+  }
+
+  function getDailySelectAttempt(level) {
+    if (typeof window.getDailyAttemptState === 'function') {
+      const state = window.getDailyAttemptState(level);
+      if (state) return state;
+    }
+    return { remaining: 1, max: 1 };
+  }
+
+  function refreshDailyStageSelect() {
+    const overlay = document.getElementById('shooting-daily-stage-select');
+    if (!overlay) return;
+
+    const info = getDailySelectRewardInfo();
+    const reward = info.reward || {};
+    const weekdayLabel = {
+      Mon: '月曜日',
+      Tue: '火曜日',
+      Wed: '水曜日',
+      Thu: '木曜日',
+      Fri: '金曜日',
+      Sat: '土曜日',
+      Sun: '日曜日',
+    }[String(info.weekday || '')] || '本日';
+
+    const titleSub = overlay.querySelector('[data-daily-weekday-label]');
+    if (titleSub) {
+      titleSub.textContent = info.random
+        ? `${weekdayLabel}・ランダム報酬`
+        : `${weekdayLabel}・${reward.name || '曜日報酬'}`;
+    }
+
+    ['intermediate', 'advanced'].forEach(level => {
+      const amount = level === 'advanced' ? 2 : 1;
+      const attempt = getDailySelectAttempt(level);
+      const row = overlay.querySelector(`[data-daily-level="${level}"]`);
+      if (!row) return;
+
+      const img = row.querySelector('[data-daily-reward-img]');
+      const count = row.querySelector('[data-daily-reward-count]');
+      const remaining = row.querySelector('[data-daily-remaining]');
+
+      if (img) {
+        img.src = reward.img || 'images/item_kyoumeistone.webp';
+        img.alt = reward.name || 'デイリー報酬';
+      }
+      if (count) count.textContent = `×${amount}`;
+      if (remaining) remaining.textContent = `残り ${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
+
+      const exhausted = Number(attempt.remaining || 0) <= 0;
+      row.classList.toggle('is-exhausted', exhausted);
+      row.setAttribute('aria-disabled', exhausted ? 'true' : 'false');
+    });
+  }
+
+  function openDailyStage(level) {
+    const normalizedLevel = level === 'advanced' ? 'advanced' : 'intermediate';
+    const attempt = getDailySelectAttempt(normalizedLevel);
+
+    if (Number(attempt.remaining || 0) <= 0) {
+      const message = '本日の挑戦回数を使い切りました';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return false;
+    }
+
+    // デイリー巡行 → 難易度選択 → パーティ編成。
+    // 編成画面の「戻る」では、この難易度選択画面へ戻す。
+    window.__shootingReturnContext = { type: 'dailyStageSelect' };
+    closeDailyStageSelect();
+    window.openShootingEvent({ stageId: getDailyStageId(normalizedLevel) });
+    return true;
+  }
+
+  function showDailyStageSelect(options = {}) {
+    closeDailyStageSelect();
+
+    const immediate = !!(options && options.immediate);
+    const overlay = document.createElement('div');
+    overlay.id = 'shooting-daily-stage-select';
+    overlay.className = 'shooting-special-stage-select shooting-faceless-stage-select shooting-daily-stage-select';
+
+    if (immediate) {
+      overlay.classList.add('show');
+      overlay.style.transition = 'none';
+    }
+
+    overlay.innerHTML = `
+      <div class="shooting-special-stage-page shooting-faceless-stage-page shooting-daily-stage-page">
+        <div class="shooting-special-stage-header shooting-faceless-stage-header shooting-daily-stage-header">
+          <button type="button"
+                  class="shooting-special-stage-back shooting-faceless-stage-back"
+                  onclick="closeDailyStageSelect()"
+                  aria-label="戻る">＜戻る</button>
+          <div class="shooting-special-stage-title shooting-faceless-stage-title">デイリー巡行</div>
+          <div class="shooting-daily-stage-subtitle" data-daily-weekday-label></div>
+        </div>
+
+        <div class="shooting-special-stage-list shooting-faceless-stage-list shooting-daily-stage-list">
+          <button type="button"
+                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row"
+                  data-daily-level="intermediate"
+                  onclick="openDailyStage('intermediate')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>中級</strong>
+                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
+              <div class="shooting-daily-stage-reward">
+                <span class="shooting-daily-stage-reward-label">報酬</span>
+                <span class="shooting-daily-stage-reward-chip">
+                  <img src="images/item_kyoumeistone.webp" alt="" data-daily-reward-img>
+                  <b data-daily-reward-count>×1</b>
+                </span>
+              </div>
+            </div>
+          </button>
+
+          <button type="button"
+                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row"
+                  data-daily-level="advanced"
+                  onclick="openDailyStage('advanced')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>上級</strong>
+                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
+              <div class="shooting-daily-stage-reward">
+                <span class="shooting-daily-stage-reward-label">報酬</span>
+                <span class="shooting-daily-stage-reward-chip">
+                  <img src="images/item_kyoumeistone.webp" alt="" data-daily-reward-img>
+                  <b data-daily-reward-count>×2</b>
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+    refreshDailyStageSelect();
+
+    if (!immediate) {
+      requestAnimationFrame(() => overlay.classList.add('show'));
+    } else {
+      requestAnimationFrame(() => {
+        if (overlay.isConnected) overlay.style.transition = '';
+      });
+    }
+  }
+
+  window.closeDailyStageSelect = closeDailyStageSelect;
+  window.showDailyStageSelect = showDailyStageSelect;
+  window.openDailyStage = openDailyStage;
+  window.refreshDailyStageSelect = refreshDailyStageSelect;
+
   function closeFacelessStageSelect() {
     document.getElementById('shooting-faceless-stage-select')?.remove();
   }
@@ -9758,9 +10150,11 @@
   // ============================================================
   // Clear rewards - STORY / SPECIAL EVENT / DAILY RAID
   // ============================================================
-  // 神核はシューティングの通常クリア報酬には含めない。
-  // REWARDは『プレイヤーEXP + ランダムアイテム2種類』の3枠固定。
-  // アイテム枠は5候補から重複なしで2種類を抽選する。
+  // v281:
+  // クリア時はプレイヤーEXPとコインを必ず付与する。
+  // 追加アイテムは最大3枠。
+  // CHAPTER 01は進化素材を落とさず、共鳴石のみ5%で1個抽選する。
+  // CHAPTER 02以降はstageNoに応じて追加ドロップ率を段階的に上げる。
   const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
     Object.freeze({ id: 'kyoumei_stone', name: '共鳴石', image: 'images/item_kyoumeistone.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'soul_vessel_fire', name: '魂の器(火)', image: 'images/type_fire.webp', rewardType: 'evolution' }),
@@ -9770,6 +10164,61 @@
     Object.freeze({ id: 'soul_vessel_light', name: '魂の器(光)', image: 'images/type_light.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'shinju_nutrition', name: '神樹の栄養', image: 'images/shinju.webp', rewardType: 'shinju' }),
   ]);
+
+
+  const SHOOTING_STORY_ITEM_POOL = Object.freeze(
+    SHOOTING_EVOLUTION_REWARD_POOL.filter(item => item.rewardType === 'evolution')
+  );
+
+  function getShootingStoryItemSlotRates() {
+    const stage = selectedStage || {};
+    const chapter = Math.max(1, Math.floor(Number(stage.chapter || 1)));
+    const stageNo = Math.max(1, Math.floor(Number(stage.stageNo || 1)));
+
+    // CHAPTER01は共鳴石5%だけ。魂の器など進化素材は出さない。
+    if (chapter === 1) return [0.05];
+
+    // 低難度の1ステージ目は追加ドロップをかなり絞る。
+    // 2枠目・3枠目ほど大きく確率を落とし、最大3枠まで。
+    const table = {
+      1: [0.18, 0.04, 0.01],
+      2: [0.28, 0.08, 0.02],
+      3: [0.40, 0.15, 0.04],
+      4: [0.55, 0.25, 0.08],
+    };
+    const base = table[Math.min(stageNo, 4)] || table[4];
+
+    // 後半Chapterはわずかに底上げ。ただし上限は抑える。
+    const chapterBonus = Math.min(0.12, Math.max(0, chapter - 2) * 0.025);
+    return base.map((rate, index) => {
+      const slotScale = index === 0 ? 1 : index === 1 ? 0.65 : 0.4;
+      return Math.min(index === 0 ? 0.75 : index === 1 ? 0.40 : 0.15, rate + chapterBonus * slotScale);
+    });
+  }
+
+  function pickStoryAdditionalItemDrops() {
+    const stage = selectedStage || {};
+    const chapter = Math.max(1, Math.floor(Number(stage.chapter || 1)));
+
+    if (chapter === 1) {
+      if (Math.random() >= 0.05) return [];
+      const stone = SHOOTING_EVOLUTION_REWARD_POOL.find(item => item.id === 'kyoumei_stone');
+      return stone ? [{ material: stone, count: 1 }] : [];
+    }
+
+    const rates = getShootingStoryItemSlotRates();
+    const drops = [];
+    const pool = Array.from(SHOOTING_STORY_ITEM_POOL);
+
+    rates.slice(0, 3).forEach(rate => {
+      if (!pool.length || Math.random() >= rate) return;
+      const index = Math.floor(Math.random() * pool.length);
+      const material = pool.splice(index, 1)[0];
+      if (material) drops.push({ material, count: 1 });
+    });
+
+    return drops;
+  }
 
   function getShootingClearRewardPlan() {
     const stage = selectedStage || {};
@@ -9818,8 +10267,35 @@
     return picked;
   }
 
+  function pickDailyQuestMaterialRewards() {
+    const cfg = getDailyQuestConfig();
+    if (!cfg) return [];
+
+    const count = Math.max(1, Math.floor(Number(cfg.rewardCount || 1)));
+    const sourceIds = Array.isArray(cfg.rewardPool) && cfg.rewardPool.length
+      ? Array.from(cfg.rewardPool)
+      : [String(cfg.rewardId || '')].filter(Boolean);
+    if (!sourceIds.length) return [];
+
+    const picked = new Map();
+    for (let i = 0; i < count; i++) {
+      const id = sourceIds.length === 1
+        ? sourceIds[0]
+        : sourceIds[Math.floor(Math.random() * sourceIds.length)];
+      const material = SHOOTING_EVOLUTION_REWARD_POOL.find(item => item.id === id);
+      if (!material || material.rewardType !== 'evolution') continue;
+      const current = picked.get(id);
+      if (current) current.count += 1;
+      else picked.set(id, { material, count: 1 });
+    }
+    return Array.from(picked.values());
+  }
+
   function getShootingPlayerExpDifficulty() {
     const stage = selectedStage || {};
+    if (isDailyQuestStage()) {
+      return getDailyQuestConfig()?.level === 'advanced' ? 'hard' : 'normal';
+    }
     if (isRaidStage()) return 'boss';
     if (isFacelessStage()) {
       return stage.faceless && stage.faceless.difficulty === 'super' ? 'boss' : 'hard';
@@ -9852,25 +10328,90 @@
     return Math.max(1, Math.floor(base * rankMul));
   }
 
+  function getShootingCoinReward(playerExp) {
+    // v285:
+    // コインは CHAPTERごとのベース + STAGE進行分。
+    //
+    // CHAPTER 01 base = 1,000
+    // CHAPTER 02 base = 1,200
+    // CHAPTER 03 base = 1,400
+    // ...CHAPTERが1上がるごとにベース +200
+    //
+    // 各CHAPTER内では STAGEが1上がるごとに +300。
+    // 例:
+    // CH01-01 = 1,000 / CH01-02 = 1,300 / CH01-03 = 1,600 / CH01-04 = 1,900
+    // CH02-01 = 1,200 / CH02-02 = 1,500 / CH02-03 = 1,800 / CH02-04 = 2,100
+    const stage = selectedStage || {};
+    const chapter = Math.max(1, Math.floor(Number(stage.chapter || 1)));
+    const stageNo = Math.max(1, Math.floor(Number(stage.stageNo || 1)));
+    const chapterBase = 1000 + ((chapter - 1) * 200);
+    const stageBonus = (stageNo - 1) * 300;
+    return chapterBase + stageBonus;
+  }
+
+  function grantCoinReward(amount) {
+    const coin = Math.max(0, Math.floor(Number(amount || 0)));
+    if (!coin || !window.userProfile) return false;
+
+    const next = Math.max(0, Number(window.userProfile.coin || 0)) + coin;
+    window.userProfile.coin = next;
+
+    // v286: リザルト直後にヘッダーのコイン残高と端末キャッシュを即時同期。
+    if (typeof window.refreshProfileHud === 'function') {
+      window.refreshProfileHud();
+    } else if (typeof window.updateMainUI === 'function') {
+      window.updateMainUI();
+    }
+
+    if (typeof window.saveProfileToDB === 'function') {
+      Promise.resolve(window.saveProfileToDB({
+        coin: next,
+        last_played: new Date().toISOString(),
+      })).then(() => {
+        if (typeof window.refreshProfileHud === 'function') window.refreshProfileHud();
+      }).catch(err => {
+        console.warn('[shooting reward] coin cloud save failed', err);
+        if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+      });
+    } else if (typeof window.scheduleCloudSave === 'function') {
+      window.scheduleCloudSave();
+    }
+    return true;
+  }
+
   function grantPlayerExpReward(amount) {
     const exp = Math.max(0, Math.floor(Number(amount || 0)));
-    if (!exp) return false;
+    if (!exp || !window.userProfile) return false;
 
-    if (typeof window.addTotalScore === 'function') {
-      Promise.resolve(window.addTotalScore(exp)).catch(err => {
-        console.warn('[shooting reward] player exp save failed', err);
+    // v286:
+    // addTotalScore() は旧セキュリティ仕様で無効化済みだったため、
+    // リザルト上はEXPを獲得していてもHUDのtotal_scoreが更新されていなかった。
+    // まず現在のプロフィールへ即時反映し、円形EXPリングを同期する。
+    const before = Math.max(0, Number(window.userProfile.total_score || 0));
+    const next = before + exp;
+    window.userProfile.total_score = next;
+
+    if (typeof window.refreshProfileHud === 'function') {
+      window.refreshProfileHud();
+    } else if (typeof window.updateMainUI === 'function') {
+      window.updateMainUI();
+    }
+
+    // クラウド保存もベストエフォートで同期。
+    // total_score/rankの権限制約がある環境では端末表示を巻き戻さない。
+    if (typeof window.saveProfileToDB === 'function') {
+      const rank = Math.max(1, Number(window.userProfile.rank || 1));
+      Promise.resolve(window.saveProfileToDB({
+        total_score: next,
+        rank: rank,
+        last_played: new Date().toISOString(),
+      })).then(() => {
+        if (typeof window.refreshProfileHud === 'function') window.refreshProfileHud();
+      }).catch(err => {
+        console.warn('[shooting reward] player exp cloud save skipped', err);
       });
-      return true;
     }
-
-    // 通常はaddTotalScoreを使う。未初期化時だけ端末上の値を最低限更新する。
-    if (window.userProfile) {
-      window.userProfile.total_score = Math.max(0, Number(window.userProfile.total_score || 0)) + exp;
-      if (typeof window.updateMainUI === 'function') window.updateMainUI();
-      if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
-      return true;
-    }
-    return false;
+    return true;
   }
 
   function grantShinjuNutrition(exp, count) {
@@ -9958,7 +10499,7 @@
   // v163: first-clear gem reward must be tied to a server-issued shooting run.
   // A stage_id alone is no longer enough to claim gems from the console.
   async function beginSecureShootingRun() {
-    if (!state || !state.stageId) return null;
+    if (!state || !state.stageId || isDailyQuestStage()) return null;
     if (state.secureRunToken) return state.secureRunToken;
     if (state.secureRunPromise) return state.secureRunPromise;
 
@@ -10066,20 +10607,35 @@
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
 
+    const dailyQuestReward = isDailyQuestStage();
     const scoreAttackFixedReward = isScoreAttackStage();
-    const range = scoreAttackFixedReward
-      ? { min: 1, max: 1, label: 'SCORE ATTACK FIXED' }
-      : getShootingRewardCountRange(state.score);
     const playerExp = getShootingPlayerExpReward();
-    const materials = pickShootingEvolutionRewards(2);
-    const materialDrops = materials.map(material => ({
-      material,
-      count: scoreAttackFixedReward ? 1 : rollShootingRewardCount(range),
-    }));
+    const coin = getShootingCoinReward(playerExp);
     const rewardPlan = getShootingClearRewardPlan();
 
-    // ステージ固有の確定報酬。
-    // 通常のランダム報酬プールには混ぜず、クリア時に必ず追加で付与する。
+    let itemDrops = [];
+
+    if (dailyQuestReward) {
+      // デイリーは曜日別の既存確定個数を維持。
+      itemDrops = pickDailyQuestMaterialRewards();
+    } else if (scoreAttackFixedReward) {
+      // すこあた！は従来の固定報酬感を維持しつつ、最大3枠以内。
+      itemDrops = pickShootingEvolutionRewards(2).map(material => ({ material, count: 1 }));
+    } else if (!isRaidStage() && !isFacelessStage()) {
+      // STORY通常巡行。CH01だけ特例、CH02以降はstageNo別確率。
+      itemDrops = pickStoryAdditionalItemDrops();
+    } else {
+      // 特殊/ボス系は通常STORYより少し報酬感を残す。
+      const slotRates = [0.65, 0.28, 0.08];
+      const pool = Array.from(SHOOTING_EVOLUTION_REWARD_POOL);
+      slotRates.forEach(rate => {
+        if (!pool.length || Math.random() >= rate) return;
+        const index = Math.floor(Math.random() * pool.length);
+        itemDrops.push({ material: pool.splice(index, 1)[0], count: 1 });
+      });
+    }
+
+    // ステージ固有の確定報酬は既存仕様を維持。
     const guaranteedRewards = Array.isArray(selectedStage && selectedStage.guaranteedRewards)
       ? selectedStage.guaranteedRewards.map(reward => ({
           type: String(reward && reward.type || 'material'),
@@ -10092,12 +10648,27 @@
       : [];
 
     const drops = [
-      { type: 'exp', name: 'プレイヤーEXP', amount: playerExp, detail: 'プレイヤーレベル経験値', image: '', amountPrefix: '+' },
-      ...materialDrops.map(({ material, count }) => ({
+      {
+        type: 'exp',
+        name: 'EXP',
+        amount: playerExp,
+        detail: 'プレイヤーEXP',
+        image: '',
+        amountPrefix: '+'
+      },
+      {
+        type: 'coin',
+        name: 'コイン',
+        amount: coin,
+        detail: 'クリア報酬',
+        image: 'images/icon_coin.webp',
+        amountPrefix: '+'
+      },
+      ...itemDrops.map(({ material, count }) => ({
         type: 'material',
         name: material.name,
         amount: count,
-        detail: material.rewardType === 'shinju' ? '神樹成長素材' : '進化素材',
+        detail: material.rewardType === 'shinju' ? '神樹成長素材' : '追加ドロップ',
         image: material.image,
         materialId: material.id,
       })),
@@ -10111,8 +10682,17 @@
       })),
     ];
 
-    grantPlayerExpReward(playerExp);
-    materialDrops.forEach(({ material, count }) => {
+    // v287:
+    // 通常シューティングのEXP/コインは finish_secure_shooting_run 側で
+    // run token 消費と同一トランザクション内にて確定付与する。
+    // クライアント加算すると二重付与になるため、ここでは加算しない。
+    // DAILYは既存の別経路を維持。
+    if (dailyQuestReward) {
+      grantPlayerExpReward(playerExp);
+      grantCoinReward(coin);
+    }
+
+    itemDrops.forEach(({ material, count }) => {
       if (material.rewardType === 'shinju') {
         grantShinjuNutrition(rewardPlan.nutritionExp, count);
       } else {
@@ -10124,7 +10704,6 @@
       grantEvolutionReward({ id: reward.id }, reward.count);
     });
 
-    state.clearRewardScoreRange = range;
     state.clearRewards = drops;
     return drops;
   }
@@ -10144,18 +10723,26 @@
 
     const drops = buildAndGrantShootingClearRewards();
     section.style.display = '';
-    list.innerHTML = drops.map(buildShootingRewardItemHtml).join('');
+
+    // v283: EXP / コインは確定報酬として必ず先頭表示。
+    // 旧stateを引き継いだ場合でも表示順を固定する。
+    const orderedDrops = Array.isArray(drops)
+      ? [
+          ...drops.filter(drop => drop && drop.type === 'exp'),
+          ...drops.filter(drop => drop && drop.type === 'coin'),
+          ...drops.filter(drop => drop && drop.type !== 'exp' && drop.type !== 'coin')
+        ]
+      : [];
+
+    list.innerHTML = orderedDrops.map(buildShootingRewardItemHtml).join('');
     if (note) {
-      note.textContent = isAmbushStage()
-        ? 'オーバーシア亜種の心核を獲得しました'
-        : (isScoreAttackStage()
-          ? 'すこあた！クリア報酬を獲得しました'
-          : `SCORE ${Math.floor(Number(state.score || 0)).toLocaleString('ja-JP')} に応じた報酬を獲得しました`);
+      note.textContent = '';
+      note.style.display = 'none';
     }
 
     // v172: 初回クリア結晶も、同じrun tokenを確定する結果RPCから受け取る。
     // score保存と初回報酬を別々のクライアント申告にしない。
-    if (!state.firstClearGemRenderStarted) {
+    if (!isDailyQuestStage() && !state.firstClearGemRenderStarted) {
       state.firstClearGemRenderStarted = true;
       const finalizePromise = state.secureFinalizePromise
         || submitShootingHighScore(state.score, true);
@@ -10311,7 +10898,10 @@
     const rankLetter = getResultRank(state.score, win);
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
 
-    if (isRaidStage()) {
+    if (isDailyQuestStage()) {
+      if (raidRow) raidRow.style.display = 'none';
+      if (retryBtn) retryBtn.style.display = 'none';
+    } else if (isRaidStage()) {
       state.raidDamageDealt = Math.max(0, Math.floor(Number(state.raidInitialHp || 0) - Number(state.boss && state.boss.hp || 0)));
       if (raidRow) raidRow.style.display = '';
       if (raidDamageEl) raidDamageEl.textContent = state.raidDamageDealt.toLocaleString('ja-JP');
@@ -10333,7 +10923,7 @@
 
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.
-    state.secureFinalizePromise = submitShootingHighScore(state.score, !!win);
+    state.secureFinalizePromise = isDailyQuestStage() ? Promise.resolve(null) : submitShootingHighScore(state.score, !!win);
     // STORY進捗へシューティング結果を通知。
     try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
@@ -10499,7 +11089,7 @@
 
     // ミア：移動ドラッグと同じpointerを使ってチャージ開始。
     // DOM追加はせずplayerのCSSクラスだけで溜め演出を出す。
-    if (!state.countdown && getCurrentCharacter().id === CHARACTER_ID.MIA) {
+    if (!state.countdown && getCurrentCharacter().shotType === 'charge_release') {
       beginMiaCharge(e.pointerId, now);
     }
 
@@ -10569,7 +11159,7 @@
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
-      } else if (e.type !== 'pointercancel' && getCurrentCharacter().id === CHARACTER_ID.MIA) {
+      } else if (e.type !== 'pointercancel' && getCurrentCharacter().shotType === 'charge_release') {
         releaseMiaCharge(e.pointerId, performance.now());
       } else if (e.type === 'pointercancel') {
         clearMiaChargeState();
@@ -10696,7 +11286,7 @@
     pointerIsTouch = false;
     activePointerId = null;
 
-    if (getCurrentCharacter && getCurrentCharacter().id === CHARACTER_ID.MIA) {
+    if (getCurrentCharacter && getCurrentCharacter().shotType === 'charge_release') {
       clearMiaChargeState();
     }
 
@@ -10831,7 +11421,7 @@
       <div class="shooting-pause-backdrop" aria-hidden="true"></div>
       <section class="shooting-pause-card" role="dialog" aria-modal="true" aria-labelledby="shooting-pause-title">
         <div class="shooting-pause-kicker">PAUSE</div>
-        <h2 id="shooting-pause-title">メニュー</h2>
+        <h2 id="shooting-pause-title" aria-label="メニュー"><span class="sasaphia-menu-heading-icon" aria-hidden="true">☰</span></h2>
         <div class="shooting-pause-divider"></div>
         <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
         <button type="button" class="shooting-pause-action" onclick="restartShootingStageFromPause()">最初からやり直す</button>
@@ -11071,6 +11661,43 @@
     }
   }
 
+  let dailyQuestConsumePending = false;
+
+  async function ensureSelectedDailyQuestAttemptConsumed() {
+    if (!isDailyQuestStage()) return true;
+    if (dailyQuestConsumePending) return false;
+
+    const cfg = getDailyQuestConfig();
+    const level = cfg && cfg.level === 'advanced' ? 'advanced' : 'intermediate';
+    dailyQuestConsumePending = true;
+    try {
+      if (typeof window.getDailyAttemptState === 'function') {
+        const attempt = window.getDailyAttemptState(level);
+        if (!attempt || Number(attempt.remaining || 0) <= 0) {
+          const message = '本日の挑戦回数を使い切りました';
+          if (typeof window.showToast === 'function') window.showToast(message);
+          else alert(message);
+          return false;
+        }
+      }
+      if (typeof window.consumeDailyQuestAttempt !== 'function') {
+        const message = 'デイリー挑戦回数を確認できません';
+        if (typeof window.showToast === 'function') window.showToast(message);
+        else alert(message);
+        return false;
+      }
+      if (!window.consumeDailyQuestAttempt(level)) {
+        const message = '本日の挑戦回数を使い切りました';
+        if (typeof window.showToast === 'function') window.showToast(message);
+        else alert(message);
+        return false;
+      }
+      return true;
+    } finally {
+      dailyQuestConsumePending = false;
+    }
+  }
+
   let specialTicketConsumePending = false;
 
   async function ensureSelectedStageTicketConsumed() {
@@ -11103,7 +11730,8 @@
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
 
-    // レイド挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
+    // 挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
+    if (!(await ensureSelectedDailyQuestAttemptConsumed())) return;
     if (!(await ensureSelectedRaidAttemptStarted())) return;
     if (!(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
@@ -11328,6 +11956,9 @@
     const returningToFacelessStageSelect = !!(
       returnContext && returnContext.type === 'facelessStageSelect'
     );
+    const returningToDailyStageSelect = !!(
+      returnContext && returnContext.type === 'dailyStageSelect'
+    );
     const returningToRaidLobby = !!(returnContext && returnContext.type === 'raidLobby');
 
     // 戦闘途中で戻った場合も、その日の挑戦は消費済み。
@@ -11349,8 +11980,13 @@
     // その後で④のshooting rootを破棄することで、背面の②特別巡行を一瞬も見せない。
     if (returningToFacelessStageSelect) {
       showFacelessStageSelect({ immediate: true });
+      closeDailyStageSelect();
+    } else if (returningToDailyStageSelect) {
+      showDailyStageSelect({ immediate: true });
+      closeFacelessStageSelect();
     } else {
       closeFacelessStageSelect();
+      closeDailyStageSelect();
     }
     clearUltTimers();
     if (state) {
@@ -11389,8 +12025,8 @@
     suppressShootingResumeSave = false;
 
     // 直前画面を復元する。
-    if (returningToFacelessStageSelect) {
-      // ③はroot削除前にすでに描画済み。
+    if (returningToFacelessStageSelect || returningToDailyStageSelect) {
+      // ステージ選択画面はroot削除前にすでに描画済み。
       selectedRaidContext = null;
       return;
     }
@@ -11532,7 +12168,7 @@
     }
     if (player) player.classList.add('hayate-moonlight');
     const playerImg = document.getElementById('shooting-player-image');
-    if (playerImg) playerImg.src = 'images/chara_12_battle_back_moon.webp';
+    if (playerImg) playerImg.src = 'images/chara_04_battle_back_moon.webp';
     renderHud();
 
     pushUltTimer(() => {
@@ -11631,13 +12267,13 @@
       wave.classList.remove('fly');
       wave.classList.add('impact');
       if (root) root.classList.add('ayane-rampage-shake');
-      // 五条ULTは盤面上の敵弾を消去しない。発動前から存在する弾もそのまま残す。
+      // シュリULTは盤面上の敵弾を消去しない。発動前から存在する弾もそのまま残す。
       createHit(endX, endY, true);
 
       const activeFrom = performance.now();
       const activeUntil = activeFrom + HOLD_MS;
 
-      // エテルナのブラックホールに近い吸引挙動＋攻撃力を持つ紫波動。
+      // エテルナのブラックホールに近い吸引挙動＋攻撃力を持つ血月瘴気場。
       state.gojoPurpleField = {
         x: endX,
         y: endY,
@@ -11657,7 +12293,7 @@
         state.bossGrabUntil = Math.max(Number(state.bossGrabUntil || 0), activeUntil);
       }
 
-      // 着弾後は五条自身の通常射撃をすぐ再開できる。
+      // 着弾後はシュリ自身の通常射撃をすぐ再開できる。
       state.ultLockUntil = performance.now() + 120;
       state.lastShotAt = performance.now();
       renderHud();
@@ -11679,7 +12315,7 @@
   }
 
   function useAyaneUlt(c) {
-    const isGojoPurple = Number(c && c.id) === Number(CHARACTER_ID.GOJO);
+    const isGojoPurple = Number(c && c.id) === Number(CHARACTER_ID.SHURI);
     if (!isGojoPurple) {
       preloadShootingImage(AYANE_ULT_HAND_OPEN_SRC);
       preloadShootingImage(AYANE_ULT_HAND_CLOSE_SRC);
@@ -12273,7 +12909,7 @@
 
     const flower = document.createElement('div');
     flower.className = 'shooting-rose-flower';
-    flower.innerHTML = `<img src="${c.flowerImage || 'images/chara_07_battle_flower.webp'}" alt="rose flower" draggable="false"><span class="shooting-rose-flower-aura"></span>`;
+    flower.innerHTML = `<img src="${c.flowerImage || 'images/chara_09_battle_flower.webp'}" alt="rose flower" draggable="false"><span class="shooting-rose-flower-aura"></span>`;
     arena.appendChild(flower);
 
     const x = arena.clientWidth * 0.5;
@@ -12630,7 +13266,7 @@
     const pt = getClarineSpawnPoint(index);
     const el = document.createElement('img');
     el.className = 'shooting-clarine-decoy';
-    el.src = c.decoyImage || 'images/chara_05_battle_decoy.webp';
+    el.src = c.decoyImage || 'images/chara_27_battle_decoy.webp';
     el.alt = 'デコイ';
     el.draggable = false;
     arena.appendChild(el);
@@ -13254,6 +13890,7 @@
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
+    else if (c.ultType === 'prototype_generic') useEriUlt(c);
     else useEriUlt(c);
 
     renderHud();

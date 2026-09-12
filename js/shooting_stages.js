@@ -51,6 +51,21 @@
     CH05_02: 'shooting_ch05_02',
     CH05_03: 'shooting_ch05_03',
 
+    DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
+    DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
+    DAILY_TUE_INTERMEDIATE: 'shooting_daily_tue_intermediate',
+    DAILY_TUE_ADVANCED: 'shooting_daily_tue_advanced',
+    DAILY_WED_INTERMEDIATE: 'shooting_daily_wed_intermediate',
+    DAILY_WED_ADVANCED: 'shooting_daily_wed_advanced',
+    DAILY_THU_INTERMEDIATE: 'shooting_daily_thu_intermediate',
+    DAILY_THU_ADVANCED: 'shooting_daily_thu_advanced',
+    DAILY_FRI_INTERMEDIATE: 'shooting_daily_fri_intermediate',
+    DAILY_FRI_ADVANCED: 'shooting_daily_fri_advanced',
+    DAILY_SAT_INTERMEDIATE: 'shooting_daily_sat_intermediate',
+    DAILY_SAT_ADVANCED: 'shooting_daily_sat_advanced',
+    DAILY_SUN_INTERMEDIATE: 'shooting_daily_sun_intermediate',
+    DAILY_SUN_ADVANCED: 'shooting_daily_sun_advanced',
+
     FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
@@ -76,6 +91,34 @@
   // 04 旅立ち:
   //   オーバーシアBOSS
   //
+  function makeDailyStage(config) {
+    const level = config.level === 'advanced' ? 'advanced' : 'intermediate';
+    const rewardCount = level === 'advanced' ? 2 : 1;
+    return Object.freeze({
+      id: config.id,
+      chapter: 0,
+      stageNo: 0,
+      name: config.name,
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze(Array.from(config.enemyIds || [])),
+      normalBattle: Object.freeze({
+        totalEnemies: Math.max(1, Number(config.totalEnemies || (level === 'advanced' ? 8 : 5))),
+        maxActive: Math.max(1, Number(config.maxActive || (level === 'advanced' ? 3 : 2))),
+        spawnIntervalMs: Math.max(500, Number(config.spawnIntervalMs || (level === 'advanced' ? 1050 : 1250))),
+      }),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.DEFEAT_ALL, text: '敵をすべて撃破' }),
+      dailyQuest: Object.freeze({
+        weekday: config.weekday,
+        level,
+        rewardId: config.rewardId || '',
+        rewardPool: Object.freeze(Array.from(config.rewardPool || [])),
+        rewardCount,
+      }),
+      playable: true,
+    });
+  }
+
   const SHOOTING_STAGES = Object.freeze({
     [SHOOTING_STAGE_ID.CH01_01]: Object.freeze({
       id: SHOOTING_STAGE_ID.CH01_01,
@@ -613,6 +656,89 @@
     // wave1: 約40秒 → 7,600 / wave2: 約100秒 → 19,000
     // object: 約5秒 → 950
     // ============================================================
+    // ============================================================
+    // DAILY QUEST
+    // 中級1個 / 上級2個。日曜のみ敵・報酬とも全属性ミックス。
+    // ============================================================
+    [SHOOTING_STAGE_ID.DAILY_MON_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_MON_INTERMEDIATE, weekday: 'Mon', level: 'intermediate', name: '月曜巡行・中級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT], rewardId: 'soul_vessel_dark',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_MON_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_MON_ADVANCED, weekday: 'Mon', level: 'advanced', name: '月曜巡行・上級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_DARK_LASER], rewardId: 'soul_vessel_dark',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_TUE_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_TUE_INTERMEDIATE, weekday: 'Tue', level: 'intermediate', name: '火曜巡行・中級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE], rewardId: 'soul_vessel_fire',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_TUE_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_TUE_ADVANCED, weekday: 'Tue', level: 'advanced', name: '火曜巡行・上級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER, SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE],
+      rewardId: 'soul_vessel_fire',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_WED_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_WED_INTERMEDIATE, weekday: 'Wed', level: 'intermediate', name: '水曜巡行・中級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT], rewardId: 'soul_vessel_aqua',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_WED_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_WED_ADVANCED, weekday: 'Wed', level: 'advanced', name: '水曜巡行・上級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER], rewardId: 'soul_vessel_aqua',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_THU_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_THU_INTERMEDIATE, weekday: 'Thu', level: 'intermediate', name: '木曜巡行・中級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT], rewardId: 'soul_vessel_wood',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_THU_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_THU_ADVANCED, weekday: 'Thu', level: 'advanced', name: '木曜巡行・上級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER], rewardId: 'soul_vessel_wood',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_FRI_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_FRI_INTERMEDIATE, weekday: 'Fri', level: 'intermediate', name: '金曜巡行・中級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT], rewardId: 'soul_vessel_light',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_FRI_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_FRI_ADVANCED, weekday: 'Fri', level: 'advanced', name: '金曜巡行・上級',
+      enemyIds: [SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER], rewardId: 'soul_vessel_light',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_SAT_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_SAT_INTERMEDIATE, weekday: 'Sat', level: 'intermediate', name: '土曜巡行・中級',
+      enemyIds: [
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
+      ],
+      rewardId: 'kyoumei_stone', totalEnemies: 5,
+    }),
+    [SHOOTING_STAGE_ID.DAILY_SAT_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_SAT_ADVANCED, weekday: 'Sat', level: 'advanced', name: '土曜巡行・上級',
+      enemyIds: [
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER, SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER, SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_LASER, SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
+      ],
+      rewardId: 'kyoumei_stone',
+    }),
+    [SHOOTING_STAGE_ID.DAILY_SUN_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_SUN_INTERMEDIATE, weekday: 'Sun', level: 'intermediate', name: '日曜巡行・中級',
+      enemyIds: [
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
+      ],
+      rewardPool: ['kyoumei_stone','soul_vessel_fire','soul_vessel_aqua','soul_vessel_wood','soul_vessel_dark','soul_vessel_light'],
+      totalEnemies: 6,
+    }),
+    [SHOOTING_STAGE_ID.DAILY_SUN_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_SUN_ADVANCED, weekday: 'Sun', level: 'advanced', name: '日曜巡行・上級',
+      enemyIds: [
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER, SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
+        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_DARK_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
+      ],
+      rewardPool: ['kyoumei_stone','soul_vessel_fire','soul_vessel_aqua','soul_vessel_wood','soul_vessel_dark','soul_vessel_light'],
+      totalEnemies: 10, maxActive: 3, spawnIntervalMs: 950,
+    }),
+
     [SHOOTING_STAGE_ID.FACELESS_ADVANCED]: Object.freeze({
       id: SHOOTING_STAGE_ID.FACELESS_ADVANCED,
       chapter: 0,
