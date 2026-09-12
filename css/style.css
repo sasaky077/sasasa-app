@@ -30648,3 +30648,75 @@ body.is-gacha-pool-detail-open{
     background:rgba(247,239,220,.34) !important;
   }
 }
+
+
+/* =========================================================
+   v327 邂逅画面 中央UIの可読性改善
+   - 透け感は残す
+   - 中央タイトルボックス / 天井ゲージを少し濃く
+   - 文字コントラストを上げる
+   ========================================================= */
+
+/* 中央タイトルボックス */
+#screen-summon .summon-center-title-card{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,251,239,.76) 0%,
+      rgba(239,226,199,.68) 100%
+    ) !important;
+  border-color:rgba(122,88,44,.42) !important;
+  box-shadow:
+    0 8px 20px rgba(58,39,18,.16),
+    inset 0 1px 0 rgba(255,255,255,.72) !important;
+}
+
+/* タイトル内テキストを少し濃く */
+#screen-summon .summon-center-title-card,
+#screen-summon .summon-center-title-card *{
+  text-shadow:0 1px 0 rgba(255,255,255,.66) !important;
+}
+
+#screen-summon .summon-detail-title{
+  color:#4f3823 !important;
+}
+
+#screen-summon .summon-detail-desc{
+  color:rgba(86,64,39,.76) !important;
+}
+
+/* 天井ゲージ */
+#screen-summon .pity-counter{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,250,237,.58) 0%,
+      rgba(248,238,215,.70) 18%,
+      rgba(243,231,205,.74) 50%,
+      rgba(248,238,215,.70) 82%,
+      rgba(255,250,237,.58) 100%
+    ) !important;
+  border-color:rgba(127,92,47,.24) !important;
+  box-shadow:
+    0 5px 14px rgba(60,41,20,.10),
+    inset 0 1px 0 rgba(255,255,255,.56) !important;
+}
+
+/* 天井文字・数値のコントラスト */
+#screen-summon .pity-counter,
+#screen-summon .pity-counter .pity-label,
+#screen-summon .pity-counter .pity-num{
+  color:#735b3e !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.68) !important;
+}
+
+/* iOS Safari: 透明すぎない単色寄りに固定 */
+@supports (-webkit-touch-callout: none) {
+  #screen-summon .summon-center-title-card{
+    background:rgba(244,233,208,.72) !important;
+  }
+
+  #screen-summon .pity-counter{
+    background:rgba(246,236,213,.66) !important;
+  }
+}
