@@ -30578,3 +30578,73 @@ body.is-gacha-pool-detail-open{
     right .32s cubic-bezier(.22,.78,.24,1),
     bottom .32s cubic-bezier(.22,.78,.24,1) !important;
 }
+
+
+/* =========================================================
+   v323 iOS Safari - GACHA translucency fix
+   中央タイトルカード / 天井ゲージの「白ベタ化」を避ける。
+   backdrop-filter を外し、RGBAそのものの透明度で見せる。
+   ========================================================= */
+
+/* 中央タイトルボックス */
+#screen-summon .summon-center-title-card{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,252,240,.48) 0%,
+      rgba(236,224,198,.34) 100%
+    ) !important;
+  border-color:rgba(130,94,45,.34) !important;
+  box-shadow:
+    0 7px 18px rgba(62,42,20,.12),
+    inset 0 1px 0 rgba(255,255,255,.46) !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  /* iOS compositingを安定させる */
+  isolation:isolate !important;
+  -webkit-transform:translateX(-50%) translateZ(0) !important;
+  transform:translateX(-50%) translateZ(0) !important;
+}
+
+/* 押下時も透過感を維持 */
+#screen-summon .summon-center-title-card:active{
+  transform:translateX(-50%) translateZ(0) scale(.985) !important;
+}
+
+/* 天井ゲージ背景。完全透明ではなく「薄い金茶ガラス」程度に。 */
+#screen-summon .pity-counter{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,251,239,.18) 0%,
+      rgba(255,249,234,.38) 14%,
+      rgba(248,239,218,.44) 50%,
+      rgba(255,249,234,.38) 86%,
+      rgba(255,251,239,.18) 100%
+    ) !important;
+  border:1px solid rgba(135,100,52,.18) !important;
+  border-radius:10px !important;
+  box-shadow:
+    0 4px 12px rgba(66,45,22,.08),
+    inset 0 1px 0 rgba(255,255,255,.32) !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  isolation:isolate !important;
+  -webkit-transform:translateZ(0) !important;
+  transform:translateZ(0) !important;
+}
+
+/* iOS Safari向け：さらに白濁しにくい単色半透明へ */
+@supports (-webkit-touch-callout: none) {
+  #screen-summon .summon-center-title-card{
+    background:rgba(244,234,211,.42) !important;
+  }
+
+  #screen-summon .pity-counter{
+    background:rgba(247,239,220,.34) !important;
+  }
+}
