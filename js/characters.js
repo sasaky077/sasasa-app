@@ -777,8 +777,8 @@ skills: [
         desc: '射程：前方3〜5マスの広域遠距離。近距離には当たらない。対象の敵にATK×2.75のダメージを与え、1ターンATKを20%低下させる。' }
     ]},
 
-  // ── id:15 ソフィア
-  { id: 15, name: 'ソフィア', rarity: 'r',
+  // ── id:15 アリス
+  { id: 15, name: 'アリス', rarity: 'r',
     element: 'light',
     role: 'ヒーラー',
     moveType: 'front2_backdiag2',

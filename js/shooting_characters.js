@@ -64,7 +64,7 @@
     9: 'sr',  // ロゼ
     28: 'sr',  // ミモザ
     16: 'r',  // パトラ
-    15: 'r',  // ソフィア
+    15: 'r',  // アリス
     13: 'r',  // シグレ
     4: 'sr',  // ハヤテ
     14: 'r',  // ミア
@@ -198,7 +198,7 @@
       uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
     },
     15: {
-      id: 15, name: 'ソフィア',
+      id: 15, name: 'アリス',
       element: 'light',
       hp: 650, atk: 210,
       image: 'images/chara_15_battle_back.webp',

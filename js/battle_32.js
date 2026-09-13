@@ -640,7 +640,7 @@
           const down = effect('atk_down'); if (down) down.rate = 0.90;
         }
         break;
-      case 10: // ソフィア R
+      case 10: // アリス R
         if (lb >= 2 && s1) s1.multiplier = 1.40;
         if (lb >= 3 && c.combo) c.combo.range = 'combo_around8';
         if (lb >= 4 && combo) { combo.multiplier = 0.55; combo.resonanceDelayedUltBoost = 1.10; }

@@ -34694,3 +34694,1025 @@ html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-labe
     letter-spacing:.12em !important;
   }
 }
+
+/* =========================================================
+   v405 RANK EXP RING — restore visible progress
+   白い霞は維持しつつ、経験値進捗だけ濃いブラウンの円周で可視化。
+   黄味・オレンジ系の発光は使わない。
+   ========================================================= */
+html body #global-user-frame .hud-lv-circle{
+  background:
+    conic-gradient(
+      from -90deg,
+      #654a2c 0deg,
+      #755b38 var(--rank-exp),
+      rgba(96,78,56,.16) var(--rank-exp),
+      rgba(96,78,56,.16) 360deg
+    ) !important;
+  border:0 !important;
+  box-shadow:
+    0 0 9px rgba(255,255,255,.98),
+    0 0 20px rgba(255,255,255,.78),
+    0 1px 4px rgba(76,57,34,.14) !important;
+}
+
+html body #global-user-frame .hud-lv-circle::before{
+  inset:3px !important;
+  background:rgba(255,255,255,.92) !important;
+  box-shadow:
+    inset 0 0 7px rgba(255,255,255,1),
+    0 0 8px rgba(255,255,255,.74) !important;
+}
+
+html body #global-user-frame .hud-lv-circle::after{
+  inset:-2px !important;
+  border:1px solid rgba(103,80,49,.20) !important;
+  box-shadow:0 0 8px rgba(255,255,255,.78) !important;
+  opacity:.72 !important;
+}
+
+/* =========================================================
+   v406 RANK EXP RING — elegant gold / transparent center
+   - 経験値リングは12時開始・時計回り
+   - 上品なゴールドで進捗を表示
+   - 中央は塗らず、背景色を変えない
+   ========================================================= */
+html body #global-user-frame .hud-lv-circle{
+  position:relative !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:
+    0 0 10px rgba(255,255,255,.90),
+    0 0 20px rgba(255,255,255,.55) !important;
+  isolation:isolate !important;
+}
+
+/* 円周そのものを疑似要素で描画。中央はmaskで完全に抜く。 */
+html body #global-user-frame .hud-lv-circle::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:-1px !important;
+  border-radius:50% !important;
+  padding:0 !important;
+  background:
+    conic-gradient(
+      from 0deg,
+      #b58a37 0deg,
+      #e7cf7c var(--rank-exp),
+      rgba(139,112,68,.14) var(--rank-exp),
+      rgba(139,112,68,.14) 360deg
+    ) !important;
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.2px)) !important;
+  mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.2px)) !important;
+  box-shadow:none !important;
+  filter:
+    drop-shadow(0 0 1px rgba(255,246,209,.85))
+    drop-shadow(0 0 3px rgba(181,138,55,.18)) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+}
+
+/* 全周の極細金ラインだけを添える。中央色には触れない。 */
+html body #global-user-frame .hud-lv-circle::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:2px !important;
+  border-radius:50% !important;
+  border:1px solid rgba(155,120,54,.18) !important;
+  background:transparent !important;
+  box-shadow:
+    0 0 4px rgba(255,255,255,.68),
+    inset 0 0 4px rgba(255,255,255,.48) !important;
+  opacity:1 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+}
+
+html body #global-user-frame .hud-lv-core{
+  position:relative !important;
+  z-index:2 !important;
+  background:transparent !important;
+}
+
+
+/* =========================================================
+   v408 GLOBAL CHROME POLICY — safe implementation
+   通常画面では既存レイアウトを一切変更せず、HUD / bottom nav を表示。
+   演出・プレイ中だけ body.ui-immersive で非表示。
+   ========================================================= */
+html body.ui-immersive #global-user-frame,
+html body.ui-immersive #bottom-nav-shared{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+
+/* =========================================================
+   v412 CHROME HAZE ONLY — external stylesheet mirror
+   Visual only. Page geometry is intentionally untouched.
+   ========================================================= */
+html body #global-user-frame.global-user-frame{background:transparent!important;background-color:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+html body #global-user-frame.global-user-frame::before,html body #global-user-frame.global-user-frame::after{content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;filter:none!important;}
+html body #bottom-nav-shared.bottom-nav{background:transparent!important;background-color:transparent!important;background-image:none!important;border:0!important;border-top:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+html body #bottom-nav-shared.bottom-nav::before,html body #bottom-nav-shared.bottom-nav::after{content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item,html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active{background:transparent!important;border-color:transparent!important;box-shadow:none!important;}
+
+
+/* =========================================================
+   v414 CHROME BACKGROUND CONTINUITY — external mirror
+   Screen background reaches behind transparent global chrome;
+   content stays in the same usable region via padding.
+   ========================================================= */
+html body:not(.ui-immersive) .screen.active:not(#screen-main){
+  top:0 !important;
+  bottom:0 !important;
+  padding-top:var(--header-h) !important;
+  padding-bottom:var(--bottom-nav-h) !important;
+}
+
+
+/* =========================================================
+   v415 SUMMON — no redundant page header
+   The summon artwork/title is the page identity. Remove the extra
+   page-level “邂逅” heading and underline without touching geometry
+   of other screens.
+   ========================================================= */
+html body #screen-summon > .header{
+  display:none !important;
+}
+html body #screen-summon > .summon-layout{
+  margin-top:0 !important;
+}
+
+/* =========================================================
+   v418 COMMON CHROME DESIGN — ONE HUD / ONE NAV / ONE MIST
+   - All normal screens use exactly the same top/bottom chrome design.
+   - No screen-specific haze rules.
+   - Backgrounds remain transparent; only a long white mist protects text/icons.
+   - Geometry / scrolling / page positions are intentionally untouched.
+   ========================================================= */
+
+/* One common top mist for every normal screen, including Home / Summon. */
+html body:not(.ui-immersive) #global-user-frame.global-user-frame{
+  isolation:isolate !important;
+  overflow:visible !important;
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+html body:not(.ui-immersive) #global-user-frame.global-user-frame::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:-7% !important;
+  right:-7% !important;
+  top:-10px !important;
+  height:calc(100% + 58px) !important;
+  background:linear-gradient(
+    to bottom,
+    rgba(255,255,255,.78) 0%,
+    rgba(255,255,255,.68) 38%,
+    rgba(255,255,255,.44) 58%,
+    rgba(255,255,255,.20) 76%,
+    rgba(255,255,255,.06) 90%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(11px) !important;
+  -webkit-filter:blur(11px) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  border-radius:0 !important;
+}
+
+html body:not(.ui-immersive) #global-user-frame.global-user-frame::after{
+  content:none !important;
+  display:none !important;
+}
+
+html body:not(.ui-immersive) #global-user-frame.global-user-frame > *{
+  position:relative;
+  z-index:2;
+}
+
+/* One common bottom mist for every normal screen. */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav{
+  isolation:isolate !important;
+  overflow:visible !important;
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-top:0 !important;
+  box-shadow:none !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:-7% !important;
+  right:-7% !important;
+  bottom:-10px !important;
+  height:calc(100% + 62px) !important;
+  background:linear-gradient(
+    to top,
+    rgba(255,255,255,.80) 0%,
+    rgba(255,255,255,.70) 38%,
+    rgba(255,255,255,.46) 58%,
+    rgba(255,255,255,.21) 76%,
+    rgba(255,255,255,.06) 90%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  border-radius:0 !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav::after{
+  content:none !important;
+  display:none !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* Retire the temporary screen-specific v417 veils completely. */
+#screen-zukan::before,
+#screen-zukan::after,
+#screen-setting::before,
+#screen-setting::after,
+#screen-friend::before,
+#screen-friend::after,
+#screen-bonus::before,
+#screen-bonus::after{
+  content:none !important;
+  display:none !important;
+}
+
+
+/* =========================================================
+   v420 FULLSCREEN SCROLL SHELL — common design
+   Scroll-centric screens use the full viewport exactly like Home / Summon.
+   The scroll layer itself runs behind the fixed HUD and bottom nav.
+   Safe top/bottom padding only protects the first/last content items.
+   No per-screen geometry tuning: one rule for every scroll screen.
+   ========================================================= */
+html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+html body:not(.ui-immersive) :is(#screen-zukan,#screen-friend,#screen-setting).screen.active > .header,
+html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header{
+  position:absolute !important;
+  top:var(--header-h) !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:auto !important;
+  width:100% !important;
+  height:var(--page-header-h) !important;
+  min-height:var(--page-header-h) !important;
+  max-height:var(--page-header-h) !important;
+  margin:0 !important;
+  transform:none !important;
+  box-sizing:border-box !important;
+  z-index:220 !important;
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active > .screen-scroll{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  touch-action:pan-y !important;
+  padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
+  padding-bottom:calc(var(--bottom-nav-h) + 52px) !important;
+  scroll-padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
+  scroll-padding-bottom:calc(var(--bottom-nav-h) + 52px) !important;
+  z-index:1 !important;
+}
+@media (min-width:500px){
+  html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* =========================================================
+   v420 PAGE-HEADER MELT — shared boundaryless top fade
+   Pages that have a visible section heading let scrolled content
+   dissolve BEFORE it reaches the heading. Home / Summon are excluded:
+   they intentionally have no page-heading boundary.
+   Geometry remains unchanged; this is visual masking only.
+   ========================================================= */
+
+/* Keep shared page headings clean and above the fade veil. */
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting
+).screen.active > .header,
+html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header{
+  isolation:isolate !important;
+  overflow:visible !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* Long, soft mist below the heading — no straight dividing line. */
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting
+).screen.active > .header::after,
+html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  pointer-events:none !important;
+  z-index:-1 !important;
+  left:-6% !important;
+  right:-6% !important;
+  top:42% !important;
+  height:76px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    to bottom,
+    rgba(255,255,255,.90) 0%,
+    rgba(255,255,255,.82) 24%,
+    rgba(255,255,255,.61) 48%,
+    rgba(255,255,255,.34) 69%,
+    rgba(255,255,255,.12) 86%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  box-shadow:
+    0 12px 26px 7px rgba(255,255,255,.28) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:1 !important;
+}
+
+/* Heading text / controls stay crisp above the mist. */
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting
+).screen.active > .header > *,
+html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* Home and Summon are intentional exceptions: no page-heading fade boundary. */
+html body:not(.ui-immersive) :is(#screen-main,#screen-summon).screen.active > .header::after{
+  content:none !important;
+  display:none !important;
+}
+
+
+/* =========================================================
+   v421 PAGE-HEADER MELT — REAL CONTENT MASK
+   The v420 pseudo-element only painted mist above the content.
+   v421 fades the scrolling layer itself, so content cannot visually
+   pierce through the page heading. Home / Summon stay exempt.
+   ========================================================= */
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting,
+  #screen-bonus
+).screen.active > .screen-scroll{
+  --z-melt-start: calc(var(--header-h) + var(--page-header-h) - 10px);
+  --z-melt-end:   calc(var(--header-h) + var(--page-header-h) + 42px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--z-melt-start),
+    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
+    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
+    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
+    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
+    #000 var(--z-melt-end),
+    #000 100%
+  ) !important;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--z-melt-start),
+    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
+    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
+    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
+    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
+    #000 var(--z-melt-end),
+    #000 100%
+  ) !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:100% 100% !important;
+  mask-size:100% 100% !important;
+}
+
+/* No heading boundary on these full-art screens. */
+html body:not(.ui-immersive) :is(#screen-main,#screen-summon).screen.active > .screen-scroll{
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+}
+
+
+/* =========================================================
+   v422 PAGE-HEADER + BOTTOM-NAV MELT — TWO-SIDED CONTENT MASK
+   Keep the successful v421 top dissolve and add the same treatment
+   above the fixed bottom navigation. Home / Summon remain exempt.
+   Geometry and scroll positions are unchanged.
+   ========================================================= */
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting,
+  #screen-bonus
+).screen.active > .screen-scroll{
+  --z-melt-start: calc(var(--header-h) + var(--page-header-h) - 10px);
+  --z-melt-end:   calc(var(--header-h) + var(--page-header-h) + 42px);
+  --z-bottom-melt-start: calc(100% - var(--bottom-nav-h) - 48px);
+  --z-bottom-melt-end:   calc(100% - var(--bottom-nav-h) + 8px);
+
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--z-melt-start),
+    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
+    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
+    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
+    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
+    #000 var(--z-melt-end),
+    #000 var(--z-bottom-melt-start),
+    rgba(0,0,0,.82) calc(var(--z-bottom-melt-start) + 10px),
+    rgba(0,0,0,.55) calc(var(--z-bottom-melt-start) + 24px),
+    rgba(0,0,0,.28) calc(var(--z-bottom-melt-start) + 36px),
+    rgba(0,0,0,.10) calc(var(--z-bottom-melt-start) + 46px),
+    transparent var(--z-bottom-melt-end),
+    transparent 100%
+  ) !important;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--z-melt-start),
+    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
+    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
+    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
+    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
+    #000 var(--z-melt-end),
+    #000 var(--z-bottom-melt-start),
+    rgba(0,0,0,.82) calc(var(--z-bottom-melt-start) + 10px),
+    rgba(0,0,0,.55) calc(var(--z-bottom-melt-start) + 24px),
+    rgba(0,0,0,.28) calc(var(--z-bottom-melt-start) + 36px),
+    rgba(0,0,0,.10) calc(var(--z-bottom-melt-start) + 46px),
+    transparent var(--z-bottom-melt-end),
+    transparent 100%
+  ) !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:100% 100% !important;
+  mask-size:100% 100% !important;
+}
+
+/* Full-art screens deliberately keep edge-to-edge content. */
+html body:not(.ui-immersive) :is(#screen-main,#screen-summon).screen.active > .screen-scroll{
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+}
+
+/* =========================================================
+   v424 SETTING — INITIAL CONTENT BREATHING ROOM
+   Keep the shared fullscreen scroll + two-sided dissolve from v422.
+   Only the setting screen's initial content starts slightly lower so
+   the first section label (プロフィール) is fully readable at rest.
+   Scroll geometry, masks, HUD, nav, and other screens stay unchanged.
+   ========================================================= */
+html body:not(.ui-immersive) #screen-setting.screen.active > .screen-scroll{
+  padding-top:calc(var(--header-h) + var(--page-header-h) + 52px) !important;
+  scroll-padding-top:calc(var(--header-h) + var(--page-header-h) + 52px) !important;
+}
+
+
+/* =========================================================
+   v425 SETTING — FIRST SECTION POSITION FIX
+   v424 moved padding on the fullscreen scroll viewport itself.
+   With the masked absolute scroller that does not reliably change the
+   visual resting position. Move the first content block instead.
+   ========================================================= */
+html body:not(.ui-immersive) #screen-setting.screen.active > .screen-scroll{
+  padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
+  scroll-padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
+}
+html body:not(.ui-immersive) #screen-setting.screen.active > .screen-scroll > .setting-section:first-child{
+  margin-top:44px !important;
+}
+
+/* =========================================================
+   v426 巡行：左カテゴリ下に出る横スクロールバーを除去
+   原因：ninmu-left の横方向 overflow と active マーカーの張り出し。
+   横スクロールだけ禁止し、縦方向の動作は維持する。
+   ========================================================= */
+#screen-ninmu .ninmu-left{
+  overflow-x:hidden !important;
+}
+#screen-ninmu .ninmu-cat-item.active::after{
+  right:2px !important;
+}
+
+/* =========================================================
+   v427 BONUS HEADER UNDERLINE ALIGNMENT
+   Keep the bonus title and its decorative rule optically centered.
+   ========================================================= */
+#screen-bonus .bonus-screen-header .header-title{
+  top:50% !important;
+  left:50% !important;
+  right:auto !important;
+  width:auto !important;
+  transform:translate(-50%,-50%) !important;
+  text-align:center !important;
+  overflow:visible !important;
+}
+#screen-bonus .bonus-screen-header .header-title::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:calc(100% + 7px) !important;
+  width:28px !important;
+  height:2px !important;
+  margin:0 !important;
+  transform:translateX(-50%) !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg, rgba(183,155,94,.85), rgba(183,155,94,.15)) !important;
+}
+
+
+/* =========================================================
+   v428 FINE FIXES
+   1) Bonus/Friend title underline: explicit centered rule
+   2) Friend: visible back button to Home
+   3) Character index: first row starts below the top dissolve at rest
+   4) Notice start-bonus bundle: remove fixed-height clipping
+   ========================================================= */
+
+/* Shared title rule: keep the decorative line independent from title width/overflow. */
+#screen-bonus .bonus-screen-header .header-title,
+#screen-friend .header .header-title{
+  overflow:visible !important;
+}
+#screen-bonus .bonus-screen-header .header-title::after,
+#screen-friend .header .header-title::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:calc(100% + 7px) !important;
+  width:28px !important;
+  height:2px !important;
+  margin:0 !important;
+  transform:translateX(-50%) !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg, rgba(183,155,94,.85), rgba(183,155,94,.15)) !important;
+  opacity:1 !important;
+  z-index:4 !important;
+  pointer-events:none !important;
+}
+
+/* Friend back button follows the Bonus screen's text-back pattern. */
+#screen-friend .friend-back-btn{
+  position:absolute !important;
+  top:50% !important;
+  left:18px !important;
+  right:auto !important;
+  transform:translateY(-50%) !important;
+  min-width:auto !important;
+  width:auto !important;
+  height:32px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#9b7a3d !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:13px !important;
+  font-weight:500 !important;
+  letter-spacing:.02em !important;
+  line-height:32px !important;
+  z-index:6 !important;
+}
+
+/* Character list: initial content should begin fully below the top dissolve.
+   Only the resting position changes; the full-screen scroll/mask behavior stays intact. */
+html body:not(.ui-immersive) #screen-zukan.screen.active.is-primoa-index > .screen-scroll > #zukan-sub-box{
+  margin-top:30px !important;
+}
+
+/* Notice: start-bonus has two reward rows. The generic 34px reward-main height clipped it. */
+.notice-reward-main:has(.notice-reward-start-bundle){
+  height:auto !important;
+  min-height:54px !important;
+  overflow:visible !important;
+  align-items:flex-start !important;
+}
+.notice-reward:has(.notice-reward-start-bundle){
+  align-items:stretch !important;
+  min-height:74px !important;
+  overflow:visible !important;
+}
+.notice-reward-start-bundle{
+  overflow:visible !important;
+}
+.notice-reward-start-row{
+  row-gap:5px !important;
+}
+
+/* =========================================================
+   v429 HEADER RULE HARDENING
+   Title-level ::after could be lost by older header/pseudo rules.
+   Draw the short gold rule on the header container itself instead.
+   ========================================================= */
+#screen-bonus .bonus-screen-header,
+#screen-friend .header{
+  position:relative !important;
+  overflow:visible !important;
+}
+
+/* disable the fragile title pseudo rule */
+#screen-bonus .bonus-screen-header .header-title::after,
+#screen-friend .header .header-title::after{
+  content:none !important;
+  display:none !important;
+}
+
+#screen-bonus .bonus-screen-header::before,
+#screen-friend .header::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:calc(50% + 15px) !important;
+  width:28px !important;
+  height:2px !important;
+  transform:translateX(-50%) !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg, rgba(183,155,94,.88), rgba(183,155,94,.16)) !important;
+  opacity:1 !important;
+  z-index:230 !important;
+  pointer-events:none !important;
+}
+\n\n/* =========================================================\n   v430 FRIEND SCREEN CLEANUP\n   - Remove the raid banner from Friend; raid lives elsewhere.\n   - With Friend Requests now first, lower the resting content slightly\n     so the first section does not sit inside the top dissolve mask.\n   ========================================================= */\nhtml body:not(.ui-immersive) #screen-friend.screen.active > .screen-scroll > .friend-section:first-child{\n  margin-top:32px !important;\n}\n
+
+/* =========================================================
+   v431 FRIEND REST POSITION + NAV NOTICE COLOR PROTECTION
+   - Lower Friend's first section further so its heading is fully clear
+     of the shared top dissolve at the initial resting position.
+   - Notification dots in the fixed bottom nav stay vivid and are not
+     visually washed out by shared mist/filter effects.
+   ========================================================= */
+html body:not(.ui-immersive) #screen-friend.screen.active > .screen-scroll > .friend-section:first-child{
+  margin-top:62px !important;
+}
+
+/* Fixed navigation notification badges must render above the mist as UI chrome. */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-notice{
+  position:absolute !important;
+  z-index:30 !important;
+  width:14px !important;
+  height:14px !important;
+  min-width:14px !important;
+  min-height:14px !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+  border-radius:50% !important;
+  background:#ef3448 !important;
+  background-color:#ef3448 !important;
+  border:1px solid rgba(255,255,255,.96) !important;
+  box-shadow:0 1px 4px rgba(92,20,29,.34), 0 0 7px rgba(239,52,72,.48) !important;
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  mix-blend-mode:normal !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  transform:none;
+}
+
+/* Keep every bottom-nav child above the common mist veil; future badges inherit clean color too. */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > *{
+  position:relative;
+  z-index:3;
+}
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
+  position:absolute !important;
+  z-index:31 !important;
+}
+
+
+/* =========================================================
+   v432 BOTTOM NAV NOTICE — match the standard growth dot
+   - Same size / red / white rim / shadow as character-card notices.
+   - Render as fixed UI chrome above the bottom mist, with no filters.
+   ========================================================= */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item{
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-notice{
+  position:absolute !important;
+  z-index:999 !important;
+  width:11px !important;
+  height:11px !important;
+  min-width:11px !important;
+  min-height:11px !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+  border-radius:50% !important;
+  background:#e33b3b !important;
+  background-color:#e33b3b !important;
+  border:1.5px solid rgba(255,255,255,.95) !important;
+  box-shadow:
+    0 1px 3px rgba(75,25,18,.28),
+    0 0 0 2px rgba(227,59,59,.12) !important;
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  mix-blend-mode:normal !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  isolation:isolate !important;
+}
+
+/* Keep any future nav notice on the same visual spec. */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav [class*="notice"][class*="bottom-nav"],
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
+  width:11px !important;
+  height:11px !important;
+  min-width:11px !important;
+  min-height:11px !important;
+  background:#e33b3b !important;
+  border:1.5px solid rgba(255,255,255,.95) !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+}
+
+/* =========================================================
+   v433 BOTTOM NAV NOTICE — vivid red core, same visual size as card dots
+   The previous border-box badge let the white rim eat into the 11px disk,
+   making the red center look pale. Keep the full 11px red core and draw the
+   white rim OUTSIDE with box-shadow, so the badge stays vivid over the mist.
+   ========================================================= */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav #bnav-zukan-notice.bottom-nav-notice,
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
+  width:11px !important;
+  height:11px !important;
+  min-width:11px !important;
+  min-height:11px !important;
+  box-sizing:content-box !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#e33b3b !important;
+  background-color:#e33b3b !important;
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,.96),
+    0 1px 3px rgba(75,25,18,.28),
+    0 0 0 3.5px rgba(227,59,59,.10) !important;
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  mix-blend-mode:normal !important;
+  isolation:isolate !important;
+  z-index:9999 !important;
+}
+
+/* =========================================================
+   v434 BOTTOM NAV NOTICE — exact character-dot visual spec
+   Use the SAME core geometry/color/rim/shadow as the character growth dot.
+   Remove the extra glow/halo from v431-v433 that made the nav badge look pale.
+   ========================================================= */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav #bnav-zukan-notice.bottom-nav-notice,
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
+  width:9px !important;
+  height:9px !important;
+  min-width:9px !important;
+  min-height:9px !important;
+  box-sizing:content-box !important;
+  padding:0 !important;
+  border-radius:50% !important;
+  background:#e33b3b !important;
+  background-color:#e33b3b !important;
+  border:1.5px solid rgba(255,255,255,.96) !important;
+  box-shadow:
+    0 1px 3px rgba(75,25,18,.28),
+    0 0 0 2px rgba(227,59,59,.10) !important;
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  mix-blend-mode:normal !important;
+  isolation:isolate !important;
+  z-index:10001 !important;
+  animation:character-growth-dot-pulse-v246 1.8s ease-in-out infinite !important;
+}
+
+
+/* =========================================================
+   v435 BOTTOM NAV NOTICE — TRUE FOREGROUND OVERLAY
+   The character-tab notice is removed from .bottom-nav-item entirely and
+   rendered as a direct child of #bottom-nav-shared. This puts it outside the
+   per-item haze/filter stacking context instead of trying to override it.
+   It intentionally has no pulse animation so its apparent size/color stays
+   identical to the static character-card notification dots.
+   ========================================================= */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav{
+  position:fixed !important;
+  isolation:isolate !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.bottom-nav-notice-overlay{
+  position:absolute !important;
+  /* second of five nav slots = 30% center; keep horizontal center, make dot one size larger and slightly lower */
+  left:calc(30% + 12px) !important;
+  right:auto !important;
+  top:7px !important;
+  bottom:auto !important;
+  width:11px !important;
+  height:11px !important;
+  min-width:11px !important;
+  min-height:11px !important;
+  box-sizing:border-box !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  background:#e33b3b !important;
+  background-color:#e33b3b !important;
+  border:1.5px solid rgba(255,255,255,.96) !important;
+  box-shadow:0 1px 3px rgba(75,25,18,.28),0 0 0 2px rgba(227,59,59,.10) !important;
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  mix-blend-mode:normal !important;
+  transform:none !important;
+  animation:none !important;
+  pointer-events:none !important;
+  z-index:2147483647 !important;
+}
+
+
+/* =========================================================
+   v436 BOTTOM NAV NOTICE — size/position micro-adjustment
+   Slightly larger and lower, with the same vivid foreground treatment.
+   ========================================================= */
+
+
+/* =========================================================
+   v437 CHARACTER INDEX — first-row notice dots foreground overlay
+   The scroll container itself is mask-faded near the page heading, so a
+   descendant z-index cannot escape that compositing mask. The first-row
+   growth dots are therefore mirrored into a direct child of #screen-zukan
+   only at the initial scroll position. Once scrolling starts, the mirror is
+   removed and the original dots dissolve naturally with the cards.
+   ========================================================= */
+html body:not(.ui-immersive) #screen-zukan > .zukan-top-notice-overlay-v437{
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+  z-index:10000 !important;
+  overflow:visible !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+}
+html body:not(.ui-immersive) #screen-zukan > .zukan-top-notice-overlay-v437 .zukan-top-notice-dot-v437{
+  position:absolute !important;
+  width:11px !important;
+  height:11px !important;
+  min-width:11px !important;
+  min-height:11px !important;
+  box-sizing:border-box !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  background:#e33b3b !important;
+  background-color:#e33b3b !important;
+  border:1.5px solid rgba(255,255,255,.95) !important;
+  box-shadow:0 1px 3px rgba(75,25,18,.28),0 0 0 2px rgba(227,59,59,.12) !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  transform:none !important;
+  animation:none !important;
+}
+html body:not(.ui-immersive) #screen-zukan .primoa-index-limitbreak-dot.is-mirrored-v437{
+  opacity:0 !important;
+}
+
+/* =========================================================
+   v438 HOME SIDE MENU — inward spacing refinement
+   Keep the six text-menu entries away from the screen edge while
+   preserving their current vertical rhythm and typography.
+   ========================================================= */
+#screen-main .bonus-home-entry,
+#screen-main .friend-home-entry,
+#screen-main .raid-home-entry{
+  left:18px !important;
+  right:auto !important;
+}
+
+#screen-main .home-notice-btn,
+#screen-main .shinju-home-entry,
+#screen-main .score-attack-home-entry{
+  right:18px !important;
+  left:auto !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .bonus-home-entry,
+  #screen-main .friend-home-entry,
+  #screen-main .raid-home-entry{
+    left:14px !important;
+  }
+  #screen-main .home-notice-btn,
+  #screen-main .shinju-home-entry,
+  #screen-main .score-attack-home-entry{
+    right:14px !important;
+  }
+}
+
+
+/* =========================================================
+   v439 COIN HUD — display cap + slight inward alignment
+   - 0..999,999: comma-separated exact value
+   - 1,000,000+: 999,999↑ (display only; stored value is untouched)
+   - add a small right-side breathing space so the coin block sits inward
+   ========================================================= */
+html body #global-user-frame .hud-right .hud-resource:last-child{
+  margin-right:6px !important;
+}
+
+/* The capped label is slightly wider; keep it on one line without disturbing HUD height. */
+html body #global-user-frame #user-coin{
+  white-space:nowrap !important;
+  min-width:0 !important;
+  font-variant-numeric:tabular-nums !important;
+}
