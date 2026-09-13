@@ -34643,3 +34643,54 @@ html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-labe
     ) !important;
   }
 }
+
+
+/* =========================================================
+   v403 HOME TYPE TYPOGRAPHY — spacing / stepped hierarchy
+   - 神聖樹: 頭文字と残り文字の間隔を少し広げる
+   - レイドバトル / スコアアタック: 1文字目を上段、2文字目以降を少し下げ、
+     ボーナス等と同じ「頭文字→残り文字」の段差を付ける
+   ========================================================= */
+
+/* 神聖樹だけ「神」と「聖樹」の間を少し広げる */
+#screen-main .shinju-home-entry::after{
+  left:48px !important;
+}
+
+/* 2行メニューも、1行目の小文字側を頭文字より低く置く。
+   2行目はそのまま下へ流して、他メニューと同じ段差感にする。 */
+#screen-main .home-type-entry[data-home-lines="2"]::after{
+  transform:translateY(-22%) rotate(.4deg) !important;
+  line-height:1.18 !important;
+}
+
+#screen-main .home-type-entry[data-home-lines="2"]:active::after{
+  transform:translateY(-19%) scale(.95) !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .shinju-home-entry::after{
+    left:43px !important;
+  }
+  #screen-main .home-type-entry[data-home-lines="2"]::after{
+    transform:translateY(-20%) rotate(.4deg) !important;
+  }
+  #screen-main .home-type-entry[data-home-lines="2"]:active::after{
+    transform:translateY(-17%) scale(.95) !important;
+  }
+}
+
+/* =========================================================
+   v404 HOME TYPE TYPOGRAPHY — Shinju inner spacing
+   「神｜聖｜樹」の3文字それぞれに呼吸を持たせる。
+   v403の「神」と「聖樹」の間隔は維持しつつ、聖と樹の間も少し広げる。
+   ========================================================= */
+#screen-main .shinju-home-entry::after{
+  letter-spacing:.14em !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .shinju-home-entry::after{
+    letter-spacing:.12em !important;
+  }
+}
