@@ -20921,31 +20921,25 @@ body {
 
 #screen-main .score-attack-home-entry{
   position:absolute;
-  right:calc(10px + (clamp(88px,22vw,98px) - 70px) / 2);
-  top:calc(var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) + clamp(88px,22vw,98px) + 4px);
+  right:calc(10px + (clamp(88px,22vw,98px) - 76px) / 2);
+  top:calc(var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) + clamp(88px,22vw,98px) + 2px);
   bottom:auto;
   z-index:25;
-  width:70px;
-  height:70px;
-  padding:0;margin:0;border:0;background:transparent;
-  appearance:none;-webkit-appearance:none;cursor:pointer;overflow:visible;
+  width:76px;
+  height:76px;
+  padding:0;
+  margin:0;
+  border:0;
+  background:transparent;
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+  overflow:visible;
   -webkit-tap-highlight-color:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-#screen-main .score-attack-home-entry img{
-  display:block;
-  width:84%;
-  height:84%;
-  margin:8% auto 0;
-  object-fit:contain;
-  opacity:.96;
-  filter:
-    saturate(.88)
-    contrast(.92)
-    brightness(1.04)
-    drop-shadow(0 3px 5px rgba(78,64,45,.14));
-  transition:transform .18s ease,filter .18s ease,opacity .18s ease;
-}
-#screen-main .score-attack-home-entry:active img{transform:scale(.94)}
 
 #score-attack-root{
   display:none;position:fixed;inset:0;z-index:245000;
@@ -30718,5 +30712,3934 @@ body.is-gacha-pool-detail-open{
 
   #screen-summon .pity-counter{
     background:rgba(246,236,213,.66) !important;
+  }
+}
+
+
+/* =========================================================
+   v329 TITLE / HOME BGM toggle
+   ========================================================= */
+.global-bgm-toggle{
+  position:fixed;
+  right:14px;
+  bottom:calc(env(safe-area-inset-bottom) + 92px);
+  z-index:560;
+  width:38px;
+  height:38px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-radius:50%;
+  background:rgba(250,246,233,.24);
+  box-shadow:none;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  opacity:.72;
+}
+
+.global-bgm-toggle .global-bgm-icon{
+  display:block;
+  width:24px;
+  height:24px;
+  object-fit:contain;
+  opacity:.58;
+  filter:none;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+.global-bgm-toggle.is-muted{
+  background:rgba(245,241,232,.14);
+  opacity:.48;
+}
+
+.global-bgm-toggle.is-muted .global-bgm-icon{
+  opacity:.32;
+}
+
+.global-bgm-toggle:active{
+  transform:scale(.94);
+  opacity:.9;
+}
+
+@media (max-width:380px){
+  .global-bgm-toggle{
+    right:10px;
+    bottom:calc(env(safe-area-inset-bottom) + 86px);
+    width:34px;
+    height:34px;
+  }
+  .global-bgm-toggle .global-bgm-icon{
+    width:22px;
+    height:22px;
+  }
+}
+
+
+/* =========================================================
+   v332 BGM OFF slash
+   OFF時だけスピーカーアイコンに斜線を重ねる
+   ========================================================= */
+.global-bgm-toggle{
+  overflow:visible;
+}
+
+.global-bgm-toggle::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:27px;
+  height:2px;
+  border-radius:999px;
+  background:rgba(78,58,35,.72);
+  opacity:0;
+  transform:translate(-50%,-50%) rotate(-45deg);
+  transform-origin:center;
+  pointer-events:none;
+  box-shadow:0 0 0 1px rgba(255,255,255,.16);
+  transition:opacity .16s ease;
+}
+
+.global-bgm-toggle.is-muted::after{
+  opacity:.72;
+}
+
+@media (max-width:380px){
+  .global-bgm-toggle::after{
+    width:24px;
+    height:2px;
+  }
+}
+
+
+/* =========================================================
+   v333 USER FRAME redesign
+   RANK円を四角フレームの中に入れず、
+   「○──────|」のように円 + 横バーとして分離する。
+   ========================================================= */
+
+/* ヘッダー全体を大きな四角い板に見せない */
+.global-user-frame{
+  background:transparent !important;
+  border-bottom:0 !important;
+  box-shadow:none !important;
+}
+
+/* 左側は 円 + バー の独立ユニット */
+.global-user-frame .hud-left{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:0 !important;
+  overflow:visible !important;
+}
+
+/* RANK円は完全に独立。バーより手前に出す */
+.global-user-frame .hud-lv-circle{
+  position:relative !important;
+  z-index:3 !important;
+  flex:0 0 58px !important;
+  width:58px !important;
+  height:58px !important;
+}
+
+/* 名前側だけを細長いフレームにする */
+.global-user-frame .hud-info{
+  position:relative !important;
+  z-index:1 !important;
+  height:34px !important;
+  min-width:112px !important;
+  max-width:150px !important;
+  margin-left:5px !important;
+  padding:0 18px 0 10px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  box-sizing:border-box !important;
+
+  /* 左辺は作らない。円とは別パーツとして右へ伸びる */
+  border-top:1px solid rgba(145,109,49,.34) !important;
+  border-right:1px solid rgba(145,109,49,.48) !important;
+  border-bottom:1px solid rgba(145,109,49,.34) !important;
+  border-left:0 !important;
+  border-radius:0 !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(249,245,233,.18) 0%,
+      rgba(247,241,225,.54) 34%,
+      rgba(244,236,215,.66) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    3px 3px 10px rgba(76,55,27,.06) !important;
+}
+
+/* 円からバーへつながる細い水平線 */
+.global-user-frame .hud-info::before{
+  content:"" !important;
+  position:absolute !important;
+  left:-7px !important;
+  right:7px !important;
+  top:50% !important;
+  height:1px !important;
+  transform:translateY(-50%) !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(148,111,49,.16),
+      rgba(148,111,49,.34) 25%,
+      rgba(148,111,49,.18) 100%
+    ) !important;
+  pointer-events:none !important;
+  z-index:-1 !important;
+}
+
+/* 右端の縦線を少しだけ強調 */
+.global-user-frame .hud-info::after{
+  content:"" !important;
+  position:absolute !important;
+  right:-1px !important;
+  top:5px !important;
+  bottom:5px !important;
+  width:1px !important;
+  background:rgba(123,88,39,.52) !important;
+  pointer-events:none !important;
+}
+
+/* 名前はバー中央に載せる */
+.global-user-frame .hud-name{
+  position:relative !important;
+  z-index:2 !important;
+  max-width:118px !important;
+  padding:0 !important;
+  line-height:1 !important;
+}
+
+/* 小型端末でも 円を四角の中へ戻さない */
+@media (max-width:390px){
+  .global-user-frame .hud-lv-circle{
+    width:54px !important;
+    height:54px !important;
+    flex-basis:54px !important;
+  }
+
+  .global-user-frame .hud-info{
+    height:31px !important;
+    min-width:96px !important;
+    max-width:126px !important;
+    margin-left:4px !important;
+    padding:0 12px 0 8px !important;
+  }
+
+  .global-user-frame .hud-name{
+    max-width:100px !important;
+    font-size:13px !important;
+  }
+}
+
+
+/* =========================================================
+   v334 USER FRAME refinement
+   「○══════|」に寄せる。塗りつぶし箱ではなく、線だけの横フレーム。
+   ========================================================= */
+
+/* 旧ヘッダー全体の下線も消す */
+.global-user-frame::after{
+  display:none !important;
+  content:none !important;
+}
+
+/* 左ユニットの間隔をさらに自然に */
+.global-user-frame .hud-left{
+  gap:0 !important;
+}
+
+/* 名前側は背景板をほぼ消して、上下線 + 右端線だけ */
+.global-user-frame .hud-info{
+  height:32px !important;
+  min-width:116px !important;
+  max-width:154px !important;
+  margin-left:2px !important;
+  padding:0 16px 0 12px !important;
+
+  border-top:1px solid rgba(145,109,49,.34) !important;
+  border-right:1px solid rgba(123,88,39,.50) !important;
+  border-bottom:1px solid rgba(145,109,49,.34) !important;
+  border-left:0 !important;
+  border-radius:0 !important;
+
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,.02) 0%,
+    rgba(248,242,226,.14) 52%,
+    rgba(239,229,205,.20) 100%
+  ) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    2px 2px 7px rgba(76,55,27,.03) !important;
+}
+
+/* 円のすぐ右から自然につなぐ */
+.global-user-frame .hud-info::before{
+  content:"" !important;
+  position:absolute !important;
+  left:-5px !important;
+  right:auto !important;
+  top:50% !important;
+  width:7px !important;
+  height:1px !important;
+  transform:translateY(-50%) !important;
+  background:rgba(145,109,49,.30) !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+}
+
+/* 右端縦線 */
+.global-user-frame .hud-info::after{
+  content:"" !important;
+  position:absolute !important;
+  right:-1px !important;
+  top:-1px !important;
+  bottom:-1px !important;
+  width:1px !important;
+  background:rgba(123,88,39,.48) !important;
+  pointer-events:none !important;
+}
+
+/* RANK円は完全にバーの外側 */
+.global-user-frame .hud-lv-circle{
+  z-index:4 !important;
+  margin:0 !important;
+}
+
+/* PLAYER文字を線に対して中央へ */
+.global-user-frame .hud-name{
+  transform:translateY(.5px) !important;
+}
+
+@media (max-width:390px){
+  .global-user-frame .hud-info{
+    height:30px !important;
+    min-width:98px !important;
+    max-width:128px !important;
+    margin-left:1px !important;
+    padding:0 11px 0 9px !important;
+  }
+}
+
+
+/* =========================================================
+   v335 HEADER cleanup
+   head内の誤文字列除去後、上端に白い帯が出ないよう
+   USER FRAME自体は完全透明のまま固定。
+   ========================================================= */
+.global-user-frame{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+
+/* =========================================================
+   v336 BOTTOM NAV translucency
+   ヘッダーの軽さに合わせてベージュ面を透過。
+   文字は読みづらくならないようコントラストを維持。
+   ========================================================= */
+
+.bottom-nav{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248,243,232,.70) 0%,
+      rgba(236,225,205,.62) 100%
+    ) !important;
+  border-top:1px solid rgba(145,109,49,.26) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.58),
+    0 -4px 12px rgba(78,57,28,.06) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* 上端の装飾線も少し控えめに */
+.bottom-nav::before{
+  opacity:.56 !important;
+}
+
+/* 非選択文字は背景が透けても読める濃さへ */
+.bottom-nav .bottom-nav-label{
+  color:rgba(88,67,39,.82) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.86),
+    0 0 4px rgba(250,246,235,.54) !important;
+}
+
+/* 選択中は少しだけ濃く */
+.bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  color:#654b24 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 5px rgba(255,248,226,.82) !important;
+}
+
+/* アイコンも透過背景で埋もれないようわずかに締める */
+.bottom-nav .bottom-nav-item img{
+  opacity:.84 !important;
+}
+
+.bottom-nav .bottom-nav-item.active img{
+  opacity:1 !important;
+}
+
+/* 選択中の背景は完全透明にせず、視認性用の薄い紙面だけ残す */
+.bottom-nav .bottom-nav-item.active::before{
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255,248,221,.58), transparent 48%),
+    linear-gradient(180deg, rgba(255,252,241,.54), rgba(233,216,176,.40)) !important;
+  border-color:rgba(173,133,58,.34) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.38),
+    0 0 8px rgba(137,101,39,.08) !important;
+}
+
+/* iOS Safariでも白ベタ化しにくい単純RGBAに寄せる */
+@supports (-webkit-touch-callout: none){
+  .bottom-nav{
+    background:rgba(241,232,214,.66) !important;
+  }
+}
+
+
+/* =========================================================
+   v337 GLOBAL HEADER all-screen fix
+   HOME以外で復活していた上部の白/ベージュ帯を完全に除去。
+   USER FRAMEは全画面共通で背景透明。
+   ========================================================= */
+
+/* どの画面でもユーザーフレーム本体は背景を持たない */
+body .global-user-frame,
+body #global-user-frame,
+.screen ~ .global-user-frame,
+.global-user-frame{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-top:0 !important;
+  border-bottom:0 !important;
+  box-shadow:none !important;
+}
+
+/* 擬似要素で帯・線を復活させない */
+.global-user-frame::before,
+.global-user-frame::after{
+  content:none !important;
+  display:none !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* 各画面側の固定ヘッダーが上部帯として見えるケースも抑制 */
+.screen > .header,
+.screen .header{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-bottom:0 !important;
+  box-shadow:none !important;
+}
+
+/* 画面ごとの余白は維持しつつ、色付きバーだけ消す */
+#screen-main .header,
+#screen-summon .header,
+#screen-zukan .header,
+#screen-kichi .header,
+#screen-settings .header,
+#screen-friend .header,
+#screen-ninmu .header,
+#screen-party .header{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* RANK円＋PLAYERバー自体の見た目はv334以降を維持 */
+.global-user-frame .hud-info{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.02) 0%,
+      rgba(248,242,226,.14) 52%,
+      rgba(239,229,205,.20) 100%
+    ) !important;
+}
+
+
+/* =========================================================
+   v338 READABILITY TUNING
+   透明感は残しつつ、文字の直下だけ薄い紙面を置いて可読性を確保。
+   ========================================================= */
+
+/* PLAYERバー：全面ベタ塗りではなく中央にだけ薄い紙面 */
+.global-user-frame .hud-info{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(248,243,230,.18) 0%,
+      rgba(248,242,226,.50) 28%,
+      rgba(244,235,214,.58) 72%,
+      rgba(239,229,205,.24) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.44),
+    1px 2px 7px rgba(76,55,27,.05) !important;
+}
+
+/* PLAYER文字は色を少し締め、白縁ではなくごく薄い紙面影 */
+.global-user-frame .hud-name{
+  color:#563f23 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.94),
+    0 0 4px rgba(250,246,235,.74) !important;
+}
+
+/* GEM / COIN：文字列の背後にだけ淡いハイライトを置く */
+.global-user-frame .hud-resource{
+  position:relative !important;
+}
+
+.global-user-frame .hud-resource::after{
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(247,239,220,.26) 18%,
+      rgba(247,239,220,.58) 50%,
+      rgba(247,239,220,.26) 82%,
+      transparent 100%
+    ) !important;
+  height:18px !important;
+  bottom:50% !important;
+  transform:translateY(50%) !important;
+  border-radius:999px !important;
+  z-index:-1 !important;
+}
+
+.global-user-frame .hud-res-val{
+  color:#4f3a21 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.94),
+    0 0 4px rgba(250,246,235,.72) !important;
+}
+
+.global-user-frame .hud-gem-plus-btn{
+  color:#7e5d2b !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+/* ボトムナビ：背景は透過のまま、ほんの少し濃度だけ戻す */
+.bottom-nav{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248,243,232,.78) 0%,
+      rgba(236,225,205,.70) 100%
+    ) !important;
+}
+
+/* ラベルは背景に負けないが、黒々しすぎない */
+.bottom-nav .bottom-nav-label{
+  color:rgba(79,60,36,.88) !important;
+  font-weight:650 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 4px rgba(250,246,235,.68) !important;
+}
+
+.bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  color:#5d431f !important;
+  font-weight:700 !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  .global-user-frame .hud-info{
+    background:rgba(244,235,214,.50) !important;
+  }
+
+  .bottom-nav{
+    background:rgba(241,232,214,.73) !important;
+  }
+}
+
+
+/* =========================================================
+   v359 GACHA CENTER — FINAL RUNTIME OVERRIDE
+   IMPORTANT: this is in css/style.css, the stylesheet actually loaded by index.html.
+   ========================================================= */
+
+/* ===== TITLE: remove every rectangular panel source ===== */
+html body #screen-summon .summon-center-title-card{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:auto !important;
+  min-height:0 !important;
+
+  padding:3px 12px 5px !important;
+  margin:0 !important;
+
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+
+  border:0 !important;
+  border-width:0 !important;
+  border-style:none !important;
+  border-color:transparent !important;
+  border-radius:0 !important;
+
+  box-shadow:none !important;
+  outline:0 !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  overflow:visible !important;
+}
+
+/* Kill every old card pseudo layer from v264/v323/v327 etc. */
+html body #screen-summon .summon-center-title-card::before,
+html body #screen-summon .summon-center-title-card::after{
+  content:none !important;
+  display:none !important;
+  width:0 !important;
+  height:0 !important;
+  background:none !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  opacity:0 !important;
+}
+
+/* No background on children either */
+html body #screen-summon .summon-center-title-en,
+html body #screen-summon .summon-center-title-jp,
+html body #screen-summon .summon-center-title-more{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* Only a local mist behind the MAIN title text */
+html body #screen-summon .summon-center-title-jp{
+  position:relative !important;
+  color:#3c2a16 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,252,243,.98),
+    0 0 9px rgba(255,248,225,.78),
+    0 0 15px rgba(238,221,183,.34) !important;
+}
+
+html body #screen-summon .summon-center-title-jp::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:142px !important;
+  height:42px !important;
+  transform:translate(-50%,-50%) rotate(-1.7deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 46% 54%,
+      rgba(255,254,249,.64) 0%,
+      rgba(252,247,236,.40) 28%,
+      rgba(245,233,207,.14) 52%,
+      rgba(245,233,207,0) 75%
+    ),
+    radial-gradient(
+      ellipse at 68% 42%,
+      rgba(255,250,236,.16) 0%,
+      rgba(246,235,210,.05) 44%,
+      rgba(246,235,210,0) 70%
+    ) !important;
+
+  filter:blur(8px) !important;
+  opacity:.94 !important;
+}
+
+html body #screen-summon .summon-center-title-en{
+  color:rgba(72,52,29,.72) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 4px rgba(255,251,239,.74) !important;
+}
+
+html body #screen-summon .summon-center-title-more{
+  color:rgba(69,50,29,.76) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 4px rgba(255,251,239,.72) !important;
+}
+
+/* ===== PITY: preserve v355 absolute positioning, remove rectangular panel ===== */
+html body #screen-summon .pity-counter{
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:var(--gacha-pity-bottom) !important;
+  transform:translateX(-50%) !important;
+
+  display:grid !important;
+  grid-template-columns:auto minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:10px !important;
+
+  width:min(88vw,356px) !important;
+  min-height:38px !important;
+  padding:7px 12px !important;
+  margin:0 !important;
+
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  z-index:16 !important;
+  overflow:visible !important;
+  isolation:isolate !important;
+}
+
+html body #screen-summon .pity-counter::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:106% !important;
+  height:145% !important;
+  transform:translate(-50%,-50%) rotate(.35deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,254,249,.70) 0%,
+      rgba(251,247,237,.46) 28%,
+      rgba(246,238,219,.20) 51%,
+      rgba(241,229,201,.07) 64%,
+      rgba(241,229,201,0) 78%
+    ) !important;
+
+  filter:blur(9px) !important;
+  opacity:.95 !important;
+}
+
+html body #screen-summon .pity-counter::after{
+  content:none !important;
+  display:none !important;
+}
+
+html body #screen-summon .pity-counter > *{
+  position:relative !important;
+  z-index:3 !important;
+}
+
+html body #screen-summon .pity-note{
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:var(--gacha-pity-note-bottom) !important;
+  transform:translateX(-50%) !important;
+
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+  z-index:16 !important;
+}
+
+/* iOS Safari: no native glass or panel fallback */
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .summon-center-title-card{
+    background:transparent !important;
+    border:0 !important;
+    box-shadow:none !important;
+  }
+
+  html body #screen-summon .pity-counter{
+    background:transparent !important;
+    border:0 !important;
+    box-shadow:none !important;
+  }
+}
+
+
+/* =========================================================
+   v360 GACHA CENTER — stronger white haze / readability
+   ボックス感は戻さず、白い滲みだけを一段強く。
+   文字・天井ゲージを背景から明確に分離する。
+   ========================================================= */
+
+/* ---------- 中央タイトル ---------- */
+html body #screen-summon .summon-center-title-jp::before{
+  width:168px !important;
+  height:50px !important;
+  background:
+    radial-gradient(
+      ellipse at 46% 54%,
+      rgba(255,255,252,.84) 0%,
+      rgba(252,248,239,.62) 30%,
+      rgba(247,238,217,.30) 52%,
+      rgba(242,228,198,.10) 67%,
+      rgba(242,228,198,0) 80%
+    ),
+    radial-gradient(
+      ellipse at 68% 42%,
+      rgba(255,251,240,.28) 0%,
+      rgba(247,237,214,.12) 46%,
+      rgba(247,237,214,0) 72%
+    ) !important;
+  filter:blur(8.5px) !important;
+  opacity:1 !important;
+}
+
+html body #screen-summon .summon-center-title-en{
+  color:rgba(63,45,24,.82) !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,.98),
+    0 0 8px rgba(250,242,220,.56) !important;
+}
+
+html body #screen-summon .summon-center-title-jp{
+  color:#352512 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,1),
+    0 0 8px rgba(255,249,229,.92),
+    0 1px 2px rgba(50,35,17,.12) !important;
+}
+
+html body #screen-summon .summon-center-title-more{
+  color:rgba(64,46,26,.86) !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,.94),
+    0 0 7px rgba(249,240,217,.54) !important;
+}
+
+/* ---------- 天井まわり ---------- */
+html body #screen-summon .pity-counter::before{
+  width:110% !important;
+  height:168% !important;
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,255,252,.86) 0%,
+      rgba(252,248,239,.66) 30%,
+      rgba(247,239,219,.34) 52%,
+      rgba(241,229,201,.12) 66%,
+      rgba(241,229,201,0) 80%
+    ),
+    radial-gradient(
+      ellipse at 28% 48%,
+      rgba(255,251,239,.30) 0%,
+      rgba(247,237,214,.12) 46%,
+      rgba(247,237,214,0) 72%
+    ),
+    radial-gradient(
+      ellipse at 76% 48%,
+      rgba(255,251,239,.24) 0%,
+      rgba(247,237,214,.08) 46%,
+      rgba(247,237,214,0) 72%
+    ) !important;
+  filter:blur(8.5px) !important;
+  opacity:1 !important;
+}
+
+html body #screen-summon .pity-label,
+html body #screen-summon .pity-num{
+  color:#4a331a !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,.98),
+    0 1px 2px rgba(56,39,18,.10) !important;
+}
+
+/* ゲージは白霞の中で輪郭が分かる程度にだけ強化 */
+html body #screen-summon .pity-bar-wrap{
+  height:7px !important;
+  background:rgba(92,67,37,.16) !important;
+  border:0 !important;
+  border-radius:999px !important;
+  box-shadow:
+    inset 0 1px 2px rgba(73,51,25,.14),
+    0 1px 0 rgba(255,255,255,.74),
+    0 0 4px rgba(255,250,236,.70) !important;
+}
+
+html body #screen-summon .pity-bar-fill{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(172,130,55,.76),
+      rgba(225,190,100,.94)
+    ) !important;
+  box-shadow:
+    0 0 5px rgba(191,149,65,.32),
+    0 0 8px rgba(255,242,199,.18) !important;
+}
+
+/* 天井説明の背後にも、ごく局所的な霞 */
+html body #screen-summon .pity-note{
+  color:#4e371d !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,.98),
+    0 0 7px rgba(249,241,219,.50) !important;
+}
+
+html body #screen-summon .pity-note::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:190px !important;
+  height:30px !important;
+  transform:translate(-50%,-50%) rotate(.4deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,251,.62) 0%,
+      rgba(251,246,234,.38) 44%,
+      rgba(245,233,207,.12) 64%,
+      rgba(245,233,207,0) 80%
+    ) !important;
+  filter:blur(7px) !important;
+  opacity:.96 !important;
+}
+
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .summon-center-title-jp::before{
+    filter:blur(8px) !important;
+  }
+  html body #screen-summon .pity-counter::before{
+    filter:blur(8px) !important;
+  }
+}
+
+
+/* =========================================================
+   v361 GACHA CENTER — denser white haze
+   v360の「箱なし」は維持。
+   白い滲みの中心濃度だけをさらに上げ、文字・天井ゲージを背景から分離。
+   ========================================================= */
+
+/* ---------- タイトル周辺 ---------- */
+html body #screen-summon .summon-center-title-jp::before{
+  width:192px !important;
+  height:62px !important;
+  background:
+    radial-gradient(
+      ellipse at 46% 54%,
+      rgba(255,255,253,.97) 0%,
+      rgba(253,250,242,.84) 24%,
+      rgba(249,242,224,.56) 43%,
+      rgba(244,232,204,.28) 58%,
+      rgba(241,226,194,.10) 69%,
+      rgba(241,226,194,0) 82%
+    ),
+    radial-gradient(
+      ellipse at 65% 41%,
+      rgba(255,252,243,.56) 0%,
+      rgba(249,240,219,.24) 42%,
+      rgba(249,240,219,0) 70%
+    ),
+    radial-gradient(
+      ellipse at 33% 66%,
+      rgba(255,253,245,.44) 0%,
+      rgba(247,236,211,.16) 45%,
+      rgba(247,236,211,0) 72%
+    ) !important;
+  filter:blur(7.5px) !important;
+  opacity:1 !important;
+}
+
+/* 英字と提供割合にも、ごく小さい局所霞を追加 */
+html body #screen-summon .summon-center-title-en::before,
+html body #screen-summon .summon-center-title-more::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,252,.72) 0%,
+      rgba(252,248,239,.48) 38%,
+      rgba(247,236,211,.16) 62%,
+      rgba(247,236,211,0) 80%
+    ) !important;
+  filter:blur(6px) !important;
+}
+
+html body #screen-summon .summon-center-title-en::before{
+  width:150px !important;
+  height:28px !important;
+}
+
+html body #screen-summon .summon-center-title-more::before{
+  width:170px !important;
+  height:28px !important;
+}
+
+/* 文字自体もさらに少しだけ締める */
+html body #screen-summon .summon-center-title-en{
+  color:rgba(58,41,22,.88) !important;
+}
+html body #screen-summon .summon-center-title-jp{
+  color:#2f2010 !important;
+}
+html body #screen-summon .summon-center-title-more{
+  color:rgba(58,42,24,.90) !important;
+}
+
+/* ---------- 天井カウント周辺 ---------- */
+html body #screen-summon .pity-counter::before{
+  width:114% !important;
+  height:195% !important;
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,255,253,.96) 0%,
+      rgba(253,250,242,.82) 25%,
+      rgba(249,242,224,.54) 44%,
+      rgba(244,232,204,.26) 59%,
+      rgba(241,226,194,.08) 70%,
+      rgba(241,226,194,0) 82%
+    ),
+    radial-gradient(
+      ellipse at 28% 48%,
+      rgba(255,252,242,.44) 0%,
+      rgba(248,239,217,.18) 45%,
+      rgba(248,239,217,0) 72%
+    ),
+    radial-gradient(
+      ellipse at 76% 48%,
+      rgba(255,252,242,.36) 0%,
+      rgba(248,239,217,.14) 45%,
+      rgba(248,239,217,0) 72%
+    ) !important;
+  filter:blur(7.5px) !important;
+  opacity:1 !important;
+}
+
+/* ラベルと数値の背後にも局所霞 */
+html body #screen-summon .pity-label::before,
+html body #screen-summon .pity-num::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:76px !important;
+  height:24px !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,252,.68) 0%,
+      rgba(252,248,239,.42) 42%,
+      rgba(247,236,211,0) 80%
+    ) !important;
+  filter:blur(5.5px) !important;
+}
+
+/* ゲージ周辺の白い縁取りを少し強化 */
+html body #screen-summon .pity-bar-wrap{
+  background:rgba(88,63,34,.18) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(70,49,24,.15),
+    0 1px 0 rgba(255,255,255,.90),
+    0 0 6px rgba(255,252,241,.88),
+    0 0 10px rgba(248,238,215,.40) !important;
+}
+
+/* 天井説明の局所霞をさらに濃く */
+html body #screen-summon .pity-note::before{
+  width:220px !important;
+  height:36px !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,252,.80) 0%,
+      rgba(252,248,239,.56) 38%,
+      rgba(247,236,211,.20) 62%,
+      rgba(247,236,211,0) 82%
+    ) !important;
+  filter:blur(6.5px) !important;
+  opacity:1 !important;
+}
+
+html body #screen-summon .pity-label,
+html body #screen-summon .pity-num,
+html body #screen-summon .pity-note{
+  color:#3f2b16 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,1),
+    0 1px 2px rgba(48,33,16,.10) !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .summon-center-title-jp::before,
+  html body #screen-summon .pity-counter::before{
+    filter:blur(7px) !important;
+  }
+}
+
+
+/* =========================================================
+   v362 GACHA NAV — ARROW GLYPH + PAGE DOTS
+   左右矢印を➤系のシャープな形に変更。
+   背後に局所的な白霞を置き、ページドットを追加。
+   ========================================================= */
+
+/* Arrow button itself stays invisible */
+html body #screen-summon .summon-banner-arrow{
+  pointer-events:auto !important;
+  position:absolute !important;
+  top:48% !important;
+
+  width:54px !important;
+  height:70px !important;
+  padding:0 !important;
+  margin:0 !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  font-family:Georgia,"Times New Roman",serif !important;
+  font-size:29px !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+  color:rgba(115,79,32,.82) !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 4px rgba(255,250,235,.88),
+    0 1px 3px rgba(66,44,20,.10) !important;
+
+  filter:none !important;
+  opacity:1 !important;
+  z-index:3 !important;
+
+  transition:
+    transform .18s ease,
+    color .18s ease,
+    opacity .18s ease !important;
+}
+
+/* White blurry halo behind arrow — no circle / no box */
+html body #screen-summon .summon-banner-arrow::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:58px !important;
+  height:50px !important;
+  transform:translate(-50%,-50%) rotate(-4deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+
+  background:
+    radial-gradient(
+      ellipse at 48% 52%,
+      rgba(255,255,252,.88) 0%,
+      rgba(253,249,241,.62) 34%,
+      rgba(247,238,217,.28) 55%,
+      rgba(243,230,201,.08) 68%,
+      rgba(243,230,201,0) 80%
+    ) !important;
+
+  filter:blur(7px) !important;
+  opacity:.98 !important;
+}
+
+/* Previous = same glyph mirrored */
+html body #screen-summon .summon-banner-arrow-prev{
+  left:9px !important;
+  transform:translateY(-50%) rotate(180deg) !important;
+}
+
+html body #screen-summon .summon-banner-arrow-next{
+  right:9px !important;
+  transform:translateY(-50%) !important;
+}
+
+html body #screen-summon .summon-banner-arrow:hover,
+html body #screen-summon .summon-banner-arrow:focus-visible{
+  color:rgba(102,68,25,.96) !important;
+  outline:none !important;
+}
+
+html body #screen-summon .summon-banner-arrow-prev:active{
+  transform:translateY(-50%) rotate(180deg) scale(.90) !important;
+  opacity:.72 !important;
+}
+
+html body #screen-summon .summon-banner-arrow-next:active{
+  transform:translateY(-50%) scale(.90) !important;
+  opacity:.72 !important;
+}
+
+/* ---------- pager dots ---------- */
+html body #screen-summon .summon-banner-dots{
+  position:absolute !important;
+  left:50% !important;
+  bottom:calc(var(--gacha-title-bottom) - 24px) !important;
+  transform:translateX(-50%) !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+
+  min-height:20px !important;
+  padding:2px 10px !important;
+  z-index:18 !important;
+  pointer-events:auto !important;
+}
+
+/* Local haze behind dot row */
+html body #screen-summon .summon-banner-dots::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:calc(100% + 30px) !important;
+  height:28px !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border-radius:50% !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,252,.70) 0%,
+      rgba(252,248,239,.46) 42%,
+      rgba(247,236,211,.14) 64%,
+      rgba(247,236,211,0) 82%
+    ) !important;
+  filter:blur(6px) !important;
+}
+
+/* dot buttons */
+html body #screen-summon .summon-banner-dot{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  width:6px !important;
+  height:6px !important;
+  min-width:6px !important;
+  min-height:6px !important;
+  padding:0 !important;
+  margin:0 !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+
+  background:rgba(109,82,47,.30) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.82),
+    0 0 3px rgba(255,250,235,.62) !important;
+
+  transition:
+    width .18s ease,
+    background .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease !important;
+}
+
+/* active dot = elongated, easy to read */
+html body #screen-summon .summon-banner-dot.active{
+  width:18px !important;
+  border-radius:999px !important;
+  background:rgba(165,120,45,.72) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.90),
+    0 0 5px rgba(207,166,79,.28) !important;
+}
+
+html body #screen-summon .summon-banner-dot:active{
+  transform:scale(.90) !important;
+}
+
+/* Small screens */
+@media (max-width:380px){
+  html body #screen-summon .summon-banner-arrow{
+    width:48px !important;
+    height:64px !important;
+    font-size:26px !important;
+  }
+
+  html body #screen-summon .summon-banner-arrow-prev{
+    left:4px !important;
+  }
+
+  html body #screen-summon .summon-banner-arrow-next{
+    right:4px !important;
+  }
+
+  html body #screen-summon .summon-banner-dots{
+    gap:6px !important;
+    bottom:calc(var(--gacha-title-bottom) - 21px) !important;
+  }
+}
+
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .summon-banner-arrow::before{
+    filter:blur(6.5px) !important;
+  }
+}
+
+
+/* =========================================================
+   v364 GACHA POOL CTA
+   「提供内容・提供割合」がタップできることを自然に示唆。
+   箱にはせず、細いライン + 小さな矢印 + タップ反応。
+   ========================================================= */
+
+html body #screen-summon .summon-center-title-more{
+  position:relative !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+
+  margin:7px auto 0 !important;
+  padding:4px 4px 6px !important;
+
+  color:rgba(55,40,23,.88) !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent !important;
+
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 4px rgba(255,252,242,.82) !important;
+
+  transition:
+    transform .16s ease,
+    opacity .16s ease !important;
+}
+
+/* white haze remains local, not a card */
+html body #screen-summon .summon-center-title-more::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:176px !important;
+  height:30px !important;
+  transform:translate(-50%,-50%) rotate(.4deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,252,.78) 0%,
+      rgba(252,248,239,.50) 38%,
+      rgba(247,236,211,.16) 62%,
+      rgba(247,236,211,0) 82%
+    ) !important;
+
+  filter:blur(6px) !important;
+}
+
+/* underline = tappable cue */
+html body #screen-summon .summon-center-title-more::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:0 !important;
+  width:118px !important;
+  height:1px !important;
+  transform:translateX(-50%) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(157,113,49,.16) 18%,
+      rgba(183,136,59,.52) 50%,
+      rgba(157,113,49,.16) 82%,
+      transparent 100%
+    ) !important;
+
+  box-shadow:0 0 3px rgba(206,167,85,.15) !important;
+}
+
+/* subtle forward cue */
+html body #screen-summon .summon-center-title-more-arrow{
+  display:inline-block !important;
+  font-family:Georgia,"Times New Roman",serif !important;
+  font-size:17px !important;
+  line-height:1 !important;
+  color:rgba(137,93,34,.78) !important;
+  transform:translateY(-1px) !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.88) !important;
+
+  animation:zeraphiaPoolCtaNudge 2.8s ease-in-out infinite !important;
+}
+
+@keyframes zeraphiaPoolCtaNudge{
+  0%,72%,100%{ transform:translate(0,-1px); opacity:.72; }
+  82%{ transform:translate(3px,-1px); opacity:1; }
+  90%{ transform:translate(0,-1px); opacity:.82; }
+}
+
+/* touch feedback */
+html body #screen-summon .summon-center-title-card:active .summon-center-title-more{
+  transform:scale(.97) !important;
+  opacity:.78 !important;
+}
+
+/* keyboard focus without a box */
+html body #screen-summon .summon-center-title-card:focus-visible .summon-center-title-more::after{
+  width:138px !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(175,126,48,.68),
+      transparent
+    ) !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  html body #screen-summon .summon-center-title-more-arrow{
+    animation:none !important;
+  }
+}
+
+
+/* =========================================================
+   v365 GACHA CENTER — brown fade readability
+   「提供割合」「天井到達」を白文字 + ブラウンのフェード帯へ。
+   箱ではなく、両端と上下が滲んで消えるインク帯。
+   ========================================================= */
+
+/* ---------- overall center text readability ---------- */
+html body #screen-summon .summon-center-title-en{
+  color:rgba(60,42,22,.90) !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,.98),
+    0 0 8px rgba(249,241,218,.62) !important;
+}
+
+html body #screen-summon .summon-center-title-jp{
+  color:#2d1f10 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,1),
+    0 0 9px rgba(255,248,227,.92),
+    0 1px 2px rgba(44,30,14,.12) !important;
+}
+
+html body #screen-summon .pity-label,
+html body #screen-summon .pity-num{
+  color:#3b2814 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,253,245,.98),
+    0 1px 2px rgba(49,34,16,.10) !important;
+}
+
+/* ---------- 提供内容・提供割合 ---------- */
+html body #screen-summon .summon-center-title-more{
+  min-width:176px !important;
+  min-height:28px !important;
+  margin:7px auto 0 !important;
+  padding:4px 15px 5px !important;
+
+  color:#fffaf0 !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+
+  text-shadow:
+    0 1px 2px rgba(41,27,13,.86),
+    0 0 4px rgba(255,244,213,.16) !important;
+}
+
+/* brown ink-fade band, not a hard box */
+html body #screen-summon .summon-center-title-more::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:212px !important;
+  height:34px !important;
+  transform:translate(-50%,-50%) rotate(-.25deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(89,59,31,0) 0%,
+      rgba(89,59,31,.32) 10%,
+      rgba(75,48,25,.64) 26%,
+      rgba(65,40,21,.78) 50%,
+      rgba(75,48,25,.64) 74%,
+      rgba(89,59,31,.32) 90%,
+      rgba(89,59,31,0) 100%
+    ) !important;
+
+  box-shadow:none !important;
+  filter:blur(2.6px) !important;
+  opacity:.94 !important;
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,.78) 22%,
+      #000 50%,
+      rgba(0,0,0,.78) 78%,
+      transparent 100%
+    ) !important;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,.78) 22%,
+      #000 50%,
+      rgba(0,0,0,.78) 78%,
+      transparent 100%
+    ) !important;
+}
+
+/* CTA underline becomes a soft gold hairline */
+html body #screen-summon .summon-center-title-more::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:0 !important;
+  width:112px !important;
+  height:1px !important;
+  transform:translateX(-50%) !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(229,196,123,.18) 18%,
+      rgba(243,213,143,.54) 50%,
+      rgba(229,196,123,.18) 82%,
+      transparent
+    ) !important;
+  box-shadow:0 0 3px rgba(240,211,142,.18) !important;
+}
+
+html body #screen-summon .summon-center-title-more-arrow{
+  color:rgba(255,239,200,.92) !important;
+  text-shadow:
+    0 1px 2px rgba(42,27,12,.86),
+    0 0 4px rgba(255,243,207,.18) !important;
+}
+
+/* ---------- 天井到達：... ---------- */
+html body #screen-summon .pity-note{
+  min-width:252px !important;
+  padding:4px 18px !important;
+
+  color:#fffaf0 !important;
+  font-weight:700 !important;
+  letter-spacing:.035em !important;
+
+  text-shadow:
+    0 1px 2px rgba(42,27,12,.90),
+    0 0 4px rgba(255,244,213,.14) !important;
+}
+
+/* replace white haze with brown fade band */
+html body #screen-summon .pity-note::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:286px !important;
+  height:36px !important;
+  transform:translate(-50%,-50%) rotate(.15deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(82,53,27,0) 0%,
+      rgba(82,53,27,.30) 9%,
+      rgba(65,41,21,.62) 24%,
+      rgba(55,34,18,.78) 50%,
+      rgba(65,41,21,.62) 76%,
+      rgba(82,53,27,.30) 91%,
+      rgba(82,53,27,0) 100%
+    ) !important;
+
+  filter:blur(2.8px) !important;
+  opacity:.95 !important;
+  box-shadow:none !important;
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,.82) 20%,
+      #000 50%,
+      rgba(0,0,0,.82) 80%,
+      transparent 100%
+    ) !important;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,.82) 20%,
+      #000 50%,
+      rgba(0,0,0,.82) 80%,
+      transparent 100%
+    ) !important;
+}
+
+/* subtle warm line above note */
+html body #screen-summon .pity-note::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:-2px !important;
+  width:126px !important;
+  height:1px !important;
+  transform:translateX(-50%) !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(226,187,105,.42),
+      transparent
+    ) !important;
+  box-shadow:0 0 4px rgba(232,193,108,.14) !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .summon-center-title-more::before,
+  html body #screen-summon .pity-note::before{
+    filter:blur(2.4px) !important;
+  }
+}
+
+
+/* =========================================================
+   v366 GACHA CENTER — CTA + pity readability refinement
+   1) 提供割合の太すぎる文字を軽く
+   2) 天井到達テキストの背景フェードを濃くして可読性を確保
+   ========================================================= */
+
+/* ---------- 提供内容・提供割合：太さを落として繊細に ---------- */
+html body #screen-summon .summon-center-title-more{
+  font-weight:500 !important;
+  font-size:9.5px !important;
+  letter-spacing:.075em !important;
+
+  color:rgba(255,250,240,.96) !important;
+
+  text-shadow:
+    0 1px 1px rgba(37,24,12,.72),
+    0 0 3px rgba(255,244,213,.10) !important;
+}
+
+html body #screen-summon .summon-center-title-more-label{
+  font-weight:500 !important;
+}
+
+html body #screen-summon .summon-center-title-more-arrow{
+  font-weight:400 !important;
+  opacity:.90 !important;
+}
+
+/* 帯は少しだけ柔らかくして、文字が重たく見えないように */
+html body #screen-summon .summon-center-title-more::before{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(89,59,31,0) 0%,
+      rgba(89,59,31,.24) 10%,
+      rgba(75,48,25,.54) 27%,
+      rgba(65,40,21,.70) 50%,
+      rgba(75,48,25,.54) 73%,
+      rgba(89,59,31,.24) 90%,
+      rgba(89,59,31,0) 100%
+    ) !important;
+  filter:blur(2.9px) !important;
+}
+
+/* ---------- 天井到達：背景に溶けないよう明確に ---------- */
+html body #screen-summon .pity-note{
+  min-width:272px !important;
+  padding:5px 20px !important;
+
+  color:#fffdf7 !important;
+  font-weight:600 !important;
+  font-size:10.5px !important;
+  letter-spacing:.035em !important;
+
+  text-shadow:
+    0 1px 2px rgba(24,15,8,.94),
+    0 0 4px rgba(255,246,220,.14) !important;
+}
+
+/* 帯の中心濃度を上げ、上下左右は柔らかく消す */
+html body #screen-summon .pity-note::before{
+  width:304px !important;
+  height:40px !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(70,44,23,0) 0%,
+      rgba(70,44,23,.34) 8%,
+      rgba(57,35,18,.70) 23%,
+      rgba(43,26,14,.88) 50%,
+      rgba(57,35,18,.70) 77%,
+      rgba(70,44,23,.34) 92%,
+      rgba(70,44,23,0) 100%
+    ) !important;
+
+  filter:blur(2.6px) !important;
+  opacity:.98 !important;
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,.88) 16%,
+      #000 50%,
+      rgba(0,0,0,.88) 84%,
+      transparent 100%
+    ) !important;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0,0,0,.88) 16%,
+      #000 50%,
+      rgba(0,0,0,.88) 84%,
+      transparent 100%
+    ) !important;
+}
+
+/* 上の細線は少しだけ明るく */
+html body #screen-summon .pity-note::after{
+  width:136px !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(235,198,116,.54),
+      transparent
+    ) !important;
+  box-shadow:0 0 4px rgba(235,198,116,.18) !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .pity-note::before{
+    filter:blur(2.3px) !important;
+  }
+}
+
+
+/* =========================================================
+   v367 GACHA PITY NOTE — move label closer to gauge
+   「天井到達」テキストだけを上へ8px移動。ゲージ位置は変更しない。
+   ========================================================= */
+html body #screen-summon .pity-note{
+  transform:translate(-50%, -8px) !important;
+}
+
+/* =========================================================
+   v368 GACHA PITY NOTE — brown text + stronger white haze
+   明るい背景上でも読めるよう、文字をブラウン系へ。
+   背景の帯は白いぼかしに差し替え、ゲージ位置は変更しない。
+   ========================================================= */
+html body #screen-summon .pity-note{
+  color:#71552e !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 0 3px rgba(255,255,255,1),
+    0 0 7px rgba(255,255,255,.96),
+    0 0 12px rgba(255,255,255,.82),
+    0 1px 1px rgba(92,72,39,.14) !important;
+  filter:none !important;
+}
+
+/* 既存の濃い帯を、柔らかな白いぼかしへ置き換える */
+html body #screen-summon .pity-note::before{
+  width:286px !important;
+  height:34px !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,255,.94) 0%,
+      rgba(255,255,255,.80) 38%,
+      rgba(255,255,255,.42) 68%,
+      rgba(255,255,255,0) 100%
+    ) !important;
+  filter:blur(5px) !important;
+  opacity:1 !important;
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+}
+
+/* 白ぼかし化に合わせて上側の飾り線は消す */
+html body #screen-summon .pity-note::after{
+  content:none !important;
+  display:none !important;
+}
+
+@supports (-webkit-touch-callout: none){
+  html body #screen-summon .pity-note::before{
+    filter:blur(4.5px) !important;
+  }
+}
+
+
+/* =========================================================
+   v369 GACHA ARROW POLISH
+   - 左右のページ送り矢印を、主張の弱い上品な記号へ
+   ========================================================= */
+#screen-summon .summon-banner-arrow{
+  width:34px !important;
+  height:52px !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:rgba(118,91,46,.58) !important;
+  font-size:34px !important;
+  font-weight:300 !important;
+  line-height:1 !important;
+  opacity:.55 !important;
+  text-shadow:
+    0 0 5px rgba(255,255,255,.95),
+    0 0 10px rgba(255,255,255,.65) !important;
+  transition:opacity .18s ease, transform .18s ease !important;
+}
+#screen-summon .summon-banner-arrow:active{
+  opacity:.9 !important;
+  transform:translateY(-50%) scale(.92) !important;
+}
+
+
+/* v369 final arrow override: thin typographic chevrons */
+html body #screen-summon .summon-banner-arrow{
+  width:30px !important;
+  height:48px !important;
+  padding:0 !important;
+  font-size:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  opacity:.52 !important;
+  text-shadow:none !important;
+}
+html body #screen-summon .summon-banner-arrow::before{
+  display:block !important;
+  width:auto !important;
+  height:auto !important;
+  border:0 !important;
+  filter:none !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:38px !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+  color:rgba(112,83,39,.66) !important;
+  text-shadow:
+    0 0 4px rgba(255,255,255,.98),
+    0 0 10px rgba(255,255,255,.72) !important;
+}
+html body #screen-summon .summon-banner-arrow-prev::before{ content:"‹" !important; }
+html body #screen-summon .summon-banner-arrow-next::before{ content:"›" !important; }
+html body #screen-summon .summon-banner-arrow-prev{
+  left:10px !important;
+  transform:translateY(-50%) !important;
+}
+html body #screen-summon .summon-banner-arrow-next{
+  right:10px !important;
+  transform:translateY(-50%) !important;
+}
+html body #screen-summon .summon-banner-arrow:hover,
+html body #screen-summon .summon-banner-arrow:focus-visible{
+  opacity:.72 !important;
+}
+html body #screen-summon .summon-banner-arrow-prev:active,
+html body #screen-summon .summon-banner-arrow-next:active{
+  opacity:.88 !important;
+  transform:translateY(-50%) scale(.92) !important;
+}
+@media (max-width:360px){
+  html body #screen-summon .summon-banner-arrow::before{ font-size:34px !important; }
+  html body #screen-summon .summon-banner-arrow-prev{ left:7px !important; }
+  html body #screen-summon .summon-banner-arrow-next{ right:7px !important; }
+}
+
+/* =========================================================
+   v370 GACHA ARROW SOFT LIGHT POOL
+   - 水彩背景の明暗に埋もれないよう、矢印の背後へ白い光だまりを追加
+   - 記号自体は細いまま、ボタン感を出さず上品に保持
+   ========================================================= */
+html body #screen-summon .summon-banner-arrow{
+  isolation:isolate !important;
+  overflow:visible !important;
+  opacity:.72 !important;
+}
+
+html body #screen-summon .summon-banner-arrow::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:48px !important;
+  height:66px !important;
+  transform:translate(-50%,-50%) !important;
+  border-radius:50% !important;
+  background:radial-gradient(
+    ellipse at center,
+    rgba(255,255,255,.98) 0%,
+    rgba(255,255,255,.90) 30%,
+    rgba(255,255,255,.58) 54%,
+    rgba(255,255,255,.18) 73%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(4px) !important;
+  pointer-events:none !important;
+  z-index:-1 !important;
+}
+
+html body #screen-summon .summon-banner-arrow::before{
+  position:relative !important;
+  z-index:1 !important;
+  color:rgba(104,76,34,.82) !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 3px rgba(255,255,255,.90) !important;
+}
+
+html body #screen-summon .summon-banner-arrow:hover,
+html body #screen-summon .summon-banner-arrow:focus-visible{
+  opacity:.86 !important;
+}
+
+html body #screen-summon .summon-banner-arrow:active{
+  opacity:1 !important;
+}
+
+@media (max-width:360px){
+  html body #screen-summon .summon-banner-arrow::after{
+    width:44px !important;
+    height:60px !important;
+  }
+}
+
+/* =========================================================
+   v371 GACHA ARROW GEOMETRY FIX
+   - ‹ › のフォント字形に依存しないCSS描画へ変更
+   - 左右を同一寸法・同一中心座標で描画し、辺との余白を完全対称化
+   - v370の白い光だまりは維持
+   ========================================================= */
+html body #screen-summon .summon-banner-arrow{
+  width:30px !important;
+  height:48px !important;
+}
+
+/* フォント記号を廃止し、同じ10x10pxの線から左右矢印を生成 */
+html body #screen-summon .summon-banner-arrow::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:10px !important;
+  height:10px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-left:1.6px solid rgba(104,76,34,.84) !important;
+  border-bottom:1.6px solid rgba(104,76,34,.84) !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  box-sizing:border-box !important;
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.95)) !important;
+  text-shadow:none !important;
+  z-index:1 !important;
+  transform-origin:50% 50% !important;
+}
+
+html body #screen-summon .summon-banner-arrow-prev::before{
+  transform:translate(-43%,-50%) rotate(45deg) !important;
+}
+
+html body #screen-summon .summon-banner-arrow-next::before{
+  transform:translate(-57%,-50%) rotate(225deg) !important;
+}
+
+/* ボタン箱そのものも左右で完全対称 */
+html body #screen-summon .summon-banner-arrow-prev{
+  left:10px !important;
+  right:auto !important;
+}
+html body #screen-summon .summon-banner-arrow-next{
+  right:10px !important;
+  left:auto !important;
+}
+
+@media (max-width:360px){
+  html body #screen-summon .summon-banner-arrow-prev{
+    left:7px !important;
+  }
+  html body #screen-summon .summon-banner-arrow-next{
+    right:7px !important;
+  }
+  html body #screen-summon .summon-banner-arrow::before{
+    width:9px !important;
+    height:9px !important;
+  }
+}
+
+/* =========================================================
+   v372 GACHA ARROW SHARP CHEVRON FIX
+   - 旧v363の ::before に残っていた border-radius / background を完全解除
+   - 角の丸い「C」形状をやめ、細く鋭いシェブロンへ
+   - 左右は同一ジオメトリ、白い光だまりは ::after で維持
+   ========================================================= */
+html body #screen-summon .summon-banner-arrow::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:11px !important;
+  height:11px !important;
+  margin:0 !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+
+  background:none !important;
+  border-radius:0 !important;
+  opacity:1 !important;
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.96)) !important;
+
+  border-top:0 !important;
+  border-right:0 !important;
+  border-left:1.45px solid rgba(98,71,31,.86) !important;
+  border-bottom:1.45px solid rgba(98,71,31,.86) !important;
+
+  font-size:0 !important;
+  line-height:0 !important;
+  text-shadow:none !important;
+  z-index:1 !important;
+  transform-origin:50% 50% !important;
+}
+
+html body #screen-summon .summon-banner-arrow-prev::before{
+  transform:translate(-44%,-50%) rotate(45deg) !important;
+}
+html body #screen-summon .summon-banner-arrow-next::before{
+  transform:translate(-56%,-50%) rotate(225deg) !important;
+}
+
+@media (max-width:360px){
+  html body #screen-summon .summon-banner-arrow::before{
+    width:10px !important;
+    height:10px !important;
+  }
+}
+
+/* =========================================================
+   v373 TOP HUD READABILITY POLISH
+   - PLAYER / crystal / coin readability over bright artwork
+   - soft ivory light pools, restrained shadows
+   - plus control slightly bolder
+   ========================================================= */
+
+/* PLAYER name: brighten the immediate background without making a box */
+.global-user-frame .hud-info{
+  position:relative !important;
+  isolation:isolate !important;
+}
+.global-user-frame .hud-info::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:-16px;
+  top:50%;
+  width:112px;
+  height:42px;
+  transform:translateY(-50%);
+  pointer-events:none;
+  background:radial-gradient(
+    ellipse at 42% 50%,
+    rgba(255,253,246,.98) 0%,
+    rgba(255,252,242,.86) 32%,
+    rgba(255,250,238,.45) 58%,
+    rgba(255,250,238,0) 78%
+  );
+  filter:blur(5px);
+}
+.global-user-frame .hud-name{
+  color:#594226 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,255,255,.98),
+    0 0 9px rgba(255,252,242,.88),
+    0 1px 2px rgba(61,44,24,.16) !important;
+}
+
+/* Resource groups: glow only, no capsule/frame */
+.global-user-frame .hud-resource{
+  isolation:isolate !important;
+}
+.global-user-frame .hud-resource::before{
+  content:"" !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  left:50% !important;
+  top:50% !important;
+  bottom:auto !important;
+  width:96px !important;
+  height:42px !important;
+  transform:translate(-50%,-50%) !important;
+  pointer-events:none !important;
+  background:radial-gradient(
+    ellipse at center,
+    rgba(255,254,249,.98) 0%,
+    rgba(255,252,242,.82) 34%,
+    rgba(255,249,235,.38) 61%,
+    rgba(255,249,235,0) 80%
+  ) !important;
+  filter:blur(5px) !important;
+}
+
+/* restore the existing architectural underline above the glow */
+.global-user-frame .hud-resource::after{
+  z-index:1 !important;
+}
+
+.global-user-frame .hud-res-icon{
+  position:relative !important;
+  z-index:2 !important;
+  filter:
+    drop-shadow(0 0 3px rgba(255,255,255,.96))
+    drop-shadow(0 2px 2px rgba(74,55,28,.18)) !important;
+}
+.global-user-frame .hud-res-val{
+  position:relative !important;
+  z-index:2 !important;
+  color:#594226 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,255,255,.98),
+    0 0 8px rgba(255,252,241,.88),
+    0 1px 2px rgba(61,44,24,.15) !important;
+}
+
+/* crystal + button: retain delicacy, but make the + unmistakable */
+.global-user-frame .hud-gem-plus-btn{
+  position:relative !important;
+  z-index:3 !important;
+  color:#7e5b2b !important;
+  font-size:19px !important;
+  font-weight:700 !important;
+  line-height:18px !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,255,255,.98),
+    0 0 8px rgba(255,250,236,.80),
+    0 1px 2px rgba(74,52,21,.16) !important;
+}
+
+@media (max-width:360px){
+  .global-user-frame .hud-info::before{
+    width:100px;
+    height:38px;
+  }
+  .global-user-frame .hud-resource::before{
+    width:82px !important;
+    height:38px !important;
+  }
+  .global-user-frame .hud-gem-plus-btn{
+    font-size:18px !important;
+  }
+}
+
+/* =========================================================
+   v374 RANK RING SOFT EDGE
+   - 左上RANKリングだけ輪郭が強すぎるため、水彩UIへ馴染ませる
+   - 円形は維持しつつ、境界線を弱め、白い霞でエッジを溶かす
+   ========================================================= */
+.global-user-frame .hud-lv-circle{
+  position:relative !important;
+  isolation:isolate !important;
+  border:1px solid rgba(145,109,49,.24) !important;
+  background:rgba(250,247,239,.62) !important;
+  box-shadow:
+    0 0 4px rgba(255,255,255,.98),
+    0 0 10px rgba(255,255,255,.72),
+    0 0 18px rgba(255,250,239,.42),
+    inset 0 0 7px rgba(255,255,255,.48),
+    inset 0 0 1px rgba(122,91,45,.10) !important;
+  backdrop-filter:blur(2.5px) !important;
+  -webkit-backdrop-filter:blur(2.5px) !important;
+}
+
+/* 既存の装飾リングも一段弱め、外周だけ硬く見えないようにする */
+.global-user-frame .hud-lv-circle::before,
+.global-user-frame .hud-lv-circle::after{
+  opacity:.38 !important;
+  filter:blur(.45px) !important;
+}
+
+.global-user-frame .hud-lv-label,
+.global-user-frame .hud-lv-num{
+  position:relative !important;
+  z-index:2 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.75) !important;
+}
+
+/* =========================================================
+   v375 BOTTOM NAV — active location emphasis
+   現在地を「上昇 + 拡大」で明確化。
+   赤丸だけに依存せず、選択中アイコン自体を主役にする。
+   ========================================================= */
+
+/* 通常アイコンは既存位置を維持 */
+html body .bottom-nav .bottom-nav-item img{
+  transition:
+    transform .22s cubic-bezier(.22,.8,.28,1.18),
+    filter .20s ease,
+    opacity .20s ease !important;
+  transform-origin:50% 58% !important;
+}
+
+/* 選択中：明確に上へ、ひと回り大きく */
+html body .bottom-nav .bottom-nav-item.active img{
+  transform:translateY(-7px) scale(1.18) !important;
+  opacity:1 !important;
+  filter:
+    brightness(1.06)
+    saturate(1.08)
+    sepia(.08)
+    drop-shadow(0 3px 5px rgba(93,67,30,.20))
+    drop-shadow(0 0 10px rgba(255,246,215,.62)) !important;
+}
+
+/* 選択中の文字もアイコンに追従して、現在地として一段だけ強く */
+html body .bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  transform:translateY(-2px) !important;
+  color:#5d431f !important;
+  font-weight:700 !important;
+}
+
+/* 選択中の淡い光だまりは、拡大アイコンの後ろに少し広げる */
+html body .bottom-nav .bottom-nav-item.active::before{
+  inset:-12px 2px -7px !important;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,249,223,.72) 0%, rgba(255,246,213,.40) 33%, transparent 66%),
+    linear-gradient(180deg, rgba(255,252,241,.42), rgba(233,216,176,.24)) !important;
+  border-color:rgba(173,133,58,.22) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.24),
+    0 0 12px rgba(137,101,39,.07) !important;
+}
+
+/* タップ時も選択中の大きさを崩しすぎない */
+html body .bottom-nav .bottom-nav-item.active:active img{
+  transform:translateY(-6px) scale(1.14) !important;
+}
+
+/* 小型端末では少しだけ控えめにしてラベルとの衝突を防ぐ */
+@media (max-width:380px), (max-height:700px){
+  html body .bottom-nav .bottom-nav-item.active img{
+    transform:translateY(-6px) scale(1.15) !important;
+  }
+  html body .bottom-nav .bottom-nav-item.active:active img{
+    transform:translateY(-5px) scale(1.11) !important;
+  }
+  html body .bottom-nav .bottom-nav-item.active .bottom-nav-label{
+    transform:translateY(-1px) !important;
+  }
+}
+
+/* =========================================================
+   v376 BOTTOM NAV — real size emphasis
+   transform:scale だけでは透過余白のあるアイコンで拡大感が弱いため、
+   選択中は画像そのものの width / height を拡大する。
+   ========================================================= */
+html body .bottom-nav .bottom-nav-item img{
+  width:42px !important;
+  height:42px !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active img{
+  width:50px !important;
+  height:50px !important;
+  transform:translateY(-7px) !important;
+  opacity:1 !important;
+  filter:
+    brightness(1.06)
+    saturate(1.08)
+    sepia(.08)
+    drop-shadow(0 3px 5px rgba(93,67,30,.20))
+    drop-shadow(0 0 10px rgba(255,246,215,.62)) !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active:active img{
+  width:49px !important;
+  height:49px !important;
+  transform:translateY(-6px) !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  html body .bottom-nav .bottom-nav-item.active img{
+    width:48px !important;
+    height:48px !important;
+    transform:translateY(-6px) !important;
+  }
+  html body .bottom-nav .bottom-nav-item.active:active img{
+    width:47px !important;
+    height:47px !important;
+    transform:translateY(-5px) !important;
+  }
+}
+
+/* =========================================================
+   v377 BOTTOM NAV — softer vertical lift
+   選択中アイコンの実寸拡大は維持しつつ、上方向の移動量を抑える。
+   ========================================================= */
+html body .bottom-nav .bottom-nav-item.active img{
+  transform:translateY(-3px) !important;
+}
+html body .bottom-nav .bottom-nav-item.active:active img{
+  transform:translateY(-2px) !important;
+}
+@media (max-width:380px), (max-height:700px){
+  html body .bottom-nav .bottom-nav-item.active img{
+    transform:translateY(-3px) !important;
+  }
+  html body .bottom-nav .bottom-nav-item.active:active img{
+    transform:translateY(-2px) !important;
+  }
+}
+
+/* =========================================================
+   v384 HOME TYPE MENU — canonical shared component
+   ボーナス / フレンド / メッセージ / 神聖樹 / スコアアタックを
+   同一HTML構造・同一CSSで描画する。
+   個別の文字描画CSS・画像アイコンCSS・神聖樹専用疑似要素は使用しない。
+   ========================================================= */
+
+/* 5メニュー共通のタップ領域 / 表示基盤 */
+#screen-main .home-type-entry{
+  width:clamp(88px,22vw,98px) !important;
+  height:clamp(88px,22vw,98px) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:visible !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  z-index:30 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#60492c !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* 過去の画像アイコン / button疑似要素を完全停止 */
+#screen-main .home-type-entry > img,
+#screen-main .bonus-home-entry-icon,
+#screen-main .friend-home-entry-icon,
+#screen-main .shinju-home-entry-icon{
+  display:none !important;
+}
+
+#screen-main .home-type-entry::before,
+#screen-main .home-type-entry::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* 文字ロゴ：全メニュー完全共通 */
+#screen-main .home-type-logo{
+  position:relative !important;
+  z-index:1 !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:auto !important;
+  min-width:0 !important;
+  height:54px !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
+  color:#60492c !important;
+  font-family:"Noto Serif JP",serif !important;
+  line-height:1 !important;
+  text-rendering:geometricPrecision;
+  transform:translateY(1px);
+  transition:transform .16s ease, opacity .16s ease, filter .16s ease;
+  filter:
+    drop-shadow(0 0 3px rgba(255,255,255,.98))
+    drop-shadow(0 0 8px rgba(255,255,255,.76))
+    drop-shadow(0 2px 2px rgba(92,67,33,.11));
+}
+
+/* 全メニュー同じ白い霞 */
+#screen-main .home-type-logo::before,
+#screen-main .home-type-logo::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  pointer-events:none;
+}
+
+#screen-main .home-type-logo::before{
+  z-index:-2;
+  width:104px;
+  height:44px;
+  transform:translate(-50%,-50%) rotate(-2deg);
+  border-radius:58% 42% 55% 45% / 45% 58% 42% 55%;
+  background:radial-gradient(
+    ellipse at 48% 50%,
+    rgba(255,255,255,.80) 0%,
+    rgba(255,253,247,.52) 34%,
+    rgba(255,255,255,.22) 58%,
+    rgba(255,255,255,.06) 74%,
+    rgba(255,255,255,0) 91%
+  );
+  filter:blur(8px);
+}
+
+#screen-main .home-type-logo::after{
+  z-index:-3;
+  width:116px;
+  height:34px;
+  transform:translate(-50%,-50%) rotate(3deg);
+  border-radius:44% 56% 47% 53% / 58% 43% 57% 42%;
+  background:radial-gradient(
+    ellipse at center,
+    rgba(255,255,255,.28) 0%,
+    rgba(255,255,255,.13) 48%,
+    rgba(255,255,255,.04) 69%,
+    rgba(255,255,255,0) 90%
+  );
+  filter:blur(12px);
+}
+
+/* 頭文字 */
+#screen-main .home-type-head{
+  display:inline-block !important;
+  flex:0 0 auto !important;
+  font-size:30px !important;
+  font-weight:500 !important;
+  letter-spacing:-.14em !important;
+  line-height:1 !important;
+  transform:translateY(-1px) rotate(-4deg);
+  transform-origin:55% 70%;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.88),
+    0 2px 3px rgba(79,57,27,.12);
+}
+
+/* 残り文字 */
+#screen-main .home-type-rest{
+  display:inline-block !important;
+  flex:0 0 auto !important;
+  margin-left:5px !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  letter-spacing:-.06em !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  transform:translateY(3px) rotate(.4deg);
+  text-shadow:
+    0 0 3px rgba(255,255,255,.94),
+    0 1px 2px rgba(79,57,27,.10);
+}
+
+#screen-main .home-type-entry:active .home-type-logo{
+  transform:translateY(2px) scale(.94);
+  opacity:.86;
+}
+
+/* 右側は同じ列・同じ外寸へ統一 */
+#screen-main .home-notice-btn{
+  right:10px !important;
+  top:var(--home-banner-bottom, calc(env(safe-area-inset-top) + 205px)) !important;
+}
+
+#screen-main .shinju-home-entry{
+  right:10px !important;
+  top:var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) !important;
+}
+
+#screen-main .score-attack-home-entry{
+  position:absolute !important;
+  right:10px !important;
+  top:calc(
+    var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
+    + clamp(88px,22vw,98px)
+    + 8px
+  ) !important;
+  bottom:auto !important;
+}
+
+/* 左側も同一レイヤー */
+#screen-main .bonus-home-entry,
+#screen-main .friend-home-entry{
+  z-index:30 !important;
+}
+
+/* 中央キャラはホームメニューより背面 */
+#screen-main > .favorite-area{
+  z-index:2 !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .home-type-entry{
+    width:84px !important;
+    height:84px !important;
+  }
+  #screen-main .home-type-logo{
+    height:50px !important;
+  }
+  #screen-main .home-type-head{
+    font-size:27px !important;
+  }
+  #screen-main .home-type-rest{
+    font-size:12px !important;
+  }
+  #screen-main .score-attack-home-entry{
+    top:calc(
+      var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
+      + 84px
+      + 8px
+    ) !important;
+  }
+}
+
+
+/* =========================================================
+   v385 HOME TYPE MENU — single-source text rendering
+   5メニューを button[data-home-head][data-home-rest] の1構造へ統一。
+   神聖樹の子要素が外部JSに触られても、ラベルはbutton自身の
+   ::before / ::after で描画されるため消えない。
+   白い霞もbuttonのbackgroundのみで共通管理する。
+   ========================================================= */
+#screen-main .home-type-entry{
+  position:absolute !important;
+  width:clamp(88px,22vw,98px) !important;
+  height:clamp(88px,22vw,98px) !important;
+  display:block !important;
+  overflow:visible !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  z-index:30 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  color:#60492c !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(ellipse 58% 31% at 48% 50%,
+      rgba(255,255,255,.80) 0%,
+      rgba(255,253,247,.50) 36%,
+      rgba(255,255,255,.20) 60%,
+      rgba(255,255,255,.055) 76%,
+      rgba(255,255,255,0) 92%),
+    radial-gradient(ellipse 66% 24% at 53% 52%,
+      rgba(255,255,255,.24) 0%,
+      rgba(255,255,255,.11) 50%,
+      rgba(255,255,255,0) 91%) !important;
+  filter:
+    drop-shadow(0 0 4px rgba(255,255,255,.62))
+    drop-shadow(0 2px 2px rgba(92,67,33,.08));
+}
+
+/* 旧画像・旧文字DOMは表示に使わない。通知バッジ等は除外。 */
+#screen-main .home-type-entry > img,
+#screen-main .home-type-entry > .home-type-logo,
+#screen-main .bonus-home-entry-icon,
+#screen-main .friend-home-entry-icon,
+#screen-main .shinju-home-entry-icon{
+  display:none !important;
+}
+
+/* 共通：大きい頭文字 */
+#screen-main .home-type-entry::before{
+  content:attr(data-home-head) !important;
+  display:block !important;
+  position:absolute !important;
+  left:12px !important;
+  top:50% !important;
+  z-index:2 !important;
+  width:auto !important;
+  height:auto !important;
+  transform:translateY(-52%) rotate(-4deg) !important;
+  transform-origin:55% 70%;
+  color:#60492c !important;
+  background:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:30px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  letter-spacing:-.14em !important;
+  white-space:nowrap !important;
+  pointer-events:none !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.88),
+    0 2px 3px rgba(79,57,27,.12) !important;
+}
+
+/* 共通：残り文字 */
+#screen-main .home-type-entry::after{
+  content:attr(data-home-rest) !important;
+  display:block !important;
+  position:absolute !important;
+  left:43px !important;
+  top:50% !important;
+  z-index:2 !important;
+  width:auto !important;
+  height:auto !important;
+  transform:translateY(-25%) rotate(.4deg) !important;
+  color:#60492c !important;
+  background:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  letter-spacing:-.06em !important;
+  white-space:pre !important;
+  text-align:left !important;
+  pointer-events:none !important;
+  text-shadow:
+    0 0 3px rgba(255,255,255,.94),
+    0 1px 2px rgba(79,57,27,.10) !important;
+}
+
+/* 2行ロゴも同じコンポーネントの状態差として管理 */
+#screen-main .home-type-entry[data-home-lines="2"]::after{
+  transform:translateY(-46%) rotate(.4deg) !important;
+  line-height:1.18 !important;
+  white-space:pre !important;
+}
+
+#screen-main .home-type-entry:active{
+  filter:
+    drop-shadow(0 0 4px rgba(255,255,255,.58))
+    drop-shadow(0 1px 1px rgba(92,67,33,.07));
+  opacity:.88 !important;
+}
+#screen-main .home-type-entry:active::before,
+#screen-main .home-type-entry:active::after{
+  transform:translateY(-48%) scale(.95) !important;
+}
+#screen-main .home-type-entry[data-home-lines="2"]:active::after{
+  transform:translateY(-43%) scale(.95) !important;
+}
+
+/* 右側の位置だけは役割ごとの既存変数を継続利用 */
+#screen-main .home-notice-btn{
+  right:10px !important;
+  top:var(--home-banner-bottom, calc(env(safe-area-inset-top) + 205px)) !important;
+}
+#screen-main .shinju-home-entry{
+  right:10px !important;
+  top:var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) !important;
+}
+#screen-main .score-attack-home-entry{
+  right:10px !important;
+  top:calc(var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) + clamp(88px,22vw,98px) + 8px) !important;
+  bottom:auto !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .home-type-entry{
+    width:84px !important;
+    height:84px !important;
+  }
+  #screen-main .home-type-entry::before{
+    left:10px !important;
+    font-size:27px !important;
+  }
+  #screen-main .home-type-entry::after{
+    left:38px !important;
+    font-size:12px !important;
+  }
+  #screen-main .score-attack-home-entry{
+    top:calc(var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px)) + 84px + 8px) !important;
+  }
+}
+
+/* =========================================================
+   v386 HOME TYPE MENU — stronger soft white haze
+   5メニュー共通。円形に見えないよう、横長の霞を大きく・柔らかくする。
+   ========================================================= */
+#screen-main .home-type-entry{
+  background:
+    radial-gradient(ellipse 78% 42% at 48% 50%,
+      rgba(255,255,255,.94) 0%,
+      rgba(255,254,249,.72) 30%,
+      rgba(255,255,255,.42) 52%,
+      rgba(255,255,255,.16) 72%,
+      rgba(255,255,255,0) 96%),
+    radial-gradient(ellipse 92% 32% at 54% 54%,
+      rgba(255,255,255,.48) 0%,
+      rgba(255,255,255,.22) 48%,
+      rgba(255,255,255,.06) 72%,
+      rgba(255,255,255,0) 98%) !important;
+  filter:
+    drop-shadow(0 0 7px rgba(255,255,255,.82))
+    drop-shadow(0 0 15px rgba(255,255,255,.38))
+    drop-shadow(0 2px 2px rgba(92,67,33,.06)) !important;
+}
+
+/* =========================================================
+   v386 BOTTOM NAV — active stays white
+   現在地は色変更せず、白い光だまりの広がりだけで示す。
+   ========================================================= */
+html body .bottom-nav .bottom-nav-item.active img{
+  opacity:1 !important;
+  filter:
+    brightness(1.08)
+    saturate(1)
+    sepia(0)
+    drop-shadow(0 2px 4px rgba(72,62,48,.14))
+    drop-shadow(0 0 9px rgba(255,255,255,.92)) !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  color:rgba(72,62,48,.88) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 0 3px rgba(255,255,255,1),
+    0 0 7px rgba(255,255,255,.86) !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active::before{
+  inset:-18px -7px -11px !important;
+  background:
+    radial-gradient(ellipse 78% 62% at 50% 38%,
+      rgba(255,255,255,.96) 0%,
+      rgba(255,255,255,.68) 34%,
+      rgba(255,255,255,.32) 58%,
+      rgba(255,255,255,0) 84%) !important;
+  border:0 !important;
+  box-shadow:
+    0 0 18px rgba(255,255,255,.72),
+    0 0 28px rgba(255,255,255,.34) !important;
+}
+
+/* =========================================================
+   v387 BOTTOM NAV — neutral white active halo
+   暖色の光だまりを完全に撤去。現在地は「純白の霞」だけで示す。
+   背景のベージュが透けて黄ばんで見えないよう中心部は高不透明度。
+   ========================================================= */
+html body .bottom-nav .bottom-nav-item.active{
+  isolation:isolate !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active::before{
+  content:"" !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+  inset:-21px -10px -13px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(ellipse 76% 60% at 50% 38%,
+      rgba(255,255,255,1) 0%,
+      rgba(255,255,255,.98) 24%,
+      rgba(255,255,255,.84) 44%,
+      rgba(255,255,255,.48) 62%,
+      rgba(255,255,255,.18) 76%,
+      rgba(255,255,255,0) 92%) !important;
+  box-shadow:
+    0 0 16px rgba(255,255,255,.92),
+    0 0 30px rgba(255,255,255,.58) !important;
+  backdrop-filter:saturate(0) brightness(1.08) blur(1.5px) !important;
+  -webkit-backdrop-filter:saturate(0) brightness(1.08) blur(1.5px) !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active img{
+  filter:
+    brightness(1.03)
+    saturate(.72)
+    sepia(0)
+    drop-shadow(0 1px 3px rgba(70,62,52,.12))
+    drop-shadow(0 0 7px rgba(255,255,255,.96)) !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  color:rgba(72,62,48,.86) !important;
+  text-shadow:
+    0 0 4px rgba(255,255,255,1),
+    0 0 9px rgba(255,255,255,.96) !important;
+}
+
+/* =========================================================
+   v388 BOTTOM NAV — boundaryless pure-white fog
+   選択中の現在地は色を付けず、境界の見えない白い光だまりだけで示す。
+   円形 radial-gradient / 暖色 / backdrop-filter は使わない。
+   ========================================================= */
+html body .bottom-nav .bottom-nav-item.active{
+  isolation:isolate !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active::before{
+  content:"" !important;
+  position:absolute !important;
+  z-index:0 !important;
+  left:50% !important;
+  top:43% !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:92px !important;
+  height:24px !important;
+  transform:translate(-50%,-50%) !important;
+  border:0 !important;
+  border-radius:46% 54% 50% 50% / 58% 44% 56% 42% !important;
+  background:rgba(255,255,255,.88) !important;
+  box-shadow:
+    -22px 2px 20px rgba(255,255,255,.58),
+     24px -3px 22px rgba(255,255,255,.52),
+      0 8px 24px rgba(255,255,255,.34) !important;
+  filter:blur(18px) !important;
+  -webkit-filter:blur(18px) !important;
+  opacity:.96 !important;
+  pointer-events:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* 選択中でもアイコンへ黄・セピアを足さない */
+html body .bottom-nav .bottom-nav-item.active img{
+  position:relative !important;
+  z-index:2 !important;
+  filter:
+    grayscale(1)
+    sepia(0)
+    saturate(0)
+    brightness(.80)
+    contrast(.92)
+    drop-shadow(0 0 7px rgba(255,255,255,.90)) !important;
+}
+
+html body .bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  position:relative !important;
+  z-index:2 !important;
+  color:rgba(72,62,48,.86) !important;
+  text-shadow:
+    0 0 5px rgba(255,255,255,1),
+    0 0 11px rgba(255,255,255,.96) !important;
+}
+
+/* =========================================================
+   v389 BOTTOM NAV — canonical neutral-white current-location haze
+   Root fix:
+   - no radial/circular halo
+   - no warm tint on active state
+   - opaque white core + long feathered horizontal fog
+   - overrides all legacy gold active-state rules
+   ========================================================= */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active{
+  isolation:isolate !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  border-color:transparent !important;
+}
+
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  content:"" !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:50% !important;
+  top:48% !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:116px !important;
+  height:34px !important;
+  transform:translate(-50%,-50%) !important;
+  border:0 !important;
+  border-radius:18px !important;
+  background:
+    linear-gradient(90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.90) 18%,
+      rgba(255,255,255,1) 38%,
+      rgba(255,255,255,1) 62%,
+      rgba(255,255,255,.90) 82%,
+      rgba(255,255,255,0) 100%) !important;
+  box-shadow:
+    0 0 20px 10px rgba(255,255,255,.78),
+    0 0 38px 16px rgba(255,255,255,.42) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+  opacity:1 !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  position:relative !important;
+  z-index:2 !important;
+  opacity:1 !important;
+  filter:
+    grayscale(1)
+    sepia(0)
+    saturate(0)
+    brightness(.74)
+    contrast(1.02)
+    drop-shadow(0 0 8px rgba(255,255,255,.96)) !important;
+}
+
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  position:relative !important;
+  z-index:2 !important;
+  color:rgba(68,60,50,.90) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 0 5px rgba(255,255,255,1),
+    0 0 12px rgba(255,255,255,1) !important;
+}
+
+/* =========================================================
+   v390 TOP HUD + BOTTOM NAV — PURE WHITE HAZE
+   - warm ivory/orange haze removed
+   - PLAYER / rank / crystal / coin use neutral white mist
+   - bottom current-location haze slightly denser and whiter
+   ========================================================= */
+
+/* PLAYER name: neutral white fog, no ivory tint */
+html body .global-user-frame .hud-info::before{
+  left:-20px !important;
+  width:126px !important;
+  height:48px !important;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.58) 14%,
+    rgba(255,255,255,.96) 36%,
+    rgba(255,255,255,.98) 62%,
+    rgba(255,255,255,.56) 84%,
+    rgba(255,255,255,0) 100%) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:.96 !important;
+}
+
+/* Rank ring: remove warm fill/border and dissolve into white mist */
+html body .global-user-frame .hud-lv-circle{
+  border:1px solid rgba(255,255,255,.58) !important;
+  background:rgba(255,255,255,.38) !important;
+  box-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 18px rgba(255,255,255,.88),
+    0 0 32px rgba(255,255,255,.54),
+    inset 0 0 10px rgba(255,255,255,.72) !important;
+  backdrop-filter:blur(3px) !important;
+  -webkit-backdrop-filter:blur(3px) !important;
+}
+html body .global-user-frame .hud-lv-circle::before,
+html body .global-user-frame .hud-lv-circle::after{
+  border-color:rgba(255,255,255,.42) !important;
+  box-shadow:0 0 8px rgba(255,255,255,.70) !important;
+  opacity:.48 !important;
+}
+
+/* Crystal / coin groups: same neutral white fog */
+html body .global-user-frame .hud-resource::before{
+  width:104px !important;
+  height:48px !important;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.52) 13%,
+    rgba(255,255,255,.96) 36%,
+    rgba(255,255,255,.98) 64%,
+    rgba(255,255,255,.54) 86%,
+    rgba(255,255,255,0) 100%) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:.96 !important;
+}
+
+/* Keep text readable, but make the glow itself neutral white */
+html body .global-user-frame .hud-name,
+html body .global-user-frame .hud-res-val,
+html body .global-user-frame .hud-gem-plus-btn{
+  text-shadow:
+    0 0 4px rgba(255,255,255,1),
+    0 0 9px rgba(255,255,255,1),
+    0 1px 2px rgba(61,44,24,.14) !important;
+}
+html body .global-user-frame .hud-res-icon{
+  filter:
+    drop-shadow(0 0 4px rgba(255,255,255,1))
+    drop-shadow(0 0 9px rgba(255,255,255,.88)) !important;
+}
+
+/* Bottom nav: same shape as v389, only a little denser / whiter */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  width:122px !important;
+  height:38px !important;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.94) 16%,
+    rgba(255,255,255,1) 35%,
+    rgba(255,255,255,1) 65%,
+    rgba(255,255,255,.94) 84%,
+    rgba(255,255,255,0) 100%) !important;
+  box-shadow:
+    0 0 22px 11px rgba(255,255,255,.88),
+    0 0 42px 18px rgba(255,255,255,.52) !important;
+  filter:blur(13px) !important;
+  -webkit-filter:blur(13px) !important;
+  opacity:1 !important;
+}
+
+@media (max-width:360px){
+  html body .global-user-frame .hud-info::before{
+    width:112px !important;
+    height:44px !important;
+  }
+  html body .global-user-frame .hud-resource::before{
+    width:90px !important;
+    height:44px !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+    width:108px !important;
+    height:36px !important;
+  }
+}
+
+/* =========================================================
+   v391 TOP HUD — CANONICAL PURE-WHITE MIST
+   Root fix for lingering beige/warm cast:
+   - create one shared neutral-white haze behind the entire HUD
+   - neutralize the RANK inner disc and resource underline/accent
+   - preserve artwork visibility with very soft, boundaryless feathering
+   ========================================================= */
+
+html body #global-user-frame.global-user-frame{
+  position:fixed !important;
+  isolation:isolate !important;
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+/* One continuous white mist instead of several warm local halos. */
+html body #global-user-frame.global-user-frame::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:-2 !important;
+  pointer-events:none !important;
+  left:-8% !important;
+  right:-8% !important;
+  top:-18px !important;
+  height:98px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.96) 0%,
+    rgba(255,255,255,.90) 28%,
+    rgba(255,255,255,.68) 58%,
+    rgba(255,255,255,.28) 80%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(13px) !important;
+  -webkit-filter:blur(13px) !important;
+  opacity:.98 !important;
+}
+
+/* Remove any second decorative/warm HUD sheet. */
+html body #global-user-frame.global-user-frame::after{
+  content:none !important;
+  display:none !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+
+/* Local glows only supplement the shared white mist. */
+html body #global-user-frame .hud-info::before,
+html body #global-user-frame .hud-resource::before{
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.56) 18%,
+    rgba(255,255,255,.90) 38%,
+    rgba(255,255,255,.92) 62%,
+    rgba(255,255,255,.54) 82%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+}
+
+/* RANK: preserve EXP ring mechanics, but remove ivory/orange fill. */
+html body #global-user-frame .hud-lv-circle{
+  background:rgba(255,255,255,.20) !important;
+  border-color:rgba(255,255,255,.60) !important;
+  box-shadow:
+    0 0 10px rgba(255,255,255,1),
+    0 0 22px rgba(255,255,255,.90),
+    0 0 38px rgba(255,255,255,.48),
+    inset 0 0 10px rgba(255,255,255,.70) !important;
+}
+
+html body #global-user-frame .hud-lv-circle::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:3px !important;
+  z-index:0 !important;
+  border-radius:50% !important;
+  border:0 !important;
+  background:rgba(255,255,255,.72) !important;
+  box-shadow:
+    inset 0 0 10px rgba(255,255,255,.98),
+    0 0 12px rgba(255,255,255,.82) !important;
+  filter:blur(.15px) !important;
+  -webkit-filter:blur(.15px) !important;
+  opacity:1 !important;
+}
+
+html body #global-user-frame .hud-lv-circle::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:-2px !important;
+  z-index:0 !important;
+  border-radius:50% !important;
+  border:1px solid rgba(255,255,255,.42) !important;
+  background:transparent !important;
+  box-shadow:0 0 9px rgba(255,255,255,.74) !important;
+  opacity:.62 !important;
+}
+
+/* Resource underline/accent: neutral white/gray, never gold. */
+html body #global-user-frame .hud-resource::after{
+  background:linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.16) 14%,
+    rgba(255,255,255,.58) 50%,
+    rgba(255,255,255,.16) 86%,
+    transparent 100%
+  ) !important;
+}
+
+/* Keep the plus readable without a warm glow. */
+html body #global-user-frame .hud-gem-plus-btn{
+  text-shadow:
+    0 0 4px rgba(255,255,255,1),
+    0 0 10px rgba(255,255,255,1),
+    0 1px 2px rgba(35,35,35,.10) !important;
+}
+
+/* Bottom nav: one notch denser/whiter, same boundaryless shape. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.98) 15%,
+    rgba(255,255,255,1) 34%,
+    rgba(255,255,255,1) 66%,
+    rgba(255,255,255,.98) 85%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  box-shadow:
+    0 0 25px 12px rgba(255,255,255,.94),
+    0 0 48px 20px rgba(255,255,255,.60) !important;
+  filter:blur(14px) !important;
+  -webkit-filter:blur(14px) !important;
+}
+
+/* =========================================================
+   v392 GACHA CENTER — PURE WHITE MIST
+   Replace lingering ivory/beige haze around the central gacha UI
+   with neutral white, boundaryless mist.
+   ========================================================= */
+
+/* Main gacha title haze: pure white only. */
+html body #screen-summon .summon-center-title-jp::before{
+  width:196px !important;
+  height:64px !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.72) 14%,
+    rgba(255,255,255,.98) 34%,
+    rgba(255,255,255,1) 50%,
+    rgba(255,255,255,.98) 66%,
+    rgba(255,255,255,.72) 86%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(14px) !important;
+  -webkit-filter:blur(14px) !important;
+  opacity:.96 !important;
+}
+
+/* Smaller title lines: same white mist, no cream tint. */
+html body #screen-summon .summon-center-title-en::before,
+html body #screen-summon .summon-center-title-more::before{
+  border-radius:0 !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.64) 18%,
+    rgba(255,255,255,.94) 40%,
+    rgba(255,255,255,.94) 60%,
+    rgba(255,255,255,.64) 82%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(11px) !important;
+  -webkit-filter:blur(11px) !important;
+  opacity:.94 !important;
+}
+
+/* Pity gauge area: remove the remaining warm/ivory veil. */
+html body #screen-summon .pity-counter::before{
+  width:118% !important;
+  height:200% !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.60) 10%,
+    rgba(255,255,255,.93) 28%,
+    rgba(255,255,255,.99) 50%,
+    rgba(255,255,255,.93) 72%,
+    rgba(255,255,255,.60) 90%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(15px) !important;
+  -webkit-filter:blur(15px) !important;
+  opacity:.97 !important;
+}
+
+/* Pity explanation: matching white haze. */
+html body #screen-summon .pity-note::before{
+  width:210px !important;
+  height:34px !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.66) 18%,
+    rgba(255,255,255,.96) 42%,
+    rgba(255,255,255,.96) 58%,
+    rgba(255,255,255,.66) 82%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(11px) !important;
+  -webkit-filter:blur(11px) !important;
+  opacity:.96 !important;
+}
+
+/* Remove warm-colored glow from the text itself as well. */
+html body #screen-summon .summon-center-title-en,
+html body #screen-summon .summon-center-title-jp,
+html body #screen-summon .summon-center-title-more,
+html body #screen-summon .pity-label,
+html body #screen-summon .pity-num,
+html body #screen-summon .pity-note{
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,255,255,1),
+    0 0 9px rgba(255,255,255,.92),
+    0 1px 2px rgba(45,45,45,.10) !important;
+}
+
+/* Keep the gauge neutral too: no golden haze around the bar. */
+html body #screen-summon .pity-bar-wrap{
+  box-shadow:
+    inset 0 1px 2px rgba(55,55,55,.10),
+    0 1px 0 rgba(255,255,255,.88),
+    0 0 5px rgba(255,255,255,.82) !important;
+}
+
+/* =========================================================
+   v393 GACHA CENTER — BROWN LABEL MIST
+   「排出内容・提供割合」だけ、白霞からブラウン系の
+   ラベル風フェードへ戻す。輪郭のある箱にはせず、
+   横方向へ溶ける霞として表示する。
+   ========================================================= */
+html body #screen-summon .summon-center-title-more{
+  color:rgba(255,252,245,.98) !important;
+  text-shadow:
+    0 1px 1px rgba(45,29,16,.80),
+    0 0 3px rgba(54,34,17,.38),
+    0 0 8px rgba(255,255,255,.16) !important;
+}
+
+html body #screen-summon .summon-center-title-more::before{
+  width:176px !important;
+  height:30px !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    90deg,
+    rgba(94,61,31,0) 0%,
+    rgba(94,61,31,.22) 10%,
+    rgba(80,51,27,.48) 26%,
+    rgba(67,42,23,.68) 43%,
+    rgba(62,39,21,.74) 50%,
+    rgba(67,42,23,.68) 57%,
+    rgba(80,51,27,.48) 74%,
+    rgba(94,61,31,.22) 90%,
+    rgba(94,61,31,0) 100%
+  ) !important;
+  filter:blur(5.5px) !important;
+  -webkit-filter:blur(5.5px) !important;
+  opacity:.92 !important;
+}
+
+html body #screen-summon .summon-center-title-more-arrow{
+  color:rgba(255,251,242,.94) !important;
+  text-shadow:0 1px 2px rgba(45,29,16,.60) !important;
+}
+
+/* =========================================================
+   v394 GACHA CENTER — EN LABEL READABILITY + CTA ARROW ALIGN
+   - STANDARD / LIMITED GACHA を暗く濃くして視認性を上げる
+   - 「排出内容・提供割合」の › を文字と同じ高さへ揃える
+   ========================================================= */
+html body #screen-summon .summon-center-title-en{
+  color:rgba(58,40,22,.94) !important;
+  font-weight:700 !important;
+  letter-spacing:.10em !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 3px rgba(255,255,255,.96),
+    0 1px 2px rgba(54,37,20,.16) !important;
+}
+
+/* CTAはラベルと矢印を同じ行ボックスで揃える */
+html body #screen-summon .summon-center-title-more{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  line-height:1 !important;
+}
+
+html body #screen-summon .summon-center-title-more-label,
+html body #screen-summon .summon-center-title-more-arrow{
+  display:inline-flex !important;
+  align-items:center !important;
+  line-height:1 !important;
+}
+
+html body #screen-summon .summon-center-title-more-arrow{
+  position:relative !important;
+  top:0 !important;
+  margin:0 !important;
+  transform:none !important;
+  translate:none !important;
+  vertical-align:middle !important;
+}
+
+/* =========================================================
+   v395 GACHA CENTER — EN KICKER HIGH-CONTRAST
+   STANDARD / LIMITED GACHA が明るいキャラ絵に飲まれないよう、
+   小さな英字見出しだけを「濃いブラウン + 無彩色の白霞」で独立。
+   ========================================================= */
+html body #screen-summon .summon-center-title-en{
+  position:relative !important;
+  z-index:3 !important;
+  color:#4a321d !important;
+  font-weight:700 !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  letter-spacing:.12em !important;
+  opacity:1 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 2px rgba(255,255,255,1),
+    0 0 5px rgba(255,255,255,.98),
+    0 1px 2px rgba(44,29,17,.22) !important;
+}
+
+/* 丸い光ではなく、英字の左右へ長く溶ける白い霞 */
+html body #screen-summon .summon-center-title-en::before{
+  content:"" !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  left:50% !important;
+  top:50% !important;
+  width:148px !important;
+  height:24px !important;
+  transform:translate(-50%,-50%) !important;
+  border-radius:0 !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.70) 16%,
+    rgba(255,255,255,.98) 36%,
+    rgba(255,255,255,1) 50%,
+    rgba(255,255,255,.98) 64%,
+    rgba(255,255,255,.70) 84%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(7px) !important;
+  -webkit-filter:blur(7px) !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+}
+
+/* =========================================================
+   v396 HOME TYPE MENU — borderless text haze
+   ホーム5メニューの霞を「ボックス背景」から切り離す。
+   背景レイヤーを持たず、文字そのものの周囲へ白い光を拡散することで
+   直線的な四辺・矩形感を完全に消す。
+   ========================================================= */
+#screen-main .home-type-entry{
+  background:none !important;
+  box-shadow:none !important;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,.98))
+    drop-shadow(0 0 11px rgba(255,255,255,.90))
+    drop-shadow(0 0 19px rgba(255,255,255,.62))
+    drop-shadow(0 0 28px rgba(255,255,255,.32)) !important;
+}
+
+#screen-main .home-type-entry::before{
+  text-shadow:
+    0 0 3px rgba(255,255,255,1),
+    0 0 7px rgba(255,255,255,.98),
+    0 0 13px rgba(255,255,255,.88),
+    0 0 21px rgba(255,255,255,.58),
+    0 1px 0 rgba(255,255,255,.96),
+    0 2px 3px rgba(79,57,27,.10) !important;
+}
+
+#screen-main .home-type-entry::after{
+  text-shadow:
+    0 0 3px rgba(255,255,255,1),
+    0 0 7px rgba(255,255,255,.98),
+    0 0 12px rgba(255,255,255,.84),
+    0 0 19px rgba(255,255,255,.54),
+    0 1px 2px rgba(79,57,27,.08) !important;
+}
+
+#screen-main .home-type-entry:active{
+  background:none !important;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,.94))
+    drop-shadow(0 0 10px rgba(255,255,255,.82))
+    drop-shadow(0 0 17px rgba(255,255,255,.50)) !important;
+}
+
+/* =========================================================
+   v397 BOTTOM NAV — PURE WHITE / SIZE-ONLY ACTIVE STATE
+   - idle and active icons use the same pure-white treatment
+   - idle and active haze use the same neutral white tone
+   - active state is distinguished only by icon size
+   - remove legacy yellow/gold/sepia tint and vertical jump
+   ========================================================= */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active{
+  background:transparent !important;
+  box-shadow:none !important;
+  border-color:transparent !important;
+}
+
+/* Every nav item gets the same boundaryless white mist. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item::before,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:50% !important;
+  top:48% !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:104px !important;
+  height:30px !important;
+  transform:translate(-50%,-50%) !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.44) 18%,
+    rgba(255,255,255,.82) 38%,
+    rgba(255,255,255,.94) 50%,
+    rgba(255,255,255,.82) 62%,
+    rgba(255,255,255,.44) 82%,
+    rgba(255,255,255,0) 100%) !important;
+  box-shadow:
+    0 0 18px 9px rgba(255,255,255,.56),
+    0 0 32px 14px rgba(255,255,255,.28) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+  opacity:1 !important;
+}
+
+/* Idle and active icons are identically white. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  position:relative !important;
+  z-index:2 !important;
+  opacity:1 !important;
+  filter:
+    grayscale(1)
+    brightness(0)
+    invert(1)
+    drop-shadow(0 1px 2px rgba(54,48,40,.24))
+    drop-shadow(0 0 5px rgba(255,255,255,.96)) !important;
+  transform:none !important;
+  transition:width .18s ease,height .18s ease,filter .18s ease !important;
+}
+
+/* Idle size. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item img{
+  width:42px !important;
+  height:42px !important;
+}
+
+/* Current location: size only. No jump, tint, or extra glow. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  width:50px !important;
+  height:50px !important;
+  transform:none !important;
+}
+
+/* Labels also keep the same neutral treatment. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item .bottom-nav-label,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  position:relative !important;
+  z-index:2 !important;
+  color:rgba(64,58,50,.90) !important;
+  font-weight:500 !important;
+  text-shadow:
+    0 0 4px rgba(255,255,255,1),
+    0 0 9px rgba(255,255,255,.98) !important;
+}
+
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item:active img,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active:active img{
+  transform:none !important;
+}
+
+@media (max-width:360px){
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item img{
+    width:40px !important;
+    height:40px !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+    width:47px !important;
+    height:47px !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item::before,
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+    width:94px !important;
+    height:28px !important;
+  }
+}
+
+
+/* =========================================================
+   v398 BOTTOM NAV — BROWN ICONS / WHITE MIST / SIZE-ONLY ACTIVE
+   - icon color stays deep brown for both idle and active
+   - mist stays neutral white for both idle and active
+   - current location differs only by icon size
+   ========================================================= */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  opacity:1 !important;
+  /* original dark ornamental artwork is kept deep brown, not white */
+  filter:
+    brightness(.46)
+    sepia(.52)
+    saturate(.88)
+    hue-rotate(350deg)
+    contrast(1.10)
+    drop-shadow(0 1px 2px rgba(255,255,255,.92))
+    drop-shadow(0 0 5px rgba(255,255,255,.84)) !important;
+}
+
+/* White haze remains exactly the same in idle and active states. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item::before,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.48) 17%,
+    rgba(255,255,255,.86) 37%,
+    rgba(255,255,255,.96) 50%,
+    rgba(255,255,255,.86) 63%,
+    rgba(255,255,255,.48) 83%,
+    rgba(255,255,255,0) 100%) !important;
+  box-shadow:
+    0 0 18px 9px rgba(255,255,255,.60),
+    0 0 34px 15px rgba(255,255,255,.30) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+}
+
+/* Size is the only active-state difference. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item img{
+  width:42px !important;
+  height:42px !important;
+}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  width:50px !important;
+  height:50px !important;
+  transform:none !important;
+}
+
+@media (max-width:360px){
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item img{
+    width:40px !important;
+    height:40px !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+    width:47px !important;
+    height:47px !important;
+  }
+}
+
+/* =========================================================
+   v399 BOTTOM NAV — STABLE LAYOUT / HEAVIER LABELS
+   - every icon reserves the same footprint, so tab changes never move the row
+   - current tab is distinguished by scale only
+   - labels are slightly heavier for readability
+   ========================================================= */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  width:50px !important;
+  height:50px !important;
+  min-width:50px !important;
+  min-height:50px !important;
+  flex:0 0 50px !important;
+  transform-origin:center bottom !important;
+  transition:transform .18s ease, filter .18s ease !important;
+}
+
+/* Idle icon keeps a 50px layout box but is visually 42px. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) img{
+  transform:scale(.84) !important;
+}
+
+/* Current location: same box, larger artwork only. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  transform:scale(1) !important;
+}
+
+/* Touch feedback is local to the pressed item; no layout-size change. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active):active img{
+  transform:scale(.88) !important;
+}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active:active img{
+  transform:scale(1.04) !important;
+}
+
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item .bottom-nav-label,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-label{
+  font-size:11px !important;
+  font-weight:600 !important;
+  line-height:1.05 !important;
+  letter-spacing:.10em !important;
+  color:rgba(61,54,46,.96) !important;
+  -webkit-font-smoothing:antialiased;
+  text-shadow:
+    0 0 3px rgba(255,255,255,1),
+    0 0 8px rgba(255,255,255,.98) !important;
+}
+
+@media (max-width:360px){
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+    width:47px !important;
+    height:47px !important;
+    min-width:47px !important;
+    min-height:47px !important;
+    flex-basis:47px !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) img{
+    transform:scale(.8511) !important; /* ~40px visual size */
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+    transform:scale(1) !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active):active img{
+    transform:scale(.89) !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active:active img{
+    transform:scale(1.04) !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item .bottom-nav-label,
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-label{
+    font-size:10.5px !important;
+    font-weight:600 !important;
+  }
+}
+
+/* =========================================================
+   v400 CHARACTER INDEX - soft fading name labels
+   四角いバー感をなくし、左右・上下とも白い霞へ自然に溶かす。
+   ========================================================= */
+#screen-zukan.is-primoa-index .primoa-index-name{
+  position:relative !important;
+  z-index:1 !important;
+  isolation:isolate !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  padding:1px 3px !important;
+  overflow:visible !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-name::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  pointer-events:none;
+  left:-6px;
+  right:-6px;
+  top:-2px;
+  bottom:-2px;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.34) 16%,
+    rgba(255,255,255,.62) 34%,
+    rgba(255,255,255,.70) 50%,
+    rgba(255,255,255,.62) 66%,
+    rgba(255,255,255,.34) 84%,
+    rgba(255,255,255,0) 100%
+  );
+  filter:blur(3.2px);
+  opacity:.96;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned .primoa-index-name{
+  background:transparent !important;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned .primoa-index-name::before{
+  opacity:.72;
+}
+
+
+/* =========================================================
+   v401 Splash / title BGM toggle visibility + frameless control
+   - SaSaSa App splash中はスピーカーボタンを表示しない
+   - splash終了後（タイトル画面以降）だけ表示
+   - 丸いフレーム/背景を廃止し、スピーカーアイコンだけ見せる
+   ========================================================= */
+
+/* 初期状態～splashがdisplay:noneになるまでは非表示。
+   #splash はボタンより前にあるため sibling selector だけで制御できる。 */
+#splash:not([style*="display: none"]) ~ .global-bgm-toggle{
+  display:none !important;
+}
+
+.global-bgm-toggle{
+  width:36px !important;
+  height:36px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  background-color:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  opacity:.68 !important;
+}
+
+.global-bgm-toggle.is-muted{
+  background:transparent !important;
+  background-color:transparent !important;
+  box-shadow:none !important;
+  opacity:.46 !important;
+}
+
+.global-bgm-toggle .global-bgm-icon{
+  width:25px !important;
+  height:25px !important;
+  opacity:.58 !important;
+}
+
+.global-bgm-toggle:active{
+  transform:scale(.92) !important;
+  opacity:.86 !important;
+}
+
+@media (max-width:380px){
+  .global-bgm-toggle{
+    width:34px !important;
+    height:34px !important;
+  }
+  .global-bgm-toggle .global-bgm-icon{
+    width:23px !important;
+    height:23px !important;
+  }
+}
+
+
+/* =========================================================
+   v402 HOME RAID ENTRY
+   フレンド直下に「レイド / バトル」を追加。
+   文字表現は既存 .home-type-entry の共通コンポーネントをそのまま使用。
+   ========================================================= */
+#screen-main .raid-home-entry{
+  position:absolute !important;
+  left:10px !important;
+  right:auto !important;
+  top:calc(
+    var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
+    + clamp(88px,22vw,98px)
+    + 8px
+  ) !important;
+  bottom:auto !important;
+  z-index:30 !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .raid-home-entry{
+    left:8px !important;
+    top:calc(
+      var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
+      + 84px
+      + 8px
+    ) !important;
   }
 }

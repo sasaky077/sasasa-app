@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '20260913-gacha-translucency-readable-v327';
+    var FALLBACK_BUILD = '20260913-home-raid-entry-v402';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="20260913-gacha-translucency-readable-v327">
+  <meta name="sasaphia-build" content="20260913-home-raid-entry-v402">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=20260913-gacha-translucency-readable-v327">
+  <link rel="manifest" href="manifest.json?v=20260913-home-raid-entry-v402">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=20260913-gacha-translucency-readable-v327"
+        href="css/style.css?v=20260913-home-raid-entry-v402"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=20260913-gacha-translucency-readable-v327"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=20260913-home-raid-entry-v402"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -250,7 +250,7 @@
 
 
 
-\n<style id="gacha-resonance-preview-style">
+<style id="gacha-resonance-preview-style">
 .gacha-preview-name{font-family:"Cinzel","Noto Serif JP",serif;font-size:24px;font-weight:700;letter-spacing:.12em;text-align:center;color:#fff;margin:4px 0 12px;text-shadow:0 2px 12px rgba(0,0,0,.8)}
 .gacha-resonance-switch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:0 0 10px;position:sticky;top:0;z-index:5;padding:3px 0;background:transparent;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
 .gacha-resonance-tab{appearance:none;-webkit-appearance:none;min-width:0;height:30px;padding:0 2px;border:none;border-radius:0;background:transparent url("images/gacha_ui_01.webp") center/100% 100% no-repeat;color:#938269;display:flex;align-items:center;justify-content:center;font-family:"Noto Serif JP",serif;font-size:10px;font-weight:500;line-height:1;letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,255,255,.75);cursor:pointer;filter:saturate(.78) brightness(1.03);transition:transform .16s ease,filter .16s ease,color .16s ease;-webkit-tap-highlight-color:transparent}
@@ -260,16 +260,16 @@
 .gacha-resonance-current{display:flex;flex-direction:column;gap:5px;margin:0 0 12px;padding:10px 12px;border-left:3px solid #d8b96b;background:rgba(216,185,107,.08);font-size:11px;line-height:1.65;color:#ccc}
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
-</style>\n
+</style>
   <script>
     // shooting_event.cssは、アクセスの度に必ず変わる値でキャッシュを強制迂回する。
     // 通常のバージョン文字列更新だけではCDN/PWAキャッシュが古いまま
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260913-gacha-translucency-readable-v327">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=20260913-home-raid-entry-v402">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=20260913-gacha-translucency-readable-v327">
+  <link rel="stylesheet" href="css/raid_event.css?v=20260913-home-raid-entry-v402">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '20260913-gacha-translucency-readable-v327';
+  var BUILD = '20260913-home-raid-entry-v402';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -644,6 +644,2549 @@
 }
 </style>
 
+
+<style id="bottomnav-barless-hardfix-v340">
+/* v340: bottom nav hard override — show only icon + text */
+#bottom-nav-shared.bottom-nav,
+body #bottom-nav-shared.bottom-nav{
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-top: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+#bottom-nav-shared.bottom-nav::before,
+#bottom-nav-shared.bottom-nav::after{
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#bottom-nav-shared .bottom-nav-item,
+#bottom-nav-shared .bottom-nav-item.active{
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+#bottom-nav-shared .bottom-nav-item::before,
+#bottom-nav-shared .bottom-nav-item::after,
+#bottom-nav-shared .bottom-nav-item.active::before,
+#bottom-nav-shared .bottom-nav-item.active::after{
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* icon readability without a panel */
+#bottom-nav-shared .bottom-nav-item img{
+  opacity:.92 !important;
+  filter:
+    sepia(.22)
+    saturate(.72)
+    brightness(.70)
+    contrast(1.06)
+    drop-shadow(0 1px 0 rgba(255,255,255,.98))
+    drop-shadow(0 0 4px rgba(255,250,238,.94))
+    drop-shadow(0 2px 4px rgba(62,46,26,.18)) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active img{
+  opacity:1 !important;
+  filter:
+    sepia(.28)
+    saturate(.96)
+    brightness(.88)
+    contrast(1.06)
+    drop-shadow(0 1px 0 rgba(255,255,255,1))
+    drop-shadow(0 0 6px rgba(255,247,219,.98))
+    drop-shadow(0 2px 5px rgba(93,66,26,.20)) !important;
+}
+
+/* text readability without a panel */
+#bottom-nav-shared .bottom-nav-label{
+  color:#584222 !important;
+  font-weight:700 !important;
+  text-shadow:
+    -1px 0 rgba(255,255,255,.84),
+     1px 0 rgba(255,255,255,.84),
+     0 -1px rgba(255,255,255,.84),
+     0  1px rgba(255,255,255,.84),
+     0 0 4px rgba(255,249,232,.96),
+     0 1px 3px rgba(67,49,27,.12) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
+  color:#47331a !important;
+}
+
+/* iOS Safari: never paint a nav panel */
+@supports (-webkit-touch-callout: none){
+  #bottom-nav-shared.bottom-nav{
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+}
+</style>
+
+<style id="bottomnav-bottomfade-v341">
+/* =========================================================
+   v341 BOTTOM NAV — edge fade
+   バーは戻さず、画面下端だけに極薄の紙面フェードを敷く。
+   ========================================================= */
+
+#bottom-nav-shared.bottom-nav{
+  overflow:visible !important;
+  isolation:isolate !important;
+}
+
+/* 下端から上へ消える、極薄のフェードだけ */
+#bottom-nav-shared.bottom-nav::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  height:52px !important;
+  pointer-events:none !important;
+  z-index:-1 !important;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(241,232,214,.48) 0%,
+      rgba(247,241,228,.26) 42%,
+      rgba(250,247,239,.10) 72%,
+      rgba(250,247,239,0) 100%
+    ) !important;
+
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* 上端線や板っぽさは絶対に出さない */
+#bottom-nav-shared.bottom-nav::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* アイコンは少しだけ締める */
+#bottom-nav-shared .bottom-nav-item img{
+  opacity:.90 !important;
+  filter:
+    sepia(.20)
+    saturate(.66)
+    brightness(.68)
+    contrast(1.06)
+    drop-shadow(0 1px 0 rgba(255,255,255,.92))
+    drop-shadow(0 0 3px rgba(255,250,238,.76))
+    drop-shadow(0 2px 4px rgba(62,46,26,.14)) !important;
+}
+
+/* 選択中は金寄りの淡いグロー */
+#bottom-nav-shared .bottom-nav-item.active img{
+  opacity:1 !important;
+  filter:
+    sepia(.30)
+    saturate(.98)
+    brightness(.90)
+    contrast(1.05)
+    drop-shadow(0 1px 0 rgba(255,255,255,.98))
+    drop-shadow(0 0 6px rgba(222,188,104,.32))
+    drop-shadow(0 2px 5px rgba(93,66,26,.18)) !important;
+}
+
+/* 文字の白縁を細くして、UI感を軽く */
+#bottom-nav-shared .bottom-nav-label{
+  color:#574226 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.88),
+    0 0 3px rgba(255,249,232,.72),
+    0 1px 2px rgba(67,49,27,.08) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
+  color:#4d371c !important;
+}
+
+/* 小型端末はフェード高さを少しだけ抑える */
+@media (max-width:380px){
+  #bottom-nav-shared.bottom-nav::before{
+    height:46px !important;
+  }
+}
+
+/* iOS Safariでも帯化させず同じフェードだけ */
+@supports (-webkit-touch-callout: none){
+  #bottom-nav-shared.bottom-nav::before{
+    background:
+      linear-gradient(
+        to top,
+        rgba(241,232,214,.46) 0%,
+        rgba(247,241,228,.24) 44%,
+        rgba(250,247,239,0) 100%
+      ) !important;
+  }
+}
+</style>
+
+<style id="bottomnav-lightpool-v342">
+/* =========================================================
+   v342 BOTTOM NAV — light pool
+   全体バーは無し。
+   各アイコン + テキストの背後にだけ小さな光だまりを置く。
+   ========================================================= */
+
+/* v341の全面フェードはかなり弱める */
+#bottom-nav-shared.bottom-nav::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  height:26px !important;
+  pointer-events:none !important;
+  z-index:-2 !important;
+  background:
+    linear-gradient(
+      to top,
+      rgba(245,238,223,.16) 0%,
+      rgba(248,244,235,.06) 55%,
+      rgba(250,248,242,0) 100%
+    ) !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* 各タブの背後に独立した光だまり */
+#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:-1px !important;
+  width:74px !important;
+  height:58px !important;
+  transform:translateX(-50%) !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 72%,
+      rgba(255,252,241,.74) 0%,
+      rgba(248,240,220,.46) 34%,
+      rgba(243,231,204,.18) 54%,
+      rgba(243,231,204,0) 74%
+    ) !important;
+
+  filter:blur(.4px) !important;
+}
+
+/* 選択中だけ少し金色を足す */
+#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  content:"" !important;
+  display:block !important;
+  width:80px !important;
+  height:62px !important;
+  background:
+    radial-gradient(
+      ellipse at 50% 70%,
+      rgba(255,252,235,.88) 0%,
+      rgba(245,224,168,.50) 36%,
+      rgba(214,177,92,.18) 58%,
+      rgba(214,177,92,0) 76%
+    ) !important;
+  filter:blur(.3px) !important;
+}
+
+/* アイコン/文字は光だまりより前面 */
+#bottom-nav-shared .bottom-nav-item img{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+#bottom-nav-shared .bottom-nav-label{
+  position:relative !important;
+  z-index:3 !important;
+  color:#594426 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.84),
+    0 0 3px rgba(255,249,232,.56),
+    0 1px 2px rgba(67,49,27,.08) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
+  color:#49351c !important;
+}
+
+/* 小型端末は少し縮小 */
+@media (max-width:380px){
+  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+    width:66px !important;
+    height:54px !important;
+  }
+
+  #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+    width:72px !important;
+    height:58px !important;
+  }
+}
+
+/* iOS Safariでも同じ見え方 */
+@supports (-webkit-touch-callout: none){
+  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+    background:
+      radial-gradient(
+        ellipse at 50% 72%,
+        rgba(255,252,241,.72) 0%,
+        rgba(248,240,220,.42) 36%,
+        rgba(243,231,204,.14) 56%,
+        rgba(243,231,204,0) 76%
+      ) !important;
+  }
+}
+</style>
+
+<style id="bottomnav-softblur-v343">
+/* =========================================================
+   v343 BOTTOM NAV — soft blur light
+   「丸い光だまり」感を消し、境界のない不定形なボカシへ。
+   ========================================================= */
+
+/* 全面下端フェードはさらに控えめ */
+#bottom-nav-shared.bottom-nav::before{
+  height:22px !important;
+  background:
+    linear-gradient(
+      to top,
+      rgba(245,238,223,.10) 0%,
+      rgba(248,244,235,.03) 58%,
+      rgba(250,248,242,0) 100%
+    ) !important;
+}
+
+/* 各タブの光だまり：楕円をやめて、不定形の複数ぼかしに */
+#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:0 !important;
+  width:64px !important;
+  height:46px !important;
+  transform:translateX(-50%) rotate(-2deg) !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+
+  border:0 !important;
+  border-radius:42% 58% 51% 49% / 46% 43% 57% 54% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      circle at 42% 64%,
+      rgba(255,252,241,.54) 0%,
+      rgba(250,244,229,.30) 34%,
+      rgba(246,237,216,.12) 56%,
+      rgba(246,237,216,0) 78%
+    ),
+    radial-gradient(
+      circle at 64% 48%,
+      rgba(255,249,232,.24) 0%,
+      rgba(246,235,210,.10) 48%,
+      rgba(246,235,210,0) 76%
+    ) !important;
+
+  filter:blur(5px) !important;
+  opacity:.92 !important;
+}
+
+/* タブごとに少しだけ崩しを変えて規則感を減らす */
+#bottom-nav-shared .bottom-nav-item:nth-child(2)::before{
+  transform:translateX(-50%) rotate(2.5deg) scaleX(.96) !important;
+}
+#bottom-nav-shared .bottom-nav-item:nth-child(3)::before{
+  transform:translateX(-50%) rotate(-1deg) scaleX(1.04) !important;
+}
+#bottom-nav-shared .bottom-nav-item:nth-child(4)::before{
+  transform:translateX(-50%) rotate(2deg) scaleX(.98) !important;
+}
+#bottom-nav-shared .bottom-nav-item:nth-child(5)::before{
+  transform:translateX(-50%) rotate(-2.5deg) scaleX(1.02) !important;
+}
+
+/* 選択中は少しだけ金色の霞を足す */
+#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  width:68px !important;
+  height:48px !important;
+  background:
+    radial-gradient(
+      circle at 46% 66%,
+      rgba(255,250,229,.70) 0%,
+      rgba(242,222,168,.34) 34%,
+      rgba(219,181,93,.12) 58%,
+      rgba(219,181,93,0) 80%
+    ),
+    radial-gradient(
+      circle at 62% 44%,
+      rgba(255,245,211,.26) 0%,
+      rgba(228,194,119,.08) 50%,
+      rgba(228,194,119,0) 78%
+    ) !important;
+  filter:blur(5.5px) !important;
+  opacity:.96 !important;
+}
+
+/* 光がぼける分、アイコンは少しだけ濃く */
+#bottom-nav-shared .bottom-nav-item img{
+  opacity:.94 !important;
+  filter:
+    sepia(.18)
+    saturate(.68)
+    brightness(.65)
+    contrast(1.07)
+    drop-shadow(0 1px 0 rgba(255,255,255,.88))
+    drop-shadow(0 1px 3px rgba(62,46,26,.14)) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active img{
+  opacity:1 !important;
+  filter:
+    sepia(.28)
+    saturate(.95)
+    brightness(.88)
+    contrast(1.06)
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 5px rgba(218,184,96,.26))
+    drop-shadow(0 2px 4px rgba(92,66,27,.18)) !important;
+}
+
+/* 文字も少し締める */
+#bottom-nav-shared .bottom-nav-label{
+  color:#513d24 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.82),
+    0 1px 2px rgba(70,50,28,.08) !important;
+}
+
+/* iOS Safariでも同じく柔らかいぼかし */
+@supports (-webkit-touch-callout: none){
+  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+    filter:blur(5px) !important;
+    opacity:.88 !important;
+  }
+}
+</style>
+
+<style id="bottomnav-lightpool-stronger-v344">
+/* =========================================================
+   v344 BOTTOM NAV — light pool stronger
+   v343の不定形ぼかしは維持したまま、待機中も見えるよう
+   光だまりを一回り大きく・少し濃く。
+   ========================================================= */
+
+/* 待機中：白い霞を一回り大きく、濃度アップ */
+#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+  width:74px !important;
+  height:54px !important;
+  bottom:-2px !important;
+
+  background:
+    radial-gradient(
+      circle at 42% 64%,
+      rgba(255,252,241,.68) 0%,
+      rgba(250,244,229,.42) 32%,
+      rgba(246,237,216,.18) 56%,
+      rgba(246,237,216,0) 82%
+    ),
+    radial-gradient(
+      circle at 64% 48%,
+      rgba(255,249,232,.34) 0%,
+      rgba(246,235,210,.16) 46%,
+      rgba(246,235,210,0) 80%
+    ) !important;
+
+  filter:blur(5.4px) !important;
+  opacity:.98 !important;
+}
+
+/* 選択中：さらに少しだけ広げて、金色を一段だけ強く */
+#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  width:80px !important;
+  height:58px !important;
+
+  background:
+    radial-gradient(
+      circle at 46% 66%,
+      rgba(255,250,229,.82) 0%,
+      rgba(242,222,168,.46) 34%,
+      rgba(219,181,93,.18) 58%,
+      rgba(219,181,93,0) 82%
+    ),
+    radial-gradient(
+      circle at 62% 44%,
+      rgba(255,245,211,.34) 0%,
+      rgba(228,194,119,.12) 50%,
+      rgba(228,194,119,0) 80%
+    ) !important;
+
+  filter:blur(5.8px) !important;
+  opacity:1 !important;
+}
+
+/* 小型端末でも待機中の白霞が消えないよう少し大きめ */
+@media (max-width:380px){
+  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+    width:70px !important;
+    height:52px !important;
+  }
+
+  #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+    width:76px !important;
+    height:56px !important;
+  }
+}
+</style>
+
+<style id="bottomnav-frosted-haze-v345">
+/* =========================================================
+   v345 BOTTOM NAV — frosted haze
+   キャラ一覧のような情報量の多い背景でも、
+   バーを作らず、各ナビの背後だけを静かにする。
+   ========================================================= */
+
+/* 主光だまり：少し大きく、中央はしっかり背景を抑える */
+#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:-5px !important;
+  width:82px !important;
+  height:62px !important;
+  transform:translateX(-50%) rotate(-2deg) !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+
+  border:0 !important;
+  border-radius:47% 53% 41% 59% / 55% 45% 57% 43% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 46% 66%,
+      rgba(255,252,243,.86) 0%,
+      rgba(250,244,231,.66) 32%,
+      rgba(246,237,216,.34) 54%,
+      rgba(246,237,216,.10) 70%,
+      rgba(246,237,216,0) 88%
+    ),
+    radial-gradient(
+      ellipse at 63% 42%,
+      rgba(255,249,234,.46) 0%,
+      rgba(248,239,219,.22) 48%,
+      rgba(248,239,219,0) 82%
+    ) !important;
+
+  filter:blur(6.5px) !important;
+  opacity:1 !important;
+}
+
+/* 文字の真後ろだけ、さらに小さな霞を追加 */
+#bottom-nav-shared.bottom-nav .bottom-nav-item::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:2px !important;
+  width:58px !important;
+  height:22px !important;
+  transform:translateX(-50%) rotate(1deg) !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+
+  border:0 !important;
+  border-radius:43% 57% 52% 48% / 58% 46% 54% 42% !important;
+  box-shadow:none !important;
+
+  background:rgba(255,252,244,.48) !important;
+  filter:blur(7px) !important;
+  opacity:.95 !important;
+}
+
+/* タブごとに少し崩して、規則的な丸感を避ける */
+#bottom-nav-shared .bottom-nav-item:nth-child(2)::before{
+  transform:translateX(-50%) rotate(2.2deg) scaleX(.96) !important;
+}
+#bottom-nav-shared .bottom-nav-item:nth-child(3)::before{
+  transform:translateX(-50%) rotate(-1deg) scaleX(1.05) !important;
+}
+#bottom-nav-shared .bottom-nav-item:nth-child(4)::before{
+  transform:translateX(-50%) rotate(2.8deg) scaleX(.98) !important;
+}
+#bottom-nav-shared .bottom-nav-item:nth-child(5)::before{
+  transform:translateX(-50%) rotate(-2.5deg) scaleX(1.03) !important;
+}
+
+/* 選択中は白霞にごく薄い金を混ぜる */
+#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  width:86px !important;
+  height:64px !important;
+  background:
+    radial-gradient(
+      ellipse at 47% 66%,
+      rgba(255,252,239,.92) 0%,
+      rgba(248,233,194,.72) 34%,
+      rgba(232,201,129,.34) 56%,
+      rgba(215,176,88,.10) 72%,
+      rgba(215,176,88,0) 88%
+    ),
+    radial-gradient(
+      ellipse at 64% 42%,
+      rgba(255,246,216,.52) 0%,
+      rgba(236,207,143,.20) 50%,
+      rgba(236,207,143,0) 84%
+    ) !important;
+  filter:blur(6.7px) !important;
+}
+
+#bottom-nav-shared.bottom-nav .bottom-nav-item.active::after{
+  background:rgba(255,248,226,.58) !important;
+  opacity:1 !important;
+}
+
+/* アイコンと文字はしっかり前へ */
+#bottom-nav-shared .bottom-nav-item img{
+  position:relative !important;
+  z-index:3 !important;
+  opacity:.96 !important;
+  filter:
+    sepia(.16)
+    saturate(.70)
+    brightness(.63)
+    contrast(1.08)
+    drop-shadow(0 1px 0 rgba(255,255,255,.86))
+    drop-shadow(0 2px 3px rgba(62,46,26,.16)) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active img{
+  opacity:1 !important;
+  filter:
+    sepia(.28)
+    saturate(.98)
+    brightness(.88)
+    contrast(1.06)
+    drop-shadow(0 1px 0 rgba(255,255,255,.96))
+    drop-shadow(0 0 5px rgba(216,181,93,.24))
+    drop-shadow(0 2px 4px rgba(90,64,26,.18)) !important;
+}
+
+#bottom-nav-shared .bottom-nav-label{
+  position:relative !important;
+  z-index:4 !important;
+  color:#4e3a22 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 1px 2px rgba(60,44,24,.10) !important;
+}
+
+#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
+  color:#433018 !important;
+}
+
+/* 小型端末 */
+@media (max-width:380px){
+  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
+    width:76px !important;
+    height:58px !important;
+  }
+  #bottom-nav-shared.bottom-nav .bottom-nav-item::after{
+    width:54px !important;
+    height:20px !important;
+  }
+}
+</style>
+
+<style id="header-frosted-haze-v346">
+/* =========================================================
+   v346 GLOBAL HEADER — frosted haze
+   ヘッダーの大きなバーは作らず、
+   PLAYER / GEM / COIN の背後だけ白い霞を置いて可読性を上げる。
+   ========================================================= */
+
+/* ヘッダー全体は引き続き完全透明 */
+#global-user-frame.global-user-frame{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* PLAYERバー：線フレームは残しつつ、塗り板感を弱めて霞へ */
+#global-user-frame .hud-info{
+  overflow:visible !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* PLAYER背後の不定形白霞 */
+#global-user-frame .hud-info::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:-8px !important;
+  right:-7px !important;
+  top:50% !important;
+  height:42px !important;
+  transform:translateY(-50%) rotate(-1.2deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:46% 54% 43% 57% / 55% 45% 58% 42% !important;
+
+  background:
+    radial-gradient(
+      ellipse at 44% 53%,
+      rgba(255,252,244,.84) 0%,
+      rgba(249,243,229,.60) 34%,
+      rgba(245,236,215,.26) 58%,
+      rgba(245,236,215,0) 84%
+    ),
+    radial-gradient(
+      ellipse at 68% 46%,
+      rgba(255,248,230,.34) 0%,
+      rgba(246,235,211,.12) 52%,
+      rgba(246,235,211,0) 82%
+    ) !important;
+
+  filter:blur(6px) !important;
+  opacity:.98 !important;
+}
+
+/* 右端の縦線は残す */
+#global-user-frame .hud-info::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  right:-1px !important;
+  top:-1px !important;
+  bottom:-1px !important;
+  width:1px !important;
+  background:rgba(123,88,39,.42) !important;
+  filter:none !important;
+  opacity:1 !important;
+  z-index:1 !important;
+}
+
+/* GEM / COIN 各項目にも独立した白霞 */
+#global-user-frame .hud-resource{
+  position:relative !important;
+  z-index:1 !important;
+  overflow:visible !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* 既存の underline pseudo を霞へ転用 */
+#global-user-frame .hud-resource::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  bottom:auto !important;
+  width:84px !important;
+  height:34px !important;
+  transform:translate(-50%,-50%) rotate(1.2deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:44% 56% 48% 52% / 58% 43% 57% 42% !important;
+
+  background:
+    radial-gradient(
+      ellipse at 48% 52%,
+      rgba(255,252,244,.82) 0%,
+      rgba(249,242,227,.58) 34%,
+      rgba(244,234,211,.24) 58%,
+      rgba(244,234,211,0) 84%
+    ),
+    radial-gradient(
+      ellipse at 66% 44%,
+      rgba(255,248,231,.28) 0%,
+      rgba(246,235,211,.10) 54%,
+      rgba(246,235,211,0) 82%
+    ) !important;
+
+  filter:blur(6px) !important;
+  opacity:.98 !important;
+}
+
+/* GEMだけ少し横に広め */
+#global-user-frame .hud-resource-gem::after{
+  width:94px !important;
+}
+
+/* 既存の下線用beforeは消して、バー感をなくす */
+#global-user-frame .hud-resource::before{
+  content:none !important;
+  display:none !important;
+}
+
+/* 文字・数値・アイコンは霞より前面 */
+#global-user-frame .hud-name,
+#global-user-frame .hud-res-val,
+#global-user-frame .hud-res-icon,
+#global-user-frame .hud-gem-plus-btn{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* 可読性は少しだけ締める */
+#global-user-frame .hud-name{
+  color:#4f3a21 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 1px 2px rgba(66,48,27,.08) !important;
+}
+
+#global-user-frame .hud-res-val{
+  color:#4a361f !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 1px 2px rgba(66,48,27,.08) !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  #global-user-frame .hud-info::before,
+  #global-user-frame .hud-resource::after{
+    filter:blur(5.5px) !important;
+    opacity:.94 !important;
+  }
+}
+</style>
+
+<style id="header-soft-haze-visible-v347">
+/* =========================================================
+   v347 GLOBAL HEADER — visible soft haze
+   v346で霞が背面へ潜って見えなくなっていた点を修正。
+   下部ナビと同じく「輪郭の無い、ぼやぁと滲む白い霞」に統一。
+   ========================================================= */
+
+/* ヘッダー全体の板は引き続き無し */
+#global-user-frame.global-user-frame{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* PLAYER側：矩形フレームを消し、霞だけを残す */
+#global-user-frame .hud-info{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:visible !important;
+
+  border:0 !important;
+  border-top:0 !important;
+  border-right:0 !important;
+  border-bottom:0 !important;
+  border-left:0 !important;
+
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+/* PLAYER背後の大きな不定形白霞 */
+#global-user-frame .hud-info::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:132px !important;
+  height:54px !important;
+  transform:translate(-50%,-50%) rotate(-1.5deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:44% 56% 47% 53% / 56% 45% 55% 44% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 43% 58%,
+      rgba(255,253,246,.92) 0%,
+      rgba(250,245,233,.72) 30%,
+      rgba(246,238,219,.40) 52%,
+      rgba(243,232,207,.16) 68%,
+      rgba(243,232,207,0) 86%
+    ),
+    radial-gradient(
+      ellipse at 68% 40%,
+      rgba(255,250,235,.44) 0%,
+      rgba(247,237,216,.20) 48%,
+      rgba(247,237,216,0) 82%
+    ) !important;
+
+  filter:blur(7px) !important;
+  opacity:.98 !important;
+}
+
+/* 右端縦線も撤去。境界線を作らない */
+#global-user-frame .hud-info::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* PLAYER文字を霞より前面へ */
+#global-user-frame .hud-name{
+  position:relative !important;
+  z-index:2 !important;
+  color:#4d391f !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.94),
+    0 1px 2px rgba(67,48,25,.08) !important;
+}
+
+/* GEM / COIN：それぞれ独立した不定形の霞 */
+#global-user-frame .hud-resource{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:visible !important;
+
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+#global-user-frame .hud-resource::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:90px !important;
+  height:46px !important;
+  transform:translate(-50%,-50%) rotate(1.6deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:47% 53% 42% 58% / 58% 43% 57% 42% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 46% 56%,
+      rgba(255,253,246,.90) 0%,
+      rgba(250,244,231,.68) 31%,
+      rgba(245,236,215,.36) 53%,
+      rgba(242,230,204,.13) 69%,
+      rgba(242,230,204,0) 86%
+    ),
+    radial-gradient(
+      ellipse at 67% 40%,
+      rgba(255,249,232,.38) 0%,
+      rgba(246,235,210,.16) 50%,
+      rgba(246,235,210,0) 82%
+    ) !important;
+
+  filter:blur(6.8px) !important;
+  opacity:.98 !important;
+}
+
+/* 結晶側は + ボタン分だけ少し横長 */
+#global-user-frame .hud-resource-gem::before{
+  width:102px !important;
+  transform:translate(-50%,-50%) rotate(-1.2deg) !important;
+}
+
+/* 旧underline / 擬似背景を完全無効化 */
+#global-user-frame .hud-resource::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* 中身は霞の前面 */
+#global-user-frame .hud-res-icon,
+#global-user-frame .hud-res-val,
+#global-user-frame .hud-gem-plus-btn{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+#global-user-frame .hud-res-val{
+  color:#49351d !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.94),
+    0 1px 2px rgba(67,48,25,.08) !important;
+}
+
+#global-user-frame .hud-gem-plus-btn{
+  color:#765626 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.92) !important;
+}
+
+/* 小型端末では幅だけ少し詰める */
+@media (max-width:380px){
+  #global-user-frame .hud-info::before{
+    width:118px !important;
+    height:50px !important;
+  }
+
+  #global-user-frame .hud-resource::before{
+    width:82px !important;
+    height:42px !important;
+  }
+
+  #global-user-frame .hud-resource-gem::before{
+    width:94px !important;
+  }
+}
+
+/* iOS Safariでも同じ柔らかい霞を維持 */
+@supports (-webkit-touch-callout: none){
+  #global-user-frame .hud-info::before,
+  #global-user-frame .hud-resource::before{
+    filter:blur(6.5px) !important;
+    opacity:.96 !important;
+  }
+}
+</style>
+
+<style id="header-sweep-lines-v348">
+/* =========================================================
+   v348 HEADER — sweep lines
+   PLAYER / GEM / COIN の下を、細い光がスーッと流れる。
+   ========================================================= */
+
+#global-user-frame .hud-info,
+#global-user-frame .hud-resource{
+  overflow:visible !important;
+}
+
+/* ベースの極細ライン */
+#global-user-frame .hud-info::after,
+#global-user-frame .hud-resource::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:-7px !important;
+  width:74% !important;
+  height:1px !important;
+  transform:translateX(-50%) !important;
+  z-index:1 !important;
+  pointer-events:none !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(155,118,58,.10) 15%,
+      rgba(155,118,58,.34) 50%,
+      rgba(155,118,58,.10) 85%,
+      transparent 100%
+    ) !important;
+
+  box-shadow:0 0 4px rgba(202,166,88,.16) !important;
+  opacity:.72 !important;
+}
+
+/* スーッと走る光 */
+#global-user-frame .hud-info{
+  --sweep-line-width:78%;
+}
+#global-user-frame .hud-resource{
+  --sweep-line-width:74%;
+}
+
+#global-user-frame .hud-info > *,
+#global-user-frame .hud-resource > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* 独立した走査光はbox-shadowで擬似的に流す */
+@keyframes zeraphiaHeaderSweep{
+  0%{
+    background-position:-120% 0;
+    opacity:.18;
+  }
+  18%{
+    opacity:.82;
+  }
+  55%{
+    opacity:.82;
+  }
+  100%{
+    background-position:220% 0;
+    opacity:.16;
+  }
+}
+
+/* ライン本体に細いハイライトを重ねる */
+#global-user-frame .hud-info::after,
+#global-user-frame .hud-resource::after{
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(164,126,62,.16) 18%,
+      rgba(164,126,62,.28) 34%,
+      rgba(255,244,201,.92) 47%,
+      rgba(210,173,92,.52) 53%,
+      rgba(164,126,62,.22) 68%,
+      rgba(164,126,62,.10) 84%,
+      transparent 100%
+    ) !important;
+
+  background-size:220% 100% !important;
+  background-position:-120% 0;
+  animation:zeraphiaHeaderSweep 3.6s cubic-bezier(.22,.65,.22,1) infinite !important;
+}
+
+/* 3項目が完全同期しないよう少しずらす */
+#global-user-frame .hud-info::after{
+  animation-delay:0s !important;
+  width:82% !important;
+}
+
+#global-user-frame .hud-resource-gem::after{
+  animation-delay:.45s !important;
+  width:78% !important;
+}
+
+#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
+  animation-delay:.9s !important;
+  width:76% !important;
+}
+
+/* iOS Safari: 動きを軽く */
+@supports (-webkit-touch-callout: none){
+  #global-user-frame .hud-info::after,
+  #global-user-frame .hud-resource::after{
+    animation-duration:4.2s !important;
+    box-shadow:0 0 3px rgba(202,166,88,.14) !important;
+  }
+}
+</style>
+
+<style id="header-sweep-lines-bottom-v349">
+/* =========================================================
+   v349 HEADER — sweep lines bottom fix
+   ラインを各項目の「下部」に明確に固定。
+   PLAYER / GEM / COIN の文字・数値の下をスーッと走る。
+   ========================================================= */
+
+#global-user-frame .hud-info,
+#global-user-frame .hud-resource{
+  position:relative !important;
+  overflow:visible !important;
+}
+
+/* v348ラインを下部へ固定 */
+#global-user-frame .hud-info::after,
+#global-user-frame .hud-resource::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+
+  left:50% !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:-10px !important;
+
+  height:1px !important;
+  transform:translateX(-50%) !important;
+  z-index:5 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:999px !important;
+  box-shadow:
+    0 0 3px rgba(207,171,92,.18),
+    0 0 6px rgba(255,241,193,.10) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(151,112,51,.10) 16%,
+      rgba(151,112,51,.24) 34%,
+      rgba(255,245,205,.96) 48%,
+      rgba(209,168,81,.52) 54%,
+      rgba(151,112,51,.20) 70%,
+      rgba(151,112,51,.08) 86%,
+      transparent 100%
+    ) !important;
+
+  background-size:230% 100% !important;
+  background-position:-130% 0;
+  animation:zeraphiaHeaderBottomSweep 3.8s cubic-bezier(.22,.65,.22,1) infinite !important;
+}
+
+/* 項目ごとに少し長さを変える */
+#global-user-frame .hud-info::after{
+  width:92px !important;
+  animation-delay:0s !important;
+}
+
+#global-user-frame .hud-resource-gem::after{
+  width:76px !important;
+  animation-delay:.45s !important;
+}
+
+#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
+  width:72px !important;
+  animation-delay:.9s !important;
+}
+
+@keyframes zeraphiaHeaderBottomSweep{
+  0%{
+    background-position:-130% 0;
+    opacity:.20;
+  }
+  16%{
+    opacity:.85;
+  }
+  58%{
+    opacity:.85;
+  }
+  100%{
+    background-position:230% 0;
+    opacity:.18;
+  }
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  #global-user-frame .hud-info::after,
+  #global-user-frame .hud-resource::after{
+    bottom:-9px !important;
+    animation-duration:4.3s !important;
+  }
+}
+</style>
+
+<style id="header-underlines-mock-v350">
+/* =========================================================
+   v350 HEADER UNDERLINES — mock match
+   モックのように、各情報の“直下”に細い金ラインを配置。
+   ========================================================= */
+
+#global-user-frame .hud-info,
+#global-user-frame .hud-resource{
+  position:relative !important;
+  overflow:visible !important;
+}
+
+/* 既存v349の位置を上書きして、文字/数値のすぐ下へ */
+#global-user-frame .hud-info::after,
+#global-user-frame .hud-resource::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+
+  left:50% !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:-2px !important;
+
+  height:1px !important;
+  transform:translateX(-50%) !important;
+  z-index:6 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:999px !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(151,112,51,.08) 10%,
+      rgba(151,112,51,.34) 28%,
+      rgba(202,162,77,.56) 50%,
+      rgba(151,112,51,.34) 72%,
+      rgba(151,112,51,.08) 90%,
+      transparent 100%
+    ) !important;
+
+  box-shadow:
+    0 0 3px rgba(201,164,84,.18) !important;
+
+  opacity:.82 !important;
+  animation:none !important;
+}
+
+/* モックに合わせて項目ごとの長さを調整 */
+#global-user-frame .hud-info::after{
+  width:94px !important;
+}
+
+#global-user-frame .hud-resource-gem::after{
+  width:72px !important;
+}
+
+#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
+  width:70px !important;
+}
+
+/* ライン上を細い光が静かに走る */
+@keyframes zeraphiaHeaderUnderlineSweepV350{
+  0%{
+    background-position:-140% 0;
+  }
+  100%{
+    background-position:240% 0;
+  }
+}
+
+#global-user-frame .hud-info::after,
+#global-user-frame .hud-resource::after{
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(151,112,51,.10) 18%,
+      rgba(151,112,51,.30) 36%,
+      rgba(255,246,211,.95) 48%,
+      rgba(211,171,87,.48) 54%,
+      rgba(151,112,51,.22) 70%,
+      rgba(151,112,51,.08) 86%,
+      transparent 100%
+    ) !important;
+  background-size:220% 100% !important;
+  animation:zeraphiaHeaderUnderlineSweepV350 4.6s linear infinite !important;
+}
+
+#global-user-frame .hud-resource-gem::after{
+  animation-delay:.35s !important;
+}
+
+#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
+  animation-delay:.7s !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  #global-user-frame .hud-info::after,
+  #global-user-frame .hud-resource::after{
+    bottom:-2px !important;
+    opacity:.78 !important;
+    animation-duration:5.2s !important;
+  }
+}
+</style>
+
+<style id="header-underlines-real-elements-v351">
+/* =========================================================
+   v351 HEADER UNDERLINES — real DOM elements
+   pseudo-element競合をやめ、実要素で確実にラインを表示。
+   ========================================================= */
+
+/* v348-v350 pseudo line is disabled */
+#global-user-frame .hud-info::after,
+#global-user-frame .hud-resource::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* Real underline */
+#global-user-frame .hud-sweep-line{
+  position:absolute !important;
+  left:50% !important;
+  bottom:-3px !important;
+  height:1px !important;
+  transform:translateX(-50%) !important;
+  z-index:20 !important;
+  display:block !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:999px !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(151,112,51,0) 0%,
+      rgba(151,112,51,.18) 14%,
+      rgba(180,139,66,.46) 38%,
+      rgba(224,190,111,.70) 50%,
+      rgba(180,139,66,.46) 62%,
+      rgba(151,112,51,.18) 86%,
+      rgba(151,112,51,0) 100%
+    ) !important;
+
+  box-shadow:
+    0 0 3px rgba(201,164,84,.24),
+    0 0 6px rgba(255,241,193,.10) !important;
+
+  opacity:.92 !important;
+  overflow:hidden !important;
+}
+
+/* Sweep highlight */
+#global-user-frame .hud-sweep-line::after{
+  content:"" !important;
+  position:absolute !important;
+  top:0 !important;
+  left:-36% !important;
+  width:34% !important;
+  height:100% !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255,248,219,.35) 22%,
+      rgba(255,252,232,1) 52%,
+      rgba(228,195,117,.52) 78%,
+      transparent 100%
+    ) !important;
+
+  filter:blur(.15px) !important;
+  animation:zeraphiaRealHeaderSweep 3.8s cubic-bezier(.22,.65,.22,1) infinite !important;
+}
+
+#global-user-frame .hud-sweep-line-player{
+  width:96px !important;
+}
+#global-user-frame .hud-sweep-line-gem{
+  width:76px !important;
+}
+#global-user-frame .hud-sweep-line-coin{
+  width:72px !important;
+}
+
+#global-user-frame .hud-sweep-line-gem::after{
+  animation-delay:.45s !important;
+}
+#global-user-frame .hud-sweep-line-coin::after{
+  animation-delay:.9s !important;
+}
+
+@keyframes zeraphiaRealHeaderSweep{
+  0%{ left:-38%; opacity:0; }
+  12%{ opacity:1; }
+  78%{ opacity:1; }
+  100%{ left:108%; opacity:0; }
+}
+
+@supports (-webkit-touch-callout: none){
+  #global-user-frame .hud-sweep-line{
+    bottom:-2px !important;
+  }
+  #global-user-frame .hud-sweep-line::after{
+    animation-duration:4.3s !important;
+  }
+}
+</style>
+
+<style id="rank-readability-v352">
+/* =========================================================
+   v352 RANK readability
+   RANK文字を大きく・濃く。数字との階層を保ちつつ視認性優先。
+   ========================================================= */
+#global-user-frame .hud-lv-circle{
+  width:62px !important;
+  height:62px !important;
+  flex:0 0 62px !important;
+}
+
+#global-user-frame .hud-lv-circle::before{
+  inset:3px !important;
+}
+
+#global-user-frame .hud-lv-label{
+  font-size:10.5px !important;
+  letter-spacing:.11em !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  color:#6a4d24 !important;
+  opacity:1 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 2px rgba(255,248,226,.72) !important;
+}
+
+#global-user-frame .hud-lv-num{
+  font-size:22px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  margin-top:2px !important;
+  color:#4f391d !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 2px rgba(255,248,226,.62) !important;
+}
+
+@media (max-width:380px){
+  #global-user-frame .hud-lv-circle{
+    width:58px !important;
+    height:58px !important;
+    flex-basis:58px !important;
+  }
+  #global-user-frame .hud-lv-label{
+    font-size:9.5px !important;
+  }
+  #global-user-frame .hud-lv-num{
+    font-size:21px !important;
+  }
+}
+</style>
+
+<style id="gacha-world-bleed-ui-v353">
+/* =========================================================
+   v353 GACHA CENTER UI — WORLD BLEED
+   中央の四角いカード/ゲージ枠を撤去し、
+   背景世界に滲む白い霞 + 文字 + ゲージだけにする。
+   機能・クリック領域・天井計算は変更しない。
+   ========================================================= */
+
+/* ---------- 中央タイトル ---------- */
+#screen-summon .summon-center-title-card{
+  position:absolute !important;
+  isolation:isolate !important;
+  overflow:visible !important;
+
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  /* 既存レイアウト/クリック領域は維持 */
+  color:#4d3923 !important;
+}
+
+/* 四角ではなく、不定形の白い霞 */
+#screen-summon .summon-center-title-card::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:118% !important;
+  height:132% !important;
+  transform:translate(-50%,-50%) rotate(-1.2deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:46% 54% 43% 57% / 58% 44% 56% 42% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 44% 54%,
+      rgba(255,253,246,.88) 0%,
+      rgba(250,245,233,.68) 30%,
+      rgba(246,237,217,.38) 52%,
+      rgba(241,228,199,.14) 69%,
+      rgba(241,228,199,0) 86%
+    ),
+    radial-gradient(
+      ellipse at 68% 40%,
+      rgba(255,249,234,.42) 0%,
+      rgba(247,236,213,.18) 48%,
+      rgba(247,236,213,0) 82%
+    ) !important;
+
+  filter:blur(9px) !important;
+  opacity:.98 !important;
+}
+
+/* タイトル内の文字は霞より前面 */
+#screen-summon .summon-center-title-card > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* 既存のカード系装飾を消す */
+#screen-summon .summon-center-title-card::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* 英字は薄く、和文タイトルはしっかり */
+#screen-summon .summon-center-title-en{
+  color:rgba(101,76,43,.58) !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.78) !important;
+}
+
+#screen-summon .summon-center-title-jp{
+  color:#4a351d !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.94),
+    0 1px 3px rgba(78,56,28,.08) !important;
+}
+
+/* タイトルの下にごく薄いライン */
+#screen-summon .summon-center-title-jp::after{
+  content:"" !important;
+  display:block !important;
+  width:72px !important;
+  height:1px !important;
+  margin:7px auto 2px !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(168,126,56,.22) 25%,
+      rgba(195,153,70,.46) 50%,
+      rgba(168,126,56,.22) 75%,
+      transparent
+    ) !important;
+  box-shadow:0 0 3px rgba(208,170,90,.12) !important;
+}
+
+#screen-summon .summon-center-title-more{
+  color:rgba(91,69,42,.68) !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.82) !important;
+}
+
+/* ---------- 天井ゲージ ---------- */
+#screen-summon .pity-counter{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:visible !important;
+
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* ゲージ周辺も横長の不定形霞 */
+#screen-summon .pity-counter::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:106% !important;
+  height:150% !important;
+  transform:translate(-50%,-50%) rotate(.4deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% 50% 44% 56% / 54% 46% 56% 44% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,253,246,.84) 0%,
+      rgba(250,245,233,.64) 34%,
+      rgba(245,236,214,.32) 57%,
+      rgba(241,229,201,.11) 72%,
+      rgba(241,229,201,0) 88%
+    ),
+    radial-gradient(
+      ellipse at 28% 48%,
+      rgba(255,249,233,.28) 0%,
+      rgba(246,235,211,.10) 54%,
+      rgba(246,235,211,0) 82%
+    ) !important;
+
+  filter:blur(8px) !important;
+  opacity:.98 !important;
+}
+
+#screen-summon .pity-counter::after{
+  content:none !important;
+  display:none !important;
+}
+
+#screen-summon .pity-counter > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* ラベル/数値は少し締める */
+#screen-summon .pity-label,
+#screen-summon .pity-num{
+  color:#624a2b !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 1px 2px rgba(71,51,27,.08) !important;
+}
+
+/* ゲージ本体だけは残す。枠を細く・軽く */
+#screen-summon .pity-bar-wrap{
+  background:rgba(129,101,61,.13) !important;
+  border:0 !important;
+  box-shadow:
+    inset 0 1px 2px rgba(92,67,31,.08),
+    0 1px 0 rgba(255,255,255,.46) !important;
+}
+
+#screen-summon .pity-bar-fill{
+  box-shadow:0 0 5px rgba(190,147,66,.24) !important;
+}
+
+/* 天井説明もカード化しない */
+#screen-summon .pity-note{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:#684e2d !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 0 4px rgba(255,249,232,.52) !important;
+}
+
+/* ガチャボタン・左右矢印・クリック機能は触らない */
+
+/* iOS Safari：白ベタ化せず霞として維持 */
+@supports (-webkit-touch-callout: none){
+  #screen-summon .summon-center-title-card::before{
+    filter:blur(8px) !important;
+    opacity:.96 !important;
+  }
+
+  #screen-summon .pity-counter::before{
+    filter:blur(7.5px) !important;
+    opacity:.96 !important;
+  }
+}
+</style>
+
+<style id="gacha-world-bleed-readability-v354">
+/* =========================================================
+   v354 GACHA CENTER UI — readability + pity restore
+   霞デザインは維持しつつ、文字を背景から明確に分離。
+   天井カウント/ゲージは確実に前面へ復帰。
+   ========================================================= */
+
+/* ---------- 中央タイトル：文字をしっかり前へ ---------- */
+#screen-summon .summon-center-title-card{
+  z-index:8 !important;
+  color:#3f2d18 !important;
+}
+
+#screen-summon .summon-center-title-card::before{
+  width:122% !important;
+  height:138% !important;
+  filter:blur(7px) !important;
+  opacity:1 !important;
+  background:
+    radial-gradient(
+      ellipse at 44% 54%,
+      rgba(255,254,249,.96) 0%,
+      rgba(250,246,236,.82) 30%,
+      rgba(245,236,214,.52) 52%,
+      rgba(240,226,194,.20) 69%,
+      rgba(240,226,194,0) 86%
+    ),
+    radial-gradient(
+      ellipse at 68% 40%,
+      rgba(255,250,237,.48) 0%,
+      rgba(247,236,213,.20) 48%,
+      rgba(247,236,213,0) 82%
+    ) !important;
+}
+
+#screen-summon .summon-center-title-en{
+  color:rgba(82,59,30,.72) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 3px rgba(255,250,236,.82) !important;
+}
+
+#screen-summon .summon-center-title-jp{
+  color:#3f2c17 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,249,232,.90),
+    0 1px 2px rgba(58,41,20,.12) !important;
+}
+
+#screen-summon .summon-center-title-more{
+  color:rgba(76,55,31,.78) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 3px rgba(255,250,236,.72) !important;
+}
+
+/* ---------- 天井カウントを確実に復帰 ---------- */
+#screen-summon .pity-counter{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  position:relative !important;
+  z-index:9 !important;
+  overflow:visible !important;
+
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* 霞はゲージを覆わないよう背面に固定 */
+#screen-summon .pity-counter::before{
+  z-index:0 !important;
+  width:108% !important;
+  height:155% !important;
+  filter:blur(6.8px) !important;
+  opacity:1 !important;
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,254,249,.96) 0%,
+      rgba(250,246,236,.82) 34%,
+      rgba(245,236,214,.50) 57%,
+      rgba(240,227,198,.18) 72%,
+      rgba(240,227,198,0) 88%
+    ),
+    radial-gradient(
+      ellipse at 28% 48%,
+      rgba(255,250,236,.34) 0%,
+      rgba(246,235,211,.12) 54%,
+      rgba(246,235,211,0) 82%
+    ) !important;
+}
+
+#screen-summon .pity-counter > *{
+  position:relative !important;
+  z-index:3 !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+/* 天井文字は濃く、背景から分離 */
+#screen-summon .pity-label{
+  color:#5b4225 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 3px rgba(255,250,236,.78) !important;
+}
+
+#screen-summon .pity-num{
+  color:#4c351c !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 3px rgba(255,250,236,.78) !important;
+}
+
+/* ゲージ本体の存在感を戻す */
+#screen-summon .pity-bar-wrap{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  background:rgba(111,82,46,.18) !important;
+  border:0 !important;
+  box-shadow:
+    inset 0 1px 2px rgba(74,52,25,.12),
+    0 1px 0 rgba(255,255,255,.66) !important;
+}
+
+#screen-summon .pity-bar-fill{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(177,135,58,.72),
+      rgba(220,186,104,.90)
+    ) !important;
+  box-shadow:0 0 6px rgba(188,145,61,.28) !important;
+}
+
+/* 天井説明も見やすく */
+#screen-summon .pity-note{
+  position:relative !important;
+  z-index:9 !important;
+  color:#5d4326 !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 4px rgba(255,249,232,.78) !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  #screen-summon .summon-center-title-card::before,
+  #screen-summon .pity-counter::before{
+    filter:blur(6.2px) !important;
+  }
+}
+</style>
+
+<style id="gacha-pity-absolute-restore-v355">
+/* =========================================================
+   v355 GACHA PITY — absolute stack restore
+   v353/v354で position:relative に変わり、天井UIが画面外へ流れていた。
+   既存の下から積み上げる配置へ戻す。
+   ========================================================= */
+
+#screen-summon .pity-counter{
+  display:grid !important;
+  grid-template-columns:auto minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:10px !important;
+
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:var(--gacha-pity-bottom) !important;
+  transform:translateX(-50%) !important;
+
+  width:min(88vw,356px) !important;
+  min-height:38px !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:7px 12px !important;
+
+  visibility:visible !important;
+  opacity:1 !important;
+  z-index:16 !important;
+
+  /* v353/v354の霞デザインは維持 */
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  isolation:isolate !important;
+}
+
+#screen-summon .pity-counter::before{
+  z-index:0 !important;
+}
+
+#screen-summon .pity-counter > *{
+  position:relative !important;
+  z-index:3 !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+#screen-summon .pity-label,
+#screen-summon .pity-num{
+  display:inline-block !important;
+  white-space:nowrap !important;
+}
+
+/* ゲージ本体を確実に表示 */
+#screen-summon .pity-bar-wrap{
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:7px !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  overflow:hidden !important;
+  border-radius:999px !important;
+}
+
+#screen-summon .pity-bar-fill{
+  display:block !important;
+  height:100% !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  border-radius:999px !important;
+}
+
+/* 天井説明もボタンの上、ゲージの下に固定 */
+#screen-summon .pity-note{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:var(--gacha-pity-note-bottom) !important;
+  transform:translateX(-50%) !important;
+
+  width:max-content !important;
+  max-width:calc(100vw - 36px) !important;
+  margin:0 !important;
+  padding:0 !important;
+  z-index:16 !important;
+
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  white-space:nowrap !important;
+}
+
+/* 短い端末では少しだけ横幅を詰める */
+@media (max-width:380px){
+  #screen-summon .pity-counter{
+    width:min(90vw,338px) !important;
+    column-gap:8px !important;
+    padding:6px 10px !important;
+  }
+}
+
+@supports (-webkit-touch-callout: none){
+  #screen-summon .pity-counter{
+    -webkit-transform:translateX(-50%) !important;
+    transform:translateX(-50%) !important;
+  }
+}
+</style>
+
+<style id="gacha-center-haze-v356">
+/* =========================================================
+   v356 GACHA CENTER — haze only
+   中央タイトル/天井を「箱」ではなく、世界に滲む霞へ。
+   天井配置・機能はv355のまま維持。
+   ========================================================= */
+
+/* ---------- 中央タイトル ---------- */
+#screen-summon .summon-center-title-card{
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  outline:0 !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  isolation:isolate !important;
+  overflow:visible !important;
+}
+
+/* 箱型に見えない、輪郭のない不定形霞 */
+#screen-summon .summon-center-title-card::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:126% !important;
+  height:145% !important;
+  transform:translate(-50%,-50%) rotate(-1.3deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 43% 54%,
+      rgba(255,254,249,.86) 0%,
+      rgba(252,248,239,.68) 25%,
+      rgba(247,239,221,.40) 45%,
+      rgba(241,228,199,.16) 61%,
+      rgba(241,228,199,0) 78%
+    ),
+    radial-gradient(
+      ellipse at 68% 43%,
+      rgba(255,250,236,.42) 0%,
+      rgba(248,238,216,.20) 38%,
+      rgba(248,238,216,0) 70%
+    ),
+    radial-gradient(
+      ellipse at 32% 68%,
+      rgba(255,252,243,.28) 0%,
+      rgba(245,234,208,.10) 42%,
+      rgba(245,234,208,0) 72%
+    ) !important;
+
+  filter:blur(10px) !important;
+  opacity:.98 !important;
+
+  /* 四角い端を確実に消す */
+  -webkit-mask-image:radial-gradient(
+    ellipse at center,
+    #000 0%,
+    #000 44%,
+    rgba(0,0,0,.78) 58%,
+    rgba(0,0,0,.28) 72%,
+    transparent 88%
+  ) !important;
+  mask-image:radial-gradient(
+    ellipse at center,
+    #000 0%,
+    #000 44%,
+    rgba(0,0,0,.78) 58%,
+    rgba(0,0,0,.28) 72%,
+    transparent 88%
+  ) !important;
+}
+
+#screen-summon .summon-center-title-card::after{
+  content:none !important;
+  display:none !important;
+}
+
+#screen-summon .summon-center-title-card > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* 文字は霞に飲ませない */
+#screen-summon .summon-center-title-en{
+  color:rgba(73,52,28,.72) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 3px rgba(255,250,237,.76) !important;
+}
+
+#screen-summon .summon-center-title-jp{
+  color:#3f2d19 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,250,237,.80),
+    0 1px 2px rgba(62,43,21,.10) !important;
+}
+
+#screen-summon .summon-center-title-more{
+  color:rgba(74,54,31,.78) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 3px rgba(255,250,237,.66) !important;
+}
+
+/* ---------- 天井カウント ---------- */
+#screen-summon .pity-counter{
+  /* v355のabsolute位置はそのまま */
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  outline:0 !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  isolation:isolate !important;
+  overflow:visible !important;
+}
+
+/* 横長だが箱ではない霞 */
+#screen-summon .pity-counter::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:112% !important;
+  height:190% !important;
+  transform:translate(-50%,-50%) rotate(.5deg) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,254,249,.84) 0%,
+      rgba(251,247,237,.66) 27%,
+      rgba(246,238,219,.36) 47%,
+      rgba(241,229,201,.14) 63%,
+      rgba(241,229,201,0) 80%
+    ),
+    radial-gradient(
+      ellipse at 28% 50%,
+      rgba(255,250,237,.30) 0%,
+      rgba(246,236,213,.12) 42%,
+      rgba(246,236,213,0) 70%
+    ),
+    radial-gradient(
+      ellipse at 76% 46%,
+      rgba(255,251,239,.24) 0%,
+      rgba(246,236,213,.08) 44%,
+      rgba(246,236,213,0) 72%
+    ) !important;
+
+  filter:blur(9px) !important;
+  opacity:.98 !important;
+
+  -webkit-mask-image:radial-gradient(
+    ellipse at center,
+    #000 0%,
+    #000 48%,
+    rgba(0,0,0,.74) 61%,
+    rgba(0,0,0,.24) 75%,
+    transparent 90%
+  ) !important;
+  mask-image:radial-gradient(
+    ellipse at center,
+    #000 0%,
+    #000 48%,
+    rgba(0,0,0,.74) 61%,
+    rgba(0,0,0,.24) 75%,
+    transparent 90%
+  ) !important;
+}
+
+#screen-summon .pity-counter::after{
+  content:none !important;
+  display:none !important;
+}
+
+#screen-summon .pity-counter > *{
+  position:relative !important;
+  z-index:3 !important;
+}
+
+/* 天井説明も箱なし */
+#screen-summon .pity-note{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  #screen-summon .summon-center-title-card::before{
+    filter:blur(9px) !important;
+  }
+  #screen-summon .pity-counter::before{
+    filter:blur(8px) !important;
+  }
+}
+</style>
+
+<style id="gacha-title-no-box-v357">
+/* =========================================================
+   v357 GACHA TITLE — NO BOX
+   これまでの広い霞が“箱”に見えていたため、
+   カード全体の霞を完全撤去。
+   文字そのものの周囲だけが滲むようにする。
+   ========================================================= */
+
+/* ボタン本体は完全な透明キャンバス */
+#screen-summon .summon-center-title-card{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+
+  background:none !important;
+  background-color:transparent !important;
+  background-image:none !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  outline:0 !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  overflow:visible !important;
+  isolation:auto !important;
+}
+
+/* カード全体に広がる霞は完全に廃止 */
+#screen-summon .summon-center-title-card::before,
+#screen-summon .summon-center-title-card::after{
+  content:none !important;
+  display:none !important;
+  background:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+}
+
+/* 各文字自体を前面に */
+#screen-summon .summon-center-title-card > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* 英字：淡いが読める */
+#screen-summon .summon-center-title-en{
+  color:rgba(76,55,31,.70) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 5px rgba(255,252,242,.96),
+    0 0 10px rgba(249,240,216,.56) !important;
+}
+
+/* メインタイトルの“直下”だけに局所霞 */
+#screen-summon .summon-center-title-jp{
+  color:#3d2b17 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,1),
+    0 0 4px rgba(255,252,242,.98),
+    0 0 8px rgba(255,248,227,.84),
+    0 0 14px rgba(244,230,198,.44) !important;
+}
+
+#screen-summon .summon-center-title-jp::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:170px !important;
+  height:54px !important;
+  transform:translate(-50%,-50%) rotate(-1deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+
+  background:
+    radial-gradient(
+      ellipse at 48% 54%,
+      rgba(255,254,248,.72) 0%,
+      rgba(251,246,234,.46) 34%,
+      rgba(244,232,207,.18) 58%,
+      rgba(244,232,207,0) 78%
+    ),
+    radial-gradient(
+      ellipse at 67% 40%,
+      rgba(255,249,234,.24) 0%,
+      rgba(246,235,210,.08) 48%,
+      rgba(246,235,210,0) 72%
+    ) !important;
+
+  filter:blur(8px) !important;
+  opacity:.96 !important;
+}
+
+/* メインタイトル下の細い線 */
+#screen-summon .summon-center-title-jp::after{
+  content:"" !important;
+  display:block !important;
+  width:70px !important;
+  height:1px !important;
+  margin:7px auto 2px !important;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(166,124,54,.20) 24%,
+      rgba(197,154,69,.48) 50%,
+      rgba(166,124,54,.20) 76%,
+      transparent
+    ) !important;
+  box-shadow:0 0 3px rgba(207,168,87,.12) !important;
+}
+
+/* 提供割合テキストも文字周りだけ滲ませる */
+#screen-summon .summon-center-title-more{
+  color:rgba(72,52,30,.76) !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 4px rgba(255,252,242,.92),
+    0 0 8px rgba(247,237,214,.46) !important;
+}
+
+/* 天井側も“全面の大きな霞”を弱くして箱感を避ける */
+#screen-summon .pity-counter::before{
+  width:104% !important;
+  height:130% !important;
+  background:
+    radial-gradient(
+      ellipse at 50% 52%,
+      rgba(255,254,249,.66) 0%,
+      rgba(251,247,237,.42) 30%,
+      rgba(246,238,219,.18) 54%,
+      rgba(241,229,201,0) 76%
+    ) !important;
+  filter:blur(9px) !important;
+  opacity:.92 !important;
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+}
+
+/* iOS Safari */
+@supports (-webkit-touch-callout: none){
+  #screen-summon .summon-center-title-jp::before{
+    filter:blur(7px) !important;
+  }
+}
+</style>
+
+<style id="gacha-title-native-button-removal-v358">
+/* =========================================================
+   v358 GACHA TITLE — native button removed
+   原因対策:
+   iOS/Safariのbutton描画・過去button CSSの影響を完全に切る。
+   ========================================================= */
+
+#screen-summon .summon-center-title-card{
+  display:block !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+
+  border:0 !important;
+  border-width:0 !important;
+  border-style:none !important;
+  border-color:transparent !important;
+  border-radius:0 !important;
+
+  box-shadow:none !important;
+  outline:none !important;
+
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+
+  -webkit-tap-highlight-color:transparent !important;
+  color:inherit !important;
+}
+
+/* カード自身には一切背景を作らない */
+#screen-summon .summon-center-title-card::before,
+#screen-summon .summon-center-title-card::after{
+  content:none !important;
+  display:none !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  opacity:0 !important;
+}
+
+/* 霞は「文字の背後だけ」に限定 */
+#screen-summon .summon-center-title-en,
+#screen-summon .summon-center-title-jp,
+#screen-summon .summon-center-title-more{
+  position:relative !important;
+  z-index:2 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+#screen-summon .summon-center-title-en::before,
+#screen-summon .summon-center-title-more::before{
+  content:none !important;
+  display:none !important;
+}
+
+/* メインタイトルの局所霞だけ残す。幅を狭くして箱に見えないようにする */
+#screen-summon .summon-center-title-jp::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:150px !important;
+  height:46px !important;
+  transform:translate(-50%,-50%) rotate(-1.6deg) !important;
+  z-index:-1 !important;
+  pointer-events:none !important;
+
+  border:0 !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+
+  background:
+    radial-gradient(
+      ellipse at 46% 54%,
+      rgba(255,254,248,.68) 0%,
+      rgba(251,246,234,.44) 30%,
+      rgba(244,232,207,.16) 54%,
+      rgba(244,232,207,0) 78%
+    ),
+    radial-gradient(
+      ellipse at 66% 40%,
+      rgba(255,249,234,.18) 0%,
+      rgba(246,235,210,.06) 46%,
+      rgba(246,235,210,0) 72%
+    ) !important;
+
+  filter:blur(8px) !important;
+  opacity:.94 !important;
+}
+
+/* 下線は維持 */
+#screen-summon .summon-center-title-jp::after{
+  content:"" !important;
+  display:block !important;
+  width:68px !important;
+  height:1px !important;
+  margin:7px auto 2px !important;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(166,124,54,.18) 24%,
+    rgba(197,154,69,.46) 50%,
+    rgba(166,124,54,.18) 76%,
+    transparent
+  ) !important;
+  box-shadow:0 0 3px rgba(207,168,87,.10) !important;
+}
+
+/* タップ可能性を視覚的に邪魔しない */
+#screen-summon .summon-center-title-card:focus,
+#screen-summon .summon-center-title-card:focus-visible,
+#screen-summon .summon-center-title-card:active{
+  outline:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+</style>
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -656,6 +3199,7 @@
     </div>
     <div class="hud-info">
       <div class="hud-name" id="hud-name">Player</div>
+      <span class="hud-sweep-line hud-sweep-line-player" aria-hidden="true"></span>
     </div>
   </div>
   <div class="hud-right">
@@ -663,10 +3207,12 @@
       <img src="images/icon_gem.webp" class="hud-res-icon" onerror="this.style.visibility='hidden'">
       <span class="hud-res-val" id="user-gem">0</span>
       <button class="hud-gem-plus-btn" onclick="openShopModalFromHud(event)">＋</button>
+      <span class="hud-sweep-line hud-sweep-line-gem" aria-hidden="true"></span>
     </div>
     <div class="hud-resource">
       <img src="images/icon_coin.webp" class="hud-res-icon" onerror="this.style.visibility='hidden'">
       <span class="hud-res-val" id="user-coin">0</span>
+      <span class="hud-sweep-line hud-sweep-line-coin" aria-hidden="true"></span>
     </div>
   </div>
 </div>
@@ -675,6 +3221,22 @@
   <img src="images/splash.png" alt="SaSaSa App" onerror="this.style.display='none'">  
 </div>
 <div id="glitch-noise"></div>
+
+<!-- v329: BGM only -->
+<audio id="bgm-opening" src="audio/bgm_title.mp3" preload="auto" loop></audio>
+<audio id="bgm" src="audio/bgm_home_01.mp3" preload="auto" loop></audio>
+
+<button
+  id="global-bgm-toggle"
+  class="global-bgm-toggle"
+  type="button"
+  aria-label="BGMをOFFにする"
+  aria-pressed="true"
+  title="BGM ON / OFF"
+  onclick="toggleGlobalBgm(event)"
+>
+  <img class="global-bgm-icon" src="assets/ui/speaker.webp" alt="" aria-hidden="true">
+</button>
 
 <div id="title-screen" onclick="startFromTitle()">
   <img src="images/title.webp" alt="Zeraphia">
@@ -887,8 +3449,7 @@
   </div>
 
   <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
-  <button class="home-notice-btn" onclick="openNoticeModal(event)" aria-label="お知らせ">
-    <img src="images/mail.webp" alt="お知らせ">
+  <button class="home-notice-btn home-type-entry" onclick="openNoticeModal(event)" aria-label="メッセージ" data-home-head="メ" data-home-rest="ッセージ">
     <span class="home-notice-badge" aria-hidden="true"></span>
   </button>
 
@@ -900,24 +3461,21 @@
   </div>
 
   <!-- 神樹：アルケミア創世進捗への入口（右側アイコン） -->
-  <button class="shinju-home-entry" id="shinju-home-entry" type="button" onclick="openShinjuScreen()" aria-label="神樹へ移動">
-    <img class="shinju-home-entry-icon" src="images/shinju.webp" alt="神樹">
-  </button>
+  <button class="shinju-home-entry home-type-entry" id="shinju-home-entry" type="button" onclick="openShinjuScreen()" aria-label="神聖樹へ移動" data-home-head="神" data-home-rest="聖樹"></button>
 
   <!-- 各種ボーナス確認ページへの入口 -->
-  <button class="bonus-home-entry" id="bonus-home-entry" type="button" onclick="openBonusScreen()" aria-label="ボーナスを確認">
-    <img class="bonus-home-entry-icon" src="images/bonus.webp" alt="ボーナス">
+  <button class="bonus-home-entry home-type-entry" id="bonus-home-entry" type="button" onclick="openBonusScreen()" aria-label="ボーナスを確認" data-home-head="ボ" data-home-rest="ーナス">
     <span class="bonus-home-entry-notice" id="bonus-home-entry-notice" aria-hidden="true"></span>
   </button>
 
   <!-- フレンド：ホーム左側、ボーナスの下 -->
-  <button class="friend-home-entry" id="friend-home-entry" type="button" onclick="showMainTab('friend')" aria-label="フレンドへ移動">
-    <img class="friend-home-entry-icon" src="images/friend_icon.webp" alt="フレンド">
+  <button class="friend-home-entry home-type-entry" id="friend-home-entry" type="button" onclick="showMainTab('friend')" aria-label="フレンドへ移動" data-home-head="フ" data-home-rest="レンド">
     <span class="friend-notice-dot" aria-hidden="true"></span>
   </button>
-  <button class="score-attack-home-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="すこあた！へ移動">
-    <img src="images/score_atack.webp" alt="すこあた！">
-  </button>
+
+  <!-- レイドバトル：ホーム左側、フレンドの下 -->
+  <button class="raid-home-entry home-type-entry" id="raid-home-entry" type="button" onclick="openDailyRaid()" aria-label="レイドバトルへ移動" data-home-head="レ" data-home-rest="イド&#10;　バトル" data-home-lines="2"></button>
+  <button class="score-attack-home-entry home-type-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="スコアアタックへ移動" data-home-head="ス" data-home-rest="コア&#10;　アタック" data-home-lines="2"></button>
 
   <div class="favorite-area">
     <div id="fav-display" style="position:relative;z-index:1;">
@@ -961,11 +3519,11 @@
     <div class="summon-detail" id="summon-detail">
       <div class="summon-detail-visual" id="summon-detail-visual">
         <img id="summon-detail-img" src="" alt="">
-        <button class="summon-center-title-card" type="button" aria-live="polite" aria-label="ガチャ詳細を開く" onclick="openGachaPoolDetail()">
+        <div class="summon-center-title-card" role="button" tabindex="0" aria-live="polite" aria-label="ガチャ詳細を開く" onclick="openGachaPoolDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGachaPoolDetail();}">
           <div class="summon-center-title-en" id="summon-center-title-en"></div>
           <div class="summon-center-title-jp" id="summon-center-title-jp"></div>
-          <div class="summon-center-title-more">排出内容・提供割合</div>
-        </button>
+          <div class="summon-center-title-more"><span class="summon-center-title-more-label">排出内容・提供割合</span><span class="summon-center-title-more-arrow" aria-hidden="true">›</span></div>
+        </div>
       </div>
       <!-- バナーリスト -->
       <div class="summon-banner-list" id="summon-banner-list"></div>
@@ -1532,7 +4090,7 @@
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/home_banners.js?v=20260913-home-raid-entry-v402"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -2649,10 +5207,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/resonance_system.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/resonance_ui.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/character_levelup.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/shooting_resonance.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/resonance_system.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/resonance_ui.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/character_levelup.js?v=20260913-home-raid-entry-v402"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -3264,11 +5822,16 @@ document.addEventListener('touchend', function (e) {
     }
     list.style.display = '';
 
+    var currentIndex = visibleGachaBanners.findIndex(function(gacha){
+      return gacha.id === currentGachaId;
+    });
+    if(currentIndex < 0) currentIndex = 0;
+
     var prevBtn = document.createElement('button');
     prevBtn.type = 'button';
     prevBtn.className = 'summon-banner-arrow summon-banner-arrow-prev';
     prevBtn.setAttribute('aria-label', '前のガチャへ');
-    prevBtn.textContent = '';
+    prevBtn.textContent = '‹';
     prevBtn.onclick = function(event){
       event.stopPropagation();
       moveSummonBanner(-1);
@@ -3279,12 +5842,31 @@ document.addEventListener('touchend', function (e) {
     nextBtn.type = 'button';
     nextBtn.className = 'summon-banner-arrow summon-banner-arrow-next';
     nextBtn.setAttribute('aria-label', '次のガチャへ');
-    nextBtn.textContent = '';
+    nextBtn.textContent = '›';
     nextBtn.onclick = function(event){
       event.stopPropagation();
       moveSummonBanner(1);
     };
     list.appendChild(nextBtn);
+
+    var dots = document.createElement('div');
+    dots.className = 'summon-banner-dots';
+    dots.setAttribute('aria-label', 'ガチャページ');
+
+    visibleGachaBanners.forEach(function(gacha, index){
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'summon-banner-dot' + (index === currentIndex ? ' active' : '');
+      dot.setAttribute('aria-label', (index + 1) + 'ページ目へ');
+      dot.setAttribute('aria-current', index === currentIndex ? 'true' : 'false');
+      dot.onclick = function(event){
+        event.stopPropagation();
+        openGachaDetail(gacha);
+      };
+      dots.appendChild(dot);
+    });
+
+    list.appendChild(dots);
   }
 
   function getGachaPoolCharacter(charaId){
@@ -9753,7 +12335,6 @@ function buildCharacterDetailHTML(data, options){
       '<div class="detail-section-title">ULT</div>' +
       '<div class="detail-shooting-card detail-shooting-ult">' +
         '<div class="detail-shooting-ult-head">' +
-          '<span class="detail-skill-badge">ULT</span>' +
           '<strong>' + detailEscapeHTML(c.ultName || 'ULT') + '</strong>' +
         '</div>' +
         '<div class="detail-shooting-desc">' + detailEscapeHTML(buildShootingUltDescription(c)) + '</div>' +
@@ -11086,12 +13667,12 @@ window.closeTestplayNotice = closeTestplayNotice;
 window.showTestplayGuide = showTestplayGuide;
 window.closeTestplayGuide = closeTestplayGuide;
 
-var bgmVolume = 0;
+var bgmVolume = 30;
 var seVolume = 0;
 
 var audioSettings = {
-  title_bgm: false,
-  main_bgm: false,
+  title_bgm: localStorage.getItem('zeraphia_bgm_enabled') !== 'false',
+  main_bgm: localStorage.getItem('zeraphia_bgm_enabled') !== 'false',
   gacha_se: false,
   battle_se: false,
   other_se: false,
@@ -11100,11 +13681,67 @@ var audioSettings = {
 var bgmFadeInterval = null;
 
 function isAudioEnabled(key) {
-  // v326: AUDIO reset. All BGM/SE disabled globally.
+  if(key === 'title_bgm' || key === 'main_bgm'){
+    return localStorage.getItem('zeraphia_bgm_enabled') !== 'false';
+  }
   return false;
 }
 
+function updateGlobalBgmToggle(){
+  var btn = document.getElementById('global-bgm-toggle');
+  if(!btn) return;
+
+  var enabled = isAudioEnabled('main_bgm');
+
+  btn.classList.toggle('is-muted', !enabled);
+  btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  btn.setAttribute('aria-label', enabled ? 'BGMをOFFにする' : 'BGMをONにする');
+}
+
+function setGlobalBgmEnabled(enabled){
+  enabled = !!enabled;
+  localStorage.setItem('zeraphia_bgm_enabled', enabled ? 'true' : 'false');
+  audioSettings.title_bgm = enabled;
+  audioSettings.main_bgm = enabled;
+
+  var opening = document.getElementById('bgm-opening');
+  var home = document.getElementById('bgm');
+  var titleScreen = document.getElementById('title-screen');
+  var titleVisible = titleScreen &&
+    titleScreen.style.display !== 'none' &&
+    !titleScreen.classList.contains('closing');
+
+  if(!enabled){
+    if(opening) opening.pause();
+    if(home) home.pause();
+  }else if(titleVisible){
+    if(home) home.pause();
+    if(opening){
+      opening.volume = bgmVolume / 100;
+      opening.play().catch(function(){});
+    }
+  }else if(isHomeScreenActive()){
+    if(opening) opening.pause();
+    fadeInBgm();
+  }
+
+  updateGlobalBgmToggle();
+}
+
+function toggleGlobalBgm(event){
+  if(event){
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  setGlobalBgmEnabled(!isAudioEnabled('main_bgm'));
+}
+
 function toggleAudioSetting(key) {
+  if(key === 'title_bgm' || key === 'main_bgm'){
+    setGlobalBgmEnabled(!isAudioEnabled('main_bgm'));
+    return;
+  }
+
   audioSettings[key] = !audioSettings[key];
   localStorage.setItem('audio_' + key, audioSettings[key]);
 
@@ -11157,6 +13794,7 @@ function updateBgmUI(){
   }
 
   updateAudioSettingsUI();
+  updateGlobalBgmToggle();
 
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if(isIOS){
@@ -11170,9 +13808,10 @@ function updateBgmUI(){
 
 function applyBgmVolume(){
   var bgm = document.getElementById('bgm');
-  if(!bgm) return;
+  var opening = document.getElementById('bgm-opening');
 
-  bgm.volume = bgmVolume / 100;
+  if(bgm) bgm.volume = bgmVolume / 100;
+  if(opening) opening.volume = bgmVolume / 100;
 }
 
 function changeSeVolume(value){
@@ -12156,43 +14795,43 @@ window.addEventListener('pagehide', function () {
 </div>
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/asset_loader.js?v=20260913-home-raid-entry-v402"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/login_bonus.js?v=20260913-home-raid-entry-v402"></script>
 
-<script src="js/story_engine.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/stories/chapter01.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/story_engine.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/stories/chapter01.js?v=20260913-home-raid-entry-v402"></script>
 
-<script src="js/battle_range.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/characters.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/enemies.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/battle.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/battle_swipe.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/battle_range.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/characters.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/enemies.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/battle.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/battle_swipe.js?v=20260913-home-raid-entry-v402"></script>
 
-<script src="js/stages.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/stage_select.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/party_select.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/enemy_intro.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/stages.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/stage_select.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/party_select.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/enemy_intro.js?v=20260913-home-raid-entry-v402"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=20260913-gacha-translucency-readable-v327">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=20260913-home-raid-entry-v402">
 
-<script src="js/battle_range_32.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/characters_32.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/remnant_blessings.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/combo_32.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/cards.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/battle_32.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/battle_32_ui.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/battle_range_32.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/characters_32.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/remnant_blessings.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/combo_32.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/cards.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/battle_32.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/battle_32_ui.js?v=20260913-home-raid-entry-v402"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/roguelite_run.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/roguelite_reward.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/shinju.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/roguelite_controller.js?v=20260913-gacha-translucency-readable-v327"></script>
-<script src="js/roguelite_overseer_run.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/roguelite_options.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/roguelite_run.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/roguelite_reward.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/shinju.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/roguelite_controller.js?v=20260913-home-raid-entry-v402"></script>
+<script src="js/roguelite_overseer_run.js?v=20260913-home-raid-entry-v402"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -12636,10 +15275,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=20260913-gacha-translucency-readable-v327"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=20260913-home-raid-entry-v402"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/raid_event.js?v=20260913-home-raid-entry-v402"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -12660,7 +15299,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=20260913-gacha-translucency-readable-v327"></script>
+<script src="js/score_attack.js?v=20260913-home-raid-entry-v402"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
