@@ -201,10 +201,22 @@
     document.body.appendChild(root);
 
     const arena = root.querySelector('#shooting-arena');
+
+    // iOS Safari/PWAでスクロール・ズーム・長押し判定へタッチを奪われないよう、
+    // バトル領域はゲーム専用の入力面として固定する。
+    arena.style.touchAction = 'none';
+    arena.style.overscrollBehavior = 'none';
+    arena.style.webkitUserSelect = 'none';
+    arena.style.userSelect = 'none';
+    arena.style.webkitTouchCallout = 'none';
+
     arena.addEventListener('pointerdown', onPointerDown, { passive: false });
     arena.addEventListener('pointermove', onPointerMove, { passive: false });
     arena.addEventListener('pointerup', onPointerUp, { passive: false });
     arena.addEventListener('pointercancel', onPointerUp, { passive: false });
+    arena.addEventListener('dragstart', ev => {
+      try { ev.preventDefault(); } catch (_) {}
+    }, { passive: false });
 
     // iOS Safari/PWAではPointer Eventsが実タッチ中でもcancelされることがある。
     // Touch Eventsを並行監視し、実際のtouchendまで操作を維持する。

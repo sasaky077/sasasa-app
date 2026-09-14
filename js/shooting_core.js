@@ -1945,6 +1945,14 @@
   let nativeTouchActive = false;
   let activeTouchIdentifier = null;
 
+  // v446: iPhone/PWAの一瞬のtouchcancel・Pointer/Touch二重入力を吸収する。
+  // Touch Eventsを実タッチの正とし、Pointer Eventsは補助に回す。
+  let nativeTouchCancelTimer = null;
+  let nativeTouchCancelToken = 0;
+  let lastNativeTouchMoveAt = 0;
+  const TOUCH_CANCEL_GRACE_MS = 140;
+  const TOUCH_FOLLOW_RESPONSE = 90;
+
   const SWITCH_SWIPE_MIN_X = 78;
   const SWITCH_SWIPE_MAX_MS = 260;
   const SWITCH_SWIPE_AXIS_RATIO = 1.45;
@@ -8143,13 +8151,17 @@
 
     if (pointerActive) {
       if (pointerIsTouch) {
-        // v181:
-        // タッチ中は指の移動量に1:1で追従する。
-        // v173～v180の最大追従速度(最低720px/s)方式では、
-        // 指を速く動かした時にキャラが追いつけず「指についてこない」感触が出ていた。
-        // 異常座標対策はonPointerMove側の単発スパイク除外で行う。
-        state.player.x = pointerX;
-        state.player.y = pointerY;
+        // v446:
+        // 入力イベントとrequestAnimationFrameの位相がずれると、60/120Hz端末でも
+        // 「1フレーム停止→次で大きく移動」という微小な段差が見える。
+        // 約11msの非常に短い時定数で補間し、操作遅延をほぼ増やさず段差だけを吸収する。
+        const follow = 1 - Math.exp(-Math.max(0, Number(dt || 0)) * TOUCH_FOLLOW_RESPONSE);
+        const dxToTarget = pointerX - state.player.x;
+        const dyToTarget = pointerY - state.player.y;
+        state.player.x += dxToTarget * Math.min(1, follow);
+        state.player.y += dyToTarget * Math.min(1, follow);
+        if (Math.abs(dxToTarget) < 0.08) state.player.x = pointerX;
+        if (Math.abs(dyToTarget) < 0.08) state.player.y = pointerY;
       } else {
         // PCマウスは従来の少し滑らかな追従を維持。
         state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
@@ -11528,6 +11540,14 @@
     if (!pointerActive || !state || state.ended || state.finishing || state.paused) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
+    // iPhoneではPointerEventとTouchEventが同じ指から交互に届くことがあり、
+    // わずかな座標差とイベント順序差で目標座標が往復してカクつく。
+    // 実Touchが生存中はTouch Eventsだけを座標ソースにする。
+    if (pointerIsTouch && nativeTouchActive) {
+      try { e.preventDefault(); } catch (_) {}
+      return;
+    }
+
     // v181:
     // iOS/Safariで極まれに発生する単発の異常座標だけを弾く。
     // 通常の素早いドラッグはそのまま1:1で反映する。
@@ -11558,9 +11578,10 @@
   function onPointerUp(e) {
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-    // iOS Safariでは、指を離していないのにpointercancelが来ることがある。
-    // Touch Events側で同じ指が生存している間は操作終了にしない。
-    if (e.type === 'pointercancel' && nativeTouchActive) {
+    // iOS Safari/PWAではpointerup/pointercancelがTouch Eventsより先に来る。
+    // 実Touchが生存している間にPointer側でpointerActiveを落とすと、
+    // 1フレームだけ「指が離れた」状態になりカクつくため、終了判定もTouch側へ一本化。
+    if (pointerIsTouch && nativeTouchActive) {
       try { e.preventDefault(); } catch (_) {}
       return;
     }
@@ -11608,24 +11629,85 @@
     return null;
   }
 
+  function clearNativeTouchCancelTimer() {
+    nativeTouchCancelToken += 1;
+    if (nativeTouchCancelTimer) {
+      clearTimeout(nativeTouchCancelTimer);
+      nativeTouchCancelTimer = null;
+    }
+  }
+
+  function finishNativeTouchInteraction(clientX, clientY, cancelled = false) {
+    const wasActive = pointerActive;
+    const releasePointerId = state ? state.miaChargePointerId : null;
+
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    pointerActive = false;
+    pointerIsTouch = false;
+    activePointerId = null;
+
+    if (!wasActive || !state || state.ended || state.finishing || state.koTransition) {
+      if (cancelled) clearMiaChargeState();
+      return;
+    }
+
+    if (cancelled) {
+      clearMiaChargeState();
+      return;
+    }
+
+    const endX = Number.isFinite(Number(clientX)) ? Number(clientX) : lastPointerClientX;
+    const endY = Number.isFinite(Number(clientY)) ? Number(clientY) : lastPointerClientY;
+    const elapsed = performance.now() - swipeStartAt;
+    const dx = endX - swipeStartX;
+    const dy = endY - swipeStartY;
+    const isFlick =
+      elapsed <= SWITCH_SWIPE_MAX_MS &&
+      Math.abs(dx) >= SWITCH_SWIPE_MIN_X &&
+      Math.abs(dx) >= Math.abs(dy) * SWITCH_SWIPE_AXIS_RATIO;
+
+    if (isFlick) {
+      clearMiaChargeState();
+      const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
+      const target = dx > 0 ? others[0] : others[1];
+      if (target) window.switchShootingCharacter(target.id);
+      return;
+    }
+
+    if (getCurrentCharacter().shotType === 'charge_release') {
+      releaseMiaCharge(releasePointerId, performance.now());
+    }
+  }
+
   function onNativeTouchStart(e) {
     if (!state || state.ended || state.finishing || state.paused) return;
 
     // パーティ選択/ボタン/RESULT上のタッチは、スクロールやクリックを優先。
     if (isShootingUiInteractionTarget(e.target)) return;
 
-    if (!e.touches || !e.touches.length || nativeTouchActive) return;
+    clearNativeTouchCancelTimer();
 
+    if (!e.touches || !e.touches.length) return;
+
+    // touchcancel直後にWebKitが新しいtouch identifierで再開した場合も拾う。
     const t = (e.changedTouches && e.changedTouches.length)
       ? e.changedTouches[0]
       : e.touches[0];
     if (!t) return;
 
+    const restartingAfterCancel = nativeTouchActive && activeTouchIdentifier !== t.identifier;
+    if (nativeTouchActive && !restartingAfterCancel) {
+      try { e.preventDefault(); } catch (_) {}
+      return;
+    }
+
     nativeTouchActive = true;
     activeTouchIdentifier = t.identifier;
+    lastNativeTouchMoveAt = performance.now();
 
     // PointerEventが未開始/途中で切れていた場合はここで入力状態を復元。
-    if (!pointerActive) {
+    if (!pointerActive || restartingAfterCancel) {
       pointerActive = true;
       pointerIsTouch = true;
       activePointerId = null;
@@ -11650,7 +11732,18 @@
   function onNativeTouchMove(e) {
     if (!nativeTouchActive || !state || state.ended || state.finishing || state.paused) return;
 
-    const t = findActiveTouch(e.touches);
+    clearNativeTouchCancelTimer();
+
+    let t = findActiveTouch(e.touches);
+    // WebKitがidentifierだけ差し替えたような異常系では、残っている1本を継続指として採用。
+    if (!t && e.touches && e.touches.length === 1) {
+      t = e.touches[0];
+      activeTouchIdentifier = t.identifier;
+      dragStartClientX = t.clientX;
+      dragStartClientY = t.clientY;
+      dragStartPlayerX = state.player.x;
+      dragStartPlayerY = state.player.y;
+    }
     if (!t) return;
 
     // Pointer Eventsがpointercancelで切れていても、touchmoveで即復旧。
@@ -11684,6 +11777,7 @@
 
     lastPointerClientX = t.clientX;
     lastPointerClientY = t.clientY;
+    lastNativeTouchMoveAt = performance.now();
 
     try { e.preventDefault(); } catch (_) {}
   }
@@ -11706,28 +11800,42 @@
       return;
     }
 
-    nativeTouchActive = false;
-    activeTouchIdentifier = null;
+    clearNativeTouchCancelTimer();
 
-    // 物理的なtouchendを確認した時だけ操作終了。
-    pointerActive = false;
-    pointerIsTouch = false;
-    activePointerId = null;
-
-    if (getCurrentCharacter && getCurrentCharacter().shotType === 'charge_release') {
-      clearMiaChargeState();
+    let endedTouch = null;
+    if (e.changedTouches) {
+      for (let i = 0; i < e.changedTouches.length; i += 1) {
+        if (e.changedTouches[i].identifier === activeTouchIdentifier) {
+          endedTouch = e.changedTouches[i];
+          break;
+        }
+      }
     }
+
+    finishNativeTouchInteraction(
+      endedTouch ? endedTouch.clientX : lastPointerClientX,
+      endedTouch ? endedTouch.clientY : lastPointerClientY,
+      false
+    );
 
     try { e.preventDefault(); } catch (_) {}
   }
 
   function onNativeTouchCancel(e) {
-    nativeTouchActive = false;
-    activeTouchIdentifier = null;
-    pointerActive = false;
-    pointerIsTouch = false;
+    if (!nativeTouchActive) return;
+
+    // iOSでは実際の離指ではなく、一時的なWebKit都合でtouchcancelが来ることがある。
+    // ここで即pointerActiveを落とさず短い猶予を設け、touchmove/touchstartが戻れば継続。
+    clearNativeTouchCancelTimer();
+    const token = nativeTouchCancelToken;
     activePointerId = null;
-    clearMiaChargeState();
+
+    nativeTouchCancelTimer = setTimeout(() => {
+      if (token !== nativeTouchCancelToken) return;
+      nativeTouchCancelTimer = null;
+      finishNativeTouchInteraction(lastPointerClientX, lastPointerClientY, true);
+    }, TOUCH_CANCEL_GRACE_MS);
+
     try { e.preventDefault(); } catch (_) {}
   }
 
