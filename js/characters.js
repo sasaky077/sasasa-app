@@ -648,7 +648,7 @@ skills: [
     battleUpImg: 'images/chara_12_battle_up.webp',
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
-    favScale: 0.88, favOffsetY: -20,
+    favScale: 0.80, favOffsetY: -30,
     uiScale: {panel: 1.0,battleBack: 0.72,battleUp: 1.0},
     combo: { range: 'combo_line_all', skill: { id: 'combo', name: '共鳴攻撃', type: 'attack', multiplier: 0.70, range: 'front3', effects: [], hitStyle: 'normal', desc: '同列の味方スキルに反応して追撃する。' } },
     skills: [
@@ -797,7 +797,7 @@ skills: [
     battleUpImg: 'images/chara_15_battle_up.webp',
     battleBackImg: 'images/chara_15_battle_back.webp',
     panelImg: 'images/chara_15_panel.webp',
-    favScale: 1.00, favOffsetY: 20,
+    favScale: 0.85, favOffsetY: -30,
     uiScale: {panel: 1.0,battleBack: 1.5,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
@@ -1139,7 +1139,7 @@ skills: [
     battleUpImg: 'images/chara_22_battle_up.webp',
     battleBackImg: 'images/chara_22_battle_back.webp',
     panelImg: 'images/chara_22_panel.webp',
-    favScale: 0.88, favOffsetY: -20,
+    favScale: 0.83, favOffsetY: -20,
     uiScale: {panel: 1.0,battleBack: 0.72,battleUp: 1.0},
     combo: { range: 'combo_line_all', skill: { id: 'combo', name: '共鳴攻撃', type: 'attack', multiplier: 0.70, range: 'front3', effects: [], hitStyle: 'normal', desc: '同列の味方スキルに反応して追撃する。' } },
     skills: [

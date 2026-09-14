@@ -608,11 +608,20 @@
   });
 
 
-  // アリス：ULTのみアルノと同一仕様。通常ショットは従来の継承性能を維持。
+  // アリス：通常攻撃をベロニカ系の近距離斬撃へ変更。ULT「環流」は従来どおり。
   SHOOTING_CHARACTERS[CHARACTER_ID.FLORA] = buildShootingCharacter({
     ...SHOOTING_CHARACTERS[CHARACTER_ID.FLORA],
     id: CHARACTER_ID.FLORA,
     effectKey: 'arno',
+    label: 'MELEE / AURA',
+    description: '前方の近距離を斬り払う近接型。通常攻撃はベロニカと同じ近距離斬撃で、ULTは敵弾を消去して5秒間の攻撃オーラを展開する。',
+    shotType: 'melee_slash',
+    shotCount: 1,
+    fireRate: 520,
+    shotPowerRate: 0.95,
+    slashRange: 182,
+    slashWidth: 120,
+    slashVisualMs: 180,
     ultDescription: '発動時に画面内の敵弾をすべて消去し、5秒間攻撃オーラを展開。0.25秒ごとに固定1.8ダメージを与える（最大36ダメージ/1体）。',
     ultName: '環流',
     ultType: 'arno_aura',
@@ -1092,7 +1101,7 @@
     label: 'MELEE / BLADE BUFF',
     description: '前方の近距離だけを斬り払う高威力の剣撃型。射程は短いが、接近時はRとして非常に高い瞬間火力を出せる。ULTは5秒間、自身を無敵にしてATKを1.3倍にする。',
     shotType: 'melee_slash', shotCount: 1, fireRate: 520, shotPowerRate: 0.95,
-    slashRange: 140,
+    slashRange: 182,
     slashWidth: 120,
     slashVisualMs: 180,
     ultName: '刃装解放',

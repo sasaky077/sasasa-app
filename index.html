@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '440';
+    var FALLBACK_BUILD = '445';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="440">
+  <meta name="sasaphia-build" content="445">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=440">
+  <link rel="manifest" href="manifest.json?v=445">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=440"
+        href="css/style.css?v=445"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=440"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=445"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=440">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=445">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=440">
+  <link rel="stylesheet" href="css/raid_event.css?v=445">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '440';
+  var BUILD = '445';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -932,7 +932,7 @@ body #bottom-nav-shared.bottom-nav{
 #bottom-nav-shared .bottom-nav-label{
   position:relative !important;
   z-index:3 !important;
-  color:#594426 !important;
+  color:#594456 !important;
   font-weight:700 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,.84),
@@ -4082,7 +4082,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=440"></script>
+<script src="js/home_banners.js?v=445"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -4093,6 +4093,23 @@ body #bottom-nav-shared.bottom-nav{
 // =========================================================
 
 window.NOTICE_ITEMS = [
+  {
+    id: 'notice_test_growth_bundle_20260914',
+    date: '2026.09.14',
+    title: 'テスト用 育成支援',
+    body: 'テストプレイ用に、経験値アイテム（小・中・大）を各100個、結晶を1,000個配布します。',
+    reward: {
+      type: 'test_growth_bundle',
+      claimId: 'notice_reward_test_growth_bundle_v1',
+      gem: 1000,
+      items: [
+        { materialId:'level_exp_small',  label:'強化素材・小', amount:100 },
+        { materialId:'level_exp_medium', label:'強化素材・中', amount:100 },
+        { materialId:'level_exp_large',  label:'強化素材・大', amount:100 }
+      ]
+    },
+    hidden: false
+  },
   {
     id: 'notice_start_bonus_20260912',
     date: '2026.09.12',
@@ -4558,7 +4575,8 @@ window.NOTICE_ITEMS = [
       return item && item.reward && item.reward.claimId &&
         (item.reward.type === 'gem' ||
          item.reward.type === 'level_material_bundle' ||
-         item.reward.type === 'start_bonus_bundle');
+         item.reward.type === 'start_bonus_bundle' ||
+         item.reward.type === 'test_growth_bundle');
     });
     if (!rewardItems.length) return;
 
@@ -4579,6 +4597,8 @@ window.NOTICE_ITEMS = [
             p_user_id: userId,
             p_claim_id: item.reward.claimId
           });
+        } else if (item.reward.type === 'test_growth_bundle') {
+          res = await client.rpc('is_test_growth_bundle_claimed');
         } else {
           res = await client.rpc('is_notice_reward_claimed', {
             p_claim_id: item.reward.claimId
@@ -4625,6 +4645,45 @@ window.NOTICE_ITEMS = [
             <div class="notice-reward-copy">
               <span class="notice-reward-label">レイドクリア報酬</span>
               <strong>${escapeHtml(reward.characterName || 'テストちゃん')} ×1</strong>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id || '')}"
+            ${claimed ? 'disabled' : ''}
+          >${claimed ? '受取済み' : '受け取る'}</button>
+        </div>
+      `;
+    }
+
+    if (reward.type === 'test_growth_bundle') {
+      const items = Array.isArray(reward.items) ? reward.items : [];
+      const itemHtml = items.map(function(entry){
+        const materialId = String(entry && entry.materialId || '');
+        const itemAmount = Math.max(0, Math.floor(Number(entry && entry.amount || 0)));
+        const short = materialId === 'level_exp_small' ? '小'
+          : materialId === 'level_exp_medium' ? '中'
+          : materialId === 'level_exp_large' ? '大' : 'EXP';
+        return '<span class="notice-reward-material-item">' +
+          '<span class="notice-reward-material-dot" aria-hidden="true">' + escapeHtml(short) + '</span>' +
+          '<span>×' + itemAmount + '</span>' +
+        '</span>';
+      }).join('');
+      const gem = Math.max(0, Math.floor(Number(reward.gem || 0)));
+
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <div class="notice-reward-copy notice-reward-start-bundle">
+              <span class="notice-reward-label">テスト配布</span>
+              <div class="notice-reward-start-row">
+                <span class="notice-reward-start-item">
+                  <img class="notice-reward-start-icon" src="images/icon_gem.webp" alt="">
+                  結晶 ×${gem.toLocaleString()}
+                </span>
+              </div>
+              <div class="notice-reward-material-list">${itemHtml}</div>
             </div>
           </div>
           <button
@@ -4827,7 +4886,7 @@ window.NOTICE_ITEMS = [
       }
     }
 
-    if (reward.type === 'start_bonus_bundle') {
+    if (reward.type === 'test_growth_bundle') {
       if (!reward.claimId) return;
 
       if (button) {
@@ -4837,18 +4896,14 @@ window.NOTICE_ITEMS = [
 
       try {
         const client = window.zsSupabase || null;
-        const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
         if (!client || typeof client.rpc !== 'function') {
           throw new Error('Supabaseへ接続できません');
         }
-        if (!userId) {
-          throw new Error('ユーザーIDがありません');
-        }
 
-        const res = await client.rpc('claim_start_bonus', {
-          p_user_id: userId,
-          p_claim_id: reward.claimId
-        });
+        // auth.uid() から所有プロフィールをサーバー側で特定し、
+        // 在庫・結晶・1回限り判定を1トランザクションで処理する。
+        // ブラウザから user_id / 個数 / 結晶数は渡さない。
+        const res = await client.rpc('claim_test_growth_bundle');
         if (res && res.error) throw res.error;
 
         let result = res ? res.data : null;
@@ -4859,17 +4914,13 @@ window.NOTICE_ITEMS = [
           throw new Error((result && result.message) || '報酬を受け取れませんでした');
         }
 
-        if (typeof loadInventoryFromSupabase === 'function') {
+        const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
+        if (userId && typeof loadInventoryFromSupabase === 'function') {
           await loadInventoryFromSupabase(userId);
         }
 
-        if (window.userProfile) {
-          if (Number.isFinite(Number(result.gem))) {
-            window.userProfile.gem = Math.max(0, Number(result.gem));
-          }
-          if (Number.isFinite(Number(result.coin))) {
-            window.userProfile.coin = Math.max(0, Number(result.coin));
-          }
+        if (window.userProfile && Number.isFinite(Number(result.gem))) {
+          window.userProfile.gem = Math.max(0, Number(result.gem));
         }
 
         reward.claimed = true;
@@ -4877,84 +4928,19 @@ window.NOTICE_ITEMS = [
 
         if (typeof window.updateMainUI === 'function') window.updateMainUI();
         if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
-        try {
-          window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'));
-        } catch (_) {}
+        try { window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed')); } catch (_) {}
 
         if (typeof window.showToast === 'function') {
           window.showToast(result.already_claimed
-            ? 'このスタートボーナスは受取済みです'
-            : 'スタートボーナスを受け取りました！');
+            ? 'このテスト配布は受取済みです'
+            : '経験値アイテム各100個・結晶1,000個を受け取りました！');
         }
 
         renderNoticeList();
         updateNoticeBadge();
         return;
       } catch (error) {
-        console.error('[NoticeReward] start bonus claim failed:', error);
-        if (typeof window.showToast === 'function') {
-          window.showToast('受け取りに失敗しました。もう一度お試しください');
-        }
-        if (button) {
-          button.disabled = false;
-          button.textContent = '受け取る';
-        }
-        return;
-      }
-    }
-
-    if (reward.type === 'level_material_bundle') {
-      const items = Array.isArray(reward.items) ? reward.items : [];
-      if (!reward.claimId || !items.length) return;
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = '受取中...';
-      }
-
-      try {
-        const client = window.zsSupabase || null;
-        const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
-        if (!client || typeof client.rpc !== 'function') {
-          throw new Error('Supabaseへ接続できません');
-        }
-        if (!userId) {
-          throw new Error('ユーザーIDがありません');
-        }
-
-        const res = await client.rpc('claim_start_level_material_bonus', {
-          p_user_id: userId,
-          p_claim_id: reward.claimId
-        });
-        if (res && res.error) throw res.error;
-
-        let result = res ? res.data : null;
-        if (typeof result === 'string') {
-          try { result = JSON.parse(result); } catch (_) {}
-        }
-        if (!result || result.ok === false) {
-          throw new Error((result && result.message) || '報酬を受け取れませんでした');
-        }
-
-        // player_inventory はサーバー権威。
-        // RPCで付与した正式値を再読込し、ローカル表示へ反映する。
-        if (typeof loadInventoryFromSupabase === 'function') {
-          await loadInventoryFromSupabase(userId);
-        }
-
-        reward.claimed = true;
-        markNoticeRewardClaimedLocally(reward.claimId);
-
-        if (typeof window.showToast === 'function') {
-          window.showToast(result.already_claimed
-            ? 'このスタートボーナスは受取済みです'
-            : '経験値素材を受け取りました！');
-        }
-        renderNoticeList();
-        updateNoticeBadge();
-        return;
-      } catch (error) {
-        console.error('[NoticeReward] level material bundle claim failed:', error);
+        console.error('[NoticeReward] test growth bundle claim failed:', error);
         if (typeof window.showToast === 'function') {
           window.showToast('受け取りに失敗しました。もう一度お試しください');
         }
@@ -5199,10 +5185,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=440"></script>
-<script src="js/resonance_system.js?v=440"></script>
-<script src="js/resonance_ui.js?v=440"></script>
-<script src="js/character_levelup.js?v=440"></script>
+<script src="js/shooting_resonance.js?v=445"></script>
+<script src="js/resonance_system.js?v=445"></script>
+<script src="js/resonance_ui.js?v=445"></script>
+<script src="js/character_levelup.js?v=445"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -14779,43 +14765,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=440"></script>
+<script src="js/asset_loader.js?v=445"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=440"></script>
+<script src="js/login_bonus.js?v=445"></script>
 
-<script src="js/story_engine.js?v=440"></script>
-<script src="js/stories/chapter01.js?v=440"></script>
+<script src="js/story_engine.js?v=445"></script>
+<script src="js/stories/chapter01.js?v=445"></script>
 
-<script src="js/battle_range.js?v=440"></script>
-<script src="js/characters.js?v=440"></script>
-<script src="js/enemies.js?v=440"></script>
-<script src="js/battle.js?v=440"></script>
-<script src="js/battle_swipe.js?v=440"></script>
+<script src="js/battle_range.js?v=445"></script>
+<script src="js/characters.js?v=445"></script>
+<script src="js/enemies.js?v=445"></script>
+<script src="js/battle.js?v=445"></script>
+<script src="js/battle_swipe.js?v=445"></script>
 
-<script src="js/stages.js?v=440"></script>
-<script src="js/stage_select.js?v=440"></script>
-<script src="js/party_select.js?v=440"></script>
-<script src="js/enemy_intro.js?v=440"></script>
+<script src="js/stages.js?v=445"></script>
+<script src="js/stage_select.js?v=445"></script>
+<script src="js/party_select.js?v=445"></script>
+<script src="js/enemy_intro.js?v=445"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=440">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=445">
 
-<script src="js/battle_range_32.js?v=440"></script>
-<script src="js/characters_32.js?v=440"></script>
-<script src="js/remnant_blessings.js?v=440"></script>
-<script src="js/combo_32.js?v=440"></script>
-<script src="js/cards.js?v=440"></script>
-<script src="js/battle_32.js?v=440"></script>
-<script src="js/battle_32_ui.js?v=440"></script>
+<script src="js/battle_range_32.js?v=445"></script>
+<script src="js/characters_32.js?v=445"></script>
+<script src="js/remnant_blessings.js?v=445"></script>
+<script src="js/combo_32.js?v=445"></script>
+<script src="js/cards.js?v=445"></script>
+<script src="js/battle_32.js?v=445"></script>
+<script src="js/battle_32_ui.js?v=445"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=440"></script>
-<script src="js/roguelite_run.js?v=440"></script>
-<script src="js/roguelite_reward.js?v=440"></script>
-<script src="js/shinju.js?v=440"></script>
-<script src="js/roguelite_controller.js?v=440"></script>
-<script src="js/roguelite_overseer_run.js?v=440"></script>
+<script src="js/roguelite_options.js?v=445"></script>
+<script src="js/roguelite_run.js?v=445"></script>
+<script src="js/roguelite_reward.js?v=445"></script>
+<script src="js/shinju.js?v=445"></script>
+<script src="js/roguelite_controller.js?v=445"></script>
+<script src="js/roguelite_overseer_run.js?v=445"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15259,10 +15245,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=440"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=445"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=440"></script>
+<script src="js/raid_event.js?v=445"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15283,7 +15269,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=440"></script>
+<script src="js/score_attack.js?v=445"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
