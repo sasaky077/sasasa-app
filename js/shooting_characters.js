@@ -334,7 +334,7 @@
     },
     12: {
       id: 12, name: 'シイナ',
-      element: 'dark',
+      element: 'light',
       hp: 600, atk: 250,
       image: 'images/chara_12_battle_back.webp',
       panelImage: 'images/chara_12_panel.webp',
@@ -375,7 +375,7 @@
       image: 'images/chara_18_battle_back.webp',
       panelImage: 'images/chara_18_panel.webp',
       cutinImage: 'images/chara_18_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+      uiScale: { panel: 0.72, battleBack: 0.60, battleUp: 0.72 },
     },
     10: {
       id: 10, name: 'オリオン',
@@ -414,7 +414,7 @@
       uiScale: { panel: 1.0, battleBack: 0.8, battleUp: 1.0 },
     },
     8: {
-      id: 8, name: 'シュリ',
+      id: 8, name: 'マグダレーナ',
       element: 'dark',
       hp: 680, atk: 300,
       image: 'images/chara_08_battle_back.webp',
@@ -602,6 +602,23 @@
     ultGainPerHit: 0.555,
     coreTop: '38%',
     shotOffsetY: 38,
+    auraDurationMs: 5000,
+    auraTickMs: 250,
+    auraTickDamage: 1.8,
+  });
+
+
+  // アリス：ULTのみアルノと同一仕様。通常ショットは従来の継承性能を維持。
+  SHOOTING_CHARACTERS[CHARACTER_ID.FLORA] = buildShootingCharacter({
+    ...SHOOTING_CHARACTERS[CHARACTER_ID.FLORA],
+    id: CHARACTER_ID.FLORA,
+    effectKey: 'arno',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、5秒間攻撃オーラを展開。0.25秒ごとに固定1.8ダメージを与える（最大36ダメージ/1体）。',
+    ultName: '環流',
+    ultType: 'arno_aura',
+    burstDamage: 36,
+    burstNeed: 30,
+    ultGainPerHit: 0.555,
     auraDurationMs: 5000,
     auraTickMs: 250,
     auraTickDamage: 1.8,
@@ -1044,10 +1061,16 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.KAINA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.KAINA, effectKey: 'kaina',
-    label: 'CHARGE / FIRE', description: '長押しで溜め、離して撃つRチャージ型。単発威力を高めに設定。',
+    label: 'CHARGE / ATK FIELD',
+    description: '長押しで溜め、離して撃つRチャージ型。ULTはウルフと同系統のATK UP領域を展開するR版。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
+    ultName: '紅蓮の領域',
     shotType: 'charge_release', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
     chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
-    ultBaseType: 'delay', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultBaseType: 'field', ultAddons: ['bullet_clear','player_buff'], ultType: 'wolf_atk_field',
+    ultFieldDurationMs: 10000,
+    ultFieldAtkMultiplier: 1.3,
+    ultFieldRadius: 112,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
@@ -1066,24 +1089,47 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.IONA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.IONA, effectKey: 'iona',
-    label: 'PRECISION / CONTROL', description: '単発の高威力精密射撃。ULTは短時間停止＋弾消し。',
-    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 980, shotPowerRate: 0.44,
-    ultBaseType: 'control', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
+    label: 'MELEE / BLADE BUFF',
+    description: '前方の近距離だけを斬り払う高威力の剣撃型。射程は短いが、接近時はRとして非常に高い瞬間火力を出せる。ULTは5秒間、自身を無敵にしてATKを1.3倍にする。',
+    shotType: 'melee_slash', shotCount: 1, fireRate: 520, shotPowerRate: 0.95,
+    slashRange: 140,
+    slashWidth: 120,
+    slashVisualMs: 180,
+    ultName: '刃装解放',
+    ultDescription: '5秒間、自身を無敵状態にし、同時にATKを1.3倍へ上昇させる。キャラクターを交代すると、ベロニカに付与された効果は待機中となり、他キャラクターには引き継がれない。',
+    ultBaseType: 'buff', ultAddons: ['invincible','player_buff'], ultType: 'veronica_blade_buff',
+    ultBuffDurationMs: 5000,
+    ultAtkMultiplier: 1.3,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ELSIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ELSIA, effectKey: 'elsia',
-    label: 'ORBIT / DEBUFF FIELD', description: '2発の円環軌道ショット。ULTは敵弱体化フィールドを展開。',
+    label: 'ORBIT / BULLET SLOW FIELD',
+    description: '2発の円環軌道ショット。ULTは自身を中心に大きな光の円環を7秒間展開し、円内へ入った敵弾の速度を半減する。',
+    ultName: '術式・光の円環',
+    ultDescription: '自身を中心に大きな光のサークルを7秒間展開する。サークル内に入った敵弾は移動速度が50%に低下し、サークル外へ出ると元の速度へ戻る。',
     shotType: 'orbit_forward', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 32, orbitAngularSpeed: 11.8, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
-    ultBaseType: 'field', ultAddons: ['enemy_debuff'], ultType: 'prototype_generic',
+    ultBaseType: 'field', ultAddons: ['enemy_bullet_slow'], ultType: 'shiina_light_ring',
+    lightRingDurationMs: 7000,
+    lightRingRadius: 190,
+    lightRingBulletSpeedMultiplier: 0.5,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.FIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.FIA, effectKey: 'fia',
-    label: 'LASER / WOOD', description: '細い高密度レーザーを照射するRレーザー型。',
+    label: 'LASER / WOOD', description: '細い高密度レーザーを照射するRレーザー型。ULTは6本の細レーザーを射出し、5秒間ランダム反射させて画面全域を掃射する。',
     shotType: 'laser', shotStyle: 'fia', fireRate: 100, laserWidth: 9, laserHitWidth: 30, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
-    ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultName: 'SCRAMBLE RAY',
+    ultDescription: 'ジグを起点に6本の細レーザーを射出。5秒間、画面端でランダム反射しながら敵を貫通してダメージを与える。',
+    ultBaseType: 'beam', ultAddons: ['damage','bullet_clear'], ultType: 'jig_scramble_ray',
+    jigUltDurationMs: 5000,
+    jigUltBeamCount: 6,
+    jigUltBeamSpeed: 520,
+    jigUltBeamLength: 128,
+    jigUltBeamWidth: 5,
+    jigUltDamageAtkRate: 0.12,
+    jigUltHitIntervalMs: 200,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
@@ -1102,9 +1148,16 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SHION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SHION, effectKey: 'shion',
-    label: 'PRECISION / DELAY', description: '高威力の単発精密射撃。ULTは時間差攻撃＋弱体化。',
+    label: 'PRECISION / DELAY',
+    description: '高威力の単発精密射撃。ULT「黒羽葬鐘」は敵全体へ呪印を刻み、時間差で闇撃を起こした後、敵の攻撃力を弱体化する。',
+    ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・スタン・無敵は発生しない。',
+    ultName: '黒羽葬鐘',
     shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 980, shotPowerRate: 0.44,
-    ultBaseType: 'delay', ultAddons: ['damage','enemy_debuff'], ultType: 'prototype_generic',
+    ultType: 'shion_delayed_curse',
+    ultDelayMs: 1200,
+    ultDamageAtkMultiplier: 2.8,
+    ultDebuffDurationMs: 6000,
+    ultEnemyDamageMultiplier: 0.70,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
@@ -1121,9 +1174,9 @@
     effectKey: 'iverna',
     label: 'LASER / FIRE',
     description: '細い紅色レーザーを連続照射する限定SRレーザー型。',
-    ultDescription: '高密度の紅光を前方へ集中照射する。',
+    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
     ultName: '終端紅閃',
-    ultType: 'laser_burst',
+    ultType: 'testchan_black_ship',
     moveSpeed: 400,
     shotType: 'laser',
     shotStyle: 'iverna',
@@ -1137,6 +1190,12 @@
     ultGainPerHit: 0.70,
     coreTop: '39%',
     shotOffsetY: 40,
+
+    // ULT：テストちゃん「ブラックシップ」と同一性能
+    ultBeamDurationMs: 5000,
+    ultBeamTickMs: 250,
+    ultBeamTickAtkMultiplier: 0.35,
+    ultBeamWidth: 62,
   });
 
   // v313: 限定SR AQUA
@@ -1268,7 +1327,7 @@
 
 
   // ============================================================
-  // シュリ：紅黒5WAY気弾 / ULT「彼岸残月」
+  // マグダレーナ：紅黒5WAY気弾 / ULT「彼岸残月」
   // 既存性能は維持しつつ、IDを19へ変更。
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.SHURI] = buildShootingCharacter({
@@ -1276,8 +1335,8 @@
     id: CHARACTER_ID.SHURI,
     effectKey: 'gojo',
     label: 'CRIMSON MOON / FIVE-WAY',
-    description: '淡い紅黒の5WAY気弾を放つSR火力型。ULT「彼岸残月」は血色の波動を敵へ射出し、着弾地点で巨大化。周囲の敵を中心へ吸引して停止させながら継続ダメージを与える。',
-    ultDescription: '小さな紅黒の波動を敵へ向けて放つ。着弾すると巨大な血月の瘴気場へ変化し、約7秒間すべての敵を中心へ吸引。中心まで寄せられた敵は停止する。盤面上の敵弾は消去せず残り続け、各対象へ合計ATK×3.5相当の継続ダメージを与える。',
+    description: '淡い紅黒の5WAY気弾を放つSR火力型。ULT「彼岸残月」は大鎌を敵へ投擲し、着弾地点で血月の瘴気場を展開。周囲の敵を中心へ吸引して停止させながら継続ダメージを与える。',
+    ultDescription: '大鎌を敵へ向けて投げ放つ。着弾すると巨大な血月の瘴気場が発生し、約7秒間すべての敵を中心へ吸引。中心まで寄せられた敵は停止する。盤面上の敵弾は消去せず残り続け、各対象へ合計ATK×3.5相当の継続ダメージを与える。',
     ultName: '彼岸残月',
     ultType: 'gojo_purple',
     moveSpeed: 400,
@@ -1292,7 +1351,7 @@
     shotStyle: 'gojo',
     shotOffsetY: 42,
 
-    // ---- ULT：効果は旧五条枠と同一 ----
+    // ---- ULT：投擲した大鎌の着弾地点で瘴気場を展開 ----
     burstDamage: 27,
     ultDamageAtkMultiplier: 3.5,
     burstNeed: 24,

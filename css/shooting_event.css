@@ -7896,3 +7896,105 @@
 #shooting-event-root .shooting-switch-element-icon{
   display:none!important;
 }
+/* ============================================================
+   v213 Battle typography visibility pass
+   - Increase only text legibility; preserve existing box geometry.
+   - Narrow-device rules are intentionally overridden here so that
+     the 360-390px battle layout does not shrink text excessively.
+   ============================================================ */
+#shooting-event-root .shooting-hud-title > span{
+  font-size:9px !important;
+  line-height:1.05;
+}
+#shooting-event-root .shooting-hud-title > strong{
+  font-size:17px !important;
+  line-height:1.08;
+}
+#shooting-event-root #shooting-hud-difficulty{
+  font-size:9px !important;
+}
+#shooting-event-root .shooting-score{
+  font-size:13px !important;
+  line-height:1.05;
+}
+#shooting-event-root .shooting-high-score-label{
+  font-size:11px !important;
+}
+#shooting-event-root .shooting-high-score-value{
+  font-size:13px !important;
+}
+
+#shooting-event-root .shooting-boss-name{
+  font-size:10px !important;
+}
+#shooting-event-root .shooting-boss-phase{
+  font-size:9px !important;
+}
+
+#shooting-event-root .shooting-mission-hud span{
+  font-size:8px !important;
+  line-height:1.15;
+}
+#shooting-event-root .shooting-mission-hud strong{
+  font-size:12px !important;
+  line-height:1.25;
+}
+#shooting-event-root .shooting-mission-hud b{
+  font-size:10px !important;
+  line-height:1.15;
+}
+
+#shooting-event-root .shooting-combo span{
+  font-size:9px !important;
+}
+#shooting-event-root .shooting-switch-status{
+  width:82px !important;
+  font-size:8px !important;
+  line-height:1.15;
+  letter-spacing:.08em;
+}
+
+#shooting-event-root .shooting-ult-side-copy span{
+  font-size:11px !important;
+  font-weight:500;
+}
+#shooting-event-root .shooting-battle-timer small{
+  font-size:7px !important;
+}
+#shooting-event-root .shooting-battle-timer strong{
+  font-size:20px !important;
+}
+
+#shooting-event-root .shooting-player-name{
+  font-size:12px !important;
+  line-height:1.1;
+}
+#shooting-event-root .shooting-player-hp-text{
+  font-size:12px !important;
+  line-height:1.1;
+  font-weight:600;
+  letter-spacing:.03em;
+}
+#shooting-event-root .shooting-battle-menu-btn,
+#shooting-event-root .shooting-ui-layout-btn{
+  font-size:12px !important;
+}
+
+/* 360-390px class phones: keep the layout sizes, but do not downscale text. */
+@media (max-width:390px){
+  #shooting-event-root .shooting-hud-title > span{font-size:8px !important}
+  #shooting-event-root .shooting-hud-title > strong{font-size:15px !important}
+  #shooting-event-root .shooting-score{font-size:11px !important}
+  #shooting-event-root .shooting-high-score-label{font-size:10px !important}
+  #shooting-event-root .shooting-high-score-value{font-size:12px !important}
+
+  #shooting-event-root .shooting-mission-hud span{font-size:7px !important}
+  #shooting-event-root .shooting-mission-hud strong{font-size:11px !important}
+  #shooting-event-root .shooting-mission-hud b{font-size:9px !important}
+
+  #shooting-event-root .shooting-player-name{font-size:11px !important}
+  #shooting-event-root .shooting-player-hp-text{font-size:11px !important}
+  #shooting-event-root .shooting-battle-menu-btn,
+  #shooting-event-root .shooting-ui-layout-btn{font-size:11px !important}
+  #shooting-event-root .shooting-switch-status{font-size:8px !important}
+}

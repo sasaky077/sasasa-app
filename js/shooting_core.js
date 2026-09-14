@@ -139,6 +139,246 @@
   }
 
 
+  // ERI系ULT：予兆 → 閃光斬撃 → 命中強調。軽量DOM/CSSのみで共通化。
+  if (!document.getElementById('shooting-eri-ult-feedback-style-v1')) {
+    const eriUltStyle = document.createElement('style');
+    eriUltStyle.id = 'shooting-eri-ult-feedback-style-v1';
+    eriUltStyle.textContent = `
+      .shooting-eri-ult-mark,
+      .shooting-eri-ult-slash{
+        position:absolute;
+        left:0;top:0;
+        pointer-events:none;
+        transform:translate(-50%,-50%);
+        z-index:46;
+      }
+      .shooting-eri-ult-mark{
+        width:74px;height:74px;
+        border-radius:50%;
+        border:1px solid rgba(255,248,220,.72);
+        box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 0 14px rgba(246,225,164,.25);
+        opacity:0;
+        animation:shootingEriUltMark .42s cubic-bezier(.2,.72,.28,1) both;
+      }
+      .shooting-eri-ult-mark::before,
+      .shooting-eri-ult-mark::after{
+        content:"";
+        position:absolute;
+        left:50%;top:50%;
+        background:rgba(255,250,232,.78);
+        box-shadow:0 0 5px rgba(255,245,207,.48);
+        transform:translate(-50%,-50%);
+      }
+      .shooting-eri-ult-mark::before{width:1px;height:94px}
+      .shooting-eri-ult-mark::after{width:94px;height:1px}
+      @keyframes shootingEriUltMark{
+        0%{opacity:0;transform:translate(-50%,-50%) scale(1.28) rotate(-8deg)}
+        22%{opacity:.78}
+        82%{opacity:.94;transform:translate(-50%,-50%) scale(.78) rotate(0deg)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(.58) rotate(4deg)}
+      }
+      .shooting-eri-ult-slash{
+        width:116px;height:5px;
+        border-radius:50%;
+        background:linear-gradient(90deg,transparent,rgba(255,249,224,.92) 18%,#fff 50%,rgba(255,243,198,.9) 82%,transparent);
+        box-shadow:0 0 7px rgba(255,255,255,.98),0 0 17px rgba(244,216,143,.62);
+        transform:translate(-50%,-50%) rotate(-18deg) scaleX(.18);
+        opacity:0;
+        animation:shootingEriUltSlash .30s cubic-bezier(.16,.72,.22,1) both;
+      }
+      .shooting-eri-ult-slash::after{
+        content:"";
+        position:absolute;
+        left:50%;top:50%;
+        width:84px;height:84px;
+        transform:translate(-50%,-50%);
+        border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,.72) 0%,rgba(255,247,220,.20) 34%,transparent 68%);
+      }
+      @keyframes shootingEriUltSlash{
+        0%{opacity:0;transform:translate(-50%,-50%) rotate(-18deg) scaleX(.12)}
+        18%{opacity:1}
+        48%{opacity:1;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.18)}
+        100%{opacity:0;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.42)}
+      }
+      #shooting-event-root.eri-ult-impact .shooting-arena{
+        animation:shootingEriUltImpact .16s ease-out both;
+      }
+      @keyframes shootingEriUltImpact{
+        0%{filter:brightness(1)}
+        18%{filter:brightness(1.8) saturate(.55)}
+        52%{filter:brightness(1.16) saturate(.82)}
+        100%{filter:brightness(1)}
+      }
+      #shooting-event-root.eri-ult-hitstop #shooting-boss,
+      #shooting-event-root.eri-ult-hitstop .shooting-normal-enemy{
+        filter:brightness(2.15) saturate(.28) drop-shadow(0 0 9px rgba(255,248,225,.82))!important;
+      }
+    `;
+    document.head.appendChild(eriUltStyle);
+  }
+
+
+  // ベロニカ通常攻撃：近距離の半月状剣撃。
+  if (!document.getElementById('shooting-veronica-slash-style-v1')) {
+    const veronicaSlashStyle = document.createElement('style');
+    veronicaSlashStyle.id = 'shooting-veronica-slash-style-v1';
+    veronicaSlashStyle.textContent = `
+      .shooting-veronica-slash{
+        position:absolute;
+        left:0;top:0;
+        width:var(--veronica-slash-width,120px);
+        height:var(--veronica-slash-range,140px);
+        transform:translate(-50%,-100%);
+        transform-origin:50% 100%;
+        pointer-events:none;
+        z-index:35;
+        opacity:0;
+        overflow:visible;
+        animation:veronicaSlashFade var(--veronica-slash-ms,180ms) ease-out both;
+      }
+      .shooting-veronica-slash::before{
+        content:"";
+        position:absolute;
+        left:50%;bottom:2px;
+        width:92%;height:92%;
+        transform:translateX(-50%) rotate(-8deg);
+        border-radius:52% 52% 46% 46%;
+        border-top:4px solid rgba(255,255,255,.96);
+        border-left:2px solid rgba(194,222,235,.74);
+        box-shadow:0 -2px 7px rgba(255,255,255,.95),0 -7px 17px rgba(145,190,216,.48);
+        clip-path:polygon(0 0,100% 0,90% 58%,50% 100%,10% 58%);
+      }
+      .shooting-veronica-slash::after{
+        content:"";
+        position:absolute;
+        left:50%;bottom:10%;
+        width:68%;height:65%;
+        transform:translateX(-50%) rotate(9deg);
+        border-radius:50%;
+        border-top:1px solid rgba(224,242,249,.64);
+        filter:blur(.3px);
+      }
+      @keyframes veronicaSlashFade{
+        0%{opacity:0;transform:translate(-50%,-100%) scale(.72) rotate(-8deg)}
+        18%{opacity:1}
+        58%{opacity:.94;transform:translate(-50%,-100%) scale(1.05) rotate(5deg)}
+        100%{opacity:0;transform:translate(-50%,-100%) scale(1.13) rotate(10deg)}
+      }
+    `;
+    document.head.appendChild(veronicaSlashStyle);
+  }
+
+
+  // ジグULT：6本の細レーザーが5秒間、壁をランダム反射しながら画面を走査。
+  if (!document.getElementById('shooting-jig-scramble-ray-style-v1')) {
+    const jigUltStyle = document.createElement('style');
+    jigUltStyle.id = 'shooting-jig-scramble-ray-style-v1';
+    jigUltStyle.textContent = `
+      .shooting-jig-scramble-ray{
+        position:absolute;
+        left:0;top:0;
+        height:var(--jig-ray-width,5px);
+        width:var(--jig-ray-length,128px);
+        pointer-events:none;
+        transform-origin:100% 50%;
+        z-index:47;
+        border-radius:999px;
+        opacity:.94;
+        background:linear-gradient(90deg,
+          rgba(190,226,203,0) 0%,
+          rgba(205,237,214,.42) 16%,
+          rgba(238,255,244,.96) 54%,
+          rgba(255,255,255,1) 82%,
+          rgba(226,255,235,.98) 100%);
+        box-shadow:
+          0 0 3px rgba(255,255,255,.98),
+          0 0 8px rgba(190,240,208,.88),
+          0 0 15px rgba(105,191,137,.44);
+        filter:saturate(.72) brightness(1.06);
+        will-change:transform,left,top;
+      }
+      .shooting-jig-scramble-ray::after{
+        content:"";
+        position:absolute;
+        right:-4px;
+        top:50%;
+        width:9px;height:9px;
+        transform:translateY(-50%);
+        border-radius:50%;
+        background:rgba(255,255,255,.98);
+        box-shadow:0 0 7px rgba(231,255,239,1),0 0 14px rgba(127,214,156,.72);
+      }
+      #shooting-event-root.jig-scramble-active .shooting-arena{
+        box-shadow:inset 0 0 38px rgba(159,218,178,.10);
+      }
+    `;
+    document.head.appendChild(jigUltStyle);
+  }
+
+
+  // シオンULT「黒羽葬鐘」: 画像を使わない呪印 / 黒羽の時間差演出
+  if (!document.getElementById('shooting-shion-ult-style-v1')) {
+    const shionUltStyle = document.createElement('style');
+    shionUltStyle.id = 'shooting-shion-ult-style-v1';
+    shionUltStyle.textContent = `
+      .shooting-shion-curse-mark{
+        position:absolute;
+        left:0;top:0;
+        z-index:34;
+        width:62px;height:62px;
+        border-radius:50%;
+        pointer-events:none;
+        transform:translate3d(var(--unit-x,0px),var(--unit-y,0px),0) translate(-50%,-50%);
+        opacity:0;
+      }
+      .shooting-shion-curse-mark::before{
+        content:"";
+        position:absolute;
+        inset:7px;
+        border-radius:50%;
+        border:1px solid rgba(86,67,105,.50);
+        box-shadow:
+          0 0 8px rgba(63,43,79,.22),
+          inset 0 0 12px rgba(103,80,125,.10);
+      }
+      .shooting-shion-curse-mark::after{
+        content:"";
+        position:absolute;
+        left:50%;top:50%;
+        width:7px;height:32px;
+        border-radius:70% 20% 70% 20%;
+        background:linear-gradient(180deg,rgba(44,34,53,.08),rgba(62,43,76,.66),rgba(30,21,38,.04));
+        filter:blur(.25px);
+        transform:translate(-50%,-50%) rotate(22deg);
+        box-shadow:
+          -13px 7px 0 -1px rgba(54,39,66,.30),
+          14px -6px 0 -2px rgba(74,55,88,.22);
+      }
+      .shooting-shion-curse-mark.arm{
+        animation:shootingShionCurseArm 1.2s ease-out forwards;
+      }
+      .shooting-shion-curse-mark.detonate{
+        animation:shootingShionCurseDetonate .42s ease-out forwards;
+      }
+      @keyframes shootingShionCurseArm{
+        0%{opacity:0;scale:.46;filter:blur(3px)}
+        28%{opacity:.78;scale:.88;filter:blur(.6px)}
+        72%{opacity:.56;scale:1;filter:blur(.2px)}
+        100%{opacity:.86;scale:1.04;filter:blur(0)}
+      }
+      @keyframes shootingShionCurseDetonate{
+        0%{opacity:.92;scale:.82;filter:brightness(.9)}
+        42%{opacity:.72;scale:1.30;filter:brightness(1.35)}
+        100%{opacity:0;scale:1.78;filter:blur(3px)}
+      }
+      #shooting-event-root.shion-curse-active .shooting-arena{
+        box-shadow:inset 0 0 42px rgba(48,34,59,.11);
+      }
+    `;
+    document.head.appendChild(shionUltStyle);
+  }
+
   // CH04 final ITEM: CSSファイルの更新状況に依存せず、大きく脈動させる。
   if (!document.getElementById('shooting-ch04-item-style-v152')) {
     const style = document.createElement('style');
@@ -2389,7 +2629,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -4385,6 +4625,61 @@
   }
 
 
+  function spawnVeronicaSlashVisual(c) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state) return;
+    const el = document.createElement('div');
+    el.className = 'shooting-veronica-slash';
+    el.style.left = `${Number(state.player.x || 0)}px`;
+    el.style.top = `${Number(state.player.y || 0) - 6}px`;
+    el.style.setProperty('--veronica-slash-width', `${Math.max(60, Number(c.slashWidth || 120))}px`);
+    el.style.setProperty('--veronica-slash-range', `${Math.max(70, Number(c.slashRange || 140))}px`);
+    el.style.setProperty('--veronica-slash-ms', `${Math.max(100, Number(c.slashVisualMs || 180))}ms`);
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), Math.max(140, Number(c.slashVisualMs || 180)) + 80);
+  }
+
+  function applyVeronicaSlash(c, damage, now) {
+    if (!state || !c) return;
+    const px = Number(state.player.x || 0);
+    const py = Number(state.player.y || 0);
+    const range = Math.max(60, Number(c.slashRange || 140));
+    const halfWidth = Math.max(30, Number(c.slashWidth || 120) / 2);
+    const attackElement = normalizeCombatElement(c.element);
+
+    const inSlash = target => {
+      if (!target) return false;
+      const dx = Math.abs(Number(target.x || 0) - px);
+      const forward = py - Number(target.y || 0);
+      return dx <= halfWidth && forward >= -16 && forward <= range;
+    };
+
+    if (isNormalBattle() || hasBossAdds()) {
+      (state.normalEnemies || []).slice().forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0 || !inSlash(enemy)) return;
+        const finalDamage = applyElementDamage(damage, attackElement, getCombatTargetElement(enemy));
+        damageNormalEnemy(enemy, finalDamage, now, true);
+      });
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      evaluateNormalMission(now);
+    }
+
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0 && inSlash(state.boss)) {
+      const finalDamage = applyElementDamage(damage, attackElement, getCombatTargetElement(state.boss));
+      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+      updateBossPhase();
+      createHit(Number(state.boss.x || px), Number(state.boss.y || (py - range * .55)), true);
+      showBossDamageNumber(appliedDamage, true);
+      flashBossHit(true);
+      if (!addScoreAttackDamageScore(appliedDamage)) state.score += Math.round(appliedDamage * 100);
+      if (state.boss.hp <= 0) beginBossDefeat();
+    }
+
+    spawnVeronicaSlashVisual(c);
+    renderHud();
+  }
+
   function firePlayer(now) {
     // CH04-1/2は回避専用。CH04-3のみ通常射撃あり。
     if (isChapter04Stage() && !isChapter43BossStage()) return;
@@ -4439,6 +4734,15 @@
     const y = state.player.y - Number(c.shotOffsetY || 38);
     const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
     const bulletClass = 'shooting-bullet' + styleClass + attrBulletClass;
+
+    // ----------------------------------------------------------
+    // ベロニカ：近距離剣撃
+    // 弾を飛ばさず、自機前方の短い範囲だけに高威力判定を出す。
+    // ----------------------------------------------------------
+    if (c.shotType === 'melee_slash') {
+      applyVeronicaSlash(c, effectivePower, now);
+      return;
+    }
 
     // ----------------------------------------------------------
     // ノア：中心レーザー + 周囲2発の追尾弾
@@ -6998,6 +7302,12 @@
     // フェイスレス最上級のみ、即死攻撃以外の基本攻撃力を1.3倍。
     // 固定ダメージ制は維持し、高HPキャラの耐久メリットも残す。
     if (isFacelessSuperDifficulty()) damage *= 1.3;
+
+    // シオンULT「黒羽葬鐘」: 弱体化中は敵の非即死ダメージを軽減。
+    // lethal はこの関数上部ですでに確定returnしているため対象外。
+    if (state && performance.now() < Number(state.shionEnemyDebuffUntil || 0)) {
+      damage *= Math.max(0.05, Math.min(1, Number(state.shionEnemyDamageMultiplier || 0.70)));
+    }
     return Math.round(damage);
   }
 
@@ -7921,6 +8231,7 @@
     // 通常は何もしない。弾が異常増殖した時だけ、当たり判定を回す前に負荷を戻す。
     enforceEnemyBulletSafetyLimit(now);
     enforcePlayerBulletSafetyLimit(now);
+    syncShiinaLightRingVisual(now);
 
     const arena = document.getElementById('shooting-arena');
     const boss = document.getElementById(BOSS_ID);
@@ -8198,11 +8509,12 @@
 
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
+      const moveDt = dt * getShiinaEnemyBulletSpeedMultiplier(p, now);
 
       // CH04の▼弾。ゆるく横揺れしながら落下する。
       if (p.chapter4CurtainDrift) {
-        p.chapter4CurtainAge = Number(p.chapter4CurtainAge || 0) + dt;
-        p.y += p.vy * dt;
+        p.chapter4CurtainAge = Number(p.chapter4CurtainAge || 0) + moveDt;
+        p.y += p.vy * moveDt;
         p.x = Number(p.chapter4CurtainBaseX || p.x) +
           Math.sin(p.chapter4CurtainAge * Number(p.chapter4CurtainFreq || 2.1) + Number(p.chapter4CurtainPhase || 0)) *
           Number(p.chapter4CurtainAmp || 12);
@@ -8214,7 +8526,7 @@
           p.el.remove();
           return false;
         }
-        p.sakielWarningAge = Number(p.sakielWarningAge || 0) + dt;
+        p.sakielWarningAge = Number(p.sakielWarningAge || 0) + moveDt;
         const age = p.sakielWarningAge;
         const base = Number(p.sakielWarningBaseHeading || Math.atan2(p.vy, p.vx));
         const amp = Number(p.sakielWarningTurnAmp || 0.42);
@@ -8236,7 +8548,7 @@
         const wobble =
           Math.sin(now * 0.00135 + phase) * 0.86 +
           Math.sin(now * 0.00215 + phase * 1.37) * 0.34;
-        p.dangerDriftHeading = Number(p.dangerDriftHeading || Math.atan2(p.vy, p.vx)) + wobble * turnRate * dt;
+        p.dangerDriftHeading = Number(p.dangerDriftHeading || Math.atan2(p.vy, p.vx)) + wobble * turnRate * moveDt;
         const driftSpeed = Number(p.dangerDriftSpeed || 138);
         p.vx = Math.cos(p.dangerDriftHeading) * driftSpeed;
         p.vy = Math.sin(p.dangerDriftHeading) * driftSpeed;
@@ -8246,20 +8558,20 @@
       // spiral: 発射点から半径を増やしつつ回転するアルキメデス螺旋。
       // wave:    下方向へ進みながらX座標だけを正弦波で揺らす。
       if (p.beautifulSpiral) {
-        p.beautifulAge = Number(p.beautifulAge || 0) + dt;
+        p.beautifulAge = Number(p.beautifulAge || 0) + moveDt;
         const age = p.beautifulAge;
         const radius = Number(p.beautifulRadialSpeed || 180) * age;
         const angle = Number(p.beautifulStartAngle || 0) + Number(p.beautifulAngularSpeed || 1.2) * age;
         p.x = Number(p.beautifulOriginX || 0) + Math.cos(angle) * radius;
         p.y = Number(p.beautifulOriginY || 0) + Math.sin(angle) * radius;
       } else if (p.beautifulWave) {
-        p.beautifulAge = Number(p.beautifulAge || 0) + dt;
-        p.y += p.vy * dt;
+        p.beautifulAge = Number(p.beautifulAge || 0) + moveDt;
+        p.y += p.vy * moveDt;
         p.x = Number(p.beautifulWaveBaseX || p.x) +
           Math.sin(p.beautifulAge * Number(p.beautifulWaveFreq || 4.2) + Number(p.beautifulWavePhase || 0)) *
           Number(p.beautifulWaveAmp || 18);
       } else {
-        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.x += p.vx * dt; p.y += p.vy * moveDt;
       }
 
       // リヴィアの漂流弾は8秒間フィールド内に残すため、壁では消さずに反射する。
@@ -8574,20 +8886,33 @@
   const AYANE_ULT_HAND_OPEN_SRC = 'images/ayane_ult_hand_open.webp';
   const AYANE_ULT_HAND_CLOSE_SRC = 'images/ayane_ult_hand_close.webp';
 
+  const SHURI_ULT_SCYTHE_SRC = 'data:image/webp;base64,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E6Uwft7W7LIO/6IqtZPRlXhg+RO1WDqoG3hEXAvlt0ZHnPxeGWRdts4PVkpSGwEQRvwAPpHJE1IxoyGOUBeiRj3hw/A2Ph0Fl1jun89XMVayq9/zsdxUEMx2ypWP9bF37Fd8X663m4FE32aMgBIRSytHiTP198W3hbuIc/S2Q123j40lnrkDfv/9cqZ5SdRraxuO/qw8pOyJpveyUiCIMHfn5/ahoZG+oB+eJf0SvAnS6JOwDY7tlAdmBnh11pbUER8KwJ6xVIfjgx61b7Dvst6cHhLPmIXGVbQKPeTV3siYAVf/OKSxYFpgIJt/w9W85RBC8woTLyRRQMlxoJfSWVy1oBe33beyjyehMCQhgxJb7imd4q3712VPjC1zjVaF8ttDrkiTwLNaMFV5ld0BsUkgmC7Uhr/ARbo//Ym0kdQTl4I0weG+S0cBsxuBtGa5O4m5MMjtfsw4wA2EaECQ/xhv//cRRDgAAABFWElGXgAAAE1NACoAAAAIAAIBMQACAAAAIwAAACYBMgACAAAAFAAAAEoAAAAAUGhvdG9wZWEgRWRpdG9yICh3d3cucGhvdG9wZWEuY29tKQAAMjAyNjowOToxNCAxNTowMjoyMgBYTVAgBgMAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+Cjx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQ1IDc5LjE2MzQ5OSwgMjAxOC8wOC8xMy0xNjo0MDoyMiI+CjxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CjxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOklwdGM0eG1wQ29yZT0iaHR0cDovL2lwdGMub3JnL3N0ZC9JcHRjNHhtcENvcmUvMS4wL3htbG5zLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiPgo8L3JkZjpEZXNjcmlwdGlvbj4KPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KPD94cGFja2V0IGVuZD0idyI/Pg==';
+
   // シュリ(id:19)専用エフェクト。紅黒の波動が飛び、命中地点で巨大化して停止・振動する。
   if (!document.getElementById('shooting-gojo-style-v2')) {
     const style = document.createElement('style');
     style.id = 'shooting-gojo-style-v2';
     style.textContent = `
-      .shooting-bullet-gojo,
-      .shooting-bullet-gojo.shooting-bullet-logos{
-        width:16px!important;height:16px!important;border-radius:50%!important;
-        opacity:.74!important;
-        background-color:rgba(154,32,52,.72)!important;
-        filter:saturate(1.08) brightness(1.02)!important;
-        background:radial-gradient(circle at 38% 34%,rgba(255,244,246,.90) 0 9%,rgba(232,152,170,.82) 18%,rgba(176,40,68,.74) 42%,rgba(86,10,26,.62) 68%,rgba(20,0,8,.20) 100%)!important;
-        box-shadow:0 0 7px rgba(255,242,245,.66),0 0 14px rgba(196,66,96,.52),0 0 24px rgba(88,8,27,.34)!important;
-        border:1px solid rgba(255,233,238,.44)!important;
+      #shooting-event-root .shooting-bullet.shooting-bullet-gojo,
+      #shooting-event-root .shooting-bullet.shooting-bullet-gojo.shooting-bullet-logos{
+        width:4px!important;
+        height:22px!important;
+        min-width:4px!important;
+        min-height:22px!important;
+        max-width:4px!important;
+        max-height:22px!important;
+        border-radius:999px!important;
+        opacity:1!important;
+        border:0!important;
+        outline:none!important;
+        background:linear-gradient(180deg,#fff7f8 0%,#e7a5b1 44%,#8d243b 100%)!important;
+        box-shadow:0 0 7px rgba(215,93,119,.78)!important;
+        filter:none!important;
+      }
+      #shooting-event-root .shooting-bullet.shooting-bullet-gojo::before,
+      #shooting-event-root .shooting-bullet.shooting-bullet-gojo::after{
+        content:none!important;
+        display:none!important;
       }
       .shooting-gojo-purple-wave{
         position:absolute;left:0;top:0;z-index:28;pointer-events:none;
@@ -8625,6 +8950,73 @@
       }
       .shooting-gojo-purple-wave.release{
         animation:shootingGojoWaveRelease .36s ease-out forwards!important;
+      }
+      .shooting-gojo-purple-wave.scythe{
+        width:118px;height:118px;
+        border-radius:0;
+        background:none!important;
+        box-shadow:none!important;
+        filter:none!important;
+        overflow:visible;
+        transform-origin:50% 50%!important;
+      }
+      .shooting-gojo-purple-wave.scythe::before{
+        content:none!important;
+        display:none!important;
+      }
+      .shooting-gojo-purple-wave.scythe::after{
+        content:"";
+        position:absolute;
+        left:50%;top:50%;
+        width:154px;height:154px;
+        transform:translate(-50%,-50%);
+        border-radius:50%;
+        background:radial-gradient(circle,rgba(236,164,181,.20) 0 22%,rgba(166,42,70,.18) 42%,rgba(82,8,25,.08) 62%,transparent 76%)!important;
+        box-shadow:0 0 28px rgba(157,38,66,.16),0 0 72px rgba(73,7,22,.10);
+        opacity:0;
+        pointer-events:none;
+      }
+      .shooting-gojo-purple-wave.scythe .shooting-shuri-scythe-img{
+        position:absolute;
+        left:50%;top:50%;
+        width:100%;height:100%;
+        transform:translate(-50%,-50%);
+        object-fit:contain;
+        display:block;
+        pointer-events:none;
+        filter:drop-shadow(0 0 9px rgba(130,16,38,.24)) drop-shadow(0 0 18px rgba(57,3,14,.18));
+      }
+      .shooting-gojo-purple-wave.scythe.fly{
+        opacity:.98;
+        animation:none!important;
+      }
+      .shooting-gojo-purple-wave.scythe.fly::after{
+        opacity:0;
+      }
+      .shooting-gojo-purple-wave.scythe.impact{
+        width:176px;height:176px;
+        opacity:.94;
+        background:none!important;
+        border-radius:50%;
+        box-shadow:none!important;
+        filter:none!important;
+        overflow:visible;
+        animation:shootingGojoImpactShake .10s linear infinite, shootingGojoImpactPulse .40s ease-in-out infinite alternate;
+      }
+      .shooting-gojo-purple-wave.scythe.impact .shooting-shuri-scythe-img{
+        width:72%;height:72%;
+        filter:drop-shadow(0 0 10px rgba(255,242,246,.18)) drop-shadow(0 0 24px rgba(120,15,37,.20));
+      }
+      .shooting-gojo-purple-wave.scythe.impact::after{
+        width:176px;height:176px;
+        opacity:1;
+      }
+      .shooting-gojo-purple-wave.scythe.release{
+        animation:shootingScytheRelease .42s ease-out forwards!important;
+      }
+      @keyframes shootingScytheRelease{
+        0%{opacity:.94;filter:none}
+        100%{opacity:0;filter:blur(3px)}
       }
       @keyframes shootingGojoWaveSpin{
         0%{filter:brightness(1.02) saturate(.96);transform:translate(-50%,-50%) scale(.82)}
@@ -12127,14 +12519,57 @@
     if (p) state.bullets.push(p);
   }
 
+  function getEriUltTargetPoints() {
+    if (!state) return [];
+    if (isNormalBattle()) {
+      return state.normalEnemies
+        .filter(enemy => enemy && enemy.el && enemy.hp > 0)
+        .map(enemy => ({ x: Number(enemy.x || 0), y: Number(enemy.y || 0) }));
+    }
+    if (state.boss && state.boss.hp > 0) {
+      return [{ x: Number(state.boss.x || 0), y: Number(state.boss.y || 0) }];
+    }
+    return [];
+  }
+
+  function spawnEriUltFeedback(kind, points) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const cls = kind === 'slash' ? 'shooting-eri-ult-slash' : 'shooting-eri-ult-mark';
+    (Array.isArray(points) ? points : []).forEach(point => {
+      const el = document.createElement('i');
+      el.className = cls;
+      arena.appendChild(el);
+      positionUnit(el, Number(point.x || 0), Number(point.y || 0));
+      setTimeout(() => el.remove(), kind === 'slash' ? 360 : 480);
+    });
+  }
+
+  function triggerEriUltImpactFeedback(points) {
+    const root = document.getElementById(ROOT_ID);
+    spawnEriUltFeedback('slash', points);
+    if (!root) return;
+    root.classList.remove('eri-ult-impact', 'eri-ult-hitstop');
+    void root.offsetWidth;
+    root.classList.add('eri-ult-impact', 'eri-ult-hitstop');
+    setTimeout(() => root.classList.remove('eri-ult-hitstop'), 82);
+    setTimeout(() => root.classList.remove('eri-ult-impact'), 190);
+  }
+
   function useEriUlt(c) {
     showUltCut(c.ultName, c.effectKey);
     ultScreenFlash('ult-flash-eri');
     clearEnemyBulletsOnly();
     applyBossStun(1000, 'eri_ult');
     state.ultLockUntil = performance.now() + 900;
+
+    // ダメージ地点を発動時に固定し、0.42秒の予兆が「何に当たるか」を明確にする。
+    const impactPoints = getEriUltTargetPoints();
+    spawnEriUltFeedback('mark', impactPoints);
+
     renderHud();
     pushUltTimer(() => {
+      triggerEriUltImpactFeedback(impactPoints);
       const damage =
         Number(c.atk || 0) *
         Number(c.ultDamageAtkMultiplier || 2.8);
@@ -12205,7 +12640,6 @@
     clearGojoPurpleField();
 
     const now = performance.now();
-    const TRAVEL_MS = 430;
     const HOLD_MS = Number(c.gojoPurpleDurationMs || 7000);
     const TICK_MS = Number(c.gojoPurpleTickMs || 250);
     const TICK_COUNT = Math.max(1, Math.round(HOLD_MS / TICK_MS));
@@ -12214,10 +12648,12 @@
     const startX = Number(state.player.x || arena.clientWidth * .5);
     const startY = Math.max(24, Number(state.player.y || arena.clientHeight * .72) - 18);
 
-    let endX = startX;
-    let endY = Math.max(36, startY - 180);
+    let targetX = startX;
+    let targetY = Math.max(36, startY - 180);
+    let travelTargetEnemyId = null;
+    let isBossTarget = false;
 
-    // 最寄りの敵へ小さな波動を飛ばす。着弾後はその座標が重力場の中心になる。
+    // 最寄りの敵へ大鎌を直線投擲する。接触した瞬間に瘴気場を展開する。
     if (isNormalBattle()) {
       const living = (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0);
       if (!living.length) {
@@ -12229,54 +12665,73 @@
         const db = Math.hypot(Number(b.x || 0) - startX, Number(b.y || 0) - startY);
         return da - db;
       })[0];
-      endX = Number(target.x || startX);
-      endY = Number(target.y || endY);
+      travelTargetEnemyId = target.id;
+      targetX = Number(target.x || startX);
+      targetY = Number(target.y || targetY);
     } else if (state.boss) {
-      endX = Number(state.boss.x || startX);
-      endY = Math.max(24, Number(state.boss.y || endY) + 8);
-      state.bossGrabUntil = Math.max(Number(state.bossGrabUntil || 0), now + TRAVEL_MS + 100);
+      isBossTarget = true;
+      targetX = Number(state.boss.x || startX);
+      targetY = Math.max(24, Number(state.boss.y || targetY) + 8);
+    } else {
+      state.ultLockUntil = now + 240;
+      return;
     }
 
-    state.ultLockUntil = now + TRAVEL_MS + 100;
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+    const baseDistance = Math.max(1, Math.hypot(dx, dy));
+    const dirX = dx / baseDistance;
+    const dirY = dy / baseDistance;
+    const baseDeg = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+    const TRAVEL_SPEED = 460; // px / sec
+    const MAX_TRAVEL_MS = 1600;
+    const ROTATE_DPS = 180; // 画像中心を支点にゆっくり回転
+    const normalHitRadius = 34;
+    const bossHitRadius = 58;
+
+    state.ultLockUntil = now + MAX_TRAVEL_MS + 100;
     renderHud();
 
     const wave = document.createElement('div');
-    wave.className = 'shooting-gojo-purple-wave fly';
+    wave.className = 'shooting-gojo-purple-wave scythe fly';
     wave.setAttribute('aria-hidden', 'true');
+    const scytheImg = document.createElement('img');
+    scytheImg.className = 'shooting-shuri-scythe-img';
+    scytheImg.src = SHURI_ULT_SCYTHE_SRC;
+    scytheImg.alt = '';
+    scytheImg.draggable = false;
+    wave.appendChild(scytheImg);
     arena.appendChild(wave);
-    positionUnit(wave, startX, startY);
+    wave.style.transformOrigin = '50% 50%';
 
-    const travelStartedAt = performance.now();
-    const animateTravel = ts => {
-      if (!wave.isConnected || !state || state.ended || state.finishing) return;
-      const t = Math.max(0, Math.min(1, (ts - travelStartedAt) / TRAVEL_MS));
-      const eased = t * t * (3 - 2 * t);
-      positionUnit(
-        wave,
-        startX + (endX - startX) * eased,
-        startY + (endY - startY) * eased
-      );
-      if (t < 1) requestAnimationFrame(animateTravel);
+    const setScytheTransform = (x, y, deg = 0, scale = 1) => {
+      wave.style.transform =
+        `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${deg}deg) scale(${scale})`;
     };
-    requestAnimationFrame(animateTravel);
 
-    pushUltTimer(() => {
-      if (!state || state.ended || state.finishing || !wave.isConnected) return;
+    let currentX = startX;
+    let currentY = startY;
+    let prevTs = performance.now();
+    let impacted = false;
 
-      positionUnit(wave, endX, endY);
+    const impactAt = (x, y) => {
+      if (impacted || !state || state.ended || state.finishing || !wave.isConnected) return;
+      impacted = true;
+
+      setScytheTransform(x, y, 0, 1);
       wave.classList.remove('fly');
       wave.classList.add('impact');
       if (root) root.classList.add('ayane-rampage-shake');
+
       // シュリULTは盤面上の敵弾を消去しない。発動前から存在する弾もそのまま残す。
-      createHit(endX, endY, true);
+      createHit(x, y, true);
 
       const activeFrom = performance.now();
       const activeUntil = activeFrom + HOLD_MS;
 
-      // エテルナのブラックホールに近い吸引挙動＋攻撃力を持つ血月瘴気場。
       state.gojoPurpleField = {
-        x: endX,
-        y: endY,
+        x,
+        y,
         activeFrom,
         activeUntil,
         pullStrength: Number(c.gojoPurplePullStrength || 10.8),
@@ -12288,30 +12743,85 @@
         damagePulseIndex: 0,
       };
 
-      // ボスの攻撃AIも停止。通常敵/SPECIAL OBJECTは isEnemyPullFieldActive() 側で停止。
       if (!isNormalBattle()) {
         state.bossGrabUntil = Math.max(Number(state.bossGrabUntil || 0), activeUntil);
       }
 
-      // 着弾後はシュリ自身の通常射撃をすぐ再開できる。
       state.ultLockUntil = performance.now() + 120;
       state.lastShotAt = performance.now();
       renderHud();
-    }, TRAVEL_MS);
 
-    pushUltTimer(() => {
-      if (!state) return;
-      clearGojoPurpleField();
-      if (!isNormalBattle()) state.bossGrabUntil = 0;
-      wave.classList.add('release');
-      if (root) root.classList.remove('ayane-rampage-shake');
-      renderHud();
-    }, TRAVEL_MS + HOLD_MS);
+      pushUltTimer(() => {
+        if (!state) return;
+        clearGojoPurpleField();
+        if (!isNormalBattle()) state.bossGrabUntil = 0;
+        if (wave.isConnected) wave.classList.add('release');
+        if (root) root.classList.remove('ayane-rampage-shake');
+        renderHud();
+      }, HOLD_MS);
 
-    pushUltTimer(() => {
-      if (wave.isConnected) wave.remove();
-      if (root) root.classList.remove('ayane-rampage-shake');
-    }, TRAVEL_MS + HOLD_MS + 420);
+      pushUltTimer(() => {
+        if (wave.isConnected) wave.remove();
+        if (root) root.classList.remove('ayane-rampage-shake');
+      }, HOLD_MS + 420);
+    };
+
+    const animateTravel = ts => {
+      if (impacted || !wave.isConnected || !state || state.ended || state.finishing) return;
+
+      const dt = Math.max(0.001, (ts - prevTs) / 1000);
+      prevTs = ts;
+      const elapsedMs = ts - now;
+
+      currentX += dirX * TRAVEL_SPEED * dt;
+      currentY += dirY * TRAVEL_SPEED * dt;
+
+      const spinDeg = (elapsedMs / 1000) * ROTATE_DPS;
+      setScytheTransform(currentX, currentY, baseDeg + spinDeg, 1);
+
+      let hitX = null;
+      let hitY = null;
+
+      if (isNormalBattle()) {
+        const targets = (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0);
+        let contact = null;
+
+        if (travelTargetEnemyId != null) {
+          contact = targets.find(enemy => Number(enemy.id) === Number(travelTargetEnemyId)) || null;
+        }
+        if (!contact) {
+          contact = targets.find(enemy => Math.hypot(Number(enemy.x || 0) - currentX, Number(enemy.y || 0) - currentY) <= normalHitRadius) || null;
+        }
+
+        if (contact && Math.hypot(Number(contact.x || 0) - currentX, Number(contact.y || 0) - currentY) <= normalHitRadius) {
+          hitX = Number(contact.x || currentX);
+          hitY = Number(contact.y || currentY);
+        }
+      } else if (isBossTarget && state.boss && state.boss.hp > 0) {
+        const bossX = Number(state.boss.x || targetX);
+        const bossY = Math.max(24, Number(state.boss.y || targetY - 8) + 8);
+        if (Math.hypot(bossX - currentX, bossY - currentY) <= bossHitRadius) {
+          hitX = bossX;
+          hitY = bossY;
+        }
+      }
+
+      const traveled = Math.hypot(currentX - startX, currentY - startY);
+      if (hitX != null && hitY != null) {
+        impactAt(hitX, hitY);
+        return;
+      }
+
+      if (traveled >= baseDistance || elapsedMs >= MAX_TRAVEL_MS) {
+        impactAt(targetX, targetY);
+        return;
+      }
+
+      requestAnimationFrame(animateTravel);
+    };
+
+    setScytheTransform(currentX, currentY, baseDeg, 1);
+    requestAnimationFrame(animateTravel);
   }
 
   function useAyaneUlt(c) {
@@ -12930,6 +13440,133 @@
     state.ultLockUntil = now + 260;
   }
 
+  function ensureIgnisBurnEffectStyle() {
+    if (document.getElementById('shooting-ignis-burn-style-v1')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-ignis-burn-style-v1';
+    style.textContent = `
+      .shooting-ignis-burn{
+        position:absolute;
+        left:0;top:0;
+        width:96px;height:112px;
+        z-index:24;
+        pointer-events:none;
+        opacity:.92;
+        transform-origin:50% 72%;
+        will-change:transform,opacity,filter;
+        filter:drop-shadow(0 0 7px rgba(158,22,18,.20));
+      }
+
+      .shooting-ignis-burn .ignis-burn-aura{
+        position:absolute;
+        left:50%;top:63%;
+        width:78px;height:46px;
+        transform:translate(-50%,-50%);
+        border-radius:50%;
+        background:
+          radial-gradient(ellipse at center,
+            rgba(255,225,210,.10) 0 10%,
+            rgba(255,84,62,.17) 22%,
+            rgba(176,24,25,.17) 43%,
+            rgba(70,4,12,.08) 62%,
+            transparent 76%);
+        box-shadow:
+          0 0 13px rgba(255,88,62,.13),
+          0 0 28px rgba(160,18,22,.10),
+          inset 0 0 12px rgba(255,203,185,.06);
+        animation:ignisBurnAuraBreath 1.5s ease-in-out infinite alternate;
+      }
+
+      .shooting-ignis-burn .ignis-burn-ring{
+        position:absolute;
+        left:50%;top:69%;
+        width:70px;height:28px;
+        transform:translate(-50%,-50%) rotate(-5deg);
+        border:1px solid rgba(233,74,58,.28);
+        border-radius:50%;
+        box-shadow:
+          0 0 8px rgba(238,75,57,.14),
+          inset 0 0 6px rgba(255,116,91,.08);
+        opacity:.72;
+        animation:ignisBurnRingDrift 2.4s ease-in-out infinite alternate;
+      }
+
+      .shooting-ignis-burn .ignis-burn-heat{
+        position:absolute;
+        left:50%;top:50%;
+        width:54px;height:76px;
+        transform:translate(-50%,-50%);
+        border-radius:48% 52% 45% 55%;
+        background:
+          radial-gradient(ellipse at 52% 70%, rgba(255,121,92,.16), transparent 44%),
+          linear-gradient(to top,
+            rgba(100,6,14,.16) 0%,
+            rgba(204,36,31,.15) 28%,
+            rgba(255,105,73,.10) 52%,
+            rgba(255,188,158,.04) 70%,
+            transparent 88%);
+        filter:blur(3.5px);
+        opacity:.82;
+        animation:ignisBurnHeatWaver 1.05s ease-in-out infinite alternate;
+      }
+
+      .shooting-ignis-burn .ignis-burn-ember{
+        position:absolute;
+        left:50%;top:70%;
+        width:3px;height:7px;
+        margin-left:-1px;
+        border-radius:60% 40% 60% 40%;
+        background:linear-gradient(to top, rgba(198,31,25,.90), rgba(255,143,103,.62), rgba(255,235,211,.10));
+        box-shadow:0 0 5px rgba(233,61,43,.28);
+        opacity:0;
+      }
+      .shooting-ignis-burn .e1{--dx:-25px;--dy:-63px;animation:ignisBurnEmber 1.35s ease-out .08s infinite}
+      .shooting-ignis-burn .e2{--dx:18px;--dy:-71px;animation:ignisBurnEmber 1.72s ease-out .42s infinite}
+      .shooting-ignis-burn .e3{--dx:-8px;--dy:-84px;animation:ignisBurnEmber 1.48s ease-out .76s infinite}
+      .shooting-ignis-burn .e4{--dx:29px;--dy:-56px;animation:ignisBurnEmber 1.86s ease-out 1.02s infinite}
+      .shooting-ignis-burn .e5{--dx:-33px;--dy:-48px;animation:ignisBurnEmber 1.64s ease-out 1.18s infinite}
+
+      .shooting-ignis-burn.tick .ignis-burn-aura{
+        animation:ignisBurnTickPulse .28s ease-out 1;
+      }
+      .shooting-ignis-burn.tick .ignis-burn-ring{
+        border-color:rgba(255,118,90,.44);
+        box-shadow:0 0 13px rgba(246,77,54,.22),inset 0 0 9px rgba(255,140,109,.11);
+      }
+
+      .shooting-ignis-burn.fade{
+        opacity:0!important;
+        filter:blur(3px);
+        transition:opacity .22s ease,filter .22s ease;
+      }
+
+      @keyframes ignisBurnAuraBreath{
+        from{transform:translate(-50%,-50%) scale(.94);opacity:.62}
+        to{transform:translate(-50%,-50%) scale(1.07);opacity:.94}
+      }
+      @keyframes ignisBurnRingDrift{
+        from{transform:translate(-50%,-50%) rotate(-7deg) scaleX(.94);opacity:.48}
+        to{transform:translate(-50%,-50%) rotate(5deg) scaleX(1.05);opacity:.78}
+      }
+      @keyframes ignisBurnHeatWaver{
+        from{transform:translate(-53%,-50%) scale(.96,1.00) skewX(-2deg);opacity:.60}
+        to{transform:translate(-47%,-53%) scale(1.04,1.08) skewX(3deg);opacity:.88}
+      }
+      @keyframes ignisBurnEmber{
+        0%{transform:translate(0,0) scale(.72);opacity:0}
+        12%{opacity:.68}
+        64%{opacity:.36}
+        100%{transform:translate(var(--dx),var(--dy)) scale(.20);opacity:0}
+      }
+      @keyframes ignisBurnTickPulse{
+        0%{transform:translate(-50%,-50%) scale(.92);opacity:.64}
+        38%{transform:translate(-50%,-50%) scale(1.18);opacity:1}
+        100%{transform:translate(-50%,-50%) scale(1.02);opacity:.76}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function getIgnisBurnFx(key) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
@@ -12940,20 +13577,39 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
 
+    ensureIgnisBurnEffectStyle();
+
     let burn = getIgnisBurnFx(key);
     if (!burn) {
-      burn = document.createElement('img');
+      burn = document.createElement('div');
       burn.className = 'shooting-ignis-burn';
       burn.dataset.burnKey = key;
-      burn.src = 'images/battle_barn.webp';
-      burn.alt = 'burn';
-      burn.draggable = false;
+      burn.setAttribute('aria-hidden', 'true');
+      burn.innerHTML = `
+        <span class="ignis-burn-aura"></span>
+        <span class="ignis-burn-ring"></span>
+        <span class="ignis-burn-heat"></span>
+        <i class="ignis-burn-ember e1"></i>
+        <i class="ignis-burn-ember e2"></i>
+        <i class="ignis-burn-ember e3"></i>
+        <i class="ignis-burn-ember e4"></i>
+        <i class="ignis-burn-ember e5"></i>
+      `;
       arena.appendChild(burn);
     }
 
-    // 少し下へずらして、敵の足元から燃え上がる見え方にする。
-    positionUnit(burn, x, y + 12);
+    // 足元寄りに置き、炎そのものではなく赤い熱と火の粉で燃焼状態を見せる。
+    positionUnit(burn, x, y + 10);
     return burn;
+  }
+
+  function pulseIgnisBurnVisual(key) {
+    const burn = getIgnisBurnFx(key);
+    if (!burn) return;
+    burn.classList.remove('tick');
+    void burn.offsetWidth;
+    burn.classList.add('tick');
+    setTimeout(() => burn.classList.remove('tick'), 320);
   }
 
   function removeIgnisBurnVisual(key) {
@@ -13014,6 +13670,7 @@
 
         if (now >= Number(enemy.ignisBurnNextTickAt || 0)) {
           enemy.ignisBurnNextTickAt = now + tickMs;
+          pulseIgnisBurnVisual(burnKey);
           damageNormalEnemy(enemy, damage, now, true);
         }
       });
@@ -13034,6 +13691,7 @@
 
     if (state.boss && state.boss.hp > 0 && now >= Number(state.ignisBossBurnNextTickAt || 0)) {
       state.ignisBossBurnNextTickAt = now + tickMs;
+      pulseIgnisBurnVisual('boss');
       const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       createHit(state.boss.x, state.boss.y, true);
@@ -13546,6 +14204,192 @@
     if (state.boss.hp <= 0) beginBossDefeat();
   }
 
+
+  function pointSegmentDistance(px, py, ax, ay, bx, by) {
+    const abx = bx - ax;
+    const aby = by - ay;
+    const lenSq = abx * abx + aby * aby;
+    if (lenSq <= 0.0001) return Math.hypot(px - ax, py - ay);
+    const t = clamp(((px - ax) * abx + (py - ay) * aby) / lenSq, 0, 1);
+    const qx = ax + abx * t;
+    const qy = ay + aby * t;
+    return Math.hypot(px - qx, py - qy);
+  }
+
+  function randomJigBounceAngle(side, previousAngle) {
+    // 壁沿いに張り付く極端な浅角度を避けつつ、反射のたびに十分ランダム化する。
+    const minNormal = 0.34; // 壁法線方向の最低成分。約20度相当。
+    let vx = 0;
+    let vy = 0;
+    for (let i = 0; i < 10; i++) {
+      let a = Math.random() * Math.PI * 2;
+      vx = Math.cos(a);
+      vy = Math.sin(a);
+      const valid =
+        (side === 'left'   && vx >  minNormal) ||
+        (side === 'right'  && vx < -minNormal) ||
+        (side === 'top'    && vy >  minNormal) ||
+        (side === 'bottom' && vy < -minNormal);
+      if (!valid) continue;
+      // 直前とほぼ同じ向きだけは避け、スクランブル感を保つ。
+      const delta = Math.abs(Math.atan2(Math.sin(a - previousAngle), Math.cos(a - previousAngle)));
+      if (delta < 0.22) continue;
+      return a;
+    }
+    // フォールバック：通常反射に少しだけランダム角を足す。
+    if (side === 'left' || side === 'right') return Math.PI - previousAngle + (Math.random() - .5) * .8;
+    return -previousAngle + (Math.random() - .5) * .8;
+  }
+
+  function damageJigScrambleTargets(beam, c, now) {
+    if (!state || !beam) return;
+    const len = Math.max(48, Number(c.jigUltBeamLength || 128));
+    const angle = Number(beam.angle || 0);
+    const hx = Number(beam.x || 0);
+    const hy = Number(beam.y || 0);
+    const tx = hx - Math.cos(angle) * len;
+    const ty = hy - Math.sin(angle) * len;
+    const hitInterval = Math.max(80, Number(c.jigUltHitIntervalMs || 200));
+    const baseDamage = Number(c.atk || 0) * Math.max(0, Number(c.jigUltDamageAtkRate || 0.12));
+    const beamRadius = Math.max(10, Number(c.jigUltBeamWidth || 5) * 1.8);
+
+    if (isNormalBattle() || hasBossAdds()) {
+      (state.normalEnemies || []).slice().forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        const key = enemy;
+        const last = Number(beam.hitCooldown.get(key) || -Infinity);
+        if (now - last < hitInterval) return;
+        const hitRadius = beamRadius + 22;
+        if (pointSegmentDistance(Number(enemy.x || 0), Number(enemy.y || 0), tx, ty, hx, hy) > hitRadius) return;
+        beam.hitCooldown.set(key, now);
+        const finalDamage = applyElementDamage(baseDamage, normalizeCombatElement(c.element), getCombatTargetElement(enemy));
+        damageNormalEnemy(enemy, finalDamage, now, false);
+      });
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    }
+
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      const key = state.boss;
+      const last = Number(beam.hitCooldown.get(key) || -Infinity);
+      if (now - last >= hitInterval) {
+        const bossHitRadius = beamRadius + 44;
+        if (pointSegmentDistance(Number(state.boss.x || 0), Number(state.boss.y || 0), tx, ty, hx, hy) <= bossHitRadius) {
+          beam.hitCooldown.set(key, now);
+          const finalDamage = applyElementDamage(baseDamage, normalizeCombatElement(c.element), getCombatTargetElement(state.boss));
+          const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+          state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+          updateBossPhase();
+          if (shouldRenderRaidBossHitVisual(now, 'hit')) {
+            createHit(Number(state.boss.x || hx), Number(state.boss.y || hy), false);
+            flashBossHit(false, true);
+          }
+          if (shouldRenderRaidBossHitVisual(now, 'number')) showBossDamageNumber(appliedDamage, false);
+          if (!addScoreAttackDamageScore(appliedDamage)) state.score += Math.round(appliedDamage * 70);
+          if (state.boss.hp <= 0) beginBossDefeat();
+        }
+      }
+    }
+  }
+
+  function useJigScrambleUlt(c) {
+    const arena = document.getElementById('shooting-arena');
+    const root = document.getElementById(ROOT_ID);
+    if (!arena || !state) return;
+
+    showUltCut(c.ultName || 'SCRAMBLE RAY', c.effectKey);
+    clearEnemyBulletsOnly();
+
+    const duration = Math.max(1000, Number(c.jigUltDurationMs || 5000));
+    const count = Math.max(1, Math.round(Number(c.jigUltBeamCount || 6)));
+    const speed = Math.max(180, Number(c.jigUltBeamSpeed || 520));
+    const len = Math.max(48, Number(c.jigUltBeamLength || 128));
+    const width = Math.max(2, Number(c.jigUltBeamWidth || 5));
+    const startX = Number(state.player.x || arena.clientWidth * .5);
+    const startY = Number(state.player.y || arena.clientHeight * .78);
+    const margin = 3;
+    const token = (Number(state.jigScrambleToken || 0) + 1);
+    state.jigScrambleToken = token;
+    state.ultActiveUntil = performance.now() + duration;
+    state.ultLockUntil = performance.now() + 260;
+
+    arena.querySelectorAll('.shooting-jig-scramble-ray').forEach(el => el.remove());
+    if (root) {
+      root.classList.remove('jig-scramble-active');
+      void root.offsetWidth;
+      root.classList.add('jig-scramble-active');
+    }
+
+    const beams = [];
+    for (let i = 0; i < count; i++) {
+      // 均等放射を基準に少し乱し、6本が最初から同方向へ固まらないようにする。
+      const base = -Math.PI * 0.92 + (Math.PI * 1.84) * (i / Math.max(1, count - 1));
+      const angle = base + (Math.random() - .5) * 0.34;
+      const el = document.createElement('i');
+      el.className = 'shooting-jig-scramble-ray';
+      el.style.setProperty('--jig-ray-length', len + 'px');
+      el.style.setProperty('--jig-ray-width', width + 'px');
+      arena.appendChild(el);
+      beams.push({
+        el,
+        x: startX,
+        y: startY,
+        angle,
+        speed: speed * (0.92 + Math.random() * 0.16),
+        hitCooldown: new Map(),
+      });
+    }
+
+    const startedAt = performance.now();
+    let lastFrame = startedAt;
+    let ended = false;
+
+    function finish() {
+      if (ended) return;
+      ended = true;
+      beams.forEach(beam => beam.el && beam.el.remove());
+      if (root) root.classList.remove('jig-scramble-active');
+      if (state && state.jigScrambleToken === token) state.ultActiveUntil = 0;
+      renderHud();
+    }
+
+    function frame(now) {
+      if (!state || state.jigScrambleToken !== token || state.ended || state.finishing || now - startedAt >= duration) {
+        finish();
+        return;
+      }
+      const dt = Math.min(0.035, Math.max(0.001, (now - lastFrame) / 1000));
+      lastFrame = now;
+      const w = Math.max(1, arena.clientWidth);
+      const h = Math.max(1, arena.clientHeight);
+
+      beams.forEach(beam => {
+        let vx = Math.cos(beam.angle) * beam.speed;
+        let vy = Math.sin(beam.angle) * beam.speed;
+        beam.x += vx * dt;
+        beam.y += vy * dt;
+
+        let side = '';
+        if (beam.x <= margin) { beam.x = margin; side = 'left'; }
+        else if (beam.x >= w - margin) { beam.x = w - margin; side = 'right'; }
+        if (beam.y <= margin) { beam.y = margin; side = side || 'top'; }
+        else if (beam.y >= h - margin) { beam.y = h - margin; side = side || 'bottom'; }
+
+        if (side) beam.angle = randomJigBounceAngle(side, beam.angle);
+
+        beam.el.style.left = (beam.x - len) + 'px';
+        beam.el.style.top = (beam.y - width * .5) + 'px';
+        beam.el.style.transform = 'rotate(' + beam.angle + 'rad)';
+        damageJigScrambleTargets(beam, c, now);
+      });
+
+      renderHud();
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+    renderHud();
+  }
+
   function useTestChanUlt(c) {
     if (!state || state.ended || state.finishing) return;
 
@@ -13862,6 +14706,169 @@
   }
 
 
+  // ============================================================
+  // シイナ ULT：術式・光の円環
+  // 自機追従の大きな光円。円内の敵弾だけ移動速度を低下させる。
+  // 弾そのものの vx/vy は書き換えず、更新時の dt を縮めるため、
+  // 円外へ出た瞬間に元の速度へ自然に復帰する。
+  // ============================================================
+  function isShiinaLightRingActive(now = performance.now()) {
+    return !!state && now < Number(state.shiinaLightRingUntil || 0);
+  }
+
+  function getShiinaEnemyBulletSpeedMultiplier(p, now = performance.now()) {
+    if (!p || !state || !isShiinaLightRingActive(now)) return 1;
+    const radius = Math.max(1, Number(state.shiinaLightRingRadius || 190));
+    const dx = Number(p.x || 0) - Number(state.player?.x || 0);
+    const dy = Number(p.y || 0) - Number(state.player?.y || 0);
+    if (dx * dx + dy * dy > radius * radius) return 1;
+    return Math.max(0.05, Math.min(1, Number(state.shiinaLightRingSlowMultiplier || 0.5)));
+  }
+
+  function syncShiinaLightRingVisual(now = performance.now()) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    let ring = arena.querySelector('.shooting-shiina-light-ring');
+    if (!isShiinaLightRingActive(now)) {
+      if (ring) ring.remove();
+      return;
+    }
+
+    if (!ring) {
+      ring = document.createElement('div');
+      ring.className = 'shooting-shiina-light-ring';
+      Object.assign(ring.style, {
+        position: 'absolute',
+        left: '0px',
+        top: '0px',
+        borderRadius: '50%',
+        pointerEvents: 'none',
+        zIndex: '6',
+        boxSizing: 'border-box',
+        border: '2px solid rgba(255,248,205,.88)',
+        background: 'radial-gradient(circle, rgba(255,250,220,.035) 0%, rgba(245,255,220,.05) 55%, rgba(255,248,200,.13) 78%, rgba(255,255,235,.025) 100%)',
+        boxShadow: '0 0 14px rgba(255,250,205,.62), inset 0 0 18px rgba(255,255,225,.30)',
+        transform: 'translate3d(-50%,-50%,0)',
+        opacity: '.92'
+      });
+      arena.appendChild(ring);
+      if (typeof ring.animate === 'function') {
+        ring.animate([
+          { opacity:.48, filter:'brightness(.88)' },
+          { opacity:.96, filter:'brightness(1.22)' },
+          { opacity:.58, filter:'brightness(.96)' }
+        ], { duration:1350, iterations:Infinity, easing:'ease-in-out' });
+      }
+    }
+
+    const radius = Math.max(1, Number(state.shiinaLightRingRadius || 190));
+    ring.style.width = `${radius * 2}px`;
+    ring.style.height = `${radius * 2}px`;
+    ring.style.left = `${Number(state.player?.x || 0)}px`;
+    ring.style.top = `${Number(state.player?.y || 0)}px`;
+  }
+
+  function useShiinaLightRingUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const now = performance.now();
+    const duration = Math.max(1000, Number(c.lightRingDurationMs || 7000));
+
+    showUltCut(c.ultName || '術式・光の円環', c.effectKey);
+    state.shiinaLightRingUntil = now + duration;
+    state.shiinaLightRingRadius = Math.max(80, Number(c.lightRingRadius || 190));
+    state.shiinaLightRingSlowMultiplier = Math.max(0.05, Math.min(1, Number(c.lightRingBulletSpeedMultiplier || 0.5)));
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 260);
+    syncShiinaLightRingVisual(now);
+    renderHud();
+  }
+
+
+  function spawnShionCurseMarks(points) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return [];
+    return (Array.isArray(points) ? points : []).map(point => {
+      const el = document.createElement('i');
+      el.className = 'shooting-shion-curse-mark arm';
+      el.setAttribute('aria-hidden', 'true');
+      arena.appendChild(el);
+      positionUnit(el, Number(point.x || 0), Number(point.y || 0));
+      return el;
+    });
+  }
+
+  function useShionUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    const now = performance.now();
+    const delayMs = Math.max(300, Number(c.ultDelayMs || 1200));
+    const debuffMs = Math.max(1000, Number(c.ultDebuffDurationMs || 6000));
+    const damageMultiplier = Math.max(0, Number(c.ultDamageAtkMultiplier || 2.8));
+    const enemyDamageMultiplier = Math.max(0.05, Math.min(1, Number(c.ultEnemyDamageMultiplier || 0.70)));
+    const root = document.getElementById(ROOT_ID);
+
+    showUltCut(c.ultName || '黒羽葬鐘', c.effectKey);
+    ultScreenFlash('ult-flash-ayane');
+
+    // 発動時点の敵位置へ呪印を置く。ダメージ自体は時間差で、その時点で生存している敵全体へ適用。
+    const points = getEriUltTargetPoints();
+    const marks = spawnShionCurseMarks(points);
+
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + delayMs + 180);
+    renderHud();
+
+    pushUltTimer(() => {
+      if (!state || state.ended || state.finishing) return;
+
+      marks.forEach(el => {
+        if (!el || !el.isConnected) return;
+        el.classList.remove('arm');
+        void el.offsetWidth;
+        el.classList.add('detonate');
+        setTimeout(() => el.remove(), 440);
+      });
+
+      const damage = Number(c.atk || 0) * damageMultiplier;
+      applyUltDamage(damage, true);
+
+      state.shionEnemyDebuffUntil = performance.now() + debuffMs;
+      state.shionEnemyDamageMultiplier = enemyDamageMultiplier;
+
+      if (root) {
+        root.classList.remove('shion-curse-active');
+        void root.offsetWidth;
+        root.classList.add('shion-curse-active');
+      }
+
+      state.ultLockUntil = performance.now() + 120;
+      renderHud();
+
+      pushUltTimer(() => {
+        if (!state) return;
+        state.shionEnemyDebuffUntil = 0;
+        state.shionEnemyDamageMultiplier = 1;
+        if (root) root.classList.remove('shion-curse-active');
+        renderHud();
+      }, debuffMs);
+    }, delayMs);
+  }
+
+  function useVeronicaBladeBuffUlt(c) {
+    if (!state) return;
+    const member = getActiveMember();
+    if (!member) return;
+
+    const now = performance.now();
+    const duration = Math.max(1000, Number(c.ultBuffDurationMs || 5000));
+    const multiplier = Math.max(1, Number(c.ultAtkMultiplier || 1.3));
+
+    showUltCut(c.ultName || '刃装解放', c.effectKey);
+    member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + duration);
+    member.atkBuffUntil = Math.max(Number(member.atkBuffUntil || 0), now + duration);
+    member.atkBuffMultiplier = multiplier;
+    renderHud();
+  }
+
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
     if (isChapter04Stage() && !isChapter43BossStage()) return false;
@@ -13889,7 +14896,11 @@
     else if (c.ultType === 'mito_time_rush') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
+    else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
+    else if (c.ultType === 'veronica_blade_buff') useVeronicaBladeBuffUlt(c);
+    else if (c.ultType === 'shiina_light_ring') useShiinaLightRingUlt(c);
+    else if (c.ultType === 'shion_delayed_curse') useShionUlt(c);
     else if (c.ultType === 'prototype_generic') useEriUlt(c);
     else useEriUlt(c);
 
