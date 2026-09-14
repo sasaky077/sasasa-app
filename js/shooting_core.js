@@ -4690,18 +4690,69 @@
 
   function applyVeronicaSlash(c, damage, now) {
     if (!state || !c) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    // エフェクトと当たり判定を同じ「斬撃矩形」から計算する。
+    // 以前は敵の中心点(x/y)だけで判定していたため、見た目の半月が敵の身体に
+    // 重なっていても中心点が範囲外だとMISSになるケースがあった。
     const px = Number(state.player.x || 0);
     const py = Number(state.player.y || 0);
     const range = Math.max(60, Number(c.slashRange || 140));
-    const halfWidth = Math.max(30, Number(c.slashWidth || 120) / 2);
+    const width = Math.max(60, Number(c.slashWidth || 120));
+    const halfWidth = width / 2;
     const attackElement = normalizeCombatElement(c.element);
+    const arenaRect = arena.getBoundingClientRect();
     let connected = false;
 
+    // CSS visual:
+    // left=player.x / top=player.y-6 / width=slashWidth / height=slashRange /
+    // transform:translate(-50%,-100%)
+    // とほぼ同じ矩形。アニメーション中のscale分だけごく小さく許容を足す。
+    const forgivenessX = 8;
+    const forgivenessY = 10;
+    const slashRect = {
+      left: arenaRect.left + px - halfWidth - forgivenessX,
+      right: arenaRect.left + px + halfWidth + forgivenessX,
+      top: arenaRect.top + (py - 6) - range - forgivenessY,
+      bottom: arenaRect.top + (py - 6) + forgivenessY
+    };
+
+    const getTargetRect = target => {
+      if (!target) return null;
+
+      // 通常敵は毎フレームDOM計測しない既存の数値hitboxを優先。
+      if (target.el) {
+        let hw = Number(target._hw || 0);
+        let hh = Number(target._hh || 0);
+        if (hw <= 0 || hh <= 0) {
+          measureUnitSize(target);
+          hw = Number(target._hw || 0);
+          hh = Number(target._hh || 0);
+        }
+        if (hw > 0 && hh > 0) return getUnitRect(target, arenaRect);
+
+        // 画像初期化直後などサイズキャッシュがまだ取れない場合だけDOM矩形へ退避。
+        const r = target.el.getBoundingClientRect();
+        if (r && r.width > 0 && r.height > 0) return r;
+      }
+
+      // ボスなどDOM参照を直接持たない対象用の座標フォールバック。
+      const tx = arenaRect.left + Number(target.x || 0);
+      const ty = arenaRect.top + Number(target.y || 0);
+      const fallbackHalfW = target === state.boss ? 48 : 28;
+      const fallbackHalfH = target === state.boss ? 48 : 28;
+      return {
+        left: tx - fallbackHalfW,
+        right: tx + fallbackHalfW,
+        top: ty - fallbackHalfH,
+        bottom: ty + fallbackHalfH
+      };
+    };
+
     const inSlash = target => {
-      if (!target) return false;
-      const dx = Math.abs(Number(target.x || 0) - px);
-      const forward = py - Number(target.y || 0);
-      return dx <= halfWidth && forward >= -16 && forward <= range;
+      const targetRect = getTargetRect(target);
+      return !!targetRect && rectsHit(slashRect, targetRect, 0, 4);
     };
 
     if (isNormalBattle() || hasBossAdds()) {
@@ -4736,6 +4787,8 @@
       grantUltGaugeForHits(c, 1, c.id);
     }
 
+    // エフェクト生成も同じfirePlayer呼び出し内で実行するため、
+    // 「斬撃エフェクト1回 = 当たり判定1回」の周期を常に一致させる。
     spawnVeronicaSlashVisual(c);
     renderHud();
   }
