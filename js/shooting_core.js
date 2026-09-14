@@ -2040,6 +2040,58 @@
   // キャラごとの ultGainPerHit の相対差はそのまま維持する。
   const ULT_GAIN_GLOBAL_MULTIPLIER = 0.5;
 
+  // 単発・低連射型が、命中回数ベースのULTゲージ設計で極端に不利にならないための補正。
+  // 全弾命中を前提に、おおむね20秒程度で満タンになる獲得量を下限とする。
+  // 連射・多段・レーザー系には適用しない。
+  function getUltGainAmountPerHit(c) {
+    if (!c) return 0;
+    const baseGain = Number.isFinite(c.ultGainPerHit) ? Number(c.ultGainPerHit) : 1;
+    let gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER;
+
+    const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
+    const fireRate = Math.max(1, Number(c.fireRate || 0));
+    const shotType = String(c.shotType || '');
+    const singleShotType =
+      shotCount === 1 &&
+      (shotType === 'precision' ||
+       shotType === 'melee_slash' ||
+       shotType === 'charge_release' ||
+       shotType === 'splash');
+
+    if (singleShotType && fireRate >= 350) {
+      const burstNeed = Math.max(1, Number(c.burstNeed || 30));
+      const targetSeconds = 20;
+      const normalizedGain = burstNeed * fireRate / (targetSeconds * 1000);
+      gain = Math.max(gain, normalizedGain);
+    }
+
+    return Math.max(0, gain);
+  }
+
+  function grantUltGaugeForHits(c, hitCount = 1, ownerId = null) {
+    if (!state || !c || hitCount <= 0) return;
+    if ((isChapter04Stage() && !isChapter43BossStage()) || state?.chapter43AttackSealed) return;
+
+    const resolvedOwnerId = ownerId == null ? c.id : ownerId;
+    const ownerMoonlightBlocked =
+      Number(resolvedOwnerId) === CHARACTER_ID.HAYATE &&
+      performance.now() < Number(state.hayateMoonlightUntil || 0);
+    if (ownerMoonlightBlocked) return;
+
+    const member = getPartyMember(resolvedOwnerId);
+    if (!member) return;
+
+    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1));
+    const wasReady = member.burst >= c.burstNeed;
+    member.burst = Math.min(c.burstNeed, member.burst + gain);
+    if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
+      member.ultReadyNotified = true;
+      if (Number(resolvedOwnerId) === Number(state.activeCharacterId)) {
+        showShootingUltFullChargeNotice();
+      }
+    }
+  }
+
   function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
   function rectsHit(a, b, insetA, insetB) {
@@ -4133,18 +4185,7 @@
     state.shotsHit++;
     registerComboHit(c.id, now);
 
-    if (member && (!isChapter04Stage() || isChapter43BossStage()) && !state?.chapter43AttackSealed) {
-      const baseGain = Number.isFinite(c.ultGainPerHit) ? c.ultGainPerHit : 0.3;
-      const gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER;
-      const wasReady = member.burst >= c.burstNeed;
-      member.burst = Math.min(c.burstNeed, member.burst + gain);
-      if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
-        member.ultReadyNotified = true;
-        if (c.id === state.activeCharacterId) {
-          showShootingUltFullChargeNotice();
-        }
-      }
-    }
+    grantUltGaugeForHits(c, 1, c.id);
   }
 
 
@@ -4646,6 +4687,7 @@
     const range = Math.max(60, Number(c.slashRange || 140));
     const halfWidth = Math.max(30, Number(c.slashWidth || 120) / 2);
     const attackElement = normalizeCombatElement(c.element);
+    let connected = false;
 
     const inSlash = target => {
       if (!target) return false;
@@ -4657,6 +4699,7 @@
     if (isNormalBattle() || hasBossAdds()) {
       (state.normalEnemies || []).slice().forEach(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0 || !inSlash(enemy)) return;
+        connected = true;
         const finalDamage = applyElementDamage(damage, attackElement, getCombatTargetElement(enemy));
         damageNormalEnemy(enemy, finalDamage, now, true);
       });
@@ -4665,6 +4708,7 @@
     }
 
     if (!isNormalBattle() && state.boss && state.boss.hp > 0 && inSlash(state.boss)) {
+      connected = true;
       const finalDamage = applyElementDamage(damage, attackElement, getCombatTargetElement(state.boss));
       const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
@@ -4674,6 +4718,14 @@
       flashBossHit(true);
       if (!addScoreAttackDamageScore(appliedDamage)) state.score += Math.round(appliedDamage * 100);
       if (state.boss.hp <= 0) beginBossDefeat();
+    }
+
+    // 近接斬撃は通常Projectileを生成しないため、命中時のコンボ/ULTゲージをここで明示的に加算する。
+    // 複数の敵を同時に斬っても、1回の斬撃につきゲージ加算は1回とする。
+    if (connected) {
+      state.shotsHit = Number(state.shotsHit || 0) + 1;
+      registerComboHit(c.id, now);
+      grantUltGaugeForHits(c, 1, c.id);
     }
 
     spawnVeronicaSlashVisual(c);
@@ -8481,24 +8533,8 @@
           }
         }
 
-        const ownerMoonlightBlocked =
-          Number(ownerId) === CHARACTER_ID.HAYATE &&
-          now < (state.hayateMoonlightUntil || 0);
-
-        if ((!isChapter04Stage() || isChapter43BossStage()) && !state?.chapter43AttackSealed && !p.noUltGain && !ownerMoonlightBlocked) {
-          const baseGain = Number.isFinite(chara.ultGainPerHit) ? chara.ultGainPerHit : 1;
-          const gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER * hitCount;
-
-          if (member) {
-            const wasReady = member.burst >= chara.burstNeed;
-            member.burst = Math.min(chara.burstNeed, member.burst + gain);
-            if (!wasReady && member.burst >= chara.burstNeed && !member.ultReadyNotified) {
-              member.ultReadyNotified = true;
-              if (ownerId === state.activeCharacterId) {
-                showShootingUltFullChargeNotice();
-              }
-            }
-          }
+        if (!p.noUltGain) {
+          grantUltGaugeForHits(chara, hitCount, ownerId);
         }
 
         p.el.remove();
