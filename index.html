@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '468';
+    var FALLBACK_BUILD = '470';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="468">
+  <meta name="sasaphia-build" content="470">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=468">
+  <link rel="manifest" href="manifest.json?v=470">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=468"
+        href="css/style.css?v=470"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=468"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=470"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=468">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=470">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=468">
+  <link rel="stylesheet" href="css/raid_event.css?v=470">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '468';
+  var BUILD = '470';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3448,7 +3448,7 @@ body #bottom-nav-shared.bottom-nav{
     </div>
   </div>
 
-  <script id="home-sky-day-night-v468">
+  <script id="home-sky-day-night-v470">
   (function(){
     'use strict';
 
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=468"></script>
+<script src="js/home_banners.js?v=470"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=468"></script>
-<script src="js/resonance_system.js?v=468"></script>
-<script src="js/resonance_ui.js?v=468"></script>
-<script src="js/character_levelup.js?v=468"></script>
+<script src="js/shooting_resonance.js?v=470"></script>
+<script src="js/resonance_system.js?v=470"></script>
+<script src="js/resonance_ui.js?v=470"></script>
+<script src="js/character_levelup.js?v=470"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -7280,6 +7280,11 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   if(titleStarted) return;
   titleStarted = true;
 
+  // build470:
+  // 非同期ロードに入る前、ユーザーTAPの権限が残っているこの瞬間に
+  // HOME BGMを無音で一度だけprimeしておく。
+  primeHomeBgmFromUserGesture();
+
   var titleScreen = document.getElementById('title-screen');
   var titleHint = document.getElementById('title-tap-hint');
   setTitleLoadingProgress(5);
@@ -7343,9 +7348,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   }
 
   // ここまででHOME表示に必要な画像だけは保証済み。
-  // 残りはゲーム開始後、音声を邪魔しない低負荷ウォームアップへ回す。
-  startDeferredAssetWarmup();
-
+  // 残り画像のウォームアップはHOME BGMが安定した後に開始する。
   setTitleLoadingStage('FINAL CHECK');
   setTitleLoadingProgress(98);
 
@@ -7357,9 +7360,10 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   setTitleLoadingProgress(100);
   await new Promise(function(resolve){ setTimeout(resolve, 140); });
 
-  // タイトルが完全に消えるまではホームBGMを絶対に鳴らさない。
+  // build470 audio handoff:
+  // タイトルBGMはロード中もフェード中も維持し、
+  // HOMEが実際に表示された瞬間にだけ切り替える。
   stopBgm();
-  fadeOutOpeningBgm();
   titleScreen.classList.add('closing');
 
   setTimeout(function(){
@@ -7368,8 +7372,30 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     resetTitleLoadingProgress();
     if(titleHint) titleHint.textContent = '✦ TAP TO START ✦';
 
-    if(isAudioEnabled('main_bgm')) fadeInBgm();
+    // タイトルが完全に消えた瞬間にタイトルBGMを停止。
+    var opening = document.getElementById('bgm-opening');
+    if(opening){
+      opening.pause();
+      try { opening.currentTime = 0; } catch(_){}
+    }
+
+    // HOME BGMはユーザーTAP時にprime済みなので、
+    // 非同期ロード後でもiOS/Safariで安定して開始できる。
+    if(isAudioEnabled('main_bgm')){
+      var homeBgm = document.getElementById('bgm');
+      if(homeBgm){
+        try { homeBgm.currentTime = 0; } catch(_){}
+      }
+      fadeInBgm();
+    }
+
     refreshHomeNotifications();
+
+    // HOME BGMの開始直後に画像decodeをぶつけない。
+    // 1.8秒安定再生させてから残り画像を低負荷でwarmupする。
+    setTimeout(function(){
+      startDeferredAssetWarmup();
+    }, 1800);
 
     setTimeout(function(){
       showTestplayNotice();
@@ -8790,6 +8816,16 @@ function goHome(){
 }
   // ボトムナビゲーション切替
   function showMainTab(name){
+    // build470:
+    // ステージ選択画面上の共通ボトムナビから別タブへ移動する場合は、
+    // 背面だけ切り替えてステージ選択モーダルを残さない。
+    // ナビ操作時は即時に完全非表示へ戻す。
+    var stageSelectModal = document.getElementById('stage-select-modal');
+    if(stageSelectModal && stageSelectModal.style.display !== 'none'){
+      stageSelectModal.style.opacity = '0';
+      stageSelectModal.style.display = 'none';
+    }
+
     if(isSummoning){
       console.log('ガチャ中のため画面遷移をブロック:', name);
       return;
@@ -14065,7 +14101,7 @@ function changeBgmVolume(value){
 }
 
 function isHomeScreenActive(){
-  // build468:
+  // build470:
   // タイトル画面の裏でHOMEを先にactiveにして画像準備するため、
   // HOME activeだけではホームBGM再生条件にしない。
   // タイトルが完全に非表示になるまでは必ずfalse。
@@ -14116,6 +14152,52 @@ function isHomeScreenActive(){
   }
 
   return true;
+}
+
+
+var homeBgmPrimed = false;
+
+function primeHomeBgmFromUserGesture(){
+  if(homeBgmPrimed) return;
+
+  var bgm = document.getElementById('bgm');
+  if(!bgm || !isAudioEnabled('main_bgm')) return;
+
+  // iOS/Safari対策:
+  // タイトルのTAPという明示的なユーザー操作中に一度だけ再生権限を取得する。
+  // 無音状態でplay→pauseし、実際のHOME表示時には通常再生できるようにする。
+  var previousMuted = bgm.muted;
+  var previousVolume = bgm.volume;
+
+  try {
+    bgm.muted = true;
+    bgm.volume = 0;
+
+    var p = bgm.play();
+    if(p && typeof p.then === 'function'){
+      p.then(function(){
+        bgm.pause();
+        try { bgm.currentTime = 0; } catch(_){}
+        bgm.muted = previousMuted;
+        bgm.volume = previousVolume;
+        homeBgmPrimed = true;
+      }).catch(function(e){
+        bgm.muted = previousMuted;
+        bgm.volume = previousVolume;
+        console.warn('[BGM] HOME prime failed:', e);
+      });
+    } else {
+      bgm.pause();
+      try { bgm.currentTime = 0; } catch(_){}
+      bgm.muted = previousMuted;
+      bgm.volume = previousVolume;
+      homeBgmPrimed = true;
+    }
+  } catch(e){
+    bgm.muted = previousMuted;
+    bgm.volume = previousVolume;
+    console.warn('[BGM] HOME prime exception:', e);
+  }
 }
 
 function playBgm(){
@@ -14171,9 +14253,23 @@ function fadeInBgm(){
   bgm.volume = 0;
 
   if(isAudioEnabled('main_bgm')){
-    bgm.play().catch(function(e){
-      console.log('BGMフェードイン待機:', e);
-    });
+    var playPromise = bgm.play();
+    if(playPromise && typeof playPromise.catch === 'function'){
+      playPromise.catch(function(e){
+        console.warn('[BGM] HOME play failed:', e);
+
+        // prime済みでもSafariが一時的に拒否した場合の保険。
+        // 次のユーザー入力でHOMEにいるなら即再試行する。
+        var retry = function(){
+          if(!isHomeScreenActive() || !isAudioEnabled('main_bgm')) return;
+          bgm.play().catch(function(){});
+          window.removeEventListener('touchstart', retry, true);
+          window.removeEventListener('pointerdown', retry, true);
+        };
+        window.addEventListener('touchstart', retry, true);
+        window.addEventListener('pointerdown', retry, true);
+      });
+    }
   } else {
     return;
   }
@@ -15049,43 +15145,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=468"></script>
+<script src="js/asset_loader.js?v=470"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=468"></script>
+<script src="js/login_bonus.js?v=470"></script>
 
-<script src="js/story_engine.js?v=468"></script>
-<script src="js/stories/chapter01.js?v=468"></script>
+<script src="js/story_engine.js?v=470"></script>
+<script src="js/stories/chapter01.js?v=470"></script>
 
-<script src="js/battle_range.js?v=468"></script>
-<script src="js/characters.js?v=468"></script>
-<script src="js/enemies.js?v=468"></script>
-<script src="js/battle.js?v=468"></script>
-<script src="js/battle_swipe.js?v=468"></script>
+<script src="js/battle_range.js?v=470"></script>
+<script src="js/characters.js?v=470"></script>
+<script src="js/enemies.js?v=470"></script>
+<script src="js/battle.js?v=470"></script>
+<script src="js/battle_swipe.js?v=470"></script>
 
-<script src="js/stages.js?v=468"></script>
-<script src="js/stage_select.js?v=468"></script>
-<script src="js/party_select.js?v=468"></script>
-<script src="js/enemy_intro.js?v=468"></script>
+<script src="js/stages.js?v=470"></script>
+<script src="js/stage_select.js?v=470"></script>
+<script src="js/party_select.js?v=470"></script>
+<script src="js/enemy_intro.js?v=470"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=468">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=470">
 
-<script src="js/battle_range_32.js?v=468"></script>
-<script src="js/characters_32.js?v=468"></script>
-<script src="js/remnant_blessings.js?v=468"></script>
-<script src="js/combo_32.js?v=468"></script>
-<script src="js/cards.js?v=468"></script>
-<script src="js/battle_32.js?v=468"></script>
-<script src="js/battle_32_ui.js?v=468"></script>
+<script src="js/battle_range_32.js?v=470"></script>
+<script src="js/characters_32.js?v=470"></script>
+<script src="js/remnant_blessings.js?v=470"></script>
+<script src="js/combo_32.js?v=470"></script>
+<script src="js/cards.js?v=470"></script>
+<script src="js/battle_32.js?v=470"></script>
+<script src="js/battle_32_ui.js?v=470"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=468"></script>
-<script src="js/roguelite_run.js?v=468"></script>
-<script src="js/roguelite_reward.js?v=468"></script>
-<script src="js/shinju.js?v=468"></script>
-<script src="js/roguelite_controller.js?v=468"></script>
-<script src="js/roguelite_overseer_run.js?v=468"></script>
+<script src="js/roguelite_options.js?v=470"></script>
+<script src="js/roguelite_run.js?v=470"></script>
+<script src="js/roguelite_reward.js?v=470"></script>
+<script src="js/shinju.js?v=470"></script>
+<script src="js/roguelite_controller.js?v=470"></script>
+<script src="js/roguelite_overseer_run.js?v=470"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15529,10 +15625,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=468"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=470"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=468"></script>
+<script src="js/raid_event.js?v=470"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15553,7 +15649,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=468"></script>
+<script src="js/score_attack.js?v=470"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
