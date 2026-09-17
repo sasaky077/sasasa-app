@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '463';
+    var FALLBACK_BUILD = '465';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="463">
+  <meta name="sasaphia-build" content="465">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=463">
+  <link rel="manifest" href="manifest.json?v=465">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=463"
+        href="css/style.css?v=465"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=463"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=465"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=463">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=465">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=463">
+  <link rel="stylesheet" href="css/raid_event.css?v=465">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '463';
+  var BUILD = '465';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3448,7 +3448,7 @@ body #bottom-nav-shared.bottom-nav{
     </div>
   </div>
 
-  <script id="home-sky-day-night-v463">
+  <script id="home-sky-day-night-v465">
   (function(){
     'use strict';
 
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=463"></script>
+<script src="js/home_banners.js?v=465"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=463"></script>
-<script src="js/resonance_system.js?v=463"></script>
-<script src="js/resonance_ui.js?v=463"></script>
-<script src="js/character_levelup.js?v=463"></script>
+<script src="js/shooting_resonance.js?v=465"></script>
+<script src="js/resonance_system.js?v=465"></script>
+<script src="js/resonance_ui.js?v=465"></script>
+<script src="js/character_levelup.js?v=465"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -6902,6 +6902,8 @@ function selectChara(now, gacha) {
   function collectStartupAssetGroups(){
     var common = [];
     var homeCore = [];
+    var characterPanels = [];
+    var shootingCharacterAssets = [];
     var homeBanners = [];
     var summonBanners = [];
 
@@ -6919,7 +6921,6 @@ function selectChara(now, gacha) {
 
     var main = document.getElementById('screen-main');
     if(main){
-      // ホームバナー以外のキャラ・ショートカット等を先に読む。
       main.querySelectorAll('img').forEach(function(img){
         var src = img.currentSrc || img.getAttribute('src');
         if(!src) return;
@@ -6928,7 +6929,40 @@ function selectChara(now, gacha) {
       });
     }
 
-    // DOM未生成・lazy対象でも漏れないよう、設定配列から明示追加。
+    // キャラ一覧で必要なパネル画像は、DOM生成前でも全件先読みする。
+    try {
+      if(typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)){
+        CHARACTERS.forEach(function(chara){
+          if(!chara || chara.hidden === true) return;
+          if(chara.panelImg) characterPanels.push(chara.panelImg);
+
+          // ホーム設定対象になり得る立ち絵もキャッシュしておく。
+          // 現在ホームに設定中のキャラはhomeCoreでも拾うが、
+          // キャラ変更直後の欠け防止としてcutImgも先読み対象にする。
+          if(chara.cutImg) homeCore.push(chara.cutImg);
+        });
+      }
+    } catch(e){
+      console.warn('[StartupAssets] CHARACTERS collect skipped:', e);
+    }
+
+    // シューティングはStrategy側と別マスターなので、専用画像を明示的に先読みする。
+    try {
+      var shootingApi = window.ShootingCharacters;
+      var master = shootingApi && shootingApi.SHOOTING_CHARACTER_MASTER;
+      if(master){
+        Object.keys(master).forEach(function(key){
+          var chara = master[key];
+          if(!chara) return;
+          if(chara.panelImage) shootingCharacterAssets.push(chara.panelImage);
+          if(chara.image) shootingCharacterAssets.push(chara.image);
+          if(chara.cutinImage) shootingCharacterAssets.push(chara.cutinImage);
+        });
+      }
+    } catch(e){
+      console.warn('[StartupAssets] SHOOTING_CHARACTER_MASTER collect skipped:', e);
+    }
+
     try {
       getHomeEventBanners().filter(function(b){ return b && b.hidden !== true; }).forEach(function(b){
         if(b.img) homeBanners.push(b.img);
@@ -6944,10 +6978,12 @@ function selectChara(now, gacha) {
     } catch(_){}
 
     return [
-      { name:'UI',        from:30, to:45, urls:uniqueStartupAssets(common) },
-      { name:'HOME',      from:45, to:68, urls:uniqueStartupAssets(homeCore) },
-      { name:'BANNERS',   from:68, to:84, urls:uniqueStartupAssets(homeBanners) },
-      { name:'ENCOUNTER', from:84, to:96, urls:uniqueStartupAssets(summonBanners) }
+      { name:'UI',         from:30, to:40, urls:uniqueStartupAssets(common) },
+      { name:'HOME',       from:40, to:55, urls:uniqueStartupAssets(homeCore) },
+      { name:'CHARACTERS', from:55, to:72, urls:uniqueStartupAssets(characterPanels) },
+      { name:'SHOOTING',   from:72, to:90, urls:uniqueStartupAssets(shootingCharacterAssets) },
+      { name:'BANNERS',    from:90, to:95, urls:uniqueStartupAssets(homeBanners) },
+      { name:'ENCOUNTER',  from:95, to:98, urls:uniqueStartupAssets(summonBanners) }
     ];
   }
 
@@ -6970,10 +7006,10 @@ function selectChara(now, gacha) {
       return failed;
     }
 
-    // iPhone Safariへの同時リクエスト集中を避けるため、2本ずつ段階ロード。
+    // 全画像を待つが、iPhone Safariへの集中を避けるため4本ずつロード。
     var completed = 0;
-    for(var i = 0; i < urls.length; i += 2){
-      var batch = urls.slice(i, i + 2);
+    for(var i = 0; i < urls.length; i += 4){
+      var batch = urls.slice(i, i + 4);
       var results = await Promise.all(batch.map(function(src){
         return preloadImageForStartup(src, 2);
       }));
@@ -6993,7 +7029,7 @@ function selectChara(now, gacha) {
   }
 
   async function repairStartupDomImages(){
-    var roots = ['screen-main', 'screen-summon', 'bottom-nav-shared'];
+    var roots = ['screen-main', 'screen-summon', 'bottom-nav-shared', 'box-grid'];
     var broken = [];
     roots.forEach(function(id){
       var root = document.getElementById(id);
@@ -7019,6 +7055,17 @@ function selectChara(now, gacha) {
   }
 
   async function waitForStartupAssets(){
+    // シューティング専用マスターが動的ロードなので、
+    // 画像一覧を収集する前にモジュール初期化完了を必ず待つ。
+    if(window.__sasaphiaShootingModulesReady){
+      try {
+        await window.__sasaphiaShootingModulesReady;
+      } catch(e) {
+        console.error('[StartupAssets] shooting modules failed:', e);
+        return { ok:false, failed:['shooting-modules'] };
+      }
+    }
+
     // タイトルの裏で初期DOMを一度完成させる。
     try {
       updateSummonGemUI();
@@ -7215,18 +7262,28 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   if(typeof setNavVisible === 'function') setNavVisible(true);
   setReloadBtnVisible(true);
 
-  // iPhone Safari向け：画像群を段階的にロードする。
-  // UI → ホーム → ホームバナー → 邂逅の順に読み、各画像は成功判定＋再試行する。
-  // 全体の安全弁だけ12秒にし、通常は各段階の完了時点でそのまま進む。
-  var startupAssetsReady = Promise.all([
+  // 起動に必要な画像は「時間切れで見切り発車」しない。
+  // ホームキャラ / キャラ一覧 / シューティングキャラまで、成功判定が終わるまでタイトルを維持する。
+  var startupAssetResults = await Promise.all([
     window._bottomNavAssetsReady || waitForBottomNavAssets(),
     waitForStartupAssets()
   ]);
 
-  await Promise.race([
-    startupAssetsReady,
-    new Promise(function(resolve){ setTimeout(resolve, 12000); })
-  ]);
+  var startupAssetState = startupAssetResults[1] || { ok:false, failed:['unknown'] };
+  if(!startupAssetState.ok){
+    titleStarted = false;
+    setTitleLoadingStage('LOAD FAILED');
+    setTitleLoadingProgress(0);
+    if(titleHint){
+      titleHint.textContent = '画像の読み込みに失敗しました · TAP TO RETRY';
+    }
+    console.error('[StartupAssets] game start blocked:', startupAssetState.failed);
+    alert(
+      '必要な画像を読み込めなかったため、ゲーム開始を停止しました。\n\n' +
+      '通信状態を確認して、もう一度タイトル画面をタップしてください。'
+    );
+    return;
+  }
 
   setTitleLoadingStage('FINAL CHECK');
   setTitleLoadingProgress(98);
@@ -14897,43 +14954,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=463"></script>
+<script src="js/asset_loader.js?v=465"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=463"></script>
+<script src="js/login_bonus.js?v=465"></script>
 
-<script src="js/story_engine.js?v=463"></script>
-<script src="js/stories/chapter01.js?v=463"></script>
+<script src="js/story_engine.js?v=465"></script>
+<script src="js/stories/chapter01.js?v=465"></script>
 
-<script src="js/battle_range.js?v=463"></script>
-<script src="js/characters.js?v=463"></script>
-<script src="js/enemies.js?v=463"></script>
-<script src="js/battle.js?v=463"></script>
-<script src="js/battle_swipe.js?v=463"></script>
+<script src="js/battle_range.js?v=465"></script>
+<script src="js/characters.js?v=465"></script>
+<script src="js/enemies.js?v=465"></script>
+<script src="js/battle.js?v=465"></script>
+<script src="js/battle_swipe.js?v=465"></script>
 
-<script src="js/stages.js?v=463"></script>
-<script src="js/stage_select.js?v=463"></script>
-<script src="js/party_select.js?v=463"></script>
-<script src="js/enemy_intro.js?v=463"></script>
+<script src="js/stages.js?v=465"></script>
+<script src="js/stage_select.js?v=465"></script>
+<script src="js/party_select.js?v=465"></script>
+<script src="js/enemy_intro.js?v=465"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=463">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=465">
 
-<script src="js/battle_range_32.js?v=463"></script>
-<script src="js/characters_32.js?v=463"></script>
-<script src="js/remnant_blessings.js?v=463"></script>
-<script src="js/combo_32.js?v=463"></script>
-<script src="js/cards.js?v=463"></script>
-<script src="js/battle_32.js?v=463"></script>
-<script src="js/battle_32_ui.js?v=463"></script>
+<script src="js/battle_range_32.js?v=465"></script>
+<script src="js/characters_32.js?v=465"></script>
+<script src="js/remnant_blessings.js?v=465"></script>
+<script src="js/combo_32.js?v=465"></script>
+<script src="js/cards.js?v=465"></script>
+<script src="js/battle_32.js?v=465"></script>
+<script src="js/battle_32_ui.js?v=465"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=463"></script>
-<script src="js/roguelite_run.js?v=463"></script>
-<script src="js/roguelite_reward.js?v=463"></script>
-<script src="js/shinju.js?v=463"></script>
-<script src="js/roguelite_controller.js?v=463"></script>
-<script src="js/roguelite_overseer_run.js?v=463"></script>
+<script src="js/roguelite_options.js?v=465"></script>
+<script src="js/roguelite_run.js?v=465"></script>
+<script src="js/roguelite_reward.js?v=465"></script>
+<script src="js/shinju.js?v=465"></script>
+<script src="js/roguelite_controller.js?v=465"></script>
+<script src="js/roguelite_overseer_run.js?v=465"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15377,10 +15434,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=463"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=465"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=463"></script>
+<script src="js/raid_event.js?v=465"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15401,7 +15458,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=463"></script>
+<script src="js/score_attack.js?v=465"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

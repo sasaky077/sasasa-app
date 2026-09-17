@@ -35845,3 +35845,18 @@ html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.
 #primor-fullscreen-viewer .primor-fullscreen-back:active{
   opacity:.58 !important;
 }
+
+
+/* =========================================================
+   v465 Home side-menu notification badges
+   - current positionから 2px 上
+   - current positionから 2px 右
+   ========================================================= */
+#screen-main .home-notice-badge,
+#screen-main .shinju-home-entry .shinju-home-entry-badge,
+#screen-main .friend-home-entry .friend-notice-dot,
+#screen-main .bonus-home-entry-notice {
+  top: calc(5px + 5mm - 2px) !important;
+  right: 0 !important;
+}
+
