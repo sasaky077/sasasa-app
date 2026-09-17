@@ -8204,17 +8204,11 @@
 
     if (pointerActive) {
       if (pointerIsTouch) {
-        // v446:
-        // 入力イベントとrequestAnimationFrameの位相がずれると、60/120Hz端末でも
-        // 「1フレーム停止→次で大きく移動」という微小な段差が見える。
-        // 約11msの非常に短い時定数で補間し、操作遅延をほぼ増やさず段差だけを吸収する。
-        const follow = 1 - Math.exp(-Math.max(0, Number(dt || 0)) * TOUCH_FOLLOW_RESPONSE);
-        const dxToTarget = pointerX - state.player.x;
-        const dyToTarget = pointerY - state.player.y;
-        state.player.x += dxToTarget * Math.min(1, follow);
-        state.player.y += dyToTarget * Math.min(1, follow);
-        if (Math.abs(dxToTarget) < 0.08) state.player.x = pointerX;
-        if (Math.abs(dyToTarget) < 0.08) state.player.y = pointerY;
+        // build463:
+        // スマホ操作は補間を一切入れない。
+        // 指が1px動けばキャラも同じフレームで1px動く、完全1:1追従。
+        state.player.x = pointerX;
+        state.player.y = pointerY;
       } else {
         // PCマウスは従来の少し滑らかな追従を維持。
         state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
@@ -11513,10 +11507,10 @@
       return;
     }
 
-    dragStartPlayerX = state.player.x;
-    dragStartPlayerY = state.player.y;
-    pointerX = state.player.x;
-    pointerY = state.player.y;
+    // 入力基準は常に現在のtargetを維持する。
+    // pointercancel / identifier差し替えが起きても指とのオフセットを蓄積させない。
+    dragStartPlayerX = pointerX;
+    dragStartPlayerY = pointerY;
   }
 
   function beginTouchDrag(e) {
@@ -11531,9 +11525,8 @@
     dragStartClientX = e.clientX;
     dragStartClientY = e.clientY;
 
-    // 重要:
-    // 指を置いた座標ではなく「その瞬間のキャラ位置」を移動目標にする。
-    // これで画面の離れた場所をタップしてもキャラは1pxもワープしない。
+    // 指を置いた瞬間はキャラをワープさせない。
+    // 以後はこの位置を基準に、指の移動量とキャラの移動量を完全1:1にする。
     dragStartPlayerX = state.player.x;
     dragStartPlayerY = state.player.y;
     pointerX = state.player.x;
@@ -11801,10 +11794,8 @@
       lastPointerClientY = t.clientY;
       dragStartClientX = t.clientX;
       dragStartClientY = t.clientY;
-      dragStartPlayerX = state.player.x;
-      dragStartPlayerY = state.player.y;
-      pointerX = state.player.x;
-      pointerY = state.player.y;
+      dragStartPlayerX = pointerX;
+      dragStartPlayerY = pointerY;
 
       swipeStartX = t.clientX;
       swipeStartY = t.clientY;
@@ -11826,8 +11817,8 @@
       activeTouchIdentifier = t.identifier;
       dragStartClientX = t.clientX;
       dragStartClientY = t.clientY;
-      dragStartPlayerX = state.player.x;
-      dragStartPlayerY = state.player.y;
+      dragStartPlayerX = pointerX;
+      dragStartPlayerY = pointerY;
     }
     if (!t) return;
 
@@ -11838,8 +11829,8 @@
       activePointerId = null;
       dragStartClientX = t.clientX;
       dragStartClientY = t.clientY;
-      dragStartPlayerX = state.player.x;
-      dragStartPlayerY = state.player.y;
+      dragStartPlayerX = pointerX;
+      dragStartPlayerY = pointerY;
     }
 
     const arena = document.getElementById('shooting-arena');
