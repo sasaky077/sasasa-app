@@ -331,7 +331,10 @@
     const el = document.createElement('div');
     el.id = 'stage-select-modal';
     el.style.cssText = [
-      'position:fixed', 'inset:0', 'z-index:140000',
+      'position:fixed',
+      'top:var(--header-h,82px)', 'right:0',
+      'bottom:var(--bottom-nav-h,76px)', 'left:0',
+      'z-index:200',
       'display:none', 'flex-direction:column',
       'background:#07080a', 'color:#e8e4dc',
       'font-family:"Noto Serif JP",serif',
@@ -866,18 +869,16 @@
     void el.offsetWidth;
     el.style.opacity = '1';
 
-// ボトムナビ・HUD制御
-// 通常のステージ選択ではホーム用ボトムナビを表示する
-// 明示的に隠したい場合だけ window.__HIDE_HOME_NAV_ON_STAGE_SELECT__ = true にする
-const shouldHideHomeNav = window.__HIDE_HOME_NAV_ON_STAGE_SELECT__ === true;
-
+// build468:
+// ステージ選択画面までは共通の上部ユーザーフレームとボトムナビを残す。
+// 実際の戦闘画面へ遷移するまでは、ここで共有UIを隠さない。
 const nav = document.getElementById('bottom-nav-shared');
-if (nav) nav.style.display = shouldHideHomeNav ? 'none' : '';
+if (nav) nav.style.display = '';
 
 const guf = document.getElementById('global-user-frame');
 if (guf) {
   guf.classList.remove('hidden');
-  guf.style.display = shouldHideHomeNav ? 'none' : '';
+  guf.style.display = '';
 }
   };
 
