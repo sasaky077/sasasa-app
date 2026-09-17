@@ -68,16 +68,33 @@
     });
   }
 
-  loadScript('shooting_characters.js')
+  const modulesReady = loadScript('shooting_characters.js')
     .then(() => loadScript('shooting_enemies.js'))
     .then(() => loadScript('shooting_stages.js'))
     .then(() => loadScript('shooting_ui.js'))
     .then(() => loadScript('shooting_core.js'))
     .then(() => {
+      // shooting_coreが定義した本体を保持し、画像ウォームアップ完了を入口で保証する。
+      const actualOpenShootingEvent = window.openShootingEvent;
+      if (typeof actualOpenShootingEvent === 'function') {
+        window.openShootingEvent = async function (...args) {
+          if (window.__sasaphiaShootingAssetsReady) {
+            try { await window.__sasaphiaShootingAssetsReady; } catch (_) {}
+          }
+          return actualOpenShootingEvent(...args);
+        };
+      }
+
       if (queuedOpenArgs.length && typeof window.openShootingEvent === 'function') {
         const calls = queuedOpenArgs.splice(0);
         calls.forEach(args => window.openShootingEvent(...args));
       }
-    })
-    .catch(err => console.error('[shooting] module load failed', err));
+      return true;
+    });
+
+  // タイトル画面の起動ローダーから、
+  // シューティング用キャラ画像の列挙前にモジュール完了を待てるよう公開。
+  window.__sasaphiaShootingModulesReady = modulesReady;
+
+  modulesReady.catch(err => console.error('[shooting] module load failed', err));
 })();

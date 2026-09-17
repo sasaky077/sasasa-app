@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '465';
+    var FALLBACK_BUILD = '466';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="465">
+  <meta name="sasaphia-build" content="466">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=465">
+  <link rel="manifest" href="manifest.json?v=466">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=465"
+        href="css/style.css?v=466"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=465"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=466"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=465">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=466">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=465">
+  <link rel="stylesheet" href="css/raid_event.css?v=466">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '465';
+  var BUILD = '466';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3448,7 +3448,7 @@ body #bottom-nav-shared.bottom-nav{
     </div>
   </div>
 
-  <script id="home-sky-day-night-v465">
+  <script id="home-sky-day-night-v466">
   (function(){
     'use strict';
 
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=465"></script>
+<script src="js/home_banners.js?v=466"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=465"></script>
-<script src="js/resonance_system.js?v=465"></script>
-<script src="js/resonance_ui.js?v=465"></script>
-<script src="js/character_levelup.js?v=465"></script>
+<script src="js/shooting_resonance.js?v=466"></script>
+<script src="js/resonance_system.js?v=466"></script>
+<script src="js/resonance_ui.js?v=466"></script>
+<script src="js/character_levelup.js?v=466"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -6902,10 +6902,7 @@ function selectChara(now, gacha) {
   function collectStartupAssetGroups(){
     var common = [];
     var homeCore = [];
-    var characterPanels = [];
-    var shootingCharacterAssets = [];
     var homeBanners = [];
-    var summonBanners = [];
 
     function addFrom(root, selector, target){
       if(!root) return;
@@ -6919,6 +6916,8 @@ function selectChara(now, gacha) {
     addFrom(nav, 'img', common);
     common.push('images/icon_gem.webp', 'images/icon_coin.webp');
 
+    // タイトル画面では「ゲーム開始直後に見えるHOME」だけを確実にする。
+    // 全キャラ / シューティング画像は、開始後に低負荷でバックグラウンド先読みする。
     var main = document.getElementById('screen-main');
     if(main){
       main.querySelectorAll('img').forEach(function(img){
@@ -6929,24 +6928,50 @@ function selectChara(now, gacha) {
       });
     }
 
-    // キャラ一覧で必要なパネル画像は、DOM生成前でも全件先読みする。
+    try {
+      getHomeEventBanners().filter(function(b){ return b && b.hidden !== true; }).forEach(function(b){
+        if(b.img) homeBanners.push(b.img);
+      });
+    } catch(_){}
+
+    return [
+      { name:'UI',      from:30, to:50, urls:uniqueStartupAssets(common) },
+      { name:'HOME',    from:50, to:82, urls:uniqueStartupAssets(homeCore) },
+      { name:'BANNERS', from:82, to:98, urls:uniqueStartupAssets(homeBanners) }
+    ];
+  }
+
+  function collectDeferredAssetGroups(){
+    var characterPanels = [];
+    var shootingCharacterAssets = [];
+    var summonAssets = [];
+
     try {
       if(typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)){
         CHARACTERS.forEach(function(chara){
           if(!chara || chara.hidden === true) return;
           if(chara.panelImg) characterPanels.push(chara.panelImg);
-
-          // ホーム設定対象になり得る立ち絵もキャッシュしておく。
-          // 現在ホームに設定中のキャラはhomeCoreでも拾うが、
-          // キャラ変更直後の欠け防止としてcutImgも先読み対象にする。
-          if(chara.cutImg) homeCore.push(chara.cutImg);
+          // ホームキャラ変更直後の欠け防止用。現在表示分はStartup側で既に読込済み。
+          if(chara.cutImg) characterPanels.push(chara.cutImg);
         });
       }
     } catch(e){
-      console.warn('[StartupAssets] CHARACTERS collect skipped:', e);
+      console.warn('[DeferredAssets] CHARACTERS collect skipped:', e);
     }
 
-    // シューティングはStrategy側と別マスターなので、専用画像を明示的に先読みする。
+    var summon = document.getElementById('screen-summon');
+    if(summon){
+      summon.querySelectorAll('img').forEach(function(img){
+        var src = img.currentSrc || img.getAttribute('src');
+        if(src) summonAssets.push(src);
+      });
+    }
+    try {
+      getVisibleGachaBanners().forEach(function(gacha){
+        if(gacha && gacha.img) summonAssets.push(gacha.img);
+      });
+    } catch(_){}
+
     try {
       var shootingApi = window.ShootingCharacters;
       var master = shootingApi && shootingApi.SHOOTING_CHARACTER_MASTER;
@@ -6960,31 +6985,72 @@ function selectChara(now, gacha) {
         });
       }
     } catch(e){
-      console.warn('[StartupAssets] SHOOTING_CHARACTER_MASTER collect skipped:', e);
+      console.warn('[DeferredAssets] SHOOTING_CHARACTER_MASTER collect skipped:', e);
     }
 
-    try {
-      getHomeEventBanners().filter(function(b){ return b && b.hidden !== true; }).forEach(function(b){
-        if(b.img) homeBanners.push(b.img);
-      });
-    } catch(_){}
+    return {
+      characters: uniqueStartupAssets(characterPanels),
+      shooting: uniqueStartupAssets(shootingCharacterAssets),
+      summon: uniqueStartupAssets(summonAssets)
+    };
+  }
 
-    var summon = document.getElementById('screen-summon');
-    addFrom(summon, 'img', summonBanners);
-    try {
-      getVisibleGachaBanners().forEach(function(gacha){
-        if(gacha && gacha.img) summonBanners.push(gacha.img);
-      });
-    } catch(_){}
+  async function preloadDeferredAssets(urls, label){
+    urls = uniqueStartupAssets(urls || []);
+    var failed = [];
 
-    return [
-      { name:'UI',         from:30, to:40, urls:uniqueStartupAssets(common) },
-      { name:'HOME',       from:40, to:55, urls:uniqueStartupAssets(homeCore) },
-      { name:'CHARACTERS', from:55, to:72, urls:uniqueStartupAssets(characterPanels) },
-      { name:'SHOOTING',   from:72, to:90, urls:uniqueStartupAssets(shootingCharacterAssets) },
-      { name:'BANNERS',    from:90, to:95, urls:uniqueStartupAssets(homeBanners) },
-      { name:'ENCOUNTER',  from:95, to:98, urls:uniqueStartupAssets(summonBanners) }
-    ];
+    // BGM/描画を優先。1枚ずつ読み、毎回メインスレッドを返す。
+    for(var i = 0; i < urls.length; i++){
+      var result = await preloadImageForStartup(urls[i], 2);
+      if(!result || !result.ok) failed.push(result ? result.src : urls[i]);
+
+      // decodeが連続してAudioを詰まらせないよう短く休ませる。
+      await startupSleep(24);
+      await new Promise(function(resolve){
+        if(typeof requestIdleCallback === 'function'){
+          requestIdleCallback(function(){ resolve(); }, { timeout: 120 });
+        } else {
+          requestAnimationFrame(function(){ resolve(); });
+        }
+      });
+    }
+
+    if(failed.length){
+      console.warn('[DeferredAssets] ' + label + ' failed:', failed);
+    }
+    return { ok: failed.length === 0, failed: failed };
+  }
+
+  function startDeferredAssetWarmup(){
+    if(window.__sasaphiaDeferredWarmupStarted) return;
+    window.__sasaphiaDeferredWarmupStarted = true;
+
+    // HOME描画・BGM切替が落ち着いてから開始する。
+    var kickoff = startupSleep(900);
+
+    window.__sasaphiaCharacterAssetsReady = kickoff.then(function(){
+      var groups = collectDeferredAssetGroups();
+      return preloadDeferredAssets(groups.characters, 'characters');
+    });
+
+    window.__sasaphiaSummonAssetsReady = window.__sasaphiaCharacterAssetsReady.then(function(){
+      var groups = collectDeferredAssetGroups();
+      return preloadDeferredAssets(groups.summon, 'summon');
+    });
+
+    window.__sasaphiaShootingAssetsReady = window.__sasaphiaSummonAssetsReady
+      .then(async function(){
+        // シューティングの画像マスターは動的JSなので、ここで初めて待つ。
+        if(window.__sasaphiaShootingModulesReady){
+          try { await window.__sasaphiaShootingModulesReady; }
+          catch(e){
+            console.error('[DeferredAssets] shooting modules failed:', e);
+            return { ok:false, failed:['shooting-modules'] };
+          }
+        }
+        var groups = collectDeferredAssetGroups();
+        return preloadDeferredAssets(groups.shooting, 'shooting');
+      });
   }
 
   function setTitleLoadingStage(stage){
@@ -7006,10 +7072,10 @@ function selectChara(now, gacha) {
       return failed;
     }
 
-    // 全画像を待つが、iPhone Safariへの集中を避けるため4本ずつロード。
+    // タイトルBGMを優先し、必要最低限の画像だけ2本ずつロード。
     var completed = 0;
-    for(var i = 0; i < urls.length; i += 4){
-      var batch = urls.slice(i, i + 4);
+    for(var i = 0; i < urls.length; i += 2){
+      var batch = urls.slice(i, i + 2);
       var results = await Promise.all(batch.map(function(src){
         return preloadImageForStartup(src, 2);
       }));
@@ -7021,7 +7087,8 @@ function selectChara(now, gacha) {
         setTitleLoadingProgress(from + (to - from) * ratio);
       });
 
-      // バッチ間に短い余白を入れ、Safariのdecode/描画キューを詰まらせない。
+      // Audio再生を詰まらせないよう、decodeバッチごとに明示的に制御を返す。
+      await startupSleep(32);
       await new Promise(function(resolve){ requestAnimationFrame(resolve); });
     }
 
@@ -7055,18 +7122,8 @@ function selectChara(now, gacha) {
   }
 
   async function waitForStartupAssets(){
-    // シューティング専用マスターが動的ロードなので、
-    // 画像一覧を収集する前にモジュール初期化完了を必ず待つ。
-    if(window.__sasaphiaShootingModulesReady){
-      try {
-        await window.__sasaphiaShootingModulesReady;
-      } catch(e) {
-        console.error('[StartupAssets] shooting modules failed:', e);
-        return { ok:false, failed:['shooting-modules'] };
-      }
-    }
-
     // タイトルの裏で初期DOMを一度完成させる。
+    // シューティングモジュールや全キャラ画像はここでは待たない。
     try {
       updateSummonGemUI();
       updateMainUI();
@@ -7284,6 +7341,10 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     );
     return;
   }
+
+  // ここまででHOME表示に必要な画像だけは保証済み。
+  // 残りはゲーム開始後、音声を邪魔しない低負荷ウォームアップへ回す。
+  startDeferredAssetWarmup();
 
   setTitleLoadingStage('FINAL CHECK');
   setTitleLoadingProgress(98);
@@ -8629,7 +8690,15 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   se.currentTime = 0;
   }
 
- function showScreen(name){
+ async function showScreen(name){
+  // タイトルは短くする代わりに、各画面を初めて開く瞬間だけ必要画像を保証する。
+  if(name === 'zukan' && window.__sasaphiaCharacterAssetsReady){
+    try { await window.__sasaphiaCharacterAssetsReady; } catch(_){}
+  }
+  if(name === 'summon' && window.__sasaphiaSummonAssetsReady){
+    try { await window.__sasaphiaSummonAssetsReady; } catch(_){}
+  }
+
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   if(name === 'summon'){ resetSummonResult(); }
   document.getElementById('screen-'+name).classList.add('active');
@@ -14954,43 +15023,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=465"></script>
+<script src="js/asset_loader.js?v=466"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=465"></script>
+<script src="js/login_bonus.js?v=466"></script>
 
-<script src="js/story_engine.js?v=465"></script>
-<script src="js/stories/chapter01.js?v=465"></script>
+<script src="js/story_engine.js?v=466"></script>
+<script src="js/stories/chapter01.js?v=466"></script>
 
-<script src="js/battle_range.js?v=465"></script>
-<script src="js/characters.js?v=465"></script>
-<script src="js/enemies.js?v=465"></script>
-<script src="js/battle.js?v=465"></script>
-<script src="js/battle_swipe.js?v=465"></script>
+<script src="js/battle_range.js?v=466"></script>
+<script src="js/characters.js?v=466"></script>
+<script src="js/enemies.js?v=466"></script>
+<script src="js/battle.js?v=466"></script>
+<script src="js/battle_swipe.js?v=466"></script>
 
-<script src="js/stages.js?v=465"></script>
-<script src="js/stage_select.js?v=465"></script>
-<script src="js/party_select.js?v=465"></script>
-<script src="js/enemy_intro.js?v=465"></script>
+<script src="js/stages.js?v=466"></script>
+<script src="js/stage_select.js?v=466"></script>
+<script src="js/party_select.js?v=466"></script>
+<script src="js/enemy_intro.js?v=466"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=465">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=466">
 
-<script src="js/battle_range_32.js?v=465"></script>
-<script src="js/characters_32.js?v=465"></script>
-<script src="js/remnant_blessings.js?v=465"></script>
-<script src="js/combo_32.js?v=465"></script>
-<script src="js/cards.js?v=465"></script>
-<script src="js/battle_32.js?v=465"></script>
-<script src="js/battle_32_ui.js?v=465"></script>
+<script src="js/battle_range_32.js?v=466"></script>
+<script src="js/characters_32.js?v=466"></script>
+<script src="js/remnant_blessings.js?v=466"></script>
+<script src="js/combo_32.js?v=466"></script>
+<script src="js/cards.js?v=466"></script>
+<script src="js/battle_32.js?v=466"></script>
+<script src="js/battle_32_ui.js?v=466"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=465"></script>
-<script src="js/roguelite_run.js?v=465"></script>
-<script src="js/roguelite_reward.js?v=465"></script>
-<script src="js/shinju.js?v=465"></script>
-<script src="js/roguelite_controller.js?v=465"></script>
-<script src="js/roguelite_overseer_run.js?v=465"></script>
+<script src="js/roguelite_options.js?v=466"></script>
+<script src="js/roguelite_run.js?v=466"></script>
+<script src="js/roguelite_reward.js?v=466"></script>
+<script src="js/shinju.js?v=466"></script>
+<script src="js/roguelite_controller.js?v=466"></script>
+<script src="js/roguelite_overseer_run.js?v=466"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15434,10 +15503,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=465"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=466"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=465"></script>
+<script src="js/raid_event.js?v=466"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15458,7 +15527,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=465"></script>
+<script src="js/score_attack.js?v=466"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
