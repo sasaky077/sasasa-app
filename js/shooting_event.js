@@ -74,17 +74,8 @@
     .then(() => loadScript('shooting_ui.js'))
     .then(() => loadScript('shooting_core.js'))
     .then(() => {
-      // shooting_coreが定義した本体を保持し、画像ウォームアップ完了を入口で保証する。
-      const actualOpenShootingEvent = window.openShootingEvent;
-      if (typeof actualOpenShootingEvent === 'function') {
-        window.openShootingEvent = async function (...args) {
-          if (window.__sasaphiaShootingAssetsReady) {
-            try { await window.__sasaphiaShootingAssetsReady; } catch (_) {}
-          }
-          return actualOpenShootingEvent(...args);
-        };
-      }
-
+      // build471: module readiness is required, image warmup is not.
+      // The shooting screen opens immediately and its images may finish naturally from cache/network.
       if (queuedOpenArgs.length && typeof window.openShootingEvent === 'function') {
         const calls = queuedOpenArgs.splice(0);
         calls.forEach(args => window.openShootingEvent(...args));

@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '470';
+    var FALLBACK_BUILD = '471';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="470">
+  <meta name="sasaphia-build" content="471">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=470">
+  <link rel="manifest" href="manifest.json?v=471">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=470"
+        href="css/style.css?v=471"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=470"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=471"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=470">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=471">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=470">
+  <link rel="stylesheet" href="css/raid_event.css?v=471">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '470';
+  var BUILD = '471';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3448,7 +3448,7 @@ body #bottom-nav-shared.bottom-nav{
     </div>
   </div>
 
-  <script id="home-sky-day-night-v470">
+  <script id="home-sky-day-night-v471">
   (function(){
     'use strict';
 
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=470"></script>
+<script src="js/home_banners.js?v=471"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=470"></script>
-<script src="js/resonance_system.js?v=470"></script>
-<script src="js/resonance_ui.js?v=470"></script>
-<script src="js/character_levelup.js?v=470"></script>
+<script src="js/shooting_resonance.js?v=471"></script>
+<script src="js/resonance_system.js?v=471"></script>
+<script src="js/resonance_ui.js?v=471"></script>
+<script src="js/character_levelup.js?v=471"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -6796,11 +6796,8 @@ function selectChara(now, gacha) {
     if(!images.length) return Promise.resolve(true);
 
     return Promise.all(images.map(function(img){
-      // 既にロード済みならdecodeだけ待つ。
+      // build471: title BGMを優先し、起動中に明示的なdecode()は行わない。
       if(img.complete && img.naturalWidth > 0){
-        if(typeof img.decode === 'function'){
-          return img.decode().catch(function(){ return true; });
-        }
         return Promise.resolve(true);
       }
 
@@ -6809,11 +6806,7 @@ function selectChara(now, gacha) {
         function finish(){
           if(done) return;
           done = true;
-          if(typeof img.decode === 'function'){
-            img.decode().catch(function(){}).finally(resolve);
-          } else {
-            resolve(true);
-          }
+          resolve(true);
         }
         img.addEventListener('load', finish, { once:true });
         img.addEventListener('error', finish, { once:true });
@@ -6899,46 +6892,85 @@ function selectChara(now, gacha) {
     });
   }
 
-  function collectStartupAssetGroups(){
-    var common = [];
-    var homeCore = [];
-    var homeBanners = [];
+  // build471: startup asset policy
+  // - Title loading only waits for the images needed for the first HOME frame.
+  // - Image failures never block game startup.
+  // - Other screens are never gated by preload promises.
+  // - Background warmup fills the browser cache without forcing decode().
 
-    function addFrom(root, selector, target){
-      if(!root) return;
-      root.querySelectorAll(selector || 'img').forEach(function(img){
-        var src = img.currentSrc || img.getAttribute('src');
-        if(src) target.push(src);
-      });
+  function waitForDomImageLoad(img, timeoutMs){
+    if(!img) return Promise.resolve({ ok:true, src:'' });
+    var src = img.currentSrc || img.getAttribute('src') || '';
+    if(!src) return Promise.resolve({ ok:true, src:src });
+    if(img.complete && img.naturalWidth > 0){
+      return Promise.resolve({ ok:true, src:src });
     }
 
-    var nav = document.getElementById('bottom-nav-shared');
-    addFrom(nav, 'img', common);
-    common.push('images/icon_gem.webp', 'images/icon_coin.webp');
+    return new Promise(function(resolve){
+      var settled = false;
+      var timer = null;
+      function finish(ok){
+        if(settled) return;
+        settled = true;
+        if(timer) clearTimeout(timer);
+        img.removeEventListener('load', onLoad);
+        img.removeEventListener('error', onError);
+        resolve({ ok:!!ok, src:src });
+      }
+      function onLoad(){ finish(img.naturalWidth > 0); }
+      function onError(){ finish(false); }
+      img.addEventListener('load', onLoad, { once:true });
+      img.addEventListener('error', onError, { once:true });
+      timer = setTimeout(function(){ finish(img.naturalWidth > 0); }, Math.max(500, Number(timeoutMs || 2200)));
+    });
+  }
 
-    // タイトル画面では「ゲーム開始直後に見えるHOME」だけを確実にする。
-    // 全キャラ / シューティング画像は、開始後に低負荷でバックグラウンド先読みする。
-    var main = document.getElementById('screen-main');
-    if(main){
-      main.querySelectorAll('img').forEach(function(img){
-        var src = img.currentSrc || img.getAttribute('src');
-        if(!src) return;
-        if(img.closest && img.closest('#home-event-banner-wrap')) homeBanners.push(src);
-        else homeCore.push(src);
-      });
-    }
+  function collectCriticalHomeDomImages(){
+    var images = [];
+    var fav = document.querySelector('#fav-display img');
+    if(fav) images.push(fav);
 
+    // One sky image is enough to guarantee that the HOME background has started loading.
+    var sky = document.querySelector('#screen-main .home-sky-scroll-img[src]');
+    if(sky) images.push(sky);
+
+    // First visible home banner only. The rest may continue loading after HOME appears.
+    var banner = document.querySelector('#home-event-banner-track img');
+    if(banner) images.push(banner);
+
+    return images.filter(function(img, idx, arr){ return arr.indexOf(img) === idx; });
+  }
+
+  async function waitForStartupAssets(){
     try {
-      getHomeEventBanners().filter(function(b){ return b && b.hidden !== true; }).forEach(function(b){
-        if(b.img) homeBanners.push(b.img);
-      });
-    } catch(_){}
+      updateSummonGemUI();
+      updateMainUI();
 
-    return [
-      { name:'UI',      from:30, to:50, urls:uniqueStartupAssets(common) },
-      { name:'HOME',    from:50, to:82, urls:uniqueStartupAssets(homeCore) },
-      { name:'BANNERS', from:82, to:98, urls:uniqueStartupAssets(homeBanners) }
-    ];
+      var homeBannerTrack = document.getElementById('home-event-banner-track');
+      if(typeof renderHomeEventBanners === 'function' && homeBannerTrack && !homeBannerTrack.children.length){
+        renderHomeEventBanners();
+        if(typeof initHomeBannerInfinite === 'function') initHomeBannerInfinite();
+      }
+    } catch(e) {
+      console.warn('[StartupAssets] HOME prerender skipped:', e);
+    }
+
+    setTitleLoadingStage('HOME');
+    setTitleLoadingProgress(55);
+
+    var critical = collectCriticalHomeDomImages();
+    var results = await Promise.all(critical.map(function(img){
+      return waitForDomImageLoad(img, 2200);
+    }));
+    var failed = results.filter(function(r){ return !r || !r.ok; });
+
+    // Failure is diagnostic only. Never convert one image failure into an app-start failure.
+    if(failed.length){
+      console.warn('[StartupAssets] HOME image(s) still pending/failed; continue startup:', failed);
+    }
+
+    setTitleLoadingProgress(92);
+    return { ok:true, failed:failed };
   }
 
   function collectDeferredAssetGroups(){
@@ -6951,26 +6983,23 @@ function selectChara(now, gacha) {
         CHARACTERS.forEach(function(chara){
           if(!chara || chara.hidden === true) return;
           if(chara.panelImg) characterPanels.push(chara.panelImg);
-          // ホームキャラ変更直後の欠け防止用。現在表示分はStartup側で既に読込済み。
           if(chara.cutImg) characterPanels.push(chara.cutImg);
         });
       }
-    } catch(e){
-      console.warn('[DeferredAssets] CHARACTERS collect skipped:', e);
-    }
+    } catch(e){ console.warn('[DeferredAssets] CHARACTERS collect skipped:', e); }
 
-    var summon = document.getElementById('screen-summon');
-    if(summon){
-      summon.querySelectorAll('img').forEach(function(img){
-        var src = img.currentSrc || img.getAttribute('src');
-        if(src) summonAssets.push(src);
-      });
-    }
     try {
+      var summon = document.getElementById('screen-summon');
+      if(summon){
+        summon.querySelectorAll('img').forEach(function(img){
+          var src = img.currentSrc || img.getAttribute('src');
+          if(src) summonAssets.push(src);
+        });
+      }
       getVisibleGachaBanners().forEach(function(gacha){
         if(gacha && gacha.img) summonAssets.push(gacha.img);
       });
-    } catch(_){}
+    } catch(e){ console.warn('[DeferredAssets] summon collect skipped:', e); }
 
     try {
       var shootingApi = window.ShootingCharacters;
@@ -6984,50 +7013,68 @@ function selectChara(now, gacha) {
           if(chara.cutinImage) shootingCharacterAssets.push(chara.cutinImage);
         });
       }
-    } catch(e){
-      console.warn('[DeferredAssets] SHOOTING_CHARACTER_MASTER collect skipped:', e);
-    }
+    } catch(e){ console.warn('[DeferredAssets] shooting collect skipped:', e); }
 
     return {
       characters: uniqueStartupAssets(characterPanels),
-      shooting: uniqueStartupAssets(shootingCharacterAssets),
-      summon: uniqueStartupAssets(summonAssets)
+      summon: uniqueStartupAssets(summonAssets),
+      shooting: uniqueStartupAssets(shootingCharacterAssets)
     };
+  }
+
+  function idleYield(){
+    return new Promise(function(resolve){
+      if(typeof requestIdleCallback === 'function'){
+        requestIdleCallback(function(){ resolve(); }, { timeout:180 });
+      } else {
+        setTimeout(resolve, 40);
+      }
+    });
+  }
+
+  function warmImageCache(src, timeoutMs){
+    src = normalizeStartupAsset(src);
+    if(!src) return Promise.resolve({ ok:true, src:src });
+    return new Promise(function(resolve){
+      var img = new Image();
+      var settled = false;
+      var timer = null;
+      function done(ok){
+        if(settled) return;
+        settled = true;
+        if(timer) clearTimeout(timer);
+        resolve({ ok:!!ok, src:src });
+      }
+      // Intentionally do not call decode(): decoding many images can starve audio on iPhone.
+      img.onload = function(){ done(img.naturalWidth > 0); };
+      img.onerror = function(){ done(false); };
+      timer = setTimeout(function(){ done(false); }, Math.max(1200, Number(timeoutMs || 5000)));
+      img.src = src;
+    });
   }
 
   async function preloadDeferredAssets(urls, label){
     urls = uniqueStartupAssets(urls || []);
     var failed = [];
-
-    // BGM/描画を優先。1枚ずつ読み、毎回メインスレッドを返す。
-    for(var i = 0; i < urls.length; i++){
-      var result = await preloadImageForStartup(urls[i], 2);
+    for(var i=0; i<urls.length; i++){
+      await idleYield();
+      var result = await warmImageCache(urls[i], 5000);
       if(!result || !result.ok) failed.push(result ? result.src : urls[i]);
-
-      // decodeが連続してAudioを詰まらせないよう短く休ませる。
-      await startupSleep(24);
-      await new Promise(function(resolve){
-        if(typeof requestIdleCallback === 'function'){
-          requestIdleCallback(function(){ resolve(); }, { timeout: 120 });
-        } else {
-          requestAnimationFrame(function(){ resolve(); });
-        }
-      });
+      // Keep decode/network pressure away from BGM and interaction.
+      await startupSleep(70);
     }
-
-    if(failed.length){
-      console.warn('[DeferredAssets] ' + label + ' failed:', failed);
-    }
-    return { ok: failed.length === 0, failed: failed };
+    if(failed.length) console.warn('[DeferredAssets] ' + label + ' warmup misses:', failed);
+    return { ok:failed.length === 0, failed:failed };
   }
 
   function startDeferredAssetWarmup(){
     if(window.__sasaphiaDeferredWarmupStarted) return;
     window.__sasaphiaDeferredWarmupStarted = true;
 
-    // HOME描画・BGM切替が落ち着いてから開始する。
-    var kickoff = startupSleep(900);
+    var kickoff = startupSleep(2400);
 
+    // These promises are exposed only for diagnostics/backward compatibility.
+    // Navigation MUST NOT await them.
     window.__sasaphiaCharacterAssetsReady = kickoff.then(function(){
       var groups = collectDeferredAssetGroups();
       return preloadDeferredAssets(groups.characters, 'characters');
@@ -7038,126 +7085,20 @@ function selectChara(now, gacha) {
       return preloadDeferredAssets(groups.summon, 'summon');
     });
 
-    window.__sasaphiaShootingAssetsReady = window.__sasaphiaSummonAssetsReady
-      .then(async function(){
-        // シューティングの画像マスターは動的JSなので、ここで初めて待つ。
-        if(window.__sasaphiaShootingModulesReady){
-          try { await window.__sasaphiaShootingModulesReady; }
-          catch(e){
-            console.error('[DeferredAssets] shooting modules failed:', e);
-            return { ok:false, failed:['shooting-modules'] };
-          }
-        }
-        var groups = collectDeferredAssetGroups();
-        return preloadDeferredAssets(groups.shooting, 'shooting');
-      });
+    window.__sasaphiaShootingAssetsReady = window.__sasaphiaSummonAssetsReady.then(async function(){
+      if(window.__sasaphiaShootingModulesReady){
+        try { await window.__sasaphiaShootingModulesReady; }
+        catch(e){ console.warn('[DeferredAssets] shooting modules unavailable during warmup:', e); }
+      }
+      var groups = collectDeferredAssetGroups();
+      return preloadDeferredAssets(groups.shooting, 'shooting');
+    });
   }
 
   function setTitleLoadingStage(stage){
     var hint = document.getElementById('title-tap-hint');
     if(!hint) return;
     hint.textContent = stage ? ('NOW LOADING · ' + stage) : 'NOW LOADING';
-  }
-
-  async function loadStartupAssetGroup(group){
-    var urls = group && group.urls ? group.urls : [];
-    var from = Number(group.from || 0);
-    var to = Number(group.to || from);
-    var total = urls.length;
-    var failed = [];
-
-    setTitleLoadingStage(group.name || '');
-    if(!total){
-      setTitleLoadingProgress(to);
-      return failed;
-    }
-
-    // タイトルBGMを優先し、必要最低限の画像だけ2本ずつロード。
-    var completed = 0;
-    for(var i = 0; i < urls.length; i += 2){
-      var batch = urls.slice(i, i + 2);
-      var results = await Promise.all(batch.map(function(src){
-        return preloadImageForStartup(src, 2);
-      }));
-
-      results.forEach(function(result){
-        completed += 1;
-        if(!result || !result.ok) failed.push(result ? result.src : '');
-        var ratio = completed / total;
-        setTitleLoadingProgress(from + (to - from) * ratio);
-      });
-
-      // Audio再生を詰まらせないよう、decodeバッチごとに明示的に制御を返す。
-      await startupSleep(32);
-      await new Promise(function(resolve){ requestAnimationFrame(resolve); });
-    }
-
-    return failed;
-  }
-
-  async function repairStartupDomImages(){
-    var roots = ['screen-main', 'screen-summon', 'bottom-nav-shared', 'box-grid'];
-    var broken = [];
-    roots.forEach(function(id){
-      var root = document.getElementById(id);
-      if(!root) return;
-      root.querySelectorAll('img').forEach(function(img){
-        if(img.complete && img.naturalWidth === 0){
-          var src = img.getAttribute('src');
-          if(src) broken.push({ img:img, src:src });
-        }
-      });
-    });
-
-    for(var item of broken){
-      var result = await preloadImageForStartup(item.src, 1);
-      if(result && result.ok){
-        // preload成功後に実DOMへ同URLを再設定し、Safariに再描画を促す。
-        item.img.removeAttribute('src');
-        await startupSleep(20);
-        item.img.src = item.src;
-      }
-    }
-    return broken.length;
-  }
-
-  async function waitForStartupAssets(){
-    // タイトルの裏で初期DOMを一度完成させる。
-    // シューティングモジュールや全キャラ画像はここでは待たない。
-    try {
-      updateSummonGemUI();
-      updateMainUI();
-
-      // Home banner is already rendered and infinite-loop clones are initialized
-      // during normal boot. Re-rendering here removes those clones while leaving
-      // the track at -100%, which makes the first banner appear to be missing.
-      // Only render as a fallback when the track is genuinely empty.
-      var homeBannerTrack = document.getElementById('home-event-banner-track');
-      if(typeof renderHomeEventBanners === 'function' && homeBannerTrack && !homeBannerTrack.children.length){
-        renderHomeEventBanners();
-        if(typeof initHomeBannerInfinite === 'function') initHomeBannerInfinite();
-      }
-
-      renderSummonBanners();
-    } catch(e) {
-      console.warn('[StartupAssets] prerender skipped:', e);
-    }
-
-    var groups = collectStartupAssetGroups();
-    var failed = [];
-    for(var group of groups){
-      var groupFailed = await loadStartupAssetGroup(group);
-      failed = failed.concat(groupFailed);
-    }
-
-    setTitleLoadingStage('FINAL CHECK');
-    await repairStartupDomImages();
-    setTitleLoadingProgress(98);
-
-    if(failed.length){
-      console.warn('[StartupAssets] failed after retries:', failed);
-    }
-    return { ok: failed.length === 0, failed: failed };
   }
 
   function setTitleLoadingProgress(percent){
@@ -7242,13 +7183,8 @@ function selectChara(now, gacha) {
 
     splash.style.cursor = 'pointer';
     splash.addEventListener('click', function(){
-      try {
-        var openingBgm = document.getElementById('bgm-opening');
-        if(openingBgm && isAudioEnabled('title_bgm')){
-  openingBgm.volume = 0.3;
-  openingBgm.play().catch(function(){});
-}
-      } catch(e){}
+      // First user gesture unlocks the single BGM element and starts TITLE music.
+      try { setAppAudioPhase('TITLE', true); } catch(e){}
 
       Promise.resolve(window._sasaphiaMainStyleReady).finally(function(){
         splash.style.opacity = '0';
@@ -7265,25 +7201,17 @@ function selectChara(now, gacha) {
 var titleScreen = document.getElementById('title-screen');
 titleScreen.style.display = 'flex';
 
-var openingBgm = document.getElementById('bgm-opening');
-if(openingBgm && isAudioEnabled('title_bgm')){
-  openingBgm.volume = 0.3;
-  setTimeout(function(){
-    if(isAudioEnabled('title_bgm')){
-      openingBgm.play().catch(function(){});
-    }
-  }, 100);
-}
+// TITLE/LOADING BGM is managed by the single BGM state controller.
+setAppAudioPhase('TITLE', false);
 }
   var titleStarted = false;
   async function startFromTitle(){
   if(titleStarted) return;
   titleStarted = true;
 
-  // build470:
-  // 非同期ロードに入る前、ユーザーTAPの権限が残っているこの瞬間に
-  // HOME BGMを無音で一度だけprimeしておく。
-  primeHomeBgmFromUserGesture();
+  // Keep the title track playing through the entire loading phase.
+  // This call is still inside the title TAP handler, so a return-to-title reload can also unlock audio here.
+  setAppAudioPhase('LOADING', true);
 
   var titleScreen = document.getElementById('title-screen');
   var titleHint = document.getElementById('title-tap-hint');
@@ -7317,34 +7245,18 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   updateHeaderHeight();
   updateSummonGemUI();
   updateMainUI();
-  if(typeof renderSummonBanners === 'function') renderSummonBanners();
+  // 邂逅バナーはTITLE中に生成しない。邂逅画面を開いた時に描画する。
 
   if(bottomNav) bottomNav.style.display = '';
   if(typeof setBnavActive === 'function') setBnavActive('main');
   if(typeof setNavVisible === 'function') setNavVisible(true);
   setReloadBtnVisible(true);
 
-  // 起動に必要な画像は「時間切れで見切り発車」しない。
-  // ホームキャラ / キャラ一覧 / シューティングキャラまで、成功判定が終わるまでタイトルを維持する。
-  var startupAssetResults = await Promise.all([
-    window._bottomNavAssetsReady || waitForBottomNavAssets(),
-    waitForStartupAssets()
-  ]);
-
-  var startupAssetState = startupAssetResults[1] || { ok:false, failed:['unknown'] };
-  if(!startupAssetState.ok){
-    titleStarted = false;
-    setTitleLoadingStage('LOAD FAILED');
-    setTitleLoadingProgress(0);
-    if(titleHint){
-      titleHint.textContent = '画像の読み込みに失敗しました · TAP TO RETRY';
-    }
-    console.error('[StartupAssets] game start blocked:', startupAssetState.failed);
-    alert(
-      '必要な画像を読み込めなかったため、ゲーム開始を停止しました。\n\n' +
-      '通信状態を確認して、もう一度タイトル画面をタップしてください。'
-    );
-    return;
+  // Only HOME-critical images are waited briefly and best-effort.
+  // Bottom-nav / noncritical image failures must never prevent game startup.
+  var startupAssetState = await waitForStartupAssets();
+  if(startupAssetState && startupAssetState.failed && startupAssetState.failed.length){
+    console.warn('[StartupAssets] continuing with non-fatal image misses:', startupAssetState.failed);
   }
 
   // ここまででHOME表示に必要な画像だけは保証済み。
@@ -7360,10 +7272,7 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   setTitleLoadingProgress(100);
   await new Promise(function(resolve){ setTimeout(resolve, 140); });
 
-  // build470 audio handoff:
-  // タイトルBGMはロード中もフェード中も維持し、
-  // HOMEが実際に表示された瞬間にだけ切り替える。
-  stopBgm();
+  // Title music remains untouched while the title fades.
   titleScreen.classList.add('closing');
 
   setTimeout(function(){
@@ -7372,38 +7281,15 @@ if(openingBgm && isAudioEnabled('title_bgm')){
     resetTitleLoadingProgress();
     if(titleHint) titleHint.textContent = '✦ TAP TO START ✦';
 
-    // タイトルが完全に消えた瞬間にタイトルBGMを停止。
-    var opening = document.getElementById('bgm-opening');
-    if(opening){
-      opening.pause();
-      try { opening.currentTime = 0; } catch(_){}
-    }
-
-    // HOME BGMはユーザーTAP時にprime済みなので、
-    // 非同期ロード後でもiOS/Safariで安定して開始できる。
-    if(isAudioEnabled('main_bgm')){
-      var homeBgm = document.getElementById('bgm');
-      if(homeBgm){
-        try { homeBgm.currentTime = 0; } catch(_){}
-      }
-      fadeInBgm();
-    }
-
+    // One atomic state transition owns the BGM switch: TITLE -> HOME.
+    setAppAudioPhase('HOME', false);
     refreshHomeNotifications();
 
-    // HOME BGMの開始直後に画像decodeをぶつけない。
-    // 1.8秒安定再生させてから残り画像を低負荷でwarmupする。
-    setTimeout(function(){
-      startDeferredAssetWarmup();
-    }, 1800);
+    // Cache the rest only after HOME audio/paint has settled.
+    startDeferredAssetWarmup();
 
-    setTimeout(function(){
-      showTestplayNotice();
-    }, 80);
-
-    if (checkBattle32Resume()) {
-      return;
-    }
+    setTimeout(function(){ showTestplayNotice(); }, 80);
+    if (checkBattle32Resume()) return;
   }, 480);
 }
 
@@ -8718,20 +8604,14 @@ if(openingBgm && isAudioEnabled('title_bgm')){
   se.currentTime = 0;
   }
 
- async function showScreen(name){
-  // タイトルは短くする代わりに、各画面を初めて開く瞬間だけ必要画像を保証する。
-  if(name === 'zukan' && window.__sasaphiaCharacterAssetsReady){
-    try { await window.__sasaphiaCharacterAssetsReady; } catch(_){}
-  }
-  if(name === 'summon' && window.__sasaphiaSummonAssetsReady){
-    try { await window.__sasaphiaSummonAssetsReady; } catch(_){}
-  }
-
-  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
-  if(name === 'summon'){ resetSummonResult(); }
-  document.getElementById('screen-'+name).classList.add('active');
-  if(name==='zukan') renderCurrentZukanTab();
-  if(name==='main')  updateMainUI();
+ function showScreen(name){
+  // build471: screen changes are immediate. Image warmup is never a navigation gate.
+  document.querySelectorAll('.screen').forEach(function(screen){ screen.classList.remove('active'); });
+  if(name === 'summon') resetSummonResult();
+  var target = document.getElementById('screen-' + name);
+  if(target) target.classList.add('active');
+  if(name === 'zukan') renderCurrentZukanTab();
+  if(name === 'main') updateMainUI();
 }
 
   // ボトムナビ active 制御
@@ -8816,7 +8696,7 @@ function goHome(){
 }
   // ボトムナビゲーション切替
   function showMainTab(name){
-    // build470:
+    // build471:
     // ステージ選択画面上の共通ボトムナビから別タブへ移動する場合は、
     // 背面だけ切り替えてステージ選択モーダルを残さない。
     // ナビ操作時は即時に完全非表示へ戻す。
@@ -8831,11 +8711,8 @@ function goHome(){
       return;
     }
 
-    // BGMはホーム画面専用。
-    // 画面遷移開始時点でホーム以外なら即停止する。
-    if(name !== 'main' && typeof stopBgm === 'function'){
-      stopBgm();
-    }
+    // Navigation phase is centralized; non-HOME screens never keep HOME BGM.
+    if(name !== 'main') setAppAudioPhase('OTHER', false);
 
     var guf = document.getElementById('global-user-frame');
 
@@ -8883,6 +8760,7 @@ function goHome(){
       if(guf2) guf2.classList.remove('hud-dark');
       // Battle32バトル中にホームへ戻った場合は中断保存を削除
       if (typeof clearBattle32ResumeState === 'function') clearBattle32ResumeState();
+      setAppAudioPhase('HOME', false);
     } else {
       document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
       if(name === 'zukan') switchZukanMainTab('box');
@@ -13953,7 +13831,13 @@ var audioSettings = {
   other_se: false,
 };
 
-var bgmFadeInterval = null;
+// build471: one physical <audio> element owns both TITLE and HOME BGM.
+// Reusing the same element after a user gesture is much more reliable on iPhone/Safari
+// than starting a second audio element after an asynchronous loading chain.
+var ZERAPHIA_TITLE_BGM_SRC = 'audio/bgm_title.mp3';
+var ZERAPHIA_HOME_BGM_SRC = 'audio/bgm_home_01.mp3';
+var zeraphiaAppAudioPhase = 'SPLASH'; // SPLASH | TITLE | LOADING | HOME | OTHER
+var bgmRetryArmed = false;
 
 function isAudioEnabled(key) {
   if(key === 'title_bgm' || key === 'main_bgm'){
@@ -13962,12 +13846,86 @@ function isAudioEnabled(key) {
   return false;
 }
 
+function getMasterBgm(){
+  return document.getElementById('bgm');
+}
+
+function desiredBgmTrackForPhase(){
+  if(zeraphiaAppAudioPhase === 'TITLE' || zeraphiaAppAudioPhase === 'LOADING') return 'title';
+  if(zeraphiaAppAudioPhase === 'HOME' && isHomeScreenActive()) return 'home';
+  return '';
+}
+
+function ensureMasterBgmTrack(track){
+  var bgm = getMasterBgm();
+  if(!bgm || !track) return bgm;
+  if(bgm.dataset.zTrack === track) return bgm;
+
+  var src = track === 'title' ? ZERAPHIA_TITLE_BGM_SRC : ZERAPHIA_HOME_BGM_SRC;
+  bgm.pause();
+  bgm.src = src;
+  bgm.dataset.zTrack = track;
+  bgm.loop = true;
+  bgm.preload = 'auto';
+  try { bgm.load(); } catch(_){}
+  return bgm;
+}
+
+function armBgmRetry(){
+  if(bgmRetryArmed) return;
+  bgmRetryArmed = true;
+  var retry = function(){
+    bgmRetryArmed = false;
+    window.removeEventListener('touchstart', retry, true);
+    window.removeEventListener('pointerdown', retry, true);
+    syncMainBgmToHome(true);
+  };
+  window.addEventListener('touchstart', retry, true);
+  window.addEventListener('pointerdown', retry, true);
+}
+
+function syncAppBgm(fromUserGesture){
+  var bgm = getMasterBgm();
+  var legacyOpening = document.getElementById('bgm-opening');
+  if(legacyOpening) legacyOpening.pause();
+  if(!bgm) return;
+
+  var track = desiredBgmTrackForPhase();
+  if(!track || !isAudioEnabled(track === 'title' ? 'title_bgm' : 'main_bgm')){
+    bgm.pause();
+    return;
+  }
+
+  bgm = ensureMasterBgmTrack(track);
+  bgm.volume = bgmVolume / 100;
+
+  var playPromise;
+  try { playPromise = bgm.play(); }
+  catch(e){
+    console.warn('[BGM] play exception:', e);
+    armBgmRetry();
+    return;
+  }
+  if(playPromise && typeof playPromise.catch === 'function'){
+    playPromise.catch(function(e){
+      console.warn('[BGM] play rejected for phase ' + zeraphiaAppAudioPhase + ':', e);
+      // A return-to-title reload can reach TITLE without a preceding splash gesture.
+      // The next title tap retries from a real user gesture.
+      armBgmRetry();
+    });
+  }
+}
+
+function setAppAudioPhase(nextPhase, fromUserGesture){
+  zeraphiaAppAudioPhase = nextPhase || 'OTHER';
+  window.__zeraphiaAppAudioPhase = zeraphiaAppAudioPhase;
+  syncAppBgm(!!fromUserGesture);
+}
+
 function updateGlobalBgmToggle(){
   var btn = document.getElementById('global-bgm-toggle');
   if(!btn) return;
-
   var enabled = isAudioEnabled('main_bgm');
-
   btn.classList.toggle('is-muted', !enabled);
   btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
   btn.setAttribute('aria-label', enabled ? 'BGMをOFFにする' : 'BGMをONにする');
@@ -13978,36 +13936,17 @@ function setGlobalBgmEnabled(enabled){
   localStorage.setItem('zeraphia_bgm_enabled', enabled ? 'true' : 'false');
   audioSettings.title_bgm = enabled;
   audioSettings.main_bgm = enabled;
-
-  var opening = document.getElementById('bgm-opening');
-  var home = document.getElementById('bgm');
-  var titleScreen = document.getElementById('title-screen');
-  var titleVisible = titleScreen &&
-    titleScreen.style.display !== 'none' &&
-    !titleScreen.classList.contains('closing');
-
   if(!enabled){
-    if(opening) opening.pause();
-    if(home) home.pause();
-  }else if(titleVisible){
-    if(home) home.pause();
-    if(opening){
-      opening.volume = bgmVolume / 100;
-      opening.play().catch(function(){});
-    }
-  }else if(isHomeScreenActive()){
-    if(opening) opening.pause();
-    fadeInBgm();
+    var bgm = getMasterBgm();
+    if(bgm) bgm.pause();
+  } else {
+    syncAppBgm(true);
   }
-
   updateGlobalBgmToggle();
 }
 
 function toggleGlobalBgm(event){
-  if(event){
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  if(event){ event.preventDefault(); event.stopPropagation(); }
   setGlobalBgmEnabled(!isAudioEnabled('main_bgm'));
 }
 
@@ -14016,26 +13955,8 @@ function toggleAudioSetting(key) {
     setGlobalBgmEnabled(!isAudioEnabled('main_bgm'));
     return;
   }
-
   audioSettings[key] = !audioSettings[key];
   localStorage.setItem('audio_' + key, audioSettings[key]);
-
-  if (key === 'title_bgm' && !audioSettings[key]) {
-    var opening = document.getElementById('bgm-opening');
-    if (opening) {
-      opening.pause();
-      opening.currentTime = 0;
-    }
-  }
-
-  if (key === 'main_bgm' && !audioSettings[key]) {
-    stopBgm();
-  }
-
-  if (key === 'main_bgm' && audioSettings[key]) {
-  playBgm();
-}
-
   updateBgmUI();
 }
 
@@ -14047,46 +13968,32 @@ function updateAudioSettingsUI() {
     'battle-se-status': 'battle_se',
     'other-se-status': 'other_se',
   };
-
-  Object.keys(map).forEach(function(id) {
+  Object.keys(map).forEach(function(id){
     var el = document.getElementById(id);
-    if (!el) return;
-
-    var key = map[id];
-    el.textContent = audioSettings[key] ? 'ON' : 'OFF';
+    if(el) el.textContent = isAudioEnabled(map[id]) ? 'ON' : 'OFF';
   });
 }
 
 function updateBgmUI(){
   var volume = document.getElementById('bgm-volume');
   var seVol = document.getElementById('se-volume');
-
-  if(volume){
-    volume.value = bgmVolume;
-  }
-  if(seVol){
-    seVol.value = seVolume;
-  }
-
+  if(volume) volume.value = bgmVolume;
+  if(seVol) seVol.value = seVolume;
   updateAudioSettingsUI();
   updateGlobalBgmToggle();
 
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if(isIOS){
     var bgmRow = document.getElementById('bgm-volume');
-    if(bgmRow) bgmRow.closest('.setting-row').style.display = 'none';
-
+    if(bgmRow && bgmRow.closest('.setting-row')) bgmRow.closest('.setting-row').style.display = 'none';
     var seRow = document.getElementById('se-volume');
-    if(seRow) seRow.closest('.setting-row').style.display = 'none';
+    if(seRow && seRow.closest('.setting-row')) seRow.closest('.setting-row').style.display = 'none';
   }
 }
 
 function applyBgmVolume(){
-  var bgm = document.getElementById('bgm');
-  var opening = document.getElementById('bgm-opening');
-
+  var bgm = getMasterBgm();
   if(bgm) bgm.volume = bgmVolume / 100;
-  if(opening) opening.volume = bgmVolume / 100;
 }
 
 function changeSeVolume(value){
@@ -14101,48 +14008,26 @@ function changeBgmVolume(value){
 }
 
 function isHomeScreenActive(){
-  // build470:
-  // タイトル画面の裏でHOMEを先にactiveにして画像準備するため、
-  // HOME activeだけではホームBGM再生条件にしない。
-  // タイトルが完全に非表示になるまでは必ずfalse。
   var titleScreen = document.getElementById('title-screen');
   if(titleScreen){
     var titleStyle = window.getComputedStyle(titleScreen);
-    var titleVisible =
-      titleScreen.style.display !== 'none' &&
-      titleStyle.display !== 'none' &&
-      titleStyle.visibility !== 'hidden';
-    if(titleVisible) return false;
+    if(titleScreen.style.display !== 'none' && titleStyle.display !== 'none' && titleStyle.visibility !== 'hidden') return false;
   }
-
   var splash = document.getElementById('splash');
   if(splash){
     var splashStyle = window.getComputedStyle(splash);
-    var splashVisible =
-      splash.style.display !== 'none' &&
-      splashStyle.display !== 'none' &&
-      splashStyle.visibility !== 'hidden';
-    if(splashVisible) return false;
+    if(splash.style.display !== 'none' && splashStyle.display !== 'none' && splashStyle.visibility !== 'hidden') return false;
   }
 
   var home = document.getElementById('screen-main');
   if(!(home && home.classList.contains('active'))) return false;
-
-  var otherActive = Array.prototype.some.call(
-    document.querySelectorAll('.screen.active'),
-    function(screen){ return screen && screen.id !== 'screen-main'; }
-  );
+  var otherActive = Array.prototype.some.call(document.querySelectorAll('.screen.active'), function(screen){
+    return screen && screen.id !== 'screen-main';
+  });
   if(otherActive) return false;
 
   var shootingRoot = document.getElementById('shooting-event-root');
-  if(
-    shootingRoot &&
-    (
-      shootingRoot.classList.contains('open') ||
-      shootingRoot.getAttribute('aria-hidden') !== 'true'
-    )
-  ) return false;
-
+  if(shootingRoot && (shootingRoot.classList.contains('open') || shootingRoot.getAttribute('aria-hidden') !== 'true')) return false;
   if(document.getElementById('shooting-faceless-stage-select')) return false;
 
   var storyRoot = document.getElementById('story-root');
@@ -14150,192 +14035,65 @@ function isHomeScreenActive(){
     var storyStyle = window.getComputedStyle(storyRoot);
     if(storyStyle.display !== 'none' && storyStyle.visibility !== 'hidden') return false;
   }
-
   return true;
 }
 
-
-var homeBgmPrimed = false;
-
-function primeHomeBgmFromUserGesture(){
-  if(homeBgmPrimed) return;
-
-  var bgm = document.getElementById('bgm');
-  if(!bgm || !isAudioEnabled('main_bgm')) return;
-
-  // iOS/Safari対策:
-  // タイトルのTAPという明示的なユーザー操作中に一度だけ再生権限を取得する。
-  // 無音状態でplay→pauseし、実際のHOME表示時には通常再生できるようにする。
-  var previousMuted = bgm.muted;
-  var previousVolume = bgm.volume;
-
-  try {
-    bgm.muted = true;
-    bgm.volume = 0;
-
-    var p = bgm.play();
-    if(p && typeof p.then === 'function'){
-      p.then(function(){
-        bgm.pause();
-        try { bgm.currentTime = 0; } catch(_){}
-        bgm.muted = previousMuted;
-        bgm.volume = previousVolume;
-        homeBgmPrimed = true;
-      }).catch(function(e){
-        bgm.muted = previousMuted;
-        bgm.volume = previousVolume;
-        console.warn('[BGM] HOME prime failed:', e);
-      });
-    } else {
-      bgm.pause();
-      try { bgm.currentTime = 0; } catch(_){}
-      bgm.muted = previousMuted;
-      bgm.volume = previousVolume;
-      homeBgmPrimed = true;
-    }
-  } catch(e){
-    bgm.muted = previousMuted;
-    bgm.volume = previousVolume;
-    console.warn('[BGM] HOME prime exception:', e);
-  }
-}
-
+// Compatibility functions used elsewhere in the existing game code.
 function playBgm(){
-  var bgm = document.getElementById('bgm');
-  if(!bgm) return;
-
-  // 通常BGMはホーム画面以外では絶対に再生しない。
-  if(!isHomeScreenActive()){
-    bgm.pause();
-    return;
-  }
-
-  applyBgmVolume();
-
-  if(isAudioEnabled('main_bgm')){
-    bgm.play().catch(function(e){
-      console.log('BGM再生待機:', e);
-    });
-  }
+  // Compatibility call: never change navigation/app phase from an audio helper.
+  // (e.g. gacha close calls fadeInBgm while still on the summon screen.)
+  if(zeraphiaAppAudioPhase === 'HOME' && isHomeScreenActive()) syncAppBgm(false);
 }
-
 function stopBgm(){
-  var bgm = document.getElementById('bgm');
-  if(!bgm) return;
-
-  if(bgmFadeInterval){
-    clearInterval(bgmFadeInterval);
-    bgmFadeInterval = null;
-  }
-
-  bgm.pause();
+  var bgm = getMasterBgm();
+  if(bgm) bgm.pause();
 }
+function fadeInBgm(){ playBgm(); }
+function fadeOutOpeningBgm(){ /* build471: title/home use one master audio element */ }
 
-function fadeInBgm(){
-  var bgm = document.getElementById('bgm');
-  if(!bgm) return;
-
-  if(bgmFadeInterval){
-    clearInterval(bgmFadeInterval);
-    bgmFadeInterval = null;
-  }
-
-  // ガチャ終了などからfadeInBgm()が呼ばれても、
-  // ホーム以外ではBGMを復帰させない。
-  if(!isHomeScreenActive()){
-    bgm.pause();
+function syncMainBgmToHome(fromUserGesture){
+  // During TITLE/LOADING, screen mutations must never stop the title track.
+  if(zeraphiaAppAudioPhase === 'TITLE' || zeraphiaAppAudioPhase === 'LOADING'){
+    syncAppBgm(!!fromUserGesture);
     return;
   }
 
-  var target = bgmVolume / 100;
-  var vol = 0;
-
-  bgm.volume = 0;
-
-  if(isAudioEnabled('main_bgm')){
-    var playPromise = bgm.play();
-    if(playPromise && typeof playPromise.catch === 'function'){
-      playPromise.catch(function(e){
-        console.warn('[BGM] HOME play failed:', e);
-
-        // prime済みでもSafariが一時的に拒否した場合の保険。
-        // 次のユーザー入力でHOMEにいるなら即再試行する。
-        var retry = function(){
-          if(!isHomeScreenActive() || !isAudioEnabled('main_bgm')) return;
-          bgm.play().catch(function(){});
-          window.removeEventListener('touchstart', retry, true);
-          window.removeEventListener('pointerdown', retry, true);
-        };
-        window.addEventListener('touchstart', retry, true);
-        window.addEventListener('pointerdown', retry, true);
-      });
-    }
-  } else {
+  if(zeraphiaAppAudioPhase === 'HOME' && !isHomeScreenActive()){
+    var bgm = getMasterBgm();
+    if(bgm) bgm.pause();
     return;
   }
-
-  bgmFadeInterval = setInterval(function(){
-    vol += 0.05;
-
-    if(vol >= target){
-      vol = target;
-      clearInterval(bgmFadeInterval);
-    }
-
-    bgm.volume = vol;
-  }, 100);
+  syncAppBgm(!!fromUserGesture);
 }
 
-function syncMainBgmToHome(){
-  if(isHomeScreenActive()){
-    if(isAudioEnabled('main_bgm')){
-      playBgm();
-    } else {
-      stopBgm();
-    }
-  } else {
-    stopBgm();
-  }
-}
-
-// showMainTab()を通らない画面切替にも対応。
-// .screen のactive変更を監視し、ホーム以外になった瞬間にBGMを止める。
 function initHomeOnlyBgmGuard(){
-  var screens = document.querySelectorAll('.screen');
-
-  var observer = new MutationObserver(function(){
-    syncMainBgmToHome();
+  var observer = new MutationObserver(function(){ syncMainBgmToHome(false); });
+  document.querySelectorAll('.screen').forEach(function(screen){
+    observer.observe(screen, { attributes:true, attributeFilter:['class'] });
   });
-
-  screens.forEach(function(screen){
-    observer.observe(screen, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-  });
-
   var storyRoot = document.getElementById('story-root');
-  if(storyRoot){
-    observer.observe(storyRoot, {
-      attributes: true,
-      attributeFilter: ['style', 'class', 'aria-hidden']
-    });
-  }
+  if(storyRoot) observer.observe(storyRoot, { attributes:true, attributeFilter:['style','class','aria-hidden'] });
+  if(document.body) observer.observe(document.body, { childList:true, subtree:false });
 
-  if(document.body){
-    observer.observe(document.body, {
-      childList: true,
-      subtree: false
-    });
-  }
-
-  document.addEventListener('visibilitychange', syncMainBgmToHome);
-  window.addEventListener('pageshow', syncMainBgmToHome);
-
-  syncMainBgmToHome();
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){
+      var bgm = getMasterBgm();
+      if(bgm) bgm.pause();
+    } else {
+      syncMainBgmToHome(false);
+    }
+  });
+  window.addEventListener('pageshow', function(){ syncMainBgmToHome(false); });
 }
 
 window.addEventListener('load', function(){
+  var legacyOpening = document.getElementById('bgm-opening');
+  if(legacyOpening) legacyOpening.pause();
+  var master = getMasterBgm();
+  if(master){
+    master.pause();
+    master.dataset.zTrack = 'home';
+  }
   updateBgmUI();
   applyBgmVolume();
   initHomeOnlyBgmGuard();
@@ -14349,23 +14107,6 @@ function updateHeaderHeight() {
 }
 
 window.addEventListener('load', updateHeaderHeight);
-
-function fadeOutOpeningBgm(){
-  const bgm = document.getElementById('bgm-opening');
-  if(!bgm) return;
-
-  let vol = bgm.volume;
-  const interval = setInterval(()=>{
-    vol -= 0.05;
-    if(vol <= 0){
-      bgm.pause();
-      bgm.currentTime = 0;
-      clearInterval(interval);
-    } else {
-      bgm.volume = vol;
-    }
-  }, 50);
-}
 
 const B32_SAVE_KEY = 'battle32_resume_state';
 const B32_SAVE_VERSION = '2026-06-07-b32-resume-001';
@@ -15145,43 +14886,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=470"></script>
+<script src="js/asset_loader.js?v=471"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=470"></script>
+<script src="js/login_bonus.js?v=471"></script>
 
-<script src="js/story_engine.js?v=470"></script>
-<script src="js/stories/chapter01.js?v=470"></script>
+<script src="js/story_engine.js?v=471"></script>
+<script src="js/stories/chapter01.js?v=471"></script>
 
-<script src="js/battle_range.js?v=470"></script>
-<script src="js/characters.js?v=470"></script>
-<script src="js/enemies.js?v=470"></script>
-<script src="js/battle.js?v=470"></script>
-<script src="js/battle_swipe.js?v=470"></script>
+<script src="js/battle_range.js?v=471"></script>
+<script src="js/characters.js?v=471"></script>
+<script src="js/enemies.js?v=471"></script>
+<script src="js/battle.js?v=471"></script>
+<script src="js/battle_swipe.js?v=471"></script>
 
-<script src="js/stages.js?v=470"></script>
-<script src="js/stage_select.js?v=470"></script>
-<script src="js/party_select.js?v=470"></script>
-<script src="js/enemy_intro.js?v=470"></script>
+<script src="js/stages.js?v=471"></script>
+<script src="js/stage_select.js?v=471"></script>
+<script src="js/party_select.js?v=471"></script>
+<script src="js/enemy_intro.js?v=471"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=470">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=471">
 
-<script src="js/battle_range_32.js?v=470"></script>
-<script src="js/characters_32.js?v=470"></script>
-<script src="js/remnant_blessings.js?v=470"></script>
-<script src="js/combo_32.js?v=470"></script>
-<script src="js/cards.js?v=470"></script>
-<script src="js/battle_32.js?v=470"></script>
-<script src="js/battle_32_ui.js?v=470"></script>
+<script src="js/battle_range_32.js?v=471"></script>
+<script src="js/characters_32.js?v=471"></script>
+<script src="js/remnant_blessings.js?v=471"></script>
+<script src="js/combo_32.js?v=471"></script>
+<script src="js/cards.js?v=471"></script>
+<script src="js/battle_32.js?v=471"></script>
+<script src="js/battle_32_ui.js?v=471"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=470"></script>
-<script src="js/roguelite_run.js?v=470"></script>
-<script src="js/roguelite_reward.js?v=470"></script>
-<script src="js/shinju.js?v=470"></script>
-<script src="js/roguelite_controller.js?v=470"></script>
-<script src="js/roguelite_overseer_run.js?v=470"></script>
+<script src="js/roguelite_options.js?v=471"></script>
+<script src="js/roguelite_run.js?v=471"></script>
+<script src="js/roguelite_reward.js?v=471"></script>
+<script src="js/shinju.js?v=471"></script>
+<script src="js/roguelite_controller.js?v=471"></script>
+<script src="js/roguelite_overseer_run.js?v=471"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15625,10 +15366,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=470"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=471"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=470"></script>
+<script src="js/raid_event.js?v=471"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15649,7 +15390,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=470"></script>
+<script src="js/score_attack.js?v=471"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
