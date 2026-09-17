@@ -5017,8 +5017,8 @@ canvas {
   background: rgba(0,0,0,0.35);
 
   box-shadow:
-    0 8px 22px rgba(0,0,0,0.55),
-    0 0 16px rgba(255,255,255,0.08);
+    0 8px 22px rgba(0,0,0,0.44),
+    0 0 16px rgba(255,255,255,0.064);
 
   touch-action: pan-y;
 }
@@ -15308,9 +15308,10 @@ body.login-bonus-open {
 
 /* =========================================================
    111 Home Background / Sky Loop
-   使用する背景画像は以下の2つだけ
-   - chara_bg_sky.webp      : 横ループ
-   - chara_bg_building.webp : 固定前景
+   使用する背景画像
+   - chara_bg_sky.webp       : 06:00〜18:59（昼）横ループ
+   - chara_bg_sky_night.webp : 19:00〜05:59（夜）横ループ
+   - chara_bg_building.webp  : 固定前景
    ========================================================= */
 
 /* 空全体を左から右へ止まらずループ。 */
@@ -15323,6 +15324,10 @@ body.login-bonus-open {
   user-select: none;
   -webkit-user-select: none;
   background: #f3efe7;
+}
+
+#screen-main .home-sky-scroll-layer.is-night {
+  background: #17243d;
 }
 
 #screen-main .home-sky-scroll-track {
@@ -19379,7 +19384,7 @@ body.login-bonus-open {
 }
 #screen-zukan.is-primoa-index #box-grid.primoa-index-grid{
   display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
   align-content:start;
   gap:10px 5px;
   padding:0 10px calc(112px + env(safe-area-inset-bottom));
@@ -35588,7 +35593,7 @@ html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.
   /* second of five nav slots = 30% center; keep horizontal center, make dot one size larger and slightly lower */
   left:calc(30% + 12px) !important;
   right:auto !important;
-  top:7px !important;
+  top:calc(7px + 3mm) !important;
   bottom:auto !important;
   width:11px !important;
   height:11px !important;
@@ -35715,4 +35720,128 @@ html body #global-user-frame #user-coin{
   white-space:nowrap !important;
   min-width:0 !important;
   font-variant-numeric:tabular-nums !important;
+}
+
+
+/* =========================================================
+   v449 BOTTOM NAV NOTICE — move 3mm lower
+   Keep the current visual styling and horizontal position;
+   only lower the foreground notification dot by exactly 3mm.
+   ========================================================= */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.bottom-nav-notice-overlay{
+  top:calc(7px + 3mm) !important;
+}
+
+/* =========================================================
+   v450 Home side-menu notification badges
+   - stop pulse animation
+   - move badges 5mm lower from the current position
+   ========================================================= */
+#screen-main .home-notice-badge,
+#screen-main .shinju-home-entry .shinju-home-entry-badge,
+#screen-main .friend-home-entry .friend-notice-dot,
+#screen-main .bonus-home-entry-notice {
+  top: calc(5px + 5mm) !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+#screen-main .home-notice-btn.has-unread .home-notice-badge,
+#screen-main .home-notice-badge[style*="display: block"],
+#screen-main .home-notice-badge[style*="display:block"],
+#screen-main .home-notice-badge.show,
+#screen-main .shinju-home-entry.has-items .shinju-home-entry-badge,
+#screen-main .friend-home-entry.has-friend-notice .friend-notice-dot,
+#screen-main .bonus-home-entry.has-unclaimed .bonus-home-entry-notice {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* =========================================================
+   v451 Home side-menu notification badges — 3px right
+   v450の静止 + 5mm下げを維持し、通知ドットだけ3px右へ移動。
+   right:5px → 2px
+   ========================================================= */
+#screen-main .home-notice-badge,
+#screen-main .shinju-home-entry .shinju-home-entry-badge,
+#screen-main .friend-home-entry .friend-notice-dot,
+#screen-main .bonus-home-entry-notice {
+  right: 2px !important;
+}
+
+
+/* =========================================================
+   v456 Detail modal back button
+   - 右上の×を廃止
+   - 左上に「＜戻る」を固定配置
+   ========================================================= */
+#detail-modal > .detail-modal-back-btn{
+  position:absolute !important;
+  top: calc(6vh + 12px) !important;
+  left: max(
+    30px,
+    calc((100vw - min(400px, calc(100vw - 36px))) / 2 + 12px)
+  ) !important;
+  right:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  min-width:86px !important;
+  height:40px !important;
+  padding:0 14px !important;
+  border-radius:999px !important;
+  border:1px solid rgba(157,124,65,.34) !important;
+  background:rgba(255,252,246,.97) !important;
+  color:#6f5a39 !important;
+  font-family:"Noto Serif JP", serif !important;
+  font-size:15px !important;
+  font-weight:600 !important;
+  line-height:38px !important;
+  letter-spacing:.02em !important;
+  text-align:center !important;
+  display:block !important;
+  z-index:7000 !important;
+  box-shadow:0 7px 18px rgba(69,49,23,.18) !important;
+  transform:none !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+#detail-modal > .detail-modal-back-btn:active{
+  transform:scale(.96) !important;
+}
+@media (max-height:700px){
+  #detail-modal > .detail-modal-back-btn{
+    top: calc(4vh + 12px) !important;
+  }
+}
+
+
+/* =========================================================
+   v457 Primor fullscreen back button
+   - キャラ画像拡大画面の右上×を廃止
+   - 左上に「＜戻る」を配置
+   ========================================================= */
+#primor-fullscreen-viewer .primor-fullscreen-back{
+  position:fixed !important;
+  top:calc(env(safe-area-inset-top) + 12px) !important;
+  left:14px !important;
+  right:auto !important;
+  z-index:5 !important;
+  min-width:82px !important;
+  height:38px !important;
+  padding:0 12px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#6f5735 !important;
+  font-family:"Noto Serif JP", serif !important;
+  font-size:14px !important;
+  font-weight:500 !important;
+  line-height:38px !important;
+  letter-spacing:.04em !important;
+  text-align:left !important;
+  box-shadow:none !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+#primor-fullscreen-viewer .primor-fullscreen-back:active{
+  opacity:.58 !important;
 }

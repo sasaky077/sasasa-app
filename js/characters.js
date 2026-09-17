@@ -97,7 +97,7 @@ skills: [
     battleUpImg: 'images/chara_02.webp',
     battleBackImg: 'images/chara_02_battle_back.webp',
     panelImg: 'images/chara_02_panel.webp',
-    favScale: 1.1, favOffsetY: -10,
+    favScale: 0.85, favOffsetY: -10,
     uiScale: {panel: 1.0,battleBack: 1.22,battleUp: 1.0},
     combo: {
       range: 'combo_line_all',
@@ -648,7 +648,7 @@ skills: [
     battleUpImg: 'images/chara_12_battle_up.webp',
     battleBackImg: 'images/chara_12_battle_back.webp',
     panelImg: 'images/chara_12_panel.webp',
-    favScale: 0.80, favOffsetY: -30,
+    favScale: 0.70, favOffsetY: -30,
     uiScale: {panel: 1.0,battleBack: 0.72,battleUp: 1.0},
     combo: { range: 'combo_line_all', skill: { id: 'combo', name: '共鳴攻撃', type: 'attack', multiplier: 0.70, range: 'front3', effects: [], hitStyle: 'normal', desc: '同列の味方スキルに反応して追撃する。' } },
     skills: [
@@ -1018,7 +1018,7 @@ skills: [
         selfAtkUpOnCritical: { rate: 1.15, duration: 1 }
       }
     },
-    favScale: 0.82, favOffsetY: -50,
+    favScale: 0.88, favOffsetY: -30,
     uiScale: {panel: 1.0,battleBack: 1.0,battleUp: 1.0},
         combo: {
       range: 'combo_cross_1',

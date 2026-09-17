@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '447';
+    var FALLBACK_BUILD = '458';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="447">
+  <meta name="sasaphia-build" content="458">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=447">
+  <link rel="manifest" href="manifest.json?v=458">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=447"
+        href="css/style.css?v=458"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=447"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=458"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=447">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=458">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=447">
+  <link rel="stylesheet" href="css/raid_event.css?v=458">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '447';
+  var BUILD = '458';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -420,7 +420,7 @@
       align-items:center;
       justify-content:flex-end;
       gap:6px;
-      color:#5f5447;
+      color:#5f5451;
       white-space:nowrap;
     }
     .shooting-result-first-clear-main img{
@@ -932,7 +932,7 @@ body #bottom-nav-shared.bottom-nav{
 #bottom-nav-shared .bottom-nav-label{
   position:relative !important;
   z-index:3 !important;
-  color:#594476 !important;
+  color:#594516 !important;
   font-weight:700 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,.84),
@@ -3441,12 +3441,50 @@ body #bottom-nav-shared.bottom-nav{
   <!-- Home background: moving sky -> static transparent building -->
   <div class="home-sky-scroll-layer" aria-hidden="true">
     <div class="home-sky-scroll-track">
-      <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="" decoding="async" fetchpriority="high">
-      <img class="home-sky-scroll-img home-sky-scroll-img-mirror" src="images/chara_bg_sky.webp" alt="">
-      <img class="home-sky-scroll-img" src="images/chara_bg_sky.webp" alt="">
-      <img class="home-sky-scroll-img home-sky-scroll-img-mirror" src="images/chara_bg_sky.webp" alt="">
+      <img class="home-sky-scroll-img" alt="" decoding="async" fetchpriority="high">
+      <img class="home-sky-scroll-img home-sky-scroll-img-mirror" alt="" decoding="async">
+      <img class="home-sky-scroll-img" alt="" decoding="async">
+      <img class="home-sky-scroll-img home-sky-scroll-img-mirror" alt="" decoding="async">
     </div>
   </div>
+
+  <script id="home-sky-day-night-v458">
+  (function(){
+    'use strict';
+
+    var DAY_SKY = 'images/chara_bg_sky.webp';
+    var NIGHT_SKY = 'images/chara_bg_sky_night.webp';
+    var currentMode = '';
+
+    function getHomeSkyMode(){
+      var hour = new Date().getHours();
+      return (hour >= 19 || hour < 6) ? 'night' : 'day';
+    }
+
+    function applyHomeSkyByTime(){
+      var mode = getHomeSkyMode();
+      if (mode === currentMode) return;
+
+      var src = mode === 'night' ? NIGHT_SKY : DAY_SKY;
+      var images = document.querySelectorAll('#screen-main .home-sky-scroll-img');
+      images.forEach(function(img){
+        if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+      });
+
+      var layer = document.querySelector('#screen-main .home-sky-scroll-layer');
+      if (layer) layer.classList.toggle('is-night', mode === 'night');
+      currentMode = mode;
+    }
+
+    applyHomeSkyByTime();
+
+    // 19:00 / 06:00 を開きっぱなしで跨いでも自動反映。
+    setInterval(applyHomeSkyByTime, 60 * 1000);
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden) applyHomeSkyByTime();
+    });
+  })();
+  </script>
 
   <img class="home-bg-building" src="images/chara_bg_building.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
   <button class="home-notice-btn home-type-entry" onclick="openNoticeModal(event)" aria-label="メッセージ" data-home-head="メ" data-home-rest="ッセージ">
@@ -4059,7 +4097,7 @@ body #bottom-nav-shared.bottom-nav{
 </div>
 
 <div class="modal-overlay" id="detail-modal">
-  <button class="modal-close-btn detail-modal-close-x" type="button" aria-label="閉じる" onclick="event.stopPropagation(); closeModal('detail-modal')">×</button>
+  <button class="detail-modal-back-btn" type="button" aria-label="戻る" onclick="event.stopPropagation(); closeModal('detail-modal')">＜戻る</button>
   <div class="modal">
     <div class="gacha-pickup-title-name" id="gacha-pickup-title-name" aria-live="polite"></div>
     <div class="detail-header">
@@ -4082,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=447"></script>
+<script src="js/home_banners.js?v=458"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5185,10 +5223,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=447"></script>
-<script src="js/resonance_system.js?v=447"></script>
-<script src="js/resonance_ui.js?v=447"></script>
-<script src="js/character_levelup.js?v=447"></script>
+<script src="js/shooting_resonance.js?v=458"></script>
+<script src="js/resonance_system.js?v=458"></script>
+<script src="js/resonance_ui.js?v=458"></script>
+<script src="js/character_levelup.js?v=458"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -11154,7 +11192,7 @@ function showTenResult(results){
     ov.className = 'element-' + fullscreenElementKey;
     ov.innerHTML =
       '<div class="primor-fullscreen-bg"></div>' +
-      '<button class="primor-fullscreen-close" aria-label="閉じる">×</button>' +
+      '<button class="primor-fullscreen-back" type="button" aria-label="戻る">＜戻る</button>' +
       '<div class="primor-fullscreen-content">' +
         '<img class="primor-fullscreen-img" src="' + detailEscapeHTML(src) + '" alt="' + detailEscapeHTML(name) + '">' +
         '<div class="primor-fullscreen-name">' + detailEscapeHTML(name) + '</div>' +
@@ -11170,7 +11208,7 @@ function showTenResult(results){
 
     ov.addEventListener('click', close);
     ov.querySelector('.primor-fullscreen-content').addEventListener('click', function(e){ e.stopPropagation(); });
-    ov.querySelector('.primor-fullscreen-close').addEventListener('click', function(e){ e.stopPropagation(); close(); });
+    ov.querySelector('.primor-fullscreen-back').addEventListener('click', function(e){ e.stopPropagation(); close(); });
     var homeBtn = ov.querySelector('.primor-fullscreen-home-btn');
     if(homeBtn){
       homeBtn.addEventListener('click', function(e){
@@ -14765,43 +14803,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=447"></script>
+<script src="js/asset_loader.js?v=458"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=447"></script>
+<script src="js/login_bonus.js?v=458"></script>
 
-<script src="js/story_engine.js?v=447"></script>
-<script src="js/stories/chapter01.js?v=447"></script>
+<script src="js/story_engine.js?v=458"></script>
+<script src="js/stories/chapter01.js?v=458"></script>
 
-<script src="js/battle_range.js?v=447"></script>
-<script src="js/characters.js?v=447"></script>
-<script src="js/enemies.js?v=447"></script>
-<script src="js/battle.js?v=447"></script>
-<script src="js/battle_swipe.js?v=447"></script>
+<script src="js/battle_range.js?v=458"></script>
+<script src="js/characters.js?v=458"></script>
+<script src="js/enemies.js?v=458"></script>
+<script src="js/battle.js?v=458"></script>
+<script src="js/battle_swipe.js?v=458"></script>
 
-<script src="js/stages.js?v=447"></script>
-<script src="js/stage_select.js?v=447"></script>
-<script src="js/party_select.js?v=447"></script>
-<script src="js/enemy_intro.js?v=447"></script>
+<script src="js/stages.js?v=458"></script>
+<script src="js/stage_select.js?v=458"></script>
+<script src="js/party_select.js?v=458"></script>
+<script src="js/enemy_intro.js?v=458"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=447">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=458">
 
-<script src="js/battle_range_32.js?v=447"></script>
-<script src="js/characters_32.js?v=447"></script>
-<script src="js/remnant_blessings.js?v=447"></script>
-<script src="js/combo_32.js?v=447"></script>
-<script src="js/cards.js?v=447"></script>
-<script src="js/battle_32.js?v=447"></script>
-<script src="js/battle_32_ui.js?v=447"></script>
+<script src="js/battle_range_32.js?v=458"></script>
+<script src="js/characters_32.js?v=458"></script>
+<script src="js/remnant_blessings.js?v=458"></script>
+<script src="js/combo_32.js?v=458"></script>
+<script src="js/cards.js?v=458"></script>
+<script src="js/battle_32.js?v=458"></script>
+<script src="js/battle_32_ui.js?v=458"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=447"></script>
-<script src="js/roguelite_run.js?v=447"></script>
-<script src="js/roguelite_reward.js?v=447"></script>
-<script src="js/shinju.js?v=447"></script>
-<script src="js/roguelite_controller.js?v=447"></script>
-<script src="js/roguelite_overseer_run.js?v=447"></script>
+<script src="js/roguelite_options.js?v=458"></script>
+<script src="js/roguelite_run.js?v=458"></script>
+<script src="js/roguelite_reward.js?v=458"></script>
+<script src="js/shinju.js?v=458"></script>
+<script src="js/roguelite_controller.js?v=458"></script>
+<script src="js/roguelite_overseer_run.js?v=458"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15245,10 +15283,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=447"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=458"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=447"></script>
+<script src="js/raid_event.js?v=458"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15269,7 +15307,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=447"></script>
+<script src="js/score_attack.js?v=458"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -16154,88 +16192,23 @@ html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#scr
 </style>
 
 <script>
-/* v437: keep first-row character growth dots above the top haze at initial position. */
+/* v451: キャラ一覧の通知ドットは全段共通のカード内配置のみを使用する。
+   v437 の最上段専用ミラー追従処理は廃止。スクロール時もキャラ画像と同一要素内で移動する。 */
 (function(){
-  var rafId = 0;
-
-  function clearMirror(){
+  function removeLegacyTopRowNoticeOverlay(){
     document.querySelectorAll('#screen-zukan .primoa-index-limitbreak-dot.is-mirrored-v437').forEach(function(dot){
       dot.classList.remove('is-mirrored-v437');
     });
-    var overlay = document.querySelector('#screen-zukan > .zukan-top-notice-overlay-v437');
-    if(overlay) overlay.innerHTML = '';
-  }
-
-  function syncTopRowNoticeDots(){
-    rafId = 0;
-    var screen = document.getElementById('screen-zukan');
-    if(!screen) return;
-    var scroll = screen.querySelector(':scope > .screen-scroll');
-    var grid = document.getElementById('box-grid');
-    if(!scroll || !grid) return;
-
-    var active = screen.classList.contains('active') && screen.classList.contains('is-primoa-index');
-    var atInitialTop = scroll.scrollTop <= 3;
-    if(!active || !atInitialTop){
-      clearMirror();
-      return;
-    }
-
-    var overlay = screen.querySelector(':scope > .zukan-top-notice-overlay-v437');
-    if(!overlay){
-      overlay = document.createElement('div');
-      overlay.className = 'zukan-top-notice-overlay-v437';
-      overlay.setAttribute('aria-hidden','true');
-      screen.appendChild(overlay);
-    }
-
-    document.querySelectorAll('#screen-zukan .primoa-index-limitbreak-dot.is-mirrored-v437').forEach(function(dot){
-      dot.classList.remove('is-mirrored-v437');
-    });
-    overlay.innerHTML = '';
-
-    var screenRect = screen.getBoundingClientRect();
-    var cards = Array.prototype.slice.call(grid.querySelectorAll('.primoa-index-card')).slice(0,5);
-    cards.forEach(function(card){
-      var dot = card.querySelector('.primoa-index-limitbreak-dot');
-      if(!dot) return;
-      var rect = dot.getBoundingClientRect();
-      if(rect.width <= 0 || rect.height <= 0) return;
-
-      var mirror = document.createElement('span');
-      mirror.className = 'zukan-top-notice-dot-v437';
-      mirror.style.left = (rect.left - screenRect.left) + 'px';
-      mirror.style.top = (rect.top - screenRect.top) + 'px';
-      overlay.appendChild(mirror);
-      dot.classList.add('is-mirrored-v437');
+    document.querySelectorAll('#screen-zukan > .zukan-top-notice-overlay-v437').forEach(function(overlay){
+      overlay.remove();
     });
   }
 
-  function requestSync(){
-    if(rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(syncTopRowNoticeDots);
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', removeLegacyTopRowNoticeOverlay, { once:true });
+  } else {
+    removeLegacyTopRowNoticeOverlay();
   }
-
-  function bind(){
-    var screen = document.getElementById('screen-zukan');
-    if(!screen) return;
-    var scroll = screen.querySelector(':scope > .screen-scroll');
-    var grid = document.getElementById('box-grid');
-    if(scroll) scroll.addEventListener('scroll', requestSync, {passive:true});
-    window.addEventListener('resize', requestSync, {passive:true});
-    if(grid && window.MutationObserver){
-      new MutationObserver(requestSync).observe(grid,{childList:true,subtree:true});
-    }
-    if(window.MutationObserver){
-      new MutationObserver(requestSync).observe(screen,{attributes:true,attributeFilter:['class']});
-    }
-    requestSync();
-    setTimeout(requestSync,100);
-    setTimeout(requestSync,350);
-  }
-
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
-  else bind();
 })();
 </script>
 </body>
