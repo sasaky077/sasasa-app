@@ -308,63 +308,7 @@ function buildBulkLimitBreakSummaryHTML(target, plan){
 }
 
 function confirmBulkLimitBreak(){
-  var target = currentDetailData;
-  if(!target) return;
-
-  var plan = getBulkLimitBreakPlan(target, selectedLimitBreakSoulVesselId);
-  if(!plan || !plan.canExecute){
-    showToast('一括で限界突破できる素材がありません');
-    return;
-  }
-
-  document.getElementById('lb-confirm-text').innerHTML = buildBulkLimitBreakSummaryHTML(target, plan);
-
-  var okBtn = document.getElementById('lb-confirm-ok-btn');
-  okBtn.textContent = 'Lv.' + plan.toLb + ' まで一括強化';
-  okBtn.onclick = async function(){
-    okBtn.disabled = true;
-
-    // 一括強化も決定直後から演出カバーを表示し、キャラ一覧への瞬間復帰を隠す。
-    beginLimitBreakTransitionCover();
-    closeModal('limitbreak-confirm-modal');
-    closeLimitBreakModal();
-
-    var fromLb = Number(target.limitBreak || 0);
-    var completed = 0;
-
-    for(var i = 0; i < plan.steps.length; i++){
-      var step = plan.steps[i];
-      var material = (Number(target.id) === 1 || Number(target.id) === 52) ? null : getAutoLimitBreakMaterial(target);
-      var ok = await executeLimitBreak(target, material, step.soulVesselId, { silent:true, bulk:true });
-      if(!ok) break;
-      completed++;
-    }
-
-    if(completed > 0){
-      await playLimitBreakPowerupEffect(target, fromLb, Number(target.limitBreak || 0));
-
-      // 演出が終わってから背後画面を最新状態へ更新する。
-      renderBox();
-      updateMainUI();
-      if(currentZukanMainTab !== 'box') showDetail(target, false);
-      updateZukanLimitBreakNotice();
-
-      var completeText = document.getElementById('lb-complete-text');
-      if(completeText){
-        completeText.style.whiteSpace = 'pre-line';
-        completeText.textContent = completed + '段階の一括限界突破が完了しました。\n限界突破Lvが ' +
-          Number(target.limitBreak || 0) + ' になりました。';
-      }
-      var completeModal = document.getElementById('limitbreak-complete-modal');
-      if(completeModal) completeModal.classList.add('active');
-    } else {
-      endLimitBreakTransitionCover();
-    }
-
-    okBtn.disabled = false;
-  };
-
-  document.getElementById('limitbreak-confirm-modal').classList.add('active');
+  showToast('限界突破はLv上限到達後に1段階ずつ行ってください');
 }
 window.confirmBulkLimitBreak = confirmBulkLimitBreak;
 
@@ -387,16 +331,14 @@ function openLimitBreakModal(target){
 
   if((target.limitBreak || 0) >= MAX_LIMIT_BREAK){
     listEl.innerHTML += '<div class="lb-no-material">限界突破LvはすでにMAXです</div>';
+  } else if(!status.levelReady){
+    listEl.innerHTML +=
+      '<div class="lb-no-material">Lv.' + status.requiredLevel + '到達で限界突破が解放されます</div>' +
+      '<div class="lb-current-level-display">現在 Lv.' + status.currentLevel + ' / ' + status.requiredLevel + '</div>';
   } else if(status.canLimitBreak){
-    var bulkPlan = getBulkLimitBreakPlan(target, selectedLimitBreakSoulVesselId);
     listEl.innerHTML +=
       '<div class="lb-execute-area">' +
-        (bulkPlan && bulkPlan.count >= 2
-          ? '<button type="button" class="btn-pay lb-execute-btn lb-execute-bulk-btn" onclick="confirmBulkLimitBreak()">' +
-              '一気に限界突破する' +
-            '</button>'
-          : '') +
-        '<button type="button" class="btn-pay lb-execute-btn lb-execute-single-btn" onclick="confirmLimitBreak()">1Lvだけ突破する</button>' +
+        '<button type="button" class="btn-pay lb-execute-btn lb-execute-single-btn" onclick="confirmLimitBreak()">限界突破する</button>' +
         '<div class="lb-execute-note">' +
           (status.recipe.specialMaterialId
             ? 'エリ専用素材「原初の翼環」を消費します'
@@ -417,6 +359,15 @@ function closeLimitBreakModal(){
 function confirmLimitBreak(materialDbId){
   var target = currentDetailData;
   if(!target) return;
+
+  var requiredLevel = (typeof getLimitBreakRequiredLevel === 'function')
+    ? getLimitBreakRequiredLevel(target)
+    : 0;
+  var currentLevel = Math.max(1, Number(target.characterLevel || target.character_level || 1));
+  if(requiredLevel > 0 && currentLevel < requiredLevel){
+    showToast('Lv.' + requiredLevel + 'まで上げると限界突破できます');
+    return;
+  }
 
   var isEri = Number(target.id) === 1;
   var isNoah = Number(target.id) === 52;

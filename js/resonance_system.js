@@ -205,6 +205,34 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
   };
 }
 
+
+// build461: 限界突破は「現在の凸段階でのLv上限」に到達している場合のみ許可する。
+// SR: 40 -> 凸 -> 45 -> 凸 -> 50 -> ...
+// R : 30 -> 凸 -> 35 -> 凸 -> 40 -> ...
+function getLimitBreakRequiredLevel(target){
+  if(!target) return 0;
+
+  var lb = Math.max(0, Math.min(MAX_LIMIT_BREAK, Number(target.limitBreak || 0)));
+
+  if(window.CharacterLeveling && typeof window.CharacterLeveling.getLevelCap === 'function'){
+    return Math.max(1, Number(window.CharacterLeveling.getLevelCap(target.rarity, lb) || 1));
+  }
+
+  var rarity = String(target.rarity || 'r').toLowerCase();
+  return (rarity === 'sr' ? 40 : 30) + (lb * 5);
+}
+
+function isLimitBreakLevelReady(target){
+  if(!target) return false;
+  var requiredLevel = getLimitBreakRequiredLevel(target);
+  var currentLevel = Math.max(1, Number(target.characterLevel || target.character_level || 1));
+  return currentLevel >= requiredLevel;
+}
+
+window.getLimitBreakRequiredLevel = getLimitBreakRequiredLevel;
+window.isLimitBreakLevelReady = isLimitBreakLevelReady;
+
+
 function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
   var recipe = getLimitBreakRecipe(target, preferredSoulVesselId);
   var sameCharaCount = target ? getSameCharaMaterials(target).length : 0;
@@ -213,6 +241,11 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
     : 0;
   var stoneOwned = getEvolutionMaterialCount(recipe.stoneId);
   var currentLb = target ? Number(target.limitBreak || 0) : 0;
+  var requiredLevel = getLimitBreakRequiredLevel(target);
+  var currentLevel = target
+    ? Math.max(1, Number(target.characterLevel || target.character_level || 1))
+    : 1;
+  var levelReady = !!target && currentLevel >= requiredLevel;
 
   var vesselOptionsStatus = (recipe.soulVesselOptions || []).map(function(opt){
     var owned = getEvolutionMaterialCount(opt.id);
@@ -239,7 +272,11 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
     soulVesselOptions: vesselOptionsStatus,
     selectedSoulVessel: selectedVessel,
     stoneOwned: stoneOwned,
+    currentLevel: currentLevel,
+    requiredLevel: requiredLevel,
+    levelReady: levelReady,
     canLimitBreak: !!target && currentLb < MAX_LIMIT_BREAK &&
+      levelReady &&
       sameCharaCount >= recipe.sameChara &&
       (!recipe.specialMaterialId || specialOwned >= recipe.specialMaterialCount) &&
       hasAnySoulVesselOption && soulVesselAvailable &&
@@ -252,63 +289,14 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
 // 一括限界突破で「今ある素材だけで何段階まで上げられるか」を事前計算する。
 // 実データは変更せず、同キャラ / 専用素材 / 魂の器 / 共鳴石を段階ごとにシミュレート。
 function getBulkLimitBreakPlan(target, preferredSoulVesselId){
-  if(!target) return { steps:[], fromLb:0, toLb:0, canExecute:false };
-
-  var fromLb = Math.max(0, Number(target.limitBreak || 0));
-  var isEri = Number(target.id) === 1;
-  var isNoah = Number(target.id) === 52;
-  var sameRemain = (isEri || isNoah) ? 999999 : getSameCharaMaterials(target).length;
-  var specialRemain = getEvolutionMaterialCount('eri_origin_wing');
-  var stoneRemain = getEvolutionMaterialCount('kyoumei_stone');
-
-  var vesselIds = getSoulVesselMaterialIdsByElement(target.element);
-  var vesselRemain = {};
-  vesselIds.forEach(function(id){ vesselRemain[id] = getEvolutionMaterialCount(id); });
-
-  var preferred = resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
-  var steps = [];
-  var level = fromLb;
-
-  while(level < MAX_LIMIT_BREAK){
-    var nextLb = level + 1;
-    var vesselId = '';
-
-    // 現在選択中の魂の器を優先。足りなければ同属性候補へ自動で切替。
-    if(preferred && vesselIds.indexOf(preferred) !== -1 && Number(vesselRemain[preferred] || 0) >= 1){
-      vesselId = preferred;
-    } else {
-      vesselId = vesselIds.find(function(id){ return Number(vesselRemain[id] || 0) >= 1; }) || '';
-    }
-
-    var canStep =
-      (isEri ? specialRemain >= 1 : (isNoah ? true : sameRemain >= 1)) &&
-      !!vesselId &&
-      stoneRemain >= nextLb;
-
-    if(!canStep) break;
-
-    steps.push({
-      fromLb: level,
-      toLb: nextLb,
-      soulVesselId: vesselId,
-      stoneCount: nextLb,
-      sameCharaCount: (isEri || isNoah) ? 0 : 1,
-      specialMaterialCount: isEri ? 1 : 0
-    });
-
-    if(isEri) specialRemain -= 1;
-    else if(!isNoah) sameRemain -= 1;
-    vesselRemain[vesselId] = Math.max(0, Number(vesselRemain[vesselId] || 0) - 1);
-    stoneRemain -= nextLb;
-    level = nextLb;
-  }
-
+  var fromLb = target ? Math.max(0, Number(target.limitBreak || 0)) : 0;
   return {
-    steps: steps,
+    steps: [],
     fromLb: fromLb,
-    toLb: level,
-    canExecute: steps.length > 0,
-    count: steps.length
+    toLb: fromLb,
+    canExecute: false,
+    count: 0,
+    disabledByLevelProgression: true
   };
 }
 window.getBulkLimitBreakPlan = getBulkLimitBreakPlan;
@@ -342,6 +330,21 @@ function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
 window.EVOLUTION_MATERIAL_MASTER = EVOLUTION_MATERIAL_MASTER;
 window.getEvolutionMaterialCount = getEvolutionMaterialCount;
 window.addEvolutionMaterial = addEvolutionMaterial;
+
+// build459: DB(player_inventory)から再読込された進化素材を、
+// 実行中メモリにも即時反映する。localStorageだけ更新されて表示が古いまま残る不具合を防止。
+window.addEventListener('zeraphia:evolution-materials-cloud-loaded', function(event){
+  var detail = event && event.detail && typeof event.detail === 'object' ? event.detail : {};
+  evolutionMaterials = {};
+  Object.keys(detail).forEach(function(materialId){
+    if(!getEvolutionMaterialDef(materialId)) return;
+    var count = Math.max(0, Math.floor(Number(detail[materialId] || 0)));
+    if(count > 0) evolutionMaterials[materialId] = count;
+  });
+  saveEvolutionMaterialsToLocal();
+  updateZukanLimitBreakNotice();
+  try { window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed')); } catch (_) {}
+});
 
 function isGachaMaterialResult(data){
   return !!(data && (data.resultKind === 'material' || data.materialId));
@@ -454,6 +457,13 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
 
   if(currentLb >= MAX_LIMIT_BREAK){
     showToast('限界突破LvはすでにMAXです');
+    return false;
+  }
+
+  var requiredLevel = getLimitBreakRequiredLevel(target);
+  var currentLevel = Math.max(1, Number(target.characterLevel || target.character_level || 1));
+  if(currentLevel < requiredLevel){
+    showToast('Lv.' + requiredLevel + 'まで上げると限界突破できます');
     return false;
   }
 

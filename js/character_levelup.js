@@ -488,7 +488,8 @@
           target.stats = applyToStats(resonatedStats, target.rarity, target.limitBreak || 0, target.characterLevel);
         }
       } catch(_){}
-      if(typeof _zsApplyInventoryState === 'function') _zsApplyInventoryState(inventoryAfter);
+      // loadInventoryFromSupabase() 成功後はDB値が正本。
+      // ここで古い inventoryAfter を再適用すると、サーバー確定値をローカルで巻き戻すため再適用しない。
 
       // 同じDB行を参照する collected 側も同期。
       try {

@@ -10951,12 +10951,44 @@
     }
   }
 
+  function persistShootingEvolutionReward(materialId, amount) {
+    // DAILY QUESTはsecure run tokenを発行しない既存仕様のため対象外。
+    // STORY / SCORE ATTACK / EVENT / RAID系は、finish_secure_shooting_runで
+    // run tokenが消費された後に専用RPCへ付与を確定させる。
+    if (isDailyQuestStage()) return;
+
+    const sb = window.zsSupabase;
+    const userId = getShootingUserId();
+    const runToken = String(state && state.secureRunToken || '').trim();
+    if (!sb || typeof sb.rpc !== 'function' || !userId || !runToken) return;
+
+    const finalizePromise = state && state.secureFinalizePromise
+      ? state.secureFinalizePromise
+      : Promise.resolve(null);
+
+    void Promise.resolve(finalizePromise).then(async finalized => {
+      if (!finalized) return;
+      const res = await sb.rpc('claim_shooting_material_reward_secure', {
+        p_user_id: userId,
+        p_run_token: runToken,
+        p_material_id: String(materialId || ''),
+        p_quantity: Math.max(1, Math.floor(Number(amount || 1)))
+      });
+      if (res && res.error) throw res.error;
+      if (typeof window.loadInventoryFromSupabase === 'function') {
+        await window.loadInventoryFromSupabase(userId);
+      }
+    }).catch(err => {
+      console.warn('[shooting reward] secure evolution material save failed', err && (err.message || err));
+    });
+  }
+
   function grantEvolutionReward(material, count) {
     const amount = Math.max(1, Math.floor(Number(count || 1)));
     try {
       if (typeof window.addEvolutionMaterial === 'function') {
         const result = window.addEvolutionMaterial(material.id, amount);
-        if (typeof window.scheduleCloudSave === 'function') window.scheduleCloudSave();
+        persistShootingEvolutionReward(material.id, amount);
         return result || true;
       }
     } catch (err) {

@@ -210,6 +210,18 @@
     if(!itemId || totalQuantity == null) return;
     var total = Math.max(0, Number(totalQuantity || 0));
     try {
+      var isEvolution = !!(window.EVOLUTION_MATERIAL_MASTER && window.EVOLUTION_MATERIAL_MASTER[itemId]);
+      if(isEvolution){
+        var evoKey = 'zeraphia_evolution_materials_v1';
+        var evolution = {};
+        try { evolution = JSON.parse(localStorage.getItem(evoKey) || '{}') || {}; } catch(_) { evolution = {}; }
+        if(total > 0) evolution[itemId] = total;
+        else delete evolution[itemId];
+        localStorage.setItem(evoKey, JSON.stringify(evolution));
+        try{ window.dispatchEvent(new CustomEvent('zeraphia:evolution-materials-cloud-loaded', { detail:evolution })); }catch(_){}
+        return;
+      }
+
       var key = 'zeraphia_inventory_v1';
       var inventory = {};
       try { inventory = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch(_) { inventory = {}; }
@@ -275,7 +287,11 @@
         if(row.total_special_ticket != null) window.userProfile.special_stage_ticket = Number(row.total_special_ticket || 0);
       }
       if(row.reward_item_id && row.total_item_quantity != null){
-        applyInventoryReward(String(row.reward_item_id), Number(row.total_item_quantity || 0));
+        if(typeof window.loadInventoryFromSupabase === 'function'){
+          await window.loadInventoryFromSupabase(uid);
+        } else {
+          applyInventoryReward(String(row.reward_item_id), Number(row.total_item_quantity || 0));
+        }
       }
 
       if(typeof window.updateMainUI === 'function') window.updateMainUI();

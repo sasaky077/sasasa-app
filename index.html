@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '458';
+    var FALLBACK_BUILD = '462';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="458">
+  <meta name="sasaphia-build" content="462">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -114,7 +114,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=458">
+  <link rel="manifest" href="manifest.json?v=462">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=458"
+        href="css/style.css?v=462"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=458"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=462"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,9 +267,9 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=458">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=462">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=458">
+  <link rel="stylesheet" href="css/raid_event.css?v=462">
   <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '458';
+  var BUILD = '462';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3448,7 +3448,7 @@ body #bottom-nav-shared.bottom-nav{
     </div>
   </div>
 
-  <script id="home-sky-day-night-v458">
+  <script id="home-sky-day-night-v462">
   (function(){
     'use strict';
 
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=458"></script>
+<script src="js/home_banners.js?v=462"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -4850,12 +4850,77 @@ window.NOTICE_ITEMS = [
       return;
     }
 
-    if (typeof window.saveProfileToDB !== 'function') {
-      console.error('[NoticeReward] saveProfileToDB is unavailable');
-      return;
+    const reward = item.reward;
+
+    if (reward.type === 'start_bonus_bundle') {
+      if (!reward.claimId) return;
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = '受取中...';
+      }
+
+      try {
+        const client = window.zsSupabase || null;
+        if (!client || typeof client.rpc !== 'function') {
+          throw new Error('Supabaseへ接続できません');
+        }
+
+        const res = await client.rpc('claim_start_bonus_bundle');
+        if (res && res.error) throw res.error;
+
+        let result = res ? res.data : null;
+        if (typeof result === 'string') {
+          try { result = JSON.parse(result); } catch (_) {}
+        }
+        if (!result || result.ok === false) {
+          throw new Error((result && result.message) || '報酬を受け取れませんでした');
+        }
+
+        const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
+        if (userId && typeof loadInventoryFromSupabase === 'function') {
+          await loadInventoryFromSupabase(userId);
+        }
+
+        if (window.userProfile) {
+          if (Number.isFinite(Number(result.gem))) {
+            window.userProfile.gem = Math.max(0, Number(result.gem));
+          }
+          if (Number.isFinite(Number(result.coin))) {
+            window.userProfile.coin = Math.max(0, Number(result.coin));
+          }
+        }
+
+        reward.claimed = true;
+        markNoticeRewardClaimedLocally(reward.claimId);
+
+        if (typeof window.updateMainUI === 'function') window.updateMainUI();
+        if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
+        if (typeof window.refreshProfileHud === 'function') window.refreshProfileHud();
+        try { window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed')); } catch (_) {}
+
+        if (typeof window.showToast === 'function') {
+          window.showToast(result.already_claimed
+            ? 'スタートボーナスは受取済みです'
+            : 'スタートボーナスを受け取りました！');
+        }
+
+        renderNoticeList();
+        updateNoticeBadge();
+        return;
+      } catch (error) {
+        console.error('[NoticeReward] start bonus claim failed:', error);
+        if (typeof window.showToast === 'function') {
+          window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
+        }
+        if (button) {
+          button.disabled = false;
+          button.textContent = '受け取る';
+        }
+        return;
+      }
     }
 
-    const reward = item.reward;
 
     if (reward.type === 'character') {
       if (button) {
@@ -5223,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=458"></script>
-<script src="js/resonance_system.js?v=458"></script>
-<script src="js/resonance_ui.js?v=458"></script>
-<script src="js/character_levelup.js?v=458"></script>
+<script src="js/shooting_resonance.js?v=462"></script>
+<script src="js/resonance_system.js?v=462"></script>
+<script src="js/resonance_ui.js?v=462"></script>
+<script src="js/character_levelup.js?v=462"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -5306,7 +5371,23 @@ document.addEventListener('touchend', function (e) {
   const ZERAPHIA_REMNANT_KEY = 'zeraphia_remnants_owned_v1';
   const ZERAPHIA_INVENTORY_KEY = 'zeraphia_inventory_v1';
   const ZERAPHIA_EVOLUTION_MATERIAL_KEY = 'zeraphia_evolution_materials_v1';
-  const ZERAPHIA_EVOLUTION_ITEM_PREFIX = 'evo:';
+  const ZERAPHIA_EVOLUTION_ITEM_PREFIX = 'evo:'; // legacy compatibility only
+  const ZERAPHIA_EVOLUTION_ITEM_IDS = new Set([
+    'kyoumei_stone',
+    'soul_vessel_fire',
+    'soul_vessel_aqua',
+    'soul_vessel_wood',
+    'soul_vessel_dark',
+    'soul_vessel_light'
+  ]);
+
+  function _zsNormalizeEvolutionItemId(itemId) {
+    itemId = String(itemId || '');
+    if (itemId.indexOf(ZERAPHIA_EVOLUTION_ITEM_PREFIX) === 0) {
+      itemId = itemId.slice(ZERAPHIA_EVOLUTION_ITEM_PREFIX.length);
+    }
+    return ZERAPHIA_EVOLUTION_ITEM_IDS.has(itemId) ? itemId : '';
+  }
   const ZERAPHIA_TRANSFER_PENDING_KEY = 'zeraphia_pending_transfer_v1';
   const ZERAPHIA_TRANSFER_BACKUP_KEY = 'zeraphia_transfer_backup_v1';
   const ZERAPHIA_MIGRATED_KEY = 'zeraphia_cloud_migrated_v1';
@@ -5377,8 +5458,9 @@ document.addEventListener('touchend', function (e) {
 
     var evolutionMaterials = _zsReadLocalObject(ZERAPHIA_EVOLUTION_MATERIAL_KEY);
     Object.keys(evolutionMaterials || {}).forEach(function(materialId){
+      var normalizedId = _zsNormalizeEvolutionItemId(materialId);
       var count = Math.max(0, Number(evolutionMaterials[materialId] || 0));
-      if (count > 0) inventory[ZERAPHIA_EVOLUTION_ITEM_PREFIX + materialId] = count;
+      if (normalizedId && count > 0) inventory[normalizedId] = count;
     });
 
     return inventory;
@@ -5392,9 +5474,9 @@ document.addEventListener('touchend', function (e) {
 
     Object.keys(inventory).forEach(function(itemId){
       var count = Math.max(0, Number(inventory[itemId] || 0));
-      if (itemId.indexOf(ZERAPHIA_EVOLUTION_ITEM_PREFIX) === 0) {
-        var materialId = itemId.slice(ZERAPHIA_EVOLUTION_ITEM_PREFIX.length);
-        if (materialId && count > 0) evolutionMaterials[materialId] = count;
+      var materialId = _zsNormalizeEvolutionItemId(itemId);
+      if (materialId) {
+        if (count > 0) evolutionMaterials[materialId] = count;
         return;
       }
       normalInventory[itemId] = count;
@@ -14534,6 +14616,18 @@ window.addEventListener('pagehide', function () {
     padding: 20px 0;
   }
 
+  .lb-current-level-display {
+    margin-top: 2px;
+    text-align: center;
+    color: #6d5a38;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: .02em;
+    padding: 6px 0 2px;
+  }
+
+
   .lb-select-title {
     margin: 12px 0 8px;
     color: #6d5a38;
@@ -14803,43 +14897,43 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=458"></script>
+<script src="js/asset_loader.js?v=462"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=458"></script>
+<script src="js/login_bonus.js?v=462"></script>
 
-<script src="js/story_engine.js?v=458"></script>
-<script src="js/stories/chapter01.js?v=458"></script>
+<script src="js/story_engine.js?v=462"></script>
+<script src="js/stories/chapter01.js?v=462"></script>
 
-<script src="js/battle_range.js?v=458"></script>
-<script src="js/characters.js?v=458"></script>
-<script src="js/enemies.js?v=458"></script>
-<script src="js/battle.js?v=458"></script>
-<script src="js/battle_swipe.js?v=458"></script>
+<script src="js/battle_range.js?v=462"></script>
+<script src="js/characters.js?v=462"></script>
+<script src="js/enemies.js?v=462"></script>
+<script src="js/battle.js?v=462"></script>
+<script src="js/battle_swipe.js?v=462"></script>
 
-<script src="js/stages.js?v=458"></script>
-<script src="js/stage_select.js?v=458"></script>
-<script src="js/party_select.js?v=458"></script>
-<script src="js/enemy_intro.js?v=458"></script>
+<script src="js/stages.js?v=462"></script>
+<script src="js/stage_select.js?v=462"></script>
+<script src="js/party_select.js?v=462"></script>
+<script src="js/enemy_intro.js?v=462"></script>
 
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=458">
+<link rel="stylesheet" href="css/battle_32_ui.css?v=462">
 
-<script src="js/battle_range_32.js?v=458"></script>
-<script src="js/characters_32.js?v=458"></script>
-<script src="js/remnant_blessings.js?v=458"></script>
-<script src="js/combo_32.js?v=458"></script>
-<script src="js/cards.js?v=458"></script>
-<script src="js/battle_32.js?v=458"></script>
-<script src="js/battle_32_ui.js?v=458"></script>
+<script src="js/battle_range_32.js?v=462"></script>
+<script src="js/characters_32.js?v=462"></script>
+<script src="js/remnant_blessings.js?v=462"></script>
+<script src="js/combo_32.js?v=462"></script>
+<script src="js/cards.js?v=462"></script>
+<script src="js/battle_32.js?v=462"></script>
+<script src="js/battle_32_ui.js?v=462"></script>
 
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=458"></script>
-<script src="js/roguelite_run.js?v=458"></script>
-<script src="js/roguelite_reward.js?v=458"></script>
-<script src="js/shinju.js?v=458"></script>
-<script src="js/roguelite_controller.js?v=458"></script>
-<script src="js/roguelite_overseer_run.js?v=458"></script>
+<script src="js/roguelite_options.js?v=462"></script>
+<script src="js/roguelite_run.js?v=462"></script>
+<script src="js/roguelite_reward.js?v=462"></script>
+<script src="js/shinju.js?v=462"></script>
+<script src="js/roguelite_controller.js?v=462"></script>
+<script src="js/roguelite_overseer_run.js?v=462"></script>
 
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
@@ -15283,10 +15377,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=458"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=462"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=458"></script>
+<script src="js/raid_event.js?v=462"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15307,7 +15401,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=458"></script>
+<script src="js/score_attack.js?v=462"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
