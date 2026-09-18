@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '485';
+    var FALLBACK_BUILD = '487';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="485">
+  <meta name="sasaphia-build" content="487">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -100,21 +100,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=485-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=487-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=485-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=487-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=485-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=487-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=485-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=487-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=485">
+  <link rel="manifest" href="manifest.json?v=487">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=485"
+        href="css/style.css?v=487"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=485"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=487"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,10 +267,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=485">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=487">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=485">
-  <link rel="stylesheet" href="css/admin_mode.css?v=485-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=487">
+  <link rel="stylesheet" href="css/admin_mode.css?v=487-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '485';
+  var BUILD = '487';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=485"></script>
+<script src="js/home_banners.js?v=487"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=485"></script>
-<script src="js/resonance_system.js?v=485"></script>
-<script src="js/resonance_ui.js?v=485"></script>
-<script src="js/character_levelup.js?v=485"></script>
+<script src="js/shooting_resonance.js?v=487"></script>
+<script src="js/resonance_system.js?v=487"></script>
+<script src="js/resonance_ui.js?v=487"></script>
+<script src="js/character_levelup.js?v=487"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -11532,6 +11532,14 @@ function showTenResult(results){
         }
       }
 
+      var currentLevel = representative
+        ? Math.max(1, Math.floor(Number(
+            representative.characterLevel != null
+              ? representative.characterLevel
+              : (representative.character_level != null ? representative.character_level : 1)
+          ) || 1))
+        : 0;
+
       var no = String(chara.id || 0).padStart(2, '0');
       var panelSrc = getZukanIndexPanelSrc(chara);
       var name = chara.name || ('ID ' + no);
@@ -11552,7 +11560,7 @@ function showTenResult(results){
             '<img class="primoa-index-image" src="' + panelSrc + '" alt="' + detailEscapeHTML(name) + '">' +
             (owned ? getElementCornerIconHTML(chara, 'primoa-index-element-icon') : '') +
           '</span>' +
-          '<span class="primoa-index-name">' + detailEscapeHTML(name) + '</span>' +
+          '<span class="primoa-index-name">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
           (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
         '</button>';
     }).join('');
@@ -14987,20 +14995,20 @@ function fadeOutOpeningBgm(){
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=485"></script>
+<script src="js/asset_loader.js?v=487"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=485"></script>
+<script src="js/login_bonus.js?v=487"></script>
 
 
 
-<script src="js/shooting_characters.js?v=485"></script>
-<script src="js/stage_select.js?v=485"></script>
+<script src="js/shooting_characters.js?v=487"></script>
+<script src="js/stage_select.js?v=487"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=485">
-<script src="js/remnant_blessings.js?v=485"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=487">
+<script src="js/remnant_blessings.js?v=487"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=485"></script>
+<script src="js/shinju.js?v=487"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15073,10 +15081,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=485"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=487"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=485-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=485"></script>
+<script src="js/admin_mode.js?v=487-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=487"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15097,7 +15105,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=485"></script>
+<script src="js/score_attack.js?v=487"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -15493,7 +15501,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=485-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=487-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
@@ -16021,6 +16029,14 @@ html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#scr
   border:1px solid rgba(176,143,77,.30) !important;
   box-shadow:0 1px 5px rgba(63,46,21,.16), 0 0 0 1px rgba(255,255,255,.55) inset !important;
   pointer-events:none !important;
+}
+</style>
+
+<style id="zukan-index-level-display-v486">
+/* build486: キャラ一覧カードの下段表記を名前→Lv表示へ変更 */
+#box-grid.primoa-index-grid .primoa-index-name{
+  font-variant-numeric: tabular-nums;
+  letter-spacing:.04em;
 }
 </style>
 </body>
