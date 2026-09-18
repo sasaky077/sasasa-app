@@ -17,24 +17,33 @@ function ensureRoot(){
 
  <header class="score-attack-head">
    <button type="button" class="score-attack-back" onclick="closeScoreAttack()">‹ 戻る</button>
-   <div class="score-attack-head-title score-attack-head-title-logo">
-     <img class="score-attack-head-logo" src="images/score_attack_title.webp" alt="すこあた！">
+   <div class="score-attack-head-title">
+     <small>SCORE ATTACK</small>
+     <strong>スコアアタック</strong>
    </div>
+   <div class="score-attack-head-mark" aria-hidden="true">✦</div>
  </header>
 
  <div class="score-attack-scroll">
 
   <section class="score-attack-ranking score-attack-ranking-first">
     <div class="score-attack-section-head">
-      <div><strong>現在のフレンド内ランキング</strong></div>
+      <div>
+        <span>RANKING</span>
+        <strong>フレンドランキング</strong>
+      </div>
+      <small>BEST SCORE</small>
     </div>
     <div id="score-attack-list" class="score-attack-list"><div class="score-attack-loading">読み込み中...</div></div>
   </section>
 
   <section class="score-attack-mode-card">
     <div class="score-attack-mode-head">
-      <div><strong>難易度を選択</strong></div>
-      <span>各難易度で個別ランキング</span>
+      <div>
+        <small>DIFFICULTY</small>
+        <strong>難易度を選択</strong>
+      </div>
+      <span>難易度別ランキング</span>
     </div>
     <div class="score-attack-tabs">
       <button id="score-attack-tab-normal" class="active" onclick="setScoreAttackDifficulty('normal')">

@@ -1420,7 +1420,7 @@ skills: [
     battleUpImg: 'images/chara_29_battle_up.webp',
     battleBackImg: 'images/chara_29_battle_back.webp',
     panelImg: 'images/chara_29_panel.webp',
-    favScale: 0.90, favOffsetY: -100,
+    favScale: 0.85, favOffsetY: -50,
     uiScale: {panel: 1.0,battleBack: 1.52,battleUp: 1.0},
     combo: {
       range: 'combo_x_1',
