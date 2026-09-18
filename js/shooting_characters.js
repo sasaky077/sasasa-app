@@ -1,8 +1,9 @@
-// Zeraphia Shooting - standalone character master / combat profiles / ownership
-// IMPORTANT:
-// - This file does NOT read CHARACTERS / window.CHARACTERS.
-// - Strategy character definitions and shooting character definitions are fully independent.
-// - Character IDs are kept aligned only as identifiers.
+// Zeraphia Unified Character Master + Shooting combat profiles / ownership
+// build475:
+// - キャラ共通情報の正本はこのファイル。
+// - 旧 characters.js は廃止。
+// - HOME / ガチャ / キャラ一覧 / 育成 / Shooting は同じマスターを参照する。
+// - 旧Strategy専用性能は削除済み。
 (function () {
   'use strict';
 
@@ -47,9 +48,8 @@
   // ============================================================
   // シューティング専用レアリティ格差
   // ============================================================
-  // Strategy側 characters.js の rarity フィールドを、実行時参照ではなく
-  // ここに直接複製する（本ファイルはStrategy側を一切読み込まない方針のため）。
-  // 本編でレアリティ変更があった場合はこのマップも合わせて更新すること。
+  // rarity も共通情報の正本としてここで管理する。
+  // Strategy characters.js 側へは実行時にこの値が反映されるため、二重更新は不要。
   // v306 Gacha SR:
   //   限定: イヴェルナ / スゥ / ロゼ / シュリ / ハヤテ
   //   恒常: ウルフ / レイ / ミモザ / アヤネ / ミト
@@ -110,328 +110,793 @@
   }
 
   // ============================================================
-  // SHOOTING専用キャラクターマスター
+  // キャラクター共通マスター（正本）
   // ============================================================
-  // Strategy側 characters.js とは完全に独立。
-  // 今後、HP / ATK / 画像 / 表示倍率をシューティングだけ変更しても
-  // Strategy側には一切影響しない。
+  // name / element / base HP / base ATK / 共通画像はここを唯一の正本とする。
+  // characters.js はこの値を参照するため、ここを変更すればStrategy側にも反映される。
+  // uiScale はShooting画面専用の表示調整値。
+  // build478: battleBack は全キャラ 1.0 固定。
+  // ============================================================
+  // Zeraphia 統合キャラクターマスター（唯一の正本）
+  // ============================================================
+  // build476:
+  // HOME / ガチャ / キャラ一覧 / 育成 / Shooting をここへ完全一本化。
+  // 旧 characters.js は廃止。
+  // 重複情報はShooting側を正とする。
+  // 旧Strategy専用情報は保持しない。
+  // ============================================================
   const SHOOTING_CHARACTER_MASTER = Object.freeze({
-    1: {
-      id: 1, name: 'エリ',
-      element: 'neutral',
-      hp: 670, atk: 235,
-      image: 'images/chara_01_battle_back.webp',
-      panelImage: 'images/chara_01_panel.webp',
-      cutinImage: 'images/chara_01_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.95, battleUp: 1.0 },
+  "1": {
+    "id": 1,
+    "name": "エリ",
+    "element": "neutral",
+    "hp": 670,
+    "atk": 235,
+    "image": "images/chara_01_battle_back.webp",
+    "panelImage": "images/chara_01_panel.webp",
+    "cutinImage": "images/chara_01_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    26: {
-      id: 26, name: 'ネム',
-      element: 'light',
-      hp: 560, atk: 270,
-      image: 'images/chara_26_battle_back.webp',
-      panelImage: 'images/chara_26_panel.webp',
-      cutinImage: 'images/chara_26_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    "portraitImage": "images/chara_01.webp",
+    "homeImage": "images/chara_01_cut.webp",
+    "upImage": "images/chara_01_up.webp",
+    "homeScale": 0.8,
+    "homeOffsetX": 0,
+    "homeOffsetY": -40,
+    "hidden": false
+  },
+  "2": {
+    "id": 2,
+    "name": "ウルフ",
+    "element": "fire",
+    "hp": 610,
+    "atk": 300,
+    "image": "images/chara_02_battle_back.webp",
+    "panelImage": "images/chara_02_panel.webp",
+    "cutinImage": "images/chara_02_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    31: {
-      id: 31, name: 'スゥ',
-      element: 'aqua',
-      hp: 600, atk: 250,
-      image: 'images/chara_31_battle_back.webp',
-      panelImage: 'images/chara_31_panel.webp',
-      cutinImage: 'images/chara_31_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.75, battleUp: 1.0 },
+    "portraitImage": "images/chara_02.webp",
+    "homeImage": "images/chara_02_cut.webp",
+    "upImage": "images/chara_02_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -10,
+    "hidden": false
+  },
+  "3": {
+    "id": 3,
+    "name": "リゼ",
+    "element": "wood",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_03_battle_back.webp",
+    "panelImage": "images/chara_03_panel.webp",
+    "cutinImage": "images/chara_03_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    20: {
-      id: 20, name: 'アルノ',
-      element: 'fire',
-      hp: 500, atk: 300,
-      image: 'images/chara_20_battle_back.webp',
-      panelImage: 'images/chara_20_panel.webp',
-      cutinImage: 'images/chara_20_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.85, battleUp: 1.0 },
+    "portraitImage": "images/chara_03.webp",
+    "homeImage": "images/chara_03_cut.webp",
+    "upImage": "images/chara_03_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "4": {
+    "id": 4,
+    "name": "ハヤテ",
+    "element": "light",
+    "hp": 580,
+    "atk": 305,
+    "image": "images/chara_04_battle_back.webp",
+    "panelImage": "images/chara_04_panel.webp",
+    "cutinImage": "images/chara_04_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    27: {
-      id: 27, name: 'クラリネ',
-      element: 'dark',
-      hp: 580, atk: 280,
-      image: 'images/chara_27_battle_back.webp',
-      panelImage: 'images/chara_27_panel.webp',
-      cutinImage: 'images/chara_27_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.3, battleUp: 1.0 },
+    "portraitImage": "images/chara_04.webp",
+    "homeImage": "images/chara_04_cut.webp",
+    "upImage": "images/chara_04_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -70,
+    "hidden": false
+  },
+  "5": {
+    "id": 5,
+    "name": "ジグ",
+    "element": "wood",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_05_battle_back.webp",
+    "panelImage": "images/chara_05_panel.webp",
+    "cutinImage": "images/chara_05_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    6: {
-      id: 6, name: 'イグニス',
-      element: 'fire',
-      hp: 600, atk: 285,
-      image: 'images/chara_06_battle_back.webp',
-      panelImage: 'images/chara_06_panel.webp',
-      cutinImage: 'images/chara_06_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.35, battleUp: 1.0 },
+    "portraitImage": "images/chara_05.webp",
+    "homeImage": "images/chara_05_cut.webp",
+    "upImage": "images/chara_05_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "6": {
+    "id": 6,
+    "name": "イグニス",
+    "element": "fire",
+    "hp": 600,
+    "atk": 285,
+    "image": "images/chara_06_battle_back.webp",
+    "panelImage": "images/chara_06_panel.webp",
+    "cutinImage": "images/chara_06_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    9: {
-      id: 9, name: 'ロゼ',
-      element: 'wood',
-      hp: 680, atk: 230,
-      image: 'images/chara_09_battle_back.webp',
-      panelImage: 'images/chara_09_panel.webp',
-      cutinImage: 'images/chara_09_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.2, battleUp: 1.0 },
+    "portraitImage": "images/chara_06.webp",
+    "homeImage": "images/chara_06_cut.webp",
+    "upImage": "images/chara_06_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -45,
+    "hidden": false
+  },
+  "7": {
+    "id": 7,
+    "name": "ミト",
+    "element": "light",
+    "hp": 700,
+    "atk": 245,
+    "image": "images/chara_07_battle_back.webp",
+    "panelImage": "images/chara_07_panel.webp",
+    "cutinImage": "images/chara_07_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    28: {
-      id: 28, name: 'ミモザ',
-      element: 'wood',
-      hp: 700, atk: 220,
-      image: 'images/chara_28_battle_back.webp',
-      panelImage: 'images/chara_28_panel.webp',
-      cutinImage: 'images/chara_28_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.45, battleUp: 1.0 },
+    "portraitImage": "images/chara_07.webp",
+    "homeImage": "images/chara_07_cut.webp",
+    "upImage": "images/chara_07_up.webp",
+    "homeScale": 0.9,
+    "homeOffsetX": 0,
+    "homeOffsetY": -40,
+    "hidden": false
+  },
+  "8": {
+    "id": 8,
+    "name": "マグダレーナ",
+    "element": "dark",
+    "hp": 680,
+    "atk": 300,
+    "image": "images/chara_08_battle_back.webp",
+    "panelImage": "images/chara_08_panel.webp",
+    "cutinImage": "images/chara_08_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    16: {
-      id: 16, name: 'パトラ',
-      element: 'dark',
-      hp: 590, atk: 275,
-      image: 'images/chara_16_battle_back.webp',
-      panelImage: 'images/chara_16_panel.webp',
-      cutinImage: 'images/chara_16_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    "portraitImage": "images/chara_08.webp",
+    "homeImage": "images/chara_08_cut.webp",
+    "upImage": "images/chara_08_up.webp",
+    "homeScale": 0.9,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "9": {
+    "id": 9,
+    "name": "ロゼ",
+    "element": "wood",
+    "hp": 680,
+    "atk": 230,
+    "image": "images/chara_09_battle_back.webp",
+    "panelImage": "images/chara_09_panel.webp",
+    "cutinImage": "images/chara_09_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    15: {
-      id: 15, name: 'アリス',
-      element: 'light',
-      hp: 650, atk: 210,
-      image: 'images/chara_15_battle_back.webp',
-      panelImage: 'images/chara_15_panel.webp',
-      cutinImage: 'images/chara_15_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    "portraitImage": "images/chara_09.webp",
+    "homeImage": "images/chara_09_cut.webp",
+    "upImage": "images/chara_09_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -40,
+    "hidden": false
+  },
+  "10": {
+    "id": 10,
+    "name": "オリオン",
+    "element": "light",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_10_battle_back.webp",
+    "panelImage": "images/chara_10_panel.webp",
+    "cutinImage": "images/chara_10_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    13: {
-      id: 13, name: 'シグレ',
-      element: 'dark',
-      hp: 500, atk: 200,
-      image: 'images/chara_13_battle_back.webp',
-      panelImage: 'images/chara_13_panel.webp',
-      cutinImage: 'images/chara_13_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    "portraitImage": "images/chara_10.webp",
+    "homeImage": "images/chara_10_cut.webp",
+    "upImage": "images/chara_10_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "11": {
+    "id": 11,
+    "name": "アヤネ",
+    "element": "dark",
+    "hp": 740,
+    "atk": 225,
+    "image": "images/chara_11_battle_back.webp",
+    "panelImage": "images/chara_11_panel.webp",
+    "cutinImage": "images/chara_11_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 0.7
     },
-    4: {
-      id: 4, name: 'ハヤテ',
-      element: 'light',
-      hp: 580, atk: 305,
-      image: 'images/chara_04_battle_back.webp',
-      panelImage: 'images/chara_04_panel.webp',
-      cutinImage: 'images/chara_04_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+    "portraitImage": "images/chara_11.webp",
+    "homeImage": "images/chara_11_cut.webp",
+    "upImage": "images/chara_11_up.webp",
+    "homeScale": 0.8,
+    "homeOffsetX": 0,
+    "homeOffsetY": -50,
+    "hidden": false
+  },
+  "12": {
+    "id": 12,
+    "name": "シイナ",
+    "element": "light",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_12_battle_back.webp",
+    "panelImage": "images/chara_12_panel.webp",
+    "cutinImage": "images/chara_12_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    14: {
-      id: 14, name: 'ミア',
-      element: 'aqua',
-      hp: 540, atk: 295,
-      image: 'images/chara_14_battle_back.webp',
-      panelImage: 'images/chara_14_panel.webp',
-      cutinImage: 'images/chara_14_cutin.webp',
-      uiScale: { panel: 0.6, battleBack: 0.7, battleUp: 0.75 },
+    "portraitImage": "images/chara_12.webp",
+    "homeImage": "images/chara_12_cut.webp",
+    "upImage": "images/chara_12_up.webp",
+    "homeScale": 0.7,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "13": {
+    "id": 13,
+    "name": "シグレ",
+    "element": "dark",
+    "hp": 500,
+    "atk": 200,
+    "image": "images/chara_13_battle_back.webp",
+    "panelImage": "images/chara_13_panel.webp",
+    "cutinImage": "images/chara_13_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    11: {
-      id: 11, name: 'アヤネ',
-      element: 'dark',
-      hp: 740, atk: 225,
-      image: 'images/chara_11_battle_back.webp',
-      panelImage: 'images/chara_11_panel.webp',
-      cutinImage: 'images/chara_11_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.70, battleUp: 0.7 },
+    "portraitImage": "images/chara_13.webp",
+    "homeImage": "images/chara_13_cut.webp",
+    "upImage": "images/chara_13_up.webp",
+    "homeScale": 0.95,
+    "homeOffsetX": 0,
+    "homeOffsetY": 5,
+    "hidden": false
+  },
+  "14": {
+    "id": 14,
+    "name": "ミア",
+    "element": "aqua",
+    "hp": 540,
+    "atk": 295,
+    "image": "images/chara_14_battle_back.webp",
+    "panelImage": "images/chara_14_panel.webp",
+    "cutinImage": "images/chara_14_cutin.webp",
+    "uiScale": {
+      "panel": 0.6,
+      "battleBack": 1.0,
+      "battleUp": 0.75
     },
-    29: {
-      id: 29, name: 'エルテナ',
-      element: 'wood',
-      hp: 560, atk: 290,
-      image: 'images/chara_29_battle_back.webp',
-      panelImage: 'images/chara_29_panel.webp',
-      cutinImage: 'images/chara_29_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.25, battleUp: 1.0 },
+    "portraitImage": "images/chara_14.webp",
+    "homeImage": "images/chara_14_cut.webp",
+    "upImage": "images/chara_14_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -40,
+    "hidden": false
+  },
+  "15": {
+    "id": 15,
+    "name": "アリス",
+    "element": "light",
+    "hp": 650,
+    "atk": 210,
+    "image": "images/chara_15_battle_back.webp",
+    "panelImage": "images/chara_15_panel.webp",
+    "cutinImage": "images/chara_15_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    7: {
-      id: 7, name: 'ミト',
-      element: 'light',
-      hp: 700, atk: 245,
-      image: 'images/chara_07_battle_back.webp',
-      panelImage: 'images/chara_07_panel.webp',
-      cutinImage: 'images/chara_07_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.5, battleUp: 1.0 },
+    "portraitImage": "images/chara_15.webp",
+    "homeImage": "images/chara_15_cut.webp",
+    "upImage": "images/chara_15_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "16": {
+    "id": 16,
+    "name": "パトラ",
+    "element": "dark",
+    "hp": 590,
+    "atk": 275,
+    "image": "images/chara_16_battle_back.webp",
+    "panelImage": "images/chara_16_panel.webp",
+    "cutinImage": "images/chara_16_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    21: {
-      id: 21, name: 'アンジェ',
-      element: 'light',
-      hp: 720, atk: 190,
-      image: 'images/chara_21_battle_back.webp',
-      panelImage: 'images/chara_21_panel.webp',
-      cutinImage: 'images/chara_21_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 0.8 },
+    "portraitImage": "images/chara_16.webp",
+    "homeImage": "images/chara_16_cut.webp",
+    "upImage": "images/chara_16_up.webp",
+    "homeScale": 1,
+    "homeOffsetX": 0,
+    "homeOffsetY": 10,
+    "hidden": false
+  },
+  "17": {
+    "id": 17,
+    "name": "アイナ",
+    "element": "fire",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_17_battle_back.webp",
+    "panelImage": "images/chara_17_panel.webp",
+    "cutinImage": "images/chara_17_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    2: {
-      id: 2, name: 'ウルフ',
-      element: 'fire',
-      hp: 610, atk: 300,
-      image: 'images/chara_02_battle_back.webp',
-      panelImage: 'images/chara_02_panel.webp',
-      cutinImage: 'images/chara_02_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.22, battleUp: 1.0 },
+    "portraitImage": "images/chara_17.webp",
+    "homeImage": "images/chara_17_cut.webp",
+    "upImage": "images/chara_17_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "18": {
+    "id": 18,
+    "name": "シオン",
+    "element": "dark",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_18_battle_back.webp",
+    "panelImage": "images/chara_18_panel.webp",
+    "cutinImage": "images/chara_18_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    23: {
-      id: 23, name: 'セレナ',
-      element: 'wood',
-      hp: 600, atk: 250,
-      image: 'images/chara_23_battle_back.webp',
-      panelImage: 'images/chara_23_panel.webp',
-      cutinImage: 'images/chara_23_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_18.webp",
+    "homeImage": "images/chara_18_cut.webp",
+    "upImage": "images/chara_18_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "19": {
+    "id": 19,
+    "name": "ラグナ",
+    "element": "fire",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_19_battle_back.webp",
+    "panelImage": "images/chara_19_panel.webp",
+    "cutinImage": "images/chara_19_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    25: {
-      id: 25, name: 'リュネ',
-      element: 'aqua',
-      hp: 600, atk: 250,
-      image: 'images/chara_25_battle_back.webp',
-      panelImage: 'images/chara_25_panel.webp',
-      cutinImage: 'images/chara_25_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_19.webp",
+    "homeImage": "images/chara_19_cut.webp",
+    "upImage": "images/chara_19_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "20": {
+    "id": 20,
+    "name": "アルノ",
+    "element": "fire",
+    "hp": 500,
+    "atk": 300,
+    "image": "images/chara_20_battle_back.webp",
+    "panelImage": "images/chara_20_panel.webp",
+    "cutinImage": "images/chara_20_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    17: {
-      id: 17, name: 'アイナ',
-      element: 'fire',
-      hp: 600, atk: 250,
-      image: 'images/chara_17_battle_back.webp',
-      panelImage: 'images/chara_17_panel.webp',
-      cutinImage: 'images/chara_17_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_20.webp",
+    "homeImage": "images/chara_20_cut.webp",
+    "upImage": "images/chara_20_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "21": {
+    "id": 21,
+    "name": "アンジェ",
+    "element": "light",
+    "hp": 720,
+    "atk": 190,
+    "image": "images/chara_21_battle_back.webp",
+    "panelImage": "images/chara_21_panel.webp",
+    "cutinImage": "images/chara_21_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 0.8
     },
-    30: {
-      id: 30, name: 'リズ',
-      element: 'aqua',
-      hp: 600, atk: 250,
-      image: 'images/chara_30_battle_back.webp',
-      panelImage: 'images/chara_30_panel.webp',
-      cutinImage: 'images/chara_30_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_21.webp",
+    "homeImage": "images/chara_21_cut.webp",
+    "upImage": "images/chara_21_up.webp",
+    "homeScale": 0.95,
+    "homeOffsetX": 0,
+    "homeOffsetY": 15,
+    "hidden": false
+  },
+  "22": {
+    "id": 22,
+    "name": "ベロニカ",
+    "element": "aqua",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_22_battle_back.webp",
+    "panelImage": "images/chara_22_panel.webp",
+    "cutinImage": "images/chara_22_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    24: {
-      id: 24, name: 'ノエル',
-      element: 'light',
-      hp: 600, atk: 250,
-      image: 'images/chara_24_battle_back.webp',
-      panelImage: 'images/chara_24_panel.webp',
-      cutinImage: 'images/chara_24_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_22.webp",
+    "homeImage": "images/chara_22_cut.webp",
+    "upImage": "images/chara_22_up.webp",
+    "homeScale": 0.83,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "23": {
+    "id": 23,
+    "name": "セレナ",
+    "element": "wood",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_23_battle_back.webp",
+    "panelImage": "images/chara_23_panel.webp",
+    "cutinImage": "images/chara_23_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    22: {
-      id: 22, name: 'ベロニカ',
-      element: 'aqua',
-      hp: 600, atk: 250,
-      image: 'images/chara_22_battle_back.webp',
-      panelImage: 'images/chara_22_panel.webp',
-      cutinImage: 'images/chara_22_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_23.webp",
+    "homeImage": "images/chara_23_cut.webp",
+    "upImage": "images/chara_23_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "24": {
+    "id": 24,
+    "name": "ノエル",
+    "element": "light",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_24_battle_back.webp",
+    "panelImage": "images/chara_24_panel.webp",
+    "cutinImage": "images/chara_24_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    12: {
-      id: 12, name: 'シイナ',
-      element: 'light',
-      hp: 600, atk: 250,
-      image: 'images/chara_12_battle_back.webp',
-      panelImage: 'images/chara_12_panel.webp',
-      cutinImage: 'images/chara_12_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_24.webp",
+    "homeImage": "images/chara_24_cut.webp",
+    "upImage": "images/chara_24_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "25": {
+    "id": 25,
+    "name": "リュネ",
+    "element": "aqua",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_25_battle_back.webp",
+    "panelImage": "images/chara_25_panel.webp",
+    "cutinImage": "images/chara_25_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    5: {
-      id: 5, name: 'ジグ',
-      element: 'wood',
-      hp: 600, atk: 250,
-      image: 'images/chara_05_battle_back.webp',
-      panelImage: 'images/chara_05_panel.webp',
-      cutinImage: 'images/chara_05_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_25.webp",
+    "homeImage": "images/chara_25_cut.webp",
+    "upImage": "images/chara_25_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "26": {
+    "id": 26,
+    "name": "ネム",
+    "element": "light",
+    "hp": 560,
+    "atk": 270,
+    "image": "images/chara_26_battle_back.webp",
+    "panelImage": "images/chara_26_panel.webp",
+    "cutinImage": "images/chara_26_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    19: {
-      id: 19, name: 'ラグナ',
-      element: 'fire',
-      hp: 600, atk: 250,
-      image: 'images/chara_19_battle_back.webp',
-      panelImage: 'images/chara_19_panel.webp',
-      cutinImage: 'images/chara_19_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_26.webp",
+    "homeImage": "images/chara_26_cut.webp",
+    "upImage": "images/chara_26_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -25,
+    "hidden": false
+  },
+  "27": {
+    "id": 27,
+    "name": "クラリネ",
+    "element": "dark",
+    "hp": 580,
+    "atk": 280,
+    "image": "images/chara_27_battle_back.webp",
+    "panelImage": "images/chara_27_panel.webp",
+    "cutinImage": "images/chara_27_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    3: {
-      id: 3, name: 'リゼ',
-      element: 'wood',
-      hp: 600, atk: 250,
-      image: 'images/chara_03_battle_back.webp',
-      panelImage: 'images/chara_03_panel.webp',
-      cutinImage: 'images/chara_03_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_27.webp",
+    "homeImage": "images/chara_27_cut.webp",
+    "upImage": "images/chara_27_up.webp",
+    "homeScale": 0.8,
+    "homeOffsetX": 0,
+    "homeOffsetY": -45,
+    "hidden": false
+  },
+  "28": {
+    "id": 28,
+    "name": "ミモザ",
+    "element": "wood",
+    "hp": 700,
+    "atk": 220,
+    "image": "images/chara_28_battle_back.webp",
+    "panelImage": "images/chara_28_panel.webp",
+    "cutinImage": "images/chara_28_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    18: {
-      id: 18, name: 'シオン',
-      element: 'dark',
-      hp: 600, atk: 250,
-      image: 'images/chara_18_battle_back.webp',
-      panelImage: 'images/chara_18_panel.webp',
-      cutinImage: 'images/chara_18_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.60, battleUp: 0.72 },
+    "portraitImage": "images/chara_28.webp",
+    "homeImage": "images/chara_28_cut.webp",
+    "upImage": "images/chara_28_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -45,
+    "hidden": false
+  },
+  "29": {
+    "id": 29,
+    "name": "エルテナ",
+    "element": "wood",
+    "hp": 560,
+    "atk": 290,
+    "image": "images/chara_29_battle_back.webp",
+    "panelImage": "images/chara_29_panel.webp",
+    "cutinImage": "images/chara_29_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    10: {
-      id: 10, name: 'オリオン',
-      element: 'light',
-      hp: 600, atk: 250,
-      image: 'images/chara_10_battle_back.webp',
-      panelImage: 'images/chara_10_panel.webp',
-      cutinImage: 'images/chara_10_cutin.webp',
-      uiScale: { panel: 0.72, battleBack: 0.68, battleUp: 0.72 },
+    "portraitImage": "images/chara_29.webp",
+    "homeImage": "images/chara_29_cut.webp",
+    "upImage": "images/chara_29_up.webp",
+    "homeScale": 0.85,
+    "homeOffsetX": 0,
+    "homeOffsetY": -50,
+    "hidden": false
+  },
+  "30": {
+    "id": 30,
+    "name": "リズ",
+    "element": "aqua",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_30_battle_back.webp",
+    "panelImage": "images/chara_30_panel.webp",
+    "cutinImage": "images/chara_30_cutin.webp",
+    "uiScale": {
+      "panel": 0.72,
+      "battleBack": 1.0,
+      "battleUp": 0.72
     },
-    32: {
-      id: 32, name: 'イヴェルナ',
-      element: 'fire',
-      hp: 620, atk: 300,
-      image: 'images/chara_32_battle_back.webp',
-      panelImage: 'images/chara_32_panel.webp',
-      cutinImage: 'images/chara_32_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+    "portraitImage": "images/chara_30.webp",
+    "homeImage": "images/chara_30_cut.webp",
+    "upImage": "images/chara_30_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "31": {
+    "id": 31,
+    "name": "スゥ",
+    "element": "aqua",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_31_battle_back.webp",
+    "panelImage": "images/chara_31_panel.webp",
+    "cutinImage": "images/chara_31_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    33: {
-      id: 33, name: 'レイ',
-      element: 'aqua',
-      hp: 650, atk: 255,
-      image: 'images/chara_33_battle_back.webp',
-      panelImage: 'images/chara_33_panel.webp',
-      cutinImage: 'images/chara_33_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.0, battleUp: 1.0 },
+    "portraitImage": "images/chara_31.webp",
+    "homeImage": "images/chara_31_cut.webp",
+    "upImage": "images/chara_31_up.webp",
+    "homeScale": 0.9,
+    "homeOffsetX": 0,
+    "homeOffsetY": -10,
+    "hidden": false
+  },
+  "32": {
+    "id": 32,
+    "name": "イヴェルナ",
+    "element": "fire",
+    "hp": 620,
+    "atk": 300,
+    "image": "images/chara_32_battle_back.webp",
+    "panelImage": "images/chara_32_panel.webp",
+    "cutinImage": "images/chara_32_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    50: {
-      id: 50, name: 'テストちゃん',
-      element: 'wood',
-      hp: 620, atk: 285,
-      image: 'images/chara_50_battle_back.webp',
-      panelImage: 'images/chara_50_panel.webp',
-      cutinImage: 'images/chara_50_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.8, battleUp: 1.0 },
+    "portraitImage": "images/chara_32.webp",
+    "homeImage": "images/chara_32_cut.webp",
+    "upImage": "images/chara_32_up.webp",
+    "homeScale": 0.88,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "33": {
+    "id": 33,
+    "name": "レイ",
+    "element": "aqua",
+    "hp": 650,
+    "atk": 255,
+    "image": "images/chara_33_battle_back.webp",
+    "panelImage": "images/chara_33_panel.webp",
+    "cutinImage": "images/chara_33_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    8: {
-      id: 8, name: 'マグダレーナ',
-      element: 'dark',
-      hp: 680, atk: 300,
-      image: 'images/chara_08_battle_back.webp',
-      panelImage: 'images/chara_08_panel.webp',
-      cutinImage: 'images/chara_08_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 0.90, battleUp: 1.0 },
+    "portraitImage": "images/chara_33.webp",
+    "homeImage": "images/chara_33_cut.webp",
+    "upImage": "images/chara_33_up.webp",
+    "homeScale": 0.9,
+    "homeOffsetX": 0,
+    "homeOffsetY": -25,
+    "hidden": false
+  },
+  "50": {
+    "id": 50,
+    "name": "テストちゃん",
+    "element": "wood",
+    "hp": 620,
+    "atk": 285,
+    "image": "images/chara_50_battle_back.webp",
+    "panelImage": "images/chara_50_panel.webp",
+    "cutinImage": "images/chara_50_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-    52: {
-      id: 52, name: 'ノア',
-      element: 'light',
-      hp: 650, atk: 305,
-      image: 'images/chara_52_battle_back.webp',
-      panelImage: 'images/chara_52_panel.webp',
-      cutinImage: 'images/chara_52_cutin.webp',
-      uiScale: { panel: 1.0, battleBack: 1.55, battleUp: 1.0 },
+    "portraitImage": "images/chara_50.webp",
+    "homeImage": "images/chara_50_cut.webp",
+    "upImage": "images/chara_50.webp",
+    "homeScale": 0.9,
+    "homeOffsetX": 0,
+    "homeOffsetY": -20,
+    "hidden": false
+  },
+  "52": {
+    "id": 52,
+    "name": "ノア",
+    "element": "light",
+    "hp": 650,
+    "atk": 305,
+    "image": "images/chara_52_battle_back.webp",
+    "panelImage": "images/chara_52_panel.webp",
+    "cutinImage": "images/chara_52_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.0,
+      "battleUp": 1
     },
-  });
+    "portraitImage": "images/chara_52_cut.webp",
+    "homeImage": "images/chara_52_cutin.webp",
+    "upImage": "images/chara_52_panel.webp",
+    "homeScale": 0.78,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  }
+});
 
   function getShootingCharacterMaster(id) {
     return SHOOTING_CHARACTER_MASTER[Number(id)] || null;
@@ -1205,6 +1670,7 @@
     ultBeamTickMs: 250,
     ultBeamTickAtkMultiplier: 0.35,
     ultBeamWidth: 62,
+    ultBeamElement: 'fire',
   });
 
   // v313: 限定SR AQUA
@@ -1379,7 +1845,7 @@
   // 所持判定
   // ============================================================
   // ここは「キャラ定義」ではなくアカウント側の所持データをIDで参照する。
-  // Strategy characters.js は参照しない。
+  // 旧 characters.js は参照しない。
   function getOwnedShootingInstance(charaId) {
     const id = Number(charaId);
 
@@ -1410,40 +1876,95 @@
     return !!getOwnedShootingInstance(charaId);
   }
 
+  // build481: パーティ選択パネル用 属性アイコン
+  const SHOOTING_ELEMENT_ICON = Object.freeze({
+    neutral: 'images/type_neutral.webp',
+    aqua: 'images/type_aqua.webp',
+    fire: 'images/type_fire.webp',
+    wood: 'images/type_wood.webp',
+    dark: 'images/type_dark.webp',
+    light: 'images/type_light.webp',
+  });
+
+  function getShootingRosterElementIcon(element) {
+    const raw = Array.isArray(element) ? element[0] : element;
+    const key = String(raw || 'neutral').trim().toLowerCase();
+    return SHOOTING_ELEMENT_ICON[key] || SHOOTING_ELEMENT_ICON.neutral;
+  }
+
   function getShootingRosterHtml() {
     return Object.values(SHOOTING_CHARACTERS)
       .sort((a, b) => a.id - b.id)
       .map(c => {
-        const owned = isShootingCharacterOwned(c.id);
+        const ownedData = getOwnedShootingInstance(c.id);
+        const owned = !!ownedData;
+        const currentLevel = owned
+          ? Math.max(1, Math.floor(Number(
+              ownedData.characterLevel != null
+                ? ownedData.characterLevel
+                : (ownedData.character_level != null ? ownedData.character_level : 1)
+            ) || 1))
+          : 0;
+
         return `
           <div class="shooting-character-option-wrap${owned ? '' : ' locked'}" data-character-wrap-id="${c.id}">
             <button type="button"
                     class="shooting-character-option${owned ? '' : ' locked'}"
                     data-character-id="${c.id}"
+                    aria-label="${owned ? `${c.name} Lv.${currentLevel}。長押しで詳細` : '未所持キャラクター'}"
                     onclick="selectShootingCharacter(${c.id})"
                     ${owned ? '' : 'disabled aria-disabled="true"'}>
               <span class="shooting-character-portrait">
                 <img src="${c.panelImage || c.image}"
                      alt="${owned ? c.name : '未所持'}"
                      draggable="false">
+                ${owned ? `<img class="shooting-character-element-icon"
+                               src="${getShootingRosterElementIcon(c.element)}"
+                               alt=""
+                               aria-hidden="true"
+                               draggable="false">` : ''}
               </span>
-              <b>${owned ? c.name : '????'}</b>
+              <b class="shooting-character-level-label">${owned ? `Lv.${currentLevel}` : '????'}</b>
             </button>
-            ${owned ? `
-            <button type="button"
-                    class="shooting-character-info-button"
-                    data-info-character-id="${c.id}"
-                    aria-label="${c.name}の詳細を見る"
-                    onclick="event.preventDefault();event.stopPropagation();openShootingCharacterInfo(${c.id});">i</button>
-            ` : ''}
           </div>`;
       })
       .join('');
   }
 
+
+  // ============================================================
+  // 既存UI互換ビュー
+  // ============================================================
+  // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
+  const CHARACTER_CATALOG = Object.freeze(
+    Object.values(SHOOTING_CHARACTER_MASTER)
+      .sort((a,b) => Number(a.id) - Number(b.id))
+      .map(master => Object.freeze({
+        id: Number(master.id),
+        name: master.name,
+        rarity: getShootingRarity(master.id),
+        element: master.element,
+        stats: Object.freeze({
+          HP: Number(master.hp || 0),
+          ATK: Number(master.atk || 0),
+        }),
+        img: master.portraitImage,
+        cutImg: master.homeImage,
+        ultImg: master.cutinImage,
+        upImg: master.upImage,
+        battleBackImg: master.image,
+        panelImg: master.panelImage,
+        favScale: Number(master.homeScale ?? 1),
+        favOffsetX: Number(master.homeOffsetX ?? 0),
+        favOffsetY: Number(master.homeOffsetY ?? 0),
+        hidden: master.hidden === true,
+      }))
+  );
+
   window.ShootingCharacters = Object.freeze({
     CHARACTER_ID,
     SHOOTING_CHARACTER_MASTER,
+    CHARACTER_CATALOG,
     SHOOTING_CHARACTERS,
     SHOOTING_RARITY,
     RARITY_STAT_MULTIPLIER,
@@ -1456,4 +1977,9 @@
     isShootingCharacterOwned,
     getShootingRosterHtml,
   });
+  // 旧UI互換。実体は上の統合マスターのみ。
+  window.CHARACTERS = CHARACTER_CATALOG;
 })();
+
+// classic-script global binding
+var CHARACTERS = window.ShootingCharacters.CHARACTER_CATALOG;

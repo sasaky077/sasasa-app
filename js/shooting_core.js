@@ -2282,8 +2282,9 @@
     const startType = document.getElementById('shooting-start-type');
     if (player) {
       player.setAttribute('data-character-id', String(c.id));
-      const battleBackScale = Number(c.id === CHARACTER_ID.NOAH ? 1.45 : (c.uiScale?.battleBack || 1));
-      player.style.setProperty('--unit-scale', String(battleBackScale));
+      // build478: シューティング中の battle_back 表示倍率は全キャラ 1.0 固定。
+      const battleBackScale = 1.0;
+      player.style.setProperty('--unit-scale', '1');
     }
     if (img) {
       img.src = (c.id === CHARACTER_ID.HAYATE && state && performance.now() < (state.hayateMoonlightUntil || 0)) ? (c.moonlightImage || c.image) : c.image;

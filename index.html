@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '473';
+    var FALLBACK_BUILD = '485';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="473">
+  <meta name="sasaphia-build" content="485">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -100,21 +100,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=20260816-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=485-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=20260816-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=485-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=20260816-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=485-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=20260816-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=485-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=473">
+  <link rel="manifest" href="manifest.json?v=485">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=473"
+        href="css/style.css?v=485"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=473"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=485"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,10 +267,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=473">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=485">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=473">
-  <link rel="stylesheet" href="css/admin_mode.css?v=20260820-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=485">
+  <link rel="stylesheet" href="css/admin_mode.css?v=485-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '473';
+  var BUILD = '485';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=473"></script>
+<script src="js/home_banners.js?v=485"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=473"></script>
-<script src="js/resonance_system.js?v=473"></script>
-<script src="js/resonance_ui.js?v=473"></script>
-<script src="js/character_levelup.js?v=473"></script>
+<script src="js/shooting_resonance.js?v=485"></script>
+<script src="js/resonance_system.js?v=485"></script>
+<script src="js/resonance_ui.js?v=485"></script>
+<script src="js/character_levelup.js?v=485"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -6829,7 +6829,7 @@ function selectChara(now, gacha) {
   }
 
   // ============================================================
-  // build473: 起動/BGM状態をDOMのactive監視から分離。
+  // build 478: 起動/BGM状態をDOMのactive監視から分離。
   // SPLASH -> TITLE -> LOADING -> HOME -> OTHER
   // ============================================================
   window.__zeraphiaAppPhase = window.__zeraphiaAppPhase || 'SPLASH';
@@ -6844,7 +6844,7 @@ function selectChara(now, gacha) {
   }
 
   // ============================================================
-  // build473: タイトルBGM再生を1箇所に集約。
+  // build 478: タイトルBGM再生を1箇所に集約。
   // ・二重再生を防ぐ（既に再生中なら何もしない）
   // ・自動再生が拒否された場合は、次のタップで1回だけ再試行する
   // ============================================================
@@ -6957,7 +6957,7 @@ function selectChara(now, gacha) {
     });
   }
 
-  // build473:
+  // build 478:
   // ここで集めるのは「HOMEを表示した瞬間に画面内へ見えていて、
   // 欠けていると明らかにおかしい」画像だけに限定する（= critical）。
   // ボトムナビは waitForBottomNavAssets() が別途・非ブロッキングで保証済みなので含めない。
@@ -7130,7 +7130,7 @@ function selectChara(now, gacha) {
     }
 
     // タイトルBGMを優先し、必要最低限の画像だけ2本ずつロード。
-    // build473: 失敗しても起動全体は止めないため、リトライは1回までに短縮し、
+    // build 478: 失敗しても起動全体は止めないため、リトライは1回までに短縮し、
     // 万一の通信不良時にタイトルで長時間止まらないようにする。
     var completed = 0;
     for(var i = 0; i < urls.length; i += 1){
@@ -7208,7 +7208,7 @@ function selectChara(now, gacha) {
     await repairStartupDomImages();
     setTitleLoadingProgress(98);
 
-    // build473: 画像1枚(あるいは全滅)のロード失敗でゲーム全体を止めない。
+    // build 478: 画像1枚(あるいは全滅)のロード失敗でゲーム全体を止めない。
     // 失敗はログにだけ残し、HOME表示は常に続行する。
     // 取りこぼした画像は repairStartupDomImages() 済み、または
     // HOME表示後の通常imgロード/バックグラウンドwarmupで再取得を試みる。
@@ -7325,7 +7325,7 @@ var titleScreen = document.getElementById('title-screen');
 titleScreen.style.display = 'flex';
 setZeraphiaAppPhase('TITLE');
 
-// build473: 「タイトルに戻る」(location.reload)などスプラッシュのクリックを
+// build 478: 「タイトルに戻る」(location.reload)などスプラッシュのクリックを
 // 経由しないケースの保険。既に再生中なら startTitleBgm() 内で何もしない。
 startTitleBgm();
 }
@@ -7386,7 +7386,7 @@ startTitleBgm();
 
   if(bottomNav) bottomNav.style.display = 'none';
 
-  // build473:
+  // build 478:
   // HOME表示に本当に必要な最小限の画像(collectStartupAssetGroups)だけを
   // ここで待つ。1枚でも失敗した場合はログに残すだけで、ゲーム開始は止めない
   // (waitForStartupAssets()は常に ok:true を返す。失敗分は repairStartupDomImages()
@@ -7413,7 +7413,7 @@ startTitleBgm();
   await new Promise(function(resolve){ setTimeout(resolve, 140); });
 
   // ============================================================
-  // build473: タイトルBGM → HOME BGMの切替はこのブロックだけで行う。
+  // build 478: タイトルBGM → HOME BGMの切替はこのブロックだけで行う。
   // タイトルBGMはロード中もフェード中も途切れさせず維持し、
   // タイトルが完全に非表示になった瞬間にだけ切り替える。
   // ============================================================
@@ -7466,11 +7466,7 @@ startTitleBgm();
     setTimeout(function(){
       showTestplayNotice();
     }, 80);
-
-    if (checkBattle32Resume()) {
-      return;
-    }
-  }, 480);
+}, 480);
 }
 
 
@@ -8791,7 +8787,7 @@ startTitleBgm();
     setZeraphiaAppPhase('OTHER');
   }
 
-  // build473: 画面遷移をバックグラウンド画像プリロードのPromiseに依存させない。
+  // build 478: 画面遷移をバックグラウンド画像プリロードのPromiseに依存させない。
   // 各画面の<img>はここで即座にactive化され、画像自体は通常のブラウザロード
   // (既にキャッシュ済みならほぼ即時、未取得でも表示をブロックしない)に任せる。
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
@@ -8950,8 +8946,6 @@ function goHome(){
       setHomeBtnVisible(false);
       setReloadBtnVisible(true);
       if(guf2) guf2.classList.remove('hud-dark');
-      // Battle32バトル中にホームへ戻った場合は中断保存を削除
-      if (typeof clearBattle32ResumeState === 'function') clearBattle32ResumeState();
     } else {
       document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
       if(name === 'zukan') switchZukanMainTab('box');
@@ -10793,21 +10787,6 @@ function showTenResult(results){
   var currentRemnantCarouselIndex = 0;
   var REMNANT_STORAGE_KEY = 'zeraphia_remnants_owned_v1';
 
-  // BOSSドロップ率。1周で抽選されるドロップ枠は最大1つだけ。
-  // 現時点では「レムナント」または「コイン」のどちらかをBOSSドロップとして扱う。
-  var REMNANT_BOSS_DROP_RATE_BY_RANK = { S: 1.00, A: 0.70, B: 0.45, C: 0.30, D: 0.15, E: 0.05 };
-  var REMNANT_BOSS_COIN_FALLBACK_BY_RANK = { S: 0, A: 160, B: 130, C: 100, D: 80, E: 50 };
-
-  function getBossDropRateByRank(rank){
-    rank = String(rank || 'E').toUpperCase();
-    return REMNANT_BOSS_DROP_RATE_BY_RANK[rank] != null ? REMNANT_BOSS_DROP_RATE_BY_RANK[rank] : REMNANT_BOSS_DROP_RATE_BY_RANK.E;
-  }
-
-  function getBossDropCoinByRank(rank){
-    rank = String(rank || 'E').toUpperCase();
-    return REMNANT_BOSS_COIN_FALLBACK_BY_RANK[rank] != null ? REMNANT_BOSS_COIN_FALLBACK_BY_RANK[rank] : REMNANT_BOSS_COIN_FALLBACK_BY_RANK.E;
-  }
-
   // レムナント一覧マスター。今後8体まで登録予定。
   // サキエルは No.04 として固定登録。
   var REMNANT_MASTER = [
@@ -10978,95 +10957,10 @@ function showTenResult(results){
     return { ok: true, unlocked: true, alreadyOwned: false, duplicate: false, remnant: def, entry: entry, count: 1 };
   }
 
-  async function grantBossDropCoin(amount, meta){
-    amount = Math.max(0, Math.floor(Number(amount || 0)));
-    if(amount <= 0) return { ok: true, coin: 0 };
-
-    try {
-      if(window.userProfile){
-        window.userProfile.coin = Number(window.userProfile.coin || 0) + amount;
-      }
-      if(typeof window.saveProfileToDB === 'function' && window.userProfile){
-        await window.saveProfileToDB({
-          coin: window.userProfile.coin,
-          last_played: new Date().toISOString()
-        });
-      }
-      if(typeof window.updateMainUI === 'function') window.updateMainUI();
-      if(typeof showToast === 'function') showToast('BOSS DROP：コイン +' + amount);
-    } catch(e) {
-      console.warn('[Remnant] boss drop coin grant failed:', e);
-    }
-
-    return { ok: true, coin: amount, meta: meta || null };
-  }
-
-  async function rollBossDropFromRoguelite(result){
-    result = result || {};
-    var runId = result.runId || '';
-    var rank = String(result.rank || 'E').toUpperCase();
-    var totalTurns = result.totalTurns;
-
-    // 現在はサキエル降臨のみBOSSドロップ対象。
-    if(runId !== 'sakiel'){
-      return { ok: true, type: 'none', dropped: false, reason: 'not_target_run' };
-    }
-
-    var rate = getBossDropRateByRank(rank);
-    var roll = Math.random();
-    var hit = roll < rate;
-
-    if(hit){
-      var res = await unlockRemnantById('remnant_04', {
-        source: 'boss_drop',
-        runId: runId,
-        rank: rank,
-        totalTurns: totalTurns,
-        rate: rate,
-        roll: roll
-      });
-
-      return {
-        ok: true,
-        type: 'remnant',
-        dropped: true,
-        rate: rate,
-        roll: roll,
-        unlocked: !!(res && res.unlocked),
-        duplicate: !!(res && res.duplicate),
-        alreadyOwned: !!(res && res.alreadyOwned),
-        remnant: res && res.remnant,
-        entry: res && res.entry,
-        count: res && res.count ? res.count : 1
-      };
-    }
-
-    var coin = getBossDropCoinByRank(rank);
-    await grantBossDropCoin(coin, { source: 'boss_drop_fallback', runId: runId, rank: rank, totalTurns: totalTurns, rate: rate, roll: roll });
-
-    return {
-      ok: true,
-      type: 'coin',
-      dropped: false,
-      rate: rate,
-      roll: roll,
-      coin: coin,
-      reason: 'remnant_not_dropped'
-    };
-  }
-
-  // 旧API互換。以前の呼び出しが残っていてもBOSSドロップ抽選に流す。
-  async function tryUnlockRemnantFromRoguelite(result){
-    return await rollBossDropFromRoguelite(result || {});
-  }
-
   window.REMNANT_MASTER = REMNANT_MASTER;
   window.getOwnedRemnantCount = getOwnedRemnantCount;
   window.isRemnantOwned = isRemnantOwned;
   window.unlockRemnantById = unlockRemnantById;
-  window.tryUnlockRemnantFromRoguelite = tryUnlockRemnantFromRoguelite;
-  window.rollBossDropFromRoguelite = rollBossDropFromRoguelite;
-  window.getBossDropRateByRank = getBossDropRateByRank;
 
   function showZukanMenu(){
     switchZukanMainTab('box');
@@ -11656,6 +11550,7 @@ function showTenResult(results){
           (canGrow ? '<span class="primoa-index-limitbreak-dot" aria-label="育成可能"></span>' : '') +
           '<span class="primoa-index-image-wrap">' +
             '<img class="primoa-index-image" src="' + panelSrc + '" alt="' + detailEscapeHTML(name) + '">' +
+            (owned ? getElementCornerIconHTML(chara, 'primoa-index-element-icon') : '') +
           '</span>' +
           '<span class="primoa-index-name">' + detailEscapeHTML(name) + '</span>' +
           (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
@@ -11722,8 +11617,6 @@ function showTenResult(results){
       name: chara.name,
       rarity: displayData.rarity || chara.rarity,
       element: displayData.element || chara.element,
-      role: chara.role,
-      moveType: chara.moveType,
       stats: displayData.stats || chara.stats || {},
       baseStats: displayData.baseStats || chara.stats || {},
       limitBreak: lb,
@@ -12417,7 +12310,7 @@ function showTenResult(results){
   grid.innerHTML = '';
 
   var targetChars = CHARACTERS.filter(function(c){
-    return c && c.pool === 'survivor' && c.hidden !== true;
+    return c && c.hidden !== true;
   });
 
   targetChars.forEach(function(c){
@@ -12455,7 +12348,7 @@ document.getElementById('stat-max').textContent = targetChars.length;
 // ── キャラクター詳細表示ヘルパー ─────────────────────────────
 // =========================================================
 // キャラ詳細：SHOOTING専用
-// Strategy / Battle32 / moveType / range / LINK / combo は表示しない。
+// キャラ詳細は統合Shootingマスターの情報だけを表示する。
 // =========================================================
 function detailEscapeHTML(v){
   return String(v ?? '')
@@ -12758,7 +12651,7 @@ window.openShootingPartyCharacterDetail = function(charaId){
     : null;
 
   // 詳細側はIDからShootingCharactersの性能を解決するため、
-  // ここでは所持個体の共鳴Lv・画像などをStrategyマスターへ重ねればよい。
+  // ここでは所持個体の共鳴Lvを統合マスターへ重ねればよい。
   var data = Object.assign({}, master, owned || {}, {
     id: master.id,
     name: master.name,
@@ -13701,25 +13594,7 @@ function initHomeBannerSwipe(){
 }
 
 
-// ローグライトは現在非公開。どの旧導線から呼ばれてもここで止める。
-function showRoguelitePreparing(event){
-  if(event){
-    if(typeof event.preventDefault === 'function') event.preventDefault();
-    if(typeof event.stopPropagation === 'function') event.stopPropagation();
-  }
-  showUnimplementedFeatureNotice();
-  return false;
-}
-
-// ホームイベントバナー「サキエル降臨」から、サキエルローグライトへ直接遷移
-function openSakielRogueliteFromHome(){
-  // ローグライト公開停止中。ホームバナー経由でも起動させない。
-  if(typeof showMainTab === 'function') showMainTab('ninmu');
-  if(typeof switchNinmuCat === 'function') switchNinmuCat('special');
-  showRoguelitePreparing();
-  return false;
-}
-
+// build478: old home mode helper removed.
 // ホームイベントバナー3「ウルフ実装」から、特別邂逅へ直接遷移
 function openWolfGachaFromHome(){
   var specialGacha = (typeof GACHA_BANNERS !== 'undefined' && Array.isArray(GACHA_BANNERS))
@@ -14170,7 +14045,7 @@ function changeBgmVolume(value){
 }
 
 function isHomeScreenActive(){
-  // build473: DOMだけでHOME判定しない。
+  // build 478: DOMだけでHOME判定しない。
   if(typeof getZeraphiaAppPhase === 'function' && getZeraphiaAppPhase() !== 'HOME'){
     return false;
   }
@@ -14432,106 +14307,8 @@ function fadeOutOpeningBgm(){
   }, 50);
 }
 
-const B32_SAVE_KEY = 'battle32_resume_state';
-const B32_SAVE_VERSION = '2026-06-07-b32-resume-001';
+// build478: old battle resume code removed.
 
-function saveBattle32ResumeState(reason) {
-  try {
-    if (!window.Battle32 || typeof window.Battle32.getState !== 'function') return;
-
-    const bs = window.Battle32.getState();
-    if (!bs) return;
-
-    // 終了済みバトルは保存しない
-    if (bs.result || bs.phase === 'end') {
-      localStorage.removeItem(B32_SAVE_KEY);
-      return;
-    }
-
-    const payload = {
-      version: B32_SAVE_VERSION,
-      savedAt: Date.now(),
-      reason: reason || '',
-      state: bs
-    };
-
-    localStorage.setItem(B32_SAVE_KEY, JSON.stringify(payload));
-  } catch (e) {
-    console.warn('[Battle32] resume save failed', e);
-  }
-}
-
-function clearBattle32ResumeState() {
-  localStorage.removeItem(B32_SAVE_KEY);
-}
-
-function checkBattle32Resume() {
-  try {
-    const raw = localStorage.getItem(B32_SAVE_KEY);
-    if (!raw) return false;
-
-    const payload = JSON.parse(raw);
-    if (!payload || payload.version !== B32_SAVE_VERSION || !payload.state) {
-      localStorage.removeItem(B32_SAVE_KEY);
-      return false;
-    }
-
-    // 24時間以上古い保存データは破棄
-    const age = Date.now() - (payload.savedAt || 0);
-    if (age > 24 * 60 * 60 * 1000) {
-      localStorage.removeItem(B32_SAVE_KEY);
-      return false;
-    }
-
-    const ok = confirm('中断中のバトルがあります。途中から再開しますか？');
-    if (!ok) {
-      localStorage.removeItem(B32_SAVE_KEY);
-      return false;
-    }
-
-    // ホーム画面などを隠し、Battle32を前面表示できる状態にする
-    if (typeof hideAllMainScreens === 'function') {
-      hideAllMainScreens();
-    } else {
-      document.querySelectorAll('.screen').forEach(function(el) {
-        el.classList.remove('active');
-      });
-    }
-
-    // 共有HUD・ボトムナビを隠す（バトル中と同じ状態に）
-    const hud = document.getElementById('global-user-frame');
-    if (hud) hud.classList.add('hidden');
-
-    const nav = document.getElementById('bottom-nav-shared');
-    if (nav) nav.style.display = 'none';
-
-    if (window.Battle32 && typeof window.Battle32.restore === 'function') {
-      const restored = window.Battle32.restore(payload.state);
-      if (restored) {
-        if (typeof window.renderBattle32UI === 'function') {
-          window.renderBattle32UI();
-        }
-        return true;
-      }
-    }
-
-    return false;
-  } catch (e) {
-    console.warn('[Battle32] resume load failed', e);
-    localStorage.removeItem(B32_SAVE_KEY);
-    return false;
-  }
-}
-
-document.addEventListener('visibilitychange', function () {
-  if (document.visibilityState === 'hidden') {
-    saveBattle32ResumeState('visibilitychange');
-  }
-});
-
-window.addEventListener('pagehide', function () {
-  saveBattle32ResumeState('pagehide');
-});
 
 </script>
 
@@ -15210,44 +14987,20 @@ window.addEventListener('pagehide', function () {
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=473"></script>
+<script src="js/asset_loader.js?v=485"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=473"></script>
+<script src="js/login_bonus.js?v=485"></script>
 
-<script src="js/story_engine.js?v=473"></script>
-<script src="js/stories/chapter01.js?v=473"></script>
 
-<script src="js/battle_range.js?v=473"></script>
-<script src="js/characters.js?v=473"></script>
-<script src="js/enemies.js?v=473"></script>
-<script src="js/battle.js?v=473"></script>
-<script src="js/battle_swipe.js?v=473"></script>
 
-<script src="js/stages.js?v=473"></script>
-<script src="js/stage_select.js?v=473"></script>
-<script src="js/party_select.js?v=473"></script>
-<script src="js/enemy_intro.js?v=473"></script>
-
+<script src="js/shooting_characters.js?v=485"></script>
+<script src="js/stage_select.js?v=485"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=473">
-
-<script src="js/battle_range_32.js?v=473"></script>
-<script src="js/characters_32.js?v=473"></script>
-<script src="js/remnant_blessings.js?v=473"></script>
-<script src="js/combo_32.js?v=473"></script>
-<script src="js/cards.js?v=473"></script>
-<script src="js/battle_32.js?v=473"></script>
-<script src="js/battle_32_ui.js?v=473"></script>
-
+<link rel="stylesheet" href="css/battle_32_ui.css?v=485">
+<script src="js/remnant_blessings.js?v=485"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/roguelite_options.js?v=473"></script>
-<script src="js/roguelite_run.js?v=473"></script>
-<script src="js/roguelite_reward.js?v=473"></script>
-<script src="js/shinju.js?v=473"></script>
-<script src="js/roguelite_controller.js?v=473"></script>
-<script src="js/roguelite_overseer_run.js?v=473"></script>
-
+<script src="js/shinju.js?v=485"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15296,377 +15049,7 @@ window.addEventListener('pagehide', function () {
 })();
 </script>
 
-<script id="roguelite-condition-script">
-(function () {
-  'use strict';
-
-  const LONG_PRESS_MS = 520;
-  const MOVE_CANCEL_PX = 12;
-  const PORTAL_ID = 'roguelite-condition-viewport-portal';
-  let suppressClickUntil = 0;
-
-  const RUN_INFO = {
-    overseer:{title:'観察',sub:'レムナント：オーバーシア',coreName:'オーバーシアの心核',coreImg:'images/item_overseercore.webp',s:'20TURN以内にクリア'},
-    irish:{title:'破壊',sub:'レムナント：イリシュ',coreName:'イリシュの心核',coreImg:'images/item_irishcore.webp',s:'2体以上生存かつ30TURN以内にクリア'},
-    rivia:{title:'忘却',sub:'レムナント：リヴィア',coreName:'リヴィアの心核',coreImg:'images/item_riviacore.webp',s:'24TURN以内にクリア'},
-    sakiel:{title:'真実',sub:'大天使 サキエル',coreName:'サキエルの心核',coreImg:'images/item_sakielcore.webp',s:'3体以上生存かつ20TURN以内にクリア'},
-    remnant05:{title:'執着',sub:'レムナント：レム',coreName:'レムの心核',coreImg:'images/item_remcore.webp',s:'16TURN以内にクリア'}
-  };
-
-  const REWARDS = {
-    S:{coin:500,core:100},
-    A:{coin:400,core:70},
-    B:{coin:300,core:50},
-    C:{coin:220,core:30},
-    D:{coin:150,core:15},
-    E:{coin:100,core:5}
-  };
-
-  function rows(info) {
-    return [
-      {rank:'S',text:info.s},
-      {rank:'A',text:'S条件未達かつ35TURN以内にクリア'},
-      {rank:'B',text:'36～38TURNでクリア'},
-      {rank:'C',text:'39～41TURNでクリア'},
-      {rank:'D',text:'42～45TURNでクリア'},
-      {rank:'E',text:'46TURN以上でクリア'}
-    ];
-  }
-
-  function esc(v) {
-    return String(v == null ? '' : v)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#39;');
-  }
-
-  function rewardCard(src, title, sub) {
-    return '<div class="rlc-vp-reward">'
-      + '<img src="' + esc(src) + '" alt="' + esc(title) + '" onerror="this.style.display=\'none\'">'
-      + '<span><b>' + esc(title) + '</b><br>' + esc(sub) + '</span>'
-      + '</div>';
-  }
-
-  function removePortal() {
-    const portal = document.getElementById(PORTAL_ID);
-    if (portal) portal.remove();
-  }
-
-  function close() {
-    removePortal();
-  }
-
-  function buildPortal(info) {
-    removePortal();
-
-    const portal = document.createElement('div');
-    portal.id = PORTAL_ID;
-    portal.setAttribute('role', 'dialog');
-    portal.setAttribute('aria-modal', 'true');
-    portal.setAttribute('aria-label', 'クリア条件');
-
-    /* 重要：
-       body / .screen / .ninmu-right の座標系を一切使わず、
-       documentElement直下へ固定配置する。 */
-    portal.style.cssText = [
-      'position:fixed',
-      'left:0',
-      'top:0',
-      'right:0',
-      'bottom:0',
-      'width:100%',
-      'height:100%',
-      'height:100dvh',
-      'z-index:2147483000',
-      'display:block',
-      'overflow-x:hidden',
-      'overflow-y:auto',
-      '-webkit-overflow-scrolling:touch',
-      'overscroll-behavior:contain',
-      'touch-action:pan-y',
-      'background:rgba(26,18,8,.64)',
-      'padding:calc(env(safe-area-inset-top,0px) + 8px) 8px calc(env(safe-area-inset-bottom,0px) + 18px)',
-      'box-sizing:border-box',
-      'transform:none',
-      'margin:0'
-    ].join(';');
-
-    const rankHtml = rows(info).map(function(row) {
-      const r = REWARDS[row.rank];
-      return '<div class="rlc-vp-rank">'
-        + '<div class="rlc-vp-badge">' + row.rank + '</div>'
-        + '<div class="rlc-vp-condition">' + esc(row.text) + '</div>'
-        + '<div class="rlc-vp-rank-reward"><b>' + r.coin + ' COIN</b><span>心核 ' + r.core + '%</span></div>'
-        + '</div>';
-    }).join('');
-
-    portal.innerHTML =
-      '<div class="rlc-vp-backdrop" data-rlc-close></div>'
-      + '<section class="rlc-vp-sheet">'
-      +   '<button type="button" class="rlc-vp-close" data-rlc-close aria-label="閉じる">×</button>'
-      +   '<div class="rlc-vp-kicker">ROGUELITE CLEAR RANK</div>'
-      +   '<h2>' + esc(info.title) + '</h2>'
-      +   '<div class="rlc-vp-sub">' + esc(info.sub) + '</div>'
-      +   '<div class="rlc-vp-rewards">'
-      +     rewardCard(info.coreImg,'心核','ランク別抽選')
-      +     rewardCard('images/icon_coin.webp','コイン','クリア報酬')
-      +     rewardCard('images/item_kyoumeistone.webp','共鳴石','ランク別個数')
-      +     rewardCard('images/item_soul_vessel_fire.webp','魂の器(火)','抽選候補')
-      +     rewardCard('images/item_soul_vessel_aqua.webp','魂の器(水)','抽選候補')
-      +     rewardCard('images/item_soul_vessel_wood.webp','魂の器(木)','抽選候補')
-      +     rewardCard('images/item_soul_vessel_dark.webp','魂の器(闇)','抽選候補')
-      +     rewardCard('images/item_soul_vessel_light.webp','魂の器(光)','抽選候補')
-      +   '</div>'
-      +   '<div class="rlc-vp-ranks">' + rankHtml + '</div>'
-      +   '<div class="rlc-vp-note">心核はクリアランクに応じた確率で獲得できます。</div>'
-      + '</section>';
-
-    const style = document.createElement('style');
-    style.textContent = `
-      #${PORTAL_ID} .rlc-vp-backdrop{
-        position:fixed;inset:0;z-index:0;
-      }
-      #${PORTAL_ID} .rlc-vp-sheet{
-        position:relative;z-index:1;
-        width:calc(100% - 4px);
-        max-width:420px;
-        min-height:0;
-        margin:0 auto;
-        padding:20px 12px 18px;
-        box-sizing:border-box;
-        color:#5d4b35;
-        font-family:"Noto Serif JP",serif;
-        border:1px solid rgba(173,139,82,.48);
-        border-radius:12px;
-        background:linear-gradient(165deg,#fffdf7,#f4eddf);
-        box-shadow:0 18px 52px rgba(49,32,12,.42);
-        overflow:visible;
-        transform:none!important;
-      }
-      #${PORTAL_ID} .rlc-vp-close{
-        position:sticky;
-        top:0;
-        float:right;
-        z-index:10;
-        width:42px;height:42px;
-        margin:-12px -5px -32px 0;
-        border:1px solid rgba(150,120,75,.24);
-        border-radius:50%;
-        background:#fffdf7;
-        color:#765f42;
-        font-size:29px;
-        line-height:38px;
-        text-align:center;
-        box-shadow:0 2px 10px rgba(49,32,12,.18);
-        touch-action:manipulation;
-        -webkit-tap-highlight-color:transparent;
-      }
-      #${PORTAL_ID} .rlc-vp-kicker{
-        clear:both;text-align:center;
-        font-family:"Cinzel",serif;
-        font-size:8px;letter-spacing:.18em;color:#aa8b5e;
-        padding-top:2px;
-      }
-      #${PORTAL_ID} h2{
-        margin:5px 40px 2px;
-        text-align:center;
-        font-size:20px;
-        letter-spacing:.1em;
-        font-weight:600;
-      }
-      #${PORTAL_ID} .rlc-vp-sub{
-        text-align:center;font-size:9px;color:#a08a6c;letter-spacing:.06em;
-      }
-      #${PORTAL_ID} .rlc-vp-rewards{
-        display:grid;
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:6px;
-        margin:13px 0 10px;
-      }
-      #${PORTAL_ID} .rlc-vp-reward{
-        display:flex;align-items:center;gap:6px;
-        min-width:0;padding:7px;
-        border:1px solid rgba(171,136,78,.22);
-        border-radius:8px;
-        background:rgba(255,255,255,.58);
-      }
-      #${PORTAL_ID} .rlc-vp-reward img{
-        width:27px;height:27px;object-fit:contain;flex:0 0 27px;
-      }
-      #${PORTAL_ID} .rlc-vp-reward span{
-        min-width:0;font-size:8px;line-height:1.35;
-      }
-      #${PORTAL_ID} .rlc-vp-reward b{font-size:9px}
-      #${PORTAL_ID} .rlc-vp-ranks{
-        display:flex;flex-direction:column;
-        border-top:1px solid rgba(160,125,70,.24);
-      }
-      #${PORTAL_ID} .rlc-vp-rank{
-        display:grid;
-        grid-template-columns:34px minmax(0,1fr) 66px;
-        gap:5px;
-        align-items:center;
-        padding:9px 1px;
-        border-bottom:1px solid rgba(160,125,70,.18);
-      }
-      #${PORTAL_ID} .rlc-vp-badge{
-        width:31px;height:31px;border-radius:50%;
-        display:grid;place-items:center;
-        font-family:"Cinzel",serif;
-        font-size:17px;font-weight:700;
-        border:1px solid rgba(151,117,64,.28);
-        background:rgba(255,255,255,.65);
-      }
-      #${PORTAL_ID} .rlc-vp-condition{
-        min-width:0;
-        font-size:9px;
-        line-height:1.45;
-        overflow-wrap:anywhere;
-      }
-      #${PORTAL_ID} .rlc-vp-rank-reward{
-        text-align:right;font-size:8px;line-height:1.35;color:#8a7353;
-      }
-      #${PORTAL_ID} .rlc-vp-rank-reward b{
-        display:block;font-family:"Cinzel",serif;font-size:11px;color:#725b3d;
-      }
-      #${PORTAL_ID} .rlc-vp-rank-reward span{display:block}
-      #${PORTAL_ID} .rlc-vp-note{
-        margin-top:10px;text-align:center;font-size:8px;color:#9b8668;
-      }
-      @media (max-width:340px){
-        #${PORTAL_ID}{padding-left:5px!important;padding-right:5px!important}
-        #${PORTAL_ID} .rlc-vp-sheet{width:100%;padding-left:9px;padding-right:9px}
-        #${PORTAL_ID} .rlc-vp-rank{grid-template-columns:32px minmax(0,1fr) 62px;gap:3px}
-        #${PORTAL_ID} .rlc-vp-condition{font-size:8px}
-      }
-    `;
-    portal.appendChild(style);
-
-    /* bodyではなくhtml直下へ置くことで、巡行レイアウトのtransform/
-       overflow/positioning contextから完全に分離する。 */
-    document.documentElement.appendChild(portal);
-
-    portal.querySelectorAll('[data-rlc-close]').forEach(function(el) {
-      el.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        close();
-      });
-      el.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        close();
-      }, {passive:false});
-    });
-
-    portal.scrollTop = 0;
-  }
-
-  function open(runId) {
-    const info = RUN_INFO[runId];
-    if (!info) return;
-    buildPortal(info);
-  }
-
-  function bind(card) {
-    if (!card || card.dataset.rogueliteLongpressBound === '1') return;
-    card.dataset.rogueliteLongpressBound = '1';
-
-    let timer = null;
-    let sx = 0;
-    let sy = 0;
-    let opened = false;
-
-    function clear() {
-      if (timer) clearTimeout(timer);
-      timer = null;
-      card.classList.remove('is-longpressing');
-    }
-
-    function start(x, y) {
-      opened = false;
-      sx = x;
-      sy = y;
-      clear();
-      card.classList.add('is-longpressing');
-      timer = setTimeout(function() {
-        timer = null;
-        opened = true;
-        suppressClickUntil = Date.now() + 900;
-        card.classList.remove('is-longpressing');
-        if (navigator.vibrate) navigator.vibrate(25);
-        open(card.dataset.rogueliteRun);
-      }, LONG_PRESS_MS);
-    }
-
-    function move(x, y) {
-      if (Math.abs(x - sx) > MOVE_CANCEL_PX || Math.abs(y - sy) > MOVE_CANCEL_PX) clear();
-    }
-
-    card.addEventListener('touchstart', function(e) {
-      const t = e.touches && e.touches[0];
-      if (t) start(t.clientX, t.clientY);
-    }, {passive:true});
-
-    card.addEventListener('touchmove', function(e) {
-      const t = e.touches && e.touches[0];
-      if (t) move(t.clientX, t.clientY);
-    }, {passive:true});
-
-    card.addEventListener('touchend', clear, {passive:true});
-    card.addEventListener('touchcancel', clear, {passive:true});
-
-    card.addEventListener('pointerdown', function(e) {
-      if (e.pointerType !== 'touch') start(e.clientX, e.clientY);
-    });
-    card.addEventListener('pointermove', function(e) {
-      if (e.pointerType !== 'touch') move(e.clientX, e.clientY);
-    });
-    ['pointerup','pointercancel','pointerleave'].forEach(function(n) {
-      card.addEventListener(n, clear);
-    });
-
-    card.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-    card.addEventListener('click', function(e) {
-      if (opened || Date.now() < suppressClickUntil) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        opened = false;
-      }
-    }, true);
-  }
-
-  function setup() {
-    /* 旧モーダルは表示対象にしない。既存HTMLは残して互換性だけ保持。 */
-    const oldModal = document.getElementById('roguelite-condition-modal');
-    if (oldModal) {
-      oldModal.classList.remove('show');
-      oldModal.setAttribute('aria-hidden','true');
-      oldModal.style.display = 'none';
-    }
-
-    document.querySelectorAll('.roguelite-entry-card:not(.roguelite-disabled-entry)').forEach(bind);
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') close();
-    });
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('.bottom-nav-item,.bottom-nav button,[data-screen],.nav-item')) close();
-    }, true);
-    window.addEventListener('pagehide', close);
-  }
-
-  window.openRogueliteConditionModal = open;
-  window.closeRogueliteConditionModal = close;
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setup, {once:true});
-  } else {
-    setup();
-  }
-})();
-</script>
+<!-- build478: obsolete mode script removed -->
 <script id="sasaphia-return-title-v148">
 window.returnToTitleScreen = function(){
   const ok = window.confirm('タイトル画面に戻りますか？\n\nアプリを再読み込みしてタイトル画面へ戻ります。');
@@ -15690,10 +15073,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=473"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=485"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=20260820-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=473"></script>
+<script src="js/admin_mode.js?v=485-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=485"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15714,7 +15097,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=473"></script>
+<script src="js/score_attack.js?v=485"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -16110,7 +15493,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=20260907-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=485-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
@@ -16618,5 +16001,27 @@ html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#scr
   }
 })();
 </script>
+
+<style id="zukan-index-element-icon-v485">
+/* build485: キャラ一覧カードの画像左上に属性アイコンを表示 */
+#box-grid.primoa-index-grid .primoa-index-image-wrap{
+  position:relative !important;
+  overflow:visible !important;
+}
+#box-grid.primoa-index-grid .primoa-index-element-icon{
+  position:absolute !important;
+  top:0 !important;
+  left:0 !important;
+  z-index:3 !important;
+  width:20px !important;
+  height:20px !important;
+  object-fit:contain !important;
+  border-radius:50% !important;
+  background:rgba(255,253,247,.86) !important;
+  border:1px solid rgba(176,143,77,.30) !important;
+  box-shadow:0 1px 5px rgba(63,46,21,.16), 0 0 0 1px rgba(255,255,255,.55) inset !important;
+  pointer-events:none !important;
+}
+</style>
 </body>
 </html>

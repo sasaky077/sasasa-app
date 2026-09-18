@@ -15,7 +15,7 @@ window.HOME_EVENT_BANNERS = [
     id: 'event_faceless',
     img: 'images/home_banner_faceless_v1.webp',
     alt: 'フェイスレス降臨',
-    actionName: 'openSakielRogueliteFromHome',
+    actionName: 'openShootingEvent',
     hidden: false
   },
   {

@@ -1,7 +1,7 @@
 // stage_select.js
 // 20260817-ch04-02-geometry-lite-v58
 // ステージ選択モーダル
-// openStageSelect(chapter) で開く → ステージ選択 → openPartySelect(enemyId) へ
+// openStageSelect(chapter) で開く → STORY SHOOTINGステージを選択
 
 (function () {
 
@@ -612,62 +612,9 @@
     }
 
 
-    // ── 特別巡行用ローグライト ──
-    // 現在は非公開。カード一覧自体を出さず、準備中表示だけにする。
-    if (chapter === 'roguelite') {
-      list.innerHTML = `
-        <div class="ss-roguelite-preparing">
-          <div class="ss-roguelite-preparing-en">ROGUELITE</div>
-          <div class="ss-roguelite-preparing-main">このコンテンツは準備中です</div>
-          <div class="ss-roguelite-preparing-sub">現在はシューティングのみプレイできます</div>
-        </div>
-      `;
-      return;
-    }
-
-
-    const stages = (typeof getStagesByChapter === 'function')
-      ? getStagesByChapter(chapter)
-      : STAGES.filter(s => s.chapter === chapter);
-
-    if (stages.length === 0) {
-      list.innerHTML += '<div style="text-align:center;color:rgba(232,228,220,.3);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
-      return;
-    }
-
-    stages.forEach(stage => {
-      const card = document.createElement('div');
-      card.className = 'ss-card' + (!stage.unlocked ? ' locked' : '');
-      if (stage.chapter >= 1 && stage.chapter <= 8 && isStoryStageCleared(stage.id)) card.classList.add('story-cleared');
-
-      const diffColor  = DIFFICULTY_COLOR[stage.difficulty]  || DIFFICULTY_COLOR.normal;
-      const diffLabel  = DIFFICULTY_LABEL[stage.difficulty]  || 'NORMAL';
-      const rewardText = stage.reward
-        ? `EXP +${stage.reward.exp}　Coin +${stage.reward.coin || 0}`
-        : '';
-
-      card.innerHTML = `
-        <div class="ss-card-no">${String(stage.no).padStart(2, '0')}</div>
-        <div class="ss-card-body">
-          <div class="ss-card-name">${stage.name}${isStoryStageCleared(stage.id) ? '　<span class="ss-story-clear" aria-label="クリア済み">CLEAR</span>' : ''}</div>
-          <div class="ss-card-meta">
-            <div class="ss-card-enemy">${stage.enemyName}</div>
-            ${rewardText ? `<div class="ss-card-reward">${rewardText}</div>` : ''}
-          </div>
-        </div>
-        <div class="ss-diff-badge" style="color:${diffColor};border-color:${diffColor.replace('.85', '.4')}">${diffLabel}</div>
-        ${stage.unlocked
-          ? '<div class="ss-card-arrow">›</div>'
-          : '<div class="ss-lock-icon">🔒</div>'
-        }
-      `;
-
-      if (stage.unlocked) {
-        card.onclick = () => onStageTap(stage);
-      }
-
-      list.appendChild(card);
-    });
+    // build476: STORY SHOOTING以外の旧ゲームモードは廃止。
+    list.innerHTML = '<div style="text-align:center;color:rgba(95,82,63,.46);font-size:12px;padding:40px 0;letter-spacing:2px;">準備中</div>';
+    return;
   }
 
   window.addEventListener('shooting-stage-record-updated', () => {
@@ -677,22 +624,6 @@
     const mode = modal.dataset.storyMode === 'beginner' ? 'beginner' : 'normal';
     if (chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) renderList(chapter, mode);
   });
-
-  // ============================================================
-  // ローグライト：パーティ選択を開く（battleMode:'roguelite' を渡す）
-  // ============================================================
-  function _openRoguelitePartySelect(runId) {
-    // 非公開期間中の最終防衛ライン。
-    // HTML・ホームバナー・旧ステージ定義など、どこから呼ばれても開始しない。
-    if (typeof showToast === 'function') {
-      showToast('このコンテンツは準備中です');
-    } else {
-      alert('このコンテンツは準備中です');
-    }
-    return false;
-  }
-
-  window.openRoguelitePartySelect = _openRoguelitePartySelect;
 
   // ============================================================
   // STORY（SHOOTING）ステージ選択
@@ -742,107 +673,11 @@
   }
 
   // ============================================================
-  // 旧ストラテジー側ステージ選択（コードは保持・STORY導線からは使用しない）
-  // ============================================================
-  function onStageTap(stage) {
-    if (stage && stage.rogueliteRunId) {
-      // ローグライトは現在すべて非公開。
-      _openRoguelitePartySelect(stage.rogueliteRunId);
-      return;
-    }
-
-    /* legacy roguelite branch disabled
-      // CHAPTER06〜08は対応ローグライトランがまだ未実装のため、誤って別BOSSを起動しない。
-      if (stage.rogueliteRunReady === false) {
-        alert('このBOSSステージは準備中です');
-        return;
-      }
-      // STORYの各CHAPTER 04(BOSS)は、特別巡行と同じローグライトランを使用する。
-      // 勝利した場合に、このstory stageをCLEARとして記録できるようコンテキストを保持。
-      if (Number(stage.chapter) >= STORY_CHAPTER_MIN && Number(stage.chapter) <= STORY_CHAPTER_MAX) {
-        window.__STORY_BOSS_ROGUELITE_CONTEXT__ = {
-          stageId: stage.id,
-          chapter: Number(stage.chapter),
-          runId: stage.rogueliteRunId,
-        };
-      }
-      _openRoguelitePartySelect(stage.rogueliteRunId);
-      return;
-    */
-    closeStageSelect();
-    // 少し間を置いてから編成モーダルへ
-    setTimeout(() => {
-      if (typeof openPartySelect === 'function') {
-        // [Battle32 分岐] stage.useBattle32 === true のステージは battleMode:'32' を付与
-        const battleOptions = {
-          returnChapter: stage.chapter,
-          stageId: stage.id,
-        };
-        if (stage.useBattle32 === true) {
-          battleOptions.battleMode = '32';
-
-          // Battle32の戦闘ルールは全モード共通。
-          // エリ固定・最大4人編成、LINK、ロスター、召喚などは常に有効。
-          // ローグライトとの差はラン進行・戦闘後報酬の有無。
-          battleOptions.useRogueliteBattleRules = true;
-
-          // enemyIds を明示的に battleOptions にも持たせる
-          // openPartySelect → Battle32.start(config) の config.enemyIds に渡るようにする
-          if (stage.enemyIds && stage.enemyIds.length > 0) {
-            battleOptions.enemyIds = stage.enemyIds;
-          }
-
-          // enemies（インライン敵定義配列）を引き継ぐ
-          // enemyIds より優先度が高い場合は Battle32.start() 側で判定する
-          if (stage.enemies && stage.enemies.length > 0) {
-            battleOptions.enemies = stage.enemies;
-          }
-
-          // 敵スポーン設定を引き継ぐ
-          if (stage.enemySpawn) {
-            battleOptions.enemySpawn = stage.enemySpawn;
-          }
-
-          // 敵行動モード（'all' | 'limit'）
-          if (stage.enemyActionMode) {
-            battleOptions.enemyActionMode = stage.enemyActionMode;
-          }
-
-          // 1ターンあたりの敵行動数（enemyActionMode:'limit' のとき有効）
-          if (stage.enemyActionsPerTurn != null) {
-            battleOptions.enemyActionsPerTurn = stage.enemyActionsPerTurn;
-          }
-
-          // ターン制限
-          if (stage.turnLimit != null) {
-            battleOptions.turnLimit = stage.turnLimit;
-          }
-
-          // バトル背景番号（設計者指定）。未指定はUI側で01。
-          if (stage.battleBackgroundNo != null) {
-            battleOptions.battleBackgroundNo = stage.battleBackgroundNo;
-          }
-
-          // DEBUG等でローグライトと同じロスター/初期配置だけを使う
-          if (stage.forceRogueliteLayout === true) {
-            battleOptions.forceRogueliteLayout = true;
-          }
-
-          // ボス捕獲に必要な駒取り回数
-          if (stage.bossCaptureMax != null) {
-            battleOptions.bossCaptureMax = stage.bossCaptureMax;
-          }
-        }
-        openPartySelect(stage.enemyIds || stage.enemyId, battleOptions);
-      }
-    }, 350);
-  }
-
-  // ============================================================
   // 開閉
   // ============================================================
   window.openStageSelect = function (chapter, mode = 'normal') {
-  chapter = chapter ?? 1;
+  chapter = Number(chapter || 1);
+  if(!Number.isFinite(chapter)) chapter = 1;
 
   if (typeof chapter === 'number' && chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX && !isStoryChapterUnlocked(chapter, mode)) {
     showStoryLockedMessage();
@@ -854,11 +689,7 @@
     const el = document.getElementById('stage-select-modal');
     const title = document.getElementById('ss-title');
     if (title) {
-      title.textContent = chapter === 'roguelite'
-        ? 'ROGUELITE'
-        : chapter === 0
-          ? '— DEBUG —'
-          : 'CHAPTER ' + String(chapter).padStart(2, '0') + (mode === 'beginner' ? ' NORMAL' : ' HARD');
+      title.textContent = 'CHAPTER ' + String(chapter).padStart(2, '0') + (mode === 'beginner' ? ' NORMAL' : ' HARD');
     }
 
     renderList(chapter, mode);

@@ -265,17 +265,97 @@
       }, { passive: false });
     }
 
-    // キャラ情報ボタンは親のキャラ選択buttonとは完全分離。
-    // inline onclickでopenShootingCharacterInfo()を直接呼ぶ。
+    // build479: パネルは「タップ=選択 / 長押し=詳細」。
     const roster = root.querySelector('.shooting-party-roster');
     if (roster) {
+      let longPressTimer = 0;
+      let pressTarget = null;
+      let pressCharacterId = 0;
+      let pressStartX = 0;
+      let pressStartY = 0;
+      let longPressTriggered = false;
+      let suppressClickCharacterId = 0;
+
+      const clearLongPress = function(){
+        if (longPressTimer) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = 0;
+        }
+        if (pressTarget) pressTarget.classList.remove('long-press-active');
+        pressTarget = null;
+        pressCharacterId = 0;
+      };
+
       roster.addEventListener('pointerdown', ev => {
-        const info = ev.target && ev.target.closest
-          ? ev.target.closest('.shooting-character-info-button')
+        const card = ev.target && ev.target.closest
+          ? ev.target.closest('.shooting-character-option')
           : null;
-        if (!info) return;
+        if (!card || card.disabled || card.classList.contains('locked')) return;
+
         ev.stopPropagation();
+        pressTarget = card;
+        pressCharacterId = Number(card.getAttribute('data-character-id') || 0);
+        pressStartX = Number(ev.clientX || 0);
+        pressStartY = Number(ev.clientY || 0);
+        longPressTriggered = false;
+
+        if (longPressTimer) window.clearTimeout(longPressTimer);
+        longPressTimer = window.setTimeout(() => {
+          if (!pressTarget || !pressCharacterId) return;
+          longPressTriggered = true;
+          suppressClickCharacterId = pressCharacterId;
+          pressTarget.classList.add('long-press-active');
+          openShootingCharacterInfo(pressCharacterId);
+        }, 480);
       }, { passive: true });
+
+      roster.addEventListener('pointermove', ev => {
+        if (!pressTarget) return;
+        ev.stopPropagation();
+        const dx = Number(ev.clientX || 0) - pressStartX;
+        const dy = Number(ev.clientY || 0) - pressStartY;
+        if (Math.hypot(dx, dy) > 10) clearLongPress();
+      }, { passive: true });
+
+      roster.addEventListener('pointerup', ev => {
+        if (pressTarget) ev.stopPropagation();
+        const triggeredId = longPressTriggered ? pressCharacterId : 0;
+        clearLongPress();
+
+        if (triggeredId) {
+          suppressClickCharacterId = triggeredId;
+          window.setTimeout(() => {
+            if (suppressClickCharacterId === triggeredId) suppressClickCharacterId = 0;
+          }, 550);
+        }
+      }, { passive: true });
+
+      roster.addEventListener('pointercancel', ev => {
+        if (pressTarget) ev.stopPropagation();
+        clearLongPress();
+      }, { passive: true });
+
+      roster.addEventListener('click', ev => {
+        const card = ev.target && ev.target.closest
+          ? ev.target.closest('.shooting-character-option')
+          : null;
+        if (!card) return;
+
+        const id = Number(card.getAttribute('data-character-id') || 0);
+        if (suppressClickCharacterId && id === suppressClickCharacterId) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          suppressClickCharacterId = 0;
+        }
+      }, true);
+
+      roster.addEventListener('contextmenu', ev => {
+        const card = ev.target && ev.target.closest
+          ? ev.target.closest('.shooting-character-option')
+          : null;
+        if (!card) return;
+        ev.preventDefault();
+      }, { passive: false });
     }
 
     return root;
