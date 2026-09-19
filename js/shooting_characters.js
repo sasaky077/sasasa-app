@@ -1,5 +1,5 @@
 // Zeraphia Unified Character Master + Shooting combat profiles / ownership
-// build475:
+// build497:
 // - キャラ共通情報の正本はこのファイル。
 // - 旧 characters.js は廃止。
 // - HOME / ガチャ / キャラ一覧 / 育成 / Shooting は同じマスターを参照する。
@@ -137,7 +137,7 @@
     "cutinImage": "images/chara_01_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_01.webp",
@@ -159,7 +159,7 @@
     "cutinImage": "images/chara_02_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_02.webp",
@@ -181,7 +181,7 @@
     "cutinImage": "images/chara_03_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_03.webp",
@@ -203,7 +203,7 @@
     "cutinImage": "images/chara_04_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_04.webp",
@@ -225,7 +225,7 @@
     "cutinImage": "images/chara_05_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_05.webp",
@@ -247,7 +247,7 @@
     "cutinImage": "images/chara_06_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_06.webp",
@@ -269,7 +269,7 @@
     "cutinImage": "images/chara_07_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_07.webp",
@@ -291,7 +291,7 @@
     "cutinImage": "images/chara_08_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_08.webp",
@@ -313,7 +313,7 @@
     "cutinImage": "images/chara_09_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_09.webp",
@@ -335,7 +335,7 @@
     "cutinImage": "images/chara_10_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_10.webp",
@@ -357,7 +357,7 @@
     "cutinImage": "images/chara_11_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.7
     },
     "portraitImage": "images/chara_11.webp",
@@ -379,7 +379,7 @@
     "cutinImage": "images/chara_12_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_12.webp",
@@ -401,7 +401,7 @@
     "cutinImage": "images/chara_13_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_13.webp",
@@ -423,7 +423,7 @@
     "cutinImage": "images/chara_14_cutin.webp",
     "uiScale": {
       "panel": 0.6,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.75
     },
     "portraitImage": "images/chara_14.webp",
@@ -445,7 +445,7 @@
     "cutinImage": "images/chara_15_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_15.webp",
@@ -467,7 +467,7 @@
     "cutinImage": "images/chara_16_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_16.webp",
@@ -489,7 +489,7 @@
     "cutinImage": "images/chara_17_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_17.webp",
@@ -511,7 +511,7 @@
     "cutinImage": "images/chara_18_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_18.webp",
@@ -533,7 +533,7 @@
     "cutinImage": "images/chara_19_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_19.webp",
@@ -555,7 +555,7 @@
     "cutinImage": "images/chara_20_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_20.webp",
@@ -577,7 +577,7 @@
     "cutinImage": "images/chara_21_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.8
     },
     "portraitImage": "images/chara_21.webp",
@@ -599,7 +599,7 @@
     "cutinImage": "images/chara_22_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_22.webp",
@@ -621,7 +621,7 @@
     "cutinImage": "images/chara_23_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_23.webp",
@@ -643,7 +643,7 @@
     "cutinImage": "images/chara_24_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_24.webp",
@@ -665,7 +665,7 @@
     "cutinImage": "images/chara_25_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_25.webp",
@@ -687,7 +687,7 @@
     "cutinImage": "images/chara_26_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_26.webp",
@@ -709,7 +709,7 @@
     "cutinImage": "images/chara_27_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_27.webp",
@@ -731,7 +731,7 @@
     "cutinImage": "images/chara_28_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_28.webp",
@@ -753,7 +753,7 @@
     "cutinImage": "images/chara_29_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_29.webp",
@@ -775,7 +775,7 @@
     "cutinImage": "images/chara_30_cutin.webp",
     "uiScale": {
       "panel": 0.72,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 0.72
     },
     "portraitImage": "images/chara_30.webp",
@@ -797,7 +797,7 @@
     "cutinImage": "images/chara_31_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_31.webp",
@@ -819,7 +819,7 @@
     "cutinImage": "images/chara_32_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_32.webp",
@@ -841,7 +841,7 @@
     "cutinImage": "images/chara_33_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_33.webp",
@@ -863,7 +863,7 @@
     "cutinImage": "images/chara_50_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_50.webp",
@@ -885,7 +885,7 @@
     "cutinImage": "images/chara_52_cutin.webp",
     "uiScale": {
       "panel": 1,
-      "battleBack": 1.0,
+      "battleBack": 1.2,
       "battleUp": 1
     },
     "portraitImage": "images/chara_52_cut.webp",
@@ -1954,6 +1954,14 @@
         upImg: master.upImage,
         battleBackImg: master.image,
         panelImg: master.panelImage,
+        uiScale: Object.freeze({
+          panel: Number(master.uiScale && master.uiScale.panel != null ? master.uiScale.panel : 1),
+          battleBack: Number(master.uiScale && master.uiScale.battleBack != null ? master.uiScale.battleBack : 1),
+          battleUp: Number(master.uiScale && master.uiScale.battleUp != null ? master.uiScale.battleUp : 1),
+        }),
+        panelScale: Number(master.uiScale && master.uiScale.panel != null ? master.uiScale.panel : 1),
+        battleBackScale: Number(master.uiScale && master.uiScale.battleBack != null ? master.uiScale.battleBack : 1),
+        battleUpScale: Number(master.uiScale && master.uiScale.battleUp != null ? master.uiScale.battleUp : 1),
         favScale: Number(master.homeScale ?? 1),
         favOffsetX: Number(master.homeOffsetX ?? 0),
         favOffsetY: Number(master.homeOffsetY ?? 0),

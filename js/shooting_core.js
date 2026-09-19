@@ -2282,9 +2282,15 @@
     const startType = document.getElementById('shooting-start-type');
     if (player) {
       player.setAttribute('data-character-id', String(c.id));
-      // build478: シューティング中の battle_back 表示倍率は全キャラ 1.0 固定。
-      const battleBackScale = 1.0;
-      player.style.setProperty('--unit-scale', '1');
+      // build498: キャラマスターの uiScale.battleBack を戦闘ユニットへ反映。
+      // 例: レイ 2.0 / シオン 0.70
+      const battleBackScale = Math.max(
+        0.1,
+        Number(c && c.uiScale && c.uiScale.battleBack != null
+          ? c.uiScale.battleBack
+          : 1) || 1
+      );
+      player.style.setProperty('--unit-scale', String(battleBackScale));
     }
     if (img) {
       img.src = (c.id === CHARACTER_ID.HAYATE && state && performance.now() < (state.hayateMoonlightUntil || 0)) ? (c.moonlightImage || c.image) : c.image;
