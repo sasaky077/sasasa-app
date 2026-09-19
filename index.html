@@ -5,7 +5,7 @@
   <script id="sasaphia-version-gate-v95">
   (function(){
     'use strict';
-    var FALLBACK_BUILD = '487';
+    var FALLBACK_BUILD = '495';
     var VERSION_URL = 'version.json';
     var CHECK_PARAM = '__sasaphia_update';
 
@@ -82,7 +82,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="487">
+  <meta name="sasaphia-build" content="495">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -100,21 +100,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=487-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=495-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=487-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=495-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=487-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=495-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=487-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=495-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=487">
+  <link rel="manifest" href="manifest.json?v=495">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +182,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=487"
+        href="css/style.css?v=495"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=487"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=495"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,10 +267,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=487">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=495">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=487">
-  <link rel="stylesheet" href="css/admin_mode.css?v=487-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=495">
+  <link rel="stylesheet" href="css/admin_mode.css?v=495-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -338,7 +338,7 @@
 
 <script>
 (function(){
-  var BUILD = '487';
+  var BUILD = '495';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -4120,7 +4120,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=487"></script>
+<script src="js/home_banners.js?v=495"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5288,10 +5288,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=487"></script>
-<script src="js/resonance_system.js?v=487"></script>
-<script src="js/resonance_ui.js?v=487"></script>
-<script src="js/character_levelup.js?v=487"></script>
+<script src="js/shooting_resonance.js?v=495"></script>
+<script src="js/resonance_system.js?v=495"></script>
+<script src="js/resonance_ui.js?v=495"></script>
+<script src="js/character_levelup.js?v=495"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -10715,7 +10715,7 @@ function showTenResult(results){
     var coinEl = document.getElementById('user-coin');
     if(coinEl){
       var hudCoin = Math.max(0, Math.floor(Number(userProfile.coin) || 0));
-      coinEl.textContent = hudCoin > 999999 ? '999,999↑' : hudCoin.toLocaleString('ja-JP');
+      coinEl.textContent = hudCoin.toLocaleString('ja-JP');
       coinEl.setAttribute('aria-label', 'コイン ' + hudCoin.toLocaleString('ja-JP'));
     }
     var gemEl = document.getElementById('user-gem');
@@ -14995,20 +14995,20 @@ function fadeOutOpeningBgm(){
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=487"></script>
+<script src="js/asset_loader.js?v=495"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=487"></script>
+<script src="js/login_bonus.js?v=495"></script>
 
 
 
-<script src="js/shooting_characters.js?v=487"></script>
-<script src="js/stage_select.js?v=487"></script>
+<script src="js/shooting_characters.js?v=495"></script>
+<script src="js/stage_select.js?v=495"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=487">
-<script src="js/remnant_blessings.js?v=487"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=495">
+<script src="js/remnant_blessings.js?v=495"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=487"></script>
+<script src="js/shinju.js?v=495"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15081,10 +15081,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=487"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=495"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=487-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=487"></script>
+<script src="js/admin_mode.js?v=495-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=495"></script>
 
 <script id="sasaphia-update-worker-register-v95">
 (function(){
@@ -15105,7 +15105,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=487"></script>
+<script src="js/score_attack.js?v=495"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -15501,7 +15501,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=487-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=495-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
@@ -16039,5 +16039,237 @@ html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#scr
   letter-spacing:.04em;
 }
 </style>
+
+<style id="zeraphia-user-frame-v495">
+/* =========================================================
+   build495 GLOBAL USER FRAME
+   - RANK経験値リング：高級時計風の細目盛り＋4クォーター装飾
+   - PLAYER：可変領域
+   - GEM / COIN：右側固定幅で縦2段
+   - 桁数が増えてもHUD全体を押し動かさない
+   ========================================================= */
+
+html body #global-user-frame.global-user-frame{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 126px !important;
+  align-items:center !important;
+  column-gap:9px !important;
+  width:100% !important;
+  min-height:var(--header-h,82px) !important;
+  padding:
+    calc(env(safe-area-inset-top) + 5px)
+    12px
+    5px
+    12px !important;
+  box-sizing:border-box !important;
+}
+
+/* LEFT = RANK + PLAYER */
+html body #global-user-frame .hud-left{
+  min-width:0 !important;
+  width:100% !important;
+  display:grid !important;
+  grid-template-columns:62px minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:9px !important;
+  flex:none !important;
+}
+
+html body #global-user-frame .hud-info{
+  min-width:0 !important;
+  width:100% !important;
+  height:44px !important;
+  position:relative !important;
+  display:block !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+}
+
+html body #global-user-frame .hud-name{
+  position:absolute !important;
+  left:10px !important;
+  right:9px !important;
+  bottom:1px !important;
+  top:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size:15px !important;
+  line-height:1 !important;
+  letter-spacing:.10em !important;
+}
+
+/* RANK ring: reverted to the existing Zeraphia design in build489. */
+
+/* RIGHT = currencies stacked vertically */
+html body #global-user-frame .hud-right{
+  width:126px !important;
+  min-width:126px !important;
+  max-width:126px !important;
+  height:58px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+  gap:3px !important;
+  transform:none !important;
+  flex:none !important;
+}
+
+html body #global-user-frame .hud-resource{
+  position:relative !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:27px !important;
+  min-height:27px !important;
+  padding:0 4px 1px 8px !important;
+  margin:0 !important;
+  display:grid !important;
+  grid-template-columns:20px minmax(0,1fr) !important;
+  align-items:end !important;
+  justify-content:stretch !important;
+  gap:8px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+html body #global-user-frame .hud-resource-gem{
+  grid-template-columns:20px minmax(0,1fr) 20px !important;
+}
+
+html body #global-user-frame .hud-resource::after{
+  left:3px !important;
+  right:3px !important;
+  bottom:0 !important;
+  height:1px !important;
+  opacity:.78 !important;
+}
+
+html body #global-user-frame .hud-resource::before{
+  bottom:-1px !important;
+  width:24px !important;
+  opacity:.75 !important;
+}
+
+html body #global-user-frame .hud-res-icon{
+  width:19px !important;
+  height:19px !important;
+  min-width:19px !important;
+  justify-self:start !important;
+  align-self:end !important;
+  position:relative !important;
+  top:1px !important;
+}
+
+html body #global-user-frame .hud-res-val{
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
+  text-align:left !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  letter-spacing:.025em !important;
+  font-variant-numeric:tabular-nums lining-nums !important;
+  color:#574124 !important;
+  align-self:end !important;
+  position:relative !important;
+  top:1px !important;
+}
+
+html body #global-user-frame .hud-gem-plus-btn{
+  justify-self:end !important;
+  align-self:end !important;
+  width:20px !important;
+  min-width:20px !important;
+  height:20px !important;
+  min-height:20px !important;
+  font-size:17px !important;
+  line-height:20px !important;
+  position:relative !important;
+  top:1px !important;
+}
+
+/* Decorative sweep stays overlay-only; never participates in grid sizing. */
+html body #global-user-frame .hud-sweep-line{
+  position:absolute !important;
+  pointer-events:none !important;
+}
+
+/* PLAYER underline: start a bit more to the left */
+html body #global-user-frame .hud-sweep-line-player{
+  left:8px !important;
+  transform:none !important;
+  width:108px !important;
+}
+
+/* SE-size phones: keep the same logic, only compact dimensions. */
+@media (max-width:360px){
+  html body #global-user-frame.global-user-frame{
+    grid-template-columns:minmax(0,1fr) 112px !important;
+    column-gap:6px !important;
+    padding-left:9px !important;
+    padding-right:9px !important;
+  }
+
+  html body #global-user-frame .hud-left{
+    grid-template-columns:58px minmax(0,1fr) !important;
+    gap:6px !important;
+  }
+
+  html body #global-user-frame .hud-lv-circle{
+    width:58px !important;
+    height:58px !important;
+    flex-basis:58px !important;
+  }
+
+  html body #global-user-frame .hud-right{
+    width:112px !important;
+    min-width:112px !important;
+    max-width:112px !important;
+  }
+
+  html body #global-user-frame .hud-resource{
+    gap:6px !important;
+    padding-left:6px !important;
+    padding-right:2px !important;
+    padding-top:0 !important;
+    padding-bottom:1px !important;
+    align-items:end !important;
+  }
+
+  html body #global-user-frame .hud-resource-gem{
+    grid-template-columns:18px minmax(0,1fr) 18px !important;
+  }
+
+  html body #global-user-frame .hud-resource:not(.hud-resource-gem){
+    grid-template-columns:18px minmax(0,1fr) !important;
+  }
+
+  html body #global-user-frame .hud-res-icon{
+    width:17px !important;
+    height:17px !important;
+    min-width:17px !important;
+  }
+
+  html body #global-user-frame .hud-res-val{
+    font-size:11.5px !important;
+  }
+
+  html body #global-user-frame .hud-name{
+    font-size:13px !important;
+  }
+}
+</style>
+
 </body>
 </html>
