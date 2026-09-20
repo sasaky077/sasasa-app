@@ -4940,19 +4940,21 @@
     // ----------------------------------------------------------
     if (c.shotType === 'rose_seed_splash') {
       const angleStep = Number(c.shotAngleStep || 0.17);
+      const speed = Number(c.bulletSpeed || 335);
 
+      // build515:
+      // ロゼの6発は完全な左右対称扇状配置に固定する。
+      // 角度・速度の乱数を廃止し、毎射撃で同じ整列状態から射出。
       for (let i = 0; i < shotCount; i++) {
         const step = i - (shotCount - 1) / 2;
-        const jitter = (Math.random() - 0.5) * 0.08;
-        const speedScale = 0.82 + Math.random() * 0.24;
-        const angle = -Math.PI / 2 + angleStep * step + jitter;
+        const angle = -Math.PI / 2 + angleStep * step;
 
         const p = makeProjectile(
           bulletClass,
           state.player.x,
           y,
-          Math.cos(angle) * Number(c.bulletSpeed || 335) * speedScale,
-          Math.sin(angle) * Number(c.bulletSpeed || 335) * speedScale,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed,
           effectivePower,
           c.id
         );

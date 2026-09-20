@@ -36339,3 +36339,73 @@ html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.
   #screen-zukan .zukan-search-button{min-width:34px;width:34px;}
   #screen-zukan .zukan-name-search{margin-left:10px;margin-right:10px;}
 }
+
+
+/* =========================================================
+   build517 - iPhone image reliability / progressive zukan
+   ========================================================= */
+#screen-zukan .primoa-index-image-wrap.zimg-placeholder{
+  position:relative;
+  overflow:hidden;
+}
+#screen-zukan .primoa-index-image-wrap.zimg-placeholder::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.84) 0%,
+      rgba(248,244,234,.74) 48%,
+      rgba(226,218,198,.54) 100%
+    );
+  opacity:1;
+  transition:opacity .16s ease;
+  pointer-events:none;
+}
+#screen-zukan .primoa-index-image{
+  opacity:1;
+}
+#screen-zukan .primoa-index-image.zimg-lazy:not(.zimg-loaded){
+  opacity:0;
+}
+#screen-zukan .primoa-index-image.zimg-loaded{
+  opacity:1;
+  transition:opacity .18s ease;
+}
+#screen-zukan .primoa-index-image-wrap:has(.zimg-loaded)::before{
+  opacity:0;
+}
+#screen-zukan .primoa-index-image.zimg-failed{
+  opacity:0;
+}
+
+/* :has 非対応ブラウザ向けにも画像が載れば見た目上プレースホルダは隠れる */
+#screen-zukan .primoa-index-image{
+  position:relative;
+  z-index:1;
+}
+
+#screen-zukan .zukan-index-load-sentinel{
+  grid-column:1 / -1;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+#screen-zukan .zukan-index-load-sentinel span{
+  display:block;
+  width:18px;
+  height:1px;
+  background:rgba(129,100,55,.22);
+  box-shadow:-7px 0 0 rgba(129,100,55,.08),7px 0 0 rgba(129,100,55,.08);
+}
+
+/* ランタイム再読込中は消さず、既存の枠・背景を残す */
+img.zimg-loading{
+  visibility:visible!important;
+}
+img.zimg-loaded{
+  visibility:visible!important;
+}

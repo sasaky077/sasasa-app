@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '514';
+  var FALLBACK_BUILD = '517';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -230,7 +230,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="514">
+  <meta name="sasaphia-build" content="517">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -248,21 +248,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=514-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=517-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=514-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=517-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=514-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=517-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=514-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=517-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=514">
+  <link rel="manifest" href="manifest.json?v=517">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -330,9 +330,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=514"
+        href="css/style.css?v=517"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=514"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=517"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -415,10 +415,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=514">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=517">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=514">
-  <link rel="stylesheet" href="css/admin_mode.css?v=514-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=517">
+  <link rel="stylesheet" href="css/admin_mode.css?v=517-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -486,7 +486,7 @@
 
 <script>
 (function(){
-  var BUILD = '514';
+  var BUILD = '517';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -4293,7 +4293,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=514"></script>
+<script src="js/home_banners.js?v=517"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5445,10 +5445,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=514"></script>
-<script src="js/resonance_system.js?v=514"></script>
-<script src="js/resonance_ui.js?v=514"></script>
-<script src="js/character_levelup.js?v=514"></script>
+<script src="js/shooting_resonance.js?v=517"></script>
+<script src="js/resonance_system.js?v=517"></script>
+<script src="js/resonance_ui.js?v=517"></script>
+<script src="js/character_levelup.js?v=517"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -7043,6 +7043,172 @@ function selectChara(now, gacha) {
     document.addEventListener('pointerdown', retry, true);
   }
 
+
+  // ============================================================
+  // build517: iPhone / Safari image reliability layer
+  // ・img の一時的な読み込み失敗をその場で再試行
+  // ・既存 onerror="display:none" / visibility:hidden を無効化
+  // ・一覧画像は IntersectionObserver で可視付近だけロード
+  // ============================================================
+  var ZERAPHIA_IMAGE_RETRY_MAX = 3;
+  var ZERAPHIA_LAZY_PLACEHOLDER =
+    'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+
+  function zeraphiaCleanImageUrl(src){
+    if(!src) return '';
+    try {
+      var u = new URL(src, location.href);
+      u.searchParams.delete('__zimg_retry');
+      return u.href;
+    } catch(_){
+      return String(src).replace(/([?&])__zimg_retry=[^&#]*(&?)/, function(_, lead, tail){
+        return tail ? lead : '';
+      });
+    }
+  }
+
+  function zeraphiaRetryImage(img, src){
+    if(!img || !src) return;
+    var retries = Math.max(0, Number(img.dataset.zimgRetry || 0));
+    if(retries >= ZERAPHIA_IMAGE_RETRY_MAX){
+      img.classList.remove('zimg-loading');
+      img.classList.add('zimg-failed');
+      return;
+    }
+
+    retries += 1;
+    img.dataset.zimgRetry = String(retries);
+    img.dataset.zimgOriginal = zeraphiaCleanImageUrl(src);
+    img.classList.add('zimg-loading');
+    img.classList.remove('zimg-failed');
+    img.style.removeProperty('display');
+    img.style.removeProperty('visibility');
+
+    var delay = 350 * Math.pow(2, retries - 1);
+    setTimeout(function(){
+      if(!img.isConnected) return;
+      var baseSrc = img.dataset.zimgOriginal || zeraphiaCleanImageUrl(src);
+      try {
+        var u = new URL(baseSrc, location.href);
+        u.searchParams.set('__zimg_retry', String(Date.now()) + '_' + retries);
+        img.src = u.href;
+      } catch(_){
+        img.src = baseSrc + (baseSrc.indexOf('?') >= 0 ? '&' : '?') +
+          '__zimg_retry=' + Date.now() + '_' + retries;
+      }
+    }, delay);
+  }
+
+  function zeraphiaMarkImageLoaded(img){
+    if(!img) return;
+    img.dataset.zimgRetry = '0';
+    img.classList.remove('zimg-loading', 'zimg-failed');
+    img.classList.add('zimg-loaded');
+    img.style.removeProperty('display');
+    img.style.removeProperty('visibility');
+  }
+
+  // error は bubble しないため capture で拾う。
+  document.addEventListener('error', function(event){
+    var img = event && event.target;
+    if(!(img instanceof HTMLImageElement)) return;
+
+    var src = img.dataset.zimgOriginal ||
+      img.dataset.src ||
+      img.currentSrc ||
+      img.getAttribute('src') || '';
+
+    // transparent placeholder / data URL は対象外。
+    if(!src || /^data:/i.test(src)) return;
+
+    // inline onerror で非表示固定される前に止める。
+    try { event.stopImmediatePropagation(); } catch(_){}
+    try { event.preventDefault(); } catch(_){}
+
+    zeraphiaRetryImage(img, src);
+  }, true);
+
+  document.addEventListener('load', function(event){
+    var img = event && event.target;
+    if(!(img instanceof HTMLImageElement)) return;
+    if(img.naturalWidth > 0 && img.naturalHeight > 0){
+      zeraphiaMarkImageLoaded(img);
+    }
+  }, true);
+
+  var __zeraphiaLazyImageObserver = null;
+  function getZeraphiaLazyImageObserver(){
+    if(__zeraphiaLazyImageObserver) return __zeraphiaLazyImageObserver;
+    if(typeof IntersectionObserver !== 'function') return null;
+
+    __zeraphiaLazyImageObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(!entry.isIntersecting) return;
+        var img = entry.target;
+        __zeraphiaLazyImageObserver.unobserve(img);
+
+        var src = img.dataset.src || '';
+        if(!src) return;
+        img.dataset.zimgOriginal = zeraphiaCleanImageUrl(src);
+        img.classList.add('zimg-loading');
+        img.src = src;
+      });
+    }, {
+      root: null,
+      rootMargin: '280px 0px',
+      threshold: 0.01
+    });
+
+    return __zeraphiaLazyImageObserver;
+  }
+
+  function hydrateZeraphiaLazyImages(root){
+    root = root || document;
+    var imgs = root.querySelectorAll('img[data-z-lazy="1"][data-src]');
+    var observer = getZeraphiaLazyImageObserver();
+
+    imgs.forEach(function(img){
+      if(img.dataset.zLazyBound === '1') return;
+      img.dataset.zLazyBound = '1';
+      img.dataset.zimgOriginal = zeraphiaCleanImageUrl(img.dataset.src || '');
+
+      if(observer){
+        observer.observe(img);
+      }else{
+        img.classList.add('zimg-loading');
+        img.src = img.dataset.src;
+      }
+    });
+  }
+
+  // 動的に追加された通常画像にも、失敗時の再試行用元URLを保持する。
+  var __zeraphiaImageMutationObserver = new MutationObserver(function(records){
+    records.forEach(function(record){
+      record.addedNodes.forEach(function(node){
+        if(!(node instanceof Element)) return;
+        var imgs = [];
+        if(node.matches && node.matches('img')) imgs.push(node);
+        if(node.querySelectorAll) imgs = imgs.concat(Array.from(node.querySelectorAll('img')));
+        imgs.forEach(function(img){
+          var src = img.dataset.src || img.getAttribute('src') || '';
+          if(src && !/^data:/i.test(src) && !img.dataset.zimgOriginal){
+            img.dataset.zimgOriginal = zeraphiaCleanImageUrl(src);
+          }
+        });
+        hydrateZeraphiaLazyImages(node);
+      });
+    });
+  });
+
+  if(document.documentElement){
+    __zeraphiaImageMutationObserver.observe(document.documentElement, {
+      childList:true,
+      subtree:true
+    });
+  }
+
+  window.hydrateZeraphiaLazyImages = hydrateZeraphiaLazyImages;
+
   async function preloadImageForStartup(src, retries){
     if(!src) return { ok:true, src:src };
     var maxRetries = (typeof retries === 'number') ? retries : 2;
@@ -7158,18 +7324,11 @@ function selectChara(now, gacha) {
       });
     } catch(_){}
 
-    try {
-      if(typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)){
-        CHARACTERS.forEach(function(chara){
-          if(!chara || chara.hidden === true) return;
-          if(chara.panelImg) characterPanels.push(chara.panelImg);
-          // ホームキャラ変更直後の欠け防止用。現在表示分はStartup側で既に読込済み。
-          if(chara.cutImg) characterPanels.push(chara.cutImg);
-        });
-      }
-    } catch(e){
-      console.warn('[DeferredAssets] CHARACTERS collect skipped:', e);
-    }
+    // build517:
+    // iPhone Safari/PWA ではキャラ画像を全件先読みすると画像デコードが集中し、
+    // 一覧の一部が欠けたままになることがあるため、キャラ画像の一括ウォームアップを廃止。
+    // キャラ一覧は IntersectionObserver で必要になった panel 画像だけ読む。
+    characterPanels = [];
 
     var summon = document.getElementById('screen-summon');
     if(summon){
@@ -7184,21 +7343,10 @@ function selectChara(now, gacha) {
       });
     } catch(_){}
 
-    try {
-      var shootingApi = window.ShootingCharacters;
-      var master = shootingApi && shootingApi.SHOOTING_CHARACTER_MASTER;
-      if(master){
-        Object.keys(master).forEach(function(key){
-          var chara = master[key];
-          if(!chara) return;
-          if(chara.panelImage) shootingCharacterAssets.push(chara.panelImage);
-          if(chara.image) shootingCharacterAssets.push(chara.image);
-          if(chara.cutinImage) shootingCharacterAssets.push(chara.cutinImage);
-        });
-      }
-    } catch(e){
-      console.warn('[DeferredAssets] SHOOTING_CHARACTER_MASTER collect skipped:', e);
-    }
+    // build517:
+    // battle_back / cutin / panel を全件先読みしない。
+    // 各画面・各戦闘で必要になった時だけブラウザへ要求し、同時デコード数を抑える。
+    shootingCharacterAssets = [];
 
     return {
       banners: uniqueStartupAssets(homeBanners),
@@ -11708,7 +11856,9 @@ function showTenResult(results){
   }
 
   function getZukanIndexPanelSrc(chara){
-    return (chara && (chara.panelImg || chara.img || chara.upImg)) || 'images/unknown.webp';
+    // build517: 一覧では軽量な panel 専用画像だけを使う。
+    // 大型のホーム立ち絵・up画像へのフォールバックはiPhone負荷対策のため禁止。
+    return (chara && chara.panelImg) || 'images/unknown.webp';
   }
 
   function openZukanCharacterDetail(charaId){
@@ -11748,11 +11898,145 @@ function showTenResult(results){
 
   // 1階層目：キャラ一覧。
   // v310: 未所持は一覧には表示するが、タップ不可・詳細閲覧不可。
+  var zukanIndexPendingChars = [];
+  var zukanIndexRenderedCount = 0;
+  var zukanIndexBatchSize = 8;
+  var zukanIndexLoadObserver = null;
+  var zukanIndexRenderGeneration = 0;
+
+  function buildZukanIndexCardHTML(chara){
+    var ownedList = getOwnedInstancesByCharaId(chara.id);
+    var owned = ownedList.length > 0;
+    var representative = owned ? getRepresentativeOwnedInstance(chara.id) : null;
+    var canLimitBreak = !!(
+      representative &&
+      getLimitBreakMaterialStatus(representative).canLimitBreak
+    );
+    var canLevelUp = !!(
+      representative &&
+      window.CharacterLeveling &&
+      typeof window.CharacterLeveling.canLevelUp === 'function' &&
+      window.CharacterLeveling.canLevelUp(representative)
+    );
+    var canGrow = canLevelUp || canLimitBreak;
+    var lbMax = (typeof MAX_LIMIT_BREAK !== 'undefined' && MAX_LIMIT_BREAK > 0) ? Number(MAX_LIMIT_BREAK) : 4;
+    var lb = representative ? Math.max(0, Math.min(lbMax, Number(representative.limitBreak || 0))) : 0;
+    var isMaxLimitBreak = owned && lb >= lbMax;
+    var limitBreakDots = '';
+    if(owned){
+      for(var dotIndex = 1; dotIndex <= lbMax; dotIndex++){
+        limitBreakDots += '<span class="primoa-index-lb-dot ' + (dotIndex <= lb ? 'is-filled' : 'is-empty') + '"></span>';
+      }
+    }
+
+    var currentLevel = representative
+      ? Math.max(1, Math.floor(Number(
+          representative.characterLevel != null
+            ? representative.characterLevel
+            : (representative.character_level != null ? representative.character_level : 1)
+        ) || 1))
+      : 0;
+
+    var no = String(chara.id || 0).padStart(2, '0');
+    var panelSrc = getZukanIndexPanelSrc(chara);
+    var name = chara.name || ('ID ' + no);
+    var elementKey = String(chara.element || 'neutral').toLowerCase();
+    if(['fire','aqua','wood','light','dark','neutral'].indexOf(elementKey) < 0) elementKey = 'neutral';
+    var rarityKey = String(chara.rarity || 'r').toLowerCase() === 'sr' ? 'sr' : 'r';
+    var rarityLabel = rarityKey === 'sr' ? 'SR' : 'R';
+    var lbAria = owned ? ('・限界突破 ' + lb + '/' + lbMax) : '・未所持';
+
+    var interactionAttr = owned
+      ? (' onclick="openZukanCharacterDetail(' + Number(chara.id) + ')"')
+      : ' disabled aria-disabled="true"';
+
+    return '' +
+      '<button class="primoa-index-card element-' + elementKey + ' rarity-' + rarityKey + ' ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (canLevelUp ? ' can-level-up' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + '" type="button"' + interactionAttr + ' aria-label="' + detailEscapeHTML(name + '・' + rarityLabel + lbAria) + '">' +
+        (canGrow ? '<span class="primoa-index-limitbreak-dot" aria-label="育成可能"></span>' : '') +
+        '<span class="primoa-index-image-wrap zimg-placeholder">' +
+          '<img class="primoa-index-image zimg-lazy" ' +
+            'src="' + ZERAPHIA_LAZY_PLACEHOLDER + '" ' +
+            'data-src="' + detailEscapeHTML(panelSrc) + '" data-z-lazy="1" ' +
+            'loading="lazy" decoding="async" fetchpriority="low" ' +
+            'alt="' + detailEscapeHTML(name) + '">' +
+          (owned ? getElementCornerIconHTML(chara, 'primoa-index-element-icon') : '') +
+        '</span>' +
+        '<span class="primoa-index-name">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
+        (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
+      '</button>';
+  }
+
+  function disconnectZukanIndexLoadObserver(){
+    if(zukanIndexLoadObserver){
+      try { zukanIndexLoadObserver.disconnect(); } catch(_){}
+      zukanIndexLoadObserver = null;
+    }
+  }
+
+  function observeZukanIndexSentinel(generation){
+    disconnectZukanIndexLoadObserver();
+
+    var sentinel = document.getElementById('zukan-index-load-sentinel');
+    if(!sentinel) return;
+
+    if(typeof IntersectionObserver !== 'function'){
+      appendZukanIndexBatch(generation);
+      return;
+    }
+
+    zukanIndexLoadObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(!entry.isIntersecting) return;
+        disconnectZukanIndexLoadObserver();
+        appendZukanIndexBatch(generation);
+      });
+    }, {
+      root: null,
+      rootMargin: '500px 0px',
+      threshold: 0.01
+    });
+    zukanIndexLoadObserver.observe(sentinel);
+  }
+
+  function appendZukanIndexBatch(generation){
+    if(generation !== zukanIndexRenderGeneration) return;
+    var grid = document.getElementById('box-grid');
+    if(!grid || currentZukanDetailCharaId != null) return;
+
+    var oldSentinel = document.getElementById('zukan-index-load-sentinel');
+    if(oldSentinel) oldSentinel.remove();
+
+    var start = zukanIndexRenderedCount;
+    var end = Math.min(zukanIndexPendingChars.length, start + zukanIndexBatchSize);
+    if(end <= start) return;
+
+    var html = zukanIndexPendingChars.slice(start, end).map(buildZukanIndexCardHTML).join('');
+    grid.insertAdjacentHTML('beforeend', html);
+    zukanIndexRenderedCount = end;
+
+    hydrateZeraphiaLazyImages(grid);
+
+    if(zukanIndexRenderedCount < zukanIndexPendingChars.length){
+      grid.insertAdjacentHTML(
+        'beforeend',
+        '<div id="zukan-index-load-sentinel" class="zukan-index-load-sentinel" aria-hidden="true"><span></span></div>'
+      );
+      observeZukanIndexSentinel(generation);
+    }
+  }
+
+  // 1階層目：キャラ一覧。
+  // build517:
+  // ・最初は8件（4列×2段）だけDOM生成
+  // ・下へ近づいたら8件ずつ追加
+  // ・画像は可視付近まで data-src のまま保持
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
 
     currentZukanDetailCharaId = null;
+    disconnectZukanIndexLoadObserver();
+
     var allChars = getAllBoxCharaDefs();
     var chars = applyZukanIndexFilterAndSort(allChars);
     grid.className = 'zukan-grid primoa-index-grid';
@@ -11775,63 +12059,10 @@ function showTenResult(results){
       return;
     }
 
-    grid.innerHTML = chars.map(function(chara){
-      var ownedList = getOwnedInstancesByCharaId(chara.id);
-      var owned = ownedList.length > 0;
-      var representative = owned ? getRepresentativeOwnedInstance(chara.id) : null;
-      var canLimitBreak = !!(
-        representative &&
-        getLimitBreakMaterialStatus(representative).canLimitBreak
-      );
-      var canLevelUp = !!(
-        representative &&
-        window.CharacterLeveling &&
-        typeof window.CharacterLeveling.canLevelUp === 'function' &&
-        window.CharacterLeveling.canLevelUp(representative)
-      );
-      var canGrow = canLevelUp || canLimitBreak;
-      var lbMax = (typeof MAX_LIMIT_BREAK !== 'undefined' && MAX_LIMIT_BREAK > 0) ? Number(MAX_LIMIT_BREAK) : 4;
-      var lb = representative ? Math.max(0, Math.min(lbMax, Number(representative.limitBreak || 0))) : 0;
-      var isMaxLimitBreak = owned && lb >= lbMax;
-      var limitBreakDots = '';
-      if(owned){
-        for(var dotIndex = 1; dotIndex <= lbMax; dotIndex++){
-          limitBreakDots += '<span class="primoa-index-lb-dot ' + (dotIndex <= lb ? 'is-filled' : 'is-empty') + '"></span>';
-        }
-      }
-
-      var currentLevel = representative
-        ? Math.max(1, Math.floor(Number(
-            representative.characterLevel != null
-              ? representative.characterLevel
-              : (representative.character_level != null ? representative.character_level : 1)
-          ) || 1))
-        : 0;
-
-      var no = String(chara.id || 0).padStart(2, '0');
-      var panelSrc = getZukanIndexPanelSrc(chara);
-      var name = chara.name || ('ID ' + no);
-      var elementKey = String(chara.element || 'neutral').toLowerCase();
-      if(['fire','aqua','wood','light','dark','neutral'].indexOf(elementKey) < 0) elementKey = 'neutral';
-      var rarityKey = String(chara.rarity || 'r').toLowerCase() === 'sr' ? 'sr' : 'r';
-      var rarityLabel = rarityKey === 'sr' ? 'SR' : 'R';
-      var lbAria = owned ? ('・限界突破 ' + lb + '/' + lbMax) : '・未所持';
-
-      var interactionAttr = owned
-        ? (' onclick="openZukanCharacterDetail(' + Number(chara.id) + ')"')
-        : ' disabled aria-disabled="true"';
-
-      return '' +
-        '<button class="primoa-index-card element-' + elementKey + ' rarity-' + rarityKey + ' ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (canLevelUp ? ' can-level-up' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + '" type="button"' + interactionAttr + ' aria-label="' + detailEscapeHTML(name + '・' + rarityLabel + lbAria) + '">' +
-          (canGrow ? '<span class="primoa-index-limitbreak-dot" aria-label="育成可能"></span>' : '') +
-          '<span class="primoa-index-image-wrap">' +
-            '<img class="primoa-index-image" src="' + panelSrc + '" alt="' + detailEscapeHTML(name) + '">' +
-            (owned ? getElementCornerIconHTML(chara, 'primoa-index-element-icon') : '') +
-          '</span>' +
-          '<span class="primoa-index-name">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
-          (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
-        '</button>';
-    }).join('');
+    zukanIndexPendingChars = chars.slice();
+    zukanIndexRenderedCount = 0;
+    zukanIndexRenderGeneration += 1;
+    appendZukanIndexBatch(zukanIndexRenderGeneration);
   }
 
   // 2階層目：従来のキャラ詳細。左右矢印と横スワイプ切替は廃止する。
@@ -13929,7 +14160,18 @@ function openHomeBanner(index){
 
  renderHomeEventBanners();
 initHomeBannerSwipe();
-init();
+
+// build516:
+// 初期化はHTML解析完了後に開始する。
+// shooting_characters.js 等の下部スクリプトが読み込まれる前に loadFromDB() が走ると
+// CHARACTERS が未定義になり、タイトル画面から進めなくなるため。
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', function(){
+    init();
+  }, { once:true });
+}else{
+  init();
+}
 
 document.getElementById('detail-modal').addEventListener('click', function(e){
   if(e.target === this){
@@ -15263,20 +15505,20 @@ function fadeOutOpeningBgm(){
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=514"></script>
+<script src="js/asset_loader.js?v=517"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=514"></script>
+<script src="js/login_bonus.js?v=517"></script>
 
 
 
-<script src="js/shooting_characters.js?v=514"></script>
-<script src="js/stage_select.js?v=514"></script>
+<script src="js/shooting_characters.js?v=517"></script>
+<script src="js/stage_select.js?v=517"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=514">
-<script src="js/remnant_blessings.js?v=514"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=517">
+<script src="js/remnant_blessings.js?v=517"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=514"></script>
+<script src="js/shinju.js?v=517"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15349,10 +15591,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=514"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=517"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=514-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=514"></script>
+<script src="js/admin_mode.js?v=517-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=517"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -15360,7 +15602,7 @@ window.returnToTitleScreen = function(){
 
   function appBuild(){
     var meta = document.querySelector('meta[name="sasaphia-build"]');
-    return meta ? String(meta.content || '').trim() : '514';
+    return meta ? String(meta.content || '').trim() : '517';
   }
 
   window.addEventListener('load', function(){
@@ -15387,7 +15629,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=514"></script>
+<script src="js/score_attack.js?v=517"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -15783,7 +16025,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=514-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=517-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
