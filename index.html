@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '553';
+  var FALLBACK_BUILD = '562';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -230,7 +230,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="553">
+  <meta name="sasaphia-build" content="562">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -248,21 +248,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=553-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=562-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=553-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=562-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=553-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=562-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=553-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=562-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=553">
+  <link rel="manifest" href="manifest.json?v=562">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -330,9 +330,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=553"
+        href="css/style.css?v=562"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=553"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=562"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -402,7 +402,7 @@
 .gacha-preview-name{font-family:"Cinzel","Noto Serif JP",serif;font-size:24px;font-weight:700;letter-spacing:.12em;text-align:center;color:#fff;margin:4px 0 12px;text-shadow:0 2px 12px rgba(0,0,0,.8)}
 .gacha-resonance-switch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:0 0 10px;position:sticky;top:0;z-index:5;padding:3px 0;background:transparent;border:none;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
 .gacha-resonance-tab{appearance:none;-webkit-appearance:none;min-width:0;height:30px;padding:0 2px;border:none;border-radius:0;background:transparent url("images/gacha_ui_01.webp") center/100% 100% no-repeat;color:#938269;display:flex;align-items:center;justify-content:center;font-family:"Noto Serif JP",serif;font-size:10px;font-weight:500;line-height:1;letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,255,255,.75);cursor:pointer;filter:saturate(.78) brightness(1.03);transition:transform .16s ease,filter .16s ease,color .16s ease;-webkit-tap-highlight-color:transparent}
-.gacha-resonance-tab.active{color:#74553d;font-weight:700;filter:saturate(1.32) brightness(.96) contrast(1.04) drop-shadow(0 2px 3px rgba(122,89,28,.22));transform:translateY(-1px)}
+.gacha-resonance-tab.active{color:#74555d;font-weight:700;filter:saturate(1.32) brightness(.96) contrast(1.04) drop-shadow(0 2px 3px rgba(122,89,28,.22));transform:translateY(-1px)}
 .gacha-resonance-tab:active{transform:translateY(1px) scale(.98)}
 .gacha-resonance-tab:focus-visible{outline:1px solid rgba(185,145,62,.72);outline-offset:1px}
 .gacha-resonance-current{display:flex;flex-direction:column;gap:5px;margin:0 0 12px;padding:10px 12px;border-left:3px solid #d8b96b;background:rgba(216,185,107,.08);font-size:11px;line-height:1.65;color:#ccc}
@@ -415,10 +415,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=553">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=562">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=553">
-  <link rel="stylesheet" href="css/admin_mode.css?v=553-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=562">
+  <link rel="stylesheet" href="css/admin_mode.css?v=562-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -486,13 +486,13 @@
 
 <script>
 (function(){
-  var BUILD = '553';
+  var BUILD = '562';
 
-  // build553: one-time shooting score reset for score-system retest.
+  // build555: one-time shooting score reset for score-system retest.
   // Keeps story clears / first-clear rewards / inventory intact.
   (function resetShootingScoreCacheOnce(){
     try {
-      var marker = 'zeraphia_score_reset_20260920_build553_v1';
+      var marker = 'zeraphia_score_reset_20260920_build555_v1';
       if (window.localStorage.getItem(marker) === '1') return;
       window.localStorage.removeItem('zeraphia_shooting_high_scores_v1');
       window.localStorage.removeItem('zeraphia_shooting_stage_records_v1');
@@ -4308,7 +4308,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=553"></script>
+<script src="js/home_banners.js?v=562"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5460,10 +5460,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=553"></script>
-<script src="js/resonance_system.js?v=553"></script>
-<script src="js/resonance_ui.js?v=553"></script>
-<script src="js/character_levelup.js?v=553"></script>
+<script src="js/shooting_resonance.js?v=562"></script>
+<script src="js/resonance_system.js?v=562"></script>
+<script src="js/resonance_ui.js?v=562"></script>
+<script src="js/character_levelup.js?v=562"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -6159,6 +6159,30 @@ document.addEventListener('touchend', function (e) {
     return (Math.round(Number(value) * 1000) / 1000).toFixed(3).replace(/0+$/,'').replace(/\.$/,'') + '%';
   }
 
+  function getGachaCharacterOwnershipProgress(charaId){
+    var id = Number(charaId);
+    var owned = [];
+
+    if(typeof getOwnedInstancesByCharaId === 'function'){
+      owned = getOwnedInstancesByCharaId(id) || [];
+    } else if(typeof box !== 'undefined' && Array.isArray(box)){
+      owned = box.filter(function(item){ return item && Number(item.id) === id; });
+    }
+
+    if(!owned.length) return 0;
+
+    // 「4凸 = 5/5」として見せる進捗。
+    // 1体目を1、各個体の限界突破Lvを追加取得相当として数え、
+    // 未消費の同キャラ個体もそれぞれ1として含める。
+    // これにより 2凸本体 + 未消費1体 = 4/5 のように、次の凸素材も反映できる。
+    var progress = owned.reduce(function(total, item){
+      var lb = Math.max(0, Math.min(4, Number(item && (item.limitBreak != null ? item.limitBreak : item.limit_break) || 0)));
+      return total + 1 + lb;
+    }, 0);
+
+    return Math.max(0, Math.min(5, progress));
+  }
+
   function buildGachaCharacterPoolRows(ids, totalRate, limitedIds){
     ids = Array.isArray(ids) ? ids : [];
     if(!ids.length) return '';
@@ -6168,12 +6192,14 @@ document.addEventListener('touchend', function (e) {
       var name = chara && chara.name ? chara.name : ('No.' + String(id).padStart(2,'0'));
       var img = getGachaPoolCharacterImage(chara);
       var element = chara && chara.element ? String(chara.element).toUpperCase() : '';
+      var ownershipProgress = getGachaCharacterOwnershipProgress(id);
       return '' +
         '<button class="gacha-pool-entry is-character" type="button" onclick="openGachaPoolCharacterDetail(' + Number(id) + ')" aria-label="' + detailEscapeHTML(name + 'の能力を見る') + '">' +
           '<img class="gacha-pool-entry-img" src="' + detailEscapeHTML(img) + '" alt="">' +
           '<div class="gacha-pool-entry-main">' +
             '<div class="gacha-pool-entry-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
             '<div class="gacha-pool-entry-meta">' + detailEscapeHTML(element) + '</div>' +
+            '<div class="gacha-pool-entry-owned">所有状況：' + ownershipProgress + '/5</div>' +
           '</div>' +
           '<div class="gacha-pool-entry-rate">' + formatGachaRate(eachRate) + '</div>' +
           '<div class="gacha-pool-entry-chevron" aria-hidden="true">›</div>' +
@@ -11308,8 +11334,9 @@ function showTenResult(results){
 
   // ── キャラ一覧：フィルター / ソート ──────────────────────────
   var zukanIndexFilter = {
-    element: 'all',
-    rarity: 'all',
+    // 空配列 = すべて。複数選択時は OR 条件で絞り込む。
+    elements: [],
+    rarities: [],
     sort: 'id',
     query: ''
   };
@@ -11398,17 +11425,29 @@ function showTenResult(results){
   window.clearZukanNameSearch = clearZukanNameSearch;
 
   function isZukanFilterActive(){
-    return zukanIndexFilter.element !== 'all' ||
-      zukanIndexFilter.rarity !== 'all' ||
+    return (Array.isArray(zukanIndexFilter.elements) && zukanIndexFilter.elements.length > 0) ||
+      (Array.isArray(zukanIndexFilter.rarities) && zukanIndexFilter.rarities.length > 0) ||
       zukanIndexFilter.sort !== 'id';
+  }
+
+  function isZukanElementSelected(value){
+    var selected = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements : [];
+    return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
+  }
+
+  function isZukanRaritySelected(value){
+    var selected = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities : [];
+    return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
   }
 
   function applyZukanIndexFilterAndSort(chars){
     var query = normalizeZukanSearchText(zukanIndexFilter.query);
+    var selectedElements = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements : [];
+    var selectedRarities = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities : [];
     var list = (chars || []).filter(function(chara){
       if(!chara) return false;
-      if(zukanIndexFilter.element !== 'all' && normalizeZukanElement(chara.element) !== zukanIndexFilter.element) return false;
-      if(zukanIndexFilter.rarity !== 'all' && normalizeZukanRarity(chara.rarity) !== zukanIndexFilter.rarity) return false;
+      if(selectedElements.length && selectedElements.indexOf(normalizeZukanElement(chara.element)) < 0) return false;
+      if(selectedRarities.length && selectedRarities.indexOf(normalizeZukanRarity(chara.rarity)) < 0) return false;
       if(query){
         var nameKey = normalizeZukanSearchText(chara.name || '');
         if(nameKey.indexOf(query) < 0) return false;
@@ -11440,7 +11479,8 @@ function showTenResult(results){
   function getZukanFilterMenuHTML(){
     var elementKeys = ['all'].concat(ZUKAN_ELEMENT_ORDER);
     var elementButtons = elementKeys.map(function(key){
-      return '<button type="button" class="zukan-filter-chip element-chip element-' + key + (zukanIndexFilter.element === key ? ' active' : '') + '" onclick="setZukanElementFilter(\'' + key + '\')">' + ZUKAN_ELEMENT_LABELS[key] + '</button>';
+      var selected = isZukanElementSelected(key);
+      return '<button type="button" class="zukan-filter-chip element-chip element-' + key + (selected ? ' active' : '') + '" aria-pressed="' + (selected ? 'true' : 'false') + '" onclick="setZukanElementFilter(\'' + key + '\')">' + ZUKAN_ELEMENT_LABELS[key] + '</button>';
     }).join('');
 
     return '' +
@@ -11452,9 +11492,9 @@ function showTenResult(results){
         '<div class="zukan-filter-section">' +
           '<div class="zukan-filter-section-title">レアリティ</div>' +
           '<div class="zukan-filter-chip-grid zukan-filter-rarity-grid">' +
-            '<button type="button" class="zukan-filter-chip' + (zukanIndexFilter.rarity === 'all' ? ' active' : '') + '" onclick="setZukanRarityFilter(\'all\')">すべて</button>' +
-            '<button type="button" class="zukan-filter-chip rarity-sr' + (zukanIndexFilter.rarity === 'sr' ? ' active' : '') + '" onclick="setZukanRarityFilter(\'sr\')">SR</button>' +
-            '<button type="button" class="zukan-filter-chip rarity-r' + (zukanIndexFilter.rarity === 'r' ? ' active' : '') + '" onclick="setZukanRarityFilter(\'r\')">R</button>' +
+            '<button type="button" class="zukan-filter-chip' + (isZukanRaritySelected('all') ? ' active' : '') + '" aria-pressed="' + (isZukanRaritySelected('all') ? 'true' : 'false') + '" onclick="setZukanRarityFilter(\'all\')">すべて</button>' +
+            '<button type="button" class="zukan-filter-chip rarity-sr' + (isZukanRaritySelected('sr') ? ' active' : '') + '" aria-pressed="' + (isZukanRaritySelected('sr') ? 'true' : 'false') + '" onclick="setZukanRarityFilter(\'sr\')">SR</button>' +
+            '<button type="button" class="zukan-filter-chip rarity-r' + (isZukanRaritySelected('r') ? ' active' : '') + '" aria-pressed="' + (isZukanRaritySelected('r') ? 'true' : 'false') + '" onclick="setZukanRarityFilter(\'r\')">R</button>' +
           '</div>' +
         '</div>' +
         '<div class="zukan-filter-section">' +
@@ -11501,13 +11541,31 @@ function showTenResult(results){
   }
 
   function setZukanElementFilter(value){
-    zukanIndexFilter.element = value || 'all';
+    value = String(value || 'all').toLowerCase();
+    if(value === 'all'){
+      zukanIndexFilter.elements = [];
+    } else if(ZUKAN_ELEMENT_ORDER.indexOf(value) >= 0){
+      var selected = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements.slice() : [];
+      var index = selected.indexOf(value);
+      if(index >= 0) selected.splice(index, 1);
+      else selected.push(value);
+      zukanIndexFilter.elements = selected;
+    }
     renderBox();
     renderZukanFilterMenu();
   }
 
   function setZukanRarityFilter(value){
-    zukanIndexFilter.rarity = value || 'all';
+    value = String(value || 'all').toLowerCase();
+    if(value === 'all'){
+      zukanIndexFilter.rarities = [];
+    } else if(value === 'sr' || value === 'r'){
+      var selected = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities.slice() : [];
+      var index = selected.indexOf(value);
+      if(index >= 0) selected.splice(index, 1);
+      else selected.push(value);
+      zukanIndexFilter.rarities = selected;
+    }
     renderBox();
     renderZukanFilterMenu();
   }
@@ -11519,8 +11577,8 @@ function showTenResult(results){
   }
 
   function resetZukanFilters(){
-    zukanIndexFilter.element = 'all';
-    zukanIndexFilter.rarity = 'all';
+    zukanIndexFilter.elements = [];
+    zukanIndexFilter.rarities = [];
     zukanIndexFilter.sort = 'id';
     renderBox();
     renderZukanFilterMenu();
@@ -15452,17 +15510,17 @@ function fadeOutOpeningBgm(){
   - 画像はService Workerで全面管理しない
 -->
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=553"></script>
+<script src="js/login_bonus.js?v=562"></script>
 
 
 
-<script src="js/shooting_characters.js?v=553"></script>
-<script src="js/stage_select.js?v=553"></script>
+<script src="js/shooting_characters.js?v=562"></script>
+<script src="js/stage_select.js?v=562"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=553">
-<script src="js/remnant_blessings.js?v=553"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=562">
+<script src="js/remnant_blessings.js?v=562"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=553"></script>
+<script src="js/shinju.js?v=562"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15535,10 +15593,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=553"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=562"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=553-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=553"></script>
+<script src="js/admin_mode.js?v=562-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=562"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -15546,7 +15604,7 @@ window.returnToTitleScreen = function(){
 
   function appBuild(){
     var meta = document.querySelector('meta[name="sasaphia-build"]');
-    return meta ? String(meta.content || '').trim() : '553';
+    return meta ? String(meta.content || '').trim() : '562';
   }
 
   window.addEventListener('load', function(){
@@ -15573,7 +15631,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=553"></script>
+<script src="js/score_attack.js?v=562"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -15969,7 +16027,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=553-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=562-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){

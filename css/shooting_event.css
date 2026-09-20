@@ -8651,3 +8651,37 @@
   from{rotate:0deg}
   to{rotate:360deg}
 }
+
+
+/* ============================================================
+   build557 — COMBO position common adjustment
+   Keep COMBO below mission / boss HP HUD on every battle stage.
+   ============================================================ */
+#shooting-event-root .shooting-combo{
+  top:46px !important;
+}
+
+/* ============================================================
+   build558 — COMBO position: upper-right
+   Move the common COMBO counter from the left side to the right,
+   while keeping the build557 vertical offset below stage HUDs.
+   ============================================================ */
+#shooting-event-root .shooting-combo{
+  left:auto !important;
+  right:16px !important;
+  top:46px !important;
+  align-items:flex-end !important;
+  text-align:right !important;
+  transform-origin:right center !important;
+}
+#shooting-event-root .shooting-combo span{
+  padding-left:0 !important;
+  padding-right:2px !important;
+}
+@media(max-width:420px){
+  #shooting-event-root .shooting-combo{
+    left:auto !important;
+    right:14px !important;
+    top:46px !important;
+  }
+}

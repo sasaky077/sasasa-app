@@ -167,11 +167,6 @@
                 <strong id="shooting-result-hit-total">0回</strong>
               </div>
               <div class="shooting-result-detail-row">
-                <span class="shooting-result-detail-label">ULT使用回数</span>
-                <div class="shooting-result-member-list" id="shooting-result-ult-details"></div>
-                <strong id="shooting-result-ult-total">0回</strong>
-              </div>
-              <div class="shooting-result-detail-row">
                 <span class="shooting-result-detail-label">生存キャラ数</span>
                 <div class="shooting-result-member-list" id="shooting-result-survivor-details"></div>
                 <strong id="shooting-result-survivor-total">3/3</strong>

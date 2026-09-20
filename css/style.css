@@ -36761,3 +36761,143 @@ img.zimg-loaded{
   background: #fffdf8 !important;
   border-color: rgba(157, 126, 74, 0.14) !important;
 }
+
+
+/* =========================================================
+   build554 GACHA PROVIDING-RATE SHEET HEIGHT
+   ユーザーフレーム / ボトムナビと干渉しないよう、
+   提供割合シートの上下を約1cmずつ内側へ寄せる。
+   中央リストは既存どおり内部スクロール。
+   ========================================================= */
+.gacha-pool-detail-sheet{
+  top:calc(env(safe-area-inset-top) + 62px) !important;
+  bottom:calc(env(safe-area-inset-bottom) + 66px) !important;
+}
+
+/* 低い端末では表示領域を確保しつつHUD/NAVを避ける */
+@media (max-height:700px){
+  .gacha-pool-detail-sheet{
+    top:calc(env(safe-area-inset-top) + 58px) !important;
+    bottom:calc(env(safe-area-inset-bottom) + 62px) !important;
+    padding-top:20px !important;
+    padding-bottom:14px !important;
+  }
+}
+
+
+/* =========================================================
+   build555 GACHA PROVIDING-RATE SHEET + OWNERSHIP
+   HUD / ボトムナビからさらに内側へ寄せる。
+   キャラクターごとに4凸到達を5/5とした所有進捗を表示。
+   ========================================================= */
+.gacha-pool-detail-sheet{
+  top:calc(env(safe-area-inset-top) + 76px) !important;
+  bottom:calc(env(safe-area-inset-bottom) + 82px) !important;
+}
+
+.gacha-pool-entry-owned{
+  margin-top:2px;
+  font-family:"Noto Serif JP",serif;
+  font-size:8px;
+  line-height:1.2;
+  letter-spacing:.04em;
+  color:rgba(113,83,43,.66);
+  white-space:nowrap;
+}
+
+@media (max-height:700px){
+  .gacha-pool-detail-sheet{
+    top:calc(env(safe-area-inset-top) + 72px) !important;
+    bottom:calc(env(safe-area-inset-bottom) + 80px) !important;
+    padding-top:18px !important;
+    padding-bottom:12px !important;
+  }
+  .gacha-pool-entry{
+    min-height:50px;
+  }
+}
+
+
+/* =========================================================
+   build560 CHARACTER INDEX - HEADER BUTTONS / STICKY SEARCH
+   - 検索/メニューボタンの楕円フレームを撤去
+   - 検索フォームは一覧スクロール中もページヘッダー直下に固定
+   ========================================================= */
+#screen-zukan.is-primoa-index .zukan-header-switch,
+#screen-zukan.is-primoa-index .zukan-search-button,
+#screen-zukan.is-primoa-index .zukan-filter-menu-button{
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+#screen-zukan.is-primoa-index .zukan-header-switch:active,
+#screen-zukan.is-primoa-index .zukan-search-button:active,
+#screen-zukan.is-primoa-index .zukan-filter-menu-button:active,
+#screen-zukan.is-primoa-index .zukan-search-button.is-open,
+#screen-zukan.is-primoa-index .zukan-filter-menu-button.is-filtered{
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+/* 開いた検索欄はスクロールレイヤー内で固定。
+   共通HUD(72px) + ページヘッダー(64px) の直下に残す。 */
+#screen-zukan.is-primoa-index .zukan-name-search.open{
+  position:-webkit-sticky !important;
+  position:sticky !important;
+  top:calc(var(--header-h) + var(--page-header-h) + 4px) !important;
+  z-index:210 !important;
+  margin-top:4px !important;
+  margin-bottom:10px !important;
+  padding-top:3px !important;
+  padding-bottom:3px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(250,247,239,.97) 0%,
+    rgba(250,247,239,.94) 72%,
+    rgba(250,247,239,.82) 100%
+  ) !important;
+  box-shadow:0 7px 12px rgba(110,88,52,.045) !important;
+}
+
+@media (max-width:360px){
+  #screen-zukan.is-primoa-index .zukan-name-search.open{
+    top:calc(var(--header-h) + var(--page-header-h) + 2px) !important;
+  }
+}
+
+
+/* =========================================================
+   build561 CHARACTER INDEX - SEARCH POSITION
+   検索フォームをキャラ一覧タイトル / 検索 / メニューの直下へ固定。
+   sticky は自然配置位置より上へ移動できないため fixed へ変更する。
+   ========================================================= */
+#screen-zukan.is-primoa-index .zukan-name-search.open{
+  position:fixed !important;
+  top:calc(var(--header-h) + var(--page-header-h) + 2px) !important;
+  left:50% !important;
+  right:auto !important;
+  width:min(calc(100vw - 24px), 406px) !important;
+  margin:0 !important;
+  padding:2px 0 4px !important;
+  transform:translateX(-50%) !important;
+  z-index:225 !important;
+  box-sizing:border-box !important;
+}
+
+/* fixed化で通常フローから外れるため、先頭キャラが検索欄の下に隠れないよう確保。 */
+#screen-zukan.is-primoa-index .zukan-name-search.open + #box-grid{
+  margin-top:52px !important;
+}
+
+@media (max-width:360px){
+  #screen-zukan.is-primoa-index .zukan-name-search.open{
+    top:calc(var(--header-h) + var(--page-header-h)) !important;
+    width:calc(100vw - 20px) !important;
+  }
+  #screen-zukan.is-primoa-index .zukan-name-search.open + #box-grid{
+    margin-top:50px !important;
+  }
+}

@@ -359,6 +359,7 @@
       name: 'フェイスレス',
       displayName: 'FACELESS　無貌の天使',
       image: 'images/enemy_faceless_battle.webp',
+      element: 'dark',
 
       // 実HPはステージ側のfaceless.waveHpでwaveごとに上書きする。
       gaugeHp: 7600,

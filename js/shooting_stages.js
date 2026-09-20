@@ -852,6 +852,7 @@
       background: 'images/battle_bg_01.webp',
       introImage: 'images/enemy_faceless_battle_start.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
+      bossElement: 'dark',
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'フェイスレスを撃破',
@@ -878,6 +879,7 @@
       background: 'images/battle_bg_01.webp',
       introImage: 'images/enemy_faceless_battle_start.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
+      bossElement: 'dark',
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'フェイスレスを撃破',
