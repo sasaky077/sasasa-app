@@ -1950,8 +1950,50 @@
   let nativeTouchCancelTimer = null;
   let nativeTouchCancelToken = 0;
   let lastNativeTouchMoveAt = 0;
-  const TOUCH_CANCEL_GRACE_MS = 140;
+  // build551: iOS/PWAでは重いフレーム直後に一時的なtouchcancelが来ることがある。
+  // 140msだと1回のLong Taskで猶予を超えやすいため、操作復帰を待つ時間を少し拡張。
+  // touchendは従来どおり即終了するので、通常の離指レスポンスには影響しない。
+  const TOUCH_CANCEL_GRACE_MS = 240;
   const TOUCH_FOLLOW_RESPONSE = 90;
+
+  // build551: touchmove / pointermove のたびにgetBoundingClientRect()を読まない。
+  // arenaの矩形は戦闘開始・resize/orientationchange時だけ更新し、
+  // iOSの高頻度touchmoveでは数値キャッシュだけを参照する。
+  let cachedArenaInputRect = null;
+  let cachedArenaInputEl = null;
+
+  function invalidateArenaInputRect() {
+    cachedArenaInputRect = null;
+    cachedArenaInputEl = null;
+  }
+
+  function refreshArenaInputRect(force = false) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) {
+      invalidateArenaInputRect();
+      return null;
+    }
+    if (!force && cachedArenaInputRect && cachedArenaInputEl === arena) {
+      return cachedArenaInputRect;
+    }
+    const r = arena.getBoundingClientRect();
+    cachedArenaInputEl = arena;
+    cachedArenaInputRect = {
+      left: Number(r.left || 0),
+      top: Number(r.top || 0),
+      right: Number(r.right || 0),
+      bottom: Number(r.bottom || 0),
+      width: Number(r.width || arena.clientWidth || 0),
+      height: Number(r.height || arena.clientHeight || 0)
+    };
+    return cachedArenaInputRect;
+  }
+
+  function getArenaInputRect() {
+    return (cachedArenaInputRect && cachedArenaInputEl === document.getElementById('shooting-arena'))
+      ? cachedArenaInputRect
+      : refreshArenaInputRect(true);
+  }
 
   const SWITCH_SWIPE_MIN_X = 78;
   const SWITCH_SWIPE_MAX_MS = 260;
@@ -2648,6 +2690,10 @@
     positionUnit(player, state.player.x, state.player.y);
     updateMitoCompanion();
     positionUnit(boss, state.boss.x, state.boss.y);
+
+    // arenaが表示された直後 / resize後の操作範囲をここで1度だけ再取得。
+    // touchmove側ではこのキャッシュを使う。
+    refreshArenaInputRect(true);
   }
 
   function positionUnit(el, x, y) {
@@ -5521,11 +5567,22 @@
   }
 
   function pulseChapter6Barrier(barrier) {
-    if (!barrier || !barrier.el) return;
-    barrier.el.classList.remove('hit');
-    void barrier.el.offsetWidth;
+    if (!barrier || !barrier.el) return false;
+
+    // build551: 高速多弾が壁へ当たるたびoffsetWidthを読むと、
+    // 1発ごとに同期レイアウトが発生してiOSの入力まで止まりやすい。
+    // 判定自体は全弾処理し、見た目のパルスだけ約10fpsに制限する。
+    const now = performance.now();
+    if (now < Number(barrier._hitFxUntil || 0)) return false;
+    barrier._hitFxUntil = now + 96;
+
     barrier.el.classList.add('hit');
-    setTimeout(() => barrier && barrier.el && barrier.el.classList.remove('hit'), 120);
+    if (barrier._hitFxTimer) clearTimeout(barrier._hitFxTimer);
+    barrier._hitFxTimer = setTimeout(() => {
+      if (barrier && barrier.el) barrier.el.classList.remove('hit');
+      barrier._hitFxTimer = null;
+    }, 120);
+    return true;
   }
 
   function getChapter4CurtainConfig() {
@@ -6326,18 +6383,32 @@
     if (!enemy || enemy.hp <= 0) return;
     const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
-    renderMiniEnemyHp(enemy, true);
-    createHit(enemy.x, enemy.y, !!big);
-    showDamageNumber(enemy.x, enemy.y, appliedDamage, 'enemy', !!big, elementReaction);
-    if (elementReaction === 'immune' && enemy.weaknessBarrierEl) {
-      const shield = enemy.weaknessBarrierEl;
-      shield.classList.remove('hit');
-      void shield.offsetWidth;
-      shield.classList.add('hit');
-      setTimeout(() => shield && shield.classList.remove('hit'), 150);
-    }
-    if (enemy.el) {
-      sustainHitFeedback(enemy.el, big ? 210 : 145);
+
+    // HPが変わらないIMMUNE弾でHP DOMを書き直さない。
+    if (appliedDamage > 0) renderMiniEnemyHp(enemy, true);
+
+    // build551: IMMUNE相手へSpread/Laser等を当て続けても、ゲーム判定は全件維持しつつ
+    // HIT/0/IMMUNE/バリア発光のDOM演出だけ約9fpsへ間引く。
+    const visualNow = Number(now || performance.now());
+    const immuneVisual = elementReaction === 'immune';
+    const renderImpact = !immuneVisual || visualNow >= Number(enemy._immuneVisualNextAt || 0);
+    if (renderImpact) {
+      if (immuneVisual) enemy._immuneVisualNextAt = visualNow + 110;
+
+      createHit(enemy.x, enemy.y, !!big);
+      showDamageNumber(enemy.x, enemy.y, appliedDamage, 'enemy', !!big, elementReaction);
+
+      if (immuneVisual && enemy.weaknessBarrierEl) {
+        const shield = enemy.weaknessBarrierEl;
+        shield.classList.add('hit');
+        if (enemy._weaknessBarrierFxTimer) clearTimeout(enemy._weaknessBarrierFxTimer);
+        enemy._weaknessBarrierFxTimer = setTimeout(() => {
+          if (shield && shield.isConnected) shield.classList.remove('hit');
+          enemy._weaknessBarrierFxTimer = null;
+        }, 140);
+      }
+
+      if (enemy.el) sustainHitFeedback(enemy.el, big ? 210 : 145);
     }
     if (enemy.hp > 0) return;
 
@@ -8362,6 +8433,14 @@
     if (isScoreAttackStage()) return;
     // 通常弾以外の継続攻撃/ULTも数字DOMを大量生成しない。
     if (isScoreAttackStage() && !big && !shouldRenderRaidBossHitVisual(performance.now(), 'number')) return;
+
+    // CH06等のIMMUNEボスへ高速攻撃を当てた際、0/IMMUNEを1発ごとにDOM生成しない。
+    // ダメージ判定そのものには触れず、表示だけ約9fpsに制限。
+    if (!big && elementReaction === 'immune') {
+      const now = performance.now();
+      if (now < Number(state.bossImmuneNumberNextAt || 0)) return;
+      state.bossImmuneNumberNextAt = now + 110;
+    }
     showDamageNumber(state.boss.x, state.boss.y, amount, 'enemy', big, elementReaction);
   }
 
@@ -8461,8 +8540,11 @@
     const boss = document.getElementById(BOSS_ID);
     if (!arena || !player || !boss) return;
 
-    const w = arena.clientWidth;
-    const h = arena.clientHeight;
+    // arenaサイズは戦闘中ほぼ不変。毎フレームclientWidth/clientHeightを読まず、
+    // touch入力と共有しているキャッシュを使う。resize時だけ更新される。
+    const arenaInputRect = getArenaInputRect();
+    const w = Number(arenaInputRect?.width || arena.clientWidth || 0);
+    const h = Number(arenaInputRect?.height || arena.clientHeight || 0);
     if (isScoreAttackStage() && state) {
       state.scoreAttackArenaWidth = w;
       state.scoreAttackArenaHeight = h;
@@ -8613,23 +8695,42 @@
     if (boss && !isNormalBattle()) positionUnit(boss, state.boss.x, state.boss.y);
   }
 
-  function updateProjectiles(dt, now) {
+  // build551: 同一フレームのarena/player/core/boss矩形を一括で読み、
+  // contact判定とprojectile判定で共有する。DOM書き込みの間に
+  // getBoundingClientRect()を挟むlayout thrashingを減らす。
+  function captureCombatFrameLayout() {
+    const arena = document.getElementById('shooting-arena');
+    const player = document.getElementById(PLAYER_ID);
+    const playerCore = document.getElementById('shooting-player-core');
+    const boss = document.getElementById(BOSS_ID);
+    if (!arena || !player || !playerCore) return null;
+    if (!isNormalBattle() && !boss) return null;
+
+    // 読み取りは連続して行う。ここより後は同じフレーム内で再読込しない。
+    const arenaRect = arena.getBoundingClientRect();
+    const playerRect = player.getBoundingClientRect();
+    const playerCoreRect = playerCore.getBoundingClientRect();
+    const bossRect = boss && !isNormalBattle() ? boss.getBoundingClientRect() : null;
+
+    return {
+      arena, player, playerCore, boss,
+      arenaRect, playerRect, playerCoreRect, bossRect,
+      width: Number(arenaRect.width || 0),
+      height: Number(arenaRect.height || 0)
+    };
+  }
+
+  function updateProjectiles(dt, now, frameLayout = null) {
     // 通常は何もしない。弾が異常増殖した時だけ、当たり判定を回す前に負荷を戻す。
     enforceEnemyBulletSafetyLimit(now);
     enforcePlayerBulletSafetyLimit(now);
     syncShiinaLightRingVisual(now);
 
-    const arena = document.getElementById('shooting-arena');
-    const boss = document.getElementById(BOSS_ID);
-    const player = document.getElementById(PLAYER_ID);
-    const playerCore = document.getElementById('shooting-player-core');
-    if (!arena || !player || !playerCore) return;
-    if (!isNormalBattle() && !boss) return;
-    const w = arena.clientWidth;
-    const h = arena.clientHeight;
-    const bossRect = boss && !isNormalBattle() ? boss.getBoundingClientRect() : null;
-    const playerCoreRect = playerCore.getBoundingClientRect();
-    const arenaRect = arena.getBoundingClientRect();
+    const layout = frameLayout || captureCombatFrameLayout();
+    if (!layout) return;
+    const { arena, boss, player, playerCore, bossRect, playerCoreRect, playerRect, arenaRect } = layout;
+    const w = Number(layout.width || arenaRect.width || 0);
+    const h = Number(layout.height || arenaRect.height || 0);
 
     state.bullets = state.bullets.filter(p => {
       if (!p || !p.el) return false;
@@ -8656,7 +8757,6 @@
         }
 
         const r = getUnitRect(p, arenaRect);
-        const playerRect = player.getBoundingClientRect();
 
         // 味方(現状はアクティブなプレイヤー)に当たると回復。
         if (rectsHit(r, playerRect, 0, 4)) {
@@ -8712,12 +8812,14 @@
       // CH06遮断壁：通常Projectileはここで止まる。Shotgun(pierce)だけはそのまま奥へ進む。
       const chapter6BarrierTarget = findChapter6BarrierCollision(r, arenaRect, p);
       if (chapter6BarrierTarget) {
+        const renderBarrierImpact = pulseChapter6Barrier(chapter6BarrierTarget);
         if (p.pierce) {
           if (p.piercedTargets) p.piercedTargets.add(chapter6BarrierTarget);
-          pulseChapter6Barrier(chapter6BarrierTarget);
         } else {
-          pulseChapter6Barrier(chapter6BarrierTarget);
-          createHit(Number(p.x || chapter6BarrierTarget.x || 0), Number(p.y || chapter6BarrierTarget.y || 0), false);
+          // 壁への当たり判定・弾消滅は全弾維持。DOMを作るHIT演出だけ間引く。
+          if (renderBarrierImpact) {
+            createHit(Number(p.x || chapter6BarrierTarget.x || 0), Number(p.y || chapter6BarrierTarget.y || 0), false);
+          }
           p.el.remove();
           return false;
         }
@@ -9131,7 +9233,7 @@
     });
   }
 
-  function updateEnemyContactCollisions(now) {
+  function updateEnemyContactCollisions(now, frameLayout = null) {
     if (!state || state.ended || state.finishing || state.koTransition || state.countdown) return;
     if (now < (state.player.invulnUntil || 0)) return;
 
@@ -9139,11 +9241,9 @@
     const moonlightInvulnerable = getCurrentCharacter().id === CHARACTER_ID.HAYATE && now < (state.hayateMoonlightUntil || 0);
     if (moonlightInvulnerable) return;
 
-    const player = document.getElementById(PLAYER_ID);
-    if (!player) return;
-    const playerRect = player.getBoundingClientRect();
-    const arenaRectForContact = document.getElementById('shooting-arena')?.getBoundingClientRect();
-    if (!arenaRectForContact) return;
+    const layout = frameLayout || captureCombatFrameLayout();
+    if (!layout) return;
+    const { playerRect, arenaRect: arenaRectForContact, boss, bossRect } = layout;
 
     if (isNormalBattle()) {
       const hitEnemy = state.normalEnemies.find(enemy => {
@@ -9162,13 +9262,12 @@
       return;
     }
 
-    const boss = document.getElementById(BOSS_ID);
-    if (!boss || !state.boss || state.boss.hp <= 0) return;
+    if (!boss || !bossRect || !state.boss || state.boss.hp <= 0) return;
     // CH02-4 イリシュ(violence_v1)専用: 突進の当たり判定は画像の透明余白ぶんを
     // 大きく差し引いて、画面幅の半分以上は必ず回避ゾーンとして残す。
     // 他ボスの当たり判定(14, 18)は一切変更しない。
     const bossContactInsetB = (BOSS && BOSS.behavior === 'violence_v1') ? 42 : 18;
-    if (rectsHit(playerRect, boss.getBoundingClientRect(), 14, bossContactInsetB)) {
+    if (rectsHit(playerRect, bossRect, 14, bossContactInsetB)) {
       let bossContactDamage = Number(BOSS.contactDamage || BOSS.bulletDamage) || 200;
 
       // 初級 CHAPTER02-STAGE04「イリシュ」限定:
@@ -10382,9 +10481,11 @@
     updateEltenaBlackHole(dt, ts);
     updateGojoPurpleField(dt, ts);
 
-    // 敵の位置更新後にプレイヤーとの直接接触を判定する。
-    updateEnemyContactCollisions(ts);
-    updateProjectiles(dt, ts);
+    // 敵の位置更新後、当たり判定で使うDOM矩形を一度だけまとめて取得。
+    // contact/projectileの間でDOM read/writeを往復させない。
+    const frameLayout = captureCombatFrameLayout();
+    updateEnemyContactCollisions(ts, frameLayout);
+    updateProjectiles(dt, ts, frameLayout);
     // 同じ更新済み座標を使って、検証ステージの敵弾だけを一枚へ描画する。
     renderCanvasEnemyBullets();
 
@@ -12073,6 +12174,7 @@
       Math.hypot(dx, dy) <= ULT_DOUBLE_TAP_DISTANCE;
 
     if (touchLike) {
+      refreshArenaInputRect(false);
       beginTouchDrag(e);
     } else {
       pointerActive = true;
@@ -12134,8 +12236,7 @@
         Number(e.clientX) - Number(lastPointerClientX),
         Number(e.clientY) - Number(lastPointerClientY)
       );
-      const arena = document.getElementById('shooting-arena');
-      const rect = arena ? arena.getBoundingClientRect() : null;
+      const rect = getArenaInputRect();
       const diagonal = rect ? Math.hypot(rect.width, rect.height) : 600;
       const rejectDistance = Math.max(180, diagonal * 0.55);
 
@@ -12264,6 +12365,8 @@
     // パーティ選択/ボタン/RESULT上のタッチは、スクロールやクリックを優先。
     if (isShootingUiInteractionTarget(e.target)) return;
 
+    // 1操作の開始時だけarena矩形を確認。以後のtouchmoveではDOMを読まない。
+    refreshArenaInputRect(false);
     clearNativeTouchCancelTimer();
 
     if (!e.touches || !e.touches.length) return;
@@ -12333,9 +12436,8 @@
       dragStartPlayerY = pointerY;
     }
 
-    const arena = document.getElementById('shooting-arena');
-    if (!arena) return;
-    const r = arena.getBoundingClientRect();
+    const r = getArenaInputRect();
+    if (!r) return;
 
     const deltaX = t.clientX - dragStartClientX;
     const deltaY = t.clientY - dragStartClientY;
@@ -12419,8 +12521,11 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state || !state.player) return;
 
-    const r = arena.getBoundingClientRect();
     const touchLike = pointerIsTouch || isTouchLikePointer(e);
+    // touchはキャッシュのみ。PCマウスはイベント頻度が低く、absolute座標変換にleft/topが必要なので
+    // 従来どおりライブ矩形を読む。
+    const r = touchLike ? getArenaInputRect() : arena.getBoundingClientRect();
+    if (!r) return;
 
     if (touchLike) {
       // iPhoneでは絶対座標に追従させない。
@@ -15710,7 +15815,15 @@
   }, { passive: false });
   window.addEventListener('keyup', e => { keys[e.key] = false; });
   window.addEventListener('resize', () => {
+    invalidateArenaInputRect();
     if (state && state.running && !state.ended) placeInitialUnits();
+    else requestAnimationFrame(() => refreshArenaInputRect(true));
+  });
+  window.addEventListener('orientationchange', () => {
+    invalidateArenaInputRect();
+    // iOSはorientationchange直後にviewportサイズが確定していない場合があるため、
+    // 次フレームで再取得する。
+    requestAnimationFrame(() => refreshArenaInputRect(true));
   });
   // 復元チェックは所持キャラ判定(collected)に依存する。
   // window._dbLoadPromiseは、index.html側のinit()がスプラッシュタップ後の
