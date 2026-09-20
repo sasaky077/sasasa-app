@@ -2473,6 +2473,7 @@
       paused: false, pauseStartedAt: 0,
       arnoAuraUntil: 0, arnoAuraNextTickAt: 0, arnoAuraOwnerId: 0,
       clarineDecoys: [], clarineDecoySeq: 0,
+      greshaBurnField: null,
       ignisLaserEl: null, ignisLaserHideAt: 0,
       ignisFireWheel: null,
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
@@ -2679,12 +2680,13 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
       state.clarineDecoys = [];
+      state.greshaBurnField = null;
       state.ignisLaserEl = null;
       state.ignisFireWheel = null;
       state.roseFlower = null;
@@ -5103,7 +5105,10 @@
   function positionMiniEnemyHp(enemy) {
     if (!enemy || !enemy.hpEl) return;
 
-    const scale = Math.max(0.1, Number(enemy.def && enemy.def.uiScale || 1));
+    const scale = Math.max(
+      0.1,
+      Number(enemy.displayScale || (enemy.def && enemy.def.uiScale) || 1)
+    );
 
     // Base mobile enemy box is about 60px tall.
     // Keep the HP bar just above the visible unit as uiScale changes.
@@ -5149,7 +5154,17 @@
     el.src = enemyDef.image;
     el.alt = enemyDef.name || '敵';
     el.draggable = false;
-    el.style.setProperty('--enemy-scale', String(Number(enemyDef.uiScale || 1)));
+
+    const baseEnemyScale = Math.max(0.1, Number(enemyDef.uiScale || 1));
+    const isChapter02MidBoss =
+      getSelectedBaseStageId() === 'shooting_ch02_04' &&
+      enemyDef.behavior === 'mini_violence_v1';
+    const displayScale = isChapter02MidBoss
+      ? baseEnemyScale * 2.5
+      : baseEnemyScale;
+
+    el.style.setProperty('--enemy-scale', String(displayScale));
+    if (isChapter02MidBoss) el.classList.add('shooting-ch02-midboss');
     layer.appendChild(el);
 
     // 雑魚敵共通HPバー
@@ -5190,6 +5205,7 @@
     const enemy = {
       uid: `mini_${Date.now()}_${state.normalSpawned}_${Math.random().toString(36).slice(2,6)}`,
       def: enemyDef, el, hpEl: hpWrap, elementEl, x, y, baseX: x, baseY: y,
+      displayScale,
       element: enemyElement,
       hp: enemyHp,
       hpMax: enemyHp,
@@ -9710,6 +9726,164 @@
     createEltenaBlackHole(c);
   }
 
+
+  // ============================================================
+  // グレシャ：焼野原
+  // 敵陣へ固定の火属性ダメージフィールドを6秒間展開。
+  // 範囲内の敵だけへ1秒ごとにATK×1.5。
+  // ============================================================
+  function clearGreshaBurnField() {
+    if (!state || !state.greshaBurnField) return;
+    if (state.greshaBurnField.el) state.greshaBurnField.el.remove();
+    state.greshaBurnField = null;
+  }
+
+  function createGreshaBurnField(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    clearGreshaBurnField();
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const w = Math.max(1, Number(arena.clientWidth || 1));
+    const h = Math.max(1, Number(arena.clientHeight || 1));
+    const width = w * Math.max(.2, Math.min(.96, Number(c.burnFieldWidthRate || .84)));
+    const height = h * Math.max(.12, Math.min(.65, Number(c.burnFieldHeightRate || .42)));
+    const cx = w * .5;
+    const cy = h * Math.max(.12, Math.min(.48, Number(c.burnFieldCenterYRate || .27)));
+
+    const el = document.createElement('div');
+    el.className = 'shooting-gresha-burn-field';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = `
+      <span class="gresha-burn-glow"></span>
+      <span class="gresha-burn-ground"></span>
+      <i class="gresha-ember e1"></i>
+      <i class="gresha-ember e2"></i>
+      <i class="gresha-ember e3"></i>
+      <i class="gresha-ember e4"></i>
+      <i class="gresha-ember e5"></i>
+      <i class="gresha-ember e6"></i>
+    `;
+    el.style.width = `${width}px`;
+    el.style.height = `${height}px`;
+    positionUnit(el, cx, cy);
+    arena.appendChild(el);
+
+    const now = performance.now();
+    state.greshaBurnField = {
+      el,
+      x: cx,
+      y: cy,
+      width,
+      height,
+      activeUntil: now + Math.max(1000, Number(c.burnFieldDurationMs || 6000)),
+      tickMs: Math.max(100, Number(c.burnFieldTickMs || 1000)),
+      nextTickAt: now + Math.max(100, Number(c.burnFieldTickMs || 1000)),
+      damage: Math.max(0, Number(c.atk || 0) * Number(c.burnFieldAtkMultiplier || 1.5)),
+      attackElement: normalizeCombatElement(c.element) || 'fire',
+      pulseIndex: 0,
+    };
+  }
+
+  function isPointInsideGreshaField(field, x, y) {
+    if (!field) return false;
+    const halfW = Number(field.width || 0) * .5;
+    const halfH = Number(field.height || 0) * .5;
+    return (
+      Number(x || 0) >= Number(field.x || 0) - halfW &&
+      Number(x || 0) <= Number(field.x || 0) + halfW &&
+      Number(y || 0) >= Number(field.y || 0) - halfH &&
+      Number(y || 0) <= Number(field.y || 0) + halfH
+    );
+  }
+
+  function pulseGreshaBurnField(field) {
+    if (!field || !field.el) return;
+    field.el.classList.remove('tick');
+    void field.el.offsetWidth;
+    field.el.classList.add('tick');
+    setTimeout(() => {
+      if (field.el) field.el.classList.remove('tick');
+    }, 280);
+  }
+
+  function damageBossFromGreshaField(field, now) {
+    if (!state || !field || !state.boss || state.boss.hp <= 0) return;
+    if (!isPointInsideGreshaField(field, state.boss.x, state.boss.y)) return;
+
+    const finalDamage = applyElementDamage(
+      field.damage,
+      field.attackElement,
+      getCombatTargetElement(state.boss)
+    );
+    const applied = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+    if (applied <= 0) return;
+
+    state.boss.hp = Math.max(0, state.boss.hp - applied);
+    showBossDamageNumber(applied, false);
+    createHit(state.boss.x + (Math.random() - .5) * 20, state.boss.y + (Math.random() - .5) * 14, false);
+    flashBossHit(false);
+    if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+    updateBossPhase();
+    if (state.boss.hp <= 0) beginBossDefeat();
+  }
+
+  function updateGreshaBurnField(now) {
+    if (!state || !state.greshaBurnField) return;
+    const field = state.greshaBurnField;
+
+    if (now >= Number(field.activeUntil || 0)) {
+      clearGreshaBurnField();
+      return;
+    }
+    if (now < Number(field.nextTickAt || 0)) return;
+
+    field.nextTickAt += field.tickMs;
+    pulseGreshaBurnField(field);
+
+    if (isNormalBattle()) {
+      (state.normalEnemies || []).slice().forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        if (!isPointInsideGreshaField(field, enemy.x, enemy.y)) return;
+
+        const finalDamage = applyElementDamage(
+          field.damage,
+          field.attackElement,
+          getCombatTargetElement(enemy)
+        );
+        damageNormalEnemy(enemy, finalDamage, now, false);
+      });
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      evaluateNormalMission(now);
+    } else {
+      // 特殊ステージ内の破壊対象も「敵」として範囲内なら燃える。
+      (state.facelessObjects || []).slice().forEach(obj => {
+        if (!obj || !obj.el || obj.hp <= 0) return;
+        if (!isPointInsideGreshaField(field, obj.x, obj.y)) return;
+
+        const finalDamage = applyElementDamage(
+          field.damage,
+          field.attackElement,
+          getCombatTargetElement(obj)
+        );
+        damageFacelessObject(obj, finalDamage, now);
+      });
+
+      damageBossFromGreshaField(field, now);
+    }
+
+    renderHud();
+  }
+
+  function useGreshaUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName || '焼野原', c.effectKey);
+    ultScreenFlash('ult-flash-fire');
+    createGreshaBurnField(c);
+  }
+
   // ============================================================
   // ミモザ：ミモザの贈り物
   // ============================================================
@@ -9875,6 +10049,7 @@
     prevTs = ts;
     if (!state.koTransition) updateMovement(dt, ts);
     updateMitoSummon(dt, ts);
+    updateGreshaBurnField(ts);
     updateClarineDecoys(dt, ts);
     updateIgnisFireWheel(ts);
     updateIgnisBurns(ts);
@@ -15167,6 +15342,7 @@
     else if (c.ultType === 'rose_flower_heart') useRoseUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);
+    else if (c.ultType === 'gresha_burn_field') useGreshaUlt(c);
     else if (c.ultType === 'arno_aura') useArnoUlt(c);
     else if (c.ultType === 'speed_storm') useHayateUlt(c);
     else if (c.ultType === 'precision_beam') useAyaneUlt(c);

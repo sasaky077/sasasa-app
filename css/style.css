@@ -36174,3 +36174,168 @@ html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.
     min-height:36px !important;
   }
 }
+
+
+/* =========================================================
+   build513 CHARACTER INDEX - NAME SEARCH
+   検索ボタンでフォームを開き、入力中にリアルタイム絞り込み。
+   ========================================================= */
+#screen-zukan #zukan-header-back{
+  right:14px;
+}
+#screen-zukan .zukan-header-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:4px;
+}
+#screen-zukan .zukan-search-button{
+  position:relative;
+  min-width:38px;
+  width:38px;
+  padding:0!important;
+}
+#screen-zukan .zukan-search-glyph{
+  position:relative;
+  display:block;
+  width:15px;
+  height:15px;
+  margin:0 auto;
+  border:1.6px solid currentColor;
+  border-radius:50%;
+}
+#screen-zukan .zukan-search-glyph::after{
+  content:"";
+  position:absolute;
+  width:7px;
+  height:1.6px;
+  right:-5px;
+  bottom:-3px;
+  border-radius:999px;
+  background:currentColor;
+  transform:rotate(45deg);
+  transform-origin:left center;
+}
+#screen-zukan .zukan-search-button.is-open{
+  color:#6d5125!important;
+  background:rgba(245,235,214,.62)!important;
+}
+#screen-zukan .zukan-search-button.has-query::after{
+  content:"";
+  position:absolute;
+  top:4px;
+  right:4px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#b98a35;
+  box-shadow:0 0 0 2px rgba(255,250,238,.82);
+}
+
+#screen-zukan .zukan-name-search{
+  display:grid;
+  grid-template-rows:0fr;
+  opacity:0;
+  margin:0 14px;
+  transition:grid-template-rows .18s ease,opacity .14s ease,margin .18s ease;
+  overflow:hidden;
+}
+#screen-zukan .zukan-name-search.open{
+  grid-template-rows:1fr;
+  opacity:1;
+  margin-top:4px;
+  margin-bottom:10px;
+}
+#screen-zukan .zukan-name-search-form{
+  min-height:0;
+  position:relative;
+  display:flex;
+  align-items:center;
+  width:100%;
+  height:42px;
+  border:1px solid rgba(145,118,73,.26);
+  border-radius:5px;
+  background:rgba(255,253,247,.88);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.70),
+    0 3px 10px rgba(80,58,28,.05);
+  overflow:hidden;
+}
+#screen-zukan .zukan-name-search-icon{
+  position:relative;
+  flex:0 0 auto;
+  width:14px;
+  height:14px;
+  margin-left:13px;
+  margin-right:10px;
+  border:1.4px solid rgba(111,87,50,.60);
+  border-radius:50%;
+}
+#screen-zukan .zukan-name-search-icon::after{
+  content:"";
+  position:absolute;
+  width:6px;
+  height:1.4px;
+  right:-4px;
+  bottom:-3px;
+  border-radius:999px;
+  background:rgba(111,87,50,.60);
+  transform:rotate(45deg);
+  transform-origin:left center;
+}
+#screen-zukan .zukan-name-search-input{
+  appearance:none;
+  -webkit-appearance:none;
+  min-width:0;
+  flex:1 1 auto;
+  height:100%;
+  padding:0 38px 0 0;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  color:#56462f;
+  font-family:"Noto Serif JP",serif;
+  font-size:13px;
+  letter-spacing:.04em;
+  box-shadow:none!important;
+}
+#screen-zukan .zukan-name-search-input::placeholder{
+  color:rgba(92,75,52,.42);
+}
+#screen-zukan .zukan-name-search-input::-webkit-search-cancel-button{
+  display:none;
+}
+#screen-zukan .zukan-name-search-clear{
+  appearance:none;
+  -webkit-appearance:none;
+  position:absolute;
+  right:5px;
+  top:50%;
+  width:30px;
+  height:30px;
+  transform:translateY(-50%);
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  color:rgba(91,72,45,.52);
+  font-family:Arial,sans-serif;
+  font-size:20px;
+  line-height:28px;
+  opacity:0;
+  pointer-events:none;
+}
+#screen-zukan .zukan-name-search-clear.show{
+  opacity:1;
+  pointer-events:auto;
+}
+#screen-zukan .zukan-name-search-clear:active{
+  background:rgba(117,93,56,.08);
+  transform:translateY(-50%) scale(.92);
+}
+
+@media (max-width:360px){
+  #screen-zukan #zukan-header-back{right:8px;}
+  #screen-zukan .zukan-header-actions{gap:2px;}
+  #screen-zukan .zukan-search-button{min-width:34px;width:34px;}
+  #screen-zukan .zukan-name-search{margin-left:10px;margin-right:10px;}
+}

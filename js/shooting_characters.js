@@ -43,6 +43,7 @@
     NOAH: 52,
     IVERNA: 32,
     REI: 33,
+    GRESHA: 34,
   });
 
   // ============================================================
@@ -90,6 +91,7 @@
     52: 'sr',  // ノア
     32: 'sr',  // イヴェルナ
     33: 'sr',  // レイ
+    34: 'r',   // グレシャ
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -852,6 +854,28 @@
     "homeOffsetY": -25,
     "hidden": false
   },
+  "34": {
+    "id": 34,
+    "name": "グレシャ",
+    "element": "fire",
+    "hp": 580,
+    "atk": 280,
+    "image": "images/chara_34_battle_back.webp",
+    "panelImage": "images/chara_34_panel.webp",
+    "cutinImage": "images/chara_34_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_34.webp",
+    "homeImage": "images/chara_34_cut.webp",
+    "upImage": "images/chara_34_up.webp",
+    "homeScale": 0.8,
+    "homeOffsetX": 0,
+    "homeOffsetY": -40,
+    "hidden": false
+  },
   "50": {
     "id": 50,
     "name": "テストちゃん",
@@ -1143,6 +1167,48 @@
     decoyImage: 'images/chara_27_battle_decoy.webp',
   });
 
+  // ============================================================
+  // グレシャ：クラリネ型ショット / 焼野原
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.GRESHA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.GRESHA,
+    effectKey: 'gresha',
+    label: 'BURN FIELD / ORBIT SHOT',
+    description: 'クラリネと同型の4ライン円環射撃。ULTは敵陣へ6秒間「焼野原」を展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
+    ultDescription: '敵陣に6秒間ダメージフィールド「焼野原」を展開。フィールド内にいる敵全員へ1秒ごとにATK×1.5の火属性ダメージを与える。',
+    ultName: '焼野原',
+    ultType: 'gresha_burn_field',
+
+    // クラリネと同一の通常ショット性能
+    moveSpeed: 400,
+    fireRate: 178,
+    bulletSpeed: 430,
+    shotPowerRate: 0.050,
+    shotType: 'orbit_forward',
+    shotCount: 4,
+    shotSpacing: 26,
+    shotStyle: 'clarine',
+    orbitRadius: 28,
+    orbitAngularSpeed: 12.4,
+    orbitForwardLoopRate: 0.28,
+    orbitPhaseStep: 1.5707963267948966,
+
+    burstDamage: 0,
+    burstNeed: 30,
+    ultGainPerHit: 0.297,
+    coreTop: '38%',
+    shotOffsetY: 38,
+
+    // ULT
+    burnFieldDurationMs: 6000,
+    burnFieldTickMs: 1000,
+    burnFieldAtkMultiplier: 1.5,
+    burnFieldWidthRate: 0.84,
+    burnFieldHeightRate: 0.42,
+    burnFieldCenterYRate: 0.27,
+  });
+
   SHOOTING_CHARACTERS[CHARACTER_ID.IGNIS] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.IGNIS,
@@ -1330,7 +1396,7 @@
     ultType: 'precision_beam',
     moveSpeed: 400,
     fireRate: 275,
-    bulletSpeed: 980,
+    bulletSpeed: 1250,
     shotPowerRate: 0.315,
 
     // ---- 通常ショット設定 ----
@@ -1343,7 +1409,7 @@
     burstDamage: 27,
     ultDamageAtkMultiplier: 3.5,
     burstNeed: 24,
-    ultGainPerHit: 1.100,
+    ultGainPerHit: 1.320,
     coreTop: '37%',
     shotOffsetY: 42,
   });
@@ -1618,7 +1684,8 @@
     description: '高威力の単発精密射撃。ULT「黒羽葬鐘」は敵全体へ呪印を刻み、時間差で闇撃を起こした後、敵の攻撃力を弱体化する。',
     ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・スタン・無敵は発生しない。',
     ultName: '黒羽葬鐘',
-    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 980, shotPowerRate: 0.44,
+    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    ultGainPerHit: 3.600,
     ultType: 'shion_delayed_curse',
     ultDelayMs: 1200,
     ultDamageAtkMultiplier: 2.8,
@@ -1629,7 +1696,8 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
     label: 'PRECISION / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
-    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 990, shotPowerRate: 0.44,
+    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    ultGainPerHit: 3.600,
     ultBaseType: 'burst', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
   });
 

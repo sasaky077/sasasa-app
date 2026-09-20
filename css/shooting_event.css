@@ -8253,3 +8253,76 @@
 #shooting-event-root.mito-time-stop-active .shooting-normal-enemy{
   filter:none!important;
 }
+
+
+/* ============================================================
+   GRESHA build512 - 焼野原
+   ============================================================ */
+#shooting-event-root .shooting-gresha-burn-field{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  z-index:7!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+  border-radius:42% 38% 46% 40%!important;
+  border:1px solid rgba(196,75,35,.30)!important;
+  background:
+    radial-gradient(ellipse at 50% 72%,rgba(255,205,88,.24),rgba(212,74,28,.15) 38%,rgba(116,42,24,.08) 62%,transparent 78%)!important;
+  box-shadow:
+    inset 0 0 30px rgba(231,84,28,.14),
+    0 0 18px rgba(210,75,32,.10)!important;
+  opacity:.88!important;
+  transform-origin:center center!important;
+}
+#shooting-event-root .shooting-gresha-burn-field .gresha-burn-glow,
+#shooting-event-root .shooting-gresha-burn-field .gresha-burn-ground{
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  pointer-events:none!important;
+}
+#shooting-event-root .shooting-gresha-burn-field .gresha-burn-glow{
+  background:
+    radial-gradient(circle at 18% 65%,rgba(255,173,64,.28),transparent 18%),
+    radial-gradient(circle at 44% 72%,rgba(255,113,44,.34),transparent 22%),
+    radial-gradient(circle at 71% 62%,rgba(255,186,69,.24),transparent 20%),
+    radial-gradient(circle at 86% 74%,rgba(222,68,29,.28),transparent 17%)!important;
+  filter:blur(3px)!important;
+  animation:greshaBurnGlow 1.15s ease-in-out infinite alternate!important;
+}
+#shooting-event-root .shooting-gresha-burn-field .gresha-burn-ground{
+  inset:auto 4% 8% 4%!important;
+  height:34%!important;
+  border-radius:50%!important;
+  background:linear-gradient(90deg,transparent,rgba(112,47,30,.24),rgba(190,70,30,.24),rgba(112,47,30,.20),transparent)!important;
+  filter:blur(2px)!important;
+}
+#shooting-event-root .shooting-gresha-burn-field.tick{
+  filter:brightness(1.26) saturate(1.18)!important;
+}
+#shooting-event-root .shooting-gresha-burn-field .gresha-ember{
+  position:absolute!important;
+  bottom:14%!important;
+  width:4px!important;
+  height:4px!important;
+  border-radius:50%!important;
+  background:#ffd48c!important;
+  box-shadow:0 0 7px rgba(255,118,49,.82)!important;
+  opacity:0!important;
+}
+#shooting-event-root .shooting-gresha-burn-field .e1{left:12%;animation:greshaEmber 1.45s ease-out .05s infinite!important}
+#shooting-event-root .shooting-gresha-burn-field .e2{left:29%;animation:greshaEmber 1.72s ease-out .38s infinite!important}
+#shooting-event-root .shooting-gresha-burn-field .e3{left:44%;animation:greshaEmber 1.38s ease-out .72s infinite!important}
+#shooting-event-root .shooting-gresha-burn-field .e4{left:59%;animation:greshaEmber 1.64s ease-out .18s infinite!important}
+#shooting-event-root .shooting-gresha-burn-field .e5{left:74%;animation:greshaEmber 1.52s ease-out .54s infinite!important}
+#shooting-event-root .shooting-gresha-burn-field .e6{left:88%;animation:greshaEmber 1.81s ease-out .93s infinite!important}
+@keyframes greshaBurnGlow{
+  from{opacity:.72;transform:scale(.98)}
+  to{opacity:1;transform:scale(1.02)}
+}
+@keyframes greshaEmber{
+  0%{opacity:0;transform:translate3d(0,0,0) scale(.7)}
+  18%{opacity:.95}
+  100%{opacity:0;transform:translate3d(5px,-62px,0) scale(.25)}
+}
