@@ -1972,6 +1972,11 @@
   let nativeTouchCancelTimer = null;
   let nativeTouchCancelToken = 0;
   let lastNativeTouchMoveAt = 0;
+
+  // build596: iOS/PWAでTouch Eventsが一時的にcancelされた後も、
+  // Pointer Eventsが継続して届いている場合はそちらへ一時退避する。
+  // Touchが復帰したら自動でTouch Eventsへ戻す。
+  let nativeTouchPointerFallback = false;
   // build551: iOS/PWAでは重いフレーム直後に一時的なtouchcancelが来ることがある。
   // 140msだと1回のLong Taskで猶予を超えやすいため、操作復帰を待つ時間を少し拡張。
   // touchendは従来どおり即終了するので、通常の離指レスポンスには影響しない。
@@ -12989,10 +12994,18 @@
 
     // iPhoneではPointerEventとTouchEventが同じ指から交互に届くことがあり、
     // わずかな座標差とイベント順序差で目標座標が往復してカクつく。
-    // 実Touchが生存中はTouch Eventsだけを座標ソースにする。
-    if (pointerIsTouch && nativeTouchActive) {
-      try { e.preventDefault(); } catch (_) {}
-      return;
+    // 通常時はTouch Eventsを正とする。
+    // ただしtouchcancel待機中にPointer Eventsが継続している場合は、
+    // Pointer側へ一時退避して「数秒後に指から離れる」断線を防ぐ。
+    if (pointerIsTouch && nativeTouchActive && !nativeTouchPointerFallback) {
+      if (nativeTouchCancelTimer && isTouchLikePointer(e)) {
+        nativeTouchPointerFallback = true;
+        clearNativeTouchCancelTimer();
+        activePointerId = e.pointerId;
+      } else {
+        try { e.preventDefault(); } catch (_) {}
+        return;
+      }
     }
 
     // v181:
@@ -13025,14 +13038,21 @@
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
     // iOS Safari/PWAではpointerup/pointercancelがTouch Eventsより先に来る。
-    // 実Touchが生存している間にPointer側でpointerActiveを落とすと、
-    // 1フレームだけ「指が離れた」状態になりカクつくため、終了判定もTouch側へ一本化。
-    if (pointerIsTouch && nativeTouchActive) {
+    // 通常はTouch側へ終了判定を一本化する。
+    // touchcancel後にPointerへ退避している時だけPointer側の終了を採用する。
+    if (pointerIsTouch && nativeTouchActive && !nativeTouchPointerFallback) {
       try { e.preventDefault(); } catch (_) {}
       return;
     }
 
     const wasActive = pointerActive;
+
+    if (nativeTouchPointerFallback) {
+      nativeTouchPointerFallback = false;
+      nativeTouchActive = false;
+      activeTouchIdentifier = null;
+      clearNativeTouchCancelTimer();
+    }
 
     pointerActive = false;
     pointerIsTouch = false;
@@ -13083,11 +13103,55 @@
     }
   }
 
+  // build596:
+  // touchstart時点からの総移動量で追従させると、画面端でclampされた分だけ
+  // 指とキャラの差分が蓄積し、端から戻した時に「指だけ動いてキャラが遅れる」
+  // デッドゾーンが発生する。
+  // 1イベントごとの差分を現在targetへ加算する方式にして、clamp後もズレを残さない。
+  function applyTouchDelta(clientX, clientY) {
+    if (!state || !state.player) return false;
+
+    const r = getArenaInputRect();
+    if (!r) return false;
+
+    const x = Number(clientX);
+    const y = Number(clientY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+
+    const prevX = Number(lastPointerClientX);
+    const prevY = Number(lastPointerClientY);
+    const dx = Number.isFinite(prevX) ? (x - prevX) : 0;
+    const dy = Number.isFinite(prevY) ? (y - prevY) : 0;
+
+    pointerX = clamp(
+      pointerX + (isHorizontalControlReversed() ? -dx : dx),
+      30,
+      r.width - 30
+    );
+    pointerY = clamp(
+      pointerY + dy,
+      34,
+      r.height - 38
+    );
+
+    lastPointerClientX = x;
+    lastPointerClientY = y;
+
+    // 次イベントの基準も現在targetへ揃える。
+    // 画面端・フレーム落ち・identifier差替え後にもオフセットを持ち越さない。
+    dragStartClientX = x;
+    dragStartClientY = y;
+    dragStartPlayerX = pointerX;
+    dragStartPlayerY = pointerY;
+    return true;
+  }
+
   function finishNativeTouchInteraction(clientX, clientY, cancelled = false) {
     const wasActive = pointerActive;
     const releasePointerId = state ? state.miaChargePointerId : null;
 
     nativeTouchActive = false;
+    nativeTouchPointerFallback = false;
     activeTouchIdentifier = null;
     pointerActive = false;
     pointerIsTouch = false;
@@ -13151,6 +13215,7 @@
     }
 
     nativeTouchActive = true;
+    nativeTouchPointerFallback = false;
     activeTouchIdentifier = t.identifier;
     lastNativeTouchMoveAt = performance.now();
 
@@ -13179,16 +13244,24 @@
     if (!nativeTouchActive || !state || state.ended || state.finishing || state.paused) return;
 
     clearNativeTouchCancelTimer();
+    nativeTouchPointerFallback = false;
 
     let t = findActiveTouch(e.touches);
     // WebKitがidentifierだけ差し替えたような異常系では、残っている1本を継続指として採用。
     if (!t && e.touches && e.touches.length === 1) {
       t = e.touches[0];
       activeTouchIdentifier = t.identifier;
+
+      // identifier差替えの最初の1イベントだけは座標ジャンプを移動量へ入れない。
+      lastPointerClientX = t.clientX;
+      lastPointerClientY = t.clientY;
       dragStartClientX = t.clientX;
       dragStartClientY = t.clientY;
       dragStartPlayerX = pointerX;
       dragStartPlayerY = pointerY;
+
+      try { e.preventDefault(); } catch (_) {}
+      return;
     }
     if (!t) return;
 
@@ -13197,31 +13270,18 @@
       pointerActive = true;
       pointerIsTouch = true;
       activePointerId = null;
+      lastPointerClientX = t.clientX;
+      lastPointerClientY = t.clientY;
       dragStartClientX = t.clientX;
       dragStartClientY = t.clientY;
       dragStartPlayerX = pointerX;
       dragStartPlayerY = pointerY;
+
+      try { e.preventDefault(); } catch (_) {}
+      return;
     }
 
-    const r = getArenaInputRect();
-    if (!r) return;
-
-    const deltaX = t.clientX - dragStartClientX;
-    const deltaY = t.clientY - dragStartClientY;
-
-    pointerX = clamp(
-      dragStartPlayerX + (isHorizontalControlReversed() ? -deltaX : deltaX),
-      30,
-      r.width - 30
-    );
-    pointerY = clamp(
-      dragStartPlayerY + deltaY,
-      34,
-      r.height - 38
-    );
-
-    lastPointerClientX = t.clientX;
-    lastPointerClientY = t.clientY;
+    applyTouchDelta(t.clientX, t.clientY);
     lastNativeTouchMoveAt = performance.now();
 
     try { e.preventDefault(); } catch (_) {}
@@ -13278,6 +13338,7 @@
     nativeTouchCancelTimer = setTimeout(() => {
       if (token !== nativeTouchCancelToken) return;
       nativeTouchCancelTimer = null;
+      if (nativeTouchPointerFallback) return;
       finishNativeTouchInteraction(lastPointerClientX, lastPointerClientY, true);
     }, TOUCH_CANCEL_GRACE_MS);
 
@@ -13295,23 +13356,10 @@
     if (!r) return;
 
     if (touchLike) {
-      // iPhoneでは絶対座標に追従させない。
-      // touchstartから動いた「差分」だけを、touchstart時点のキャラ位置へ足す。
-      const deltaX = e.clientX - dragStartClientX;
-      const deltaY = e.clientY - dragStartClientY;
-
-      pointerX = clamp(
-        dragStartPlayerX + (isHorizontalControlReversed() ? -deltaX : deltaX),
-        30,
-        r.width - 30
-      );
-
-      pointerY = clamp(
-        dragStartPlayerY + deltaY,
-        34,
-        r.height - 38
-      );
-
+      // build596:
+      // タッチは「開始点からの総差分」ではなく、直前イベントからの差分を加算する。
+      // これで画面端に当てた後も余分な差分が蓄積せず、指とキャラが離れていかない。
+      applyTouchDelta(e.clientX, e.clientY);
       return;
     }
 
@@ -13458,6 +13506,10 @@
     keys = Object.create(null);
     pointerActive = false;
     pointerIsTouch = false;
+    nativeTouchPointerFallback = false;
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    clearNativeTouchCancelTimer();
   }
 
   window.openShootingPauseMenu = function () {
@@ -13470,6 +13522,10 @@
     state.pauseStartedAt = performance.now();
     pointerActive = false;
     pointerIsTouch = false;
+    nativeTouchPointerFallback = false;
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    clearNativeTouchCancelTimer();
     keys = Object.create(null);
 
     menu.classList.add('show');
@@ -13993,6 +14049,10 @@
     clearNormalBattleObjects();
     pointerActive = false;
     pointerIsTouch = false;
+    nativeTouchPointerFallback = false;
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    clearNativeTouchCancelTimer();
     keys = Object.create(null);
     lastTapAt = 0;
     const root = document.getElementById(ROOT_ID);
