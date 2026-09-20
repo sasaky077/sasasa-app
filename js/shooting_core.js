@@ -2511,6 +2511,7 @@
       scoreAttackFinalWarningShown: false,
       scoreAttackFinalWarningFired: false,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
+      storyScoreFinalized: false, storyScoreClearBonus: 0, storyScoreTimeBonus: 0, storyScoreSurvivalBonus: 0, bossDefeatScoreAwarded: false,
       ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
       ultCutinActive: false, ultCutinTimer: 0, skipNextUltCut: false,
       paused: false, pauseStartedAt: 0,
@@ -2985,6 +2986,69 @@
     renderSwitchRail(false);
   }
 
+  // ============================================================
+  // HIT COMBO DAMAGE BOOST / STORY CLEAR SCORE v552
+  // ============================================================
+  const HIT_COMBO_TIMEOUT_MS = 3000;
+  const HIT_COMBO_STEP = 50;
+  const HIT_COMBO_STEP_BONUS = 0.05;
+  const HIT_COMBO_MAX = 300;
+
+  function getHitComboDamageMultiplier() {
+    if (!state || isScoreAttackStage()) return 1;
+    const combo = Math.max(0, Math.min(HIT_COMBO_MAX, Number(state.combo || 0)));
+    return 1 + Math.floor(combo / HIT_COMBO_STEP) * HIT_COMBO_STEP_BONUS;
+  }
+
+  function applyHitComboDamage(amount) {
+    const base = Math.max(0, Number(amount || 0));
+    return base > 0 ? base * getHitComboDamageMultiplier() : 0;
+  }
+
+  function addLegacyCombatScore(points) {
+    // STORYではダメージ量/Hit数/ULT倍率から直接SCOREを増やさない。
+    // Special / Daily / Raid等の既存スコア仕様はここでは維持する。
+    if (!state || isStoryShootingStage()) return;
+    state.score += Math.max(0, Math.round(Number(points || 0)));
+  }
+
+  const STORY_CLEAR_BONUS = 8000;
+  const STORY_TIME_BONUS_MAX = 8000;
+  const STORY_SURVIVAL_BONUS_MAX = 8000;
+
+  function getStoryScoreParSeconds() {
+    if (!selectedStage) return 0;
+    const explicit = Number(selectedStage.scoreParSeconds || 0);
+    if (explicit > 0) return explicit;
+    const mission = selectedStage.mission || {};
+    if (mission.type === SHOOTING_MISSION_TYPE.SURVIVE_TIME) return -1;
+    const limit = getBattleTimeLimitSeconds();
+    if (limit > 0) return limit;
+    return selectedStage.type === 'boss' ? 120 : 90;
+  }
+
+  function finalizeStoryClearScore(win) {
+    if (!state || !isStoryShootingStage() || state.storyScoreFinalized) return;
+    state.storyScoreFinalized = true;
+    state.storyScoreClearBonus = 0;
+    state.storyScoreTimeBonus = 0;
+    state.storyScoreSurvivalBonus = 0;
+    if (!win) return;
+
+    const elapsedSeconds = Math.max(0, Number(state.clearTimeMs || 0) / 1000);
+    const parSeconds = getStoryScoreParSeconds();
+    const timeRatio = parSeconds === -1 ? 1 : (parSeconds > 0 ? clamp(1 - elapsedSeconds / parSeconds, 0, 1) : 0);
+    const party = Array.isArray(state.party) ? state.party : [];
+    const hpMaxTotal = party.reduce((sum, m) => sum + Math.max(0, Number(m && m.hpMax || 0)), 0);
+    const hpTotal = party.reduce((sum, m) => sum + Math.max(0, Number(m && m.hp || 0)), 0);
+    const survivalRatio = hpMaxTotal > 0 ? clamp(hpTotal / hpMaxTotal, 0, 1) : 0;
+
+    state.storyScoreClearBonus = STORY_CLEAR_BONUS;
+    state.storyScoreTimeBonus = Math.round(STORY_TIME_BONUS_MAX * timeRatio);
+    state.storyScoreSurvivalBonus = Math.round(STORY_SURVIVAL_BONUS_MAX * survivalRatio);
+    state.score += state.storyScoreClearBonus + state.storyScoreTimeBonus + state.storyScoreSurvivalBonus;
+  }
+
   function pulseCombo(milestone) {
     const combo = document.getElementById('shooting-combo');
     if (!combo) return;
@@ -2995,11 +3059,11 @@
     setTimeout(() => combo.classList.remove('pulse', 'milestone'), milestone ? 520 : 220);
   }
 
-  function resetCombo() {
+  function resetCombo(silent = false) {
     if (!state || !state.combo) return;
     state.combo = 0;
     state.lastComboHitAt = 0;
-    renderHud();
+    if (!silent) renderHud();
   }
 
   function applyBossStun(durationMs, source) {
@@ -3057,12 +3121,13 @@
     }, durationMs + 30);
   }
 
-  function registerComboHit(ownerId, now) {
+  function registerComboHit(ownerId, now, dealtDamage = 1) {
     if (!state || state.ended || state.finishing) return;
+    if (!(Number(dealtDamage || 0) > 0)) return;
     state.combo = (state.combo || 0) + 1;
     state.maxCombo = Math.max(state.maxCombo || 0, state.combo);
-    state.lastComboHitAt = now;
-    pulseCombo(false);
+    state.lastComboHitAt = Number(now || performance.now());
+    pulseCombo(state.combo > 0 && state.combo % HIT_COMBO_STEP === 0);
   }
 
   function showUltReadyNotice() {
@@ -3856,11 +3921,13 @@
     const base = Math.max(0, Number(amount || 0));
     const rate = getElementDamageMultiplier(attackElement, targetElement);
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
+    const incoming = !!(options && options.incoming);
     // CH06強敵/ボス：弱点属性倍率(1.30)以外は0 DAMAGE。
     if (!ignoreStageImmunity && isStageWeaknessOnlyTarget(targetElement) && rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001) {
       return 0;
     }
-    return base * rate;
+    const elemental = base * rate;
+    return incoming ? elemental : applyHitComboDamage(elemental);
   }
 
   // build548: Weak / Resist に加えて、CH06の完全無効を IMMUNE として表示。
@@ -4294,9 +4361,9 @@
       if (entry.kind === 'object') {
         const targetElement = getCombatTargetElement(entry.target, state.boss?.element);
         const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
-        damageFacelessObject(entry.target, finalDamage, now, getElementDamageReaction(laserAttackElement, targetElement));
-        state.score += Math.round(finalDamage * 60);
-        hitCount++;
+        const appliedObjectDamage = damageFacelessObject(entry.target, finalDamage, now, getElementDamageReaction(laserAttackElement, targetElement));
+        addLegacyCombatScore(Math.round(finalDamage * 60));
+        if (appliedObjectDamage > 0) hitCount++;
         return;
       }
 
@@ -4309,18 +4376,18 @@
         createHit(state.boss.x, state.boss.y, false);
         showBossDamageNumber(appliedDamage, false, getElementDamageReaction(laserAttackElement, targetElement));
         flashBossHit(false);
-        if (!addScoreAttackDamageScore(appliedDamage)) state.score += Math.round(damage * 100);
+        if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(damage * 100));
         updateBossPhase();
         if (state.boss.hp <= 0) beginBossDefeat();
-        hitCount++;
+        if (appliedDamage > 0) hitCount++;
         return;
       }
 
       if (entry.kind === 'normal' && entry.target.hp > 0) {
         const targetElement = getCombatTargetElement(entry.target);
         const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
-        damageNormalEnemy(entry.target, finalDamage, now, false, getElementDamageReaction(laserAttackElement, targetElement));
-        hitCount++;
+        const appliedEnemyDamage = damageNormalEnemy(entry.target, finalDamage, now, false, getElementDamageReaction(laserAttackElement, targetElement));
+        if (appliedEnemyDamage > 0) hitCount++;
       }
     });
 
@@ -4839,6 +4906,7 @@
     const attackElement = normalizeCombatElement(c.element);
     const arenaRect = arena.getBoundingClientRect();
     let connected = false;
+    let comboConnected = false;
 
     // CSS visual:
     // left=player.x / top=player.y-6 / width=slashWidth / height=slashRange /
@@ -4896,7 +4964,8 @@
         connected = true;
         const targetElement = getCombatTargetElement(enemy);
         const finalDamage = applyElementDamage(damage, attackElement, targetElement);
-        damageNormalEnemy(enemy, finalDamage, now, true, getElementDamageReaction(attackElement, targetElement));
+        const appliedEnemyDamage = damageNormalEnemy(enemy, finalDamage, now, true, getElementDamageReaction(attackElement, targetElement));
+        if (appliedEnemyDamage > 0) comboConnected = true;
       });
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
       evaluateNormalMission(now);
@@ -4912,7 +4981,8 @@
       createHit(Number(state.boss.x || px), Number(state.boss.y || (py - range * .55)), true);
       showBossDamageNumber(appliedDamage, true, getElementDamageReaction(attackElement, targetElement));
       flashBossHit(true);
-      if (!addScoreAttackDamageScore(appliedDamage)) state.score += Math.round(appliedDamage * 100);
+      if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(appliedDamage * 100));
+      if (appliedDamage > 0) comboConnected = true;
       if (state.boss.hp <= 0) beginBossDefeat();
     }
 
@@ -4920,8 +4990,8 @@
     // 複数の敵を同時に斬っても、1回の斬撃につきゲージ加算は1回とする。
     if (connected) {
       state.shotsHit = Number(state.shotsHit || 0) + 1;
-      registerComboHit(c.id, now);
-      grantUltGaugeForHits(c, 1, c.id);
+      registerComboHit(c.id, now, comboConnected ? 1 : 0);
+      if (comboConnected) grantUltGaugeForHits(c, 1, c.id);
     }
 
     // エフェクト生成も同じfirePlayer呼び出し内で実行するため、
@@ -6380,7 +6450,7 @@
   }
 
   function damageNormalEnemy(enemy, amount, now, big, elementReaction = '') {
-    if (!enemy || enemy.hp <= 0) return;
+    if (!enemy || enemy.hp <= 0) return 0;
     const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
 
@@ -6410,7 +6480,7 @@
 
       if (enemy.el) sustainHitFeedback(enemy.el, big ? 210 : 145);
     }
-    if (enemy.hp > 0) return;
+    if (enemy.hp > 0) return appliedDamage;
 
     // アヤネ拘束中に撃破された場合、残っている拘束演出を即掃除。
     enemy.ayaneGrabUntil = 0;
@@ -6461,6 +6531,7 @@
     enemy.elementEl = null;
     enemy.weaknessBarrierEl = null;
     evaluateNormalMission(now);
+    return appliedDamage;
   }
 
   function evaluateNormalMission(now) {
@@ -7068,7 +7139,7 @@
   }
 
   function damageFacelessObject(obj, damage, now, elementReaction = '') {
-    if (!obj || obj.hp <= 0) return;
+    if (!obj || obj.hp <= 0) return 0;
     const appliedDamage = Math.min(obj.hp, Math.max(0, Number(damage || 0)));
     obj.hp = Math.max(0, obj.hp - appliedDamage);
 
@@ -7103,6 +7174,7 @@
         obj.hpEl?.remove();
       }, 180);
     }
+    return appliedDamage;
   }
 
   function fireFacelessObject(obj, now) {
@@ -8780,7 +8852,7 @@
             Number(rose?.flowerHeartDamageAtkRate || 0.30);
 
           if (hitNormalHeart) {
-            damageNormalEnemy(hitNormalHeart, heartDamage, now, false);
+            damageNormalEnemy(hitNormalHeart, applyHitComboDamage(heartDamage), now, false);
             state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
           } else if (hitBossHeart && state.boss) {
             const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(heartDamage || 0)));
@@ -8907,15 +8979,16 @@
             state.boss?.element
           );
           const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
-          damageFacelessObject(facelessObjectTarget, finalDamage, now, getElementDamageReaction(attackElement, targetElement));
-          state.score += 80;
+          const appliedObjectDamage = damageFacelessObject(facelessObjectTarget, finalDamage, now, getElementDamageReaction(attackElement, targetElement));
+          hitCount = appliedObjectDamage > 0 ? 1 : 0;
+          addLegacyCombatScore(80);
         } else if (normalTarget) {
           const targetsToDamage =
             Array.isArray(normalTargets) && normalTargets.length
               ? normalTargets
               : [normalTarget];
 
-          hitCount = targetsToDamage.length;
+          hitCount = 0;
 
           targetsToDamage.forEach(enemy => {
             if (p.pierce && p.piercedTargets) p.piercedTargets.add(enemy);
@@ -8925,7 +8998,8 @@
             );
             const targetElement = getCombatTargetElement(enemy);
             const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
-            damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
+            const appliedEnemyDamage = damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
+            if (appliedEnemyDamage > 0) hitCount++;
           });
 
           if (p.kind === 'generic_splash' && normalTarget) {
@@ -8961,8 +9035,9 @@
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
           if (!addScoreAttackDamageScore(appliedDamage)) {
-            state.score += 120;
+            addLegacyCombatScore(120);
           }
+          hitCount = appliedDamage > 0 ? 1 : 0;
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
           if (isAmbushStage()) {
@@ -9292,7 +9367,7 @@
     // (コンボも被弾回数もダメージも一切発生させない)。
     // 効果は取得したmemberにのみ紐づくため、交代先には影響しない。
     if (now < (member.invincibleUntil || 0)) return;
-    // COMBOは時間経過では切れない。プレイヤーが被弾した瞬間だけ0へ戻す。
+    // HIT COMBOは被弾で即0。無被弾でも3秒間HitがなければgameLoop側で0へ戻す。
     resetCombo();
     member.hitCount = (member.hitCount || 0) + 1;
     state.totalHitsTaken = (state.totalHitsTaken || 0) + 1;
@@ -9304,7 +9379,7 @@
     const isLethal = (attackType || 'raw') === 'lethal';
     const elementAdjustedDamage = isLethal
       ? incomingDamage
-      : applyElementDamage(incomingDamage, normalizedAttackElement, targetElement, { ignoreStageImmunity:true });
+      : applyElementDamage(incomingDamage, normalizedAttackElement, targetElement, { ignoreStageImmunity:true, incoming:true });
     const elementReaction = isLethal
       ? ''
       : getElementDamageReaction(normalizedAttackElement, targetElement, { ignoreStageImmunity:true });
@@ -9934,18 +10009,18 @@
       if (damage > 0) {
         (state.normalEnemies || []).forEach(enemy => {
           if (!enemy || !enemy.el || enemy.hp <= 0) return;
-          damageNormalEnemy(enemy, damage, now, false);
+          damageNormalEnemy(enemy, applyHitComboDamage(damage), now, false);
         });
         state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
         if (isNormalBattle()) evaluateNormalMission(now);
 
         (state.facelessObjects || []).forEach(obj => {
           if (!obj || !obj.el || obj.hp <= 0) return;
-          damageFacelessObject(obj, damage, now);
+          damageFacelessObject(obj, applyHitComboDamage(damage), now);
         });
 
         if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
-          const applied = Math.min(state.boss.hp, Math.max(0, damage));
+          const applied = Math.min(state.boss.hp, Math.max(0, applyHitComboDamage(damage)));
           state.boss.hp = Math.max(0, state.boss.hp - applied);
           if ((bh.damagePulseIndex % 2) === 1) {
             createHit(
@@ -9958,7 +10033,7 @@
           if (!isRaidStage() || shouldRenderRaidBossHitVisual(now, 'number')) {
             showBossDamageNumber(applied, false);
           }
-          if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+          if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
           updateBossPhase();
           if (state.boss.hp <= 0) beginBossDefeat();
         }
@@ -10084,21 +10159,21 @@
       if (isNormalBattle()) {
         (state.normalEnemies || []).slice().forEach(enemy => {
           if (!enemy || !enemy.el || enemy.hp <= 0) return;
-          damageNormalEnemy(enemy, damage, now, false);
+          damageNormalEnemy(enemy, applyHitComboDamage(damage), now, false);
         });
         state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
         evaluateNormalMission(now);
       } else {
         (state.facelessObjects || []).slice().forEach(obj => {
           if (!obj || !obj.el || obj.hp <= 0) return;
-          damageFacelessObject(obj, damage, now);
+          damageFacelessObject(obj, applyHitComboDamage(damage), now);
         });
 
         if (state.boss && state.boss.hp > 0) {
-          const applied = Math.min(state.boss.hp, damage);
+          const applied = Math.min(state.boss.hp, applyHitComboDamage(damage));
           state.boss.hp = Math.max(0, state.boss.hp - applied);
           showBossDamageNumber(applied, false);
-          if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+          if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
           if ((field.damagePulseIndex++ % 2) === 0) {
             createHit(state.boss.x + (Math.random() - .5) * 22, state.boss.y + (Math.random() - .5) * 18, false);
             flashBossHit(false);
@@ -10218,7 +10293,7 @@
     showBossDamageNumber(applied, false, getElementDamageReaction(field.attackElement, targetElement));
     createHit(state.boss.x + (Math.random() - .5) * 20, state.boss.y + (Math.random() - .5) * 14, false);
     flashBossHit(false);
-    if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+    if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
     updateBossPhase();
     if (state.boss.hp <= 0) beginBossDefeat();
   }
@@ -10442,6 +10517,9 @@
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
     prevTs = ts;
+    if (!isScoreAttackStage() && state.combo > 0 && Number(state.lastComboHitAt || 0) > 0 && ts - Number(state.lastComboHitAt || 0) >= HIT_COMBO_TIMEOUT_MS) {
+      resetCombo(true);
+    }
     if (!state.koTransition) updateMovement(dt, ts);
     updateChapter6Barriers(ts);
     updateMitoSummon(dt, ts);
@@ -11156,6 +11234,10 @@
     if (isFacelessStage() && Number(state.facelessWave || 1) === 1) {
       beginFacelessWave2();
       return;
+    }
+    if (isStoryShootingStage() && !state.bossDefeatScoreAwarded) {
+      state.bossDefeatScoreAwarded = true;
+      state.score += Math.max(0, Number(selectedStage?.bossScoreValue || BOSS?.scoreValue || 6000));
     }
     state.finishing = true;
     state.running = false;
@@ -12015,8 +12097,9 @@
     const raidRow = document.getElementById('shooting-result-raid-row');
     const raidDamageEl = document.getElementById('shooting-result-raid-damage');
     const retryBtn = document.getElementById('shooting-result-retry');
-    const rankLetter = getResultRank(state.score, win);
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
+    finalizeStoryClearScore(!!win);
+    const rankLetter = getResultRank(state.score, win);
 
     if (isDailyQuestStage()) {
       if (raidRow) raidRow.style.display = 'none';
@@ -13341,7 +13424,7 @@
         damageNormalEnemy(enemy, finalDamage, performance.now(), !!big, getElementDamageReaction(attackElement, targetElement));
       });
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
-      state.score += Math.round(Number(amount || 0) * 35 * Math.max(1, targets.length));
+      addLegacyCombatScore(Math.round(Number(amount || 0) * 35 * Math.max(1, targets.length)));
       evaluateNormalMission(performance.now());
       renderHud();
       return;
@@ -13355,7 +13438,7 @@
     showBossDamageNumber(appliedDamage, !!big, getElementDamageReaction(attackElement, targetElement));
     flashBossHit(true);
     if (!addScoreAttackDamageScore(appliedDamage)) {
-      state.score += Math.round(appliedDamage * 100);
+      addLegacyCombatScore(Math.round(appliedDamage * 100));
     }
     renderHud();
     if (state.boss.hp <= 0) beginBossDefeat();
@@ -14009,7 +14092,7 @@
         showBossDamageNumber(appliedDamage, true, getElementDamageReaction(getUltAttackElement(c), getCombatTargetElement(state.boss)));
         flashBossHit(true);
         if (!addScoreAttackDamageScore(appliedDamage)) {
-          state.score += Math.round(initialDamage * 100);
+          addLegacyCombatScore(Math.round(initialDamage * 100));
         }
         renderHud();
         if (state.boss.hp <= 0) beginBossDefeat();
@@ -14023,7 +14106,7 @@
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           showBossDamageNumber(appliedDamage, false, getElementDamageReaction(getUltAttackElement(c), getCombatTargetElement(state.boss)));
           if (!addScoreAttackDamageScore(appliedDamage)) {
-            state.score += Math.round(tickDamage * 100);
+            addLegacyCombatScore(Math.round(tickDamage * 100));
           }
           if (i % 2 === 0) {
             createHit(state.boss.x + (Math.random() - .5) * 26, state.boss.y + (Math.random() - .5) * 20, false);
@@ -14147,7 +14230,7 @@
     state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     showBossDamageNumber(appliedDamage, false, getElementDamageReaction(getUltAttackElement(c), targetElement));
     if (!addScoreAttackDamageScore(appliedDamage)) {
-      state.score += Math.round(damage * 100);
+      addLegacyCombatScore(Math.round(damage * 100));
     }
     createHit(
       state.boss.x + (Math.random() - .5) * 32,
@@ -14557,7 +14640,7 @@
       showBossDamageNumber(appliedDamage, true, getElementDamageReaction(getUltAttackElement(c), targetElement));
       flashBossHit(true);
       if (!addScoreAttackDamageScore(appliedDamage)) {
-        state.score += Math.round(damage * 100);
+        addLegacyCombatScore(Math.round(damage * 100));
       }
       updateBossPhase();
       if (state.boss.hp <= 0) beginBossDefeat();
@@ -14739,7 +14822,7 @@
     showBossDamageNumber(appliedDamage, true, getElementDamageReaction(getUltAttackElement(c), targetElement));
     flashBossHit(true);
     if (!addScoreAttackDamageScore(appliedDamage)) {
-      state.score += Math.round(damage * 100);
+      addLegacyCombatScore(Math.round(damage * 100));
     }
     renderHud();
     if (state.boss.hp <= 0) beginBossDefeat();
@@ -15033,7 +15116,7 @@
         damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(getUltAttackElement(c), targetElement));
       });
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
-      state.score += Math.round(damage * 30 * Math.max(1, targets.length));
+      addLegacyCombatScore(Math.round(damage * 30 * Math.max(1, targets.length)));
       evaluateNormalMission(now);
       renderHud();
       return;
@@ -15061,7 +15144,7 @@
     state.boss.hp = Math.max(0, state.boss.hp - applied);
     updateBossPhase();
     if (!addScoreAttackDamageScore(applied)) {
-      state.score += Math.round(applied * 100);
+      addLegacyCombatScore(Math.round(applied * 100));
     }
 
     // 5秒持続ULTなので数字・HIT演出は毎tick出さず軽量化。
@@ -15159,7 +15242,7 @@
             flashBossHit(false, true);
           }
           if (shouldRenderRaidBossHitVisual(now, 'number')) showBossDamageNumber(appliedDamage, false, getElementDamageReaction(getUltAttackElement(c), targetElement));
-          if (!addScoreAttackDamageScore(appliedDamage)) state.score += Math.round(appliedDamage * 70);
+          if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(appliedDamage * 70));
           if (state.boss.hp <= 0) beginBossDefeat();
         }
       }
@@ -15403,34 +15486,36 @@
   function applyNoahUltHit(c, target, now) {
     if (!state || state.ended || state.finishing || !target) return;
 
+    let comboDamage = 0;
     const damage = Math.max(0, Number(c.atk || 0) * Number(c.noahUltHitAtkMultiplier || 0.35));
 
     if (target.kind === 'normal' && target.ref && target.ref.hp > 0) {
       const targetElement = getCombatTargetElement(target.ref);
       const finalDamage = applyElementDamage(damage, getUltAttackElement(c), targetElement);
-      damageNormalEnemy(target.ref, finalDamage, now, false, getElementDamageReaction(getUltAttackElement(c), targetElement));
+      comboDamage = damageNormalEnemy(target.ref, finalDamage, now, false, getElementDamageReaction(getUltAttackElement(c), targetElement));
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
       evaluateNormalMission(now);
     } else if (target.kind === 'faceless' && target.ref && target.ref.hp > 0) {
       const targetElement = getCombatTargetElement(target.ref, state.boss?.element);
       const finalDamage = applyElementDamage(damage, getUltAttackElement(c), targetElement);
-      damageFacelessObject(target.ref, finalDamage, now, getElementDamageReaction(getUltAttackElement(c), targetElement));
+      comboDamage = damageFacelessObject(target.ref, finalDamage, now, getElementDamageReaction(getUltAttackElement(c), targetElement));
     } else if (target.kind === 'boss' && state.boss && state.boss.hp > 0) {
       const targetElement = getCombatTargetElement(state.boss);
       const finalDamage = applyElementDamage(damage, getUltAttackElement(c), targetElement);
       const applied = Math.min(state.boss.hp, finalDamage);
       if (applied <= 0) return;
+      comboDamage = applied;
       state.boss.hp = Math.max(0, state.boss.hp - applied);
       createHit(state.boss.x, state.boss.y, true);
       showBossDamageNumber(applied, false, getElementDamageReaction(getUltAttackElement(c), targetElement));
       flashBossHit(false);
-      if (!addScoreAttackDamageScore(applied)) state.score += Math.round(applied * 100);
+      if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
       updateBossPhase();
       if (state.boss.hp <= 0) beginBossDefeat();
     }
 
-    state.shotsHit = Number(state.shotsHit || 0) + 1;
-    registerComboHit(c.id, now);
+    if (comboDamage > 0) state.shotsHit = Number(state.shotsHit || 0) + 1;
+    registerComboHit(c.id, now, comboDamage);
     renderHud();
   }
 

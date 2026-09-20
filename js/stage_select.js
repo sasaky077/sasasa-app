@@ -77,6 +77,14 @@
   const SHOOTING_STAGE_RECORD_KEY = 'zeraphia_shooting_stage_records_v1';
   const SHOOTING_HIGH_SCORE_KEY = 'zeraphia_shooting_high_scores_v1';
 
+  const STORY_RANK_ORDER = Object.freeze({ S:6, A:5, B:4, C:3, D:2, E:1, '':0 });
+
+  function getBetterStoryRank(a, b) {
+    const left = String(a || '').toUpperCase();
+    const right = String(b || '').toUpperCase();
+    return (STORY_RANK_ORDER[right] || 0) > (STORY_RANK_ORDER[left] || 0) ? right : left;
+  }
+
   function getStoryShootingRecord(stageId) {
     const id = String(stageId || '');
     if (!id) return { cleared: false, bestRank: '', highScore: 0 };
@@ -88,9 +96,10 @@
         const cleared = isStoryStageCleared(id) || !!record.cleared;
         const highScore = Math.max(0, Number(record.highScore || 0));
         const storedRank = String(record.bestRank || '').toUpperCase();
+        const scoreRank = cleared && highScore > 0 ? getStoryRankFromScore(highScore) : '';
         return {
           cleared,
-          bestRank: storedRank || (cleared && highScore > 0 ? getStoryRankFromScore(highScore) : ''),
+          bestRank: getBetterStoryRank(storedRank, scoreRank),
           highScore,
         };
       } catch (_) {}
@@ -114,10 +123,11 @@
 
     // 旧バージョンではクリア済み/ハイスコアだけ保存され、RANK自体は未保存だった。
     // クリア済みが確認できるステージに限り、既存HIGH SCOREから現在の閾値で復元する。
-    const derivedRank = storedRank || (cleared && highScore > 0 ? getStoryRankFromScore(highScore) : '');
+    const scoreRank = cleared && highScore > 0 ? getStoryRankFromScore(highScore) : '';
+    const derivedRank = getBetterStoryRank(storedRank, scoreRank);
 
     // 復元できた場合は新しい記録領域にも移行して、次回以降は通常の保存値として扱う。
-    if (!storedRank && derivedRank) {
+    if (derivedRank && derivedRank !== storedRank) {
       try {
         records[id] = {
           ...raw,
