@@ -1,3 +1,5 @@
 {
-  "build": "502"
+  "build": "509",
+  "update_policy": "self_healing_v2",
+  "published_at": "2026-09-20T11:25:00+09:00"
 }

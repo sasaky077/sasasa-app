@@ -3768,6 +3768,34 @@
     );
   }
 
+  // build504: 全ULTに戦闘属性を付与。
+  // 原則はキャラ属性、ultElement が指定されている場合のみ上書き。
+  // 不明値は必ず neutral にフォールバックする。
+  function getUltAttackElement(c) {
+    return normalizeCombatElement(c && (c.ultElement ?? c.element)) || 'neutral';
+  }
+
+  const ULT_ELEMENT_VISUAL = Object.freeze({
+    neutral: { color:'#f4efe3', rgb:'244,239,227', filter:'grayscale(1) brightness(1.16)' },
+    fire:    { color:'#e64b43', rgb:'230,75,67',  filter:'grayscale(1) sepia(1) saturate(8) hue-rotate(318deg) brightness(1.02)' },
+    aqua:    { color:'#4aaee8', rgb:'74,174,232', filter:'grayscale(1) sepia(1) saturate(7) hue-rotate(150deg) brightness(1.04)' },
+    wood:    { color:'#67b96a', rgb:'103,185,106',filter:'grayscale(1) sepia(1) saturate(6) hue-rotate(72deg) brightness(.98)' },
+    light:   { color:'#e7c85a', rgb:'231,200,90', filter:'grayscale(1) sepia(1) saturate(5) hue-rotate(2deg) brightness(1.15)' },
+    dark:    { color:'#9a66d8', rgb:'154,102,216',filter:'grayscale(1) sepia(1) saturate(7) hue-rotate(220deg) brightness(.92)' },
+  });
+
+  function applyUltElementVisualContext(c) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return getUltAttackElement(c);
+    const element = getUltAttackElement(c);
+    const visual = ULT_ELEMENT_VISUAL[element] || ULT_ELEMENT_VISUAL.neutral;
+    root.dataset.ultElement = element;
+    root.style.setProperty('--ult-element-color', visual.color);
+    root.style.setProperty('--ult-element-rgb', visual.rgb);
+    root.style.setProperty('--ult-element-filter', visual.filter);
+    return element;
+  }
+
   function applyElementDamage(amount, attackElement, targetElement) {
     const base = Math.max(0, Number(amount || 0));
     return base * getElementDamageMultiplier(attackElement, targetElement);
@@ -4478,7 +4506,8 @@
         if (!canMitoUltHit(key, now, cooldown)) return;
 
         const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
-        damageNormalEnemy(enemy, damage, now, false);
+        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(enemy));
+        damageNormalEnemy(enemy, finalDamage, now, false);
       });
 
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
@@ -4496,7 +4525,8 @@
         if (!canMitoUltHit(key, now, cooldown)) return;
 
         const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
-        damageFacelessObject(obj, damage, now);
+        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(obj, state.boss?.element));
+        damageFacelessObject(obj, finalDamage, now);
       });
     }
 
@@ -10209,15 +10239,30 @@
       const row = overlay.querySelector(`[data-daily-level="${level}"]`);
       if (!row) return;
 
-      const img = row.querySelector('[data-daily-reward-img]');
-      const count = row.querySelector('[data-daily-reward-count]');
+      const materialSlot = row.querySelector('[data-daily-material-slot]');
       const remaining = row.querySelector('[data-daily-remaining]');
 
-      if (img) {
-        img.src = reward.img || 'images/item_kyoumeistone.webp';
-        img.alt = reward.name || 'デイリー報酬';
+      if (materialSlot) {
+        if (info.random && Array.isArray(info.rewards) && info.rewards.length) {
+          materialSlot.classList.add('is-random-list');
+          materialSlot.innerHTML = info.rewards.map(item => `
+            <span class="shooting-daily-stage-random-item" title="${item.name || ''}">
+              <img src="${item.img || ''}" alt="${item.name || ''}">
+            </span>
+          `).join('');
+          materialSlot.setAttribute(
+            'aria-label',
+            `ランダム報酬候補：${info.rewards.map(item => item.name || '').filter(Boolean).join('、')} から ${amount}個`
+          );
+        } else {
+          materialSlot.classList.remove('is-random-list');
+          materialSlot.innerHTML = `
+            <img src="${reward.img || 'images/item_kyoumeistone.webp'}" alt="${reward.name || 'デイリー報酬'}">
+            <b>×${amount}</b>
+          `;
+          materialSlot.setAttribute('aria-label', `${reward.name || 'デイリー報酬'} ${amount}個`);
+        }
       }
-      if (count) count.textContent = `×${amount}`;
       if (remaining) remaining.textContent = `残り ${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
 
       const exhausted = Number(attempt.remaining || 0) <= 0;
@@ -10283,9 +10328,13 @@
               <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
               <div class="shooting-daily-stage-reward">
                 <span class="shooting-daily-stage-reward-label">報酬</span>
-                <span class="shooting-daily-stage-reward-chip">
-                  <img src="images/item_kyoumeistone.webp" alt="" data-daily-reward-img>
-                  <b data-daily-reward-count>×1</b>
+                <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
+                  <img src="images/icon_coin.webp" alt="コイン">
+                  <b>×10,000</b>
+                </span>
+                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot>
+                  <img src="images/item_kyoumeistone.webp" alt="">
+                  <b>×1</b>
                 </span>
               </div>
             </div>
@@ -10304,9 +10353,13 @@
               <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
               <div class="shooting-daily-stage-reward">
                 <span class="shooting-daily-stage-reward-label">報酬</span>
-                <span class="shooting-daily-stage-reward-chip">
-                  <img src="images/item_kyoumeistone.webp" alt="" data-daily-reward-img>
-                  <b data-daily-reward-count>×2</b>
+                <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
+                  <img src="images/icon_coin.webp" alt="コイン">
+                  <b>×10,000</b>
+                </span>
+                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot>
+                  <img src="images/item_kyoumeistone.webp" alt="">
+                  <b>×2</b>
                 </span>
               </div>
             </div>
@@ -10823,6 +10876,10 @@
   }
 
   function getShootingCoinReward(playerExp) {
+    // build505: DAILY QUESTは難易度に関係なくコイン10,000固定。
+    // 曜日別の進化素材報酬は既存dailyQuest設定をそのまま使用する。
+    if (isDailyQuestStage()) return 10000;
+
     // v285:
     // コインは CHAPTERごとのベース + STAGE進行分。
     //
@@ -12690,17 +12747,20 @@
     state.ultTimerIds.push(id);
   }
 
-  function showUltCut(name, className) {
+  function showUltCut(name, className, character) {
     if (state && state.skipNextUltCut) {
       state.skipNextUltCut = false;
       return;
     }
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
+    const c = character || getCurrentCharacter();
+    const ultElement = applyUltElementVisualContext(c);
     const old = root.querySelector('.shooting-ult-cut');
     if (old) old.remove();
     const el = document.createElement('div');
-    el.className = 'shooting-ult-cut ' + (className || '');
+    el.className = 'shooting-ult-cut ' + (className || '') + ' ult-element-' + ultElement;
+    el.dataset.ultElement = ultElement;
     el.innerHTML = `<span>ULT</span><strong>${name}</strong>`;
     root.appendChild(el);
     requestAnimationFrame(() => el.classList.add('show'));
@@ -12708,34 +12768,45 @@
     setTimeout(() => el.remove(), 1150);
   }
 
-  function ultScreenFlash(className) {
+  function ultScreenFlash(className, character) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
-    root.classList.remove('ult-flash-eri','ult-flash-hayate','ult-flash-ayane','ult-flash-nem','ult-flash-mito','ult-flash-wolf');
+    applyUltElementVisualContext(character || getCurrentCharacter());
+    root.classList.remove('ult-flash-eri','ult-flash-hayate','ult-flash-ayane','ult-flash-nem','ult-flash-mito','ult-flash-wolf','ult-flash-element');
     void root.offsetWidth;
-    root.classList.add(className);
-    setTimeout(() => root.classList.remove(className), 700);
+    if (className) root.classList.add(className);
+    root.classList.add('ult-flash-element');
+    setTimeout(() => {
+      if (className) root.classList.remove(className);
+      root.classList.remove('ult-flash-element');
+    }, 700);
   }
 
-  function applyUltDamage(amount, big) {
+  function applyUltDamage(amount, big, character) {
     if (!state || state.ended || state.finishing) return;
+    const c = character || getCurrentCharacter();
+    const attackElement = getUltAttackElement(c);
     if (isNormalBattle()) {
       const targets = state.normalEnemies.filter(enemy => enemy && enemy.el && enemy.hp > 0);
-      targets.forEach(enemy => damageNormalEnemy(enemy, amount, performance.now(), !!big));
+      targets.forEach(enemy => {
+        const finalDamage = applyElementDamage(amount, attackElement, getCombatTargetElement(enemy));
+        damageNormalEnemy(enemy, finalDamage, performance.now(), !!big);
+      });
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
-      state.score += Math.round(amount * 35 * Math.max(1, targets.length));
+      state.score += Math.round(Number(amount || 0) * 35 * Math.max(1, targets.length));
       evaluateNormalMission(performance.now());
       renderHud();
       return;
     }
-    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(amount || 0)));
+    const finalDamage = applyElementDamage(amount, attackElement, getCombatTargetElement(state.boss));
+    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
     state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     updateBossPhase();
     createHit(state.boss.x, state.boss.y, !!big);
     showBossDamageNumber(appliedDamage, !!big);
     flashBossHit(true);
     if (!addScoreAttackDamageScore(appliedDamage)) {
-      state.score += Math.round(amount * 100);
+      state.score += Math.round(appliedDamage * 100);
     }
     renderHud();
     if (state.boss.hp <= 0) beginBossDefeat();
@@ -12800,7 +12871,7 @@
       const damage =
         Number(c.atk || 0) *
         Number(c.ultDamageAtkMultiplier || 2.8);
-      applyUltDamage(damage, true);
+      applyUltDamage(damage, true, c);
       renderHud();
     }, 420);
   }
@@ -13195,13 +13266,15 @@
           enemy.ayaneGrabMarker = marker;
 
           createHit(enemy.x, enemy.y, true);
-          damageNormalEnemy(enemy, initialDamage, performance.now(), true);
+          const initialElementDamage = applyElementDamage(initialDamage, getUltAttackElement(c), getCombatTargetElement(enemy));
+          damageNormalEnemy(enemy, initialElementDamage, performance.now(), true);
 
           // 7秒間に残りダメージを分割。
           for (let i = 1; i <= tickCount; i++) {
             pushUltTimer(() => {
               if (!state || state.ended || !enemy || enemy.hp <= 0) return;
-              damageNormalEnemy(enemy, tickDamage, performance.now(), false);
+              const tickElementDamage = applyElementDamage(tickDamage, getUltAttackElement(c), getCombatTargetElement(enemy));
+              damageNormalEnemy(enemy, tickElementDamage, performance.now(), false);
 
               // 敵が倒れた場合は拘束マーカーを即消す。
               if (enemy.hp <= 0 && enemy.ayaneGrabMarker) {
@@ -13380,7 +13453,8 @@
 
       // 掴んだ瞬間の初撃。ゲージ段階更新は拘束終了時にまとめる。
       if (state && !state.ended && !state.finishing) {
-        const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(initialDamage || 0)));
+        const initialElementDamage = applyElementDamage(initialDamage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+        const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(initialElementDamage || 0)));
         state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
         createHit(state.boss.x, state.boss.y, true);
         showBossDamageNumber(appliedDamage, true);
@@ -13395,7 +13469,8 @@
       for (let i = 1; i <= tickCount; i++) {
         pushUltTimer(() => {
           if (!state || state.ended || state.finishing || state.boss.hp <= 0) return;
-          const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(tickDamage || 0)));
+          const tickElementDamage = applyElementDamage(tickDamage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+          const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(tickElementDamage || 0)));
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           showBossDamageNumber(appliedDamage, false);
           if (!addScoreAttackDamageScore(appliedDamage)) {
@@ -13508,14 +13583,16 @@
       const targets = [...(state.normalEnemies || [])];
       targets.forEach(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return;
-        damageNormalEnemy(enemy, damage, now, false);
+        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(enemy));
+        damageNormalEnemy(enemy, finalDamage, now, false);
       });
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
       return;
     }
 
     if (!state.boss || state.boss.hp <= 0) return;
-    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+    const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
     state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     showBossDamageNumber(appliedDamage, false);
     if (!addScoreAttackDamageScore(appliedDamage)) {
@@ -13898,7 +13975,8 @@
         if (now >= Number(enemy.ignisBurnNextTickAt || 0)) {
           enemy.ignisBurnNextTickAt = now + tickMs;
           pulseIgnisBurnVisual(burnKey);
-          damageNormalEnemy(enemy, damage, now, true);
+          const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(enemy));
+          damageNormalEnemy(enemy, finalDamage, now, true);
         }
       });
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
@@ -13919,7 +13997,8 @@
     if (state.boss && state.boss.hp > 0 && now >= Number(state.ignisBossBurnNextTickAt || 0)) {
       state.ignisBossBurnNextTickAt = now + tickMs;
       pulseIgnisBurnVisual('boss');
-      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+      const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       createHit(state.boss.x, state.boss.y, true);
       showBossDamageNumber(appliedDamage, true);
@@ -14084,7 +14163,10 @@
       targets.forEach(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return;
         const dist = Math.hypot((enemy.x || 0) - x, (enemy.y || 0) - y);
-        if (dist <= radius) damageNormalEnemy(enemy, damage, now, true);
+        if (dist <= radius) {
+          const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(enemy));
+          damageNormalEnemy(enemy, finalDamage, now, true);
+        }
       });
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
       evaluateNormalMission(now);
@@ -14094,7 +14176,8 @@
     if (!state.boss || state.boss.hp <= 0) return;
     const dist = Math.hypot((state.boss.x || 0) - x, (state.boss.y || 0) - y);
     if (dist > radius + 20) return;
-    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(damage || 0)));
+    const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
     state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
     updateBossPhase();
     createHit(x, y, true);
@@ -14288,7 +14371,7 @@
     }
 
     const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3);
-    applyUltDamage(damage, true);
+    applyUltDamage(damage, true, c);
 
     const root = document.getElementById(ROOT_ID);
     if (root) {
@@ -14389,7 +14472,10 @@
         Number(enemy.y || 0) < py &&
         Math.abs(Number(enemy.x || 0) - px) <= half + 28
       );
-      targets.forEach(enemy => damageNormalEnemy(enemy, damage, now, false));
+      targets.forEach(enemy => {
+        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(enemy));
+        damageNormalEnemy(enemy, finalDamage, now, false);
+      });
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
       state.score += Math.round(damage * 30 * Math.max(1, targets.length));
       evaluateNormalMission(now);
@@ -14403,7 +14489,8 @@
         if (!obj || !obj.el || obj.hp <= 0) return;
         if (Number(obj.y || 0) >= py) return;
         if (Math.abs(Number(obj.x || 0) - px) > half + 30) return;
-        damageFacelessObject(obj, damage, now);
+        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(obj, state.boss?.element));
+        damageFacelessObject(obj, finalDamage, now);
       });
     }
 
@@ -14411,7 +14498,8 @@
     if (Number(state.boss.y || 0) >= py) return;
     if (Math.abs(Number(state.boss.x || 0) - px) > half + 48) return;
 
-    const applied = Math.min(state.boss.hp, Math.max(0, damage));
+    const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+    const applied = Math.min(state.boss.hp, Math.max(0, finalDamage));
     state.boss.hp = Math.max(0, state.boss.hp - applied);
     updateBossPhase();
     if (!addScoreAttackDamageScore(applied)) {
@@ -14489,7 +14577,7 @@
         const hitRadius = beamRadius + 22;
         if (pointSegmentDistance(Number(enemy.x || 0), Number(enemy.y || 0), tx, ty, hx, hy) > hitRadius) return;
         beam.hitCooldown.set(key, now);
-        const finalDamage = applyElementDamage(baseDamage, normalizeCombatElement(c.element), getCombatTargetElement(enemy));
+        const finalDamage = applyElementDamage(baseDamage, getUltAttackElement(c), getCombatTargetElement(enemy));
         damageNormalEnemy(enemy, finalDamage, now, false);
       });
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
@@ -14502,7 +14590,7 @@
         const bossHitRadius = beamRadius + 44;
         if (pointSegmentDistance(Number(state.boss.x || 0), Number(state.boss.y || 0), tx, ty, hx, hy) <= bossHitRadius) {
           beam.hitCooldown.set(key, now);
-          const finalDamage = applyElementDamage(baseDamage, normalizeCombatElement(c.element), getCombatTargetElement(state.boss));
+          const finalDamage = applyElementDamage(baseDamage, getUltAttackElement(c), getCombatTargetElement(state.boss));
           const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
@@ -14758,13 +14846,16 @@
     const damage = Math.max(0, Number(c.atk || 0) * Number(c.noahUltHitAtkMultiplier || 0.35));
 
     if (target.kind === 'normal' && target.ref && target.ref.hp > 0) {
-      damageNormalEnemy(target.ref, damage, now, false);
+      const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(target.ref));
+      damageNormalEnemy(target.ref, finalDamage, now, false);
       state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
       evaluateNormalMission(now);
     } else if (target.kind === 'faceless' && target.ref && target.ref.hp > 0) {
-      damageFacelessObject(target.ref, damage, now);
+      const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(target.ref, state.boss?.element));
+      damageFacelessObject(target.ref, finalDamage, now);
     } else if (target.kind === 'boss' && state.boss && state.boss.hp > 0) {
-      const applied = Math.min(state.boss.hp, damage);
+      const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(state.boss));
+      const applied = Math.min(state.boss.hp, finalDamage);
       if (applied <= 0) return;
       state.boss.hp = Math.max(0, state.boss.hp - applied);
       createHit(state.boss.x, state.boss.y, true);
@@ -15056,7 +15147,7 @@
       });
 
       const damage = Number(c.atk || 0) * damageMultiplier;
-      applyUltDamage(damage, true);
+      applyUltDamage(damage, true, c);
 
       state.shionEnemyDebuffUntil = performance.now() + debuffMs;
       state.shionEnemyDamageMultiplier = enemyDamageMultiplier;
@@ -15108,6 +15199,9 @@
 
   function executeCharacterUlt(c) {
     if (!state || state.ended || state.finishing) return;
+
+    // ULTの内部属性と、画像を使わない演出の基調色を同じ属性へ同期。
+    applyUltElementVisualContext(c);
 
     if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
     else if (c.ultType === 'rose_flower_heart') useRoseUlt(c);

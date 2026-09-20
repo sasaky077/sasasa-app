@@ -7839,6 +7839,11 @@
   display:flex;
   align-items:center;
   gap:8px;
+  flex-wrap:wrap;
+}
+
+.shooting-daily-stage-reward-coin{
+  margin-right:2px;
 }
 
 .shooting-daily-stage-reward-label{
@@ -8099,4 +8104,86 @@
     0 0 0 1px rgba(255,255,255,.55) inset !important;
   pointer-events:none !important;
   filter:none !important;
+}
+
+
+/* ============================================================
+   build504: ULT element visual unification
+   - ULT内部属性は shooting_core.js の ultElement / character.element を正本とする。
+   - 画像カットイン(.shooting-ult-cutin-image)は色加工しない。
+   - DOM/CSSだけで描画するULT演出は属性色へ寄せる。
+   ============================================================ */
+#shooting-event-root.ult-flash-element .shooting-wash{
+  animation:shootingUltElementFlash .68s ease-out !important;
+}
+@keyframes shootingUltElementFlash{
+  0%{background:rgba(var(--ult-element-rgb,244,239,227),0)}
+  18%{background:rgba(var(--ult-element-rgb,244,239,227),.62)}
+  48%{background:rgba(var(--ult-element-rgb,244,239,227),.22)}
+  100%{background:rgba(var(--ult-element-rgb,244,239,227),0)}
+}
+
+#shooting-event-root .shooting-ult-cut{
+  border-color:rgba(var(--ult-element-rgb,244,239,227),.46) !important;
+  box-shadow:0 0 20px rgba(var(--ult-element-rgb,244,239,227),.16) !important;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,.06),
+    rgba(var(--ult-element-rgb,244,239,227),.26) 18%,
+    rgba(var(--ult-element-rgb,244,239,227),.52) 72%,
+    rgba(255,255,255,.08)) !important;
+}
+#shooting-event-root .shooting-ult-cut span{
+  color:var(--ult-element-color,#f4efe3) !important;
+}
+
+/* 非画像ULTのエフェクト本体。形状・アニメーションは維持し、色相だけ属性へ統一する。 */
+#shooting-event-root .shooting-eri-ult-mark,
+#shooting-event-root .shooting-eri-ult-slash,
+#shooting-event-root .shooting-ayane-blackhand-ult,
+#shooting-event-root .shooting-ayane-blackhand-impact,
+#shooting-event-root .shooting-ayane-blackhand-grip-ring,
+#shooting-event-root .shooting-ayane-blackhand-smoke,
+#shooting-event-root .shooting-ayane-multi-grip,
+#shooting-event-root .shooting-gojo-purple-wave,
+#shooting-event-root .shooting-arno-aura,
+#shooting-event-root .shooting-ignis-burn,
+#shooting-event-root .shooting-ignis-fire-wheel,
+#shooting-event-root .shooting-clarine-decoy,
+#shooting-event-root .shooting-clarine-decoy-burst,
+#shooting-event-root .shooting-rose-flower,
+#shooting-event-root .shooting-rose-flower-aura,
+#shooting-event-root .shooting-rose-heart-shape,
+#shooting-event-root .shooting-sui-clock-burst,
+#shooting-event-root .shooting-sui-clock-mark,
+#shooting-event-root .shooting-jig-scramble-ray,
+#shooting-event-root .shooting-noah-lightning,
+#shooting-event-root .shooting-shiina-light-ring,
+#shooting-event-root .shooting-shion-curse-mark,
+#shooting-event-root .shooting-testchan-blackship-beam{
+  filter:var(--ult-element-filter,none) drop-shadow(0 0 7px rgba(var(--ult-element-rgb,244,239,227),.68)) !important;
+}
+
+/* 画像そのものは加工対象外。 */
+#shooting-event-root .shooting-ult-cutin-image,
+#shooting-event-root .shooting-shuri-scythe-img{
+  filter:none !important;
+}
+
+
+/* build506: Sunday DAILY QUEST shows all six possible random-material rewards. */
+.shooting-daily-stage-reward-chip.is-random-list{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  flex-wrap:nowrap;
+}
+.shooting-daily-stage-random-item{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.shooting-daily-stage-random-item img{
+  width:24px!important;
+  height:24px!important;
+  object-fit:contain;
 }

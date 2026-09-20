@@ -919,7 +919,9 @@
       ...profile,
       id: master.id,
       name: profile.name || master.name,
-      element: profile.element ?? master.element ?? null,
+      element: profile.element ?? master.element ?? 'neutral',
+      // build504: ULT属性は原則キャラ属性と同一。個別ULTだけ profile.ultElement で上書き可能。
+      ultElement: profile.ultElement ?? profile.element ?? master.element ?? 'neutral',
       image: profile.image || master.image,
       panelImage: profile.panelImage || master.panelImage || master.image,
       cutinImage: profile.cutinImage || master.cutinImage || '',

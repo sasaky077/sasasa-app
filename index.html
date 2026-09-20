@@ -2,87 +2,233 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <script id="sasaphia-version-gate-v95">
-  (function(){
-    'use strict';
-    var FALLBACK_BUILD = '502';
-    var VERSION_URL = 'version.json';
-    var CHECK_PARAM = '__sasaphia_update';
+  <script id="sasaphia-version-gate-v109">
+(function(){
+  'use strict';
 
-    function cleanBuild(value) {
-      return String(value || '').trim().replace(/[^a-zA-Z0-9._-]/g, '');
+  var FALLBACK_BUILD = '509';
+  var VERSION_URL = 'version.json';
+  var CHECK_PARAM = '__sasaphia_update';
+  var REPAIR_PARAM = '__sasaphia_repair';
+  var LAST_CHECK_KEY = 'sasaphia_last_version_check_v2';
+  var RECOVERY_KEY = 'sasaphia_update_recovery_guard_v2';
+  var CHECK_INTERVAL_MS = 30000;
+  var RECOVERY_WINDOW_MS = 120000;
+  var MAX_RECOVERIES_PER_WINDOW = 2;
+  var checking = null;
+
+  var CRITICAL_ASSETS = [
+    'css/style.css',
+    'css/shooting_event.css',
+    'js/stage_select.js',
+    'js/shooting_event.js'
+  ];
+
+  function cleanBuild(value){
+    return String(value || '').trim().replace(/[^a-zA-Z0-9._-]/g, '');
+  }
+
+  function getUrlBuild(){
+    try { return cleanBuild(new URL(location.href).searchParams.get('build')); }
+    catch (_) { return ''; }
+  }
+
+  function getCurrentBuild(){
+    return getUrlBuild() || FALLBACK_BUILD;
+  }
+
+  function getLatestKnownBuild(){
+    try { return cleanBuild(localStorage.getItem('sasaphia_latest_server_build')); }
+    catch (_) { return ''; }
+  }
+
+  function sameOriginAssetUrl(raw){
+    try {
+      var u = new URL(raw, location.href);
+      return u.origin === location.origin ? u : null;
+    } catch (_) { return null; }
+  }
+
+  function getRecoveryGuard(){
+    try {
+      var parsed = JSON.parse(sessionStorage.getItem(RECOVERY_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) { return {}; }
+  }
+
+  function allowRecovery(build, reason){
+    var now = Date.now();
+    var guard = getRecoveryGuard();
+    if (guard.build !== build || guard.reason !== reason || now - Number(guard.startedAt || 0) > RECOVERY_WINDOW_MS) {
+      guard = { build: build, reason: reason, startedAt: now, count: 0 };
+    }
+    guard.count = Number(guard.count || 0) + 1;
+    try { sessionStorage.setItem(RECOVERY_KEY, JSON.stringify(guard)); } catch (_) {}
+    return guard.count <= MAX_RECOVERIES_PER_WINDOW;
+  }
+
+  function clearSasaphiaCaches(){
+    if (!('caches' in window)) return Promise.resolve();
+    return caches.keys().then(function(keys){
+      return Promise.all(keys
+        .filter(function(key){ return /^sasaphia-assets-/.test(key); })
+        .map(function(key){ return caches.delete(key); }));
+    }).catch(function(){});
+  }
+
+  function updateServiceWorkers(){
+    if (!navigator.serviceWorker || !navigator.serviceWorker.getRegistrations) return Promise.resolve();
+    return navigator.serviceWorker.getRegistrations().then(function(regs){
+      return Promise.all(regs.map(function(reg){
+        try { return reg.update(); } catch (_) { return Promise.resolve(); }
+      }));
+    }).catch(function(){});
+  }
+
+  function verifyCriticalAssets(build){
+    build = cleanBuild(build);
+    if (!build) return Promise.reject(new Error('invalid build'));
+
+    return Promise.all(CRITICAL_ASSETS.map(function(path){
+      var sep = path.indexOf('?') >= 0 ? '&' : '?';
+      var url = path + sep + 'v=' + encodeURIComponent(build) + '&__verify=' + Date.now().toString(36);
+      return fetch(url, { cache:'no-store', headers:{ 'Cache-Control':'no-cache' } })
+        .then(function(res){
+          if (!res.ok) throw new Error('critical asset unavailable: ' + path + ' (' + res.status + ')');
+          return true;
+        });
+    }));
+  }
+
+  function forceReloadTo(build, reason){
+    build = cleanBuild(build) || FALLBACK_BUILD;
+    reason = String(reason || 'update');
+
+    if (!allowRecovery(build, reason)) {
+      console.warn('[sasaphia] automatic recovery stopped to prevent reload loop', build, reason);
+      return Promise.resolve(false);
     }
 
-    function getUrlBuild() {
-      try { return cleanBuild(new URL(location.href).searchParams.get('build')); }
-      catch (_) { return ''; }
+    var target;
+    try {
+      target = new URL(location.href);
+      target.searchParams.set('build', build);
+      target.searchParams.set(CHECK_PARAM, Date.now().toString(36));
+      if (reason !== 'version-mismatch') target.searchParams.set(REPAIR_PARAM, reason);
+      else target.searchParams.delete(REPAIR_PARAM);
+    } catch (_) {
+      location.reload();
+      return Promise.resolve(true);
     }
 
-    function forceReloadTo(build) {
-      build = cleanBuild(build) || FALLBACK_BUILD;
+    return Promise.allSettled([
+      clearSasaphiaCaches(),
+      updateServiceWorkers()
+    ]).then(function(){
+      location.replace(target.toString());
+      return true;
+    });
+  }
+
+  function fetchServerBuild(){
+    return fetch(VERSION_URL + '?t=' + Date.now(), {
+      cache:'no-store',
+      headers:{ 'Cache-Control':'no-cache' }
+    }).then(function(res){
+      if (!res.ok) throw new Error('version fetch failed: ' + res.status);
+      return res.json();
+    }).then(function(info){
+      var latest = cleanBuild(info && info.build);
+      if (!latest) throw new Error('invalid version.json');
       try {
-        var target = new URL(location.href);
-        target.searchParams.set('build', build);
-        target.searchParams.set(CHECK_PARAM, Date.now().toString(36));
+        localStorage.setItem('sasaphia_latest_server_build', latest);
+        localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
+      } catch (_) {}
+      return latest;
+    });
+  }
 
-        // PWA/Service Worker/Cache Storage が古い資産を保持している場合も可能な範囲で破棄。
-        var jobs = [];
-        if ('caches' in window) {
-          jobs.push(caches.keys().then(function(keys){
-            return Promise.all(keys.map(function(key){ return caches.delete(key); }));
-          }).catch(function(){}));
-        }
-        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
-          jobs.push(navigator.serviceWorker.getRegistrations().then(function(regs){
-            return Promise.all(regs.map(function(reg){ return reg.unregister(); }));
-          }).catch(function(){}));
-        }
-
-        Promise.allSettled(jobs).finally(function(){ location.replace(target.toString()); });
-        setTimeout(function(){ location.replace(target.toString()); }, 1200);
-      } catch (_) {
-        location.reload();
-      }
+  function checkLatestBuild(reason, force){
+    var now = Date.now();
+    if (!force) {
+      try {
+        var last = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
+        if (last && now - last < CHECK_INTERVAL_MS) return Promise.resolve(getLatestKnownBuild() || getCurrentBuild());
+      } catch (_) {}
     }
+    if (checking) return checking;
 
-    // version.json 自体を毎回別URL + no-store で取得する。
-    fetch(VERSION_URL + '?t=' + Date.now(), {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
-    })
+    checking = fetchServerBuild().then(function(latest){
+      var current = getCurrentBuild();
+      if (latest === current) return latest;
+
+      return verifyCriticalAssets(latest).then(function(){
+        return forceReloadTo(latest, 'version-mismatch').then(function(){ return latest; });
+      }).catch(function(err){
+        console.warn('[sasaphia] new build detected but deploy is not complete yet', latest, err);
+        return current;
+      });
+    }).catch(function(err){
+      console.warn('[sasaphia] version check skipped', reason || '', err);
+      return getCurrentBuild();
+    }).finally(function(){ checking = null; });
+
+    return checking;
+  }
+
+  function repairFailedAsset(rawUrl){
+    var u = sameOriginAssetUrl(rawUrl);
+    if (!u || !/\.(?:js|css)$/i.test(u.pathname)) return;
+
+    var probe = new URL(u.href);
+    probe.searchParams.set('__repair_probe', Date.now().toString(36));
+    fetch(probe.href, { cache:'no-store', headers:{ 'Cache-Control':'no-cache' } })
       .then(function(res){
-        if (!res.ok) throw new Error('version fetch failed: ' + res.status);
-        return res.json();
+        if (!res.ok) throw new Error('asset still unavailable: ' + res.status);
+        return fetchServerBuild();
       })
-      .then(function(info){
-        var latest = cleanBuild(info && info.build);
-        if (!latest) return;
-        // ホーム画面(PWA)起動URLには ?build= が付かないことがある。
-        // その場合でも、このHTML自身のビルド(FALLBACK_BUILD)とserver buildが同じなら
-        // 更新扱いにせず、起動後の強制リロードを発生させない。
-        var current = getUrlBuild() || FALLBACK_BUILD;
-        try { localStorage.setItem('sasaphia_latest_server_build', latest); } catch (_) {}
-        if (current !== latest) {
-          forceReloadTo(latest);
-        }
+      .then(function(latest){
+        return forceReloadTo(latest || getCurrentBuild(), 'asset-load-failure');
       })
       .catch(function(err){
-        console.warn('[sasaphia] version check skipped', err);
+        console.warn('[sasaphia] asset repair skipped', u.pathname, err);
       });
+  }
 
-    window.forceSasaphiaLatestBuild = function(){
-      fetch(VERSION_URL + '?t=' + Date.now(), { cache:'no-store' })
-        .then(function(r){ return r.json(); })
-        .then(function(v){ forceReloadTo(v && v.build); })
-        .catch(function(){ forceReloadTo(FALLBACK_BUILD); });
-    };
-  })();
-  </script>
+  window.addEventListener('error', function(event){
+    var target = event && event.target;
+    if (!target || target === window) return;
+    var tag = String(target.tagName || '').toUpperCase();
+    if (tag === 'SCRIPT' && target.src) repairFailedAsset(target.src);
+    if (tag === 'LINK' && target.href && /stylesheet/i.test(String(target.rel || ''))) repairFailedAsset(target.href);
+  }, true);
+
+  window.checkSasaphiaLatestBuild = function(reason){
+    return checkLatestBuild(reason || 'manual', true);
+  };
+
+  window.forceSasaphiaLatestBuild = function(){
+    return fetchServerBuild()
+      .then(function(latest){
+        return verifyCriticalAssets(latest)
+          .then(function(){ return forceReloadTo(latest, 'manual-refresh'); });
+      })
+      .catch(function(){ return forceReloadTo(FALLBACK_BUILD, 'manual-refresh'); });
+  };
+
+  checkLatestBuild('startup', true);
+
+  window.addEventListener('pageshow', function(){ checkLatestBuild('pageshow', false); });
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) checkLatestBuild('resume', false);
+  });
+})();
+</script>
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="502">
+  <meta name="sasaphia-build" content="509">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -100,21 +246,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=502-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=509-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=502-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=509-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=502-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=509-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=502-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=509-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=502">
+  <link rel="manifest" href="manifest.json?v=509">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -182,9 +328,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=502"
+        href="css/style.css?v=509"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=502"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=509"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -267,10 +413,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=502">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=509">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=502">
-  <link rel="stylesheet" href="css/admin_mode.css?v=502-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=509">
+  <link rel="stylesheet" href="css/admin_mode.css?v=509-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -338,7 +484,7 @@
 
 <script>
 (function(){
-  var BUILD = '502';
+  var BUILD = '509';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -3187,6 +3333,13 @@ body #bottom-nav-shared.bottom-nav{
   box-shadow:none !important;
 }
 </style>
+
+  <style id="daily-sunday-reward-list-build506">
+    .ninmu-daily-random-item{display:inline-flex;align-items:center;gap:3px;margin-right:3px}
+    .ninmu-daily-random-item img{width:22px;height:22px;object-fit:contain}
+    .ninmu-daily-random-item b{font-size:10px;font-weight:600}
+  </style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -4120,7 +4273,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=502"></script>
+<script src="js/home_banners.js?v=509"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -4132,36 +4285,20 @@ body #bottom-nav-shared.bottom-nav{
 
 window.NOTICE_ITEMS = [
   {
-    id: 'notice_test_growth_bundle_20260914',
-    date: '2026.09.14',
-    title: 'テスト用 育成支援',
-    body: 'テストプレイ用に、経験値アイテム（小・中・大）を各100個、結晶を1,000個配布します。',
+    id: 'notice_start_bonus_20260920',
+    date: '2026.09.20',
+    title: 'スタートボーナス',
+    body: 'Zeraphiaを始めていただいた皆様へ、スタートボーナスをプレゼントします。',
     reward: {
-      type: 'test_growth_bundle',
-      claimId: 'notice_reward_test_growth_bundle_v1',
-      gem: 1000,
+      type: 'start_bonus_bundle',
+      claimId: 'notice_reward_start_bonus_v3_20260920',
+      rpcName: 'claim_start_bonus_bundle_v3',
+      gem: 999,
+      coin: 150000,
       items: [
         { materialId:'level_exp_small',  label:'強化素材・小', amount:100 },
         { materialId:'level_exp_medium', label:'強化素材・中', amount:100 },
         { materialId:'level_exp_large',  label:'強化素材・大', amount:100 }
-      ]
-    },
-    hidden: false
-  },
-  {
-    id: 'notice_start_bonus_20260912',
-    date: '2026.09.12',
-    title: 'スタートボーナス',
-    body: 'Zeraphiaを始めていただいた皆様へ、冒険とキャラクター育成に役立つスタートボーナスをプレゼントします。',
-    reward: {
-      type: 'start_bonus_bundle',
-      claimId: 'notice_reward_start_bonus_v2',
-      gem: 250,
-      coin: 50000,
-      items: [
-        { materialId:'level_exp_small',  label:'強化素材・小', amount:30 },
-        { materialId:'level_exp_medium', label:'強化素材・中', amount:20 },
-        { materialId:'level_exp_large',  label:'強化素材・大', amount:15 }
       ]
     },
     hidden: false
@@ -4500,7 +4637,6 @@ window.NOTICE_ITEMS = [
         <button class="notice-close" onclick="closeNoticeModal()">×</button>
 
         <div class="notice-head">
-          <img src="images/mail.webp" alt="">
           <div>
             <div class="notice-title">お知らせ</div>
             <div class="notice-sub">Notice</div>
@@ -4866,7 +5002,8 @@ window.NOTICE_ITEMS = [
           throw new Error('Supabaseへ接続できません');
         }
 
-        const res = await client.rpc('claim_start_bonus_bundle');
+        const rpcName = String(reward.rpcName || 'claim_start_bonus_bundle').trim();
+        const res = await client.rpc(rpcName);
         if (res && res.error) throw res.error;
 
         let result = res ? res.data : null;
@@ -5288,10 +5425,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=502"></script>
-<script src="js/resonance_system.js?v=502"></script>
-<script src="js/resonance_ui.js?v=502"></script>
-<script src="js/character_levelup.js?v=502"></script>
+<script src="js/shooting_resonance.js?v=509"></script>
+<script src="js/resonance_system.js?v=509"></script>
+<script src="js/resonance_ui.js?v=509"></script>
+<script src="js/character_levelup.js?v=509"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -8516,9 +8653,18 @@ startTitleBgm();
     daily_mix: {
       id: 'daily_mix',
       name: '日曜ランダム素材',
-      img: 'images/type_neutral.webp'
+      img: ''
     }
   };
+
+  var DAILY_SUNDAY_REWARD_IDS = [
+    'kyoumei_stone',
+    'soul_vessel_fire',
+    'soul_vessel_aqua',
+    'soul_vessel_wood',
+    'soul_vessel_dark',
+    'soul_vessel_light'
+  ];
 
   function getTokyoDailyDateParts() {
     try {
@@ -8561,9 +8707,15 @@ startTitleBgm();
     };
 
     var rewardId = fixed[p.weekday] || 'daily_mix';
+    var isSunday = p.weekday === 'Sun';
+    var rewards = isSunday
+      ? DAILY_SUNDAY_REWARD_IDS.map(function(id){ return DAILY_WEEKDAY_REWARD_MASTER[id]; }).filter(Boolean)
+      : [];
+
     return {
       reward: DAILY_WEEKDAY_REWARD_MASTER[rewardId] || DAILY_WEEKDAY_REWARD_MASTER.daily_mix,
-      random: p.weekday === 'Sun',
+      rewards: rewards,
+      random: isSunday,
       weekday: p.weekday
     };
   }
@@ -8579,18 +8731,29 @@ startTitleBgm();
     slots.forEach(function(slot) {
       var wrap = document.getElementById(slot.id);
       if (!wrap) return;
-      var img = wrap.querySelector('img');
-      var amount = wrap.querySelector('b');
-      if (img) {
-        img.src = reward.img;
-        img.alt = reward.name;
+
+      if (info.random && Array.isArray(info.rewards) && info.rewards.length) {
+        wrap.innerHTML = info.rewards.map(function(item){
+          return '<span class="ninmu-daily-random-item">' +
+            '<img src="' + item.img + '" alt="' + item.name + '">' +
+            '</span>';
+        }).join('');
+        wrap.setAttribute(
+          'aria-label',
+          '日曜ランダム報酬候補：' + info.rewards.map(function(item){ return item.name; }).join('、') +
+          ' から ' + slot.amount + '個'
+        );
+        wrap.dataset.dailyRewardId = 'daily_mix';
+      } else {
+        wrap.innerHTML =
+          '<span class="ninmu-daily-random-item">' +
+            '<img src="' + reward.img + '" alt="' + reward.name + '">' +
+            '<b>×' + slot.amount + '</b>' +
+          '</span>';
+        wrap.setAttribute('aria-label', reward.name + ' ' + slot.amount + '個');
+        wrap.dataset.dailyRewardId = reward.id;
       }
-      if (amount) amount.textContent = '×' + slot.amount;
-      wrap.setAttribute(
-        'aria-label',
-        reward.name + ' ' + slot.amount + '個' + (info.random ? '（ランダム）' : '')
-      );
-      wrap.dataset.dailyRewardId = reward.id;
+
       wrap.dataset.dailyRewardAmount = String(slot.amount);
     });
 
@@ -14995,20 +15158,20 @@ function fadeOutOpeningBgm(){
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
 
 <!-- 共通Asset Loader：画像/音声の初回表示抜け対策 -->
-<script src="js/asset_loader.js?v=502"></script>
+<script src="js/asset_loader.js?v=509"></script>
 
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=502"></script>
+<script src="js/login_bonus.js?v=509"></script>
 
 
 
-<script src="js/shooting_characters.js?v=502"></script>
-<script src="js/stage_select.js?v=502"></script>
+<script src="js/shooting_characters.js?v=509"></script>
+<script src="js/stage_select.js?v=509"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=502">
-<script src="js/remnant_blessings.js?v=502"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=509">
+<script src="js/remnant_blessings.js?v=509"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=502"></script>
+<script src="js/shinju.js?v=509"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15081,31 +15244,45 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=502"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=509"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=502-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=502"></script>
+<script src="js/admin_mode.js?v=509-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=509"></script>
 
-<script id="sasaphia-update-worker-register-v95">
+<script id="sasaphia-update-worker-register-v109">
 (function(){
   if (!('serviceWorker' in navigator)) return;
+
+  function appBuild(){
+    var meta = document.querySelector('meta[name="sasaphia-build"]');
+    return meta ? String(meta.content || '').trim() : '509';
+  }
+
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
-      .then(function(reg){
-        try { reg.update(); } catch (_) {}
-        // sw.js 側の activate で clients.claim() しているため、
-        // 初回登録直後にページを強制reloadする必要はない。
-        // ここでreloadすると、タイトル→ホーム到達後に突然画面が落ちたように見えるため廃止。
-        if (!navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.catch(function(){});
-        }
-      })
-      .catch(function(err){ console.warn('[sasaphia] service worker registration failed', err); });
+    var build = appBuild();
+    navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(build), {
+      updateViaCache:'none',
+      scope:'./'
+    }).then(function(reg){
+      try { reg.update(); } catch (_) {}
+
+      reg.addEventListener('updatefound', function(){
+        var worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', function(){
+          if (worker.state === 'activated' && typeof window.checkSasaphiaLatestBuild === 'function') {
+            window.checkSasaphiaLatestBuild('sw-activated');
+          }
+        });
+      });
+    }).catch(function(err){
+      console.warn('[sasaphia] service worker registration failed', err);
+    });
   }, { once:true });
 })();
 </script>
 
-<script src="js/score_attack.js?v=502"></script>
+<script src="js/score_attack.js?v=509"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -15501,7 +15678,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=502-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=509-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
@@ -16187,15 +16364,36 @@ html body #global-user-frame .hud-res-val{
 }
 
 html body #global-user-frame .hud-gem-plus-btn{
-  justify-self:end !important;
+  justify-self:start !important;
   align-self:end !important;
-  width:20px !important;
-  min-width:20px !important;
-  height:20px !important;
-  min-height:20px !important;
-  font-size:17px !important;
-  line-height:20px !important;
+  width:18px !important;
+  min-width:18px !important;
+  height:16px !important;
+  min-height:16px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  font-size:16px !important;
+  line-height:13px !important;
+  display:flex !important;
+  align-items:flex-end !important;
+  justify-content:center !important;
   position:relative !important;
+  top:1px !important;
+}
+
+/* GEM is one visual group: icon + value + plus */
+html body #global-user-frame .hud-resource-gem{
+  grid-template-columns:20px max-content 18px !important;
+  justify-content:start !important;
+  column-gap:7px !important;
+}
+
+html body #global-user-frame .hud-resource-gem .hud-res-val,
+html body #global-user-frame .hud-resource-gem .hud-gem-plus-btn{
+  align-self:end !important;
   top:1px !important;
 }
 
@@ -16248,7 +16446,9 @@ html body #global-user-frame .hud-sweep-line-player{
   }
 
   html body #global-user-frame .hud-resource-gem{
-    grid-template-columns:18px minmax(0,1fr) 18px !important;
+    grid-template-columns:18px max-content 18px !important;
+    justify-content:start !important;
+    column-gap:6px !important;
   }
 
   html body #global-user-frame .hud-resource:not(.hud-resource-gem){

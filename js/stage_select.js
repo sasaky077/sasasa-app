@@ -689,7 +689,7 @@
     const el = document.getElementById('stage-select-modal');
     const title = document.getElementById('ss-title');
     if (title) {
-      title.textContent = 'CHAPTER ' + String(chapter).padStart(2, '0') + (mode === 'beginner' ? ' NORMAL' : ' HARD');
+      title.textContent = 'CHAPTER ' + String(chapter).padStart(2, '0');
     }
 
     renderList(chapter, mode);
