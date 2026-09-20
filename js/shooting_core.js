@@ -139,80 +139,102 @@
   }
 
 
-  // ERI系ULT：予兆 → 閃光斬撃 → 命中強調。軽量DOM/CSSのみで共通化。
-  if (!document.getElementById('shooting-eri-ult-feedback-style-v1')) {
+  // ERI系共通ULT：敵行動停止 → 属性色の細い閃光 → 全体ダメージ。
+  if (!document.getElementById('shooting-eri-ult-feedback-style-v2')) {
     const eriUltStyle = document.createElement('style');
-    eriUltStyle.id = 'shooting-eri-ult-feedback-style-v1';
+    eriUltStyle.id = 'shooting-eri-ult-feedback-style-v2';
     eriUltStyle.textContent = `
-      .shooting-eri-ult-mark,
+      .shooting-eri-ult-ray,
       .shooting-eri-ult-slash{
         position:absolute;
         left:0;top:0;
         pointer-events:none;
-        transform:translate(-50%,-50%);
         z-index:46;
       }
-      .shooting-eri-ult-mark{
-        width:74px;height:74px;
-        border-radius:50%;
-        border:1px solid rgba(255,248,220,.72);
-        box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 0 14px rgba(246,225,164,.25);
+      .shooting-eri-ult-ray{
+        height:2px;
+        border-radius:999px;
+        transform-origin:0 50%;
         opacity:0;
-        animation:shootingEriUltMark .42s cubic-bezier(.2,.72,.28,1) both;
+        background:linear-gradient(
+          90deg,
+          rgba(var(--ult-element-rgb),0) 0%,
+          rgba(var(--ult-element-rgb),.66) 10%,
+          rgba(255,255,255,.98) 48%,
+          rgba(var(--ult-element-rgb),.98) 78%,
+          rgba(var(--ult-element-rgb),0) 100%
+        );
+        box-shadow:
+          0 0 3px rgba(255,255,255,.92),
+          0 0 8px rgba(var(--ult-element-rgb),.92),
+          0 0 14px rgba(var(--ult-element-rgb),.48);
+        animation:shootingEriUltRay .34s cubic-bezier(.18,.76,.22,1) var(--eri-ray-delay,0ms) both;
       }
-      .shooting-eri-ult-mark::before,
-      .shooting-eri-ult-mark::after{
+      .shooting-eri-ult-ray::after{
         content:"";
         position:absolute;
-        left:50%;top:50%;
-        background:rgba(255,250,232,.78);
-        box-shadow:0 0 5px rgba(255,245,207,.48);
-        transform:translate(-50%,-50%);
+        left:0;right:0;top:50%;
+        height:1px;
+        transform:translateY(-50%);
+        background:rgba(255,255,255,.9);
+        filter:blur(.15px);
       }
-      .shooting-eri-ult-mark::before{width:1px;height:94px}
-      .shooting-eri-ult-mark::after{width:94px;height:1px}
-      @keyframes shootingEriUltMark{
-        0%{opacity:0;transform:translate(-50%,-50%) scale(1.28) rotate(-8deg)}
-        22%{opacity:.78}
-        82%{opacity:.94;transform:translate(-50%,-50%) scale(.78) rotate(0deg)}
-        100%{opacity:0;transform:translate(-50%,-50%) scale(.58) rotate(4deg)}
+      @keyframes shootingEriUltRay{
+        0%{opacity:0;transform:rotate(var(--eri-ray-angle,0deg)) scaleX(.02)}
+        16%{opacity:1}
+        62%{opacity:1;transform:rotate(var(--eri-ray-angle,0deg)) scaleX(1)}
+        100%{opacity:0;transform:rotate(var(--eri-ray-angle,0deg)) scaleX(1.04)}
       }
       .shooting-eri-ult-slash{
-        width:116px;height:5px;
+        width:104px;height:4px;
         border-radius:50%;
-        background:linear-gradient(90deg,transparent,rgba(255,249,224,.92) 18%,#fff 50%,rgba(255,243,198,.9) 82%,transparent);
-        box-shadow:0 0 7px rgba(255,255,255,.98),0 0 17px rgba(244,216,143,.62);
+        background:linear-gradient(
+          90deg,
+          transparent,
+          rgba(var(--ult-element-rgb),.86) 18%,
+          #fff 50%,
+          rgba(var(--ult-element-rgb),.96) 82%,
+          transparent
+        );
+        box-shadow:
+          0 0 6px rgba(255,255,255,.96),
+          0 0 16px rgba(var(--ult-element-rgb),.72);
         transform:translate(-50%,-50%) rotate(-18deg) scaleX(.18);
         opacity:0;
-        animation:shootingEriUltSlash .30s cubic-bezier(.16,.72,.22,1) both;
+        animation:shootingEriUltSlash .36s cubic-bezier(.16,.72,.22,1) both;
       }
       .shooting-eri-ult-slash::after{
         content:"";
         position:absolute;
         left:50%;top:50%;
-        width:84px;height:84px;
+        width:72px;height:72px;
         transform:translate(-50%,-50%);
         border-radius:50%;
-        background:radial-gradient(circle,rgba(255,255,255,.72) 0%,rgba(255,247,220,.20) 34%,transparent 68%);
+        background:radial-gradient(
+          circle,
+          rgba(255,255,255,.68) 0%,
+          rgba(var(--ult-element-rgb),.22) 36%,
+          transparent 70%
+        );
       }
       @keyframes shootingEriUltSlash{
         0%{opacity:0;transform:translate(-50%,-50%) rotate(-18deg) scaleX(.12)}
         18%{opacity:1}
-        48%{opacity:1;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.18)}
-        100%{opacity:0;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.42)}
+        48%{opacity:1;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.12)}
+        100%{opacity:0;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.34)}
       }
       #shooting-event-root.eri-ult-impact .shooting-arena{
         animation:shootingEriUltImpact .16s ease-out both;
       }
       @keyframes shootingEriUltImpact{
         0%{filter:brightness(1)}
-        18%{filter:brightness(1.8) saturate(.55)}
-        52%{filter:brightness(1.16) saturate(.82)}
+        18%{filter:brightness(1.55) saturate(.72)}
+        52%{filter:brightness(1.12) saturate(.9)}
         100%{filter:brightness(1)}
       }
       #shooting-event-root.eri-ult-hitstop #shooting-boss,
       #shooting-event-root.eri-ult-hitstop .shooting-normal-enemy{
-        filter:brightness(2.15) saturate(.28) drop-shadow(0 0 9px rgba(255,248,225,.82))!important;
+        filter:brightness(1.92) saturate(.52) drop-shadow(0 0 9px rgba(var(--ult-element-rgb),.88))!important;
       }
     `;
     document.head.appendChild(eriUltStyle);
@@ -2202,6 +2224,63 @@
     return { left: x - hw, right: x + hw, top: y - hh, bottom: y + hh };
   }
 
+  // build567: FACELESSの仮面は「非貫通ショットを受け止める遮蔽物」として扱う。
+  // 単純な現在座標の矩形衝突だけだと、高速弾が1フレームで仮面を跨いだ際に
+  // BOSSまで到達してしまうことがあるため、前フレーム位置→現在位置の線分でも判定する。
+  // Shotgunなど p.pierce=true の弾は従来どおり仮面を貫通できる。
+  function segmentAabbEntryT(x0, y0, x1, y1, minX, maxX, minY, maxY) {
+    let tMin = 0;
+    let tMax = 1;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+
+    const clipAxis = (start, delta, minV, maxV) => {
+      if (Math.abs(delta) < 0.000001) {
+        return start >= minV && start <= maxV;
+      }
+      let t1 = (minV - start) / delta;
+      let t2 = (maxV - start) / delta;
+      if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+      tMin = Math.max(tMin, t1);
+      tMax = Math.min(tMax, t2);
+      return tMin <= tMax;
+    };
+
+    if (!clipAxis(x0, dx, minX, maxX)) return null;
+    if (!clipAxis(y0, dy, minY, maxY)) return null;
+    return (tMax >= 0 && tMin <= 1) ? Math.max(0, tMin) : null;
+  }
+
+  function findFacelessMaskProjectileCollision(projectile, fromX, fromY, toX, toY) {
+    if (!isFacelessStage() || !projectile || !Array.isArray(state?.facelessObjects)) return null;
+
+    const bulletHalfW = Math.max(1, Number(projectile._hw || 4));
+    const bulletHalfH = Math.max(1, Number(projectile._hh || 7));
+    const maskHalf = 39; // CSS上の仮面は78x78
+    let best = null;
+    let bestT = Infinity;
+
+    state.facelessObjects.forEach(obj => {
+      if (!obj || !obj.el || obj.hp <= 0) return;
+      if (projectile.pierce && projectile.piercedTargets && projectile.piercedTargets.has(obj)) return;
+
+      const cx = Number(obj.x || 0);
+      const cy = Number(obj.y || 0);
+      const hitT = segmentAabbEntryT(
+        Number(fromX || 0), Number(fromY || 0),
+        Number(toX || 0), Number(toY || 0),
+        cx - maskHalf - bulletHalfW, cx + maskHalf + bulletHalfW,
+        cy - maskHalf - bulletHalfH, cy + maskHalf + bulletHalfH
+      );
+
+      if (hitT == null || hitT >= bestT) return;
+      bestT = hitT;
+      best = obj;
+    });
+
+    return best;
+  }
+
   // レイド直線レーザー専用の回転込み当たり判定。
   // 通常の矩形判定だと、270pxの棒を回転させても
   // 「横向き270pxの透明な矩形」のまま判定されてしまうため、
@@ -2259,6 +2338,28 @@
     }));
   }
 
+  function getShootingPartySlotElementIconSrc(element) {
+    const raw = Array.isArray(element) ? element[0] : element;
+    const key = String(raw || 'neutral').trim().toLowerCase();
+    const icons = {
+      neutral: 'images/type_neutral.webp',
+      aqua: 'images/type_aqua.webp',
+      fire: 'images/type_fire.webp',
+      wood: 'images/type_wood.webp',
+      dark: 'images/type_dark.webp?v=572',
+      light: 'images/type_light.webp',
+    };
+    return icons[key] || icons.neutral;
+  }
+
+  function getShootingPartySlotElementIconHtml(c) {
+    if (!c || !c.element) return '';
+    const src = getShootingPartySlotElementIconSrc(c.element);
+    return src
+      ? `<img class="shooting-party-slot-element-icon" src="${src}" alt="" aria-hidden="true" draggable="false">`
+      : '';
+  }
+
   function renderShootingPartySlots() {
     const wrap = document.getElementById('shooting-party-slots');
     if (!wrap) return;
@@ -2271,10 +2372,12 @@
         i === 0 &&
         Number(id) === Number(CHARACTER_ID.ERI);
       return fixedStoryEri
-        ? `<button type="button" class="shooting-party-slot filled fixed" aria-label="${c.name}・ストーリー固定枠">
+        ? `<button type="button" class="shooting-party-slot filled fixed" data-character-id="${id}" aria-label="${c.name}・ストーリー固定枠">
+            ${getShootingPartySlotElementIconHtml(c)}
             <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small>
           </button>`
-        : `<button type="button" class="shooting-party-slot filled" onclick="removeShootingPartyCharacter(${id})" aria-label="${c.name}を外す">
+        : `<button type="button" class="shooting-party-slot filled" data-character-id="${id}" onclick="removeShootingPartyCharacter(${id})" aria-label="${c.name}を外す">
+            ${getShootingPartySlotElementIconHtml(c)}
             <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small><i>×</i>
           </button>`;
     }).join('');
@@ -2512,7 +2615,7 @@
       scoreAttackFinalWarningFired: false,
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       storyScoreFinalized: false, storyScoreClearBonus: 0, storyScoreTimeBonus: 0, storyScoreSurvivalBonus: 0, bossDefeatScoreAwarded: false,
-      ultActiveUntil: 0, ultLockUntil: 0, hayateMoonlightUntil: 0,
+      ultActiveUntil: 0, ultLockUntil: 0, playerShotLockUntil: 0, hayateMoonlightUntil: 0,
       ultCutinActive: false, ultCutinTimer: 0, skipNextUltCut: false,
       paused: false, pauseStartedAt: 0,
       arnoAuraUntil: 0, arnoAuraNextTickAt: 0, arnoAuraOwnerId: 0,
@@ -2524,6 +2627,7 @@
       roseFlower: null, roseHeartSeq: 0,
       eltenaBlackHole: null,
       gojoPurpleField: null,
+      gojoPurpleBossFreezeUntil: 0,
       wolfAtkField: null,
       chapter4ItemPhase: false,
       chapter4FinalItem: null,
@@ -2728,7 +2832,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -3066,6 +3170,63 @@
     if (!silent) renderHud();
   }
 
+  // build565: 敵の「移動停止」と「敵弾生成停止」は常にセットで扱う。
+  // 停止解除時に、停止時間中に期限切れになった射撃/行動予約をまとめて消化しないよう、
+  // 再開基準時刻を停止終了後へ送る共通ヘルパー。
+  function deferNormalEnemyAttackResume(enemy, resumeAt, index = 0) {
+    if (!enemy) return;
+    const until = Math.max(performance.now(), Number(resumeAt || 0));
+    const def = enemy.def || {};
+    const interval = getStageAdjustedEnemyFireInterval(Number(def.fireRate || 1200));
+    enemy.lastShotAt = Math.max(Number(enemy.lastShotAt || 0), until);
+    enemy.nextActionAt = Math.max(Number(enemy.nextActionAt || 0), until + interval + Math.max(0, Number(index || 0)) * 35);
+    enemy.attackExecuteAt = 0;
+  }
+
+  function freezeNormalEnemyAction(enemy, resumeAt, index = 0) {
+    if (!enemy) return;
+    deferNormalEnemyAttackResume(enemy, resumeAt, index);
+    enemy.dashUntil = 0;
+    enemy.dashVx = 0;
+    enemy.dashVy = 0;
+    enemy.attackState = 'idle';
+    if (enemy.el) enemy.el.classList.remove('violence-dash', 'generic-charge-dash', 'generic-charge-warning');
+  }
+
+  function deferFacelessObjectAttackResume(obj, resumeAt) {
+    if (!obj) return;
+    const until = Math.max(performance.now(), Number(resumeAt || 0));
+    obj.lastShotAt = Math.max(Number(obj.lastShotAt || 0), until);
+  }
+
+  function deferBossAttackResume(resumeAt) {
+    if (!state || isNormalBattle()) return;
+    const until = Math.max(performance.now(), Number(resumeAt || 0));
+    state.lastBossShotAt = Math.max(Number(state.lastBossShotAt || 0), until);
+    removeBossDangerWarning();
+    state.bossDangerExecuteAt = 0;
+    state.nextBossDangerAt = Math.max(
+      Number(state.nextBossDangerAt || 0),
+      until + getBossDangerInterval()
+    );
+  }
+
+  function deferAllEnemyAttackResume(resumeAt) {
+    if (!state) return;
+    const until = Math.max(performance.now(), Number(resumeAt || 0));
+    (state.normalEnemies || []).forEach((enemy, index) => {
+      if (!enemy || enemy.hp <= 0) return;
+      deferNormalEnemyAttackResume(enemy, until, index);
+    });
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj || obj.hp <= 0) return;
+      deferFacelessObjectAttackResume(obj, until);
+    });
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      deferBossAttackResume(until);
+    }
+  }
+
   function applyBossStun(durationMs, source) {
     if (!state || state.ended || state.finishing) return;
     const now = performance.now();
@@ -3074,6 +3235,11 @@
       // 既に発射済みの弾は残すが、新規弾生成はmakeProjectile側でも遮断する。
       const nextUntil = Math.max(state.normalEnemyStunUntil || 0, now + durationMs);
       state.normalEnemyStunUntil = nextUntil;
+      // 全敵の移動/攻撃停止と同時に、射撃時計も停止終了後へ送る。
+      (state.normalEnemies || []).forEach((enemy, index) => {
+        if (!enemy || enemy.hp <= 0) return;
+        freezeNormalEnemyAction(enemy, nextUntil, index);
+      });
 
       // スタン解除時に全敵の射撃タイマーが「期限切れ」扱いになって
       // 一斉射撃しないよう、再開基準時刻を揃え直す。
@@ -3087,20 +3253,14 @@
         const resumedAt = performance.now();
         (state.normalEnemies || []).forEach((enemy, index) => {
           if (!enemy || enemy.hp <= 0) return;
-          enemy.lastShotAt = resumedAt;
-          if (Number(enemy.nextActionAt || 0) < resumedAt) {
-            enemy.nextActionAt = resumedAt + 260 + index * 70;
-          }
-          if (enemy.attackState === 'telegraph' && Number(enemy.attackExecuteAt || 0) < resumedAt) {
-            enemy.attackExecuteAt = resumedAt + 260 + index * 70;
-          }
+          deferNormalEnemyAttackResume(enemy, resumedAt, index);
         });
       }, Math.max(0, nextUntil - now) + 30);
       return;
     }
     if (state.boss.hp <= 0) return;
     state.bossStunUntil = Math.max(state.bossStunUntil || 0, now + durationMs);
-    state.lastBossShotAt = state.bossStunUntil;
+    deferBossAttackResume(state.bossStunUntil);
     const boss = document.getElementById(BOSS_ID);
     const root = document.getElementById(ROOT_ID);
     if (boss) boss.classList.add('nem-stunned');
@@ -3117,7 +3277,7 @@
         root.classList.remove('nem-stun-active');
         root.removeAttribute('data-nem-stun-source');
       }
-      state.lastBossShotAt = performance.now();
+      deferBossAttackResume(performance.now());
     }, durationMs + 30);
   }
 
@@ -3474,20 +3634,20 @@
     drawRing('noah', 'rgba(197,184,255,.92)', 1.14, .95);
     drawRing('noah', 'rgba(255,255,255,.55)', .72, .65);
 
-    // FACELESS: 黒い弾を潰さず見せるため、黒芯 + 濃灰殻 + 淡い輪郭の多層構成。
-    // blur/shadowは使わずCanvasの円だけで立体感を出す。
-    drawCircleLayer('faceless', 'rgba(8,8,10,.34)', 1.62);
-    drawCircleLayer('faceless', 'rgba(18,18,22,.99)', 1.08);
-    drawCircleLayer('faceless', 'rgba(3,3,5,1)', .66);
-    drawCircleLayer('faceless', 'rgba(198,198,210,.88)', .19);
-    drawRing('faceless', 'rgba(105,105,118,.92)', 1.10, .95);
+    // FACELESS: DARK属性カラーを黒ではなく中間紫で明示。
+    // Canvas描画でもDOM弾と同じ紫系に揃え、FIREの赤 / AQUAの青と区別する。
+    drawCircleLayer('faceless', 'rgba(128,84,174,.25)', 1.62);
+    drawCircleLayer('faceless', 'rgba(128,84,174,.98)', 1.08);
+    drawCircleLayer('faceless', 'rgba(92,54,130,1)', .66);
+    drawCircleLayer('faceless', 'rgba(236,221,247,.94)', .20);
+    drawRing('faceless', 'rgba(180,139,212,.96)', 1.10, .95);
 
-    // 仮面オブジェクト由来の弾は少し大きく、銀縁を強める。
-    drawCircleLayer('faceless-object', 'rgba(5,5,8,.36)', 1.72);
-    drawCircleLayer('faceless-object', 'rgba(22,22,28,.99)', 1.12);
-    drawCircleLayer('faceless-object', 'rgba(2,2,4,1)', .69);
-    drawCircleLayer('faceless-object', 'rgba(224,224,232,.92)', .18);
-    drawRing('faceless-object', 'rgba(138,138,152,.94)', 1.13, 1.05);
+    // 仮面オブジェクト由来も同じDARK紫。少し大きく、明るい紫縁を強める。
+    drawCircleLayer('faceless-object', 'rgba(128,84,174,.28)', 1.72);
+    drawCircleLayer('faceless-object', 'rgba(143,96,184,.99)', 1.12);
+    drawCircleLayer('faceless-object', 'rgba(96,56,135,1)', .69);
+    drawCircleLayer('faceless-object', 'rgba(243,231,251,.96)', .19);
+    drawRing('faceless-object', 'rgba(194,157,222,.98)', 1.13, 1.05);
 
     // その他の通常Canvas弾。
     drawCircleLayer('normal', 'rgba(78,66,92,.94)', 1.00);
@@ -3543,10 +3703,17 @@
   // makeProjectileへ到達することがあるため、最終入口でも必ず止める。
   function isEnemyProjectileSpawnSuppressed(now = performance.now()) {
     if (!state || state.ended || state.finishing) return false;
+    const ts = Number(now || 0);
+
+    // ノア落雷中 / エルテナ重力場中は盤面全体の敵行動が停止するため、
+    // gameLoop外の遅延処理から来た弾生成も最終入口で必ず遮断する。
+    if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
+    if (isEnemyPullFieldActive(ts)) return true;
+
     if (isNormalBattle()) {
-      return Number(now || 0) < Number(state.normalEnemyStunUntil || 0);
+      return ts < Number(state.normalEnemyStunUntil || 0);
     }
-    return Number(now || 0) < Number(state.bossStunUntil || 0);
+    return ts < Number(state.bossStunUntil || 0);
   }
 
   function makeProjectile(cls, x, y, vx, vy, damage, ownerId) {
@@ -3877,8 +4044,422 @@
     aqua:    { color:'#4aaee8', rgb:'74,174,232', filter:'grayscale(1) sepia(1) saturate(7) hue-rotate(150deg) brightness(1.04)' },
     wood:    { color:'#67b96a', rgb:'103,185,106',filter:'grayscale(1) sepia(1) saturate(6) hue-rotate(72deg) brightness(.98)' },
     light:   { color:'#e7c85a', rgb:'231,200,90', filter:'grayscale(1) sepia(1) saturate(5) hue-rotate(2deg) brightness(1.15)' },
-    dark:    { color:'#171717', rgb:'23,23,23', filter:'grayscale(1) contrast(1.28) brightness(.56)' },
+    dark:    { color:'#8054ae', rgb:'128,84,174', filter:'grayscale(1) sepia(1) saturate(5.2) hue-rotate(225deg) brightness(.86)' },
   });
+
+  // ============================================================
+  // build580: BOMB専用ビジュアル
+  // 「通常弾が少し大きいだけ」に見えないよう、投擲物としての見た目と
+  // 着弾時の属性色爆風をBOMB共通仕様として与える。
+  // 当たり判定 / ダメージ計算は従来のBOMBロジックを維持する。
+  // ============================================================
+  function getBombElementVisual(element) {
+    const key = normalizeCombatElement(element) || 'neutral';
+    return ULT_ELEMENT_VISUAL[key] || ULT_ELEMENT_VISUAL.neutral;
+  }
+
+  function ensureBombVisualStyles() {
+    const styleId = 'shooting-bomb-visual-style-build580';
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .shooting-bullet-splash{
+        width:20px!important;
+        height:20px!important;
+        border-radius:50%!important;
+        border:1px solid rgba(255,255,255,.42)!important;
+        background:
+          radial-gradient(circle at 34% 28%,rgba(255,255,255,.98) 0 11%,rgba(255,255,255,.42) 12% 20%,transparent 21%),
+          radial-gradient(circle at 50% 54%,rgba(var(--bomb-rgb,244,239,227),.98) 0 35%,var(--bomb-color,#f4efe3) 36% 67%,rgba(34,28,35,.95) 68% 100%)!important;
+        box-shadow:
+          0 0 8px rgba(var(--bomb-rgb,244,239,227),.78),
+          0 0 16px rgba(var(--bomb-rgb,244,239,227),.34),
+          inset -3px -4px 5px rgba(0,0,0,.34),
+          inset 2px 2px 4px rgba(255,255,255,.24)!important;
+        transform-origin:50% 50%!important;
+        will-change:transform;
+        overflow:visible!important;
+      }
+      .shooting-bullet-splash.bomb-size-l{
+        width:24px!important;
+        height:24px!important;
+      }
+      .shooting-bullet-splash::before{
+        content:"";
+        position:absolute;
+        left:50%;
+        top:-6px;
+        width:7px;
+        height:6px;
+        border:2px solid rgba(var(--bomb-rgb,244,239,227),.92);
+        border-bottom:0;
+        border-radius:8px 8px 2px 2px;
+        transform:translateX(-50%) rotate(-13deg);
+        box-shadow:0 0 5px rgba(var(--bomb-rgb,244,239,227),.52);
+        pointer-events:none;
+      }
+      .shooting-bullet-splash::after{
+        content:"";
+        position:absolute;
+        left:calc(50% + 3px);
+        top:-9px;
+        width:4px;
+        height:4px;
+        border-radius:50%;
+        background:#fff;
+        box-shadow:
+          0 0 5px 2px rgba(var(--bomb-rgb,244,239,227),.98),
+          0 0 9px 4px rgba(var(--bomb-rgb,244,239,227),.44);
+        animation:shootingBombFuseSpark580 .18s ease-in-out infinite alternate;
+        pointer-events:none;
+      }
+
+      .shooting-bomb-throw-pop{
+        position:absolute;
+        left:0;
+        top:0;
+        width:32px;
+        height:16px;
+        border:1px solid rgba(var(--bomb-rgb,244,239,227),.74);
+        border-radius:50%;
+        pointer-events:none;
+        z-index:24;
+        transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0) translate(-50%,-50%) scale(.35);
+        box-shadow:0 0 8px rgba(var(--bomb-rgb,244,239,227),.30);
+        animation:shootingBombThrowPop580 .24s ease-out forwards;
+      }
+
+      .shooting-bomb-explosion{
+        position:absolute;
+        left:0;
+        top:0;
+        width:var(--bomb-explosion-size,168px);
+        height:var(--bomb-explosion-size,168px);
+        transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0) translate(-50%,-50%);
+        pointer-events:none;
+        z-index:46;
+        contain:layout style paint;
+      }
+      .shooting-bomb-explosion > i{
+        position:absolute;
+        left:50%;
+        top:50%;
+        pointer-events:none;
+      }
+      .shooting-bomb-explosion .bomb-flash{
+        width:32%;
+        height:32%;
+        border-radius:50%;
+        background:radial-gradient(circle,#fff 0 14%,rgba(255,255,255,.95) 15% 28%,rgba(var(--bomb-rgb,244,239,227),.94) 29% 58%,rgba(var(--bomb-rgb,244,239,227),0) 72%);
+        box-shadow:0 0 18px rgba(var(--bomb-rgb,244,239,227),.96),0 0 38px rgba(var(--bomb-rgb,244,239,227),.48);
+        animation:shootingBombFlash580 .34s cubic-bezier(.16,.88,.24,1) forwards;
+      }
+      .shooting-bomb-explosion .bomb-cloud{
+        width:72%;
+        height:72%;
+        border-radius:50%;
+        background:
+          radial-gradient(circle,rgba(var(--bomb-rgb,244,239,227),.44) 0 24%,rgba(var(--bomb-rgb,244,239,227),.26) 42%,rgba(var(--bomb-rgb,244,239,227),0) 72%);
+        filter:blur(2px);
+        animation:shootingBombCloud580 .48s ease-out forwards;
+      }
+      .shooting-bomb-explosion .bomb-ring{
+        width:70%;
+        height:70%;
+        border-radius:50%;
+        border:2px solid rgba(var(--bomb-rgb,244,239,227),.92);
+        box-shadow:
+          0 0 10px rgba(var(--bomb-rgb,244,239,227),.74),
+          inset 0 0 11px rgba(var(--bomb-rgb,244,239,227),.35);
+        animation:shootingBombRing580 .46s cubic-bezier(.08,.76,.18,1) forwards;
+      }
+      .shooting-bomb-explosion .bomb-ring.ring2{
+        width:50%;
+        height:50%;
+        border-width:1px;
+        opacity:.72;
+        animation-duration:.38s;
+        animation-delay:.035s;
+      }
+      .shooting-bomb-explosion .bomb-lobe{
+        width:22%;
+        height:22%;
+        margin:-11% 0 0 -11%;
+        border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,.88) 0 10%,rgba(var(--bomb-rgb,244,239,227),.82) 26%,rgba(var(--bomb-rgb,244,239,227),.18) 68%,transparent 74%);
+        transform:rotate(var(--bomb-a,0deg)) translateX(calc(var(--bomb-explosion-size,168px) * .13)) scale(.28);
+        transform-origin:50% 50%;
+        animation:shootingBombLobe580 .42s ease-out forwards;
+      }
+
+      .shooting-bomb-splash-hit{
+        position:absolute;
+        left:0;
+        top:0;
+        width:104px;
+        height:104px;
+        transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0) translate(-50%,-50%);
+        pointer-events:none;
+        z-index:48;
+        contain:layout style paint;
+      }
+      .shooting-bomb-splash-hit > i{
+        position:absolute;
+        left:50%;
+        top:50%;
+        pointer-events:none;
+      }
+      .shooting-bomb-splash-hit .splash-core{
+        width:34px;
+        height:34px;
+        margin:-17px 0 0 -17px;
+        border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,1) 0 18%,rgba(var(--bomb-rgb,244,239,227),.98) 19% 48%,rgba(var(--bomb-rgb,244,239,227),.18) 70%,rgba(var(--bomb-rgb,244,239,227),0) 78%);
+        box-shadow:0 0 12px 3px rgba(var(--bomb-rgb,244,239,227),.98),0 0 30px 8px rgba(var(--bomb-rgb,244,239,227),.52);
+        animation:shootingBombSplashCore582 .34s ease-out forwards;
+      }
+      .shooting-bomb-splash-hit .splash-burst{
+        width:70px;
+        height:70px;
+        margin:-35px 0 0 -35px;
+        border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,.34) 0 16%,rgba(var(--bomb-rgb,244,239,227),.44) 28%,rgba(var(--bomb-rgb,244,239,227),.14) 52%,rgba(var(--bomb-rgb,244,239,227),0) 74%);
+        animation:shootingBombSplashBurst582 .38s ease-out forwards;
+      }
+      .shooting-bomb-splash-hit .splash-ring{
+        width:68px;
+        height:68px;
+        margin:-34px 0 0 -34px;
+        border-radius:50%;
+        border:3px solid rgba(var(--bomb-rgb,244,239,227),.94);
+        box-shadow:0 0 12px rgba(var(--bomb-rgb,244,239,227),.84), inset 0 0 14px rgba(var(--bomb-rgb,244,239,227),.30);
+        animation:shootingBombSplashRing582 .40s cubic-bezier(.12,.72,.18,1) forwards;
+      }
+      .shooting-bomb-splash-hit .splash-ring.r2{
+        width:46px;
+        height:46px;
+        margin:-23px 0 0 -23px;
+        border-width:2px;
+        opacity:.92;
+        animation-duration:.32s;
+      }
+      .shooting-bomb-splash-hit .splash-ray{
+        width:34px;
+        height:4px;
+        margin:-2px 0 0 0;
+        border-radius:999px;
+        transform-origin:0 50%;
+        background:linear-gradient(90deg,rgba(255,255,255,.98),rgba(var(--bomb-rgb,244,239,227),.92) 34%,rgba(var(--bomb-rgb,244,239,227),0) 100%);
+        box-shadow:0 0 8px rgba(var(--bomb-rgb,244,239,227),.72);
+        transform:rotate(var(--splash-a,0deg)) translateX(10px) scaleX(.22);
+        animation:shootingBombSplashRay582 .32s ease-out forwards;
+      }
+
+      /* build587: リズULT専用・巨大AQUA BOMB */
+      .shooting-liz-ult-bomb{
+        position:absolute;
+        left:0;
+        top:0;
+        width:62px;
+        height:62px;
+        margin:0;
+        border-radius:50%;
+        pointer-events:none;
+        z-index:58;
+        border:2px solid rgba(255,255,255,.72);
+        background:
+          radial-gradient(circle at 31% 25%,rgba(255,255,255,1) 0 8%,rgba(255,255,255,.54) 9% 17%,transparent 18%),
+          radial-gradient(circle at 47% 52%,rgba(var(--bomb-rgb,74,174,232),1) 0 34%,var(--bomb-color,#4aaee8) 35% 62%,rgba(22,57,82,.98) 63% 100%);
+        box-shadow:
+          0 0 16px 4px rgba(var(--bomb-rgb,74,174,232),.84),
+          0 0 34px 10px rgba(var(--bomb-rgb,74,174,232),.34),
+          inset -9px -11px 12px rgba(0,25,48,.42),
+          inset 5px 5px 9px rgba(255,255,255,.28);
+        transform-origin:50% 50%;
+        will-change:transform,filter;
+      }
+      .shooting-liz-ult-bomb::before{
+        content:"";
+        position:absolute;
+        left:50%;
+        top:-15px;
+        width:17px;
+        height:17px;
+        border:4px solid rgba(var(--bomb-rgb,74,174,232),.96);
+        border-bottom:0;
+        border-radius:15px 15px 4px 4px;
+        transform:translateX(-50%) rotate(-12deg);
+        box-shadow:0 0 11px rgba(var(--bomb-rgb,74,174,232),.72);
+      }
+      .shooting-liz-ult-bomb::after{
+        content:"";
+        position:absolute;
+        left:calc(50% + 8px);
+        top:-18px;
+        width:9px;
+        height:9px;
+        border-radius:50%;
+        background:#fff;
+        box-shadow:
+          0 0 8px 3px rgba(255,255,255,.92),
+          0 0 16px 7px rgba(var(--bomb-rgb,74,174,232),.78);
+        animation:shootingLizUltFuse587 .16s ease-in-out infinite alternate;
+      }
+      .shooting-liz-ult-bomb-shadow{
+        position:absolute;
+        width:76px;
+        height:24px;
+        border-radius:50%;
+        pointer-events:none;
+        z-index:25;
+        background:radial-gradient(ellipse,rgba(var(--bomb-rgb,74,174,232),.38),rgba(var(--bomb-rgb,74,174,232),0) 72%);
+        filter:blur(2px);
+        transform:translate(-50%,-50%);
+        will-change:transform,opacity;
+      }
+
+      @keyframes shootingLizUltFuse587{
+        from{opacity:.58;transform:scale(.72)}
+        to{opacity:1;transform:scale(1.34)}
+      }
+
+      @keyframes shootingBombFuseSpark580{
+        from{opacity:.56;transform:scale(.72)}
+        to{opacity:1;transform:scale(1.22)}
+      }
+      @keyframes shootingBombThrowPop580{
+        0%{opacity:.76;transform:translate3d(var(--bomb-x),var(--bomb-y),0) translate(-50%,-50%) scale(.35)}
+        100%{opacity:0;transform:translate3d(var(--bomb-x),calc(var(--bomb-y) + 3px),0) translate(-50%,-50%) scale(1.25)}
+      }
+      @keyframes shootingBombFlash580{
+        0%{opacity:0;transform:translate(-50%,-50%) scale(.18)}
+        18%{opacity:1;transform:translate(-50%,-50%) scale(.78)}
+        58%{opacity:.96;transform:translate(-50%,-50%) scale(1.36)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.82)}
+      }
+      @keyframes shootingBombCloud580{
+        0%{opacity:.72;transform:translate(-50%,-50%) scale(.24)}
+        62%{opacity:.56;transform:translate(-50%,-50%) scale(.92)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.14)}
+      }
+      @keyframes shootingBombRing580{
+        0%{opacity:.94;transform:translate(-50%,-50%) scale(.18)}
+        68%{opacity:.76;transform:translate(-50%,-50%) scale(.93)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.18)}
+      }
+      @keyframes shootingBombLobe580{
+        0%{opacity:.86;transform:rotate(var(--bomb-a)) translateX(calc(var(--bomb-explosion-size) * .08)) scale(.24)}
+        62%{opacity:.68;transform:rotate(var(--bomb-a)) translateX(calc(var(--bomb-explosion-size) * .27)) scale(1.02)}
+        100%{opacity:0;transform:rotate(var(--bomb-a)) translateX(calc(var(--bomb-explosion-size) * .34)) scale(.48)}
+      }
+      @keyframes shootingBombSplashCore582{
+        0%{opacity:0;transform:translate(-50%,-50%) scale(.16)}
+        20%{opacity:1;transform:translate(-50%,-50%) scale(1.16)}
+        58%{opacity:.96;transform:translate(-50%,-50%) scale(.92)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.62)}
+      }
+      @keyframes shootingBombSplashBurst582{
+        0%{opacity:0;transform:translate(-50%,-50%) scale(.18)}
+        28%{opacity:.92;transform:translate(-50%,-50%) scale(.72)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.35)}
+      }
+      @keyframes shootingBombSplashRing582{
+        0%{opacity:1;transform:translate(-50%,-50%) scale(.20)}
+        60%{opacity:.92;transform:translate(-50%,-50%) scale(1.05)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.42)}
+      }
+      @keyframes shootingBombSplashRay582{
+        0%{opacity:0;transform:rotate(var(--splash-a)) translateX(4px) scaleX(.10)}
+        22%{opacity:1;transform:rotate(var(--splash-a)) translateX(10px) scaleX(.72)}
+        100%{opacity:0;transform:rotate(var(--splash-a)) translateX(31px) scaleX(1.16)}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function createBombThrowPop(x, y, element) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureBombVisualStyles();
+    const visual = getBombElementVisual(element);
+    const el = document.createElement('i');
+    el.className = 'shooting-bomb-throw-pop';
+    el.style.setProperty('--bomb-x', `${Number(x || 0)}px`);
+    el.style.setProperty('--bomb-y', `${Number(y || 0)}px`);
+    el.style.setProperty('--bomb-rgb', visual.rgb);
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 280);
+  }
+
+  function createGenericBombExplosionEffect(x, y, element, radius, bombSize) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureBombVisualStyles();
+
+    const visual = getBombElementVisual(element);
+    const safeRadius = Math.max(30, Number(radius || 76));
+    const sizeMultiplier = String(bombSize || '').toUpperCase() === 'L' ? 2.28 : 2.16;
+    const visualSize = Math.round(safeRadius * sizeMultiplier);
+
+    const el = document.createElement('div');
+    el.className = 'shooting-bomb-explosion';
+    el.style.setProperty('--bomb-x', `${Number(x || 0)}px`);
+    el.style.setProperty('--bomb-y', `${Number(y || 0)}px`);
+    el.style.setProperty('--bomb-color', visual.color);
+    el.style.setProperty('--bomb-rgb', visual.rgb);
+    el.style.setProperty('--bomb-explosion-size', `${visualSize}px`);
+
+    el.innerHTML = '<i class="bomb-cloud"></i><i class="bomb-ring"></i><i class="bomb-ring ring2"></i><i class="bomb-flash"></i>';
+    for (let i = 0; i < 7; i++) {
+      const lobe = document.createElement('i');
+      lobe.className = 'bomb-lobe';
+      lobe.style.setProperty('--bomb-a', `${i * (360 / 7) + (i % 2 ? 8 : -5)}deg`);
+      el.appendChild(lobe);
+    }
+
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 560);
+  }
+
+  function createBombSplashVictimHitEffect(x, y, element) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureBombVisualStyles();
+    const visual = getBombElementVisual(element);
+    const el = document.createElement('div');
+    el.className = 'shooting-bomb-splash-hit';
+    el.style.setProperty('--bomb-x', `${Number(x || 0)}px`);
+    el.style.setProperty('--bomb-y', `${Number(y || 0)}px`);
+    el.style.setProperty('--bomb-rgb', visual.rgb);
+    el.innerHTML = '<i class="splash-burst"></i><i class="splash-ring"></i><i class="splash-ring r2"></i><i class="splash-core"></i>';
+    for (let i = 0; i < 8; i++) {
+      const ray = document.createElement('i');
+      ray.className = 'splash-ray';
+      ray.style.setProperty('--splash-a', `${i * 45 + (i % 2 ? 7 : -4)}deg`);
+      el.appendChild(ray);
+    }
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 460);
+  }
+
+  function positionGenericBombProjectile(p, now) {
+    if (!p || !p.el) return;
+    const travelled = Math.max(0, Number(p.bombStartY || p.y) - Number(p.y || 0));
+    const arcLength = Math.max(120, Number(p.bombArcLength || 220));
+    const arcPhase = Math.min(1, travelled / arcLength);
+    const lift = Math.sin(Math.PI * arcPhase) * Number(p.bombArcHeight || 12);
+    const ageSec = Math.max(0, Number(now || performance.now()) - Number(p.bombBornAt || 0)) / 1000;
+    const spin = ageSec * Number(p.bombSpinRateDeg || 430);
+    const settle = arcPhase < 1
+      ? 0.80 + Math.sin(Math.PI * arcPhase) * 0.27
+      : 0.98;
+
+    p.el.style.transform =
+      `translate3d(${Number(p.x || 0)}px,${Number(p.y || 0) - lift}px,0) ` +
+      `translate(-50%,-50%) rotate(${spin}deg) scale(${settle})`;
+  }
 
   function applyUltElementVisualContext(c) {
     const root = document.getElementById(ROOT_ID);
@@ -5169,8 +5750,12 @@
     // 汎用スプラッシュ：単発着弾 + 周囲へ減衰ダメージ
     // ----------------------------------------------------------
     if (c.shotType === 'bomb') {
+      ensureBombVisualStyles();
+      const bombSize = String(c.bombSize || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+      const attackElement = normalizeCombatElement(c.element) || 'neutral';
+      const visual = getBombElementVisual(attackElement);
       const p = makeProjectile(
-        bulletClass + ' shooting-bullet-splash',
+        bulletClass + ' shooting-bullet-splash' + (bombSize === 'L' ? ' bomb-size-l' : ' bomb-size-m'),
         state.player.x,
         y,
         0,
@@ -5182,6 +5767,22 @@
         p.kind = 'generic_splash';
         p.splashRadius = Math.max(30, Number(c.splashRadius || 76));
         p.splashDamageRate = Math.max(0, Number(c.splashDamageRate || 0.55));
+        p.bombSize = bombSize;
+        p.attackElement = attackElement;
+        p.bombBornAt = now;
+        p.bombStartY = y;
+        p.bombArcLength = bombSize === 'L' ? 240 : 215;
+        p.bombArcHeight = bombSize === 'L' ? 15 : 12;
+        p.bombSpinRateDeg = (state.shotIndex % 2 === 0 ? 1 : -1) * (bombSize === 'L' ? 390 : 455);
+        p.el.style.setProperty('--bomb-color', visual.color);
+        p.el.style.setProperty('--bomb-rgb', visual.rgb);
+
+        // 見た目は大きくするが、命中判定はbuild579までの通常弾(4x22px)と同じ。
+        // 演出変更だけでBOMBが当てやすく/当たりにくくならないようにする。
+        p._hw = 2;
+        p._hh = 11;
+
+        createBombThrowPop(state.player.x, y + 7, attackElement);
         state.bullets.push(p);
       }
       return;
@@ -6244,11 +6845,29 @@
       if (!enemy || !enemy.el) return;
       const def = enemy.def || {};
 
+      // エリ/ネム等の全体停止：移動停止と敵弾生成停止を必ずセットにする。
+      const globalStunUntil = Number(state.normalEnemyStunUntil || 0);
+      if (now < globalStunUntil) {
+        freezeNormalEnemyAction(enemy, globalStunUntil);
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
+
       // ノアULT後：落雷を受けた敵だけスタン。
       if (now < Number(enemy.noahStunUntil || 0)) {
-        enemy.dashVx = 0;
-        enemy.dashVy = 0;
-        enemy.attackState = 'idle';
+        freezeNormalEnemyAction(enemy, Number(enemy.noahStunUntil || now));
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
+
+      // マグダレーナULTで捕捉された敵は、拘束時間中は自発的な移動・攻撃を完全停止。
+      // lastShotAt / nextActionAt を拘束終了後へ送ることで、解除直後に
+      // 停止中の射撃予約がまとめて吐き出されることも防ぐ。
+      if (now < Number(enemy.gojoPurpleFreezeUntil || 0)) {
+        const resumeAt = Number(enemy.gojoPurpleFreezeUntil || now);
+        freezeNormalEnemyAction(enemy, resumeAt);
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
         return;
@@ -6262,8 +6881,8 @@
 
       if (activePullField) {
         // 攻撃も止め、吸引中は位置更新をブラックホール処理だけに一元化する。
-        enemy.dashVx = 0;
-        enemy.dashVy = 0;
+        const pullResumeAt = Number(state.eltenaBlackHole?.activeUntil || now);
+        freezeNormalEnemyAction(enemy, pullResumeAt);
         if (enemy.attackState === 'dash') {
           enemy.attackState = 'idle';
           enemy.el.classList.remove('violence-dash', 'generic-charge-dash');
@@ -6275,9 +6894,7 @@
       // アヤネULTで掴まれている敵だけを個別拘束する。
       // global stunではなく、命中した敵だけ7秒間停止。
       if (now < Number(enemy.ayaneGrabUntil || 0)) {
-        enemy.dashVx = 0;
-        enemy.dashVy = 0;
-        enemy.attackState = 'idle';
+        freezeNormalEnemyAction(enemy, Number(enemy.ayaneGrabUntil || now));
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
         return;
@@ -7244,9 +7861,27 @@
     state.facelessObjects = state.facelessObjects.filter(obj => {
       if (!obj || obj.hp <= 0) return false;
 
+      // ノアULT後：落雷を受けたOBJECTも、移動停止と射撃生成停止をセットで維持。
+      if (now < Number(obj.noahStunUntil || 0)) {
+        deferFacelessObjectAttackResume(obj, Number(obj.noahStunUntil || now));
+        positionUnit(obj.el, obj.x, obj.y);
+        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        return true;
+      }
+
+      // マグダレーナULTで捕捉されたOBJECTも移動・射撃生成を停止。
+      // 解除後に即連射しないよう、最終射撃時刻を拘束終了時刻まで進める。
+      if (now < Number(obj.gojoPurpleFreezeUntil || 0)) {
+        deferFacelessObjectAttackResume(obj, Number(obj.gojoPurpleFreezeUntil || now));
+        positionUnit(obj.el, obj.x, obj.y);
+        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        return true;
+      }
+
       // ブラックホール中はOBJECT側の横移動/攻撃AIを止め、
       // 吸引処理だけに座標更新を一元化する。
       if (activePullField) {
+        deferFacelessObjectAttackResume(obj, Number(state.eltenaBlackHole?.activeUntil || now));
         positionUnit(obj.el, obj.x, obj.y);
         positionUnit(obj.hpEl, obj.x, obj.y + 56);
         return true;
@@ -8670,7 +9305,8 @@
     const t = (now - state.startedAt) / 1000;
     const bossGrabbed = now < (state.bossGrabUntil || 0);
     const bossStunned = now < (state.bossStunUntil || 0);
-    const bossBlackHolePulled = isEnemyPullFieldActive(now);
+    const bossGojoFrozen = now < Number(state.gojoPurpleBossFreezeUntil || 0);
+    const bossBlackHolePulled = isEnemyPullFieldActive(now) || bossGojoFrozen;
 
     const applyBossStartBlend = (targetX, targetY) => {
       const startedAt = Number(state.bossMotionBlendStartedAt || 0);
@@ -8806,6 +9442,8 @@
 
     state.bullets = state.bullets.filter(p => {
       if (!p || !p.el) return false;
+      const projectilePrevX = Number(p.x || 0);
+      const projectilePrevY = Number(p.y || 0);
       if (p.kind === 'arno_orbit_forward') {
         updateArnoOrbitProjectile(p, dt);
       } else if (p.kind === 'wolf_j_homing') {
@@ -8816,7 +9454,11 @@
         p.x += p.vx * dt;
         p.y += p.vy * dt;
       }
-      positionUnit(p.el, p.x, p.y);
+      if (p.kind === 'generic_splash') {
+        positionGenericBombProjectile(p, now);
+      } else {
+        positionUnit(p.el, p.x, p.y);
+      }
 
       // J字の折り返し中は当たり判定を開始しない。
       // 標的直下へ収束してから通常の着弾判定へ入る。
@@ -8888,8 +9530,16 @@
         if (p.pierce) {
           if (p.piercedTargets) p.piercedTargets.add(chapter6BarrierTarget);
         } else {
-          // 壁への当たり判定・弾消滅は全弾維持。DOMを作るHIT演出だけ間引く。
-          if (renderBarrierImpact) {
+          // 壁への当たり判定・弾消滅は全弾維持。BOMBは壁面でも爆発させる。
+          if (p.kind === 'generic_splash') {
+            createGenericBombExplosionEffect(
+              Number(p.x || chapter6BarrierTarget.x || 0),
+              Number(p.y || chapter6BarrierTarget.y || 0),
+              p.attackElement,
+              p.splashRadius,
+              p.bombSize
+            );
+          } else if (renderBarrierImpact) {
             createHit(Number(p.x || chapter6BarrierTarget.x || 0), Number(p.y || chapter6BarrierTarget.y || 0), false);
           }
           p.el.remove();
@@ -8899,31 +9549,26 @@
 
       let normalTarget = null;
       let normalTargets = null;
-      const facelessObjectTarget = (isFacelessStage() || isAmbushStage())
-        ? (state.facelessObjects || []).find(obj => {
-            if (!obj || !obj.el || obj.hp <= 0) return false;
-            if (p.pierce && p.piercedTargets && p.piercedTargets.has(obj)) return false;
-            let targetRect = null;
-            if (isAmbushStage() && obj.ambushMinion) {
-              targetRect = getAmbushMinionHitRect(obj, arenaRect);
-            } else if (isFacelessStage()) {
-              // 仮面はCSS上 78x78。画像ロード直後のgetBoundingClientRect()が0でも
-              // 当たり判定を失わないよう、ゲーム座標から固定サイズで作る。
-              const cx = arenaRect.left + Number(obj.x || 0);
-              const cy = arenaRect.top + Number(obj.y || 0);
-              const half = 39;
-              targetRect = {
-                left: cx - half,
-                right: cx + half,
-                top: cy - half,
-                bottom: cy + half
-              };
-            } else {
-              targetRect = getUnitRect(obj, arenaRect);
-            }
-            return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 12);
-          })
-        : null;
+      // FACELESSの仮面は物理的な遮蔽物。
+      // 非貫通弾は仮面に触れた時点でそこで消え、同じフレームでBOSSへ抜けない。
+      // 高速弾のすり抜け防止のため、現在位置だけでなく移動線分でも最初に交差した仮面を拾う。
+      let facelessObjectTarget = null;
+      if (isFacelessStage()) {
+        facelessObjectTarget = findFacelessMaskProjectileCollision(
+          p,
+          projectilePrevX, projectilePrevY,
+          Number(p.x || 0), Number(p.y || 0)
+        );
+      } else if (isAmbushStage()) {
+        facelessObjectTarget = (state.facelessObjects || []).find(obj => {
+          if (!obj || !obj.el || obj.hp <= 0) return false;
+          if (p.pierce && p.piercedTargets && p.piercedTargets.has(obj)) return false;
+          const targetRect = obj.ambushMinion
+            ? getAmbushMinionHitRect(obj, arenaRect)
+            : getUnitRect(obj, arenaRect);
+          return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 12);
+        }) || null;
+      }
       const hitBoss = !facelessObjectTarget &&
         !isNormalBattle() &&
         bossRect &&
@@ -8981,6 +9626,15 @@
           const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
           const appliedObjectDamage = damageFacelessObject(facelessObjectTarget, finalDamage, now, getElementDamageReaction(attackElement, targetElement));
           hitCount = appliedObjectDamage > 0 ? 1 : 0;
+          if (p.kind === 'generic_splash') {
+            createGenericBombExplosionEffect(
+              Number(facelessObjectTarget.x || p.x),
+              Number(facelessObjectTarget.y || p.y),
+              attackElement,
+              p.splashRadius,
+              p.bombSize
+            );
+          }
           addLegacyCombatScore(80);
         } else if (normalTarget) {
           const targetsToDamage =
@@ -9011,9 +9665,16 @@
               if (Math.hypot(Number(enemy.x || 0) - Number(normalTarget.x || 0), Number(enemy.y || 0) - Number(normalTarget.y || 0)) > radius) return;
               const splashTargetElement = getCombatTargetElement(enemy);
               const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, splashTargetElement);
-              damageNormalEnemy(enemy, splashDamage, now, false, getElementDamageReaction(attackElement, splashTargetElement));
+              createBombSplashVictimHitEffect(Number(enemy.x || 0), Number(enemy.y || 0), attackElement);
+              damageNormalEnemy(enemy, splashDamage, now, true, getElementDamageReaction(attackElement, splashTargetElement));
             });
-            createHit(Number(normalTarget.x || p.x), Number(normalTarget.y || p.y), false);
+            createGenericBombExplosionEffect(
+              Number(normalTarget.x || p.x),
+              Number(normalTarget.y || p.y),
+              attackElement,
+              radius,
+              p.bombSize
+            );
           }
 
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
@@ -9038,6 +9699,15 @@
             addLegacyCombatScore(120);
           }
           hitCount = appliedDamage > 0 ? 1 : 0;
+          if (p.kind === 'generic_splash') {
+            createGenericBombExplosionEffect(
+              Number(p.x || state.boss.x || 0),
+              Number(p.y || state.boss.y || 0),
+              attackElement,
+              p.splashRadius,
+              p.bombSize
+            );
+          }
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
           if (isAmbushStage()) {
@@ -9501,8 +10171,8 @@
         opacity:1!important;
         border:0!important;
         outline:none!important;
-        background:linear-gradient(180deg,#fff7f8 0%,#e7a5b1 44%,#8d243b 100%)!important;
-        box-shadow:0 0 7px rgba(215,93,119,.78)!important;
+        background:linear-gradient(180deg,#fffaff 0%,#eadbff 34%,#aa67ee 68%,#6928b8 100%)!important;
+        box-shadow:0 0 7px rgba(179,111,235,.82)!important;
         filter:none!important;
       }
       #shooting-event-root .shooting-bullet.shooting-bullet-gojo::before,
@@ -9516,16 +10186,16 @@
         transform:translate(-50%,-50%) scale(.82);
         transform-origin:center center;
         background:
-          radial-gradient(circle at 36% 34%,rgba(255,247,248,.78) 0 8%,rgba(238,168,184,.64) 15%,rgba(181,46,77,.58) 38%,rgba(92,11,29,.46) 64%,rgba(26,0,10,.22) 100%);
-        box-shadow:0 0 9px rgba(255,244,246,.52),0 0 20px rgba(196,66,96,.34),0 0 38px rgba(78,6,22,.24);
+          radial-gradient(circle at 36% 34%,rgba(255,250,255,.80) 0 8%,rgba(234,219,255,.68) 15%,rgba(170,103,238,.60) 38%,rgba(105,40,184,.48) 64%,rgba(53,12,103,.24) 100%);
+        box-shadow:0 0 9px rgba(251,247,255,.54),0 0 20px rgba(166,91,233,.36),0 0 38px rgba(100,37,177,.24);
         opacity:0;
         will-change:left,top,transform,filter;
       }
       .shooting-gojo-purple-wave::before,
       .shooting-gojo-purple-wave::after{
         content:'';position:absolute;inset:-9px;border-radius:50%;
-        border:2px solid rgba(210,108,130,.34);
-        box-shadow:0 0 16px rgba(140,34,54,.26);
+        border:2px solid rgba(179,108,239,.36);
+        box-shadow:0 0 16px rgba(123,54,204,.28);
         opacity:.34;
       }
       .shooting-gojo-purple-wave::after{
@@ -9540,8 +10210,8 @@
         opacity:.54;
         transform:translate(-50%,-50%) scale(1);
         background:
-          radial-gradient(circle at 38% 34%,rgba(255,245,247,.66) 0 7%,rgba(240,174,188,.46) 13%,rgba(182,48,78,.40) 34%,rgba(92,10,28,.28) 58%,rgba(26,0,10,.14) 78%,rgba(10,0,4,.05) 100%);
-        box-shadow:0 0 15px rgba(255,244,246,.34),0 0 36px rgba(182,51,81,.24),0 0 80px rgba(82,8,25,.18),0 0 120px rgba(30,0,10,.12);
+          radial-gradient(circle at 38% 34%,rgba(255,250,255,.68) 0 7%,rgba(234,219,255,.48) 13%,rgba(170,103,238,.42) 34%,rgba(105,40,184,.30) 58%,rgba(53,12,103,.16) 78%,rgba(21,0,42,.06) 100%);
+        box-shadow:0 0 15px rgba(251,247,255,.36),0 0 36px rgba(166,91,233,.26),0 0 80px rgba(100,37,177,.18),0 0 120px rgba(53,12,103,.12);
         animation:shootingGojoImpactShake .10s linear infinite, shootingGojoImpactPulse .40s ease-in-out infinite alternate;
       }
       .shooting-gojo-purple-wave.release{
@@ -9567,8 +10237,8 @@
         width:154px;height:154px;
         transform:translate(-50%,-50%);
         border-radius:50%;
-        background:radial-gradient(circle,rgba(236,164,181,.20) 0 22%,rgba(166,42,70,.18) 42%,rgba(82,8,25,.08) 62%,transparent 76%)!important;
-        box-shadow:0 0 28px rgba(157,38,66,.16),0 0 72px rgba(73,7,22,.10);
+        background:radial-gradient(circle,rgba(234,219,255,.22) 0 22%,rgba(170,103,238,.20) 42%,rgba(105,40,184,.10) 62%,transparent 76%)!important;
+        box-shadow:0 0 28px rgba(123,54,204,.18),0 0 72px rgba(53,12,103,.10);
         opacity:0;
         pointer-events:none;
       }
@@ -9580,7 +10250,7 @@
         object-fit:contain;
         display:block;
         pointer-events:none;
-        filter:drop-shadow(0 0 9px rgba(130,16,38,.24)) drop-shadow(0 0 18px rgba(57,3,14,.18));
+        filter:drop-shadow(0 0 9px rgba(123,54,204,.24)) drop-shadow(0 0 18px rgba(53,12,103,.18));
       }
       .shooting-gojo-purple-wave.scythe.fly{
         opacity:.98;
@@ -9601,7 +10271,7 @@
       }
       .shooting-gojo-purple-wave.scythe.impact .shooting-shuri-scythe-img{
         width:72%;height:72%;
-        filter:drop-shadow(0 0 10px rgba(255,242,246,.18)) drop-shadow(0 0 24px rgba(120,15,37,.20));
+        filter:drop-shadow(0 0 10px rgba(251,247,255,.18)) drop-shadow(0 0 24px rgba(123,54,204,.20));
       }
       .shooting-gojo-purple-wave.scythe.impact::after{
         width:176px;height:176px;
@@ -9899,13 +10569,14 @@
   }
 
   function isEnemyPullFieldActive(now = performance.now()) {
-    const eltenaActive = !!(
+    // エルテナのブラックホールだけが盤面全体の敵AIを停止する。
+    // build565以降のマグダレーナULTは、命中地点の範囲内で捕捉した敵だけを個別停止する。
+    return !!(
       state &&
       state.eltenaBlackHole &&
       state.eltenaBlackHole.phase === 'active' &&
       now < Number(state.eltenaBlackHole.activeUntil || 0)
     );
-    return eltenaActive || isGojoPurpleFieldActive(now);
   }
 
   function pullPointTowardBlackHole(obj, bh, dt, stopRadius, bounds) {
@@ -9960,6 +10631,7 @@
         bh.activeFrom = now;
         bh.activeUntil = now + bh.durationMs;
         bh.nextDamageAt = now;
+        deferAllEnemyAttackResume(bh.activeUntil);
         bh.el.classList.remove('traveling');
         bh.el.classList.add('active');
         document.getElementById(ROOT_ID)?.classList.add('eltena-black-hole-active');
@@ -10070,6 +10742,7 @@
 
     // ボスも「すべての敵」に含めて吸引する。
     if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      deferBossAttackResume(Number(bh.activeUntil || now));
       pullPointTowardBlackHole(state.boss, bh, dt, bh.bossStopRadius, {
         minX: 54, maxX: w - 54, minY: 52, maxY: h * .74
       });
@@ -10084,17 +10757,27 @@
   function clearGojoPurpleField() {
     if (!state) return;
 
+    // 捕捉対象だけに付与した拘束状態を解除する。
     (state.normalEnemies || []).forEach(enemy => {
       if (!enemy) return;
       if (enemy.el) enemy.el.classList.remove('gojo-purple-pulled');
       if (enemy.hpEl) enemy.hpEl.classList.remove('gojo-purple-pulled');
+      if (Number(enemy.gojoPurpleFreezeUntil || 0) > 0) {
+        enemy.gojoPurpleFreezeUntil = 0;
+        // 吸引後の位置から自然にAIを再開させる。
+        enemy.baseX = Number(enemy.x || enemy.baseX || 0);
+        enemy.baseY = Number(enemy.y || enemy.baseY || 0);
+      }
     });
     (state.facelessObjects || []).forEach(obj => {
-      if (obj?.el) obj.el.classList.remove('gojo-purple-pulled');
-      if (obj?.hpEl) obj.hpEl.classList.remove('gojo-purple-pulled');
+      if (!obj) return;
+      if (obj.el) obj.el.classList.remove('gojo-purple-pulled');
+      if (obj.hpEl) obj.hpEl.classList.remove('gojo-purple-pulled');
+      obj.gojoPurpleFreezeUntil = 0;
     });
     document.getElementById(BOSS_ID)?.classList.remove('gojo-purple-pulled');
 
+    state.gojoPurpleBossFreezeUntil = 0;
     state.gojoPurpleField = null;
   }
 
@@ -10115,11 +10798,19 @@
 
     const w = arena.clientWidth;
     const h = arena.clientHeight;
+    const enemyIds = Array.isArray(field.capturedEnemyUids) ? field.capturedEnemyUids : [];
+    const objectIds = Array.isArray(field.capturedObjectUids) ? field.capturedObjectUids : [];
 
-    // エテルナULTと同じ考え方で、全敵を波動中心へ吸引する。
-    // stopRadius以内へ入った敵はそこで停止し続ける。
+    // build565: 命中時に範囲内だった敵だけを吸引。
+    // 盤面全体を止めるのではなく、捕捉された対象だけが7秒間行動停止する。
     (state.normalEnemies || []).forEach(enemy => {
       if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      if (!enemyIds.includes(String(enemy.uid || ''))) return;
+
+      enemy.gojoPurpleFreezeUntil = Math.max(
+        Number(enemy.gojoPurpleFreezeUntil || 0),
+        Number(field.activeUntil || 0)
+      );
       pullPointTowardBlackHole(enemy, field, dt, field.enemyStopRadius, {
         minX: 34, maxX: w - 34, minY: 42, maxY: h - 46
       });
@@ -10131,6 +10822,12 @@
 
     (state.facelessObjects || []).forEach(obj => {
       if (!obj || !obj.el || obj.hp <= 0) return;
+      if (!objectIds.includes(String(obj.uid || ''))) return;
+
+      obj.gojoPurpleFreezeUntil = Math.max(
+        Number(obj.gojoPurpleFreezeUntil || 0),
+        Number(field.activeUntil || 0)
+      );
       pullPointTowardBlackHole(obj, field, dt, field.enemyStopRadius, {
         minX: 34, maxX: w - 34, minY: 42, maxY: h - 46
       });
@@ -10140,7 +10837,12 @@
       if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 56);
     });
 
-    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+    if (field.capturedBoss && !isNormalBattle() && state.boss && state.boss.hp > 0) {
+      state.gojoPurpleBossFreezeUntil = Math.max(
+        Number(state.gojoPurpleBossFreezeUntil || 0),
+        Number(field.activeUntil || 0)
+      );
+      deferBossAttackResume(Number(field.activeUntil || now));
       pullPointTowardBlackHole(state.boss, field, dt, field.bossStopRadius, {
         minX: 54, maxX: w - 54, minY: 52, maxY: h * .74
       });
@@ -10149,40 +10851,6 @@
         bossEl.classList.add('gojo-purple-pulled');
         positionUnit(bossEl, state.boss.x, state.boss.y);
       }
-    }
-
-    // 攻撃力を持つ重力場。展開中の全対象へ一定間隔でダメージ。
-    if (now >= Number(field.nextDamageAt || 0)) {
-      field.nextDamageAt = now + field.damageTickMs;
-      const damage = Math.max(0.1, Number(field.damagePerTick || 0));
-
-      if (isNormalBattle()) {
-        (state.normalEnemies || []).slice().forEach(enemy => {
-          if (!enemy || !enemy.el || enemy.hp <= 0) return;
-          damageNormalEnemy(enemy, applyHitComboDamage(damage), now, false);
-        });
-        state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
-        evaluateNormalMission(now);
-      } else {
-        (state.facelessObjects || []).slice().forEach(obj => {
-          if (!obj || !obj.el || obj.hp <= 0) return;
-          damageFacelessObject(obj, applyHitComboDamage(damage), now);
-        });
-
-        if (state.boss && state.boss.hp > 0) {
-          const applied = Math.min(state.boss.hp, applyHitComboDamage(damage));
-          state.boss.hp = Math.max(0, state.boss.hp - applied);
-          showBossDamageNumber(applied, false);
-          if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
-          if ((field.damagePulseIndex++ % 2) === 0) {
-            createHit(state.boss.x + (Math.random() - .5) * 22, state.boss.y + (Math.random() - .5) * 18, false);
-            flashBossHit(false);
-          }
-          updateBossPhase();
-          if (state.boss.hp <= 0) beginBossDefeat();
-        }
-      }
-      renderHud();
     }
   }
 
@@ -10504,6 +11172,7 @@
         if (isNormalBattle()) {
           spawnNormalEnemies(ts);
         }
+        deferAllEnemyAttackResume(Number(state.noahMovementFreezeUntil || ts));
 
         renderHud();
         if (!state.ended) rafId = requestAnimationFrame(gameLoop);
@@ -10536,10 +11205,25 @@
       hideIgnisLaser();
     }
     const ultLocked = ts < (state.ultLockUntil || 0);
-    const bossGrabbed = ts < (state.bossGrabUntil || 0);
+    const bossGojoFrozen = ts < Number(state.gojoPurpleBossFreezeUntil || 0);
+    const bossPullFrozen = isEnemyPullFieldActive(ts);
+    const bossGrabbed = ts < (state.bossGrabUntil || 0) || bossGojoFrozen || bossPullFrozen;
     const bossStunned = ts < (state.bossStunUntil || 0);
+    if (bossGojoFrozen) {
+      // 拘束中は弾を生成しない。さらに発射時計を拘束終了へ送って、
+      // 解除フレームで停止中の射撃をまとめて実行しないようにする。
+      deferBossAttackResume(Number(state.gojoPurpleBossFreezeUntil || ts));
+    }
+    if (bossPullFrozen) {
+      deferBossAttackResume(Number(state.eltenaBlackHole?.activeUntil || ts));
+    }
+    if (ts < Number(state.bossGrabUntil || 0)) {
+      deferBossAttackResume(Number(state.bossGrabUntil || ts));
+    }
     if (!state.phaseTransition && !state.koTransition && !ultLocked) {
-      firePlayer(ts);
+      // 長いULT演出で通常射撃だけを止めたい場合は playerShotLockUntil を使う。
+      // 敵の移動・攻撃は止めない。敵の行動停止は専用のfreeze/stun処理だけで行う。
+      if (ts >= Number(state.playerShotLockUntil || 0)) firePlayer(ts);
       if (isNormalBattle()) {
         spawnNormalEnemies(ts);
         updateNormalEnemies(dt, ts);
@@ -13471,7 +14155,35 @@
       el.className = cls;
       arena.appendChild(el);
       positionUnit(el, Number(point.x || 0), Number(point.y || 0));
-      setTimeout(() => el.remove(), kind === 'slash' ? 360 : 480);
+      setTimeout(() => el.remove(), kind === 'slash' ? 430 : 460);
+    });
+  }
+
+  function spawnEriUltRays(points, character) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state) return;
+    applyUltElementVisualContext(character || getCurrentCharacter());
+
+    const startX = Number(state.player?.x || arena.clientWidth * .5);
+    const startY = Number(state.player?.y || arena.clientHeight * .78) - 18;
+
+    (Array.isArray(points) ? points : []).forEach((point, index) => {
+      const targetX = Number(point.x || 0);
+      const targetY = Number(point.y || 0);
+      const dx = targetX - startX;
+      const dy = targetY - startY;
+      const length = Math.max(12, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      const ray = document.createElement('i');
+      ray.className = 'shooting-eri-ult-ray';
+      ray.style.left = `${startX}px`;
+      ray.style.top = `${startY}px`;
+      ray.style.width = `${length}px`;
+      ray.style.setProperty('--eri-ray-angle', `${angle}deg`);
+      ray.style.setProperty('--eri-ray-delay', `${Math.min(index, 5) * 10}ms`);
+      arena.appendChild(ray);
+      setTimeout(() => ray.remove(), 430 + Math.min(index, 5) * 10);
     });
   }
 
@@ -13482,30 +14194,171 @@
     root.classList.remove('eri-ult-impact', 'eri-ult-hitstop');
     void root.offsetWidth;
     root.classList.add('eri-ult-impact', 'eri-ult-hitstop');
-    setTimeout(() => root.classList.remove('eri-ult-hitstop'), 82);
-    setTimeout(() => root.classList.remove('eri-ult-impact'), 190);
+    // ダメージが入った瞬間を認識しやすいよう、短すぎたヒットストップを少し伸ばす。
+    setTimeout(() => root.classList.remove('eri-ult-hitstop'), 135);
+    setTimeout(() => root.classList.remove('eri-ult-impact'), 300);
+  }
+
+  function getLizGiantBombTargetPoint(arena) {
+    const width = Math.max(1, Number(arena?.clientWidth || 0));
+    const height = Math.max(1, Number(arena?.clientHeight || 0));
+    const fallback = { x: width * .5, y: height * .30 };
+    if (!state) return fallback;
+
+    const points = [];
+    if (Array.isArray(state.normalEnemies)) {
+      state.normalEnemies.forEach(enemy => {
+        if (enemy && enemy.el && enemy.hp > 0) {
+          points.push({ x:Number(enemy.x || 0), y:Number(enemy.y || 0) });
+        }
+      });
+    }
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      points.push({ x:Number(state.boss.x || 0), y:Number(state.boss.y || 0) });
+    }
+    if (!points.length) return fallback;
+
+    const avgX = points.reduce((sum, p) => sum + p.x, 0) / points.length;
+    const avgY = points.reduce((sum, p) => sum + p.y, 0) / points.length;
+    return {
+      x: clamp(avgX, 58, Math.max(58, width - 58)),
+      y: clamp(avgY, 72, Math.max(72, height * .54)),
+    };
+  }
+
+  function spawnLizGiantBombImpactHits(c) {
+    const points = getEriUltTargetPoints();
+    const attackElement = getUltAttackElement(c);
+    points.forEach((point, index) => {
+      setTimeout(() => {
+        if (!state || state.ended || state.finishing) return;
+        createBombSplashVictimHitEffect(Number(point.x || 0), Number(point.y || 0), attackElement);
+      }, Math.min(index, 6) * 22);
+    });
+  }
+
+  function useLizGiantBombUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    showUltCut(c.ultName || 'MEGA AQUA BOMB', c.effectKey, c);
+    ultScreenFlash('ult-flash-element', c);
+    ensureBombVisualStyles();
+
+    const now = performance.now();
+    const visual = getBombElementVisual(getUltAttackElement(c));
+    const duration = Math.max(520, Number(c.lizUltThrowMs || 760));
+    const blastRadius = Math.max(130, Number(c.lizUltBlastRadius || 164));
+    const startX = Number(state.player?.x || arena.clientWidth * .5);
+    const startY = Math.max(36, Number(state.player?.y || arena.clientHeight * .80) - 28);
+    const target = getLizGiantBombTargetPoint(arena);
+
+    // 投擲中は本人の射撃だけ短時間ロック。敵は動き続けるため、
+    // 「巨大爆弾を敵陣へ放り込む」ULTとして共通閃光ULTと役割を分ける。
+    state.ultLockUntil = now + duration + 360;
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now + duration + 120);
+    createBombThrowPop(startX, startY, getUltAttackElement(c));
+
+    const shadow = document.createElement('i');
+    shadow.className = 'shooting-liz-ult-bomb-shadow';
+    shadow.style.setProperty('--bomb-rgb', visual.rgb);
+    arena.appendChild(shadow);
+
+    const bomb = document.createElement('i');
+    bomb.className = 'shooting-liz-ult-bomb';
+    bomb.style.setProperty('--bomb-color', visual.color);
+    bomb.style.setProperty('--bomb-rgb', visual.rgb);
+    arena.appendChild(bomb);
+
+    const startAt = performance.now();
+    let raf = 0;
+    const cleanup = () => {
+      if (raf) cancelAnimationFrame(raf);
+      bomb.remove();
+      shadow.remove();
+    };
+
+    const impact = () => {
+      cleanup();
+      if (!state || state.ended || state.finishing) return;
+
+      // 着弾と同時に盤面弾を吹き飛ばし、大きなAQUA爆風を見せてからダメージ。
+      clearEnemyBulletsOnly();
+      createGenericBombExplosionEffect(target.x, target.y, getUltAttackElement(c), blastRadius, 'L');
+      spawnLizGiantBombImpactHits(c);
+      shakeVeronicaPunchImpact();
+
+      const root = document.getElementById(ROOT_ID);
+      if (root) {
+        root.classList.remove('eri-ult-hitstop');
+        void root.offsetWidth;
+        root.classList.add('eri-ult-hitstop');
+        setTimeout(() => root.classList.remove('eri-ult-hitstop'), 150);
+      }
+
+      const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 4.0);
+      applyUltDamage(damage, true, c);
+      renderHud();
+    };
+
+    const animate = (ts) => {
+      if (!state || state.ended || state.finishing || !bomb.isConnected) {
+        cleanup();
+        return;
+      }
+      const t = clamp((ts - startAt) / duration, 0, 1);
+      const eased = 1 - Math.pow(1 - t, 2.15);
+      const x = startX + (target.x - startX) * eased;
+      const baselineY = startY + (target.y - startY) * eased;
+      const arcLift = Math.sin(Math.PI * t) * Math.min(118, 78 + Math.abs(startY - target.y) * .10);
+      const y = baselineY - arcLift;
+      const spin = t * 620;
+      const scale = .58 + Math.sin(Math.PI * t) * .48 + t * .22;
+
+      bomb.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${spin}deg) scale(${scale})`;
+      shadow.style.transform = `translate3d(${x}px,${baselineY + 22}px,0) translate(-50%,-50%) scale(${.45 + t * .65})`;
+      shadow.style.opacity = String(.18 + t * .50);
+
+      if (t >= 1) {
+        impact();
+        return;
+      }
+      raf = requestAnimationFrame(animate);
+    };
+
+    raf = requestAnimationFrame(animate);
+    renderHud();
   }
 
   function useEriUlt(c) {
     showUltCut(c.ultName, c.effectKey);
-    ultScreenFlash('ult-flash-eri');
+    ultScreenFlash('ult-flash-eri', c);
+
+    // 共通ULTのテンポ：
+    // 発動 → 敵停止 → 閃光 → 一拍 → ダメージ → 敵行動再開。
     clearEnemyBulletsOnly();
-    applyBossStun(1000, 'eri_ult');
-    state.ultLockUntil = performance.now() + 900;
+    applyBossStun(1400, 'eri_ult');
+    state.ultLockUntil = performance.now() + 1320;
 
-    // ダメージ地点を発動時に固定し、0.42秒の予兆が「何に当たるか」を明確にする。
+    // 発動時点の盤面上の敵を固定。停止中に対象へ属性色の細い閃光を走らせる。
     const impactPoints = getEriUltTargetPoints();
-    spawnEriUltFeedback('mark', impactPoints);
-
     renderHud();
+
+    // 停止したことを見せてから閃光を開始。
+    pushUltTimer(() => {
+      spawnEriUltRays(impactPoints, c);
+    }, 240);
+
+    // 閃光が走り切った後に約0.25秒の「間」を置き、
+    // そこからダメージエフェクト＋ATK×3.0を同時に入れる。
     pushUltTimer(() => {
       triggerEriUltImpactFeedback(impactPoints);
-      const damage =
-        Number(c.atk || 0) *
-        Number(c.ultDamageAtkMultiplier || 2.8);
+      const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3.0);
       applyUltDamage(damage, true, c);
       renderHud();
-    }, 420);
+      // 敵行動はこのヒットを見せた後、applyBossStun() の停止終了で再開する。
+    }, 840);
   }
 
   function useHayateUlt(c) {
@@ -13571,55 +14424,22 @@
 
     const now = performance.now();
     const HOLD_MS = Number(c.gojoPurpleDurationMs || 7000);
-    const TICK_MS = Number(c.gojoPurpleTickMs || 250);
-    const TICK_COUNT = Math.max(1, Math.round(HOLD_MS / TICK_MS));
-    const totalDamage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3.5);
-
+    const PULL_RADIUS = Math.max(60, Number(c.gojoPurplePullRadius || 165));
     const startX = Number(state.player.x || arena.clientWidth * .5);
     const startY = Math.max(24, Number(state.player.y || arena.clientHeight * .72) - 18);
+    const TRAVEL_SPEED = 620; // px / sec
+    const MAX_TRAVEL_MS = Math.max(900, Math.ceil((startY + 100) / TRAVEL_SPEED * 1000) + 220);
+    const ROTATE_DPS = 300;
 
-    let targetX = startX;
-    let targetY = Math.max(36, startY - 180);
-    let travelTargetEnemyId = null;
-    let isBossTarget = false;
+    // 正面＝画面上方向へ固定。敵への自動照準は行わない。
+    const dirX = 0;
+    const dirY = -1;
+    const baseDeg = 0;
 
-    // 最寄りの敵へ大鎌を直線投擲する。接触した瞬間に瘴気場を展開する。
-    if (isNormalBattle()) {
-      const living = (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0);
-      if (!living.length) {
-        state.ultLockUntil = now + 240;
-        return;
-      }
-      const target = living.slice().sort((a, b) => {
-        const da = Math.hypot(Number(a.x || 0) - startX, Number(a.y || 0) - startY);
-        const db = Math.hypot(Number(b.x || 0) - startX, Number(b.y || 0) - startY);
-        return da - db;
-      })[0];
-      travelTargetEnemyId = target.id;
-      targetX = Number(target.x || startX);
-      targetY = Number(target.y || targetY);
-    } else if (state.boss) {
-      isBossTarget = true;
-      targetX = Number(state.boss.x || startX);
-      targetY = Math.max(24, Number(state.boss.y || targetY) + 8);
-    } else {
-      state.ultLockUntil = now + 240;
-      return;
-    }
-
-    const dx = targetX - startX;
-    const dy = targetY - startY;
-    const baseDistance = Math.max(1, Math.hypot(dx, dy));
-    const dirX = dx / baseDistance;
-    const dirY = dy / baseDistance;
-    const baseDeg = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-    const TRAVEL_SPEED = 460; // px / sec
-    const MAX_TRAVEL_MS = 1600;
-    const ROTATE_DPS = 180; // 画像中心を支点にゆっくり回転
-    const normalHitRadius = 34;
-    const bossHitRadius = 58;
-
-    state.ultLockUntil = now + MAX_TRAVEL_MS + 100;
+    // build566: 鎌の飛行中に敵の射撃だけが止まる副作用を廃止。
+    // 敵は通常行動を継続し、マグダレーナ本人の通常射撃だけを投擲中ロックする。
+    state.ultLockUntil = now + 260;
+    state.playerShotLockUntil = now + MAX_TRAVEL_MS + 120;
     renderHud();
 
     const wave = document.createElement('div');
@@ -13641,52 +14461,137 @@
 
     let currentX = startX;
     let currentY = startY;
-    let prevTs = performance.now();
-    let impacted = false;
+    let prevTs = now;
+    let resolved = false;
 
-    const impactAt = (x, y) => {
-      if (impacted || !state || state.ended || state.finishing || !wave.isConnected) return;
-      impacted = true;
-
+    const releaseAsMiss = (x = currentX, y = currentY) => {
+      if (resolved || !wave.isConnected) return;
+      resolved = true;
       setScytheTransform(x, y, 0, 1);
       wave.classList.remove('fly');
-      wave.classList.add('impact');
-      if (root) root.classList.add('ayane-rampage-shake');
+      wave.classList.add('miss', 'release', 'fade');
+      state.ultLockUntil = performance.now() + 120;
+      state.playerShotLockUntil = performance.now() + 120;
+      if (root) {
+        root.classList.add('ult-miss');
+        setTimeout(() => root.classList.remove('ult-miss'), 450);
+      }
+      pushUltTimer(() => wave.isConnected && wave.remove(), 480);
+      renderHud();
+    };
 
-      // シュリULTは盤面上の敵弾を消去しない。発動前から存在する弾もそのまま残す。
-      createHit(x, y, true);
+    const collectTargets = () => {
+      const targets = [];
 
+      // 通常ステージの敵、およびBOSS戦の取り巻き。
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        targets.push({
+          kind: 'enemy', ref: enemy,
+          x: Number(enemy.x || 0), y: Number(enemy.y || 0),
+          hitRadius: Math.max(26, Number(enemy.hitRadius || 34))
+        });
+      });
+
+      // フェイスレスの召喚OBJECTも「敵」として鎌に当たる。
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || !obj.el || obj.hp <= 0) return;
+        targets.push({
+          kind: 'object', ref: obj,
+          x: Number(obj.x || 0), y: Number(obj.y || 0),
+          hitRadius: 42
+        });
+      });
+
+      if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+        targets.push({
+          kind: 'boss', ref: state.boss,
+          x: Number(state.boss.x || 0), y: Number(state.boss.y || 0),
+          hitRadius: 58
+        });
+      }
+      return targets;
+    };
+
+    const captureAtImpact = (x, y) => {
       const activeFrom = performance.now();
       const activeUntil = activeFrom + HOLD_MS;
+      const capturedEnemyUids = [];
+      const capturedObjectUids = [];
+      let capturedBoss = false;
+
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        if (Math.hypot(Number(enemy.x || 0) - x, Number(enemy.y || 0) - y) > PULL_RADIUS) return;
+        capturedEnemyUids.push(String(enemy.uid || ''));
+        enemy.gojoPurpleFreezeUntil = activeUntil;
+        freezeNormalEnemyAction(enemy, activeUntil);
+      });
+
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || !obj.el || obj.hp <= 0) return;
+        if (Math.hypot(Number(obj.x || 0) - x, Number(obj.y || 0) - y) > PULL_RADIUS) return;
+        capturedObjectUids.push(String(obj.uid || ''));
+        obj.gojoPurpleFreezeUntil = activeUntil;
+        deferFacelessObjectAttackResume(obj, activeUntil);
+      });
+
+      if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+        const bossDist = Math.hypot(Number(state.boss.x || 0) - x, Number(state.boss.y || 0) - y);
+        if (bossDist <= PULL_RADIUS) {
+          capturedBoss = true;
+          state.gojoPurpleBossFreezeUntil = activeUntil;
+          // WARNING予兆中の予約も含め、再開後へ安全に送り直す。
+          deferBossAttackResume(activeUntil);
+        }
+      }
 
       state.gojoPurpleField = {
         x,
         y,
         activeFrom,
         activeUntil,
+        pullRadius: PULL_RADIUS,
         pullStrength: Number(c.gojoPurplePullStrength || 10.8),
         enemyStopRadius: Number(c.gojoPurpleEnemyStopRadius || 18),
         bossStopRadius: Number(c.gojoPurpleBossStopRadius || 26),
-        damageTickMs: TICK_MS,
-        damagePerTick: totalDamage / TICK_COUNT,
-        nextDamageAt: activeFrom,
-        damagePulseIndex: 0,
+        capturedEnemyUids,
+        capturedObjectUids,
+        capturedBoss,
       };
 
-      if (!isNormalBattle()) {
-        state.bossGrabUntil = Math.max(Number(state.bossGrabUntil || 0), activeUntil);
-      }
-
       state.ultLockUntil = performance.now() + 120;
+      state.playerShotLockUntil = performance.now() + 120;
       state.lastShotAt = performance.now();
       renderHud();
+    };
+
+    const impactAt = (target) => {
+      if (resolved || !state || state.ended || state.finishing || !wave.isConnected) return;
+      resolved = true;
+
+      const x = Number(target?.x || currentX);
+      const y = Number(target?.y || currentY);
+      setScytheTransform(x, y, 0, 1);
+      wave.classList.remove('fly');
+      wave.classList.add('impact', 'hit', 'grab');
+      createHit(x, y, true);
+
+      // 命中の衝撃だけ短く揺らす。拘束中ずっと揺らし続けない。
+      if (root) {
+        root.classList.add('ayane-rampage-shake');
+        pushUltTimer(() => root.classList.remove('ayane-rampage-shake'), 240);
+      }
+
+      captureAtImpact(x, y);
 
       pushUltTimer(() => {
         if (!state) return;
         clearGojoPurpleField();
-        if (!isNormalBattle()) state.bossGrabUntil = 0;
-        if (wave.isConnected) wave.classList.add('release');
-        if (root) root.classList.remove('ayane-rampage-shake');
+        if (wave.isConnected) {
+          wave.classList.remove('grab');
+          wave.classList.add('release', 'fade');
+        }
         renderHud();
       }, HOLD_MS);
 
@@ -13697,53 +14602,50 @@
     };
 
     const animateTravel = ts => {
-      if (impacted || !wave.isConnected || !state || state.ended || state.finishing) return;
+      if (resolved || !wave.isConnected || !state || state.ended || state.finishing) return;
 
-      const dt = Math.max(0.001, (ts - prevTs) / 1000);
+      const dt = Math.max(0.001, Math.min(.04, (ts - prevTs) / 1000));
       prevTs = ts;
       const elapsedMs = ts - now;
 
       currentX += dirX * TRAVEL_SPEED * dt;
       currentY += dirY * TRAVEL_SPEED * dt;
-
       const spinDeg = (elapsedMs / 1000) * ROTATE_DPS;
       setScytheTransform(currentX, currentY, baseDeg + spinDeg, 1);
 
-      let hitX = null;
-      let hitY = null;
-
-      if (isNormalBattle()) {
-        const targets = (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0);
-        let contact = null;
-
-        if (travelTargetEnemyId != null) {
-          contact = targets.find(enemy => Number(enemy.id) === Number(travelTargetEnemyId)) || null;
-        }
-        if (!contact) {
-          contact = targets.find(enemy => Math.hypot(Number(enemy.x || 0) - currentX, Number(enemy.y || 0) - currentY) <= normalHitRadius) || null;
-        }
-
-        if (contact && Math.hypot(Number(contact.x || 0) - currentX, Number(contact.y || 0) - currentY) <= normalHitRadius) {
-          hitX = Number(contact.x || currentX);
-          hitY = Number(contact.y || currentY);
-        }
-      } else if (isBossTarget && state.boss && state.boss.hp > 0) {
-        const bossX = Number(state.boss.x || targetX);
-        const bossY = Math.max(24, Number(state.boss.y || targetY - 8) + 8);
-        if (Math.hypot(bossX - currentX, bossY - currentY) <= bossHitRadius) {
-          hitX = bossX;
-          hitY = bossY;
-        }
-      }
-
-      const traveled = Math.hypot(currentX - startX, currentY - startY);
-      if (hitX != null && hitY != null) {
-        impactAt(hitX, hitY);
+      // CH06 / DAILY上級の破壊不能壁は物理投擲を遮断する。
+      // 壁は敵ではないため、ここで止まった場合はMISS扱い。
+      const blocked = (state.chapter6Barriers || []).find(barrier => {
+        if (!barrier || !barrier.el) return false;
+        const halfW = Number(barrier.width || 0) * .5 + 22;
+        const halfH = Number(barrier.height || 0) * .5 + 22;
+        return (
+          Math.abs(currentX - Number(barrier.x || 0)) <= halfW &&
+          Math.abs(currentY - Number(barrier.y || 0)) <= halfH
+        );
+      });
+      if (blocked) {
+        pulseChapter6Barrier(blocked);
+        releaseAsMiss(currentX, currentY);
         return;
       }
 
-      if (traveled >= baseDistance || elapsedMs >= MAX_TRAVEL_MS) {
-        impactAt(targetX, targetY);
+      // 現在位置に最初に触れた敵で停止。自動追尾・最寄り照準はしない。
+      const contact = collectTargets()
+        .map(target => ({
+          ...target,
+          distance: Math.hypot(target.x - currentX, target.y - currentY)
+        }))
+        .filter(target => target.distance <= target.hitRadius)
+        .sort((a, b) => b.y - a.y || a.distance - b.distance)[0] || null;
+
+      if (contact) {
+        impactAt(contact);
+        return;
+      }
+
+      if (currentY <= -56 || elapsedMs >= MAX_TRAVEL_MS) {
+        releaseAsMiss(currentX, currentY);
         return;
       }
 
@@ -13887,6 +14789,7 @@
           if (!enemy || enemy.hp <= 0 || !enemy.el) return;
 
           enemy.ayaneGrabUntil = grabUntil;
+          freezeNormalEnemyAction(enemy, grabUntil, index);
           enemy.el.classList.add('ayane-grabbed', 'ayane-multi-grabbed');
 
           // 各敵の位置に個別の拘束リングを表示。
@@ -14060,6 +14963,7 @@
       // ボスは bossGrabUntil で止めるが、アヤネ側の ultLockUntil はすぐ解除する。
       // これにより「拘束中も通常攻撃を続けられる」状態になる。
       state.bossGrabUntil = performance.now() + GRAB_DURATION;
+      deferBossAttackResume(state.bossGrabUntil);
       state.ultLockUntil = performance.now() + 120;
       state.lastShotAt = performance.now();
       clearEnemyBulletsOnly();
@@ -14123,6 +15027,7 @@
       pushUltTimer(() => {
         if (!state) return;
         state.bossGrabUntil = 0;
+        deferBossAttackResume(performance.now());
         if (bossEl) bossEl.classList.remove('ayane-grabbed');
         fx.classList.remove('grab');
         fx.classList.add('release');
@@ -15093,7 +15998,7 @@
   }
 
   // ============================================================
-  // テストちゃん：ブラックシップ
+  // SIGMA-IX：ブラックシップ
   // 正面へ5秒間の極太レーザー。敵弾消去・スタン等の追加効果なし。
   // ============================================================
   function applyTestChanBeamTick(c, now) {
@@ -15374,7 +16279,10 @@
     const until = started + duration;
     const token = (state.testchanUltToken || 0) + 1;
     state.testchanUltToken = token;
-    state.ultLockUntil = until;
+    // build566: 5秒レーザー中に敵弾生成だけが止まっていた副作用を修正。
+    // 敵は移動・攻撃とも通常継続。使用者の通常射撃だけレーザー終了まで止める。
+    state.ultLockUntil = started + 260;
+    state.playerShotLockUntil = until;
 
     let nextDamageAt = started;
 
@@ -15597,6 +16505,11 @@
       // 敵オブジェクト単位のスタンだけを付与。
       // player / party / movement state には一切触れない。
       target.ref.noahStunUntil = Math.max(Number(target.ref.noahStunUntil || 0), until);
+      if (target.kind === 'normal') {
+        freezeNormalEnemyAction(target.ref, target.ref.noahStunUntil);
+      } else if (target.kind === 'faceless') {
+        deferFacelessObjectAttackResume(target.ref, target.ref.noahStunUntil);
+      }
     });
 
     if (refs.some(t => t && t.kind === 'boss')) {
@@ -15615,6 +16528,9 @@
     // プレイヤー（ノア）は通常どおり移動・射撃できる。
     state.noahMovementFreezeUntil = 0;
     state.noahUltActive = false;
+    // 全体停止解除フレームを射撃再開の起点にする。
+    // 個別1.5秒スタン対象は、すでにより後ろのresumeAtが入っているため維持される。
+    deferAllEnemyAttackResume(performance.now());
 
     // ここからは「敵だけスタン」のフェーズ。
     // ULTロックを解除し、ノアは即座に移動・通常射撃へ復帰する。
@@ -15650,6 +16566,7 @@
     // 16発を撃ち切るまで盤面上の敵全体の移動・攻撃を停止。
     // 新規スポーン判定は止めない。
     state.noahMovementFreezeUntil = performance.now() + (hitCount - 1) * beatMs + 220;
+    deferAllEnemyAttackResume(state.noahMovementFreezeUntil);
 
     times.forEach((delay, i) => {
       pushUltTimer(() => {
@@ -15780,7 +16697,10 @@
     const points = getEriUltTargetPoints();
     const marks = spawnShionCurseMarks(points);
 
-    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + delayMs + 180);
+    // build566: 呪印の待機時間中も敵は移動・攻撃を継続する。
+    // シオン本人の通常射撃だけ、時間差発動までロックする。
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 260);
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now + delayMs + 180);
     renderHud();
 
     pushUltTimer(() => {
@@ -15807,6 +16727,7 @@
       }
 
       state.ultLockUntil = performance.now() + 120;
+      state.playerShotLockUntil = performance.now() + 120;
       renderHud();
 
       pushUltTimer(() => {
@@ -15819,19 +16740,152 @@
     }, delayMs);
   }
 
-  function useVeronicaBladeBuffUlt(c) {
-    if (!state) return;
-    const member = getActiveMember();
-    if (!member) return;
+  function shakeVeronicaPunchImpact() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    // Hit時だけ短く強めに揺らす。MISSでは呼ばない。
+    // Web Animationsを使い、ゲームループ側の座標/transform処理とは分離する。
+    if (typeof arena.animate === 'function') {
+      arena.animate([
+        { transform:'translate3d(0,0,0)' },
+        { transform:'translate3d(-5px,2px,0)' },
+        { transform:'translate3d(5px,-3px,0)' },
+        { transform:'translate3d(-4px,-2px,0)' },
+        { transform:'translate3d(3px,2px,0)' },
+        { transform:'translate3d(-2px,1px,0)' },
+        { transform:'translate3d(0,0,0)' }
+      ], {
+        duration: 260,
+        easing: 'cubic-bezier(.2,.8,.2,1)'
+      });
+    }
+  }
+
+  function useVeronicaBrassPunchUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
 
     const now = performance.now();
-    const duration = Math.max(1000, Number(c.ultBuffDurationMs || 5000));
-    const multiplier = Math.max(1, Number(c.ultAtkMultiplier || 1.3));
+    const px = Number(state.player?.x || 0);
+    const py = Number(state.player?.y || 0);
+    const range = Math.max(56, Number(c.ultPunchRange || 118));
+    const width = Math.max(36, Number(c.ultPunchWidth || 68));
+    const halfWidth = width * .5;
+    const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 7));
+    const attackElement = getUltAttackElement(c);
+    const arenaRect = arena.getBoundingClientRect();
 
-    showUltCut(c.ultName || '刃装解放', c.effectKey);
-    member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + duration);
-    member.atkBuffUntil = Math.max(Number(member.atkBuffUntil || 0), now + duration);
-    member.atkBuffMultiplier = multiplier;
+    showUltCut(c.ultName || 'キョーレツな一発をあげる♡', c.effectKey);
+    ultScreenFlash('ult-flash-ayane', c);
+
+    // ベロニカの真正面だけ。通常Strikeより狭く、追尾・自動補正はしない。
+    const punchRect = {
+      left: arenaRect.left + px - halfWidth,
+      right: arenaRect.left + px + halfWidth,
+      top: arenaRect.top + py - range,
+      bottom: arenaRect.top + py + 6
+    };
+
+    const candidates = [];
+    const pushCandidate = (kind, ref, rect, x, y) => {
+      if (!rect || !rectsHit(punchRect, rect, 0, 0)) return;
+      const dx = Number(x || 0) - px;
+      const dy = Number(y || 0) - py;
+      candidates.push({ kind, ref, x:Number(x || 0), y:Number(y || 0), dist2:dx*dx + dy*dy });
+    };
+
+    // CH06/デイリー上級の壁はStrike系を遮る。壁が一番手前なら拳はそこで止まる。
+    (state.chapter6Barriers || []).forEach(barrier => {
+      if (!barrier || !barrier.el) return;
+      pushCandidate('barrier', barrier, getChapter6BarrierRect(barrier, arenaRect), barrier.x, barrier.y);
+    });
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      let rect = null;
+      let hw = Number(enemy._hw || 0);
+      let hh = Number(enemy._hh || 0);
+      if (hw <= 0 || hh <= 0) {
+        measureUnitSize(enemy);
+        hw = Number(enemy._hw || 0);
+        hh = Number(enemy._hh || 0);
+      }
+      if (hw > 0 && hh > 0) rect = getUnitRect(enemy, arenaRect);
+      if (!rect) rect = enemy.el.getBoundingClientRect();
+      pushCandidate('enemy', enemy, rect, enemy.x, enemy.y);
+    });
+
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj || !obj.el || obj.hp <= 0) return;
+      pushCandidate('faceless', obj, obj.el.getBoundingClientRect(), obj.x, obj.y);
+    });
+
+    if (state.boss && state.boss.hp > 0) {
+      const bossEl = document.getElementById(BOSS_ID);
+      const bossRect = bossEl ? bossEl.getBoundingClientRect() : {
+        left:arenaRect.left + Number(state.boss.x || 0) - 48,
+        right:arenaRect.left + Number(state.boss.x || 0) + 48,
+        top:arenaRect.top + Number(state.boss.y || 0) - 48,
+        bottom:arenaRect.top + Number(state.boss.y || 0) + 48
+      };
+      pushCandidate('boss', state.boss, bossRect, state.boss.x, state.boss.y);
+    }
+
+    candidates.sort((a,b) => a.dist2 - b.dist2);
+    const target = candidates[0] || null;
+
+    // 外したらそのまま終了。バフ・追撃・再判定は一切ない。
+    if (!target) {
+      state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 180);
+      renderHud();
+      return;
+    }
+
+    if (target.kind === 'barrier') {
+      pulseChapter6Barrier(target.ref);
+      createHit(target.x, target.y, true);
+      shakeVeronicaPunchImpact();
+      state.shotsHit = Number(state.shotsHit || 0) + 1;
+      state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 220);
+      renderHud();
+      return;
+    }
+
+    let appliedDamage = 0;
+    let reaction = '';
+
+    if (target.kind === 'enemy') {
+      const targetElement = getCombatTargetElement(target.ref);
+      reaction = getElementDamageReaction(attackElement, targetElement);
+      const finalDamage = applyElementDamage(damage, attackElement, targetElement);
+      appliedDamage = damageNormalEnemy(target.ref, finalDamage, now, true, reaction);
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      evaluateNormalMission(now);
+    } else if (target.kind === 'faceless') {
+      const targetElement = getCombatTargetElement(target.ref);
+      reaction = getElementDamageReaction(attackElement, targetElement);
+      const finalDamage = applyElementDamage(damage, attackElement, targetElement);
+      appliedDamage = damageFacelessObject(target.ref, finalDamage, now, reaction);
+    } else if (target.kind === 'boss') {
+      const targetElement = getCombatTargetElement(state.boss);
+      reaction = getElementDamageReaction(attackElement, targetElement);
+      const finalDamage = applyElementDamage(damage, attackElement, targetElement);
+      appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+      updateBossPhase();
+      createHit(target.x, target.y, true);
+      showBossDamageNumber(appliedDamage, true, reaction);
+      flashBossHit(true);
+      if (state.boss.hp <= 0) beginBossDefeat();
+    }
+
+    // 1回のULTにつきHit判定も1回。IMMUNE(0 damage)はHit COMBOに加算しない。
+    state.shotsHit = Number(state.shotsHit || 0) + 1;
+    registerComboHit(c.id, now, appliedDamage > 0 ? appliedDamage : 0);
+    shakeVeronicaPunchImpact();
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 260);
     renderHud();
   }
 
@@ -15868,9 +16922,10 @@
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
-    else if (c.ultType === 'veronica_blade_buff') useVeronicaBladeBuffUlt(c);
+    else if (c.ultType === 'veronica_brass_punch') useVeronicaBrassPunchUlt(c);
     else if (c.ultType === 'shiina_light_ring') useShiinaLightRingUlt(c);
     else if (c.ultType === 'shion_delayed_curse') useShionUlt(c);
+    else if (c.ultType === 'liz_giant_bomb') useLizGiantBombUlt(c);
     else if (c.ultType === 'prototype_generic') useEriUlt(c);
     else useEriUlt(c);
 
@@ -16577,42 +17632,42 @@
   }
 
   // ============================================================
-  // build536: 闇属性カラーを黒へ統一
-  // - 通常ショット / 特殊ショット / レーザーを黒〜チャコールへ
-  // - ULTは ULT_ELEMENT_VISUAL.dark で黒系へ統一
+  // build568: 闇属性カラーをロイヤルバイオレットへ統一
+  // - 黒を廃止し、青や赤へ寄らない中間的な紫を基準色にする
+  // - 通常ショット / 特殊ショット / レーザー / ULTを同系色へ統一
   // - 形状・当たり判定・性能は変更しない
   // ============================================================
-  if (!document.getElementById('shooting-dark-element-black-style-v536')) {
+  if (!document.getElementById('shooting-dark-element-violet-style-v569')) {
     const darkStyle = document.createElement('style');
-    darkStyle.id = 'shooting-dark-element-black-style-v536';
+    darkStyle.id = 'shooting-dark-element-violet-style-v569';
     darkStyle.textContent = `
-      /* 汎用・闇属性弾 */
+      /* DARK: royal violet / blue・redとの差を明確化 */
       #shooting-arena .shooting-bullet.shooting-bullet-dark{
         background:
           radial-gradient(circle at 38% 34%,
-            rgba(255,255,255,.94) 0 8%,
-            rgba(184,184,184,.74) 14%,
-            rgba(72,72,72,.92) 34%,
-            rgba(20,20,20,.98) 62%,
-            rgba(0,0,0,.82) 100%)!important;
-        border-color:rgba(35,35,35,.94)!important;
+            rgba(255,255,255,.96) 0 8%,
+            rgba(224,209,238,.90) 15%,
+            rgba(167,123,208,.92) 34%,
+            rgba(126,80,168,.98) 62%,
+            rgba(75,42,106,.86) 100%)!important;
+        border-color:rgba(126,80,168,.94)!important;
         box-shadow:
-          0 0 6px rgba(255,255,255,.34),
-          0 0 13px rgba(34,34,34,.76),
-          0 0 24px rgba(0,0,0,.58)!important;
-        filter:grayscale(1) contrast(1.15)!important;
+          0 0 6px rgba(245,238,252,.62),
+          0 0 13px rgba(126,80,168,.76),
+          0 0 24px rgba(75,42,106,.52)!important;
+        filter:saturate(.94) contrast(1.04)!important;
       }
 
       #shooting-arena .shooting-bullet.shooting-bullet-dark::before{
-        border-color:rgba(28,28,28,.92)!important;
-        box-shadow:0 0 8px rgba(0,0,0,.72)!important;
+        border-color:rgba(151,105,194,.90)!important;
+        box-shadow:0 0 8px rgba(103,59,144,.68)!important;
       }
 
       #shooting-arena .shooting-bullet.shooting-bullet-dark::after{
         background:
           radial-gradient(circle,
-            rgba(92,92,92,.26),
-            rgba(15,15,15,.22) 46%,
+            rgba(159,116,199,.30),
+            rgba(91,53,127,.20) 46%,
             transparent 72%)!important;
       }
 
@@ -16620,79 +17675,79 @@
       #shooting-arena .shooting-ignis-laser.shooting-bullet-dark i{
         background:
           linear-gradient(90deg,
-            rgba(0,0,0,.10),
-            #111,
-            #d8d8d8 48%,
-            #111,
-            rgba(0,0,0,.10))!important;
+            rgba(75,42,106,.08),
+            #8054ae,
+            #e7dcf1 48%,
+            #8054ae,
+            rgba(75,42,106,.08))!important;
         box-shadow:
-          0 0 7px rgba(215,215,215,.38),
-          0 0 16px rgba(0,0,0,.82)!important;
+          0 0 7px rgba(211,191,229,.58),
+          0 0 16px rgba(97,57,137,.70)!important;
       }
 
       #shooting-arena .shooting-ignis-laser.shooting-bullet-dark b{
-        background:#d8d8d8!important;
-        box-shadow:0 0 10px rgba(0,0,0,.88)!important;
+        background:#e7dcf1!important;
+        box-shadow:0 0 10px rgba(126,80,168,.76)!important;
       }
 
       /* エルテナ等のオーラ型闇弾 */
       #shooting-arena .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark{
         background:
           radial-gradient(ellipse at 50% 30%,
-            rgba(245,245,245,.88) 0 10%,
-            rgba(148,148,148,.58) 16%,
-            rgba(62,62,62,.44) 34%,
-            rgba(20,20,20,.28) 55%,
-            rgba(0,0,0,.14) 72%,
+            rgba(248,244,252,.90) 0 10%,
+            rgba(218,199,235,.70) 16%,
+            rgba(164,120,204,.48) 34%,
+            rgba(116,72,158,.30) 55%,
+            rgba(75,42,106,.14) 72%,
             transparent 84%)!important;
         box-shadow:
-          0 0 8px rgba(235,235,235,.30),
-          0 0 18px rgba(36,36,36,.48),
-          0 0 28px rgba(0,0,0,.30)!important;
+          0 0 8px rgba(239,230,247,.38),
+          0 0 18px rgba(126,80,168,.46),
+          0 0 28px rgba(75,42,106,.26)!important;
       }
 
       #shooting-arena .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark::before{
         background:
           radial-gradient(ellipse at 50% 38%,
-            rgba(210,210,210,.32) 0 16%,
-            rgba(78,78,78,.28) 31%,
-            rgba(12,12,12,.20) 52%,
+            rgba(218,199,235,.38) 0 16%,
+            rgba(151,105,194,.30) 31%,
+            rgba(91,53,127,.20) 52%,
             transparent 76%)!important;
       }
 
       #shooting-arena .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark::after{
         background:
           radial-gradient(ellipse at 50% 58%,
-            rgba(80,80,80,.22) 0 24%,
-            rgba(0,0,0,.18) 42%,
+            rgba(139,94,181,.24) 0 24%,
+            rgba(75,42,106,.16) 42%,
             transparent 76%)!important;
       }
 
-      /* ミア等のチャージ型が闇属性になった場合も黒で統一 */
+      /* チャージ型が闇属性になった場合も同じ紫系へ */
       #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark::before{
         background:
           radial-gradient(ellipse at 50% 24%,
-            rgba(245,245,245,.94) 0 18%,
-            rgba(154,154,154,.62) 25%,
-            rgba(70,70,70,.40) 47%,
-            rgba(18,18,18,.24) 68%,
+            rgba(247,242,251,.94) 0 18%,
+            rgba(205,181,226,.68) 25%,
+            rgba(146,99,190,.46) 47%,
+            rgba(91,53,127,.28) 68%,
             transparent 100%)!important;
       }
 
       #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark::after{
         background:
           linear-gradient(to bottom,
-            rgba(190,190,190,.56) 0%,
-            rgba(82,82,82,.40) 28%,
-            rgba(18,18,18,.26) 66%,
+            rgba(185,149,216,.58) 0%,
+            rgba(126,80,168,.42) 28%,
+            rgba(75,42,106,.26) 66%,
             transparent 100%)!important;
       }
 
       #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark{
         box-shadow:
-          0 -4px 10px rgba(220,220,220,.18),
-          0 7px 22px rgba(25,25,25,.34),
-          0 18px 34px rgba(0,0,0,.24)!important;
+          0 -4px 10px rgba(220,203,235,.24),
+          0 7px 22px rgba(103,59,144,.36),
+          0 18px 34px rgba(75,42,106,.24)!important;
       }
     `;
     document.head.appendChild(darkStyle);

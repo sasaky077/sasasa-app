@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '562';
+  var FALLBACK_BUILD = '593';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -230,7 +230,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="562">
+  <meta name="sasaphia-build" content="595">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -248,21 +248,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=562-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=593-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=562-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=593-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=562-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=593-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=562-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=593-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=562">
+  <link rel="manifest" href="manifest.json?v=593">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -330,9 +330,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=562"
+        href="css/style.css?v=593"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=562"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=593"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -415,10 +415,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=562">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=593">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=562">
-  <link rel="stylesheet" href="css/admin_mode.css?v=562-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=593">
+  <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -449,7 +449,7 @@
   display:flex;
   align-items:baseline;
   gap:8px;
-  color:#6f5735;
+  color:#6f5745;
 }
 .testplay-guide-step-no{
   flex:0 0 auto;
@@ -486,7 +486,7 @@
 
 <script>
 (function(){
-  var BUILD = '562';
+  var BUILD = '591';
 
   // build555: one-time shooting score reset for score-system retest.
   // Keeps story clears / first-clear rewards / inventory intact.
@@ -3357,6 +3357,56 @@ body #bottom-nav-shared.bottom-nav{
     .ninmu-daily-random-item b{font-size:10px;font-weight:600}
   </style>
 
+
+<style id="shooting-party-ux-build593">
+  /* build595: 上段の編成済み3枠だけ、属性アイコンを2回り大きくする。 */
+  #shooting-event-root .shooting-party-slot.filled > img.shooting-party-slot-element-icon {
+    position: absolute !important;
+    left: 4px !important;
+    top: 4px !important;
+    width: 28px !important;
+    height: 28px !important;
+    object-fit: contain !important;
+    z-index: 4 !important;
+    pointer-events: none !important;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.18)) !important;
+    opacity: 1 !important;
+  }
+
+  /* 未所持は既存の減光だけ残し、中央のLOCK文字だけ消す。 */
+  #shooting-event-root .shooting-party-roster .shooting-character-option.locked .shooting-character-portrait::after,
+  #shooting-event-root .shooting-party-roster .shooting-character-option:disabled .shooting-character-portrait::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* build594: パーティ編成中のキャラ詳細は shooting-event-root(240000) より前面へ。
+     style.css の #detail-modal { z-index:4000!important } を確実に上書きする。 */
+  #detail-modal.is-shooting-party-detail {
+    z-index: 260000 !important;
+  }
+
+  /* build594: パーティ編成から開く詳細は確認専用UIに寄せる */
+  #detail-modal.is-shooting-party-detail .detail-lb-action-block,
+  #detail-modal.is-shooting-party-detail .btn-limit-break {
+    display: none !important;
+  }
+
+  #detail-modal.is-shooting-party-detail .detail-element-img {
+    display: none !important;
+  }
+
+  #detail-modal.is-shooting-party-detail .detail-visual-wrap,
+  #detail-modal.is-shooting-party-detail .detail-main-img {
+    border-radius: 0 !important;
+  }
+
+  /* build595: パーティ編成から開くキャラ詳細モーダル本体も角丸なし。 */
+  #detail-modal.is-shooting-party-detail > .modal {
+    border-radius: 0 !important;
+  }
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -3683,6 +3733,10 @@ body #bottom-nav-shared.bottom-nav{
 
   <!-- レイドバトル：ホーム左側、フレンドの下 -->
   <button class="raid-home-entry home-type-entry" id="raid-home-entry" type="button" onclick="openDailyRaid()" aria-label="レイドバトルへ移動" data-home-head="レ" data-home-rest="イド&#10;　バトル" data-home-lines="2"></button>
+
+  <!-- 位相遠征：将来実装予定。ホーム左側、レイドバトルの下 -->
+  <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('位相遠征は準備中です')" aria-label="位相遠征（準備中）" data-home-head="位" data-home-rest="相遠征"></button>
+
   <button class="score-attack-home-entry home-type-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="スコアアタックへ移動" data-home-head="ス" data-home-rest="コア&#10;　アタック" data-home-lines="2"></button>
 
   <div class="favorite-area">
@@ -4308,7 +4362,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=562"></script>
+<script src="js/home_banners.js?v=595"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -4513,7 +4567,7 @@ window.NOTICE_ITEMS = [
         padding:0!important;
         font-size:13px!important;
         line-height:1.25!important;
-        color:#795719!important;
+        color:#795729!important;
         font-weight:700!important;
         white-space:nowrap!important;
       }
@@ -4533,7 +4587,7 @@ window.NOTICE_ITEMS = [
         border:1px solid rgba(174,133,54,.40)!important;
         border-radius:9px!important;
         background:linear-gradient(180deg,#fff8e8,#f1e1ba)!important;
-        color:#795719!important;
+        color:#795729!important;
         font-family:"Noto Serif JP",serif!important;
         font-size:11px!important;
         font-weight:600!important;
@@ -4563,7 +4617,7 @@ window.NOTICE_ITEMS = [
         min-width:0!important;
         font-size:11px!important;
         line-height:1.2!important;
-        color:#795719!important;
+        color:#795729!important;
         font-weight:700!important;
         white-space:nowrap!important;
       }
@@ -4722,11 +4776,11 @@ window.NOTICE_ITEMS = [
       id: RAID_TEST_REWARD_NOTICE_ID,
       date: status.raid_date ? String(status.raid_date).replace(/-/g,'.') : '2026.08.17',
       title: 'DAILY RAID CLEAR 報酬',
-      body: 'ザ・テスト討伐への参加報酬として「テストちゃん」1体をプレゼントします。',
+      body: 'ザ・テスト討伐への参加報酬として「SIGMA-IX（シグマ-ナイン）」1体をプレゼントします。',
       reward: {
         type: 'character',
         characterId: 50,
-        characterName: 'テストちゃん',
+        characterName: 'SIGMA-IX',
         image: 'images/chara_50_panel.webp',
         claimed: status.claimed === true
       },
@@ -4853,7 +4907,7 @@ window.NOTICE_ITEMS = [
             <img class="notice-reward-character-icon" src="${escapeHtml(reward.image || 'images/chara_50_panel.webp')}" alt="">
             <div class="notice-reward-copy">
               <span class="notice-reward-label">レイドクリア報酬</span>
-              <strong>${escapeHtml(reward.characterName || 'テストちゃん')} ×1</strong>
+              <strong>${escapeHtml(reward.characterName || 'SIGMA-IX')} ×1</strong>
             </div>
           </div>
           <button
@@ -5122,7 +5176,7 @@ window.NOTICE_ITEMS = [
             const entry = typeof createCharaSummonData === 'function'
               ? createCharaSummonData(chara, now)
               : {
-                  id:50, name:'テストちゃん', rarity:'sr',
+                  id:50, name:'SIGMA-IX', rarity:'sr',
                   stats:{HP:620,ATK:285}, baseStats:{HP:620,ATK:285},
                   capturedAt:now.toISOString()
                 };
@@ -5140,7 +5194,7 @@ window.NOTICE_ITEMS = [
 
         item.reward.claimed = true;
         if (typeof window.showToast === 'function') {
-          window.showToast('テストちゃん ×1 を受け取りました！');
+          window.showToast('SIGMA-IX ×1 を受け取りました！');
         }
         if (typeof renderZukan === 'function') {
           try { renderZukan(); } catch(_){}
@@ -5460,10 +5514,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=562"></script>
-<script src="js/resonance_system.js?v=562"></script>
-<script src="js/resonance_ui.js?v=562"></script>
-<script src="js/character_levelup.js?v=562"></script>
+<script src="js/shooting_resonance.js?v=593"></script>
+<script src="js/resonance_system.js?v=593"></script>
+<script src="js/resonance_ui.js?v=593"></script>
+<script src="js/character_levelup.js?v=593"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -5954,8 +6008,8 @@ document.addEventListener('touchend', function (e) {
 
   // ─── ガチャ仕様 v259 ───────────────────────────
   // ガチャは2種類のみ。
-  // 1) 恒常ガチャ: R22 + 恒常SR5。限定SR5は排出しない。
-  // 2) 限定ガチャ: R22 + 恒常SR5 + 限定SR5。
+  // 1) 恒常ガチャ: R23 + 恒常SR5。限定SR5は排出しない。
+  // 2) 限定ガチャ: R23 + 恒常SR5 + 限定SR5。
   // 排出率はどちらも SR6% / R47% / 進化素材47%。
   // 価格は従来どおり 1回5結晶 / 10回50結晶、天井50回。
   //
@@ -5969,10 +6023,10 @@ document.addEventListener('touchend', function (e) {
   // DARK アヤネ(11) / LIGHT ミト(7)
   const GACHA_PERMANENT_SR_IDS = [2, 31, 28, 11, 7];
 
-  // 通常R22体（ネム・クラリネをRへ移行）
+  // 通常R23体（グレシャ34を恒常Rへ追加）
   const GACHA_R_IDS = [
     3, 5, 6, 10, 12, 13, 14, 15, 16, 17,
-    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30
+    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 34
   ];
 
   const GACHA_SR_RATE = 0.06;
@@ -6576,7 +6630,7 @@ const ELEMENT_ICON_IMAGE = {
   neutral: "images/type_neutral.webp",
   aqua:    "images/type_aqua.webp",
   fire:    "images/type_fire.webp",
-  dark:    "images/type_dark.webp",
+  dark:    "images/type_dark.webp?v=593",
   light:   "images/type_light.webp",
   wood:    "images/type_wood.webp"
 };
@@ -6979,7 +7033,7 @@ function selectChara(now, gacha) {
    var homeVisualOverride = {
      1: { scale:0.82, y:-40 }, // エリ
      2: { scale:0.85, y:-10 }, // ウルフ
-     3: { scale:0.82, y:-20 }, // リゼ
+     3: { scale:0.82, y:-20 }, // アウラ
      4: { scale:0.85, y:-70 }, // ハヤテ
      5: { scale:0.81, y:-20 }, // ジグ
      6: { scale:0.81, y:-34 }, // イグニス
@@ -7011,7 +7065,7 @@ function selectChara(now, gacha) {
      32: { scale:0.79, y:-30 }, // イヴェルナ
      33: { scale:0.79, y:-25 }, // レイ
      34: { scale:0.83, y:-40 }, // グレシャ
-     50: { scale:0.82, y:-20 }, // テストちゃん
+     50: { scale:0.82, y:-20 }, // SIGMA-IX
      52: { scale:0.99, y:-24 }, // ノア
    };
    var homeTune = homeVisualOverride[Number(chara.id)];
@@ -9056,6 +9110,11 @@ startTitleBgm();
   }
 
  async function showScreen(name){
+  // build586: 図鑑から別画面へ移る場合、一覧へ戻るための一時スクロール記憶は破棄する。
+  if(typeof resetZukanListPositionWhenLeaving === 'function'){
+    resetZukanListPositionWhenLeaving(name);
+  }
+
   if(name === 'main'){
     setZeraphiaAppPhase('HOME');
   } else if(getZeraphiaAppPhase() === 'HOME' || getZeraphiaAppPhase() === 'OTHER'){
@@ -9154,6 +9213,11 @@ function goHome(){
 }
   // ボトムナビゲーション切替
   function showMainTab(name){
+    // build586: ボトムナビ等で図鑑を閉じた時点でスクロール記憶をリセットする。
+    if(typeof resetZukanListPositionWhenLeaving === 'function'){
+      resetZukanListPositionWhenLeaving(name);
+    }
+
     // build470:
     // ステージ選択画面上の共通ボトムナビから別タブへ移動する場合は、
     // 背面だけ切り替えてステージ選択モーダルを残さない。
@@ -11060,6 +11124,68 @@ function showTenResult(results){
   // 既存のキャラ一覧レイアウトは変更せず、レムナントは同じカルーセルUIを別モードで描画する。
   var currentZukanMainTab = 'box';
   var currentZukanDetailCharaId = null;
+
+  // build586: キャラ一覧 -> キャラ詳細 -> 戻る の間だけ一覧スクロール位置を保持する。
+  // 図鑑そのものから他画面へ離れた時点で破棄し、次回は必ず先頭から開く。
+  var zukanListReturnScrollTop = 0;
+  var zukanListReturnRenderedCount = 0;
+  var zukanListReturnPositionValid = false;
+
+  function rememberZukanListReturnPosition(){
+    var scroll = document.querySelector('#screen-zukan .screen-scroll');
+    zukanListReturnScrollTop = scroll ? Math.max(0, Number(scroll.scrollTop || 0)) : 0;
+    zukanListReturnRenderedCount = Math.max(0, Number(zukanIndexRenderedCount || 0));
+    zukanListReturnPositionValid = true;
+  }
+
+  function resetZukanListReturnPosition(resetScroller){
+    zukanListReturnScrollTop = 0;
+    zukanListReturnRenderedCount = 0;
+    zukanListReturnPositionValid = false;
+
+    if(resetScroller){
+      var scroll = document.querySelector('#screen-zukan .screen-scroll');
+      if(scroll) scroll.scrollTop = 0;
+    }
+  }
+
+  function restoreZukanListReturnPosition(){
+    if(!zukanListReturnPositionValid) return;
+
+    var targetTop = Math.max(0, Number(zukanListReturnScrollTop || 0));
+    var targetRenderedCount = Math.max(0, Number(zukanListReturnRenderedCount || 0));
+    var generation = zukanIndexRenderGeneration;
+
+    // 一覧は8件ずつ遅延DOM生成しているため、戻る前に表示済みだった件数までは
+    // 先に復元しておく。これをしないと深い位置のscrollTopが上限で丸められる。
+    var guard = 0;
+    while(
+      targetRenderedCount > zukanIndexRenderedCount &&
+      zukanIndexRenderedCount < zukanIndexPendingChars.length &&
+      guard < 100
+    ){
+      appendZukanIndexBatch(generation);
+      guard += 1;
+    }
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        var scroll = document.querySelector('#screen-zukan .screen-scroll');
+        if(scroll) scroll.scrollTop = targetTop;
+        // 復元は一度だけ。次に詳細を開いた時は現在位置を新しく記憶する。
+        zukanListReturnPositionValid = false;
+      });
+    });
+  }
+
+  function resetZukanListPositionWhenLeaving(nextScreenName){
+    if(String(nextScreenName || '') === 'zukan') return;
+    var zukanScreen = document.getElementById('screen-zukan');
+    if(zukanScreen && zukanScreen.classList.contains('active')){
+      resetZukanListReturnPosition(true);
+    }
+  }
+
   var currentRemnantCarouselIndex = 0;
   var REMNANT_STORAGE_KEY = 'zeraphia_remnants_owned_v1';
 
@@ -11850,6 +11976,10 @@ function showTenResult(results){
     var index = chars.findIndex(function(chara){ return Number(chara.id) === id; });
     if(index < 0) return;
 
+    // build586: 詳細DOMへ差し替える前に一覧位置を記憶する。
+    // 差し替え後ではscrollHeightが縮んでscrollTopが0付近へ丸められるため、必ず先に保存。
+    rememberZukanListReturnPosition();
+
     currentBoxCarouselIndex = index;
     currentZukanDetailCharaId = id;
     if(isZukanFilterMenuOpen){
@@ -11870,8 +12000,14 @@ function showTenResult(results){
     updateZukanHeaderForMode();
     renderBox();
 
-    var scroll = document.querySelector('#screen-zukan .screen-scroll');
-    if(scroll) scroll.scrollTop = 0;
+    // 詳細から「戻る」の時だけ、直前のキャラ一覧位置へ戻す。
+    // 他画面へ移動して図鑑を閉じた場合は遷移側で記憶を破棄する。
+    if(zukanListReturnPositionValid){
+      restoreZukanListReturnPosition();
+    } else {
+      var scroll = document.querySelector('#screen-zukan .screen-scroll');
+      if(scroll) scroll.scrollTop = 0;
+    }
   }
 
   // 1階層目：キャラ一覧。
@@ -15510,17 +15646,17 @@ function fadeOutOpeningBgm(){
   - 画像はService Workerで全面管理しない
 -->
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=562"></script>
+<script src="js/login_bonus.js?v=593"></script>
 
 
 
-<script src="js/shooting_characters.js?v=562"></script>
-<script src="js/stage_select.js?v=562"></script>
+<script src="js/shooting_characters.js?v=593"></script>
+<script src="js/stage_select.js?v=593"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=562">
-<script src="js/remnant_blessings.js?v=562"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=593">
+<script src="js/remnant_blessings.js?v=593"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=562"></script>
+<script src="js/shinju.js?v=593"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15593,10 +15729,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=562"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=593"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=562-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=562"></script>
+<script src="js/admin_mode.js?v=593-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=593"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -15604,7 +15740,7 @@ window.returnToTitleScreen = function(){
 
   function appBuild(){
     var meta = document.querySelector('meta[name="sasaphia-build"]');
-    return meta ? String(meta.content || '').trim() : '562';
+    return meta ? String(meta.content || '').trim() : '574';
   }
 
   window.addEventListener('load', function(){
@@ -15631,7 +15767,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=562"></script>
+<script src="js/score_attack.js?v=593"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -16027,7 +16163,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=562-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=593-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
@@ -16819,6 +16955,91 @@ html body #global-user-frame .hud-sweep-line-player{
   }
 }
 </style>
+
+
+<script id="home-type-dancing-letters-build586">
+(() => {
+  const ROOT_SELECTOR = '#screen-main .home-type-entry';
+  const HEAD_TILT = '-4deg';
+
+  function makeLetter(char, extraClass = '', shouldTilt = false) {
+    const slot = document.createElement('span');
+    slot.className = `home-type-letter${extraClass ? ' ' + extraClass : ''}`;
+
+    const glyph = document.createElement('span');
+    glyph.className = 'home-type-glyph';
+    // build586: 傾きを付けるのは各メニューの先頭1文字だけ。
+    glyph.style.setProperty('--home-letter-tilt', shouldTilt ? HEAD_TILT : '0deg');
+
+    if (char === ' ' || char === '　') {
+      slot.classList.add('is-space');
+      glyph.textContent = '\u00a0';
+    } else {
+      glyph.textContent = char;
+    }
+    slot.appendChild(glyph);
+    return slot;
+  }
+
+  function renderEqualGrid(button, head, rest, gridClass) {
+    const layer = document.createElement('span');
+    layer.className = `home-type-letter-layer ${gridClass}`;
+    const chars = Array.from(`${head}${rest}`.replace(/[\r\n\s　]+/g, ''));
+    chars.forEach((char, index) => {
+      layer.appendChild(makeLetter(char, index === 0 ? 'is-head' : 'is-rest', index === 0));
+    });
+    button.appendChild(layer);
+  }
+
+  function renderStandard(button, head, rest) {
+    const layer = document.createElement('span');
+    layer.className = 'home-type-letter-layer';
+    layer.appendChild(makeLetter(head, 'is-head', true));
+
+    const restWrap = document.createElement('span');
+    restWrap.className = 'home-type-rest-letter-wrap';
+    const lines = String(rest || '').split(/\r?\n/);
+    lines.forEach((line, lineIndex) => {
+      const lineSpan = document.createElement('span');
+      lineSpan.className = 'home-type-letter-line';
+      Array.from(line).forEach(char => lineSpan.appendChild(makeLetter(char, 'is-rest', false)));
+      restWrap.appendChild(lineSpan);
+      if (lineIndex < lines.length - 1) {
+        const br = document.createElement('span');
+        br.className = 'home-type-line-break';
+        restWrap.appendChild(br);
+      }
+    });
+    layer.appendChild(restWrap);
+    button.appendChild(layer);
+  }
+
+  function letterizeHomeMenu() {
+    document.querySelectorAll(ROOT_SELECTOR).forEach(button => {
+      button.querySelector(':scope > .home-type-letter-layer')?.remove();
+      const head = button.getAttribute('data-home-head') || '';
+      const rest = button.getAttribute('data-home-rest') || '';
+      if (!head && !rest) return;
+      button.classList.add('home-type-letterized');
+
+      if (button.classList.contains('phase-expedition-home-entry')) {
+        renderEqualGrid(button, head, rest, 'phase-expedition-letter-grid');
+      } else if (button.classList.contains('shinju-home-entry')) {
+        renderEqualGrid(button, head, rest, 'shinju-letter-grid');
+      } else {
+        renderStandard(button, head, rest);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', letterizeHomeMenu, { once:true });
+  } else {
+    letterizeHomeMenu();
+  }
+})();
+</script>
+
 
 </body>
 </html>

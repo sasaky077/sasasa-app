@@ -284,7 +284,7 @@
     34: genericSet('グレシャ'),
 
     50: Object.freeze({
-      1: bonus('艦砲同調', 'ATK +5%', 'テストちゃんの基礎ATKが5%上昇する。', [
+      1: bonus('艦砲同調', 'ATK +5%', 'SIGMA-IXの基礎ATKが5%上昇する。', [
         { type:'statRate', hp:0, atk:0.05 }
       ]),
       2: bonus('トライ・レーザー増幅', '通常射撃ダメージ +10%', '3WAY通常射撃の1Hitダメージを10%強化する。', [

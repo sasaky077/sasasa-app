@@ -26587,8 +26587,8 @@ body {
   --primoa-element-edge: rgba(206,151,33,.46);
 }
 #screen-zukan.is-primoa-index .primoa-index-card.element-dark{
-  --primoa-element-base: rgba(101,72,145,.25);
-  --primoa-element-edge: rgba(76,52,119,.44);
+  --primoa-element-base: rgba(128,84,174,.25);
+  --primoa-element-edge: rgba(97,57,137,.44);
 }
 #screen-zukan.is-primoa-index .primoa-index-card.element-neutral{
   --primoa-element-base: rgba(92,98,103,.20);
@@ -26744,7 +26744,7 @@ body {
 .zukan-filter-chip.element-aqua.active{background:rgba(61,143,196,.18);border-color:rgba(43,117,177,.42);}
 .zukan-filter-chip.element-wood.active{background:rgba(91,151,82,.18);border-color:rgba(65,126,67,.42);}
 .zukan-filter-chip.element-light.active{background:rgba(232,190,60,.21);border-color:rgba(206,151,33,.48);}
-.zukan-filter-chip.element-dark.active{background:rgba(101,72,145,.18);border-color:rgba(76,52,119,.42);}
+.zukan-filter-chip.element-dark.active{background:rgba(128,84,174,.18);border-color:rgba(97,57,137,.42);}
 .zukan-filter-chip.element-neutral.active{background:rgba(92,98,103,.15);border-color:rgba(70,76,82,.38);}
 .zukan-filter-chip.rarity-sr.active{background:linear-gradient(120deg,rgba(255,247,213,.95),rgba(239,219,164,.78),rgba(255,250,232,.94));}
 .zukan-filter-chip.rarity-r.active{background:rgba(226,218,204,.72);}
@@ -27340,8 +27340,8 @@ select,
   --detail-element-deep:rgba(189,145,47,.20);
 }
 #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-dark{
-  --detail-element-soft:rgba(113,88,143,.12);
-  --detail-element-deep:rgba(83,63,112,.19);
+  --detail-element-soft:rgba(132,96,169,.12);
+  --detail-element-deep:rgba(96,61,132,.19);
 }
 #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-view.element-neutral{
   --detail-element-soft:rgba(118,118,118,.065);
@@ -27377,8 +27377,8 @@ select,
   --viewer-element-deep:rgba(187,143,45,.20);
 }
 #primor-fullscreen-viewer.element-dark{
-  --viewer-element-soft:rgba(113,88,143,.13);
-  --viewer-element-deep:rgba(83,62,112,.20);
+  --viewer-element-soft:rgba(132,96,169,.13);
+  --viewer-element-deep:rgba(96,61,132,.20);
 }
 #primor-fullscreen-viewer.element-neutral{
   --viewer-element-soft:rgba(118,118,118,.07);
@@ -27478,8 +27478,8 @@ select,
 
 /* DARK */
 #box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual.element-dark{
-  --panel-element-mid:rgba(119,87,151,.17);
-  --panel-element-bottom:rgba(83,58,113,.29);
+  --panel-element-mid:rgba(137,91,181,.17);
+  --panel-element-bottom:rgba(96,59,135,.29);
 }
 
 /* NEUTRAL */
@@ -36899,5 +36899,397 @@ img.zimg-loaded{
   }
   #screen-zukan.is-primoa-index .zukan-name-search.open + #box-grid{
     margin-top:50px !important;
+  }
+}
+
+
+/* =========================================================
+   build571 DARK ATTRIBUTE ICON — supplied artwork
+   type_dark.webp はユーザー指定の水彩/月輪アイコンをそのまま表示する。
+   単色化フィルターは適用しない。
+   ========================================================= */
+img[src*="type_dark.webp"]{
+  filter:none !important;
+}
+
+
+/* =========================================================
+   build574 PHASE EXPEDITION — home left menu placeholder
+   将来コンテンツ「位相遠征」。既存HOME TYPE MENUの文字組みを継承し、
+   「位」だけを赤、残りの「相遠征」は既存ブラウンのまま表示する。
+   ========================================================= */
+#screen-main .phase-expedition-home-entry{
+  position:absolute !important;
+  left:18px !important;
+  right:auto !important;
+  top:calc(
+    var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
+    + (clamp(88px,22vw,98px) + 8px) * 2
+  ) !important;
+  bottom:auto !important;
+  z-index:30 !important;
+}
+
+/* 「位」だけ赤。残り文字は共通HOME TYPE MENUのブラウンを維持。 */
+#screen-main .phase-expedition-home-entry::before{
+  color:#a13a35 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.90),
+    0 2px 3px rgba(104,38,34,.14) !important;
+}
+
+#screen-main .phase-expedition-home-entry::after{
+  color:#60492c !important;
+  left:49px !important;
+  letter-spacing:.08em !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .phase-expedition-home-entry{
+    left:14px !important;
+    top:calc(
+      var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
+      + (84px + 8px) * 2
+    ) !important;
+  }
+}
+
+
+/* =========================================================
+   build583 HOME TYPE MENU — first-letter tilt only
+   - 全メニュー共通で、傾きを付けるのは先頭1文字だけ。2文字目以降は0deg固定。
+   - 位相遠征は「位 / 相 / 遠 / 征」を4等分。
+   - 神聖樹は「神 / 聖 / 樹」の字間を均等感を保ちつつ詰める。
+   ========================================================= */
+#screen-main .home-type-entry.home-type-letterized::before,
+#screen-main .home-type-entry.home-type-letterized::after{
+  content:none !important;
+  display:none !important;
+}
+
+#screen-main .home-type-letter-layer{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:2 !important;
+  pointer-events:none !important;
+  transform-origin:50% 50% !important;
+}
+
+#screen-main .home-type-letter{
+  display:inline-block !important;
+  position:relative !important;
+  font-family:"Noto Serif JP",serif !important;
+  color:#60492c !important;
+  background:none !important;
+  border:0 !important;
+  white-space:pre !important;
+}
+
+#screen-main .home-type-glyph{
+  display:inline-block !important;
+  font:inherit !important;
+  color:inherit !important;
+  line-height:inherit !important;
+  text-shadow:inherit !important;
+  transform:rotate(var(--home-letter-tilt,0deg)) !important;
+  transform-origin:50% 68% !important;
+  will-change:transform;
+}
+
+#screen-main .home-type-letter.is-head{
+  position:absolute !important;
+  left:12px !important;
+  top:50% !important;
+  font-size:30px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.88),
+    0 2px 3px rgba(79,57,27,.12) !important;
+  transform:translateY(-52%) !important;
+}
+
+#screen-main .home-type-rest-letter-wrap{
+  position:absolute !important;
+  left:43px !important;
+  top:50% !important;
+  display:block !important;
+  transform:translateY(-25%) !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  text-align:left !important;
+  white-space:nowrap !important;
+}
+
+#screen-main .home-type-letter-line{
+  display:flex !important;
+  align-items:baseline !important;
+  gap:0 !important;
+  height:1em !important;
+  white-space:nowrap !important;
+}
+
+#screen-main .home-type-letter.is-rest{
+  position:relative !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  margin-right:-.06em !important;
+  text-shadow:
+    0 0 3px rgba(255,255,255,.94),
+    0 1px 2px rgba(79,57,27,.10) !important;
+}
+
+#screen-main .home-type-letter.is-space{
+  width:.56em !important;
+  margin-right:0 !important;
+}
+
+#screen-main .home-type-line-break{
+  display:block !important;
+  height:.18em !important;
+}
+
+#screen-main .home-type-entry[data-home-lines="2"] .home-type-rest-letter-wrap{
+  transform:translateY(-46%) !important;
+  line-height:1.18 !important;
+}
+
+#screen-main .home-type-entry:active .home-type-letter-layer{
+  transform:scale(.95) !important;
+}
+
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  display:grid !important;
+  grid-template-columns:repeat(4,1fr) !important;
+  align-items:center !important;
+  justify-items:center !important;
+  padding:0 2px !important;
+}
+
+#screen-main .shinju-home-entry .shinju-letter-grid{
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  display:grid !important;
+  /* 神・聖・樹の見た目上の字間を揃えつつ、聖と樹が離れすぎないよう固定幅化 */
+  grid-template-columns:34px 18px 18px !important;
+  column-gap:1px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  justify-items:center !important;
+  padding:0 !important;
+}
+
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .home-type-letter,
+#screen-main .shinju-home-entry .shinju-letter-grid .home-type-letter{
+  position:static !important;
+  left:auto !important;
+  top:auto !important;
+  margin:0 !important;
+  transform:none !important;
+}
+
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head,
+#screen-main .shinju-home-entry .shinju-letter-grid .is-head{
+  font-size:30px !important;
+  font-weight:500 !important;
+}
+
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head{
+  /* build583: 「位」と「相」の間だけ、半角スペース1個分ほど広げる */
+  transform:translateX(-4px) !important;
+  color:#a13a35 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.90),
+    0 2px 3px rgba(104,38,34,.14) !important;
+}
+
+#screen-main .shinju-home-entry .shinju-letter-grid .is-head{
+  color:#60492c !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.95),
+    0 0 4px rgba(255,255,255,.88),
+    0 2px 3px rgba(79,57,27,.12) !important;
+}
+
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-rest,
+#screen-main .shinju-home-entry .shinju-letter-grid .is-rest{
+  font-size:13px !important;
+  font-weight:600 !important;
+  color:#60492c !important;
+  margin:0 !important;
+  text-shadow:
+    0 0 3px rgba(255,255,255,.94),
+    0 1px 2px rgba(79,57,27,.10) !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main .home-type-letter.is-head{
+    font-size:27px !important;
+  }
+  #screen-main .home-type-rest-letter-wrap,
+  #screen-main .home-type-letter.is-rest{
+    font-size:12px !important;
+  }
+  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head,
+  #screen-main .shinju-home-entry .shinju-letter-grid .is-head{
+    font-size:27px !important;
+  }
+  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-rest,
+  #screen-main .shinju-home-entry .shinju-letter-grid .is-rest{
+    font-size:12px !important;
+  }
+}
+
+
+/* =========================================================
+   build584 HOME SIDE MENU — shared horizontal origin
+   レイアウトの基準点を左右それぞれの列で完全統一。
+   - 左列: button左端を同一化し、頭文字の開始位置も共通化
+   - 右列: button右端を同一化し、頭文字の開始位置も共通化
+   - 位相遠征 / 神聖樹の特殊文字組みも、通常メニューと同じ頭文字X座標から開始
+   ========================================================= */
+#screen-main{
+  --home-side-menu-inset:18px;
+  --home-side-menu-head-x:12px;
+}
+
+/* 左右の列そのものを同じ基準線へ固定 */
+#screen-main .bonus-home-entry,
+#screen-main .friend-home-entry,
+#screen-main .raid-home-entry,
+#screen-main .phase-expedition-home-entry{
+  left:var(--home-side-menu-inset) !important;
+  right:auto !important;
+}
+
+#screen-main .home-notice-btn,
+#screen-main .shinju-home-entry,
+#screen-main .score-attack-home-entry{
+  right:var(--home-side-menu-inset) !important;
+  left:auto !important;
+}
+
+/* 通常メニューの頭文字も同じ開始位置 */
+#screen-main .home-type-letter.is-head{
+  left:var(--home-side-menu-head-x) !important;
+}
+
+/* 位相遠征：先頭「位」を通常メニューと同じXから開始。
+   「位→相」だけ半角スペース1個ぶんほど広め、相→遠→征は等間隔。 */
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+  left:var(--home-side-menu-head-x) !important;
+  right:auto !important;
+  width:auto !important;
+  display:grid !important;
+  grid-template-columns:33px 13px 13px 13px !important;
+  column-gap:4px !important;
+  justify-content:start !important;
+  justify-items:start !important;
+  padding:0 !important;
+}
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head{
+  transform:none !important;
+  justify-self:start !important;
+}
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-rest{
+  justify-self:start !important;
+}
+
+/* 神聖樹：特殊グリッドでも「神」の開始位置は他の右メニューと共通。
+   聖と樹は離しすぎず、既存の小さめ字間を維持。 */
+#screen-main .shinju-home-entry .shinju-letter-grid{
+  left:var(--home-side-menu-head-x) !important;
+  right:auto !important;
+  width:auto !important;
+  display:grid !important;
+  grid-template-columns:30px 13px 13px !important;
+  column-gap:1px !important;
+  justify-content:start !important;
+  justify-items:start !important;
+  padding:0 !important;
+}
+#screen-main .shinju-home-entry .shinju-letter-grid .is-head,
+#screen-main .shinju-home-entry .shinju-letter-grid .is-rest{
+  justify-self:start !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main{
+    --home-side-menu-inset:14px;
+    --home-side-menu-head-x:10px;
+  }
+  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+    grid-template-columns:30px 12px 12px 12px !important;
+    column-gap:3px !important;
+  }
+  #screen-main .shinju-home-entry .shinju-letter-grid{
+    grid-template-columns:27px 12px 12px !important;
+    column-gap:1px !important;
+  }
+}
+
+/* =========================================================
+   build585 HOME SIDE MENU — shared first/second character gap
+   全メニュー共通で、1文字目→2文字目の間を少し広めに統一。
+   先頭文字の開始位置はbuild584の左右共通基準を維持。
+   ========================================================= */
+#screen-main{
+  --home-side-menu-rest-x:48px;
+  --home-side-menu-rest-step:17px;
+}
+
+/* 通常メニュー：2文字目の開始位置を共通化 */
+#screen-main .home-type-rest-letter-wrap{
+  left:var(--home-side-menu-rest-x) !important;
+}
+
+/* 位相遠征：位→相も同じ共通ギャップ。相→遠→征は軽く字間を確保。 */
+#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+  grid-template-columns:
+    calc(var(--home-side-menu-rest-x) - var(--home-side-menu-head-x))
+    var(--home-side-menu-rest-step)
+    var(--home-side-menu-rest-step)
+    13px !important;
+  column-gap:0 !important;
+}
+
+/* 神聖樹：神→聖を他メニューと同じ共通ギャップにし、聖→樹は自然な小字間。 */
+#screen-main .shinju-home-entry .shinju-letter-grid{
+  grid-template-columns:
+    calc(var(--home-side-menu-rest-x) - var(--home-side-menu-head-x))
+    var(--home-side-menu-rest-step)
+    13px !important;
+  column-gap:0 !important;
+}
+
+@media (max-width:380px), (max-height:700px){
+  #screen-main{
+    --home-side-menu-rest-x:43px;
+    --home-side-menu-rest-step:16px;
+  }
+  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+    grid-template-columns:
+      calc(var(--home-side-menu-rest-x) - var(--home-side-menu-head-x))
+      var(--home-side-menu-rest-step)
+      var(--home-side-menu-rest-step)
+      12px !important;
+  }
+  #screen-main .shinju-home-entry .shinju-letter-grid{
+    grid-template-columns:
+      calc(var(--home-side-menu-rest-x) - var(--home-side-menu-head-x))
+      var(--home-side-menu-rest-step)
+      12px !important;
   }
 }

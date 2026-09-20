@@ -54,7 +54,7 @@
   // v306 Gacha SR:
   //   限定: イヴェルナ / スゥ / ロゼ / シュリ / ハヤテ
   //   恒常: ウルフ / レイ / ミモザ / アヤネ / ミト
-  //   ネム / クラリネはRへ移行。エリ・テストちゃん・ノアは別枠SR。
+  //   ネム / クラリネはRへ移行。エリ・SIGMA-IX・ノアは別枠SR。
   const SHOOTING_RARITY = Object.freeze({
     1: 'sr',  // エリ
     26: 'r',   // ネム
@@ -84,10 +84,10 @@
     12: 'r',  // シイナ
     5: 'r',  // ジグ
     19: 'r',  // ラグナ
-    3: 'r',  // リゼ
+    3: 'r',  // アウラ
     18: 'r',  // シオン
     10: 'r',  // オリオン
-    50: 'sr',  // テストちゃん
+    50: 'sr',  // SIGMA-IX
     52: 'sr',  // ノア
     32: 'sr',  // イヴェルナ
     33: 'sr',  // レイ
@@ -174,7 +174,7 @@
   },
   "3": {
     "id": 3,
-    "name": "リゼ",
+    "name": "アウラ",
     "element": "wood",
     "hp": 600,
     "atk": 250,
@@ -878,7 +878,7 @@
   },
   "50": {
     "id": 50,
-    "name": "テストちゃん",
+    "name": "SIGMA-IX",
     "element": "wood",
     "hp": 620,
     "atk": 285,
@@ -1028,8 +1028,8 @@
     // 通常攻撃ダメージは ATK × shotPowerRate。
     // fireRate / shotCount と合わせて理論DPSを調整する。
     label: 'BALANCE',
-    description: '暫定性能。ULTは敵弾を全消去し、敵を1秒停止させた後、ATKの280%ダメージを与える。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去し、敵を約1秒間停止させる。0.42秒後に敵全体へATK×2.8のダメージを与える。',
+    description: '暫定性能。ULTは敵弾を全消去し、敵行動を約1秒停止。属性色の閃光後、敵全体へATK×3.0のダメージを与える。',
+    ultDescription: '発動時に盤面上の敵弾をすべて消去し、敵行動を停止。盤面上の全敵へ自身の属性色の細い閃光を走らせ、ATK×3.0のダメージを与えた後、敵行動が再開する。',
     ultName: '駆け巡る閃光',
     ultType: 'balance_flash',
     moveSpeed: 400,
@@ -1047,7 +1047,7 @@
     // ---- ULT / 駆け巡る閃光 ----
     // エリ本人と、固有性能未実装でERI_BASE_PROFILEを継承するキャラ共通。
     // 固定ダメージではなく現在ATKを参照する。
-    ultDamageAtkMultiplier: 2.8,
+    ultDamageAtkMultiplier: 3.0,
 
     burstNeed: 28,
     ultGainPerHit: 0.476,
@@ -1228,37 +1228,32 @@
   });
 
   // ============================================================
-  // グレシャ：クラリネ型ショット / 焼野原
+  // グレシャ：FIRE 3WAY SPREAD / 焼野原
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.GRESHA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.GRESHA,
     effectKey: 'gresha',
-    label: 'BURN FIELD / ORBIT SHOT',
-    description: 'クラリネと同型の4ライン円環射撃。ULTは敵陣へ6秒間「焼野原」を展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
+    label: 'SPREAD / BURN FIELD',
+    description: '扇状に3WAYの火属性弾を放つR広域射撃型。ULT「焼野原」は敵陣へ6秒間ダメージフィールドを展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
     ultDescription: '敵陣に6秒間ダメージフィールド「焼野原」を展開。フィールド内にいる敵全員へ1秒ごとにATK×1.5の火属性ダメージを与える。',
     ultName: '焼野原',
     ultType: 'gresha_burn_field',
 
-    // クラリネと同一の通常ショット性能
+    // 通常ショット：FIRE 3WAY SPREAD
     moveSpeed: 400,
-    fireRate: 178,
-    bulletSpeed: 430,
-    shotPowerRate: 0.050,
-    shotType: 'orbit',
-    shotCount: 4,
-    shotSpacing: 26,
-    shotStyle: 'clarine',
-    orbitRadius: 28,
-    orbitAngularSpeed: 12.4,
-    orbitForwardLoopRate: 0.28,
-    orbitPhaseStep: 1.5707963267948966,
+    fireRate: 360,
+    bulletSpeed: 760,
+    shotPowerRate: 0.095,
+    shotType: 'spread',
+    shotCount: 3,
+    shotAngleStep: 0.18,
 
     burstDamage: 0,
     burstNeed: 30,
-    ultGainPerHit: 0.297,
+    ultGainPerHit: 0.75,
     coreTop: '38%',
-    shotOffsetY: 38,
+    shotOffsetY: 40,
 
     // ULT
     burnFieldDurationMs: 6000,
@@ -1442,7 +1437,7 @@
     chargeMinSize: 30,
     chargeMaxSize: 76,
 
-    // ULTは今回未実装。既存の暫定挙動には触れない。
+    // ULTはERI系共通仕様：敵弾消去＋敵行動停止＋属性閃光＋ATK×3.0。
     coreTop: '38%',
   });
 
@@ -1639,17 +1634,17 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SERA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SERA, effectKey: 'sera',
-    label: 'ORBIT / SUMMON', description: '2発の円環軌道ショット。ULTは植物系召喚物を設置するR召喚型。',
+    label: 'ORBIT / WOOD', description: '2発の円環軌道ショット。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
-    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RYUNE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RYUNE, effectKey: 'ryune',
-    label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。',
+    label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'laser', shotStyle: 'ryune', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
-    ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.KAINA] = buildShootingCharacter({
@@ -1668,31 +1663,38 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.REISIA, effectKey: 'reisia',
-    label: 'STRAIGHT / AQUA', description: '左右2発の水弾をまっすぐ前方へ同時射出するRストレート型。',
-    shotType: 'parallel', shotCount: 2, shotSpacing: 28, fireRate: 500, bulletSpeed: 640, shotPowerRate: 0.14,
-    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
+    label: 'BOMB / AQUA',
+    description: '水属性の爆弾を前方へ投げ、着弾時に小範囲へAQUA属性の爆風を広げるRスプラッシュ型。ULTは巨大なAQUA爆弾を敵陣へ投げ込み、着弾時に盤面を覆う大爆発を起こす。',
+    ultName: 'MEGA AQUA BOMB',
+    ultDescription: '巨大なAQUA爆弾を敵陣へ放り投げる。着弾時に盤面上の敵弾を消去し、敵全体へATK×4.0のAQUA属性ダメージを与える。',
+    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'liz_giant_bomb',
+    ultDamageAtkMultiplier: 4.0,
+    lizUltBlastRadius: 164,
+    lizUltThrowMs: 760,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
-    label: 'BOMB / ITEM', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは支援アイテムを少数出現させる。',
+    label: 'BOMB / LIGHT', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
-    ultBaseType: 'item_summon', ultAddons: [], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.IONA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.IONA, effectKey: 'iona',
-    label: 'STRIKE / BLADE BUFF',
-    description: '前方の近距離だけを斬り払う高威力の剣撃型。射程は短いが、接近時はRとして非常に高い瞬間火力を出せる。ULTは5秒間、自身を無敵にしてATKを1.3倍にする。',
+    label: 'STRIKE / BRASS PUNCH',
+    description: 'メリケンサックで真正面をぶん殴る超近接型。通常攻撃も射程は短いが高火力。ULTはさらに狭い間合いへ、外せば終わりの一撃を叩き込む。',
     shotType: 'strike', shotCount: 1, fireRate: 520, shotPowerRate: 0.95,
     slashRange: 182,
     slashWidth: 120,
     slashVisualMs: 180,
-    ultName: '刃装解放',
-    ultDescription: '5秒間、自身を無敵状態にし、同時にATKを1.3倍へ上昇させる。キャラクターを交代すると、ベロニカに付与された効果は待機中となり、他キャラクターには引き継がれない。',
-    ultBaseType: 'buff', ultAddons: ['invincible','player_buff'], ultType: 'veronica_blade_buff',
-    ultBuffDurationMs: 5000,
-    ultAtkMultiplier: 1.3,
+    ultName: 'キョーレツな一発をあげる♡',
+    ultDescription: '真正面の超狭範囲へ1Hitだけの強烈な拳を叩き込む。命中時はATKの700%ダメージ。追尾せず、範囲外なら完全にMISSとなる。',
+    ultBaseType: 'damage', ultAddons: ['damage'], ultType: 'veronica_brass_punch',
+    ultDamageAtkMultiplier: 7.0,
+    ultPunchRange: 118,
+    ultPunchWidth: 68,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ELSIA] = buildShootingCharacter({
@@ -1727,16 +1729,16 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RAGNA, effectKey: 'ragna',
-    label: 'BOMB / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは広範囲BURST。',
+    label: 'BOMB / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'bomb', bombSize: 'L', shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27, splashRadius: 96, splashDamageRate: 0.58,
-    ultBaseType: 'burst', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'BOMB / DOT', description: '小範囲へ広がるRスプラッシュ型。ULTは継続ダメージ＋微回復。',
+    label: 'BOMB / WOOD', description: '小範囲へ広がるRスプラッシュ型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
-    ultBaseType: 'dot', ultAddons: ['heal'], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SHION] = buildShootingCharacter({
@@ -1756,10 +1758,10 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
-    label: 'SHOTGUN / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
+    label: 'SHOTGUN / LIGHT', description: '高威力の単発精密射撃。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
-    ultBaseType: 'burst', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   // v306: 限定SR FIRE / LASER
@@ -1787,7 +1789,7 @@
     coreTop: '39%',
     shotOffsetY: 40,
 
-    // ULT：テストちゃん「ブラックシップ」と同一性能
+    // ULT：SIGMA-IX「ブラックシップ」と同一性能
     ultBeamDurationMs: 5000,
     ultBeamTickMs: 250,
     ultBeamTickAtkMultiplier: 0.35,
@@ -1893,14 +1895,14 @@
 
 
   // ============================================================
-  // テストちゃん：DAILY RAIDクリア報酬
+  // SIGMA-IX：DAILY RAIDクリア報酬
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.TESTCHAN,
     effectKey: 'testchan',
     label: 'TRI-LASER / BLACK SHIP',
-    description: '3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
+    description: '未来から来たアンドロイド、SIGMA-IX（シグマ-ナイン）。3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
     ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
     ultName: 'ブラックシップ',
     ultType: 'testchan_black_ship',
@@ -1928,15 +1930,16 @@
 
   // ============================================================
   // マグダレーナ：紅黒5WAY気弾 / ULT「彼岸残月」
-  // 既存性能は維持しつつ、IDを19へ変更。
+  // build564: 大鎌を正面へ直線投擲し、最初に当たった敵の位置で停止。
+  // 命中地点の一定範囲だけを吸引・行動停止する。誰にも当たらなければMISS。
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.SHURI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.SHURI,
     effectKey: 'gojo',
     label: 'CRIMSON MOON / FIVE-WAY',
-    description: '淡い紅黒の5WAY気弾を放つSR火力型。ULT「彼岸残月」は大鎌を敵へ投擲し、着弾地点で血月の瘴気場を展開。周囲の敵を中心へ吸引して停止させながら継続ダメージを与える。',
-    ultDescription: '大鎌を敵へ向けて投げ放つ。着弾すると巨大な血月の瘴気場が発生し、約7秒間すべての敵を中心へ吸引。中心まで寄せられた敵は停止する。盤面上の敵弾は消去せず残り続け、各対象へ合計ATK×3.5相当の継続ダメージを与える。',
+    description: '淡い紅黒の5WAY気弾を放つSR火力型。ULT「彼岸残月」は大鎌を正面へ直線投擲し、最初に命中した敵の位置で停止。周囲の敵を吸引して行動を封じる。',
+    ultDescription: '大鎌を正面へ一直線に投擲する。最初に敵へ命中した位置で鎌が停止し、その一定範囲内の敵を約7秒間吸引。吸引された敵は効果中、移動・攻撃・弾の生成が停止する。すでに盤面に存在する敵弾は消去しない。直線上に敵がいなければMISSで終了する。',
     ultName: '彼岸残月',
     ultType: 'gojo_purple',
     moveSpeed: 400,
@@ -1951,13 +1954,12 @@
     shotStyle: 'gojo',
     shotOffsetY: 42,
 
-    // ---- ULT：投擲した大鎌の着弾地点で瘴気場を展開 ----
+    // ---- ULT：正面直線投擲 / 命中地点周辺だけを吸引・拘束 ----
     burstDamage: 27,
-    ultDamageAtkMultiplier: 3.5,
     burstNeed: 24,
     ultGainPerHit: 0.46,
     gojoPurpleDurationMs: 7000,
-    gojoPurpleTickMs: 250,
+    gojoPurplePullRadius: 165,
     gojoPurplePullStrength: 10.8,
     gojoPurpleEnemyStopRadius: 18,
     gojoPurpleBossStopRadius: 26,
@@ -2007,7 +2009,7 @@
     aqua: 'images/type_aqua.webp',
     fire: 'images/type_fire.webp',
     wood: 'images/type_wood.webp',
-    dark: 'images/type_dark.webp',
+    dark: 'images/type_dark.webp?v=571',
     light: 'images/type_light.webp',
   });
 

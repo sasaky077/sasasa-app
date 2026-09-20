@@ -260,9 +260,15 @@
       }, { passive: false });
     }
 
-    // build479: パネルは「タップ=選択 / 長押し=詳細」。
-    const roster = root.querySelector('.shooting-party-roster');
-    if (roster) {
+    // build592: パーティ選択画面の「一覧」と「編成中スロット」の両方で
+    // 長押し=詳細を有効化。PC ChromeはPointer Events、touch端末はTouch Eventsを使う。
+    // 長押し成立後は通常clickを抑止し、一覧の選択/上段スロットの解除を誤発火させない。
+    const longPressSurfaces = [
+      root.querySelector('.shooting-party-roster'),
+      root.querySelector('#shooting-party-slots')
+    ].filter(Boolean);
+
+    longPressSurfaces.forEach(surface => {
       let longPressTimer = 0;
       let pressTarget = null;
       let pressCharacterId = 0;
@@ -270,8 +276,24 @@
       let pressStartY = 0;
       let longPressTriggered = false;
       let suppressClickCharacterId = 0;
+      let activeInput = '';
+      let activePointerId = null;
 
-      const clearLongPress = function(){
+      surface.style.webkitTouchCallout = 'none';
+      surface.style.webkitUserSelect = 'none';
+      surface.style.userSelect = 'none';
+
+      const getCharacterCard = function(target){
+        const card = target && target.closest
+          ? target.closest('.shooting-character-option[data-character-id], .shooting-party-slot.filled[data-character-id]')
+          : null;
+        if (!card) return null;
+        // 一覧の未所持だけ除外。編成中スロットはbuttonでも常に所持済み。
+        if (card.classList.contains('shooting-character-option') && (card.disabled || card.classList.contains('locked'))) return null;
+        return card;
+      };
+
+      const clearLongPress = function(resetTriggered){
         if (longPressTimer) {
           window.clearTimeout(longPressTimer);
           longPressTimer = 0;
@@ -279,63 +301,119 @@
         if (pressTarget) pressTarget.classList.remove('long-press-active');
         pressTarget = null;
         pressCharacterId = 0;
+        activeInput = '';
+        activePointerId = null;
+        if (resetTriggered) longPressTriggered = false;
       };
 
-      roster.addEventListener('pointerdown', ev => {
-        const card = ev.target && ev.target.closest
-          ? ev.target.closest('.shooting-character-option')
-          : null;
-        if (!card || card.disabled || card.classList.contains('locked')) return;
-
-        ev.stopPropagation();
+      const beginLongPress = function(card, x, y, inputType, pointerId){
+        if (!card) return;
+        if (longPressTimer) window.clearTimeout(longPressTimer);
         pressTarget = card;
         pressCharacterId = Number(card.getAttribute('data-character-id') || 0);
-        pressStartX = Number(ev.clientX || 0);
-        pressStartY = Number(ev.clientY || 0);
+        if (!pressCharacterId) return;
+        pressStartX = Number(x || 0);
+        pressStartY = Number(y || 0);
         longPressTriggered = false;
+        activeInput = inputType || '';
+        activePointerId = pointerId == null ? null : pointerId;
 
-        if (longPressTimer) window.clearTimeout(longPressTimer);
         longPressTimer = window.setTimeout(() => {
+          longPressTimer = 0;
           if (!pressTarget || !pressCharacterId) return;
+          const id = pressCharacterId;
           longPressTriggered = true;
-          suppressClickCharacterId = pressCharacterId;
+          suppressClickCharacterId = id;
           pressTarget.classList.add('long-press-active');
-          openShootingCharacterInfo(pressCharacterId);
-        }, 480);
-      }, { passive: true });
+          try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+          openShootingCharacterInfo(id);
+        }, 460);
+      };
 
-      roster.addEventListener('pointermove', ev => {
-        if (!pressTarget) return;
-        ev.stopPropagation();
-        const dx = Number(ev.clientX || 0) - pressStartX;
-        const dy = Number(ev.clientY || 0) - pressStartY;
-        if (Math.hypot(dx, dy) > 10) clearLongPress();
-      }, { passive: true });
+      const cancelIfMoved = function(x, y){
+        if (!pressTarget || longPressTriggered) return;
+        const dx = Number(x || 0) - pressStartX;
+        const dy = Number(y || 0) - pressStartY;
+        if (Math.hypot(dx, dy) > 12) clearLongPress(true);
+      };
 
-      roster.addEventListener('pointerup', ev => {
-        if (pressTarget) ev.stopPropagation();
-        const triggeredId = longPressTriggered ? pressCharacterId : 0;
-        clearLongPress();
-
-        if (triggeredId) {
-          suppressClickCharacterId = triggeredId;
+      const finishLongPress = function(ev){
+        if (!pressTarget && !longPressTriggered) return;
+        const id = pressCharacterId;
+        const didLongPress = !!longPressTriggered;
+        if (didLongPress && ev && ev.cancelable) ev.preventDefault();
+        clearLongPress(false);
+        longPressTriggered = false;
+        if (didLongPress && id) {
+          suppressClickCharacterId = id;
           window.setTimeout(() => {
-            if (suppressClickCharacterId === triggeredId) suppressClickCharacterId = 0;
-          }, 550);
+            if (suppressClickCharacterId === id) suppressClickCharacterId = 0;
+          }, 800);
         }
-      }, { passive: true });
+      };
 
-      roster.addEventListener('pointercancel', ev => {
-        if (pressTarget) ev.stopPropagation();
-        clearLongPress();
-      }, { passive: true });
-
-      roster.addEventListener('click', ev => {
-        const card = ev.target && ev.target.closest
-          ? ev.target.closest('.shooting-character-option')
-          : null;
+      // PC Chrome / mouse / pen
+      surface.addEventListener('pointerdown', ev => {
+        if (ev.pointerType === 'touch') return;
+        const card = getCharacterCard(ev.target);
         if (!card) return;
+        ev.stopPropagation();
+        // pointerupがモーダル表示後に別要素へ逃げないよう、可能ならcaptureする。
+        try { if (card.setPointerCapture && ev.pointerId != null) card.setPointerCapture(ev.pointerId); } catch (_) {}
+        beginLongPress(card, ev.clientX, ev.clientY, 'pointer', ev.pointerId);
+      }, { passive: true });
 
+      surface.addEventListener('pointermove', ev => {
+        if (activeInput !== 'pointer' || !pressTarget) return;
+        if (activePointerId != null && ev.pointerId !== activePointerId) return;
+        ev.stopPropagation();
+        cancelIfMoved(ev.clientX, ev.clientY);
+      }, { passive: true });
+
+      surface.addEventListener('pointerup', ev => {
+        if (activeInput !== 'pointer' && !longPressTriggered) return;
+        if (activePointerId != null && ev.pointerId !== activePointerId) return;
+        ev.stopPropagation();
+        finishLongPress(ev);
+      }, { passive: false });
+
+      surface.addEventListener('pointercancel', ev => {
+        if (activeInput === 'pointer' || pressTarget) ev.stopPropagation();
+        clearLongPress(true);
+      }, { passive: true });
+
+      // Touch端末
+      surface.addEventListener('touchstart', ev => {
+        if (!ev.touches || ev.touches.length !== 1) return;
+        const card = getCharacterCard(ev.target);
+        if (!card) return;
+        ev.stopPropagation();
+        const t = ev.touches[0];
+        beginLongPress(card, t.clientX, t.clientY, 'touch', null);
+      }, { passive: true });
+
+      surface.addEventListener('touchmove', ev => {
+        if (activeInput !== 'touch' || !pressTarget || !ev.touches || !ev.touches.length) return;
+        ev.stopPropagation();
+        const t = ev.touches[0];
+        cancelIfMoved(t.clientX, t.clientY);
+      }, { passive: true });
+
+      surface.addEventListener('touchend', ev => {
+        if (activeInput !== 'touch' && !longPressTriggered) return;
+        ev.stopPropagation();
+        finishLongPress(ev);
+      }, { passive: false });
+
+      surface.addEventListener('touchcancel', ev => {
+        if (activeInput === 'touch' || pressTarget) ev.stopPropagation();
+        clearLongPress(true);
+      }, { passive: true });
+
+      // 長押し後に生成されるclickをcapture段階で止める。
+      surface.addEventListener('click', ev => {
+        const card = getCharacterCard(ev.target);
+        if (!card) return;
         const id = Number(card.getAttribute('data-character-id') || 0);
         if (suppressClickCharacterId && id === suppressClickCharacterId) {
           ev.preventDefault();
@@ -344,14 +422,12 @@
         }
       }, true);
 
-      roster.addEventListener('contextmenu', ev => {
-        const card = ev.target && ev.target.closest
-          ? ev.target.closest('.shooting-character-option')
-          : null;
+      surface.addEventListener('contextmenu', ev => {
+        const card = getCharacterCard(ev.target);
         if (!card) return;
         ev.preventDefault();
       }, { passive: false });
-    }
+    });
 
     return root;
   }
@@ -418,6 +494,15 @@
   }
 
   function openShootingCharacterInfo(charaId) {
+    // build588: パーティ選択の長押し詳細は、図鑑/キャラ一覧と同じ
+    // 詳細UIへ統一する。所持個体のLv/共鳴/属性/ショット性能/ULT/共鳴効果まで
+    // 一覧側と同じ情報量で確認できるようにする。
+    if (typeof window.openShootingPartyCharacterDetail === 'function') {
+      const opened = window.openShootingPartyCharacterDetail(charaId);
+      if (opened) return true;
+    }
+
+    // bridge未初期化時のみ旧コンパクトUIへフォールバック。
     const profile = getShootingInfoProfile(charaId);
     const overlay = document.getElementById('shooting-character-info-overlay');
     if (!profile || !overlay) return false;

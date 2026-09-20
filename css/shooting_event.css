@@ -84,7 +84,8 @@
    他ステージの見た目には一切影響しない。 */
 #shooting-event-root[data-shooting-stage="shooting_ch03_04"] .shooting-enemy-bullet,
 #shooting-event-root[data-shooting-stage="shooting_ch03_04"] .shooting-mini-enemy-bullet{
-  background:#5c4a63!important;
+  background:#8054ae!important;
+  border:1px solid rgba(215,191,235,.58)!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
@@ -112,7 +113,8 @@
    通常ステージ(ボスフェーズなし)なのでphase別の上書きは不要。 */
 #shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-enemy-bullet,
 #shooting-event-root[data-shooting-stage="shooting_ch03_03"] .shooting-mini-enemy-bullet{
-  background:#5c4a63!important;
+  background:#8054ae!important;
+  border:1px solid rgba(215,191,235,.58)!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
@@ -3128,8 +3130,8 @@
   width:14px!important;
   height:14px!important;
   border-radius:50%!important;
-  background:radial-gradient(circle,#f7efff 0 12%,#7b5d91 28%,#24182d 68%,transparent 72%)!important;
-  box-shadow:0 0 8px rgba(70,38,92,.95),0 0 16px rgba(109,72,135,.72)!important;
+  background:radial-gradient(circle,#fff 0 10%,#d8c2ec 24%,#9c6bc2 46%,#8054ae 70%,transparent 74%)!important;
+  box-shadow:0 0 7px rgba(184,143,217,.72),0 0 15px rgba(128,84,174,.54)!important;
   filter:none!important;
   opacity:1!important;
   z-index:14!important;
@@ -3155,7 +3157,8 @@
 #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-mini-enemy-bullet,
 #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-bullet,
 #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object-bullet{
-  background:#5c4a63!important;
+  background:#8054ae!important;
+  border:1px solid rgba(215,191,235,.58)!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
@@ -6034,27 +6037,28 @@
   height:200px;
   pointer-events:none;
   transform-origin:center bottom;
-  opacity:.96;
+  /* build566: 敵弾をレーザー越しに視認できるよう透明度を上げる。 */
+  opacity:.58;
   background:
     linear-gradient(90deg,
       transparent 0%,
-      rgba(27,166,72,.16) 8%,
-      rgba(70,242,116,.72) 24%,
-      rgba(239,255,242,.98) 44%,
-      #fff 50%,
-      rgba(239,255,242,.98) 56%,
-      rgba(70,242,116,.72) 76%,
-      rgba(27,166,72,.16) 92%,
+      rgba(27,166,72,.10) 8%,
+      rgba(70,242,116,.46) 24%,
+      rgba(239,255,242,.68) 44%,
+      rgba(255,255,255,.72) 50%,
+      rgba(239,255,242,.68) 56%,
+      rgba(70,242,116,.46) 76%,
+      rgba(27,166,72,.10) 92%,
       transparent 100%);
-  box-shadow:0 0 18px rgba(40,222,94,.66),0 0 38px rgba(24,166,69,.38);
+  box-shadow:0 0 14px rgba(40,222,94,.42),0 0 28px rgba(24,166,69,.24);
   will-change:transform,height;
   animation:testchanBlackShipPulse .15s ease-in-out infinite alternate;
 }
 .shooting-testchan-blackship-beam i{
   position:absolute;
   inset:0 42%;
-  background:#f7fff8;
-  box-shadow:0 0 12px rgba(255,255,255,.95);
+  background:rgba(247,255,248,.72);
+  box-shadow:0 0 9px rgba(255,255,255,.62);
 }
 .shooting-testchan-blackship-beam.ending{opacity:0;transition:opacity .18s ease}
 @keyframes testchanBlackShipPulse{
@@ -7606,8 +7610,8 @@
 #shooting-event-root .shooting-enemy-element-fire.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(255,249,234,.98),#ffbf76 22%,#ed5e35 64%,rgba(179,39,22,.20))!important;box-shadow:0 0 7px rgba(255,124,75,.82),0 0 16px rgba(229,69,42,.42)!important}
 #shooting-event-root .shooting-enemy-element-wood.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 14%,#d9efad 28%,#7da557 66%,rgba(65,98,43,.10) 100%)!important;box-shadow:0 0 8px rgba(147,190,91,.70)!important}
 #shooting-event-root .shooting-enemy-element-wood.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(251,255,240,.98),#d7ecaa 22%,#7fa45a 64%,rgba(64,99,43,.20))!important;box-shadow:0 0 7px rgba(154,194,99,.80),0 0 16px rgba(101,139,69,.40)!important}
-#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 12%,#c9a6ed 27%,#71459f 64%,rgba(54,31,88,.12) 100%)!important;box-shadow:0 0 8px rgba(133,79,190,.76)!important}
-#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(250,243,255,.98),#c79ce9 22%,#7445a3 64%,rgba(55,31,90,.22))!important;box-shadow:0 0 7px rgba(146,91,202,.84),0 0 16px rgba(97,54,153,.44)!important}
+#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 12%,#d9c8e9 27%,#8054ae 64%,rgba(75,42,106,.14) 100%)!important;box-shadow:0 0 8px rgba(128,84,174,.76)!important}
+#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-laser{background:linear-gradient(180deg,rgba(250,246,253,.98),#d4bee7 22%,#8054ae 64%,rgba(75,42,106,.24))!important;box-shadow:0 0 7px rgba(151,105,194,.82),0 0 16px rgba(97,57,137,.46)!important}
 #shooting-event-root .shooting-enemy-element-light.shooting-generic-zako-shot{background:radial-gradient(circle,#fff 0 18%,#fff3af 34%,#eacb62 68%,rgba(191,152,38,.10) 100%)!important;box-shadow:0 0 8px rgba(247,219,109,.76)!important}
 #shooting-event-root .shooting-enemy-element-light.shooting-generic-zako-laser{background:linear-gradient(180deg,#fff 0%,#fff5bd 24%,#efd46f 66%,rgba(194,159,45,.18))!important;box-shadow:0 0 7px rgba(255,231,128,.86),0 0 16px rgba(229,193,77,.44)!important}
 
@@ -8637,7 +8641,7 @@
 #shooting-event-root .shooting-mini-enemy-weakness-barrier.element-aqua{--weak-shield-rgb:62,155,220}
 #shooting-event-root .shooting-mini-enemy-weakness-barrier.element-wood{--weak-shield-rgb:75,158,83}
 #shooting-event-root .shooting-mini-enemy-weakness-barrier.element-light{--weak-shield-rgb:220,186,70}
-#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-dark{--weak-shield-rgb:91,64,135}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-dark{--weak-shield-rgb:128,84,174}
 #shooting-event-root .shooting-mini-enemy-weakness-barrier.hit{
   opacity:1;
   box-shadow:
@@ -8685,3 +8689,51 @@
     top:46px !important;
   }
 }
+
+
+/* ============================================================
+   build571 DARK ATTRIBUTE ICON — supplied artwork
+   水彩/月輪の type_dark.webp をそのまま表示する。
+   戦闘HUDでも単色化・色変換を行わない。
+   ============================================================ */
+#shooting-event-root img[src*="type_dark.webp"]{
+  filter:none !important;
+}
+
+/* ============================================================
+   build569 DARK ATTRIBUTE PROJECTILES — final violet override
+   FIRE(赤) / AQUA(青) と混同しない、赤青どちらにも寄せすぎない中間紫。
+   旧キャラ固有の黒系指定より後段で属性色を優先する。
+   ============================================================ */
+#shooting-event-root .shooting-bullet.shooting-bullet-dark{
+  background:radial-gradient(circle at 38% 34%,#fff 0 9%,#e6d8f1 17%,#b486d2 36%,#8755b2 61%,rgba(94,53,132,.34) 100%)!important;
+  border-color:rgba(223,201,240,.90)!important;
+  box-shadow:0 0 6px rgba(245,236,252,.80),0 0 13px rgba(139,91,181,.72),0 0 22px rgba(91,53,127,.46)!important;
+  filter:none!important;
+}
+#shooting-event-root .shooting-bullet.shooting-bullet-dark::before{
+  border-color:rgba(180,139,212,.86)!important;
+  box-shadow:0 0 8px rgba(128,84,174,.58)!important;
+}
+#shooting-event-root .shooting-bullet.shooting-bullet-dark::after{
+  background:radial-gradient(circle,rgba(172,127,207,.30),rgba(105,62,145,.16) 48%,transparent 72%)!important;
+}
+#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-shot{
+  background:radial-gradient(circle,#fff 0 13%,#d8c2ec 28%,#9f6fc5 48%,#8054ae 70%,rgba(91,53,127,.14) 100%)!important;
+  box-shadow:0 0 8px rgba(153,109,193,.72)!important;
+}
+#shooting-event-root .shooting-enemy-element-dark.shooting-generic-zako-laser{
+  background:linear-gradient(180deg,#fff 0%,#ddcaed 24%,#9d6bc3 48%,#8054ae 70%,rgba(91,53,127,.22))!important;
+  box-shadow:0 0 7px rgba(173,131,207,.76),0 0 15px rgba(128,84,174,.42)!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-mini-enemy-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object-bullet{
+  background:#8054ae!important;
+  border:1px solid rgba(215,191,235,.58)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+
