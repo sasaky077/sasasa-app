@@ -1,4 +1,4 @@
-// 20260823-raid-skip-cachefix-v65
+// 20260920-raid-header-v66
 (function(){
   'use strict';
 
@@ -218,6 +218,115 @@
         grid-column:1 / -1!important;
       }
 
+      #daily-raid-root #daily-raid-back{
+        width:auto!important;
+        min-width:0!important;
+        height:auto!important;
+        min-height:0!important;
+        padding:4px 0!important;
+        border:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        color:#f2e6b2!important;
+        font-family:"Noto Serif JP",serif!important;
+        font-size:11px!important;
+        font-weight:500!important;
+        letter-spacing:.04em!important;
+        line-height:1.2!important;
+      }
+      #daily-raid-root #daily-raid-back:active{
+        opacity:.55!important;
+        transform:none!important;
+      }
+
+      /* v66: レイド上部を他コンテンツと同じ「戻る + 中央タイトル」に統一 */
+      #daily-raid-root .daily-raid-head{
+        position:relative!important;
+        min-height:54px!important;
+        height:54px!important;
+        padding:0 18px!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        box-sizing:border-box!important;
+        border-bottom:1px solid rgba(211,184,111,.16)!important;
+      }
+      #daily-raid-root .daily-raid-head::before,
+      #daily-raid-root .daily-raid-head::after{
+        content:none!important;
+        display:none!important;
+      }
+      #daily-raid-root .daily-raid-head-title{
+        position:absolute!important;
+        left:50%!important;
+        top:50%!important;
+        transform:translate(-50%,-50%)!important;
+        width:calc(100% - 140px)!important;
+        margin:0!important;
+        text-align:center!important;
+        white-space:nowrap!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+        color:#f2e6b2!important;
+        font-family:"Noto Serif JP",serif!important;
+        font-size:14px!important;
+        font-weight:600!important;
+        line-height:1!important;
+        letter-spacing:.12em!important;
+        pointer-events:none!important;
+      }
+      #daily-raid-root .daily-raid-head-rule{
+        display:none!important;
+      }
+
+      /* 上部右端にあった回数表示を、独立した見やすいステータス帯へ移動 */
+      #daily-raid-root .daily-raid-attempt-overview{
+        min-height:40px!important;
+        margin:9px 18px 10px!important;
+        padding:7px 10px 7px 12px!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:space-between!important;
+        gap:12px!important;
+        box-sizing:border-box!important;
+        border-left:2px solid rgba(214,180,91,.68)!important;
+        border-top:1px solid rgba(214,180,91,.10)!important;
+        border-bottom:1px solid rgba(214,180,91,.10)!important;
+        background:linear-gradient(90deg,rgba(193,153,64,.10),rgba(255,255,255,.018))!important;
+      }
+      #daily-raid-root .daily-raid-attempt-overview > span{
+        color:rgba(214,202,165,.68)!important;
+        font-family:"Noto Serif JP",serif!important;
+        font-size:9px!important;
+        line-height:1.2!important;
+        letter-spacing:.12em!important;
+        white-space:nowrap!important;
+      }
+      #daily-raid-root .daily-raid-attempt-overview > strong{
+        display:flex!important;
+        align-items:baseline!important;
+        gap:4px!important;
+        color:#eee5c5!important;
+        font-family:"Noto Serif JP",serif!important;
+        font-size:11px!important;
+        font-weight:500!important;
+        line-height:1!important;
+        letter-spacing:.05em!important;
+        white-space:nowrap!important;
+      }
+      #daily-raid-root #daily-raid-attempt-remaining{
+        min-width:18px!important;
+        text-align:right!important;
+        color:#e2c76f!important;
+        font-family:"Cinzel","Noto Serif JP",serif!important;
+        font-size:18px!important;
+        font-weight:600!important;
+        line-height:1!important;
+      }
+      #daily-raid-root .daily-raid-attempt-overview.is-empty #daily-raid-attempt-remaining{
+        color:rgba(199,106,94,.88)!important;
+      }
+
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
           gap:5px!important;
@@ -225,6 +334,14 @@
         #daily-raid-root #daily-raid-finalize-best b,
         #daily-raid-root #daily-raid-start b{
           font-size:10px!important;
+        }
+        #daily-raid-root .daily-raid-head{
+          padding-left:14px!important;
+          padding-right:14px!important;
+        }
+        #daily-raid-root .daily-raid-attempt-overview{
+          margin-left:14px!important;
+          margin-right:14px!important;
         }
       }
     `;
@@ -241,10 +358,14 @@
     root.innerHTML=`
       <div class="daily-raid-page">
         <header class="daily-raid-head">
-          <button type="button" id="daily-raid-back" aria-label="戻る">‹</button>
-          <div class="daily-raid-head-title"><small>DAILY RAID</small><strong>ザ・テスト</strong></div>
-          <div class="daily-raid-head-rule"><span>1 DAY</span><b>3 ATTEMPTS</b></div>
+          <button type="button" id="daily-raid-back" aria-label="戻る">＜戻る</button>
+          <div class="daily-raid-head-title">レイドバトル</div>
         </header>
+
+        <div class="daily-raid-attempt-overview" id="daily-raid-attempt-overview" aria-live="polite">
+          <span>本日の挑戦回数</span>
+          <strong>残り <b id="daily-raid-attempt-remaining">3</b> / 3 回</strong>
+        </div>
 
         <section class="daily-raid-entry" id="daily-raid-entry">
           <div class="daily-raid-entry-hero">
@@ -335,7 +456,27 @@
     const lobby=root.querySelector('#daily-raid-lobby');
     entry.hidden=which!=='entry'; join.hidden=which!=='join'; lobby.hidden=which!=='lobby';
   }
-  function showEntryMode(){ currentStatus=null; showOnly('entry'); }
+
+  function updateAttemptOverview(status){
+    const root=ensureRoot();
+    const box=root.querySelector('#daily-raid-attempt-overview');
+    const value=root.querySelector('#daily-raid-attempt-remaining');
+    if(!box || !value) return;
+
+    if(isAdmin()){
+      value.textContent='∞';
+      box.classList.remove('is-empty');
+      return;
+    }
+
+    const me=status&&status.me||{};
+    const used=Math.max(0,Math.min(3,n(me.attempt_count)));
+    const remaining=Math.max(0,3-used);
+    value.textContent=String(remaining);
+    box.classList.toggle('is-empty',remaining<=0);
+  }
+
+  function showEntryMode(){ currentStatus=null; updateAttemptOverview(null); showOnly('entry'); }
 
   async function fetchStatus(){
     const userId=uid();
@@ -424,7 +565,7 @@
   }
 
   function render(status){
-    const root=ensureRoot(); showOnly('lobby');
+    const root=ensureRoot(); updateAttemptOverview(status); showOnly('lobby');
     const hp=n(status&&status.current_hp), maxHp=Math.max(1,n(status&&status.max_hp)||100000);
     const cleared=!!(status&&status.status==='cleared')||hp<=0;
     const me=status&&status.me||{};
