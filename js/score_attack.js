@@ -6,7 +6,21 @@ const PANEL_MAP={"1": "images/chara_01_panel.webp", "2": "images/chara_02_panel.
 let currentDifficulty='normal',root=null,loading=false,currentAttemptId=null;
 function uid(){return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase();}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function panelSrc(id){id=Number(id||0);try{const m=window.ShootingCharacters&&window.ShootingCharacters.SHOOTING_CHARACTER_MASTER;if(m&&m[id]&&m[id].panelImage)return m[id].panelImage;}catch(_){}return PANEL_MAP[id]||'';}
+function playerName7(v){
+ const s=String(v==null?'':v).trim()||'Player';
+ return Array.from(s).slice(0,7).join('');
+}
+function panelSrc(id){
+ id=Number(id||0);
+ if(!id)return '';
+ try{
+  const m=window.ShootingCharacters&&window.ShootingCharacters.SHOOTING_CHARACTER_MASTER;
+  if(m&&m[id]&&m[id].panelImage)return m[id].panelImage;
+ }catch(_){}
+ // build530: score attack may render before ShootingCharacters is ready.
+ // Party IDs are character IDs, so derive the canonical panel path directly.
+ return PANEL_MAP[id]||('images/chara_'+String(id).padStart(2,'0')+'_panel.webp');
+}
 function partyHtml(ids,large){const a=Array.isArray(ids)?ids.slice(0,3):[];while(a.length<3)a.push(0);return '<div class="score-attack-party'+(large?' is-large':'')+'">'+a.map(id=>{const src=panelSrc(id);return src?'<span><img src="'+esc(src)+'" alt="" draggable="false"></span>':'<span class="empty"></span>';}).join('')+'</div>';}
 function ensureRoot(){
  if(root)return root;
@@ -80,7 +94,7 @@ function renderRows(rows){
    return '<div class="score-attack-row'+(me?' is-me':'')+'">'+
      '<span class="score-attack-rank-no">'+rank+'</span>'+
      '<div class="score-attack-row-main">'+
-       '<b>'+esc(row.display_name||row.user_id||'Player')+(me?' <em>自分</em>':'')+'</b>'+
+       '<b title="'+esc(row.display_name||row.user_id||'Player')+'">'+esc(playerName7(row.display_name||row.user_id||'Player'))+(me?' <em>自分</em>':'')+'</b>'+
        partyHtml(row.party_ids,false)+
      '</div>'+
      '<strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong>'+
