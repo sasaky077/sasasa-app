@@ -36597,3 +36597,128 @@ img.zimg-loaded{
   text-overflow:ellipsis !important;
   white-space:nowrap !important;
 }
+
+
+/* =========================================================
+   build534 - SCORE ATTACK TOP5 ranking layout
+   ========================================================= */
+
+/* 上位5名を主役にするため、1行を広げて名前とキャラパネルを大きくする */
+#score-attack-root .score-attack-row{
+  min-height:58px !important;
+  grid-template-columns:24px minmax(0,1fr) minmax(72px,auto) !important;
+  gap:8px !important;
+  padding:7px 8px !important;
+}
+
+#score-attack-root .score-attack-row-main{
+  min-width:0 !important;
+  display:grid !important;
+  grid-template-columns:minmax(78px,1fr) auto !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+#score-attack-root .score-attack-row-main>b{
+  min-width:0 !important;
+  max-width:none !important;
+  font-size:12px !important;
+  letter-spacing:.01em !important;
+  line-height:1.35 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+#score-attack-root .score-attack-row-main em{
+  font-size:7px !important;
+  padding:1px 3px !important;
+  margin-left:3px !important;
+}
+
+#score-attack-root .score-attack-party{
+  gap:3px !important;
+}
+
+#score-attack-root .score-attack-row-main .score-attack-party span{
+  flex:0 0 36px !important;
+  width:36px !important;
+  height:36px !important;
+  border-radius:8px !important;
+}
+
+#score-attack-root .score-attack-row-main .score-attack-party img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center top !important;
+  border-radius:8px !important;
+}
+
+#score-attack-root .score-attack-row>strong{
+  min-width:72px !important;
+  font-size:12px !important;
+  letter-spacing:.02em !important;
+}
+
+/* 6位以下は初期状態で折りたたむ */
+#score-attack-root .score-attack-row-extra{
+  display:none !important;
+}
+#score-attack-root .score-attack-list.show-all .score-attack-row-extra{
+  display:grid !important;
+}
+
+/* ランキング下部の展開ボタン */
+#score-attack-root .score-attack-more{
+  width:100% !important;
+  min-height:34px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+  margin:5px 0 0 !important;
+  padding:6px 10px !important;
+  border:0 !important;
+  border-top:1px solid rgba(168,137,79,.18) !important;
+  background:transparent !important;
+  color:#8b734b !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:10px !important;
+  letter-spacing:.08em !important;
+}
+#score-attack-root .score-attack-more small{
+  min-width:20px !important;
+  padding:1px 5px !important;
+  border:1px solid rgba(171,139,78,.28) !important;
+  border-radius:999px !important;
+  color:#9b7c47 !important;
+  font-family:"Cinzel",serif !important;
+  font-size:8px !important;
+  letter-spacing:0 !important;
+}
+
+@media (max-width:360px){
+  #score-attack-root .score-attack-row{
+    grid-template-columns:22px minmax(0,1fr) minmax(64px,auto) !important;
+    gap:5px !important;
+    padding-left:6px !important;
+    padding-right:6px !important;
+  }
+  #score-attack-root .score-attack-row-main{
+    grid-template-columns:minmax(68px,1fr) auto !important;
+    gap:5px !important;
+  }
+  #score-attack-root .score-attack-row-main>b{
+    font-size:11px !important;
+  }
+  #score-attack-root .score-attack-row-main .score-attack-party span{
+    flex-basis:32px !important;
+    width:32px !important;
+    height:32px !important;
+  }
+  #score-attack-root .score-attack-row>strong{
+    min-width:64px !important;
+    font-size:10.5px !important;
+  }
+}

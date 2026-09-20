@@ -81,17 +81,18 @@ function ensureRoot(){
 async function fetchRanking(){const sb=window.zsSupabase,userId=uid();if(!sb||typeof sb.rpc!=='function'||!userId)return[];const res=await sb.rpc('get_score_attack_friend_ranking',{p_user_id:userId,p_difficulty:currentDifficulty});if(res&&res.error)throw res.error;return Array.isArray(res&&res.data)?res.data:[];}
 function renderRows(rows){
  const r=ensureRoot(),myId=uid(),list=r.querySelector('#score-attack-list');
- const mine=rows.find(x=>String(x.user_id||'').toLowerCase()===myId)||null;
 
  if(!rows.length){
    list.innerHTML='<div class="score-attack-empty">まだ記録がありません</div>';
    return;
  }
 
- list.innerHTML=rows.map((row,i)=>{
+ const TOP_COUNT=5;
+ const rowHtml=rows.map((row,i)=>{
    const me=String(row.user_id||'').toLowerCase()===myId;
    const rank=Number(row.rank_no||i+1);
-   return '<div class="score-attack-row'+(me?' is-me':'')+'">'+
+   const extra=i>=TOP_COUNT?' score-attack-row-extra':'';
+   return '<div class="score-attack-row'+(me?' is-me':'')+extra+'">'+
      '<span class="score-attack-rank-no">'+rank+'</span>'+
      '<div class="score-attack-row-main">'+
        '<b title="'+esc(row.display_name||row.user_id||'Player')+'">'+esc(playerName7(row.display_name||row.user_id||'Player'))+(me?' <em>自分</em>':'')+'</b>'+
@@ -100,11 +101,29 @@ function renderRows(rows){
      '<strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong>'+
    '</div>';
  }).join('');
+
+ const moreCount=Math.max(0,rows.length-TOP_COUNT);
+ const toggleHtml=moreCount>0
+   ? '<button type="button" class="score-attack-more" onclick="toggleScoreAttackRankingMore(this)" aria-expanded="false">'+
+       '<span>6位以下を表示</span><small>+'+moreCount+'</small>'+
+     '</button>'
+   : '';
+
+ list.innerHTML=rowHtml+toggleHtml;
 }
 async function refresh(){if(loading)return;loading=true;const r=ensureRoot();r.querySelector('#score-attack-list').innerHTML='<div class="score-attack-loading">読み込み中...</div>';try{renderRows(await fetchRanking());}catch(err){console.error('[ScoreAttack] ranking failed',err);renderRows([]);r.querySelector('#score-attack-list').innerHTML='<div class="score-attack-empty">ランキングを取得できません。<br>Supabase SQLを確認してください。</div>';}finally{loading=false;}}
 window.openScoreAttack=function(){const r=ensureRoot();r.classList.add('show');r.setAttribute('aria-hidden','false');if(window.setNavVisible)setNavVisible(false);if(window.setHomeBtnVisible)setHomeBtnVisible(false);if(window.setReloadBtnVisible)setReloadBtnVisible(false);refresh();};
 window.closeScoreAttack=function(){const r=ensureRoot();r.classList.remove('show');r.setAttribute('aria-hidden','true');if(window.setNavVisible)setNavVisible(true);if(window.setHomeBtnVisible)setHomeBtnVisible(false);if(window.setReloadBtnVisible)setReloadBtnVisible(true);};
 window.setScoreAttackDifficulty=function(d){currentDifficulty=d==='hard'?'hard':'normal';const r=ensureRoot();r.querySelector('#score-attack-tab-normal').classList.toggle('active',currentDifficulty==='normal');r.querySelector('#score-attack-tab-hard').classList.toggle('active',currentDifficulty==='hard');refresh();};
+window.toggleScoreAttackRankingMore=function(btn){
+ const r=ensureRoot();
+ const list=r.querySelector('#score-attack-list');
+ if(!list||!btn)return;
+ const open=list.classList.toggle('show-all');
+ btn.setAttribute('aria-expanded',open?'true':'false');
+ const span=btn.querySelector('span');
+ if(span)span.textContent=open?'6位以下を閉じる':'6位以下を表示';
+};
 window.startScoreAttack=async function(){
   const stageId=STAGES[currentDifficulty];
   const sb=window.zsSupabase;
@@ -113,49 +132,86 @@ window.startScoreAttack=async function(){
     return;
   }
 
-  try{
-    const res=await sb.rpc('begin_score_attack_attempt',{
-      p_difficulty:currentDifficulty,
-      p_party_ids:[]
-    });
-    if(res&&res.error)throw res.error;
-
-    const data=res&&res.data;
-    const attemptId=data&&data.attempt_id;
-    if(!attemptId)throw new Error('attempt_id was not returned');
-
-    currentAttemptId=String(attemptId);
-    console.log('[ScoreAttack] attempt started:',currentAttemptId);
-
-    closeScoreAttack();
-    if(typeof window.openShootingEvent==='function'){
-      window.openShootingEvent({stageId});
-    }
-  }catch(err){
-    console.error('[ScoreAttack] begin attempt failed',err);
-    alert('スコアアタックを開始できませんでした。通信状況を確認してもう一度お試しください。');
+  // build532:
+  // この時点ではまだパーティ未選択。
+  // attemptは戦闘開始ボタン押下時に実編成で作成する。
+  currentAttemptId=null;
+  closeScoreAttack();
+  if(typeof window.openShootingEvent==='function'){
+    window.openShootingEvent({stageId});
   }
 };
 window.ScoreAttack={
+  async beginAttemptForParty(partyIds){
+    const sb=window.zsSupabase;
+    const ids=(Array.isArray(partyIds)?partyIds:[])
+      .map(Number)
+      .filter((id,index,arr)=>id>0&&arr.indexOf(id)===index)
+      .slice(0,3);
+
+    if(!sb||typeof sb.rpc!=='function'){
+      alert('通信準備ができていません。もう一度お試しください。');
+      return false;
+    }
+    if(!ids.length){
+      alert('出撃キャラクターを選択してください。');
+      return false;
+    }
+
+    try{
+      const res=await sb.rpc('begin_score_attack_attempt',{
+        p_difficulty:currentDifficulty,
+        p_party_ids:ids
+      });
+      if(res&&res.error)throw res.error;
+
+      const data=res&&res.data;
+      const attemptId=data&&data.attempt_id;
+      if(!attemptId)throw new Error('attempt_id was not returned');
+
+      currentAttemptId=String(attemptId);
+      console.log('[ScoreAttack] attempt started:',currentAttemptId,'party=',ids);
+      return true;
+    }catch(err){
+      console.error('[ScoreAttack] begin attempt failed',err);
+      alert('スコアアタックを開始できませんでした。通信状況を確認してもう一度お試しください。');
+      return false;
+    }
+  },
+
   async submitResult(detail){
     if(!detail||!String(detail.stageId||'').startsWith('shooting_score_attack_'))return;
 
     const sb=window.zsSupabase;
-    const attemptId=currentAttemptId;
-
-    if(!sb||typeof sb.rpc!=='function'||!attemptId){
-      console.error('[ScoreAttack] finish blocked: attempt_id is missing');
+    if(!sb||typeof sb.rpc!=='function'){
+      console.error('[ScoreAttack] finish blocked: Supabase is not ready');
       return;
     }
 
+    // 復帰時などattemptが無い場合は、結果に含まれる実編成から復旧を試みる。
+    if(!currentAttemptId){
+      const ok=await window.ScoreAttack.beginAttemptForParty(detail.partyIds||[]);
+      if(!ok){
+        console.error('[ScoreAttack] finish blocked: attempt_id is missing');
+        return;
+      }
+    }
+
+    const attemptId=currentAttemptId;
     try{
-      const res=await sb.rpc('finish_score_attack_attempt',{
+      const resultPartyIds=(Array.isArray(detail.partyIds)?detail.partyIds:[])
+        .map(Number)
+        .filter((id,index,arr)=>id>0&&arr.indexOf(id)===index)
+        .slice(0,3);
+
+      const res=await sb.rpc('finish_score_attack_attempt_v2',{
         p_attempt_id:attemptId,
-        p_score:Math.max(0,Math.floor(Number(detail.score||0)))
+        p_score:Math.max(0,Math.floor(Number(detail.score||0))),
+        p_party_ids:resultPartyIds
       });
       if(res&&res.error)throw res.error;
 
-      console.log('[ScoreAttack] attempt finished:',attemptId,res&&res.data);
+      console.log('[ScoreAttack] attempt finished:',attemptId,'party=',resultPartyIds,res&&res.data);
       currentAttemptId=null;
     }catch(err){
       console.error('[ScoreAttack] finish attempt failed',err);

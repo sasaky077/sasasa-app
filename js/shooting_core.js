@@ -3765,7 +3765,7 @@
     aqua:    { color:'#4aaee8', rgb:'74,174,232', filter:'grayscale(1) sepia(1) saturate(7) hue-rotate(150deg) brightness(1.04)' },
     wood:    { color:'#67b96a', rgb:'103,185,106',filter:'grayscale(1) sepia(1) saturate(6) hue-rotate(72deg) brightness(.98)' },
     light:   { color:'#e7c85a', rgb:'231,200,90', filter:'grayscale(1) sepia(1) saturate(5) hue-rotate(2deg) brightness(1.15)' },
-    dark:    { color:'#9a66d8', rgb:'154,102,216',filter:'grayscale(1) sepia(1) saturate(7) hue-rotate(220deg) brightness(.92)' },
+    dark:    { color:'#171717', rgb:'23,23,23', filter:'grayscale(1) contrast(1.28) brightness(.56)' },
   });
 
   function applyUltElementVisualContext(c) {
@@ -10843,7 +10843,7 @@
     Object.freeze({ id: 'soul_vessel_wood', name: '魂の器(木)', image: 'images/type_wood.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'soul_vessel_dark', name: '魂の器(闇)', image: 'images/type_dark.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'soul_vessel_light', name: '魂の器(光)', image: 'images/type_light.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'shinju_nutrition', name: '神樹の栄養', image: 'images/shinju.webp', rewardType: 'shinju' }),
+    Object.freeze({ id: 'shinju_nutrition', name: '神樹の栄養', image: 'images/shinju_aura.webp', rewardType: 'shinju' }),
   ]);
 
 
@@ -12545,6 +12545,12 @@
     if (!(await ensureSelectedRaidAttemptStarted())) return;
     if (!(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
+
+    // build532: SCORE ATTACKは実際の編成確定後にattemptを作る。
+    if (isScoreAttackStage() && window.ScoreAttack && typeof window.ScoreAttack.beginAttemptForParty === 'function') {
+      const scoreAttackAttemptOk = await window.ScoreAttack.beginAttemptForParty(selectedPartyIds);
+      if (!scoreAttackAttemptOk) return;
+    }
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
     // 集計保存はゲーム開始をブロックしない。
@@ -16053,5 +16059,128 @@
     `;
     document.head.appendChild(style);
   }
+
+  // ============================================================
+  // build536: 闇属性カラーを黒へ統一
+  // - 通常ショット / 特殊ショット / レーザーを黒〜チャコールへ
+  // - ULTは ULT_ELEMENT_VISUAL.dark で黒系へ統一
+  // - 形状・当たり判定・性能は変更しない
+  // ============================================================
+  if (!document.getElementById('shooting-dark-element-black-style-v536')) {
+    const darkStyle = document.createElement('style');
+    darkStyle.id = 'shooting-dark-element-black-style-v536';
+    darkStyle.textContent = `
+      /* 汎用・闇属性弾 */
+      #shooting-arena .shooting-bullet.shooting-bullet-dark{
+        background:
+          radial-gradient(circle at 38% 34%,
+            rgba(255,255,255,.94) 0 8%,
+            rgba(184,184,184,.74) 14%,
+            rgba(72,72,72,.92) 34%,
+            rgba(20,20,20,.98) 62%,
+            rgba(0,0,0,.82) 100%)!important;
+        border-color:rgba(35,35,35,.94)!important;
+        box-shadow:
+          0 0 6px rgba(255,255,255,.34),
+          0 0 13px rgba(34,34,34,.76),
+          0 0 24px rgba(0,0,0,.58)!important;
+        filter:grayscale(1) contrast(1.15)!important;
+      }
+
+      #shooting-arena .shooting-bullet.shooting-bullet-dark::before{
+        border-color:rgba(28,28,28,.92)!important;
+        box-shadow:0 0 8px rgba(0,0,0,.72)!important;
+      }
+
+      #shooting-arena .shooting-bullet.shooting-bullet-dark::after{
+        background:
+          radial-gradient(circle,
+            rgba(92,92,92,.26),
+            rgba(15,15,15,.22) 46%,
+            transparent 72%)!important;
+      }
+
+      /* 闇属性レーザー */
+      #shooting-arena .shooting-ignis-laser.shooting-bullet-dark i{
+        background:
+          linear-gradient(90deg,
+            rgba(0,0,0,.10),
+            #111,
+            #d8d8d8 48%,
+            #111,
+            rgba(0,0,0,.10))!important;
+        box-shadow:
+          0 0 7px rgba(215,215,215,.38),
+          0 0 16px rgba(0,0,0,.82)!important;
+      }
+
+      #shooting-arena .shooting-ignis-laser.shooting-bullet-dark b{
+        background:#d8d8d8!important;
+        box-shadow:0 0 10px rgba(0,0,0,.88)!important;
+      }
+
+      /* エルテナ等のオーラ型闇弾 */
+      #shooting-arena .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark{
+        background:
+          radial-gradient(ellipse at 50% 30%,
+            rgba(245,245,245,.88) 0 10%,
+            rgba(148,148,148,.58) 16%,
+            rgba(62,62,62,.44) 34%,
+            rgba(20,20,20,.28) 55%,
+            rgba(0,0,0,.14) 72%,
+            transparent 84%)!important;
+        box-shadow:
+          0 0 8px rgba(235,235,235,.30),
+          0 0 18px rgba(36,36,36,.48),
+          0 0 28px rgba(0,0,0,.30)!important;
+      }
+
+      #shooting-arena .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark::before{
+        background:
+          radial-gradient(ellipse at 50% 38%,
+            rgba(210,210,210,.32) 0 16%,
+            rgba(78,78,78,.28) 31%,
+            rgba(12,12,12,.20) 52%,
+            transparent 76%)!important;
+      }
+
+      #shooting-arena .shooting-bullet.shooting-bullet-eltena.shooting-bullet-dark::after{
+        background:
+          radial-gradient(ellipse at 50% 58%,
+            rgba(80,80,80,.22) 0 24%,
+            rgba(0,0,0,.18) 42%,
+            transparent 76%)!important;
+      }
+
+      /* ミア等のチャージ型が闇属性になった場合も黒で統一 */
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark::before{
+        background:
+          radial-gradient(ellipse at 50% 24%,
+            rgba(245,245,245,.94) 0 18%,
+            rgba(154,154,154,.62) 25%,
+            rgba(70,70,70,.40) 47%,
+            rgba(18,18,18,.24) 68%,
+            transparent 100%)!important;
+      }
+
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark::after{
+        background:
+          linear-gradient(to bottom,
+            rgba(190,190,190,.56) 0%,
+            rgba(82,82,82,.40) 28%,
+            rgba(18,18,18,.26) 66%,
+            transparent 100%)!important;
+      }
+
+      #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-bullet-dark{
+        box-shadow:
+          0 -4px 10px rgba(220,220,220,.18),
+          0 7px 22px rgba(25,25,25,.34),
+          0 18px 34px rgba(0,0,0,.24)!important;
+      }
+    `;
+    document.head.appendChild(darkStyle);
+  }
+
 
 })();
