@@ -9225,12 +9225,10 @@
   }
 
   function warmShootingAssets() {
-    // build519:
-    // iPhone Safari/PWAで大量画像の同時fetch+decodeが画像欠損を誘発する疑いがあるため、
-    // ShootingCharacters 全体の一括プリロードを停止。
-    //
-    // 必要な画像は各処理で都度ロードする。
-    // 例: ULTカットインは preloadShootingImage(cutinSrc) で対象1枚だけ待つ。
+    // build520:
+    // 全キャラ資産の一括プリロードは禁止。
+    // 戦闘では「その場で使う画像だけ」を必要時ロードする。
+    // ULTカットイン等は preloadShootingImage() で対象1枚のみ処理する。
     return;
   }
 

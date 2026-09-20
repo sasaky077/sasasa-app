@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '519';
+  var FALLBACK_BUILD = '520';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -230,7 +230,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="519">
+  <meta name="sasaphia-build" content="520">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -248,21 +248,21 @@
   <meta property="og:title" content="Zeraphia">
   <meta property="og:description" content="Zeraphia - オリジナルスマートフォンゲーム">
   <meta property="og:url" content="https://sasaky077.github.io/sasasa-app/">
-  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=519-ogp-sasaphia-r1">
+  <meta property="og:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=520-ogp-sasaphia-r1">
   <meta property="og:image:alt" content="Zeraphia">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zeraphia">
   <meta name="twitter:description" content="Zeraphia - オリジナルスマートフォンゲーム">
-  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=519-ogp-sasaphia-r1">
+  <meta name="twitter:image" content="https://sasaky077.github.io/sasasa-app/images/title.webp?v=520-ogp-sasaphia-r1">
 
   <!-- iOS用-->
-  <link rel="apple-touch-icon" href="images/icon_192.webp?v=519-1116-r1">
+  <link rel="apple-touch-icon" href="images/icon_192.webp?v=520-1116-r1">
 
   <!-- ブラウザタブ用 -->
-  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=519-1116-r1">
+  <link rel="icon" type="image/webp" href="images/icon_192.webp?v=520-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=519">
+  <link rel="manifest" href="manifest.json?v=520">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -330,9 +330,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=519"
+        href="css/style.css?v=520"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=519"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=520"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -415,10 +415,10 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=519">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=520">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=519">
-  <link rel="stylesheet" href="css/admin_mode.css?v=519-admin-7tap-hidden-v169">
+  <link rel="stylesheet" href="css/raid_event.css?v=520">
+  <link rel="stylesheet" href="css/admin_mode.css?v=520-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -486,7 +486,7 @@
 
 <script>
 (function(){
-  var BUILD = '519';
+  var BUILD = '520';
   try {
     var url = new URL(location.href);
     if (url.searchParams.get('build') !== BUILD) {
@@ -4293,7 +4293,7 @@ body #bottom-nav-shared.bottom-nav{
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=519"></script>
+<script src="js/home_banners.js?v=520"></script>
 <script id="sasaphia-notices-inline-v6">
 // =========================================================
 // Zeraphia Notices
@@ -5445,10 +5445,10 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=519"></script>
-<script src="js/resonance_system.js?v=519"></script>
-<script src="js/resonance_ui.js?v=519"></script>
-<script src="js/character_levelup.js?v=519"></script>
+<script src="js/shooting_resonance.js?v=520"></script>
+<script src="js/resonance_system.js?v=520"></script>
+<script src="js/resonance_ui.js?v=520"></script>
+<script src="js/character_levelup.js?v=520"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -7044,169 +7044,7 @@ function selectChara(now, gacha) {
   }
 
 
-  // ============================================================
-  // build517: iPhone / Safari image reliability layer
-  // ・img の一時的な読み込み失敗をその場で再試行
-  // ・既存 onerror="display:none" / visibility:hidden を無効化
-  // ・一覧画像は IntersectionObserver で可視付近だけロード
-  // ============================================================
-  var ZERAPHIA_IMAGE_RETRY_MAX = 3;
-  var ZERAPHIA_LAZY_PLACEHOLDER =
-    'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
-
-  function zeraphiaCleanImageUrl(src){
-    if(!src) return '';
-    try {
-      var u = new URL(src, location.href);
-      u.searchParams.delete('__zimg_retry');
-      return u.href;
-    } catch(_){
-      return String(src).replace(/([?&])__zimg_retry=[^&#]*(&?)/, function(_, lead, tail){
-        return tail ? lead : '';
-      });
-    }
-  }
-
-  function zeraphiaRetryImage(img, src){
-    if(!img || !src) return;
-    var retries = Math.max(0, Number(img.dataset.zimgRetry || 0));
-    if(retries >= ZERAPHIA_IMAGE_RETRY_MAX){
-      img.classList.remove('zimg-loading');
-      img.classList.add('zimg-failed');
-      return;
-    }
-
-    retries += 1;
-    img.dataset.zimgRetry = String(retries);
-    img.dataset.zimgOriginal = zeraphiaCleanImageUrl(src);
-    img.classList.add('zimg-loading');
-    img.classList.remove('zimg-failed');
-    img.style.removeProperty('display');
-    img.style.removeProperty('visibility');
-
-    var delay = 350 * Math.pow(2, retries - 1);
-    setTimeout(function(){
-      if(!img.isConnected) return;
-      var baseSrc = img.dataset.zimgOriginal || zeraphiaCleanImageUrl(src);
-      try {
-        var u = new URL(baseSrc, location.href);
-        u.searchParams.set('__zimg_retry', String(Date.now()) + '_' + retries);
-        img.src = u.href;
-      } catch(_){
-        img.src = baseSrc + (baseSrc.indexOf('?') >= 0 ? '&' : '?') +
-          '__zimg_retry=' + Date.now() + '_' + retries;
-      }
-    }, delay);
-  }
-
-  function zeraphiaMarkImageLoaded(img){
-    if(!img) return;
-    img.dataset.zimgRetry = '0';
-    img.classList.remove('zimg-loading', 'zimg-failed');
-    img.classList.add('zimg-loaded');
-    img.style.removeProperty('display');
-    img.style.removeProperty('visibility');
-  }
-
-  // error は bubble しないため capture で拾う。
-  document.addEventListener('error', function(event){
-    var img = event && event.target;
-    if(!(img instanceof HTMLImageElement)) return;
-
-    var src = img.dataset.zimgOriginal ||
-      img.dataset.src ||
-      img.currentSrc ||
-      img.getAttribute('src') || '';
-
-    // transparent placeholder / data URL は対象外。
-    if(!src || /^data:/i.test(src)) return;
-
-    // build518:
-    // ブラウザ本来のerror処理や既存UIのフォールバックは妨げない。
-    // そのうえで裏側から再取得し、成功時にはvisibility/displayを復元する。
-    zeraphiaRetryImage(img, src);
-  }, true);
-
-  document.addEventListener('load', function(event){
-    var img = event && event.target;
-    if(!(img instanceof HTMLImageElement)) return;
-    if(img.naturalWidth > 0 && img.naturalHeight > 0){
-      zeraphiaMarkImageLoaded(img);
-    }
-  }, true);
-
-  var __zeraphiaLazyImageObserver = null;
-  function getZeraphiaLazyImageObserver(){
-    if(__zeraphiaLazyImageObserver) return __zeraphiaLazyImageObserver;
-    if(typeof IntersectionObserver !== 'function') return null;
-
-    __zeraphiaLazyImageObserver = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(!entry.isIntersecting) return;
-        var img = entry.target;
-        __zeraphiaLazyImageObserver.unobserve(img);
-
-        var src = img.dataset.src || '';
-        if(!src) return;
-        img.dataset.zimgOriginal = zeraphiaCleanImageUrl(src);
-        img.classList.add('zimg-loading');
-        img.src = src;
-      });
-    }, {
-      root: null,
-      rootMargin: '280px 0px',
-      threshold: 0.01
-    });
-
-    return __zeraphiaLazyImageObserver;
-  }
-
-  function hydrateZeraphiaLazyImages(root){
-    root = root || document;
-    var imgs = root.querySelectorAll('img[data-z-lazy="1"][data-src]');
-    var observer = getZeraphiaLazyImageObserver();
-
-    imgs.forEach(function(img){
-      if(img.dataset.zLazyBound === '1') return;
-      img.dataset.zLazyBound = '1';
-      img.dataset.zimgOriginal = zeraphiaCleanImageUrl(img.dataset.src || '');
-
-      if(observer){
-        observer.observe(img);
-      }else{
-        img.classList.add('zimg-loading');
-        img.src = img.dataset.src;
-      }
-    });
-  }
-
-  // 動的に追加された通常画像にも、失敗時の再試行用元URLを保持する。
-  var __zeraphiaImageMutationObserver = new MutationObserver(function(records){
-    records.forEach(function(record){
-      record.addedNodes.forEach(function(node){
-        if(!(node instanceof Element)) return;
-        var imgs = [];
-        if(node.matches && node.matches('img')) imgs.push(node);
-        if(node.querySelectorAll) imgs = imgs.concat(Array.from(node.querySelectorAll('img')));
-        imgs.forEach(function(img){
-          var src = img.dataset.src || img.getAttribute('src') || '';
-          if(src && !/^data:/i.test(src) && !img.dataset.zimgOriginal){
-            img.dataset.zimgOriginal = zeraphiaCleanImageUrl(src);
-          }
-        });
-        hydrateZeraphiaLazyImages(node);
-      });
-    });
-  });
-
-  if(document.documentElement){
-    __zeraphiaImageMutationObserver.observe(document.documentElement, {
-      childList:true,
-      subtree:true
-    });
-  }
-
-  window.hydrateZeraphiaLazyImages = hydrateZeraphiaLazyImages;
+  // build520: image loading policy is screen-scoped and browser-native.
 
   async function preloadImageForStartup(src, retries){
     if(!src) return { ok:true, src:src };
@@ -9291,9 +9129,9 @@ function goHome(){
         }
       }
 
-      // build519:
-      // 邂逅画面遷移時の「全キャラ画像スキャン＋一括プリロード」は廃止。
-      // 必要なバナー/当選結果画像だけ通常のブラウザロード、または結果確定後に限定プリロードする。
+      // build520:
+      // 邂逅画面遷移時に全キャラ画像は先読みしない。
+      // 表示中バナーは通常ロード、抽選結果画像のみ結果確定後に限定プリロードする。
 
       setHomeBtnVisible(true);
       setReloadBtnVisible(true);
@@ -12023,10 +11861,11 @@ function showTenResult(results){
   }
 
   // 1階層目：キャラ一覧。
-  // build517:
+  // build520:
   // ・最初は8件（4列×2段）だけDOM生成
   // ・下へ近づいたら8件ずつ追加
-  // ・画像は可視付近まで data-src のまま保持
+  // ・画像ロードはブラウザ標準 loading="lazy" を使用
+  // ・全キャラ一括プリロードは行わない
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
@@ -15500,19 +15339,26 @@ function fadeOutOpeningBgm(){
 
 
 <!-- Legacy static notice markup removed in v413. Notices are rendered only by NOTICE_ITEMS runtime. -->
-<!-- build519: iPhone画像欠損の切り分けのため、全件プリロード型Asset Loaderを停止。 -->
+<!-- build520:
+  画像ロード正式方針
+  - 共通Asset Loaderは廃止
+  - 起動時はスプラッシュ/タイトル等の必須画像のみ
+  - ホーム/邂逅/図鑑/戦闘は画面単位・必要時ロード
+  - 図鑑は段階DOM生成 + native lazy loading
+  - 画像はService Workerで全面管理しない
+-->
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=519"></script>
+<script src="js/login_bonus.js?v=520"></script>
 
 
 
-<script src="js/shooting_characters.js?v=519"></script>
-<script src="js/stage_select.js?v=519"></script>
+<script src="js/shooting_characters.js?v=520"></script>
+<script src="js/stage_select.js?v=520"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
-<link rel="stylesheet" href="css/battle_32_ui.css?v=519">
-<script src="js/remnant_blessings.js?v=519"></script>
+<link rel="stylesheet" href="css/battle_32_ui.css?v=520">
+<script src="js/remnant_blessings.js?v=520"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=519"></script>
+<script src="js/shinju.js?v=520"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15585,10 +15431,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=519"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=520"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=519-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=519"></script>
+<script src="js/admin_mode.js?v=520-admin-7tap-hidden-v169"></script>
+<script src="js/raid_event.js?v=520"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -15596,7 +15442,7 @@ window.returnToTitleScreen = function(){
 
   function appBuild(){
     var meta = document.querySelector('meta[name="sasaphia-build"]');
-    return meta ? String(meta.content || '').trim() : '519';
+    return meta ? String(meta.content || '').trim() : '520';
   }
 
   window.addEventListener('load', function(){
@@ -15623,7 +15469,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=519"></script>
+<script src="js/score_attack.js?v=520"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -16019,7 +15865,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=519-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=520-noah-server-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
