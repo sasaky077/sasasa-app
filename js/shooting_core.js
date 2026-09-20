@@ -2384,12 +2384,18 @@
       }),
       player: { x: 0, y: 0, invulnUntil: 0 },
       mitoCompanionEl: null,
-      mitoCompanionX: 0,
-      mitoCompanionY: 0,
-      mitoUltUntil: 0,
-      mitoUltVx: 0,
-      mitoUltVy: 0,
-      mitoUltHitAt: Object.create(null),
+      mitoSummonHpEl: null,
+      mitoSummonActive: false,
+      mitoSummonX: 0,
+      mitoSummonY: 0,
+      mitoSummonVx: 0,
+      mitoSummonVy: 0,
+      mitoSummonHp: 0,
+      mitoSummonHpMax: 0,
+      mitoSummonExpireAt: 0,
+      mitoSummonLastShotAt: -9999,
+      mitoSummonInvulnUntil: 0,
+      mitoSummonContactInvulnUntil: 0,
       battleType: selectedStage && selectedStage.type === 'normal' ? 'normal' : 'boss',
       stageId: selectedStage ? selectedStage.id : null,
       mission: selectedStage ? selectedStage.mission : null,
@@ -2581,31 +2587,8 @@
   }
 
   function cleanupMitoCompanionOnSwitch(nextCharacterId) {
-    if (!state) return;
-
-    const leavingMito =
-      Number(state.activeCharacterId) === Number(CHARACTER_ID.MITO) &&
-      Number(nextCharacterId) !== Number(CHARACTER_ID.MITO);
-
-    if (!leavingMito) return;
-
-    const root = document.getElementById(ROOT_ID);
-    const companion = state.mitoCompanionEl;
-
-    // ミト以外へ交代した瞬間に召喚獣を確実に非表示化する。
-    // ULT中の交代でも犬だけフィールドに残らないよう、
-    // ミト専用の時間停止ラッシュ状態も同時に終了させる。
-    state.mitoUltUntil = 0;
-    state.mitoUltVx = 0;
-    state.mitoUltVy = 0;
-    state.mitoUltHitAt = Object.create(null);
-
-    if (root) root.classList.remove('mito-time-stop-active', 'ult-flash-mito');
-
-    if (companion) {
-      companion.classList.remove('show', 'mito-ult-rush');
-      companion.removeAttribute('data-side');
-    }
+    // 独立召喚ユニットなので、ミトから交代しても8秒/HP0まで残る。
+    return;
   }
 
   window.switchShootingCharacter = function(id, forced) {
@@ -3446,7 +3429,6 @@
   // makeProjectileへ到達することがあるため、最終入口でも必ず止める。
   function isEnemyProjectileSpawnSuppressed(now = performance.now()) {
     if (!state || state.ended || state.finishing) return false;
-    if (Number(state.mitoUltUntil || 0) > Number(now || 0)) return true;
     if (isNormalBattle()) {
       return Number(now || 0) < Number(state.normalEnemyStunUntil || 0);
     }
@@ -4358,7 +4340,7 @@
     let el = state.mitoCompanionEl;
     if (!el || !el.isConnected) {
       el = document.createElement('img');
-      el.className = 'shooting-mito-companion';
+      el.className = 'shooting-mito-companion shooting-mito-summon';
       el.alt = 'ミトの召喚獣';
       el.draggable = false;
       arena.appendChild(el);
@@ -4368,64 +4350,195 @@
     const src = String(c?.companionImage || 'images/chara_07_battle_set.webp');
     if (el.getAttribute('src') !== src) el.src = src;
     el.style.setProperty('--mito-companion-scale', String(Number(c?.companionScale || 1)));
+
+    let hpEl = state.mitoSummonHpEl;
+    if (!hpEl || !hpEl.isConnected) {
+      hpEl = document.createElement('div');
+      hpEl.className = 'shooting-mito-summon-hp';
+      hpEl.innerHTML = '<i></i>';
+      arena.appendChild(hpEl);
+      state.mitoSummonHpEl = hpEl;
+    }
     return el;
   }
 
+  // 旧サイドカー追従APIは互換のため残すが、通常時は召喚獣を表示しない。
   function updateMitoCompanion() {
-    if (!state) return;
-
-    // ULT中は召喚獣の座標をラッシュ処理側が完全管理する。
-    // 通常の「ミトの横へ追従」で毎フレーム上書きしない。
-    if (Number(state.mitoUltUntil || 0) > performance.now()) return;
-
-    const c = getCurrentCharacter();
-    const el = state.mitoCompanionEl;
-
-    if (!c || Number(c.id) !== Number(CHARACTER_ID.MITO)) {
-      if (el) el.classList.remove('show');
-      return;
-    }
-
-    const arena = document.getElementById('shooting-arena');
-    const companion = ensureMitoCompanion(c);
-    if (!arena || !companion) return;
-
-    const w = Number(arena.clientWidth || 0);
-    const h = Number(arena.clientHeight || 0);
-    const offsetX = Math.max(24, Number(c.companionOffsetX || 58));
-    const offsetY = Number(c.companionOffsetY || 0);
-
-    // 画面中央より右ならミトの右、左ならミトの左。
-    // 中央ぴったりは右側を採用する。
-    const side = Number(state.player.x || 0) >= w * 0.5 ? 1 : -1;
-    const x = clamp(Number(state.player.x || 0) + side * offsetX, 24, Math.max(24, w - 24));
-    const y = clamp(Number(state.player.y || 0) + offsetY, 28, Math.max(28, h - 28));
-
-    state.mitoCompanionX = x;
-    state.mitoCompanionY = y;
-    companion.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(var(--mito-companion-scale,1))`;
-    companion.classList.add('show');
-    companion.dataset.side = side > 0 ? 'right' : 'left';
+    if (!state || state.mitoSummonActive) return;
+    if (state.mitoCompanionEl) state.mitoCompanionEl.classList.remove('show');
+    if (state.mitoSummonHpEl) state.mitoSummonHpEl.classList.remove('show');
   }
 
-  function fireMitoCompanion(c, effectivePower, bulletClass) {
-    if (!state || !c || Number(c.id) !== Number(CHARACTER_ID.MITO)) return;
+  function positionMitoSummon() {
+    if (!state || !state.mitoSummonActive) return;
+    const c = getBattleCharacter(CHARACTER_ID.MITO);
     const companion = ensureMitoCompanion(c);
+    const hpEl = state.mitoSummonHpEl;
     if (!companion) return;
 
-    // 発射直前にも位置を同期して、ミトと召喚獣の弾源がずれないようにする。
-    updateMitoCompanion();
+    const x = Number(state.mitoSummonX || 0);
+    const y = Number(state.mitoSummonY || 0);
+    companion.style.transform =
+      `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(var(--mito-companion-scale,1))`;
+    companion.classList.add('show', 'mito-summon-active');
 
-    const x = Number(state.mitoCompanionX || state.player.x || 0);
-    const y = Number(state.mitoCompanionY || state.player.y || 0) - Number(c.companionShotOffsetY || c.shotOffsetY || 38);
+    if (hpEl) {
+      const max = Math.max(1, Number(state.mitoSummonHpMax || 1));
+      const ratio = clamp(Number(state.mitoSummonHp || 0) / max, 0, 1);
+      const fill = hpEl.querySelector('i');
+      if (fill) fill.style.transform = `scaleX(${ratio})`;
+      hpEl.style.transform =
+        `translate3d(${x}px,${y - 52}px,0) translate(-50%,-50%)`;
+      hpEl.classList.toggle('low', ratio <= 0.30);
+      hpEl.classList.add('show');
+    }
+  }
+
+  function hideMitoSummon() {
+    if (!state) return;
+    if (state.mitoCompanionEl) {
+      state.mitoCompanionEl.classList.remove('show', 'mito-summon-active', 'hit');
+    }
+    if (state.mitoSummonHpEl) {
+      state.mitoSummonHpEl.classList.remove('show', 'low', 'hit');
+    }
+  }
+
+  function getMitoSummonCharacter() {
+    return getBattleCharacter(CHARACTER_ID.MITO) || SHOOTING_CHARACTERS?.[CHARACTER_ID.MITO] || null;
+  }
+
+  function healMitoFromSummon(amount) {
+    if (!state) return 0;
+    const mitoMember = getPartyMember(CHARACTER_ID.MITO);
+    if (!mitoMember || mitoMember.hp <= 0) return 0;
+
+    const before = Number(mitoMember.hp || 0);
+    mitoMember.hp = Math.min(
+      Math.max(1, Number(mitoMember.hpMax || before || 1)),
+      before + Math.max(0, Number(amount || 0))
+    );
+    return Math.max(0, mitoMember.hp - before);
+  }
+
+  function finishMitoSummon(reason) {
+    if (!state || !state.mitoSummonActive) return;
+    const timedOut = reason === 'timeout';
+    const remainingHp = Math.max(0, Number(state.mitoSummonHp || 0));
+
+    state.mitoSummonActive = false;
+    state.mitoSummonExpireAt = 0;
+    state.mitoSummonVx = 0;
+    state.mitoSummonVy = 0;
+    state.mitoSummonInvulnUntil = 0;
+    state.mitoSummonContactInvulnUntil = 0;
+
+    hideMitoSummon();
+
+    // 8秒生存した場合だけ残HPをミトへ戻す。
+    if (timedOut && remainingHp > 0) {
+      healMitoFromSummon(remainingHp);
+      renderHud();
+    }
+
+    state.mitoSummonHp = 0;
+    state.mitoSummonHpMax = 0;
+  }
+
+  function damageMitoSummon(amount, now, attackType) {
+    if (!state || !state.mitoSummonActive || state.mitoSummonHp <= 0) return false;
+    const mitoMember = getPartyMember(CHARACTER_ID.MITO);
+    const raw = Math.max(0, Number(amount || 0));
+    const resolved = mitoMember
+      ? resolveIncomingDamage(mitoMember, raw, attackType || 'raw')
+      : raw;
+    const applied = Math.min(Number(state.mitoSummonHp || 0), Math.max(0, Number(resolved || 0)));
+    if (applied <= 0) return false;
+
+    state.mitoSummonHp = Math.max(0, Number(state.mitoSummonHp || 0) - applied);
+
+    const el = state.mitoCompanionEl;
+    if (el) {
+      el.classList.remove('hit');
+      void el.offsetWidth;
+      el.classList.add('hit');
+      setTimeout(() => el && el.classList.remove('hit'), 110);
+    }
+    if (state.mitoSummonHpEl) {
+      state.mitoSummonHpEl.classList.remove('hit');
+      void state.mitoSummonHpEl.offsetWidth;
+      state.mitoSummonHpEl.classList.add('hit');
+    }
+
+    showDamageNumber(
+      Number(state.mitoSummonX || 0),
+      Number(state.mitoSummonY || 0),
+      applied,
+      'player',
+      false
+    );
+    positionMitoSummon();
+
+    if (state.mitoSummonHp <= 0) finishMitoSummon('hp_zero');
+    return true;
+  }
+
+  function tryDamageMitoSummonFromEnemyBullet(p, arenaRect, now) {
+    if (!state || !state.mitoSummonActive || !p || !p.el) return false;
+    if (now < Number(state.mitoSummonInvulnUntil || 0)) return false;
+
+    const companion = state.mitoCompanionEl;
+    if (!companion || !companion.isConnected) return false;
+
+    const bulletRect = getUnitRect(p, arenaRect);
+    const summonRect = companion.getBoundingClientRect();
+    if (!rectsHit(bulletRect, summonRect, 4, 14)) return false;
+
+    const c = getMitoSummonCharacter();
+    state.mitoSummonInvulnUntil =
+      now + Math.max(40, Number(c?.summonBulletInvulnMs || 90));
+    damageMitoSummon(Number(p.damage || 0), now, classifyIncomingAttack(p));
+
+    // 常駐WARNINGだけは既存ルールどおり弾を消さない。
+    return !p.ambushPersistent;
+  }
+
+  function fireMitoSummon(now) {
+    if (!state || !state.mitoSummonActive) return;
+    const c = getMitoSummonCharacter();
+    if (!c) return;
+
+    const fireRate = Math.max(30, Number(c.fireRate || 170));
+    if (now - Number(state.mitoSummonLastShotAt || -9999) < fireRate) return;
+    state.mitoSummonLastShotAt = now;
+
+    const mitoMember = getPartyMember(CHARACTER_ID.MITO);
+    const itemAtkBuffMultiplier =
+      mitoMember && now < Number(mitoMember.atkBuffUntil || 0)
+        ? Number(mitoMember.atkBuffMultiplier || 1)
+        : 1;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier;
+    const effectivePower =
+      Number(c.atk || 0) *
+      Number(c.shotPowerRate || 0.095) *
+      itemAtkBuffMultiplier *
+      wolfFieldAtkMultiplier;
+
+    const x = Number(state.mitoSummonX || 0);
+    const y = Number(state.mitoSummonY || 0) - Number(c.companionShotOffsetY || c.shotOffsetY || 38);
     const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
     const spacing = Number(c.shotSpacing || 0);
     const speed = Number(c.bulletSpeed || 780);
+    const bulletClass =
+      'shooting-bullet' +
+      getCharacterShotStyleClass(c) +
+      getCharacterBulletClass(c) +
+      ' shooting-bullet-mito-companion';
 
     for (let i = 0; i < shotCount; i++) {
       const offset = getCenteredShotOffset(i, shotCount, spacing);
       const p = makeProjectile(
-        bulletClass + ' shooting-bullet-mito-companion',
+        bulletClass,
         x + offset,
         y,
         0,
@@ -4433,160 +4546,72 @@
         effectivePower,
         c.id
       );
-      if (p) {
-        p.mitoCompanionShot = true;
-        state.bullets.push(p);
-      }
+      if (!p) continue;
+      p.mitoSummonShot = true;
+      p.noUltGain = true;
+      state.bullets.push(p);
     }
   }
 
+  function updateMitoSummonContactDamage(now, arenaRect) {
+    if (!state || !state.mitoSummonActive) return;
+    if (now < Number(state.mitoSummonContactInvulnUntil || 0)) return;
 
-  // ============================================================
-  // ミト ULT：時駆けの獣
-  // 4秒間だけ世界を停止し、召喚獣だけが高速反射移動する。
-  // 接触ダメージはフレーム依存の多重HITにならないよう、
-  // 同一対象ごとにごく短い再HIT間隔を設ける。
-  // ============================================================
-  function isMitoUltActive(now = performance.now()) {
-    return !!(state && Number(state.mitoUltUntil || 0) > Number(now || 0));
-  }
-
-  function clearMitoUltBoardBullets() {
-    if (!state) return;
-
-    // 「盤面の弾が消える」：敵弾だけでなく発射済みの自機弾も消去。
-    (state.bullets || []).forEach(p => p && p.el && p.el.remove());
-    state.bullets = [];
-    clearEnemyBulletsOnly();
-  }
-
-  function canMitoUltHit(key, now, cooldownMs) {
-    if (!state) return false;
-    const map = state.mitoUltHitAt || (state.mitoUltHitAt = Object.create(null));
-    const last = Number(map[key] || -999999);
-    if (now - last < cooldownMs) return false;
-    map[key] = now;
-    return true;
-  }
-
-  function applyMitoUltBossDamage(c, now) {
-    if (!state || !state.boss || state.boss.hp <= 0) return;
-    const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
-    const applied = Math.min(state.boss.hp, damage);
-    if (applied <= 0) return;
-
-    state.boss.hp = Math.max(0, state.boss.hp - applied);
-    updateBossPhase();
-    createHit(state.boss.x, state.boss.y, false);
-    showBossDamageNumber(applied, false);
-    flashBossHit(false);
-    if (!addScoreAttackDamageScore(applied)) {
-      state.score += Math.round(applied * 100);
-    }
-    renderHud();
-
-    if (state.boss.hp <= 0) beginBossDefeat();
-  }
-
-  function hitMitoUltTargets(c, now) {
-    if (!state || state.ended || state.finishing) return;
-
-    const x = Number(state.mitoCompanionX || 0);
-    const y = Number(state.mitoCompanionY || 0);
-    const cooldown = Math.max(60, Number(c.ultHitCooldownMs || 140));
+    const companion = state.mitoCompanionEl;
+    if (!companion || !companion.isConnected) return;
+    const summonRect = companion.getBoundingClientRect();
+    const c = getMitoSummonCharacter();
 
     if (isNormalBattle()) {
-      const targets = [...(state.normalEnemies || [])];
-      targets.forEach(enemy => {
-        if (!enemy || !enemy.el || enemy.hp <= 0) return;
-        const hitRadius = 42;
-        if (Math.hypot(Number(enemy.x || 0) - x, Number(enemy.y || 0) - y) > hitRadius) return;
-
-        const key = `normal:${enemy.uid || enemy.id || 'enemy'}`;
-        if (!canMitoUltHit(key, now, cooldown)) return;
-
-        const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
-        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(enemy));
-        damageNormalEnemy(enemy, finalDamage, now, false);
+      const hitEnemy = (state.normalEnemies || []).find(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return false;
+        if (
+          enemy.def?.behavior === 'generic_element_charge_v1' &&
+          enemy.attackState !== 'dash'
+        ) return false;
+        return rectsHit(summonRect, getUnitRect(enemy, arenaRect), 13, 10);
       });
-
-      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
-      evaluateNormalMission(now);
+      if (hitEnemy) {
+        state.mitoSummonContactInvulnUntil =
+          now + Math.max(250, Number(c?.summonContactInvulnMs || 650));
+        damageMitoSummon(
+          Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85,
+          now,
+          'normal'
+        );
+      }
       return;
     }
 
-    // フェイスレスの召喚オブジェクトも「敵」として接触対象に含める。
-    if (isFacelessStage()) {
-      (state.facelessObjects || []).forEach(obj => {
-        if (!obj || !obj.el || obj.hp <= 0) return;
-        if (Math.hypot(Number(obj.x || 0) - x, Number(obj.y || 0) - y) > 40) return;
-
-        const key = `faceless:${obj.uid || obj.id || 'object'}`;
-        if (!canMitoUltHit(key, now, cooldown)) return;
-
-        const damage = Math.max(0, Number(c.atk || 0) * Number(c.ultHitAtkMultiplier || 0.30));
-        const finalDamage = applyElementDamage(damage, getUltAttackElement(c), getCombatTargetElement(obj, state.boss?.element));
-        damageFacelessObject(obj, finalDamage, now);
-      });
-    }
-
-    if (!state.boss || state.boss.hp <= 0) return;
-    const bossRadius = 66;
-    if (Math.hypot(Number(state.boss.x || 0) - x, Number(state.boss.y || 0) - y) > bossRadius) return;
-
-    if (canMitoUltHit('boss', now, cooldown)) {
-      applyMitoUltBossDamage(c, now);
+    const boss = document.getElementById(BOSS_ID);
+    if (boss && state.boss && state.boss.hp > 0 && rectsHit(summonRect, boss.getBoundingClientRect(), 14, 20)) {
+      state.mitoSummonContactInvulnUntil =
+        now + Math.max(250, Number(c?.summonContactInvulnMs || 650));
+      damageMitoSummon(Number(BOSS.contactDamage || BOSS.bulletDamage) || 200, now, 'boss-heavy');
     }
   }
 
-  function freezeMitoUltWorldTimers(deltaMs) {
-    if (!state || deltaMs <= 0) return;
+  function updateMitoSummon(dt, now) {
+    if (!state || !state.mitoSummonActive) return;
+    if (now >= Number(state.mitoSummonExpireAt || 0)) {
+      finishMitoSummon('timeout');
+      return;
+    }
 
-    // バトル残り時間・敵AIの位相も4秒進めない。
-    state.startedAt = Number(state.startedAt || 0) + deltaMs;
-
-    (state.normalEnemies || []).forEach(enemy => {
-      if (!enemy) return;
-      ['spawnedAt', 'lastShotAt', 'nextActionAt', 'attackExecuteAt', 'dashUntil'].forEach(key => {
-        if (Number.isFinite(Number(enemy[key])) && Number(enemy[key]) > 0) {
-          enemy[key] = Number(enemy[key]) + deltaMs;
-        }
-      });
-    });
-
-    (state.facelessObjects || []).forEach(obj => {
-      if (!obj) return;
-      ['spawnedAt', 'lastShotAt', 'nextShotAt', 'expireAt'].forEach(key => {
-        if (Number.isFinite(Number(obj[key])) && Number(obj[key]) > 0) {
-          obj[key] = Number(obj[key]) + deltaMs;
-        }
-      });
-    });
-
-    ['nextBossDangerAt', 'bossDangerExecuteAt', 'lastBossShotAt'].forEach(key => {
-      if (Number.isFinite(Number(state[key])) && Number(state[key]) > 0) {
-        state[key] = Number(state[key]) + deltaMs;
-      }
-    });
-  }
-
-  function updateMitoUltRush(dt, now) {
-    if (!state || !isMitoUltActive(now)) return;
-
-    const c = getBattleCharacter(CHARACTER_ID.MITO) || getCurrentCharacter();
+    const c = getMitoSummonCharacter();
     const arena = document.getElementById('shooting-arena');
     const companion = ensureMitoCompanion(c);
     if (!arena || !companion) return;
 
     const w = Number(arena.clientWidth || 0);
     const h = Number(arena.clientHeight || 0);
-    const marginX = 28;
-    const marginY = 34;
+    const marginX = 32;
+    const marginY = 44;
 
-    let x = Number(state.mitoCompanionX || w * 0.5);
-    let y = Number(state.mitoCompanionY || h * 0.6);
-    let vx = Number(state.mitoUltVx || 0);
-    let vy = Number(state.mitoUltVy || 0);
+    let x = Number(state.mitoSummonX || w * 0.5);
+    let y = Number(state.mitoSummonY || h * 0.65);
+    let vx = Number(state.mitoSummonVx || 0);
+    let vy = Number(state.mitoSummonVy || 0);
 
     x += vx * dt;
     y += vy * dt;
@@ -4607,55 +4632,48 @@
       vy = -Math.abs(vy);
     }
 
-    state.mitoCompanionX = x;
-    state.mitoCompanionY = y;
-    state.mitoUltVx = vx;
-    state.mitoUltVy = vy;
+    state.mitoSummonX = x;
+    state.mitoSummonY = y;
+    state.mitoSummonVx = vx;
+    state.mitoSummonVy = vy;
 
-    companion.classList.add('show', 'mito-ult-rush');
-    companion.style.transform =
-      `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(var(--mito-companion-scale,1))`;
-
-    hitMitoUltTargets(c, now);
+    positionMitoSummon();
+    fireMitoSummon(now);
+    updateMitoSummonContactDamage(now, arena.getBoundingClientRect());
   }
 
-  function finishMitoUltRush() {
-    if (!state) return;
-    const root = document.getElementById(ROOT_ID);
-    const companion = state.mitoCompanionEl;
+  function spawnMitoSummon(c) {
+    if (!state || !c || state.ended || state.finishing) return;
 
-    state.mitoUltUntil = 0;
-    state.mitoUltVx = 0;
-    state.mitoUltVy = 0;
-    state.mitoUltHitAt = Object.create(null);
+    // 再発動は古い個体を回復変換せず置換。
+    if (state.mitoSummonActive) finishMitoSummon('replaced');
 
-    // 時間停止中に期限だけ過ぎた発射タイマーを、解除直後にまとめて消化させない。
-    const resumedAt = performance.now();
-    state.lastBossShotAt = resumedAt;
-    (state.normalEnemies || []).forEach((enemy, index) => {
-      if (!enemy || enemy.hp <= 0) return;
-      enemy.lastShotAt = resumedAt;
-      if (Number(enemy.nextActionAt || 0) < resumedAt) {
-        enemy.nextActionAt = resumedAt + 260 + index * 70;
-      }
-      if (enemy.attackState === 'telegraph' && Number(enemy.attackExecuteAt || 0) < resumedAt) {
-        enemy.attackExecuteAt = resumedAt + 260 + index * 70;
-      }
-    });
-    (state.facelessObjects || []).forEach((obj, index) => {
-      if (!obj || obj.hp <= 0) return;
-      obj.lastShotAt = resumedAt + index * 70;
-      if (Number(obj.nextShotAt || 0) < resumedAt) {
-        obj.nextShotAt = resumedAt + 300 + index * 70;
-      }
-    });
+    const arena = document.getElementById('shooting-arena');
+    const companion = ensureMitoCompanion(c);
+    if (!arena || !companion) return;
 
-    if (root) root.classList.remove('mito-time-stop-active');
-    if (companion) companion.classList.remove('mito-ult-rush');
+    const now = performance.now();
+    const duration = Math.max(1000, Number(c.summonDurationMs || 8000));
+    const hpMax = Math.max(1, Number(c.hp || getPartyMember(CHARACTER_ID.MITO)?.hpMax || 1));
+    const speed = Math.max(80, Number(c.summonMoveSpeed || 250));
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
 
-    // ULT終了後は即座に通常のサイドカー位置へ戻す。
-    updateMitoCompanion();
-    renderHud();
+    state.mitoSummonActive = true;
+    state.mitoSummonHpMax = hpMax;
+    state.mitoSummonHp = hpMax;
+    state.mitoSummonExpireAt = now + duration;
+    state.mitoSummonLastShotAt = now - Number(c.fireRate || 170);
+    state.mitoSummonInvulnUntil = now + 180;
+    state.mitoSummonContactInvulnUntil = now + 350;
+    state.mitoSummonX = clamp(Number(state.player.x || w * 0.5) + 44, 32, Math.max(32, w - 32));
+    state.mitoSummonY = clamp(Number(state.player.y || h * 0.7) - 22, 44, Math.max(44, h - 44));
+
+    const angle = (-Math.PI * 0.65) + Math.random() * (Math.PI * 0.30);
+    state.mitoSummonVx = Math.cos(angle) * speed * (Math.random() < 0.5 ? -1 : 1);
+    state.mitoSummonVy = Math.sin(angle) * speed;
+
+    positionMitoSummon();
   }
 
   function useMitoUlt(c) {
@@ -4664,52 +4682,10 @@
     showUltCut(c.ultName, c.effectKey);
     ultScreenFlash('ult-flash-mito');
 
-    const now = performance.now();
-    const duration = Math.max(1000, Number(c.ultDurationMs || 4000));
-    const until = now + duration;
-    const speed = Math.max(300, Number(c.ultCompanionSpeed || 920));
-    const arena = document.getElementById('shooting-arena');
-    const root = document.getElementById(ROOT_ID);
-    const companion = ensureMitoCompanion(c);
-
-    // 盤面の弾をすべて消し、4秒間は通常射撃・敵行動も停止。
-    clearMitoUltBoardBullets();
-    applyBossStun(duration, 'mito_ult');
-
-    state.mitoUltUntil = until;
-    state.ultLockUntil = until;
-    state.mitoUltHitAt = Object.create(null);
-
-    if (arena) {
-      const w = Number(arena.clientWidth || 0);
-      const h = Number(arena.clientHeight || 0);
-
-      // サイドカー位置から飛び出し、斜め方向へ高速反射移動を開始。
-      state.mitoCompanionX = clamp(
-        Number(state.mitoCompanionX || state.player.x || w * 0.5),
-        28,
-        Math.max(28, w - 28)
-      );
-      state.mitoCompanionY = clamp(
-        Number(state.mitoCompanionY || state.player.y || h * 0.65),
-        34,
-        Math.max(34, h - 34)
-      );
-
-      const signX = Math.random() < 0.5 ? -1 : 1;
-      const signY = Math.random() < 0.5 ? -1 : 1;
-      const vxBase = speed * 0.78;
-      const vyBase = Math.sqrt(Math.max(0, speed * speed - vxBase * vxBase));
-      state.mitoUltVx = signX * vxBase;
-      state.mitoUltVy = signY * vyBase;
-    }
-
-    if (root) root.classList.add('mito-time-stop-active');
-    if (companion) companion.classList.add('show', 'mito-ult-rush');
-
+    // 時間停止・弾消去・突撃ラッシュは廃止。
+    spawnMitoSummon(c);
     renderHud();
   }
-
 
   function spawnVeronicaSlashVisual(c) {
     const arena = document.getElementById('shooting-arena');
@@ -5105,10 +5081,6 @@
       ));
     }
 
-    // ミトだけは召喚獣も同じタイミング・同じ弾速・同じ火力で支援射撃。
-    if (Number(c.id) === Number(CHARACTER_ID.MITO)) {
-      fireMitoCompanion(c, effectivePower, bulletClass);
-    }
   }
 
   function isNormalBattle() {
@@ -8797,6 +8769,12 @@
       if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
 
+      // ミトULT召喚獣は独立したHP付きユニットとして敵弾を受ける。
+      if (tryDamageMitoSummonFromEnemyBullet(p, arenaRect, now)) {
+        p.el.remove();
+        return false;
+      }
+
       // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
       // 花自体にはHPを持たせず、敵弾は接触した時点で消滅。
       const roseFlower = state.roseFlower;
@@ -9890,31 +9868,13 @@
       state.noahMovementFreezeUntil = 0;
     }
 
-    // ミトULT中は「時が止まる」。
-    // 通常の敵・弾・ステージギミックは一切更新せず、
-    // プレイヤー操作と召喚獣の高速ラッシュだけを進める。
-    if (Number(state.mitoUltUntil || 0) > 0) {
-      if (ts < Number(state.mitoUltUntil || 0)) {
-        const mitoDt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
-        prevTs = ts;
-
-        freezeMitoUltWorldTimers(mitoDt * 1000);
-        if (!state.koTransition) updateMovement(mitoDt, ts, true);
-        updateMitoUltRush(mitoDt, ts);
-        renderHud();
-
-        if (!state.ended) rafId = requestAnimationFrame(gameLoop);
-        return;
-      }
-
-      finishMitoUltRush();
-    }
 
     if (checkBattleTimeLimit(ts)) return;
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
     prevTs = ts;
     if (!state.koTransition) updateMovement(dt, ts);
+    updateMitoSummon(dt, ts);
     updateClarineDecoys(dt, ts);
     updateIgnisFireWheel(ts);
     updateIgnisBurns(ts);
@@ -15214,7 +15174,7 @@
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
-    else if (c.ultType === 'mito_time_rush') useMitoUlt(c);
+    else if (c.ultType === 'mito_summon_double') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);

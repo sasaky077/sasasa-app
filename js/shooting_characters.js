@@ -919,9 +919,7 @@
       ...profile,
       id: master.id,
       name: profile.name || master.name,
-      element: profile.element ?? master.element ?? 'neutral',
-      // build504: ULT属性は原則キャラ属性と同一。個別ULTだけ profile.ultElement で上書き可能。
-      ultElement: profile.ultElement ?? profile.element ?? master.element ?? 'neutral',
+      element: profile.element ?? master.element ?? null,
       image: profile.image || master.image,
       panelImage: profile.panelImage || master.panelImage || master.image,
       cutinImage: profile.cutinImage || master.cutinImage || '',
@@ -1432,11 +1430,10 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.MITO,
     effectKey: 'mito',
-    label: 'FAMILIAR / SIDECAR',
-    description: '召喚獣が常にミトの隣を追従して同時射撃。ULTは盤面の弾を消し4秒間時を止め、召喚獣が高速突撃して接触ごとにATK×30%ダメージを与える。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去し、4秒間、敵とステージ進行を停止する。その間、召喚獣がフィールドを高速突撃し、敵へ接触するたびATK×30%のダメージを与える。同一対象への再ヒット間隔は約0.14秒。',
+    label: 'FAMILIAR / TEMPORARY DOUBLE',
+    description: 'ULT発動で召喚獣を8秒間フィールドへ独立召喚。召喚獣はミトと同じHP・ATK・ショット性能を持って自律移動しながら射撃する。HPが0になると消滅。8秒経過で消える場合は残HPをミトの回復へ変換する。',
+    ultDescription: 'HP・ATK・通常ショット性能がミトと同じ召喚獣を8秒間召喚する。召喚獣は独立してフィールド内を移動・射撃し、敵弾や接触でHPを失う。HP0で消滅。8秒間生存した場合、残HP分だけミトを回復する。召喚獣の攻撃ではULTゲージは増加しない。',
 
-    // ミト自身の通常射撃性能は従来値を維持。
     moveSpeed: 400,
     fireRate: 170,
     bulletSpeed: 780,
@@ -1447,23 +1444,16 @@
     shotStyle: 'normal',
     shotOffsetY: 38,
 
-    // 召喚獣。位置はshooting_core側で画面中央を境に左右切替。
     companionImage: 'images/chara_07_battle_set.webp',
-    companionOffsetX: 68,
-    companionOffsetY: 2,
-    companionShotOffsetY: 30,
     companionScale: 1.0,
+    companionShotOffsetY: 30,
 
-    // ---- ULT：召喚獣による4秒間の時間停止ラッシュ ----
-    // 盤面の弾を消去し、敵・ステージ進行を停止。
-    // その間だけ召喚獣がフィールド全体を高速反射移動し、
-    // 敵へ接触するたび現在ATK×30%ダメージ。
     ultName: '時駆けの獣',
-    ultType: 'mito_time_rush',
-    ultDurationMs: 4000,
-    ultCompanionSpeed: 920,
-    ultHitAtkMultiplier: 0.30,
-    ultHitCooldownMs: 140,
+    ultType: 'mito_summon_double',
+    summonDurationMs: 8000,
+    summonMoveSpeed: 250,
+    summonContactInvulnMs: 650,
+    summonBulletInvulnMs: 90,
   });
 
   // ============================================================

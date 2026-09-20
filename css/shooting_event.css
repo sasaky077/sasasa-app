@@ -8187,3 +8187,69 @@
   height:24px!important;
   object-fit:contain;
 }
+
+
+/* ============================================================
+   MITO build510 - independent HP summon
+   ============================================================ */
+#shooting-event-root .shooting-mito-companion{
+  width:72px!important;
+  height:94px!important;
+  opacity:0!important;
+  transition:opacity .10s ease!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+}
+#shooting-event-root .shooting-mito-companion.show,
+#shooting-event-root .shooting-mito-companion.mito-summon-active{
+  opacity:1!important;
+}
+#shooting-event-root .shooting-mito-companion.mito-summon-active{
+  z-index:17!important;
+  filter:
+    drop-shadow(0 5px 7px rgba(70,55,35,.16))
+    drop-shadow(0 0 6px rgba(245,239,210,.36))!important;
+}
+#shooting-event-root .shooting-mito-companion.hit{
+  filter:
+    brightness(1.55)
+    drop-shadow(0 0 9px rgba(255,170,150,.75))!important;
+}
+#shooting-event-root .shooting-mito-summon-hp{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  z-index:18!important;
+  width:54px!important;
+  height:4px!important;
+  border:1px solid rgba(112,91,55,.32)!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  background:rgba(255,255,255,.72)!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  box-shadow:0 1px 3px rgba(62,46,24,.10)!important;
+}
+#shooting-event-root .shooting-mito-summon-hp.show{opacity:1!important}
+#shooting-event-root .shooting-mito-summon-hp i{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  transform-origin:left center!important;
+  background:linear-gradient(90deg,#d8bd70,#eee1ad)!important;
+  transition:transform .08s linear!important;
+}
+#shooting-event-root .shooting-mito-summon-hp.low i{
+  background:linear-gradient(90deg,#b56b58,#d6a37d)!important;
+}
+#shooting-event-root .shooting-mito-summon-hp.hit{
+  box-shadow:0 0 7px rgba(189,93,70,.52)!important;
+}
+
+/* 旧時間停止見た目は無効 */
+#shooting-event-root.mito-time-stop-active .shooting-bg,
+#shooting-event-root.mito-time-stop-active .shooting-wash,
+#shooting-event-root.mito-time-stop-active .shooting-boss,
+#shooting-event-root.mito-time-stop-active .shooting-normal-enemy{
+  filter:none!important;
+}
