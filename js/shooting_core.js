@@ -9225,14 +9225,13 @@
   }
 
   function warmShootingAssets() {
-    if (!window.GameAssets) return;
-    const urls = [];
-
-    // キャラ画像・パネル・ULTは戦闘中に高確率で使うため先読み。
-    // 敵/ステージマスター全件は、未実装画像参照が混ざる可能性があるので読まない。
-    try { window.GameAssets.collectFromObject(window.ShootingCharacters, urls); } catch (_) {}
-
-    window.GameAssets.many(urls, { timeout: 7000, quiet: true });
+    // build519:
+    // iPhone Safari/PWAで大量画像の同時fetch+decodeが画像欠損を誘発する疑いがあるため、
+    // ShootingCharacters 全体の一括プリロードを停止。
+    //
+    // 必要な画像は各処理で都度ロードする。
+    // 例: ULTカットインは preloadShootingImage(cutinSrc) で対象1枚だけ待つ。
+    return;
   }
 
   function clearUltCutin() {
