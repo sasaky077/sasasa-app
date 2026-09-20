@@ -36409,3 +36409,13 @@ img.zimg-loading{
 img.zimg-loaded{
   visibility:visible!important;
 }
+
+
+/* build518 - native lazy-loading stabilization
+   実URLをsrcに持たせ、ブラウザ標準の画像ローダーを優先する。 */
+#screen-zukan .primoa-index-image.zimg-lazy{
+  opacity:1!important;
+}
+#screen-zukan .primoa-index-image.zimg-loading{
+  opacity:1!important;
+}
