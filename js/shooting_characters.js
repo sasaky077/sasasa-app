@@ -926,12 +926,69 @@
     return SHOOTING_CHARACTER_MASTER[Number(id)] || null;
   }
 
+  const SHOT_VARIANTS = Object.freeze({
+    parallel: Object.freeze([2, 3, 4, 5]),
+    spread: Object.freeze([3, 5, 7]),
+    laser: Object.freeze(['M', 'L']),
+    bomb: Object.freeze(['M', 'L']),
+  });
+
+  function normalizeShotType(type) {
+    const raw = String(type || '').trim().toLowerCase();
+    const aliases = {
+      orbit_forward: 'orbit',
+      charge_release: 'charge',
+      precision: 'shotgun',
+      splash: 'bomb',
+      melee_slash: 'strike',
+      wolf_j_homing: 'homing',
+      rose_seed_splash: 'spread',
+      noah_hybrid: 'laser',
+    };
+    return aliases[raw] || raw || 'parallel';
+  }
+
+  function buildShotSlot(slot, profile, isMain) {
+    if (slot === null || slot === false) return null;
+    const source = slot && typeof slot === 'object' ? slot : {};
+    const type = normalizeShotType(source.type || (isMain ? profile.shotType : ''));
+    if (!type) return null;
+
+    const out = { ...source, type };
+    if (type === 'parallel' || type === 'spread') {
+      const allowed = SHOT_VARIANTS[type];
+      const requested = Math.max(1, Math.floor(Number(source.count ?? (isMain ? profile.shotCount : allowed[0]) ?? allowed[0])));
+      out.count = allowed.includes(requested) ? requested : allowed[0];
+    }
+    if (type === 'laser') {
+      const fallbackSize = Number(profile.laserWidth || 0) >= 11 ? 'L' : 'M';
+      out.size = String(source.size || (isMain ? profile.laserSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
+    }
+    if (type === 'bomb') {
+      const fallbackSize = Number(profile.splashRadius || 0) >= 80 ? 'L' : 'M';
+      out.size = String(source.size || (isMain ? profile.bombSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
+    }
+    return Object.freeze(out);
+  }
+
   function buildShootingCharacter(profile) {
     const master = getShootingCharacterMaster(profile.id);
     if (!master) return null;
 
     const rarity = getShootingRarity(master.id);
     const rarityMultiplier = getShootingRarityMultiplier(master.id);
+
+    // v542: 通常攻撃を MAIN / SUB のスロット構造へ統一。
+    // 既存トップレベルの戦闘パラメータは互換性のため維持し、shotType は MAIN の type を正本として同期する。
+    const normalizedProfileType = normalizeShotType(profile.shotType);
+    const inheritedMainType = profile.mainShot && typeof profile.mainShot === 'object'
+      ? normalizeShotType(profile.mainShot.type)
+      : '';
+    const mainShotSource = profile.mainShot && inheritedMainType === normalizedProfileType
+      ? profile.mainShot
+      : { type: profile.shotType };
+    const mainShot = buildShotSlot(mainShotSource, profile, true);
+    const subShot = profile.subShot ? buildShotSlot(profile.subShot, profile, false) : null;
 
     // hp/atkが個体側(profile)で明示指定されていない限りmasterの値を基準にし、
     // そこへレアリティ倍率をかけてから丸める。
@@ -941,6 +998,9 @@
 
     return {
       ...profile,
+      shotType: mainShot?.type || normalizeShotType(profile.shotType),
+      mainShot,
+      subShot,
       id: master.id,
       name: profile.name || master.name,
       element: profile.element ?? master.element ?? null,
@@ -1077,7 +1137,7 @@
     shotPowerRate: 0.105,
 
     // ---- 通常ショット設定 ----
-    shotType: 'orbit_forward',
+    shotType: 'orbit',
     shotCount: 2,
     shotSpacing: 28,
     shotStyle: 'arno',
@@ -1102,9 +1162,9 @@
     ...SHOOTING_CHARACTERS[CHARACTER_ID.FLORA],
     id: CHARACTER_ID.FLORA,
     effectKey: 'arno',
-    label: 'MELEE / AURA',
+    label: 'STRIKE / AURA',
     description: '前方の近距離を斬り払う近接型。通常攻撃はベロニカと同じ近距離斬撃で、ULTは敵弾を消去して5秒間の攻撃オーラを展開する。',
-    shotType: 'melee_slash',
+    shotType: 'strike',
     shotCount: 1,
     fireRate: 520,
     shotPowerRate: 0.95,
@@ -1137,7 +1197,7 @@
     shotPowerRate: 0.050,
 
     // ---- 通常ショット設定 ----
-    shotType: 'orbit_forward',
+    shotType: 'orbit',
     shotCount: 4,
     shotSpacing: 26,
     shotStyle: 'clarine',
@@ -1185,7 +1245,7 @@
     fireRate: 178,
     bulletSpeed: 430,
     shotPowerRate: 0.050,
-    shotType: 'orbit_forward',
+    shotType: 'orbit',
     shotCount: 4,
     shotSpacing: 26,
     shotStyle: 'clarine',
@@ -1223,9 +1283,10 @@
     // ---- 通常ショット / 連続レーザー ----
     shotType: 'laser',
     shotStyle: 'ignis',
+    laserSize: 'L',
     fireRate: 95,              // レーザーのダメージ判定間隔
-    laserWidth: 12,
-    laserHitWidth: 44,
+    laserWidth: 16,
+    laserHitWidth: 50,
     laserDamageAtkRate: 0.105,
     laserVisualHoldMs: 130,
 
@@ -1259,20 +1320,20 @@
     id: CHARACTER_ID.ROSE,
     effectKey: 'rose',
     label: 'SEED / HEAL FLOWER',
-    description: '0.5秒ごとに6発のスプラッシュ弾を放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、取得した場のキャラのみ最大HPの5%回復／敵へATKの30%ダメージ。',
+    description: '0.5秒ごとに7発の種子Spreadを放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、取得した場のキャラのみ最大HPの5%回復／敵へATKの30%ダメージ。',
     ultDescription: '中央に大花を5.2秒間展開して敵弾を遮断。0.24秒ごとにハートを10個放つ。ハートを取得すると、その時点で操作中のキャラの最大HPを5%回復。敵に命中した場合はATK×30%のダメージを与える。',
     ultName: '花園の息吹',
     ultType: 'rose_flower_heart',
     moveSpeed: 400,
 
     // ---- 通常ショット ----
-    shotType: 'rose_seed_splash',
+    shotType: 'spread',
     shotStyle: 'rose-seed',
     fireRate: 500,
     bulletSpeed: 335,
-    shotPowerRate: 0.085,
-    shotCount: 6,
-    shotAngleStep: 0.17,
+    shotPowerRate: 0.07286, // 旧6発×0.085と総火力をほぼ同等に維持
+    shotCount: 7,
+    shotAngleStep: 0.145,
 
     burstDamage: 0,
     burstNeed: 28,
@@ -1369,7 +1430,7 @@
     moveSpeed: 400,
 
     // ---- 通常ショット：リリース式チャージ ----
-    shotType: 'charge_release',
+    shotType: 'charge',
     shotStyle: 'mia-charge',
     fireRate: 0,                 // 自動射撃は使用しない
     bulletSpeed: 760,
@@ -1400,7 +1461,7 @@
     shotPowerRate: 0.315,
 
     // ---- 通常ショット設定 ----
-    shotType: 'precision',
+    shotType: 'shotgun',
     shotCount: 1,
     shotStyle: 'ayane',
     chargedEvery: 4,
@@ -1529,7 +1590,7 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.WOLF,
     effectKey: 'wolf',
-    label: 'J-HOMING / PREDATOR FIELD',
+    label: 'HOMING / PREDATOR FIELD',
     description: '左右2発がいったん肩より後ろへ沈み込み、深いJ字を描いてUターン。2本の軌道は同じ標的へ収束するホーミング射撃。ULTは敵弾を全消去し、中央に10秒間ATK×1.5の強化フィールドを展開する。',
     ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.5倍にする。',
     ultName: '月喰みの狩場',
@@ -1540,7 +1601,7 @@
     shotPowerRate: 0.115,
 
     // 左右2発が後方へ沈み、J字で反転して同一点へ収束する。
-    shotType: 'wolf_j_homing',
+    shotType: 'homing',
     shotCount: 2,
     shotSpacing: 30,
     shotStyle: 'wolf',
@@ -1579,7 +1640,7 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.SERA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SERA, effectKey: 'sera',
     label: 'ORBIT / SUMMON', description: '2発の円環軌道ショット。ULTは植物系召喚物を設置するR召喚型。',
-    shotType: 'orbit_forward', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
+    shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
     ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
@@ -1587,7 +1648,7 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.RYUNE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RYUNE, effectKey: 'ryune',
     label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。',
-    shotType: 'laser', shotStyle: 'ryune', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
+    shotType: 'laser', shotStyle: 'ryune', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
     ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
@@ -1597,7 +1658,7 @@
     description: '長押しで溜め、離して撃つRチャージ型。ULTはウルフと同系統のATK UP領域を展開するR版。',
     ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
     ultName: '紅蓮の領域',
-    shotType: 'charge_release', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
+    shotType: 'charge', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
     chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
     ultBaseType: 'field', ultAddons: ['bullet_clear','player_buff'], ultType: 'wolf_atk_field',
     ultFieldDurationMs: 10000,
@@ -1607,23 +1668,23 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.REISIA, effectKey: 'reisia',
-    label: 'HOMING / AQUA', description: '2発の追尾弾が敵を狙うRホーミング型。',
-    shotType: 'homing', shotCount: 2, shotSpacing: 28, fireRate: 500, bulletSpeed: 640, shotPowerRate: 0.14,
-    homingTurnRate: 8.0, ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
+    label: 'STRAIGHT / AQUA', description: '左右2発の水弾をまっすぐ前方へ同時射出するRストレート型。',
+    shotType: 'parallel', shotCount: 2, shotSpacing: 28, fireRate: 500, bulletSpeed: 640, shotPowerRate: 0.14,
+    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
-    label: 'SPLASH / ITEM', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは支援アイテムを少数出現させる。',
-    shotType: 'splash', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    label: 'BOMB / ITEM', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは支援アイテムを少数出現させる。',
+    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
     ultBaseType: 'item_summon', ultAddons: [], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.IONA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.IONA, effectKey: 'iona',
-    label: 'MELEE / BLADE BUFF',
+    label: 'STRIKE / BLADE BUFF',
     description: '前方の近距離だけを斬り払う高威力の剣撃型。射程は短いが、接近時はRとして非常に高い瞬間火力を出せる。ULTは5秒間、自身を無敵にしてATKを1.3倍にする。',
-    shotType: 'melee_slash', shotCount: 1, fireRate: 520, shotPowerRate: 0.95,
+    shotType: 'strike', shotCount: 1, fireRate: 520, shotPowerRate: 0.95,
     slashRange: 182,
     slashWidth: 120,
     slashVisualMs: 180,
@@ -1640,7 +1701,7 @@
     description: '2発の円環軌道ショット。ULTは自身を中心に大きな光の円環を7秒間展開し、円内へ入った敵弾の速度を半減する。',
     ultName: '術式・光の円環',
     ultDescription: '自身を中心に大きな光のサークルを7秒間展開する。サークル内に入った敵弾は移動速度が50%に低下し、サークル外へ出ると元の速度へ戻る。',
-    shotType: 'orbit_forward', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
+    shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 32, orbitAngularSpeed: 11.8, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
     ultBaseType: 'field', ultAddons: ['enemy_bullet_slow'], ultType: 'shiina_light_ring',
     lightRingDurationMs: 7000,
@@ -1651,7 +1712,7 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.FIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.FIA, effectKey: 'fia',
     label: 'LASER / WOOD', description: '細い高密度レーザーを照射するRレーザー型。ULTは6本の細レーザーを射出し、5秒間ランダム反射させて画面全域を掃射する。',
-    shotType: 'laser', shotStyle: 'fia', fireRate: 100, laserWidth: 9, laserHitWidth: 30, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
+    shotType: 'laser', shotStyle: 'fia', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
     ultName: 'SCRAMBLE RAY',
     ultDescription: 'ジグを起点に6本の細レーザーを射出。5秒間、画面端でランダム反射しながら敵を貫通してダメージを与える。',
     ultBaseType: 'beam', ultAddons: ['damage','bullet_clear'], ultType: 'jig_scramble_ray',
@@ -1666,25 +1727,25 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RAGNA, effectKey: 'ragna',
-    label: 'SPLASH / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは広範囲BURST。',
-    shotType: 'splash', shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27, splashRadius: 82, splashDamageRate: 0.58,
+    label: 'BOMB / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは広範囲BURST。',
+    shotType: 'bomb', bombSize: 'L', shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27, splashRadius: 96, splashDamageRate: 0.58,
     ultBaseType: 'burst', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'SPLASH / DOT', description: '小範囲へ広がるRスプラッシュ型。ULTは継続ダメージ＋微回復。',
-    shotType: 'splash', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 78, splashDamageRate: 0.55,
+    label: 'BOMB / DOT', description: '小範囲へ広がるRスプラッシュ型。ULTは継続ダメージ＋微回復。',
+    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
     ultBaseType: 'dot', ultAddons: ['heal'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SHION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SHION, effectKey: 'shion',
-    label: 'PRECISION / DELAY',
+    label: 'SHOTGUN / DELAY',
     description: '高威力の単発精密射撃。ULT「黒羽葬鐘」は敵全体へ呪印を刻み、時間差で闇撃を起こした後、敵の攻撃力を弱体化する。',
     ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・スタン・無敵は発生しない。',
     ultName: '黒羽葬鐘',
-    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
     ultType: 'shion_delayed_curse',
     ultDelayMs: 1200,
@@ -1695,8 +1756,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
-    label: 'PRECISION / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
-    shotType: 'precision', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    label: 'SHOTGUN / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
+    shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
     ultBaseType: 'burst', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
   });
@@ -1707,16 +1768,17 @@
     id: CHARACTER_ID.IVERNA,
     effectKey: 'iverna',
     label: 'LASER / FIRE',
-    description: '細い紅色レーザーを連続照射する限定SRレーザー型。',
+    description: '太い紅色レーザーを連続照射する限定SRレーザー型。',
     ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
     ultName: '終端紅閃',
     ultType: 'testchan_black_ship',
     moveSpeed: 400,
     shotType: 'laser',
     shotStyle: 'iverna',
+    laserSize: 'L',
     fireRate: 95,
-    laserWidth: 11,
-    laserHitWidth: 40,
+    laserWidth: 16,
+    laserHitWidth: 50,
     laserDamageAtkRate: 0.090,
     laserVisualHoldMs: 130,
     burstDamage: 0,
@@ -1740,7 +1802,7 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.REI,
     effectKey: 'rei',
-    label: 'J-HOMING / BLACK HOLE',
+    label: 'HOMING / BLACK HOLE',
     description: 'ウルフと同じ深いJ字軌道の2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、すべての敵を吸引・拘束しながら継続ダメージを与える。',
     ultDescription: '敵陣へブラックホールを射出し、7秒間展開。通常敵・大型敵・ボスを中心へ吸引して拘束し、展開中に合計ATK×3.5相当の継続ダメージを与える。',
     ultName: '深淵水界',
@@ -1751,7 +1813,7 @@
     fireRate: 285,
     bulletSpeed: 900,
     shotPowerRate: 0.115,
-    shotType: 'wolf_j_homing',
+    shotType: 'homing',
     shotCount: 2,
     shotSpacing: 30,
     shotStyle: 'wolf',
@@ -1789,30 +1851,33 @@
     ultType: 'noah_time_homing',
     moveSpeed: 400,
 
-    // 中心レーザー：LIGHT属性。イグニスと同じ連続レーザー仕様。
-    // 判定間隔 / 幅 / 当たり幅 / 見た目保持時間はイグニスと同一。
-    // 1Hit威力だけ少し抑える。
-    shotType: 'noah_hybrid',
+    // MAIN：LIGHT属性 Laser M。
+    // SUB：FIRE属性 Homing。SUBは現時点でノアだけが持つ希少スロット。
+    shotType: 'laser',
+    mainShot: { type: 'laser', size: 'M' },
+    subShot: {
+      type: 'homing',
+      count: 2,
+      element: 'fire',
+      fireRate: 285,
+      shotPowerRate: 0.070,
+      bulletSpeed: 860,
+      shotSpacing: 28,
+      wolfCurveDurationMs: 360,
+      wolfRetreatDepth: 52,
+      wolfOuterOffset: 42,
+      wolfConvergeLead: 44,
+    },
     shotStyle: 'noah',
     fireRate: 95,
     laserElement: 'light',
-    laserWidth: 12,
-    laserHitWidth: 44,
+    laserSize: 'M',
+    laserWidth: 10,
+    laserHitWidth: 34,
     laserDamageAtkRate: 0.085,
     laserVisualHoldMs: 130,
-
-    // 周囲2発：FIRE属性ホーミング弾。
-    // レーザーとは別タイマーで従来どおり285ms間隔。
-    homingElement: 'fire',
-    homingFireRate: 285,
-    shotCount: 2,
-    shotSpacing: 28,
+    shotCount: 1,
     shotPowerRate: 0.070,
-    bulletSpeed: 860,
-    wolfCurveDurationMs: 360,
-    wolfRetreatDepth: 52,
-    wolfOuterOffset: 42,
-    wolfConvergeLead: 44,
 
     burstNeed: 34,
     ultGainPerHit: 0.36,
@@ -2036,6 +2101,7 @@
     SHOOTING_CHARACTERS,
     SHOOTING_RARITY,
     RARITY_STAT_MULTIPLIER,
+    SHOT_VARIANTS,
     PARTY_SIZE: 3,
     SWITCH_COOLDOWN_MS: 5000,
     getShootingCharacterMaster,

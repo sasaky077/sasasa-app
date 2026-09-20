@@ -8326,3 +8326,328 @@
   18%{opacity:.95}
   100%{opacity:0;transform:translate3d(5px,-62px,0) scale(.25)}
 }
+
+
+/* ============================================================
+   v539 CHARGE PREVIEW — MIA(14) / AINA(17)
+   - 実キャラIDへ修正（旧指定13では表示されなかった）
+   - 長押し中、射出位置に弾体を表示して徐々に拡大
+   - ミア=水 / アイナ=火 の見た目を分離
+   ============================================================ */
+#shooting-event-root .shooting-player:is([data-character-id="14"],[data-character-id="17"]).mia-charging{
+  overflow:visible!important;
+}
+
+/* ミア：射出中心 = player center - 44px / 最大76px */
+#shooting-event-root .shooting-player[data-character-id="14"].mia-charging::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:18!important;
+  left:50%!important;
+  top:calc(50% - 44px)!important;
+  width:76px!important;
+  height:76px!important;
+  transform:translate(-50%,-50%) scale(.395)!important;
+  transform-origin:center center!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 44% 36%,
+      rgba(255,255,255,.99) 0 12%,
+      rgba(232,250,255,.94) 18%,
+      rgba(164,232,255,.66) 38%,
+      rgba(79,186,244,.34) 58%,
+      rgba(24,121,211,.13) 76%,
+      transparent 92%)!important;
+  box-shadow:
+    0 0 10px rgba(246,253,255,.82),
+    0 0 24px rgba(117,219,255,.52),
+    0 0 42px rgba(52,160,237,.26)!important;
+  opacity:.76!important;
+  filter:none!important;
+  pointer-events:none!important;
+  animation:zeraphiaChargeGrowMia 1000ms linear forwards!important;
+}
+#shooting-event-root .shooting-player[data-character-id="14"].mia-charging::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:17!important;
+  left:50%!important;
+  top:calc(50% - 44px)!important;
+  width:102px!important;
+  height:102px!important;
+  transform:translate(-50%,-50%) scale(.30)!important;
+  transform-origin:center center!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle,rgba(220,247,255,.28) 0 26%,rgba(116,215,255,.18) 44%,rgba(42,146,229,.07) 65%,transparent 84%)!important;
+  box-shadow:none!important;
+  filter:blur(7px)!important;
+  opacity:.46!important;
+  pointer-events:none!important;
+  animation:zeraphiaChargeHaloGrowMia 1000ms linear forwards!important;
+}
+
+/* アイナ：射出中心 = player center - 40px / 最大72px */
+#shooting-event-root .shooting-player[data-character-id="17"].mia-charging::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:18!important;
+  left:50%!important;
+  top:calc(50% - 40px)!important;
+  width:72px!important;
+  height:72px!important;
+  transform:translate(-50%,-50%) scale(.389)!important;
+  transform-origin:center center!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 44% 36%,
+      rgba(255,255,255,.99) 0 11%,
+      rgba(255,241,221,.95) 18%,
+      rgba(255,188,109,.70) 38%,
+      rgba(244,102,53,.40) 58%,
+      rgba(177,42,20,.16) 76%,
+      transparent 92%)!important;
+  box-shadow:
+    0 0 10px rgba(255,248,231,.84),
+    0 0 24px rgba(255,153,75,.58),
+    0 0 42px rgba(225,68,35,.28)!important;
+  opacity:.78!important;
+  filter:none!important;
+  pointer-events:none!important;
+  animation:zeraphiaChargeGrowAina 1200ms linear forwards!important;
+}
+#shooting-event-root .shooting-player[data-character-id="17"].mia-charging::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:17!important;
+  left:50%!important;
+  top:calc(50% - 40px)!important;
+  width:98px!important;
+  height:98px!important;
+  transform:translate(-50%,-50%) scale(.30)!important;
+  transform-origin:center center!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle,rgba(255,234,194,.30) 0 25%,rgba(255,143,68,.20) 43%,rgba(210,54,25,.08) 65%,transparent 84%)!important;
+  box-shadow:none!important;
+  filter:blur(7px)!important;
+  opacity:.48!important;
+  pointer-events:none!important;
+  animation:zeraphiaChargeHaloGrowAina 1200ms linear forwards!important;
+}
+
+@keyframes zeraphiaChargeGrowMia{
+  0%{transform:translate(-50%,-50%) scale(.395);opacity:.76}
+  55%{transform:translate(-50%,-50%) scale(.70);opacity:.88}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:1}
+}
+@keyframes zeraphiaChargeHaloGrowMia{
+  0%{transform:translate(-50%,-50%) scale(.30);opacity:.34}
+  55%{transform:translate(-50%,-50%) scale(.68);opacity:.48}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:.62}
+}
+@keyframes zeraphiaChargeGrowAina{
+  0%{transform:translate(-50%,-50%) scale(.389);opacity:.78}
+  55%{transform:translate(-50%,-50%) scale(.70);opacity:.90}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:1}
+}
+@keyframes zeraphiaChargeHaloGrowAina{
+  0%{transform:translate(-50%,-50%) scale(.30);opacity:.36}
+  55%{transform:translate(-50%,-50%) scale(.68);opacity:.50}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:.64}
+}
+
+/* MAX到達後は、成長済みサイズを保ったまま軽く脈動 */
+#shooting-event-root .shooting-player[data-character-id="14"].mia-charging.mia-charge-max::after,
+#shooting-event-root .shooting-player[data-character-id="17"].mia-charging.mia-charge-max::after{
+  animation:zeraphiaChargeMaxPulse .50s ease-in-out infinite alternate!important;
+}
+#shooting-event-root .shooting-player[data-character-id="14"].mia-charging.mia-charge-max::before,
+#shooting-event-root .shooting-player[data-character-id="17"].mia-charging.mia-charge-max::before{
+  animation:zeraphiaChargeMaxHaloPulse .50s ease-in-out infinite alternate!important;
+}
+@keyframes zeraphiaChargeMaxPulse{
+  from{transform:translate(-50%,-50%) scale(.96);opacity:.90}
+  to{transform:translate(-50%,-50%) scale(1.08);opacity:1}
+}
+@keyframes zeraphiaChargeMaxHaloPulse{
+  from{transform:translate(-50%,-50%) scale(.92);opacity:.48}
+  to{transform:translate(-50%,-50%) scale(1.08);opacity:.68}
+}
+
+/* ============================================================
+   v540 AINA CHARGE RELEASE — FIRE RED
+   アイナ(ID17)のCHARGE射出弾には shooting-bullet-fire が付くため、
+   共通の水色CHARGE弾スタイルを火属性の赤系へ最終上書きする。
+   ============================================================ */
+#shooting-event-root .shooting-mia-charge-shot.shooting-bullet-fire{
+  background:transparent!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:
+    0 0 10px rgba(255,239,224,.30),
+    0 0 24px rgba(255,91,58,.34),
+    0 4px 38px rgba(190,34,24,.22)!important;
+  filter:none!important;
+}
+
+#shooting-event-root .shooting-mia-charge-shot.shooting-bullet-fire::before{
+  background:
+    radial-gradient(circle at 46% 38%,
+      rgba(255,255,255,.99) 0 12%,
+      rgba(255,238,219,.96) 18%,
+      rgba(255,160,104,.78) 38%,
+      rgba(244,67,48,.50) 60%,
+      rgba(165,28,20,.18) 78%,
+      transparent 100%)!important;
+  filter:blur(1px)!important;
+  opacity:.98!important;
+}
+
+#shooting-event-root .shooting-mia-charge-shot.shooting-bullet-fire::after{
+  background:
+    radial-gradient(ellipse at 50% 42%,
+      rgba(255,224,189,.46) 0 22%,
+      rgba(255,111,67,.34) 38%,
+      rgba(226,50,34,.20) 58%,
+      rgba(150,24,18,.08) 74%,
+      transparent 88%)!important;
+  filter:blur(6px)!important;
+  opacity:.92!important;
+}
+
+/* ============================================================
+   build546 — ELEMENT DAMAGE FEEDBACK
+   属性相性が発生した命中だけ、ダメージ数字の上に Weak / Resist を表示。
+   ============================================================ */
+.shooting-damage-number{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  white-space:nowrap;
+}
+.shooting-damage-number .shooting-damage-value{
+  display:block;
+  line-height:1;
+}
+.shooting-damage-number .shooting-element-reaction{
+  display:block;
+  margin:0 0 1px;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:8px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:.045em;
+  text-transform:none;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.82),
+    0 0 4px rgba(0,0,0,.35);
+}
+.shooting-damage-number.element-weak .shooting-element-reaction{
+  color:#ffd08a;
+}
+.shooting-damage-number.element-resist .shooting-element-reaction{
+  color:#9bc8ff;
+}
+.shooting-damage-number.to-player.element-weak .shooting-element-reaction{
+  color:#ffb47d;
+}
+.shooting-damage-number.to-player.element-resist .shooting-element-reaction{
+  color:#a9d5ff;
+}
+.shooting-damage-number.big .shooting-element-reaction{
+  font-size:9px;
+}
+
+
+/* ============================================================
+   CHAPTER 06 — BARRIER / IMMUNE
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier{
+  position:absolute;left:0;top:0;z-index:23;pointer-events:none;box-sizing:border-box;
+  border:1px solid rgba(189,171,132,.72);border-radius:999px;
+  background:linear-gradient(90deg,rgba(255,255,255,.90),rgba(230,221,200,.84) 22%,rgba(255,255,255,.94) 50%,rgba(230,221,200,.84) 78%,rgba(255,255,255,.90));
+  box-shadow:0 0 0 1px rgba(255,255,255,.75) inset,0 0 14px rgba(208,190,150,.30),0 4px 12px rgba(81,65,39,.12);
+  opacity:.96;
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier::before,
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier::after{
+  content:"";position:absolute;top:50%;width:18px;height:18px;border:1px solid rgba(153,127,79,.58);
+  background:rgba(255,253,246,.96);transform:translateY(-50%) rotate(45deg);box-shadow:0 0 8px rgba(202,176,120,.24);
+}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier::before{left:8px}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier::after{right:8px}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier i{position:absolute;left:30px;right:30px;top:50%;height:1px;transform:translateY(-50%);background:repeating-linear-gradient(90deg,rgba(143,115,68,.42) 0 10px,transparent 10px 18px)}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier b{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(147,118,70,.62);background:rgba(255,252,242,.98)}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-ch06-barrier.hit{filter:brightness(1.12);box-shadow:0 0 0 1px rgba(255,255,255,.9) inset,0 0 18px rgba(213,181,111,.62),0 0 30px rgba(255,245,211,.48)}
+#shooting-event-root[data-shooting-stage^="shooting_ch06_"] .shooting-strong-enemy{filter:drop-shadow(0 8px 12px rgba(67,48,28,.16))}
+.shooting-damage-number.element-immune .shooting-element-reaction{color:#807666!important;text-shadow:none!important;letter-spacing:.12em!important}
+.shooting-damage-number.element-immune .shooting-damage-value{color:#aaa295!important;text-shadow:none!important}
+
+
+/* ============================================================
+   build549 DAILY ADVANCED — wall + weakness-only elemental shield
+   上級巡行の壁はCH06と同じ当たり判定を使用。
+   耐性雑魚は自身の属性色バリアをまとい、Weak属性以外はIMMUNE。
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier{
+  position:absolute;left:0;top:0;z-index:23;pointer-events:none;box-sizing:border-box;
+  border:1px solid rgba(189,171,132,.72);border-radius:999px;
+  background:linear-gradient(90deg,rgba(255,255,255,.90),rgba(230,221,200,.84) 22%,rgba(255,255,255,.94) 50%,rgba(230,221,200,.84) 78%,rgba(255,255,255,.90));
+  box-shadow:0 0 0 1px rgba(255,255,255,.75) inset,0 0 14px rgba(208,190,150,.30),0 4px 12px rgba(81,65,39,.12);
+  opacity:.96;
+}
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier::before,
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier::after{
+  content:"";position:absolute;top:50%;width:18px;height:18px;border:1px solid rgba(153,127,79,.58);
+  background:rgba(255,253,246,.96);transform:translateY(-50%) rotate(45deg);box-shadow:0 0 8px rgba(202,176,120,.24);
+}
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier::before{left:8px}
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier::after{right:8px}
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier i{position:absolute;left:30px;right:30px;top:50%;height:1px;transform:translateY(-50%);background:repeating-linear-gradient(90deg,rgba(143,115,68,.42) 0 10px,transparent 10px 18px)}
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier b{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(147,118,70,.62);background:rgba(255,252,242,.98)}
+#shooting-event-root[data-shooting-stage^="shooting_daily_"][data-shooting-stage$="_advanced"] .shooting-ch06-barrier.hit{filter:brightness(1.12);box-shadow:0 0 0 1px rgba(255,255,255,.9) inset,0 0 18px rgba(213,181,111,.62),0 0 30px rgba(255,245,211,.48)}
+
+#shooting-event-root .shooting-mini-enemy-weakness-barrier{
+  --weak-shield-rgb:130,130,130;
+  position:absolute;left:0;top:0;z-index:1;pointer-events:none;box-sizing:border-box;
+  border-radius:50%;
+  border:1px solid rgba(var(--weak-shield-rgb),.72);
+  background:
+    radial-gradient(circle,transparent 0 48%,rgba(var(--weak-shield-rgb),.07) 55%,rgba(var(--weak-shield-rgb),.24) 67%,rgba(var(--weak-shield-rgb),.05) 76%,transparent 79%),
+    conic-gradient(from 20deg,transparent 0 13%,rgba(var(--weak-shield-rgb),.42) 16%,transparent 20% 46%,rgba(var(--weak-shield-rgb),.30) 50%,transparent 54% 80%,rgba(var(--weak-shield-rgb),.38) 84%,transparent 88%);
+  box-shadow:
+    0 0 8px rgba(var(--weak-shield-rgb),.32),
+    0 0 18px rgba(var(--weak-shield-rgb),.20),
+    inset 0 0 10px rgba(var(--weak-shield-rgb),.18);
+  opacity:.92;
+  animation:shootingWeaknessBarrierSpin 5.6s linear infinite;
+}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-fire{--weak-shield-rgb:224,74,55}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-aqua{--weak-shield-rgb:62,155,220}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-wood{--weak-shield-rgb:75,158,83}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-light{--weak-shield-rgb:220,186,70}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.element-dark{--weak-shield-rgb:91,64,135}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.hit{
+  opacity:1;
+  box-shadow:
+    0 0 12px rgba(var(--weak-shield-rgb),.65),
+    0 0 28px rgba(var(--weak-shield-rgb),.48),
+    inset 0 0 18px rgba(var(--weak-shield-rgb),.34);
+}
+#shooting-event-root .shooting-mini-enemy-weakness-barrier.defeated{opacity:0;transition:opacity .20s ease}
+#shooting-event-root .shooting-mini-enemy.has-weakness-barrier{position:absolute;z-index:2}
+@keyframes shootingWeaknessBarrierSpin{
+  from{rotate:0deg}
+  to{rotate:360deg}
+}

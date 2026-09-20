@@ -198,7 +198,7 @@
     }),
     28: genericSet('ミモザ'),
     16: genericSet('パトラ'),
-    15: genericSet('フローラ'),
+    15: genericSet('アリス'),
     13: genericSet('シグレ'),
 
     4: Object.freeze({
@@ -265,6 +265,24 @@
       ])
     }),
 
+    // build545: 共鳴未設定キャラを共通セットで補完。
+    // 既存の専用共鳴は維持し、未設定キャラのみ genericSet を使用する。
+    3: genericSet('リゼ'),
+    5: genericSet('ジグ'),
+    10: genericSet('オリオン'),
+    12: genericSet('シイナ'),
+    17: genericSet('アイナ'),
+    18: genericSet('シオン'),
+    19: genericSet('ラグナ'),
+    22: genericSet('ベロニカ'),
+    23: genericSet('セレナ'),
+    24: genericSet('ノエル'),
+    25: genericSet('リュネ'),
+    30: genericSet('リズ'),
+    32: genericSet('イヴェルナ'),
+    33: genericSet('レイ'),
+    34: genericSet('グレシャ'),
+
     50: Object.freeze({
       1: bonus('艦砲同調', 'ATK +5%', 'テストちゃんの基礎ATKが5%上昇する。', [
         { type:'statRate', hp:0, atk:0.05 }
@@ -282,7 +300,7 @@
     }),
 
     8: Object.freeze({
-      1: bonus('紅月覚醒', 'HP・ATK +5%', 'シュリの基礎HPとATKが5%上昇する。', [
+      1: bonus('紅月覚醒', 'HP・ATK +5%', 'マグダレーナの基礎HPとATKが5%上昇する。', [
         { type:'statRate', hp:0.05, atk:0.05 }
       ]),
       2: bonus('緋月深化', '通常射撃ダメージ +12%', '紅黒の5WAY気弾の1Hitダメージを12%強化する。', [
@@ -327,8 +345,9 @@
       1: bonus('基礎共鳴', 'HP・ATK +4%', `${name}の基礎HPとATKが4%上昇する。`, [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
-      2: bonus('射撃増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
-        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
+      2: bonus('攻撃増幅', '通常攻撃ダメージ +10%', 'MAIN通常攻撃の1Hitダメージを10%強化する。レーザー型ではレーザーダメージへ適用する。', [
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 },
+        { type:'profileMultiply', field:'laserDamageAtkRate', multiplier:1.10 }
       ]),
       3: bonus('射撃加速', '連射速度 +8%', '通常射撃の間隔を8%短縮する。', [
         { type:'profileMultiply', field:'fireRate', multiplier:0.92 }

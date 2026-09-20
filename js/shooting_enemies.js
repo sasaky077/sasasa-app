@@ -25,6 +25,10 @@
     ZAKO_LIGHT_SHOT: 'zako_light_shot',
     ZAKO_LIGHT_LASER: 'zako_light_laser',
 
+    // CHAPTER 06 強敵（画像は既存zako素材を暫定流用）
+    CH06_STRONG_FIRE: 'shooting_ch06_strong_fire',
+    CH06_STRONG_DARK: 'shooting_ch06_strong_dark',
+
     // Remnant bosses
     REMNANT_01: 'shooting_remnant_01',
     REMNANT_02: 'shooting_remnant_02',
@@ -149,6 +153,26 @@
       element: 'light', attackType: 'laser', image: 'images/zako_light_laser.webp',
       hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
       moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+
+    // CH06-01：FIRE強敵。AQUA以外のダメージはステージ側で無効化する。
+    [SHOOTING_ENEMY_ID.CH06_STRONG_FIRE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.CH06_STRONG_FIRE,
+      kind: 'normal', implemented: true, strongEnemy: true,
+      name: '炎冠の強敵', displayName: 'STRONG ENEMY / FIRE',
+      element: 'fire', attackType: 'shot', image: 'images/ch06_strong_fire.webp',
+      hp: 9200, bulletDamage: 175, bulletSpeed: 250, fireRate: 1180,
+      moveSpeed: 24, scoreValue: 2600, behavior: 'generic_element_shot_v1', uiScale: 1.72,
+    }),
+
+    // CH06-02：DARK強敵。LIGHT以外のダメージはステージ側で無効化する。
+    [SHOOTING_ENEMY_ID.CH06_STRONG_DARK]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.CH06_STRONG_DARK,
+      kind: 'normal', implemented: true, strongEnemy: true,
+      name: '黒環の強敵', displayName: 'STRONG ENEMY / DARK',
+      element: 'dark', attackType: 'laser', image: 'images/ch06_strong_dark.webp',
+      hp: 11800, laserDamage: 205, laserSpeed: 565, fireRate: 1780,
+      moveSpeed: 20, scoreValue: 3200, behavior: 'generic_element_laser_v1', uiScale: 1.78,
     }),
 
     [SHOOTING_ENEMY_ID.MINI_01]: Object.freeze({
@@ -482,7 +506,18 @@
       id: SHOOTING_ENEMY_ID.REMNANT_06,
       kind: 'boss',
       remnantNo: 6,
-      implemented: false,
+      implemented: true,
+      name: 'レムナント06',
+      displayName: 'REMNANT 06',
+      element: 'light',
+      image: 'images/remnant_06_battle.webp',
+      gaugeHp: 6000,
+      gauges: 3,
+      bulletSpeed: 255,
+      fireRate: 760,
+      bulletDamage: 245,
+      behavior: 'barrage_v1',
+      uiScale: 1.12,
     }),
     [SHOOTING_ENEMY_ID.REMNANT_07]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_07,

@@ -51,6 +51,10 @@
     CH05_02: 'shooting_ch05_02',
     CH05_03: 'shooting_ch05_03',
 
+    CH06_01: 'shooting_ch06_01',
+    CH06_02: 'shooting_ch06_02',
+    CH06_03: 'shooting_ch06_03',
+
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
     DAILY_TUE_INTERMEDIATE: 'shooting_daily_tue_intermediate',
@@ -94,6 +98,7 @@
   function makeDailyStage(config) {
     const level = config.level === 'advanced' ? 'advanced' : 'intermediate';
     const rewardCount = level === 'advanced' ? 2 : 1;
+    const advancedGimmick = level === 'advanced';
     return Object.freeze({
       id: config.id,
       chapter: 0,
@@ -102,6 +107,17 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze(Array.from(config.enemyIds || [])),
+
+      // build549: DAILY上級はCH06と同系統の「遮断壁＋弱点属性限定」ギミック。
+      // 敵ごとの属性はそのまま使うため、土日など複数属性が混在しても
+      // 各個体の弱点属性だけが有効になる。
+      weaknessOnlyEnemies: advancedGimmick,
+      chapter6Barriers: advancedGimmick
+        ? Object.freeze([
+            Object.freeze({ xRate:.50, yRate:.49, widthRate:.70, height:46, moveRangeRate:0, moveSpeed:0 })
+          ])
+        : Object.freeze([]),
+
       normalBattle: Object.freeze({
         totalEnemies: Math.max(1, Number(config.totalEnemies || (level === 'advanced' ? 8 : 5))),
         maxActive: Math.max(1, Number(config.maxActive || (level === 'advanced' ? 3 : 2))),
@@ -646,6 +662,92 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'レムナント：ミラージュを撃破しろ',
+      }),
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // CHAPTER 06 - 遮断領域（仮）
+    // 共通ギミック：破壊不能の壁。通常弾を遮断し、Homingの優先標的になる。
+    // Laser / Shotgun は貫通可能。
+    // 強敵・ボスは弱点属性以外のダメージを完全無効化する。
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH06_01]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH06_01,
+      chapter: 6,
+      stageNo: 1,
+      name: '遮断領域',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.CH06_STRONG_FIRE]),
+      weaknessOnlyElement: 'fire',
+      chapter6Barriers: Object.freeze([
+        Object.freeze({ xRate:.50, yRate:.47, widthRate:.78, height:48, moveRangeRate:0, moveSpeed:0 })
+      ]),
+      normalBattle: Object.freeze({
+        totalEnemies: 1,
+        maxActive: 1,
+        spawnIntervalMs: 0,
+        spawnAllAtStart: true,
+        enemySequence: Object.freeze([SHOOTING_ENEMY_ID.CH06_STRONG_FIRE]),
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '壁の奥のFIRE強敵を撃破しろ（AQUAのみ有効）',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH06_02]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH06_02,
+      chapter: 6,
+      stageNo: 2,
+      name: '遮断領域',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_01, SHOOTING_ENEMY_ID.CH06_STRONG_DARK]),
+      weaknessOnlyElement: 'dark',
+      chapter6Barriers: Object.freeze([
+        Object.freeze({ xRate:.50, yRate:.48, widthRate:.62, height:48, moveRangeRate:.34, moveSpeed:.86 })
+      ]),
+      normalBattle: Object.freeze({
+        totalEnemies: 4,
+        maxActive: 4,
+        spawnIntervalMs: 0,
+        spawnAllAtStart: true,
+        enemySequence: Object.freeze([
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.CH06_STRONG_DARK,
+        ]),
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '雑魚を退け、DARK強敵を撃破しろ（LIGHTのみ有効）',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH06_03]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH06_03,
+      chapter: 6,
+      stageNo: 3,
+      name: 'レムナント06',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/remnant_06_battle.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_06]),
+      weaknessOnlyElement: 'light',
+      bossElement: 'light',
+      chapter6Barriers: Object.freeze([
+        Object.freeze({ xRate:.34, yRate:.43, widthRate:.68, height:44, moveRangeRate:.10, moveSpeed:.52, phase:0 }),
+        Object.freeze({ xRate:.67, yRate:.54, widthRate:.68, height:44, moveRangeRate:.10, moveSpeed:.58, phase:2.2 }),
+      ]),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'LIGHTボスを撃破しろ（DARKのみ有効）',
       }),
       playable: true,
     }),
