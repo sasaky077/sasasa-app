@@ -145,7 +145,7 @@
     "portraitImage": "images/chara_01.webp",
     "homeImage": "images/chara_01_cut.webp",
     "upImage": "images/chara_01_up.webp",
-    "homeScale": 0.8,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -40,
     "hidden": false
@@ -189,7 +189,7 @@
     "portraitImage": "images/chara_03.webp",
     "homeImage": "images/chara_03_cut.webp",
     "upImage": "images/chara_03_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -233,7 +233,7 @@
     "portraitImage": "images/chara_05.webp",
     "homeImage": "images/chara_05_cut.webp",
     "upImage": "images/chara_05_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -255,9 +255,9 @@
     "portraitImage": "images/chara_06.webp",
     "homeImage": "images/chara_06_cut.webp",
     "upImage": "images/chara_06_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
-    "homeOffsetY": -45,
+    "homeOffsetY": -34,
     "hidden": false
   },
   "7": {
@@ -277,9 +277,9 @@
     "portraitImage": "images/chara_07.webp",
     "homeImage": "images/chara_07_cut.webp",
     "upImage": "images/chara_07_up.webp",
-    "homeScale": 0.9,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
-    "homeOffsetY": -40,
+    "homeOffsetY": -32,
     "hidden": false
   },
   "8": {
@@ -299,7 +299,7 @@
     "portraitImage": "images/chara_08.webp",
     "homeImage": "images/chara_08_cut.webp",
     "upImage": "images/chara_08_up.webp",
-    "homeScale": 0.9,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -30,
     "hidden": false
@@ -321,7 +321,7 @@
     "portraitImage": "images/chara_09.webp",
     "homeImage": "images/chara_09_cut.webp",
     "upImage": "images/chara_09_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.79,
     "homeOffsetX": 0,
     "homeOffsetY": -40,
     "hidden": false
@@ -343,7 +343,7 @@
     "portraitImage": "images/chara_10.webp",
     "homeImage": "images/chara_10_cut.webp",
     "upImage": "images/chara_10_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -365,7 +365,7 @@
     "portraitImage": "images/chara_11.webp",
     "homeImage": "images/chara_11_cut.webp",
     "upImage": "images/chara_11_up.webp",
-    "homeScale": 0.8,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -50,
     "hidden": false
@@ -387,7 +387,7 @@
     "portraitImage": "images/chara_12.webp",
     "homeImage": "images/chara_12_cut.webp",
     "upImage": "images/chara_12_up.webp",
-    "homeScale": 0.7,
+    "homeScale": 0.85,
     "homeOffsetX": 0,
     "homeOffsetY": -30,
     "hidden": false
@@ -409,7 +409,7 @@
     "portraitImage": "images/chara_13.webp",
     "homeImage": "images/chara_13_cut.webp",
     "upImage": "images/chara_13_up.webp",
-    "homeScale": 0.95,
+    "homeScale": 0.88,
     "homeOffsetX": 0,
     "homeOffsetY": 5,
     "hidden": false
@@ -431,7 +431,7 @@
     "portraitImage": "images/chara_14.webp",
     "homeImage": "images/chara_14_cut.webp",
     "upImage": "images/chara_14_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
     "homeOffsetY": -40,
     "hidden": false
@@ -453,7 +453,7 @@
     "portraitImage": "images/chara_15.webp",
     "homeImage": "images/chara_15_cut.webp",
     "upImage": "images/chara_15_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.78,
     "homeOffsetX": 0,
     "homeOffsetY": -30,
     "hidden": false
@@ -475,7 +475,7 @@
     "portraitImage": "images/chara_16.webp",
     "homeImage": "images/chara_16_cut.webp",
     "upImage": "images/chara_16_up.webp",
-    "homeScale": 1,
+    "homeScale": 0.91,
     "homeOffsetX": 0,
     "homeOffsetY": 10,
     "hidden": false
@@ -497,7 +497,7 @@
     "portraitImage": "images/chara_17.webp",
     "homeImage": "images/chara_17_cut.webp",
     "upImage": "images/chara_17_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -519,7 +519,7 @@
     "portraitImage": "images/chara_18.webp",
     "homeImage": "images/chara_18_cut.webp",
     "upImage": "images/chara_18_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.79,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -541,7 +541,7 @@
     "portraitImage": "images/chara_19.webp",
     "homeImage": "images/chara_19_cut.webp",
     "upImage": "images/chara_19_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.80,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -563,7 +563,7 @@
     "portraitImage": "images/chara_20.webp",
     "homeImage": "images/chara_20_cut.webp",
     "upImage": "images/chara_20_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.96,
     "homeOffsetX": 0,
     "homeOffsetY": -30,
     "hidden": false
@@ -585,7 +585,7 @@
     "portraitImage": "images/chara_21.webp",
     "homeImage": "images/chara_21_cut.webp",
     "upImage": "images/chara_21_up.webp",
-    "homeScale": 0.95,
+    "homeScale": 0.91,
     "homeOffsetX": 0,
     "homeOffsetY": 15,
     "hidden": false
@@ -607,7 +607,7 @@
     "portraitImage": "images/chara_22.webp",
     "homeImage": "images/chara_22_cut.webp",
     "upImage": "images/chara_22_up.webp",
-    "homeScale": 0.83,
+    "homeScale": 0.79,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -629,7 +629,7 @@
     "portraitImage": "images/chara_23.webp",
     "homeImage": "images/chara_23_cut.webp",
     "upImage": "images/chara_23_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.80,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -651,7 +651,7 @@
     "portraitImage": "images/chara_24.webp",
     "homeImage": "images/chara_24_cut.webp",
     "upImage": "images/chara_24_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -673,9 +673,9 @@
     "portraitImage": "images/chara_25.webp",
     "homeImage": "images/chara_25_cut.webp",
     "upImage": "images/chara_25_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.80,
     "homeOffsetX": 0,
-    "homeOffsetY": -20,
+    "homeOffsetY": -12,
     "hidden": false
   },
   "26": {
@@ -695,7 +695,7 @@
     "portraitImage": "images/chara_26.webp",
     "homeImage": "images/chara_26_cut.webp",
     "upImage": "images/chara_26_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.90,
     "homeOffsetX": 0,
     "homeOffsetY": -25,
     "hidden": false
@@ -717,7 +717,7 @@
     "portraitImage": "images/chara_27.webp",
     "homeImage": "images/chara_27_cut.webp",
     "upImage": "images/chara_27_up.webp",
-    "homeScale": 0.8,
+    "homeScale": 0.83,
     "homeOffsetX": 0,
     "homeOffsetY": -45,
     "hidden": false
@@ -739,7 +739,7 @@
     "portraitImage": "images/chara_28.webp",
     "homeImage": "images/chara_28_cut.webp",
     "upImage": "images/chara_28_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.89,
     "homeOffsetX": 0,
     "homeOffsetY": -45,
     "hidden": false
@@ -761,7 +761,7 @@
     "portraitImage": "images/chara_29.webp",
     "homeImage": "images/chara_29_cut.webp",
     "upImage": "images/chara_29_up.webp",
-    "homeScale": 0.85,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -50,
     "hidden": false
@@ -783,7 +783,7 @@
     "portraitImage": "images/chara_30.webp",
     "homeImage": "images/chara_30_cut.webp",
     "upImage": "images/chara_30_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.79,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -805,7 +805,7 @@
     "portraitImage": "images/chara_31.webp",
     "homeImage": "images/chara_31_cut.webp",
     "upImage": "images/chara_31_up.webp",
-    "homeScale": 0.9,
+    "homeScale": 0.81,
     "homeOffsetX": 0,
     "homeOffsetY": -10,
     "hidden": false
@@ -827,7 +827,7 @@
     "portraitImage": "images/chara_32.webp",
     "homeImage": "images/chara_32_cut.webp",
     "upImage": "images/chara_32_up.webp",
-    "homeScale": 0.88,
+    "homeScale": 0.79,
     "homeOffsetX": 0,
     "homeOffsetY": -30,
     "hidden": false
@@ -849,7 +849,7 @@
     "portraitImage": "images/chara_33.webp",
     "homeImage": "images/chara_33_cut.webp",
     "upImage": "images/chara_33_up.webp",
-    "homeScale": 0.9,
+    "homeScale": 0.79,
     "homeOffsetX": 0,
     "homeOffsetY": -25,
     "hidden": false
@@ -871,7 +871,7 @@
     "portraitImage": "images/chara_34.webp",
     "homeImage": "images/chara_34_cut.webp",
     "upImage": "images/chara_34_up.webp",
-    "homeScale": 0.8,
+    "homeScale": 0.83,
     "homeOffsetX": 0,
     "homeOffsetY": -40,
     "hidden": false
@@ -893,7 +893,7 @@
     "portraitImage": "images/chara_50.webp",
     "homeImage": "images/chara_50_cut.webp",
     "upImage": "images/chara_50.webp",
-    "homeScale": 0.9,
+    "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -20,
     "hidden": false
@@ -915,7 +915,7 @@
     "portraitImage": "images/chara_52_cut.webp",
     "homeImage": "images/chara_52_cutin.webp",
     "upImage": "images/chara_52_panel.webp",
-    "homeScale": 0.78,
+    "homeScale": 0.99,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
     "hidden": false
