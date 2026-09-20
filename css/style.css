@@ -36419,3 +36419,91 @@ img.zimg-loaded{
 #screen-zukan .primoa-index-image.zimg-loading{
   opacity:1!important;
 }
+
+
+/* =========================================================
+   build521 - character detail cleanup
+   ========================================================= */
+
+/* 戻る：フレームを消し、文字リンクだけにする */
+#detail-modal > .detail-modal-back-btn {
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 4px 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #755c39 !important;
+  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: .04em !important;
+}
+#detail-modal > .detail-modal-back-btn:active {
+  transform: none !important;
+  opacity: .55 !important;
+}
+
+/* ホーム画面に設定：他UIと同じ明朝体 */
+#detail-modal .btn-set-home,
+#detail-modal .btn-set-fav.btn-set-home {
+  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+}
+
+/* ショットタイプ / 共鳴をLEVEL・HP等と同じ1行レイアウトに固定 */
+#detail-modal .detail-status-grid .detail-status-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+}
+#detail-modal .detail-status-grid .detail-status-label {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+#detail-modal .detail-status-grid .detail-status-val {
+  min-width: 0 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
+
+
+/* =========================================================
+   build524 - hide element information for unowned characters
+   未所持キャラは属性未判明扱い。
+   カード背景・縁・オーバーレイから属性色を完全に外す。
+   ========================================================= */
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned {
+  --primoa-element-base: rgba(224, 220, 211, .34) !important;
+  --primoa-element-edge: rgba(137, 130, 118, .24) !important;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned .primoa-index-image-wrap {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(250,248,243,.92),
+      rgba(226,222,214,.72)
+    ) !important;
+  border-color: rgba(137,130,118,.24) !important;
+  box-shadow:
+    inset 0 -12px 20px rgba(151,145,134,.08),
+    0 3px 10px rgba(85,63,30,.05) !important;
+}
+
+#screen-zukan.is-primoa-index .primoa-index-card.is-unowned .primoa-index-image-wrap::before {
+  background:
+    linear-gradient(
+      180deg,
+      transparent 14%,
+      rgba(166,160,149,.08) 60%,
+      rgba(120,114,104,.14) 116%
+    ) !important;
+  opacity: .52 !important;
+}

@@ -268,10 +268,10 @@
     if (!box) return;
     const s = getViewState();
 
-    // ホーム入口は右側の神樹アイコンのみ表示する。
-    // innerHTMLを固定形に戻すことで、旧カード型HTMLが残っていても自動で置き換わる。
+    // build522:
+    // ホーム入口は「神聖樹」のテキストロゴをbutton側(data-home-head/rest)で描画する。
+    // 旧ホーム画像は廃止済みのため、画像DOMを生成しない。
     box.innerHTML = `
-      <img class="shinju-home-entry-icon" src="images/shinju.webp" alt="神樹">
       <span class="shinju-home-entry-badge" id="shinju-home-entry-badge" aria-hidden="true"></span>
     `;
 
