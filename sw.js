@@ -1,5 +1,5 @@
-/* Zeraphia self-healing update worker - build748 */
-const SW_BUILD = '748';
+/* Zeraphia self-healing update worker - build749 */
+const SW_BUILD = '749';
 const ASSET_CACHE = `sasaphia-assets-${SW_BUILD}`;
 
 self.addEventListener('install', event => {

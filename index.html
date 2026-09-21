@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '748';
+  var FALLBACK_BUILD = '749';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="748">
+  <meta name="sasaphia-build" content="749">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -511,20 +511,13 @@
       display:none !important;
     }
   </style>
-  <style id="home-menu-notice-anchors-build745">
+  <style id="home-menu-notice-anchors-build749">
 /*
-  build745 — HOME MENU NOTICE ANCHORS
-
-  通知位置を画面・端末ではなく「各メニューボタン自身」を基準に固定する。
-  過去の共通 translate / mm / compact端末用補正をすべて無効化。
-
-  重要:
-  - 各通知は独立セレクタ。今後1つだけ調整しても他メニューへ波及しない。
-  - px固定 + 親要素基準なので、画面高さ/幅/端末DPIによる位置差を作らない。
-  - 通知の表示/非表示ロジック、色、サイズは既存のまま。
+  build749:
+  ホーム左右メニューの通知ドットを、各メニュー要素ごとに独立制御する。
+  位置指定はJSで「各ラベル実体の右上」に行うため、CSS側は全通知を
+  ニュートラルな absolute 原点へリセットするだけにする。
 */
-
-/* 各通知の containing block を、そのメニュー自身に限定 */
 html body #screen-main > .home-notice-btn.home-type-entry,
 html body #screen-main > #shinju-home-entry.shinju-home-entry,
 html body #screen-main > #bonus-home-entry.bonus-home-entry,
@@ -534,58 +527,11 @@ html body #screen-main > #raid-home-entry.raid-home-entry{
   overflow:visible !important;
 }
 
-/* ---------------------------------------------------------
-   MESSAGE
-   build734でOKになった見た目を、mm/translateなしのpx座標へ置換。
-   見た目は維持しつつ端末差をなくす。
-   --------------------------------------------------------- */
-html body #screen-main > .home-notice-btn.home-type-entry > .home-notice-badge{
-  position:absolute !important;
-  top:24px !important;
-  right:-14px !important;
-  left:auto !important;
-  bottom:auto !important;
-  translate:none !important;
-  transform:none !important;
-  animation:none !important;
-  margin:0 !important;
-}
-
-/* ---------------------------------------------------------
-   SHINJU — 神聖樹メニュー右上
-   --------------------------------------------------------- */
-html body #screen-main > #shinju-home-entry.shinju-home-entry > .shinju-home-entry-badge{
-  position:absolute !important;
-  top:0 !important;
-  right:6px !important;
-  left:auto !important;
-  bottom:auto !important;
-  translate:none !important;
-  transform:none !important;
-  animation:none !important;
-  margin:0 !important;
-}
-
-/* ---------------------------------------------------------
-   BONUS — ボーナスメニュー右上
-   --------------------------------------------------------- */
-html body #screen-main > #bonus-home-entry.bonus-home-entry > .bonus-home-entry-notice{
-  position:absolute !important;
-  top:0 !important;
-  right:6px !important;
-  left:auto !important;
-  bottom:auto !important;
-  translate:none !important;
-  transform:none !important;
-  animation:none !important;
-  margin:0 !important;
-}
-
-/* ---------------------------------------------------------
-   FRIEND — フレンドメニュー右上
-   build744の修正位置をそのまま正式固定。
-   --------------------------------------------------------- */
-html body #screen-main > #friend-home-entry.friend-home-entry > .friend-notice-dot{
+html body #screen-main > .home-notice-btn.home-type-entry > .home-notice-badge,
+html body #screen-main > #shinju-home-entry.shinju-home-entry > .shinju-home-entry-badge,
+html body #screen-main > #bonus-home-entry.bonus-home-entry > .bonus-home-entry-notice,
+html body #screen-main > #friend-home-entry.friend-home-entry > .friend-notice-dot,
+html body #screen-main > #raid-home-entry.raid-home-entry > .raid-notice-dot{
   position:absolute !important;
   top:0 !important;
   left:0 !important;
@@ -593,24 +539,8 @@ html body #screen-main > #friend-home-entry.friend-home-entry > .friend-notice-d
   bottom:auto !important;
   translate:none !important;
   transform:none !important;
-  animation:none !important;
   margin:0 !important;
-}
-
-/* ---------------------------------------------------------
-   RAID — レイドメニュー右上
-   raid_event.css側の端末別 top/right もここで完全上書き。
-   --------------------------------------------------------- */
-html body #screen-main > #raid-home-entry.raid-home-entry > .raid-notice-dot{
-  position:absolute !important;
-  top:0 !important;
-  right:6px !important;
-  left:auto !important;
-  bottom:auto !important;
-  translate:none !important;
-  transform:none !important;
-  animation:none !important;
-  margin:0 !important;
+  z-index:12 !important;
 }
 </style>
   <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
@@ -16540,75 +16470,134 @@ html body #global-user-frame .hud-sweep-line-player::after{
 })();
 </script>
 
-<script id="friend-notice-pin-build747">
+<script id="home-menu-notice-pin-build749">
 (function(){
-  function pinFriendNoticeDot(){
+  'use strict';
+
+  var CONFIGS = [
+    {
+      name:'message',
+      button:function(root){ return root.querySelector('.home-notice-btn.home-type-entry'); },
+      dot:'.home-notice-badge'
+    },
+    {
+      name:'shinju',
+      button:'#shinju-home-entry',
+      dot:'.shinju-home-entry-badge'
+    },
+    {
+      name:'bonus',
+      button:'#bonus-home-entry',
+      dot:'.bonus-home-entry-notice'
+    },
+    {
+      name:'friend',
+      button:'#friend-home-entry',
+      dot:'.friend-notice-dot'
+    },
+    {
+      name:'raid',
+      button:'#raid-home-entry',
+      dot:'.raid-notice-dot'
+    }
+  ];
+
+  function resolveButton(root, spec){
+    if(typeof spec.button === 'function') return spec.button(root);
+    return document.querySelector(spec.button);
+  }
+
+  function getLabelTarget(btn){
+    if(!btn) return null;
+    return btn.querySelector(':scope > .home-type-letter-layer') || btn;
+  }
+
+  function measureDot(dot){
+    var prevVis = dot.style.visibility;
+    var prevDisplay = dot.style.display;
+    dot.style.visibility = 'hidden';
+    if (getComputedStyle(dot).display === 'none') {
+      dot.style.display = 'block';
+    }
+    var r = dot.getBoundingClientRect();
+    var w = r.width || dot.offsetWidth || 14;
+    var h = r.height || dot.offsetHeight || 14;
+    dot.style.visibility = prevVis || '';
+    dot.style.display = prevDisplay || '';
+    return {w:w,h:h};
+  }
+
+  function pinOne(root, cfg){
+    var btn = resolveButton(root, cfg);
+    if(!btn) return;
+
+    var dot = btn.querySelector(cfg.dot);
+    if(!dot) return;
+
+    var target = getLabelTarget(btn);
+    if(!target) return;
+
+    var rootRect = root.getBoundingClientRect();
+    var targetRect = target.getBoundingClientRect();
+    var size = measureDot(dot);
+
+    // 「ラベル文字塊の右上」に少しかぶせる。
+    var x = (targetRect.right - rootRect.left) - (size.w * 0.30);
+    var y = (targetRect.top   - rootRect.top)  - (size.h * 0.42);
+
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+    dot.style.right = 'auto';
+    dot.style.bottom = 'auto';
+  }
+
+  function pinAllHomeMenuDots(){
     try{
       var root = document.getElementById('screen-main');
-      var btn  = document.getElementById('friend-home-entry');
-      if(!root || !btn) return;
-
-      var dot = btn.querySelector('.friend-notice-dot');
-      if(!dot) return;
-
-      var rootRect = root.getBoundingClientRect();
-      var btnRect  = btn.getBoundingClientRect();
-
-      // 一度表示させてサイズ取得
-      var prevVis = dot.style.visibility;
-      dot.style.visibility = 'hidden';
-      dot.style.left = '0px';
-      dot.style.top = '0px';
-      dot.style.display = '';
-
-      var dotRect = dot.getBoundingClientRect();
-      var dotW = dotRect.width || 14;
-      var dotH = dotRect.height || 14;
-
-      // 各端末でズレないよう、実ボタン矩形の右上を基準に配置
-      // 少し内側に寄せて「ボタンの右上についている」見た目にする
-      var x = (btnRect.right - rootRect.left) - (dotW * 0.55);
-      var y = (btnRect.top   - rootRect.top)  - (dotH * 0.10);
-
-      dot.style.left = x + 'px';
-      dot.style.top = y + 'px';
-      dot.style.right = 'auto';
-      dot.style.bottom = 'auto';
-      dot.style.visibility = prevVis || '';
+      if(!root) return;
+      CONFIGS.forEach(function(cfg){ pinOne(root, cfg); });
     }catch(e){
-      console.warn('[home] friend notice pin failed', e);
+      console.warn('[home] notice pin failed', e);
     }
   }
 
-  function schedulePin(){
+  function schedulePinAll(){
     requestAnimationFrame(function(){
-      requestAnimationFrame(pinFriendNoticeDot);
+      requestAnimationFrame(pinAllHomeMenuDots);
     });
   }
 
-  window.addEventListener('load', schedulePin);
-  window.addEventListener('resize', schedulePin);
-  window.addEventListener('orientationchange', schedulePin);
-  document.addEventListener('visibilitychange', function(){
-    if(!document.hidden) schedulePin();
-  });
+  function bind(){
+    schedulePinAll();
 
-  document.addEventListener('DOMContentLoaded', schedulePin);
+    window.addEventListener('load', schedulePinAll);
+    window.addEventListener('resize', schedulePinAll);
+    window.addEventListener('orientationchange', schedulePinAll);
+    window.addEventListener('pageshow', schedulePinAll);
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden) schedulePinAll();
+    });
 
-  var mo = new MutationObserver(schedulePin);
-  window.addEventListener('load', function(){
     var root = document.getElementById('screen-main');
-    if(root) mo.observe(root, {attributes:true, childList:false, subtree:false});
-    schedulePin();
-  });
+    if(root){
+      var mo = new MutationObserver(schedulePinAll);
+      mo.observe(root, {attributes:true, childList:true, subtree:true});
+    }
 
-  // 念のため初回数秒は追従
-  var n = 0;
-  var t = setInterval(function(){
-    schedulePin();
-    n++;
-    if(n >= 8) clearInterval(t);
-  }, 500);
+    // 初回数秒はレイアウト安定後も追従
+    var n = 0;
+    var t = setInterval(function(){
+      schedulePinAll();
+      n++;
+      if(n >= 12) clearInterval(t);
+    }, 400);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bind, {once:true});
+  }else{
+    bind();
+  }
 })();
 </script>
 </body>
