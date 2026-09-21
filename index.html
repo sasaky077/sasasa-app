@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '645';
+  var FALLBACK_BUILD = '662';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -19,6 +19,7 @@
 
   var CRITICAL_ASSETS = [
     'css/style.css',
+    'css/app_chrome.css',
     'css/shooting_event.css',
     'js/stage_select.js',
     'js/shooting_event.js',
@@ -230,7 +231,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="645">
+  <meta name="sasaphia-build" content="662">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -330,9 +331,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=621-ninmu-melt-r2"
+        href="css/style.css?v=660-raid-bottom-nav-icon-color-v1"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=621-ninmu-melt-r2"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=660-raid-bottom-nav-icon-color-v1"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -417,10 +418,29 @@
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
     document.write('<link rel="stylesheet" href="css/shooting_event.css?v=593">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=645-raid-notice-v105">
-  <link rel="stylesheet" href="css/item_management.css?v=645-item-v119">
-  <link rel="stylesheet" href="css/score_attack_chrome.css?v=645-score-chrome-v124">
+  <link rel="stylesheet" href="css/raid_event.css?v=660-raid-bottom-nav-icon-color-v1">
+  <link rel="stylesheet" href="css/item_management.css?v=660-raid-bottom-nav-icon-color-v1">
+  <link rel="stylesheet" href="css/score_attack_chrome.css?v=660-raid-bottom-nav-icon-color-v1">
+  <link rel="stylesheet" href="css/app_chrome.css?v=660-raid-bottom-nav-icon-color-v1">
   <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
+<style id="raid-bottom-nav-icon-color-fix-build660">
+/* Raid screen: keep shared bottom-nav icon tone identical to normal screens. */
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active img,
+html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item.active img{
+  opacity:1 !important;
+  filter:
+    brightness(.46)
+    sepia(.52)
+    saturate(.88)
+    hue-rotate(350deg)
+    contrast(1.10)
+    drop-shadow(0 1px 2px rgba(255,255,255,.92))
+    drop-shadow(0 0 5px rgba(255,255,255,.84)) !important;
+}
+</style>
+
 
 <style id="testplay-end-notice-left-v139">
 #testplay-notice .testplay-notice-text{
@@ -808,1483 +828,6 @@
   -webkit-tap-highlight-color:transparent !important;
 }
 </style>
-
-
-<style id="bottomnav-barless-hardfix-v340">
-/* v340: bottom nav hard override — show only icon + text */
-#bottom-nav-shared.bottom-nav,
-body #bottom-nav-shared.bottom-nav{
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: 0 !important;
-  border-top: 0 !important;
-  box-shadow: none !important;
-  outline: 0 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-#bottom-nav-shared.bottom-nav::before,
-#bottom-nav-shared.bottom-nav::after{
-  content: none !important;
-  display: none !important;
-  background: none !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-#bottom-nav-shared .bottom-nav-item,
-#bottom-nav-shared .bottom-nav-item.active{
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: 0 !important;
-  border-left: 0 !important;
-  border-right: 0 !important;
-  border-top: 0 !important;
-  border-bottom: 0 !important;
-  box-shadow: none !important;
-  outline: 0 !important;
-}
-
-#bottom-nav-shared .bottom-nav-item::before,
-#bottom-nav-shared .bottom-nav-item::after,
-#bottom-nav-shared .bottom-nav-item.active::before,
-#bottom-nav-shared .bottom-nav-item.active::after{
-  content: none !important;
-  display: none !important;
-  background: none !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-/* icon readability without a panel */
-#bottom-nav-shared .bottom-nav-item img{
-  opacity:.92 !important;
-  filter:
-    sepia(.22)
-    saturate(.72)
-    brightness(.70)
-    contrast(1.06)
-    drop-shadow(0 1px 0 rgba(255,255,255,.98))
-    drop-shadow(0 0 4px rgba(255,250,238,.94))
-    drop-shadow(0 2px 4px rgba(62,46,26,.18)) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active img{
-  opacity:1 !important;
-  filter:
-    sepia(.28)
-    saturate(.96)
-    brightness(.88)
-    contrast(1.06)
-    drop-shadow(0 1px 0 rgba(255,255,255,1))
-    drop-shadow(0 0 6px rgba(255,247,219,.98))
-    drop-shadow(0 2px 5px rgba(93,66,26,.20)) !important;
-}
-
-/* text readability without a panel */
-#bottom-nav-shared .bottom-nav-label{
-  color:#584222 !important;
-  font-weight:700 !important;
-  text-shadow:
-    -1px 0 rgba(255,255,255,.84),
-     1px 0 rgba(255,255,255,.84),
-     0 -1px rgba(255,255,255,.84),
-     0  1px rgba(255,255,255,.84),
-     0 0 4px rgba(255,249,232,.96),
-     0 1px 3px rgba(67,49,27,.12) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
-  color:#47331a !important;
-}
-
-/* iOS Safari: never paint a nav panel */
-@supports (-webkit-touch-callout: none){
-  #bottom-nav-shared.bottom-nav{
-    background: transparent !important;
-    background-color: transparent !important;
-  }
-}
-</style>
-
-<style id="bottomnav-bottomfade-v341">
-/* =========================================================
-   v341 BOTTOM NAV — edge fade
-   バーは戻さず、画面下端だけに極薄の紙面フェードを敷く。
-   ========================================================= */
-
-#bottom-nav-shared.bottom-nav{
-  overflow:visible !important;
-  isolation:isolate !important;
-}
-
-/* 下端から上へ消える、極薄のフェードだけ */
-#bottom-nav-shared.bottom-nav::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  height:52px !important;
-  pointer-events:none !important;
-  z-index:-1 !important;
-
-  background:
-    linear-gradient(
-      to top,
-      rgba(241,232,214,.48) 0%,
-      rgba(247,241,228,.26) 42%,
-      rgba(250,247,239,.10) 72%,
-      rgba(250,247,239,0) 100%
-    ) !important;
-
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* 上端線や板っぽさは絶対に出さない */
-#bottom-nav-shared.bottom-nav::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* アイコンは少しだけ締める */
-#bottom-nav-shared .bottom-nav-item img{
-  opacity:.90 !important;
-  filter:
-    sepia(.20)
-    saturate(.66)
-    brightness(.68)
-    contrast(1.06)
-    drop-shadow(0 1px 0 rgba(255,255,255,.92))
-    drop-shadow(0 0 3px rgba(255,250,238,.76))
-    drop-shadow(0 2px 4px rgba(62,46,26,.14)) !important;
-}
-
-/* 選択中は金寄りの淡いグロー */
-#bottom-nav-shared .bottom-nav-item.active img{
-  opacity:1 !important;
-  filter:
-    sepia(.30)
-    saturate(.98)
-    brightness(.90)
-    contrast(1.05)
-    drop-shadow(0 1px 0 rgba(255,255,255,.98))
-    drop-shadow(0 0 6px rgba(222,188,104,.32))
-    drop-shadow(0 2px 5px rgba(93,66,26,.18)) !important;
-}
-
-/* 文字の白縁を細くして、UI感を軽く */
-#bottom-nav-shared .bottom-nav-label{
-  color:#574226 !important;
-  font-weight:700 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.88),
-    0 0 3px rgba(255,249,232,.72),
-    0 1px 2px rgba(67,49,27,.08) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
-  color:#4d371c !important;
-}
-
-/* 小型端末はフェード高さを少しだけ抑える */
-@media (max-width:380px){
-  #bottom-nav-shared.bottom-nav::before{
-    height:46px !important;
-  }
-}
-
-/* iOS Safariでも帯化させず同じフェードだけ */
-@supports (-webkit-touch-callout: none){
-  #bottom-nav-shared.bottom-nav::before{
-    background:
-      linear-gradient(
-        to top,
-        rgba(241,232,214,.46) 0%,
-        rgba(247,241,228,.24) 44%,
-        rgba(250,247,239,0) 100%
-      ) !important;
-  }
-}
-</style>
-
-<style id="bottomnav-lightpool-v342">
-/* =========================================================
-   v342 BOTTOM NAV — light pool
-   全体バーは無し。
-   各アイコン + テキストの背後にだけ小さな光だまりを置く。
-   ========================================================= */
-
-/* v341の全面フェードはかなり弱める */
-#bottom-nav-shared.bottom-nav::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  height:26px !important;
-  pointer-events:none !important;
-  z-index:-2 !important;
-  background:
-    linear-gradient(
-      to top,
-      rgba(245,238,223,.16) 0%,
-      rgba(248,244,235,.06) 55%,
-      rgba(250,248,242,0) 100%
-    ) !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* 各タブの背後に独立した光だまり */
-#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  bottom:-1px !important;
-  width:74px !important;
-  height:58px !important;
-  transform:translateX(-50%) !important;
-  pointer-events:none !important;
-  z-index:0 !important;
-
-  border:0 !important;
-  border-radius:50% !important;
-  box-shadow:none !important;
-
-  background:
-    radial-gradient(
-      ellipse at 50% 72%,
-      rgba(255,252,241,.74) 0%,
-      rgba(248,240,220,.46) 34%,
-      rgba(243,231,204,.18) 54%,
-      rgba(243,231,204,0) 74%
-    ) !important;
-
-  filter:blur(.4px) !important;
-}
-
-/* 選択中だけ少し金色を足す */
-#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
-  content:"" !important;
-  display:block !important;
-  width:80px !important;
-  height:62px !important;
-  background:
-    radial-gradient(
-      ellipse at 50% 70%,
-      rgba(255,252,235,.88) 0%,
-      rgba(245,224,168,.50) 36%,
-      rgba(214,177,92,.18) 58%,
-      rgba(214,177,92,0) 76%
-    ) !important;
-  filter:blur(.3px) !important;
-}
-
-/* アイコン/文字は光だまりより前面 */
-#bottom-nav-shared .bottom-nav-item img{
-  position:relative !important;
-  z-index:2 !important;
-}
-
-#bottom-nav-shared .bottom-nav-label{
-  position:relative !important;
-  z-index:3 !important;
-  color:#594516 !important;
-  font-weight:700 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.84),
-    0 0 3px rgba(255,249,232,.56),
-    0 1px 2px rgba(67,49,27,.08) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
-  color:#49351c !important;
-}
-
-/* 小型端末は少し縮小 */
-@media (max-width:380px){
-  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-    width:66px !important;
-    height:54px !important;
-  }
-
-  #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
-    width:72px !important;
-    height:58px !important;
-  }
-}
-
-/* iOS Safariでも同じ見え方 */
-@supports (-webkit-touch-callout: none){
-  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-    background:
-      radial-gradient(
-        ellipse at 50% 72%,
-        rgba(255,252,241,.72) 0%,
-        rgba(248,240,220,.42) 36%,
-        rgba(243,231,204,.14) 56%,
-        rgba(243,231,204,0) 76%
-      ) !important;
-  }
-}
-</style>
-
-<style id="bottomnav-softblur-v343">
-/* =========================================================
-   v343 BOTTOM NAV — soft blur light
-   「丸い光だまり」感を消し、境界のない不定形なボカシへ。
-   ========================================================= */
-
-/* 全面下端フェードはさらに控えめ */
-#bottom-nav-shared.bottom-nav::before{
-  height:22px !important;
-  background:
-    linear-gradient(
-      to top,
-      rgba(245,238,223,.10) 0%,
-      rgba(248,244,235,.03) 58%,
-      rgba(250,248,242,0) 100%
-    ) !important;
-}
-
-/* 各タブの光だまり：楕円をやめて、不定形の複数ぼかしに */
-#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  bottom:0 !important;
-  width:64px !important;
-  height:46px !important;
-  transform:translateX(-50%) rotate(-2deg) !important;
-  pointer-events:none !important;
-  z-index:0 !important;
-
-  border:0 !important;
-  border-radius:42% 58% 51% 49% / 46% 43% 57% 54% !important;
-  box-shadow:none !important;
-
-  background:
-    radial-gradient(
-      circle at 42% 64%,
-      rgba(255,252,241,.54) 0%,
-      rgba(250,244,229,.30) 34%,
-      rgba(246,237,216,.12) 56%,
-      rgba(246,237,216,0) 78%
-    ),
-    radial-gradient(
-      circle at 64% 48%,
-      rgba(255,249,232,.24) 0%,
-      rgba(246,235,210,.10) 48%,
-      rgba(246,235,210,0) 76%
-    ) !important;
-
-  filter:blur(5px) !important;
-  opacity:.92 !important;
-}
-
-/* タブごとに少しだけ崩しを変えて規則感を減らす */
-#bottom-nav-shared .bottom-nav-item:nth-child(2)::before{
-  transform:translateX(-50%) rotate(2.5deg) scaleX(.96) !important;
-}
-#bottom-nav-shared .bottom-nav-item:nth-child(3)::before{
-  transform:translateX(-50%) rotate(-1deg) scaleX(1.04) !important;
-}
-#bottom-nav-shared .bottom-nav-item:nth-child(4)::before{
-  transform:translateX(-50%) rotate(2deg) scaleX(.98) !important;
-}
-#bottom-nav-shared .bottom-nav-item:nth-child(5)::before{
-  transform:translateX(-50%) rotate(-2.5deg) scaleX(1.02) !important;
-}
-
-/* 選択中は少しだけ金色の霞を足す */
-#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
-  width:68px !important;
-  height:48px !important;
-  background:
-    radial-gradient(
-      circle at 46% 66%,
-      rgba(255,250,229,.70) 0%,
-      rgba(242,222,168,.34) 34%,
-      rgba(219,181,93,.12) 58%,
-      rgba(219,181,93,0) 80%
-    ),
-    radial-gradient(
-      circle at 62% 44%,
-      rgba(255,245,211,.26) 0%,
-      rgba(228,194,119,.08) 50%,
-      rgba(228,194,119,0) 78%
-    ) !important;
-  filter:blur(5.5px) !important;
-  opacity:.96 !important;
-}
-
-/* 光がぼける分、アイコンは少しだけ濃く */
-#bottom-nav-shared .bottom-nav-item img{
-  opacity:.94 !important;
-  filter:
-    sepia(.18)
-    saturate(.68)
-    brightness(.65)
-    contrast(1.07)
-    drop-shadow(0 1px 0 rgba(255,255,255,.88))
-    drop-shadow(0 1px 3px rgba(62,46,26,.14)) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active img{
-  opacity:1 !important;
-  filter:
-    sepia(.28)
-    saturate(.95)
-    brightness(.88)
-    contrast(1.06)
-    drop-shadow(0 1px 0 rgba(255,255,255,.96))
-    drop-shadow(0 0 5px rgba(218,184,96,.26))
-    drop-shadow(0 2px 4px rgba(92,66,27,.18)) !important;
-}
-
-/* 文字も少し締める */
-#bottom-nav-shared .bottom-nav-label{
-  color:#513d24 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.82),
-    0 1px 2px rgba(70,50,28,.08) !important;
-}
-
-/* iOS Safariでも同じく柔らかいぼかし */
-@supports (-webkit-touch-callout: none){
-  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-    filter:blur(5px) !important;
-    opacity:.88 !important;
-  }
-}
-</style>
-
-<style id="bottomnav-lightpool-stronger-v344">
-/* =========================================================
-   v344 BOTTOM NAV — light pool stronger
-   v343の不定形ぼかしは維持したまま、待機中も見えるよう
-   光だまりを一回り大きく・少し濃く。
-   ========================================================= */
-
-/* 待機中：白い霞を一回り大きく、濃度アップ */
-#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-  width:74px !important;
-  height:54px !important;
-  bottom:-2px !important;
-
-  background:
-    radial-gradient(
-      circle at 42% 64%,
-      rgba(255,252,241,.68) 0%,
-      rgba(250,244,229,.42) 32%,
-      rgba(246,237,216,.18) 56%,
-      rgba(246,237,216,0) 82%
-    ),
-    radial-gradient(
-      circle at 64% 48%,
-      rgba(255,249,232,.34) 0%,
-      rgba(246,235,210,.16) 46%,
-      rgba(246,235,210,0) 80%
-    ) !important;
-
-  filter:blur(5.4px) !important;
-  opacity:.98 !important;
-}
-
-/* 選択中：さらに少しだけ広げて、金色を一段だけ強く */
-#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
-  width:80px !important;
-  height:58px !important;
-
-  background:
-    radial-gradient(
-      circle at 46% 66%,
-      rgba(255,250,229,.82) 0%,
-      rgba(242,222,168,.46) 34%,
-      rgba(219,181,93,.18) 58%,
-      rgba(219,181,93,0) 82%
-    ),
-    radial-gradient(
-      circle at 62% 44%,
-      rgba(255,245,211,.34) 0%,
-      rgba(228,194,119,.12) 50%,
-      rgba(228,194,119,0) 80%
-    ) !important;
-
-  filter:blur(5.8px) !important;
-  opacity:1 !important;
-}
-
-/* 小型端末でも待機中の白霞が消えないよう少し大きめ */
-@media (max-width:380px){
-  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-    width:70px !important;
-    height:52px !important;
-  }
-
-  #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
-    width:76px !important;
-    height:56px !important;
-  }
-}
-</style>
-
-<style id="bottomnav-frosted-haze-v345">
-/* =========================================================
-   v345 BOTTOM NAV — frosted haze
-   キャラ一覧のような情報量の多い背景でも、
-   バーを作らず、各ナビの背後だけを静かにする。
-   ========================================================= */
-
-/* 主光だまり：少し大きく、中央はしっかり背景を抑える */
-#bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  bottom:-5px !important;
-  width:82px !important;
-  height:62px !important;
-  transform:translateX(-50%) rotate(-2deg) !important;
-  pointer-events:none !important;
-  z-index:0 !important;
-
-  border:0 !important;
-  border-radius:47% 53% 41% 59% / 55% 45% 57% 43% !important;
-  box-shadow:none !important;
-
-  background:
-    radial-gradient(
-      ellipse at 46% 66%,
-      rgba(255,252,243,.86) 0%,
-      rgba(250,244,231,.66) 32%,
-      rgba(246,237,216,.34) 54%,
-      rgba(246,237,216,.10) 70%,
-      rgba(246,237,216,0) 88%
-    ),
-    radial-gradient(
-      ellipse at 63% 42%,
-      rgba(255,249,234,.46) 0%,
-      rgba(248,239,219,.22) 48%,
-      rgba(248,239,219,0) 82%
-    ) !important;
-
-  filter:blur(6.5px) !important;
-  opacity:1 !important;
-}
-
-/* 文字の真後ろだけ、さらに小さな霞を追加 */
-#bottom-nav-shared.bottom-nav .bottom-nav-item::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  bottom:2px !important;
-  width:58px !important;
-  height:22px !important;
-  transform:translateX(-50%) rotate(1deg) !important;
-  pointer-events:none !important;
-  z-index:1 !important;
-
-  border:0 !important;
-  border-radius:43% 57% 52% 48% / 58% 46% 54% 42% !important;
-  box-shadow:none !important;
-
-  background:rgba(255,252,244,.48) !important;
-  filter:blur(7px) !important;
-  opacity:.95 !important;
-}
-
-/* タブごとに少し崩して、規則的な丸感を避ける */
-#bottom-nav-shared .bottom-nav-item:nth-child(2)::before{
-  transform:translateX(-50%) rotate(2.2deg) scaleX(.96) !important;
-}
-#bottom-nav-shared .bottom-nav-item:nth-child(3)::before{
-  transform:translateX(-50%) rotate(-1deg) scaleX(1.05) !important;
-}
-#bottom-nav-shared .bottom-nav-item:nth-child(4)::before{
-  transform:translateX(-50%) rotate(2.8deg) scaleX(.98) !important;
-}
-#bottom-nav-shared .bottom-nav-item:nth-child(5)::before{
-  transform:translateX(-50%) rotate(-2.5deg) scaleX(1.03) !important;
-}
-
-/* 選択中は白霞にごく薄い金を混ぜる */
-#bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
-  width:86px !important;
-  height:64px !important;
-  background:
-    radial-gradient(
-      ellipse at 47% 66%,
-      rgba(255,252,239,.92) 0%,
-      rgba(248,233,194,.72) 34%,
-      rgba(232,201,129,.34) 56%,
-      rgba(215,176,88,.10) 72%,
-      rgba(215,176,88,0) 88%
-    ),
-    radial-gradient(
-      ellipse at 64% 42%,
-      rgba(255,246,216,.52) 0%,
-      rgba(236,207,143,.20) 50%,
-      rgba(236,207,143,0) 84%
-    ) !important;
-  filter:blur(6.7px) !important;
-}
-
-#bottom-nav-shared.bottom-nav .bottom-nav-item.active::after{
-  background:rgba(255,248,226,.58) !important;
-  opacity:1 !important;
-}
-
-/* アイコンと文字はしっかり前へ */
-#bottom-nav-shared .bottom-nav-item img{
-  position:relative !important;
-  z-index:3 !important;
-  opacity:.96 !important;
-  filter:
-    sepia(.16)
-    saturate(.70)
-    brightness(.63)
-    contrast(1.08)
-    drop-shadow(0 1px 0 rgba(255,255,255,.86))
-    drop-shadow(0 2px 3px rgba(62,46,26,.16)) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active img{
-  opacity:1 !important;
-  filter:
-    sepia(.28)
-    saturate(.98)
-    brightness(.88)
-    contrast(1.06)
-    drop-shadow(0 1px 0 rgba(255,255,255,.96))
-    drop-shadow(0 0 5px rgba(216,181,93,.24))
-    drop-shadow(0 2px 4px rgba(90,64,26,.18)) !important;
-}
-
-#bottom-nav-shared .bottom-nav-label{
-  position:relative !important;
-  z-index:4 !important;
-  color:#4e3a22 !important;
-  font-weight:700 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.92),
-    0 1px 2px rgba(60,44,24,.10) !important;
-}
-
-#bottom-nav-shared .bottom-nav-item.active .bottom-nav-label{
-  color:#433018 !important;
-}
-
-/* 小型端末 */
-@media (max-width:380px){
-  #bottom-nav-shared.bottom-nav .bottom-nav-item::before{
-    width:76px !important;
-    height:58px !important;
-  }
-  #bottom-nav-shared.bottom-nav .bottom-nav-item::after{
-    width:54px !important;
-    height:20px !important;
-  }
-}
-</style>
-
-<style id="header-frosted-haze-v346">
-/* =========================================================
-   v346 GLOBAL HEADER — frosted haze
-   ヘッダーの大きなバーは作らず、
-   PLAYER / GEM / COIN の背後だけ白い霞を置いて可読性を上げる。
-   ========================================================= */
-
-/* ヘッダー全体は引き続き完全透明 */
-#global-user-frame.global-user-frame{
-  background:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* PLAYERバー：線フレームは残しつつ、塗り板感を弱めて霞へ */
-#global-user-frame .hud-info{
-  overflow:visible !important;
-  background:transparent !important;
-  box-shadow:none !important;
-}
-
-/* PLAYER背後の不定形白霞 */
-#global-user-frame .hud-info::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:-8px !important;
-  right:-7px !important;
-  top:50% !important;
-  height:42px !important;
-  transform:translateY(-50%) rotate(-1.2deg) !important;
-  z-index:-1 !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:46% 54% 43% 57% / 55% 45% 58% 42% !important;
-
-  background:
-    radial-gradient(
-      ellipse at 44% 53%,
-      rgba(255,252,244,.84) 0%,
-      rgba(249,243,229,.60) 34%,
-      rgba(245,236,215,.26) 58%,
-      rgba(245,236,215,0) 84%
-    ),
-    radial-gradient(
-      ellipse at 68% 46%,
-      rgba(255,248,230,.34) 0%,
-      rgba(246,235,211,.12) 52%,
-      rgba(246,235,211,0) 82%
-    ) !important;
-
-  filter:blur(6px) !important;
-  opacity:.98 !important;
-}
-
-/* 右端の縦線は残す */
-#global-user-frame .hud-info::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  right:-1px !important;
-  top:-1px !important;
-  bottom:-1px !important;
-  width:1px !important;
-  background:rgba(123,88,39,.42) !important;
-  filter:none !important;
-  opacity:1 !important;
-  z-index:1 !important;
-}
-
-/* GEM / COIN 各項目にも独立した白霞 */
-#global-user-frame .hud-resource{
-  position:relative !important;
-  z-index:1 !important;
-  overflow:visible !important;
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* 既存の underline pseudo を霞へ転用 */
-#global-user-frame .hud-resource::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
-  bottom:auto !important;
-  width:84px !important;
-  height:34px !important;
-  transform:translate(-50%,-50%) rotate(1.2deg) !important;
-  z-index:-1 !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:44% 56% 48% 52% / 58% 43% 57% 42% !important;
-
-  background:
-    radial-gradient(
-      ellipse at 48% 52%,
-      rgba(255,252,244,.82) 0%,
-      rgba(249,242,227,.58) 34%,
-      rgba(244,234,211,.24) 58%,
-      rgba(244,234,211,0) 84%
-    ),
-    radial-gradient(
-      ellipse at 66% 44%,
-      rgba(255,248,231,.28) 0%,
-      rgba(246,235,211,.10) 54%,
-      rgba(246,235,211,0) 82%
-    ) !important;
-
-  filter:blur(6px) !important;
-  opacity:.98 !important;
-}
-
-/* GEMだけ少し横に広め */
-#global-user-frame .hud-resource-gem::after{
-  width:94px !important;
-}
-
-/* 既存の下線用beforeは消して、バー感をなくす */
-#global-user-frame .hud-resource::before{
-  content:none !important;
-  display:none !important;
-}
-
-/* 文字・数値・アイコンは霞より前面 */
-#global-user-frame .hud-name,
-#global-user-frame .hud-res-val,
-#global-user-frame .hud-res-icon,
-#global-user-frame .hud-gem-plus-btn{
-  position:relative !important;
-  z-index:2 !important;
-}
-
-/* 可読性は少しだけ締める */
-#global-user-frame .hud-name{
-  color:#4f3a21 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.92),
-    0 1px 2px rgba(66,48,27,.08) !important;
-}
-
-#global-user-frame .hud-res-val{
-  color:#4a361f !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.92),
-    0 1px 2px rgba(66,48,27,.08) !important;
-}
-
-/* iOS Safari */
-@supports (-webkit-touch-callout: none){
-  #global-user-frame .hud-info::before,
-  #global-user-frame .hud-resource::after{
-    filter:blur(5.5px) !important;
-    opacity:.94 !important;
-  }
-}
-</style>
-
-<style id="header-soft-haze-visible-v347">
-/* =========================================================
-   v347 GLOBAL HEADER — visible soft haze
-   v346で霞が背面へ潜って見えなくなっていた点を修正。
-   下部ナビと同じく「輪郭の無い、ぼやぁと滲む白い霞」に統一。
-   ========================================================= */
-
-/* ヘッダー全体の板は引き続き無し */
-#global-user-frame.global-user-frame{
-  background:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* PLAYER側：矩形フレームを消し、霞だけを残す */
-#global-user-frame .hud-info{
-  position:relative !important;
-  isolation:isolate !important;
-  overflow:visible !important;
-
-  border:0 !important;
-  border-top:0 !important;
-  border-right:0 !important;
-  border-bottom:0 !important;
-  border-left:0 !important;
-
-  background:transparent !important;
-  background-image:none !important;
-  box-shadow:none !important;
-}
-
-/* PLAYER背後の大きな不定形白霞 */
-#global-user-frame .hud-info::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
-  width:132px !important;
-  height:54px !important;
-  transform:translate(-50%,-50%) rotate(-1.5deg) !important;
-  z-index:0 !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:44% 56% 47% 53% / 56% 45% 55% 44% !important;
-  box-shadow:none !important;
-
-  background:
-    radial-gradient(
-      ellipse at 43% 58%,
-      rgba(255,253,246,.92) 0%,
-      rgba(250,245,233,.72) 30%,
-      rgba(246,238,219,.40) 52%,
-      rgba(243,232,207,.16) 68%,
-      rgba(243,232,207,0) 86%
-    ),
-    radial-gradient(
-      ellipse at 68% 40%,
-      rgba(255,250,235,.44) 0%,
-      rgba(247,237,216,.20) 48%,
-      rgba(247,237,216,0) 82%
-    ) !important;
-
-  filter:blur(7px) !important;
-  opacity:.98 !important;
-}
-
-/* 右端縦線も撤去。境界線を作らない */
-#global-user-frame .hud-info::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* PLAYER文字を霞より前面へ */
-#global-user-frame .hud-name{
-  position:relative !important;
-  z-index:2 !important;
-  color:#4d391f !important;
-  font-weight:700 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.94),
-    0 1px 2px rgba(67,48,25,.08) !important;
-}
-
-/* GEM / COIN：それぞれ独立した不定形の霞 */
-#global-user-frame .hud-resource{
-  position:relative !important;
-  isolation:isolate !important;
-  overflow:visible !important;
-
-  background:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-#global-user-frame .hud-resource::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
-  width:90px !important;
-  height:46px !important;
-  transform:translate(-50%,-50%) rotate(1.6deg) !important;
-  z-index:0 !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:47% 53% 42% 58% / 58% 43% 57% 42% !important;
-  box-shadow:none !important;
-
-  background:
-    radial-gradient(
-      ellipse at 46% 56%,
-      rgba(255,253,246,.90) 0%,
-      rgba(250,244,231,.68) 31%,
-      rgba(245,236,215,.36) 53%,
-      rgba(242,230,204,.13) 69%,
-      rgba(242,230,204,0) 86%
-    ),
-    radial-gradient(
-      ellipse at 67% 40%,
-      rgba(255,249,232,.38) 0%,
-      rgba(246,235,210,.16) 50%,
-      rgba(246,235,210,0) 82%
-    ) !important;
-
-  filter:blur(6.8px) !important;
-  opacity:.98 !important;
-}
-
-/* 結晶側は + ボタン分だけ少し横長 */
-#global-user-frame .hud-resource-gem::before{
-  width:102px !important;
-  transform:translate(-50%,-50%) rotate(-1.2deg) !important;
-}
-
-/* 旧underline / 擬似背景を完全無効化 */
-#global-user-frame .hud-resource::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* 中身は霞の前面 */
-#global-user-frame .hud-res-icon,
-#global-user-frame .hud-res-val,
-#global-user-frame .hud-gem-plus-btn{
-  position:relative !important;
-  z-index:2 !important;
-}
-
-#global-user-frame .hud-res-val{
-  color:#49351d !important;
-  font-weight:700 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.94),
-    0 1px 2px rgba(67,48,25,.08) !important;
-}
-
-#global-user-frame .hud-gem-plus-btn{
-  color:#765626 !important;
-  text-shadow:0 1px 0 rgba(255,255,255,.92) !important;
-}
-
-/* 小型端末では幅だけ少し詰める */
-@media (max-width:380px){
-  #global-user-frame .hud-info::before{
-    width:118px !important;
-    height:50px !important;
-  }
-
-  #global-user-frame .hud-resource::before{
-    width:82px !important;
-    height:42px !important;
-  }
-
-  #global-user-frame .hud-resource-gem::before{
-    width:94px !important;
-  }
-}
-
-/* iOS Safariでも同じ柔らかい霞を維持 */
-@supports (-webkit-touch-callout: none){
-  #global-user-frame .hud-info::before,
-  #global-user-frame .hud-resource::before{
-    filter:blur(6.5px) !important;
-    opacity:.96 !important;
-  }
-}
-</style>
-
-<style id="header-sweep-lines-v348">
-/* =========================================================
-   v348 HEADER — sweep lines
-   PLAYER / GEM / COIN の下を、細い光がスーッと流れる。
-   ========================================================= */
-
-#global-user-frame .hud-info,
-#global-user-frame .hud-resource{
-  overflow:visible !important;
-}
-
-/* ベースの極細ライン */
-#global-user-frame .hud-info::after,
-#global-user-frame .hud-resource::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  bottom:-7px !important;
-  width:74% !important;
-  height:1px !important;
-  transform:translateX(-50%) !important;
-  z-index:1 !important;
-  pointer-events:none !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(155,118,58,.10) 15%,
-      rgba(155,118,58,.34) 50%,
-      rgba(155,118,58,.10) 85%,
-      transparent 100%
-    ) !important;
-
-  box-shadow:0 0 4px rgba(202,166,88,.16) !important;
-  opacity:.72 !important;
-}
-
-/* スーッと走る光 */
-#global-user-frame .hud-info{
-  --sweep-line-width:78%;
-}
-#global-user-frame .hud-resource{
-  --sweep-line-width:74%;
-}
-
-#global-user-frame .hud-info > *,
-#global-user-frame .hud-resource > *{
-  position:relative !important;
-  z-index:2 !important;
-}
-
-/* 独立した走査光はbox-shadowで擬似的に流す */
-@keyframes zeraphiaHeaderSweep{
-  0%{
-    background-position:-120% 0;
-    opacity:.18;
-  }
-  18%{
-    opacity:.82;
-  }
-  55%{
-    opacity:.82;
-  }
-  100%{
-    background-position:220% 0;
-    opacity:.16;
-  }
-}
-
-/* ライン本体に細いハイライトを重ねる */
-#global-user-frame .hud-info::after,
-#global-user-frame .hud-resource::after{
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(164,126,62,.16) 18%,
-      rgba(164,126,62,.28) 34%,
-      rgba(255,244,201,.92) 47%,
-      rgba(210,173,92,.52) 53%,
-      rgba(164,126,62,.22) 68%,
-      rgba(164,126,62,.10) 84%,
-      transparent 100%
-    ) !important;
-
-  background-size:220% 100% !important;
-  background-position:-120% 0;
-  animation:zeraphiaHeaderSweep 3.6s cubic-bezier(.22,.65,.22,1) infinite !important;
-}
-
-/* 3項目が完全同期しないよう少しずらす */
-#global-user-frame .hud-info::after{
-  animation-delay:0s !important;
-  width:82% !important;
-}
-
-#global-user-frame .hud-resource-gem::after{
-  animation-delay:.45s !important;
-  width:78% !important;
-}
-
-#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
-  animation-delay:.9s !important;
-  width:76% !important;
-}
-
-/* iOS Safari: 動きを軽く */
-@supports (-webkit-touch-callout: none){
-  #global-user-frame .hud-info::after,
-  #global-user-frame .hud-resource::after{
-    animation-duration:4.2s !important;
-    box-shadow:0 0 3px rgba(202,166,88,.14) !important;
-  }
-}
-</style>
-
-<style id="header-sweep-lines-bottom-v349">
-/* =========================================================
-   v349 HEADER — sweep lines bottom fix
-   ラインを各項目の「下部」に明確に固定。
-   PLAYER / GEM / COIN の文字・数値の下をスーッと走る。
-   ========================================================= */
-
-#global-user-frame .hud-info,
-#global-user-frame .hud-resource{
-  position:relative !important;
-  overflow:visible !important;
-}
-
-/* v348ラインを下部へ固定 */
-#global-user-frame .hud-info::after,
-#global-user-frame .hud-resource::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-
-  left:50% !important;
-  top:auto !important;
-  right:auto !important;
-  bottom:-10px !important;
-
-  height:1px !important;
-  transform:translateX(-50%) !important;
-  z-index:5 !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:999px !important;
-  box-shadow:
-    0 0 3px rgba(207,171,92,.18),
-    0 0 6px rgba(255,241,193,.10) !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(151,112,51,.10) 16%,
-      rgba(151,112,51,.24) 34%,
-      rgba(255,245,205,.96) 48%,
-      rgba(209,168,81,.52) 54%,
-      rgba(151,112,51,.20) 70%,
-      rgba(151,112,51,.08) 86%,
-      transparent 100%
-    ) !important;
-
-  background-size:230% 100% !important;
-  background-position:-130% 0;
-  animation:zeraphiaHeaderBottomSweep 3.8s cubic-bezier(.22,.65,.22,1) infinite !important;
-}
-
-/* 項目ごとに少し長さを変える */
-#global-user-frame .hud-info::after{
-  width:92px !important;
-  animation-delay:0s !important;
-}
-
-#global-user-frame .hud-resource-gem::after{
-  width:76px !important;
-  animation-delay:.45s !important;
-}
-
-#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
-  width:72px !important;
-  animation-delay:.9s !important;
-}
-
-@keyframes zeraphiaHeaderBottomSweep{
-  0%{
-    background-position:-130% 0;
-    opacity:.20;
-  }
-  16%{
-    opacity:.85;
-  }
-  58%{
-    opacity:.85;
-  }
-  100%{
-    background-position:230% 0;
-    opacity:.18;
-  }
-}
-
-/* iOS Safari */
-@supports (-webkit-touch-callout: none){
-  #global-user-frame .hud-info::after,
-  #global-user-frame .hud-resource::after{
-    bottom:-9px !important;
-    animation-duration:4.3s !important;
-  }
-}
-</style>
-
-<style id="header-underlines-mock-v350">
-/* =========================================================
-   v350 HEADER UNDERLINES — mock match
-   モックのように、各情報の“直下”に細い金ラインを配置。
-   ========================================================= */
-
-#global-user-frame .hud-info,
-#global-user-frame .hud-resource{
-  position:relative !important;
-  overflow:visible !important;
-}
-
-/* 既存v349の位置を上書きして、文字/数値のすぐ下へ */
-#global-user-frame .hud-info::after,
-#global-user-frame .hud-resource::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-
-  left:50% !important;
-  top:auto !important;
-  right:auto !important;
-  bottom:-2px !important;
-
-  height:1px !important;
-  transform:translateX(-50%) !important;
-  z-index:6 !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:999px !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(151,112,51,.08) 10%,
-      rgba(151,112,51,.34) 28%,
-      rgba(202,162,77,.56) 50%,
-      rgba(151,112,51,.34) 72%,
-      rgba(151,112,51,.08) 90%,
-      transparent 100%
-    ) !important;
-
-  box-shadow:
-    0 0 3px rgba(201,164,84,.18) !important;
-
-  opacity:.82 !important;
-  animation:none !important;
-}
-
-/* モックに合わせて項目ごとの長さを調整 */
-#global-user-frame .hud-info::after{
-  width:94px !important;
-}
-
-#global-user-frame .hud-resource-gem::after{
-  width:72px !important;
-}
-
-#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
-  width:70px !important;
-}
-
-/* ライン上を細い光が静かに走る */
-@keyframes zeraphiaHeaderUnderlineSweepV350{
-  0%{
-    background-position:-140% 0;
-  }
-  100%{
-    background-position:240% 0;
-  }
-}
-
-#global-user-frame .hud-info::after,
-#global-user-frame .hud-resource::after{
-  background-image:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(151,112,51,.10) 18%,
-      rgba(151,112,51,.30) 36%,
-      rgba(255,246,211,.95) 48%,
-      rgba(211,171,87,.48) 54%,
-      rgba(151,112,51,.22) 70%,
-      rgba(151,112,51,.08) 86%,
-      transparent 100%
-    ) !important;
-  background-size:220% 100% !important;
-  animation:zeraphiaHeaderUnderlineSweepV350 4.6s linear infinite !important;
-}
-
-#global-user-frame .hud-resource-gem::after{
-  animation-delay:.35s !important;
-}
-
-#global-user-frame .hud-resource:not(.hud-resource-gem)::after{
-  animation-delay:.7s !important;
-}
-
-/* iOS Safari */
-@supports (-webkit-touch-callout: none){
-  #global-user-frame .hud-info::after,
-  #global-user-frame .hud-resource::after{
-    bottom:-2px !important;
-    opacity:.78 !important;
-    animation-duration:5.2s !important;
-  }
-}
-</style>
-
-<style id="header-underlines-real-elements-v351">
-/* =========================================================
-   v351 HEADER UNDERLINES — real DOM elements
-   pseudo-element競合をやめ、実要素で確実にラインを表示。
-   ========================================================= */
-
-/* v348-v350 pseudo line is disabled */
-#global-user-frame .hud-info::after,
-#global-user-frame .hud-resource::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* Real underline */
-#global-user-frame .hud-sweep-line{
-  position:absolute !important;
-  left:50% !important;
-  bottom:-3px !important;
-  height:1px !important;
-  transform:translateX(-50%) !important;
-  z-index:20 !important;
-  display:block !important;
-  pointer-events:none !important;
-
-  border:0 !important;
-  border-radius:999px !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      rgba(151,112,51,0) 0%,
-      rgba(151,112,51,.18) 14%,
-      rgba(180,139,66,.46) 38%,
-      rgba(224,190,111,.70) 50%,
-      rgba(180,139,66,.46) 62%,
-      rgba(151,112,51,.18) 86%,
-      rgba(151,112,51,0) 100%
-    ) !important;
-
-  box-shadow:
-    0 0 3px rgba(201,164,84,.24),
-    0 0 6px rgba(255,241,193,.10) !important;
-
-  opacity:.92 !important;
-  overflow:hidden !important;
-}
-
-/* Sweep highlight */
-#global-user-frame .hud-sweep-line::after{
-  content:"" !important;
-  position:absolute !important;
-  top:0 !important;
-  left:-36% !important;
-  width:34% !important;
-  height:100% !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255,248,219,.35) 22%,
-      rgba(255,252,232,1) 52%,
-      rgba(228,195,117,.52) 78%,
-      transparent 100%
-    ) !important;
-
-  filter:blur(.15px) !important;
-  animation:zeraphiaRealHeaderSweep 3.8s cubic-bezier(.22,.65,.22,1) infinite !important;
-}
-
-#global-user-frame .hud-sweep-line-player{
-  width:96px !important;
-}
-#global-user-frame .hud-sweep-line-gem{
-  width:76px !important;
-}
-#global-user-frame .hud-sweep-line-coin{
-  width:72px !important;
-}
-
-#global-user-frame .hud-sweep-line-gem::after{
-  animation-delay:.45s !important;
-}
-#global-user-frame .hud-sweep-line-coin::after{
-  animation-delay:.9s !important;
-}
-
-@keyframes zeraphiaRealHeaderSweep{
-  0%{ left:-38%; opacity:0; }
-  12%{ opacity:1; }
-  78%{ opacity:1; }
-  100%{ left:108%; opacity:0; }
-}
-
-@supports (-webkit-touch-callout: none){
-  #global-user-frame .hud-sweep-line{
-    bottom:-2px !important;
-  }
-  #global-user-frame .hud-sweep-line::after{
-    animation-duration:4.3s !important;
-  }
-}
-</style>
-
 <style id="rank-readability-v352">
 /* =========================================================
    v352 RANK readability
@@ -3617,14 +2160,14 @@ body #bottom-nav-shared.bottom-nav{
   <div class="loading-txt">LOADING...</div>
 </div>
 
-<div id="screen-ninmu" class="screen">
-  <div class="header">
-    <div></div>
-    <div class="header-title">巡行</div>
-    <div></div>
-  </div>
+<div id="screen-ninmu" class="screen app-page app-page--standard">
+  <header class="app-page-header">
+    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <div class="app-page-heading"><h1 class="app-page-title">巡行</h1></div>
+    <div class="app-page-action"></div>
+  </header>
 
-  <div class="ninmu-layout">
+  <div class="app-page-content ninmu-layout">
     <div class="ninmu-left" aria-label="巡行カテゴリ">
       <button class="ninmu-cat-item active" id="ninmu-cat-daily" onclick="switchNinmuCat('daily')">
         <span class="ninmu-cat-jp">デイリー</span><span class="ninmu-cat-en">DAILY</span>
@@ -3784,14 +2327,14 @@ body #bottom-nav-shared.bottom-nav{
 </div>
 
 <!-- ボーナス一覧 -->
-<div id="screen-bonus" class="screen bonus-screen">
-  <div class="header bonus-screen-header">
-    <button type="button" class="back-btn bonus-back-btn" onclick="showMainTab('main')">＜戻る</button>
-    <div class="header-title">ボーナス</div>
-    <div></div>
-  </div>
+<div id="screen-bonus" class="screen app-page app-page--standard bonus-screen">
+  <header class="app-page-header">
+    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <div class="app-page-heading"><h1 class="app-page-title">ボーナス</h1></div>
+    <div class="app-page-action"></div>
+  </header>
 
-  <div class="bonus-screen-scroll screen-scroll">
+  <div class="app-page-content bonus-screen-scroll">
     <section class="bonus-page-intro">
       <div class="bonus-page-kicker">REWARD ARCHIVE</div>
       <h2>受取状況</h2>
@@ -3805,14 +2348,14 @@ body #bottom-nav-shared.bottom-nav{
 </div>
 
 <!-- アイテム管理 -->
-<div id="screen-item" class="screen item-screen">
-  <div class="header item-screen-header">
-    <button type="button" class="back-btn item-back-btn" onclick="showMainTab('main')">＜戻る</button>
-    <div class="header-title">アイテム</div>
-    <div></div>
-  </div>
+<div id="screen-item" class="screen app-page app-page--standard item-screen">
+  <header class="app-page-header">
+    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <div class="app-page-heading"><h1 class="app-page-title">アイテム</h1></div>
+    <div class="app-page-action"></div>
+  </header>
 
-  <div class="screen-scroll item-screen-scroll">
+  <div class="app-page-content item-screen-scroll">
     <section class="item-page-intro">
       <div>
         <small>INVENTORY</small>
@@ -3947,14 +2490,16 @@ body #bottom-nav-shared.bottom-nav{
   </div>
 </div>
 
-<div id="screen-zukan" class="screen is-primoa-mode">
-  <div class="header">
-    <div id="zukan-detail-back" class="zukan-detail-back" style="display:none"></div>
-    <div class="header-title" id="zukan-header-title">キャラ一覧</div>
-    <div id="zukan-header-back" style="display:none"></div>
-  </div>
+<div id="screen-zukan" class="screen app-page app-page--standard is-primoa-mode">
+  <header class="app-page-header">
+    <div id="zukan-detail-back" class="app-page-back-slot zukan-detail-back">
+      <button class="app-page-back" type="button" onclick="showMainTab('main')">＜戻る</button>
+    </div>
+    <div class="app-page-heading"><h1 class="app-page-title" id="zukan-header-title">キャラ一覧</h1></div>
+    <div id="zukan-header-back" class="app-page-action"></div>
+  </header>
 
-  <div class="screen-scroll">
+  <div class="app-page-content app-scroll-region zukan-screen-scroll">
     <!-- キャラ一覧を直接表示。編成メニュー/パーティ編成画面は削除。 -->
     <div id="zukan-sub-box">
 <div class="zukan-stats" id="zukan-stats">
@@ -3992,13 +2537,13 @@ body #bottom-nav-shared.bottom-nav{
 </div>
 
 <!-- フレンド画面 -->
-<div id="screen-friend" class="screen">
-  <div class="header">
-    <button type="button" class="back-btn friend-back-btn" onclick="showMainTab('main')">＜戻る</button>
-    <div class="header-title">戦友</div>
-    <div></div>
-  </div>
-  <div class="screen-scroll">
+<div id="screen-friend" class="screen app-page app-page--standard">
+  <header class="app-page-header">
+    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <div class="app-page-heading"><h1 class="app-page-title">戦友</h1></div>
+    <div class="app-page-action"></div>
+  </header>
+  <div class="app-page-content app-scroll-region friend-screen-scroll">
 
     <!-- 申請受信 -->
     <div class="friend-section">
@@ -4036,13 +2581,13 @@ body #bottom-nav-shared.bottom-nav{
 </div>
 
 <!-- 設定画面 -->
-<div id="screen-setting" class="screen">
-  <div class="header">
-    <div></div>
-    <div class="header-title">設定</div>
-    <div></div>
-  </div>
-  <div class="screen-scroll">
+<div id="screen-setting" class="screen app-page app-page--standard">
+  <header class="app-page-header">
+    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <div class="app-page-heading"><h1 class="app-page-title">設定</h1></div>
+    <div class="app-page-action"></div>
+  </header>
+  <div class="app-page-content app-scroll-region setting-screen-scroll">
   <div class="setting-section">
     <div class="setting-section-title">プロフィール</div>
     <div class="setting-row" onclick="openNameEdit()">
@@ -9389,7 +7934,7 @@ function goHome(){
 
       // v425: setting opens at its true resting top position.
       if(name === 'setting'){
-        var settingScroll = document.querySelector('#screen-setting .screen-scroll');
+        var settingScroll = document.querySelector('#screen-setting .setting-screen-scroll');
         if(settingScroll){
           settingScroll.scrollTop = 0;
           requestAnimationFrame(function(){ settingScroll.scrollTop = 0; });
@@ -11251,7 +9796,7 @@ function showTenResult(results){
   var zukanListReturnPositionValid = false;
 
   function rememberZukanListReturnPosition(){
-    var scroll = document.querySelector('#screen-zukan .screen-scroll');
+    var scroll = document.querySelector('#screen-zukan .zukan-screen-scroll');
     zukanListReturnScrollTop = scroll ? Math.max(0, Number(scroll.scrollTop || 0)) : 0;
     zukanListReturnRenderedCount = Math.max(0, Number(zukanIndexRenderedCount || 0));
     zukanListReturnPositionValid = true;
@@ -11263,7 +9808,7 @@ function showTenResult(results){
     zukanListReturnPositionValid = false;
 
     if(resetScroller){
-      var scroll = document.querySelector('#screen-zukan .screen-scroll');
+      var scroll = document.querySelector('#screen-zukan .zukan-screen-scroll');
       if(scroll) scroll.scrollTop = 0;
     }
   }
@@ -11289,7 +9834,7 @@ function showTenResult(results){
 
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
-        var scroll = document.querySelector('#screen-zukan .screen-scroll');
+        var scroll = document.querySelector('#screen-zukan .zukan-screen-scroll');
         if(scroll) scroll.scrollTop = targetTop;
         // 復元は一度だけ。次に詳細を開いた時は現在位置を新しく記憶する。
         zukanListReturnPositionValid = false;
@@ -11507,12 +10052,13 @@ function showTenResult(results){
       headerTitle.classList.remove('header-title-indented');
     }
 
-    // 個別ページだけ左上に「戻る」。図鑑トップへ1階層だけ戻す。
+    // v2 foundation: 左上は常に同じ戻るスロットを使う。
+    // 詳細時だけ遷移先を図鑑トップへ差し替え、一覧時はHOMEへ戻す。
     if(detailBack){
-      detailBack.style.display = isDetail ? 'block' : 'none';
+      detailBack.style.display = 'flex';
       detailBack.innerHTML = isDetail
-        ? '<button class="zukan-detail-back-btn" type="button" onclick="closeZukanCharacterDetail()">＜戻る</button>'
-        : '';
+        ? '<button class="app-page-back" type="button" onclick="closeZukanCharacterDetail()">＜戻る</button>'
+        : '<button class="app-page-back" type="button" onclick="showMainTab(\'main\')">＜戻る</button>';
     }
 
     var nameSearch = document.getElementById('zukan-name-search');
@@ -12109,7 +10655,7 @@ function showTenResult(results){
     updateZukanHeaderForMode();
     renderBoxDetail(id);
 
-    var scroll = document.querySelector('#screen-zukan .screen-scroll');
+    var scroll = document.querySelector('#screen-zukan .zukan-screen-scroll');
     if(scroll) scroll.scrollTop = 0;
   }
 
@@ -12124,7 +10670,7 @@ function showTenResult(results){
     if(zukanListReturnPositionValid){
       restoreZukanListReturnPosition();
     } else {
-      var scroll = document.querySelector('#screen-zukan .screen-scroll');
+      var scroll = document.querySelector('#screen-zukan .zukan-screen-scroll');
       if(scroll) scroll.scrollTop = 0;
     }
   }
@@ -15854,9 +14400,9 @@ window.returnToTitleScreen = function(){
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
   document.write('<script src="js/shooting_event.js?v=621"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=593-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=645-raid-notice-v105"></script>
-<script src="js/item_management.js?v=645-item-v119"></script>
+<script src="js/admin_mode.js?v=660-raid-bottom-nav-icon-color-v1"></script>
+<script src="js/raid_event.js?v=660-raid-bottom-nav-icon-color-v1"></script>
+<script src="js/item_management.js?v=660-raid-bottom-nav-icon-color-v1"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -15891,7 +14437,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=645-score-chrome-v124"></script>
+<script src="js/score_attack.js?v=660-raid-bottom-nav-icon-color-v1"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -16445,335 +14991,6 @@ window.returnToTitleScreen = function(){
   setTimeout(queue, 500);
 })();
 </script>
-
-
-
-<style id="normal-screen-layout-v411">
-/* =========================================================
-   v411 NORMAL SCREEN LAYOUT — canonical structure
-
-   GLOBAL HUD (fixed)
-        ↓
-   .screen viewport
-     ├─ .header       (normal flow / fixed height)
-     └─ content       (only this area scrolls)
-        ↓
-   BOTTOM NAV (fixed)
-
-   Page headers are intentionally NOT fixed anymore.
-   This removes the possibility of a page title entering the HUD area.
-   ========================================================= */
-:root{
-  --header-h:82px; /* JS measures the real HUD height and replaces this fallback */
-  --page-header-h:54px;
-  --bottom-nav-h:calc(76px + env(safe-area-inset-bottom));
-}
-
-html body #global-user-frame.global-user-frame{
-  z-index:300 !important;
-}
-html body #bottom-nav-shared.bottom-nav{
-  z-index:300 !important;
-}
-
-/* Normal screens live only in the physical space between HUD and bottom nav. */
-html body:not(.ui-immersive) .screen.active:not(#screen-main){
-  position:fixed !important;
-  top:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  left:0 !important;
-  width:auto !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  padding-top:var(--header-h) !important;
-  padding-right:0 !important;
-  padding-bottom:var(--bottom-nav-h) !important;
-  padding-left:0 !important;
-  margin:0 !important;
-  box-sizing:border-box !important;
-  display:flex !important;
-  flex-direction:column !important;
-  overflow:hidden !important;
-}
-
-/* Page header is part of the screen's flex flow, never viewport-fixed. */
-html body:not(.ui-immersive) .screen.active:not(#screen-main) > .header{
-  position:relative !important;
-  top:auto !important;
-  right:auto !important;
-  bottom:auto !important;
-  left:auto !important;
-  transform:none !important;
-  width:100% !important;
-  max-width:none !important;
-  height:var(--page-header-h) !important;
-  min-height:var(--page-header-h) !important;
-  max-height:var(--page-header-h) !important;
-  flex:0 0 var(--page-header-h) !important;
-  padding:0 18px !important;
-  margin:0 !important;
-  box-sizing:border-box !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:space-between !important;
-  overflow:visible !important;
-  z-index:5 !important;
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* Centered page title, but only inside its own header row. */
-html body:not(.ui-immersive) .screen.active:not(#screen-main) > .header .header-title{
-  position:absolute !important;
-  top:50% !important;
-  left:50% !important;
-  right:auto !important;
-  bottom:auto !important;
-  width:calc(100% - 140px) !important;
-  max-width:250px !important;
-  margin:0 !important;
-  transform:translate(-50%,-50%) !important;
-  text-align:center !important;
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
-  z-index:2 !important;
-}
-
-/* Standard content region: one scroll owner, no top-coordinate math. */
-html body:not(.ui-immersive) .screen.active:not(#screen-main) > .screen-scroll{
-  position:relative !important;
-  top:auto !important;
-  right:auto !important;
-  bottom:auto !important;
-  left:auto !important;
-  width:100% !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  flex:1 1 0 !important;
-  margin:0 !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-  -webkit-overflow-scrolling:touch !important;
-  box-sizing:border-box !important;
-}
-
-/* 巡行は .screen-scroll ではなく .ninmu-layout が主コンテンツ。 */
-html body:not(.ui-immersive) #screen-ninmu.active > .ninmu-layout{
-  position:relative !important;
-  top:auto !important;
-  right:auto !important;
-  bottom:auto !important;
-  left:auto !important;
-  width:100% !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  flex:1 1 0 !important;
-  margin:0 !important;
-  box-sizing:border-box !important;
-  overflow:hidden !important;
-}
-
-/* Bonus uses a dedicated header class: keep it in the exact same flow slot. */
-html body:not(.ui-immersive) #screen-bonus.active > .bonus-screen-header{
-  position:relative !important;
-  top:auto !important;
-  right:auto !important;
-  bottom:auto !important;
-  left:auto !important;
-  transform:none !important;
-  width:100% !important;
-  height:var(--page-header-h) !important;
-  min-height:var(--page-header-h) !important;
-  max-height:var(--page-header-h) !important;
-  flex:0 0 var(--page-header-h) !important;
-  margin:0 !important;
-  box-sizing:border-box !important;
-}
-
-@media (max-width:380px), (max-height:700px){
-  :root{ --page-header-h:50px; }
-  html body:not(.ui-immersive) .screen.active:not(#screen-main) > .header{
-    padding-left:14px !important;
-    padding-right:14px !important;
-  }
-  html body:not(.ui-immersive) .screen.active:not(#screen-main) > .header .header-title{
-    width:calc(100% - 126px) !important;
-    max-width:220px !important;
-  }
-}
-
-/* Desktop preview/container centering. */
-@media (min-width:500px){
-  html body:not(.ui-immersive) .screen.active:not(#screen-main){
-    left:50% !important;
-    right:auto !important;
-    width:100% !important;
-    max-width:430px !important;
-    transform:translateX(-50%) !important;
-  }
-}
-</style>
-
-
-<style id="chrome-haze-v412">
-/* =========================================================
-   v412 CHROME HAZE ONLY
-   Visual-only stage: do NOT move page headers/content.
-   - no rectangular top HUD sheet
-   - no rectangular bottom-nav sheet
-   - preserve local white haze around HUD/nav items
-   ========================================================= */
-
-/* TOP HUD: container itself owns no sheet/bar. */
-html body #global-user-frame.global-user-frame{
-  background:transparent !important;
-  background-color:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-}
-
-/* The old full-width shared mist reads as a rectangular bar on flat pages.
-   Remove only that shared sheet; local HUD glows remain. */
-html body #global-user-frame.global-user-frame::before,
-html body #global-user-frame.global-user-frame::after{
-  content:none !important;
-  display:none !important;
-  background:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-  filter:none !important;
-}
-
-/* BOTTOM NAV: no full-width paper/beige panel. */
-html body #bottom-nav-shared.bottom-nav{
-  background:transparent !important;
-  background-color:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  border-top:0 !important;
-  box-shadow:none !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-}
-
-/* Kill only container decoration. Item-level ::before haze is intentionally kept. */
-html body #bottom-nav-shared.bottom-nav::before,
-html body #bottom-nav-shared.bottom-nav::after{
-  content:none !important;
-  display:none !important;
-  background:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* Keep each nav item's existing white mist and brown artwork untouched. */
-html body #bottom-nav-shared.bottom-nav .bottom-nav-item,
-html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active{
-  background:transparent !important;
-  border-color:transparent !important;
-  box-shadow:none !important;
-}
-</style>
-
-<style id="chrome-background-continuity-v414">
-/* =========================================================
-   v414 CHROME BACKGROUND CONTINUITY
-   The white rectangles were not HUD/nav backgrounds anymore.
-   They were the BODY showing through because v411 physically
-   shortened normal screens to the space between the chrome.
-
-   Keep exactly the same content geometry, but let each active
-   screen itself extend behind the transparent HUD and bottom nav.
-   The usable content area is preserved with padding instead.
-   ========================================================= */
-html body:not(.ui-immersive) .screen.active:not(#screen-main){
-  top:0 !important;
-  bottom:0 !important;
-  padding-top:var(--header-h) !important;
-  padding-bottom:var(--bottom-nav-h) !important;
-}
-</style>
-<style id="header-fade-shell-v421">
-
-/* =========================================================
-   v421 FULLSCREEN SCROLL SHELL — common design
-   Scroll-centric screens use the full viewport exactly like Home / Summon.
-   The scroll layer itself runs behind the fixed HUD and bottom nav.
-   Safe top/bottom padding only protects the first/last content items.
-   No per-screen geometry tuning: one rule for every scroll screen.
-   ========================================================= */
-html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active{
-  position:fixed !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100dvh !important;
-  min-height:100dvh !important;
-  max-height:none !important;
-  padding:0 !important;
-  margin:0 !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-html body:not(.ui-immersive) :is(#screen-zukan,#screen-friend,#screen-setting).screen.active > .header,
-html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header{
-  position:absolute !important;
-  top:var(--header-h) !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:auto !important;
-  width:100% !important;
-  height:var(--page-header-h) !important;
-  min-height:var(--page-header-h) !important;
-  max-height:var(--page-header-h) !important;
-  margin:0 !important;
-  transform:none !important;
-  box-sizing:border-box !important;
-  z-index:220 !important;
-  background:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active > .screen-scroll{
-  position:absolute !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100% !important;
-  min-height:0 !important;
-  max-height:none !important;
-  margin:0 !important;
-  box-sizing:border-box !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-  -webkit-overflow-scrolling:touch !important;
-  overscroll-behavior-y:contain !important;
-  touch-action:pan-y !important;
-  padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
-  padding-bottom:calc(var(--bottom-nav-h) + 18px) !important;
-  scroll-padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
-  scroll-padding-bottom:calc(var(--bottom-nav-h) + 18px) !important;
-  z-index:1 !important;
-}
-@media (min-width:500px){
-  html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active{
-    left:50% !important;
-    right:auto !important;
-    width:100% !important;
-    max-width:430px !important;
-    transform:translateX(-50%) !important;
-  }
-}
-</style>
-
 <script>
 /* v451: キャラ一覧の通知ドットは全段共通のカード内配置のみを使用する。
    v437 の最上段専用ミラー追従処理は廃止。スクロール時もキャラ画像と同一要素内で移動する。 */
@@ -17014,8 +15231,21 @@ html body #global-user-frame .hud-sweep-line{
 /* PLAYER underline: start a bit more to the left */
 html body #global-user-frame .hud-sweep-line-player{
   left:8px !important;
-  transform:none !important;
-  width:108px !important;
+  transform:rotate(-0.45deg) !important;
+  width:131px !important;      /* 現在119pxからさらに約+10% */
+  top:auto !important;
+  bottom:-4px !important;      /* build658で調整した位置を維持 */
+  height:.55px !important;
+  opacity:.88 !important;
+  box-shadow:
+    0 0 .2px rgba(255,248,225,.34),
+    0 0 .55px rgba(201,164,79,.04) !important;
+  filter:none !important;
+}
+
+html body #global-user-frame .hud-sweep-line-player::after{
+  height:.22px !important;
+  opacity:.52 !important;
 }
 
 /* SE-size phones: keep the same logic, only compact dimensions. */
@@ -17295,436 +15525,5 @@ html body #global-user-frame .hud-sweep-line-player{
   }
 })();
 </script>
-
-
-<style id="item-layout-hardfix-v110">
-html body:not(.ui-immersive) #screen-item.screen.active{
-  position:fixed !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100dvh !important;
-  min-height:100dvh !important;
-  max-height:none !important;
-  padding:0 !important;
-  margin:0 !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-
-html body:not(.ui-immersive) #screen-item.screen.active > .header{
-  position:absolute !important;
-  top:var(--header-h) !important;
-  left:0 !important;
-  right:0 !important;
-  width:100% !important;
-  height:var(--page-header-h) !important;
-  min-height:var(--page-header-h) !important;
-  max-height:var(--page-header-h) !important;
-  margin:0 !important;
-  padding:0 18px !important;
-  z-index:220 !important;
-}
-
-/*
- * Important:
- * this shell itself never scrolls.
- * Its bottom edge stops above the shared bottom nav.
- */
-html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
-  position:absolute !important;
-  top:calc(var(--header-h) + var(--page-header-h) - 6px) !important;
-  right:14px !important;
-  bottom:calc(var(--bottom-nav-h) + 3px) !important;
-  left:14px !important;
-  width:auto !important;
-  height:auto !important;
-  margin:0 !important;
-  padding:0 !important;
-  display:flex !important;
-  flex-direction:column !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-
-@media (min-width:500px){
-  html body:not(.ui-immersive) #screen-item.screen.active{
-    left:50% !important;
-    right:auto !important;
-    width:100% !important;
-    max-width:430px !important;
-    transform:translateX(-50%) !important;
-  }
-}
-
-@media (max-width:360px){
-  html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
-    left:10px !important;
-    right:10px !important;
-  }
-}
-</style>
-
-
-
-
-
-
-
-
-<style id="global-page-header-design-v124">
-/* =========================================================
-   v124 PAGE HEADER DESIGN SYSTEM
-   Commercial-quality hierarchy for standard/light app pages.
-
-   Rules:
-   - Japanese Mincho title: same size / color / weight / position
-   - Back control: same typography, hit target, left inset
-   - No decorative underline
-   - Right-side actions remain available (character list etc.)
-   - Special dark/event canvases keep their own theme colors unless noted
-   ========================================================= */
-
-:root{
-  --z-page-header-h:52px;
-  --z-page-title-size:15px;
-  --z-page-title-color:#6f5535;
-  --z-page-title-weight:500;
-  --z-page-title-spacing:.12em;
-
-  --z-page-back-size:10px;
-  --z-page-back-color:#8b7a66;
-  --z-page-back-weight:500;
-  --z-page-back-spacing:.015em;
-
-  --z-page-side-inset:18px;
-}
-
-/* Keep the shared geometry variable aligned with the visual system. */
-html body:not(.ui-immersive){
-  --page-header-h:var(--z-page-header-h) !important;
-}
-
-/* ---------------------------------------------------------
-   STANDARD PAGE HEADER
-   巡行 / ボーナス / アイテム / キャラ一覧 / 戦友 / 設定
-   --------------------------------------------------------- */
-html body:not(.ui-immersive) .screen:not(#screen-main) > .header,
-html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header{
-  height:var(--z-page-header-h) !important;
-  min-height:var(--z-page-header-h) !important;
-  max-height:var(--z-page-header-h) !important;
-  padding-left:var(--z-page-side-inset) !important;
-  padding-right:var(--z-page-side-inset) !important;
-  box-sizing:border-box !important;
-}
-
-/* Main Japanese page title. */
-html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title,
-html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header .header-title{
-  position:absolute !important;
-  top:50% !important;
-  left:50% !important;
-  right:auto !important;
-  bottom:auto !important;
-  width:calc(100% - 148px) !important;
-  max-width:230px !important;
-  margin:0 !important;
-  padding:0 !important;
-  transform:translate(-50%,-50%) !important;
-
-  color:var(--z-page-title-color) !important;
-  font-family:
-    "Noto Serif JP",
-    "Yu Mincho",
-    "YuMincho",
-    "Hiragino Mincho ProN",
-    serif !important;
-  font-size:var(--z-page-title-size) !important;
-  font-weight:var(--z-page-title-weight) !important;
-  font-style:normal !important;
-  font-synthesis:none !important;
-  line-height:1 !important;
-  letter-spacing:var(--z-page-title-spacing) !important;
-  text-align:center !important;
-  text-indent:var(--z-page-title-spacing) !important;
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
-  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
-}
-
-/* No page-title underline / stray header ornaments. */
-html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title::before,
-html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title::after,
-html body:not(.ui-immersive) #screen-bonus .bonus-screen-header .header-title::before,
-html body:not(.ui-immersive) #screen-bonus .bonus-screen-header .header-title::after,
-html body:not(.ui-immersive) #screen-bonus .bonus-screen-header::before,
-html body:not(.ui-immersive) #screen-friend .header::before{
-  content:none !important;
-  display:none !important;
-  width:0 !important;
-  height:0 !important;
-  border:0 !important;
-  background:none !important;
-  box-shadow:none !important;
-}
-
-/* ---------------------------------------------------------
-   BACK CONTROL — one visual language
-   Color is intentionally quiet so the page title stays primary.
-   44px hit height, 10px visible type.
-   --------------------------------------------------------- */
-html body .back-btn,
-html body #score-attack-root .score-attack-back,
-html body .shooting-special-stage-back,
-html body .shooting-faceless-stage-back,
-html body .noah-piece-back,
-html body .detail-modal-back-btn,
-html body .friend-profile-detail-back,
-html body .zukan-detail-back-btn,
-html body .primor-fullscreen-back,
-html body button[aria-label="戻る"]{
-  appearance:none !important;
-  -webkit-appearance:none !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:flex-start !important;
-
-  min-width:52px !important;
-  height:44px !important;
-  margin:0 !important;
-  padding:0 !important;
-
-  border:0 !important;
-  border-radius:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-
-  color:var(--z-page-back-color) !important;
-  font-family:
-    "Noto Serif JP",
-    "Yu Mincho",
-    "YuMincho",
-    "Hiragino Mincho ProN",
-    serif !important;
-  font-size:var(--z-page-back-size) !important;
-  font-weight:var(--z-page-back-weight) !important;
-  font-style:normal !important;
-  font-synthesis:none !important;
-  line-height:1 !important;
-  letter-spacing:var(--z-page-back-spacing) !important;
-  text-align:left !important;
-  white-space:nowrap !important;
-  text-decoration:none !important;
-  text-transform:none !important;
-  text-shadow:0 0 8px rgba(255,255,255,.78) !important;
-}
-
-html body .back-btn:active,
-html body #score-attack-root .score-attack-back:active,
-html body .shooting-special-stage-back:active,
-html body .shooting-faceless-stage-back:active,
-html body .noah-piece-back:active,
-html body button[aria-label="戻る"]:active{
-  opacity:.62 !important;
-  transform:none !important;
-}
-
-/* Standard headers: exact left inset and vertical alignment. */
-html body:not(.ui-immersive) .screen:not(#screen-main) > .header .back-btn,
-html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header .back-btn{
-  position:relative !important;
-  top:auto !important;
-  left:auto !important;
-  right:auto !important;
-  bottom:auto !important;
-  transform:none !important;
-  z-index:4 !important;
-}
-
-/* ---------------------------------------------------------
-   SCORE ATTACK — same Japanese title baseline as normal pages.
-   English kicker becomes a quiet eyebrow rather than a second title.
-   --------------------------------------------------------- */
-html body:not(.ui-immersive) #score-attack-root .score-attack-head{
-  position:relative !important;
-  height:var(--z-page-header-h) !important;
-  min-height:var(--z-page-header-h) !important;
-  max-height:var(--z-page-header-h) !important;
-  flex:0 0 var(--z-page-header-h) !important;
-  padding:0 var(--z-page-side-inset) !important;
-  grid-template-columns:64px minmax(0,1fr) 64px !important;
-}
-
-html body:not(.ui-immersive) #score-attack-root .score-attack-back{
-  position:relative !important;
-  z-index:4 !important;
-  align-self:center !important;
-}
-
-html body:not(.ui-immersive) #score-attack-root .score-attack-head-title{
-  position:absolute !important;
-  top:50% !important;
-  left:50% !important;
-  width:calc(100% - 148px) !important;
-  max-width:230px !important;
-  transform:translate(-50%,-50%) !important;
-  text-align:center !important;
-  pointer-events:none !important;
-}
-
-html body:not(.ui-immersive) #score-attack-root .score-attack-head-title strong{
-  display:block !important;
-  margin:0 !important;
-  color:var(--z-page-title-color) !important;
-  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
-  font-size:var(--z-page-title-size) !important;
-  font-weight:var(--z-page-title-weight) !important;
-  line-height:1 !important;
-  letter-spacing:var(--z-page-title-spacing) !important;
-  text-indent:var(--z-page-title-spacing) !important;
-  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
-}
-
-html body:not(.ui-immersive) #score-attack-root .score-attack-head-title small{
-  position:absolute !important;
-  left:50% !important;
-  bottom:calc(100% + 4px) !important;
-  transform:translateX(-50%) !important;
-  margin:0 !important;
-  color:#aa8a56 !important;
-  font-family:"Cinzel","Times New Roman",serif !important;
-  font-size:5px !important;
-  font-weight:600 !important;
-  line-height:1 !important;
-  letter-spacing:.24em !important;
-  white-space:nowrap !important;
-  opacity:.78 !important;
-}
-
-html body:not(.ui-immersive) #score-attack-root .score-attack-head-mark{
-  color:#aa8a56 !important;
-  font-size:9px !important;
-  opacity:.62 !important;
-}
-
-/* ---------------------------------------------------------
-   SHOOTING STAGE SELECT
-   デイリー巡行 / 無貌の天使 etc.
-   These are fullscreen selectors, but their header uses the same type scale.
-   --------------------------------------------------------- */
-html body .shooting-special-stage-header,
-html body .shooting-faceless-stage-header{
-  position:relative !important;
-  min-height:56px !important;
-  box-sizing:border-box !important;
-}
-
-html body .shooting-special-stage-back,
-html body .shooting-faceless-stage-back{
-  position:absolute !important;
-  left:var(--z-page-side-inset) !important;
-  top:50% !important;
-  transform:translateY(-50%) !important;
-  z-index:4 !important;
-}
-
-html body .shooting-special-stage-title,
-html body .shooting-faceless-stage-title{
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
-  width:calc(100% - 148px) !important;
-  max-width:230px !important;
-  margin:0 !important;
-  transform:translate(-50%,-50%) !important;
-
-  color:var(--z-page-title-color) !important;
-  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
-  font-size:var(--z-page-title-size) !important;
-  font-weight:var(--z-page-title-weight) !important;
-  line-height:1 !important;
-  letter-spacing:var(--z-page-title-spacing) !important;
-  text-indent:var(--z-page-title-spacing) !important;
-  text-align:center !important;
-  white-space:nowrap !important;
-  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
-}
-
-/* Daily has a functional subtitle: title sits slightly above center. */
-html body .shooting-daily-stage-header .shooting-special-stage-title,
-html body .shooting-daily-stage-header .shooting-faceless-stage-title{
-  top:40% !important;
-}
-
-html body .shooting-daily-stage-subtitle{
-  position:absolute !important;
-  left:50% !important;
-  top:61% !important;
-  margin:0 !important;
-  transform:translateX(-50%) !important;
-  color:#9b825e !important;
-  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
-  font-size:8px !important;
-  font-weight:500 !important;
-  line-height:1 !important;
-  letter-spacing:.06em !important;
-  white-space:nowrap !important;
-}
-
-/* ---------------------------------------------------------
-   NOAH PIECE / special modal header
-   Keep its contextual eyebrow/ticket count, normalize the main title/back.
-   --------------------------------------------------------- */
-html body .noah-piece-head{
-  min-height:56px !important;
-  padding-left:var(--z-page-side-inset) !important;
-  padding-right:var(--z-page-side-inset) !important;
-  grid-template-columns:64px 1fr 64px !important;
-}
-
-html body .noah-piece-title strong{
-  color:var(--z-page-title-color) !important;
-  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
-  font-size:var(--z-page-title-size) !important;
-  font-weight:var(--z-page-title-weight) !important;
-  line-height:1 !important;
-  letter-spacing:var(--z-page-title-spacing) !important;
-}
-
-html body .noah-piece-title small{
-  margin-bottom:4px !important;
-  color:#aa8a56 !important;
-  font-size:5px !important;
-  letter-spacing:.24em !important;
-}
-
-/* ---------------------------------------------------------
-   COMPACT / iPhone SE
-   Do not let typography scale independently per screen.
-   --------------------------------------------------------- */
-@media (max-width:380px), (max-height:700px){
-  :root{
-    --z-page-header-h:50px;
-    --z-page-title-size:14px;
-    --z-page-back-size:9px;
-    --z-page-side-inset:14px;
-  }
-
-  html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title,
-  html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header .header-title,
-  html body:not(.ui-immersive) #score-attack-root .score-attack-head-title{
-    width:calc(100% - 126px) !important;
-    max-width:210px !important;
-  }
-
-  html body .shooting-special-stage-title,
-  html body .shooting-faceless-stage-title{
-    width:calc(100% - 126px) !important;
-    max-width:210px !important;
-  }
-}
-</style>
-
 </body>
 </html>

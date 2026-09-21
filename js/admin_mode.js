@@ -438,7 +438,7 @@
     btn.addEventListener('click', countAdminTap, false);
 
     // 設定画面上部タイトルでも同じ7回操作を許可。
-    const title = document.querySelector('#screen-setting .header-title');
+    const title = document.querySelector('#screen-setting .app-page-title');
     if(title && title.dataset.adminTapBound !== '1'){
       title.dataset.adminTapBound = '1';
       title.addEventListener('click', countAdminTap, false);

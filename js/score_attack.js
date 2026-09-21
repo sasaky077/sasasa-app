@@ -24,21 +24,24 @@ function panelSrc(id){
 function partyHtml(ids,large){const a=Array.isArray(ids)?ids.slice(0,3):[];while(a.length<3)a.push(0);return '<div class="score-attack-party'+(large?' is-large':'')+'">'+a.map(id=>{const src=panelSrc(id);return src?'<span><img src="'+esc(src)+'" alt="" draggable="false"></span>':'<span class="empty"></span>';}).join('')+'</div>';}
 function ensureRoot(){
  if(root)return root;
- root=document.createElement('div');root.id='score-attack-root';root.setAttribute('aria-hidden','true');
- root.innerHTML=`<div class="score-attack-page">
+ root=document.createElement('div');
+ root.id='score-attack-root';
+ root.className='app-page app-page--overlay score-attack-app-page';
+ root.setAttribute('aria-hidden','true');
+ root.innerHTML=`<div class="score-attack-page app-page-surface">
  <div class="score-attack-bg-deco score-attack-bg-deco-a" aria-hidden="true"></div>
  <div class="score-attack-bg-deco score-attack-bg-deco-b" aria-hidden="true"></div>
 
- <header class="score-attack-head">
-   <button type="button" class="score-attack-back" aria-label="戻る" onclick="closeScoreAttack()">＜戻る</button>
-   <div class="score-attack-head-title">
-     <small>SCORE ATTACK</small>
-     <strong>スコアアタック</strong>
+ <header class="app-page-header score-attack-head">
+   <button type="button" class="app-page-back" onclick="closeScoreAttack()">＜戻る</button>
+   <div class="app-page-heading">
+     <small class="app-page-eyebrow">SCORE ATTACK</small>
+     <h1 class="app-page-title">スコアアタック</h1>
    </div>
-   <div class="score-attack-head-mark" aria-hidden="true">✦</div>
+   <div class="app-page-action score-attack-head-mark" aria-hidden="true">✦</div>
  </header>
 
- <div class="score-attack-scroll">
+ <div class="app-page-content score-attack-scroll">
 
   <section class="score-attack-ranking score-attack-ranking-first">
     <div class="score-attack-section-head">
@@ -117,24 +120,11 @@ window.openScoreAttack=function(){
   r.classList.add('show');
   r.setAttribute('aria-hidden','false');
 
-  // Score Attack is now a normal app page, not an immersive/fullscreen layer.
-  document.body.classList.remove('ui-immersive');
-  document.body.removeAttribute('data-ui-immersive-reason');
-
-  const hud=document.getElementById('global-user-frame');
-  if(hud){
-    hud.classList.remove('hidden');
-    hud.style.removeProperty('display');
-    hud.style.removeProperty('visibility');
-    hud.style.removeProperty('opacity');
-    hud.style.removeProperty('pointer-events');
-  }
-
-  if(window.setNavVisible) setNavVisible(true);
-  if(window.setHomeBtnVisible) setHomeBtnVisible(false);
-  if(window.setReloadBtnVisible) setReloadBtnVisible(true);
-  if(window.setBnavActive) setBnavActive('main');
-
+  // UI Foundation v2: Score Attack is a Standard Page.
+  // Chrome visibility is controlled by the shared application policy only.
+  if(window.setGameChromeImmersive) window.setGameChromeImmersive(false,'score-attack');
+  if(window.setNavVisible) window.setNavVisible(true);
+  if(window.setBnavActive) window.setBnavActive('main');
   if(typeof window.updateHeaderHeight==='function') window.updateHeaderHeight();
   refresh();
 };
@@ -142,9 +132,7 @@ window.closeScoreAttack=function(){
   const r=ensureRoot();
   r.classList.remove('show');
   r.setAttribute('aria-hidden','true');
-  if(window.setNavVisible) setNavVisible(true);
-  if(window.setHomeBtnVisible) setHomeBtnVisible(false);
-  if(window.setReloadBtnVisible) setReloadBtnVisible(true);
+  if(window.setNavVisible) window.setNavVisible(true);
 };
 window.setScoreAttackDifficulty=function(d){currentDifficulty=d==='hard'?'hard':'normal';const r=ensureRoot();r.querySelector('#score-attack-tab-normal').classList.toggle('active',currentDifficulty==='normal');r.querySelector('#score-attack-tab-hard').classList.toggle('active',currentDifficulty==='hard');refresh();};
 window.toggleScoreAttackRankingMore=function(btn){

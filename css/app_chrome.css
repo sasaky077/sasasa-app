@@ -1,0 +1,439 @@
+/* =========================================================
+   ZERAPHIA UI FOUNDATION v2 — build646
+   One owner for normal-page geometry, header/back/title, shared chrome,
+   responsive behavior and standard scroll edges.
+
+   Standard Page:
+     Global HUD
+       -> app-page-header
+       -> app-page-content
+     Bottom Navigation
+
+   Special / immersive screens keep their own visual systems.
+   ========================================================= */
+
+:root{
+  --app-page-header-h:52px;
+  --page-header-h:var(--app-page-header-h);
+  --bottom-nav-h:calc(76px + env(safe-area-inset-bottom));
+  --app-page-side:18px;
+  --app-title-size:15px;
+  --app-title-color:#6f5535;
+  --app-back-size:11px;
+  --app-back-color:#837361;
+  --app-paper:#f7f3ea;
+}
+
+/* ---------- Shared chrome policy ---------- */
+html body.ui-immersive #global-user-frame,
+html body.ui-immersive #bottom-nav-shared{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+html body:not(.ui-immersive) #global-user-frame.global-user-frame,
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav{
+  isolation:isolate !important;
+  overflow:visible !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  z-index:300 !important;
+}
+
+html body:not(.ui-immersive) #global-user-frame.global-user-frame::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:-7% !important;
+  right:-7% !important;
+  top:-10px !important;
+  height:calc(100% + 58px) !important;
+  background:linear-gradient(to bottom,
+    rgba(255,255,255,.80) 0%,
+    rgba(255,255,255,.69) 38%,
+    rgba(255,255,255,.44) 58%,
+    rgba(255,255,255,.20) 76%,
+    rgba(255,255,255,.06) 90%,
+    rgba(255,255,255,0) 100%) !important;
+  filter:blur(11px) !important;
+  -webkit-filter:blur(11px) !important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame::after{content:none !important;display:none !important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame > *{position:relative;z-index:2;}
+
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:-7% !important;
+  right:-7% !important;
+  bottom:-10px !important;
+  height:calc(100% + 62px) !important;
+  background:linear-gradient(to top,
+    rgba(255,255,255,.82) 0%,
+    rgba(255,255,255,.71) 38%,
+    rgba(255,255,255,.46) 58%,
+    rgba(255,255,255,.21) 76%,
+    rgba(255,255,255,.06) 90%,
+    rgba(255,255,255,0) 100%) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+}
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav::after{content:none !important;display:none !important;}
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item{
+  position:relative !important;
+  z-index:2 !important;
+  background:transparent !important;
+  border-color:transparent !important;
+  box-shadow:none !important;
+}
+
+/* Current character-tab notification overlay, consolidated from v431-v436. */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav{
+  position:fixed !important;
+}
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.bottom-nav-notice-overlay{
+  position:absolute !important;
+  left:calc(30% + 12px) !important;
+  right:auto !important;
+  top:calc(7px + 3mm) !important;
+  bottom:auto !important;
+  width:11px !important;
+  height:11px !important;
+  min-width:11px !important;
+  min-height:11px !important;
+  box-sizing:border-box !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  background:#e33b3b !important;
+  border:1.5px solid rgba(255,255,255,.96) !important;
+  box-shadow:0 1px 3px rgba(75,25,18,.28),0 0 0 2px rgba(227,59,59,.10) !important;
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  transform:none !important;
+  animation:none !important;
+  pointer-events:none !important;
+  z-index:2147483647 !important;
+}
+
+/* ---------- Standard Page shell ---------- */
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-bonus,
+  #screen-item,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting
+).screen.app-page{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  padding:var(--header-h) 0 var(--bottom-nav-h) !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  flex-direction:column !important;
+  z-index:40 !important;
+  color:#3f342a;
+}
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-bonus,
+  #screen-item,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting
+).screen.app-page:not(.active){display:none !important;}
+html body:not(.ui-immersive) :is(
+  #screen-ninmu,
+  #screen-bonus,
+  #screen-item,
+  #screen-zukan,
+  #screen-friend,
+  #screen-setting
+).screen.app-page.active{display:flex !important;}
+
+/* Dynamic standard-page overlay: Score Attack. */
+html body:not(.ui-immersive) #score-attack-root.app-page{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  padding:var(--header-h) 0 var(--bottom-nav-h) !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  z-index:40 !important;
+  background:#f8f4ec !important;
+}
+html body:not(.ui-immersive) #score-attack-root.app-page:not(.show){display:none !important;}
+html body:not(.ui-immersive) #score-attack-root.app-page.show{display:flex !important;}
+html body:not(.ui-immersive) #score-attack-root > .app-page-surface{
+  flex:1 1 auto;
+  min-height:0;
+}
+
+@media (min-width:500px){
+  html body:not(.ui-immersive) :is(
+    #screen-ninmu,#screen-bonus,#screen-item,#screen-zukan,#screen-friend,#screen-setting
+  ).screen.app-page,
+  html body:not(.ui-immersive) #score-attack-root.app-page{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* ---------- One standard header ---------- */
+.app-page-header{
+  position:relative;
+  z-index:220;
+  flex:0 0 var(--app-page-header-h);
+  width:100%;
+  height:var(--app-page-header-h);
+  min-height:var(--app-page-header-h);
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr) 72px;
+  align-items:center;
+  padding:0 var(--app-page-side);
+  box-sizing:border-box;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  isolation:isolate;
+}
+
+/* Soft header haze; no rule/underline. */
+.app-page-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  pointer-events:none;
+  left:-6%;
+  right:-6%;
+  top:22%;
+  height:78px;
+  background:linear-gradient(to bottom,
+    rgba(255,255,255,.82) 0%,
+    rgba(255,255,255,.66) 34%,
+    rgba(255,255,255,.35) 66%,
+    rgba(255,255,255,0) 100%);
+  filter:blur(10px);
+  -webkit-filter:blur(10px);
+}
+
+.app-page-heading{
+  grid-column:2;
+  min-width:0;
+  align-self:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  pointer-events:none;
+}
+#screen-setting .app-page-title{pointer-events:auto;cursor:default;}
+
+.app-page-title{
+  margin:0;
+  padding:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--app-title-color);
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+  font-size:var(--app-title-size);
+  font-weight:500;
+  font-style:normal;
+  line-height:1;
+  letter-spacing:.12em;
+  text-indent:.12em;
+  text-shadow:0 0 9px rgba(255,255,255,.72);
+}
+.app-page-eyebrow{
+  display:block;
+  margin:0 0 4px;
+  color:#aa8a56;
+  font-family:"Cinzel","Times New Roman",serif;
+  font-size:5.5px;
+  font-weight:600;
+  line-height:1;
+  letter-spacing:.24em;
+  white-space:nowrap;
+  opacity:.80;
+}
+
+.app-page-back,
+.app-page-back-slot{
+  grid-column:1;
+  justify-self:start;
+}
+.app-page-back-slot{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  height:100%;
+}
+.app-page-back{
+  appearance:none;
+  -webkit-appearance:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  min-width:52px;
+  height:44px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:var(--app-back-color);
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+  font-size:var(--app-back-size);
+  font-weight:500;
+  font-style:normal;
+  line-height:1;
+  letter-spacing:.015em;
+  text-align:left;
+  white-space:nowrap;
+  text-shadow:0 0 8px rgba(255,255,255,.80);
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.app-page-back:active{opacity:.58;}
+
+.app-page-action{
+  grid-column:3;
+  justify-self:end;
+  align-self:center;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+/* ---------- Standard content ---------- */
+.app-page-content{
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  box-sizing:border-box;
+}
+.app-scroll-region{
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
+  scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px,#000 calc(100% - 24px),transparent 100%);
+  mask-image:linear-gradient(to bottom,transparent 0,#000 18px,#000 calc(100% - 24px),transparent 100%);
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-size:100% 100%;
+  mask-size:100% 100%;
+}
+.app-scroll-region::-webkit-scrollbar{display:none;width:0;height:0;}
+
+/* Page-specific content insets; shell geometry remains shared. */
+#screen-zukan > .app-scroll-region{padding:12px 0 22px;}
+#screen-friend > .app-scroll-region{padding:18px 18px 24px;}
+#screen-setting > .app-scroll-region{padding:14px 0 24px;}
+
+/* Bonus intentionally fits in one viewport and does not page-scroll. */
+#screen-bonus.app-page > .bonus-screen-scroll.app-page-content{
+  overflow:hidden !important;
+  padding:8px 16px 10px !important;
+}
+
+/* Item owns an internal list scroller. */
+#screen-item.app-page > .item-screen-scroll.app-page-content{
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  padding:0 14px 3px !important;
+}
+
+/* 巡行 owns two internal scrolling columns. */
+#screen-ninmu.app-page > .ninmu-layout.app-page-content{
+  position:relative !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  left:auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  flex:1 1 auto !important;
+  margin:0 !important;
+  overflow:hidden !important;
+}
+#screen-ninmu.app-page .ninmu-left,
+#screen-ninmu.app-page .ninmu-right{
+  min-height:0 !important;
+  padding-top:18px !important;
+  padding-bottom:22px !important;
+}
+#screen-ninmu.app-page .ninmu-left{overflow-x:hidden !important;}
+#screen-ninmu.app-page .ninmu-right{padding-right:2px !important;}
+#screen-ninmu.app-page .ninmu-cat-item.active::after{right:2px !important;}
+
+/* Character index: old header/detail classes no longer own layout. */
+#screen-zukan .zukan-detail-back{position:static !important;transform:none !important;}
+#screen-zukan #zukan-header-back{position:static !important;transform:none !important;}
+#screen-zukan.is-remnant-mode{
+  --app-title-color:#eee6d8;
+  --app-back-color:#d4c8b1;
+}
+#screen-zukan.is-remnant-mode .app-page-header::after{
+  background:linear-gradient(to bottom,rgba(18,18,18,.84),rgba(18,18,18,.42) 55%,rgba(18,18,18,0) 100%);
+}
+
+/* Fixed character search stays below the canonical header. */
+#screen-zukan.is-primoa-index .zukan-name-search.open{
+  top:calc(var(--header-h) + var(--app-page-header-h) + 2px) !important;
+}
+
+/* Score Attack right ornament is presentation-only. */
+#score-attack-root .score-attack-head-mark{
+  color:#aa8a56;
+  font-size:9px;
+  opacity:.62;
+}
+
+@media (max-width:380px),(max-height:700px){
+  :root{
+    --app-page-header-h:50px;
+    --app-page-side:14px;
+    /* Do not shrink typography on iPhone SE; only geometry tightens. */
+    --app-title-size:15px;
+    --app-back-size:11px;
+  }
+  .app-page-header{grid-template-columns:64px minmax(0,1fr) 64px;}
+  .app-page-back{min-width:48px;height:42px;}
+  #screen-friend > .app-scroll-region{padding-left:14px;padding-right:14px;}
+  #screen-item.app-page > .item-screen-scroll.app-page-content{padding-left:10px !important;padding-right:10px !important;}
+}

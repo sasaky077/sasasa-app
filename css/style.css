@@ -9164,9 +9164,9 @@ body,
 
 .hud-lv-label,
 .hud-exp-text,
-.hud-id { color: rgba(226,207,151,0.68) !important; }
+.hud-id { color: rgba(82,78,73,.68) !important; }
 .hud-lv-num,
-.hud-name { color: #f4ead0 !important; }
+.hud-name { color: #4b4946 !important; }
 .hud-exp-bg { background: rgba(255,255,255,0.16) !important; border: 1px solid rgba(214,185,111,0.18) !important; height: 5px !important; }
 .hud-exp-fill { background: linear-gradient(90deg, #96783b, #e4cc7b) !important; }
 
@@ -9180,7 +9180,7 @@ body,
   box-shadow: inset 0 0 8px rgba(255,255,255,0.04) !important;
 }
 
-.hud-res-val { color: #f4ead0 !important; font-size: 14px !important; }
+.hud-res-val { color: #4b4946 !important; font-size: 14px !important; }
 .hud-gem-plus-btn {
   width: 24px !important;
   height: 24px !important;
@@ -9637,13 +9637,13 @@ body,
 .global-user-frame .hud-lv-label,
 .global-user-frame .hud-exp-text,
 .global-user-frame .hud-id {
-  color: rgba(226,207,151,0.68) !important;
+  color: rgba(82,78,73,.68) !important;
 }
 
 .global-user-frame .hud-lv-num,
 .global-user-frame .hud-name,
 .global-user-frame .hud-res-val {
-  color: #f4ead0 !important;
+  color: #4b4946 !important;
   text-shadow: none !important;
 }
 
@@ -28890,7 +28890,7 @@ body.is-gacha-pool-detail-open{
 .global-user-frame .hud-lv-num{
   font-size:20px !important;
   font-weight:600 !important;
-  color:#594226 !important;
+  color:#4b4946 !important;
   text-shadow:0 1px 0 rgba(255,255,255,.82) !important;
 }
 
@@ -28983,7 +28983,7 @@ body.is-gacha-pool-detail-open{
   font-size:14px !important;
   font-weight:600 !important;
   letter-spacing:.04em !important;
-  color:#594226 !important;
+  color:#4b4946 !important;
   text-shadow:0 1px 0 rgba(255,255,255,.88) !important;
 }
 
@@ -30868,9 +30868,9 @@ body.is-gacha-pool-detail-open{
   box-sizing:border-box !important;
 
   /* 左辺は作らない。円とは別パーツとして右へ伸びる */
-  border-top:1px solid rgba(145,109,49,.34) !important;
-  border-right:1px solid rgba(145,109,49,.48) !important;
-  border-bottom:1px solid rgba(145,109,49,.34) !important;
+  border-top:0 !important;
+  border-right:0 !important;
+  border-bottom:1px solid rgba(92,88,82,.22) !important;
   border-left:0 !important;
   border-radius:0 !important;
 
@@ -30906,16 +30906,10 @@ body.is-gacha-pool-detail-open{
   z-index:-1 !important;
 }
 
-/* 右端の縦線を少しだけ強調 */
+/* PLAYER / resource boundary divider removed in UI Foundation v2.1. */
 .global-user-frame .hud-info::after{
-  content:"" !important;
-  position:absolute !important;
-  right:-1px !important;
-  top:5px !important;
-  bottom:5px !important;
-  width:1px !important;
-  background:rgba(123,88,39,.52) !important;
-  pointer-events:none !important;
+  content:none !important;
+  display:none !important;
 }
 
 /* 名前はバー中央に載せる */
@@ -30974,18 +30968,20 @@ body.is-gacha-pool-detail-open{
   margin-left:2px !important;
   padding:0 16px 0 12px !important;
 
-  border-top:1px solid rgba(145,109,49,.34) !important;
-  border-right:1px solid rgba(123,88,39,.50) !important;
-  border-bottom:1px solid rgba(145,109,49,.34) !important;
+  border-top:0 !important;
+  border-right:0 !important;
+  border-bottom:1px solid rgba(92,88,82,.22) !important;
   border-left:0 !important;
   border-radius:0 !important;
 
-  background:linear-gradient(
-    90deg,
-    rgba(255,255,255,.02) 0%,
-    rgba(248,242,226,.14) 52%,
-    rgba(239,229,205,.20) 100%
-  ) !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.04) 0%,
+      rgba(255,255,255,.30) 30%,
+      rgba(250,250,249,.38) 72%,
+      rgba(255,255,255,.10) 100%
+    ) !important;
 
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.18),
@@ -31002,21 +30998,15 @@ body.is-gacha-pool-detail-open{
   width:7px !important;
   height:1px !important;
   transform:translateY(-50%) !important;
-  background:rgba(145,109,49,.30) !important;
+  background:rgba(92,88,82,.22) !important;
   pointer-events:none !important;
   z-index:0 !important;
 }
 
-/* 右端縦線 */
+/* No vertical separator between PLAYER and currency groups. */
 .global-user-frame .hud-info::after{
-  content:"" !important;
-  position:absolute !important;
-  right:-1px !important;
-  top:-1px !important;
-  bottom:-1px !important;
-  width:1px !important;
-  background:rgba(123,88,39,.48) !important;
-  pointer-events:none !important;
+  content:none !important;
+  display:none !important;
 }
 
 /* RANK円は完全にバーの外側 */
@@ -31200,10 +31190,10 @@ body #global-user-frame,
   background:
     linear-gradient(
       90deg,
-      rgba(248,243,230,.18) 0%,
-      rgba(248,242,226,.50) 28%,
-      rgba(244,235,214,.58) 72%,
-      rgba(239,229,205,.24) 100%
+      rgba(255,255,255,.04) 0%,
+      rgba(255,255,255,.30) 30%,
+      rgba(250,250,249,.38) 72%,
+      rgba(255,255,255,.10) 100%
     ) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.44),
@@ -31212,7 +31202,7 @@ body #global-user-frame,
 
 /* PLAYER文字は色を少し締め、白縁ではなくごく薄い紙面影 */
 .global-user-frame .hud-name{
-  color:#563f23 !important;
+  color:#4b4946 !important;
   font-weight:700 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,.94),
@@ -31242,7 +31232,7 @@ body #global-user-frame,
 }
 
 .global-user-frame .hud-res-val{
-  color:#4f3a21 !important;
+  color:#4b4946 !important;
   font-weight:700 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,.94),
@@ -32889,7 +32879,7 @@ html body #screen-summon .summon-banner-arrow-next::before{
   filter:blur(5px);
 }
 .global-user-frame .hud-name{
-  color:#594226 !important;
+  color:#4b4946 !important;
   font-weight:700 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,1),
@@ -32938,7 +32928,7 @@ html body #screen-summon .summon-banner-arrow-next::before{
 .global-user-frame .hud-res-val{
   position:relative !important;
   z-index:2 !important;
-  color:#594226 !important;
+  color:#4b4946 !important;
   font-weight:700 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,1),
@@ -32951,7 +32941,7 @@ html body #screen-summon .summon-banner-arrow-next::before{
 .global-user-frame .hud-gem-plus-btn{
   position:relative !important;
   z-index:3 !important;
-  color:#7e5b2b !important;
+  color:#68645f !important;
   font-size:19px !important;
   font-weight:700 !important;
   line-height:18px !important;
@@ -34762,17 +34752,17 @@ html body #global-user-frame .hud-lv-circle::before{
   background:
     conic-gradient(
       from 0deg,
-      #b58a37 0deg,
-      #e7cf7c var(--rank-exp),
-      rgba(139,112,68,.14) var(--rank-exp),
-      rgba(139,112,68,.14) 360deg
+      #77726b 0deg,
+      #a9a49d var(--rank-exp),
+      rgba(100,96,91,.14) var(--rank-exp),
+      rgba(100,96,91,.14) 360deg
     ) !important;
   -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.2px)) !important;
   mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.2px)) !important;
   box-shadow:none !important;
   filter:
-    drop-shadow(0 0 1px rgba(255,246,209,.85))
-    drop-shadow(0 0 3px rgba(181,138,55,.18)) !important;
+    drop-shadow(0 0 1px rgba(255,255,255,.86))
+    drop-shadow(0 0 3px rgba(95,91,86,.14)) !important;
   z-index:0 !important;
   pointer-events:none !important;
 }
@@ -34783,7 +34773,7 @@ html body #global-user-frame .hud-lv-circle::after{
   position:absolute !important;
   inset:2px !important;
   border-radius:50% !important;
-  border:1px solid rgba(155,120,54,.18) !important;
+  border:1px solid rgba(92,88,82,.18) !important;
   background:transparent !important;
   box-shadow:
     0 0 4px rgba(255,255,255,.68),
@@ -34801,564 +34791,9 @@ html body #global-user-frame .hud-lv-core{
 
 
 /* =========================================================
-   v408 GLOBAL CHROME POLICY — safe implementation
-   通常画面では既存レイアウトを一切変更せず、HUD / bottom nav を表示。
-   演出・プレイ中だけ body.ui-immersive で非表示。
+   UI FOUNDATION v2 — preserved unrelated notice reward fit
+   (extracted from the old v428 mixed chrome hotfix block)
    ========================================================= */
-html body.ui-immersive #global-user-frame,
-html body.ui-immersive #bottom-nav-shared{
-  display:none !important;
-  visibility:hidden !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-}
-
-
-/* =========================================================
-   v412 CHROME HAZE ONLY — external stylesheet mirror
-   Visual only. Page geometry is intentionally untouched.
-   ========================================================= */
-html body #global-user-frame.global-user-frame{background:transparent!important;background-color:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-html body #global-user-frame.global-user-frame::before,html body #global-user-frame.global-user-frame::after{content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;filter:none!important;}
-html body #bottom-nav-shared.bottom-nav{background:transparent!important;background-color:transparent!important;background-image:none!important;border:0!important;border-top:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-html body #bottom-nav-shared.bottom-nav::before,html body #bottom-nav-shared.bottom-nav::after{content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;}
-html body #bottom-nav-shared.bottom-nav .bottom-nav-item,html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active{background:transparent!important;border-color:transparent!important;box-shadow:none!important;}
-
-
-/* =========================================================
-   v414 CHROME BACKGROUND CONTINUITY — external mirror
-   Screen background reaches behind transparent global chrome;
-   content stays in the same usable region via padding.
-   ========================================================= */
-html body:not(.ui-immersive) .screen.active:not(#screen-main){
-  top:0 !important;
-  bottom:0 !important;
-  padding-top:var(--header-h) !important;
-  padding-bottom:var(--bottom-nav-h) !important;
-}
-
-
-/* =========================================================
-   v415 SUMMON — no redundant page header
-   The summon artwork/title is the page identity. Remove the extra
-   page-level “邂逅” heading and underline without touching geometry
-   of other screens.
-   ========================================================= */
-html body #screen-summon > .header{
-  display:none !important;
-}
-html body #screen-summon > .summon-layout{
-  margin-top:0 !important;
-}
-
-/* =========================================================
-   v418 COMMON CHROME DESIGN — ONE HUD / ONE NAV / ONE MIST
-   - All normal screens use exactly the same top/bottom chrome design.
-   - No screen-specific haze rules.
-   - Backgrounds remain transparent; only a long white mist protects text/icons.
-   - Geometry / scrolling / page positions are intentionally untouched.
-   ========================================================= */
-
-/* One common top mist for every normal screen, including Home / Summon. */
-html body:not(.ui-immersive) #global-user-frame.global-user-frame{
-  isolation:isolate !important;
-  overflow:visible !important;
-  background:transparent !important;
-  background-color:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-html body:not(.ui-immersive) #global-user-frame.global-user-frame::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  z-index:0 !important;
-  pointer-events:none !important;
-  left:-7% !important;
-  right:-7% !important;
-  top:-10px !important;
-  height:calc(100% + 58px) !important;
-  background:linear-gradient(
-    to bottom,
-    rgba(255,255,255,.78) 0%,
-    rgba(255,255,255,.68) 38%,
-    rgba(255,255,255,.44) 58%,
-    rgba(255,255,255,.20) 76%,
-    rgba(255,255,255,.06) 90%,
-    rgba(255,255,255,0) 100%
-  ) !important;
-  filter:blur(11px) !important;
-  -webkit-filter:blur(11px) !important;
-  border:0 !important;
-  box-shadow:none !important;
-  border-radius:0 !important;
-}
-
-html body:not(.ui-immersive) #global-user-frame.global-user-frame::after{
-  content:none !important;
-  display:none !important;
-}
-
-html body:not(.ui-immersive) #global-user-frame.global-user-frame > *{
-  position:relative;
-  z-index:2;
-}
-
-/* One common bottom mist for every normal screen. */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav{
-  isolation:isolate !important;
-  overflow:visible !important;
-  background:transparent !important;
-  background-color:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  border-top:0 !important;
-  box-shadow:none !important;
-}
-
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  z-index:0 !important;
-  pointer-events:none !important;
-  left:-7% !important;
-  right:-7% !important;
-  bottom:-10px !important;
-  height:calc(100% + 62px) !important;
-  background:linear-gradient(
-    to top,
-    rgba(255,255,255,.80) 0%,
-    rgba(255,255,255,.70) 38%,
-    rgba(255,255,255,.46) 58%,
-    rgba(255,255,255,.21) 76%,
-    rgba(255,255,255,.06) 90%,
-    rgba(255,255,255,0) 100%
-  ) !important;
-  filter:blur(12px) !important;
-  -webkit-filter:blur(12px) !important;
-  border:0 !important;
-  box-shadow:none !important;
-  border-radius:0 !important;
-}
-
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav::after{
-  content:none !important;
-  display:none !important;
-}
-
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item{
-  position:relative !important;
-  z-index:2 !important;
-}
-
-/* Retire the temporary screen-specific v417 veils completely. */
-#screen-zukan::before,
-#screen-zukan::after,
-#screen-setting::before,
-#screen-setting::after,
-#screen-friend::before,
-#screen-friend::after,
-#screen-bonus::before,
-#screen-bonus::after{
-  content:none !important;
-  display:none !important;
-}
-
-
-/* =========================================================
-   v420 FULLSCREEN SCROLL SHELL — common design
-   Scroll-centric screens use the full viewport exactly like Home / Summon.
-   The scroll layer itself runs behind the fixed HUD and bottom nav.
-   Safe top/bottom padding only protects the first/last content items.
-   No per-screen geometry tuning: one rule for every scroll screen.
-   ========================================================= */
-html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active{
-  position:fixed !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100dvh !important;
-  min-height:100dvh !important;
-  max-height:none !important;
-  padding:0 !important;
-  margin:0 !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-html body:not(.ui-immersive) :is(#screen-zukan,#screen-friend,#screen-setting).screen.active > .header,
-html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header{
-  position:absolute !important;
-  top:var(--header-h) !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:auto !important;
-  width:100% !important;
-  height:var(--page-header-h) !important;
-  min-height:var(--page-header-h) !important;
-  max-height:var(--page-header-h) !important;
-  margin:0 !important;
-  transform:none !important;
-  box-sizing:border-box !important;
-  z-index:220 !important;
-  background:transparent !important;
-  background-image:none !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active > .screen-scroll{
-  position:absolute !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100% !important;
-  min-height:0 !important;
-  max-height:none !important;
-  margin:0 !important;
-  box-sizing:border-box !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-  -webkit-overflow-scrolling:touch !important;
-  overscroll-behavior-y:contain !important;
-  touch-action:pan-y !important;
-  padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
-  padding-bottom:calc(var(--bottom-nav-h) + 52px) !important;
-  scroll-padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
-  scroll-padding-bottom:calc(var(--bottom-nav-h) + 52px) !important;
-  z-index:1 !important;
-}
-@media (min-width:500px){
-  html body:not(.ui-immersive) :is(#screen-bonus,#screen-zukan,#screen-friend,#screen-setting).screen.active{
-    left:50% !important;
-    right:auto !important;
-    width:100% !important;
-    max-width:430px !important;
-    transform:translateX(-50%) !important;
-  }
-}
-
-/* =========================================================
-   v420 PAGE-HEADER MELT — shared boundaryless top fade
-   Pages that have a visible section heading let scrolled content
-   dissolve BEFORE it reaches the heading. Home / Summon are excluded:
-   they intentionally have no page-heading boundary.
-   Geometry remains unchanged; this is visual masking only.
-   ========================================================= */
-
-/* Keep shared page headings clean and above the fade veil. */
-html body:not(.ui-immersive) :is(
-  #screen-ninmu,
-  #screen-zukan,
-  #screen-friend,
-  #screen-setting
-).screen.active > .header,
-html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header{
-  isolation:isolate !important;
-  overflow:visible !important;
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-/* Long, soft mist below the heading — no straight dividing line. */
-html body:not(.ui-immersive) :is(
-  #screen-ninmu,
-  #screen-zukan,
-  #screen-friend,
-  #screen-setting
-).screen.active > .header::after,
-html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  pointer-events:none !important;
-  z-index:-1 !important;
-  left:-6% !important;
-  right:-6% !important;
-  top:42% !important;
-  height:76px !important;
-  border:0 !important;
-  border-radius:0 !important;
-  background:linear-gradient(
-    to bottom,
-    rgba(255,255,255,.90) 0%,
-    rgba(255,255,255,.82) 24%,
-    rgba(255,255,255,.61) 48%,
-    rgba(255,255,255,.34) 69%,
-    rgba(255,255,255,.12) 86%,
-    rgba(255,255,255,0) 100%
-  ) !important;
-  box-shadow:
-    0 12px 26px 7px rgba(255,255,255,.28) !important;
-  filter:blur(10px) !important;
-  -webkit-filter:blur(10px) !important;
-  opacity:1 !important;
-}
-
-/* Heading text / controls stay crisp above the mist. */
-html body:not(.ui-immersive) :is(
-  #screen-ninmu,
-  #screen-zukan,
-  #screen-friend,
-  #screen-setting
-).screen.active > .header > *,
-html body:not(.ui-immersive) #screen-bonus.screen.active > .bonus-screen-header > *{
-  position:relative !important;
-  z-index:2 !important;
-}
-
-/* Home and Summon are intentional exceptions: no page-heading fade boundary. */
-html body:not(.ui-immersive) :is(#screen-main,#screen-summon).screen.active > .header::after{
-  content:none !important;
-  display:none !important;
-}
-
-
-/* =========================================================
-   v421 PAGE-HEADER MELT — REAL CONTENT MASK
-   The v420 pseudo-element only painted mist above the content.
-   v421 fades the scrolling layer itself, so content cannot visually
-   pierce through the page heading. Home / Summon stay exempt.
-   ========================================================= */
-html body:not(.ui-immersive) :is(
-  #screen-ninmu,
-  #screen-zukan,
-  #screen-friend,
-  #screen-setting,
-  #screen-bonus
-).screen.active > .screen-scroll{
-  --z-melt-start: calc(var(--header-h) + var(--page-header-h) - 10px);
-  --z-melt-end:   calc(var(--header-h) + var(--page-header-h) + 42px);
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent var(--z-melt-start),
-    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
-    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
-    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
-    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
-    #000 var(--z-melt-end),
-    #000 100%
-  ) !important;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent var(--z-melt-start),
-    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
-    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
-    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
-    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
-    #000 var(--z-melt-end),
-    #000 100%
-  ) !important;
-  -webkit-mask-repeat:no-repeat !important;
-  mask-repeat:no-repeat !important;
-  -webkit-mask-size:100% 100% !important;
-  mask-size:100% 100% !important;
-}
-
-/* No heading boundary on these full-art screens. */
-html body:not(.ui-immersive) :is(#screen-main,#screen-summon).screen.active > .screen-scroll{
-  -webkit-mask-image:none !important;
-  mask-image:none !important;
-}
-
-
-/* =========================================================
-   v422 PAGE-HEADER + BOTTOM-NAV MELT — TWO-SIDED CONTENT MASK
-   Keep the successful v421 top dissolve and add the same treatment
-   above the fixed bottom navigation. Home / Summon remain exempt.
-   Geometry and scroll positions are unchanged.
-   ========================================================= */
-html body:not(.ui-immersive) :is(
-  #screen-ninmu,
-  #screen-zukan,
-  #screen-friend,
-  #screen-setting,
-  #screen-bonus
-).screen.active > .screen-scroll{
-  --z-melt-start: calc(var(--header-h) + var(--page-header-h) - 10px);
-  --z-melt-end:   calc(var(--header-h) + var(--page-header-h) + 42px);
-  --z-bottom-melt-start: calc(100% - var(--bottom-nav-h) - 48px);
-  --z-bottom-melt-end:   calc(100% - var(--bottom-nav-h) + 8px);
-
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent var(--z-melt-start),
-    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
-    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
-    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
-    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
-    #000 var(--z-melt-end),
-    #000 var(--z-bottom-melt-start),
-    rgba(0,0,0,.82) calc(var(--z-bottom-melt-start) + 10px),
-    rgba(0,0,0,.55) calc(var(--z-bottom-melt-start) + 24px),
-    rgba(0,0,0,.28) calc(var(--z-bottom-melt-start) + 36px),
-    rgba(0,0,0,.10) calc(var(--z-bottom-melt-start) + 46px),
-    transparent var(--z-bottom-melt-end),
-    transparent 100%
-  ) !important;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent var(--z-melt-start),
-    rgba(0,0,0,.10) calc(var(--z-melt-start) + 8px),
-    rgba(0,0,0,.28) calc(var(--z-melt-start) + 18px),
-    rgba(0,0,0,.55) calc(var(--z-melt-start) + 30px),
-    rgba(0,0,0,.82) calc(var(--z-melt-start) + 40px),
-    #000 var(--z-melt-end),
-    #000 var(--z-bottom-melt-start),
-    rgba(0,0,0,.82) calc(var(--z-bottom-melt-start) + 10px),
-    rgba(0,0,0,.55) calc(var(--z-bottom-melt-start) + 24px),
-    rgba(0,0,0,.28) calc(var(--z-bottom-melt-start) + 36px),
-    rgba(0,0,0,.10) calc(var(--z-bottom-melt-start) + 46px),
-    transparent var(--z-bottom-melt-end),
-    transparent 100%
-  ) !important;
-  -webkit-mask-repeat:no-repeat !important;
-  mask-repeat:no-repeat !important;
-  -webkit-mask-size:100% 100% !important;
-  mask-size:100% 100% !important;
-}
-
-/* Full-art screens deliberately keep edge-to-edge content. */
-html body:not(.ui-immersive) :is(#screen-main,#screen-summon).screen.active > .screen-scroll{
-  -webkit-mask-image:none !important;
-  mask-image:none !important;
-}
-
-/* =========================================================
-   v424 SETTING — INITIAL CONTENT BREATHING ROOM
-   Keep the shared fullscreen scroll + two-sided dissolve from v422.
-   Only the setting screen's initial content starts slightly lower so
-   the first section label (プロフィール) is fully readable at rest.
-   Scroll geometry, masks, HUD, nav, and other screens stay unchanged.
-   ========================================================= */
-html body:not(.ui-immersive) #screen-setting.screen.active > .screen-scroll{
-  padding-top:calc(var(--header-h) + var(--page-header-h) + 52px) !important;
-  scroll-padding-top:calc(var(--header-h) + var(--page-header-h) + 52px) !important;
-}
-
-
-/* =========================================================
-   v425 SETTING — FIRST SECTION POSITION FIX
-   v424 moved padding on the fullscreen scroll viewport itself.
-   With the masked absolute scroller that does not reliably change the
-   visual resting position. Move the first content block instead.
-   ========================================================= */
-html body:not(.ui-immersive) #screen-setting.screen.active > .screen-scroll{
-  padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
-  scroll-padding-top:calc(var(--header-h) + var(--page-header-h)) !important;
-}
-html body:not(.ui-immersive) #screen-setting.screen.active > .screen-scroll > .setting-section:first-child{
-  margin-top:44px !important;
-}
-
-/* =========================================================
-   v426 巡行：左カテゴリ下に出る横スクロールバーを除去
-   原因：ninmu-left の横方向 overflow と active マーカーの張り出し。
-   横スクロールだけ禁止し、縦方向の動作は維持する。
-   ========================================================= */
-#screen-ninmu .ninmu-left{
-  overflow-x:hidden !important;
-}
-#screen-ninmu .ninmu-cat-item.active::after{
-  right:2px !important;
-}
-
-/* =========================================================
-   v427 BONUS HEADER UNDERLINE ALIGNMENT
-   Keep the bonus title and its decorative rule optically centered.
-   ========================================================= */
-#screen-bonus .bonus-screen-header .header-title{
-  top:50% !important;
-  left:50% !important;
-  right:auto !important;
-  width:auto !important;
-  transform:translate(-50%,-50%) !important;
-  text-align:center !important;
-  overflow:visible !important;
-}
-#screen-bonus .bonus-screen-header .header-title::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  top:calc(100% + 7px) !important;
-  width:28px !important;
-  height:2px !important;
-  margin:0 !important;
-  transform:translateX(-50%) !important;
-  border-radius:999px !important;
-  background:linear-gradient(90deg, rgba(183,155,94,.85), rgba(183,155,94,.15)) !important;
-}
-
-
-/* =========================================================
-   v428 FINE FIXES
-   1) Bonus/Friend title underline: explicit centered rule
-   2) Friend: visible back button to Home
-   3) Character index: first row starts below the top dissolve at rest
-   4) Notice start-bonus bundle: remove fixed-height clipping
-   ========================================================= */
-
-/* Shared title rule: keep the decorative line independent from title width/overflow. */
-#screen-bonus .bonus-screen-header .header-title,
-#screen-friend .header .header-title{
-  overflow:visible !important;
-}
-#screen-bonus .bonus-screen-header .header-title::after,
-#screen-friend .header .header-title::after{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  right:auto !important;
-  top:calc(100% + 7px) !important;
-  width:28px !important;
-  height:2px !important;
-  margin:0 !important;
-  transform:translateX(-50%) !important;
-  border:0 !important;
-  border-radius:999px !important;
-  background:linear-gradient(90deg, rgba(183,155,94,.85), rgba(183,155,94,.15)) !important;
-  opacity:1 !important;
-  z-index:4 !important;
-  pointer-events:none !important;
-}
-
-/* Friend back button follows the Bonus screen's text-back pattern. */
-#screen-friend .friend-back-btn{
-  position:absolute !important;
-  top:50% !important;
-  left:18px !important;
-  right:auto !important;
-  transform:translateY(-50%) !important;
-  min-width:auto !important;
-  width:auto !important;
-  height:32px !important;
-  margin:0 !important;
-  padding:0 !important;
-  border:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  color:#9b7a3d !important;
-  font-family:"Noto Serif JP",serif !important;
-  font-size:13px !important;
-  font-weight:500 !important;
-  letter-spacing:.02em !important;
-  line-height:32px !important;
-  z-index:6 !important;
-}
-
-/* Character list: initial content should begin fully below the top dissolve.
-   Only the resting position changes; the full-screen scroll/mask behavior stays intact. */
-html body:not(.ui-immersive) #screen-zukan.screen.active.is-primoa-index > .screen-scroll > #zukan-sub-box{
-  margin-top:30px !important;
-}
-
-/* Notice: start-bonus has two reward rows. The generic 34px reward-main height clipped it. */
 .notice-reward-main:has(.notice-reward-start-bundle){
   height:auto !important;
   min-height:54px !important;
@@ -35370,261 +34805,8 @@ html body:not(.ui-immersive) #screen-zukan.screen.active.is-primoa-index > .scre
   min-height:74px !important;
   overflow:visible !important;
 }
-.notice-reward-start-bundle{
-  overflow:visible !important;
-}
-.notice-reward-start-row{
-  row-gap:5px !important;
-}
-
-/* =========================================================
-   v429 HEADER RULE HARDENING
-   Title-level ::after could be lost by older header/pseudo rules.
-   Draw the short gold rule on the header container itself instead.
-   ========================================================= */
-#screen-bonus .bonus-screen-header,
-#screen-friend .header{
-  position:relative !important;
-  overflow:visible !important;
-}
-
-/* disable the fragile title pseudo rule */
-#screen-bonus .bonus-screen-header .header-title::after,
-#screen-friend .header .header-title::after{
-  content:none !important;
-  display:none !important;
-}
-
-#screen-bonus .bonus-screen-header::before,
-#screen-friend .header::before{
-  content:"" !important;
-  display:block !important;
-  position:absolute !important;
-  left:50% !important;
-  top:calc(50% + 15px) !important;
-  width:28px !important;
-  height:2px !important;
-  transform:translateX(-50%) !important;
-  margin:0 !important;
-  border:0 !important;
-  border-radius:999px !important;
-  background:linear-gradient(90deg, rgba(183,155,94,.88), rgba(183,155,94,.16)) !important;
-  opacity:1 !important;
-  z-index:230 !important;
-  pointer-events:none !important;
-}
-\n\n/* =========================================================\n   v430 FRIEND SCREEN CLEANUP\n   - Remove the raid banner from Friend; raid lives elsewhere.\n   - With Friend Requests now first, lower the resting content slightly\n     so the first section does not sit inside the top dissolve mask.\n   ========================================================= */\nhtml body:not(.ui-immersive) #screen-friend.screen.active > .screen-scroll > .friend-section:first-child{\n  margin-top:32px !important;\n}\n
-
-/* =========================================================
-   v431 FRIEND REST POSITION + NAV NOTICE COLOR PROTECTION
-   - Lower Friend's first section further so its heading is fully clear
-     of the shared top dissolve at the initial resting position.
-   - Notification dots in the fixed bottom nav stay vivid and are not
-     visually washed out by shared mist/filter effects.
-   ========================================================= */
-html body:not(.ui-immersive) #screen-friend.screen.active > .screen-scroll > .friend-section:first-child{
-  margin-top:62px !important;
-}
-
-/* Fixed navigation notification badges must render above the mist as UI chrome. */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-notice{
-  position:absolute !important;
-  z-index:30 !important;
-  width:14px !important;
-  height:14px !important;
-  min-width:14px !important;
-  min-height:14px !important;
-  padding:0 !important;
-  box-sizing:border-box !important;
-  border-radius:50% !important;
-  background:#ef3448 !important;
-  background-color:#ef3448 !important;
-  border:1px solid rgba(255,255,255,.96) !important;
-  box-shadow:0 1px 4px rgba(92,20,29,.34), 0 0 7px rgba(239,52,72,.48) !important;
-  opacity:1 !important;
-  filter:none !important;
-  -webkit-filter:none !important;
-  mix-blend-mode:normal !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  transform:none;
-}
-
-/* Keep every bottom-nav child above the common mist veil; future badges inherit clean color too. */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > *{
-  position:relative;
-  z-index:3;
-}
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
-  position:absolute !important;
-  z-index:31 !important;
-}
-
-
-/* =========================================================
-   v432 BOTTOM NAV NOTICE — match the standard growth dot
-   - Same size / red / white rim / shadow as character-card notices.
-   - Render as fixed UI chrome above the bottom mist, with no filters.
-   ========================================================= */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item{
-  filter:none !important;
-  -webkit-filter:none !important;
-  opacity:1 !important;
-}
-
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-notice{
-  position:absolute !important;
-  z-index:999 !important;
-  width:11px !important;
-  height:11px !important;
-  min-width:11px !important;
-  min-height:11px !important;
-  padding:0 !important;
-  box-sizing:border-box !important;
-  border-radius:50% !important;
-  background:#e33b3b !important;
-  background-color:#e33b3b !important;
-  border:1.5px solid rgba(255,255,255,.95) !important;
-  box-shadow:
-    0 1px 3px rgba(75,25,18,.28),
-    0 0 0 2px rgba(227,59,59,.12) !important;
-  opacity:1 !important;
-  filter:none !important;
-  -webkit-filter:none !important;
-  mix-blend-mode:normal !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  isolation:isolate !important;
-}
-
-/* Keep any future nav notice on the same visual spec. */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav [class*="notice"][class*="bottom-nav"],
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
-  width:11px !important;
-  height:11px !important;
-  min-width:11px !important;
-  min-height:11px !important;
-  background:#e33b3b !important;
-  border:1.5px solid rgba(255,255,255,.95) !important;
-  filter:none !important;
-  -webkit-filter:none !important;
-  opacity:1 !important;
-}
-
-/* =========================================================
-   v433 BOTTOM NAV NOTICE — vivid red core, same visual size as card dots
-   The previous border-box badge let the white rim eat into the 11px disk,
-   making the red center look pale. Keep the full 11px red core and draw the
-   white rim OUTSIDE with box-shadow, so the badge stays vivid over the mist.
-   ========================================================= */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav #bnav-zukan-notice.bottom-nav-notice,
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
-  width:11px !important;
-  height:11px !important;
-  min-width:11px !important;
-  min-height:11px !important;
-  box-sizing:content-box !important;
-  padding:0 !important;
-  border:0 !important;
-  border-radius:50% !important;
-  background:#e33b3b !important;
-  background-color:#e33b3b !important;
-  box-shadow:
-    0 0 0 1.5px rgba(255,255,255,.96),
-    0 1px 3px rgba(75,25,18,.28),
-    0 0 0 3.5px rgba(227,59,59,.10) !important;
-  opacity:1 !important;
-  filter:none !important;
-  -webkit-filter:none !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  mix-blend-mode:normal !important;
-  isolation:isolate !important;
-  z-index:9999 !important;
-}
-
-/* =========================================================
-   v434 BOTTOM NAV NOTICE — exact character-dot visual spec
-   Use the SAME core geometry/color/rim/shadow as the character growth dot.
-   Remove the extra glow/halo from v431-v433 that made the nav badge look pale.
-   ========================================================= */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav #bnav-zukan-notice.bottom-nav-notice,
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item > .bottom-nav-notice{
-  width:9px !important;
-  height:9px !important;
-  min-width:9px !important;
-  min-height:9px !important;
-  box-sizing:content-box !important;
-  padding:0 !important;
-  border-radius:50% !important;
-  background:#e33b3b !important;
-  background-color:#e33b3b !important;
-  border:1.5px solid rgba(255,255,255,.96) !important;
-  box-shadow:
-    0 1px 3px rgba(75,25,18,.28),
-    0 0 0 2px rgba(227,59,59,.10) !important;
-  opacity:1 !important;
-  filter:none !important;
-  -webkit-filter:none !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  mix-blend-mode:normal !important;
-  isolation:isolate !important;
-  z-index:10001 !important;
-  animation:character-growth-dot-pulse-v246 1.8s ease-in-out infinite !important;
-}
-
-
-/* =========================================================
-   v435 BOTTOM NAV NOTICE — TRUE FOREGROUND OVERLAY
-   The character-tab notice is removed from .bottom-nav-item entirely and
-   rendered as a direct child of #bottom-nav-shared. This puts it outside the
-   per-item haze/filter stacking context instead of trying to override it.
-   It intentionally has no pulse animation so its apparent size/color stays
-   identical to the static character-card notification dots.
-   ========================================================= */
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav{
-  position:fixed !important;
-  isolation:isolate !important;
-}
-
-html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.bottom-nav-notice-overlay{
-  position:absolute !important;
-  /* second of five nav slots = 30% center; keep horizontal center, make dot one size larger and slightly lower */
-  left:calc(30% + 12px) !important;
-  right:auto !important;
-  top:calc(7px + 3mm) !important;
-  bottom:auto !important;
-  width:11px !important;
-  height:11px !important;
-  min-width:11px !important;
-  min-height:11px !important;
-  box-sizing:border-box !important;
-  padding:0 !important;
-  margin:0 !important;
-  border-radius:50% !important;
-  background:#e33b3b !important;
-  background-color:#e33b3b !important;
-  border:1.5px solid rgba(255,255,255,.96) !important;
-  box-shadow:0 1px 3px rgba(75,25,18,.28),0 0 0 2px rgba(227,59,59,.10) !important;
-  opacity:1 !important;
-  filter:none !important;
-  -webkit-filter:none !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  mix-blend-mode:normal !important;
-  transform:none !important;
-  animation:none !important;
-  pointer-events:none !important;
-  z-index:2147483647 !important;
-}
-
-
-/* =========================================================
-   v436 BOTTOM NAV NOTICE — size/position micro-adjustment
-   Slightly larger and lower, with the same vivid foreground treatment.
-   ========================================================= */
-
+.notice-reward-start-bundle{overflow:visible !important;}
+.notice-reward-start-row{row-gap:5px !important;}
 
 /* =========================================================
    v437 CHARACTER INDEX — first-row notice dots foreground overlay
@@ -37484,3 +36666,465 @@ html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-right{
   }
 }
 
+
+
+
+
+
+
+/* =========================================================
+   build651 RANK EXP RING — 12 o'clock → clockwise (fixed)
+   - CSS conic-gradient の 0deg は12時方向。from 0deg を明示。
+   - --rank-exp は JS 側の 0〜360deg をそのまま時計回りに消費する。
+   - 右(3時) → 下(6時) → 左(9時) の順で進む。
+   ========================================================= */
+html body #global-user-frame .hud-lv-circle{
+  position:relative !important;
+  background:radial-gradient(circle at 50% 50%, rgba(255,252,245,.44) 0%, rgba(255,248,235,.18) 58%, rgba(255,245,225,0) 80%) !important;
+  border:0 !important;
+  box-shadow:
+    0 0 10px rgba(255,255,255,.84),
+    0 0 18px rgba(244,221,166,.45),
+    0 0 28px rgba(184,136,44,.26) !important;
+  isolation:isolate !important;
+}
+
+/* 進捗リング本体：0deg=12時、正方向=時計回り */
+html body #global-user-frame .hud-lv-circle::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:-1px !important;
+  border-radius:50% !important;
+  background:
+    conic-gradient(
+      from 0deg at 50% 50%,
+      #9b702b 0deg,
+      #d1a34b calc(var(--rank-exp) * .28),
+      #f7e4a4 calc(var(--rank-exp) * .64),
+      #e9c873 calc(var(--rank-exp) * .84),
+      #b8832f var(--rank-exp),
+      rgba(165,132,69,.22) var(--rank-exp),
+      rgba(165,132,69,.22) 360deg
+    ) !important;
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)) !important;
+  mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)) !important;
+  filter:
+    drop-shadow(0 0 1px rgba(255,249,230,.98))
+    drop-shadow(0 0 5px rgba(221,181,88,.42))
+    drop-shadow(0 0 11px rgba(174,129,38,.22)) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+}
+
+html body #global-user-frame .hud-lv-circle::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:1px !important;
+  border-radius:50% !important;
+  border:1px solid rgba(190,150,72,.44) !important;
+  background:transparent !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,248,223,.80),
+    inset 0 0 6px rgba(255,244,214,.36),
+    0 0 5px rgba(255,255,255,.58),
+    0 0 13px rgba(207,166,74,.24) !important;
+  opacity:1 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+}
+
+html body #global-user-frame .hud-lv-core{
+  position:relative !important;
+  z-index:2 !important;
+  background:radial-gradient(circle at 38% 30%, rgba(255,255,255,.98) 0%, rgba(255,251,243,.93) 56%, rgba(255,244,224,.50) 100%) !important;
+  border-radius:50% !important;
+  box-shadow:
+    inset 0 0 5px rgba(255,255,255,.74),
+    inset 0 0 12px rgba(255,245,220,.24),
+    0 0 6px rgba(255,255,255,.28) !important;
+}
+
+html body #global-user-frame .hud-lv-label,
+html body #global-user-frame .hud-lv-num{
+  color:#6b4f22 !important;
+  text-shadow:
+    0 0 4px rgba(255,255,255,.98),
+    0 1px 1px rgba(255,247,227,.62),
+    0 0 10px rgba(255,236,190,.28) !important;
+}
+
+
+/* =========================================================
+   build652 TOP HUD polish
+   - PLAYER name: remove the remaining rectangular frame completely
+   - Keep only a boundaryless white haze behind the name
+   - RANK EXP ring: preserve 12 o'clock -> clockwise progress,
+     but reduce the gold/white glow intensity
+   ========================================================= */
+
+/* PLAYER name: no panel, no border, no rectangular shadow. */
+html body #global-user-frame .hud-info{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-top:0 !important;
+  border-right:0 !important;
+  border-bottom:0 !important;
+  border-left:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* Replace the old horizontal/box-like haze with a soft ellipse. */
+html body #global-user-frame .hud-info::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  left:-17px !important;
+  right:auto !important;
+  top:50% !important;
+  width:140px !important;
+  height:48px !important;
+  transform:translateY(-50%) !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:radial-gradient(
+    ellipse at 48% 50%,
+    rgba(255,255,255,.88) 0%,
+    rgba(255,255,255,.64) 36%,
+    rgba(255,255,255,.30) 62%,
+    rgba(255,255,255,.08) 75%,
+    rgba(255,255,255,0) 88%
+  ) !important;
+  box-shadow:none !important;
+  filter:blur(7px) !important;
+  -webkit-filter:blur(7px) !important;
+  opacity:.92 !important;
+  pointer-events:none !important;
+}
+
+/* No second edge/divider on the player name group. */
+html body #global-user-frame .hud-info::after{
+  content:none !important;
+  display:none !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+
+/* Also remove the legacy underline element if present. */
+html body #global-user-frame .hud-sweep-line-player{
+  display:none !important;
+}
+
+/* RANK circle outer glow: softer than build651. */
+html body #global-user-frame .hud-lv-circle{
+  box-shadow:
+    0 0 6px rgba(255,255,255,.62),
+    0 0 11px rgba(239,214,155,.24),
+    0 0 16px rgba(179,132,42,.10) !important;
+}
+
+/* Keep exact build651 clockwise gradient; only reduce emitted glow. */
+html body #global-user-frame .hud-lv-circle::before{
+  filter:
+    drop-shadow(0 0 1px rgba(255,249,230,.76))
+    drop-shadow(0 0 3px rgba(211,171,82,.22))
+    drop-shadow(0 0 6px rgba(169,124,34,.10)) !important;
+}
+
+html body #global-user-frame .hud-lv-circle::after{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,248,223,.64),
+    inset 0 0 4px rgba(255,244,214,.20),
+    0 0 3px rgba(255,255,255,.36),
+    0 0 7px rgba(203,161,70,.10) !important;
+}
+
+html body #global-user-frame .hud-lv-core{
+  box-shadow:
+    inset 0 0 4px rgba(255,255,255,.58),
+    inset 0 0 8px rgba(255,245,220,.14),
+    0 0 3px rgba(255,255,255,.14) !important;
+}
+
+html body #global-user-frame .hud-lv-label,
+html body #global-user-frame .hud-lv-num{
+  text-shadow:
+    0 0 3px rgba(255,255,255,.86),
+    0 1px 1px rgba(255,247,227,.48),
+    0 0 6px rgba(255,236,190,.12) !important;
+}
+
+@media (max-width:360px){
+  html body #global-user-frame .hud-info::before{
+    width:118px !important;
+    height:44px !important;
+    left:-14px !important;
+  }
+}
+
+
+/* =========================================================
+   build653 TOP HUD ink sweep lines
+   - モック参考: PLAYER / GEM / COIN の区分を見やすくするため
+     ペンで走り書いたような細い金ラインを追加
+   - build652のフレームレス方針は維持
+   - 経験値リングの弱めた発光も維持
+   ========================================================= */
+
+/* line anchor */
+html body #global-user-frame .hud-info,
+html body #global-user-frame .hud-resource{
+  position:relative !important;
+  overflow:visible !important;
+}
+
+html body #global-user-frame .hud-sweep-line{
+  display:block !important;
+  position:absolute !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+  height:2px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    90deg,
+    rgba(191,160,89,0) 0%,
+    rgba(191,160,89,.18) 6%,
+    rgba(191,160,89,.60) 20%,
+    rgba(182,149,74,.82) 52%,
+    rgba(192,160,91,.54) 82%,
+    rgba(192,160,91,.14) 94%,
+    rgba(192,160,91,0) 100%
+  ) !important;
+  box-shadow:
+    0 0 .5px rgba(255,248,225,.62),
+    0 0 2px rgba(201,164,79,.10) !important;
+  filter:blur(.08px) !important;
+  transform-origin:left center !important;
+}
+
+html body #global-user-frame .hud-sweep-line::after{
+  content:"" !important;
+  position:absolute !important;
+  left:12% !important;
+  right:8% !important;
+  top:0 !important;
+  bottom:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,250,236,0) 0%,
+    rgba(255,250,236,.16) 20%,
+    rgba(255,250,236,.42) 50%,
+    rgba(255,250,236,.14) 82%,
+    rgba(255,250,236,0) 100%
+  ) !important;
+  opacity:.8 !important;
+}
+
+/* player name group */
+html body #global-user-frame .hud-sweep-line-player{
+  left:-8px !important;
+  width:214px !important;
+  bottom:1px !important;
+  transform:rotate(-0.55deg) !important;
+  opacity:.95 !important;
+}
+
+/* gem / coin groups */
+html body #global-user-frame .hud-sweep-line-gem,
+html body #global-user-frame .hud-sweep-line-coin{
+  left:18px !important;
+  right:-8px !important;
+  bottom:-2px !important;
+  width:auto !important;
+  opacity:.88 !important;
+}
+
+html body #global-user-frame .hud-sweep-line-gem{
+  transform:rotate(-0.45deg) !important;
+}
+
+html body #global-user-frame .hud-sweep-line-coin{
+  transform:rotate(-0.15deg) !important;
+}
+
+/* keep line behind the text / icons but visible through the frameless HUD */
+html body #global-user-frame .hud-name,
+html body #global-user-frame .hud-res-icon,
+html body #global-user-frame .hud-res-val,
+html body #global-user-frame .hud-gem-plus-btn{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+@media (max-width:360px){
+  html body #global-user-frame .hud-sweep-line-player{
+    width:178px !important;
+    left:-6px !important;
+  }
+  html body #global-user-frame .hud-sweep-line-gem,
+  html body #global-user-frame .hud-sweep-line-coin{
+    left:16px !important;
+    right:-6px !important;
+  }
+}
+
+
+/* =========================================================
+   build655 TOP HUD ink sweep lines — thinner stroke
+   - build653の長さ・配置・色味は維持
+   - 走り書きラインだけ2px → 1pxへ細線化
+   ========================================================= */
+html body #global-user-frame .hud-sweep-line{
+  height:1px !important;
+  box-shadow:
+    0 0 .35px rgba(255,248,225,.48),
+    0 0 1px rgba(201,164,79,.07) !important;
+  filter:none !important;
+}
+
+html body #global-user-frame .hud-sweep-line::after{
+  top:50% !important;
+  bottom:auto !important;
+  height:.5px !important;
+  transform:translateY(-50%) !important;
+  opacity:.68 !important;
+}
+
+
+/* =========================================================
+   build656 TOP HUD ink sweep lines — ultra thin
+   - build655よりさらに細線化
+   - 長さ・配置・色味は維持
+   ========================================================= */
+html body #global-user-frame .hud-sweep-line{
+  height:.55px !important;
+  box-shadow:
+    0 0 .2px rgba(255,248,225,.34),
+    0 0 .55px rgba(201,164,79,.04) !important;
+  filter:none !important;
+}
+
+html body #global-user-frame .hud-sweep-line::after{
+  top:50% !important;
+  bottom:auto !important;
+  height:.22px !important;
+  transform:translateY(-50%) !important;
+  opacity:.52 !important;
+}
+
+
+/* =========================================================
+   build657 PLAYER NAME sweep line tuning
+   - プレイヤー名だけ太く見える差を補正
+   - 下線を少し下へ
+   - 長さを約10%延長
+   - 結晶 / コインの線はbuild656のまま
+   ========================================================= */
+html body #global-user-frame .hud-sweep-line-player{
+  width:235px !important;          /* 214px -> 約+10% */
+  bottom:-1px !important;          /* 1px -> -1px : 2px下へ */
+  height:.44px !important;         /* 見た目の太さを少し細く補正 */
+  opacity:.82 !important;
+  box-shadow:
+    0 0 .14px rgba(255,248,225,.24),
+    0 0 .35px rgba(201,164,79,.025) !important;
+}
+
+html body #global-user-frame .hud-sweep-line-player::after{
+  height:.16px !important;
+  opacity:.42 !important;
+}
+
+@media (max-width:360px){
+  html body #global-user-frame .hud-sweep-line-player{
+    width:196px !important;        /* 178px -> 約+10% */
+    bottom:-1px !important;
+  }
+}
+
+
+/* =========================================================
+   build658 PLAYER underline — effective position/length fix
+   - index末尾のHUDレイアウト指定と同じ値に統一
+   - 実表示長 108px → 119px（約+10%）
+   - 下線を既存位置より少し下へ
+   - 線の細さはbuild657のまま
+   ========================================================= */
+html body #global-user-frame .hud-sweep-line-player{
+  left:8px !important;
+  width:119px !important;
+  top:auto !important;
+  bottom:-4px !important;
+}
+
+@media (max-width:360px){
+  html body #global-user-frame .hud-sweep-line-player{
+    width:119px !important;
+    left:8px !important;
+    top:auto !important;
+    bottom:-4px !important;
+  }
+}
+
+
+/* =========================================================
+   build659 PLAYER underline — match currency lines + extend
+   - プレイヤー名下線の見た目を結晶/コインの共通線と同じに統一
+   - build658の縦位置は維持
+   - 現在119pxから約10%延長して131px
+   ========================================================= */
+html body #global-user-frame .hud-sweep-line-player{
+  left:8px !important;
+  width:131px !important;
+  top:auto !important;
+  bottom:-4px !important;
+  height:.55px !important;
+  opacity:.88 !important;
+  box-shadow:
+    0 0 .2px rgba(255,248,225,.34),
+    0 0 .55px rgba(201,164,79,.04) !important;
+  filter:none !important;
+  transform:rotate(-0.45deg) !important;
+}
+html body #global-user-frame .hud-sweep-line-player::after{
+  height:.22px !important;
+  opacity:.52 !important;
+}
+@media (max-width:360px){
+  html body #global-user-frame .hud-sweep-line-player{
+    left:8px !important;
+    width:131px !important;
+    top:auto !important;
+    bottom:-4px !important;
+    height:.55px !important;
+    opacity:.88 !important;
+    transform:rotate(-0.45deg) !important;
+  }
+}
+
+
+/* =========================================================
+   build661 RANK ring center — transparent
+   - RANK文字と数字は維持
+   - 中央の白い丸（hud-lv-core）だけを撤去
+   - 経験値リングと外周の金線はそのまま
+   ========================================================= */
+html body #global-user-frame .hud-lv-circle{
+  background:transparent !important;
+}
+
+html body #global-user-frame .hud-lv-core{
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
