@@ -36503,15 +36503,15 @@ img[src*="type_dark.webp"]{
   background:
     radial-gradient(
       ellipse at 50% 50%,
-      rgba(255,255,255,.64) 0%,
-      rgba(255,255,255,.48) 30%,
-      rgba(255,255,255,.27) 52%,
-      rgba(255,255,255,.10) 70%,
+      rgba(255,255,255,.54) 0%,
+      rgba(255,255,255,.40) 30%,
+      rgba(255,255,255,.22) 52%,
+      rgba(255,255,255,.08) 70%,
       rgba(255,255,255,0) 90%
     ) !important;
   filter:blur(7px) !important;
   -webkit-filter:blur(7px) !important;
-  opacity:.92 !important;
+  opacity:.84 !important;
 }
 
 /* 中心だけ少し密度を足して、背景が明るい場所でも字が沈まないようにする */
@@ -36531,14 +36531,14 @@ img[src*="type_dark.webp"]{
   background:
     radial-gradient(
       ellipse at center,
-      rgba(255,255,255,.42) 0%,
-      rgba(255,255,255,.24) 45%,
-      rgba(255,255,255,.08) 68%,
+      rgba(255,255,255,.35) 0%,
+      rgba(255,255,255,.20) 45%,
+      rgba(255,255,255,.06) 68%,
       rgba(255,255,255,0) 88%
     ) !important;
   filter:blur(9px) !important;
   -webkit-filter:blur(9px) !important;
-  opacity:.88 !important;
+  opacity:.80 !important;
 }
 
 /* 霞より文字を必ず前面へ */
@@ -36549,10 +36549,10 @@ img[src*="type_dark.webp"]{
 
 /* タップ時も霞を消さず、ほんの少しだけ薄くする */
 #screen-main .home-type-entry:active .home-type-letter-layer::before{
-  opacity:.78 !important;
+  opacity:.70 !important;
 }
 #screen-main .home-type-entry:active .home-type-letter-layer::after{
-  opacity:.72 !important;
+  opacity:.65 !important;
 }
 
 /* 小さい端末では広がりだけ少し抑える */
@@ -37127,4 +37127,46 @@ html body #global-user-frame .hud-lv-core{
   box-shadow:none !important;
   backdrop-filter:none !important;
   -webkit-backdrop-filter:none !important;
+}
+
+
+/* =========================================================
+   build664 HOME side-menu notification dots — direct position fix
+   - transform移動ではなく、実効 top/right を直接変更
+   - 現在位置から右へドット1個分（19px）
+   - 現在位置から下へドット1.5個分（28.5px）
+   - サイズ・色・表示条件は変更しない
+   ========================================================= */
+#screen-main .home-notice-badge,
+#screen-main .shinju-home-entry .shinju-home-entry-badge,
+#screen-main .bonus-home-entry-notice,
+#screen-main .friend-home-entry .friend-notice-dot,
+#screen-main .raid-home-entry .raid-notice-dot {
+  top: calc(5px + 5mm - 2px + 28.5px) !important;
+  right: -19px !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+/* 表示状態の旧アニメーション/transformにも確実に勝つ */
+#screen-main .home-notice-btn.has-unread .home-notice-badge,
+#screen-main .home-notice-badge[style*="display: block"],
+#screen-main .home-notice-badge[style*="display:block"],
+#screen-main .home-notice-badge.show,
+#screen-main .shinju-home-entry.has-items .shinju-home-entry-badge,
+#screen-main .bonus-home-entry.has-unclaimed .bonus-home-entry-notice,
+#screen-main .friend-home-entry.has-friend-notice .friend-notice-dot,
+#screen-main .raid-home-entry .raid-notice-dot {
+  transform: none !important;
+  animation: none !important;
+}
+
+
+/* =========================================================
+   build667 HUD GEM PLUS — subtle warm brown tone
+   - build665をベースに、結晶右の「+」だけ少しブラウン寄りへ
+   - サイズ / 位置 / 発光 / タップ領域は変更しない
+   ========================================================= */
+html body #global-user-frame .hud-gem-plus-btn{
+  color:#75634f !important;
 }
