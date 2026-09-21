@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '743';
+  var FALLBACK_BUILD = '745';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -231,7 +231,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="743">
+  <meta name="sasaphia-build" content="745">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -497,57 +497,106 @@
       display:none !important;
     }
   </style>
-  <style id="home-side-notice-offset-build665">
-  /*
-    build665: side-menu notice position fix.
-    IMPORTANT: this style is intentionally placed AFTER raid_event.css.
-    raid_event.css owns .raid-notice-dot with !important top/right rules,
-    so changing style.css alone cannot move the visible raid dot.
-
-    Move every side-menu notice marker from its own current position by:
-      X = +1 dot diameter to the right
-      Y = +1.5 dot diameters downward
-
-    Use the independent `translate` property so existing `transform:scale()` /
-    pulse animations do not cancel the positional offset.
-  */
-  #screen-main{
-    --home-side-notice-shift-x:13px;
-    --home-side-notice-shift-y:19.5px;
-  }
-
-  html body #screen-main .home-notice-badge,
-  html body #screen-main .shinju-home-entry .shinju-home-entry-badge,
-  html body #screen-main .bonus-home-entry-notice,
-  html body #screen-main .friend-home-entry .friend-notice-dot,
-  html body #screen-main .raid-home-entry .raid-notice-dot{
-    translate:var(--home-side-notice-shift-x) var(--home-side-notice-shift-y) !important;
-  }
-
-  /* raid_event.css uses 12px dots on compact screens. Keep the offset proportional. */
-  @media (max-width:380px),(max-height:700px){
-    #screen-main{
-      --home-side-notice-shift-x:12px;
-      --home-side-notice-shift-y:18px;
-    }
-  }
-  </style>
-
-<style id="home-message-notice-position-build734 build735-character-add-35-37">
+  <style id="home-menu-notice-anchors-build745">
 /*
-  build734: メッセージ通知バッジをbuild733から少しだけ左へ戻す。
-  raid向けの build664/build665 の位置補正を受けないようにする。
+  build745 — HOME MENU NOTICE ANCHORS
+
+  通知位置を画面・端末ではなく「各メニューボタン自身」を基準に固定する。
+  過去の共通 translate / mm / compact端末用補正をすべて無効化。
+
+  重要:
+  - 各通知は独立セレクタ。今後1つだけ調整しても他メニューへ波及しない。
+  - px固定 + 親要素基準なので、画面高さ/幅/端末DPIによる位置差を作らない。
+  - 通知の表示/非表示ロジック、色、サイズは既存のまま。
 */
-html body #screen-main .home-notice-btn .home-notice-badge{
-  top:calc(5px + 5mm) !important;
-  right:2px !important;
-  translate:15.5px 0 !important;
-  transform:none !important;
+
+/* 各通知の containing block を、そのメニュー自身に限定 */
+html body #screen-main > .home-notice-btn.home-type-entry,
+html body #screen-main > #shinju-home-entry.shinju-home-entry,
+html body #screen-main > #bonus-home-entry.bonus-home-entry,
+html body #screen-main > #friend-home-entry.friend-home-entry,
+html body #screen-main > #raid-home-entry.raid-home-entry{
+  position:absolute !important;
+  overflow:visible !important;
 }
-@media (max-width:380px),(max-height:700px){
-  html body #screen-main .home-notice-btn .home-notice-badge{
-    translate:14px 0 !important;
-  }
+
+/* ---------------------------------------------------------
+   MESSAGE
+   build734でOKになった見た目を、mm/translateなしのpx座標へ置換。
+   見た目は維持しつつ端末差をなくす。
+   --------------------------------------------------------- */
+html body #screen-main > .home-notice-btn.home-type-entry > .home-notice-badge{
+  position:absolute !important;
+  top:24px !important;
+  right:-14px !important;
+  left:auto !important;
+  bottom:auto !important;
+  translate:none !important;
+  transform:none !important;
+  animation:none !important;
+  margin:0 !important;
+}
+
+/* ---------------------------------------------------------
+   SHINJU — 神聖樹メニュー右上
+   --------------------------------------------------------- */
+html body #screen-main > #shinju-home-entry.shinju-home-entry > .shinju-home-entry-badge{
+  position:absolute !important;
+  top:0 !important;
+  right:6px !important;
+  left:auto !important;
+  bottom:auto !important;
+  translate:none !important;
+  transform:none !important;
+  animation:none !important;
+  margin:0 !important;
+}
+
+/* ---------------------------------------------------------
+   BONUS — ボーナスメニュー右上
+   --------------------------------------------------------- */
+html body #screen-main > #bonus-home-entry.bonus-home-entry > .bonus-home-entry-notice{
+  position:absolute !important;
+  top:0 !important;
+  right:6px !important;
+  left:auto !important;
+  bottom:auto !important;
+  translate:none !important;
+  transform:none !important;
+  animation:none !important;
+  margin:0 !important;
+}
+
+/* ---------------------------------------------------------
+   FRIEND — フレンドメニュー右上
+   build744の修正位置をそのまま正式固定。
+   --------------------------------------------------------- */
+html body #screen-main > #friend-home-entry.friend-home-entry > .friend-notice-dot{
+  position:absolute !important;
+  top:0 !important;
+  right:6px !important;
+  left:auto !important;
+  bottom:auto !important;
+  translate:none !important;
+  transform:none !important;
+  animation:none !important;
+  margin:0 !important;
+}
+
+/* ---------------------------------------------------------
+   RAID — レイドメニュー右上
+   raid_event.css側の端末別 top/right もここで完全上書き。
+   --------------------------------------------------------- */
+html body #screen-main > #raid-home-entry.raid-home-entry > .raid-notice-dot{
+  position:absolute !important;
+  top:0 !important;
+  right:6px !important;
+  left:auto !important;
+  bottom:auto !important;
+  translate:none !important;
+  transform:none !important;
+  animation:none !important;
+  margin:0 !important;
 }
 </style>
   <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
