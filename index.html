@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '688';
+  var FALLBACK_BUILD = '695';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -231,7 +231,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="688">
+  <meta name="sasaphia-build" content="695">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -331,9 +331,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=688-setting-bgm-toggle-v1"
+        href="css/style.css?v=693-score-ranking-nav-v2"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=688-setting-bgm-toggle-v1"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=693-score-ranking-nav-v2"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -418,10 +418,10 @@
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
     document.write('<link rel="stylesheet" href="css/shooting_event.css?v=593">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=688-setting-bgm-toggle-v1">
-  <link rel="stylesheet" href="css/item_management.css?v=688-setting-bgm-toggle-v1">
-  <link rel="stylesheet" href="css/score_attack_chrome.css?v=688-setting-bgm-toggle-v1">
-  <link rel="stylesheet" href="css/app_chrome.css?v=688-setting-bgm-toggle-v1">
+  <link rel="stylesheet" href="css/raid_event.css?v=693-score-ranking-nav-v2">
+  <link rel="stylesheet" href="css/item_management.css?v=693-score-ranking-nav-v2">
+  <link rel="stylesheet" href="css/score_attack_chrome.css?v=695-score-label-clean">
+  <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
 
   <style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
@@ -3157,12 +3157,12 @@ window.NOTICE_ITEMS = [
       type: 'start_bonus_bundle',
       claimId: 'notice_reward_start_bonus_v3_20260920',
       rpcName: 'claim_start_bonus_bundle_v3',
-      gem: 999,
+      gem: 300,
       coin: 150000,
       items: [
-        { materialId:'level_exp_small',  label:'強化素材・小', amount:100 },
-        { materialId:'level_exp_medium', label:'強化素材・中', amount:100 },
-        { materialId:'level_exp_large',  label:'強化素材・大', amount:100 }
+        { materialId:'level_exp_small',  label:'強化素材(銅)', amount:50 },
+        { materialId:'level_exp_medium', label:'強化素材(銀)', amount:50 },
+        { materialId:'level_exp_large',  label:'強化素材(金)', amount:50 }
       ]
     },
     hidden: false
@@ -3397,19 +3397,17 @@ window.NOTICE_ITEMS = [
         white-space:nowrap!important;
       }
       .notice-reward-material-dot{
-        display:inline-flex!important;
-        align-items:center!important;
-        justify-content:center!important;
-        width:20px!important;
-        height:20px!important;
-        border-radius:50%!important;
-        border:1px solid rgba(172,132,58,.30)!important;
-        background:linear-gradient(180deg,#fff9ed,#ead9b8)!important;
-        color:#8a6523!important;
-        font-family:"Cinzel","Noto Serif JP",serif!important;
-        font-size:9px!important;
-        font-weight:700!important;
-        flex:0 0 20px!important;
+        display:block!important;
+        width:28px!important;
+        height:28px!important;
+        flex:0 0 28px!important;
+        object-fit:contain!important;
+        object-position:center!important;
+        border:0!important;
+        border-radius:0!important;
+        background:none!important;
+        box-shadow:none!important;
+        filter:none!important;
       }
       .notice-reward-start-bundle{
         display:flex!important;
@@ -3437,6 +3435,50 @@ window.NOTICE_ITEMS = [
         height:20px!important;
         object-fit:contain!important;
         flex:0 0 20px!important;
+      }
+      .notice-reward-start-bonus{
+        align-items:center!important;
+      }
+      .notice-reward-start-bonus .notice-reward-main{
+        height:auto!important;
+        overflow:visible!important;
+      }
+      .notice-reward-bundle-list{
+        display:flex!important;
+        flex-direction:column!important;
+        width:100%!important;
+        gap:4px!important;
+      }
+      .notice-reward-bundle-item{
+        display:grid!important;
+        grid-template-columns:24px minmax(0,1fr) auto!important;
+        align-items:center!important;
+        column-gap:6px!important;
+        min-height:25px!important;
+        color:#735421!important;
+        font-size:11px!important;
+        font-weight:700!important;
+        line-height:1.15!important;
+      }
+      .notice-reward-bundle-icon{
+        display:block!important;
+        width:24px!important;
+        height:24px!important;
+        object-fit:contain!important;
+        object-position:center!important;
+        border:0!important;
+        background:none!important;
+        box-shadow:none!important;
+        filter:none!important;
+      }
+      .notice-reward-bundle-name{
+        min-width:0!important;
+        white-space:nowrap!important;
+      }
+      .notice-reward-bundle-amount{
+        white-space:nowrap!important;
+        color:#8b6427!important;
+        font-variant-numeric:tabular-nums!important;
       }
       @media(max-height:700px){
         .notice-panel{max-height:82dvh!important;padding:15px!important}
@@ -3700,11 +3742,11 @@ window.NOTICE_ITEMS = [
       const itemHtml = items.map(function(entry){
         const materialId = String(entry && entry.materialId || '');
         const itemAmount = Math.max(0, Math.floor(Number(entry && entry.amount || 0)));
-        const short = materialId === 'level_exp_small' ? '小'
-          : materialId === 'level_exp_medium' ? '中'
-          : materialId === 'level_exp_large' ? '大' : 'EXP';
+        const materialImg = materialId === 'level_exp_small' ? 'images/item_exp_bronze.webp'
+          : materialId === 'level_exp_medium' ? 'images/item_exp_silver.webp'
+          : materialId === 'level_exp_large' ? 'images/item_exp_gold.webp' : '';
         return '<span class="notice-reward-material-item">' +
-          '<span class="notice-reward-material-dot" aria-hidden="true">' + escapeHtml(short) + '</span>' +
+          (materialImg ? '<img class="notice-reward-material-dot" src="' + escapeHtml(materialImg) + '" alt="" aria-hidden="true">' : '') +
           '<span>×' + itemAmount + '</span>' +
         '</span>';
       }).join('');
@@ -3739,34 +3781,38 @@ window.NOTICE_ITEMS = [
       const itemHtml = items.map(function(entry){
         const materialId = String(entry && entry.materialId || '');
         const itemAmount = Math.max(0, Math.floor(Number(entry && entry.amount || 0)));
-        const short = materialId === 'level_exp_small' ? '小'
-          : materialId === 'level_exp_medium' ? '中'
-          : materialId === 'level_exp_large' ? '大' : 'EXP';
-        return '<span class="notice-reward-material-item">' +
-          '<span class="notice-reward-material-dot" aria-hidden="true">' + escapeHtml(short) + '</span>' +
-          '<span>×' + itemAmount + '</span>' +
-        '</span>';
+        const itemLabel = String(entry && entry.label || '強化素材');
+        const materialImg = materialId === 'level_exp_small' ? 'images/item_exp_bronze.webp'
+          : materialId === 'level_exp_medium' ? 'images/item_exp_silver.webp'
+          : materialId === 'level_exp_large' ? 'images/item_exp_gold.webp' : '';
+        return '<div class="notice-reward-bundle-item">' +
+          (materialImg ? '<img class="notice-reward-bundle-icon" src="' + escapeHtml(materialImg) + '" alt="" aria-hidden="true">' : '') +
+          '<span class="notice-reward-bundle-name">' + escapeHtml(itemLabel) + '</span>' +
+          '<span class="notice-reward-bundle-amount">×' + itemAmount.toLocaleString() + '</span>' +
+        '</div>';
       }).join('');
 
       const gem = Math.max(0, Math.floor(Number(reward.gem || 0)));
       const coin = Math.max(0, Math.floor(Number(reward.coin || 0)));
 
       return `
-        <div class="notice-reward">
+        <div class="notice-reward notice-reward-start-bonus">
           <div class="notice-reward-main">
             <div class="notice-reward-copy notice-reward-start-bundle">
               <span class="notice-reward-label">スタートボーナス</span>
-              <div class="notice-reward-start-row">
-                <span class="notice-reward-start-item">
-                  <img class="notice-reward-start-icon" src="images/icon_gem.webp" alt="">
-                  結晶 ×${gem.toLocaleString()}
-                </span>
-                <span class="notice-reward-start-item">
-                  <img class="notice-reward-start-icon" src="images/icon_coin.webp" alt="">
-                  コイン ×${coin.toLocaleString()}
-                </span>
+              <div class="notice-reward-bundle-list">
+                <div class="notice-reward-bundle-item">
+                  <img class="notice-reward-bundle-icon" src="images/icon_gem.webp" alt="" aria-hidden="true">
+                  <span class="notice-reward-bundle-name">結晶</span>
+                  <span class="notice-reward-bundle-amount">×${gem.toLocaleString()}</span>
+                </div>
+                <div class="notice-reward-bundle-item">
+                  <img class="notice-reward-bundle-icon" src="images/icon_coin.webp" alt="" aria-hidden="true">
+                  <span class="notice-reward-bundle-name">コイン</span>
+                  <span class="notice-reward-bundle-amount">×${coin.toLocaleString()}</span>
+                </div>
+                ${itemHtml}
               </div>
-              <div class="notice-reward-material-list">${itemHtml}</div>
             </div>
           </div>
           <button
@@ -3784,11 +3830,11 @@ window.NOTICE_ITEMS = [
       const itemHtml = items.map(function(entry){
         const materialId = String(entry && entry.materialId || '');
         const itemAmount = Math.max(0, Math.floor(Number(entry && entry.amount || 0)));
-        const short = materialId === 'level_exp_small' ? '小'
-          : materialId === 'level_exp_medium' ? '中'
-          : materialId === 'level_exp_large' ? '大' : 'EXP';
+        const materialImg = materialId === 'level_exp_small' ? 'images/item_exp_bronze.webp'
+          : materialId === 'level_exp_medium' ? 'images/item_exp_silver.webp'
+          : materialId === 'level_exp_large' ? 'images/item_exp_gold.webp' : '';
         return '<span class="notice-reward-material-item">' +
-          '<span class="notice-reward-material-dot" aria-hidden="true">' + escapeHtml(short) + '</span>' +
+          (materialImg ? '<img class="notice-reward-material-dot" src="' + escapeHtml(materialImg) + '" alt="" aria-hidden="true">' : '') +
           '<span>×' + itemAmount + '</span>' +
         '</span>';
       }).join('');
@@ -4292,7 +4338,7 @@ window.NOTICE_ITEMS = [
 <script src="js/shooting_resonance.js?v=593"></script>
 <script src="js/resonance_system.js?v=593"></script>
 <script src="js/resonance_ui.js?v=593"></script>
-<script src="js/character_levelup.js?v=593"></script>
+<script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -14754,7 +14800,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=688-setting-bgm-toggle-v1"></script>
+<script src="js/shooting_characters.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/stage_select.js?v=593"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -14835,9 +14881,9 @@ window.returnToTitleScreen = function(){
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
   document.write('<script src="js/shooting_event.js?v=621"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=688-setting-bgm-toggle-v1"></script>
-<script src="js/raid_event.js?v=688-setting-bgm-toggle-v1"></script>
-<script src="js/item_management.js?v=688-setting-bgm-toggle-v1"></script>
+<script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
+<script src="js/raid_event.js?v=693-score-ranking-nav-v2"></script>
+<script src="js/item_management.js?v=693-score-ranking-nav-v2"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -14872,7 +14918,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=688-setting-bgm-toggle-v1"></script>
+<script src="js/score_attack.js?v=695-score-label-clean"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

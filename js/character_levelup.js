@@ -1,4 +1,4 @@
-// Zeraphia Character Level Up System v241
+// Zeraphia Character Level Up System v689
 // - R:  Lv cap 30 / 35 / 40 / 45 / 50
 // - SR: Lv cap 40 / 45 / 50 / 55 / 60
 // - EXP materials: S=100 / M=500 / L=2000
@@ -8,9 +8,9 @@
   'use strict';
 
   const MATERIALS = Object.freeze([
-    Object.freeze({ id:'level_exp_small',  name:'強化素材・小', shortName:'小', exp:100,  tone:'small' }),
-    Object.freeze({ id:'level_exp_medium', name:'強化素材・中', shortName:'中', exp:500,  tone:'medium' }),
-    Object.freeze({ id:'level_exp_large',  name:'強化素材・大', shortName:'大', exp:2000, tone:'large' })
+    Object.freeze({ id:'level_exp_small',  name:'強化素材・銅', shortName:'銅', exp:100,  tone:'small',  img:'images/item_exp_bronze.webp' }),
+    Object.freeze({ id:'level_exp_medium', name:'強化素材・銀', shortName:'銀', exp:500,  tone:'medium', img:'images/item_exp_silver.webp' }),
+    Object.freeze({ id:'level_exp_large',  name:'強化素材・金', shortName:'金', exp:2000, tone:'large',  img:'images/item_exp_gold.webp' })
   ]);
 
   const COIN_PER_EXP = 1;
@@ -332,7 +332,7 @@
     const count = Math.max(0, Number(selected[mat.id] || 0));
     return '' +
       '<div class="chara-level-material-row">' +
-        '<div class="chara-level-material-icon tone-' + mat.tone + '"><span>' + mat.shortName + '</span></div>' +
+        '<div class="chara-level-material-icon tone-' + mat.tone + '"><img src="' + mat.img + '" alt=""></div>' +
         '<div class="chara-level-material-info">' +
           '<strong>' + mat.name + '</strong>' +
           '<span>EXP +' + mat.exp.toLocaleString() + '　所持 ' + owned.toLocaleString() + '</span>' +

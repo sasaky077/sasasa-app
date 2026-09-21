@@ -1,89 +1,484 @@
-/* Zeraphia SCORE ATTACK — UI Foundation v2
-   Page shell/header/chrome live in css/app_chrome.css.
-   This file owns only Score Attack-specific viewport behavior. */
 
-#score-attack-root .score-attack-page{
-  position:relative;
-  width:100%;
-  height:100%;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
+/* =========================================================
+   SCORE ATTACK v120 — shared chrome layout
+   上部ユーザーフレーム / 下部ボトムナビを通常画面と共用する。
+   巡行・設定・アイテムと同じ「HUD + page header + content + nav」構成。
+   ========================================================= */
+
+/* The page lives between shared HUD and shared bottom navigation. */
+html body:not(.ui-immersive) #score-attack-root{
+  display:none;
+  position:fixed !important;
+  top:var(--header-h,82px) !important;
+  right:0 !important;
+  bottom:var(--bottom-nav-h,76px) !important;
+  left:0 !important;
+
+  width:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+
+  /* HUD=60 / nav=50 in the base app; keep content beneath both. */
+  z-index:40 !important;
+  overflow:hidden !important;
+
   background:
-    radial-gradient(circle at 78% 20%,rgba(216,192,145,.10),rgba(216,192,145,0) 34%),
-    linear-gradient(180deg,rgba(255,253,249,.98),rgba(249,245,237,.96));
+    linear-gradient(180deg,rgba(255,253,249,.93),rgba(248,243,235,.87)) !important;
+  box-shadow:none !important;
 }
 
-#score-attack-root .score-attack-scroll{
-  flex:1 1 auto;
-  min-height:0;
-  overflow:hidden;
-  padding:4px 12px 8px;
+html body:not(.ui-immersive) #score-attack-root.show{
+  display:block !important;
 }
 
-#score-attack-root .score-attack-ranking{
-  min-height:0;
+/* Desktop/app-frame width matches the rest of the app. */
+@media (min-width:500px){
+  html body:not(.ui-immersive) #score-attack-root{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
 }
 
-#score-attack-root .score-attack-list{
-  min-height:0;
-  overflow-y:auto;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior-y:contain;
-  scrollbar-width:none;
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);
-  mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);
-  -webkit-mask-repeat:no-repeat;
-  mask-repeat:no-repeat;
-  -webkit-mask-size:100% 100%;
-  mask-size:100% 100%;
+/* Page fills only the content area, not the device viewport. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-page{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
 }
-#score-attack-root .score-attack-list::-webkit-scrollbar{display:none;width:0;height:0;}
+
+/* Shared-page style header, same height rhythm as other content pages. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-head{
+  flex:0 0 var(--page-header-h,54px) !important;
+  min-height:var(--page-header-h,54px) !important;
+  height:var(--page-header-h,54px) !important;
+
+  display:grid !important;
+  grid-template-columns:72px minmax(0,1fr) 72px !important;
+  align-items:center !important;
+
+  padding:0 14px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-back{
+  height:34px !important;
+  align-self:center !important;
+  color:#7c6a56 !important;
+  font-size:10px !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title small{
+  color:#a58245 !important;
+  font-size:6px !important;
+  letter-spacing:.25em !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title strong{
+  margin-top:5px !important;
+  color:#49392d !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  letter-spacing:.10em !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-mark{
+  color:#aa833f !important;
+  opacity:.72 !important;
+}
+
+/* No independent full-screen safe-area padding anymore. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-scroll{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding:4px 12px 8px !important;
+}
+
+/* Preserve the current ranking-only scrolling behavior inside the smaller viewport. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-ranking{
+  min-height:0 !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-list{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+}
+
+/* Gentle melt at ranking list bounds, matching other scroll pages. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-list{
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    ) !important;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    ) !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:100% 100% !important;
+  mask-size:100% 100% !important;
+}
+
+/* Shared chrome must remain above the score content. */
+html body:not(.ui-immersive) #global-user-frame{
+  z-index:60 !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared{
+  z-index:50 !important;
+}
+
+/* Compact phones: use the same smaller page-header rhythm as other pages. */
+@media (max-height:700px){
+  html body:not(.ui-immersive) #score-attack-root .score-attack-head{
+    flex-basis:50px !important;
+    min-height:50px !important;
+    height:50px !important;
+  }
+
+  html body:not(.ui-immersive) #score-attack-root .score-attack-scroll{
+    padding-top:2px !important;
+    padding-bottom:5px !important;
+    gap:6px !important;
+  }
+}
+
+/* =========================================================
+   SCORE ATTACK v121 — full-page background under shared chrome
+   ホーム画面の上下を見せない。
+   スコアアタック自身が画面全面を覆い、
+   ユーザーフレームとボトムナビだけを上から重ねる。
+   ========================================================= */
+
+/* Full app-frame layer: never reveal HOME behind top/bottom chrome. */
+html body:not(.ui-immersive) #score-attack-root{
+  top:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  left:0 !important;
+
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+
+  /* Opaque score-attack canvas beneath the translucent shared chrome. */
+  background:
+    linear-gradient(180deg,
+      rgba(255,253,249,1) 0%,
+      rgba(250,247,240,1) 56%,
+      rgba(247,242,233,1) 100%) !important;
+}
+
+/* The actual score content starts below HUD and stops above bottom nav. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-page{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+
+  padding:
+    var(--header-h,82px)
+    0
+    var(--bottom-nav-h,76px) !important;
+  box-sizing:border-box !important;
+
+  /* Own page atmosphere continues behind HUD/nav. */
+  background:
+    radial-gradient(circle at 78% 20%,
+      rgba(216,192,145,.10),
+      rgba(216,192,145,0) 34%),
+    linear-gradient(180deg,
+      rgba(255,253,249,.96),
+      rgba(249,245,237,.93)) !important;
+}
+
+/* Desktop/app-frame: the full SCORE page, not HOME, occupies the app frame. */
+@media (min-width:500px){
+  html body:not(.ui-immersive) #score-attack-root{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* Shared HUD / nav remain visible above SCORE ATTACK. */
+html body:not(.ui-immersive) #global-user-frame{
+  z-index:60 !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared{
+  z-index:60 !important;
+}
+
+/* White haze belongs to the shared chrome itself, not the HOME screen. */
+html body:not(.ui-immersive) #global-user-frame,
+html body:not(.ui-immersive) #bottom-nav-shared{
+  isolation:isolate !important;
+}
+
+/* =========================================================
+   SCORE ATTACK v122 — SE ranking badge / challenge decoration
+   ① iPhone SEで「自分」バッジを潰さない
+   ② 挑戦するボタン左右の装飾ダッシュを削除
+   ========================================================= */
 
 /* Player name may shrink, but the SELF badge never does. */
 #score-attack-root .score-attack-row-main > b{
-  display:flex;
-  align-items:center;
-  gap:4px;
-  min-width:0;
-  overflow:visible;
-  white-space:nowrap;
+  display:flex !important;
+  align-items:center !important;
+  gap:4px !important;
+  min-width:0 !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
 }
+
 #score-attack-root .score-attack-player-name{
-  display:block;
-  flex:1 1 auto;
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  display:block !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
 }
+
 #score-attack-root .score-attack-row-main em{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  flex:0 0 auto;
-  min-width:25px;
-  height:16px;
-  margin-left:0;
-  padding:1px 4px;
-  box-sizing:border-box;
-  line-height:1;
-  white-space:nowrap;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  min-width:25px !important;
+  height:16px !important;
+  margin-left:0 !important;
+  padding:1px 4px !important;
+  box-sizing:border-box !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
 }
 
-/* Old decorative dashes around the challenge button are retired. */
+/* The "—" marks were decorative pseudo-elements only. Remove both. */
 #score-attack-root .score-attack-start::before,
-#score-attack-root .score-attack-start::after{content:none;display:none;}
+#score-attack-root .score-attack-start::after{
+  content:none !important;
+  display:none !important;
+}
 
-@media (max-width:360px),(max-height:700px){
-  #score-attack-root .score-attack-scroll{padding:2px 10px 5px;}
-  #score-attack-root .score-attack-row-main > b{gap:3px;}
+/* iPhone SE class */
+@media (max-width:360px){
+  #score-attack-root .score-attack-row-main > b{
+    gap:3px !important;
+  }
+
   #score-attack-root .score-attack-row-main em{
-    min-width:24px;
-    height:15px;
-    padding:1px 3px;
-    font-size:7px;
+    min-width:24px !important;
+    height:15px !important;
+    padding:1px 3px !important;
+    font-size:7px !important;
+  }
+}
+
+
+
+/* =========================================================
+   SCORE ATTACK v124 — header typography is owned globally.
+   This block only clears older per-screen typography offsets.
+   ========================================================= */
+html body:not(.ui-immersive) #score-attack-root .score-attack-back{
+  margin:0 !important;
+}
+
+/* =========================================================
+   SCORE ATTACK build694 — clean swipe navigation / stale DOM guard
+   ========================================================= */
+#score-attack-root .score-attack-head-mark{
+  display:none !important;
+}
+
+#score-attack-root .score-attack-ranking{
+  position:relative !important;
+  touch-action:pan-y !important;
+}
+
+/* Old build691/692 selector controls must never remain visible. */
+#score-attack-root .score-attack-ranking-switch,
+#score-attack-root .score-attack-ranking-dots,
+#score-attack-root #score-attack-scope-friends,
+#score-attack-root #score-attack-scope-national{
+  display:none !important;
+}
+
+#score-attack-root .score-attack-section-head{
+  display:block !important;
+  position:relative !important;
+  margin-bottom:0 !important;
+}
+
+#score-attack-root .score-attack-section-head > div:first-child{
+  display:block !important;
+  min-width:0 !important;
+}
+
+#score-attack-root .score-attack-section-head > div:first-child > span{
+  display:block !important;
+  text-align:left !important;
+}
+
+/* New build694 markup: one centered title, with only two bare chevrons. */
+#score-attack-root .score-attack-ranking-nav{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-height:32px !important;
+  margin:1px 0 7px !important;
+  padding:0 42px !important;
+}
+
+#score-attack-root #score-attack-ranking-title{
+  display:block !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  color:#5f4025 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  line-height:1.35 !important;
+  letter-spacing:.08em !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+#score-attack-root .score-attack-swipe-cue{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  position:absolute !important;
+  top:50% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:28px !important;
+  height:28px !important;
+  margin:0 !important;
+  padding:0 0 2px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  outline:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  color:rgba(113,80,36,.76) !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:22px !important;
+  font-weight:300 !important;
+  line-height:1 !important;
+  text-align:center !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+  transform:translateY(-50%) !important;
+  transition:opacity .14s ease,transform .14s ease !important;
+  -webkit-tap-highlight-color:transparent !important;
+  z-index:4 !important;
+}
+
+#score-attack-root .score-attack-swipe-cue.is-prev{
+  left:calc(50% - 115px) !important;
+  right:auto !important;
+}
+#score-attack-root .score-attack-swipe-cue.is-next{
+  right:calc(50% - 115px) !important;
+  left:auto !important;
+}
+
+#score-attack-root .score-attack-swipe-cue:not(:disabled):active{
+  transform:translateY(-50%) scale(.88) !important;
+}
+#score-attack-root .score-attack-swipe-cue:disabled{
+  color:rgba(113,80,36,.18) !important;
+  opacity:1 !important;
+}
+
+/* Compatibility fallback: if a pre-694 DOM is restored, keep it tidy rather
+   than showing the old FRIEND / 全国 controls. */
+#score-attack-root .score-attack-section-head #score-attack-ranking-title{
+  margin-top:3px !important;
+  text-align:center !important;
+}
+#score-attack-root .score-attack-ranking > .score-attack-swipe-cue{
+  top:31px !important;
+}
+
+#score-attack-root .score-attack-list{
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+
+#score-attack-root .score-attack-list.swipe-from-right{
+  animation:scoreAttackRankingFromRight694 .24s cubic-bezier(.22,.75,.28,1) both !important;
+}
+#score-attack-root .score-attack-list.swipe-from-left{
+  animation:scoreAttackRankingFromLeft694 .24s cubic-bezier(.22,.75,.28,1) both !important;
+}
+@keyframes scoreAttackRankingFromRight694{
+  from{opacity:.18;transform:translateX(18px)}
+  to{opacity:1;transform:translateX(0)}
+}
+@keyframes scoreAttackRankingFromLeft694{
+  from{opacity:.18;transform:translateX(-18px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+#score-attack-root .score-attack-ranking[data-ranking-scope="national"] .score-attack-more{
+  display:none !important;
+}
+
+@media (max-width:360px){
+  #score-attack-root .score-attack-ranking-nav{
+    min-height:30px !important;
+    padding-left:38px !important;
+    padding-right:38px !important;
+    margin-bottom:6px !important;
+  }
+  #score-attack-root #score-attack-ranking-title{
+    font-size:13px !important;
+  }
+  #score-attack-root .score-attack-swipe-cue{
+    width:26px !important;
+    height:26px !important;
+    font-size:20px !important;
+  }
+  #score-attack-root .score-attack-swipe-cue.is-prev{
+    left:calc(50% - 102px) !important;
+  }
+  #score-attack-root .score-attack-swipe-cue.is-next{
+    right:calc(50% - 102px) !important;
   }
 }

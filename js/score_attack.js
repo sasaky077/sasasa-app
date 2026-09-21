@@ -3,7 +3,8 @@
 'use strict';
 const STAGES={normal:'shooting_score_attack_normal',hard:'shooting_score_attack_hard'};
 const PANEL_MAP={"1": "images/chara_01_panel.webp", "2": "images/chara_02_panel.webp", "3": "images/chara_03_panel.webp", "4": "images/chara_04_panel.webp", "5": "images/chara_05_panel.webp", "6": "images/chara_06_panel.webp", "7": "images/chara_07_panel.webp", "8": "images/chara_08_panel.webp", "9": "images/chara_09_panel.webp", "10": "images/chara_10_panel.webp", "11": "images/chara_11_panel.webp", "12": "images/chara_12_panel.webp", "13": "images/chara_13_panel.webp", "14": "images/chara_14_panel.webp", "15": "images/chara_15_panel.webp", "16": "images/chara_16_panel.webp", "17": "images/chara_17_panel.webp", "50": "images/chara_50_panel.webp"};
-let currentDifficulty='normal',root=null,loading=false,currentAttemptId=null;
+let currentDifficulty='normal',currentRankingScope='friends',root=null,currentAttemptId=null,rankingRequestSeq=0;
+const rankingCache=Object.create(null);
 function uid(){return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase();}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function playerName7(v){
@@ -23,10 +24,16 @@ function panelSrc(id){
 }
 function partyHtml(ids,large){const a=Array.isArray(ids)?ids.slice(0,3):[];while(a.length<3)a.push(0);return '<div class="score-attack-party'+(large?' is-large':'')+'">'+a.map(id=>{const src=panelSrc(id);return src?'<span><img src="'+esc(src)+'" alt="" draggable="false"></span>':'<span class="empty"></span>';}).join('')+'</div>';}
 function ensureRoot(){
- if(root)return root;
+ if(root && root.isConnected && root.dataset.scoreAttackUi==='694')return root;
+ // build694: if an older SCORE ATTACK DOM survived an asset update/BFCache restore,
+ // discard it before rendering the current markup. This prevents old FRIEND/全国
+ // controls from mixing with the new navigation CSS.
+ const stale=document.getElementById('score-attack-root');
+ if(stale)stale.remove();
  root=document.createElement('div');
  root.id='score-attack-root';
  root.className='app-page app-page--overlay score-attack-app-page';
+ root.dataset.scoreAttackUi='694';
  root.setAttribute('aria-hidden','true');
  root.innerHTML=`<div class="score-attack-page app-page-surface">
  <div class="score-attack-bg-deco score-attack-bg-deco-a" aria-hidden="true"></div>
@@ -38,18 +45,16 @@ function ensureRoot(){
      <small class="app-page-eyebrow">SCORE ATTACK</small>
      <h1 class="app-page-title">スコアアタック</h1>
    </div>
-   <div class="app-page-action score-attack-head-mark" aria-hidden="true">✦</div>
+   <div class="app-page-action score-attack-head-mark" aria-hidden="true"></div>
  </header>
 
  <div class="app-page-content score-attack-scroll">
 
-  <section class="score-attack-ranking score-attack-ranking-first">
-    <div class="score-attack-section-head">
-      <div>
-        <span>RANKING</span>
-        <strong>フレンドランキング</strong>
-      </div>
-      <small>BEST SCORE</small>
+  <section class="score-attack-ranking score-attack-ranking-first" data-ranking-scope="friends">
+    <div class="score-attack-ranking-nav" aria-label="ランキング切替">
+      <button id="score-attack-swipe-prev" type="button" class="score-attack-swipe-cue is-prev" aria-label="フレンドランキングへ" onclick="setScoreAttackRankingScope('friends')">‹</button>
+      <strong id="score-attack-ranking-title">フレンドランキング</strong>
+      <button id="score-attack-swipe-next" type="button" class="score-attack-swipe-cue is-next" aria-label="全国ランキングへ" onclick="setScoreAttackRankingScope('national')">›</button>
     </div>
     <div id="score-attack-list" class="score-attack-list"><div class="score-attack-loading">読み込み中...</div></div>
   </section>
@@ -60,7 +65,6 @@ function ensureRoot(){
         <small>DIFFICULTY</small>
         <strong>難易度を選択</strong>
       </div>
-      <span>難易度別ランキング</span>
     </div>
     <div class="score-attack-tabs">
       <button id="score-attack-tab-normal" class="active" onclick="setScoreAttackDifficulty('normal')">
@@ -79,22 +83,77 @@ function ensureRoot(){
   </section>
 
  </div></div>`;
- document.body.appendChild(root);return root;
+ document.body.appendChild(root);
+ installRankingSwipe(root);
+ updateRankingScopeUi();
+ return root;
 }
-async function fetchRanking(){const sb=window.zsSupabase,userId=uid();if(!sb||typeof sb.rpc!=='function'||!userId)return[];const res=await sb.rpc('get_score_attack_friend_ranking',{p_user_id:userId,p_difficulty:currentDifficulty});if(res&&res.error)throw res.error;return Array.isArray(res&&res.data)?res.data:[];}
-function renderRows(rows){
+function rankingKey(scope){return currentDifficulty+':'+scope;}
+async function fetchRanking(scope){
+ const sb=window.zsSupabase,userId=uid();
+ if(!sb||typeof sb.rpc!=='function'||!userId)return[];
+ const isNational=scope==='national';
+ const rpcName=isNational?'get_score_attack_national_ranking':'get_score_attack_friend_ranking';
+ const args=isNational
+   ? {p_difficulty:currentDifficulty}
+   : {p_user_id:userId,p_difficulty:currentDifficulty};
+ const res=await sb.rpc(rpcName,args);
+ if(res&&res.error)throw res.error;
+ return Array.isArray(res&&res.data)?res.data:[];
+}
+function updateRankingScopeUi(){
+ const r=ensureRoot();
+ const national=currentRankingScope==='national';
+ const section=r.querySelector('.score-attack-ranking');
+ const title=r.querySelector('#score-attack-ranking-title');
+ const prevCue=r.querySelector('#score-attack-swipe-prev');
+ const nextCue=r.querySelector('#score-attack-swipe-next');
+ if(section)section.setAttribute('data-ranking-scope',national?'national':'friends');
+ if(title)title.textContent=national?'全国ランキング':'フレンドランキング';
+ if(prevCue){prevCue.disabled=!national;prevCue.setAttribute('aria-disabled',!national?'true':'false');}
+ if(nextCue){nextCue.disabled=national;nextCue.setAttribute('aria-disabled',national?'true':'false');}
+}
+function animateRankingSwap(direction){
+ const list=ensureRoot().querySelector('#score-attack-list');
+ if(!list)return;
+ list.classList.remove('swipe-from-left','swipe-from-right');
+ void list.offsetWidth;
+ list.classList.add(direction==='right'?'swipe-from-left':'swipe-from-right');
+ setTimeout(()=>list.classList.remove('swipe-from-left','swipe-from-right'),280);
+}
+function installRankingSwipe(r){
+ const section=r.querySelector('.score-attack-ranking');
+ if(!section||section.dataset.swipeReady==='1')return;
+ section.dataset.swipeReady='1';
+ let sx=0,sy=0;
+ section.addEventListener('touchstart',ev=>{
+   const t=ev.touches&&ev.touches[0];
+   if(!t)return;
+   sx=t.clientX;sy=t.clientY;
+ },{passive:true});
+ section.addEventListener('touchend',ev=>{
+   const t=ev.changedTouches&&ev.changedTouches[0];
+   if(!t)return;
+   const dx=t.clientX-sx,dy=t.clientY-sy;
+   if(Math.abs(dx)<46||Math.abs(dx)<=Math.abs(dy)*1.15)return;
+   if(dx<0&&currentRankingScope==='friends')window.setScoreAttackRankingScope('national');
+   else if(dx>0&&currentRankingScope==='national')window.setScoreAttackRankingScope('friends');
+ },{passive:true});
+}
+function renderRows(rows,scope){
  const r=ensureRoot(),myId=uid(),list=r.querySelector('#score-attack-list');
+ const isNational=scope==='national';
 
  if(!rows.length){
-   list.innerHTML='<div class="score-attack-empty">まだ記録がありません</div>';
+   list.innerHTML='<div class="score-attack-empty">'+(isNational?'全国ランキングに記録がありません':'まだ記録がありません')+'</div>';
    return;
  }
 
- const TOP_COUNT=5;
- const rowHtml=rows.map((row,i)=>{
+ const TOP_COUNT=isNational?20:5;
+ const html=rows.map((row,i)=>{
    const me=String(row.user_id||'').toLowerCase()===myId;
    const rank=Number(row.rank_no||i+1);
-   const extra=i>=TOP_COUNT?' score-attack-row-extra':'';
+   const extra=(!isNational&&i>=TOP_COUNT)?' score-attack-row-extra':'';
    return '<div class="score-attack-row'+(me?' is-me':'')+extra+'">'+
      '<span class="score-attack-rank-no">'+rank+'</span>'+
      '<div class="score-attack-row-main">'+
@@ -105,16 +164,39 @@ function renderRows(rows){
    '</div>';
  }).join('');
 
- const moreCount=Math.max(0,rows.length-TOP_COUNT);
+ const moreCount=isNational?0:Math.max(0,rows.length-TOP_COUNT);
  const toggleHtml=moreCount>0
    ? '<button type="button" class="score-attack-more" onclick="toggleScoreAttackRankingMore(this)" aria-expanded="false">'+
        '<span>6位以下を表示</span><small>+'+moreCount+'</small>'+
      '</button>'
    : '';
 
- list.innerHTML=rowHtml+toggleHtml;
+ list.innerHTML=html+toggleHtml;
 }
-async function refresh(){if(loading)return;loading=true;const r=ensureRoot();r.querySelector('#score-attack-list').innerHTML='<div class="score-attack-loading">読み込み中...</div>';try{renderRows(await fetchRanking());}catch(err){console.error('[ScoreAttack] ranking failed',err);renderRows([]);r.querySelector('#score-attack-list').innerHTML='<div class="score-attack-empty">ランキングを取得できません。<br>Supabase SQLを確認してください。</div>';}finally{loading=false;}}
+async function prefetchRanking(scope){
+ const key=rankingKey(scope);
+ if(rankingCache[key])return;
+ try{rankingCache[key]=await fetchRanking(scope);}catch(err){console.warn('[ScoreAttack] ranking prefetch failed',scope,err);}
+}
+async function refresh(options){
+ const opts=options||{};
+ const r=ensureRoot(),scope=currentRankingScope,key=rankingKey(scope),list=r.querySelector('#score-attack-list');
+ updateRankingScopeUi();
+ if(list)list.scrollTop=0;
+ if(!opts.force&&rankingCache[key])renderRows(rankingCache[key],scope);
+ else if(list)list.innerHTML='<div class="score-attack-loading">読み込み中...</div>';
+ const seq=++rankingRequestSeq;
+ try{
+   const rows=await fetchRanking(scope);
+   rankingCache[key]=rows;
+   if(seq!==rankingRequestSeq||scope!==currentRankingScope)return;
+   renderRows(rows,scope);
+ }catch(err){
+   console.error('[ScoreAttack] ranking failed',err);
+   if(seq!==rankingRequestSeq||scope!==currentRankingScope)return;
+   list.innerHTML='<div class="score-attack-empty">ランキングを取得できません。<br>もう一度お試しください。</div>';
+ }
+}
 window.openScoreAttack=function(){
   const r=ensureRoot();
   r.classList.add('show');
@@ -126,7 +208,9 @@ window.openScoreAttack=function(){
   if(window.setNavVisible) window.setNavVisible(true);
   if(window.setBnavActive) window.setBnavActive('main');
   if(typeof window.updateHeaderHeight==='function') window.updateHeaderHeight();
+  updateRankingScopeUi();
   refresh();
+  void prefetchRanking(currentRankingScope==='friends'?'national':'friends');
 };
 window.closeScoreAttack=function(){
   const r=ensureRoot();
@@ -134,7 +218,23 @@ window.closeScoreAttack=function(){
   r.setAttribute('aria-hidden','true');
   if(window.setNavVisible) window.setNavVisible(true);
 };
-window.setScoreAttackDifficulty=function(d){currentDifficulty=d==='hard'?'hard':'normal';const r=ensureRoot();r.querySelector('#score-attack-tab-normal').classList.toggle('active',currentDifficulty==='normal');r.querySelector('#score-attack-tab-hard').classList.toggle('active',currentDifficulty==='hard');refresh();};
+window.setScoreAttackDifficulty=function(d){
+ currentDifficulty=d==='hard'?'hard':'normal';
+ const r=ensureRoot();
+ r.querySelector('#score-attack-tab-normal').classList.toggle('active',currentDifficulty==='normal');
+ r.querySelector('#score-attack-tab-hard').classList.toggle('active',currentDifficulty==='hard');
+ refresh({force:true});
+ void prefetchRanking(currentRankingScope==='friends'?'national':'friends');
+};
+window.setScoreAttackRankingScope=function(scope){
+ const next=scope==='national'?'national':'friends';
+ if(next===currentRankingScope)return;
+ const direction=next==='national'?'left':'right';
+ currentRankingScope=next;
+ updateRankingScopeUi();
+ animateRankingSwap(direction);
+ refresh();
+};
 window.toggleScoreAttackRankingMore=function(btn){
  const r=ensureRoot();
  const list=r.querySelector('#score-attack-list');
