@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '752';
+  var FALLBACK_BUILD = '753';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="752">
+  <meta name="sasaphia-build" content="753">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -12883,8 +12883,10 @@ function buildCharacterDetailHTML(data, options){
   document.getElementById('detail-stat-table').innerHTML = '';
 
   // 強化Lv / HP / ATK / 移動型 / スキル詳細
+  // build753: ガチャ結果から開いたキャラ詳細では「強化」ボタンを出さない。
+  // 通常の図鑑/所持キャラ詳細では従来どおり表示する。
   document.getElementById('detail-opts').innerHTML = buildCharacterDetailHTML(data, {
-    showLimitBreakButton: true
+    showLimitBreakButton: !fromTenResult
   });
 
   var favBtn = document.querySelector('#detail-modal .btn-set-fav');
