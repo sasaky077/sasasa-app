@@ -38164,3 +38164,101 @@ html body #global-user-frame .hud-gem-plus-btn{
   73%,79%{opacity:1}
   100%{opacity:0}
 }
+
+/* =========================================================
+   build752 cross-device app viewport / root scroll guard
+   - iOS Safari / iOS PWA / Android Chrome / desktop browsers 共通
+   - document自体は絶対にスクロールさせない
+   - スクロールは overflow-y:auto / scroll を持つコンテンツだけ許可
+   - visualViewport の実高を --sasaphia-app-height に反映
+   ========================================================= */
+:root{
+  --sasaphia-app-height: 100dvh;
+}
+
+@supports not (height: 100dvh){
+  :root{
+    --sasaphia-app-height: 100vh;
+  }
+}
+
+html{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:var(--sasaphia-app-height) !important;
+  min-height:0 !important;
+  max-height:var(--sasaphia-app-height) !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  scroll-behavior:auto !important;
+}
+
+body{
+  position:fixed !important;
+  top:0 !important;
+  bottom:auto !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  height:var(--sasaphia-app-height) !important;
+  min-height:0 !important;
+  max-height:var(--sasaphia-app-height) !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  scroll-behavior:auto !important;
+}
+
+/* PCのスマホ幅表示は中央寄せを維持 */
+@media (min-width:500px){
+  body{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* 通常画面自体はviewportから絶対にはみ出させない */
+.screen{
+  height:var(--sasaphia-app-height) !important;
+  min-height:0 !important;
+  max-height:var(--sasaphia-app-height) !important;
+  overflow:hidden;
+}
+
+/* ホームは常に完全固定 */
+#screen-main{
+  overflow:hidden !important;
+}
+
+/*
+  「スクロールを許可された領域」は既存 overflow-y の指定をそのまま使用。
+  overscroll-behavior だけ補強し、親documentへのスクロール連鎖を切る。
+*/
+.screen-scroll,
+#screen-friend,
+#screen-summon,
+.modal,
+[style*="overflow-y: auto"],
+[style*="overflow-y:auto"],
+[style*="overflow-y: scroll"],
+[style*="overflow-y:scroll"]{
+  overscroll-behavior-y:contain !important;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* モーダル全体が固定レイヤーの場合、外枠はスクロールさせない */
+#splash,
+#title-screen,
+#loading,
+#summon-standby,
+#fullscreen-blackout,
+#ur-alert-screen,
+#reveal-modal,
+#ten-result-modal{
+  max-height:var(--sasaphia-app-height) !important;
+}

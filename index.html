@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '750';
+  var FALLBACK_BUILD = '752';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="750">
+  <meta name="sasaphia-build" content="752">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -346,9 +346,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=734-message-notice-tune"
+        href="css/style.css?v=752-cross-device-root-scroll-guard"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=734-message-notice-tune"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=752-cross-device-root-scroll-guard"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -16587,5 +16587,171 @@ html body #global-user-frame .hud-sweep-line-player::after{
   }
 })();
 </script>
+
+<script id="sasaphia-root-scroll-guard-build752">
+(function(){
+  'use strict';
+
+  var startX = 0;
+  var startY = 0;
+  var EPS = 1;
+
+  function asElement(node){
+    if(!node) return null;
+    if(node.nodeType === 1) return node;
+    return node.parentElement || null;
+  }
+
+  function isVerticalScroller(el){
+    if(!el || el === document.documentElement || el === document.body) return false;
+
+    var style;
+    try { style = getComputedStyle(el); } catch (_) { return false; }
+
+    var overflowY = String(style.overflowY || '');
+    if(overflowY !== 'auto' && overflowY !== 'scroll') return false;
+
+    return el.scrollHeight > el.clientHeight + EPS;
+  }
+
+  function findAllowedScroller(node){
+    var el = asElement(node);
+    while(el && el !== document.body && el !== document.documentElement){
+      if(isVerticalScroller(el)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function clampRootScroll(){
+    if(window.scrollX !== 0 || window.scrollY !== 0){
+      window.scrollTo(0, 0);
+    }
+
+    var doc = document.documentElement;
+    var body = document.body;
+
+    if(doc){
+      if(doc.scrollTop !== 0) doc.scrollTop = 0;
+      if(doc.scrollLeft !== 0) doc.scrollLeft = 0;
+    }
+    if(body){
+      if(body.scrollTop !== 0) body.scrollTop = 0;
+      if(body.scrollLeft !== 0) body.scrollLeft = 0;
+    }
+  }
+
+  function updateViewportUnit(){
+    var height = 0;
+
+    try{
+      if(window.visualViewport && Number(window.visualViewport.height) > 0){
+        height = Math.round(window.visualViewport.height);
+      }
+    }catch(_){}
+
+    if(!height){
+      height = Math.round(window.innerHeight || document.documentElement.clientHeight || 0);
+    }
+
+    if(height > 0){
+      document.documentElement.style.setProperty('--sasaphia-app-height', height + 'px');
+    }
+  }
+
+  function isAtVerticalEdge(scroller, deltaY){
+    var atTop = scroller.scrollTop <= EPS;
+    var atBottom =
+      (scroller.scrollTop + scroller.clientHeight) >=
+      (scroller.scrollHeight - EPS);
+
+    // touch: deltaY > 0 = finger moves down = content would overscroll above top
+    // wheel: deltaY < 0 = wheel up = content would overscroll above top
+    return { atTop:atTop, atBottom:atBottom };
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if(!e.touches || e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true, capture:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!e.touches || e.touches.length !== 1) return;
+
+    var touch = e.touches[0];
+    var dx = touch.clientX - startX;
+    var dy = touch.clientY - startY;
+
+    // Horizontal gestures (carousels / game gestures) are not page scrolling.
+    if(Math.abs(dx) > Math.abs(dy)) return;
+
+    var scroller = findAllowedScroller(e.target);
+
+    // No explicit vertical scroller under the finger:
+    // never allow the browser/document itself to move.
+    if(!scroller){
+      e.preventDefault();
+      return;
+    }
+
+    var edge = isAtVerticalEdge(scroller, dy);
+
+    // Prevent rubber-band / scroll chaining out of an allowed container.
+    if((dy > 0 && edge.atTop) || (dy < 0 && edge.atBottom)){
+      e.preventDefault();
+    }
+  }, {passive:false, capture:true});
+
+  // Desktop / trackpad / Android mouse support:
+  // wheel is accepted only by a real overflow-y:auto/scroll container.
+  document.addEventListener('wheel', function(e){
+    var dy = Number(e.deltaY || 0);
+    if(Math.abs(dy) < 0.01) return;
+
+    var scroller = findAllowedScroller(e.target);
+    if(!scroller){
+      e.preventDefault();
+      return;
+    }
+
+    var edge = isAtVerticalEdge(scroller, dy);
+
+    if((dy < 0 && edge.atTop) || (dy > 0 && edge.atBottom)){
+      e.preventDefault();
+    }
+  }, {passive:false, capture:true});
+
+  function refreshViewport(){
+    updateViewportUnit();
+    clampRootScroll();
+  }
+
+  window.addEventListener('scroll', clampRootScroll, {passive:true});
+  window.addEventListener('resize', refreshViewport);
+  window.addEventListener('orientationchange', function(){
+    requestAnimationFrame(refreshViewport);
+    setTimeout(refreshViewport, 120);
+    setTimeout(refreshViewport, 420);
+  });
+  window.addEventListener('pageshow', refreshViewport);
+
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', refreshViewport);
+    window.visualViewport.addEventListener('scroll', clampRootScroll);
+  }
+
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) requestAnimationFrame(refreshViewport);
+  });
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', refreshViewport, {once:true});
+  }else{
+    refreshViewport();
+  }
+})();
+</script>
+
 </body>
 </html>
