@@ -247,9 +247,9 @@
   }
 
   function ensureEarlyFinalizeStyle(){
-    if(document.getElementById('daily-raid-early-finalize-style-v92')) return;
+    if(document.getElementById('daily-raid-early-finalize-style-v93')) return;
     const style=document.createElement('style');
-    style.id='daily-raid-early-finalize-style-v92';
+    style.id='daily-raid-early-finalize-style-v93';
     style.textContent=`
       #daily-raid-root .daily-raid-actions{
         display:flex!important;
@@ -257,11 +257,12 @@
         justify-content:center!important;
         min-height:66px!important;
         height:66px!important;
-        padding:6px 12px!important;
-        gap:10px!important;
+        padding:6px 14px!important;
+        gap:8px!important;
         background:transparent!important;
         border:0!important;
         box-shadow:none!important;
+        box-sizing:border-box!important;
       }
       #daily-raid-root .daily-raid-attempt-copy{
         display:none!important;
@@ -270,50 +271,78 @@
       #daily-raid-root #daily-raid-start{
         position:static!important;
         width:210px!important;
-        min-width:180px!important;
-        max-width:58vw!important;
+        min-width:0!important;
+        max-width:210px!important;
         height:52px!important;
         min-height:52px!important;
         margin:0 auto!important;
-        padding:0 22px!important;
+        padding:0 14px!important;
         border-radius:0!important;
         transform:none!important;
         display:flex!important;
         align-items:center!important;
         justify-content:center!important;
+        box-sizing:border-box!important;
+        clip-path:none!important;
+      }
+      #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-start,
+      #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-finalize-best{
+        flex:1 1 0!important;
+        width:auto!important;
+        min-width:0!important;
+        max-width:182px!important;
+        height:52px!important;
+        min-height:52px!important;
+        margin:0!important;
+        box-sizing:border-box!important;
+        border-radius:0!important;
+        clip-path:none!important;
+      }
+      #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-start::before,
+      #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-start::after,
+      #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-finalize-best::before,
+      #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-finalize-best::after{
+        display:none!important;
+        content:none!important;
       }
       #daily-raid-root #daily-raid-finalize-best{
         position:static!important;
         width:210px!important;
-        min-width:180px!important;
-        max-width:58vw!important;
-        height:50px!important;
-        min-height:50px!important;
+        min-width:0!important;
+        max-width:210px!important;
+        height:52px!important;
+        min-height:52px!important;
         margin:0!important;
-        padding:5px 10px!important;
+        padding:5px 8px!important;
         border-radius:0!important;
         transform:none!important;
         flex-direction:column!important;
         align-items:center!important;
         justify-content:center!important;
-        border:1px solid rgba(132,157,105,.55)!important;
-        background:linear-gradient(180deg,rgba(88,98,67,.94),rgba(62,71,48,.98))!important;
-        color:#f5efce!important;
+        border:1px solid rgba(201,171,101,.78)!important;
+        background:linear-gradient(180deg,rgba(56,57,56,.97),rgba(29,30,30,.99))!important;
+        color:#f7f3ea!important;
         font-family:"Noto Serif JP",serif!important;
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)!important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.10),
+          inset 0 0 0 1px rgba(255,255,255,.025),
+          0 2px 8px rgba(25,22,18,.16)!important;
       }
       #daily-raid-root #daily-raid-finalize-best[hidden]{
         display:none!important;
       }
       #daily-raid-root #daily-raid-finalize-best span{
         display:block!important;
-        margin:0 0 3px!important;
+        margin:0 0 4px!important;
+        color:#d9bc72!important;
         font-family:"Cinzel",serif!important;
-        font-size:6px!important;
+        font-size:9px!important;
         line-height:1!important;
-        letter-spacing:.16em!important;
-        opacity:.72!important;
+        font-weight:650!important;
+        letter-spacing:.06em!important;
+        opacity:1!important;
         white-space:nowrap!important;
+        text-shadow:0 1px 2px rgba(0,0,0,.70)!important;
       }
       #daily-raid-root #daily-raid-start span{
         display:none!important;
@@ -321,11 +350,13 @@
       #daily-raid-root #daily-raid-finalize-best b{
         display:block!important;
         margin:0!important;
-        font-size:11px!important;
+        color:#fffaf0!important;
+        font-size:12px!important;
         line-height:1.12!important;
         font-weight:700!important;
-        letter-spacing:.04em!important;
+        letter-spacing:.035em!important;
         white-space:nowrap!important;
+        text-shadow:0 1px 2px rgba(0,0,0,.78)!important;
       }
       #daily-raid-root #daily-raid-start b{
         display:block!important;
@@ -505,18 +536,24 @@
 
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
-          gap:5px!important;
+          padding-left:10px!important;
+          padding-right:10px!important;
+          gap:6px!important;
+        }
+        #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-start,
+        #daily-raid-root .daily-raid-actions.can-finalize-early #daily-raid-finalize-best{
+          max-width:none!important;
+        }
+        #daily-raid-root #daily-raid-finalize-best span{
+          font-size:8px!important;
         }
         #daily-raid-root #daily-raid-finalize-best b{
-          font-size:10px!important;
-        }
-        #daily-raid-root #daily-raid-start{
-          width:194px!important;
-          min-width:172px!important;
-          max-width:62vw!important;
+          font-size:10.5px!important;
+          letter-spacing:.015em!important;
         }
         #daily-raid-root #daily-raid-start b{
-          font-size:17px!important;
+          font-size:16px!important;
+          letter-spacing:.10em!important;
         }
         #daily-raid-root .daily-raid-head{
           padding-left:14px!important;
@@ -626,7 +663,7 @@
           <footer class="daily-raid-actions">
             <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b id="daily-raid-attempt-count">0 / 3</b></div>
             <button type="button" id="daily-raid-finalize-best" class="daily-raid-finalize-best" hidden>
-              <span>SKIP REMAINING</span><b>残り挑戦をスキップ</b>
+              <span>現在BEST：--</span><b>残り挑戦をスキップ</b>
             </button>
             <button type="button" id="daily-raid-start"><span>RAID BATTLE</span><b>バトル開始</b></button>
           </footer>
@@ -993,7 +1030,7 @@
       finalizeBtn.hidden=!canFinalizeEarly;
       finalizeBtn.disabled=!canFinalizeEarly;
       if(canFinalizeEarly){
-        finalizeBtn.innerHTML=`<span>${3-attemptCount} ATTEMPT LEFT</span><b>残り挑戦をスキップ</b>`;
+        finalizeBtn.innerHTML=`<span>現在BEST：${fmt(bestDamage)}</span><b>残り挑戦をスキップ</b>`;
       }
     }
 

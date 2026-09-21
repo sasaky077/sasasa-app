@@ -486,7 +486,9 @@
       orbit_forward: '円環軌道射撃',
       laser: '連続レーザー',
       rose_seed_splash: '種子拡散射撃',
-      precision: '精密射撃'
+      piercing: '貫通射撃',
+      shotgun: '貫通射撃',
+      precision: '貫通射撃'
     };
     const type = labels[String(profile.shotType || '')] || '標準射撃';
     const count = profile.shotType === 'laser' ? '' : ` / ${Number(profile.shotCount || 1)}発`;

@@ -38,7 +38,61 @@
   }
 }
 
-/* Page shell is owned by css/app_chrome.css (UI Foundation v2). */
+/* Shared full-height scroll shell */
+html body:not(.ui-immersive) #screen-item.screen.active{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.74),rgba(249,246,239,.60)),
+    url("../images/chara_bg_sky.webp") center/cover no-repeat !important;
+}
+
+html body:not(.ui-immersive) #screen-item.screen.active > .header{
+  position:absolute !important;
+  top:var(--header-h) !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  height:var(--page-header-h) !important;
+  min-height:var(--page-header-h) !important;
+  z-index:220 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  padding:
+    calc(var(--header-h) + var(--page-header-h) + 4px)
+    14px
+    calc(var(--bottom-nav-h) + 24px) !important;
+  box-sizing:border-box !important;
+}
+
+@media (min-width:500px){
+  html body:not(.ui-immersive) #screen-item.screen.active{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
 
 .item-page-intro{
   display:flex;
@@ -473,7 +527,7 @@
 }
 
 @media (max-width:360px){
-  html body:not(.ui-immersive) #screen-item.screen.active > .app-page-content{
+  html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
     padding-left:10px !important;
     padding-right:10px !important;
   }
@@ -566,7 +620,7 @@
    ========================================================= */
 
 /* Whole item content is no longer a page scroller. */
-html body:not(.ui-immersive) #screen-item.screen.active > .app-page-content{
+html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
   display:flex !important;
   flex-direction:column !important;
   overflow:hidden !important;
@@ -657,14 +711,9 @@ html body:not(.ui-immersive) #screen-item.screen.active > .app-page-content{
 }
 
 #screen-item .item-inventory-panel::before{
-  top:39px !important;
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(253,250,244,.78) 0%,
-      rgba(253,250,244,.34) 42%,
-      rgba(253,250,244,0) 100%
-    ) !important;
+  /* build684: redundant top haze removed. The list mask handles top-edge fade. */
+  content:none !important;
+  display:none !important;
 }
 
 #screen-item .item-inventory-panel::after{
@@ -704,9 +753,6 @@ html body:not(.ui-immersive) #screen-item.screen.active > .app-page-content{
     padding-bottom:3px !important;
   }
 
-  #screen-item .item-inventory-panel::before{
-    top:34px !important;
-  }
 }
 
 /* =========================================================
@@ -874,4 +920,62 @@ html body:not(.ui-immersive) #screen-item.screen.active > .app-page-content{
 #screen-item .item-row:has(img[src$="item_wing.webp"]) .item-row-price{
   color:#8f8577 !important;
   font-weight:600 !important;
+}
+
+
+/* =========================================================
+   ITEM build685 — OTHER typography parity
+   その他のアイテム情報を進化素材・強化素材と完全に同じ書体/色へ統一
+   ========================================================= */
+#screen-item .item-row-other,
+#screen-item .item-row-other.is-zero{
+  opacity:1 !important;
+}
+#screen-item .item-row-other .item-row-kicker{
+  color:#a1844d !important;
+  font:600 6px/1 "Cinzel",serif !important;
+  letter-spacing:.22em !important;
+  opacity:1 !important;
+}
+#screen-item .item-row-other .item-row-name{
+  margin-top:5px !important;
+  color:#3e3126 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  line-height:normal !important;
+  opacity:1 !important;
+}
+#screen-item .item-row-other .item-row-desc{
+  margin-top:4px !important;
+  color:#827568 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:7.5px !important;
+  font-weight:400 !important;
+  line-height:1.42 !important;
+  opacity:1 !important;
+}
+#screen-item .item-row-other .item-row-count,
+#screen-item .item-row-other .item-row-count-other{
+  color:#756348 !important;
+  opacity:1 !important;
+}
+#screen-item .item-row-other .item-row-count span,
+#screen-item .item-row-other .item-row-count-other span{
+  color:#756348 !important;
+  font:500 7px/1 "Cinzel",serif !important;
+  letter-spacing:.10em !important;
+  opacity:1 !important;
+}
+#screen-item .item-row-other .item-row-count strong,
+#screen-item .item-row-other .item-row-count-other strong{
+  color:#3d2e20 !important;
+  font:600 14px/1 "Cinzel","Noto Serif JP",serif !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+}
+@media (max-width:360px){
+  #screen-item .item-row-other .item-row-name{
+    font-size:11px !important;
+  }
 }

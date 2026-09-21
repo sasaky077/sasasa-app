@@ -49,7 +49,7 @@
     {
       id:'flower_r',
       source:'inventory',
-      name:'聖霊花・R',
+      name:'聖霊花(R)',
       img:'images/item_flower_r.webp',
       kicker:'SPIRIT FLOWER',
       desc:'Rキャラクターが完凸後に重複した際、代わりに獲得する交換素材。',
@@ -58,7 +58,7 @@
     {
       id:'flower_sr',
       source:'inventory',
-      name:'聖霊花・SR',
+      name:'聖霊花(SR)',
       img:'images/item_flower_sr.webp',
       kicker:'SPIRIT FLOWER',
       desc:'SRキャラクターが完凸後に重複した際、代わりに獲得する交換素材。',
@@ -516,13 +516,13 @@
      --------------------------------------------------------- */
   const OTHER_GACHA_REWARDS = {
     flower_r:{
-      name:'聖霊花・R',
+      name:'聖霊花(R)',
       img:'images/item_flower_r.webp',
       rarity:'r',
       itemCategory:'exchange'
     },
     flower_sr:{
-      name:'聖霊花・SR',
+      name:'聖霊花(SR)',
       img:'images/item_flower_sr.webp',
       rarity:'sr',
       itemCategory:'exchange'

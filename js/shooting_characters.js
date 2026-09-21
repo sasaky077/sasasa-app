@@ -938,7 +938,8 @@
     const aliases = {
       orbit_forward: 'orbit',
       charge_release: 'charge',
-      precision: 'shotgun',
+      precision: 'piercing',
+      shotgun: 'piercing',
       splash: 'bomb',
       melee_slash: 'strike',
       wolf_j_homing: 'homing',
@@ -1456,7 +1457,7 @@
     shotPowerRate: 0.315,
 
     // ---- 通常ショット設定 ----
-    shotType: 'shotgun',
+    shotType: 'piercing',
     shotCount: 1,
     shotStyle: 'ayane',
     chargedEvery: 4,
@@ -1743,11 +1744,11 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SHION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SHION, effectKey: 'shion',
-    label: 'SHOTGUN / DELAY',
+    label: 'PIERCING / DELAY',
     description: '高威力の単発精密射撃。ULT「黒羽葬鐘」は敵全体へ呪印を刻み、時間差で闇撃を起こした後、敵の攻撃力を弱体化する。',
     ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・スタン・無敵は発生しない。',
     ultName: '黒羽葬鐘',
-    shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    shotType: 'piercing', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
     ultType: 'shion_delayed_curse',
     ultDelayMs: 1200,
@@ -1758,8 +1759,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
-    label: 'SHOTGUN / LIGHT', description: '高威力の単発精密射撃。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    label: 'PIERCING / LIGHT', description: '高威力の単発精密射撃。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    shotType: 'piercing', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });

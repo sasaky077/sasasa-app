@@ -2130,7 +2130,9 @@
     const shotType = String(c.shotType || '');
     const singleShotType =
       shotCount === 1 &&
-      (shotType === 'shotgun' ||
+      (shotType === 'piercing' ||
+       shotType === 'shotgun' ||
+       shotType === 'precision' ||
        shotType === 'strike' ||
        shotType === 'charge' ||
        shotType === 'bomb');
@@ -5821,7 +5823,7 @@
     // 精密射撃
     // chargedEvery / chargedPowerMultiplier もキャラJS側
     // ----------------------------------------------------------
-    if (c.shotType === 'shotgun') {
+    if (c.shotType === 'piercing' || c.shotType === 'shotgun' || c.shotType === 'precision') {
       const chargedEvery = Math.max(0, Math.floor(Number(c.chargedEvery || 0)));
       const heavy = chargedEvery > 0 && state.shotIndex % chargedEvery === 0;
       const chargedMultiplier = Number(c.chargedPowerMultiplier || 1);
@@ -5840,7 +5842,7 @@
           c.id
         );
         if (p) {
-          // Shotgun は貫通弾。1体につき1回だけ命中し、敵に当たっても消えない。
+          // PIERCING は貫通弾。1体につき1回だけ命中し、敵に当たっても消えない。
           p.pierce = true;
           p.piercedTargets = new WeakSet();
           state.bullets.push(p);

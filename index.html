@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '668';
+  var FALLBACK_BUILD = '685';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -231,7 +231,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="668">
+  <meta name="sasaphia-build" content="685">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -331,9 +331,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=668-home-menu-haze-soft-v1"
+        href="css/style.css?v=685-item-other-typography-v1"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=668-home-menu-haze-soft-v1"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=685-item-other-typography-v1"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -418,10 +418,84 @@
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
     document.write('<link rel="stylesheet" href="css/shooting_event.css?v=593">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=668-home-menu-haze-soft-v1">
-  <link rel="stylesheet" href="css/item_management.css?v=668-home-menu-haze-soft-v1">
-  <link rel="stylesheet" href="css/score_attack_chrome.css?v=668-home-menu-haze-soft-v1">
-  <link rel="stylesheet" href="css/app_chrome.css?v=668-home-menu-haze-soft-v1">
+  <link rel="stylesheet" href="css/raid_event.css?v=685-item-other-typography-v1">
+  <link rel="stylesheet" href="css/item_management.css?v=685-item-other-typography-v1">
+  <link rel="stylesheet" href="css/score_attack_chrome.css?v=685-item-other-typography-v1">
+  <link rel="stylesheet" href="css/app_chrome.css?v=685-item-other-typography-v1">
+
+  <style id="item-page-build682-fixes">
+    /* build682: item page visual alignment */
+    #screen-item .item-page-intro h2{
+      font-size:18px !important;
+    }
+
+    /* Keep the section heading clear of the first item card, including short screens. */
+    #screen-item .item-panel-head{
+      margin:0 4px 7px !important;
+      padding-bottom:5px !important;
+    }
+
+    /* OTHER uses the same text palette as Evolution / Enhance. */
+    #screen-item .item-row-other,
+    #screen-item .item-row-other.is-zero{
+      opacity:1 !important;
+    }
+    #screen-item .item-row-other .item-row-kicker{
+      color:#a1844d !important;
+      opacity:1 !important;
+    }
+    #screen-item .item-row-other .item-row-name{
+      color:#3e3126 !important;
+      opacity:1 !important;
+    }
+    #screen-item .item-row-other .item-row-desc{
+      color:#827568 !important;
+      opacity:1 !important;
+    }
+    #screen-item .item-row-other .item-row-count{
+      color:#756348 !important;
+      opacity:1 !important;
+    }
+    #screen-item .item-row-other .item-row-count span{
+      color:#756348 !important;
+      opacity:1 !important;
+    }
+    #screen-item .item-row-other .item-row-count strong{
+      color:#3d2e20 !important;
+      opacity:1 !important;
+    }
+
+    @media (max-width:360px){
+      #screen-item .item-page-intro h2{
+        font-size:17px !important;
+      }
+    }
+
+    /* build683: iPhone SE height — prevent the section kicker/title from touching. */
+    @media (max-height:700px){
+      #screen-item .item-panel-head{
+        margin-bottom:8px !important;
+        padding-bottom:5px !important;
+      }
+      #screen-item .item-panel-head small{
+        line-height:1.2 !important;
+      }
+      #screen-item .item-panel-head strong{
+        margin-top:6px !important;
+        line-height:1.25 !important;
+      }
+      #screen-item .item-management-list{
+        padding-top:10px !important;
+      }
+    }
+
+    /* build684: the top white haze sat above the section heading on short screens.
+       The list already has its own top mask, so remove only the redundant top haze. */
+    #screen-item .item-inventory-panel::before{
+      content:none !important;
+      display:none !important;
+    }
+  </style>
   <style id="home-side-notice-offset-build665">
   /*
     build665: side-menu notice position fix.
@@ -2056,18 +2130,6 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <audio id="bgm-opening" src="audio/bgm_title.mp3" preload="auto" loop></audio>
 <audio id="bgm" src="audio/bgm_home_01.mp3" preload="auto" loop></audio>
 
-<button
-  id="global-bgm-toggle"
-  class="global-bgm-toggle"
-  type="button"
-  aria-label="BGMをOFFにする"
-  aria-pressed="true"
-  title="BGM ON / OFF"
-  onclick="toggleGlobalBgm(event)"
->
-  <img class="global-bgm-icon" src="assets/ui/speaker.webp" alt="" aria-hidden="true">
-</button>
-
 <div id="title-screen" onclick="startFromTitle()">
   <img src="images/title.webp" alt="Zeraphia">
   <div id="title-tap-hint">✦ TAP TO START ✦</div>
@@ -2634,6 +2696,15 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     </div>
   </div>
   <div class="setting-section">
+    <div class="setting-section-title">サウンド</div>
+    <div class="setting-row setting-audio-row" onclick="toggleAudioSetting('main_bgm')" role="button" tabindex="0" aria-label="BGM設定を切り替える">
+      <span class="setting-row-label">BGM</span>
+      <span class="setting-audio-control">
+        <span class="setting-audio-status" id="main-bgm-status">ON</span>
+      </span>
+    </div>
+  </div>
+  <div class="setting-section">
     <div class="setting-section-title">アカウント</div>
 
     <div class="setting-row" onclick="openAccountProtection()">
@@ -2883,6 +2954,17 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       </button>
       <button class="ten-result-close-btn" onclick="closeTenResult()">戻る</button>
     </div>
+  </div>
+</div>
+
+<!-- 完凸後の重複キャラ → 聖霊花 変換結果 -->
+<div class="modal-overlay" id="gacha-conversion-modal" aria-hidden="true">
+  <div class="modal gacha-conversion-modal-inner" role="dialog" aria-modal="true" aria-labelledby="gacha-conversion-title">
+    <div class="gacha-conversion-kicker">CONVERSION RESULT</div>
+    <h2 id="gacha-conversion-title">変換結果</h2>
+    <div id="gacha-conversion-list" class="gacha-conversion-list"></div>
+    <p class="gacha-conversion-note">獲得した聖霊花はアイテムに追加されています。</p>
+    <button class="gacha-conversion-ok" type="button" onclick="closeGachaConversionPopup()">OK</button>
   </div>
 </div>
 
@@ -5436,6 +5518,9 @@ function renderResultElementBadge(data){
   };
   var currentResultData=null, currentDetailData=null, pendingNew=null;
   var detailReturnToSummonAfterClose = false;
+  var pendingSingleGachaConversions = [];
+  var tenConversionPopupShown = false;
+  var gachaConversionCloseHandler = null;
   function normalizeZeraphiaUserId(value){
     return String(value || '').trim().toLowerCase();
   }
@@ -8069,10 +8154,13 @@ function recoverSummonUI(message){
   clearGachaEffectTimers();
   setSkipBtnVisible(false);
 
-  ['summon-standby','reveal-modal','ten-result-modal','summon-confirm-modal'].forEach(function(id){
+  ['summon-standby','reveal-modal','ten-result-modal','summon-confirm-modal','gacha-conversion-modal'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.classList.remove('active','is-starting');
   });
+  pendingSingleGachaConversions = [];
+  tenConversionPopupShown = false;
+  gachaConversionCloseHandler = null;
   var standby = document.getElementById('summon-standby');
   if(standby) standby.style.pointerEvents = '';
   var guf = document.getElementById('global-user-frame');
@@ -8255,6 +8343,8 @@ if(window.GameAssets){
   var gachaAssetUrls = [];
   results.forEach(function(data){
     if(data && data.img) gachaAssetUrls.push(data.img);
+    var displayData = getGachaPresentationResult(data);
+    if(displayData && displayData.img) gachaAssetUrls.push(displayData.img);
     var cardSrc = getTenResultImageSrc(data);
     if(cardSrc) gachaAssetUrls.push(cardSrc);
   });
@@ -8332,20 +8422,23 @@ function preloadGachaImage(src, timeoutMs){
 
 function getTenResultImageSrc(data){
   if(!data) return '';
-  var isMaterial = isGachaMaterialResult(data);
+  var displayData = getGachaPresentationResult(data);
+  var isMaterial = isGachaMaterialResult(displayData);
   var masterChara = (!isMaterial && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
-    ? CHARACTERS.find(function(c){ return String(c.id) === String(data.id); })
+    ? CHARACTERS.find(function(c){ return String(c.id) === String(displayData.id); })
     : null;
   return isMaterial
-    ? (data.img || 'images/unknown.webp')
-    : ((masterChara && masterChara.upImg) || data.upImg ||
-       (masterChara && masterChara.img) || data.img || 'images/unknown.webp');
+    ? (displayData.img || 'images/unknown.webp')
+    : ((masterChara && masterChara.upImg) || displayData.upImg ||
+       (masterChara && masterChara.img) || displayData.img || 'images/unknown.webp');
 }
 
 function preloadGachaResults(results){
   var urls = [];
   (results || []).forEach(function(data){
-    if(data && data.img) urls.push(data.img); // 全画面リビール用
+    if(data && data.img) urls.push(data.img);
+    var displayData = getGachaPresentationResult(data);
+    if(displayData && displayData.img) urls.push(displayData.img); // 全画面リビール用
     var cardImg = getTenResultImageSrc(data); // 10連カード用
     if(cardImg) urls.push(cardImg);
   });
@@ -8498,6 +8591,183 @@ function getCharaById(id){
   return CHARACTERS.find(function(c){ return Number(c.id) === Number(id); }) || null;
 }
 
+function isGachaExcessConversion(data){
+  if(!isGachaMaterialResult(data)) return false;
+  var materialId = String(data && data.materialId || '');
+  return (materialId === 'flower_r' || materialId === 'flower_sr') &&
+    data && data.convertedFromCharacterId != null;
+}
+
+function getGachaConversionSourceCharacter(data){
+  if(!isGachaExcessConversion(data)) return null;
+  return getCharaById(Number(data.convertedFromCharacterId));
+}
+
+function getGachaConversionRarity(data){
+  var rarity = String(data && data.convertedFromRarity || '').trim().toLowerCase();
+  if(rarity === 'sr' || rarity === 'r') return rarity;
+  if(data && data.materialId === 'flower_sr') return 'sr';
+  if(data && data.materialId === 'flower_r') return 'r';
+  var source = getGachaConversionSourceCharacter(data);
+  rarity = String(source && source.rarity || '').trim().toLowerCase();
+  return rarity === 'sr' ? 'sr' : 'r';
+}
+
+function getGachaPresentationResult(data){
+  if(!isGachaExcessConversion(data)) return data;
+
+  var source = getGachaConversionSourceCharacter(data);
+  if(!source) return data;
+
+  var capturedAt = data && data.capturedAt ? new Date(data.capturedAt) : new Date();
+  if(!Number.isFinite(capturedAt.getTime())) capturedAt = new Date();
+
+  var base = createCharaSummonData(source, capturedAt, data.time);
+  var owned = null;
+  try {
+    if(typeof getRepresentativeOwnedInstance === 'function'){
+      owned = getRepresentativeOwnedInstance(source.id);
+    }
+  } catch(_){ owned = null; }
+
+  var presentation = Object.assign({}, base, owned || {});
+  presentation.resultKind = 'character';
+  presentation.id = source.id;
+  presentation.name = source.name;
+  presentation.img = source.img;
+  presentation.upImg = source.upImg || source.img;
+  presentation.cutImg = source.cutImg;
+  presentation.element = source.element;
+  presentation.type = source.type;
+  presentation.rarity = getGachaConversionRarity(data);
+  presentation.isNew = false;
+  presentation.isPickup = !!data.isPickup;
+  presentation.isConvertedExcess = true;
+  presentation.convertedMaterialId = data.materialId;
+  presentation.convertedMaterialName = data.name;
+  presentation.convertedFromCharacterId = Number(data.convertedFromCharacterId);
+  presentation.convertedFromRarity = getGachaConversionRarity(data);
+  presentation.actualGachaResult = data;
+  return presentation;
+}
+
+function collectGachaExcessConversions(results){
+  return (Array.isArray(results) ? results : [results]).filter(function(data){
+    return isGachaExcessConversion(data);
+  });
+}
+
+function showGachaConversionPopup(conversions, onClose){
+  var list = collectGachaExcessConversions(conversions);
+  if(!list.length){
+    if(typeof onClose === 'function') onClose();
+    return false;
+  }
+
+  var modal = document.getElementById('gacha-conversion-modal');
+  var listEl = document.getElementById('gacha-conversion-list');
+  if(!modal || !listEl){
+    if(typeof onClose === 'function') onClose();
+    return false;
+  }
+
+  listEl.innerHTML = list.map(function(data){
+    var source = getGachaConversionSourceCharacter(data);
+    var sourceName = source ? source.name : ('キャラクター No.' + Number(data.convertedFromCharacterId || 0));
+    var rarity = getGachaConversionRarity(data).toUpperCase();
+    var sourceImg = source ? (source.panelImg || source.upImg || source.img || 'images/unknown.webp') : 'images/unknown.webp';
+    var flowerImg = data.materialId === 'flower_sr' ? 'images/item_flower_sr.webp' : 'images/item_flower_r.webp';
+
+    return '<div class="gacha-conversion-row">' +
+      '<div class="gacha-conversion-visual">' +
+        '<img class="gacha-conversion-source-img" src="' + detailEscapeHTML(sourceImg) + '" alt="">' +
+        '<span class="gacha-conversion-arrow" aria-hidden="true">→</span>' +
+        '<img class="gacha-conversion-flower-img" src="' + detailEscapeHTML(flowerImg) + '" alt="">' +
+      '</div>' +
+      '<div class="gacha-conversion-message"><b>' + detailEscapeHTML(sourceName) + '</b>が聖霊花(' + rarity + ')に変換されました</div>' +
+    '</div>';
+  }).join('');
+
+  gachaConversionCloseHandler = typeof onClose === 'function' ? onClose : null;
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden','false');
+  return true;
+}
+
+function renderTenConvertedFlowerCard(index, data){
+  var card = document.getElementById('ten-card-' + index);
+  if(!card || !isGachaExcessConversion(data)) return false;
+
+  var rarity = getGachaConversionRarity(data);
+  var flowerImg = data.materialId === 'flower_sr' ? 'images/item_flower_sr.webp' : 'images/item_flower_r.webp';
+  var flowerName = rarity === 'sr' ? '聖霊花(SR)' : '聖霊花(R)';
+
+  card.className = 'ten-result-card rarity-' + rarity + ' is-material is-converted-flower ten-conversion-arrived';
+  card.innerHTML =
+    '<span class="ten-conversion-glow" aria-hidden="true"></span>' +
+    '<img class="ten-card-img ten-card-item-img" src="' + flowerImg + '" alt="' + flowerName + '" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
+    '<div class="ten-card-item-badge">ITEM</div>' +
+    '<div class="ten-card-bottom"><span class="ten-card-name">' + flowerName + '</span></div>';
+
+  card.onclick = function(){
+    showGachaMaterialDetail(data, true);
+  };
+
+  setTimeout(function(){
+    card.classList.remove('ten-conversion-arrived');
+  }, 560);
+  return true;
+}
+
+function runTenConversionSequence(results, onComplete){
+  var entries = [];
+  (Array.isArray(results) ? results : []).forEach(function(data, index){
+    if(isGachaExcessConversion(data)) entries.push({ data:data, index:index });
+  });
+
+  if(!entries.length){
+    if(typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // build677: 変換対象が複数ある時の間を約2倍にして、
+  // 最後の花への変換演出が完了してから1秒後に結果ポップアップを出す。
+  var STEP_MS = 720;
+  var SWAP_MS = 210;
+  var FLOWER_IN_MS = 560;
+  var POPUP_DELAY_MS = 1000;
+
+  entries.forEach(function(entry, order){
+    setTimeout(function(){
+      var card = document.getElementById('ten-card-' + entry.index);
+      if(!card) return;
+
+      card.classList.add('is-conversion-changing');
+
+      setTimeout(function(){
+        card.classList.remove('is-conversion-changing');
+        renderTenConvertedFlowerCard(entry.index, entry.data);
+      }, SWAP_MS);
+    }, order * STEP_MS);
+  });
+
+  var totalMs = (entries.length - 1) * STEP_MS + SWAP_MS + FLOWER_IN_MS + POPUP_DELAY_MS;
+  setTimeout(function(){
+    if(typeof onComplete === 'function') onComplete();
+  }, totalMs);
+}
+
+function closeGachaConversionPopup(){
+  var modal = document.getElementById('gacha-conversion-modal');
+  if(modal){
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden','true');
+  }
+  var callback = gachaConversionCloseHandler;
+  gachaConversionCloseHandler = null;
+  if(typeof callback === 'function') callback();
+}
+
 function createCharaSummonData(chara, now, fixedTimeStr){
   now = now || new Date();
   var timeStr = fixedTimeStr ||
@@ -8611,7 +8881,11 @@ function handleSingleResult(data){
   if(!isGachaMaterialResult(data)){
     registerServerGrantedCharacter(data);
   }
-  showReveal(data, false);
+
+  // 完凸済みキャラの重複は、サーバー上では聖霊花へ変換済み。
+  // 演出では「どのキャラを引いたか」を先に見せ、その後に変換結果を通知する。
+  pendingSingleGachaConversions = collectGachaExcessConversions([data]);
+  showReveal(getGachaPresentationResult(data), false);
 }
 
   // デバッグ用: 'bronze'/'silver'/'gold'/'ur' に固定、nullで通常
@@ -9108,6 +9382,16 @@ function finalGachaFlash(callback){
     }
   }
 
+  if(pendingSingleGachaConversions.length){
+    var conversions = pendingSingleGachaConversions.slice();
+    pendingSingleGachaConversions = [];
+    pendingRevealIsCompare = false;
+    showGachaConversionPopup(conversions, function(){
+      restoreSummonScreenAfterSingleGacha();
+    });
+    return;
+  }
+
   if(pendingRevealIsCompare){
     showCompareModal(currentResultData, collected[currentResultData.id]);
   } else {
@@ -9371,6 +9655,7 @@ async function startTenRevealSequence(results){
   tenRevealResults = results;
   tenRevealIndex = 0;
   tenRevealWaiting = false;
+  tenConversionPopupShown = false;
 
   // 10連カードと全画面リビール画像をすべて準備してから開封を開始する。
   await preloadGachaResults(results);
@@ -9442,35 +9727,37 @@ function openNextTenCard(){
 
 function revealTenCard(index){
   var data = tenRevealResults[index];
+  var displayData = getGachaPresentationResult(data);
   var card = document.getElementById('ten-card-' + index);
   if(!card) return;
 
-  var nameLabel   = data.name || '';
-  var isNew       = data.isNew === true;
-  var isMaterial  = isGachaMaterialResult(data);
+  var nameLabel   = displayData.name || '';
+  var isNew       = displayData.isNew === true;
+  var isMaterial  = isGachaMaterialResult(displayData);
 
   card.className = 'ten-result-card' +
-    (data.rarity ? ' rarity-' + data.rarity : '') +
+    (displayData.rarity ? ' rarity-' + displayData.rarity : '') +
     (isNew ? ' is-new' : '') +
-    (data.isPickup ? ' is-pickup' : '') +
-    (isMaterial ? ' is-material' : '');
+    (displayData.isPickup ? ' is-pickup' : '') +
+    (isMaterial ? ' is-material' : '') +
+    (isGachaExcessConversion(data) ? ' is-converted-excess' : '');
 
   var masterChara = (!isMaterial && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS))
-    ? CHARACTERS.find(function(c){ return String(c.id) === String(data.id); })
+    ? CHARACTERS.find(function(c){ return String(c.id) === String(displayData.id); })
     : null;
 
   // 10連結果は事前ロード済みの共通解決ロジックを使用する。
   var imgSrc = getTenResultImageSrc(data);
 
   card.innerHTML =
-    ((data.rarity === 'sr' || data.rarity === 'ur') && !isMaterial
+    ((displayData.rarity === 'sr' || displayData.rarity === 'ur') && !isMaterial
       ? '<span class="ten-card-sr-shimmer" aria-hidden="true"></span>'
       : '') +
-    (data.isPickup && !isMaterial
+    (displayData.isPickup && !isMaterial
       ? '<span class="ten-card-pickup-aura" aria-hidden="true"></span><span class="ten-card-pickup-glint" aria-hidden="true"></span>'
       : '') +
     '<img class="ten-card-img' + (isMaterial ? ' ten-card-item-img' : '') + '" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
-    (isMaterial ? '<div class="ten-card-item-badge">ITEM</div>' : getElementCornerIconHTML(data, 'ten-card-element-icon')) +
+    (isMaterial ? '<div class="ten-card-item-badge">ITEM</div>' : getElementCornerIconHTML(displayData, 'ten-card-element-icon')) +
     '<div class="ten-card-top">' +
       '' +
     '</div>' +
@@ -9561,10 +9848,11 @@ function showTenResult(results){
     // 10枚すべての演出が完了した、このタイミングでのみ詳細タップを解禁する。
     (function(d){
       card.onclick = function(){
-        if(isGachaMaterialResult(d)){
-          showGachaMaterialDetail(d, true);
+        var displayData = getGachaPresentationResult(d);
+        if(isGachaMaterialResult(displayData)){
+          showGachaMaterialDetail(displayData, true);
         } else {
-          showDetail(d, true);
+          showDetail(displayData, true);
         }
       };
     })(data);
@@ -9576,12 +9864,33 @@ function showTenResult(results){
   // showTenResult到達時点でも、最後のカード画像の描画が完了するまではボタンを隠す。
   // 10枚すべてが「開封済み + 画像描画済み」になった後だけ表示する。
   setTenResultFooterVisible(false);
-  waitForTenResultCardsReady(results);
+  waitForTenResultCardsReady(results, function(){
+    if(tenConversionPopupShown) return;
+    var conversions = collectGachaExcessConversions(results);
+    if(!conversions.length) return;
+
+    tenConversionPopupShown = true;
+    // 10個を見せ切ったあと、変換対象の枠だけを元キャラ → 聖霊花へチェンジ。
+    // 変換アニメーション完了後に、まとめて変換結果を表示する。
+    setTenResultFooterVisible(false);
+    runTenConversionSequence(results, function(){
+      showGachaConversionPopup(conversions, function(){
+        setTenResultFooterVisible(true);
+      });
+    });
+  });
 
   }
 
   function closeTenResult(){
     document.getElementById('ten-result-modal').classList.remove('active');
+    var conversionModal = document.getElementById('gacha-conversion-modal');
+    if(conversionModal){
+      conversionModal.classList.remove('active');
+      conversionModal.setAttribute('aria-hidden','true');
+    }
+    gachaConversionCloseHandler = null;
+    tenConversionPopupShown = false;
     updateMainUI();
     renderCurrentZukanTab();
 
@@ -11775,7 +12084,9 @@ function getShootingShotTypeLabel(type, c, slot){
   var labels = {
     orbit: 'Orbit',
     charge: 'Charge',
-    shotgun: 'Shotgun',
+    piercing: 'Piercing',
+    shotgun: 'Piercing',
+    precision: 'Piercing',
     strike: 'Strike',
     homing: 'Homing'
   };
@@ -12234,6 +12545,7 @@ async function deleteCurrentChara(){
   currentResultData = null;
   pendingNew = null;
   pendingRevealIsCompare = false;
+  pendingSingleGachaConversions = [];
 
   const result = document.getElementById('summon-result');
   if(result){
@@ -14354,7 +14666,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=593"></script>
+<script src="js/shooting_characters.js?v=685-item-other-typography-v1"></script>
 <script src="js/stage_select.js?v=593"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -14435,9 +14747,9 @@ window.returnToTitleScreen = function(){
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
   document.write('<script src="js/shooting_event.js?v=621"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=668-home-menu-haze-soft-v1"></script>
-<script src="js/raid_event.js?v=668-home-menu-haze-soft-v1"></script>
-<script src="js/item_management.js?v=668-home-menu-haze-soft-v1"></script>
+<script src="js/admin_mode.js?v=685-item-other-typography-v1"></script>
+<script src="js/raid_event.js?v=685-item-other-typography-v1"></script>
+<script src="js/item_management.js?v=685-item-other-typography-v1"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -14472,7 +14784,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=668-home-menu-haze-soft-v1"></script>
+<script src="js/score_attack.js?v=685-item-other-typography-v1"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

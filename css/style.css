@@ -37170,3 +37170,493 @@ html body #global-user-frame .hud-lv-core{
 html body #global-user-frame .hud-gem-plus-btn{
   color:#75634f !important;
 }
+
+/* =========================================================
+   build671 GACHA excess-copy conversion sequence
+   - 10連: 全10枠表示 → 対象枠を元キャラから聖霊花へ変換 → 変換結果ポップアップ
+   - build670で末尾CSSが文字列化していたため、実CSSとして再定義
+   ========================================================= */
+#gacha-conversion-modal.modal-overlay{
+  z-index:260000 !important;
+  background:rgba(42,35,28,.48) !important;
+  backdrop-filter:blur(7px) !important;
+  -webkit-backdrop-filter:blur(7px) !important;
+  padding:22px !important;
+}
+
+#gacha-conversion-modal > .gacha-conversion-modal-inner{
+  width:min(360px,92vw) !important;
+  max-width:360px !important;
+  max-height:min(74dvh,620px) !important;
+  margin:0 !important;
+  padding:24px 22px 20px !important;
+  overflow:auto !important;
+  border-radius:2px !important;
+  border:1px solid rgba(151,122,77,.34) !important;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.98),rgba(255,255,255,.82) 42%,rgba(247,242,232,.93) 100%) !important;
+  box-shadow:
+    0 18px 48px rgba(49,39,26,.18),
+    inset 0 0 0 1px rgba(255,255,255,.74) !important;
+  color:#584936 !important;
+  text-align:center !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-kicker{
+  margin-bottom:6px !important;
+  font-family:"Cinzel",serif !important;
+  font-size:8px !important;
+  letter-spacing:.30em !important;
+  color:#aa8950 !important;
+}
+
+#gacha-conversion-modal h2{
+  margin:0 0 18px !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:18px !important;
+  font-weight:500 !important;
+  letter-spacing:.12em !important;
+  color:#51412f !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-list{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:9px !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-row{
+  display:grid !important;
+  grid-template-columns:82px minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-height:64px !important;
+  padding:8px 10px !important;
+  border-top:1px solid rgba(151,122,77,.18) !important;
+  border-bottom:1px solid rgba(151,122,77,.10) !important;
+  background:rgba(255,255,255,.35) !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-visual{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:5px !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-source-img,
+#gacha-conversion-modal .gacha-conversion-flower-img{
+  width:31px !important;
+  height:31px !important;
+  object-fit:contain !important;
+  flex:0 0 auto !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-source-img{
+  border-radius:50% !important;
+  object-fit:cover !important;
+  box-shadow:0 0 0 1px rgba(139,111,68,.20) !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-flower-img{
+  filter:drop-shadow(0 2px 5px rgba(122,95,48,.14)) !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-arrow{
+  font-family:"Cinzel",serif !important;
+  font-size:13px !important;
+  color:#a78a58 !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-message{
+  text-align:left !important;
+  font-size:11px !important;
+  line-height:1.65 !important;
+  letter-spacing:.015em !important;
+  color:#655541 !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-message b{
+  color:#463727 !important;
+  font-weight:600 !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-note{
+  margin:15px 0 14px !important;
+  font-size:9px !important;
+  line-height:1.6 !important;
+  color:rgba(91,73,50,.62) !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-ok{
+  width:100% !important;
+  height:42px !important;
+  border:1px solid rgba(135,106,61,.42) !important;
+  border-radius:0 !important;
+  background:rgba(255,255,255,.70) !important;
+  color:#5d4a34 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:12px !important;
+  letter-spacing:.22em !important;
+  cursor:pointer !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-ok:active{
+  transform:translateY(1px) !important;
+  background:rgba(239,231,216,.84) !important;
+}
+
+/* 変換前: 結果枠には元キャラを表示する */
+#ten-result-modal .ten-result-card.is-converted-excess{
+  box-shadow:inset 0 0 0 1px rgba(169,137,79,.26) !important;
+}
+
+/* 元キャラが光に溶ける */
+#ten-result-modal .ten-result-card.is-conversion-changing{
+  overflow:hidden !important;
+  animation:tenConversionCardOut671 .24s ease-in both !important;
+}
+#ten-result-modal .ten-result-card.is-conversion-changing .ten-card-img,
+#ten-result-modal .ten-result-card.is-conversion-changing .ten-card-bottom,
+#ten-result-modal .ten-result-card.is-conversion-changing .ten-card-element-icon,
+#ten-result-modal .ten-result-card.is-conversion-changing .ten-card-new-badge,
+#ten-result-modal .ten-result-card.is-conversion-changing .ten-card-item-badge{
+  transition:opacity .18s ease,filter .18s ease,transform .18s ease !important;
+  opacity:.08 !important;
+  filter:brightness(1.8) blur(2px) !important;
+  transform:scale(.88) !important;
+}
+
+/* 聖霊花へ入れ替わった直後 */
+#ten-result-modal .ten-result-card.is-converted-flower{
+  overflow:hidden !important;
+  border-color:rgba(166,132,70,.36) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.58),
+    0 0 14px rgba(192,157,91,.16) !important;
+}
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-img{
+  object-fit:contain !important;
+  padding:7% !important;
+  filter:drop-shadow(0 3px 8px rgba(128,97,45,.18)) !important;
+}
+#ten-result-modal .ten-result-card.ten-conversion-arrived{
+  animation:tenConversionFlowerIn671 .52s cubic-bezier(.18,.78,.24,1.08) both !important;
+}
+#ten-result-modal .ten-conversion-glow{
+  position:absolute !important;
+  inset:-20% !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:radial-gradient(circle,rgba(255,252,228,.92) 0%,rgba(233,206,145,.34) 30%,rgba(233,206,145,0) 66%) !important;
+  animation:tenConversionGlow671 .58s ease-out both !important;
+}
+#ten-result-modal .ten-result-card.is-converted-flower > *:not(.ten-conversion-glow){
+  position:relative !important;
+  z-index:1 !important;
+}
+
+@keyframes tenConversionCardOut671{
+  0%{transform:scale(1);filter:brightness(1);}
+  55%{transform:scale(.96);filter:brightness(1.42);}
+  100%{transform:scale(.90);filter:brightness(1.9);}
+}
+@keyframes tenConversionFlowerIn671{
+  0%{transform:scale(.88);filter:brightness(1.8);opacity:.28;}
+  58%{transform:scale(1.05);filter:brightness(1.18);opacity:1;}
+  100%{transform:scale(1);filter:brightness(1);opacity:1;}
+}
+@keyframes tenConversionGlow671{
+  0%{opacity:0;transform:scale(.55);}
+  35%{opacity:1;transform:scale(.92);}
+  100%{opacity:0;transform:scale(1.28);}
+}
+
+@media (max-width:360px), (max-height:700px){
+  #gacha-conversion-modal > .gacha-conversion-modal-inner{
+    width:min(340px,94vw) !important;
+    max-height:80dvh !important;
+    padding:20px 16px 16px !important;
+  }
+  #gacha-conversion-modal .gacha-conversion-row{
+    grid-template-columns:76px minmax(0,1fr) !important;
+    gap:8px !important;
+    padding:8px !important;
+  }
+  #gacha-conversion-modal .gacha-conversion-source-img,
+  #gacha-conversion-modal .gacha-conversion-flower-img{
+    width:29px !important;
+    height:29px !important;
+  }
+}
+
+
+/* =========================================================
+   build672 GACHA converted flower — artwork clarity
+   - 聖霊花画像にはフィルターを重ねない
+   - 10連の変換後カード / 変換結果ポップアップの花画像のみ対象
+   - 変換演出・枠・背景・サイズはbuild671を維持
+   ========================================================= */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-img.ten-card-item-img,
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-img{
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-flower-img{
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+}
+
+
+/* =========================================================
+   build673 GACHA converted flower — raw/crisp artwork
+   - Generic material cards enlarge ITEM art with transform:scale(1.62).
+     That transform can rasterize square flower art at a small base size and
+     make it look soft. Keep the same visual size using geometry instead.
+   - No filter / opacity / blend processing on the flower artwork.
+   ========================================================= */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-img.ten-card-item-img,
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-img{
+  left:-31% !important;
+  top:-31% !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset:auto !important;
+  width:162% !important;
+  height:162% !important;
+  padding:0 !important;
+  margin:0 !important;
+  background:transparent !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:none !important;
+  transform-origin:center center !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  image-rendering:auto !important;
+}
+
+/* The conversion-result popup should also show the source asset untouched. */
+#gacha-conversion-modal .gacha-conversion-flower-img{
+  padding:0 !important;
+  background:transparent !important;
+  transform:none !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  image-rendering:auto !important;
+}
+
+
+/* =========================================================
+   build674 GACHA converted flower — centered raw artwork
+   - build673のleft/top負オフセット方式を廃止
+   - 画像の見た目サイズ(162%)は維持しつつ、カード中心を基準に配置
+   - scale()は使わず、filter / opacity / blendも引き続き不使用
+   ========================================================= */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-img.ten-card-item-img,
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-img{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset:auto !important;
+  width:162% !important;
+  height:162% !important;
+  max-width:none !important;
+  max-height:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  background:transparent !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:translate(-50%,-50%) !important;
+  transform-origin:center center !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  image-rendering:auto !important;
+}
+
+/* =========================================================
+   build675 GACHA converted flower — layer/position repair
+   - build671 blanket child positioning pushed flower art behind the
+     white card overlays and stretched ITEM / name blocks into normal flow.
+   - Restore the same absolute stacking model as ordinary item cards.
+   - Keep the build674 raw/no-filter centered flower artwork.
+   ========================================================= */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-img.ten-card-item-img,
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-img{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset:auto !important;
+  width:162% !important;
+  height:162% !important;
+  max-width:none !important;
+  max-height:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:translate(-50%,-50%) !important;
+  background:transparent !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  z-index:6 !important;
+}
+
+/* Converted ITEM badge: compact pill, never a full-width block. */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-badge{
+  position:absolute !important;
+  top:6px !important;
+  left:6px !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:1px 4px !important;
+  margin:0 !important;
+  border-radius:999px !important;
+  font-size:7px !important;
+  line-height:1.2 !important;
+  letter-spacing:.05em !important;
+  white-space:nowrap !important;
+  z-index:9 !important;
+}
+
+/* Name plate must stay anchored to the bottom like every other result card. */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-bottom{
+  position:absolute !important;
+  left:4px !important;
+  right:4px !important;
+  top:auto !important;
+  bottom:4px !important;
+  width:auto !important;
+  margin:0 !important;
+  z-index:8 !important;
+}
+
+/* Decorative overlays remain below the actual flower artwork. */
+#ten-result-modal .ten-result-card.is-converted-flower::before{
+  z-index:3 !important;
+}
+#ten-result-modal .ten-result-card.is-converted-flower::after{
+  z-index:2 !important;
+}
+#ten-result-modal .ten-result-card.is-converted-flower .ten-conversion-glow{
+  z-index:5 !important;
+}
+
+/* =========================================================
+   build676 GACHA converted flower — true centering + badge restore
+   - Fix build675 ordering bug: `inset:auto` was declared after left/top,
+     resetting the 50% centering coordinates and leaving the artwork at
+     its static/top-left position.
+   - Keep flower art raw (no filter) and the existing 162% visual size.
+   - Restore ITEM badge to the normal material-card size.
+   ========================================================= */
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-img.ten-card-item-img,
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-img{
+  position:absolute !important;
+  inset:auto !important;
+  left:50% !important;
+  top:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:162% !important;
+  height:162% !important;
+  max-width:none !important;
+  max-height:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  transform:translate(-50%,-50%) !important;
+  transform-origin:center center !important;
+  background:transparent !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  z-index:6 !important;
+}
+
+#ten-result-modal .ten-result-card.is-converted-flower .ten-card-item-badge{
+  position:absolute !important;
+  top:6px !important;
+  left:6px !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:2px 6px !important;
+  margin:0 !important;
+  border-radius:999px !important;
+  font-size:9px !important;
+  line-height:1.2 !important;
+  letter-spacing:.08em !important;
+  white-space:nowrap !important;
+  z-index:9 !important;
+}
+
+
+/* =========================================================
+   build681: move BGM control into Settings menu
+   ========================================================= */
+.setting-audio-row{
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.setting-audio-control{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  min-width:58px;
+}
+.setting-audio-status{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:46px;
+  height:26px;
+  padding:0 11px;
+  box-sizing:border-box;
+  border:1px solid rgba(169,137,78,.48);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:#8b6b32;
+  font-family:Georgia,"Times New Roman","Yu Mincho","Hiragino Mincho ProN",serif;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.12em;
+  line-height:1;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55), 0 1px 5px rgba(82,68,45,.08);
+}
+.setting-audio-row:active .setting-audio-status{
+  transform:translateY(1px);
+  opacity:.78;
+}
