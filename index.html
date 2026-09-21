@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '597';
+  var FALLBACK_BUILD = '645';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -230,7 +230,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="597">
+  <meta name="sasaphia-build" content="645">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -330,9 +330,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=593"
+        href="css/style.css?v=621-ninmu-melt-r2"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=593"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=621-ninmu-melt-r2"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -417,7 +417,9 @@
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
     document.write('<link rel="stylesheet" href="css/shooting_event.css?v=593">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=593">
+  <link rel="stylesheet" href="css/raid_event.css?v=645-raid-notice-v105">
+  <link rel="stylesheet" href="css/item_management.css?v=645-item-v119">
+  <link rel="stylesheet" href="css/score_attack_chrome.css?v=645-score-chrome-v124">
   <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
 
 <style id="testplay-end-notice-left-v139">
@@ -3407,6 +3409,36 @@ body #bottom-nav-shared.bottom-nav{
   }
 </style>
 
+
+<style id="raid-message-hardfix-v99">
+#daily-raid-root .daily-raid-hero-message{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+#daily-raid-root .daily-raid-hero-copy span{
+  display:inline-block !important;
+  width:auto !important;
+  max-width:82% !important;
+  padding:2px 10px 3px !important;
+  color:#2f251d !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,.92) 0%,
+      rgba(255,255,255,.72) 38%,
+      rgba(255,255,255,.34) 66%,
+      rgba(255,255,255,0) 90%) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,1),
+    0 0 14px rgba(255,255,255,.95) !important;
+}
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -3721,6 +3753,9 @@ body #bottom-nav-shared.bottom-nav{
   <!-- 神樹：アルケミア創世進捗への入口（右側アイコン） -->
   <button class="shinju-home-entry home-type-entry" id="shinju-home-entry" type="button" onclick="openShinjuScreen()" aria-label="神聖樹へ移動" data-home-head="神" data-home-rest="聖樹"></button>
 
+  <!-- アイテム管理：所持素材の確認・売却 -->
+  <button class="item-home-entry home-type-entry" id="item-home-entry" type="button" onclick="openItemScreen()" aria-label="アイテム管理へ移動" data-home-head="ア" data-home-rest="イテム"></button>
+
   <!-- 各種ボーナス確認ページへの入口 -->
   <button class="bonus-home-entry home-type-entry" id="bonus-home-entry" type="button" onclick="openBonusScreen()" aria-label="ボーナスを確認" data-home-head="ボ" data-home-rest="ーナス">
     <span class="bonus-home-entry-notice" id="bonus-home-entry-notice" aria-hidden="true"></span>
@@ -3732,7 +3767,9 @@ body #bottom-nav-shared.bottom-nav{
   </button>
 
   <!-- レイドバトル：ホーム左側、フレンドの下 -->
-  <button class="raid-home-entry home-type-entry" id="raid-home-entry" type="button" onclick="openDailyRaid()" aria-label="レイドバトルへ移動" data-home-head="レ" data-home-rest="イド&#10;　バトル" data-home-lines="2"></button>
+  <button class="raid-home-entry home-type-entry" id="raid-home-entry" type="button" onclick="openDailyRaid()" aria-label="レイドバトルへ移動" data-home-head="レ" data-home-rest="イド&#10;　バトル" data-home-lines="2">
+    <span class="raid-notice-dot" aria-hidden="true"></span>
+  </button>
 
   <!-- 位相遠征：将来実装予定。ホーム左側、レイドバトルの下 -->
   <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('位相遠征は準備中です')" aria-label="位相遠征（準備中）" data-home-head="位" data-home-rest="相遠征"></button>
@@ -3764,6 +3801,82 @@ body #bottom-nav-shared.bottom-nav{
     <div id="bonus-page-list" class="bonus-page-list">
       <div class="bonus-page-loading">読み込み中...</div>
     </div>
+  </div>
+</div>
+
+<!-- アイテム管理 -->
+<div id="screen-item" class="screen item-screen">
+  <div class="header item-screen-header">
+    <button type="button" class="back-btn item-back-btn" onclick="showMainTab('main')">＜戻る</button>
+    <div class="header-title">アイテム</div>
+    <div></div>
+  </div>
+
+  <div class="screen-scroll item-screen-scroll">
+    <section class="item-page-intro">
+      <div>
+        <small>INVENTORY</small>
+        <h2>所有アイテム</h2>
+        <p>育成素材の所持数確認と、進化素材の売却ができます。</p>
+      </div>
+    </section>
+
+    <nav class="item-category-tabs" aria-label="アイテムカテゴリ">
+      <button type="button" class="item-category-tab is-active" data-item-tab="evolution">
+        <span>進化素材</span>
+      </button>
+      <button type="button" class="item-category-tab" data-item-tab="level">
+        <span>強化素材</span>
+      </button>
+      <button type="button" class="item-category-tab" data-item-tab="other">
+        <span>その他</span>
+      </button>
+    </nav>
+
+    <section class="item-inventory-panel">
+      <div class="item-panel-head">
+        <div>
+          <small id="item-panel-kicker">EVOLUTION MATERIAL</small>
+          <strong id="item-panel-title">進化素材</strong>
+        </div>
+        <button type="button" class="item-refresh-btn" id="item-refresh-btn" aria-label="アイテム情報を更新">更新</button>
+      </div>
+      <div id="item-management-list" class="item-management-list" aria-live="polite">
+        <div class="item-management-loading">読み込み中...</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="item-sell-modal" class="item-sell-modal" hidden aria-hidden="true">
+    <div class="item-sell-backdrop" data-item-sell-close></div>
+    <section class="item-sell-dialog" role="dialog" aria-modal="true" aria-labelledby="item-sell-title">
+      <button type="button" class="item-sell-close" data-item-sell-close aria-label="閉じる">×</button>
+      <small class="item-sell-kicker">SELL ITEM</small>
+      <h2 id="item-sell-title">アイテム売却</h2>
+
+      <div class="item-sell-selected">
+        <div class="item-sell-icon" id="item-sell-icon"></div>
+        <div class="item-sell-copy">
+          <strong id="item-sell-name">--</strong>
+          <span>所持 <b id="item-sell-owned">0</b></span>
+        </div>
+      </div>
+
+      <div class="item-sell-stepper">
+        <button type="button" id="item-sell-minus" aria-label="売却数を減らす">−</button>
+        <input id="item-sell-qty" type="number" min="1" value="1" inputmode="numeric" aria-label="売却数">
+        <button type="button" id="item-sell-plus" aria-label="売却数を増やす">＋</button>
+        <button type="button" id="item-sell-max">MAX</button>
+      </div>
+
+      <div class="item-sell-summary">
+        <div><span>単価</span><strong><img src="images/icon_coin.webp" alt=""> <b id="item-sell-unit-price">0</b></strong></div>
+        <div><span>売却額</span><strong><img src="images/icon_coin.webp" alt=""> <b id="item-sell-total-price">0</b></strong></div>
+      </div>
+
+      <button type="button" class="item-sell-confirm" id="item-sell-confirm">売却する</button>
+      <p class="item-sell-note">売却したアイテムは元に戻せません。</p>
+    </section>
   </div>
 </div>
 
@@ -9189,7 +9302,14 @@ function goHome(){
 }
   // ボトムナビゲーション切替
   function showMainTab(name){
-    // build586: ボトムナビ等で図鑑を閉じた時点でスクロール記憶をリセットする。
+    // build641: Score Attack is a normal chrome page.
+    // Any shared bottom-nav transition closes it first.
+    var scoreAttackRoot = document.getElementById('score-attack-root');
+    if(scoreAttackRoot && scoreAttackRoot.classList.contains('show') && typeof window.closeScoreAttack === 'function'){
+      window.closeScoreAttack();
+    }
+
+    // build586: ボトムナビ等で図鑑を閉じた時点でスクロール記憶をリセットする.
     if(typeof resetZukanListPositionWhenLeaving === 'function'){
       resetZukanListPositionWhenLeaving(name);
     }
@@ -9515,6 +9635,15 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
         throw new Error('未知のガチャ素材IDが返されました: ' + raw.id);
       }
       materialData.isPickup = !!raw.pickup;
+      if(Number.isFinite(Number(raw.total_quantity))){
+        materialData.currentTotal = Math.max(0,Math.floor(Number(raw.total_quantity)));
+      }
+      if(raw.converted_from_character_id != null){
+        materialData.convertedFromCharacterId = Number(raw.converted_from_character_id);
+      }
+      if(raw.converted_from_rarity != null){
+        materialData.convertedFromRarity = String(raw.converted_from_rarity);
+      }
       return materialData;
     }
 
@@ -9940,9 +10069,14 @@ function clearGachaOmenOverlay(){
 }
 
 function getGachaOmenTier(data){
-  // 示唆ルールを固定:
-  // ITEM = 銀 / Rキャラ = 金 / SRキャラ = 虹
-  if(isGachaMaterialResult(data)) return 'silver';
+  // 示唆ルール:
+  // 通常ITEM = 銀 / R = 金 / SR = 虹。
+  // 完凸後の聖霊花は元キャラのレアリティを維持する。
+  if(isGachaMaterialResult(data)){
+    if(data && data.materialId === 'flower_sr') return 'rainbow';
+    if(data && data.materialId === 'flower_r') return 'gold';
+    return 'silver';
+  }
 
   var rarity = String(data && data.rarity || '').trim().toLowerCase();
   if(rarity === 'sr' || rarity === 'ur') return 'rainbow';
@@ -10067,7 +10201,9 @@ function setRevealEncounterText(data){
       label.className = 'is-known';
     }
     if(copy){
-      copy.textContent = '強化用素材を入手した';
+      copy.textContent = data && data.itemCategory === 'exchange'
+        ? '交換素材へと変換された'
+        : '強化用素材を入手した';
       copy.className = 'is-known';
     }
     return;
@@ -10476,7 +10612,13 @@ function finalGachaFlash(callback){
       guf.classList.add('hud-dark');
     }
 
-    var total = getEvolutionMaterialCount(data.materialId);
+    var total = Number.isFinite(Number(data.currentTotal))
+      ? Math.max(0,Math.floor(Number(data.currentTotal)))
+      : (
+          window.ItemManagement && typeof window.ItemManagement.getCount === 'function'
+            ? window.ItemManagement.getCount(data.materialId)
+            : getEvolutionMaterialCount(data.materialId)
+        );
     var itemCount = data.itemCount || 1;
 
     document.getElementById('detail-chara-visual').innerHTML =
@@ -10484,7 +10626,8 @@ function finalGachaFlash(callback){
         '<img class="detail-main-img detail-item-img" src="' + (data.img || 'images/unknown.webp') + '">' +
       '</div>';
     document.getElementById('detail-name').textContent = data.name || '素材';
-    document.getElementById('detail-rank').textContent = '強化用素材';
+    document.getElementById('detail-rank').textContent =
+      data.itemCategory === 'exchange' ? '交換素材' : '強化用素材';
     document.getElementById('detail-stat-table').innerHTML = '';
     document.getElementById('detail-opts').innerHTML =
       '<div class="gacha-material-detail-box">' +
@@ -15709,10 +15852,11 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=597"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=621"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=593-admin-7tap-hidden-v169"></script>
-<script src="js/raid_event.js?v=593"></script>
+<script src="js/raid_event.js?v=645-raid-notice-v105"></script>
+<script src="js/item_management.js?v=645-item-v119"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -15747,7 +15891,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=593"></script>
+<script src="js/score_attack.js?v=645-score-chrome-v124"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -15856,7 +16000,7 @@ window.returnToTitleScreen = function(){
     overlay.innerHTML =
       '<section class="noah-piece-screen" role="dialog" aria-modal="true" aria-labelledby="noah-piece-title">' +
         '<header class="noah-piece-head">' +
-          '<button type="button" class="noah-piece-back" onclick="closeNoahPiecePanel()">‹ 戻る</button>' +
+          '<button type="button" class="noah-piece-back" aria-label="戻る" onclick="closeNoahPiecePanel()">＜戻る</button>' +
           '<div class="noah-piece-title">' +
             '<small>SPECIAL STAGE</small>' +
             '<strong id="noah-piece-title">理想郷 -ノア-</strong>' +
@@ -16237,7 +16381,6 @@ window.returnToTitleScreen = function(){
     if(active('#story-root')) return 'story';
     if(active('#battle32-root')) return 'battle32';
     if(active('#shooting-event-root')) return 'shooting';
-    if(active('#score-attack-root')) return 'score-attack';
     if(active('#raid-event-root')) return 'raid';
     if(active('#roguelite-root')) return 'roguelite';
     return '';
@@ -17020,6 +17163,568 @@ html body #global-user-frame .hud-sweep-line-player{
 })();
 </script>
 
+
+<script id="shinju-home-label-persistence-v106">
+(function(){
+  'use strict';
+
+  function makeLetter(char, isHead){
+    var slot=document.createElement('span');
+    slot.className='home-type-letter ' + (isHead?'is-head':'is-rest');
+
+    var glyph=document.createElement('span');
+    glyph.className='home-type-glyph';
+    glyph.style.setProperty('--home-letter-tilt', isHead ? '-4deg' : '0deg');
+    glyph.textContent=(char===' '||char==='　') ? '\u00a0' : char;
+
+    if(char===' '||char==='　') slot.classList.add('is-space');
+    slot.appendChild(glyph);
+    return slot;
+  }
+
+  function restoreShinjuHomeLabel(){
+    var btn=document.getElementById('shinju-home-entry');
+    if(!btn) return;
+
+    // shinju.js の renderHomeEntry() は innerHTML を badge だけに置換するため、
+    // 文字レイヤーが消えた時だけ再生成する。
+    if(btn.querySelector(':scope > .home-type-letter-layer')) return;
+
+    var head=btn.getAttribute('data-home-head') || '神';
+    var rest=btn.getAttribute('data-home-rest') || '聖樹';
+    var chars=Array.from((head+rest).replace(/[\r\n\s　]+/g,''));
+
+    var layer=document.createElement('span');
+    layer.className='home-type-letter-layer shinju-letter-grid';
+
+    chars.forEach(function(char,index){
+      layer.appendChild(makeLetter(char,index===0));
+    });
+
+    btn.classList.add('home-type-letterized');
+    btn.appendChild(layer);
+  }
+
+  function bind(){
+    restoreShinjuHomeLabel();
+
+    var btn=document.getElementById('shinju-home-entry');
+    if(btn && !btn.dataset.shinjuLabelObserverBound){
+      btn.dataset.shinjuLabelObserverBound='1';
+      var observer=new MutationObserver(function(){
+        // 自分で追加したDOMによる再通知を安全に吸収
+        requestAnimationFrame(restoreShinjuHomeLabel);
+      });
+      observer.observe(btn,{childList:true});
+    }
+
+    // 神聖樹を閉じた直後にも確実に復元
+    var originalClose=window.closeShinjuScreen;
+    if(typeof originalClose==='function' && !originalClose.__homeLabelWrapped){
+      var wrapped=function(){
+        var result=originalClose.apply(this,arguments);
+        requestAnimationFrame(restoreShinjuHomeLabel);
+        setTimeout(restoreShinjuHomeLabel,60);
+        return result;
+      };
+      wrapped.__homeLabelWrapped=true;
+      window.closeShinjuScreen=wrapped;
+    }
+
+    // ホーム復帰経路全般にも保険
+    window.addEventListener('focus',restoreShinjuHomeLabel);
+    window.addEventListener('pageshow',restoreShinjuHomeLabel);
+    window.addEventListener('shinju-progress-updated',restoreShinjuHomeLabel);
+    document.addEventListener('click',function(e){
+      var target=e.target && e.target.closest ? e.target.closest('.shinju-close') : null;
+      if(target){
+        setTimeout(restoreShinjuHomeLabel,0);
+        setTimeout(restoreShinjuHomeLabel,100);
+      }
+    },true);
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',bind,{once:true});
+  }else{
+    bind();
+  }
+})();
+</script>
+
+<script id="raid-message-hardfix-script-v99">
+(function(){
+  var COPY = '―これより、調査を開始する。';
+
+  function applyRaidMessageFix(){
+    var root = document.getElementById('daily-raid-root');
+    if(!root) return;
+
+    var sub = root.querySelector('.daily-raid-hero-copy span');
+    if(sub && sub.textContent !== COPY) sub.textContent = COPY;
+
+    var msg = root.querySelector('.daily-raid-hero-message');
+    if(msg) {
+      msg.textContent = '';
+      msg.style.display = 'none';
+    }
+  }
+
+  function install(){
+    applyRaidMessageFix();
+
+    var target = document.body || document.documentElement;
+    if(!target) return;
+
+    var observer = new MutationObserver(function(){
+      applyRaidMessageFix();
+    });
+    observer.observe(target, {childList:true, subtree:true, characterData:true});
+
+    document.addEventListener('click', function(){
+      setTimeout(applyRaidMessageFix, 0);
+      setTimeout(applyRaidMessageFix, 120);
+      setTimeout(applyRaidMessageFix, 400);
+    }, true);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', install, {once:true});
+  }else{
+    install();
+  }
+})();
+</script>
+
+
+<style id="item-layout-hardfix-v110">
+html body:not(.ui-immersive) #screen-item.screen.active{
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+
+html body:not(.ui-immersive) #screen-item.screen.active > .header{
+  position:absolute !important;
+  top:var(--header-h) !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  height:var(--page-header-h) !important;
+  min-height:var(--page-header-h) !important;
+  max-height:var(--page-header-h) !important;
+  margin:0 !important;
+  padding:0 18px !important;
+  z-index:220 !important;
+}
+
+/*
+ * Important:
+ * this shell itself never scrolls.
+ * Its bottom edge stops above the shared bottom nav.
+ */
+html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
+  position:absolute !important;
+  top:calc(var(--header-h) + var(--page-header-h) - 6px) !important;
+  right:14px !important;
+  bottom:calc(var(--bottom-nav-h) + 3px) !important;
+  left:14px !important;
+  width:auto !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+
+@media (min-width:500px){
+  html body:not(.ui-immersive) #screen-item.screen.active{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+@media (max-width:360px){
+  html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
+    left:10px !important;
+    right:10px !important;
+  }
+}
+</style>
+
+
+
+
+
+
+
+
+<style id="global-page-header-design-v124">
+/* =========================================================
+   v124 PAGE HEADER DESIGN SYSTEM
+   Commercial-quality hierarchy for standard/light app pages.
+
+   Rules:
+   - Japanese Mincho title: same size / color / weight / position
+   - Back control: same typography, hit target, left inset
+   - No decorative underline
+   - Right-side actions remain available (character list etc.)
+   - Special dark/event canvases keep their own theme colors unless noted
+   ========================================================= */
+
+:root{
+  --z-page-header-h:52px;
+  --z-page-title-size:15px;
+  --z-page-title-color:#6f5535;
+  --z-page-title-weight:500;
+  --z-page-title-spacing:.12em;
+
+  --z-page-back-size:10px;
+  --z-page-back-color:#8b7a66;
+  --z-page-back-weight:500;
+  --z-page-back-spacing:.015em;
+
+  --z-page-side-inset:18px;
+}
+
+/* Keep the shared geometry variable aligned with the visual system. */
+html body:not(.ui-immersive){
+  --page-header-h:var(--z-page-header-h) !important;
+}
+
+/* ---------------------------------------------------------
+   STANDARD PAGE HEADER
+   巡行 / ボーナス / アイテム / キャラ一覧 / 戦友 / 設定
+   --------------------------------------------------------- */
+html body:not(.ui-immersive) .screen:not(#screen-main) > .header,
+html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header{
+  height:var(--z-page-header-h) !important;
+  min-height:var(--z-page-header-h) !important;
+  max-height:var(--z-page-header-h) !important;
+  padding-left:var(--z-page-side-inset) !important;
+  padding-right:var(--z-page-side-inset) !important;
+  box-sizing:border-box !important;
+}
+
+/* Main Japanese page title. */
+html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title,
+html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header .header-title{
+  position:absolute !important;
+  top:50% !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:calc(100% - 148px) !important;
+  max-width:230px !important;
+  margin:0 !important;
+  padding:0 !important;
+  transform:translate(-50%,-50%) !important;
+
+  color:var(--z-page-title-color) !important;
+  font-family:
+    "Noto Serif JP",
+    "Yu Mincho",
+    "YuMincho",
+    "Hiragino Mincho ProN",
+    serif !important;
+  font-size:var(--z-page-title-size) !important;
+  font-weight:var(--z-page-title-weight) !important;
+  font-style:normal !important;
+  font-synthesis:none !important;
+  line-height:1 !important;
+  letter-spacing:var(--z-page-title-spacing) !important;
+  text-align:center !important;
+  text-indent:var(--z-page-title-spacing) !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
+}
+
+/* No page-title underline / stray header ornaments. */
+html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title::before,
+html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title::after,
+html body:not(.ui-immersive) #screen-bonus .bonus-screen-header .header-title::before,
+html body:not(.ui-immersive) #screen-bonus .bonus-screen-header .header-title::after,
+html body:not(.ui-immersive) #screen-bonus .bonus-screen-header::before,
+html body:not(.ui-immersive) #screen-friend .header::before{
+  content:none !important;
+  display:none !important;
+  width:0 !important;
+  height:0 !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+
+/* ---------------------------------------------------------
+   BACK CONTROL — one visual language
+   Color is intentionally quiet so the page title stays primary.
+   44px hit height, 10px visible type.
+   --------------------------------------------------------- */
+html body .back-btn,
+html body #score-attack-root .score-attack-back,
+html body .shooting-special-stage-back,
+html body .shooting-faceless-stage-back,
+html body .noah-piece-back,
+html body .detail-modal-back-btn,
+html body .friend-profile-detail-back,
+html body .zukan-detail-back-btn,
+html body .primor-fullscreen-back,
+html body button[aria-label="戻る"]{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+
+  min-width:52px !important;
+  height:44px !important;
+  margin:0 !important;
+  padding:0 !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+
+  color:var(--z-page-back-color) !important;
+  font-family:
+    "Noto Serif JP",
+    "Yu Mincho",
+    "YuMincho",
+    "Hiragino Mincho ProN",
+    serif !important;
+  font-size:var(--z-page-back-size) !important;
+  font-weight:var(--z-page-back-weight) !important;
+  font-style:normal !important;
+  font-synthesis:none !important;
+  line-height:1 !important;
+  letter-spacing:var(--z-page-back-spacing) !important;
+  text-align:left !important;
+  white-space:nowrap !important;
+  text-decoration:none !important;
+  text-transform:none !important;
+  text-shadow:0 0 8px rgba(255,255,255,.78) !important;
+}
+
+html body .back-btn:active,
+html body #score-attack-root .score-attack-back:active,
+html body .shooting-special-stage-back:active,
+html body .shooting-faceless-stage-back:active,
+html body .noah-piece-back:active,
+html body button[aria-label="戻る"]:active{
+  opacity:.62 !important;
+  transform:none !important;
+}
+
+/* Standard headers: exact left inset and vertical alignment. */
+html body:not(.ui-immersive) .screen:not(#screen-main) > .header .back-btn,
+html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header .back-btn{
+  position:relative !important;
+  top:auto !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  z-index:4 !important;
+}
+
+/* ---------------------------------------------------------
+   SCORE ATTACK — same Japanese title baseline as normal pages.
+   English kicker becomes a quiet eyebrow rather than a second title.
+   --------------------------------------------------------- */
+html body:not(.ui-immersive) #score-attack-root .score-attack-head{
+  position:relative !important;
+  height:var(--z-page-header-h) !important;
+  min-height:var(--z-page-header-h) !important;
+  max-height:var(--z-page-header-h) !important;
+  flex:0 0 var(--z-page-header-h) !important;
+  padding:0 var(--z-page-side-inset) !important;
+  grid-template-columns:64px minmax(0,1fr) 64px !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-back{
+  position:relative !important;
+  z-index:4 !important;
+  align-self:center !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title{
+  position:absolute !important;
+  top:50% !important;
+  left:50% !important;
+  width:calc(100% - 148px) !important;
+  max-width:230px !important;
+  transform:translate(-50%,-50%) !important;
+  text-align:center !important;
+  pointer-events:none !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title strong{
+  display:block !important;
+  margin:0 !important;
+  color:var(--z-page-title-color) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:var(--z-page-title-size) !important;
+  font-weight:var(--z-page-title-weight) !important;
+  line-height:1 !important;
+  letter-spacing:var(--z-page-title-spacing) !important;
+  text-indent:var(--z-page-title-spacing) !important;
+  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title small{
+  position:absolute !important;
+  left:50% !important;
+  bottom:calc(100% + 4px) !important;
+  transform:translateX(-50%) !important;
+  margin:0 !important;
+  color:#aa8a56 !important;
+  font-family:"Cinzel","Times New Roman",serif !important;
+  font-size:5px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  letter-spacing:.24em !important;
+  white-space:nowrap !important;
+  opacity:.78 !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-mark{
+  color:#aa8a56 !important;
+  font-size:9px !important;
+  opacity:.62 !important;
+}
+
+/* ---------------------------------------------------------
+   SHOOTING STAGE SELECT
+   デイリー巡行 / 無貌の天使 etc.
+   These are fullscreen selectors, but their header uses the same type scale.
+   --------------------------------------------------------- */
+html body .shooting-special-stage-header,
+html body .shooting-faceless-stage-header{
+  position:relative !important;
+  min-height:56px !important;
+  box-sizing:border-box !important;
+}
+
+html body .shooting-special-stage-back,
+html body .shooting-faceless-stage-back{
+  position:absolute !important;
+  left:var(--z-page-side-inset) !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  z-index:4 !important;
+}
+
+html body .shooting-special-stage-title,
+html body .shooting-faceless-stage-title{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:calc(100% - 148px) !important;
+  max-width:230px !important;
+  margin:0 !important;
+  transform:translate(-50%,-50%) !important;
+
+  color:var(--z-page-title-color) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:var(--z-page-title-size) !important;
+  font-weight:var(--z-page-title-weight) !important;
+  line-height:1 !important;
+  letter-spacing:var(--z-page-title-spacing) !important;
+  text-indent:var(--z-page-title-spacing) !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
+}
+
+/* Daily has a functional subtitle: title sits slightly above center. */
+html body .shooting-daily-stage-header .shooting-special-stage-title,
+html body .shooting-daily-stage-header .shooting-faceless-stage-title{
+  top:40% !important;
+}
+
+html body .shooting-daily-stage-subtitle{
+  position:absolute !important;
+  left:50% !important;
+  top:61% !important;
+  margin:0 !important;
+  transform:translateX(-50%) !important;
+  color:#9b825e !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:8px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  letter-spacing:.06em !important;
+  white-space:nowrap !important;
+}
+
+/* ---------------------------------------------------------
+   NOAH PIECE / special modal header
+   Keep its contextual eyebrow/ticket count, normalize the main title/back.
+   --------------------------------------------------------- */
+html body .noah-piece-head{
+  min-height:56px !important;
+  padding-left:var(--z-page-side-inset) !important;
+  padding-right:var(--z-page-side-inset) !important;
+  grid-template-columns:64px 1fr 64px !important;
+}
+
+html body .noah-piece-title strong{
+  color:var(--z-page-title-color) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:var(--z-page-title-size) !important;
+  font-weight:var(--z-page-title-weight) !important;
+  line-height:1 !important;
+  letter-spacing:var(--z-page-title-spacing) !important;
+}
+
+html body .noah-piece-title small{
+  margin-bottom:4px !important;
+  color:#aa8a56 !important;
+  font-size:5px !important;
+  letter-spacing:.24em !important;
+}
+
+/* ---------------------------------------------------------
+   COMPACT / iPhone SE
+   Do not let typography scale independently per screen.
+   --------------------------------------------------------- */
+@media (max-width:380px), (max-height:700px){
+  :root{
+    --z-page-header-h:50px;
+    --z-page-title-size:14px;
+    --z-page-back-size:9px;
+    --z-page-side-inset:14px;
+  }
+
+  html body:not(.ui-immersive) .screen:not(#screen-main) > .header .header-title,
+  html body:not(.ui-immersive) #screen-bonus > .bonus-screen-header .header-title,
+  html body:not(.ui-immersive) #score-attack-root .score-attack-head-title{
+    width:calc(100% - 126px) !important;
+    max-width:210px !important;
+  }
+
+  html body .shooting-special-stage-title,
+  html body .shooting-faceless-stage-title{
+    width:calc(100% - 126px) !important;
+    max-width:210px !important;
+  }
+}
+</style>
 
 </body>
 </html>

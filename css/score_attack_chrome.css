@@ -1,0 +1,314 @@
+
+/* =========================================================
+   SCORE ATTACK v120 — shared chrome layout
+   上部ユーザーフレーム / 下部ボトムナビを通常画面と共用する。
+   巡行・設定・アイテムと同じ「HUD + page header + content + nav」構成。
+   ========================================================= */
+
+/* The page lives between shared HUD and shared bottom navigation. */
+html body:not(.ui-immersive) #score-attack-root{
+  display:none;
+  position:fixed !important;
+  top:var(--header-h,82px) !important;
+  right:0 !important;
+  bottom:var(--bottom-nav-h,76px) !important;
+  left:0 !important;
+
+  width:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+
+  /* HUD=60 / nav=50 in the base app; keep content beneath both. */
+  z-index:40 !important;
+  overflow:hidden !important;
+
+  background:
+    linear-gradient(180deg,rgba(255,253,249,.93),rgba(248,243,235,.87)) !important;
+  box-shadow:none !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root.show{
+  display:block !important;
+}
+
+/* Desktop/app-frame width matches the rest of the app. */
+@media (min-width:500px){
+  html body:not(.ui-immersive) #score-attack-root{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* Page fills only the content area, not the device viewport. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-page{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+}
+
+/* Shared-page style header, same height rhythm as other content pages. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-head{
+  flex:0 0 var(--page-header-h,54px) !important;
+  min-height:var(--page-header-h,54px) !important;
+  height:var(--page-header-h,54px) !important;
+
+  display:grid !important;
+  grid-template-columns:72px minmax(0,1fr) 72px !important;
+  align-items:center !important;
+
+  padding:0 14px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-back{
+  height:34px !important;
+  align-self:center !important;
+  color:#7c6a56 !important;
+  font-size:10px !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title small{
+  color:#a58245 !important;
+  font-size:6px !important;
+  letter-spacing:.25em !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-title strong{
+  margin-top:5px !important;
+  color:#49392d !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  letter-spacing:.10em !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-mark{
+  color:#aa833f !important;
+  opacity:.72 !important;
+}
+
+/* No independent full-screen safe-area padding anymore. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-scroll{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding:4px 12px 8px !important;
+}
+
+/* Preserve the current ranking-only scrolling behavior inside the smaller viewport. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-ranking{
+  min-height:0 !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root .score-attack-list{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+}
+
+/* Gentle melt at ranking list bounds, matching other scroll pages. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-list{
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    ) !important;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    ) !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:100% 100% !important;
+  mask-size:100% 100% !important;
+}
+
+/* Shared chrome must remain above the score content. */
+html body:not(.ui-immersive) #global-user-frame{
+  z-index:60 !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared{
+  z-index:50 !important;
+}
+
+/* Compact phones: use the same smaller page-header rhythm as other pages. */
+@media (max-height:700px){
+  html body:not(.ui-immersive) #score-attack-root .score-attack-head{
+    flex-basis:50px !important;
+    min-height:50px !important;
+    height:50px !important;
+  }
+
+  html body:not(.ui-immersive) #score-attack-root .score-attack-scroll{
+    padding-top:2px !important;
+    padding-bottom:5px !important;
+    gap:6px !important;
+  }
+}
+
+/* =========================================================
+   SCORE ATTACK v121 — full-page background under shared chrome
+   ホーム画面の上下を見せない。
+   スコアアタック自身が画面全面を覆い、
+   ユーザーフレームとボトムナビだけを上から重ねる。
+   ========================================================= */
+
+/* Full app-frame layer: never reveal HOME behind top/bottom chrome. */
+html body:not(.ui-immersive) #score-attack-root{
+  top:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  left:0 !important;
+
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+
+  /* Opaque score-attack canvas beneath the translucent shared chrome. */
+  background:
+    linear-gradient(180deg,
+      rgba(255,253,249,1) 0%,
+      rgba(250,247,240,1) 56%,
+      rgba(247,242,233,1) 100%) !important;
+}
+
+/* The actual score content starts below HUD and stops above bottom nav. */
+html body:not(.ui-immersive) #score-attack-root .score-attack-page{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+
+  padding:
+    var(--header-h,82px)
+    0
+    var(--bottom-nav-h,76px) !important;
+  box-sizing:border-box !important;
+
+  /* Own page atmosphere continues behind HUD/nav. */
+  background:
+    radial-gradient(circle at 78% 20%,
+      rgba(216,192,145,.10),
+      rgba(216,192,145,0) 34%),
+    linear-gradient(180deg,
+      rgba(255,253,249,.96),
+      rgba(249,245,237,.93)) !important;
+}
+
+/* Desktop/app-frame: the full SCORE page, not HOME, occupies the app frame. */
+@media (min-width:500px){
+  html body:not(.ui-immersive) #score-attack-root{
+    left:50% !important;
+    right:auto !important;
+    width:100% !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+}
+
+/* Shared HUD / nav remain visible above SCORE ATTACK. */
+html body:not(.ui-immersive) #global-user-frame{
+  z-index:60 !important;
+}
+
+html body:not(.ui-immersive) #bottom-nav-shared{
+  z-index:60 !important;
+}
+
+/* White haze belongs to the shared chrome itself, not the HOME screen. */
+html body:not(.ui-immersive) #global-user-frame,
+html body:not(.ui-immersive) #bottom-nav-shared{
+  isolation:isolate !important;
+}
+
+/* =========================================================
+   SCORE ATTACK v122 — SE ranking badge / challenge decoration
+   ① iPhone SEで「自分」バッジを潰さない
+   ② 挑戦するボタン左右の装飾ダッシュを削除
+   ========================================================= */
+
+/* Player name may shrink, but the SELF badge never does. */
+#score-attack-root .score-attack-row-main > b{
+  display:flex !important;
+  align-items:center !important;
+  gap:4px !important;
+  min-width:0 !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
+}
+
+#score-attack-root .score-attack-player-name{
+  display:block !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+#score-attack-root .score-attack-row-main em{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  min-width:25px !important;
+  height:16px !important;
+  margin-left:0 !important;
+  padding:1px 4px !important;
+  box-sizing:border-box !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+/* The "—" marks were decorative pseudo-elements only. Remove both. */
+#score-attack-root .score-attack-start::before,
+#score-attack-root .score-attack-start::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* iPhone SE class */
+@media (max-width:360px){
+  #score-attack-root .score-attack-row-main > b{
+    gap:3px !important;
+  }
+
+  #score-attack-root .score-attack-row-main em{
+    min-width:24px !important;
+    height:15px !important;
+    padding:1px 3px !important;
+    font-size:7px !important;
+  }
+}
+
+
+
+/* =========================================================
+   SCORE ATTACK v124 — header typography is owned globally.
+   This block only clears older per-screen typography offsets.
+   ========================================================= */
+html body:not(.ui-immersive) #score-attack-root .score-attack-back{
+  margin:0 !important;
+}

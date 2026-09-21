@@ -1,5 +1,5 @@
 /* 20260816-notification-repair-v41 */
-/* Sasaphia DAILY RAID - premium lobby v4 */
+/* Sasaphia DAILY RAID - premium lobby v4 / normal chrome v67 */
 .raid-friend-section{padding-top:10px}
 .raid-entry-card.raid-entry-banner{
   width:100%;
@@ -210,3 +210,6032 @@
 #daily-raid-recruit-cancel{border:1px solid rgba(180,123,111,.28);background:rgba(67,38,35,.38);color:#d5b6aa;padding:7px 9px;font:500 8px/1.2 "Noto Serif JP",serif;cursor:pointer}
 #daily-raid-recruit-cancel:active{transform:scale(.97)}
 #daily-raid-recruit-cancel:disabled{opacity:.38}
+
+/* =========================================================
+   RAID v67 — normal app chrome until battle starts
+   - レイド入口 / 募集 / 参加選択 / ロビーでは共通USER FRAMEとBOTTOM NAVを表示
+   - レイド本体はその間のコンテンツ領域だけを使用
+   - 実バトル開始後は既存shooting側の全画面仕様へ戻す
+   ========================================================= */
+#daily-raid-root{
+  /* 共通HUD(上)・ボトムナビ(下)の領域を空ける */
+  inset:
+    var(--header-h,72px)
+    0
+    var(--bottom-nav-h,calc(76px + env(safe-area-inset-bottom)))
+    0 !important;
+
+  /* 共通HUD=60 / bottom nav=50 の下、通常画面の上 */
+  z-index:45 !important;
+
+  /* 縮小したfixed領域いっぱいをレイド画面として使用 */
+  width:auto !important;
+  height:auto !important;
+}
+
+/* rootが上下に縮んだ状態でも内部ページは残り領域に追従 */
+#daily-raid-root .daily-raid-page{
+  width:min(100%,430px) !important;
+  height:100% !important;
+  min-height:0 !important;
+}
+
+/* ロビー本体・入口・参加一覧が縮小領域内で確実にスクロールできる */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select,
+#daily-raid-root .daily-raid-body{
+  min-height:0 !important;
+}
+
+/* 下端アクションはボトムナビの上で完結させる */
+#daily-raid-root .daily-raid-actions{
+  padding-bottom:12px !important;
+}
+
+/* PC幅では既存アプリと同じ430px中央レイアウト */
+@media (min-width:500px){
+  #daily-raid-root .daily-raid-page{
+    max-width:430px !important;
+    margin-left:auto !important;
+    margin-right:auto !important;
+  }
+}
+
+/* =========================================================
+   RAID v68 — full raid background + shared chrome overlay
+   v67ではroot自体を上下から縮めたため、背後のホーム画面が見えていた。
+   邂逅など通常画面と同じ考え方に変更:
+   - レイド背景は画面全面を覆う
+   - 共通USER FRAME / BOTTOM NAVだけを上から重ねる
+   - レイド本文だけをHUD/NAVの内側へ退避
+   ========================================================= */
+#daily-raid-root{
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  z-index:45 !important; /* HUD=60 / bottom nav=50 より下 */
+  background:#0d100e !important;
+}
+
+/* 暗いレイド背景自体は上下の霞の背後まで全面に敷く */
+#daily-raid-root .daily-raid-page{
+  width:min(100%,430px) !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  margin:0 auto !important;
+  padding-top:var(--header-h,72px) !important;
+  padding-bottom:var(--bottom-nav-h,calc(76px + env(safe-area-inset-bottom))) !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+
+/* 上部HUD直下からレイド見出しを開始 */
+#daily-raid-root .daily-raid-head{
+  flex:0 0 54px !important;
+}
+
+/* 入口 / 参加一覧 / ロビーは「HUDとNAVの間」だけを利用 */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select,
+#daily-raid-root .daily-raid-lobby,
+#daily-raid-root .daily-raid-body{
+  min-height:0 !important;
+}
+
+/* v67でrootを縮める前提だった補正を無効化 */
+#daily-raid-root .daily-raid-actions{
+  padding-bottom:12px !important;
+}
+
+/* PC時もアプリ幅430pxの中央だけをレイド面として見せる */
+@media (min-width:500px){
+  #daily-raid-root{
+    left:50% !important;
+    right:auto !important;
+    width:430px !important;
+    max-width:430px !important;
+    transform:translateX(-50%) !important;
+  }
+  #daily-raid-root .daily-raid-page{
+    width:100% !important;
+    max-width:430px !important;
+  }
+}
+
+/* =========================================================
+   RAID v69 — restrained shared chrome / softer transitions
+   目的:
+   - 上下の共通UIは残す
+   - 大きな「白い帯」に見える霞は抑える
+   - レイド背景を上端/下端まで感じさせる
+   - コンテンツ側もナビ付近で自然に溶かす
+   ========================================================= */
+
+/* ---------- TOP HUD ----------
+   共通の大きな白霞を、薄く・短く。
+   PLAYER / GEM / COIN 個別の既存霞は残すので可読性は維持。 */
+html body.raid-shell-active #global-user-frame.global-user-frame::before{
+  left:-4% !important;
+  right:-4% !important;
+  top:-8px !important;
+  height:calc(100% + 30px) !important;
+  background:linear-gradient(
+    to bottom,
+    rgba(255,255,255,.46) 0%,
+    rgba(255,255,255,.36) 36%,
+    rgba(255,255,255,.20) 58%,
+    rgba(255,255,255,.08) 76%,
+    rgba(255,255,255,.02) 90%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(9px) !important;
+  -webkit-filter:blur(9px) !important;
+  opacity:.94 !important;
+}
+
+/* HUD内の個別霞も少しだけ控えめにして、背景の黒緑を残す */
+html body.raid-shell-active #global-user-frame .hud-info::before{
+  opacity:.76 !important;
+  filter:blur(9px) !important;
+  -webkit-filter:blur(9px) !important;
+}
+html body.raid-shell-active #global-user-frame .hud-resource::before{
+  opacity:.72 !important;
+  filter:blur(8px) !important;
+  -webkit-filter:blur(8px) !important;
+}
+
+/* 文字・アイコンは霞を減らした分だけ輪郭を少し保持 */
+html body.raid-shell-active #global-user-frame .hud-name,
+html body.raid-shell-active #global-user-frame .hud-res-val,
+html body.raid-shell-active #global-user-frame .hud-gem-plus-btn{
+  text-shadow:
+    0 0 3px rgba(255,255,255,.98),
+    0 0 7px rgba(255,255,255,.80),
+    0 1px 2px rgba(34,28,20,.20) !important;
+}
+
+/* ---------- BOTTOM NAV ----------
+   全幅の白霞を薄く短くし、アイコン周辺の読みやすさは残す。 */
+html body.raid-shell-active #bottom-nav-shared.bottom-nav::before{
+  left:-4% !important;
+  right:-4% !important;
+  bottom:-8px !important;
+  height:calc(100% + 30px) !important;
+  background:linear-gradient(
+    to top,
+    rgba(255,255,255,.48) 0%,
+    rgba(255,255,255,.37) 34%,
+    rgba(255,255,255,.20) 56%,
+    rgba(255,255,255,.08) 74%,
+    rgba(255,255,255,.02) 89%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:.94 !important;
+}
+
+/* 選択中アイコンの大きな白発光も、レイド中だけコンパクトに */
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  width:92px !important;
+  height:28px !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.56) 22%,
+    rgba(255,255,255,.72) 50%,
+    rgba(255,255,255,.56) 78%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  box-shadow:
+    0 0 13px 6px rgba(255,255,255,.34),
+    0 0 24px 10px rgba(255,255,255,.18) !important;
+  filter:blur(9px) !important;
+  -webkit-filter:blur(9px) !important;
+}
+
+/* ナビの各アイコンは「白面」ではなく輪郭光で読ませる */
+html body.raid-shell-active #bottom-nav-shared .bottom-nav-item img{
+  filter:
+    sepia(.24)
+    saturate(.74)
+    brightness(.72)
+    contrast(1.06)
+    drop-shadow(0 0 3px rgba(255,255,255,.92))
+    drop-shadow(0 1px 3px rgba(255,255,255,.62))
+    drop-shadow(0 2px 4px rgba(27,22,15,.22)) !important;
+}
+html body.raid-shell-active #bottom-nav-shared .bottom-nav-item.active img{
+  filter:
+    sepia(.28)
+    saturate(.95)
+    brightness(.88)
+    contrast(1.06)
+    drop-shadow(0 0 4px rgba(255,255,255,.92))
+    drop-shadow(0 2px 5px rgba(216,181,93,.25))
+    drop-shadow(0 2px 4px rgba(27,22,15,.22)) !important;
+}
+
+/* ---------- RAID CONTENT MELT ----------
+   下部のカードが白霞へ「ぶつかる」のではなく、
+   レイド側から先に消えていくようにする。 */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select{
+  -webkit-mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 74px),
+    rgba(0,0,0,.88) calc(100% - 58px),
+    rgba(0,0,0,.58) calc(100% - 38px),
+    rgba(0,0,0,.24) calc(100% - 20px),
+    transparent 100%
+  ) !important;
+  mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 74px),
+    rgba(0,0,0,.88) calc(100% - 58px),
+    rgba(0,0,0,.58) calc(100% - 38px),
+    rgba(0,0,0,.24) calc(100% - 20px),
+    transparent 100%
+  ) !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:100% 100% !important;
+  mask-size:100% 100% !important;
+}
+
+/* ロビーは固定アクションがあるため本文だけを薄く溶かす */
+#daily-raid-root .daily-raid-body{
+  -webkit-mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 92px),
+    rgba(0,0,0,.88) calc(100% - 70px),
+    rgba(0,0,0,.52) calc(100% - 42px),
+    transparent 100%
+  ) !important;
+  mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 92px),
+    rgba(0,0,0,.88) calc(100% - 70px),
+    rgba(0,0,0,.52) calc(100% - 42px),
+    transparent 100%
+  ) !important;
+}
+
+/* HUD直下に少しだけ暗い余白を作り、白霞→見出しを直接衝突させない */
+#daily-raid-root .daily-raid-head{
+  margin-top:6px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(16,20,17,.78) 0%,
+    rgba(17,21,18,.95) 55%,
+    rgba(17,21,18,.98) 100%
+  ) !important;
+  border-bottom-color:rgba(203,181,126,.12) !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-head{
+    margin-top:4px !important;
+  }
+  html body.raid-shell-active #global-user-frame.global-user-frame::before,
+  html body.raid-shell-active #bottom-nav-shared.bottom-nav::before{
+    opacity:.90 !important;
+  }
+}
+
+/* =========================================================
+   RAID v70 — full-screen art background composition
+   方針:
+   - 添付の縦長一枚絵をレイド入口〜ロビーの全画面背景に採用
+   - 邂逅のように「背景 + 半透明UI」で見せる
+   - 既存の大きいヒーロー画像は引き、全画面アートを主役にする
+   ========================================================= */
+
+/* 全画面背景 */
+#daily-raid-root{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248,248,248,0.12) 0%,
+      rgba(30,34,37,0.14) 18%,
+      rgba(18,21,24,0.32) 40%,
+      rgba(13,15,18,0.44) 62%,
+      rgba(10,12,14,0.54) 100%
+    ),
+    url("../img/raid_lobby_bg.webp") center top / cover no-repeat !important;
+  color:#f3efe8 !important;
+}
+
+#daily-raid-root::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255,255,255,.18), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 20%),
+    linear-gradient(180deg, rgba(6,8,10,0) 0%, rgba(6,8,10,.10) 34%, rgba(6,8,10,.26) 58%, rgba(6,8,10,.48) 100%) !important;
+  z-index:0 !important;
+}
+
+#daily-raid-root .daily-raid-page{
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+#daily-raid-root .daily-raid-page::before{
+  content:none !important;
+}
+
+/* 見出し周辺は「帯」ではなく、背景の上に乗る半透明レイヤー */
+#daily-raid-root .daily-raid-head{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10,12,15,.10) 0%,
+      rgba(10,12,15,.26) 38%,
+      rgba(10,12,15,.46) 100%
+    ) !important;
+  border-bottom:1px solid rgba(247,240,227,.10) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(4px) saturate(.9) !important;
+  -webkit-backdrop-filter:blur(4px) saturate(.9) !important;
+}
+
+#daily-raid-root .daily-raid-head button,
+#daily-raid-root .daily-raid-head-title strong{
+  color:#f5f0e3 !important;
+}
+#daily-raid-root .daily-raid-head-title small,
+#daily-raid-root .daily-raid-head-rule b{
+  color:rgba(231,216,176,.92) !important;
+}
+#daily-raid-root .daily-raid-head-rule span{
+  color:rgba(226,226,226,.58) !important;
+}
+
+/* 入口 / 参加一覧 / ロビー本文の背景は透明に近づける */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select,
+#daily-raid-root .daily-raid-body{
+  background:transparent !important;
+}
+
+/* もともとの大きいヒーロー画像は使わず、全画面背景を主役にする */
+#daily-raid-root .daily-raid-entry-hero{
+  min-height:204px !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  background:
+    linear-gradient(180deg, rgba(10,12,15,.34), rgba(10,12,15,.56)),
+    rgba(255,255,255,.05) !important;
+  box-shadow:
+    0 10px 26px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.05) !important;
+  backdrop-filter:blur(5px) saturate(.86) !important;
+  -webkit-backdrop-filter:blur(5px) saturate(.86) !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero img{
+  display:none !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero > div{
+  max-width:none !important;
+  width:100% !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero small,
+#daily-raid-root .daily-raid-join-head small{
+  color:rgba(234,220,183,.92) !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  color:#ffffff !important;
+  text-shadow:
+    0 1px 12px rgba(0,0,0,.30),
+    0 0 3px rgba(255,255,255,.16) !important;
+}
+#daily-raid-root .daily-raid-entry-hero span,
+#daily-raid-root .daily-raid-entry-note,
+#daily-raid-root .daily-raid-room-card-bottom span,
+#daily-raid-root .daily-raid-join-head span{
+  color:rgba(244,241,235,.72) !important;
+}
+
+#daily-raid-root .daily-raid-entry-note{
+  border-left:2px solid rgba(255,255,255,.14) !important;
+  background:rgba(9,11,14,.22) !important;
+  backdrop-filter:blur(4px) !important;
+  -webkit-backdrop-filter:blur(4px) !important;
+}
+
+/* 各操作カードは邂逅っぽい薄ガラス */
+#daily-raid-root .daily-raid-mode-card,
+#daily-raid-root .daily-raid-room-card,
+#daily-raid-root .daily-raid-rule,
+#daily-raid-root .daily-raid-member,
+#daily-raid-root .daily-raid-room-empty,
+#daily-raid-root .daily-raid-hpbox{
+  background:
+    linear-gradient(180deg, rgba(8,10,12,.26), rgba(8,10,12,.44)),
+    rgba(255,255,255,.035) !important;
+  border-color:rgba(255,255,255,.11) !important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.12),
+    inset 0 1px 0 rgba(255,255,255,.04) !important;
+  backdrop-filter:blur(6px) saturate(.88) !important;
+  -webkit-backdrop-filter:blur(6px) saturate(.88) !important;
+}
+
+#daily-raid-root .daily-raid-mode-card strong,
+#daily-raid-root .daily-raid-room-card-top strong,
+#daily-raid-root .daily-raid-join-head strong,
+#daily-raid-root .daily-raid-hphead > strong,
+#daily-raid-root .daily-raid-section-title span,
+#daily-raid-root .daily-raid-member-copy strong,
+#daily-raid-root .daily-raid-rule-title strong{
+  color:#faf6ee !important;
+}
+
+#daily-raid-root .daily-raid-mode-card small,
+#daily-raid-root .daily-raid-room-card-top span,
+#daily-raid-root .daily-raid-hphead small,
+#daily-raid-root .daily-raid-section-title small,
+#daily-raid-root .daily-raid-rule-title small,
+#daily-raid-root .daily-raid-member-no,
+#daily-raid-root .daily-raid-member-state,
+#daily-raid-root .daily-raid-hpmeta > span{
+  color:rgba(236,223,190,.76) !important;
+}
+
+#daily-raid-root .daily-raid-mode-card span,
+#daily-raid-root .daily-raid-rule-grid span,
+#daily-raid-root .daily-raid-hphead span,
+#daily-raid-root .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-room-empty span{
+  color:rgba(243,240,233,.68) !important;
+}
+
+#daily-raid-root .daily-raid-mode-card b,
+#daily-raid-root .daily-raid-room-card-top b,
+#daily-raid-root .daily-raid-section-title b,
+#daily-raid-root .daily-raid-rule-grid b,
+#daily-raid-root .daily-raid-hpmeta b,
+#daily-raid-root .daily-raid-member.is-done .daily-raid-member-damage b{
+  color:#ead7a5 !important;
+}
+
+/* 本日の挑戦回数ボックスも背景寄りへ */
+#daily-raid-root .daily-raid-attempt-box,
+#daily-raid-root .daily-raid-attempt-overview,
+#daily-raid-root .daily-raid-attempt-row{
+  background:
+    linear-gradient(180deg, rgba(9,11,14,.18), rgba(9,11,14,.34)),
+    rgba(255,255,255,.028) !important;
+  border-color:rgba(255,255,255,.10) !important;
+  backdrop-filter:blur(4px) !important;
+  -webkit-backdrop-filter:blur(4px) !important;
+}
+
+/* ボトム側フェードは維持しつつ、ガラスUIとの接触をなめらかに */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select{
+  -webkit-mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 84px),
+    rgba(0,0,0,.86) calc(100% - 64px),
+    rgba(0,0,0,.52) calc(100% - 38px),
+    rgba(0,0,0,.18) calc(100% - 18px),
+    transparent 100%
+  ) !important;
+  mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 84px),
+    rgba(0,0,0,.86) calc(100% - 64px),
+    rgba(0,0,0,.52) calc(100% - 38px),
+    rgba(0,0,0,.18) calc(100% - 18px),
+    transparent 100%
+  ) !important;
+}
+
+/* 小さい画面用微調整 */
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry-hero{
+    min-height:188px !important;
+  }
+}
+
+/* =========================================================
+   RAID v71 — encounter-style light composition
+   - 背景は images/bg_raid_01.webp を画面全面へ
+   - 邂逅と同じく共通HUD/NAVをそのまま使う
+   - レイド固有の上下白霞調整は撤去
+   - 黒い大型パネルをやめ、文字と薄い生成りガラスだけを重ねる
+   ========================================================= */
+
+/* v69で入れたレイド専用Chrome補正を打ち消し、通常画面と同じ共通Chromeへ戻す */
+html body.raid-shell-active #global-user-frame.global-user-frame::before,
+html body.raid-shell-active #bottom-nav-shared.bottom-nav::before{
+  left:-7% !important;
+  right:-7% !important;
+  opacity:1 !important;
+}
+
+html body.raid-shell-active #global-user-frame.global-user-frame::before{
+  top:-10px !important;
+  height:calc(100% + 58px) !important;
+  background:linear-gradient(
+    to bottom,
+    rgba(255,255,255,.78) 0%,
+    rgba(255,255,255,.68) 38%,
+    rgba(255,255,255,.44) 58%,
+    rgba(255,255,255,.20) 76%,
+    rgba(255,255,255,.06) 90%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(11px) !important;
+  -webkit-filter:blur(11px) !important;
+}
+
+html body.raid-shell-active #bottom-nav-shared.bottom-nav::before{
+  bottom:-10px !important;
+  height:calc(100% + 62px) !important;
+  background:linear-gradient(
+    to top,
+    rgba(255,255,255,.80) 0%,
+    rgba(255,255,255,.70) 38%,
+    rgba(255,255,255,.46) 58%,
+    rgba(255,255,255,.21) 76%,
+    rgba(255,255,255,.06) 90%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+}
+
+/* レイド専用で小さくしたactive haloも共通値へ戻す */
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{
+  width:122px !important;
+  height:38px !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.94) 16%,
+    rgba(255,255,255,1) 35%,
+    rgba(255,255,255,1) 65%,
+    rgba(255,255,255,.94) 84%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  box-shadow:
+    0 0 22px 11px rgba(255,255,255,.88),
+    0 0 42px 18px rgba(255,255,255,.52) !important;
+  filter:blur(13px) !important;
+  -webkit-filter:blur(13px) !important;
+}
+
+/* 背景画像。fallbackも完全不透明にしてホーム画面が絶対透けないようにする */
+#daily-raid-root{
+  background-color:#e9eaec !important;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.05) 0%,
+      rgba(255,255,255,.02) 30%,
+      rgba(226,229,233,.10) 58%,
+      rgba(222,225,229,.18) 100%
+    ),
+    url("../images/bg_raid_01.webp") !important;
+  background-position:center top, center top !important;
+  background-size:cover, cover !important;
+  background-repeat:no-repeat, no-repeat !important;
+  color:#4d4943 !important;
+}
+
+/* 余計な暗幕を撤去 */
+#daily-raid-root::before{
+  content:none !important;
+  display:none !important;
+}
+#daily-raid-root .daily-raid-page{
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* 上部は帯ではなく浮いた戻る + タイトルだけ */
+#daily-raid-root .daily-raid-head{
+  margin-top:2px !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+#daily-raid-root #daily-raid-back{
+  color:#514a3f !important;
+  text-shadow:
+    0 0 4px rgba(255,255,255,1),
+    0 0 9px rgba(255,255,255,.92) !important;
+}
+#daily-raid-root .daily-raid-head-title{
+  color:#594f3e !important;
+  text-shadow:
+    0 0 5px rgba(255,255,255,1),
+    0 0 12px rgba(255,255,255,.96),
+    0 1px 2px rgba(60,48,31,.10) !important;
+}
+
+/* 挑戦回数はカードではなく細い表示だけ */
+#daily-raid-root .daily-raid-attempt-overview{
+  min-height:34px !important;
+  margin:0 18px 4px !important;
+  padding:5px 4px 5px 8px !important;
+  background:transparent !important;
+  border-top:0 !important;
+  border-bottom:1px solid rgba(113,99,78,.16) !important;
+  border-left:1px solid rgba(174,145,86,.55) !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:rgba(79,70,57,.64) !important;
+  text-shadow:0 0 5px rgba(255,255,255,.96) !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#524b3d !important;
+  text-shadow:0 0 5px rgba(255,255,255,.96) !important;
+}
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#a08343 !important;
+}
+
+/* 入口は背景を見せるため上部の大箱を完全に撤去 */
+#daily-raid-root .daily-raid-entry{
+  padding:14px 18px calc(32px + env(safe-area-inset-bottom)) !important;
+}
+#daily-raid-root .daily-raid-entry-hero{
+  min-height:205px !important;
+  padding:18px 8px !important;
+  align-items:flex-end !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  overflow:visible !important;
+}
+#daily-raid-root .daily-raid-entry-hero img{
+  display:none !important;
+}
+#daily-raid-root .daily-raid-entry-hero > div{
+  max-width:250px !important;
+  padding:11px 12px 10px !important;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,.72) 0%,
+    rgba(255,255,255,.52) 58%,
+    rgba(255,255,255,0) 100%
+  ) !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-entry-hero small{
+  color:#8c7446 !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  color:#3e3a35 !important;
+  font-size:27px !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.96) !important;
+}
+#daily-raid-root .daily-raid-entry-hero span{
+  color:rgba(70,64,57,.72) !important;
+}
+
+/* HOST / JOIN は黒パネルではなく薄い生成りガラス */
+#daily-raid-root .daily-raid-mode-grid{
+  gap:10px !important;
+  margin-top:10px !important;
+}
+#daily-raid-root .daily-raid-mode-card{
+  min-height:132px !important;
+  padding:14px 12px !important;
+  border:1px solid rgba(124,107,79,.18) !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.70),rgba(247,244,238,.48)) !important;
+  color:#4a453e !important;
+  box-shadow:
+    0 9px 22px rgba(58,53,46,.07),
+    inset 0 1px 0 rgba(255,255,255,.75) !important;
+  backdrop-filter:blur(8px) saturate(.78) !important;
+  -webkit-backdrop-filter:blur(8px) saturate(.78) !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-host,
+#daily-raid-root .daily-raid-mode-card.is-join{
+  box-shadow:
+    inset 2px 0 0 rgba(171,143,84,.42),
+    0 9px 22px rgba(58,53,46,.07) !important;
+}
+#daily-raid-root .daily-raid-mode-card small{
+  color:#9a8358 !important;
+}
+#daily-raid-root .daily-raid-mode-card strong{
+  color:#423d36 !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  color:rgba(69,63,56,.66) !important;
+}
+#daily-raid-root .daily-raid-mode-card b{
+  color:#9a7936 !important;
+}
+
+/* 注記も板をやめる */
+#daily-raid-root .daily-raid-entry-note{
+  margin-top:10px !important;
+  padding:8px 10px !important;
+  border-left:1px solid rgba(148,124,74,.36) !important;
+  background:rgba(255,255,255,.30) !important;
+  color:rgba(67,62,55,.58) !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+}
+
+/* ロビー側も同じ生成りガラスへ */
+#daily-raid-root .daily-raid-room-card,
+#daily-raid-root .daily-raid-rule,
+#daily-raid-root .daily-raid-member,
+#daily-raid-root .daily-raid-room-empty,
+#daily-raid-root .daily-raid-hpbox{
+  background:linear-gradient(180deg,rgba(255,255,255,.66),rgba(247,244,238,.44)) !important;
+  border-color:rgba(113,98,76,.16) !important;
+  color:#4b453c !important;
+  box-shadow:0 8px 20px rgba(57,52,45,.06) !important;
+  backdrop-filter:blur(7px) saturate(.78) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(.78) !important;
+}
+#daily-raid-root .daily-raid-room-card-top strong,
+#daily-raid-root .daily-raid-join-head strong,
+#daily-raid-root .daily-raid-hphead > strong,
+#daily-raid-root .daily-raid-section-title span,
+#daily-raid-root .daily-raid-member-copy strong{
+  color:#443f38 !important;
+}
+#daily-raid-root .daily-raid-room-card-top span,
+#daily-raid-root .daily-raid-hphead small,
+#daily-raid-root .daily-raid-section-title small,
+#daily-raid-root .daily-raid-member-no,
+#daily-raid-root .daily-raid-member-state{
+  color:#8d7955 !important;
+}
+#daily-raid-root .daily-raid-room-card-bottom span,
+#daily-raid-root .daily-raid-hphead span,
+#daily-raid-root .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-rule-grid span{
+  color:rgba(70,64,56,.64) !important;
+}
+
+/* ロビー下部アクションも黒帯を撤去 */
+#daily-raid-root .daily-raid-actions{
+  background:linear-gradient(
+    180deg,
+    rgba(245,244,240,0) 0%,
+    rgba(245,244,240,.60) 35%,
+    rgba(245,244,240,.86) 100%
+  ) !important;
+}
+#daily-raid-root .daily-raid-actions button{
+  border-color:rgba(113,96,68,.24) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(230,224,211,.78)) !important;
+  color:#4d4639 !important;
+  box-shadow:0 6px 18px rgba(63,56,43,.10) !important;
+}
+#daily-raid-root .daily-raid-actions button span{
+  color:#9a7f46 !important;
+}
+
+/* レイド専用の下方向マスクは軽く。背景絵をなるべく消さない */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select{
+  -webkit-mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 54px),
+    rgba(0,0,0,.75) calc(100% - 34px),
+    rgba(0,0,0,.30) calc(100% - 14px),
+    transparent 100%
+  ) !important;
+  mask-image:linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 54px),
+    rgba(0,0,0,.75) calc(100% - 34px),
+    rgba(0,0,0,.30) calc(100% - 14px),
+    transparent 100%
+  ) !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry{
+    padding-left:14px !important;
+    padding-right:14px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero{
+    min-height:178px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card{
+    min-height:122px !important;
+  }
+}
+
+/* =========================================================
+   RAID v72 — typography / frame refinement
+   - 明るい背景上で細文字が消えないようコントラストを整理
+   - 枠は「カード」感を減らし、細い金線 + 白紙ガラスへ
+   - 見出しと本文で階層を明確化
+   ========================================================= */
+
+/* 戻る・タイトル：白背景でも読める濃い茶 + ごく薄い白縁 */
+#daily-raid-root #daily-raid-back{
+  color:#5b4932 !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:.04em !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.96),
+    0 0 4px rgba(255,255,255,.86) !important;
+}
+
+#daily-raid-root .daily-raid-head-title{
+  color:#6a5534 !important;
+  font-size:14px !important;
+  font-weight:700 !important;
+  letter-spacing:.16em !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.98),
+    0 0 6px rgba(255,255,255,.92) !important;
+}
+
+/* 挑戦回数：背景に埋もれない細い横フレーム */
+#daily-raid-root .daily-raid-attempt-overview{
+  margin-top:3px !important;
+  min-height:38px !important;
+  padding:7px 10px !important;
+  border-left:2px solid rgba(177,145,79,.66) !important;
+  border-top:1px solid rgba(147,121,73,.14) !important;
+  border-bottom:1px solid rgba(147,121,73,.18) !important;
+  background:
+    linear-gradient(90deg,
+      rgba(255,255,255,.72) 0%,
+      rgba(255,255,255,.48) 58%,
+      rgba(255,255,255,.24) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    0 3px 10px rgba(70,59,43,.04) !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:#7f6c4e !important;
+  font-size:9px !important;
+  font-weight:600 !important;
+  letter-spacing:.08em !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#5a4a34 !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+}
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#a98233 !important;
+  font-size:18px !important;
+}
+
+/* THE TEST：背景アートを邪魔しない、左寄せの紙霞 */
+#daily-raid-root .daily-raid-entry-hero > div{
+  max-width:272px !important;
+  padding:12px 14px 11px !important;
+  background:
+    linear-gradient(90deg,
+      rgba(255,255,255,.78) 0%,
+      rgba(255,255,255,.60) 58%,
+      rgba(255,255,255,.18) 88%,
+      rgba(255,255,255,0) 100%) !important;
+  border-left:1px solid rgba(167,138,78,.52) !important;
+  backdrop-filter:blur(6px) !important;
+  -webkit-backdrop-filter:blur(6px) !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero small{
+  font-size:7px !important;
+  letter-spacing:.24em !important;
+  color:#9b7e42 !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  margin-top:2px !important;
+  color:#3f3932 !important;
+  font-size:27px !important;
+  line-height:1 !important;
+  letter-spacing:.08em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.96) !important;
+}
+#daily-raid-root .daily-raid-entry-hero span{
+  margin-top:7px !important;
+  color:#61584c !important;
+  font-size:9px !important;
+  line-height:1.55 !important;
+  letter-spacing:.03em !important;
+}
+
+/* HOST / JOIN：矩形の主張を抑え、細金フレーム + 半透明紙 */
+#daily-raid-root .daily-raid-mode-card{
+  min-height:130px !important;
+  padding:14px 13px 13px !important;
+  border:1px solid rgba(139,114,73,.24) !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.76) 0%,
+      rgba(250,247,241,.58) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 8px 20px rgba(62,53,39,.06) !important;
+  backdrop-filter:blur(7px) saturate(.72) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(.72) !important;
+  position:relative !important;
+}
+
+/* 上辺に短い装飾線 */
+#daily-raid-root .daily-raid-mode-card::before{
+  content:"" !important;
+  position:absolute !important;
+  left:12px !important;
+  top:0 !important;
+  width:34px !important;
+  height:1px !important;
+  background:linear-gradient(90deg,rgba(179,145,76,.72),rgba(179,145,76,0)) !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-mode-card small{
+  color:#9a8358 !important;
+  font-size:7px !important;
+  letter-spacing:.20em !important;
+}
+#daily-raid-root .daily-raid-mode-card strong{
+  margin-top:8px !important;
+  color:#403a33 !important;
+  font-size:17px !important;
+  font-weight:600 !important;
+  letter-spacing:.07em !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  color:#625a4f !important;
+  font-size:9px !important;
+  line-height:1.5 !important;
+}
+#daily-raid-root .daily-raid-mode-card b{
+  color:#9a7936 !important;
+  font-size:8px !important;
+  font-weight:600 !important;
+}
+
+/* 下の注記はさらに控えめ */
+#daily-raid-root .daily-raid-entry-note{
+  margin-top:9px !important;
+  padding:7px 9px !important;
+  color:rgba(79,71,61,.56) !important;
+  font-size:8px !important;
+  line-height:1.55 !important;
+  background:rgba(255,255,255,.20) !important;
+  border-left:1px solid rgba(145,120,76,.28) !important;
+}
+
+/* ロビーの各フレームも同じ言語に統一 */
+#daily-raid-root .daily-raid-room-card,
+#daily-raid-root .daily-raid-rule,
+#daily-raid-root .daily-raid-member,
+#daily-raid-root .daily-raid-room-empty,
+#daily-raid-root .daily-raid-hpbox{
+  border:1px solid rgba(135,112,75,.20) !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.72) 0%,
+      rgba(248,245,239,.54) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.72),
+    0 7px 18px rgba(58,51,42,.05) !important;
+}
+
+/* スクロールバーを目立たせない */
+#daily-raid-root .daily-raid-entry,
+#daily-raid-root .daily-raid-join-select,
+#daily-raid-root .daily-raid-body{
+  scrollbar-width:none !important;
+}
+#daily-raid-root .daily-raid-entry::-webkit-scrollbar,
+#daily-raid-root .daily-raid-join-select::-webkit-scrollbar,
+#daily-raid-root .daily-raid-body::-webkit-scrollbar{
+  width:0 !important;
+  height:0 !important;
+  display:none !important;
+}
+
+/* 小型端末 */
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-head-title{
+    font-size:13px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:24px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card{
+    min-height:122px !important;
+    padding:12px 11px !important;
+  }
+}
+
+/* =========================================================
+   RAID v73 — dark blurred labels for readability
+   明るい背景上で文字が溶ける箇所に、濃いぼかしラベルを追加。
+   背景アートは見せつつ、文字の可読性を上げる。
+   ========================================================= */
+
+/* 上部の戻る・タイトルを直接背景に置かず、薄い墨ラベルの上に載せる */
+#daily-raid-root .daily-raid-head{
+  position:relative !important;
+  min-height:50px !important;
+}
+
+#daily-raid-root .daily-raid-head::before{
+  content:"" !important;
+  position:absolute !important;
+  left:12px !important;
+  right:12px !important;
+  top:7px !important;
+  height:32px !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(90deg,
+      rgba(36,33,29,.48) 0%,
+      rgba(52,47,41,.36) 38%,
+      rgba(52,47,41,.22) 68%,
+      rgba(52,47,41,.10) 100%) !important;
+  box-shadow:
+    0 6px 20px rgba(22,18,13,.10),
+    inset 0 1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter:blur(10px) !important;
+  -webkit-backdrop-filter:blur(10px) !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root #daily-raid-back,
+#daily-raid-root .daily-raid-head-title{
+  position:relative !important;
+  z-index:1 !important;
+}
+
+#daily-raid-root #daily-raid-back{
+  color:#efe7d5 !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.28),
+    0 0 8px rgba(0,0,0,.24) !important;
+}
+
+#daily-raid-root .daily-raid-head-title{
+  color:#f5edd9 !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.32),
+    0 0 9px rgba(0,0,0,.28) !important;
+}
+
+/* 挑戦回数は薄い紙色ではなく、暗めのガラス帯へ */
+#daily-raid-root .daily-raid-attempt-overview{
+  background:
+    linear-gradient(90deg,
+      rgba(38,34,29,.42) 0%,
+      rgba(52,46,39,.30) 58%,
+      rgba(52,46,39,.16) 100%) !important;
+  border-left:2px solid rgba(191,161,96,.78) !important;
+  border-top:1px solid rgba(255,255,255,.08) !important;
+  border-bottom:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 5px 14px rgba(18,15,11,.08) !important;
+  backdrop-filter:blur(9px) !important;
+  -webkit-backdrop-filter:blur(9px) !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:rgba(243,235,220,.72) !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.26) !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#f3ecdf !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.28) !important;
+}
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#f0cf77 !important;
+}
+
+/* THE TEST は暗いぼかしラベルでまとめる */
+#daily-raid-root .daily-raid-entry-hero > div{
+  padding:13px 15px 12px !important;
+  background:
+    linear-gradient(90deg,
+      rgba(33,30,26,.62) 0%,
+      rgba(48,43,37,.48) 52%,
+      rgba(48,43,37,.22) 82%,
+      rgba(48,43,37,0) 100%) !important;
+  border-left:1px solid rgba(205,174,103,.66) !important;
+  box-shadow:
+    0 10px 22px rgba(18,16,12,.08),
+    inset 0 1px 0 rgba(255,255,255,.05) !important;
+  backdrop-filter:blur(10px) !important;
+  -webkit-backdrop-filter:blur(10px) !important;
+}
+#daily-raid-root .daily-raid-entry-hero small{
+  color:#d6bb7b !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  color:#fffaf0 !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.32),
+    0 0 10px rgba(0,0,0,.18) !important;
+}
+#daily-raid-root .daily-raid-entry-hero span{
+  color:rgba(245,239,228,.82) !important;
+}
+
+/* HOST / JOIN カードも文字領域だけ少し濃く */
+#daily-raid-root .daily-raid-mode-card{
+  overflow:hidden !important;
+}
+
+#daily-raid-root .daily-raid-mode-card::after{
+  content:"" !important;
+  position:absolute !important;
+  left:10px !important;
+  right:10px !important;
+  top:10px !important;
+  bottom:10px !important;
+  background:
+    linear-gradient(180deg,
+      rgba(56,50,43,.18) 0%,
+      rgba(56,50,43,.10) 56%,
+      rgba(56,50,43,.04) 100%) !important;
+  border-radius:0 !important;
+  pointer-events:none !important;
+  opacity:.55 !important;
+}
+
+/* small/strong/desc の可読性アップ */
+#daily-raid-root .daily-raid-mode-card small,
+#daily-raid-root .daily-raid-mode-card strong,
+#daily-raid-root .daily-raid-mode-card span,
+#daily-raid-root .daily-raid-mode-card b{
+  position:relative !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-mode-card small{
+  color:#967640 !important;
+}
+#daily-raid-root .daily-raid-mode-card strong{
+  color:#37322c !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  color:#4d4740 !important;
+}
+#daily-raid-root .daily-raid-mode-card b{
+  color:#8d6e2e !important;
+}
+
+/* 下の注記も読めるように墨霞 */
+#daily-raid-root .daily-raid-entry-note{
+  background:
+    linear-gradient(90deg,
+      rgba(42,38,32,.28) 0%,
+      rgba(42,38,32,.16) 70%,
+      rgba(42,38,32,.08) 100%) !important;
+  color:rgba(252,248,241,.82) !important;
+  border-left:1px solid rgba(185,153,91,.42) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
+}
+
+/* もしルーム一覧などへ入っても、ヘッダ群の可読性を合わせる */
+#daily-raid-root .daily-raid-room-card-top strong,
+#daily-raid-root .daily-raid-join-head strong,
+#daily-raid-root .daily-raid-hphead > strong,
+#daily-raid-root .daily-raid-section-title span,
+#daily-raid-root .daily-raid-member-copy strong{
+  color:#3b352f !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.76) !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-head::before{
+    left:10px !important;
+    right:10px !important;
+    top:8px !important;
+    height:30px !important;
+  }
+}
+
+/* =========================================================
+   RAID v74 — readability cleanup
+   - 上部の「戻る」「レイドバトル」を非表示
+   - 挑戦回数バーをブラウン系文字 + ソフトなぼかし帯へ
+   - 最下段の注記を暗めラベルで可読化
+   - 全体の文字を少し太くして読みやすく
+   ========================================================= */
+
+/* --- 上部見出しは削除 --- */
+#daily-raid-root .daily-raid-head{
+  min-height:10px !important;
+  margin-top:0 !important;
+  padding:0 18px !important;
+}
+
+#daily-raid-root .daily-raid-head::before,
+#daily-raid-root #daily-raid-back,
+#daily-raid-root .daily-raid-head-title{
+  display:none !important;
+  content:none !important;
+}
+
+/* --- 全体タイポを少し太めに --- */
+#daily-raid-root,
+#daily-raid-root button,
+#daily-raid-root span,
+#daily-raid-root small,
+#daily-raid-root strong,
+#daily-raid-root b{
+  font-synthesis-weight:none !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero span,
+#daily-raid-root .daily-raid-mode-card span,
+#daily-raid-root .daily-raid-room-card-bottom span,
+#daily-raid-root .daily-raid-rule-grid span,
+#daily-raid-root .daily-raid-hphead span,
+#daily-raid-root .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-room-empty span{
+  font-weight:520 !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero strong,
+#daily-raid-root .daily-raid-mode-card strong,
+#daily-raid-root .daily-raid-room-card-top strong,
+#daily-raid-root .daily-raid-join-head strong,
+#daily-raid-root .daily-raid-hphead > strong,
+#daily-raid-root .daily-raid-section-title span,
+#daily-raid-root .daily-raid-member-copy strong{
+  font-weight:650 !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero small,
+#daily-raid-root .daily-raid-mode-card small,
+#daily-raid-root .daily-raid-mode-card b,
+#daily-raid-root .daily-raid-attempt-overview > span{
+  font-weight:600 !important;
+}
+
+/* --- 本日の挑戦回数: 四角を弱めたぼかし帯 --- */
+#daily-raid-root .daily-raid-attempt-overview{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:hidden !important;
+  min-height:40px !important;
+  margin:4px 18px 8px !important;
+  padding:8px 12px !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  border-radius:14px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.72) 0%,
+      rgba(246,241,233,.50) 58%,
+      rgba(240,232,220,.26) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.65),
+    0 4px 16px rgba(86,72,49,.04) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:.90 !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:7px !important;
+  bottom:7px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(177,144,78,.76),
+    rgba(177,144,78,.28)
+  ) !important;
+  z-index:1 !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span,
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  position:relative !important;
+  z-index:2 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.92),
+    0 0 6px rgba(255,255,255,.55) !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:#8a7350 !important;
+  font-size:9px !important;
+  letter-spacing:.05em !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#64523b !important;
+  font-size:11px !important;
+}
+
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#9f7a32 !important;
+  font-weight:700 !important;
+}
+
+/* --- THE TEST周辺を少しだけ強く --- */
+#daily-raid-root .daily-raid-entry-hero > div{
+  padding:13px 15px 12px !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero strong{
+  font-weight:680 !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero span{
+  color:#574f45 !important;
+}
+
+/* --- HOST / JOINカードは文字を少し濃く --- */
+#daily-raid-root .daily-raid-mode-card{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 8px 20px rgba(62,53,39,.05) !important;
+}
+
+#daily-raid-root .daily-raid-mode-card strong{
+  color:#36312b !important;
+}
+
+#daily-raid-root .daily-raid-mode-card span{
+  color:#554d43 !important;
+  line-height:1.56 !important;
+}
+
+#daily-raid-root .daily-raid-mode-card b{
+  color:#896929 !important;
+}
+
+/* --- 最下段の注記を読めるように濃いぼかしラベル化 --- */
+#daily-raid-root .daily-raid-entry-note{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:hidden !important;
+  margin-top:10px !important;
+  padding:8px 10px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:transparent !important;
+  color:#f5eee0 !important;
+  font-size:8px !important;
+  font-weight:560 !important;
+  line-height:1.6 !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.24),
+    0 0 6px rgba(0,0,0,.14) !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+#daily-raid-root .daily-raid-entry-note::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  border-radius:10px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(54,47,39,.38) 0%,
+      rgba(54,47,39,.24) 68%,
+      rgba(54,47,39,.12) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 5px 16px rgba(28,22,16,.06) !important;
+  filter:blur(9px) !important;
+  -webkit-filter:blur(9px) !important;
+  opacity:.96 !important;
+}
+
+#daily-raid-root .daily-raid-entry-note::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:8px !important;
+  bottom:8px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(189,158,93,.70),
+    rgba(189,158,93,.18)
+  ) !important;
+  z-index:1 !important;
+}
+
+#daily-raid-root .daily-raid-entry-note{
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-entry-note > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* --- ルーム系も少し太くして統一 --- */
+#daily-raid-root .daily-raid-room-card-top span,
+#daily-raid-root .daily-raid-hphead small,
+#daily-raid-root .daily-raid-section-title small,
+#daily-raid-root .daily-raid-member-no,
+#daily-raid-root .daily-raid-member-state{
+  font-weight:600 !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-attempt-overview{
+    margin-left:14px !important;
+    margin-right:14px !important;
+  }
+}
+
+/* =========================================================
+   RAID v75 — attempt-row haze / bottom-note rescue
+   - 「本日の挑戦回数　残り3/3回」を左寄せ
+   - ベージュ帯を撤去し、白い霞ベースへ
+   - 文字色をブラウン系へ
+   - 最下部注記を背景に飲まれないよう、独立した濃いラベルで保護
+   ========================================================= */
+
+/* --- 挑戦回数バー: 左寄せ + 白霞 --- */
+#daily-raid-root .daily-raid-attempt-overview{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+  min-height:36px !important;
+  margin:4px 18px 10px !important;
+  padding:7px 12px 7px 14px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  isolation:isolate !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:-3px -2px !important;
+  z-index:0 !important;
+  border-radius:999px !important;
+  background:
+    radial-gradient(ellipse at 18% 50%,
+      rgba(255,255,255,.78) 0%,
+      rgba(255,255,255,.58) 34%,
+      rgba(255,255,255,.30) 60%,
+      rgba(255,255,255,.10) 82%,
+      rgba(255,255,255,0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.62) 0%,
+      rgba(255,255,255,.42) 42%,
+      rgba(255,255,255,.18) 72%,
+      rgba(255,255,255,0) 100%
+    ) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+  opacity:.98 !important;
+  box-shadow:
+    0 4px 18px rgba(98,84,58,.03),
+    inset 0 1px 0 rgba(255,255,255,.42) !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:7px !important;
+  bottom:7px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(175,142,78,.72),
+    rgba(175,142,78,.16)
+  ) !important;
+  z-index:1 !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span,
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  position:relative !important;
+  z-index:2 !important;
+  margin:0 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.94),
+    0 0 5px rgba(255,255,255,.58) !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:#8c7651 !important;
+  font-size:10px !important;
+  font-weight:620 !important;
+  letter-spacing:.04em !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#6a573e !important;
+  font-size:12px !important;
+  font-weight:650 !important;
+  display:inline-flex !important;
+  align-items:baseline !important;
+  gap:4px !important;
+}
+
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#9d7a36 !important;
+  font-weight:700 !important;
+  margin:0 !important;
+}
+
+/* もし既存CSSで右側へ押し出す指定があっても無効化 */
+#daily-raid-root .daily-raid-attempt-overview > strong,
+#daily-raid-root #daily-raid-attempt-remaining{
+  margin-left:0 !important;
+}
+
+/* --- 最下部注記: 独立した濃いラベルで可読化 --- */
+#daily-raid-root .daily-raid-entry-note{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:hidden !important;
+  margin-top:12px !important;
+  margin-bottom:4px !important;
+  padding:9px 11px 9px 12px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  color:#f4eee3 !important;
+  font-size:8px !important;
+  font-weight:580 !important;
+  line-height:1.65 !important;
+  letter-spacing:.01em !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.34),
+    0 0 7px rgba(0,0,0,.18) !important;
+  box-shadow:none !important;
+}
+
+#daily-raid-root .daily-raid-entry-note::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  border-radius:12px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(54,47,39,.52) 0%,
+      rgba(54,47,39,.34) 60%,
+      rgba(54,47,39,.18) 100%
+    ) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:.98 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    0 6px 18px rgba(25,20,14,.07) !important;
+}
+
+#daily-raid-root .daily-raid-entry-note::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:9px !important;
+  bottom:9px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(191,160,95,.74),
+    rgba(191,160,95,.16)
+  ) !important;
+  z-index:1 !important;
+}
+
+#daily-raid-root .daily-raid-entry-note,
+#daily-raid-root .daily-raid-entry-note > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* モバイル微調整 */
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-attempt-overview{
+    margin-left:14px !important;
+    margin-right:14px !important;
+    gap:8px !important;
+  }
+}
+
+/* =========================================================
+   RAID v76 — hard fix for attempt row and bottom note
+   JS内スタイルと競合するため、ここでも高優先度で上書き。
+   ========================================================= */
+
+/* 挑戦回数: 左寄せ + 白霞。ベージュ帯を完全撤去 */
+#daily-raid-root .daily-raid-attempt-overview{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+  min-height:36px !important;
+  margin:4px 18px 10px !important;
+  padding:7px 12px 7px 14px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:none !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  isolation:isolate !important;
+}
+#daily-raid-root .daily-raid-attempt-overview::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:-3px -2px !important;
+  z-index:0 !important;
+  border-radius:999px !important;
+  background:
+    radial-gradient(ellipse at 18% 50%,
+      rgba(255,255,255,.78) 0%,
+      rgba(255,255,255,.58) 34%,
+      rgba(255,255,255,.30) 60%,
+      rgba(255,255,255,.10) 82%,
+      rgba(255,255,255,0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.62) 0%,
+      rgba(255,255,255,.42) 42%,
+      rgba(255,255,255,.18) 72%,
+      rgba(255,255,255,0) 100%
+    ) !important;
+  filter:blur(12px) !important;
+  -webkit-filter:blur(12px) !important;
+  opacity:.98 !important;
+}
+#daily-raid-root .daily-raid-attempt-overview::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:7px !important;
+  bottom:7px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(180deg,rgba(175,142,78,.72),rgba(175,142,78,.16)) !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > span,
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  position:relative !important;
+  z-index:2 !important;
+  margin:0 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.94),0 0 5px rgba(255,255,255,.58) !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:#8c7651 !important;
+  font-size:10px !important;
+  font-weight:620 !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#6a573e !important;
+  font-size:12px !important;
+  font-weight:650 !important;
+  display:inline-flex !important;
+  align-items:baseline !important;
+  justify-content:flex-start !important;
+  gap:4px !important;
+  margin-left:0 !important;
+}
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#9d7a36 !important;
+  font-weight:700 !important;
+  text-align:left !important;
+  margin-left:0 !important;
+}
+
+/* 最下部注記は白字で確実に見せる */
+#daily-raid-root .daily-raid-entry-note{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:hidden !important;
+  margin-top:12px !important;
+  margin-bottom:4px !important;
+  padding:9px 11px 9px 12px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  color:#ffffff !important;
+  font-size:8px !important;
+  font-weight:600 !important;
+  line-height:1.65 !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.38),0 0 8px rgba(0,0,0,.22) !important;
+  box-shadow:none !important;
+}
+#daily-raid-root .daily-raid-entry-note::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  border-radius:12px !important;
+  background:linear-gradient(90deg,rgba(54,47,39,.56) 0%,rgba(54,47,39,.38) 60%,rgba(54,47,39,.20) 100%) !important;
+  filter:blur(10px) !important;
+  -webkit-filter:blur(10px) !important;
+  opacity:.99 !important;
+}
+#daily-raid-root .daily-raid-entry-note::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:9px !important;
+  bottom:9px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(180deg,rgba(191,160,95,.74),rgba(191,160,95,.16)) !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-entry-note,
+#daily-raid-root .daily-raid-entry-note > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-attempt-overview{
+    margin-left:14px !important;
+    margin-right:14px !important;
+    gap:8px !important;
+  }
+}
+
+/* =========================================================
+   RAID v77 — bottom note readability + RAID BATTLE title
+   - 入口画面の下部マスクを解除し、注記文が潰れないようにする
+   - 注記文を白文字 + しっかりした暗ラベルで保護
+   - ヒーロー領域に「RAID BATTLE」を大きく明記
+   ========================================================= */
+
+/* 入口側はフェードで潰さない */
+#daily-raid-root .daily-raid-entry{
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  padding-bottom:calc(112px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 最下部注記は白字で明確に。背景に沈まない帯へ */
+#daily-raid-root .daily-raid-entry-note{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:hidden !important;
+  margin-top:12px !important;
+  margin-bottom:14px !important;
+  padding:10px 12px 10px 13px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  color:#ffffff !important;
+  font-size:8px !important;
+  font-weight:620 !important;
+  line-height:1.68 !important;
+  letter-spacing:.01em !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.40),
+    0 0 8px rgba(0,0,0,.22) !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+#daily-raid-root .daily-raid-entry-note::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  border-radius:12px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(34,30,26,.72) 0%,
+      rgba(34,30,26,.56) 54%,
+      rgba(34,30,26,.34) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 8px 18px rgba(18,15,12,.08) !important;
+  filter:blur(8px) !important;
+  -webkit-filter:blur(8px) !important;
+  opacity:.98 !important;
+}
+#daily-raid-root .daily-raid-entry-note::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:9px !important;
+  bottom:9px !important;
+  width:2px !important;
+  border-radius:999px !important;
+  background:linear-gradient(
+    180deg,
+    rgba(205,172,100,.76),
+    rgba(205,172,100,.22)
+  ) !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-entry-note,
+#daily-raid-root .daily-raid-entry-note > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+/* COOLな大見出し */
+#daily-raid-root .daily-raid-entry-hero{
+  position:relative !important;
+  padding-top:52px !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero::before{
+  content:"RAID BATTLE" !important;
+  position:absolute !important;
+  left:2px !important;
+  top:6px !important;
+  z-index:1 !important;
+  color:rgba(255,255,255,.78) !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:28px !important;
+  font-weight:700 !important;
+  letter-spacing:.16em !important;
+  line-height:1 !important;
+  text-transform:uppercase !important;
+  text-shadow:
+    0 1px 0 rgba(70,58,43,.18),
+    0 0 10px rgba(255,255,255,.48),
+    0 0 20px rgba(255,255,255,.18) !important;
+  opacity:.96 !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero::after{
+  content:"" !important;
+  position:absolute !important;
+  left:4px !important;
+  top:40px !important;
+  width:96px !important;
+  height:1px !important;
+  background:linear-gradient(
+    90deg,
+    rgba(198,167,100,.82),
+    rgba(198,167,100,.18),
+    rgba(198,167,100,0)
+  ) !important;
+  box-shadow:0 0 8px rgba(198,167,100,.22) !important;
+  pointer-events:none !important;
+}
+
+/* THE TESTのラベルは少し下へ避ける */
+#daily-raid-root .daily-raid-entry-hero > div{
+  position:relative !important;
+  z-index:2 !important;
+  margin-top:10px !important;
+}
+
+/* 小型端末調整 */
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry{
+    padding-bottom:calc(106px + env(safe-area-inset-bottom)) !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero{
+    padding-top:46px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero::before{
+    font-size:24px !important;
+    top:8px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero::after{
+    top:36px !important;
+    width:82px !important;
+  }
+}
+
+/* =========================================================
+   RAID v78 — SIGMA-IX / minimal cool hero
+   - 巨大な薄文字 "RAID BATTLE" を撤去
+   - RAID BATTLEはSIGMA-IXの小見出しへ統合
+   - ヒーロー文字背景は「黒い四角」ではなく片側だけの煙状グラデーション
+   - 下部注記は真っ白 + 直接暗グラデーションで確実に可読化
+   ========================================================= */
+
+/* v77の巨大タイトルと線を撤去 */
+#daily-raid-root .daily-raid-entry-hero{
+  padding-top:18px !important;
+  min-height:198px !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero::before,
+#daily-raid-root .daily-raid-entry-hero::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* SIGMA-IXラベル: 背景の少女に沿って左から煙のように消える */
+#daily-raid-root .daily-raid-entry-hero > div{
+  width:min(270px,82%) !important;
+  max-width:none !important;
+  margin-top:0 !important;
+  padding:12px 15px 12px 16px !important;
+  border:0 !important;
+  border-left:1px solid rgba(207,177,108,.72) !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(28,27,25,.68) 0%,
+      rgba(34,32,29,.54) 48%,
+      rgba(34,32,29,.24) 78%,
+      rgba(34,32,29,0) 100%
+    ) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(7px) saturate(.78) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(.78) !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero small{
+  display:block !important;
+  margin:0 0 4px !important;
+  color:#d5bd82 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:7px !important;
+  font-weight:650 !important;
+  line-height:1 !important;
+  letter-spacing:.28em !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.30) !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero strong{
+  display:block !important;
+  margin:0 !important;
+  color:#fffdf7 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:29px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  letter-spacing:.10em !important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.34),
+    0 2px 10px rgba(0,0,0,.18) !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero span{
+  display:block !important;
+  margin-top:7px !important;
+  color:rgba(255,252,245,.80) !important;
+  font-size:9px !important;
+  font-weight:540 !important;
+  line-height:1.5 !important;
+  letter-spacing:.02em !important;
+  text-shadow:0 1px 3px rgba(0,0,0,.28) !important;
+}
+
+/* HOST / JOINの白い四角感を少し弱める */
+#daily-raid-root .daily-raid-mode-card{
+  border-color:rgba(139,114,73,.16) !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.69) 0%,
+      rgba(255,255,255,.52) 55%,
+      rgba(247,244,238,.36) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.78),
+    0 8px 18px rgba(55,48,38,.045) !important;
+}
+
+/* 注記は擬似要素をやめ、真っ白の文字を直接暗い霞に載せる */
+#daily-raid-root .daily-raid-entry-note{
+  margin-top:11px !important;
+  margin-bottom:16px !important;
+  padding:9px 12px !important;
+  border:0 !important;
+  border-left:1px solid rgba(205,174,103,.52) !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(24,23,21,.62) 0%,
+      rgba(29,27,24,.46) 66%,
+      rgba(29,27,24,.18) 100%
+    ) !important;
+  color:#ffffff !important;
+  font-size:8.5px !important;
+  font-weight:650 !important;
+  line-height:1.7 !important;
+  letter-spacing:.01em !important;
+  text-shadow:
+    0 1px 1px rgba(0,0,0,.46),
+    0 0 5px rgba(0,0,0,.24) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(7px) !important;
+  -webkit-backdrop-filter:blur(7px) !important;
+}
+
+#daily-raid-root .daily-raid-entry-note::before,
+#daily-raid-root .daily-raid-entry-note::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* ロビー側の敵名も同じ方向 */
+#daily-raid-root .daily-raid-hero-copy strong{
+  letter-spacing:.08em !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry-hero{
+    padding-top:14px !important;
+    min-height:184px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:26px !important;
+  }
+  #daily-raid-root .daily-raid-entry-note{
+    font-size:8px !important;
+  }
+}
+
+/* =========================================================
+   RAID v79 — raise SIGMA-IX and dissolve cards
+   - SIGMA-IX見出しを挑戦回数のすぐ下へ
+   - 四角い箱感を弱め、霞に溶けるUIへ
+   - 最下部注記をボトムナビから離し、白字で明確化
+   ========================================================= */
+
+/* 注記がボトムナビに飲まれないよう少し上げる */
+#daily-raid-root .daily-raid-entry{
+  padding-top:4px !important;
+  padding-bottom:calc(138px + env(safe-area-inset-bottom)) !important;
+}
+
+/* SIGMA-IXの見出し帯を上へ。高さも詰めて挑戦回数の直下へ */
+#daily-raid-root .daily-raid-entry-hero{
+  min-height:100px !important;
+  padding:6px 0 6px !important;
+  margin-top:4px !important;
+  margin-bottom:6px !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero > div{
+  width:min(286px,86%) !important;
+  max-width:none !important;
+  margin-top:0 !important;
+  margin-left:0 !important;
+  padding:11px 16px 12px 16px !important;
+  border:0 !important;
+  border-left:1px solid rgba(209,180,111,.58) !important;
+  border-radius:18px !important;
+  background:
+    radial-gradient(circle at 18% 50%,
+      rgba(46,43,39,.74) 0%,
+      rgba(46,43,39,.62) 24%,
+      rgba(46,43,39,.42) 52%,
+      rgba(46,43,39,.16) 76%,
+      rgba(46,43,39,0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(38,35,31,.56) 0%,
+      rgba(38,35,31,.34) 55%,
+      rgba(38,35,31,.08) 100%
+    ) !important;
+  box-shadow:
+    0 10px 26px rgba(23,20,17,.07),
+    inset 0 1px 0 rgba(255,255,255,.04) !important;
+  backdrop-filter:blur(10px) saturate(.75) !important;
+  -webkit-backdrop-filter:blur(10px) saturate(.75) !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero small{
+  color:#d6bd84 !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero strong{
+  font-size:28px !important;
+  letter-spacing:.08em !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero span{
+  color:rgba(255,252,246,.84) !important;
+}
+
+/* カード群を四角い板ではなく、白霞のガラス片へ */
+#daily-raid-root .daily-raid-mode-grid{
+  gap:12px !important;
+  margin-top:4px !important;
+}
+
+#daily-raid-root .daily-raid-mode-card{
+  position:relative !important;
+  overflow:hidden !important;
+  min-height:144px !important;
+  padding:15px 14px 14px !important;
+  border:0 !important;
+  border-radius:22px !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.56) 0%,
+      rgba(255,255,255,.42) 44%,
+      rgba(255,255,255,.24) 100%
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.70),
+    0 12px 24px rgba(53,46,38,.045) !important;
+  backdrop-filter:blur(11px) saturate(.74) !important;
+  -webkit-backdrop-filter:blur(11px) saturate(.74) !important;
+}
+
+#daily-raid-root .daily-raid-mode-card::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:-8px !important;
+  z-index:0 !important;
+  border-radius:28px !important;
+  background:
+    radial-gradient(circle at 22% 20%,
+      rgba(255,255,255,.50) 0%,
+      rgba(255,255,255,.22) 36%,
+      rgba(255,255,255,0) 72%
+    ),
+    radial-gradient(circle at 80% 90%,
+      rgba(255,255,255,.20) 0%,
+      rgba(255,255,255,.08) 28%,
+      rgba(255,255,255,0) 62%
+    ) !important;
+  filter:blur(14px) !important;
+  -webkit-filter:blur(14px) !important;
+  opacity:.95 !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-mode-card::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  border-radius:22px !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.14) 0%,
+      rgba(255,255,255,.06) 36%,
+      rgba(255,255,255,0) 100%
+    ) !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-mode-card small,
+#daily-raid-root .daily-raid-mode-card strong,
+#daily-raid-root .daily-raid-mode-card span,
+#daily-raid-root .daily-raid-mode-card b{
+  position:relative !important;
+  z-index:1 !important;
+}
+
+#daily-raid-root .daily-raid-mode-card strong{
+  color:#352f29 !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  color:#544c42 !important;
+}
+#daily-raid-root .daily-raid-mode-card b{
+  color:#8a6b2d !important;
+}
+
+/* 最下部注記: もっと上に持ち上げ、白字を強く */
+#daily-raid-root .daily-raid-entry-note{
+  margin-top:12px !important;
+  margin-bottom:28px !important;
+  padding:10px 12px !important;
+  border:0 !important;
+  border-left:1px solid rgba(206,175,102,.48) !important;
+  border-radius:16px !important;
+  background:
+    radial-gradient(circle at 18% 50%,
+      rgba(28,26,23,.76) 0%,
+      rgba(28,26,23,.64) 28%,
+      rgba(28,26,23,.42) 56%,
+      rgba(28,26,23,.18) 82%,
+      rgba(28,26,23,0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(24,23,21,.58) 0%,
+      rgba(24,23,21,.34) 60%,
+      rgba(24,23,21,.08) 100%
+    ) !important;
+  color:#ffffff !important;
+  font-size:8.5px !important;
+  font-weight:680 !important;
+  line-height:1.72 !important;
+  text-shadow:
+    0 1px 1px rgba(0,0,0,.46),
+    0 0 6px rgba(0,0,0,.24) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(9px) !important;
+  -webkit-backdrop-filter:blur(9px) !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry{
+    padding-bottom:calc(130px + env(safe-area-inset-bottom)) !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero{
+    min-height:92px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:25px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card{
+    min-height:136px !important;
+    border-radius:20px !important;
+  }
+  #daily-raid-root .daily-raid-entry-note{
+    margin-bottom:24px !important;
+  }
+}
+
+/* =========================================================
+   RAID v80 — mockup alignment pass
+   目的:
+   - SIGMA-IX 見出しを挑戦回数のすぐ下へ
+   - 黒い塊・四角い箱感を消し、霞に溶けるUIへ
+   - モックアップ寄りの白金・明朝・装飾線へ
+   ========================================================= */
+
+/* 余白整理 */
+#daily-raid-root .daily-raid-entry{
+  padding-top:0 !important;
+  padding-bottom:calc(132px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 挑戦回数バー: モック寄りの淡いパネル */
+#daily-raid-root .daily-raid-attempt-overview{
+  position:relative !important;
+  min-height:56px !important;
+  margin:2px 18px 12px !important;
+  padding:0 18px 0 42px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:18px !important;
+  border-radius:0 !important;
+  background:rgba(255,255,255,.38) !important;
+  border-left:1px solid rgba(192,161,92,.72) !important;
+  border-right:1px solid rgba(192,161,92,.72) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(231,220,197,.48),
+    0 8px 18px rgba(75,65,48,.025) !important;
+  backdrop-filter:blur(8px) saturate(.86) !important;
+  -webkit-backdrop-filter:blur(8px) saturate(.86) !important;
+  overflow:visible !important;
+}
+#daily-raid-root .daily-raid-attempt-overview::before{
+  content:"✧" !important;
+  position:absolute !important;
+  left:12px !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:21px !important;
+  color:rgba(181,147,75,.90) !important;
+  text-shadow:0 0 4px rgba(255,255,255,.45) !important;
+  background:none !important;
+  filter:none !important;
+}
+#daily-raid-root .daily-raid-attempt-overview::after{
+  content:"" !important;
+  position:absolute !important;
+  left:12px !important;
+  right:12px !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  height:1px !important;
+  background:linear-gradient(90deg, rgba(190,160,95,0) 0%, rgba(190,160,95,.32) 14%, rgba(190,160,95,.18) 50%, rgba(190,160,95,.32) 86%, rgba(190,160,95,0) 100%) !important;
+  z-index:0 !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > span,
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  position:relative !important;
+  z-index:1 !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:#4d3c24 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:.10em !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#4d3c24 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:12px !important;
+  font-weight:650 !important;
+  letter-spacing:.10em !important;
+  background:rgba(255,255,255,.68) !important;
+  padding:4px 10px !important;
+  border-radius:999px !important;
+}
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#9f7427 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:28px !important;
+  font-weight:700 !important;
+  letter-spacing:.03em !important;
+}
+
+/* SIGMA-IX 見出し: すぐ下に配置し、背景塊を消す */
+#daily-raid-root .daily-raid-entry-hero{
+  min-height:auto !important;
+  margin:0 0 10px !important;
+  padding:2px 0 0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  overflow:visible !important;
+}
+#daily-raid-root .daily-raid-entry-hero img{
+  right:-10px !important;
+  top:18px !important;
+  width:245px !important;
+  height:250px !important;
+  opacity:.98 !important;
+  filter:drop-shadow(0 20px 18px rgba(255,255,255,.06)) drop-shadow(0 10px 12px rgba(0,0,0,.08)) !important;
+}
+#daily-raid-root .daily-raid-entry-hero > div{
+  width:min(380px,92%) !important;
+  margin-top:12px !important;
+  padding:0 0 0 18px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  position:relative !important;
+}
+#daily-raid-root .daily-raid-entry-hero > div::before{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  top:4px !important;
+  bottom:8px !important;
+  width:2px !important;
+  background:linear-gradient(180deg, rgba(197,164,94,.72), rgba(197,164,94,.10)) !important;
+}
+#daily-raid-root .daily-raid-entry-hero > div::after{
+  content:"" !important;
+  position:absolute !important;
+  left:98px !important;
+  right:34px !important;
+  bottom:36px !important;
+  height:1px !important;
+  background:linear-gradient(90deg, rgba(194,161,91,.46), rgba(194,161,91,.12)) !important;
+}
+#daily-raid-root .daily-raid-entry-hero small{
+  display:inline-block !important;
+  margin:0 0 6px !important;
+  color:#a8843c !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:650 !important;
+  line-height:1 !important;
+  letter-spacing:.42em !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  display:block !important;
+  margin:0 0 12px !important;
+  color:#3a2f23 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:72px !important;
+  font-weight:500 !important;
+  letter-spacing:.06em !important;
+  line-height:.92 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.22) !important;
+}
+#daily-raid-root .daily-raid-entry-hero span{
+  display:block !important;
+  margin:0 !important;
+  color:#2f2620 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:11px !important;
+  font-weight:540 !important;
+  line-height:1.65 !important;
+  letter-spacing:.03em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.22) !important;
+}
+
+/* モードカード: ドンとした箱から、白い板が霞に溶ける感じへ */
+#daily-raid-root .daily-raid-mode-grid{
+  gap:16px !important;
+  margin-top:14px !important;
+}
+#daily-raid-root .daily-raid-mode-card{
+  position:relative !important;
+  min-height:238px !important;
+  padding:22px 20px 22px !important;
+  border:1px solid rgba(208,179,113,.58) !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.78) 0%, rgba(252,250,246,.64) 64%, rgba(246,242,235,.54) 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(243,236,223,.92),
+    0 18px 32px rgba(59,49,39,.028) !important;
+  backdrop-filter:blur(5px) saturate(.88) !important;
+  -webkit-backdrop-filter:blur(5px) saturate(.88) !important;
+  overflow:hidden !important;
+}
+#daily-raid-root .daily-raid-mode-card::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:8px !important;
+  border:1px solid rgba(211,182,117,.54) !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+}
+#daily-raid-root .daily-raid-mode-card::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:auto 18px 56px 18px !important;
+  height:1px !important;
+  background:linear-gradient(90deg, rgba(194,161,91,0) 0%, rgba(194,161,91,.34) 14%, rgba(194,161,91,.34) 86%, rgba(194,161,91,0) 100%) !important;
+  z-index:0 !important;
+}
+#daily-raid-root .daily-raid-mode-card small,
+#daily-raid-root .daily-raid-mode-card strong,
+#daily-raid-root .daily-raid-mode-card span,
+#daily-raid-root .daily-raid-mode-card b{
+  position:relative !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-mode-card small{
+  display:block !important;
+  text-align:center !important;
+  width:100% !important;
+  color:#a8843c !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:650 !important;
+  letter-spacing:.38em !important;
+}
+#daily-raid-root .daily-raid-mode-card strong{
+  display:block !important;
+  text-align:center !important;
+  width:100% !important;
+  margin-top:78px !important;
+  color:#2f241d !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:34px !important;
+  font-weight:700 !important;
+  letter-spacing:.08em !important;
+  line-height:1.18 !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  display:block !important;
+  text-align:center !important;
+  width:100% !important;
+  margin-top:14px !important;
+  color:#40352d !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:520 !important;
+  line-height:1.55 !important;
+}
+#daily-raid-root .daily-raid-mode-card b{
+  display:block !important;
+  width:100% !important;
+  margin-top:auto !important;
+  padding-top:24px !important;
+  color:#aa7d2a !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:9px !important;
+  font-weight:650 !important;
+  text-align:left !important;
+}
+
+/* 上部アイコン風 */
+#daily-raid-root .daily-raid-mode-card.is-host::marker{content:"";}
+#daily-raid-root .daily-raid-mode-card.is-host::after,
+#daily-raid-root .daily-raid-mode-card.is-join::after{
+  height:0 !important;
+  inset:auto !important;
+  background:none !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-host::before,
+#daily-raid-root .daily-raid-mode-card.is-join::before{
+  border-color:rgba(211,182,117,.58) !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-host{
+  background:
+    radial-gradient(circle at 22% 18%, rgba(211,205,195,.16), rgba(211,205,195,0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.80) 0%, rgba(252,250,246,.66) 64%, rgba(246,242,235,.56) 100%) !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-join{
+  background:
+    radial-gradient(circle at 22% 18%, rgba(211,205,195,.16), rgba(211,205,195,0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.80) 0%, rgba(252,250,246,.66) 64%, rgba(246,242,235,.56) 100%) !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-host small::after,
+#daily-raid-root .daily-raid-mode-card.is-join small::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  top:28px !important;
+  width:120px !important;
+  height:120px !important;
+  border-radius:50% !important;
+  border:1px solid rgba(211,182,117,.46) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.44) inset !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-host small::before{
+  content:"👤＋" !important;
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  top:62px !important;
+  font-size:36px !important;
+  color:rgba(201,167,94,.88) !important;
+  letter-spacing:.05em !important;
+}
+#daily-raid-root .daily-raid-mode-card.is-join small::before{
+  content:"👥" !important;
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  top:64px !important;
+  font-size:38px !important;
+  color:rgba(201,167,94,.88) !important;
+  letter-spacing:.05em !important;
+}
+
+/* 注記: 暗い横帯だが角を弱め、溶けるように */
+#daily-raid-root .daily-raid-entry-note{
+  position:relative !important;
+  min-height:74px !important;
+  margin-top:18px !important;
+  margin-bottom:20px !important;
+  padding:18px 18px 18px 86px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(90deg, rgba(82,86,95,.76) 0%, rgba(73,77,86,.72) 36%, rgba(63,68,78,.56) 72%, rgba(63,68,78,.18) 100%) !important;
+  color:#ffffff !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:9px !important;
+  font-weight:620 !important;
+  line-height:1.7 !important;
+  letter-spacing:.02em !important;
+  text-shadow:0 1px 1px rgba(0,0,0,.22) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
+}
+#daily-raid-root .daily-raid-entry-note::before{
+  content:"✧" !important;
+  position:absolute !important;
+  left:32px !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:22px !important;
+  color:rgba(201,167,94,.92) !important;
+  border:none !important;
+  background:none !important;
+  filter:none !important;
+  opacity:1 !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-entry-note::after{
+  content:"" !important;
+  position:absolute !important;
+  left:62px !important;
+  top:16px !important;
+  bottom:16px !important;
+  width:1px !important;
+  background:rgba(221,198,145,.66) !important;
+  z-index:1 !important;
+}
+#daily-raid-root .daily-raid-entry-note > *{
+  position:relative !important;
+  z-index:2 !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-attempt-overview{
+    min-height:50px !important;
+    padding-left:38px !important;
+  }
+  #daily-raid-root .daily-raid-entry{
+    padding-bottom:calc(124px + env(safe-area-inset-bottom)) !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero img{
+    width:214px !important;
+    height:222px !important;
+    right:-12px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:60px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card{
+    min-height:220px !important;
+    padding:18px 16px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card strong{
+    font-size:30px !important;
+  }
+  #daily-raid-root .daily-raid-entry-note{
+    min-height:68px !important;
+    padding-left:78px !important;
+  }
+}
+
+/* =========================================================
+   RAID v81 — cleanup pass
+   ① 本日の挑戦回数バーのモザイク風表現を削除
+   ② SIGMA-IX を改行させない
+   ③ 募集/参加カード内の絵文字アイコンを削除
+   ========================================================= */
+
+/* ① 挑戦回数バーをクリーンに */
+#daily-raid-root .daily-raid-attempt-overview{
+  min-height:52px !important;
+  padding:0 18px !important;
+  gap:18px !important;
+  background:rgba(255,255,255,.52) !important;
+  border-left:1px solid rgba(192,161,92,.68) !important;
+  border-right:1px solid rgba(192,161,92,.68) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(231,220,197,.42),
+    0 6px 14px rgba(75,65,48,.018) !important;
+  backdrop-filter:blur(4px) saturate(.88) !important;
+  -webkit-backdrop-filter:blur(4px) saturate(.88) !important;
+}
+#daily-raid-root .daily-raid-attempt-overview::before,
+#daily-raid-root .daily-raid-attempt-overview::after{
+  content:none !important;
+  display:none !important;
+}
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  background:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+}
+
+/* ② SIGMA-IX を1行固定 */
+#daily-raid-root .daily-raid-entry-hero > div{
+  width:min(520px,94%) !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+  font-size:60px !important;
+  letter-spacing:.05em !important;
+  line-height:1 !important;
+}
+
+/* ③ カード内アイコン削除 */
+#daily-raid-root .daily-raid-mode-card{
+  min-height:214px !important;
+}
+#daily-raid-root .daily-raid-mode-card small::before,
+#daily-raid-root .daily-raid-mode-card small::after{
+  content:none !important;
+  display:none !important;
+}
+#daily-raid-root .daily-raid-mode-card strong{
+  margin-top:42px !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  margin-top:12px !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:52px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card{
+    min-height:198px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card strong{
+    margin-top:34px !important;
+  }
+}
+
+/* =========================================================
+   RAID v82 — remove note / attempt text haze only
+   ① 最下部の注記文を削除
+   ② 本日の挑戦回数の後ろのモザイク・バーを完全削除
+   ③ 文字の周囲だけ白い霞を残す
+   ========================================================= */
+
+/* ① 最下部注記文を削除 */
+#daily-raid-root .daily-raid-entry-note{
+  display:none !important;
+}
+
+/* 注記削除にあわせて下余白を少し詰める */
+#daily-raid-root .daily-raid-entry{
+  padding-bottom:calc(112px + env(safe-area-inset-bottom)) !important;
+}
+
+/* ② 本日の挑戦回数のバー類を完全削除 */
+#daily-raid-root .daily-raid-attempt-overview{
+  position:relative !important;
+  min-height:auto !important;
+  margin:4px 18px 10px !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:16px !important;
+  background:transparent !important;
+  border:0 !important;
+  border-left:0 !important;
+  border-right:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  overflow:visible !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview::before,
+#daily-raid-root .daily-raid-attempt-overview::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* ③ テキストの周囲だけ白い霞 */
+#daily-raid-root .daily-raid-attempt-overview > span,
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  position:relative !important;
+  z-index:1 !important;
+  background:transparent !important;
+  border:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  filter:none !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > span{
+  color:#6a5332 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:.08em !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 22px rgba(255,255,255,.95),
+    0 0 34px rgba(255,255,255,.78) !important;
+}
+
+#daily-raid-root .daily-raid-attempt-overview > strong{
+  color:#5f4726 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:12px !important;
+  font-weight:650 !important;
+  letter-spacing:.08em !important;
+  text-shadow:
+    0 0 12px rgba(255,255,255,.99),
+    0 0 24px rgba(255,255,255,.94),
+    0 0 36px rgba(255,255,255,.76) !important;
+}
+
+#daily-raid-root #daily-raid-attempt-remaining{
+  color:#a07423 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:28px !important;
+  font-weight:700 !important;
+  letter-spacing:.02em !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry{
+    padding-bottom:calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+  #daily-raid-root .daily-raid-attempt-overview{
+    gap:14px !important;
+  }
+  #daily-raid-root #daily-raid-attempt-remaining{
+    font-size:26px !important;
+  }
+}
+
+/* =========================================================
+   RAID v83 — title size / description haze / lower buttons
+   ① SIGMA-IXを一回り小さく
+   ② 説明文に白霞を追加
+   ③ 募集/参加見出しを一回り小さく
+   ④ ボタン群を少し下へ
+   ========================================================= */
+
+#daily-raid-root .daily-raid-entry-hero strong{
+  font-size:54px !important;
+  letter-spacing:.045em !important;
+  line-height:1 !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero span{
+  color:#2f2620 !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 18px rgba(255,255,255,.92),
+    0 0 30px rgba(255,255,255,.74) !important;
+}
+
+/* ボタン全体を少し下へ */
+#daily-raid-root .daily-raid-mode-grid{
+  margin-top:24px !important;
+}
+
+/* 募集する / 参加する を少し小さく */
+#daily-raid-root .daily-raid-mode-card strong{
+  font-size:30px !important;
+  margin-top:48px !important;
+  letter-spacing:.05em !important;
+}
+
+/* 本文位置も少し合わせて下へ */
+#daily-raid-root .daily-raid-mode-card span{
+  margin-top:14px !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:48px !important;
+  }
+  #daily-raid-root .daily-raid-mode-grid{
+    margin-top:20px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card strong{
+    font-size:27px !important;
+    margin-top:42px !important;
+  }
+}
+
+/* =========================================================
+   RAID v84 — polish pass
+   1. SIGMA-IXをさらに少し上へ
+   2. カード枠の金装飾を整える
+   3. 説明文の位置と字間を微調整
+   4. カード枠を正方形寄せ
+   5. 募集/参加を一回り小さく
+   6. 下部補助文を中央寄せ
+   ========================================================= */
+
+/* 1 & 3: タイトルと説明文の微調整 */
+#daily-raid-root .daily-raid-entry-hero{
+  margin-bottom:8px !important;
+}
+#daily-raid-root .daily-raid-entry-hero > div{
+  margin-top:2px !important;
+  width:min(500px,94%) !important;
+}
+#daily-raid-root .daily-raid-entry-hero small{
+  margin-bottom:4px !important;
+}
+#daily-raid-root .daily-raid-entry-hero strong{
+  font-size:50px !important;
+  margin-bottom:8px !important;
+  letter-spacing:.04em !important;
+}
+#daily-raid-root .daily-raid-entry-hero span{
+  margin-top:2px !important;
+  max-width:330px !important;
+  font-size:10.5px !important;
+  line-height:1.72 !important;
+  letter-spacing:.045em !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 18px rgba(255,255,255,.92),
+    0 0 30px rgba(255,255,255,.74) !important;
+}
+
+/* 4: ボタン群を少し下げ、正方形に */
+#daily-raid-root .daily-raid-mode-grid{
+  margin-top:30px !important;
+  gap:14px !important;
+}
+#daily-raid-root .daily-raid-mode-card{
+  aspect-ratio:1 / 1 !important;
+  min-height:auto !important;
+  padding:18px 18px 16px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+  border:1px solid rgba(204,174,108,.72) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(246,240,228,.94),
+    0 10px 22px rgba(55,47,38,.028) !important;
+}
+
+/* 2: 金装飾を整える */
+#daily-raid-root .daily-raid-mode-card::before{
+  inset:9px !important;
+  border:1px solid rgba(213,184,118,.66) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.48) !important;
+  background:
+    linear-gradient(90deg, rgba(202,170,101,.0) 0%, rgba(202,170,101,.55) 22%, rgba(202,170,101,.0) 100%) top 18px center / 62px 1px no-repeat,
+    linear-gradient(90deg, rgba(202,170,101,.0) 0%, rgba(202,170,101,.40) 22%, rgba(202,170,101,.0) 100%) bottom 50px center / 62px 1px no-repeat !important;
+}
+#daily-raid-root .daily-raid-mode-card::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:
+    radial-gradient(circle, rgba(202,170,101,.95) 0 1.2px, transparent 1.5px) center 17px / 4px 4px no-repeat,
+    radial-gradient(circle, rgba(202,170,101,.75) 0 1.2px, transparent 1.5px) center calc(100% - 49px) / 4px 4px no-repeat,
+    linear-gradient(90deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) left 9px top 9px / 10px 1px no-repeat,
+    linear-gradient(180deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) left 9px top 9px / 1px 10px no-repeat,
+    linear-gradient(90deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) right 9px top 9px / 10px 1px no-repeat,
+    linear-gradient(180deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) right 9px top 9px / 1px 10px no-repeat,
+    linear-gradient(90deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) left 9px bottom 9px / 10px 1px no-repeat,
+    linear-gradient(180deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) left 9px bottom 9px / 1px 10px no-repeat,
+    linear-gradient(90deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) right 9px bottom 9px / 10px 1px no-repeat,
+    linear-gradient(180deg, rgba(202,170,101,.75), rgba(202,170,101,.75)) right 9px bottom 9px / 1px 10px no-repeat !important;
+}
+
+/* 5: 募集する / 参加する を小さく */
+#daily-raid-root .daily-raid-mode-card small{
+  font-size:9px !important;
+  letter-spacing:.34em !important;
+}
+#daily-raid-root .daily-raid-mode-card strong{
+  font-size:27px !important;
+  margin-top:40px !important;
+  letter-spacing:.04em !important;
+  line-height:1.16 !important;
+}
+#daily-raid-root .daily-raid-mode-card span{
+  margin-top:12px !important;
+  font-size:10px !important;
+  line-height:1.52 !important;
+}
+#daily-raid-root .daily-raid-mode-card b{
+  text-align:center !important;
+  padding-top:18px !important;
+  font-size:9px !important;
+  line-height:1.4 !important;
+  margin-top:auto !important;
+}
+
+/* 念のためアイコンは非表示維持 */
+#daily-raid-root .daily-raid-mode-card small::before,
+#daily-raid-root .daily-raid-mode-card small::after{
+  content:none !important;
+  display:none !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-entry-hero > div{
+    margin-top:0 !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:45px !important;
+  }
+  #daily-raid-root .daily-raid-entry-hero span{
+    font-size:10px !important;
+    max-width:308px !important;
+  }
+  #daily-raid-root .daily-raid-mode-grid{
+    margin-top:24px !important;
+    gap:12px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card{
+    padding:16px 14px 14px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card strong{
+    font-size:24px !important;
+    margin-top:34px !important;
+  }
+  #daily-raid-root .daily-raid-mode-card b{
+    padding-top:15px !important;
+  }
+}
+
+/* =========================================================
+   RAID v85 — two-page horizontal lobby
+   画面① ENEMY INFO / 画面② RAID INFO
+   縦スクロールなし。バトル開始ボタンは固定。
+   ========================================================= */
+
+#daily-raid-root .daily-raid-lobby{
+  flex:1 !important;
+  min-height:0 !important;
+  height:auto !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+#daily-raid-root .daily-raid-swipe-shell{
+  flex:1 !important;
+  min-height:0 !important;
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  padding-bottom:92px !important;
+  overflow:hidden !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tabs{
+  flex:0 0 34px !important;
+  height:34px !important;
+  margin:0 18px 6px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  align-items:end !important;
+  border-bottom:1px solid rgba(164,136,83,.16) !important;
+  z-index:3 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab{
+  height:34px !important;
+  padding:0 8px 8px !important;
+  border:0 !important;
+  background:transparent !important;
+  color:rgba(93,75,49,.52) !important;
+  display:flex !important;
+  align-items:baseline !important;
+  justify-content:center !important;
+  gap:7px !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  cursor:pointer !important;
+  position:relative !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab small{
+  font-size:7px !important;
+  letter-spacing:.12em !important;
+  opacity:.74 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab span{
+  font-size:9px !important;
+  font-weight:650 !important;
+  letter-spacing:.18em !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab::after{
+  content:"" !important;
+  position:absolute !important;
+  left:26% !important;
+  right:26% !important;
+  bottom:-1px !important;
+  height:1px !important;
+  background:rgba(171,136,69,0) !important;
+  transform:scaleX(.4) !important;
+  transition:transform .22s ease, background .22s ease !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  color:#7f612b !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active::after{
+  background:rgba(171,136,69,.72) !important;
+  transform:scaleX(1) !important;
+}
+
+#daily-raid-root .daily-raid-body.daily-raid-swipe-viewport{
+  flex:1 !important;
+  min-height:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  position:relative !important;
+  touch-action:pan-y !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+}
+
+#daily-raid-root .daily-raid-swipe-track{
+  width:100% !important;
+  height:100% !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  transform:translate3d(0,0,0);
+  transition:transform .32s cubic-bezier(.22,.78,.22,1);
+  will-change:transform;
+}
+
+#daily-raid-root .daily-raid-swipe-page{
+  flex:0 0 100% !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:100% !important;
+  box-sizing:border-box !important;
+  padding:0 18px 6px !important;
+  overflow:hidden !important;
+  position:relative !important;
+}
+
+/* 画面①: 敵情報 */
+#daily-raid-root .daily-raid-enemy-page{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero{
+  height:250px !important;
+  min-height:250px !important;
+  margin:0 -18px !important;
+  border:0 !important;
+  background:
+    radial-gradient(circle at 60% 43%, rgba(255,255,255,.56) 0%, rgba(255,255,255,.20) 30%, rgba(255,255,255,0) 65%) !important;
+  box-shadow:none !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero img{
+  width:310px !important;
+  height:242px !important;
+  top:49% !important;
+  opacity:.98 !important;
+  filter:drop-shadow(0 12px 18px rgba(60,54,47,.12)) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-halo,
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-lines{
+  opacity:.28 !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank{
+  top:12px !important;
+  right:18px !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank span{
+  color:#9d7f46 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank b{
+  color:#6f5734 !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+  left:20px !important;
+  bottom:34px !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 20px rgba(255,255,255,.88) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy small{
+  color:#9b7a3b !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+  color:#34291f !important;
+  font-size:28px !important;
+  font-weight:600 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  color:#5c4e3f !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  color:#736758 !important;
+  text-shadow:0 0 10px rgba(255,255,255,.96) !important;
+}
+
+/* HPを1画面に収める */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  margin-top:6px !important;
+  padding:13px 14px 11px !important;
+  border:1px solid rgba(189,157,91,.20) !important;
+  background:rgba(255,255,255,.48) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72) !important;
+  backdrop-filter:blur(7px) !important;
+  -webkit-backdrop-filter:blur(7px) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead small{
+  color:#9e7e42 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead span,
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta > span{
+  color:#766b5d !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead > strong{
+  color:#4b3a28 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar{
+  height:10px !important;
+  background:rgba(76,68,56,.14) !important;
+  border-color:rgba(164,135,76,.22) !important;
+  box-shadow:inset 0 1px 4px rgba(65,56,44,.10) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar i{
+  background:linear-gradient(90deg,#6e8a67,#a7a56c,#c5a85d) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta>b{
+  color:#6c5b42 !important;
+}
+
+/* 画面②: レイド情報 */
+#daily-raid-root .daily-raid-info-page{
+  padding-top:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta{
+  flex:0 0 auto !important;
+  padding:4px 0 6px !important;
+  border-bottom:1px solid rgba(166,138,82,.14) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta small{
+  color:#9e7f45 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta strong{
+  color:#4a3a28 !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title{
+  margin:7px 0 6px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title small{
+  color:#a1844d !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title span{
+  color:#493a2a !important;
+  font-size:10px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title>b{
+  color:#8d6d32 !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-member-grid{
+  gap:6px !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-member{
+  min-height:73px !important;
+  padding:7px 8px 7px 54px !important;
+  border:1px solid rgba(173,145,87,.18) !important;
+  background:rgba(255,255,255,.44) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.58) !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member.is-me{
+  border-color:rgba(172,139,69,.38) !important;
+  box-shadow:inset 2px 0 0 rgba(172,139,69,.58), inset 0 1px 0 rgba(255,255,255,.64) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-panel{
+  width:39px !important;
+  height:39px !important;
+  left:8px !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy{
+  margin-top:7px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy strong{
+  color:#473a2d !important;
+  font-size:10px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-info-page .daily-raid-member-no{
+  color:#8b795c !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-damage span{
+  color:#9d7f45 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-damage b{
+  color:#5d4b34 !important;
+}
+
+/* ルールは1画面に収まるようコンパクトに */
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  margin-top:7px !important;
+  padding:9px 10px 8px !important;
+  border:1px solid rgba(173,145,87,.16) !important;
+  background:rgba(255,255,255,.34) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(5px) !important;
+  -webkit-backdrop-filter:blur(5px) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-title small{
+  color:#9b7f4a !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid{
+  margin-top:6px !important;
+  gap:5px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid>div{
+  min-height:42px !important;
+  padding-top:5px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid b{
+  color:#9b7a3d !important;
+  font-size:7px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid span{
+  color:#5c5145 !important;
+  font-size:7px !important;
+  line-height:1.35 !important;
+}
+
+/* ページインジケータ */
+#daily-raid-root .daily-raid-swipe-indicator{
+  position:absolute !important;
+  left:50% !important;
+  bottom:96px !important;
+  transform:translateX(-50%) !important;
+  display:flex !important;
+  gap:8px !important;
+  z-index:5 !important;
+  pointer-events:none !important;
+}
+#daily-raid-root .daily-raid-swipe-indicator i{
+  display:block !important;
+  width:18px !important;
+  height:2px !important;
+  background:rgba(121,102,73,.22) !important;
+  transition:width .22s ease, background .22s ease !important;
+}
+#daily-raid-root .daily-raid-swipe-indicator i.is-active{
+  width:32px !important;
+  background:rgba(166,132,65,.72) !important;
+}
+
+/* バトル開始ボタンは固定 */
+#daily-raid-root .daily-raid-actions{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  transform:none !important;
+  width:100% !important;
+  min-height:84px !important;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom)) !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.54) 30%, rgba(255,255,255,.86) 100%) !important;
+  z-index:8 !important;
+}
+
+#daily-raid-root .daily-raid-attempt-copy{
+  width:72px !important;
+  flex:0 0 72px !important;
+  padding:0 !important;
+}
+#daily-raid-root .daily-raid-attempt-copy small{
+  color:#9a8051 !important;
+}
+#daily-raid-root .daily-raid-attempt-copy b{
+  color:#5d4a31 !important;
+}
+
+#daily-raid-root #daily-raid-start,
+#daily-raid-root #daily-raid-finalize-best{
+  height:52px !important;
+  border:1px solid rgba(174,140,72,.44) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(242,236,224,.88)) !important;
+  color:#4b3925 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    0 7px 18px rgba(67,53,34,.08) !important;
+}
+
+#daily-raid-root #daily-raid-start span,
+#daily-raid-root #daily-raid-finalize-best span{
+  color:#a17d35 !important;
+}
+#daily-raid-root #daily-raid-start b,
+#daily-raid-root #daily-raid-finalize-best b{
+  color:#3d3022 !important;
+}
+
+/* 縦スクロールを完全に止める */
+#daily-raid-root .daily-raid-swipe-viewport,
+#daily-raid-root .daily-raid-swipe-page{
+  overscroll-behavior:none !important;
+  scrollbar-width:none !important;
+}
+#daily-raid-root .daily-raid-swipe-viewport::-webkit-scrollbar,
+#daily-raid-root .daily-raid-swipe-page::-webkit-scrollbar{
+  display:none !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  #daily-raid-root .daily-raid-swipe-tabs{
+    margin-left:14px !important;
+    margin-right:14px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-page{
+    padding-left:14px !important;
+    padding-right:14px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero{
+    height:214px !important;
+    min-height:214px !important;
+    margin-left:-14px !important;
+    margin-right:-14px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero img{
+    width:276px !important;
+    height:208px !important;
+  }
+  #daily-raid-root .daily-raid-info-page .daily-raid-member{
+    min-height:66px !important;
+  }
+  #daily-raid-root .daily-raid-info-page .daily-raid-rule-grid>div{
+    min-height:38px !important;
+  }
+  #daily-raid-root .daily-raid-actions{
+    padding-left:14px !important;
+    padding-right:14px !important;
+  }
+}
+
+/* =========================================================
+   RAID v86 — hidden-state hard fix
+   横スワイプロビーの display:flex!important が [hidden] を上書きし、
+   トップへ戻ったあとロビー要素が残る問題を防止。
+   ========================================================= */
+#daily-raid-root .daily-raid-entry[hidden],
+#daily-raid-root .daily-raid-join-select[hidden],
+#daily-raid-root .daily-raid-lobby[hidden]{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+/* =========================================================
+   RAID v87 — horizontal lobby readability pass
+   画面①/②の文字・HP・タブ・固定ボタンを背景に負けない濃さへ。
+   ========================================================= */
+
+/* タブをはっきり */
+#daily-raid-root .daily-raid-swipe-tabs{
+  border-bottom-color:rgba(126,96,47,.34) !important;
+}
+#daily-raid-root .daily-raid-swipe-tab{
+  color:rgba(74,55,32,.72) !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.98),
+    0 0 16px rgba(255,255,255,.82) !important;
+}
+#daily-raid-root .daily-raid-swipe-tab small{
+  font-weight:650 !important;
+  opacity:.88 !important;
+}
+#daily-raid-root .daily-raid-swipe-tab span{
+  font-size:9.5px !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  color:#6d4e1f !important;
+}
+#daily-raid-root .daily-raid-swipe-tab.is-active::after{
+  height:2px !important;
+  background:rgba(158,119,53,.86) !important;
+  box-shadow:0 0 6px rgba(255,255,255,.68) !important;
+}
+
+/* ENEMY INFO 見出し群 */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank span{
+  color:#8f6c32 !important;
+  font-weight:700 !important;
+  text-shadow:0 0 8px rgba(255,255,255,.96) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank b{
+  color:#4b3822 !important;
+  font-weight:700 !important;
+  text-shadow:0 0 8px rgba(255,255,255,.96) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+  text-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 16px rgba(255,255,255,.96),
+    0 0 26px rgba(255,255,255,.78) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy small{
+  color:#856222 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+  color:#2f241a !important;
+  font-size:30px !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  color:#44382c !important;
+  font-weight:600 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  color:#53483c !important;
+  font-weight:600 !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,.98),
+    0 0 16px rgba(255,255,255,.82) !important;
+}
+
+/* HPボックスをもっと読めるように */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  border-color:rgba(164,128,63,.34) !important;
+  background:rgba(255,255,255,.72) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.94),
+    0 8px 22px rgba(65,53,39,.055) !important;
+  backdrop-filter:blur(8px) saturate(.84) !important;
+  -webkit-backdrop-filter:blur(8px) saturate(.84) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead small{
+  color:#8f6b30 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead span,
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta > span{
+  color:#5f5143 !important;
+  font-weight:600 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead > strong{
+  color:#3a2b1d !important;
+  font-size:15px !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta>b{
+  color:#4c3b27 !important;
+  font-weight:700 !important;
+}
+
+/* RAID INFO側も同じ濃さへ */
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta small,
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title small,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-title small{
+  color:#8d692f !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta strong,
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title span{
+  color:#3f3020 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title>b{
+  color:#7d5a21 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member{
+  background:rgba(255,255,255,.68) !important;
+  border-color:rgba(157,122,63,.28) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy strong{
+  color:#382a1d !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-info-page .daily-raid-member-no{
+  color:#665644 !important;
+  font-weight:600 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-damage span{
+  color:#856328 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-damage b{
+  color:#44331f !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  background:rgba(255,255,255,.62) !important;
+  border-color:rgba(157,122,63,.26) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid b{
+  color:#805e25 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid span{
+  color:#493d31 !important;
+  font-size:7.5px !important;
+  font-weight:600 !important;
+}
+
+/* ページインジケータも少し強く */
+#daily-raid-root .daily-raid-swipe-indicator i{
+  height:3px !important;
+  background:rgba(92,71,44,.36) !important;
+}
+#daily-raid-root .daily-raid-swipe-indicator i.is-active{
+  background:#9a742e !important;
+  box-shadow:0 0 6px rgba(255,255,255,.76) !important;
+}
+
+/* 下部固定部 */
+#daily-raid-root .daily-raid-actions{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.72) 28%,
+      rgba(255,255,255,.94) 100%
+    ) !important;
+}
+#daily-raid-root .daily-raid-attempt-copy small{
+  color:#75572d !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-attempt-copy b{
+  color:#3f2f20 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root #daily-raid-start,
+#daily-raid-root #daily-raid-finalize-best{
+  border-color:rgba(152,112,48,.56) !important;
+  background:linear-gradient(180deg,#fffdf8,#eee5d5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 7px 18px rgba(67,53,34,.10) !important;
+}
+#daily-raid-root #daily-raid-start span,
+#daily-raid-root #daily-raid-finalize-best span{
+  color:#8f6825 !important;
+  font-weight:700 !important;
+}
+#daily-raid-root #daily-raid-start b,
+#daily-raid-root #daily-raid-finalize-best b{
+  color:#2f241a !important;
+  font-size:14px !important;
+  font-weight:700 !important;
+}
+
+/* =========================================================
+   RAID v88 — strong readability
+   明るい背景に対して「濃くする」だけでは足りないため、
+   文字のある領域そのものに局所的な白霞/白ガラスを置く。
+   ========================================================= */
+
+/* 上部タブ */
+#daily-raid-root .daily-raid-swipe-tabs{
+  height:40px !important;
+  margin:0 16px 8px !important;
+  border:0 !important;
+  gap:8px !important;
+}
+#daily-raid-root .daily-raid-swipe-tab{
+  height:36px !important;
+  padding:0 10px !important;
+  align-items:center !important;
+  border:1px solid rgba(151,116,55,.18) !important;
+  background:rgba(255,255,255,.74) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.96),
+    0 4px 12px rgba(59,48,35,.035) !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
+  color:#5c4220 !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  background:rgba(255,255,255,.94) !important;
+  border-color:rgba(157,119,51,.46) !important;
+  color:#503818 !important;
+}
+#daily-raid-root .daily-raid-swipe-tab::after{
+  left:20% !important;
+  right:20% !important;
+  bottom:0 !important;
+}
+#daily-raid-root .daily-raid-swipe-tab small{
+  color:#9a7334 !important;
+  font-size:7px !important;
+  font-weight:700 !important;
+}
+#daily-raid-root .daily-raid-swipe-tab span{
+  color:inherit !important;
+  font-size:10px !important;
+  font-weight:750 !important;
+}
+
+/* 敵情報のテキストを白霞ラベル上へ */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank{
+  padding:7px 10px !important;
+  background:rgba(255,255,255,.84) !important;
+  border-left:1px solid rgba(164,126,57,.58) !important;
+  box-shadow:0 5px 16px rgba(61,50,38,.04) !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank span{
+  color:#76521f !important;
+  font-weight:750 !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank b{
+  color:#332419 !important;
+  font-weight:750 !important;
+  text-shadow:none !important;
+}
+
+/* SIGMA-IX見出し */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+  min-width:220px !important;
+  padding:10px 14px 11px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.94) 0%,
+      rgba(255,255,255,.84) 68%,
+      rgba(255,255,255,.18) 100%
+    ) !important;
+  border-left:2px solid rgba(165,126,53,.66) !important;
+  box-shadow:0 6px 18px rgba(61,50,38,.045) !important;
+  backdrop-filter:blur(9px) !important;
+  -webkit-backdrop-filter:blur(9px) !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy small{
+  color:#8d6727 !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+  color:#251a13 !important;
+  font-size:31px !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  color:#43372c !important;
+  font-weight:650 !important;
+}
+
+/* メッセージ */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  padding:5px 9px !important;
+  background:rgba(255,255,255,.74) !important;
+  color:#44382d !important;
+  font-weight:650 !important;
+  text-shadow:none !important;
+  backdrop-filter:blur(6px) !important;
+  -webkit-backdrop-filter:blur(6px) !important;
+}
+
+/* HPはほぼ白紙の上に載せる */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  background:rgba(255,255,255,.90) !important;
+  border:1px solid rgba(151,113,49,.42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    0 8px 20px rgba(59,47,34,.055) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead small{
+  color:#79531e !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead span{
+  color:#46392d !important;
+  font-weight:650 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead > strong{
+  color:#241a12 !important;
+  font-size:16px !important;
+  font-weight:800 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta>b{
+  color:#37281a !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta>span{
+  color:#665442 !important;
+  font-weight:650 !important;
+}
+
+/* RAID INFO */
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta,
+#daily-raid-root .daily-raid-info-page .daily-raid-member,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  background:rgba(255,255,255,.86) !important;
+  border-color:rgba(151,113,49,.34) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 6px 16px rgba(59,47,34,.045) !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta{
+  padding:8px 10px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta small,
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title small,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-title small{
+  color:#7d5924 !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta strong,
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title span,
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy strong{
+  color:#2d2118 !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-info-page .daily-raid-member-no,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid span{
+  color:#4f4235 !important;
+  font-weight:650 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-damage span,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid b{
+  color:#7b5721 !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-damage b{
+  color:#2d2118 !important;
+  font-weight:800 !important;
+}
+
+/* 下部固定部は完全に読める濃さへ */
+#daily-raid-root .daily-raid-actions{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.16) 0%,
+      rgba(255,255,255,.90) 30%,
+      rgba(255,255,255,.98) 100%
+    ) !important;
+}
+#daily-raid-root .daily-raid-attempt-copy small{
+  color:#67471d !important;
+  font-weight:750 !important;
+}
+#daily-raid-root .daily-raid-attempt-copy b{
+  color:#241a12 !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+}
+#daily-raid-root #daily-raid-start,
+#daily-raid-root #daily-raid-finalize-best{
+  background:#fffaf0 !important;
+  border:1px solid rgba(143,103,37,.62) !important;
+}
+#daily-raid-root #daily-raid-start span,
+#daily-raid-root #daily-raid-finalize-best span{
+  color:#80591f !important;
+  font-weight:800 !important;
+}
+#daily-raid-root #daily-raid-start b,
+#daily-raid-root #daily-raid-finalize-best b{
+  color:#241a12 !important;
+  font-size:15px !important;
+  font-weight:800 !important;
+}
+
+/* =========================================================
+   RAID v89 — ENEMY INFO mockup alignment
+   既存の全画面 bg_raid_01.webp を主役にし、
+   raid_enemy_01.webp の重ね表示を廃止。
+   ========================================================= */
+
+/* 背景そのものを敵情報ビジュアルとして使用 */
+#daily-raid-root{
+  background-color:#eef0f2 !important;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.04) 0%,
+      rgba(255,255,255,.01) 42%,
+      rgba(245,246,247,.08) 70%,
+      rgba(238,240,242,.14) 100%
+    ),
+    url("../images/bg_raid_01.webp") !important;
+  background-size:cover, cover !important;
+  background-position:center top, 56% center !important;
+  background-repeat:no-repeat !important;
+}
+
+/* 01 / 02 タブをモック寄りの大きな白パネルへ */
+#daily-raid-root .daily-raid-swipe-tabs{
+  flex:0 0 54px !important;
+  height:54px !important;
+  margin:2px 16px 8px !important;
+  gap:8px !important;
+  border:0 !important;
+  align-items:stretch !important;
+}
+#daily-raid-root .daily-raid-swipe-tab{
+  height:54px !important;
+  padding:0 12px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:13px !important;
+  border:1px solid rgba(157,124,63,.24) !important;
+  border-radius:0 !important;
+  background:rgba(255,255,255,.78) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.82),
+    0 5px 14px rgba(62,52,39,.035) !important;
+  backdrop-filter:blur(7px) saturate(.82) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(.82) !important;
+  color:#4b3b2a !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-swipe-tab small{
+  color:#66513a !important;
+  font-size:9px !important;
+  font-weight:600 !important;
+  letter-spacing:.04em !important;
+}
+#daily-raid-root .daily-raid-swipe-tab span{
+  color:#3b2e23 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:13px !important;
+  font-weight:650 !important;
+  letter-spacing:.18em !important;
+}
+#daily-raid-root .daily-raid-swipe-tab::after{
+  left:20% !important;
+  right:20% !important;
+  bottom:0 !important;
+  height:2px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  border-color:rgba(172,133,60,.56) !important;
+  background:rgba(255,255,255,.94) !important;
+}
+#daily-raid-root .daily-raid-swipe-tab.is-active::after{
+  background:rgba(171,130,51,.86) !important;
+}
+
+/* ENEMY INFO: 画像を重ねない */
+#daily-raid-root .daily-raid-enemy-page{
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:0 !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero{
+  flex:1 1 auto !important;
+  min-height:226px !important;
+  height:auto !important;
+  margin:0 -18px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero img{
+  display:none !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-halo,
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-lines{
+  display:none !important;
+}
+
+/* 右下の小さな敵ラベル */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank{
+  top:auto !important;
+  right:18px !important;
+  bottom:42px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  align-items:flex-start !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank span{
+  color:#8d6c35 !important;
+  font-size:6px !important;
+  font-weight:650 !important;
+  letter-spacing:.28em !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,.96),
+    0 0 14px rgba(255,255,255,.78) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank b{
+  color:#4c3b2c !important;
+  font-size:7px !important;
+  font-weight:650 !important;
+  letter-spacing:.18em !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,.96),
+    0 0 14px rgba(255,255,255,.78) !important;
+}
+
+/* 左側メイン見出し */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+  left:22px !important;
+  top:34px !important;
+  bottom:auto !important;
+  min-width:0 !important;
+  width:min(310px,76%) !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  text-shadow:none !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy::after{
+  content:"" !important;
+  display:block !important;
+  width:176px !important;
+  height:1px !important;
+  margin-top:10px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(169,129,53,.72) 0%,
+      rgba(169,129,53,.40) 70%,
+      rgba(169,129,53,0) 100%
+    ) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy small{
+  color:#8f6b30 !important;
+  font-size:8px !important;
+  font-weight:650 !important;
+  letter-spacing:.31em !important;
+  text-shadow:
+    0 0 9px rgba(255,255,255,.98),
+    0 0 18px rgba(255,255,255,.90) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+  margin-top:5px !important;
+  color:#2c2118 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:44px !important;
+  font-weight:520 !important;
+  line-height:1 !important;
+  letter-spacing:.045em !important;
+  white-space:nowrap !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 20px rgba(255,255,255,.92),
+    0 1px 0 rgba(255,255,255,.76) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  margin-top:8px !important;
+  color:#45382d !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  letter-spacing:.10em !important;
+  text-shadow:
+    0 0 9px rgba(255,255,255,.98),
+    0 0 17px rgba(255,255,255,.88) !important;
+}
+
+/* 試練メッセージは左下へ */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  left:22px !important;
+  right:auto !important;
+  bottom:18px !important;
+  padding:0 !important;
+  background:transparent !important;
+  color:#3f3329 !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  letter-spacing:.08em !important;
+  text-align:left !important;
+  text-shadow:
+    0 0 9px rgba(255,255,255,1),
+    0 0 18px rgba(255,255,255,.90) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* CURRENT HP: モックの下部白ガラス */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  flex:0 0 86px !important;
+  margin:0 !important;
+  padding:12px 16px 10px !important;
+  border:1px solid rgba(168,132,64,.28) !important;
+  background:rgba(255,255,255,.80) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.96),
+    0 8px 20px rgba(65,53,39,.04) !important;
+  backdrop-filter:blur(8px) saturate(.82) !important;
+  -webkit-backdrop-filter:blur(8px) saturate(.82) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead{
+  align-items:center !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead>div{
+  flex-direction:row !important;
+  align-items:baseline !important;
+  gap:10px !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead small{
+  color:#8b682d !important;
+  font-size:8px !important;
+  font-weight:700 !important;
+  letter-spacing:.22em !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead span{
+  display:none !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead>strong{
+  color:#2b2017 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:17px !important;
+  font-weight:600 !important;
+  letter-spacing:.04em !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar{
+  height:7px !important;
+  margin-top:9px !important;
+  background:rgba(89,75,54,.16) !important;
+  border:1px solid rgba(153,118,55,.42) !important;
+  border-radius:999px !important;
+  box-shadow:inset 0 1px 4px rgba(55,45,34,.10) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar i{
+  border-radius:999px !important;
+  background:linear-gradient(90deg,#776b50,#9c8652,#c2a052) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar>span{
+  display:none !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpmeta{
+  display:none !important;
+}
+
+/* 下部固定: TODAY'S ATTEMPT → 大きなバトル開始 */
+#daily-raid-root .daily-raid-swipe-shell{
+  padding-bottom:112px !important;
+}
+#daily-raid-root .daily-raid-actions{
+  min-height:106px !important;
+  height:106px !important;
+  padding:9px 18px 10px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+  gap:7px !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.30) 0%,
+      rgba(255,255,255,.82) 18%,
+      rgba(255,255,255,.96) 100%
+    ) !important;
+  border-top:1px solid rgba(170,137,73,.20) !important;
+  backdrop-filter:blur(8px) saturate(.86) !important;
+  -webkit-backdrop-filter:blur(8px) saturate(.86) !important;
+}
+#daily-raid-root .daily-raid-attempt-copy{
+  width:100% !important;
+  flex:0 0 auto !important;
+  padding:0 10px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+}
+#daily-raid-root .daily-raid-attempt-copy small{
+  color:#7d5b28 !important;
+  font-size:7px !important;
+  font-weight:700 !important;
+  letter-spacing:.20em !important;
+}
+#daily-raid-root .daily-raid-attempt-copy b{
+  margin:0 !important;
+  color:#2d2118 !important;
+  font-size:17px !important;
+  font-weight:650 !important;
+  letter-spacing:.08em !important;
+}
+#daily-raid-root #daily-raid-start,
+#daily-raid-root #daily-raid-finalize-best{
+  flex:0 0 56px !important;
+  width:min(100%,300px) !important;
+  height:56px !important;
+  margin:0 auto !important;
+  border:1px solid rgba(159,121,50,.58) !important;
+  background:
+    linear-gradient(180deg,#fffdf9 0%,#f4eddf 100%) !important;
+  color:#2f2419 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.96),
+    0 7px 18px rgba(67,53,34,.08) !important;
+}
+#daily-raid-root #daily-raid-start span,
+#daily-raid-root #daily-raid-finalize-best span{
+  display:none !important;
+}
+#daily-raid-root #daily-raid-start b,
+#daily-raid-root #daily-raid-finalize-best b{
+  color:#33261a !important;
+  font-size:16px !important;
+  font-weight:650 !important;
+  letter-spacing:.12em !important;
+}
+
+/* 下部ページインジケータはアクション上へ */
+#daily-raid-root .daily-raid-swipe-indicator{
+  bottom:112px !important;
+}
+
+/* 画面が低い端末では縮小して1画面に収める */
+@media (max-height:700px){
+  #daily-raid-root .daily-raid-swipe-tabs{
+    flex-basis:48px !important;
+    height:48px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-tab{
+    height:48px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero{
+    min-height:192px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+    top:24px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+    font-size:38px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+    flex-basis:78px !important;
+  }
+  #daily-raid-root .daily-raid-actions{
+    min-height:100px !important;
+    height:100px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-shell{
+    padding-bottom:106px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-indicator{
+    bottom:106px !important;
+  }
+}
+
+@media (max-width:380px){
+  #daily-raid-root{
+    background-position:center top, 58% center !important;
+  }
+  #daily-raid-root .daily-raid-swipe-tabs{
+    margin-left:12px !important;
+    margin-right:12px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-tab{
+    gap:9px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-tab span{
+    font-size:11px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+    left:18px !important;
+    width:min(285px,78%) !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+    font-size:40px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+    left:18px !important;
+  }
+  #daily-raid-root #daily-raid-start,
+  #daily-raid-root #daily-raid-finalize-best{
+    width:min(100%,270px) !important;
+  }
+}
+
+/* =========================================================
+   RAID v90 — ENEMY INFO clarity / action cleanup
+   - バトル開始周辺の残り回数表示を削除
+   - 固定フッターの白ボカシブロックを完全撤去
+   - 旧ロビー用 bottom mask を横スワイプ画面では無効化
+   - HP数字と背景に溶ける文字を強くする
+   ========================================================= */
+
+/* 旧ロビー用の下端フェードがHPまで透明化していたため解除 */
+#daily-raid-root .daily-raid-body.daily-raid-swipe-viewport{
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  opacity:1 !important;
+}
+
+/* バトル開始の周囲に残り回数は不要 */
+#daily-raid-root .daily-raid-attempt-copy{
+  display:none !important;
+}
+
+/* 固定フッターは「透明な置き場」だけにする。白い帯・ボカシなし */
+#daily-raid-root .daily-raid-swipe-shell{
+  padding-bottom:76px !important;
+}
+
+#daily-raid-root .daily-raid-actions{
+  min-height:68px !important;
+  height:68px !important;
+  padding:6px 18px 6px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:0 !important;
+
+  background:transparent !important;
+  background-image:none !important;
+  border:0 !important;
+  border-top:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* バトル開始ボタン単体だけを残す */
+#daily-raid-root #daily-raid-start,
+#daily-raid-root #daily-raid-finalize-best{
+  flex:0 0 auto !important;
+  width:min(100%,300px) !important;
+  height:54px !important;
+  margin:0 auto !important;
+  border:1px solid rgba(151,109,38,.70) !important;
+  background:rgba(255,252,245,.96) !important;
+  color:#2b2017 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,1),
+    0 4px 12px rgba(62,49,32,.06) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+#daily-raid-root #daily-raid-start b,
+#daily-raid-root #daily-raid-finalize-best b{
+  color:#241911 !important;
+  font-size:15px !important;
+  font-weight:750 !important;
+  letter-spacing:.13em !important;
+  text-shadow:none !important;
+}
+
+/* ページインジケータもフッター縮小に追従 */
+#daily-raid-root .daily-raid-swipe-indicator{
+  bottom:76px !important;
+}
+
+/* CURRENT HP の数字を完全不透明・太字へ */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  opacity:1 !important;
+  background:rgba(255,255,255,.90) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead,
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead > *{
+  opacity:1 !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead>strong,
+#daily-raid-root #daily-raid-hptext{
+  opacity:1 !important;
+  color:#1f1711 !important;
+  font-size:18px !important;
+  font-weight:800 !important;
+  letter-spacing:.035em !important;
+  text-shadow:
+    0 0 6px rgba(255,255,255,1),
+    0 0 12px rgba(255,255,255,.88) !important;
+}
+
+/* CURRENT HPラベルも濃く */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead small{
+  opacity:1 !important;
+  color:#704b17 !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 0 6px rgba(255,255,255,1),
+    0 0 12px rgba(255,255,255,.82) !important;
+}
+
+/* HPバーも背景に負けないよう輪郭を強化 */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar{
+  opacity:1 !important;
+  background:rgba(63,51,36,.20) !important;
+  border:1px solid rgba(128,89,29,.64) !important;
+  box-shadow:
+    inset 0 1px 3px rgba(41,31,21,.16),
+    0 0 0 1px rgba(255,255,255,.50) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar i{
+  opacity:1 !important;
+  background:linear-gradient(90deg,#65523b,#95743a,#bc943e) !important;
+}
+
+/* 背景に乗る主見出しをもう一段見やすく */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy small{
+  color:#7b561f !important;
+  font-weight:800 !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 16px rgba(255,255,255,.94),
+    0 0 26px rgba(255,255,255,.72) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+  color:#211812 !important;
+  font-weight:650 !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 16px rgba(255,255,255,.94),
+    0 0 26px rgba(255,255,255,.70) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  color:#362b22 !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 15px rgba(255,255,255,.94),
+    0 0 24px rgba(255,255,255,.72) !important;
+}
+
+/* 「これは、神々への試練だ。」も明確に */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  color:#30261f !important;
+  font-weight:700 !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 16px rgba(255,255,255,.96),
+    0 0 26px rgba(255,255,255,.76) !important;
+}
+
+/* 右下の小文字も消えすぎない */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank span{
+  color:#75521e !important;
+  font-weight:750 !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,1),
+    0 0 14px rgba(255,255,255,.94) !important;
+}
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank b{
+  color:#382b21 !important;
+  font-weight:750 !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,1),
+    0 0 14px rgba(255,255,255,.94) !important;
+}
+
+/* タブ文字も完全不透明 */
+#daily-raid-root .daily-raid-swipe-tab,
+#daily-raid-root .daily-raid-swipe-tab small,
+#daily-raid-root .daily-raid-swipe-tab span{
+  opacity:1 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab span{
+  color:#30251c !important;
+  font-weight:750 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab small{
+  color:#70552f !important;
+  font-weight:750 !important;
+}
+
+/* 小型端末 */
+@media (max-height:700px){
+  #daily-raid-root .daily-raid-swipe-shell{
+    padding-bottom:72px !important;
+  }
+  #daily-raid-root .daily-raid-actions{
+    min-height:64px !important;
+    height:64px !important;
+  }
+  #daily-raid-root .daily-raid-swipe-indicator{
+    bottom:72px !important;
+  }
+}
+
+@media (max-width:380px){
+  #daily-raid-root #daily-raid-start,
+  #daily-raid-root #daily-raid-finalize-best{
+    width:min(100%,270px) !important;
+  }
+}
+
+/* =========================================================
+   RAID v91 — battle button simplification
+   - バトル開始ボタン上の X/3 ATTEMPT を完全非表示
+   - 「バトル開始」を大きく
+   - ボタン横幅をコンパクト化
+   ========================================================= */
+
+/* X/3 ATTEMPT 表示を完全削除 */
+#daily-raid-root .daily-raid-attempt-copy,
+#daily-raid-root #daily-raid-attempt-count{
+  display:none !important;
+  visibility:hidden !important;
+}
+
+/* フッターはボタンだけを中央配置 */
+#daily-raid-root .daily-raid-actions{
+  min-height:66px !important;
+  height:66px !important;
+  padding:6px 12px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* バトル開始ボタンを小さく、文字は大きく */
+#daily-raid-root #daily-raid-start{
+  width:210px !important;
+  max-width:58vw !important;
+  min-width:180px !important;
+  height:52px !important;
+  margin:0 auto !important;
+  padding:0 22px !important;
+  border:1px solid rgba(151,109,38,.72) !important;
+  background:rgba(255,252,245,.97) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,1),
+    0 4px 12px rgba(62,49,32,.055) !important;
+}
+
+/* 英字サブ見出しは非表示 */
+#daily-raid-root #daily-raid-start span{
+  display:none !important;
+}
+
+/* 「バトル開始」を大きく */
+#daily-raid-root #daily-raid-start b{
+  color:#241911 !important;
+  font-size:18px !important;
+  font-weight:750 !important;
+  line-height:1 !important;
+  letter-spacing:.14em !important;
+  white-space:nowrap !important;
+}
+
+/* スキップボタンが出る場合は既存サイズを維持 */
+#daily-raid-root #daily-raid-finalize-best{
+  width:220px !important;
+  max-width:62vw !important;
+  height:50px !important;
+}
+
+/* インジケータ位置もフッター縮小に追従 */
+#daily-raid-root .daily-raid-swipe-shell{
+  padding-bottom:74px !important;
+}
+#daily-raid-root .daily-raid-swipe-indicator{
+  bottom:74px !important;
+}
+
+@media (max-width:380px){
+  #daily-raid-root #daily-raid-start{
+    width:194px !important;
+    min-width:172px !important;
+    max-width:62vw !important;
+  }
+  #daily-raid-root #daily-raid-start b{
+    font-size:17px !important;
+  }
+}
+
+/* =========================================================
+   RAID v92 — hard battle-button fix
+   JS注入styleも同時修正済み。ここは最終セーフガード。
+   ========================================================= */
+#daily-raid-root .daily-raid-attempt-copy{
+  display:none !important;
+  visibility:hidden !important;
+}
+#daily-raid-root .daily-raid-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:66px !important;
+  height:66px !important;
+  padding:6px 12px !important;
+  gap:10px !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+#daily-raid-root #daily-raid-start{
+  width:210px !important;
+  min-width:180px !important;
+  max-width:58vw !important;
+  height:52px !important;
+  min-height:52px !important;
+  margin:0 auto !important;
+}
+#daily-raid-root #daily-raid-start span{
+  display:none !important;
+}
+#daily-raid-root #daily-raid-start b{
+  font-size:18px !important;
+  font-weight:750 !important;
+  letter-spacing:.14em !important;
+  white-space:nowrap !important;
+}
+@media (max-width:380px){
+  #daily-raid-root #daily-raid-start{
+    width:194px !important;
+    min-width:172px !important;
+    max-width:62vw !important;
+  }
+  #daily-raid-root #daily-raid-start b{
+    font-size:17px !important;
+  }
+}
+
+/* =========================================================
+   RAID v93 — ENEMY INFO final polish
+   レイアウトは維持し、白金・明朝・細線装飾の品を上げる。
+   ========================================================= */
+
+#daily-raid-root{
+  --raid-gold:#a67b31;
+  --raid-gold-soft:rgba(166,123,49,.42);
+  --raid-gold-faint:rgba(166,123,49,.18);
+  --raid-ink:#2d2219;
+  --raid-ink-soft:#514438;
+  --raid-paper:rgba(255,253,248,.88);
+}
+
+/* ---------- 01 / 02 タブ ---------- */
+#daily-raid-root .daily-raid-swipe-tab{
+  position:relative !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.90),rgba(249,247,242,.76)) !important;
+  border-color:rgba(166,123,49,.28) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.80),
+    0 5px 14px rgba(66,53,37,.025) !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab::before{
+  content:"" !important;
+  position:absolute !important;
+  left:11px !important;
+  top:11px !important;
+  width:7px !important;
+  height:7px !important;
+  border-left:1px solid rgba(166,123,49,.52) !important;
+  border-top:1px solid rgba(166,123,49,.52) !important;
+  opacity:.62 !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.98),rgba(253,249,241,.90)) !important;
+  border-color:rgba(166,123,49,.60) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.92),
+    0 6px 15px rgba(68,52,30,.035) !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active::after{
+  height:2px !important;
+  left:18% !important;
+  right:18% !important;
+  background:
+    linear-gradient(90deg,rgba(166,123,49,0),rgba(166,123,49,.88) 25%,rgba(166,123,49,.88) 75%,rgba(166,123,49,0)) !important;
+  box-shadow:0 0 6px rgba(255,255,255,.80) !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab small{
+  color:#73572f !important;
+  font-weight:650 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab span{
+  color:#382b21 !important;
+  font-weight:650 !important;
+}
+
+/* ---------- 敵タイトル ---------- */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy{
+  position:absolute !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy::before{
+  content:"" !important;
+  position:absolute !important;
+  left:-10px !important;
+  top:1px !important;
+  width:1px !important;
+  height:74px !important;
+  background:
+    linear-gradient(180deg,rgba(166,123,49,.76),rgba(166,123,49,.16),rgba(166,123,49,0)) !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy::after{
+  width:188px !important;
+  height:1px !important;
+  margin-top:11px !important;
+  background:
+    linear-gradient(90deg,
+      rgba(166,123,49,.82) 0%,
+      rgba(166,123,49,.46) 68%,
+      rgba(166,123,49,0) 100%
+    ) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy small{
+  color:#896629 !important;
+  font-weight:700 !important;
+  letter-spacing:.32em !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy strong{
+  color:#261d16 !important;
+  font-weight:520 !important;
+  letter-spacing:.052em !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,.98),
+    0 0 15px rgba(255,255,255,.90),
+    0 1px 0 rgba(255,255,255,.68) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  color:#3f3328 !important;
+  font-weight:600 !important;
+  letter-spacing:.09em !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  color:#3a2e25 !important;
+  font-weight:600 !important;
+  letter-spacing:.09em !important;
+  text-shadow:
+    0 0 7px rgba(255,255,255,1),
+    0 0 15px rgba(255,255,255,.94),
+    0 0 24px rgba(255,255,255,.72) !important;
+}
+
+/* ---------- CURRENT HP ---------- */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  position:relative !important;
+  overflow:hidden !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.92),rgba(250,247,241,.84)) !important;
+  border:1px solid rgba(166,123,49,.38) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.94),
+    inset 0 -1px 0 rgba(166,123,49,.08),
+    0 9px 20px rgba(68,52,31,.035) !important;
+}
+
+/* 四隅を強くしすぎない装飾 */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:5px !important;
+  pointer-events:none !important;
+  background:
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) left top / 12px 1px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) left top / 1px 12px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) right top / 12px 1px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) right top / 1px 12px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) left bottom / 12px 1px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) left bottom / 1px 12px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) right bottom / 12px 1px no-repeat,
+    linear-gradient(var(--raid-gold-soft),var(--raid-gold-soft)) right bottom / 1px 12px no-repeat !important;
+  opacity:.72 !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead small{
+  color:#785720 !important;
+  letter-spacing:.22em !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hphead>strong,
+#daily-raid-root #daily-raid-hptext{
+  color:#211812 !important;
+  font-weight:650 !important;
+  text-shadow:
+    0 0 5px rgba(255,255,255,1),
+    0 1px 0 rgba(255,255,255,.72) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar{
+  height:7px !important;
+  border-color:rgba(132,96,36,.62) !important;
+  background:rgba(83,66,42,.16) !important;
+  box-shadow:
+    inset 0 1px 3px rgba(55,42,27,.13),
+    0 0 0 1px rgba(255,255,255,.62) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbar i{
+  background:
+    linear-gradient(180deg,#c9aa5b 0%,#a17a35 48%,#765323 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,245,201,.44),
+    0 0 6px rgba(166,123,49,.15) !important;
+}
+
+/* ---------- バトル開始 ---------- */
+#daily-raid-root .daily-raid-actions{
+  overflow:visible !important;
+}
+
+#daily-raid-root #daily-raid-start{
+  position:relative !important;
+  width:210px !important;
+  height:54px !important;
+  border:1px solid rgba(155,112,39,.70) !important;
+  border-radius:0 !important;
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px) !important;
+  background:
+    linear-gradient(180deg,rgba(255,254,250,.99),rgba(245,238,225,.96)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.96),
+    inset 0 0 0 3px rgba(166,123,49,.055),
+    0 6px 14px rgba(69,51,28,.055) !important;
+}
+
+#daily-raid-root #daily-raid-start::before,
+#daily-raid-root #daily-raid-start::after{
+  content:"" !important;
+  position:absolute !important;
+  top:50% !important;
+  width:5px !important;
+  height:5px !important;
+  border:1px solid rgba(166,123,49,.72) !important;
+  transform:translateY(-50%) rotate(45deg) !important;
+  background:rgba(255,253,247,.96) !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root #daily-raid-start::before{
+  left:15px !important;
+}
+
+#daily-raid-root #daily-raid-start::after{
+  right:15px !important;
+}
+
+#daily-raid-root #daily-raid-start b{
+  color:#2b2018 !important;
+  font-size:19px !important;
+  font-weight:650 !important;
+  letter-spacing:.16em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.90) !important;
+}
+
+#daily-raid-root #daily-raid-start:active{
+  transform:translateY(1px) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.96),
+    inset 0 0 0 3px rgba(166,123,49,.08),
+    0 3px 8px rgba(69,51,28,.045) !important;
+}
+
+/* ---------- 微細な文字の一貫性 ---------- */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank span,
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank b{
+  letter-spacing:.20em !important;
+}
+
+/* 小型端末も装飾の比率を崩さない */
+@media (max-width:380px){
+  #daily-raid-root #daily-raid-start{
+    width:194px !important;
+    height:52px !important;
+  }
+  #daily-raid-root #daily-raid-start b{
+    font-size:18px !important;
+  }
+  #daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy::after{
+    width:164px !important;
+  }
+}
+
+/* =========================================================
+   RAID v94 — soft transparency tuning
+   ENEMY INFO / RAID INFO タブ、HPパネル、バトル開始ボタンを
+   少しだけ背景が透ける方向へ微調整
+   ========================================================= */
+
+#daily-raid-root .daily-raid-swipe-tab{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.84),rgba(249,247,242,.66)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.68),
+    0 5px 14px rgba(66,53,37,.020) !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.90),rgba(253,249,241,.76)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.74),
+    0 6px 15px rgba(68,52,30,.028) !important;
+}
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.82),rgba(250,247,241,.72)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.82),
+    inset 0 -1px 0 rgba(166,123,49,.06),
+    0 9px 20px rgba(68,52,31,.028) !important;
+  backdrop-filter:blur(3px) !important;
+  -webkit-backdrop-filter:blur(3px) !important;
+}
+
+#daily-raid-root #daily-raid-start{
+  background:
+    linear-gradient(180deg,rgba(255,254,250,.90),rgba(245,238,225,.84)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.88),
+    inset 0 0 0 3px rgba(166,123,49,.045),
+    0 6px 14px rgba(69,51,28,.045) !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+}
+
+#daily-raid-root #daily-raid-start::before,
+#daily-raid-root #daily-raid-start::after{
+  background:rgba(255,253,247,.86) !important;
+}
+
+/* =========================================================
+   RAID v95 — softer glass + clearer inactive tab
+   - 板っぽさをさらに弱める
+   - 非アクティブタブを一段控えめに
+   ========================================================= */
+
+/* ---------- tabs ---------- */
+#daily-raid-root .daily-raid-swipe-tab{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.73), rgba(247,244,237,.52)) !important;
+  border-color: rgba(166,123,49,.18) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.44),
+    0 4px 10px rgba(66,53,37,.012) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+  opacity: .82 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab small{
+  color:#8e7a59 !important;
+  opacity:.72 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab span{
+  color:#746556 !important;
+  opacity:.72 !important;
+}
+
+/* active tab remains clearer */
+#daily-raid-root .daily-raid-swipe-tab.is-active{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.86), rgba(252,248,240,.68)) !important;
+  border-color: rgba(166,123,49,.48) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.66),
+    0 5px 12px rgba(68,52,30,.020) !important;
+  opacity: 1 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active small{
+  color:#7a5b27 !important;
+  opacity:1 !important;
+}
+
+#daily-raid-root .daily-raid-swipe-tab.is-active span{
+  color:#35291f !important;
+  opacity:1 !important;
+}
+
+/* active underline a bit brighter */
+#daily-raid-root .daily-raid-swipe-tab.is-active::after{
+  opacity: .95 !important;
+}
+
+/* ---------- HP modal ---------- */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.74), rgba(249,246,239,.58)) !important;
+  border-color: rgba(166,123,49,.28) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.62),
+    inset 0 -1px 0 rgba(166,123,49,.05),
+    0 8px 16px rgba(68,52,31,.018) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* ---------- start button ---------- */
+#daily-raid-root #daily-raid-start{
+  background:
+    linear-gradient(180deg, rgba(255,254,250,.80), rgba(243,236,223,.70)) !important;
+  border-color: rgba(155,112,39,.56) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.72),
+    inset 0 0 0 3px rgba(166,123,49,.030),
+    0 5px 10px rgba(69,51,28,.028) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
+#daily-raid-root #daily-raid-start::before,
+#daily-raid-root #daily-raid-start::after{
+  background: rgba(255,253,247,.72) !important;
+  border-color: rgba(166,123,49,.58) !important;
+}
+
+/* =========================================================
+   RAID v96 — TOP responsive composition
+   - 縦長端末では募集/参加カードを下部へ
+   - 中央のボス表示領域を広く確保
+   - 狭幅でもカード内文字が必ず収まるよう再調整
+   ========================================================= */
+
+/* TOPは縦スクロールさせず、上：タイトル / 中：背景ボス / 下：操作カード の3層にする */
+#daily-raid-root .daily-raid-entry{
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding:4px 14px calc(92px + env(safe-area-inset-bottom)) !important;
+}
+
+/* SIGMA-IX見出し領域は上部に固定し、残り高さは背景を見せる余白にする */
+#daily-raid-root .daily-raid-entry-hero{
+  flex:1 1 auto !important;
+  min-height:132px !important;
+  margin:0 !important;
+  padding:4px 0 0 !important;
+  overflow:visible !important;
+}
+
+#daily-raid-root .daily-raid-entry-hero > div{
+  margin-top:0 !important;
+  padding-left:16px !important;
+}
+
+/* 操作カードは下部へ押し下げる */
+#daily-raid-root .daily-raid-mode-grid{
+  flex:0 0 auto !important;
+  width:100% !important;
+  margin-top:auto !important;
+  margin-bottom:8px !important;
+  gap:10px !important;
+  align-items:stretch !important;
+}
+
+/* 正方形を維持しつつ、狭幅端末でも文字が中に収まる密度へ */
+#daily-raid-root .daily-raid-mode-card{
+  min-width:0 !important;
+  width:100% !important;
+  aspect-ratio:1 / 1 !important;
+  min-height:0 !important;
+  padding:12px 10px 10px !important;
+  overflow:hidden !important;
+}
+
+#daily-raid-root .daily-raid-mode-card::before{
+  inset:7px !important;
+}
+
+#daily-raid-root .daily-raid-mode-card small{
+  flex:0 0 auto !important;
+  font-size:7.5px !important;
+  line-height:1 !important;
+  letter-spacing:.28em !important;
+}
+
+#daily-raid-root .daily-raid-mode-card strong{
+  flex:0 0 auto !important;
+  margin-top:24px !important;
+  font-size:22px !important;
+  line-height:1.12 !important;
+  letter-spacing:.025em !important;
+  white-space:nowrap !important;
+}
+
+#daily-raid-root .daily-raid-mode-card span{
+  flex:0 0 auto !important;
+  margin-top:10px !important;
+  padding:0 2px !important;
+  font-size:8px !important;
+  line-height:1.42 !important;
+  letter-spacing:0 !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+}
+
+#daily-raid-root .daily-raid-mode-card b{
+  flex:0 0 auto !important;
+  margin-top:auto !important;
+  padding:8px 1px 0 !important;
+  font-size:6.8px !important;
+  line-height:1.28 !important;
+  letter-spacing:0 !important;
+  text-align:center !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+}
+
+/* 背景ボスを縦長端末では少し中央へ寄せる */
+@media (max-width:380px) and (min-height:640px){
+  #daily-raid-root{
+    background-position:center top, 60% center !important;
+  }
+
+  #daily-raid-root .daily-raid-entry{
+    padding-left:12px !important;
+    padding-right:12px !important;
+    padding-bottom:calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #daily-raid-root .daily-raid-entry-hero{
+    min-height:160px !important;
+  }
+
+  #daily-raid-root .daily-raid-entry-hero strong{
+    font-size:41px !important;
+  }
+
+  #daily-raid-root .daily-raid-entry-hero span{
+    font-size:8.8px !important;
+    line-height:1.5 !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-grid{
+    gap:8px !important;
+    margin-bottom:4px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card{
+    padding:11px 8px 9px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card::before{
+    inset:6px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card strong{
+    margin-top:21px !important;
+    font-size:20px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card span{
+    margin-top:8px !important;
+    font-size:7.5px !important;
+    line-height:1.38 !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card b{
+    padding-top:6px !important;
+    font-size:6.3px !important;
+    line-height:1.22 !important;
+  }
+}
+
+/* かなり縦長の端末では、カードをさらに下へ残してボスの全身を見せる */
+@media (max-width:390px) and (min-height:760px){
+  #daily-raid-root .daily-raid-entry-hero{
+    min-height:210px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-grid{
+    margin-bottom:2px !important;
+  }
+}
+
+/* 低い端末は従来どおりカードを詰めて画面内に収める */
+@media (max-height:639px){
+  #daily-raid-root .daily-raid-entry{
+    padding-bottom:calc(82px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #daily-raid-root .daily-raid-entry-hero{
+    min-height:112px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card strong{
+    margin-top:18px !important;
+    font-size:20px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card span{
+    margin-top:7px !important;
+    font-size:7.3px !important;
+  }
+
+  #daily-raid-root .daily-raid-mode-card b{
+    padding-top:5px !important;
+    font-size:6.1px !important;
+  }
+}
+
+/* =========================================================
+   RAID v97 — remove right-side enemy label
+   赤丸部分の RAID ENEMY / SIGMA-IX テキストを完全削除
+   ========================================================= */
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-rank{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+/* =========================================================
+   RAID v98 — hero message copy update + white haze
+   「―これより、調査を開始する。」へ変更し、
+   文字背後に白霞を追加
+   ========================================================= */
+
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  left:auto !important;
+  right:14px !important;
+  bottom:10px !important;
+  display:inline-block !important;
+  max-width:74% !important;
+  padding:7px 12px !important;
+  border-radius:999px !important;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,.84) 0%,
+      rgba(255,255,255,.62) 36%,
+      rgba(255,255,255,.26) 62%,
+      rgba(255,255,255,0) 86%) !important;
+  backdrop-filter: blur(1.5px) !important;
+  -webkit-backdrop-filter: blur(1.5px) !important;
+  color:#2f251d !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+  text-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 16px rgba(255,255,255,.95),
+    0 0 26px rgba(255,255,255,.76) !important;
+}
+
+/* =========================================================
+   RAID v99 — hard copy/haze fallback
+   index inline patchと二重化。
+   ========================================================= */
+#daily-raid-root .daily-raid-hero-message{
+  display:inline-block !important;
+  width:auto !important;
+  max-width:82% !important;
+  padding:7px 13px !important;
+  color:#2f251d !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,.92) 0%,
+      rgba(255,255,255,.72) 38%,
+      rgba(255,255,255,.34) 66%,
+      rgba(255,255,255,0) 90%) !important;
+}
+
+/* =========================================================
+   RAID v100 — move investigation copy into subtitle
+   - 「これより、調査を開始する。」をサブタイトルへ
+   - 旧 hero-message は完全削除
+   ========================================================= */
+
+#daily-raid-root .daily-raid-hero-message{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-hero-copy span{
+  display:inline-block !important;
+  margin-top:4px !important;
+  padding:2px 10px 3px !important;
+  border-radius:999px !important;
+  color:#2f251d !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,.90) 0%,
+      rgba(255,255,255,.68) 42%,
+      rgba(255,255,255,.26) 70%,
+      rgba(255,255,255,0) 92%) !important;
+  text-shadow:
+    0 0 6px rgba(255,255,255,1),
+    0 0 12px rgba(255,255,255,.92) !important;
+}
+
+/* =========================================================
+   RAID v101 — RAID INFO glass polish / readability
+   - 各ブロックにガラス感・透け感
+   - 募集取り消しボタンを視認性改善
+   - RAID MEMBERS カウントを白霞 + サイズ強化
+   ========================================================= */
+
+#daily-raid-root .daily-raid-tab{
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.50) 0%,
+      rgba(255,255,255,.30) 100%) !important;
+  border-color:rgba(190,162,103,.30) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 10px 26px rgba(112,98,76,.06) !important;
+  backdrop-filter:blur(10px) saturate(1.03) !important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.03) !important;
+}
+#daily-raid-root .daily-raid-tab[aria-selected="false"]{
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.34) 0%,
+      rgba(255,255,255,.18) 100%) !important;
+  border-color:rgba(190,162,103,.18) !important;
+  color:rgba(72,57,37,.76) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.54),
+    0 8px 18px rgba(112,98,76,.03) !important;
+  filter:saturate(.90) brightness(.98) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta,
+#daily-raid-root .daily-raid-info-page .daily-raid-members,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  border:1px solid rgba(188,159,98,.24) !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.44) 0%,
+      rgba(255,255,255,.22) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 14px 34px rgba(107,92,70,.06) !important;
+  backdrop-filter:blur(11px) saturate(1.03) !important;
+  -webkit-backdrop-filter:blur(11px) saturate(1.03) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta{
+  padding:10px 12px 10px !important;
+  border-bottom:1px solid rgba(188,159,98,.24) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-members{
+  margin-top:8px !important;
+  padding:10px 11px 10px !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  margin-top:9px !important;
+  padding:10px 11px 11px !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-member,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid > div{
+  border:1px solid rgba(181,151,95,.22) !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.40) 0%,
+      rgba(255,255,255,.22) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.78),
+    0 8px 18px rgba(107,92,70,.05) !important;
+  backdrop-filter:blur(9px) !important;
+  -webkit-backdrop-filter:blur(9px) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title{
+  display:flex !important;
+  align-items:flex-end !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+  margin:0 0 8px !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title > b{
+  position:relative !important;
+  top:-1px !important;
+  flex:0 0 auto !important;
+  padding:4px 11px 5px !important;
+  border-radius:999px !important;
+  color:#7a6028 !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  letter-spacing:.08em !important;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,.95) 0%,
+      rgba(255,255,255,.80) 42%,
+      rgba(255,255,255,.34) 72%,
+      rgba(255,255,255,0) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.86),
+    0 0 14px rgba(255,255,255,.92) !important;
+  text-shadow:
+    0 0 9px rgba(255,255,255,1),
+    0 0 18px rgba(255,255,255,.88) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title small,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-title small,
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta small{
+  text-shadow:0 0 10px rgba(255,255,255,.72) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title span,
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta strong,
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy strong,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule-grid span{
+  text-shadow:0 0 10px rgba(255,255,255,.58) !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-member-grid{
+  gap:8px !important;
+}
+
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy strong{
+  font-size:11px !important;
+}
+#daily-raid-root .daily-raid-info-page .daily-raid-member-copy small,
+#daily-raid-root .daily-raid-info-page .daily-raid-member-no{
+  font-size:8px !important;
+}
+
+#daily-raid-root #daily-raid-recruit-cancel{
+  min-width:132px !important;
+  padding:10px 15px !important;
+  border:1px solid rgba(180,130,123,.58) !important;
+  border-radius:6px !important;
+  background:
+    linear-gradient(180deg,
+      rgba(218,194,190,.96) 0%,
+      rgba(196,164,158,.92) 100%) !important;
+  color:#6b4c49 !important;
+  font:600 9px/1.2 "Noto Serif JP", serif !important;
+  letter-spacing:.05em !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.72),
+    0 10px 22px rgba(122,86,81,.10),
+    0 0 20px rgba(255,255,255,.18) !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.42) !important;
+}
+#daily-raid-root #daily-raid-recruit-cancel:hover{
+  filter:brightness(1.02) saturate(1.03) !important;
+}
+#daily-raid-root #daily-raid-recruit-cancel:active{
+  transform:scale(.985) !important;
+}
+
+@media (max-width: 420px){
+  #daily-raid-root .daily-raid-info-page .daily-raid-section-title > b{
+    font-size:15px !important;
+    padding:4px 10px 5px !important;
+  }
+  #daily-raid-root #daily-raid-recruit-cancel{
+    min-width:120px !important;
+    padding:9px 12px !important;
+    font-size:8px !important;
+  }
+}
+
+/* =========================================================
+   RAID v102 — RAID RULE external modal
+   - RAID INFO内のルールを撤去
+   - 本日の挑戦回数と同じ行の右端に RAID RULE
+   - タップで3ルールをガラスモーダル表示
+   ========================================================= */
+
+/* 挑戦回数の右端にルールボタン */
+#daily-raid-root .daily-raid-attempt-overview{
+  width:auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:12px !important;
+}
+
+#daily-raid-root .daily-raid-rule-open{
+  margin-left:auto !important;
+  flex:0 0 auto !important;
+  min-width:78px !important;
+  height:28px !important;
+  padding:0 10px !important;
+  border:1px solid rgba(164,126,61,.34) !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.48) 0%,
+      rgba(255,255,255,.22) 100%) !important;
+  color:#765823 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:8px !important;
+  font-weight:700 !important;
+  letter-spacing:.15em !important;
+  line-height:1 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 4px 14px rgba(95,78,50,.05) !important;
+  backdrop-filter:blur(7px) saturate(1.02) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(1.02) !important;
+  text-shadow:0 0 8px rgba(255,255,255,.86) !important;
+}
+
+#daily-raid-root .daily-raid-rule-open:active{
+  transform:scale(.98) !important;
+}
+
+/* RAID INFOからルール領域を完全に消す */
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  display:none !important;
+}
+
+/* ルールモーダル */
+#daily-raid-root .daily-raid-rule-modal[hidden]{
+  display:none !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:50 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:22px 18px calc(86px + env(safe-area-inset-bottom)) !important;
+  opacity:0 !important;
+  transition:opacity .18s ease !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal.is-open{
+  opacity:1 !important;
+}
+
+#daily-raid-root .daily-raid-rule-backdrop{
+  position:absolute !important;
+  inset:0 !important;
+  background:rgba(247,246,242,.34) !important;
+  backdrop-filter:blur(7px) saturate(.86) !important;
+  -webkit-backdrop-filter:blur(7px) saturate(.86) !important;
+}
+
+#daily-raid-root .daily-raid-rule-dialog{
+  position:relative !important;
+  z-index:1 !important;
+  width:min(100%,360px) !important;
+  padding:20px 18px 18px !important;
+  border:1px solid rgba(173,137,70,.42) !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.82) 0%,
+      rgba(250,247,240,.68) 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.82),
+    0 18px 48px rgba(73,57,37,.14) !important;
+  backdrop-filter:blur(13px) saturate(1.02) !important;
+  -webkit-backdrop-filter:blur(13px) saturate(1.02) !important;
+}
+
+#daily-raid-root .daily-raid-rule-dialog::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:7px !important;
+  border:1px solid rgba(190,157,91,.18) !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-rule-close{
+  position:absolute !important;
+  top:9px !important;
+  right:10px !important;
+  width:30px !important;
+  height:30px !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#806330 !important;
+  font-family:"Cinzel",serif !important;
+  font-size:20px !important;
+  line-height:1 !important;
+  z-index:2 !important;
+}
+
+#daily-raid-root .daily-raid-rule-heading{
+  position:relative !important;
+  z-index:1 !important;
+  padding-bottom:12px !important;
+  border-bottom:1px solid rgba(175,141,72,.22) !important;
+}
+
+#daily-raid-root .daily-raid-rule-heading small{
+  display:block !important;
+  color:#96743a !important;
+  font-family:"Cinzel",serif !important;
+  font-size:7px !important;
+  font-weight:700 !important;
+  letter-spacing:.28em !important;
+}
+
+#daily-raid-root .daily-raid-rule-heading strong{
+  display:block !important;
+  margin-top:4px !important;
+  color:#30251d !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:20px !important;
+  font-weight:600 !important;
+  letter-spacing:.15em !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal-grid{
+  position:relative !important;
+  z-index:1 !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:0 !important;
+  margin-top:5px !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal-grid > div{
+  display:grid !important;
+  grid-template-columns:42px 1fr !important;
+  align-items:center !important;
+  gap:9px !important;
+  min-height:62px !important;
+  padding:9px 3px !important;
+  border-bottom:1px solid rgba(177,147,88,.15) !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal-grid > div:last-child{
+  border-bottom:0 !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal-grid b{
+  color:#9a762e !important;
+  font-family:"Cinzel",serif !important;
+  font-size:16px !important;
+  font-weight:600 !important;
+  text-align:center !important;
+}
+
+#daily-raid-root .daily-raid-rule-modal-grid span{
+  color:#3d3329 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  line-height:1.55 !important;
+  letter-spacing:.02em !important;
+  text-shadow:0 0 8px rgba(255,255,255,.58) !important;
+}
+
+/* iPhone SE級でも挑戦回数行を崩さない */
+@media (max-width:380px){
+  #daily-raid-root .daily-raid-attempt-overview{
+    gap:8px !important;
+  }
+
+  #daily-raid-root .daily-raid-attempt-overview > span{
+    font-size:9px !important;
+  }
+
+  #daily-raid-root .daily-raid-attempt-overview > strong{
+    font-size:10px !important;
+  }
+
+  #daily-raid-root .daily-raid-rule-open{
+    min-width:68px !important;
+    height:26px !important;
+    padding:0 8px !important;
+    font-size:7px !important;
+    letter-spacing:.12em !important;
+  }
+
+  #daily-raid-root .daily-raid-rule-dialog{
+    width:min(100%,330px) !important;
+    padding:18px 16px 15px !important;
+  }
+}
+
+/* =========================================================
+   RAID v103 — subtle glass / frame cleanup
+   ENEMY INFO
+   - 「―これより、調査を開始する。」背後の白霞を削除
+
+   RAID INFO
+   - X/4 の楕円フレーム削除
+   - 募集を取り消す文字を大きく
+   - ガラスのボカシを弱め、より透き通る方向へ
+
+   RAID RULE
+   - ボタンを大きめに
+   - 楕円フレーム削除
+   - 白霞で強調
+   ========================================================= */
+
+/* ---------- ENEMY INFO ---------- */
+/* サブタイトル背後の白霞を完全削除 */
+#daily-raid-root .daily-raid-hero-copy span{
+  background:transparent !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* ---------- RAID INFO ---------- */
+/* 外側のガラスをより透過・低ブラーに */
+#daily-raid-root .daily-raid-info-page .daily-raid-team-meta,
+#daily-raid-root .daily-raid-info-page .daily-raid-members,
+#daily-raid-root .daily-raid-info-page .daily-raid-rule{
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.29) 0%,
+      rgba(255,255,255,.12) 100%) !important;
+  border-color:rgba(188,159,98,.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.48),
+    0 10px 24px rgba(107,92,70,.025) !important;
+  backdrop-filter:blur(3px) saturate(1.00) !important;
+  -webkit-backdrop-filter:blur(3px) saturate(1.00) !important;
+}
+
+/* メンバーカードも透け感を上げる */
+#daily-raid-root .daily-raid-info-page .daily-raid-member{
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.25) 0%,
+      rgba(255,255,255,.10) 100%) !important;
+  border-color:rgba(181,151,95,.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.42),
+    0 6px 14px rgba(107,92,70,.018) !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+}
+
+/* X/4 の楕円フレームを削除。白霞だけ残す */
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title > b{
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#7a6028 !important;
+  font-size:17px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  letter-spacing:.08em !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,1),
+    0 0 20px rgba(255,255,255,.96),
+    0 0 30px rgba(255,255,255,.72) !important;
+}
+
+/* 募集を取り消すボタンの文字を大きく */
+#daily-raid-root #daily-raid-recruit-cancel{
+  min-width:138px !important;
+  padding:10px 15px !important;
+  font-size:10.5px !important;
+  font-weight:700 !important;
+  letter-spacing:.04em !important;
+  color:#654542 !important;
+}
+
+/* ---------- RAID RULE ---------- */
+/* 大きめ・楕円フレームなし・白霞強調 */
+#daily-raid-root .daily-raid-rule-open{
+  min-width:auto !important;
+  height:auto !important;
+  padding:5px 4px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#765823 !important;
+  font-size:10px !important;
+  font-weight:750 !important;
+  letter-spacing:.16em !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,1),
+    0 0 20px rgba(255,255,255,.95),
+    0 0 30px rgba(255,255,255,.72) !important;
+}
+
+#daily-raid-root .daily-raid-rule-open::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:-5px -10px !important;
+  z-index:-1 !important;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,.66) 0%,
+      rgba(255,255,255,.36) 46%,
+      rgba(255,255,255,.12) 72%,
+      rgba(255,255,255,0) 100%) !important;
+  filter:blur(4px) !important;
+  pointer-events:none !important;
+}
+
+#daily-raid-root .daily-raid-rule-open{
+  position:relative !important;
+  z-index:1 !important;
+}
+
+@media (max-width:380px){
+  #daily-raid-root .daily-raid-info-page .daily-raid-section-title > b{
+    font-size:16px !important;
+  }
+
+  #daily-raid-root #daily-raid-recruit-cancel{
+    min-width:124px !important;
+    padding:9px 11px !important;
+    font-size:9.5px !important;
+  }
+
+  #daily-raid-root .daily-raid-rule-open{
+    font-size:9px !important;
+    padding:4px 2px !important;
+  }
+}
+
+/* =========================================================
+   RAID v104 — ENEMY INFO subtitle haze hard remove
+   赤丸部分の長方形ぼかしバーを完全削除
+   ========================================================= */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-copy span{
+  display:block !important;
+  width:auto !important;
+  max-width:max-content !important;
+  margin-top:4px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:none !important;
+  background-image:none !important;
+  background-color:transparent !important;
+  box-shadow:none !important;
+  filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  text-shadow:none !important;
+  color:#3b3026 !important;
+  font-weight:600 !important;
+  letter-spacing:.06em !important;
+}
+
+/* 念のため旧メッセージ側の残骸も完全無効化 */
+#daily-raid-root .daily-raid-enemy-page .daily-raid-hero-message{
+  display:none !important;
+  width:0 !important;
+  height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  background:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* =========================================================
+   RAID v105 — dedicated HOME raid notification
+   FRIEND: pending friend requests only
+   RAID: active hosted/joined raid only
+   ========================================================= */
+
+#screen-main .raid-home-entry{
+  overflow:visible !important;
+}
+
+#screen-main .raid-home-entry .raid-notice-dot{
+  position:absolute !important;
+  top:5px !important;
+  right:7px !important;
+  width:13px !important;
+  height:13px !important;
+  border-radius:50% !important;
+  background:#e33434 !important;
+  border:2px solid #fff8ec !important;
+  box-shadow:
+    0 2px 7px rgba(80,0,0,.36),
+    0 0 0 1px rgba(125,24,24,.16) !important;
+  z-index:20 !important;
+  opacity:0 !important;
+  transform:scale(.55) !important;
+  pointer-events:none !important;
+  transition:opacity .16s ease,transform .16s ease !important;
+}
+
+#screen-main .raid-home-entry .raid-notice-dot.show{
+  opacity:1 !important;
+  transform:scale(1) !important;
+}
+
+#screen-main .raid-home-entry.has-raid-notice .raid-notice-dot.show{
+  animation:raidHomeNoticePulse 2.2s ease-in-out infinite !important;
+}
+
+@keyframes raidHomeNoticePulse{
+  0%,72%,100%{
+    transform:scale(1);
+    box-shadow:
+      0 2px 7px rgba(80,0,0,.36),
+      0 0 0 1px rgba(125,24,24,.16);
+  }
+  82%{
+    transform:scale(1.15);
+    box-shadow:
+      0 2px 9px rgba(80,0,0,.40),
+      0 0 0 5px rgba(227,52,52,.11);
+  }
+}
+
+@media (max-width:380px),(max-height:700px){
+  #screen-main .raid-home-entry .raid-notice-dot{
+    top:4px !important;
+    right:5px !important;
+    width:12px !important;
+    height:12px !important;
+  }
+}
+

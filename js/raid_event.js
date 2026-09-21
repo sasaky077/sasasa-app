@@ -1,4 +1,4 @@
-// 20260920-raid-header-v66
+// 20260921-raid-readability-fix-v76
 (function(){
   'use strict';
 
@@ -40,6 +40,20 @@
     }
     return dot;
   }
+
+  function ensureRaidNoticeDot(){
+    const btn=document.getElementById('raid-home-entry');
+    if(!btn) return null;
+    let dot=btn.querySelector('.raid-notice-dot');
+    if(!dot){
+      dot=document.createElement('span');
+      dot.className='raid-notice-dot';
+      dot.setAttribute('aria-hidden','true');
+      btn.appendChild(dot);
+    }
+    return dot;
+  }
+
   function setFriendNotice(count,reasons){
     const btn=document.getElementById('friend-home-entry');
     const dot=ensureFriendNoticeDot();
@@ -51,7 +65,64 @@
     dot.textContent=active?(noticeCount>99?'99+':String(noticeCount)):'';
     dot.setAttribute('aria-hidden',active?'false':'true');
     btn.dataset.noticeReason=(Array.isArray(reasons)?reasons:[]).filter(Boolean).join(',');
-    btn.setAttribute('aria-label',active?('フレンドへ移動、要確認'+noticeCount+'件'):'フレンドへ移動');
+    btn.setAttribute('aria-label',active?('フレンドへ移動、申請'+noticeCount+'件'):'フレンドへ移動');
+  }
+
+  function setRaidNotice(active,reason){
+    const btn=document.getElementById('raid-home-entry');
+    const dot=ensureRaidNoticeDot();
+    if(!btn || !dot) return;
+    active=!!active;
+    btn.classList.toggle('has-raid-notice',active);
+    dot.classList.toggle('show',active);
+    dot.textContent='';
+    dot.setAttribute('aria-hidden',active?'false':'true');
+    btn.dataset.noticeReason=active?String(reason||'active-raid'):'';
+    btn.setAttribute(
+      'aria-label',
+      active
+        ? (reason==='hosting'?'レイドバトルへ移動、自分の募集レイド進行中':'レイドバトルへ移動、参加中のレイドあり')
+        : 'レイドバトルへ移動'
+    );
+  }
+
+  function isRaidResultFinal(status){
+    if(!status || !status.raid_id) return true;
+
+    const state=String(status.status||'').trim().toLowerCase();
+    const finalStates=new Set([
+      'cleared','clear',
+      'completed','complete',
+      'finished','finish',
+      'resolved','result',
+      'closed',
+      'cancelled','canceled'
+    ]);
+
+    if(finalStates.has(state)) return true;
+    if(n(status.current_hp)<=0) return true;
+
+    // Future/server-compatible result flags.
+    if(
+      status.result_confirmed===true ||
+      status.result_finalized===true ||
+      status.is_result_confirmed===true ||
+      status.is_finished===true ||
+      status.raid_finished===true ||
+      status.ended===true
+    ) return true;
+
+    if(
+      status.result_confirmed_at ||
+      status.result_finalized_at ||
+      status.raid_finished_at ||
+      status.ended_at ||
+      status.closed_at ||
+      status.cancelled_at ||
+      status.canceled_at
+    ) return true;
+
+    return false;
   }
 
   async function refreshFriendHomeNotice(){
@@ -59,34 +130,73 @@
     friendNoticeRefreshPromise=(async()=>{
       const client=sb(), userId=uid();
       ensureFriendNoticeDot();
-      if(!client || !userId){ setFriendNotice(0,[]); return {pendingFriend:false,pendingFriendCount:0,raidReady:false}; }
-      let pendingFriend=false, pendingFriendCount=0, raidReady=false;
+      ensureRaidNoticeDot();
+
+      if(!client || !userId){
+        setFriendNotice(0,[]);
+        setRaidNotice(false,'');
+        return {
+          pendingFriend:false,
+          pendingFriendCount:0,
+          activeRaid:false,
+          raidRole:''
+        };
+      }
+
+      // FRIEND dot: friend requests ONLY.
+      let pendingFriendCount=0;
       try{
-        const req=await client.from('friendships').select('id').eq('receiver_id',userId).eq('status','pending');
-        pendingFriendCount=(req && !req.error && Array.isArray(req.data)) ? req.data.length : 0;
-        pendingFriend=pendingFriendCount>0;
-      }catch(err){ console.warn('[friend notice] request check skipped',err&&err.message||err); }
+        const req=await client
+          .from('friendships')
+          .select('id')
+          .eq('receiver_id',userId)
+          .eq('status','pending');
+
+        pendingFriendCount=
+          (req && !req.error && Array.isArray(req.data))
+            ? req.data.length
+            : 0;
+      }catch(err){
+        console.warn('[home notice] friend request check skipped',err&&err.message||err);
+      }
+
+      const pendingFriend=pendingFriendCount>0;
+      setFriendNotice(
+        pendingFriendCount,
+        pendingFriend?['friend-request']:[]
+      );
+
+      // RAID dot:
+      // - my hosted raid is active
+      // - OR I already joined a friend's raid
+      // Merely having a friend who is recruiting does NOT show a dot.
+      let activeRaid=false;
+      let raidRole='';
       try{
-        const mine=normalizeStatus(await rpc('get_my_daily_raid_room',{p_user_id:userId}));
-        if(mine && mine.raid_id){
-          const me=mine.me||{};
-          const hp=n(mine.current_hp);
-          const cleared=mine.status==='cleared'||hp<=0;
-          const attempts=Math.max(0,Math.min(3,n(me.attempt_count)));
-          const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
-          raidReady=!cleared && attempts<3 && !inBattle;
-        }else{
-          const rooms=normalizeStatus(await rpc('list_recruiting_friend_raids',{p_user_id:userId}))||[];
-          raidReady=Array.isArray(rooms) && rooms.length>0;
+        const mine=normalizeStatus(
+          await rpc('get_my_daily_raid_room',{p_user_id:userId})
+        );
+
+        if(mine && mine.raid_id && !isRaidResultFinal(mine)){
+          activeRaid=true;
+          raidRole=mine.is_host?'hosting':'joined';
         }
-      }catch(err){ console.warn('[friend notice] raid check skipped',err&&err.message||err); }
-      const reasons=[];
-      if(pendingFriend) reasons.push('friend-request');
-      if(raidReady) reasons.push('raid-ready');
-      const noticeCount=pendingFriendCount+(raidReady?1:0);
-      setFriendNotice(noticeCount,reasons);
-      return {pendingFriend,pendingFriendCount,raidReady,noticeCount};
-    })().finally(()=>{ friendNoticeRefreshPromise=null; });
+      }catch(err){
+        console.warn('[home notice] active raid check skipped',err&&err.message||err);
+      }
+
+      setRaidNotice(activeRaid,raidRole);
+
+      return {
+        pendingFriend,
+        pendingFriendCount,
+        activeRaid,
+        raidRole
+      };
+    })().finally(()=>{
+      friendNoticeRefreshPromise=null;
+    });
+
     return friendNoticeRefreshPromise;
   }
 
@@ -137,45 +247,52 @@
   }
 
   function ensureEarlyFinalizeStyle(){
-    if(document.getElementById('daily-raid-early-finalize-style-v54')) return;
+    if(document.getElementById('daily-raid-early-finalize-style-v92')) return;
     const style=document.createElement('style');
-    style.id='daily-raid-early-finalize-style-v54';
+    style.id='daily-raid-early-finalize-style-v92';
     style.textContent=`
       #daily-raid-root .daily-raid-actions{
-        display:grid!important;
-        grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-        grid-template-rows:auto 46px!important;
-        gap:7px!important;
-        align-items:stretch!important;
-        padding-top:7px!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        min-height:66px!important;
+        height:66px!important;
+        padding:6px 12px!important;
+        gap:10px!important;
+        background:transparent!important;
+        border:0!important;
+        box-shadow:none!important;
       }
       #daily-raid-root .daily-raid-attempt-copy{
-        grid-column:1 / -1!important;
-        grid-row:1!important;
-        min-width:0!important;
-        margin:0!important;
-      }
-      #daily-raid-root #daily-raid-start,
-      #daily-raid-root #daily-raid-finalize-best{
-        position:static!important;
-        width:100%!important;
-        min-width:0!important;
-        max-width:none!important;
-        height:46px!important;
-        min-height:46px!important;
-        margin:0!important;
-        padding:5px 7px!important;
-        border-radius:0!important;
-        transform:none!important;
+        display:none!important;
+        visibility:hidden!important;
       }
       #daily-raid-root #daily-raid-start{
-        grid-column:1!important;
-        grid-row:2!important;
+        position:static!important;
+        width:210px!important;
+        min-width:180px!important;
+        max-width:58vw!important;
+        height:52px!important;
+        min-height:52px!important;
+        margin:0 auto!important;
+        padding:0 22px!important;
+        border-radius:0!important;
+        transform:none!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
       }
       #daily-raid-root #daily-raid-finalize-best{
-        grid-column:2!important;
-        grid-row:2!important;
-        display:flex!important;
+        position:static!important;
+        width:210px!important;
+        min-width:180px!important;
+        max-width:58vw!important;
+        height:50px!important;
+        min-height:50px!important;
+        margin:0!important;
+        padding:5px 10px!important;
+        border-radius:0!important;
+        transform:none!important;
         flex-direction:column!important;
         align-items:center!important;
         justify-content:center!important;
@@ -188,8 +305,7 @@
       #daily-raid-root #daily-raid-finalize-best[hidden]{
         display:none!important;
       }
-      #daily-raid-root #daily-raid-finalize-best span,
-      #daily-raid-root #daily-raid-start span{
+      #daily-raid-root #daily-raid-finalize-best span{
         display:block!important;
         margin:0 0 3px!important;
         font-family:"Cinzel",serif!important;
@@ -199,8 +315,10 @@
         opacity:.72!important;
         white-space:nowrap!important;
       }
-      #daily-raid-root #daily-raid-finalize-best b,
-      #daily-raid-root #daily-raid-start b{
+      #daily-raid-root #daily-raid-start span{
+        display:none!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best b{
         display:block!important;
         margin:0!important;
         font-size:11px!important;
@@ -209,13 +327,18 @@
         letter-spacing:.04em!important;
         white-space:nowrap!important;
       }
+      #daily-raid-root #daily-raid-start b{
+        display:block!important;
+        margin:0!important;
+        color:#241911!important;
+        font-size:18px!important;
+        line-height:1!important;
+        font-weight:750!important;
+        letter-spacing:.14em!important;
+        white-space:nowrap!important;
+      }
       #daily-raid-root #daily-raid-finalize-best:disabled{
         opacity:.38!important;
-      }
-
-      /* スキップボタンが出ない状態ではバトル開始を2列分使う */
-      #daily-raid-root .daily-raid-actions:not(.can-finalize-early) #daily-raid-start{
-        grid-column:1 / -1!important;
       }
 
       #daily-raid-root #daily-raid-back{
@@ -281,46 +404,99 @@
 
       /* 上部右端にあった回数表示を、独立した見やすいステータス帯へ移動 */
       #daily-raid-root .daily-raid-attempt-overview{
-        min-height:40px!important;
-        margin:9px 18px 10px!important;
-        padding:7px 10px 7px 12px!important;
+        position:relative!important;
+        min-height:36px!important;
+        margin:4px 18px 10px!important;
+        padding:7px 12px 7px 14px!important;
         display:flex!important;
         align-items:center!important;
-        justify-content:space-between!important;
-        gap:12px!important;
+        justify-content:flex-start!important;
+        gap:10px!important;
         box-sizing:border-box!important;
-        border-left:2px solid rgba(214,180,91,.68)!important;
-        border-top:1px solid rgba(214,180,91,.10)!important;
-        border-bottom:1px solid rgba(214,180,91,.10)!important;
-        background:linear-gradient(90deg,rgba(193,153,64,.10),rgba(255,255,255,.018))!important;
+        border:0!important;
+        border-radius:999px!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        overflow:visible!important;
+        isolation:isolate!important;
+      }
+      #daily-raid-root .daily-raid-attempt-overview::before{
+        content:""!important;
+        position:absolute!important;
+        inset:-3px -2px!important;
+        z-index:0!important;
+        border-radius:999px!important;
+        background:
+          radial-gradient(ellipse at 18% 50%,
+            rgba(255,255,255,.78) 0%,
+            rgba(255,255,255,.58) 34%,
+            rgba(255,255,255,.30) 60%,
+            rgba(255,255,255,.10) 82%,
+            rgba(255,255,255,0) 100%
+          ),
+          linear-gradient(
+            90deg,
+            rgba(255,255,255,.62) 0%,
+            rgba(255,255,255,.42) 42%,
+            rgba(255,255,255,.18) 72%,
+            rgba(255,255,255,0) 100%
+          )!important;
+        filter:blur(12px)!important;
+        -webkit-filter:blur(12px)!important;
+        opacity:.98!important;
+        box-shadow:
+          0 4px 18px rgba(98,84,58,.03),
+          inset 0 1px 0 rgba(255,255,255,.42)!important;
+      }
+      #daily-raid-root .daily-raid-attempt-overview::after{
+        content:""!important;
+        position:absolute!important;
+        left:0!important;
+        top:7px!important;
+        bottom:7px!important;
+        width:2px!important;
+        border-radius:999px!important;
+        background:linear-gradient(180deg,rgba(175,142,78,.72),rgba(175,142,78,.16))!important;
+        z-index:1!important;
       }
       #daily-raid-root .daily-raid-attempt-overview > span{
-        color:rgba(214,202,165,.68)!important;
+        position:relative!important;
+        z-index:2!important;
+        margin:0!important;
+        color:#8c7651!important;
         font-family:"Noto Serif JP",serif!important;
-        font-size:9px!important;
+        font-size:10px!important;
+        font-weight:620!important;
         line-height:1.2!important;
-        letter-spacing:.12em!important;
+        letter-spacing:.04em!important;
         white-space:nowrap!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.94),0 0 5px rgba(255,255,255,.58)!important;
       }
       #daily-raid-root .daily-raid-attempt-overview > strong{
-        display:flex!important;
+        position:relative!important;
+        z-index:2!important;
+        margin:0!important;
+        display:inline-flex!important;
         align-items:baseline!important;
+        justify-content:flex-start!important;
         gap:4px!important;
-        color:#eee5c5!important;
+        color:#6a573e!important;
         font-family:"Noto Serif JP",serif!important;
-        font-size:11px!important;
-        font-weight:500!important;
+        font-size:12px!important;
+        font-weight:650!important;
         line-height:1!important;
-        letter-spacing:.05em!important;
+        letter-spacing:.03em!important;
         white-space:nowrap!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.94),0 0 5px rgba(255,255,255,.58)!important;
       }
       #daily-raid-root #daily-raid-attempt-remaining{
         min-width:18px!important;
-        text-align:right!important;
-        color:#e2c76f!important;
+        margin:0!important;
+        text-align:left!important;
+        color:#9d7a36!important;
         font-family:"Cinzel","Noto Serif JP",serif!important;
         font-size:18px!important;
-        font-weight:600!important;
+        font-weight:700!important;
         line-height:1!important;
       }
       #daily-raid-root .daily-raid-attempt-overview.is-empty #daily-raid-attempt-remaining{
@@ -331,9 +507,16 @@
         #daily-raid-root .daily-raid-actions{
           gap:5px!important;
         }
-        #daily-raid-root #daily-raid-finalize-best b,
-        #daily-raid-root #daily-raid-start b{
+        #daily-raid-root #daily-raid-finalize-best b{
           font-size:10px!important;
+        }
+        #daily-raid-root #daily-raid-start{
+          width:194px!important;
+          min-width:172px!important;
+          max-width:62vw!important;
+        }
+        #daily-raid-root #daily-raid-start b{
+          font-size:17px!important;
         }
         #daily-raid-root .daily-raid-head{
           padding-left:14px!important;
@@ -365,12 +548,13 @@
         <div class="daily-raid-attempt-overview" id="daily-raid-attempt-overview" aria-live="polite">
           <span>本日の挑戦回数</span>
           <strong>残り <b id="daily-raid-attempt-remaining">3</b> / 3 回</strong>
+          <button type="button" id="daily-raid-rule-open" class="daily-raid-rule-open" aria-haspopup="dialog" aria-controls="daily-raid-rule-modal">RAID RULE</button>
         </div>
 
         <section class="daily-raid-entry" id="daily-raid-entry">
           <div class="daily-raid-entry-hero">
-            <img src="images/raid_enemy_01.webp" alt="ザ・テスト">
-            <div><small>DAILY CO-OP RAID</small><strong>THE TEST</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
+            <img src="images/raid_enemy_01.webp" alt="SIGMA-IX">
+            <div><small>RAID BATTLE</small><strong>SIGMA-IX</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
           </div>
           <div class="daily-raid-mode-grid">
             <button type="button" class="daily-raid-mode-card is-host" id="daily-raid-recruit-btn">
@@ -389,49 +573,78 @@
         </section>
 
         <div id="daily-raid-lobby" class="daily-raid-lobby" hidden>
-          <main class="daily-raid-body">
-            <section class="daily-raid-hero">
-              <div class="daily-raid-hero-halo" aria-hidden="true"></div><div class="daily-raid-hero-lines" aria-hidden="true"></div>
-              <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b>TEST TYPE</b></div>
-              <img src="images/raid_enemy_01.webp" alt="ザ・テスト">
-              <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong>THE TEST</strong><span>ザ・テスト</span></div>
-              <div class="daily-raid-hero-message">これは、神々への試験だ。</div>
-            </section>
+          <div class="daily-raid-swipe-shell">
+            <nav class="daily-raid-swipe-tabs" aria-label="レイド情報切替">
+              <button type="button" class="daily-raid-swipe-tab is-active" data-raid-page="0" aria-selected="true">
+                <small>01</small><span>ENEMY INFO</span>
+              </button>
+              <button type="button" class="daily-raid-swipe-tab" data-raid-page="1" aria-selected="false">
+                <small>02</small><span>RAID INFO</span>
+              </button>
+            </nav>
 
-            <section class="daily-raid-team-meta">
-              <div><small>RAID TEAM</small><strong id="daily-raid-team-name">--</strong></div>
-              <div class="daily-raid-host-actions" id="daily-raid-host-actions" hidden>
-                <button type="button" id="daily-raid-recruit-cancel" class="daily-raid-recruit-cancel" hidden>募集を取り消す</button>
+            <main class="daily-raid-body daily-raid-swipe-viewport" id="daily-raid-swipe-viewport">
+              <div class="daily-raid-swipe-track" id="daily-raid-swipe-track">
+                <section class="daily-raid-swipe-page daily-raid-enemy-page" data-raid-page-index="0">
+                  <section class="daily-raid-hero">
+                    <div class="daily-raid-hero-halo" aria-hidden="true"></div><div class="daily-raid-hero-lines" aria-hidden="true"></div>
+                    <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b>SIGMA-IX</b></div>
+                    <img src="images/raid_enemy_01.webp" alt="SIGMA-IX">
+                    <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong>SIGMA-IX</strong><span>―これより、調査を開始する。</span></div>
+                  </section>
+
+                  <section class="daily-raid-hpbox">
+                    <div class="daily-raid-hphead"><div><small>CURRENT HP</small><span>現在HP</span></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
+                    <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
+                    <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
+                  </section>
+                </section>
+
+                <section class="daily-raid-swipe-page daily-raid-info-page" data-raid-page-index="1">
+                  <section class="daily-raid-team-meta">
+                    <div><small>RAID TEAM</small><strong id="daily-raid-team-name">--</strong></div>
+                    <div class="daily-raid-host-actions" id="daily-raid-host-actions" hidden>
+                      <button type="button" id="daily-raid-recruit-cancel" class="daily-raid-recruit-cancel" hidden>募集を取り消す</button>
+                    </div>
+                  </section>
+
+                  <section class="daily-raid-members">
+                    <div class="daily-raid-section-title"><div><small>CO-OP UNIT</small><span>RAID MEMBERS</span></div><b id="daily-raid-member-count">0 / 4</b></div>
+                    <div id="daily-raid-member-list" class="daily-raid-member-grid"></div>
+                  </section>
+
+
+                </section>
               </div>
-            </section>
+            </main>
 
-            <section class="daily-raid-hpbox">
-              <div class="daily-raid-hphead"><div><small>SHARED HP</small><span>本日の共有耐久値</span></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
-              <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
-              <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
-            </section>
+            <div class="daily-raid-swipe-indicator" aria-hidden="true">
+              <i class="is-active"></i><i></i>
+            </div>
+          </div>
 
-            <section class="daily-raid-members">
-              <div class="daily-raid-section-title"><div><small>CO-OP UNIT</small><span>RAID MEMBERS</span></div><b id="daily-raid-member-count">0 / 4</b></div>
-              <div id="daily-raid-member-list" class="daily-raid-member-grid"></div>
-            </section>
-
-            <section class="daily-raid-rule">
-              <div class="daily-raid-rule-title"><small>BATTLE RULE</small></div>
-              <div class="daily-raid-rule-grid">
-                <div><b>01</b><span>1人につき1日3回チャレンジ・BESTダメージを採用</span></div>
-                <div><b>02</b><span>全滅または180秒経過で終了</span></div>
-                <div><b>03</b><span>3回目終了時にBESTダメージを共有HPから差し引く</span></div>
-              </div>
-            </section>
-          </main>
           <footer class="daily-raid-actions">
             <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b id="daily-raid-attempt-count">0 / 3</b></div>
             <button type="button" id="daily-raid-finalize-best" class="daily-raid-finalize-best" hidden>
               <span>SKIP REMAINING</span><b>残り挑戦をスキップ</b>
             </button>
-            <button type="button" id="daily-raid-start"><span>RAID BATTLE</span><b>挑戦する</b></button>
+            <button type="button" id="daily-raid-start"><span>RAID BATTLE</span><b>バトル開始</b></button>
           </footer>
+        </div>
+        <div id="daily-raid-rule-modal" class="daily-raid-rule-modal" hidden aria-hidden="true">
+          <div class="daily-raid-rule-backdrop" data-raid-rule-close></div>
+          <section class="daily-raid-rule-dialog" role="dialog" aria-modal="true" aria-labelledby="daily-raid-rule-title">
+            <button type="button" class="daily-raid-rule-close" data-raid-rule-close aria-label="ルールを閉じる">×</button>
+            <div class="daily-raid-rule-heading">
+              <small>RAID RULE</small>
+              <strong id="daily-raid-rule-title">BATTLE RULE</strong>
+            </div>
+            <div class="daily-raid-rule-modal-grid">
+              <div><b>01</b><span>1人につき1日3回。BESTダメージを採用</span></div>
+              <div><b>02</b><span>全滅または180秒経過で終了</span></div>
+              <div><b>03</b><span>3回目終了時にBESTを共有HPへ反映</span></div>
+            </div>
+          </section>
         </div>
       </div>`;
     document.body.appendChild(root);
@@ -446,7 +659,119 @@
     root.querySelector('#daily-raid-start').addEventListener('click',start);
     root.querySelector('#daily-raid-finalize-best').addEventListener('click',skipRemainingAttempts);
     root.querySelector('#daily-raid-recruit-cancel').addEventListener('click',cancelRecruitment);
+
+    const ruleModal=root.querySelector('#daily-raid-rule-modal');
+    const ruleOpen=root.querySelector('#daily-raid-rule-open');
+    const closeRuleModal=()=>{
+      if(!ruleModal) return;
+      ruleModal.hidden=true;
+      ruleModal.setAttribute('aria-hidden','true');
+      ruleModal.classList.remove('is-open');
+    };
+    const openRuleModal=()=>{
+      if(!ruleModal) return;
+      ruleModal.hidden=false;
+      ruleModal.setAttribute('aria-hidden','false');
+      requestAnimationFrame(()=>ruleModal.classList.add('is-open'));
+    };
+    if(ruleOpen) ruleOpen.addEventListener('click',openRuleModal);
+    root.querySelectorAll('[data-raid-rule-close]').forEach(el=>el.addEventListener('click',closeRuleModal));
+    root.addEventListener('keydown',e=>{
+      if(e.key==='Escape' && ruleModal && !ruleModal.hidden){
+        e.preventDefault();
+        closeRuleModal();
+      }
+    });
+
+    bindRaidSwipe(root);
     return root;
+  }
+
+
+  let raidSwipePage=0;
+
+  function setRaidSwipePage(page, immediate){
+    const root=document.getElementById('daily-raid-root');
+    if(!root) return;
+    const track=root.querySelector('#daily-raid-swipe-track');
+    const tabs=[...root.querySelectorAll('.daily-raid-swipe-tab')];
+    const dots=[...root.querySelectorAll('.daily-raid-swipe-indicator i')];
+    page=Math.max(0,Math.min(1,Number(page)||0));
+    raidSwipePage=page;
+    if(track){
+      track.style.transition=immediate?'none':'transform .32s cubic-bezier(.22,.78,.22,1)';
+      track.style.transform=`translate3d(${-page*100}%,0,0)`;
+      if(immediate){
+        requestAnimationFrame(()=>{ track.style.transition='transform .32s cubic-bezier(.22,.78,.22,1)'; });
+      }
+    }
+    tabs.forEach((tab,i)=>{
+      const active=i===page;
+      tab.classList.toggle('is-active',active);
+      tab.setAttribute('aria-selected',active?'true':'false');
+    });
+    dots.forEach((dot,i)=>dot.classList.toggle('is-active',i===page));
+  }
+
+  function bindRaidSwipe(root){
+    const viewport=root.querySelector('#daily-raid-swipe-viewport');
+    if(!viewport || viewport.dataset.swipeBound==='1') return;
+    viewport.dataset.swipeBound='1';
+
+    root.querySelectorAll('.daily-raid-swipe-tab').forEach(tab=>{
+      tab.addEventListener('click',()=>setRaidSwipePage(Number(tab.dataset.raidPage)||0,false));
+    });
+
+    let pointerId=null;
+    let startX=0;
+    let startY=0;
+    let currentX=0;
+    let currentY=0;
+    let tracking=false;
+
+    viewport.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse' && e.button!==0) return;
+      if(e.target && e.target.closest && e.target.closest('button')) return;
+      pointerId=e.pointerId;
+      startX=currentX=e.clientX;
+      startY=currentY=e.clientY;
+      tracking=true;
+      try{ viewport.setPointerCapture(pointerId); }catch(_){}
+    });
+
+    viewport.addEventListener('pointermove',e=>{
+      if(!tracking || e.pointerId!==pointerId) return;
+      currentX=e.clientX;
+      currentY=e.clientY;
+      const dx=currentX-startX;
+      const dy=currentY-startY;
+      if(Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)*1.1 && e.cancelable){
+        e.preventDefault();
+      }
+    });
+
+    function finishSwipe(e){
+      if(!tracking || (e && e.pointerId!==pointerId)) return;
+      const dx=currentX-startX;
+      const dy=currentY-startY;
+      tracking=false;
+      try{ viewport.releasePointerCapture(pointerId); }catch(_){}
+      pointerId=null;
+      if(Math.abs(dx)>=44 && Math.abs(dx)>Math.abs(dy)*1.15){
+        setRaidSwipePage(raidSwipePage+(dx<0?1:-1),false);
+      }else{
+        setRaidSwipePage(raidSwipePage,false);
+      }
+    }
+
+    viewport.addEventListener('pointerup',finishSwipe);
+    viewport.addEventListener('pointercancel',finishSwipe);
+    viewport.addEventListener('keydown',e=>{
+      if(e.key==='ArrowLeft'){ e.preventDefault(); setRaidSwipePage(raidSwipePage-1,false); }
+      if(e.key==='ArrowRight'){ e.preventDefault(); setRaidSwipePage(raidSwipePage+1,false); }
+    });
+
+    setRaidSwipePage(0,true);
   }
 
   function showOnly(which){
@@ -454,7 +779,29 @@
     const entry=root.querySelector('#daily-raid-entry');
     const join=root.querySelector('#daily-raid-join-select');
     const lobby=root.querySelector('#daily-raid-lobby');
-    entry.hidden=which!=='entry'; join.hidden=which!=='join'; lobby.hidden=which!=='lobby';
+
+    const apply=(el,name)=>{
+      if(!el) return;
+      const active=which===name;
+      el.hidden=!active;
+      el.setAttribute('aria-hidden',active?'false':'true');
+
+      // Later component CSS uses display:flex!important for the lobby.
+      // Inline important guarantees an inactive screen can never remain visible.
+      if(active){
+        el.style.removeProperty('display');
+        el.style.removeProperty('visibility');
+        el.style.removeProperty('pointer-events');
+      }else{
+        el.style.setProperty('display','none','important');
+        el.style.setProperty('visibility','hidden','important');
+        el.style.setProperty('pointer-events','none','important');
+      }
+    };
+
+    apply(entry,'entry');
+    apply(join,'join');
+    apply(lobby,'lobby');
   }
 
   function updateAttemptOverview(status){
@@ -476,7 +823,25 @@
     box.classList.toggle('is-empty',remaining<=0);
   }
 
-  function showEntryMode(){ currentStatus=null; updateAttemptOverview(null); showOnly('entry'); }
+
+
+  function bindRaidChromeNavigation(){
+    const nav=document.getElementById('bottom-nav-shared');
+    if(!nav || nav.dataset.raidCloseBound==='1') return;
+    nav.dataset.raidCloseBound='1';
+    nav.addEventListener('click',event=>{
+      const item=event.target&&event.target.closest
+        ? event.target.closest('.bottom-nav-item')
+        : null;
+      if(!item) return;
+      const root=document.getElementById('daily-raid-root');
+      if(root && root.getAttribute('aria-hidden')==='false'){
+        close();
+      }
+    },true);
+  }
+
+  function showEntryMode(){ currentStatus=null; updateAttemptOverview(null); setRaidSwipePage(0,true); showOnly('entry'); }
 
   async function fetchStatus(){
     const userId=uid();
@@ -565,7 +930,10 @@
   }
 
   function render(status){
-    const root=ensureRoot(); updateAttemptOverview(status); showOnly('lobby');
+    const root=ensureRoot();
+    const lobbyWasHidden=!!(root.querySelector('#daily-raid-lobby')&&root.querySelector('#daily-raid-lobby').hidden);
+    updateAttemptOverview(status); showOnly('lobby');
+    if(lobbyWasHidden) setRaidSwipePage(0,true);
     const hp=n(status&&status.current_hp), maxHp=Math.max(1,n(status&&status.max_hp)||100000);
     const cleared=!!(status&&status.status==='cleared')||hp<=0;
     const me=status&&status.me||{};
@@ -639,6 +1007,8 @@
   }
 
   async function open(options){
+    bindRaidChromeNavigation();
+    document.body.classList.add('raid-shell-active');
     const root=ensureRoot(); root.style.display='block'; root.setAttribute('aria-hidden','false');
     if(options&&options.immediate) root.classList.add('show'); else requestAnimationFrame(()=>root.classList.add('show'));
     try{
@@ -651,6 +1021,7 @@
     }
   }
   function close(){
+    document.body.classList.remove('raid-shell-active');
     const root=document.getElementById('daily-raid-root'); if(!root) return;
     root.classList.remove('show'); root.setAttribute('aria-hidden','true');
     setTimeout(()=>{ if(root.getAttribute('aria-hidden')==='true') root.style.display='none'; },180);
@@ -820,6 +1191,7 @@
 
   function setupFriendHomeNotice(){
     ensureFriendNoticeDot();
+    ensureRaidNoticeDot();
     try{
       const dbReady=window._dbLoadPromise;
       if(dbReady&&typeof dbReady.then==='function') Promise.resolve(dbReady).catch(()=>null).then(()=>refreshFriendHomeNotice());
@@ -828,12 +1200,13 @@
     window.addEventListener('focus',refreshFriendHomeNotice);
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') refreshFriendHomeNotice(); });
     document.addEventListener('click',e=>{ const btn=e.target&&e.target.closest?e.target.closest('.friend-req-accept,.friend-req-decline'):null; if(btn)setTimeout(refreshFriendHomeNotice,450); },true);
+    window.addEventListener('sasaphia-daily-raid-cleared',()=>setTimeout(refreshFriendHomeNotice,100));
     setInterval(refreshFriendHomeNotice,60000);
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setupFriendHomeNotice,{once:true}); else setupFriendHomeNotice();
 
-  window.RaidEvent={fetchStatus,finishAttempt,skipRemainingAttempts,refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
+  window.RaidEvent={fetchStatus,finishAttempt,skipRemainingAttempts,refreshFriendHomeNotice,refreshHomeNotices:refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
   window.openDailyRaid=open;
   window.closeDailyRaid=close;
   window.startDailyRaidBattle=start;

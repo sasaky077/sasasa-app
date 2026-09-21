@@ -30,7 +30,7 @@ function ensureRoot(){
  <div class="score-attack-bg-deco score-attack-bg-deco-b" aria-hidden="true"></div>
 
  <header class="score-attack-head">
-   <button type="button" class="score-attack-back" onclick="closeScoreAttack()">‹ 戻る</button>
+   <button type="button" class="score-attack-back" aria-label="戻る" onclick="closeScoreAttack()">＜戻る</button>
    <div class="score-attack-head-title">
      <small>SCORE ATTACK</small>
      <strong>スコアアタック</strong>
@@ -95,7 +95,7 @@ function renderRows(rows){
    return '<div class="score-attack-row'+(me?' is-me':'')+extra+'">'+
      '<span class="score-attack-rank-no">'+rank+'</span>'+
      '<div class="score-attack-row-main">'+
-       '<b title="'+esc(row.display_name||row.user_id||'Player')+'">'+esc(playerName7(row.display_name||row.user_id||'Player'))+(me?' <em>自分</em>':'')+'</b>'+
+       '<b title="'+esc(row.display_name||row.user_id||'Player')+'"><span class="score-attack-player-name">'+esc(playerName7(row.display_name||row.user_id||'Player'))+'</span>'+(me?'<em>自分</em>':'')+'</b>'+
        partyHtml(row.party_ids,false)+
      '</div>'+
      '<strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong>'+
@@ -112,8 +112,40 @@ function renderRows(rows){
  list.innerHTML=rowHtml+toggleHtml;
 }
 async function refresh(){if(loading)return;loading=true;const r=ensureRoot();r.querySelector('#score-attack-list').innerHTML='<div class="score-attack-loading">読み込み中...</div>';try{renderRows(await fetchRanking());}catch(err){console.error('[ScoreAttack] ranking failed',err);renderRows([]);r.querySelector('#score-attack-list').innerHTML='<div class="score-attack-empty">ランキングを取得できません。<br>Supabase SQLを確認してください。</div>';}finally{loading=false;}}
-window.openScoreAttack=function(){const r=ensureRoot();r.classList.add('show');r.setAttribute('aria-hidden','false');if(window.setNavVisible)setNavVisible(false);if(window.setHomeBtnVisible)setHomeBtnVisible(false);if(window.setReloadBtnVisible)setReloadBtnVisible(false);refresh();};
-window.closeScoreAttack=function(){const r=ensureRoot();r.classList.remove('show');r.setAttribute('aria-hidden','true');if(window.setNavVisible)setNavVisible(true);if(window.setHomeBtnVisible)setHomeBtnVisible(false);if(window.setReloadBtnVisible)setReloadBtnVisible(true);};
+window.openScoreAttack=function(){
+  const r=ensureRoot();
+  r.classList.add('show');
+  r.setAttribute('aria-hidden','false');
+
+  // Score Attack is now a normal app page, not an immersive/fullscreen layer.
+  document.body.classList.remove('ui-immersive');
+  document.body.removeAttribute('data-ui-immersive-reason');
+
+  const hud=document.getElementById('global-user-frame');
+  if(hud){
+    hud.classList.remove('hidden');
+    hud.style.removeProperty('display');
+    hud.style.removeProperty('visibility');
+    hud.style.removeProperty('opacity');
+    hud.style.removeProperty('pointer-events');
+  }
+
+  if(window.setNavVisible) setNavVisible(true);
+  if(window.setHomeBtnVisible) setHomeBtnVisible(false);
+  if(window.setReloadBtnVisible) setReloadBtnVisible(true);
+  if(window.setBnavActive) setBnavActive('main');
+
+  if(typeof window.updateHeaderHeight==='function') window.updateHeaderHeight();
+  refresh();
+};
+window.closeScoreAttack=function(){
+  const r=ensureRoot();
+  r.classList.remove('show');
+  r.setAttribute('aria-hidden','true');
+  if(window.setNavVisible) setNavVisible(true);
+  if(window.setHomeBtnVisible) setHomeBtnVisible(false);
+  if(window.setReloadBtnVisible) setReloadBtnVisible(true);
+};
 window.setScoreAttackDifficulty=function(d){currentDifficulty=d==='hard'?'hard':'normal';const r=ensureRoot();r.querySelector('#score-attack-tab-normal').classList.toggle('active',currentDifficulty==='normal');r.querySelector('#score-attack-tab-hard').classList.toggle('active',currentDifficulty==='hard');refresh();};
 window.toggleScoreAttackRankingMore=function(btn){
  const r=ensureRoot();

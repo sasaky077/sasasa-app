@@ -37293,3 +37293,194 @@ img[src*="type_dark.webp"]{
       12px !important;
   }
 }
+
+/* =========================================================
+   build597 HOME SIDE MENU — soft white reading haze restore
+   左右メニューの文字裏に、境界のない薄い白霞を復元。
+   build583以降の letterized DOM を前提に、文字レイヤーの
+   疑似要素だけで描画するため文字位置・タップ領域は変えない。
+   ========================================================= */
+#screen-main .home-type-letter-layer{
+  isolation:isolate !important;
+}
+
+/* 文字全体を包む、横長で薄い主霞 */
+#screen-main .home-type-letter-layer::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:50% !important;
+  top:50% !important;
+  width:108px !important;
+  height:44px !important;
+  transform:translate(-50%,-50%) rotate(-1deg) !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(255,255,255,.64) 0%,
+      rgba(255,255,255,.48) 30%,
+      rgba(255,255,255,.27) 52%,
+      rgba(255,255,255,.10) 70%,
+      rgba(255,255,255,0) 90%
+    ) !important;
+  filter:blur(7px) !important;
+  -webkit-filter:blur(7px) !important;
+  opacity:.92 !important;
+}
+
+/* 中心だけ少し密度を足して、背景が明るい場所でも字が沈まないようにする */
+#screen-main .home-type-letter-layer::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  left:50% !important;
+  top:50% !important;
+  width:88px !important;
+  height:28px !important;
+  transform:translate(-50%,-50%) rotate(2deg) !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,255,.42) 0%,
+      rgba(255,255,255,.24) 45%,
+      rgba(255,255,255,.08) 68%,
+      rgba(255,255,255,0) 88%
+    ) !important;
+  filter:blur(9px) !important;
+  -webkit-filter:blur(9px) !important;
+  opacity:.88 !important;
+}
+
+/* 霞より文字を必ず前面へ */
+#screen-main .home-type-letter-layer .home-type-letter,
+#screen-main .home-type-letter-layer .home-type-rest-letter-wrap{
+  z-index:1 !important;
+}
+
+/* タップ時も霞を消さず、ほんの少しだけ薄くする */
+#screen-main .home-type-entry:active .home-type-letter-layer::before{
+  opacity:.78 !important;
+}
+#screen-main .home-type-entry:active .home-type-letter-layer::after{
+  opacity:.72 !important;
+}
+
+/* 小さい端末では広がりだけ少し抑える */
+@media (max-width:380px), (max-height:700px){
+  #screen-main .home-type-letter-layer::before{
+    width:100px !important;
+    height:40px !important;
+    filter:blur(7px) !important;
+    -webkit-filter:blur(7px) !important;
+  }
+  #screen-main .home-type-letter-layer::after{
+    width:82px !important;
+    height:26px !important;
+  }
+}
+
+/* =========================================================
+   build597 巡行 SCROLL MELT — character/settings visual parity
+   巡行だけ .screen-scroll ではなく .ninmu-left / .ninmu-right が
+   実スクロールコンテナのため、共通v422マスクが届いていなかった。
+   左右カラムの上下端を同じ段階で透明化し、見切れを白背景へ溶かす。
+   レイアウト寸法・スクロール量・タップ領域は変更しない。
+   ========================================================= */
+html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-left,
+html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-right{
+  -webkit-mask-image:linear-gradient(
+    to bottom,
+    rgba(0,0,0,.10) 0,
+    rgba(0,0,0,.28) 10px,
+    rgba(0,0,0,.55) 22px,
+    rgba(0,0,0,.82) 34px,
+    #000 48px,
+    #000 calc(100% - 58px),
+    rgba(0,0,0,.82) calc(100% - 44px),
+    rgba(0,0,0,.55) calc(100% - 30px),
+    rgba(0,0,0,.28) calc(100% - 18px),
+    rgba(0,0,0,.10) calc(100% - 8px),
+    transparent 100%
+  ) !important;
+  mask-image:linear-gradient(
+    to bottom,
+    rgba(0,0,0,.10) 0,
+    rgba(0,0,0,.28) 10px,
+    rgba(0,0,0,.55) 22px,
+    rgba(0,0,0,.82) 34px,
+    #000 48px,
+    #000 calc(100% - 58px),
+    rgba(0,0,0,.82) calc(100% - 44px),
+    rgba(0,0,0,.55) calc(100% - 30px),
+    rgba(0,0,0,.28) calc(100% - 18px),
+    rgba(0,0,0,.10) calc(100% - 8px),
+    transparent 100%
+  ) !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:100% 100% !important;
+  mask-size:100% 100% !important;
+}
+
+/* 小さい端末では可視領域を食いすぎないよう溶け幅を少し短縮 */
+@media (max-width:380px), (max-height:700px){
+  html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-left,
+  html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-right{
+    -webkit-mask-image:linear-gradient(
+      to bottom,
+      rgba(0,0,0,.14) 0,
+      rgba(0,0,0,.36) 8px,
+      rgba(0,0,0,.66) 20px,
+      #000 36px,
+      #000 calc(100% - 46px),
+      rgba(0,0,0,.66) calc(100% - 28px),
+      rgba(0,0,0,.32) calc(100% - 14px),
+      transparent 100%
+    ) !important;
+    mask-image:linear-gradient(
+      to bottom,
+      rgba(0,0,0,.14) 0,
+      rgba(0,0,0,.36) 8px,
+      rgba(0,0,0,.66) 20px,
+      #000 36px,
+      #000 calc(100% - 46px),
+      rgba(0,0,0,.66) calc(100% - 28px),
+      rgba(0,0,0,.32) calc(100% - 14px),
+      transparent 100%
+    ) !important;
+  }
+}
+
+/* =========================================================
+   build597 巡行 INITIAL OFFSET — keep first row out of melt core
+   初期表示時に先頭項目が上側マスクの濃い領域へ入り込みすぎないよう、
+   左右スクロール内容の開始位置だけを少し下げる。
+   スクロール領域・カード寸法・見出し位置は変更しない。
+   ========================================================= */
+html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-left,
+html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-right{
+  padding-top:22px !important;
+}
+
+/* 右カラム既存の余白を維持 */
+html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-right{
+  padding-right:2px !important;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 小さい端末では少しだけ控えめ */
+@media (max-width:380px), (max-height:700px){
+  html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-left,
+  html body:not(.ui-immersive) #screen-ninmu.screen.active .ninmu-right{
+    padding-top:18px !important;
+  }
+}
+
