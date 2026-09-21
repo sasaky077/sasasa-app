@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '685';
+  var FALLBACK_BUILD = '688';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -231,7 +231,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="685">
+  <meta name="sasaphia-build" content="688">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -331,9 +331,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=685-item-other-typography-v1"
+        href="css/style.css?v=688-setting-bgm-toggle-v1"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=685-item-other-typography-v1"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=688-setting-bgm-toggle-v1"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -418,10 +418,10 @@
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
     document.write('<link rel="stylesheet" href="css/shooting_event.css?v=593">');
   </script>
-  <link rel="stylesheet" href="css/raid_event.css?v=685-item-other-typography-v1">
-  <link rel="stylesheet" href="css/item_management.css?v=685-item-other-typography-v1">
-  <link rel="stylesheet" href="css/score_attack_chrome.css?v=685-item-other-typography-v1">
-  <link rel="stylesheet" href="css/app_chrome.css?v=685-item-other-typography-v1">
+  <link rel="stylesheet" href="css/raid_event.css?v=688-setting-bgm-toggle-v1">
+  <link rel="stylesheet" href="css/item_management.css?v=688-setting-bgm-toggle-v1">
+  <link rel="stylesheet" href="css/score_attack_chrome.css?v=688-setting-bgm-toggle-v1">
+  <link rel="stylesheet" href="css/app_chrome.css?v=688-setting-bgm-toggle-v1">
 
   <style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
@@ -2697,7 +2697,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </div>
   <div class="setting-section">
     <div class="setting-section-title">サウンド</div>
-    <div class="setting-row setting-audio-row" onclick="toggleAudioSetting('main_bgm')" role="button" tabindex="0" aria-label="BGM設定を切り替える">
+    <div class="setting-row setting-audio-row" onclick="toggleAudioSetting('main_bgm')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAudioSetting('main_bgm');}" role="button" tabindex="0" aria-label="BGM設定を切り替える">
       <span class="setting-row-label">BGM</span>
       <span class="setting-audio-control">
         <span class="setting-audio-status" id="main-bgm-status">ON</span>
@@ -8059,6 +8059,8 @@ function goHome(){
           settingScroll.scrollTop = 0;
           requestAnimationFrame(function(){ settingScroll.scrollTop = 0; });
         }
+        // build688: setting画面を開くたび、保存済みBGM状態を表示へ同期する。
+        if(typeof updateAudioSettingsUI === 'function') updateAudioSettingsUI();
       }
 
       // build520:
@@ -10472,6 +10474,7 @@ function showTenResult(results){
     // 空配列 = すべて。複数選択時は OR 条件で絞り込む。
     elements: [],
     rarities: [],
+    shotTypes: [],
     sort: 'id',
     query: ''
   };
@@ -10489,6 +10492,21 @@ function showTenResult(results){
     neutral: 'NEUTRAL'
   };
 
+  // build686: キャラ一覧をMAINショットタイプでも絞り込めるようにする。
+  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','bomb','spread','laser','piercing','orbit','charge','strike'];
+  var ZUKAN_SHOT_TYPE_LABELS = {
+    all: 'すべて',
+    parallel: 'PARALLEL',
+    homing: 'HOMING',
+    bomb: 'BOMB',
+    spread: 'SPREAD',
+    laser: 'LASER',
+    piercing: 'PIERCING',
+    orbit: 'ORBIT',
+    charge: 'CHARGE',
+    strike: 'STRIKE'
+  };
+
   function normalizeZukanElement(value){
     var key = String(value || 'neutral').toLowerCase();
     return ZUKAN_ELEMENT_ORDER.indexOf(key) >= 0 ? key : 'neutral';
@@ -10496,6 +10514,33 @@ function showTenResult(results){
 
   function normalizeZukanRarity(value){
     return String(value || 'r').trim().toLowerCase() === 'sr' ? 'sr' : 'r';
+  }
+
+  function normalizeZukanShotType(value){
+    var raw = String(value || '').trim().toLowerCase();
+    var aliases = {
+      orbit_forward: 'orbit',
+      charge_release: 'charge',
+      precision: 'piercing',
+      shotgun: 'piercing',
+      splash: 'bomb',
+      melee_slash: 'strike',
+      wolf_j_homing: 'homing',
+      rose_seed_splash: 'spread',
+      noah_hybrid: 'laser'
+    };
+    raw = aliases[raw] || raw;
+    return ZUKAN_SHOT_TYPE_ORDER.indexOf(raw) >= 0 ? raw : 'parallel';
+  }
+
+  function getZukanCharacterShotType(chara){
+    var id = Number(chara && chara.id);
+    try {
+      var profiles = window.ShootingCharacters && window.ShootingCharacters.SHOOTING_CHARACTERS;
+      var profile = profiles && profiles[id];
+      if(profile) return normalizeZukanShotType(profile.shotType || (profile.mainShot && profile.mainShot.type));
+    } catch(_){ }
+    return normalizeZukanShotType(chara && chara.shotType);
   }
 
   function normalizeZukanSearchText(value){
@@ -10562,6 +10607,7 @@ function showTenResult(results){
   function isZukanFilterActive(){
     return (Array.isArray(zukanIndexFilter.elements) && zukanIndexFilter.elements.length > 0) ||
       (Array.isArray(zukanIndexFilter.rarities) && zukanIndexFilter.rarities.length > 0) ||
+      (Array.isArray(zukanIndexFilter.shotTypes) && zukanIndexFilter.shotTypes.length > 0) ||
       zukanIndexFilter.sort !== 'id';
   }
 
@@ -10575,14 +10621,21 @@ function showTenResult(results){
     return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
   }
 
+  function isZukanShotTypeSelected(value){
+    var selected = Array.isArray(zukanIndexFilter.shotTypes) ? zukanIndexFilter.shotTypes : [];
+    return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
+  }
+
   function applyZukanIndexFilterAndSort(chars){
     var query = normalizeZukanSearchText(zukanIndexFilter.query);
     var selectedElements = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements : [];
     var selectedRarities = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities : [];
+    var selectedShotTypes = Array.isArray(zukanIndexFilter.shotTypes) ? zukanIndexFilter.shotTypes : [];
     var list = (chars || []).filter(function(chara){
       if(!chara) return false;
       if(selectedElements.length && selectedElements.indexOf(normalizeZukanElement(chara.element)) < 0) return false;
       if(selectedRarities.length && selectedRarities.indexOf(normalizeZukanRarity(chara.rarity)) < 0) return false;
+      if(selectedShotTypes.length && selectedShotTypes.indexOf(getZukanCharacterShotType(chara)) < 0) return false;
       if(query){
         var nameKey = normalizeZukanSearchText(chara.name || '');
         if(nameKey.indexOf(query) < 0) return false;
@@ -10617,6 +10670,11 @@ function showTenResult(results){
       var selected = isZukanElementSelected(key);
       return '<button type="button" class="zukan-filter-chip element-chip element-' + key + (selected ? ' active' : '') + '" aria-pressed="' + (selected ? 'true' : 'false') + '" onclick="setZukanElementFilter(\'' + key + '\')">' + ZUKAN_ELEMENT_LABELS[key] + '</button>';
     }).join('');
+    var shotTypeKeys = ['all'].concat(ZUKAN_SHOT_TYPE_ORDER);
+    var shotTypeButtons = shotTypeKeys.map(function(key){
+      var selected = isZukanShotTypeSelected(key);
+      return '<button type="button" class="zukan-filter-chip shot-type-chip shot-' + key + (selected ? ' active' : '') + '" aria-pressed="' + (selected ? 'true' : 'false') + '" onclick="setZukanShotTypeFilter(\'' + key + '\')">' + ZUKAN_SHOT_TYPE_LABELS[key] + '</button>';
+    }).join('');
 
     return '' +
       '<div class="zukan-filter-popover" role="dialog" aria-label="キャラ一覧メニュー" onclick="event.stopPropagation()">' +
@@ -10631,6 +10689,10 @@ function showTenResult(results){
             '<button type="button" class="zukan-filter-chip rarity-sr' + (isZukanRaritySelected('sr') ? ' active' : '') + '" aria-pressed="' + (isZukanRaritySelected('sr') ? 'true' : 'false') + '" onclick="setZukanRarityFilter(\'sr\')">SR</button>' +
             '<button type="button" class="zukan-filter-chip rarity-r' + (isZukanRaritySelected('r') ? ' active' : '') + '" aria-pressed="' + (isZukanRaritySelected('r') ? 'true' : 'false') + '" onclick="setZukanRarityFilter(\'r\')">R</button>' +
           '</div>' +
+        '</div>' +
+        '<div class="zukan-filter-section">' +
+          '<div class="zukan-filter-section-title">ショットタイプ</div>' +
+          '<div class="zukan-filter-chip-grid zukan-filter-shot-grid">' + shotTypeButtons + '</div>' +
         '</div>' +
         '<div class="zukan-filter-section">' +
           '<div class="zukan-filter-section-title">並び順</div>' +
@@ -10705,6 +10767,24 @@ function showTenResult(results){
     renderZukanFilterMenu();
   }
 
+  function setZukanShotTypeFilter(value){
+    var raw = String(value || 'all').toLowerCase();
+    if(raw === 'all'){
+      zukanIndexFilter.shotTypes = [];
+    } else {
+      var normalized = normalizeZukanShotType(raw);
+      if(ZUKAN_SHOT_TYPE_ORDER.indexOf(normalized) >= 0){
+        var selected = Array.isArray(zukanIndexFilter.shotTypes) ? zukanIndexFilter.shotTypes.slice() : [];
+        var index = selected.indexOf(normalized);
+        if(index >= 0) selected.splice(index, 1);
+        else selected.push(normalized);
+        zukanIndexFilter.shotTypes = selected;
+      }
+    }
+    renderBox();
+    renderZukanFilterMenu();
+  }
+
   function setZukanSort(value){
     zukanIndexFilter.sort = ['id','element','rarity'].indexOf(value) >= 0 ? value : 'id';
     renderBox();
@@ -10714,6 +10794,7 @@ function showTenResult(results){
   function resetZukanFilters(){
     zukanIndexFilter.elements = [];
     zukanIndexFilter.rarities = [];
+    zukanIndexFilter.shotTypes = [];
     zukanIndexFilter.sort = 'id';
     renderBox();
     renderZukanFilterMenu();
@@ -10723,6 +10804,7 @@ function showTenResult(results){
   window.closeZukanFilterMenu = closeZukanFilterMenu;
   window.setZukanElementFilter = setZukanElementFilter;
   window.setZukanRarityFilter = setZukanRarityFilter;
+  window.setZukanShotTypeFilter = setZukanShotTypeFilter;
   window.setZukanSort = setZukanSort;
   window.resetZukanFilters = resetZukanFilters;
 
@@ -13612,6 +13694,8 @@ function setGlobalBgmEnabled(enabled){
     fadeInBgm();
   }
 
+  // build688: 常駐speakerを廃止したため、設定画面のON/OFF表示を即時更新する。
+  updateAudioSettingsUI();
   updateGlobalBgmToggle();
 }
 
@@ -13665,7 +13749,11 @@ function updateAudioSettingsUI() {
     if (!el) return;
 
     var key = map[id];
-    el.textContent = audioSettings[key] ? 'ON' : 'OFF';
+    var enabled = (key === 'title_bgm' || key === 'main_bgm')
+      ? isAudioEnabled(key)
+      : !!audioSettings[key];
+    el.textContent = enabled ? 'ON' : 'OFF';
+    el.classList.toggle('is-off', !enabled);
   });
 }
 
@@ -14666,7 +14754,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=685-item-other-typography-v1"></script>
+<script src="js/shooting_characters.js?v=688-setting-bgm-toggle-v1"></script>
 <script src="js/stage_select.js?v=593"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -14747,9 +14835,9 @@ window.returnToTitleScreen = function(){
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
   document.write('<script src="js/shooting_event.js?v=621"><\/script>');
 </script>
-<script src="js/admin_mode.js?v=685-item-other-typography-v1"></script>
-<script src="js/raid_event.js?v=685-item-other-typography-v1"></script>
-<script src="js/item_management.js?v=685-item-other-typography-v1"></script>
+<script src="js/admin_mode.js?v=688-setting-bgm-toggle-v1"></script>
+<script src="js/raid_event.js?v=688-setting-bgm-toggle-v1"></script>
+<script src="js/item_management.js?v=688-setting-bgm-toggle-v1"></script>
 
 <script id="sasaphia-update-worker-register-v109">
 (function(){
@@ -14784,7 +14872,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=685-item-other-typography-v1"></script>
+<script src="js/score_attack.js?v=688-setting-bgm-toggle-v1"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

@@ -26656,8 +26656,8 @@ body {
 /* 未所持の既存シルエット処理は維持。属性オーバーレイだけ無効化。 */
 
 /* =========================================================
-   v237 CHARACTER INDEX - MENU / filter / sort
-   右上レムナント入口をMENUへ置換し、属性・レアリティで絞り込み/並び替え。
+   build686 CHARACTER INDEX - MENU / filter / sort
+   属性・レアリティ・ショットタイプで絞り込み/並び替え。
    ========================================================= */
 #screen-zukan .zukan-filter-menu-button{
   position:relative;
@@ -26679,21 +26679,26 @@ body {
   position:fixed;
   inset:0;
   z-index:12020;
-  background:rgba(55,45,31,.12);
+  background:rgba(55,45,31,.06);
   -webkit-tap-highlight-color:transparent;
 }
 .zukan-filter-popover{
   position:absolute;
   top:calc(var(--header-h) + var(--page-header-h, 64px) - 2px);
-  right:max(10px, calc((100vw - min(100vw, 430px))/2 + 10px));
+  left:50%;
+  right:auto;
+  transform:translateX(-50%);
   width:min(300px, calc(100vw - 20px));
   padding:14px 14px 12px;
   border:1px solid rgba(151,119,66,.30);
   border-radius:4px;
-  background:rgba(250,247,239,.985);
+  background:rgba(250,247,239,.92);
   box-shadow:0 12px 28px rgba(72,54,29,.20), inset 0 0 0 1px rgba(255,255,255,.70);
   color:#5b4932;
   font-family:"Noto Serif JP",serif;
+  max-height:calc(100dvh - var(--header-h) - var(--page-header-h, 64px) - 14px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
 }
 .zukan-filter-section + .zukan-filter-section{
   margin-top:13px;
@@ -26715,8 +26720,13 @@ body {
   grid-template-columns:repeat(4,minmax(0,1fr));
 }
 .zukan-filter-rarity-grid,
-.zukan-filter-sort-grid{
+.zukan-filter-sort-grid,
+.zukan-filter-shot-grid{
   grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.zukan-filter-shot-grid .zukan-filter-chip{
+  font-size:8px;
+  letter-spacing:.015em;
 }
 .zukan-filter-chip{
   appearance:none;
@@ -26791,9 +26801,11 @@ body {
   letter-spacing:.05em;
 }
 @media (max-width:360px){
-  .zukan-filter-popover{right:8px;width:calc(100vw - 16px);padding:12px;}
+  .zukan-filter-popover{left:50%;right:auto;transform:translateX(-50%);width:calc(100vw - 16px);padding:12px;}
   .zukan-filter-element-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+  .zukan-filter-shot-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;}
   .zukan-filter-chip{font-size:8.5px;}
+  .zukan-filter-shot-grid .zukan-filter-chip{font-size:7.6px;}
 }
 
 
@@ -37659,4 +37671,40 @@ html body #global-user-frame .hud-gem-plus-btn{
 .setting-audio-row:active .setting-audio-status{
   transform:translateY(1px);
   opacity:.78;
+}
+\n\n/* =========================================================
+   build688: Settings BGM — text-only ON/OFF + reliable tap feedback
+   ========================================================= */
+#screen-setting .setting-audio-control{
+  min-width:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+}
+#screen-setting .setting-audio-status{
+  display:inline !important;
+  min-width:0 !important;
+  height:auto !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#9a7330 !important;
+  font-family:Georgia,"Times New Roman","Yu Mincho","Hiragino Mincho ProN",serif !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  line-height:1.2 !important;
+  letter-spacing:.12em !important;
+  transform:none !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+}
+#screen-setting .setting-audio-status.is-off{
+  color:#8b877f !important;
+}
+#screen-setting .setting-audio-row:active .setting-audio-status{
+  transform:none !important;
+  opacity:.58 !important;
 }
