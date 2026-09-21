@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '749';
+  var FALLBACK_BUILD = '750';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="749">
+  <meta name="sasaphia-build" content="750">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -511,36 +511,67 @@
       display:none !important;
     }
   </style>
-  <style id="home-menu-notice-anchors-build749">
+  <style id="home-menu-notice-anchors-build750">
 /*
-  build749:
-  ホーム左右メニューの通知ドットを、各メニュー要素ごとに独立制御する。
-  位置指定はJSで「各ラベル実体の右上」に行うため、CSS側は全通知を
-  ニュートラルな absolute 原点へリセットするだけにする。
+  build750 — HOME NOTICE WRAPPERS
+
+  各通知ドットを「画面座標」ではなく、
+  各ホームメニューボタン内の専用アンカーへ入れて右上固定する。
+
+  これにより端末幅 / 高さ / DPR / safe-area に依存せず、
+  メニューが動けば通知もそのメニューと一緒に動く。
 */
-html body #screen-main > .home-notice-btn.home-type-entry,
-html body #screen-main > #shinju-home-entry.shinju-home-entry,
-html body #screen-main > #bonus-home-entry.bonus-home-entry,
-html body #screen-main > #friend-home-entry.friend-home-entry,
-html body #screen-main > #raid-home-entry.raid-home-entry{
-  position:absolute !important;
+html body #screen-main > .home-type-entry{
   overflow:visible !important;
 }
 
-html body #screen-main > .home-notice-btn.home-type-entry > .home-notice-badge,
-html body #screen-main > #shinju-home-entry.shinju-home-entry > .shinju-home-entry-badge,
-html body #screen-main > #bonus-home-entry.bonus-home-entry > .bonus-home-entry-notice,
-html body #screen-main > #friend-home-entry.friend-home-entry > .friend-notice-dot,
-html body #screen-main > #raid-home-entry.raid-home-entry > .raid-notice-dot{
+/* 各メニュー専用の通知アンカー。ボタン全面を基準面にする。 */
+html body #screen-main .home-type-entry > .home-menu-notice-anchor{
   position:absolute !important;
-  top:0 !important;
-  left:0 !important;
-  right:auto !important;
+  inset:0 !important;
+  display:block !important;
+  overflow:visible !important;
+  pointer-events:none !important;
+  z-index:40 !important;
+}
+
+/*
+  通知はボタン右上へ。
+  top:12px は「文字より少し上」、right:4px は「右端から少し内側」。
+  旧 mm / translate / root座標計算は完全に使わない。
+*/
+html body #screen-main .home-menu-notice-anchor > .home-notice-badge,
+html body #screen-main .home-menu-notice-anchor > .shinju-home-entry-badge,
+html body #screen-main .home-menu-notice-anchor > .bonus-home-entry-notice,
+html body #screen-main .home-menu-notice-anchor > .friend-notice-dot,
+html body #screen-main .home-menu-notice-anchor > .raid-notice-dot{
+  position:absolute !important;
+  top:12px !important;
+  right:4px !important;
+  left:auto !important;
   bottom:auto !important;
   translate:none !important;
   transform:none !important;
   margin:0 !important;
-  z-index:12 !important;
+  animation:none !important;
+  pointer-events:none !important;
+  z-index:41 !important;
+}
+
+/* compact端末でも同じボタン内座標を使う。端末別位置補正はしない。 */
+@media (max-width:380px),(max-height:700px){
+  html body #screen-main .home-menu-notice-anchor > .home-notice-badge,
+  html body #screen-main .home-menu-notice-anchor > .shinju-home-entry-badge,
+  html body #screen-main .home-menu-notice-anchor > .bonus-home-entry-notice,
+  html body #screen-main .home-menu-notice-anchor > .friend-notice-dot,
+  html body #screen-main .home-menu-notice-anchor > .raid-notice-dot{
+    top:12px !important;
+    right:4px !important;
+    left:auto !important;
+    bottom:auto !important;
+    translate:none !important;
+    transform:none !important;
+  }
 }
 </style>
   <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
@@ -16470,133 +16501,89 @@ html body #global-user-frame .hud-sweep-line-player::after{
 })();
 </script>
 
-<script id="home-menu-notice-pin-build749">
+<script id="home-menu-notice-wrapper-build750">
 (function(){
   'use strict';
 
-  var CONFIGS = [
-    {
-      name:'message',
-      button:function(root){ return root.querySelector('.home-notice-btn.home-type-entry'); },
-      dot:'.home-notice-badge'
-    },
-    {
-      name:'shinju',
-      button:'#shinju-home-entry',
-      dot:'.shinju-home-entry-badge'
-    },
-    {
-      name:'bonus',
-      button:'#bonus-home-entry',
-      dot:'.bonus-home-entry-notice'
-    },
-    {
-      name:'friend',
-      button:'#friend-home-entry',
-      dot:'.friend-notice-dot'
-    },
-    {
-      name:'raid',
-      button:'#raid-home-entry',
-      dot:'.raid-notice-dot'
-    }
+  var SPECS = [
+    { button:'.home-notice-btn.home-type-entry', dot:'.home-notice-badge' },
+    { button:'#shinju-home-entry', dot:'.shinju-home-entry-badge' },
+    { button:'#bonus-home-entry', dot:'.bonus-home-entry-notice' },
+    { button:'#friend-home-entry', dot:'.friend-notice-dot' },
+    { button:'#raid-home-entry', dot:'.raid-notice-dot' }
   ];
 
-  function resolveButton(root, spec){
-    if(typeof spec.button === 'function') return spec.button(root);
-    return document.querySelector(spec.button);
-  }
-
-  function getLabelTarget(btn){
+  function ensureAnchor(btn){
     if(!btn) return null;
-    return btn.querySelector(':scope > .home-type-letter-layer') || btn;
-  }
-
-  function measureDot(dot){
-    var prevVis = dot.style.visibility;
-    var prevDisplay = dot.style.display;
-    dot.style.visibility = 'hidden';
-    if (getComputedStyle(dot).display === 'none') {
-      dot.style.display = 'block';
+    var anchor = btn.querySelector(':scope > .home-menu-notice-anchor');
+    if(!anchor){
+      anchor = document.createElement('span');
+      anchor.className = 'home-menu-notice-anchor';
+      anchor.setAttribute('aria-hidden','true');
+      btn.appendChild(anchor);
     }
-    var r = dot.getBoundingClientRect();
-    var w = r.width || dot.offsetWidth || 14;
-    var h = r.height || dot.offsetHeight || 14;
-    dot.style.visibility = prevVis || '';
-    dot.style.display = prevDisplay || '';
-    return {w:w,h:h};
+    return anchor;
   }
 
-  function pinOne(root, cfg){
-    var btn = resolveButton(root, cfg);
+  function attachNotice(spec){
+    var btn = document.querySelector('#screen-main ' + spec.button);
     if(!btn) return;
 
-    var dot = btn.querySelector(cfg.dot);
+    var anchor = ensureAnchor(btn);
+    if(!anchor) return;
+
+    // badgeがJSで後生成 / 再生成されても拾う。
+    var dot = btn.querySelector(spec.dot);
     if(!dot) return;
 
-    var target = getLabelTarget(btn);
-    if(!target) return;
+    // すでに正しいアンカー配下なら何もしない。
+    if(dot.parentElement === anchor) return;
 
-    var rootRect = root.getBoundingClientRect();
-    var targetRect = target.getBoundingClientRect();
-    var size = measureDot(dot);
-
-    // 「ラベル文字塊の右上」に少しかぶせる。
-    var x = (targetRect.right - rootRect.left) - (size.w * 0.30);
-    var y = (targetRect.top   - rootRect.top)  - (size.h * 0.42);
-
-    dot.style.left = x + 'px';
-    dot.style.top = y + 'px';
-    dot.style.right = 'auto';
-    dot.style.bottom = 'auto';
+    anchor.appendChild(dot);
   }
 
-  function pinAllHomeMenuDots(){
-    try{
-      var root = document.getElementById('screen-main');
-      if(!root) return;
-      CONFIGS.forEach(function(cfg){ pinOne(root, cfg); });
-    }catch(e){
-      console.warn('[home] notice pin failed', e);
-    }
+  function attachAll(){
+    SPECS.forEach(attachNotice);
   }
 
-  function schedulePinAll(){
+  var scheduled = false;
+  function scheduleAttach(){
+    if(scheduled) return;
+    scheduled = true;
     requestAnimationFrame(function(){
-      requestAnimationFrame(pinAllHomeMenuDots);
+      scheduled = false;
+      attachAll();
     });
   }
 
-  function bind(){
-    schedulePinAll();
-
-    window.addEventListener('load', schedulePinAll);
-    window.addEventListener('resize', schedulePinAll);
-    window.addEventListener('orientationchange', schedulePinAll);
-    window.addEventListener('pageshow', schedulePinAll);
-    document.addEventListener('visibilitychange', function(){
-      if(!document.hidden) schedulePinAll();
-    });
+  function install(){
+    attachAll();
 
     var root = document.getElementById('screen-main');
     if(root){
-      var mo = new MutationObserver(schedulePinAll);
-      mo.observe(root, {attributes:true, childList:true, subtree:true});
+      // 神聖樹などがinnerHTMLを書き換えても、その直後に専用アンカーへ戻す。
+      var observer = new MutationObserver(scheduleAttach);
+      observer.observe(root, { childList:true, subtree:true });
     }
 
-    // 初回数秒はレイアウト安定後も追従
-    var n = 0;
-    var t = setInterval(function(){
-      schedulePinAll();
-      n++;
-      if(n >= 12) clearInterval(t);
-    }, 400);
+    window.addEventListener('pageshow', scheduleAttach);
+    window.addEventListener('resize', scheduleAttach);
+    window.addEventListener('orientationchange', scheduleAttach);
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden) scheduleAttach();
+    });
+
+    // 初回の文字レイヤー生成や各機能JSの初期化後にも確実に整える。
+    setTimeout(attachAll, 0);
+    setTimeout(attachAll, 120);
+    setTimeout(attachAll, 500);
+    setTimeout(attachAll, 1200);
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', bind, {once:true});
+    document.addEventListener('DOMContentLoaded', install, {once:true});
   }else{
-    bind();
+    install();
   }
 })();
 </script>
