@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>ZERAPHIA GACHA PIXI RUNTIME — build723</title>
+<style>
+:root{--ink:#514838;--muted:#9a8c76;--gold:#b99958}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f1e8;font-family:"Noto Serif JP","Yu Mincho",serif;color:var(--ink);-webkit-tap-highlight-color:transparent}
+button{font:inherit}
+#lab{position:fixed;inset:0;overflow:hidden;background:radial-gradient(circle at 50% 46%,#fff 0%,#faf7ef 42%,#f0eadf 100%)}
+#pixi-stage{position:absolute;inset:0;z-index:1}
+#pixi-stage canvas{display:block;width:100%;height:100%;touch-action:none}
+.head{position:absolute;z-index:10;top:max(18px,env(safe-area-inset-top));left:0;right:0;text-align:center;pointer-events:none}
+.head small{display:block;font-family:Georgia,serif;font-size:9px;letter-spacing:.28em;color:#b09361}
+.head strong{display:block;margin-top:5px;font-size:14px;font-weight:500;letter-spacing:.14em;color:#675a48}
+.caption{position:absolute;z-index:10;left:50%;top:13%;transform:translateX(-50%);width:min(88vw,390px);text-align:center;pointer-events:none;color:#8b7b65}
+.caption span{font-size:10px;letter-spacing:.08em}
+.caption b{display:block;margin-top:6px;font-size:11px;font-weight:500;letter-spacing:.08em;color:#6e604d}
+.controls{position:absolute;z-index:30;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;align-items:center}
+.layout-row,.action-row{display:flex;justify-content:center;gap:6px;width:100%;max-width:430px}
+.layout-row button,.action-row button{border:0;background:rgba(255,255,255,.58);color:#8e7d65;box-shadow:inset 0 0 0 1px rgba(163,139,99,.20);padding:8px 12px;font-size:9px;letter-spacing:.08em;cursor:pointer;backdrop-filter:blur(4px)}
+.layout-row button{flex:1 1 0}
+.layout-row button.active{color:#6c5735;background:rgba(232,218,184,.62);box-shadow:inset 0 0 0 1px rgba(166,131,66,.38)}
+.action-row button{font-family:Georgia,serif;letter-spacing:.14em;padding-inline:18px}
+.note{font-size:8px;color:#aa9b84;letter-spacing:.05em;text-align:center;line-height:1.6}
+#open-bloom,#open-bloom2{position:absolute;left:50%;top:50%;pointer-events:none;border-radius:50%;opacity:0;transform:translate(-50%,-50%) scale(.01);transform-origin:50% 50%;mix-blend-mode:screen}
+#open-bloom{z-index:23;width:140vmax;height:140vmax;background:radial-gradient(circle,rgba(255,255,255,1) 0 16%,rgba(255,255,255,.99) 31%,rgba(255,250,236,.92) 47%,rgba(255,255,255,.70) 62%,rgba(255,255,255,.28) 78%,rgba(255,255,255,0) 100%);filter:blur(8px)}
+#open-bloom2{z-index:24;width:118vmax;height:118vmax;background:radial-gradient(circle,rgba(255,255,255,1) 0 24%,rgba(255,255,255,.98) 43%,rgba(255,255,255,.70) 63%,rgba(255,255,255,.16) 84%,rgba(255,255,255,0) 100%);filter:blur(2px)}
+#whiteout{position:absolute;inset:0;z-index:60;background:#fff;opacity:0;pointer-events:none}
+.legend{position:absolute;z-index:8;right:14px;top:18%;display:flex;flex-direction:column;gap:5px;pointer-events:none;opacity:.75}
+.legend span{font-size:8px;letter-spacing:.08em;color:#8f806a;display:flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%}
+.legend .s{background:#aeb9c2}.legend .g{background:#d1a24b}.legend .r{background:conic-gradient(#ff6b77,#ffd365,#8de7b4,#6bd8ff,#9c85ff,#ff79dc,#ff6b77)}
+@media(max-height:700px){.caption{top:12%}.legend{top:17%}.layout-row button,.action-row button{padding-top:7px;padding-bottom:7px}.note{font-size:7px}}
+
+.head,.caption,.legend,.controls{display:none!important}
+</style>
+</head>
+<body>
+<main id="lab">
+  <div id="pixi-stage"></div><div id="open-bloom"></div><div id="open-bloom2"></div><div id="whiteout"></div>
+  <div class="head"><small>PIXIJS GACHA LAB</small><strong>10 SOUL SEQUENCE TEST</strong></div>
+  <div class="caption"><span>10魂 出現→脈動→昇格テスト / build723</span><b id="layout-name">正円・等間隔</b></div>
+  <div class="legend"><span><i class="s"></i>銀</span><span><i class="g"></i>金</span><span><i class="r"></i>虹</span></div>
+  <div class="controls">
+    <div class="layout-row">
+      <button type="button" data-layout="grid">5＋5</button>
+      <button type="button" data-layout="ring" class="active">円環</button>
+      <button type="button" data-layout="arc">弧</button>
+    </div>
+    <div class="action-row">
+      <button type="button" id="pulse">SEQUENCE REPLAY</button>
+      <button type="button" id="shuffle">UPGRADE TEST RESET</button>
+    </div>
+    <div class="note">魂が1個ずつ「ボワァ」と出現 → 10個揃う → 5回脈動。1・3・5回目だけ昇格します。</div>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@8.8.1/dist/pixi.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script>
+(async function(){
+'use strict';
+const {Application,Container,Sprite,Texture,Graphics}=PIXI;
+const gsap=window.gsap;
+const host=document.getElementById('pixi-stage');
+const nameEl=document.getElementById('layout-name');
+const layoutBtns=[...document.querySelectorAll('[data-layout]')];
+const pulseBtn=document.getElementById('pulse');
+const shuffleBtn=document.getElementById('shuffle');
+let app,world,core,orbs=[],layoutMode='ring',busy=false;
+const rawTierParam=(new URLSearchParams(location.search).get('tiers')||'').split(',').map(v=>String(v||'').trim().toLowerCase()).filter(v=>['silver','gold','rainbow'].includes(v));
+const requestedTiers=(rawTierParam.length?rawTierParam:['silver','gold','silver','rainbow','silver','gold','silver','silver','gold','silver']).slice(0,10);
+while(requestedTiers.length<10) requestedTiers.push('silver');
+function buildPresentationPlan(finalTier){
+  const upgradeBeats=[1,3,5];
+  if(finalTier==='silver') return {final:'silver',initial:'silver',promotions:{}};
+  if(finalTier==='gold'){
+    if(Math.random()<.5) return {final:'gold',initial:'gold',promotions:{}};
+    const beat=upgradeBeats[Math.floor(Math.random()*upgradeBeats.length)];
+    return {final:'gold',initial:'silver',promotions:{[beat]:'gold'}};
+  }
+  if(finalTier==='rainbow'){
+    const roll=Math.random();
+    if(roll<.50) return {final:'rainbow',initial:'rainbow',promotions:{}};
+    if(roll<.75){
+      const beat=upgradeBeats[Math.floor(Math.random()*upgradeBeats.length)];
+      return {final:'rainbow',initial:'gold',promotions:{[beat]:'rainbow'}};
+    }
+    const pairs=[[1,3],[1,5],[3,5]];
+    const pair=pairs[Math.floor(Math.random()*pairs.length)];
+    return {final:'rainbow',initial:'silver',promotions:{[pair[0]]:'gold',[pair[1]]:'rainbow'}};
+  }
+  return {final:'silver',initial:'silver',promotions:{}};
+}
+const presentationPlans=requestedTiers.map(buildPresentationPlan);
+const PALETTES={
+ silver:{core:'#ffffff',inner:'#dce4ea',mid:'#a7b3bd',edge:'#75828e'},
+ gold:{core:'#fff9d9',inner:'#f3d68a',mid:'#d2a74f',edge:'#876329'},
+ rainbow:{core:'#ffffff',inner:'#f5f9ff',mid:'#d7e5f4',edge:'#aaa7c8'}
+};
+function canvasTexture(size,draw){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');draw(x,size);return Texture.from(c)}
+function radialTexture(size,stops){return canvasTexture(size,(x,s)=>{const g=x.createRadialGradient(s*.5,s*.5,0,s*.5,s*.5,s*.5);stops.forEach(([p,c])=>g.addColorStop(p,c));x.fillStyle=g;x.fillRect(0,0,s,s)})}
+function ringTexture(size,color,width=2,alpha=.55){return canvasTexture(size,(x,s)=>{x.clearRect(0,0,s,s);x.strokeStyle=color;x.globalAlpha=alpha;x.lineWidth=width;x.beginPath();x.arc(s/2,s/2,s*.38,0,Math.PI*2);x.stroke();x.globalAlpha=alpha*.32;x.lineWidth=1;x.beginPath();x.arc(s/2,s/2,s*.46,0,Math.PI*2);x.stroke()})}
+function rainbowTexture(size){return canvasTexture(size,(x,s)=>{const c=s/2,g=x.createConicGradient(-Math.PI/2,c,c);['#ff5c73','#ffbf5c','#fff27a','#7ff0b8','#65d6ff','#9383ff','#ef79ff','#ff5c73'].forEach((v,i)=>g.addColorStop(i/7,v));x.fillStyle=g;x.globalAlpha=.74;x.beginPath();x.arc(c,c,s*.36,0,Math.PI*2);x.fill();x.globalCompositeOperation='destination-in';const r=x.createRadialGradient(c,c,s*.10,c,c,s*.43);r.addColorStop(0,'rgba(255,255,255,.10)');r.addColorStop(.48,'rgba(255,255,255,.78)');r.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=r;x.fillRect(0,0,s,s)})}
+function bleedAuraTexture(size,type){return canvasTexture(size,(x,s)=>{const c=s/2;const colors=type==='gold'?['rgba(255,239,176,.72)','rgba(245,194,79,.56)','rgba(255,250,221,.48)']:type==='rainbow'?['rgba(255,83,142,.48)','rgba(255,198,82,.46)','rgba(104,238,187,.43)','rgba(73,198,255,.50)','rgba(151,119,255,.48)','rgba(241,97,255,.45)']:['rgba(241,251,255,.66)','rgba(184,218,241,.50)','rgba(255,255,255,.42)'];const seed=type==='gold'?17:type==='rainbow'?31:9;function rnd(n){const v=Math.sin((n+seed)*12.9898)*43758.5453;return v-Math.floor(v)}x.clearRect(0,0,s,s);x.save();x.globalCompositeOperation='lighter';const base=x.createRadialGradient(c,c+s*.05,0,c,c+s*.05,s*.34);base.addColorStop(0,type==='gold'?'rgba(255,240,183,.42)':type==='rainbow'?'rgba(245,248,255,.30)':'rgba(232,248,255,.38)');base.addColorStop(.30,type==='rainbow'?'rgba(200,201,255,.16)':'rgba(255,255,255,.18)');base.addColorStop(.72,type==='gold'?'rgba(230,177,65,.08)':type==='rainbow'?'rgba(145,124,255,.07)':'rgba(172,211,235,.07)');base.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=base;x.fillRect(0,0,s,s);for(let i=0;i<22;i++){const a=(i/22)*Math.PI*2+rnd(i)*.72;const bias=Math.sin(a)<0?1.18:.88;const dist=s*(.04+rnd(i+20)*.16)*bias;const px=c+Math.cos(a)*dist,py=c+Math.sin(a)*dist-s*.025;const rr=s*(.075+rnd(i+40)*.10);const g=x.createRadialGradient(px,py,0,px,py,rr);const col=colors[i%colors.length];g.addColorStop(0,col);g.addColorStop(.22,col);g.addColorStop(.62,col.replace(/\.[0-9]+\)/,'.14)'));g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(px,py,rr,0,Math.PI*2);x.fill()}for(let i=0;i<9;i++){const a=-Math.PI*.92+rnd(i+90)*Math.PI*.84;const px=c+Math.cos(a)*s*.08,py=c-s*.06+Math.sin(a)*s*.08;const rx=s*(.15+rnd(i+100)*.08),ry=s*(.038+rnd(i+110)*.032);x.save();x.translate(px,py);x.rotate(a-Math.PI/2+rnd(i+120)*.55);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,colors[(i*2)%colors.length]);g.addColorStop(.50,'rgba(255,255,255,.07)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore()}x.restore()})}
+function soulMask(size){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d'),s=size,cx=s*.5;function soft(px,py,r,a=1){const g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,`rgba(255,255,255,${a})`);g.addColorStop(.48,`rgba(255,255,255,${a*.78})`);g.addColorStop(.78,`rgba(255,255,255,${a*.28})`);g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,Math.PI*2);x.fill()}soft(cx,s*.58,s*.22,1);soft(cx-s*.035,s*.49,s*.17,.94);soft(cx+s*.025,s*.42,s*.13,.78);soft(cx-s*.035,s*.35,s*.085,.55);soft(cx+s*.055,s*.31,s*.055,.35);for(let i=0;i<5;i++){const px=cx+Math.sin(i*1.7)*s*(.025+i*.006),py=s*(.34-i*.035),rx=s*(.065-i*.006),ry=s*(.13-i*.012);x.save();x.translate(px,py);x.rotate(-.25+Math.sin(i)*.34);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,`rgba(255,255,255,${.34-i*.035})`);g.addColorStop(.55,`rgba(255,255,255,${.14-i*.012})`);g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore()}return c}
+function soulTexture(size,type){const mask=soulMask(size);return canvasTexture(size,(x,s)=>{const c=s/2;x.clearRect(0,0,s,s);if(type==='rainbow'){const g=x.createConicGradient(-Math.PI*.65,c,c);['#ff4e72','#ff9d42','#ffe56d','#59e0ad','#47cfff','#7678ff','#c55bff','#ff55b5','#ff4e72'].forEach((v,i)=>g.addColorStop(i/8,v));x.fillStyle=g;x.fillRect(0,0,s,s)}else{const top=type==='gold'?'#fff5c0':'#f6fbff',mid=type==='gold'?'#e8bd58':'#c5d0d9',low=type==='gold'?'#9b6d25':'#71808d';const g=x.createLinearGradient(0,s*.28,0,s*.76);g.addColorStop(0,top);g.addColorStop(.44,mid);g.addColorStop(1,low);x.fillStyle=g;x.fillRect(0,0,s,s)}x.globalCompositeOperation='destination-in';x.drawImage(mask,0,0);x.globalCompositeOperation='screen';const inner=x.createRadialGradient(c-s*.035,s*.53,0,c-s*.035,s*.53,s*.17);inner.addColorStop(0,'rgba(255,255,255,.98)');inner.addColorStop(.24,'rgba(255,255,255,.62)');inner.addColorStop(.62,'rgba(255,255,255,.12)');inner.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=inner;x.fillRect(0,0,s,s);const ember=x.createRadialGradient(c+s*.055,s*.43,0,c+s*.055,s*.43,s*.075);ember.addColorStop(0,type==='gold'?'rgba(255,249,198,.85)':type==='rainbow'?'rgba(255,255,255,.76)':'rgba(238,250,255,.74)');ember.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=ember;x.fillRect(0,0,s,s);x.globalCompositeOperation='destination-in';x.drawImage(mask,0,0)})}
+function soulHaloTexture(size,type){return canvasTexture(size,(x,s)=>{const colors=type==='gold'?['rgba(255,226,142,.30)','rgba(240,183,72,.18)']:type==='rainbow'?['rgba(255,82,145,.20)','rgba(75,203,255,.19)','rgba(175,104,255,.18)']:['rgba(225,244,255,.25)','rgba(170,208,233,.16)'];x.clearRect(0,0,s,s);x.save();x.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const a=-1.45+i*.42;const px=s*.5+Math.sin(a*1.7)*s*.06,py=s*.50-Math.cos(a)*s*.10;const rx=s*(.18+i*.008),ry=s*(.026+i*.004);x.save();x.translate(px,py);x.rotate(a*.44);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,colors[i%colors.length]);g.addColorStop(.58,'rgba(255,255,255,.05)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore()}x.restore()})}
+function wispTexture(size,type){return canvasTexture(size,(x,s)=>{x.clearRect(0,0,s,s);const palette=type==='gold'?['rgba(255,236,170,.34)','rgba(232,177,69,.20)']:type==='rainbow'?['rgba(255,102,158,.24)','rgba(94,218,255,.23)','rgba(171,113,255,.22)']:['rgba(229,246,255,.28)','rgba(165,208,236,.18)'];x.save();x.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const cx=s*(.42+i*.055),cy=s*(.65-i*.08),rx=s*(.09-i*.009),ry=s*(.24-i*.025);x.save();x.translate(cx,cy);x.rotate((i-1.5)*.13);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,palette[i%palette.length]);g.addColorStop(.45,palette[(i+1)%palette.length]);g.addColorStop(.72,'rgba(255,255,255,.05)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore()}x.restore()})}
+function spr(t,a=1,b='normal'){const s=new Sprite(t);s.anchor.set(.5);s.alpha=a;s.blendMode=b;return s}
+const TEX={};
+for(const k of Object.keys(PALETTES)) TEX[k]=soulTexture(256,k);
+const GLOW={
+ silver:bleedAuraTexture(320,'silver'),
+ gold:bleedAuraTexture(320,'gold'),
+ rainbow:bleedAuraTexture(320,'rainbow')
+};
+const HALO={
+ silver:soulHaloTexture(280,'silver'),
+ gold:soulHaloTexture(280,'gold'),
+ rainbow:soulHaloTexture(280,'rainbow')
+};
+const WISP={
+ silver:wispTexture(260,'silver'),
+ gold:wispTexture(260,'gold'),
+ rainbow:wispTexture(260,'rainbow')
+};
+function makeOrb(type,index){
+ const c=new Container();
+ const glow=spr(GLOW[type],type==='rainbow'?.94:.82,'add');glow.scale.set(1.42,1.66);glow.rotation=(index%5)*.12-.18;c.addChild(glow);
+ const glow2=spr(GLOW[type],type==='rainbow'?.38:.27,'screen');glow2.scale.set(1.80,2.12);glow2.rotation=-.36-(index%4)*.09;c.addChild(glow2);
+ const wisps=[];
+ for(let j=0;j<3;j++){
+   const w=spr(WISP[type],type==='rainbow'?.34:.25,'add');
+   w.scale.set(.80+j*.10,1.02+j*.14);
+   w.position.set((j-1)*10,-12-j*6);
+   w.rotation=(j-1)*.18;
+   c.addChild(w);wisps.push(w);
+ }
+ const r1=spr(HALO[type],type==='rainbow'?.42:.28,'screen');r1.scale.set(1.12,1.26);r1.rotation=(index%3-.8)*.18;c.addChild(r1);
+ const shell=spr(TEX[type],.98,'normal');shell.scale.set(.94,1.08);shell.position.y=3;c.addChild(shell);
+ const tint=spr(rainbowTexture(256),type==='rainbow'?.15:0,'screen');tint.scale.set(.58,.72);tint.position.y=9;c.addChild(tint);
+ const white=spr(radialTexture(256,[[0,'rgba(255,255,255,.95)'],[.18,'rgba(255,255,255,.54)'],[.50,'rgba(255,255,255,.10)'],[1,'rgba(255,255,255,0)']]),.26,'add');white.scale.set(.24,.34);white.position.set(-5,18);c.addChild(white);
+ const fx=new Container();c.addChild(fx);
+ c._glow=glow;c._glow2=glow2;c._wisps=wisps;c._ring=r1;c._shell=shell;c._rainbowTint=tint;c._white=white;c._fx=fx;c._type=type;c._index=index;c.scale.set(.46);
+ return c;
+}
+function centralCore(){
+ const c=new Container();
+ const glow=spr(radialTexture(384,[[0,'rgba(255,255,255,.96)'],[.20,'rgba(242,222,173,.42)'],[.55,'rgba(207,179,117,.14)'],[1,'rgba(255,255,255,0)']]),.42,'add');glow.scale.set(1.4);c.addChild(glow);
+ const ring=spr(ringTexture(384,'#c5a66b',1.3,.42),.40,'screen');c.addChild(ring);
+ const dot=spr(radialTexture(256,[[0,'rgba(255,255,255,.98)'],[.30,'rgba(248,231,192,.70)'],[.70,'rgba(187,150,85,.15)'],[1,'rgba(255,255,255,0)']]),.62,'add');dot.scale.set(.48);c.addChild(dot);
+ c._glow=glow;c._ring=ring;c.scale.set(.44);return c;
+}
+function colorPattern(){return presentationPlans.map(p=>p.initial)}
+function rebuildColors(){
+ const pattern=colorPattern().sort(()=>Math.random()-.5);
+ orbs.forEach((o,i)=>{const p=o.position.clone();const sc=o.scale.x;world.removeChild(o);o.destroy({children:true});const n=makeOrb(pattern[i],i);n.position.copyFrom(p);n.scale.set(sc);orbs[i]=n;world.addChild(n)});
+ world.addChild(core);
+}
+function positions(mode){
+ const pts=[];
+ if(mode==='grid'){
+   const xs=[-124,-62,0,62,124], ys=[-56,56];
+   ys.forEach(y=>xs.forEach(x=>pts.push({x,y})))
+ }else if(mode==='ring'){
+   const radius=146;
+   for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI*2/10;pts.push({x:Math.cos(a)*radius,y:Math.sin(a)*radius})}
+ }else{
+   // Two elegant arcs around the heart: 5 upper + 5 lower, leaving the center clear.
+   for(let i=0;i<5;i++){const t=i/4;const a=Math.PI*1.10 + t*Math.PI*.80;pts.push({x:Math.cos(a)*150,y:Math.sin(a)*92-34})}
+   for(let i=0;i<5;i++){const t=i/4;const a=Math.PI*.10 + t*Math.PI*.80;pts.push({x:Math.cos(a)*150,y:Math.sin(a)*92+34})}
+ }
+ return pts;
+}
+function applyLayout(mode,animate=true){
+ layoutMode=mode;
+ const labels={grid:'5＋5 配置',ring:'正円・等間隔',arc:'弧配置'};nameEl.textContent=labels[mode];
+ layoutBtns.forEach(b=>b.classList.toggle('active',b.dataset.layout===mode));
+ const pts=positions(mode);
+ const orbScale=mode==='grid'?.41:(mode==='ring'?.30:.42);
+ orbs.forEach((o,i)=>{
+   if(animate) gsap.to(o,{x:pts[i].x,y:pts[i].y,duration:.55,ease:'power3.inOut'}); else o.position.set(pts[i].x,pts[i].y);
+   gsap.to(o.scale,{x:orbScale,y:orbScale,duration:animate?.45:0,ease:'power2.out'});
+ });
+ gsap.to(core,{alpha:mode==='grid'?.22:.72,duration:.35});
+}
+function fit(){if(!app)return;const w=app.screen.width,h=app.screen.height;world.position.set(w/2,h*.50);const s=Math.min(w/390,h/680);world.scale.set(Math.max(.84,Math.min(1.16,s)));}
+function baseScale(){return layoutMode==='grid'?.41:(layoutMode==='ring'?.30:.42)}
+function normalGlowAlpha(type){return type==='rainbow'?.90:type==='gold'?.83:.76}
+function normalGlow2Alpha(type){return type==='rainbow'?.38:type==='gold'?.31:.26}
+function normalWispAlpha(type,j){return type==='rainbow'?(.38+j*.045):type==='gold'?(.33+j*.042):(.30+j*.040)}
+function setOrbType(o,type){
+ o._type=type;
+ o._shell.texture=TEX[type];
+ o._glow.texture=GLOW[type];
+ o._glow2.texture=GLOW[type];
+ o._ring.texture=HALO[type];
+ o._wisps.forEach(w=>w.texture=WISP[type]);
+ o._rainbowTint.alpha=type==='rainbow'?.15:0;
+ o._glow.alpha=normalGlowAlpha(type);
+ o._glow2.alpha=normalGlow2Alpha(type);
+ o._ring.alpha=type==='rainbow'?.42:.28;
+}
+function initialTestPattern(){return presentationPlans.map(p=>p.initial)}
+function resetTestPattern(){
+ const p=initialTestPattern();
+ orbs.forEach((o,i)=>setOrbType(o,p[i]));
+}
+function clearFx(o){
+ if(!o._fx)return;
+ o._fx.removeChildren().forEach(ch=>{try{ch.destroy({children:true})}catch(_){}});
+}
+function burst(o,newType,intensity=1){
+ const colors=newType==='rainbow'?[0xff4f72,0xff9e43,0xffdf5f,0x68efae,0x4fd5ff,0x7f7cff,0xc75cff,0xff5ebd,0xffffff]:[0xfff0a8,0xf2c957,0xd99b2f,0xffffff];
+ const layer=o._fx;
+ const rainbow=newType==='rainbow';
+ const shardCount=Math.round((rainbow?34:28)*intensity);
+ const dustCount=Math.round((rainbow?118:92)*intensity);
+ const sparkCount=Math.round((rainbow?18:14)*intensity);
+
+ // Sharp shell fragments — immediate, readable "PAN".
+ for(let i=0;i<shardCount;i++){
+   const g=new Graphics();
+   const w=(5+(i%5)*1.9)*(rainbow?1.08:1),h=(13+(i%6)*2.7)*(rainbow?1.10:1);
+   g.rect(-w/2,-h/2,w,h).fill({color:colors[i%colors.length],alpha:1});
+   const a=Math.PI*2*i/shardCount+((i%7)-3)*.045;
+   g.position.set(Math.cos(a)*(30+(i%4)*5),Math.sin(a)*(30+(i%4)*5));
+   g.rotation=a+(i%4)*.19;layer.addChild(g);
+   const d=(285+(i%8)*38)*(rainbow?1.10:1);
+   gsap.to(g,{x:Math.cos(a)*d,y:Math.sin(a)*d,rotation:g.rotation+(i%2?4.4:-4.4),alpha:0,duration:.42+(i%5)*.045,ease:'power4.out',onComplete:()=>{try{g.destroy()}catch(_){}}});
+ }
+
+ // Dense colored dust cloud — deliberately larger and longer-lived.
+ for(let i=0;i<dustCount;i++){
+   const g=new Graphics();const r=(1.6+(i%6)*.62)*(i%11===0?1.8:1);
+   g.circle(0,0,r).fill({color:colors[(i*5)%colors.length],alpha:.94});
+   const a=Math.PI*2*i/dustCount+((i%9)-4)*.037;
+   const st=22+(i%7)*6;
+   g.position.set(Math.cos(a)*st,Math.sin(a)*st);layer.addChild(g);
+   const d=175+(i%13)*24+(rainbow?18:0);
+   gsap.to(g,{x:Math.cos(a)*d,y:Math.sin(a)*d,alpha:0,duration:.68+(i%8)*.055,ease:'power2.out',onComplete:()=>{try{g.destroy()}catch(_){}}});
+ }
+
+ // Hot sparks travel farther than the dust so the burst reads even at ring scale.
+ for(let i=0;i<sparkCount;i++){
+   const g=new Graphics();
+   const len=24+(i%5)*8;
+   g.roundRect(-2,-len*.5,4,len,2).fill({color:i%3===0?0xffffff:colors[i%colors.length],alpha:1});
+   const a=Math.PI*2*i/sparkCount+((i%4)-1.5)*.08;
+   g.position.set(Math.cos(a)*24,Math.sin(a)*24);g.rotation=a+Math.PI/2;layer.addChild(g);
+   const d=330+(i%6)*46+(rainbow?45:0);
+   gsap.to(g,{x:Math.cos(a)*d,y:Math.sin(a)*d,alpha:0,duration:.48+(i%4)*.06,ease:'power4.out',onComplete:()=>{try{g.destroy()}catch(_){}}});
+ }
+
+ // Triple shock rings create a visible expanding impact wave.
+ [0,1,2].forEach(n=>{
+   const r=new Graphics();
+   r.circle(0,0,54+n*13).stroke({width:n===0?6:(n===1?4:2.5),color:colors[(n*2)%colors.length],alpha:n===0?.96:(n===1?.66:.42)});
+   r.scale.set(.48);layer.addChild(r);
+   gsap.to(r.scale,{x:3.15+n*.34,y:3.15+n*.34,duration:.46+n*.09,ease:'power3.out'});
+   gsap.to(r,{alpha:0,duration:.43+n*.11,ease:'power2.out',onComplete:()=>{try{r.destroy()}catch(_){}}});
+ });
+
+ // Brief starburst rays behind the fragments.
+ for(let i=0;i<10;i++){
+   const ray=new Graphics();const a=Math.PI*2*i/10+.12;
+   ray.roundRect(-2,-86,4,86,2).fill({color:rainbow?colors[i%colors.length]:0xffe6a0,alpha:.50});
+   ray.rotation=a+Math.PI/2;ray.scale.set(.25,.58);layer.addChild(ray);
+   gsap.to(ray.scale,{x:.62,y:1.55,duration:.24,ease:'power4.out'});
+   gsap.to(ray,{alpha:0,duration:.34,ease:'power2.out',onComplete:()=>{try{ray.destroy()}catch(_){}}});
+ }
+}
+function promoteOrb(o,newType){
+ if(o._type===newType)return;
+ const flash=spr(radialTexture(256,[[0,'rgba(255,255,255,1)'],[.18,'rgba(255,255,255,.98)'],[.52,'rgba(255,255,255,.38)'],[1,'rgba(255,255,255,0)']]),0,'add');
+ flash.scale.set(.18);o._fx.addChild(flash);
+ gsap.timeline()
+   .to(flash,{alpha:1,duration:.055,ease:'power4.out'})
+   .to(flash.scale,{x:1.35,y:1.35,duration:.14,ease:'power4.out'},0)
+   .add(()=>{burst(o,newType);setOrbType(o,newType)},.065)
+   .to(flash,{alpha:0,duration:.22,ease:'power2.out'},.09)
+   .add(()=>{try{flash.destroy()}catch(_){}},.34);
+}
+function heartbeatAt(tl,t,beatNo){
+ const base=baseScale();
+ // DO = expand + brighten. KUN = contract + darken. Every beat uses identical timing.
+ tl.to(core.scale,{x:.58,y:.58,duration:.18,ease:'power3.out'},t)
+   .to(core._glow,{alpha:1,duration:.15,ease:'power4.out'},t)
+   .to(core.scale,{x:.28,y:.28,duration:.27,ease:'power3.inOut'},t+.18)
+   .to(core._glow,{alpha:.12,duration:.25,ease:'power2.in'},t+.18)
+   .to(core.scale,{x:.40,y:.40,duration:.24,ease:'sine.out'},t+.45)
+   .to(core._glow,{alpha:.28,duration:.24,ease:'sine.out'},t+.45);
+ orbs.forEach((o,i)=>{
+   const d=i*.005;
+   tl.to(o.scale,{x:base*1.18,y:base*1.18,duration:.18,ease:'power3.out'},t+d)
+     .to(o._glow,{alpha:1,duration:.13,ease:'power4.out'},t+d)
+     .to(o._glow2,{alpha:.60,duration:.13,ease:'power4.out'},t+d)
+     .to(o._ring,{alpha:.66,duration:.13,ease:'power4.out'},t+d)
+     .to(o.scale,{x:base*.64,y:base*.64,duration:.27,ease:'power3.inOut'},t+.18+d)
+     .to(o._glow,{alpha:.13,duration:.24,ease:'power2.in'},t+.18+d)
+     .to(o._glow2,{alpha:.05,duration:.24,ease:'power2.in'},t+.18+d)
+     .to(o._ring,{alpha:.09,duration:.24,ease:'power2.in'},t+.18+d)
+     .to(o.scale,{x:base*.91,y:base*.91,duration:.25,ease:'sine.out'},t+.45+d)
+     .to(o._glow,{alpha:normalGlowAlpha(o._type)*.58,duration:.24,ease:'sine.out'},t+.45+d)
+     .to(o._glow2,{alpha:normalGlow2Alpha(o._type)*.56,duration:.24,ease:'sine.out'},t+.45+d)
+     .to(o._ring,{alpha:(o._type==='rainbow'?.42:.28)*.62,duration:.24,ease:'sine.out'},t+.45+d);
+ });
+ // Actual draw results are already fixed by the parent app. Only the presentation path changes here.
+ // Upgrades are allowed on beats 1 / 3 / 5 only.
+ presentationPlans.forEach((plan,i)=>{
+   const next=plan && plan.promotions ? plan.promotions[beatNo] : null;
+   if(next) tl.add(()=>promoteOrb(orbs[i],next),t+.15+i*.008);
+ });
+}
+function appearSoul(tl,o,i,t){
+ const base=baseScale();
+ const g1=normalGlowAlpha(o._type), g2=normalGlow2Alpha(o._type), ringA=o._type==='rainbow'?.42:.28;
+ tl.set(o,{alpha:1},t)
+   .set(o.scale,{x:base*.025,y:base*.025},t)
+   .set(o._shell,{alpha:0},t)
+   .set(o._ring,{alpha:0},t)
+   .set(o._glow,{alpha:0},t)
+   .set(o._glow2,{alpha:0},t)
+   .set(o._white,{alpha:0},t)
+   .add(()=>{ o._wisps.forEach(w=>w.alpha=0); },t)
+   .add(()=>{
+      // Small point of light first, then a hazy soul aura blooms outward before the body settles in.
+      const seed=spr(radialTexture(256,[[0,'rgba(255,255,255,1)'],[.12,'rgba(255,255,255,.92)'],[.34,'rgba(255,251,239,.46)'],[1,'rgba(255,255,255,0)']]),1,'add');
+      seed.scale.set(.028);o._fx.addChild(seed);
+      gsap.timeline({onComplete:()=>{try{seed.destroy()}catch(_){}}})
+        .to(seed.scale,{x:.82,y:.82,duration:.18,ease:'sine.out'},0)
+        .to(seed.scale,{x:2.25,y:2.25,duration:.54,ease:'power2.out'},.18)
+        .to(seed,{alpha:0,duration:.62,ease:'power2.out'},.10);
+
+      const haze=spr(radialTexture(256,[[0,'rgba(255,255,255,.86)'],[.22,'rgba(255,247,232,.42)'],[.62,'rgba(231,214,178,.12)'],[1,'rgba(255,255,255,0)']]),.92,'screen');
+      haze.scale.set(.04);o._fx.addChild(haze);
+      gsap.timeline({onComplete:()=>{try{haze.destroy()}catch(_){}}})
+        .to(haze.scale,{x:1.75,y:1.75,duration:.60,ease:'power2.out'},.02)
+        .to(haze,{alpha:0,duration:.58,ease:'sine.out'},.16);
+   },t)
+   .to(o._glow,{alpha:g1*1.18,duration:.46,ease:'power2.out'},t+.06)
+   .to(o._glow2,{alpha:g2*1.10,duration:.54,ease:'power2.out'},t+.08)
+   .to(o._white,{alpha:.34,duration:.34,ease:'sine.out'},t+.18)
+   .to(o.scale,{x:base*1.22,y:base*1.22,duration:.58,ease:'power2.out'},t+.08)
+   .add(()=>{
+      o._wisps.forEach((w,j)=>{
+        gsap.to(w,{alpha:Math.min(.62,normalWispAlpha(o._type,j)+.10),duration:.34,ease:'sine.out'});
+      });
+   },t+.18)
+   .to(o._shell,{alpha:1,duration:.26,ease:'sine.out'},t+.24)
+   .to(o._ring,{alpha:ringA,duration:.28,ease:'sine.out'},t+.30)
+   .to(o.scale,{x:base,y:base,duration:.30,ease:'sine.out'},t+.60)
+   .to(o._glow,{alpha:g1,duration:.30,ease:'sine.out'},t+.60)
+   .to(o._glow2,{alpha:g2,duration:.30,ease:'sine.out'},t+.60)
+   .to(o._white,{alpha:.26,duration:.26,ease:'sine.out'},t+.60)
+   // A rainbow soul is a jackpot cue even when it appears at the initial reveal.
+   // Give it the same explosive particle language as a promotion, without changing its type.
+   .add(()=>{if(o._type==='rainbow') burst(o,'rainbow',1.12)},t+.32);
+}
+function sequencePreview(){
+ if(busy)return;busy=true;
+ gsap.killTweensOf(orbs.map(o=>o.scale));
+ resetTestPattern();orbs.forEach(clearFx);
+ const pts=positions(layoutMode);const base=baseScale();
+ orbs.forEach((o,i)=>{o.position.set(pts[i].x,pts[i].y);o.alpha=0;o.scale.set(base*.12)});
+ core.alpha=.72;core.scale.set(.40);core._glow.alpha=.20;
+ nameEl.textContent='';
+ const tl=gsap.timeline({onComplete:()=>{busy=false;nameEl.textContent='正円・等間隔 / 昇格テスト完了'}});
+ const gap=.40;
+ for(let i=0;i<10;i++) appearSoul(tl,orbs[i],i,.35+i*gap);
+ const allIn=.35+9*gap+.72;
+ tl.add(()=>{},allIn+.15);
+ const phase=allIn+.35;
+ [1,2,3,4,5].forEach((beat,idx)=>{
+   const bt=phase+1.5*(idx+1);
+   tl.add(()=>{},bt-.02);
+   heartbeatAt(tl,bt,beat);
+ });
+ // After beat 5, keep the souls dim for one breath, then let a huge radial bloom swallow the entire viewport.
+ const openT=phase+9.5;
+ tl.set('#open-bloom',{opacity:0,scale:.008},openT-.02)
+   .set('#open-bloom2',{opacity:0,scale:.006},openT-.02)
+   .set('#whiteout',{opacity:0},openT-.02)
+   .add(()=>{},openT-.05)
+   // The center compresses for a split second, then detonates outward.
+   .to(core.scale,{x:.30,y:.30,duration:.10,ease:'power3.in'},openT)
+   .to(core._glow,{alpha:1,duration:.08,ease:'power4.out'},openT)
+   .to(core.scale,{x:.76,y:.76,duration:.24,ease:'expo.out'},openT+.10)
+   .to(core._glow.scale,{x:26,y:26,duration:.72,ease:'expo.in'},openT+.08)
+   // Two overlapping radial blooms make the expansion read as light, not a flat white card.
+   .to('#open-bloom',{opacity:1,duration:.08,ease:'power4.out'},openT+.02)
+   .to('#open-bloom',{scale:1.08,duration:.82,ease:'expo.in'},openT+.02)
+   .to('#open-bloom2',{opacity:1,duration:.06,ease:'power4.out'},openT+.12)
+   .to('#open-bloom2',{scale:1.18,duration:.66,ease:'power4.in'},openT+.12)
+   // Only after the radial bloom has engulfed the screen do we lock to pure white.
+   .to('#whiteout',{opacity:1,duration:.22,ease:'power3.in'},openT+.58)
+   .add(()=>{ try{ parent.postMessage({type:'ZERAPHIA_PIXI_GACHA_WHITEOUT'}, location.origin); }catch(_){} },openT+.82)
+   .to('#open-bloom',{opacity:0,duration:.18,ease:'power2.out'},openT+.82)
+   .to('#open-bloom2',{opacity:0,duration:.18,ease:'power2.out'},openT+.82)
+   .to('#whiteout',{opacity:0,duration:.78,ease:'power2.out'},openT+1.02)
+   .add(()=>{ try{ parent.postMessage({type:'ZERAPHIA_PIXI_GACHA_DONE'}, location.origin); }catch(_){} },openT+1.72)
+   .add(()=>{
+      core._glow.scale.set(1.4);core.scale.set(.44);core._glow.alpha=.30;
+      gsap.set('#open-bloom',{opacity:0,scale:.008});
+      gsap.set('#open-bloom2',{opacity:0,scale:.006});
+      gsap.set('#whiteout',{opacity:0});
+      orbs.forEach(o=>{o.scale.set(base);o.alpha=1});
+   },openT+1.86);
+}
+
+app=new Application();
+await app.init({resizeTo:window,backgroundAlpha:0,antialias:true,resolution:Math.min(devicePixelRatio||1,2),autoDensity:true});
+host.appendChild(app.canvas);
+world=new Container();app.stage.addChild(world);
+core=centralCore();world.addChild(core);
+const pattern=colorPattern();
+for(let i=0;i<10;i++){const o=makeOrb(pattern[i],i);orbs.push(o);world.addChild(o)}
+world.addChild(core);
+applyLayout('ring',false);fit();
+window.addEventListener('resize',fit);
+app.ticker.add(()=>{
+ const t=performance.now()/1000;
+ core._ring.rotation+=.0007;
+ core._glow.scale.set(1.4*(1+Math.sin(t*.9)*.014));
+ orbs.forEach((o,i)=>{
+   o._ring.rotation+=(i%2?-.00042:.00042);
+   o._glow.rotation+=(i%2?-.00034:.00034);
+   o._glow2.rotation+=(i%2?.00024:-.00024);
+
+   // The whole aura breathes enough to remain visible even in the small ring layout.
+   const breath=Math.sin(t*.92+i*.57);
+   const breath2=Math.sin(t*1.31+i*.39);
+   o._glow.scale.set(1.42*(1+breath*.055),1.66*(1+breath2*.080));
+   o._glow2.scale.set(1.80*(1-breath2*.045),2.12*(1+breath*.095));
+   o._glow.alpha=(o._type==='rainbow'?.90:.76)+breath*.10;
+   o._glow2.alpha=(o._type==='rainbow'?.38:.26)+breath2*.075;
+
+   o._shell.rotation=Math.sin(t*.72+i*.71)*.035;
+   o._shell.scale.set(.94*(1+Math.sin(t*.92+i*.43)*.025),1.08*(1+Math.sin(t*.79+i*.37)*.040));
+
+   // Each wisp is intentionally exaggerated because the parent soul is scaled to ~30% in ring mode.
+   // This turns the aura into visible, irregular tongues of light instead of a static circular glow.
+   o._wisps.forEach((w,j)=>{
+     const ph=i*.83+j*1.91;
+     const s1=Math.sin(t*(1.22+j*.19)+ph);
+     const s2=Math.sin(t*(1.91+j*.13)+ph*.71);
+     const s3=Math.sin(t*(2.63+j*.17)+ph*1.17);
+     const baseX=(j-1)*15;
+     const baseY=-18-j*12;
+     w.x=baseX+s1*(15+j*3)+s2*(6+j*2);
+     w.y=baseY+s2*(9+j*2)-Math.max(0,s3)*(8+j*3);
+     w.rotation=(j-1)*.18+s1*.27+s3*.08;
+     const baseAlpha=o._type==='rainbow'?(.38+j*.045):(.30+j*.040);
+     w.alpha=Math.max(.13,Math.min(.62,baseAlpha+s2*.12+s3*.075));
+     w.scale.set(
+       (.82+j*.11)*(1+s3*.11),
+       (1.08+j*.17)*(1+s1*.18+s2*.06)
+     );
+   });
+ })
+});
+layoutBtns.forEach(b=>b.addEventListener('click',()=>{if(!busy)applyLayout(b.dataset.layout,true)}));
+pulseBtn.addEventListener('click',sequencePreview);
+shuffleBtn.addEventListener('click',()=>{if(!busy){resetTestPattern();nameEl.textContent='昇格テスト初期状態';}});
+setTimeout(()=>{if(!busy)sequencePreview()},80);
+})().catch(err=>{console.error(err);document.getElementById('layout-name').textContent='PixiJS LOAD ERROR';});
+</script>
+</body>
+</html>

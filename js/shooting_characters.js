@@ -44,6 +44,9 @@
     IVERNA: 32,
     REI: 33,
     GRESHA: 34,
+    GISELLE: 35,
+    NINA: 36,
+    TOYFEL: 37,
   });
 
   // ============================================================
@@ -92,6 +95,9 @@
     32: 'sr',  // イヴェルナ
     33: 'sr',  // レイ
     34: 'r',   // グレシャ
+    35: 'r',   // ジゼル
+    36: 'sr',  // ニーナ
+    37: 'r',   // トイフェル
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -876,6 +882,72 @@
     "homeOffsetY": -40,
     "hidden": false
   },
+  "35": {
+    "id": 35,
+    "name": "ジゼル",
+    "element": "aqua",
+    "hp": 620,
+    "atk": 255,
+    "image": "images/chara_35_battle_back.webp",
+    "panelImage": "images/chara_35_panel.webp",
+    "cutinImage": "images/chara_35_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_35.webp",
+    "homeImage": "images/chara_35_cut.webp",
+    "upImage": "images/chara_35_up.webp",
+    "homeScale": 1,
+    "homeOffsetX": 0,
+    "homeOffsetY": 0,
+    "hidden": false
+  },
+  "36": {
+    "id": 36,
+    "name": "ニーナ",
+    "element": "light",
+    "hp": 590,
+    "atk": 280,
+    "image": "images/chara_36_battle_back.webp",
+    "panelImage": "images/chara_36_panel.webp",
+    "cutinImage": "images/chara_36_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_36.webp",
+    "homeImage": "images/chara_36_cut.webp",
+    "upImage": "images/chara_36_up.webp",
+    "homeScale": 1,
+    "homeOffsetX": 0,
+    "homeOffsetY": 0,
+    "hidden": false
+  },
+  "37": {
+    "id": 37,
+    "name": "トイフェル",
+    "element": "dark",
+    "hp": 580,
+    "atk": 290,
+    "image": "images/chara_37_battle_back.webp",
+    "panelImage": "images/chara_37_panel.webp",
+    "cutinImage": "images/chara_37_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_37.webp",
+    "homeImage": "images/chara_37_cut.webp",
+    "upImage": "images/chara_37_up.webp",
+    "homeScale": 1,
+    "homeOffsetX": 0,
+    "homeOffsetY": 0,
+    "hidden": false
+  },
   "50": {
     "id": 50,
     "name": "SIGMA-IX",
@@ -1072,7 +1144,7 @@
   // SHOOTING専用戦闘プロフィール
   // ============================================================
   // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 13ミア / 14アヤネ / 15エルテナ
-  // その他13人：現時点ではエリ性能を継承
+  // その他未調整キャラ：現時点ではエリ性能を継承
   const SHOOTING_CHARACTERS = {};
 
   Object.keys(SHOOTING_CHARACTER_MASTER).forEach(id => {
@@ -1898,6 +1970,86 @@
   // ============================================================
   // SIGMA-IX：DAILY RAIDクリア報酬
   // ============================================================
+
+  // ============================================================
+  // build737: ID35-37 combat profiles
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.GISELLE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.GISELLE, effectKey: 'giselle',
+    label: 'ORBIT / AQUA',
+    description: '2発の水属性円環ショットが前進しながら軌道を描くORBIT型。ULTはウルフ系のATK UP FIELDをR向けに抑えた1.3倍・10秒版。',
+    ultName: 'ATK UP FIELD',
+    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
+    shotType: 'orbit',
+    shotCount: 2,
+    shotSpacing: 28,
+    fireRate: 450,
+    bulletSpeed: 520,
+    shotPowerRate: 0.165,
+    orbitRadius: 30,
+    orbitAngularSpeed: 12.0,
+    orbitForwardLoopRate: 0.29,
+    orbitPhaseStep: Math.PI,
+    ultBaseType: 'field',
+    ultAddons: ['bullet_clear','player_buff'],
+    ultType: 'wolf_atk_field',
+    ultFieldDurationMs: 10000,
+    ultFieldAtkMultiplier: 1.3,
+    ultFieldRadius: 112,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.NINA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NINA, effectKey: 'nina',
+    label: 'LIGHTNING / CHAIN',
+    description: '電撃弾を放つSRチェイン型。命中した敵から周囲の敵へ感電が連鎖。ULTは画面上半分の敵側フィールドを8分割し、8秒間に16回ランダムエリアへ落雷する。',
+    ultName: 'LIGHTNING STORM',
+    ultDescription: '画面上半分の敵側フィールドを4列×2段の8エリアに分割。8秒間に16回、ランダムな1エリアへ落雷し、その瞬間エリア内にいる敵全員へATK×4.0のLIGHT属性ダメージ。命中した敵は3秒間、移動と射撃が停止する。',
+    shotType: 'lightning',
+    shotCount: 1,
+    fireRate: 300,
+    bulletSpeed: 900,
+    shotPowerRate: 0.28,
+    lightningChainRadius: 120,
+    lightningMaxJumps: 3,
+    lightningChainDamageRate: 0.62,
+    lightningChainDecay: 0.82,
+    ultBaseType: 'storm',
+    ultAddons: ['damage','enemy_paralyze'],
+    ultType: 'nina_lightning_storm',
+    ninaUltDurationMs: 8000,
+    ninaUltHitCount: 16,
+    ninaUltHitAtkMultiplier: 4.0,
+    ninaUltParalyzeMs: 3000,
+    ninaUltEnemyFieldRatio: 0.5,
+    ninaUltZoneColumns: 4,
+    ninaUltZoneRows: 2,
+    ninaUltTelegraphMs: 180,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.TOYFEL] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.TOYFEL, effectKey: 'toyfel',
+    label: 'BOMB / DARK',
+    description: '闇属性の爆弾を前方へ投げ、着弾時に周囲へDARK属性の爆風を広げるBOMB型。ULTは発動地点の左右端へ2つのブラックホールを7秒間展開し、敵弾を吸収する。',
+    ultName: 'DUAL BLACK HOLE',
+    ultDescription: '発動時の自機Y座標に合わせて、画面左端・右端へブラックホールを1つずつ召喚。7秒間、盤面上の敵弾を左右どちらかのブラックホールへ吸引して消滅させる。',
+    shotType: 'bomb',
+    bombSize: 'M',
+    shotCount: 1,
+    fireRate: 550,
+    bulletSpeed: 660,
+    shotPowerRate: 0.27,
+    splashRadius: 76,
+    splashDamageRate: 0.55,
+    ultBaseType: 'field',
+    ultAddons: ['enemy_bullet_absorb'],
+    ultType: 'toyfel_double_black_hole',
+    toyfelBlackHoleDurationMs: 7000,
+    toyfelBlackHoleSize: 96,
+    toyfelBlackHoleEdgeInset: 34,
+    toyfelBlackHoleAbsorbRadius: 28,
+    toyfelBlackHoleAbsorbSpeed: 980,
+  });
+
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.TESTCHAN,

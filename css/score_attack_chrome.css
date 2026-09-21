@@ -482,3 +482,45 @@ html body:not(.ui-immersive) #score-attack-root .score-attack-back{
     right:calc(50% - 102px) !important;
   }
 }
+
+/* =========================================================
+   SCORE ATTACK build696 — move SELF badge to card corner
+   名前の横幅を奪わず、自分のランキング行の右上に固定する。
+   ========================================================= */
+#score-attack-root .score-attack-row{
+  position:relative !important;
+}
+
+#score-attack-root .score-attack-row-main > b{
+  overflow:visible !important;
+}
+
+#score-attack-root .score-attack-row-main em{
+  position:absolute !important;
+  top:5px !important;
+  right:7px !important;
+  z-index:4 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:auto !important;
+  min-width:24px !important;
+  height:14px !important;
+  margin:0 !important;
+  padding:1px 4px !important;
+  box-sizing:border-box !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  pointer-events:none !important;
+}
+
+@media (max-width:360px){
+  #score-attack-root .score-attack-row-main em{
+    top:4px !important;
+    right:5px !important;
+    min-width:23px !important;
+    height:13px !important;
+    padding:1px 3px !important;
+    font-size:7px !important;
+  }
+}

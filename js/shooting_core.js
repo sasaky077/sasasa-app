@@ -4,6 +4,136 @@
 (function () {
   'use strict';
 
+
+  // build737: ニーナ LIGHTNING - 電撃弾 + 連鎖感電
+  if (!document.getElementById('shooting-lightning-shot-style-v737')) {
+    const lightningStyle = document.createElement('style');
+    lightningStyle.id = 'shooting-lightning-shot-style-v737';
+    lightningStyle.textContent = `
+      .shooting-bullet-lightning{
+        width:8px!important;
+        height:30px!important;
+        min-width:8px!important;
+        min-height:30px!important;
+        max-width:8px!important;
+        max-height:30px!important;
+        margin:-15px 0 0 -4px!important;
+        border-radius:55% 55% 42% 42%!important;
+        overflow:visible!important;
+        background:
+          linear-gradient(180deg,
+            rgba(255,255,255,.15) 0%,
+            rgba(255,255,255,.98) 18%,
+            rgba(238,245,255,1) 45%,
+            rgba(176,208,255,.96) 70%,
+            rgba(116,157,255,.18) 100%)!important;
+        box-shadow:
+          0 0 4px rgba(255,255,255,.95),
+          0 0 9px rgba(178,211,255,.88),
+          0 0 16px rgba(112,158,255,.48)!important;
+        filter:none!important;
+      }
+      .shooting-bullet-lightning::before{
+        content:"";
+        position:absolute;
+        left:50%;
+        top:-5px;
+        width:2px;
+        height:40px;
+        transform:translateX(-50%) rotate(7deg);
+        background:rgba(255,255,255,.95);
+        box-shadow:0 0 6px rgba(197,222,255,.95);
+        opacity:.86;
+      }
+      .shooting-bullet-lightning::after{
+        content:"";
+        position:absolute;
+        left:-7px;
+        right:-7px;
+        top:-5px;
+        bottom:-5px;
+        background:radial-gradient(ellipse at 50% 50%,rgba(190,219,255,.30),rgba(132,175,255,.10) 48%,transparent 72%);
+        filter:blur(1.5px);
+        opacity:.85;
+      }
+      .shooting-lightning-chain-effect{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        overflow:visible;
+        z-index:47;
+        pointer-events:none;
+      }
+      .shooting-lightning-chain-glow{
+        fill:none;
+        stroke:rgba(143,188,255,.55);
+        stroke-width:6;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+        filter:blur(2px);
+      }
+      .shooting-lightning-chain-core{
+        fill:none;
+        stroke:rgba(248,252,255,.98);
+        stroke-width:1.6;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+      }
+      .shooting-lightning-chain-hit{
+        fill:rgba(255,255,255,.94);
+        stroke:rgba(159,200,255,.78);
+        stroke-width:1.2;
+      }
+      .shooting-nina-ult-zone-warning{
+        position:absolute;
+        z-index:45;
+        pointer-events:none;
+        box-sizing:border-box;
+        border:1px solid rgba(152,193,255,.74);
+        background:
+          radial-gradient(circle at 50% 50%,
+            rgba(231,242,255,.34) 0%,
+            rgba(164,202,255,.16) 42%,
+            rgba(112,162,244,.05) 72%,
+            transparent 100%);
+        box-shadow:
+          inset 0 0 18px rgba(190,218,255,.18),
+          0 0 12px rgba(138,183,255,.14);
+        opacity:0;
+        transform:scale(.98);
+        animation:ninaUltZoneWarn 180ms ease-out forwards;
+      }
+      .shooting-nina-ult-zone-warning::before,
+      .shooting-nina-ult-zone-warning::after{
+        content:"";
+        position:absolute;
+        background:rgba(230,242,255,.72);
+        box-shadow:0 0 6px rgba(153,195,255,.54);
+      }
+      .shooting-nina-ult-zone-warning::before{
+        left:50%;
+        top:12%;
+        bottom:12%;
+        width:1px;
+        transform:translateX(-50%);
+      }
+      .shooting-nina-ult-zone-warning::after{
+        top:50%;
+        left:12%;
+        right:12%;
+        height:1px;
+        transform:translateY(-50%);
+      }
+      @keyframes ninaUltZoneWarn{
+        0%{opacity:0;transform:scale(.985)}
+        38%{opacity:.72;transform:scale(1)}
+        100%{opacity:.34;transform:scale(1)}
+      }
+    `;
+    document.head.appendChild(lightningStyle);
+  }
+
   // ウルフ / ノア：波動ホーミング弾 + ノアULT専用の軽量DOMエフェクト
   if (!document.getElementById('shooting-noah-wave-style-v112')) {
     const noahStyle = document.createElement('style');
@@ -2633,6 +2763,8 @@
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFlower: null, roseHeartSeq: 0,
       eltenaBlackHole: null,
+      toyfelBlackHoleField: null,
+      ninaUltToken: 0,
       gojoPurpleField: null,
       gojoPurpleBossFreezeUntil: 0,
       wolfAtkField: null,
@@ -2839,7 +2971,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-ult-zone-warning,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -4063,6 +4195,144 @@
   function getBombElementVisual(element) {
     const key = normalizeCombatElement(element) || 'neutral';
     return ULT_ELEMENT_VISUAL[key] || ULT_ELEMENT_VISUAL.neutral;
+  }
+
+
+  function createLightningChainEffect(x1, y1, x2, y2, jumpIndex = 0) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const width = Math.max(1, Number(arena.clientWidth || 0));
+    const height = Math.max(1, Number(arena.clientHeight || 0));
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('class', 'shooting-lightning-chain-effect');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    const dx = Number(x2 || 0) - Number(x1 || 0);
+    const dy = Number(y2 || 0) - Number(y1 || 0);
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const segments = 6;
+    const points = [];
+
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      let px = Number(x1 || 0) + dx * t;
+      let py = Number(y1 || 0) + dy * t;
+      if (i > 0 && i < segments) {
+        const wave =
+          Math.sin((i + 1.35 * jumpIndex) * 2.17) * 7 +
+          Math.sin((i + 0.6 * jumpIndex) * 4.03) * 3.5;
+        px += nx * wave;
+        py += ny * wave;
+      }
+      points.push([px, py]);
+    }
+
+    const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+
+    const glow = document.createElementNS(svgNs, 'path');
+    glow.setAttribute('class', 'shooting-lightning-chain-glow');
+    glow.setAttribute('d', d);
+
+    const corePath = document.createElementNS(svgNs, 'path');
+    corePath.setAttribute('class', 'shooting-lightning-chain-core');
+    corePath.setAttribute('d', d);
+
+    const hit = document.createElementNS(svgNs, 'circle');
+    hit.setAttribute('class', 'shooting-lightning-chain-hit');
+    hit.setAttribute('cx', String(Number(x2 || 0)));
+    hit.setAttribute('cy', String(Number(y2 || 0)));
+    hit.setAttribute('r', String(Math.max(4, 7 - jumpIndex)));
+
+    svg.appendChild(glow);
+    svg.appendChild(corePath);
+    svg.appendChild(hit);
+    arena.appendChild(svg);
+
+    requestAnimationFrame(() => {
+      svg.style.transition = 'opacity 150ms ease-out';
+      svg.style.opacity = '0';
+    });
+    setTimeout(() => {
+      if (svg && svg.parentNode) svg.remove();
+    }, 180);
+  }
+
+  function applyLightningChain(p, originTarget, now, chara, ownerId) {
+    if (!p || !originTarget || !state) return 0;
+
+    const maxJumps = Math.max(0, Math.floor(Number(p.lightningMaxJumps || 0)));
+    const radius = Math.max(24, Number(p.lightningChainRadius || 0));
+    const baseRate = Math.max(0, Number(p.lightningChainDamageRate || 0));
+    const decay = Math.max(0, Math.min(1, Number(p.lightningChainDecay || 1)));
+    if (!maxJumps || !radius || !baseRate) return 0;
+
+    const visited = new Set([originTarget]);
+    let from = originTarget;
+    let appliedCount = 0;
+
+    for (let jump = 0; jump < maxJumps; jump++) {
+      const fromX = Number(from.x || 0);
+      const fromY = Number(from.y || 0);
+
+      let next = null;
+      let nextDistance = Infinity;
+
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0 || visited.has(enemy)) return;
+        const distance = Math.hypot(
+          Number(enemy.x || 0) - fromX,
+          Number(enemy.y || 0) - fromY
+        );
+        if (distance <= radius && distance < nextDistance) {
+          next = enemy;
+          nextDistance = distance;
+        }
+      });
+
+      if (!next) break;
+
+      visited.add(next);
+      const toX = Number(next.x || 0);
+      const toY = Number(next.y || 0);
+      createLightningChainEffect(fromX, fromY, toX, toY, jump);
+
+      const attackElement = normalizeCombatElement(
+        p.attackElement || p.element || chara.element
+      );
+      const targetElement = getCombatTargetElement(next);
+      const rate = baseRate * Math.pow(decay, jump);
+      const chainDamage = applyElementDamage(
+        Number(p.damage || 0) * rate,
+        attackElement,
+        targetElement
+      );
+      const applied = damageNormalEnemy(
+        next,
+        chainDamage,
+        now,
+        true,
+        getElementDamageReaction(attackElement, targetElement)
+      );
+
+      if (applied > 0) {
+        appliedCount++;
+        state.shotsHit += 1;
+        if (!p.noComboGain) registerComboHit(ownerId, now);
+        // 連鎖HitはULTゲージを追加しない。密集時だけゲージ効率が跳ねないようにする。
+      }
+
+      from = next;
+    }
+
+    if (appliedCount > 0) {
+      state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
+    }
+    return appliedCount;
   }
 
   function ensureBombVisualStyles() {
@@ -5790,6 +6060,32 @@
         p._hh = 11;
 
         createBombThrowPop(state.player.x, y + 7, attackElement);
+        state.bullets.push(p);
+      }
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // ニーナ：LIGHTNING
+    // 直進する電撃弾。命中後、周囲の敵へ近い順に感電が連鎖する。
+    // ----------------------------------------------------------
+    if (c.shotType === 'lightning') {
+      const p = makeProjectile(
+        bulletClass + ' shooting-bullet-lightning',
+        state.player.x,
+        y,
+        0,
+        -Number(c.bulletSpeed || 900),
+        effectivePower,
+        c.id
+      );
+      if (p) {
+        p.kind = 'lightning_chain';
+        p.attackElement = normalizeCombatElement(c.element) || 'light';
+        p.lightningChainRadius = Math.max(24, Number(c.lightningChainRadius || 120));
+        p.lightningMaxJumps = Math.max(0, Math.floor(Number(c.lightningMaxJumps || 3)));
+        p.lightningChainDamageRate = Math.max(0, Number(c.lightningChainDamageRate || 0.62));
+        p.lightningChainDecay = Math.max(0, Math.min(1, Number(c.lightningChainDecay || 0.82)));
         state.bullets.push(p);
       }
       return;
@@ -9663,6 +9959,10 @@
             if (appliedEnemyDamage > 0) hitCount++;
           });
 
+          if (p.kind === 'lightning_chain' && normalTarget) {
+            applyLightningChain(p, normalTarget, now, chara, ownerId);
+          }
+
           if (p.kind === 'generic_splash' && normalTarget) {
             const radius = Math.max(30, Number(p.splashRadius || 76));
             const rate = Math.max(0, Number(p.splashDamageRate || 0.55));
@@ -9706,6 +10006,9 @@
             addLegacyCombatScore(120);
           }
           hitCount = appliedDamage > 0 ? 1 : 0;
+          if (p.kind === 'lightning_chain' && state.boss) {
+            applyLightningChain(p, state.boss, now, chara, ownerId);
+          }
           if (p.kind === 'generic_splash') {
             createGenericBombExplosionEffect(
               Number(p.x || state.boss.x || 0),
@@ -9769,6 +10072,51 @@
 
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
+
+      // トイフェルULT中：敵弾は通常の移動・当たり判定を行わず、
+      // 現在位置に近い左右どちらかのブラックホールへ吸収される。
+      if (isToyfelBlackHoleFieldActive(now)) {
+        const field = state.toyfelBlackHoleField;
+        const holes = Array.isArray(field?.holes) ? field.holes : [];
+        if (holes.length) {
+          let targetHole = holes[0];
+          let bestDist = Infinity;
+          holes.forEach(hole => {
+            const d = Math.hypot(
+              Number(hole.x || 0) - Number(p.x || 0),
+              Number(hole.y || 0) - Number(p.y || 0)
+            );
+            if (d < bestDist) {
+              bestDist = d;
+              targetHole = hole;
+            }
+          });
+
+          const dx = Number(targetHole.x || 0) - Number(p.x || 0);
+          const dy = Number(targetHole.y || 0) - Number(p.y || 0);
+          const dist = Math.max(.001, Math.hypot(dx, dy));
+          const absorbRadius = Math.max(8, Number(field.absorbRadius || 28));
+
+          if (dist <= absorbRadius) {
+            try { p.el.remove(); } catch (_) {}
+            return false;
+          }
+
+          const speed = Math.max(
+            Number(field.absorbSpeed || 980),
+            Math.hypot(Number(p.vx || 0), Number(p.vy || 0)) * 1.45
+          );
+          const step = Math.min(dist, speed * dt);
+          p.x += dx / dist * step;
+          p.y += dy / dist * step;
+          p.vx = dx / dist * speed;
+          p.vy = dy / dist * speed;
+
+          if (!p.canvasRendered) positionUnit(p.el, p.x, p.y);
+          return true;
+        }
+      }
+
       const moveDt = dt * getShiinaEnemyBulletSpeedMultiplier(p, now);
 
       // CH04の▼弾。ゆるく横揺れしながら落下する。
@@ -10471,6 +10819,89 @@
         if (typeof onComplete === 'function') onComplete();
       }, 120);
     }, ULT_CUTIN_DURATION_MS);
+  }
+
+
+
+  // ============================================================
+  // トイフェル ULT：DUAL BLACK HOLE
+  // 発動時の自機Y座標の左右端に2つ配置。
+  // 7秒間、敵弾だけを強制的に左右の穴へ吸収する。
+  // 敵本体の移動・射撃AIは止めない。
+  // ============================================================
+  function clearToyfelBlackHoleField() {
+    if (!state || !state.toyfelBlackHoleField) return;
+    const field = state.toyfelBlackHoleField;
+    (field.holes || []).forEach(hole => {
+      if (!hole || !hole.el || !hole.el.isConnected) return;
+      hole.el.classList.add('ending');
+      setTimeout(() => {
+        try { hole.el && hole.el.isConnected && hole.el.remove(); } catch (_) {}
+      }, 320);
+    });
+    state.toyfelBlackHoleField = null;
+  }
+
+  function isToyfelBlackHoleFieldActive(now = performance.now()) {
+    return !!(
+      state &&
+      state.toyfelBlackHoleField &&
+      now < Number(state.toyfelBlackHoleField.until || 0)
+    );
+  }
+
+  function updateToyfelBlackHoleField(now = performance.now()) {
+    if (!state || !state.toyfelBlackHoleField) return;
+    if (now < Number(state.toyfelBlackHoleField.until || 0)) return;
+    clearToyfelBlackHoleField();
+  }
+
+  function useToyfelUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    clearToyfelBlackHoleField();
+    showUltCut(c.ultName || 'DUAL BLACK HOLE', c.effectKey);
+    ultScreenFlash('ult-flash-eltena');
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const now = performance.now();
+    const duration = Math.max(1000, Number(c.toyfelBlackHoleDurationMs || 7000));
+    const size = Math.max(56, Number(c.toyfelBlackHoleSize || 96));
+    const edgeInset = Math.max(0, Number(c.toyfelBlackHoleEdgeInset || 34));
+    const y = clamp(
+      Number(state.player?.y || arena.clientHeight * .72),
+      size * .30,
+      Math.max(size * .30, arena.clientHeight - size * .30)
+    );
+
+    const holes = [
+      { x: edgeInset, y },
+      { x: Math.max(edgeInset, arena.clientWidth - edgeInset), y }
+    ].map((point, index) => {
+      const el = document.createElement('div');
+      el.className = 'shooting-eltena-black-hole shooting-toyfel-black-hole active';
+      el.setAttribute('aria-hidden', 'true');
+      el.style.setProperty('--eltena-bh-size', `${size}px`);
+      el.style.opacity = '.96';
+      el.style.zIndex = '11';
+      el.innerHTML = '<i></i><b></b><span></span>';
+      arena.appendChild(el);
+      positionUnit(el, point.x, point.y);
+      return { el, x: point.x, y: point.y, side: index === 0 ? 'left' : 'right' };
+    });
+
+    state.toyfelBlackHoleField = {
+      ownerId: c.id,
+      holes,
+      until: now + duration,
+      absorbRadius: Math.max(12, Number(c.toyfelBlackHoleAbsorbRadius || 28)),
+      absorbSpeed: Math.max(240, Number(c.toyfelBlackHoleAbsorbSpeed || 980))
+    };
+
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 260);
+    renderHud();
   }
 
 
@@ -11205,6 +11636,7 @@
     updateIgnisBurns(ts);
     updateRoseFlower(ts);
     updateWolfAtkField(ts);
+    updateToyfelBlackHoleField(ts);
     if (state.ignisLaserEl && (
       String(getCurrentCharacter()?.shotType || '') !== 'laser' ||
       ts >= Number(state.ignisLaserHideAt || 0)
@@ -16461,7 +16893,273 @@
 
 
   // ============================================================
-  // ノア ULT：理想郷の静止
+
+  // ============================================================
+  // ニーナ ULT：LIGHTNING STORM
+  // 8秒 / 16発 / 各ATK×4.0。
+  // 毎回、その時点で生存している敵からランダム選択。
+  // 命中した敵だけ3秒麻痺（移動・射撃停止）。全体停止はしない。
+  // ============================================================
+  function applyNinaParalyze(target, durationMs) {
+    if (!state || !target || !target.ref) return;
+    const now = performance.now();
+    const duration = Math.max(300, Number(durationMs || 3000));
+    const until = now + duration;
+
+    if (target.kind === 'normal') {
+      target.ref.noahStunUntil = Math.max(Number(target.ref.noahStunUntil || 0), until);
+      freezeNormalEnemyAction(target.ref, target.ref.noahStunUntil);
+      return;
+    }
+
+    if (target.kind === 'faceless') {
+      target.ref.noahStunUntil = Math.max(Number(target.ref.noahStunUntil || 0), until);
+      deferFacelessObjectAttackResume(target.ref, target.ref.noahStunUntil);
+      return;
+    }
+
+    if (target.kind === 'boss') {
+      applyBossStun(duration, 'nina_lightning_storm');
+    }
+  }
+
+  function applyNinaUltHit(c, target, now) {
+    if (!state || state.ended || state.finishing || !target) return 0;
+
+    const baseDamage = Math.max(
+      0,
+      Number(c.atk || 0) * Math.max(0, Number(c.ninaUltHitAtkMultiplier || 4.0))
+    );
+    const attackElement = getUltAttackElement(c);
+    let appliedDamage = 0;
+
+    if (target.kind === 'normal' && target.ref && target.ref.hp > 0) {
+      const targetElement = getCombatTargetElement(target.ref);
+      const finalDamage = applyElementDamage(baseDamage, attackElement, targetElement);
+      appliedDamage = damageNormalEnemy(
+        target.ref,
+        finalDamage,
+        now,
+        false,
+        getElementDamageReaction(attackElement, targetElement)
+      );
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      if (isNormalBattle()) evaluateNormalMission(now);
+    } else if (target.kind === 'faceless' && target.ref && target.ref.hp > 0) {
+      const targetElement = getCombatTargetElement(target.ref, state.boss?.element);
+      const finalDamage = applyElementDamage(baseDamage, attackElement, targetElement);
+      appliedDamage = damageFacelessObject(
+        target.ref,
+        finalDamage,
+        now,
+        getElementDamageReaction(attackElement, targetElement)
+      );
+    } else if (target.kind === 'boss' && state.boss && state.boss.hp > 0) {
+      const targetElement = getCombatTargetElement(state.boss);
+      const finalDamage = applyElementDamage(baseDamage, attackElement, targetElement);
+      appliedDamage = Math.min(state.boss.hp, Math.max(0, finalDamage));
+
+      if (appliedDamage > 0) {
+        state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+        createHit(state.boss.x, state.boss.y, true);
+        showBossDamageNumber(
+          appliedDamage,
+          false,
+          getElementDamageReaction(attackElement, targetElement)
+        );
+        flashBossHit(false);
+        if (!addScoreAttackDamageScore(appliedDamage)) {
+          addLegacyCombatScore(Math.round(appliedDamage * 100));
+        }
+        updateBossPhase();
+        if (state.boss.hp <= 0) beginBossDefeat();
+      }
+    }
+
+    if (appliedDamage > 0) {
+      state.shotsHit = Number(state.shotsHit || 0) + 1;
+      registerComboHit(c.id, now, appliedDamage);
+      applyNinaParalyze(target, Number(c.ninaUltParalyzeMs || 3000));
+    }
+
+    renderHud();
+    return appliedDamage;
+  }
+
+  function getNinaUltZoneRect(c, zoneIndex, arena) {
+    if (!arena) return null;
+
+    const width = Math.max(1, Number(arena.clientWidth || 0));
+    const height = Math.max(1, Number(arena.clientHeight || 0));
+    const fieldRatio = Math.max(.2, Math.min(.8, Number(c.ninaUltEnemyFieldRatio || .5)));
+    const cols = Math.max(1, Math.floor(Number(c.ninaUltZoneColumns || 4)));
+    const rows = Math.max(1, Math.floor(Number(c.ninaUltZoneRows || 2)));
+    const zoneCount = cols * rows;
+    const safeIndex = ((Math.floor(Number(zoneIndex || 0)) % zoneCount) + zoneCount) % zoneCount;
+
+    // 敵側フィールド = 画面上半分。
+    // その領域だけを4列×2段（計8エリア）へ等分する。
+    const enemyFieldHeight = height * fieldRatio;
+    const cellWidth = width / cols;
+    const cellHeight = enemyFieldHeight / rows;
+    const col = safeIndex % cols;
+    const row = Math.floor(safeIndex / cols);
+
+    return {
+      index: safeIndex,
+      left: col * cellWidth,
+      right: (col + 1) * cellWidth,
+      top: row * cellHeight,
+      bottom: (row + 1) * cellHeight,
+      width: cellWidth,
+      height: cellHeight,
+      centerX: (col + .5) * cellWidth,
+      centerY: (row + .5) * cellHeight
+    };
+  }
+
+  function showNinaUltZoneWarning(rect, telegraphMs) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !rect) return null;
+
+    const warning = document.createElement('div');
+    warning.className = 'shooting-nina-ult-zone-warning';
+    warning.setAttribute('aria-hidden', 'true');
+    warning.style.left = `${rect.left}px`;
+    warning.style.top = `${rect.top}px`;
+    warning.style.width = `${rect.width}px`;
+    warning.style.height = `${rect.height}px`;
+    warning.style.animationDuration = `${Math.max(80, Number(telegraphMs || 180))}ms`;
+    arena.appendChild(warning);
+    return warning;
+  }
+
+  function getNinaTargetsInZone(rect) {
+    if (!state || !rect) return [];
+    const targets = getNoahUltTargets();
+
+    return targets.filter(target => {
+      if (!target || !target.ref) return false;
+      const x = Number(target.x || 0);
+      const y = Number(target.y || 0);
+
+      // 敵の中心座標が選択エリア内にある場合のみ命中。
+      // 右端・下端は隣接エリアとの二重判定を避けるため非包含。
+      return (
+        x >= rect.left &&
+        x < rect.right &&
+        y >= rect.top &&
+        y < rect.bottom
+      );
+    });
+  }
+
+  function strikeNinaUltZone(c, rect, warning) {
+    if (!state || state.ended || state.finishing || !rect) {
+      try { warning && warning.remove(); } catch (_) {}
+      return false;
+    }
+
+    const arena = document.getElementById('shooting-arena');
+    const targets = getNinaTargetsInZone(rect);
+    const now = performance.now();
+
+    if (arena) {
+      // 落雷位置は選択エリア中央付近。
+      // 判定そのものはエリア全体なので、この見た目の座標に敵が重なる必要はない。
+      const jitterX = (Math.random() - .5) * Math.min(34, rect.width * .22);
+      const tx = clamp(rect.centerX + jitterX, 8, Math.max(8, arena.clientWidth - 8));
+      const ty = clamp(rect.centerY, 18, Math.max(18, arena.clientHeight * .5 - 8));
+
+      const bolt = document.createElement('div');
+      bolt.className = 'shooting-noah-lightning shooting-nina-lightning strike';
+      bolt.style.left = `${tx}px`;
+      bolt.style.top = '0px';
+      bolt.style.height = `${Math.max(54, ty)}px`;
+      arena.appendChild(bolt);
+
+      setTimeout(() => {
+        try { bolt && bolt.isConnected && bolt.remove(); } catch (_) {}
+      }, 260);
+    }
+
+    // その瞬間、エリア内にいる敵全員へ同時命中。
+    targets.forEach(target => {
+      applyNinaUltHit(c, target, now);
+    });
+
+    try { warning && warning.remove(); } catch (_) {}
+    shakeNoahLightning();
+    return targets.length > 0;
+  }
+
+  function queueNinaLightningZone(c, token) {
+    if (!state || state.ended || state.finishing) return false;
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return false;
+
+    const cols = Math.max(1, Math.floor(Number(c.ninaUltZoneColumns || 4)));
+    const rows = Math.max(1, Math.floor(Number(c.ninaUltZoneRows || 2)));
+    const zoneCount = Math.max(1, cols * rows);
+    const zoneIndex = Math.floor(Math.random() * zoneCount);
+    const rect = getNinaUltZoneRect(c, zoneIndex, arena);
+    if (!rect) return false;
+
+    const telegraphMs = Math.max(80, Number(c.ninaUltTelegraphMs || 180));
+    const warning = showNinaUltZoneWarning(rect, telegraphMs);
+
+    pushUltTimer(() => {
+      if (
+        !state ||
+        state.ended ||
+        state.finishing ||
+        Number(state.ninaUltToken || 0) !== Number(token)
+      ) {
+        try { warning && warning.remove(); } catch (_) {}
+        return;
+      }
+      strikeNinaUltZone(c, rect, warning);
+    }, telegraphMs);
+
+    return true;
+  }
+
+  function useNinaUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    showUltCut(c.ultName || 'LIGHTNING STORM', c.effectKey);
+
+    const duration = Math.max(1000, Number(c.ninaUltDurationMs || 8000));
+    const hitCount = Math.max(1, Math.floor(Number(c.ninaUltHitCount || 16)));
+    const interval = duration / hitCount;
+    const token = Number(state.ninaUltToken || 0) + 1;
+    state.ninaUltToken = token;
+
+    // カットイン後は通常移動・通常射撃を継続可能。
+    // 8秒間の落雷は独立した継続ULTとして処理する。
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), performance.now() + 260);
+
+    for (let i = 0; i < hitCount; i++) {
+      // 0.5秒間隔で16回。
+      // 各回、画面上半分の8エリアから1エリアをランダム選択して予兆→落雷。
+      const delay = interval * i + 70;
+      pushUltTimer(() => {
+        if (
+          !state ||
+          state.ended ||
+          state.finishing ||
+          Number(state.ninaUltToken || 0) !== token
+        ) return;
+        queueNinaLightningZone(c, token);
+      }, delay);
+    }
+
+    renderHud();
+  }
+
+
+    // ノア ULT：理想郷の静止
   // 発動直後に盤面の敵弾を完全削除。
   // 8拍×2セットの16落雷 -> 終了後に敵を感電停止。
   // ============================================================
@@ -17063,6 +17761,8 @@
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else if (c.ultType === 'mito_summon_double') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
+    else if (c.ultType === 'toyfel_double_black_hole') useToyfelUlt(c);
+    else if (c.ultType === 'nina_lightning_storm') useNinaUlt(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
