@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '596';
+  var FALLBACK_BUILD = '597';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -230,7 +230,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="596">
+  <meta name="sasaphia-build" content="597">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -8670,80 +8670,50 @@ startTitleBgm();
   }
 
   // ============================================================
-  // DAILY QUEST - 1日1回制限（中級 / 上級で個別管理）
-  // JST 0:00リセット。実ステージ開始成功時のみconsumeする。
+  // DAILY QUEST - server-authoritative attempt state
+  // 挑戦権の正本はSupabase daily_quest_runs。localStorageは使用しない。
   // ============================================================
   var DAILY_ATTEMPT_MAX = 1;
-  var DAILY_ATTEMPT_STORAGE_KEY = 'sasaphia_daily_quest_attempts_v1';
-
-  function getTokyoDailyDateKey() {
-    var p = getTokyoDailyDateParts();
-    return String(p.year).padStart(4,'0') + '-' +
-      String(p.month).padStart(2,'0') + '-' +
-      String(p.day).padStart(2,'0');
-  }
-
-  function loadDailyAttemptStore() {
-    try {
-      var raw = localStorage.getItem(DAILY_ATTEMPT_STORAGE_KEY);
-      var data = raw ? JSON.parse(raw) : {};
-      return data && typeof data === 'object' ? data : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function saveDailyAttemptStore(data) {
-    try {
-      localStorage.setItem(DAILY_ATTEMPT_STORAGE_KEY, JSON.stringify(data || {}));
-    } catch (_) {}
-  }
+  var dailyAttemptServerCache = {
+    date: '',
+    intermediate: { used:0, remaining:1, finished:false, win:false },
+    advanced: { used:0, remaining:1, finished:false, win:false }
+  };
 
   function getDailyAttemptState(level) {
     level = level === 'advanced' ? 'advanced' : 'intermediate';
-    var key = getTokyoDailyDateKey();
-    var data = loadDailyAttemptStore();
-
-    // 日付が変わったら前日の記録を捨てて自動リセット。
-    if (data.date !== key) {
-      data = { date:key, intermediate:0, advanced:0 };
-      saveDailyAttemptStore(data);
-    }
-
-    var used = Math.max(0, Math.min(DAILY_ATTEMPT_MAX, Number(data[level] || 0)));
+    var src = dailyAttemptServerCache[level] || {};
     return {
       level: level,
-      used: used,
-      remaining: Math.max(0, DAILY_ATTEMPT_MAX - used),
+      used: Math.max(0, Math.min(1, Number(src.used || 0))),
+      remaining: Math.max(0, Math.min(1, Number(src.remaining == null ? 1 : src.remaining))),
       max: DAILY_ATTEMPT_MAX,
-      date: key
+      date: dailyAttemptServerCache.date || '',
+      finished: !!src.finished,
+      win: !!src.win
     };
   }
 
-  function consumeDailyQuestAttempt(level) {
-    if (level !== 'intermediate' && level !== 'advanced') return false;
-    var state = getDailyAttemptState(level);
-    if (state.remaining <= 0) return false;
-
-    var data = loadDailyAttemptStore();
-    data.date = state.date;
-    data[level] = state.used + 1;
-    saveDailyAttemptStore(data);
-    refreshDailyAttemptUI();
-    return true;
-  }
-
-  function refundDailyQuestAttempt(level) {
-    if (level !== 'intermediate' && level !== 'advanced') return false;
-    var state = getDailyAttemptState(level);
-    if (state.used <= 0) return false;
-
-    var data = loadDailyAttemptStore();
-    data.date = state.date;
-    data[level] = Math.max(0, state.used - 1);
-    saveDailyAttemptStore(data);
-    refreshDailyAttemptUI();
-    return true;
+  async function syncDailyAttemptStateFromServer() {
+    try {
+      var client = window.zsSupabase || (typeof sb !== 'undefined' ? sb : null);
+      if (!client || typeof client.rpc !== 'function') return dailyAttemptServerCache;
+      var res = await client.rpc('get_daily_quest_state');
+      if (res && res.error) throw res.error;
+      var data = res ? res.data : null;
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (_) {} }
+      if (!data || data.ok === false) return dailyAttemptServerCache;
+      dailyAttemptServerCache = {
+        date: String(data.date || ''),
+        intermediate: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.intermediate || {}),
+        advanced: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.advanced || {})
+      };
+      refreshDailyAttemptUI();
+      return dailyAttemptServerCache;
+    } catch (err) {
+      console.warn('[DailyQuest] state sync failed:', err && (err.message || err));
+      return dailyAttemptServerCache;
+    }
   }
 
   function refreshDailyAttemptUI() {
@@ -8764,9 +8734,15 @@ startTitleBgm();
   }
 
   window.getDailyAttemptState = getDailyAttemptState;
-  window.consumeDailyQuestAttempt = consumeDailyQuestAttempt;
-  window.refundDailyQuestAttempt = refundDailyQuestAttempt;
+  window.syncDailyAttemptStateFromServer = syncDailyAttemptStateFromServer;
   window.refreshDailyAttemptUI = refreshDailyAttemptUI;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ void syncDailyAttemptStateFromServer(); });
+  } else {
+    setTimeout(function(){ void syncDailyAttemptStateFromServer(); }, 0);
+  }
+  window.addEventListener('pageshow', function(){ void syncDailyAttemptStateFromServer(); });
 
   // ============================================================
   // DAILY QUEST - 曜日別報酬表示
@@ -13354,37 +13330,41 @@ async function deleteCurrentChara(){
   if(!currentDetailData) return;
 
   var target = currentDetailData;
+  if(!target.db_id){
+    showToast('削除対象を確認できません');
+    return;
+  }
 
-  box = box.filter(function(item){
-    return item !== target;
-  });
-
-  // collected が削除対象を参照していたら差し替え
-  if(collected[target.id] && collected[target.id].db_id === target.db_id){
-    var remain = box.find(function(b){ return b.id === target.id; });
-    if(remain){
-      collected[target.id] = remain;
-    } else {
-      delete collected[target.id];
+  try {
+    var res = await sb.rpc('delete_owned_character_secure', {
+      p_character_row_id: Number(target.db_id)
+    });
+    if(res && res.error) throw res.error;
+    var data = res ? res.data : null;
+    if(typeof data === 'string'){ try { data = JSON.parse(data); } catch(_){} }
+    if(!data || data.ok === false){
+      throw new Error((data && data.message) || 'キャラクターを削除できませんでした');
     }
-  }
 
-  if(userProfile.favorite_id === target.id){
-    userProfile.favorite_id = null;
-    await saveProfileToDB({ favorite_id: null });
-  }
+    box = box.filter(function(item){ return item !== target; });
+    if(collected[target.id] && collected[target.id].db_id === target.db_id){
+      var remain = box.find(function(b){ return b.id === target.id; });
+      if(remain) collected[target.id] = remain;
+      else delete collected[target.id];
+    }
 
-  currentDetailData = null;
+    if(userProfile.favorite_id === target.id){
+      userProfile.favorite_id = null;
+    }
 
-  closeModal('delete-confirm-modal');
-  closeModal('detail-modal');
-
-  renderBox();
-  updateMainUI();
-
-  // DBからも削除
-  if(target.db_id){
-    await sb.from('collected_characters').delete().eq('id', target.db_id);
+    currentDetailData = null;
+    closeModal('delete-confirm-modal');
+    closeModal('detail-modal');
+    renderBox();
+    updateMainUI();
+  } catch(err) {
+    console.error('[CharacterDelete] secure delete failed:', err);
+    showToast(err && err.message ? err.message : '削除に失敗しました');
   }
 }
 
@@ -15729,7 +15709,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=596"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=597"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=593-admin-7tap-hidden-v169"></script>
 <script src="js/raid_event.js?v=593"></script>

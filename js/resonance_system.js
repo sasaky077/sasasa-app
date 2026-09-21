@@ -454,7 +454,6 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
   if(!isEri && !isNoah && !material) return false;
 
   var currentLb = target.limitBreak || 0;
-
   if(currentLb >= MAX_LIMIT_BREAK){
     showToast('限界突破LvはすでにMAXです');
     return false;
@@ -467,91 +466,80 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
     return false;
   }
 
-  if(!getLimitBreakMaterialStatus(target, selectedSoulVesselId).canLimitBreak){
-    showToast('限界突破素材が不足しています');
-    return false;
-  }
-
-  // DB保存失敗時に、強化Lv・素材・BOX状態を元へ戻せるよう事前退避する。
-  var beforeState = {
-    limitBreak: Number(target.limitBreak || 0),
-    stats: Object.assign({}, target.stats || {}),
-    dbId: target.db_id || null,
-    evolutionMaterials: JSON.parse(JSON.stringify(evolutionMaterials || {})),
-    box: box.slice(),
-    collected: Object.assign({}, collected)
-  };
-
-  if(!consumeLimitBreakRecipeMaterials(target, selectedSoulVesselId)){
-    showToast('限界突破素材の消費に失敗しました');
-    return false;
-  }
-
-  target.limitBreak = beforeState.limitBreak + 1;
-  var resonatedStats = applyLimitBreakStats(
-    target.baseStats,
-    target.limitBreak,
-    target.rarity,
-    target.id
-  );
-  target.stats = (window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats === 'function')
-    ? window.CharacterLeveling.applyToStats(
-        resonatedStats,
-        target.rarity,
-        target.limitBreak,
-        Math.max(1, Number(target.characterLevel || 1))
-      )
-    : resonatedStats;
-
-  // 通常キャラのみ、同キャラ素材をBOXから削除する。
-  // エリは専用アイテムを消費するため、キャラクターは削除しない。
-  if(material){
-    box = box.filter(function(b){ return b !== material; });
-
-    if(collected[material.id] && collected[material.id].db_id === material.db_id){
-      var remain = box.find(function(b){ return b.id === material.id; });
-      if(remain){
-        collected[material.id] = remain;
-      } else {
-        delete collected[material.id];
-      }
+  if(!target.db_id){
+    try {
+      var resolved = await sb.from('collected_characters')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('character_id', Number(target.id))
+        .order('id', { ascending:true })
+        .limit(1);
+      if(resolved && resolved.error) throw resolved.error;
+      if(resolved && resolved.data && resolved.data[0]) target.db_id = resolved.data[0].id;
+    } catch(err){
+      console.error('[Resonance] target row resolve failed:', err);
     }
+  }
+
+  if(!target.db_id){
+    showToast('共鳴対象を確認できません');
+    return false;
   }
 
   try {
-    // エリはdb_id欠落時も user_id + character_id で保存先を解決する。
-    await updateLimitBreakToDB(target);
+    var result = await sb.rpc('resonate_character_secure', {
+      p_character_row_id: Number(target.db_id),
+      p_soul_vessel_id: selectedSoulVesselId || null
+    });
+    if(result && result.error) throw result.error;
 
-    // 通常キャラだけ素材キャラをDELETEする。
-    if(material){
-      await deleteMaterialFromDB(material, target);
+    var data = result ? result.data : null;
+    if(typeof data === 'string'){
+      try { data = JSON.parse(data); } catch(_){ }
+    }
+    if(!data || data.ok === false){
+      throw new Error((data && data.message) || '共鳴に失敗しました');
+    }
+
+    target.limitBreak = Math.max(0, Number(data.limit_break || (currentLb + 1)));
+    var resonatedStats = applyLimitBreakStats(
+      target.baseStats,
+      target.limitBreak,
+      target.rarity,
+      target.id
+    );
+    target.stats = (window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats === 'function')
+      ? window.CharacterLeveling.applyToStats(
+          resonatedStats,
+          target.rarity,
+          target.limitBreak,
+          Math.max(1, Number(target.characterLevel || 1))
+        )
+      : resonatedStats;
+
+    var consumedDuplicateId = Number(data.consumed_duplicate_id || 0);
+    if(consumedDuplicateId){
+      box = box.filter(function(b){ return Number(b && b.db_id || 0) !== consumedDuplicateId; });
+      if(collected[target.id] && Number(collected[target.id].db_id || 0) === consumedDuplicateId){
+        var remain = box.find(function(b){ return b && Number(b.id) === Number(target.id); });
+        if(remain) collected[target.id] = remain;
+        else collected[target.id] = target;
+      }
+    }
+
+    if(typeof window.loadInventoryFromSupabase === 'function'){
+      await window.loadInventoryFromSupabase(userId);
     }
   } catch(saveError) {
-    console.error('[Resonance] save failed; rolling back local state:', saveError);
-    saveError.attemptedLimitBreak = Number(target.limitBreak || 0);
-
-    target.limitBreak = beforeState.limitBreak;
-    target.stats = beforeState.stats;
-    target.db_id = beforeState.dbId;
-    evolutionMaterials = beforeState.evolutionMaterials;
-    saveEvolutionMaterialsToLocal();
-    box = beforeState.box;
-    collected = beforeState.collected;
-
-    renderBox();
-    updateMainUI();
-    if(currentZukanMainTab !== 'box') showDetail(target, false);
-
-    showResonanceDiagnostic(saveError, target, beforeState);
+    console.error('[Resonance] secure RPC failed:', saveError);
+    showToast(saveError && saveError.message ? saveError.message : '共鳴に失敗しました');
     return false;
   }
 
   if(!silent){
     renderBox();
     updateMainUI();
-    if(currentZukanMainTab !== 'box'){
-      showDetail(target, false);
-    }
+    if(currentZukanMainTab !== 'box') showDetail(target, false);
   }
 
   var completeText = document.getElementById('lb-complete-text');
@@ -564,15 +552,11 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
 
   if(!silent){
     var completeModal = document.getElementById('limitbreak-complete-modal');
-    if (completeModal) {
-      completeModal.classList.add('active');
-    } else {
-      alert('限界突破が完了しました。');
-    }
+    if (completeModal) completeModal.classList.add('active');
+    else alert('限界突破が完了しました。');
   }
   return true;
 }
-
 
 
 async function updateLimitBreakToDB(target){

@@ -1973,7 +1973,7 @@
   let nativeTouchCancelToken = 0;
   let lastNativeTouchMoveAt = 0;
 
-  // build596: iOS/PWAでTouch Eventsが一時的にcancelされた後も、
+  // build597: iOS/PWAでTouch Eventsが一時的にcancelされた後も、
   // Pointer Eventsが継続して届いている場合はそちらへ一時退避する。
   // Touchが復帰したら自動でTouch Eventsへ戻す。
   let nativeTouchPointerFallback = false;
@@ -11673,6 +11673,9 @@
 
     document.body.appendChild(overlay);
     refreshDailyStageSelect();
+    if (typeof window.syncDailyAttemptStateFromServer === 'function') {
+      void window.syncDailyAttemptStateFromServer();
+    }
 
     if (!immediate) {
       requestAnimationFrame(() => overlay.classList.add('show'));
@@ -12500,15 +12503,30 @@
 
     const dailyQuestReward = isDailyQuestStage();
     const scoreAttackFixedReward = isScoreAttackStage();
-    const playerExp = getShootingPlayerExpReward();
-    const coin = getShootingCoinReward(playerExp);
+    let playerExp = getShootingPlayerExpReward();
+    let coin = getShootingCoinReward(playerExp);
+    const dailyServer = dailyQuestReward && state && state.dailyQuestServerRewards ? state.dailyQuestServerRewards : null;
+    if (dailyServer) {
+      playerExp = Math.max(0, Number(dailyServer.exp_reward || 0));
+      coin = Math.max(0, Number(dailyServer.coin_reward || 0));
+    }
     const rewardPlan = getShootingClearRewardPlan();
 
     let itemDrops = [];
 
     if (dailyQuestReward) {
-      // デイリーは曜日別の既存確定個数を維持。
-      itemDrops = pickDailyQuestMaterialRewards();
+      // デイリー報酬はサーバー確定結果だけを表示する。
+      const rows = dailyServer && Array.isArray(dailyServer.items) ? dailyServer.items : [];
+      itemDrops = rows.map(row => {
+        const id = String(row && row.id || '');
+        const def = (typeof window.getEvolutionMaterialDef === 'function')
+          ? window.getEvolutionMaterialDef(id)
+          : (typeof getEvolutionMaterialDef === 'function' ? getEvolutionMaterialDef(id) : null);
+        return {
+          material: def || { id:id, name:id || '素材', image:'' },
+          count: Math.max(1, Number(row && row.quantity || 1))
+        };
+      });
     } else if (scoreAttackFixedReward) {
       // すこあた！は従来の固定報酬感を維持しつつ、最大3枠以内。
       itemDrops = pickShootingEvolutionRewards(2).map(material => ({ material, count: 1 }));
@@ -12578,22 +12596,21 @@
     // run token 消費と同一トランザクション内にて確定付与する。
     // クライアント加算すると二重付与になるため、ここでは加算しない。
     // DAILYは既存の別経路を維持。
-    if (dailyQuestReward) {
-      grantPlayerExpReward(playerExp);
-      grantCoinReward(coin);
+    // DAILYはcoin/EXP/素材すべてfinish_daily_quest_runで確定済み。
+    // 通常シューティングだけ既存の追加素材付与処理を使用する。
+    if (!dailyQuestReward) {
+      itemDrops.forEach(({ material, count }) => {
+        if (material.rewardType === 'shinju') {
+          grantShinjuNutrition(rewardPlan.nutritionExp, count);
+        } else {
+          grantEvolutionReward(material, count);
+        }
+      });
+
+      guaranteedRewards.forEach(reward => {
+        grantEvolutionReward({ id: reward.id }, reward.count);
+      });
     }
-
-    itemDrops.forEach(({ material, count }) => {
-      if (material.rewardType === 'shinju') {
-        grantShinjuNutrition(rewardPlan.nutritionExp, count);
-      } else {
-        grantEvolutionReward(material, count);
-      }
-    });
-
-    guaranteedRewards.forEach(reward => {
-      grantEvolutionReward({ id: reward.id }, reward.count);
-    });
 
     state.clearRewards = drops;
     return drops;
@@ -12721,7 +12738,7 @@
     }, 1500);
   }
 
-  function endGame(win) {
+  async function endGame(win) {
     if (!state || state.ended) return;
 
     // CH04専用ギミックはRESULTへ持ち越さない。
@@ -12815,7 +12832,15 @@
 
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.
-    state.secureFinalizePromise = isDailyQuestStage() ? Promise.resolve(null) : submitShootingHighScore(state.score, !!win);
+    state.secureFinalizePromise = isDailyQuestStage() ? finalizeDailyQuestRun(state.score, !!win) : submitShootingHighScore(state.score, !!win);
+    if (isDailyQuestStage()) {
+      try {
+        await state.secureFinalizePromise;
+      } catch (err) {
+        console.error('[DailyQuest] finalize failed:', err);
+        if (typeof window.showToast === 'function') window.showToast('デイリー報酬の確定に失敗しました');
+      }
+    }
     // STORY進捗へシューティング結果を通知。
     try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
@@ -13103,7 +13128,7 @@
     }
   }
 
-  // build596:
+  // build597:
   // touchstart時点からの総移動量で追従させると、画面端でclampされた分だけ
   // 指とキャラの差分が蓄積し、端から戻した時に「指だけ動いてキャラが遅れる」
   // デッドゾーンが発生する。
@@ -13356,7 +13381,7 @@
     if (!r) return;
 
     if (touchLike) {
-      // build596:
+      // build597:
       // タッチは「開始点からの総差分」ではなく、直前イベントからの差分を加算する。
       // これで画面端に当てた後も余分な差分が蓄積せず、指とキャラが離れていかない。
       applyTouchDelta(e.clientX, e.clientY);
@@ -13702,6 +13727,7 @@
   }
 
   let dailyQuestConsumePending = false;
+  let activeDailyQuestRunToken = '';
 
   async function ensureSelectedDailyQuestAttemptConsumed() {
     if (!isDailyQuestStage()) return true;
@@ -13709,33 +13735,89 @@
 
     const cfg = getDailyQuestConfig();
     const level = cfg && cfg.level === 'advanced' ? 'advanced' : 'intermediate';
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') {
+      const message = 'デイリー挑戦情報を確認できません';
+      if (typeof window.showToast === 'function') window.showToast(message); else alert(message);
+      return false;
+    }
+
     dailyQuestConsumePending = true;
     try {
-      if (typeof window.getDailyAttemptState === 'function') {
-        const attempt = window.getDailyAttemptState(level);
-        if (!attempt || Number(attempt.remaining || 0) <= 0) {
-          const message = '本日の挑戦回数を使い切りました';
-          if (typeof window.showToast === 'function') window.showToast(message);
-          else alert(message);
-          return false;
+      const res = await sb.rpc('begin_daily_quest_run', {
+        p_level: level,
+        p_party_ids: Array.isArray(selectedPartyIds) ? selectedPartyIds.map(Number).filter(Boolean) : []
+      });
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (_) {} }
+      if (!data || data.ok === false || !data.run_token) {
+        const message = (data && data.message) || '本日の挑戦回数を使い切りました';
+        if (typeof window.showToast === 'function') window.showToast(message); else alert(message);
+        if (typeof window.syncDailyAttemptStateFromServer === 'function') {
+          void window.syncDailyAttemptStateFromServer();
         }
-      }
-      if (typeof window.consumeDailyQuestAttempt !== 'function') {
-        const message = 'デイリー挑戦回数を確認できません';
-        if (typeof window.showToast === 'function') window.showToast(message);
-        else alert(message);
         return false;
       }
-      if (!window.consumeDailyQuestAttempt(level)) {
-        const message = '本日の挑戦回数を使い切りました';
-        if (typeof window.showToast === 'function') window.showToast(message);
-        else alert(message);
-        return false;
+      activeDailyQuestRunToken = String(data.run_token);
+      if (typeof window.syncDailyAttemptStateFromServer === 'function') {
+        void window.syncDailyAttemptStateFromServer();
       }
       return true;
+    } catch (err) {
+      console.error('[DailyQuest] begin failed:', err);
+      const message = err && err.message ? err.message : 'デイリー挑戦の開始に失敗しました';
+      if (typeof window.showToast === 'function') window.showToast(message); else alert(message);
+      return false;
     } finally {
       dailyQuestConsumePending = false;
     }
+  }
+
+  async function finalizeDailyQuestRun(score, win) {
+    if (!isDailyQuestStage()) return null;
+    const sb = window.zsSupabase;
+    const token = String(activeDailyQuestRunToken || '').trim();
+    if (!sb || typeof sb.rpc !== 'function' || !token) {
+      throw new Error('デイリー挑戦トークンを確認できません');
+    }
+
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await sb.rpc('finish_daily_quest_run', {
+          p_run_token: token,
+          p_score: Math.max(0, Math.floor(Number(score || 0))),
+          p_win: !!win
+        });
+        if (res && res.error) throw res.error;
+        let data = res ? res.data : null;
+        if (typeof data === 'string') { try { data = JSON.parse(data); } catch (_) {} }
+        if (!data || data.ok === false) throw new Error((data && data.message) || 'デイリー報酬を確定できません');
+
+        if (state) state.dailyQuestServerRewards = data;
+        if (window.userProfile) {
+          if (Number.isFinite(Number(data.coin))) window.userProfile.coin = Math.max(0, Number(data.coin));
+          if (Number.isFinite(Number(data.total_score))) window.userProfile.total_score = Math.max(0, Number(data.total_score));
+          if (Number.isFinite(Number(data.rank))) window.userProfile.rank = Math.max(1, Number(data.rank));
+        }
+        if (typeof window.loadInventoryFromSupabase === 'function') {
+          const uid = getShootingUserId();
+          if (uid) await window.loadInventoryFromSupabase(uid);
+        }
+        if (typeof window.refreshProfileHud === 'function') window.refreshProfileHud();
+        else if (typeof window.updateMainUI === 'function') window.updateMainUI();
+        if (typeof window.syncDailyAttemptStateFromServer === 'function') {
+          await window.syncDailyAttemptStateFromServer();
+        }
+        activeDailyQuestRunToken = '';
+        return data;
+      } catch (err) {
+        lastErr = err;
+        if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 450));
+      }
+    }
+    throw lastErr || new Error('デイリー報酬の確定に失敗しました');
   }
 
   let specialTicketConsumePending = false;
