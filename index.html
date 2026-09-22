@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '754';
+  var FALLBACK_BUILD = '755';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -4839,6 +4839,14 @@ document.addEventListener('touchend', function (e) {
     localStorage.removeItem(ZERAPHIA_TRANSFER_PENDING_KEY);
     sessionStorage.removeItem(ZERAPHIA_TRANSFER_BACKUP_KEY);
     localStorage.setItem('zeraphia_last_transfer_success', new Date().toISOString());
+
+    if(localStorage.getItem('sasaphia_email_transfer_pending') === '1'){
+      localStorage.removeItem('sasaphia_email_transfer_pending');
+      localStorage.removeItem('sasaphia_email_transfer_email');
+      localStorage.setItem('sasaphia_email_transfer_completed', '1');
+      clearEmailTransferUrlMarker();
+    }
+
     return { remnants: cloudRemnants, inventory: inventory, shinju: shinju, progress: progress };
   }
 
@@ -5704,14 +5712,43 @@ function renderResultElementBadge(data){
 
   // ユーザーIDは全端末・全保存処理で小文字へ統一する。
   // 過去版で大文字IDが保存されていても、起動時に正規化する。
-  var userId = normalizeZeraphiaUserId(localStorage.getItem('zukan_user_id'));
+  var storedUserIdAtBoot = normalizeZeraphiaUserId(localStorage.getItem('zukan_user_id'));
+  var hadStoredUserIdAtBoot = !!storedUserIdAtBoot;
+  var userId = storedUserIdAtBoot;
   if(!userId){
     userId = 'user_' + Math.random().toString(36).slice(2,10).toLowerCase();
   }
   localStorage.setItem('zukan_user_id', userId);
 
+  function isExplicitEmailTransferRequested(){
+    if(localStorage.getItem('sasaphia_email_transfer_pending') === '1') return true;
+    try {
+      return new URL(location.href).searchParams.get('zeraphia_transfer') === 'email';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function clearEmailTransferUrlMarker(){
+    try {
+      var current = new URL(location.href);
+      if(current.searchParams.get('zeraphia_transfer') !== 'email') return;
+      current.searchParams.delete('zeraphia_transfer');
+      history.replaceState(history.state, '', current.toString());
+    } catch (_) {}
+  }
+
   async function restoreGameUserFromAuthenticatedOwner(){
     try {
+      var explicitTransfer = isExplicitEmailTransferRequested();
+
+      // build755 emergency guard:
+      // 通常起動では、端末に保存済みの user_id を Auth 側の都合で絶対に差し替えない。
+      // 例外は「明示的なメール引継ぎ」または端末に user_id 自体が無い場合のみ。
+      if(!explicitTransfer && hadStoredUserIdAtBoot){
+        return { ok:false, reason:'not_requested' };
+      }
+
       var authUser = await window.zsAuthReady;
       if(!authUser || !authUser.id){
         return { ok:false, reason:'no_auth_user' };
@@ -5734,12 +5771,17 @@ function renderResultElementBadge(data){
       }
 
       if(ownedUserId !== userId){
+        if(!explicitTransfer && hadStoredUserIdAtBoot){
+          console.error('[AuthGuard] automatic user_id switch blocked:', userId, '->', ownedUserId);
+          return { ok:false, reason:'account_id_mismatch', owned_user_id:ownedUserId };
+        }
+
         var previousUserId = userId;
         userId = ownedUserId;
         localStorage.setItem('zukan_user_id', userId);
 
         console.log(
-          '[EmailTransfer] restored game user:',
+          explicitTransfer ? '[EmailTransfer] restored game user:' : '[AuthRestore] restored missing local user id:',
           previousUserId,
           '->',
           userId,
@@ -5750,13 +5792,14 @@ function renderResultElementBadge(data){
         console.log('[AuthRestore] linked game user confirmed:', userId, '->', authUser.id);
       }
 
-      if(localStorage.getItem('sasaphia_email_transfer_pending') === '1'){
-        localStorage.removeItem('sasaphia_email_transfer_pending');
-        localStorage.removeItem('sasaphia_email_transfer_email');
-        localStorage.setItem('sasaphia_email_transfer_completed', '1');
+      if(explicitTransfer){
+        // 明示的な引継ぎ時は、後段でクラウド側データを「読む」。
+        // ローカル状態をクラウドへ上書きする通常migrationには入れない。
+        localStorage.setItem('sasaphia_email_transfer_pending', '1');
+        localStorage.setItem(ZERAPHIA_TRANSFER_PENDING_KEY, '1');
       }
 
-      return { ok:true, user_id:userId, auth_uid:authUser.id };
+      return { ok:true, user_id:userId, auth_uid:authUser.id, explicit_transfer:explicitTransfer };
     } catch(error) {
       console.error('[EmailTransfer] restore failed:', error);
       return { ok:false, reason:'error', error:error };
@@ -5794,9 +5837,17 @@ function renderResultElementBadge(data){
       );
       return { ok:true, alreadyLinked:!!data.already_linked };
     } catch(error) {
-      // β移行中は紐付け失敗だけでゲーム全体を止めない。
       console.error('[AuthBind] failed:', error);
-      return { ok:false, reason:'error', error:error };
+      var bindMessage = String(error && (error.message || error.code) || '').toLowerCase();
+      var isOwnershipConflict =
+        bindMessage.includes('already linked') ||
+        bindMessage.includes('another user') ||
+        bindMessage.includes('another auth account');
+      return {
+        ok:false,
+        reason:isOwnershipConflict ? 'ownership_conflict' : 'error',
+        error:error
+      };
     }
   }
 
@@ -6597,7 +6648,17 @@ startTitleBgm();
     resetTitleLoadingProgress();
     if(titleHint) titleHint.textContent = '✦ TAP TO START ✦';
     var detail = window._profileLoadError && (window._profileLoadError.message || window._profileLoadError.details || window._profileLoadError.code);
-    alert('プレイヤーデータを読み込めませんでした。\nコイン・ガチャ石を保護するため、ゲーム開始を停止しました。\n\nSupabaseのRLS / Policy / anon権限を確認してください。' + (detail ? '\n\n詳細: ' + detail : ''));
+    if(detail && /^\[ACCOUNT_ID_(?:MISMATCH|CONFLICT)\]/.test(String(detail))){
+      alert(
+        'アカウント識別情報の不一致を検出しました。\n\n' +
+        '別ユーザーへの自動切替は停止しました。\n' +
+        'サーバー上の元データは削除していません。\n\n' +
+        '現在のユーザーID：' + (userId || '取得できません') + '\n\n' +
+        'このIDを控えて管理者へ連絡してください。'
+      );
+    } else {
+      alert('プレイヤーデータを読み込めませんでした。\nコイン・ガチャ石を保護するため、ゲーム開始を停止しました。\n\nSupabaseのRLS / Policy / anon権限を確認してください。' + (detail ? '\n\n詳細: ' + detail : ''));
+    }
     return;
   }
 
@@ -6873,85 +6934,55 @@ startTitleBgm();
     throw new Error('Supabase Authセッションの反映待ちがタイムアウトしました');
   }
 
-  // プロフィール確定もSELECTより先にRPCへ一本化。
-  // 既存Authなら既存user_idを返し、新規Authなら安全な初期値で作成する。
-  var bootProfileResult = await sb.rpc('ensure_user_profile', {
-    p_user_id: userId
-  });
+  // build755 emergency guard:
+  // 既存プロフィールはまず現在のAuthへ安全に紐付け確認する。
+  // profile_not_found の新規ユーザーだけ ensure_user_profile で作成する。
+  // Auth不一致時に別 user_id へ切り替えたり、新IDを自動発行したりしない。
+  var bootBindResult = await bindAuthToCurrentUserProfile();
+  var bootProfileResult = null;
 
-  // 端末に古い公開IDだけ残っており、現在のAuthとは所有者が異なる場合。
-  // 既存IDを奪わず、新しい公開IDを発行して新規プロフィールを作成する。
-  if(bootProfileResult && bootProfileResult.error){
-    var bootProfileMessage = String(
-      bootProfileResult.error.message ||
-      bootProfileResult.error.code ||
-      'unknown'
-    );
+  if(bootBindResult && bootBindResult.ok){
+    bootProfileResult = { data:{ ok:true, user_id:userId } };
+  } else if(bootBindResult && bootBindResult.reason === 'profile_not_found'){
+    bootProfileResult = await sb.rpc('ensure_user_profile', {
+      p_user_id: userId
+    });
 
-    if(bootProfileMessage.toLowerCase().includes('user id already exists')){
-      var replacementCreated = false;
+    if(bootProfileResult && bootProfileResult.error){
+      var createMessage = String(
+        bootProfileResult.error.message ||
+        bootProfileResult.error.code ||
+        'unknown'
+      );
 
-      for(var replacementTry = 0; replacementTry < 5; replacementTry++){
-        var replacementUserId =
-          'user_' + Math.random().toString(36).slice(2,10).toLowerCase();
-
-        var replacementResult = await sb.rpc('ensure_user_profile', {
-          p_user_id: replacementUserId
-        });
-
-        if(replacementResult && !replacementResult.error){
-          var replacementResolvedId = normalizeZeraphiaUserId(
-            replacementResult.data && replacementResult.data.user_id
-              ? replacementResult.data.user_id
-              : replacementUserId
-          );
-
-          if(replacementResolvedId){
-            console.warn(
-              '[AuthBoot] stale local user id conflict; issued new user id:',
-              userId,
-              '->',
-              replacementResolvedId
-            );
-
-            userId = replacementResolvedId;
-            localStorage.setItem('zukan_user_id', userId);
-            bootProfileResult = replacementResult;
-            replacementCreated = true;
-            break;
-          }
-        }
-
-        if(
-          !replacementResult ||
-          !replacementResult.error ||
-          !String(
-            replacementResult.error.message ||
-            replacementResult.error.code ||
-            ''
-          ).toLowerCase().includes('user id already exists')
-        ){
-          bootProfileResult = replacementResult;
-          break;
-        }
-      }
-
-      if(!replacementCreated && bootProfileResult && bootProfileResult.error){
+      if(createMessage.toLowerCase().includes('user id already exists')){
         throw new Error(
-          'user_profiles確定失敗: ' +
-          (bootProfileResult.error.message || bootProfileResult.error.code || 'unknown')
+          '[ACCOUNT_ID_CONFLICT] 現在のユーザーIDはサーバーに残っていますが、認証状態が一致しません。' +
+          '安全のためIDの自動差し替えを停止しました。 user_id=' + userId
         );
       }
-    } else {
-      throw new Error('user_profiles確定失敗: ' + bootProfileMessage);
+      throw new Error('user_profiles確定失敗: ' + createMessage);
     }
+  } else if(bootBindResult && bootBindResult.reason === 'ownership_conflict'){
+    throw new Error(
+      '[ACCOUNT_ID_MISMATCH] 端末のユーザーIDとSupabase Authの所有者が一致しません。' +
+      'データ保護のため自動切替を停止しました。 user_id=' + userId
+    );
+  } else {
+    throw new Error(
+      'ユーザー所有権の確認に失敗しました: ' +
+      String(bootBindResult && bootBindResult.reason || 'unknown')
+    );
   }
 
   if(bootProfileResult && bootProfileResult.data && bootProfileResult.data.user_id){
     var bootUserId = normalizeZeraphiaUserId(bootProfileResult.data.user_id);
     if(bootUserId && bootUserId !== userId){
-      userId = bootUserId;
-      localStorage.setItem('zukan_user_id', userId);
+      // ensure_user_profile が別IDを返しても、通常起動では絶対に採用しない。
+      throw new Error(
+        '[ACCOUNT_ID_MISMATCH] サーバーから別ユーザーIDが返されました。' +
+        '安全のため自動切替を停止しました。 local=' + userId + ' server=' + bootUserId
+      );
     }
   }
 
@@ -7064,9 +7095,7 @@ startTitleBgm();
     throw new Error('user_profiles確定後の読込に失敗しました');
   }
 
-  // profileの読込/新規作成が完了した時点でAuth所有者を紐付ける。
-  // その後に初期キャラのエリを付与する。RLS所有者判定が通る順番にする。
-  await bindAuthToCurrentUserProfile();
+  // Auth所有者は起動直後に確認済み。ここでは初期キャラだけ確認する。
   await ensureStarterEriOwned();
 
   // 明示的な引き継ぎ待ちだけは整合性保護のため起動前に完了させる。
@@ -13224,13 +13253,11 @@ async function openDataTransfer(){
   if(!ok) return;
 
   try {
-    try {
-      await sb.auth.signOut({ scope:'local' });
-    } catch(signOutError) {
-      console.warn('[EmailTransfer] local sign-out skipped:', signOutError);
-    }
-
-    var redirectTo = window.location.origin + window.location.pathname;
+    // build755: メールを送っただけで現在のAuthを失わない。
+    // 実際にメールリンクの認証が成功した時だけSupabase側のセッションが切り替わる。
+    var redirectUrl = new URL(window.location.origin + window.location.pathname);
+    redirectUrl.searchParams.set('zeraphia_transfer', 'email');
+    var redirectTo = redirectUrl.toString();
 
     var result = await sb.auth.signInWithOtp({
       email: email,
@@ -13319,6 +13346,22 @@ async function openAccountProtection(){
   var state = await refreshAccountProtectionStatus();
   if(!state || !state.user){
     alert('アカウント情報を確認できませんでした。通信状況を確認してもう一度お試しください。');
+    return;
+  }
+
+  // build755 emergency guard:
+  // メールをAuthへ付与する前に、現在表示中のゲームIDをこのAuthが所有していることを確定する。
+  // 不一致時はメール登録を絶対に進めない。
+  var ownership = await bindAuthToCurrentUserProfile();
+  if(!ownership || ownership.ok !== true){
+    console.error('[AccountProtection] ownership verification blocked:', ownership);
+    alert(
+      '安全確認のため、アカウント保護を中止しました。\n\n' +
+      '現在のゲームIDと認証情報が一致していません。\n' +
+      'データは削除・変更していません。\n\n' +
+      'ユーザーID：' + (userId || '取得できません') + '\n\n' +
+      'このIDを控えてください。'
+    );
     return;
   }
 
