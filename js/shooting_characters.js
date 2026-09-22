@@ -1733,7 +1733,10 @@
     description: '長押しで溜め、離して撃つRチャージ型。ULTはウルフと同系統のATK UP領域を展開するR版。',
     ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
     ultName: '紅蓮の領域',
-    shotType: 'charge', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
+    // build819: CHARGE砲の威力を2倍。ULT回収は基準0.476の3倍。
+    // ULT回収量はshooting_core側でチャージ率に比例させ、短押し連打の抜け道を防ぐ。
+    shotType: 'charge', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 1.80, shotCount: 1,
+    ultGainPerHit: 1.428,
     chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
     ultBaseType: 'field', ultAddons: ['bullet_clear','player_buff'], ultType: 'wolf_atk_field',
     ultFieldDurationMs: 10000,
@@ -1906,7 +1909,8 @@
 
     burstDamage: 0,
     burstNeed: 32,
-    ultGainPerHit: 0.44,
+    // build819: 限定SRレイは通常火力を据え置き、ULT回転を1.5倍へ。
+    ultGainPerHit: 0.66,
     coreTop: '38%',
     shotOffsetY: 32,
 

@@ -2545,7 +2545,7 @@
     return Math.max(0, gain);
   }
 
-  function grantUltGaugeForHits(c, hitCount = 1, ownerId = null) {
+  function grantUltGaugeForHits(c, hitCount = 1, ownerId = null, gainMultiplier = 1) {
     if (!state || !c || hitCount <= 0) return;
     if ((isChapter04Stage() && !isChapter43BossStage()) || state?.chapter43AttackSealed) return;
 
@@ -2558,7 +2558,8 @@
     const member = getPartyMember(resolvedOwnerId);
     if (!member) return;
 
-    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1));
+    const safeGainMultiplier = Math.max(0, Number.isFinite(Number(gainMultiplier)) ? Number(gainMultiplier) : 1);
+    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier;
     const wasReady = member.burst >= c.burstNeed;
     member.burst = Math.min(c.burstNeed, member.burst + gain);
     if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
@@ -6252,6 +6253,13 @@
       c.id
     );
     if (!p) return false;
+
+    // build819: アイナ(ID17)のULT回収もCHARGE量に正比例。
+    // MAXなら100%、半分溜めなら50%、最低溜めならその比率だけ獲得する。
+    // ミア等ほかのCHARGEキャラには影響させない。
+    if (Number(c.id) === Number(CHARACTER_ID.KAINA)) {
+      p.ultGainMultiplier = chargeRatio;
+    }
 
     const minSize = Math.max(18, Number(c.chargeMinSize || 30));
     const maxSize = Math.max(minSize, Number(c.chargeMaxSize || 76));
@@ -10956,7 +10964,10 @@
         }
 
         if (!p.noUltGain) {
-          grantUltGaugeForHits(chara, hitCount, ownerId);
+          const projectileUltGainMultiplier = Number.isFinite(Number(p.ultGainMultiplier))
+            ? Number(p.ultGainMultiplier)
+            : 1;
+          grantUltGaugeForHits(chara, hitCount, ownerId, projectileUltGainMultiplier);
         }
 
         if (p.pierce) {
