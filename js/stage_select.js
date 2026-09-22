@@ -357,7 +357,7 @@
 
     el.innerHTML = `
       <div class="ss-header">
-        <button class="ss-back-btn" onclick="closeStageSelect()">‹ 戻る</button>
+        <button class="ss-back-btn" onclick="closeStageSelect()">＜戻る</button>
         <div class="ss-title" id="ss-title">討伐任務</div>
         <div class="ss-spacer"></div>
       </div>

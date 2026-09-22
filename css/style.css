@@ -39058,3 +39058,990 @@ body{
     font-size:10px !important;
   }
 }
+
+
+/* =========================================================
+   build786 — SHARP UI REFORM / 角丸・楕円撤廃
+
+   ZERAPHIA white UI geometry policy:
+   - controls / cards / modals / sheets / tabs are rectilinear
+   - thin warm-gold rules + white/ivory paper surfaces
+   - rounded rectangles and capsule/pill controls are prohibited
+   - true circular symbols/effects (RANK seal, notification dots,
+     battle/orbit effects) remain circular by explicit exception
+   ========================================================= */
+
+:root{
+  --zr-sharp-line:rgba(167,135,79,.34);
+  --zr-sharp-line-strong:rgba(158,119,55,.52);
+  --zr-sharp-paper:rgba(255,253,248,.86);
+  --zr-sharp-paper-pressed:rgba(247,240,226,.92);
+  --zr-sharp-text:#6b5434;
+}
+
+/* --- Geometry policy ---
+   Do NOT flatten every descendant globally: icon primitives and semantic
+   indicators (search lens / notification dots / seals) legitimately use circles.
+   Rectilinear geometry is applied to controls, cards, panels and modals below.
+*/
+
+/* Pseudo-elements used specifically as UI frames follow the same geometry. */
+html body .modal::before,
+html body .modal::after,
+html body .notice-panel::before,
+html body .notice-panel::after,
+html body .stat-card::before,
+html body .stat-card::after,
+html body .zukan-card::before,
+html body .zukan-card::after,
+html body .box-card::before,
+html body .box-card::after,
+html body .ten-result-card::before,
+html body .ten-result-card::after,
+html body .summon-banner-card::before,
+html body .summon-banner-card::after,
+html body .ss-card::before,
+html body .ss-card::after{
+  border-radius:0 !important;
+}
+
+/* --- True circles / effects: not part of the UI-rounding language. --- */
+html body .hud-lv-circle,
+html body .box-carousel-action-notice-dot,
+html body .primoa-index-limitbreak-dot,
+html body .zukan-search-glyph,
+html body .zukan-name-search-icon,
+html body .zukan-search-button.has-query::after,
+html body .bottom-nav-notice,
+html body .box-limitbreak-dot,
+html body .home-event-banner-dots span,
+html body .standby-orbit,
+html body .standby-core,
+html body .reveal-circle,
+html body .reveal-wing-light,
+html body .gacha-aura,
+html body .ten-card-back-ring,
+html body .ten-card-back-core,
+html body .summon-header-sigil,
+html body .box-carousel-lock-mark,
+html body .box-carousel-locked-seal,
+html body .detail-range-cell.self,
+html body .detail-move-cell.self{
+  border-radius:50% !important;
+}
+
+/* Some effect fragments intentionally use fully rounded geometry. */
+html body .standby-light-fragment,
+html body .reveal-glyph{
+  border-radius:999px !important;
+}
+
+/* --- All native controls: never pill / never soft-rounded. --- */
+html body button,
+html body input:not([type="checkbox"]):not([type="radio"]),
+html body select,
+html body textarea{
+  border-radius:0 !important;
+}
+
+/* White-theme action buttons: thin frame, low-noise paper surface. */
+#screen-zukan button,
+#screen-item button,
+#detail-modal button,
+#character-levelup-modal button,
+#limitbreak-modal button,
+#limitbreak-confirm-modal button,
+#shinju-overlay button,
+#shinju-blessing-picker button,
+.notice-panel button{
+  box-shadow:none !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn,
+.primor-fullscreen-home-btn,
+#detail-modal .btn-set-home,
+#detail-modal .btn-set-fav.btn-set-home,
+#character-levelup-modal .character-levelup-actions button,
+#limitbreak-modal .lb-execute-btn,
+#limitbreak-modal .modal-cancel-btn,
+#limitbreak-confirm-modal .btn-pay,
+#limitbreak-confirm-modal .modal-cancel-btn,
+#shinju-overlay .shinju-offer-btn,
+#shinju-overlay .shinju-offer-all,
+#shinju-overlay .shinju-clear-btn,
+#shinju-blessing-picker .shinju-blessing-picker-close,
+#shinju-blessing-picker .shinju-blessing-picker-clear{
+  border-radius:0 !important;
+  box-shadow:none !important;
+  border:1px solid var(--zr-sharp-line) !important;
+  background:var(--zr-sharp-paper) !important;
+  color:var(--zr-sharp-text) !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-action-btn:active,
+.primor-fullscreen-home-btn:active,
+#detail-modal .btn-set-home:active,
+#detail-modal .btn-set-fav.btn-set-home:active,
+#character-levelup-modal .character-levelup-actions button:active,
+#limitbreak-modal .lb-execute-btn:active,
+#limitbreak-confirm-modal .btn-pay:active{
+  transform:translateY(1px) !important;
+  filter:none !important;
+  background:var(--zr-sharp-paper-pressed) !important;
+}
+
+/* Ready / primary states are expressed with line strength, not rounded gold pills. */
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-limitbreak-btn.is-ready,
+#character-levelup-modal .character-levelup-execute,
+#limitbreak-modal .lb-execute-btn,
+#limitbreak-confirm-modal .btn-pay{
+  border-color:var(--zr-sharp-line-strong) !important;
+  background:rgba(250,245,232,.92) !important;
+}
+
+/* --- Character detail: remove the large soft bottom-sheet silhouette. --- */
+#screen-zukan.is-primoa-mode .box-carousel-detail,
+#detail-modal .box-carousel-detail{
+  border-radius:0 !important;
+  box-shadow:none !important;
+  border-color:rgba(173,142,89,.24) !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-sheet-handle span{
+  height:2px !important;
+  border-radius:0 !important;
+  background:rgba(133,104,62,.34) !important;
+  box-shadow:none !important;
+}
+
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-visual,
+#box-grid.box-carousel:not(.remnant-carousel) .box-carousel-img,
+#screen-zukan .primoa-index-image-wrap,
+#screen-zukan .primoa-index-image{
+  border-radius:0 !important;
+}
+
+/* --- Detail / image modal: paper frame, no capsule controls. --- */
+#detail-modal .modal,
+.modal,
+.modal-content,
+.modal-card,
+.modal-inner,
+.modal-box,
+#character-levelup-modal .character-levelup-modal-inner,
+#limitbreak-modal .modal,
+#limitbreak-confirm-modal .modal,
+#shinju-blessing-picker .shinju-blessing-picker-card{
+  border-radius:0 !important;
+}
+
+#detail-modal .modal{
+  box-shadow:0 10px 30px rgba(75,57,31,.08) !important;
+}
+
+#detail-modal .btn-set-home,
+#detail-modal .btn-set-fav.btn-set-home{
+  min-height:42px !important;
+  padding:10px 18px !important;
+}
+
+/* Close controls are square / typographic instead of circular floating buttons. */
+.modal-close-btn,
+.detail-modal-close-x,
+.primor-fullscreen-close,
+.remnant-fullscreen-close,
+.notice-close,
+.shinju-close,
+#shinju-blessing-picker .shinju-blessing-picker-close{
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+/* --- Common white UI cards / panels / rows. --- */
+.setting-row,
+.id-box,
+.id-btn,
+.summon-counter,
+#summon-result,
+.result-photo,
+.opt-badge,
+.btn-favorite,
+.stat-card,
+.stat-card-total,
+.zukan-card,
+#box-grid .box-card,
+.detail-photo,
+.photo-zoom img,
+.compare-chara-visual img,
+.name-edit-box,
+.name-edit-input,
+.friend-add-box,
+.friend-add-input,
+.friend-status-badge,
+.friend-card,
+.friend-card-compact,
+.friend-card-panel,
+.friend-stat-chip,
+.friend-chara-photo,
+.friend-chara-photo-empty,
+.friend-req-card,
+.friend-search-card,
+.friend-chara-section,
+.friend-icon-img,
+.friend-icon-empty,
+.notice-panel,
+.notice-item,
+.detail-lb-section,
+.detail-shooting-card,
+.detail-skill-card,
+.detail-skill-badge,
+.detail-skill-empty,
+.detail-range-board,
+.detail-move-board,
+.box-carousel-locked-panel,
+.detail-lb-ready-badge,
+.summon-banner-card,
+.summon-detail-visual,
+.pity-counter,
+.gacha-material-detail-box,
+.lb-vessel-choice,
+.remnant-detail-row,
+.remnant-blessing-card,
+.remnant-blessing-upgrade-material,
+#stage-select-modal .ss-card,
+#limitbreak-confirm-modal .lb-confirm-consume-box,
+#limitbreak-confirm-modal .lb-confirm-level,
+.detail-combo-condition,
+.detail-combo-range-item,
+.lb-bonus-box,
+.lb-bonus-row.next,
+.lb-next-bonus,
+#limitbreak-modal .lb-recipe-box,
+#limitbreak-modal .lb-lack-box,
+#character-levelup-modal .chara-level-material-row,
+#shinju-overlay .shinju-content,
+#shinju-overlay .shinju-hero-info,
+#shinju-overlay .shinju-progress-box,
+#shinju-overlay .shinju-progress-bg,
+#shinju-overlay .shinju-progress-fill,
+#shinju-overlay .shinju-item-card,
+#shinju-overlay .shinju-item-empty,
+#shinju-overlay .shinju-clear-card,
+#shinju-overlay .shinju-stage,
+#shinju-overlay .shinju-blessing-section,
+#shinju-overlay .shinju-blessing-slot,
+#shinju-overlay .shinju-blessing-character-panel,
+#shinju-blessing-picker .shinju-blessing-picker-character,
+#shinju-blessing-picker .shinju-blessing-picker-portrait,
+.ten-result-card,
+.ten-card-back,
+.ten-card-img,
+.ten-card-bottom,
+.ten-result-again-btn,
+.ten-result-close-btn{
+  border-radius:0 !important;
+}
+
+/* Remove the especially soft 'app card' shadow language where it clashes with sharp geometry. */
+#screen-zukan .stat-card,
+#screen-zukan .zukan-card,
+#screen-zukan .box-carousel-detail,
+#detail-modal .modal,
+#detail-modal .detail-shooting-card,
+#detail-modal .detail-lb-section,
+#screen-item .item-inventory-panel,
+.notice-panel,
+#character-levelup-modal .character-levelup-modal-inner,
+#limitbreak-modal .modal,
+#limitbreak-confirm-modal .modal,
+#shinju-blessing-picker .shinju-blessing-picker-card{
+  box-shadow:none !important;
+}
+
+/* --- Pills / tabs / chips / counters become rectangular labels. --- */
+.zukan-tabs button,
+.box-limitbreak-jump,
+.box-limitbreak-count,
+.detail-lb-ready-badge,
+.btn-gacha-guarantee-badge,
+.summon-history-btn,
+.gacha-resonance-tab,
+#stage-select-modal .ss-story-clear,
+.ten-card-new-badge,
+.ten-card-item-badge,
+.ten-card-pickup-badge,
+#reveal-pickup-badge,
+.shop-item-badge,
+.card-no,
+.box-rarity-label,
+.ten-card-rarity-label,
+.ten-card-type-label{
+  border-radius:0 !important;
+}
+
+/* Progress / meter ends are straight. */
+.hud-exp-bg,
+.hud-exp-fill,
+.pity-bar-wrap,
+.pity-bar-fill,
+.title-loading-track,
+#title-loading-fill,
+#screen-summon .pity-bar-wrap,
+#screen-summon .pity-bar-fill,
+#shinju-overlay .shinju-progress-bg,
+#shinju-overlay .shinju-progress-fill{
+  border-radius:0 !important;
+}
+
+/* HUD resources: remove capsule silhouette. The + remains a simple typographic action. */
+.global-user-frame .hud-resource,
+.hud-resource{
+  border-radius:0 !important;
+}
+.global-user-frame .hud-gem-plus-btn,
+.hud-gem-plus-btn{
+  width:auto !important;
+  min-width:0 !important;
+  height:auto !important;
+  min-height:0 !important;
+  padding:0 2px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* Item management is the visual reference: keep its thin rectangular tabs/buttons explicit. */
+#screen-item button,
+#screen-item .item-tab,
+#screen-item .item-category-tab,
+#screen-item .item-sell-btn{
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+/* End build786 SHARP UI REFORM */
+
+/* ============================================================
+   build795 NOAH / FRAGMENTS OF PARADISE — LOGO PUZZLE REFORM
+   - 9欠片をZERAPHIAロゴ1枚の3x3分割として表示
+   - 未取得欠片は白いマット紙、取得欠片だけロゴが現れる
+   - 紫カード / 金ベタ大ボタン / 強いフレームを廃止
+   - iPhone SE高さでも1画面に静かに収める
+   ============================================================ */
+
+.noah-piece-overlay{
+  background:rgba(243,239,231,.97) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+.noah-piece-screen{
+  background:
+    radial-gradient(ellipse at 50% 10%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.72) 28%, rgba(255,255,255,0) 58%),
+    linear-gradient(180deg,#faf7f0 0%,#f3ede1 100%) !important;
+  color:#574936 !important;
+}
+
+/* header: standard ZERAPHIA proportions, no hard frame */
+.noah-piece-head{
+  position:relative !important;
+  flex:0 0 64px !important;
+  min-height:64px !important;
+  padding:max(8px,env(safe-area-inset-top)) 18px 4px !important;
+  grid-template-columns:74px minmax(0,1fr) 74px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  isolation:isolate;
+}
+.noah-piece-head::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  pointer-events:none;
+  left:-6%;
+  right:-6%;
+  top:14px;
+  height:72px;
+  background:linear-gradient(to bottom,
+    rgba(255,255,255,.88) 0%,
+    rgba(255,255,255,.64) 38%,
+    rgba(255,255,255,.27) 70%,
+    rgba(255,255,255,0) 100%);
+  filter:blur(10px);
+  -webkit-filter:blur(10px);
+}
+.noah-piece-back{
+  min-width:52px !important;
+  height:44px !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#837361 !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  letter-spacing:.015em !important;
+  text-shadow:0 0 8px rgba(255,255,255,.82) !important;
+}
+.noah-piece-title small{
+  margin-bottom:4px !important;
+  color:#aa8a56 !important;
+  font-family:"Cinzel",serif !important;
+  font-size:6px !important;
+  font-weight:600 !important;
+  letter-spacing:.25em !important;
+}
+.noah-piece-title strong{
+  color:#6f5535 !important;
+  font-size:16px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  letter-spacing:.12em !important;
+  text-shadow:0 0 9px rgba(255,255,255,.72) !important;
+}
+.noah-piece-ticket{
+  color:rgba(111,91,64,.68) !important;
+  font-size:8px !important;
+  letter-spacing:.03em !important;
+}
+.noah-piece-ticket b{
+  color:#765b32 !important;
+  font-size:14px !important;
+  font-weight:500 !important;
+}
+
+/* body: center the composition instead of stretching it to the footer */
+.noah-piece-body{
+  flex:0 1 auto !important;
+  width:100% !important;
+  min-height:0 !important;
+  overflow:visible !important;
+  padding:10px 18px 8px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  box-sizing:border-box !important;
+}
+.noah-piece-lead{
+  margin:0 0 7px !important;
+}
+.noah-piece-lead .en{
+  color:#aa8a56 !important;
+  font-size:7px !important;
+  letter-spacing:.28em !important;
+}
+.noah-piece-lead h2{
+  margin-top:5px !important;
+  color:#66523a !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  letter-spacing:.10em !important;
+}
+.noah-piece-lead p{
+  margin-top:5px !important;
+  color:rgba(91,72,44,.52) !important;
+  font-size:9px !important;
+  line-height:1.5 !important;
+}
+
+.noah-piece-progress{
+  margin:2px 0 10px !important;
+  gap:6px !important;
+}
+.noah-piece-progress-label{
+  color:rgba(116,92,57,.58) !important;
+  font-size:8px !important;
+  letter-spacing:.08em !important;
+}
+.noah-piece-progress strong{
+  color:#6e542a !important;
+  font-size:23px !important;
+  font-weight:400 !important;
+}
+.noah-piece-progress span:not(.noah-piece-progress-label){
+  color:#aa8c57 !important;
+  font-size:9px !important;
+}
+
+/* Wide logo board: its aspect ratio exactly matches the supplied logo artwork. */
+.noah-puzzle-frame{
+  position:relative !important;
+  width:min(calc(100vw - 36px),354px) !important;
+  aspect-ratio:1573 / 679 !important;
+  margin:0 auto !important;
+  padding:4px !important;
+  border:1px solid rgba(154,119,59,.18) !important;
+  border-radius:0 !important;
+  background:rgba(255,255,255,.58) !important;
+  box-shadow:
+    0 10px 30px rgba(91,70,37,.07),
+    inset 0 0 0 1px rgba(255,255,255,.72) !important;
+}
+.noah-puzzle-frame::before{
+  content:"";
+  position:absolute;
+  inset:-18px -14px;
+  z-index:-1;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,rgba(255,255,255,.70),rgba(255,255,255,0) 72%);
+  filter:blur(8px);
+}
+.noah-puzzle-grid{
+  gap:1px !important;
+  background:rgba(149,126,88,.16) !important;
+  border-radius:0 !important;
+}
+.noah-puzzle-piece,
+.noah-puzzle-piece.open{
+  background-image:url("../images/noah_logo_puzzle.webp") !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  background-color:#fff !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+/* unopened = a clean sheet covering its exact logo fragment */
+.noah-puzzle-piece.locked{
+  background-image:none !important;
+  background:#f4f0e8 !important;
+  filter:none !important;
+}
+.noah-puzzle-piece.locked::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:
+    radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.96) 0%,rgba(255,255,255,.56) 52%,rgba(244,239,229,.18) 100%),
+    linear-gradient(135deg,rgba(255,255,255,.30),rgba(210,199,181,.08)) !important;
+  opacity:1 !important;
+}
+.noah-puzzle-piece.locked::after{
+  content:attr(data-noah-piece) !important;
+  left:auto !important;
+  top:auto !important;
+  right:7px !important;
+  bottom:5px !important;
+  transform:none !important;
+  color:rgba(121,99,66,.22) !important;
+  font-family:"Cinzel",serif !important;
+  font-size:7px !important;
+  font-weight:500 !important;
+  letter-spacing:.12em !important;
+}
+.noah-puzzle-piece.open::before,
+.noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+.noah-puzzle-piece.open{
+  animation:noahLogoFragmentOpen795 .62s cubic-bezier(.2,.78,.2,1) both !important;
+}
+@keyframes noahLogoFragmentOpen795{
+  0%{opacity:0;filter:brightness(2.15) blur(5px);transform:scale(.94)}
+  58%{opacity:1;filter:brightness(1.15) blur(0);transform:scale(1.012)}
+  100%{opacity:1;filter:brightness(1) blur(0);transform:scale(1)}
+}
+
+.noah-piece-note{
+  margin:10px auto 0 !important;
+  max-width:330px !important;
+  color:rgba(89,70,42,.48) !important;
+  font-size:8px !important;
+  line-height:1.55 !important;
+  letter-spacing:.025em !important;
+}
+
+/* action area: quiet editorial button, no gold slab, no hard footer */
+.noah-piece-actions{
+  flex:0 0 auto !important;
+  width:min(calc(100vw - 48px),330px) !important;
+  margin:14px auto max(14px,env(safe-area-inset-bottom)) !important;
+  padding:0 !important;
+  border:0 !important;
+  border-top:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.noah-piece-challenge{
+  width:100% !important;
+  min-height:58px !important;
+  height:auto !important;
+  padding:9px 14px !important;
+  border:1px solid rgba(163,128,69,.36) !important;
+  border-radius:0 !important;
+  background:
+    linear-gradient(180deg,rgba(255,254,250,.96),rgba(245,238,224,.94)) !important;
+  color:#6d5531 !important;
+  box-shadow:
+    0 5px 16px rgba(85,63,31,.07),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+  text-shadow:none !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  letter-spacing:.065em !important;
+}
+.noah-piece-challenge::before{
+  content:"";
+  display:block;
+  width:42px;
+  height:1px;
+  margin:0 auto 7px;
+  background:linear-gradient(90deg,transparent,rgba(160,126,67,.46),transparent);
+}
+.noah-piece-challenge small,
+.noah-piece-challenge-sub{
+  display:block !important;
+  margin:0 0 3px !important;
+  color:#a18452 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:7px !important;
+  font-weight:500 !important;
+  line-height:1.25 !important;
+  letter-spacing:.16em !important;
+  opacity:.88 !important;
+}
+.noah-piece-challenge-main{
+  color:#6d5531 !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  line-height:1.45 !important;
+  letter-spacing:.065em !important;
+}
+.noah-piece-challenge:active:not(:disabled){
+  transform:translateY(1px) !important;
+  background:linear-gradient(180deg,rgba(248,242,231,.98),rgba(239,230,213,.96)) !important;
+}
+.noah-piece-challenge:disabled{
+  border-color:rgba(137,120,94,.18) !important;
+  background:rgba(245,241,233,.72) !important;
+  color:rgba(106,91,68,.42) !important;
+  box-shadow:none !important;
+  text-shadow:none !important;
+  opacity:.78 !important;
+}
+.noah-piece-challenge:disabled small,
+.noah-piece-challenge:disabled .noah-piece-challenge-sub{
+  color:rgba(120,102,76,.42) !important;
+}
+.noah-piece-ticket-status{
+  display:none !important; /* header already owns ticket balance */
+}
+.noah-piece-complete{
+  margin-top:8px !important;
+  color:#80673f !important;
+  font-size:9px !important;
+  letter-spacing:.08em !important;
+}
+
+/* compact layout for iPhone SE and other short screens */
+@media(max-height:700px){
+  .noah-piece-head{
+    flex-basis:58px !important;
+    min-height:58px !important;
+    padding-top:max(5px,env(safe-area-inset-top)) !important;
+  }
+  .noah-piece-body{
+    padding-top:6px !important;
+    padding-bottom:4px !important;
+  }
+  .noah-piece-lead{
+    margin-bottom:4px !important;
+  }
+  .noah-piece-lead p{
+    display:none !important;
+  }
+  .noah-piece-progress{
+    margin:0 0 7px !important;
+  }
+  .noah-puzzle-frame{
+    width:min(calc(100vw - 42px),342px) !important;
+  }
+  .noah-piece-note{
+    margin-top:7px !important;
+  }
+  .noah-piece-actions{
+    width:min(calc(100vw - 54px),318px) !important;
+    margin-top:11px !important;
+    margin-bottom:max(10px,env(safe-area-inset-bottom)) !important;
+  }
+  .noah-piece-challenge{
+    min-height:54px !important;
+    padding:7px 12px !important;
+  }
+}
+
+/* ============================================================
+   build796 NOAH / SQUARE LOGO PUZZLE
+   - puzzle returns to a true square 3x3 board
+   - closed pieces are quiet ivory tiles; no numbering
+   - the supplied ZERAPHIA logo is composed on a square master image
+   - challenge CTA is reduced to a single line; ticket balance sits below it
+   ============================================================ */
+
+.noah-piece-head-spacer{
+  grid-column:3;
+  width:100%;
+  height:1px;
+}
+
+/* ticket balance belongs below the action, not in the header */
+.noah-piece-ticket{
+  display:none !important;
+}
+
+.noah-puzzle-frame{
+  width:min(calc(100vw - 44px),306px) !important;
+  aspect-ratio:1 / 1 !important;
+  padding:3px !important;
+  border:1px solid rgba(157,126,75,.20) !important;
+  background:rgba(255,255,255,.62) !important;
+  box-shadow:
+    0 8px 26px rgba(76,58,34,.055),
+    inset 0 0 0 1px rgba(255,255,255,.82) !important;
+}
+.noah-puzzle-frame::before{
+  inset:-20px !important;
+  background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.78),rgba(255,255,255,0) 70%) !important;
+  filter:blur(9px) !important;
+}
+.noah-puzzle-grid{
+  width:100% !important;
+  height:100% !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(3,minmax(0,1fr)) !important;
+  gap:1px !important;
+  background:rgba(140,118,84,.15) !important;
+}
+.noah-puzzle-piece,
+.noah-puzzle-piece.open{
+  background-image:url("../images/noah_logo_puzzle.webp") !important;
+  background-size:300% 300% !important;
+  background-repeat:no-repeat !important;
+  background-color:#faf8f3 !important;
+}
+.noah-puzzle-piece.locked{
+  background-image:none !important;
+  background:
+    radial-gradient(circle at 50% 44%,rgba(255,255,255,.96) 0%,rgba(250,248,243,.92) 58%,rgba(239,234,224,.72) 100%) !important;
+}
+.noah-puzzle-piece.locked::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(181,163,135,.035)) !important;
+  opacity:1 !important;
+}
+.noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+
+.noah-piece-note{
+  margin-top:9px !important;
+}
+.noah-piece-actions{
+  width:min(calc(100vw - 70px),258px) !important;
+  margin:18px auto max(14px,env(safe-area-inset-bottom)) !important;
+}
+.noah-piece-challenge{
+  width:100% !important;
+  min-height:46px !important;
+  height:46px !important;
+  padding:0 14px !important;
+  border:1px solid rgba(161,126,67,.35) !important;
+  background:rgba(255,253,248,.74) !important;
+  color:#6b5230 !important;
+  box-shadow:0 4px 14px rgba(84,62,31,.045) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:12px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  letter-spacing:.10em !important;
+  text-shadow:none !important;
+}
+.noah-piece-challenge::before{
+  content:none !important;
+  display:none !important;
+}
+.noah-piece-challenge:active:not(:disabled){
+  transform:translateY(1px) !important;
+  background:rgba(246,240,228,.88) !important;
+}
+.noah-piece-ticket-status{
+  display:block !important;
+  margin-top:8px !important;
+  text-align:center !important;
+  color:rgba(102,81,53,.55) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:8px !important;
+  font-weight:400 !important;
+  line-height:1.3 !important;
+  letter-spacing:.07em !important;
+}
+.noah-piece-ticket-status b{
+  margin:0 2px !important;
+  color:#765b32 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+}
+
+@media(max-height:700px){
+  .noah-puzzle-frame{
+    width:min(calc(100vw - 48px),286px) !important;
+  }
+  .noah-piece-actions{
+    width:min(calc(100vw - 78px),246px) !important;
+    margin-top:13px !important;
+  }
+  .noah-piece-challenge{
+    min-height:44px !important;
+    height:44px !important;
+  }
+  .noah-piece-ticket-status{
+    margin-top:6px !important;
+  }
+}
+
+
+/* ============================================================
+   build797 NOAH / REFINED PARADISE PUZZLE
+   ============================================================ */
+#noah-piece-overlay.noah-piece-overlay{
+  background:rgba(247,244,237,.985) !important;
+}
+#noah-piece-overlay .noah-piece-screen{
+  background:
+    radial-gradient(ellipse at 50% 7%,rgba(255,255,255,.99) 0%,rgba(255,255,255,.74) 31%,rgba(255,255,255,0) 63%),
+    linear-gradient(180deg,#fbf9f4 0%,#f5f0e7 100%) !important;
+}
+#noah-piece-overlay .noah-piece-head{
+  flex:0 0 62px !important;
+  min-height:62px !important;
+  padding:max(7px,env(safe-area-inset-top)) 18px 3px !important;
+  grid-template-columns:72px minmax(0,1fr) 72px !important;
+  border:0 !important;
+  background:transparent !important;
+}
+#noah-piece-overlay .noah-piece-back{
+  min-width:52px !important;height:42px !important;padding:0 !important;
+  border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;
+  color:#837361 !important;font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:11px !important;font-weight:500 !important;letter-spacing:.015em !important;
+}
+#noah-piece-overlay .noah-piece-title small{
+  margin:0 0 4px !important;color:#a98955 !important;font-family:"Cinzel","Times New Roman",serif !important;
+  font-size:5.5px !important;font-weight:600 !important;letter-spacing:.27em !important;
+}
+#noah-piece-overlay .noah-piece-title strong{
+  color:#6f5535 !important;font-size:15px !important;font-weight:500 !important;letter-spacing:.12em !important;
+}
+#noah-piece-overlay .noah-piece-body{
+  flex:1 1 auto !important;min-height:0 !important;width:100% !important;
+  padding:13px 18px max(14px,env(safe-area-inset-bottom)) !important;
+  display:flex !important;flex-direction:column !important;align-items:center !important;overflow:hidden !important;box-sizing:border-box !important;
+}
+#noah-piece-overlay .noah-piece-lead{margin:0 0 7px !important;text-align:center !important;}
+#noah-piece-overlay .noah-piece-lead .en{
+  margin:0 0 5px !important;color:#ad905f !important;font-family:"Cinzel","Times New Roman",serif !important;
+  font-size:6px !important;font-weight:500 !important;letter-spacing:.30em !important;
+}
+#noah-piece-overlay .noah-piece-lead h2{
+  margin:0 !important;color:#5f4c35 !important;font-size:16px !important;font-weight:500 !important;line-height:1.35 !important;letter-spacing:.10em !important;
+}
+#noah-piece-overlay .noah-piece-lead p{display:none !important;}
+#noah-piece-overlay .noah-piece-progress{
+  width:min(calc(100vw - 54px),292px) !important;min-height:26px !important;margin:0 0 8px !important;padding:0 2px !important;
+  display:flex !important;align-items:baseline !important;justify-content:center !important;gap:6px !important;border:0 !important;background:transparent !important;
+}
+#noah-piece-overlay .noah-piece-progress-label{margin-right:2px !important;color:rgba(103,83,55,.50) !important;font-size:7px !important;letter-spacing:.12em !important;}
+#noah-piece-overlay .noah-piece-progress strong{
+  color:#73582f !important;font-family:"Cinzel","Noto Serif JP",serif !important;font-size:22px !important;font-weight:400 !important;line-height:1 !important;
+}
+#noah-piece-overlay .noah-piece-progress span:not(.noah-piece-progress-label){
+  color:#aa8c57 !important;font-family:"Cinzel","Noto Serif JP",serif !important;font-size:8px !important;letter-spacing:.08em !important;
+}
+#noah-piece-overlay .noah-puzzle-frame{
+  position:relative !important;width:min(calc(100vw - 52px),292px) !important;aspect-ratio:1/1 !important;flex:0 0 auto !important;
+  margin:0 !important;padding:5px !important;box-sizing:border-box !important;border:1px solid rgba(150,121,76,.22) !important;border-radius:0 !important;
+  background:rgba(255,255,255,.68) !important;box-shadow:0 12px 34px rgba(77,58,31,.055),inset 0 0 0 1px rgba(255,255,255,.86) !important;
+}
+#noah-piece-overlay .noah-puzzle-frame::before{
+  content:"" !important;position:absolute !important;z-index:-1 !important;inset:-22px !important;pointer-events:none !important;
+  background:radial-gradient(circle at 50% 49%,rgba(255,255,255,.92),rgba(255,255,255,0) 70%) !important;filter:blur(10px) !important;
+}
+#noah-piece-overlay .noah-puzzle-grid{
+  width:100% !important;height:100% !important;display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(3,minmax(0,1fr)) !important;gap:1px !important;overflow:hidden !important;border-radius:0 !important;background:rgba(143,119,82,.105) !important;
+}
+#noah-piece-overlay .noah-puzzle-piece,
+#noah-piece-overlay .noah-puzzle-piece.open,
+#noah-piece-overlay .noah-puzzle-piece.locked{
+  position:relative !important;min-width:0 !important;min-height:0 !important;overflow:hidden !important;border-radius:0 !important;
+  background-image:url("../images/noah_logo_puzzle.webp") !important;background-repeat:no-repeat !important;background-size:300% 300% !important;
+  background-color:#faf8f3 !important;box-shadow:none !important;
+}
+#noah-piece-overlay .noah-puzzle-piece.locked{filter:saturate(.35) contrast(.82) !important;}
+#noah-piece-overlay .noah-puzzle-piece.locked::before{
+  content:"" !important;position:absolute !important;inset:0 !important;z-index:1 !important;display:block !important;
+  background:linear-gradient(180deg,rgba(250,248,243,.80),rgba(246,242,234,.84)) !important;opacity:1 !important;
+}
+#noah-piece-overlay .noah-puzzle-piece.locked::after{content:none !important;display:none !important;}
+#noah-piece-overlay .noah-puzzle-piece.open{filter:none !important;animation:noahPieceFocus797 .68s cubic-bezier(.20,.76,.20,1) both !important;}
+#noah-piece-overlay .noah-puzzle-piece.open::before,#noah-piece-overlay .noah-puzzle-piece.open::after{content:none !important;display:none !important;}
+@keyframes noahPieceFocus797{0%{opacity:.18;filter:brightness(2.3) blur(3px)}58%{opacity:1;filter:brightness(1.16) blur(0)}100%{opacity:1;filter:brightness(1) blur(0)}}
+#noah-piece-overlay .noah-piece-note{
+  margin:10px auto 0 !important;max-width:292px !important;color:rgba(92,74,50,.43) !important;font-size:7.5px !important;line-height:1.45 !important;letter-spacing:.035em !important;text-align:center !important;
+}
+#noah-piece-overlay .noah-piece-actions{
+  flex:0 0 auto !important;width:min(calc(100vw - 84px),238px) !important;margin:18px auto 0 !important;padding:0 !important;
+  border:0 !important;background:transparent !important;box-shadow:none !important;text-align:center !important;
+}
+#noah-piece-overlay .noah-piece-actions::before{
+  content:"" !important;display:block !important;width:52px !important;height:1px !important;margin:0 auto 10px !important;
+  background:linear-gradient(90deg,transparent,rgba(157,124,70,.30),transparent) !important;
+}
+#noah-piece-overlay .noah-piece-challenge{
+  width:100% !important;height:44px !important;min-height:44px !important;padding:0 14px !important;border:1px solid rgba(160,126,68,.34) !important;
+  border-radius:0 !important;background:linear-gradient(180deg,rgba(255,254,250,.96),rgba(247,241,230,.90)) !important;color:#674e2d !important;
+  box-shadow:0 5px 16px rgba(80,59,30,.045),inset 0 1px 0 rgba(255,255,255,.92) !important;text-shadow:none !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;font-size:11px !important;font-weight:500 !important;line-height:1 !important;letter-spacing:.12em !important;white-space:nowrap !important;
+}
+#noah-piece-overlay .noah-piece-challenge::before,#noah-piece-overlay .noah-piece-challenge::after{content:none !important;display:none !important;}
+#noah-piece-overlay .noah-piece-challenge:active:not(:disabled){transform:translateY(1px) !important;background:linear-gradient(180deg,rgba(248,242,231,.98),rgba(241,232,216,.94)) !important;}
+#noah-piece-overlay .noah-piece-challenge:disabled{
+  border-color:rgba(147,128,98,.20) !important;background:rgba(249,246,240,.68) !important;color:rgba(94,77,54,.42) !important;box-shadow:none !important;opacity:1 !important;
+}
+#noah-piece-overlay .noah-piece-ticket{display:none !important;}
+#noah-piece-overlay .noah-piece-head-spacer{display:block !important;grid-column:3 !important;width:100% !important;height:1px !important;}
+#noah-piece-overlay .noah-piece-ticket-status{
+  display:block !important;margin:7px 0 0 !important;color:rgba(102,82,56,.48) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;font-size:7.5px !important;font-weight:400 !important;line-height:1.3 !important;letter-spacing:.08em !important;
+}
+#noah-piece-overlay .noah-piece-ticket-status b{
+  margin:0 2px !important;color:#71572f !important;font-family:"Cinzel","Noto Serif JP",serif !important;font-size:10px !important;font-weight:500 !important;
+}
+#noah-piece-overlay .noah-piece-complete{margin-top:8px !important;color:#81683f !important;font-size:8px !important;letter-spacing:.08em !important;}
+@media(max-height:700px){
+  #noah-piece-overlay .noah-piece-head{flex-basis:56px !important;min-height:56px !important;padding-top:max(4px,env(safe-area-inset-top)) !important;}
+  #noah-piece-overlay .noah-piece-body{padding-top:8px !important;}
+  #noah-piece-overlay .noah-piece-lead{margin-bottom:4px !important;}
+  #noah-piece-overlay .noah-piece-lead h2{font-size:15px !important;}
+  #noah-piece-overlay .noah-piece-progress{width:min(calc(100vw - 60px),278px) !important;min-height:22px !important;margin-bottom:6px !important;}
+  #noah-piece-overlay .noah-puzzle-frame{width:min(calc(100vw - 60px),278px) !important;}
+  #noah-piece-overlay .noah-piece-note{margin-top:7px !important;}
+  #noah-piece-overlay .noah-piece-actions{width:min(calc(100vw - 98px),226px) !important;margin-top:12px !important;}
+  #noah-piece-overlay .noah-piece-actions::before{margin-bottom:8px !important;}
+  #noah-piece-overlay .noah-piece-challenge{height:42px !important;min-height:42px !important;}
+}
+

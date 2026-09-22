@@ -3163,46 +3163,79 @@
     const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
     renderBossElementIcon();
     const missionHud = document.getElementById('shooting-mission-hud');
-    // v72: CHAPTER04だけはBOSS形式でもMISSION HUDを表示する。
-    // 他BOSS / EVENT / RAIDの表示条件は従来どおり変更しない。
-    const showChapter04MissionHud = isChapter04Stage();
+
+    // build792: every battle uses the same fixed mission/clear-condition band.
+    // The shell never disappears between STORY / DAILY / EVENT / RAID; only its text changes.
     if (bossHud) bossHud.style.display = isNormalBattle() ? 'none' : '';
-    if (missionHud) missionHud.style.display = (isNormalBattle() || showChapter04MissionHud) ? 'grid' : 'none';
-    if ((isNormalBattle() || showChapter04MissionHud) && selectedStage) {
+    if (missionHud) missionHud.style.display = 'grid';
+
+    if (selectedStage) {
       const stageLabel = document.getElementById('shooting-stage-label');
       const missionText = document.getElementById('shooting-mission-text');
       const missionProgress = document.getElementById('shooting-mission-progress');
-      if (stageLabel) stageLabel.textContent = `CHAPTER ${String(selectedStage.chapter).padStart(2,'0')}　${String(selectedStage.stageNo).padStart(2,'0')} ${selectedStage.name}`;
-      if (missionText) missionText.textContent = selectedStage.mission?.text || '敵を撃破';
+      const m = selectedStage.mission || {};
+      const nowMission = performance.now();
+
+      if (stageLabel) {
+        if (isDailyQuestStage()) {
+          stageLabel.textContent = 'DAILY QUEST';
+        } else if (isRaidStage()) {
+          stageLabel.textContent = 'RAID BATTLE';
+        } else if (isScoreAttackStage()) {
+          stageLabel.textContent = 'SCORE ATTACK';
+        } else if (isAmbushStage()) {
+          stageLabel.textContent = 'ENCOUNTER';
+        } else if (selectedStage.eventId) {
+          stageLabel.textContent = 'SPECIAL EVENT';
+        } else {
+          stageLabel.textContent = `CHAPTER ${String(selectedStage.chapter).padStart(2,'0')}　${String(selectedStage.stageNo).padStart(2,'0')}`;
+        }
+      }
+
+      if (missionText) missionText.textContent = m.text || '敵を撃破';
+
       if (missionProgress) {
-        const m = selectedStage.mission || {};
-        const total = Number(getNormalBattleConfig().totalEnemies || 0);
         if (isChapter43BossStage()) {
-          const now43 = performance.now();
+          const now43 = nowMission;
           if (state.chapter43AttackSealed && !state.chapter43RestoreItemSpawned) {
             missionProgress.textContent = `DODGE ${Math.max(0, Math.ceil((state.chapter43DodgeEndsAt - now43) / 1000))}s`;
           } else if (state.chapter43AttackSealed) {
-            missionProgress.textContent = 'ITEMを取得しろ！';
+            missionProgress.textContent = 'ITEM';
           } else if (state.chapter43Wave2CountdownTriggered) {
             missionProgress.textContent = `LIMIT ${Math.max(0, Math.ceil((state.chapter43CollapseDeadlineAt - now43) / 1000))}s`;
           } else {
             missionProgress.textContent = `WAVE ${state.boss.phase || 1} / 2`;
           }
+        } else if (isFacelessStage()) {
+          missionProgress.textContent = `WAVE ${state.facelessWave || 1} / 2`;
+        } else if (isAmbushStage()) {
+          missionProgress.textContent = `WAVE ${state.ambushWave || 1} / 2`;
+        } else if (isRaidStage()) {
+          missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(nowMission))}`;
+        } else if (isScoreAttackStage()) {
+          missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(nowMission))}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
-          // アイテム収集ミッションは、敵撃破数を勝利条件に含めない。
           missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
+          const total = Number(getNormalBattleConfig().totalEnemies || 0);
           missionProgress.textContent = `ENEMY ${state.normalDefeated}/${total}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.SURVIVE_TIME) {
           if (isChapter04Stage() && state.chapter4ItemPhase) {
-            const itemLeft = Math.max(0, Number(state.chapter4ItemDeadlineAt || 0) - performance.now());
+            const itemLeft = Math.max(0, Number(state.chapter4ItemDeadlineAt || 0) - nowMission);
             missionProgress.textContent = `ITEM ${Math.max(1, Math.ceil(itemLeft / 1000))}`;
           } else {
-            missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(performance.now()))}`;
+            missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(nowMission))}`;
           }
         } else if (m.type === SHOOTING_MISSION_TYPE.MAX_HITS_TAKEN) {
+          const total = Number(getNormalBattleConfig().totalEnemies || 0);
           missionProgress.textContent = `被弾 ${state.totalHitsTaken}/${Number(m.maxHits || 3)}　ENEMY ${state.normalDefeated}/${total}`;
+        } else if (m.type === SHOOTING_MISSION_TYPE.BOSS_CLEAR || !isNormalBattle()) {
+          const gauges = Math.max(1, Number(state.boss?.gauges || 1));
+          missionProgress.textContent = gauges > 1
+            ? `PHASE ${state.boss?.phase || 1} / ${gauges}`
+            : 'BOSS';
         } else {
+          const total = Number(getNormalBattleConfig().totalEnemies || 0);
           missionProgress.textContent = `ENEMY ${state.normalDefeated}/${total}`;
         }
       }
@@ -13611,7 +13644,7 @@
     if (hitTotal) hitTotal.textContent = `${totalHits}回`;
     if (ultDetails) ultDetails.innerHTML = state.party.map(m => resultMemberHtml(m, m.ultUseCount || 0, '回', false)).join('');
     if (ultTotal) ultTotal.textContent = `${totalUlts}回`;
-    if (survivorDetails) survivorDetails.innerHTML = state.party.map(m => resultMemberHtml(m, m.hp > 0 ? '生存' : 'DOWN', '', true)).join('');
+    if (survivorDetails) survivorDetails.innerHTML = state.party.map(m => resultMemberHtml(m, m.hp > 0 ? '生存' : 'LOST', '', true)).join('');
     if (survivorTotal) survivorTotal.textContent = `${survivors.length}/${state.party.length}`;
     if (clearTime) clearTime.textContent = `${(state.clearTimeMs / 1000).toFixed(2)}秒`;
     if (rank) {

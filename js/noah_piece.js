@@ -79,12 +79,12 @@
     overlay.innerHTML =
       '<section class="noah-piece-screen" role="dialog" aria-modal="true" aria-labelledby="noah-piece-title">' +
         '<header class="noah-piece-head">' +
-          '<button type="button" class="noah-piece-back" onclick="closeNoahPiecePanel()">‹ 戻る</button>' +
+          '<button type="button" class="noah-piece-back" aria-label="戻る" onclick="closeNoahPiecePanel()">＜戻る</button>' +
           '<div class="noah-piece-title">' +
             '<small>SPECIAL STAGE</small>' +
             '<strong id="noah-piece-title">楽園 -ノア-</strong>' +
           '</div>' +
-          '<div class="noah-piece-ticket">所持枚数 <b id="noah-piece-ticket-count">0</b>枚</div>' +
+          '<div class="noah-piece-head-spacer" aria-hidden="true"></div>' +
         '</header>' +
         '<div class="noah-piece-body">' +
           '<div class="noah-piece-lead">' +
@@ -102,10 +102,8 @@
           '<div class="noah-piece-note">ステージクリアごとに、ノアの欠片を1つ獲得できます。</div>' +
         '</div>' +
         '<footer class="noah-piece-actions">' +
-          '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">' +
-            '<small>SPECIAL STAGE TICKET ×1</small>' +
-            'チケットを1枚消費して ノアに挑戦する' +
-          '</button>' +
+          '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">ノアに挑戦する</button>' +
+          '<div class="noah-piece-ticket-status">所持チケット <b id="noah-piece-ticket-status-count">0</b>枚</div>' +
           '<div class="noah-piece-complete" id="noah-piece-complete">楽園の欠片がすべて揃いました。</div>' +
         '</footer>' +
       '</section>';
@@ -121,9 +119,6 @@
     const progress = document.getElementById('noah-piece-progress-now');
     if (progress) progress.textContent = String(count);
 
-    const ticketEl = document.getElementById('noah-piece-ticket-count');
-    if (ticketEl) ticketEl.textContent = String(ticket);
-
     document.querySelectorAll('[data-noah-piece]').forEach(function(el){
       const pieceNo = Number(el.getAttribute('data-noah-piece') || 0);
       const open = pieceNo <= count;
@@ -134,13 +129,11 @@
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
       button.disabled = ticket < 1 || count >= MAX_PIECES;
-      const small = button.querySelector('small');
-      if (small) {
-        small.textContent = count >= MAX_PIECES
-          ? 'ノア解放済み'
-          : (ticket < 1 ? 'SPECIAL STAGE TICKET がありません' : 'SPECIAL STAGE TICKET ×1');
-      }
+      button.textContent = count >= MAX_PIECES ? 'ノア解放済み' : 'ノアに挑戦する';
     }
+
+    const ticketStatus = document.getElementById('noah-piece-ticket-status-count');
+    if (ticketStatus) ticketStatus.textContent = String(ticket);
 
     const complete = document.getElementById('noah-piece-complete');
     if (complete) complete.classList.toggle('show', count >= MAX_PIECES);

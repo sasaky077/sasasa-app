@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '784';
+  var FALLBACK_BUILD = '796';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="784">
+  <meta name="sasaphia-build" content="796">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -346,9 +346,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=764-shinju-ui-simplify"
+        href="css/style.css?v=797-noah-refined-puzzle"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=764-shinju-ui-simplify"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=797-noah-refined-puzzle"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -431,7 +431,7 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=784-timer-below-combo">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=794-result-se-spacing-lost">');
   </script>
   <link rel="stylesheet" href="css/raid_event.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/item_management.css?v=693-score-ranking-nav-v2">
@@ -2591,9 +2591,9 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
             <div class="ninmu-chapter-title">無貌の天使</div>
             <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/enemy_faceless_panel.webp" alt=""></div>
           </div>
-          <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece role="button" tabindex="0" aria-label="SPECIAL STAGE 理想郷 -ノア-">
+          <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece role="button" tabindex="0" aria-label="SPECIAL STAGE 楽園 -ノア-">
             <div class="ninmu-chapter-label">SPECIAL STAGE</div>
-            <div class="ninmu-chapter-title">理想郷 -ノア-</div>
+            <div class="ninmu-chapter-title">楽園 -ノア-</div>
                         <div class="special-ticket-balance">所持枚数 <b id="special-ticket-count">--</b>枚</div>
           </div>
         </div>
@@ -15608,7 +15608,7 @@ function fadeOutOpeningBgm(){
 
 
 <script src="js/shooting_characters.js?v=779-bomb-rarity-4-6"></script>
-<script src="js/stage_select.js?v=593"></script>
+<script src="js/stage_select.js?v=789-stage-select-story-canonical"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
@@ -15837,14 +15837,14 @@ window.returnToTitleScreen = function(){
           '<button type="button" class="noah-piece-back" aria-label="戻る" onclick="closeNoahPiecePanel()">＜戻る</button>' +
           '<div class="noah-piece-title">' +
             '<small>SPECIAL STAGE</small>' +
-            '<strong id="noah-piece-title">理想郷 -ノア-</strong>' +
+            '<strong id="noah-piece-title">楽園 -ノア-</strong>' +
           '</div>' +
-          '<div class="noah-piece-ticket">所持枚数 <b id="noah-piece-ticket-count">0</b>枚</div>' +
+          '<div class="noah-piece-head-spacer" aria-hidden="true"></div>' +
         '</header>' +
         '<div class="noah-piece-body">' +
           '<div class="noah-piece-lead">' +
             '<div class="en">FRAGMENTS OF PARADISE</div>' +
-            '<h2>理想郷を完成させる</h2>' +
+            '<h2>失われた楽園を完成させる</h2>' +
             '<p>ノアを打ち破り、欠片を集める。<br>9つの欠片が揃ったとき、ひとつの姿が完成する。</p>' +
           '</div>' +
           '<div class="noah-piece-progress">' +
@@ -15856,11 +15856,8 @@ window.returnToTitleScreen = function(){
           '</div>' +
           '<div class="noah-piece-note">ステージクリアごとに、ノアの欠片を1つ獲得できます。</div>' +
           '<div class="noah-piece-actions">' +
-            '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">' +
-              '<span class="noah-piece-challenge-main">理想郷 -ノア- に挑戦する</span>' +
-              '<span class="noah-piece-challenge-sub">（チケットを1枚消費）</span>' +
-            '</button>' +
-            '<div class="noah-piece-ticket-status">チケット所持枚数：<b id="noah-piece-ticket-status-count">0</b>枚</div>' +
+            '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">ノアに挑戦する</button>' +
+            '<div class="noah-piece-ticket-status">所持チケット <b id="noah-piece-ticket-status-count">0</b>枚</div>' +
             '<div class="noah-piece-complete" id="noah-piece-complete">ノアの欠片がすべて揃いました。</div>' +
           '</div>' +
         '</div>' +
@@ -15877,9 +15874,6 @@ window.returnToTitleScreen = function(){
     const progress = document.getElementById('noah-piece-progress-now');
     if (progress) progress.textContent = String(count);
 
-    const ticketEl = document.getElementById('noah-piece-ticket-count');
-    if (ticketEl) ticketEl.textContent = String(ticket);
-
     document.querySelectorAll('[data-noah-piece]').forEach(function(el){
       const pieceNo = Number(el.getAttribute('data-noah-piece') || 0);
       const open = pieceNo <= count;
@@ -15889,9 +15883,8 @@ window.returnToTitleScreen = function(){
 
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
-      button.disabled = false;
-      const sub = button.querySelector('.noah-piece-challenge-sub');
-      if (sub) sub.textContent = '（チケットを1枚消費）';
+      button.disabled = ticket < 1 || count >= MAX_PIECES;
+      button.textContent = count >= MAX_PIECES ? 'ノア解放済み' : 'ノアに挑戦する';
     }
 
     const ticketStatus = document.getElementById('noah-piece-ticket-status-count');
@@ -16121,7 +16114,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=593-noah-server-flow"></script>
+<script src="js/noah_piece.js?v=797-noah-refined-puzzle"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
