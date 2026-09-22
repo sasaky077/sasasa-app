@@ -10255,3 +10255,19 @@ html body #shooting-result .shooting-result-member.down b{
     letter-spacing:.035em !important;
   }
 }
+
+
+/* build827: 固有デザインを持つ召喚/設置ULTオブジェクトは属性色で上書きしない。
+   - マグダレーナの鎌
+   - ロゼの花 / ハート
+   - クラリネのデコイ
+   これらは元アート/元演出色を優先する。 */
+#shooting-event-root .shooting-gojo-purple-wave,
+#shooting-event-root .shooting-gojo-purple-wave.scythe,
+#shooting-event-root .shooting-clarine-decoy,
+#shooting-event-root .shooting-clarine-decoy-burst,
+#shooting-event-root .shooting-rose-flower,
+#shooting-event-root .shooting-rose-flower-aura,
+#shooting-event-root .shooting-rose-heart-shape{
+  filter:none !important;
+}
