@@ -13005,12 +13005,21 @@ function buildCharacterDetailHTML(data, options){
     : (Number(c.shotCount || 1) + '発');
   var fireInterval = formatShootingSeconds(c.fireRate || 0, Number(c.fireRate || 0) < 100 ? 3 : 2);
 
-  // v322: 内部ポイントではなく「1HitでULTゲージが何%貯まるか」を表示。
-  var ultGainPerHit = Math.max(0, Number(c.ultGainPerHit || 0));
+  // build822: 実戦ロジックと同じ補正後のULT獲得量と、理論満タン時間を表示。
   var ultNeed = Math.max(0, Number(c.burstNeed || 0));
+  var shootingApi = window.ShootingCharacters || null;
+  var ultGainPerHit = shootingApi && typeof shootingApi.getShootingUltGainPerHitEffective === 'function'
+    ? Math.max(0, Number(shootingApi.getShootingUltGainPerHitEffective(c) || 0))
+    : Math.max(0, Number(c.ultGainPerHit || 0) * 0.5);
   var ultGainPercent = ultNeed > 0 ? (ultGainPerHit / ultNeed * 100) : 0;
   var ultGainPercentText = ultNeed > 0
     ? (ultGainPercent.toFixed(2).replace(/0+$/,'').replace(/\.$/,'') + '%')
+    : '-';
+  var ultTheorySeconds = shootingApi && typeof shootingApi.getShootingUltTheoreticalSeconds === 'function'
+    ? Number(shootingApi.getShootingUltTheoreticalSeconds(c))
+    : NaN;
+  var ultTheoryText = Number.isFinite(ultTheorySeconds) && ultTheorySeconds > 0
+    ? (ultTheorySeconds.toFixed(1) + '秒')
     : '-';
 
   var html =
@@ -13036,7 +13045,8 @@ function buildCharacterDetailHTML(data, options){
           buildShootingStatusRow('1Hit', normalRate > 0 ? ('ATK × ' + formatShootingRate(normalRate)) : '-') +
           buildShootingStatusRow('発射', shotCount) +
           buildShootingStatusRow('射撃間隔', fireInterval) +
-          buildShootingStatusRow('ULT獲得/1Hit', ultGainPercentText) +
+          buildShootingStatusRow(c.shotType === 'charge' ? 'ULT獲得/MAX' : 'ULT獲得/1Hit', ultGainPercentText) +
+          buildShootingStatusRow('ULT回収理論値', ultTheoryText) +
         '</div>' +
       '</div>' +
     '</div>' +

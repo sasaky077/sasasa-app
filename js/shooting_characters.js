@@ -1509,13 +1509,16 @@
     shotStyle: 'mia-charge',
     fireRate: 0,                 // 自動射撃は使用しない
     bulletSpeed: 760,
-    shotPowerRate: 1.24,         // MAX1秒で約ATK×124%。R補正後でも約293ダメージ/秒相当
+    // build820: アイナと理論DPSを揃える。R補正後ATK236 × 1.27 ≒ 300/秒。
+    shotPowerRate: 1.27,
     shotCount: 1,
     shotOffsetY: 44,
     chargeMinMs: 120,            // 誤タップ対策。これ未満は不発
     chargeMaxMs: 1000,
     chargeMinSize: 30,
     chargeMaxSize: 76,
+    // build821: 理論ULT満タン20秒上限。チャージ率連動でもMAX/部分溜めの理論時間を20秒以内へ統一。
+    ultGainPerHit: 2.8,
 
     // ULTはERI系共通仕様：敵弾消去＋敵行動停止＋属性閃光＋ATK×3.0。
     coreTop: '38%',
@@ -1686,7 +1689,8 @@
     wolfConvergeLead: 54,
 
     burstNeed: 32,
-    ultGainPerHit: 0.44,
+    // build821: 2発ホーミング全弾命中時、理論ULT満タン20秒上限。
+    ultGainPerHit: 0.456,
     coreTop: '38%',
     shotOffsetY: 32,
 
@@ -1717,6 +1721,7 @@
     label: 'ORBIT / WOOD', description: '2発の円環軌道ショット。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
+    ultGainPerHit: 0.675, // build821: 2発全弾命中で理論20秒
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
@@ -1733,10 +1738,10 @@
     description: '長押しで溜め、離して撃つRチャージ型。ULTはウルフと同系統のATK UP領域を展開するR版。',
     ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
     ultName: '紅蓮の領域',
-    // build819: CHARGE砲の威力を2倍。ULT回収は基準0.476の3倍。
-    // ULT回収量はshooting_core側でチャージ率に比例させ、短押し連打の抜け道を防ぐ。
+    // build819: CHARGE砲の威力を2倍。
+    // build821: ULT回収はチャージ率連動を維持したまま、理論満タン20秒上限へ補正。
     shotType: 'charge', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 1.80, shotCount: 1,
-    ultGainPerHit: 1.428,
+    ultGainPerHit: 3.6,
     chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
     ultBaseType: 'field', ultAddons: ['bullet_clear','player_buff'], ultType: 'wolf_atk_field',
     ultFieldDurationMs: 10000,
@@ -1788,6 +1793,7 @@
     ultDescription: '自身を中心に大きな光のサークルを7秒間展開する。サークル内に入った敵弾は移動速度が50%に低下し、サークル外へ出ると元の速度へ戻る。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 32, orbitAngularSpeed: 11.8, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
+    ultGainPerHit: 0.675, // build821: 2発全弾命中で理論20秒
     ultBaseType: 'field', ultAddons: ['enemy_bullet_slow'], ultType: 'shiina_light_ring',
     lightRingDurationMs: 7000,
     lightRingRadius: 190,
@@ -1881,36 +1887,37 @@
   });
 
   // v313: 限定SR AQUA
-  // 通常ショットはウルフと同じ「深いJ字2発ホーミング」。
+  // build824: 通常ショットをCLUSTER 8へ変更。
+  // 親弾の単体DPSは旧2発ホーミングと同等を維持し、着弾時に8方向へ50%分裂。
   // ULTはブラックホールを展開し、吸引・拘束しながら継続ダメージ。
   SHOOTING_CHARACTERS[CHARACTER_ID.REI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.REI,
     effectKey: 'rei',
-    label: 'HOMING / BLACK HOLE',
-    description: 'ウルフと同じ深いJ字軌道の2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、すべての敵を吸引・拘束しながら継続ダメージを与える。',
+    label: 'CLUSTER 8 / BLACK HOLE',
+    description: 'AQUA属性の親弾を前方へ射出し、着弾時に8方向へ分裂する限定SR型。分裂弾1発は親弾の50%ダメージ。ULTは敵陣にブラックホールを生成し、すべての敵を吸引・拘束しながら継続ダメージを与える。',
     ultDescription: '敵陣へブラックホールを射出し、7秒間展開。通常敵・大型敵・ボスを中心へ吸引して拘束し、展開中に合計ATK×3.5相当の継続ダメージを与える。',
     ultName: '深淵水界',
     ultType: 'eltena_black_hole',
     moveSpeed: 400,
 
-    // ---- 通常ショット：ウルフと完全に同じ挙動 ----
+    // ---- 通常ショット：CLUSTER 8 ----
+    // 旧ホーミング2発(0.115×2)と同じ親弾総威力になるよう0.23へ統合。
+    // 分裂弾は元の着弾対象には再命中しないため、単体ボス火力は旧仕様を維持。
     fireRate: 285,
     bulletSpeed: 900,
-    shotPowerRate: 0.115,
-    shotType: 'homing',
-    shotCount: 2,
-    shotSpacing: 30,
-    shotStyle: 'wolf',
-    wolfCurveDurationMs: 430,
-    wolfRetreatDepth: 78,
-    wolfOuterOffset: 52,
-    wolfConvergeLead: 54,
+    shotPowerRate: 0.23,
+    shotType: 'cluster',
+    shotCount: 1,
+    clusterSize: 'L',
+    clusterSplitCount: 8,
+    clusterFragmentDamageRate: 0.50,
+    clusterFragmentSpeed: 430,
 
     burstDamage: 0,
     burstNeed: 32,
-    // build819: 限定SRレイは通常火力を据え置き、ULT回転を1.5倍へ。
-    ultGainPerHit: 0.66,
+    // build824: 2発→1発化に合わせて1Hit回収量を2倍化し、親弾のみ命中時の理論13.8秒を維持。
+    ultGainPerHit: 1.32,
     coreTop: '38%',
     shotOffsetY: 32,
 
@@ -2001,6 +2008,7 @@
     orbitAngularSpeed: 12.0,
     orbitForwardLoopRate: 0.29,
     orbitPhaseStep: Math.PI,
+    ultGainPerHit: 0.675, // build821: 2発全弾命中で理論20秒
     ultBaseType: 'field',
     ultAddons: ['bullet_clear','player_buff'],
     ultType: 'wolf_atk_field',
@@ -2227,6 +2235,69 @@
 
 
   // ============================================================
+  // build822: ULT回収理論値 共通計算
+  // 戦闘ロジックとキャラ詳細UIで同じ式を使い、表示と実挙動の乖離を防ぐ。
+  // 理論値は「敵が存在し、連続攻撃し、想定Hitがすべて命中」の条件。
+  // CHARGEはMAXチャージを1周期として扱う。
+  // ============================================================
+  const ULT_GAIN_GLOBAL_MULTIPLIER_SHARED = 0.5;
+  const ULT_THEORETICAL_MAX_SECONDS_SHARED = 20;
+
+  function getShootingUltCycleMetrics(c) {
+    if (!c) return null;
+    const shotType = String(c.shotType || '');
+    const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
+    const burstNeed = Math.max(1, Number(c.burstNeed || 30));
+    let cycleMs = Math.max(0, Number(c.fireRate || 0));
+    let expectedHitsPerCycle = shotCount;
+
+    if (shotType === 'charge') {
+      cycleMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+      expectedHitsPerCycle = 1;
+    } else if (shotType === 'laser' || shotType === 'lightning') {
+      expectedHitsPerCycle = 1;
+    } else if (
+      shotType === 'piercing' ||
+      shotType === 'shotgun' ||
+      shotType === 'precision' ||
+      shotType === 'strike' ||
+      shotType === 'cluster' ||
+      shotType === 'bomb'
+    ) {
+      expectedHitsPerCycle = 1;
+    }
+
+    return { shotType, shotCount, burstNeed, cycleMs, expectedHitsPerCycle };
+  }
+
+  function getShootingUltGainPerHitEffective(c) {
+    if (!c) return 0;
+    const metrics = getShootingUltCycleMetrics(c);
+    if (!metrics) return 0;
+
+    const baseGain = Number.isFinite(c.ultGainPerHit) ? Number(c.ultGainPerHit) : 1;
+    let gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER_SHARED;
+
+    if (metrics.cycleMs > 0 && metrics.expectedHitsPerCycle > 0) {
+      const normalizedGain =
+        metrics.burstNeed * metrics.cycleMs /
+        (ULT_THEORETICAL_MAX_SECONDS_SHARED * 1000 * metrics.expectedHitsPerCycle);
+      gain = Math.max(gain, normalizedGain);
+    }
+
+    return Math.max(0, gain);
+  }
+
+  function getShootingUltTheoreticalSeconds(c) {
+    const metrics = getShootingUltCycleMetrics(c);
+    if (!metrics || metrics.cycleMs <= 0 || metrics.expectedHitsPerCycle <= 0) return null;
+    const gainPerHit = getShootingUltGainPerHitEffective(c);
+    if (!(gainPerHit > 0)) return null;
+    return metrics.burstNeed * metrics.cycleMs /
+      (gainPerHit * metrics.expectedHitsPerCycle * 1000);
+  }
+
+  // ============================================================
   // 既存UI互換ビュー
   // ============================================================
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
@@ -2279,6 +2350,10 @@
     getOwnedShootingInstance,
     isShootingCharacterOwned,
     getShootingRosterHtml,
+    ULT_GAIN_GLOBAL_MULTIPLIER: ULT_GAIN_GLOBAL_MULTIPLIER_SHARED,
+    ULT_THEORETICAL_MAX_SECONDS: ULT_THEORETICAL_MAX_SECONDS_SHARED,
+    getShootingUltGainPerHitEffective,
+    getShootingUltTheoreticalSeconds,
   });
   // 旧UI互換。実体は上の統合マスターのみ。
   window.CHARACTERS = CHARACTER_CATALOG;

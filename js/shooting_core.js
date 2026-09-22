@@ -2514,31 +2514,47 @@
   // キャラごとの ultGainPerHit の相対差はそのまま維持する。
   const ULT_GAIN_GLOBAL_MULTIPLIER = 0.5;
 
-  // 単発・低連射型が、命中回数ベースのULTゲージ設計で極端に不利にならないための補正。
-  // 全弾命中を前提に、おおむね20秒程度で満タンになる獲得量を下限とする。
-  // 連射・多段・レーザー系には適用しない。
+  // build821: 全キャラ共通のULT回収20秒上限ガード。
+  // 「理論上すべての通常ショットが命中する」条件で、満タンまで20秒を超えないよう
+  // 1Hitあたりの最低ゲージ獲得量を自動算出する。既に速いキャラの値は変更しない。
+  // CHARGEはMAXチャージ時間、LASER/LIGHTNINGは1tick=1Hit、その他の多弾はshotCount全弾命中で計算。
+  const ULT_THEORETICAL_MAX_SECONDS = 20;
+
   function getUltGainAmountPerHit(c) {
     if (!c) return 0;
+    if (window.ShootingCharacters && typeof window.ShootingCharacters.getShootingUltGainPerHitEffective === 'function') {
+      return Math.max(0, Number(window.ShootingCharacters.getShootingUltGainPerHitEffective(c) || 0));
+    }
     const baseGain = Number.isFinite(c.ultGainPerHit) ? Number(c.ultGainPerHit) : 1;
     let gain = baseGain * ULT_GAIN_GLOBAL_MULTIPLIER;
 
-    const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
-    const fireRate = Math.max(1, Number(c.fireRate || 0));
     const shotType = String(c.shotType || '');
-    const singleShotType =
-      shotCount === 1 &&
-      (shotType === 'piercing' ||
-       shotType === 'shotgun' ||
-       shotType === 'precision' ||
-       shotType === 'strike' ||
-       shotType === 'charge' ||
-       shotType === 'cluster' ||
-       shotType === 'bomb');
+    const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
+    const burstNeed = Math.max(1, Number(c.burstNeed || 30));
 
-    if (singleShotType && fireRate >= 350) {
-      const burstNeed = Math.max(1, Number(c.burstNeed || 30));
-      const targetSeconds = 20;
-      const normalizedGain = burstNeed * fireRate / (targetSeconds * 1000);
+    let cycleMs = Math.max(0, Number(c.fireRate || 0));
+    let expectedHitsPerCycle = shotCount;
+
+    if (shotType === 'charge') {
+      cycleMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+      expectedHitsPerCycle = 1;
+    } else if (shotType === 'laser' || shotType === 'lightning') {
+      expectedHitsPerCycle = 1;
+    } else if (
+      shotType === 'piercing' ||
+      shotType === 'shotgun' ||
+      shotType === 'precision' ||
+      shotType === 'strike' ||
+      shotType === 'cluster' ||
+      shotType === 'bomb'
+    ) {
+      expectedHitsPerCycle = 1;
+    }
+
+    if (cycleMs > 0 && expectedHitsPerCycle > 0) {
+      const normalizedGain =
+        burstNeed * cycleMs /
+        (ULT_THEORETICAL_MAX_SECONDS * 1000 * expectedHitsPerCycle);
       gain = Math.max(gain, normalizedGain);
     }
 
@@ -6235,12 +6251,16 @@
       activeMember && Number(now || performance.now()) < (activeMember.atkBuffUntil || 0)
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
+    // build823: CHARGEも通常射撃と同じATK UPフィールド補正を受ける。
+    // これによりアイナの「紅蓮の領域」(ATK×1.3)が自身のCHARGEにも正しく適用される。
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(Number(now || performance.now())).multiplier;
 
     const damage =
       Number(c.atk || 0) *
       Number(c.shotPowerRate || 1.24) *
       chargeRatio *
-      itemAtkBuffMultiplier;
+      itemAtkBuffMultiplier *
+      wolfFieldAtkMultiplier;
 
     const y = state.player.y - Number(c.shotOffsetY || 44);
     const p = makeProjectile(
@@ -6254,10 +6274,13 @@
     );
     if (!p) return false;
 
-    // build819: アイナ(ID17)のULT回収もCHARGE量に正比例。
+    // build820: ミア(ID14) / アイナ(ID17)のULT回収をCHARGE量に正比例。
     // MAXなら100%、半分溜めなら50%、最低溜めならその比率だけ獲得する。
-    // ミア等ほかのCHARGEキャラには影響させない。
-    if (Number(c.id) === Number(CHARACTER_ID.KAINA)) {
+    // 短押し連打だけがULT回収で有利になる抜け道を両CHARGEキャラで防ぐ。
+    if (
+      Number(c.id) === Number(CHARACTER_ID.MIA) ||
+      Number(c.id) === Number(CHARACTER_ID.KAINA)
+    ) {
       p.ultGainMultiplier = chargeRatio;
     }
 
