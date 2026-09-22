@@ -1,5 +1,5 @@
 // shinju.js
-// ZERAPHIA: 神樹 / アルケミア創世進捗
+// ZERAPHIA: 神樹 / ゼラフィア創世進捗
 // 依存: なし
 // 使い方:
 //   openShinjuScreen()                         : 神樹画面を開く
@@ -330,7 +330,7 @@
     ov = document.createElement('div');
     ov.id = 'shinju-overlay';
     ov.innerHTML = `
-      <div class="shinju-panel" role="dialog" aria-modal="true" aria-label="アルケミア創世進捗">
+      <div class="shinju-panel" role="dialog" aria-modal="true" aria-label="ゼラフィア創世進捗">
         <button class="shinju-close" type="button" onclick="closeShinjuScreen()">＜戻る</button>
         <div class="shinju-visual-wrap">
           <img class="shinju-visual" id="shinju-visual" src="images/shinju_01.webp?v=758" alt="神樹">
@@ -536,11 +536,10 @@
       return `
         <button class="shinju-blessing-slot ${assigned ? 'is-assigned' : 'is-empty'}" type="button" data-blessing-slot="${slot}" onclick="ShinjuProgress.openBlessingPicker('${slot}')">
           <span class="shinju-blessing-slot-kind">${BLESSING_LABELS[slot]}</span>
-          <span class="shinju-blessing-slot-effect">${blessingRateLabel(slot, rates[slot])}</span>
-          <span class="shinju-blessing-character">
+          <span class="shinju-blessing-character-panel">
             ${assigned && info.image ? `<img src="${escapeHtml(info.image)}" alt="">` : '<span class="shinju-blessing-plus">＋</span>'}
-            <b>${assigned ? escapeHtml(info.name) : 'キャラを設定'}</b>
           </span>
+          <span class="shinju-blessing-slot-effect">${blessingRateLabel(slot, rates[slot])}</span>
         </button>`;
     }).join('');
   }
@@ -603,7 +602,6 @@
             <span class="shinju-blessing-picker-portrait">${img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy">` : ''}</span>
             <span class="shinju-blessing-picker-meta">
               <b>${escapeHtml(c.name || `CHARACTER ${id}`)}</b>
-              ${disabled ? `<small>${BLESSING_LABELS[otherSlot]}設定中</small>` : (selected ? '<small>設定中</small>' : '<small>選択</small>')}
             </span>
           </button>`;
       }).join('') : '<div class="shinju-blessing-picker-empty">所持キャラクターがありません</div>';
@@ -656,7 +654,7 @@
     if (lore) {
       lore.textContent = s.isMax
         ? '神樹は成長臨界点に到達した。'
-        : '創世資源を奉納すると、アルケミアの創世が進む。';
+        : '創世資源を奉納すると、ゼラフィアの創世が進む。';
     }
 
     renderBlessingSlots(ov, s);
@@ -718,7 +716,7 @@
       <div class="shinju-clear-card">
         <div class="shinju-clear-kicker">GENESIS COMPLETE</div>
         <div class="shinju-clear-title">創世完了</div>
-        <div class="shinju-clear-body">神樹は成長の果てに開花し、アルケミアは新世界の核へ到達した。</div>
+        <div class="shinju-clear-body">神樹は成長の果てに開花し、ゼラフィアは新世界の核へ到達した。</div>
         <button class="shinju-clear-btn" type="button">閉じる</button>
       </div>
     `;

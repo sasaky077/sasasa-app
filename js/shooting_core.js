@@ -10131,15 +10131,26 @@
             return false;
           }
 
+          // build766: ブラックホールへ一瞬で吸い切らず、
+          // 遠距離ではゆっくり、中心付近で少し加速する吸引に変更。
+          // これにより「敵弾が吸い込まれている」見た目を保つ。
+          const maxSpeed = Math.max(180, Number(field.absorbSpeed || 320));
+          const minSpeed = Math.max(78, maxSpeed * 0.34);
+          const influenceRadius = Math.max(absorbRadius + 1, arena.clientWidth * 0.36);
+          const proximity = 1 - clamp((dist - absorbRadius) / Math.max(1, influenceRadius - absorbRadius), 0, 1);
+          const eased = proximity * proximity * (3 - 2 * proximity);
+          const bulletSpeed = Math.hypot(Number(p.vx || 0), Number(p.vy || 0));
           const speed = Math.max(
-            Number(field.absorbSpeed || 980),
-            Math.hypot(Number(p.vx || 0), Number(p.vy || 0)) * 1.45
+            minSpeed + (maxSpeed - minSpeed) * eased,
+            Math.min(maxSpeed * 0.72, bulletSpeed * 0.88)
           );
           const step = Math.min(dist, speed * dt);
           p.x += dx / dist * step;
           p.y += dy / dist * step;
           p.vx = dx / dist * speed;
           p.vy = dy / dist * speed;
+          p.el.style.opacity = `${0.92 - proximity * 0.34}`;
+          p.el.style.filter = `blur(${(0.3 + proximity * 1.15).toFixed(2)}px)`;
 
           if (!p.canvasRendered) positionUnit(p.el, p.x, p.y);
           return true;
@@ -10925,8 +10936,10 @@
       ownerId: c.id,
       holes,
       until: now + duration,
-      absorbRadius: Math.max(12, Number(c.toyfelBlackHoleAbsorbRadius || 28)),
-      absorbSpeed: Math.max(240, Number(c.toyfelBlackHoleAbsorbSpeed || 980))
+      // build766: 吸い込みを少し長く見せるため、当たり半径を絞り、速度も抑える。
+      // 既存キャラ定義の数値は活かしつつ、視認性重視のバランスへ正規化する。
+      absorbRadius: Math.max(8, Number(c.toyfelBlackHoleAbsorbRadius || 28) * 0.46),
+      absorbSpeed: Math.max(180, Number(c.toyfelBlackHoleAbsorbSpeed || 980) * 0.33)
     };
 
     state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 260);
@@ -13458,7 +13471,7 @@
         // ULT発動時も「現在のキャラ位置」をドラッグ基準に維持。
         // 指の絶対座標へ同期しない。
         window.useShootingBurst();
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         return;
       }
     } else {
@@ -13473,7 +13486,7 @@
       beginMiaCharge(e.pointerId, now);
     }
 
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
   }
 
   function onPointerMove(e) {
@@ -13491,7 +13504,7 @@
         clearNativeTouchCancelTimer();
         activePointerId = e.pointerId;
       } else {
-        try { e.preventDefault(); } catch (_) {}
+        if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
         return;
       }
     }
@@ -13509,7 +13522,7 @@
       const rejectDistance = Math.max(180, diagonal * 0.55);
 
       if (Number.isFinite(jump) && jump > rejectDistance) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         return;
       }
     }
@@ -13519,7 +13532,7 @@
 
     // ultCutinActive中でも入力基準だけ更新する。
     updatePointer(e);
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
   }
 
   function onPointerUp(e) {
@@ -13529,7 +13542,7 @@
     // 通常はTouch側へ終了判定を一本化する。
     // touchcancel後にPointerへ退避している時だけPointer側の終了を採用する。
     if (pointerIsTouch && nativeTouchActive && !nativeTouchPointerFallback) {
-      try { e.preventDefault(); } catch (_) {}
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
       return;
     }
 
@@ -13571,7 +13584,7 @@
       clearMiaChargeState();
     }
 
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
   }
 
   function findActiveTouch(list) {
@@ -13698,7 +13711,7 @@
 
     const restartingAfterCancel = nativeTouchActive && activeTouchIdentifier !== t.identifier;
     if (nativeTouchActive && !restartingAfterCancel) {
-      try { e.preventDefault(); } catch (_) {}
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
       return;
     }
 
@@ -13725,7 +13738,7 @@
       swipeStartAt = performance.now();
     }
 
-    try { e.preventDefault(); } catch (_) {}
+    if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
   }
 
   function onNativeTouchMove(e) {
@@ -13748,7 +13761,7 @@
       dragStartPlayerX = pointerX;
       dragStartPlayerY = pointerY;
 
-      try { e.preventDefault(); } catch (_) {}
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
       return;
     }
     if (!t) return;
@@ -13765,14 +13778,14 @@
       dragStartPlayerX = pointerX;
       dragStartPlayerY = pointerY;
 
-      try { e.preventDefault(); } catch (_) {}
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
       return;
     }
 
     applyTouchDelta(t.clientX, t.clientY);
     lastNativeTouchMoveAt = performance.now();
 
-    try { e.preventDefault(); } catch (_) {}
+    if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
   }
 
   function onNativeTouchEnd(e) {
@@ -13789,7 +13802,7 @@
     }
 
     if (stillAlive) {
-      try { e.preventDefault(); } catch (_) {}
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
       return;
     }
 
@@ -13811,7 +13824,7 @@
       false
     );
 
-    try { e.preventDefault(); } catch (_) {}
+    if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
   }
 
   function onNativeTouchCancel(e) {
@@ -13830,7 +13843,7 @@
       finishNativeTouchInteraction(lastPointerClientX, lastPointerClientY, true);
     }, TOUCH_CANCEL_GRACE_MS);
 
-    try { e.preventDefault(); } catch (_) {}
+    if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
   }
 
   function updatePointer(e) {
@@ -18647,5 +18660,146 @@
     document.head.appendChild(darkStyle);
   }
 
+
+  // ------------------------------------------------------------
+  // build766: Black hole visual tuning
+  // - 境界線をぼかし、時空に開いた穴のような柔らかい見た目へ寄せる。
+  // - トイフェル/エルテナ系のブラックホール演出を共通で調整する。
+  // ------------------------------------------------------------
+  if (!document.getElementById('shooting-black-hole-style-v206')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-black-hole-style-v206';
+    style.textContent = `
+      #shooting-arena .shooting-eltena-black-hole{
+        position:absolute;
+        left:0; top:0;
+        width:var(--eltena-bh-size,154px);
+        height:var(--eltena-bh-size,154px);
+        margin:0;
+        pointer-events:none;
+        border-radius:50%;
+        overflow:visible;
+        isolation:isolate;
+        opacity:.95;
+        filter:saturate(.86) brightness(.96);
+        will-change:transform,opacity,filter;
+      }
+      #shooting-arena .shooting-eltena-black-hole::before,
+      #shooting-arena .shooting-eltena-black-hole::after,
+      #shooting-arena .shooting-eltena-black-hole > i,
+      #shooting-arena .shooting-eltena-black-hole > b,
+      #shooting-arena .shooting-eltena-black-hole > span{
+        content:"";
+        position:absolute;
+        inset:0;
+        border-radius:50%;
+        pointer-events:none;
+        display:block;
+      }
+      #shooting-arena .shooting-eltena-black-hole::before{
+        inset:-18%;
+        background:
+          radial-gradient(circle at 50% 50%,
+            rgba(0,0,0,.98) 0 15%,
+            rgba(4,5,10,.96) 18%,
+            rgba(13,10,26,.88) 26%,
+            rgba(34,21,58,.58) 38%,
+            rgba(72,52,118,.25) 50%,
+            rgba(157,203,255,.10) 61%,
+            rgba(255,255,255,.035) 68%,
+            rgba(255,255,255,0) 100%);
+        filter:blur(13px);
+        transform:scale(.96);
+        opacity:.98;
+      }
+      #shooting-arena .shooting-eltena-black-hole::after{
+        inset:-6%;
+        background:
+          radial-gradient(circle at 50% 50%,
+            rgba(0,0,0,0) 0 27%,
+            rgba(235,239,255,.08) 39%,
+            rgba(181,205,255,.12) 45%,
+            rgba(128,110,212,.10) 52%,
+            rgba(255,255,255,0) 67%);
+        filter:blur(9px);
+        opacity:.72;
+        animation:shootingBlackHoleHaloPulse 2.6s ease-in-out infinite;
+      }
+      #shooting-arena .shooting-eltena-black-hole > i{
+        inset:8%;
+        background:
+          radial-gradient(circle at 50% 50%,
+            rgba(0,0,0,1) 0 28%,
+            rgba(8,8,16,.98) 35%,
+            rgba(23,17,40,.56) 46%,
+            rgba(255,255,255,0) 68%);
+        filter:blur(5px);
+        opacity:.98;
+      }
+      #shooting-arena .shooting-eltena-black-hole > b{
+        inset:18%;
+        border:1px solid rgba(230,235,255,.10);
+        box-shadow:
+          0 0 20px rgba(125,140,230,.14),
+          inset 0 0 18px rgba(255,255,255,.05);
+        filter:blur(3px);
+        opacity:.58;
+        animation:shootingBlackHoleInnerSpin 3.4s linear infinite;
+      }
+      #shooting-arena .shooting-eltena-black-hole > span{
+        inset:-7%;
+        background:
+          conic-gradient(from 0deg,
+            rgba(255,255,255,0) 0deg,
+            rgba(183,186,255,.07) 48deg,
+            rgba(113,85,190,.10) 112deg,
+            rgba(255,255,255,0) 176deg,
+            rgba(199,218,255,.08) 238deg,
+            rgba(255,255,255,0) 360deg);
+        filter:blur(8px);
+        mix-blend-mode:screen;
+        opacity:.46;
+        animation:shootingBlackHoleSwirl 4.8s linear infinite;
+      }
+      #shooting-arena .shooting-eltena-black-hole.traveling{
+        opacity:.82;
+      }
+      #shooting-arena .shooting-eltena-black-hole.traveling::before{
+        filter:blur(11px);
+        transform:scale(.82);
+      }
+      #shooting-arena .shooting-eltena-black-hole.traveling > span{
+        opacity:.28;
+      }
+      #shooting-arena .shooting-eltena-black-hole.active{
+        animation:shootingBlackHoleBreath 2.9s ease-in-out infinite;
+      }
+      #shooting-arena .shooting-eltena-black-hole.ending{
+        opacity:0 !important;
+        transform:translate(-50%,-50%) scale(.72) !important;
+        transition:opacity .32s ease, transform .32s ease;
+      }
+      #shooting-arena .shooting-toyfel-black-hole{
+        filter:saturate(.82) brightness(.92);
+      }
+      @keyframes shootingBlackHoleHaloPulse {
+        0%,100% { transform:scale(.96); opacity:.58; }
+        50% { transform:scale(1.05); opacity:.82; }
+      }
+      @keyframes shootingBlackHoleInnerSpin {
+        from { transform:rotate(0deg) scale(1); }
+        to   { transform:rotate(360deg) scale(1.02); }
+      }
+      @keyframes shootingBlackHoleSwirl {
+        from { transform:rotate(0deg) scale(1); }
+        to   { transform:rotate(-360deg) scale(1.04); }
+      }
+      @keyframes shootingBlackHoleBreath {
+        0%,100% { filter:saturate(.84) brightness(.95); }
+        50% { filter:saturate(.90) brightness(.99); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
 })();

@@ -38839,3 +38839,222 @@ body{
   #shinju-overlay .shinju-visual[data-stage="4"]{ object-position:center 56% !important; }
   #shinju-overlay .shinju-visual[data-stage="5"]{ object-position:center 54% !important; }
 }
+
+/* =========================================================
+   build764: Shinju blessing UI simplification
+   - simpler slot panels with character image as hero
+   - no "選択" helper text in picker
+   - thinner frames / refined serif look
+   ========================================================= */
+#shinju-overlay .shinju-blessing-section{
+  padding:10px 10px 9px !important;
+  border:1px solid rgba(144,118,72,.13) !important;
+  border-radius:18px !important;
+  background:rgba(255,251,245,.42) !important;
+  box-shadow:none !important;
+}
+#shinju-overlay .shinju-blessing-head{
+  margin:0 2px 8px !important;
+  align-items:flex-end !important;
+}
+#shinju-overlay .shinju-blessing-head strong{
+  font-family:"Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif !important;
+  font-size:14px !important;
+  font-weight:500 !important;
+  letter-spacing:.05em !important;
+}
+#shinju-overlay .shinju-blessing-head span{
+  font-family:"Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif !important;
+  font-size:9px !important;
+  letter-spacing:.04em !important;
+  color:rgba(118,98,70,.42) !important;
+}
+#shinju-overlay .shinju-blessing-slots{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+#shinju-overlay .shinju-blessing-slot{
+  min-width:0 !important;
+  height:auto !important;
+  min-height:122px !important;
+  padding:8px 8px 9px !important;
+  border:1px solid rgba(137,111,67,.14) !important;
+  border-radius:14px !important;
+  background:rgba(255,255,255,.40) !important;
+  box-shadow:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+  gap:6px !important;
+}
+#shinju-overlay .shinju-blessing-slot-kind{
+  position:static !important;
+  display:block !important;
+  margin:0 !important;
+  font-family:"Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif !important;
+  font-size:11px !important;
+  letter-spacing:.08em !important;
+  color:#8c7248 !important;
+  text-align:left !important;
+}
+#shinju-overlay .shinju-blessing-character,
+#shinju-overlay .shinju-blessing-character-panel{
+  position:static !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-height:0 !important;
+}
+#shinju-overlay .shinju-blessing-character-panel{
+  flex:1 1 auto !important;
+  min-height:60px !important;
+  aspect-ratio:1/1 !important;
+  overflow:hidden !important;
+  border-radius:10px !important;
+  background:rgba(241,235,225,.56) !important;
+}
+#shinju-overlay .shinju-blessing-character-panel img{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center 18% !important;
+}
+#shinju-overlay .shinju-blessing-plus{
+  width:100% !important;
+  height:100% !important;
+  flex-basis:auto !important;
+  border:none !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:rgba(154,126,78,.55) !important;
+  font-size:26px !important;
+  line-height:1 !important;
+}
+#shinju-overlay .shinju-blessing-character b{
+  display:none !important;
+}
+#shinju-overlay .shinju-blessing-slot-effect{
+  position:static !important;
+  display:block !important;
+  margin:0 !important;
+  font-family:"Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  line-height:1.2 !important;
+  text-align:center !important;
+  color:#8f6f3d !important;
+}
+#shinju-overlay .shinju-blessing-slot.is-assigned{
+  border-color:rgba(157,124,64,.22) !important;
+  background:rgba(255,252,247,.54) !important;
+}
+
+#shinju-blessing-picker{
+  background:rgba(28,23,16,.14) !important;
+  backdrop-filter:blur(10px) !important;
+  -webkit-backdrop-filter:blur(10px) !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-card{
+  width:min(100%,620px) !important;
+  max-height:min(84dvh,780px) !important;
+  padding:15px 15px calc(13px + env(safe-area-inset-bottom)) !important;
+  border:1px solid rgba(144,118,72,.14) !important;
+  border-radius:24px !important;
+  background:rgba(252,248,241,.76) !important;
+  box-shadow:0 12px 36px rgba(59,45,21,.08), inset 0 1px 0 rgba(255,255,255,.38) !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-head{
+  margin-bottom:10px !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-head small{
+  font-size:10px !important;
+  letter-spacing:.12em !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-head strong{
+  font-size:18px !important;
+  font-weight:500 !important;
+  letter-spacing:.06em !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-close{
+  border:1px solid rgba(141,112,67,.14) !important;
+  background:rgba(255,255,255,.22) !important;
+  font-size:11px !important;
+  padding:9px 14px !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-character{
+  gap:6px !important;
+  padding:8px !important;
+  border:1px solid rgba(137,111,67,.12) !important;
+  border-radius:14px !important;
+  background:rgba(255,255,255,.28) !important;
+  box-shadow:none !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-character.is-selected{
+  border-color:rgba(161,124,57,.36) !important;
+  background:rgba(251,244,228,.54) !important;
+  box-shadow:none !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-character.is-used{
+  opacity:.45 !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-portrait{
+  width:100% !important;
+  aspect-ratio:1/1 !important;
+  border-radius:10px !important;
+  background:rgba(239,233,220,.48) !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-portrait img{
+  object-position:center 18% !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-meta{
+  gap:0 !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-character b{
+  text-align:left !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  letter-spacing:.03em !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-character small{
+  display:none !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-foot{
+  padding-top:8px !important;
+}
+#shinju-blessing-picker .shinju-blessing-picker-clear{
+  height:40px !important;
+  border:1px solid rgba(138,110,63,.13) !important;
+  background:rgba(255,255,255,.20) !important;
+  font-size:11px !important;
+}
+
+@media (max-width:390px){
+  #shinju-overlay .shinju-blessing-slot{
+    min-height:108px !important;
+    padding:7px 7px 8px !important;
+    gap:5px !important;
+  }
+  #shinju-overlay .shinju-blessing-slot-kind{
+    font-size:10px !important;
+  }
+  #shinju-overlay .shinju-blessing-slot-effect{
+    font-size:10px !important;
+  }
+  #shinju-blessing-picker .shinju-blessing-picker-grid{
+    gap:8px !important;
+  }
+  #shinju-blessing-picker .shinju-blessing-picker-character{
+    padding:7px !important;
+  }
+  #shinju-blessing-picker .shinju-blessing-picker-character b{
+    font-size:10px !important;
+  }
+}
