@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '755';
+  var FALLBACK_BUILD = '756';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="754">
+  <meta name="sasaphia-build" content="756">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -346,9 +346,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=752-cross-device-root-scroll-guard"
+        href="css/style.css?v=756-shinju-blessing"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=752-cross-device-root-scroll-guard"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=756-shinju-blessing"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -4594,11 +4594,21 @@ document.addEventListener('touchend', function (e) {
   }
 
   function _zsGetShinjuState() {
-    var explicit = _zsReadLocalObject('zeraphia_shinju_v1');
+    // shinju.js の実データキーを正としてクラウド保存する。
+    // zeraphia_shinju_v1 はbuild756以降の同期ミラー。
+    var runtimeState = _zsReadLocalObject('zeraphia_shinju_progress_v1');
+    var cloudMirror = _zsReadLocalObject('zeraphia_shinju_v1');
+    var explicit = Object.keys(runtimeState || {}).length ? runtimeState : cloudMirror;
+    var stage = 1;
+    var exp = Math.max(0, Number(explicit.exp || 0));
+    if (exp >= 7000) stage = 5;
+    else if (exp >= 4000) stage = 4;
+    else if (exp >= 2000) stage = 3;
+    else if (exp >= 1000) stage = 2;
     return {
-      level: Math.max(1, Number(explicit.level || explicit.shinjuLevel || 1)),
-      exp: Math.max(0, Number(explicit.exp || 0)),
-      offeringCount: Math.max(0, Number(explicit.offeringCount || explicit.offering_count || 0)),
+      level: Math.max(1, Number(explicit.level || explicit.shinjuLevel || stage || 1)),
+      exp: exp,
+      offeringCount: Math.max(0, Number(explicit.offeringCount || explicit.offering_count || (explicit.offeredItems && explicit.offeredItems.length) || 0)),
       state: explicit,
       localStorage: _zsCollectLocalStorageByKeyword(['shinju', '神樹'])
     };
@@ -4607,7 +4617,10 @@ document.addEventListener('touchend', function (e) {
   function _zsApplyShinjuState(payload) {
     if (!payload || typeof payload !== 'object') return;
     var state = payload.state && typeof payload.state === 'object' ? payload.state : payload;
-    if (state && Object.keys(state).length) _zsSetLocalJson('zeraphia_shinju_v1', state);
+    if (state && Object.keys(state).length) {
+      _zsSetLocalJson('zeraphia_shinju_v1', state);
+      _zsSetLocalJson('zeraphia_shinju_progress_v1', state);
+    }
     _zsRestoreLocalStorageBundle(payload.localStorage || {});
     try {
       window.dispatchEvent(new CustomEvent('zeraphia:shinju-cloud-loaded', { detail: state }));
@@ -15345,7 +15358,7 @@ function fadeOutOpeningBgm(){
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=593"></script>
+<script src="js/shinju.js?v=756-shinju-blessing"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {

@@ -1783,6 +1783,16 @@
       }
     } catch (_) {}
 
+    // 神聖樹の加護は、共鳴・レベル育成をすべて解決した後の最終補正として適用する。
+    // HP SLOT / ATK SLOT の対象キャラにのみ反映。
+    try {
+      if (window.ShinjuProgress && typeof window.ShinjuProgress.applyBlessingToProfile === 'function') {
+        profile = window.ShinjuProgress.applyBlessingToProfile(profile, numericId) || profile;
+      }
+    } catch (err) {
+      console.warn('[shooting] shinju blessing profile skipped:', err);
+    }
+
     return profile;
   }
 
@@ -17784,6 +17794,21 @@
 
     // 二重発動防止のため、カットイン開始時点でゲージを消費。
     member.burst = 0;
+
+    // 神聖樹 ULT SLOT：ULT発動直後に必要ゲージ量の一定割合を還元する。
+    // Stage1→5 = 4 / 8 / 12 / 16 / 20%。
+    try {
+      const blessing = window.ShinjuProgress && typeof window.ShinjuProgress.getBlessingForCharacter === 'function'
+        ? window.ShinjuProgress.getBlessingForCharacter(c.id)
+        : null;
+      const refundRate = Math.max(0, Math.min(1, Number(blessing && blessing.ultRefundRate || 0)));
+      if (refundRate > 0) {
+        member.burst = Math.min(Number(c.burstNeed || 0), Number(c.burstNeed || 0) * refundRate);
+      }
+    } catch (err) {
+      console.warn('[shooting] shinju ULT refund skipped:', err);
+    }
+
     member.ultReadyNotified = false;
     member.ultUseCount = (member.ultUseCount || 0) + 1;
     clearUltTimers();

@@ -10,8 +10,11 @@
   'use strict';
 
   const STORAGE_KEY = 'zeraphia_shinju_progress_v1';
+  const CLOUD_STORAGE_KEY = 'zeraphia_shinju_v1';
   const EVENT_NAME = 'shinju-progress-updated';
   const MAX_STAGE = 5;
+  const BLESSING_SLOTS = Object.freeze(['hp', 'atk', 'ult']);
+  const BLESSING_LABELS = Object.freeze({ hp: 'HP SLOT', atk: 'ATK SLOT', ult: 'ULT SLOT' });
 
   // stage 1 = shinju_01.webp（芽） / stage 5 = shinju_05.webp（大木）
   const STAGE_EXP = [0, 1000, 2000, 4000, 7000];
@@ -23,6 +26,15 @@
     '聖樹',
     '神樹',
   ];
+
+  // 神聖樹の加護。段階1→5で最終 HP/ATK +25%、ULT還元20%。
+  const BLESSING_RATE_BY_STAGE = Object.freeze({
+    1: Object.freeze({ hp: 0.05, atk: 0.05, ult: 0.04 }),
+    2: Object.freeze({ hp: 0.10, atk: 0.10, ult: 0.08 }),
+    3: Object.freeze({ hp: 0.15, atk: 0.15, ult: 0.12 }),
+    4: Object.freeze({ hp: 0.20, atk: 0.20, ult: 0.16 }),
+    5: Object.freeze({ hp: 0.25, atk: 0.25, ult: 0.20 }),
+  });
 
   const DEFAULT_BOSS_ITEM_EXP = 120;
   const RUN_REWARD_MASTER = {
@@ -50,12 +62,23 @@
     return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
+  function safeParse(raw) {
+    try { return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+  }
+
+  function stateTimestamp(state) {
+    const t = Date.parse(state && state.updatedAt || '');
+    return Number.isFinite(t) ? t : 0;
+  }
+
   function readState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return createInitialState();
-      const parsed = JSON.parse(raw);
-      return normalizeState(parsed);
+      // 旧実データキーとクラウド同期キーの両方を読み、更新時刻が新しい方を採用する。
+      // build756以降はsaveState()で両方を同時更新する。
+      const legacy = safeParse(localStorage.getItem(STORAGE_KEY));
+      const cloud = safeParse(localStorage.getItem(CLOUD_STORAGE_KEY));
+      const selected = stateTimestamp(cloud) > stateTimestamp(legacy) ? cloud : (legacy || cloud);
+      return normalizeState(selected || createInitialState());
     } catch (err) {
       console.warn('[ShinjuProgress] 保存データ読込に失敗:', err);
       return createInitialState();
@@ -68,8 +91,33 @@
       inventory: [],
       offeredItems: [],
       gameClearSeen: false,
+      blessings: { hp: null, atk: null, ult: null },
       updatedAt: new Date().toISOString(),
     };
+  }
+
+  function normalizeCharacterId(value) {
+    const id = Number(value);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  }
+
+  function normalizeBlessings(value) {
+    const src = value && typeof value === 'object' ? value : {};
+    const normalized = {
+      hp: normalizeCharacterId(src.hp),
+      atk: normalizeCharacterId(src.atk),
+      ult: normalizeCharacterId(src.ult),
+    };
+
+    // 同一キャラの重複加護は不可。古い/壊れた保存値も読み込み時に安全化する。
+    const seen = new Set();
+    BLESSING_SLOTS.forEach(slot => {
+      const id = normalized[slot];
+      if (id == null) return;
+      if (seen.has(id)) normalized[slot] = null;
+      else seen.add(id);
+    });
+    return normalized;
   }
 
   function normalizeState(state) {
@@ -79,16 +127,71 @@
       inventory: Array.isArray(s.inventory) ? s.inventory.filter(Boolean) : [],
       offeredItems: Array.isArray(s.offeredItems) ? s.offeredItems.filter(Boolean) : [],
       gameClearSeen: !!s.gameClearSeen,
+      blessings: normalizeBlessings(s.blessings || s.blessingSlots || s.slots),
       updatedAt: s.updatedAt || new Date().toISOString(),
     };
   }
 
-  function saveState(state) {
+  let cloudSaveTimer = 0;
+  function queueCloudSave() {
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(() => {
+      try {
+        if (typeof window.saveShinjuToSupabase === 'function') {
+          Promise.resolve(window.saveShinjuToSupabase()).catch(err => {
+            console.warn('[ShinjuProgress] cloud save skipped:', err && (err.message || err));
+          });
+        }
+      } catch (err) {
+        console.warn('[ShinjuProgress] cloud save failed:', err);
+      }
+    }, 120);
+  }
+
+  function writeStateLocal(state) {
+    const s = normalizeState(state);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(s));
+    return s;
+  }
+
+  function saveState(state, options) {
     const s = normalizeState(state);
     s.updatedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    writeStateLocal(s);
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: getViewState(s) }));
+    if (!options || options.cloud !== false) queueCloudSave();
     return s;
+  }
+
+  function getBlessingRates(stage) {
+    const n = clamp(Math.floor(Number(stage || 1)), 1, MAX_STAGE);
+    return Object.assign({}, BLESSING_RATE_BY_STAGE[n] || BLESSING_RATE_BY_STAGE[1]);
+  }
+
+  function getBlessingForCharacter(characterId, stateOverride) {
+    const id = normalizeCharacterId(characterId);
+    const view = getViewState(stateOverride || readState());
+    const slots = view.blessings || {};
+    const rates = view.blessingRates || getBlessingRates(view.stage);
+    return {
+      characterId: id,
+      stage: view.stage,
+      hpRate: id != null && Number(slots.hp) === id ? Number(rates.hp || 0) : 0,
+      atkRate: id != null && Number(slots.atk) === id ? Number(rates.atk || 0) : 0,
+      ultRefundRate: id != null && Number(slots.ult) === id ? Number(rates.ult || 0) : 0,
+    };
+  }
+
+  function applyBlessingToProfile(profile, characterId) {
+    if (!profile || typeof profile !== 'object') return profile;
+    const blessing = getBlessingForCharacter(characterId);
+    if (!blessing.hpRate && !blessing.atkRate) return profile;
+    const next = Object.assign({}, profile);
+    if (blessing.hpRate) next.hp = Math.max(1, Math.round(Number(profile.hp || 1) * (1 + blessing.hpRate)));
+    if (blessing.atkRate) next.atk = Math.max(0, Math.round(Number(profile.atk || 0) * (1 + blessing.atkRate)));
+    next.shinjuBlessing = blessing;
+    return next;
   }
 
   function getStageByExp(exp) {
@@ -120,6 +223,7 @@
       totalRequiredExp: COMPLETE_EXP,
       isMax,
       pendingItemCount: s.inventory.length,
+      blessingRates: getBlessingRates(stage),
       imageSrc: `images/shinju_${String(stage).padStart(2, '0')}.webp`,
     });
   }
@@ -245,6 +349,13 @@
         </div>
         <div class="shinju-content">
           <div class="shinju-lore" id="shinju-lore"></div>
+          <section class="shinju-blessing-section" aria-label="神聖樹の加護">
+            <div class="shinju-blessing-head">
+              <strong>神聖樹の加護</strong>
+              <span>各スロットに1人</span>
+            </div>
+            <div class="shinju-blessing-slots" id="shinju-blessing-slots"></div>
+          </section>
           <div class="shinju-offering-bar" id="shinju-offering-bar">
             <div class="shinju-offering-state">
               <span class="shinju-offering-label">奉納可能</span>
@@ -354,6 +465,165 @@
     return new Promise(resolve => setTimeout(resolve, totalMs));
   }
 
+  function getCharacterModule() {
+    return window.ShootingCharacters || null;
+  }
+
+  function getCharacterInfo(characterId) {
+    const module = getCharacterModule();
+    const id = normalizeCharacterId(characterId);
+    const c = module && module.SHOOTING_CHARACTERS && module.SHOOTING_CHARACTERS[id];
+    if (!c) return null;
+    return {
+      id,
+      name: c.name || `CHARACTER ${id}`,
+      image: c.panelImage || c.image || '',
+      owned: typeof module.isShootingCharacterOwned === 'function' ? !!module.isShootingCharacterOwned(id) : true,
+    };
+  }
+
+  function getOwnedBlessingCharacters() {
+    const module = getCharacterModule();
+    if (!module || !module.SHOOTING_CHARACTERS) return [];
+    return Object.values(module.SHOOTING_CHARACTERS)
+      .filter(Boolean)
+      .filter(c => typeof module.isShootingCharacterOwned !== 'function' || module.isShootingCharacterOwned(c.id))
+      .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+  }
+
+  function blessingRateLabel(slot, rate) {
+    const pct = Math.round(Math.max(0, Number(rate || 0)) * 100);
+    if (slot === 'hp') return `HP +${pct}%`;
+    if (slot === 'atk') return `ATK +${pct}%`;
+    return `ULT還元 +${pct}%`;
+  }
+
+  function setBlessingSlot(slot, characterId) {
+    if (!BLESSING_SLOTS.includes(slot)) return { ok:false, reason:'invalid_slot' };
+    const state = readState();
+    const id = normalizeCharacterId(characterId);
+
+    if (id != null) {
+      const info = getCharacterInfo(id);
+      if (!info || !info.owned) return { ok:false, reason:'not_owned' };
+      const duplicate = BLESSING_SLOTS.find(other => other !== slot && Number(state.blessings[other]) === id);
+      if (duplicate) {
+        showTinyToast(`${info.name}は${BLESSING_LABELS[duplicate]}に設定済み`);
+        return { ok:false, reason:'duplicate', duplicateSlot:duplicate };
+      }
+    }
+
+    state.blessings[slot] = id;
+    const saved = saveState(state);
+    renderOverlay();
+    renderHomeEntry();
+    if (id == null) showTinyToast(`${BLESSING_LABELS[slot]}を解除した`);
+    else {
+      const info = getCharacterInfo(id);
+      showTinyToast(`${BLESSING_LABELS[slot]}：${info ? info.name : id}`);
+    }
+    return { ok:true, state:getViewState(saved) };
+  }
+
+  function renderBlessingSlots(ov, state) {
+    const box = ov.querySelector('#shinju-blessing-slots');
+    if (!box) return;
+    const rates = state.blessingRates || getBlessingRates(state.stage);
+    box.innerHTML = BLESSING_SLOTS.map(slot => {
+      const id = state.blessings && state.blessings[slot];
+      const info = getCharacterInfo(id);
+      const assigned = !!info;
+      return `
+        <button class="shinju-blessing-slot ${assigned ? 'is-assigned' : 'is-empty'}" type="button" data-blessing-slot="${slot}" onclick="ShinjuProgress.openBlessingPicker('${slot}')">
+          <span class="shinju-blessing-slot-kind">${BLESSING_LABELS[slot]}</span>
+          <span class="shinju-blessing-slot-effect">${blessingRateLabel(slot, rates[slot])}</span>
+          <span class="shinju-blessing-character">
+            ${assigned && info.image ? `<img src="${escapeHtml(info.image)}" alt="">` : '<span class="shinju-blessing-plus">＋</span>'}
+            <b>${assigned ? escapeHtml(info.name) : 'キャラを設定'}</b>
+          </span>
+        </button>`;
+    }).join('');
+  }
+
+  function ensureBlessingPicker() {
+    let picker = document.getElementById('shinju-blessing-picker');
+    if (picker) return picker;
+    picker = document.createElement('div');
+    picker.id = 'shinju-blessing-picker';
+    picker.className = 'shinju-blessing-picker';
+    picker.innerHTML = `
+      <div class="shinju-blessing-picker-card" role="dialog" aria-modal="true" aria-label="加護キャラクター選択">
+        <div class="shinju-blessing-picker-head">
+          <div><small>神聖樹の加護</small><strong id="shinju-blessing-picker-title">SLOT</strong></div>
+          <button type="button" class="shinju-blessing-picker-close" onclick="ShinjuProgress.closeBlessingPicker()">閉じる</button>
+        </div>
+        <div class="shinju-blessing-picker-grid" id="shinju-blessing-picker-grid"></div>
+        <button type="button" class="shinju-blessing-picker-clear" id="shinju-blessing-picker-clear">このスロットを解除</button>
+      </div>`;
+    picker.addEventListener('click', e => {
+      if (e.target === picker) closeBlessingPicker();
+    });
+    document.body.appendChild(picker);
+    return picker;
+  }
+
+  function openBlessingPicker(slot) {
+    if (!BLESSING_SLOTS.includes(slot)) return;
+    const picker = ensureBlessingPicker();
+    const state = getViewState();
+    const title = picker.querySelector('#shinju-blessing-picker-title');
+    const grid = picker.querySelector('#shinju-blessing-picker-grid');
+    const clear = picker.querySelector('#shinju-blessing-picker-clear');
+    if (title) title.textContent = BLESSING_LABELS[slot];
+    picker.dataset.slot = slot;
+
+    const assignedElsewhere = new Map();
+    BLESSING_SLOTS.forEach(other => {
+      if (other === slot) return;
+      const id = Number(state.blessings && state.blessings[other]);
+      if (id > 0) assignedElsewhere.set(id, other);
+    });
+
+    const chars = getOwnedBlessingCharacters();
+    if (grid) {
+      grid.innerHTML = chars.length ? chars.map(c => {
+        const id = Number(c.id);
+        const selected = Number(state.blessings && state.blessings[slot]) === id;
+        const otherSlot = assignedElsewhere.get(id);
+        const disabled = !!otherSlot;
+        const img = c.panelImage || c.image || '';
+        return `
+          <button type="button" class="shinju-blessing-picker-character ${selected ? 'is-selected' : ''} ${disabled ? 'is-used' : ''}"
+                  data-character-id="${id}" ${disabled ? 'disabled' : ''}>
+            <span class="shinju-blessing-picker-portrait">${img ? `<img src="${escapeHtml(img)}" alt="">` : ''}</span>
+            <b>${escapeHtml(c.name || `CHARACTER ${id}`)}</b>
+            ${disabled ? `<small>${BLESSING_LABELS[otherSlot]}設定中</small>` : (selected ? '<small>設定中</small>' : '<small>選択</small>')}
+          </button>`;
+      }).join('') : '<div class="shinju-blessing-picker-empty">所持キャラクターがありません</div>';
+
+      grid.querySelectorAll('.shinju-blessing-picker-character:not(:disabled)').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.characterId);
+          const result = setBlessingSlot(slot, id);
+          if (result && result.ok) closeBlessingPicker();
+        });
+      });
+    }
+    if (clear) {
+      clear.disabled = !(state.blessings && state.blessings[slot]);
+      clear.onclick = () => {
+        setBlessingSlot(slot, null);
+        closeBlessingPicker();
+      };
+    }
+    picker.classList.add('active');
+  }
+
+  function closeBlessingPicker() {
+    const picker = document.getElementById('shinju-blessing-picker');
+    if (picker) picker.classList.remove('active');
+  }
+
   function renderOverlay() {
     const ov = ensureOverlay();
     const s = getViewState();
@@ -381,6 +651,7 @@
         : '創世資源を奉納すると、アルケミアの創世が進む。';
     }
 
+    renderBlessingSlots(ov, s);
     renderAuraField(ov, s);
     updateOfferingMeta(ov, s);
   }
@@ -393,6 +664,7 @@
   }
 
   function closeShinjuScreen() {
+    closeBlessingPicker();
     const ov = document.getElementById('shinju-overlay');
     if (ov) ov.classList.remove('active');
     if (typeof window.setNavVisible === 'function') window.setNavVisible(true);
@@ -531,6 +803,7 @@
 
   function resetForDebug() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CLOUD_STORAGE_KEY);
     renderHomeEntry();
     renderOverlay();
   }
@@ -539,6 +812,11 @@
   window.closeShinjuScreen = closeShinjuScreen;
   window.ShinjuProgress = {
     getState: () => getViewState(),
+    getBlessingForCharacter,
+    applyBlessingToProfile,
+    setBlessingSlot,
+    openBlessingPicker,
+    closeBlessingPicker,
     grantBossItem,
     grantBossItemFromRoguelite,
     offerItem,
@@ -553,4 +831,15 @@
 
   document.addEventListener('DOMContentLoaded', renderHomeEntry);
   window.addEventListener(EVENT_NAME, renderHomeEntry);
+  window.addEventListener('zeraphia:shinju-cloud-loaded', function (event) {
+    try {
+      const incoming = normalizeState(event && event.detail || {});
+      writeStateLocal(incoming);
+      renderHomeEntry();
+      const ov = document.getElementById('shinju-overlay');
+      if (ov && ov.classList.contains('active')) renderOverlay();
+    } catch (err) {
+      console.warn('[ShinjuProgress] cloud apply failed:', err);
+    }
+  });
 })();
