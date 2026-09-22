@@ -283,6 +283,12 @@
     33: genericSet('レイ'),
     34: genericSet('グレシャ'),
 
+    // build754: build737で追加されたID35-37にも共鳴を設定。
+    // 既存の未設定キャラ補完方針に合わせ、まずは安全な共通セットを適用する。
+    35: genericSet('ジゼル'),
+    36: genericSet('ニーナ'),
+    37: genericSet('トイフェル'),
+
     50: Object.freeze({
       1: bonus('艦砲同調', 'ATK +5%', 'SIGMA-IXの基礎ATKが5%上昇する。', [
         { type:'statRate', hp:0, atk:0.05 }
