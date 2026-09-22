@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '756';
+  var FALLBACK_BUILD = '759';
   var VERSION_URL = 'version.json';
   var CHECK_PARAM = '__sasaphia_update';
   var REPAIR_PARAM = '__sasaphia_repair';
@@ -245,7 +245,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="756">
+  <meta name="sasaphia-build" content="759">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -346,9 +346,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=757-shinju-responsive"
+        href="css/style.css?v=762-shinju-picker-redesign"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=757-shinju-responsive"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=762-shinju-picker-redesign"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -5398,7 +5398,7 @@ document.addEventListener('touchend', function (e) {
     }
     if(centerTitleJp){
       centerTitleJp.textContent =
-        gacha.poolType === 'pickup' ? '限定邂逅' :
+        gacha.poolType === 'pickup' ? '限定ピックアップ' :
         (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅');
     }
 
@@ -6591,7 +6591,9 @@ function selectChara(now, gacha) {
     });
   }
 
-  // Step1: スプラッシュ（タップで進む）
+  // build760: スプラッシュはユーザー操作を待たず自動進行。
+  // 1.5秒表示 -> 暗転 -> TITLE。タイトルBGMはTITLE表示時に自動再生を試し、
+  // ブラウザのautoplay制限で拒否された場合だけ最初のTITLEタップで再試行する。
   await new Promise(function(resolve){
     var splash = document.getElementById('splash');
 
@@ -6606,23 +6608,20 @@ function selectChara(now, gacha) {
       return;
     }
 
-    splash.style.cursor = 'pointer';
-    splash.addEventListener('click', function(){
-      setZeraphiaAppPhase('TITLE');
+    splash.style.cursor = 'default';
 
-      // タイトルBGMの再生開始はここ(実ユーザー操作の直後)だけで行う。
-      // 以降の非同期処理から重ねて.play()を呼ばない。
-      try { startTitleBgm(); } catch(e){}
-
-      Promise.resolve(window._sasaphiaMainStyleReady).finally(function(){
-        splash.style.opacity = '0';
-        // 通信待ちではなく、演出としての余韻を残す。
-        setTimeout(function(){
-          splash.style.display = 'none';
-          resolve();
-        }, 700);
-      });
-    }, { once: true });
+    Promise.all([
+      startupSleep(1500),
+      Promise.resolve(window._sasaphiaMainStyleReady).catch(function(){ return true; })
+    ]).then(function(){
+      // TITLEはまだ表示せず、まず黒背景へ暗転する。
+      splash.style.opacity = '0';
+      setTimeout(function(){
+        splash.style.display = 'none';
+        setZeraphiaAppPhase('TITLE');
+        resolve();
+      }, 560);
+    });
   });
 
 // Step2: タイトル画面（DBはスプラッシュ表示中から既に先行ロード中）
@@ -15358,7 +15357,7 @@ function fadeOutOpeningBgm(){
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=757-shinju-responsive"></script>
+<script src="js/shinju.js?v=762-shinju-picker-redesign"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -15470,7 +15469,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=696-score-self-badge-corner"></script>
+<script src="js/score_attack.js?v=759-score-resume-attempt-fix"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

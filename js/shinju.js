@@ -224,7 +224,7 @@
       isMax,
       pendingItemCount: s.inventory.length,
       blessingRates: getBlessingRates(stage),
-      imageSrc: `images/shinju_${String(stage).padStart(2, '0')}.webp`,
+      imageSrc: `images/shinju_${String(stage).padStart(2, '0')}.webp?v=758`,
     });
   }
 
@@ -333,7 +333,7 @@
       <div class="shinju-panel" role="dialog" aria-modal="true" aria-label="アルケミア創世進捗">
         <button class="shinju-close" type="button" onclick="closeShinjuScreen()">＜戻る</button>
         <div class="shinju-visual-wrap">
-          <img class="shinju-visual" id="shinju-visual" src="images/shinju_01.webp" alt="神樹">
+          <img class="shinju-visual" id="shinju-visual" src="images/shinju_01.webp?v=758" alt="神樹">
           <div class="shinju-visual-glow"></div>
           <div class="shinju-aura-field" id="shinju-aura-field" aria-hidden="true"></div>
           <div class="shinju-hero-info" aria-label="神樹の成長情報">
@@ -554,11 +554,16 @@
     picker.innerHTML = `
       <div class="shinju-blessing-picker-card" role="dialog" aria-modal="true" aria-label="加護キャラクター選択">
         <div class="shinju-blessing-picker-head">
-          <div><small>神聖樹の加護</small><strong id="shinju-blessing-picker-title">SLOT</strong></div>
+          <div class="shinju-blessing-picker-heading">
+            <small>神聖樹の加護</small>
+            <strong id="shinju-blessing-picker-title">SLOT</strong>
+          </div>
           <button type="button" class="shinju-blessing-picker-close" onclick="ShinjuProgress.closeBlessingPicker()">閉じる</button>
         </div>
         <div class="shinju-blessing-picker-grid" id="shinju-blessing-picker-grid"></div>
-        <button type="button" class="shinju-blessing-picker-clear" id="shinju-blessing-picker-clear">このスロットを解除</button>
+        <div class="shinju-blessing-picker-foot">
+          <button type="button" class="shinju-blessing-picker-clear" id="shinju-blessing-picker-clear">このスロットを解除</button>
+        </div>
       </div>`;
     picker.addEventListener('click', e => {
       if (e.target === picker) closeBlessingPicker();
@@ -595,9 +600,11 @@
         return `
           <button type="button" class="shinju-blessing-picker-character ${selected ? 'is-selected' : ''} ${disabled ? 'is-used' : ''}"
                   data-character-id="${id}" ${disabled ? 'disabled' : ''}>
-            <span class="shinju-blessing-picker-portrait">${img ? `<img src="${escapeHtml(img)}" alt="">` : ''}</span>
-            <b>${escapeHtml(c.name || `CHARACTER ${id}`)}</b>
-            ${disabled ? `<small>${BLESSING_LABELS[otherSlot]}設定中</small>` : (selected ? '<small>設定中</small>' : '<small>選択</small>')}
+            <span class="shinju-blessing-picker-portrait">${img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy">` : ''}</span>
+            <span class="shinju-blessing-picker-meta">
+              <b>${escapeHtml(c.name || `CHARACTER ${id}`)}</b>
+              ${disabled ? `<small>${BLESSING_LABELS[otherSlot]}設定中</small>` : (selected ? '<small>設定中</small>' : '<small>選択</small>')}
+            </span>
           </button>`;
       }).join('') : '<div class="shinju-blessing-picker-empty">所持キャラクターがありません</div>';
 
@@ -635,10 +642,11 @@
     const lore = ov.querySelector('#shinju-lore');
 
     if (img) {
+      img.dataset.stage = String(s.stage);
       img.src = s.imageSrc;
       img.onerror = function () {
         this.onerror = null;
-        this.src = 'images/shinju_05.webp';
+        this.src = 'images/shinju_05.webp?v=758';
       };
     }
     if (stage) stage.textContent = `${s.stageLabel}　${s.stage} / ${s.maxStage}`;

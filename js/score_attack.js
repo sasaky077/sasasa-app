@@ -3,9 +3,73 @@
 'use strict';
 const STAGES={normal:'shooting_score_attack_normal',hard:'shooting_score_attack_hard'};
 const PANEL_MAP={"1": "images/chara_01_panel.webp", "2": "images/chara_02_panel.webp", "3": "images/chara_03_panel.webp", "4": "images/chara_04_panel.webp", "5": "images/chara_05_panel.webp", "6": "images/chara_06_panel.webp", "7": "images/chara_07_panel.webp", "8": "images/chara_08_panel.webp", "9": "images/chara_09_panel.webp", "10": "images/chara_10_panel.webp", "11": "images/chara_11_panel.webp", "12": "images/chara_12_panel.webp", "13": "images/chara_13_panel.webp", "14": "images/chara_14_panel.webp", "15": "images/chara_15_panel.webp", "16": "images/chara_16_panel.webp", "17": "images/chara_17_panel.webp", "50": "images/chara_50_panel.webp"};
-let currentDifficulty='normal',currentRankingScope='friends',root=null,currentAttemptId=null,rankingRequestSeq=0;
+let currentDifficulty='normal',currentRankingScope='friends',root=null,currentAttemptId=null,currentAttemptPartyIds=[],currentAttemptStartedAt='',rankingRequestSeq=0;
+const ATTEMPT_STORAGE_KEY='zeraphia_score_attack_attempt_v1';
+const ATTEMPT_MAX_AGE_MS=30*60*1000;
 const rankingCache=Object.create(null);
 function uid(){return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase();}
+function normalizePartyIds(partyIds){
+ return (Array.isArray(partyIds)?partyIds:[])
+  .map(Number)
+  .filter((id,index,arr)=>id>0&&arr.indexOf(id)===index)
+  .slice(0,3);
+}
+function difficultyFromStageId(stageId){
+ const id=String(stageId||'');
+ if(id===STAGES.hard)return'hard';
+ if(id===STAGES.normal)return'normal';
+ return'';
+}
+function sameParty(a,b){
+ const aa=normalizePartyIds(a),bb=normalizePartyIds(b);
+ return aa.length===bb.length&&aa.every((id,i)=>id===bb[i]);
+}
+function clearPersistedAttempt(){
+ try{localStorage.removeItem(ATTEMPT_STORAGE_KEY);}catch(_){}
+}
+function persistCurrentAttempt(){
+ if(!currentAttemptId)return;
+ const record={
+  attemptId:String(currentAttemptId),
+  difficulty:currentDifficulty,
+  partyIds:normalizePartyIds(currentAttemptPartyIds),
+  startedAt:String(currentAttemptStartedAt||''),
+  userId:uid(),
+  savedAt:Date.now()
+ };
+ try{localStorage.setItem(ATTEMPT_STORAGE_KEY,JSON.stringify(record));}catch(_){}
+}
+function readPersistedAttempt(){
+ try{
+  const raw=localStorage.getItem(ATTEMPT_STORAGE_KEY);
+  if(!raw)return null;
+  const record=JSON.parse(raw);
+  if(!record||!record.attemptId||!['normal','hard'].includes(String(record.difficulty||''))){clearPersistedAttempt();return null;}
+  if(record.userId&&String(record.userId)!==uid()){clearPersistedAttempt();return null;}
+  const startedAtMs=Date.parse(String(record.startedAt||''));
+  const savedAt=Number(record.savedAt||0);
+  const ageBase=Number.isFinite(startedAtMs)?startedAtMs:savedAt;
+  if(ageBase&&Date.now()-ageBase>ATTEMPT_MAX_AGE_MS){clearPersistedAttempt();return null;}
+  record.partyIds=normalizePartyIds(record.partyIds);
+  return record;
+ }catch(_){clearPersistedAttempt();return null;}
+}
+function restoreAttemptRecord(record,stageId,partyIds){
+ if(!record||!record.attemptId)return false;
+ const stageDifficulty=difficultyFromStageId(stageId);
+ const recordDifficulty=String(record.difficulty||stageDifficulty||'');
+ if(stageDifficulty&&recordDifficulty!==stageDifficulty)return false;
+ const resultParty=normalizePartyIds(partyIds);
+ const recordParty=normalizePartyIds(record.partyIds);
+ if(recordParty.length&&resultParty.length&&!sameParty(recordParty,resultParty))return false;
+ currentDifficulty=recordDifficulty||currentDifficulty;
+ currentAttemptId=String(record.attemptId);
+ currentAttemptPartyIds=recordParty.length?recordParty:resultParty;
+ currentAttemptStartedAt=String(record.startedAt||'');
+ persistCurrentAttempt();
+ console.log('[ScoreAttack] attempt restored:',currentAttemptId,'party=',currentAttemptPartyIds);
+ return true;
+}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function playerName7(v){
  const s=String(v==null?'':v).trim()||'Player';
@@ -256,6 +320,9 @@ window.startScoreAttack=async function(){
   // この時点ではまだパーティ未選択。
   // attemptは戦闘開始ボタン押下時に実編成で作成する。
   currentAttemptId=null;
+  currentAttemptPartyIds=[];
+  currentAttemptStartedAt='';
+  clearPersistedAttempt();
   closeScoreAttack();
   if(typeof window.openShootingEvent==='function'){
     window.openShootingEvent({stageId});
@@ -264,10 +331,7 @@ window.startScoreAttack=async function(){
 window.ScoreAttack={
   async beginAttemptForParty(partyIds){
     const sb=window.zsSupabase;
-    const ids=(Array.isArray(partyIds)?partyIds:[])
-      .map(Number)
-      .filter((id,index,arr)=>id>0&&arr.indexOf(id)===index)
-      .slice(0,3);
+    const ids=normalizePartyIds(partyIds);
 
     if(!sb||typeof sb.rpc!=='function'){
       alert('通信準備ができていません。もう一度お試しください。');
@@ -290,6 +354,9 @@ window.ScoreAttack={
       if(!attemptId)throw new Error('attempt_id was not returned');
 
       currentAttemptId=String(attemptId);
+      currentAttemptPartyIds=ids.slice();
+      currentAttemptStartedAt=String(data&&data.started_at||'');
+      persistCurrentAttempt();
       console.log('[ScoreAttack] attempt started:',currentAttemptId,'party=',ids);
       return true;
     }catch(err){
@@ -308,21 +375,22 @@ window.ScoreAttack={
       return;
     }
 
-    // 復帰時などattemptが無い場合は、結果に含まれる実編成から復旧を試みる。
+    const resultPartyIds=normalizePartyIds(detail.partyIds||[]);
+
+    // クラッシュ復帰ではJSメモリ上のattempt_idが消える。
+    // 終了時に新attemptを作ると「開始直後のfinish」になりサーバーに拒否されるため、
+    // 戦闘開始時に保存した元attemptだけを復元して使う。
     if(!currentAttemptId){
-      const ok=await window.ScoreAttack.beginAttemptForParty(detail.partyIds||[]);
-      if(!ok){
-        console.error('[ScoreAttack] finish blocked: attempt_id is missing');
+      const persisted=readPersistedAttempt();
+      if(!restoreAttemptRecord(persisted,detail.stageId,resultPartyIds)){
+        console.error('[ScoreAttack] finish blocked: original attempt_id is missing');
+        if(typeof window.showToast==='function')window.showToast('スコアアタックの挑戦情報を復元できませんでした');
         return;
       }
     }
 
     const attemptId=currentAttemptId;
     try{
-      const resultPartyIds=(Array.isArray(detail.partyIds)?detail.partyIds:[])
-        .map(Number)
-        .filter((id,index,arr)=>id>0&&arr.indexOf(id)===index)
-        .slice(0,3);
 
       const res=await sb.rpc('finish_score_attack_attempt_v2',{
         p_attempt_id:attemptId,
@@ -333,9 +401,42 @@ window.ScoreAttack={
 
       console.log('[ScoreAttack] attempt finished:',attemptId,'party=',resultPartyIds,res&&res.data);
       currentAttemptId=null;
+      currentAttemptPartyIds=[];
+      currentAttemptStartedAt='';
+      clearPersistedAttempt();
+      Object.keys(rankingCache).forEach(key=>delete rankingCache[key]);
+      if(root&&root.isConnected&&root.classList.contains('show'))void refresh({force:true});
     }catch(err){
       console.error('[ScoreAttack] finish attempt failed',err);
+      const message=String(err&&err.message||'');
+      if(/attempt (?:expired|already used)|invalid attempt/i.test(message)){
+        currentAttemptId=null;
+        currentAttemptPartyIds=[];
+        currentAttemptStartedAt='';
+        clearPersistedAttempt();
+      }
     }
+  },
+  getResumeAttempt(){
+    const live=currentAttemptId?{
+      attemptId:String(currentAttemptId),
+      difficulty:currentDifficulty,
+      partyIds:normalizePartyIds(currentAttemptPartyIds),
+      startedAt:String(currentAttemptStartedAt||''),
+      userId:uid(),
+      savedAt:Date.now()
+    }:readPersistedAttempt();
+    return live?{...live,partyIds:normalizePartyIds(live.partyIds)}:null;
+  },
+  restoreAttemptFromResume(record,stageId,partyIds){
+    return restoreAttemptRecord(record,stageId,partyIds)
+      || restoreAttemptRecord(readPersistedAttempt(),stageId,partyIds);
+  },
+  clearAttempt(){
+    currentAttemptId=null;
+    currentAttemptPartyIds=[];
+    currentAttemptStartedAt='';
+    clearPersistedAttempt();
   },
   refresh
 };

@@ -1864,6 +1864,9 @@
       stageId: String(state.stageId || selectedStage?.id || ''),
       raidContext: selectedRaidContext ? { ...selectedRaidContext } : null,
       returnContext: window.__shootingReturnContext ? { ...window.__shootingReturnContext } : null,
+      scoreAttackAttempt: (isScoreAttackStage() && window.ScoreAttack && typeof window.ScoreAttack.getResumeAttempt === 'function')
+        ? window.ScoreAttack.getResumeAttempt()
+        : null,
       selectedPartyIds: state.party.map(m => Number(m.id)),
       selectedCharacterId: resumeActiveId,
       selectedBlessingId: selectedBlessingId || null,
@@ -1966,6 +1969,22 @@
       ? Number(snapshot.selectedCharacterId)
       : selectedPartyIds[0];
     selectedBlessingId = snapshot.selectedBlessingId || null;
+
+    // SCORE ATTACKは戦闘開始時のサーバーattemptをそのまま復元する。
+    // 新しいattemptを再開時/終了時に作り直すと、経過時間検証と不整合になる。
+    if (isScoreAttackStage()) {
+      const restored = !!(
+        window.ScoreAttack &&
+        typeof window.ScoreAttack.restoreAttemptFromResume === 'function' &&
+        window.ScoreAttack.restoreAttemptFromResume(snapshot.scoreAttackAttempt || null, snapshot.stageId, selectedPartyIds)
+      );
+      if (!restored) {
+        console.error('[ScoreAttack] resume blocked: original attempt could not be restored');
+        if (typeof window.showToast === 'function') window.showToast('スコアアタックの中断データを復元できませんでした');
+        clearShootingResumeState();
+        return false;
+      }
+    }
 
     // 現行マスター/共鳴値でstateの骨格を作り直してから、保存値だけ重ねる。
     resetState();
@@ -14459,6 +14478,12 @@
     }
     if (!(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
+
+    // SCORE ATTACKのRETRYは新しい挑戦なので、ここで新attemptを発行する。
+    if (isScoreAttackStage() && window.ScoreAttack && typeof window.ScoreAttack.beginAttemptForParty === 'function') {
+      const scoreAttackAttemptOk = await window.ScoreAttack.beginAttemptForParty(selectedPartyIds);
+      if (!scoreAttackAttemptOk) return;
+    }
 
     // RETRYも新しい1出撃として使用回数へ加算。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
