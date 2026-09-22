@@ -9437,6 +9437,24 @@ html body:not(.ui-immersive) :is(
   opacity:1 !important;
 }
 
+/* build826: stage-select shell must not block the shared bottom navigation.
+   The shell spans 100dvh for the paper background, while its page occupies only the
+   content area between global HUD and bottom nav. Let taps pass through the shell
+   padding and restore pointer events only on the actual page. */
+html body:not(.ui-immersive) :is(
+  .shooting-faceless-stage-select.shooting-daily-stage-select,
+  .shooting-faceless-stage-select:not(.shooting-daily-stage-select)
+){
+  pointer-events:none !important;
+}
+
+html body:not(.ui-immersive) :is(
+  .shooting-daily-stage-select .shooting-daily-stage-page,
+  .shooting-faceless-stage-select:not(.shooting-daily-stage-select) .shooting-faceless-stage-page
+){
+  pointer-events:auto !important;
+}
+
 html body:not(.ui-immersive) :is(
   .shooting-daily-stage-select .shooting-daily-stage-page,
   .shooting-faceless-stage-select:not(.shooting-daily-stage-select) .shooting-faceless-stage-page

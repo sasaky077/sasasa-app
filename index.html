@@ -8358,6 +8358,14 @@ function goHome(){
       stageSelectModal.style.display = 'none';
     }
 
+    // build826: DAILY / FACELESSの独自ステージ一覧も共通ボトムナビ遷移時に破棄する。
+    // 一覧overlayはbody直下に生成されるため、残したまま画面だけ切り替えると
+    // 新しいタブの上に居残り、ボトムナビが反応していないように見える。
+    var dailyStageSelect = document.getElementById('shooting-daily-stage-select');
+    if(dailyStageSelect) dailyStageSelect.remove();
+    var facelessStageSelect = document.getElementById('shooting-faceless-stage-select');
+    if(facelessStageSelect) facelessStageSelect.remove();
+
     if(isSummoning){
       console.log('ガチャ中のため画面遷移をブロック:', name);
       return;
