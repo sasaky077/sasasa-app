@@ -38564,3 +38564,174 @@ body{
   #shinju-blessing-picker .shinju-blessing-picker-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
   #shinju-blessing-picker .shinju-blessing-picker-portrait{width:42px;height:42px}
 }
+
+/* =========================================================
+   build757 trial: Shinju responsive layout stabilization
+   - image area and bottom panel share the viewport instead of overlapping
+   - remove fixed minimum panel height
+   - compact blessing slots on narrow devices
+   ========================================================= */
+#shinju-overlay .shinju-panel{
+  display:flex !important;
+  flex-direction:column !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  overflow:hidden !important;
+}
+
+#shinju-overlay .shinju-visual-wrap{
+  position:relative !important;
+  flex:1 1 auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:hidden !important;
+}
+
+#shinju-overlay .shinju-visual{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+}
+
+#shinju-overlay .shinju-hero-info{
+  left:clamp(16px,7vw,28px) !important;
+  right:clamp(16px,7vw,28px) !important;
+  top:calc(env(safe-area-inset-top) + clamp(220px,40dvh,285px)) !important;
+  bottom:auto !important;
+}
+
+#shinju-overlay .shinju-content{
+  position:relative !important;
+  z-index:20 !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  overflow:visible !important;
+  padding:clamp(8px,1.5dvh,12px) clamp(10px,4vw,18px)
+          calc(clamp(8px,1.5dvh,12px) + env(safe-area-inset-bottom)) !important;
+}
+
+#shinju-overlay .shinju-lore{
+  margin:0 0 clamp(5px,1dvh,8px) !important;
+  font-size:clamp(8px,2.45vw,10px) !important;
+  line-height:1.45 !important;
+}
+
+#shinju-overlay .shinju-blessing-section{
+  margin:0 0 clamp(6px,1.2dvh,9px) !important;
+  padding:clamp(6px,1.2dvh,8px) clamp(7px,2.2vw,9px) clamp(7px,1.3dvh,9px) !important;
+}
+
+#shinju-overlay .shinju-blessing-head{
+  gap:6px !important;
+  margin:0 2px clamp(4px,.9dvh,7px) !important;
+}
+
+#shinju-overlay .shinju-blessing-slots{
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:clamp(4px,1.8vw,7px) !important;
+}
+
+#shinju-overlay .shinju-blessing-slot{
+  min-width:0 !important;
+  height:clamp(64px,10.8dvh,78px) !important;
+  padding:clamp(5px,1.8vw,7px) !important;
+}
+
+#shinju-overlay .shinju-blessing-slot-kind{
+  font-size:clamp(6.8px,2.1vw,8px) !important;
+  letter-spacing:.07em !important;
+}
+
+#shinju-overlay .shinju-blessing-slot-effect{
+  margin-top:1px !important;
+  font-size:clamp(8.5px,2.6vw,10px) !important;
+}
+
+#shinju-overlay .shinju-blessing-character{
+  left:clamp(4px,1.7vw,6px) !important;
+  right:clamp(4px,1.7vw,6px) !important;
+  bottom:clamp(3px,.8dvh,5px) !important;
+  height:clamp(27px,4.8dvh,34px) !important;
+  gap:clamp(3px,1.3vw,5px) !important;
+}
+
+#shinju-overlay .shinju-blessing-character img,
+#shinju-overlay .shinju-blessing-plus{
+  flex-basis:clamp(24px,8.4vw,32px) !important;
+  width:clamp(24px,8.4vw,32px) !important;
+  height:clamp(24px,8.4vw,32px) !important;
+}
+
+#shinju-overlay .shinju-blessing-character b{
+  font-size:clamp(6.8px,2.1vw,8px) !important;
+}
+
+#shinju-overlay .shinju-offering-bar{
+  min-height:clamp(34px,5.8dvh,42px) !important;
+  gap:clamp(6px,2.4vw,12px) !important;
+}
+
+#shinju-overlay .shinju-offer-all{
+  min-width:clamp(88px,29vw,106px) !important;
+  height:clamp(34px,5.6dvh,38px) !important;
+  padding:0 clamp(10px,3.2vw,15px) !important;
+  font-size:clamp(9px,2.7vw,11px) !important;
+}
+
+/* 320px級の細い端末では、未設定枠の説明文を省略して「＋」を主役にする。 */
+@media (max-width:340px){
+  #shinju-overlay .shinju-content{
+    padding-left:8px !important;
+    padding-right:8px !important;
+  }
+  #shinju-overlay .shinju-blessing-section{
+    padding-left:6px !important;
+    padding-right:6px !important;
+  }
+  #shinju-overlay .shinju-blessing-head span{
+    font-size:7px !important;
+  }
+  #shinju-overlay .shinju-blessing-slot{
+    height:64px !important;
+    padding:5px !important;
+  }
+  #shinju-overlay .shinju-blessing-slot.is-empty .shinju-blessing-character{
+    left:0 !important;
+    right:0 !important;
+    justify-content:center !important;
+  }
+  #shinju-overlay .shinju-blessing-slot.is-empty .shinju-blessing-character b{
+    display:none !important;
+  }
+  #shinju-overlay .shinju-blessing-slot.is-empty .shinju-blessing-plus{
+    width:24px !important;
+    height:24px !important;
+    flex-basis:24px !important;
+    font-size:15px !important;
+  }
+}
+
+/* 低い端末では成長情報を少し上へ逃がして下部UIとの衝突を防ぐ。 */
+@media (max-height:620px){
+  #shinju-overlay .shinju-hero-info{
+    top:calc(env(safe-area-inset-top) + clamp(190px,37dvh,225px)) !important;
+  }
+  #shinju-overlay .shinju-blessing-slot{
+    height:62px !important;
+  }
+  #shinju-overlay .shinju-lore{
+    margin-bottom:4px !important;
+  }
+}
