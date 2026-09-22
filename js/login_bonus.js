@@ -1,25 +1,25 @@
 /* =========================================================
-   Sasaphia - 7日周期ログインボーナス
-   DAY1: 共鳴石 ×3
-   DAY2: 魂の器(火) ×3
-   DAY3: 魂の器(水) ×3
-   DAY4: 魂の器(木) ×3
-   DAY5: 共鳴石 ×6
-   DAY6: 魂の器(光) ×3
-   DAY7: SPECIAL STAGE TICKET ×1
+   ZERAPHIA - 7日周期ログインボーナス
+   DAY1: 結晶 ×2
+   DAY2: 結晶 ×4
+   DAY3: 結晶 ×6
+   DAY4: 結晶 ×8
+   DAY5: 結晶 ×10
+   DAY6: 結晶 ×20
+   DAY7: SPECIAL TICKET -ノア- ×1
    ※ 日付判定・付与の確定はSupabase RPC側で行う
    ========================================================= */
 (function(){
   'use strict';
 
   var REWARDS = [
-    { type:'item', itemId:'kyoumei_stone',      name:'共鳴石',      qty:3, image:'images/item_kyoumeistone.webp' },
-    { type:'item', itemId:'soul_vessel_fire',   name:'魂の器(火)', qty:3, image:'images/item_soul_vessel_fire.webp' },
-    { type:'item', itemId:'soul_vessel_aqua',   name:'魂の器(水)', qty:3, image:'images/item_soul_vessel_aqua.webp' },
-    { type:'item', itemId:'soul_vessel_wood',   name:'魂の器(木)', qty:3, image:'images/item_soul_vessel_wood.webp' },
-    { type:'item', itemId:'kyoumei_stone',      name:'共鳴石',      qty:6, image:'images/item_kyoumeistone.webp' },
-    { type:'item', itemId:'soul_vessel_light',  name:'魂の器(光)', qty:3, image:'images/item_soul_vessel_light.webp' },
-    { type:'ticket', itemId:'special_stage_ticket', name:'SPECIAL STAGE TICKET', qty:1, image:'images/special_stage_ticket.webp' }
+    { type:'gem', name:'結晶', qty:2,  image:'images/icon_gem.webp' },
+    { type:'gem', name:'結晶', qty:4,  image:'images/icon_gem.webp' },
+    { type:'gem', name:'結晶', qty:6,  image:'images/icon_gem.webp' },
+    { type:'gem', name:'結晶', qty:8,  image:'images/icon_gem.webp' },
+    { type:'gem', name:'結晶', qty:10, image:'images/icon_gem.webp' },
+    { type:'gem', name:'結晶', qty:20, image:'images/icon_gem.webp' },
+    { type:'ticket', itemId:'special_stage_ticket', name:'SPECIAL TICKET -ノア-', qty:1, image:'images/special_stage_ticket.webp' }
   ];
 
   var modal = null;
@@ -60,7 +60,7 @@
       '<section class="login-bonus-sheet login-bonus-sheet-mixed-v106" role="dialog" aria-modal="true" aria-labelledby="login-bonus-title">' +
         '<div class="login-bonus-kicker">DAILY RESONANCE</div>' +
         '<h2 id="login-bonus-title">ログインボーナス</h2>' +
-        '<p class="login-bonus-sub">7日目にSPECIAL STAGE TICKETを獲得</p>' +
+        '<p class="login-bonus-sub">DAY 1〜6は結晶、7日目にSPECIAL TICKET -ノア-を獲得</p>' +
         '<div class="login-bonus-days" id="login-bonus-days"></div>' +
         '<div class="login-bonus-today login-bonus-today-mixed">' +
           '<span class="login-bonus-today-label">TODAY</span>' +
@@ -199,11 +199,11 @@
     var uid = getUserId();
     if(!sb || !uid) return null;
     var result = await sb.from('user_profiles')
-      .select('login_bonus_day,last_login_bonus_date,special_stage_ticket')
+      .select('login_bonus_day,last_login_bonus_date,special_stage_ticket,gem')
       .eq('user_id', uid)
       .maybeSingle();
     if(result.error) throw result.error;
-    return result.data || { login_bonus_day:0, last_login_bonus_date:null, special_stage_ticket:0 };
+    return result.data || { login_bonus_day:0, last_login_bonus_date:null, special_stage_ticket:0, gem:0 };
   }
 
   function applyInventoryReward(itemId, totalQuantity){
@@ -281,10 +281,13 @@
       }
 
       var rewardQty = Math.max(0, Number(row.reward_quantity != null ? row.reward_quantity : reward.qty));
+      var stateAfter = await fetchState();
       if(window.userProfile){
         window.userProfile.login_bonus_day = day;
         window.userProfile.last_login_bonus_date = row.last_claim_date || getJstDateString();
-        if(row.total_special_ticket != null) window.userProfile.special_stage_ticket = Number(row.total_special_ticket || 0);
+        if(stateAfter && stateAfter.gem != null) window.userProfile.gem = Number(stateAfter.gem || 0);
+        if(stateAfter && stateAfter.special_stage_ticket != null) window.userProfile.special_stage_ticket = Number(stateAfter.special_stage_ticket || 0);
+        else if(row.total_special_ticket != null) window.userProfile.special_stage_ticket = Number(row.total_special_ticket || 0);
       }
       if(row.reward_item_id && row.total_item_quantity != null){
         if(typeof window.loadInventoryFromSupabase === 'function'){
@@ -295,6 +298,7 @@
       }
 
       if(typeof window.updateMainUI === 'function') window.updateMainUI();
+      if(typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
       updateBonusHomeNotice(false);
       if(document.getElementById('screen-bonus') && document.getElementById('screen-bonus').classList.contains('active')) renderBonusPage();
       if(typeof window.refreshSpecialTicketUI === 'function') window.refreshSpecialTicketUI();
@@ -367,7 +371,7 @@
       }
       html +=   '</div>';
       html +=   '<div class="bonus-card-foot">';
-      html +=     '<div class="bonus-card-note">毎日 0:00（JST）更新<br>DAY 1〜6：育成素材<br>DAY 7：SPECIAL STAGE TICKET ×1</div>';
+      html +=     '<div class="bonus-card-note">毎日 0:00（JST）更新<br>DAY 1〜6：結晶<br>DAY 7：SPECIAL TICKET -ノア- ×1</div>';
       html +=     '<button type="button" class="bonus-card-action" onclick="openLoginBonusFromBonusPage()"' + (claimedToday ? ' disabled' : '') + '>' + (claimedToday ? '受取済み' : '受け取る') + '</button>';
       html +=   '</div>';
       html += '</section>';

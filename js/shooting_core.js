@@ -903,12 +903,39 @@
     return !!(selectedStage && selectedStage.eventId === 'score_attack' && selectedStage.scoreAttack);
   }
 
+  function getDailyQuestStageIdentity() {
+    const id = String((selectedStage && selectedStage.id) || selectedStageId || '');
+    const match = id.match(/^shooting_daily_(mon|tue|wed|thu|fri|sat|sun)_(intermediate|advanced)$/i);
+    if (!match) return null;
+    return {
+      id,
+      weekdayKey: String(match[1] || '').toLowerCase(),
+      level: String(match[2] || '').toLowerCase() === 'advanced' ? 'advanced' : 'intermediate',
+    };
+  }
+
   function isDailyQuestStage() {
-    return !!(selectedStage && selectedStage.dailyQuest);
+    // build812: daily判定をstage metadataだけに依存させない。
+    // 古い/不整合なshooting_stages.jsが読み込まれてdailyQuest metadataが欠けても、
+    // stage id自体がdailyなら必ずDAILYとして扱う。これでRETRY露出・finish RPC未実行を防ぐ。
+    return !!((selectedStage && selectedStage.dailyQuest) || getDailyQuestStageIdentity());
   }
 
   function getDailyQuestConfig() {
-    return isDailyQuestStage() ? selectedStage.dailyQuest : null;
+    if (selectedStage && selectedStage.dailyQuest) return selectedStage.dailyQuest;
+
+    // metadata欠落時の安全フォールバック。
+    // 報酬の正本はfinish_daily_quest_run側なので、ここでは判定に必要な最小情報だけ復元する。
+    const identity = getDailyQuestStageIdentity();
+    if (!identity) return null;
+    const weekdayMap = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+    return {
+      weekday: weekdayMap[identity.weekdayKey] || '',
+      level: identity.level,
+      rewardId: '',
+      rewardPool: [],
+      rewardCount: identity.level === 'advanced' ? 2 : 1,
+    };
   }
 
   function isNoahStage() {
@@ -14107,7 +14134,9 @@
   }
 
   function maybeQueueRandomAmbush(win) {
-    if (!win || isAmbushStage()) return;
+    // DAILY巡行はサーバー確定・残回数UIへ戻す専用フロー。
+    // ランダム襲来でselectedStageを書き換えない。
+    if (!win || isAmbushStage() || isDailyQuestStage()) return;
     const rate = 0.10;
     if (Math.random() >= rate) return;
     // リザルトを一度見せてから緊急警告へ。
@@ -14119,6 +14148,9 @@
 
   async function endGame(win) {
     if (!state || state.ended) return;
+
+    // build812: RESULT処理中にstage参照が変化してもDAILY判定を揺らさない。
+    const dailyQuestAtResult = isDailyQuestStage();
 
     // RESULTへ入るタイミングで戦闘BGMを短くフェードアウト。
     fadeOutShootingBattleBgm(520, true);
@@ -14189,7 +14221,7 @@
     finalizeStoryClearScore(!!win);
     const rankLetter = getResultRank(state.score, win);
 
-    if (isDailyQuestStage()) {
+    if (dailyQuestAtResult) {
       if (raidRow) raidRow.style.display = 'none';
       if (retryBtn) retryBtn.style.display = 'none';
     } else if (isRaidStage()) {
@@ -14214,8 +14246,8 @@
 
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.
-    state.secureFinalizePromise = isDailyQuestStage() ? finalizeDailyQuestRun(state.score, !!win) : submitShootingHighScore(state.score, !!win);
-    if (isDailyQuestStage()) {
+    state.secureFinalizePromise = dailyQuestAtResult ? finalizeDailyQuestRun(state.score, !!win) : submitShootingHighScore(state.score, !!win);
+    if (dailyQuestAtResult) {
       try {
         await state.secureFinalizePromise;
       } catch (err) {
@@ -15354,6 +15386,7 @@
         return false;
       }
       activeDailyQuestRunToken = String(data.run_token);
+      if (state) state.dailyQuestRunToken = activeDailyQuestRunToken;
       if (typeof window.syncDailyAttemptStateFromServer === 'function') {
         void window.syncDailyAttemptStateFromServer();
       }
@@ -15371,7 +15404,9 @@
   async function finalizeDailyQuestRun(score, win) {
     if (!isDailyQuestStage()) return null;
     const sb = window.zsSupabase;
-    const token = String(activeDailyQuestRunToken || '').trim();
+    // build812: closure tokenだけでなくbattle stateにも退避したtokenを使用。
+    // DAILY判定やUI差し替えが途中で揺れても、開始済みrunを確実にfinishへ渡す。
+    const token = String(activeDailyQuestRunToken || (state && state.dailyQuestRunToken) || '').trim();
     if (!sb || typeof sb.rpc !== 'function' || !token) {
       throw new Error('デイリー挑戦トークンを確認できません');
     }
@@ -15405,6 +15440,7 @@
           await window.syncDailyAttemptStateFromServer();
         }
         activeDailyQuestRunToken = '';
+        if (state) state.dailyQuestRunToken = '';
         return data;
       } catch (err) {
         lastErr = err;
@@ -15625,6 +15661,17 @@
   };
 
   window.restartShootingEvent = async function () {
+    // build812: DAILY巡行はRESULTから直接RETRYさせない。
+    // UI表示が何らかの理由で崩れても、処理側で二重出撃を必ず止める。
+    if (isDailyQuestStage()) {
+      if (typeof window.syncDailyAttemptStateFromServer === 'function') {
+        try { await window.syncDailyAttemptStateFromServer(); } catch (_) {}
+      }
+      const message = 'デイリー巡行はRESULTからRETRYできません';
+      if (typeof window.showToast === 'function') window.showToast(message);
+      else alert(message);
+      return;
+    }
     if (isRaidStage()) {
       alert('DAILY RAIDは1日1回のみ挑戦できます。');
       return;

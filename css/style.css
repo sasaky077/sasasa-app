@@ -40504,172 +40504,57 @@ html body textarea{
   }
 }
 
-
-/* ============================================================
-   build802 NOAH / SPECIAL TICKET -ノア- confirmation flow
-   - challenge button is always active
-   - no ticket: requirement dialog
-   - ticket owned: explicit yes/no consumption confirmation
-   - straight edges, restrained paper / gold language
-   ============================================================ */
-#noah-piece-overlay .noah-piece-challenge,
-#noah-piece-overlay .noah-piece-challenge:disabled{
-  pointer-events:auto !important;
-  cursor:pointer !important;
-  opacity:1 !important;
-  border-color:rgba(139,99,41,.56) !important;
-  background:linear-gradient(180deg,rgba(255,253,247,.995),rgba(244,234,217,.99)) !important;
-  color:#563d20 !important;
-  box-shadow:0 4px 12px rgba(74,53,24,.06),inset 0 1px 0 rgba(255,255,255,.98) !important;
-}
-#noah-piece-overlay .noah-piece-challenge:hover{
-  border-color:rgba(130,88,31,.68) !important;
-}
-#noah-piece-overlay .noah-piece-ticket-status{
+/* =========================================================
+   build813: Shinju growth stage label integration
+   - move growth stage text below EXP gauge
+   - remove framed badge treatment
+   - replace it with a soft white haze
+   ========================================================= */
+#shinju-overlay .shinju-hero-info{
   display:flex !important;
-  align-items:baseline !important;
-  justify-content:center !important;
-  gap:7px !important;
-  margin-top:7px !important;
-  color:rgba(79,60,38,.74) !important;
-  white-space:nowrap !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
 }
-#noah-piece-overlay .noah-piece-ticket-name{
+
+#shinju-overlay .shinju-progress-box{
+  order:1 !important;
+  margin-top:0 !important;
+}
+
+#shinju-overlay .shinju-stage{
+  order:2 !important;
+  position:relative !important;
+  align-self:center !important;
+  width:auto !important;
+  min-width:0 !important;
+  margin:7px auto 0 !important;
+  padding:4px 30px 5px !important;
+  border:0 !important;
+  background:
+    radial-gradient(ellipse at 50% 50%,
+      rgba(255,255,255,.88) 0%,
+      rgba(255,255,255,.68) 34%,
+      rgba(255,253,246,.40) 58%,
+      rgba(255,255,255,0) 82%) !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  color:rgba(103,82,49,.88) !important;
   font-family:"Cinzel","Noto Serif JP",serif !important;
-  font-size:7.4px !important;
-  letter-spacing:.105em !important;
-  color:rgba(116,86,42,.74) !important;
-}
-#noah-piece-overlay .noah-piece-ticket-owned{
-  font-family:"Noto Serif JP","Yu Mincho",serif !important;
-  font-size:8px !important;
-  letter-spacing:.045em !important;
-}
-#noah-piece-overlay .noah-piece-ticket-owned b{
-  margin:0 2px !important;
-  color:#60431e !important;
-  font-family:"Cinzel","Noto Serif JP",serif !important;
-  font-size:10.5px !important;
-  font-weight:500 !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  line-height:1.25 !important;
+  letter-spacing:.12em !important;
+  text-align:center !important;
+  text-shadow:
+    0 1px 7px rgba(255,255,255,.96),
+    0 0 12px rgba(255,255,255,.76) !important;
 }
 
-.noah-ticket-dialog{
-  position:fixed;
-  inset:0;
-  z-index:146500;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-  box-sizing:border-box;
-  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
-}
-.noah-ticket-dialog.show{display:flex;}
-.noah-ticket-dialog-veil{
-  position:absolute;
-  inset:0;
-  background:rgba(244,239,230,.48);
-  backdrop-filter:blur(5px);
-  -webkit-backdrop-filter:blur(5px);
-}
-.noah-ticket-dialog-card{
-  position:relative;
-  z-index:1;
-  width:min(310px,calc(100vw - 54px));
-  padding:25px 22px 18px;
-  box-sizing:border-box;
-  border:1px solid rgba(143,108,57,.30);
-  border-radius:0;
-  background:linear-gradient(180deg,rgba(255,254,250,.985),rgba(247,241,231,.985));
-  box-shadow:0 18px 48px rgba(72,51,24,.13),inset 0 1px 0 rgba(255,255,255,.98);
-  text-align:center;
-  color:#4f3d28;
-}
-.noah-ticket-dialog-card::before{
-  content:"";
-  position:absolute;
-  left:26px;
-  right:26px;
-  top:0;
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(171,128,59,.58),transparent);
-}
-.noah-ticket-dialog-kicker{
-  font-family:"Cinzel",serif;
-  font-size:6.5px;
-  letter-spacing:.30em;
-  color:rgba(158,120,62,.78);
-}
-.noah-ticket-dialog-title{
-  margin-top:7px;
-  font-family:"Cinzel","Noto Serif JP",serif;
-  font-size:10px;
-  font-weight:500;
-  letter-spacing:.13em;
-  color:#7a5a2e;
-}
-.noah-ticket-dialog-message{
-  margin:18px 0 0;
-  min-height:22px;
-  font-size:12px;
-  font-weight:400;
-  line-height:1.7;
-  letter-spacing:.04em;
-  color:#493825;
-}
-.noah-ticket-dialog-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-top:20px;
-}
-.noah-ticket-dialog-actions button{
-  height:40px;
-  border-radius:0;
-  font-family:"Noto Serif JP","Yu Mincho",serif;
-  font-size:10px;
-  font-weight:500;
-  letter-spacing:.10em;
-  cursor:pointer;
-  box-shadow:none;
-}
-.noah-ticket-dialog-yes{
-  border:1px solid rgba(146,105,45,.52);
-  background:linear-gradient(180deg,rgba(253,249,240,.99),rgba(239,226,202,.98));
-  color:#5a3f1f;
-}
-.noah-ticket-dialog-no{
-  border:1px solid rgba(135,116,88,.28);
-  background:rgba(255,253,248,.92);
-  color:#776852;
-}
-.noah-ticket-dialog-actions button:active{transform:translateY(1px);}
-.noah-ticket-dialog-yes[style*="display: none"] + .noah-ticket-dialog-no{
-  grid-column:1 / -1;
-}
-
-/* Special-stage card uses the same in-game ticket name. */
-.noah-stage-entry-card .special-ticket-balance{
-  min-width:98px;
-  line-height:1.05;
-}
-.noah-stage-entry-card .special-ticket-balance span{
-  display:block;
-  margin-bottom:3px;
-  font-family:"Cinzel","Noto Serif JP",serif;
-  font-size:5.6px;
-  letter-spacing:.08em;
-  white-space:nowrap;
-  color:rgba(118,88,44,.70);
-}
-.noah-stage-entry-card .special-ticket-balance b{
-  margin-right:2px;
-}
-
-@media(max-width:390px){
-  .noah-ticket-dialog-card{
-    width:min(292px,calc(100vw - 44px));
-    padding:22px 18px 16px;
+@media (max-height:700px){
+  #shinju-overlay .shinju-stage{
+    margin-top:5px !important;
+    padding-top:3px !important;
+    padding-bottom:4px !important;
   }
-  .noah-ticket-dialog-message{font-size:11px;}
 }
