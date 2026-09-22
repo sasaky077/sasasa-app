@@ -3179,10 +3179,33 @@
 #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-bullet{
   box-shadow:none!important;
 }
-/* 召喚オブジェクト(マスク)本体のdrop-shadowも撤去。最大3体同時表示。 */
-#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object,
-#shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-faceless-object.hit-flash{
+/* 召喚オブジェクト(マスク)本体の常時drop-shadowだけ撤去。
+   build782: 被弾中までfilter:none!importantで潰していたため、
+   通常敵と同じ赤系sustained feedback / HITフラッシュは許可する。 */
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"]
+.shooting-faceless-object:not(.shooting-hit-sustained):not(.faceless-hit-flash){
   filter:none!important;
+}
+
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"]
+.shooting-faceless-object.shooting-hit-sustained{
+  animation:shootingSustainedEnemyHit .11s steps(2,jump-none) infinite!important;
+}
+
+#shooting-event-root[data-shooting-stage^="shooting_event_faceless"]
+.shooting-faceless-object.faceless-hit-flash{
+  filter:
+    sepia(1)
+    saturate(7.5)
+    hue-rotate(318deg)
+    brightness(1.34)
+    contrast(1.06)
+    drop-shadow(0 0 11px rgba(218,58,58,.88))
+    drop-shadow(0 0 3px rgba(255,255,255,.96))!important;
+  transform:
+    translate3d(var(--unit-x),var(--unit-y),0)
+    translate(-50%,-50%)
+    scale(1.06)!important;
 }
 
 
@@ -3936,6 +3959,45 @@
 
 .shooting-pause-action:active{
   background:#f3eadc;
+}
+
+/* build776: PAUSE内BGM ON/OFF */
+.shooting-pause-action.shooting-pause-bgm-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding-left:17px;
+  padding-right:15px;
+  text-align:left;
+}
+.shooting-pause-action.shooting-pause-bgm-toggle span{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:12px;
+  letter-spacing:.18em;
+}
+.shooting-pause-action.shooting-pause-bgm-toggle strong{
+  min-width:48px;
+  padding:5px 8px 4px;
+  border:1px solid rgba(164,130,72,.30);
+  border-radius:999px;
+  background:rgba(244,234,213,.62);
+  color:#7c623a;
+  font-family:"Cinzel",serif;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.14em;
+  text-align:center;
+  text-indent:.14em;
+}
+.shooting-pause-action.shooting-pause-bgm-toggle.is-off{
+  color:#9d9280;
+  background:#faf8f3;
+}
+.shooting-pause-action.shooting-pause-bgm-toggle.is-off strong{
+  border-color:rgba(133,123,106,.22);
+  background:rgba(226,222,214,.54);
+  color:#9b9285;
 }
 
 .shooting-pause-action.shooting-pause-exit{
@@ -7269,19 +7331,23 @@
 
 
 /* ============================================================
-   v133 FACELESS 仮面 被弾演出
+   build782 FACELESS 仮面 被弾演出
+   他ステージの敵と同じ赤系の「被弾した」フィードバックへ統一。
    ============================================================ */
 #shooting-event-root[data-shooting-stage^="shooting_event_faceless"]
 .shooting-faceless-object.faceless-hit-flash{
   filter:
-    brightness(2.15)
-    saturate(.55)
-    drop-shadow(0 0 10px rgba(255,255,255,.95))
-    drop-shadow(0 0 18px rgba(195,185,215,.80))!important;
+    sepia(1)
+    saturate(7.5)
+    hue-rotate(318deg)
+    brightness(1.34)
+    contrast(1.06)
+    drop-shadow(0 0 11px rgba(218,58,58,.88))
+    drop-shadow(0 0 3px rgba(255,255,255,.96))!important;
   transform:
     translate3d(var(--unit-x),var(--unit-y),0)
     translate(-50%,-50%)
-    scale(1.08)!important;
+    scale(1.06)!important;
 }
 
 
@@ -8737,3 +8803,50 @@
   opacity:1!important;
 }
 
+
+/* ===== PLAYER HIT SCREEN SHAKE / build774 =====
+   Fallback for older WebViews. Modern browsers run the same impact directly
+   from shooting_core.js via Web Animations API. */
+#shooting-event-root.player-hit-shake .shooting-stage{
+  animation:shootingPlayerHitScreenShake .42s cubic-bezier(.18,.72,.22,1) both;
+  transform-origin:center center;
+  will-change:transform;
+}
+@keyframes shootingPlayerHitScreenShake{
+  0%,100%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}
+  12%{transform:translate3d(-14px,8px,0) rotate(-.55deg) scale(1.014)}
+  28%{transform:translate3d(12px,-6px,0) rotate(.45deg) scale(1.010)}
+  45%{transform:translate3d(-9px,4px,0) rotate(-.32deg) scale(1.008)}
+  62%{transform:translate3d(7px,-3px,0) rotate(.24deg) scale(1.005)}
+  78%{transform:translate3d(-4px,2px,0) rotate(-.14deg) scale(1.003)}
+  90%{transform:translate3d(2px,-1px,0) rotate(.07deg) scale(1.001)}
+}
+
+
+/* ============================================================
+   build784 — LIMITED TIMER below COMBO
+   制限時間タイマーはCOMBO表示の直下へ配置する。
+   timerはroot直下、comboはarena内なので、arena上端(72px)を加味して
+   端末幅に依存しにくい位置関係にする。
+   ============================================================ */
+#shooting-event-root{
+  --shooting-arena-top:72px;
+  --shooting-combo-top-offset:46px;
+  --shooting-combo-visual-height:clamp(54px,14vw,60px);
+  --shooting-timer-combo-gap:8px;
+}
+#shooting-event-root .shooting-battle-timer{
+  top:calc(
+    var(--shooting-arena-top) +
+    var(--shooting-combo-top-offset) +
+    var(--shooting-combo-visual-height) +
+    var(--shooting-timer-combo-gap)
+  ) !important;
+  right:clamp(10px,3.4vw,16px) !important;
+}
+@media (max-width:390px){
+  #shooting-event-root{
+    --shooting-combo-visual-height:54px;
+    --shooting-timer-combo-gap:7px;
+  }
+}

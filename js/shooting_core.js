@@ -2423,6 +2423,10 @@
     const bulletHalfW = Math.max(1, Number(projectile._hw || 4));
     const bulletHalfH = Math.max(1, Number(projectile._hh || 7));
     const maskHalf = 39; // CSS上の仮面は78x78
+    const x0 = Number(fromX || 0);
+    const y0 = Number(fromY || 0);
+    const x1 = Number(toX || 0);
+    const y1 = Number(toY || 0);
     let best = null;
     let bestT = Infinity;
 
@@ -2433,8 +2437,7 @@
       const cx = Number(obj.x || 0);
       const cy = Number(obj.y || 0);
       const hitT = segmentAabbEntryT(
-        Number(fromX || 0), Number(fromY || 0),
-        Number(toX || 0), Number(toY || 0),
+        x0, y0, x1, y1,
         cx - maskHalf - bulletHalfW, cx + maskHalf + bulletHalfW,
         cy - maskHalf - bulletHalfH, cy + maskHalf + bulletHalfH
       );
@@ -2443,6 +2446,14 @@
       bestT = hitT;
       best = obj;
     });
+
+    // build782: 「当たり判定はあるのに中央でしか光らない」見え方をやめる。
+    // 線分衝突で求めた実際の接触点を保存し、HITリングを着弾位置に出す。
+    if (best && Number.isFinite(bestT)) {
+      best._lastProjectileImpactX = x0 + (x1 - x0) * bestT;
+      best._lastProjectileImpactY = y0 + (y1 - y0) * bestT;
+      best._lastProjectileImpactAt = performance.now();
+    }
 
     return best;
   }
@@ -3505,10 +3516,11 @@
   const ENEMY_BULLET_CANVAS_ID = 'shooting-enemy-bullet-canvas';
 
   // 既存CSSや端末差にCanvasの可視性を左右されないよう、検証レイヤーを固定する。
-  // ボス被弾時だけ単一画像へbrightnessを掛ける処理も復旧する。
-  if (!document.getElementById('shooting-canvas-test-visual-style-v230')) {
+  // build782: FACELESSの被弾フィルタ上書きは撤去。通常BOSSと同じ
+  // HITリング + 赤系フラッシュ + sustained feedback をそのまま使う。
+  if (!document.getElementById('shooting-canvas-test-visual-style-v231')) {
     const style = document.createElement('style');
-    style.id = 'shooting-canvas-test-visual-style-v230';
+    style.id = 'shooting-canvas-test-visual-style-v231';
     style.textContent = `
       #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"],[data-shooting-stage="shooting_raid_test"],[data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) #shooting-enemy-bullet-canvas{
         position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
@@ -3519,11 +3531,6 @@
       #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.hit-flash,
       #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.burst-hit,
       #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-boss.shooting-hit-sustained{
-        filter:brightness(1.55) saturate(.72)!important;
-      }
-      #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.hit-flash,
-      #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.burst-hit,
-      #shooting-event-root[data-shooting-stage^="shooting_event_faceless"] .shooting-boss.shooting-hit-sustained{
         filter:brightness(1.55) saturate(.72)!important;
       }
     `;
@@ -4216,10 +4223,9 @@
   });
 
   // ============================================================
-  // build580: BOMB専用ビジュアル
-  // 「通常弾が少し大きいだけ」に見えないよう、投擲物としての見た目と
-  // 着弾時の属性色爆風をBOMB共通仕様として与える。
-  // 当たり判定 / ダメージ計算は従来のBOMBロジックを維持する。
+  // build777: BOMB専用ビジュアル / 分裂ロジック
+  // 投擲BOMBは着弾時に爆風ダメージを出さず、BOMB 4/6/8の分裂弾へ変換する。
+  // 4はX字、6/8は360度等間隔。分裂弾1発は元弾の50%ダメージ。
   // ============================================================
   function getBombElementVisual(element) {
     const key = normalizeCombatElement(element) || 'neutral';
@@ -4365,7 +4371,7 @@
   }
 
   function ensureBombVisualStyles() {
-    const styleId = 'shooting-bomb-visual-style-build580';
+    const styleId = 'shooting-bomb-visual-style-build777';
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement('style');
@@ -4563,6 +4569,67 @@
         animation:shootingBombSplashRay582 .32s ease-out forwards;
       }
 
+      /* build777: 通常BOMBの着弾 = 分裂。爆風に当たり判定は持たせない。 */
+      .shooting-bomb-fragment{
+        width:9px!important;
+        height:9px!important;
+        min-width:9px!important;
+        min-height:9px!important;
+        border-radius:50%!important;
+        border:1px solid rgba(255,255,255,.72)!important;
+        background:radial-gradient(circle at 38% 34%,#fff 0 16%,rgba(var(--bomb-rgb,244,239,227),.98) 17% 58%,rgba(var(--bomb-rgb,244,239,227),.16) 74%,transparent 76%)!important;
+        box-shadow:0 0 7px 2px rgba(var(--bomb-rgb,244,239,227),.82),0 0 15px rgba(var(--bomb-rgb,244,239,227),.42)!important;
+        overflow:visible!important;
+      }
+      .shooting-bomb-fragment::before,
+      .shooting-bomb-fragment::after{content:none!important;display:none!important}
+
+      .shooting-bomb-split-burst{
+        position:absolute;
+        left:0;
+        top:0;
+        width:74px;
+        height:74px;
+        transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0) translate(-50%,-50%);
+        pointer-events:none;
+        z-index:49;
+      }
+      .shooting-bomb-split-burst > i{
+        position:absolute;
+        left:50%;
+        top:50%;
+        pointer-events:none;
+      }
+      .shooting-bomb-split-burst .split-core{
+        width:24px;
+        height:24px;
+        margin:-12px 0 0 -12px;
+        border-radius:50%;
+        background:radial-gradient(circle,#fff 0 16%,rgba(var(--bomb-rgb,244,239,227),.94) 18% 48%,rgba(var(--bomb-rgb,244,239,227),0) 74%);
+        box-shadow:0 0 12px rgba(var(--bomb-rgb,244,239,227),.88);
+        animation:shootingBombSplitCore777 .28s ease-out forwards;
+      }
+      .shooting-bomb-split-burst .split-ring{
+        width:42px;
+        height:42px;
+        margin:-21px 0 0 -21px;
+        border-radius:50%;
+        border:2px solid rgba(var(--bomb-rgb,244,239,227),.82);
+        box-shadow:0 0 8px rgba(var(--bomb-rgb,244,239,227),.52);
+        animation:shootingBombSplitRing777 .32s ease-out forwards;
+      }
+      .shooting-bomb-split-burst .split-ray{
+        width:30px;
+        height:3px;
+        margin:-1.5px 0 0 0;
+        border-radius:999px;
+        transform-origin:0 50%;
+        background:linear-gradient(90deg,#fff,rgba(var(--bomb-rgb,244,239,227),.92) 38%,rgba(var(--bomb-rgb,244,239,227),0) 100%);
+        box-shadow:0 0 6px rgba(var(--bomb-rgb,244,239,227),.68);
+        transform:rotate(var(--split-a,0deg)) translateX(6px) scaleX(.18);
+        animation:shootingBombSplitRay777 .30s ease-out forwards;
+      }
+
       /* build587: リズULT専用・巨大AQUA BOMB */
       .shooting-liz-ult-bomb{
         position:absolute;
@@ -4681,6 +4748,20 @@
         22%{opacity:1;transform:rotate(var(--splash-a)) translateX(10px) scaleX(.72)}
         100%{opacity:0;transform:rotate(var(--splash-a)) translateX(31px) scaleX(1.16)}
       }
+      @keyframes shootingBombSplitCore777{
+        0%{opacity:0;transform:translate(-50%,-50%) scale(.18)}
+        24%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.54)}
+      }
+      @keyframes shootingBombSplitRing777{
+        0%{opacity:.96;transform:translate(-50%,-50%) scale(.24)}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(1.34)}
+      }
+      @keyframes shootingBombSplitRay777{
+        0%{opacity:0;transform:rotate(var(--split-a)) translateX(3px) scaleX(.08)}
+        22%{opacity:1;transform:rotate(var(--split-a)) translateX(7px) scaleX(.72)}
+        100%{opacity:0;transform:rotate(var(--split-a)) translateX(26px) scaleX(1.16)}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -4765,6 +4846,99 @@
     p.el.style.transform =
       `translate3d(${Number(p.x || 0)}px,${Number(p.y || 0) - lift}px,0) ` +
       `translate(-50%,-50%) rotate(${spin}deg) scale(${settle})`;
+  }
+
+  function normalizeBombSplitCount(source) {
+    const raw = Math.floor(Number(
+      source?.bombSplitCount ??
+      source?.mainShot?.count ??
+      source?.bombFragments ??
+      0
+    ));
+    if (raw === 4 || raw === 6 || raw === 8) return raw;
+    // build776以前のM/L設定との互換。M=BOMB 4、L=BOMB 8。
+    return String(source?.bombSize || source?.mainShot?.size || 'M').toUpperCase() === 'L' ? 8 : 4;
+  }
+
+  function getBombSplitAngles(count) {
+    const n = count === 6 || count === 8 ? count : 4;
+    if (n === 4) return [45, 135, 225, 315]; // X字
+    if (n === 6) return [-90, -30, 30, 90, 150, 210];
+    return Array.from({ length: 8 }, (_, i) => i * 45);
+  }
+
+  function createBombSplitBurstEffect(x, y, element, splitCount) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureBombVisualStyles();
+    const visual = getBombElementVisual(element);
+    const angles = getBombSplitAngles(splitCount);
+    const el = document.createElement('div');
+    el.className = 'shooting-bomb-split-burst';
+    el.style.setProperty('--bomb-x', `${Number(x || 0)}px`);
+    el.style.setProperty('--bomb-y', `${Number(y || 0)}px`);
+    el.style.setProperty('--bomb-rgb', visual.rgb);
+    el.innerHTML = '<i class="split-ring"></i><i class="split-core"></i>';
+    angles.forEach(angle => {
+      const ray = document.createElement('i');
+      ray.className = 'split-ray';
+      ray.style.setProperty('--split-a', `${angle}deg`);
+      el.appendChild(ray);
+    });
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 380);
+  }
+
+  function spawnBombSplitProjectiles(source, x, y, now, queue, ignoredTarget = null) {
+    if (!source || !Array.isArray(queue)) return 0;
+    ensureBombVisualStyles();
+
+    const splitCount = normalizeBombSplitCount(source);
+    const angles = getBombSplitAngles(splitCount);
+    const rate = Math.max(0, Number(source.bombFragmentDamageRate ?? 0.50));
+    const damage = Math.max(0, Number(source.damage || 0)) * rate;
+    const speed = Math.max(120, Number(source.bombFragmentSpeed || 430));
+    const element = normalizeCombatElement(source.attackElement || source.element) || 'neutral';
+    const visual = getBombElementVisual(element);
+    const fragmentClass = String(source.bombFragmentClass || 'shooting-bullet') + ' shooting-bomb-fragment';
+
+    angles.forEach(angleDeg => {
+      const rad = angleDeg * Math.PI / 180;
+      // 元の着弾対象の中心に全弾が重ならないよう、少し外側から分裂開始。
+      const spawnOffset = 9;
+      const px = Number(x || 0) + Math.cos(rad) * spawnOffset;
+      const py = Number(y || 0) + Math.sin(rad) * spawnOffset;
+      const fragment = makeProjectile(
+        fragmentClass,
+        px,
+        py,
+        Math.cos(rad) * speed,
+        Math.sin(rad) * speed,
+        damage,
+        source.ownerId
+      );
+      if (!fragment) return;
+      fragment.kind = 'bomb_fragment';
+      fragment.attackElement = element;
+      fragment.element = element;
+      fragment.bombFragment = true;
+      fragment.bombIgnoreTarget = ignoredTarget || null;
+      fragment.bombBornAt = Number(now || performance.now());
+      fragment.bombExpireAt = fragment.bombBornAt + 2200;
+      fragment.noBombSplit = true;
+      fragment._hw = 4.5;
+      fragment._hh = 4.5;
+      fragment.el.style.setProperty('--bomb-rgb', visual.rgb);
+      queue.push(fragment);
+    });
+
+    createBombSplitBurstEffect(x, y, element, splitCount);
+    return angles.length;
+  }
+
+  function splitBombAtImpact(p, x, y, now, queue, ignoredTarget = null) {
+    if (!p || p.kind !== 'generic_splash') return 0;
+    return spawnBombSplitProjectiles(p, x, y, now, queue, ignoredTarget);
   }
 
   function applyUltElementVisualContext(c) {
@@ -6053,11 +6227,13 @@
 
 
     // ----------------------------------------------------------
-    // 汎用スプラッシュ：単発着弾 + 周囲へ減衰ダメージ
+    // build777 BOMB：単発着弾 → 4/6/8方向へ分裂
+    // 爆風ダメージは廃止。着弾した元弾は通常ダメージ、分裂弾は各50%。
     // ----------------------------------------------------------
     if (c.shotType === 'bomb') {
       ensureBombVisualStyles();
-      const bombSize = String(c.bombSize || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+      const bombSize = String(c.bombSize || c.mainShot?.size || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+      const splitCount = normalizeBombSplitCount(c);
       const attackElement = normalizeCombatElement(c.element) || 'neutral';
       const visual = getBombElementVisual(attackElement);
       const p = makeProjectile(
@@ -6070,10 +6246,13 @@
         c.id
       );
       if (p) {
+        // kind名は既存互換のためgeneric_splashを維持するが、build777以降AOEは発生しない。
         p.kind = 'generic_splash';
-        p.splashRadius = Math.max(30, Number(c.splashRadius || 76));
-        p.splashDamageRate = Math.max(0, Number(c.splashDamageRate || 0.55));
         p.bombSize = bombSize;
+        p.bombSplitCount = splitCount;
+        p.bombFragmentDamageRate = Math.max(0, Number(c.bombFragmentDamageRate ?? 0.50));
+        p.bombFragmentSpeed = Math.max(120, Number(c.bombFragmentSpeed || 430));
+        p.bombFragmentClass = bulletClass;
         p.attackElement = attackElement;
         p.bombBornAt = now;
         p.bombStartY = y;
@@ -6083,8 +6262,7 @@
         p.el.style.setProperty('--bomb-color', visual.color);
         p.el.style.setProperty('--bomb-rgb', visual.rgb);
 
-        // 見た目は大きくするが、命中判定はbuild579までの通常弾(4x22px)と同じ。
-        // 演出変更だけでBOMBが当てやすく/当たりにくくならないようにする。
+        // 見た目は大きくするが、元弾の命中判定は従来の通常弾(4x22px)と同じ。
         p._hw = 2;
         p._hh = 11;
 
@@ -8092,21 +8270,31 @@
     const appliedDamage = Math.min(obj.hp, Math.max(0, Number(damage || 0)));
     obj.hp = Math.max(0, obj.hp - appliedDamage);
 
-    // miniを含むOBJECT命中時は「当たった」と明確に分かるよう、
-    // HITリング + ダメージ数字 + 本体発光を同時に出す。
-    createHit(obj.x, obj.y, !!obj.ambushMinion);
+    // build782: FACELESSの仮面も通常敵と同じ被弾フィードバックへ統一。
+    // 通常射撃は実際の接触位置にHITリング、ダメージ数字は敵中心に出す。
+    const visualNow = Number(now || performance.now());
+    const useProjectileImpact =
+      Number.isFinite(Number(obj._lastProjectileImpactX)) &&
+      Number.isFinite(Number(obj._lastProjectileImpactY)) &&
+      Math.abs(visualNow - Number(obj._lastProjectileImpactAt || 0)) <= 80;
+    const hitX = useProjectileImpact ? Number(obj._lastProjectileImpactX) : Number(obj.x || 0);
+    const hitY = useProjectileImpact ? Number(obj._lastProjectileImpactY) : Number(obj.y || 0);
+
+    createHit(hitX, hitY, !!obj.ambushMinion);
     showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', !!obj.ambushMinion, elementReaction);
     if (obj.el) {
       sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 175);
 
-      // 仮面は1発ごとにフラッシュを再発火させ、命中が視覚で分かるようにする。
+      // 仮面は1発ごとに短い被弾フラッシュを再発火。
       if (!obj.ambushMinion) {
         obj.el.classList.remove('faceless-hit-flash');
         void obj.el.offsetWidth;
         obj.el.classList.add('faceless-hit-flash');
-        window.setTimeout(() => {
+        window.clearTimeout(obj._facelessHitFlashTimer);
+        obj._facelessHitFlashTimer = window.setTimeout(() => {
           if (obj.el && obj.el.isConnected) obj.el.classList.remove('faceless-hit-flash');
-        }, 150);
+          obj._facelessHitFlashTimer = null;
+        }, 170);
       } else {
         obj.el.classList.remove('ambush-hit-flash');
         void obj.el.offsetWidth;
@@ -9772,6 +9960,9 @@
     const w = Number(layout.width || arenaRect.width || 0);
     const h = Number(layout.height || arenaRect.height || 0);
 
+    // filter中にstate.bulletsへ直接pushすると、filter完了時の再代入で分裂弾が消える。
+    // build777では着弾中に生成したBOMB分裂弾を一旦キューへ積み、filter後に追加する。
+    const spawnedPlayerBullets = [];
     state.bullets = state.bullets.filter(p => {
       if (!p || !p.el) return false;
       const projectilePrevX = Number(p.x || 0);
@@ -9852,7 +10043,14 @@
         return true;
       }
 
-      if (p.y < -20 || p.x < -20 || p.x > w + 20) { p.el.remove(); return false; }
+      if (p.kind === 'bomb_fragment' && now >= Number(p.bombExpireAt || 0)) {
+        p.el.remove();
+        return false;
+      }
+      if (p.y < -20 || p.x < -20 || p.x > w + 20 || (p.kind === 'bomb_fragment' && p.y > h + 20)) {
+        p.el.remove();
+        return false;
+      }
       const r = getUnitRect(p, arenaRect);
 
       // CH06遮断壁：通常Projectileはここで止まる。Shotgun(pierce)だけはそのまま奥へ進む。
@@ -9862,14 +10060,15 @@
         if (p.pierce) {
           if (p.piercedTargets) p.piercedTargets.add(chapter6BarrierTarget);
         } else {
-          // 壁への当たり判定・弾消滅は全弾維持。BOMBは壁面でも爆発させる。
+          // 壁への当たり判定・弾消滅は全弾維持。BOMBは壁面着弾でも分裂する。
           if (p.kind === 'generic_splash') {
-            createGenericBombExplosionEffect(
+            splitBombAtImpact(
+              p,
               Number(p.x || chapter6BarrierTarget.x || 0),
               Number(p.y || chapter6BarrierTarget.y || 0),
-              p.attackElement,
-              p.splashRadius,
-              p.bombSize
+              now,
+              spawnedPlayerBullets,
+              chapter6BarrierTarget
             );
           } else if (renderBarrierImpact) {
             createHit(Number(p.x || chapter6BarrierTarget.x || 0), Number(p.y || chapter6BarrierTarget.y || 0), false);
@@ -9901,9 +10100,13 @@
           return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 12);
         }) || null;
       }
+      if (facelessObjectTarget && p.bombIgnoreTarget === facelessObjectTarget) {
+        facelessObjectTarget = null;
+      }
       const hitBoss = !facelessObjectTarget &&
         !isNormalBattle() &&
         bossRect &&
+        p.bombIgnoreTarget !== state.boss &&
         !(p.pierce && p.piercedTargets && state.boss && p.piercedTargets.has(state.boss)) &&
         rectsHit(r, bossRect, 0, 22);
 
@@ -9917,6 +10120,7 @@
           // 貫通弾は同じ敵へ多重ヒットさせず、射線上の未命中ターゲットをすべて拾う。
           normalTargets = state.normalEnemies.filter(enemy =>
             enemy && enemy.el && enemy.hp > 0 &&
+            p.bombIgnoreTarget !== enemy &&
             !(p.piercedTargets && p.piercedTargets.has(enemy)) &&
             rectsHit(r, getUnitRect(enemy, arenaRect), 0, 13)
           );
@@ -9926,6 +10130,7 @@
           // 離れた敵を貫通するのではなく、ブラックホールで密集した敵群への同時ヒット。
           normalTargets = state.normalEnemies.filter(enemy =>
             enemy && enemy.el && enemy.hp > 0 &&
+            p.bombIgnoreTarget !== enemy &&
             rectsHit(r, getUnitRect(enemy, arenaRect), 0, 13)
           );
           normalTarget = normalTargets[0] || null;
@@ -9933,6 +10138,7 @@
           // 通常時は従来どおり、1発につき最初に当たった敵1体だけ。
           normalTarget = state.normalEnemies.find(enemy =>
             enemy && enemy.el && enemy.hp > 0 &&
+            p.bombIgnoreTarget !== enemy &&
             rectsHit(r, getUnitRect(enemy, arenaRect), 0, 13)
           );
         }
@@ -9959,12 +10165,13 @@
           const appliedObjectDamage = damageFacelessObject(facelessObjectTarget, finalDamage, now, getElementDamageReaction(attackElement, targetElement));
           hitCount = appliedObjectDamage > 0 ? 1 : 0;
           if (p.kind === 'generic_splash') {
-            createGenericBombExplosionEffect(
+            splitBombAtImpact(
+              p,
               Number(facelessObjectTarget.x || p.x),
               Number(facelessObjectTarget.y || p.y),
-              attackElement,
-              p.splashRadius,
-              p.bombSize
+              now,
+              spawnedPlayerBullets,
+              facelessObjectTarget
             );
           }
           addLegacyCombatScore(80);
@@ -9993,23 +10200,14 @@
           }
 
           if (p.kind === 'generic_splash' && normalTarget) {
-            const radius = Math.max(30, Number(p.splashRadius || 76));
-            const rate = Math.max(0, Number(p.splashDamageRate || 0.55));
-            const attackElement = normalizeCombatElement(p.attackElement || p.element || chara.element);
-            state.normalEnemies.forEach(enemy => {
-              if (!enemy || enemy === normalTarget || enemy.hp <= 0) return;
-              if (Math.hypot(Number(enemy.x || 0) - Number(normalTarget.x || 0), Number(enemy.y || 0) - Number(normalTarget.y || 0)) > radius) return;
-              const splashTargetElement = getCombatTargetElement(enemy);
-              const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, splashTargetElement);
-              createBombSplashVictimHitEffect(Number(enemy.x || 0), Number(enemy.y || 0), attackElement);
-              damageNormalEnemy(enemy, splashDamage, now, true, getElementDamageReaction(attackElement, splashTargetElement));
-            });
-            createGenericBombExplosionEffect(
+            // build777: 爆風AOEは廃止。着弾点から4/6/8方向へ50%弾を分裂させる。
+            splitBombAtImpact(
+              p,
               Number(normalTarget.x || p.x),
               Number(normalTarget.y || p.y),
-              attackElement,
-              radius,
-              p.bombSize
+              now,
+              spawnedPlayerBullets,
+              normalTarget
             );
           }
 
@@ -10039,12 +10237,13 @@
             applyLightningChain(p, state.boss, now, chara, ownerId);
           }
           if (p.kind === 'generic_splash') {
-            createGenericBombExplosionEffect(
+            splitBombAtImpact(
+              p,
               Number(p.x || state.boss.x || 0),
               Number(p.y || state.boss.y || 0),
-              attackElement,
-              p.splashRadius,
-              p.bombSize
+              now,
+              spawnedPlayerBullets,
+              state.boss
             );
           }
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
@@ -10098,6 +10297,9 @@
       }
       return true;
     });
+    if (spawnedPlayerBullets.length) {
+      state.bullets.push(...spawnedPlayerBullets);
+    }
 
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
@@ -10358,7 +10560,7 @@
           : rectsHit(r, playerCoreRect, 0, 1);
 
         if (hitPlayerCore) {
-          damagePlayer(now, p.damage, classifyIncomingAttack(p), getIncomingAttackElement(p));
+          damagePlayer(now, p.damage, classifyIncomingAttack(p), getIncomingAttackElement(p), 'enemy-bullet');
           if (p.ambushPersistent) {
             // WAVE2の常駐WARNINGは被弾しても消えない。
             p.x = clamp(p.x + (p.vx >= 0 ? -18 : 18), 12, w - 12);
@@ -10424,7 +10626,57 @@
     }
   }
 
-  function damagePlayer(now, amount, attackType, attackElement) {
+  function triggerPlayerHitScreenShake() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    const stage = root.querySelector('.shooting-stage');
+    if (!stage) return;
+
+    // build774: enemy-bullet impact is driven directly from JS so the shake
+    // cannot disappear just because an older shooting_event.css is cached.
+    // The first lurch is intentionally large, then it settles with a heavy recoil.
+    if (typeof stage.animate === 'function') {
+      try {
+        if (root.__playerHitShakeAnimation) {
+          root.__playerHitShakeAnimation.cancel();
+        }
+        const animation = stage.animate([
+          { transform: 'translate3d(0,0,0) rotate(0deg) scale(1)', offset: 0 },
+          { transform: 'translate3d(-14px,8px,0) rotate(-0.55deg) scale(1.014)', offset: 0.12 },
+          { transform: 'translate3d(12px,-6px,0) rotate(0.45deg) scale(1.010)', offset: 0.28 },
+          { transform: 'translate3d(-9px,4px,0) rotate(-0.32deg) scale(1.008)', offset: 0.45 },
+          { transform: 'translate3d(7px,-3px,0) rotate(0.24deg) scale(1.005)', offset: 0.62 },
+          { transform: 'translate3d(-4px,2px,0) rotate(-0.14deg) scale(1.003)', offset: 0.78 },
+          { transform: 'translate3d(2px,-1px,0) rotate(0.07deg) scale(1.001)', offset: 0.90 },
+          { transform: 'translate3d(0,0,0) rotate(0deg) scale(1)', offset: 1 }
+        ], {
+          duration: 420,
+          easing: 'cubic-bezier(.18,.72,.22,1)',
+          fill: 'none'
+        });
+        root.__playerHitShakeAnimation = animation;
+        const clear = () => {
+          if (root.__playerHitShakeAnimation === animation) {
+            root.__playerHitShakeAnimation = null;
+          }
+        };
+        animation.addEventListener('finish', clear, { once: true });
+        animation.addEventListener('cancel', clear, { once: true });
+        return;
+      } catch (_) {
+        // Older WebView fallback below.
+      }
+    }
+
+    root.classList.remove('player-hit-shake');
+    void root.offsetWidth;
+    root.classList.add('player-hit-shake');
+    setTimeout(() => {
+      if (root.isConnected) root.classList.remove('player-hit-shake');
+    }, 460);
+  }
+
+  function damagePlayer(now, amount, attackType, attackElement, hitSource) {
     if (!state || state.ended || state.koTransition) return;
     const member = getActiveMember();
     if (!member) return;
@@ -10432,6 +10684,9 @@
     // (コンボも被弾回数もダメージも一切発生させない)。
     // 効果は取得したmemberにのみ紐づくため、交代先には影響しない。
     if (now < (member.invincibleUntil || 0)) return;
+    // 敵弾が実際に味方へ通った時だけ画面を短く揺らす。
+    // 接触ダメージ・無敵中の弾・デコイ/召喚物への命中では発火しない。
+    if (hitSource === 'enemy-bullet') triggerPlayerHitScreenShake();
     // HIT COMBOは被弾で即0。無被弾でも3秒間HitがなければgameLoop側で0へ戻す。
     resetCombo();
     member.hitCount = (member.hitCount || 0) + 1;
@@ -12261,6 +12516,10 @@
   }
 
   function runStartCountdown() {
+    // 中断復帰など、ボス登場演出を経由しない開始経路でもBGMを必ず同期。
+    if (!shootingBattleBgmSessionActive) activateShootingBattleBgm(false);
+    else window.syncShootingBattleBgm();
+
     const countdown = document.getElementById('shooting-countdown');
     const copy = document.getElementById('shooting-start-copy');
     if (!state || !countdown) return;
@@ -13217,6 +13476,9 @@
   async function endGame(win) {
     if (!state || state.ended) return;
 
+    // RESULTへ入るタイミングで戦闘BGMを短くフェードアウト。
+    fadeOutShootingBattleBgm(520, true);
+
     // CH04専用ギミックはRESULTへ持ち越さない。
     clearChapter4FinalItem();
     purgeChapter4ItemDom();
@@ -13918,6 +14180,210 @@
     }, 2350);
   }
 
+  // ============================================================
+  // build776: SHOOTING battle BGM
+  // - normal stages: audio/bgm_battle_normal.mp3
+  // - boss stages:   audio/bgm_battle_boss.mp3
+  // - global BGM setting (zeraphia_bgm_enabled) is shared with HOME/TITLE.
+  // ============================================================
+  const SHOOTING_BGM_NORMAL_ID = 'bgm-battle-normal';
+  const SHOOTING_BGM_BOSS_ID = 'bgm-battle-boss';
+  let shootingBattleBgmSessionActive = false;
+  let shootingBattleBgmFadeRaf = 0;
+
+  function getShootingBattleBgmTrack() {
+    const id = selectedStage && selectedStage.type === 'normal'
+      ? SHOOTING_BGM_NORMAL_ID
+      : SHOOTING_BGM_BOSS_ID;
+    return document.getElementById(id);
+  }
+
+  function getShootingBattleBgmVolume() {
+    let value = Number(window.bgmVolume);
+    if (!Number.isFinite(value)) {
+      try { value = Number(localStorage.getItem('bgm_volume')); } catch (_) { value = 30; }
+    }
+    if (!Number.isFinite(value)) value = 30;
+    return Math.max(0, Math.min(1, value / 100));
+  }
+
+  function isShootingBattleBgmEnabled() {
+    if (typeof window.isAudioEnabled === 'function') {
+      try { return !!window.isAudioEnabled('main_bgm'); } catch (_) {}
+    }
+    try { return localStorage.getItem('zeraphia_bgm_enabled') !== 'false'; }
+    catch (_) { return true; }
+  }
+
+  function getAllShootingBattleBgmTracks() {
+    return [
+      document.getElementById(SHOOTING_BGM_NORMAL_ID),
+      document.getElementById(SHOOTING_BGM_BOSS_ID)
+    ].filter(Boolean);
+  }
+
+  function cancelShootingBattleBgmFade() {
+    if (!shootingBattleBgmFadeRaf) return;
+    cancelAnimationFrame(shootingBattleBgmFadeRaf);
+    shootingBattleBgmFadeRaf = 0;
+  }
+
+  function updateShootingBattleBgmMenuUi() {
+    const menu = document.getElementById('shooting-pause-menu');
+    if (!menu) return;
+    const button = menu.querySelector('.shooting-pause-bgm-toggle');
+    const status = menu.querySelector('#shooting-pause-bgm-status');
+    const enabled = isShootingBattleBgmEnabled();
+    if (status) status.textContent = enabled ? 'ON' : 'OFF';
+    if (button) {
+      button.classList.toggle('is-off', !enabled);
+      button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      button.setAttribute('aria-label', enabled ? 'BGMをOFFにする' : 'BGMをONにする');
+    }
+  }
+
+  function warmShootingBattleBgm() {
+    const audio = getShootingBattleBgmTrack();
+    if (!audio) return;
+    try {
+      audio.preload = 'auto';
+      if (audio.readyState < 2) audio.load();
+    } catch (_) {}
+  }
+
+  function primeShootingBattleBgmFromUserGesture() {
+    if (!isShootingBattleBgmEnabled()) return;
+    const audio = getShootingBattleBgmTrack();
+    if (!audio) return;
+
+    // iOS/PWA対策：戦闘開始ボタンのユーザー操作中に対象audioを一度だけprimeする。
+    const previousMuted = audio.muted;
+    const previousVolume = audio.volume;
+    try {
+      audio.preload = 'auto';
+      audio.muted = true;
+      audio.volume = 0;
+      const p = audio.play();
+      audio.pause();
+      try { audio.currentTime = 0; } catch (_) {}
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    } catch (_) {
+      try { audio.pause(); } catch (_) {}
+    } finally {
+      audio.muted = previousMuted;
+      audio.volume = previousVolume;
+    }
+  }
+
+  function stopShootingBattleBgm(resetPosition) {
+    cancelShootingBattleBgmFade();
+    getAllShootingBattleBgmTracks().forEach(audio => {
+      try { audio.pause(); } catch (_) {}
+      if (resetPosition) {
+        try { audio.currentTime = 0; } catch (_) {}
+      }
+      audio.volume = getShootingBattleBgmVolume();
+    });
+  }
+
+  function playShootingBattleBgm(options) {
+    options = options || {};
+    if (!shootingBattleBgmSessionActive || !isShootingBattleBgmEnabled()) {
+      stopShootingBattleBgm(false);
+      updateShootingBattleBgmMenuUi();
+      return;
+    }
+
+    const target = getShootingBattleBgmTrack();
+    if (!target) return;
+    cancelShootingBattleBgmFade();
+
+    getAllShootingBattleBgmTracks().forEach(audio => {
+      if (audio !== target) {
+        try { audio.pause(); } catch (_) {}
+        try { audio.currentTime = 0; } catch (_) {}
+      }
+    });
+
+    if (options.restart) {
+      try { target.currentTime = 0; } catch (_) {}
+    }
+    target.muted = false;
+    target.volume = getShootingBattleBgmVolume();
+    if (target.paused) {
+      const p = target.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => console.warn('[shooting BGM] play failed:', err));
+      }
+    }
+    updateShootingBattleBgmMenuUi();
+  }
+
+  function activateShootingBattleBgm(restart) {
+    shootingBattleBgmSessionActive = true;
+    playShootingBattleBgm({ restart: !!restart });
+  }
+
+  function fadeOutShootingBattleBgm(durationMs, resetPosition) {
+    shootingBattleBgmSessionActive = false;
+    cancelShootingBattleBgmFade();
+
+    const playing = getAllShootingBattleBgmTracks().filter(audio => !audio.paused);
+    if (!playing.length) {
+      stopShootingBattleBgm(!!resetPosition);
+      updateShootingBattleBgmMenuUi();
+      return;
+    }
+
+    const duration = Math.max(80, Number(durationMs || 320));
+    const startedAt = performance.now();
+    const startVolumes = new Map(playing.map(audio => [audio, Number(audio.volume || 0)]));
+
+    const step = now => {
+      const ratio = Math.max(0, Math.min(1, (now - startedAt) / duration));
+      playing.forEach(audio => {
+        const start = startVolumes.get(audio) || 0;
+        audio.volume = start * (1 - ratio);
+      });
+
+      if (ratio < 1) {
+        shootingBattleBgmFadeRaf = requestAnimationFrame(step);
+        return;
+      }
+
+      shootingBattleBgmFadeRaf = 0;
+      playing.forEach(audio => {
+        try { audio.pause(); } catch (_) {}
+        if (resetPosition) {
+          try { audio.currentTime = 0; } catch (_) {}
+        }
+        audio.volume = getShootingBattleBgmVolume();
+      });
+      updateShootingBattleBgmMenuUi();
+    };
+
+    shootingBattleBgmFadeRaf = requestAnimationFrame(step);
+  }
+
+  window.syncShootingBattleBgm = function () {
+    updateShootingBattleBgmMenuUi();
+    if (!shootingBattleBgmSessionActive || !isShootingBattleBgmEnabled()) {
+      stopShootingBattleBgm(false);
+      return;
+    }
+    playShootingBattleBgm({ restart:false });
+  };
+
+  window.toggleShootingBattleBgm = function () {
+    const enabled = isShootingBattleBgmEnabled();
+    if (typeof window.setGlobalBgmEnabled === 'function') {
+      window.setGlobalBgmEnabled(!enabled);
+    } else {
+      try { localStorage.setItem('zeraphia_bgm_enabled', enabled ? 'false' : 'true'); } catch (_) {}
+      window.syncShootingBattleBgm();
+    }
+  };
+
   function setShootingHeaderMenuMode(inBattle) {
     const btn = document.querySelector(`#${ROOT_ID} .shooting-back`);
     if (!btn) return;
@@ -13944,7 +14410,10 @@
     if (!root) return null;
 
     let menu = root.querySelector('#shooting-pause-menu');
-    if (menu) return menu;
+    if (menu) {
+      updateShootingBattleBgmMenuUi();
+      return menu;
+    }
 
     menu = document.createElement('div');
     menu.id = 'shooting-pause-menu';
@@ -13956,12 +14425,16 @@
         <div class="shooting-pause-kicker">PAUSE</div>
         <h2 id="shooting-pause-title" aria-label="メニュー"><span class="sasaphia-menu-heading-icon" aria-hidden="true">☰</span></h2>
         <div class="shooting-pause-divider"></div>
+        <button type="button" class="shooting-pause-action shooting-pause-bgm-toggle" onclick="toggleShootingBattleBgm()" aria-pressed="true">
+          <span>BGM</span><strong id="shooting-pause-bgm-status">ON</strong>
+        </button>
         <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
         <button type="button" class="shooting-pause-action" onclick="restartShootingStageFromPause()">最初からやり直す</button>
         <button type="button" class="shooting-pause-action shooting-pause-close" onclick="closeShootingPauseMenu()">閉じる</button>
       </section>
     `;
     root.appendChild(menu);
+    updateShootingBattleBgmMenuUi();
     return menu;
   }
 
@@ -14029,6 +14502,7 @@
     clearNativeTouchCancelTimer();
     keys = Object.create(null);
 
+    updateShootingBattleBgmMenuUi();
     menu.classList.add('show');
     menu.setAttribute('aria-hidden', 'false');
   };
@@ -14328,6 +14802,11 @@
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
 
+    // build776: ユーザーの「戦闘開始」操作中に対象BGMをprimeして、
+    // iOS/PWAでもカウントダウン開始時に再生しやすくする。
+    warmShootingBattleBgm();
+    primeShootingBattleBgmFromUserGesture();
+
     // 挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
     if (!(await ensureSelectedDailyQuestAttemptConsumed())) return;
     if (!(await ensureSelectedRaidAttemptStarted())) return;
@@ -14344,8 +14823,11 @@
     // 集計保存はゲーム開始をブロックしない。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
 
-    // build768: ステージIN演出。戦闘初期化と並行して約1.35秒だけ表示する。
-    // 実ロードの有無とは切り離したアイキャッチ演出として扱う。
+    // build772: アイキャッチ読み込み前から白い遮蔽を出し、
+    // ステージタイトル演出が完了するまでバトル画面を一切見せない。
+    beginShootingStageTransitionMask();
+
+    // ステージIN演出。実ロードの有無とは切り離したアイキャッチ演出として扱う。
     const stageIcatchPromise = showShootingStageIcatch();
 
     selectedCharacterId = selectedPartyIds[0];
@@ -14376,9 +14858,15 @@
     }
 
     await stageIcatchPromise;
+    await showShootingStageInfo();
+
+    // タイトル演出が終わった白画面の裏で初期配置を完成させる。
+    placeInitialUnits();
+    renderHud();
+    await endShootingStageTransitionMask();
+    // 画面が戦闘へ戻った瞬間からBGM開始。BOSSは登場演出から専用曲を流す。
+    activateShootingBattleBgm(true);
     requestAnimationFrame(() => {
-      placeInitialUnits();
-      renderHud();
       playBossStageIntro(runStartCountdown);
     });
   };
@@ -14403,6 +14891,9 @@
     resolveSelectedStage(options || {});
     selectedRaidContext = options && options.raidContext ? { ...options.raidContext } : null;
     BOSS = getCurrentShootingEnemy();
+    shootingBattleBgmSessionActive = false;
+    stopShootingBattleBgm(true);
+    warmShootingBattleBgm();
 
     // パーティ選択中に、その後のバトル画像・ULT・敵画像を先読みしておく。
     warmShootingAssets();
@@ -14506,11 +14997,16 @@
     // RETRYも新しい1出撃として使用回数へ加算。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
 
-    // RETRYも「再度ステージへ入る」扱いとして同じアイキャッチを挟む。
+    // RETRYも「再度ステージへ入る」扱いとして同じ演出を挟む。
+    fadeOutShootingBattleBgm(180, true);
+    beginShootingStageTransitionMask();
     const stageIcatchPromise = showShootingStageIcatch();
 
     const root = document.getElementById(ROOT_ID);
-    if (!root) return window.openShootingEvent();
+    if (!root) {
+      clearShootingStageTransitionMask();
+      return window.openShootingEvent();
+    }
     clearEltenaBlackHole();
 
     // RETRY前にCH04 ITEM関連DOMを旧state参照が生きているうちに完全掃除。
@@ -14544,16 +15040,36 @@
     root.classList.remove('boss-defeat-flash', 'boss-phase-flash', 'boss-phase-pause', 'player-defeat-flash');
     root.setAttribute('data-boss-phase', '1');
     await stageIcatchPromise;
+    await showShootingStageInfo();
     placeInitialUnits();
     renderHud();
+    await endShootingStageTransitionMask();
+    activateShootingBattleBgm(true);
     playBossStageIntro(runStartCountdown);
   };
 
-  window.closeShootingEvent = function () {
+  window.closeShootingEvent = async function () {
+    // RESULT画面から戻る時だけ、1秒かけて白へフェードしてから前画面へ戻す。
+    // 戦闘中の退出・編成画面のキャンセルには適用しない。
+    const resultElBeforeClose = document.getElementById('shooting-result');
+    const resultWasVisible = !!(
+      resultElBeforeClose &&
+      (
+        resultElBeforeClose.classList.contains('show') ||
+        resultElBeforeClose.getAttribute('aria-hidden') === 'false'
+      )
+    );
+    if (resultWasVisible) {
+      if (shootingResultExitFadeRunning) return;
+      await playShootingResultExitFade();
+    }
+
+    // PAUSEからの途中退出などでも戦闘BGMを残さない。
+    fadeOutShootingBattleBgm(resultWasVisible ? 220 : 160, true);
+
     // SCORE ATTACKのRESULT画面から「戻る」を押した場合だけ、
     // ホームではなく「すこあた！」イベント画面へ戻す。
     // パーティ選択中のキャンセル等には影響させない。
-    const resultElBeforeClose = document.getElementById('shooting-result');
     const returningToScoreAttackLobby = !!(
       isScoreAttackStage() &&
       resultElBeforeClose &&
@@ -14651,12 +15167,14 @@
     if (returningToFacelessStageSelect || returningToDailyStageSelect) {
       // ステージ選択画面はroot削除前にすでに描画済み。
       selectedRaidContext = null;
+      clearShootingResultExitFade();
       return;
     }
 
     if (returningToRaidLobby) {
       selectedRaidContext = null;
       if (typeof window.openDailyRaid === 'function') window.openDailyRaid({ immediate: true, refresh: true });
+      clearShootingResultExitFade();
       return;
     }
 
@@ -14666,6 +15184,7 @@
         // RESULT反映直後のランキングも再取得して表示する。
         window.openScoreAttack();
       }
+      clearShootingResultExitFade();
       return;
     }
 
@@ -14677,6 +15196,7 @@
         window.openStageSelect(chapter, mode);
       }
     }
+    clearShootingResultExitFade();
   };
 
   function clearUltTimers() {
@@ -18813,33 +19333,304 @@
 
   // ============================================================
   // build768: STAGE IN アイキャッチ
-  // icatch_01.webp ～ icatch_03.webp をランダム表示。
-  // 未配置画像は自動的にスキップするため、素材追加途中でも動作する。
   // ============================================================
-  const SHOOTING_ICATCH_PATHS = Object.freeze([
-    'images/icatch_01.webp',
-    'images/icatch_02.webp',
-    'images/icatch_03.webp'
-  ]);
-  const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
-  const SHOOTING_ICATCH_HOLD_MS = 1350;
-  const SHOOTING_ICATCH_FADE_MS = 280;
-  let lastShootingIcatchPath = '';
+  // build771: STAGE INFO / RESULT EXIT TRANSITION
+  // アイキャッチ後に白背景のステージ情報を表示し、
+  // RESULTから戻る時は1秒かけて白へフェードする。
+  // ============================================================
+  // build772: ステージタイトルは一文字ずつゆっくり現れる。
+  const SHOOTING_STAGE_INFO_CHAR_STAGGER_MS = 70;
+  const SHOOTING_STAGE_INFO_CHAR_FADE_MS = 480;
+  const SHOOTING_STAGE_INFO_LINE_GAP_MS = 260;
+  const SHOOTING_STAGE_INFO_HOLD_MS = 900;
+  const SHOOTING_STAGE_INFO_FADE_MS = 650;
+  const SHOOTING_STAGE_MASK_RELEASE_MS = 320;
+  const SHOOTING_RESULT_EXIT_FADE_MS = 1000;
+  let shootingResultExitFadeRunning = false;
 
-  function shuffleShootingIcatchPaths() {
-    const list = SHOOTING_ICATCH_PATHS.slice();
-    for (let i = list.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
-    if (list.length > 1 && list[0] === lastShootingIcatchPath) {
-      const swapIndex = list.findIndex((path, index) => index > 0 && path !== lastShootingIcatchPath);
-      if (swapIndex > 0) [list[0], list[swapIndex]] = [list[swapIndex], list[0]];
-    }
-    return list;
+  function waitShootingTransition(ms) {
+    return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms || 0))));
   }
 
-  function preloadIcatchImage(src, timeoutMs = 900) {
+  function ensureShootingStageTransitionMask() {
+    let mask = document.getElementById('shooting-stage-transition-mask');
+    if (mask) return mask;
+    mask = document.createElement('div');
+    mask.id = 'shooting-stage-transition-mask';
+    mask.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(mask);
+    return mask;
+  }
+
+  function beginShootingStageTransitionMask() {
+    const mask = ensureShootingStageTransitionMask();
+    mask.classList.remove('is-releasing');
+    mask.style.display = 'block';
+    mask.style.opacity = '1';
+    mask.setAttribute('aria-hidden', 'false');
+    void mask.offsetWidth;
+  }
+
+  async function endShootingStageTransitionMask() {
+    const mask = ensureShootingStageTransitionMask();
+    mask.classList.add('is-releasing');
+    await waitShootingTransition(SHOOTING_STAGE_MASK_RELEASE_MS);
+    clearShootingStageTransitionMask();
+  }
+
+  function clearShootingStageTransitionMask() {
+    const mask = document.getElementById('shooting-stage-transition-mask');
+    if (!mask) return;
+    mask.classList.remove('is-releasing');
+    mask.style.display = 'none';
+    mask.style.opacity = '0';
+    mask.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderShootingStageInfoCharacters(el, text, baseDelayMs = 0) {
+    if (!el) return 0;
+    el.textContent = '';
+    el.setAttribute('aria-label', text);
+    const chars = Array.from(String(text || ''));
+    chars.forEach((ch, index) => {
+      const span = document.createElement('span');
+      span.className = 'shooting-stage-info-char';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = ch === ' ' ? '\u00A0' : ch;
+      span.style.setProperty('--stage-char-delay', `${baseDelayMs + index * SHOOTING_STAGE_INFO_CHAR_STAGGER_MS}ms`);
+      el.appendChild(span);
+    });
+    return baseDelayMs + Math.max(0, chars.length - 1) * SHOOTING_STAGE_INFO_CHAR_STAGGER_MS + SHOOTING_STAGE_INFO_CHAR_FADE_MS;
+  }
+
+  function getShootingStageInfoLines() {
+    const chapter = Math.max(0, Math.floor(Number(selectedStage?.chapter || 0)));
+    const stageNo = Math.max(0, Math.floor(Number(selectedStage?.stageNo || 0)));
+    if (chapter > 0 && stageNo > 0) {
+      return [
+        `CHAPTER ${String(chapter).padStart(2, '0')}`,
+        `STAGE ${String(stageNo).padStart(2, '0')}`
+      ];
+    }
+
+    const stageId = String(selectedStage?.id || '').toLowerCase();
+    const stageName = String(selectedStage?.name || '').trim();
+    if (stageId.includes('score_attack')) {
+      return ['SCORE ATTACK', stageId.includes('hard') ? 'HARD' : 'NORMAL'];
+    }
+    if (stageId.includes('raid')) return ['RAID BATTLE', stageName || 'STAGE'];
+    if (stageId.includes('daily')) return ['DAILY QUEST', stageName || 'STAGE'];
+    if (stageId.includes('noah')) return ['NOAH', stageName || 'STAGE'];
+    return ['ZERAPHIA', stageName || 'STAGE'];
+  }
+
+  function ensureShootingStageInfoOverlay() {
+    let overlay = document.getElementById('shooting-stage-info');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'shooting-stage-info';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="shooting-stage-info-copy" aria-hidden="true">
+        <div class="shooting-stage-info-line line-1"></div>
+        <div class="shooting-stage-info-line line-2"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  async function showShootingStageInfo() {
+    const overlay = ensureShootingStageInfoOverlay();
+    const [line1, line2] = getShootingStageInfoLines();
+    const line1El = overlay.querySelector('.line-1');
+    const line2El = overlay.querySelector('.line-2');
+    if (!line1El || !line2El) return;
+
+    // CHAPTERを先に、STAGEは少し余韻を置いて追いかける。
+    const line1End = renderShootingStageInfoCharacters(line1El, line1, 120);
+    const line2BaseDelay = Math.max(720, line1End - SHOOTING_STAGE_INFO_CHAR_FADE_MS + SHOOTING_STAGE_INFO_LINE_GAP_MS);
+    const line2End = renderShootingStageInfoCharacters(line2El, line2, line2BaseDelay);
+    const revealEnd = Math.max(line1End, line2End);
+
+    overlay.classList.remove('is-revealing', 'is-fading');
+    overlay.classList.add('is-visible');
+    overlay.setAttribute('aria-hidden', 'false');
+    void overlay.offsetWidth;
+    overlay.classList.add('is-revealing');
+
+    await waitShootingTransition(revealEnd + SHOOTING_STAGE_INFO_HOLD_MS);
+    overlay.classList.add('is-fading');
+    await waitShootingTransition(SHOOTING_STAGE_INFO_FADE_MS);
+    overlay.classList.remove('is-visible', 'is-revealing', 'is-fading');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function ensureShootingResultExitFade() {
+    let overlay = document.getElementById('shooting-result-exit-fade');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'shooting-result-exit-fade';
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  async function playShootingResultExitFade() {
+    shootingResultExitFadeRunning = true;
+    const overlay = ensureShootingResultExitFade();
+    overlay.classList.remove('is-visible');
+    overlay.style.display = 'block';
+    overlay.setAttribute('aria-hidden', 'false');
+    void overlay.offsetWidth;
+    requestAnimationFrame(() => overlay.classList.add('is-visible'));
+    await waitShootingTransition(SHOOTING_RESULT_EXIT_FADE_MS);
+  }
+
+  function clearShootingResultExitFade() {
+    const overlay = document.getElementById('shooting-result-exit-fade');
+    if (overlay) {
+      overlay.classList.remove('is-visible');
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+    shootingResultExitFadeRunning = false;
+  }
+
+  if (!document.getElementById('shooting-stage-info-style-v772')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-stage-info-style-v772';
+    style.textContent = `
+      #shooting-stage-transition-mask{
+        position:fixed;
+        inset:0;
+        z-index:519800;
+        display:none;
+        background:#fff;
+        opacity:0;
+        pointer-events:none;
+        transition:opacity ${SHOOTING_STAGE_MASK_RELEASE_MS}ms cubic-bezier(.4,0,.2,1);
+      }
+      #shooting-stage-transition-mask.is-releasing{opacity:0!important;}
+      #shooting-stage-info{
+        position:fixed;
+        inset:0;
+        z-index:519900;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:#fff;
+        opacity:1;
+        pointer-events:none;
+        user-select:none;
+        -webkit-user-select:none;
+      }
+      #shooting-stage-info.is-visible{display:flex;}
+      #shooting-stage-info.is-fading{
+        opacity:0;
+        transition:opacity ${SHOOTING_STAGE_INFO_FADE_MS}ms cubic-bezier(.4,0,.2,1);
+      }
+      #shooting-stage-info .shooting-stage-info-copy{
+        width:min(78vw,420px);
+        display:flex;
+        flex-direction:column;
+        align-items:flex-start;
+        gap:15px;
+      }
+      #shooting-stage-info .shooting-stage-info-line{
+        display:flex;
+        align-items:baseline;
+        max-width:100%;
+        color:#746d64;
+        font-family:"Times New Roman","Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
+        font-size:clamp(22px,6.2vw,36px);
+        font-weight:400;
+        line-height:1.12;
+        letter-spacing:.15em;
+        white-space:nowrap;
+        font-variant-numeric:lining-nums tabular-nums;
+      }
+      #shooting-stage-info .shooting-stage-info-line.line-2{
+        color:#967b60;
+      }
+      #shooting-stage-info .shooting-stage-info-char{
+        display:inline-block;
+        opacity:0;
+        transform:translateX(-6px);
+        filter:blur(.8px);
+      }
+      #shooting-stage-info.is-revealing .shooting-stage-info-char{
+        animation:shootingStageInfoCharReveal ${SHOOTING_STAGE_INFO_CHAR_FADE_MS}ms cubic-bezier(.18,.72,.24,1) forwards;
+        animation-delay:var(--stage-char-delay,0ms);
+      }
+      #shooting-result-exit-fade{
+        position:fixed;
+        inset:0;
+        z-index:530000;
+        display:none;
+        background:#fff;
+        opacity:0;
+        pointer-events:none;
+        transition:opacity ${SHOOTING_RESULT_EXIT_FADE_MS}ms ease;
+      }
+      #shooting-result-exit-fade.is-visible{opacity:1;}
+      @keyframes shootingStageInfoCharReveal{
+        0%{opacity:0;transform:translateX(-6px);filter:blur(.8px);}
+        42%{opacity:.48;filter:blur(.35px);}
+        100%{opacity:1;transform:translateX(0);filter:blur(0);}
+      }
+      @media (max-width:390px){
+        #shooting-stage-info .shooting-stage-info-copy{width:76vw;gap:10px;}
+        #shooting-stage-info .shooting-stage-info-line{font-size:clamp(20px,6vw,30px);letter-spacing:.12em;}
+      }
+      @media (prefers-reduced-motion:reduce){
+        #shooting-stage-info .shooting-stage-info-char{
+          opacity:1!important;
+          transform:none!important;
+          filter:none!important;
+          animation:none!important;
+        }
+        #shooting-stage-transition-mask,
+        #shooting-stage-info.is-fading,
+        #shooting-result-exit-fade{transition:none!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // build778: アイキャッチ一覧は manifest 方式へ変更。
+  // 静的サイトでは「次の連番画像が存在するか」を自動判定するためには
+  // 存在しないURLへ実際にリクエストする必要があり、終端で404が必ず発生する。
+  // そのため images/icatch_manifest.json を唯一の一覧ソースにして、404探索を廃止する。
+  // 今後は画像追加時に manifest の files へファイル名を1行追加するだけでよい。
+  // HTML / JS / build番号の更新は不要。
+  // ============================================================
+  const SHOOTING_ICATCH_MANIFEST = 'images/icatch_manifest.json';
+  const SHOOTING_ICATCH_FALLBACK_PATHS = Object.freeze([
+    'images/icatch_01.webp',
+    'images/icatch_02.webp',
+    'images/icatch_03.webp',
+    'images/icatch_04.webp',
+    'images/icatch_05.webp'
+  ]);
+  const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
+  const SHOOTING_ICATCH_FADE_IN_MS = 1000;
+  const SHOOTING_ICATCH_HOLD_MS = 2000;
+  const SHOOTING_ICATCH_FADE_OUT_MS = 1000;
+  const SHOOTING_ICATCH_MANIFEST_REFRESH_MS = 5000;
+  let lastShootingIcatchPath = '';
+  let shootingIcatchDiscoveryPromise = null;
+  let shootingIcatchManifestFetchedAt = 0;
+
+  function normalizeShootingIcatchManifestPath(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const name = raw.replace(/^\.\//, '').replace(/^images\//, '');
+    // icatch_XX.webp 形式だけを許可。ロゴ等の誤混入を防ぐ。
+    if (!/^icatch_\d{2,3}\.webp$/i.test(name)) return '';
+    return `images/${name}`;
+  }
+
+  function preloadIcatchImage(src, timeoutMs = 1200) {
     return new Promise(resolve => {
       const img = new Image();
       let settled = false;
@@ -18857,8 +19648,63 @@
     });
   }
 
+  async function discoverShootingIcatchPaths() {
+    try {
+      const sep = SHOOTING_ICATCH_MANIFEST.includes('?') ? '&' : '?';
+      const url = `${SHOOTING_ICATCH_MANIFEST}${sep}t=${Date.now().toString(36)}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if (!response.ok) throw new Error(`manifest HTTP ${response.status}`);
+
+      const data = await response.json();
+      const source = Array.isArray(data)
+        ? data
+        : (data && Array.isArray(data.files) ? data.files : []);
+      const paths = source
+        .map(normalizeShootingIcatchManifestPath)
+        .filter(Boolean)
+        .filter((path, index, list) => list.indexOf(path) === index);
+
+      if (paths.length) return paths;
+      throw new Error('manifest has no valid icatch files');
+    } catch (err) {
+      console.warn('[shooting] icatch manifest fallback:', err);
+      return SHOOTING_ICATCH_FALLBACK_PATHS.slice();
+    }
+  }
+
+  function getShootingIcatchPaths() {
+    const now = Date.now();
+    if (!shootingIcatchDiscoveryPromise || now - shootingIcatchManifestFetchedAt >= SHOOTING_ICATCH_MANIFEST_REFRESH_MS) {
+      shootingIcatchManifestFetchedAt = now;
+      shootingIcatchDiscoveryPromise = discoverShootingIcatchPaths().catch(err => {
+        console.warn('[shooting] icatch discovery failed:', err);
+        return SHOOTING_ICATCH_FALLBACK_PATHS.slice();
+      });
+    }
+    return shootingIcatchDiscoveryPromise;
+  }
+
+  function shuffleShootingIcatchPaths(paths) {
+    const list = Array.isArray(paths) ? paths.slice() : [];
+    for (let i = list.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    if (list.length > 1 && list[0] === lastShootingIcatchPath) {
+      const swapIndex = list.findIndex((path, index) => index > 0 && path !== lastShootingIcatchPath);
+      if (swapIndex > 0) [list[0], list[swapIndex]] = [list[swapIndex], list[0]];
+    }
+    return list;
+  }
+
   async function resolveShootingIcatchPath() {
-    const candidates = shuffleShootingIcatchPaths();
+    const discovered = await getShootingIcatchPaths();
+    const candidates = shuffleShootingIcatchPaths(discovered);
     for (const src of candidates) {
       const loaded = await preloadIcatchImage(src);
       if (loaded) {
@@ -18879,7 +19725,10 @@
     overlay.setAttribute('aria-hidden', 'true');
     overlay.innerHTML = `
       <img class="shooting-stage-icatch-art" alt="" draggable="false">
-      <img class="shooting-stage-icatch-logo" src="${SHOOTING_ICATCH_LOGO}" alt="ZERAPHIA" draggable="false">
+      <div class="shooting-stage-icatch-logo-wrap" aria-hidden="true">
+        <span class="shooting-stage-icatch-logo-haze"></span>
+        <img class="shooting-stage-icatch-logo" src="${SHOOTING_ICATCH_LOGO}" alt="ZERAPHIA" draggable="false">
+      </div>
     `;
     document.body.appendChild(overlay);
     return overlay;
@@ -18895,13 +19744,22 @@
       if (!art) return;
 
       art.src = src;
-      overlay.classList.remove('is-fading');
+      overlay.classList.remove('is-entered', 'is-fading');
       overlay.classList.add('is-visible');
       overlay.setAttribute('aria-hidden', 'false');
 
+      // display:block / opacity:0 を1フレーム確定させてから1秒でフェードイン。
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      overlay.classList.add('is-entered');
+      await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_FADE_IN_MS));
+
+      // 完全表示状態を2秒維持。
       await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_HOLD_MS));
+
+      // 1秒でフェードアウトしてからステージを開始。
+      overlay.classList.remove('is-entered');
       overlay.classList.add('is-fading');
-      await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_FADE_MS));
+      await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_FADE_OUT_MS));
 
       overlay.classList.remove('is-visible', 'is-fading');
       overlay.setAttribute('aria-hidden', 'true');
@@ -18910,9 +19768,9 @@
     }
   }
 
-  if (!document.getElementById('shooting-stage-icatch-style-v768')) {
+  if (!document.getElementById('shooting-stage-icatch-style-v770')) {
     const style = document.createElement('style');
-    style.id = 'shooting-stage-icatch-style-v768';
+    style.id = 'shooting-stage-icatch-style-v770';
     style.textContent = `
       #shooting-stage-icatch{
         position:fixed;
@@ -18928,11 +19786,15 @@
       }
       #shooting-stage-icatch.is-visible{
         display:block;
-        opacity:1;
-      }
-      #shooting-stage-icatch.is-fading{
         opacity:0;
-        transition:opacity ${SHOOTING_ICATCH_FADE_MS}ms ease;
+      }
+      #shooting-stage-icatch.is-visible.is-entered{
+        opacity:1;
+        transition:opacity ${SHOOTING_ICATCH_FADE_IN_MS}ms ease;
+      }
+      #shooting-stage-icatch.is-visible.is-fading{
+        opacity:0;
+        transition:opacity ${SHOOTING_ICATCH_FADE_OUT_MS}ms ease;
       }
       #shooting-stage-icatch .shooting-stage-icatch-art{
         position:absolute;
@@ -18943,26 +19805,54 @@
         object-position:center center;
         display:block;
       }
-      #shooting-stage-icatch .shooting-stage-icatch-logo{
+      #shooting-stage-icatch .shooting-stage-icatch-logo-wrap{
         position:absolute;
         right:max(18px,env(safe-area-inset-right));
         bottom:max(22px,calc(env(safe-area-inset-bottom) + 12px));
         width:clamp(150px,44vw,260px);
+        pointer-events:none;
+      }
+      #shooting-stage-icatch .shooting-stage-icatch-logo-haze{
+        position:absolute;
+        left:50%;
+        top:50%;
+        width:122%;
+        height:170%;
+        transform:translate(-50%,-50%);
+        border-radius:999px;
+        background:radial-gradient(ellipse at center,
+          rgba(255,255,255,.92) 0%,
+          rgba(255,255,255,.78) 34%,
+          rgba(255,255,255,.42) 58%,
+          rgba(255,255,255,.14) 76%,
+          rgba(255,255,255,0) 100%);
+        filter:blur(16px);
+        opacity:.90;
+      }
+      #shooting-stage-icatch .shooting-stage-icatch-logo{
+        position:relative;
+        width:100%;
         height:auto;
         display:block;
-        opacity:.82;
+        opacity:.88;
         mix-blend-mode:multiply;
-        filter:contrast(1.04);
+        filter:contrast(1.04) drop-shadow(0 0 10px rgba(255,255,255,.55));
       }
       @media (max-width:375px){
-        #shooting-stage-icatch .shooting-stage-icatch-logo{
+        #shooting-stage-icatch .shooting-stage-icatch-logo-wrap{
           right:max(14px,env(safe-area-inset-right));
           bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
           width:clamp(138px,45vw,172px);
         }
+        #shooting-stage-icatch .shooting-stage-icatch-logo-haze{
+          width:128%;
+          height:178%;
+          filter:blur(14px);
+        }
       }
       @media (prefers-reduced-motion:reduce){
-        #shooting-stage-icatch.is-fading{transition:none;}
+        #shooting-stage-icatch.is-visible.is-entered,
+        #shooting-stage-icatch.is-visible.is-fading{transition:none;}
       }
     `;
     document.head.appendChild(style);

@@ -1002,7 +1002,9 @@
     parallel: Object.freeze([2, 3, 4, 5]),
     spread: Object.freeze([3, 5, 7]),
     laser: Object.freeze(['M', 'L']),
-    bomb: Object.freeze(['M', 'L']),
+    // build779: BOMB分裂数はレアリティで統一（R=4 / SR=6）。
+    // 4 = X字、6/8 = 360度等間隔。分裂弾は各50%ダメージ。
+    bomb: Object.freeze([4, 6]),
   });
 
   function normalizeShotType(type) {
@@ -1038,8 +1040,11 @@
       out.size = String(source.size || (isMain ? profile.laserSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
     }
     if (type === 'bomb') {
-      const fallbackSize = Number(profile.splashRadius || 0) >= 80 ? 'L' : 'M';
-      out.size = String(source.size || (isMain ? profile.bombSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
+      // build779: BOMBの分裂数はキャラクターのレアリティで統一する。
+      // R = 4方向 / SR = 6方向。個別profileの旧count/size指定では分裂数を変えない。
+      const rarityCount = getShootingRarity(profile.id) === 'sr' ? 6 : 4;
+      out.count = rarityCount;
+      out.size = String(source.size || (isMain ? profile.bombSize : '') || 'M').toUpperCase() === 'L' ? 'L' : 'M';
     }
     return Object.freeze(out);
   }
@@ -1062,6 +1067,7 @@
       : { type: profile.shotType };
     const mainShot = buildShotSlot(mainShotSource, profile, true);
     const subShot = profile.subShot ? buildShotSlot(profile.subShot, profile, false) : null;
+    const rarityBombSplitCount = mainShot?.type === 'bomb' ? (rarity === 'sr' ? 6 : 4) : profile.bombSplitCount;
 
     // hp/atkが個体側(profile)で明示指定されていない限りmasterの値を基準にし、
     // そこへレアリティ倍率をかけてから丸める。
@@ -1074,6 +1080,7 @@
       shotType: mainShot?.type || normalizeShotType(profile.shotType),
       mainShot,
       subShot,
+      bombSplitCount: rarityBombSplitCount,
       id: master.id,
       name: profile.name || master.name,
       element: profile.element ?? master.element ?? null,
@@ -1736,11 +1743,11 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.REISIA, effectKey: 'reisia',
-    label: 'BOMB / AQUA',
-    description: '水属性の爆弾を前方へ投げ、着弾時に小範囲へAQUA属性の爆風を広げるRスプラッシュ型。ULTは巨大なAQUA爆弾を敵陣へ投げ込み、着弾時に盤面を覆う大爆発を起こす。',
+    label: 'BOMB 4 / AQUA',
+    description: '水属性の爆弾を前方へ投げ、着弾時にX字4方向へAQUA属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは巨大なAQUA爆弾を敵陣へ投げ込み、着弾時に盤面を覆う大爆発を起こす。',
     ultName: 'MEGA AQUA BOMB',
     ultDescription: '巨大なAQUA爆弾を敵陣へ放り投げる。着弾時に盤面上の敵弾を消去し、敵全体へATK×4.0のAQUA属性ダメージを与える。',
-    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'liz_giant_bomb',
     ultDamageAtkMultiplier: 4.0,
     lizUltBlastRadius: 164,
@@ -1749,8 +1756,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
-    label: 'BOMB / LIGHT', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    label: 'BOMB 4 / LIGHT', description: '着弾時にX字4方向へLIGHT属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
@@ -1802,15 +1809,15 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RAGNA, effectKey: 'ragna',
-    label: 'BOMB / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'bomb', bombSize: 'L', shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27, splashRadius: 96, splashDamageRate: 0.58,
+    label: 'BOMB 4 / FIRE', description: '着弾時にX字4方向へFIRE属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'BOMB / WOOD', description: '小範囲へ広がるRスプラッシュ型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    label: 'BOMB 4 / WOOD', description: '着弾時にX字4方向へWOOD属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
@@ -2028,8 +2035,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.TOYFEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.TOYFEL, effectKey: 'toyfel',
-    label: 'BOMB / DARK',
-    description: '闇属性の爆弾を前方へ投げ、着弾時に周囲へDARK属性の爆風を広げるBOMB型。ULTは発動地点の左右端へ2つのブラックホールを7秒間展開し、敵弾を吸収する。',
+    label: 'BOMB 4 / DARK',
+    description: '闇属性の爆弾を前方へ投げ、着弾時にX字4方向へDARK属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは発動地点の左右端へ2つのブラックホールを7秒間展開し、敵弾を吸収する。',
     ultName: 'DUAL BLACK HOLE',
     ultDescription: '発動時の自機Y座標に合わせて、画面左端・右端へブラックホールを1つずつ召喚。7秒間、盤面上の敵弾を左右どちらかのブラックホールへ吸引して消滅させる。',
     shotType: 'bomb',
@@ -2038,8 +2045,8 @@
     fireRate: 550,
     bulletSpeed: 660,
     shotPowerRate: 0.27,
-    splashRadius: 76,
-    splashDamageRate: 0.55,
+    bombSplitCount: 4,
+    bombFragmentDamageRate: 0.50,
     ultBaseType: 'field',
     ultAddons: ['enemy_bullet_absorb'],
     ultType: 'toyfel_double_black_hole',
