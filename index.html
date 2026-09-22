@@ -2,81 +2,84 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <script id="sasaphia-version-gate-v109">
+  <script id="zeraphia-release-coordinator-v1">
 (function(){
   'use strict';
 
-  var FALLBACK_BUILD = '796';
+  // Release safety v1
+  // version.json is the ONLY runtime source of the release/build number.
+  // A new release never forces a reload while the player is in-game.
   var VERSION_URL = 'version.json';
-  var CHECK_PARAM = '__sasaphia_update';
-  var REPAIR_PARAM = '__sasaphia_repair';
-  var LAST_CHECK_KEY = 'sasaphia_last_version_check_v2';
-  var RECOVERY_KEY = 'sasaphia_update_recovery_guard_v2';
-  var CHECK_INTERVAL_MS = 30000;
-  var RECOVERY_WINDOW_MS = 120000;
-  var MAX_RECOVERIES_PER_WINDOW = 2;
-  var checking = null;
+  var SERVER_RELEASE_KEY = 'zeraphia_server_release_v1';
+  var BOOT_REPAIR_KEY = 'zeraphia_boot_asset_repair_v1';
+  var bootComplete = false;
+  var releaseRequest = null;
+  var releaseInfo = null;
 
-  var CRITICAL_ASSETS = [
-    'css/style.css',
-    'css/app_chrome.css',
-    'css/shooting_event.css',
-    'js/stage_select.js',
-    'js/shooting_event.js',
-    'js/shooting_characters.js',
-    'js/shooting_core.js'
-  ];
-
-  function cleanBuild(value){
-    return String(value || '').trim().replace(/[^a-zA-Z0-9._-]/g, '');
-  }
-
-  function getUrlBuild(){
-    try { return cleanBuild(new URL(location.href).searchParams.get('build')); }
-    catch (_) { return ''; }
-  }
-
-  function getCurrentBuild(){
-    // build= はキャッシュバスター/表示用。
-    // 実際に読み込まれているHTMLのbuildは、このHTMLに埋め込まれた値を正とする。
-    return FALLBACK_BUILD;
-  }
-
-  function getLatestKnownBuild(){
-    try { return cleanBuild(localStorage.getItem('sasaphia_latest_server_build')); }
-    catch (_) { return ''; }
-  }
-
-  function sameOriginAssetUrl(raw){
+  function cleanLegacyUpdateState(){
     try {
-      var u = new URL(raw, location.href);
-      return u.origin === location.origin ? u : null;
-    } catch (_) { return null; }
-  }
+      var u = new URL(location.href);
+      var changed = false;
+      ['build','__sasaphia_update','__sasaphia_repair'].forEach(function(key){
+        if (u.searchParams.has(key)) {
+          u.searchParams.delete(key);
+          changed = true;
+        }
+      });
+      if (changed) history.replaceState(null, '', u.toString());
+    } catch (_) {}
 
-  function getRecoveryGuard(){
     try {
-      var parsed = JSON.parse(sessionStorage.getItem(RECOVERY_KEY) || '{}');
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch (_) { return {}; }
+      [
+        'sasaphia_latest_server_build',
+        'sasaphia_last_version_check_v2',
+        'sasaphia_update_recovery_guard_v2',
+        'sasaphia_build_version'
+      ].forEach(function(key){ localStorage.removeItem(key); });
+    } catch (_) {}
   }
 
-  function allowRecovery(build, reason){
-    var now = Date.now();
-    var guard = getRecoveryGuard();
-    if (guard.build !== build || guard.reason !== reason || now - Number(guard.startedAt || 0) > RECOVERY_WINDOW_MS) {
-      guard = { build: build, reason: reason, startedAt: now, count: 0 };
-    }
-    guard.count = Number(guard.count || 0) + 1;
-    try { sessionStorage.setItem(RECOVERY_KEY, JSON.stringify(guard)); } catch (_) {}
-    return guard.count <= MAX_RECOVERIES_PER_WINDOW;
+  function normalizeRelease(info){
+    var build = Number(info && info.build);
+    if (!Number.isInteger(build) || build <= 0) throw new Error('invalid version.json build');
+    return {
+      build: build,
+      published_at: String((info && info.published_at) || ''),
+      label: String((info && info.label) || ''),
+      release_protocol: Number((info && info.release_protocol) || 0),
+      commit_marker: info && info.commit_marker === true
+    };
   }
 
-  function clearSasaphiaCaches(){
+  function fetchReleaseInfo(reason){
+    if (releaseRequest) return releaseRequest;
+    releaseRequest = fetch(VERSION_URL + '?t=' + Date.now(), {
+      cache:'no-store',
+      headers:{ 'Cache-Control':'no-cache' }
+    }).then(function(res){
+      if (!res.ok) throw new Error('version fetch failed: ' + res.status);
+      return res.json();
+    }).then(function(info){
+      releaseInfo = normalizeRelease(info);
+      window.__ZERAPHIA_RELEASE__ = Object.freeze(Object.assign({}, releaseInfo));
+      try { localStorage.setItem(SERVER_RELEASE_KEY, JSON.stringify(releaseInfo)); } catch (_) {}
+      return releaseInfo;
+    }).catch(function(err){
+      console.warn('[zeraphia] release info unavailable', reason || '', err);
+      return releaseInfo;
+    }).finally(function(){
+      releaseRequest = null;
+    });
+    return releaseRequest;
+  }
+
+  function clearRuntimeCaches(){
     if (!('caches' in window)) return Promise.resolve();
     return caches.keys().then(function(keys){
       return Promise.all(keys
-        .filter(function(key){ return /^sasaphia-assets-/.test(key); })
+        .filter(function(key){
+          return /^sasaphia-assets-/.test(key) || /^zeraphia-runtime-/.test(key);
+        })
         .map(function(key){ return caches.delete(key); }));
     }).catch(function(){});
   }
@@ -90,162 +93,85 @@
     }).catch(function(){});
   }
 
-  function verifyCriticalAssets(build){
-    build = cleanBuild(build);
-    if (!build) return Promise.reject(new Error('invalid build'));
-
-    return Promise.all(CRITICAL_ASSETS.map(function(path){
-      var sep = path.indexOf('?') >= 0 ? '&' : '?';
-      var url = path + sep + 'v=' + encodeURIComponent(build) + '&__verify=' + Date.now().toString(36);
-      return fetch(url, { cache:'no-store', headers:{ 'Cache-Control':'no-cache' } })
-        .then(function(res){
-          if (!res.ok) throw new Error('critical asset unavailable: ' + path + ' (' + res.status + ')');
-          return true;
-        });
-    }));
-  }
-
-  function forceReloadTo(build, reason){
-    build = cleanBuild(build) || FALLBACK_BUILD;
-    reason = String(reason || 'update');
-
-    if (!allowRecovery(build, reason)) {
-      console.warn('[sasaphia] automatic recovery stopped to prevent reload loop', build, reason);
-      return Promise.resolve(false);
-    }
-
+  function reloadFresh(reason){
     var target;
     try {
       target = new URL(location.href);
-      target.searchParams.set('build', build);
-      target.searchParams.set(CHECK_PARAM, Date.now().toString(36));
-      if (reason !== 'version-mismatch') target.searchParams.set(REPAIR_PARAM, reason);
-      else target.searchParams.delete(REPAIR_PARAM);
+      ['build','__sasaphia_update','__sasaphia_repair'].forEach(function(key){ target.searchParams.delete(key); });
+      target.searchParams.set('__release_refresh', Date.now().toString(36));
+      if (reason) target.searchParams.set('__release_reason', String(reason).slice(0,40));
     } catch (_) {
       location.reload();
       return Promise.resolve(true);
     }
 
-    return Promise.allSettled([
-      clearSasaphiaCaches(),
-      updateServiceWorkers()
-    ]).then(function(){
+    return Promise.allSettled([clearRuntimeCaches(), updateServiceWorkers()]).then(function(){
       location.replace(target.toString());
       return true;
     });
   }
 
-  function fetchServerBuild(){
-    return fetch(VERSION_URL + '?t=' + Date.now(), {
-      cache:'no-store',
-      headers:{ 'Cache-Control':'no-cache' }
-    }).then(function(res){
-      if (!res.ok) throw new Error('version fetch failed: ' + res.status);
-      return res.json();
-    }).then(function(info){
-      var latest = cleanBuild(info && info.build);
-      if (!latest) throw new Error('invalid version.json');
-      try {
-        localStorage.setItem('sasaphia_latest_server_build', latest);
-        localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
-      } catch (_) {}
-      return latest;
+  // Compatibility names retained for old callers, but neither function auto-reloads.
+  window.checkSasaphiaLatestBuild = function(reason){
+    return fetchReleaseInfo(reason || 'manual-check');
+  };
+
+  // Explicit user action only (for example "タイトルに戻る").
+  window.forceSasaphiaLatestBuild = function(){
+    return fetchReleaseInfo('manual-refresh').finally(function(){
+      reloadFresh('manual');
     });
-  }
+  };
 
-  function checkLatestBuild(reason, force){
-    var now = Date.now();
-    if (!force) {
-      try {
-        var last = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
-        if (last && now - last < CHECK_INTERVAL_MS) return Promise.resolve(getLatestKnownBuild() || getCurrentBuild());
-      } catch (_) {}
-    }
-    if (checking) return checking;
+  window.getZeraphiaReleaseDiagnostics = function(){
+    var stored = null;
+    try { stored = JSON.parse(localStorage.getItem(SERVER_RELEASE_KEY) || 'null'); } catch (_) {}
+    return {
+      release: releaseInfo || stored,
+      serviceWorkerControlled: !!(navigator.serviceWorker && navigator.serviceWorker.controller),
+      bootComplete: bootComplete,
+      autoReloadWhilePlaying: false
+    };
+  };
 
-    checking = fetchServerBuild().then(function(latest){
-      var current = getCurrentBuild();
-      if (latest === current) return latest;
+  cleanLegacyUpdateState();
+  fetchReleaseInfo('startup');
 
-      return verifyCriticalAssets(latest).then(function(){
-        return forceReloadTo(latest, 'version-mismatch').then(function(){ return latest; });
-      }).catch(function(err){
-        console.warn('[sasaphia] new build detected but deploy is not complete yet', latest, err);
-        return current;
-      });
-    }).catch(function(err){
-      console.warn('[sasaphia] version check skipped', reason || '', err);
-      return getCurrentBuild();
-    }).finally(function(){ checking = null; });
+  window.addEventListener('load', function(){
+    bootComplete = true;
+    try { sessionStorage.removeItem(BOOT_REPAIR_KEY); } catch (_) {}
+  }, { once:true });
 
-    return checking;
-  }
-
-  function repairFailedAsset(rawUrl){
-    var u = sameOriginAssetUrl(rawUrl);
-    if (!u || !/\.(?:js|css)$/i.test(u.pathname)) return;
-
-    var probe = new URL(u.href);
-    probe.searchParams.set('__repair_probe', Date.now().toString(36));
-    fetch(probe.href, { cache:'no-store', headers:{ 'Cache-Control':'no-cache' } })
-      .then(function(res){
-        if (!res.ok) throw new Error('asset still unavailable: ' + res.status);
-        return fetchServerBuild();
-      })
-      .then(function(latest){
-        return forceReloadTo(latest || getCurrentBuild(), 'asset-load-failure');
-      })
-      .catch(function(err){
-        console.warn('[sasaphia] asset repair skipped', u.pathname, err);
-      });
-  }
-
+  // Only a BOOT-TIME script/stylesheet load failure may trigger one self-repair.
+  // Runtime/gameplay errors never cause an automatic reload.
   window.addEventListener('error', function(event){
+    if (bootComplete) return;
     var target = event && event.target;
     if (!target || target === window) return;
     var tag = String(target.tagName || '').toUpperCase();
-    if (tag === 'SCRIPT' && target.src) repairFailedAsset(target.src);
-    if (tag === 'LINK' && target.href && /stylesheet/i.test(String(target.rel || ''))) repairFailedAsset(target.href);
+    var isCriticalAsset = (tag === 'SCRIPT' && target.src) ||
+      (tag === 'LINK' && target.href && /stylesheet/i.test(String(target.rel || '')));
+    if (!isCriticalAsset) return;
+
+    var alreadyRepaired = false;
+    try { alreadyRepaired = sessionStorage.getItem(BOOT_REPAIR_KEY) === '1'; } catch (_) {}
+    if (alreadyRepaired) {
+      console.error('[zeraphia] asset failed after one boot repair; automatic reload stopped');
+      return;
+    }
+    try { sessionStorage.setItem(BOOT_REPAIR_KEY, '1'); } catch (_) {}
+    Promise.allSettled([clearRuntimeCaches(), updateServiceWorkers()]).then(function(){
+      var u = new URL(location.href);
+      u.searchParams.set('__boot_repair', Date.now().toString(36));
+      location.replace(u.toString());
+    });
   }, true);
-
-  window.checkSasaphiaLatestBuild = function(reason){
-    return checkLatestBuild(reason || 'manual', true);
-  };
-
-  window.forceSasaphiaLatestBuild = function(){
-    return fetchServerBuild()
-      .then(function(latest){
-        return verifyCriticalAssets(latest)
-          .then(function(){ return forceReloadTo(latest, 'manual-refresh'); });
-      })
-      .catch(function(){ return forceReloadTo(FALLBACK_BUILD, 'manual-refresh'); });
-  };
-
-  checkLatestBuild('startup', true);
-
-  window.addEventListener('pageshow', function(){ checkLatestBuild('pageshow', false); });
-  document.addEventListener('visibilitychange', function(){
-    if (!document.hidden) checkLatestBuild('resume', false);
-  });
-
-  // build748:
-  // Chromeは開きっぱなしのタブを自動リロードしないため、
-  // アプリ側で30秒ごとにversion.jsonを確認する。
-  setInterval(function(){
-    if (!document.hidden) checkLatestBuild('interval', false);
-  }, CHECK_INTERVAL_MS);
-
-  // ネット復帰時にも即確認。
-  window.addEventListener('online', function(){
-    checkLatestBuild('online', true);
-  });
 })();
 </script>
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="sasaphia-build" content="796">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
@@ -346,9 +272,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=797-noah-refined-puzzle"
+        href="css/style.css?v=802-noah-ticket-flow"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=797-noah-refined-puzzle"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=802-noah-ticket-flow"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -658,39 +584,21 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </style>
 
 
-<script>
+<script id="shooting-score-cache-reset-v1">
 (function(){
-  // build746:
-  // 旧コードが BUILD='591' を固定値で持ち、毎回URLを ?build=591 に
-  // 書き戻していたため、現在のHTMLに埋め込まれたbuild番号を正とする。
-  var buildMeta = document.querySelector('meta[name="sasaphia-build"]');
-  var BUILD = buildMeta ? String(buildMeta.content || '').trim() : '';
-
-  // build555: one-time shooting score reset for score-system retest.
-  // Keeps story clears / first-clear rewards / inventory intact.
-  (function resetShootingScoreCacheOnce(){
-    try {
-      var marker = 'zeraphia_score_reset_20260920_build555_v1';
-      if (window.localStorage.getItem(marker) === '1') return;
+  // One-time shooting score reset retained from the existing game.
+  // Release/build identity is intentionally NOT handled here.
+  try {
+    var marker = 'zeraphia_score_reset_20260920_build555_v1';
+    if (window.localStorage.getItem(marker) !== '1') {
       window.localStorage.removeItem('zeraphia_shooting_high_scores_v1');
       window.localStorage.removeItem('zeraphia_shooting_stage_records_v1');
       window.localStorage.setItem(marker, '1');
       console.info('[shooting] one-time score cache reset applied');
-    } catch (e) {
-      console.warn('[shooting] one-time score cache reset skipped', e);
     }
-  })();
-
-  if (!BUILD) return;
-
-  try {
-    var url = new URL(location.href);
-    if (url.searchParams.get('build') !== BUILD) {
-      url.searchParams.set('build', BUILD);
-      history.replaceState(null, '', url.toString());
-    }
-    localStorage.setItem('sasaphia_build_version', BUILD);
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[shooting] one-time score cache reset skipped', e);
+  }
 })();
 </script>
 
@@ -2594,7 +2502,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
           <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece role="button" tabindex="0" aria-label="SPECIAL STAGE 楽園 -ノア-">
             <div class="ninmu-chapter-label">SPECIAL STAGE</div>
             <div class="ninmu-chapter-title">楽園 -ノア-</div>
-                        <div class="special-ticket-balance">所持枚数 <b id="special-ticket-count">--</b>枚</div>
+                        <div class="special-ticket-balance"><span>SPECIAL TICKET -ノア-</span><b id="special-ticket-count">--</b>枚</div>
           </div>
         </div>
       </div>
@@ -11312,12 +11220,12 @@ function showTenResult(results){
   };
 
   // build686: キャラ一覧をMAINショットタイプでも絞り込めるようにする。
-  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','bomb','spread','laser','piercing','orbit','charge','lightning','strike'];
+  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','spread','laser','piercing','orbit','charge','lightning','strike'];
   var ZUKAN_SHOT_TYPE_LABELS = {
     all: 'すべて',
     parallel: 'PARALLEL',
     homing: 'HOMING',
-    bomb: 'BOMB',
+    cluster: 'CLUSTER',
     spread: 'SPREAD',
     laser: 'LASER',
     piercing: 'PIERCING',
@@ -11343,7 +11251,8 @@ function showTenResult(results){
       charge_release: 'charge',
       precision: 'piercing',
       shotgun: 'piercing',
-      splash: 'bomb',
+      bomb: 'cluster',
+      splash: 'cluster',
       melee_slash: 'strike',
       wolf_j_homing: 'homing',
       rose_seed_splash: 'spread',
@@ -12979,13 +12888,21 @@ function getShootingShotTypeLabel(type, c, slot){
     var laserSize = String(shot.size || (c && c.laserSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
     return 'Laser ' + laserSize;
   }
-  if(normalized === 'bomb'){
-    var rawBombCount = Math.floor(Number(shot.count || (c && c.bombSplitCount) || 0));
-    var legacyBombSize = String(shot.size || (c && c.bombSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
-    var bombCount = (rawBombCount === 4 || rawBombCount === 6 || rawBombCount === 8)
-      ? rawBombCount
-      : (legacyBombSize === 'L' ? 8 : 4);
-    return 'Bomb ' + bombCount;
+  if(normalized === 'cluster' || normalized === 'bomb'){
+    var rawClusterCount = Math.floor(Number(
+      shot.count ||
+      (c && (c.clusterSplitCount || c.bombSplitCount)) ||
+      0
+    ));
+    var legacyClusterSize = String(
+      shot.size ||
+      (c && (c.clusterSize || c.bombSize)) ||
+      'M'
+    ).toUpperCase() === 'L' ? 'L' : 'M';
+    var clusterCount = (rawClusterCount === 4 || rawClusterCount === 6 || rawClusterCount === 8)
+      ? rawClusterCount
+      : (legacyClusterSize === 'L' ? 8 : 4);
+    return 'CLUSTER ' + clusterCount;
   }
   var labels = {
     orbit: 'Orbit',
@@ -15607,7 +15524,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=779-bomb-rarity-4-6"></script>
+<script src="js/shooting_characters.js?v=807-nina-wild-contact"></script>
 <script src="js/stage_select.js?v=789-stage-select-story-canonical"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -15692,34 +15609,20 @@ window.returnToTitleScreen = function(){
 <script src="js/raid_event.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/item_management.js?v=693-score-ranking-nav-v2"></script>
 
-<script id="sasaphia-update-worker-register-v109">
+<script id="zeraphia-service-worker-register-v1">
 (function(){
   if (!('serviceWorker' in navigator)) return;
 
-  function appBuild(){
-    var meta = document.querySelector('meta[name="sasaphia-build"]');
-    return meta ? String(meta.content || '').trim() : '574';
-  }
-
   window.addEventListener('load', function(){
-    var build = appBuild();
-    navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(build), {
+    // No per-build query string. updateViaCache:none asks the browser to compare sw.js itself.
+    // A newly activated worker never reloads the running game session.
+    navigator.serviceWorker.register('./sw.js', {
       updateViaCache:'none',
       scope:'./'
     }).then(function(reg){
       try { reg.update(); } catch (_) {}
-
-      reg.addEventListener('updatefound', function(){
-        var worker = reg.installing;
-        if (!worker) return;
-        worker.addEventListener('statechange', function(){
-          if (worker.state === 'activated' && typeof window.checkSasaphiaLatestBuild === 'function') {
-            window.checkSasaphiaLatestBuild('sw-activated');
-          }
-        });
-      });
     }).catch(function(err){
-      console.warn('[sasaphia] service worker registration failed', err);
+      console.warn('[zeraphia] service worker registration failed', err);
     });
   }, { once:true });
 })();
@@ -15857,7 +15760,7 @@ window.returnToTitleScreen = function(){
           '<div class="noah-piece-note">ステージクリアごとに、ノアの欠片を1つ獲得できます。</div>' +
           '<div class="noah-piece-actions">' +
             '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">ノアに挑戦する</button>' +
-            '<div class="noah-piece-ticket-status">所持チケット <b id="noah-piece-ticket-status-count">0</b>枚</div>' +
+            '<div class="noah-piece-ticket-status"><span class="noah-piece-ticket-name">SPECIAL TICKET -ノア-</span><span class="noah-piece-ticket-owned">所持 <b id="noah-piece-ticket-status-count">0</b>枚</span></div>' +
             '<div class="noah-piece-complete" id="noah-piece-complete">ノアの欠片がすべて揃いました。</div>' +
           '</div>' +
         '</div>' +
@@ -15883,8 +15786,10 @@ window.returnToTitleScreen = function(){
 
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
-      button.disabled = ticket < 1 || count >= MAX_PIECES;
-      button.textContent = count >= MAX_PIECES ? 'ノア解放済み' : 'ノアに挑戦する';
+      button.disabled = false;
+      button.removeAttribute('disabled');
+      button.textContent = 'ノアに挑戦する';
+      button.setAttribute('aria-disabled','false');
     }
 
     const ticketStatus = document.getElementById('noah-piece-ticket-status-count');
@@ -15918,23 +15823,83 @@ window.returnToTitleScreen = function(){
     overlay.setAttribute('aria-hidden','true');
   }
 
-  function challengeNoahSpecialStage(){
-    const ticket = getSpecialTicketCount();
-    if (ticket < 1) {
-      if (typeof window.showToast === 'function') window.showToast('チケットを所持していません');
-      else alert('チケットを所持していません');
-      return;
-    }
+  function ensureNoahTicketDialog(){
+    let dialog = document.getElementById('noah-ticket-dialog');
+    if (dialog) return dialog;
 
+    dialog = document.createElement('div');
+    dialog.id = 'noah-ticket-dialog';
+    dialog.className = 'noah-ticket-dialog';
+    dialog.setAttribute('aria-hidden','true');
+    dialog.innerHTML =
+      '<div class="noah-ticket-dialog-veil" onclick="closeNoahTicketDialog()"></div>' +
+      '<section class="noah-ticket-dialog-card" role="dialog" aria-modal="true" aria-labelledby="noah-ticket-dialog-title">' +
+        '<div class="noah-ticket-dialog-kicker">SPECIAL STAGE</div>' +
+        '<div class="noah-ticket-dialog-title" id="noah-ticket-dialog-title">SPECIAL TICKET -ノア-</div>' +
+        '<p class="noah-ticket-dialog-message" id="noah-ticket-dialog-message"></p>' +
+        '<div class="noah-ticket-dialog-actions">' +
+          '<button type="button" class="noah-ticket-dialog-yes" id="noah-ticket-dialog-yes" onclick="confirmNoahSpecialStage()">はい</button>' +
+          '<button type="button" class="noah-ticket-dialog-no" id="noah-ticket-dialog-no" onclick="closeNoahTicketDialog()">いいえ</button>' +
+        '</div>' +
+      '</section>';
+    document.body.appendChild(dialog);
+    return dialog;
+  }
+
+  function closeNoahTicketDialog(){
+    const dialog = document.getElementById('noah-ticket-dialog');
+    if (!dialog) return;
+    dialog.classList.remove('show');
+    dialog.setAttribute('aria-hidden','true');
+  }
+
+  function showNoahTicketDialog(mode){
+    const dialog = ensureNoahTicketDialog();
+    const message = dialog.querySelector('#noah-ticket-dialog-message');
+    const yes = dialog.querySelector('#noah-ticket-dialog-yes');
+    const no = dialog.querySelector('#noah-ticket-dialog-no');
+    const hasTicket = mode === 'confirm';
+
+    if (message) {
+      message.textContent = hasTicket
+        ? 'SPECIAL TICKET -ノア- を1枚消費します'
+        : 'SPECIAL TICKET -ノア- が必要です。';
+    }
+    if (yes) yes.style.display = hasTicket ? '' : 'none';
+    if (no) no.textContent = hasTicket ? 'いいえ' : '閉じる';
+
+    dialog.classList.add('show');
+    dialog.setAttribute('aria-hidden','false');
+  }
+
+  function beginNoahSpecialStage(){
+    closeNoahTicketDialog();
     closeNoahPiecePanel();
 
-    // 現在のノア戦は既存シューティングステージへ接続する。
-    // チケット消費はシューティング側の「戦闘開始」処理で行う設計。
+    // チケット消費そのものは既存の戦闘開始処理に委ねる。
     if (typeof window.openShootingEvent === 'function') {
       window.openShootingEvent({ stageId: STAGE_ID });
     } else {
       console.error('[NoahPiece] openShootingEvent is not available');
     }
+  }
+
+  function confirmNoahSpecialStage(){
+    const ticket = getSpecialTicketCount();
+    if (ticket < 1) {
+      showNoahTicketDialog('required');
+      return;
+    }
+    beginNoahSpecialStage();
+  }
+
+  function challengeNoahSpecialStage(){
+    const ticket = getSpecialTicketCount();
+    if (ticket < 1) {
+      showNoahTicketDialog('required');
+      return;
+    }
+    showNoahTicketDialog('confirm');
   }
 
   // クリア報酬接続用API。今回はプレイアブル化までは行わない。
@@ -15950,6 +15915,8 @@ window.returnToTitleScreen = function(){
   window.openNoahPiecePanel = openNoahPiecePanel;
   window.closeNoahPiecePanel = closeNoahPiecePanel;
   window.challengeNoahSpecialStage = challengeNoahSpecialStage;
+  window.closeNoahTicketDialog = closeNoahTicketDialog;
+  window.confirmNoahSpecialStage = confirmNoahSpecialStage;
 
   function ensureNoahCompletePopup(){
     var existing = document.getElementById('noah-complete-popup');
@@ -16114,7 +16081,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=797-noah-refined-puzzle"></script>
+<script src="js/noah_piece.js?v=802-noah-ticket-flow"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){

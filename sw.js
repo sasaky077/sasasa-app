@@ -1,6 +1,7 @@
-/* Zeraphia self-healing update worker - build797 */
-const SW_BUILD = '797';
-const ASSET_CACHE = `sasaphia-assets-${SW_BUILD}`;
+/* Zeraphia runtime service worker - release safety v1
+   Runtime release/build number lives only in version.json.
+   This worker never forces a page reload. */
+const RUNTIME_CACHE = 'zeraphia-runtime-v1';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -11,7 +12,10 @@ self.addEventListener('activate', event => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter(key => key.startsWith('sasaphia-assets-') && key !== ASSET_CACHE)
+        .filter(key =>
+          key.startsWith('sasaphia-assets-') ||
+          (key.startsWith('zeraphia-runtime-') && key !== RUNTIME_CACHE)
+        )
         .map(key => caches.delete(key))
     );
     await self.clients.claim();
@@ -27,12 +31,12 @@ self.addEventListener('message', event => {
   if (data.type === 'CLEAR_RUNTIME_CACHES') {
     event.waitUntil((async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k.startsWith('sasaphia-assets-')).map(k => caches.delete(k)));
+      await Promise.all(
+        keys
+          .filter(key => key.startsWith('sasaphia-assets-') || key.startsWith('zeraphia-runtime-'))
+          .map(key => caches.delete(key))
+      );
     })());
-    return;
-  }
-  if (data.type === 'GET_BUILD' && event.source && event.source.postMessage) {
-    event.source.postMessage({ type:'SASAPHIA_SW_BUILD', build:SW_BUILD });
   }
 });
 
@@ -47,42 +51,27 @@ self.addEventListener('fetch', event => {
   const isNavigate = req.mode === 'navigate';
   const isHtml = /\.(?:html?)$/i.test(url.pathname);
   const isJson = /\.json$/i.test(url.pathname);
-  const isVersionedAsset = /\.(?:js|css)$/i.test(url.pathname);
+  const isCode = /\.(?:js|css)$/i.test(url.pathname);
 
+  // HTML and release metadata must never be served from an old runtime cache.
   if (isNavigate || isHtml || isJson) {
-    event.respondWith((async () => {
-      try {
-        return await fetch(req, { cache:'no-store' });
-      } catch (err) {
-        try { return await fetch(req); } catch (_) { throw err; }
-      }
-    })());
+    event.respondWith(fetch(req, { cache:'no-store' }));
     return;
   }
 
-  if (isVersionedAsset) {
-    const rawVersion = String(url.searchParams.get('v') || '');
-    const requestedBuild = rawVersion.split('-')[0];
-
-    if (requestedBuild && requestedBuild !== SW_BUILD) {
-      event.respondWith(fetch(req, { cache:'no-store' }));
-      return;
-    }
-
+  // JS/CSS are NETWORK FIRST on every page load.
+  // Even if an old ?v= query remains in HTML, online users receive current bytes.
+  // Cache is fallback-only for a transient offline/network failure.
+  if (isCode) {
     event.respondWith((async () => {
-      const cache = await caches.open(ASSET_CACHE);
-      const cached = await cache.match(req);
-      if (cached) return cached;
-
+      const cache = await caches.open(RUNTIME_CACHE);
       try {
-        const res = await fetch(req, { cache:'no-cache' });
-        if (res && res.ok) {
-          await cache.put(req, res.clone());
-        }
+        const res = await fetch(req, { cache:'no-store' });
+        if (res && res.ok) await cache.put(req, res.clone());
         return res;
       } catch (err) {
-        const fallback = await cache.match(req, { ignoreVary:true });
-        if (fallback) return fallback;
+        const cached = await cache.match(req, { ignoreVary:true });
+        if (cached) return cached;
         throw err;
       }
     })());

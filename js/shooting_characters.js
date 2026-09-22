@@ -1743,8 +1743,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.REISIA, effectKey: 'reisia',
-    label: 'BOMB 4 / AQUA',
-    description: '水属性の爆弾を前方へ投げ、着弾時にX字4方向へAQUA属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは巨大なAQUA爆弾を敵陣へ投げ込み、着弾時に盤面を覆う大爆発を起こす。',
+    label: 'CLUSTER 4 / AQUA',
+    description: '水属性の弾を前方へ射出し、着弾時にX字4方向へAQUA属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは巨大なAQUA爆弾を敵陣へ投げ込み、着弾時に盤面を覆う大爆発を起こす。',
     ultName: 'MEGA AQUA BOMB',
     ultDescription: '巨大なAQUA爆弾を敵陣へ放り投げる。着弾時に盤面上の敵弾を消去し、敵全体へATK×4.0のAQUA属性ダメージを与える。',
     shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27,
@@ -1756,7 +1756,7 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
-    label: 'BOMB 4 / LIGHT', description: '着弾時にX字4方向へLIGHT属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    label: 'CLUSTER 4 / LIGHT', description: '着弾時にX字4方向へLIGHT属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
@@ -1809,14 +1809,14 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RAGNA, effectKey: 'ragna',
-    label: 'BOMB 4 / FIRE', description: '着弾時にX字4方向へFIRE属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    label: 'CLUSTER 4 / FIRE', description: '着弾時にX字4方向へFIRE属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'BOMB 4 / WOOD', description: '着弾時にX字4方向へWOOD属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    label: 'CLUSTER 4 / WOOD', description: '着弾時にX字4方向へWOOD属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
     shotType: 'bomb', bombSize: 'M', bombSplitCount: 4, bombFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
@@ -2008,18 +2008,20 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.NINA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NINA, effectKey: 'nina',
     label: 'LIGHTNING / CHAIN',
-    description: '電撃弾を放つSRチェイン型。命中した敵から周囲の敵へ感電が連鎖。ULTは画面上半分の敵側フィールドを8分割し、8秒間に16回ランダムエリアへ落雷する。',
+    description: '弾を撃たず、220px圏内を暴れる電撃が接触した敵・オブジェクトへ絡みつくSRチェイン型。接続は250pxまで維持。最大4体へ伝播し、威力は100%→50%→25%→12.5%。',
     ultName: 'LIGHTNING STORM',
     ultDescription: '画面上半分の敵側フィールドを4列×2段の8エリアに分割。8秒間に16回、ランダムな1エリアへ落雷し、その瞬間エリア内にいる敵全員へATK×4.0のLIGHT属性ダメージ。命中した敵は3秒間、移動と射撃が停止する。',
     shotType: 'lightning',
     shotCount: 1,
     fireRate: 300,
-    bulletSpeed: 900,
     shotPowerRate: 0.28,
-    lightningChainRadius: 120,
-    lightningMaxJumps: 3,
-    lightningChainDamageRate: 0.62,
-    lightningChainDecay: 0.82,
+    lightningMaxTargets: 4,
+    lightningTickCount: 4,
+    lightningTickMs: 70,
+    lightningChainDecay: 0.5,
+    lightningAcquireRange: 220,
+    lightningReleaseRange: 250,
+    lightningChainRange: 160,
     ultBaseType: 'storm',
     ultAddons: ['damage','enemy_paralyze'],
     ultType: 'nina_lightning_storm',
@@ -2035,8 +2037,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.TOYFEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.TOYFEL, effectKey: 'toyfel',
-    label: 'BOMB 4 / DARK',
-    description: '闇属性の爆弾を前方へ投げ、着弾時にX字4方向へDARK属性の分裂弾を放つBOMB 4型。分裂弾1発は元弾の50%ダメージ。ULTは発動地点の左右端へ2つのブラックホールを7秒間展開し、敵弾を吸収する。',
+    label: 'CLUSTER 4 / DARK',
+    description: '闇属性の弾を前方へ射出し、着弾時にX字4方向へDARK属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは発動地点の左右端へ2つのブラックホールを7秒間展開し、敵弾を吸収する。',
     ultName: 'DUAL BLACK HOLE',
     ultDescription: '発動時の自機Y座標に合わせて、画面左端・右端へブラックホールを1つずつ召喚。7秒間、盤面上の敵弾を左右どちらかのブラックホールへ吸引して消滅させる。',
     shotType: 'bomb',

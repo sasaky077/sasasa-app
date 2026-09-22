@@ -85,6 +85,63 @@
         stroke:rgba(159,200,255,.78);
         stroke-width:1.2;
       }
+      /* build806: ニーナ通常攻撃は弾ではなく、対象へ直接つながる継続電撃。 */
+      .shooting-nina-electric-network{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        overflow:visible;
+        z-index:49;
+        pointer-events:none;
+        opacity:1;
+        mix-blend-mode:screen;
+        filter:drop-shadow(0 0 3px rgba(var(--nina-electric-rgb,231,200,90),.46));
+        animation:ninaElectricNetworkFlicker 112ms steps(4,end) forwards;
+      }
+      .shooting-nina-electric-glow{
+        fill:none;
+        stroke:rgba(var(--nina-electric-rgb,231,200,90),.54);
+        stroke-width:7;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+        filter:blur(2.2px);
+      }
+      .shooting-nina-electric-color{
+        fill:none;
+        stroke:rgba(var(--nina-electric-rgb,231,200,90),.96);
+        stroke-width:2.8;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+      }
+      .shooting-nina-electric-core{
+        fill:none;
+        stroke:rgba(255,255,247,.98);
+        stroke-width:1.15;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+      }
+      .shooting-nina-electric-branch{
+        fill:none;
+        stroke:rgba(var(--nina-electric-rgb,231,200,90),.84);
+        stroke-width:1.25;
+        stroke-linecap:round;
+      }
+      .shooting-nina-electric-hit{
+        fill:rgba(255,255,247,.96);
+        stroke:rgba(var(--nina-electric-rgb,231,200,90),.96);
+        stroke-width:2;
+        filter:drop-shadow(0 0 5px rgba(var(--nina-electric-rgb,231,200,90),.74));
+      }
+      @keyframes ninaElectricNetworkFlicker{
+        0%{opacity:.28}
+        18%{opacity:1}
+        34%{opacity:.48}
+        50%{opacity:.96}
+        68%{opacity:.38}
+        82%{opacity:.9}
+        100%{opacity:0}
+      }
       .shooting-nina-ult-zone-warning{
         position:absolute;
         z-index:45;
@@ -129,6 +186,160 @@
         0%{opacity:0;transform:scale(.985)}
         38%{opacity:.72;transform:scale(1)}
         100%{opacity:.34;transform:scale(1)}
+      }
+
+      /* build810: ニーナULT VFX刷新。細い稲光が上から下へ走り、着弾リングは使わない。 */
+      .shooting-nina-ult-lightning{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        z-index:51;
+        overflow:visible;
+        pointer-events:none;
+        mix-blend-mode:screen;
+      }
+      .shooting-nina-ult-lightning path{
+        fill:none;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+        vector-effect:non-scaling-stroke;
+      }
+      .shooting-nina-ult-bolt-glow{
+        stroke:rgba(var(--nina-ult-rgb,231,200,90),.52);
+        stroke-width:7;
+        filter:blur(2.2px);
+        opacity:.82;
+        stroke-dasharray:100;
+        stroke-dashoffset:100;
+        animation:ninaUltBoltDraw 230ms cubic-bezier(.16,.82,.24,1) forwards;
+      }
+      .shooting-nina-ult-bolt-color{
+        stroke:rgba(var(--nina-ult-rgb,231,200,90),.98);
+        stroke-width:2.7;
+        stroke-dasharray:100;
+        stroke-dashoffset:100;
+        animation:ninaUltBoltDraw 220ms cubic-bezier(.16,.82,.24,1) forwards;
+      }
+      .shooting-nina-ult-bolt-core{
+        stroke:rgba(255,255,249,.99);
+        stroke-width:1.15;
+        stroke-dasharray:16 84;
+        stroke-dashoffset:100;
+        filter:drop-shadow(0 0 3px rgba(255,255,255,.92));
+        animation:ninaUltBoltRunner 220ms cubic-bezier(.14,.78,.18,1) forwards;
+      }
+      .shooting-nina-ult-bolt-branch{
+        stroke:rgba(var(--nina-ult-rgb,231,200,90),.82);
+        stroke-width:1.25;
+        stroke-dasharray:100;
+        stroke-dashoffset:100;
+        opacity:.82;
+        animation:ninaUltBoltDraw 180ms cubic-bezier(.2,.8,.2,1) 36ms forwards;
+      }
+      @keyframes ninaUltBoltDraw{
+        0%{stroke-dashoffset:100;opacity:.08}
+        12%{opacity:1}
+        72%{stroke-dashoffset:0;opacity:1}
+        100%{stroke-dashoffset:0;opacity:0}
+      }
+      @keyframes ninaUltBoltRunner{
+        0%{stroke-dashoffset:100;opacity:0}
+        8%{opacity:1}
+        78%{stroke-dashoffset:0;opacity:1}
+        100%{stroke-dashoffset:-14;opacity:0}
+      }
+
+      /* 着弾は控えめな塵だけ。円・リング・爆発は出さない。 */
+      .shooting-nina-ult-dust{
+        position:absolute;
+        left:0;top:0;
+        width:1px;height:1px;
+        z-index:50;
+        pointer-events:none;
+      }
+      .shooting-nina-ult-dust i{
+        position:absolute;
+        left:0;top:0;
+        width:var(--dust-size,4px);
+        height:3px;
+        border-radius:46% 54% 52% 48%;
+        background:rgba(199,195,184,.56);
+        box-shadow:0 0 3px rgba(228,224,214,.28);
+        transform:translate(-50%,-50%);
+        opacity:0;
+        animation:ninaUltDust 360ms ease-out var(--dust-delay,0ms) forwards;
+      }
+      @keyframes ninaUltDust{
+        0%{opacity:0;transform:translate(-50%,-50%) translate(0,0) scale(.65)}
+        18%{opacity:.68}
+        100%{opacity:0;transform:translate(-50%,-50%) translate(var(--dust-x,0px),var(--dust-y,-12px)) scale(1.22)}
+      }
+
+      /* 麻痺中は対象の周囲だけに細い電流を走らせる。 */
+      .shooting-nina-paralyze-vfx{
+        position:absolute;
+        inset:-9px;
+        z-index:72;
+        pointer-events:none;
+        overflow:visible;
+        mix-blend-mode:screen;
+        filter:drop-shadow(0 0 4px rgba(var(--nina-paralyze-rgb,231,200,90),.58));
+        animation:ninaParalyzeJitter 118ms steps(3,end) infinite;
+      }
+      .shooting-nina-paralyze-vfx svg{
+        display:block;
+        width:100%;
+        height:100%;
+        overflow:visible;
+      }
+      .shooting-nina-paralyze-vfx path{
+        fill:none;
+        stroke:rgba(var(--nina-paralyze-rgb,231,200,90),.92);
+        stroke-width:1.45;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+        vector-effect:non-scaling-stroke;
+        stroke-dasharray:10 7 3 6;
+        animation:ninaParalyzeCurrent 190ms linear infinite;
+      }
+      .shooting-nina-paralyze-vfx path:nth-child(2){
+        opacity:.72;
+        animation-duration:143ms;
+        animation-direction:reverse;
+      }
+      .shooting-nina-paralyze-vfx path:nth-child(3){
+        opacity:.56;
+        animation-duration:227ms;
+      }
+      .shooting-nina-paralyze-vfx::after{
+        content:"";
+        position:absolute;
+        left:50%;top:50%;
+        width:5px;height:5px;
+        border-radius:50%;
+        background:rgba(255,255,249,.94);
+        box-shadow:
+          -19px -8px 0 -1px rgba(var(--nina-paralyze-rgb,231,200,90),.88),
+          18px -15px 0 -1px rgba(var(--nina-paralyze-rgb,231,200,90),.72),
+          22px 11px 0 -1px rgba(var(--nina-paralyze-rgb,231,200,90),.82),
+          -15px 17px 0 -1px rgba(var(--nina-paralyze-rgb,231,200,90),.68);
+        animation:ninaParalyzeSpark 210ms steps(2,end) infinite alternate;
+      }
+      @keyframes ninaParalyzeCurrent{
+        from{stroke-dashoffset:23;opacity:.44}
+        45%{opacity:1}
+        to{stroke-dashoffset:-23;opacity:.58}
+      }
+      @keyframes ninaParalyzeJitter{
+        0%{transform:translate(0,0) rotate(0deg)}
+        33%{transform:translate(-1px,1px) rotate(-.7deg)}
+        66%{transform:translate(1px,-1px) rotate(.6deg)}
+        100%{transform:translate(0,0) rotate(0deg)}
+      }
+      @keyframes ninaParalyzeSpark{
+        0%{opacity:.3;transform:translate(-50%,-50%) scale(.7)}
+        100%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}
       }
     `;
     document.head.appendChild(lightningStyle);
@@ -2294,6 +2505,7 @@
        shotType === 'precision' ||
        shotType === 'strike' ||
        shotType === 'charge' ||
+       shotType === 'cluster' ||
        shotType === 'bomb');
 
     if (singleShotType && fireRate >= 350) {
@@ -3011,7 +3223,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-ult-zone-warning,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -4403,6 +4615,440 @@
     return appliedCount;
   }
 
+  // ============================================================
+  // build807: ニーナ通常攻撃 / WILD CONTACT CHAIN LIGHTNING
+  // ・弾を生成しない
+  // ・220px圏内を先端が不規則に暴れ、接触した敵/OBJECTへロック
+  // ・接続後は250pxまで維持し、超えると切断
+  // ・そこから近い順に最大4体へ伝播
+  // ・ダメージ比率 100% -> 50% -> 25% -> 12.5%
+  // ・1射を複数tickへ分け、短いSVGを連続再描画してジリジリ感を出す
+  // ============================================================
+  function getNinaConductiveTargets() {
+    if (!state) return [];
+    const targets = [];
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      targets.push({ kind:'enemy', ref:enemy, x:Number(enemy.x || 0), y:Number(enemy.y || 0) });
+    });
+
+    // SPECIAL EVENT等の破壊可能OBJECTも通常敵と同じ導電対象に含める。
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj || !obj.el || obj.hp <= 0) return;
+      targets.push({ kind:'object', ref:obj, x:Number(obj.x || 0), y:Number(obj.y || 0) });
+    });
+
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      targets.push({
+        kind:'boss',
+        ref:state.boss,
+        x:Number(state.boss.x || 0),
+        y:Number(state.boss.y || 0)
+      });
+    }
+
+    return targets;
+  }
+
+  function getNinaTargetSnapshot(target) {
+    if (!target || !target.ref) return null;
+    const fresh = getNinaConductiveTargets();
+    return fresh.find(item => item && item.kind === target.kind && item.ref === target.ref) || null;
+  }
+
+  function getNinaDistanceFromPlayer(target) {
+    if (!state?.player || !target) return Infinity;
+    const fromX = Number(state.player.x || 0);
+    const fromY = Number(state.player.y || 0) - 22;
+    return Math.hypot(Number(target.x || 0) - fromX, Number(target.y || 0) - fromY);
+  }
+
+  function pickNinaAcquireTarget(acquireRange) {
+    const range = Math.max(24, Number(acquireRange || 220));
+    const candidates = getNinaConductiveTargets()
+      .map(target => ({ target, distance:getNinaDistanceFromPlayer(target) }))
+      .filter(entry => entry.distance <= range);
+    if (!candidates.length) return null;
+
+    // 最寄り寄りだが完全固定にはしない。電撃の先端が220px圏内を暴れ、
+    // 近くにいる対象へ偶発的に触れる感触を残すため、距離へ小さな乱数を掛ける。
+    candidates.forEach(entry => {
+      entry.score = entry.distance * (.82 + Math.random() * .36);
+    });
+    candidates.sort((a,b) => a.score - b.score);
+    return candidates[0].target;
+  }
+
+  function buildNinaConductiveChain(maxTargets, primaryTarget, chainRange) {
+    const primary = getNinaTargetSnapshot(primaryTarget);
+    if (!primary) return [];
+
+    const pool = getNinaConductiveTargets().filter(item => item && item.ref !== primary.ref);
+    const chain = [primary];
+    const limit = Math.max(1, Math.min(4, Math.floor(Number(maxTargets || 4))));
+    const maxLinkDistance = Math.max(24, Number(chainRange || 160));
+    let fromX = Number(primary.x || 0);
+    let fromY = Number(primary.y || 0);
+
+    while (pool.length && chain.length < limit) {
+      let bestIndex = -1;
+      let bestDistance = Infinity;
+      for (let i = 0; i < pool.length; i++) {
+        const target = pool[i];
+        const distance = Math.hypot(Number(target.x || 0) - fromX, Number(target.y || 0) - fromY);
+        if (distance <= maxLinkDistance && distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = i;
+        }
+      }
+      if (bestIndex < 0) break;
+      const next = pool.splice(bestIndex, 1)[0];
+      chain.push(next);
+      fromX = Number(next.x || 0);
+      fromY = Number(next.y || 0);
+    }
+    return chain;
+  }
+
+  function buildNinaElectricPath(x1, y1, x2, y2, pulseIndex, linkIndex, jitterScale) {
+    const dx = Number(x2 || 0) - Number(x1 || 0);
+    const dy = Number(y2 || 0) - Number(y1 || 0);
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const segments = Math.max(7, Math.min(12, Math.round(len / 34)));
+    const points = [];
+    const seed = (Number(pulseIndex || 0) + 1) * 1.91 + (Number(linkIndex || 0) + 1) * 2.73;
+    const jitter = Math.max(3.5, Math.min(11, Number(jitterScale || 1) * (4.2 + len * .012)));
+
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      let px = Number(x1 || 0) + dx * t;
+      let py = Number(y1 || 0) + dy * t;
+      if (i > 0 && i < segments) {
+        // 毎tick形を変える2周波の折れ。滑らかな波ではなく電気的なギザつきを優先。
+        const sign = ((i + pulseIndex + linkIndex) % 2 === 0) ? 1 : -1;
+        const wave =
+          sign * jitter * (.48 + Math.random() * .72) +
+          Math.sin((i + seed) * 2.41) * jitter * .34;
+        px += nx * wave;
+        py += ny * wave;
+      }
+      points.push([px, py]);
+    }
+
+    return {
+      d: points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' '),
+      points
+    };
+  }
+
+  function createNinaElectricNetworkEffect(chain, element, pulseIndex) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !Array.isArray(chain) || !chain.length || !state?.player) return;
+
+    const width = Math.max(1, Number(arena.clientWidth || 0));
+    const height = Math.max(1, Number(arena.clientHeight || 0));
+    const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('class', 'shooting-nina-electric-network');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.setProperty('--nina-electric-rgb', visual.rgb);
+    svg.style.setProperty('--nina-electric-color', visual.color);
+
+    let fromX = Number(state.player.x || 0);
+    let fromY = Number(state.player.y || 0) - 22;
+
+    chain.forEach((target, linkIndex) => {
+      const toX = Number(target.x || 0);
+      const toY = Number(target.y || 0);
+      const built = buildNinaElectricPath(fromX, fromY, toX, toY, pulseIndex, linkIndex, 1);
+
+      const glow = document.createElementNS(svgNs, 'path');
+      glow.setAttribute('class', 'shooting-nina-electric-glow');
+      glow.setAttribute('d', built.d);
+      svg.appendChild(glow);
+
+      const color = document.createElementNS(svgNs, 'path');
+      color.setAttribute('class', 'shooting-nina-electric-color');
+      color.setAttribute('d', built.d);
+      svg.appendChild(color);
+
+      const core = document.createElementNS(svgNs, 'path');
+      core.setAttribute('class', 'shooting-nina-electric-core');
+      core.setAttribute('d', built.d);
+      svg.appendChild(core);
+
+      // 主幹から短い枝を1本だけ出し、毎tick方向を変えて「ジリジリ」感を出す。
+      if (built.points.length >= 5) {
+        const mid = built.points[Math.max(2, Math.min(built.points.length - 3, Math.floor(built.points.length * .56)))];
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        const nx = -dy / len;
+        const ny = dx / len;
+        const branchSign = ((pulseIndex + linkIndex) % 2 === 0) ? 1 : -1;
+        const branchLen = 9 + Math.random() * 11;
+        const branch = document.createElementNS(svgNs, 'path');
+        branch.setAttribute('class', 'shooting-nina-electric-branch');
+        branch.setAttribute('d', `M ${mid[0].toFixed(1)} ${mid[1].toFixed(1)} L ${(mid[0] + nx * branchLen * branchSign).toFixed(1)} ${(mid[1] + ny * branchLen * branchSign).toFixed(1)}`);
+        svg.appendChild(branch);
+      }
+
+      const hit = document.createElementNS(svgNs, 'circle');
+      hit.setAttribute('class', 'shooting-nina-electric-hit');
+      hit.setAttribute('cx', String(toX));
+      hit.setAttribute('cy', String(toY));
+      hit.setAttribute('r', String(Math.max(3.2, 6.2 - linkIndex * .7)));
+      svg.appendChild(hit);
+
+      fromX = toX;
+      fromY = toY;
+    });
+
+    arena.appendChild(svg);
+    setTimeout(() => { if (svg && svg.isConnected) svg.remove(); }, 118);
+  }
+
+  function createNinaElectricSeekEffect(element, pulseIndex, acquireRange, pendingTarget) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state?.player) return;
+
+    const width = Math.max(1, Number(arena.clientWidth || 0));
+    const height = Math.max(1, Number(arena.clientHeight || 0));
+    const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('class', 'shooting-nina-electric-network');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.setProperty('--nina-electric-rgb', visual.rgb);
+    svg.style.setProperty('--nina-electric-color', visual.color);
+    svg.style.opacity = '.82';
+
+    const fromX = Number(state.player.x || 0);
+    const fromY = Number(state.player.y || 0) - 22;
+    const range = Math.max(24, Number(acquireRange || 220));
+    const phase = Number(state.ninaLightningSeekPhase || 0) + 1;
+    state.ninaLightningSeekPhase = phase;
+
+    let toX;
+    let toY;
+    const target = getNinaTargetSnapshot(pendingTarget);
+    if (target && getNinaDistanceFromPlayer(target) <= range) {
+      // 接触直前は対象の周囲を不規則に舐める。次のpulseで対象へ噛みつく。
+      const angle = phase * 2.17 + Math.random() * 2.6;
+      const miss = 18 + Math.random() * 28;
+      toX = Number(target.x || 0) + Math.cos(angle) * miss;
+      toY = Number(target.y || 0) + Math.sin(angle) * miss;
+    } else {
+      // 射程内に対象がいない時も、220px圏内を探る短い放電だけは見せる。
+      const angle = phase * 1.73 + Math.random() * 2.8;
+      const radius = range * (.52 + Math.random() * .46);
+      toX = fromX + Math.cos(angle) * radius;
+      toY = fromY + Math.sin(angle) * radius;
+    }
+
+    const built = buildNinaElectricPath(fromX, fromY, toX, toY, pulseIndex, -1, 1.25);
+    ['shooting-nina-electric-glow','shooting-nina-electric-color','shooting-nina-electric-core'].forEach(cls => {
+      const path = document.createElementNS(svgNs, 'path');
+      path.setAttribute('class', cls);
+      path.setAttribute('d', built.d);
+      svg.appendChild(path);
+    });
+
+    if (built.points.length >= 4) {
+      const mid = built.points[Math.floor(built.points.length * .62)];
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const len = Math.max(1, Math.hypot(dx, dy));
+      const nx = -dy / len;
+      const ny = dx / len;
+      const branchSign = phase % 2 ? 1 : -1;
+      const branchLen = 12 + Math.random() * 14;
+      const branch = document.createElementNS(svgNs, 'path');
+      branch.setAttribute('class', 'shooting-nina-electric-branch');
+      branch.setAttribute('d', `M ${mid[0].toFixed(1)} ${mid[1].toFixed(1)} L ${(mid[0] + nx * branchLen * branchSign).toFixed(1)} ${(mid[1] + ny * branchLen * branchSign).toFixed(1)}`);
+      svg.appendChild(branch);
+    }
+
+    arena.appendChild(svg);
+    setTimeout(() => { if (svg && svg.isConnected) svg.remove(); }, 112);
+  }
+
+  function damageNinaConductiveTarget(target, amount, now, c, suppressVisual) {
+    if (!target || !target.ref || amount <= 0) return 0;
+    const attackElement = normalizeCombatElement(c?.element) || 'light';
+    const ref = target.ref;
+
+    if (target.kind === 'enemy') {
+      const targetElement = getCombatTargetElement(ref);
+      const finalDamage = applyElementDamage(amount, attackElement, targetElement);
+      return damageNormalEnemy(
+        ref,
+        finalDamage,
+        now,
+        false,
+        getElementDamageReaction(attackElement, targetElement),
+        !!suppressVisual
+      );
+    }
+
+    if (target.kind === 'object') {
+      const targetElement = getCombatTargetElement(ref, state?.boss?.element);
+      const finalDamage = applyElementDamage(amount, attackElement, targetElement);
+      return damageFacelessObject(
+        ref,
+        finalDamage,
+        now,
+        getElementDamageReaction(attackElement, targetElement),
+        !!suppressVisual
+      );
+    }
+
+    if (target.kind === 'boss' && state?.boss && state.boss.hp > 0) {
+      const targetElement = getCombatTargetElement(state.boss);
+      const finalDamage = applyElementDamage(amount, attackElement, targetElement);
+      const applied = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - applied);
+      updateBossPhase();
+
+      if (!suppressVisual && applied > 0) {
+        createHit(Number(state.boss.x || 0), Number(state.boss.y || 0), false);
+        flashBossHit(false, true);
+        if (!isRaidStage() || shouldRenderRaidBossHitVisual(now, 'number')) {
+          showBossDamageNumber(applied, false, getElementDamageReaction(attackElement, targetElement));
+        }
+      }
+
+      if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
+      if (state.boss.hp <= 0) beginBossDefeat();
+      return applied;
+    }
+
+    return 0;
+  }
+
+  function fireNinaChainLightning(c, effectivePower, now) {
+    if (!state || !c || !state.player) return;
+
+    const maxTargets = Math.max(1, Math.min(4, Math.floor(Number(c.lightningMaxTargets || 4))));
+    const tickCount = Math.max(2, Math.min(6, Math.floor(Number(c.lightningTickCount || 4))));
+    const tickMs = Math.max(45, Number(c.lightningTickMs || 70));
+    const decay = Math.max(0, Math.min(1, Number(c.lightningChainDecay ?? 0.5)));
+    const acquireRange = Math.max(24, Number(c.lightningAcquireRange || 220));
+    const releaseRange = Math.max(acquireRange, Number(c.lightningReleaseRange || 250));
+    const chainRange = Math.max(24, Number(c.lightningChainRange || 160));
+    const ownerId = Number(c.id || 0);
+
+    // 指を離してしばらく経ってから再度撃ち始めた場合は、古いロックを持ち越さない。
+    const previousFireAt = Number(state.ninaLightningLastFireAt || 0);
+    const reconnectGrace = Math.max(420, Number(c.fireRate || 300) * 1.55);
+    if (!previousFireAt || Number(now || 0) - previousFireAt > reconnectGrace) {
+      state.ninaLightningLockedTarget = null;
+      state.ninaLightningPendingTarget = null;
+    }
+    state.ninaLightningLastFireAt = Number(now || performance.now());
+
+    let locked = getNinaTargetSnapshot(state.ninaLightningLockedTarget);
+    if (locked && getNinaDistanceFromPlayer(locked) > releaseRange) {
+      // 220pxで掴み、250pxを越えるまでは接続維持。250px超過でブツッと切る。
+      locked = null;
+      state.ninaLightningLockedTarget = null;
+    }
+
+    let pending = null;
+    let pendingLockPulse = 0;
+    if (!locked) {
+      pending = pickNinaAcquireTarget(acquireRange);
+      state.ninaLightningPendingTarget = pending;
+      // 1〜2pulseだけ先端を暴れさせてから接触。即必中に見えないための短い遊び。
+      pendingLockPulse = pending ? Math.min(tickCount - 1, 1 + Math.floor(Math.random() * 2)) : tickCount;
+    } else {
+      state.ninaLightningPendingTarget = null;
+    }
+
+    const token = Number(state.ninaLightningAttackToken || 0) + 1;
+    state.ninaLightningAttackToken = token;
+    let lockReadyPulse = locked ? 0 : null;
+
+    const pulse = (pulseIndex) => {
+      if (!state || state.ended || state.finishing) return;
+      if (Number(state.ninaLightningAttackToken || 0) !== token) return;
+      const active = getCurrentCharacter();
+      if (!active || Number(active.id || 0) !== ownerId || !pointerActive) return;
+
+      // 既存ロックは250pxまで粘る。対象死亡・消失でも切断。
+      locked = getNinaTargetSnapshot(state.ninaLightningLockedTarget || locked);
+      if (locked && getNinaDistanceFromPlayer(locked) > releaseRange) {
+        locked = null;
+        state.ninaLightningLockedTarget = null;
+        lockReadyPulse = null;
+      }
+
+      // 未接続なら220px圏内をビリビリ探索。候補がいれば少し暴れてから噛みつく。
+      if (!locked) {
+        pending = getNinaTargetSnapshot(pending || state.ninaLightningPendingTarget);
+        if (!pending || getNinaDistanceFromPlayer(pending) > acquireRange) {
+          pending = pickNinaAcquireTarget(acquireRange);
+          state.ninaLightningPendingTarget = pending;
+          pendingLockPulse = pending ? Math.min(tickCount - 1, pulseIndex + 1) : tickCount;
+        }
+
+        if (pending && pulseIndex >= pendingLockPulse && getNinaDistanceFromPlayer(pending) <= acquireRange) {
+          locked = pending;
+          state.ninaLightningLockedTarget = locked;
+          state.ninaLightningPendingTarget = null;
+          lockReadyPulse = pulseIndex;
+        } else {
+          createNinaElectricSeekEffect(c.element, pulseIndex, acquireRange, pending);
+          return;
+        }
+      }
+
+      const chain = buildNinaConductiveChain(maxTargets, locked, chainRange);
+      if (!chain.length) {
+        state.ninaLightningLockedTarget = null;
+        return;
+      }
+
+      // 属性色の電撃網を毎tick作り直す。線形レーザーではなく、常に細かくジリジリ暴れる。
+      createNinaElectricNetworkEffect(chain, c.element, pulseIndex);
+
+      const activeDamageTicks = Math.max(1, tickCount - Number(lockReadyPulse || 0));
+      let firstPulseHits = 0;
+      chain.forEach((target, index) => {
+        // 1射全体のダメージを有効tick数へ分割。伝播倍率は 100 / 50 / 25 / 12.5%。
+        const chainRate = Math.pow(decay, index);
+        const tickDamage = Number(effectivePower || 0) * chainRate / activeDamageTicks;
+        const isFirstDamagePulse = pulseIndex === Number(lockReadyPulse || 0);
+        const applied = damageNinaConductiveTarget(target, tickDamage, performance.now(), c, !isFirstDamagePulse);
+        if (isFirstDamagePulse && applied > 0) {
+          firstPulseHits++;
+          state.shotsHit = Number(state.shotsHit || 0) + 1;
+          registerComboHit(ownerId, now);
+        }
+      });
+
+      if (pulseIndex === Number(lockReadyPulse || 0) && firstPulseHits > 0) {
+        // 連鎖数でULTゲージが過剰加速しないよう1射=1Hit分だけ加算。
+        grantUltGaugeForHits(c, 1, ownerId);
+      }
+
+      state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+      if (isNormalBattle()) evaluateNormalMission(performance.now());
+      renderHud();
+    };
+
+    pulse(0);
+    for (let i = 1; i < tickCount; i++) {
+      setTimeout(() => pulse(i), i * tickMs);
+    }
+  }
+
   function ensureBombVisualStyles() {
     const styleId = 'shooting-bomb-visual-style-build777';
     if (document.getElementById(styleId)) return;
@@ -4866,19 +5512,8 @@
 
   function positionGenericBombProjectile(p, now) {
     if (!p || !p.el) return;
-    const travelled = Math.max(0, Number(p.bombStartY || p.y) - Number(p.y || 0));
-    const arcLength = Math.max(120, Number(p.bombArcLength || 220));
-    const arcPhase = Math.min(1, travelled / arcLength);
-    const lift = Math.sin(Math.PI * arcPhase) * Number(p.bombArcHeight || 12);
-    const ageSec = Math.max(0, Number(now || performance.now()) - Number(p.bombBornAt || 0)) / 1000;
-    const spin = ageSec * Number(p.bombSpinRateDeg || 430);
-    const settle = arcPhase < 1
-      ? 0.80 + Math.sin(Math.PI * arcPhase) * 0.27
-      : 0.98;
-
-    p.el.style.transform =
-      `translate3d(${Number(p.x || 0)}px,${Number(p.y || 0) - lift}px,0) ` +
-      `translate(-50%,-50%) rotate(${spin}deg) scale(${settle})`;
+    // CLUSTERの親弾は通常弾と同じ直進表示。旧BOMBの投擲アーク/回転は使わない。
+    positionUnit(p.el, Number(p.x || 0), Number(p.y || 0));
   }
 
   function normalizeBombSplitCount(source) {
@@ -4889,8 +5524,8 @@
       0
     ));
     if (raw === 4 || raw === 6 || raw === 8) return raw;
-    // build776以前のM/L設定との互換。M=BOMB 4、L=BOMB 8。
-    return String(source?.bombSize || source?.mainShot?.size || 'M').toUpperCase() === 'L' ? 8 : 4;
+    // 旧BOMB表記との互換を維持。M=CLUSTER 4、L=CLUSTER 8。
+    return String(source?.clusterSize || source?.bombSize || source?.mainShot?.size || 'M').toUpperCase() === 'L' ? 8 : 4;
   }
 
   function getBombSplitAngles(count) {
@@ -4928,12 +5563,12 @@
 
     const splitCount = normalizeBombSplitCount(source);
     const angles = getBombSplitAngles(splitCount);
-    const rate = Math.max(0, Number(source.bombFragmentDamageRate ?? 0.50));
+    const rate = Math.max(0, Number(source.clusterFragmentDamageRate ?? source.bombFragmentDamageRate ?? 0.50));
     const damage = Math.max(0, Number(source.damage || 0)) * rate;
-    const speed = Math.max(120, Number(source.bombFragmentSpeed || 430));
+    const speed = Math.max(120, Number(source.clusterFragmentSpeed || source.bombFragmentSpeed || 430));
     const element = normalizeCombatElement(source.attackElement || source.element) || 'neutral';
     const visual = getBombElementVisual(element);
-    const fragmentClass = String(source.bombFragmentClass || 'shooting-bullet') + ' shooting-bomb-fragment';
+    const fragmentClass = String(source.clusterFragmentClass || source.bombFragmentClass || 'shooting-bullet') + ' shooting-bomb-fragment';
 
     angles.forEach(angleDeg => {
       const rad = angleDeg * Math.PI / 180;
@@ -6260,17 +6895,16 @@
 
 
     // ----------------------------------------------------------
-    // build777 BOMB：単発着弾 → 4/6/8方向へ分裂
-    // 爆風ダメージは廃止。着弾した元弾は通常ダメージ、分裂弾は各50%。
+    // build803 CLUSTER：通常弾が着弾すると4/6/8方向へ分裂
+    // 親弾は通常弾と同じ見た目・直進挙動。爆弾形状/投擲アークは使用しない。
     // ----------------------------------------------------------
-    if (c.shotType === 'bomb') {
+    if (c.shotType === 'cluster' || c.shotType === 'bomb') {
       ensureBombVisualStyles();
-      const bombSize = String(c.bombSize || c.mainShot?.size || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+      const bombSize = String(c.clusterSize || c.bombSize || c.mainShot?.size || 'M').toUpperCase() === 'L' ? 'L' : 'M';
       const splitCount = normalizeBombSplitCount(c);
       const attackElement = normalizeCombatElement(c.element) || 'neutral';
-      const visual = getBombElementVisual(attackElement);
       const p = makeProjectile(
-        bulletClass + ' shooting-bullet-splash' + (bombSize === 'L' ? ' bomb-size-l' : ' bomb-size-m'),
+        bulletClass + ' shooting-cluster-projectile',
         state.player.x,
         y,
         0,
@@ -6281,53 +6915,28 @@
       if (p) {
         // kind名は既存互換のためgeneric_splashを維持するが、build777以降AOEは発生しない。
         p.kind = 'generic_splash';
-        p.bombSize = bombSize;
-        p.bombSplitCount = splitCount;
-        p.bombFragmentDamageRate = Math.max(0, Number(c.bombFragmentDamageRate ?? 0.50));
-        p.bombFragmentSpeed = Math.max(120, Number(c.bombFragmentSpeed || 430));
-        p.bombFragmentClass = bulletClass;
+        p.clusterSize = bombSize;
+        p.clusterSplitCount = splitCount;
+        p.clusterFragmentDamageRate = Math.max(0, Number(c.clusterFragmentDamageRate ?? c.bombFragmentDamageRate ?? 0.50));
+        p.clusterFragmentSpeed = Math.max(120, Number(c.clusterFragmentSpeed || c.bombFragmentSpeed || 430));
+        p.clusterFragmentClass = bulletClass;
         p.attackElement = attackElement;
-        p.bombBornAt = now;
-        p.bombStartY = y;
-        p.bombArcLength = bombSize === 'L' ? 240 : 215;
-        p.bombArcHeight = bombSize === 'L' ? 15 : 12;
-        p.bombSpinRateDeg = (state.shotIndex % 2 === 0 ? 1 : -1) * (bombSize === 'L' ? 390 : 455);
-        p.el.style.setProperty('--bomb-color', visual.color);
-        p.el.style.setProperty('--bomb-rgb', visual.rgb);
+        p.bombBornAt = now; // 既存の分裂処理との互換フィールド
 
-        // 見た目は大きくするが、元弾の命中判定は従来の通常弾(4x22px)と同じ。
+        // 親弾は通常弾と同じ4x22px判定。見た目も通常弾そのもの。
         p._hw = 2;
         p._hh = 11;
-
-        createBombThrowPop(state.player.x, y + 7, attackElement);
         state.bullets.push(p);
       }
       return;
     }
 
     // ----------------------------------------------------------
-    // ニーナ：LIGHTNING
-    // 直進する電撃弾。命中後、周囲の敵へ近い順に感電が連鎖する。
+    // build806 ニーナ：DIRECT CHAIN LIGHTNING
+    // 弾を発射せず、最寄りの敵/OBJECTへ直接放電。最大4体へ連鎖する。
     // ----------------------------------------------------------
     if (c.shotType === 'lightning') {
-      const p = makeProjectile(
-        bulletClass + ' shooting-bullet-lightning',
-        state.player.x,
-        y,
-        0,
-        -Number(c.bulletSpeed || 900),
-        effectivePower,
-        c.id
-      );
-      if (p) {
-        p.kind = 'lightning_chain';
-        p.attackElement = normalizeCombatElement(c.element) || 'light';
-        p.lightningChainRadius = Math.max(24, Number(c.lightningChainRadius || 120));
-        p.lightningMaxJumps = Math.max(0, Math.floor(Number(c.lightningMaxJumps || 3)));
-        p.lightningChainDamageRate = Math.max(0, Number(c.lightningChainDamageRate || 0.62));
-        p.lightningChainDecay = Math.max(0, Math.min(1, Number(c.lightningChainDecay || 0.82)));
-        state.bullets.push(p);
-      }
+      fireNinaChainLightning(c, effectivePower, now);
       return;
     }
 
@@ -7609,7 +8218,7 @@
     });
   }
 
-  function damageNormalEnemy(enemy, amount, now, big, elementReaction = '') {
+  function damageNormalEnemy(enemy, amount, now, big, elementReaction = '', suppressVisual = false) {
     if (!enemy || enemy.hp <= 0) return 0;
     const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
@@ -7621,7 +8230,7 @@
     // HIT/0/IMMUNE/バリア発光のDOM演出だけ約9fpsへ間引く。
     const visualNow = Number(now || performance.now());
     const immuneVisual = elementReaction === 'immune';
-    const renderImpact = !immuneVisual || visualNow >= Number(enemy._immuneVisualNextAt || 0);
+    const renderImpact = !suppressVisual && (!immuneVisual || visualNow >= Number(enemy._immuneVisualNextAt || 0));
     if (renderImpact) {
       if (immuneVisual) enemy._immuneVisualNextAt = visualNow + 110;
 
@@ -8298,7 +8907,7 @@
     return obj;
   }
 
-  function damageFacelessObject(obj, damage, now, elementReaction = '') {
+  function damageFacelessObject(obj, damage, now, elementReaction = '', suppressVisual = false) {
     if (!obj || obj.hp <= 0) return 0;
     const appliedDamage = Math.min(obj.hp, Math.max(0, Number(damage || 0)));
     obj.hp = Math.max(0, obj.hp - appliedDamage);
@@ -8313,25 +8922,27 @@
     const hitX = useProjectileImpact ? Number(obj._lastProjectileImpactX) : Number(obj.x || 0);
     const hitY = useProjectileImpact ? Number(obj._lastProjectileImpactY) : Number(obj.y || 0);
 
-    createHit(hitX, hitY, !!obj.ambushMinion);
-    showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', !!obj.ambushMinion, elementReaction);
-    if (obj.el) {
-      sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 175);
+    if (!suppressVisual) {
+      createHit(hitX, hitY, !!obj.ambushMinion);
+      showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', !!obj.ambushMinion, elementReaction);
+      if (obj.el) {
+        sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 175);
 
-      // 仮面は1発ごとに短い被弾フラッシュを再発火。
-      if (!obj.ambushMinion) {
-        obj.el.classList.remove('faceless-hit-flash');
-        void obj.el.offsetWidth;
-        obj.el.classList.add('faceless-hit-flash');
-        window.clearTimeout(obj._facelessHitFlashTimer);
-        obj._facelessHitFlashTimer = window.setTimeout(() => {
-          if (obj.el && obj.el.isConnected) obj.el.classList.remove('faceless-hit-flash');
-          obj._facelessHitFlashTimer = null;
-        }, 170);
-      } else {
-        obj.el.classList.remove('ambush-hit-flash');
-        void obj.el.offsetWidth;
-        obj.el.classList.add('ambush-hit-flash');
+        // 仮面は1発ごとに短い被弾フラッシュを再発火。
+        if (!obj.ambushMinion) {
+          obj.el.classList.remove('faceless-hit-flash');
+          void obj.el.offsetWidth;
+          obj.el.classList.add('faceless-hit-flash');
+          window.clearTimeout(obj._facelessHitFlashTimer);
+          obj._facelessHitFlashTimer = window.setTimeout(() => {
+            if (obj.el && obj.el.isConnected) obj.el.classList.remove('faceless-hit-flash');
+            obj._facelessHitFlashTimer = null;
+          }, 170);
+        } else {
+          obj.el.classList.remove('ambush-hit-flash');
+          void obj.el.offsetWidth;
+          obj.el.classList.add('ambush-hit-flash');
+        }
       }
     }
 
@@ -9994,7 +10605,7 @@
     const h = Number(layout.height || arenaRect.height || 0);
 
     // filter中にstate.bulletsへ直接pushすると、filter完了時の再代入で分裂弾が消える。
-    // build777では着弾中に生成したBOMB分裂弾を一旦キューへ積み、filter後に追加する。
+    // 着弾中に生成したCLUSTER分裂弾を一旦キューへ積み、filter後に追加する。
     const spawnedPlayerBullets = [];
     state.bullets = state.bullets.filter(p => {
       if (!p || !p.el) return false;
@@ -10093,7 +10704,7 @@
         if (p.pierce) {
           if (p.piercedTargets) p.piercedTargets.add(chapter6BarrierTarget);
         } else {
-          // 壁への当たり判定・弾消滅は全弾維持。BOMBは壁面着弾でも分裂する。
+          // 壁への当たり判定・弾消滅は全弾維持。CLUSTERは壁面着弾でも分裂する。
           if (p.kind === 'generic_splash') {
             splitBombAtImpact(
               p,
@@ -10233,7 +10844,7 @@
           }
 
           if (p.kind === 'generic_splash' && normalTarget) {
-            // build777: 爆風AOEは廃止。着弾点から4/6/8方向へ50%弾を分裂させる。
+            // CLUSTER: 着弾点から4/6/8方向へ50%弾を分裂させる。
             splitBombAtImpact(
               p,
               Number(normalTarget.x || p.x),
@@ -17510,7 +18121,52 @@
   // 毎回、その時点で生存している敵からランダム選択。
   // 命中した敵だけ3秒麻痺（移動・射撃停止）。全体停止はしない。
   // ============================================================
-  function applyNinaParalyze(target, durationMs) {
+  function getNinaParalyzeElement(target) {
+    if (!target) return null;
+    if ((target.kind === 'normal' || target.kind === 'faceless') && target.ref && target.ref.el) {
+      return target.ref.el;
+    }
+    if (target.kind === 'boss') return document.getElementById(BOSS_ID);
+    return null;
+  }
+
+  function showNinaParalyzeVfx(target, element, until) {
+    const host = getNinaParalyzeElement(target);
+    if (!host) return;
+
+    const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
+    let fx = Array.from(host.children || []).find(child => child && child.classList && child.classList.contains('shooting-nina-paralyze-vfx'));
+    if (!fx) {
+      fx = document.createElement('span');
+      fx.className = 'shooting-nina-paralyze-vfx';
+      fx.setAttribute('aria-hidden', 'true');
+      fx.innerHTML = `
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M4 24 L18 11 L29 30 L43 17 L57 35 L74 14 L96 28"/>
+          <path d="M8 66 L23 50 L36 70 L50 48 L64 72 L81 54 L95 67"/>
+          <path d="M26 4 L39 22 L31 40 L55 55 L45 76 L67 96"/>
+        </svg>`;
+      host.appendChild(fx);
+    }
+
+    fx.style.setProperty('--nina-paralyze-rgb', visual.rgb);
+    fx.style.setProperty('--nina-paralyze-color', visual.color);
+    const nextUntil = Math.max(Number(fx.dataset.ninaParalyzeUntil || 0), Number(until || 0));
+    fx.dataset.ninaParalyzeUntil = String(nextUntil);
+
+    const wait = Math.max(80, nextUntil - performance.now() + 60);
+    // build811: 同じ敵へ再命中するたびにremove用Timerを積まない。常に1本だけ更新する。
+    if (fx._ninaParalyzeRemoveTimer) clearTimeout(fx._ninaParalyzeRemoveTimer);
+    fx._ninaParalyzeRemoveTimer = setTimeout(() => {
+      if (!fx || !fx.isConnected) return;
+      const activeUntil = Number(fx.dataset.ninaParalyzeUntil || 0);
+      if (performance.now() + 8 < activeUntil) return;
+      fx._ninaParalyzeRemoveTimer = null;
+      try { fx.remove(); } catch (_) {}
+    }, wait);
+  }
+
+  function applyNinaParalyze(target, durationMs, element) {
     if (!state || !target || !target.ref) return;
     const now = performance.now();
     const duration = Math.max(300, Number(durationMs || 3000));
@@ -17518,18 +18174,21 @@
 
     if (target.kind === 'normal') {
       target.ref.noahStunUntil = Math.max(Number(target.ref.noahStunUntil || 0), until);
+      showNinaParalyzeVfx(target, element, target.ref.noahStunUntil);
       freezeNormalEnemyAction(target.ref, target.ref.noahStunUntil);
       return;
     }
 
     if (target.kind === 'faceless') {
       target.ref.noahStunUntil = Math.max(Number(target.ref.noahStunUntil || 0), until);
+      showNinaParalyzeVfx(target, element, target.ref.noahStunUntil);
       deferFacelessObjectAttackResume(target.ref, target.ref.noahStunUntil);
       return;
     }
 
     if (target.kind === 'boss') {
       applyBossStun(duration, 'nina_lightning_storm');
+      showNinaParalyzeVfx(target, element, Math.max(until, Number(state.bossStunUntil || 0)));
     }
   }
 
@@ -17589,7 +18248,7 @@
     if (appliedDamage > 0) {
       state.shotsHit = Number(state.shotsHit || 0) + 1;
       registerComboHit(c.id, now, appliedDamage);
-      applyNinaParalyze(target, Number(c.ninaUltParalyzeMs || 3000));
+      applyNinaParalyze(target, Number(c.ninaUltParalyzeMs || 3000), attackElement);
     }
 
     renderHud();
@@ -17664,6 +18323,132 @@
     });
   }
 
+  // build811: ニーナULTの見た目はそのまま、落雷SVGと塵DOMを使い回してGC負荷を抑える。
+  // 16発ごとに要素を生成・破棄せず、1セットだけ再利用してアニメーションを再始動する。
+  function createNinaUltLightningBolt(c, x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    const width = Math.max(1, Number(arena.clientWidth || 0));
+    const height = Math.max(1, Number(arena.clientHeight || 0));
+    const tx = clamp(Number(x || width * .5), 8, Math.max(8, width - 8));
+    const ty = clamp(Number(y || height * .35), 24, Math.max(24, height - 8));
+    const element = getUltAttackElement(c);
+    const visual = ULT_ELEMENT_VISUAL[element] || ULT_ELEMENT_VISUAL.neutral;
+    const svgNs = 'http://www.w3.org/2000/svg';
+
+    let svg = arena.querySelector('.shooting-nina-ult-lightning');
+    if (!svg) {
+      svg = document.createElementNS(svgNs, 'svg');
+      svg.setAttribute('class', 'shooting-nina-ult-lightning');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      const classes = [
+        'shooting-nina-ult-bolt-glow',
+        'shooting-nina-ult-bolt-color',
+        'shooting-nina-ult-bolt-core',
+        'shooting-nina-ult-bolt-branch',
+        'shooting-nina-ult-bolt-branch'
+      ];
+      classes.forEach(cls => {
+        const path = document.createElementNS(svgNs, 'path');
+        path.setAttribute('class', cls);
+        path.setAttribute('d', 'M0 0 L0 0');
+        path.setAttribute('pathLength', '100');
+        svg.appendChild(path);
+      });
+      arena.appendChild(svg);
+    }
+
+    svg.style.display = 'block';
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.style.setProperty('--nina-ult-rgb', visual.rgb);
+    svg.style.setProperty('--nina-ult-color', visual.color);
+
+    const points = [];
+    const segments = 10;
+    const topDrift = (Math.random() - .5) * 18;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const py = ty * t;
+      let px;
+      if (i === 0) px = tx + topDrift;
+      else if (i === segments) px = tx;
+      else {
+        const envelope = .52 + Math.sin(Math.PI * t) * .58;
+        const jag = (Math.random() - .5) * 34 * envelope;
+        const alternating = (i % 2 ? -1 : 1) * (5 + Math.random() * 7);
+        px = tx + jag + alternating;
+      }
+      points.push([clamp(px, 4, width - 4), py]);
+    }
+    const d = points.map((pt, i) => `${i ? 'L' : 'M'}${pt[0].toFixed(1)} ${pt[1].toFixed(1)}`).join(' ');
+    const paths = Array.from(svg.querySelectorAll('path'));
+    if (paths[0]) paths[0].setAttribute('d', d);
+    if (paths[1]) paths[1].setAttribute('d', d);
+    if (paths[2]) paths[2].setAttribute('d', d);
+
+    // 稲光の短い枝。主線より細く、着弾地点までは伸ばさない。
+    [3, 6].forEach((idx, branchIndex) => {
+      const base = points[idx];
+      const path = paths[3 + branchIndex];
+      if (!base || !path) return;
+      const dir = branchIndex % 2 ? 1 : -1;
+      const bx1 = clamp(base[0] + dir * (10 + Math.random() * 10), 4, width - 4);
+      const by1 = Math.min(ty, base[1] + 10 + Math.random() * 12);
+      const bx2 = clamp(bx1 + dir * (7 + Math.random() * 8), 4, width - 4);
+      const by2 = Math.min(ty, by1 + 10 + Math.random() * 14);
+      path.setAttribute('d', `M${base[0].toFixed(1)} ${base[1].toFixed(1)} L${bx1.toFixed(1)} ${by1.toFixed(1)} L${bx2.toFixed(1)} ${by2.toFixed(1)}`);
+    });
+
+    // CSSアニメーションだけを再始動。SVGそのものは破棄しない。
+    paths.forEach(path => { path.style.animation = 'none'; });
+    void svg.getBoundingClientRect();
+    paths.forEach(path => { path.style.animation = ''; });
+
+    if (svg._ninaUltHideTimer) clearTimeout(svg._ninaUltHideTimer);
+    svg._ninaUltHideTimer = setTimeout(() => {
+      if (svg && svg.isConnected) svg.style.display = 'none';
+    }, 320);
+    return svg;
+  }
+
+  function createNinaUltDust(x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    let dust = arena.querySelector('.shooting-nina-ult-dust');
+    if (!dust) {
+      dust = document.createElement('span');
+      dust.className = 'shooting-nina-ult-dust';
+      dust.setAttribute('aria-hidden', 'true');
+      const offsets = [
+        [-14,-10,4,0], [12,-12,5,12], [-7,-17,3,22], [18,-7,4,34], [3,-20,3,46]
+      ];
+      offsets.forEach(([dx,dy,size,delay]) => {
+        const p = document.createElement('i');
+        p.style.setProperty('--dust-x', `${dx}px`);
+        p.style.setProperty('--dust-y', `${dy}px`);
+        p.style.setProperty('--dust-size', `${size}px`);
+        p.style.setProperty('--dust-delay', `${delay}ms`);
+        dust.appendChild(p);
+      });
+      arena.appendChild(dust);
+    }
+
+    dust.style.display = 'block';
+    dust.style.transform = `translate3d(${Number(x || 0)}px,${Number(y || 0)}px,0)`;
+    const particles = Array.from(dust.children || []);
+    particles.forEach(p => { p.style.animation = 'none'; });
+    void dust.offsetWidth;
+    particles.forEach(p => { p.style.animation = ''; });
+
+    if (dust._ninaUltHideTimer) clearTimeout(dust._ninaUltHideTimer);
+    dust._ninaUltHideTimer = setTimeout(() => {
+      if (dust && dust.isConnected) dust.style.display = 'none';
+    }, 460);
+  }
+
   function strikeNinaUltZone(c, rect, warning) {
     if (!state || state.ended || state.finishing || !rect) {
       try { warning && warning.remove(); } catch (_) {}
@@ -17675,31 +18460,33 @@
     const now = performance.now();
 
     if (arena) {
-      // 落雷位置は選択エリア中央付近。
-      // 判定そのものはエリア全体なので、この見た目の座標に敵が重なる必要はない。
-      const jitterX = (Math.random() - .5) * Math.min(34, rect.width * .22);
-      const tx = clamp(rect.centerX + jitterX, 8, Math.max(8, arena.clientWidth - 8));
-      const ty = clamp(rect.centerY, 18, Math.max(18, arena.clientHeight * .5 - 8));
+      // 性能・判定は従来のエリア方式をそのまま維持。
+      // 見た目だけ、命中時はエリア内の敵へ寄せ、空振り時はエリア中央へ落とす。
+      let tx = rect.centerX;
+      let ty = rect.centerY;
+      if (targets.length > 0) {
+        const visualTarget = targets[Math.floor(Math.random() * targets.length)];
+        tx = Number(visualTarget && visualTarget.x || rect.centerX);
+        ty = Number(visualTarget && visualTarget.y || rect.centerY);
+      } else {
+        tx += (Math.random() - .5) * Math.min(32, rect.width * .2);
+      }
+      tx = clamp(tx, 8, Math.max(8, arena.clientWidth - 8));
+      ty = clamp(ty, 18, Math.max(18, arena.clientHeight * .5 - 8));
 
-      const bolt = document.createElement('div');
-      bolt.className = 'shooting-noah-lightning shooting-nina-lightning strike';
-      bolt.style.left = `${tx}px`;
-      bolt.style.top = '0px';
-      bolt.style.height = `${Math.max(54, ty)}px`;
-      arena.appendChild(bolt);
-
-      setTimeout(() => {
-        try { bolt && bolt.isConnected && bolt.remove(); } catch (_) {}
-      }, 260);
+      createNinaUltLightningBolt(c, tx, ty);
+      createNinaUltDust(tx, ty);
     }
 
     // その瞬間、エリア内にいる敵全員へ同時命中。
+    // ダメージ・麻痺時間・16回という性能値は変更しない。
     targets.forEach(target => {
       applyNinaUltHit(c, target, now);
     });
 
     try { warning && warning.remove(); } catch (_) {}
-    shakeNoahLightning();
+    // 画面シェイクは「敵に当たった時だけ」。空振り落雷では揺らさない。
+    if (targets.length > 0) shakeNoahLightning();
     return targets.length > 0;
   }
 
