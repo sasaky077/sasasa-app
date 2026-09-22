@@ -14344,6 +14344,10 @@
     // 集計保存はゲーム開始をブロックしない。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
 
+    // build768: ステージIN演出。戦闘初期化と並行して約1.35秒だけ表示する。
+    // 実ロードの有無とは切り離したアイキャッチ演出として扱う。
+    const stageIcatchPromise = showShootingStageIcatch();
+
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
@@ -14371,6 +14375,7 @@
       root.setAttribute('data-boss-phase', '1');
     }
 
+    await stageIcatchPromise;
     requestAnimationFrame(() => {
       placeInitialUnits();
       renderHud();
@@ -14501,6 +14506,9 @@
     // RETRYも新しい1出撃として使用回数へ加算。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
 
+    // RETRYも「再度ステージへ入る」扱いとして同じアイキャッチを挟む。
+    const stageIcatchPromise = showShootingStageIcatch();
+
     const root = document.getElementById(ROOT_ID);
     if (!root) return window.openShootingEvent();
     clearEltenaBlackHole();
@@ -14535,6 +14543,7 @@
     if (player) player.classList.remove('defeated');
     root.classList.remove('boss-defeat-flash', 'boss-phase-flash', 'boss-phase-pause', 'player-defeat-flash');
     root.setAttribute('data-boss-phase', '1');
+    await stageIcatchPromise;
     placeInitialUnits();
     renderHud();
     playBossStageIntro(runStartCountdown);
@@ -18801,5 +18810,163 @@
     `;
     document.head.appendChild(style);
   }
+
+  // ============================================================
+  // build768: STAGE IN アイキャッチ
+  // icatch_01.webp ～ icatch_03.webp をランダム表示。
+  // 未配置画像は自動的にスキップするため、素材追加途中でも動作する。
+  // ============================================================
+  const SHOOTING_ICATCH_PATHS = Object.freeze([
+    'images/icatch_01.webp',
+    'images/icatch_02.webp',
+    'images/icatch_03.webp'
+  ]);
+  const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
+  const SHOOTING_ICATCH_HOLD_MS = 1350;
+  const SHOOTING_ICATCH_FADE_MS = 280;
+  let lastShootingIcatchPath = '';
+
+  function shuffleShootingIcatchPaths() {
+    const list = SHOOTING_ICATCH_PATHS.slice();
+    for (let i = list.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    if (list.length > 1 && list[0] === lastShootingIcatchPath) {
+      const swapIndex = list.findIndex((path, index) => index > 0 && path !== lastShootingIcatchPath);
+      if (swapIndex > 0) [list[0], list[swapIndex]] = [list[swapIndex], list[0]];
+    }
+    return list;
+  }
+
+  function preloadIcatchImage(src, timeoutMs = 900) {
+    return new Promise(resolve => {
+      const img = new Image();
+      let settled = false;
+      const done = ok => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(ok ? src : '');
+      };
+      const timer = setTimeout(() => done(false), timeoutMs);
+      img.onload = () => done(true);
+      img.onerror = () => done(false);
+      img.src = src;
+      if (img.complete && img.naturalWidth > 0) done(true);
+    });
+  }
+
+  async function resolveShootingIcatchPath() {
+    const candidates = shuffleShootingIcatchPaths();
+    for (const src of candidates) {
+      const loaded = await preloadIcatchImage(src);
+      if (loaded) {
+        lastShootingIcatchPath = loaded;
+        return loaded;
+      }
+    }
+    return '';
+  }
+
+  function ensureShootingIcatchOverlay() {
+    let overlay = document.getElementById('shooting-stage-icatch');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'shooting-stage-icatch';
+    overlay.className = 'shooting-stage-icatch';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <img class="shooting-stage-icatch-art" alt="" draggable="false">
+      <img class="shooting-stage-icatch-logo" src="${SHOOTING_ICATCH_LOGO}" alt="ZERAPHIA" draggable="false">
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  async function showShootingStageIcatch() {
+    try {
+      const src = await resolveShootingIcatchPath();
+      if (!src) return;
+
+      const overlay = ensureShootingIcatchOverlay();
+      const art = overlay.querySelector('.shooting-stage-icatch-art');
+      if (!art) return;
+
+      art.src = src;
+      overlay.classList.remove('is-fading');
+      overlay.classList.add('is-visible');
+      overlay.setAttribute('aria-hidden', 'false');
+
+      await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_HOLD_MS));
+      overlay.classList.add('is-fading');
+      await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_FADE_MS));
+
+      overlay.classList.remove('is-visible', 'is-fading');
+      overlay.setAttribute('aria-hidden', 'true');
+    } catch (err) {
+      console.warn('[shooting] stage icatch skipped:', err);
+    }
+  }
+
+  if (!document.getElementById('shooting-stage-icatch-style-v768')) {
+    const style = document.createElement('style');
+    style.id = 'shooting-stage-icatch-style-v768';
+    style.textContent = `
+      #shooting-stage-icatch{
+        position:fixed;
+        inset:0;
+        z-index:520000;
+        display:none;
+        overflow:hidden;
+        background:#f8f5ef;
+        opacity:0;
+        pointer-events:none;
+        user-select:none;
+        -webkit-user-select:none;
+      }
+      #shooting-stage-icatch.is-visible{
+        display:block;
+        opacity:1;
+      }
+      #shooting-stage-icatch.is-fading{
+        opacity:0;
+        transition:opacity ${SHOOTING_ICATCH_FADE_MS}ms ease;
+      }
+      #shooting-stage-icatch .shooting-stage-icatch-art{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        object-position:center center;
+        display:block;
+      }
+      #shooting-stage-icatch .shooting-stage-icatch-logo{
+        position:absolute;
+        right:max(18px,env(safe-area-inset-right));
+        bottom:max(22px,calc(env(safe-area-inset-bottom) + 12px));
+        width:clamp(150px,44vw,260px);
+        height:auto;
+        display:block;
+        opacity:.82;
+        mix-blend-mode:multiply;
+        filter:contrast(1.04);
+      }
+      @media (max-width:375px){
+        #shooting-stage-icatch .shooting-stage-icatch-logo{
+          right:max(14px,env(safe-area-inset-right));
+          bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
+          width:clamp(138px,45vw,172px);
+        }
+      }
+      @media (prefers-reduced-motion:reduce){
+        #shooting-stage-icatch.is-fading{transition:none;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
 
 })();
