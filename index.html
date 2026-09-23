@@ -272,9 +272,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=829-close-frame-removal"
+        href="css/style.css?v=834-stage-attribute-default"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=829-close-frame-removal"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=834-stage-attribute-default"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -357,7 +357,7 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=794-result-se-spacing-lost">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=836-wall-shield-contact">');
   </script>
   <link rel="stylesheet" href="css/raid_event.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/item_management.css?v=693-score-ranking-nav-v2">
@@ -3315,7 +3315,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </div>
 
 <div class="modal-overlay" id="detail-modal">
-  <button class="detail-modal-back-btn" type="button" aria-label="戻る" onclick="event.stopPropagation(); closeModal('detail-modal')">＜戻る</button>
+  <button class="detail-modal-back-btn" type="button" aria-label="閉じる" onclick="event.stopPropagation(); closeCharacterDetailModal()">＜戻る</button>
   <div class="modal">
     <div class="gacha-pickup-title-name" id="gacha-pickup-title-name" aria-live="polite"></div>
     <div class="detail-header">
@@ -5393,11 +5393,17 @@ document.addEventListener('touchend', function (e) {
     }).join('');
   }
 
+  var gachaPoolDetailReturnScrollTop = 0;
+
   function openGachaPoolCharacterDetail(charaId){
     var chara = getGachaPoolCharacter(charaId);
     if(!chara) return;
 
-    // 提供割合を閉じて、既存のキャラ能力詳細をガチャプレビューとして開く。
+    // 提供割合から開いたキャラ詳細は、閉じたら提供割合へ戻す。
+    // 現在位置も保存して、一覧の途中から見ていても同じ場所へ戻れるようにする。
+    var poolContent = document.getElementById('gacha-pool-detail-content');
+    gachaPoolDetailReturnScrollTop = poolContent ? Number(poolContent.scrollTop || 0) : 0;
+    detailReturnToSummonAfterClose = false;
     closeGachaPoolDetail();
 
     if(typeof showZukanCharacterDetail === 'function'){
@@ -13350,6 +13356,22 @@ async function deleteCurrentChara(){
     document.getElementById('detail-modal').classList.add('active');
   }
 
+  function closeCharacterDetailModal(){
+    var modal = document.getElementById('detail-modal');
+    var returnToGachaPool = !!(modal && modal.classList.contains('is-gacha-pool-preview'));
+
+    closeModal('detail-modal');
+
+    if(returnToGachaPool){
+      openGachaPoolDetail();
+      requestAnimationFrame(function(){
+        var content = document.getElementById('gacha-pool-detail-content');
+        if(content) content.scrollTop = Math.max(0, Number(gachaPoolDetailReturnScrollTop || 0));
+      });
+    }
+  }
+  window.closeCharacterDetailModal = closeCharacterDetailModal;
+
   function closeModal(id){
     var modal = document.getElementById(id);
     if(modal) modal.classList.remove('active');
@@ -14183,7 +14205,7 @@ if(document.readyState === 'loading'){
 
 document.getElementById('detail-modal').addEventListener('click', function(e){
   if(e.target === this){
-    closeModal('detail-modal');
+    closeCharacterDetailModal();
   }
 });
 
@@ -15543,7 +15565,7 @@ function fadeOutOpeningBgm(){
 
 
 <script src="js/shooting_characters.js?v=807-nina-wild-contact"></script>
-<script src="js/stage_select.js?v=789-stage-select-story-canonical"></script>
+<script src="js/stage_select.js?v=843-story-title-canonical"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
@@ -15621,10 +15643,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=776-battle-bgm"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=836-wall-shield-contact"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=693-score-ranking-nav-v2"></script>
+<script src="js/raid_event.js?v=847-empty-back-glass-brown"></script>
 <script src="js/item_management.js?v=693-score-ranking-nav-v2"></script>
 
 <script id="zeraphia-service-worker-register-v1">

@@ -40833,3 +40833,201 @@ html body textarea{
   line-height:34px !important;
   padding:0 !important;
 }
+
+
+/* =========================================================
+   build832 GACHA POOL CHARACTER DETAIL CLOSE
+   提供割合から開いたキャラ詳細だけ、左上「＜戻る」を廃止。
+   右上にフレーム無しの×を置き、閉じると提供割合一覧へ戻る。
+   ========================================================= */
+#detail-modal.is-gacha-pool-preview > .detail-modal-back-btn{
+  top:calc(6vh + 10px) !important;
+  left:auto !important;
+  right:max(
+    30px,
+    calc((100vw - min(400px, calc(100vw - 36px))) / 2 + 10px)
+  ) !important;
+  width:40px !important;
+  min-width:40px !important;
+  height:40px !important;
+  min-height:40px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+  color:#6f5a39 !important;
+  font-size:0 !important;
+  line-height:40px !important;
+  text-align:center !important;
+  opacity:.90 !important;
+}
+#detail-modal.is-gacha-pool-preview > .detail-modal-back-btn::before{
+  content:"×" !important;
+  display:block !important;
+  width:40px !important;
+  height:40px !important;
+  font-family:"Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif !important;
+  font-size:22px !important;
+  font-weight:400 !important;
+  line-height:38px !important;
+  letter-spacing:0 !important;
+  color:#6f5a39 !important;
+  text-shadow:none !important;
+}
+#detail-modal.is-gacha-pool-preview > .detail-modal-back-btn:active{
+  transform:none !important;
+  opacity:.52 !important;
+}
+@media (max-height:700px){
+  #detail-modal.is-gacha-pool-preview > .detail-modal-back-btn{
+    top:calc(4vh + 10px) !important;
+  }
+}
+
+/* =========================================================
+   build833 STORY STAGE SELECT — ELEMENT PREVIEW
+   ステージ選択カードに主な出現属性(上位2)と、BOSS属性を表示。
+   属性アイコンはtype_XXXX.webpを原色のまま使用する。
+   ========================================================= */
+#stage-select-modal .ss-story-shooting-card{
+  min-height:92px !important;
+}
+#stage-select-modal .ss-stage-elements{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin-top:3px;
+  min-width:0;
+}
+#stage-select-modal .ss-stage-element-line{
+  display:flex;
+  align-items:center;
+  min-height:20px;
+  gap:5px;
+  white-space:nowrap;
+}
+#stage-select-modal .ss-stage-element-label{
+  flex:0 0 auto;
+  font-family:"Noto Serif JP",serif;
+  font-size:8.5px;
+  font-weight:400;
+  letter-spacing:.055em;
+  color:rgba(98,82,59,.62);
+}
+#stage-select-modal .ss-stage-element-icons{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+}
+#stage-select-modal .ss-stage-element-icon{
+  display:block;
+  width:20px;
+  height:20px;
+  object-fit:contain;
+  flex:0 0 20px;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+#stage-select-modal .ss-stage-boss-element-line .ss-stage-element-label{
+  color:rgba(94,69,43,.76);
+}
+#stage-select-modal .ss-stage-boss-element-line .ss-stage-element-icon{
+  width:21px;
+  height:21px;
+  flex-basis:21px;
+}
+@media (max-width:390px){
+  #stage-select-modal .ss-story-shooting-card{
+    min-height:96px !important;
+  }
+  #stage-select-modal .ss-stage-element-label{
+    font-size:8px;
+    letter-spacing:.035em;
+  }
+  #stage-select-modal .ss-stage-element-icon{
+    width:18px;
+    height:18px;
+    flex-basis:18px;
+  }
+  #stage-select-modal .ss-stage-boss-element-line .ss-stage-element-icon{
+    width:19px;
+    height:19px;
+    flex-basis:19px;
+  }
+}
+
+/* =========================================================
+   build834 STAGE SELECT — DEFAULT ELEMENT PREVIEW COMPONENT
+   STORY / DAILY / SPECIAL EVENT 共通のステージ属性表示。
+   基本は上位2属性。属性限定バリア対象属性は必ず表示する。
+   ========================================================= */
+.shooting-stage-elements{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin-top:3px;
+  min-width:0;
+}
+.shooting-stage-element-line{
+  display:flex;
+  align-items:center;
+  min-height:20px;
+  gap:5px;
+  white-space:nowrap;
+}
+.shooting-stage-element-label{
+  flex:0 0 auto;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+  font-size:8.5px;
+  font-weight:400;
+  letter-spacing:.055em;
+  color:rgba(98,82,59,.62);
+}
+.shooting-stage-element-icons{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+}
+.shooting-stage-element-icon{
+  display:block;
+  width:20px;
+  height:20px;
+  object-fit:contain;
+  flex:0 0 20px;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+.shooting-stage-boss-element-line .shooting-stage-element-label{
+  color:rgba(94,69,43,.76);
+}
+.shooting-stage-boss-element-line .shooting-stage-element-icon{
+  width:21px;
+  height:21px;
+  flex-basis:21px;
+}
+@media (max-width:390px){
+  .shooting-stage-element-label{
+    font-size:8px;
+    letter-spacing:.035em;
+  }
+  .shooting-stage-element-icon{
+    width:18px;
+    height:18px;
+    flex-basis:18px;
+  }
+  .shooting-stage-boss-element-line .shooting-stage-element-icon{
+    width:19px;
+    height:19px;
+    flex-basis:19px;
+  }
+}

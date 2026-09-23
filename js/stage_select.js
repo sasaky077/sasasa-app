@@ -175,6 +175,233 @@
       </div>`;
   }
 
+
+  // ============================================================
+  // build833: ステージ選択 - 出現属性表示
+  // 通常/BOSSとも「主に出現する属性」を最大2属性まで表示。
+  // 属性限定バリア対象の雑魚属性は、出現比率に関係なく必ず上位2枠へ含める。
+  // BOSSステージは別行でBOSS自身の属性も表示する。
+  // ============================================================
+  const STORY_ELEMENT_ICON = Object.freeze({
+    neutral: 'images/type_neutral.webp',
+    fire: 'images/type_fire.webp',
+    aqua: 'images/type_aqua.webp',
+    wood: 'images/type_wood.webp',
+    dark: 'images/type_dark.webp',
+    light: 'images/type_light.webp',
+  });
+
+  const STORY_ELEMENT_LABEL = Object.freeze({
+    neutral: '無属性',
+    fire: '火',
+    aqua: '水',
+    wood: '木',
+    dark: '闇',
+    light: '光',
+  });
+
+  function normalizeStoryElement(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'water') return 'aqua';
+    if (STORY_ELEMENT_ICON[raw]) return raw;
+    return 'neutral';
+  }
+
+  function getStoryEnemyDef(enemyId) {
+    if (!enemyId || !window.ShootingEnemies) return null;
+    try {
+      if (typeof window.ShootingEnemies.getShootingEnemy === 'function') {
+        return window.ShootingEnemies.getShootingEnemy(enemyId) || null;
+      }
+      return window.ShootingEnemies.SHOOTING_ENEMIES?.[String(enemyId)] || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getStoryEnemyElement(enemyId) {
+    const def = getStoryEnemyDef(enemyId);
+    return normalizeStoryElement(def && def.element);
+  }
+
+  function getStoryMainEnemyIds(stage) {
+    if (!stage) return [];
+
+    // 実際の固定出現順があるステージはenemySequenceを最優先。
+    const sequence = stage.normalBattle && Array.isArray(stage.normalBattle.enemySequence)
+      ? stage.normalBattle.enemySequence.filter(Boolean)
+      : [];
+    if (sequence.length) return sequence.slice();
+
+    // BOSS戦で援軍定義がある場合は、援軍構成を「主に出現する属性」の母集団にする。
+    const bossAdds = stage.bossAdds && Array.isArray(stage.bossAdds.enemyIds)
+      ? stage.bossAdds.enemyIds.filter(Boolean)
+      : [];
+    if (stage.type === 'boss' && bossAdds.length) return bossAdds.slice();
+
+    // 援軍がないBOSS戦はBOSS自身、通常戦は通常のenemyIdsを参照。
+    return Array.isArray(stage.enemyIds) ? stage.enemyIds.filter(Boolean) : [];
+  }
+
+  function getStoryForcedBarrierElements(stage, mainEnemyIds) {
+    if (!stage) return [];
+    const ids = Array.isArray(mainEnemyIds) ? mainEnemyIds : [];
+    const forced = [];
+
+    // CH06等：指定属性の敵だけが「弱点属性以外無効」の対象。
+    const guarded = stage.weaknessOnlyElement ? normalizeStoryElement(stage.weaknessOnlyElement) : '';
+    if (guarded) {
+      const hasGuardedNormalEnemy = ids.some(enemyId => {
+        const def = getStoryEnemyDef(enemyId);
+        return !!(def && def.kind !== 'boss' && normalizeStoryElement(def.element) === guarded);
+      });
+      if (hasGuardedNormalEnemy) forced.push(guarded);
+    }
+
+    // build834: DAILY上級はshooting_core側で、stage定義にフラグが無くても
+    // 非neutral雑魚へ「弱点属性以外無効」バリアを付ける。表示側も同じ判定へ統一。
+    const isDailyAdvanced = !!(
+      (stage.dailyQuest && stage.dailyQuest.level === 'advanced') ||
+      /^shooting_daily_[a-z]{3}_advanced$/i.test(String(stage.id || ''))
+    );
+
+    // 全属性バリア指定 / DAILY上級：対象になる雑魚属性は出現比率に関係なく必ず表示。
+    if (stage.weaknessOnlyEnemies === true || isDailyAdvanced) {
+      ids.forEach(enemyId => {
+        const def = getStoryEnemyDef(enemyId);
+        if (!def || def.kind === 'boss') return;
+        const element = normalizeStoryElement(def.element);
+        if (element !== 'neutral' && !forced.includes(element)) forced.push(element);
+      });
+    }
+
+    return forced;
+  }
+
+  function getStoryMainElements(stage) {
+    const ids = getStoryMainEnemyIds(stage);
+    const counts = new Map();
+    const firstSeen = new Map();
+
+    ids.forEach((enemyId, index) => {
+      const element = getStoryEnemyElement(enemyId);
+      counts.set(element, (counts.get(element) || 0) + 1);
+      if (!firstSeen.has(element)) firstSeen.set(element, index);
+    });
+
+    let ranked = Array.from(counts.keys()).sort((a, b) => {
+      const countDiff = (counts.get(b) || 0) - (counts.get(a) || 0);
+      if (countDiff) return countDiff;
+      return (firstSeen.get(a) || 0) - (firstSeen.get(b) || 0);
+    });
+
+    const forced = getStoryForcedBarrierElements(stage, ids);
+    const selected = [];
+
+    // 通常は上位2属性。
+    // ただし属性バリア対象属性は絶対表示し、バリア属性が3種以上ある場合だけ2枠を超えて表示する。
+    forced.forEach(element => {
+      if (!selected.includes(element)) selected.push(element);
+    });
+    ranked.forEach(element => {
+      if (selected.includes(element)) return;
+      if (selected.length >= Math.max(2, forced.length)) return;
+      selected.push(element);
+    });
+    selected.sort((a, b) => {
+      const countDiff = (counts.get(b) || 0) - (counts.get(a) || 0);
+      if (countDiff) return countDiff;
+      return (firstSeen.get(a) ?? Number.MAX_SAFE_INTEGER) - (firstSeen.get(b) ?? Number.MAX_SAFE_INTEGER);
+    });
+
+    // enemy data未定義の予約ステージでも空欄にはしない。
+    if (!selected.length && Array.isArray(stage.enemyIds) && stage.enemyIds.length) {
+      selected.push('neutral');
+    }
+    return selected;
+  }
+
+  function getStoryBossElement(stage) {
+    if (!stage || stage.type !== 'boss') return '';
+    if (stage.bossElement) return normalizeStoryElement(stage.bossElement);
+
+    const ids = Array.isArray(stage.enemyIds) ? stage.enemyIds : [];
+    for (const enemyId of ids) {
+      const def = getStoryEnemyDef(enemyId);
+      if (def && def.kind === 'boss') return normalizeStoryElement(def.element);
+    }
+    return ids.length ? getStoryEnemyElement(ids[0]) : 'neutral';
+  }
+
+  function buildStoryElementIcons(elements, iconClass = 'ss-stage-element-icon') {
+    return (Array.isArray(elements) ? elements : []).map(element => {
+      const key = normalizeStoryElement(element);
+      const src = STORY_ELEMENT_ICON[key] || STORY_ELEMENT_ICON.neutral;
+      const label = STORY_ELEMENT_LABEL[key] || STORY_ELEMENT_LABEL.neutral;
+      return `<img class="${iconClass}" src="${src}" alt="${label}" title="${label}" draggable="false">`;
+    }).join('');
+  }
+
+  function resolveStageAttributeStage(stageOrId) {
+    if (stageOrId && typeof stageOrId === 'object') return stageOrId;
+    const stageId = String(stageOrId || '');
+    if (!stageId || !window.ShootingStages) return null;
+    try {
+      if (typeof window.ShootingStages.getShootingStage === 'function') {
+        return window.ShootingStages.getShootingStage(stageId) || null;
+      }
+      return window.ShootingStages.SHOOTING_STAGES?.[stageId] || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // build834: 全ステージ選択画面で使う共通属性プレビュー。
+  // 今後ステージ選択UIを追加する場合も、このbuildHtml()を1行差し込めば同じ構成になる。
+  function buildStageAttributePreviewHtml(stageOrId, classes = {}) {
+    const stage = resolveStageAttributeStage(stageOrId);
+    if (!stage) return '';
+
+    const className = {
+      root: classes.root || 'shooting-stage-elements',
+      line: classes.line || 'shooting-stage-element-line',
+      bossLine: classes.bossLine || 'shooting-stage-boss-element-line',
+      label: classes.label || 'shooting-stage-element-label',
+      icons: classes.icons || 'shooting-stage-element-icons',
+      icon: classes.icon || 'shooting-stage-element-icon',
+    };
+
+    const mainElements = getStoryMainElements(stage);
+    const bossElement = getStoryBossElement(stage);
+    const mainIcons = buildStoryElementIcons(mainElements, className.icon);
+    const bossHtml = stage.type === 'boss'
+      ? `<div class="${className.line} ${className.bossLine}"><span class="${className.label}">BOSSの属性：</span><span class="${className.icons}">${buildStoryElementIcons([bossElement || 'neutral'], className.icon)}</span></div>`
+      : '';
+
+    return `
+      <div class="${className.root}" aria-label="ステージ属性">
+        <div class="${className.line}"><span class="${className.label}">主に出現する属性：</span><span class="${className.icons}">${mainIcons}</span></div>
+        ${bossHtml}
+      </div>`;
+  }
+
+  window.ShootingStageAttributePreview = Object.freeze({
+    buildHtml: buildStageAttributePreviewHtml,
+    getMainElements: getStoryMainElements,
+    getBossElement: getStoryBossElement,
+  });
+
+  function buildStoryStageElementHtml(stage) {
+    return buildStageAttributePreviewHtml(stage, {
+      root: 'ss-stage-elements',
+      line: 'ss-stage-element-line',
+      bossLine: 'ss-stage-boss-element-line',
+      label: 'ss-stage-element-label',
+      icons: 'ss-stage-element-icons',
+      icon: 'ss-stage-element-icon',
+    });
+  }
+
   function markStoryStageCleared(stageId) {
     if (!stageId) return;
     const map = getStoryClearMap();
@@ -350,7 +577,7 @@
       'bottom:var(--bottom-nav-h,76px)', 'left:0',
       'z-index:200',
       'display:none', 'flex-direction:column',
-      'background:#07080a', 'color:#e8e4dc',
+      'background:transparent', 'color:#4b4640',
       'font-family:"Noto Serif JP",serif',
       'opacity:0', 'transition:opacity 0.35s ease',
     ].join(';');
@@ -378,183 +605,394 @@
     const s = document.createElement('style');
     s.id = 'stage-select-style';
     s.textContent = `
-      /* ヘッダー */
+      #stage-select-modal{
+        position:fixed !important;
+        top:var(--header-h,72px) !important;
+        right:0 !important;
+        bottom:var(--bottom-nav-h,76px) !important;
+        left:0 !important;
+        z-index:200 !important;
+        display:none;
+        flex-direction:column;
+        overflow:hidden !important;
+        background-color:#f6f1e6 !important;
+        background-image:
+          linear-gradient(rgba(255,253,247,.14),rgba(255,253,247,.14)),
+          url("images/zeraphia_bg_01.webp") !important;
+        background-repeat:no-repeat !important;
+        background-position:center center !important;
+        background-size:cover !important;
+        color:#4b4640 !important;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+      }
+      #stage-select-modal::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        pointer-events:none;
+        background:linear-gradient(180deg,
+          rgba(255,255,255,.18) 0%,
+          rgba(255,255,255,.04) 42%,
+          rgba(244,238,226,.12) 100%);
+      }
       .ss-header {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        padding: max(18px, env(safe-area-inset-top, 18px)) 16px 12px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-        background: rgba(0,0,0,.5);
-        gap: 12px;
+        position:relative;
+        z-index:2;
+        flex:0 0 var(--app-page-header-h,52px);
+        width:100%;
+        height:var(--app-page-header-h,52px);
+        min-height:var(--app-page-header-h,52px);
+        box-sizing:border-box;
+        margin:0;
+        padding:0 var(--app-page-side,18px);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border:0;
+        background:transparent;
+        box-shadow:none;
+        isolation:isolate;
+        gap:0;
+      }
+      .ss-header::after{
+        content:"";
+        position:absolute;
+        z-index:-1;
+        pointer-events:none;
+        left:-6%;
+        right:-6%;
+        top:22%;
+        height:78px;
+        background:linear-gradient(to bottom,
+          rgba(255,255,255,.82) 0%,
+          rgba(255,255,255,.66) 34%,
+          rgba(255,255,255,.35) 66%,
+          rgba(255,255,255,0) 100%);
+        filter:blur(10px);
+        -webkit-filter:blur(10px);
       }
       .ss-back-btn {
-        background: none;
-        border: none;
-        color: rgba(232,228,220,.5);
-        font-family: "Noto Serif JP", serif;
-        font-size: 14px;
-        letter-spacing: 1px;
-        cursor: pointer;
-        padding: 4px 0;
-        flex-shrink: 0;
+        position:absolute;
+        left:var(--app-page-side,18px);
+        top:50%;
+        transform:translateY(-50%);
+        display:inline-flex;
+        align-items:center;
+        justify-content:flex-start;
+        min-width:52px;
+        width:auto;
+        height:44px;
+        margin:0;
+        padding:0;
+        border:0;
+        border-radius:0;
+        background:transparent;
+        box-shadow:none;
+        color:var(--app-back-color,#837361);
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+        font-size:var(--app-back-size,11px);
+        font-weight:500;
+        line-height:1;
+        letter-spacing:.015em;
+        text-shadow:0 0 8px rgba(255,255,255,.80);
+        cursor:pointer;
       }
-      .ss-back-btn:active { color: rgba(232,228,220,.85); }
+      .ss-back-btn:active { opacity:.58; transform:translateY(-50%); }
       .ss-title {
-        flex: 1;
-        text-align: center;
-        font-family: "Cinzel", serif;
-        font-size: 15px;
-        letter-spacing: 4px;
-        color: rgba(232,228,220,.85);
+        position:static;
+        width:auto;
+        max-width:calc(100% - 150px);
+        margin:0;
+        padding:0;
+        color:#6f5535;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+        font-size:15px;
+        font-weight:500;
+        font-style:normal;
+        line-height:1;
+        letter-spacing:.12em;
+        text-indent:.12em;
+        text-align:center;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        text-shadow:0 0 9px rgba(255,255,255,.72);
+        pointer-events:none;
       }
-      .ss-spacer { flex-shrink: 0; width: 48px; }
-
-      /* リスト */
+      /* build843: STORY chapter header must use the exact canonical selector.
+         Do not allow older page/selector typography to recolor or re-font CHAPTER xx. */
+      html body:not(.ui-immersive) #stage-select-modal .ss-header #ss-title{
+        color:#6f5535 !important;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+        font-size:15px !important;
+        font-weight:500 !important;
+        font-style:normal !important;
+        line-height:1 !important;
+        letter-spacing:.12em !important;
+        text-indent:.12em !important;
+        text-align:center !important;
+        text-shadow:0 0 9px rgba(255,255,255,.72) !important;
+        -webkit-text-fill-color:#6f5535 !important;
+        opacity:1 !important;
+        filter:none !important;
+      }
+      .ss-spacer { display:none; }
       .ss-list-wrap {
-        flex: 1;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 0 0 calc(40px + env(safe-area-inset-bottom, 20px));
+        position:relative;
+        z-index:1;
+        flex:1 1 auto;
+        min-height:0;
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+        padding:0 0 calc(18px + env(safe-area-inset-bottom, 0px));
+        scrollbar-width:none;
+        background:transparent;
       }
-      .ss-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-
-      /* ステージカード */
+      .ss-list-wrap::-webkit-scrollbar { display:none; }
+      .ss-list { display:flex; flex-direction:column; gap:0; }
       .ss-card {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        min-height: 72px;
-        padding: 14px 18px;
-        border-radius: 0;
-        border: 0;
-        border-bottom: 1px solid rgba(255,255,255,.08);
-        background: rgba(255,255,255,.03);
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: background .15s;
-        position: relative;
-        overflow: hidden;
+        position:relative;
+        display:grid;
+        grid-template-columns:28px minmax(0,1fr) minmax(86px, auto) 12px;
+        align-items:center;
+        gap:12px;
+        width:100%;
+        min-height:118px;
+        padding:14px 16px 14px 15px;
+        border:0;
+        border-bottom:1px solid rgba(173,157,127,.24);
+        border-top:1px solid rgba(255,255,255,.42);
+        border-radius:0;
+        background:linear-gradient(180deg, rgba(255,253,248,.32), rgba(255,252,247,.12));
+        box-shadow:none;
+        text-align:left;
+        cursor:pointer;
+        -webkit-tap-highlight-color:transparent;
+        transition:background .12s ease, transform .12s ease;
+        overflow:hidden;
       }
-      .ss-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,.03) 0%, transparent 60%);
-        pointer-events: none;
+      .ss-card::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        pointer-events:none;
+        background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 48%);
+        opacity:.55;
       }
-      .ss-card:active {
-        background: rgba(255,255,255,.09);
-      }
-      .ss-card.locked {
-        opacity: .35;
-        pointer-events: none;
-      }
-
-      /* ステージ番号 */
+      .ss-card:active { transform:translateY(1px); background:linear-gradient(180deg, rgba(255,253,248,.40), rgba(255,252,247,.18)); }
+      .ss-card.locked { opacity:.58; }
       .ss-card-no {
-        flex-shrink: 0;
-        width: 36px;
-        height: auto;
-        border-radius: 0;
-        border: 0;
-        background: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        font-family: "Cinzel", serif;
-        font-size: 11px;
-        color: rgba(232,228,220,.55);
-        letter-spacing: .12em;
+        position:relative;
+        z-index:1;
+        width:28px;
+        min-width:28px;
+        align-self:flex-start;
+        padding:6px 0 0;
+        font-family:"Cinzel","Times New Roman",serif;
+        font-size:8px;
+        font-weight:500;
+        line-height:1;
+        letter-spacing:.18em;
+        color:#a3834e;
       }
-
-      /* テキストエリア */
       .ss-card-body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+        position:relative;
+        z-index:1;
+        min-width:0;
+        display:flex;
+        flex-direction:column;
+        gap:4px;
+        padding-right:4px;
+      }
+      .ss-card-name-row {
+        display:flex;
+        align-items:baseline;
+        gap:8px;
+        min-width:0;
       }
       .ss-card-name {
-        font-size: 15px;
-        letter-spacing: 1px;
-        color: rgba(232,228,220,.9);
-        font-weight: 500;
+        color:#443827;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+        font-size:15px;
+        font-weight:400;
+        line-height:1.35;
+        letter-spacing:.06em;
+        text-shadow:none;
+      }
+      .ss-story-clear {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        vertical-align:baseline;
+        margin-left:6px;
+        padding:1px 6px 0;
+        border:1px solid rgba(195,170,116,.72);
+        background:rgba(255,249,235,.74);
+        color:#9a7a43;
+        font-family:"Cinzel","Noto Serif JP",serif;
+        font-size:8px;
+        font-weight:600;
+        letter-spacing:.15em;
+        line-height:1.45;
       }
       .ss-card-meta {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        display:flex;
+        align-items:flex-start;
+        gap:8px;
       }
       .ss-card-enemy {
-        font-size: 11px;
-        letter-spacing: 2px;
-        color: rgba(232,228,220,.4);
-        font-family: "Cinzel", serif;
+        color:#776a58;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+        font-size:8px;
+        line-height:1.55;
+        letter-spacing:.08em;
       }
-      .ss-card-reward {
-        font-size: 10px;
-        color: rgba(180,160,100,.6);
-        letter-spacing: 1px;
+      .ss-stage-elements { margin-top:2px; }
+      .ss-stage-element-line {
+        display:flex;
+        align-items:center;
+        gap:6px;
+        margin-top:3px;
+        min-width:0;
       }
-
-      /* 難易度バッジ */
-      .ss-diff-badge {
-        flex-shrink: 0;
-        font-family: "Cinzel", serif;
-        font-size: 8px;
-        letter-spacing: 2px;
-        padding: 0;
-        border-radius: 0;
-        border: 0;
-        background: transparent;
+      .ss-stage-element-label {
+        flex:0 0 auto;
+        color:#a29076;
+        font-size:7px;
+        line-height:1.45;
+        letter-spacing:.08em;
       }
-
-      /* 矢印 */
-      .ss-card-arrow {
-        flex-shrink: 0;
-        font-size: 16px;
-        color: rgba(232,228,220,.2);
+      .ss-stage-element-icons {
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        min-width:0;
+        flex-wrap:wrap;
       }
-
-      /* ロックアイコン */
+      .ss-stage-element-icon {
+        width:18px;
+        height:18px;
+        object-fit:contain;
+        filter:drop-shadow(0 0 2px rgba(255,255,255,.45));
+      }
+      .ss-stage-boss-element-line .ss-stage-element-label { color:#9a8660; }
+      .ss-stage-record {
+        position:relative;
+        z-index:1;
+        min-width:84px;
+        align-self:stretch;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        gap:8px;
+        padding-right:2px;
+        text-align:right;
+      }
+      .ss-stage-record-rank,
+      .ss-stage-record-score {
+        display:flex;
+        flex-direction:column;
+        gap:2px;
+      }
+      .ss-stage-record-rank span,
+      .ss-stage-record-score span {
+        color:#c1b29a;
+        font-family:"Cinzel","Times New Roman",serif;
+        font-size:7px;
+        font-weight:500;
+        letter-spacing:.14em;
+        line-height:1;
+      }
+      .ss-stage-record-rank b {
+        color:#b18741;
+        font-family:"Cinzel","Times New Roman",serif;
+        font-size:24px;
+        font-weight:500;
+        line-height:1;
+        letter-spacing:.04em;
+      }
+      .ss-stage-record-rank.rank-s b { color:#b6883f; }
+      .ss-stage-record-rank.rank-a b { color:#b48a45; }
+      .ss-stage-record-rank.rank-b b { color:#9a8353; }
+      .ss-stage-record-rank.rank-c b,
+      .ss-stage-record-rank.rank-d b,
+      .ss-stage-record-rank.rank-e b,
+      .ss-stage-record-rank.rank-none b { color:#c9bdab; }
+      .ss-stage-record-score b {
+        color:#b0a189;
+        font-family:"Cinzel","Times New Roman",serif;
+        font-size:10px;
+        font-weight:500;
+        line-height:1;
+        letter-spacing:.12em;
+      }
+      .ss-card-arrow,
       .ss-lock-icon {
-        flex-shrink: 0;
-        font-size: 14px;
-        color: rgba(232,228,220,.2);
+        position:relative;
+        z-index:1;
+        align-self:center;
+        justify-self:end;
+        color:rgba(181,165,136,.82);
+        font-size:16px;
+        line-height:1;
       }
-
+      .ss-lock-icon { font-size:12px; }
       .ss-roguelite-preparing {
-        min-height: 52vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 48px 24px;
-        text-align: center;
+        min-height:52vh;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        padding:48px 24px;
+        text-align:center;
       }
       .ss-roguelite-preparing-en {
-        font-family: "Cinzel", serif;
-        font-size: 11px;
-        letter-spacing: .32em;
-        color: rgba(190,170,255,.42);
-        margin-bottom: 18px;
+        font-family:"Cinzel",serif;
+        font-size:11px;
+        letter-spacing:.32em;
+        color:rgba(150,130,98,.42);
+        margin-bottom:18px;
       }
       .ss-roguelite-preparing-main {
-        font-size: 15px;
-        letter-spacing: .12em;
-        color: rgba(232,228,220,.82);
+        font-size:15px;
+        letter-spacing:.12em;
+        color:rgba(76,63,46,.82);
       }
       .ss-roguelite-preparing-sub {
-        margin-top: 10px;
-        font-size: 11px;
-        letter-spacing: .08em;
-        color: rgba(232,228,220,.35);
+        margin-top:10px;
+        font-size:11px;
+        letter-spacing:.08em;
+        color:rgba(118,104,82,.56);
+      }
+      @media (min-width:500px){
+        #stage-select-modal{
+          left:50% !important;
+          right:auto !important;
+          width:100% !important;
+          max-width:430px !important;
+          transform:translateX(-50%) !important;
+        }
+      }
+      @media (max-width:380px),(max-height:700px){
+        .ss-header{
+          flex-basis:var(--app-page-header-h,50px);
+          height:var(--app-page-header-h,50px);
+          min-height:var(--app-page-header-h,50px);
+          padding-left:var(--app-page-side,14px);
+          padding-right:var(--app-page-side,14px);
+        }
+        .ss-back-btn{ left:var(--app-page-side,14px); }
+        .ss-list-wrap{ padding-bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }
+        .ss-card{
+          min-height:110px;
+          grid-template-columns:26px minmax(0,1fr) minmax(80px, auto) 10px;
+          gap:10px;
+          padding:13px 12px 13px 13px;
+        }
+        .ss-card-name{ font-size:14px; }
+        .ss-stage-record{ min-width:78px; }
+        .ss-stage-record-rank b{ font-size:22px; }
+        .ss-stage-record-score b{ font-size:9px; }
       }
     `;
     document.body.appendChild(s);
@@ -573,7 +1011,7 @@
     // ============================================================
     if (typeof chapter === 'number' && chapter >= STORY_CHAPTER_MIN && chapter <= STORY_CHAPTER_MAX) {
       if (!window.ShootingStages) {
-        list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.45);font-size:12px;padding:42px 0;letter-spacing:2px;">SHOOTING DATA LOADING...</div>';
+        list.innerHTML = '<div style="text-align:center;color:rgba(117,103,81,.58);font-size:12px;padding:42px 0;letter-spacing:2px;">SHOOTING DATA LOADING...</div>';
         setTimeout(() => {
           const modal = document.getElementById('stage-select-modal');
           if (modal && modal.style.display !== 'none') renderList(chapter, mode);
@@ -583,7 +1021,7 @@
 
       const stages = getStoryStages(chapter, mode);
       if (!stages.length) {
-        list.innerHTML = '<div style="text-align:center;color:rgba(232,228,220,.3);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
+        list.innerHTML = '<div style="text-align:center;color:rgba(117,103,81,.48);font-size:13px;padding:40px 0;letter-spacing:2px;">準備中</div>';
         return;
       }
 
@@ -614,6 +1052,7 @@
             <div class="ss-card-meta">
               <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
             </div>
+            ${buildStoryStageElementHtml(stageDef)}
           </div>
           ${buildStoryRecordHtml(record)}
           ${unlocked ? '<div class="ss-card-arrow">›</div>' : '<div class="ss-lock-icon">🔒</div>'}

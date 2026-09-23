@@ -1053,6 +1053,56 @@
     return quantity < 1 ? base / quantity : base;
   }
 
+
+  // build840: 端末サイズによる敵弾難易度差を抑える。
+  // iPhone SE(375x667)でHUD/FOOTER各72pxを除いた 375x523 を基準戦闘領域とする。
+  // 見た目・HUD・敵/味方配置はレスポンシブのまま維持し、
+  // 敵弾の「画面を横断する時間」だけを基準端末へ揃える。
+  const SHOOTING_REFERENCE_ARENA_WIDTH = 375;
+  const SHOOTING_REFERENCE_ARENA_HEIGHT = 523;
+
+  function getEnemyProjectileViewportScale(width, height) {
+    const w = Math.max(1, Number(width || SHOOTING_REFERENCE_ARENA_WIDTH));
+    const h = Math.max(1, Number(height || SHOOTING_REFERENCE_ARENA_HEIGHT));
+    return {
+      x: clamp(w / SHOOTING_REFERENCE_ARENA_WIDTH, 0.72, 1.45),
+      y: clamp(h / SHOOTING_REFERENCE_ARENA_HEIGHT, 0.72, 1.70),
+    };
+  }
+
+  // build841: STAGE PATTERN DETERMINISM
+  // 戦闘難易度に関わる「乱数」をステージID + ボレー/出現番号から固定生成する。
+  // 同じステージ・同じ出現順なら、端末や再挑戦に関係なく同じ値を返す。
+  // 報酬抽選・ガチャ・キャラ固有スキルのランダム性には使用しない。
+  function getFixedStagePatternKey() {
+    return String(
+      (selectedStage && (selectedStage.baseStageId || selectedStage.id)) ||
+      selectedStageId ||
+      'shooting_stage'
+    );
+  }
+
+  function hashFixedStagePattern(value) {
+    const str = String(value || '');
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    // final avalanche
+    h ^= h >>> 16;
+    h = Math.imul(h, 2246822507) >>> 0;
+    h ^= h >>> 13;
+    h = Math.imul(h, 3266489909) >>> 0;
+    h ^= h >>> 16;
+    return h >>> 0;
+  }
+
+  function fixedStagePatternRandom(label, index = 0, salt = 0) {
+    const key = `${getFixedStagePatternKey()}|${String(label || 'pattern')}|${Number(index || 0)}|${Number(salt || 0)}`;
+    return hashFixedStagePattern(key) / 4294967296;
+  }
+
   function getBattleTimeLimitSeconds() {
     if (!selectedStage) return 0;
     const explicit = Number(selectedStage.timeLimitSeconds || 0);
@@ -1268,7 +1318,7 @@
         .filter(pos => pos.x >= safeLeft && pos.x <= safeRight && pos.y >= safeTop && pos.y <= safeBottom);
       const fallback = { x: clamp(bx, safeLeft, safeRight), y: clamp(by + 86, safeTop, safeBottom) };
       const pick = candidates.length
-        ? candidates[Math.floor(Math.random() * candidates.length)]
+        ? candidates[Math.floor(fixedStagePatternRandom('ch04_final_item', 0, 0) * candidates.length)]
         : fallback;
       x = clamp(pick.x, safeLeft, safeRight);
       y = clamp(pick.y, safeTop, safeBottom);
@@ -1549,17 +1599,19 @@
     // 毎回同じ10WAYの軌道をなぞると固定安置ができるため、
     // fan全体の向き・各弾角度・速度を小さくランダム化する。
     // 4拍/8拍というリズムと10WAYの本数自体は維持する。
-    const fanDrift = (Math.random() - .5) * 0.34;
+    const volleyIndex = Number(state.chapter43VolleyIndex || 0);
+    state.chapter43VolleyIndex = volleyIndex + 1;
+    const fanDrift = (fixedStagePatternRandom('ch43_fan_drift', volleyIndex, 0) - .5) * 0.34;
     const beatSwing = Math.sin((step + 1) * 1.73) * 0.055;
     const baseAngle = aimedAngle + fanDrift + beatSwing;
     const baseSpeed = Math.max(145, Number(BOSS.bulletSpeed || 190));
 
     for (let i = 0; i < ways; i++) {
       const t = i / (ways - 1);
-      const angleJitter = (Math.random() - .5) * 0.095;
+      const angleJitter = (fixedStagePatternRandom('ch43_angle', volleyIndex, i) - .5) * 0.095;
       const a = baseAngle + (t - .5) * spread + angleJitter;
-      const speed = baseSpeed * (0.88 + Math.random() * 0.24);
-      const spawnJitterX = (Math.random() - .5) * 18;
+      const speed = baseSpeed * (0.88 + fixedStagePatternRandom('ch43_speed', volleyIndex, i) * 0.24);
+      const spawnJitterX = (fixedStagePatternRandom('ch43_spawn_x', volleyIndex, i) - .5) * 18;
       const p = makeProjectile(
         'shooting-enemy-bullet shooting-sakiel-bullet shooting-beautiful-bullet',
         state.boss.x + spawnJitterX, state.boss.y + 38,
@@ -2989,6 +3041,11 @@
       normalDefeated: 0,
       normalLastSpawnAt: -9999,
       normalEnemyStunUntil: 0,
+      // build841: stage-side random patterns are now deterministic.
+      chapter4CurtainVolleyIndex: 0,
+      chapter43VolleyIndex: 0,
+      facelessVolleyIndex: 0,
+      bulletHellVolleyIndex: 0,
       chapter6Barriers: [],
       collectibles: [],
       mimosaItems: [],
@@ -7119,7 +7176,16 @@
     }
 
     if (enemy.weaknessBarrierEl) {
-      const barrierSize = Math.max(72, 82 * Number(enemy.displayScale || 1));
+      // build836: 属性バリアは敵本体へ密着。
+      // 実測済みサイズを最優先し、生成直後だけCSS基準サイズで補完する。
+      // 旧82px基準の大きなリングは廃止し、敵画像の外周+約2%だけにする。
+      const scale = Math.max(0.1, Number(enemy.displayScale || 1));
+      const measuredDiameter = Math.max(
+        Number(enemy._hw || 0) * 2,
+        Number(enemy._hh || 0) * 2
+      );
+      const fallbackDiameter = 62 * scale;
+      const barrierSize = Math.max(50, (measuredDiameter > 0 ? measuredDiameter : fallbackDiameter) * 1.02);
       enemy.weaknessBarrierEl.style.width = `${barrierSize}px`;
       enemy.weaknessBarrierEl.style.height = `${barrierSize}px`;
       enemy.weaknessBarrierEl.style.transform =
@@ -7209,9 +7275,10 @@
 
     const lane = state.normalSpawned % 4;
     const lanes = [w * .20, w * .40, w * .60, w * .80];
+    const spawnIndex = Number(state.normalSpawned || 0);
     const x = enemyDef.strongEnemy
       ? w * .50
-      : lanes[lane] + (Math.random() - .5) * Math.min(28, w * .06);
+      : lanes[lane] + (fixedStagePatternRandom('normal_spawn_x', spawnIndex, 0) - .5) * Math.min(28, w * .06);
     const y = enemyDef.strongEnemy
       ? Math.max(86, h * .145)
       : Math.max(92, h * (.16 + (state.normalSpawned % 2) * .075));
@@ -7222,17 +7289,18 @@
       : Number(enemyDef.hp || 18);
 
     const enemy = {
-      uid: `mini_${Date.now()}_${state.normalSpawned}_${Math.random().toString(36).slice(2,6)}`,
+      uid: `mini_${String(state.stageId || 'stage')}_${spawnIndex}`,
       def: enemyDef, el, hpEl: hpWrap, elementEl, weaknessBarrierEl, x, y, baseX: x, baseY: y,
       displayScale,
       element: enemyElement,
       hp: enemyHp,
       hpMax: enemyHp,
       spawnedAt: now,
-      lastShotAt: now + Math.random() * 500,
-      phaseSeed: Math.random() * Math.PI * 2,
-      nextActionAt: now + 900 + Math.random() * 450,
+      lastShotAt: now + fixedStagePatternRandom('normal_first_shot', spawnIndex, 0) * 500,
+      phaseSeed: fixedStagePatternRandom('normal_phase_seed', spawnIndex, 0) * Math.PI * 2,
+      nextActionAt: now + 900 + fixedStagePatternRandom('normal_next_action', spawnIndex, 0) * 450,
       actionIndex: state.normalSpawned % 3,
+      patternVolleyIndex: 0,
       attackState: 'idle',
       attackExecuteAt: 0,
       dashUntil: 0,
@@ -7247,6 +7315,8 @@
       // spawningクラス除去後(最終的な--enemy-scale込みの見た目)でサイズを実測してキャッシュする。
       // ここでのgetBoundingClientRect呼び出しは生成時に1回だけなので、毎フレームのコストにはならない。
       measureUnitSize(enemy);
+      // 実測した敵サイズで属性バリアを即座に再フィットする。
+      positionMiniEnemyHp(enemy);
     });
     return enemy;
   }
@@ -7360,7 +7430,7 @@
     // build550: DAILY上級は旧stage定義がキャッシュされていても壁を必ず生成する。
     // CH06の壁ロジックをそのまま再利用する固定1枚構成。
     if (isDailyAdvancedGimmickStage()) {
-      return [{ xRate:.50, yRate:.49, widthRate:.70, height:46, moveRangeRate:0, moveSpeed:0 }];
+      return [{ xRate:.50, yRate:.49, widthRate:.70, height:23, moveRangeRate:.10, moveSpeed:.30, contactDamage:85 }];
     }
 
     return [];
@@ -7574,6 +7644,8 @@
     // v74: CH04の▼を全体で約20%減。
     // 等間隔は使わず、左右端までまんべんなく散らす。
     // 7区画に分けてランダム化し、総数は上4 + 下3 = 7発にする。
+    const volleyIndex = Number(state.chapter4CurtainVolleyIndex || 0);
+    state.chapter4CurtainVolleyIndex = volleyIndex + 1;
     const totalCount = 7;
     const segment = laneWidth / totalCount;
     const positions = [];
@@ -7582,13 +7654,13 @@
       const margin = Math.min(8, segment * 0.16);
       const innerLeft = segLeft + margin;
       const innerRight = segLeft + segment - margin;
-      const x = innerLeft + Math.random() * Math.max(1, innerRight - innerLeft);
+      const x = innerLeft + fixedStagePatternRandom('ch04_curtain_x', volleyIndex, i) * Math.max(1, innerRight - innerLeft);
       positions.push(x);
     }
 
-    // 毎波シャッフル。見た目の規則性をなくす。
+    // 毎波の並び替えも固定シード化。再挑戦しても同じ順序になる。
     for (let i = positions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(fixedStagePatternRandom('ch04_curtain_shuffle', volleyIndex, i) * (i + 1));
       [positions[i], positions[j]] = [positions[j], positions[i]];
     }
 
@@ -7603,9 +7675,10 @@
         p.canvasTone = ((i + rowIndex * 2) % 4) + 1;
         p.chapter4CurtainBaseX = x;
         p.chapter4CurtainAge = 0;
-        p.chapter4CurtainAmp = 10 + Math.random() * 7;
-        p.chapter4CurtainFreq = 1.75 + Math.random() * 0.8;
-        p.chapter4CurtainPhase = Math.random() * Math.PI * 2 + rowIndex * 0.8 + i * 0.17;
+        const bulletSalt = rowIndex * 16 + i;
+        p.chapter4CurtainAmp = 10 + fixedStagePatternRandom('ch04_curtain_amp', volleyIndex, bulletSalt) * 7;
+        p.chapter4CurtainFreq = 1.75 + fixedStagePatternRandom('ch04_curtain_freq', volleyIndex, bulletSalt) * 0.8;
+        p.chapter4CurtainPhase = fixedStagePatternRandom('ch04_curtain_phase', volleyIndex, bulletSalt) * Math.PI * 2 + rowIndex * 0.8 + i * 0.17;
         state.enemyBullets.push(p);
       });
     };
@@ -7819,6 +7892,8 @@
       const baseAngle = Math.atan2(dy, dx);
       const speed = Number(cfg.enemyBulletSpeed || def.bulletSpeed || 220);
       const damage = Number(cfg.enemyBulletDamage || def.bulletDamage || 105);
+      const volleyIndex = Number(enemy.patternVolleyIndex || 0);
+      enemy.patternVolleyIndex = volleyIndex + 1;
 
       if (level === 1) {
         // CH03-01 弱:
@@ -7867,7 +7942,7 @@
             );
           });
         } else if (pattern === 1) {
-          const phaseOffset = Math.sin((enemy.phaseSeed || 0) + now * 0.0028) * 0.12;
+          const phaseOffset = Math.sin((enemy.phaseSeed || 0) + volleyIndex * fireRate * 0.0028) * 0.12;
           [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach(offset => {
             shootNormalEnemyProjectile(
               enemy,
@@ -7878,7 +7953,7 @@
             );
           });
         } else {
-          const startAngle = (enemy.phaseSeed || 0) + now * 0.0018;
+          const startAngle = (enemy.phaseSeed || 0) + volleyIndex * fireRate * 0.0018;
           for (let i = 0; i < 8; i++) {
             const angle = startAngle + (Math.PI * 2 * i / 8);
             shootNormalEnemyProjectile(
@@ -7911,7 +7986,7 @@
           );
         });
       } else if (pattern === 1) {
-        const phaseOffset = Math.sin((enemy.phaseSeed || 0) + now * 0.0035) * 0.20;
+        const phaseOffset = Math.sin((enemy.phaseSeed || 0) + volleyIndex * fireRate * 0.0035) * 0.20;
         [-0.72, -0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54, 0.72].forEach(offset => {
           shootNormalEnemyProjectile(
             enemy,
@@ -7922,7 +7997,7 @@
           );
         });
       } else {
-        const startAngle = (enemy.phaseSeed || 0) + now * 0.0027;
+        const startAngle = (enemy.phaseSeed || 0) + volleyIndex * fireRate * 0.0027;
         for (let i = 0; i < 12; i++) {
           const angle = startAngle + (Math.PI * 2 * i / 12);
           shootNormalEnemyProjectile(
@@ -7951,6 +8026,8 @@
 
       const speed = Number(cfg.enemyBulletSpeed || def.bulletSpeed || 205);
       const damage = Number(cfg.enemyBulletDamage || def.bulletDamage || 95);
+      const beautifulVolleyIndex = Number(enemy.patternVolleyIndex || 0);
+      enemy.patternVolleyIndex = beautifulVolleyIndex + 1;
       if (curtainCfg) {
         fireChapter4CurtainVolley(now, damage, 'shooting-enemy-bullet shooting-mini-enemy-bullet');
         enemy.actionIndex = (enemy.actionIndex + 1) % 2;
@@ -7963,7 +8040,7 @@
         const originY = enemy.y + 22;
         const spin = (reverse ? -1 : 1) * (level === 1 ? 0.36 : 0.44);
         const radialSpeed = speed * (level === 1 ? 0.58 : 0.64);
-        const start = (enemy.phaseSeed || 0) + now * 0.00055;
+        const start = (enemy.phaseSeed || 0) + beautifulVolleyIndex * fireRate * 0.00055;
         for (let i = 0; i < arms; i++) {
           const a = start + Math.PI * 2 * i / arms;
           const p = makeProjectile(
@@ -7990,7 +8067,7 @@
       const spawnWave = (count, mirror = false) => {
         const center = enemy.x;
         const gap = level === 2 ? 18 : 16;
-        const phaseSeed = (enemy.phaseSeed || 0) + now * 0.002;
+        const phaseSeed = (enemy.phaseSeed || 0) + beautifulVolleyIndex * fireRate * 0.002;
         for (let i = 0; i < count; i++) {
           const offset = (i - (count - 1) / 2) * gap;
           const x = center + offset;
@@ -8219,9 +8296,10 @@
     const cfg = getNormalBattleConfig();
     const configuredDropRate = Number(cfg.itemDropRate);
 
-    // CH03: 敵撃破時に80%抽選など、ステージ設定の確率ドロップを使用。
+    // CH03: 確率設定は維持するが、抽選列はステージごとに固定。
+    // 同じ撃破番号なら再挑戦時も必ず同じ結果になる。
     if (Number.isFinite(configuredDropRate)) {
-      return Math.random() < clamp(configuredDropRate, 0, 1);
+      return fixedStagePatternRandom('mission_item_drop', defeatedNo, 0) < clamp(configuredDropRate, 0, 1);
     }
 
     // 既存CHAPTERの収集ステージは従来の保証ドロップ方式を維持。
@@ -8620,11 +8698,14 @@
     const interval = phase === 1 ? 260 : phase === 2 ? 190 : 130;
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
+    const volleyIndex = Number(state.bulletHellVolleyIndex || 0);
+    state.bulletHellVolleyIndex = volleyIndex + 1;
 
     // 同心円リング：WAVEごとに弾数を増やす。
     const ringCounts = { 1: 16, 2: 22, 3: 30 };
     const ringCount = ringCounts[phase] || ringCounts[3];
-    const spin = now * (phase === 1 ? 0.0016 : phase === 2 ? 0.0022 : 0.0030);
+    const spinRate = phase === 1 ? 0.0016 : phase === 2 ? 0.0022 : 0.0030;
+    const spin = volleyIndex * interval * spinRate;
     for (let i = 0; i < ringCount; i++) {
       const a = spin + (Math.PI * 2 * i / ringCount);
       state.enemyBullets.push(makeProjectile(
@@ -8783,7 +8864,7 @@
     // 通常弾幕の隙間に差し込む中威力レーザー。
     // WARNING級ではなく、見て避けられる細い直線弾として扱う。
     const phase = Math.max(1, Math.min(3, Number(state.boss?.phase || 1)));
-    const sway = Math.sin(now * 0.0017) * 0.16;
+    const sway = Math.sin(Number(state.boss?.patternTick || 0) * 1.29) * 0.16;
     const offset = phase >= 3 ? (state.boss.patternTick % 2 ? -0.22 : 0.22) : sway;
     const angle = baseAngle + offset;
     const laserSpeed = Math.max(360, Number(speed || 248) * 1.62);
@@ -8846,7 +8927,7 @@
       });
 
       if (tick % 2 === 0) {
-        const start = now * 0.0022;
+        const start = tick * (860 * 0.0022);
         for (let i = 0; i < 10; i++) {
           const a = start + (Math.PI * 2 * i / 10);
           state.enemyBullets.push(makeProjectile(
@@ -8874,7 +8955,7 @@
         ));
       });
 
-      const start = (tick % 2 === 0 ? 0 : Math.PI / 12) + now * 0.0028;
+      const start = (tick % 2 === 0 ? 0 : Math.PI / 12) + tick * (760 * 0.0028);
       for (let i = 0; i < 8; i++) {
         const a = start + (Math.PI * 2 * i / 8);
         state.enemyBullets.push(makeProjectile(
@@ -8900,7 +8981,7 @@
       ));
     });
 
-    const start = now * 0.0034 + (tick % 2 ? Math.PI / 18 : 0);
+    const start = tick * (650 * 0.0034) + (tick % 2 ? Math.PI / 18 : 0);
     for (let i = 0; i < 8; i++) {
       const a = start + (Math.PI * 2 * i / 8);
       state.enemyBullets.push(makeProjectile(
@@ -9174,6 +9255,7 @@
     state.facelessObjects = [];
     state.facelessWave = 2;
     state.facelessSummonTriggered = false;
+    state.facelessVolleyIndex = 0;
 
     const hp = getFacelessWaveHp(2);
     state.boss.hp = hp;
@@ -9220,6 +9302,8 @@
 
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRate)) return;
     state.lastBossShotAt = now;
+    const volleyIndex = Number(state.facelessVolleyIndex || 0);
+    state.facelessVolleyIndex = volleyIndex + 1;
 
     const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
     offsets.forEach(offset => {
@@ -9234,8 +9318,8 @@
     });
 
     // 超上級wave2のみ、ときどき薄い円形弾を混ぜて「濃い」にする。
-    if (mode === 'dense' && Math.floor(now / fireRate) % 3 === 0) {
-      const start = now * 0.0022;
+    if (mode === 'dense' && volleyIndex % 3 === 2) {
+      const start = volleyIndex * (fireRate * 0.0022);
       for (let i = 0; i < 10; i++) {
         const a = start + Math.PI * 2 * i / 10;
         state.enemyBullets.push(makeProjectile(
@@ -9877,7 +9961,8 @@
             projectile.dangerExpireAt = now + 8000;
             projectile.dangerDriftSpeed = driftSpeed;
             projectile.dangerDriftHeading = heading;
-            projectile.dangerDriftPhase = index * 1.7 + now * 0.0007;
+            projectile.dangerDriftPhase = index * 1.7 + Number(state.bossDangerPatternIndex || 0) * 0.23;
+            projectile.dangerDriftAge = 0;
             projectile.dangerDriftTurnRate = 0.78;
             state.enemyBullets.push(projectile);
           });
@@ -9985,7 +10070,7 @@
       // 「ゆったり」を優先。角速度は雑魚よりさらに低め。
       const radialSpeed = phase === 1 ? 142 : 154;
       const angularSpeed = (reverse ? -1 : 1) * (phase === 1 ? 0.34 : 0.42);
-      const start = now * 0.00028 + patternIndex * 0.18;
+      const start = patternIndex * 0.44;
       for (let i = 0; i < arms; i++) {
         const a = start + Math.PI * 2 * i / arms;
         const p = makeProjectile(
@@ -10013,7 +10098,7 @@
       const amp = phase >= 3 ? 28 : 24;
       const freq = phase >= 3 ? 3.15 : 2.75;
       const speed = phase >= 3 ? 188 : 178;
-      const phaseBase = now * 0.0012 + patternIndex * 0.34 + (reverse ? Math.PI : 0);
+      const phaseBase = patternIndex * 1.37 + (reverse ? Math.PI : 0);
       for (let i = 0; i < count; i++) {
         const offset = (i - (count - 1) / 2) * gap;
         const x = originX + offset;
@@ -10145,6 +10230,10 @@
     state.phaseTransition = true;
     removeBossDangerWarning();
     state.bossDangerExecuteAt = 0;
+    // build841: phase開始時の弾幕初期位相も固定。
+    if (state.boss) state.boss.patternTick = 0;
+    state.bulletHellVolleyIndex = 0;
+    state.chapter43VolleyIndex = 0;
     state.nextBossDangerAt = performance.now() + 4200;
     if (isChapter43BossStage()) {
       state.chapter43RhythmStep = 0;
@@ -11009,6 +11098,10 @@
       state.bullets.push(...spawnedPlayerBullets);
     }
 
+    const enemyViewportScale = getEnemyProjectileViewportScale(w, h);
+    const enemyMoveScaleX = Number(enemyViewportScale.x || 1);
+    const enemyMoveScaleY = Number(enemyViewportScale.y || 1);
+
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
 
@@ -11072,10 +11165,10 @@
       // CH04の▼弾。ゆるく横揺れしながら落下する。
       if (p.chapter4CurtainDrift) {
         p.chapter4CurtainAge = Number(p.chapter4CurtainAge || 0) + moveDt;
-        p.y += p.vy * moveDt;
+        p.y += p.vy * moveDt * enemyMoveScaleY;
         p.x = Number(p.chapter4CurtainBaseX || p.x) +
           Math.sin(p.chapter4CurtainAge * Number(p.chapter4CurtainFreq || 2.1) + Number(p.chapter4CurtainPhase || 0)) *
-          Number(p.chapter4CurtainAmp || 12);
+          Number(p.chapter4CurtainAmp || 12) * enemyMoveScaleX;
       }
 
       // サキエルのWARNING弾。5秒間だけゆっくり揺れながら漂い、壁反射せずに消える。
@@ -11101,11 +11194,13 @@
           p.el.remove();
           return false;
         }
+        p.dangerDriftAge = Number(p.dangerDriftAge || 0) + moveDt;
+        const age = p.dangerDriftAge;
         const phase = Number(p.dangerDriftPhase || 0);
         const turnRate = Number(p.dangerDriftTurnRate || 0.78);
         const wobble =
-          Math.sin(now * 0.00135 + phase) * 0.86 +
-          Math.sin(now * 0.00215 + phase * 1.37) * 0.34;
+          Math.sin(age * 1.35 + phase) * 0.86 +
+          Math.sin(age * 2.15 + phase * 1.37) * 0.34;
         p.dangerDriftHeading = Number(p.dangerDriftHeading || Math.atan2(p.vy, p.vx)) + wobble * turnRate * moveDt;
         const driftSpeed = Number(p.dangerDriftSpeed || 138);
         p.vx = Math.cos(p.dangerDriftHeading) * driftSpeed;
@@ -11120,16 +11215,17 @@
         const age = p.beautifulAge;
         const radius = Number(p.beautifulRadialSpeed || 180) * age;
         const angle = Number(p.beautifulStartAngle || 0) + Number(p.beautifulAngularSpeed || 1.2) * age;
-        p.x = Number(p.beautifulOriginX || 0) + Math.cos(angle) * radius;
-        p.y = Number(p.beautifulOriginY || 0) + Math.sin(angle) * radius;
+        p.x = Number(p.beautifulOriginX || 0) + Math.cos(angle) * radius * enemyMoveScaleX;
+        p.y = Number(p.beautifulOriginY || 0) + Math.sin(angle) * radius * enemyMoveScaleY;
       } else if (p.beautifulWave) {
         p.beautifulAge = Number(p.beautifulAge || 0) + moveDt;
-        p.y += p.vy * moveDt;
+        p.y += p.vy * moveDt * enemyMoveScaleY;
         p.x = Number(p.beautifulWaveBaseX || p.x) +
           Math.sin(p.beautifulAge * Number(p.beautifulWaveFreq || 4.2) + Number(p.beautifulWavePhase || 0)) *
-          Number(p.beautifulWaveAmp || 18);
+          Number(p.beautifulWaveAmp || 18) * enemyMoveScaleX;
       } else {
-        p.x += p.vx * dt; p.y += p.vy * moveDt;
+        p.x += p.vx * dt * enemyMoveScaleX;
+        p.y += p.vy * moveDt * enemyMoveScaleY;
       }
 
       // リヴィアの漂流弾は8秒間フィールド内に残すため、壁では消さずに反射する。
@@ -11294,6 +11390,22 @@
     const layout = frameLayout || captureCombatFrameLayout();
     if (!layout) return;
     const { playerRect, arenaRect: arenaRectForContact, boss, bossRect } = layout;
+
+    // build836: CH06 / DAILY上級の遮断壁は味方にも実体を持つ。
+    // 壁へ接触した場合は通常の接触ダメージとして処理し、
+    // damagePlayer側の無敵時間で毎フレーム連続ダメージになるのを防ぐ。
+    const hitBarrier = (state.chapter6Barriers || []).find(barrier => {
+      if (!barrier || !barrier.el) return false;
+      const barrierRect = getChapter6BarrierRect(barrier, arenaRectForContact);
+      // キャラ画像の透明余白で早すぎるHITにならないよう少し内側へ絞る。
+      return !!barrierRect && rectsHit(playerRect, barrierRect, 12, 1);
+    });
+    if (hitBarrier) {
+      pulseChapter6Barrier(hitBarrier);
+      const contactDamage = Math.max(1, Number(hitBarrier.def && hitBarrier.def.contactDamage) || 85);
+      damagePlayer(now, contactDamage, 'raw', 'neutral', 'barrier-contact');
+      return;
+    }
 
     if (isNormalBattle()) {
       const hitEnemy = state.normalEnemies.find(enemy => {
@@ -12959,22 +13071,6 @@
 
     const info = getDailySelectRewardInfo();
     const reward = info.reward || {};
-    const weekdayLabel = {
-      Mon: '月曜日',
-      Tue: '火曜日',
-      Wed: '水曜日',
-      Thu: '木曜日',
-      Fri: '金曜日',
-      Sat: '土曜日',
-      Sun: '日曜日',
-    }[String(info.weekday || '')] || '本日';
-
-    const titleSub = overlay.querySelector('[data-daily-weekday-label]');
-    if (titleSub) {
-      titleSub.textContent = info.random
-        ? `${weekdayLabel}・ランダム報酬`
-        : `${weekdayLabel}・${reward.name || '曜日報酬'}`;
-    }
 
     ['intermediate', 'advanced'].forEach(level => {
       const amount = level === 'advanced' ? 2 : 1;
@@ -13014,6 +13110,17 @@
     });
   }
 
+  function buildStageSelectAttributePreview(stageId) {
+    const preview = window.ShootingStageAttributePreview;
+    if (!preview || typeof preview.buildHtml !== 'function') return '';
+    try {
+      return preview.buildHtml(String(stageId || '')) || '';
+    } catch (err) {
+      console.warn('[shooting] stage attribute preview failed:', err);
+      return '';
+    }
+  }
+
   function openDailyStage(level) {
     const normalizedLevel = level === 'advanced' ? 'advanced' : 'intermediate';
     const attempt = getDailySelectAttempt(normalizedLevel);
@@ -13046,6 +13153,9 @@
       overlay.style.transition = 'none';
     }
 
+    const intermediateAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('intermediate'));
+    const advancedAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('advanced'));
+
     overlay.innerHTML = `
       <div class="shooting-special-stage-page shooting-faceless-stage-page shooting-daily-stage-page">
         <div class="shooting-special-stage-header shooting-faceless-stage-header shooting-daily-stage-header">
@@ -13054,7 +13164,6 @@
                   onclick="closeDailyStageSelect()"
                   aria-label="戻る">＜戻る</button>
           <div class="shooting-special-stage-title shooting-faceless-stage-title">デイリー巡行</div>
-          <div class="shooting-daily-stage-subtitle" data-daily-weekday-label></div>
         </div>
 
         <div class="shooting-special-stage-list shooting-faceless-stage-list shooting-daily-stage-list">
@@ -13069,6 +13178,7 @@
                 <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
               </div>
               <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
+              ${intermediateAttributeHtml}
               <div class="shooting-daily-stage-reward">
                 <span class="shooting-daily-stage-reward-label">報酬</span>
                 <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
@@ -13094,6 +13204,7 @@
                 <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
               </div>
               <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
+              ${advancedAttributeHtml}
               <div class="shooting-daily-stage-reward">
                 <span class="shooting-daily-stage-reward-label">報酬</span>
                 <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
@@ -13154,6 +13265,8 @@
       overlay.classList.add('show');
       overlay.style.transition = 'none';
     }
+    const facelessAdvancedAttributeHtml = buildStageSelectAttributePreview(SHOOTING_STAGE_ID.FACELESS_ADVANCED);
+    const facelessSuperAttributeHtml = buildStageSelectAttributePreview(SHOOTING_STAGE_ID.FACELESS_SUPER);
     overlay.innerHTML = `
       <div class="shooting-special-stage-page shooting-faceless-stage-page">
         <div class="shooting-special-stage-header shooting-faceless-stage-header">
@@ -13169,6 +13282,7 @@
                 <strong>上級</strong>
               </div>
               <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
+              ${facelessAdvancedAttributeHtml}
               <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
             </div>
           </button>
@@ -13180,6 +13294,7 @@
                 <strong>最上級</strong>
               </div>
               <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
+              ${facelessSuperAttributeHtml}
               <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
             </div>
           </button>
@@ -20295,7 +20410,11 @@
     if (!el) return 0;
     el.textContent = '';
     el.setAttribute('aria-label', text);
-    const chars = Array.from(String(text || ''));
+    const normalizedText = String(text || '');
+    // build845: STAGE INFO typography is canonical across every stage/language.
+    // Never branch font sizing/spacing by Japanese/English content.
+    el.classList.remove('is-japanese');
+    const chars = Array.from(normalizedText);
     chars.forEach((ch, index) => {
       const span = document.createElement('span');
       span.className = 'shooting-stage-info-char';
@@ -20307,9 +20426,71 @@
     return baseDelayMs + Math.max(0, chars.length - 1) * SHOOTING_STAGE_INFO_CHAR_STAGGER_MS + SHOOTING_STAGE_INFO_CHAR_FADE_MS;
   }
 
+  function formatShootingStageInfoStageName(name, fallbackDifficulty = '') {
+    const raw = String(name || '').trim();
+    if (!raw) return '';
+    const difficulty = String(fallbackDifficulty || '').trim();
+    const splitMatch = raw.match(/^(.*?)[・\-－—–]\s*(.+)$/u);
+    if (splitMatch) {
+      const base = String(splitMatch[1] || '').trim();
+      const diff = String(splitMatch[2] || '').trim();
+      if (base && diff) return `${base}(${diff})`;
+    }
+    if (difficulty && !raw.includes(`(${difficulty})`)) {
+      return `${raw}(${difficulty})`;
+    }
+    return raw;
+  }
+
+  const SHOOTING_STAGE_INFO_WEEKDAY = Object.freeze({
+    Mon: '月曜',
+    Tue: '火曜',
+    Wed: '水曜',
+    Thu: '木曜',
+    Fri: '金曜',
+    Sat: '土曜',
+    Sun: '日曜',
+  });
+
+  function getShootingStageInfoDifficulty(stage = selectedStage) {
+    if (!stage) return '';
+    const explicit = String(stage.difficultyLabel || '').trim();
+    if (explicit) return explicit;
+    const dailyLevel = String(stage.dailyQuest?.level || '').trim().toLowerCase();
+    if (dailyLevel === 'intermediate') return '中級';
+    if (dailyLevel === 'advanced') return '上級';
+    if (dailyLevel === 'super') return '最上級';
+    return '';
+  }
+
+  function getShootingStageInfoBossName(stage = selectedStage) {
+    if (!stage) return 'BOSS';
+    const explicit = String(stage.stageInfoBossName || stage.bossDisplayName || '').trim();
+    if (explicit) return explicit;
+
+    const ids = Array.isArray(stage.enemyIds) ? stage.enemyIds : [];
+    for (const enemyId of ids) {
+      try {
+        const def = window.ShootingEnemies && typeof window.ShootingEnemies.getShootingEnemy === 'function'
+          ? window.ShootingEnemies.getShootingEnemy(enemyId)
+          : null;
+        if (def && String(def.name || '').trim()) return String(def.name).trim();
+      } catch (_) {}
+    }
+    return String(stage.eventTitle || stage.name || 'BOSS').trim() || 'BOSS';
+  }
+
+  function getShootingSpecialStageInfoName(stage = selectedStage) {
+    if (!stage) return 'STAGE';
+    return String(stage.stageInfoName || stage.eventTitle || stage.name || getShootingStageInfoBossName(stage) || 'STAGE').trim();
+  }
+
   function getShootingStageInfoLines() {
-    const chapter = Math.max(0, Math.floor(Number(selectedStage?.chapter || 0)));
-    const stageNo = Math.max(0, Math.floor(Number(selectedStage?.stageNo || 0)));
+    const stage = selectedStage || {};
+    const chapter = Math.max(0, Math.floor(Number(stage.chapter || 0)));
+    const stageNo = Math.max(0, Math.floor(Number(stage.stageNo || 0)));
+
+    // STORY
     if (chapter > 0 && stageNo > 0) {
       return [
         `CHAPTER ${String(chapter).padStart(2, '0')}`,
@@ -20317,15 +20498,30 @@
       ];
     }
 
-    const stageId = String(selectedStage?.id || '').toLowerCase();
-    const stageName = String(selectedStage?.name || '').trim();
-    if (stageId.includes('score_attack')) {
-      return ['SCORE ATTACK', stageId.includes('hard') ? 'HARD' : 'NORMAL'];
+    const stageId = String(stage.id || '').toLowerCase();
+    const difficulty = getShootingStageInfoDifficulty(stage);
+
+    // DAILY PROC.
+    if (stage.dailyQuest || stageId.includes('shooting_daily_')) {
+      const weekdayKey = String(stage.dailyQuest?.weekday || '').trim();
+      const weekday = SHOOTING_STAGE_INFO_WEEKDAY[weekdayKey] || String(stage.stageInfoWeekday || '').trim() || '曜日';
+      return ['DAILY PROC.', `${weekday}${difficulty ? `(${difficulty})` : ''}`];
     }
-    if (stageId.includes('raid')) return ['RAID BATTLE', stageName || 'STAGE'];
-    if (stageId.includes('daily')) return ['DAILY QUEST', stageName || 'STAGE'];
-    if (stageId.includes('noah')) return ['NOAH', stageName || 'STAGE'];
-    return ['ZERAPHIA', stageName || 'STAGE'];
+
+    // SCORE ATTACK
+    if (stage.scoreAttack || stageId.includes('score_attack')) {
+      const bossName = getShootingStageInfoBossName(stage);
+      return ['SCORE ATTACK', `${bossName}${difficulty ? `(${difficulty})` : ''}`];
+    }
+
+    // RAID BATTLE
+    if (stage.raid || stageId.includes('raid')) {
+      return ['RAID BATTLE', getShootingStageInfoBossName(stage)];
+    }
+
+    // SPECIAL PROC.  STORY / DAILY / SCORE / RAID 以外の巡行系はここへ統一。
+    const specialName = getShootingSpecialStageInfoName(stage);
+    return ['SPECIAL PROC.', `${specialName}${difficulty ? `(${difficulty})` : ''}`];
   }
 
   function ensureShootingStageInfoOverlay() {
@@ -20400,9 +20596,9 @@
     shootingResultExitFadeRunning = false;
   }
 
-  if (!document.getElementById('shooting-stage-info-style-v772')) {
+  if (!document.getElementById('shooting-stage-info-style-v845')) {
     const style = document.createElement('style');
-    style.id = 'shooting-stage-info-style-v772';
+    style.id = 'shooting-stage-info-style-v845';
     style.textContent = `
       #shooting-stage-transition-mask{
         position:fixed;
@@ -20445,13 +20641,21 @@
         align-items:baseline;
         max-width:100%;
         color:#746d64;
-        font-family:"Times New Roman","Noto Serif JP","Yu Mincho","Hiragino Mincho ProN",serif;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN","Times New Roman",serif;
         font-size:clamp(22px,6.2vw,36px);
         font-weight:400;
         line-height:1.12;
         letter-spacing:.15em;
         white-space:nowrap;
         font-variant-numeric:lining-nums tabular-nums;
+      }
+      #shooting-stage-info .shooting-stage-info-line.line-1,
+      #shooting-stage-info .shooting-stage-info-line.line-2{
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN","Times New Roman",serif;
+        font-size:clamp(22px,6.2vw,36px);
+        font-weight:400;
+        line-height:1.12;
+        letter-spacing:.15em;
       }
       #shooting-stage-info .shooting-stage-info-line.line-2{
         color:#967b60;
@@ -20484,7 +20688,13 @@
       }
       @media (max-width:390px){
         #shooting-stage-info .shooting-stage-info-copy{width:76vw;gap:10px;}
-        #shooting-stage-info .shooting-stage-info-line{font-size:clamp(20px,6vw,30px);letter-spacing:.12em;}
+        #shooting-stage-info .shooting-stage-info-line,
+        #shooting-stage-info .shooting-stage-info-line.line-1,
+        #shooting-stage-info .shooting-stage-info-line.line-2{
+          font-size:clamp(20px,6vw,30px);
+          letter-spacing:.12em;
+          line-height:1.12;
+        }
       }
       @media (prefers-reduced-motion:reduce){
         #shooting-stage-info .shooting-stage-info-char{

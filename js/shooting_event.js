@@ -7,9 +7,14 @@
   const current = document.currentScript;
   const baseUrl = current && current.src ? new URL('.', current.src) : new URL('./js/', location.href);
   const queuedOpenArgs = [];
-  const MODULE_VERSION = (
+  const currentVersionParam = current && current.src
+    ? new URL(current.src, location.href).searchParams.get('v')
+    : '';
+  const MODULE_VERSION = String(
+    (window.__ZERAPHIA_RELEASE__ && window.__ZERAPHIA_RELEASE__.build) ||
     document.querySelector('meta[name="sasaphia-build"]')?.getAttribute('content') ||
-    '20260823-raid-skip-remaining-v63'
+    currentVersionParam ||
+    '836-wall-shield-contact'
   );
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 

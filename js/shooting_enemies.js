@@ -183,7 +183,7 @@
       name: '観測眼の残穢',
       displayName: '観測眼の残穢',
       image: 'images/enemy_mini_01_battle.webp',
-      element: 'neutral',
+      element: 'light',
       hp: 1000,
       bulletDamage: 85,
       bulletSpeed: 185,
@@ -202,6 +202,7 @@
       name: '暴威の残穢',
       displayName: '暴威の残穢',
       image: 'images/enemy_mini_02_battle.webp',
+      element: 'fire',
 
       // CHAPTER 02: 数ではなく「個の暴力」で押す強敵。
       hp: 4000,
@@ -230,6 +231,7 @@
       name: '星護の残穢',
       displayName: '星護の残穢',
       image: 'images/enemy_mini_03_battle.webp',
+      element: 'wood',
       // CH03通常敵。弾幕は濃いが、撃破テンポは軽めにする。
       hp: 1400,
       bulletDamage: 105,
@@ -249,6 +251,7 @@
       name: '流麗の残穢',
       displayName: '流麗の残穢',
       image: 'images/remnant_04_zako_up.webp',
+      element: 'light',
       // CH04通常敵。密度よりも軌道の美しさを優先する。
       hp: 1500,
       bulletDamage: 95,
@@ -268,6 +271,7 @@
       name: 'ミラージュの残影',
       displayName: 'ミラージュの残影',
       image: 'images/remnant_05_battle_mini.webp',
+      element: 'dark',
       hp: 2400,
       bulletDamage: 120,
       bulletSpeed: 230,
@@ -289,7 +293,7 @@
       name: 'オーバーシア',
       displayName: 'REMNANT 01　オーバーシア',
       image: 'images/remnant_01_battle.webp',
-      element: 'neutral',
+      element: 'light',
 
       gaugeHp: 7500,
       gauges: 3,
@@ -337,6 +341,7 @@
       name: '天墜',
       displayName: 'REMNANT 03　天墜',
       image: 'images/remnant_03_battle.webp',
+      element: 'wood',
 
       gaugeHp: 7200,
       gauges: 3,
@@ -456,6 +461,7 @@
       name: 'サキエル',
       displayName: 'REMNANT 04　サキエル',
       image: 'images/enemy_sakiel_battle.webp',
+      element: 'light',
 
       // CHAPTER04-04「美しい弾幕」本実装。
       // 超軽量を維持しつつ、螺旋とウェーブを多色で見せる。
@@ -476,6 +482,7 @@
       name: 'ミラージュ',
       displayName: 'REMNANT 05　ミラージュ',
       image: 'images/remnant_05_battle.webp',
+      element: 'dark',
       gaugeHp: 4500,
       gauges: 3,
       bulletSpeed: 240,
@@ -510,7 +517,7 @@
       implemented: true,
       name: 'レムナント06',
       displayName: 'REMNANT 06',
-      element: 'light',
+      element: 'aqua',
       image: 'images/remnant_06_battle.webp',
       gaugeHp: 6000,
       gauges: 3,
