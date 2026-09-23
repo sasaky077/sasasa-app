@@ -1,7 +1,7 @@
 {
-  "build": 826,
-  "published_at": "2026-09-23T02:58:00+09:00",
-  "label": "daily_stage_bottom_nav_fix",
+  "build": 828,
+  "published_at": "2026-09-23T10:22:00+09:00",
+  "label": "battle_unit_visual_scale_1_2x",
   "release_protocol": 2,
   "commit_marker": true
 }

@@ -2862,12 +2862,15 @@
       player.setAttribute('data-character-id', String(c.id));
       // build498: キャラマスターの uiScale.battleBack を戦闘ユニットへ反映。
       // 例: レイ 2.0 / シオン 0.70
+      // build828: 味方の battle_back 表示だけを全キャラ共通で1.2倍。
+      // キャラ個別の uiScale.battleBack は維持し、その最終表示倍率へ1.2を乗算する。
+      // 当たり判定・移動座標・赤コア位置は変更しない（画像表示サイズのみ）。
       const battleBackScale = Math.max(
         0.1,
         Number(c && c.uiScale && c.uiScale.battleBack != null
           ? c.uiScale.battleBack
           : 1) || 1
-      );
+      ) * 1.2;
       player.style.setProperty('--unit-scale', String(battleBackScale));
     }
     if (img) {
