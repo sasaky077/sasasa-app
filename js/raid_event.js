@@ -247,9 +247,9 @@
   }
 
   function ensureEarlyFinalizeStyle(){
-    if(document.getElementById('daily-raid-early-finalize-style-v97')) return;
+    if(document.getElementById('daily-raid-early-finalize-style-v98')) return;
     const style=document.createElement('style');
-    style.id='daily-raid-early-finalize-style-v97';
+    style.id='daily-raid-early-finalize-style-v98';
     style.textContent=`
       #daily-raid-root .daily-raid-actions{
         display:flex!important;
@@ -931,6 +931,86 @@
         -webkit-text-fill-color:#654c37!important;
         text-shadow:none!important;
       }
+
+
+      /* build853: 単一の共通クラス raid-surface へ統一。
+         どのページのパネルでも全く同じ質感になるよう、
+         背景・枠線・影・ブラー・文字色をこのクラスだけで管理する。 */
+      #daily-raid-root{
+        --raid-surface-bg:linear-gradient(180deg, rgba(255,255,255,.25) 0%, rgba(248,245,239,.16) 100%);
+        --raid-surface-border:rgba(122,102,76,.12);
+        --raid-surface-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 1px 4px rgba(58,51,42,.02);
+        --raid-surface-blur:none;
+      }
+      #daily-raid-root .raid-surface,
+      #daily-raid-root button.raid-surface,
+      #daily-raid-root .raid-surface.is-host,
+      #daily-raid-root .raid-surface.is-join,
+      #daily-raid-root .raid-surface.is-active{
+        appearance:none!important;
+        -webkit-appearance:none!important;
+        background:var(--raid-surface-bg)!important;
+        background-color:transparent!important;
+        border:1px solid var(--raid-surface-border)!important;
+        border-radius:0!important;
+        box-shadow:var(--raid-surface-shadow)!important;
+        backdrop-filter:var(--raid-surface-blur)!important;
+        -webkit-backdrop-filter:var(--raid-surface-blur)!important;
+        filter:none!important;
+      }
+      #daily-raid-root .raid-surface::before,
+      #daily-raid-root .raid-surface::after{
+        content:none!important;
+        display:none!important;
+        background:none!important;
+        border:0!important;
+        box-shadow:none!important;
+      }
+      #daily-raid-root .raid-surface :is(strong,b),
+      #daily-raid-root .raid-surface strong,
+      #daily-raid-root .raid-surface b,
+      #daily-raid-root .raid-surface .daily-raid-member-copy strong,
+      #daily-raid-root .raid-surface .daily-raid-room-card-top strong,
+      #daily-raid-root .raid-surface .daily-raid-section-title b{
+        color:#493524!important;
+        -webkit-text-fill-color:#493524!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .raid-surface :is(span,small),
+      #daily-raid-root .raid-surface span,
+      #daily-raid-root .raid-surface small{
+        color:#654c37!important;
+        -webkit-text-fill-color:#654c37!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-entry .raid-surface,
+      #daily-raid-root .daily-raid-join-select .raid-surface,
+      #daily-raid-root .daily-raid-lobby .raid-surface{
+        opacity:1!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions{
+        background:transparent!important;
+        box-shadow:none!important;
+        backdrop-filter:none!important;
+        -webkit-backdrop-filter:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab.raid-surface,
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab.raid-surface.is-active{
+        background:transparent!important;
+        border:0!important;
+        box-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface{
+        padding:0!important;
+        overflow:hidden!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab.raid-surface.is-active{
+        background:linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.04) 100%)!important;
+      }
+      #daily-raid-root #daily-raid-start.raid-surface,
+      #daily-raid-root #daily-raid-finalize-best.raid-surface{
+        min-height:52px!important;
+      }
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
           padding-left:10px!important;
@@ -991,10 +1071,10 @@
             <div><small>RAID BATTLE</small><strong>SIGMA-IX</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
           </div>
           <div class="daily-raid-mode-grid">
-            <button type="button" class="daily-raid-mode-card is-host" id="daily-raid-recruit-btn">
+            <button type="button" class="daily-raid-mode-card is-host raid-surface" id="daily-raid-recruit-btn">
               <small>HOST</small><strong>募集する</strong><span>自分のレイドを作成してフレンドを募集</span><b>募集しながらプレイ可能</b>
             </button>
-            <button type="button" class="daily-raid-mode-card is-join" id="daily-raid-join-btn">
+            <button type="button" class="daily-raid-mode-card is-join raid-surface" id="daily-raid-join-btn">
               <small>JOIN</small><strong>参加する</strong><span>募集中のフレンドレイドから選択</span><b>空きのある募集のみ表示</b>
             </button>
           </div>
@@ -1008,11 +1088,11 @@
 
         <div id="daily-raid-lobby" class="daily-raid-lobby" hidden>
           <div class="daily-raid-swipe-shell">
-            <nav class="daily-raid-swipe-tabs" aria-label="レイド情報切替">
-              <button type="button" class="daily-raid-swipe-tab is-active" data-raid-page="0" aria-selected="true">
+            <nav class="daily-raid-swipe-tabs raid-surface" aria-label="レイド情報切替">
+              <button type="button" class="daily-raid-swipe-tab raid-surface is-active" data-raid-page="0" aria-selected="true">
                 <small>01</small><span>ENEMY INFO</span>
               </button>
-              <button type="button" class="daily-raid-swipe-tab" data-raid-page="1" aria-selected="false">
+              <button type="button" class="daily-raid-swipe-tab raid-surface" data-raid-page="1" aria-selected="false">
                 <small>02</small><span>RAID INFO</span>
               </button>
             </nav>
@@ -1027,7 +1107,7 @@
                     <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong>SIGMA-IX</strong><span>―これより、調査を開始する。</span></div>
                   </section>
 
-                  <section class="daily-raid-hpbox">
+                  <section class="daily-raid-hpbox raid-surface">
                     <div class="daily-raid-hphead"><div><small>CURRENT HP</small><span>現在HP</span></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
                     <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
                     <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
@@ -1035,14 +1115,14 @@
                 </section>
 
                 <section class="daily-raid-swipe-page daily-raid-info-page" data-raid-page-index="1">
-                  <section class="daily-raid-team-meta">
+                  <section class="daily-raid-team-meta raid-surface">
                     <div><small>RAID TEAM</small><strong id="daily-raid-team-name">--</strong></div>
                     <div class="daily-raid-host-actions" id="daily-raid-host-actions" hidden>
                       <button type="button" id="daily-raid-recruit-cancel" class="daily-raid-recruit-cancel" hidden>募集を取り消す</button>
                     </div>
                   </section>
 
-                  <section class="daily-raid-members">
+                  <section class="daily-raid-members raid-surface">
                     <div class="daily-raid-section-title"><div><small>CO-OP UNIT</small><span>RAID MEMBERS</span></div><b id="daily-raid-member-count">0 / 4</b></div>
                     <div id="daily-raid-member-list" class="daily-raid-member-grid"></div>
                   </section>
@@ -1059,10 +1139,10 @@
 
           <footer class="daily-raid-actions">
             <div class="daily-raid-attempt-copy"><small>TODAY'S ATTEMPT</small><b id="daily-raid-attempt-count">0 / 3</b></div>
-            <button type="button" id="daily-raid-finalize-best" class="daily-raid-finalize-best" hidden>
+            <button type="button" id="daily-raid-finalize-best" class="daily-raid-finalize-best raid-surface" hidden>
               <span>現在BEST：--</span><b>残り挑戦をスキップ</b>
             </button>
-            <button type="button" id="daily-raid-start"><span>RAID BATTLE</span><b>バトル開始</b></button>
+            <button type="button" id="daily-raid-start" class="raid-surface"><span>RAID BATTLE</span><b>バトル開始</b></button>
           </footer>
         </div>
         <div id="daily-raid-rule-modal" class="daily-raid-rule-modal" hidden aria-hidden="true">
@@ -1287,18 +1367,18 @@
   async function showJoinList(){
     const root=ensureRoot(); showOnly('join');
     const list=root.querySelector('#daily-raid-room-list');
-    list.innerHTML='<div class="daily-raid-room-empty">募集中のレイドを確認中...</div>';
+    list.innerHTML='<div class="daily-raid-room-empty raid-surface">募集中のレイドを確認中...</div>';
     try{
       const rooms=normalizeStatus(await rpc('list_recruiting_friend_raids',{p_user_id:uid()}))||[];
       if(!Array.isArray(rooms)||!rooms.length){
-        list.innerHTML='<div class="daily-raid-room-empty"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span></div>';
+        list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span></div>';
         return;
       }
       list.innerHTML=rooms.map(room=>{
         const count=Math.max(1,n(room.member_count));
         const hp=n(room.current_hp), max=Math.max(1,n(room.max_hp)||100000);
         const pct=Math.max(0,Math.min(100,Math.round(hp/max*100)));
-        return `<button type="button" class="daily-raid-room-card" data-room-id="${esc(room.raid_id)}">
+        return `<button type="button" class="daily-raid-room-card raid-surface" data-room-id="${esc(room.raid_id)}">
           <div class="daily-raid-room-card-top"><span>HOST</span><strong>${esc(room.host_display_name||room.host_user_id||'PLAYER')}</strong><b>${count} / 4</b></div>
           <div class="daily-raid-room-card-hp"><i style="width:${pct}%"></i></div>
           <div class="daily-raid-room-card-bottom"><span>${fmt(hp)} / ${fmt(max)} HP</span><b>このレイドに参加</b></div>
@@ -1307,7 +1387,7 @@
       list.querySelectorAll('.daily-raid-room-card').forEach(btn=>btn.addEventListener('click',()=>joinRoom(btn.dataset.roomId,btn)));
     }catch(err){
       console.error('[raid] list failed',err);
-      list.innerHTML='<div class="daily-raid-room-empty"><strong>募集情報を取得できません</strong><span>'+esc(err&&err.message||'通信エラー')+'</span></div>';
+      list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>募集情報を取得できません</strong><span>'+esc(err&&err.message||'通信エラー')+'</span></div>';
     }
   }
 
