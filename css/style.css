@@ -40558,3 +40558,278 @@ html body textarea{
     padding-bottom:4px !important;
   }
 }
+
+
+/* =========================================================
+   build829 CLOSE BUTTON — frame removal
+   お知らせ / キャラ詳細レベルアップの × はタップ領域を維持しつつ、
+   四角・丸のフレーム、背景、影を表示しない。
+   ========================================================= */
+#notice-modal .notice-panel .notice-close,
+#notice-modal .notice-panel .notice-close:active{
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+#character-levelup-modal .modal-close-btn,
+#character-levelup-modal .modal-close-btn:active{
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* =========================================================
+   build830 LIMIT BREAK — SHARP / QUIET LUXURY
+   角丸・楕円を廃止。細い罫線と余白だけで階層を作る。
+   素材アイコンそのものの形状は変更しない。
+   ========================================================= */
+#limitbreak-modal .modal,
+#limitbreak-modal .modal-inner,
+#limitbreak-modal .lb-recipe-box,
+#limitbreak-modal .lb-bonus-box,
+#limitbreak-modal .lb-bonus-row,
+#limitbreak-modal .lb-material-card,
+#limitbreak-modal .lb-lack-box,
+#limitbreak-modal .lb-vessel-choice,
+#limitbreak-modal .lb-execute-btn,
+#limitbreak-modal .lb-execute-bulk-btn,
+#limitbreak-modal .lb-execute-single-btn,
+#limitbreak-modal .lb-bonus-state,
+#limitbreak-modal button{
+  border-radius:0 !important;
+}
+
+#limitbreak-modal .modal{
+  background:linear-gradient(180deg,rgba(255,254,250,.995),rgba(248,245,237,.99)) !important;
+  border:1px solid rgba(139,112,70,.26) !important;
+  box-shadow:0 18px 46px rgba(28,24,18,.20) !important;
+}
+
+#limitbreak-modal .modal-inner{
+  position:relative !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.54),rgba(255,255,255,0) 24%),
+    transparent !important;
+}
+
+#limitbreak-modal .modal h2{
+  color:#3d3932 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-weight:600 !important;
+  letter-spacing:.12em !important;
+  text-shadow:none !important;
+}
+
+#limitbreak-modal .lb-modal-desc{
+  color:rgba(73,69,62,.58) !important;
+  letter-spacing:.035em !important;
+}
+
+/* 必要素材：カードではなく、上下の細線で区切る */
+#limitbreak-modal .lb-recipe-box{
+  border:0 !important;
+  border-top:1px solid rgba(141,116,77,.22) !important;
+  border-bottom:1px solid rgba(141,116,77,.22) !important;
+  background:rgba(255,255,255,.28) !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .lb-recipe-title{
+  color:#7b6440 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-weight:600 !important;
+  letter-spacing:.13em !important;
+}
+
+#limitbreak-modal .lb-recipe-row{
+  border-top:1px solid rgba(92,83,69,.075) !important;
+}
+
+#limitbreak-modal .lb-recipe-row:first-of-type{
+  border-top:0 !important;
+}
+
+#limitbreak-modal .lb-recipe-name,
+#limitbreak-modal .lb-recipe-count,
+#limitbreak-modal .lb-recipe-owned{
+  color:#514d46 !important;
+  text-shadow:none !important;
+}
+
+/* 効果一覧：外枠を直線化し、選択中だけ左の金線で示す */
+#limitbreak-modal .lb-bonus-box{
+  border:0 !important;
+  border-top:1px solid rgba(141,116,77,.22) !important;
+  border-bottom:1px solid rgba(141,116,77,.22) !important;
+  background:rgba(255,255,255,.20) !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .lb-bonus-box-title{
+  color:#826a43 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-weight:600 !important;
+  letter-spacing:.14em !important;
+}
+
+#limitbreak-modal .lb-bonus-row{
+  border:0 !important;
+  border-top:1px solid rgba(86,78,66,.09) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .lb-bonus-row:first-of-type{
+  border-top:0 !important;
+}
+
+#limitbreak-modal .lb-bonus-row.next{
+  border:0 !important;
+  border-top:1px solid rgba(166,131,70,.28) !important;
+  border-bottom:1px solid rgba(166,131,70,.28) !important;
+  border-left:2px solid rgba(159,117,46,.72) !important;
+  background:linear-gradient(90deg,rgba(201,166,102,.095),rgba(255,255,255,.12) 58%,transparent) !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .lb-bonus-level{
+  color:#736f68 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-weight:500 !important;
+}
+
+#limitbreak-modal .lb-bonus-title{
+  color:#3f3b35 !important;
+  font-weight:600 !important;
+}
+
+#limitbreak-modal .lb-bonus-summary{
+  color:#6f6a61 !important;
+}
+
+/* 「次回解放」「未解放」：ピル廃止。縦罫線 + 文字のみ */
+#limitbreak-modal .lb-bonus-state,
+#limitbreak-modal .lb-bonus-row.unlocked .lb-bonus-state,
+#limitbreak-modal .lb-bonus-row.next .lb-bonus-state{
+  min-width:54px !important;
+  min-height:0 !important;
+  padding:2px 0 2px 8px !important;
+  border:0 !important;
+  border-left:1px solid rgba(104,96,83,.18) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#817b72 !important;
+  font-weight:500 !important;
+  letter-spacing:.04em !important;
+}
+
+#limitbreak-modal .lb-bonus-row.unlocked .lb-bonus-state{
+  color:#596f73 !important;
+  border-left-color:rgba(75,112,116,.22) !important;
+}
+
+#limitbreak-modal .lb-bonus-row.next .lb-bonus-state{
+  color:#946d2c !important;
+  border-left-color:rgba(159,117,46,.34) !important;
+}
+
+#limitbreak-modal .lb-bonus-row.next .lb-bonus-level{
+  color:#946d2c !important;
+}
+
+/* 実行ボタン：楕円感をなくし、紙面上の横長ボタンへ */
+#limitbreak-modal .lb-execute-btn,
+#limitbreak-modal .lb-execute-bulk-btn,
+#limitbreak-modal .lb-execute-single-btn{
+  border:1px solid rgba(161,126,64,.34) !important;
+  background:linear-gradient(180deg,rgba(250,246,236,.98),rgba(243,237,223,.98)) !important;
+  color:#6d5630 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.82) !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-weight:500 !important;
+  letter-spacing:.06em !important;
+}
+
+#limitbreak-modal .lb-execute-btn:active,
+#limitbreak-modal .lb-execute-bulk-btn:active,
+#limitbreak-modal .lb-execute-single-btn:active{
+  background:#eee7d8 !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .btn-cancel-txt{
+  border:0 !important;
+  border-top:1px solid rgba(93,84,70,.13) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#5b5750 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-weight:500 !important;
+  letter-spacing:.05em !important;
+}
+
+/* 不足表示 / 器選択も同じ直線ルール */
+#limitbreak-modal .lb-lack-box{
+  border:1px solid rgba(146,82,75,.20) !important;
+  background:rgba(151,74,65,.035) !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .lb-vessel-choice{
+  border:0 !important;
+  border-top:1px solid rgba(91,82,69,.10) !important;
+  border-bottom:1px solid rgba(91,82,69,.10) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+#limitbreak-modal .lb-vessel-choice.selected{
+  border-color:rgba(160,124,61,.36) !important;
+  border-left:2px solid rgba(160,124,61,.68) !important;
+  background:rgba(195,157,86,.06) !important;
+  box-shadow:none !important;
+}
+
+/* 確認・完了も同フローなので丸みを残さない */
+#limitbreak-confirm-modal .modal,
+#limitbreak-confirm-modal .modal-inner,
+#limitbreak-confirm-modal .lb-next-bonus,
+#limitbreak-confirm-modal .lb-confirm-consume-box,
+#limitbreak-confirm-modal .lb-confirm-level,
+#limitbreak-confirm-modal .btn-pay,
+#limitbreak-confirm-modal .btn-cancel-txt,
+#limitbreak-complete-modal .modal,
+#limitbreak-complete-modal .modal-inner,
+#limitbreak-complete-modal .btn-pay{
+  border-radius:0 !important;
+}
+
+
+/* =========================================================
+   build831 GACHA PROVIDE-RATE CLOSE BUTTON
+   提供割合モーダル右上×のフレームを撤廃。
+   文字の×だけを残し、上品で軽い見た目へ。タップ領域は維持。
+   ========================================================= */
+#gacha-pool-detail-modal .gacha-pool-detail-close,
+#gacha-pool-detail-modal .gacha-pool-detail-close:active,
+#gacha-pool-detail-modal .gacha-pool-detail-close:hover,
+#gacha-pool-detail-modal .gacha-pool-detail-close:focus-visible{
+  width:38px !important;
+  height:38px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+  color:#775b34 !important;
+  font-size:25px !important;
+  line-height:34px !important;
+  padding:0 !important;
+}

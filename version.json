@@ -1,7 +1,7 @@
 {
-  "build": 828,
-  "published_at": "2026-09-23T10:22:00+09:00",
-  "label": "battle_unit_visual_scale_1_2x",
+  "build": 831,
+  "published_at": "2026-09-23T12:05:00+09:00",
+  "label": "gacha_probability_close_frame_removed",
   "release_protocol": 2,
   "commit_marker": true
 }
