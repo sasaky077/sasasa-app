@@ -1,4 +1,4 @@
-// 20260923-raid-header-back-canonical-v78
+// 20260923-raid-glass-canonical-v80
 (function(){
   'use strict';
 
@@ -247,9 +247,9 @@
   }
 
   function ensureEarlyFinalizeStyle(){
-    if(document.getElementById('daily-raid-early-finalize-style-v95')) return;
+    if(document.getElementById('daily-raid-early-finalize-style-v97')) return;
     const style=document.createElement('style');
-    style.id='daily-raid-early-finalize-style-v95';
+    style.id='daily-raid-early-finalize-style-v97';
     style.textContent=`
       #daily-raid-root .daily-raid-actions{
         display:flex!important;
@@ -630,6 +630,307 @@
         text-shadow:none!important;
       }
 
+      /* build850: TOPの募集/参加カードを参加一覧の空状態ガラスと完全共通化 */
+      #daily-raid-root .daily-raid-mode-card,
+      #daily-raid-root .daily-raid-mode-card.is-host,
+      #daily-raid-root .daily-raid-mode-card.is-join{
+        border:1px solid rgba(135,112,75,.20)!important;
+        border-radius:0!important;
+        background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(248,245,239,.54) 100%)!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 7px 18px rgba(58,51,42,.05)!important;
+        backdrop-filter:blur(7px) saturate(.78)!important;
+        -webkit-backdrop-filter:blur(7px) saturate(.78)!important;
+      }
+      #daily-raid-root .daily-raid-mode-card::before,
+      #daily-raid-root .daily-raid-mode-card::after,
+      #daily-raid-root .daily-raid-mode-card.is-host::before,
+      #daily-raid-root .daily-raid-mode-card.is-host::after,
+      #daily-raid-root .daily-raid-mode-card.is-join::before,
+      #daily-raid-root .daily-raid-mode-card.is-join::after{
+        content:none!important;
+        display:none!important;
+        background:none!important;
+        border:0!important;
+        box-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-mode-card small{
+        color:var(--raid-glass-sub)!important;
+        -webkit-text-fill-color:var(--raid-glass-sub)!important;
+      }
+      #daily-raid-root .daily-raid-mode-card strong{
+        color:var(--raid-glass-text)!important;
+        -webkit-text-fill-color:var(--raid-glass-text)!important;
+      }
+      #daily-raid-root .daily-raid-mode-card span,
+      #daily-raid-root .daily-raid-mode-card b{
+        color:var(--raid-glass-sub)!important;
+        -webkit-text-fill-color:var(--raid-glass-sub)!important;
+      }
+
+
+
+      /* build851: 抜本改修 - レイド内の主要ガラスUIを参加一覧の空状態ボックス基準の薄さへ統一 */
+      #daily-raid-root{
+        --raid-pane-bg:linear-gradient(180deg,rgba(255,255,255,.42) 0%,rgba(248,245,239,.24) 100%);
+        --raid-pane-border:rgba(135,112,75,.16);
+        --raid-pane-shadow:inset 0 1px 0 rgba(255,255,255,.44),0 2px 8px rgba(58,51,42,.03);
+        --raid-pane-blur:blur(2px) saturate(.72);
+      }
+      #daily-raid-root .daily-raid-mode-card,
+      #daily-raid-root .daily-raid-mode-card.is-host,
+      #daily-raid-root .daily-raid-mode-card.is-join,
+      #daily-raid-root .daily-raid-room-empty,
+      #daily-raid-root .daily-raid-room-card,
+      #daily-raid-root .daily-raid-swipe-tabs,
+      #daily-raid-root .daily-raid-team-meta,
+      #daily-raid-root .daily-raid-hpbox,
+      #daily-raid-root .daily-raid-members,
+      #daily-raid-root .daily-raid-member,
+      #daily-raid-root .daily-raid-rule-dialog,
+      #daily-raid-root #daily-raid-start,
+      #daily-raid-root #daily-raid-finalize-best,
+      #daily-raid-root .daily-raid-swipe-tab{
+        border:1px solid var(--raid-pane-border)!important;
+        border-radius:0!important;
+        background:var(--raid-pane-bg)!important;
+        box-shadow:var(--raid-pane-shadow)!important;
+        backdrop-filter:var(--raid-pane-blur)!important;
+        -webkit-backdrop-filter:var(--raid-pane-blur)!important;
+      }
+      #daily-raid-root .daily-raid-mode-card::before,
+      #daily-raid-root .daily-raid-mode-card::after,
+      #daily-raid-root .daily-raid-room-card::before,
+      #daily-raid-root .daily-raid-room-card::after,
+      #daily-raid-root .daily-raid-hpbox::before,
+      #daily-raid-root .daily-raid-hpbox::after,
+      #daily-raid-root .daily-raid-team-meta::before,
+      #daily-raid-root .daily-raid-team-meta::after,
+      #daily-raid-root .daily-raid-members::before,
+      #daily-raid-root .daily-raid-members::after,
+      #daily-raid-root #daily-raid-start::before,
+      #daily-raid-root #daily-raid-start::after,
+      #daily-raid-root #daily-raid-finalize-best::before,
+      #daily-raid-root #daily-raid-finalize-best::after{
+        content:none!important;
+        display:none!important;
+      }
+      #daily-raid-root .daily-raid-mode-card,
+      #daily-raid-root .daily-raid-room-card,
+      #daily-raid-root .daily-raid-room-empty,
+      #daily-raid-root .daily-raid-hpbox,
+      #daily-raid-root .daily-raid-team-meta,
+      #daily-raid-root .daily-raid-members,
+      #daily-raid-root .daily-raid-member,
+      #daily-raid-root .daily-raid-swipe-tabs,
+      #daily-raid-root .daily-raid-swipe-tab,
+      #daily-raid-root .daily-raid-rule-dialog,
+      #daily-raid-root #daily-raid-start,
+      #daily-raid-root #daily-raid-finalize-best{
+        color:var(--raid-glass-text)!important;
+        -webkit-text-fill-color:var(--raid-glass-text)!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-swipe-tab.is-active{
+        background:linear-gradient(180deg,rgba(255,255,255,.50) 0%,rgba(248,245,239,.30) 100%)!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.50),0 2px 8px rgba(58,51,42,.035)!important;
+      }
+      #daily-raid-root .daily-raid-mode-card small,
+      #daily-raid-root .daily-raid-room-card small,
+      #daily-raid-root .daily-raid-room-empty small,
+      #daily-raid-root .daily-raid-swipe-tab small,
+      #daily-raid-root .daily-raid-team-meta small,
+      #daily-raid-root .daily-raid-hpbox small,
+      #daily-raid-root #daily-raid-finalize-best span{
+        color:var(--raid-glass-sub)!important;
+        -webkit-text-fill-color:var(--raid-glass-sub)!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-mode-card strong,
+      #daily-raid-root .daily-raid-room-card strong,
+      #daily-raid-root .daily-raid-room-empty strong,
+      #daily-raid-root .daily-raid-join-head strong,
+      #daily-raid-root .daily-raid-hphead strong,
+      #daily-raid-root .daily-raid-section-title b,
+      #daily-raid-root #daily-raid-start b,
+      #daily-raid-root #daily-raid-finalize-best b,
+      #daily-raid-root .daily-raid-swipe-tab span,
+      #daily-raid-root .daily-raid-hero-copy strong,
+      #daily-raid-root .daily-raid-hero-rank b,
+      #daily-raid-root #daily-raid-status{
+        color:var(--raid-glass-text)!important;
+        -webkit-text-fill-color:var(--raid-glass-text)!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-mode-card span,
+      #daily-raid-root .daily-raid-mode-card b,
+      #daily-raid-root .daily-raid-room-card span,
+      #daily-raid-root .daily-raid-room-empty span,
+      #daily-raid-root .daily-raid-hphead span,
+      #daily-raid-root .daily-raid-hpmeta span,
+      #daily-raid-root .daily-raid-member-state{
+        color:var(--raid-glass-sub)!important;
+        -webkit-text-fill-color:var(--raid-glass-sub)!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root #daily-raid-start{
+        width:210px!important;
+        max-width:210px!important;
+        border-color:rgba(135,112,75,.18)!important;
+      }
+      #daily-raid-root #daily-raid-start b{
+        font-size:17px!important;
+        font-weight:700!important;
+        letter-spacing:.10em!important;
+      }
+      #daily-raid-root #daily-raid-finalize-best{
+        border-color:rgba(135,112,75,.18)!important;
+      }
+      #daily-raid-root .daily-raid-hpbox,
+      #daily-raid-root .daily-raid-team-meta,
+      #daily-raid-root .daily-raid-members{
+        box-shadow:var(--raid-pane-shadow)!important;
+      }
+      #daily-raid-root .daily-raid-hpmeta{
+        border-top:1px solid rgba(135,112,75,.12)!important;
+      }
+      #daily-raid-root .daily-raid-room-empty,
+      #daily-raid-root .daily-raid-mode-card,
+      #daily-raid-root .daily-raid-room-card,
+      #daily-raid-root .daily-raid-hpbox,
+      #daily-raid-root .daily-raid-team-meta,
+      #daily-raid-root .daily-raid-members,
+      #daily-raid-root #daily-raid-start,
+      #daily-raid-root #daily-raid-finalize-best{
+        filter:none!important;
+      }
+
+      /* =========================================================
+         build852 FINAL CANONICAL GLASS
+         参加レイド0件の中央パネルを唯一の基準にする。
+         既存の高詳細度 !important を確実に上書きするため、
+         各画面コンテキストまで含めたセレクタで固定。
+         ========================================================= */
+      #daily-raid-root{
+        --raid-canonical-bg:linear-gradient(180deg,rgba(255,255,255,.31) 0%,rgba(250,248,244,.21) 100%);
+        --raid-canonical-border:rgba(115,96,70,.13);
+        --raid-canonical-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 2px 7px rgba(54,47,38,.025);
+        --raid-canonical-blur:blur(0.8px) saturate(.80);
+      }
+
+      /* TOP: 募集する / 参加する */
+      #daily-raid-root .daily-raid-entry .daily-raid-mode-grid .daily-raid-mode-card,
+      #daily-raid-root .daily-raid-entry .daily-raid-mode-grid .daily-raid-mode-card.is-host,
+      #daily-raid-root .daily-raid-entry .daily-raid-mode-grid .daily-raid-mode-card.is-join{
+        background:var(--raid-canonical-bg)!important;
+        border:1px solid var(--raid-canonical-border)!important;
+        box-shadow:var(--raid-canonical-shadow)!important;
+        backdrop-filter:var(--raid-canonical-blur)!important;
+        -webkit-backdrop-filter:var(--raid-canonical-blur)!important;
+        filter:none!important;
+      }
+
+      /* JOIN: これが基準。空状態/募集カードとも同じ薄さ */
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-list .daily-raid-room-empty,
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-list .daily-raid-room-card{
+        background:var(--raid-canonical-bg)!important;
+        border:1px solid var(--raid-canonical-border)!important;
+        box-shadow:var(--raid-canonical-shadow)!important;
+        backdrop-filter:var(--raid-canonical-blur)!important;
+        -webkit-backdrop-filter:var(--raid-canonical-blur)!important;
+        filter:none!important;
+      }
+
+      /* LOBBY: タブ */
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-shell .daily-raid-swipe-tabs{
+        background:var(--raid-canonical-bg)!important;
+        border:1px solid var(--raid-canonical-border)!important;
+        box-shadow:var(--raid-canonical-shadow)!important;
+        backdrop-filter:var(--raid-canonical-blur)!important;
+        -webkit-backdrop-filter:var(--raid-canonical-blur)!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-shell .daily-raid-swipe-tabs .daily-raid-swipe-tab,
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-shell .daily-raid-swipe-tabs .daily-raid-swipe-tab.is-active{
+        background:transparent!important;
+        border:0!important;
+        box-shadow:none!important;
+        backdrop-filter:none!important;
+        -webkit-backdrop-filter:none!important;
+      }
+
+      /* LOBBY: HP panel — 既存 .daily-raid-enemy-page .daily-raid-hpbox より強くする */
+      #daily-raid-root .daily-raid-lobby .daily-raid-enemy-page .daily-raid-hpbox{
+        background:var(--raid-canonical-bg)!important;
+        border:1px solid var(--raid-canonical-border)!important;
+        box-shadow:var(--raid-canonical-shadow)!important;
+        backdrop-filter:var(--raid-canonical-blur)!important;
+        -webkit-backdrop-filter:var(--raid-canonical-blur)!important;
+        filter:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-enemy-page .daily-raid-hpbox::before,
+      #daily-raid-root .daily-raid-lobby .daily-raid-enemy-page .daily-raid-hpbox::after{
+        content:none!important;
+        display:none!important;
+      }
+
+      /* LOBBY: RAID INFO panels */
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page .daily-raid-team-meta,
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page .daily-raid-members,
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page .daily-raid-member{
+        background:var(--raid-canonical-bg)!important;
+        border:1px solid var(--raid-canonical-border)!important;
+        box-shadow:var(--raid-canonical-shadow)!important;
+        backdrop-filter:var(--raid-canonical-blur)!important;
+        -webkit-backdrop-filter:var(--raid-canonical-blur)!important;
+        filter:none!important;
+      }
+
+      /* LOBBY: 下部の白フェード自体を撤去。これがボタン周辺を白くしていた */
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions{
+        background:transparent!important;
+        box-shadow:none!important;
+        backdrop-filter:none!important;
+        -webkit-backdrop-filter:none!important;
+      }
+
+      /* LOBBY: 操作ボタン */
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions #daily-raid-start,
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions #daily-raid-finalize-best{
+        background:var(--raid-canonical-bg)!important;
+        border:1px solid var(--raid-canonical-border)!important;
+        box-shadow:var(--raid-canonical-shadow)!important;
+        backdrop-filter:var(--raid-canonical-blur)!important;
+        -webkit-backdrop-filter:var(--raid-canonical-blur)!important;
+        filter:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions #daily-raid-start::before,
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions #daily-raid-start::after,
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions #daily-raid-finalize-best::before,
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions #daily-raid-finalize-best::after{
+        content:none!important;
+        display:none!important;
+      }
+
+      /* 全ガラス面の文字は濃いブラウン。白/黄を禁止 */
+      #daily-raid-root .daily-raid-entry .daily-raid-mode-card :is(strong,b),
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-list :is(strong,b),
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs :is(strong,b,span),
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbox :is(strong,b),
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page :is(strong,b),
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions :is(strong,b){
+        color:#493524!important;
+        -webkit-text-fill-color:#493524!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-entry .daily-raid-mode-card :is(span,small),
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-list :is(span,small),
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs small,
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbox :is(span,small),
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page :is(span,small),
+      #daily-raid-root .daily-raid-lobby .daily-raid-actions span{
+        color:#654c37!important;
+        -webkit-text-fill-color:#654c37!important;
+        text-shadow:none!important;
+      }
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
           padding-left:10px!important;
