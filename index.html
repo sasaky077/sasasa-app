@@ -2289,6 +2289,50 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 }
 </style>
 
+
+<style id="notice-button-center-v860">
+.notice-reward{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+}
+.notice-reward-main{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+  width:100%!important;
+  flex:0 0 auto!important;
+  height:auto!important;
+  min-height:34px!important;
+  overflow:visible!important;
+}
+.notice-reward-btn{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  align-self:center!important;
+  flex:0 0 auto!important;
+  width:96px!important;
+  min-width:96px!important;
+  max-width:96px!important;
+  height:36px!important;
+  min-height:36px!important;
+  max-height:36px!important;
+  margin:4px auto 0!important;
+}
+#testplay-notice .testplay-notice-actions{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+}
+#testplay-notice .testplay-notice-btn{
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -3339,7 +3383,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/home_banners.js?v=595"></script>
-<script id="sasaphia-notices-inline-v6">
+<script id="sasaphia-notices-inline-v9">
 // =========================================================
 // Zeraphia Notices
 // =========================================================
@@ -3349,6 +3393,20 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 // =========================================================
 
 window.NOTICE_ITEMS = [
+  {
+    id: 'notice_noah_guerrilla_bonus_20260923',
+    date: '2026.09.23',
+    title: 'ゲリラボーナス',
+    body: 'ゲリラボーナスとして、SPECIAL TICKET -ノア- を1枚プレゼントします。',
+    reward: {
+      type: 'special_stage_ticket',
+      claimId: 'notice_noah_guerrilla_ticket_20260923_v1',
+      rpcName: 'claim_noah_guerrilla_bonus',
+      amount: 1,
+      image: 'images/special_stage_ticket.webp'
+    },
+    hidden: false
+  },
   {
     id: 'notice_start_bonus_20260920',
     date: '2026.09.20',
@@ -3373,6 +3431,8 @@ window.NOTICE_ITEMS = [
 (function () {
   const NOTICE_READ_KEY = 'sasaphia_notice_read_ids_v2';
   const NOTICE_CLAIMED_KEY = 'sasaphia_notice_claimed_ids_v1';
+  let noticeFilterMode = 'all';
+  let noticeBulkClaimActive = false;
 
   function ensureNoticeRuntimeStyle() {
     if (document.getElementById('sasaphia-notice-inline-style-v5')) return;
@@ -3400,12 +3460,13 @@ window.NOTICE_ITEMS = [
         flex-direction:column!important;
         width:min(360px,100%)!important;
         max-width:100%!important;
+        height:min(78dvh,620px)!important;
+        min-height:min(78dvh,620px)!important;
         max-height:min(78dvh,620px)!important;
-        min-height:0!important;
         overflow:hidden!important;
         padding:18px!important;
         border:1px solid rgba(183,145,70,.38)!important;
-        border-radius:22px!important;
+        border-radius:0!important;
         background:
           radial-gradient(circle at 50% 0%,rgba(214,180,103,.16),transparent 34%),
           linear-gradient(180deg,rgba(255,253,247,.98),rgba(246,238,221,.98))!important;
@@ -3418,7 +3479,7 @@ window.NOTICE_ITEMS = [
         position:absolute;
         inset:7px;
         border:1px solid rgba(188,150,76,.16);
-        border-radius:16px;
+        border-radius:0;
         pointer-events:none;
       }
       .notice-head{
@@ -3561,7 +3622,7 @@ window.NOTICE_ITEMS = [
         margin:0!important;
         padding:0!important;
         border:1px solid rgba(174,133,54,.40)!important;
-        border-radius:9px!important;
+        border-radius:0!important;
         background:linear-gradient(180deg,#fff8e8,#f1e1ba)!important;
         color:#795729!important;
         font-family:"Noto Serif JP",serif!important;
@@ -3672,6 +3733,25 @@ window.NOTICE_ITEMS = [
         box-shadow:none!important;
         filter:none!important;
       }
+      .notice-reward-item-icon{
+        display:block!important;
+        flex:0 0 42px!important;
+        width:42px!important;
+        height:42px!important;
+        min-width:42px!important;
+        min-height:42px!important;
+        max-width:42px!important;
+        max-height:42px!important;
+        object-fit:contain!important;
+        object-position:center!important;
+        border:0!important;
+        border-radius:0!important;
+        outline:0!important;
+        background:transparent!important;
+        background-color:transparent!important;
+        box-shadow:none!important;
+        filter:none!important;
+      }
       .notice-reward-bundle-name{
         min-width:0!important;
         white-space:nowrap!important;
@@ -3681,8 +3761,80 @@ window.NOTICE_ITEMS = [
         color:#8b6427!important;
         font-variant-numeric:tabular-nums!important;
       }
+      .notice-toolbar{
+        position:relative!important;
+        z-index:1!important;
+        flex:0 0 auto!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:space-between!important;
+        gap:10px!important;
+        margin:0 0 10px!important;
+        padding:0!important;
+      }
+      .notice-filter-group,
+      .notice-bulk-group{
+        display:flex!important;
+        align-items:center!important;
+        gap:5px!important;
+        min-width:0!important;
+      }
+      .notice-filter-btn,
+      .notice-bulk-btn{
+        appearance:none!important;
+        -webkit-appearance:none!important;
+        min-height:28px!important;
+        padding:0 9px!important;
+        border:1px solid rgba(164,132,76,.20)!important;
+        border-radius:0!important;
+        background:rgba(255,252,245,.52)!important;
+        box-shadow:none!important;
+        color:#80633a!important;
+        font-family:"Noto Serif JP",serif!important;
+        font-size:9px!important;
+        font-weight:600!important;
+        line-height:1!important;
+        letter-spacing:.05em!important;
+        white-space:nowrap!important;
+      }
+      .notice-filter-btn.is-active{
+        border-color:rgba(149,111,49,.40)!important;
+        background:rgba(246,235,211,.76)!important;
+        color:#5f441c!important;
+      }
+      .notice-bulk-btn{
+        padding-left:8px!important;
+        padding-right:8px!important;
+        color:#6d5230!important;
+      }
+      .notice-bulk-btn:disabled{
+        opacity:.34!important;
+        cursor:default!important;
+      }
+      .notice-filter-empty{
+        padding:34px 12px!important;
+        text-align:center!important;
+        color:#8b7656!important;
+        font-size:11px!important;
+        letter-spacing:.05em!important;
+      }
+      @media(max-width:380px){
+        .notice-toolbar{
+          align-items:stretch!important;
+          flex-direction:column!important;
+          gap:6px!important;
+        }
+        .notice-filter-group,
+        .notice-bulk-group{
+          width:100%!important;
+        }
+        .notice-filter-group .notice-filter-btn,
+        .notice-bulk-group .notice-bulk-btn{
+          flex:1 1 0!important;
+        }
+      }
       @media(max-height:700px){
-        .notice-panel{max-height:82dvh!important;padding:15px!important}
+        .notice-panel{height:82dvh!important;min-height:82dvh!important;max-height:82dvh!important;padding:15px!important}
         .notice-item{padding:10px!important}
         .notice-reward{margin-top:9px!important;padding:8px 9px!important}
       }
@@ -3750,6 +3902,18 @@ window.NOTICE_ITEMS = [
           </div>
         </div>
 
+        <div class="notice-toolbar" aria-label="お知らせ操作">
+          <div class="notice-filter-group" role="tablist" aria-label="お知らせフィルター">
+            <button type="button" class="notice-filter-btn is-active" data-notice-filter="all" role="tab" aria-selected="true">すべて</button>
+            <button type="button" class="notice-filter-btn" data-notice-filter="unread" role="tab" aria-selected="false">未読</button>
+            <button type="button" class="notice-filter-btn" data-notice-filter="read" role="tab" aria-selected="false">既読</button>
+          </div>
+          <div class="notice-bulk-group">
+            <button type="button" class="notice-bulk-btn" id="notice-mark-all-read">一括既読</button>
+            <button type="button" class="notice-bulk-btn" id="notice-claim-all">一括受取</button>
+          </div>
+        </div>
+
         <div class="notice-list" id="notice-list"></div>
       </div>
     `;
@@ -3767,6 +3931,73 @@ window.NOTICE_ITEMS = [
         closeNoticeModal();
       }
     });
+
+    modal.querySelectorAll('[data-notice-filter]').forEach(function(button){
+      button.addEventListener('click', function(event){
+        event.preventDefault();
+        const mode = String(button.getAttribute('data-notice-filter') || 'all');
+        noticeFilterMode = ['all','unread','read'].includes(mode) ? mode : 'all';
+        renderNoticeList();
+      });
+    });
+
+    const markAllButton = modal.querySelector('#notice-mark-all-read');
+    if (markAllButton) {
+      markAllButton.addEventListener('click', function(event){
+        event.preventDefault();
+        const ids = getVisibleNotices().map(function(item){ return item && item.id; }).filter(Boolean);
+        setReadNoticeIds(getReadNoticeIds().concat(ids));
+        renderNoticeList();
+        updateNoticeBadge();
+        if (typeof window.showToast === 'function') window.showToast('すべて既読にしました');
+      });
+    }
+
+    const claimAllButton = modal.querySelector('#notice-claim-all');
+    if (claimAllButton) {
+      claimAllButton.addEventListener('click', async function(event){
+        event.preventDefault();
+        if (noticeBulkClaimActive) return;
+        const targets = getVisibleNotices().filter(function(item){
+          return item && item.reward && !isRewardClaimed(item);
+        });
+        if (!targets.length) {
+          if (typeof window.showToast === 'function') window.showToast('受け取れる報酬はありません');
+          return;
+        }
+        noticeBulkClaimActive = true;
+        claimAllButton.disabled = true;
+        claimAllButton.textContent = '受取中...';
+        let successCount = 0;
+        let failedCount = 0;
+        try {
+          for (const item of targets) {
+            try {
+              await claimNoticeReward(item.id, null);
+              if (isRewardClaimed(item)) successCount += 1;
+              else failedCount += 1;
+            } catch (_) {
+              failedCount += 1;
+            }
+          }
+        } finally {
+          noticeBulkClaimActive = false;
+          renderNoticeList();
+          updateNoticeBadge();
+          const liveButton = document.getElementById('notice-claim-all');
+          if (liveButton) {
+            liveButton.disabled = false;
+            liveButton.textContent = '一括受取';
+          }
+          if (typeof window.showToast === 'function') {
+            const message = failedCount > 0
+              ? ('一括受取：' + successCount + '件完了 / ' + failedCount + '件未完了')
+              : ('一括受取：' + successCount + '件完了');
+            window.showToast(message);
+          }
+        }
+      });
+    }
 
     document.body.appendChild(modal);
   }
@@ -3857,7 +4088,8 @@ window.NOTICE_ITEMS = [
         (item.reward.type === 'gem' ||
          item.reward.type === 'level_material_bundle' ||
          item.reward.type === 'start_bonus_bundle' ||
-         item.reward.type === 'test_growth_bundle');
+         item.reward.type === 'test_growth_bundle' ||
+         item.reward.type === 'special_stage_ticket');
     });
     if (!rewardItems.length) return;
 
@@ -3880,6 +4112,8 @@ window.NOTICE_ITEMS = [
           });
         } else if (item.reward.type === 'test_growth_bundle') {
           res = await client.rpc('is_test_growth_bundle_claimed');
+        } else if (item.reward.type === 'special_stage_ticket') {
+          res = await client.rpc('is_noah_guerrilla_bonus_claimed');
         } else {
           res = await client.rpc('is_notice_reward_claimed', {
             p_claim_id: item.reward.claimId
@@ -4058,6 +4292,27 @@ window.NOTICE_ITEMS = [
       `;
     }
 
+    if (reward.type === 'special_stage_ticket') {
+      const ticketAmount = Math.max(1, Math.floor(Number(reward.amount || 1)));
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <img class="notice-reward-item-icon" src="${escapeHtml(reward.image || 'images/special_stage_ticket.webp')}" alt="">
+            <div class="notice-reward-copy">
+              <span class="notice-reward-label">ゲリラボーナス</span>
+              <strong>SPECIAL TICKET -ノア- ×${ticketAmount}</strong>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id || '')}"
+            ${claimed ? 'disabled' : ''}
+          >${claimed ? '受取済み' : '受け取る'}</button>
+        </div>
+      `;
+    }
+
     if (reward.type !== 'gem' || amount <= 0) return '';
 
     return `
@@ -4091,13 +4346,80 @@ window.NOTICE_ITEMS = [
     }
 
     if (window._profileLoadState !== 'ready' || !window.userProfile) {
-      if (typeof window.showToast === 'function') {
+      if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
         window.showToast('プロフィールの読み込み後に、もう一度お試しください');
       }
       return;
     }
 
     const reward = item.reward;
+
+    if (reward.type === 'special_stage_ticket') {
+      if (!reward.claimId) return;
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = '受取中...';
+      }
+
+      try {
+        const client = window.zsSupabase || null;
+        if (!client || typeof client.rpc !== 'function') {
+          throw new Error('Supabaseへ接続できません');
+        }
+
+        const rpcName = String(reward.rpcName || 'claim_noah_guerrilla_bonus').trim();
+        const res = await client.rpc(rpcName);
+        if (res && res.error) throw res.error;
+
+        let result = res ? res.data : null;
+        if (typeof result === 'string') {
+          try { result = JSON.parse(result); } catch (_) {}
+        }
+        if (!result || result.ok === false) {
+          throw new Error((result && result.message) || '報酬を受け取れませんでした');
+        }
+
+        const ticketTotal = Math.max(0, Math.floor(Number(result.special_stage_ticket || 0)));
+        if (window.userProfile) {
+          window.userProfile.special_stage_ticket = ticketTotal;
+        }
+
+        document.querySelectorAll('#special-ticket-count,[data-special-ticket-count],#noah-piece-ticket-status-count').forEach(function(el){
+          el.textContent = String(ticketTotal);
+        });
+
+        reward.claimed = true;
+        markNoticeRewardClaimedLocally(reward.claimId);
+
+        if (typeof window.renderNoahPiecePanel === 'function') {
+          try { window.renderNoahPiecePanel(); } catch (_) {}
+        }
+        if (typeof window.updateMainUI === 'function') {
+          try { window.updateMainUI(); } catch (_) {}
+        }
+
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
+          window.showToast(result.already_claimed
+            ? 'ゲリラボーナスは受取済みです'
+            : 'SPECIAL TICKET -ノア- ×1 を受け取りました！');
+        }
+
+        renderNoticeList();
+        updateNoticeBadge();
+        return;
+      } catch (error) {
+        console.error('[NoticeReward] Noah guerrilla bonus claim failed:', error);
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
+          window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
+        }
+        if (button) {
+          button.disabled = false;
+          button.textContent = '受け取る';
+        }
+        return;
+      }
+    }
 
     if (reward.type === 'start_bonus_bundle') {
       if (!reward.claimId) return;
@@ -4147,7 +4469,7 @@ window.NOTICE_ITEMS = [
         if (typeof window.refreshProfileHud === 'function') window.refreshProfileHud();
         try { window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed')); } catch (_) {}
 
-        if (typeof window.showToast === 'function') {
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast(result.already_claimed
             ? 'スタートボーナスは受取済みです'
             : 'スタートボーナスを受け取りました！');
@@ -4158,7 +4480,7 @@ window.NOTICE_ITEMS = [
         return;
       } catch (error) {
         console.error('[NoticeReward] start bonus claim failed:', error);
-        if (typeof window.showToast === 'function') {
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
         }
         if (button) {
@@ -4215,7 +4537,7 @@ window.NOTICE_ITEMS = [
         }
 
         item.reward.claimed = true;
-        if (typeof window.showToast === 'function') {
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast('SIGMA-IX ×1 を受け取りました！');
         }
         if (typeof renderZukan === 'function') {
@@ -4226,7 +4548,7 @@ window.NOTICE_ITEMS = [
         return;
       } catch (error) {
         console.error('[RaidRewardNotice] claim failed:', error);
-        if (typeof window.showToast === 'function') {
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
         }
         if (button) {
@@ -4281,7 +4603,7 @@ window.NOTICE_ITEMS = [
         if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
         try { window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed')); } catch (_) {}
 
-        if (typeof window.showToast === 'function') {
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast(result.already_claimed
             ? 'このテスト配布は受取済みです'
             : '経験値アイテム各100個・結晶1,000個を受け取りました！');
@@ -4292,7 +4614,7 @@ window.NOTICE_ITEMS = [
         return;
       } catch (error) {
         console.error('[NoticeReward] test growth bundle claim failed:', error);
-        if (typeof window.showToast === 'function') {
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast('受け取りに失敗しました。もう一度お試しください');
         }
         if (button) {
@@ -4346,7 +4668,7 @@ window.NOTICE_ITEMS = [
       if (typeof window.updateMainUI === 'function') window.updateMainUI();
       if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
-      if (typeof window.showToast === 'function') {
+      if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
         window.showToast(result.already_claimed
           ? 'この報酬は受取済みです'
           : ('結晶 ×' + Number(amount).toLocaleString('ja-JP') + ' を受け取りました！'));
@@ -4356,7 +4678,7 @@ window.NOTICE_ITEMS = [
       updateNoticeBadge();
     } catch (error) {
       console.error('[NoticeReward] claim failed:', error);
-      if (typeof window.showToast === 'function') {
+      if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
         window.showToast('受け取りに失敗しました。もう一度お試しください');
       }
       renderNoticeList();
@@ -4367,10 +4689,33 @@ window.NOTICE_ITEMS = [
     const list = document.getElementById('notice-list');
     if (!list) return;
 
-    const items = (window.NOTICE_ITEMS || []).filter(item => item && item.hidden !== true);
+    const allItems = (window.NOTICE_ITEMS || []).filter(item => item && item.hidden !== true);
     const readIds = new Set(getReadNoticeIds());
+    const items = allItems.filter(function(item){
+      const isUnread = !!(item && item.id && !readIds.has(item.id));
+      const hasUnclaimedReward = !!(item && item.reward && !isRewardClaimed(item));
+      // build865: フィルター上の「未読」は通知ドットと同義。
+      // 本文未読 OR 報酬未受取なら未読扱い。既読はドット無しのみ。
+      const hasAttention = isUnread || hasUnclaimedReward;
+      if (noticeFilterMode === 'unread') return hasAttention;
+      if (noticeFilterMode === 'read') return !hasAttention;
+      return true;
+    });
 
-    if (!items.length) {
+    document.querySelectorAll('#notice-modal [data-notice-filter]').forEach(function(button){
+      const active = button.getAttribute('data-notice-filter') === noticeFilterMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    const unreadCount = allItems.filter(function(item){ return item && item.id && !readIds.has(item.id); }).length;
+    const unclaimedCount = allItems.filter(function(item){ return item && item.reward && !isRewardClaimed(item); }).length;
+    const markAllButton = document.getElementById('notice-mark-all-read');
+    const claimAllButton = document.getElementById('notice-claim-all');
+    if (markAllButton) markAllButton.disabled = unreadCount === 0;
+    if (claimAllButton && !noticeBulkClaimActive) claimAllButton.disabled = unclaimedCount === 0;
+
+    if (!allItems.length) {
       list.innerHTML = `
         <div class="notice-item">
           <div class="notice-item-title">現在のお知らせはありません</div>
@@ -4380,17 +4725,28 @@ window.NOTICE_ITEMS = [
       return;
     }
 
+    if (!items.length) {
+      const label = noticeFilterMode === 'unread' ? '未読・未受取のお知らせはありません' : '既読のお知らせはありません';
+      list.innerHTML = '<div class="notice-filter-empty">' + label + '</div>';
+      return;
+    }
+
     list.innerHTML = items.map(item => {
       const isUnread = !!(item.id && !readIds.has(item.id));
+      const hasUnclaimedReward = !!(item.reward && !isRewardClaimed(item));
+      const hasAttention = isUnread || hasUnclaimedReward;
+      const noticeStateLabel = isUnread
+        ? '、未読'
+        : (hasUnclaimedReward ? '、未受取報酬あり' : '、既読');
       return `
         <div
-          class="notice-item${item.reward ? ' notice-item-reward' : ''}${isUnread ? ' is-unread' : ' is-read'}"
+          class="notice-item${item.reward ? ' notice-item-reward' : ''}${isUnread ? ' is-unread' : ' is-read'}${hasAttention ? ' has-attention' : ''}"
           data-notice-id="${escapeHtml(item.id || '')}"
           role="button"
           tabindex="0"
-          aria-label="${escapeHtml(item.title || 'お知らせ')}${isUnread ? '、未読' : '、既読'}"
+          aria-label="${escapeHtml(item.title || 'お知らせ')}${noticeStateLabel}"
         >
-          ${isUnread ? '<span class="notice-unread-dot" aria-hidden="true"></span>' : ''}
+          ${hasAttention ? '<span class="notice-unread-dot" aria-hidden="true"></span>' : ''}
           <div class="notice-date">${escapeHtml(item.date || '')}</div>
           <div class="notice-item-title">${escapeHtml(item.title || '')}</div>
           <div class="notice-body">${escapeHtml(item.body || '')}</div>
@@ -4407,8 +4763,21 @@ window.NOTICE_ITEMS = [
         markNoticeAsRead(noticeId);
         itemEl.classList.remove('is-unread');
         itemEl.classList.add('is-read');
-        itemEl.querySelector('.notice-unread-dot')?.remove();
-        itemEl.setAttribute('aria-label', (itemEl.querySelector('.notice-item-title')?.textContent || 'お知らせ') + '、既読');
+        const noticeItem = (window.NOTICE_ITEMS || []).find(function(entry){
+          return entry && entry.id === noticeId;
+        });
+        const hasUnclaimedReward = !!(noticeItem && noticeItem.reward && !isRewardClaimed(noticeItem));
+        if (!hasUnclaimedReward) {
+          itemEl.classList.remove('has-attention');
+          itemEl.querySelector('.notice-unread-dot')?.remove();
+          itemEl.setAttribute('aria-label', (itemEl.querySelector('.notice-item-title')?.textContent || 'お知らせ') + '、既読');
+        } else {
+          itemEl.classList.add('has-attention');
+          if (!itemEl.querySelector('.notice-unread-dot')) {
+            itemEl.insertAdjacentHTML('afterbegin', '<span class="notice-unread-dot" aria-hidden="true"></span>');
+          }
+          itemEl.setAttribute('aria-label', (itemEl.querySelector('.notice-item-title')?.textContent || 'お知らせ') + '、未受取報酬あり');
+        }
         updateNoticeBadge();
       };
 
@@ -4435,7 +4804,19 @@ window.NOTICE_ITEMS = [
           markNoticeAsRead(noticeId);
           itemEl.classList.remove('is-unread');
           itemEl.classList.add('is-read');
-          itemEl.querySelector('.notice-unread-dot')?.remove();
+          const noticeItem = (window.NOTICE_ITEMS || []).find(function(entry){
+            return entry && entry.id === noticeId;
+          });
+          const hasUnclaimedReward = !!(noticeItem && noticeItem.reward && !isRewardClaimed(noticeItem));
+          if (!hasUnclaimedReward) {
+            itemEl.classList.remove('has-attention');
+            itemEl.querySelector('.notice-unread-dot')?.remove();
+          } else {
+            itemEl.classList.add('has-attention');
+            if (!itemEl.querySelector('.notice-unread-dot')) {
+              itemEl.insertAdjacentHTML('afterbegin', '<span class="notice-unread-dot" aria-hidden="true"></span>');
+            }
+          }
           updateNoticeBadge();
         }
 
@@ -15646,7 +16027,7 @@ window.returnToTitleScreen = function(){
   document.write('<script src="js/shooting_event.js?v=836-wall-shield-contact"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=853-raid-surface-single-class-unified"></script>
+<script src="js/raid_event.js?v=867-raid-flat-hp-bar"></script>
 <script src="js/item_management.js?v=693-score-ranking-nav-v2"></script>
 
 <script id="zeraphia-service-worker-register-v1">

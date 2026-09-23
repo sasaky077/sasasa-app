@@ -247,9 +247,9 @@
   }
 
   function ensureEarlyFinalizeStyle(){
-    if(document.getElementById('daily-raid-early-finalize-style-v98')) return;
+    if(document.getElementById('daily-raid-early-finalize-style-v99')) return;
     const style=document.createElement('style');
-    style.id='daily-raid-early-finalize-style-v98';
+    style.id='daily-raid-early-finalize-style-v99';
     style.textContent=`
       #daily-raid-root .daily-raid-actions{
         display:flex!important;
@@ -1011,6 +1011,133 @@
       #daily-raid-root #daily-raid-finalize-best.raid-surface{
         min-height:52px!important;
       }
+
+
+      /* build854: legacy装飾を完全無効化。inline !important とセットで使用 */
+      #daily-raid-root [data-raid-canonical-surface="1"]::before,
+      #daily-raid-root [data-raid-canonical-surface="1"]::after,
+      #daily-raid-root [data-raid-canonical-surface="1"] > small::before,
+      #daily-raid-root [data-raid-canonical-surface="1"] > small::after,
+      #daily-raid-root .daily-raid-mode-card[data-raid-canonical-surface="1"] small::before,
+      #daily-raid-root .daily-raid-mode-card[data-raid-canonical-surface="1"] small::after{
+        content:none!important;
+        display:none!important;
+        background:none!important;
+        border:0!important;
+        box-shadow:none!important;
+        filter:none!important;
+        -webkit-filter:none!important;
+      }
+
+
+      /* build855: 「募集を取り消す」だけをレイドUIへ馴染ませる（build856でinline統一の補助として維持） */
+      #daily-raid-root #daily-raid-recruit-cancel{
+        appearance:none!important;
+        -webkit-appearance:none!important;
+        border-radius:0!important;
+        border:1px solid rgba(151,104,96,.22)!important;
+        background:rgba(193,132,124,.12)!important;
+        background-color:rgba(193,132,124,.12)!important;
+        background-image:none!important;
+        box-shadow:none!important;
+        backdrop-filter:none!important;
+        -webkit-backdrop-filter:none!important;
+        filter:none!important;
+        color:#6a443c!important;
+        -webkit-text-fill-color:#6a443c!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root #daily-raid-recruit-cancel::before,
+      #daily-raid-root #daily-raid-recruit-cancel::after{
+        content:none!important;
+        display:none!important;
+      }
+      #daily-raid-root #daily-raid-recruit-cancel:active{
+        background:rgba(193,132,124,.18)!important;
+        transform:none!important;
+      }
+
+
+      /* build857: RAID INFO tabs — タブであることを明確化 */
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface{
+        display:grid!important;
+        grid-template-columns:1fr 1fr!important;
+        align-items:stretch!important;
+        overflow:hidden!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab{
+        position:relative!important;
+        min-width:0!important;
+        opacity:.58!important;
+        transform:scale(.91)!important;
+        transform-origin:center center!important;
+        transition:opacity .18s ease,transform .18s ease,background .18s ease!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab + .daily-raid-swipe-tab{
+        border-left:1px solid rgba(112,94,70,.20)!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab.is-active{
+        opacity:1!important;
+        transform:scale(1)!important;
+        background:rgba(255,255,255,.13)!important;
+        box-shadow:inset 0 -2px 0 rgba(111,79,47,.54)!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab:not(.is-active) span{
+        color:#806f5e!important;
+        -webkit-text-fill-color:#806f5e!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab:not(.is-active) small{
+        color:#9a8b7a!important;
+        -webkit-text-fill-color:#9a8b7a!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab.is-active span{
+        color:#493524!important;
+        -webkit-text-fill-color:#493524!important;
+        font-weight:650!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-swipe-tabs.raid-surface .daily-raid-swipe-tab.is-active small{
+        color:#654c37!important;
+        -webkit-text-fill-color:#654c37!important;
+      }
+
+      /* build867: RAID HP BAR — flat / square / restrained */
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbar{
+        position:relative!important;
+        width:100%!important;
+        height:7px!important;
+        min-height:7px!important;
+        max-height:7px!important;
+        padding:0!important;
+        overflow:hidden!important;
+        border:1px solid rgba(91,72,49,.22)!important;
+        border-radius:0!important;
+        background:rgba(92,76,56,.10)!important;
+        background-image:none!important;
+        box-shadow:none!important;
+        filter:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbar > i{
+        position:absolute!important;
+        inset:0!important;
+        transform-origin:left center!important;
+        border:0!important;
+        border-radius:0!important;
+        background:#a78749!important;
+        background-image:none!important;
+        box-shadow:none!important;
+        filter:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbar > span{
+        display:none!important;
+        content:none!important;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-hphead small{
+        color:#654c37!important;
+        -webkit-text-fill-color:#654c37!important;
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho",serif!important;
+        letter-spacing:.12em!important;
+        text-shadow:none!important;
+      }
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
           padding-left:10px!important;
@@ -1045,10 +1172,95 @@
     document.head.appendChild(style);
   }
 
+
+  const RAID_CANONICAL_SURFACE_SELECTOR = [
+    '.daily-raid-mode-card',
+    '.daily-raid-room-empty',
+    '.daily-raid-room-card',
+    '.daily-raid-swipe-tabs',
+    '.daily-raid-hpbox',
+    '.daily-raid-team-meta',
+    '.daily-raid-members',
+    '.daily-raid-member',
+    '.daily-raid-rule-dialog',
+    '#daily-raid-start',
+    '#daily-raid-finalize-best',
+    '#daily-raid-recruit-cancel'
+  ].join(',');
+
+  function forceRaidSurfaceStyle(el){
+    if(!el || !el.style) return;
+    el.setAttribute('data-raid-canonical-surface','1');
+    const set=(prop,value)=>el.style.setProperty(prop,value,'important');
+    const isCancel = el.id === 'daily-raid-recruit-cancel';
+
+    // build856: 視認性を上げるため、全パネル共通で白膜を強める。
+    // 個別差を出さないよう、背景・枠線・影・ブラーは1系統へ寄せる。
+    // 取消ボタンのみ、同じ設計のまま色相だけ淡いピンクへ寄せる。
+    const bg = isCancel ? 'rgba(223,170,165,.34)' : 'rgba(255,255,255,.44)';
+    const border = isCancel ? '1px solid rgba(181,126,118,.30)' : '1px solid rgba(112,94,70,.17)';
+    const mainText = isCancel ? '#6a443c' : '#493524';
+    const subText = isCancel ? '#7d564d' : '#654c37';
+
+    set('background', bg);
+    set('background-color', bg);
+    set('background-image', 'none');
+    set('border', border);
+    set('border-radius', '0');
+    set('box-shadow', 'none');
+    set('backdrop-filter', 'none');
+    set('-webkit-backdrop-filter', 'none');
+    set('filter', 'none');
+    set('opacity', '1');
+    set('mix-blend-mode', 'normal');
+    set('background-blend-mode', 'normal');
+    set('-webkit-mask-image', 'none');
+    set('mask-image', 'none');
+
+    el.querySelectorAll('strong,b').forEach(node=>{
+      node.style.setProperty('color', mainText, 'important');
+      node.style.setProperty('-webkit-text-fill-color', mainText, 'important');
+      node.style.setProperty('text-shadow', 'none', 'important');
+    });
+    el.querySelectorAll('span,small').forEach(node=>{
+      node.style.setProperty('color', subText, 'important');
+      node.style.setProperty('-webkit-text-fill-color', subText, 'important');
+      node.style.setProperty('text-shadow', 'none', 'important');
+    });
+
+    if(isCancel){
+      el.style.setProperty('color', mainText, 'important');
+      el.style.setProperty('-webkit-text-fill-color', mainText, 'important');
+      el.style.setProperty('text-shadow', 'none', 'important');
+    }
+  }
+
+  function applyRaidCanonicalSurfaces(root){
+    if(!root) return;
+    root.querySelectorAll(RAID_CANONICAL_SURFACE_SELECTOR).forEach(forceRaidSurfaceStyle);
+  }
+
+  function bindRaidSurfaceObserver(root){
+    if(!root || root.dataset.raidSurfaceObserverBound==='1') return;
+    root.dataset.raidSurfaceObserverBound='1';
+    const observer=new MutationObserver(mutations=>{
+      let shouldApply=false;
+      for(const mutation of mutations){
+        if(mutation.type==='childList' && mutation.addedNodes && mutation.addedNodes.length){
+          shouldApply=true;
+          break;
+        }
+      }
+      if(shouldApply) applyRaidCanonicalSurfaces(root);
+    });
+    observer.observe(root,{childList:true,subtree:true});
+    root.__raidSurfaceObserver=observer;
+  }
+
   function ensureRoot(){
     ensureEarlyFinalizeStyle();
     let root=document.getElementById('daily-raid-root');
-    if(root) return root;
+    if(root){ applyRaidCanonicalSurfaces(root); bindRaidSurfaceObserver(root); return root; }
     root=document.createElement('div');
     root.id='daily-raid-root';
     root.setAttribute('aria-hidden','true');
@@ -1056,7 +1268,6 @@
       <div class="daily-raid-page">
         <header class="daily-raid-head">
           <button type="button" id="daily-raid-back" aria-label="戻る">＜戻る</button>
-          <div class="daily-raid-head-title">レイドバトル</div>
         </header>
 
         <div class="daily-raid-attempt-overview" id="daily-raid-attempt-overview" aria-live="polite">
@@ -1108,7 +1319,7 @@
                   </section>
 
                   <section class="daily-raid-hpbox raid-surface">
-                    <div class="daily-raid-hphead"><div><small>CURRENT HP</small><span>現在HP</span></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
+                    <div class="daily-raid-hphead"><div><small>現在のHP</small></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
                     <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
                     <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
                   </section>
@@ -1162,6 +1373,8 @@
         </div>
       </div>`;
     document.body.appendChild(root);
+    applyRaidCanonicalSurfaces(root);
+    bindRaidSurfaceObserver(root);
 
     root.querySelector('#daily-raid-back').addEventListener('click',()=>{
       if(root.dataset.raidView==='join'){ showEntryMode(); return; }
@@ -1367,11 +1580,11 @@
   async function showJoinList(){
     const root=ensureRoot(); showOnly('join');
     const list=root.querySelector('#daily-raid-room-list');
-    list.innerHTML='<div class="daily-raid-room-empty raid-surface">募集中のレイドを確認中...</div>';
+    list.innerHTML='<div class="daily-raid-room-empty raid-surface">募集中のレイドを確認中...</div>'; applyRaidCanonicalSurfaces(root);
     try{
       const rooms=normalizeStatus(await rpc('list_recruiting_friend_raids',{p_user_id:uid()}))||[];
       if(!Array.isArray(rooms)||!rooms.length){
-        list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span></div>';
+        list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span></div>'; applyRaidCanonicalSurfaces(root);
         return;
       }
       list.innerHTML=rooms.map(room=>{
@@ -1384,10 +1597,11 @@
           <div class="daily-raid-room-card-bottom"><span>${fmt(hp)} / ${fmt(max)} HP</span><b>このレイドに参加</b></div>
         </button>`;
       }).join('');
+      applyRaidCanonicalSurfaces(root);
       list.querySelectorAll('.daily-raid-room-card').forEach(btn=>btn.addEventListener('click',()=>joinRoom(btn.dataset.roomId,btn)));
     }catch(err){
       console.error('[raid] list failed',err);
-      list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>募集情報を取得できません</strong><span>'+esc(err&&err.message||'通信エラー')+'</span></div>';
+      list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>募集情報を取得できません</strong><span>'+esc(err&&err.message||'通信エラー')+'</span></div>'; applyRaidCanonicalSurfaces(root);
     }
   }
 
@@ -1498,6 +1712,7 @@
     });
     while(rows.length<4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>フレンド枠</small></div><b>OPEN</b></div>');
     list.innerHTML=rows.join('');
+    applyRaidCanonicalSurfaces(root);
 
     const finalizeBtn=root.querySelector('#daily-raid-finalize-best');
     const actions=root.querySelector('.daily-raid-actions');
