@@ -2686,6 +2686,31 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   }
 </style>
 
+
+<style id="name-edit-mincho-unify-build906">
+  /* build906: プレイヤー名変更モーダルを設定画面と同じ明朝系へ統一 */
+  #name-edit-modal .name-edit-title,
+  #name-edit-modal .name-edit-sub,
+  #name-edit-modal .name-edit-count,
+  #name-edit-modal .name-edit-input,
+  #name-edit-modal .name-edit-btn-cancel,
+  #name-edit-modal .name-edit-btn-ok{
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif!important;
+  }
+  #name-edit-modal .name-edit-input{
+    font-weight:400!important;
+    letter-spacing:.02em!important;
+  }
+  #name-edit-modal .name-edit-btn-cancel,
+  #name-edit-modal .name-edit-btn-ok{
+    font-weight:400!important;
+    letter-spacing:.05em!important;
+  }
+  #name-edit-modal .name-edit-input::placeholder{
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif!important;
+  }
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -6444,25 +6469,65 @@ document.addEventListener('touchend', function (e) {
     event.preventDefault();
   });
 
+  // build906: 邂逅の切替は矢印だけでなく、メインバナーの横スワイプにも対応。
+  // 並びは visibleGachaBanners の順序をそのまま循環し、
+  // 通常 → 限定 → 特別 → 通常 / 逆方向も同様にループする。
   (function setupSummonPagerSwipe(){
+    var startX = null;
+    var startY = null;
+    var swipeSurface = null;
+    var suppressSwipeClickUntil = 0;
+
+    function resolveSwipeSurface(target){
+      if(!target || !target.closest) return null;
+      return target.closest('#summon-detail-visual, #summon-banner-list');
+    }
+
     document.addEventListener('touchstart', function(event){
-      var list = event.target.closest && event.target.closest('#summon-banner-list');
-      if(!list || !event.touches || !event.touches.length) return;
-      summonPagerTouchStartX = event.touches[0].clientX;
+      var surface = resolveSwipeSurface(event.target);
+      if(!surface || !event.touches || !event.touches.length) return;
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      swipeSurface = surface;
+      summonPagerTouchStartX = startX;
     }, { passive: true });
 
     document.addEventListener('touchend', function(event){
-      if(summonPagerTouchStartX === null) return;
-      var list = event.target.closest && event.target.closest('#summon-banner-list');
-      if(!list || !event.changedTouches || !event.changedTouches.length){
+      if(startX === null || startY === null || !swipeSurface) return;
+
+      var surface = resolveSwipeSurface(event.target);
+      if(!surface || surface !== swipeSurface || !event.changedTouches || !event.changedTouches.length){
+        startX = null;
+        startY = null;
+        swipeSurface = null;
         summonPagerTouchStartX = null;
         return;
       }
-      var diffX = event.changedTouches[0].clientX - summonPagerTouchStartX;
+
+      var diffX = event.changedTouches[0].clientX - startX;
+      var diffY = event.changedTouches[0].clientY - startY;
+
+      startX = null;
+      startY = null;
+      swipeSurface = null;
       summonPagerTouchStartX = null;
-      if(Math.abs(diffX) < 36) return;
+
+      // 縦スクロールは邪魔せず、明確な横スワイプだけを切替として扱う。
+      if(Math.abs(diffX) < 42) return;
+      if(Math.abs(diffX) <= Math.abs(diffY) * 1.2) return;
+
+      suppressSwipeClickUntil = Date.now() + 500;
       moveSummonBanner(diffX < 0 ? 1 : -1);
     }, { passive: true });
+
+    // スワイプ直後にタイトルカードの「提供割合」が誤タップ扱いになるのを防止。
+    document.addEventListener('click', function(event){
+      if(Date.now() > suppressSwipeClickUntil) return;
+      var surface = resolveSwipeSurface(event.target);
+      if(!surface) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
   })();
  
 const BASE_STATS = ["HP","ATK"];
@@ -16539,7 +16604,7 @@ window.returnToTitleScreen = function(){
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
-<script src="js/item_management.js?v=693-score-ranking-nav-v2"></script>
+<script src="js/item_management.js?v=905-sell-qty-free-input"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){
