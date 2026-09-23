@@ -10,12 +10,7 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = String(
-    (window.__ZERAPHIA_RELEASE__ && window.__ZERAPHIA_RELEASE__.build) ||
-    document.querySelector('meta[name="sasaphia-build"]')?.getAttribute('content') ||
-    currentVersionParam ||
-    '836-wall-shield-contact'
-  );
+  const MODULE_VERSION = '20260923-build884-icatch-01-14';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {

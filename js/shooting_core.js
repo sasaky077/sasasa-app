@@ -890,6 +890,27 @@
     return getSelectedBaseStageId() === String(stageId || '');
   }
 
+  // build875: normal-stage mission source of truth.
+  // CH01-STAGE1 is always COLLECT_ITEM x3, even if stale stage data is mixed in.
+  function getEffectiveNormalMission() {
+    const source = (state && state.mission) || (selectedStage && selectedStage.mission) || {};
+    if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_01)) {
+      return {
+        ...source,
+        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        target: 3,
+        text: 'アイテムを3個拾ってクリア',
+      };
+    }
+    return source;
+  }
+
+  function isCollectMissionSatisfied(mission = getEffectiveNormalMission()) {
+    if (!mission || mission.type !== SHOOTING_MISSION_TYPE.COLLECT_ITEM) return true;
+    const target = Math.max(1, Number(mission.target || 3));
+    return Math.max(0, Number((state && state.collectedItems) || 0)) >= target;
+  }
+
 
   function isFacelessStage() {
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
@@ -3489,7 +3510,7 @@
       const stageLabel = document.getElementById('shooting-stage-label');
       const missionText = document.getElementById('shooting-mission-text');
       const missionProgress = document.getElementById('shooting-mission-progress');
-      const m = selectedStage.mission || {};
+      const m = isNormalBattle() ? getEffectiveNormalMission() : (selectedStage.mission || {});
       const nowMission = performance.now();
 
       if (stageLabel) {
@@ -5463,6 +5484,27 @@
           0 0 16px 7px rgba(var(--bomb-rgb,74,174,232),.78);
         animation:shootingLizUltFuse587 .16s ease-in-out infinite alternate;
       }
+      /* build881: ID38専用。青いフチをやめ、白〜淡金〜淡茶のなじむ色へ */
+      .shooting-liz-ult-bomb.shooting-painter-ult-bomb{
+        border:2px solid rgba(247,239,210,.84)!important;
+        background:
+          radial-gradient(circle at 31% 25%,rgba(255,255,255,1) 0 8%,rgba(255,255,255,.56) 9% 17%,transparent 18%),
+          radial-gradient(circle at 47% 52%,rgba(255,245,210,1) 0 34%,rgba(245,214,120,.98) 35% 62%,rgba(116,88,44,.96) 63% 100%)!important;
+        box-shadow:
+          0 0 14px 3px rgba(255,229,132,.42),
+          0 0 28px 8px rgba(215,181,86,.16),
+          inset -8px -10px 12px rgba(92,69,32,.30),
+          inset 5px 5px 9px rgba(255,255,255,.26)!important;
+      }
+      .shooting-liz-ult-bomb.shooting-painter-ult-bomb::before{
+        border-color:rgba(228,193,96,.92)!important;
+        box-shadow:0 0 9px rgba(224,185,77,.34)!important;
+      }
+      .shooting-liz-ult-bomb.shooting-painter-ult-bomb::after{
+        box-shadow:
+          0 0 8px 3px rgba(255,255,255,.90),
+          0 0 14px 6px rgba(244,212,112,.46)!important;
+      }
       .shooting-liz-ult-bomb-shadow{
         position:absolute;
         width:76px;
@@ -5622,6 +5664,7 @@
 
   function normalizeBombSplitCount(source) {
     const raw = Math.floor(Number(
+      source?.clusterSplitCount ??
       source?.bombSplitCount ??
       source?.mainShot?.count ??
       source?.bombFragments ??
@@ -5711,6 +5754,60 @@
   function splitBombAtImpact(p, x, y, now, queue, ignoredTarget = null) {
     if (!p || p.kind !== 'generic_splash') return 0;
     return spawnBombSplitProjectiles(p, x, y, now, queue, ignoredTarget);
+  }
+
+
+  // build869: BOMBはCLUSTERと分離。着弾点を中心に範囲ダメージを与える。
+  function applyGenericBombSplashDamage(p, impactX, impactY, now, chara, ignoredTarget = null) {
+    if (!state || !p) return 0;
+    const radius = Math.max(30, Number(p.splashRadius || 76));
+    const rate = Math.max(0, Number(p.splashDamageRate || 0.55));
+    const attackElement = normalizeCombatElement(p.attackElement || p.element || chara?.element) || 'neutral';
+    let extraHits = 0;
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || enemy === ignoredTarget || !enemy.el || enemy.hp <= 0) return;
+      if (Math.hypot(Number(enemy.x || 0) - impactX, Number(enemy.y || 0) - impactY) > radius) return;
+      const targetElement = getCombatTargetElement(enemy);
+      const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, targetElement);
+      createBombSplashVictimHitEffect(Number(enemy.x || 0), Number(enemy.y || 0), attackElement);
+      const applied = damageNormalEnemy(enemy, splashDamage, now, true, getElementDamageReaction(attackElement, targetElement));
+      if (applied > 0) extraHits++;
+    });
+
+    (state.facelessObjects || []).forEach(obj => {
+      if (!obj || obj === ignoredTarget || !obj.el || obj.hp <= 0) return;
+      if (Math.hypot(Number(obj.x || 0) - impactX, Number(obj.y || 0) - impactY) > radius) return;
+      const targetElement = getCombatTargetElement(obj, state?.boss?.element);
+      const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, targetElement);
+      createBombSplashVictimHitEffect(Number(obj.x || 0), Number(obj.y || 0), attackElement);
+      const applied = damageFacelessObject(obj, splashDamage, now, getElementDamageReaction(attackElement, targetElement));
+      if (applied > 0) extraHits++;
+    });
+
+    if (state.boss && state.boss !== ignoredTarget && state.boss.hp > 0) {
+      const bx = Number(state.boss.x || 0);
+      const by = Number(state.boss.y || 0);
+      if (Math.hypot(bx - impactX, by - impactY) <= radius) {
+        const targetElement = getCombatTargetElement(state.boss);
+        const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, targetElement);
+        const applied = Math.min(state.boss.hp, Math.max(0, Number(splashDamage || 0)));
+        state.boss.hp = Math.max(0, state.boss.hp - applied);
+        updateBossPhase();
+        if (applied > 0) {
+          extraHits++;
+          createBombSplashVictimHitEffect(bx, by, attackElement);
+          if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(80);
+          if (shouldRenderRaidBossHitVisual(now, 'number')) {
+            showBossDamageNumber(applied, false, getElementDamageReaction(attackElement, targetElement));
+          }
+          if (state.boss.hp <= 0) beginBossDefeat();
+        }
+      }
+    }
+
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    return extraHits;
   }
 
   function applyUltElementVisualContext(c) {
@@ -7013,10 +7110,41 @@
 
 
     // ----------------------------------------------------------
-    // build803 CLUSTER：通常弾が着弾すると4/6/8方向へ分裂
-    // 親弾は通常弾と同じ見た目・直進挙動。爆弾形状/投擲アークは使用しない。
+    // build869 BOMB：着弾点を中心に範囲爆発する独立ショット。
     // ----------------------------------------------------------
-    if (c.shotType === 'cluster' || c.shotType === 'bomb') {
+    if (c.shotType === 'bomb') {
+      ensureBombVisualStyles();
+      const bombSize = String(c.bombSize || c.mainShot?.size || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+      const attackElement = normalizeCombatElement(c.element) || 'neutral';
+      const visual = getBombElementVisual(attackElement);
+      const p = makeProjectile(
+        bulletClass + ' shooting-bullet-splash' + (bombSize === 'L' ? ' bomb-size-l' : ''),
+        state.player.x,
+        y,
+        0,
+        -Number(c.bulletSpeed || 660),
+        effectivePower,
+        c.id
+      );
+      if (p) {
+        p.kind = 'generic_bomb';
+        p.bombSize = bombSize;
+        p.splashRadius = Math.max(30, Number(c.bombSplashRadius || (bombSize === 'L' ? 112 : 76)));
+        p.splashDamageRate = Math.max(0, Number(c.bombSplashDamageRate ?? 0.55));
+        p.attackElement = attackElement;
+        p._hw = bombSize === 'L' ? 12 : 10;
+        p._hh = bombSize === 'L' ? 12 : 10;
+        p.el.style.setProperty('--bomb-color', visual.color);
+        p.el.style.setProperty('--bomb-rgb', visual.rgb);
+        state.bullets.push(p);
+      }
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // CLUSTER：通常弾が着弾すると4/6/8方向へ分裂。
+    // ----------------------------------------------------------
+    if (c.shotType === 'cluster') {
       ensureBombVisualStyles();
       const bombSize = String(c.clusterSize || c.bombSize || c.mainShot?.size || 'M').toUpperCase() === 'L' ? 'L' : 'M';
       const splitCount = normalizeBombSplitCount(c);
@@ -7327,10 +7455,11 @@
 
     // アイテム収集ミッションは、必要数を拾うまで敵が枯渇しないよう保証する。
     // ステージ設定が有限敵でも、収集未達成の間だけは補充を継続する。
+    const effectiveMission = getEffectiveNormalMission();
     const collectMissionActive =
-      state.mission &&
-      state.mission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM &&
-      state.collectedItems < Number(state.mission.target || 3);
+      effectiveMission &&
+      effectiveMission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM &&
+      state.collectedItems < Number(effectiveMission.target || 3);
 
     const infiniteEnemies = !!cfg.infiniteEnemies || collectMissionActive;
     const total = Number(cfg.totalEnemies || 7);
@@ -8288,9 +8417,11 @@
   }
 
   function shouldDropMissionItem(defeatedNo) {
-    if (!selectedStage || selectedStage.mission?.type !== SHOOTING_MISSION_TYPE.COLLECT_ITEM) return false;
+    if (!selectedStage) return false;
+    const mission = getEffectiveNormalMission();
+    if (mission.type !== SHOOTING_MISSION_TYPE.COLLECT_ITEM) return false;
 
-    const target = Number(selectedStage.mission.target || 3);
+    const target = Number(mission.target || 3);
     if (state.collectedItems + state.collectibles.length >= target) return false;
 
     const cfg = getNormalBattleConfig();
@@ -8444,7 +8575,7 @@
 
   function evaluateNormalMission(now) {
     if (!isNormalBattle() || state.ended || state.finishing) return;
-    const mission = state.mission || {};
+    const mission = getEffectiveNormalMission();
     const cfg = getNormalBattleConfig();
     const total = Number(cfg.totalEnemies || 0);
     const allDefeated = total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
@@ -8467,9 +8598,9 @@
       }
       state.missionComplete = allDefeated;
     } else if (mission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
-      // アイテム収集ミッションは敵全滅を要求しない。
-      // 指定数のアイテムを取得した瞬間にクリア。
-      state.missionComplete = state.collectedItems >= Number(mission.target || 3);
+      // 敵全滅ではクリアしない。指定数を実際に取得した時だけ成立。
+      state.missionComplete = isCollectMissionSatisfied(mission);
+      if (!state.missionComplete) return;
     } else {
       state.missionComplete = allDefeated;
     }
@@ -8541,6 +8672,19 @@
 
   function beginNormalStageClear() {
     if (!state || state.ended || state.finishing) return;
+
+    // 最終防波堤: 収集ミッションは取得数不足ならCLEAR演出へ入れない。
+    const mission = getEffectiveNormalMission();
+    if (mission.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM && !isCollectMissionSatisfied(mission)) {
+      state.missionComplete = false;
+      console.warn('[shooting] blocked premature collect-mission clear', {
+        stageId: getSelectedBaseStageId(),
+        collected: Number(state.collectedItems || 0),
+        target: Number(mission.target || 3),
+      });
+      return;
+    }
+
     state.finishing = true;
     state.running = false;
     cancelAnimationFrame(rafId);
@@ -10771,7 +10915,7 @@
         p.x += p.vx * dt;
         p.y += p.vy * dt;
       }
-      if (p.kind === 'generic_splash') {
+      if (p.kind === 'generic_splash' || p.kind === 'generic_bomb') {
         positionGenericBombProjectile(p, now);
       } else {
         positionUnit(p.el, p.x, p.y);
@@ -10863,6 +11007,14 @@
               now,
               spawnedPlayerBullets,
               chapter6BarrierTarget
+            );
+          } else if (p.kind === 'generic_bomb') {
+            createGenericBombExplosionEffect(
+              Number(p.x || chapter6BarrierTarget.x || 0),
+              Number(p.y || chapter6BarrierTarget.y || 0),
+              p.attackElement,
+              p.splashRadius,
+              p.bombSize
             );
           } else if (renderBarrierImpact) {
             createHit(Number(p.x || chapter6BarrierTarget.x || 0), Number(p.y || chapter6BarrierTarget.y || 0), false);
@@ -10967,6 +11119,11 @@
               spawnedPlayerBullets,
               facelessObjectTarget
             );
+          } else if (p.kind === 'generic_bomb') {
+            const ix = Number(facelessObjectTarget.x || p.x);
+            const iy = Number(facelessObjectTarget.y || p.y);
+            createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
+            hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, facelessObjectTarget);
           }
           addLegacyCombatScore(80);
         } else if (normalTarget) {
@@ -10974,15 +11131,15 @@
             Array.isArray(normalTargets) && normalTargets.length
               ? normalTargets
               : [normalTarget];
+          const attackElement = normalizeCombatElement(
+            p.attackElement || p.element || chara.element
+          );
 
           hitCount = 0;
 
           targetsToDamage.forEach(enemy => {
             if (p.pierce && p.piercedTargets) p.piercedTargets.add(enemy);
             if (isMiaChargeProjectile(p)) state.nextHitEffect = 'mia_water';
-            const attackElement = normalizeCombatElement(
-              p.attackElement || p.element || chara.element
-            );
             const targetElement = getCombatTargetElement(enemy);
             const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
             const appliedEnemyDamage = damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
@@ -11003,6 +11160,11 @@
               spawnedPlayerBullets,
               normalTarget
             );
+          } else if (p.kind === 'generic_bomb' && normalTarget) {
+            const ix = Number(normalTarget.x || p.x);
+            const iy = Number(normalTarget.y || p.y);
+            createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
+            hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, normalTarget);
           }
 
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
@@ -11039,6 +11201,11 @@
               spawnedPlayerBullets,
               state.boss
             );
+          } else if (p.kind === 'generic_bomb') {
+            const ix = Number(p.x || state.boss.x || 0);
+            const iy = Number(p.y || state.boss.y || 0);
+            createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
+            hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, state.boss);
           }
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
@@ -11865,14 +12032,13 @@
       return;
     }
 
-    // iPhone/PWA安定化:
-    // 以前はカットイン画像のpreload/decodeが終わるまで戦闘ループが動き続けていた。
-    // CH03-04 phase2のような高密度弾幕では、弾DOMの更新と大型カットイン画像の
-    // decodeが同時発生し、WebKitのメモリ負荷上昇やphase状態競合を起こしやすい。
-    // ULT入力を受けた瞬間から戦闘を完全停止し、画像準備後に演出へ入る。
-    state.ultCutinActive = true;
+    // 通常ULTは従来どおりカットイン中に戦闘停止。
+    // ID38(PAINTER)だけは非停止ULT：敵移動・敵弾・自弾・通常射撃をすべて継続する。
+    const nonBlockingCutin = Number(c && c.id) === 38 ||
+      String(c && c.ultType || '').startsWith('painter_');
+    state.ultCutinActive = !nonBlockingCutin;
     root.classList.add('ult-cutin-active');
-    prevTs = performance.now();
+    if (!nonBlockingCutin) prevTs = performance.now();
 
     const cutinSrc = c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
     await preloadShootingImage(cutinSrc, 7000, true);
@@ -11905,8 +12071,9 @@
     wrap.appendChild(label);
     arena.appendChild(wrap);
 
-    // カットイン中はすでに停止済み。画像準備後もdt基準だけ更新しておく。
-    prevTs = performance.now();
+    // 停止型ULTだけdt基準をリセットする。
+    // ID38は戦闘が進行中なのでprevTsへ介入しない。
+    if (!nonBlockingCutin) prevTs = performance.now();
 
     requestAnimationFrame(() => wrap.classList.add('show'));
 
@@ -11925,7 +12092,7 @@
         state.ultCutinTimer = 0;
         state.skipNextUltCut = true;
         root.classList.remove('ult-cutin-active');
-        prevTs = performance.now();
+        if (!nonBlockingCutin) prevTs = performance.now();
 
         // カットイン終了時も指位置へ即ワープさせず、
         // 現在位置から相対ドラッグを継続する。
@@ -13477,6 +13644,19 @@
 
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+
+    // build876: 通常ステージのCLEARは必ずevaluateNormalMission()経由に限定する。
+    // BOSS専用経路が誤って呼ばれても、収集・時間・被弾条件を迂回させない。
+    if (isNormalBattle()) {
+      console.warn('[shooting] blocked boss-defeat clear path on normal stage', {
+        stageId: getSelectedBaseStageId(),
+        mission: getEffectiveNormalMission(),
+        collectedItems: Number(state.collectedItems || 0),
+      });
+      evaluateNormalMission(performance.now());
+      return;
+    }
+
     if (isAmbushStage() && Number(state.ambushWave || 1) === 1) {
       beginAmbushWave2();
       return;
@@ -16262,7 +16442,7 @@
     arena.appendChild(shadow);
 
     const bomb = document.createElement('i');
-    bomb.className = 'shooting-liz-ult-bomb';
+    bomb.className = 'shooting-liz-ult-bomb shooting-painter-ult-bomb';
     bomb.style.setProperty('--bomb-color', visual.color);
     bomb.style.setProperty('--bomb-rgb', visual.rgb);
     arena.appendChild(bomb);
@@ -19327,6 +19507,229 @@
     renderHud();
   }
 
+
+  // ============================================================
+  // build880: ID38 ULT — LIGHT PAINT BOMB / NON-BLOCKING TIME
+  // 自機Xから真上へ低速直進。敵への直撃時だけBOMB Mとして爆発。
+  // 直撃 ATK×250% / 拡散50%。直撃・拡散に触れた生存敵をLIGHTへ書き換える。
+  // ============================================================
+  function setCombatTargetElement(target, element) {
+    if (!target) return false;
+    const nextElement = normalizeCombatElement(element) || 'neutral';
+    target.element = nextElement;
+    if (target.el) target.el.dataset.element = nextElement;
+
+    if (Object.prototype.hasOwnProperty.call(target, 'elementEl')) {
+      const src = getCombatElementIcon(nextElement);
+      if (target.elementEl && src) {
+        target.elementEl.src = src;
+        target.elementEl.style.display = '';
+      }
+      if (target.weaknessBarrierEl) {
+        ['neutral','aqua','fire','wood','dark','light'].forEach(key => {
+          target.weaknessBarrierEl.classList.remove(`element-${key}`);
+        });
+        target.weaknessBarrierEl.classList.add(`element-${nextElement}`);
+        target.weaknessBarrierEl.dataset.element = nextElement;
+      }
+      positionMiniEnemyHp(target);
+    }
+
+    if (target === state?.boss) renderBossElementIcon();
+
+    if (target.el) {
+      target.el.classList.remove('painter-element-shift-hit');
+      void target.el.offsetWidth;
+      target.el.classList.add('painter-element-shift-hit');
+      setTimeout(() => target.el && target.el.classList.remove('painter-element-shift-hit'), 420);
+    }
+    return true;
+  }
+
+  function ensurePainterUltStyle() {
+    const styleId = 'shooting-painter-ult-style-v2';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .painter-element-shift-hit{
+        filter:brightness(1.16) saturate(.90) drop-shadow(0 0 10px rgba(232,197,86,.72))!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getPainterUltCandidates() {
+    const list = [];
+    (state?.normalEnemies || []).forEach(enemy => {
+      if (enemy && enemy.el && enemy.hp > 0) list.push(enemy);
+    });
+    (state?.facelessObjects || []).forEach(obj => {
+      if (obj && obj.el && obj.hp > 0) list.push(obj);
+    });
+    // 通常ステージの内部dummy bossは対象外。
+    if (!isNormalBattle() && state?.boss && state.boss.hp > 0) list.push(state.boss);
+    return list;
+  }
+
+  function findPainterUltCollision(x, y, arenaRect) {
+    const projectileRect = {
+      left: x - 10,
+      right: x + 10,
+      top: y - 10,
+      bottom: y + 10,
+      width: 20,
+      height: 20,
+    };
+    const candidates = getPainterUltCandidates();
+    for (const target of candidates) {
+      const targetRect = getUnitRect(target, arenaRect);
+      if (targetRect && rectsHit(projectileRect, targetRect, 0, target === state?.boss ? 18 : 10)) {
+        return target;
+      }
+    }
+    return null;
+  }
+
+  function applyPainterUltDamage(target, rawDamage, attackElement, now, c, isSplash) {
+    if (!target || target.hp <= 0) return 0;
+    const targetElement = getCombatTargetElement(target, state?.boss?.element);
+    const reaction = getElementDamageReaction(attackElement, targetElement);
+    const finalDamage = applyElementDamage(rawDamage, attackElement, targetElement);
+    let appliedDamage = 0;
+
+    if ((state.normalEnemies || []).includes(target)) {
+      appliedDamage = damageNormalEnemy(target, finalDamage, now, !!isSplash, reaction);
+    } else if ((state.facelessObjects || []).includes(target)) {
+      appliedDamage = damageFacelessObject(target, finalDamage, now, reaction);
+    } else if (target === state.boss && state.boss && state.boss.hp > 0) {
+      appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+      updateBossPhase();
+      createHit(Number(state.boss.x || 0), Number(state.boss.y || 0), !isSplash);
+      showBossDamageNumber(appliedDamage, !isSplash, reaction);
+      flashBossHit(!isSplash);
+      if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(appliedDamage * (isSplash ? 80 : 100)));
+    }
+
+    if (appliedDamage > 0) {
+      state.shotsHit = Number(state.shotsHit || 0) + 1;
+      registerComboHit(c.id, now, appliedDamage);
+    }
+
+    // ダメージは命中前属性で計算し、その後LIGHTへ書き換える。
+    if (target.hp > 0) setCombatTargetElement(target, 'light');
+    return appliedDamage;
+  }
+
+  function explodePainterUltAt(target, x, y, c) {
+    if (!state || state.ended || state.finishing || !target) return;
+    const nowHit = performance.now();
+    const attackElement = 'light';
+    const radius = Math.max(30, Number(c.paintUltRadius || c.bombSplashRadius || 76));
+    const directDamage = Math.max(0, Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 2.5));
+    const splashRate = Math.max(0, Number(c.paintUltSplashDamageRate ?? 0.50));
+
+    // BOMB Mと同じ着弾拡散演出。
+    createGenericBombExplosionEffect(x, y, attackElement, radius, 'M');
+
+    applyPainterUltDamage(target, directDamage, attackElement, nowHit, c, false);
+
+    // 直撃対象以外へ50%拡散。拡散対象にもLIGHT書き換えを適用。
+    getPainterUltCandidates().forEach(other => {
+      if (!other || other === target || other.hp <= 0) return;
+      if (Math.hypot(Number(other.x || 0) - x, Number(other.y || 0) - y) > radius) return;
+      createBombSplashVictimHitEffect(Number(other.x || 0), Number(other.y || 0), attackElement);
+      applyPainterUltDamage(other, directDamage * splashRate, attackElement, nowHit, c, true);
+    });
+
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    if (isNormalBattle()) {
+      evaluateNormalMission(nowHit);
+    } else if (state.boss && state.boss.hp <= 0) {
+      beginBossDefeat();
+    }
+    shakeVeronicaPunchImpact();
+    renderHud();
+  }
+
+  function usePainterUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    ensureBombVisualStyles();
+    ensurePainterUltStyle();
+    showUltCut(c.ultName || 'LIGHT PAINT BOMB', c.effectKey, c);
+    ultScreenFlash('ult-flash-element', c);
+
+    const now = performance.now();
+    const startX = Number(state.player?.x || arena.clientWidth * .5);
+    const startY = Math.max(36, Number(state.player?.y || arena.clientHeight * .80) - 28);
+    const baseSpeed = Math.max(120, Number(c.paintUltBaseSpeed || c.bulletSpeed || 660));
+    const speedMultiplier = Math.max(.1, Number(c.paintUltSpeedMultiplier ?? .70));
+    const speed = baseSpeed * speedMultiplier;
+    const visual = getBombElementVisual('light');
+    const maxTravelMs = ((startY + 36) / Math.max(1, speed)) * 1000 + 180;
+
+    // ID38は非停止ULT。
+    // shared ultLockUntil は敵移動・敵攻撃まで止めるため使用しない。
+    // playerShotLockUntil も使わず、通常ショットをULT中ずっと継続する。
+    createBombThrowPop(startX, startY, 'light');
+
+    const bomb = document.createElement('i');
+    bomb.className = 'shooting-liz-ult-bomb';
+    bomb.style.setProperty('--bomb-color', visual.color);
+    bomb.style.setProperty('--bomb-rgb', visual.rgb);
+    arena.appendChild(bomb);
+
+    let x = startX;
+    let y = startY;
+    let lastTs = performance.now();
+    let spin = 0;
+    let raf = 0;
+    const cleanup = () => {
+      if (raf) cancelAnimationFrame(raf);
+      bomb.remove();
+    };
+
+    const animate = ts => {
+      if (!state || state.ended || state.finishing || !bomb.isConnected) {
+        cleanup();
+        return;
+      }
+
+      const dt = Math.min(.035, Math.max(0, (ts - lastTs) / 1000));
+      lastTs = ts;
+      // Xは発射位置から一切変えない。完全な縦直進。
+      y -= speed * dt;
+      spin += 260 * dt;
+      bomb.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${spin}deg) scale(.82)`;
+
+      const arenaRect = arena.getBoundingClientRect();
+      const hitTarget = findPainterUltCollision(x, y, arenaRect);
+      if (hitTarget) {
+        const impactX = Number(hitTarget.x || x);
+        const impactY = Number(hitTarget.y || y);
+        cleanup();
+        explodePainterUltAt(hitTarget, impactX, impactY, c);
+        return;
+      }
+
+      // BOMB Shotと同様、何にも当たらなければ画面外へ抜けて不発。
+      if (y < -24) {
+        cleanup();
+        renderHud();
+        return;
+      }
+      raf = requestAnimationFrame(animate);
+    };
+
+    bomb.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(.82)`;
+    raf = requestAnimationFrame(animate);
+    renderHud();
+  }
+
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
     if (isChapter04Stage() && !isChapter43BossStage()) return false;
@@ -19358,6 +19761,7 @@
     else if (c.ultType === 'mito_summon_double') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'toyfel_double_black_hole') useToyfelUlt(c);
+    else if (c.ultType === 'painter_light_paint_bomb' || c.ultType === 'painter_dark_paint_bomb') usePainterUlt(c);
     else if (c.ultType === 'nina_lightning_storm') useNinaUlt(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
@@ -20724,7 +21128,16 @@
     'images/icatch_02.webp',
     'images/icatch_03.webp',
     'images/icatch_04.webp',
-    'images/icatch_05.webp'
+    'images/icatch_05.webp',
+    'images/icatch_06.webp',
+    'images/icatch_07.webp',
+    'images/icatch_08.webp',
+    'images/icatch_09.webp',
+    'images/icatch_10.webp',
+    'images/icatch_11.webp',
+    'images/icatch_12.webp',
+    'images/icatch_13.webp',
+    'images/icatch_14.webp'
   ]);
   const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
   const SHOOTING_ICATCH_FADE_IN_MS = 1000;

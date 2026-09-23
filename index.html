@@ -2333,6 +2333,62 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 }
 </style>
 
+
+<style id="friend-screen-polish-v872">
+  /* build872: friend screen frame/button/input polish */
+  #screen-friend .friend-section,
+  #screen-friend .friend-list-empty,
+  #screen-friend .friend-req-card,
+  #screen-friend .friend-search-card,
+  #screen-friend .friend-card,
+  #screen-friend .friend-add-box{
+    border-radius:0!important;
+  }
+  #screen-friend .friend-add-input{
+    border-radius:0!important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho",serif!important;
+    letter-spacing:.03em!important;
+    color:#5c4734!important;
+    -webkit-text-fill-color:#5c4734!important;
+  }
+  #screen-friend .friend-add-input::placeholder{
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho",serif!important;
+    color:#a99a8a!important;
+    -webkit-text-fill-color:#a99a8a!important;
+    opacity:1!important;
+    letter-spacing:.03em!important;
+  }
+  #screen-friend .friend-add-btn{
+    border-radius:0!important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho",serif!important;
+    letter-spacing:.08em!important;
+    color:#6a563f!important;
+    -webkit-text-fill-color:#6a563f!important;
+    border:1px solid rgba(175,148,96,.45)!important;
+    background:rgba(214,189,137,.24)!important;
+    background-image:none!important;
+    box-shadow:none!important;
+    text-shadow:none!important;
+  }
+  #screen-friend .friend-add-btn:hover,
+  #screen-friend .friend-add-btn:active{
+    background:rgba(214,189,137,.32)!important;
+    border-color:rgba(175,148,96,.55)!important;
+  }
+  #screen-friend .friend-add-btn:disabled{
+    opacity:.58!important;
+  }
+</style>
+
+
+<style id="summon-button-image-opacity-v873">
+/* build873: 邂逅画面の画像ボタンだけ、わずかに透過 */
+#screen-summon .btn-gacha.btn-gacha-single:not(:disabled),
+#screen-summon .btn-gacha.btn-gacha-ten:not(:disabled){
+  opacity:.92!important;
+}
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -5447,10 +5503,10 @@ document.addEventListener('touchend', function (e) {
   // DARK アヤネ(11) / LIGHT ミト(7)
   const GACHA_PERMANENT_SR_IDS = [2, 31, 28, 11, 7];
 
-  // 通常R25体（グレシャ34 / ジゼル35 / トイフェル37 を恒常Rへ追加）
+  // 通常R26体（ID38 絵描きの少女を恒常Rへ追加）
   const GACHA_R_IDS = [
     3, 5, 6, 10, 12, 13, 14, 15, 16, 17,
-    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 34, 35, 37
+    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 34, 35, 37, 38
   ];
 
   const GACHA_SR_RATE = 0.06;
@@ -11626,7 +11682,7 @@ function showTenResult(results){
     piercing: 'PIERCING',
     orbit: 'ORBIT',
     charge: 'CHARGE',
-    lightning: 'LIGHTNING',
+    lightning: 'PLASMA',
     strike: 'STRIKE'
   };
 
@@ -15945,7 +16001,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=807-nina-wild-contact"></script>
+<script src="js/shooting_characters.js?v=878-id38-ult-speed-050"></script>
 <script src="js/stage_select.js?v=843-story-title-canonical"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -16024,10 +16080,10 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=836-wall-shield-contact"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=884-icatch-01-14"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=867-raid-flat-hp-bar"></script>
+<script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/item_management.js?v=693-score-ranking-nav-v2"></script>
 
 <script id="zeraphia-service-worker-register-v1">

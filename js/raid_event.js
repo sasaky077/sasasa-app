@@ -1138,6 +1138,60 @@
         letter-spacing:.12em!important;
         text-shadow:none!important;
       }
+
+      /* build871: recruit-room typography and HP bar polish */
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card,
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-empty,
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card :is(strong,b,span,small),
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-empty :is(strong,b,span,small){
+        font-family:"Noto Serif JP","Yu Mincho","YuMincho",serif!important;
+        text-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-top,
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-bottom{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:space-between!important;
+        gap:10px!important;
+      }
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-top strong{
+        flex:1 1 auto!important;
+        text-align:left!important;
+        font-size:13px!important;
+        font-weight:650!important;
+        letter-spacing:.04em!important;
+      }
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-top span,
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-bottom span,
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-bottom b{
+        font-size:10px!important;
+        letter-spacing:.05em!important;
+      }
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-top b{
+        font-size:12px!important;
+        font-weight:600!important;
+        letter-spacing:.04em!important;
+      }
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-hp{
+        position:relative!important;
+        width:100%!important;
+        height:6px!important;
+        margin:8px 0 7px!important;
+        overflow:hidden!important;
+        border:1px solid rgba(104,83,56,.24)!important;
+        border-radius:0!important;
+        background:rgba(97,79,55,.10)!important;
+        background-image:none!important;
+        box-shadow:none!important;
+      }
+      #daily-raid-root .daily-raid-join-select .daily-raid-room-card .daily-raid-room-card-hp i{
+        display:block!important;
+        height:100%!important;
+        border-radius:0!important;
+        background:#a8884d!important;
+        background-image:none!important;
+        box-shadow:none!important;
+      }
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
           padding-left:10px!important;
@@ -1227,6 +1281,17 @@
       node.style.setProperty('-webkit-text-fill-color', subText, 'important');
       node.style.setProperty('text-shadow', 'none', 'important');
     });
+
+    if(el.classList.contains('daily-raid-room-card') || el.classList.contains('daily-raid-room-empty')){
+      el.style.setProperty('font-family', '"Noto Serif JP","Yu Mincho","YuMincho",serif', 'important');
+      el.querySelectorAll('strong,b,span,small').forEach(node=>{
+        node.style.setProperty('font-family', '"Noto Serif JP","Yu Mincho","YuMincho",serif', 'important');
+        node.style.setProperty('letter-spacing', '.04em', 'important');
+      });
+      el.querySelectorAll('.daily-raid-room-card-top strong').forEach(node=>{
+        node.style.setProperty('font-weight', '650', 'important');
+      });
+    }
 
     if(isCancel){
       el.style.setProperty('color', mainText, 'important');
