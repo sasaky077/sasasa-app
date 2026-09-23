@@ -441,6 +441,7 @@
       name: '理想郷：ノア',
       displayName: 'SPECIAL STAGE　理想郷：ノア',
       image: 'images/nore_battle.webp',
+      element: 'light',
 
       gaugeHp: 5000,
       gauges: 3,
@@ -501,6 +502,7 @@
       name: 'オーバーシア（亜種）',
       displayName: 'EMERGENCY　オーバーシア（亜種）',
       image: 'images/remnant_01_blk_battle.webp',
+      element: 'dark',
       gaugeHp: 2500,
       gauges: 1,
       bulletSpeed: 210,
