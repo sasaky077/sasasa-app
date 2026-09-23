@@ -21150,7 +21150,12 @@
     'images/icatch_11.webp',
     'images/icatch_12.webp',
     'images/icatch_13.webp',
-    'images/icatch_14.webp'
+    'images/icatch_14.webp',
+    'images/icatch_15.webp',
+    'images/icatch_16.webp',
+    'images/icatch_17.webp',
+    'images/icatch_18.webp',
+    'images/icatch_19.webp'
   ]);
   const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
   const SHOOTING_ICATCH_FADE_IN_MS = 1000;

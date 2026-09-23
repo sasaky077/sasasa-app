@@ -2622,6 +2622,23 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   }
 </style>
 
+
+<style id="settings-bgm-font-unify-build901">
+  /* 設定画面：BGM行も他の設定項目と同じ明朝系へ統一 */
+  #screen-setting .setting-audio-row .setting-row-label,
+  #screen-setting .setting-audio-row .setting-audio-status{
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif!important;
+  }
+  #screen-setting .setting-audio-row .setting-row-label{
+    font-weight:400!important;
+    letter-spacing:normal!important;
+  }
+  #screen-setting .setting-audio-row .setting-audio-status{
+    font-weight:400!important;
+    letter-spacing:.08em!important;
+  }
+</style>
+
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -16469,7 +16486,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=896-secure-noah-shinju"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=902-icatch-01-19"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
