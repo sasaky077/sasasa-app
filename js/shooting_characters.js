@@ -99,7 +99,7 @@
     35: 'r',   // ジゼル
     36: 'sr',  // ニーナ
     37: 'r',   // トイフェル
-    38: 'r',   // 絵描きの少女（仮称）
+    38: 'r',   // クローマ
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -952,7 +952,7 @@
   },
   "38": {
     "id": 38,
-    "name": "絵描きの少女",
+    "name": "クローマ",
     "element": "light",
     "hp": 590,
     "atk": 255,
@@ -2116,7 +2116,7 @@
 
   // ============================================================
   // build869: ID38 LIGHT / BOMB M / ATTRIBUTE PAINT
-  // 表示名は名称未確定のため「絵描きの少女」で仮置き。
+  // ID38 正式名：クローマ。
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.PAINTER] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.PAINTER, effectKey: 'painter',

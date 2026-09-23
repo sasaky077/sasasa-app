@@ -1187,13 +1187,13 @@
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.OVERSEER_AMBUSH]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'オーバーシア（亜種）を撃破',
+        text: '???を撃破',
       }),
       guaranteedRewards: Object.freeze([
         Object.freeze({
           type: 'material',
           id: 'overseer_blk_core',
-          name: 'オーバーシア亜種の心核',
+          name: '???の心核',
           image: 'images/item_overseer_blk_core.webp',
           count: 1,
           detail: '特殊強化素材',

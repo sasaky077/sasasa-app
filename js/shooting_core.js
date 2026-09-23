@@ -13041,7 +13041,7 @@
 
     if (isAmbushStage()) {
       meta.kicker = 'EMERGENCY ENCOUNTER';
-      meta.title = 'オーバーシア（亜種）';
+      meta.title = '???';
       meta.sub = 'OVERSEER VARIANT';
       meta.image = selectedStage.introImage || 'images/remnant_01_blk_battle_start.webp';
     } else if (isScoreAttackStage()) {
@@ -14421,7 +14421,7 @@
     const result = document.getElementById('shooting-result');
     const overlay = document.createElement('div');
     overlay.className = 'shooting-ambush-emergency';
-    overlay.innerHTML = '<small>EMERGENCY</small><strong>緊急事態</strong><span>オーバーシア（亜種）が出現しました</span>';
+    overlay.innerHTML = '<small>EMERGENCY</small><strong>緊急事態</strong><span>???が出現しました</span>';
     root.appendChild(overlay);
 
     setTimeout(() => {
