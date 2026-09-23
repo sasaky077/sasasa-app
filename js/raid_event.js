@@ -1,4 +1,4 @@
-// 20260923-raid-empty-back-glass-brown-v77
+// 20260923-raid-header-back-canonical-v78
 (function(){
   'use strict';
 
@@ -247,9 +247,9 @@
   }
 
   function ensureEarlyFinalizeStyle(){
-    if(document.getElementById('daily-raid-early-finalize-style-v94')) return;
+    if(document.getElementById('daily-raid-early-finalize-style-v95')) return;
     const style=document.createElement('style');
-    style.id='daily-raid-early-finalize-style-v94';
+    style.id='daily-raid-early-finalize-style-v95';
     style.textContent=`
       #daily-raid-root .daily-raid-actions{
         display:flex!important;
@@ -373,6 +373,12 @@
       }
 
       #daily-raid-root #daily-raid-back{
+        display:inline-flex!important;
+        visibility:visible!important;
+        opacity:1!important;
+        pointer-events:auto!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
         width:auto!important;
         min-width:0!important;
         height:auto!important;
@@ -397,14 +403,22 @@
       /* v66: レイド上部を他コンテンツと同じ「戻る + 中央タイトル」に統一 */
       #daily-raid-root .daily-raid-head{
         position:relative!important;
-        min-height:54px!important;
-        height:54px!important;
-        padding:0 18px!important;
+        z-index:30!important;
+        flex:0 0 var(--app-page-header-h,52px)!important;
+        min-height:var(--app-page-header-h,52px)!important;
+        height:var(--app-page-header-h,52px)!important;
+        margin:0!important;
+        padding:0 var(--app-page-side,18px)!important;
         display:flex!important;
+        visibility:visible!important;
+        opacity:1!important;
         align-items:center!important;
         justify-content:flex-start!important;
         box-sizing:border-box!important;
-        border-bottom:1px solid rgba(211,184,111,.16)!important;
+        border:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        overflow:visible!important;
       }
       #daily-raid-root .daily-raid-head::before,
       #daily-raid-root .daily-raid-head::after{
@@ -412,6 +426,9 @@
         display:none!important;
       }
       #daily-raid-root .daily-raid-head-title{
+        display:block!important;
+        visibility:visible!important;
+        opacity:1!important;
         position:absolute!important;
         left:50%!important;
         top:50%!important;
@@ -612,26 +629,6 @@
         -webkit-text-fill-color:var(--raid-glass-text)!important;
         text-shadow:none!important;
       }
-      #daily-raid-root .daily-raid-room-empty-back{
-        display:inline-flex!important;
-        align-items:center!important;
-        justify-content:center!important;
-        min-width:96px!important;
-        height:36px!important;
-        margin:16px auto 0!important;
-        padding:0 18px!important;
-        border:1px solid rgba(107,78,52,.32)!important;
-        background:rgba(255,252,246,.46)!important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.55)!important;
-        color:#4d3827!important;
-        -webkit-text-fill-color:#4d3827!important;
-        font-family:"Noto Serif JP",serif!important;
-        font-size:11px!important;
-        font-weight:600!important;
-        letter-spacing:.05em!important;
-        text-shadow:none!important;
-      }
-      #daily-raid-root .daily-raid-room-empty-back:active{ opacity:.62!important; }
 
       @media (max-width:380px){
         #daily-raid-root .daily-raid-actions{
@@ -788,12 +785,6 @@
     root.querySelector('#daily-raid-back').addEventListener('click',()=>{
       if(root.dataset.raidView==='join'){ showEntryMode(); return; }
       close();
-    });
-    root.addEventListener('click',e=>{
-      const back=e.target&&e.target.closest?e.target.closest('[data-raid-empty-back]'):null;
-      if(!back) return;
-      e.preventDefault();
-      showEntryMode();
     });
     root.querySelector('#daily-raid-recruit-btn').addEventListener('click',startRecruiting);
     root.querySelector('#daily-raid-join-btn').addEventListener('click',showJoinList);
@@ -999,7 +990,7 @@
     try{
       const rooms=normalizeStatus(await rpc('list_recruiting_friend_raids',{p_user_id:uid()}))||[];
       if(!Array.isArray(rooms)||!rooms.length){
-        list.innerHTML='<div class="daily-raid-room-empty"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span><button type="button" class="daily-raid-room-empty-back" data-raid-empty-back>＜戻る</button></div>';
+        list.innerHTML='<div class="daily-raid-room-empty"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span></div>';
         return;
       }
       list.innerHTML=rooms.map(room=>{
@@ -1015,7 +1006,7 @@
       list.querySelectorAll('.daily-raid-room-card').forEach(btn=>btn.addEventListener('click',()=>joinRoom(btn.dataset.roomId,btn)));
     }catch(err){
       console.error('[raid] list failed',err);
-      list.innerHTML='<div class="daily-raid-room-empty"><strong>募集情報を取得できません</strong><span>'+esc(err&&err.message||'通信エラー')+'</span><button type="button" class="daily-raid-room-empty-back" data-raid-empty-back>＜戻る</button></div>';
+      list.innerHTML='<div class="daily-raid-room-empty"><strong>募集情報を取得できません</strong><span>'+esc(err&&err.message||'通信エラー')+'</span></div>';
     }
   }
 
