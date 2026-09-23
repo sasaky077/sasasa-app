@@ -15,6 +15,10 @@
   const MAX_STAGE = 5;
   const BLESSING_SLOTS = Object.freeze(['hp', 'atk', 'ult']);
   const BLESSING_LABELS = Object.freeze({ hp: 'HP SLOT', atk: 'ATK SLOT', ult: 'ULT SLOT' });
+  // build896: Supabase is the authority. localStorage is display/offline cache only.
+  let authoritativeState = null;
+  let shinjuServerReady = false;
+  let shinjuRefreshPromise = null;
 
   // stage 1 = shinju_01.webp（芽） / stage 5 = shinju_05.webp（大木）
   const STAGE_EXP = [0, 1000, 2000, 4000, 7000];
@@ -72,17 +76,52 @@
   }
 
   function readState() {
+    if (authoritativeState) return normalizeState(authoritativeState);
     try {
-      // 旧実データキーとクラウド同期キーの両方を読み、更新時刻が新しい方を採用する。
-      // build756以降はsaveState()で両方を同時更新する。
       const legacy = safeParse(localStorage.getItem(STORAGE_KEY));
       const cloud = safeParse(localStorage.getItem(CLOUD_STORAGE_KEY));
       const selected = stateTimestamp(cloud) > stateTimestamp(legacy) ? cloud : (legacy || cloud);
       return normalizeState(selected || createInitialState());
     } catch (err) {
-      console.warn('[ShinjuProgress] 保存データ読込に失敗:', err);
+      console.warn('[ShinjuProgress] cache load failed:', err);
       return createInitialState();
     }
+  }
+
+  function applyServerPayload(payload) {
+    const raw = payload && payload.state && typeof payload.state === 'object'
+      ? payload.state
+      : payload;
+    const state = normalizeState(raw || createInitialState());
+    authoritativeState = state;
+    shinjuServerReady = true;
+    writeStateLocal(state);
+    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: getViewState(state) }));
+    return getViewState(state);
+  }
+
+  async function refreshFromServer() {
+    if (shinjuRefreshPromise) return shinjuRefreshPromise;
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') return getViewState(readState());
+
+    shinjuRefreshPromise = (async () => {
+      const res = await sb.rpc('get_shinju_state_secure');
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      if (!data || data.ok === false) throw new Error('神聖樹データを取得できませんでした');
+      return applyServerPayload(data);
+    })().catch(err => {
+      console.warn('[ShinjuProgress] secure refresh failed:', err && (err.message || err));
+      return getViewState(readState());
+    }).finally(() => {
+      shinjuRefreshPromise = null;
+    });
+
+    return shinjuRefreshPromise;
   }
 
   function createInitialState() {
@@ -134,18 +173,8 @@
 
   let cloudSaveTimer = 0;
   function queueCloudSave() {
-    clearTimeout(cloudSaveTimer);
-    cloudSaveTimer = setTimeout(() => {
-      try {
-        if (typeof window.saveShinjuToSupabase === 'function') {
-          Promise.resolve(window.saveShinjuToSupabase()).catch(err => {
-            console.warn('[ShinjuProgress] cloud save skipped:', err && (err.message || err));
-          });
-        }
-      } catch (err) {
-        console.warn('[ShinjuProgress] cloud save failed:', err);
-      }
-    }, 120);
+    // build896: direct client upsert is intentionally disabled.
+    // Authoritative mutations use dedicated SECURITY DEFINER RPCs.
   }
 
   function writeStateLocal(state) {
@@ -156,11 +185,11 @@
   }
 
   function saveState(state, options) {
+    // Cache-only helper. Never treats local data as authoritative.
     const s = normalizeState(state);
     s.updatedAt = new Date().toISOString();
     writeStateLocal(s);
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: getViewState(s) }));
-    if (!options || options.cloud !== false) queueCloudSave();
     return s;
   }
 
@@ -171,7 +200,14 @@
 
   function getBlessingForCharacter(characterId, stateOverride) {
     const id = normalizeCharacterId(characterId);
-    const view = getViewState(stateOverride || readState());
+
+    // Combat bonuses are disabled until a server-confirmed snapshot has loaded.
+    // This prevents localStorage edits from becoming battle buffs.
+    if (!shinjuServerReady || !authoritativeState) {
+      return { characterId:id, stage:1, hpRate:0, atkRate:0, ultRefundRate:0 };
+    }
+
+    const view = getViewState(authoritativeState);
     const slots = view.blessings || {};
     const rates = view.blessingRates || getBlessingRates(view.stage);
     return {
@@ -228,90 +264,44 @@
     });
   }
 
-  function setGameClearSeen(value) {
-    const state = readState();
-    state.gameClearSeen = !!value;
-    saveState(state);
+  async function setGameClearSeen(value) {
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') return false;
+    try {
+      const res = await sb.rpc('set_shinju_game_clear_seen_secure', { p_seen: !!value });
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      applyServerPayload(data);
+      return true;
+    } catch (err) {
+      console.warn('[ShinjuProgress] clear-seen update failed:', err && (err.message || err));
+      return false;
+    }
   }
 
   function grantBossItem(opts) {
-    const o = opts || {};
-    const state = readState();
-    const item = {
-      id: uid('shinju_item'),
-      bossId: o.bossId || 'unknown_boss',
-      bossName: o.bossName || 'UNKNOWN BOSS',
-      runId: o.runId || '',
-      name: o.itemName || o.name || '創世片',
-      exp: Math.max(1, Number(o.exp || DEFAULT_BOSS_ITEM_EXP)),
-      rank: o.rank || '',
-      obtainedAt: new Date().toISOString(),
-    };
-    state.inventory.push(item);
-    saveState(state);
-    return item;
+    // build896: reward creation is server-side.
+    console.warn('[ShinjuProgress] client reward grant ignored; server-authoritative mode');
+    void refreshFromServer();
+    return { ok:false, reason:'server_authoritative' };
   }
 
   function grantBossItemFromRoguelite(payload) {
-    const p = payload || {};
-    const runId = p.runId || (window.RogueliteRun && window.RogueliteRun.getRunId && window.RogueliteRun.getRunId()) || window.__ROGUELITE_PENDING_RUN_ID__ || 'default';
-    const master = RUN_REWARD_MASTER[runId] || RUN_REWARD_MASTER.default;
-    return grantBossItem(Object.assign({}, master, {
-      runId,
-      rank: p.rank || '',
-      totalTurns: p.totalTurns || 0,
-    }));
+    // Reserved until the roguelite reward source is server-finalized.
+    console.warn('[ShinjuProgress] roguelite client reward grant ignored in secure mode');
+    void refreshFromServer();
+    return { ok:false, reason:'server_authoritative' };
   }
 
   function offerItem(itemId) {
-    const state = readState();
-    const idx = state.inventory.findIndex(item => item && item.id === itemId);
-    if (idx < 0) return { ok: false, reason: 'not_found', state: getViewState(state) };
-
-    const before = getViewState(state);
-    const item = state.inventory.splice(idx, 1)[0];
-    state.exp = Math.max(0, Number(state.exp || 0) + Number(item.exp || 0));
-    state.offeredItems.push(Object.assign({}, item, { offeredAt: new Date().toISOString() }));
-    const saved = saveState(state);
-    const after = getViewState(saved);
-
-    return {
-      ok: true,
-      item,
-      before,
-      after,
-      levelUp: after.stage > before.stage,
-      reachedMax: after.isMax && !before.isMax,
-    };
+    return { ok:false, reason:'server_authoritative', state:getViewState(readState()) };
   }
 
   function offerAllItems() {
-    const state = readState();
-    if (!state.inventory.length) {
-      return { ok: false, reason: 'empty', state: getViewState(state) };
-    }
-
-    const before = getViewState(state);
-    const items = state.inventory.slice();
-    const totalExp = items.reduce((sum, item) => sum + Math.max(0, Number(item && item.exp || 0)), 0);
-    const offeredAt = new Date().toISOString();
-
-    state.inventory = [];
-    state.exp = Math.max(0, Number(state.exp || 0) + totalExp);
-    state.offeredItems.push(...items.map(item => Object.assign({}, item, { offeredAt })));
-
-    const saved = saveState(state);
-    const after = getViewState(saved);
-
-    return {
-      ok: true,
-      items,
-      totalExp,
-      before,
-      after,
-      levelUp: after.stage > before.stage,
-      reachedMax: after.isMax && !before.isMax,
-    };
+    return { ok:false, reason:'server_authoritative', state:getViewState(readState()) };
   }
 
   function escapeHtml(str) {
@@ -498,31 +488,39 @@
     return `ULT還元 +${pct}%`;
   }
 
-  function setBlessingSlot(slot, characterId) {
+  async function setBlessingSlot(slot, characterId) {
     if (!BLESSING_SLOTS.includes(slot)) return { ok:false, reason:'invalid_slot' };
-    const state = readState();
     const id = normalizeCharacterId(characterId);
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') return { ok:false, reason:'offline' };
 
-    if (id != null) {
-      const info = getCharacterInfo(id);
-      if (!info || !info.owned) return { ok:false, reason:'not_owned' };
-      const duplicate = BLESSING_SLOTS.find(other => other !== slot && Number(state.blessings[other]) === id);
-      if (duplicate) {
-        showTinyToast(`${info.name}は${BLESSING_LABELS[duplicate]}に設定済み`);
-        return { ok:false, reason:'duplicate', duplicateSlot:duplicate };
+    try {
+      const res = await sb.rpc('set_shinju_blessing_secure', {
+        p_slot: slot,
+        p_character_id: id
+      });
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
       }
-    }
+      const view = applyServerPayload(data);
+      renderOverlay();
+      renderHomeEntry();
 
-    state.blessings[slot] = id;
-    const saved = saveState(state);
-    renderOverlay();
-    renderHomeEntry();
-    if (id == null) showTinyToast(`${BLESSING_LABELS[slot]}を解除した`);
-    else {
-      const info = getCharacterInfo(id);
-      showTinyToast(`${BLESSING_LABELS[slot]}：${info ? info.name : id}`);
+      if (id == null) showTinyToast(`${BLESSING_LABELS[slot]}を解除した`);
+      else {
+        const info = getCharacterInfo(id);
+        showTinyToast(`${BLESSING_LABELS[slot]}：${info ? info.name : id}`);
+      }
+      return { ok:true, state:view };
+    } catch (err) {
+      const message = String(err && err.message || '');
+      if (message.includes('another shinju slot')) showTinyToast('このキャラは別スロットに設定済みです');
+      else if (message.includes('not owned')) showTinyToast('未所持キャラは設定できません');
+      else showTinyToast('加護の設定に失敗しました');
+      return { ok:false, reason:'server_rejected', error:err };
     }
-    return { ok:true, state:getViewState(saved) };
   }
 
   function renderBlessingSlots(ov, state) {
@@ -607,18 +605,22 @@
       }).join('') : '<div class="shinju-blessing-picker-empty">所持キャラクターがありません</div>';
 
       grid.querySelectorAll('.shinju-blessing-picker-character:not(:disabled)').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const id = Number(btn.dataset.characterId);
-          const result = setBlessingSlot(slot, id);
+          btn.disabled = true;
+          const result = await setBlessingSlot(slot, id);
           if (result && result.ok) closeBlessingPicker();
+          else btn.disabled = false;
         });
       });
     }
     if (clear) {
       clear.disabled = !(state.blessings && state.blessings[slot]);
-      clear.onclick = () => {
-        setBlessingSlot(slot, null);
-        closeBlessingPicker();
+      clear.onclick = async () => {
+        clear.disabled = true;
+        const result = await setBlessingSlot(slot, null);
+        if (result && result.ok) closeBlessingPicker();
+        else clear.disabled = false;
       };
     }
     picker.classList.add('active');
@@ -667,6 +669,12 @@
     const ov = ensureOverlay();
     ov.classList.add('active');
     if (typeof window.setNavVisible === 'function') window.setNavVisible(false);
+
+    // Show cached UI immediately, then replace it with the authoritative server snapshot.
+    void refreshFromServer().then(() => {
+      if (ov.classList.contains('active')) renderOverlay();
+      renderHomeEntry();
+    });
   }
 
   function closeShinjuScreen() {
@@ -737,74 +745,102 @@
 
   async function offerAllFromUI() {
     const ov = ensureOverlay();
-    const before = getViewState();
+    const before = await refreshFromServer();
     if (!before.inventory.length) {
       showTinyToast('奉納できる創世資源がありません');
-      return { ok: false, reason: 'empty', state: before };
+      renderOverlay();
+      return { ok:false, reason:'empty', state:before };
     }
-    if (ov.dataset.offering === '1') return { ok: false, reason: 'busy', state: before };
+    if (ov.dataset.offering === '1') return { ok:false, reason:'busy', state:before };
 
     ov.dataset.offering = '1';
     updateOfferingMeta(ov, before);
-
     await animateAuraOffering(ov);
 
-    const result = offerAllItems();
-    if (!result.ok) {
-      delete ov.dataset.offering;
-      renderOverlay();
-      return result;
-    }
+    try {
+      const sb = window.zsSupabase;
+      if (!sb || typeof sb.rpc !== 'function') throw new Error('Supabase unavailable');
 
-    // EXPは吸い込み完了後に初めて反映し、ゲージの伸びを見せる。
-    const stage = ov.querySelector('#shinju-stage');
-    const expLabel = ov.querySelector('#shinju-exp-label');
-    const expPercent = ov.querySelector('#shinju-exp-percent');
-    const fill = ov.querySelector('#shinju-progress-fill');
+      const res = await sb.rpc('offer_all_shinju_secure');
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      const after = applyServerPayload(data);
+      const offeredCount = Math.max(0, Number(data && data.offered_count_now || 0));
+      const totalExp = Math.max(0, Number(data && data.offered_exp || 0));
 
-    const applyAfterLabels = () => {
-      if (stage) stage.textContent = `${result.after.stageLabel}　${result.after.stage} / ${result.after.maxStage}`;
-      if (expLabel) expLabel.textContent = result.after.isMax
-        ? `創世EXP ${result.after.exp} / ${result.after.totalRequiredExp}`
-        : `創世EXP ${result.after.exp} / ${result.after.nextStageExp}`;
-      if (expPercent) expPercent.textContent = result.after.isMax ? 'MAX' : `${Math.round(result.after.progress)}%`;
-    };
+      if (!offeredCount) {
+        delete ov.dataset.offering;
+        ov.classList.remove('is-offering');
+        renderOverlay();
+        showTinyToast('奉納できる創世資源がありません');
+        return { ok:false, reason:'empty', state:after };
+      }
 
-    if (fill) {
-      fill.style.width = `${result.before.progress}%`;
-      void fill.offsetWidth;
+      const result = {
+        ok:true,
+        items:before.inventory.slice(),
+        totalExp,
+        before,
+        after,
+        levelUp:after.stage > before.stage,
+        reachedMax:after.isMax && !before.isMax
+      };
 
-      if (result.levelUp) {
-        // 段階をまたぐ時は、まず現在ゲージを100%まで満たしてから
-        // 新しい段階のゲージへ切り替える。減って見える演出を防ぐ。
-        requestAnimationFrame(() => { fill.style.width = '100%'; });
-        setTimeout(() => {
+      const stage = ov.querySelector('#shinju-stage');
+      const expLabel = ov.querySelector('#shinju-exp-label');
+      const expPercent = ov.querySelector('#shinju-exp-percent');
+      const fill = ov.querySelector('#shinju-progress-fill');
+
+      const applyAfterLabels = () => {
+        if (stage) stage.textContent = `${after.stageLabel}　${after.stage} / ${after.maxStage}`;
+        if (expLabel) expLabel.textContent = after.isMax
+          ? `創世EXP ${after.exp} / ${after.totalRequiredExp}`
+          : `創世EXP ${after.exp} / ${after.nextStageExp}`;
+        if (expPercent) expPercent.textContent = after.isMax ? 'MAX' : `${Math.round(after.progress)}%`;
+      };
+
+      if (fill) {
+        fill.style.width = `${before.progress}%`;
+        void fill.offsetWidth;
+        if (result.levelUp) {
+          requestAnimationFrame(() => { fill.style.width = '100%'; });
+          setTimeout(() => {
+            applyAfterLabels();
+            fill.style.transition = 'none';
+            fill.style.width = '0%';
+            void fill.offsetWidth;
+            fill.style.transition = '';
+            requestAnimationFrame(() => { fill.style.width = `${after.progress}%`; });
+          }, 520);
+        } else {
           applyAfterLabels();
-          fill.style.transition = 'none';
-          fill.style.width = '0%';
-          void fill.offsetWidth;
-          fill.style.transition = '';
-          requestAnimationFrame(() => { fill.style.width = `${result.after.progress}%`; });
-        }, 520);
+          requestAnimationFrame(() => { fill.style.width = `${after.progress}%`; });
+        }
       } else {
         applyAfterLabels();
-        requestAnimationFrame(() => { fill.style.width = `${result.after.progress}%`; });
       }
-    } else {
-      applyAfterLabels();
-    }
 
-    ov.classList.add('shinju-gauge-receive');
-    setTimeout(() => ov.classList.remove('shinju-gauge-receive'), result.levelUp ? 1250 : 760);
+      ov.classList.add('shinju-gauge-receive');
+      setTimeout(() => ov.classList.remove('shinju-gauge-receive'), result.levelUp ? 1250 : 760);
+      setTimeout(() => {
+        delete ov.dataset.offering;
+        ov.classList.remove('is-offering');
+        renderOverlay();
+        showOfferFeedback(result);
+      }, result.levelUp ? 1320 : 820);
 
-    setTimeout(() => {
+      return result;
+    } catch (err) {
       delete ov.dataset.offering;
       ov.classList.remove('is-offering');
       renderOverlay();
-      showOfferFeedback(result);
-    }, result.levelUp ? 1320 : 820);
-
-    return result;
+      showTinyToast('奉納処理に失敗しました');
+      console.warn('[ShinjuProgress] secure offer failed:', err && (err.message || err));
+      return { ok:false, reason:'server_error', state:getViewState(readState()) };
+    }
   }
 
   function resetForDebug() {
@@ -818,6 +854,7 @@
   window.closeShinjuScreen = closeShinjuScreen;
   window.ShinjuProgress = {
     getState: () => getViewState(),
+    refreshFromServer,
     getBlessingForCharacter,
     applyBlessingToProfile,
     setBlessingSlot,
@@ -835,12 +872,17 @@
     resetForDebug,
   };
 
-  document.addEventListener('DOMContentLoaded', renderHomeEntry);
+  document.addEventListener('DOMContentLoaded', function () {
+    renderHomeEntry();
+    void refreshFromServer();
+  });
   window.addEventListener(EVENT_NAME, renderHomeEntry);
+  window.addEventListener('pageshow', function () { void refreshFromServer(); });
   window.addEventListener('zeraphia:shinju-cloud-loaded', function (event) {
     try {
-      const incoming = normalizeState(event && event.detail || {});
-      writeStateLocal(incoming);
+      authoritativeState = normalizeState(event && event.detail || {});
+      shinjuServerReady = true;
+      writeStateLocal(authoritativeState);
       renderHomeEntry();
       const ov = document.getElementById('shinju-overlay');
       if (ov && ov.classList.contains('active')) renderOverlay();

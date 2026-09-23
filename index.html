@@ -5541,31 +5541,21 @@ document.addEventListener('touchend', function (e) {
   }
 
   async function saveShinjuToSupabase(shinjuOverride) {
-    var uid = _zsCurrentUserId();
-    if (!uid) throw new Error('ユーザーIDがありません');
-    var payload = shinjuOverride || _zsGetShinjuState();
-    var row = {
-      user_id: uid,
-      level: Math.max(1, Number(payload.level || 1)),
-      exp: Math.max(0, Number(payload.exp || 0)),
-      offering_count: Math.max(0, Number(payload.offeringCount || 0)),
-      state: payload
-    };
-    var result = await sb.from('player_shinju').upsert(row, { onConflict: 'user_id' });
-    if (result.error) throw result.error;
-    return { ok: true };
+    // build896: player_shinju is server-authoritative.
+    // Legacy cloud-save calls now refresh the server snapshot instead of uploading localStorage.
+    return loadShinjuFromSupabase(_zsCurrentUserId());
   }
 
   async function loadShinjuFromSupabase(targetUserId) {
-    var result = await sb.from('player_shinju').select('*').eq('user_id', targetUserId).maybeSingle();
-    if (result.error) throw result.error;
-    if (!result.data) return null;
-    var payload = result.data.state || {
-      level: result.data.level,
-      exp: result.data.exp,
-      offeringCount: result.data.offering_count
-    };
-    _zsApplyShinjuState(payload);
+    var result = await sb.rpc('get_shinju_state_secure');
+    if (result && result.error) throw result.error;
+    var data = result ? result.data : null;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (_) {}
+    }
+    if (!data || data.ok === false) return null;
+    var payload = data.state || null;
+    if (payload) _zsApplyShinjuState(payload);
     return payload;
   }
 
@@ -16396,7 +16386,7 @@ function fadeOutOpeningBgm(){
   - 画像はService Workerで全面管理しない
 -->
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=593"></script>
+<script src="js/login_bonus.js?v=898-claimed-gray-badge-right"></script>
 
 
 
@@ -16406,7 +16396,7 @@ function fadeOutOpeningBgm(){
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=765-alchemia-to-zeraphia"></script>
+<script src="js/shinju.js?v=896-server-authority"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -16479,7 +16469,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=895-overseer-variant-secret-name"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=896-secure-noah-shinju"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
@@ -16957,7 +16947,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=802-noah-ticket-flow"></script>
+<script src="js/noah_piece.js?v=896-server-authority"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){

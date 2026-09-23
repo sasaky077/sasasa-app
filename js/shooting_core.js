@@ -1968,11 +1968,34 @@
       }
       if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
+      // build896: server decides whether this finalized run produced 神樹の栄養.
+      // The client no longer creates Shinju EXP/items by itself.
+      let shinjuRewardExp = 0;
+      if (win) {
+        try {
+          const shinjuRes = await sb.rpc('finalize_shinju_shooting_reward', {
+            p_run_token: runToken
+          });
+          if (shinjuRes && shinjuRes.error) throw shinjuRes.error;
+          let shinjuData = shinjuRes ? shinjuRes.data : null;
+          if (typeof shinjuData === 'string') {
+            try { shinjuData = JSON.parse(shinjuData); } catch (_) {}
+          }
+          shinjuRewardExp = Math.max(0, Number(shinjuData && shinjuData.reward_exp || 0));
+          if (window.ShinjuProgress && typeof window.ShinjuProgress.refreshFromServer === 'function') {
+            await window.ShinjuProgress.refreshFromServer();
+          }
+        } catch (shinjuErr) {
+          console.warn('[shooting reward] Shinju server reward finalize failed:', shinjuErr?.message || shinjuErr);
+        }
+      }
+
       return {
         highScore: cloudScore,
         firstClearClaimed: !!row?.first_clear_claimed,
         firstClearAmount: Math.max(0, Number(row?.first_clear_amount || 0)),
-        gem: Number.isFinite(gem) ? Math.max(0, gem) : null
+        gem: Number.isFinite(gem) ? Math.max(0, gem) : null,
+        shinjuRewardExp
       };
     } catch (err) {
       console.warn('[shooting] secure result save skipped:', err?.message || err);
@@ -13852,7 +13875,7 @@
   }
 
   function pickShootingEvolutionRewards(count = 2) {
-    const pool = Array.from(SHOOTING_EVOLUTION_REWARD_POOL);
+    const pool = Array.from(SHOOTING_EVOLUTION_REWARD_POOL.filter(item => item.rewardType === 'evolution'));
     const picked = [];
     const target = Math.min(Math.max(1, Math.floor(Number(count || 2))), pool.length);
 
@@ -14015,47 +14038,14 @@
   }
 
   function grantShinjuNutrition(exp, count) {
-    const nutritionExp = Math.max(1, Math.floor(Number(exp || 1)));
-    const amount = Math.max(1, Math.floor(Number(count || 1)));
-    const baseRunId = `shooting:${String(selectedStage && selectedStage.id || 'unknown')}:${Date.now()}`;
-
-    if (window.ShinjuProgress && typeof window.ShinjuProgress.grantBossItem === 'function') {
-      for (let i = 0; i < amount; i++) {
-        window.ShinjuProgress.grantBossItem({
-          bossId: 'shooting_clear_reward',
-          bossName: selectedStage && (selectedStage.eventTitle || selectedStage.name) || 'SHOOTING',
-          runId: `${baseRunId}:${i + 1}`,
-          itemName: '神樹の栄養',
-          exp: nutritionExp,
-          rank: '',
-        });
-      }
-      return true;
-    }
-
-    // shinju.jsの読込順が変わった場合でも報酬を失わない最低限の互換保存。
+    // build896: Shinju reward issuance is server-authoritative.
+    // Kept only as a compatibility hook for old callers.
     try {
-      const key = 'zeraphia_shinju_progress_v1';
-      const raw = localStorage.getItem(key);
-      const saved = raw ? JSON.parse(raw) : {};
-      saved.inventory = Array.isArray(saved.inventory) ? saved.inventory : [];
-      for (let i = 0; i < amount; i++) {
-        saved.inventory.push({
-          id: `shinju_item_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}_${i}`,
-          bossId: 'shooting_clear_reward', bossName: 'SHOOTING', runId: `${baseRunId}:${i + 1}`,
-          name: '神樹の栄養', exp: nutritionExp, rank: '', obtainedAt: new Date().toISOString(),
-        });
+      if (window.ShinjuProgress && typeof window.ShinjuProgress.refreshFromServer === 'function') {
+        void window.ShinjuProgress.refreshFromServer();
       }
-      saved.exp = Math.max(0, Number(saved.exp || 0));
-      saved.offeredItems = Array.isArray(saved.offeredItems) ? saved.offeredItems : [];
-      saved.gameClearSeen = !!saved.gameClearSeen;
-      saved.updatedAt = new Date().toISOString();
-      localStorage.setItem(key, JSON.stringify(saved));
-      return true;
-    } catch (err) {
-      console.warn('[shooting reward] shinju nutrition save failed', err);
-      return false;
-    }
+    } catch (_) {}
+    return false;
   }
 
   function persistShootingEvolutionReward(materialId, amount) {
@@ -14274,7 +14264,7 @@
     } else {
       // 特殊/ボス系は通常STORYより少し報酬感を残す。
       const slotRates = [0.65, 0.28, 0.08];
-      const pool = Array.from(SHOOTING_EVOLUTION_REWARD_POOL);
+      const pool = Array.from(SHOOTING_EVOLUTION_REWARD_POOL.filter(item => item.rewardType === 'evolution'));
       slotRates.forEach(rate => {
         if (!pool.length || Math.random() >= rate) return;
         const index = Math.floor(Math.random() * pool.length);
@@ -14408,6 +14398,29 @@
           list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(gemDrop));
         }
         if (note && note.isConnected) note.textContent = '';
+      });
+    }
+
+    if (!isDailyQuestStage() && !state.shinjuRewardRenderStarted) {
+      state.shinjuRewardRenderStarted = true;
+      const finalizePromise = state.secureFinalizePromise
+        || submitShootingHighScore(state.score, true);
+      void Promise.resolve(finalizePromise).then(finalized => {
+        const rewardExp = Math.max(0, Number(finalized && finalized.shinjuRewardExp || 0));
+        if (!rewardExp) return;
+        const shinjuDrop = {
+          type: 'material',
+          name: '神樹の栄養',
+          amount: 1,
+          detail: `神樹成長素材 / 創世EXP +${rewardExp}`,
+          image: 'images/shinju_aura.webp',
+        };
+        state.clearRewards = Array.isArray(state.clearRewards)
+          ? [...state.clearRewards, shinjuDrop]
+          : [shinjuDrop];
+        if (list && list.isConnected) {
+          list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(shinjuDrop));
+        }
       });
     }
   }

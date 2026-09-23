@@ -33,17 +33,16 @@
 
   async function refreshNoahProgress(){
     const sb = window.zsSupabase;
-    const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
-    if (!sb || !userId) return getNoahPieceCount();
+    if (!sb || typeof sb.rpc !== 'function') return getNoahPieceCount();
 
     try {
-      const res = await sb.from('noah_progress')
-        .select('piece_count')
-        .eq('user_id', userId)
-        .maybeSingle();
-
+      const res = await sb.rpc('get_noah_progress_secure');
       if (res && res.error) throw res.error;
-      setDisplayPieceCount(res && res.data ? res.data.piece_count : 0);
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      setDisplayPieceCount(data && data.piece_count != null ? data.piece_count : 0);
     } catch (err) {
       console.warn('[NoahPiece] progress load failed:', err);
     }
@@ -79,12 +78,12 @@
     overlay.innerHTML =
       '<section class="noah-piece-screen" role="dialog" aria-modal="true" aria-labelledby="noah-piece-title">' +
         '<header class="noah-piece-head">' +
-          '<button type="button" class="noah-piece-back" aria-label="戻る" onclick="closeNoahPiecePanel()">＜戻る</button>' +
+          '<button type="button" class="noah-piece-back" onclick="closeNoahPiecePanel()">‹ 戻る</button>' +
           '<div class="noah-piece-title">' +
             '<small>SPECIAL STAGE</small>' +
             '<strong id="noah-piece-title">楽園 -ノア-</strong>' +
           '</div>' +
-          '<div class="noah-piece-head-spacer" aria-hidden="true"></div>' +
+          '<div class="noah-piece-ticket">所持枚数 <b id="noah-piece-ticket-count">0</b>枚</div>' +
         '</header>' +
         '<div class="noah-piece-body">' +
           '<div class="noah-piece-lead">' +
@@ -102,8 +101,10 @@
           '<div class="noah-piece-note">ステージクリアごとに、ノアの欠片を1つ獲得できます。</div>' +
         '</div>' +
         '<footer class="noah-piece-actions">' +
-          '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">ノアに挑戦する</button>' +
-          '<div class="noah-piece-ticket-status"><span class="noah-piece-ticket-name">SPECIAL TICKET -ノア-</span><span class="noah-piece-ticket-owned">所持 <b id="noah-piece-ticket-status-count">0</b>枚</span></div>' +
+          '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">' +
+            '<small>SPECIAL STAGE TICKET ×1</small>' +
+            'チケットを1枚消費して ノアに挑戦する' +
+          '</button>' +
           '<div class="noah-piece-complete" id="noah-piece-complete">楽園の欠片がすべて揃いました。</div>' +
         '</footer>' +
       '</section>';
@@ -119,6 +120,9 @@
     const progress = document.getElementById('noah-piece-progress-now');
     if (progress) progress.textContent = String(count);
 
+    const ticketEl = document.getElementById('noah-piece-ticket-count');
+    if (ticketEl) ticketEl.textContent = String(ticket);
+
     document.querySelectorAll('[data-noah-piece]').forEach(function(el){
       const pieceNo = Number(el.getAttribute('data-noah-piece') || 0);
       const open = pieceNo <= count;
@@ -128,14 +132,14 @@
 
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
-      button.disabled = false;
-      button.removeAttribute('disabled');
-      button.textContent = 'ノアに挑戦する';
-      button.setAttribute('aria-disabled','false');
+      button.disabled = ticket < 1 || count >= MAX_PIECES;
+      const small = button.querySelector('small');
+      if (small) {
+        small.textContent = count >= MAX_PIECES
+          ? 'ノア解放済み'
+          : (ticket < 1 ? 'SPECIAL STAGE TICKET がありません' : 'SPECIAL STAGE TICKET ×1');
+      }
     }
-
-    const ticketStatus = document.getElementById('noah-piece-ticket-status-count');
-    if (ticketStatus) ticketStatus.textContent = String(ticket);
 
     const complete = document.getElementById('noah-piece-complete');
     if (complete) complete.classList.toggle('show', count >= MAX_PIECES);
@@ -161,83 +165,21 @@
     overlay.setAttribute('aria-hidden','true');
   }
 
-  function ensureNoahTicketDialog(){
-    let dialog = document.getElementById('noah-ticket-dialog');
-    if (dialog) return dialog;
-
-    dialog = document.createElement('div');
-    dialog.id = 'noah-ticket-dialog';
-    dialog.className = 'noah-ticket-dialog';
-    dialog.setAttribute('aria-hidden','true');
-    dialog.innerHTML =
-      '<div class="noah-ticket-dialog-veil" onclick="closeNoahTicketDialog()"></div>' +
-      '<section class="noah-ticket-dialog-card" role="dialog" aria-modal="true" aria-labelledby="noah-ticket-dialog-title">' +
-        '<div class="noah-ticket-dialog-kicker">SPECIAL STAGE</div>' +
-        '<div class="noah-ticket-dialog-title" id="noah-ticket-dialog-title">SPECIAL TICKET -ノア-</div>' +
-        '<p class="noah-ticket-dialog-message" id="noah-ticket-dialog-message"></p>' +
-        '<div class="noah-ticket-dialog-actions">' +
-          '<button type="button" class="noah-ticket-dialog-yes" id="noah-ticket-dialog-yes" onclick="confirmNoahSpecialStage()">はい</button>' +
-          '<button type="button" class="noah-ticket-dialog-no" id="noah-ticket-dialog-no" onclick="closeNoahTicketDialog()">いいえ</button>' +
-        '</div>' +
-      '</section>';
-    document.body.appendChild(dialog);
-    return dialog;
-  }
-
-  function closeNoahTicketDialog(){
-    const dialog = document.getElementById('noah-ticket-dialog');
-    if (!dialog) return;
-    dialog.classList.remove('show');
-    dialog.setAttribute('aria-hidden','true');
-  }
-
-  function showNoahTicketDialog(mode){
-    const dialog = ensureNoahTicketDialog();
-    const message = dialog.querySelector('#noah-ticket-dialog-message');
-    const yes = dialog.querySelector('#noah-ticket-dialog-yes');
-    const no = dialog.querySelector('#noah-ticket-dialog-no');
-    const hasTicket = mode === 'confirm';
-
-    if (message) {
-      message.textContent = hasTicket
-        ? 'SPECIAL TICKET -ノア- を1枚消費します'
-        : 'SPECIAL TICKET -ノア- が必要です。';
+  function challengeNoahSpecialStage(){
+    const ticket = getSpecialTicketCount();
+    if (ticket < 1) {
+      if (typeof window.showToast === 'function') window.showToast('SPECIAL STAGE TICKETがありません');
+      else alert('SPECIAL STAGE TICKETがありません');
+      return;
     }
-    if (yes) yes.style.display = hasTicket ? '' : 'none';
-    if (no) no.textContent = hasTicket ? 'いいえ' : '閉じる';
 
-    dialog.classList.add('show');
-    dialog.setAttribute('aria-hidden','false');
-  }
-
-  function beginNoahSpecialStage(){
-    closeNoahTicketDialog();
     closeNoahPiecePanel();
 
-    // チケット消費そのものは既存の戦闘開始処理に委ねる。
     if (typeof window.openShootingEvent === 'function') {
       window.openShootingEvent({ stageId: STAGE_ID });
     } else {
       console.error('[NoahPiece] openShootingEvent is not available');
     }
-  }
-
-  function confirmNoahSpecialStage(){
-    const ticket = getSpecialTicketCount();
-    if (ticket < 1) {
-      showNoahTicketDialog('required');
-      return;
-    }
-    beginNoahSpecialStage();
-  }
-
-  function challengeNoahSpecialStage(){
-    const ticket = getSpecialTicketCount();
-    if (ticket < 1) {
-      showNoahTicketDialog('required');
-      return;
-    }
-    showNoahTicketDialog('confirm');
   }
 
   async function syncUnlockedNoahToLocal(characterRowId){
@@ -345,14 +287,11 @@
   }
 
   window.getNoahPieceCount = getNoahPieceCount;
-  window.setNoahPieceCount = setDisplayPieceCount;
   window.refreshNoahProgress = refreshNoahProgress;
   window.renderNoahPiecePanel = renderNoahPiecePanel;
   window.openNoahPiecePanel = openNoahPiecePanel;
   window.closeNoahPiecePanel = closeNoahPiecePanel;
   window.challengeNoahSpecialStage = challengeNoahSpecialStage;
-  window.closeNoahTicketDialog = closeNoahTicketDialog;
-  window.confirmNoahSpecialStage = confirmNoahSpecialStage;
 
   window.addEventListener('shooting-stage-result', handleShootingStageResult);
   window.addEventListener('pageshow', function(){
