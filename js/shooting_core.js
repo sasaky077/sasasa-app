@@ -19589,9 +19589,22 @@
 
 
   // ============================================================
-  // build880: ID38 ULT — LIGHT PAINT BOMB / NON-BLOCKING TIME
-  // 自機Xから真上へ低速直進。敵への直撃時だけBOMB Mとして爆発。
-  // 直撃 ATK×250% / 拡散50%。直撃・拡散に触れた生存敵をLIGHTへ書き換える。
+  // build908: ID38 クロエ ULT — 虹のかかる世界
+  //
+  // 親弾：
+  //   LIGHT属性 / 真上へ直進 / 最初の敵・オブジェクトへの命中時のみ着弾。
+  //   命中した場合はLIGHT属性として通常の弱点・耐性計算を適用する。未命中なら分裂せず消滅。
+  //
+  // 子弾：
+  //   着弾地点から6方向へ同時発射。すべて非貫通。
+  //     上    = NEUTRAL
+  //     下    = DARK
+  //     左上  = FIRE
+  //     右上  = AQUA
+  //     左下  = WOOD
+  //     右下  = LIGHT
+  //   ダメージ計算は「命中前の敵属性」で行い、その後、生存した敵を
+  //   命中した子弾の属性へ書き換える。
   // ============================================================
   function setCombatTargetElement(target, element) {
     if (!target) return false;
@@ -19618,6 +19631,8 @@
     if (target === state?.boss) renderBossElementIcon();
 
     if (target.el) {
+      const visual = getBombElementVisual(nextElement);
+      target.el.style.setProperty('--painter-shift-rgb', visual.rgb);
       target.el.classList.remove('painter-element-shift-hit');
       void target.el.offsetWidth;
       target.el.classList.add('painter-element-shift-hit');
@@ -19627,13 +19642,64 @@
   }
 
   function ensurePainterUltStyle() {
-    const styleId = 'shooting-painter-ult-style-v2';
+    const styleId = 'shooting-painter-rainbow-ult-style-v3';
     if (document.getElementById(styleId)) return;
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
       .painter-element-shift-hit{
-        filter:brightness(1.16) saturate(.90) drop-shadow(0 0 10px rgba(232,197,86,.72))!important;
+        filter:
+          brightness(1.18)
+          saturate(1.04)
+          drop-shadow(0 0 10px rgba(var(--painter-shift-rgb,231,200,90),.78))!important;
+      }
+      .shooting-painter-rainbow-child{
+        position:absolute;
+        z-index:47;
+        width:15px;
+        height:15px;
+        margin:-7.5px 0 0 -7.5px;
+        border-radius:50%;
+        pointer-events:none;
+        box-sizing:border-box;
+        border:1px solid rgba(255,255,255,.90);
+        background:
+          radial-gradient(circle at 36% 32%,
+            rgba(255,255,255,1) 0 13%,
+            rgba(var(--painter-rgb,244,239,227),.98) 28%,
+            rgba(var(--painter-rgb,244,239,227),.82) 55%,
+            rgba(var(--painter-rgb,244,239,227),.18) 76%,
+            transparent 78%);
+        box-shadow:
+          0 0 7px rgba(255,255,255,.90),
+          0 0 14px rgba(var(--painter-rgb,244,239,227),.78),
+          0 0 22px rgba(var(--painter-rgb,244,239,227),.34);
+      }
+      .shooting-painter-rainbow-child::after{
+        content:"";
+        position:absolute;
+        inset:-5px;
+        border-radius:50%;
+        border:1px solid rgba(var(--painter-rgb,244,239,227),.46);
+        opacity:.72;
+      }
+      .shooting-painter-rainbow-burst{
+        position:absolute;
+        z-index:46;
+        width:26px;
+        height:26px;
+        margin:-13px 0 0 -13px;
+        border-radius:50%;
+        pointer-events:none;
+        border:1px solid rgba(255,255,255,.88);
+        box-shadow:
+          0 0 9px rgba(255,255,255,.94),
+          0 0 20px rgba(231,200,90,.50);
+        animation:painterRainbowBurst .32s ease-out both;
+      }
+      @keyframes painterRainbowBurst{
+        0%{transform:scale(.35);opacity:1}
+        100%{transform:scale(2.35);opacity:0}
       }
     `;
     document.head.appendChild(style);
@@ -19652,44 +19718,51 @@
     return list;
   }
 
-  function findPainterUltCollision(x, y, arenaRect) {
+  function findPainterUltCollision(x, y, arenaRect, ignoreTarget = null, radius = 10) {
+    const r = Math.max(4, Number(radius || 10));
     const projectileRect = {
-      left: x - 10,
-      right: x + 10,
-      top: y - 10,
-      bottom: y + 10,
-      width: 20,
-      height: 20,
+      left: x - r,
+      right: x + r,
+      top: y - r,
+      bottom: y + r,
+      width: r * 2,
+      height: r * 2,
     };
     const candidates = getPainterUltCandidates();
     for (const target of candidates) {
+      if (!target || target === ignoreTarget || target.hp <= 0) continue;
       const targetRect = getUnitRect(target, arenaRect);
-      if (targetRect && rectsHit(projectileRect, targetRect, 0, target === state?.boss ? 18 : 10)) {
+      if (targetRect && rectsHit(projectileRect, targetRect, 0, target === state?.boss ? 18 : 8)) {
         return target;
       }
     }
     return null;
   }
 
-  function applyPainterUltDamage(target, rawDamage, attackElement, now, c, isSplash) {
+  function applyPainterRainbowDamage(target, rawDamage, attackElement, now, c, options = {}) {
     if (!target || target.hp <= 0) return 0;
-    const targetElement = getCombatTargetElement(target, state?.boss?.element);
-    const reaction = getElementDamageReaction(attackElement, targetElement);
-    const finalDamage = applyElementDamage(rawDamage, attackElement, targetElement);
+
+    // 必ず変更前の属性を使ってダメージ倍率を決める。
+    const targetElementBeforeHit = getCombatTargetElement(target, state?.boss?.element);
+    const reaction = getElementDamageReaction(attackElement, targetElementBeforeHit);
+    const finalDamage = applyElementDamage(rawDamage, attackElement, targetElementBeforeHit);
     let appliedDamage = 0;
+    const big = !!options.big;
 
     if ((state.normalEnemies || []).includes(target)) {
-      appliedDamage = damageNormalEnemy(target, finalDamage, now, !!isSplash, reaction);
+      appliedDamage = damageNormalEnemy(target, finalDamage, now, big, reaction);
     } else if ((state.facelessObjects || []).includes(target)) {
       appliedDamage = damageFacelessObject(target, finalDamage, now, reaction);
     } else if (target === state.boss && state.boss && state.boss.hp > 0) {
       appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       updateBossPhase();
-      createHit(Number(state.boss.x || 0), Number(state.boss.y || 0), !isSplash);
-      showBossDamageNumber(appliedDamage, !isSplash, reaction);
-      flashBossHit(!isSplash);
-      if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(appliedDamage * (isSplash ? 80 : 100)));
+      createHit(Number(target.x || 0), Number(target.y || 0), big);
+      showBossDamageNumber(appliedDamage, big, reaction);
+      flashBossHit(big);
+      if (!addScoreAttackDamageScore(appliedDamage)) {
+        addLegacyCombatScore(Math.round(appliedDamage * (big ? 100 : 80)));
+      }
     }
 
     if (appliedDamage > 0) {
@@ -19697,118 +19770,265 @@
       registerComboHit(c.id, now, appliedDamage);
     }
 
-    // ダメージは命中前属性で計算し、その後LIGHTへ書き換える。
-    if (target.hp > 0) setCombatTargetElement(target, 'light');
+    // 親弾は属性を書き換えない。
+    // 子弾はダメージ解決後、生存対象のみ命中弾の属性へ変更する。
+    if (options.shiftElement && target.hp > 0) {
+      setCombatTargetElement(target, attackElement);
+    }
+
     return appliedDamage;
   }
 
-  function explodePainterUltAt(target, x, y, c) {
-    if (!state || state.ended || state.finishing || !target) return;
-    const nowHit = performance.now();
-    const attackElement = 'light';
-    const radius = Math.max(30, Number(c.paintUltRadius || c.bombSplashRadius || 76));
-    const directDamage = Math.max(0, Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 2.5));
-    const splashRate = Math.max(0, Number(c.paintUltSplashDamageRate ?? 0.50));
-
-    // BOMB Mと同じ着弾拡散演出。
-    createGenericBombExplosionEffect(x, y, attackElement, radius, 'M');
-
-    applyPainterUltDamage(target, directDamage, attackElement, nowHit, c, false);
-
-    // 直撃対象以外へ50%拡散。拡散対象にもLIGHT書き換えを適用。
-    getPainterUltCandidates().forEach(other => {
-      if (!other || other === target || other.hp <= 0) return;
-      if (Math.hypot(Number(other.x || 0) - x, Number(other.y || 0) - y) > radius) return;
-      createBombSplashVictimHitEffect(Number(other.x || 0), Number(other.y || 0), attackElement);
-      applyPainterUltDamage(other, directDamage * splashRate, attackElement, nowHit, c, true);
-    });
-
+  function finalizePainterRainbowHit(now) {
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    state.facelessObjects = (state.facelessObjects || []).filter(obj => obj && obj.hp > 0);
+
     if (isNormalBattle()) {
-      evaluateNormalMission(nowHit);
+      evaluateNormalMission(now);
     } else if (state.boss && state.boss.hp <= 0) {
       beginBossDefeat();
     }
-    shakeVeronicaPunchImpact();
     renderHud();
   }
 
-  function usePainterUlt(c) {
+  function createPainterRainbowBurst(x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const burst = document.createElement('i');
+    burst.className = 'shooting-painter-rainbow-burst';
+    burst.style.left = `${x}px`;
+    burst.style.top = `${y}px`;
+    arena.appendChild(burst);
+    setTimeout(() => burst.remove(), 360);
+  }
+
+  function launchPainterRainbowChildren(x, y, c, sourceTarget = null) {
     if (!state || state.ended || state.finishing) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
 
-    ensureBombVisualStyles();
     ensurePainterUltStyle();
-    showUltCut(c.ultName || 'LIGHT PAINT BOMB', c.effectKey, c);
-    ultScreenFlash('ult-flash-element', c);
+    createPainterRainbowBurst(x, y);
 
-    const now = performance.now();
-    const startX = Number(state.player?.x || arena.clientWidth * .5);
-    const startY = Math.max(36, Number(state.player?.y || arena.clientHeight * .80) - 28);
-    const baseSpeed = Math.max(120, Number(c.paintUltBaseSpeed || c.bulletSpeed || 660));
-    const speedMultiplier = Math.max(.1, Number(c.paintUltSpeedMultiplier ?? .70));
-    const speed = baseSpeed * speedMultiplier;
-    const visual = getBombElementVisual('light');
-    const maxTravelMs = ((startY + 36) / Math.max(1, speed)) * 1000 + 180;
+    const diagonal = Math.SQRT1_2;
+    const specs = [
+      { key:'up',         element:'neutral', dx:0,         dy:-1 },
+      { key:'down',       element:'dark',    dx:0,         dy: 1 },
+      { key:'left-up',    element:'fire',    dx:-diagonal, dy:-diagonal },
+      { key:'right-up',   element:'aqua',    dx: diagonal, dy:-diagonal },
+      { key:'left-down',  element:'wood',    dx:-diagonal, dy: diagonal },
+      { key:'right-down', element:'light',   dx: diagonal, dy: diagonal },
+    ];
 
-    // ID38は非停止ULT。
-    // shared ultLockUntil は敵移動・敵攻撃まで止めるため使用しない。
-    // playerShotLockUntil も使わず、通常ショットをULT中ずっと継続する。
-    createBombThrowPop(startX, startY, 'light');
+    const speed = Math.max(180, Number(c.paintRainbowChildSpeed || 520));
+    const damage = Math.max(
+      0,
+      Number(c.atk || 0) * Math.max(0, Number(c.paintRainbowChildDamageAtkMultiplier ?? 1.0))
+    );
 
-    const bomb = document.createElement('i');
-    bomb.className = 'shooting-liz-ult-bomb';
-    bomb.style.setProperty('--bomb-color', visual.color);
-    bomb.style.setProperty('--bomb-rgb', visual.rgb);
-    arena.appendChild(bomb);
+    const children = specs.map(spec => {
+      const visual = getBombElementVisual(spec.element);
+      const el = document.createElement('i');
+      el.className = `shooting-painter-rainbow-child element-${spec.element}`;
+      el.dataset.element = spec.element;
+      el.dataset.direction = spec.key;
+      el.style.setProperty('--painter-rgb', visual.rgb);
+      el.style.transform = `translate3d(${x}px,${y}px,0)`;
+      arena.appendChild(el);
+      return {
+        ...spec,
+        x,
+        y,
+        travel: 0,
+        el,
+        alive: true,
+      };
+    });
 
-    let x = startX;
-    let y = startY;
     let lastTs = performance.now();
-    let spin = 0;
     let raf = 0;
+
     const cleanup = () => {
       if (raf) cancelAnimationFrame(raf);
-      bomb.remove();
+      children.forEach(child => child.el && child.el.remove());
     };
 
     const animate = ts => {
-      if (!state || state.ended || state.finishing || !bomb.isConnected) {
+      if (!state || state.ended || state.finishing) {
         cleanup();
         return;
       }
 
       const dt = Math.min(.035, Math.max(0, (ts - lastTs) / 1000));
       lastTs = ts;
-      // Xは発射位置から一切変えない。完全な縦直進。
+      const arenaRect = arena.getBoundingClientRect();
+      const width = Math.max(1, Number(arena.clientWidth || 0));
+      const height = Math.max(1, Number(arena.clientHeight || 0));
+      let aliveCount = 0;
+
+      for (const child of children) {
+        if (!child.alive) continue;
+
+        child.x += child.dx * speed * dt;
+        child.y += child.dy * speed * dt;
+        child.travel += speed * dt;
+        child.el.style.transform = `translate3d(${child.x}px,${child.y}px,0)`;
+
+        if (child.x < -22 || child.x > width + 22 || child.y < -22 || child.y > height + 22) {
+          child.alive = false;
+          child.el.remove();
+          continue;
+        }
+
+        // 親弾の着弾対象を全6弾が即座に多重ヒットしないよう除外。
+        // また、発生直後の数pxは「飛び出す」見た目を優先して判定しない。
+        if (child.travel >= 18) {
+          const hitTarget = findPainterUltCollision(
+            child.x,
+            child.y,
+            arenaRect,
+            sourceTarget,
+            7
+          );
+
+          if (hitTarget) {
+            createBombSplashVictimHitEffect(
+              Number(hitTarget.x || child.x),
+              Number(hitTarget.y || child.y),
+              child.element
+            );
+            applyPainterRainbowDamage(
+              hitTarget,
+              damage,
+              child.element,
+              ts,
+              c,
+              { shiftElement:true, big:false }
+            );
+
+            child.alive = false;
+            child.el.remove();
+            finalizePainterRainbowHit(ts);
+            continue;
+          }
+        }
+
+        aliveCount++;
+      }
+
+      if (aliveCount > 0) {
+        raf = requestAnimationFrame(animate);
+      } else {
+        cleanup();
+      }
+    };
+
+    raf = requestAnimationFrame(animate);
+  }
+
+  function impactPainterRainbowParent(target, x, y, c) {
+    if (!state || state.ended || state.finishing) return;
+    const nowHit = performance.now();
+    const attackElement = 'light';
+    const directDamage = Math.max(
+      0,
+      Number(c.atk || 0) * Math.max(0, Number(c.ultDamageAtkMultiplier || 2.5))
+    );
+
+    // 親弾はLIGHT属性ダメージのみ。属性書き換えは子弾だけ。
+    if (target && target.hp > 0) {
+      createBombSplashVictimHitEffect(x, y, attackElement);
+      applyPainterRainbowDamage(
+        target,
+        directDamage,
+        attackElement,
+        nowHit,
+        c,
+        { shiftElement:false, big:true }
+      );
+    }
+
+    // 親弾の着弾地点を起点に必ず6方向へ展開。
+    launchPainterRainbowChildren(x, y, c, target || null);
+    finalizePainterRainbowHit(nowHit);
+  }
+
+  function usePainterRainbowUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    ensureBombVisualStyles();
+    ensurePainterUltStyle();
+    showUltCut(c.ultName || '虹のかかる世界', c.effectKey, c);
+    ultScreenFlash('ult-flash-element', c);
+
+    const startX = Number(state.player?.x || arena.clientWidth * .5);
+    const startY = Math.max(36, Number(state.player?.y || arena.clientHeight * .80) - 28);
+    const baseSpeed = Math.max(120, Number(c.paintUltBaseSpeed || c.bulletSpeed || 660));
+    const speedMultiplier = Math.max(.1, Number(c.paintUltSpeedMultiplier ?? .35));
+    const speed = baseSpeed * speedMultiplier;
+    const visual = getBombElementVisual('light');
+
+    // クロエULTは旧仕様と同じく戦闘時間を止めない。
+    // 通常ショット、敵移動、敵弾もそのまま進行する。
+    createBombThrowPop(startX, startY, 'light');
+
+    const parent = document.createElement('i');
+    parent.className = 'shooting-liz-ult-bomb';
+    parent.dataset.element = 'light';
+    parent.style.setProperty('--bomb-color', visual.color);
+    parent.style.setProperty('--bomb-rgb', visual.rgb);
+    arena.appendChild(parent);
+
+    let x = startX;
+    let y = startY;
+    let lastTs = performance.now();
+    let spin = 0;
+    let raf = 0;
+
+    const cleanup = () => {
+      if (raf) cancelAnimationFrame(raf);
+      parent.remove();
+    };
+
+    const animate = ts => {
+      if (!state || state.ended || state.finishing || !parent.isConnected) {
+        cleanup();
+        return;
+      }
+
+      const dt = Math.min(.035, Math.max(0, (ts - lastTs) / 1000));
+      lastTs = ts;
       y -= speed * dt;
-      spin += 260 * dt;
-      bomb.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${spin}deg) scale(.82)`;
+      spin += 220 * dt;
+      parent.style.transform =
+        `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${spin}deg) scale(.72)`;
 
       const arenaRect = arena.getBoundingClientRect();
-      const hitTarget = findPainterUltCollision(x, y, arenaRect);
+      const hitTarget = findPainterUltCollision(x, y, arenaRect, null, 10);
+
       if (hitTarget) {
-        const impactX = Number(hitTarget.x || x);
-        const impactY = Number(hitTarget.y || y);
         cleanup();
-        explodePainterUltAt(hitTarget, impactX, impactY, c);
+        impactPainterRainbowParent(hitTarget, x, y, c);
         return;
       }
 
-      // BOMB Shotと同様、何にも当たらなければ画面外へ抜けて不発。
-      if (y < -24) {
+      // build909: 敵・オブジェクトへ命中しなかった親弾は分裂せず消滅する。
+      if (y <= -24) {
         cleanup();
-        renderHud();
         return;
       }
+
       raf = requestAnimationFrame(animate);
     };
 
-    bomb.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(.82)`;
+    parent.style.transform =
+      `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(.72)`;
     raf = requestAnimationFrame(animate);
     renderHud();
   }
+
 
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
@@ -19841,7 +20061,11 @@
     else if (c.ultType === 'mito_summon_double') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'toyfel_double_black_hole') useToyfelUlt(c);
-    else if (c.ultType === 'painter_light_paint_bomb' || c.ultType === 'painter_dark_paint_bomb') usePainterUlt(c);
+    else if (
+      c.ultType === 'painter_rainbow_world' ||
+      c.ultType === 'painter_light_paint_bomb' ||
+      c.ultType === 'painter_dark_paint_bomb'
+    ) usePainterRainbowUlt(c);
     else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);

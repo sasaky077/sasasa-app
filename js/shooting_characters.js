@@ -99,7 +99,7 @@
     35: 'r',   // ジゼル
     36: 'sr',  // ニーナ
     37: 'r',   // トイフェル
-    38: 'r',   // クローマ
+    38: 'r',   // クロエ
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -952,7 +952,7 @@
   },
   "38": {
     "id": 38,
-    "name": "クローマ",
+    "name": "クロエ",
     "element": "light",
     "hp": 590,
     "atk": 255,
@@ -2111,14 +2111,14 @@
 
   // ============================================================
   // build869: ID38 LIGHT / BOMB M / ATTRIBUTE PAINT
-  // ID38 正式名：クローマ。
+  // ID38 正式名：クロエ。
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.PAINTER] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.PAINTER, effectKey: 'painter',
-    label: 'BOMB M / PAINT SHIFT',
-    description: 'LIGHT属性のBOMB Mを投擲するR範囲攻撃型。着弾点を中心に爆発し、周囲の敵も巻き込む。ULTは自機から真上へ低速のペンキ爆弾を投げ、直撃と拡散に触れた敵の属性をLIGHTへ書き換える。',
-    ultName: 'LIGHT PAINT BOMB',
-    ultDescription: '自機の現在位置から真上へ低速のペンキ爆弾を投擲。直撃時はATK×250%、着弾点からBOMB Mと同じ範囲へ拡散し周囲にはその50%ダメージ。直撃・拡散に触れ、生き残った敵の属性をLIGHTへ書き換える。',
+    label: 'BOMB M / RAINBOW SHIFT',
+    description: 'LIGHT属性のBOMB Mを扱うR範囲攻撃型。ULT「虹のかかる世界」は光の親弾を着弾させ、6方向へ異なる属性弾を放って敵の属性を書き換える。',
+    ultName: '虹のかかる世界',
+    ultDescription: '光属性の弾を前方へ発射し、着弾地点から、6方向へ属性弾を放つ。弾はそれぞれ無・闇・火・水・木・光属性。通常の弱点・耐性計算を行い、命中後に対象の属性を命中した属性弾と同じ属性へ変更する。属性弾は非貫通。',
     shotType: 'bomb',
     mainShot: { type: 'bomb', size: 'M' },
     bombSize: 'M',
@@ -2130,12 +2130,12 @@
     bombSplashDamageRate: 0.55,
     burstNeed: 30,
     ultGainPerHit: 1.40,
-    ultBaseType: 'burst',
-    ultAddons: ['damage','element_shift'],
-    ultType: 'painter_light_paint_bomb',
+    ultBaseType: 'projectile',
+    ultAddons: ['damage','multi_element','element_shift'],
+    ultType: 'painter_rainbow_world',
     ultDamageAtkMultiplier: 2.5,
-    paintUltRadius: 76,
-    paintUltSplashDamageRate: 0.50,
+    paintRainbowChildDamageAtkMultiplier: 1.75,
+    paintRainbowChildSpeed: 520,
     paintUltBaseSpeed: 660,
     paintUltSpeedMultiplier: 0.35,
   });
