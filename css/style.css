@@ -41050,3 +41050,49 @@ html body textarea{
     flex-basis:19px;
   }
 }
+
+/* =========================================================
+   build928 LIMIT BREAK — SHORTAGE LIST SCROLL FIX
+   不足一覧が親領域にクリップされるケースを修正。
+   必要素材・効果一覧は維持し、不足欄だけ残り高を使ってスクロールする。
+   ========================================================= */
+#limitbreak-modal .lb-material-list{
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+
+#limitbreak-modal .lb-recipe-box,
+#limitbreak-modal .lb-bonus-box{
+  flex:0 0 auto !important;
+}
+
+#limitbreak-modal .lb-lack-box{
+  display:flex !important;
+  flex-direction:column !important;
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+
+#limitbreak-modal .lb-lack-title{
+  flex:0 0 auto !important;
+}
+
+#limitbreak-modal .lb-lack-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  touch-action:pan-y !important;
+  scrollbar-width:thin;
+  scrollbar-gutter:stable;
+}
+
+#limitbreak-modal .lb-lack-row{
+  flex:0 0 auto !important;
+}
