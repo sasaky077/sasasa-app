@@ -966,7 +966,7 @@
     },
     "portraitImage": "images/chara_38.webp",
     "homeImage": "images/chara_38_cut.webp",
-    "upImage": "images/chara_38_panel.webp",
+    "upImage": "images/chara_38_up.webp",
     "homeScale": 0.86,
     "homeOffsetX": 0,
     "homeOffsetY": -18,
