@@ -3227,6 +3227,7 @@
       normalDefeated: 0,
       normalLastSpawnAt: -9999,
       normalEnemyStunUntil: 0,
+      angeEnemyFreezeUntil: 0,
       // build841: stage-side random patterns are now deterministic.
       chapter4CurtainVolleyIndex: 0,
       chapter43VolleyIndex: 0,
@@ -9500,6 +9501,15 @@
     state.facelessObjects = state.facelessObjects.filter(obj => {
       if (!obj || obj.hp <= 0) return false;
 
+      // build929: アンジェULT中はOBJECTも移動・新規射撃を停止。
+      // 既に盤面にある敵弾はupdateProjectiles側で通常どおり進行する。
+      if (now < Number(state.angeEnemyFreezeUntil || 0)) {
+        deferFacelessObjectAttackResume(obj, Number(state.angeEnemyFreezeUntil || now));
+        positionUnit(obj.el, obj.x, obj.y);
+        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        return true;
+      }
+
       // ノアULT後：落雷を受けたOBJECTも、移動停止と射撃生成停止をセットで維持。
       if (now < Number(obj.noahStunUntil || 0)) {
         deferFacelessObjectAttackResume(obj, Number(obj.noahStunUntil || now));
@@ -9783,6 +9793,13 @@
     const w = arena.clientWidth;
     state.facelessObjects = (state.facelessObjects || []).filter(obj => {
       if (!obj || !obj.ambushMinion || obj.hp <= 0) return false;
+      // build929: アンジェULT中は乱入ミニオンもその場で停止し、新規射撃を行わない。
+      if (now < Number(state.angeEnemyFreezeUntil || 0)) {
+        deferFacelessObjectAttackResume(obj, Number(state.angeEnemyFreezeUntil || now));
+        positionUnit(obj.el, obj.x, obj.y);
+        positionUnit(obj.hpEl, obj.x, obj.y + 38);
+        return true;
+      }
       obj.x += Number(obj.vx || 0) * dt;
       if (obj.x < 62 || obj.x > w-62) {
         obj.x = clamp(obj.x,62,w-62);
@@ -12934,6 +12951,199 @@
   }
 
   // ============================================================
+  // build929: アンジェ ULT「慈愛の光」
+  // ============================================================
+  // 敵本体の移動・新規弾生成だけを3秒停止し、既存弾は消さない。
+  // 同時に、取得キャラの最大HP33%を回復するハートを3個設置する。
+  function ensureAngeHeartStyles() {
+    if (document.getElementById('shooting-ange-heart-style-v1')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-ange-heart-style-v1';
+    style.textContent = `
+      .shooting-ange-heart{
+        position:absolute;
+        left:0;top:0;
+        width:44px;height:44px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:34;
+        pointer-events:none;
+        transform-origin:center center;
+        will-change:transform,opacity,filter;
+        filter:drop-shadow(0 3px 8px rgba(122,64,77,.24));
+      }
+      .shooting-ange-heart .ange-heart-shape{
+        display:block;
+        font-family:"Noto Serif JP",serif;
+        font-size:35px;
+        line-height:1;
+        color:#d98f9a;
+        text-shadow:
+          0 0 2px rgba(255,255,255,.98),
+          0 0 8px rgba(255,224,229,.92),
+          0 3px 9px rgba(129,71,83,.20);
+        animation:angeHeartFloat 1.15s ease-in-out infinite alternate;
+      }
+      .shooting-ange-heart::after{
+        content:"";
+        position:absolute;
+        inset:5px;
+        border:1px solid rgba(225,169,177,.34);
+        border-radius:50%;
+        box-shadow:0 0 12px rgba(225,169,177,.18);
+      }
+      .shooting-ange-heart.is-expiring{
+        animation:angeHeartBlink .34s steps(1,end) infinite;
+      }
+      @keyframes angeHeartFloat{
+        from{transform:translateY(2px) scale(.96)}
+        to{transform:translateY(-2px) scale(1.04)}
+      }
+      @keyframes angeHeartBlink{
+        0%,49%{opacity:1}
+        50%,100%{opacity:.18}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getAngeHeartSpawnPositions(count, w, h) {
+    const positions = [];
+    const existing = (state?.mimosaItems || [])
+      .filter(item => item && item.sourceType === 'ange_heart')
+      .map(item => ({ x:Number(item.x || 0), y:Number(item.y || 0) }));
+    const occupied = existing.slice();
+    const targetCount = Math.max(1, Math.floor(Number(count || 3)));
+    const minDistance = Math.min(86, Math.max(58, Math.min(w, h) * .14));
+
+    for (let i = 0; i < targetCount; i++) {
+      let chosen = null;
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const candidate = {
+          x: w * (0.16 + Math.random() * 0.68),
+          // 敵陣の最上部と画面最下端を避け、7秒以内に取りに行ける範囲へ置く。
+          y: h * (0.30 + Math.random() * 0.45),
+        };
+        const safe = occupied.every(pos => Math.hypot(candidate.x - pos.x, candidate.y - pos.y) >= minDistance);
+        if (safe) {
+          chosen = candidate;
+          break;
+        }
+        if (!chosen) chosen = candidate;
+      }
+      if (!chosen) chosen = { x:w * .5, y:h * (.42 + i * .08) };
+      positions.push(chosen);
+      occupied.push(chosen);
+    }
+    return positions;
+  }
+
+  function spawnAngeHealingHearts(c) {
+    if (!state) return;
+    const arena = document.getElementById('shooting-arena');
+    const layer = document.getElementById('shooting-collectible-layer');
+    if (!arena || !layer) return;
+
+    ensureAngeHeartStyles();
+
+    const now = performance.now();
+    const count = Math.max(1, Math.floor(Number(c.ultHeartCount || 3)));
+    const lifeMs = Math.max(1000, Number(c.ultHeartLifeMs || 7000));
+    const blinkLeadMs = Math.max(0, Math.min(lifeMs, Number(c.ultHeartBlinkLeadMs || 2000)));
+    const healPercent = Math.max(0, Number(c.ultHeartHealPercent || 0.33));
+    const positions = getAngeHeartSpawnPositions(count, arena.clientWidth, arena.clientHeight);
+
+    positions.forEach((pos, index) => {
+      const el = document.createElement('div');
+      el.className = 'shooting-ange-heart';
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<span class="ange-heart-shape">♥</span>';
+      layer.appendChild(el);
+
+      const item = {
+        uid: `ange_heart_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`,
+        el,
+        x: Number(pos.x || 0),
+        y: Number(pos.y || 0),
+        kind: 'heal',
+        sourceType: 'ange_heart',
+        label: 'HP HEAL',
+        detail: `最大HP ${Math.round(healPercent * 100)}%回復`,
+        healPercent,
+        spawnedAt: now,
+        blinkAt: now + Math.max(0, lifeMs - blinkLeadMs),
+        expireAt: now + lifeMs,
+      };
+      state.mimosaItems.push(item);
+      positionUnit(el, item.x, item.y);
+    });
+  }
+
+  function applyAngeEnemyFreeze(durationMs) {
+    if (!state || state.ended || state.finishing) return;
+    const now = performance.now();
+    const until = now + Math.max(0, Number(durationMs || 3000));
+
+    // 全敵共通の追加停止フラグ。OBJECT / 乱入ミニオンの移動停止にも使用する。
+    state.angeEnemyFreezeUntil = Math.max(Number(state.angeEnemyFreezeUntil || 0), until);
+
+    // 通常敵・BOSS ADDを停止。射撃タイマーも終了時刻の後ろへ送る。
+    const normalUntil = Math.max(Number(state.normalEnemyStunUntil || 0), until);
+    state.normalEnemyStunUntil = normalUntil;
+    (state.normalEnemies || []).forEach((enemy, index) => {
+      if (!enemy || enemy.hp <= 0) return;
+      freezeNormalEnemyAction(enemy, normalUntil, index);
+    });
+
+    // BOSS戦ではBOSS自身も停止。敵弾生成ガードはbossStunUntilを参照するため、
+    // setTimeout由来の射撃も3秒間生成されない。既存弾には触れない。
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      state.bossStunUntil = Math.max(Number(state.bossStunUntil || 0), until);
+    }
+
+    deferAllEnemyAttackResume(until);
+
+    const expectedAngeUntil = state.angeEnemyFreezeUntil;
+    const expectedNormalUntil = state.normalEnemyStunUntil;
+    const expectedBossUntil = Number(state.bossStunUntil || 0);
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing) return;
+      const resumedAt = performance.now();
+
+      if (state.angeEnemyFreezeUntil === expectedAngeUntil && resumedAt + 8 >= expectedAngeUntil) {
+        state.angeEnemyFreezeUntil = 0;
+      }
+
+      if (state.normalEnemyStunUntil === expectedNormalUntil && resumedAt + 8 >= expectedNormalUntil) {
+        state.normalEnemyStunUntil = 0;
+        (state.normalEnemies || []).forEach((enemy, index) => {
+          if (!enemy || enemy.hp <= 0) return;
+          deferNormalEnemyAttackResume(enemy, resumedAt, index);
+        });
+      }
+
+      if (!isNormalBattle() && state.bossStunUntil === expectedBossUntil && resumedAt + 8 >= expectedBossUntil) {
+        state.bossStunUntil = 0;
+        deferBossAttackResume(resumedAt);
+      }
+    }, Math.max(0, until - now) + 35);
+  }
+
+  function useAngeUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName || '慈愛の光', c.effectKey);
+    ultScreenFlash('ult-flash-mimosa', c);
+
+    // 重要：既存の敵弾は消さない。停止対象は敵本体の移動と「これから出る弾」だけ。
+    applyAngeEnemyFreeze(Number(c.ultEnemyFreezeMs || 3000));
+    spawnAngeHealingHearts(c);
+
+    state.ultLockUntil = performance.now() + 300;
+    renderHud();
+  }
+
+  // ============================================================
   // ミモザ：ミモザの贈り物
   // ============================================================
   // 盤面のランダム位置に恩恵アイテムを3つ設置する。
@@ -13015,11 +13225,25 @@
     const playerCore = document.getElementById('shooting-player-core');
     if (!playerCore) return;
     const coreRect = playerCore.getBoundingClientRect();
+    const now = performance.now();
 
     state.mimosaItems = state.mimosaItems.filter(item => {
       if (!item || !item.el) return false;
+
+      // build929: アンジェの回復ハートだけ7秒寿命を持つ。
+      // 消滅2秒前から点滅し、期限に達したら未取得でも消える。
+      const expireAt = Number(item.expireAt || 0);
+      if (expireAt > 0 && now >= expireAt) {
+        item.el.remove();
+        return false;
+      }
+      const blinkAt = Number(item.blinkAt || 0);
+      if (blinkAt > 0 && now >= blinkAt) {
+        item.el.classList.add('is-expiring');
+      }
+
       if (rectsHit(item.el.getBoundingClientRect(), coreRect, -5, -3)) {
-        applyMimosaItemEffect(item, performance.now());
+        applyMimosaItemEffect(item, now);
         item.el.remove();
         return false;
       }
@@ -20215,6 +20439,7 @@
     else if (c.ultType === 'gojo_purple') useGojoUlt(c);
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
+    else if (c.ultType === 'ange_healing_hearts') useAngeUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else if (c.ultType === 'mito_summon_double') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);

@@ -1177,7 +1177,7 @@
   // ============================================================
   // SHOOTING専用戦闘プロフィール
   // ============================================================
-  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 13ミア / 14アヤネ / 15エルテナ
+  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 13ミア / 14アヤネ / 15エルテナ / 21アンジェ
   // その他未調整キャラ：現時点ではエリ性能を継承
   const SHOOTING_CHARACTERS = {};
 
@@ -1217,6 +1217,29 @@
     id: CHARACTER_ID.ERI,
     effectKey: 'eri',
     description: '扱いやすい2連射の標準型。ULTは敵弾を全消去し、敵を1秒停止させた後、ATKの280%ダメージを与える。',
+  });
+
+  // ============================================================
+  // build929: アンジェ専用ULT「慈愛の光」
+  // 敵の移動・新規射撃だけを3秒停止。既存の敵弾は残したまま進行し、
+  // 盤面へ最大HP33%回復のハートを3個設置する。
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.ANGE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.ANGE,
+    effectKey: 'ange',
+    label: 'SUPPORT / HEAL',
+    description: '扱いやすい2ライン射撃の回復支援型。ULT「慈愛の光」は敵の移動と新規射撃を3秒停止し、最大HPの33%を回復するハートを3個召喚する。既に盤面にある敵弾は消去しない。',
+    ultDescription: '敵の移動と新規弾の射出を3秒間停止する。発動時点で盤面に存在する敵弾は消去せず、そのまま進行する。同時にランダムな位置へ回復ハートを3個召喚し、取得したキャラクター自身の最大HPの33%を回復する。ハートは7秒後に消滅し、消滅2秒前から点滅する。',
+    ultName: '慈愛の光',
+    ultType: 'ange_healing_hearts',
+    burstNeed: 28,
+    ultGainPerHit: 0.476,
+    ultEnemyFreezeMs: 3000,
+    ultHeartCount: 3,
+    ultHeartHealPercent: 0.33,
+    ultHeartLifeMs: 7000,
+    ultHeartBlinkLeadMs: 2000,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SUI] = buildShootingCharacter({
