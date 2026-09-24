@@ -1,7 +1,7 @@
 {
-  "build": 930,
-  "published_at": "2026-09-25T00:10:00+09:00",
-  "label": "enemy_projectiles_match_enemy_element_color",
+  "build": 931,
+  "published_at": "2026-09-25T00:20:00+09:00",
+  "label": "noah_special_stage_uses_noah_boss_image",
   "release_protocol": 2,
   "commit_marker": true
 }
