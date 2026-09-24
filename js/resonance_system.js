@@ -119,6 +119,16 @@ function consumeEvolutionMaterial(materialId, count){
 var selectedLimitBreakSoulVesselId = '';
 var selectedLimitBreakTargetKey = '';
 
+// build926: エリは属性を選択せず、魂の器5属性すべてを1個ずつ要求する。
+var ERI_REQUIRED_SOUL_VESSEL_IDS = Object.freeze([
+  'soul_vessel_fire',
+  'soul_vessel_aqua',
+  'soul_vessel_wood',
+  'soul_vessel_dark',
+  'soul_vessel_light'
+]);
+window.ERI_REQUIRED_SOUL_VESSEL_IDS = ERI_REQUIRED_SOUL_VESSEL_IDS;
+
 function escapeHtml(str){
   return String(str == null ? '' : str)
     .replace(/&/g, '&amp;')
@@ -182,21 +192,31 @@ function resolveLimitBreakSoulVesselId(target, preferredId){
 function getLimitBreakRecipe(target, preferredSoulVesselId){
   var currentLb = target ? Number(target.limitBreak || 0) : 0;
   var nextLb = Math.min(currentLb + 1, MAX_LIMIT_BREAK);
-  var vesselOptions = getSoulVesselMaterialIdsByElement(target && target.element).map(function(materialId){
+  var isEri = !!(target && Number(target.id) === 1);
+  var isNoah = !!(target && Number(target.id) === 52);
+
+  var vesselIds = isEri
+    ? ERI_REQUIRED_SOUL_VESSEL_IDS.slice()
+    : getSoulVesselMaterialIdsByElement(target && target.element);
+
+  var vesselOptions = vesselIds.map(function(materialId){
     return {
       id: materialId,
       count: 1
     };
   });
-  var selectedVesselId = resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
-  var isEri = !!(target && Number(target.id) === 1);
-  var isNoah = !!(target && Number(target.id) === 52);
+
+  // エリは5種すべて消費するため「選択中の器」は持たない。
+  var selectedVesselId = isEri
+    ? ''
+    : resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
 
   return {
     nextLb: nextLb,
     sameChara: (isEri || isNoah) ? 0 : 1,
     specialMaterialId: isEri ? 'eri_origin_wing' : '',
     specialMaterialCount: isEri ? 1 : 0,
+    requiresAllSoulVessels: isEri,
     soulVesselId: selectedVesselId,
     soulVesselOptions: vesselOptions,
     soulVesselCount: 1,
@@ -204,34 +224,6 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
     stoneCount: nextLb
   };
 }
-
-
-// build461: 限界突破は「現在の凸段階でのLv上限」に到達している場合のみ許可する。
-// SR: 40 -> 凸 -> 45 -> 凸 -> 50 -> ...
-// R : 30 -> 凸 -> 35 -> 凸 -> 40 -> ...
-function getLimitBreakRequiredLevel(target){
-  if(!target) return 0;
-
-  var lb = Math.max(0, Math.min(MAX_LIMIT_BREAK, Number(target.limitBreak || 0)));
-
-  if(window.CharacterLeveling && typeof window.CharacterLeveling.getLevelCap === 'function'){
-    return Math.max(1, Number(window.CharacterLeveling.getLevelCap(target.rarity, lb) || 1));
-  }
-
-  var rarity = String(target.rarity || 'r').toLowerCase();
-  return (rarity === 'sr' ? 40 : 30) + (lb * 5);
-}
-
-function isLimitBreakLevelReady(target){
-  if(!target) return false;
-  var requiredLevel = getLimitBreakRequiredLevel(target);
-  var currentLevel = Math.max(1, Number(target.characterLevel || target.character_level || 1));
-  return currentLevel >= requiredLevel;
-}
-
-window.getLimitBreakRequiredLevel = getLimitBreakRequiredLevel;
-window.isLimitBreakLevelReady = isLimitBreakLevelReady;
-
 
 function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
   var recipe = getLimitBreakRecipe(target, preferredSoulVesselId);
@@ -241,11 +233,6 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
     : 0;
   var stoneOwned = getEvolutionMaterialCount(recipe.stoneId);
   var currentLb = target ? Number(target.limitBreak || 0) : 0;
-  var requiredLevel = getLimitBreakRequiredLevel(target);
-  var currentLevel = target
-    ? Math.max(1, Number(target.characterLevel || target.character_level || 1))
-    : 1;
-  var levelReady = !!target && currentLevel >= requiredLevel;
 
   var vesselOptionsStatus = (recipe.soulVesselOptions || []).map(function(opt){
     var owned = getEvolutionMaterialCount(opt.id);
@@ -263,6 +250,12 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
   var selectedVessel = vesselOptionsStatus.find(function(opt){ return opt.selected; }) || null;
   var soulVesselAvailable = !!selectedVessel && selectedVessel.available;
   var hasAnySoulVesselOption = vesselOptionsStatus.length > 0;
+  var allSoulVesselsAvailable = !!recipe.requiresAllSoulVessels &&
+    vesselOptionsStatus.length === ERI_REQUIRED_SOUL_VESSEL_IDS.length &&
+    vesselOptionsStatus.every(function(opt){ return opt.available; });
+  var vesselRequirementMet = recipe.requiresAllSoulVessels
+    ? allSoulVesselsAvailable
+    : (hasAnySoulVesselOption && soulVesselAvailable);
 
   return {
     recipe: recipe,
@@ -271,15 +264,12 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
     soulVesselOwned: selectedVessel ? selectedVessel.owned : 0,
     soulVesselOptions: vesselOptionsStatus,
     selectedSoulVessel: selectedVessel,
+    allSoulVesselsAvailable: allSoulVesselsAvailable,
     stoneOwned: stoneOwned,
-    currentLevel: currentLevel,
-    requiredLevel: requiredLevel,
-    levelReady: levelReady,
     canLimitBreak: !!target && currentLb < MAX_LIMIT_BREAK &&
-      levelReady &&
       sameCharaCount >= recipe.sameChara &&
       (!recipe.specialMaterialId || specialOwned >= recipe.specialMaterialCount) &&
-      hasAnySoulVesselOption && soulVesselAvailable &&
+      vesselRequirementMet &&
       stoneOwned >= recipe.stoneCount
   };
 }
@@ -289,14 +279,80 @@ function getLimitBreakMaterialStatus(target, preferredSoulVesselId){
 // 一括限界突破で「今ある素材だけで何段階まで上げられるか」を事前計算する。
 // 実データは変更せず、同キャラ / 専用素材 / 魂の器 / 共鳴石を段階ごとにシミュレート。
 function getBulkLimitBreakPlan(target, preferredSoulVesselId){
-  var fromLb = target ? Math.max(0, Number(target.limitBreak || 0)) : 0;
+  if(!target) return { steps:[], fromLb:0, toLb:0, canExecute:false };
+
+  var fromLb = Math.max(0, Number(target.limitBreak || 0));
+  var isEri = Number(target.id) === 1;
+  var isNoah = Number(target.id) === 52;
+  var sameRemain = (isEri || isNoah) ? 999999 : getSameCharaMaterials(target).length;
+  var specialRemain = getEvolutionMaterialCount('eri_origin_wing');
+  var stoneRemain = getEvolutionMaterialCount('kyoumei_stone');
+
+  var vesselIds = isEri
+    ? ERI_REQUIRED_SOUL_VESSEL_IDS.slice()
+    : getSoulVesselMaterialIdsByElement(target.element);
+  var vesselRemain = {};
+  vesselIds.forEach(function(id){ vesselRemain[id] = getEvolutionMaterialCount(id); });
+
+  var preferred = isEri
+    ? ''
+    : resolveLimitBreakSoulVesselId(target, preferredSoulVesselId || selectedLimitBreakSoulVesselId);
+  var steps = [];
+  var level = fromLb;
+
+  while(level < MAX_LIMIT_BREAK){
+    var nextLb = level + 1;
+    var vesselId = '';
+
+    if(!isEri){
+      // 通常キャラは現在選択中の魂の器を優先。足りなければ同属性候補へ自動切替。
+      if(preferred && vesselIds.indexOf(preferred) !== -1 && Number(vesselRemain[preferred] || 0) >= 1){
+        vesselId = preferred;
+      } else {
+        vesselId = vesselIds.find(function(id){ return Number(vesselRemain[id] || 0) >= 1; }) || '';
+      }
+    }
+
+    var allEriVesselsReady = isEri
+      ? vesselIds.every(function(id){ return Number(vesselRemain[id] || 0) >= 1; })
+      : false;
+
+    var canStep =
+      (isEri ? specialRemain >= 1 : (isNoah ? true : sameRemain >= 1)) &&
+      (isEri ? allEriVesselsReady : !!vesselId) &&
+      stoneRemain >= nextLb;
+
+    if(!canStep) break;
+
+    steps.push({
+      fromLb: level,
+      toLb: nextLb,
+      soulVesselId: vesselId,
+      soulVesselIds: isEri ? vesselIds.slice() : (vesselId ? [vesselId] : []),
+      stoneCount: nextLb,
+      sameCharaCount: (isEri || isNoah) ? 0 : 1,
+      specialMaterialCount: isEri ? 1 : 0
+    });
+
+    if(isEri){
+      specialRemain -= 1;
+      vesselIds.forEach(function(id){
+        vesselRemain[id] = Math.max(0, Number(vesselRemain[id] || 0) - 1);
+      });
+    } else {
+      if(!isNoah) sameRemain -= 1;
+      vesselRemain[vesselId] = Math.max(0, Number(vesselRemain[vesselId] || 0) - 1);
+    }
+    stoneRemain -= nextLb;
+    level = nextLb;
+  }
+
   return {
-    steps: [],
+    steps: steps,
     fromLb: fromLb,
-    toLb: fromLb,
-    canExecute: false,
-    count: 0,
-    disabledByLevelProgression: true
+    toLb: level,
+    canExecute: steps.length > 0,
+    count: steps.length
   };
 }
 window.getBulkLimitBreakPlan = getBulkLimitBreakPlan;
@@ -306,21 +362,38 @@ function consumeLimitBreakRecipeMaterials(target, preferredSoulVesselId){
   var status = getLimitBreakMaterialStatus(target, preferredSoulVesselId);
   if(!status.canLimitBreak) return false;
   var recipe = status.recipe;
-  var vesselId = recipe.soulVesselId;
+  var consumedVessels = [];
+  var specialConsumed = false;
+
+  function rollback(){
+    consumedVessels.forEach(function(entry){
+      addEvolutionMaterial(entry.id, entry.count);
+    });
+    if(specialConsumed && recipe.specialMaterialId){
+      addEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount);
+    }
+  }
 
   if(recipe.specialMaterialId){
     if(!consumeEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount)) return false;
+    specialConsumed = true;
   }
 
-  if(!consumeEvolutionMaterial(vesselId, recipe.soulVesselCount)){
-    if(recipe.specialMaterialId) addEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount);
-    return false;
+  var vesselIds = recipe.requiresAllSoulVessels
+    ? (recipe.soulVesselOptions || []).map(function(opt){ return opt.id; })
+    : [recipe.soulVesselId];
+
+  for(var i = 0; i < vesselIds.length; i++){
+    var vesselId = vesselIds[i];
+    if(!vesselId || !consumeEvolutionMaterial(vesselId, recipe.soulVesselCount)){
+      rollback();
+      return false;
+    }
+    consumedVessels.push({ id:vesselId, count:recipe.soulVesselCount });
   }
 
   if(!consumeEvolutionMaterial(recipe.stoneId, recipe.stoneCount)) {
-    // 念のため、先に消費した素材を戻す
-    addEvolutionMaterial(vesselId, recipe.soulVesselCount);
-    if(recipe.specialMaterialId) addEvolutionMaterial(recipe.specialMaterialId, recipe.specialMaterialCount);
+    rollback();
     return false;
   }
   return true;
@@ -331,40 +404,11 @@ window.EVOLUTION_MATERIAL_MASTER = EVOLUTION_MATERIAL_MASTER;
 window.getEvolutionMaterialCount = getEvolutionMaterialCount;
 window.addEvolutionMaterial = addEvolutionMaterial;
 
-// build459: DB(player_inventory)から再読込された進化素材を、
-// 実行中メモリにも即時反映する。localStorageだけ更新されて表示が古いまま残る不具合を防止。
-window.addEventListener('zeraphia:evolution-materials-cloud-loaded', function(event){
-  var detail = event && event.detail && typeof event.detail === 'object' ? event.detail : {};
-  evolutionMaterials = {};
-  Object.keys(detail).forEach(function(materialId){
-    if(!getEvolutionMaterialDef(materialId)) return;
-    var count = Math.max(0, Math.floor(Number(detail[materialId] || 0)));
-    if(count > 0) evolutionMaterials[materialId] = count;
-  });
-  saveEvolutionMaterialsToLocal();
-  updateZukanLimitBreakNotice();
-  try { window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed')); } catch (_) {}
-});
-
 function isGachaMaterialResult(data){
   return !!(data && (data.resultKind === 'material' || data.materialId));
 }
 
 function getGachaMaterialRewardData(materialId, count, timeStr, capturedAt){
-  // v192: Supabase側のガチャ設定が旧3属性IDのままでも落ちないよう互換変換する。
-  // 魂の器はローカル進化素材として付与されるため、旧ID受信時に新5属性へ振り分ける。
-  var legacyVesselIds = ['soul_vessel_logos','soul_vessel_mystis','soul_vessel_chaos'];
-  if(legacyVesselIds.indexOf(String(materialId || '')) !== -1){
-    var vesselPool = [
-      'soul_vessel_fire',
-      'soul_vessel_aqua',
-      'soul_vessel_wood',
-      'soul_vessel_dark',
-      'soul_vessel_light'
-    ];
-    materialId = vesselPool[Math.floor(Math.random() * vesselPool.length)];
-  }
-
   var def = getEvolutionMaterialDef(materialId);
   if(!def) return null;
   var n = Math.max(1, Number(count || 1));
@@ -431,12 +475,6 @@ function getAutoLimitBreakMaterial(target){
     var lbA = Number(a.limitBreak || 0);
     var lbB = Number(b.limitBreak || 0);
     if(lbA !== lbB) return lbA - lbB;
-
-    // レベル育成済み個体を素材にしないよう、同凸なら低Lvを優先する。
-    var lvA = Math.max(1, Number(a.characterLevel || 1));
-    var lvB = Math.max(1, Number(b.characterLevel || 1));
-    if(lvA !== lvB) return lvA - lvB;
-
     return String(a.db_id || '').localeCompare(String(b.db_id || ''));
   });
   return materials[0];
@@ -454,92 +492,89 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
   if(!isEri && !isNoah && !material) return false;
 
   var currentLb = target.limitBreak || 0;
+
   if(currentLb >= MAX_LIMIT_BREAK){
     showToast('限界突破LvはすでにMAXです');
     return false;
   }
 
-  var requiredLevel = getLimitBreakRequiredLevel(target);
-  var currentLevel = Math.max(1, Number(target.characterLevel || target.character_level || 1));
-  if(currentLevel < requiredLevel){
-    showToast('Lv.' + requiredLevel + 'まで上げると限界突破できます');
+  if(!getLimitBreakMaterialStatus(target, selectedSoulVesselId).canLimitBreak){
+    showToast('限界突破素材が不足しています');
     return false;
   }
 
-  if(!target.db_id){
-    try {
-      var resolved = await sb.from('collected_characters')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('character_id', Number(target.id))
-        .order('id', { ascending:true })
-        .limit(1);
-      if(resolved && resolved.error) throw resolved.error;
-      if(resolved && resolved.data && resolved.data[0]) target.db_id = resolved.data[0].id;
-    } catch(err){
-      console.error('[Resonance] target row resolve failed:', err);
+  // DB保存失敗時に、強化Lv・素材・BOX状態を元へ戻せるよう事前退避する。
+  var beforeState = {
+    limitBreak: Number(target.limitBreak || 0),
+    stats: Object.assign({}, target.stats || {}),
+    dbId: target.db_id || null,
+    evolutionMaterials: JSON.parse(JSON.stringify(evolutionMaterials || {})),
+    box: box.slice(),
+    collected: Object.assign({}, collected)
+  };
+
+  if(!consumeLimitBreakRecipeMaterials(target, selectedSoulVesselId)){
+    showToast('限界突破素材の消費に失敗しました');
+    return false;
+  }
+
+  target.limitBreak = beforeState.limitBreak + 1;
+  target.stats = applyLimitBreakStats(
+    target.baseStats,
+    target.limitBreak,
+    target.rarity,
+    target.id
+  );
+
+  // 通常キャラのみ、同キャラ素材をBOXから削除する。
+  // エリは専用アイテムを消費するため、キャラクターは削除しない。
+  if(material){
+    box = box.filter(function(b){ return b !== material; });
+
+    if(collected[material.id] && collected[material.id].db_id === material.db_id){
+      var remain = box.find(function(b){ return b.id === material.id; });
+      if(remain){
+        collected[material.id] = remain;
+      } else {
+        delete collected[material.id];
+      }
     }
-  }
-
-  if(!target.db_id){
-    showToast('共鳴対象を確認できません');
-    return false;
   }
 
   try {
-    var result = await sb.rpc('resonate_character_secure', {
-      p_character_row_id: Number(target.db_id),
-      p_soul_vessel_id: selectedSoulVesselId || null
-    });
-    if(result && result.error) throw result.error;
+    // エリはdb_id欠落時も user_id + character_id で保存先を解決する。
+    await updateLimitBreakToDB(target);
 
-    var data = result ? result.data : null;
-    if(typeof data === 'string'){
-      try { data = JSON.parse(data); } catch(_){ }
-    }
-    if(!data || data.ok === false){
-      throw new Error((data && data.message) || '共鳴に失敗しました');
-    }
-
-    target.limitBreak = Math.max(0, Number(data.limit_break || (currentLb + 1)));
-    var resonatedStats = applyLimitBreakStats(
-      target.baseStats,
-      target.limitBreak,
-      target.rarity,
-      target.id
-    );
-    target.stats = (window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats === 'function')
-      ? window.CharacterLeveling.applyToStats(
-          resonatedStats,
-          target.rarity,
-          target.limitBreak,
-          Math.max(1, Number(target.characterLevel || 1))
-        )
-      : resonatedStats;
-
-    var consumedDuplicateId = Number(data.consumed_duplicate_id || 0);
-    if(consumedDuplicateId){
-      box = box.filter(function(b){ return Number(b && b.db_id || 0) !== consumedDuplicateId; });
-      if(collected[target.id] && Number(collected[target.id].db_id || 0) === consumedDuplicateId){
-        var remain = box.find(function(b){ return b && Number(b.id) === Number(target.id); });
-        if(remain) collected[target.id] = remain;
-        else collected[target.id] = target;
-      }
-    }
-
-    if(typeof window.loadInventoryFromSupabase === 'function'){
-      await window.loadInventoryFromSupabase(userId);
+    // 通常キャラだけ素材キャラをDELETEする。
+    if(material){
+      await deleteMaterialFromDB(material, target);
     }
   } catch(saveError) {
-    console.error('[Resonance] secure RPC failed:', saveError);
-    showToast(saveError && saveError.message ? saveError.message : '共鳴に失敗しました');
+    console.error('[Resonance] save failed; rolling back local state:', saveError);
+    saveError.attemptedLimitBreak = Number(target.limitBreak || 0);
+
+    target.limitBreak = beforeState.limitBreak;
+    target.stats = beforeState.stats;
+    target.db_id = beforeState.dbId;
+    evolutionMaterials = beforeState.evolutionMaterials;
+    saveEvolutionMaterialsToLocal();
+    box = beforeState.box;
+    collected = beforeState.collected;
+
+    renderBox();
+    updateMainUI();
+    if(currentZukanMainTab !== 'box') showDetail(target, false);
+
+    showResonanceDiagnostic(saveError, target, beforeState);
     return false;
   }
 
   if(!silent){
     renderBox();
     updateMainUI();
-    if(currentZukanMainTab !== 'box') showDetail(target, false);
+    if(currentZukanMainTab !== 'box'){
+      showDetail(target, false);
+    }
   }
 
   var completeText = document.getElementById('lb-complete-text');
@@ -552,11 +587,15 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
 
   if(!silent){
     var completeModal = document.getElementById('limitbreak-complete-modal');
-    if (completeModal) completeModal.classList.add('active');
-    else alert('限界突破が完了しました。');
+    if (completeModal) {
+      completeModal.classList.add('active');
+    } else {
+      alert('限界突破が完了しました。');
+    }
   }
   return true;
 }
+
 
 
 async function updateLimitBreakToDB(target){

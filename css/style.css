@@ -13261,6 +13261,25 @@ body,
   text-align: center;
 }
 
+/* build927: 不足素材が多い場合は、不足一覧だけを縦スクロール可能にする。 */
+#limitbreak-modal .lb-lack-list {
+  max-height: 92px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167,47,47,.34) transparent;
+}
+
+#limitbreak-modal .lb-lack-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+#limitbreak-modal .lb-lack-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(167,47,47,.30);
+}
+
 #limitbreak-modal .lb-lack-row {
   display: flex;
   align-items: center;

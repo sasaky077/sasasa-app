@@ -272,9 +272,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=834-stage-attribute-default"
+        href="css/style.css?v=927-limitbreak-lack-scroll"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=834-stage-attribute-default"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=927-limitbreak-lack-scroll"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -5429,9 +5429,9 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=754-resonance"></script>
-<script src="js/resonance_system.js?v=593"></script>
-<script src="js/resonance_ui.js?v=593"></script>
+<script src="js/shooting_resonance.js?v=926-eri-limitbreak-all-vessels"></script>
+<script src="js/resonance_system.js?v=926-eri-limitbreak-all-vessels"></script>
+<script src="js/resonance_ui.js?v=927-limitbreak-lack-scroll"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
@@ -5514,6 +5514,7 @@ document.addEventListener('touchend', function (e) {
   const ZERAPHIA_EVOLUTION_MATERIAL_KEY = 'zeraphia_evolution_materials_v1';
   const ZERAPHIA_EVOLUTION_ITEM_PREFIX = 'evo:'; // legacy compatibility only
   const ZERAPHIA_EVOLUTION_ITEM_IDS = new Set([
+    'eri_origin_wing',
     'kyoumei_stone',
     'soul_vessel_fire',
     'soul_vessel_aqua',
@@ -16659,7 +16660,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=910-chloe-up-image"></script>
+<script src="js/shooting_characters.js?v=925-chloe-ult-aura-freeze"></script>
 <script src="js/stage_select.js?v=843-story-title-canonical"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -16738,7 +16739,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=924-responsive-unit-scale"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=925-chloe-ult-aura-freeze"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
