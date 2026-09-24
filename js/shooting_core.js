@@ -133,6 +133,25 @@
         stroke-width:2;
         filter:drop-shadow(0 0 5px rgba(var(--nina-electric-rgb,231,200,90),.74));
       }
+      /* build907: ニーナULT「出力最大！」中はPLASMAを太く・強く発光させる。 */
+      .shooting-nina-electric-network.is-output-max{
+        filter:
+          drop-shadow(0 0 4px rgba(var(--nina-electric-rgb,231,200,90),.78))
+          drop-shadow(0 0 10px rgba(var(--nina-electric-rgb,231,200,90),.38));
+      }
+      .shooting-nina-electric-network.is-output-max .shooting-nina-electric-glow{
+        stroke-width:11;
+        opacity:.88;
+      }
+      .shooting-nina-electric-network.is-output-max .shooting-nina-electric-color{
+        stroke-width:4.2;
+      }
+      .shooting-nina-electric-network.is-output-max .shooting-nina-electric-core{
+        stroke-width:1.65;
+      }
+      .shooting-nina-electric-network.is-output-max .shooting-nina-electric-hit{
+        stroke-width:3;
+      }
       @keyframes ninaElectricNetworkFlicker{
         0%{opacity:.28}
         18%{opacity:1}
@@ -3165,6 +3184,7 @@
       eltenaBlackHole: null,
       toyfelBlackHoleField: null,
       ninaUltToken: 0,
+      ninaOutputMaxUntil: 0,
       gojoPurpleField: null,
       gojoPurpleBossFreezeUntil: 0,
       wolfAtkField: null,
@@ -4901,7 +4921,10 @@
     const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
     const svgNs = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNs, 'svg');
-    svg.setAttribute('class', 'shooting-nina-electric-network');
+    svg.setAttribute(
+      'class',
+      'shooting-nina-electric-network' + (isNinaOutputMaxActive(performance.now()) ? ' is-output-max' : '')
+    );
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.style.setProperty('--nina-electric-rgb', visual.rgb);
@@ -4970,7 +4993,10 @@
     const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
     const svgNs = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNs, 'svg');
-    svg.setAttribute('class', 'shooting-nina-electric-network');
+    svg.setAttribute(
+      'class',
+      'shooting-nina-electric-network' + (isNinaOutputMaxActive(performance.now()) ? ' is-output-max' : '')
+    );
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.style.setProperty('--nina-electric-rgb', visual.rgb);
@@ -5080,16 +5106,31 @@
     return 0;
   }
 
+  function isNinaOutputMaxActive(now) {
+    if (!state) return false;
+    const ts = Number(now || performance.now());
+    return ts < Number(state.ninaOutputMaxUntil || 0);
+  }
+
   function fireNinaChainLightning(c, effectivePower, now) {
     if (!state || !c || !state.player) return;
+
+    const outputMaxActive = isNinaOutputMaxActive(now);
+    const outputPowerMultiplier = outputMaxActive
+      ? Math.max(1, Number(c.ninaOutputMaxPowerMultiplier || 1.5))
+      : 1;
+    const outputRangeMultiplier = outputMaxActive
+      ? Math.max(1, Number(c.ninaOutputMaxRangeMultiplier || 2.0))
+      : 1;
+    const boostedEffectivePower = Number(effectivePower || 0) * outputPowerMultiplier;
 
     const maxTargets = Math.max(1, Math.min(4, Math.floor(Number(c.lightningMaxTargets || 4))));
     const tickCount = Math.max(2, Math.min(6, Math.floor(Number(c.lightningTickCount || 4))));
     const tickMs = Math.max(45, Number(c.lightningTickMs || 70));
     const decay = Math.max(0, Math.min(1, Number(c.lightningChainDecay ?? 0.5)));
-    const acquireRange = Math.max(24, Number(c.lightningAcquireRange || 220));
-    const releaseRange = Math.max(acquireRange, Number(c.lightningReleaseRange || 250));
-    const chainRange = Math.max(24, Number(c.lightningChainRange || 160));
+    const acquireRange = Math.max(24, Number(c.lightningAcquireRange || 220) * outputRangeMultiplier);
+    const releaseRange = Math.max(acquireRange, Number(c.lightningReleaseRange || 250) * outputRangeMultiplier);
+    const chainRange = Math.max(24, Number(c.lightningChainRange || 160) * outputRangeMultiplier);
     const ownerId = Number(c.id || 0);
 
     // 指を離してしばらく経ってから再度撃ち始めた場合は、古いロックを持ち越さない。
@@ -5171,7 +5212,7 @@
       chain.forEach((target, index) => {
         // 1射全体のダメージを有効tick数へ分割。伝播倍率は 100 / 50 / 25 / 12.5%。
         const chainRate = Math.pow(decay, index);
-        const tickDamage = Number(effectivePower || 0) * chainRate / activeDamageTicks;
+        const tickDamage = boostedEffectivePower * chainRate / activeDamageTicks;
         const isFirstDamagePulse = pulseIndex === Number(lockReadyPulse || 0);
         const applied = damageNinaConductiveTarget(target, tickDamage, performance.now(), c, !isFirstDamagePulse);
         if (isFirstDamagePulse && applied > 0) {
@@ -18508,7 +18549,33 @@
   // ============================================================
 
   // ============================================================
-  // ニーナ ULT：LIGHTNING STORM
+  // build907: ニーナ ULT「出力最大！」
+  // 7秒間 PLASMA威力×1.5 / 射程×2.0。
+  // 連鎖数・発射速度は通常時のまま。旧LIGHTNING STORMの落雷は発動しない。
+  // ============================================================
+  function useNinaOutputMax(c) {
+    if (!state || state.ended || state.finishing) return;
+
+    showUltCut(c.ultName || '出力最大！', c.effectKey);
+
+    const now = performance.now();
+    const duration = Math.max(1000, Number(c.ninaOutputMaxDurationMs || 7000));
+    state.ninaOutputMaxUntil = now + duration;
+
+    // ULT直前のロック状態を一度切り、拡張された射程で再探索させる。
+    state.ninaLightningLockedTarget = null;
+    state.ninaLightningPendingTarget = null;
+    state.ninaLightningLastFireAt = 0;
+    state.ninaLightningAttackToken = Number(state.ninaLightningAttackToken || 0) + 1;
+
+    // カットイン後は移動・射撃をすぐ再開。7秒間の強化時間を射撃停止で消費しない。
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 180);
+    renderHud();
+  }
+
+
+  // ============================================================
+  // ニーナ旧ULT：LIGHTNING STORM（build907以降は未使用）
   // 8秒 / 16発 / 各ATK×4.0。
   // 毎回、その時点で生存している敵からランダム選択。
   // 命中した敵だけ3秒麻痺（移動・射撃停止）。全体停止はしない。
@@ -19775,7 +19842,7 @@
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'toyfel_double_black_hole') useToyfelUlt(c);
     else if (c.ultType === 'painter_light_paint_bomb' || c.ultType === 'painter_dark_paint_bomb') usePainterUlt(c);
-    else if (c.ultType === 'nina_lightning_storm') useNinaUlt(c);
+    else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
