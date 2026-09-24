@@ -986,6 +986,134 @@
     return !!(selectedStage && selectedStage.eventId === 'random_ambush' && selectedStage.ambush);
   }
 
+  // ============================================================
+  // build924: 端末サイズ連動の戦闘ユニット表示倍率
+  //
+  // 基準: arena 390 x 700 ≒ 標準的なスマホの戦闘領域
+  // 味方      : 0.86 ～ 1.10
+  // 通常敵    : 基準値そのものを1.12倍し、端末補正0.92 ～ 1.10
+  // BOSS      : 0.92 ～ 1.06
+  //
+  // 機種名ではなく、実際のarenaサイズから連続的に算出する。
+  // ============================================================
+  const NORMAL_ENEMY_BASE_VISUAL_MULTIPLIER = 1.12;
+
+  function getResponsiveCombatScaleProfile() {
+    const arena = document.getElementById('shooting-arena');
+    const w = Math.max(1, Number(arena && arena.clientWidth) || 390);
+    const h = Math.max(1, Number(arena && arena.clientHeight) || 700);
+
+    const raw = Math.sqrt((w / 390) * (h / 700));
+    const clampScale = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    return {
+      raw,
+      player: clampScale(raw, 0.86, 1.10),
+      normalEnemyDevice: clampScale(raw, 0.92, 1.10),
+      normalEnemy: NORMAL_ENEMY_BASE_VISUAL_MULTIPLIER * clampScale(raw, 0.92, 1.10),
+      boss: clampScale(raw, 0.92, 1.06),
+      width: w,
+      height: h,
+    };
+  }
+
+  function isResponsiveBossStage() {
+    // BOSS対象:
+    // フェイスレス / 各種レムナント / ノア / オーバーシア(???) / すこあちゃん
+    if (isFacelessStage() || isNoahStage() || isAmbushStage() || isScoreAttackStage()) {
+      return true;
+    }
+
+    let image = '';
+    try { image = String(getSelectedBossImage() || '').toLowerCase(); } catch (_) {}
+    const bossName = String((BOSS && BOSS.name) || '').toLowerCase();
+
+    return (
+      /remnant[_-]?\d+/i.test(image) ||
+      image.includes('enemy_sakiel') ||
+      image.includes('overseer') ||
+      bossName.includes('レムナント') ||
+      bossName.includes('オーバーシア') ||
+      bossName.includes('イリシュ') ||
+      bossName.includes('リヴィア') ||
+      bossName.includes('サキエル')
+    );
+  }
+
+  function getCharacterBattleBackBaseScale(character) {
+    return Math.max(
+      0.1,
+      Number(character && character.uiScale && character.uiScale.battleBack != null
+        ? character.uiScale.battleBack
+        : 1) || 1
+    ) * 1.2;
+  }
+
+  function getResponsivePlayerDisplayScale(character) {
+    return getCharacterBattleBackBaseScale(character) * getResponsiveCombatScaleProfile().player;
+  }
+
+  function getNormalEnemyBaseDisplayScale(enemyDef) {
+    const baseEnemyScale = Math.max(0.1, Number(enemyDef && enemyDef.uiScale || 1));
+    const isChapter02MidBoss =
+      getSelectedBaseStageId() === 'shooting_ch02_04' &&
+      enemyDef &&
+      enemyDef.behavior === 'mini_violence_v1';
+
+    return isChapter02MidBoss
+      ? baseEnemyScale * 2.5
+      : baseEnemyScale;
+  }
+
+  function getResponsiveNormalEnemyDisplayScale(enemyDef) {
+    return getNormalEnemyBaseDisplayScale(enemyDef) * getResponsiveCombatScaleProfile().normalEnemy;
+  }
+
+  function getResponsiveBossDisplayScale() {
+    const base = Math.max(0.1, Number(BOSS && BOSS.uiScale || 1));
+    if (!isResponsiveBossStage()) return base;
+    return base * getResponsiveCombatScaleProfile().boss;
+  }
+
+  function refreshResponsiveCombatUnitScales() {
+    const profile = getResponsiveCombatScaleProfile();
+    const root = document.getElementById(ROOT_ID);
+    if (root) {
+      root.dataset.combatScaleRaw = profile.raw.toFixed(3);
+      root.dataset.playerScaleFactor = profile.player.toFixed(3);
+      root.dataset.normalEnemyScaleFactor = profile.normalEnemy.toFixed(3);
+      root.dataset.bossScaleFactor = profile.boss.toFixed(3);
+    }
+
+    const player = document.getElementById(PLAYER_ID);
+    if (player) {
+      player.style.setProperty(
+        '--unit-scale',
+        String(getResponsivePlayerDisplayScale(getCurrentCharacter()))
+      );
+    }
+
+    (state && Array.isArray(state.normalEnemies) ? state.normalEnemies : []).forEach(enemy => {
+      if (!enemy || !enemy.el) return;
+      const baseScale = Number(enemy.baseDisplayScale || getNormalEnemyBaseDisplayScale(enemy.def));
+      const nextScale = baseScale * profile.normalEnemy;
+      enemy.baseDisplayScale = baseScale;
+      enemy.displayScale = nextScale;
+      enemy.el.style.setProperty('--enemy-scale', String(nextScale));
+
+      requestAnimationFrame(() => {
+        if (!enemy.el || !enemy.el.isConnected) return;
+        measureUnitSize(enemy);
+        positionMiniEnemyHp(enemy);
+      });
+    });
+
+    const boss = document.getElementById(BOSS_ID);
+    if (boss && !isNormalBattle()) {
+      boss.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
+    }
+  }
+
   function getAmbushConfig() {
     return isAmbushStage() ? selectedStage.ambush : null;
   }
@@ -2980,12 +3108,7 @@
       // build828: 味方の battle_back 表示だけを全キャラ共通で1.2倍。
       // キャラ個別の uiScale.battleBack は維持し、その最終表示倍率へ1.2を乗算する。
       // 当たり判定・移動座標・赤コア位置は変更しない（画像表示サイズのみ）。
-      const battleBackScale = Math.max(
-        0.1,
-        Number(c && c.uiScale && c.uiScale.battleBack != null
-          ? c.uiScale.battleBack
-          : 1) || 1
-      ) * 1.2;
+      const battleBackScale = getResponsivePlayerDisplayScale(c);
       player.style.setProperty('--unit-scale', String(battleBackScale));
     }
     if (img) {
@@ -3347,6 +3470,9 @@
     if (!isNormalBattle() && !boss) return;
     const w = arena.clientWidth;
     const h = arena.clientHeight;
+
+    // 端末の実バトル領域が確定した時点で表示倍率を再計算。
+    refreshResponsiveCombatUnitScales();
     state.player.x = w * 0.5;
     state.player.y = h * 0.82;
     state.boss.x = w * 0.5;
@@ -7415,13 +7541,11 @@
     el.alt = enemyDef.name || '敵';
     el.draggable = false;
 
-    const baseEnemyScale = Math.max(0.1, Number(enemyDef.uiScale || 1));
+    const baseDisplayScale = getNormalEnemyBaseDisplayScale(enemyDef);
     const isChapter02MidBoss =
       getSelectedBaseStageId() === 'shooting_ch02_04' &&
       enemyDef.behavior === 'mini_violence_v1';
-    const displayScale = isChapter02MidBoss
-      ? baseEnemyScale * 2.5
-      : baseEnemyScale;
+    const displayScale = baseDisplayScale * getResponsiveCombatScaleProfile().normalEnemy;
 
     el.style.setProperty('--enemy-scale', String(displayScale));
     if (isChapter02MidBoss) el.classList.add('shooting-ch02-midboss');
@@ -7483,6 +7607,7 @@
     const enemy = {
       uid: `mini_${String(state.stageId || 'stage')}_${spawnIndex}`,
       def: enemyDef, el, hpEl: hpWrap, elementEl, weaknessBarrierEl, x, y, baseX: x, baseY: y,
+      baseDisplayScale,
       displayScale,
       element: enemyElement,
       hp: enemyHp,
@@ -14521,7 +14646,7 @@
       if (boss) {
         boss.src = getSelectedBossImage();
         boss.alt = BOSS.name || '';
-        boss.style.setProperty('--enemy-scale', String(Number(BOSS.uiScale || 1)));
+        boss.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
         boss.style.display = '';
         boss.classList.remove('defeated');
       }
@@ -16015,7 +16140,7 @@
       if (introMeta && introMeta.image && introMeta.image !== selectedBossImage) void preloadShootingImage(introMeta.image, 7000);
       bossImage.src = selectedBossImage;
       bossImage.alt = BOSS.name || '';
-      bossImage.style.setProperty('--enemy-scale', String(Number(BOSS.uiScale || 1)));
+      bossImage.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
       bossImage.style.display = selectedStage && selectedStage.type === 'normal' ? 'none' : '';
     }
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
@@ -20159,7 +20284,10 @@
     invalidateArenaInputRect();
     // iOSはorientationchange直後にviewportサイズが確定していない場合があるため、
     // 次フレームで再取得する。
-    requestAnimationFrame(() => refreshArenaInputRect(true));
+    requestAnimationFrame(() => {
+      refreshArenaInputRect(true);
+      refreshResponsiveCombatUnitScales();
+    });
   });
   // 復元チェックは所持キャラ判定(collected)に依存する。
   // window._dbLoadPromiseは、index.html側のinit()がスプラッシュタップ後の
