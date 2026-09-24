@@ -2514,6 +2514,141 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </style>
 
 
+
+<style id="zukan-back-reset-legacy-absolute-build916">
+  /* build916:
+     style.css に残っている旧 #screen-zukan #zukan-detail-back の
+     absolute / left:16px / translateY を完全に打ち消す。
+     巡行・設定と同じ header 直下の通常 flex 要素として扱う。 */
+  #screen-zukan #zukan-detail-back.app-page-back{
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    z-index: auto !important;
+    margin: 0 !important;
+  }
+</style>
+
+
+
+
+
+
+
+<style id="shooting-pause-countdown-polish-build922">
+  /* build922: PAUSE画面 - 三本線廃止後のタイトルを大きく */
+  #shooting-event-root .shooting-pause-kicker{
+    font-size:20px !important;
+    font-weight:500 !important;
+    letter-spacing:.24em !important;
+    margin:0 0 14px !important;
+    color:#806a43 !important;
+  }
+
+  /* 旧DOM/キャッシュが残っても三本線見出しは表示しない */
+  #shooting-event-root .shooting-pause-card h2,
+  #shooting-event-root .shooting-pause-card .sasaphia-menu-heading-icon{
+    display:none !important;
+  }
+
+  #shooting-event-root .shooting-pause-divider{
+    margin:0 auto 17px !important;
+  }
+
+  /* 3,2,1...中にPAUSEした場合、文字アニメーション自体も停止する */
+  #shooting-event-root.is-shooting-paused #shooting-countdown span{
+    animation-play-state:paused !important;
+    -webkit-animation-play-state:paused !important;
+  }
+</style>
+
+<style id="ten-result-badge-footer-polish-build921">
+  /* build921: 10連結果 ITEMバッジ廃止 / NEW金フレーム廃止 / 下段ボタン角丸廃止 */
+  #ten-result-modal .ten-card-item-badge{
+    display:none !important;
+  }
+
+  #ten-result-modal .ten-card-new-badge{
+    border:0 !important;
+    outline:0 !important;
+    box-shadow:none !important;
+  }
+
+  #ten-result-modal .ten-result-footer .ten-result-close-btn,
+  #ten-result-modal .ten-result-footer .ten-result-again-btn{
+    border-radius:0 !important;
+  }
+</style>
+
+<style id="shooting-party-actions-square-buttons-build920">
+  /* build920: 現行シューティング編成画面の下部2ボタンを完全な四角形にする */
+  #shooting-event-root .shooting-character-select.show .shooting-party-cancel,
+  #shooting-event-root .shooting-character-select.show .shooting-character-start{
+    border-radius:0 !important;
+  }
+</style>
+
+<style id="party-select-footer-square-buttons-build919">
+  /* build919: パーティ編成下部のキャンセル / 戦闘開始のみ角丸廃止 */
+  #party-select-modal .ps-footer .ps-btn-cancel,
+  #party-select-modal .ps-footer .ps-btn-start{
+    border-radius:0 !important;
+  }
+</style>
+
+<style id="limitbreak-level-label-tone-build918">
+  /* build918: 限界突破Lvラベルの紫系を廃止し、生成り・薄金・ブラウンへ統一 */
+  #limitbreak-confirm-modal .lb-confirm-level{
+    background:rgba(184,150,92,.08) !important;
+    border:1px solid rgba(151,117,61,.15) !important;
+    color:#6f5a43 !important;
+    -webkit-text-fill-color:#6f5a43 !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
+  }
+
+  #limitbreak-confirm-modal .lb-confirm-level span{
+    color:#6f5a43 !important;
+    -webkit-text-fill-color:#6f5a43 !important;
+    text-shadow:none !important;
+  }
+
+  #limitbreak-confirm-modal .lb-confirm-level strong{
+    color:#9a713b !important;
+    -webkit-text-fill-color:#9a713b !important;
+    text-shadow:none !important;
+    font-weight:600 !important;
+  }
+</style>
+
+<style id="limitbreak-execute-text-brown-build917">
+  /* build917: 限界突破メイン画面の実行ボタン文字をブラウンへ統一 */
+  #limitbreak-modal .lb-execute-btn,
+  #limitbreak-modal .lb-execute-single-btn,
+  #limitbreak-modal .lb-execute-bulk-btn{
+    color:#6a5136 !important;
+    -webkit-text-fill-color:#6a5136 !important;
+    text-shadow:none !important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+    font-weight:600 !important;
+    letter-spacing:.06em !important;
+  }
+</style>
+
+<style id="limitbreak-title-button-polish-build912">
+  #limitbreak-confirm-modal #lb-confirm-ok-btn{
+    color:#6a5136 !important;
+    -webkit-text-fill-color:#6a5136 !important;
+    text-shadow:none !important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+    font-weight:600 !important;
+    letter-spacing:.06em !important;
+  }
+</style>
+
 <style id="gacha-confirm-mincho-build893">
   #summon-confirm-modal .modal-btns .btn-pay,
   #summon-confirm-modal .modal-btns .btn-cancel-txt{
@@ -3212,9 +3347,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 <div id="screen-zukan" class="screen app-page app-page--standard is-primoa-mode">
   <header class="app-page-header">
-    <div id="zukan-detail-back" class="app-page-back-slot zukan-detail-back">
-      <button class="app-page-back" type="button" onclick="showMainTab('main')">＜戻る</button>
-    </div>
+    <button id="zukan-detail-back" class="app-page-back" type="button" onclick="showMainTab('main')">＜戻る</button>
     <div class="app-page-heading"><h1 class="app-page-title" id="zukan-header-title">キャラ一覧</h1></div>
     <div id="zukan-header-back" class="app-page-action"></div>
   </header>
@@ -3624,7 +3757,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <div class="modal-overlay" id="limitbreak-modal">
   <div class="modal">
     <div class="modal-inner">
-      <h2>強化する</h2>
+      <h2>限界突破</h2>
       <p class="lb-modal-desc">強化には、強化用素材が必要です。<br>素材にしたアイテムは消去されます。</p>
       <div id="lb-material-list" class="lb-material-list"></div>
       <button class="btn-cancel-txt" onclick="closeLimitBreakModal()" style="margin-top:12px">キャンセル</button>
@@ -3639,7 +3772,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <h2>強化確認</h2>
       <p id="lb-confirm-text"></p>
       <div class="modal-btns">
-        <button class="btn-pay" id="lb-confirm-ok-btn">強化する</button>
+        <button class="btn-pay" id="lb-confirm-ok-btn">限界突破する</button>
         <button class="btn-cancel-txt" onclick="closeModal('limitbreak-confirm-modal')">キャンセル</button>
       </div>
     </div>
@@ -9964,7 +10097,6 @@ function renderTenConvertedFlowerCard(index, data){
   card.innerHTML =
     '<span class="ten-conversion-glow" aria-hidden="true"></span>' +
     '<img class="ten-card-img ten-card-item-img" src="' + flowerImg + '" alt="' + flowerName + '" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
-    '<div class="ten-card-item-badge">ITEM</div>' +
     '<div class="ten-card-bottom"><span class="ten-card-name">' + flowerName + '</span></div>';
 
   card.onclick = function(){
@@ -10897,7 +11029,11 @@ function finalGachaFlash(callback){
 
     var materialDetailModal = document.getElementById('detail-modal');
     if(materialDetailModal){
-      materialDetailModal.classList.toggle('is-gacha-material-result', !fromTenResult);
+      // build911:
+      // 単発・10連のどちらから開いても、ITEM詳細は完全に同じデザインを使用する。
+      // 10連側だけ素材詳細クラスを外していた旧処理を廃止。
+      materialDetailModal.classList.remove('is-gacha-result-detail');
+      materialDetailModal.classList.add('is-gacha-material-result');
     }
 
     currentResultData = data;
@@ -11448,7 +11584,7 @@ function revealTenCard(index){
       ? '<span class="ten-card-pickup-aura" aria-hidden="true"></span><span class="ten-card-pickup-glint" aria-hidden="true"></span>'
       : '') +
     '<img class="ten-card-img' + (isMaterial ? ' ten-card-item-img' : '') + '" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'images/unknown.webp\';">' +
-    (isMaterial ? '<div class="ten-card-item-badge">ITEM</div>' : getElementCornerIconHTML(displayData, 'ten-card-element-icon')) +
+    (isMaterial ? '' : getElementCornerIconHTML(displayData, 'ten-card-element-icon')) +
     '<div class="ten-card-top">' +
       '' +
     '</div>' +
@@ -12088,13 +12224,15 @@ function showTenResult(results){
       headerTitle.classList.remove('header-title-indented');
     }
 
-    // v2 foundation: 左上は常に同じ戻るスロットを使う。
-    // 詳細時だけ遷移先を図鑑トップへ差し替え、一覧時はHOMEへ戻す。
+    // build915: 巡行・設定と同じく、戻るボタン自体をheader直下に置く。
+    // 詳細時だけ遷移先を一覧へ切り替え、DOM構造・位置は一切変えない。
     if(detailBack){
-      detailBack.style.display = 'flex';
-      detailBack.innerHTML = isDetail
-        ? '<button class="app-page-back" type="button" onclick="closeZukanCharacterDetail()">＜戻る</button>'
-        : '<button class="app-page-back" type="button" onclick="showMainTab(\'main\')">＜戻る</button>';
+      detailBack.style.display = '';
+      detailBack.textContent = '＜戻る';
+      detailBack.setAttribute(
+        'onclick',
+        isDetail ? 'closeZukanCharacterDetail()' : "showMainTab('main')"
+      );
     }
 
     var nameSearch = document.getElementById('zukan-name-search');
@@ -16600,7 +16738,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=907-nina-output-max"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=922-pause-countdown"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>

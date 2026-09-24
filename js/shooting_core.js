@@ -13569,6 +13569,33 @@
     countdownMoveRafId = requestAnimationFrame(countdownMovementLoop);
   }
 
+  // build922: 開始カウントダウン専用のPAUSE対応タイマー。
+  // PAUSE中は残り時間を消費しないため、3・2・1・STARTの途中で
+  // メニューを開いてもカウントダウンが裏で進行しない。
+  function scheduleCountdownDelay(delayMs, callback) {
+    let remaining = Math.max(0, Number(delayMs || 0));
+    let lastTs = performance.now();
+
+    const tick = () => {
+      if (!state || state.ended || state.finishing || !state.countdown) return;
+
+      const now = performance.now();
+      if (!state.paused) {
+        remaining -= Math.max(0, now - lastTs);
+      }
+      lastTs = now;
+
+      if (remaining <= 0) {
+        callback();
+        return;
+      }
+
+      setTimeout(tick, Math.min(50, Math.max(16, remaining)));
+    };
+
+    setTimeout(tick, Math.min(50, Math.max(16, remaining)));
+  }
+
   function runStartCountdown() {
     // 中断復帰など、ボス登場演出を経由しない開始経路でもBGMを必ず同期。
     if (!shootingBattleBgmSessionActive) activateShootingBattleBgm(false);
@@ -13665,14 +13692,14 @@
       i += 1;
 
       if (i < sequence.length) {
-        setTimeout(showStep, step.hold);
+        scheduleCountdownDelay(step.hold, showStep);
         return;
       }
 
       // STARTはカウントダウン演出として完結させる。
       // START表示中はまだ敵弾・自動射撃・時間計測を開始せず、
       // 文字が消えた直後から実戦を開始する。
-      setTimeout(() => {
+      scheduleCountdownDelay(step.hold, () => {
         if (!state || state.ended || !state.countdown) return;
 
         countdown.classList.remove('show', 'ready-phase', 'number-phase', 'start-phase');
@@ -15484,11 +15511,10 @@
     menu.innerHTML = `
       <div class="shooting-pause-backdrop" aria-hidden="true"></div>
       <section class="shooting-pause-card" role="dialog" aria-modal="true" aria-labelledby="shooting-pause-title">
-        <div class="shooting-pause-kicker">PAUSE</div>
-        <h2 id="shooting-pause-title" aria-label="メニュー"><span class="sasaphia-menu-heading-icon" aria-hidden="true">☰</span></h2>
+        <div class="shooting-pause-kicker" id="shooting-pause-title">PAUSE</div>
         <div class="shooting-pause-divider"></div>
         <button type="button" class="shooting-pause-action shooting-pause-bgm-toggle" onclick="toggleShootingBattleBgm()" aria-pressed="true">
-          <span>BGM</span><strong id="shooting-pause-bgm-status">ON</strong>
+          <span>BGM　</span><strong id="shooting-pause-bgm-status">ON</strong>
         </button>
         <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
         <button type="button" class="shooting-pause-action" onclick="restartShootingStageFromPause()">最初からやり直す</button>
@@ -15538,6 +15564,8 @@
 
     state.paused = false;
     state.pauseStartedAt = 0;
+    const pauseRoot = document.getElementById(ROOT_ID);
+    if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
     prevTs = now;
     keys = Object.create(null);
     pointerActive = false;
@@ -15549,13 +15577,16 @@
   }
 
   window.openShootingPauseMenu = function () {
-    if (!state || state.ended || state.finishing || state.countdown) return;
+    // build922: 開始前カウントダウン中もMENUを有効化。
+    if (!state || state.ended || state.finishing) return;
 
     const menu = ensureShootingPauseMenu();
     if (!menu || state.paused) return;
 
     state.paused = true;
     state.pauseStartedAt = performance.now();
+    const pauseRoot = document.getElementById(ROOT_ID);
+    if (pauseRoot) pauseRoot.classList.add('is-shooting-paused');
     pointerActive = false;
     pointerIsTouch = false;
     nativeTouchPointerFallback = false;
@@ -15598,6 +15629,8 @@
       state.paused = false;
       state.pauseStartedAt = 0;
     }
+    const pauseRoot = document.getElementById(ROOT_ID);
+    if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
     window.closeShootingEvent();
   };
 
