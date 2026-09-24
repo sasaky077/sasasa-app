@@ -21479,7 +21479,9 @@
     'images/icatch_16.webp',
     'images/icatch_17.webp',
     'images/icatch_18.webp',
-    'images/icatch_19.webp'
+    'images/icatch_19.webp',
+    'images/icatch_20.webp',
+    'images/icatch_21.webp'
   ]);
   const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
   const SHOOTING_ICATCH_FADE_IN_MS = 1000;
