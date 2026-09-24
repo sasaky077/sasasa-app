@@ -4202,32 +4202,42 @@
     const bullets = (state && state.enemyBullets) || [];
 
     function drawCircleLayer(kind, color, scale) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      for (const p of bullets) {
-        if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
-        const radius = Number(p.canvasRadius || 5.5) * scale;
-        const x = Number(p.x || 0);
-        const y = Number(p.y || 0);
-        ctx.moveTo(x + radius, y);
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
+      // build930: Canvas弾もchapter固有色ではなく発射元属性色で描画する。
+      const role = scale >= 1.28 ? 'halo' : (scale >= .80 ? 'main' : 'core');
+      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
+        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[element];
+        ctx.fillStyle = palette[role];
+        ctx.beginPath();
+        for (const p of bullets) {
+          if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
+          if (getEnemyProjectileElement(p) !== element) continue;
+          const radius = Number(p.canvasRadius || 5.5) * scale;
+          const x = Number(p.x || 0);
+          const y = Number(p.y || 0);
+          ctx.moveTo(x + radius, y);
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+        }
+        ctx.fill();
       }
-      ctx.fill();
     }
 
     function drawRing(kind, color, scale, width) {
-      ctx.strokeStyle = color;
       ctx.lineWidth = width;
-      ctx.beginPath();
-      for (const p of bullets) {
-        if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
-        const radius = Number(p.canvasRadius || 5.5) * scale;
-        const x = Number(p.x || 0);
-        const y = Number(p.y || 0);
-        ctx.moveTo(x + radius, y);
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
+      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
+        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[element];
+        ctx.strokeStyle = palette.ring;
+        ctx.beginPath();
+        for (const p of bullets) {
+          if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
+          if (getEnemyProjectileElement(p) !== element) continue;
+          const radius = Number(p.canvasRadius || 5.5) * scale;
+          const x = Number(p.x || 0);
+          const y = Number(p.y || 0);
+          ctx.moveTo(x + radius, y);
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
     // CH01: 神聖 / 象牙 + 金。柔らかい外輪と白い芯。
@@ -4253,53 +4263,60 @@
     const ch04Bullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'ch04');
 
     function drawCh04MeteorFill(color, headScale, tailScale, widthScale, headOnly) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      for (const p of ch04Bullets) {
-        const x = Number(p.x || 0);
-        const y = Number(p.y || 0);
-        const base = Number(p.canvasRadius || 6.2);
-        const vx = Number(p.vx || 0);
-        const vy = Number(p.vy || (p.canvasCurtain ? 1 : 0));
-        const len = Math.hypot(vx, vy) || 1;
-        const ux = vx / len;
-        const uy = vy / len || 1;
-        const head = base * headScale;
+      const role = headOnly ? 'core' : (headScale >= 1 ? 'halo' : 'main');
+      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
+        ctx.fillStyle = ENEMY_PROJECTILE_ELEMENT_VISUAL[element][role];
+        ctx.beginPath();
+        for (const p of ch04Bullets) {
+          if (getEnemyProjectileElement(p) !== element) continue;
+          const x = Number(p.x || 0);
+          const y = Number(p.y || 0);
+          const base = Number(p.canvasRadius || 6.2);
+          const vx = Number(p.vx || 0);
+          const vy = Number(p.vy || (p.canvasCurtain ? 1 : 0));
+          const len = Math.hypot(vx, vy) || 1;
+          const ux = vx / len;
+          const uy = vy / len || 1;
+          const head = base * headScale;
 
-        if (!headOnly) {
-          const tail = base * (p.canvasCurtain ? tailScale * 1.25 : tailScale);
-          const halfW = base * (p.canvasCurtain ? widthScale * 0.88 : widthScale);
-          const bx = x - ux * head * 0.28;
-          const by = y - uy * head * 0.28;
-          const tx = x - ux * tail;
-          const ty = y - uy * tail;
-          const px = -uy * halfW;
-          const py = ux * halfW;
+          if (!headOnly) {
+            const tail = base * (p.canvasCurtain ? tailScale * 1.25 : tailScale);
+            const halfW = base * (p.canvasCurtain ? widthScale * 0.88 : widthScale);
+            const bx = x - ux * head * 0.28;
+            const by = y - uy * head * 0.28;
+            const tx = x - ux * tail;
+            const ty = y - uy * tail;
+            const px = -uy * halfW;
+            const py = ux * halfW;
 
-          ctx.moveTo(tx, ty);
-          ctx.lineTo(bx + px, by + py);
-          ctx.lineTo(bx - px, by - py);
-          ctx.closePath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(bx + px, by + py);
+            ctx.lineTo(bx - px, by - py);
+            ctx.closePath();
+          }
+
+          ctx.moveTo(x + head, y);
+          ctx.arc(x, y, head, 0, Math.PI * 2);
         }
-
-        ctx.moveTo(x + head, y);
-        ctx.arc(x, y, head, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.fill();
     }
 
     function drawCh04MeteorRing(color, headScale, width) {
-      ctx.strokeStyle = color;
       ctx.lineWidth = width;
-      ctx.beginPath();
-      for (const p of ch04Bullets) {
-        const x = Number(p.x || 0);
-        const y = Number(p.y || 0);
-        const r = Number(p.canvasRadius || 6.2) * headScale;
-        ctx.moveTo(x + r, y);
-        ctx.arc(x, y, r, 0, Math.PI * 2);
+      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
+        ctx.strokeStyle = ENEMY_PROJECTILE_ELEMENT_VISUAL[element].ring;
+        ctx.beginPath();
+        for (const p of ch04Bullets) {
+          if (getEnemyProjectileElement(p) !== element) continue;
+          const x = Number(p.x || 0);
+          const y = Number(p.y || 0);
+          const r = Number(p.canvasRadius || 6.2) * headScale;
+          ctx.moveTo(x + r, y);
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
     // 通常弾・カーテン弾の両方を黄色系の流星ドロップに統一。
@@ -4380,35 +4397,40 @@
     drawCircleLayer('danger', 'rgba(255,227,227,.99)', .32);
     drawRing('danger', 'rgba(255,123,123,.96)', 1.08, 1.2);
 
-    // RAID laser
+    // RAID laserもBOSS属性色へ追従。
     ctx.lineCap = 'round';
-    ctx.beginPath();
-    for (const p of bullets) {
-      if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
-      const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
-      const dx = Math.cos(angle) * 135;
-      const dy = Math.sin(angle) * 135;
-      const x = Number(p.x || 0), y = Number(p.y || 0);
-      ctx.moveTo(x - dx, y - dy);
-      ctx.lineTo(x + dx, y + dy);
-    }
-    ctx.strokeStyle = 'rgba(55,221,103,.45)';
-    ctx.lineWidth = 8;
-    ctx.stroke();
+    for (const element of ['neutral','fire','aqua','wood','light','dark']) {
+      const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[element];
+      ctx.beginPath();
+      for (const p of bullets) {
+        if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
+        if (getEnemyProjectileElement(p) !== element) continue;
+        const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
+        const dx = Math.cos(angle) * 135;
+        const dy = Math.sin(angle) * 135;
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        ctx.moveTo(x - dx, y - dy);
+        ctx.lineTo(x + dx, y + dy);
+      }
+      ctx.strokeStyle = palette.halo;
+      ctx.lineWidth = 8;
+      ctx.stroke();
 
-    ctx.beginPath();
-    for (const p of bullets) {
-      if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
-      const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
-      const dx = Math.cos(angle) * 135;
-      const dy = Math.sin(angle) * 135;
-      const x = Number(p.x || 0), y = Number(p.y || 0);
-      ctx.moveTo(x - dx, y - dy);
-      ctx.lineTo(x + dx, y + dy);
+      ctx.beginPath();
+      for (const p of bullets) {
+        if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
+        if (getEnemyProjectileElement(p) !== element) continue;
+        const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
+        const dx = Math.cos(angle) * 135;
+        const dy = Math.sin(angle) * 135;
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        ctx.moveTo(x - dx, y - dy);
+        ctx.lineTo(x + dx, y + dy);
+      }
+      ctx.strokeStyle = palette.core;
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(238,255,243,.98)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
     ctx.lineCap = 'butt';
   }
 
@@ -4494,6 +4516,9 @@
         canvasHalfHeight: isRaidLaser ? 2.5 : radius,
       };
       measureUnitSize(p);
+      if (classNameForGuard.includes('shooting-enemy-bullet')) {
+        applyEnemyProjectileElementVisual(p, getEnemyProjectileElement(p));
+      }
       return p;
     }
 
@@ -4501,6 +4526,9 @@
     el.className = cls;
     arena.appendChild(el);
     const p = { el, x, y, vx, vy, damage: damage || 1, ownerId: ownerId || null };
+    if (classNameForGuard.includes('shooting-enemy-bullet')) {
+      applyEnemyProjectileElementVisual(p, getEnemyProjectileElement(p));
+    }
     positionUnit(el, x, y);
     measureUnitSize(p);
     return p;
@@ -4662,6 +4690,83 @@
   function getCombatElementIcon(element) {
     const key = normalizeCombatElement(element);
     return COMBAT_ELEMENT_ICON_IMAGE[key] || '';
+  }
+
+  // build930: 敵弾は発射元の属性色へ統一。
+  // 通常敵 / BOSS / SCORE ATTACK / RAID / SPECIAL / WARNING を含め、
+  // 弾の形状や挙動は変えず、色だけを属性に追従させる。
+  const ENEMY_PROJECTILE_ELEMENT_VISUAL = Object.freeze({
+    neutral: { main:'#b9b3aa', core:'#fffaf0', halo:'rgba(185,179,170,.28)', ring:'rgba(245,239,226,.92)', shadow:'rgba(150,142,132,.58)' },
+    fire:    { main:'#e85846', core:'#ffe5b5', halo:'rgba(232,88,70,.30)',  ring:'rgba(255,178,116,.96)', shadow:'rgba(199,48,39,.72)' },
+    aqua:    { main:'#43aee8', core:'#e7f8ff', halo:'rgba(67,174,232,.30)', ring:'rgba(139,218,255,.96)', shadow:'rgba(38,139,204,.72)' },
+    wood:    { main:'#62b85e', core:'#efffd9', halo:'rgba(98,184,94,.30)',  ring:'rgba(166,224,128,.96)', shadow:'rgba(57,135,57,.72)' },
+    light:   { main:'#e7c64e', core:'#fff8d9', halo:'rgba(231,198,78,.30)', ring:'rgba(255,229,139,.98)', shadow:'rgba(188,149,35,.72)' },
+    dark:    { main:'#8054ae', core:'#f0dcff', halo:'rgba(128,84,174,.30)', ring:'rgba(185,139,223,.96)', shadow:'rgba(86,48,128,.76)' },
+  });
+
+  function getEnemyProjectileElement(projectile, fallbackElement) {
+    const direct = normalizeCombatElement(projectile && (projectile.attackElement || projectile.element));
+    if (direct) return direct;
+    return normalizeCombatElement(
+      fallbackElement ||
+      state?.boss?.element ||
+      BOSS?.element ||
+      selectedStage?.enemyElement ||
+      selectedStage?.element
+    ) || 'neutral';
+  }
+
+  function getEnemyProjectilePalette(projectile, fallbackElement) {
+    const element = getEnemyProjectileElement(projectile, fallbackElement);
+    return ENEMY_PROJECTILE_ELEMENT_VISUAL[element] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+  }
+
+  function applyEnemyProjectileElementVisual(projectile, element) {
+    if (!projectile) return projectile;
+    const key = normalizeCombatElement(element) || getEnemyProjectileElement(projectile) || 'neutral';
+    projectile.attackElement = key;
+    projectile.element = key;
+    const el = projectile.el;
+    if (el && el.classList) {
+      ['neutral','fire','aqua','wood','light','dark'].forEach(k => el.classList.remove('shooting-enemy-element-' + k));
+      el.classList.add('shooting-enemy-element-' + key);
+      if (el.dataset) el.dataset.enemyElement = key;
+      const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+      if (el.style && palette) {
+        el.style.setProperty('--enemy-bullet-main', palette.main);
+        el.style.setProperty('--enemy-bullet-core', palette.core);
+        el.style.setProperty('--enemy-bullet-ring', palette.ring);
+        el.style.setProperty('--enemy-bullet-shadow', palette.shadow);
+        el.style.setProperty('--enemy-bullet-halo', palette.halo);
+      }
+    }
+    return projectile;
+  }
+
+  if (!document.getElementById('shooting-enemy-element-bullet-style-build930')) {
+    const enemyElementBulletStyle = document.createElement('style');
+    enemyElementBulletStyle.id = 'shooting-enemy-element-bullet-style-build930';
+    enemyElementBulletStyle.textContent = `
+      .shooting-enemy-bullet[data-enemy-element]{
+        border-color:var(--enemy-bullet-ring,rgba(255,255,255,.9))!important;
+        box-shadow:0 0 5px var(--enemy-bullet-shadow,rgba(255,255,255,.45)),0 0 10px var(--enemy-bullet-halo,rgba(255,255,255,.22))!important;
+      }
+      .shooting-enemy-bullet[data-enemy-element]:not(.shooting-raid-green-laser){
+        background:radial-gradient(circle at 50% 50%,var(--enemy-bullet-core) 0 24%,var(--enemy-bullet-main) 42% 70%,var(--enemy-bullet-ring) 76%,transparent 79%)!important;
+      }
+      .shooting-enemy-bullet.shooting-generic-zako-laser[data-enemy-element],
+      .shooting-enemy-bullet.shooting-raid-green-laser[data-enemy-element]{
+        background:linear-gradient(90deg,transparent 0%,var(--enemy-bullet-main) 22%,var(--enemy-bullet-core) 50%,var(--enemy-bullet-main) 78%,transparent 100%)!important;
+        box-shadow:0 0 7px var(--enemy-bullet-shadow),0 0 14px var(--enemy-bullet-halo)!important;
+      }
+      .shooting-enemy-bullet[data-enemy-element=neutral]{--enemy-bullet-main:#b9b3aa;--enemy-bullet-core:#fffaf0;--enemy-bullet-ring:#e7dfd1;--enemy-bullet-shadow:rgba(150,142,132,.62);--enemy-bullet-halo:rgba(185,179,170,.30)}
+      .shooting-enemy-bullet[data-enemy-element=fire]{--enemy-bullet-main:#e85846;--enemy-bullet-core:#ffe5b5;--enemy-bullet-ring:#ffb274;--enemy-bullet-shadow:rgba(199,48,39,.74);--enemy-bullet-halo:rgba(232,88,70,.32)}
+      .shooting-enemy-bullet[data-enemy-element=aqua]{--enemy-bullet-main:#43aee8;--enemy-bullet-core:#e7f8ff;--enemy-bullet-ring:#8bdaff;--enemy-bullet-shadow:rgba(38,139,204,.74);--enemy-bullet-halo:rgba(67,174,232,.32)}
+      .shooting-enemy-bullet[data-enemy-element=wood]{--enemy-bullet-main:#62b85e;--enemy-bullet-core:#efffd9;--enemy-bullet-ring:#a6e080;--enemy-bullet-shadow:rgba(57,135,57,.74);--enemy-bullet-halo:rgba(98,184,94,.32)}
+      .shooting-enemy-bullet[data-enemy-element=light]{--enemy-bullet-main:#e7c64e;--enemy-bullet-core:#fff8d9;--enemy-bullet-ring:#ffe58b;--enemy-bullet-shadow:rgba(188,149,35,.74);--enemy-bullet-halo:rgba(231,198,78,.32)}
+      .shooting-enemy-bullet[data-enemy-element=dark]{--enemy-bullet-main:#8054ae;--enemy-bullet-core:#f0dcff;--enemy-bullet-ring:#b98bdf;--enemy-bullet-shadow:rgba(86,48,128,.78);--enemy-bullet-halo:rgba(128,84,174,.32)}
+    `;
+    document.head.appendChild(enemyElementBulletStyle);
   }
 
   function setEnemyHpElementIcon(holder, element, className) {
@@ -7730,6 +7835,7 @@
     );
     if (projectile) {
       projectile.attackElement = getCombatTargetElement(enemy, enemy && enemy.def && enemy.def.element);
+      applyEnemyProjectileElementVisual(projectile, projectile.attackElement);
       state.enemyBullets.push(projectile);
     }
     return projectile;
@@ -8047,6 +8153,7 @@
       if (p) {
         p.genericZakoLaser = true;
         p.attackElement = element;
+        applyEnemyProjectileElementVisual(p, element);
         p._hw = 5;
         p._hh = 46;
         state.enemyBullets.push(p);

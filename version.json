@@ -1,7 +1,7 @@
 {
-  "build": 929,
-  "published_at": "2026-09-24T23:33:00+09:00",
-  "label": "ange_healing_ult_hearts",
+  "build": 930,
+  "published_at": "2026-09-25T00:10:00+09:00",
+  "label": "enemy_projectiles_match_enemy_element_color",
   "release_protocol": 2,
   "commit_marker": true
 }
