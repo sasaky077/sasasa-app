@@ -48,6 +48,7 @@
     NINA: 36,
     TOYFEL: 37,
     PAINTER: 38,
+    REMNACROSS: 39,
   });
 
   // ============================================================
@@ -100,6 +101,7 @@
     36: 'sr',  // ニーナ
     37: 'r',   // トイフェル
     38: 'r',   // クロエ
+    39: 'r',   // レムナクロス
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -967,6 +969,28 @@
     "portraitImage": "images/chara_38.webp",
     "homeImage": "images/chara_38_cut.webp",
     "upImage": "images/chara_38_up.webp",
+    "homeScale": 0.86,
+    "homeOffsetX": 0,
+    "homeOffsetY": -18,
+    "hidden": false
+  },
+  "39": {
+    "id": 39,
+    "name": "レムナクロス",
+    "element": "neutral",
+    "hp": 590,
+    "atk": 270,
+    "image": "images/chara_39_battle_back.webp",
+    "panelImage": "images/chara_39_panel.webp",
+    "cutinImage": "images/chara_39_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_39.webp",
+    "homeImage": "images/chara_39_cut.webp",
+    "upImage": "images/chara_39_up.webp",
     "homeScale": 0.86,
     "homeOffsetX": 0,
     "homeOffsetY": -18,
@@ -2162,6 +2186,45 @@
     paintUltBaseSpeed: 660,
     paintUltSpeedMultiplier: 0.35,
   });
+
+  // ============================================================
+  // build935: ID39 レムナクロス / NEUTRAL / TRAP
+  // 2秒ごとに中距離へ地雷を投擲。設置後3秒、または敵接触で爆発する。
+  // 設置前の直撃は爆発せず、爆発基準ダメージの50%のみ。
+  // ULTはSIGMA-IX「ブラックシップ」と同じ5秒レーザー処理を共用。
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.REMNACROSS] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.REMNACROSS,
+    effectKey: 'remnacross',
+    label: 'TRAP / PHOTON BUSTER 202',
+    description: '無属性の罠師。2秒ごとに中距離へ地雷を投げ、設置から3秒後または敵接触で範囲爆発させる。設置前に敵へ直撃した場合は爆発せず、爆発ダメージの50%だけを与える。ULTは5秒間の無属性極太レーザー。',
+    ultName: '対神性滅焼破壊砲――フォトンバスター202',
+    ultDescription: 'SIGMA-IX「ブラックシップ」と同じ方式で、正面へ極太レーザーを5秒間連続照射する。攻撃属性は無属性。0.25秒ごとにATK×35%のダメージ判定が発生する。',
+    shotType: 'trap',
+    mainShot: { type: 'trap' },
+    shotCount: 1,
+    fireRate: 2000,
+    bulletSpeed: 460,
+    shotPowerRate: 0.90,
+    shotOffsetY: 38,
+    trapThrowDistance: 220,
+    trapMaxFlightMs: 620,
+    trapCountdownMs: 3000,
+    trapExplosionRadius: 88,
+    trapPreDeployDamageRate: 0.50,
+    burstNeed: 32,
+    ultGainPerHit: 2.0,
+    ultBaseType: 'beam',
+    ultAddons: ['damage'],
+    ultType: 'testchan_black_ship',
+    ultElement: 'neutral',
+    ultBeamDurationMs: 5000,
+    ultBeamTickMs: 250,
+    ultBeamTickAtkMultiplier: 0.35,
+    ultBeamWidth: 62,
+  });
+
 
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,

@@ -6106,6 +6106,168 @@
     return extraHits;
   }
 
+  // ============================================================
+  // build935: レムナクロス TRAP
+  // flying -> armed(countdown) -> explosion の3状態。
+  // 設置前接触は爆発せず50%単体ダメージ、設置後は接触/3秒で範囲爆発。
+  // ============================================================
+  function ensureRemnaTrapVisualStyles() {
+    const styleId = 'shooting-remna-trap-style-build935';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .shooting-remna-trap{
+        width:22px!important;height:22px!important;border-radius:50%!important;
+        border:1px solid rgba(255,255,255,.82)!important;
+        background:
+          radial-gradient(circle at 38% 32%,#fff 0 8%,#d8d8dc 10% 19%,#686a72 22% 48%,#24252b 54% 74%,#0b0b0e 80% 100%)!important;
+        box-shadow:0 0 0 2px rgba(255,255,255,.10),0 0 10px rgba(230,230,238,.24)!important;
+        overflow:visible!important;
+      }
+      .shooting-remna-trap::before{
+        content:''!important;display:block!important;position:absolute!important;
+        left:50%!important;top:50%!important;width:30px!important;height:10px!important;
+        transform:translate(-50%,-50%) rotate(0deg)!important;
+        border-left:5px solid rgba(45,46,52,.92)!important;
+        border-right:5px solid rgba(45,46,52,.92)!important;
+        border-radius:50%!important;background:transparent!important;
+        box-shadow:none!important;pointer-events:none!important;
+      }
+      .shooting-remna-trap.trap-armed{
+        border-color:rgba(255,220,135,.92)!important;
+        box-shadow:0 0 0 2px rgba(255,193,73,.13),0 0 12px rgba(255,170,52,.44)!important;
+        animation:shootingRemnaTrapArmed935 .55s ease-in-out infinite alternate!important;
+      }
+      .shooting-remna-trap.trap-armed::after{
+        content:attr(data-trap-count)!important;display:flex!important;align-items:center!important;justify-content:center!important;
+        position:absolute!important;left:50%!important;top:-17px!important;width:20px!important;height:14px!important;
+        transform:translateX(-50%)!important;background:rgba(20,18,18,.76)!important;
+        border:1px solid rgba(255,205,112,.42)!important;border-radius:3px!important;
+        color:#fff4cf!important;font:700 9px/1 "Cinzel",sans-serif!important;
+        text-shadow:0 0 5px rgba(255,184,69,.72)!important;box-shadow:none!important;
+        pointer-events:none!important;
+      }
+      .shooting-remna-trap.trap-flying::after{content:none!important;display:none!important}
+      @keyframes shootingRemnaTrapArmed935{from{filter:brightness(.88)}to{filter:brightness(1.18)}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getRemnaTrapTargetAtRect(r, arenaRect, bossRect, padding = 8) {
+    if (!state) return null;
+    const normal = (state.normalEnemies || []).find(enemy =>
+      enemy && enemy.el && enemy.hp > 0 && rectsHit(r, getUnitRect(enemy, arenaRect), 0, padding)
+    );
+    if (normal) return { kind:'normal', ref:normal };
+
+    const faceless = (state.facelessObjects || []).find(obj =>
+      obj && obj.el && obj.hp > 0 && rectsHit(r, getUnitRect(obj, arenaRect), 0, padding)
+    );
+    if (faceless) return { kind:'faceless', ref:faceless };
+
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0 && bossRect && rectsHit(r, bossRect, 0, padding + 10)) {
+      return { kind:'boss', ref:state.boss };
+    }
+    return null;
+  }
+
+  function applyRemnaTrapDamageToTarget(target, rawDamage, attackElement, now) {
+    if (!target || !target.ref || rawDamage <= 0) return 0;
+    const targetElement = getCombatTargetElement(target.ref, state?.boss?.element);
+    const finalDamage = applyElementDamage(rawDamage, attackElement, targetElement);
+    if (target.kind === 'normal') {
+      return Math.max(0, Number(damageNormalEnemy(target.ref, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement)) || 0));
+    }
+    if (target.kind === 'faceless') {
+      return Math.max(0, Number(damageFacelessObject(target.ref, finalDamage, now, getElementDamageReaction(attackElement, targetElement)) || 0));
+    }
+    if (target.kind === 'boss') {
+      const applied = Math.min(Number(state.boss.hp || 0), Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, Number(state.boss.hp || 0) - applied);
+      updateBossPhase();
+      if (applied > 0) {
+        if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(120);
+        if (shouldRenderRaidBossHitVisual(now, 'hit')) {
+          createHit(Number(state.boss.x || 0), Number(state.boss.y || 0), false);
+          flashBossHit(false, true);
+        }
+        if (shouldRenderRaidBossHitVisual(now, 'number')) {
+          showBossDamageNumber(applied, false, getElementDamageReaction(attackElement, targetElement));
+        }
+        if (state.boss.hp <= 0) beginBossDefeat();
+      }
+      return applied;
+    }
+    return 0;
+  }
+
+  function creditRemnaTrapHits(p, hitCount, now) {
+    if (!p || hitCount <= 0) return;
+    const ownerId = p.ownerId || state.activeCharacterId;
+    const chara = getBattleCharacter(ownerId) || getCurrentCharacter();
+    state.shotsHit = Number(state.shotsHit || 0) + hitCount;
+    for (let i = 0; i < hitCount; i++) registerComboHit(ownerId, now);
+    grantUltGaugeForHits(chara, hitCount, ownerId);
+  }
+
+  function explodeRemnaTrap(p, now) {
+    if (!state || !p || p.trapExploded) return 0;
+    p.trapExploded = true;
+    const x = Number(p.x || 0);
+    const y = Number(p.y || 0);
+    const radius = Math.max(36, Number(p.trapExplosionRadius || 88));
+    const damage = Math.max(0, Number(p.trapExplosionDamage || p.damage || 0));
+    const attackElement = normalizeCombatElement(p.attackElement || p.element) || 'neutral';
+    createGenericBombExplosionEffect(x, y, attackElement, radius, 'M');
+
+    let hits = 0;
+    (state.normalEnemies || []).slice().forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      if (Math.hypot(Number(enemy.x || 0) - x, Number(enemy.y || 0) - y) > radius) return;
+      if (applyRemnaTrapDamageToTarget({kind:'normal',ref:enemy}, damage, attackElement, now) > 0) hits++;
+    });
+    (state.facelessObjects || []).slice().forEach(obj => {
+      if (!obj || !obj.el || obj.hp <= 0) return;
+      if (Math.hypot(Number(obj.x || 0) - x, Number(obj.y || 0) - y) > radius) return;
+      if (applyRemnaTrapDamageToTarget({kind:'faceless',ref:obj}, damage, attackElement, now) > 0) hits++;
+    });
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      if (Math.hypot(Number(state.boss.x || 0) - x, Number(state.boss.y || 0) - y) <= radius) {
+        if (applyRemnaTrapDamageToTarget({kind:'boss',ref:state.boss}, damage, attackElement, now) > 0) hits++;
+      }
+    }
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    creditRemnaTrapHits(p, hits, now);
+    if (isNormalBattle()) evaluateNormalMission(now);
+    renderHud();
+    return hits;
+  }
+
+  function updateRemnaTrapProjectile(p, dt, now) {
+    if (!p || !p.el) return;
+    if (p.trapState === 'armed') {
+      p.vx = 0; p.vy = 0;
+      const leftMs = Math.max(0, Number(p.trapExplodeAt || now) - now);
+      p.el.dataset.trapCount = String(Math.max(1, Math.ceil(leftMs / 1000)));
+      return;
+    }
+    p.x += Number(p.vx || 0) * dt;
+    p.y += Number(p.vy || 0) * dt;
+    const reachedDistance = Number(p.y || 0) <= Number(p.trapTargetY || -Infinity);
+    const timedOut = now >= Number(p.trapDeployAt || Infinity);
+    if (reachedDistance || timedOut) {
+      p.trapState = 'armed';
+      p.x = Number(p.x || 0);
+      p.y = Math.max(28, Number(p.y || 0));
+      p.vx = 0; p.vy = 0;
+      p.trapExplodeAt = now + Math.max(500, Number(p.trapCountdownMs || 3000));
+      p.el.classList.remove('trap-flying');
+      p.el.classList.add('trap-armed');
+      p.el.dataset.trapCount = '3';
+    }
+  }
+
   function applyUltElementVisualContext(c) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return getUltAttackElement(c);
@@ -7404,6 +7566,41 @@
       return;
     }
 
+
+    // ----------------------------------------------------------
+    // レムナクロス：TRAP
+    // 中距離へ投擲 -> 静止して3秒カウント -> 時限/接触で範囲爆発。
+    // ----------------------------------------------------------
+    if (c.shotType === 'trap') {
+      ensureBombVisualStyles();
+      ensureRemnaTrapVisualStyles();
+      const attackElement = normalizeCombatElement(c.element) || 'neutral';
+      const p = makeProjectile(
+        bulletClass + ' shooting-remna-trap trap-flying',
+        state.player.x,
+        y,
+        0,
+        -Math.max(120, Number(c.bulletSpeed || 460)),
+        effectivePower,
+        c.id
+      );
+      if (p) {
+        const distance = Math.max(80, Number(c.trapThrowDistance || 220));
+        p.kind = 'remna_trap';
+        p.trapState = 'flying';
+        p.trapTargetY = Math.max(44, Number(y || 0) - distance);
+        p.trapDeployAt = now + Math.max(220, Number(c.trapMaxFlightMs || 620));
+        p.trapCountdownMs = Math.max(500, Number(c.trapCountdownMs || 3000));
+        p.trapExplosionRadius = Math.max(36, Number(c.trapExplosionRadius || 88));
+        p.trapExplosionDamage = effectivePower;
+        p.trapPreDeployDamageRate = Math.max(0, Number(c.trapPreDeployDamageRate ?? 0.50));
+        p.attackElement = attackElement;
+        p._hw = 11;
+        p._hh = 11;
+        state.bullets.push(p);
+      }
+      return;
+    }
 
     // ----------------------------------------------------------
     // build869 BOMB：着弾点を中心に範囲爆発する独立ショット。
@@ -9082,47 +9279,78 @@
     // 理想郷：ノア専用。
     // 高負荷な同心円乱射ではなく、少ない発数で密度感が出る二重らせんへ変更する。
     if (isNoahStage()) {
-      const interval = phase === 1 ? 280 : (phase === 2 ? 220 : 170);
+      const interval = phase === 1 ? 260 : (phase === 2 ? 205 : 160);
       if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
       state.lastBossShotAt = now;
 
       const step = Number(state.noahSpiralStep || 0);
-      const baseSpin = step * (phase === 1 ? 0.29 : (phase === 2 ? 0.34 : 0.40));
-      const armCount = phase === 1 ? 2 : (phase === 2 ? 4 : 6);
+      const baseSpin = step * (phase === 1 ? 0.28 : (phase === 2 ? 0.335 : 0.39));
+      const armCount = phase === 1 ? 2 : (phase === 2 ? 3 : 4);
       const pairStep = (Math.PI * 2) / armCount;
-      const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 1.00 : 1.08);
-      const twist = phase === 1 ? 0.0 : (phase === 2 ? 0.10 : 0.16);
+      const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 0.99 : 1.05);
+      const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.90 : 0.96);
+      const twist = phase === 1 ? 0.04 : (phase === 2 ? 0.08 : 0.11);
+      const laneGap = phase === 1 ? 0.09 : (phase === 2 ? 0.11 : 0.13);
 
+      // 左右対称の二重らせん。1本増やすのではなく、各アームに伴走レーンを付けて密度感を上げる。
       for (let i = 0; i < armCount; i++) {
-        const a = baseSpin + pairStep * i + (i % 2 === 0 ? twist : -twist);
-        const p = makeProjectile(
-          'shooting-enemy-bullet',
-          originX, originY,
-          Math.cos(a) * speed * speedMul,
-          Math.sin(a) * speed * speedMul,
-          damage
-        );
-        if (p) {
-          p.canvasRadius = phase === 3 ? 6.4 : 5.9;
-          state.enemyBullets.push(p);
+        const base = baseSpin + pairStep * i;
+        const sign = (i % 2 === 0) ? 1 : -1;
+        const angles = [base + sign * twist, base - sign * laneGap];
+        const speedMuls = [speedMul, secondarySpeedMul];
+        angles.forEach((a, idx) => {
+          const p = makeProjectile(
+            'shooting-enemy-bullet',
+            originX, originY,
+            Math.cos(a) * speed * speedMuls[idx],
+            Math.sin(a) * speed * speedMuls[idx],
+            damage
+          );
+          if (p) {
+            p.canvasRadius = phase === 3 ? (idx === 0 ? 6.4 : 6.0) : (idx === 0 ? 5.9 : 5.5);
+            state.enemyBullets.push(p);
+          }
+        });
+      }
+
+      state.noahSpiralStep = step + 1;
+
+      // 数ボレーごとに、外周へ広がるリングを薄く重ねて「同心円＋渦」の見た目を足す。
+      const haloEvery = phase === 1 ? 5 : (phase === 2 ? 4 : 3);
+      if ((state.noahSpiralStep % haloEvery) === 0) {
+        const haloCount = phase === 1 ? 6 : (phase === 2 ? 8 : 10);
+        const haloSpeed = phase === 1 ? 0.74 : (phase === 2 ? 0.80 : 0.86);
+        const haloSpin = baseSpin * 0.45 + Math.PI / haloCount;
+        for (let i = 0; i < haloCount; i++) {
+          const a = haloSpin + (Math.PI * 2 * i / haloCount);
+          const p = makeProjectile(
+            'shooting-enemy-bullet',
+            originX, originY,
+            Math.cos(a) * speed * haloSpeed,
+            Math.sin(a) * speed * haloSpeed,
+            damage
+          );
+          if (p) {
+            p.canvasRadius = phase === 3 ? 5.8 : 5.2;
+            state.enemyBullets.push(p);
+          }
         }
       }
 
-      // 数ボレーごとに、渦の中心から少量の追尾弾を添えて回避方向をずらす。
-      state.noahSpiralStep = step + 1;
+      // 追尾弾も対称配置にして、回避方向を軽く制限するだけに留める。
       const extraEvery = phase === 1 ? 4 : 3;
       if ((state.noahSpiralStep % extraEvery) === 0) {
         const dx = state.player.x - state.boss.x;
         const dy = state.player.y - state.boss.y;
         const aim = Math.atan2(dy, dx);
-        const offsets = phase === 3 ? [-0.18, 0.18] : [0];
+        const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.18, 0.18] : [-0.26, 0, 0.26]);
         offsets.forEach(offset => {
           const a = aim + offset;
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
-            Math.cos(a) * speed * 0.92,
-            Math.sin(a) * speed * 0.92,
+            Math.cos(a) * speed * 0.90,
+            Math.sin(a) * speed * 0.90,
             damage
           );
           if (p) {
@@ -10284,6 +10512,11 @@
       return Math.max(1000, every - Number(cfg?.warningTelegraphMs || 700));
     }
     if (isChapter04BossStage()) return Math.max(1000, Number(selectedStage?.dangerEveryMs || 10000) - 700); // WARNING表示0.7秒を含め弾発射は10秒周期
+    if (isNoahStage()) {
+      if (phase >= 3) return 5600;
+      if (phase === 2) return 6900;
+      return 8200;
+    }
 
     // CHAPTER01-04 オーバーシアだけはWAVE2/3の危険攻撃頻度も
     // 通常弾と同じく1段階ずつ弱体化する。
@@ -10355,6 +10588,30 @@
           projectile.sakielWarningPhase = idx === 0 ? 0 : Math.PI;
           projectile.sakielWarningTurnAmp = 0.34;
           projectile.sakielWarningExpireAt = now + 5000;
+          state.enemyBullets.push(projectile);
+        });
+      } else if (isNoahStage()) {
+        // ノア: WARNINGも左右対称を基本にする。少しだけ本数を増やし、曲線的に漂わせる。
+        const noahPhase = Math.max(1, Number(state.boss.phase || 1));
+        const warningSpeed = Math.max(150, Number(BOSS.bulletSpeed || 230) * (noahPhase >= 3 ? 0.64 : 0.58));
+        const offsets = noahPhase >= 3 ? [-0.54, 0, 0.54] : [-0.36, 0.36];
+        offsets.forEach((offset, index) => {
+          const heading = angle + offset;
+          const projectile = makeProjectile(
+            'shooting-enemy-bullet shooting-danger-bullet shooting-noah-warning-drift',
+            state.boss.x, state.boss.y + 38,
+            Math.cos(heading) * warningSpeed,
+            Math.sin(heading) * warningSpeed,
+            999999
+          );
+          if (!projectile) return;
+          projectile.dangerDrift = true;
+          projectile.dangerExpireAt = now + (noahPhase >= 3 ? 6200 : 5600);
+          projectile.dangerDriftSpeed = warningSpeed;
+          projectile.dangerDriftHeading = heading;
+          projectile.dangerDriftPhase = offsets.length === 3 ? (index - 1) * 1.45 : (index === 0 ? 0 : Math.PI);
+          projectile.dangerDriftAge = 0;
+          projectile.dangerDriftTurnRate = noahPhase >= 3 ? 0.84 : 0.72;
           state.enemyBullets.push(projectile);
         });
       } else if (selectedStageId === SHOOTING_STAGE_ID.CH02_04) {
@@ -11218,7 +11475,9 @@
       if (!p || !p.el) return false;
       const projectilePrevX = Number(p.x || 0);
       const projectilePrevY = Number(p.y || 0);
-      if (p.kind === 'arno_orbit_forward') {
+      if (p.kind === 'remna_trap') {
+        updateRemnaTrapProjectile(p, dt, now);
+      } else if (p.kind === 'arno_orbit_forward') {
         updateArnoOrbitProjectile(p, dt);
       } else if (p.kind === 'wolf_j_homing') {
         updateWolfJHomingProjectile(p, dt, now);
@@ -11334,6 +11593,34 @@
           }
           p.el.remove();
           return false;
+        }
+      }
+
+      // レムナクロスTRAPは通常Projectileの命中処理へ流さず専用処理する。
+      if (p.kind === 'remna_trap') {
+        const contact = getRemnaTrapTargetAtRect(r, arenaRect, bossRect, p.trapState === 'armed' ? 12 : 6);
+        if (p.trapState === 'flying') {
+          if (contact) {
+            // 設置前直撃：爆発なし。爆発基準の50%だけ単体へ与える。
+            const chara = getBattleCharacter(p.ownerId || state.activeCharacterId) || getCurrentCharacter();
+            const attackElement = normalizeCombatElement(p.attackElement || chara?.element) || 'neutral';
+            const directDamage = Math.max(0, Number(p.trapExplosionDamage || p.damage || 0)) * Math.max(0, Number(p.trapPreDeployDamageRate ?? 0.50));
+            const applied = applyRemnaTrapDamageToTarget(contact, directDamage, attackElement, now);
+            if (applied > 0) creditRemnaTrapHits(p, 1, now);
+            p.el.remove();
+            renderHud();
+            return false;
+          }
+          return true;
+        }
+
+        if (p.trapState === 'armed') {
+          if (contact || now >= Number(p.trapExplodeAt || Infinity)) {
+            explodeRemnaTrap(p, now);
+            p.el.remove();
+            return false;
+          }
+          return true;
         }
       }
 
