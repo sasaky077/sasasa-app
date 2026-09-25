@@ -9450,11 +9450,13 @@
       const outerTable = [0.56, 0.64, 0.72, 0.64];
       const outer = outerTable[pattern];
 
+      // 中央レーンを常時塞ぐため、全WAVEで必ず offset=0 を含める。
+      // 左右対称は維持し、中央弾は1発だけにして負荷増を最小限にする。
       const normalOffsets = phase === 1
-        ? [-inner, inner]
+        ? [-inner, 0, inner]
         : (phase === 2
           ? [-inner, 0, inner]
-          : [-outer, -inner, inner, outer]);
+          : [-outer, -inner, 0, inner, outer]);
 
       for (let i = 0; i < normalOffsets.length; i++) {
         const a = centerAxis + normalOffsets[i];
@@ -9476,7 +9478,9 @@
         const laneShift = phase === 1 ? 0.10 : (phase === 2 ? 0.09 : 0.08);
         for (let i = 0; i < normalOffsets.length; i++) {
           const offset = normalOffsets[i];
-          const shifted = offset === 0 ? 0 : offset + (offset < 0 ? -laneShift : laneShift);
+          // 中央は通常弾ですでに常時流しているので、伴走レーンでは重複生成しない。
+          if (offset === 0) continue;
+          const shifted = offset + (offset < 0 ? -laneShift : laneShift);
           const a = centerAxis + shifted;
           const p = makeProjectile(
             'shooting-enemy-bullet',
