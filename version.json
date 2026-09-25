@@ -1,7 +1,7 @@
 {
-  "build": 950,
-  "published_at": "2026-09-26T00:18:00+09:00",
-  "label": "noah_puzzle_3x3_guide_overlay",
+  "build": 952,
+  "published_at": "2026-09-26T00:31:00+09:00",
+  "label": "noah_puzzle_panel_gap_visible",
   "release_protocol": 2,
   "commit_marker": true
 }
