@@ -10424,3 +10424,88 @@ html body:not(.ui-immersive) :is(
     opacity:.8;
   }
 }
+
+
+/* ============================================================
+   build933 — DANGER / WARNING BULLET final override
+   即死WARNING弾は属性色より常に優先し、赤紫の禍々しい見た目に固定する。
+   CH04 / SCORE ATTACK / stage固有軽量化ルールの後段で最終上書き。
+   ============================================================ */
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet,
+#shooting-event-root .shooting-danger-bullet,
+#shooting-event-root .shooting-score-attack-warning-bullet,
+#shooting-event-root .shooting-sakiel-warning-bullet{
+  width:34px !important;
+  height:34px !important;
+  display:block !important;
+  opacity:1 !important;
+  z-index:18 !important;
+  border-radius:50% !important;
+  border:2px solid rgba(255,233,246,.90) !important;
+  clip-path:none !important;
+  background:
+    radial-gradient(circle at 34% 32%, rgba(255,244,251,.98) 0 7%, rgba(255,166,213,.98) 10% 18%, rgba(255,68,146,.98) 22% 34%, rgba(182,26,115,.98) 39% 52%, rgba(95,16,96,.98) 58% 72%, rgba(28,0,40,.92) 78% 100%) !important;
+  background-color:#8a145f !important;
+  background-image:
+    radial-gradient(circle at 34% 32%, rgba(255,244,251,.98) 0 7%, rgba(255,166,213,.98) 10% 18%, rgba(255,68,146,.98) 22% 34%, rgba(182,26,115,.98) 39% 52%, rgba(95,16,96,.98) 58% 72%, rgba(28,0,40,.92) 78% 100%) !important;
+  box-shadow:
+    0 0 0 3px rgba(106,12,79,.22),
+    0 0 14px rgba(255,61,136,.78),
+    0 0 28px rgba(164,22,124,.70),
+    0 0 44px rgba(83,0,74,.62) !important;
+  filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  animation:shootingDangerBulletPulse933 .34s ease-in-out infinite alternate !important;
+}
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet::before,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet::before,
+#shooting-event-root .shooting-danger-bullet::before,
+#shooting-event-root .shooting-score-attack-warning-bullet::before,
+#shooting-event-root .shooting-sakiel-warning-bullet::before{
+  content:'' !important;
+  display:block !important;
+  position:absolute !important;
+  inset:-10px !important;
+  border-radius:50% !important;
+  border:1.5px solid rgba(255,72,170,.72) !important;
+  background:radial-gradient(circle, rgba(255,91,192,.06) 0 42%, rgba(111,15,99,.18) 62%, rgba(50,0,58,0) 74%) !important;
+  box-shadow:
+    0 0 10px rgba(255,60,162,.48),
+    inset 0 0 12px rgba(255,120,194,.14) !important;
+  filter:none !important;
+  animation:shootingDangerBulletAura933 .54s ease-out infinite !important;
+  pointer-events:none !important;
+}
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet::after,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet::after,
+#shooting-event-root .shooting-danger-bullet::after,
+#shooting-event-root .shooting-score-attack-warning-bullet::after,
+#shooting-event-root .shooting-sakiel-warning-bullet::after{
+  content:'!' !important;
+  display:block !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-54%) !important;
+  color:#fff6fb !important;
+  font:900 17px/1 sans-serif !important;
+  letter-spacing:0 !important;
+  text-shadow:
+    0 0 4px rgba(255,255,255,.96),
+    0 0 10px rgba(255,100,196,.82),
+    0 0 18px rgba(186,22,123,.74) !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  pointer-events:none !important;
+}
+@keyframes shootingDangerBulletPulse933{
+  from{transform:scale(.94)}
+  to{transform:scale(1.06)}
+}
+@keyframes shootingDangerBulletAura933{
+  0%{opacity:.22;transform:scale(.82)}
+  55%{opacity:.72}
+  100%{opacity:0;transform:scale(1.24)}
+}

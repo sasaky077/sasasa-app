@@ -20131,7 +20131,7 @@
   }
 
   function ensurePainterUltStyle() {
-    const styleId = 'shooting-painter-rainbow-ult-style-v3';
+    const styleId = 'shooting-painter-rainbow-ult-style-v4';
     if (document.getElementById(styleId)) return;
     const style = document.createElement('style');
     style.id = styleId;
@@ -20142,35 +20142,75 @@
           saturate(1.04)
           drop-shadow(0 0 10px rgba(var(--painter-shift-rgb,231,200,90),.78))!important;
       }
+      /* build932: クロエULT弾は「輪郭のある球」ではなく、ぼやけた気弾/aura表現へ統一。 */
+      .shooting-painter-rainbow-parent,
       .shooting-painter-rainbow-child{
         position:absolute;
         z-index:47;
-        width:15px;
-        height:15px;
-        margin:-7.5px 0 0 -7.5px;
+        width:22px;
+        height:22px;
+        margin:-11px 0 0 -11px;
+        border:0!important;
+        outline:0!important;
         border-radius:50%;
         pointer-events:none;
         box-sizing:border-box;
-        border:1px solid rgba(255,255,255,.90);
         background:
-          radial-gradient(circle at 36% 32%,
-            rgba(255,255,255,1) 0 13%,
-            rgba(var(--painter-rgb,244,239,227),.98) 28%,
-            rgba(var(--painter-rgb,244,239,227),.82) 55%,
-            rgba(var(--painter-rgb,244,239,227),.18) 76%,
-            transparent 78%);
+          radial-gradient(circle at 48% 43%,
+            rgba(255,255,255,.98) 0 10%,
+            rgba(255,255,255,.78) 17%,
+            rgba(var(--painter-rgb,244,239,227),.58) 36%,
+            rgba(var(--painter-rgb,244,239,227),.24) 55%,
+            rgba(var(--painter-rgb,244,239,227),.08) 68%,
+            transparent 82%);
         box-shadow:
-          0 0 7px rgba(255,255,255,.90),
-          0 0 14px rgba(var(--painter-rgb,244,239,227),.78),
-          0 0 22px rgba(var(--painter-rgb,244,239,227),.34);
+          0 0 8px rgba(255,255,255,.52),
+          0 0 17px rgba(var(--painter-rgb,244,239,227),.42),
+          0 0 30px rgba(var(--painter-rgb,244,239,227),.18)!important;
+        filter:blur(.45px) saturate(.96);
       }
+      .shooting-painter-rainbow-parent{
+        z-index:48;
+        width:30px;
+        height:30px;
+        margin:-15px 0 0 -15px;
+        filter:blur(.65px) saturate(.94);
+        box-shadow:
+          0 0 10px rgba(255,255,255,.60),
+          0 0 24px rgba(var(--painter-rgb,244,239,227),.46),
+          0 0 42px rgba(var(--painter-rgb,244,239,227),.20)!important;
+      }
+      .shooting-painter-rainbow-parent::before,
+      .shooting-painter-rainbow-child::before{
+        content:"";
+        position:absolute;
+        inset:-38%;
+        border-radius:50%;
+        background:
+          radial-gradient(circle,
+            rgba(var(--painter-rgb,244,239,227),.22) 0 22%,
+            rgba(var(--painter-rgb,244,239,227),.10) 42%,
+            transparent 72%);
+        filter:blur(5px);
+        opacity:.92;
+      }
+      .shooting-painter-rainbow-parent::after,
       .shooting-painter-rainbow-child::after{
         content:"";
         position:absolute;
-        inset:-5px;
+        left:50%;
+        top:58%;
+        width:58%;
+        height:118%;
+        transform:translate(-50%,-12%);
         border-radius:50%;
-        border:1px solid rgba(var(--painter-rgb,244,239,227),.46);
-        opacity:.72;
+        border:0!important;
+        background:linear-gradient(180deg,
+          rgba(var(--painter-rgb,244,239,227),.16),
+          rgba(var(--painter-rgb,244,239,227),.06) 42%,
+          transparent 88%);
+        filter:blur(5px);
+        opacity:.66;
       }
       .shooting-painter-rainbow-burst{
         position:absolute;
@@ -20207,25 +20247,47 @@
     return list;
   }
 
-  function findPainterUltCollision(x, y, arenaRect, ignoreTarget = null, radius = 10) {
+  // build932: クロエULT専用の衝突判定を座標系統一 + swept collisionへ変更。
+  // projectileのx/yはarenaローカル座標、getUnitRect()はviewport座標を返すため、
+  // 旧実装ではHUDぶんY座標がずれて「見た目は命中しているのに未命中」が起き得た。
+  // さらに高速移動時の1フレーム跨ぎも拾えるよう、前位置→現在位置の線分で最初の接触を探す。
+  function findPainterUltCollisionSwept(x0, y0, x1, y1, arenaRect, ignoreTarget = null, radius = 10) {
     const r = Math.max(4, Number(radius || 10));
-    const projectileRect = {
-      left: x - r,
-      right: x + r,
-      top: y - r,
-      bottom: y + r,
-      width: r * 2,
-      height: r * 2,
-    };
     const candidates = getPainterUltCandidates();
+    let nearest = null;
+
     for (const target of candidates) {
       if (!target || target === ignoreTarget || target.hp <= 0) continue;
-      const targetRect = getUnitRect(target, arenaRect);
-      if (targetRect && rectsHit(projectileRect, targetRect, 0, target === state?.boss ? 18 : 8)) {
-        return target;
+      const viewportRect = getUnitRect(target, arenaRect);
+      if (!viewportRect) continue;
+
+      // targetもarenaローカル座標へ戻してから比較する。
+      // 見た目と判定の乖離を避けるため、旧実装の大きなhitbox縮小は廃止し、
+      // 端だけの誤爆防止として最小限のinsetだけ残す。
+      const inset = target === state?.boss ? 5 : 2;
+      const minX = viewportRect.left - arenaRect.left + inset - r;
+      const maxX = viewportRect.right - arenaRect.left - inset + r;
+      const minY = viewportRect.top - arenaRect.top + inset - r;
+      const maxY = viewportRect.bottom - arenaRect.top - inset + r;
+      if (minX > maxX || minY > maxY) continue;
+
+      const t = segmentAabbEntryT(x0, y0, x1, y1, minX, maxX, minY, maxY);
+      if (t == null) continue;
+      if (!nearest || t < nearest.t) {
+        nearest = {
+          target,
+          t,
+          x: x0 + (x1 - x0) * t,
+          y: y0 + (y1 - y0) * t,
+        };
       }
     }
-    return null;
+    return nearest;
+  }
+
+  function findPainterUltCollision(x, y, arenaRect, ignoreTarget = null, radius = 10) {
+    const hit = findPainterUltCollisionSwept(x, y, x, y, arenaRect, ignoreTarget, radius);
+    return hit ? hit.target : null;
   }
 
   function applyPainterRainbowDamage(target, rawDamage, attackElement, now, c, options = {}) {
@@ -20358,6 +20420,8 @@
       for (const child of children) {
         if (!child.alive) continue;
 
+        const prevX = child.x;
+        const prevY = child.y;
         child.x += child.dx * speed * dt;
         child.y += child.dy * speed * dt;
         child.travel += speed * dt;
@@ -20372,20 +20436,21 @@
         // 親弾の着弾対象を全6弾が即座に多重ヒットしないよう除外。
         // また、発生直後の数pxは「飛び出す」見た目を優先して判定しない。
         if (child.travel >= 18) {
-          const hitTarget = findPainterUltCollision(
+          const collision = findPainterUltCollisionSwept(
+            prevX,
+            prevY,
             child.x,
             child.y,
             arenaRect,
             sourceTarget,
-            7
+            8
           );
+          const hitTarget = collision && collision.target;
 
           if (hitTarget) {
-            createBombSplashVictimHitEffect(
-              Number(hitTarget.x || child.x),
-              Number(hitTarget.y || child.y),
-              child.element
-            );
+            const impactX = Number(collision.x || child.x);
+            const impactY = Number(collision.y || child.y);
+            createBombSplashVictimHitEffect(impactX, impactY, child.element);
             applyPainterRainbowDamage(
               hitTarget,
               damage,
@@ -20464,16 +20529,14 @@
     createBombThrowPop(startX, startY, 'light');
 
     const parent = document.createElement('i');
-    parent.className = 'shooting-liz-ult-bomb';
+    parent.className = 'shooting-painter-rainbow-parent element-light';
     parent.dataset.element = 'light';
-    parent.style.setProperty('--bomb-color', visual.color);
-    parent.style.setProperty('--bomb-rgb', visual.rgb);
+    parent.style.setProperty('--painter-rgb', visual.rgb);
     arena.appendChild(parent);
 
     let x = startX;
     let y = startY;
     let lastTs = performance.now();
-    let spin = 0;
     let raf = 0;
 
     const cleanup = () => {
@@ -20489,17 +20552,18 @@
 
       const dt = Math.min(.035, Math.max(0, (ts - lastTs) / 1000));
       lastTs = ts;
+      const prevX = x;
+      const prevY = y;
       y -= speed * dt;
-      spin += 220 * dt;
-      parent.style.transform =
-        `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${spin}deg) scale(.72)`;
+      parent.style.transform = `translate3d(${x}px,${y}px,0)`;
 
       const arenaRect = arena.getBoundingClientRect();
-      const hitTarget = findPainterUltCollision(x, y, arenaRect, null, 10);
+      const collision = findPainterUltCollisionSwept(prevX, prevY, x, y, arenaRect, null, 14);
+      const hitTarget = collision && collision.target;
 
       if (hitTarget) {
         cleanup();
-        impactPainterRainbowParent(hitTarget, x, y, c);
+        impactPainterRainbowParent(hitTarget, Number(collision.x || x), Number(collision.y || y), c);
         return;
       }
 
@@ -20512,8 +20576,7 @@
       raf = requestAnimationFrame(animate);
     };
 
-    parent.style.transform =
-      `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(.72)`;
+    parent.style.transform = `translate3d(${x}px,${y}px,0)`;
     raf = requestAnimationFrame(animate);
     renderHud();
   }
