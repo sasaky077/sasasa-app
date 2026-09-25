@@ -1,7 +1,7 @@
 {
-  "build": 949,
-  "published_at": "2026-09-26T00:08:00+09:00",
-  "label": "noah_center_lane_always_active",
+  "build": 950,
+  "published_at": "2026-09-26T00:18:00+09:00",
+  "label": "noah_puzzle_3x3_guide_overlay",
   "release_protocol": 2,
   "commit_marker": true
 }

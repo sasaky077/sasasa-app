@@ -16739,7 +16739,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=949-noah-center-lane"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=948-canvas-projectile-dom-decouple"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
@@ -16815,7 +16815,7 @@ window.returnToTitleScreen = function(){
   });
 })();
 </script>
-<script id="noah-piece-inline-v99">
+<script id="noah-piece-inline-v100">
 // noah_piece.js
 (function(){
   'use strict';
@@ -16823,6 +16823,58 @@ window.returnToTitleScreen = function(){
   const PIECE_KEY = 'sasaphia_noah_piece_count_v1';
   const MAX_PIECES = 9;
   const STAGE_ID = 'shooting_event_bullet_hell_test';
+
+  function ensureNoahPieceGuideStyle(){
+    if (document.getElementById('noah-piece-guide-style-v950')) return;
+    const style = document.createElement('style');
+    style.id = 'noah-piece-guide-style-v950';
+    style.textContent = `
+      .noah-puzzle-frame{
+        position:relative;
+        overflow:hidden;
+      }
+      .noah-puzzle-grid{
+        position:relative;
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        grid-template-rows:repeat(3,1fr);
+        isolation:isolate;
+      }
+      .noah-puzzle-grid::after{
+        content:'';
+        position:absolute;
+        inset:0;
+        pointer-events:none;
+        z-index:3;
+        background-image:
+          linear-gradient(to right, transparent calc(33.333% - 0.75px), rgba(255,255,255,.18) calc(33.333% - 0.75px), rgba(255,255,255,.18) calc(33.333% + 0.75px), transparent calc(33.333% + 0.75px), transparent calc(66.666% - 0.75px), rgba(255,255,255,.18) calc(66.666% - 0.75px), rgba(255,255,255,.18) calc(66.666% + 0.75px), transparent calc(66.666% + 0.75px)),
+          linear-gradient(to bottom, transparent calc(33.333% - 0.75px), rgba(255,255,255,.18) calc(33.333% - 0.75px), rgba(255,255,255,.18) calc(33.333% + 0.75px), transparent calc(33.333% + 0.75px), transparent calc(66.666% - 0.75px), rgba(255,255,255,.18) calc(66.666% - 0.75px), rgba(255,255,255,.18) calc(66.666% + 0.75px), transparent calc(66.666% + 0.75px));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.16), inset 0 0 18px rgba(255,255,255,.05);
+      }
+      .noah-puzzle-piece{
+        position:relative;
+        z-index:1;
+        box-sizing:border-box;
+        outline:1px solid rgba(255,255,255,.10);
+        outline-offset:-1px;
+      }
+      .noah-puzzle-piece::after{
+        content:'';
+        position:absolute;
+        inset:0;
+        pointer-events:none;
+        background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 26%, rgba(0,0,0,.04) 100%);
+        mix-blend-mode:screen;
+      }
+      .noah-puzzle-piece.locked{
+        outline-color:rgba(255,255,255,.12);
+      }
+      .noah-puzzle-piece.open{
+        outline-color:rgba(255,255,255,.08);
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function clampPieceCount(value){
     const n = Math.floor(Number(value || 0));
@@ -16854,6 +16906,7 @@ window.returnToTitleScreen = function(){
   }
 
   function buildPanel(){
+    ensureNoahPieceGuideStyle();
     if (document.getElementById('noah-piece-overlay')) return;
 
     const overlay = document.createElement('div');
@@ -17217,7 +17270,7 @@ window.returnToTitleScreen = function(){
 })();
 
 </script>
-<script src="js/noah_piece.js?v=896-server-authority"></script>
+<script src="js/noah_piece.js?v=950-puzzle-guide-grid"></script>
 
 <script id="sasaphia-global-interaction-lock-v248">
 (function(){
