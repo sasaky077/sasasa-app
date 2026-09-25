@@ -1,7 +1,7 @@
 {
-  "build": 946,
-  "published_at": "2026-09-26T00:04:00+09:00",
-  "label": "noah_start_freeze_fix_remnacross_gacha_cache_refresh",
+  "build": 948,
+  "published_at": "2026-09-25T23:59:00+09:00",
+  "label": "canvas_projectile_dom_decouple_global_freeze_fix",
   "release_protocol": 2,
   "commit_marker": true
 }

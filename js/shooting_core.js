@@ -4119,7 +4119,9 @@
     const virtual = {
       className: String(className || ''),
       id: '',
-      style: { setProperty() {} },
+      // Canvas弾はDOMを生成しないため、属性色更新コードが使う最小style APIを持たせる。
+      // build947: removeProperty不足で最初のCanvas弾生成時にTypeErrorとなり、gameLoopが停止していた。
+      style: { setProperty() {}, removeProperty() {} },
       classList: {
         contains(name) { return names.has(name); },
         add(...items) { items.forEach(item => names.add(item)); },
@@ -4636,7 +4638,9 @@
       };
       measureUnitSize(p);
       if (classNameForGuard.includes('shooting-enemy-bullet')) {
-        applyEnemyProjectileElementVisual(p, getEnemyProjectileElement(p));
+        const key = getEnemyProjectileElement(p);
+        p.attackElement = key;
+        p.element = key;
       }
       return p;
     }
@@ -4845,13 +4849,20 @@
     const key = normalizeCombatElement(element) || getEnemyProjectileElement(projectile) || 'neutral';
     projectile.attackElement = key;
     projectile.element = key;
+
+    // build948: Canvas弾はDOM要素を持たない。
+    // 描画色は attackElement / element をCanvas rendererが直接参照するため、
+    // 仮想class/styleへ触れる必要はない。ここで即returnし、DOM API差異による
+    // gameLoop停止を全Canvasステージで根本的に防ぐ。
+    if (projectile.canvasRendered) return projectile;
+
     const el = projectile.el;
     const cls = String(el && el.className || '').toLowerCase();
     const isDangerVisual = cls.includes('shooting-danger-bullet') || cls.includes('warning');
     if (el && el.classList) {
       ['neutral','fire','aqua','wood','light','dark'].forEach(k => el.classList.remove('shooting-enemy-element-' + k));
       if (el.dataset) delete el.dataset.enemyElement;
-      if (el.style) {
+      if (el.style && typeof el.style.removeProperty === 'function') {
         el.style.removeProperty('--enemy-bullet-main');
         el.style.removeProperty('--enemy-bullet-core');
         el.style.removeProperty('--enemy-bullet-ring');
