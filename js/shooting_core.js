@@ -12599,12 +12599,32 @@
     });
   }
 
+  function getShootingUltCutinSrc(character) {
+    const c = character || getCurrentCharacter();
+    if (!c) return '';
+    return c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
+  }
+
+  function preloadSelectedPartyUltCutins(ids = selectedPartyIds, timeoutMs = 7000) {
+    const list = Array.isArray(ids) ? ids : [];
+    const sources = list.slice(0, PARTY_SIZE)
+      .map(id => getShootingUltCutinSrc(SHOOTING_CHARACTERS[Number(id)]))
+      .filter(Boolean);
+    if (!sources.length) return Promise.resolve([]);
+    return Promise.allSettled(
+      sources.map(src => preloadShootingImage(src, timeoutMs, false))
+    );
+  }
+
+  function warmSelectedPartyUltCutins(ids = selectedPartyIds) {
+    void preloadSelectedPartyUltCutins(ids, 7000);
+  }
+
   function warmShootingAssets() {
-    // build520:
-    // 全キャラ資産の一括プリロードは禁止。
-    // 戦闘では「その場で使う画像だけ」を必要時ロードする。
-    // ULTカットイン等は preloadShootingImage() で対象1枚のみ処理する。
-    return;
+    // build936:
+    // 全キャラ一括ロードはしない。選択済みパーティ最大3人のULTカットインだけを先読みする。
+    // これによりULT入力後の画像decode待ちを戦闘中へ持ち込まない。
+    warmSelectedPartyUltCutins();
   }
 
   function clearUltCutin() {
@@ -12632,22 +12652,14 @@
       return;
     }
 
-    // 通常ULTは従来どおりカットイン中に戦闘停止。
-    // ID38(PAINTER)だけは非停止ULT：敵移動・敵弾・自弾・通常射撃をすべて継続する。
+    // build936:
+    // カットイン画像のネットワーク/decode完了を待ってから戦闘停止すると、
+    // 「ULT入力 → 無反応に固まる → 画像表示」という体感になる。
+    // 先にカットインDOMを即時生成し、画像は事前キャッシュを使う。未キャッシュでも表示開始は待たない。
     const nonBlockingCutin = Number(c && c.id) === 38 ||
       String(c && c.ultType || '').startsWith('painter_');
-    state.ultCutinActive = !nonBlockingCutin;
-    root.classList.add('ult-cutin-active');
-    if (!nonBlockingCutin) prevTs = performance.now();
-
-    const cutinSrc = c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
-    await preloadShootingImage(cutinSrc, 7000, true);
-
-    // ロード待ち中に戦闘終了/画面遷移した場合は停止状態を必ず解除する。
-    if (!state || state.ended || state.finishing || !document.getElementById(ROOT_ID)) {
-      clearUltCutin();
-      return;
-    }
+    const cutinSrc = getShootingUltCutinSrc(c);
+    if (cutinSrc) void preloadShootingImage(cutinSrc, 7000, false);
 
     const wrap = document.createElement('div');
     wrap.className = 'shooting-ult-cutin';
@@ -12670,6 +12682,12 @@
     wrap.appendChild(flash);
     wrap.appendChild(label);
     arena.appendChild(wrap);
+
+    // DOMを先に載せてから停止状態へ入れる。
+    // これで入力したフレームから必ず視覚フィードバックが出る。
+    state.ultCutinActive = !nonBlockingCutin;
+    root.classList.add('ult-cutin-active');
+    if (!nonBlockingCutin) prevTs = performance.now();
 
     // 停止型ULTだけdt基準をリセットする。
     // ID38は戦闘が進行中なのでprevTsへ介入しない。
@@ -15990,6 +16008,8 @@
     if (isStoryShootingStage()) ensureStoryEriLeader();
     selectedCharacterId = selectedPartyIds[0] || id;
     applySelectedCharacterToUi();
+    // パーティ選択中の待ち時間を利用して、最大3人のULTカットインだけ先読み。
+    warmSelectedPartyUltCutins();
   };
 
 
@@ -16648,6 +16668,7 @@
     // iOS/PWAでもカウントダウン開始時に再生しやすくする。
     warmShootingBattleBgm();
     primeShootingBattleBgmFromUserGesture();
+    warmSelectedPartyUltCutins();
 
     // 挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
     if (!(await ensureSelectedDailyQuestAttemptConsumed())) return;
@@ -22416,9 +22437,17 @@
   }
 
   async function showShootingStageIcatch() {
+    // build937:
+    // アイキャッチ演出の約4秒を、出撃3人のULTカットイン画像の本ロード＋decodeに使う。
+    // パーティ選択時のwarm-upは残すが、ここが戦闘開始前の最終プリロード地点。
+    // 読み込みが極端に遅い場合でも戦闘開始を長時間ブロックせず、build936の即時表示へフォールバックする。
+    const ultCutinPreloadPromise = preloadSelectedPartyUltCutins(selectedPartyIds, 7000);
     try {
       const src = await resolveShootingIcatchPath();
-      if (!src) return;
+      if (!src) {
+        await Promise.race([ultCutinPreloadPromise, waitShootingTransition(900)]);
+        return;
+      }
 
       const overlay = ensureShootingIcatchOverlay();
       const art = overlay.querySelector('.shooting-stage-icatch-art');
@@ -22441,6 +22470,10 @@
       overlay.classList.remove('is-entered');
       overlay.classList.add('is-fading');
       await new Promise(resolve => setTimeout(resolve, SHOOTING_ICATCH_FADE_OUT_MS));
+
+      // ほとんどの端末ではここまでの4秒内に完了する。
+      // 未完了時だけ最大900ms待ち、無制限のロード待ちにはしない。
+      await Promise.race([ultCutinPreloadPromise, waitShootingTransition(900)]);
 
       overlay.classList.remove('is-visible', 'is-fading');
       overlay.setAttribute('aria-hidden', 'true');

@@ -10,7 +10,7 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = '20260925-build935-remnacross-trap';
+  const MODULE_VERSION = '20260925-build937-ult-cutin-icatch-preload';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
