@@ -4161,9 +4161,11 @@
 
     const cssWidth = Math.max(1, arena.clientWidth);
     const cssHeight = Math.max(1, arena.clientHeight);
-    // Retina端末で無制限に内部解像度を上げない。弾の輪郭を保ちつつ
-    // ピクセル数を抑えるため、最大1.5倍に制限する。
-    const dpr = Math.min(1.5, Math.max(1, Number(window.devicePixelRatio || 1)));
+    // 弾幕ゲームは描画ピクセル数を最優先で抑える。
+    // ノアは弾数が多いため1x固定、その他Canvas弾幕も最大1.25xに制限する。
+    // UI/キャラ画像には影響せず、敵弾Canvasだけを軽量化する。
+    const nativeDpr = Math.max(1, Number(window.devicePixelRatio || 1));
+    const dpr = isNoahStage() ? 1 : Math.min(1.25, nativeDpr);
     const pixelWidth = Math.round(cssWidth * dpr);
     const pixelHeight = Math.round(cssHeight * dpr);
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
@@ -4200,6 +4202,98 @@
     ctx.imageSmoothingEnabled = false;
 
     const bullets = (state && state.enemyBullets) || [];
+
+    // build943: ノアは専用の高速描画ルートを使う。
+    // 汎用rendererは全ステージ種別を毎フレーム走査するため、ノアでは大きな無駄になる。
+    // ここでは noah / danger だけを一度分類し、必要なレイヤーだけ描いて即returnする。
+    if (isNoahStage()) {
+      const noahByElement = {
+        neutral: [], fire: [], aqua: [], wood: [], light: [], dark: []
+      };
+      const dangerBullets = [];
+      for (const p of bullets) {
+        if (!p || !p.canvasRendered) continue;
+        if (p.canvasKind === 'danger') {
+          dangerBullets.push(p);
+          continue;
+        }
+        if (p.canvasKind !== 'noah' || p.canvasCurtain) continue;
+        const key = getEnemyProjectileElement(p);
+        (noahByElement[key] || noahByElement.neutral).push(p);
+      }
+
+      const TAU = Math.PI * 2;
+      const drawNoahLayer = (role, scale) => {
+        for (const key of ['neutral','fire','aqua','wood','light','dark']) {
+          const list = noahByElement[key];
+          if (!list.length) continue;
+          const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+          ctx.fillStyle = palette[role];
+          ctx.beginPath();
+          for (const p of list) {
+            const r = Number(p.canvasRadius || 5.5) * scale;
+            const x = Number(p.x || 0), y = Number(p.y || 0);
+            ctx.moveTo(x + r, y);
+            ctx.arc(x, y, r, 0, TAU);
+          }
+          ctx.fill();
+        }
+      };
+      const drawNoahRing = (scale, width, alphaScale=1) => {
+        ctx.lineWidth = width;
+        for (const key of ['neutral','fire','aqua','wood','light','dark']) {
+          const list = noahByElement[key];
+          if (!list.length) continue;
+          const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+          ctx.strokeStyle = palette.ring;
+          ctx.globalAlpha = alphaScale;
+          ctx.beginPath();
+          for (const p of list) {
+            const r = Number(p.canvasRadius || 5.5) * scale;
+            const x = Number(p.x || 0), y = Number(p.y || 0);
+            ctx.moveTo(x + r, y);
+            ctx.arc(x, y, r, 0, TAU);
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      };
+
+      // 元の多層感をほぼ維持。5レイヤー→4レイヤーにして走査数を削減。
+      drawNoahLayer('halo', 1.66);
+      drawNoahLayer('main', 1.04);
+      drawNoahLayer('core', .43);
+      drawNoahRing(1.12, .9, .92);
+
+      // WARNINGは属性を一切参照せず、赤紫で固定。
+      if (dangerBullets.length) {
+        const drawDangerFill = (fill, scale) => {
+          ctx.fillStyle = fill;
+          ctx.beginPath();
+          for (const p of dangerBullets) {
+            const r = Number(p.canvasRadius || 17) * scale;
+            const x = Number(p.x || 0), y = Number(p.y || 0);
+            ctx.moveTo(x + r, y);
+            ctx.arc(x, y, r, 0, TAU);
+          }
+          ctx.fill();
+        };
+        drawDangerFill('rgba(75,0,64,.42)', 1.34);
+        drawDangerFill('rgba(181,22,119,.99)', 1.00);
+        drawDangerFill('rgba(255,221,242,.99)', .31);
+        ctx.strokeStyle = 'rgba(255,89,181,.98)';
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        for (const p of dangerBullets) {
+          const r = Number(p.canvasRadius || 17) * 1.08;
+          const x = Number(p.x || 0), y = Number(p.y || 0);
+          ctx.moveTo(x + r, y);
+          ctx.arc(x, y, r, 0, TAU);
+        }
+        ctx.stroke();
+      }
+      return;
+    }
 
     function drawCircleLayer(kind, color, scale) {
       // build930: Canvas弾もchapter固有色ではなく発射元属性色で描画する。
@@ -4391,11 +4485,36 @@
     drawCircleLayer('raid', 'rgba(206,255,218,.98)', .44);
     drawRing('raid', 'rgba(128,241,158,.90)', 1.14, .95);
 
-    // WARNINGは全ステージ共通で赤。通常パレットより後に描いて最優先。
-    drawCircleLayer('danger', 'rgba(104,0,8,.33)', 1.35);
-    drawCircleLayer('danger', 'rgba(225,36,48,.99)', 1.00);
-    drawCircleLayer('danger', 'rgba(255,227,227,.99)', .32);
-    drawRing('danger', 'rgba(255,123,123,.96)', 1.08, 1.2);
+    // WARNINGは属性色を参照しない。全ステージ共通で禍々しい赤紫に固定。
+    // drawCircleLayer()は属性paletteを使うため、WARNINGだけ専用描画にする。
+    const dangerCanvasBullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'danger');
+    if (dangerCanvasBullets.length) {
+      const TAU = Math.PI * 2;
+      const drawDangerFill = (fill, scale) => {
+        ctx.fillStyle = fill;
+        ctx.beginPath();
+        for (const p of dangerCanvasBullets) {
+          const r = Number(p.canvasRadius || 17) * scale;
+          const x = Number(p.x || 0), y = Number(p.y || 0);
+          ctx.moveTo(x + r, y);
+          ctx.arc(x, y, r, 0, TAU);
+        }
+        ctx.fill();
+      };
+      drawDangerFill('rgba(75,0,64,.42)', 1.34);
+      drawDangerFill('rgba(181,22,119,.99)', 1.00);
+      drawDangerFill('rgba(255,221,242,.99)', .31);
+      ctx.strokeStyle = 'rgba(255,89,181,.98)';
+      ctx.lineWidth = 1.15;
+      ctx.beginPath();
+      for (const p of dangerCanvasBullets) {
+        const r = Number(p.canvasRadius || 17) * 1.08;
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, TAU);
+      }
+      ctx.stroke();
+    }
 
     // RAID laserもBOSS属性色へ追従。
     ctx.lineCap = 'round';
@@ -4552,7 +4671,7 @@
       hard: Math.max(30, Number(scoreCfg.maxEnemyBullets || 80)),
       recovery: Math.max(20, Number(scoreCfg.recoverEnemyBulletsTo || 60))
     } : null;
-    const noahLimits = !scoreAttackLimits && isNoahStage() ? { hard: 90, recovery: 64 } : null;
+    const noahLimits = !scoreAttackLimits && isNoahStage() ? { hard: 58, recovery: 42 } : null;
     const raidLimits = !scoreAttackLimits && !noahLimits && isRaidStage() ? getRaidEnemyBulletLimits() : null;
     const ch03BossLimits = !scoreAttackLimits && !noahLimits && !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
     const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (noahLimits ? noahLimits.hard : (raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT)));
@@ -4727,17 +4846,29 @@
     projectile.attackElement = key;
     projectile.element = key;
     const el = projectile.el;
+    const cls = String(el && el.className || '').toLowerCase();
+    const isDangerVisual = cls.includes('shooting-danger-bullet') || cls.includes('warning');
     if (el && el.classList) {
       ['neutral','fire','aqua','wood','light','dark'].forEach(k => el.classList.remove('shooting-enemy-element-' + k));
-      el.classList.add('shooting-enemy-element-' + key);
-      if (el.dataset) el.dataset.enemyElement = key;
-      const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
-      if (el.style && palette) {
-        el.style.setProperty('--enemy-bullet-main', palette.main);
-        el.style.setProperty('--enemy-bullet-core', palette.core);
-        el.style.setProperty('--enemy-bullet-ring', palette.ring);
-        el.style.setProperty('--enemy-bullet-shadow', palette.shadow);
-        el.style.setProperty('--enemy-bullet-halo', palette.halo);
+      if (el.dataset) delete el.dataset.enemyElement;
+      if (el.style) {
+        el.style.removeProperty('--enemy-bullet-main');
+        el.style.removeProperty('--enemy-bullet-core');
+        el.style.removeProperty('--enemy-bullet-ring');
+        el.style.removeProperty('--enemy-bullet-shadow');
+        el.style.removeProperty('--enemy-bullet-halo');
+      }
+      if (!isDangerVisual) {
+        el.classList.add('shooting-enemy-element-' + key);
+        if (el.dataset) el.dataset.enemyElement = key;
+        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+        if (el.style && palette) {
+          el.style.setProperty('--enemy-bullet-main', palette.main);
+          el.style.setProperty('--enemy-bullet-core', palette.core);
+          el.style.setProperty('--enemy-bullet-ring', palette.ring);
+          el.style.setProperty('--enemy-bullet-shadow', palette.shadow);
+          el.style.setProperty('--enemy-bullet-halo', palette.halo);
+        }
       }
     }
     return projectile;
@@ -9277,52 +9408,83 @@
     const originY = state.boss.y + 40;
 
     // 理想郷：ノア専用。
-    // 高負荷な同心円乱射ではなく、少ない発数で密度感が出る二重らせんへ変更する。
+    // 軽量化を維持しつつ、通常弾は毎ボレー左右対称になるよう鏡写しで生成する。
     if (isNoahStage()) {
-      const interval = phase === 1 ? 260 : (phase === 2 ? 205 : 160);
+      const interval = phase === 1 ? 300 : (phase === 2 ? 245 : 205);
       if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
       state.lastBossShotAt = now;
 
       const step = Number(state.noahSpiralStep || 0);
-      const baseSpin = step * (phase === 1 ? 0.28 : (phase === 2 ? 0.335 : 0.39));
-      const armCount = phase === 1 ? 2 : (phase === 2 ? 3 : 4);
-      const pairStep = (Math.PI * 2) / armCount;
-      const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 0.99 : 1.05);
-      const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.90 : 0.96);
-      const twist = phase === 1 ? 0.04 : (phase === 2 ? 0.08 : 0.11);
-      const laneGap = phase === 1 ? 0.09 : (phase === 2 ? 0.11 : 0.13);
+      const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 0.98 : 1.04);
+      const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94);
+      const spawnCompanionLane = (step % 3) === 0;
 
-      // 左右対称の二重らせん。1本増やすのではなく、各アームに伴走レーンを付けて密度感を上げる。
-      for (let i = 0; i < armCount; i++) {
-        const base = baseSpin + pairStep * i;
-        const sign = (i % 2 === 0) ? 1 : -1;
-        const angles = [base + sign * twist, base - sign * laneGap];
-        const speedMuls = [speedMul, secondarySpeedMul];
-        angles.forEach((a, idx) => {
+      // 画面縦軸（下方向 = PI/2）を中心に左右対称。
+      // spreadは周期的に呼吸させ、弾数を増やさず見た目の変化だけ作る。
+      const pulse = 0.5 + 0.5 * Math.sin(step * (phase === 1 ? 0.42 : (phase === 2 ? 0.48 : 0.54)));
+      const innerSpread = phase === 1
+        ? 0.28 + 0.16 * pulse
+        : (phase === 2 ? 0.24 + 0.18 * pulse : 0.20 + 0.16 * pulse);
+      const outerSpread = phase === 3 ? 0.54 + 0.18 * (1 - pulse) : 0;
+      const centerAxis = Math.PI / 2;
+
+      const normalOffsets = phase === 1
+        ? [-innerSpread, innerSpread]
+        : (phase === 2
+          ? [-innerSpread, 0, innerSpread]
+          : [-outerSpread, -innerSpread, innerSpread, outerSpread]);
+
+      for (const offset of normalOffsets) {
+        const a = centerAxis + offset;
+        const p = makeProjectile(
+          'shooting-enemy-bullet',
+          originX, originY,
+          Math.cos(a) * speed * speedMul,
+          Math.sin(a) * speed * speedMul,
+          damage
+        );
+        if (p) {
+          p.canvasRadius = phase === 3 ? 6.3 : 5.8;
+          state.enemyBullets.push(p);
+        }
+      }
+
+      // 伴走レーンも同じ本数・同じ左右対称構成。3ボレーに1回だけで軽量化を維持。
+      if (spawnCompanionLane) {
+        const laneShift = phase === 1 ? 0.10 : (phase === 2 ? 0.09 : 0.08);
+        for (const offset of normalOffsets) {
+          const mirroredOffset = offset === 0
+            ? 0
+            : offset + Math.sign(offset) * laneShift;
+          const a = centerAxis + mirroredOffset;
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
-            Math.cos(a) * speed * speedMuls[idx],
-            Math.sin(a) * speed * speedMuls[idx],
+            Math.cos(a) * speed * secondarySpeedMul,
+            Math.sin(a) * speed * secondarySpeedMul,
             damage
           );
           if (p) {
-            p.canvasRadius = phase === 3 ? (idx === 0 ? 6.4 : 6.0) : (idx === 0 ? 5.9 : 5.5);
+            p.canvasRadius = phase === 3 ? 5.8 : 5.3;
             state.enemyBullets.push(p);
           }
-        });
+        }
       }
 
       state.noahSpiralStep = step + 1;
 
-      // 数ボレーごとに、外周へ広がるリングを薄く重ねて「同心円＋渦」の見た目を足す。
-      const haloEvery = phase === 1 ? 5 : (phase === 2 ? 4 : 3);
+      // リングも左右対称配置。ランダム回転はせず、中心線に対して鏡写しになる角度だけを使う。
+      const haloEvery = phase === 1 ? 8 : (phase === 2 ? 7 : 6);
       if ((state.noahSpiralStep % haloEvery) === 0) {
-        const haloCount = phase === 1 ? 6 : (phase === 2 ? 8 : 10);
-        const haloSpeed = phase === 1 ? 0.74 : (phase === 2 ? 0.80 : 0.86);
-        const haloSpin = baseSpin * 0.45 + Math.PI / haloCount;
-        for (let i = 0; i < haloCount; i++) {
-          const a = haloSpin + (Math.PI * 2 * i / haloCount);
+        const haloCount = phase === 1 ? 4 : (phase === 2 ? 5 : 6);
+        const haloSpeed = phase === 1 ? 0.72 : (phase === 2 ? 0.78 : 0.84);
+        const haloOffsets = haloCount === 4
+          ? [-0.78, -0.30, 0.30, 0.78]
+          : (haloCount === 5
+            ? [-0.88, -0.42, 0, 0.42, 0.88]
+            : [-1.00, -0.62, -0.24, 0.24, 0.62, 1.00]);
+        for (const offset of haloOffsets) {
+          const a = centerAxis + offset;
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
@@ -9331,30 +9493,30 @@
             damage
           );
           if (p) {
-            p.canvasRadius = phase === 3 ? 5.8 : 5.2;
+            p.canvasRadius = phase === 3 ? 5.6 : 5.0;
             state.enemyBullets.push(p);
           }
         }
       }
 
-      // 追尾弾も対称配置にして、回避方向を軽く制限するだけに留める。
-      const extraEvery = phase === 1 ? 4 : 3;
+      // 追従弾だけは例外。プレイヤー位置基準なので左右対称制約をかけない。
+      const extraEvery = phase === 1 ? 6 : 5;
       if ((state.noahSpiralStep % extraEvery) === 0) {
         const dx = state.player.x - state.boss.x;
         const dy = state.player.y - state.boss.y;
         const aim = Math.atan2(dy, dx);
-        const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.18, 0.18] : [-0.26, 0, 0.26]);
+        const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.16, 0.16] : [-0.22, 0, 0.22]);
         offsets.forEach(offset => {
           const a = aim + offset;
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
-            Math.cos(a) * speed * 0.90,
-            Math.sin(a) * speed * 0.90,
+            Math.cos(a) * speed * 0.88,
+            Math.sin(a) * speed * 0.88,
             damage
           );
           if (p) {
-            p.canvasRadius = 5.4;
+            p.canvasRadius = 5.2;
             state.enemyBullets.push(p);
           }
         });
@@ -12656,8 +12818,7 @@
     // カットイン画像のネットワーク/decode完了を待ってから戦闘停止すると、
     // 「ULT入力 → 無反応に固まる → 画像表示」という体感になる。
     // 先にカットインDOMを即時生成し、画像は事前キャッシュを使う。未キャッシュでも表示開始は待たない。
-    const nonBlockingCutin = Number(c && c.id) === 38 ||
-      String(c && c.ultType || '').startsWith('painter_');
+    const nonBlockingCutin = false;
     const cutinSrc = getShootingUltCutinSrc(c);
     if (cutinSrc) void preloadShootingImage(cutinSrc, 7000, false);
 
@@ -12690,7 +12851,6 @@
     if (!nonBlockingCutin) prevTs = performance.now();
 
     // 停止型ULTだけdt基準をリセットする。
-    // ID38は戦闘が進行中なのでprevTsへ介入しない。
     if (!nonBlockingCutin) prevTs = performance.now();
 
     requestAnimationFrame(() => wrap.classList.add('show'));
@@ -20386,22 +20546,13 @@
 
 
   // ============================================================
-  // build908: ID38 クロエ ULT — 虹のかかる世界
+  // build941: ID38 クロエ ULT — 虹のかかる世界
   //
-  // 親弾：
-  //   LIGHT属性 / 真上へ直進 / 最初の敵・オブジェクトへの命中時のみ着弾。
-  //   命中した場合はLIGHT属性として通常の弱点・耐性計算を適用する。未命中なら分裂せず消滅。
-  //
-  // 子弾：
-  //   着弾地点から6方向へ同時発射。すべて非貫通。
-  //     上    = NEUTRAL
-  //     下    = DARK
-  //     左上  = FIRE
-  //     右上  = AQUA
-  //     左下  = WOOD
-  //     右下  = LIGHT
-  //   ダメージ計算は「命中前の敵属性」で行い、その後、生存した敵を
-  //   命中した子弾の属性へ書き換える。
+  // 旧「親弾が着弾 → 6方向へ分裂」は完全廃止。
+  // プレイヤー前方へ、筆でペンキを払うように6本の属性変化弾を同時発射する。
+  // 左から NEUTRAL / FIRE / AQUA / WOOD / DARK / LIGHT。
+  // 全弾貫通。同じ弾は同一対象へ1回だけ命中する。
+  // 複数属性弾が同じ対象へ命中した場合は、命中順に属性を書き換え、最後の属性が残る。
   // ============================================================
   function setCombatTargetElement(target, element) {
     if (!target) return false;
@@ -20439,7 +20590,7 @@
   }
 
   function ensurePainterUltStyle() {
-    const styleId = 'shooting-painter-rainbow-ult-style-v4';
+    const styleId = 'shooting-painter-element-spread-style-v5';
     if (document.getElementById(styleId)) return;
     const style = document.createElement('style');
     style.id = styleId;
@@ -20450,93 +20601,83 @@
           saturate(1.04)
           drop-shadow(0 0 10px rgba(var(--painter-shift-rgb,231,200,90),.78))!important;
       }
-      /* build932: クロエULT弾は「輪郭のある球」ではなく、ぼやけた気弾/aura表現へ統一。 */
-      .shooting-painter-rainbow-parent,
-      .shooting-painter-rainbow-child{
+      .shooting-painter-spread-bullet{
         position:absolute;
-        z-index:47;
-        width:22px;
-        height:22px;
-        margin:-11px 0 0 -11px;
+        z-index:48;
+        width:17px;
+        height:38px;
+        margin:-19px 0 0 -8.5px;
         border:0!important;
         outline:0!important;
-        border-radius:50%;
+        border-radius:52% 52% 62% 62% / 35% 35% 70% 70%;
         pointer-events:none;
         box-sizing:border-box;
+        transform-origin:50% 50%;
         background:
-          radial-gradient(circle at 48% 43%,
-            rgba(255,255,255,.98) 0 10%,
-            rgba(255,255,255,.78) 17%,
-            rgba(var(--painter-rgb,244,239,227),.58) 36%,
-            rgba(var(--painter-rgb,244,239,227),.24) 55%,
-            rgba(var(--painter-rgb,244,239,227),.08) 68%,
-            transparent 82%);
+          radial-gradient(ellipse at 50% 22%,
+            rgba(255,255,255,.95) 0 8%,
+            rgba(var(--painter-rgb,244,239,227),.96) 18%,
+            rgba(var(--painter-rgb,244,239,227),.78) 48%,
+            rgba(var(--painter-rgb,244,239,227),.28) 72%,
+            transparent 88%);
         box-shadow:
-          0 0 8px rgba(255,255,255,.52),
-          0 0 17px rgba(var(--painter-rgb,244,239,227),.42),
-          0 0 30px rgba(var(--painter-rgb,244,239,227),.18)!important;
-        filter:blur(.45px) saturate(.96);
+          0 0 6px rgba(255,255,255,.40),
+          0 0 12px rgba(var(--painter-rgb,244,239,227),.42),
+          0 0 22px rgba(var(--painter-rgb,244,239,227),.16)!important;
+        filter:saturate(1.08) blur(.18px);
       }
-      .shooting-painter-rainbow-parent{
-        z-index:48;
-        width:30px;
-        height:30px;
-        margin:-15px 0 0 -15px;
-        filter:blur(.65px) saturate(.94);
-        box-shadow:
-          0 0 10px rgba(255,255,255,.60),
-          0 0 24px rgba(var(--painter-rgb,244,239,227),.46),
-          0 0 42px rgba(var(--painter-rgb,244,239,227),.20)!important;
-      }
-      .shooting-painter-rainbow-parent::before,
-      .shooting-painter-rainbow-child::before{
-        content:"";
-        position:absolute;
-        inset:-38%;
-        border-radius:50%;
-        background:
-          radial-gradient(circle,
-            rgba(var(--painter-rgb,244,239,227),.22) 0 22%,
-            rgba(var(--painter-rgb,244,239,227),.10) 42%,
-            transparent 72%);
-        filter:blur(5px);
-        opacity:.92;
-      }
-      .shooting-painter-rainbow-parent::after,
-      .shooting-painter-rainbow-child::after{
+      .shooting-painter-spread-bullet::before{
         content:"";
         position:absolute;
         left:50%;
-        top:58%;
-        width:58%;
-        height:118%;
-        transform:translate(-50%,-12%);
+        top:62%;
+        width:7px;
+        height:32px;
+        transform:translateX(-50%);
         border-radius:50%;
-        border:0!important;
         background:linear-gradient(180deg,
-          rgba(var(--painter-rgb,244,239,227),.16),
-          rgba(var(--painter-rgb,244,239,227),.06) 42%,
-          transparent 88%);
-        filter:blur(5px);
-        opacity:.66;
+          rgba(var(--painter-rgb,244,239,227),.52),
+          rgba(var(--painter-rgb,244,239,227),.20) 48%,
+          transparent 100%);
+        filter:blur(2.7px);
+        opacity:.80;
       }
-      .shooting-painter-rainbow-burst{
+      .shooting-painter-spread-bullet::after{
+        content:"";
         position:absolute;
-        z-index:46;
-        width:26px;
-        height:26px;
-        margin:-13px 0 0 -13px;
+        left:50%;
+        top:78%;
+        width:4px;
+        height:4px;
         border-radius:50%;
-        pointer-events:none;
-        border:1px solid rgba(255,255,255,.88);
+        background:rgba(var(--painter-rgb,244,239,227),.75);
         box-shadow:
-          0 0 9px rgba(255,255,255,.94),
-          0 0 20px rgba(231,200,90,.50);
-        animation:painterRainbowBurst .32s ease-out both;
+          -7px 7px 0 -1px rgba(var(--painter-rgb,244,239,227),.55),
+           6px 11px 0 -1px rgba(var(--painter-rgb,244,239,227),.46),
+          -3px 17px 0 -1.5px rgba(var(--painter-rgb,244,239,227),.34);
+        opacity:.84;
       }
-      @keyframes painterRainbowBurst{
-        0%{transform:scale(.35);opacity:1}
-        100%{transform:scale(2.35);opacity:0}
+      .shooting-painter-spread-launch{
+        position:absolute;
+        z-index:47;
+        width:64px;
+        height:22px;
+        margin:-11px 0 0 -32px;
+        pointer-events:none;
+        border-radius:50%;
+        background:linear-gradient(90deg,
+          rgba(238,235,225,.70),
+          rgba(245,92,70,.65),
+          rgba(68,164,255,.65),
+          rgba(100,196,102,.65),
+          rgba(112,73,164,.65),
+          rgba(244,224,113,.70));
+        filter:blur(5px);
+        animation:painterSpreadLaunch .30s ease-out both;
+      }
+      @keyframes painterSpreadLaunch{
+        0%{transform:scale(.35,.55);opacity:.95}
+        100%{transform:scale(1.65,.25);opacity:0}
       }
     `;
     document.head.appendChild(style);
@@ -20550,28 +20691,18 @@
     (state?.facelessObjects || []).forEach(obj => {
       if (obj && obj.el && obj.hp > 0) list.push(obj);
     });
-    // 通常ステージの内部dummy bossは対象外。
     if (!isNormalBattle() && state?.boss && state.boss.hp > 0) list.push(state.boss);
     return list;
   }
 
-  // build932: クロエULT専用の衝突判定を座標系統一 + swept collisionへ変更。
-  // projectileのx/yはarenaローカル座標、getUnitRect()はviewport座標を返すため、
-  // 旧実装ではHUDぶんY座標がずれて「見た目は命中しているのに未命中」が起き得た。
-  // さらに高速移動時の1フレーム跨ぎも拾えるよう、前位置→現在位置の線分で最初の接触を探す。
-  function findPainterUltCollisionSwept(x0, y0, x1, y1, arenaRect, ignoreTarget = null, radius = 10) {
+  function findPainterSpreadCollisionsSwept(x0, y0, x1, y1, arenaRect, alreadyHit, radius = 10) {
     const r = Math.max(4, Number(radius || 10));
-    const candidates = getPainterUltCandidates();
-    let nearest = null;
-
-    for (const target of candidates) {
-      if (!target || target === ignoreTarget || target.hp <= 0) continue;
+    const hits = [];
+    for (const target of getPainterUltCandidates()) {
+      if (!target || target.hp <= 0 || (alreadyHit && alreadyHit.has(target))) continue;
       const viewportRect = getUnitRect(target, arenaRect);
       if (!viewportRect) continue;
 
-      // targetもarenaローカル座標へ戻してから比較する。
-      // 見た目と判定の乖離を避けるため、旧実装の大きなhitbox縮小は廃止し、
-      // 端だけの誤爆防止として最小限のinsetだけ残す。
       const inset = target === state?.boss ? 5 : 2;
       const minX = viewportRect.left - arenaRect.left + inset - r;
       const maxX = viewportRect.right - arenaRect.left - inset + r;
@@ -20581,46 +20712,39 @@
 
       const t = segmentAabbEntryT(x0, y0, x1, y1, minX, maxX, minY, maxY);
       if (t == null) continue;
-      if (!nearest || t < nearest.t) {
-        nearest = {
-          target,
-          t,
-          x: x0 + (x1 - x0) * t,
-          y: y0 + (y1 - y0) * t,
-        };
-      }
+      hits.push({
+        target,
+        t,
+        x:x0 + (x1 - x0) * t,
+        y:y0 + (y1 - y0) * t,
+      });
     }
-    return nearest;
+    hits.sort((a,b) => a.t - b.t);
+    return hits;
   }
 
-  function findPainterUltCollision(x, y, arenaRect, ignoreTarget = null, radius = 10) {
-    const hit = findPainterUltCollisionSwept(x, y, x, y, arenaRect, ignoreTarget, radius);
-    return hit ? hit.target : null;
-  }
-
-  function applyPainterRainbowDamage(target, rawDamage, attackElement, now, c, options = {}) {
+  function applyPainterSpreadDamage(target, rawDamage, attackElement, now, c) {
     if (!target || target.hp <= 0) return 0;
 
-    // 必ず変更前の属性を使ってダメージ倍率を決める。
+    // ダメージは命中直前の属性で計算し、その後に属性を書き換える。
     const targetElementBeforeHit = getCombatTargetElement(target, state?.boss?.element);
     const reaction = getElementDamageReaction(attackElement, targetElementBeforeHit);
     const finalDamage = applyElementDamage(rawDamage, attackElement, targetElementBeforeHit);
     let appliedDamage = 0;
-    const big = !!options.big;
 
     if ((state.normalEnemies || []).includes(target)) {
-      appliedDamage = damageNormalEnemy(target, finalDamage, now, big, reaction);
+      appliedDamage = damageNormalEnemy(target, finalDamage, now, false, reaction);
     } else if ((state.facelessObjects || []).includes(target)) {
       appliedDamage = damageFacelessObject(target, finalDamage, now, reaction);
     } else if (target === state.boss && state.boss && state.boss.hp > 0) {
       appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
       updateBossPhase();
-      createHit(Number(target.x || 0), Number(target.y || 0), big);
-      showBossDamageNumber(appliedDamage, big, reaction);
-      flashBossHit(big);
+      createHit(Number(target.x || 0), Number(target.y || 0), false);
+      showBossDamageNumber(appliedDamage, false, reaction);
+      flashBossHit(false);
       if (!addScoreAttackDamageScore(appliedDamage)) {
-        addLegacyCombatScore(Math.round(appliedDamage * (big ? 100 : 80)));
+        addLegacyCombatScore(Math.round(appliedDamage * 80));
       }
     }
 
@@ -20629,19 +20753,14 @@
       registerComboHit(c.id, now, appliedDamage);
     }
 
-    // 親弾は属性を書き換えない。
-    // 子弾はダメージ解決後、生存対象のみ命中弾の属性へ変更する。
-    if (options.shiftElement && target.hp > 0) {
-      setCombatTargetElement(target, attackElement);
-    }
-
+    // 生存していれば、命中したペンキの属性へ即時書き換え。
+    if (target.hp > 0) setCombatTargetElement(target, attackElement);
     return appliedDamage;
   }
 
-  function finalizePainterRainbowHit(now) {
+  function finalizePainterSpreadHit(now) {
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
     state.facelessObjects = (state.facelessObjects || []).filter(obj => obj && obj.hp > 0);
-
     if (isNormalBattle()) {
       evaluateNormalMission(now);
     } else if (state.boss && state.boss.hp <= 0) {
@@ -20650,57 +20769,68 @@
     renderHud();
   }
 
-  function createPainterRainbowBurst(x, y) {
+  function createPainterSpreadLaunch(x, y) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const burst = document.createElement('i');
-    burst.className = 'shooting-painter-rainbow-burst';
+    burst.className = 'shooting-painter-spread-launch';
     burst.style.left = `${x}px`;
     burst.style.top = `${y}px`;
     arena.appendChild(burst);
-    setTimeout(() => burst.remove(), 360);
+    setTimeout(() => burst.remove(), 340);
   }
 
-  function launchPainterRainbowChildren(x, y, c, sourceTarget = null) {
+  function usePainterElementSpreadUlt(c) {
     if (!state || state.ended || state.finishing) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
 
+    ensureBombVisualStyles();
     ensurePainterUltStyle();
-    createPainterRainbowBurst(x, y);
+    showUltCut(c.ultName || '虹のかかる世界', c.effectKey, c);
+    ultScreenFlash('ult-flash-element', c);
 
-    const diagonal = Math.SQRT1_2;
+    const startX = Number(state.player?.x || arena.clientWidth * .5);
+    const startY = Math.max(42, Number(state.player?.y || arena.clientHeight * .80) - 30);
+    createPainterSpreadLaunch(startX, startY);
+
+    // 左 → 右の順序を固定。画面上でもこの並びになる。
     const specs = [
-      { key:'up',         element:'neutral', dx:0,         dy:-1 },
-      { key:'down',       element:'dark',    dx:0,         dy: 1 },
-      { key:'left-up',    element:'fire',    dx:-diagonal, dy:-diagonal },
-      { key:'right-up',   element:'aqua',    dx: diagonal, dy:-diagonal },
-      { key:'left-down',  element:'wood',    dx:-diagonal, dy: diagonal },
-      { key:'right-down', element:'light',   dx: diagonal, dy: diagonal },
+      { element:'neutral', spread:-0.48 },
+      { element:'fire',    spread:-0.29 },
+      { element:'aqua',    spread:-0.10 },
+      { element:'wood',    spread: 0.10 },
+      { element:'dark',    spread: 0.29 },
+      { element:'light',   spread: 0.48 },
     ];
 
-    const speed = Math.max(180, Number(c.paintRainbowChildSpeed || 520));
+    const speed = Math.max(360, Number(c.paintSpreadSpeed || c.paintRainbowChildSpeed || 560));
     const damage = Math.max(
       0,
-      Number(c.atk || 0) * Math.max(0, Number(c.paintRainbowChildDamageAtkMultiplier ?? 1.0))
+      Number(c.atk || 0) * Math.max(0, Number(c.paintSpreadDamageAtkMultiplier ?? c.paintRainbowChildDamageAtkMultiplier ?? 1.75))
     );
 
-    const children = specs.map(spec => {
+    const bullets = specs.map((spec, index) => {
       const visual = getBombElementVisual(spec.element);
+      const dx = Math.sin(spec.spread);
+      const dy = -Math.cos(spec.spread);
+      const angleDeg = spec.spread * 180 / Math.PI;
       const el = document.createElement('i');
-      el.className = `shooting-painter-rainbow-child element-${spec.element}`;
+      el.className = `shooting-painter-spread-bullet element-${spec.element}`;
       el.dataset.element = spec.element;
-      el.dataset.direction = spec.key;
+      el.dataset.order = String(index);
       el.style.setProperty('--painter-rgb', visual.rgb);
-      el.style.transform = `translate3d(${x}px,${y}px,0)`;
       arena.appendChild(el);
       return {
         ...spec,
-        x,
-        y,
-        travel: 0,
+        dx,
+        dy,
+        angleDeg,
+        x:startX,
+        y:startY,
         el,
-        alive: true,
+        alive:true,
+        hitTargets:new Set(),
       };
     });
 
@@ -20709,7 +20839,7 @@
 
     const cleanup = () => {
       if (raf) cancelAnimationFrame(raf);
-      children.forEach(child => child.el && child.el.remove());
+      bullets.forEach(b => b.el && b.el.remove());
     };
 
     const animate = ts => {
@@ -20725,166 +20855,55 @@
       const height = Math.max(1, Number(arena.clientHeight || 0));
       let aliveCount = 0;
 
-      for (const child of children) {
-        if (!child.alive) continue;
+      // 配列順＝左から neutral → fire → aqua → wood → dark → light。
+      // 同一frameで同じ敵へ複数色が入った場合も、後ろの弾ほど後から上書きされる。
+      for (const bullet of bullets) {
+        if (!bullet.alive) continue;
 
-        const prevX = child.x;
-        const prevY = child.y;
-        child.x += child.dx * speed * dt;
-        child.y += child.dy * speed * dt;
-        child.travel += speed * dt;
-        child.el.style.transform = `translate3d(${child.x}px,${child.y}px,0)`;
+        const prevX = bullet.x;
+        const prevY = bullet.y;
+        bullet.x += bullet.dx * speed * dt;
+        bullet.y += bullet.dy * speed * dt;
+        bullet.el.style.transform = `translate3d(${bullet.x}px,${bullet.y}px,0) rotate(${bullet.angleDeg}deg)`;
 
-        if (child.x < -22 || child.x > width + 22 || child.y < -22 || child.y > height + 22) {
-          child.alive = false;
-          child.el.remove();
-          continue;
+        const hits = findPainterSpreadCollisionsSwept(
+          prevX,
+          prevY,
+          bullet.x,
+          bullet.y,
+          arenaRect,
+          bullet.hitTargets,
+          9
+        );
+
+        for (const hit of hits) {
+          if (!hit.target || hit.target.hp <= 0) continue;
+          bullet.hitTargets.add(hit.target);
+          createBombSplashVictimHitEffect(hit.x, hit.y, bullet.element);
+          applyPainterSpreadDamage(hit.target, damage, bullet.element, ts, c);
         }
 
-        // 親弾の着弾対象を全6弾が即座に多重ヒットしないよう除外。
-        // また、発生直後の数pxは「飛び出す」見た目を優先して判定しない。
-        if (child.travel >= 18) {
-          const collision = findPainterUltCollisionSwept(
-            prevX,
-            prevY,
-            child.x,
-            child.y,
-            arenaRect,
-            sourceTarget,
-            8
-          );
-          const hitTarget = collision && collision.target;
+        if (hits.length) finalizePainterSpreadHit(ts);
 
-          if (hitTarget) {
-            const impactX = Number(collision.x || child.x);
-            const impactY = Number(collision.y || child.y);
-            createBombSplashVictimHitEffect(impactX, impactY, child.element);
-            applyPainterRainbowDamage(
-              hitTarget,
-              damage,
-              child.element,
-              ts,
-              c,
-              { shiftElement:true, big:false }
-            );
-
-            child.alive = false;
-            child.el.remove();
-            finalizePainterRainbowHit(ts);
-            continue;
-          }
+        if (
+          bullet.x < -48 || bullet.x > width + 48 ||
+          bullet.y < -54 || bullet.y > height + 54
+        ) {
+          bullet.alive = false;
+          bullet.el.remove();
+          continue;
         }
 
         aliveCount++;
       }
 
-      if (aliveCount > 0) {
-        raf = requestAnimationFrame(animate);
-      } else {
-        cleanup();
-      }
+      if (aliveCount > 0) raf = requestAnimationFrame(animate);
+      else cleanup();
     };
 
-    raf = requestAnimationFrame(animate);
-  }
-
-  function impactPainterRainbowParent(target, x, y, c) {
-    if (!state || state.ended || state.finishing) return;
-    const nowHit = performance.now();
-    const attackElement = 'light';
-    const directDamage = Math.max(
-      0,
-      Number(c.atk || 0) * Math.max(0, Number(c.ultDamageAtkMultiplier || 2.5))
-    );
-
-    // 親弾はLIGHT属性ダメージのみ。属性書き換えは子弾だけ。
-    if (target && target.hp > 0) {
-      createBombSplashVictimHitEffect(x, y, attackElement);
-      applyPainterRainbowDamage(
-        target,
-        directDamage,
-        attackElement,
-        nowHit,
-        c,
-        { shiftElement:false, big:true }
-      );
-    }
-
-    // 親弾の着弾地点を起点に必ず6方向へ展開。
-    launchPainterRainbowChildren(x, y, c, target || null);
-    finalizePainterRainbowHit(nowHit);
-  }
-
-  function usePainterRainbowUlt(c) {
-    if (!state || state.ended || state.finishing) return;
-    const arena = document.getElementById('shooting-arena');
-    if (!arena) return;
-
-    ensureBombVisualStyles();
-    ensurePainterUltStyle();
-    showUltCut(c.ultName || '虹のかかる世界', c.effectKey, c);
-    ultScreenFlash('ult-flash-element', c);
-
-    const startX = Number(state.player?.x || arena.clientWidth * .5);
-    const startY = Math.max(36, Number(state.player?.y || arena.clientHeight * .80) - 28);
-    const baseSpeed = Math.max(120, Number(c.paintUltBaseSpeed || c.bulletSpeed || 660));
-    const speedMultiplier = Math.max(.1, Number(c.paintUltSpeedMultiplier ?? .35));
-    const speed = baseSpeed * speedMultiplier;
-    const visual = getBombElementVisual('light');
-
-    // クロエULTは旧仕様と同じく戦闘時間を止めない。
-    // 通常ショット、敵移動、敵弾もそのまま進行する。
-    createBombThrowPop(startX, startY, 'light');
-
-    const parent = document.createElement('i');
-    parent.className = 'shooting-painter-rainbow-parent element-light';
-    parent.dataset.element = 'light';
-    parent.style.setProperty('--painter-rgb', visual.rgb);
-    arena.appendChild(parent);
-
-    let x = startX;
-    let y = startY;
-    let lastTs = performance.now();
-    let raf = 0;
-
-    const cleanup = () => {
-      if (raf) cancelAnimationFrame(raf);
-      parent.remove();
-    };
-
-    const animate = ts => {
-      if (!state || state.ended || state.finishing || !parent.isConnected) {
-        cleanup();
-        return;
-      }
-
-      const dt = Math.min(.035, Math.max(0, (ts - lastTs) / 1000));
-      lastTs = ts;
-      const prevX = x;
-      const prevY = y;
-      y -= speed * dt;
-      parent.style.transform = `translate3d(${x}px,${y}px,0)`;
-
-      const arenaRect = arena.getBoundingClientRect();
-      const collision = findPainterUltCollisionSwept(prevX, prevY, x, y, arenaRect, null, 14);
-      const hitTarget = collision && collision.target;
-
-      if (hitTarget) {
-        cleanup();
-        impactPainterRainbowParent(hitTarget, Number(collision.x || x), Number(collision.y || y), c);
-        return;
-      }
-
-      // build909: 敵・オブジェクトへ命中しなかった親弾は分裂せず消滅する。
-      if (y <= -24) {
-        cleanup();
-        return;
-      }
-
-      raf = requestAnimationFrame(animate);
-    };
-
-    parent.style.transform = `translate3d(${x}px,${y}px,0)`;
+    bullets.forEach(b => {
+      b.el.style.transform = `translate3d(${b.x}px,${b.y}px,0) rotate(${b.angleDeg}deg)`;
+    });
     raf = requestAnimationFrame(animate);
     renderHud();
   }
@@ -20923,10 +20942,11 @@
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
     else if (c.ultType === 'toyfel_double_black_hole') useToyfelUlt(c);
     else if (
+      c.ultType === 'painter_element_spread' ||
       c.ultType === 'painter_rainbow_world' ||
       c.ultType === 'painter_light_paint_bomb' ||
       c.ultType === 'painter_dark_paint_bomb'
-    ) usePainterRainbowUlt(c);
+    ) usePainterElementSpreadUlt(c);
     else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
@@ -22312,7 +22332,11 @@
     'images/icatch_18.webp',
     'images/icatch_19.webp',
     'images/icatch_20.webp',
-    'images/icatch_21.webp'
+    'images/icatch_21.webp',
+    'images/icatch_22.webp',
+    'images/icatch_23.webp',
+    'images/icatch_24.webp',
+    'images/icatch_25.webp'
   ]);
   const SHOOTING_ICATCH_LOGO = 'images/icatch_logo.webp';
   const SHOOTING_ICATCH_FADE_IN_MS = 1000;

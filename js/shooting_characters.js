@@ -2162,10 +2162,10 @@
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.PAINTER] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.PAINTER, effectKey: 'painter',
-    label: 'BOMB M / RAINBOW SHIFT',
-    description: 'LIGHT属性のBOMB Mを扱うR範囲攻撃型。ULT「虹のかかる世界」は光の親弾を着弾させ、6方向へ異なる属性弾を放って敵の属性を書き換える。',
+    label: 'BOMB M / ELEMENT SPREAD',
+    description: 'LIGHT属性のBOMB Mを扱うR範囲攻撃型。ULT「虹のかかる世界」は6色の貫通ペイント弾を扇状に放ち、命中した敵の属性そのものを書き換える。',
     ultName: '虹のかかる世界',
-    ultDescription: '光属性の弾を前方へ発射し、着弾地点から、6方向へ属性弾を放つ。弾はそれぞれ無・闇・火・水・木・光属性。通常の弱点・耐性計算を行い、命中後に対象の属性を命中した属性弾と同じ属性へ変更する。属性弾は非貫通。',
+    ultDescription: '前方へ6本の属性変化弾をSPREAD発射する。左から無・火・水・木・闇・光属性。全弾貫通し、命中した敵をその弾と同じ属性へ変更する。同じ敵へ複数属性が命中した場合は、後から命中した属性で上書きされる。',
     shotType: 'bomb',
     mainShot: { type: 'bomb', size: 'M' },
     bombSize: 'M',
@@ -2179,12 +2179,9 @@
     ultGainPerHit: 1.40,
     ultBaseType: 'projectile',
     ultAddons: ['damage','multi_element','element_shift'],
-    ultType: 'painter_rainbow_world',
-    ultDamageAtkMultiplier: 2.5,
-    paintRainbowChildDamageAtkMultiplier: 1.75,
-    paintRainbowChildSpeed: 520,
-    paintUltBaseSpeed: 660,
-    paintUltSpeedMultiplier: 0.35,
+    ultType: 'painter_element_spread',
+    paintSpreadDamageAtkMultiplier: 1.75,
+    paintSpreadSpeed: 560,
   });
 
   // ============================================================
@@ -2199,7 +2196,7 @@
     effectKey: 'remnacross',
     label: 'TRAP / PHOTON BUSTER 202',
     description: '無属性の罠師。2秒ごとに中距離へ地雷を投げ、設置から3秒後または敵接触で範囲爆発させる。設置前に敵へ直撃した場合は爆発せず、爆発ダメージの50%だけを与える。ULTは5秒間の無属性極太レーザー。',
-    ultName: '対神性滅焼破壊砲――フォトンバスター202',
+    ultName: 'フォトンバスター202',
     ultDescription: 'SIGMA-IX「ブラックシップ」と同じ方式で、正面へ極太レーザーを5秒間連続照射する。攻撃属性は無属性。0.25秒ごとにATK×35%のダメージ判定が発生する。',
     shotType: 'trap',
     mainShot: { type: 'trap' },
