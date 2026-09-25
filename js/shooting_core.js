@@ -9408,34 +9408,45 @@
     const originY = state.boss.y + 40;
 
     // 理想郷：ノア専用。
-    // 軽量化を維持しつつ、通常弾は毎ボレー左右対称になるよう鏡写しで生成する。
+    // build946: 軽量優先。通常弾は固定テーブルで左右対称、追従弾だけ例外。
     if (isNoahStage()) {
-      const interval = phase === 1 ? 300 : (phase === 2 ? 245 : 205);
+      const interval = phase === 1 ? 320 : (phase === 2 ? 265 : 225);
+
+      // ステージ開始直後はCanvas生成・BOSS表示・各画像decodeと重なるため、
+      // 1ボレー分だけ待ってから弾幕を開始する。
+      if (!state.noahBarragePrimed) {
+        state.noahBarragePrimed = true;
+        state.lastBossShotAt = now;
+        return;
+      }
+
       if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
       state.lastBossShotAt = now;
 
       const step = Number(state.noahSpiralStep || 0);
+      const pattern = step & 3;
       const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 0.98 : 1.04);
       const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94);
-      const spawnCompanionLane = (step % 3) === 0;
-
-      // 画面縦軸（下方向 = PI/2）を中心に左右対称。
-      // spreadは周期的に呼吸させ、弾数を増やさず見た目の変化だけ作る。
-      const pulse = 0.5 + 0.5 * Math.sin(step * (phase === 1 ? 0.42 : (phase === 2 ? 0.48 : 0.54)));
-      const innerSpread = phase === 1
-        ? 0.28 + 0.16 * pulse
-        : (phase === 2 ? 0.24 + 0.18 * pulse : 0.20 + 0.16 * pulse);
-      const outerSpread = phase === 3 ? 0.54 + 0.18 * (1 - pulse) : 0;
+      const spawnCompanionLane = (step % 4) === 0;
       const centerAxis = Math.PI / 2;
 
-      const normalOffsets = phase === 1
-        ? [-innerSpread, innerSpread]
-        : (phase === 2
-          ? [-innerSpread, 0, innerSpread]
-          : [-outerSpread, -innerSpread, innerSpread, outerSpread]);
+      // 三角関数で毎回spreadを生成せず、4種類の固定角度を循環。
+      // 見た目の呼吸感は維持しつつ計算量と不確定要素を減らす。
+      const innerTable = phase === 1
+        ? [0.28, 0.34, 0.42, 0.34]
+        : (phase === 2 ? [0.24, 0.31, 0.39, 0.31] : [0.20, 0.26, 0.33, 0.26]);
+      const inner = innerTable[pattern];
+      const outerTable = [0.56, 0.64, 0.72, 0.64];
+      const outer = outerTable[pattern];
 
-      for (const offset of normalOffsets) {
-        const a = centerAxis + offset;
+      const normalOffsets = phase === 1
+        ? [-inner, inner]
+        : (phase === 2
+          ? [-inner, 0, inner]
+          : [-outer, -inner, inner, outer]);
+
+      for (let i = 0; i < normalOffsets.length; i++) {
+        const a = centerAxis + normalOffsets[i];
         const p = makeProjectile(
           'shooting-enemy-bullet',
           originX, originY,
@@ -9449,14 +9460,13 @@
         }
       }
 
-      // 伴走レーンも同じ本数・同じ左右対称構成。3ボレーに1回だけで軽量化を維持。
+      // 伴走レーンも左右対称。4ボレーに1回だけ。
       if (spawnCompanionLane) {
         const laneShift = phase === 1 ? 0.10 : (phase === 2 ? 0.09 : 0.08);
-        for (const offset of normalOffsets) {
-          const mirroredOffset = offset === 0
-            ? 0
-            : offset + Math.sign(offset) * laneShift;
-          const a = centerAxis + mirroredOffset;
+        for (let i = 0; i < normalOffsets.length; i++) {
+          const offset = normalOffsets[i];
+          const shifted = offset === 0 ? 0 : offset + (offset < 0 ? -laneShift : laneShift);
+          const a = centerAxis + shifted;
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
@@ -9473,18 +9483,17 @@
 
       state.noahSpiralStep = step + 1;
 
-      // リングも左右対称配置。ランダム回転はせず、中心線に対して鏡写しになる角度だけを使う。
-      const haloEvery = phase === 1 ? 8 : (phase === 2 ? 7 : 6);
+      // 軽量な左右対称リング。頻度を低く保つ。
+      const haloEvery = phase === 1 ? 9 : (phase === 2 ? 8 : 7);
       if ((state.noahSpiralStep % haloEvery) === 0) {
-        const haloCount = phase === 1 ? 4 : (phase === 2 ? 5 : 6);
+        const haloOffsets = phase === 1
+          ? [-0.76, -0.30, 0.30, 0.76]
+          : (phase === 2
+            ? [-0.86, -0.40, 0, 0.40, 0.86]
+            : [-0.96, -0.58, -0.22, 0.22, 0.58, 0.96]);
         const haloSpeed = phase === 1 ? 0.72 : (phase === 2 ? 0.78 : 0.84);
-        const haloOffsets = haloCount === 4
-          ? [-0.78, -0.30, 0.30, 0.78]
-          : (haloCount === 5
-            ? [-0.88, -0.42, 0, 0.42, 0.88]
-            : [-1.00, -0.62, -0.24, 0.24, 0.62, 1.00]);
-        for (const offset of haloOffsets) {
-          const a = centerAxis + offset;
+        for (let i = 0; i < haloOffsets.length; i++) {
+          const a = centerAxis + haloOffsets[i];
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
@@ -9499,15 +9508,15 @@
         }
       }
 
-      // 追従弾だけは例外。プレイヤー位置基準なので左右対称制約をかけない。
-      const extraEvery = phase === 1 ? 6 : 5;
+      // 追従弾だけ左右対称制約の例外。
+      const extraEvery = phase === 1 ? 7 : 6;
       if ((state.noahSpiralStep % extraEvery) === 0) {
         const dx = state.player.x - state.boss.x;
         const dy = state.player.y - state.boss.y;
         const aim = Math.atan2(dy, dx);
         const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.16, 0.16] : [-0.22, 0, 0.22]);
-        offsets.forEach(offset => {
-          const a = aim + offset;
+        for (let i = 0; i < offsets.length; i++) {
+          const a = aim + offsets[i];
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
@@ -9519,7 +9528,7 @@
             p.canvasRadius = 5.2;
             state.enemyBullets.push(p);
           }
-        });
+        }
       }
       return;
     }
