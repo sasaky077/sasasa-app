@@ -2929,8 +2929,13 @@
     let best = null;
     let bestT = Infinity;
 
+    const collisionNow = performance.now();
     state.facelessObjects.forEach(obj => {
-      if (!obj || !obj.el || obj.hp <= 0) return;
+      if (!obj || !obj.el) return;
+      const stillBlocking =
+        Number(obj.hp || 0) > 0 ||
+        collisionNow < Number(obj.blockingUntil || 0);
+      if (!stillBlocking) return;
       if (projectile.pierce && projectile.piercedTargets && projectile.piercedTargets.has(obj)) return;
 
       const cx = Number(obj.x || 0);
@@ -4636,6 +4641,23 @@
         canvasHalfWidth: isRaidLaser ? 135 : radius,
         canvasHalfHeight: isRaidLaser ? 2.5 : radius,
       };
+
+      // build962: Noah's ordinary bullets always snake along their forward path.
+      // Keep the projectile's original heading/speed, but add a sinusoidal offset
+      // on the perpendicular axis so the trajectory continuously draws an S-curve.
+      // WARNING / danger bullets keep their dedicated movement logic.
+      if (canvasKind === 'noah' && !isDanger) {
+        const baseSpeed = Math.max(1, Math.hypot(Number(vx || 0), Number(vy || 0)));
+        p.noahNormalWave = true;
+        p.noahWaveAge = 0;
+        p.noahWaveBaseX = Number(x || 0);
+        p.noahWaveBaseY = Number(y || 0);
+        p.noahWavePerpX = -Number(vy || 0) / baseSpeed;
+        p.noahWavePerpY = Number(vx || 0) / baseSpeed;
+        p.noahWaveAmp = 15;
+        p.noahWaveFreq = 4.4;
+        p.noahWavePhase = 0;
+      }
       measureUnitSize(p);
       if (classNameForGuard.includes('shooting-enemy-bullet')) {
         const key = getEnemyProjectileElement(p);
@@ -6273,7 +6295,7 @@
   // 設置前接触は爆発せず50%単体ダメージ、設置後は接触/3秒で範囲爆発。
   // ============================================================
   function ensureRemnaTrapVisualStyles() {
-    const styleId = 'shooting-remna-trap-style-build935';
+    const styleId = 'shooting-remna-trap-style-build966';
     if (document.getElementById(styleId)) return;
     const style = document.createElement('style');
     style.id = styleId;
@@ -6296,21 +6318,33 @@
         box-shadow:none!important;pointer-events:none!important;
       }
       .shooting-remna-trap.trap-armed{
-        border-color:rgba(255,220,135,.92)!important;
-        box-shadow:0 0 0 2px rgba(255,193,73,.13),0 0 12px rgba(255,170,52,.44)!important;
-        animation:shootingRemnaTrapArmed935 .55s ease-in-out infinite alternate!important;
+        border-color:rgba(255,220,135,.88)!important;
+        box-shadow:0 0 0 1px rgba(255,193,73,.10),0 0 9px rgba(255,170,52,.34)!important;
+        transform-origin:center center!important;
+        animation:shootingRemnaTrapPulse966 1s ease-in-out infinite!important;
       }
+      /* build966: 数字カウントは表示しない。設置後は小さな光だけが毎秒脈動する。 */
       .shooting-remna-trap.trap-armed::after{
-        content:attr(data-trap-count)!important;display:flex!important;align-items:center!important;justify-content:center!important;
-        position:absolute!important;left:50%!important;top:-17px!important;width:20px!important;height:14px!important;
-        transform:translateX(-50%)!important;background:rgba(20,18,18,.76)!important;
-        border:1px solid rgba(255,205,112,.42)!important;border-radius:3px!important;
-        color:#fff4cf!important;font:700 9px/1 "Cinzel",sans-serif!important;
-        text-shadow:0 0 5px rgba(255,184,69,.72)!important;box-shadow:none!important;
+        content:''!important;display:block!important;position:absolute!important;
+        left:50%!important;top:50%!important;width:7px!important;height:7px!important;
+        transform:translate(-50%,-50%) scale(.72)!important;
+        border:0!important;border-radius:50%!important;
+        background:rgba(255,224,151,.94)!important;
+        box-shadow:0 0 4px rgba(255,214,120,.88),0 0 9px rgba(255,177,64,.48)!important;
         pointer-events:none!important;
+        animation:shootingRemnaTrapCorePulse966 1s ease-in-out infinite!important;
       }
       .shooting-remna-trap.trap-flying::after{content:none!important;display:none!important}
-      @keyframes shootingRemnaTrapArmed935{from{filter:brightness(.88)}to{filter:brightness(1.18)}}
+      @keyframes shootingRemnaTrapPulse966{
+        0%,100%{transform:scale(.94);filter:brightness(.88);opacity:.84}
+        18%{transform:scale(1.04);filter:brightness(1.20);opacity:1}
+        34%{transform:scale(.98);filter:brightness(1.02);opacity:.92}
+      }
+      @keyframes shootingRemnaTrapCorePulse966{
+        0%,100%{transform:translate(-50%,-50%) scale(.58);opacity:.48}
+        18%{transform:translate(-50%,-50%) scale(1.08);opacity:1}
+        36%{transform:translate(-50%,-50%) scale(.72);opacity:.68}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -6322,8 +6356,11 @@
     );
     if (normal) return { kind:'normal', ref:normal };
 
+    const trapNow = performance.now();
     const faceless = (state.facelessObjects || []).find(obj =>
-      obj && obj.el && obj.hp > 0 && rectsHit(r, getUnitRect(obj, arenaRect), 0, padding)
+      obj && obj.el &&
+      (Number(obj.hp || 0) > 0 || trapNow < Number(obj.blockingUntil || 0)) &&
+      rectsHit(r, getUnitRect(obj, arenaRect), 0, padding)
     );
     if (faceless) return { kind:'faceless', ref:faceless };
 
@@ -6409,8 +6446,6 @@
     if (!p || !p.el) return;
     if (p.trapState === 'armed') {
       p.vx = 0; p.vy = 0;
-      const leftMs = Math.max(0, Number(p.trapExplodeAt || now) - now);
-      p.el.dataset.trapCount = String(Math.max(1, Math.ceil(leftMs / 1000)));
       return;
     }
     p.x += Number(p.vx || 0) * dt;
@@ -6425,7 +6460,6 @@
       p.trapExplodeAt = now + Math.max(500, Number(p.trapCountdownMs || 3000));
       p.el.classList.remove('trap-flying');
       p.el.classList.add('trap-armed');
-      p.el.dataset.trapCount = '3';
     }
   }
 
@@ -9538,6 +9572,48 @@
         }
       }
 
+      // build963: 通常のS字弾幕に対して約15%だけ「闇属性の直進弾」を追加する。
+      // 追加数は小数予算を累積して決めるため、短い区間で偏らず長期的に約15%増となる。
+      // makeProjectile() はノア通常弾へS字移動を自動付与するため、追加弾だけ明示的に解除する。
+      const companionCount = spawnCompanionLane ? Math.max(0, normalOffsets.length - 1) : 0;
+      const baseVolleyCount = normalOffsets.length + companionCount;
+      state.noahDarkStraightBudget = Number(state.noahDarkStraightBudget || 0) + baseVolleyCount * 0.15;
+
+      const darkStraightOffsets = phase === 1
+        ? [-0.48, 0.48, -0.18, 0.18]
+        : (phase === 2
+          ? [-0.62, 0.62, -0.26, 0.26, 0]
+          : [-0.82, 0.82, -0.48, 0.48, -0.16, 0.16, 0]);
+
+      while (state.noahDarkStraightBudget >= 1) {
+        state.noahDarkStraightBudget -= 1;
+        const darkIndex = Number(state.noahDarkStraightStep || 0);
+        const darkOffset = darkStraightOffsets[darkIndex % darkStraightOffsets.length];
+        state.noahDarkStraightStep = darkIndex + 1;
+
+        const darkAngle = centerAxis + darkOffset;
+        const darkP = makeProjectile(
+          'shooting-enemy-bullet',
+          originX, originY,
+          Math.cos(darkAngle) * speed * speedMul,
+          Math.sin(darkAngle) * speed * speedMul,
+          damage
+        );
+        if (darkP) {
+          // S字挙動を解除し、発射時のベクトルのまま完全直進させる。
+          darkP.noahNormalWave = false;
+          darkP.noahDarkStraight = true;
+          darkP.attackElement = 'dark';
+          darkP.element = 'dark';
+          darkP.canvasRadius = phase === 3 ? 6.3 : 5.8;
+          darkP.canvasHalfWidth = darkP.canvasRadius;
+          darkP.canvasHalfHeight = darkP.canvasRadius;
+          darkP._hw = darkP.canvasRadius;
+          darkP._hh = darkP.canvasRadius;
+          state.enemyBullets.push(darkP);
+        }
+      }
+
       state.noahSpiralStep = step + 1;
 
       // 軽量な左右対称リング。頻度を低く保つ。
@@ -9988,6 +10064,10 @@
     const fill = obj.hpEl?.querySelector('i');
     if (fill) fill.style.width = `${clamp(obj.hp / obj.hpMax, 0, 1) * 100}%`;
     if (obj.hp <= 0) {
+      // build964: the mask remains a physical wall for the whole defeat visual.
+      // Previously hp became 0 immediately, so the next projectile could pass through
+      // while the mask was still visibly present for ~180ms.
+      obj.blockingUntil = Math.max(Number(obj.blockingUntil || 0), visualNow + 190);
       obj.el?.classList.add('defeated');
       setTimeout(() => {
         obj.el?.remove();
@@ -10062,7 +10142,17 @@
     const activePullField = isEnemyPullFieldActive(now);
 
     state.facelessObjects = state.facelessObjects.filter(obj => {
-      if (!obj || obj.hp <= 0) return false;
+      if (!obj) return false;
+
+      // build964: 撃破直後の180msは見た目だけ残すのではなく、
+      // その間も「壁」として残す。移動・射撃・追加ダメージは行わない。
+      if (Number(obj.hp || 0) <= 0) {
+        const stillBlocking = now < Number(obj.blockingUntil || 0) && !!obj.el?.isConnected;
+        if (!stillBlocking) return false;
+        positionUnit(obj.el, obj.x, obj.y);
+        if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        return true;
+      }
 
       // build929: アンジェULT中はOBJECTも移動・新規射撃を停止。
       // 既に盤面にある敵弾はupdateProjectiles側で通常どおり進行する。
@@ -11721,11 +11811,57 @@
         positionUnit(p.el, p.x, p.y);
       }
 
-      // J字の折り返し中は当たり判定を開始しない。
-      // 標的直下へ収束してから通常の着弾判定へ入る。
-      if (p.kind === 'wolf_j_homing' && !p.wolfCanHit) return true;
+      // J字の折り返し中もFACELESS仮面だけは「物理壁」として扱う。
+      // 攻撃可能フェーズ前でも、非貫通HOMINGが仮面を横切ることは許可しない。
+      if (p.kind === 'wolf_j_homing' && !p.wolfCanHit) {
+        if (isFacelessStage() && !p.pierce) {
+          const mask = findFacelessMaskProjectileCollision(
+            p,
+            projectilePrevX, projectilePrevY,
+            Number(p.x || 0), Number(p.y || 0)
+          );
+          if (mask) {
+            if (Number(mask.hp || 0) > 0) {
+              const chara = getBattleCharacter(p.ownerId || state.activeCharacterId) || getCurrentCharacter();
+              const attackElement = normalizeCombatElement(p.attackElement || p.element || chara?.element);
+              const targetElement = getCombatTargetElement(mask, state.boss?.element);
+              const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
+              damageFacelessObject(mask, finalDamage, now, getElementDamageReaction(attackElement, targetElement));
+            }
+            p.el.remove();
+            return false;
+          }
+        }
+        return true;
+      }
 
       if (p.kind === 'rose_heart') {
+        // build964: ROSE HEARTも非貫通Projectileなので仮面で確実に止める。
+        if (isFacelessStage() && !p.pierce) {
+          const mask = findFacelessMaskProjectileCollision(
+            p,
+            projectilePrevX, projectilePrevY,
+            Number(p.x || 0), Number(p.y || 0)
+          );
+          if (mask) {
+            if (Number(mask.hp || 0) > 0) {
+              const rose = getBattleCharacter(CHARACTER_ID.ROSE);
+              const heartDamage =
+                Number(rose?.atk || 0) *
+                Number(rose?.flowerHeartDamageAtkRate || 0.30);
+              const attackElement = normalizeCombatElement(rose?.element) || 'neutral';
+              const targetElement = getCombatTargetElement(mask, state.boss?.element);
+              damageFacelessObject(
+                mask,
+                applyElementDamage(heartDamage, attackElement, targetElement),
+                now,
+                getElementDamageReaction(attackElement, targetElement)
+              );
+            }
+            p.el.remove();
+            return false;
+          }
+        }
         if (p.y < -30 || p.y > h + 30 || p.x < -30 || p.x > w + 30 || now >= Number(p.expireAt || 0)) {
           p.el.remove();
           return false;
@@ -11874,7 +12010,13 @@
           return !!targetRect && rectsHit(r, targetRect, 0, obj.ambushMinion ? 14 : 12);
         }) || null;
       }
-      if (facelessObjectTarget && p.bombIgnoreTarget === facelessObjectTarget) {
+      // build964: FACELESSの仮面はbombIgnoreTargetより優先する物理壁。
+      // 非貫通弾が「直前に当てた対象だから」という理由で壁をすり抜けないようにする。
+      if (
+        facelessObjectTarget &&
+        p.bombIgnoreTarget === facelessObjectTarget &&
+        !isFacelessStage()
+      ) {
         facelessObjectTarget = null;
       }
       const hitBoss = !facelessObjectTarget &&
@@ -11953,7 +12095,7 @@
             createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
             hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, facelessObjectTarget);
           }
-          addLegacyCombatScore(80);
+          if (appliedObjectDamage > 0) addLegacyCombatScore(80);
         } else if (normalTarget) {
           const targetsToDamage =
             Array.isArray(normalTargets) && normalTargets.length
@@ -12218,6 +12360,18 @@
         p.x = Number(p.beautifulWaveBaseX || p.x) +
           Math.sin(p.beautifulAge * Number(p.beautifulWaveFreq || 4.2) + Number(p.beautifulWavePhase || 0)) *
           Number(p.beautifulWaveAmp || 18) * enemyMoveScaleX;
+      } else if (p.noahNormalWave) {
+        // Noah normal bullet: advance straight on the original vector while
+        // continuously oscillating across that vector. This produces a true
+        // S-shaped path instead of merely rotating the bullet heading.
+        p.noahWaveAge = Number(p.noahWaveAge || 0) + moveDt;
+        p.noahWaveBaseX = Number(p.noahWaveBaseX ?? p.x) + p.vx * dt * enemyMoveScaleX;
+        p.noahWaveBaseY = Number(p.noahWaveBaseY ?? p.y) + p.vy * moveDt * enemyMoveScaleY;
+        const noahWave = Math.sin(
+          p.noahWaveAge * Number(p.noahWaveFreq || 4.4) + Number(p.noahWavePhase || 0)
+        ) * Number(p.noahWaveAmp || 15);
+        p.x = p.noahWaveBaseX + Number(p.noahWavePerpX || 0) * noahWave * enemyMoveScaleX;
+        p.y = p.noahWaveBaseY + Number(p.noahWavePerpY || 0) * noahWave * enemyMoveScaleY;
       } else {
         p.x += p.vx * dt * enemyMoveScaleX;
         p.y += p.vy * moveDt * enemyMoveScaleY;

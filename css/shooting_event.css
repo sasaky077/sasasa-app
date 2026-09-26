@@ -10509,3 +10509,42 @@ html body:not(.ui-immersive) :is(
   55%{opacity:.72}
   100%{opacity:0;transform:scale(1.24)}
 }
+
+
+/* ============================================================
+   build965 AYANE ULT / KEEP BLACK-HAND ARTWORK BLACK
+   - the hand image itself must retain its original black artwork
+   - no purple tint / hue / color filter is applied to the image
+   - purple can remain in surrounding aura/impact effects only
+   ============================================================ */
+#shooting-event-root .shooting-ayane-blackhand-shot img.hand-open,
+#shooting-event-root .shooting-ayane-blackhand-shot img.hand-close{
+  filter:none !important;
+  -webkit-filter:none !important;
+  mix-blend-mode:normal !important;
+}
+
+/* The parent filter also affects rendered children, so keep its glow achromatic. */
+#shooting-event-root .shooting-ayane-blackhand-shot{
+  filter:
+    drop-shadow(0 0 8px rgba(0,0,0,.96))
+    drop-shadow(0 0 18px rgba(18,18,18,.72)) !important;
+}
+
+/* During the 7-second grab, do not pulse the hand with a purple shadow. */
+#shooting-event-root .shooting-ayane-blackhand-ult.grab .shooting-ayane-blackhand-shot{
+  animation:shootingAyaneGripHoldBlack965 .48s ease-in-out infinite alternate !important;
+}
+
+@keyframes shootingAyaneGripHoldBlack965{
+  from{
+    filter:
+      drop-shadow(0 0 8px rgba(0,0,0,1))
+      drop-shadow(0 0 14px rgba(18,18,18,.76));
+  }
+  to{
+    filter:
+      drop-shadow(0 0 12px rgba(0,0,0,1))
+      drop-shadow(0 0 26px rgba(34,34,34,.92));
+  }
+}
