@@ -41096,3 +41096,161 @@ html body textarea{
 #limitbreak-modal .lb-lack-row{
   flex:0 0 auto !important;
 }
+
+
+/* ============================================================
+   build956 NOAH / CENTERED PUZZLE LOGO + CUSTOM IMAGE
+   - locked state shows one centered logo across the whole 3x3 board
+   - preserve logo aspect ratio
+   - open pieces reveal nore.webp in 9 slices
+   - use the user-provided puzzle logo asset
+   ============================================================ */
+#noah-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+}
+
+#noah-piece-overlay .noah-puzzle-grid::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background-image:url("../images/noah_puzzle_logo.webp?v=957") !important;
+  background-repeat:no-repeat !important;
+  background-position:center center !important;
+  background-size:84% auto !important;
+  opacity:1 !important;
+}
+
+#noah-piece-overlay .noah-puzzle-piece{
+  position:relative !important;
+  z-index:1 !important;
+}
+
+#noah-piece-overlay .noah-puzzle-piece.locked{
+  background-image:none !important;
+  background-color:transparent !important;
+  filter:none !important;
+}
+
+#noah-piece-overlay .noah-puzzle-piece.locked::before,
+#noah-piece-overlay .noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+
+#noah-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/nore.webp?v=957") !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  background-color:#f8f6f1 !important;
+}
+
+
+/* ============================================================
+   build958 NOAH / TRUE 3x3 LOGO BACK + THIN FRAME
+   - the logo back is sliced by the nine actual cells
+   - original aspect ratio is preserved; the logo is centered
+   - remove the thick nested frame and make the 3x3 seams visible
+   ============================================================ */
+#noah-piece-overlay .noah-puzzle-frame{
+  width:min(calc(100vw - 54px),286px) !important;
+  aspect-ratio:1 / 1 !important;
+  padding:2px !important;
+  margin:0 auto !important;
+  border:1px solid rgba(145,116,73,.18) !important;
+  background:#f4f0e8 !important;
+  box-shadow:none !important;
+}
+
+#noah-piece-overlay .noah-puzzle-frame::before{
+  content:none !important;
+  display:none !important;
+}
+
+#noah-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(3,minmax(0,1fr)) !important;
+  gap:2px !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  border:0 !important;
+  background:rgba(147,118,76,.18) !important;
+}
+
+#noah-piece-overlay .noah-puzzle-grid::before{
+  content:none !important;
+  display:none !important;
+}
+
+#noah-piece-overlay .noah-puzzle-piece,
+#noah-piece-overlay .noah-puzzle-piece.locked,
+#noah-piece-overlay .noah-puzzle-piece.open{
+  position:relative !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  filter:none !important;
+  background-color:#fff !important;
+}
+
+/* Locked = back side. Each cell clips one ninth of the same full-size logo canvas. */
+#noah-piece-overlay .noah-puzzle-piece.locked{
+  background-image:none !important;
+}
+#noah-piece-overlay .noah-puzzle-piece.locked::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  width:300% !important;
+  height:300% !important;
+  pointer-events:none !important;
+  background-image:url("../images/noah_puzzle_logo.webp?v=958") !important;
+  background-repeat:no-repeat !important;
+  background-position:center center !important;
+  background-size:100% auto !important;
+  opacity:1 !important;
+}
+#noah-piece-overlay .noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* column offsets */
+#noah-piece-overlay .noah-puzzle-piece:nth-child(3n+1).locked::before{ left:0 !important; }
+#noah-piece-overlay .noah-puzzle-piece:nth-child(3n+2).locked::before{ left:-100% !important; }
+#noah-piece-overlay .noah-puzzle-piece:nth-child(3n).locked::before{ left:-200% !important; }
+
+/* row offsets */
+#noah-piece-overlay .noah-puzzle-piece:nth-child(-n+3).locked::before{ top:0 !important; }
+#noah-piece-overlay .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).locked::before{ top:-100% !important; }
+#noah-piece-overlay .noah-puzzle-piece:nth-child(n+7).locked::before{ top:-200% !important; }
+
+/* Open = front side / Noah. Keep the existing inline 0/50/100% background positions. */
+#noah-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/nore.webp?v=958") !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  animation:noahPieceTurn799 .62s cubic-bezier(.22,.72,.18,1) both !important;
+}
+#noah-piece-overlay .noah-puzzle-piece.open::before,
+#noah-piece-overlay .noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+
+@media(max-height:700px){
+  #noah-piece-overlay .noah-puzzle-frame{
+    width:min(calc(100vw - 60px),278px) !important;
+  }
+}
