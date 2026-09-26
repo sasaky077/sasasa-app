@@ -1,7 +1,7 @@
 {
-  "build": 960,
-  "published_at": "2026-09-26T23:03:00+09:00",
-  "label": "noah_center_rail_big_small_alternating",
+  "build": 961,
+  "published_at": "2026-09-26T23:12:00+09:00",
+  "label": "noah_ticket_single_atomic_consume",
   "release_protocol": 2,
   "commit_marker": true
 }

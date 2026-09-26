@@ -16748,6 +16748,12 @@
       if (!attemptId) throw new Error('ノア挑戦IDを取得できません');
 
       window.__noahAttemptId = attemptId;
+
+      // begin_noah_attempt consumes the ticket server-side, so refresh the
+      // visible balance only after the attempt has been created successfully.
+      if (typeof window.refreshSpecialTicketUI === 'function') {
+        try { await window.refreshSpecialTicketUI(); } catch (_) {}
+      }
       return true;
     } catch (err) {
       console.error('[shooting] noah attempt start failed:', err);
@@ -16899,7 +16905,12 @@
     // 挑戦権は「戦闘開始」を押した瞬間にだけ消費する。
     if (!(await ensureSelectedDailyQuestAttemptConsumed())) return;
     if (!(await ensureSelectedRaidAttemptStarted())) return;
-    if (!(await ensureSelectedStageTicketConsumed())) return;
+
+    // build961: NOAH's begin_noah_attempt RPC already validates/consumes
+    // SPECIAL STAGE TICKET atomically. Calling the generic ticket consumer
+    // first consumed the ticket once, then begin_noah_attempt failed with
+    // "special stage ticket required". Noah must use only the dedicated RPC.
+    if (!isNoahStage() && !(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
 
     // build532: SCORE ATTACKは実際の編成確定後にattemptを作る。
@@ -17085,7 +17096,9 @@
       alert('DAILY RAIDは1日1回のみ挑戦できます。');
       return;
     }
-    if (!(await ensureSelectedStageTicketConsumed())) return;
+    // build961: Noah retry also uses begin_noah_attempt as the single,
+    // atomic ticket-consumption path. Do not consume via the generic RPC first.
+    if (!isNoahStage() && !(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
 
     // SCORE ATTACKのRETRYは新しい挑戦なので、ここで新attemptを発行する。
