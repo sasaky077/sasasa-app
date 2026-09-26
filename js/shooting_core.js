@@ -4659,7 +4659,7 @@
 
   function isProtectedEnemyProjectile(p) {
     if (!p) return false;
-    if (p.dangerRicochet || p.dangerDrift) return true;
+    if (p.dangerRicochet || p.dangerDrift || p.noahCenterRail) return true;
     const el = p.el;
     if (!el || !el.classList) return false;
     // 将来WARNING弾のクラス名が増えても、danger / warning を含むものは保護する。
@@ -4675,7 +4675,10 @@
       hard: Math.max(30, Number(scoreCfg.maxEnemyBullets || 80)),
       recovery: Math.max(20, Number(scoreCfg.recoverEnemyBulletsTo || 60))
     } : null;
-    const noahLimits = !scoreAttackLimits && isNoahStage() ? { hard: 58, recovery: 42 } : null;
+    // build959 Noah: 旧58/42では、古い弾（=プレイヤー側へ進んだ弾）から
+    // 安全装置に消され、壁際まで届く前に弾幕が薄くなっていた。
+    // 上限を引き上げつつ、超過時は後述で「新しい弾」から間引く。
+    const noahLimits = !scoreAttackLimits && isNoahStage() ? { hard: 96, recovery: 84 } : null;
     const raidLimits = !scoreAttackLimits && !noahLimits && isRaidStage() ? getRaidEnemyBulletLimits() : null;
     const ch03BossLimits = !scoreAttackLimits && !noahLimits && !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
     const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (noahLimits ? noahLimits.hard : (raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT)));
@@ -4684,21 +4687,37 @@
 
     let removeNeeded = Math.max(0, current - recoveryTarget);
     let removed = 0;
-    const kept = [];
 
-    // enemyBulletsは生成順にpushされるため、先頭から整理すると古い通常弾から消える。
-    // 危険弾は上限超過時でも残し、ゲーム固有ギミックを壊さない。
-    for (const p of state.enemyBullets) {
-      if (removeNeeded > 0 && p && p.el && !isProtectedEnemyProjectile(p)) {
+    if (noahLimits) {
+      // Noahは「古い弾ほどプレイヤー側へ近い」。
+      // 軽量化のために先頭から消すと、到達直前の弾が消えて難易度が下がる。
+      // Noahだけは末尾（生成直後の新しい通常弾）から間引き、
+      // すでに画面を進んでいる弾は自然に壁外へ抜けるまで残す。
+      const kept = state.enemyBullets.slice();
+      for (let i = kept.length - 1; i >= 0 && removeNeeded > 0; i--) {
+        const p = kept[i];
+        if (!p || !p.el || isProtectedEnemyProjectile(p)) continue;
         p.el.remove();
+        kept.splice(i, 1);
         removeNeeded--;
         removed++;
-        continue;
       }
-      kept.push(p);
+      state.enemyBullets = kept;
+    } else {
+      const kept = [];
+      // 通常ステージは従来通り、古い通常弾から整理する。
+      // 危険弾は上限超過時でも残し、ゲーム固有ギミックを壊さない。
+      for (const p of state.enemyBullets) {
+        if (removeNeeded > 0 && p && p.el && !isProtectedEnemyProjectile(p)) {
+          p.el.remove();
+          removeNeeded--;
+          removed++;
+          continue;
+        }
+        kept.push(p);
+      }
+      state.enemyBullets = kept;
     }
-
-    state.enemyBullets = kept;
 
     // テスト時に発動有無を追えるよう、最大5秒に1回だけconsoleへ記録。
     if (removed > 0 && now - lastEnemyBulletGuardLogAt >= 5000) {
@@ -9458,8 +9477,16 @@
           ? [-inner, 0, inner]
           : [-outer, -inner, 0, inner, outer]);
 
+      // 中央レールは「大 → 小 → 大 → 小…」を絶えず流し続ける。
+      // 大弾もダメージ量は通常弾と同じ。見た目と当たり判定だけ二回り大きくする。
+      // step=0 から大弾で開始し、各ボレーごとに交互へ切り替える。
+      const centerIsBig = (step % 2) === 0;
+      const centerSmallRadius = phase === 3 ? 6.3 : 5.8;
+      const centerBigRadius = phase === 3 ? 10.8 : 10.0;
+
       for (let i = 0; i < normalOffsets.length; i++) {
-        const a = centerAxis + normalOffsets[i];
+        const offset = normalOffsets[i];
+        const a = centerAxis + offset;
         const p = makeProjectile(
           'shooting-enemy-bullet',
           originX, originY,
@@ -9468,7 +9495,22 @@
           damage
         );
         if (p) {
-          p.canvasRadius = phase === 3 ? 6.3 : 5.8;
+          const isCenterLane = offset === 0;
+          const radius = isCenterLane
+            ? (centerIsBig ? centerBigRadius : centerSmallRadius)
+            : (phase === 3 ? 6.3 : 5.8);
+          p.canvasRadius = radius;
+
+          // Canvas弾は生成時に当たり判定サイズをキャッシュ済みなので、
+          // 大弾だけここでヒットボックスも見た目と同じ大きさへ更新する。
+          if (isCenterLane) {
+            p.canvasHalfWidth = radius;
+            p.canvasHalfHeight = radius;
+            p._hw = radius;
+            p._hh = radius;
+            p.noahCenterRail = true;
+            p.noahCenterRailBig = centerIsBig;
+          }
           state.enemyBullets.push(p);
         }
       }
@@ -9504,7 +9546,7 @@
         const haloOffsets = phase === 1
           ? [-0.76, -0.30, 0.30, 0.76]
           : (phase === 2
-            ? [-0.86, -0.40, 0, 0.40, 0.86]
+            ? [-0.86, -0.40, 0.40, 0.86]
             : [-0.96, -0.58, -0.22, 0.22, 0.58, 0.96]);
         const haloSpeed = phase === 1 ? 0.72 : (phase === 2 ? 0.78 : 0.84);
         for (let i = 0; i < haloOffsets.length; i++) {
