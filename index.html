@@ -357,7 +357,7 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=968-rose-fortress">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=1005-noah-stage-polish">');
   </script>
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=693-score-ranking-nav-v2">
@@ -1061,6 +1061,130 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 }
 </style>
 
+<style id="shooting-result-visibility-build984">
+#shooting-event-root .shooting-result-detail-row{
+  min-height:clamp(42px,6.5dvh,58px) !important;
+  grid-template-columns:minmax(72px,.92fr) minmax(0,1.75fr) auto !important;
+  column-gap:clamp(5px,1.6vw,9px) !important;
+  padding:clamp(5px,.95dvh,8px) 1px !important;
+}
+#shooting-event-root .shooting-result-detail-label{
+  font-size:clamp(10px,1.55dvh,11.8px) !important;
+}
+#shooting-event-root .shooting-result-member-list{
+  column-gap:clamp(4px,1.2vw,8px) !important;
+}
+#shooting-event-root .shooting-result-member{
+  grid-template-columns:clamp(26px,7.4vw,31px) minmax(0,1fr) !important;
+  column-gap:4px !important;
+}
+#shooting-event-root .shooting-result-member img{
+  width:clamp(26px,7.4vw,31px) !important;
+  height:clamp(26px,7.4vw,31px) !important;
+}
+#shooting-event-root .shooting-result-member b{
+  font-size:clamp(9.6px,2.95vw,11.6px) !important;
+  line-height:1.16 !important;
+}
+#shooting-event-root .shooting-result-detail-row > strong{
+  min-width:40px !important;
+  font-size:clamp(11.8px,1.8dvh,14.8px) !important;
+}
+#shooting-event-root .shooting-result-time-row{
+  grid-template-columns:minmax(74px,.95fr) minmax(0,1fr) !important;
+  column-gap:8px !important;
+}
+#shooting-event-root .shooting-result-time-row > strong{
+  min-width:0 !important;
+  max-width:100% !important;
+  font-size:clamp(12.4px,2dvh,17px) !important;
+  line-height:1.1 !important;
+  letter-spacing:-.03em !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  justify-self:end !important;
+}
+@media (max-width:360px){
+  #shooting-event-root .shooting-result-detail-row{grid-template-columns:67px minmax(0,1fr) 36px !important;column-gap:3px !important;}
+  #shooting-event-root .shooting-result-member{grid-template-columns:24px minmax(0,1fr) !important;column-gap:3px !important;}
+  #shooting-event-root .shooting-result-member img{width:24px !important;height:24px !important;}
+  #shooting-event-root .shooting-result-member b{font-size:9px !important;}
+  #shooting-event-root .shooting-result-time-row > strong{font-size:12px !important;letter-spacing:-.04em !important;}
+}
+</style>
+
+<style id="shooting-result-visibility-build1003">
+#shooting-event-root .shooting-result-breakdown{
+  margin:0 0 clamp(10px,1.5dvh,16px) !important;
+}
+#shooting-event-root .shooting-result-detail-row{
+  min-height:clamp(48px,7.2dvh,64px) !important;
+  grid-template-columns:minmax(78px,.98fr) minmax(0,1.8fr) auto !important;
+  column-gap:clamp(6px,1.8vw,10px) !important;
+  padding:clamp(7px,1.1dvh,10px) 1px !important;
+}
+#shooting-event-root .shooting-result-detail-label{
+  font-size:clamp(10.8px,1.68dvh,12.4px) !important;
+  line-height:1.18 !important;
+}
+#shooting-event-root .shooting-result-member-list{
+  column-gap:clamp(5px,1.4vw,9px) !important;
+}
+#shooting-event-root .shooting-result-member{
+  grid-template-columns:clamp(29px,8vw,34px) minmax(0,1fr) !important;
+  column-gap:4px !important;
+}
+#shooting-event-root .shooting-result-member img{
+  width:clamp(29px,8vw,34px) !important;
+  height:clamp(29px,8vw,34px) !important;
+}
+#shooting-event-root .shooting-result-member b{
+  font-size:clamp(10.2px,3.1vw,12.4px) !important;
+  line-height:1.18 !important;
+}
+#shooting-event-root .shooting-result-detail-row > strong{
+  min-width:42px !important;
+  font-size:clamp(12.4px,1.95dvh,15.8px) !important;
+}
+#shooting-event-root .shooting-result-time-row{
+  min-height:clamp(50px,7.4dvh,66px) !important;
+  grid-template-columns:minmax(80px,1fr) minmax(0,1fr) !important;
+  column-gap:10px !important;
+}
+#shooting-event-root .shooting-result-time-row > strong{
+  min-width:0 !important;
+  max-width:100% !important;
+  font-size:clamp(13.8px,2.15dvh,18.5px) !important;
+  line-height:1.1 !important;
+  letter-spacing:-.03em !important;
+  white-space:nowrap !important;
+  justify-self:end !important;
+}
+@media (max-height:700px){
+  #shooting-event-root .shooting-result-detail-row{
+    min-height:clamp(44px,6.6dvh,56px) !important;
+    padding-top:6px !important;
+    padding-bottom:6px !important;
+  }
+  #shooting-event-root .shooting-result-member{grid-template-columns:27px minmax(0,1fr) !important;}
+  #shooting-event-root .shooting-result-member img{width:27px !important;height:27px !important;}
+  #shooting-event-root .shooting-result-member b{font-size:9.8px !important;}
+  #shooting-event-root .shooting-result-time-row{min-height:46px !important;}
+  #shooting-event-root .shooting-result-time-row > strong{font-size:13.2px !important;}
+}
+@media (max-width:360px){
+  #shooting-event-root .shooting-result-detail-row{
+    grid-template-columns:72px minmax(0,1fr) 38px !important;
+    column-gap:4px !important;
+  }
+  #shooting-event-root .shooting-result-detail-label{font-size:10px !important;}
+  #shooting-event-root .shooting-result-member{grid-template-columns:25px minmax(0,1fr) !important;column-gap:3px !important;}
+  #shooting-event-root .shooting-result-member img{width:25px !important;height:25px !important;}
+  #shooting-event-root .shooting-result-member b{font-size:9.2px !important;}
+  #shooting-event-root .shooting-result-detail-row > strong{font-size:11.8px !important;}
+  #shooting-event-root .shooting-result-time-row > strong{font-size:12.6px !important;letter-spacing:-.04em !important;}
+}
+</style>
 
   <style id="v185-overseer-charged-shot">
     /* v185: オーバーシア亜種の600ダメージ強化弾は、即死WARNINGと誤認しない演出 */
@@ -2887,6 +3011,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <!-- build776: SHOOTING battle BGM. Stage entry warms only the selected track. -->
 <audio id="bgm-battle-normal" src="audio/bgm_battle_normal.mp3?v=776" preload="metadata" loop></audio>
 <audio id="bgm-battle-boss" src="audio/bgm_battle_boss.mp3?v=776" preload="metadata" loop></audio>
+<audio id="bgm-battle-boss-02" src="audio/bgm_battle_boss_02.mp3?v=1005" preload="metadata" loop></audio>
 
 <div id="title-screen" onclick="startFromTitle()">
   <img src="images/title.webp" alt="Zeraphia">
@@ -15730,12 +15855,14 @@ function applyBgmVolume(){
   var opening = document.getElementById('bgm-opening');
   var battleNormal = document.getElementById('bgm-battle-normal');
   var battleBoss = document.getElementById('bgm-battle-boss');
+  var battleBoss02 = document.getElementById('bgm-battle-boss-02');
   var volume = bgmVolume / 100;
 
   if(bgm) bgm.volume = volume;
   if(opening) opening.volume = volume;
   if(battleNormal) battleNormal.volume = volume;
   if(battleBoss) battleBoss.volume = volume;
+  if(battleBoss02) battleBoss02.volume = volume;
 }
 
 function changeSeVolume(value){
@@ -16710,7 +16837,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=973-olivia-pickup"></script>
+<script src="js/shooting_characters.js?v=997-remnacross-ult-name"></script>
 <script src="js/stage_select.js?v=978-locked-stage-toast"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -16789,7 +16916,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=971-id40-conjure"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=1008-noah-confirm-order"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
@@ -17147,7 +17274,8 @@ window.returnToTitleScreen = function(){
       showNoahTicketDialog('required');
       return;
     }
-    showNoahTicketDialog('confirm');
+    // チケット消費確認はキャラ選択画面の「戦闘開始」タップ時に行う。
+    beginNoahSpecialStage();
   }
 
   // クリア報酬接続用API。今回はプレイアブル化までは行わない。

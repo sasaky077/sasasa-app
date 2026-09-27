@@ -2212,7 +2212,7 @@
     effectKey: 'remnacross',
     label: 'TRAP / PHOTON BUSTER 202',
     description: '無属性の罠師。2秒ごとに中距離へ地雷を投げ、設置から3秒後または敵接触で範囲爆発させる。設置前に敵へ直撃した場合は爆発せず、爆発ダメージの50%だけを与える。ULTは5秒間の無属性極太レーザー。',
-    ultName: 'フォトンバスター202',
+    ultName: '対神性滅焼破壊砲 -フォトンバスター 202-',
     ultDescription: 'SIGMA-IX「ブラックシップ」と同じ方式で、正面へ極太レーザーを5秒間連続照射する。攻撃属性は無属性。0.25秒ごとにATK×35%のダメージ判定が発生する。',
     shotType: 'trap',
     mainShot: { type: 'trap' },
@@ -2252,7 +2252,7 @@
     effectKey: 'conjure',
     label: 'CONJURE / TURRET',
     description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大3基。各砲台は3秒間、1秒ごとに8方向へ非貫通弾を射出する。',
-    ultName: 'CONJURE',
+    ultName: 'オーバーライド・コンストラクト',
     ultDescription: '自身の左右へ追従砲台を5秒間召喚。左右それぞれ毎秒5発、計25発ずつのHOMING弾を自動射出する。HOMING弾は敵に命中すると消滅する。ULT中も通常砲台の射撃・新規設置は継続できる。',
     shotType: 'conjure',
     mainShot: { type: 'conjure' },
@@ -2486,6 +2486,23 @@
         hidden: master.hidden === true,
       }))
   );
+
+  // build980: 暫定BALANCE FLASH性能はそのまま、キャラクター固有のULT表示名だけを設定。
+  const BUILD980_ULT_NAME_ONLY = Object.freeze({
+    3:  'ゼピュロス・スピア',
+    10: '星に願いを',
+    13: '奥義・時雨',
+    14: '気まぐれキャット',
+    16: '断罪',
+    19: 'スピア・オブ・インフェルノ',
+    23: 'シルヴァニア・シンフォニー',
+    24: 'デイライト・プリズム',
+    25: 'レインフォール',
+  });
+  Object.entries(BUILD980_ULT_NAME_ONLY).forEach(([id, ultName]) => {
+    const profile = SHOOTING_CHARACTERS[Number(id)];
+    if (profile) profile.ultName = ultName;
+  });
 
   window.ShootingCharacters = Object.freeze({
     CHARACTER_ID,

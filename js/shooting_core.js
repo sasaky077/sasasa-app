@@ -3152,7 +3152,7 @@
       startBtn.disabled = !ready;
       if (!ready) {
         startBtn.textContent = 'あと 1人 選択';
-      } else if (getSelectedStageTicketCost() > 0) {
+      } else if (getSelectedStageTicketCost() > 0 && !isNoahStage()) {
         startBtn.innerHTML = '戦闘開始<br><small style="font-size:.72em;font-weight:500;letter-spacing:.04em;opacity:.82">（SPECIAL TICKET×1消費）</small>';
       } else {
         startBtn.textContent = '戦闘開始';
@@ -3313,7 +3313,9 @@
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFortress: null,
       conjureTurrets: [],
+      conjureDeployments: [],
       conjurePlacementPreview: null,
+      remnaTrapPlacementPreview: null,
       conjureUlt: null,
       eltenaBlackHole: null,
       toyfelBlackHoleField: null,
@@ -3443,6 +3445,7 @@
     if (getCurrentCharacter().id === CHARACTER_ID.HAYATE) stopHayateMoonlightForSwitch();
     if (getCurrentCharacter().shotType === 'charge') clearMiaChargeState();
     if (getCurrentCharacter().shotType === 'conjure') clearConjurePlacementPreview();
+    if (getCurrentCharacter().shotType === 'trap') clearRemnaTrapPlacementPreview();
 
     // ミトから別キャラへ交代する時は、犬とミトULT状態をその場で破棄。
     cleanupMitoCompanionOnSwitch(id);
@@ -3529,7 +3532,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-conjure-preview,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -3540,7 +3543,9 @@
       state.ignisFireWheel = null;
       state.roseFortress = null;
       state.conjureTurrets = [];
+      state.conjureDeployments = [];
       state.conjurePlacementPreview = null;
+      state.remnaTrapPlacementPreview = null;
       state.conjureUlt = null;
       state.wolfAtkField = null;
       state.bossDangerWarningEl = null;
@@ -6299,63 +6304,291 @@
   }
 
   // ============================================================
-  // build935: レムナクロス TRAP
-  // flying -> armed(countdown) -> explosion の3状態。
-  // 設置前接触は爆発せず50%単体ダメージ、設置後は接触/3秒で範囲爆発。
+  // build1001: レムナクロス TRAP
+  // target guide -> commit -> attribute projectile -> armed(countdown) -> explosion。
+  // 設置確定後に黒丸弾が予定地点へ飛び、到着時だけ専用オブジェクトを展開。
   // ============================================================
   function ensureRemnaTrapVisualStyles() {
-    const styleId = 'shooting-remna-trap-style-build966';
+    const styleId = 'shooting-remna-trap-style-build1000';
     if (document.getElementById(styleId)) return;
+    ['shooting-remna-trap-style-build966'].forEach(id => {
+      try { document.getElementById(id)?.remove(); } catch (_) {}
+    });
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
+      @font-face{
+        font-family:"DSEG7ClassicMini";
+        src:url("fonts/DSEG7ClassicMini-Regular.woff2") format("woff2");
+        font-weight:400;font-style:normal;font-display:swap;
+      }
       .shooting-remna-trap{
-        width:22px!important;height:22px!important;border-radius:50%!important;
-        border:1px solid rgba(255,255,255,.82)!important;
-        background:
-          radial-gradient(circle at 38% 32%,#fff 0 8%,#d8d8dc 10% 19%,#686a72 22% 48%,#24252b 54% 74%,#0b0b0e 80% 100%)!important;
-        box-shadow:0 0 0 2px rgba(255,255,255,.10),0 0 10px rgba(230,230,238,.24)!important;
-        overflow:visible!important;
+        overflow:visible!important;box-sizing:border-box!important;
+        transform-origin:center center!important;pointer-events:none!important;
       }
-      .shooting-remna-trap::before{
-        content:''!important;display:block!important;position:absolute!important;
-        left:50%!important;top:50%!important;width:30px!important;height:10px!important;
-        transform:translate(-50%,-50%) rotate(0deg)!important;
-        border-left:5px solid rgba(45,46,52,.92)!important;
-        border-right:5px solid rgba(45,46,52,.92)!important;
-        border-radius:50%!important;background:transparent!important;
-        box-shadow:none!important;pointer-events:none!important;
+      /* 飛翔中は属性色だけを持つ小さな丸弾。neutralは白〜淡灰。 */
+      .shooting-remna-trap.trap-flying{
+        width:9px!important;height:9px!important;border-radius:50%!important;
+        border:1px solid rgba(80,80,84,.45)!important;
+        background:#e8e9eb!important;
+        box-shadow:0 0 5px rgba(238,240,244,.86)!important;
       }
-      .shooting-remna-trap.trap-armed{
-        border-color:rgba(255,220,135,.88)!important;
-        box-shadow:0 0 0 1px rgba(255,193,73,.10),0 0 9px rgba(255,170,52,.34)!important;
-        transform-origin:center center!important;
-        animation:shootingRemnaTrapPulse966 1s ease-in-out infinite!important;
+      .shooting-remna-trap.trap-flying.trap-element-neutral{
+        background:#e8e9eb!important;
+        box-shadow:0 0 5px rgba(238,240,244,.90)!important;
       }
-      /* build966: 数字カウントは表示しない。設置後は小さな光だけが毎秒脈動する。 */
-      .shooting-remna-trap.trap-armed::after{
-        content:''!important;display:block!important;position:absolute!important;
-        left:50%!important;top:50%!important;width:7px!important;height:7px!important;
-        transform:translate(-50%,-50%) scale(.72)!important;
-        border:0!important;border-radius:50%!important;
-        background:rgba(255,224,151,.94)!important;
-        box-shadow:0 0 4px rgba(255,214,120,.88),0 0 9px rgba(255,177,64,.48)!important;
-        pointer-events:none!important;
-        animation:shootingRemnaTrapCorePulse966 1s ease-in-out infinite!important;
+      .shooting-remna-trap.trap-flying.trap-element-wood{
+        background:#72b96b!important;
+        box-shadow:0 0 6px rgba(104,191,96,.82)!important;
       }
+      .shooting-remna-trap.trap-flying::before,
       .shooting-remna-trap.trap-flying::after{content:none!important;display:none!important}
-      @keyframes shootingRemnaTrapPulse966{
-        0%,100%{transform:scale(.94);filter:brightness(.88);opacity:.84}
-        18%{transform:scale(1.04);filter:brightness(1.20);opacity:1}
-        34%{transform:scale(.98);filter:brightness(1.02);opacity:.92}
+      /* 設置成立後にだけ専用オブジェクトへ展開。 */
+      .shooting-remna-trap.trap-armed{
+        width:54px!important;height:54px!important;border:0!important;border-radius:0!important;
+        background:transparent!important;box-shadow:none!important;
+        animation:shootingRemnaTrapArmedPulse993 1s ease-in-out infinite!important;
       }
-      @keyframes shootingRemnaTrapCorePulse966{
-        0%,100%{transform:translate(-50%,-50%) scale(.58);opacity:.48}
-        18%{transform:translate(-50%,-50%) scale(1.08);opacity:1}
-        36%{transform:translate(-50%,-50%) scale(.72);opacity:.68}
+      .shooting-remna-trap-preview{
+        position:absolute;left:0;top:0;z-index:11;pointer-events:none;
+        width:54px;height:54px;transform:translate(-50%,-50%);
+        opacity:.72;animation:shootingRemnaTrapPreviewPulse1001 .72s ease-in-out infinite alternate;
+      }
+      .shooting-remna-trap-preview::before,
+      .shooting-remna-trap-preview::after{
+        content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+        pointer-events:none;box-sizing:border-box;
+      }
+      .shooting-remna-trap-preview::before{
+        width:42px;height:42px;border:2px solid rgba(226,55,55,.84);border-radius:50%;
+        box-shadow:0 0 8px rgba(226,55,55,.28),inset 0 0 7px rgba(226,55,55,.14);
+      }
+      .shooting-remna-trap-preview::after{
+        width:52px;height:2px;background:linear-gradient(90deg,transparent 0 14%,rgba(226,55,55,.82) 14% 39%,transparent 39% 61%,rgba(226,55,55,.82) 61% 86%,transparent 86%);
+        box-shadow:0 0 4px rgba(226,55,55,.30);
+      }
+      .shooting-remna-trap-guide-vertical{
+        position:absolute;left:50%;top:50%;width:2px;height:52px;transform:translate(-50%,-50%);
+        background:linear-gradient(180deg,transparent 0 14%,rgba(226,55,55,.82) 14% 39%,transparent 39% 61%,rgba(226,55,55,.82) 61% 86%,transparent 86%);
+        box-shadow:0 0 4px rgba(226,55,55,.30);pointer-events:none;
+      }
+      .shooting-remna-trap-object{
+        position:absolute;left:50%;top:50%;width:100%;height:100%;
+        transform:translate(-50%,-50%);object-fit:contain;pointer-events:none;
+        user-select:none;-webkit-user-drag:none;
+        filter:drop-shadow(0 0 5px rgba(255,40,40,.34));
+      }
+      .shooting-remna-trap-countdown{
+        position:absolute;left:50%;top:48%;z-index:4;transform:translate(-50%,-50%);
+        min-width:24px;text-align:center;pointer-events:none;
+        font-family:"DSEG7ClassicMini","Courier New",monospace;
+        font-size:16px;font-weight:400;line-height:1;letter-spacing:.02em;
+        color:#ff2b2b;
+        text-shadow:0 1px 3px rgba(30,0,0,.92),0 0 5px rgba(255,30,30,.88),0 0 10px rgba(255,30,30,.48);
+      }
+      @keyframes shootingRemnaTrapPreviewPulse1001{to{opacity:1;filter:brightness(1.12)}}
+      @keyframes shootingRemnaTrapArmedPulse993{
+        0%,100%{filter:brightness(.92)}
+        50%{filter:brightness(1.08)}
       }
     `;
     document.head.appendChild(style);
+  }
+
+  function getRemnaTrapPlacementPoint(c) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state?.player) return null;
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
+    const offsetY = Math.max(56, Number(c?.trapPlaceOffsetY || 146));
+    return {
+      x: clamp(Number(state.player.x || w * .5), 28, Math.max(28, w - 28)),
+      y: clamp(Number(state.player.y || h * .8) - offsetY, 40, Math.max(40, h - 72))
+    };
+  }
+
+  function countActiveRemnaTraps() {
+    if (!state || !Array.isArray(state.bullets)) return 0;
+    // 設置確定後の飛翔中も1枠として扱い、同時確定数が3個を超えないようにする。
+    return state.bullets.filter(p => p && p.kind === 'remna_trap' && !p.trapExploded && (p.trapState === 'flying' || p.trapState === 'armed')).length;
+  }
+
+  function clearRemnaTrapPlacementPreview() {
+    if (!state?.remnaTrapPlacementPreview) return;
+    try { state.remnaTrapPlacementPreview.el?.remove(); } catch (_) {}
+    state.remnaTrapPlacementPreview = null;
+  }
+
+  function beginRemnaTrapPlacementPreview(now) {
+    if (!state || state.ended || state.finishing) return false;
+    const c = getCurrentCharacter();
+    if (!c || c.shotType !== 'trap') return false;
+    const max = Math.max(1, Math.floor(Number(c.trapMaxPlaced || 3)));
+    if (countActiveRemnaTraps() >= max) {
+      clearRemnaTrapPlacementPreview();
+      return false;
+    }
+    ensureRemnaTrapVisualStyles();
+    clearRemnaTrapPlacementPreview();
+    const arena = document.getElementById('shooting-arena');
+    const point = getRemnaTrapPlacementPoint(c);
+    if (!arena || !point) return false;
+
+    const el = document.createElement('div');
+    el.className = 'shooting-remna-trap-preview';
+    const verticalGuide = document.createElement('span');
+    verticalGuide.className = 'shooting-remna-trap-guide-vertical';
+    el.appendChild(verticalGuide);
+
+    const countdownEl = document.createElement('span');
+    countdownEl.className = 'shooting-remna-trap-countdown';
+    countdownEl.textContent = '3';
+    el.appendChild(countdownEl);
+    arena.appendChild(el);
+
+    state.remnaTrapPlacementPreview = {
+      el, countdownEl, ownerId: c.id, x: point.x, y: point.y,
+      startedAt: Number(now || performance.now())
+    };
+    positionUnit(el, point.x, point.y);
+    return true;
+  }
+
+  function getRemnaTrapPlacementDamage(c, now) {
+    const activeMember = getActiveMember();
+    const itemAtkBuffMultiplier = activeMember && now < (activeMember.atkBuffUntil || 0)
+      ? Number(activeMember.atkBuffMultiplier || 1)
+      : 1;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier;
+    return Math.max(0,
+      Number(c?.atk || 0) *
+      Number(c?.shotPowerRate || 0.095) *
+      itemAtkBuffMultiplier *
+      wolfFieldAtkMultiplier
+    );
+  }
+
+  function spawnRemnaTrap(c, x, y, now) {
+    if (!state || !c || !state.player) return false;
+    const max = Math.max(1, Math.floor(Number(c.trapMaxPlaced || 3)));
+    if (countActiveRemnaTraps() >= max) return false;
+    ensureBombVisualStyles();
+    ensureRemnaTrapVisualStyles();
+
+    const ts = Number(now || performance.now());
+    const targetX = Number(x || 0);
+    const targetY = Number(y || 0);
+    const startX = Number(state.player.x || targetX);
+    const startY = Number(state.player.y || targetY) - Math.max(8, Number(c.shotOffsetY || 22));
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+    const distance = Math.max(1, Math.hypot(dx, dy));
+    const speed = Math.max(220, Number(c.trapThrowSpeed || 560));
+    const damage = getRemnaTrapPlacementDamage(c, ts);
+    const attackElement = normalizeCombatElement(c.element) || 'neutral';
+
+    // 設置確定後は、まず小さな黒丸弾を予定地点へ飛ばす。
+    // 専用オブジェクト画像は到着するまで生成しない。
+    const p = makeProjectile(
+      'shooting-bullet shooting-remna-trap trap-flying trap-element-' + attackElement,
+      startX, startY,
+      dx / distance * speed,
+      dy / distance * speed,
+      damage, c.id
+    );
+    if (!p) return false;
+
+    p.kind = 'remna_trap';
+    p.trapState = 'flying';
+    p.trapTargetX = targetX;
+    p.trapTargetY = targetY;
+    p.trapThrowSpeed = speed;
+    p.trapDeployAt = ts + Math.max(180, (distance / speed) * 1000 + 180);
+    p.trapCountdownMs = Math.max(500, Number(c.trapCountdownMs || 3000));
+    p.trapExplosionRadius = Math.max(36, Number(c.trapExplosionRadius || 88));
+    p.trapExplosionDamage = damage;
+    p.trapPreDeployDamageRate = Math.max(0, Number(c.trapPreDeployDamageRate ?? 0.50));
+    p.attackElement = attackElement;
+    p.element = attackElement;
+    p._hw = 5;
+    p._hh = 5;
+    state.bullets.push(p);
+    return true;
+  }
+
+  function commitRemnaTrapPlacement(now) {
+    if (!state?.remnaTrapPlacementPreview) return false;
+    const preview = state.remnaTrapPlacementPreview;
+    const c = getCurrentCharacter();
+    clearRemnaTrapPlacementPreview();
+    if (!c || c.shotType !== 'trap' || Number(preview.ownerId) !== Number(c.id)) return false;
+    return spawnRemnaTrap(c, preview.x, preview.y, Number(now || performance.now()));
+  }
+
+  function updateRemnaTrapPlacementPreview(now) {
+    if (!state?.remnaTrapPlacementPreview) return;
+    const c = getCurrentCharacter();
+    const preview = state.remnaTrapPlacementPreview;
+    if (!c || c.shotType !== 'trap' || Number(preview.ownerId) !== Number(c.id)) {
+      clearRemnaTrapPlacementPreview();
+      return;
+    }
+    const point = getRemnaTrapPlacementPoint(c);
+    if (!point) return;
+    preview.x = point.x;
+    preview.y = point.y;
+    positionUnit(preview.el, point.x, point.y);
+
+    const ts = Number(now || performance.now());
+    const elapsed = Math.max(0, ts - Number(preview.startedAt || ts));
+    const secondsLeft = Math.max(1, 3 - Math.floor(elapsed / 1000));
+    if (preview.countdownEl) preview.countdownEl.textContent = String(secondsLeft);
+
+    if (elapsed >= 3000) {
+      const placed = commitRemnaTrapPlacement(ts);
+      if (
+        placed && pointerActive && state && !state.ended && !state.finishing &&
+        !state.countdown && state.running && getCurrentCharacter()?.shotType === 'trap'
+      ) {
+        beginRemnaTrapPlacementPreview(ts);
+      }
+    }
+  }
+
+  function deployRemnaTrapVisual(p, now) {
+    if (!p || !p.el || p.trapVisualDeployed) return;
+    p.trapVisualDeployed = true;
+    p.el.classList.remove('trap-flying');
+    p.el.classList.add('trap-armed');
+    p.el.innerHTML = '';
+
+    const img = document.createElement('img');
+    img.className = 'shooting-remna-trap-object';
+    img.src = 'images/chara_39_battle_object.webp';
+    img.alt = '';
+    img.draggable = false;
+    p.el.appendChild(img);
+
+    const countdown = document.createElement('span');
+    countdown.className = 'shooting-remna-trap-countdown';
+    countdown.textContent = '3';
+    p.el.appendChild(countdown);
+    p.trapCountdownEl = countdown;
+    p.trapLastCountdownValue = 3;
+
+    if (!Number.isFinite(Number(p.trapExplodeAt))) {
+      p.trapExplodeAt = Number(now || performance.now()) + Math.max(500, Number(p.trapCountdownMs || 3000));
+    }
+  }
+
+  function updateRemnaTrapCountdownVisual(p, now) {
+    if (!p || p.trapState !== 'armed' || !p.trapCountdownEl) return;
+    const remainMs = Math.max(0, Number(p.trapExplodeAt || 0) - Number(now || 0));
+    const value = Math.max(1, Math.min(3, Math.ceil(remainMs / 1000)));
+    if (value !== p.trapLastCountdownValue) {
+      p.trapLastCountdownValue = value;
+      p.trapCountdownEl.textContent = String(value);
+    }
   }
 
   function getRemnaTrapTargetAtRect(r, arenaRect, bossRect, padding = 8) {
@@ -6455,20 +6688,33 @@
     if (!p || !p.el) return;
     if (p.trapState === 'armed') {
       p.vx = 0; p.vy = 0;
+      updateRemnaTrapCountdownVisual(p, now);
       return;
     }
+
+    if (p.trapState !== 'flying') return;
+
+    const targetX = Number(p.trapTargetX ?? p.x ?? 0);
+    const targetY = Number(p.trapTargetY ?? p.y ?? 0);
+    const beforeDistance = Math.hypot(targetX - Number(p.x || 0), targetY - Number(p.y || 0));
+
     p.x += Number(p.vx || 0) * dt;
     p.y += Number(p.vy || 0) * dt;
-    const reachedDistance = Number(p.y || 0) <= Number(p.trapTargetY || -Infinity);
+
+    const afterDistance = Math.hypot(targetX - Number(p.x || 0), targetY - Number(p.y || 0));
+    const stepDistance = Math.hypot(Number(p.vx || 0) * dt, Number(p.vy || 0) * dt);
+    const reachedTarget = afterDistance <= Math.max(5, stepDistance + 1) || afterDistance > beforeDistance;
     const timedOut = now >= Number(p.trapDeployAt || Infinity);
-    if (reachedDistance || timedOut) {
+
+    if (reachedTarget || timedOut) {
       p.trapState = 'armed';
-      p.x = Number(p.x || 0);
-      p.y = Math.max(28, Number(p.y || 0));
+      p.x = targetX;
+      p.y = targetY;
       p.vx = 0; p.vy = 0;
+      p._hw = 27;
+      p._hh = 27;
       p.trapExplodeAt = now + Math.max(500, Number(p.trapCountdownMs || 3000));
-      p.el.classList.remove('trap-flying');
-      p.el.classList.add('trap-armed');
+      deployRemnaTrapVisual(p, now);
     }
   }
 
@@ -7000,12 +7246,70 @@
         clearTimeout(state.miaChargeMaxTimer);
         state.miaChargeMaxTimer = null;
       }
+      if (state.miaChargePreviewRaf) {
+        cancelAnimationFrame(state.miaChargePreviewRaf);
+        state.miaChargePreviewRaf = 0;
+      }
+      if (state.miaChargePreviewEl) {
+        state.miaChargePreviewEl.remove();
+        state.miaChargePreviewEl = null;
+      }
     }
     const player = document.getElementById(PLAYER_ID);
     if (player) {
       player.classList.remove('mia-charging');
       player.classList.remove('mia-charge-max');
     }
+  }
+
+  function createMiaChargePreview(c, startedAt) {
+    if (!state || !c) return null;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    if (state.miaChargePreviewEl) state.miaChargePreviewEl.remove();
+    if (state.miaChargePreviewRaf) cancelAnimationFrame(state.miaChargePreviewRaf);
+
+    const el = document.createElement('i');
+    el.className = 'shooting-bullet shooting-mia-charge-shot shooting-charge-preview' + getCharacterBulletClass(c);
+    el.setAttribute('aria-hidden', 'true');
+    arena.appendChild(el);
+    state.miaChargePreviewEl = el;
+
+    const minSize = Math.max(18, Number(c.chargeMinSize || 30));
+    const maxSize = Math.max(minSize, Number(c.chargeMaxSize || 76));
+    const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+    const offsetY = Number(c.shotOffsetY || (Number(c.id) === Number(CHARACTER_ID.KAINA) ? 40 : 44));
+
+    const render = (ts) => {
+      if (!state || !el.isConnected || state.miaChargePreviewEl !== el) return;
+      if (Number(state.miaChargeStartedAt || 0) !== Number(startedAt || 0)) return;
+      if (state.ended || state.finishing || state.countdown || !state.running) return;
+
+      const elapsed = Math.max(0, Number(ts || performance.now()) - Number(startedAt || 0));
+      const ratio = Math.min(1, elapsed / maxMs);
+      const size = minSize + (maxSize - minSize) * ratio;
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.setProperty('--mia-charge-ratio', String(ratio));
+      el.style.opacity = String(0.62 + ratio * 0.38);
+      positionUnit(el, state.player.x, state.player.y - offsetY);
+
+      if (ratio < 1) {
+        state.miaChargePreviewRaf = requestAnimationFrame(render);
+      } else {
+        state.miaChargePreviewRaf = 0;
+      }
+    };
+
+    // First paint is explicitly the minimum size so the charge never starts large.
+    el.style.width = `${minSize}px`;
+    el.style.height = `${minSize}px`;
+    el.style.setProperty('--mia-charge-ratio', '0');
+    el.style.opacity = '.62';
+    positionUnit(el, state.player.x, state.player.y - offsetY);
+    state.miaChargePreviewRaf = requestAnimationFrame(render);
+    return el;
   }
 
   function beginMiaCharge(pointerId, now) {
@@ -7024,9 +7328,14 @@
 
     const player = document.getElementById(PLAYER_ID);
     if (player) {
-      player.classList.add('mia-charging');
+      player.classList.remove('mia-charging');
       player.classList.remove('mia-charge-max');
+      player.classList.add('mia-charging');
     }
+
+    // build989: charge preview is a real DOM projectile-like element.
+    // Its size is driven by elapsed charge time every frame, not by a CSS pseudo-element animation.
+    createMiaChargePreview(c, startedAt);
 
     const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000));
     state.miaChargeMaxTimer = setTimeout(() => {
@@ -7034,11 +7343,27 @@
       if (state.ended || state.finishing || state.countdown || !state.running) return;
       const current = getCurrentCharacter();
       if (!current || current.shotType !== 'charge') return;
-      const currentPlayer = document.getElementById(PLAYER_ID);
-      if (currentPlayer && currentPlayer.classList.contains('mia-charging')) {
-        currentPlayer.classList.add('mia-charge-max');
-      }
+      // build987: MAX到達時は離指を待たず、その場で自動射出する。
+      // 指を押し続けている場合は、射出後すぐ次のチャージへ移行する。
+      const chargePointerId = state.miaChargePointerId;
       state.miaChargeMaxTimer = null;
+      const fired = releaseMiaCharge(chargePointerId, performance.now());
+      if (
+        fired && pointerActive && state && !state.ended && !state.finishing &&
+        !state.countdown && state.running && getCurrentCharacter()?.shotType === 'charge'
+      ) {
+        // build988: 射出した波動を一度完全に消してから、次フレームで小サイズから再チャージ。
+        // 同一フレーム内でクラスを付け直すとCSSアニメーションが継続扱いになり、
+        // 最大サイズの波動が残って見えるため、1フレーム分だけ明示的に切る。
+        requestAnimationFrame(() => {
+          if (
+            pointerActive && state && !state.ended && !state.finishing &&
+            !state.countdown && state.running && getCurrentCharacter()?.shotType === 'charge'
+          ) {
+            beginMiaCharge(chargePointerId, performance.now());
+          }
+        });
+      }
     }, maxMs);
 
     return true;
@@ -7613,47 +7938,83 @@
   // ULT：自機左右へ完全追従する砲台を5秒間展開し、左右各25発のHOMING。
   // ============================================================
   function ensureConjureVisualStyles() {
-    if (document.getElementById('shooting-conjure-style-build971')) return;
+    if (document.getElementById('shooting-conjure-style-build991')) return;
+    const oldStyle = document.getElementById('shooting-conjure-style-build971');
+    if (oldStyle) oldStyle.remove();
     const style = document.createElement('style');
-    style.id = 'shooting-conjure-style-build971';
+    style.id = 'shooting-conjure-style-build991';
     style.textContent = `
       .shooting-conjure-preview,
       .shooting-conjure-turret,
       .shooting-conjure-ult-turret{
         position:absolute;left:0;top:0;z-index:11;pointer-events:none;
-        width:42px;height:42px;transform:translate(-50%,-50%);
+        width:50px;height:50px;transform:translate(-50%,-50%);
       }
+      .shooting-conjure-object-img{
+        position:absolute;left:50%;top:50%;width:100%;height:100%;
+        transform:translate(-50%,-50%);object-fit:contain;pointer-events:none;
+        user-select:none;-webkit-user-drag:none;
+        filter:drop-shadow(0 0 7px rgba(225,238,245,.62));
+      }
+      .shooting-conjure-preview{opacity:.72;animation:shootingConjurePreviewPulse1001 .72s ease-in-out infinite alternate}
       .shooting-conjure-preview::before,
-      .shooting-conjure-turret::before,
-      .shooting-conjure-ult-turret::before{
-        content:"";position:absolute;left:50%;top:50%;width:25px;height:25px;
-        transform:translate(-50%,-50%) rotate(45deg);
-        border:1px solid rgba(224,235,239,.88);
-        background:linear-gradient(135deg,rgba(255,255,255,.68),rgba(174,196,204,.18));
-        box-shadow:0 0 12px rgba(215,235,240,.48),inset 0 0 8px rgba(255,255,255,.38);
+      .shooting-conjure-preview::after{
+        content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+        pointer-events:none;box-sizing:border-box;
       }
-      .shooting-conjure-preview::after,
-      .shooting-conjure-turret::after,
-      .shooting-conjure-ult-turret::after{
-        content:"";position:absolute;left:50%;top:3px;width:6px;height:21px;
-        transform:translateX(-50%);border-radius:2px;
-        background:linear-gradient(180deg,rgba(250,255,255,.9),rgba(151,179,187,.32));
-        box-shadow:0 0 7px rgba(222,244,248,.48);
+      .shooting-conjure-preview::before{
+        width:42px;height:42px;border:2px solid rgba(226,55,55,.84);border-radius:50%;
+        box-shadow:0 0 8px rgba(226,55,55,.28),inset 0 0 7px rgba(226,55,55,.14);
       }
-      .shooting-conjure-preview{opacity:.34;filter:grayscale(.25);animation:shootingConjurePreviewPulse .72s ease-in-out infinite alternate}
-      .shooting-conjure-preview::before{border-style:dashed}
-      .shooting-conjure-turret{opacity:.58;transition:opacity .22s ease}
-      .shooting-conjure-turret.is-expiring{opacity:.22}
-      .shooting-conjure-turret.volley::before{animation:shootingConjureVolley .18s ease-out}
-      .shooting-conjure-ult-turret{width:48px;height:48px;opacity:.72;filter:drop-shadow(0 0 8px rgba(229,245,248,.55))}
-      .shooting-conjure-ult-turret::before{width:30px;height:30px;border-width:1.5px}
-      .shooting-conjure-ult-turret::after{height:26px;top:0}
+      .shooting-conjure-preview::after{
+        width:52px;height:2px;background:linear-gradient(90deg,transparent 0 14%,rgba(226,55,55,.82) 14% 39%,transparent 39% 61%,rgba(226,55,55,.82) 61% 86%,transparent 86%);
+        box-shadow:0 0 4px rgba(226,55,55,.30);
+      }
+      .shooting-conjure-guide-vertical{
+        position:absolute;left:50%;top:50%;width:2px;height:52px;transform:translate(-50%,-50%);
+        background:linear-gradient(180deg,transparent 0 14%,rgba(226,55,55,.82) 14% 39%,transparent 39% 61%,rgba(226,55,55,.82) 61% 86%,transparent 86%);
+        box-shadow:0 0 4px rgba(226,55,55,.30);pointer-events:none;
+      }
+      .shooting-conjure-deploy-projectile{
+        position:absolute;left:0;top:0;z-index:12;pointer-events:none;
+        width:10px;height:10px;border-radius:50%;transform:translate(-50%,-50%);
+        background:#72b96b;border:1px solid rgba(53,109,50,.55);
+        box-shadow:0 0 7px rgba(104,191,96,.92),0 0 12px rgba(104,191,96,.42);
+      }
+      @font-face{
+        font-family:"DSEG7ClassicMini";
+        src:url("fonts/DSEG7ClassicMini-Regular.woff2") format("woff2");
+        font-weight:400;font-style:normal;font-display:swap;
+      }
+      .shooting-conjure-countdown{
+        position:absolute;left:50%;top:50%;z-index:4;transform:translate(-50%,-50%);
+        min-width:24px;text-align:center;pointer-events:none;
+        font-family:"DSEG7ClassicMini","Courier New",monospace;font-size:18px;font-weight:400;line-height:1;
+        letter-spacing:.02em;
+        color:rgba(232,42,42,.98);text-shadow:0 1px 4px rgba(70,18,18,.88),0 0 7px rgba(255,120,120,.72),0 0 13px rgba(255,52,52,.30);
+      }
+      .shooting-conjure-turret{opacity:.96;transition:opacity .22s ease}
+      .shooting-conjure-turret.is-expiring{opacity:.28}
+      .shooting-conjure-turret.volley .shooting-conjure-object-img{animation:shootingConjureVolley .18s ease-out}
+      .shooting-conjure-ult-turret{width:54px;height:54px;opacity:.98}
+      .shooting-conjure-ult-turret .shooting-conjure-object-img{filter:drop-shadow(0 0 9px rgba(229,245,248,.68))}
       .shooting-bullet-conjure{width:8px!important;height:8px!important;border-radius:1px!important;transform-origin:center;background:rgba(228,241,244,.92)!important;box-shadow:0 0 7px rgba(200,229,235,.75)!important}
       .shooting-conjure-ult-homing{width:9px!important;height:14px!important;border-radius:45% 45% 55% 55%!important;background:linear-gradient(180deg,#fff,rgba(207,232,238,.95),rgba(135,170,180,.86))!important;box-shadow:0 0 8px rgba(208,239,245,.84)!important}
-      @keyframes shootingConjurePreviewPulse{to{opacity:.58;filter:brightness(1.16)}}
-      @keyframes shootingConjureVolley{0%{transform:translate(-50%,-50%) rotate(45deg) scale(.8);filter:brightness(1.7)}100%{transform:translate(-50%,-50%) rotate(45deg) scale(1);filter:brightness(1)}}
+      @keyframes shootingConjurePreviewPulse1001{to{opacity:1;filter:brightness(1.12)}}
+      @keyframes shootingConjureVolley{0%{transform:translate(-50%,-50%) scale(.84);filter:brightness(1.55)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
     `;
     document.head.appendChild(style);
+  }
+
+  function appendConjureObjectImage(container, src, alt) {
+    if (!container) return null;
+    const img = document.createElement('img');
+    img.className = 'shooting-conjure-object-img';
+    img.src = src;
+    img.alt = alt || '';
+    img.draggable = false;
+    container.appendChild(img);
+    return img;
   }
 
   function getConjurePlacementPoint(c) {
@@ -7661,7 +8022,7 @@
     if (!arena || !state?.player) return null;
     const w = Number(arena.clientWidth || 0);
     const h = Number(arena.clientHeight || 0);
-    const offsetY = Math.max(56, Number(c?.conjurePlaceOffsetY || 112));
+    const offsetY = Math.max(56, Number(c?.conjurePlaceOffsetY || 146));
     return {
       x: clamp(Number(state.player.x || w * .5), 28, Math.max(28, w - 28)),
       y: clamp(Number(state.player.y || h * .8) - offsetY, 40, Math.max(40, h - 72))
@@ -7680,6 +8041,75 @@
     });
   }
 
+  function pruneConjureDeployments() {
+    if (!state) return;
+    const list = Array.isArray(state.conjureDeployments) ? state.conjureDeployments : [];
+    state.conjureDeployments = list.filter(item => {
+      if (!item || !item.el || !item.el.isConnected) {
+        try { item?.el?.remove(); } catch (_) {}
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function getConjureOccupiedCount(now) {
+    pruneConjureTurrets(now || performance.now());
+    pruneConjureDeployments();
+    return (state?.conjureTurrets || []).length + (state?.conjureDeployments || []).length;
+  }
+
+  function launchConjureDeployment(c, targetX, targetY, now) {
+    if (!state || !c || !state.player) return false;
+    const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
+    if (getConjureOccupiedCount(now) >= max) return false;
+    ensureConjureVisualStyles();
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return false;
+
+    const startX = Number(state.player.x || targetX || 0);
+    const startY = Number(state.player.y || targetY || 0) - Math.max(8, Number(c.shotOffsetY || 22));
+    const x = Number(targetX || 0);
+    const y = Number(targetY || 0);
+    const distance = Math.max(1, Math.hypot(x - startX, y - startY));
+    const speed = Math.max(220, Number(c.conjureDeploySpeed || 600));
+    const durationMs = Math.max(120, distance / speed * 1000);
+    const el = document.createElement('div');
+    el.className = 'shooting-conjure-deploy-projectile';
+    arena.appendChild(el);
+    positionUnit(el, startX, startY);
+
+    const item = {
+      el, ownerId:c.id, startX, startY, targetX:x, targetY:y,
+      elapsedMs:0, durationMs
+    };
+    if (!Array.isArray(state.conjureDeployments)) state.conjureDeployments = [];
+    state.conjureDeployments.push(item);
+    return true;
+  }
+
+  function updateConjureDeployments(dt, now) {
+    if (!state || !Array.isArray(state.conjureDeployments) || !state.conjureDeployments.length) return;
+    const survivors = [];
+    state.conjureDeployments.forEach(item => {
+      if (!item || !item.el) return;
+      item.elapsedMs = Number(item.elapsedMs || 0) + Math.max(0, Number(dt || 0)) * 1000;
+      const t = clamp(item.elapsedMs / Math.max(1, Number(item.durationMs || 1)), 0, 1);
+      const ease = 1 - Math.pow(1 - t, 2);
+      const x = Number(item.startX || 0) + (Number(item.targetX || 0) - Number(item.startX || 0)) * ease;
+      const y = Number(item.startY || 0) + (Number(item.targetY || 0) - Number(item.startY || 0)) * ease;
+      positionUnit(item.el, x, y);
+      if (t >= 1) {
+        try { item.el.remove(); } catch (_) {}
+        const c = getBattleCharacter(item.ownerId) || SHOOTING_CHARACTERS?.[item.ownerId];
+        if (c) spawnConjureTurret(c, item.targetX, item.targetY, now);
+      } else {
+        survivors.push(item);
+      }
+    });
+    state.conjureDeployments = survivors;
+  }
+
   function clearConjurePlacementPreview() {
     if (!state?.conjurePlacementPreview) return;
     try { state.conjurePlacementPreview.el?.remove(); } catch (_) {}
@@ -7692,7 +8122,7 @@
     if (!c || c.shotType !== 'conjure') return false;
     pruneConjureTurrets(now || performance.now());
     const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
-    if ((state.conjureTurrets || []).length >= max) {
+    if (getConjureOccupiedCount(now || performance.now()) >= max) {
       clearConjurePlacementPreview();
       return false;
     }
@@ -7703,24 +8133,53 @@
     if (!arena || !point) return false;
     const el = document.createElement('div');
     el.className = 'shooting-conjure-preview';
+    const verticalGuide = document.createElement('span');
+    verticalGuide.className = 'shooting-conjure-guide-vertical';
+    el.appendChild(verticalGuide);
+    const countdownEl = document.createElement('span');
+    countdownEl.className = 'shooting-conjure-countdown';
+    countdownEl.textContent = '3';
+    el.appendChild(countdownEl);
     arena.appendChild(el);
-    state.conjurePlacementPreview = { el, ownerId: c.id, x: point.x, y: point.y };
+    state.conjurePlacementPreview = {
+      el, countdownEl, ownerId: c.id, x: point.x, y: point.y,
+      startedAt: Number(now || performance.now())
+    };
     positionUnit(el, point.x, point.y);
     return true;
   }
 
-  function updateConjurePlacementPreview() {
+  function updateConjurePlacementPreview(now) {
     if (!state?.conjurePlacementPreview) return;
     const c = getCurrentCharacter();
-    if (!c || c.shotType !== 'conjure' || Number(state.conjurePlacementPreview.ownerId) !== Number(c.id)) {
+    const preview = state.conjurePlacementPreview;
+    if (!c || c.shotType !== 'conjure' || Number(preview.ownerId) !== Number(c.id)) {
       clearConjurePlacementPreview();
       return;
     }
     const point = getConjurePlacementPoint(c);
     if (!point) return;
-    state.conjurePlacementPreview.x = point.x;
-    state.conjurePlacementPreview.y = point.y;
-    positionUnit(state.conjurePlacementPreview.el, point.x, point.y);
+    preview.x = point.x;
+    preview.y = point.y;
+    positionUnit(preview.el, point.x, point.y);
+
+    // build987: 設置予告は3秒。3→2→1を表示し、3秒経過で自動設置する。
+    const ts = Number(now || performance.now());
+    const startedAt = Number(preview.startedAt || ts);
+    const elapsed = Math.max(0, ts - startedAt);
+    const secondsLeft = Math.max(1, 3 - Math.floor(elapsed / 1000));
+    if (preview.countdownEl) preview.countdownEl.textContent = String(secondsLeft);
+
+    if (elapsed >= 3000) {
+      const placed = commitConjurePlacement(ts);
+      // 押しっぱなしなら、設置直後から次の3秒予告へ進む。
+      if (
+        placed && pointerActive && state && !state.ended && !state.finishing &&
+        !state.countdown && state.running && getCurrentCharacter()?.shotType === 'conjure'
+      ) {
+        beginConjurePlacementPreview(ts);
+      }
+    }
   }
 
   function fireConjureTurretVolley(turret, c, now) {
@@ -7766,6 +8225,7 @@
     if (!arena) return false;
     const el = document.createElement('div');
     el.className = 'shooting-conjure-turret';
+    appendConjureObjectImage(el, c.conjureObjectImage || 'images/chara_40_battle_object.webp', '');
     arena.appendChild(el);
     const life = Math.max(500, Number(c.conjureLifetimeMs || 3000));
     const turret = {
@@ -7788,7 +8248,7 @@
     const c = getCurrentCharacter();
     clearConjurePlacementPreview();
     if (!c || c.shotType !== 'conjure' || Number(preview.ownerId) !== Number(c.id)) return false;
-    return spawnConjureTurret(c, preview.x, preview.y, now || performance.now());
+    return launchConjureDeployment(c, preview.x, preview.y, now || performance.now());
   }
 
   function updateConjureTurrets(now) {
@@ -7880,6 +8340,9 @@
     const rightEl = document.createElement('div');
     leftEl.className = 'shooting-conjure-ult-turret';
     rightEl.className = 'shooting-conjure-ult-turret';
+    const ultImage = c.conjureUltObjectImage || 'images/chara_40_battle_ult.webp';
+    appendConjureObjectImage(leftEl, ultImage, '');
+    appendConjureObjectImage(rightEl, ultImage, '');
     arena.appendChild(leftEl);
     arena.appendChild(rightEl);
     const now = performance.now();
@@ -7958,6 +8421,8 @@
     if (c && c.shotType === 'charge') return;
     // ID40 CONJUREは本人から通常弾を撃たず、離指時に設置した砲台だけが射撃する。
     if (c && c.shotType === 'conjure') return;
+    // レムナクロスTRAPも通常連射せず、設置ガイド→離指/3秒で設置する。
+    if (c && c.shotType === 'trap') return;
 
     // 通常キャラは、画面に指/ポインタを置いて操作している間だけ射撃する。
     // 指を離した後も発射済みの弾はそのまま進み、新しい弾だけ生成しない。
@@ -8064,40 +8529,7 @@
     }
 
 
-    // ----------------------------------------------------------
-    // レムナクロス：TRAP
-    // 中距離へ投擲 -> 静止して3秒カウント -> 時限/接触で範囲爆発。
-    // ----------------------------------------------------------
-    if (c.shotType === 'trap') {
-      ensureBombVisualStyles();
-      ensureRemnaTrapVisualStyles();
-      const attackElement = normalizeCombatElement(c.element) || 'neutral';
-      const p = makeProjectile(
-        bulletClass + ' shooting-remna-trap trap-flying',
-        state.player.x,
-        y,
-        0,
-        -Math.max(120, Number(c.bulletSpeed || 460)),
-        effectivePower,
-        c.id
-      );
-      if (p) {
-        const distance = Math.max(80, Number(c.trapThrowDistance || 220));
-        p.kind = 'remna_trap';
-        p.trapState = 'flying';
-        p.trapTargetY = Math.max(44, Number(y || 0) - distance);
-        p.trapDeployAt = now + Math.max(220, Number(c.trapMaxFlightMs || 620));
-        p.trapCountdownMs = Math.max(500, Number(c.trapCountdownMs || 3000));
-        p.trapExplosionRadius = Math.max(36, Number(c.trapExplosionRadius || 88));
-        p.trapExplosionDamage = effectivePower;
-        p.trapPreDeployDamageRate = Math.max(0, Number(c.trapPreDeployDamageRate ?? 0.50));
-        p.attackElement = attackElement;
-        p._hw = 11;
-        p._hh = 11;
-        state.bullets.push(p);
-      }
-      return;
-    }
+    // レムナクロスTRAPは設置入力方式のため、通常射撃ループでは生成しない。
 
     // ----------------------------------------------------------
     // build869 BOMB：着弾点を中心に範囲爆発する独立ショット。
@@ -12200,7 +12632,8 @@
         }
 
         if (p.trapState === 'armed') {
-          if (contact || now >= Number(p.trapExplodeAt || Infinity)) {
+          // build999: 設置後は時限爆弾。接触では起爆せず、3→2→1完了後に爆発する。
+          if (now >= Number(p.trapExplodeAt || Infinity)) {
             explodeRemnaTrap(p, now);
             p.el.remove();
             return false;
@@ -13290,6 +13723,25 @@
     wrap.appendChild(label);
     arena.appendChild(wrap);
 
+    // build998: ULT名は必ず1行。長い名前だけ、利用可能幅へ収まるまで自動縮小する。
+    const ultNameEl = label.querySelector('strong');
+    const fitUltNameOneLine = () => {
+      if (!ultNameEl || !label.isConnected) return;
+      const basePx = window.matchMedia && window.matchMedia('(min-width:700px)').matches ? 26 : 22;
+      const minPx = 10.5;
+      ultNameEl.style.whiteSpace = 'nowrap';
+      ultNameEl.style.fontSize = basePx + 'px';
+      ultNameEl.style.maxWidth = 'none';
+      const available = Math.max(1, label.clientWidth);
+      const needed = Math.max(1, ultNameEl.scrollWidth);
+      if (needed > available) {
+        const fitted = Math.max(minPx, Math.floor((basePx * available / needed) * 10) / 10);
+        ultNameEl.style.fontSize = fitted + 'px';
+      }
+      ultNameEl.style.maxWidth = '100%';
+    };
+    requestAnimationFrame(fitUltNameOneLine);
+
     // DOMを先に載せてから停止状態へ入れる。
     // これで入力したフレームから必ず視覚フィードバックが出る。
     state.ultCutinActive = !nonBlockingCutin;
@@ -14343,7 +14795,9 @@
       resetCombo(true);
     }
     if (!state.koTransition) updateMovement(dt, ts);
-    updateConjurePlacementPreview();
+    updateConjurePlacementPreview(ts);
+    updateRemnaTrapPlacementPreview(ts);
+    updateConjureDeployments(dt, ts);
     updateConjureTurrets(ts);
     updateConjureUlt(ts);
     updateChapter6Barriers(ts);
@@ -15638,7 +16092,10 @@
     return state.firstClearGemPromise;
   }
 
+  const SHOOTING_RESULT_EXP_ICON = 'images/icon_exp.webp';
+
   function buildShootingRewardItemHtml(drop) {
+    const rewardImage = String((drop && drop.image) || '').trim() || (String(drop && drop.type || '') === 'exp' ? SHOOTING_RESULT_EXP_ICON : '');
     const isFirstClear = String(drop?.detail || '') === '初回クリア報酬';
 
     if (isFirstClear) {
@@ -15646,7 +16103,7 @@
         <div class="shooting-result-first-clear-bar">
           <span class="shooting-result-first-clear-label">初回クリア報酬</span>
           <span class="shooting-result-first-clear-main">
-            ${drop.image ? `<img src="${drop.image}" alt="">` : ''}
+            ${rewardImage ? `<img src="${rewardImage}" alt="">` : ''}
             <b>${drop.name}</b>
             <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
           </span>
@@ -15656,7 +16113,7 @@
 
     return `
       <div class="shooting-result-reward-item shooting-result-reward-${drop.type}">
-        <span class="shooting-result-reward-icon">${drop.image ? `<img src="${drop.image}" alt="">` : '<b>EXP</b>'}</span>
+        <span class="shooting-result-reward-icon">${rewardImage ? `<img src="${rewardImage}" alt="">` : '<b>EXP</b>'}</span>
         <span class="shooting-result-reward-copy"><b>${drop.name}</b><small>${drop.detail}</small></span>
         <strong>${drop.amountPrefix || '×'}${drop.amount}</strong>
       </div>
@@ -15728,7 +16185,7 @@
         name: 'EXP',
         amount: playerExp,
         detail: 'プレイヤーEXP',
-        image: '',
+        image: SHOOTING_RESULT_EXP_ICON,
         amountPrefix: '+'
       },
       {
@@ -16209,6 +16666,9 @@
     if (!state.countdown && getCurrentCharacter().shotType === 'conjure') {
       beginConjurePlacementPreview(now);
     }
+    if (!state.countdown && getCurrentCharacter().shotType === 'trap') {
+      beginRemnaTrapPlacementPreview(now);
+    }
 
     if (e.cancelable) e.preventDefault();
   }
@@ -16297,6 +16757,7 @@
       if (isFlick) {
         clearMiaChargeState();
         clearConjurePlacementPreview();
+        clearRemnaTrapPlacementPreview();
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
@@ -16304,13 +16765,17 @@
         releaseMiaCharge(e.pointerId, performance.now());
       } else if (e.type !== 'pointercancel' && getCurrentCharacter().shotType === 'conjure') {
         commitConjurePlacement(performance.now());
+      } else if (e.type !== 'pointercancel' && getCurrentCharacter().shotType === 'trap') {
+        commitRemnaTrapPlacement(performance.now());
       } else if (e.type === 'pointercancel') {
         clearMiaChargeState();
         clearConjurePlacementPreview();
+        clearRemnaTrapPlacementPreview();
       }
     } else if (e.type === 'pointercancel') {
       clearMiaChargeState();
       clearConjurePlacementPreview();
+      clearRemnaTrapPlacementPreview();
     }
 
     if (e.cancelable) e.preventDefault();
@@ -16391,6 +16856,7 @@
       if (cancelled) {
         clearMiaChargeState();
         clearConjurePlacementPreview();
+        clearRemnaTrapPlacementPreview();
       }
       return;
     }
@@ -16398,6 +16864,7 @@
     if (cancelled) {
       clearMiaChargeState();
       clearConjurePlacementPreview();
+      clearRemnaTrapPlacementPreview();
       return;
     }
 
@@ -16414,6 +16881,7 @@
     if (isFlick) {
       clearMiaChargeState();
       clearConjurePlacementPreview();
+      clearRemnaTrapPlacementPreview();
       const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
       const target = dx > 0 ? others[0] : others[1];
       if (target) window.switchShootingCharacter(target.id);
@@ -16424,6 +16892,8 @@
       releaseMiaCharge(releasePointerId, performance.now());
     } else if (getCurrentCharacter().shotType === 'conjure') {
       commitConjurePlacement(performance.now());
+    } else if (getCurrentCharacter().shotType === 'trap') {
+      commitRemnaTrapPlacement(performance.now());
     }
   }
 
@@ -16476,6 +16946,9 @@
 
     if (!state.countdown && getCurrentCharacter().shotType === 'conjure' && !state.conjurePlacementPreview) {
       beginConjurePlacementPreview(performance.now());
+    }
+    if (!state.countdown && getCurrentCharacter().shotType === 'trap' && !state.remnaTrapPlacementPreview) {
+      beginRemnaTrapPlacementPreview(performance.now());
     }
 
     if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
@@ -16668,13 +17141,16 @@
   // ============================================================
   const SHOOTING_BGM_NORMAL_ID = 'bgm-battle-normal';
   const SHOOTING_BGM_BOSS_ID = 'bgm-battle-boss';
+  const SHOOTING_BGM_BOSS_02_ID = 'bgm-battle-boss-02';
   let shootingBattleBgmSessionActive = false;
   let shootingBattleBgmFadeRaf = 0;
 
   function getShootingBattleBgmTrack() {
-    const id = selectedStage && selectedStage.type === 'normal'
-      ? SHOOTING_BGM_NORMAL_ID
-      : SHOOTING_BGM_BOSS_ID;
+    const id = isNoahStage()
+      ? SHOOTING_BGM_BOSS_02_ID
+      : (selectedStage && selectedStage.type === 'normal'
+        ? SHOOTING_BGM_NORMAL_ID
+        : SHOOTING_BGM_BOSS_ID);
     return document.getElementById(id);
   }
 
@@ -16698,7 +17174,8 @@
   function getAllShootingBattleBgmTracks() {
     return [
       document.getElementById(SHOOTING_BGM_NORMAL_ID),
-      document.getElementById(SHOOTING_BGM_BOSS_ID)
+      document.getElementById(SHOOTING_BGM_BOSS_ID),
+      document.getElementById(SHOOTING_BGM_BOSS_02_ID)
     ].filter(Boolean);
   }
 
@@ -17294,7 +17771,96 @@
     }
   }
 
-  window.startSelectedShootingCharacter = async function () {
+  function getNoahSpecialTicketCountForConfirm() {
+    // build1006: 画面上の最新チケット表示を優先する。
+    // userProfile は受取直後などに古い値が残る場合があるため、
+    // 確認ポップアップを誤ってブロックしない。
+    const candidates = [
+      document.getElementById('special-ticket-count'),
+      document.getElementById('noah-piece-ticket-status-count'),
+      document.querySelector('[data-special-ticket-count]')
+    ];
+    for (const el of candidates) {
+      if (!el) continue;
+      const raw = String(el.textContent || '').replace(/[^0-9.-]/g, '');
+      if (!raw) continue;
+      const value = Number(raw);
+      if (Number.isFinite(value)) return Math.max(0, Math.floor(value));
+    }
+    const profileValue = Number(window.userProfile && window.userProfile.special_stage_ticket);
+    return Number.isFinite(profileValue) ? Math.max(0, Math.floor(profileValue)) : 0;
+  }
+
+  function ensureNoahBattleStartConfirmDialog() {
+    let overlay = document.getElementById('noah-battle-start-confirm');
+    if (overlay) return overlay;
+
+    const style = document.createElement('style');
+    style.id = 'noah-battle-start-confirm-style';
+    style.textContent = `
+      #noah-battle-start-confirm{position:fixed;inset:0;z-index:250000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(26,21,16,.32);box-sizing:border-box}
+      #noah-battle-start-confirm.show{display:flex}
+      #noah-battle-start-confirm .noah-battle-start-card{width:min(88vw,360px);background:#fbf8f0;border:1px solid rgba(155,122,74,.42);border-radius:2px;box-shadow:0 18px 42px rgba(49,39,27,.18);padding:24px 22px 18px;box-sizing:border-box;text-align:center;color:#6e5b43}
+      #noah-battle-start-confirm .noah-battle-start-title{font-family:serif;font-size:12px;letter-spacing:.18em;margin:0 0 15px;color:#957650}
+      #noah-battle-start-confirm .noah-battle-start-message{font-family:serif;font-size:14px;line-height:1.85;margin:0;color:#6b5944;white-space:normal}
+      #noah-battle-start-confirm .noah-battle-start-count{display:block;margin-top:4px;font-size:12px;color:#8b765e}
+      #noah-battle-start-confirm .noah-battle-start-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+      #noah-battle-start-confirm .noah-battle-start-actions button{height:42px;border:1px solid rgba(155,122,74,.36);border-radius:0;background:#f7f1e5;color:#735f47;font-family:serif;font-size:13px;letter-spacing:.12em;box-shadow:none}
+      #noah-battle-start-confirm .noah-battle-start-actions button:active{transform:translateY(1px)}
+      #noah-battle-start-confirm .noah-battle-start-yes{background:linear-gradient(180deg,#fbf4e4,#f0e2c4)}
+    `;
+    document.head.appendChild(style);
+
+    overlay = document.createElement('div');
+    overlay.id = 'noah-battle-start-confirm';
+    overlay.setAttribute('aria-hidden','true');
+    overlay.innerHTML = `
+      <section class="noah-battle-start-card" role="dialog" aria-modal="true" aria-labelledby="noah-battle-start-title">
+        <div class="noah-battle-start-title" id="noah-battle-start-title">SPECIAL STAGE</div>
+        <p class="noah-battle-start-message">SPECIAL TICKET -ノア- を1枚消費します。<span class="noah-battle-start-count">（現在の所持枚数：<b id="noah-battle-start-ticket-count">0</b>枚）</span></p>
+        <div class="noah-battle-start-actions">
+          <button type="button" class="noah-battle-start-no">いいえ</button>
+          <button type="button" class="noah-battle-start-yes">はい</button>
+        </div>
+      </section>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('.noah-battle-start-no').addEventListener('click', () => {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+    });
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden','true');
+      }
+    });
+    overlay.querySelector('.noah-battle-start-yes').addEventListener('click', async () => {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+      await window.startSelectedShootingCharacter({ noahTicketConfirmed: true });
+    });
+    return overlay;
+  }
+
+  function showNoahBattleStartConfirmDialog() {
+    const overlay = ensureNoahBattleStartConfirmDialog();
+    const count = getNoahSpecialTicketCountForConfirm();
+    const countEl = overlay.querySelector('#noah-battle-start-ticket-count');
+    if (countEl) countEl.textContent = String(count);
+
+    // build1006: 所持数のクライアント表示値だけでダイアログ表示を止めない。
+    // 「はい」後の begin_noah_attempt がサーバー上の正しい所持数を検証し、
+    // チケットを原子的に消費する。
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+  }
+
+  window.startSelectedShootingCharacter = async function (options = {}) {
+    if (isNoahStage() && !options.noahTicketConfirmed) {
+      showNoahBattleStartConfirmDialog();
+      return;
+    }
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
 
@@ -18971,6 +19537,13 @@
         }
       }, 420);
     });
+
+    // build983:
+    // ULTカットイン中に離指イベントを取りこぼした場合、pointerActive が true のまま残り、
+    // ローズフォートレス展開後も通常ショットが自動射撃のように継続してしまうことがある。
+    // 発動完了時に残留している射撃入力だけ解除する。
+    // 指を実際に保持中なら次の pointer/touch move で通常どおり入力状態が復帰する。
+    pointerActive = false;
 
     // ローズフォートレス展開中も味方射撃・敵行動を止めない。
     // ULT再入力のための追加ロックも設けない（ゲージ消費そのものが再発動を制御）。
@@ -22617,6 +23190,11 @@
     // RAID BATTLE
     if (stage.raid || stageId.includes('raid')) {
       return ['RAID BATTLE', getShootingStageInfoBossName(stage)];
+    }
+
+    // ノアはステージ名のみ。旧 STRESS TEST 表記は出さない。
+    if (isNoahStage()) {
+      return ['SPECIAL PROC.', '理想郷 -ノア-'];
     }
 
     // SPECIAL PROC.  STORY / DAILY / SCORE / RAID 以外の巡行系はここへ統一。

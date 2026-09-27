@@ -167,7 +167,7 @@
                 <strong id="shooting-result-hit-total">0回</strong>
               </div>
               <div class="shooting-result-detail-row">
-                <span class="shooting-result-detail-label">生存キャラ数</span>
+                <span class="shooting-result-detail-label">生存キャラ</span>
                 <div class="shooting-result-member-list" id="shooting-result-survivor-details"></div>
                 <strong id="shooting-result-survivor-total">3/3</strong>
               </div>
