@@ -41254,3 +41254,102 @@ html body textarea{
     width:min(calc(100vw - 60px),278px) !important;
   }
 }
+
+/* =========================================================
+   build970 GACHA CTA MOTION — final cascade override
+   - page arrows: move outward once per second without touching fixed transform
+   - probability CTA: lighter type + rightward nudge
+   ========================================================= */
+html body #screen-summon .summon-center-title-more,
+html body #screen-summon .summon-center-title-more-label{
+  font-weight:400 !important;
+  letter-spacing:.045em !important;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+html body #screen-summon .summon-center-title-more{
+  font-size:10px !important;
+}
+
+html body #screen-summon .summon-center-title-more-arrow{
+  font-weight:400 !important;
+  opacity:1 !important;
+  left:0;
+  will-change:left;
+  animation:gacha970RateArrowNudge 1s ease-in-out infinite !important;
+}
+
+html body #screen-summon .summon-banner-arrow-prev{
+  margin-left:0;
+  will-change:margin-left;
+  animation:gacha970PagerLeft 1s ease-in-out infinite !important;
+}
+
+html body #screen-summon .summon-banner-arrow-next{
+  margin-right:0;
+  will-change:margin-right;
+  animation:gacha970PagerRight 1s ease-in-out infinite !important;
+}
+
+@keyframes gacha970PagerLeft{
+  0%,64%,100%{margin-left:0;}
+  78%{margin-left:-9px;}
+  90%{margin-left:-3px;}
+}
+
+@keyframes gacha970PagerRight{
+  0%,64%,100%{margin-right:0;}
+  78%{margin-right:-9px;}
+  90%{margin-right:-3px;}
+}
+
+@keyframes gacha970RateArrowNudge{
+  0%,64%,100%{left:0;}
+  78%{left:8px;}
+  90%{left:3px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body #screen-summon .summon-banner-arrow-prev,
+  html body #screen-summon .summon-banner-arrow-next,
+  html body #screen-summon .summon-center-title-more-arrow{
+    animation:none !important;
+  }
+}
+
+/* =========================================================
+   build979 GACHA conversion modal — fixed frame / list-only scroll
+   - 外枠・見出し・注記・OKボタンは固定
+   - 変換結果一覧だけ縦スクロール
+   ========================================================= */
+#gacha-conversion-modal > .gacha-conversion-modal-inner{
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-kicker,
+#gacha-conversion-modal h2,
+#gacha-conversion-modal .gacha-conversion-note,
+#gacha-conversion-modal .gacha-conversion-ok{
+  flex:0 0 auto !important;
+}
+
+#gacha-conversion-modal .gacha-conversion-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior:contain !important;
+  padding-right:3px !important;
+}
+
+/* 一覧だけスクロールしても末尾のカードが窮屈にならない */
+#gacha-conversion-modal .gacha-conversion-list::after{
+  content:"" !important;
+  display:block !important;
+  flex:0 0 1px !important;
+  height:1px !important;
+}

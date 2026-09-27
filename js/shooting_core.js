@@ -3127,7 +3127,9 @@
     if (startType) {
       startType.textContent = c.shotType === 'charge'
         ? `${c.label} · 長押し → 離して発射`
-        : `${c.label} · 射撃は自動`;
+        : (c.shotType === 'conjure'
+          ? `${c.label} · タップ中に設置予告 → 離して生成`
+          : `${c.label} · 射撃は自動`);
     }
     document.querySelectorAll('.shooting-character-option').forEach(btn => {
       const id = Number(btn.getAttribute('data-character-id'));
@@ -3309,7 +3311,10 @@
       ignisLaserEl: null, ignisLaserHideAt: 0,
       ignisFireWheel: null,
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
-      roseFlower: null, roseHeartSeq: 0,
+      roseFortress: null,
+      conjureTurrets: [],
+      conjurePlacementPreview: null,
+      conjureUlt: null,
       eltenaBlackHole: null,
       toyfelBlackHoleField: null,
       ninaUltToken: 0,
@@ -3437,6 +3442,7 @@
     if (!forced && now < (state.switchReadyAt || 0)) return;
     if (getCurrentCharacter().id === CHARACTER_ID.HAYATE) stopHayateMoonlightForSwitch();
     if (getCurrentCharacter().shotType === 'charge') clearMiaChargeState();
+    if (getCurrentCharacter().shotType === 'conjure') clearConjurePlacementPreview();
 
     // ミトから別キャラへ交代する時は、犬とミトULT状態をその場で破棄。
     cleanupMitoCompanionOnSwitch(id);
@@ -3523,7 +3529,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-conjure-preview,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -3532,7 +3538,10 @@
       state.greshaBurnField = null;
       state.ignisLaserEl = null;
       state.ignisFireWheel = null;
-      state.roseFlower = null;
+      state.roseFortress = null;
+      state.conjureTurrets = [];
+      state.conjurePlacementPreview = null;
+      state.conjureUlt = null;
       state.wolfAtkField = null;
       state.bossDangerWarningEl = null;
       state.bossDangerExecuteAt = 0;
@@ -7597,6 +7606,297 @@
     renderHud();
   }
 
+  // ============================================================
+  // build971: ID40 CONJURE
+  // 通常：タップ中に自機前方へ設置予告、離指で半透明砲台を生成。
+  // 最大3基 / 3秒 / 1秒ごとに8方向へ計3射 / ATK×0.40 / 非貫通。
+  // ULT：自機左右へ完全追従する砲台を5秒間展開し、左右各25発のHOMING。
+  // ============================================================
+  function ensureConjureVisualStyles() {
+    if (document.getElementById('shooting-conjure-style-build971')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-conjure-style-build971';
+    style.textContent = `
+      .shooting-conjure-preview,
+      .shooting-conjure-turret,
+      .shooting-conjure-ult-turret{
+        position:absolute;left:0;top:0;z-index:11;pointer-events:none;
+        width:42px;height:42px;transform:translate(-50%,-50%);
+      }
+      .shooting-conjure-preview::before,
+      .shooting-conjure-turret::before,
+      .shooting-conjure-ult-turret::before{
+        content:"";position:absolute;left:50%;top:50%;width:25px;height:25px;
+        transform:translate(-50%,-50%) rotate(45deg);
+        border:1px solid rgba(224,235,239,.88);
+        background:linear-gradient(135deg,rgba(255,255,255,.68),rgba(174,196,204,.18));
+        box-shadow:0 0 12px rgba(215,235,240,.48),inset 0 0 8px rgba(255,255,255,.38);
+      }
+      .shooting-conjure-preview::after,
+      .shooting-conjure-turret::after,
+      .shooting-conjure-ult-turret::after{
+        content:"";position:absolute;left:50%;top:3px;width:6px;height:21px;
+        transform:translateX(-50%);border-radius:2px;
+        background:linear-gradient(180deg,rgba(250,255,255,.9),rgba(151,179,187,.32));
+        box-shadow:0 0 7px rgba(222,244,248,.48);
+      }
+      .shooting-conjure-preview{opacity:.34;filter:grayscale(.25);animation:shootingConjurePreviewPulse .72s ease-in-out infinite alternate}
+      .shooting-conjure-preview::before{border-style:dashed}
+      .shooting-conjure-turret{opacity:.58;transition:opacity .22s ease}
+      .shooting-conjure-turret.is-expiring{opacity:.22}
+      .shooting-conjure-turret.volley::before{animation:shootingConjureVolley .18s ease-out}
+      .shooting-conjure-ult-turret{width:48px;height:48px;opacity:.72;filter:drop-shadow(0 0 8px rgba(229,245,248,.55))}
+      .shooting-conjure-ult-turret::before{width:30px;height:30px;border-width:1.5px}
+      .shooting-conjure-ult-turret::after{height:26px;top:0}
+      .shooting-bullet-conjure{width:8px!important;height:8px!important;border-radius:1px!important;transform-origin:center;background:rgba(228,241,244,.92)!important;box-shadow:0 0 7px rgba(200,229,235,.75)!important}
+      .shooting-conjure-ult-homing{width:9px!important;height:14px!important;border-radius:45% 45% 55% 55%!important;background:linear-gradient(180deg,#fff,rgba(207,232,238,.95),rgba(135,170,180,.86))!important;box-shadow:0 0 8px rgba(208,239,245,.84)!important}
+      @keyframes shootingConjurePreviewPulse{to{opacity:.58;filter:brightness(1.16)}}
+      @keyframes shootingConjureVolley{0%{transform:translate(-50%,-50%) rotate(45deg) scale(.8);filter:brightness(1.7)}100%{transform:translate(-50%,-50%) rotate(45deg) scale(1);filter:brightness(1)}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getConjurePlacementPoint(c) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state?.player) return null;
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
+    const offsetY = Math.max(56, Number(c?.conjurePlaceOffsetY || 112));
+    return {
+      x: clamp(Number(state.player.x || w * .5), 28, Math.max(28, w - 28)),
+      y: clamp(Number(state.player.y || h * .8) - offsetY, 40, Math.max(40, h - 72))
+    };
+  }
+
+  function pruneConjureTurrets(now) {
+    if (!state) return;
+    const list = Array.isArray(state.conjureTurrets) ? state.conjureTurrets : [];
+    state.conjureTurrets = list.filter(t => {
+      if (!t || now >= Number(t.expireAt || 0)) {
+        try { t?.el?.remove(); } catch (_) {}
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function clearConjurePlacementPreview() {
+    if (!state?.conjurePlacementPreview) return;
+    try { state.conjurePlacementPreview.el?.remove(); } catch (_) {}
+    state.conjurePlacementPreview = null;
+  }
+
+  function beginConjurePlacementPreview(now) {
+    if (!state || state.ended || state.finishing) return false;
+    const c = getCurrentCharacter();
+    if (!c || c.shotType !== 'conjure') return false;
+    pruneConjureTurrets(now || performance.now());
+    const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
+    if ((state.conjureTurrets || []).length >= max) {
+      clearConjurePlacementPreview();
+      return false;
+    }
+    ensureConjureVisualStyles();
+    clearConjurePlacementPreview();
+    const arena = document.getElementById('shooting-arena');
+    const point = getConjurePlacementPoint(c);
+    if (!arena || !point) return false;
+    const el = document.createElement('div');
+    el.className = 'shooting-conjure-preview';
+    arena.appendChild(el);
+    state.conjurePlacementPreview = { el, ownerId: c.id, x: point.x, y: point.y };
+    positionUnit(el, point.x, point.y);
+    return true;
+  }
+
+  function updateConjurePlacementPreview() {
+    if (!state?.conjurePlacementPreview) return;
+    const c = getCurrentCharacter();
+    if (!c || c.shotType !== 'conjure' || Number(state.conjurePlacementPreview.ownerId) !== Number(c.id)) {
+      clearConjurePlacementPreview();
+      return;
+    }
+    const point = getConjurePlacementPoint(c);
+    if (!point) return;
+    state.conjurePlacementPreview.x = point.x;
+    state.conjurePlacementPreview.y = point.y;
+    positionUnit(state.conjurePlacementPreview.el, point.x, point.y);
+  }
+
+  function fireConjureTurretVolley(turret, c, now) {
+    if (!state || !turret || !c) return;
+    ensureConjureVisualStyles();
+    const count = Math.max(1, Math.floor(Number(c.conjureBulletsPerVolley || 8)));
+    const speed = Math.max(180, Number(c.conjureTurretBulletSpeed || c.bulletSpeed || 520));
+    const damage = Math.max(0, Number(c.atk || 0) * Number(c.shotPowerRate || 0.40));
+    const attackElement = normalizeCombatElement(c.element) || 'neutral';
+    const elementClass = getCharacterBulletClass(c);
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * i / count);
+      const p = makeProjectile(
+        'shooting-bullet shooting-bullet-conjure' + elementClass,
+        Number(turret.x || 0), Number(turret.y || 0),
+        Math.cos(angle) * speed, Math.sin(angle) * speed,
+        damage, c.id
+      );
+      if (!p) continue;
+      p.kind = 'conjure_bullet';
+      p.attackElement = attackElement;
+      p.element = attackElement;
+      p.pierce = false;
+      p._hw = 4;
+      p._hh = 4;
+      state.bullets.push(p);
+    }
+    if (turret.el) {
+      turret.el.classList.remove('volley');
+      void turret.el.offsetWidth;
+      turret.el.classList.add('volley');
+      setTimeout(() => { try { turret.el?.classList.remove('volley'); } catch (_) {} }, 180);
+    }
+  }
+
+  function spawnConjureTurret(c, x, y, now) {
+    if (!state || !c) return false;
+    pruneConjureTurrets(now);
+    const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
+    if ((state.conjureTurrets || []).length >= max) return false;
+    ensureConjureVisualStyles();
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return false;
+    const el = document.createElement('div');
+    el.className = 'shooting-conjure-turret';
+    arena.appendChild(el);
+    const life = Math.max(500, Number(c.conjureLifetimeMs || 3000));
+    const turret = {
+      el, ownerId: c.id, x: Number(x || 0), y: Number(y || 0),
+      createdAt: now, expireAt: now + life,
+      nextShotAt: now, shotsFired: 0
+    };
+    positionUnit(el, turret.x, turret.y);
+    state.conjureTurrets.push(turret);
+    // 生成直後を1射目とし、1秒後・2秒後の計3射。
+    fireConjureTurretVolley(turret, c, now);
+    turret.shotsFired = 1;
+    turret.nextShotAt = now + Math.max(100, Number(c.conjureVolleyIntervalMs || 1000));
+    return true;
+  }
+
+  function commitConjurePlacement(now) {
+    if (!state?.conjurePlacementPreview) return false;
+    const preview = state.conjurePlacementPreview;
+    const c = getCurrentCharacter();
+    clearConjurePlacementPreview();
+    if (!c || c.shotType !== 'conjure' || Number(preview.ownerId) !== Number(c.id)) return false;
+    return spawnConjureTurret(c, preview.x, preview.y, now || performance.now());
+  }
+
+  function updateConjureTurrets(now) {
+    if (!state) return;
+    pruneConjureTurrets(now);
+    const list = state.conjureTurrets || [];
+    list.forEach(turret => {
+      const c = getBattleCharacter(turret.ownerId) || SHOOTING_CHARACTERS?.[turret.ownerId];
+      if (!c) return;
+      const lifeLeft = Number(turret.expireAt || 0) - now;
+      if (turret.el) turret.el.classList.toggle('is-expiring', lifeLeft <= 500);
+      const maxShots = Math.max(1, Math.floor(Number(c.conjureVolleyCount || 3)));
+      const interval = Math.max(100, Number(c.conjureVolleyIntervalMs || 1000));
+      while (turret.shotsFired < maxShots && now >= Number(turret.nextShotAt || Infinity)) {
+        fireConjureTurretVolley(turret, c, now);
+        turret.shotsFired += 1;
+        turret.nextShotAt += interval;
+      }
+    });
+  }
+
+  function clearConjureUlt() {
+    if (!state?.conjureUlt) return;
+    try { state.conjureUlt.leftEl?.remove(); } catch (_) {}
+    try { state.conjureUlt.rightEl?.remove(); } catch (_) {}
+    state.conjureUlt = null;
+  }
+
+  function spawnConjureUltHoming(c, x, y, side, now) {
+    if (!state || !c) return;
+    ensureConjureVisualStyles();
+    const speed = Math.max(260, Number(c.conjureUltHomingSpeed || 680));
+    const damage = Math.max(0, Number(c.atk || 0) * Number(c.conjureUltDamageAtkMultiplier || 0.30));
+    const attackElement = normalizeCombatElement(c.element) || 'neutral';
+    const elementClass = getCharacterBulletClass(c);
+    const vx = side * speed * .18;
+    const vy = -speed * .98;
+    const p = makeProjectile(
+      'shooting-bullet shooting-conjure-ult-homing' + elementClass,
+      x, y, vx, vy, damage, c.id
+    );
+    if (!p) return;
+    p.kind = 'generic_homing';
+    p.homingSpeed = speed;
+    p.homingTurnRate = Math.max(1, Number(c.conjureUltHomingTurnRate || 8.5));
+    p.attackElement = attackElement;
+    p.element = attackElement;
+    p.pierce = false;
+    p.noUltGain = true;
+    p.ultGainMultiplier = 0;
+    state.bullets.push(p);
+  }
+
+  function updateConjureUlt(now) {
+    const ult = state?.conjureUlt;
+    if (!ult) return;
+    const c = getBattleCharacter(ult.ownerId) || SHOOTING_CHARACTERS?.[ult.ownerId];
+    if (!c || now >= Number(ult.until || 0)) {
+      clearConjureUlt();
+      return;
+    }
+    const ox = Number(c.conjureUltTurretOffsetX || 54);
+    const oy = Number(c.conjureUltTurretOffsetY ?? -8);
+    const px = Number(state.player.x || 0);
+    const py = Number(state.player.y || 0) + oy;
+    ult.leftX = px - ox;
+    ult.rightX = px + ox;
+    ult.y = py;
+    positionUnit(ult.leftEl, ult.leftX, py);
+    positionUnit(ult.rightEl, ult.rightX, py);
+
+    const interval = Math.max(80, Number(c.conjureUltShotIntervalMs || 200));
+    const maxPerSide = Math.max(1, Math.floor(Number(c.conjureUltShotsPerSide || 25)));
+    while (ult.shotsPerSide < maxPerSide && now >= Number(ult.nextShotAt || Infinity)) {
+      spawnConjureUltHoming(c, ult.leftX, py - 14, -1, now);
+      spawnConjureUltHoming(c, ult.rightX, py - 14, 1, now);
+      ult.shotsPerSide += 1;
+      ult.nextShotAt += interval;
+    }
+  }
+
+  function useConjureUlt(c) {
+    if (!state || !c) return;
+    ensureConjureVisualStyles();
+    clearConjureUlt();
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const leftEl = document.createElement('div');
+    const rightEl = document.createElement('div');
+    leftEl.className = 'shooting-conjure-ult-turret';
+    rightEl.className = 'shooting-conjure-ult-turret';
+    arena.appendChild(leftEl);
+    arena.appendChild(rightEl);
+    const now = performance.now();
+    state.conjureUlt = {
+      ownerId: c.id,
+      leftEl, rightEl,
+      until: now + Math.max(500, Number(c.conjureUltDurationMs || 5000)),
+      nextShotAt: now,
+      shotsPerSide: 0,
+      leftX: state.player.x,
+      rightX: state.player.x,
+      y: state.player.y
+    };
+    // 初弾は発動直後。以後200ms周期で左右各25発まで。
+    updateConjureUlt(now);
+  }
+
   function fireCharacterSubShot(c, now, powerMultiplier, itemAtkBuffMultiplier, wolfFieldAtkMultiplier) {
     if (!state || !c || !c.subShot) return;
     const sub = c.subShot;
@@ -7656,6 +7956,8 @@
 
     // ミアは自動射撃を行わず、pointerup時のCHARGE RELEASEだけで攻撃する。
     if (c && c.shotType === 'charge') return;
+    // ID40 CONJUREは本人から通常弾を撃たず、離指時に設置した砲台だけが射撃する。
+    if (c && c.shotType === 'conjure') return;
 
     // 通常キャラは、画面に指/ポインタを置いて操作している間だけ射撃する。
     // 指を離した後も発射済みの弾はそのまま進み、新しい弾だけ生成しない。
@@ -9474,7 +9776,7 @@
     // 理想郷：ノア専用。
     // build946: 軽量優先。通常弾は固定テーブルで左右対称、追従弾だけ例外。
     if (isNoahStage()) {
-      const interval = phase === 1 ? 320 : (phase === 2 ? 265 : 225);
+      const interval = phase === 1 ? 360 : (phase === 2 ? 300 : 225);
 
       // ステージ開始直後はCanvas生成・BOSS表示・各画像decodeと重なるため、
       // 1ボレー分だけ待ってから弾幕を開始する。
@@ -9489,7 +9791,7 @@
 
       const step = Number(state.noahSpiralStep || 0);
       const pattern = step & 3;
-      const speedMul = phase === 1 ? 0.92 : (phase === 2 ? 0.98 : 1.04);
+      const speedMul = phase === 1 ? 0.88 : (phase === 2 ? 0.94 : 1.04);
       const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94);
       const spawnCompanionLane = (step % 4) === 0;
       const centerAxis = Math.PI / 2;
@@ -9572,12 +9874,13 @@
         }
       }
 
-      // build963: 通常のS字弾幕に対して約15%だけ「闇属性の直進弾」を追加する。
+      // build967: WAVE1/2の難易度を一段階緩和。闇属性の直進弾はWAVE1=11%、WAVE2=12.5%、WAVE3=15%。
       // 追加数は小数予算を累積して決めるため、短い区間で偏らず長期的に約15%増となる。
       // makeProjectile() はノア通常弾へS字移動を自動付与するため、追加弾だけ明示的に解除する。
       const companionCount = spawnCompanionLane ? Math.max(0, normalOffsets.length - 1) : 0;
       const baseVolleyCount = normalOffsets.length + companionCount;
-      state.noahDarkStraightBudget = Number(state.noahDarkStraightBudget || 0) + baseVolleyCount * 0.15;
+      const darkStraightRate = phase === 1 ? 0.11 : (phase === 2 ? 0.125 : 0.15);
+      state.noahDarkStraightBudget = Number(state.noahDarkStraightBudget || 0) + baseVolleyCount * darkStraightRate;
 
       const darkStraightOffsets = phase === 1
         ? [-0.48, 0.48, -0.18, 0.18]
@@ -9617,7 +9920,7 @@
       state.noahSpiralStep = step + 1;
 
       // 軽量な左右対称リング。頻度を低く保つ。
-      const haloEvery = phase === 1 ? 9 : (phase === 2 ? 8 : 7);
+      const haloEvery = phase === 1 ? 10 : (phase === 2 ? 9 : 7);
       if ((state.noahSpiralStep % haloEvery) === 0) {
         const haloOffsets = phase === 1
           ? [-0.76, -0.30, 0.30, 0.76]
@@ -9642,12 +9945,12 @@
       }
 
       // 追従弾だけ左右対称制約の例外。
-      const extraEvery = phase === 1 ? 7 : 6;
+      const extraEvery = phase === 1 ? 8 : (phase === 2 ? 7 : 6);
       if ((state.noahSpiralStep % extraEvery) === 0) {
         const dx = state.player.x - state.boss.x;
         const dy = state.player.y - state.boss.y;
         const aim = Math.atan2(dy, dx);
-        const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.16, 0.16] : [-0.22, 0, 0.22]);
+        const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.13, 0.13] : [-0.22, 0, 0.22]);
         for (let i = 0; i < offsets.length; i++) {
           const a = aim + offsets[i];
           const p = makeProjectile(
@@ -11835,93 +12138,11 @@
         return true;
       }
 
-      if (p.kind === 'rose_heart') {
-        // build964: ROSE HEARTも非貫通Projectileなので仮面で確実に止める。
-        if (isFacelessStage() && !p.pierce) {
-          const mask = findFacelessMaskProjectileCollision(
-            p,
-            projectilePrevX, projectilePrevY,
-            Number(p.x || 0), Number(p.y || 0)
-          );
-          if (mask) {
-            if (Number(mask.hp || 0) > 0) {
-              const rose = getBattleCharacter(CHARACTER_ID.ROSE);
-              const heartDamage =
-                Number(rose?.atk || 0) *
-                Number(rose?.flowerHeartDamageAtkRate || 0.30);
-              const attackElement = normalizeCombatElement(rose?.element) || 'neutral';
-              const targetElement = getCombatTargetElement(mask, state.boss?.element);
-              damageFacelessObject(
-                mask,
-                applyElementDamage(heartDamage, attackElement, targetElement),
-                now,
-                getElementDamageReaction(attackElement, targetElement)
-              );
-            }
-            p.el.remove();
-            return false;
-          }
-        }
-        if (p.y < -30 || p.y > h + 30 || p.x < -30 || p.x > w + 30 || now >= Number(p.expireAt || 0)) {
-          p.el.remove();
-          return false;
-        }
-
-        const r = getUnitRect(p, arenaRect);
-
-        // 味方(現状はアクティブなプレイヤー)に当たると回復。
-        if (rectsHit(r, playerRect, 0, 4)) {
-          healRoseActiveCharacter(p.healMaxHpRate || 0.05);
-          p.el.remove();
-          return false;
-        }
-
-        // 敵に当たるとロゼATK参照のダメージ。
-        // この分岐は通常弾のコンボ/ULT加算処理へ進まないため、
-        // ハートによるダメージではULTゲージを一切増やさない。
-        const hitBossHeart = !isNormalBattle() && bossRect && rectsHit(r, bossRect, 0, 16);
-        const hitNormalHeart = (isNormalBattle() || hasBossAdds())
-          ? state.normalEnemies.find(enemy => enemy && enemy.el && enemy.hp > 0 && rectsHit(r, getUnitRect(enemy, arenaRect), 0, 10))
-          : null;
-
-        if (hitBossHeart || hitNormalHeart) {
-          const rose = getBattleCharacter(CHARACTER_ID.ROSE);
-          const heartDamage =
-            Number(rose?.atk || 0) *
-            Number(rose?.flowerHeartDamageAtkRate || 0.30);
-
-          if (hitNormalHeart) {
-            damageNormalEnemy(hitNormalHeart, applyHitComboDamage(heartDamage), now, false);
-            state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
-          } else if (hitBossHeart && state.boss) {
-            const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(heartDamage || 0)));
-            state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
-            updateBossPhase();
-            if (shouldRenderRaidBossHitVisual(now, 'hit')) {
-              createHit(p.x, p.y, false);
-              flashBossHit(false, true);
-            }
-            if (shouldRenderRaidBossHitVisual(now, 'number')) {
-              showBossDamageNumber(appliedDamage, false);
-            }
-            if (state.boss.hp <= 0) beginBossDefeat();
-          }
-
-          // noComboGain / noUltGain を明示しているが、
-          // そもそもこの専用分岐でreturnするため通常のゲージ加算処理には入らない。
-          p.noComboGain = true;
-          p.noUltGain = true;
-          p.el.remove();
-          return false;
-        }
-        return true;
-      }
-
       if (p.kind === 'bomb_fragment' && now >= Number(p.bombExpireAt || 0)) {
         p.el.remove();
         return false;
       }
-      if (p.y < -20 || p.x < -20 || p.x > w + 20 || (p.kind === 'bomb_fragment' && p.y > h + 20)) {
+      if (p.y < -20 || p.x < -20 || p.x > w + 20 || ((p.kind === 'bomb_fragment' || p.kind === 'conjure_bullet') && p.y > h + 20)) {
         p.el.remove();
         return false;
       }
@@ -12474,12 +12695,17 @@
         return false;
       }
 
-      // ロゼULTの花は、効果時間中「壁」として敵弾を遮断する。
-      // 花自体にはHPを持たせず、敵弾は接触した時点で消滅。
-      const roseFlower = state.roseFlower;
-      if (roseFlower && roseFlower.el && roseFlower.el.isConnected) {
-        const flowerRect = getUnitRect(roseFlower, arenaRect);
-        if (rectsHit(r, flowerRect, 0, 28)) {
+      // ロゼULT「ローズフォートレス」：通常敵弾だけを壁で吸収する。
+      // WARNING / レーザー / HEAVYなどの特殊攻撃は対象外。
+      const roseFortress = state.roseFortress;
+      if (
+        roseFortress && roseFortress.el && roseFortress.el.isConnected &&
+        isRoseFortressAbsorbableBullet(p)
+      ) {
+        const fortressRect = getUnitRect(roseFortress, arenaRect);
+        if (rectsHit(r, fortressRect, 0, 8)) {
+          const rose = getBattleCharacter(CHARACTER_ID.ROSE);
+          healRoseActiveCharacter(Number(rose?.fortressBulletHealMaxHpRate || 0.03));
           p.el.remove();
           return false;
         }
@@ -14117,13 +14343,16 @@
       resetCombo(true);
     }
     if (!state.koTransition) updateMovement(dt, ts);
+    updateConjurePlacementPreview();
+    updateConjureTurrets(ts);
+    updateConjureUlt(ts);
     updateChapter6Barriers(ts);
     updateMitoSummon(dt, ts);
     updateGreshaBurnField(ts);
     updateClarineDecoys(dt, ts);
     updateIgnisFireWheel(ts);
     updateIgnisBurns(ts);
-    updateRoseFlower(ts);
+    updateRoseFortress(ts);
     updateWolfAtkField(ts);
     updateToyfelBlackHoleField(ts);
     if (state.ignisLaserEl && (
@@ -15977,6 +16206,9 @@
     if (!state.countdown && getCurrentCharacter().shotType === 'charge') {
       beginMiaCharge(e.pointerId, now);
     }
+    if (!state.countdown && getCurrentCharacter().shotType === 'conjure') {
+      beginConjurePlacementPreview(now);
+    }
 
     if (e.cancelable) e.preventDefault();
   }
@@ -16064,16 +16296,21 @@
 
       if (isFlick) {
         clearMiaChargeState();
+        clearConjurePlacementPreview();
         const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
         const target = dx > 0 ? others[0] : others[1];
         if (target) window.switchShootingCharacter(target.id);
       } else if (e.type !== 'pointercancel' && getCurrentCharacter().shotType === 'charge') {
         releaseMiaCharge(e.pointerId, performance.now());
+      } else if (e.type !== 'pointercancel' && getCurrentCharacter().shotType === 'conjure') {
+        commitConjurePlacement(performance.now());
       } else if (e.type === 'pointercancel') {
         clearMiaChargeState();
+        clearConjurePlacementPreview();
       }
     } else if (e.type === 'pointercancel') {
       clearMiaChargeState();
+      clearConjurePlacementPreview();
     }
 
     if (e.cancelable) e.preventDefault();
@@ -16151,12 +16388,16 @@
     activePointerId = null;
 
     if (!wasActive || !state || state.ended || state.finishing || state.koTransition) {
-      if (cancelled) clearMiaChargeState();
+      if (cancelled) {
+        clearMiaChargeState();
+        clearConjurePlacementPreview();
+      }
       return;
     }
 
     if (cancelled) {
       clearMiaChargeState();
+      clearConjurePlacementPreview();
       return;
     }
 
@@ -16172,6 +16413,7 @@
 
     if (isFlick) {
       clearMiaChargeState();
+      clearConjurePlacementPreview();
       const others = state.party.filter(m => m.id !== state.activeCharacterId && m.hp > 0);
       const target = dx > 0 ? others[0] : others[1];
       if (target) window.switchShootingCharacter(target.id);
@@ -16180,6 +16422,8 @@
 
     if (getCurrentCharacter().shotType === 'charge') {
       releaseMiaCharge(releasePointerId, performance.now());
+    } else if (getCurrentCharacter().shotType === 'conjure') {
+      commitConjurePlacement(performance.now());
     }
   }
 
@@ -16228,6 +16472,10 @@
       swipeStartX = t.clientX;
       swipeStartY = t.clientY;
       swipeStartAt = performance.now();
+    }
+
+    if (!state.countdown && getCurrentCharacter().shotType === 'conjure' && !state.conjurePlacementPreview) {
+      beginConjurePlacementPreview(performance.now());
     }
 
     if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
@@ -18575,7 +18823,7 @@
   function healRoseActiveCharacter(maxHpRate) {
     if (!state || !Array.isArray(state.party)) return;
 
-    // ハート取得時点で場にいるキャラだけ回復。ベンチは回復しない。
+    // 吸収した瞬間に操作中のユニットだけを回復する。ベンチには波及しない。
     const member = state.party.find(m => m && Number(m.id) === Number(state.activeCharacterId));
     if (!member || member.hp <= 0) return;
 
@@ -18588,86 +18836,94 @@
     renderHud();
   }
 
-  function removeRoseFlower() {
-    if (!state || !state.roseFlower) return;
-    const flower = state.roseFlower;
-    if (flower.el) {
-      flower.el.classList.add('fade');
-      setTimeout(() => flower.el && flower.el.remove(), 260);
-    }
-    state.roseFlower = null;
+  function isRoseFortressAbsorbableBullet(projectile) {
+    const type = classifyIncomingAttack(projectile);
+    // 「通常の敵弾」のみ。通常敵弾とボス通常弾は吸収するが、
+    // WARNING / RAID LASER / HEAVY / その他特殊攻撃は通す。
+    return type === 'normal' || type === 'boss';
   }
 
-  function createRoseHeartProjectile(flower, c, angle, angleOffset) {
-    if (!state || !flower) return null;
+  function removeRoseFortress(immediate = false) {
+    if (!state || !state.roseFortress) return;
+    const fortress = state.roseFortress;
+    state.roseFortress = null;
+    if (!fortress.el) return;
 
-    const speed = Number(c.flowerHeartSpeed || 250);
-    const theta = angle + angleOffset;
-
-    // 花を「弾を撃つユニット」として扱う。
-    // プレイヤー弾が state.player.x/y、敵弾が enemy.x/y から出るのと同じ。
-    const originX =
-      Number(flower.x || 0) +
-      Number(c.flowerHeartOriginOffsetX || 0);
-
-    const originY =
-      Number(flower.y || 0) +
-      Number(c.flowerHeartOriginOffsetY || 0);
-
-    const p = makeProjectile(
-      'shooting-bullet shooting-bullet-rose-heart',
-      originX,
-      originY,
-      Math.cos(theta) * speed,
-      Math.sin(theta) * speed,
-      0,
-      c.id
-    );
-    if (!p) return null;
-
-    // 位置決め用の要素(p.el)自体には rotate を一切かけず、
-    // ハートの見た目(回転・疑似要素オフセット)は中の子要素だけに閉じ込める。
-    // こうすることで「transform(位置) と rotate(回転) を同じ要素に同時適用した際の
-    // ブラウザ側の描画ズレ」の可能性そのものを排除する。
-    if (p.el) {
-      p.el.innerHTML = '<span class="shooting-rose-heart-shape"></span>';
-    }
-
-    p.kind = 'rose_heart';
-    p.healMaxHpRate = Number(c.flowerHeartHealMaxHpRate || 0.05);
-    p.expireAt = performance.now() + Number(c.flowerHeartLifeMs || 2200);
-    p.noUltGain = true;
-    p.noComboGain = true;
-    p.sourceType = 'rose_flower';
-
-    return p;
-  }
-
-  function updateRoseFlower(now) {
-    if (!state || !state.roseFlower) return;
-    const flower = state.roseFlower;
-    const c = getBattleCharacter(CHARACTER_ID.ROSE);
-    if (!c) return;
-
-    if (!flower.el || !flower.el.isConnected || now >= flower.endAt) {
-      removeRoseFlower();
+    if (immediate) {
+      fortress.el.remove();
       return;
     }
 
-    // 花の見た目と発射座標を常に同じ flower.x/y に固定。
-    positionUnit(flower.el, flower.x, flower.y);
+    fortress.el.classList.add('fade');
+    setTimeout(() => fortress.el && fortress.el.remove(), 260);
+  }
 
-    if (now >= flower.nextEmitAt) {
-      const count = Math.max(1, Math.floor(Number(c.flowerHeartBurstCount || 10)));
-      const base = Math.random() * Math.PI * 2;
-      for (let i = 0; i < count; i++) {
-        const angle = base + (Math.PI * 2 * i / count);
-        const offset = (Math.random() - 0.5) * 0.14;
-        const p = createRoseHeartProjectile(flower, c, angle, offset);
-        if (p) state.bullets.push(p);
-      }
-      flower.nextEmitAt = now + Number(c.flowerHeartIntervalMs || 240);
+  function applyRoseFortressContactDamage(now) {
+    if (!state || !state.roseFortress) return;
+    const fortress = state.roseFortress;
+    if (!fortress.el || !fortress.el.isConnected) return;
+    if (now < Number(fortress.nextContactTickAt || 0)) return;
+
+    const c = getBattleCharacter(CHARACTER_ID.ROSE);
+    if (!c) return;
+    fortress.nextContactTickAt = now + Math.max(50, Number(c.fortressContactIntervalMs || 250));
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const arenaRect = arena.getBoundingClientRect();
+    const fortressRect = getUnitRect(fortress, arenaRect);
+    const rawDamage = Math.max(0, Number(c.atk || 0) * Number(c.fortressContactDamageAtkRate || 1.0));
+    if (!rawDamage) return;
+    const attackElement = normalizeCombatElement(c.element) || 'wood';
+
+    // 通常敵 / ボス取り巻き。
+    if (Array.isArray(state.normalEnemies)) {
+      state.normalEnemies.slice().forEach(enemy => {
+        if (!enemy || enemy.hp <= 0 || !enemy.el) return;
+        const enemyRect = getUnitRect(enemy, arenaRect);
+        if (!rectsHit(enemyRect, fortressRect, 0, 0)) return;
+        const targetElement = getCombatTargetElement(enemy, enemy?.def?.element);
+        const finalDamage = applyElementDamage(rawDamage, attackElement, targetElement);
+        damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
+      });
+      state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
     }
+
+    // ボス本体。ULT由来の直ダメージなのでコンボ・ULTゲージ加算には接続しない。
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      const bossEl = document.getElementById(BOSS_ID);
+      if (bossEl && bossEl.isConnected) {
+        const bossRect = bossEl.getBoundingClientRect();
+        if (rectsHit(bossRect, fortressRect, 0, 0)) {
+          const targetElement = getCombatTargetElement(state.boss, state.boss?.element || BOSS?.element);
+          const finalDamage = applyElementDamage(rawDamage, attackElement, targetElement);
+          const appliedDamage = Math.min(Number(state.boss.hp || 0), Math.max(0, Number(finalDamage || 0)));
+          state.boss.hp = Math.max(0, Number(state.boss.hp || 0) - appliedDamage);
+          updateBossPhase();
+          if (shouldRenderRaidBossHitVisual(now, 'hit')) {
+            createHit(Number(state.boss.x || fortress.x), Number(state.boss.y || fortress.y), false);
+            flashBossHit(false, true);
+          }
+          if (shouldRenderRaidBossHitVisual(now, 'number')) {
+            showBossDamageNumber(appliedDamage, false, getElementDamageReaction(attackElement, targetElement));
+          }
+          if (state.boss.hp <= 0) beginBossDefeat();
+        }
+      }
+    }
+  }
+
+  function updateRoseFortress(now) {
+    if (!state || !state.roseFortress) return;
+    const fortress = state.roseFortress;
+    if (!fortress.el || !fortress.el.isConnected || now >= Number(fortress.endAt || 0)) {
+      removeRoseFortress(false);
+      return;
+    }
+
+    // 発動時に決めた位置へ固定。ロゼが移動・交代しても壁は追従しない。
+    positionUnit(fortress.el, fortress.x, fortress.y);
+    applyRoseFortressContactDamage(now);
   }
 
   function useRoseUlt(c) {
@@ -18675,32 +18931,50 @@
     showUltCut(c.ultName, c.effectKey);
     ultScreenFlash('ult-flash-sui');
 
-    removeRoseFlower();
+    // 同時に1枚だけ。再発動時は古い壁を即座に置き換える。
+    removeRoseFortress(true);
 
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
 
-    const flower = document.createElement('div');
-    flower.className = 'shooting-rose-flower';
-    flower.innerHTML = `<img src="${c.flowerImage || 'images/chara_09_battle_flower.webp'}" alt="rose flower" draggable="false"><span class="shooting-rose-flower-aura"></span>`;
-    arena.appendChild(flower);
+    const fortressEl = document.createElement('div');
+    fortressEl.className = 'shooting-rose-fortress';
+    fortressEl.innerHTML = `<img src="${c.fortressImage || 'images/chara_09_battle_object.webp'}" alt="rose fortress" draggable="false">`;
+    arena.appendChild(fortressEl);
 
     const x = arena.clientWidth * 0.5;
-    const y = arena.clientHeight * 0.48;
-    positionUnit(flower, x, y);
-    requestAnimationFrame(() => flower.classList.add('show'));
+    const playerY = Number(state.player?.y || arena.clientHeight * 0.76);
+    const y = clamp(
+      playerY - Number(c.fortressForwardOffsetY || 92),
+      68,
+      Math.max(68, arena.clientHeight - 68)
+    );
+    positionUnit(fortressEl, x, y);
 
     const now = performance.now();
-    state.roseFlower = {
-      el: flower,
+    state.roseFortress = {
+      el: fortressEl,
       x, y,
       startedAt: now,
-      endAt: now + Number(c.flowerDurationMs || 5200),
-      nextEmitAt: now + 180,
+      endAt: now + Number(c.fortressDurationMs || 5000),
+      nextContactTickAt: now,
     };
-    // scale transition(.42s)が収まった後の最終サイズで1回だけ実測する。
-    setTimeout(() => measureUnitSize(state.roseFlower), 440);
-    state.ultLockUntil = now + 260;
+
+    // CSS幅100%の最終サイズを取得して、敵弾・敵本体の判定をステージ全幅へ同期する。
+    requestAnimationFrame(() => {
+      if (!state || !state.roseFortress || state.roseFortress.el !== fortressEl) return;
+      fortressEl.classList.add('show');
+      measureUnitSize(state.roseFortress);
+      setTimeout(() => {
+        if (state && state.roseFortress && state.roseFortress.el === fortressEl) {
+          measureUnitSize(state.roseFortress);
+        }
+      }, 420);
+    });
+
+    // ローズフォートレス展開中も味方射撃・敵行動を止めない。
+    // ULT再入力のための追加ロックも設けない（ゲージ消費そのものが再発動を制御）。
+    state.ultLockUntil = Math.min(Number(state.ultLockUntil || 0), now);
   }
 
   function ensureIgnisBurnEffectStyle() {
@@ -21159,7 +21433,7 @@
     applyUltElementVisualContext(c);
 
     if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
-    else if (c.ultType === 'rose_flower_heart') useRoseUlt(c);
+    else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);
     else if (c.ultType === 'gresha_burn_field') useGreshaUlt(c);
@@ -21184,6 +21458,7 @@
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
+    else if (c.ultType === 'conjure_homing_battery') useConjureUlt(c);
     else if (c.ultType === 'veronica_brass_punch') useVeronicaBrassPunchUlt(c);
     else if (c.ultType === 'shiina_light_ring') useShiinaLightRingUlt(c);
     else if (c.ultType === 'shion_delayed_curse') useShionUlt(c);

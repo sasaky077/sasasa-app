@@ -1055,10 +1055,20 @@
             ${buildStoryStageElementHtml(stageDef)}
           </div>
           ${buildStoryRecordHtml(record)}
-          ${unlocked ? '<div class="ss-card-arrow">›</div>' : '<div class="ss-lock-icon">🔒</div>'}
+          ${unlocked ? '<div class="ss-card-arrow">›</div>' : ''}
         `;
 
-        if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef, mode);
+        card.onclick = () => {
+          if (unlocked) {
+            onShootingStoryStageTap(stageDef, mode);
+            return;
+          }
+          if (typeof showToast === 'function') {
+            showToast('ステージ未開放です。\n直前のステージをクリアしてください。');
+          } else {
+            alert('ステージ未開放です。\n直前のステージをクリアしてください。');
+          }
+        };
         list.appendChild(card);
       });
       return;

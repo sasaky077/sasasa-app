@@ -196,9 +196,32 @@
         { type:'profileMultiply', field:'flowerHeartDamageAtkRate', multiplier:1.25 }
       ])
     }),
+    // build974: 専用定義がないキャラクターも全員Lv1〜Lv4まで基本共鳴を持つ。
+    3: genericSet('アウラ'),
+    5: genericSet('ジグ'),
+    10: genericSet('オリオン'),
+    12: genericSet('シイナ'),
+    17: genericSet('アイナ'),
+    18: genericSet('シオン'),
+    19: genericSet('ラグナ'),
+    22: genericSet('ベロニカ'),
+    23: genericSet('セレナ'),
+    24: genericSet('ノエル'),
+    25: genericSet('リュネ'),
+    30: genericSet('リズ'),
+    32: genericSet('イヴェルナ'),
+    33: genericSet('レイ'),
+    34: genericSet('グレシャ'),
+    35: genericSet('ジゼル'),
+    36: genericSet('ニーナ'),
+    37: genericSet('トイフェル'),
+    38: genericSet('クロエ'),
+    39: genericSet('レムナクロス'),
+    40: genericSet('オリビア'),
+
     28: genericSet('ミモザ'),
     16: genericSet('パトラ'),
-    15: genericSet('フローラ'),
+    15: genericSet('アリス'),
     13: genericSet('シグレ'),
 
     4: Object.freeze({

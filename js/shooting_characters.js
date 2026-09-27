@@ -49,6 +49,7 @@
     TOYFEL: 37,
     PAINTER: 38,
     REMNACROSS: 39,
+    CONJURER: 40,
   });
 
   // ============================================================
@@ -102,6 +103,7 @@
     37: 'r',   // トイフェル
     38: 'r',   // クロエ
     39: 'r',   // レムナクロス
+    40: 'sr',  // ID40 / CONJURE
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -996,6 +998,28 @@
     "homeOffsetY": -18,
     "hidden": false
   },
+  "40": {
+    "id": 40,
+    "name": "オリビア",
+    "element": "wood",
+    "hp": 590,
+    "atk": 275,
+    "image": "images/chara_40_battle_back.webp",
+    "panelImage": "images/chara_40_panel.webp",
+    "cutinImage": "images/chara_40_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_40.webp",
+    "homeImage": "images/chara_40_cut.webp",
+    "upImage": "images/chara_40_up.webp",
+    "homeScale": 0.86,
+    "homeOffsetX": 0,
+    "homeOffsetY": -18,
+    "hidden": false
+  },
   "50": {
     "id": 50,
     "name": "SIGMA-IX",
@@ -1494,11 +1518,11 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ROSE,
     effectKey: 'rose',
-    label: 'SEED / HEAL FLOWER',
-    description: '0.5秒ごとに7発の種子Spreadを放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、取得した場のキャラのみ最大HPの5%回復／敵へATKの30%ダメージ。',
-    ultDescription: '中央に大花を5.2秒間展開して敵弾を遮断。0.24秒ごとにハートを10個放つ。ハートを取得すると、その時点で操作中のキャラの最大HPを5%回復。敵に命中した場合はATK×30%のダメージを与える。',
-    ultName: '花園の息吹',
-    ultType: 'rose_flower_heart',
+    label: 'SEED / FORTRESS',
+    description: '0.5秒ごとに7発の種子Spreadを放つ。ULT「ローズフォートレス」は発動位置の少し前へ5秒間、戦場全幅の茨壁を展開。通常敵弾を吸収して操作中ユニットを回復し、接触した敵へ継続ダメージを与える。',
+    ultDescription: '発動時のロゼ位置より少し前へ、戦場の端から端まで届く茨の要塞を5秒間展開する。通常敵弾を1発吸収するたび現在操作中ユニットを最大HPの3%回復。接触中の敵へ0.25秒ごとにロゼATK×1.0のダメージ。壁由来の攻撃・吸収ではULTゲージを増加させず、展開中も味方の通常射撃は継続する。',
+    ultName: 'ローズフォートレス',
+    ultType: 'rose_fortress',
     moveSpeed: 400,
 
     // ---- 通常ショット ----
@@ -1516,21 +1540,13 @@
     coreTop: '38%',
     shotOffsetY: 40,
 
-    // ---- ULT / 花 ----
-    flowerImage: 'images/chara_09_battle_flower.webp',
-    flowerDurationMs: 5200,
-    flowerHeartIntervalMs: 240,
-    flowerHeartBurstCount: 10,
-    flowerHeartSpeed: 250,
-    flowerHeartLifeMs: 2200,
-    flowerHeartHealMaxHpRate: 0.05,
-
-    // ハートが敵に当たった時のダメージ。
-    // ULT由来なのでATK参照。ULTゲージは増加させない。
-    flowerHeartDamageAtkRate: 0.30,
-
-    flowerHeartOriginOffsetX: 0,
-    flowerHeartOriginOffsetY: 0,
+    // ---- ULT / ローズフォートレス ----
+    fortressImage: 'images/chara_09_battle_object.webp',
+    fortressDurationMs: 5000,
+    fortressForwardOffsetY: 92,
+    fortressContactIntervalMs: 250,
+    fortressContactDamageAtkRate: 1.0,
+    fortressBulletHealMaxHpRate: 0.03,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NEM] = buildShootingCharacter({
@@ -2222,6 +2238,49 @@
     ultBeamWidth: 62,
   });
 
+
+  // ============================================================
+  // build972: ID40 / CONJURE
+  // タップ中は自機前方に設置予告、離指で半透明砲台を生成。
+  // 最大3基 / 寿命3秒 / 1秒ごとに8方向へ計3射 / 1発ATK×0.40 / 非貫通。
+  // ULTは自機左右へ追従砲台を5秒展開し、各砲台が毎秒5発のHOMINGを射出。
+  // 左右各25発（合計50発）、1発ATK×0.30、命中時消滅。
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.CONJURER] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.CONJURER,
+    effectKey: 'conjure',
+    label: 'CONJURE / TURRET',
+    description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大3基。各砲台は3秒間、1秒ごとに8方向へ非貫通弾を射出する。',
+    ultName: 'CONJURE',
+    ultDescription: '自身の左右へ追従砲台を5秒間召喚。左右それぞれ毎秒5発、計25発ずつのHOMING弾を自動射出する。HOMING弾は敵に命中すると消滅する。ULT中も通常砲台の射撃・新規設置は継続できる。',
+    shotType: 'conjure',
+    mainShot: { type: 'conjure' },
+    shotCount: 1,
+    fireRate: 1000,
+    bulletSpeed: 520,
+    shotPowerRate: 0.40,
+    conjureMaxTurrets: 3,
+    conjureLifetimeMs: 3000,
+    conjureVolleyIntervalMs: 1000,
+    conjureVolleyCount: 3,
+    conjureBulletsPerVolley: 8,
+    conjurePlaceOffsetY: 112,
+    conjureTurretBulletSpeed: 520,
+    burstNeed: 30,
+    ultGainPerHit: 0.50,
+    ultBaseType: 'summon',
+    ultAddons: ['damage','homing'],
+    ultType: 'conjure_homing_battery',
+    conjureUltDurationMs: 5000,
+    conjureUltShotIntervalMs: 200,
+    conjureUltShotsPerSide: 25,
+    conjureUltDamageAtkMultiplier: 0.30,
+    conjureUltHomingSpeed: 680,
+    conjureUltHomingTurnRate: 8.5,
+    conjureUltTurretOffsetX: 54,
+    conjureUltTurretOffsetY: -8,
+  });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,

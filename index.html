@@ -272,9 +272,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=958-noah-true-3x3-thin-frame"
+        href="css/style.css?v=979-gacha-conversion-list-scroll"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=958-noah-true-3x3-thin-frame"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=979-gacha-conversion-list-scroll"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -357,7 +357,7 @@
     // 残るケースがあったための保険。document.writeで元のlinkタグと
     // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
     // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=965-ayane-blackhand-original-black">');
+    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=968-rose-fortress">');
   </script>
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=693-score-ranking-nav-v2">
@@ -2214,8 +2214,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   /* build595: 上段の編成済み3枠だけ、属性アイコンを2回り大きくする。 */
   #shooting-event-root .shooting-party-slot.filled > img.shooting-party-slot-element-icon {
     position: absolute !important;
-    left: 4px !important;
-    top: 4px !important;
+    left: 1px !important;
+    top: 1px !important;
     width: 28px !important;
     height: 28px !important;
     object-fit: contain !important;
@@ -3170,7 +3170,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </button>
 
   <!-- 位相遠征：将来実装予定。ホーム左側、レイドバトルの下 -->
-  <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('位相遠征は準備中です')" aria-label="位相遠征（準備中）" data-home-head="位" data-home-rest="相遠征"></button>
+  <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('未開放です。\nストーリーCHAPTER08をクリアすると解放されます。')" aria-label="位相遠征（未開放）" data-home-head="位" data-home-rest="相遠征"></button>
 
   <button class="score-attack-home-entry home-type-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="スコアアタックへ移動" data-home-head="ス" data-home-rest="コア&#10;　アタック" data-home-lines="2"></button>
 
@@ -5429,7 +5429,7 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=926-eri-limitbreak-all-vessels"></script>
+<script src="js/shooting_resonance.js?v=974-basic-resonance-all"></script>
 <script src="js/resonance_system.js?v=926-eri-limitbreak-all-vessels"></script>
 <script src="js/resonance_ui.js?v=927-limitbreak-lack-scroll"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
@@ -5978,6 +5978,24 @@ document.addEventListener('touchend', function (e) {
   const GACHA_PICKUP_R_RATE = (1 - GACHA_PICKUP_SR_TOTAL_RATE) / 2;
   const GACHA_PICKUP_MATERIAL_RATE = (1 - GACHA_PICKUP_SR_TOTAL_RATE) / 2;
 
+  // 限定ピックアップ邂逅（オリビア） build973
+  // オリビア(40) 0.6% / 他の恒常SR 各0.5%
+  // 合計SR 3.1%、残りは R / 進化素材 を半々にする。
+  const GACHA_PICKUP_OLIVIA_ID = 40;
+  const GACHA_PICKUP_OLIVIA_SR_RATE_MAP = {
+    40: 0.006, // オリビア 0.6%
+    2:  0.005,
+    31: 0.005,
+    28: 0.005,
+    11: 0.005,
+    7:  0.005
+  };
+  const GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE = Object.keys(GACHA_PICKUP_OLIVIA_SR_RATE_MAP).reduce(function(total, key){
+    return total + Number(GACHA_PICKUP_OLIVIA_SR_RATE_MAP[key] || 0);
+  }, 0);
+  const GACHA_PICKUP_OLIVIA_R_RATE = (1 - GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE) / 2;
+  const GACHA_PICKUP_OLIVIA_MATERIAL_RATE = (1 - GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE) / 2;
+
   // 進化素材枠。6種を均等抽選。
   const GACHA_EVOLUTION_MATERIAL_IDS = [
     'kyoumei_stone',
@@ -6031,6 +6049,31 @@ document.addEventListener('touchend', function (e) {
       srCharacterIds: [GACHA_PICKUP_NINA_ID].concat(GACHA_PERMANENT_SR_IDS),
       rCharacterIds: GACHA_R_IDS,
       pityCharacterIds: [GACHA_PICKUP_NINA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      disablePity: false,
+      disableTenGuarantee: true,
+      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
+      itemMixed: true
+    },
+    {
+      id: 'gacha_05',
+      category: 'normal',
+      poolType: 'pickup',
+      title: '限定ピックアップ邂逅',
+      detailTitle: 'OLIVIA PICKUP ENCOUNTER',
+      desc: 'オリビア 0.6% / 他恒常SR 各0.5% / R48.45% / 進化素材48.45%',
+      thumbTitle: 'オリビアPU',
+      img: 'images/gacha_banner_04.webp',
+      cost: 5,
+      srRate: GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE,
+      rRate: GACHA_PICKUP_OLIVIA_R_RATE,
+      materialRate: GACHA_PICKUP_OLIVIA_MATERIAL_RATE,
+      characterRateMap: GACHA_PICKUP_OLIVIA_SR_RATE_MAP,
+      pickupCharaId: GACHA_PICKUP_OLIVIA_ID,
+      limitedCharacterIds: [GACHA_PICKUP_OLIVIA_ID],
+      limitedRCharacterIds: [],
+      srCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      rCharacterIds: GACHA_R_IDS,
+      pityCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
       disablePity: false,
       disableTenGuarantee: true,
       commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
@@ -12322,11 +12365,12 @@ function showTenResult(results){
   };
 
   // build686: キャラ一覧をMAINショットタイプでも絞り込めるようにする。
-  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','spread','laser','piercing','orbit','charge','lightning','strike'];
+  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','spread','laser','piercing','orbit','charge','lightning','strike','conjure'];
   var ZUKAN_SHOT_TYPE_LABELS = {
     all: 'すべて',
     parallel: 'PARALLEL',
     homing: 'HOMING',
+    conjure: 'CONJURE',
     cluster: 'CLUSTER',
     spread: 'SPREAD',
     laser: 'LASER',
@@ -12995,7 +13039,7 @@ function showTenResult(results){
             'data-zimg-original="' + detailEscapeHTML(panelSrc) + '" ' +
             'loading="lazy" decoding="async" fetchpriority="low" ' +
             'alt="' + detailEscapeHTML(name) + '">' +
-          (owned ? getElementCornerIconHTML(chara, 'primoa-index-element-icon') : '') +
+          getElementCornerIconHTML(chara, 'primoa-index-element-icon') +
         '</span>' +
         '<span class="primoa-index-name">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
         (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
@@ -14014,6 +14058,7 @@ function getShootingShotTypeLabel(type, c, slot){
     precision: 'Piercing',
     strike: 'Strike',
     homing: 'Homing',
+    conjure: 'Conjure',
     lightning: 'Lightning'
   };
   return labels[normalized] || normalized || 'Standard';
@@ -16584,6 +16629,11 @@ function fadeOutOpeningBgm(){
   }
 </style>
 
+
+<style id="toast-multiline-build978">
+  #toast{ white-space:pre-line; }
+</style>
+
 <div id="summon-flash" class="summon-flash"></div>
 <div id="toast"></div>
 
@@ -16660,8 +16710,8 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=946-remnacross-gacha-refresh"></script>
-<script src="js/stage_select.js?v=843-story-title-canonical"></script>
+<script src="js/shooting_characters.js?v=973-olivia-pickup"></script>
+<script src="js/stage_select.js?v=978-locked-stage-toast"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
@@ -16739,7 +16789,7 @@ window.returnToTitleScreen = function(){
 <script>
   // Shooting entry point: always fetch a fresh URL on every page load.
   // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=966-remna-trap-pulse-no-count"><\/script>');
+  document.write('<script src="js/shooting_event.js?v=971-id40-conjure"><\/script>');
 </script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
@@ -17477,6 +17527,14 @@ window.returnToTitleScreen = function(){
   border:1px solid rgba(176,143,77,.30) !important;
   box-shadow:0 1px 5px rgba(63,46,21,.16), 0 0 0 1px rgba(255,255,255,.55) inset !important;
   pointer-events:none !important;
+}
+</style>
+
+<style id="zukan-index-unowned-element-icon-build975">
+/* build975: 未所持でも属性アイコンを表示し、キャラ画像と同じグレーアウトにする */
+#box-grid.primoa-index-grid .primoa-index-card.is-unowned .primoa-index-element-icon{
+  filter:grayscale(1) saturate(0) brightness(.55) contrast(.9) !important;
+  opacity:.68 !important;
 }
 </style>
 
