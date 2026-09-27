@@ -17791,6 +17791,8 @@
     return Number.isFinite(profileValue) ? Math.max(0, Math.floor(profileValue)) : 0;
   }
 
+  let noahBattleConfirmAction = null;
+
   function ensureNoahBattleStartConfirmDialog() {
     let overlay = document.getElementById('noah-battle-start-confirm');
     if (overlay) return overlay;
@@ -17798,7 +17800,7 @@
     const style = document.createElement('style');
     style.id = 'noah-battle-start-confirm-style';
     style.textContent = `
-      #noah-battle-start-confirm{position:fixed;inset:0;z-index:250000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(26,21,16,.32);box-sizing:border-box}
+      #noah-battle-start-confirm{position:fixed;inset:0;z-index:300000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(26,21,16,.32);box-sizing:border-box}
       #noah-battle-start-confirm.show{display:flex}
       #noah-battle-start-confirm .noah-battle-start-card{width:min(88vw,360px);background:#fbf8f0;border:1px solid rgba(155,122,74,.42);border-radius:2px;box-shadow:0 18px 42px rgba(49,39,27,.18);padding:24px 22px 18px;box-sizing:border-box;text-align:center;color:#6e5b43}
       #noah-battle-start-confirm .noah-battle-start-title{font-family:serif;font-size:12px;letter-spacing:.18em;margin:0 0 15px;color:#957650}
@@ -17826,11 +17828,13 @@
     document.body.appendChild(overlay);
 
     overlay.querySelector('.noah-battle-start-no').addEventListener('click', () => {
+      noahBattleConfirmAction = null;
       overlay.classList.remove('show');
       overlay.setAttribute('aria-hidden','true');
     });
     overlay.addEventListener('click', (ev) => {
       if (ev.target === overlay) {
+        noahBattleConfirmAction = null;
         overlay.classList.remove('show');
         overlay.setAttribute('aria-hidden','true');
       }
@@ -17838,12 +17842,19 @@
     overlay.querySelector('.noah-battle-start-yes').addEventListener('click', async () => {
       overlay.classList.remove('show');
       overlay.setAttribute('aria-hidden','true');
-      await window.startSelectedShootingCharacter({ noahTicketConfirmed: true });
+      const action = noahBattleConfirmAction;
+      noahBattleConfirmAction = null;
+      if (typeof action === 'function') {
+        await action();
+      } else {
+        await window.startSelectedShootingCharacter({ noahTicketConfirmed: true });
+      }
     });
     return overlay;
   }
 
-  function showNoahBattleStartConfirmDialog() {
+  function showNoahBattleStartConfirmDialog(onConfirm = null) {
+    noahBattleConfirmAction = typeof onConfirm === 'function' ? onConfirm : null;
     const overlay = ensureNoahBattleStartConfirmDialog();
     const count = getNoahSpecialTicketCountForConfirm();
     const countEl = overlay.querySelector('#noah-battle-start-ticket-count');
@@ -17858,7 +17869,9 @@
 
   window.startSelectedShootingCharacter = async function (options = {}) {
     if (isNoahStage() && !options.noahTicketConfirmed) {
-      showNoahBattleStartConfirmDialog();
+      showNoahBattleStartConfirmDialog(async () => {
+        await window.startSelectedShootingCharacter({ noahTicketConfirmed: true });
+      });
       return;
     }
     if (isStoryShootingStage()) ensureStoryEriLeader();
@@ -18048,7 +18061,16 @@
     });
   };
 
-  window.restartShootingEvent = async function () {
+  window.restartShootingEvent = async function (options = {}) {
+    // build1009: NOAH RETRYも初回出撃と同じ確認を挟む。
+    // 「はい」の後だけ begin_noah_attempt へ進み、SPECIAL TICKET -ノア- を1枚消費する。
+    if (isNoahStage() && !options.noahTicketConfirmed) {
+      showNoahBattleStartConfirmDialog(async () => {
+        await window.restartShootingEvent({ noahTicketConfirmed: true });
+      });
+      return;
+    }
+
     // build812: DAILY巡行はRESULTから直接RETRYさせない。
     // UI表示が何らかの理由で崩れても、処理側で二重出撃を必ず止める。
     if (isDailyQuestStage()) {
