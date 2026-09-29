@@ -169,6 +169,60 @@
 })();
 </script>
 
+<script id="zeraphia-image-self-heal-build1013">
+(function(){
+  'use strict';
+  // build1013: 通信が混んだ瞬間に読み込み失敗した<img>が、そのまま欠けて残るのを防ぐ。
+  // ・画面に置かれている<img>だけが対象（new Image()による先読みは対象外）
+  // ・インラインonerrorを持つ<img>は既存の代替処理を優先し、触らない
+  // ・1枚につき最大2回、0.6秒→1.8秒あけて再取得する
+  var MAX_RETRY = 2;
+  var RETRY_DELAYS = [600, 1800];
+
+  function retryUrl(src, attempt){
+    try {
+      var u = new URL(src, location.href);
+      u.searchParams.set('__img_retry', String(attempt) + Date.now().toString(36));
+      return u.toString();
+    } catch(_) {
+      return src;
+    }
+  }
+
+  document.addEventListener('error', function(event){
+    var img = event.target;
+    if(!img || img.tagName !== 'IMG' || !img.isConnected) return;
+    if(img.hasAttribute('onerror') || typeof img.onerror === 'function') return;
+
+    var original = img.getAttribute('data-heal-src') || img.getAttribute('src');
+    if(!original || /^data:|^blob:/i.test(original)) return;
+
+    var count = Number(img.getAttribute('data-heal-count') || 0);
+    if(count >= MAX_RETRY) return;
+    img.setAttribute('data-heal-count', String(count + 1));
+    img.setAttribute('data-heal-src', original);
+
+    setTimeout(function(){
+      // 待っている間に別の画像へ差し替えられていたら何もしない。
+      if(!img.isConnected) return;
+      var current = img.getAttribute('src') || '';
+      if(current !== original && current.indexOf('__img_retry=') === -1) return;
+      img.src = retryUrl(original, count + 1);
+    }, RETRY_DELAYS[count] || 1800);
+  }, true);
+
+  // 成功したら記録を消し、次に同じ要素へ別画像が入った時も再試行できるようにする。
+  document.addEventListener('load', function(event){
+    var img = event.target;
+    if(!img || img.tagName !== 'IMG') return;
+    if(img.hasAttribute('data-heal-count')){
+      img.removeAttribute('data-heal-count');
+      img.removeAttribute('data-heal-src');
+    }
+  }, true);
+})();
+</script>
+
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -7450,9 +7504,10 @@ function selectChara(now, gacha) {
 
   // build520: image loading policy is screen-scoped and browser-native.
 
-  async function preloadImageForStartup(src, retries){
+  async function preloadImageForStartup(src, retries, timeoutMs){
     if(!src) return { ok:true, src:src };
     var maxRetries = (typeof retries === 'number') ? retries : 2;
+    var perTryTimeout = Math.max(1000, Number(timeoutMs) || 3200);
 
     for(var attempt = 0; attempt <= maxRetries; attempt++){
       var result = await new Promise(function(resolve){
@@ -7481,7 +7536,7 @@ function selectChara(now, gacha) {
           done(img.naturalWidth > 0 && img.naturalHeight > 0);
         };
         img.onerror = function(){ done(false); };
-        timer = setTimeout(function(){ done(false); }, 3200);
+        timer = setTimeout(function(){ done(false); }, perTryTimeout);
         img.src = src;
 
         if(img.complete){
@@ -7675,22 +7730,37 @@ function selectChara(now, gacha) {
       return failed;
     }
 
-    // タイトルBGMを優先し、必要最低限の画像だけ2本ずつロード。
-    // build 478: 失敗しても起動全体は止めないため、リトライは1回までに短縮し、
-    // 万一の通信不良時にタイトルで長時間止まらないようにする。
+    // build1013:
+    // 旧実装は1枚ずつ直列に待ち、1枚3.2秒でタイムアウトしていた。
+    // 回線が混んでいる起動直後は多くの画像が3.2秒を超えて「失敗」扱いになり、
+    // 読み込み途中のままHOMEへ進んで欠けて見えていた。
+    // ・同時3本まで並列に待つ（decode集中を避けるため3本に制限）
+    // ・1回あたりの待ち時間を8秒へ延長、リトライ1回
+    // ・失敗しても起動全体は止めない方針（build478）は維持
     var completed = 0;
-    for(var i = 0; i < urls.length; i += 1){
-      var result = await preloadImageForStartup(urls[i], 1);
+    var nextIndex = 0;
+    var STARTUP_IMAGE_CONCURRENCY = 3;
 
-      completed += 1;
-      if(!result || !result.ok) failed.push(result ? result.src : '');
-      var ratio = completed / total;
-      setTitleLoadingProgress(from + (to - from) * ratio);
+    async function worker(){
+      while(nextIndex < urls.length){
+        var url = urls[nextIndex++];
+        var result = await preloadImageForStartup(url, 1, 8000);
 
-      // iPhone Safariの音声を優先。画像decodeごとに必ず制御を返す。
-      await startupSleep(46);
-      await new Promise(function(resolve){ requestAnimationFrame(resolve); });
+        completed += 1;
+        if(!result || !result.ok) failed.push(result ? result.src : url);
+        setTitleLoadingProgress(from + (to - from) * (completed / total));
+
+        // iPhone Safariの音声を優先。画像decodeごとに必ず制御を返す。
+        await startupSleep(46);
+        await new Promise(function(resolve){ requestAnimationFrame(resolve); });
+      }
     }
+
+    var workers = [];
+    for(var w = 0; w < Math.min(STARTUP_IMAGE_CONCURRENCY, total); w++){
+      workers.push(worker());
+    }
+    await Promise.all(workers);
 
     return failed;
   }
@@ -16905,7 +16975,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1012-ch06-perf"></script>
+<script src="js/shooting_event.js?v=1013-image-load"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/item_management.js?v=905-sell-qty-free-input"></script>

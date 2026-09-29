@@ -1,4 +1,4 @@
-/* Zeraphia runtime service worker - release safety v2
+/* Zeraphia runtime service worker - release safety v3
    Runtime release/build number lives only in version.json.
    This worker never forces a page reload.
 
@@ -6,7 +6,14 @@
    - Runtime cache keys ignore the query string (?v= / ?bootstrap=), so old
      versions of the same file no longer pile up in the cache.
    - Offline navigations get a small "offline" page instead of the browser's
-     error screen. (The game itself needs the network: Supabase, images.) */
+     error screen. (The game itself needs the network: Supabase, images.)
+
+   v3 changes:
+   - HTML / JS / CSS are fetched with cache:'no-cache' instead of 'no-store'.
+     The browser still asks the server every time (so a new release is picked up
+     immediately), but an unchanged file comes back as a tiny 304 instead of
+     re-downloading ~3.5MB (index.html, style.css, shooting_core.js, ...) on every
+     launch. Those full re-downloads were competing with HOME / character images. */
 const RUNTIME_CACHE = 'zeraphia-runtime-v2';
 
 self.addEventListener('install', event => {
@@ -92,12 +99,18 @@ self.addEventListener('fetch', event => {
   // Page loads: always network, never an old cached HTML.
   // If the network is down, show the offline page instead of the browser error.
   if (isNavigate) {
-    event.respondWith(fetch(req, { cache:'no-store' }).catch(() => offlineResponse()));
+    event.respondWith(fetch(req, { cache:'no-cache' }).catch(() => offlineResponse()));
     return;
   }
 
-  // HTML fetched by script and release metadata: network only.
-  if (isHtml || isJson) {
+  // HTML fetched by script: always revalidated with the server.
+  if (isHtml) {
+    event.respondWith(fetch(req, { cache:'no-cache' }));
+    return;
+  }
+
+  // Release metadata (version.json etc.): tiny, never from any cache.
+  if (isJson) {
     event.respondWith(fetch(req, { cache:'no-store' }));
     return;
   }
@@ -109,7 +122,7 @@ self.addEventListener('fetch', event => {
       const cache = await caches.open(RUNTIME_CACHE);
       const key = cacheKeyFor(url);
       try {
-        const res = await fetch(req, { cache:'no-store' });
+        const res = await fetch(req, { cache:'no-cache' });
         if (res && res.ok) {
           event.waitUntil(cache.put(key, res.clone()).catch(() => {}));
         }
