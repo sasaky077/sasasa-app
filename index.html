@@ -275,6 +275,7 @@
     }
     #splash img{display:block;width:90%;max-width:480px;height:auto}
     #title-screen{display:none}
+    #fullscreen-blackout{opacity:0;pointer-events:none}
     #loading{position:fixed;inset:0;z-index:200;background:#0f0f0f}
     .screen{display:none}
     #bottom-nav-shared{
@@ -4015,30 +4016,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </div>
 </div>
 <button class="standby-skip-btn" id="standby-skip-btn" onclick="skipSummonEffect()" style="display:none">演出をスキップ</button>
-<!-- UR WARNING -->
 <div id="fullscreen-blackout"></div>
-
-<div id="ur-alert-screen">
-  <div class="ur-alert-bg"></div>
-
-  <div class="ur-alert-content">
-
-    <div class="ur-alert-warning">
-      WARNING
-    </div>
-
-    <div class="ur-alert-sub">
-      UNKNOWN SIGNAL DETECTED
-    </div>
-
-    <div class="ur-alert-line"></div>
-
-    <div class="ur-alert-code">
-      CODE : UR-19
-    </div>
-
-  </div>
-</div>
 
 <div class="modal-overlay" id="detail-modal">
   <button class="detail-modal-back-btn" type="button" aria-label="戻る" onclick="event.stopPropagation(); closeCharacterDetailModal()">＜戻る</button>
