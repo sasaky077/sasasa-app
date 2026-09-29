@@ -51,7 +51,7 @@
 
     'shooting_ch06_01': '壁の奥のFIRE強敵を撃破（AQUAのみ有効）',
     'shooting_ch06_02': '雑魚＋DARK強敵を撃破（LIGHTのみ有効）',
-    'shooting_ch06_03': 'LIGHTボスを撃破（DARKのみ有効）',
+    'shooting_ch06_03': 'AQUAボスを撃破（WOODのみ有効）',
   };
 
 
