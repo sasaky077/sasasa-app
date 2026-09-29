@@ -20,7 +20,7 @@
     try {
       var u = new URL(location.href);
       var changed = false;
-      ['build','__sasaphia_update','__sasaphia_repair'].forEach(function(key){
+      ['build','__sasaphia_update','__sasaphia_repair','__release_refresh','__release_reason','__boot_repair'].forEach(function(key){
         if (u.searchParams.has(key)) {
           u.searchParams.delete(key);
           changed = true;
@@ -175,7 +175,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f7f6f1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Zeraphia">
 
@@ -203,7 +202,7 @@
   <link rel="icon" type="image/webp" href="images/icon_192.webp?v=593-1116-r1">
 
   <!-- Android PWA用 -->
-  <link rel="manifest" href="manifest.json?v=593">
+  <link rel="manifest" href="manifest.json?v=1011">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -351,14 +350,7 @@
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
-  <script>
-    // shooting_event.cssは、アクセスの度に必ず変わる値でキャッシュを強制迂回する。
-    // 通常のバージョン文字列更新だけではCDN/PWAキャッシュが古いまま
-    // 残るケースがあったための保険。document.writeで元のlinkタグと
-    // 同じ位置に出力し、他スタイルシートとの読み込み順序を変えないようにする。
-    // 効果が確認できたら通常の固定バージョン文字列に戻してよい。
-    document.write('<link rel="stylesheet" href="css/shooting_event.css?v=1005-noah-stage-polish">');
-  </script>
+  <link rel="stylesheet" href="css/shooting_event.css?v=1005-noah-stage-polish">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
@@ -16913,11 +16905,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script>
-  // Shooting entry point: always fetch a fresh URL on every page load.
-  // This prevents iOS/PWA/browser caches from reusing an older shooting_event.js after deploy.
-  document.write('<script src="js/shooting_event.js?v=1009-noah-retry-confirm"><\/script>');
-</script>
+<script src="js/shooting_event.js?v=1012-ch06-perf"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/item_management.js?v=905-sell-qty-free-input"></script>
