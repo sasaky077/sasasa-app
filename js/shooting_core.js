@@ -2872,6 +2872,19 @@
       return;
     }
 
+    if (entry.el.classList) {
+      if (entry.el.classList.contains('shooting-bullet-conjure')) {
+        entry._hw = 4;
+        entry._hh = 4;
+        return;
+      }
+      if (entry.el.classList.contains('shooting-conjure-ult-homing')) {
+        entry._hw = 4.5;
+        entry._hh = 7;
+        return;
+      }
+    }
+
     const r = entry.el.getBoundingClientRect();
     entry._hw = r.width / 2;
     entry._hh = r.height / 2;
@@ -4112,8 +4125,8 @@
   function getCanvasStoryChapter() {
     if (!selectedStage) return 0;
     const chapter = Number(selectedStage.chapter || 0);
-    if (chapter >= 1 && chapter <= 5) return chapter;
-    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-5])_/i);
+    if (chapter >= 1 && chapter <= 6) return chapter;
+    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-6])_/i);
     return m ? Number(m[1] || 0) : 0;
   }
 
@@ -4373,6 +4386,12 @@
     drawCircleLayer('ch03', 'rgba(219,239,255,.99)', .43);
     drawRing('ch03', 'rgba(170,207,255,.94)', 1.08, .9);
 
+    drawCircleLayer('ch06', 'rgba(64,140,190,.26)', 1.58);
+    drawCircleLayer('ch06', 'rgba(88,168,214,.98)', 1.00);
+    drawCircleLayer('ch06', 'rgba(226,246,255,.99)', .43);
+    drawRing('ch06', 'rgba(170,222,248,.92)', 1.08, .9);
+
+    // CH04: 黄色のドロップ / 流星型。
     // CH04: 黄色のドロップ / 流星型。
     // DOMは増やさず、Canvas上で「尾 + 丸い芯」を3層描画する軽量モデル。
     const ch04Bullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'ch04');
@@ -9046,8 +9065,14 @@
       barrier.y = h * Number(def.yRate != null ? def.yRate : .48);
       barrier.width = Math.max(70, w * Number(def.widthRate || .55));
       barrier.height = Math.max(22, Number(def.height || 44));
-      barrier.el.style.width = `${barrier.width}px`;
-      barrier.el.style.height = `${barrier.height}px`;
+      if (barrier._appliedWidth !== barrier.width) {
+        barrier._appliedWidth = barrier.width;
+        barrier.el.style.width = `${barrier.width}px`;
+      }
+      if (barrier._appliedHeight !== barrier.height) {
+        barrier._appliedHeight = barrier.height;
+        barrier.el.style.height = `${barrier.height}px`;
+      }
       barrier.el.style.transform = `translate3d(${barrier.x}px,${barrier.y}px,0) translate(-50%,-50%)`;
     });
   }
