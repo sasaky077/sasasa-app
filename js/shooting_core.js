@@ -2872,21 +2872,6 @@
       return;
     }
 
-    // build1012: ID40 CONJUREの弾はCSSでサイズ固定(!important)。
-    // 1斉射8発×最大3基ぶんの生成ごとに同期レイアウトを起こさないよう数値で確定する。
-    if (entry.el.classList) {
-      if (entry.el.classList.contains('shooting-bullet-conjure')) {
-        entry._hw = 4;
-        entry._hh = 4;
-        return;
-      }
-      if (entry.el.classList.contains('shooting-conjure-ult-homing')) {
-        entry._hw = 4.5;
-        entry._hh = 7;
-        return;
-      }
-    }
-
     const r = entry.el.getBoundingClientRect();
     entry._hw = r.width / 2;
     entry._hh = r.height / 2;
@@ -4127,10 +4112,8 @@
   function getCanvasStoryChapter() {
     if (!selectedStage) return 0;
     const chapter = Number(selectedStage.chapter || 0);
-    // build1012: CH06もCanvas敵弾へ移行。DOM敵弾のままだとCH06-3(barrage_v1)の
-    // PHASE2以降、1斉射17発ぶんのDOM生成＋同期レイアウトが発生して重くなっていた。
-    if (chapter >= 1 && chapter <= 6) return chapter;
-    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-6])_/i);
+    if (chapter >= 1 && chapter <= 5) return chapter;
+    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-5])_/i);
     return m ? Number(m[1] || 0) : 0;
   }
 
@@ -4389,12 +4372,6 @@
     drawCircleLayer('ch03', 'rgba(91,119,221,.98)', 1.00);
     drawCircleLayer('ch03', 'rgba(219,239,255,.99)', .43);
     drawRing('ch03', 'rgba(170,207,255,.94)', 1.08, .9);
-
-    // CH06: 遮断領域。色は発射元属性paletteで決まるため、層構成だけ定義する。
-    drawCircleLayer('ch06', 'rgba(64,140,190,.26)', 1.58);
-    drawCircleLayer('ch06', 'rgba(88,168,214,.98)', 1.00);
-    drawCircleLayer('ch06', 'rgba(226,246,255,.99)', .43);
-    drawRing('ch06', 'rgba(170,222,248,.92)', 1.08, .9);
 
     // CH04: 黄色のドロップ / 流星型。
     // DOMは増やさず、Canvas上で「尾 + 丸い芯」を3層描画する軽量モデル。
@@ -7961,12 +7938,11 @@
   // ULT：自機左右へ完全追従する砲台を5秒間展開し、左右各25発のHOMING。
   // ============================================================
   function ensureConjureVisualStyles() {
-    if (document.getElementById('shooting-conjure-style-build1012')) return;
-    document.getElementById('shooting-conjure-style-build991')?.remove();
+    if (document.getElementById('shooting-conjure-style-build991')) return;
     const oldStyle = document.getElementById('shooting-conjure-style-build971');
     if (oldStyle) oldStyle.remove();
     const style = document.createElement('style');
-    style.id = 'shooting-conjure-style-build1012';
+    style.id = 'shooting-conjure-style-build991';
     style.textContent = `
       .shooting-conjure-preview,
       .shooting-conjure-turret,
@@ -8020,14 +7996,12 @@
       .shooting-conjure-turret{opacity:.96;transition:opacity .22s ease}
       .shooting-conjure-turret.is-expiring{opacity:.28}
       .shooting-conjure-turret.volley .shooting-conjure-object-img{animation:shootingConjureVolley .18s ease-out}
-      .shooting-conjure-turret.volley-b .shooting-conjure-object-img{animation:shootingConjureVolleyB .18s ease-out}
       .shooting-conjure-ult-turret{width:54px;height:54px;opacity:.98}
       .shooting-conjure-ult-turret .shooting-conjure-object-img{filter:drop-shadow(0 0 9px rgba(229,245,248,.68))}
       .shooting-bullet-conjure{width:8px!important;height:8px!important;border-radius:1px!important;transform-origin:center;background:rgba(228,241,244,.92)!important;box-shadow:0 0 7px rgba(200,229,235,.75)!important}
       .shooting-conjure-ult-homing{width:9px!important;height:14px!important;border-radius:45% 45% 55% 55%!important;background:linear-gradient(180deg,#fff,rgba(207,232,238,.95),rgba(135,170,180,.86))!important;box-shadow:0 0 8px rgba(208,239,245,.84)!important}
       @keyframes shootingConjurePreviewPulse1001{to{opacity:1;filter:brightness(1.12)}}
       @keyframes shootingConjureVolley{0%{transform:translate(-50%,-50%) scale(.84);filter:brightness(1.55)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
-      @keyframes shootingConjureVolleyB{0%{transform:translate(-50%,-50%) scale(.84);filter:brightness(1.55)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
     `;
     document.head.appendChild(style);
   }
@@ -8234,11 +8208,10 @@
       state.bullets.push(p);
     }
     if (turret.el) {
-      // build1012: offsetWidthによる強制リフローをやめ、同一内容の2種類の
-      // keyframesを交互に切り替えてアニメーションを再始動する。
-      turret.volleyFlip = !turret.volleyFlip;
-      turret.el.classList.toggle('volley', !turret.volleyFlip);
-      turret.el.classList.toggle('volley-b', !!turret.volleyFlip);
+      turret.el.classList.remove('volley');
+      void turret.el.offsetWidth;
+      turret.el.classList.add('volley');
+      setTimeout(() => { try { turret.el?.classList.remove('volley'); } catch (_) {} }, 180);
     }
   }
 
@@ -9059,17 +9032,8 @@
     if (!barriers.length) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    // build1012: 砲台/弾のDOM追加直後にclientWidthを毎フレーム読むと同期レイアウトになる。
-    // アリーナ寸法は500msごと(と未取得時)だけ読み直す。
-    const sizeCache = state.chapter6ArenaSize || (state.chapter6ArenaSize = { w:0, h:0, at:-Infinity });
-    const tsNow = Number(now || performance.now());
-    if (!sizeCache.w || !sizeCache.h || tsNow - sizeCache.at >= 500) {
-      sizeCache.w = Number(arena.clientWidth || 0);
-      sizeCache.h = Number(arena.clientHeight || 0);
-      sizeCache.at = tsNow;
-    }
-    const w = sizeCache.w;
-    const h = sizeCache.h;
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
     const t = Math.max(0, Number(now || performance.now()) - Number(state.startedAt || now)) / 1000;
 
     barriers.forEach((barrier, index) => {
@@ -9082,15 +9046,8 @@
       barrier.y = h * Number(def.yRate != null ? def.yRate : .48);
       barrier.width = Math.max(70, w * Number(def.widthRate || .55));
       barrier.height = Math.max(22, Number(def.height || 44));
-      // build1012: 幅/高さはレイアウトを無効化するため、値が変わった時だけ書く。
-      if (barrier._appliedWidth !== barrier.width) {
-        barrier._appliedWidth = barrier.width;
-        barrier.el.style.width = `${barrier.width}px`;
-      }
-      if (barrier._appliedHeight !== barrier.height) {
-        barrier._appliedHeight = barrier.height;
-        barrier.el.style.height = `${barrier.height}px`;
-      }
+      barrier.el.style.width = `${barrier.width}px`;
+      barrier.el.style.height = `${barrier.height}px`;
       barrier.el.style.transform = `translate3d(${barrier.x}px,${barrier.y}px,0) translate(-50%,-50%)`;
     });
   }

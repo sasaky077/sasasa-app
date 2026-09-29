@@ -1,7 +1,7 @@
 {
-  "build": 1013,
-  "published_at": "2026-09-30T00:00:00+09:00",
-  "label": "startup_image_load_fix",
+  "build": 1010,
+  "published_at": "2026-09-27T23:40:00+09:00",
+  "label": "leonacross_character_name",
   "release_protocol": 2,
   "commit_marker": true
 }

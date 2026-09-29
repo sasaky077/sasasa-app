@@ -1,7 +1,3 @@
-
-sw.js
-2.36 KB •80行
-ソースと形式が一致しない可能性があります
 /* Zeraphia runtime service worker - release safety v1
    Runtime release/build number lives only in version.json.
    This worker never forces a page reload. */
