@@ -10,7 +10,10 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = '20260927-build1009-noah-retry-confirm';
+  // build1014: サブモジュールの ?v= は index.html 側の shooting_event.js?v= を引き継ぐ。
+  // 今後は index.html のタグを上げるだけで core / ui / stages / enemies も確実に更新される。
+  // MODULE_VERSION は ?v= が取れなかった場合のフォールバック。
+  const MODULE_VERSION = currentVersionParam || '20260927-build1014-ch06-perf';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
