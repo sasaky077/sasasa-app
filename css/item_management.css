@@ -38,60 +38,13 @@
   }
 }
 
-/* Shared full-height scroll shell */
+/* build1015: 画面の配置・余白・PC幅センタリングは app_chrome.css
+   (#screen-item.screen.app-page / .item-screen-scroll.app-page-content) が唯一の持ち主。
+   ここはアイテム画面の背景画像だけを担当する。 */
 html body:not(.ui-immersive) #screen-item.screen.active{
-  position:fixed !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100dvh !important;
-  min-height:100dvh !important;
-  padding:0 !important;
-  margin:0 !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
   background:
     linear-gradient(180deg,rgba(255,255,255,.74),rgba(249,246,239,.60)),
     url("../images/chara_bg_sky.webp") center/cover no-repeat !important;
-}
-
-html body:not(.ui-immersive) #screen-item.screen.active > .header{
-  position:absolute !important;
-  top:var(--header-h) !important;
-  left:0 !important;
-  right:0 !important;
-  width:100% !important;
-  height:var(--page-header-h) !important;
-  min-height:var(--page-header-h) !important;
-  z-index:220 !important;
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
-  position:absolute !important;
-  inset:0 !important;
-  width:100% !important;
-  height:100% !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-  -webkit-overflow-scrolling:touch !important;
-  overscroll-behavior-y:contain !important;
-  padding:
-    calc(var(--header-h) + var(--page-header-h) + 4px)
-    14px
-    calc(var(--bottom-nav-h) + 24px) !important;
-  box-sizing:border-box !important;
-}
-
-@media (min-width:500px){
-  html body:not(.ui-immersive) #screen-item.screen.active{
-    left:50% !important;
-    right:auto !important;
-    width:100% !important;
-    max-width:430px !important;
-    transform:translateX(-50%) !important;
-  }
 }
 
 .item-page-intro{
@@ -527,10 +480,6 @@ html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
 }
 
 @media (max-width:360px){
-  html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
-    padding-left:10px !important;
-    padding-right:10px !important;
-  }
   .item-page-intro h2{font-size:20px}
   .item-row{
     grid-template-columns:50px minmax(0,1fr) 64px;
@@ -618,14 +567,6 @@ html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
    上部情報・カテゴリ・見出しは固定、下部ナビも固定。
    上下端は他画面と同様に溶けるようにフェード。
    ========================================================= */
-
-/* Whole item content is no longer a page scroller. */
-html body:not(.ui-immersive) #screen-item.screen.active > .screen-scroll{
-  display:flex !important;
-  flex-direction:column !important;
-  overflow:hidden !important;
-  min-height:0 !important;
-}
 
 /* Fixed content above the red line. */
 #screen-item .item-page-intro,

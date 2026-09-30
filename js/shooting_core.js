@@ -10614,6 +10614,16 @@
     state.enemyBullets.push(projectile);
   }
 
+  // build1015: ステージ単位で barrage_v1 の発射間隔を調整する(現在は CH06-3 のみ 0.85)。
+  // 未指定のステージ(CH03・CH05・レイド等)は 1 のままで挙動は変わらない。
+  // BEGINNER版は弾量を減らす設計なので、この倍率は適用しない。
+  function getStageBossBarrageIntervalMultiplier() {
+    if (!selectedStage || selectedStage.beginnerMode) return 1;
+    const value = Number(selectedStage.bossBarrageIntervalMultiplier);
+    if (!Number.isFinite(value) || value <= 0) return 1;
+    return Math.min(1.5, Math.max(0.6, value));
+  }
+
   function fireBarrageBoss(now) {
     const phase = state.boss.phase || 1;
 
@@ -10629,7 +10639,7 @@
       if (ordinaryCount >= soft) return;
     }
 
-    const interval = phase === 1 ? 860 : phase === 2 ? 760 : 650;
+    const interval = (phase === 1 ? 860 : phase === 2 ? 760 : 650) * getStageBossBarrageIntervalMultiplier();
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 

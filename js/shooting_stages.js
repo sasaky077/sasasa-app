@@ -891,6 +891,9 @@
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_06]),
       weaknessOnlyElement: 'aqua',
       bossElement: 'aqua',
+      // build1015: 弾幕の発射間隔倍率(barrage_v1 専用)。0.85 = 間隔15%短縮 ≒ 弾量+18%。
+      // BEGINNER版では core 側で無視する(従来どおり)。
+      bossBarrageIntervalMultiplier: 0.85,
       chapter6Barriers: Object.freeze([
         Object.freeze({ xRate:.34, yRate:.43, widthRate:.68, height:22, moveRangeRate:.08, moveSpeed:.28, phase:0, contactDamage:95 }),
         Object.freeze({ xRate:.67, yRate:.54, widthRate:.68, height:22, moveRangeRate:.08, moveSpeed:.32, phase:2.2, contactDamage:95 }),
