@@ -8324,6 +8324,19 @@
     return launchConjureDeployment(c, preview.x, preview.y, now || performance.now());
   }
 
+  // build1019: CONJURE long-hold rearm.
+  // 最大3基に達して予告が止まった後も、指を離さずに空き枠ができたら
+  // 次の3秒設置予告を自動で再開する。
+  function rearmConjurePlacementWhileHeld(now) {
+    if (!state || !pointerActive || state.ended || state.finishing || state.koTransition) return false;
+    if (state.countdown || !state.running || state.paused || state.conjurePlacementPreview) return false;
+    const c = getCurrentCharacter();
+    if (!c || c.shotType !== 'conjure') return false;
+    const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
+    if (getConjureOccupiedCount(now || performance.now()) >= max) return false;
+    return beginConjurePlacementPreview(now || performance.now());
+  }
+
   function updateConjureTurrets(now) {
     if (!state) return;
     pruneConjureTurrets(now);
@@ -14889,6 +14902,7 @@
     updateRemnaTrapPlacementPreview(ts);
     updateConjureDeployments(dt, ts);
     updateConjureTurrets(ts);
+    rearmConjurePlacementWhileHeld(ts);
     updateConjureUlt(ts);
     updateChapter6Barriers(ts);
     updateMitoSummon(dt, ts);
