@@ -1934,8 +1934,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'CLUSTER 4 / WOOD', description: '着弾時にX字4方向へWOOD属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
+    label: 'PIERCING / WOOD', description: '高威力の単発貫通射撃。敵を貫通して直進し、同じ弾が複数の敵へ命中できる。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    shotType: 'piercing', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
