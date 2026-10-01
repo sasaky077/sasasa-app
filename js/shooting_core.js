@@ -6361,13 +6361,25 @@
         background:#72b96b!important;
         box-shadow:0 0 6px rgba(104,191,96,.82)!important;
       }
+      /* build1022: レオナクロスのSHOTだけDARK属性色。
+         設置後の地雷オブジェクトには属性色を重ねない。 */
+      .shooting-remna-trap.trap-flying.trap-element-dark{
+        border-color:rgba(214,190,235,.78)!important;
+        background:#8054ae!important;
+        box-shadow:0 0 5px rgba(180,139,212,.82),0 0 10px rgba(128,84,174,.52)!important;
+      }
       .shooting-remna-trap.trap-flying::before,
       .shooting-remna-trap.trap-flying::after{content:none!important;display:none!important}
       /* 設置成立後にだけ専用オブジェクトへ展開。 */
       .shooting-remna-trap.trap-armed{
         width:54px!important;height:54px!important;border:0!important;border-radius:0!important;
         background:transparent!important;box-shadow:none!important;
+        color:inherit!important;
         animation:shootingRemnaTrapArmedPulse993 1s ease-in-out infinite!important;
+      }
+      /* 属性色は飛翔SHOTだけ。設置オブジェクトは素材そのものの色を維持。 */
+      .shooting-remna-trap.trap-armed.trap-element-dark{
+        border:0!important;background:transparent!important;box-shadow:none!important;
       }
       .shooting-remna-trap-preview{
         position:absolute;left:0;top:0;z-index:11;pointer-events:none;
@@ -6830,22 +6842,40 @@
 
   function applyElementDamage(amount, attackElement, targetElement, options) {
     const base = Math.max(0, Number(amount || 0));
-    const rate = getElementDamageMultiplier(attackElement, targetElement);
+    const normalizedAttackElement = normalizeCombatElement(attackElement) || 'neutral';
+    const rate = getElementDamageMultiplier(normalizedAttackElement, targetElement);
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
     const incoming = !!(options && options.incoming);
-    // CH06強敵/ボス：弱点属性倍率(1.30)以外は0 DAMAGE。
-    if (!ignoreStageImmunity && isStageWeaknessOnlyTarget(targetElement) && rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001) {
+
+    // build1023:
+    // 無属性は全属性へ常に等倍で通る共通ルール。
+    // weakness-only属性バリアでも、無属性だけはIMMUNE判定の例外として1.0倍で通す。
+    if (
+      normalizedAttackElement !== 'neutral' &&
+      !ignoreStageImmunity &&
+      isStageWeaknessOnlyTarget(targetElement) &&
+      rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001
+    ) {
       return 0;
     }
+
     const elemental = base * rate;
     return incoming ? elemental : applyHitComboDamage(elemental);
   }
 
-  // build548: Weak / Resist に加えて、CH06の完全無効を IMMUNE として表示。
+  // build1023: 無属性は属性バリアにも等倍で通るためIMMUNE表示にしない。
   function getElementDamageReaction(attackElement, targetElement, options) {
-    const rate = getElementDamageMultiplier(attackElement, targetElement);
+    const normalizedAttackElement = normalizeCombatElement(attackElement) || 'neutral';
+    const rate = getElementDamageMultiplier(normalizedAttackElement, targetElement);
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
-    if (!ignoreStageImmunity && isStageWeaknessOnlyTarget(targetElement) && rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001) return 'immune';
+
+    if (
+      normalizedAttackElement !== 'neutral' &&
+      !ignoreStageImmunity &&
+      isStageWeaknessOnlyTarget(targetElement) &&
+      rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001
+    ) return 'immune';
+
     if (rate > ELEMENT_DAMAGE_RATE.neutral + 0.001) return 'weak';
     if (rate < ELEMENT_DAMAGE_RATE.neutral - 0.001) return 'resist';
     return '';

@@ -9768,6 +9768,141 @@ function hideGachaRuntimeLoadingOverlay(immediate){
   }, 240);
 }
 
+
+// ============================================================
+// build1021 — SPECIAL ENCOUNTER SR CONFIRM FLASH
+// draw_gacha で結果確定後、限定/ピックアップ邂逅のSR当選1件ごとに50%判定。
+// 10連で対象SRが複数含まれる場合も、演出表示は最大1回。
+// 抽選結果そのものには一切影響せず、確定済み結果を参照する演出専用。
+// ============================================================
+var GACHA_PICKUP_FLASH_IMAGE = 'images/gacha_pickup.webp';
+
+function shouldPlayGachaPickupFlash(results, currentGacha){
+  // build1021:
+  // 恒常邂逅(permanent)は完全除外。
+  // 限定邂逅(limited) / ピックアップ邂逅(pickup)で引いたSRだけを
+  // 「特別邂逅SR」として扱い、1件ごとに50%で確定フラッシュ判定する。
+  // 同じSRキャラでも、恒常邂逅で引いた場合は対象外。
+  var poolType = String(currentGacha && currentGacha.poolType || '').toLowerCase();
+  if(poolType !== 'limited' && poolType !== 'pickup') return false;
+
+  var list = Array.isArray(results) ? results : [results];
+  var specialSrResults = list.filter(function(data){
+    if(!data) return false;
+
+    // 完凸変換などで素材結果になっていても、表示上の元キャラがSRなら対象にする。
+    var presentation = (typeof getGachaPresentationResult === 'function')
+      ? getGachaPresentationResult(data)
+      : data;
+
+    if(!presentation || isGachaMaterialResult(presentation)) return false;
+    return String(presentation.rarity || '').toLowerCase() === 'sr';
+  });
+
+  if(!specialSrResults.length) return false;
+
+  // 対象SR 1件ごとに独立して50%判定。
+  // 10連で複数対象が当たっても、画面への確定フラッシュ表示は最大1回。
+  return specialSrResults.some(function(){
+    return Math.random() < 0.5;
+  });
+}
+
+async function playGachaPickupFlash(results, currentGacha){
+  if(!shouldPlayGachaPickupFlash(results, currentGacha)) return false;
+
+  var loaded = false;
+  try{
+    loaded = await preloadGachaImage(GACHA_PICKUP_FLASH_IMAGE, 5000);
+  }catch(_){
+    loaded = false;
+  }
+  if(!loaded) return false;
+
+  // RPC/画像ロード待ちのLOADINGをここで外し、確定フラッシュを最前面へ。
+  hideGachaRuntimeLoadingOverlay(true);
+
+  return new Promise(function(resolve){
+    var old = document.getElementById('gacha-pickup-confirm-flash');
+    if(old && old.parentNode) old.parentNode.removeChild(old);
+
+    var overlay = document.createElement('div');
+    overlay.id = 'gacha-pickup-confirm-flash';
+    overlay.setAttribute('aria-hidden','true');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.zIndex = '9250';
+    overlay.style.overflow = 'hidden';
+    overlay.style.pointerEvents = 'none';
+    // build1025: 確定フラッシュ中は背景を完全に無地化し、
+    // 後景の文字/UIを一切見せない。画像だけがチカチカ映る画面にする。
+    overlay.style.background = '#f8f4ea';
+    overlay.style.opacity = '1';
+
+    var img = document.createElement('img');
+    img.src = GACHA_PICKUP_FLASH_IMAGE;
+    img.alt = '';
+    img.draggable = false;
+    img.style.position = 'absolute';
+    img.style.inset = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.objectPosition = 'center';
+    img.style.opacity = '0';
+    img.style.transform = 'scale(1.018)';
+    img.style.filter = 'brightness(1.04) saturate(.78)';
+    img.style.willChange = 'opacity, transform';
+
+    overlay.appendChild(img);
+    document.body.appendChild(overlay);
+
+    var finished = false;
+    function finish(){
+      if(finished) return;
+      finished = true;
+      if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(true);
+    }
+
+    try{
+      var anim = img.animate([
+        { offset:0.00, opacity:0.00, transform:'scale(1.018)' },
+        { offset:0.12, opacity:0.22, transform:'scale(1.014)' },
+        { offset:0.24, opacity:0.00, transform:'scale(1.012)' },
+        { offset:0.39, opacity:0.36, transform:'scale(1.009)' },
+        { offset:0.52, opacity:0.04, transform:'scale(1.007)' },
+        { offset:0.69, opacity:0.62, transform:'scale(1.003)' },
+        { offset:0.84, opacity:0.16, transform:'scale(1.001)' },
+        { offset:1.00, opacity:0.00, transform:'scale(1.000)' }
+      ], {
+        duration: 760,
+        easing: 'linear',
+        fill: 'forwards'
+      });
+
+      anim.onfinish = finish;
+      anim.oncancel = finish;
+      setTimeout(finish, 900);
+    }catch(_){
+      // Web Animations API非対応時の簡易フォールバック。
+      var steps = [
+        [60, .22],
+        [150, 0],
+        [250, .36],
+        [365, .04],
+        [500, .62],
+        [635, .16],
+        [760, 0]
+      ];
+      steps.forEach(function(step){
+        setTimeout(function(){ img.style.opacity = String(step[1]); }, step[0]);
+      });
+      setTimeout(finish, 820);
+    }
+  });
+}
+
 function startSummonFromStandby(){
   if(isSummoning) return;
   isSummoning = true;
@@ -9951,6 +10086,11 @@ if(window.GameAssets){
 } else {
   await preloadGachaResults(results);
 }
+
+// build1021: 恒常邂逅は除外。
+  // 限定邂逅 / ピックアップ邂逅で当選したSRを対象に、1件ごとに50%で確定フラッシュ。
+  // 結果・石消費はdraw_gacha RPCですでに確定済み。
+  await playGachaPickupFlash(results, currentGacha);
 
 if(count === 10){
   results.forEach(function(data){
