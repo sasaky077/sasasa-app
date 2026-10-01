@@ -887,7 +887,7 @@
       name: 'レムナント06',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      introImage: 'images/remnant_06_battle.webp',
+      introImage: 'images/remnant_06_battle_start.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_06]),
       weaknessOnlyElement: 'aqua',
       bossElement: 'aqua',
