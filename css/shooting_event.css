@@ -10825,3 +10825,41 @@ html body #shooting-result .shooting-result-time-row > strong{
 #shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-character-select.show .shooting-character-start{
   border-radius:0 !important;
 }
+
+
+/* ============================================================
+   build1017 — weakness-only BOSS elemental shield
+   DAILY上級の属性バリア表現をBOSSにも適用。
+   position/scale は shooting_core.js の positionUnit(BOSS) から毎フレーム同期する。
+   ============================================================ */
+#shooting-event-root .shooting-boss-weakness-barrier{
+  --weak-shield-rgb:130,130,130;
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:10;
+  pointer-events:none;
+  box-sizing:border-box;
+  border-radius:50%;
+  border:1.5px solid rgba(var(--weak-shield-rgb),.82);
+  background:
+    radial-gradient(circle,transparent 0 59%,rgba(var(--weak-shield-rgb),.10) 62%,rgba(var(--weak-shield-rgb),.32) 69%,rgba(var(--weak-shield-rgb),.08) 75%,transparent 79%),
+    conic-gradient(from 12deg,rgba(var(--weak-shield-rgb),.42),rgba(var(--weak-shield-rgb),.08) 18%,rgba(var(--weak-shield-rgb),.44) 38%,rgba(var(--weak-shield-rgb),.08) 58%,rgba(var(--weak-shield-rgb),.42) 78%,rgba(var(--weak-shield-rgb),.08));
+  box-shadow:
+    0 0 8px rgba(var(--weak-shield-rgb),.46),
+    0 0 18px rgba(var(--weak-shield-rgb),.28),
+    inset 0 0 10px rgba(var(--weak-shield-rgb),.28);
+  opacity:.97;
+  transform-origin:center center;
+  will-change:transform;
+}
+#shooting-event-root .shooting-boss-weakness-barrier.element-fire{--weak-shield-rgb:224,74,55}
+#shooting-event-root .shooting-boss-weakness-barrier.element-aqua{--weak-shield-rgb:62,155,220}
+#shooting-event-root .shooting-boss-weakness-barrier.element-wood{--weak-shield-rgb:75,158,83}
+#shooting-event-root .shooting-boss-weakness-barrier.element-light{--weak-shield-rgb:220,186,70}
+#shooting-event-root .shooting-boss-weakness-barrier.element-dark{--weak-shield-rgb:128,84,174}
+#shooting-event-root:has(#shooting-boss.defeated) .shooting-boss-weakness-barrier{
+  opacity:0;
+  transition:opacity .20s ease;
+}
+\n\n/* ============================================================\n   build1018 — ELEMENT BARRIER COMMON RULE\n   属性バリア = 対象自身の属性色の半透明な膜。\n   mini / boss 共通で中心部にも薄い色膜を持たせ、外周発光と一体化する。\n   FIRE=赤 / AQUA=青 / WOOD=緑 / LIGHT=黄 / DARK=紫\n   ============================================================ */\n#shooting-event-root .shooting-mini-enemy-weakness-barrier,\n#shooting-event-root .shooting-boss-weakness-barrier{\n  background:\n    radial-gradient(circle,\n      rgba(var(--weak-shield-rgb),.10) 0 48%,\n      rgba(var(--weak-shield-rgb),.16) 56%,\n      rgba(var(--weak-shield-rgb),.34) 67%,\n      rgba(var(--weak-shield-rgb),.12) 74%,\n      transparent 80%),\n    conic-gradient(from 12deg,\n      rgba(var(--weak-shield-rgb),.34),\n      rgba(var(--weak-shield-rgb),.08) 18%,\n      rgba(var(--weak-shield-rgb),.38) 38%,\n      rgba(var(--weak-shield-rgb),.08) 58%,\n      rgba(var(--weak-shield-rgb),.34) 78%,\n      rgba(var(--weak-shield-rgb),.08));\n  box-shadow:\n    0 0 7px rgba(var(--weak-shield-rgb),.42),\n    0 0 15px rgba(var(--weak-shield-rgb),.24),\n    inset 0 0 13px rgba(var(--weak-shield-rgb),.24);\n}\n

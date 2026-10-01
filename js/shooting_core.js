@@ -3526,6 +3526,7 @@
     if (el.id === BOSS_ID) {
       el.style.setProperty('--boss-x', `${x}px`);
       el.style.setProperty('--boss-y', `${y}px`);
+      syncBossWeaknessBarrierPosition(x, y);
     }
 
     // Scale is placed AFTER translation so changing enemy size never scales
@@ -6774,6 +6775,59 @@
     );
   }
 
+  // build1017: weakness-only BOSS gets the same elemental shield language as DAILY Advanced.
+  // The shield is a separate DOM layer but its x/y and scale are written from positionUnit(BOSS),
+  // so it follows every BOSS movement path exactly (normal AI / pull / grab / scripted movement).
+  function getBossWeaknessBarrierElement() {
+    return document.getElementById('shooting-boss-weakness-barrier');
+  }
+
+  function shouldShowBossWeaknessBarrier() {
+    if (!selectedStage || selectedStage.type === 'normal' || !BOSS) return false;
+    const enemyElement = normalizeCombatElement(BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
+    return enemyElement !== 'neutral' && isStageWeaknessOnlyTarget(enemyElement);
+  }
+
+  function ensureBossWeaknessBarrier() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+
+    let barrier = getBossWeaknessBarrierElement();
+    if (!shouldShowBossWeaknessBarrier()) {
+      if (barrier) barrier.remove();
+      return null;
+    }
+
+    const enemyElement = normalizeCombatElement(BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
+    if (!barrier) {
+      barrier = document.createElement('div');
+      barrier.id = 'shooting-boss-weakness-barrier';
+      barrier.className = 'shooting-boss-weakness-barrier';
+      barrier.setAttribute('aria-hidden', 'true');
+      arena.appendChild(barrier);
+    }
+
+    barrier.className = `shooting-boss-weakness-barrier element-${enemyElement}`;
+    barrier.dataset.element = enemyElement;
+    return barrier;
+  }
+
+  function syncBossWeaknessBarrierPosition(x, y) {
+    const barrier = ensureBossWeaknessBarrier();
+    if (!barrier) return;
+
+    const boss = document.getElementById(BOSS_ID);
+    const baseW = Math.max(1, Number(boss && boss.offsetWidth || 128));
+    const baseH = Math.max(1, Number(boss && boss.offsetHeight || 128));
+    const scale = Math.max(.1, Number(getResponsiveBossDisplayScale() || 1));
+
+    // Slightly larger than the BOSS box so the shield hugs the silhouette without covering it.
+    barrier.style.width = `${baseW + 12}px`;
+    barrier.style.height = `${baseH + 12}px`;
+    barrier.style.setProperty('--boss-shield-scale', String(scale));
+    barrier.style.transform = `translate3d(${Number(x || 0)}px,${Number(y || 0)}px,0) translate(-50%,-50%) scale(var(--boss-shield-scale,1))`;
+  }
+
   function applyElementDamage(amount, attackElement, targetElement, options) {
     const base = Math.max(0, Number(amount || 0));
     const rate = getElementDamageMultiplier(attackElement, targetElement);
@@ -8828,10 +8882,11 @@
       layer.appendChild(elementEl);
     }
 
-    // build549: DAILY上級の耐性雑魚は、敵属性と同色のバリアを常時表示する。
-    // 例：DARKバリアならLIGHTのWeak攻撃だけがダメージを通せる。
+    // build1018: 属性バリアは全ステージ共通ルール。
+    // weakness-only対象は、自身の属性色の膜を常時まとい、本体へ完全追従する。
+    // CH06の強敵もDAILY上級も同じ判定関数を使い、弱点属性以外はIMMUNE。
     let weaknessBarrierEl = null;
-    if (selectedStage && (selectedStage.weaknessOnlyEnemies === true || isDailyAdvancedGimmickStage()) && enemyElement !== 'neutral') {
+    if (enemyElement !== 'neutral' && isStageWeaknessOnlyTarget(enemyElement)) {
       weaknessBarrierEl = document.createElement('div');
       weaknessBarrierEl.className = `shooting-mini-enemy-weakness-barrier element-${enemyElement}`;
       weaknessBarrierEl.dataset.element = enemyElement;
@@ -16392,6 +16447,7 @@
         result.setAttribute('aria-hidden','true');
       }
 
+      ensureBossWeaknessBarrier();
       root.setAttribute('data-shooting-stage', selectedStage.id);
       root.setAttribute('data-battle-type','boss');
       root.setAttribute('data-boss-phase','1');
@@ -18035,6 +18091,7 @@
       bossImage.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
       bossImage.style.display = selectedStage && selectedStage.type === 'normal' ? 'none' : '';
     }
+    ensureBossWeaknessBarrier();
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
     root.setAttribute('data-battle-type', selectedStage ? selectedStage.type : 'boss');
     applyShootingUiLayout(shootingUiLayoutType);
