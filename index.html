@@ -8961,14 +8961,24 @@ startTitleBgm();
   // 挑戦権の正本はSupabase daily_quest_runs。localStorageは使用しない。
   // ============================================================
   var DAILY_ATTEMPT_MAX = 1;
+  // build1026: 曜日素材DAILYと経験値素材DAILYで挑戦権を独立管理。
   var dailyAttemptServerCache = {
     date: '',
     intermediate: { used:0, remaining:1, finished:false, win:false },
-    advanced: { used:0, remaining:1, finished:false, win:false }
+    advanced: { used:0, remaining:1, finished:false, win:false },
+    exp_intermediate: { used:0, remaining:1, finished:false, win:false },
+    exp_advanced: { used:0, remaining:1, finished:false, win:false }
   };
 
+  function normalizeDailyAttemptKey(level) {
+    var key = String(level || '').trim().toLowerCase();
+    return ['intermediate','advanced','exp_intermediate','exp_advanced'].indexOf(key) >= 0
+      ? key
+      : 'intermediate';
+  }
+
   function getDailyAttemptState(level) {
-    level = level === 'advanced' ? 'advanced' : 'intermediate';
+    level = normalizeDailyAttemptKey(level);
     var src = dailyAttemptServerCache[level] || {};
     return {
       level: level,
@@ -8993,7 +9003,9 @@ startTitleBgm();
       dailyAttemptServerCache = {
         date: String(data.date || ''),
         intermediate: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.intermediate || {}),
-        advanced: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.advanced || {})
+        advanced: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.advanced || {}),
+        exp_intermediate: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.exp_intermediate || {}),
+        exp_advanced: Object.assign({ used:0, remaining:1, finished:false, win:false }, data.exp_advanced || {})
       };
       refreshDailyAttemptUI();
       return dailyAttemptServerCache;

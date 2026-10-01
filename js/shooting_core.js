@@ -945,12 +945,22 @@
 
   function getDailyQuestStageIdentity() {
     const id = String((selectedStage && selectedStage.id) || selectedStageId || '');
+
+    const expMatch = id.match(/^shooting_daily_exp_(intermediate|advanced)$/i);
+    if (expMatch) {
+      const level = String(expMatch[1] || '').toLowerCase() === 'advanced' ? 'advanced' : 'intermediate';
+      return { id, weekdayKey:'', level, questType:'exp', runLevel:`exp_${level}` };
+    }
+
     const match = id.match(/^shooting_daily_(mon|tue|wed|thu|fri|sat|sun)_(intermediate|advanced)$/i);
     if (!match) return null;
+    const level = String(match[2] || '').toLowerCase() === 'advanced' ? 'advanced' : 'intermediate';
     return {
       id,
       weekdayKey: String(match[1] || '').toLowerCase(),
-      level: String(match[2] || '').toLowerCase() === 'advanced' ? 'advanced' : 'intermediate',
+      level,
+      questType:'weekday',
+      runLevel:level,
     };
   }
 
@@ -972,9 +982,11 @@
     return {
       weekday: weekdayMap[identity.weekdayKey] || '',
       level: identity.level,
+      questType: identity.questType || 'weekday',
+      runLevel: identity.runLevel || identity.level,
       rewardId: '',
       rewardPool: [],
-      rewardCount: identity.level === 'advanced' ? 2 : 1,
+      rewardCount: identity.questType === 'exp' ? 10 : (identity.level === 'advanced' ? 2 : 1),
     };
   }
 
@@ -6770,21 +6782,53 @@
     );
   }
 
+  // build1028: 1ステージ内の属性バリアは最大3属性まで。
+  // パーティ上限が3人のため、DAILY上級など複数属性が混在するステージでも
+  // 4種類目以降の属性敵にはバリアを付与しない。
+  let weaknessBarrierElementCacheStage = null;
+  let weaknessBarrierElementCache = [];
+
+  function getStageWeaknessBarrierElements() {
+    if (!selectedStage) return [];
+    if (weaknessBarrierElementCacheStage === selectedStage) {
+      return weaknessBarrierElementCache;
+    }
+
+    weaknessBarrierElementCacheStage = selectedStage;
+    const result = [];
+    const pushUnique = (value) => {
+      const element = normalizeCombatElement(value);
+      if (!element || element === 'neutral' || result.includes(element) || result.length >= 3) return;
+      result.push(element);
+    };
+
+    // CH06など、明示的にバリア対象属性が指定されている場合はその属性を優先。
+    const guarded = normalizeCombatElement(selectedStage.weaknessOnlyElement);
+    if (guarded && guarded !== 'neutral') {
+      pushUnique(guarded);
+      weaknessBarrierElementCache = result;
+      return weaknessBarrierElementCache;
+    }
+
+    // DAILY上級などの全敵バリア型は、ステージ定義順に最大3属性だけ採用する。
+    if (selectedStage.weaknessOnlyEnemies === true || isDailyAdvancedGimmickStage()) {
+      const ids = Array.isArray(selectedStage.enemyIds) ? selectedStage.enemyIds : [];
+      for (const enemyId of ids) {
+        const def = getShootingEnemy(enemyId);
+        if (!def) continue;
+        pushUnique(def.element || selectedStage.enemyElement || selectedStage.element);
+        if (result.length >= 3) break;
+      }
+    }
+
+    weaknessBarrierElementCache = result;
+    return weaknessBarrierElementCache;
+  }
+
   function isStageWeaknessOnlyTarget(targetElement) {
-    const guarded = normalizeCombatElement(selectedStage && selectedStage.weaknessOnlyElement);
     const target = normalizeCombatElement(targetElement);
-
-    // CH06の強敵/ボスなど、指定された属性だけを弱点限定対象にする既存仕様。
-    if (guarded && target && guarded === target) return true;
-
-    // build550: DAILY上級はstage定義の追加フラグに依存せず、
-    // dailyQuest.level / stageId から必ず判定する。
-    // 旧shooting_stages.jsがブラウザに残っていても耐性ギミックが有効になる。
-    return !!(
-      (selectedStage && selectedStage.weaknessOnlyEnemies === true || isDailyAdvancedGimmickStage()) &&
-      target &&
-      target !== 'neutral'
-    );
+    if (!target || target === 'neutral') return false;
+    return getStageWeaknessBarrierElements().includes(target);
   }
 
   // build1017: weakness-only BOSS gets the same elemental shield language as DAILY Advanced.
@@ -15225,8 +15269,9 @@
     }[weekday] || 'sun';
   }
 
-  function getDailyStageId(level) {
+  function getDailyStageId(level, kind = 'weekday') {
     const normalizedLevel = level === 'advanced' ? 'advanced' : 'intermediate';
+    if (kind === 'exp') return `shooting_daily_exp_${normalizedLevel}`;
     return `shooting_daily_${getDailyWeekdayKey()}_${normalizedLevel}`;
   }
 
@@ -15246,10 +15291,11 @@
     };
   }
 
-  function getDailySelectAttempt(level) {
+  function getDailySelectAttempt(level, kind = 'weekday') {
+    const key = kind === 'exp' ? `exp_${level === 'advanced' ? 'advanced' : 'intermediate'}` : (level === 'advanced' ? 'advanced' : 'intermediate');
     if (typeof window.getDailyAttemptState === 'function') {
-      const state = window.getDailyAttemptState(level);
-      if (state) return state;
+      const attemptState = window.getDailyAttemptState(key);
+      if (attemptState) return attemptState;
     }
     return { remaining: 1, max: 1 };
   }
@@ -15261,18 +15307,38 @@
     const info = getDailySelectRewardInfo();
     const reward = info.reward || {};
 
-    ['intermediate', 'advanced'].forEach(level => {
-      const amount = level === 'advanced' ? 2 : 1;
-      const attempt = getDailySelectAttempt(level);
-      const row = overlay.querySelector(`[data-daily-level="${level}"]`);
-      if (!row) return;
-
+    overlay.querySelectorAll('[data-daily-level]').forEach(row => {
+      const level = row.getAttribute('data-daily-level') === 'advanced' ? 'advanced' : 'intermediate';
+      const kind = row.getAttribute('data-daily-kind') === 'exp' ? 'exp' : 'weekday';
+      const attempt = getDailySelectAttempt(level, kind);
       const materialSlot = row.querySelector('[data-daily-material-slot]');
       const remaining = row.querySelector('[data-daily-remaining]');
 
       if (materialSlot) {
-        if (info.random && Array.isArray(info.rewards) && info.rewards.length) {
+        if (kind === 'exp') {
+          const expItems = level === 'advanced'
+            ? [
+                {name:'強化素材・銀', img:'images/item_exp_silver.webp'},
+                {name:'強化素材・金', img:'images/item_exp_gold.webp'}
+              ]
+            : [
+                {name:'強化素材・銅', img:'images/item_exp_bronze.webp'},
+                {name:'強化素材・金', img:'images/item_exp_gold.webp'},
+                {name:'強化素材・銀', img:'images/item_exp_silver.webp'}
+              ];
+          materialSlot.classList.add('is-random-list','is-exp-daily');
+          materialSlot.innerHTML = expItems.map(item => `
+            <span class="shooting-daily-stage-random-item" title="${item.name}">
+              <img src="${item.img}" alt="${item.name}">
+            </span>
+          `).join('');
+          materialSlot.setAttribute('aria-label', level === 'advanced'
+            ? '強化素材・銀または金を合計10個。金の出現率が高い'
+            : '強化素材・銅、金、銀を合計10個。出現率は銅、金、銀の順に高い');
+        } else if (info.random && Array.isArray(info.rewards) && info.rewards.length) {
+          const amount = level === 'advanced' ? 2 : 1;
           materialSlot.classList.add('is-random-list');
+          materialSlot.classList.remove('is-exp-daily');
           materialSlot.innerHTML = info.rewards.map(item => `
             <span class="shooting-daily-stage-random-item" title="${item.name || ''}">
               <img src="${item.img || ''}" alt="${item.name || ''}">
@@ -15283,7 +15349,8 @@
             `ランダム報酬候補：${info.rewards.map(item => item.name || '').filter(Boolean).join('、')} から ${amount}個`
           );
         } else {
-          materialSlot.classList.remove('is-random-list');
+          const amount = level === 'advanced' ? 2 : 1;
+          materialSlot.classList.remove('is-random-list','is-exp-daily');
           materialSlot.innerHTML = `
             <img src="${reward.img || 'images/item_kyoumeistone.webp'}" alt="${reward.name || 'デイリー報酬'}">
             <b>×${amount}</b>
@@ -15291,8 +15358,8 @@
           materialSlot.setAttribute('aria-label', `${reward.name || 'デイリー報酬'} ${amount}個`);
         }
       }
-      if (remaining) remaining.textContent = `残り ${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
 
+      if (remaining) remaining.textContent = `残り ${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
       const exhausted = Number(attempt.remaining || 0) <= 0;
       row.classList.toggle('is-exhausted', exhausted);
       row.setAttribute('aria-disabled', exhausted ? 'true' : 'false');
@@ -15310,9 +15377,10 @@
     }
   }
 
-  function openDailyStage(level) {
+  function openDailyStage(level, kind = 'weekday') {
     const normalizedLevel = level === 'advanced' ? 'advanced' : 'intermediate';
-    const attempt = getDailySelectAttempt(normalizedLevel);
+    const normalizedKind = kind === 'exp' ? 'exp' : 'weekday';
+    const attempt = getDailySelectAttempt(normalizedLevel, normalizedKind);
 
     if (Number(attempt.remaining || 0) <= 0) {
       const message = '本日の挑戦回数を使い切りました';
@@ -15321,11 +15389,10 @@
       return false;
     }
 
-    // デイリー巡行 → 難易度選択 → パーティ編成。
-    // 編成画面の「戻る」では、この難易度選択画面へ戻す。
+    // デイリー巡行 → 種類/難易度選択 → パーティ編成。
     window.__shootingReturnContext = { type: 'dailyStageSelect' };
     closeDailyStageSelect();
-    window.openShootingEvent({ stageId: getDailyStageId(normalizedLevel) });
+    window.openShootingEvent({ stageId: getDailyStageId(normalizedLevel, normalizedKind) });
     return true;
   }
 
@@ -15342,8 +15409,10 @@
       overlay.style.transition = 'none';
     }
 
-    const intermediateAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('intermediate'));
-    const advancedAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('advanced'));
+    const intermediateAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('intermediate','weekday'));
+    const advancedAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('advanced','weekday'));
+    const expIntermediateAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('intermediate','exp'));
+    const expAdvancedAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('advanced','exp'));
 
     overlay.innerHTML = `
       <div class="shooting-special-stage-page shooting-faceless-stage-page shooting-daily-stage-page">
@@ -15356,10 +15425,15 @@
         </div>
 
         <div class="shooting-special-stage-list shooting-faceless-stage-list shooting-daily-stage-list">
+          <div class="shooting-daily-kind-heading">
+            <strong>曜日素材</strong><span>限界突破素材</span>
+          </div>
+
           <button type="button"
                   class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row"
+                  data-daily-kind="weekday"
                   data-daily-level="intermediate"
-                  onclick="openDailyStage('intermediate')">
+                  onclick="openDailyStage('intermediate','weekday')">
             <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
             <div class="shooting-special-stage-main shooting-faceless-stage-main">
               <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
@@ -15371,21 +15445,18 @@
               <div class="shooting-daily-stage-reward">
                 <span class="shooting-daily-stage-reward-label">報酬</span>
                 <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
-                  <img src="images/icon_coin.webp" alt="コイン">
-                  <b>×10,000</b>
+                  <img src="images/icon_coin.webp" alt="コイン"><b>×10,000</b>
                 </span>
-                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot>
-                  <img src="images/item_kyoumeistone.webp" alt="">
-                  <b>×1</b>
-                </span>
+                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
               </div>
             </div>
           </button>
 
           <button type="button"
                   class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row"
+                  data-daily-kind="weekday"
                   data-daily-level="advanced"
-                  onclick="openDailyStage('advanced')">
+                  onclick="openDailyStage('advanced','weekday')">
             <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
             <div class="shooting-special-stage-main shooting-faceless-stage-main">
               <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
@@ -15397,13 +15468,53 @@
               <div class="shooting-daily-stage-reward">
                 <span class="shooting-daily-stage-reward-label">報酬</span>
                 <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
-                  <img src="images/icon_coin.webp" alt="コイン">
-                  <b>×10,000</b>
+                  <img src="images/icon_coin.webp" alt="コイン"><b>×10,000</b>
                 </span>
-                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot>
-                  <img src="images/item_kyoumeistone.webp" alt="">
-                  <b>×2</b>
-                </span>
+                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
+              </div>
+            </div>
+          </button>
+
+          <div class="shooting-daily-kind-heading shooting-daily-kind-heading-exp">
+            <strong>経験値素材</strong><span>キャラクター強化素材</span>
+          </div>
+
+          <button type="button"
+                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row shooting-daily-exp-row"
+                  data-daily-kind="exp"
+                  data-daily-level="intermediate"
+                  onclick="openDailyStage('intermediate','exp')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">03</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>中級</strong>
+                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">経験値素材を合計10個獲得</div>
+              ${expIntermediateAttributeHtml}
+              <div class="shooting-daily-stage-reward">
+                <span class="shooting-daily-stage-reward-label">報酬</span>
+                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
+              </div>
+            </div>
+          </button>
+
+          <button type="button"
+                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row shooting-daily-exp-row"
+                  data-daily-kind="exp"
+                  data-daily-level="advanced"
+                  onclick="openDailyStage('advanced','exp')">
+            <div class="shooting-special-stage-no shooting-faceless-stage-no">04</div>
+            <div class="shooting-special-stage-main shooting-faceless-stage-main">
+              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
+                <strong>上級</strong>
+                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
+              </div>
+              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">経験値素材を合計10個獲得</div>
+              ${expAdvancedAttributeHtml}
+              <div class="shooting-daily-stage-reward">
+                <span class="shooting-daily-stage-reward-label">報酬</span>
+                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
               </div>
             </div>
           </button>
@@ -16276,9 +16387,15 @@
       const rows = dailyServer && Array.isArray(dailyServer.items) ? dailyServer.items : [];
       itemDrops = rows.map(row => {
         const id = String(row && row.id || '');
-        const def = (typeof window.getEvolutionMaterialDef === 'function')
+        let def = (typeof window.getEvolutionMaterialDef === 'function')
           ? window.getEvolutionMaterialDef(id)
           : (typeof getEvolutionMaterialDef === 'function' ? getEvolutionMaterialDef(id) : null);
+        if (!def && window.CharacterLeveling && Array.isArray(window.CharacterLeveling.MATERIALS)) {
+          const levelMat = window.CharacterLeveling.MATERIALS.find(item => String(item && item.id || '') === id);
+          if (levelMat) {
+            def = { id:levelMat.id, name:levelMat.name, image:levelMat.img, rewardType:'level_exp' };
+          }
+        }
         return {
           material: def || { id:id, name:id || '素材', image:'' },
           count: Math.max(1, Number(row && row.quantity || 1))
@@ -17789,6 +17906,7 @@
 
     const cfg = getDailyQuestConfig();
     const level = cfg && cfg.level === 'advanced' ? 'advanced' : 'intermediate';
+    const runLevel = String((cfg && cfg.runLevel) || ((cfg && cfg.questType === 'exp') ? `exp_${level}` : level));
     const sb = window.zsSupabase;
     if (!sb || typeof sb.rpc !== 'function') {
       const message = 'デイリー挑戦情報を確認できません';
@@ -17799,7 +17917,7 @@
     dailyQuestConsumePending = true;
     try {
       const res = await sb.rpc('begin_daily_quest_run', {
-        p_level: level,
+        p_level: runLevel,
         p_party_ids: Array.isArray(selectedPartyIds) ? selectedPartyIds.map(Number).filter(Boolean) : []
       });
       if (res && res.error) throw res.error;

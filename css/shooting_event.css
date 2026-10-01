@@ -10863,3 +10863,50 @@ html body #shooting-result .shooting-result-time-row > strong{
   transition:opacity .20s ease;
 }
 \n\n/* ============================================================\n   build1018 — ELEMENT BARRIER COMMON RULE\n   属性バリア = 対象自身の属性色の半透明な膜。\n   mini / boss 共通で中心部にも薄い色膜を持たせ、外周発光と一体化する。\n   FIRE=赤 / AQUA=青 / WOOD=緑 / LIGHT=黄 / DARK=紫\n   ============================================================ */\n#shooting-event-root .shooting-mini-enemy-weakness-barrier,\n#shooting-event-root .shooting-boss-weakness-barrier{\n  background:\n    radial-gradient(circle,\n      rgba(var(--weak-shield-rgb),.10) 0 48%,\n      rgba(var(--weak-shield-rgb),.16) 56%,\n      rgba(var(--weak-shield-rgb),.34) 67%,\n      rgba(var(--weak-shield-rgb),.12) 74%,\n      transparent 80%),\n    conic-gradient(from 12deg,\n      rgba(var(--weak-shield-rgb),.34),\n      rgba(var(--weak-shield-rgb),.08) 18%,\n      rgba(var(--weak-shield-rgb),.38) 38%,\n      rgba(var(--weak-shield-rgb),.08) 58%,\n      rgba(var(--weak-shield-rgb),.34) 78%,\n      rgba(var(--weak-shield-rgb),.08));\n  box-shadow:\n    0 0 7px rgba(var(--weak-shield-rgb),.42),\n    0 0 15px rgba(var(--weak-shield-rgb),.24),\n    inset 0 0 13px rgba(var(--weak-shield-rgb),.24);\n}\n
+
+/* ============================================================
+   build1026 DAILY — EXP MATERIAL QUEST
+   曜日素材と経験値素材を同じDAILY選択画面で区分表示。
+   ============================================================ */
+#shooting-event-root ~ .shooting-daily-stage-select .shooting-daily-kind-heading,
+.shooting-daily-stage-select .shooting-daily-kind-heading{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  padding:8px 4px 2px;
+  color:#79613d;
+  font-family:"Noto Serif JP","Yu Mincho",serif;
+}
+.shooting-daily-stage-select .shooting-daily-kind-heading strong{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.12em;
+}
+.shooting-daily-stage-select .shooting-daily-kind-heading span{
+  font-size:8px;
+  color:rgba(92,74,50,.56);
+  letter-spacing:.06em;
+}
+.shooting-daily-stage-select .shooting-daily-kind-heading-exp{
+  margin-top:6px;
+  padding-top:12px;
+  border-top:1px solid rgba(151,124,78,.14);
+}
+.shooting-daily-stage-select .shooting-daily-stage-reward-chip.is-exp-daily{
+  gap:2px!important;
+}
+.shooting-daily-stage-select .shooting-daily-stage-reward-chip.is-exp-daily .shooting-daily-stage-random-item{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.shooting-daily-stage-select .shooting-daily-stage-reward-chip.is-exp-daily img{
+  width:26px!important;
+  height:26px!important;
+}
+.shooting-daily-stage-select .shooting-daily-exp-total{
+  margin-left:3px;
+  color:#745b35!important;
+  font-size:9px!important;
+  white-space:nowrap;
+}

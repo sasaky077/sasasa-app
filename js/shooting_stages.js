@@ -69,6 +69,8 @@
     DAILY_SAT_ADVANCED: 'shooting_daily_sat_advanced',
     DAILY_SUN_INTERMEDIATE: 'shooting_daily_sun_intermediate',
     DAILY_SUN_ADVANCED: 'shooting_daily_sun_advanced',
+    DAILY_EXP_INTERMEDIATE: 'shooting_daily_exp_intermediate',
+    DAILY_EXP_ADVANCED: 'shooting_daily_exp_advanced',
 
     FACELESS_ADVANCED: 'shooting_event_faceless_advanced',
     FACELESS_SUPER: 'shooting_event_faceless_super',
@@ -97,8 +99,9 @@
   //
   function makeDailyStage(config) {
     const level = config.level === 'advanced' ? 'advanced' : 'intermediate';
-    const rewardCount = level === 'advanced' ? 2 : 1;
-    const advancedGimmick = level === 'advanced';
+    const questType = config.questType === 'exp' ? 'exp' : 'weekday';
+    const rewardCount = Math.max(1, Number(config.rewardCount || (level === 'advanced' ? 2 : 1)));
+    const advancedGimmick = level === 'advanced' && config.advancedGimmick !== false;
     return Object.freeze({
       id: config.id,
       chapter: 0,
@@ -125,12 +128,15 @@
       }),
       mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.DEFEAT_ALL, text: '敵をすべて撃破' }),
       dailyQuest: Object.freeze({
-        weekday: config.weekday,
+        weekday: config.weekday || '',
         level,
+        questType,
+        runLevel: questType === 'exp' ? `exp_${level}` : level,
         rewardId: config.rewardId || '',
         rewardPool: Object.freeze(Array.from(config.rewardPool || [])),
         rewardCount,
       }),
+      stageInfoWeekday: config.stageInfoWeekday || '',
       playable: true,
     });
   }
@@ -991,6 +997,31 @@
         SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
       ],
       rewardPool: ['kyoumei_stone','soul_vessel_fire','soul_vessel_aqua','soul_vessel_wood','soul_vessel_dark','soul_vessel_light'],
+      totalEnemies: 10, maxActive: 3, spawnIntervalMs: 950,
+    }),
+
+    // build1026: 経験値素材専用DAILY。
+    // 中級/上級とも報酬は10個。実際の抽選率と付与はSupabase側を正本とする。
+    [SHOOTING_STAGE_ID.DAILY_EXP_INTERMEDIATE]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_EXP_INTERMEDIATE,
+      questType: 'exp', level: 'intermediate', name: '経験値素材巡行・中級', stageInfoWeekday: '経験値素材',
+      enemyIds: [
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
+      ],
+      rewardPool: ['level_exp_small','level_exp_medium','level_exp_large'],
+      rewardCount: 10,
+      totalEnemies: 6, maxActive: 2, spawnIntervalMs: 1150,
+    }),
+    [SHOOTING_STAGE_ID.DAILY_EXP_ADVANCED]: makeDailyStage({
+      id: SHOOTING_STAGE_ID.DAILY_EXP_ADVANCED,
+      questType: 'exp', level: 'advanced', name: '経験値素材巡行・上級', stageInfoWeekday: '経験値素材',
+      enemyIds: [
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER, SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER, SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_LASER, SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
+      ],
+      rewardPool: ['level_exp_medium','level_exp_large'],
+      rewardCount: 10,
       totalEnemies: 10, maxActive: 3, spawnIntervalMs: 950,
     }),
 
