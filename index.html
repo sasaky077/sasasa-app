@@ -9790,32 +9790,49 @@ function hideGachaRuntimeLoadingOverlay(immediate){
 var GACHA_PICKUP_FLASH_IMAGE = 'images/gacha_pickup.webp';
 
 function shouldPlayGachaPickupFlash(results, currentGacha){
-  // build1021:
-  // 恒常邂逅(permanent)は完全除外。
-  // 限定邂逅(limited) / ピックアップ邂逅(pickup)で引いたSRだけを
-  // 「特別邂逅SR」として扱い、1件ごとに50%で確定フラッシュ判定する。
-  // 同じSRキャラでも、恒常邂逅で引いた場合は対象外。
+  // build1029:
+  // 確定フラッシュは「そのバナーの限定/ピックアップ対象キャラ」に当選した時だけ。
+  // ピックアップガチャ内で恒常SRが当選しても対象にしない。
+  // 限定邂逅では limitedCharacterIds に含まれる限定SRだけを対象にする。
   var poolType = String(currentGacha && currentGacha.poolType || '').toLowerCase();
   if(poolType !== 'limited' && poolType !== 'pickup') return false;
 
+  var featuredIds = Array.isArray(currentGacha && currentGacha.limitedCharacterIds)
+    ? currentGacha.limitedCharacterIds.map(Number).filter(Number.isFinite)
+    : [];
+
+  // 古い/単独PU定義への互換。
+  if(currentGacha && currentGacha.pickupCharaId != null){
+    var pickupId = Number(currentGacha.pickupCharaId);
+    if(Number.isFinite(pickupId) && featuredIds.indexOf(pickupId) < 0){
+      featuredIds.push(pickupId);
+    }
+  }
+
+  if(!featuredIds.length) return false;
+
   var list = Array.isArray(results) ? results : [results];
-  var specialSrResults = list.filter(function(data){
+  var featuredHits = list.filter(function(data){
     if(!data) return false;
 
-    // 完凸変換などで素材結果になっていても、表示上の元キャラがSRなら対象にする。
-    var presentation = (typeof getGachaPresentationResult === 'function')
-      ? getGachaPresentationResult(data)
-      : data;
+    // 完凸変換で素材になった場合も、元の当選キャラIDで判定する。
+    var hitId = data.convertedFromCharacterId != null
+      ? Number(data.convertedFromCharacterId)
+      : Number(data.id);
 
-    if(!presentation || isGachaMaterialResult(presentation)) return false;
-    return String(presentation.rarity || '').toLowerCase() === 'sr';
+    if(!Number.isFinite(hitId) && typeof getGachaPresentationResult === 'function'){
+      var presentation = getGachaPresentationResult(data);
+      hitId = Number(presentation && presentation.id);
+    }
+
+    return Number.isFinite(hitId) && featuredIds.indexOf(hitId) >= 0;
   });
 
-  if(!specialSrResults.length) return false;
+  if(!featuredHits.length) return false;
 
-  // 対象SR 1件ごとに独立して50%判定。
+  // 対象キャラ当選1件ごとに独立して50%判定。
   // 10連で複数対象が当たっても、画面への確定フラッシュ表示は最大1回。
-  return specialSrResults.some(function(){
+  return featuredHits.some(function(){
     return Math.random() < 0.5;
   });
 }
