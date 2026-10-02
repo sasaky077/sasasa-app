@@ -1,7 +1,7 @@
 {
-  "build": 1029,
-  "published_at": "2026-10-02T00:36:00+09:00",
-  "label": "gacha_featured_flash_target_fix",
+  "build": 1038,
+  "published_at": "2026-10-02T11:49:00+09:00",
+  "label": "noah_wave1_wall_trigger_no_start_gimmick",
   "release_protocol": 2,
   "commit_marker": true
 }

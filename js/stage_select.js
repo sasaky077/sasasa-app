@@ -300,7 +300,7 @@
 
     // 通常は上位2属性。
     // ただし属性バリア対象属性は絶対表示し、バリア属性が3種以上ある場合だけ2枠を超えて表示する。
-    forced.forEach(element => {
+    forced.slice(0, 3).forEach(element => {
       if (!selected.includes(element)) selected.push(element);
     });
     ranked.forEach(element => {
@@ -400,6 +400,57 @@
       icons: 'ss-stage-element-icons',
       icon: 'ss-stage-element-icon',
     });
+  }
+
+
+  function getStoryStageGimmicks(stage) {
+    if (!stage) return [];
+    const mainIds = getStoryMainEnemyIds(stage);
+    const barrierElements = getStoryForcedBarrierElements(stage, mainIds).slice(0, 3);
+    const isDailyAdvanced = !!(
+      (stage.dailyQuest && stage.dailyQuest.level === 'advanced') ||
+      /^shooting_daily_(?:[a-z]{3}|exp)_advanced$/i.test(String(stage.id || ''))
+    );
+    const list = [];
+    if (stage.weaknessOnlyElement || stage.weaknessOnlyEnemies === true || isDailyAdvanced) {
+      list.push({ id:'elementBarrier', label:'属性バリア', elements:barrierElements });
+    }
+    if (Number(stage.timeLimitSeconds || 0) > 0) {
+      list.push({ id:'timeLimit', label:'制限時間', seconds:Math.max(1, Math.floor(Number(stage.timeLimitSeconds || 0))) });
+    }
+    if (Array.isArray(stage.chapter6Barriers) && stage.chapter6Barriers.length > 0) {
+      list.push({ id:'movingWall', label:'移動壁' });
+    }
+    return list;
+  }
+
+  function buildStoryStageGimmickHtml(stage) {
+    const gimmicks = getStoryStageGimmicks(stage);
+    if (!gimmicks.length) {
+      return `
+        <div class="ss-stage-gimmicks is-none" aria-label="ステージギミック：なし">
+          <span class="ss-stage-gimmick-label">GIMMICK</span>
+          <span class="ss-stage-gimmick-list">
+            <span class="ss-stage-gimmick-chip ss-gimmick-none"><b>なし</b></span>
+          </span>
+        </div>`;
+    }
+
+    const chips = gimmicks.map(item => {
+      let extra = '';
+      if (item.id === 'elementBarrier' && Array.isArray(item.elements) && item.elements.length) {
+        extra = `<span class="ss-stage-gimmick-elements">${buildStoryElementIcons(item.elements, 'ss-stage-gimmick-element-icon')}</span>`;
+      } else if (item.id === 'timeLimit' && item.seconds) {
+        extra = `<small>${item.seconds}s</small>`;
+      }
+      return `<span class="ss-stage-gimmick-chip ss-gimmick-${item.id}"><b>${item.label}</b>${extra}</span>`;
+    }).join('');
+
+    return `
+      <div class="ss-stage-gimmicks" aria-label="ステージギミック">
+        <span class="ss-stage-gimmick-label">GIMMICK</span>
+        <span class="ss-stage-gimmick-list">${chips}</span>
+      </div>`;
   }
 
   function markStoryStageCleared(stageId) {
@@ -876,6 +927,54 @@
         filter:drop-shadow(0 0 2px rgba(255,255,255,.45));
       }
       .ss-stage-boss-element-line .ss-stage-element-label { color:#9a8660; }
+
+      .ss-stage-gimmicks{
+        display:flex;
+        align-items:center;
+        gap:7px;
+        min-width:0;
+        margin-top:2px;
+      }
+      .ss-stage-gimmick-label{
+        flex:0 0 auto;
+        color:rgba(152,126,80,.72);
+        font-family:"Cinzel","Noto Serif JP",serif;
+        font-size:7px;
+        letter-spacing:.12em;
+      }
+      .ss-stage-gimmick-list{
+        display:flex;
+        align-items:center;
+        gap:7px;
+        min-width:0;
+        flex-wrap:wrap;
+      }
+      .ss-stage-gimmick-chip{
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        color:#766247;
+        font-size:8px;
+        line-height:1;
+        white-space:nowrap;
+      }
+      .ss-stage-gimmick-chip b{font-weight:500}
+      .ss-stage-gimmicks.is-none .ss-stage-gimmick-chip{color:rgba(92,80,63,.46)}
+      .ss-stage-gimmick-chip small{
+        color:#9b8667;
+        font-family:"Cinzel","Noto Serif JP",serif;
+        font-size:7px;
+      }
+      .ss-stage-gimmick-elements{
+        display:inline-flex;
+        align-items:center;
+        gap:2px;
+      }
+      .ss-stage-gimmick-element-icon{
+        width:15px;
+        height:15px;
+        object-fit:contain;
+      }
       .ss-stage-record {
         position:relative;
         z-index:1;
@@ -1053,6 +1152,7 @@
               <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
             </div>
             ${buildStoryStageElementHtml(stageDef)}
+            ${buildStoryStageGimmickHtml(stageDef)}
           </div>
           ${buildStoryRecordHtml(record)}
           ${unlocked ? '<div class="ss-card-arrow">›</div>' : ''}

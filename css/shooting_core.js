@@ -9152,16 +9152,6 @@
   // ============================================================
   function getChapter6BarrierConfig() {
     if (selectedStage && Array.isArray(selectedStage.chapter6Barriers) && selectedStage.chapter6Barriers.length) {
-      // build1038: ノアの移動壁はWAVE2以降、かつHP50%未満でのみ出現。
-      // 条件未達時は空配列を返すため、既に壁が出ていて条件外になった場合も
-      // ensureChapter6Barriers() 側で即時クリアされる。
-      if (String(selectedStage.id || '') === 'shooting_event_bullet_hell_test') {
-        const bossPhase = Math.max(1, Number(state && state.boss && state.boss.phase || 1));
-        const hp = Math.max(0, Number(state && state.boss && state.boss.hp || 0));
-        const hpMax = Math.max(1, Number(state && state.boss && state.boss.hpMax || 1));
-        const hpRatio = hp / hpMax;
-        if (bossPhase < 2 || hpRatio >= 0.5) return [];
-      }
       return selectedStage.chapter6Barriers;
     }
 
@@ -10401,7 +10391,7 @@
     // 理想郷：ノア専用。
     // build946: 軽量優先。通常弾は固定テーブルで左右対称、追従弾だけ例外。
     if (isNoahStage()) {
-      const interval = phase === 1 ? 420 : (phase === 2 ? 300 : 225);
+      const interval = phase === 1 ? 360 : (phase === 2 ? 300 : 225);
 
       // ステージ開始直後はCanvas生成・BOSS表示・各画像decodeと重なるため、
       // 1ボレー分だけ待ってから弾幕を開始する。
@@ -10418,7 +10408,7 @@
       const pattern = step & 3;
       const speedMul = phase === 1 ? 0.88 : (phase === 2 ? 0.94 : 1.04);
       const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94);
-      const spawnCompanionLane = phase === 1 ? ((step % 6) === 0) : ((step % 4) === 0);
+      const spawnCompanionLane = (step % 4) === 0;
       const centerAxis = Math.PI / 2;
 
       // 三角関数で毎回spreadを生成せず、4種類の固定角度を循環。
@@ -10499,12 +10489,12 @@
         }
       }
 
-      // build1038: WAVE1を追加緩和。闇属性の直進弾はWAVE1=7%、WAVE2=12.5%、WAVE3=15%。
+      // build967: WAVE1/2の難易度を一段階緩和。闇属性の直進弾はWAVE1=11%、WAVE2=12.5%、WAVE3=15%。
       // 追加数は小数予算を累積して決めるため、短い区間で偏らず長期的に約15%増となる。
       // makeProjectile() はノア通常弾へS字移動を自動付与するため、追加弾だけ明示的に解除する。
       const companionCount = spawnCompanionLane ? Math.max(0, normalOffsets.length - 1) : 0;
       const baseVolleyCount = normalOffsets.length + companionCount;
-      const darkStraightRate = phase === 1 ? 0.07 : (phase === 2 ? 0.125 : 0.15);
+      const darkStraightRate = phase === 1 ? 0.11 : (phase === 2 ? 0.125 : 0.15);
       state.noahDarkStraightBudget = Number(state.noahDarkStraightBudget || 0) + baseVolleyCount * darkStraightRate;
 
       const darkStraightOffsets = phase === 1
@@ -10545,7 +10535,7 @@
       state.noahSpiralStep = step + 1;
 
       // 軽量な左右対称リング。頻度を低く保つ。
-      const haloEvery = phase === 1 ? 14 : (phase === 2 ? 9 : 7);
+      const haloEvery = phase === 1 ? 10 : (phase === 2 ? 9 : 7);
       if ((state.noahSpiralStep % haloEvery) === 0) {
         const haloOffsets = phase === 1
           ? [-0.76, -0.30, 0.30, 0.76]
@@ -10579,7 +10569,7 @@
 
       if (sideGuardActive) {
         const lastSideGuardAt = Number(state.noahSideGuardAt || 0);
-        const sideGuardInterval = phase === 1 ? 900 : (phase === 2 ? 680 : 600);
+        const sideGuardInterval = phase === 1 ? 760 : (phase === 2 ? 680 : 600);
 
         if (now - lastSideGuardAt >= sideGuardInterval) {
           state.noahSideGuardAt = now;
@@ -18431,7 +18421,9 @@
     // 画面が戦闘へ戻った瞬間からBGM開始。BOSSは登場演出から専用曲を流す。
     activateShootingBattleBgm(true);
     requestAnimationFrame(() => {
-      playBossStageIntro(runStartCountdown);
+      void showShootingStageGimmickNotice().then(() => {
+        playBossStageIntro(runStartCountdown);
+      });
     });
   };
 

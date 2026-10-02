@@ -1102,7 +1102,7 @@
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.NOAH]),
       // build1036: ノア固有ギミック。
-      // 短い移動壁を上下2段に配置。WAVE2以降かつHP50%未満で出現し、左右へ独立して往復する。
+      // 短い移動壁を上下2段に配置。左右へ独立して往復する。
       chapter6Barriers: Object.freeze([
         Object.freeze({
           xRate: .34,

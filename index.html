@@ -17339,7 +17339,7 @@ window.returnToTitleScreen = function(){
           '</div>' +
           '<div class="noah-piece-note">ステージクリアごとに、ノアの欠片を1つ獲得できます。</div>' +
           '<div class="noah-piece-actions">' +
-            '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">ノアに挑戦する</button>' +
+            '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="openNoahStageSelect()">ノアに挑戦する</button>' +
             '<div class="noah-piece-ticket-status"><span class="noah-piece-ticket-name">SPECIAL TICKET -ノア-</span><span class="noah-piece-ticket-owned">所持 <b id="noah-piece-ticket-status-count">0</b>枚</span></div>' +
             '<div class="noah-piece-complete" id="noah-piece-complete">ノアの欠片がすべて揃いました。</div>' +
           '</div>' +
@@ -17452,8 +17452,90 @@ window.returnToTitleScreen = function(){
     dialog.setAttribute('aria-hidden','false');
   }
 
+  function buildNoahStageSelect(){
+    let overlay = document.getElementById('noah-stage-select');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'noah-stage-select';
+    overlay.className = 'noah-stage-select shooting-special-stage-select';
+    overlay.setAttribute('aria-hidden','true');
+
+    let attributeHtml = '';
+    try {
+      const preview = window.ShootingStageAttributePreview;
+      if (preview && typeof preview.buildHtml === 'function') {
+        attributeHtml = preview.buildHtml(STAGE_ID) || '';
+      }
+    } catch (_) {}
+
+    let gimmickHtml = '';
+    try {
+      if (typeof window.buildShootingStageGimmickPreview === 'function') {
+        gimmickHtml = window.buildShootingStageGimmickPreview(STAGE_ID) || '';
+      }
+    } catch (_) {}
+    if (!gimmickHtml) {
+      gimmickHtml =
+        '<div class="shooting-stage-gimmicks is-none" aria-label="ステージギミック：なし">' +
+          '<span class="shooting-stage-gimmick-label">GIMMICK</span>' +
+          '<span class="shooting-stage-gimmick-list">' +
+            '<span class="shooting-stage-gimmick-chip gimmick-none"><b>なし</b></span>' +
+          '</span>' +
+        '</div>';
+    }
+
+    overlay.innerHTML =
+      '<div class="noah-stage-select-page">' +
+        '<header class="noah-stage-select-header">' +
+          '<button type="button" class="noah-stage-select-back" onclick="closeNoahStageSelect(true)">＜戻る</button>' +
+          '<div class="noah-stage-select-title">' +
+            '<small>SPECIAL STAGE</small>' +
+            '<strong>楽園 -ノア-</strong>' +
+          '</div>' +
+        '</header>' +
+        '<div class="noah-stage-select-list">' +
+          '<button type="button" class="noah-stage-select-row" onclick="selectNoahSpecialStage()">' +
+            '<span class="noah-stage-select-no">01</span>' +
+            '<span class="noah-stage-select-main">' +
+              '<span class="noah-stage-select-name-row">' +
+                '<strong>楽園 -ノア-</strong>' +
+                '<em>SPECIAL</em>' +
+              '</span>' +
+              '<span class="noah-stage-select-condition">クリア条件：ノアを撃破</span>' +
+              attributeHtml +
+              gimmickHtml +
+              '<span class="noah-stage-select-cost">' +
+                '<span>SPECIAL TICKET -ノア-</span><b>×1</b>' +
+              '</span>' +
+            '</span>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function openNoahStageSelect(){
+    const overlay = buildNoahStageSelect();
+    closeNoahPiecePanel();
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+  }
+
+  function closeNoahStageSelect(returnToPiece){
+    const overlay = document.getElementById('noah-stage-select');
+    if (overlay) {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+    }
+    if (returnToPiece) openNoahPiecePanel();
+  }
+
   function beginNoahSpecialStage(){
     closeNoahTicketDialog();
+    closeNoahStageSelect(false);
     closeNoahPiecePanel();
 
     // チケット消費そのものは既存の戦闘開始処理に委ねる。
@@ -17462,6 +17544,18 @@ window.returnToTitleScreen = function(){
     } else {
       console.error('[NoahPiece] openShootingEvent is not available');
     }
+  }
+
+  function selectNoahSpecialStage(){
+    const ticket = getSpecialTicketCount();
+    if (ticket < 1) {
+      closeNoahStageSelect(false);
+      showNoahTicketDialog('required');
+      return;
+    }
+    // ステージ選択後に既存のパーティ選択へ進む。
+    // チケット消費確認はキャラ選択画面の「戦闘開始」タップ時に行う。
+    beginNoahSpecialStage();
   }
 
   function confirmNoahSpecialStage(){
@@ -17474,13 +17568,9 @@ window.returnToTitleScreen = function(){
   }
 
   function challengeNoahSpecialStage(){
-    const ticket = getSpecialTicketCount();
-    if (ticket < 1) {
-      showNoahTicketDialog('required');
-      return;
-    }
-    // チケット消費確認はキャラ選択画面の「戦闘開始」タップ時に行う。
-    beginNoahSpecialStage();
+    // build1035: ステージ情報/GIMMICK確認まではTICKET不要。
+    // 「ノアに挑戦する」からは必ずステージ選択画面を挟む。
+    openNoahStageSelect();
   }
 
   // クリア報酬接続用API。今回はプレイアブル化までは行わない。
@@ -17496,8 +17586,22 @@ window.returnToTitleScreen = function(){
   window.openNoahPiecePanel = openNoahPiecePanel;
   window.closeNoahPiecePanel = closeNoahPiecePanel;
   window.challengeNoahSpecialStage = challengeNoahSpecialStage;
+  window.openNoahStageSelect = openNoahStageSelect;
+  window.closeNoahStageSelect = closeNoahStageSelect;
+  window.selectNoahSpecialStage = selectNoahSpecialStage;
   window.closeNoahTicketDialog = closeNoahTicketDialog;
   window.confirmNoahSpecialStage = confirmNoahSpecialStage;
+
+  // build1035 safety: ノア挑戦ボタンは必ずステージ選択へ。
+  document.addEventListener('click', function(event){
+    const button = event.target && event.target.closest
+      ? event.target.closest('#noah-piece-challenge')
+      : null;
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openNoahStageSelect();
+  }, true);
 
   function ensureNoahCompletePopup(){
     var existing = document.getElementById('noah-complete-popup');

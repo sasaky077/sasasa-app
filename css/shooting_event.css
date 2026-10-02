@@ -10910,3 +10910,555 @@ html body #shooting-result .shooting-result-time-row > strong{
   font-size:9px!important;
   white-space:nowrap;
 }
+
+
+/* ============================================================
+   build1031 STAGE GIMMICK PREVIEW
+   共通ギミック: 属性バリア / 制限時間 / 移動壁
+   ============================================================ */
+.shooting-stage-gimmicks{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  margin-top:2px;
+}
+.shooting-stage-gimmick-label{
+  flex:0 0 auto;
+  color:rgba(148,119,72,.72);
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:7px;
+  letter-spacing:.13em;
+}
+.shooting-stage-gimmick-list{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  flex-wrap:wrap;
+}
+.shooting-stage-gimmick-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  color:#735d3d;
+  font-family:"Noto Serif JP",serif;
+  font-size:8px;
+  line-height:1;
+  white-space:nowrap;
+}
+.shooting-stage-gimmick-chip b{font-weight:500}
+.shooting-stage-gimmick-chip small{
+  color:#927c59;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:7px;
+}
+.shooting-stage-gimmick-elements{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+}
+.shooting-stage-gimmick-elements img{
+  width:15px;
+  height:15px;
+  object-fit:contain;
+}
+
+/* Battle-start one-shot notice */
+#shooting-event-root .shooting-stage-gimmick-notice{
+  position:absolute;
+  inset:0;
+  z-index:88;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  box-sizing:border-box;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .18s ease;
+  background:rgba(250,247,239,.90);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+#shooting-event-root .shooting-stage-gimmick-notice.show{opacity:1}
+#shooting-event-root .shooting-stage-gimmick-notice.out{opacity:0}
+#shooting-event-root .shooting-stage-gimmick-notice-card{
+  width:min(340px,88vw);
+  padding:17px 18px 16px;
+  box-sizing:border-box;
+  border-top:1px solid rgba(163,133,82,.38);
+  border-bottom:1px solid rgba(163,133,82,.38);
+  background:rgba(255,253,247,.76);
+  text-align:center;
+}
+#shooting-event-root .shooting-stage-gimmick-notice-kicker{
+  margin-bottom:10px;
+  color:#a08355;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:8px;
+  letter-spacing:.24em;
+}
+#shooting-event-root .shooting-stage-gimmick-notice-row{
+  min-height:25px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:#5c4b34;
+}
+#shooting-event-root .shooting-stage-gimmick-notice-row strong{
+  font-family:"Noto Serif JP",serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:.08em;
+}
+#shooting-event-root .shooting-stage-gimmick-notice-row small{
+  color:#8c7859;
+  font-size:8px;
+  letter-spacing:.03em;
+}
+#shooting-event-root .shooting-stage-gimmick-notice-elements{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+}
+#shooting-event-root .shooting-stage-gimmick-notice-elements img{
+  width:19px;
+  height:19px;
+  object-fit:contain;
+}
+
+
+/* ============================================================
+   build1033 DAILY FIXED ROW LAYOUT
+   - GIMMICK欄は全ステージ常設。「なし」も1行として表示。
+   - DAILY 4行はギミック数に関係なく同じ固定高さ。
+   - 画面高が足りない端末はリスト側をスクロール。
+   ============================================================ */
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-list{
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row{
+  height:108px !important;
+  min-height:108px !important;
+  max-height:108px !important;
+  padding:8px 18px !important;
+  box-sizing:border-box !important;
+  flex:0 0 108px !important;
+  align-items:center !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-faceless-stage-main{
+  height:92px !important;
+  min-height:92px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  gap:1px !important;
+  overflow:hidden !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-faceless-stage-name-row{
+  min-height:18px !important;
+  line-height:18px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-faceless-stage-condition{
+  min-height:12px !important;
+  margin:0 !important;
+  line-height:1.2 !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-elements{
+  min-height:17px !important;
+  margin:0 !important;
+  gap:0 !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-element-line{
+  min-height:17px !important;
+  line-height:17px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-element-icon{
+  width:16px !important;
+  height:16px !important;
+  flex-basis:16px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-gimmicks{
+  display:flex !important;
+  align-items:center !important;
+  min-height:16px !important;
+  height:16px !important;
+  margin:0 !important;
+  gap:6px !important;
+  overflow:hidden !important;
+  flex:0 0 16px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-gimmick-label{
+  font-size:6.5px !important;
+  line-height:16px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-gimmick-list{
+  min-width:0 !important;
+  gap:5px !important;
+  flex-wrap:nowrap !important;
+  overflow:hidden !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-gimmick-chip{
+  gap:3px !important;
+  font-size:7px !important;
+  line-height:16px !important;
+  flex:0 0 auto !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-gimmick-elements img{
+  width:13px !important;
+  height:13px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-stage-gimmicks.is-none
+.shooting-stage-gimmick-chip{
+  color:rgba(92,80,63,.48) !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-daily-stage-reward{
+  min-height:23px !important;
+  height:23px !important;
+  margin:0 !important;
+  gap:5px !important;
+  flex-wrap:nowrap !important;
+  overflow:hidden !important;
+  flex:0 0 23px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-daily-stage-reward-chip img{
+  width:22px !important;
+  height:22px !important;
+}
+
+html body:not(.ui-immersive)
+.shooting-daily-stage-select
+.shooting-daily-stage-row
+.shooting-daily-stage-reward-chip b{
+  font-size:8.5px !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  html body:not(.ui-immersive)
+  .shooting-daily-stage-select
+  .shooting-daily-stage-row{
+    height:108px !important;
+    min-height:108px !important;
+    max-height:108px !important;
+    flex-basis:108px !important;
+    padding:8px 13px !important;
+  }
+
+  html body:not(.ui-immersive)
+  .shooting-daily-stage-select
+  .shooting-daily-stage-list{
+    padding-top:20px !important;
+    padding-bottom:calc(34px + env(safe-area-inset-bottom,16px)) !important;
+  }
+}
+
+
+/* ============================================================
+   build1034 NOAH SPECIAL STAGE SELECT
+   Puzzle screen -> stage info/gimmick screen -> party select
+   ============================================================ */
+.noah-stage-select{
+  position:fixed;
+  inset:0;
+  z-index:235000;
+  display:none;
+  box-sizing:border-box;
+  padding:var(--header-h,72px) 0 var(--bottom-nav-h,76px);
+  background:
+    linear-gradient(rgba(255,253,247,.12),rgba(255,253,247,.12)),
+    url("../images/zeraphia_bg_01.webp") center/cover no-repeat;
+  color:#3f342a;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+}
+.noah-stage-select.show{display:block}
+.noah-stage-select-page{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:rgba(255,255,255,.40);
+}
+.noah-stage-select-header{
+  position:relative;
+  flex:0 0 58px;
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-bottom:1px solid rgba(115,99,70,.13);
+  background:rgba(255,255,255,.58);
+}
+.noah-stage-select-back{
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#88704c;
+  font-family:inherit;
+  font-size:9px;
+  letter-spacing:.04em;
+}
+.noah-stage-select-title{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.noah-stage-select-title small{
+  color:#aa8a56;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:6px;
+  letter-spacing:.22em;
+}
+.noah-stage-select-title strong{
+  color:#6f5535;
+  font-size:15px;
+  font-weight:500;
+  letter-spacing:.12em;
+}
+.noah-stage-select-list{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:24px 0 calc(40px + env(safe-area-inset-bottom,20px));
+}
+.noah-stage-select-row{
+  width:100%;
+  min-height:142px;
+  margin:0;
+  padding:15px 18px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  border:0;
+  border-top:1px solid rgba(115,99,70,.13);
+  border-bottom:1px solid rgba(115,99,70,.16);
+  border-radius:0;
+  background:rgba(255,255,255,.64);
+  color:#27344f;
+  text-align:left;
+  font-family:inherit;
+}
+.noah-stage-select-row:active{
+  background:rgba(214,201,171,.35);
+}
+.noah-stage-select-no{
+  flex:0 0 38px;
+  color:rgba(64,76,99,.48);
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:10px;
+  letter-spacing:.14em;
+}
+.noah-stage-select-main{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.noah-stage-select-name-row{
+  display:flex;
+  align-items:baseline;
+  gap:9px;
+  min-width:0;
+}
+.noah-stage-select-name-row strong{
+  color:#27344f;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:.08em;
+}
+.noah-stage-select-name-row em{
+  color:#aa8a56;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:7px;
+  font-style:normal;
+  letter-spacing:.12em;
+}
+.noah-stage-select-condition{
+  color:rgba(70,82,105,.58);
+  font-size:9px;
+  line-height:1.45;
+  letter-spacing:.10em;
+}
+.noah-stage-select .shooting-stage-elements{
+  margin-top:1px!important;
+}
+.noah-stage-select .shooting-stage-gimmicks{
+  min-height:18px;
+  margin-top:1px;
+}
+.noah-stage-select-cost{
+  min-height:22px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:1px;
+  color:#8b6e3c;
+  font-size:8px;
+  letter-spacing:.05em;
+}
+.noah-stage-select-cost b{
+  color:#735d3d;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:9px;
+  font-weight:600;
+}
+@media (min-width:500px){
+  .noah-stage-select{
+    left:50%;
+    right:auto;
+    width:100%;
+    max-width:430px;
+    transform:translateX(-50%);
+  }
+}
+
+
+/* ============================================================
+   build1036 NOAH — two short moving walls
+   CH06の壁ロジックをノアでも使用。ノアは短い壁2枚。
+   ============================================================ */
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier{
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:23;
+  pointer-events:none;
+  box-sizing:border-box;
+  border:1px solid rgba(189,171,132,.72);
+  border-radius:999px;
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,.90),
+    rgba(230,221,200,.84) 22%,
+    rgba(255,255,255,.94) 50%,
+    rgba(230,221,200,.84) 78%,
+    rgba(255,255,255,.90)
+  );
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.72) inset,
+    0 0 10px rgba(208,190,150,.24),
+    0 3px 8px rgba(81,65,39,.10);
+  opacity:.96;
+}
+
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier::before,
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:10px;
+  height:10px;
+  border:1px solid rgba(153,127,79,.58);
+  background:rgba(255,253,246,.96);
+  transform:translateY(-50%) rotate(45deg);
+  box-shadow:0 0 6px rgba(202,176,120,.22);
+}
+
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier::before{
+  left:6px;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier::after{
+  right:6px;
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier i{
+  position:absolute;
+  left:21px;
+  right:21px;
+  top:50%;
+  height:1px;
+  transform:translateY(-50%);
+  background:repeating-linear-gradient(
+    90deg,
+    rgba(143,115,68,.42) 0 8px,
+    transparent 8px 14px
+  );
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier b{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:12px;
+  height:12px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  border:1px solid rgba(147,118,70,.62);
+  background:rgba(255,252,242,.98);
+}
+#shooting-event-root[data-shooting-stage="shooting_event_bullet_hell_test"] .shooting-ch06-barrier.hit{
+  filter:brightness(1.12);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.9) inset,
+    0 0 14px rgba(213,181,111,.52),
+    0 0 24px rgba(255,245,211,.38);
+}
