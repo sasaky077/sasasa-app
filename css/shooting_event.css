@@ -12043,3 +12043,72 @@ html body:not(.ui-immersive)
   0%,100%{opacity:1;transform:translateX(-50%) scale(1)}
   50%{opacity:.45;transform:translateX(-50%) scale(1.06)}
 }
+
+
+/* ============================================================
+   build1073 — PLAYER ATTACK / EFFECT FRONT LAYER
+   build1041でBOSS本体を前面化した結果、プレイヤー攻撃演出が
+   BOSSの背面へ隠れるケースを修正。
+   BOSS(z-index:20)より上、PAUSE/RESULT/CUT-IN等のUIより下に配置。
+   ============================================================ */
+
+/* 通常SHOT / ULT弾 / 派生弾 */
+#shooting-event-root .shooting-bullet,
+#shooting-event-root .shooting-ult-shot,
+#shooting-event-root .shooting-mia-charge-shot,
+#shooting-event-root .shooting-cluster-projectile,
+#shooting-event-root .shooting-bomb-fragment,
+#shooting-event-root .shooting-conjure-deploy-projectile,
+#shooting-event-root .shooting-conjure-ult-homing,
+#shooting-event-root .shooting-noah-ult-bullet{
+  z-index:40 !important;
+}
+
+/* 設置物・砲台・TRAP */
+#shooting-event-root .shooting-remna-trap,
+#shooting-event-root .shooting-remna-trap-object,
+#shooting-event-root .shooting-remna-trap-countdown,
+#shooting-event-root .shooting-remna-trap-preview,
+#shooting-event-root .shooting-remna-trap-guide-vertical,
+#shooting-event-root .shooting-conjure-turret,
+#shooting-event-root .shooting-conjure-ult-turret,
+#shooting-event-root .shooting-conjure-countdown,
+#shooting-event-root .shooting-conjure-preview,
+#shooting-event-root .shooting-conjure-guide-vertical,
+#shooting-event-root .shooting-charge-preview{
+  z-index:41 !important;
+}
+
+/* 命中・爆発・連鎖・レーザー等の攻撃エフェクト */
+#shooting-event-root .shooting-bomb-explosion,
+#shooting-event-root .shooting-bomb-splash-hit,
+#shooting-event-root .shooting-bomb-split-burst,
+#shooting-event-root .shooting-bomb-throw-pop,
+#shooting-event-root .shooting-lightning-chain-effect,
+#shooting-event-root .shooting-noah-laser,
+#shooting-event-root .shooting-ignis-laser,
+#shooting-event-root .shooting-eri-ult-ray,
+#shooting-event-root .shooting-eri-ult-mark,
+#shooting-event-root .shooting-eri-ult-slash,
+#shooting-event-root .shooting-ayane-ult-beam,
+#shooting-event-root .shooting-ayane-blackhand-ult,
+#shooting-event-root .shooting-ayane-multi-grip,
+#shooting-event-root .shooting-ayane-blackhand-shot,
+#shooting-event-root .shooting-nina-ult-lightning,
+#shooting-event-root .shooting-nina-ult-bolt-core,
+#shooting-event-root .shooting-nina-ult-bolt-glow,
+#shooting-event-root .shooting-nina-ult-bolt-branch,
+#shooting-event-root .shooting-nina-ult-dust,
+#shooting-event-root .shooting-liz-ult-bomb,
+#shooting-event-root .shooting-painter-ult-bomb,
+#shooting-event-root .shooting-rose-flower,
+#shooting-event-root .shooting-rose-flower-aura,
+#shooting-event-root .shooting-rose-fortress,
+#shooting-event-root .shooting-arno-aura{
+  z-index:42 !important;
+}
+
+/* BOSSはHUDより前、プレイヤー攻撃より後ろ */
+#shooting-event-root .shooting-boss{
+  z-index:20 !important;
+}
