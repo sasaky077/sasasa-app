@@ -11539,3 +11539,65 @@ html body:not(.ui-immersive)
 #shooting-event-root .shooting-boss{
   z-index:20 !important;
 }
+
+
+/* ============================================================
+   build1042 CH04-3 — NORMAL BOSS + MEMORY FRAGMENT GATES
+   ============================================================ */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-boss-hud{
+  display:block!important;
+}
+
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-combo{
+  display:block!important;
+}
+
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_03"],
+  [data-shooting-stage="shooting_beginner_ch04_03"]
+) .shooting-character-option:not(.locked){
+  opacity:1!important;
+  filter:none!important;
+  pointer-events:auto!important;
+}
+
+#shooting-event-root .shooting-ch43-memory-fragment{
+  position:absolute;
+  width:38px!important;
+  height:38px!important;
+  z-index:145!important;
+  border:3px solid rgba(219,202,255,.96)!important;
+  background:
+    radial-gradient(circle,
+      rgba(255,255,255,1) 0 14%,
+      rgba(224,210,255,.98) 20% 38%,
+      rgba(142,95,232,.96) 44% 62%,
+      rgba(95,128,245,.70) 66% 74%,
+      rgba(92,61,220,0) 82%)!important;
+  box-shadow:
+    0 0 12px rgba(255,255,255,.95),
+    0 0 26px rgba(176,126,255,.82),
+    0 0 46px rgba(112,79,238,.62)!important;
+  pointer-events:none!important;
+}
+
+#shooting-event-root .shooting-ch43-memory-fragment span{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-52%);
+  z-index:2;
+  color:#fff;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  text-shadow:0 1px 4px rgba(69,45,130,.65);
+  pointer-events:none;
+}

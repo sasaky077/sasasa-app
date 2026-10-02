@@ -1547,6 +1547,7 @@
     state.finishing = false;
     updateChapter4ShrinkWalls(now);
     clearChapter4FinalItem();
+    clearChapter43MemoryFragment();
     purgeChapter4ItemDom();
     state.chapter4ItemPhase = false;
     spawnChapter4FinalItem(now);
@@ -1574,6 +1575,108 @@
       clearChapter4FinalItem();
       endGame(false);
     }
+  }
+
+
+  function clearChapter43MemoryFragment() {
+    if (!state) return;
+    if (state.chapter43MemoryFragment?.el) state.chapter43MemoryFragment.el.remove();
+    state.chapter43MemoryFragment = null;
+  }
+
+  function getChapter43MemoryThresholds() {
+    const cfg = getChapter43MemoryConfig();
+    const list = Array.isArray(cfg?.thresholds) ? cfg.thresholds : [.75, .50, .25];
+    return list
+      .map(Number)
+      .filter(v => Number.isFinite(v) && v > 0 && v < 1)
+      .sort((a,b) => b - a);
+  }
+
+  function spawnChapter43MemoryFragment(index) {
+    if (!state || !isChapter43MemoryBossStage() || state.chapter43MemoryFragment) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const arenaRect = arena.getBoundingClientRect();
+    const w = Math.max(1, Number(arenaRect.width || arena.clientWidth || 360));
+    const h = Math.max(1, Number(arenaRect.height || arena.clientHeight || 640));
+    const bossX = Number(state.boss?.x || w * .5);
+    const bossY = Number(state.boss?.y || h * .18);
+
+    // 3個ともボス周辺だが、同じ場所に固定しない。
+    const offsets = [
+      [-88, 88],
+      [ 88, 92],
+      [  0, 122],
+    ];
+    const [ox, oy] = offsets[Math.max(0, Math.min(offsets.length - 1, Number(index || 1) - 1))];
+    const x = clamp(bossX + ox, 46, w - 46);
+    const y = clamp(bossY + oy, 118, h * .64);
+
+    const el = document.createElement('div');
+    el.className = 'shooting-mission-item shooting-ch04-final-item shooting-ch43-memory-fragment';
+    el.dataset.memoryFragment = String(index);
+    el.innerHTML = `<i></i><span>${index}</span>`;
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+
+    state.chapter43MemoryFragment = { el, x, y, index };
+    showShootingItemEffectNotice(`記憶のかけら ${index}`, '回収するまで攻撃は通らない');
+  }
+
+  function updateChapter43MemoryFragment() {
+    if (!state || !isChapter43MemoryBossStage() || !state.boss || state.ended || state.finishing) return;
+
+    const thresholds = getChapter43MemoryThresholds();
+    const collected = Math.max(0, Math.min(thresholds.length, Number(state.chapter43MemoryFragmentsCollected || 0)));
+
+    // 未取得の次ゲートよりHPが下がった場合は、必ずゲートHPへ戻す。
+    if (collected < thresholds.length) {
+      const gateRatio = thresholds[collected];
+      const gateHp = Math.max(1, Number(state.boss.hpMax || 1) * gateRatio);
+
+      if (Number(state.boss.hp || 0) <= gateHp) {
+        state.boss.hp = gateHp;
+        state.chapter43MemoryGateRatio = gateRatio;
+        if (!state.chapter43MemoryFragment) {
+          spawnChapter43MemoryFragment(collected + 1);
+        }
+      }
+    } else {
+      state.chapter43MemoryGateRatio = 0;
+    }
+
+    const item = state.chapter43MemoryFragment;
+    if (!item?.el?.isConnected) return;
+
+    const coreEl = document.getElementById('shooting-player-core') || document.getElementById(PLAYER_ID);
+    if (!coreEl) return;
+
+    if (rectsHit(item.el.getBoundingClientRect(), coreEl.getBoundingClientRect(), -4, -3)) {
+      const index = Number(item.index || (collected + 1));
+      clearChapter43MemoryFragment();
+      state.chapter43MemoryFragmentsCollected = Math.max(collected + 1, index);
+      state.chapter43MemoryGateRatio = 0;
+      state.score += 1500;
+      showShootingItemEffectNotice(`記憶のかけら ${index} 回収`, 'サキエルへの攻撃が再び通る');
+      renderHud();
+    }
+  }
+
+  function enforceChapter43MemoryGateBeforeDefeat() {
+    if (!state || !isChapter43MemoryBossStage() || !state.boss) return false;
+    const thresholds = getChapter43MemoryThresholds();
+    const collected = Math.max(0, Math.min(thresholds.length, Number(state.chapter43MemoryFragmentsCollected || 0)));
+    if (collected >= thresholds.length) return false;
+
+    const gateRatio = thresholds[collected];
+    const gateHp = Math.max(1, Number(state.boss.hpMax || 1) * gateRatio);
+    state.boss.hp = gateHp;
+    state.chapter43MemoryGateRatio = gateRatio;
+    if (!state.chapter43MemoryFragment) spawnChapter43MemoryFragment(collected + 1);
+    renderHud();
+    return true;
   }
 
   function clearChapter43RestoreItem() {
@@ -1858,6 +1961,21 @@
     return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_03) && selectedStage.chapter43Boss);
   }
 
+  function isChapter43MemoryBossStage() {
+    const cfg = selectedStage?.memoryFragments;
+    return !!(
+      selectedStage &&
+      isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_03) &&
+      cfg &&
+      Array.isArray(cfg.thresholds) &&
+      cfg.thresholds.length
+    );
+  }
+
+  function getChapter43MemoryConfig() {
+    return isChapter43MemoryBossStage() ? selectedStage.memoryFragments : null;
+  }
+
   function getChapter43Config() {
     return isChapter43BossStage() ? selectedStage.chapter43Boss : null;
   }
@@ -1879,13 +1997,17 @@
   }
 
   function isChapter04BossStage() {
-    return !!(selectedStage && isChapter04Stage() && (selectedStage.survivalBoss || selectedStage.chapter43Boss));
+    return !!(
+      selectedStage &&
+      isChapter04Stage() &&
+      (selectedStage.survivalBoss || selectedStage.chapter43Boss || isChapter43MemoryBossStage())
+    );
   }
 
   function ensureStoryEriLeader() {
     if (!isStoryShootingStage()) return;
     // CH04-1/2は従来どおりエリ単独。CH04-3はエリ固定 + 最大2人追加。
-    if (isChapter04Stage() && !isChapter43BossStage()) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       selectedPartyIds = isShootingCharacterOwned(CHARACTER_ID.ERI) ? [Number(CHARACTER_ID.ERI)] : [];
       return;
     }
@@ -1899,7 +2021,7 @@
   function isShootingPartyReady() {
     if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
-    if (isChapter04Stage() && !isChapter43BossStage()) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
     if (isStoryShootingStage()) {
@@ -2818,7 +2940,7 @@
 
   function grantUltGaugeForHits(c, hitCount = 1, ownerId = null, gainMultiplier = 1) {
     if (!state || !c || hitCount <= 0) return;
-    if ((isChapter04Stage() && !isChapter43BossStage()) || state?.chapter43AttackSealed) return;
+    if ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) || state?.chapter43AttackSealed) return;
 
     const resolvedOwnerId = ownerId == null ? c.id : ownerId;
     const ownerMoonlightBlocked =
@@ -3069,7 +3191,7 @@
   function renderShootingPartySlots() {
     const wrap = document.getElementById('shooting-party-slots');
     if (!wrap) return;
-    wrap.innerHTML = Array.from({ length: (isChapter04Stage() && !isChapter43BossStage()) ? 1 : PARTY_SIZE }, (_, i) => {
+    wrap.innerHTML = Array.from({ length: (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE }, (_, i) => {
       const id = selectedPartyIds[i];
       if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="空きスロット"><span>${i + 1}</span><b>＋</b></button>`;
       const c = buildResonatedCharacterProfile(id);
@@ -3164,7 +3286,7 @@
     renderShootingBlessingPicker();
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage())
+      ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
         ? 'CHAPTER 04 · エリのみ出撃可能'
         : (isStoryShootingStage()
           ? '最大3人 · エリ固定 · 1人から出撃可能'
@@ -3357,6 +3479,9 @@
       chapter4CurtainBulletSeq: 0,
       chapter43RhythmStep: 0,
       chapter43RhythmNextAt: 0,
+      chapter43MemoryFragmentsCollected: 0,
+      chapter43MemoryFragment: null,
+      chapter43MemoryGateRatio: 0,
       chapter43Wave1SealTriggered: false,
       chapter43AttackSealed: false,
       chapter43SealHp: 0,
@@ -3375,7 +3500,7 @@
 
     // CH04のITEM告知DOMは戦闘開始前に1回だけ作成して非表示待機。
     // 60秒到達フレームでのDOM生成を減らす。
-    if (isChapter04Stage()) prepareChapter4ItemOverlay();
+    if (isChapter04Stage() && !isChapter43MemoryBossStage()) prepareChapter4ItemOverlay();
 
     if (selectedStage && selectedStage.survivalBoss && state.boss) {
       // SCORE ATTACK等の耐久ボスは「倒す対象」ではなく、制限時間中ずっと殴る標的。
@@ -3747,7 +3872,10 @@
       if (missionText) missionText.textContent = m.text || '敵を撃破';
 
       if (missionProgress) {
-        if (isChapter43BossStage()) {
+        if (isChapter43MemoryBossStage()) {
+          const count = Math.max(0, Number(state.chapter43MemoryFragmentsCollected || 0));
+          missionProgress.textContent = `MEMORY ${count} / 3`;
+        } else if (isChapter43BossStage()) {
           const now43 = nowMission;
           if (state.chapter43AttackSealed && !state.chapter43RestoreItemSpawned) {
             missionProgress.textContent = `DODGE ${Math.max(0, Math.ceil((state.chapter43DodgeEndsAt - now43) / 1000))}s`;
@@ -3795,7 +3923,7 @@
     if (comboCount) comboCount.textContent = String(state.combo || 0);
     const member = getActiveMember();
     const chara = getCurrentCharacter();
-    if (isChapter04Stage() && !isChapter43BossStage() && member) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && member) {
       member.burst = 0;
       member.ultReadyNotified = false;
     }
@@ -8588,7 +8716,7 @@
 
   function firePlayer(now) {
     // CH04-1/2は回避専用。CH04-3のみ通常射撃あり。
-    if (isChapter04Stage() && !isChapter43BossStage()) return;
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) return;
     if (isChapter43BossStage() && state?.chapter43AttackSealed) return;
 
     const c = getCurrentCharacter();
@@ -15121,6 +15249,7 @@
       updateFacelessObjects(dt, ts);
       updateAmbushStageMechanics(dt, ts);
       updateChapter4FinalItem(ts);
+      updateChapter43MemoryFragment();
       updateChapter43Mechanics(ts);
       updateFacelessStageMechanics(ts);
       updateChapter4ShrinkWalls(ts);
@@ -16034,6 +16163,9 @@
 
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+
+    // build1042: CH04-3は記憶のかけら未回収ゲートを撃破処理より優先。
+    if (enforceChapter43MemoryGateBeforeDefeat()) return;
 
     // build876: 通常ステージのCLEARは必ずevaluateNormalMission()経由に限定する。
     // BOSS専用経路が誤って呼ばれても、収集・時間・被弾条件を迂回させない。
@@ -17570,7 +17702,7 @@
     if (!isPublicShootingCharacterId(id)) return;
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
 
-    if (isChapter04Stage() && !isChapter43BossStage() && id !== Number(CHARACTER_ID.ERI)) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && id !== Number(CHARACTER_ID.ERI)) {
       ensureStoryEriLeader();
       selectedCharacterId = Number(CHARACTER_ID.ERI);
       applySelectedCharacterToUi();
@@ -22559,7 +22691,7 @@
 
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
-    if (isChapter04Stage() && !isChapter43BossStage()) return false;
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) return false;
     if (isChapter43BossStage() && state.chapter43AttackSealed) return false;
     if (performance.now() < (state.ultLockUntil || 0)) return false;
     const c = getCurrentCharacter();

@@ -681,7 +681,6 @@
       type: 'boss',
       background: 'images/battle_bg_01.webp',
       bossElement: 'light',
-      timeLimitSeconds: 60,
       introImage: 'images/enemy_sakiel_battle.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_04]),
       chapter4Curtain: Object.freeze({
@@ -692,15 +691,17 @@
         columnsTop: 10,
         columnsBottom: 9,
       }),
-      finalItem: Object.freeze({ timeoutSeconds: 10 }),
-      eriOnly: true,
-      survivalBoss: true,
+      // build1042: 通常ボス戦 + 記憶のかけら3段階ゲート。
+      // 75% / 50% / 25%でHPが止まり、対応するかけらを拾うまで以降のダメージを通さない。
+      memoryFragments: Object.freeze({
+        thresholds: Object.freeze([0.75, 0.50, 0.25]),
+        count: 3,
+      }),
       dangerEveryMs: 10000,
       dangerWays: 2,
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,
-        targetSeconds: 60,
-        text: '60秒生存後、10秒以内に出現アイテムを取得せよ',
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '記憶のかけらを集め、サキエルを撃破せよ',
       }),
       playable: true,
     }),
