@@ -11367,22 +11367,31 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
 
-    // 内部座標(obj.x / obj.y)から発射位置を推測しない。
-    // 実際に描画されている仮面DOMの矩形を取得し、
-    // その「見た目上の下端」を発射口として使う。
-    const arenaRect = arena.getBoundingClientRect();
-    const maskRect = obj.el.getBoundingClientRect();
+    let center;
+    let muzzleY;
+    let leftMuzzleX;
+    let rightMuzzleX;
 
-    const left = maskRect.left - arenaRect.left;
-    const right = maskRect.right - arenaRect.left;
-    const center = (left + right) * 0.5;
+    if (obj.objectKind === 'remnant07_clone') {
+      // cloneは座標ベースで発射。毎射撃のDOM layout readを避ける。
+      center = Number(obj.x || 0);
+      muzzleY = Number(obj.y || 0) + 38;
+      leftMuzzleX = center - 20;
+      rightMuzzleX = center + 20;
+    } else {
+      // 仮面は見た目の下端を発射口として使う。
+      const arenaRect = arena.getBoundingClientRect();
+      const maskRect = obj.el.getBoundingClientRect();
 
-    // 弾の中心が仮面に埋まって見えないよう、下端より少し下へ出す。
-    const muzzleY = maskRect.bottom - arenaRect.top + 5;
+      const left = maskRect.left - arenaRect.left;
+      const right = maskRect.right - arenaRect.left;
+      center = (left + right) * 0.5;
+      muzzleY = maskRect.bottom - arenaRect.top + 5;
 
-    const width = Math.max(1, right - left);
-    const leftMuzzleX = left + width * 0.28;
-    const rightMuzzleX = left + width * 0.72;
+      const width = Math.max(1, right - left);
+      leftMuzzleX = left + width * 0.28;
+      rightMuzzleX = left + width * 0.72;
+    }
 
     const speed = obj.ways >= 3 ? 230 : 215;
     const damage = obj.ways >= 3 ? 125 : 105;
@@ -11477,14 +11486,16 @@
       }
 
       obj.x += obj.vx * dt;
-      const minX = 72;
-      const maxX = Math.max(minX + 40, w - 72);
+      const isR07Clone = obj.objectKind === 'remnant07_clone';
+      const edge = isR07Clone ? 66 : 72;
+      const minX = edge;
+      const maxX = Math.max(minX + 40, w - edge);
       if (obj.x <= minX || obj.x >= maxX) {
         obj.x = clamp(obj.x, minX, maxX);
         obj.vx *= -1;
       }
       positionUnit(obj.el, obj.x, obj.y);
-      positionUnit(obj.hpEl, obj.x, obj.y + 56);
+      positionUnit(obj.hpEl, obj.x, obj.y + (isR07Clone ? 64 : 56));
       fireFacelessObject(obj, now);
       return true;
     });
@@ -11832,45 +11843,70 @@
 
   function spawnOneChapter07Clone(now) {
     if (!state || !isChapter07BossStage()) return false;
-    const cfg = getChapter07BossCfg();
-    const cloneDef = getShootingEnemy(SHOOTING_ENEMY_ID.REMNANT_07_CLONE);
-    if (!cloneDef) return false;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return false;
 
     try {
-      // createNormalEnemy() は state.normalSpawned をspawn seed/UIDに使う。
-      // CH07 cloneでも毎回進め、2体が同一UID/同一seedになるのを防ぐ。
+      const cfg = getChapter07BossCfg();
       const cloneIndex = Math.max(0, Number(state.ch07CloneSpawnIndex || 0));
-      const enemy = createNormalEnemy(cloneDef, Number(now || performance.now()));
-      if (!enemy) return false;
+      const w = Math.max(1, Number(arena.clientWidth || 390));
+      const h = Math.max(1, Number(arena.clientHeight || 700));
+      const side = cloneIndex % 2 === 0 ? -1 : 1;
 
-      state.normalSpawned = Math.max(0, Number(state.normalSpawned || 0)) + 1;
+      // REMNANT07本体と同じ画像を再利用する。
+      // 50%到達時に新しい大画像をdecodeしない。
+      const el = document.createElement('img');
+      el.className = 'shooting-faceless-object shooting-ch07-clone-object';
+      el.src = 'images/remnant_07_battle.webp';
+      el.alt = 'REMNANT 07';
+      el.draggable = false;
+      arena.appendChild(el);
+
+      const hpEl = document.createElement('div');
+      hpEl.className = 'shooting-faceless-object-hp shooting-ch07-clone-hp';
+      hpEl.innerHTML = '<i></i>';
+      arena.appendChild(hpEl);
+
+      const hp = Math.max(1, Number(cfg.cloneHp || 5200));
+      const x = clamp(w * .5 + side * Math.min(86, w * .22), 62, w - 62);
+      const y = Math.max(98, h * .225);
+
+      const obj = {
+        id: ++state.facelessObjectSeq,
+        el,
+        hpEl,
+        x,
+        y,
+        hp,
+        hpMax: hp,
+        ways: 3,
+        vx: side * 38,
+        lastShotAt: Number(now || performance.now()) + 300,
+        hitCountDurability: false,
+        objectKind: 'remnant07_clone',
+      };
+
+      state.facelessObjects.push(obj);
       state.ch07CloneSpawnIndex = cloneIndex + 1;
 
-      enemy.hp = Math.max(1, Number(cfg.cloneHp || cloneDef.hp || 5200));
-      enemy.hpMax = enemy.hp;
+      positionUnit(el, x, y);
+      positionUnit(hpEl, x, y + 64);
 
-      const arena = document.getElementById('shooting-arena');
-      const w = Math.max(1, Number(arena?.clientWidth || 390));
-      const h = Math.max(1, Number(arena?.clientHeight || 700));
+      // 画像ロード完了後だけサイズ計測。同期layout/decodeを50%到達フレームに置かない。
+      const measure = () => {
+        if (!obj.el || !obj.el.isConnected) return;
+        try { measureUnitSize(obj); } catch (_) {}
+      };
+      if (el.complete) requestAnimationFrame(measure);
+      else el.addEventListener('load', () => requestAnimationFrame(measure), { once:true });
 
-      // 左右へ明確に分ける。重なった巨大画像を同一フレームに合成しない。
-      const side = cloneIndex % 2 === 0 ? -1 : 1;
-      enemy.baseX = clamp(w * .5 + side * Math.min(86, w * .22), 50, w - 50);
-      enemy.x = enemy.baseX;
-      enemy.baseY = Math.max(90, h * .225);
-      enemy.y = enemy.baseY;
-
-      renderMiniEnemyHp(enemy);
-      positionUnit(enemy.el, enemy.x, enemy.y);
-      positionMiniEnemyHp(enemy);
-      state.normalEnemies.push(enemy);
       return true;
     } catch (error) {
-      // 分身体生成に失敗してもgameLoop自体は止めない。
-      console.error('[ZERAPHIA][CH07] clone spawn failed', error);
+      console.error('[ZERAPHIA][CH07] lightweight clone spawn failed', error);
       return false;
     }
   }
+
 
   function spawnChapter07Clones(now) {
     if (!state || !isChapter07BossStage() || state.ch07ClonesSpawned) return;
@@ -16793,8 +16829,8 @@
 
     // CH07増殖後は分身体もすべて倒すまで本体の撃破を確定しない。
     if (isChapter07BossStage() && state.ch07ClonesSpawned) {
-      const clonesAlive = (state.normalEnemies || []).some(enemy =>
-        enemy && enemy.hp > 0 && enemy.def && enemy.def.behavior === 'remnant07_clone_v1'
+      const clonesAlive = (state.facelessObjects || []).some(obj =>
+        obj && obj.hp > 0 && obj.objectKind === 'remnant07_clone'
       );
       const clonesPending = Math.max(0, Number(state.ch07CloneSpawnRemaining || 0)) > 0;
       if (clonesAlive || clonesPending) {

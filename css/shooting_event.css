@@ -11780,3 +11780,23 @@ html body:not(.ui-immersive)
 #shooting-event-root[data-shooting-stage^="shooting_ch07_"] .shooting-ch07-clone-bullet{
   box-shadow:none!important;
 }
+
+
+/* ============================================================
+   build1052 CH07 PHASE2 — lightweight REMNANT07 clones
+   通常敵サブシステムを使わず、既存のOBJECT層で分身体を管理。
+   ============================================================ */
+#shooting-event-root[data-shooting-stage="shooting_ch07_03"] .shooting-ch07-clone-object,
+#shooting-event-root[data-shooting-stage="shooting_beginner_ch07_03"] .shooting-ch07-clone-object{
+  width:86px!important;
+  height:108px!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 5px 7px rgba(58,47,66,.18))!important;
+  opacity:.94!important;
+  will-change:transform!important;
+}
+
+#shooting-event-root[data-shooting-stage="shooting_ch07_03"] .shooting-ch07-clone-hp,
+#shooting-event-root[data-shooting-stage="shooting_beginner_ch07_03"] .shooting-ch07-clone-hp{
+  width:72px!important;
+}
