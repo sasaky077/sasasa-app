@@ -2301,37 +2301,6 @@
       }
       if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
-      // build1064: CH01 / CH04 / CH05 / CH07 chapter-clear reward.
-      // The server verifies the finalized secure run and grants eri_origin_wing once per target chapter.
-      let chapterSpecialReward = null;
-      if (win) {
-        try {
-          const specialRes = await sb.rpc('claim_chapter_clear_special_reward', {
-            p_user_id: userId,
-            p_run_token: runToken
-          });
-          if (specialRes && specialRes.error) throw specialRes.error;
-          let specialData = specialRes ? specialRes.data : null;
-          if (typeof specialData === 'string') {
-            try { specialData = JSON.parse(specialData); } catch (_) {}
-          }
-          if (specialData && specialData.eligible) {
-            chapterSpecialReward = {
-              claimed: !!specialData.claimed,
-              materialId: String(specialData.material_id || 'eri_origin_wing'),
-              quantity: Math.max(0, Number(specialData.quantity || 0)),
-              totalQuantity: Math.max(0, Number(specialData.total_quantity || 0)),
-              stageId: String(specialData.stage_id || stageId)
-            };
-          }
-          if (chapterSpecialReward && typeof window.loadInventoryFromSupabase === 'function') {
-            await window.loadInventoryFromSupabase(userId);
-          }
-        } catch (specialErr) {
-          console.warn('[shooting reward] chapter special reward failed:', specialErr?.message || specialErr);
-        }
-      }
-
       // build896: server decides whether this finalized run produced 神樹の栄養.
       // The client no longer creates Shinju EXP/items by itself.
       let shinjuRewardExp = 0;
@@ -2359,8 +2328,7 @@
         firstClearClaimed: !!row?.first_clear_claimed,
         firstClearAmount: Math.max(0, Number(row?.first_clear_amount || 0)),
         gem: Number.isFinite(gem) ? Math.max(0, gem) : null,
-        shinjuRewardExp,
-        chapterSpecialReward
+        shinjuRewardExp
       };
     } catch (err) {
       console.warn('[shooting] secure result save skipped:', err?.message || err);
@@ -2838,7 +2806,14 @@
   // build551: iOS/PWAでは重いフレーム直後に一時的なtouchcancelが来ることがある。
   // 140msだと1回のLong Taskで猶予を超えやすいため、操作復帰を待つ時間を少し拡張。
   // touchendは従来どおり即終了するので、通常の離指レスポンスには影響しない。
-  const TOUCH_CANCEL_GRACE_MS = 240;
+  const TOUCH_CANCEL_GRACE_MS = 900;
+  const TOUCH_CANCEL_GRACE_MS_CH07_BOSS = 4200;
+
+  function getTouchCancelGraceMs() {
+    return isChapter07BossStage()
+      ? TOUCH_CANCEL_GRACE_MS_CH07_BOSS
+      : TOUCH_CANCEL_GRACE_MS;
+  }
   const TOUCH_FOLLOW_RESPONSE = 90;
 
   // build551: touchmove / pointermove のたびにgetBoundingClientRect()を読まない。
@@ -17847,40 +17822,6 @@
       });
     }
 
-    if (!isDailyQuestStage() && !state.chapterSpecialRewardRenderStarted) {
-      state.chapterSpecialRewardRenderStarted = true;
-      const finalizePromise = state.secureFinalizePromise
-        || submitShootingHighScore(state.score, true);
-      void Promise.resolve(finalizePromise).then(finalized => {
-        const special = finalized && finalized.chapterSpecialReward;
-        if (!special || !special.claimed || !special.quantity) return;
-
-        let def = null;
-        try {
-          def = typeof window.getEvolutionMaterialDef === 'function'
-            ? window.getEvolutionMaterialDef(special.materialId)
-            : null;
-        } catch (_) {}
-
-        const specialDrop = {
-          type: 'material',
-          name: String(def && (def.name || def.shortName) || '原初の翼環'),
-          amount: Math.max(1, Number(special.quantity || 1)),
-          detail: 'チャプタークリア報酬',
-          image: String(def && (def.img || def.image) || 'images/item_wing.webp'),
-          materialId: String(special.materialId || 'eri_origin_wing'),
-        };
-
-        state.clearRewards = Array.isArray(state.clearRewards)
-          ? [...state.clearRewards, specialDrop]
-          : [specialDrop];
-
-        if (list && list.isConnected) {
-          list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(specialDrop));
-        }
-      });
-    }
-
     if (!isDailyQuestStage() && !state.shinjuRewardRenderStarted) {
       state.shinjuRewardRenderStarted = true;
       const finalizePromise = state.secureFinalizePromise
@@ -18308,6 +18249,16 @@
   function onPointerUp(e) {
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
+    // build1072:
+    // pointercancel は「指を離した」の意味ではない。
+    // 特にCH07-03のような高負荷ステージではWebKit都合のcancelが混ざるため、
+    // touch系pointercancelでは入力を終了せず、次のtouchmove/pointermoveを待つ。
+    if (e.type === 'pointercancel' && (pointerIsTouch || isTouchLikePointer(e))) {
+      activePointerId = null;
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
+      return;
+    }
+
     // iOS Safari/PWAではpointerup/pointercancelがTouch Eventsより先に来る。
     // 通常はTouch側へ終了判定を一本化する。
     // touchcancel後にPointerへ退避している時だけPointer側の終了を採用する。
@@ -18502,6 +18453,11 @@
     if (!t) return;
 
     const restartingAfterCancel = nativeTouchActive && activeTouchIdentifier !== t.identifier;
+    if (restartingAfterCancel) {
+      // A new identifier after a transient cancel is the same physical interaction
+      // from the game's perspective; reset the event origin without moving the player.
+      activePointerId = null;
+    }
     if (nativeTouchActive && !restartingAfterCancel) {
       if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
       return;
@@ -18639,8 +18595,18 @@
       if (token !== nativeTouchCancelToken) return;
       nativeTouchCancelTimer = null;
       if (nativeTouchPointerFallback) return;
+
+      // CH07-03では瞬間的な描画負荷でtouchcancelが発生しても、
+      // 実際には指が画面上に残っているケースを優先して扱う。
+      // ここで即終了すると「指を離していないのに操作が切れる」ため、
+      // ボス戦中は論理入力を維持し、次のmove/start/upで正しい状態へ復帰させる。
+      if (isChapter07BossStage() && pointerActive) {
+        activePointerId = null;
+        return;
+      }
+
       finishNativeTouchInteraction(lastPointerClientX, lastPointerClientY, true);
-    }, TOUCH_CANCEL_GRACE_MS);
+    }, getTouchCancelGraceMs());
 
     if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
   }
