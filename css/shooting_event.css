@@ -11683,3 +11683,100 @@ html body:not(.ui-immersive)
   filter:drop-shadow(0 0 8px rgba(255,245,210,.92))
          drop-shadow(0 0 18px rgba(255,173,88,.38))!important;
 }
+
+
+/* ============================================================
+   build1047 CHAPTER 07 — FACELESS / REMNANT 07
+   ============================================================ */
+
+/* CH07のFACELESSは雑魚サイズだが、元画像の縦長シルエットを崩さない。 */
+#shooting-event-root[data-shooting-stage^="shooting_ch07_"] .shooting-mini-enemy[src*="enemy_faceless_battle"],
+#shooting-event-root[data-shooting-stage^="shooting_beginner_ch07_"] .shooting-mini-enemy[src*="enemy_faceless_battle"]{
+  width:82px!important;
+  height:110px!important;
+  object-fit:contain!important;
+}
+
+/* 開幕完全シールド。属性バリアとは別レイヤー。 */
+#shooting-event-root .shooting-ch07-complete-shield{
+  position:absolute;
+  z-index:15;
+  width:156px;
+  height:156px;
+  border:2px solid rgba(238,244,255,.88);
+  border-radius:50%;
+  background:
+    radial-gradient(circle,rgba(255,255,255,.05) 0 48%,rgba(189,203,225,.16) 62%,rgba(90,102,124,.28) 72%,transparent 74%);
+  box-shadow:
+    0 0 16px rgba(238,244,255,.55),
+    0 0 34px rgba(126,146,177,.38),
+    inset 0 0 22px rgba(255,255,255,.20);
+  pointer-events:none;
+  animation:ch07CompleteShieldPulse .92s ease-in-out infinite alternate;
+}
+@keyframes ch07CompleteShieldPulse{
+  from{opacity:.72;filter:brightness(.94)}
+  to{opacity:1;filter:brightness(1.18)}
+}
+
+/* 突進前は本体を短く明滅。 */
+#shooting-event-root #shooting-boss.ch07-dash-warning{
+  animation:ch07DashWarning .16s steps(2,end) infinite!important;
+}
+@keyframes ch07DashWarning{
+  0%,100%{filter:brightness(1) drop-shadow(0 10px 10px rgba(63,48,32,.20))}
+  50%{filter:brightness(1.9) saturate(.55) drop-shadow(0 0 16px rgba(255,255,255,.92))}
+}
+#shooting-event-root #shooting-boss.ch07-dashing{
+  filter:blur(.4px) drop-shadow(0 12px 16px rgba(65,55,80,.26))!important;
+}
+
+/* 透明化失敗時。完全に消して位置を読ませない。 */
+#shooting-event-root #shooting-boss.ch07-invisible{
+  opacity:0!important;
+  visibility:hidden!important;
+}
+
+/* 鳥居型ユニット：専用画像素材を使用。 */
+#shooting-event-root .shooting-ch07-torii{
+  width:132px!important;
+  height:132px!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  filter:drop-shadow(0 0 8px rgba(255,255,255,.34))
+         drop-shadow(0 0 16px rgba(172,145,196,.28))!important;
+}
+#shooting-event-root .shooting-ch07-torii > i{
+  display:none!important;
+}
+#shooting-event-root .shooting-ch07-torii-image{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:100%!important;
+  height:100%!important;
+  transform:translate(-50%,-50%)!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+}
+#shooting-event-root .shooting-ch07-torii-hp{
+  width:84px!important;
+}
+
+/* REMNANT07 clones */
+#shooting-event-root[data-shooting-stage="shooting_ch07_03"] .shooting-mini-enemy[src*="remnant_07_battle"],
+#shooting-event-root[data-shooting-stage="shooting_beginner_ch07_03"] .shooting-mini-enemy[src*="remnant_07_battle"]{
+  width:92px!important;
+  height:112px!important;
+  object-fit:contain!important;
+}
+
+/* CH07もFACELESS弾を軽量表示。 */
+#shooting-event-root[data-shooting-stage^="shooting_ch07_"] .shooting-faceless-object-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch07_"] .shooting-faceless-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch07_"] .shooting-ch07-remnant-bullet,
+#shooting-event-root[data-shooting-stage^="shooting_ch07_"] .shooting-ch07-clone-bullet{
+  box-shadow:none!important;
+}

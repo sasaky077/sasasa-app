@@ -55,6 +55,10 @@
     CH06_02: 'shooting_ch06_02',
     CH06_03: 'shooting_ch06_03',
 
+    CH07_01: 'shooting_ch07_01',
+    CH07_02: 'shooting_ch07_02',
+    CH07_03: 'shooting_ch07_03',
+
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
     DAILY_TUE_INTERMEDIATE: 'shooting_daily_tue_intermediate',
@@ -922,6 +926,135 @@
     // DAILY QUEST
     // 中級1個 / 上級2個。日曜のみ敵・報酬とも全属性ミックス。
     // ============================================================
+
+    // ============================================================
+    // CHAPTER 07 — FACELESS / REMNANT 07
+    // 「属性」＋「手数」＋「操作」を要求する持ち物検査章。
+    // 仮面OBJECTは通常HPではなく必要HIT数で破壊する。
+    // ============================================================
+
+    [SHOOTING_STAGE_ID.CH07_01]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH07_01,
+      chapter: 7,
+      stageNo: 1,
+      name: '無貌Ⅰ',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS_MINI]),
+      weaknessOnlyEnemies: true,
+      normalBattle: Object.freeze({
+        totalEnemies: 3,
+        maxActive: 2,
+        spawnIntervalMs: 1200,
+        enemyHp: 2600,
+        enemySequence: Object.freeze([
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+        ]),
+      }),
+      ch07: Object.freeze({
+        maskHitCount: 12,
+        maskWays: 2,
+        maskSpawnDelayMs: 750,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        target: 3,
+        text: 'FACELESSをすべて撃破',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH07_02]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH07_02,
+      chapter: 7,
+      stageNo: 2,
+      name: '無貌Ⅱ',
+      type: 'normal',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS_MINI]),
+      weaknessOnlyEnemies: true,
+      normalBattle: Object.freeze({
+        totalEnemies: 5,
+        maxActive: 3,
+        spawnIntervalMs: 980,
+        enemyHp: 3400,
+        enemySequence: Object.freeze([
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+          SHOOTING_ENEMY_ID.FACELESS_MINI,
+        ]),
+      }),
+      ch07: Object.freeze({
+        maskHitCount: 18,
+        maskWays: 3,
+        maskSpawnDelayMs: 620,
+      }),
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        target: 5,
+        text: 'FACELESSをすべて撃破',
+      }),
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.CH07_03]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH07_03,
+      chapter: 7,
+      stageNo: 3,
+      name: 'REMNANT 07',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/remnant_07_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_07]),
+      bossElement: 'dark',
+
+      // REMNANT07本体はDARK属性バリア。
+      // DARKに対して弱点となる属性、またはNEUTRALだけが通る。
+      weaknessOnlyElement: 'dark',
+
+      // 開幕はFACELESSを倒すまで完全シールド。
+      bossAdds: Object.freeze({
+        enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS_MINI]),
+        totalEnemies: 2,
+        maxActive: 2,
+        spawnIntervalMs: 260,
+        startDelayMs: 0,
+      }),
+
+      ch07: Object.freeze({
+        maskHitCount: 20,
+        maskWays: 3,
+        maskSpawnDelayMs: 520,
+
+        // 突進
+        dashIntervalMs: 6000,
+        dashWarningMs: 700,
+        dashTravelMs: 430,
+        dashReturnMs: 480,
+
+        // 透明化。鳥居を時間内に破壊できないと7秒ロス。
+        vanishIntervalMs: 10500,
+        toriiHitCount: 24,
+        toriiBreakWindowMs: 2800,
+        invisibleMs: 7000,
+
+        // HP50%でREMNANT07が増殖。
+        cloneTriggerRatio: 0.50,
+        cloneCount: 2,
+        cloneHp: 5200,
+      }),
+
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: 'REMNANT 07を撃破',
+      }),
+      playable: true,
+    }),
+
     [SHOOTING_STAGE_ID.DAILY_MON_INTERMEDIATE]: makeDailyStage({
       id: SHOOTING_STAGE_ID.DAILY_MON_INTERMEDIATE, weekday: 'Mon', level: 'intermediate', name: '月曜巡行・中級',
       enemyIds: [SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT], rewardId: 'soul_vessel_dark',

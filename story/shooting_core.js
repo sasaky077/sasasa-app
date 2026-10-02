@@ -935,6 +935,22 @@
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
   }
 
+  function isChapter07Stage() {
+    return !!(selectedStage && /^shooting_(?:beginner_)?ch07_0[1-3]$/i.test(String(selectedStage.id || '')));
+  }
+
+  function getChapter07Config() {
+    return isChapter07Stage() ? (selectedStage.ch07 || {}) : null;
+  }
+
+  function hasFacelessObjectMechanics() {
+    return isFacelessStage() || isChapter07Stage();
+  }
+
+  function isChapter07BossStage() {
+    return !!(isChapter07Stage() && getSelectedBaseStageId() === String(SHOOTING_STAGE_ID.CH07_03 || 'shooting_ch07_03'));
+  }
+
   function isRaidStage() {
     return !!(selectedStage && selectedStage.eventId === 'raid' && selectedStage.raid);
   }
@@ -1512,7 +1528,7 @@
     // 追加DOMは作らず、この1要素だけで大きく明るく表示する。
     const el = document.createElement('div');
     el.className = 'shooting-mission-item shooting-ch04-final-item';
-    el.innerHTML = '<i></i>';
+    el.innerHTML = '<img class="shooting-ch04-memory-item-image" src="images/item_memory.webp" alt="">';
     Object.assign(el.style, {
       width: '36px',
       height: '36px',
@@ -1547,6 +1563,7 @@
     state.finishing = false;
     updateChapter4ShrinkWalls(now);
     clearChapter4FinalItem();
+    clearChapter43MemoryFragment();
     purgeChapter4ItemDom();
     state.chapter4ItemPhase = false;
     spawnChapter4FinalItem(now);
@@ -1574,6 +1591,108 @@
       clearChapter4FinalItem();
       endGame(false);
     }
+  }
+
+
+  function clearChapter43MemoryFragment() {
+    if (!state) return;
+    if (state.chapter43MemoryFragment?.el) state.chapter43MemoryFragment.el.remove();
+    state.chapter43MemoryFragment = null;
+  }
+
+  function getChapter43MemoryThresholds() {
+    const cfg = getChapter43MemoryConfig();
+    const list = Array.isArray(cfg?.thresholds) ? cfg.thresholds : [.75, .50, .25];
+    return list
+      .map(Number)
+      .filter(v => Number.isFinite(v) && v > 0 && v < 1)
+      .sort((a,b) => b - a);
+  }
+
+  function spawnChapter43MemoryFragment(index) {
+    if (!state || !isChapter43MemoryBossStage() || state.chapter43MemoryFragment) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const arenaRect = arena.getBoundingClientRect();
+    const w = Math.max(1, Number(arenaRect.width || arena.clientWidth || 360));
+    const h = Math.max(1, Number(arenaRect.height || arena.clientHeight || 640));
+    const bossX = Number(state.boss?.x || w * .5);
+    const bossY = Number(state.boss?.y || h * .18);
+
+    // 3個ともボス周辺だが、同じ場所に固定しない。
+    const offsets = [
+      [-88, 88],
+      [ 88, 92],
+      [  0, 122],
+    ];
+    const [ox, oy] = offsets[Math.max(0, Math.min(offsets.length - 1, Number(index || 1) - 1))];
+    const x = clamp(bossX + ox, 46, w - 46);
+    const y = clamp(bossY + oy, 118, h * .64);
+
+    const el = document.createElement('div');
+    el.className = 'shooting-mission-item shooting-ch04-final-item shooting-ch43-memory-fragment';
+    el.dataset.memoryFragment = String(index);
+    el.innerHTML = '<img class="shooting-ch04-memory-item-image" src="images/item_memory.webp" alt="">';
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+
+    state.chapter43MemoryFragment = { el, x, y, index };
+    showShootingItemEffectNotice(`記憶のかけら ${index}`, '回収するまで攻撃は通らない');
+  }
+
+  function updateChapter43MemoryFragment() {
+    if (!state || !isChapter43MemoryBossStage() || !state.boss || state.ended || state.finishing) return;
+
+    const thresholds = getChapter43MemoryThresholds();
+    const collected = Math.max(0, Math.min(thresholds.length, Number(state.chapter43MemoryFragmentsCollected || 0)));
+
+    // 未取得の次ゲートよりHPが下がった場合は、必ずゲートHPへ戻す。
+    if (collected < thresholds.length) {
+      const gateRatio = thresholds[collected];
+      const gateHp = Math.max(1, Number(state.boss.hpMax || 1) * gateRatio);
+
+      if (Number(state.boss.hp || 0) <= gateHp) {
+        state.boss.hp = gateHp;
+        state.chapter43MemoryGateRatio = gateRatio;
+        if (!state.chapter43MemoryFragment) {
+          spawnChapter43MemoryFragment(collected + 1);
+        }
+      }
+    } else {
+      state.chapter43MemoryGateRatio = 0;
+    }
+
+    const item = state.chapter43MemoryFragment;
+    if (!item?.el?.isConnected) return;
+
+    const coreEl = document.getElementById('shooting-player-core') || document.getElementById(PLAYER_ID);
+    if (!coreEl) return;
+
+    if (rectsHit(item.el.getBoundingClientRect(), coreEl.getBoundingClientRect(), -4, -3)) {
+      const index = Number(item.index || (collected + 1));
+      clearChapter43MemoryFragment();
+      state.chapter43MemoryFragmentsCollected = Math.max(collected + 1, index);
+      state.chapter43MemoryGateRatio = 0;
+      state.score += 1500;
+      showShootingItemEffectNotice(`記憶のかけら ${index} 回収`, 'サキエルへの攻撃が再び通る');
+      renderHud();
+    }
+  }
+
+  function enforceChapter43MemoryGateBeforeDefeat() {
+    if (!state || !isChapter43MemoryBossStage() || !state.boss) return false;
+    const thresholds = getChapter43MemoryThresholds();
+    const collected = Math.max(0, Math.min(thresholds.length, Number(state.chapter43MemoryFragmentsCollected || 0)));
+    if (collected >= thresholds.length) return false;
+
+    const gateRatio = thresholds[collected];
+    const gateHp = Math.max(1, Number(state.boss.hpMax || 1) * gateRatio);
+    state.boss.hp = gateHp;
+    state.chapter43MemoryGateRatio = gateRatio;
+    if (!state.chapter43MemoryFragment) spawnChapter43MemoryFragment(collected + 1);
+    renderHud();
+    return true;
   }
 
   function clearChapter43RestoreItem() {
@@ -1641,7 +1760,7 @@
 
     const el = document.createElement('div');
     el.className = 'shooting-mission-item shooting-ch04-final-item shooting-ch43-restore-item';
-    el.innerHTML = '<i></i>';
+    el.innerHTML = '<img class="shooting-ch04-memory-item-image" src="images/item_memory.webp" alt="">';
     Object.assign(el.style, { width:'36px', height:'36px', zIndex:'145', pointerEvents:'none' });
 
     const x = Number(state.boss?.x || arena.clientWidth * .5);
@@ -1858,6 +1977,21 @@
     return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_03) && selectedStage.chapter43Boss);
   }
 
+  function isChapter43MemoryBossStage() {
+    const cfg = selectedStage?.memoryFragments;
+    return !!(
+      selectedStage &&
+      isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_03) &&
+      cfg &&
+      Array.isArray(cfg.thresholds) &&
+      cfg.thresholds.length
+    );
+  }
+
+  function getChapter43MemoryConfig() {
+    return isChapter43MemoryBossStage() ? selectedStage.memoryFragments : null;
+  }
+
   function getChapter43Config() {
     return isChapter43BossStage() ? selectedStage.chapter43Boss : null;
   }
@@ -1879,13 +2013,17 @@
   }
 
   function isChapter04BossStage() {
-    return !!(selectedStage && isChapter04Stage() && (selectedStage.survivalBoss || selectedStage.chapter43Boss));
+    return !!(
+      selectedStage &&
+      isChapter04Stage() &&
+      (selectedStage.survivalBoss || selectedStage.chapter43Boss || isChapter43MemoryBossStage())
+    );
   }
 
   function ensureStoryEriLeader() {
     if (!isStoryShootingStage()) return;
     // CH04-1/2は従来どおりエリ単独。CH04-3はエリ固定 + 最大2人追加。
-    if (isChapter04Stage() && !isChapter43BossStage()) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       selectedPartyIds = isShootingCharacterOwned(CHARACTER_ID.ERI) ? [Number(CHARACTER_ID.ERI)] : [];
       return;
     }
@@ -1899,7 +2037,7 @@
   function isShootingPartyReady() {
     if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
-    if (isChapter04Stage() && !isChapter43BossStage()) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
     if (isStoryShootingStage()) {
@@ -1919,6 +2057,9 @@
   }
 
   function getFacelessObjectHp() {
+    if (isChapter07Stage()) {
+      return Math.max(1, Math.floor(Number(getChapter07Config()?.maskHitCount || 16)));
+    }
     return Number(getFacelessConfig()?.objectHp || 950);
   }
   let BOSS = getCurrentShootingEnemy();
@@ -2818,7 +2959,7 @@
 
   function grantUltGaugeForHits(c, hitCount = 1, ownerId = null, gainMultiplier = 1) {
     if (!state || !c || hitCount <= 0) return;
-    if ((isChapter04Stage() && !isChapter43BossStage()) || state?.chapter43AttackSealed) return;
+    if ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) || state?.chapter43AttackSealed) return;
 
     const resolvedOwnerId = ownerId == null ? c.id : ownerId;
     const ownerMoonlightBlocked =
@@ -2942,7 +3083,7 @@
   }
 
   function findFacelessMaskProjectileCollision(projectile, fromX, fromY, toX, toY) {
-    if (!isFacelessStage() || !projectile || !Array.isArray(state?.facelessObjects)) return null;
+    if (!hasFacelessObjectMechanics() || !projectile || !Array.isArray(state?.facelessObjects)) return null;
 
     const bulletHalfW = Math.max(1, Number(projectile._hw || 4));
     const bulletHalfH = Math.max(1, Number(projectile._hh || 7));
@@ -3069,7 +3210,7 @@
   function renderShootingPartySlots() {
     const wrap = document.getElementById('shooting-party-slots');
     if (!wrap) return;
-    wrap.innerHTML = Array.from({ length: (isChapter04Stage() && !isChapter43BossStage()) ? 1 : PARTY_SIZE }, (_, i) => {
+    wrap.innerHTML = Array.from({ length: (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE }, (_, i) => {
       const id = selectedPartyIds[i];
       if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="空きスロット"><span>${i + 1}</span><b>＋</b></button>`;
       const c = buildResonatedCharacterProfile(id);
@@ -3164,7 +3305,7 @@
     renderShootingBlessingPicker();
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage())
+      ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
         ? 'CHAPTER 04 · エリのみ出撃可能'
         : (isStoryShootingStage()
           ? '最大3人 · エリ固定 · 1人から出撃可能'
@@ -3290,6 +3431,19 @@
       facelessSummonTriggered: false,
       facelessObjects: [],
       facelessObjectSeq: 0,
+
+      // CH07
+      ch07InitialShieldActive: isChapter07BossStage(),
+      ch07InitialShieldHp: 0,
+      ch07ShieldReleased: false,
+      ch07ClonesSpawned: false,
+      ch07DashState: null,
+      ch07NextDashAt: 0,
+      ch07VanishState: null,
+      ch07NextVanishAt: 0,
+      ch07InvisibleUntil: 0,
+      ch07InvisibleHp: 0,
+      ch07ToriiObject: null,
       ambushWave: isAmbushStage() ? 1 : 0,
       ambushMinionSummoned: false,
       ambushWarningLastAt: -9999,
@@ -3357,6 +3511,9 @@
       chapter4CurtainBulletSeq: 0,
       chapter43RhythmStep: 0,
       chapter43RhythmNextAt: 0,
+      chapter43MemoryFragmentsCollected: 0,
+      chapter43MemoryFragment: null,
+      chapter43MemoryGateRatio: 0,
       chapter43Wave1SealTriggered: false,
       chapter43AttackSealed: false,
       chapter43SealHp: 0,
@@ -3375,7 +3532,7 @@
 
     // CH04のITEM告知DOMは戦闘開始前に1回だけ作成して非表示待機。
     // 60秒到達フレームでのDOM生成を減らす。
-    if (isChapter04Stage()) prepareChapter4ItemOverlay();
+    if (isChapter04Stage() && !isChapter43MemoryBossStage()) prepareChapter4ItemOverlay();
 
     if (selectedStage && selectedStage.survivalBoss && state.boss) {
       // SCORE ATTACK等の耐久ボスは「倒す対象」ではなく、制限時間中ずっと殴る標的。
@@ -3558,7 +3715,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -3747,7 +3904,10 @@
       if (missionText) missionText.textContent = m.text || '敵を撃破';
 
       if (missionProgress) {
-        if (isChapter43BossStage()) {
+        if (isChapter43MemoryBossStage()) {
+          const count = Math.max(0, Number(state.chapter43MemoryFragmentsCollected || 0));
+          missionProgress.textContent = `MEMORY ${count} / 3`;
+        } else if (isChapter43BossStage()) {
           const now43 = nowMission;
           if (state.chapter43AttackSealed && !state.chapter43RestoreItemSpawned) {
             missionProgress.textContent = `DODGE ${Math.max(0, Math.ceil((state.chapter43DodgeEndsAt - now43) / 1000))}s`;
@@ -3795,7 +3955,7 @@
     if (comboCount) comboCount.textContent = String(state.combo || 0);
     const member = getActiveMember();
     const chara = getCurrentCharacter();
-    if (isChapter04Stage() && !isChapter43BossStage() && member) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && member) {
       member.burst = 0;
       member.ultReadyNotified = false;
     }
@@ -4107,7 +4267,7 @@
     const style = document.createElement('style');
     style.id = 'shooting-canvas-test-visual-style-v231';
     style.textContent = `
-      #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"],[data-shooting-stage="shooting_raid_test"],[data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) #shooting-enemy-bullet-canvas{
+      #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"],[data-shooting-stage="shooting_raid_test"],[data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"],[data-shooting-stage^="shooting_ch07_"],[data-shooting-stage^="shooting_beginner_ch07_"]) #shooting-enemy-bullet-canvas{
         position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
         z-index:17!important;display:block!important;visibility:visible!important;opacity:1!important;
         pointer-events:none!important;background:transparent!important;filter:none!important;
@@ -4138,8 +4298,8 @@
   function getCanvasStoryChapter() {
     if (!selectedStage) return 0;
     const chapter = Number(selectedStage.chapter || 0);
-    if (chapter >= 1 && chapter <= 6) return chapter;
-    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-6])_/i);
+    if (chapter >= 1 && chapter <= 7) return chapter;
+    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-7])_/i);
     return m ? Number(m[1] || 0) : 0;
   }
 
@@ -5547,7 +5707,9 @@
     if (target.kind === 'boss' && state?.boss && state.boss.hp > 0) {
       const targetElement = getCombatTargetElement(state.boss);
       const finalDamage = applyElementDamage(amount, attackElement, targetElement);
-      const applied = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      const applied = isChapter07BossDamageBlocked()
+        ? 0
+        : Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
       state.boss.hp = Math.max(0, state.boss.hp - applied);
       updateBossPhase();
 
@@ -7014,7 +7176,7 @@
         candidates.push({ ref: enemy, x: Number(enemy.x || 0), y: Number(enemy.y || 0) });
       });
     } else {
-      if (isFacelessStage()) {
+      if (hasFacelessObjectMechanics()) {
         const masks = (state.facelessObjects || [])
           .filter(obj => obj && obj.el && obj.hp > 0)
           .map(obj => ({ ref: obj, x: Number(obj.x || 0), y: Number(obj.y || 0) }));
@@ -7050,7 +7212,7 @@
     const tracked = p && p.wolfTargetRef;
 
     // FACELESSで仮面が顕現したら、BOSSを追っていた既存弾も仮面へ再ロックする。
-    if (isFacelessStage()) {
+    if (hasFacelessObjectMechanics()) {
       const masksAlive = (state.facelessObjects || []).some(obj => obj && obj.el && obj.hp > 0);
       const trackedIsBoss = tracked && tracked === state.boss;
       if (masksAlive && trackedIsBoss) {
@@ -8588,7 +8750,7 @@
 
   function firePlayer(now) {
     // CH04-1/2は回避専用。CH04-3のみ通常射撃あり。
-    if (isChapter04Stage() && !isChapter43BossStage()) return;
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) return;
     if (isChapter43BossStage() && state?.chapter43AttackSealed) return;
 
     const c = getCurrentCharacter();
@@ -9152,6 +9314,16 @@
   // ============================================================
   function getChapter6BarrierConfig() {
     if (selectedStage && Array.isArray(selectedStage.chapter6Barriers) && selectedStage.chapter6Barriers.length) {
+      // build1038: ノアの移動壁はWAVE2以降、かつHP50%未満でのみ出現。
+      // 条件未達時は空配列を返すため、既に壁が出ていて条件外になった場合も
+      // ensureChapter6Barriers() 側で即時クリアされる。
+      if (String(selectedStage.id || '') === 'shooting_event_bullet_hell_test') {
+        const bossPhase = Math.max(1, Number(state && state.boss && state.boss.phase || 1));
+        const hp = Math.max(0, Number(state && state.boss && state.boss.hp || 0));
+        const hpMax = Math.max(1, Number(state && state.boss && state.boss.hpMax || 1));
+        const hpRatio = hp / hpMax;
+        if (bossPhase < 2 || hpRatio >= 0.5) return [];
+      }
       return selectedStage.chapter6Barriers;
     }
 
@@ -9843,6 +10015,38 @@
       return;
     }
 
+    if (def.behavior === 'faceless_minion_v1') {
+      if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 1180))) return;
+      enemy.lastShotAt = now;
+      const base = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x);
+      [-0.18, 0, 0.18].forEach(offset => {
+        shootNormalEnemyProjectile(
+          enemy,
+          base + offset,
+          Number(def.bulletSpeed || 205),
+          Number(def.bulletDamage || 105),
+          'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-faceless-bullet'
+        );
+      });
+      return;
+    }
+
+    if (def.behavior === 'remnant07_clone_v1') {
+      if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 980))) return;
+      enemy.lastShotAt = now;
+      const base = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x);
+      [-0.30,-0.15,0,0.15,0.30].forEach(offset => {
+        shootNormalEnemyProjectile(
+          enemy,
+          base + offset,
+          Number(def.bulletSpeed || 225),
+          Number(def.bulletDamage || 135),
+          'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-ch07-clone-bullet'
+        );
+      });
+      return;
+    }
+
     // CHAPTER 01など既存敵。
     if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 1550))) return;
     enemy.lastShotAt = now;
@@ -9973,7 +10177,34 @@
 
       const age = (now - enemy.spawnedAt) / 1000;
 
-      if (def.behavior === 'generic_element_laser_v1') {
+      if (def.behavior === 'faceless_minion_v1' && !enemy.facelessMaskSpawned) {
+        const cfg = getChapter07Config() || {};
+        const delay = Math.max(250, Number(cfg.maskSpawnDelayMs || 700));
+        if (now - Number(enemy.spawnedAt || now) >= delay) {
+          enemy.facelessMaskSpawned = true;
+          const maskX = clamp(Number(enemy.x || w * .5) + (enemy.uid.charCodeAt(enemy.uid.length - 1) % 2 ? -42 : 42), 62, w - 62);
+          const maskY = clamp(Number(enemy.y || h * .20) + 82, 120, h * .48);
+          spawnFacelessObject(maskX, maskY, Number(cfg.maskWays || 2));
+        }
+      }
+
+      if (def.behavior === 'faceless_minion_v1') {
+        enemy.x = clamp(
+          enemy.baseX + Math.sin(age * .72 + enemy.phaseSeed) * Math.min(48, w * .11),
+          38,
+          w - 38
+        );
+        enemy.y = Math.max(84, Math.min(h * .30, enemy.baseY)) +
+          Math.sin(age * .56 + enemy.phaseSeed) * 8;
+      } else if (def.behavior === 'remnant07_clone_v1') {
+        enemy.x = clamp(
+          enemy.baseX + Math.sin(age * 1.04 + enemy.phaseSeed) * Math.min(76, w * .17),
+          44,
+          w - 44
+        );
+        enemy.y = Math.max(78, Math.min(h * .28, enemy.baseY)) +
+          Math.sin(age * .88 + enemy.phaseSeed * 1.2) * 14;
+      } else if (def.behavior === 'generic_element_laser_v1') {
         enemy.x = clamp(
           enemy.baseX + Math.sin(age * .42 + enemy.phaseSeed) * Math.min(34, w * .08),
           36,
@@ -10048,12 +10279,29 @@
       defeatedNo >= total - (target - state.collectedItems - state.collectibles.length);
   }
 
+  function getMissionItemImagePath() {
+    if (!selectedStage) return '';
+    const mission = getEffectiveNormalMission();
+    if (mission?.type !== SHOOTING_MISSION_TYPE.COLLECT_ITEM) return '';
+    const chapter = Number(selectedStage.chapter || 0);
+    if (chapter === 1 || chapter === 3) {
+      return 'images/item_life_energy.webp';
+    }
+    return '';
+  }
+
   function spawnMissionItem(x, y) {
     const layer = document.getElementById('shooting-collectible-layer');
     if (!layer) return;
     const el = document.createElement('div');
     el.className = 'shooting-mission-item';
-    el.innerHTML = '<i></i>';
+    const itemImagePath = getMissionItemImagePath();
+    if (itemImagePath) {
+      el.innerHTML = `<img class="shooting-mission-item-image" src="${itemImagePath}" alt="">`;
+      el.classList.add('life-energy');
+    } else {
+      el.innerHTML = '<i></i>';
+    }
     layer.appendChild(el);
     const item = { uid:`item_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, el, x, y:Math.max(y + 18, 150) };
     state.collectibles.push(item);
@@ -10391,7 +10639,7 @@
     // 理想郷：ノア専用。
     // build946: 軽量優先。通常弾は固定テーブルで左右対称、追従弾だけ例外。
     if (isNoahStage()) {
-      const interval = phase === 1 ? 360 : (phase === 2 ? 300 : 225);
+      const interval = phase === 1 ? 420 : (phase === 2 ? 300 : 225);
 
       // ステージ開始直後はCanvas生成・BOSS表示・各画像decodeと重なるため、
       // 1ボレー分だけ待ってから弾幕を開始する。
@@ -10408,7 +10656,7 @@
       const pattern = step & 3;
       const speedMul = phase === 1 ? 0.88 : (phase === 2 ? 0.94 : 1.04);
       const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94);
-      const spawnCompanionLane = (step % 4) === 0;
+      const spawnCompanionLane = phase === 1 ? ((step % 6) === 0) : ((step % 4) === 0);
       const centerAxis = Math.PI / 2;
 
       // 三角関数で毎回spreadを生成せず、4種類の固定角度を循環。
@@ -10489,12 +10737,12 @@
         }
       }
 
-      // build967: WAVE1/2の難易度を一段階緩和。闇属性の直進弾はWAVE1=11%、WAVE2=12.5%、WAVE3=15%。
+      // build1038: WAVE1を追加緩和。闇属性の直進弾はWAVE1=7%、WAVE2=12.5%、WAVE3=15%。
       // 追加数は小数予算を累積して決めるため、短い区間で偏らず長期的に約15%増となる。
       // makeProjectile() はノア通常弾へS字移動を自動付与するため、追加弾だけ明示的に解除する。
       const companionCount = spawnCompanionLane ? Math.max(0, normalOffsets.length - 1) : 0;
       const baseVolleyCount = normalOffsets.length + companionCount;
-      const darkStraightRate = phase === 1 ? 0.11 : (phase === 2 ? 0.125 : 0.15);
+      const darkStraightRate = phase === 1 ? 0.07 : (phase === 2 ? 0.125 : 0.15);
       state.noahDarkStraightBudget = Number(state.noahDarkStraightBudget || 0) + baseVolleyCount * darkStraightRate;
 
       const darkStraightOffsets = phase === 1
@@ -10535,7 +10783,7 @@
       state.noahSpiralStep = step + 1;
 
       // 軽量な左右対称リング。頻度を低く保つ。
-      const haloEvery = phase === 1 ? 10 : (phase === 2 ? 9 : 7);
+      const haloEvery = phase === 1 ? 14 : (phase === 2 ? 9 : 7);
       if ((state.noahSpiralStep % haloEvery) === 0) {
         const haloOffsets = phase === 1
           ? [-0.76, -0.30, 0.30, 0.76]
@@ -10569,7 +10817,7 @@
 
       if (sideGuardActive) {
         const lastSideGuardAt = Number(state.noahSideGuardAt || 0);
-        const sideGuardInterval = phase === 1 ? 760 : (phase === 2 ? 680 : 600);
+        const sideGuardInterval = phase === 1 ? 900 : (phase === 2 ? 680 : 600);
 
         if (now - lastSideGuardAt >= sideGuardInterval) {
           state.noahSideGuardAt = now;
@@ -10958,7 +11206,7 @@
   }
 
   function spawnFacelessObject(x, y, ways) {
-    if (!state || !isFacelessStage()) return null;
+    if (!state || !hasFacelessObjectMechanics()) return null;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
 
@@ -10983,6 +11231,8 @@
       ways: Number(ways || 2),
       vx: (state.facelessObjectSeq % 2 ? 1 : -1) * 58,
       lastShotAt: -9999,
+      hitCountDurability: isChapter07Stage(),
+      objectKind: 'mask',
     };
     state.facelessObjects.push(obj);
     positionUnit(el, x, y);
@@ -11000,7 +11250,12 @@
 
   function damageFacelessObject(obj, damage, now, elementReaction = '', suppressVisual = false) {
     if (!obj || obj.hp <= 0) return 0;
-    const appliedDamage = Math.min(obj.hp, Math.max(0, Number(damage || 0)));
+    // CH07の仮面 / 鳥居は火力ではなくHIT数で破壊。
+    // どんな倍率・属性・ULTでも、1回の命中判定につき必ず1だけ削る。
+    const rawAppliedDamage = obj.hitCountDurability
+      ? (Number(damage || 0) > 0 ? 1 : 0)
+      : Math.max(0, Number(damage || 0));
+    const appliedDamage = Math.min(obj.hp, rawAppliedDamage);
     obj.hp = Math.max(0, obj.hp - appliedDamage);
 
     // build782: FACELESSの仮面も通常敵と同じ被弾フィードバックへ統一。
@@ -11040,6 +11295,9 @@
     const fill = obj.hpEl?.querySelector('i');
     if (fill) fill.style.width = `${clamp(obj.hp / obj.hpMax, 0, 1) * 100}%`;
     if (obj.hp <= 0) {
+      if (obj.objectKind === 'torii') {
+        onChapter07ToriiDestroyed(obj, visualNow);
+      }
       // build964: the mask remains a physical wall for the whole defeat visual.
       // Previously hp became 0 immediately, so the next projectile could pass through
       // while the mask was still visibly present for ~180ms.
@@ -11110,7 +11368,7 @@
   }
 
   function updateFacelessObjects(dt, now) {
-    if (!state || !isFacelessStage() || !Array.isArray(state.facelessObjects)) return;
+    if (!state || !hasFacelessObjectMechanics() || !Array.isArray(state.facelessObjects)) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const w = arena.clientWidth;
@@ -11127,6 +11385,13 @@
         if (!stillBlocking) return false;
         positionUnit(obj.el, obj.x, obj.y);
         if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        return true;
+      }
+
+      // CH07鳥居は固定ユニット。射撃も行わない。
+      if (obj.objectKind === 'torii') {
+        positionUnit(obj.el, obj.x, obj.y);
+        if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 66);
         return true;
       }
 
@@ -11303,6 +11568,343 @@
         ));
       }
     }
+  }
+
+
+  // ============================================================
+  // CHAPTER 07 — REMNANT 07
+  // 完全シールド / 増殖 / 突進 / 鳥居破壊による透明化キャンセル
+  // ============================================================
+
+  function getChapter07BossCfg() {
+    return isChapter07BossStage() ? (getChapter07Config() || {}) : {};
+  }
+
+  function hasAliveChapter07FacelessAdds() {
+    if (!state || !isChapter07BossStage()) return false;
+    const cfg = getBossAddsConfig() || {};
+    const total = Math.max(0, Number(cfg.totalEnemies || 0));
+    const spawned = Math.max(0, Number(state.normalSpawned || 0));
+    const aliveFaceless = (state.normalEnemies || []).some(enemy =>
+      enemy && enemy.hp > 0 && enemy.def && enemy.def.behavior === 'faceless_minion_v1'
+    );
+    return spawned < total || aliveFaceless;
+  }
+
+  function ensureChapter07CompleteShield() {
+    if (!state || !isChapter07BossStage()) return null;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    let shield = document.getElementById('shooting-ch07-complete-shield');
+    if (!shield) {
+      shield = document.createElement('div');
+      shield.id = 'shooting-ch07-complete-shield';
+      shield.className = 'shooting-ch07-complete-shield';
+      shield.setAttribute('aria-hidden', 'true');
+      arena.appendChild(shield);
+    }
+    positionUnit(shield, state.boss.x, state.boss.y);
+    return shield;
+  }
+
+  function removeChapter07CompleteShield() {
+    document.getElementById('shooting-ch07-complete-shield')?.remove();
+  }
+
+  function spawnChapter07Torii(now) {
+    if (!state || !isChapter07BossStage() || state.ch07ToriiObject) return null;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    const cfg = getChapter07BossCfg();
+    const w = Math.max(1, Number(arena.clientWidth || 390));
+    const h = Math.max(1, Number(arena.clientHeight || 700));
+    const seq = Number(state.facelessObjectSeq || 0) + 1;
+    const rx = fixedStagePatternRandom('ch07_torii_x', seq, 0);
+    const ry = fixedStagePatternRandom('ch07_torii_y', seq, 1);
+    const x = clamp(w * (.18 + rx * .64), 58, w - 58);
+    const y = clamp(h * (.28 + ry * .36), 150, h * .66);
+
+    const el = document.createElement('div');
+    el.className = 'shooting-faceless-object shooting-ch07-torii';
+    el.setAttribute('aria-label', '鳥居型ユニット');
+    el.innerHTML = '<i class="ch07-torii-top"></i><i class="ch07-torii-bar"></i><i class="ch07-torii-left"></i><i class="ch07-torii-right"></i>';
+    arena.appendChild(el);
+
+    const hpEl = document.createElement('div');
+    hpEl.className = 'shooting-faceless-object-hp shooting-ch07-torii-hp';
+    hpEl.innerHTML = '<i></i>';
+    arena.appendChild(hpEl);
+
+    const hp = Math.max(1, Math.floor(Number(cfg.toriiHitCount || 24)));
+    const obj = {
+      id: ++state.facelessObjectSeq,
+      el, hpEl,
+      x, y,
+      hp, hpMax: hp,
+      ways: 0,
+      vx: 0,
+      lastShotAt: 0,
+      hitCountDurability: true,
+      objectKind: 'torii',
+      blockingUntil: 0,
+    };
+    state.facelessObjects.push(obj);
+    state.ch07ToriiObject = obj;
+    positionUnit(el, x, y);
+    positionUnit(hpEl, x, y + 66);
+    measureUnitSize(obj);
+
+    const windowMs = Math.max(1200, Number(cfg.toriiBreakWindowMs || 2800));
+    state.ch07VanishState = {
+      startedAt: Number(now || performance.now()),
+      deadline: Number(now || performance.now()) + windowMs,
+      resolved: false,
+    };
+    showFacelessBattleCut('透明化準備', '鳥居を破壊');
+    return obj;
+  }
+
+  function onChapter07ToriiDestroyed(obj, now) {
+    if (!state || !isChapter07BossStage() || !obj || obj.objectKind !== 'torii') return;
+    if (state.ch07ToriiObject === obj) state.ch07ToriiObject = null;
+    if (state.ch07VanishState) {
+      state.ch07VanishState.resolved = true;
+      state.ch07VanishState.cancelled = true;
+    }
+    state.ch07NextVanishAt = Number(now || performance.now()) + Math.max(5000, Number(getChapter07BossCfg().vanishIntervalMs || 10500));
+    showFacelessBattleCut('CANCEL', '透明化阻止');
+  }
+
+  function beginChapter07Invisible(now) {
+    if (!state || !isChapter07BossStage()) return;
+    const cfg = getChapter07BossCfg();
+    const ts = Number(now || performance.now());
+    state.ch07InvisibleHp = Number(state.boss.hp || 0);
+    state.ch07InvisibleUntil = ts + Math.max(1000, Number(cfg.invisibleMs || 7000));
+    state.ch07VanishState = null;
+
+    const torii = state.ch07ToriiObject;
+    if (torii) {
+      torii.el?.remove();
+      torii.hpEl?.remove();
+      state.facelessObjects = (state.facelessObjects || []).filter(item => item !== torii);
+    }
+    state.ch07ToriiObject = null;
+
+    const boss = document.getElementById(BOSS_ID);
+    if (boss) boss.classList.add('ch07-invisible');
+    clearEnemyBulletsOnly();
+    showFacelessBattleCut('PHASE OUT', '7 SEC');
+  }
+
+  function endChapter07Invisible(now) {
+    if (!state || !isChapter07BossStage()) return;
+    state.ch07InvisibleUntil = 0;
+    state.ch07InvisibleHp = 0;
+    const boss = document.getElementById(BOSS_ID);
+    if (boss) boss.classList.remove('ch07-invisible');
+    state.ch07NextVanishAt = Number(now || performance.now()) + Math.max(5000, Number(getChapter07BossCfg().vanishIntervalMs || 10500));
+    showFacelessBattleCut('RETURN', 'REMNANT 07');
+  }
+
+  function startChapter07Dash(now) {
+    if (!state || !isChapter07BossStage() || state.ch07DashState) return;
+    const cfg = getChapter07BossCfg();
+    const warningMs = Math.max(300, Number(cfg.dashWarningMs || 700));
+    state.ch07DashState = {
+      mode:'warning',
+      startedAt:Number(now || performance.now()),
+      executeAt:Number(now || performance.now()) + warningMs,
+      startX:Number(state.boss.x || 0),
+      startY:Number(state.boss.y || 0),
+      targetX:Number(state.player.x || 0),
+      targetY:Number(state.player.y || 0),
+    };
+    const boss = document.getElementById(BOSS_ID);
+    if (boss) boss.classList.add('ch07-dash-warning');
+  }
+
+  function updateChapter07BossMovement(now, w, h) {
+    if (!state || !isChapter07BossStage()) return false;
+    const cfg = getChapter07BossCfg();
+    const ts = Number(now || performance.now());
+    const dash = state.ch07DashState;
+
+    if (dash) {
+      const boss = document.getElementById(BOSS_ID);
+      if (dash.mode === 'warning') {
+        if (ts >= dash.executeAt) {
+          dash.mode = 'dash';
+          dash.startedAt = ts;
+          dash.fromX = Number(state.boss.x || dash.startX || w * .5);
+          dash.fromY = Number(state.boss.y || dash.startY || h * .18);
+          dash.toX = clamp(Number(dash.targetX || state.player.x || w * .5), 48, w - 48);
+          dash.toY = clamp(Number(dash.targetY || state.player.y || h * .72), 90, h - 70);
+          boss?.classList.remove('ch07-dash-warning');
+          boss?.classList.add('ch07-dashing');
+        }
+        return true;
+      }
+
+      if (dash.mode === 'dash') {
+        const duration = Math.max(220, Number(cfg.dashTravelMs || 430));
+        const p = clamp((ts - dash.startedAt) / duration, 0, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        state.boss.x = dash.fromX + (dash.toX - dash.fromX) * eased;
+        state.boss.y = dash.fromY + (dash.toY - dash.fromY) * eased;
+        if (p >= 1) {
+          dash.mode = 'return';
+          dash.startedAt = ts;
+          dash.fromX = Number(state.boss.x);
+          dash.fromY = Number(state.boss.y);
+          dash.toX = w * .5;
+          dash.toY = Math.max(70, h * .18);
+        }
+        return true;
+      }
+
+      if (dash.mode === 'return') {
+        const duration = Math.max(260, Number(cfg.dashReturnMs || 480));
+        const p = clamp((ts - dash.startedAt) / duration, 0, 1);
+        const eased = p * p * (3 - 2 * p);
+        state.boss.x = dash.fromX + (dash.toX - dash.fromX) * eased;
+        state.boss.y = dash.fromY + (dash.toY - dash.fromY) * eased;
+        if (p >= 1) {
+          boss?.classList.remove('ch07-dashing');
+          state.ch07DashState = null;
+          state.ch07NextDashAt = ts + Math.max(3200, Number(cfg.dashIntervalMs || 6000));
+        }
+        return true;
+      }
+    }
+
+    const t = (ts - Number(state.startedAt || ts)) / 1000;
+    state.boss.x = clamp(w * .5 + Math.sin(t * .72) * w * .18, 58, w - 58);
+    state.boss.y = Math.max(68, h * .18 + Math.sin(t * 1.12) * 10);
+    return true;
+  }
+
+  function spawnChapter07Clones(now) {
+    if (!state || !isChapter07BossStage() || state.ch07ClonesSpawned) return;
+    const cfg = getChapter07BossCfg();
+    const cloneDef = getShootingEnemy(SHOOTING_ENEMY_ID.REMNANT_07_CLONE);
+    if (!cloneDef) return;
+    const count = Math.max(1, Math.min(3, Number(cfg.cloneCount || 2)));
+    state.ch07ClonesSpawned = true;
+
+    for (let i = 0; i < count; i++) {
+      const enemy = createNormalEnemy(cloneDef, Number(now || performance.now()));
+      if (!enemy) continue;
+      enemy.hp = Math.max(1, Number(cfg.cloneHp || cloneDef.hp || 5200));
+      enemy.hpMax = enemy.hp;
+      enemy.baseX += (i === 0 ? -72 : 72);
+      enemy.x = enemy.baseX;
+      enemy.baseY += 38;
+      enemy.y = enemy.baseY;
+      renderMiniEnemyHp(enemy);
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+      state.normalEnemies.push(enemy);
+    }
+    showFacelessBattleCut('MULTIPLY', `${count + 1} REMNANT`);
+  }
+
+  function updateChapter07Mechanics(now) {
+    if (!state || !isChapter07Stage() || state.ended || state.finishing) return;
+    const ts = Number(now || performance.now());
+
+    if (!isChapter07BossStage()) return;
+
+    // 開幕：FACELESSが残っている限りBOSSは完全シールド。
+    const shieldNeeded = hasAliveChapter07FacelessAdds();
+    state.ch07InitialShieldActive = shieldNeeded;
+    if (shieldNeeded) {
+      if (!Number(state.ch07InitialShieldHp || 0)) state.ch07InitialShieldHp = Number(state.boss.hp || 0);
+      state.boss.hp = Math.max(Number(state.boss.hp || 0), Number(state.ch07InitialShieldHp || 0));
+      ensureChapter07CompleteShield();
+    } else if (!state.ch07ShieldReleased) {
+      state.ch07ShieldReleased = true;
+      state.ch07InitialShieldActive = false;
+      state.ch07InitialShieldHp = 0;
+      removeChapter07CompleteShield();
+      showFacelessBattleCut('SHIELD BREAK', 'REMNANT 07');
+      state.ch07NextDashAt = ts + 2300;
+      state.ch07NextVanishAt = ts + 5200;
+    }
+
+    // 透明化中は攻撃不能。HPを開始時の値へ戻す。
+    if (ts < Number(state.ch07InvisibleUntil || 0)) {
+      if (Number(state.ch07InvisibleHp || 0) > 0) state.boss.hp = Number(state.ch07InvisibleHp);
+      return;
+    } else if (Number(state.ch07InvisibleUntil || 0) > 0) {
+      endChapter07Invisible(ts);
+    }
+
+    if (!state.ch07ShieldReleased) return;
+
+    // HP50%で2体の分身体を生成。
+    const ratio = Number(state.boss.hp || 0) / Math.max(1, Number(state.boss.hpMax || 1));
+    const cloneTrigger = Math.max(.10, Math.min(.90, Number(getChapter07BossCfg().cloneTriggerRatio || .50)));
+    if (!state.ch07ClonesSpawned && ratio <= cloneTrigger && state.boss.hp > 0) {
+      spawnChapter07Clones(ts);
+    }
+
+    // 鳥居の破壊期限。
+    const vanish = state.ch07VanishState;
+    if (vanish && !vanish.resolved && ts >= Number(vanish.deadline || 0)) {
+      vanish.resolved = true;
+      beginChapter07Invisible(ts);
+      return;
+    }
+
+    // 突進と透明化準備は同時発動させない。
+    if (!state.ch07DashState && !state.ch07ToriiObject && !state.ch07VanishState) {
+      if (Number(state.ch07NextVanishAt || 0) > 0 && ts >= Number(state.ch07NextVanishAt || 0)) {
+        spawnChapter07Torii(ts);
+        return;
+      }
+      if (Number(state.ch07NextDashAt || 0) > 0 && ts >= Number(state.ch07NextDashAt || 0)) {
+        startChapter07Dash(ts);
+      }
+    }
+  }
+
+  function isChapter07BossDamageBlocked() {
+    if (!state || !isChapter07BossStage()) return false;
+    const now = performance.now();
+    return !!(
+      state.ch07InitialShieldActive ||
+      now < Number(state.ch07InvisibleUntil || 0)
+    );
+  }
+
+  function fireRemnant07Boss(now) {
+    if (!state || !isChapter07BossStage()) return;
+    if (!state.ch07ShieldReleased || now < Number(state.ch07InvisibleUntil || 0)) return;
+    if (state.ch07DashState && state.ch07DashState.mode !== 'warning') return;
+
+    const phase = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
+    const interval = phase === 1 ? 860 : (phase === 2 ? 720 : 610);
+    if (now - Number(state.lastBossShotAt || 0) < getStageAdjustedEnemyFireInterval(interval)) return;
+    state.lastBossShotAt = now;
+
+    const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+    const offsets = phase === 1
+      ? [-.18,0,.18]
+      : (phase === 2 ? [-.30,-.15,0,.15,.30] : [-.42,-.28,-.14,0,.14,.28,.42]);
+    const speed = phase === 1 ? 220 : (phase === 2 ? 235 : 250);
+    const damage = phase === 1 ? 145 : (phase === 2 ? 160 : 175);
+    offsets.forEach(offset => {
+      const p = makeProjectile(
+        'shooting-enemy-bullet shooting-ch07-remnant-bullet',
+        state.boss.x,
+        state.boss.y + 36,
+        Math.cos(base + offset) * speed,
+        Math.sin(base + offset) * speed,
+        damage
+      );
+      if (p) state.enemyBullets.push(p);
+    });
   }
 
 
@@ -12168,6 +12770,10 @@
       fireFacelessBoss(now);
       return;
     }
+    if (BOSS && BOSS.behavior === 'remnant07_v1') {
+      fireRemnant07Boss(now);
+      return;
+    }
     if (BOSS && BOSS.behavior === 'violence_v1') {
       fireViolenceBoss(now);
       return;
@@ -12696,6 +13302,8 @@
         // 小さな左右揺れで静止感を消す。Yは壁際の突進上限まで許可する。
         state.boss.x = clamp(state.boss.x + Math.sin(t * .95) * .45, 54, w - 54);
         state.boss.y = clamp(state.boss.y, 56, pressY);
+      } else if (BOSS && BOSS.behavior === 'remnant07_v1') {
+        updateChapter07BossMovement(now, w, h);
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
         const phase = state.boss.phase || 1;
         const xAmp = phase === 1 ? w * 0.22 : phase === 2 ? w * 0.28 : w * 0.32;
@@ -12790,7 +13398,7 @@
       // J字の折り返し中もFACELESS仮面だけは「物理壁」として扱う。
       // 攻撃可能フェーズ前でも、非貫通HOMINGが仮面を横切ることは許可しない。
       if (p.kind === 'wolf_j_homing' && !p.wolfCanHit) {
-        if (isFacelessStage() && !p.pierce) {
+        if (hasFacelessObjectMechanics() && !p.pierce) {
           const mask = findFacelessMaskProjectileCollision(
             p,
             projectilePrevX, projectilePrevY,
@@ -12889,7 +13497,7 @@
       // 非貫通弾は仮面に触れた時点でそこで消え、同じフレームでBOSSへ抜けない。
       // 高速弾のすり抜け防止のため、現在位置だけでなく移動線分でも最初に交差した仮面を拾う。
       let facelessObjectTarget = null;
-      if (isFacelessStage()) {
+      if (hasFacelessObjectMechanics()) {
         facelessObjectTarget = findFacelessMaskProjectileCollision(
           p,
           projectilePrevX, projectilePrevY,
@@ -13044,10 +13652,12 @@
             attackElement,
             targetElement
           );
-          const appliedDamage = Math.min(
-            state.boss.hp,
-            Math.max(0, Number(elementAdjustedDamage || 0))
-          );
+          const appliedDamage = isChapter07BossDamageBlocked()
+            ? 0
+            : Math.min(
+                state.boss.hp,
+                Math.max(0, Number(elementAdjustedDamage || 0))
+              );
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
           if (!addScoreAttackDamageScore(appliedDamage)) {
@@ -15044,6 +15654,7 @@
     rearmRemnaTrapPlacementWhileHeld(ts);
     updateConjureUlt(ts);
     updateChapter6Barriers(ts);
+    updateChapter07Mechanics(ts);
     updateMitoSummon(dt, ts);
     updateGreshaBurnField(ts);
     updateClarineDecoys(dt, ts);
@@ -15111,6 +15722,7 @@
       updateFacelessObjects(dt, ts);
       updateAmbushStageMechanics(dt, ts);
       updateChapter4FinalItem(ts);
+      updateChapter43MemoryFragment();
       updateChapter43Mechanics(ts);
       updateFacelessStageMechanics(ts);
       updateChapter4ShrinkWalls(ts);
@@ -15183,7 +15795,7 @@
       meta.kicker = 'SPECIAL STAGE';
       meta.title = '理想郷：ノア';
       meta.sub = '楽園 -ノア-';
-      meta.image = selectedStage.introImage || 'images/nore_battle_start.webp';
+      meta.image = selectedStage.introImage || 'images/noah_battle_start.webp';
     } else if (lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
       meta.title = 'オーバーシア';
@@ -16024,6 +16636,34 @@
 
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+
+    // build1042: CH04-3は記憶のかけら未回収ゲートを撃破処理より優先。
+    if (enforceChapter43MemoryGateBeforeDefeat()) return;
+
+    // CH07: 完全シールド / 透明化中は撃破不可。
+    if (isChapter07BossDamageBlocked()) {
+      const restoreHp = Math.max(
+        1,
+        Number(state.ch07InitialShieldHp || 0),
+        Number(state.ch07InvisibleHp || 0),
+        Number(state.boss.hp || 0)
+      );
+      state.boss.hp = restoreHp;
+      renderHud();
+      return;
+    }
+
+    // CH07増殖後は分身体もすべて倒すまで本体の撃破を確定しない。
+    if (isChapter07BossStage() && state.ch07ClonesSpawned) {
+      const clonesAlive = (state.normalEnemies || []).some(enemy =>
+        enemy && enemy.hp > 0 && enemy.def && enemy.def.behavior === 'remnant07_clone_v1'
+      );
+      if (clonesAlive) {
+        state.boss.hp = Math.max(1, Number(state.boss.hp || 0));
+        renderHud();
+        return;
+      }
+    }
 
     // build876: 通常ステージのCLEARは必ずevaluateNormalMission()経由に限定する。
     // BOSS専用経路が誤って呼ばれても、収集・時間・被弾条件を迂回させない。
@@ -17560,7 +18200,7 @@
     if (!isPublicShootingCharacterId(id)) return;
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
 
-    if (isChapter04Stage() && !isChapter43BossStage() && id !== Number(CHARACTER_ID.ERI)) {
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && id !== Number(CHARACTER_ID.ERI)) {
       ensureStoryEriLeader();
       selectedCharacterId = Number(CHARACTER_ID.ERI);
       applySelectedCharacterToUi();
@@ -17959,19 +18599,81 @@
     window.restartShootingEvent();
   };
 
-  window.exitShootingStageFromPause = function () {
+  let shootingAbortMissionRunning = false;
+
+  function ensureShootingAbortMissionOverlay() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return null;
+
+    let overlay = root.querySelector('#shooting-abort-mission');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'shooting-abort-mission';
+    overlay.className = 'shooting-abort-mission';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="shooting-abort-mission-copy">ABORT MISSION</div>
+      <div class="shooting-abort-mission-fade" aria-hidden="true"></div>
+    `;
+    root.appendChild(overlay);
+    return overlay;
+  }
+
+  function sleepShootingAbort(ms) {
+    return new Promise(resolve => window.setTimeout(resolve, Math.max(0, Number(ms || 0))));
+  }
+
+  window.exitShootingStageFromPause = async function () {
+    if (shootingAbortMissionRunning) return;
+    shootingAbortMissionRunning = true;
+
     const menu = document.getElementById('shooting-pause-menu');
     if (menu) {
       menu.classList.remove('show');
       menu.setAttribute('aria-hidden', 'true');
     }
+
+    // バトル画面自体は見せ直すが、演出中は戦闘ロジックを停止したままにする。
+    if (state) {
+      state.paused = true;
+      state.pauseStartedAt = performance.now();
+    }
+    pointerActive = false;
+    pointerIsTouch = false;
+    nativeTouchPointerFallback = false;
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    clearNativeTouchCancelTimer();
+    keys = Object.create(null);
+
+    const pauseRoot = document.getElementById(ROOT_ID);
+    if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
+
+    const overlay = ensureShootingAbortMissionOverlay();
+    if (!overlay) {
+      shootingAbortMissionRunning = false;
+      return window.closeShootingEvent();
+    }
+
+    // PAUSEカードが消えた直後に一度バトル画面を見せてから表示する。
+    overlay.classList.remove('show', 'fadeout');
+    overlay.setAttribute('aria-hidden', 'false');
+    await sleepShootingAbort(90);
+    overlay.classList.add('show');
+
+    // ABORT MISSIONを短く見せた後、白へフェードアウト。
+    await sleepShootingAbort(720);
+    fadeOutShootingBattleBgm(520, true);
+    overlay.classList.add('fadeout');
+    await sleepShootingAbort(650);
+
     if (state) {
       state.paused = false;
       state.pauseStartedAt = 0;
     }
-    const pauseRoot = document.getElementById(ROOT_ID);
-    if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
-    window.closeShootingEvent();
+    await window.closeShootingEvent();
+    shootingAbortMissionRunning = false;
   };
 
   function getSelectedStageTicketCost() {
@@ -18421,9 +19123,7 @@
     // 画面が戦闘へ戻った瞬間からBGM開始。BOSSは登場演出から専用曲を流す。
     activateShootingBattleBgm(true);
     requestAnimationFrame(() => {
-      void showShootingStageGimmickNotice().then(() => {
-        playBossStageIntro(runStartCountdown);
-      });
+      playBossStageIntro(runStartCountdown);
     });
   };
 
@@ -22489,7 +23189,7 @@
 
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
-    if (isChapter04Stage() && !isChapter43BossStage()) return false;
+    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) return false;
     if (isChapter43BossStage() && state.chapter43AttackSealed) return false;
     if (performance.now() < (state.ultLockUntil || 0)) return false;
     const c = getCurrentCharacter();
