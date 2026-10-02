@@ -11989,3 +11989,57 @@ html body:not(.ui-immersive)
   0%{filter:brightness(2.2)!important}
   100%{filter:none!important}
 }
+
+
+/* ============================================================
+   build1060 — FACELESS / CH07 object coordinate root fix
+   positionUnit() supplies translate3d(x,y) + translate(-50%,-50%).
+   Explicit left/top:0 prevents normal-flow static-position offsets
+   from shifting the rendered object away from obj.x / obj.y.
+   ============================================================ */
+#shooting-event-root .shooting-faceless-object,
+#shooting-event-root .shooting-faceless-object-hp{
+  left:0!important;
+  top:0!important;
+  margin:0!important;
+}
+
+/* Keep positionUnit's translation when the defeated scale is applied. */
+#shooting-event-root .shooting-faceless-object.defeated{
+  transform:
+    translate3d(var(--unit-x),var(--unit-y),0)
+    translate(-50%,-50%)
+    scale(.55)!important;
+}
+
+
+/* ============================================================
+   build1061 CH07 TORII — visible break timer / TIME OVER
+   ============================================================ */
+#shooting-event-root .shooting-ch07-torii-time{
+  position:absolute;
+  left:50%;
+  top:23px;
+  transform:translateX(-50%);
+  display:block;
+  min-width:76px;
+  text-align:center;
+  font-family:"DSEG7 Classic Mini","Cinzel","Noto Serif JP",serif;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.04em;
+  color:#5f5966;
+  text-shadow:0 1px 2px rgba(255,255,255,.96);
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+#shooting-event-root .shooting-ch07-torii-time.danger{
+  animation:shootingCh07ToriiTimerDanger .32s steps(2,end) infinite;
+}
+
+@keyframes shootingCh07ToriiTimerDanger{
+  0%,100%{opacity:1;transform:translateX(-50%) scale(1)}
+  50%{opacity:.45;transform:translateX(-50%) scale(1.06)}
+}

@@ -405,7 +405,7 @@
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
-  <link rel="stylesheet" href="css/shooting_event.css?v=1015-noah-stage-polish">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1061-torii-timer">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=1015-item-shell-cleanup">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
@@ -14446,6 +14446,51 @@ function buildShootingStatusRow(label, value){
   '</div>';
 }
 
+// build1063: SHOTタイプ欄にも、そのSHOT自身の攻撃属性アイコンを表示する。
+// 本体属性とは独立して扱う。
+// MAIN: mainShot.element > shotElement > laserElement(レーザー時) > 本体属性
+// SUB : subShot.element > 本体属性
+function getDetailShotElement(c, shot, isMain){
+  if(!c) return 'neutral';
+
+  if(shot && shot.element != null){
+    return shot.element;
+  }
+
+  if(isMain && c.shotElement != null){
+    return c.shotElement;
+  }
+
+  if(isMain && String(c.shotType || '').toLowerCase() === 'laser' && c.laserElement != null){
+    return c.laserElement;
+  }
+
+  return c.element != null ? c.element : 'neutral';
+}
+
+function buildShootingShotTypeValue(c, shot, isMain){
+  var type = isMain ? c.shotType : (shot && shot.type);
+  var shotElement = getDetailShotElement(c, shot, isMain);
+  var icon = getElementIconImage(shotElement || '');
+  var label = getElementLabel(shotElement || '') || '-';
+  var typeLabel = getShootingShotTypeLabel(type, c, shot);
+
+  var iconHtml = icon
+    ? '<img src="' + icon + '" alt="' + detailEscapeHTML(label) + '" title="' + detailEscapeHTML(label) + '"' +
+      ' style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;margin-right:6px;display:inline-block;"' +
+      ' onerror="this.style.display=\'none\'">'
+    : '';
+
+  return iconHtml + '<span>' + detailEscapeHTML(typeLabel) + '</span>';
+}
+
+function buildShootingStatusRowHTML(label, valueHtml){
+  return '<div class="detail-status-row">' +
+    '<span class="detail-status-label">' + detailEscapeHTML(label) + '</span>' +
+    '<span class="detail-status-val">' + valueHtml + '</span>' +
+  '</div>';
+}
+
 function buildCharacterDetailHTML(data, options){
   options = options || {};
   var c = resolveDetailShootingProfile(data);
@@ -14523,8 +14568,8 @@ function buildCharacterDetailHTML(data, options){
         '</div>' +
         buildShootingStatusRow('HP', String(getDetailStatValue(data, c, 'HP'))) +
         buildShootingStatusRow('ATK', String(getDetailStatValue(data, c, 'ATK'))) +
-        buildShootingStatusRow('ショットタイプ(MAIN)', getShootingShotTypeLabel(c.shotType, c, c.mainShot)) +
-        (c.subShot ? buildShootingStatusRow('ショットタイプ(SUB)', getShootingShotTypeLabel(c.subShot.type, c, c.subShot)) : '') +
+        buildShootingStatusRowHTML('ショットタイプ(MAIN)', buildShootingShotTypeValue(c, c.mainShot, true)) +
+        (c.subShot ? buildShootingStatusRowHTML('ショットタイプ(SUB)', buildShootingShotTypeValue(c, c.subShot, false)) : '') +
         buildShootingStatusRow('共鳴', 'Lv.' + lb + ' / ' + MAX_LIMIT_BREAK) +
       '</div>' +
     '</div>' +
@@ -17056,7 +17101,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1010-leonacross-name"></script>
+<script src="js/shooting_characters.js?v=1062-leona-dark-neutral-attacks"></script>
 <script src="js/stage_select.js?v=978-locked-stage-toast"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">

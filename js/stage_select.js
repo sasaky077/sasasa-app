@@ -23,6 +23,93 @@
     8: '未定'
   };
 
+  // ============================================================
+  // build1059 — per-user story unlock override
+  // Supabase側のoverrideは通常のクリア履歴を書き換えず、
+  // 指定ユーザーだけCHAPTER / STAGEのロック判定をバイパスする。
+  // ============================================================
+  let storyUnlockOverrideMaxChapter = 0;
+  let storyUnlockOverrideAllStages = false;
+  let storyUnlockOverrideLoadedUserId = '';
+  let storyUnlockOverrideLoading = null;
+
+  function getStoryUnlockOverrideUserId() {
+    try {
+      return String(localStorage.getItem('zukan_user_id') || '').trim();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function isStoryChapterOverrideUnlocked(chapter) {
+    chapter = Number(chapter);
+    return (
+      Number.isFinite(chapter) &&
+      storyUnlockOverrideMaxChapter > 0 &&
+      chapter <= storyUnlockOverrideMaxChapter
+    );
+  }
+
+  function isStoryStageOverrideUnlocked(stage) {
+    if (!stage || !storyUnlockOverrideAllStages) return false;
+    return isStoryChapterOverrideUnlocked(stage.chapter);
+  }
+
+  async function refreshStoryUnlockOverride(force = false) {
+    const userId = getStoryUnlockOverrideUserId();
+
+    if (!userId) {
+      storyUnlockOverrideMaxChapter = 0;
+      storyUnlockOverrideAllStages = false;
+      storyUnlockOverrideLoadedUserId = '';
+      return;
+    }
+
+    if (!force && storyUnlockOverrideLoadedUserId === userId) return;
+    if (storyUnlockOverrideLoading) return storyUnlockOverrideLoading;
+
+    storyUnlockOverrideLoading = (async () => {
+      let maxChapter = 0;
+      let unlockAllStages = false;
+
+      try {
+        if (typeof sb === 'undefined' || !sb || typeof sb.rpc !== 'function') {
+          throw new Error('Supabase client is not ready');
+        }
+
+        const result = await sb.rpc('get_story_unlock_override', {
+          p_user_id: userId
+        });
+
+        if (result && result.error) throw result.error;
+
+        const row = Array.isArray(result && result.data)
+          ? result.data[0]
+          : (result && result.data);
+
+        if (row) {
+          maxChapter = Math.max(0, Number(row.max_chapter || 0));
+          unlockAllStages = row.unlock_all_stages === true;
+        }
+      } catch (error) {
+        // override取得失敗時は通常進行へフォールバック。
+        console.warn('[story unlock override] load failed:', error);
+      }
+
+      storyUnlockOverrideMaxChapter = maxChapter;
+      storyUnlockOverrideAllStages = unlockAllStages;
+      storyUnlockOverrideLoadedUserId = userId;
+
+      // Supabase応答後、ロック表示を即時更新。
+      renderStoryChapterList('normal');
+      renderStoryChapterList('beginner');
+    })().finally(() => {
+      storyUnlockOverrideLoading = null;
+    });
+
+    return storyUnlockOverrideLoading;
+  }
+
   // STORY表示用クリア条件。
   // ステージ固有タイトルは使わず、画面上では「ステージN」で統一する。
   const STORY_STAGE_CONDITIONS = {
@@ -427,6 +514,10 @@
 
   function isShootingStoryStageUnlocked(stage, mode = 'normal') {
     if (!stage) return false;
+
+    // テスト用overrideは実クリア履歴とは独立。
+    if (isStoryStageOverrideUnlocked(stage)) return true;
+
     const chapterStages = getStoryStages(stage.chapter, mode);
     const index = chapterStages.findIndex(s => s && s.id === stage.id);
     if (index <= 0) return true;
@@ -455,6 +546,9 @@
     // 先に getStoryStages(1) を確認すると一瞬だけ空配列になって「???」表示になる。
     // ステージマスターのロード状態には依存させない。
     if (chapter === STORY_CHAPTER_MIN) return true;
+
+    // Supabase側で対象ユーザーだけ指定章まで強制解放。
+    if (isStoryChapterOverrideUnlocked(chapter)) return true;
 
     const currentStages = getStoryStages(chapter, mode);
     if (!currentStages.length) return false;
@@ -504,6 +598,14 @@
   window.isStoryChapterUnlocked = isStoryChapterUnlocked;
   window.isStoryChapterCleared = isStoryChapterCleared;
   window.markStoryStageCleared = markStoryStageCleared;
+  window.refreshStoryUnlockOverride = refreshStoryUnlockOverride;
+  window.getStoryUnlockOverrideState = function () {
+    return {
+      userId: getStoryUnlockOverrideUserId(),
+      maxChapter: storyUnlockOverrideMaxChapter,
+      unlockAllStages: storyUnlockOverrideAllStages
+    };
+  };
 
   // shooting_event.js 内部モジュールは非同期ロード。
   // iPhone / PWA では初期化が5秒以上遅れるケースもあるため、
@@ -511,6 +613,9 @@
   let storyMasterWatchTimer = 0;
 
   function refreshStoryChapterListWhenReady() {
+    // ユーザー別overrideも非同期更新。取得後に再描画される。
+    refreshStoryUnlockOverride(false);
+
     // CHAPTER 01 は ShootingStages 未ロードでも正しく表示できるので、まず即描画。
     renderStoryChapterList('normal');
     renderStoryChapterList('beginner');
@@ -1143,6 +1248,8 @@
   // 開閉
   // ============================================================
   window.openStageSelect = function (chapter, mode = 'normal') {
+  refreshStoryUnlockOverride(false);
+
   chapter = Number(chapter || 1);
   if(!Number.isFinite(chapter)) chapter = 1;
 

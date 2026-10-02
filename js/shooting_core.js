@@ -2301,6 +2301,37 @@
       }
       if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
+      // build1064: CH01 / CH04 / CH05 / CH07 chapter-clear reward.
+      // The server verifies the finalized secure run and grants eri_origin_wing once per target chapter.
+      let chapterSpecialReward = null;
+      if (win) {
+        try {
+          const specialRes = await sb.rpc('claim_chapter_clear_special_reward', {
+            p_user_id: userId,
+            p_run_token: runToken
+          });
+          if (specialRes && specialRes.error) throw specialRes.error;
+          let specialData = specialRes ? specialRes.data : null;
+          if (typeof specialData === 'string') {
+            try { specialData = JSON.parse(specialData); } catch (_) {}
+          }
+          if (specialData && specialData.eligible) {
+            chapterSpecialReward = {
+              claimed: !!specialData.claimed,
+              materialId: String(specialData.material_id || 'eri_origin_wing'),
+              quantity: Math.max(0, Number(specialData.quantity || 0)),
+              totalQuantity: Math.max(0, Number(specialData.total_quantity || 0)),
+              stageId: String(specialData.stage_id || stageId)
+            };
+          }
+          if (chapterSpecialReward && typeof window.loadInventoryFromSupabase === 'function') {
+            await window.loadInventoryFromSupabase(userId);
+          }
+        } catch (specialErr) {
+          console.warn('[shooting reward] chapter special reward failed:', specialErr?.message || specialErr);
+        }
+      }
+
       // build896: server decides whether this finalized run produced 神樹の栄養.
       // The client no longer creates Shinju EXP/items by itself.
       let shinjuRewardExp = 0;
@@ -2328,7 +2359,8 @@
         firstClearClaimed: !!row?.first_clear_claimed,
         firstClearAmount: Math.max(0, Number(row?.first_clear_amount || 0)),
         gem: Number.isFinite(gem) ? Math.max(0, gem) : null,
-        shinjuRewardExp
+        shinjuRewardExp,
+        chapterSpecialReward
       };
     } catch (err) {
       console.warn('[shooting] secure result save skipped:', err?.message || err);
@@ -3042,46 +3074,6 @@
   function measureUnitSize(entry) {
     if (!entry || !entry.el) return;
 
-    // CH07/FACELESS object images:
-    // Use the actually visible content size. A fixed square element with
-    // object-fit:contain may contain a tall/narrow image, so the element box
-    // itself is not necessarily the visual object's width.
-    if (
-      entry.objectKind === 'mask' ||
-      entry.objectKind === 'torii'
-    ) {
-      const hostRect = entry.el.getBoundingClientRect();
-
-      let naturalW = 0;
-      let naturalH = 0;
-
-      if (entry.el.tagName === 'IMG') {
-        naturalW = Number(entry.el.naturalWidth || 0);
-        naturalH = Number(entry.el.naturalHeight || 0);
-      } else {
-        const img = entry.el.querySelector && entry.el.querySelector('img');
-        if (img) {
-          naturalW = Number(img.naturalWidth || 0);
-          naturalH = Number(img.naturalHeight || 0);
-        }
-      }
-
-      const boxW = Math.max(1, Number(hostRect.width || 0));
-      const boxH = Math.max(1, Number(hostRect.height || 0));
-
-      if (naturalW > 0 && naturalH > 0) {
-        const scale = Math.min(boxW / naturalW, boxH / naturalH);
-        entry._hw = Math.max(1, naturalW * scale * .5);
-        entry._hh = Math.max(1, naturalH * scale * .5);
-      } else {
-        // Image decode not finished yet. Use the host box temporarily;
-        // an onload hook below will remeasure from the natural dimensions.
-        entry._hw = boxW * .5;
-        entry._hh = boxH * .5;
-      }
-      return;
-    }
-
     // Canvas描画の敵弾はDOMを持たないため、見た目と当たり判定のサイズを
     // 数値で固定する。getBoundingClientRect()を一切呼ばない。
     if (entry.canvasRendered) {
@@ -3160,6 +3152,7 @@
 
     const bulletHalfW = Math.max(1, Number(projectile._hw || 4));
     const bulletHalfH = Math.max(1, Number(projectile._hh || 7));
+    const maskHalf = 39; // CSS上の仮面は78x78
     const x0 = Number(fromX || 0);
     const y0 = Number(fromY || 0);
     const x1 = Number(toX || 0);
@@ -3178,22 +3171,10 @@
 
       const cx = Number(obj.x || 0);
       const cy = Number(obj.y || 0);
-
-      // Use the measured visual dimensions for this object.
-      // This is device/responsive-safe and works independently for masks,
-      // torii, and any future object image size.
-      let objectHalfW = Number(obj._hw || 0);
-      let objectHalfH = Number(obj._hh || 0);
-      if (objectHalfW <= 0 || objectHalfH <= 0) {
-        measureUnitSize(obj);
-        objectHalfW = Math.max(1, Number(obj._hw || 1));
-        objectHalfH = Math.max(1, Number(obj._hh || 1));
-      }
-
       const hitT = segmentAabbEntryT(
         x0, y0, x1, y1,
-        cx - objectHalfW - bulletHalfW, cx + objectHalfW + bulletHalfW,
-        cy - objectHalfH - bulletHalfH, cy + objectHalfH + bulletHalfH
+        cx - maskHalf - bulletHalfW, cx + maskHalf + bulletHalfW,
+        cy - maskHalf - bulletHalfH, cy + maskHalf + bulletHalfH
       );
 
       if (hitT == null || hitT >= bestT) return;
@@ -6796,7 +6777,9 @@
     const distance = Math.max(1, Math.hypot(dx, dy));
     const speed = Math.max(220, Number(c.trapThrowSpeed || 560));
     const damage = getRemnaTrapPlacementDamage(c, ts);
-    const attackElement = normalizeCombatElement(c.element) || 'neutral';
+    // build1062: character body element and SHOT element may differ.
+    // LeonaCross is DARK, while TRAP remains NEUTRAL.
+    const attackElement = normalizeCombatElement(c.shotElement ?? c.element) || 'neutral';
 
     // 設置確定後は、まず小さな黒丸弾を予定地点へ飛ばす。
     // 専用オブジェクト画像は到着するまで生成しない。
@@ -11322,12 +11305,21 @@
   }
 
   function getFacelessObjectVisualOffsetY(obj) {
-    // build1058:
-    // Fixed pixel correction abolished.
-    // Visual placement and hitbox both use obj.x / obj.y as the same center.
+    if (!obj) return 0;
+
+    // build1055:
+    // CH07の仮面 / 鳥居は obj.x / obj.y がそのまま当たり判定中心。
+    // 画像中心も同じ座標へ置く。以前の -34px 補正は、
+    // 逆に「画像中心」と「判定中心」をずらしていたため撤廃。
+    if (
+      isChapter07Stage() &&
+      (obj.objectKind === 'torii' || obj.objectKind === 'mask')
+    ) {
+      return 0;
+    }
+
     return 0;
   }
-
 
   function positionFacelessObjectVisual(obj) {
     if (!obj || !obj.el) return;
@@ -11375,14 +11367,6 @@
     positionFacelessObjectVisual(obj);
     measureUnitSize(obj);
 
-    // Re-measure once the source image has decoded so object-fit:contain
-    // hitbox uses the exact visible image dimensions.
-    if (!el.complete) {
-      el.addEventListener('load', () => measureUnitSize(obj), { once: true });
-    } else {
-      requestAnimationFrame(() => measureUnitSize(obj));
-    }
-
     // 無貌専用：召喚直後の1発目を確実に出す。
     // Safari/iPhoneで最初のAI更新が遅れても、仮面が無反応に見えないようにする。
     const spawnNow = performance.now();
@@ -11425,12 +11409,15 @@
       Number.isFinite(Number(obj._lastProjectileImpactX)) &&
       Number.isFinite(Number(obj._lastProjectileImpactY)) &&
       Math.abs(visualNow - Number(obj._lastProjectileImpactAt || 0)) <= 80;
-    const hitX = useProjectileImpact
-      ? Number(obj._lastProjectileImpactX)
-      : Number(obj.x || 0);
-    const hitY = useProjectileImpact
-      ? Number(obj._lastProjectileImpactY)
-      : Number(obj.y || 0);
+    const forceCenterHit =
+      isChapter07Stage() &&
+      (obj.objectKind === 'mask' || obj.objectKind === 'torii');
+    const hitX = forceCenterHit
+      ? Number(obj.x || 0)
+      : (useProjectileImpact ? Number(obj._lastProjectileImpactX) : Number(obj.x || 0));
+    const hitY = forceCenterHit
+      ? Number(obj.y || 0)
+      : (useProjectileImpact ? Number(obj._lastProjectileImpactY) : Number(obj.y || 0));
 
     if (!suppressVisual) {
       createHit(hitX, hitY, !!obj.ambushMinion);
@@ -11841,7 +11828,8 @@
     const hp = Math.max(1, Math.floor(Number(cfg.toriiHitCount || 24)));
     hpEl.innerHTML =
       '<i></i>' +
-      '<b class="shooting-ch07-torii-hit-count">' + hp + ' HIT</b>';
+      '<b class="shooting-ch07-torii-hit-count">' + hp + ' HIT</b>' +
+      '<b class="shooting-ch07-torii-time">TIME --</b>';
     const obj = {
       id: ++state.facelessObjectSeq,
       el, hpEl,
@@ -11859,21 +11847,19 @@
     positionFacelessObjectVisual(obj);
     measureUnitSize(obj);
 
-    const toriiImg = el.querySelector('img');
-    if (toriiImg) {
-      if (!toriiImg.complete) {
-        toriiImg.addEventListener('load', () => measureUnitSize(obj), { once: true });
-      } else {
-        requestAnimationFrame(() => measureUnitSize(obj));
-      }
-    }
-
     const windowMs = Math.max(1200, Number(cfg.toriiBreakWindowMs || 2800));
     state.ch07VanishState = {
       startedAt: Number(now || performance.now()),
       deadline: Number(now || performance.now()) + windowMs,
       resolved: false,
+      timerEl: hpEl.querySelector('.shooting-ch07-torii-time'),
     };
+
+    if (state.ch07VanishState.timerEl) {
+      state.ch07VanishState.timerEl.textContent =
+        'TIME ' + (windowMs / 1000).toFixed(1);
+    }
+
     showFacelessBattleCut('WARNING', '鳥居を破壊');
     return obj;
   }
@@ -11943,7 +11929,7 @@
     state.ch07NextVanishAt =
       ts + Math.max(5000, Number(getChapter07BossCfg().vanishIntervalMs || 10500));
 
-    showFacelessBattleCut('PENALTY', 'WARNING ×3');
+    showFacelessBattleCut('TIME OVER', 'WARNING ×3');
   }
 
 
@@ -12242,10 +12228,20 @@
     // 鳥居の破壊期限。
     // 失敗時は透明化ではなく、壁バウンドWARNING弾×3。
     const vanish = state.ch07VanishState;
-    if (vanish && !vanish.resolved && ts >= Number(vanish.deadline || 0)) {
-      vanish.resolved = true;
-      triggerChapter07ToriiPenalty(ts);
-      return;
+    if (vanish && !vanish.resolved) {
+      const remainingMs = Math.max(0, Number(vanish.deadline || 0) - ts);
+
+      if (vanish.timerEl && vanish.timerEl.isConnected) {
+        vanish.timerEl.textContent =
+          'TIME ' + (remainingMs / 1000).toFixed(1);
+        vanish.timerEl.classList.toggle('danger', remainingMs <= 1000);
+      }
+
+      if (remainingMs <= 0) {
+        vanish.resolved = true;
+        triggerChapter07ToriiPenalty(ts);
+        return;
+      }
     }
 
     // 突進と鳥居ギミックは同時発動させない。
@@ -17848,6 +17844,40 @@
           list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(gemDrop));
         }
         if (note && note.isConnected) note.textContent = '';
+      });
+    }
+
+    if (!isDailyQuestStage() && !state.chapterSpecialRewardRenderStarted) {
+      state.chapterSpecialRewardRenderStarted = true;
+      const finalizePromise = state.secureFinalizePromise
+        || submitShootingHighScore(state.score, true);
+      void Promise.resolve(finalizePromise).then(finalized => {
+        const special = finalized && finalized.chapterSpecialReward;
+        if (!special || !special.claimed || !special.quantity) return;
+
+        let def = null;
+        try {
+          def = typeof window.getEvolutionMaterialDef === 'function'
+            ? window.getEvolutionMaterialDef(special.materialId)
+            : null;
+        } catch (_) {}
+
+        const specialDrop = {
+          type: 'material',
+          name: String(def && (def.name || def.shortName) || '原初の翼環'),
+          amount: Math.max(1, Number(special.quantity || 1)),
+          detail: 'チャプタークリア報酬',
+          image: String(def && (def.img || def.image) || 'images/item_wing.webp'),
+          materialId: String(special.materialId || 'eri_origin_wing'),
+        };
+
+        state.clearRewards = Array.isArray(state.clearRewards)
+          ? [...state.clearRewards, specialDrop]
+          : [specialDrop];
+
+        if (list && list.isConnected) {
+          list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(specialDrop));
+        }
       });
     }
 
