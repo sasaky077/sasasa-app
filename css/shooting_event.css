@@ -11946,3 +11946,46 @@ html body:not(.ui-immersive)
       scale(1.65);
   }
 }
+
+
+/* ============================================================
+   build1056 CH07 TORII — remaining HIT / ricochet penalty
+   ============================================================ */
+
+#shooting-event-root .shooting-ch07-torii-hp{
+  overflow:visible!important;
+}
+
+#shooting-event-root .shooting-ch07-torii-hit-count{
+  position:absolute;
+  left:50%;
+  top:9px;
+  transform:translateX(-50%);
+  display:block;
+  min-width:58px;
+  text-align:center;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:10px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.08em;
+  color:#6d526f;
+  text-shadow:0 1px 2px rgba(255,255,255,.96);
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+/* 鳥居失敗時の3発は既存WARNINGデザインを維持しつつ、
+   バウンド時の位置を読み取りやすくする。 */
+#shooting-event-root .shooting-ch07-torii-warning{
+  z-index:19!important;
+}
+
+#shooting-event-root .shooting-ch07-torii-warning.ricochet{
+  animation:shootingCh07ToriiRicochet .16s ease-out!important;
+}
+
+@keyframes shootingCh07ToriiRicochet{
+  0%{filter:brightness(2.2)!important}
+  100%{filter:none!important}
+}

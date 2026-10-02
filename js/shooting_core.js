@@ -11375,8 +11375,15 @@
       Number.isFinite(Number(obj._lastProjectileImpactX)) &&
       Number.isFinite(Number(obj._lastProjectileImpactY)) &&
       Math.abs(visualNow - Number(obj._lastProjectileImpactAt || 0)) <= 80;
-    const hitX = useProjectileImpact ? Number(obj._lastProjectileImpactX) : Number(obj.x || 0);
-    const hitY = useProjectileImpact ? Number(obj._lastProjectileImpactY) : Number(obj.y || 0);
+    const forceCenterHit =
+      isChapter07Stage() &&
+      (obj.objectKind === 'mask' || obj.objectKind === 'torii');
+    const hitX = forceCenterHit
+      ? Number(obj.x || 0)
+      : (useProjectileImpact ? Number(obj._lastProjectileImpactX) : Number(obj.x || 0));
+    const hitY = forceCenterHit
+      ? Number(obj.y || 0)
+      : (useProjectileImpact ? Number(obj._lastProjectileImpactY) : Number(obj.y || 0));
 
     if (!suppressVisual) {
       createHit(hitX, hitY, !!obj.ambushMinion);
@@ -11414,6 +11421,12 @@
 
     const fill = obj.hpEl?.querySelector('i');
     if (fill) fill.style.width = `${clamp(obj.hp / obj.hpMax, 0, 1) * 100}%`;
+
+    if (obj.objectKind === 'torii' && obj.hpEl) {
+      const hitCount = obj.hpEl.querySelector('.shooting-ch07-torii-hit-count');
+      if (hitCount) hitCount.textContent = `${Math.max(0, Math.ceil(Number(obj.hp || 0)))} HIT`;
+    }
+
     if (obj.hp <= 0) {
       if (obj.objectKind === 'torii') {
         onChapter07ToriiDestroyed(obj, visualNow);
@@ -11776,10 +11789,12 @@
 
     const hpEl = document.createElement('div');
     hpEl.className = 'shooting-faceless-object-hp shooting-ch07-torii-hp';
-    hpEl.innerHTML = '<i></i>';
     arena.appendChild(hpEl);
 
     const hp = Math.max(1, Math.floor(Number(cfg.toriiHitCount || 24)));
+    hpEl.innerHTML =
+      '<i></i>' +
+      '<b class="shooting-ch07-torii-hit-count">' + hp + ' HIT</b>';
     const obj = {
       id: ++state.facelessObjectSeq,
       el, hpEl,
@@ -11803,7 +11818,7 @@
       deadline: Number(now || performance.now()) + windowMs,
       resolved: false,
     };
-    showFacelessBattleCut('透明化準備', '鳥居を破壊');
+    showFacelessBattleCut('WARNING', '鳥居を破壊');
     return obj;
   }
 
@@ -11815,30 +11830,66 @@
       state.ch07VanishState.cancelled = true;
     }
     state.ch07NextVanishAt = Number(now || performance.now()) + Math.max(5000, Number(getChapter07BossCfg().vanishIntervalMs || 10500));
-    showFacelessBattleCut('CANCEL', '透明化阻止');
+    showFacelessBattleCut('CANCEL', 'WARNING阻止');
   }
 
-  function beginChapter07Invisible(now) {
+  function triggerChapter07ToriiPenalty(now) {
     if (!state || !isChapter07BossStage()) return;
-    const cfg = getChapter07BossCfg();
-    const ts = Number(now || performance.now());
-    state.ch07InvisibleHp = Number(state.boss.hp || 0);
-    state.ch07InvisibleUntil = ts + Math.max(1000, Number(cfg.invisibleMs || 7000));
-    state.ch07VanishState = null;
 
+    const ts = Number(now || performance.now());
     const torii = state.ch07ToriiObject;
+
+    const originX = Number(torii?.x || state.boss.x || 0);
+    const originY = Number(torii?.y || state.boss.y || 0);
+
+    // 鳥居は失敗時に消滅。
     if (torii) {
       torii.el?.remove();
       torii.hpEl?.remove();
       state.facelessObjects = (state.facelessObjects || []).filter(item => item !== torii);
     }
     state.ch07ToriiObject = null;
+    state.ch07VanishState = null;
 
-    const boss = document.getElementById(BOSS_ID);
-    if (boss) boss.classList.add('ch07-invisible');
-    clearEnemyBulletsOnly();
-    showFacelessBattleCut('PHASE OUT', '7 SEC');
+    // 透明化ペナルティは廃止。
+    state.ch07InvisibleUntil = 0;
+    state.ch07InvisibleHp = 0;
+    document.getElementById(BOSS_ID)?.classList.remove('ch07-invisible');
+
+    const dx = Number(state.player.x || 0) - originX;
+    const dy = Number(state.player.y || 0) - originY;
+    const baseAngle = Math.atan2(dy, dx);
+    const speed = Math.max(260, Number(BOSS?.bulletSpeed || 235) * 1.16);
+
+    // 失敗ペナルティ：
+    // 鳥居の位置から即死WARNING弾を3発。
+    // 各弾は壁を3回反射し、4回目の壁接触で消滅。
+    [-0.42, 0, 0.42].forEach((offset, index) => {
+      const heading = baseAngle + offset;
+      const projectile = makeProjectile(
+        'shooting-enemy-bullet shooting-danger-bullet shooting-ch07-torii-warning',
+        originX,
+        originY,
+        Math.cos(heading) * speed,
+        Math.sin(heading) * speed,
+        999999
+      );
+      if (!projectile) return;
+
+      projectile.dangerRicochet = true;
+      projectile.dangerWallHits = 0;
+      projectile.dangerMaxReflections = 3;
+      projectile.ch07ToriiPenalty = true;
+      projectile.ch07ToriiPenaltyIndex = index;
+      state.enemyBullets.push(projectile);
+    });
+
+    state.ch07NextVanishAt =
+      ts + Math.max(5000, Number(getChapter07BossCfg().vanishIntervalMs || 10500));
+
+    showFacelessBattleCut('PENALTY', 'WARNING ×3');
   }
+
 
   function endChapter07Invisible(now) {
     if (!state || !isChapter07BossStage()) return;
@@ -12117,14 +12168,6 @@
       state.ch07NextVanishAt = ts + 5200;
     }
 
-    // 透明化中は攻撃不能。HPを開始時の値へ戻す。
-    if (ts < Number(state.ch07InvisibleUntil || 0)) {
-      if (Number(state.ch07InvisibleHp || 0) > 0) state.boss.hp = Number(state.ch07InvisibleHp);
-      return;
-    } else if (Number(state.ch07InvisibleUntil || 0) > 0) {
-      endChapter07Invisible(ts);
-    }
-
     if (!state.ch07ShieldReleased) return;
 
     // HP50%で「敵強化演出」に入り、ゲームを一度完全停止して分身体を生成する。
@@ -12141,14 +12184,15 @@
     }
 
     // 鳥居の破壊期限。
+    // 失敗時は透明化ではなく、壁バウンドWARNING弾×3。
     const vanish = state.ch07VanishState;
     if (vanish && !vanish.resolved && ts >= Number(vanish.deadline || 0)) {
       vanish.resolved = true;
-      beginChapter07Invisible(ts);
+      triggerChapter07ToriiPenalty(ts);
       return;
     }
 
-    // 突進と透明化準備は同時発動させない。
+    // 突進と鳥居ギミックは同時発動させない。
     if (!state.ch07DashState && !state.ch07ToriiObject && !state.ch07VanishState) {
       if (Number(state.ch07NextVanishAt || 0) > 0 && ts >= Number(state.ch07NextVanishAt || 0)) {
         spawnChapter07Torii(ts);
@@ -12162,16 +12206,12 @@
 
   function isChapter07BossDamageBlocked() {
     if (!state || !isChapter07BossStage()) return false;
-    const now = performance.now();
-    return !!(
-      state.ch07InitialShieldActive ||
-      now < Number(state.ch07InvisibleUntil || 0)
-    );
+    return !!state.ch07InitialShieldActive;
   }
 
   function fireRemnant07Boss(now) {
     if (!state || !isChapter07BossStage()) return;
-    if (!state.ch07ShieldReleased || now < Number(state.ch07InvisibleUntil || 0)) return;
+    if (!state.ch07ShieldReleased) return;
     if (state.ch07DashState && state.ch07DashState.mode !== 'warning') return;
 
     const phase = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
