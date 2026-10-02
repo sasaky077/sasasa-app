@@ -407,7 +407,8 @@
 </style>
   <link rel="stylesheet" href="css/shooting_event.css?v=1061-torii-timer">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
-  <link rel="stylesheet" href="css/item_management.css?v=1015-item-shell-cleanup">
+  <link rel="stylesheet" href="css/item_management.css?v=1071-flower-owned-layout">
+  <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
 
@@ -3387,7 +3388,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <div>
         <small>INVENTORY</small>
         <h2>所有アイテム</h2>
-        <p>育成素材の所持数確認と、進化素材の売却ができます。</p>
+        <p>育成素材の所持数確認、進化素材の売却、交換素材の交換ができます。</p>
       </div>
     </section>
 
@@ -3446,6 +3447,22 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
       <button type="button" class="item-sell-confirm" id="item-sell-confirm">売却する</button>
       <p class="item-sell-note">売却したアイテムは元に戻せません。</p>
+    </section>
+  </div>
+
+  <div id="spirit-flower-exchange-modal" class="item-exchange-modal" hidden aria-hidden="true">
+    <div class="item-exchange-backdrop" data-flower-exchange-close></div>
+    <section class="item-exchange-dialog" role="dialog" aria-modal="true" aria-labelledby="spirit-flower-exchange-title">
+      <button type="button" class="item-exchange-close" data-flower-exchange-close aria-label="閉じる">×</button>
+      <small class="item-exchange-kicker">SPIRIT FLOWER EXCHANGE</small>
+      <h2 id="spirit-flower-exchange-title">聖霊花交換所</h2>
+      <div class="item-exchange-owned">
+        <img src="images/item_flower_r.webp" alt="">
+        <span>聖霊花(R)</span>
+        <strong id="flower-r-exchange-owned">0</strong>
+      </div>
+      <div id="spirit-flower-exchange-list" class="item-exchange-list"></div>
+      <p class="item-exchange-note">交換後のアイテムは直接アイテムBOXへ加算されます。</p>
     </section>
   </div>
 </div>
@@ -7370,8 +7387,12 @@ function selectChara(now, gacha) {
      ? ' style="transform: translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + '); transform-origin: 50% 100%;"'
      : '';
 
-   if(chara.cutImg) {
-     return '<img src="'+chara.cutImg+'" class="fav-cut-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+'>';
+   var homeCutImg = (window.CharacterSkins && typeof window.CharacterSkins.getHomeImage === 'function')
+     ? window.CharacterSkins.getHomeImage(chara.id, chara.cutImg || '')
+     : chara.cutImg;
+
+   if(homeCutImg) {
+     return '<img src="'+homeCutImg+'" class="fav-cut-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+'>';
    }
 
    if(chara.img) {
@@ -8699,11 +8720,22 @@ startTitleBgm();
       rarity: (favData && favData.rarity) || chara.rarity
     });
 
+    var panelSrc = chara.panelImg || chara.img || '';
+    if(window.CharacterSkins && typeof window.CharacterSkins.getPublicPanelImage === 'function'){
+      try{
+        panelSrc = await window.CharacterSkins.getPublicPanelImage(
+          profile && profile.user_id ? profile.user_id : '',
+          chara.id,
+          panelSrc
+        );
+      }catch(_){}
+    }
+
     return {
       chara: chara,
       favData: favData,
       detailData: detailData,
-      panelSrc: chara.panelImg || chara.img || ''
+      panelSrc: panelSrc
     };
   }
 
@@ -13218,6 +13250,9 @@ function showTenResult(results){
         '<img class="primor-fullscreen-img" src="' + detailEscapeHTML(src) + '" alt="' + detailEscapeHTML(name) + '">' +
         '<div class="primor-fullscreen-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
         '<button class="primor-fullscreen-home-btn" type="button">ホーム画面に設定</button>' +
+        ((window.CharacterSkins && typeof window.CharacterSkins.buildFullscreenControlsHTML === 'function')
+          ? window.CharacterSkins.buildFullscreenControlsHTML(chara)
+          : '') +
       '</div>';
 
     function close(){
@@ -13237,6 +13272,28 @@ function showTenResult(results){
         setHomeCharacterFromDetail();
       });
     }
+
+    ov.querySelectorAll('[data-skin-choice]').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        if(btn.disabled || !window.CharacterSkins) return;
+
+        var skinId = String(btn.getAttribute('data-skin-choice') || 'default');
+        var ok = await window.CharacterSkins.equip(id, skinId);
+        if(!ok) return;
+
+        // 再描画せず、その場で選択状態だけ切り替える。
+        ov.querySelectorAll('[data-skin-choice]').forEach(function(x){
+          x.classList.toggle('is-selected', String(x.getAttribute('data-skin-choice')) === skinId);
+          var stateLabel = x.querySelector('.primor-skin-choice-state');
+          if(stateLabel){
+            if(x.disabled) stateLabel.textContent = '未所持';
+            else stateLabel.textContent = String(x.getAttribute('data-skin-choice')) === skinId ? '装備中' : '変更';
+          }
+        });
+      });
+    });
+
     document.addEventListener('keydown', onKeyDown);
 
     document.body.appendChild(ov);
@@ -13259,10 +13316,14 @@ function showTenResult(results){
   }
 
   function getZukanIndexPanelSrc(chara){
-    // build518:
-    // panel画像があるキャラはpanelを優先。
-    // 旧キャラ等でpanel未登録の場合は従来どおりimg/upImgへ安全にフォールバックする。
-    return (chara && (chara.panelImg || chara.img || chara.upImg)) || 'images/unknown.webp';
+    // build1070: equipped skin also changes the character-box panel image.
+    var fallback = (chara && (chara.panelImg || chara.img || chara.upImg)) || 'images/unknown.webp';
+    if(chara && window.CharacterSkins && typeof window.CharacterSkins.getPanelImage === 'function'){
+      try{
+        return window.CharacterSkins.getPanelImage(chara.id, fallback) || fallback;
+      }catch(_){}
+    }
+    return fallback;
   }
 
   function openZukanCharacterDetail(charaId){
@@ -14642,7 +14703,8 @@ function buildCharacterDetailHTML(data, options){
   // build753: ガチャ結果から開いたキャラ詳細では「強化」ボタンを出さない。
   // 通常の図鑑/所持キャラ詳細では従来どおり表示する。
   document.getElementById('detail-opts').innerHTML = buildCharacterDetailHTML(data, {
-    showLimitBreakButton: !fromTenResult
+    showLimitBreakButton: !fromTenResult,
+    showSkinSelector: !fromTenResult
   });
 
   var favBtn = document.querySelector('#detail-modal .btn-set-fav');
@@ -17180,7 +17242,8 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_event.js?v=1015-ch06-perf"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
-<script src="js/item_management.js?v=905-sell-qty-free-input"></script>
+<script src="js/skin_system.js?v=1070-arno-box-skin"></script>
+<script src="js/item_management.js?v=1070-arno-box-skin"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

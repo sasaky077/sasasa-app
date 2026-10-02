@@ -920,3 +920,292 @@ html body:not(.ui-immersive) #screen-item.screen.active{
     font-size:11px !important;
   }
 }
+
+
+/* =========================================================
+   ITEM build1065 — 聖霊花(R)交換所
+   ========================================================= */
+
+.item-exchange-open-btn{
+  min-width:62px;
+  min-height:34px;
+  padding:0 10px;
+  border:1px solid rgba(164,132,71,.30);
+  background:rgba(255,253,247,.66);
+  color:#6f5123;
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.10em;
+}
+.item-exchange-open-btn:disabled{
+  opacity:.42;
+}
+
+.item-exchange-modal{
+  position:fixed;
+  inset:0;
+  z-index:18050;
+}
+.item-exchange-modal[hidden]{
+  display:none !important;
+}
+.item-exchange-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(47,39,31,.38);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+.item-exchange-dialog{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(92vw,430px);
+  max-height:min(84vh,720px);
+  box-sizing:border-box;
+  overflow:hidden;
+  padding:20px 16px 16px;
+  border:1px solid rgba(165,132,72,.32);
+  background:
+    linear-gradient(180deg,rgba(255,253,248,.985),rgba(248,242,231,.985));
+  box-shadow:0 24px 70px rgba(48,38,25,.22);
+  color:#47382a;
+  font-family:"Noto Serif JP",serif;
+}
+.item-exchange-close{
+  position:absolute;
+  right:8px;
+  top:7px;
+  width:30px;
+  height:30px;
+  border:0;
+  background:transparent;
+  color:#806b4e;
+  font-size:20px;
+}
+.item-exchange-kicker{
+  display:block;
+  color:#9c7d45;
+  font:700 7px/1 "Cinzel",serif;
+  letter-spacing:.28em;
+}
+.item-exchange-dialog h2{
+  margin:6px 0 13px;
+  font-size:19px;
+  font-weight:500;
+  letter-spacing:.10em;
+}
+.item-exchange-owned{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+  padding:9px 10px;
+  border-top:1px solid rgba(168,137,82,.18);
+  border-bottom:1px solid rgba(168,137,82,.18);
+}
+.item-exchange-owned img{
+  width:28px;
+  height:28px;
+  object-fit:contain;
+}
+.item-exchange-owned span{
+  flex:1;
+  font-size:10px;
+  color:#75644d;
+}
+.item-exchange-owned strong{
+  font:600 17px/1 "Cinzel","Noto Serif JP",serif;
+  color:#5d4521;
+}
+.item-exchange-list{
+  max-height:min(58vh,500px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding-right:2px;
+}
+.item-exchange-group-title{
+  margin:13px 0 6px;
+  color:#98733a;
+  font:700 8px/1 "Cinzel","Noto Serif JP",serif;
+  letter-spacing:.18em;
+}
+.item-exchange-group-title:first-child{
+  margin-top:0;
+}
+.item-exchange-row{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 64px;
+  align-items:center;
+  gap:9px;
+  min-height:58px;
+  padding:8px 6px;
+  border-top:1px solid rgba(161,132,83,.13);
+}
+.item-exchange-reward-icon{
+  width:38px;
+  height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.item-exchange-reward-icon img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+.item-exchange-reward-icon.is-placeholder{
+  color:#b19a78;
+  border:1px solid rgba(167,137,86,.20);
+}
+.item-exchange-copy{
+  min-width:0;
+}
+.item-exchange-copy strong{
+  display:block;
+  font-size:10px;
+  font-weight:600;
+  line-height:1.35;
+  color:#49392b;
+}
+.item-exchange-copy span{
+  display:block;
+  margin-top:3px;
+  font-size:8px;
+  line-height:1.45;
+  color:#867765;
+}
+.item-exchange-btn{
+  height:34px;
+  border:1px solid rgba(163,128,67,.34);
+  background:rgba(255,255,255,.64);
+  color:#6b4d1e;
+  font-family:"Noto Serif JP",serif;
+  font-size:9px;
+  font-weight:600;
+}
+.item-exchange-btn:disabled{
+  opacity:.38;
+}
+.item-exchange-row.is-disabled{
+  opacity:.58;
+}
+.item-exchange-row.is-disabled .item-exchange-btn{
+  font-size:6.5px;
+  letter-spacing:.02em;
+}
+.item-exchange-note{
+  margin:10px 0 0;
+  color:#968571;
+  font-size:7.5px;
+  line-height:1.5;
+  text-align:center;
+}
+
+
+/* =========================================================
+   ITEM build1066 — restore OTHER action column for exchange
+   v113 had globally hidden .item-row-actions-other.
+   ========================================================= */
+
+#screen-item .item-row-other:has([data-open-flower-exchange]),
+#screen-item .item-row-other:has(.item-exchange-open-btn){
+  grid-template-columns:58px minmax(0,1fr) 68px !important;
+  padding-right:10px !important;
+}
+
+#screen-item .item-row-actions-other{
+  display:flex !important;
+  width:68px !important;
+  min-width:68px !important;
+  justify-content:center !important;
+  align-items:center !important;
+}
+
+#screen-item .item-exchange-open-btn{
+  display:block !important;
+  width:64px !important;
+  min-width:64px !important;
+  height:36px !important;
+  padding:0 6px !important;
+  box-sizing:border-box !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+#screen-item .item-exchange-open-btn:disabled{
+  opacity:.42 !important;
+}
+
+@media (max-width:360px){
+  #screen-item .item-row-other:has([data-open-flower-exchange]),
+  #screen-item .item-row-other:has(.item-exchange-open-btn){
+    grid-template-columns:50px minmax(0,1fr) 62px !important;
+    padding-right:8px !important;
+  }
+
+  #screen-item .item-row-actions-other{
+    width:62px !important;
+    min-width:62px !important;
+  }
+
+  #screen-item .item-exchange-open-btn{
+    width:58px !important;
+    min-width:58px !important;
+  }
+}
+
+
+/* =========================================================
+   ITEM build1071 — 聖霊花 所持数をカード内へ固定
+   交換ボタン追加後に OWNED が枠外へ落ちる問題を修正
+   ========================================================= */
+
+#screen-item .item-row-other:has(.item-exchange-open-btn){
+  position:relative !important;
+  min-height:96px !important;
+  height:auto !important;
+  padding-bottom:12px !important;
+  align-items:center !important;
+  overflow:hidden !important;
+}
+
+#screen-item .item-row-other:has(.item-exchange-open-btn) .item-row-main{
+  position:relative !important;
+  min-height:72px !important;
+  padding-right:2px !important;
+  padding-bottom:22px !important;
+  box-sizing:border-box !important;
+}
+
+#screen-item .item-row-other:has(.item-exchange-open-btn) .item-row-count-other{
+  position:absolute !important;
+  left:0 !important;
+  bottom:0 !important;
+  margin:0 !important;
+  padding:5px 0 0 !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  border-top:1px solid rgba(166,134,75,.12) !important;
+  display:flex !important;
+  align-items:baseline !important;
+  gap:4px !important;
+  white-space:nowrap !important;
+}
+
+#screen-item .item-row-other:has(.item-exchange-open-btn) .item-row-actions-other{
+  align-self:center !important;
+}
+
+@media (max-width:360px){
+  #screen-item .item-row-other:has(.item-exchange-open-btn){
+    min-height:94px !important;
+  }
+
+  #screen-item .item-row-other:has(.item-exchange-open-btn) .item-row-main{
+    min-height:70px !important;
+    padding-bottom:21px !important;
+  }
+}

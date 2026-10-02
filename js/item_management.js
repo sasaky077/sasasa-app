@@ -66,6 +66,135 @@
     }
   ];
 
+  const FLOWER_R_EXCHANGES = [
+    {
+      group:'R ×1',
+      id:'exp_gold_5',
+      cost:1,
+      name:'経験値素材・金 ×5',
+      img:'images/item_exp_gold.webp',
+      desc:'強化素材・金を5個獲得'
+    },
+    {
+      group:'R ×1',
+      id:'kyoumei_1',
+      cost:1,
+      name:'共鳴石 ×1',
+      img:'images/item_kyoumeistone.webp',
+      desc:'共鳴石を1個獲得'
+    },
+    {
+      group:'R ×1',
+      id:'vessel_fire_2',
+      cost:1,
+      name:'魂の器(火) ×2',
+      img:'images/item_soul_vessel_fire.webp',
+      desc:'火属性の器を2個獲得'
+    },
+    {
+      group:'R ×1',
+      id:'vessel_aqua_2',
+      cost:1,
+      name:'魂の器(水) ×2',
+      img:'images/item_soul_vessel_aqua.webp',
+      desc:'水属性の器を2個獲得'
+    },
+    {
+      group:'R ×1',
+      id:'vessel_wood_2',
+      cost:1,
+      name:'魂の器(木) ×2',
+      img:'images/item_soul_vessel_wood.webp',
+      desc:'木属性の器を2個獲得'
+    },
+    {
+      group:'R ×1',
+      id:'vessel_dark_2',
+      cost:1,
+      name:'魂の器(闇) ×2',
+      img:'images/item_soul_vessel_dark.webp',
+      desc:'闇属性の器を2個獲得'
+    },
+    {
+      group:'R ×1',
+      id:'vessel_light_2',
+      cost:1,
+      name:'魂の器(光) ×2',
+      img:'images/item_soul_vessel_light.webp',
+      desc:'光属性の器を2個獲得'
+    },
+    {
+      group:'R ×3',
+      id:'exp_set_10',
+      cost:3,
+      name:'経験値素材セット',
+      img:'images/item_exp_gold.webp',
+      desc:'金・銀・銅を各10個ずつ獲得'
+    },
+    {
+      group:'R ×3',
+      id:'vessel_all_1',
+      cost:3,
+      name:'各種器セット',
+      img:'images/item_kyoumeistone.webp',
+      desc:'火・水・木・闇・光の器を各1個獲得'
+    },
+    {
+      group:'R ×5',
+      id:'event_ticket_silver',
+      cost:5,
+      name:'イベントticket銀',
+      img:'',
+      desc:'今後実装予定',
+      disabled:true
+    },
+    {
+      group:'R ×10',
+      id:'event_ticket_gold',
+      cost:10,
+      name:'イベントticket金',
+      img:'',
+      desc:'今後実装予定',
+      disabled:true
+    },
+    {
+      group:'R ×10',
+      id:'skin_3_limited_01',
+      cost:10,
+      name:'限定衣装',
+      characterId:3,
+      img:'images/chara_03_b_panel.webp',
+      desc:'キャラクター衣装を解放'
+    },
+    {
+      group:'R ×10',
+      id:'skin_9_limited_01',
+      cost:10,
+      name:'限定衣装',
+      characterId:9,
+      img:'images/chara_09_b_panel.webp',
+      desc:'キャラクター衣装を解放'
+    },
+    {
+      group:'R ×10',
+      id:'skin_20_limited_01',
+      cost:10,
+      name:'限定衣装',
+      characterId:20,
+      img:'images/chara_20_b_panel.webp',
+      desc:'キャラクター衣装を解放'
+    },
+    {
+      group:'R ×10',
+      id:'skin_36_limited_01',
+      cost:10,
+      name:'限定衣装',
+      characterId:36,
+      img:'images/chara_36_b_panel.webp',
+      desc:'キャラクター衣装を解放'
+    }
+  ];
+
   let state = {
     tab:'evolution',
     loading:false,
@@ -74,7 +203,8 @@
     coin:0,
     specialStageTicket:0,
     sellItemId:'',
-    sellQty:1
+    sellQty:1,
+    exchanging:false
   };
 
   function fmt(n){
@@ -241,6 +371,14 @@
           ? state.specialStageTicket
           : Math.max(0,Number(state.items[meta.id]||0));
 
+        const isFlowerR=meta.id==='flower_r';
+        const isFlowerSR=meta.id==='flower_sr';
+        const actionHtml=isFlowerR
+          ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-exchange>交換</button></div>'
+          : (isFlowerSR
+              ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" disabled>未実装</button></div>'
+              : '');
+
         return ''+
           '<article class="item-row item-row-other'+(qty<=0?' is-zero':'')+'">'+
             renderIcon(meta,'other')+
@@ -250,6 +388,7 @@
               '<div class="item-row-desc">'+escapeHtml(meta.desc||'')+'</div>'+
               '<div class="item-row-count item-row-count-other"><span>OWNED</span><strong>'+fmt(qty)+'</strong></div>'+
             '</div>'+
+            actionHtml+
           '</article>';
       }).join('');
       return;
@@ -459,6 +598,147 @@
     }
   }
 
+  function closeFlowerExchange(){
+    const modal=document.getElementById('spirit-flower-exchange-modal');
+    if(!modal) return;
+    modal.hidden=true;
+    modal.setAttribute('aria-hidden','true');
+  }
+
+  function renderFlowerExchange(){
+    const list=document.getElementById('spirit-flower-exchange-list');
+    const ownedEl=document.getElementById('flower-r-exchange-owned');
+    if(!list) return;
+
+    const owned=Math.max(0,Math.floor(Number(state.items.flower_r||0)));
+    if(ownedEl) ownedEl.textContent=fmt(owned);
+
+    let lastGroup='';
+    list.innerHTML=FLOWER_R_EXCHANGES.map(item=>{
+      const groupHead=item.group!==lastGroup
+        ? '<div class="item-exchange-group-title">'+escapeHtml(item.group)+'</div>'
+        : '';
+      lastGroup=item.group;
+
+      const skinId=item.characterId ? 'limited_01' : '';
+      const skinOwned=!!(item.characterId && window.CharacterSkins &&
+        typeof window.CharacterSkins.isOwned==='function' &&
+        window.CharacterSkins.isOwned(item.characterId,skinId));
+      const canExchange=!item.disabled && !skinOwned && owned>=item.cost && !state.exchanging;
+      const icon=item.img
+        ? '<div class="item-exchange-reward-icon"><img src="'+escapeHtml(item.img)+'" alt="" onerror="this.style.display=\'none\'"></div>'
+        : '<div class="item-exchange-reward-icon is-placeholder"><span>?</span></div>';
+
+      let displayName=item.name;
+      let displayDesc=item.desc||'';
+      if(item.characterId){
+        const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===Number(item.characterId));
+        displayName=(c&&c.name?c.name+' ':'')+'限定衣装';
+        displayDesc=skinOwned?'取得済み':'聖霊花(R) ×10';
+      }
+
+      return groupHead+
+        '<article class="item-exchange-row'+(item.disabled?' is-disabled':'')+(skinOwned?' is-owned':'')+'">'+
+          icon+
+          '<div class="item-exchange-copy">'+
+            '<strong>'+escapeHtml(displayName)+'</strong>'+
+            '<span>'+escapeHtml(displayDesc)+'</span>'+
+          '</div>'+
+          '<button type="button" class="item-exchange-btn" data-flower-exchange-id="'+escapeHtml(item.id)+'" '+
+            (canExchange?'':'disabled')+'>'+
+            (item.disabled?'COMING SOON':(skinOwned?'取得済み':'交換'))+
+          '</button>'+
+        '</article>';
+    }).join('');
+  }
+
+  function openFlowerExchange(){
+    const modal=document.getElementById('spirit-flower-exchange-modal');
+    if(!modal) return;
+    renderFlowerExchange();
+    modal.hidden=false;
+    modal.setAttribute('aria-hidden','false');
+  }
+
+  function buildExchangeGrantText(grants){
+    const evo=evolutionMaster();
+    const levels=Object.fromEntries(levelMaster().map(x=>[x.id,x]));
+    return Object.keys(grants||{}).map(id=>{
+      const meta=levels[id]||evo[id]||{name:id};
+      return (meta.name||id)+' ×'+fmt(grants[id]);
+    }).join(' / ');
+  }
+
+  async function exchangeFlowerR(exchangeId){
+    if(state.exchanging) return;
+    const def=FLOWER_R_EXCHANGES.find(x=>x.id===exchangeId);
+    if(!def || def.disabled) return;
+
+    const owned=Math.max(0,Math.floor(Number(state.items.flower_r||0)));
+    if(owned<def.cost){
+      toast('聖霊花(R)が不足しています');
+      return;
+    }
+
+    state.exchanging=true;
+    renderFlowerExchange();
+
+    try{
+      const client=window.zsSupabase;
+      if(!client || typeof client.rpc!=='function') throw new Error('サーバーへ接続できません');
+
+      const res=await client.rpc('exchange_spirit_flower_r',{
+        p_exchange_id:exchangeId
+      });
+      if(res && res.error) throw res.error;
+
+      let result=res?res.data:null;
+      if(typeof result==='string'){
+        try{result=JSON.parse(result)}catch(_){}
+      }
+      if(!result || result.ok===false) throw new Error((result&&result.message)||'交換に失敗しました');
+
+      state.items.flower_r=Math.max(0,Math.floor(Number(result.remaining_flower_r)||0));
+      Object.keys(result.grants||{}).forEach(id=>{
+        state.items[id]=Math.max(0,Math.floor(Number(state.items[id]||0)))+
+          Math.max(0,Math.floor(Number(result.grants[id]||0)));
+      });
+
+      const userId=String(localStorage.getItem('zukan_user_id')||'').trim();
+      if(userId && typeof window.loadInventoryFromSupabase==='function'){
+        try{await window.loadInventoryFromSupabase(userId)}catch(err){
+          console.warn('[ItemManagement] exchange local inventory sync skipped',err);
+        }
+      }
+
+      if(result.skin && result.skin.character_id && result.skin.skin_id){
+        if(window.CharacterSkins && typeof window.CharacterSkins.notifySkinAcquired==='function'){
+          window.CharacterSkins.notifySkinAcquired(result.skin.character_id,result.skin.skin_id);
+        }
+        if(window.CharacterSkins && typeof window.CharacterSkins.reloadMySkins==='function'){
+          try{await window.CharacterSkins.reloadMySkins()}catch(_){}
+        }
+      }
+
+      try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'))}catch(_){}
+      renderFlowerExchange();
+      render();
+
+      if(result.skin && result.skin.character_id){
+        const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===Number(result.skin.character_id));
+        toast('交換しました：'+((c&&c.name)||'キャラクター')+' 限定衣装');
+      }else{
+        toast('交換しました：'+buildExchangeGrantText(result.grants||{}));
+      }
+    }catch(err){
+      console.error('[ItemManagement] spirit flower exchange failed',err);
+      toast(err&&err.message?err.message:'交換に失敗しました');
+    }finally{
+      state.exchanging=false;
+      renderFlowerExchange();
+    }
+  }
+
   function bind(){
     document.querySelectorAll('#screen-item .item-category-tab').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -473,8 +753,23 @@
     const list=document.getElementById('item-management-list');
     if(list){
       list.addEventListener('click',e=>{
-        const btn=e.target.closest('[data-sell-item]');
-        if(btn && !btn.disabled) openSell(btn.dataset.sellItem);
+        const sellBtn=e.target.closest('[data-sell-item]');
+        if(sellBtn && !sellBtn.disabled){
+          openSell(sellBtn.dataset.sellItem);
+          return;
+        }
+        const exchangeOpen=e.target.closest('[data-open-flower-exchange]');
+        if(exchangeOpen && !exchangeOpen.disabled){
+          openFlowerExchange();
+        }
+      });
+    }
+
+    const exchangeList=document.getElementById('spirit-flower-exchange-list');
+    if(exchangeList){
+      exchangeList.addEventListener('click',e=>{
+        const btn=e.target.closest('[data-flower-exchange-id]');
+        if(btn && !btn.disabled) exchangeFlowerR(btn.dataset.flowerExchangeId);
       });
     }
 
@@ -482,6 +777,7 @@
     if(refreshBtn) refreshBtn.addEventListener('click',refresh);
 
     document.querySelectorAll('[data-item-sell-close]').forEach(el=>el.addEventListener('click',closeSell));
+    document.querySelectorAll('[data-flower-exchange-close]').forEach(el=>el.addEventListener('click',closeFlowerExchange));
 
     const minus=document.getElementById('item-sell-minus');
     const plus=document.getElementById('item-sell-plus');
@@ -505,6 +801,14 @@
 
     window.addEventListener('sasaphia:growth-resources-changed',()=>{
       if(document.getElementById('screen-item')?.classList.contains('active')) refresh();
+    });
+    window.addEventListener('zeraphia:skins-loaded',()=>{
+      const modal=document.getElementById('spirit-flower-exchange-modal');
+      if(modal && !modal.hidden) renderFlowerExchange();
+    });
+    window.addEventListener('zeraphia:skin-changed',()=>{
+      const modal=document.getElementById('spirit-flower-exchange-modal');
+      if(modal && !modal.hidden) renderFlowerExchange();
     });
   }
 
