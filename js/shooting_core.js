@@ -3042,6 +3042,46 @@
   function measureUnitSize(entry) {
     if (!entry || !entry.el) return;
 
+    // CH07/FACELESS object images:
+    // Use the actually visible content size. A fixed square element with
+    // object-fit:contain may contain a tall/narrow image, so the element box
+    // itself is not necessarily the visual object's width.
+    if (
+      entry.objectKind === 'mask' ||
+      entry.objectKind === 'torii'
+    ) {
+      const hostRect = entry.el.getBoundingClientRect();
+
+      let naturalW = 0;
+      let naturalH = 0;
+
+      if (entry.el.tagName === 'IMG') {
+        naturalW = Number(entry.el.naturalWidth || 0);
+        naturalH = Number(entry.el.naturalHeight || 0);
+      } else {
+        const img = entry.el.querySelector && entry.el.querySelector('img');
+        if (img) {
+          naturalW = Number(img.naturalWidth || 0);
+          naturalH = Number(img.naturalHeight || 0);
+        }
+      }
+
+      const boxW = Math.max(1, Number(hostRect.width || 0));
+      const boxH = Math.max(1, Number(hostRect.height || 0));
+
+      if (naturalW > 0 && naturalH > 0) {
+        const scale = Math.min(boxW / naturalW, boxH / naturalH);
+        entry._hw = Math.max(1, naturalW * scale * .5);
+        entry._hh = Math.max(1, naturalH * scale * .5);
+      } else {
+        // Image decode not finished yet. Use the host box temporarily;
+        // an onload hook below will remeasure from the natural dimensions.
+        entry._hw = boxW * .5;
+        entry._hh = boxH * .5;
+      }
+      return;
+    }
+
     // Canvas描画の敵弾はDOMを持たないため、見た目と当たり判定のサイズを
     // 数値で固定する。getBoundingClientRect()を一切呼ばない。
     if (entry.canvasRendered) {
@@ -3120,7 +3160,6 @@
 
     const bulletHalfW = Math.max(1, Number(projectile._hw || 4));
     const bulletHalfH = Math.max(1, Number(projectile._hh || 7));
-    const maskHalf = 39; // CSS上の仮面は78x78
     const x0 = Number(fromX || 0);
     const y0 = Number(fromY || 0);
     const x1 = Number(toX || 0);
@@ -3139,10 +3178,22 @@
 
       const cx = Number(obj.x || 0);
       const cy = Number(obj.y || 0);
+
+      // Use the measured visual dimensions for this object.
+      // This is device/responsive-safe and works independently for masks,
+      // torii, and any future object image size.
+      let objectHalfW = Number(obj._hw || 0);
+      let objectHalfH = Number(obj._hh || 0);
+      if (objectHalfW <= 0 || objectHalfH <= 0) {
+        measureUnitSize(obj);
+        objectHalfW = Math.max(1, Number(obj._hw || 1));
+        objectHalfH = Math.max(1, Number(obj._hh || 1));
+      }
+
       const hitT = segmentAabbEntryT(
         x0, y0, x1, y1,
-        cx - maskHalf - bulletHalfW, cx + maskHalf + bulletHalfW,
-        cy - maskHalf - bulletHalfH, cy + maskHalf + bulletHalfH
+        cx - objectHalfW - bulletHalfW, cx + objectHalfW + bulletHalfW,
+        cy - objectHalfH - bulletHalfH, cy + objectHalfH + bulletHalfH
       );
 
       if (hitT == null || hitT >= bestT) return;
@@ -11271,21 +11322,12 @@
   }
 
   function getFacelessObjectVisualOffsetY(obj) {
-    if (!obj) return 0;
-
-    // build1055:
-    // CH07の仮面 / 鳥居は obj.x / obj.y がそのまま当たり判定中心。
-    // 画像中心も同じ座標へ置く。以前の -34px 補正は、
-    // 逆に「画像中心」と「判定中心」をずらしていたため撤廃。
-    if (
-      isChapter07Stage() &&
-      (obj.objectKind === 'torii' || obj.objectKind === 'mask')
-    ) {
-      return 0;
-    }
-
+    // build1058:
+    // Fixed pixel correction abolished.
+    // Visual placement and hitbox both use obj.x / obj.y as the same center.
     return 0;
   }
+
 
   function positionFacelessObjectVisual(obj) {
     if (!obj || !obj.el) return;
@@ -11333,6 +11375,14 @@
     positionFacelessObjectVisual(obj);
     measureUnitSize(obj);
 
+    // Re-measure once the source image has decoded so object-fit:contain
+    // hitbox uses the exact visible image dimensions.
+    if (!el.complete) {
+      el.addEventListener('load', () => measureUnitSize(obj), { once: true });
+    } else {
+      requestAnimationFrame(() => measureUnitSize(obj));
+    }
+
     // 無貌専用：召喚直後の1発目を確実に出す。
     // Safari/iPhoneで最初のAI更新が遅れても、仮面が無反応に見えないようにする。
     const spawnNow = performance.now();
@@ -11375,15 +11425,12 @@
       Number.isFinite(Number(obj._lastProjectileImpactX)) &&
       Number.isFinite(Number(obj._lastProjectileImpactY)) &&
       Math.abs(visualNow - Number(obj._lastProjectileImpactAt || 0)) <= 80;
-    const forceCenterHit =
-      isChapter07Stage() &&
-      (obj.objectKind === 'mask' || obj.objectKind === 'torii');
-    const hitX = forceCenterHit
-      ? Number(obj.x || 0)
-      : (useProjectileImpact ? Number(obj._lastProjectileImpactX) : Number(obj.x || 0));
-    const hitY = forceCenterHit
-      ? Number(obj.y || 0)
-      : (useProjectileImpact ? Number(obj._lastProjectileImpactY) : Number(obj.y || 0));
+    const hitX = useProjectileImpact
+      ? Number(obj._lastProjectileImpactX)
+      : Number(obj.x || 0);
+    const hitY = useProjectileImpact
+      ? Number(obj._lastProjectileImpactY)
+      : Number(obj.y || 0);
 
     if (!suppressVisual) {
       createHit(hitX, hitY, !!obj.ambushMinion);
@@ -11811,6 +11858,15 @@
     state.ch07ToriiObject = obj;
     positionFacelessObjectVisual(obj);
     measureUnitSize(obj);
+
+    const toriiImg = el.querySelector('img');
+    if (toriiImg) {
+      if (!toriiImg.complete) {
+        toriiImg.addEventListener('load', () => measureUnitSize(obj), { once: true });
+      } else {
+        requestAnimationFrame(() => measureUnitSize(obj));
+      }
+    }
 
     const windowMs = Math.max(1200, Number(cfg.toriiBreakWindowMs || 2800));
     state.ch07VanishState = {
