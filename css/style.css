@@ -24408,7 +24408,7 @@ body {
   min-width:0;
   min-height:0;
   overflow:hidden;
-  background-image:url("../images/nore.webp");
+  background-image:url("../images/noah.webp");
   background-repeat:no-repeat;
   background-size:300% 300%;
   opacity:1;
@@ -40181,10 +40181,10 @@ html body textarea{
 
 /* ============================================================
    build799 NOAH / TRUE TWO-SIDED PUZZLE
-   CLOSED = ZERAPHIA logo back, OPEN = nore.webp front
+   CLOSED = ZERAPHIA logo back, OPEN = noah.webp front
    - 0/9 : full logo composed by all nine closed tiles
-   - 1/9 : one tile reveals nore.webp, eight remain logo
-   - 9/9 : full nore.webp is completed
+   - 1/9 : one tile reveals noah.webp, eight remain logo
+   - 9/9 : full noah.webp is completed
    - action block stays directly beneath the puzzle
    ============================================================ */
 #noah-piece-overlay .noah-piece-screen{
@@ -40260,9 +40260,9 @@ html body textarea{
   display:none !important;
 }
 
-/* OPEN / front side: the exact same ninth of nore.webp. */
+/* OPEN / front side: the exact same ninth of noah.webp. */
 #noah-piece-overlay .noah-puzzle-piece.open{
-  background-image:url("../images/nore.webp?v=799") !important;
+  background-image:url("../images/noah.webp?v=799") !important;
   opacity:1 !important;
   filter:none !important;
   animation:noahPieceTurn799 .62s cubic-bezier(.22,.72,.18,1) both !important;
@@ -40367,7 +40367,7 @@ html body textarea{
    build800 NOAH / ONE LOGO, NINE WINDOWS
    The back side is ONE continuous ZERAPHIA logo image across the whole board.
    Locked cells are transparent windows over that single image.
-   Open cells replace only their own 1/9 with the matching nore.webp fragment.
+   Open cells replace only their own 1/9 with the matching noah.webp fragment.
    ============================================================ */
 #noah-piece-overlay .noah-puzzle-grid{
   position:relative !important;
@@ -40405,9 +40405,9 @@ html body textarea{
   display:none !important;
 }
 
-/* OPEN: reveal the corresponding one ninth of nore.webp over the logo. */
+/* OPEN: reveal the corresponding one ninth of noah.webp over the logo. */
 #noah-piece-overlay .noah-puzzle-piece.open{
-  background-image:url("../images/nore.webp?v=800") !important;
+  background-image:url("../images/noah.webp?v=800") !important;
   background-size:300% 300% !important;
   background-repeat:no-repeat !important;
   background-color:#faf8f3 !important;
@@ -41102,7 +41102,7 @@ html body textarea{
    build956 NOAH / CENTERED PUZZLE LOGO + CUSTOM IMAGE
    - locked state shows one centered logo across the whole 3x3 board
    - preserve logo aspect ratio
-   - open pieces reveal nore.webp in 9 slices
+   - open pieces reveal noah.webp in 9 slices
    - use the user-provided puzzle logo asset
    ============================================================ */
 #noah-piece-overlay .noah-puzzle-grid{
@@ -41141,7 +41141,7 @@ html body textarea{
 }
 
 #noah-piece-overlay .noah-puzzle-piece.open{
-  background-image:url("../images/nore.webp?v=957") !important;
+  background-image:url("../images/noah.webp?v=957") !important;
   background-repeat:no-repeat !important;
   background-size:300% 300% !important;
   background-color:#f8f6f1 !important;
@@ -41238,7 +41238,7 @@ html body textarea{
 
 /* Open = front side / Noah. Keep the existing inline 0/50/100% background positions. */
 #noah-piece-overlay .noah-puzzle-piece.open{
-  background-image:url("../images/nore.webp?v=958") !important;
+  background-image:url("../images/noah.webp?v=958") !important;
   background-repeat:no-repeat !important;
   background-size:300% 300% !important;
   animation:noahPieceTurn799 .62s cubic-bezier(.22,.72,.18,1) both !important;

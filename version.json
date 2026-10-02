@@ -1,7 +1,7 @@
 {
-  "build": 1038,
-  "published_at": "2026-10-02T11:49:00+09:00",
-  "label": "noah_wave1_wall_trigger_no_start_gimmick",
+  "build": 1040,
+  "published_at": "2026-10-02T12:11:00+09:00",
+  "label": "abort_mission_transition",
   "release_protocol": 2,
   "commit_marker": true
 }

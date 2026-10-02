@@ -11462,3 +11462,71 @@ html body:not(.ui-immersive)
     0 0 14px rgba(213,181,111,.52),
     0 0 24px rgba(255,245,211,.38);
 }
+
+
+/* ============================================================
+   build1040 ABORT MISSION transition
+   PAUSE > ステージ終了：バトル画面へ戻し、ABORT MISSION表示後に白フェード。
+   ============================================================ */
+#shooting-event-root .shooting-abort-mission{
+  position:absolute;
+  inset:0;
+  z-index:260;
+  display:block;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  overflow:hidden;
+}
+#shooting-event-root .shooting-abort-mission.show{
+  opacity:1;
+  visibility:visible;
+}
+#shooting-event-root .shooting-abort-mission-copy{
+  position:absolute;
+  z-index:2;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  color:rgba(255,255,255,.96);
+  font-family:"Cinzel","Times New Roman",serif;
+  font-size:clamp(22px,7vw,34px);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:.22em;
+  white-space:nowrap;
+  text-indent:.22em;
+  text-shadow:0 2px 12px rgba(30,24,20,.38);
+  opacity:0;
+  animation:none;
+}
+#shooting-event-root .shooting-abort-mission.show .shooting-abort-mission-copy{
+  animation:shootingAbortMissionCopy1040 720ms cubic-bezier(.22,.72,.2,1) both;
+}
+#shooting-event-root .shooting-abort-mission-fade{
+  position:absolute;
+  z-index:3;
+  inset:0;
+  background:#fffdf8;
+  opacity:0;
+}
+#shooting-event-root .shooting-abort-mission.fadeout .shooting-abort-mission-copy{
+  opacity:0 !important;
+  transition:opacity 260ms ease-out;
+}
+#shooting-event-root .shooting-abort-mission.fadeout .shooting-abort-mission-fade{
+  opacity:1;
+  transition:opacity 620ms ease-in;
+}
+@keyframes shootingAbortMissionCopy1040{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.96);letter-spacing:.28em}
+  26%{opacity:1;transform:translate(-50%,-50%) scale(1);letter-spacing:.22em}
+  78%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:.92;transform:translate(-50%,-50%) scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root .shooting-abort-mission.show .shooting-abort-mission-copy{
+    animation:none!important;
+    opacity:1!important;
+  }
+}

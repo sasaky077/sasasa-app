@@ -440,7 +440,7 @@
       implemented: true,
       name: '理想郷：ノア',
       displayName: 'SPECIAL STAGE　理想郷：ノア',
-      image: 'images/nore_battle.webp',
+      image: 'images/noah_battle.webp',
       element: 'light',
 
       gaugeHp: 5000,

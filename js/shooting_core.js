@@ -15193,7 +15193,7 @@
       meta.kicker = 'SPECIAL STAGE';
       meta.title = '理想郷：ノア';
       meta.sub = '楽園 -ノア-';
-      meta.image = selectedStage.introImage || 'images/nore_battle_start.webp';
+      meta.image = selectedStage.introImage || 'images/noah_battle_start.webp';
     } else if (lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
       meta.title = 'オーバーシア';
@@ -17969,19 +17969,81 @@
     window.restartShootingEvent();
   };
 
-  window.exitShootingStageFromPause = function () {
+  let shootingAbortMissionRunning = false;
+
+  function ensureShootingAbortMissionOverlay() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return null;
+
+    let overlay = root.querySelector('#shooting-abort-mission');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'shooting-abort-mission';
+    overlay.className = 'shooting-abort-mission';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="shooting-abort-mission-copy">ABORT MISSION</div>
+      <div class="shooting-abort-mission-fade" aria-hidden="true"></div>
+    `;
+    root.appendChild(overlay);
+    return overlay;
+  }
+
+  function sleepShootingAbort(ms) {
+    return new Promise(resolve => window.setTimeout(resolve, Math.max(0, Number(ms || 0))));
+  }
+
+  window.exitShootingStageFromPause = async function () {
+    if (shootingAbortMissionRunning) return;
+    shootingAbortMissionRunning = true;
+
     const menu = document.getElementById('shooting-pause-menu');
     if (menu) {
       menu.classList.remove('show');
       menu.setAttribute('aria-hidden', 'true');
     }
+
+    // バトル画面自体は見せ直すが、演出中は戦闘ロジックを停止したままにする。
+    if (state) {
+      state.paused = true;
+      state.pauseStartedAt = performance.now();
+    }
+    pointerActive = false;
+    pointerIsTouch = false;
+    nativeTouchPointerFallback = false;
+    nativeTouchActive = false;
+    activeTouchIdentifier = null;
+    clearNativeTouchCancelTimer();
+    keys = Object.create(null);
+
+    const pauseRoot = document.getElementById(ROOT_ID);
+    if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
+
+    const overlay = ensureShootingAbortMissionOverlay();
+    if (!overlay) {
+      shootingAbortMissionRunning = false;
+      return window.closeShootingEvent();
+    }
+
+    // PAUSEカードが消えた直後に一度バトル画面を見せてから表示する。
+    overlay.classList.remove('show', 'fadeout');
+    overlay.setAttribute('aria-hidden', 'false');
+    await sleepShootingAbort(90);
+    overlay.classList.add('show');
+
+    // ABORT MISSIONを短く見せた後、白へフェードアウト。
+    await sleepShootingAbort(720);
+    fadeOutShootingBattleBgm(520, true);
+    overlay.classList.add('fadeout');
+    await sleepShootingAbort(650);
+
     if (state) {
       state.paused = false;
       state.pauseStartedAt = 0;
     }
-    const pauseRoot = document.getElementById(ROOT_ID);
-    if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
-    window.closeShootingEvent();
+    await window.closeShootingEvent();
+    shootingAbortMissionRunning = false;
   };
 
   function getSelectedStageTicketCost() {
