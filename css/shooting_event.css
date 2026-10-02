@@ -11488,7 +11488,7 @@ html body:not(.ui-immersive)
   left:50%;
   top:50%;
   transform:translate(-50%,-50%);
-  color:rgba(255,255,255,.96);
+  color:#785a32;
   font-family:"Cinzel","Times New Roman",serif;
   font-size:clamp(22px,7vw,34px);
   font-weight:500;
@@ -11496,7 +11496,7 @@ html body:not(.ui-immersive)
   letter-spacing:.22em;
   white-space:nowrap;
   text-indent:.22em;
-  text-shadow:0 2px 12px rgba(30,24,20,.38);
+  text-shadow:0 1px 0 rgba(255,255,255,.88),0 4px 16px rgba(92,67,35,.18);
   opacity:0;
   animation:none;
 }
@@ -11529,4 +11529,13 @@ html body:not(.ui-immersive)
     animation:none!important;
     opacity:1!important;
   }
+}
+
+
+/* ============================================================
+   build1041 BOSS FRONT LAYER
+   Boss artwork must render in front of the boss HP/name HUD when they overlap.
+   ============================================================ */
+#shooting-event-root .shooting-boss{
+  z-index:20 !important;
 }

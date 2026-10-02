@@ -1,7 +1,7 @@
 {
-  "build": 1040,
-  "published_at": "2026-10-02T12:11:00+09:00",
-  "label": "abort_mission_transition",
+  "build": 1041,
+  "published_at": "2026-10-02T12:13:00+09:00",
+  "label": "abort_brown_boss_front",
   "release_protocol": 2,
   "commit_marker": true
 }
