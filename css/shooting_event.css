@@ -11872,3 +11872,77 @@ html body:not(.ui-immersive)
     0 0 28px rgba(158,181,207,.26)!important;
   pointer-events:none!important;
 }
+
+
+/* ============================================================
+   build1055 CH07 OBJECT HIT FEEDBACK
+   Mask / torii visual center is exactly the object hitbox center.
+   ============================================================ */
+
+/* 仮面・鳥居本体を1発ごとに白く短く発光。 */
+#shooting-event-root[data-shooting-stage^="shooting_ch07_"]
+.shooting-faceless-object.faceless-hit-flash,
+#shooting-event-root[data-shooting-stage^="shooting_beginner_ch07_"]
+.shooting-faceless-object.faceless-hit-flash{
+  filter:
+    brightness(2.15)
+    saturate(.58)
+    drop-shadow(0 0 9px rgba(255,255,255,.96))
+    drop-shadow(0 0 17px rgba(199,177,220,.78))!important;
+  transform:
+    translate3d(var(--unit-x),var(--unit-y),0)
+    translate(-50%,-50%)
+    scale(1.065)!important;
+}
+
+/* 着弾点に出す軽量な二重リング。 */
+#shooting-event-root .shooting-ch07-object-hit{
+  position:absolute;
+  z-index:31;
+  left:0;
+  top:0;
+  width:18px;
+  height:18px;
+  border:1px solid rgba(255,255,255,.96);
+  border-radius:50%;
+  pointer-events:none;
+  opacity:0;
+  box-shadow:
+    0 0 7px rgba(255,255,255,.92),
+    0 0 14px rgba(182,145,210,.64);
+  will-change:transform,opacity;
+}
+
+#shooting-event-root .shooting-ch07-object-hit::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:5px;
+  height:5px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 0 7px rgba(205,176,228,.90);
+}
+
+#shooting-event-root .shooting-ch07-object-hit.show{
+  animation:shootingCh07ObjectHit .22s ease-out forwards;
+}
+
+@keyframes shootingCh07ObjectHit{
+  0%{
+    opacity:1;
+    transform:
+      translate3d(var(--unit-x),var(--unit-y),0)
+      translate(-50%,-50%)
+      scale(.55);
+  }
+  100%{
+    opacity:0;
+    transform:
+      translate3d(var(--unit-x),var(--unit-y),0)
+      translate(-50%,-50%)
+      scale(1.65);
+  }
+}

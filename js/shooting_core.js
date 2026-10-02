@@ -11272,12 +11272,18 @@
 
   function getFacelessObjectVisualOffsetY(obj) {
     if (!obj) return 0;
-    // CH07では「今の当たり判定位置」を基準に、画像だけ上へ寄せる。
-    // 判定座標そのものは変えないためゲームバランスには影響しない。
-    if (isChapter07Stage()) {
-      if (obj.objectKind === 'torii') return -34;
-      if (obj.objectKind === 'mask') return -34;
+
+    // build1055:
+    // CH07の仮面 / 鳥居は obj.x / obj.y がそのまま当たり判定中心。
+    // 画像中心も同じ座標へ置く。以前の -34px 補正は、
+    // 逆に「画像中心」と「判定中心」をずらしていたため撤廃。
+    if (
+      isChapter07Stage() &&
+      (obj.objectKind === 'torii' || obj.objectKind === 'mask')
+    ) {
+      return 0;
     }
+
     return 0;
   }
 
@@ -11336,6 +11342,22 @@
     return obj;
   }
 
+  function createChapter07ObjectHitEffect(x, y, objectKind = 'mask') {
+    if (!isChapter07Stage()) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const el = document.createElement('div');
+    el.className =
+      'shooting-ch07-object-hit' +
+      (objectKind === 'torii' ? ' torii' : ' mask');
+    arena.appendChild(el);
+    positionUnit(el, Number(x || 0), Number(y || 0));
+
+    requestAnimationFrame(() => el.classList.add('show'));
+    window.setTimeout(() => el.remove(), 240);
+  }
+
   function damageFacelessObject(obj, damage, now, elementReaction = '', suppressVisual = false) {
     if (!obj || obj.hp <= 0) return 0;
     // CH07の仮面 / 鳥居は火力ではなくHIT数で破壊。
@@ -11358,6 +11380,16 @@
 
     if (!suppressVisual) {
       createHit(hitX, hitY, !!obj.ambushMinion);
+
+      // CH07の仮面 / 鳥居は、通常HITリングに加えて
+      // オブジェクト専用の短い被弾フラッシュを出す。
+      if (
+        isChapter07Stage() &&
+        (obj.objectKind === 'mask' || obj.objectKind === 'torii')
+      ) {
+        createChapter07ObjectHitEffect(hitX, hitY, obj.objectKind);
+      }
+
       showDamageNumber(obj.x, obj.y, appliedDamage, 'enemy', !!obj.ambushMinion, elementReaction);
       if (obj.el) {
         sustainHitFeedback(obj.el, obj.ambushMinion ? 190 : 175);

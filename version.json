@@ -1,7 +1,7 @@
 {
-  "build": 1054,
-  "published_at": "2026-10-02T21:52:00+09:00",
-  "label": "ch07_hitbox_shield_alignment",
+  "build": 1055,
+  "published_at": "2026-10-02T22:08:00+09:00",
+  "label": "ch07_object_hit_feedback_center",
   "release_protocol": 2,
   "commit_marker": true
 }
