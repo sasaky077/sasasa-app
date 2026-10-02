@@ -979,7 +979,7 @@
   "39": {
     "id": 39,
     "name": "レオナクロス",
-    "element": "dark",
+    "element": "neutral",
     "hp": 590,
     "atk": 270,
     "image": "images/chara_39_battle_back.webp",
@@ -1934,8 +1934,8 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'PIERCING / WOOD', description: '高威力の単発貫通射撃。敵を貫通して直進し、同じ弾が複数の敵へ命中できる。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'piercing', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    label: 'CLUSTER 4 / WOOD', description: '着弾時にX字4方向へWOOD属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
     ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
   });
 
@@ -2201,7 +2201,7 @@
   });
 
   // ============================================================
-  // build1022: ID39 レオナクロス / DARK / TRAP
+  // build935: ID39 レムナクロス / NEUTRAL / TRAP
   // 2秒ごとに中距離へ地雷を投擲。設置後3秒、または敵接触で爆発する。
   // 設置前の直撃は爆発せず、爆発基準ダメージの50%のみ。
   // ULTはSIGMA-IX「ブラックシップ」と同じ5秒レーザー処理を共用。
@@ -2211,7 +2211,7 @@
     id: CHARACTER_ID.REMNACROSS,
     effectKey: 'remnacross',
     label: 'TRAP / PHOTON BUSTER 202',
-    description: '闇属性の罠師。2秒ごとに中距離へ地雷を投げ、設置から3秒後または敵接触で範囲爆発させる。設置前に敵へ直撃した場合は爆発せず、爆発ダメージの50%だけを与える。ULTは5秒間の無属性極太レーザー。',
+    description: '無属性の罠師。2秒ごとに中距離へ地雷を投げ、設置から3秒後または敵接触で範囲爆発させる。設置前に敵へ直撃した場合は爆発せず、爆発ダメージの50%だけを与える。ULTは5秒間の無属性極太レーザー。',
     ultName: '対神性滅焼破壊砲 -フォトンバスター 202-',
     ultDescription: 'SIGMA-IX「ブラックシップ」と同じ方式で、正面へ極太レーザーを5秒間連続照射する。攻撃属性は無属性。0.25秒ごとにATK×35%のダメージ判定が発生する。',
     shotType: 'trap',
@@ -2435,6 +2435,9 @@
               <span class="shooting-character-portrait">
                 <img src="${c.panelImage || c.image}"
                      alt="${owned ? c.name : '未所持'}"
+                     loading="${owned ? 'eager' : 'lazy'}"
+                     decoding="async"
+                     fetchpriority="${owned ? 'auto' : 'low'}"
                      draggable="false">
                 ${owned ? `<img class="shooting-character-element-icon"
                                src="${getShootingRosterElementIcon(c.element)}"

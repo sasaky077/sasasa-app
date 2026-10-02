@@ -1160,6 +1160,14 @@
     }
 
     renderList(chapter, mode);
+
+    // build1049: ユーザーがステージを選んでいる時間を利用して、
+    // 所持キャラのパーティ用パネル画像を先読み＋decodeしておく。
+    // これにより「ステージ選択 → パーティ編成」で画像が後から埋まる待ちを減らす。
+    if (typeof window.warmShootingPartyPanels === 'function') {
+      window.warmShootingPartyPanels();
+    }
+
     el.dataset.chapter = String(chapter);
     el.dataset.storyMode = mode === 'beginner' ? 'beginner' : 'normal';
 

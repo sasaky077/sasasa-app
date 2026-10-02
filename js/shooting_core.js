@@ -2064,10 +2064,43 @@
   }
   let BOSS = getCurrentShootingEnemy();
 
+  function getShootingRosterStateSignature() {
+    return Object.values(SHOOTING_CHARACTERS)
+      .filter(c => c && isPublicShootingCharacterId(c.id))
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .map(c => {
+        const ownedData = getOwnedShootingInstance(c.id);
+        const level = ownedData
+          ? Math.max(1, Math.floor(Number(
+              ownedData.characterLevel != null
+                ? ownedData.characterLevel
+                : (ownedData.character_level != null ? ownedData.character_level : 1)
+            ) || 1))
+          : 0;
+        return [
+          Number(c.id),
+          ownedData ? 1 : 0,
+          level,
+          String(c.panelImage || c.image || '')
+        ].join(':');
+      })
+      .join('|');
+  }
+
   function refreshShootingRoster() {
     const roster = document.querySelector('.shooting-party-roster');
     if (!roster) return;
-    roster.innerHTML = getShootingRosterHtml();
+
+    const rosterSignature = getShootingRosterStateSignature();
+
+    // build1049:
+    // buildRoot() が生成した直後のキャラ画像DOMを、同じ内容でinnerHTMLし直すと
+    // 全パネル画像のdecode/loadingが最初からやり直しになり体感が非常に遅い。
+    // 所持状態/レベル/画像に変化がない限りDOMをそのまま再利用する。
+    if (roster.dataset.rosterSignature !== rosterSignature) {
+      roster.innerHTML = getShootingRosterHtml();
+      roster.dataset.rosterSignature = rosterSignature;
+    }
 
     // 非公開キャラクターは、ShootingCharacters側に定義が残っていても表示しない。
     HIDDEN_SHOOTING_CHARACTER_IDS.forEach(id => {
@@ -4564,6 +4597,13 @@
     drawCircleLayer('ch06', 'rgba(226,246,255,.99)', .43);
     drawRing('ch06', 'rgba(170,222,248,.92)', 1.08, .9);
 
+    // CH07: DARK。REMNANT07/分身体などCH07固有弾の描画。
+    drawCircleLayer('ch07', 'rgba(128,84,174,.25)', 1.62);
+    drawCircleLayer('ch07', 'rgba(128,84,174,.98)', 1.08);
+    drawCircleLayer('ch07', 'rgba(92,54,130,1)', .66);
+    drawCircleLayer('ch07', 'rgba(236,221,247,.94)', .20);
+    drawRing('ch07', 'rgba(180,139,212,.96)', 1.10, .95);
+
     // CH04: 黄色のドロップ / 流星型。
     // CH04: 黄色のドロップ / 流星型。
     // DOMは増やさず、Canvas上で「尾 + 丸い芯」を3層描画する軽量モデル。
@@ -4809,6 +4849,7 @@
       const virtualEl = createCanvasProjectileElement(className);
       const isDanger = className.includes('shooting-danger-bullet');
       const isFacelessObjectBullet = className.includes('shooting-faceless-object-bullet');
+      const isFacelessBullet = className.includes('shooting-faceless-bullet');
       const isScoreAttackBullet = className.includes('shooting-score-attack-bullet');
       const isRaidLaser = className.includes('shooting-raid-green-laser');
       const isRaidBullet = isRaidStage();
@@ -4834,7 +4875,9 @@
                 ? 'raid'
                 : (isNoahStage()
                   ? 'noah'
-                  : (isFacelessStage() ? 'faceless' : (storyChapter ? `ch0${storyChapter}` : 'normal')))))));
+                  : ((isFacelessStage() || isFacelessBullet)
+                    ? 'faceless'
+                    : (storyChapter ? `ch0${storyChapter}` : 'normal')))))));
       const p = {
         el: virtualEl,
         x, y, vx, vy,
@@ -14512,10 +14555,51 @@
     void preloadSelectedPartyUltCutins(ids, 7000);
   }
 
+  const shootingPartyPanelWarmCache = new Set();
+
+  function getShootingPartyPanelSources() {
+    return Object.values(SHOOTING_CHARACTERS)
+      .filter(c => c && isPublicShootingCharacterId(c.id) && isShootingCharacterOwned(c.id))
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .map(c => String(c.panelImage || c.image || ''))
+      .filter(Boolean);
+  }
+
+  async function warmShootingPartyPanels() {
+    const sources = getShootingPartyPanelSources()
+      .filter(src => !shootingPartyPanelWarmCache.has(src));
+    if (!sources.length) return;
+
+    // 同時に大量リクエストを投げず4本ずつ。通信よりも画像decode詰まりを抑える。
+    const concurrency = 4;
+    let cursor = 0;
+
+    async function worker() {
+      while (cursor < sources.length) {
+        const src = sources[cursor++];
+        if (!src || shootingPartyPanelWarmCache.has(src)) continue;
+        try {
+          await preloadShootingImage(src, 12000, false);
+          shootingPartyPanelWarmCache.add(src);
+        } catch (_) {}
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, sources.length) }, () => worker())
+    );
+  }
+
+  // ステージ選択画面から先行して呼べるよう公開。
+  window.warmShootingPartyPanels = function() {
+    void warmShootingPartyPanels();
+  };
+
   function warmShootingAssets() {
-    // build936:
-    // 全キャラ一括ロードはしない。選択済みパーティ最大3人のULTカットインだけを先読みする。
-    // これによりULT入力後の画像decode待ちを戦闘中へ持ち込まない。
+    // build1049:
+    // パーティ編成用パネルはステージ選択中から先読み・decode。
+    // ULTカットインは従来どおり選択済みパーティのみ。
+    void warmShootingPartyPanels();
     warmSelectedPartyUltCutins();
   }
 
@@ -19153,6 +19237,7 @@
 
     // パーティ選択中に、その後のバトル画像・ULT・敵画像を先読みしておく。
     warmShootingAssets();
+    const shootingRootExistedBeforeBuild = !!document.getElementById(ROOT_ID);
     const root = UIModule.buildRoot({
       ROOT_ID, PLAYER_ID, BOSS_ID, BOSS, SHOOTING_CHARACTERS, CHARACTER_ID,
       getShootingRosterHtml,
@@ -19164,6 +19249,16 @@
       onNativeTouchEnd,
       onNativeTouchCancel
     });
+
+    // buildRoot直後のロスターは現在のマスターから生成済み。
+    // refreshShootingRoster()で同じ画像DOMを破棄しないよう署名を付ける。
+    if (!shootingRootExistedBeforeBuild) {
+      const initialRoster = root.querySelector('.shooting-party-roster');
+      if (initialRoster) {
+        initialRoster.dataset.rosterSignature = getShootingRosterStateSignature();
+      }
+    }
+
     const bossImage = document.getElementById(BOSS_ID);
     if (bossImage) {
       const selectedBossImage = getSelectedBossImage();

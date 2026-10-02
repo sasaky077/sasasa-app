@@ -1,7 +1,7 @@
 {
-  "build": 1048,
-  "published_at": "2026-10-02T17:18:00+09:00",
-  "label": "ch07_torii_image_asset",
+  "build": 1050,
+  "published_at": "2026-10-02T18:03:00+09:00",
+  "label": "ch07_enemy_bullet_visible",
   "release_protocol": 2,
   "commit_marker": true
 }
