@@ -11700,9 +11700,10 @@ html body:not(.ui-immersive)
 /* 開幕完全シールド。属性バリアとは別レイヤー。 */
 #shooting-event-root .shooting-ch07-complete-shield{
   position:absolute;
-  z-index:15;
-  width:156px;
-  height:156px;
+  left:0;
+  top:0;
+  z-index:23;
+  box-sizing:border-box;
   border:2px solid rgba(238,244,255,.88);
   border-radius:50%;
   background:
@@ -11852,4 +11853,22 @@ html body:not(.ui-immersive)
     transform:translate3d(var(--boss-x,0),var(--boss-y,0),0)
               translate(-50%,-50%) scale(1);
   }
+}
+
+
+/* build1054: CH07 complete shield aligns 1:1 with elemental shield geometry. */
+#shooting-event-root[data-shooting-stage="shooting_ch07_03"] .shooting-ch07-complete-shield,
+#shooting-event-root[data-shooting-stage="shooting_beginner_ch07_03"] .shooting-ch07-complete-shield{
+  border-color:rgba(242,248,255,.80)!important;
+  background:
+    radial-gradient(circle,
+      rgba(255,255,255,.025) 0 54%,
+      rgba(219,231,244,.10) 66%,
+      rgba(184,202,222,.20) 72%,
+      transparent 75%)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.32) inset,
+    0 0 13px rgba(224,237,250,.42),
+    0 0 28px rgba(158,181,207,.26)!important;
+  pointer-events:none!important;
 }

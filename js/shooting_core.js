@@ -3735,6 +3735,11 @@
       el.style.setProperty('--boss-x', `${x}px`);
       el.style.setProperty('--boss-y', `${y}px`);
       syncBossWeaknessBarrierPosition(x, y);
+
+      const completeShield = document.getElementById('shooting-ch07-complete-shield');
+      if (completeShield) {
+        syncChapter07CompleteShieldPosition(completeShield, x, y);
+      }
     }
 
     // Scale is placed AFTER translation so changing enemy size never scales
@@ -7067,6 +7072,17 @@
 
   function shouldShowBossWeaknessBarrier() {
     if (!selectedStage || selectedStage.type === 'normal' || !BOSS) return false;
+
+    // CH07-3開幕は「完全シールド」が属性バリアを覆う。
+    // FACELESS撃破後に complete shield が消えた瞬間、紫の属性バリアへ切り替える。
+    if (
+      isChapter07BossStage() &&
+      state &&
+      state.ch07InitialShieldActive
+    ) {
+      return false;
+    }
+
     const enemyElement = normalizeCombatElement(BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
     return enemyElement !== 'neutral' && isStageWeaknessOnlyTarget(enemyElement);
   }
@@ -11254,6 +11270,30 @@
     setTimeout(() => el.remove(), 1050);
   }
 
+  function getFacelessObjectVisualOffsetY(obj) {
+    if (!obj) return 0;
+    // CH07では「今の当たり判定位置」を基準に、画像だけ上へ寄せる。
+    // 判定座標そのものは変えないためゲームバランスには影響しない。
+    if (isChapter07Stage()) {
+      if (obj.objectKind === 'torii') return -34;
+      if (obj.objectKind === 'mask') return -34;
+    }
+    return 0;
+  }
+
+  function positionFacelessObjectVisual(obj) {
+    if (!obj || !obj.el) return;
+    const visualY = Number(obj.y || 0) + getFacelessObjectVisualOffsetY(obj);
+    positionUnit(obj.el, Number(obj.x || 0), visualY);
+
+    if (obj.hpEl) {
+      const isTorii = obj.objectKind === 'torii';
+      const isR07Clone = obj.objectKind === 'remnant07_clone';
+      const hpOffset = isTorii ? 66 : (isR07Clone ? 64 : 56);
+      positionUnit(obj.hpEl, Number(obj.x || 0), visualY + hpOffset);
+    }
+  }
+
   function spawnFacelessObject(x, y, ways) {
     if (!state || !hasFacelessObjectMechanics()) return null;
     const arena = document.getElementById('shooting-arena');
@@ -11284,8 +11324,7 @@
       objectKind: 'mask',
     };
     state.facelessObjects.push(obj);
-    positionUnit(el, x, y);
-    positionUnit(hpEl, x, y + 56);
+    positionFacelessObjectVisual(obj);
     measureUnitSize(obj);
 
     // 無貌専用：召喚直後の1発目を確実に出す。
@@ -11441,15 +11480,13 @@
       if (Number(obj.hp || 0) <= 0) {
         const stillBlocking = now < Number(obj.blockingUntil || 0) && !!obj.el?.isConnected;
         if (!stillBlocking) return false;
-        positionUnit(obj.el, obj.x, obj.y);
-        if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        positionFacelessObjectVisual(obj);
         return true;
       }
 
       // CH07鳥居は固定ユニット。射撃も行わない。
       if (obj.objectKind === 'torii') {
-        positionUnit(obj.el, obj.x, obj.y);
-        if (obj.hpEl) positionUnit(obj.hpEl, obj.x, obj.y + 66);
+        positionFacelessObjectVisual(obj);
         return true;
       }
 
@@ -11457,16 +11494,14 @@
       // 既に盤面にある敵弾はupdateProjectiles側で通常どおり進行する。
       if (now < Number(state.angeEnemyFreezeUntil || 0)) {
         deferFacelessObjectAttackResume(obj, Number(state.angeEnemyFreezeUntil || now));
-        positionUnit(obj.el, obj.x, obj.y);
-        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        positionFacelessObjectVisual(obj);
         return true;
       }
 
       // ノアULT後：落雷を受けたOBJECTも、移動停止と射撃生成停止をセットで維持。
       if (now < Number(obj.noahStunUntil || 0)) {
         deferFacelessObjectAttackResume(obj, Number(obj.noahStunUntil || now));
-        positionUnit(obj.el, obj.x, obj.y);
-        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        positionFacelessObjectVisual(obj);
         return true;
       }
 
@@ -11474,8 +11509,7 @@
       // 解除後に即連射しないよう、最終射撃時刻を拘束終了時刻まで進める。
       if (now < Number(obj.gojoPurpleFreezeUntil || 0)) {
         deferFacelessObjectAttackResume(obj, Number(obj.gojoPurpleFreezeUntil || now));
-        positionUnit(obj.el, obj.x, obj.y);
-        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        positionFacelessObjectVisual(obj);
         return true;
       }
 
@@ -11483,8 +11517,7 @@
       // 吸引処理だけに座標更新を一元化する。
       if (activePullField) {
         deferFacelessObjectAttackResume(obj, Number(state.eltenaBlackHole?.activeUntil || now));
-        positionUnit(obj.el, obj.x, obj.y);
-        positionUnit(obj.hpEl, obj.x, obj.y + 56);
+        positionFacelessObjectVisual(obj);
         return true;
       }
 
@@ -11497,8 +11530,7 @@
         obj.x = clamp(obj.x, minX, maxX);
         obj.vx *= -1;
       }
-      positionUnit(obj.el, obj.x, obj.y);
-      positionUnit(obj.hpEl, obj.x, obj.y + (isR07Clone ? 64 : 56));
+      positionFacelessObjectVisual(obj);
       fireFacelessObject(obj, now);
       return true;
     });
@@ -11651,10 +11683,29 @@
     return spawned < total || aliveFaceless;
   }
 
+  function syncChapter07CompleteShieldPosition(shield, x, y) {
+    if (!shield) return;
+
+    // 紫の属性バリア(syncBossWeaknessBarrierPosition)と
+    // まったく同じBOSS box / responsive scaleを使う。
+    const boss = document.getElementById(BOSS_ID);
+    const baseW = Math.max(1, Number(boss && boss.offsetWidth || 128));
+    const baseH = Math.max(1, Number(boss && boss.offsetHeight || 128));
+    const scale = Math.max(.1, Number(getResponsiveBossDisplayScale() || 1));
+
+    shield.style.width = `${baseW + 12}px`;
+    shield.style.height = `${baseH + 12}px`;
+    shield.style.setProperty('--boss-shield-scale', String(scale));
+    shield.style.transform =
+      `translate3d(${Number(x || 0)}px,${Number(y || 0)}px,0) ` +
+      `translate(-50%,-50%) scale(var(--boss-shield-scale,1))`;
+  }
+
   function ensureChapter07CompleteShield() {
     if (!state || !isChapter07BossStage()) return null;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
+
     let shield = document.getElementById('shooting-ch07-complete-shield');
     if (!shield) {
       shield = document.createElement('div');
@@ -11663,7 +11714,8 @@
       shield.setAttribute('aria-hidden', 'true');
       arena.appendChild(shield);
     }
-    positionUnit(shield, state.boss.x, state.boss.y);
+
+    syncChapter07CompleteShieldPosition(shield, state.boss.x, state.boss.y);
     return shield;
   }
 
@@ -11710,8 +11762,7 @@
     };
     state.facelessObjects.push(obj);
     state.ch07ToriiObject = obj;
-    positionUnit(el, x, y);
-    positionUnit(hpEl, x, y + 66);
+    positionFacelessObjectVisual(obj);
     measureUnitSize(obj);
 
     const windowMs = Math.max(1200, Number(cfg.toriiBreakWindowMs || 2800));
@@ -12025,6 +12076,10 @@
       state.ch07InitialShieldActive = false;
       state.ch07InitialShieldHp = 0;
       removeChapter07CompleteShield();
+
+      // 見た目を「透明シールド → 紫の属性バリア」へ即時切替。
+      syncBossWeaknessBarrierPosition(state.boss.x, state.boss.y);
+
       showFacelessBattleCut('SHIELD BREAK', 'REMNANT 07');
       state.ch07NextDashAt = ts + 2300;
       state.ch07NextVanishAt = ts + 5200;
