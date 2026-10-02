@@ -174,7 +174,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        text: '生命エネルギーを取得しろ',
       }),
 
       playable: true,
@@ -476,7 +476,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        text: '生命エネルギーを取得しろ',
       }),
 
       playable: true,
@@ -524,7 +524,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        text: '生命エネルギーを取得しろ',
       }),
 
       playable: true,
@@ -573,7 +573,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        text: '生命エネルギーを取得しろ',
       }),
 
       playable: true,

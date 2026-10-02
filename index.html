@@ -14457,6 +14457,15 @@ function buildCharacterDetailHTML(data, options){
     ? '<span class="detail-type-icon-wrap"><img class="detail-element-type-icon" src="' + elementIcon + '" alt="' + detailEscapeHTML(elementLabel) + '" onerror="this.style.display=\'none\'"><span class="detail-element-type-label">' + detailEscapeHTML(elementLabel) + '</span></span>'
     : '<span class="detail-element-type-label">' + detailEscapeHTML(elementLabel) + '</span>';
 
+  // build1045: ULT属性はキャラ本体属性とは別に表示。
+  // ultElement が未指定のキャラは従来どおり本体属性を引き継ぐ。
+  var ultElement = c.ultElement != null ? c.ultElement : c.element;
+  var ultElementIcon = getElementIconImage(ultElement || '');
+  var ultElementLabel = getElementLabel(ultElement || '') || '-';
+  var ultElementHtml = ultElementIcon
+    ? '<img class="detail-ult-element-icon" src="' + ultElementIcon + '" alt="' + detailEscapeHTML(ultElementLabel) + '" title="' + detailEscapeHTML(ultElementLabel) + '" onerror="this.style.display=\'none\'">'
+    : '';
+
   function buildLimitBreakActionHTML(){
     if(!options.showLimitBreakButton) return '';
 
@@ -14537,6 +14546,7 @@ function buildCharacterDetailHTML(data, options){
       '<div class="detail-shooting-card detail-shooting-ult">' +
         '<div class="detail-shooting-ult-head">' +
           '<strong>' + detailEscapeHTML(c.ultName || 'ULT') + '</strong>' +
+          ultElementHtml +
         '</div>' +
         '<div class="detail-shooting-desc">' + detailEscapeHTML(buildShootingUltDescription(c)) + '</div>' +
       '</div>' +

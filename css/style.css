@@ -41353,3 +41353,31 @@ html body #screen-summon .summon-banner-arrow-next{
   flex:0 0 1px !important;
   height:1px !important;
 }
+
+
+/* ============================================================
+   build1046 CHARACTER DETAIL — ULT ELEMENT ICON ONLY
+   ULT名の直後に属性アイコンだけを表示。
+   ============================================================ */
+.detail-shooting-ult-head{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:6px;
+  min-width:0;
+}
+
+.detail-shooting-ult-head > strong{
+  flex:0 1 auto;
+  min-width:0;
+}
+
+.detail-shooting-ult-head .detail-ult-element-icon{
+  display:block;
+  flex:0 0 auto;
+  width:18px;
+  height:18px;
+  object-fit:contain;
+  border-radius:50%;
+  filter:drop-shadow(0 1px 2px rgba(48,37,62,.15));
+}

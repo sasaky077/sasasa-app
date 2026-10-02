@@ -1512,7 +1512,7 @@
     // 追加DOMは作らず、この1要素だけで大きく明るく表示する。
     const el = document.createElement('div');
     el.className = 'shooting-mission-item shooting-ch04-final-item';
-    el.innerHTML = '<i></i>';
+    el.innerHTML = '<img class="shooting-ch04-memory-item-image" src="images/item_memory.webp" alt="">';
     Object.assign(el.style, {
       width: '36px',
       height: '36px',
@@ -1617,7 +1617,7 @@
     const el = document.createElement('div');
     el.className = 'shooting-mission-item shooting-ch04-final-item shooting-ch43-memory-fragment';
     el.dataset.memoryFragment = String(index);
-    el.innerHTML = `<i></i><span>${index}</span>`;
+    el.innerHTML = '<img class="shooting-ch04-memory-item-image" src="images/item_memory.webp" alt="">';
     arena.appendChild(el);
     positionUnit(el, x, y);
 
@@ -1744,7 +1744,7 @@
 
     const el = document.createElement('div');
     el.className = 'shooting-mission-item shooting-ch04-final-item shooting-ch43-restore-item';
-    el.innerHTML = '<i></i>';
+    el.innerHTML = '<img class="shooting-ch04-memory-item-image" src="images/item_memory.webp" alt="">';
     Object.assign(el.style, { width:'36px', height:'36px', zIndex:'145', pointerEvents:'none' });
 
     const x = Number(state.boss?.x || arena.clientWidth * .5);
@@ -10186,12 +10186,29 @@
       defeatedNo >= total - (target - state.collectedItems - state.collectibles.length);
   }
 
+  function getMissionItemImagePath() {
+    if (!selectedStage) return '';
+    const mission = getEffectiveNormalMission();
+    if (mission?.type !== SHOOTING_MISSION_TYPE.COLLECT_ITEM) return '';
+    const chapter = Number(selectedStage.chapter || 0);
+    if (chapter === 1 || chapter === 3) {
+      return 'images/item_life_energy.webp';
+    }
+    return '';
+  }
+
   function spawnMissionItem(x, y) {
     const layer = document.getElementById('shooting-collectible-layer');
     if (!layer) return;
     const el = document.createElement('div');
     el.className = 'shooting-mission-item';
-    el.innerHTML = '<i></i>';
+    const itemImagePath = getMissionItemImagePath();
+    if (itemImagePath) {
+      el.innerHTML = `<img class="shooting-mission-item-image" src="${itemImagePath}" alt="">`;
+      el.classList.add('life-energy');
+    } else {
+      el.innerHTML = '<i></i>';
+    }
     layer.appendChild(el);
     const item = { uid:`item_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, el, x, y:Math.max(y + 18, 150) };
     state.collectibles.push(item);

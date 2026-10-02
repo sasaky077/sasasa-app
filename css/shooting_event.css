@@ -11601,3 +11601,85 @@ html body:not(.ui-immersive)
   text-shadow:0 1px 4px rgba(69,45,130,.65);
   pointer-events:none;
 }
+
+
+/* ============================================================
+   build1043 CH04 PICKUP ART — item_memory.webp
+   CH04で拾う全アイテムを同一画像へ統一。
+   ============================================================ */
+#shooting-event-root .shooting-ch04-final-item{
+  width:54px!important;
+  height:54px!important;
+  border:0!important;
+  background:none!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+  overflow:visible!important;
+  opacity:1!important;
+}
+
+#shooting-event-root .shooting-ch04-final-item > i,
+#shooting-event-root .shooting-ch04-final-item > span{
+  display:none!important;
+}
+
+#shooting-event-root .shooting-ch04-memory-item-image{
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  transform:translate(-50%,-50%)!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 0 7px rgba(255,255,255,.92))
+         drop-shadow(0 0 15px rgba(174,145,235,.38))!important;
+}
+
+/* 元のinline結晶背景を完全に無効化。 */
+#shooting-event-root .shooting-ch04-final-item{
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* 取得しやすさを維持するため当たり判定は画像サイズ相当。 */
+#shooting-event-root .shooting-ch43-memory-fragment,
+#shooting-event-root .shooting-ch43-restore-item{
+  width:54px!important;
+  height:54px!important;
+}
+
+
+/* ============================================================
+   build1044 CH01/CH03 collect-item stages — life energy item
+   ============================================================ */
+#shooting-event-root .shooting-mission-item.life-energy{
+  width:56px!important;
+  height:56px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+#shooting-event-root .shooting-mission-item.life-energy > i{
+  display:none!important;
+}
+#shooting-event-root .shooting-mission-item-image{
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  transform:translate(-50%,-50%)!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 0 8px rgba(255,245,210,.92))
+         drop-shadow(0 0 18px rgba(255,173,88,.38))!important;
+}
