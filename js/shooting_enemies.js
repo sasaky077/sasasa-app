@@ -405,7 +405,7 @@
       implemented: true,
       name: 'REMNANT 07',
       displayName: 'REMNANT 07',
-      image: 'images/remnant_07_battle.webp',
+      image: 'images/remnant_07_clone.webp',
       element: 'dark',
       hp: 5200,
       bulletSpeed: 225,
@@ -413,7 +413,6 @@
       bulletDamage: 135,
       behavior: 'remnant07_clone_v1',
       uiScale: .84,
-      strongEnemy: true,
     }),
 
 

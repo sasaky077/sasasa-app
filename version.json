@@ -1,7 +1,7 @@
 {
-  "build": 1050,
-  "published_at": "2026-10-02T18:03:00+09:00",
-  "label": "ch07_enemy_bullet_visible",
+  "build": 1051,
+  "published_at": "2026-10-02T21:24:00+09:00",
+  "label": "ch07_phase2_clone_freeze_fix",
   "release_protocol": 2,
   "commit_marker": true
 }

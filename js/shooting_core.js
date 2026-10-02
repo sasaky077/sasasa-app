@@ -3470,6 +3470,9 @@
       ch07InitialShieldHp: 0,
       ch07ShieldReleased: false,
       ch07ClonesSpawned: false,
+      ch07CloneSpawnRemaining: 0,
+      ch07CloneSpawnIndex: 0,
+      ch07NextCloneSpawnAt: 0,
       ch07DashState: null,
       ch07NextDashAt: 0,
       ch07VanishState: null,
@@ -11827,30 +11830,78 @@
     return true;
   }
 
-  function spawnChapter07Clones(now) {
-    if (!state || !isChapter07BossStage() || state.ch07ClonesSpawned) return;
+  function spawnOneChapter07Clone(now) {
+    if (!state || !isChapter07BossStage()) return false;
     const cfg = getChapter07BossCfg();
     const cloneDef = getShootingEnemy(SHOOTING_ENEMY_ID.REMNANT_07_CLONE);
-    if (!cloneDef) return;
-    const count = Math.max(1, Math.min(3, Number(cfg.cloneCount || 2)));
-    state.ch07ClonesSpawned = true;
+    if (!cloneDef) return false;
 
-    for (let i = 0; i < count; i++) {
+    try {
+      // createNormalEnemy() は state.normalSpawned をspawn seed/UIDに使う。
+      // CH07 cloneでも毎回進め、2体が同一UID/同一seedになるのを防ぐ。
+      const cloneIndex = Math.max(0, Number(state.ch07CloneSpawnIndex || 0));
       const enemy = createNormalEnemy(cloneDef, Number(now || performance.now()));
-      if (!enemy) continue;
+      if (!enemy) return false;
+
+      state.normalSpawned = Math.max(0, Number(state.normalSpawned || 0)) + 1;
+      state.ch07CloneSpawnIndex = cloneIndex + 1;
+
       enemy.hp = Math.max(1, Number(cfg.cloneHp || cloneDef.hp || 5200));
       enemy.hpMax = enemy.hp;
-      enemy.baseX += (i === 0 ? -72 : 72);
+
+      const arena = document.getElementById('shooting-arena');
+      const w = Math.max(1, Number(arena?.clientWidth || 390));
+      const h = Math.max(1, Number(arena?.clientHeight || 700));
+
+      // 左右へ明確に分ける。重なった巨大画像を同一フレームに合成しない。
+      const side = cloneIndex % 2 === 0 ? -1 : 1;
+      enemy.baseX = clamp(w * .5 + side * Math.min(86, w * .22), 50, w - 50);
       enemy.x = enemy.baseX;
-      enemy.baseY += 38;
+      enemy.baseY = Math.max(90, h * .225);
       enemy.y = enemy.baseY;
+
       renderMiniEnemyHp(enemy);
       positionUnit(enemy.el, enemy.x, enemy.y);
       positionMiniEnemyHp(enemy);
       state.normalEnemies.push(enemy);
+      return true;
+    } catch (error) {
+      // 分身体生成に失敗してもgameLoop自体は止めない。
+      console.error('[ZERAPHIA][CH07] clone spawn failed', error);
+      return false;
     }
+  }
+
+  function spawnChapter07Clones(now) {
+    if (!state || !isChapter07BossStage() || state.ch07ClonesSpawned) return;
+    const cfg = getChapter07BossCfg();
+    const count = Math.max(1, Math.min(3, Number(cfg.cloneCount || 2)));
+
+    state.ch07ClonesSpawned = true;
+    state.ch07CloneSpawnRemaining = count;
+    state.ch07CloneSpawnIndex = 0;
+    state.ch07NextCloneSpawnAt = Number(now || performance.now()) + 120;
+
+    // 同一フレームに2枚の大型透過画像・HPバー・属性バリアを
+    // 一気に生成しない。PHASE2中盤のフリーズ対策。
     showFacelessBattleCut('MULTIPLY', `${count + 1} REMNANT`);
   }
+
+  function updateChapter07CloneSpawnQueue(now) {
+    if (!state || !isChapter07BossStage()) return;
+    const remaining = Math.max(0, Number(state.ch07CloneSpawnRemaining || 0));
+    if (!remaining) return;
+
+    const ts = Number(now || performance.now());
+    if (ts < Number(state.ch07NextCloneSpawnAt || 0)) return;
+
+    spawnOneChapter07Clone(ts);
+    state.ch07CloneSpawnRemaining = Math.max(0, remaining - 1);
+
+    // 1体ずつ300msずらす。iPhone SE2級でもdecode/compositeが集中しない。
+    state.ch07NextCloneSpawnAt = ts + 300;
+  }
+
 
   function updateChapter07Mechanics(now) {
     if (!state || !isChapter07Stage() || state.ended || state.finishing) return;
@@ -11884,6 +11935,9 @@
     }
 
     if (!state.ch07ShieldReleased) return;
+
+    // 分身体は1体ずつ時間差生成。
+    updateChapter07CloneSpawnQueue(ts);
 
     // HP50%で2体の分身体を生成。
     const ratio = Number(state.boss.hp || 0) / Math.max(1, Number(state.boss.hpMax || 1));
@@ -16742,7 +16796,8 @@
       const clonesAlive = (state.normalEnemies || []).some(enemy =>
         enemy && enemy.hp > 0 && enemy.def && enemy.def.behavior === 'remnant07_clone_v1'
       );
-      if (clonesAlive) {
+      const clonesPending = Math.max(0, Number(state.ch07CloneSpawnRemaining || 0)) > 0;
+      if (clonesAlive || clonesPending) {
         state.boss.hp = Math.max(1, Number(state.boss.hp || 0));
         renderHud();
         return;
