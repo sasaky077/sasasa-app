@@ -3473,6 +3473,9 @@
       ch07CloneSpawnRemaining: 0,
       ch07CloneSpawnIndex: 0,
       ch07NextCloneSpawnAt: 0,
+      ch07EnhanceTransitionActive: false,
+      ch07EnhanceTransitionDone: false,
+      ch07EnhanceTransitionStartedAt: 0,
       ch07DashState: null,
       ch07NextDashAt: 0,
       ch07VanishState: null,
@@ -11938,6 +11941,71 @@
     state.ch07NextCloneSpawnAt = ts + 300;
   }
 
+  function beginChapter07EnhanceTransition(now) {
+    if (!state || !isChapter07BossStage()) return;
+    if (state.ch07EnhanceTransitionActive || state.ch07EnhanceTransitionDone) return;
+
+    const startedAt = Number(now || performance.now());
+    state.ch07EnhanceTransitionActive = true;
+    state.ch07EnhanceTransitionStartedAt = startedAt;
+
+    // 50%到達時点で盤面処理をいったん切る。
+    // 弾・射撃・当たり判定を止めた状態で分身体だけを生成する。
+    clearProjectiles();
+    clearEnemyBulletsOnly();
+    state.ch07DashState = null;
+    state.ch07VanishState = null;
+
+    const torii = state.ch07ToriiObject;
+    if (torii) {
+      torii.el?.remove();
+      torii.hpEl?.remove();
+      state.facelessObjects = (state.facelessObjects || []).filter(item => item !== torii);
+      state.ch07ToriiObject = null;
+    }
+
+    const root = document.getElementById(ROOT_ID);
+    const boss = document.getElementById(BOSS_ID);
+    root?.classList.add('ch07-enhance-transition');
+    boss?.classList.add('ch07-enhance-boss');
+
+    showFacelessBattleCut('ENHANCE', 'REMNANT 07');
+
+    // ブラウザへ描画猶予を渡してから1体ずつ生成。
+    // gameLoopはこの間、下の専用branchで完全停止している。
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing || !state.ch07EnhanceTransitionActive) return;
+      spawnOneChapter07Clone(performance.now());
+    }, 650);
+
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing || !state.ch07EnhanceTransitionActive) return;
+      spawnOneChapter07Clone(performance.now());
+    }, 1050);
+
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing || !state.ch07EnhanceTransitionActive) return;
+
+      state.ch07CloneSpawnRemaining = 0;
+      state.ch07ClonesSpawned = true;
+      state.ch07EnhanceTransitionActive = false;
+      state.ch07EnhanceTransitionDone = true;
+
+      const resumeAt = performance.now();
+
+      // 停止時間ぶん、次回行動時計も後ろへ送る。
+      state.lastBossShotAt = resumeAt;
+      state.lastShotAt = resumeAt;
+      state.ch07NextDashAt = resumeAt + 2600;
+      state.ch07NextVanishAt = resumeAt + 5200;
+
+      root?.classList.remove('ch07-enhance-transition');
+      boss?.classList.remove('ch07-enhance-boss');
+
+      showFacelessBattleCut('MULTIPLY', 'PHASE 2');
+    }, 1650);
+  }
+
 
   function updateChapter07Mechanics(now) {
     if (!state || !isChapter07Stage() || state.ended || state.finishing) return;
@@ -11972,14 +12040,17 @@
 
     if (!state.ch07ShieldReleased) return;
 
-    // 分身体は1体ずつ時間差生成。
-    updateChapter07CloneSpawnQueue(ts);
-
-    // HP50%で2体の分身体を生成。
+    // HP50%で「敵強化演出」に入り、ゲームを一度完全停止して分身体を生成する。
     const ratio = Number(state.boss.hp || 0) / Math.max(1, Number(state.boss.hpMax || 1));
     const cloneTrigger = Math.max(.10, Math.min(.90, Number(getChapter07BossCfg().cloneTriggerRatio || .50)));
-    if (!state.ch07ClonesSpawned && ratio <= cloneTrigger && state.boss.hp > 0) {
-      spawnChapter07Clones(ts);
+    if (
+      !state.ch07EnhanceTransitionDone &&
+      !state.ch07EnhanceTransitionActive &&
+      ratio <= cloneTrigger &&
+      state.boss.hp > 0
+    ) {
+      beginChapter07EnhanceTransition(ts);
+      return;
     }
 
     // 鳥居の破壊期限。
@@ -15788,6 +15859,16 @@
       return;
     }
 
+    // CH07 50%強化演出中：
+    // 時間・移動・射撃・当たり判定・DoT・ギミックをすべて停止。
+    // DOM生成とCSS演出だけを進める。
+    if (state.ch07EnhanceTransitionActive) {
+      prevTs = ts;
+      renderHud();
+      rafId = requestAnimationFrame(gameLoop);
+      return;
+    }
+
     // ノアULT落雷中：盤面上の敵全体の移動・攻撃を停止。
     // ステージ時間と新規スポーン判定だけは進める。
     if (Number(state.noahMovementFreezeUntil || 0) > 0) {
@@ -16828,11 +16909,16 @@
     }
 
     // CH07増殖後は分身体もすべて倒すまで本体の撃破を確定しない。
-    if (isChapter07BossStage() && state.ch07ClonesSpawned) {
+    if (
+      isChapter07BossStage() &&
+      (state.ch07ClonesSpawned || state.ch07EnhanceTransitionActive)
+    ) {
       const clonesAlive = (state.facelessObjects || []).some(obj =>
         obj && obj.hp > 0 && obj.objectKind === 'remnant07_clone'
       );
-      const clonesPending = Math.max(0, Number(state.ch07CloneSpawnRemaining || 0)) > 0;
+      const clonesPending =
+        state.ch07EnhanceTransitionActive ||
+        Math.max(0, Number(state.ch07CloneSpawnRemaining || 0)) > 0;
       if (clonesAlive || clonesPending) {
         state.boss.hp = Math.max(1, Number(state.boss.hp || 0));
         renderHud();

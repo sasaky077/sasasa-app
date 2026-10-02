@@ -11800,3 +11800,56 @@ html body:not(.ui-immersive)
 #shooting-event-root[data-shooting-stage="shooting_beginner_ch07_03"] .shooting-ch07-clone-hp{
   width:72px!important;
 }
+
+
+/* ============================================================
+   build1053 CH07 — 50% ENHANCE TRANSITION
+   戦闘処理を完全停止してから分身体を生成する。
+   ============================================================ */
+#shooting-event-root.ch07-enhance-transition::after{
+  content:"";
+  position:absolute;
+  z-index:96;
+  inset:72px 0 72px;
+  pointer-events:none;
+  background:rgba(245,241,232,.30);
+  animation:ch07EnhanceWash 1.65s ease-in-out both;
+}
+
+#shooting-event-root .shooting-boss.ch07-enhance-boss{
+  z-index:97!important;
+  animation:ch07EnhanceBoss 1.55s ease-in-out both!important;
+}
+
+@keyframes ch07EnhanceWash{
+  0%{opacity:0}
+  18%{opacity:.58}
+  72%{opacity:.38}
+  100%{opacity:0}
+}
+
+@keyframes ch07EnhanceBoss{
+  0%{
+    opacity:.96;
+    transform:translate3d(var(--boss-x,0),var(--boss-y,0),0)
+              translate(-50%,-50%) scale(1);
+  }
+  38%{
+    opacity:1;
+    filter:brightness(1.45) saturate(.72);
+    transform:translate3d(var(--boss-x,0),var(--boss-y,0),0)
+              translate(-50%,-50%) scale(1.08);
+  }
+  72%{
+    opacity:1;
+    filter:brightness(1.18) saturate(.88);
+    transform:translate3d(var(--boss-x,0),var(--boss-y,0),0)
+              translate(-50%,-50%) scale(1.04);
+  }
+  100%{
+    opacity:.96;
+    filter:none;
+    transform:translate3d(var(--boss-x,0),var(--boss-y,0),0)
+              translate(-50%,-50%) scale(1);
+  }
+}
