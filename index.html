@@ -7324,6 +7324,173 @@ function selectChara(now, gacha) {
   }, results[0]);
 }
 
+  // build1074:
+  // ホーム立ち絵は画像ファイルごとの透明余白量が異なるため、
+  // naturalサイズではなく「実際に描かれている非透明領域」を測って高さを揃える。
+  // 通常衣装・限定衣装とも同じ基準で表示する。
+  var _homeVisualBoundsCache = window._homeVisualBoundsCache || (window._homeVisualBoundsCache = new Map());
+
+  function getHomeVisualBounds(img){
+    return new Promise(function(resolve){
+      if(!img || !img.naturalWidth || !img.naturalHeight){
+        resolve(null);
+        return;
+      }
+
+      var src = String(img.currentSrc || img.src || '');
+      if(_homeVisualBoundsCache.has(src)){
+        resolve(_homeVisualBoundsCache.get(src));
+        return;
+      }
+
+      try{
+        var maxSide = 420;
+        var ratio = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        var cw = Math.max(1, Math.round(img.naturalWidth * ratio));
+        var ch = Math.max(1, Math.round(img.naturalHeight * ratio));
+
+        var canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        var ctx = canvas.getContext('2d', { willReadFrequently:true });
+        if(!ctx){
+          resolve(null);
+          return;
+        }
+
+        ctx.clearRect(0,0,cw,ch);
+        ctx.drawImage(img,0,0,cw,ch);
+        var data = ctx.getImageData(0,0,cw,ch).data;
+
+        var minX=cw, minY=ch, maxX=-1, maxY=-1;
+        // 極薄い縁取りノイズは無視する。
+        var alphaThreshold = 12;
+
+        for(var y=0;y<ch;y++){
+          for(var x=0;x<cw;x++){
+            var a=data[(y*cw+x)*4+3];
+            if(a>alphaThreshold){
+              if(x<minX) minX=x;
+              if(x>maxX) maxX=x;
+              if(y<minY) minY=y;
+              if(y>maxY) maxY=y;
+            }
+          }
+        }
+
+        if(maxY<minY || maxX<minX){
+          resolve(null);
+          return;
+        }
+
+        var bounds={
+          top:minY/ch,
+          bottom:(maxY+1)/ch,
+          left:minX/cw,
+          right:(maxX+1)/cw,
+          visibleHeight:(maxY-minY+1)/ch,
+          visibleWidth:(maxX-minX+1)/cw
+        };
+        _homeVisualBoundsCache.set(src,bounds);
+        resolve(bounds);
+      }catch(err){
+        console.warn('[HOME] visual bounds scan skipped',err);
+        resolve(null);
+      }
+    });
+  }
+
+  async function normalizeHomeCharacterImage(img){
+    if(!img || !img.isConnected) return;
+
+    try{
+      if(typeof img.decode === 'function' && !img.complete){
+        await img.decode().catch(function(){});
+      }
+    }catch(_){}
+
+    if(!img.isConnected || !img.naturalWidth || !img.naturalHeight) return;
+
+    var bounds = await getHomeVisualBounds(img);
+    if(!bounds || !img.isConnected) return;
+
+    // build1076:
+    // 元画像の透明余白をCSS transformで補正するのではなく、
+    // 非透明領域だけをcanvasへ描画して、全キャラを同じ見かけ身長にする。
+    var area = document.querySelector('.favorite-area');
+    var areaRect = area ? area.getBoundingClientRect() : null;
+
+    var logicalW = Math.min(310, Math.max(250, window.innerWidth * 0.80));
+    var logicalH = areaRect
+      ? Math.min(355, Math.max(305, areaRect.height * 0.78))
+      : Math.min(350, Math.max(310, window.innerHeight * 0.52));
+
+    // 実際のキャラ本体はこの高さへ統一。下に少し余白を残す。
+    var targetVisibleH = logicalH - 18;
+    var bottomGap = 8;
+
+    // アルファ境界を元画像座標へ戻す。
+    var sx = Math.max(0, Math.floor(bounds.left * img.naturalWidth));
+    var sy = Math.max(0, Math.floor(bounds.top * img.naturalHeight));
+    var sw = Math.max(1, Math.ceil((bounds.right - bounds.left) * img.naturalWidth));
+    var sh = Math.max(1, Math.ceil((bounds.bottom - bounds.top) * img.naturalHeight));
+
+    // 身長を優先しつつ、横に広いキャラは画面幅内へ縮める。
+    var scale = targetVisibleH / sh;
+    var maxDrawW = logicalW - 8;
+    if(sw * scale > maxDrawW){
+      scale = maxDrawW / sw;
+    }
+
+    var drawW = Math.max(1, sw * scale);
+    var drawH = Math.max(1, sh * scale);
+    var dx = (logicalW - drawW) / 2;
+    var dy = logicalH - bottomGap - drawH;
+
+    // 以前作ったcanvasがあれば再利用。
+    var canvas = img.nextElementSibling;
+    if(!canvas || !canvas.classList || !canvas.classList.contains('fav-normalized-canvas')){
+      canvas = document.createElement('canvas');
+      canvas.className = 'fav-normalized-canvas' + (img.classList.contains('fav-ur-glow') ? ' fav-ur-glow' : '');
+      img.insertAdjacentElement('afterend', canvas);
+    }
+
+    var dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    canvas.width = Math.round(logicalW * dpr);
+    canvas.height = Math.round(logicalH * dpr);
+    canvas.style.width = logicalW + 'px';
+    canvas.style.height = logicalH + 'px';
+    canvas.style.display = 'block';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.maxWidth = '82vw';
+    canvas.style.objectFit = 'contain';
+
+    var ctx = canvas.getContext('2d');
+    if(!ctx) return;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,logicalW,logicalH);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, drawW, drawH);
+
+    // 元imgは計測用に残すが画面上は非表示。
+    img.style.display = 'none';
+    img.dataset.homeNormalized = '1';
+  }
+  window.normalizeHomeCharacterImage = normalizeHomeCharacterImage;
+
+  var _homeNormalizeResizeTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(_homeNormalizeResizeTimer);
+    _homeNormalizeResizeTimer = setTimeout(function(){
+      document.querySelectorAll('#fav-display .fav-cut-img, #fav-display .fav-img').forEach(function(img){
+        // 一度canvas化済みでも再計算できるよう、計測元imgを一時的に戻す。
+        if(img.dataset.homeNormalized === '1') img.style.display = '';
+        normalizeHomeCharacterImage(img);
+      });
+    },120);
+  });
+
   function favVisualHTML(chara) {
    var urClass = chara.rarity === 'ur' ? ' fav-ur-glow' : '';
 
@@ -7382,21 +7549,24 @@ function selectChara(now, gacha) {
      scale = homeTune.scale;
      offsetY = homeTune.y;
    }
-   var hasAdjust = (scale !== 1 || offsetX !== 0 || offsetY !== 0);
-   var styleAttr = hasAdjust
-     ? ' style="transform: translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + '); transform-origin: 50% 100%;"'
-     : '';
+
+   // build1074: scale/Yは画像の非透明領域から自動算出する。
+   // 横位置だけ既存キャラ定義を維持する。
+   var styleAttr = ' data-home-offset-x="' + offsetX + '"' +
+     ' style="transform:translate(' + offsetX + 'px,0px) scale(1);transform-origin:50% 100%;"';
 
    var homeCutImg = (window.CharacterSkins && typeof window.CharacterSkins.getHomeImage === 'function')
      ? window.CharacterSkins.getHomeImage(chara.id, chara.cutImg || '')
      : chara.cutImg;
 
    if(homeCutImg) {
-     return '<img src="'+homeCutImg+'" class="fav-cut-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+'>';
+     return '<img src="'+homeCutImg+'" class="fav-cut-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+
+       ' onload="normalizeHomeCharacterImage(this)">';
    }
 
    if(chara.img) {
-     return '<img src="'+chara.img+'" class="fav-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+'>';
+     return '<img src="'+chara.img+'" class="fav-img'+urClass+'" loading="eager" decoding="async" fetchpriority="high"'+styleAttr+
+       ' onload="normalizeHomeCharacterImage(this)">';
    }
 
    return '<div style="width:120px;height:120px;background:#111;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px">未実装</div>';
@@ -17242,7 +17412,7 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_event.js?v=1072-ch07-touch-continuity"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
-<script src="js/skin_system.js?v=1070-arno-box-skin"></script>
+<script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>
 <script src="js/item_management.js?v=1070-arno-box-skin"></script>
 
 <script id="zeraphia-service-worker-register-v1">
