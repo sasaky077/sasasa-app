@@ -1,7 +1,7 @@
 {
-  "build": 1076,
-  "published_at": "2026-10-03T20:43:00+09:00",
-  "label": "home_canvas_normalize",
+  "build": 1092,
+  "published_at": "2026-10-04T02:31:00+09:00",
+  "label": "hide_blessing_ui",
   "release_protocol": 2,
   "commit_marker": true
 }

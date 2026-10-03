@@ -113,7 +113,7 @@
   // STORY表示用クリア条件。
   // ステージ固有タイトルは使わず、画面上では「ステージN」で統一する。
   const STORY_STAGE_CONDITIONS = {
-    'shooting_ch01_01': 'アイテムを3つ拾得',
+    'shooting_ch01_01': '敵を3体すべて撃破',
     'shooting_ch01_02': '90秒以内に敵をすべて撃破',
     'shooting_ch01_03': '被弾3回以内に敵をすべて撃破',
     'shooting_ch01_04': 'オーバーシアを撃破',
@@ -1224,24 +1224,45 @@
       window.openShootingStage(stage.id);
     };
 
-    if (typeof window.openShootingStage === 'function') {
-      openStageDirect();
+    const launchBattle = () => {
+      if (typeof window.openShootingStage === 'function') {
+        openStageDirect();
+        return;
+      }
+
+      // モジュールがまだ準備中なら、ステージ選択画面を残したまま待つ。
+      // 準備できた瞬間に直接切り替えるため、巡行トップは露出しない。
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries++;
+        if (typeof window.openShootingStage === 'function') {
+          clearInterval(timer);
+          openStageDirect();
+        } else if (tries >= 30) {
+          clearInterval(timer);
+          alert('シューティングモジュールを読み込めませんでした');
+        }
+      }, 100);
+    };
+
+    // build1084:
+    // STORYは必ず「事前ノベル → 編成 → バトル」の順で開始する。
+    // Beginnerもbase stage IDへ正規化して同じシナリオを使用する。
+    const storyStageId = stage.baseStageId || stage.id;
+    if (
+      window.StoryNovel &&
+      typeof window.StoryNovel.hasPre === 'function' &&
+      window.StoryNovel.hasPre(storyStageId)
+    ) {
+      window.StoryNovel.playPre(storyStageId, {
+        onComplete: launchBattle,
+        // 「戻る」はステージ選択画面へ戻るだけ。
+        onExit: function(){}
+      });
       return;
     }
 
-    // モジュールがまだ準備中なら、ステージ選択画面を残したまま待つ。
-    // 準備できた瞬間に直接切り替えるため、巡行トップは露出しない。
-    let tries = 0;
-    const timer = setInterval(() => {
-      tries++;
-      if (typeof window.openShootingStage === 'function') {
-        clearInterval(timer);
-        openStageDirect();
-      } else if (tries >= 30) {
-        clearInterval(timer);
-        alert('シューティングモジュールを読み込めませんでした');
-      }
-    }, 100);
+    launchBattle();
   }
 
   // ============================================================

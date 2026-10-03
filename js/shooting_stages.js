@@ -90,7 +90,7 @@
   // ============================================================
   //
   // 01 朝:
-  //   収集を覚えるステージ
+  //   エリ単独で3体の敵を撃破する導入ステージ
   //
   // 02 呼吸:
   //   攻撃効率 / キャラ交代を意識するタイムアタック
@@ -161,24 +161,20 @@
         SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 7,
+        totalEnemies: 3,
         maxActive: 2,
         spawnIntervalMs: 950,
         enemySequence: Object.freeze([
           SHOOTING_ENEMY_ID.MINI_01,
           SHOOTING_ENEMY_ID.MINI_01,
           SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
         ]),
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
         target: 3,
-        text: '生命エネルギーを取得しろ',
+        text: '敵を3体すべて撃破',
       }),
 
       playable: true,

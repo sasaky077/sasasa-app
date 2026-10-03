@@ -1,0 +1,255 @@
+/* ZERAPHIA STORY NOVEL — build1077 */
+#story-novel-root{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:260500;
+  overflow:hidden;
+  opacity:0;
+  transition:opacity .22s ease;
+  background:#f0ece4;
+  color:#463a2f;
+  font-family:"Noto Serif JP",serif;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+#story-novel-root.show{opacity:1}
+@media (min-width:500px){
+  #story-novel-root{
+    left:50%;
+    right:auto;
+    width:100%;
+    max-width:430px;
+    transform:translateX(-50%);
+  }
+}
+.story-novel-bg{
+  position:absolute;
+  inset:-2%;
+  background-position:center;
+  background-size:cover;
+  filter:saturate(.58) brightness(1.16) contrast(.88);
+  transform:scale(1.04);
+  transition:filter .25s ease;
+}
+.story-novel-wash{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.24) 24%,rgba(246,243,238,.08) 55%,rgba(243,238,230,.58) 100%);
+}
+.story-novel-vignette{
+  position:absolute;
+  inset:0;
+  box-shadow:inset 0 0 90px rgba(92,76,59,.10);
+  pointer-events:none;
+}
+#story-novel-root.is-night .story-novel-bg{
+  filter:saturate(.42) brightness(.64) contrast(.94);
+}
+#story-novel-root.is-night .story-novel-wash{
+  background:linear-gradient(180deg,rgba(31,35,46,.38),rgba(64,58,62,.18) 52%,rgba(230,225,218,.50));
+}
+#story-novel-root.is-base .story-novel-bg{
+  filter:saturate(.48) brightness(1.08) sepia(.08);
+}
+#story-novel-root.is-fog .story-novel-bg{
+  filter:saturate(.35) brightness(1.20) contrast(.82) blur(.5px);
+}
+.story-novel-head{
+  position:absolute;
+  z-index:6;
+  left:0;
+  right:0;
+  top:0;
+  min-height:78px;
+  padding:calc(14px + env(safe-area-inset-top)) 15px 9px;
+  display:grid;
+  grid-template-columns:64px 1fr 64px;
+  align-items:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.18),transparent);
+}
+.story-novel-back,
+.story-novel-skip{
+  height:34px;
+  border:0;
+  background:transparent;
+  color:#7a6854;
+  font-family:"Noto Serif JP",serif;
+  font-size:10px;
+  letter-spacing:.08em;
+}
+.story-novel-back{text-align:left}
+.story-novel-skip{
+  text-align:right;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:8px;
+  letter-spacing:.16em;
+}
+.story-novel-head-copy{
+  min-width:0;
+  text-align:center;
+}
+.story-novel-head-copy small{
+  display:block;
+  color:#a1824a;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:6.5px;
+  letter-spacing:.18em;
+}
+.story-novel-head-copy strong{
+  display:block;
+  margin-top:4px;
+  color:#584633;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.10em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.story-novel-location{
+  position:absolute;
+  z-index:5;
+  top:calc(82px + env(safe-area-inset-top));
+  left:18px;
+  right:18px;
+  text-align:center;
+  color:rgba(91,75,57,.72);
+  font-size:8px;
+  letter-spacing:.12em;
+  text-shadow:0 1px 4px rgba(255,255,255,.96);
+}
+.story-novel-cast{
+  position:absolute;
+  z-index:3;
+  inset:auto 0 150px 0;
+  height:48%;
+  opacity:0;
+  transition:opacity .20s ease;
+  pointer-events:none;
+}
+.story-novel-cast.show{opacity:1}
+.story-novel-character{
+  position:absolute;
+  bottom:0;
+  width:48%;
+  height:100%;
+  display:flex;
+  align-items:flex-end;
+  opacity:0;
+  transition:opacity .20s ease, transform .20s ease, filter .20s ease;
+}
+.story-novel-character.is-left{
+  left:4%;
+  justify-content:flex-start;
+  transform:translateX(-10px);
+}
+.story-novel-character.is-right{
+  right:4%;
+  justify-content:flex-end;
+  transform:translateX(10px);
+}
+.story-novel-character.show{opacity:.62}
+.story-novel-character.show.is-active{opacity:.98}
+.story-novel-character img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center bottom;
+  filter:drop-shadow(0 14px 18px rgba(66,51,36,.12));
+}
+#story-novel-root.has-solo-right .story-novel-character.is-right{
+  width:58%;
+  right:2%;
+}
+#story-novel-root.has-solo-right .story-novel-character.is-left{display:none}
+#story-novel-root.has-duo .story-novel-character.is-left,
+#story-novel-root.has-duo .story-novel-character.is-right{
+  width:44%;
+}
+#story-novel-root.is-narration .story-novel-cast{opacity:.18}
+#story-novel-root.is-narration .story-novel-character{opacity:0}
+.story-novel-textbox{
+  position:absolute;
+  z-index:7;
+  left:12px;
+  right:12px;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  min-height:128px;
+  padding:16px 18px 27px;
+  border:1px solid rgba(164,134,83,.22);
+  background:
+    linear-gradient(180deg,rgba(255,254,251,.91),rgba(247,242,233,.94));
+  box-shadow:0 12px 34px rgba(69,53,35,.12),inset 0 1px 0 rgba(255,255,255,.92);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+}
+.story-novel-speaker{
+  min-height:18px;
+  color:#8a672e;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.12em;
+}
+#story-novel-root.is-narration .story-novel-speaker{
+  color:#a08f79;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:7px;
+  letter-spacing:.24em;
+}
+.story-novel-dialogue{
+  margin-top:8px;
+  color:#40362d;
+  font-size:14px;
+  line-height:1.85;
+  letter-spacing:.035em;
+  min-height:52px;
+  white-space:pre-wrap;
+}
+#story-novel-root.is-narration .story-novel-dialogue{
+  color:#64584b;
+  font-size:12.5px;
+  font-style:normal;
+}
+.story-novel-tap{
+  position:absolute;
+  right:14px;
+  bottom:9px;
+  color:rgba(137,111,70,.68);
+  font-family:"Cinzel",serif;
+  font-size:6px;
+  letter-spacing:.20em;
+  animation:storyNovelTap 1.25s ease-in-out infinite;
+}
+@keyframes storyNovelTap{
+  0%,100%{opacity:.38}
+  50%{opacity:1}
+}
+@media (max-height:700px){
+  .story-novel-cast{
+    bottom:134px;
+    height:44%;
+  }
+  .story-novel-textbox{
+    min-height:112px;
+    padding:13px 15px 24px;
+  }
+  .story-novel-dialogue{
+    font-size:12.5px;
+    line-height:1.72;
+  }
+}
+
+
+/* =========================================================
+   STORY NOVEL build1079 — hidden overlay must not block input
+   ========================================================= */
+#story-novel-root:not(.show),
+#story-novel-root[aria-hidden="true"]{
+  pointer-events:none !important;
+}
+#story-novel-root.show[aria-hidden="false"]{
+  pointer-events:auto !important;
+}

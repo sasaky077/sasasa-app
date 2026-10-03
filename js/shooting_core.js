@@ -909,16 +909,16 @@
     return getSelectedBaseStageId() === String(stageId || '');
   }
 
-  // build875: normal-stage mission source of truth.
-  // CH01-STAGE1 is always COLLECT_ITEM x3, even if stale stage data is mixed in.
+  // build1082: normal-stage mission source of truth.
+  // CH01-STAGE1 is a simple tutorial battle: defeat all 3 enemies.
   function getEffectiveNormalMission() {
     const source = (state && state.mission) || (selectedStage && selectedStage.mission) || {};
     if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_01)) {
       return {
         ...source,
-        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
         target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        text: '敵を3体すべて撃破',
       };
     }
     return source;
@@ -1965,6 +1965,30 @@
     );
   }
 
+  // build1080: STORYはシナリオ上の固定編成で出撃する。
+  // 今後、各STAGEの編成が決まり次第この表へ追加する。
+  const STORY_FIXED_PARTY_MAP = Object.freeze({
+    shooting_ch01_01: Object.freeze([1]),       // エリ
+    shooting_ch01_02: Object.freeze([5, 20]),   // ジグ / アルノ
+  });
+
+  function getSelectedStoryFixedPartyIds() {
+    if (!isStoryShootingStage() || !selectedStage) return null;
+    const key = String(selectedStage.id || '')
+      .toLowerCase()
+      .replace(/^shooting_beginner_/, 'shooting_');
+    const ids = STORY_FIXED_PARTY_MAP[key];
+    return Array.isArray(ids) && ids.length ? ids.map(Number) : null;
+  }
+
+  function applySelectedStoryFixedParty() {
+    const fixed = getSelectedStoryFixedPartyIds();
+    if (!fixed) return false;
+    selectedPartyIds = fixed.filter(id => !!SHOOTING_CHARACTERS[Number(id)]).slice(0, PARTY_SIZE);
+    selectedCharacterId = selectedPartyIds[0] || CHARACTER_ID.ERI;
+    return selectedPartyIds.length > 0;
+  }
+
   function isChapter04Stage() {
     return !!(selectedStage && /^shooting_(?:beginner_)?ch04_0[1-3]$/i.test(String(selectedStage.id || '')));
   }
@@ -2022,6 +2046,8 @@
 
   function ensureStoryEriLeader() {
     if (!isStoryShootingStage()) return;
+    // build1080: ステージ固有の固定編成が定義されている場合は最優先。
+    if (applySelectedStoryFixedParty()) return;
     // CH04-1/2は従来どおりエリ単独。CH04-3はエリ固定 + 最大2人追加。
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       selectedPartyIds = isShootingCharacterOwned(CHARACTER_ID.ERI) ? [Number(CHARACTER_ID.ERI)] : [];
@@ -2036,6 +2062,14 @@
 
   function isShootingPartyReady() {
     if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
+
+    const fixedStoryParty = getSelectedStoryFixedPartyIds();
+    if (fixedStoryParty) {
+      if (selectedPartyIds.length !== fixedStoryParty.length) return false;
+      if (!fixedStoryParty.every((id, i) => Number(selectedPartyIds[i]) === Number(id))) return false;
+      return fixedStoryParty.every(id => !!SHOOTING_CHARACTERS[Number(id)]);
+    }
+
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
@@ -3250,15 +3284,24 @@
   function renderShootingPartySlots() {
     const wrap = document.getElementById('shooting-party-slots');
     if (!wrap) return;
-    wrap.innerHTML = Array.from({ length: (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE }, (_, i) => {
+
+    const fixedStoryParty = getSelectedStoryFixedPartyIds();
+    const slotCount = fixedStoryParty
+      ? fixedStoryParty.length
+      : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE);
+
+    wrap.innerHTML = Array.from({ length: slotCount }, (_, i) => {
       const id = selectedPartyIds[i];
       if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="空きスロット"><span>${i + 1}</span><b>＋</b></button>`;
       const c = buildResonatedCharacterProfile(id);
+      const fixedStoryMember = !!fixedStoryParty;
       const fixedStoryEri =
+        !fixedStoryParty &&
         isStoryShootingStage() &&
         i === 0 &&
         Number(id) === Number(CHARACTER_ID.ERI);
-      return fixedStoryEri
+
+      return (fixedStoryMember || fixedStoryEri)
         ? `<button type="button" class="shooting-party-slot filled fixed" data-character-id="${id}" aria-label="${c.name}・ストーリー固定枠">
             ${getShootingPartySlotElementIconHtml(c)}
             <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small>
@@ -3295,6 +3338,7 @@
   };
   window.removeShootingPartyCharacter = function(id) {
     id = Number(id);
+    if (getSelectedStoryFixedPartyIds()) return;
     if (isStoryShootingStage() && id === Number(CHARACTER_ID.ERI)) return;
     const idx = selectedPartyIds.indexOf(id);
     if (idx >= 0) selectedPartyIds.splice(idx, 1);
@@ -3343,13 +3387,26 @@
     });
     renderShootingPartySlots();
     renderShootingBlessingPicker();
+
+    const fixedStoryParty = getSelectedStoryFixedPartyIds();
+    const roster = document.querySelector('#shooting-character-select .shooting-party-roster');
+    if (roster) roster.style.display = fixedStoryParty ? 'none' : '';
+
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
-        ? 'CHAPTER 04 · エリのみ出撃可能'
-        : (isStoryShootingStage()
-          ? '最大3人 · エリ固定 · 1人から出撃可能'
-          : '最大3人 · 1人から出撃可能');
+      if (fixedStoryParty) {
+        const names = fixedStoryParty
+          .map(id => buildResonatedCharacterProfile(id)?.name || '')
+          .filter(Boolean)
+          .join('・');
+        ruleText.textContent = `STORY固定編成 · ${names}`;
+      } else {
+        ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
+          ? 'CHAPTER 04 · エリのみ出撃可能'
+          : (isStoryShootingStage()
+            ? '最大3人 · エリ固定 · 1人から出撃可能'
+            : '最大3人 · 1人から出撃可能');
+      }
     }
 
     const startBtn = document.getElementById('shooting-character-start');
@@ -9103,7 +9160,19 @@
   }
 
   function getNormalBattleConfig() {
-    return (selectedStage && selectedStage.normalBattle) || {};
+    const source = (selectedStage && selectedStage.normalBattle) || {};
+
+    // build1082: CH01-01 is exactly three enemies, not an item-collection stage.
+    if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_01)) {
+      return {
+        ...source,
+        totalEnemies: 3,
+        maxActive: Math.min(3, Math.max(1, Number(source.maxActive || 2))),
+        infiniteEnemies: false,
+      };
+    }
+
+    return source;
   }
 
   function getBossAddsConfig() {
@@ -17985,6 +18054,8 @@
     const raidDamageEl = document.getElementById('shooting-result-raid-damage');
     const retryBtn = document.getElementById('shooting-result-retry');
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
+    // build1081: RESULTを閉じるまで勝敗を保持し、STORY後半ノベル判定に使う。
+    state.lastResultWin = !!win;
     finalizeStoryClearScore(!!win);
     const rankLetter = getResultRank(state.score, win);
 
@@ -18062,13 +18133,51 @@
       rank.setAttribute('data-rank', rankLetter);
     }
     renderShootingClearRewards(!!win);
-    if (result) {
-      result.classList.add('show');
-      result.setAttribute('aria-hidden', 'false');
-    }
-    // 終了後は結果画面の裏にも戦闘HUDを残さない。
+
+    // build1082:
+    // STORYの表示順を
+    // 事前ノベル → バトル → 事後ノベル → RESULT
+    // に固定する。RESULT自体は先に内容だけ生成し、POSTノベル完了まで非表示。
     setBattleHudVisible(false);
-    maybeQueueRandomAmbush(!!win);
+
+    const showResultAfterStory = function(){
+      if (result) {
+        result.classList.add('show');
+        result.setAttribute('aria-hidden', 'false');
+      }
+      maybeQueueRandomAmbush(!!win);
+    };
+
+    const storyStageId = String(
+      (selectedStage && (selectedStage.baseStageId || selectedStage.id)) ||
+      state.stageId ||
+      ''
+    );
+
+    if (win && window.StoryNovel) {
+      // shooting-stage-result の同期イベントでqueuePost済みならそれを消費。
+      if (
+        typeof window.StoryNovel.consumePendingPost === 'function' &&
+        window.StoryNovel.consumePendingPost(storyStageId, showResultAfterStory)
+      ) {
+        return;
+      }
+
+      // キューを取りこぼしても、postが定義されていれば直接再生。
+      if (
+        typeof window.StoryNovel.hasPost === 'function' &&
+        window.StoryNovel.hasPost(storyStageId) &&
+        typeof window.StoryNovel.playPost === 'function'
+      ) {
+        window.StoryNovel.playPost(storyStageId, {
+          onComplete: showResultAfterStory,
+          onExit: showResultAfterStory
+        });
+        return;
+      }
+    }
+
+    showResultAfterStory();
   }
 
   function rebaseTouchDragToPlayer(preserveTarget = false) {
@@ -18637,6 +18746,14 @@
 
   window.selectShootingCharacter = function (id) {
     id = Number(id);
+
+    // build1080: 固定STORYではロスター操作を受け付けない。
+    if (getSelectedStoryFixedPartyIds()) {
+      applySelectedStoryFixedParty();
+      applySelectedCharacterToUi();
+      return;
+    }
+
     if (!isPublicShootingCharacterId(id)) return;
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
 
@@ -19658,7 +19775,9 @@
     refreshShootingRoster();
 
     const firstOwned = Object.keys(SHOOTING_CHARACTERS).map(Number).find(id => isPublicShootingCharacterId(id) && isShootingCharacterOwned(id));
-    if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
+    if (applySelectedStoryFixedParty()) {
+      // STORY固定編成をそのまま使用。所持状況には依存しない。
+    } else if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
       selectedPartyIds = [Number(CHARACTER_ID.ERI)];
       selectedCharacterId = Number(CHARACTER_ID.ERI);
     } else {
@@ -19922,9 +20041,20 @@
     if (returnContext && returnContext.type === 'storyChapter') {
       const chapter = Number(returnContext.chapter || 1);
       const mode = returnContext.mode === 'beginner' ? 'beginner' : 'normal';
-      if (typeof window.openStageSelect === 'function') {
-        window.openStageSelect(chapter, mode);
-      }
+      const stageIdForStory = selectedStage && (selectedStage.baseStageId || selectedStage.id)
+        ? (selectedStage.baseStageId || selectedStage.id)
+        : '';
+
+      const reopenStoryChapter = function(){
+        if (typeof window.openStageSelect === 'function') {
+          window.openStageSelect(chapter, mode);
+        }
+      };
+
+      // build1082:
+      // POSTノベルはRESULT表示前に完了済み。
+      // RESULTの「戻る」では章のステージ選択へ戻るだけ。
+      reopenStoryChapter();
     }
     clearShootingResultExitFade();
   };

@@ -65,7 +65,7 @@
                 <small id="shooting-party-rule-text">最大3人 · 1人から出撃可能</small>
               </div>
               <div class="shooting-party-slots" id="shooting-party-slots"></div>
-              <div class="shooting-party-blessing">
+              <div class="shooting-party-blessing" hidden aria-hidden="true" data-feature-state="reserved" style="display:none!important;">
                 <div class="shooting-party-section-head"><span>加護</span><small>未実装</small></div>
                 <button type="button" class="shooting-party-blessing-current disabled" id="shooting-party-blessing-current" onclick="toggleShootingBlessingPicker()">
                   <span class="shooting-party-blessing-plus">－</span>
