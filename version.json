@@ -1,5 +1,5 @@
 {
-  "version": "1160",
-  "build": 1160,
-  "notes": "Start bonus now grants only gems and coins; level enhancement materials were removed from both display and secure reward RPC."
+  "version": "1161",
+  "build": 1161,
+  "notes": "Grant Eri, Jig, Aura, Mimosa, Arno and Noel as starter story characters at Lv1 with no limit breaks when missing."
 }

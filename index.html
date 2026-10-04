@@ -8366,106 +8366,69 @@ startTitleBgm();
     };
   }
 
-  async function ensureStarterEriOwned(){
-    var eri = CHARACTERS.find(function(c){ return Number(c.id) === 1 || c.name === 'エリ'; });
-    if(!eri) return;
+  async function ensureStarterStoryCharactersOwned(){
+    var starterIds = [1, 5, 3, 28, 20, 24]; // エリ / ジグ / アウラ / ミモザ / アルノ / ノエル
 
-    var alreadyOwnedEntry = box.find(function(b){ return b && Number(b.id) === Number(eri.id); });
-    if(alreadyOwnedEntry){
-      if(!collected[eri.id]) collected[eri.id] = alreadyOwnedEntry;
-
-      // 旧iPhoneデータなどでローカルのエリにdb_idが無い場合、DB行を再取得して紐付け直す。
-      if(!alreadyOwnedEntry.db_id){
-        var existing = await sb.from('collected_characters')
-          .select('*')
-          .ilike('user_id', userId)
-          .eq('character_id', Number(eri.id))
-          .order('id', { ascending: true })
-          .limit(1);
-
-        if(existing.error){
-          console.error('starter Eri lookup error:', existing.error);
-        } else if(existing.data && existing.data[0]){
-          var row = existing.data[0];
-          alreadyOwnedEntry.db_id = row.id;
-          alreadyOwnedEntry.limitBreak = Math.max(0, Number(row.limit_break || 0));
-          alreadyOwnedEntry.baseStats = row.base_stats || alreadyOwnedEntry.baseStats || Object.assign({}, eri.stats);
-          alreadyOwnedEntry.stats = applyLimitBreakStats(
-            alreadyOwnedEntry.baseStats,
-            alreadyOwnedEntry.limitBreak,
-            alreadyOwnedEntry.rarity || eri.rarity,
-            eri.id
-          );
-          collected[eri.id] = alreadyOwnedEntry;
-        }
-      }
-      return;
-    }
-
-    // ローカルにエリがいなくても、DB側に既存エリがいる可能性を先に確認する。
-    // collected_characters は同キャラ複数所持を許可しているため、
-    // (user_id, character_id) の UNIQUE / upsert は使わない。
-    var existingEri = await sb.from('collected_characters')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('character_id', Number(eri.id))
-      .order('id', { ascending: true })
-      .limit(1);
-
-    if(existingEri.error){
-      console.error('starter Eri lookup error:', existingEri.error);
-      return;
-    }
-
-    if(existingEri.data && existingEri.data[0]){
-      var existingRow = existingEri.data[0];
-      var existingEntry = buildOwnedEntryFromChara(eri, existingRow);
-      existingEntry.db_id = existingRow.id;
-      box.push(existingEntry);
-      collected[eri.id] = existingEntry;
-      return;
-    }
-
-    // 初期キャラ付与はSupabase RPC側で行う。
-    // クライアントから collected_characters へ直接INSERTしない。
-    var grantResult = await sb.rpc('ensure_starter_eri');
+    // 初期ストーリーキャラ付与はSupabase RPC側で一括保証する。
+    // 既に所持しているキャラは増やさず、未所持のキャラだけLv1・無凸で追加する。
+    var grantResult = await sb.rpc('ensure_starter_story_characters');
 
     if(grantResult && grantResult.error){
-      console.error('starter Eri RPC error:', grantResult.error);
+      console.error('starter story characters RPC error:', grantResult.error);
       return;
     }
 
-    var grantData = grantResult ? grantResult.data : null;
-    var rowId = grantData && grantData.character_row_id
-      ? Number(grantData.character_row_id)
-      : null;
-
-    if(!rowId){
-      console.error('starter Eri RPC returned no character_row_id');
-      return;
-    }
-
-    // DB側で作成された正式な行を読み直して、ローカル表示へ反映する。
-    var rowResult = await sb.from('collected_characters')
+    // RPC後にDBの正式行を読み直して、起動中のbox/collectedにも即反映する。
+    var ownedResult = await sb.from('collected_characters')
       .select('*')
-      .eq('id', rowId)
-      .maybeSingle();
+      .eq('user_id', userId)
+      .in('character_id', starterIds)
+      .order('id', { ascending: true });
 
-    if(rowResult && rowResult.error){
-      console.error('starter Eri reload error:', rowResult.error);
+    if(ownedResult && ownedResult.error){
+      console.error('starter story characters reload error:', ownedResult.error);
       return;
     }
 
-    if(!rowResult || !rowResult.data){
-      console.error('starter Eri row not found after RPC');
-      return;
-    }
+    var firstRowByCharacter = {};
+    (ownedResult && ownedResult.data ? ownedResult.data : []).forEach(function(row){
+      var cid = Number(row.character_id);
+      if(!firstRowByCharacter[cid]) firstRowByCharacter[cid] = row;
+    });
 
-    var entry = buildOwnedEntryFromChara(eri, rowResult.data);
-    entry.db_id = rowResult.data.id;
+    starterIds.forEach(function(characterId){
+      var chara = CHARACTERS.find(function(c){ return Number(c.id) === Number(characterId); });
+      var row = firstRowByCharacter[Number(characterId)];
+      if(!chara || !row) return;
 
-    box.push(entry);
-    collected[eri.id] = entry;
+      var existingEntry = box.find(function(b){ return b && Number(b.id) === Number(characterId); });
+      if(existingEntry){
+        // 旧ローカルデータ等でdb_idが欠けている場合も正式行へ紐付け直す。
+        existingEntry.db_id = existingEntry.db_id || row.id;
+        existingEntry.limitBreak = Math.max(0, Number(row.limit_break || 0));
+        existingEntry.characterLevel = Math.max(1, Number(row.character_level || 1));
+        existingEntry.characterExp = Math.max(0, Number(row.character_exp || 0));
+        existingEntry.baseStats = row.base_stats || existingEntry.baseStats || Object.assign({}, chara.stats);
+
+        var resonatedStats = applyLimitBreakStats(
+          existingEntry.baseStats,
+          existingEntry.limitBreak,
+          existingEntry.rarity || chara.rarity,
+          chara.id
+        );
+        existingEntry.stats = (window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats === 'function')
+          ? window.CharacterLeveling.applyToStats(resonatedStats, existingEntry.rarity || chara.rarity, existingEntry.limitBreak, existingEntry.characterLevel)
+          : resonatedStats;
+
+        collected[chara.id] = existingEntry;
+        return;
+      }
+
+      var entry = buildOwnedEntryFromChara(chara, row);
+      entry.db_id = row.id;
+      box.push(entry);
+      collected[chara.id] = entry;
+    });
   }
 
   async function loadFromDB(){
@@ -8650,8 +8613,8 @@ startTitleBgm();
     throw new Error('user_profiles確定後の読込に失敗しました');
   }
 
-  // Auth所有者は起動直後に確認済み。ここでは初期キャラだけ確認する。
-  await ensureStarterEriOwned();
+  // Auth所有者は起動直後に確認済み。ここでは初期ストーリーキャラを保証する。
+  await ensureStarterStoryCharactersOwned();
 
   // 明示的な引き継ぎ待ちだけは整合性保護のため起動前に完了させる。
   // 通常のローカル→クラウド移行はホーム表示を止めずバックグラウンドへ。
