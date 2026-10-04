@@ -12112,3 +12112,107 @@ html body:not(.ui-immersive)
 #shooting-event-root .shooting-boss{
   z-index:20 !important;
 }
+
+
+/* ============================================================
+   build1111 — PROJECTILE READABILITY / HOSTILE BULLETS ALWAYS ABOVE ALLIED SHOTS
+   Allied shot projectiles stay below hostile bullets so dodging remains readable.
+   Layer order inside arena: allied projectile(9) < enemy bullet(11) < player(12) < boss(20).
+   ============================================================ */
+#shooting-event-root .shooting-bullet,
+#shooting-event-root [class*="shooting-bullet-"],
+#shooting-event-root .shooting-ult-shot,
+#shooting-event-root .shooting-mia-charge-shot,
+#shooting-event-root .shooting-cluster-projectile,
+#shooting-event-root .shooting-bomb-fragment,
+#shooting-event-root .shooting-conjure-deploy-projectile,
+#shooting-event-root .shooting-conjure-ult-homing,
+#shooting-event-root .shooting-noah-ult-bullet{
+  z-index:9 !important;
+}
+
+#shooting-event-root .shooting-enemy-bullet,
+#shooting-event-root .shooting-mini-enemy-bullet,
+#shooting-event-root #shooting-enemy-bullet-canvas{
+  z-index:11 !important;
+}
+
+/* ============================================================
+   build1111 — AYANE ULT / NO ELEMENT-PURPLE TINT
+   Ayane's black-hand ULT uses its original artwork and achromatic black/gray effects.
+   Do not add DARK-element purple tint, glow or parent filter to the ULT artwork.
+   ============================================================ */
+#shooting-event-root .shooting-ayane-blackhand-ult,
+#shooting-event-root .shooting-ayane-blackhand-aura,
+#shooting-event-root .shooting-ayane-blackhand-impact,
+#shooting-event-root .shooting-ayane-blackhand-grip-ring,
+#shooting-event-root .shooting-ayane-blackhand-smoke,
+#shooting-event-root .shooting-ayane-multi-grip{
+  filter:none !important;
+  -webkit-filter:none !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-shot,
+#shooting-event-root .shooting-ayane-blackhand-shot img.hand-open,
+#shooting-event-root .shooting-ayane-blackhand-shot img.hand-close{
+  filter:none !important;
+  -webkit-filter:none !important;
+  mix-blend-mode:normal !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-shot{
+  filter:
+    drop-shadow(0 0 8px rgba(0,0,0,.96))
+    drop-shadow(0 0 18px rgba(18,18,18,.72)) !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-aura{
+  background:radial-gradient(circle,
+    rgba(8,8,8,.96) 0 22%,
+    rgba(28,28,28,.72) 34%,
+    rgba(12,12,12,.25) 58%,
+    transparent 74%) !important;
+  box-shadow:
+    0 0 10px rgba(0,0,0,.92),
+    0 0 28px rgba(24,24,24,.70),
+    0 0 54px rgba(10,10,10,.46) !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-afterimage{
+  background:linear-gradient(180deg,
+    transparent 0,
+    rgba(12,12,12,.25) 10%,
+    rgba(8,8,8,.84) 26%,
+    rgba(34,34,34,.62) 72%,
+    rgba(34,34,34,0) 100%) !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-impact{
+  background:radial-gradient(circle,
+    #fff 0 4%,
+    rgba(110,110,110,.78) 9%,
+    rgba(18,18,18,.94) 28%,
+    rgba(0,0,0,.80) 45%,
+    transparent 72%) !important;
+  box-shadow:0 0 18px rgba(0,0,0,.96),0 0 42px rgba(28,28,28,.76) !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-smoke{
+  background:radial-gradient(ellipse,
+    rgba(34,34,34,.82),
+    rgba(5,5,5,.64) 55%,
+    transparent 73%) !important;
+}
+
+#shooting-event-root .shooting-ayane-blackhand-grip-ring{
+  border-color:rgba(28,28,28,.78) !important;
+  box-shadow:0 0 10px rgba(0,0,0,.78), inset 0 0 15px rgba(70,70,70,.20) !important;
+}
+
+#shooting-boss.ayane-grabbed{
+  filter:brightness(.58) contrast(1.35) saturate(0) drop-shadow(0 0 9px rgba(0,0,0,.95)) drop-shadow(0 0 19px rgba(35,35,35,.75)) !important;
+}
+
+#shooting-event-root.ayane-rampage-active .shooting-wash{
+  background:rgba(14,14,14,.18) !important;
+}

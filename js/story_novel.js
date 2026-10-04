@@ -138,16 +138,21 @@
   }
 
   const STORY_BG_PATHS = Object.freeze({
-    outside_tower: 'images/outside_tower.webp',
-    outside_tower_enemy: 'images/outside_tower_enemy.webp',
-    outside_site_enemy: 'images/outside_site_enemy.webp',
-    inside: 'images/inside.webp',
-    workbench: 'images/workbench.webp',
-    outside_road: 'images/outside_road.webp',
+    outside_tower: 'images/scene_outside_tower.webp',
+    outside_tower_enemy: 'images/scene_outside_tower_enemy.webp',
+    outside_site_enemy: 'images/scene_enemy_site.webp',
+    inside: 'images/scene_base.webp',
+    workbench: 'images/scene_workbench.webp',
+    outside_road: 'images/scene_outside_road.webp',
+    openfire: 'images/scene_openfire.webp',
     remnant_01_intro: 'images/scene_remnant_01_battle.webp',
     remnant_01_battle: 'images/scene_eri_jig_battle.webp',
-    remnant_01_aruno: 'images/scene_aruno_help.webp',
-    remnant_01_rip: 'images/scene_remnant_01_rip.webp'
+    remnant_01_aruno: 'images/scene_aruno_help.webp?v=1113',
+    remnant_01_rip: 'images/scene_remnant_01_rip.webp?v=1113',
+    enemy_site: 'images/scene_enemy_site.webp',
+    many_tower: 'images/scene_many_tower.webp',
+    remnant_02_battle: 'images/scene_remnant_02_battle.webp',
+    remnant_02_rip: 'images/scene_remnant_02_rip.webp'
   });
 
   function backgroundFor(location, stageId){
@@ -158,12 +163,23 @@
     if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
     if(!loc) return STORY_BG_PATHS.outside_tower;
 
+    // build1113: CH01-04特殊背景は完全一致を最優先。
+    if(loc==='大型レムナント・アルノ登場') return STORY_BG_PATHS.remnant_01_aruno;
+    if(loc==='大型レムナント・討伐') return STORY_BG_PATHS.remnant_01_rip;
+    if(loc==='大型レムナント・登場') return STORY_BG_PATHS.remnant_01_intro;
+    if(loc==='大型レムナント・戦闘') return STORY_BG_PATHS.remnant_01_battle;
+
     if(loc.includes('大型レムナント・登場')) return STORY_BG_PATHS.remnant_01_intro;
     if(loc.includes('大型レムナント・戦闘')) return STORY_BG_PATHS.remnant_01_battle;
     if(loc.includes('大型レムナント・アルノ登場')) return STORY_BG_PATHS.remnant_01_aruno;
     if(loc.includes('大型レムナント・討伐')) return STORY_BG_PATHS.remnant_01_rip;
 
-    if(loc.includes('一柱目の跡地')) return STORY_BG_PATHS.outside_site_enemy;
+    if(loc.includes('塔の並ぶ丘・大型レムナント・討伐')) return STORY_BG_PATHS.remnant_02_rip;
+    if(loc.includes('塔の並ぶ丘・大型レムナント')) return STORY_BG_PATHS.remnant_02_battle;
+    if(loc.includes('白い廃墟・塔の並ぶ丘')) return STORY_BG_PATHS.many_tower;
+    if(loc.includes('白い廃墟・一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
+    if(loc.includes('一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
+    if(loc.includes('拠点・焚き火のそば') || loc.includes('焚き火')) return STORY_BG_PATHS.openfire;
     if(loc.includes('作業台')) return STORY_BG_PATHS.workbench;
     if(loc.includes('拠点')) return STORY_BG_PATHS.inside;
     if(loc.includes('奥地')) return STORY_BG_PATHS.outside_road;
@@ -178,6 +194,19 @@
     }
 
     return STORY_BG_PATHS.outside_tower;
+  }
+
+  function applyStoryBackground(bg, location, stageId){
+    if(!bg) return;
+    const primary=backgroundFor(location, stageId);
+    // 特殊背景の読み込みに失敗しても白抜けさせない。
+    // 1枚目が取得できればそれが全面表示され、失敗時のみ2枚目が見える。
+    const fallback=STORY_BG_PATHS.outside_tower;
+    if(primary && primary!==fallback){
+      bg.style.backgroundImage=`url("${primary}"), url("${fallback}")`;
+    }else{
+      bg.style.backgroundImage=`url("${fallback}")`;
+    }
   }
 
 
@@ -484,7 +513,7 @@
     const title=root.querySelector('.story-novel-intro-title');
     const bg=root.querySelector('.story-novel-bg');
 
-    if(bg) bg.style.backgroundImage=`url("${backgroundFor(location, session.stageId)}")`;
+    if(bg) applyStoryBackground(bg, location, session.stageId);
     applyLocationClass(root,location);
 
     root.classList.add('is-pre-intro');
@@ -540,7 +569,7 @@
     root.querySelector('.story-novel-speaker').textContent=speaker || 'NARRATION';
 
     const bg=root.querySelector('.story-novel-bg');
-    bg.style.backgroundImage=`url("${backgroundFor(location, session.stageId)}")`;
+    applyStoryBackground(bg, location, session.stageId);
     applyLocationClass(root,location);
 
     const cast=root.querySelector('.story-novel-cast');

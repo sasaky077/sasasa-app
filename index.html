@@ -409,7 +409,6 @@
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=1071-flower-owned-layout">
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
-  <link rel="stylesheet" href="css/story_novel.css?v=1079-input-unblock">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
 
@@ -3712,7 +3711,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <img src="images/btmnv_home.webp" alt="ホーム" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">ホーム</span>
   </div>
-  <div class="bottom-nav-item" id="bnav-summon" onclick="showMainTab('summon')">
+  <div class="bottom-nav-item" id="bnav-summon" style="display:none" onclick="showMainTab('summon')">
     <img src="images/btmnv_recruit.webp" alt="邂逅" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">邂逅</span>
   </div>
@@ -6103,14 +6102,14 @@ document.addEventListener('touchend', function (e) {
   // ─── ガチャ仕様 v259 ───────────────────────────
   // ガチャは2種類のみ。
   // 1) 恒常ガチャ: R23 + 恒常SR5。限定SR5は排出しない。
-  // 2) 限定ガチャ: R23 + 恒常SR5 + 限定SR5。
+  // 2) 限定ガチャ: R23 + 恒常SR5 + 限定SR4。
   // 排出率はどちらも SR6% / R47% / 進化素材47%。
   // 価格は従来どおり 1回5結晶 / 10回50結晶、天井50回。
   //
-  // 限定SR（各属性1体） v308
-  // FIRE イヴェルナ(32) / AQUA レイ(33) / WOOD ロゼ(9)
-  // DARK シュリ(8) / LIGHT ハヤテ(4)
-  const GACHA_LIMITED_SR_IDS = [32, 33, 9, 8, 4];
+  // 限定SR build1124
+  // イヴェルナ(32)はストーリー終盤加入キャラのため邂逅排出対象外。
+  // AQUA レイ(33) / WOOD ロゼ(9) / DARK シュリ(8) / LIGHT ハヤテ(4)
+  const GACHA_LIMITED_SR_IDS = [33, 9, 8, 4];
 
   // 恒常SR（各属性1体） v308
   // FIRE ウルフ(2) / AQUA スゥ(31) / WOOD ミモザ(28)
@@ -6252,7 +6251,7 @@ document.addEventListener('touchend', function (e) {
       poolType: 'limited',
       title: '限定邂逅',
       detailTitle: 'LIMITED ENCOUNTER',
-      desc: 'SR6% / R47% / 進化素材47%。限定SR5体を含む。',
+      desc: 'SR6% / R47% / 進化素材47%。限定SR4体を含む。',
       thumbTitle: '限定',
       img: 'images/gacha_banner_02.webp',
       cost: 5,
@@ -9609,6 +9608,44 @@ startTitleBgm();
   if(name==='main')  updateMainUI();
 }
 
+  // build1122: 邂逅はCHAPTER03クリア後に解放。
+  var GACHA_UNLOCK_STAGE_ID = 'shooting_ch03_04';
+  var GACHA_UNLOCK_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
+
+  function isGachaUnlocked(){
+    try {
+      var map = JSON.parse(localStorage.getItem(GACHA_UNLOCK_CLEAR_KEY) || '{}') || {};
+      return !!map[GACHA_UNLOCK_STAGE_ID];
+    } catch(_){ return false; }
+  }
+
+  function syncGachaUnlockUI(forceUnlocked){
+    var unlocked = forceUnlocked === true || isGachaUnlocked();
+    // build1125: 邂逅の入口は常時表示。未解放時はタップ時に条件を案内する。
+    var navItem = document.getElementById('bnav-summon');
+    if(navItem) navItem.style.display = '';
+    return unlocked;
+  }
+
+  window.isGachaUnlocked = isGachaUnlocked;
+  window.syncGachaUnlockUI = syncGachaUnlockUI;
+
+  window.addEventListener('shooting-stage-result', function(event){
+    var detail = event && event.detail ? event.detail : {};
+    if(detail.win && String(detail.stageId || '') === GACHA_UNLOCK_STAGE_ID){
+      syncGachaUnlockUI(true);
+      // CH03クリア直後から邂逅バナーも解禁。
+      if(typeof renderHomeEventBanners === 'function') renderHomeEventBanners();
+      if(typeof initHomeBannerSwipe === 'function') initHomeBannerSwipe();
+    }
+  });
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ syncGachaUnlockUI(false); }, { once:true });
+  } else {
+    setTimeout(function(){ syncGachaUnlockUI(false); }, 0);
+  }
+
   // ボトムナビ active 制御
   var BNAV_MAP = { ninmu:'bnav-ninmu', zukan:'bnav-zukan', main:'bnav-main', summon:'bnav-summon', setting:'bnav-setting' };
   function setBnavActive(name){
@@ -9691,6 +9728,11 @@ function goHome(){
 }
   // ボトムナビゲーション切替
   function showMainTab(name){
+    if(name === 'summon' && !isGachaUnlocked()){
+      if(typeof showToast === 'function') showToast('CH03-04をクリアしてください');
+      return;
+    }
+
     // build641: Score Attack is a normal chrome page.
     // Any shared bottom-nav transition closes it first.
     var scoreAttackRoot = document.getElementById('score-attack-root');
@@ -13038,6 +13080,30 @@ function showTenResult(results){
     return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
   }
 
+  // build1124: キャラ一覧の基本表示順。
+  // ストーリーで触れる主要キャラを先頭に並べ、
+  // イヴェルナ / SIGMA-IX / ノアは末尾固定。
+  var ZUKAN_STORY_FIRST_ORDER = [1, 5, 3, 28, 39, 24, 30, 25];
+  var ZUKAN_LAST_ORDER = [32, 50, 52];
+
+  function getZukanBaseOrderRank(charaId){
+    var id = Number(charaId || 0);
+    var storyIndex = ZUKAN_STORY_FIRST_ORDER.indexOf(id);
+    if(storyIndex >= 0) return storyIndex;
+
+    var lastIndex = ZUKAN_LAST_ORDER.indexOf(id);
+    if(lastIndex >= 0) return 100000 + lastIndex;
+
+    // その他はID順。先頭8体と末尾3体の間に配置する。
+    return 1000 + id;
+  }
+
+  function compareZukanBaseOrder(a, b){
+    var diff = getZukanBaseOrderRank(a && a.id) - getZukanBaseOrderRank(b && b.id);
+    if(diff !== 0) return diff;
+    return Number((a && a.id) || 0) - Number((b && b.id) || 0);
+  }
+
   function applyZukanIndexFilterAndSort(chars){
     var query = normalizeZukanSearchText(zukanIndexFilter.query);
     var selectedElements = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements : [];
@@ -13071,7 +13137,7 @@ function showTenResult(results){
         var be2 = ZUKAN_ELEMENT_ORDER.indexOf(normalizeZukanElement(b.element));
         if(ae2 !== be2) return ae2 - be2;
       }
-      return Number(a.id || 0) - Number(b.id || 0);
+      return compareZukanBaseOrder(a, b);
     });
     return list;
   }
@@ -13226,9 +13292,7 @@ function showTenResult(results){
   function getAllBoxCharaDefs(){
     return CHARACTERS.filter(function(c){
       return c && c.hidden !== true;
-    }).slice().sort(function(a, b){
-      return (a.id || 0) - (b.id || 0);
-    });
+    }).slice().sort(compareZukanBaseOrder);
   }
 
   function getOwnedInstancesByCharaId(charaId){
@@ -15628,6 +15692,7 @@ window.showUnimplementedFeatureNotice = showUnimplementedFeatureNotice;
    ========================================================= */
 
 function getHomeEventBanners(){
+  // build1125: 邂逅バナーも常時表示。未解放時は遷移処理側で条件を案内する。
   return Array.isArray(window.HOME_EVENT_BANNERS) ? window.HOME_EVENT_BANNERS : [];
 }
 
@@ -15897,6 +15962,11 @@ function initHomeBannerSwipe(){
 // build478: old home mode helper removed.
 // ホームイベントバナー3「ウルフ実装」から、特別邂逅へ直接遷移
 function openWolfGachaFromHome(){
+  if(typeof isGachaUnlocked === 'function' && !isGachaUnlocked()){
+    if(typeof showToast === 'function') showToast('CH03-04をクリアしてください');
+    return false;
+  }
+
   var specialGacha = (typeof GACHA_BANNERS !== 'undefined' && Array.isArray(GACHA_BANNERS))
     ? GACHA_BANNERS.find(function(gacha){ return gacha.poolType === 'limited'; })
     : null;
@@ -17335,9 +17405,7 @@ function fadeOutOpeningBgm(){
 
 
 <script src="js/shooting_characters.js?v=1062-leona-dark-neutral-attacks"></script>
-<script src="js/story_scenario.js?v=1103-ch01-arno-rescue-switch"></script>
-<script src="js/story_novel.js?v=1100-site-bg-latest-scenario"></script>
-<script src="js/stage_select.js?v=1097-ch01-01-tutorial"></script>
+<script src="js/stage_select.js?v=978-locked-stage-toast"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>
@@ -17412,7 +17480,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1103-ch01-arno-rescue-switch"></script>
+<script src="js/shooting_event.js?v=1072-ch07-touch-continuity"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

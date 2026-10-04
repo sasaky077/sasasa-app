@@ -44,12 +44,6 @@
     IVERNA: 32,
     REI: 33,
     GRESHA: 34,
-    GISELLE: 35,
-    NINA: 36,
-    TOYFEL: 37,
-    PAINTER: 38,
-    REMNACROSS: 39,
-    CONJURER: 40,
   });
 
   // ============================================================
@@ -90,7 +84,7 @@
     12: 'r',  // シイナ
     5: 'r',  // ジグ
     19: 'r',  // ラグナ
-    3: 'r',  // アウラ
+    3: 'r',  // リゼ
     18: 'r',  // シオン
     10: 'r',  // オリオン
     50: 'sr',  // SIGMA-IX
@@ -98,12 +92,6 @@
     32: 'sr',  // イヴェルナ
     33: 'sr',  // レイ
     34: 'r',   // グレシャ
-    35: 'r',   // ジゼル
-    36: 'sr',  // ニーナ
-    37: 'r',   // トイフェル
-    38: 'r',   // クロエ
-    39: 'r',   // レムナクロス
-    40: 'sr',  // ID40 / CONJURE
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -143,7 +131,7 @@
   "1": {
     "id": 1,
     "name": "エリ",
-    "element": "neutral",
+    "element": "light",
     "hp": 670,
     "atk": 235,
     "image": "images/chara_01_battle_back.webp",
@@ -186,7 +174,7 @@
   },
   "3": {
     "id": 3,
-    "name": "アウラ",
+    "name": "リゼ",
     "element": "wood",
     "hp": 600,
     "atk": 250,
@@ -888,138 +876,6 @@
     "homeOffsetY": -40,
     "hidden": false
   },
-  "35": {
-    "id": 35,
-    "name": "ジゼル",
-    "element": "aqua",
-    "hp": 620,
-    "atk": 255,
-    "image": "images/chara_35_battle_back.webp",
-    "panelImage": "images/chara_35_panel.webp",
-    "cutinImage": "images/chara_35_cutin.webp",
-    "uiScale": {
-      "panel": 1,
-      "battleBack": 1.2,
-      "battleUp": 1
-    },
-    "portraitImage": "images/chara_35.webp",
-    "homeImage": "images/chara_35_cut.webp",
-    "upImage": "images/chara_35_up.webp",
-    "homeScale": 1,
-    "homeOffsetX": 0,
-    "homeOffsetY": 0,
-    "hidden": false
-  },
-  "36": {
-    "id": 36,
-    "name": "ニーナ",
-    "element": "light",
-    "hp": 590,
-    "atk": 280,
-    "image": "images/chara_36_battle_back.webp",
-    "panelImage": "images/chara_36_panel.webp",
-    "cutinImage": "images/chara_36_cutin.webp",
-    "uiScale": {
-      "panel": 1,
-      "battleBack": 1.2,
-      "battleUp": 1
-    },
-    "portraitImage": "images/chara_36.webp",
-    "homeImage": "images/chara_36_cut.webp",
-    "upImage": "images/chara_36_up.webp",
-    "homeScale": 1,
-    "homeOffsetX": 0,
-    "homeOffsetY": 0,
-    "hidden": false
-  },
-  "37": {
-    "id": 37,
-    "name": "トイフェル",
-    "element": "dark",
-    "hp": 580,
-    "atk": 290,
-    "image": "images/chara_37_battle_back.webp",
-    "panelImage": "images/chara_37_panel.webp",
-    "cutinImage": "images/chara_37_cutin.webp",
-    "uiScale": {
-      "panel": 1,
-      "battleBack": 1.2,
-      "battleUp": 1
-    },
-    "portraitImage": "images/chara_37.webp",
-    "homeImage": "images/chara_37_cut.webp",
-    "upImage": "images/chara_37_up.webp",
-    "homeScale": 1,
-    "homeOffsetX": 0,
-    "homeOffsetY": 0,
-    "hidden": false
-  },
-  "38": {
-    "id": 38,
-    "name": "クロエ",
-    "element": "light",
-    "hp": 590,
-    "atk": 255,
-    "image": "images/chara_38_battle_back.webp",
-    "panelImage": "images/chara_38_panel.webp",
-    "cutinImage": "images/chara_38_cutin.webp",
-    "uiScale": {
-      "panel": 1,
-      "battleBack": 1.2,
-      "battleUp": 1
-    },
-    "portraitImage": "images/chara_38.webp",
-    "homeImage": "images/chara_38_cut.webp",
-    "upImage": "images/chara_38_up.webp",
-    "homeScale": 0.86,
-    "homeOffsetX": 0,
-    "homeOffsetY": -18,
-    "hidden": false
-  },
-  "39": {
-    "id": 39,
-    "name": "レオナクロス",
-    "element": "dark",
-    "hp": 590,
-    "atk": 270,
-    "image": "images/chara_39_battle_back.webp",
-    "panelImage": "images/chara_39_panel.webp",
-    "cutinImage": "images/chara_39_cutin.webp",
-    "uiScale": {
-      "panel": 1,
-      "battleBack": 1.2,
-      "battleUp": 1
-    },
-    "portraitImage": "images/chara_39.webp",
-    "homeImage": "images/chara_39_cut.webp",
-    "upImage": "images/chara_39_up.webp",
-    "homeScale": 0.86,
-    "homeOffsetX": 0,
-    "homeOffsetY": -18,
-    "hidden": false
-  },
-  "40": {
-    "id": 40,
-    "name": "オリビア",
-    "element": "wood",
-    "hp": 590,
-    "atk": 275,
-    "image": "images/chara_40_battle_back.webp",
-    "panelImage": "images/chara_40_panel.webp",
-    "cutinImage": "images/chara_40_cutin.webp",
-    "uiScale": {
-      "panel": 1,
-      "battleBack": 1.2,
-      "battleUp": 1
-    },
-    "portraitImage": "images/chara_40.webp",
-    "homeImage": "images/chara_40_cut.webp",
-    "upImage": "images/chara_40_up.webp",
-    "homeScale": 0.86,
-    "homeOffsetX": 0,
-    "homeOffsetY": -18,
-    "hidden": false
-  },
   "50": {
     "id": 50,
     "name": "SIGMA-IX",
@@ -1074,9 +930,6 @@
     parallel: Object.freeze([2, 3, 4, 5]),
     spread: Object.freeze([3, 5, 7]),
     laser: Object.freeze(['M', 'L']),
-    // build869: 旧BOMB分裂型はCLUSTERへ正式分離。R=4 / SR=6。
-    cluster: Object.freeze([4, 6]),
-    // BOMBは着弾点を中心に範囲爆発する別ショット。
     bomb: Object.freeze(['M', 'L']),
   });
 
@@ -1085,8 +938,7 @@
     const aliases = {
       orbit_forward: 'orbit',
       charge_release: 'charge',
-      precision: 'piercing',
-      shotgun: 'piercing',
+      precision: 'shotgun',
       splash: 'bomb',
       melee_slash: 'strike',
       wolf_j_homing: 'homing',
@@ -1112,14 +964,9 @@
       const fallbackSize = Number(profile.laserWidth || 0) >= 11 ? 'L' : 'M';
       out.size = String(source.size || (isMain ? profile.laserSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
     }
-    if (type === 'cluster') {
-      // CLUSTER分裂数はレアリティで統一：R=4方向 / SR=6方向。
-      const rarityCount = getShootingRarity(profile.id) === 'sr' ? 6 : 4;
-      out.count = rarityCount;
-      out.size = String(source.size || (isMain ? profile.clusterSize : '') || 'M').toUpperCase() === 'L' ? 'L' : 'M';
-    }
     if (type === 'bomb') {
-      out.size = String(source.size || (isMain ? profile.bombSize : '') || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+      const fallbackSize = Number(profile.splashRadius || 0) >= 80 ? 'L' : 'M';
+      out.size = String(source.size || (isMain ? profile.bombSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
     }
     return Object.freeze(out);
   }
@@ -1142,7 +989,6 @@
       : { type: profile.shotType };
     const mainShot = buildShotSlot(mainShotSource, profile, true);
     const subShot = profile.subShot ? buildShotSlot(profile.subShot, profile, false) : null;
-    const rarityBombSplitCount = mainShot?.type === 'cluster' ? (rarity === 'sr' ? 6 : 4) : profile.bombSplitCount;
 
     // hp/atkが個体側(profile)で明示指定されていない限りmasterの値を基準にし、
     // そこへレアリティ倍率をかけてから丸める。
@@ -1155,7 +1001,6 @@
       shotType: mainShot?.type || normalizeShotType(profile.shotType),
       mainShot,
       subShot,
-      bombSplitCount: rarityBombSplitCount,
       id: master.id,
       name: profile.name || master.name,
       element: profile.element ?? master.element ?? null,
@@ -1183,8 +1028,8 @@
     // 通常攻撃ダメージは ATK × shotPowerRate。
     // fireRate / shotCount と合わせて理論DPSを調整する。
     label: 'BALANCE',
-    description: '暫定性能。ULTは敵弾を全消去し、敵行動を約1秒停止。属性色の閃光後、敵全体へATK×3.0のダメージを与える。',
-    ultDescription: '発動時に盤面上の敵弾をすべて消去し、敵行動を停止。盤面上の全敵へ自身の属性色の細い閃光を走らせ、ATK×3.0のダメージを与えた後、敵行動が再開する。',
+    description: '暫定性能。ULTは敵弾を全消去し、敵を1秒停止させた後、ATKの280%ダメージを与える。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、敵を約1秒間停止させる。0.42秒後に敵全体へATK×2.8のダメージを与える。',
     ultName: '駆け巡る閃光',
     ultType: 'balance_flash',
     moveSpeed: 400,
@@ -1202,7 +1047,7 @@
     // ---- ULT / 駆け巡る閃光 ----
     // エリ本人と、固有性能未実装でERI_BASE_PROFILEを継承するキャラ共通。
     // 固定ダメージではなく現在ATKを参照する。
-    ultDamageAtkMultiplier: 3.0,
+    ultDamageAtkMultiplier: 2.8,
 
     burstNeed: 28,
     ultGainPerHit: 0.476,
@@ -1225,8 +1070,8 @@
   // ============================================================
   // SHOOTING専用戦闘プロフィール
   // ============================================================
-  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 13ミア / 14アヤネ / 15エルテナ / 21アンジェ
-  // その他未調整キャラ：現時点ではエリ性能を継承
+  // 固有実装済み：1エリ / 2ネム / 3スイ / 4アルノ / 5クラリネ / 6イグニス / 7ロゼ / 12ハヤテ / 13ミア / 14アヤネ / 15エルテナ
+  // その他13人：現時点ではエリ性能を継承
   const SHOOTING_CHARACTERS = {};
 
   Object.keys(SHOOTING_CHARACTER_MASTER).forEach(id => {
@@ -1234,60 +1079,11 @@
     if (profile) SHOOTING_CHARACTERS[Number(id)] = profile;
   });
 
-  // ============================================================
-  // build882: Rショット分布調整
-  // PATRA: PARALLEL -> BOMB M / DARK
-  // ID38と同じBOMB M基準値を使用し、ULTは既存のBALANCE FLASHを維持。
-  // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.PATRA] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE,
-    id: CHARACTER_ID.PATRA,
-    effectKey: 'eri',
-    label: 'BOMB M / DARK',
-    description: 'DARK属性のBOMB Mを正面へ放つR範囲攻撃型。着弾点を中心に爆発し、周囲の敵へ拡散ダメージを与える。ULTは従来どおりBALANCE FLASH。',
-    shotType: 'bomb',
-    mainShot: { type: 'bomb', size: 'M' },
-    bombSize: 'M',
-    shotCount: 1,
-    fireRate: 550,
-    bulletSpeed: 660,
-    shotPowerRate: 0.27,
-    bombSplashRadius: 76,
-    bombSplashDamageRate: 0.55,
-    burstNeed: 28,
-    ultGainPerHit: 1.40,
-    coreTop: '38%',
-    shotOffsetY: 38,
-  });
-
   SHOOTING_CHARACTERS[CHARACTER_ID.ERI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ERI,
     effectKey: 'eri',
     description: '扱いやすい2連射の標準型。ULTは敵弾を全消去し、敵を1秒停止させた後、ATKの280%ダメージを与える。',
-  });
-
-  // ============================================================
-  // build929: アンジェ専用ULT「慈愛の光」
-  // 敵の移動・新規射撃だけを3秒停止。既存の敵弾は残したまま進行し、
-  // 盤面へ最大HP33%回復のハートを3個設置する。
-  // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.ANGE] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE,
-    id: CHARACTER_ID.ANGE,
-    effectKey: 'ange',
-    label: 'SUPPORT / HEAL',
-    description: '扱いやすい2ライン射撃の回復支援型。ULT「慈愛の光」は敵の移動と新規射撃を3秒停止し、最大HPの33%を回復するハートを3個召喚する。既に盤面にある敵弾は消去しない。',
-    ultDescription: '敵の移動と新規弾の射出を3秒間停止する。発動時点で盤面に存在する敵弾は消去せず、そのまま進行する。同時にランダムな位置へ回復ハートを3個召喚し、取得したキャラクター自身の最大HPの33%を回復する。ハートは7秒後に消滅し、消滅2秒前から点滅する。',
-    ultName: '慈愛の光',
-    ultType: 'ange_healing_hearts',
-    burstNeed: 28,
-    ultGainPerHit: 0.476,
-    ultEnemyFreezeMs: 3000,
-    ultHeartCount: 3,
-    ultHeartHealPercent: 0.33,
-    ultHeartLifeMs: 7000,
-    ultHeartBlinkLeadMs: 2000,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SUI] = buildShootingCharacter({
@@ -1432,32 +1228,37 @@
   });
 
   // ============================================================
-  // グレシャ：FIRE 3WAY SPREAD / 焼野原
+  // グレシャ：クラリネ型ショット / 焼野原
   // ============================================================
   SHOOTING_CHARACTERS[CHARACTER_ID.GRESHA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.GRESHA,
     effectKey: 'gresha',
-    label: 'SPREAD / BURN FIELD',
-    description: '扇状に3WAYの火属性弾を放つR広域射撃型。ULT「焼野原」は敵陣へ6秒間ダメージフィールドを展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
+    label: 'BURN FIELD / ORBIT SHOT',
+    description: 'クラリネと同型の4ライン円環射撃。ULTは敵陣へ6秒間「焼野原」を展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
     ultDescription: '敵陣に6秒間ダメージフィールド「焼野原」を展開。フィールド内にいる敵全員へ1秒ごとにATK×1.5の火属性ダメージを与える。',
     ultName: '焼野原',
     ultType: 'gresha_burn_field',
 
-    // 通常ショット：FIRE 3WAY SPREAD
+    // クラリネと同一の通常ショット性能
     moveSpeed: 400,
-    fireRate: 360,
-    bulletSpeed: 760,
-    shotPowerRate: 0.095,
-    shotType: 'spread',
-    shotCount: 3,
-    shotAngleStep: 0.18,
+    fireRate: 178,
+    bulletSpeed: 430,
+    shotPowerRate: 0.050,
+    shotType: 'orbit',
+    shotCount: 4,
+    shotSpacing: 26,
+    shotStyle: 'clarine',
+    orbitRadius: 28,
+    orbitAngularSpeed: 12.4,
+    orbitForwardLoopRate: 0.28,
+    orbitPhaseStep: 1.5707963267948966,
 
     burstDamage: 0,
     burstNeed: 30,
-    ultGainPerHit: 0.75,
+    ultGainPerHit: 0.297,
     coreTop: '38%',
-    shotOffsetY: 40,
+    shotOffsetY: 38,
 
     // ULT
     burnFieldDurationMs: 6000,
@@ -1518,11 +1319,11 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ROSE,
     effectKey: 'rose',
-    label: 'SEED / FORTRESS',
-    description: '0.5秒ごとに7発の種子Spreadを放つ。ULT「ローズフォートレス」は発動位置の少し前へ5秒間、戦場全幅の茨壁を展開。通常敵弾を吸収して操作中ユニットを回復し、接触した敵へ継続ダメージを与える。',
-    ultDescription: '発動時のロゼ位置より少し前へ、戦場の端から端まで届く茨の要塞を5秒間展開する。通常敵弾を1発吸収するたび現在操作中ユニットを最大HPの3%回復。接触中の敵へ0.25秒ごとにロゼATK×1.0のダメージ。壁由来の攻撃・吸収ではULTゲージを増加させず、展開中も味方の通常射撃は継続する。',
-    ultName: 'ローズフォートレス',
-    ultType: 'rose_fortress',
+    label: 'SEED / HEAL FLOWER',
+    description: '0.5秒ごとに7発の種子Spreadを放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、取得した場のキャラのみ最大HPの5%回復／敵へATKの30%ダメージ。',
+    ultDescription: '中央に大花を5.2秒間展開して敵弾を遮断。0.24秒ごとにハートを10個放つ。ハートを取得すると、その時点で操作中のキャラの最大HPを5%回復。敵に命中した場合はATK×30%のダメージを与える。',
+    ultName: '花園の息吹',
+    ultType: 'rose_flower_heart',
     moveSpeed: 400,
 
     // ---- 通常ショット ----
@@ -1540,13 +1341,21 @@
     coreTop: '38%',
     shotOffsetY: 40,
 
-    // ---- ULT / ローズフォートレス ----
-    fortressImage: 'images/chara_09_battle_object.webp',
-    fortressDurationMs: 5000,
-    fortressForwardOffsetY: 92,
-    fortressContactIntervalMs: 250,
-    fortressContactDamageAtkRate: 1.0,
-    fortressBulletHealMaxHpRate: 0.03,
+    // ---- ULT / 花 ----
+    flowerImage: 'images/chara_09_battle_flower.webp',
+    flowerDurationMs: 5200,
+    flowerHeartIntervalMs: 240,
+    flowerHeartBurstCount: 10,
+    flowerHeartSpeed: 250,
+    flowerHeartLifeMs: 2200,
+    flowerHeartHealMaxHpRate: 0.05,
+
+    // ハートが敵に当たった時のダメージ。
+    // ULT由来なのでATK参照。ULTゲージは増加させない。
+    flowerHeartDamageAtkRate: 0.30,
+
+    flowerHeartOriginOffsetX: 0,
+    flowerHeartOriginOffsetY: 0,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NEM] = buildShootingCharacter({
@@ -1633,7 +1442,7 @@
     chargeMinSize: 30,
     chargeMaxSize: 76,
 
-    // ULTはERI系共通仕様：敵弾消去＋敵行動停止＋属性閃光＋ATK×3.0。
+    // ULTは今回未実装。既存の暫定挙動には触れない。
     coreTop: '38%',
   });
 
@@ -1652,7 +1461,7 @@
     shotPowerRate: 0.315,
 
     // ---- 通常ショット設定 ----
-    shotType: 'piercing',
+    shotType: 'shotgun',
     shotCount: 1,
     shotStyle: 'ayane',
     chargedEvery: 4,
@@ -1670,26 +1479,24 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ELTENA,
     effectKey: 'eltena',
-    label: 'BOMB M / GRAVITY CONTROL',
-    description: 'WOOD属性のBOMB Mを正面へ放つR範囲攻撃型。着弾点を中心に爆発し、周囲の敵へ拡散ダメージを与える。ULTは敵陣上端にブラックホールを生成し、8秒間すべての敵を中心へ吸引・拘束する。',
+    label: 'GRAVITY / CONTROL',
+    description: '0.7秒ごとに巨大な3WAY弾を放つ。ULTは敵陣上端にブラックホールを生成し、8秒間すべての敵を中心へ吸引・拘束する。',
     ultDescription: '正面にブラックホールを射出し、敵陣で8秒間展開する。範囲内の通常敵・大型敵・ボスを中心へ吸引・拘束する。ULT自体のダメージは0。',
     ultName: '事象の地平',
     ultType: 'eltena_black_hole',
     moveSpeed: 400,
 
-    // ---- 通常ショット：WOOD BOMB M ----
-    // build882: SPREADからBOMBへ変更。ID38と同じBOMB M基準値を使用。
-    shotType: 'bomb',
-    mainShot: { type: 'bomb', size: 'M' },
-    bombSize: 'M',
-    shotCount: 1,
-    fireRate: 550,
-    bulletSpeed: 660,
-    shotPowerRate: 0.27,
-    bombSplashRadius: 76,
-    bombSplashDamageRate: 0.55,
+    // ---- 通常ショット：巨大3WAY ----
+    fireRate: 700,
+    bulletSpeed: 610,
+    shotPowerRate: 0.150,
+    shotType: 'spread',
+    shotCount: 3,
+    shotAngleStep: 0.235,
+    shotStyle: 'eltena',
     shotOffsetY: 44,
 
+    // 3発命中時は高め、拡散で1〜2発命中なら標準火力になる想定。
     burstDamage: 0,
     burstNeed: 30,
     ultGainPerHit: 1.40,
@@ -1832,17 +1639,17 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SERA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SERA, effectKey: 'sera',
-    label: 'ORBIT / WOOD', description: '2発の円環軌道ショット。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    label: 'ORBIT / SUMMON', description: '2発の円環軌道ショット。ULTは植物系召喚物を設置するR召喚型。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
+    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RYUNE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RYUNE, effectKey: 'ryune',
-    label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
+    label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。',
     shotType: 'laser', shotStyle: 'ryune', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
+    ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.KAINA] = buildShootingCharacter({
@@ -1861,22 +1668,16 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.REISIA, effectKey: 'reisia',
-    label: 'CLUSTER 4 / AQUA',
-    description: '水属性の弾を前方へ射出し、着弾時にX字4方向へAQUA属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは巨大なAQUA爆弾を敵陣へ投げ込み、着弾時に盤面を覆う大爆発を起こす。',
-    ultName: 'MEGA AQUA BOMB',
-    ultDescription: '巨大なAQUA爆弾を敵陣へ放り投げる。着弾時に盤面上の敵弾を消去し、敵全体へATK×4.0のAQUA属性ダメージを与える。',
-    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'liz_giant_bomb',
-    ultDamageAtkMultiplier: 4.0,
-    lizUltBlastRadius: 164,
-    lizUltThrowMs: 760,
+    label: 'STRAIGHT / AQUA', description: '左右2発の水弾をまっすぐ前方へ同時射出するRストレート型。',
+    shotType: 'parallel', shotCount: 2, shotSpacing: 28, fireRate: 500, bulletSpeed: 640, shotPowerRate: 0.14,
+    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
-    label: 'CLUSTER 4 / LIGHT', description: '着弾時にX字4方向へLIGHT属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
+    label: 'BOMB / ITEM', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは支援アイテムを少数出現させる。',
+    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    ultBaseType: 'item_summon', ultAddons: [], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.IONA] = buildShootingCharacter({
@@ -1927,25 +1728,25 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RAGNA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RAGNA, effectKey: 'ragna',
-    label: 'CLUSTER 4 / FIRE', description: '着弾時にX字4方向へFIRE属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
+    label: 'BOMB / FIRE', description: '着弾点を中心に爆ぜるRスプラッシュ型。ULTは広範囲BURST。',
+    shotType: 'bomb', bombSize: 'L', shotCount: 1, fireRate: 550, bulletSpeed: 680, shotPowerRate: 0.27, splashRadius: 96, splashDamageRate: 0.58,
+    ultBaseType: 'burst', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'CLUSTER 4 / WOOD', description: '着弾時にX字4方向へWOOD属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50, shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
+    label: 'BOMB / DOT', description: '小範囲へ広がるRスプラッシュ型。ULTは継続ダメージ＋微回復。',
+    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+    ultBaseType: 'dot', ultAddons: ['heal'], ultType: 'prototype_generic',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SHION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SHION, effectKey: 'shion',
-    label: 'PIERCING / DELAY',
+    label: 'SHOTGUN / DELAY',
     description: '高威力の単発精密射撃。ULT「黒羽葬鐘」は敵全体へ呪印を刻み、時間差で闇撃を起こした後、敵の攻撃力を弱体化する。',
     ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・スタン・無敵は発生しない。',
     ultName: '黒羽葬鐘',
-    shotType: 'piercing', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
     ultType: 'shion_delayed_curse',
     ultDelayMs: 1200,
@@ -1956,10 +1757,10 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
-    label: 'PIERCING / LIGHT', description: '高威力の単発精密射撃。ULTは敵弾を消去し、敵行動停止後に属性閃光で敵全体へATK×3.0ダメージ。',
-    shotType: 'piercing', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
+    label: 'SHOTGUN / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
+    shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
-    ultBaseType: 'burst', ultAddons: ['damage','bullet_clear'], ultType: 'prototype_generic',
+    ultBaseType: 'burst', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
   });
 
   // v306: 限定SR FIRE / LASER
@@ -2095,218 +1896,24 @@
   // ============================================================
   // SIGMA-IX：DAILY RAIDクリア報酬
   // ============================================================
-
-  // ============================================================
-  // build737: ID35-37 combat profiles
-  // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.GISELLE] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.GISELLE, effectKey: 'giselle',
-    label: 'ORBIT / AQUA',
-    description: '2発の水属性円環ショットが前進しながら軌道を描くORBIT型。ULTはウルフ系のATK UP FIELDをR向けに抑えた1.3倍・10秒版。',
-    ultName: 'ATK UP FIELD',
-    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
-    shotType: 'orbit',
-    shotCount: 2,
-    shotSpacing: 28,
-    fireRate: 450,
-    bulletSpeed: 520,
-    shotPowerRate: 0.165,
-    orbitRadius: 30,
-    orbitAngularSpeed: 12.0,
-    orbitForwardLoopRate: 0.29,
-    orbitPhaseStep: Math.PI,
-    ultBaseType: 'field',
-    ultAddons: ['bullet_clear','player_buff'],
-    ultType: 'wolf_atk_field',
-    ultFieldDurationMs: 10000,
-    ultFieldAtkMultiplier: 1.3,
-    ultFieldRadius: 112,
-  });
-
-  SHOOTING_CHARACTERS[CHARACTER_ID.NINA] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NINA, effectKey: 'nina',
-    label: 'PLASMA / CHAIN',
-    description: '弾を撃たず、220px圏内を暴れる電撃が接触した敵・オブジェクトへ絡みつくSRチェイン型。接続は250pxまで維持。最大4体へ伝播し、威力は100%→50%→25%→12.5%。',
-    ultName: '出力最大！',
-    ultDescription: '7秒間、PLASMAの威力が1.5倍、射程が2倍になる。連鎖数と発射速度は変化しない。',
-    shotType: 'lightning',
-    shotCount: 1,
-    fireRate: 300,
-    shotPowerRate: 0.28,
-    lightningMaxTargets: 4,
-    lightningTickCount: 4,
-    lightningTickMs: 70,
-    lightningChainDecay: 0.5,
-    lightningAcquireRange: 220,
-    lightningReleaseRange: 250,
-    lightningChainRange: 160,
-    ultBaseType: 'buff',
-    ultAddons: ['plasma_power_up','plasma_range_up'],
-    ultType: 'nina_output_max',
-    ninaOutputMaxDurationMs: 7000,
-    ninaOutputMaxPowerMultiplier: 1.5,
-    ninaOutputMaxRangeMultiplier: 2.0,
-  });
-
-  SHOOTING_CHARACTERS[CHARACTER_ID.TOYFEL] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.TOYFEL, effectKey: 'toyfel',
-    label: 'CLUSTER 4 / DARK',
-    description: '闇属性の弾を前方へ射出し、着弾時にX字4方向へDARK属性の分裂弾を放つCLUSTER 4型。分裂弾1発は元弾の50%ダメージ。ULTは発動地点の左右端へ2つのブラックホールを7秒間展開し、敵弾を吸収する。',
-    ultName: 'DUAL BLACK HOLE',
-    ultDescription: '発動時の自機Y座標に合わせて、画面左端・右端へブラックホールを1つずつ召喚。7秒間、盤面上の敵弾を左右どちらかのブラックホールへ吸引して消滅させる。',
-    shotType: 'cluster',
-    clusterSize: 'M',
-    shotCount: 1,
-    fireRate: 550,
-    bulletSpeed: 660,
-    shotPowerRate: 0.27,
-    clusterSplitCount: 4,
-    clusterFragmentDamageRate: 0.50,
-    ultBaseType: 'field',
-    ultAddons: ['enemy_bullet_absorb'],
-    ultType: 'toyfel_double_black_hole',
-    toyfelBlackHoleDurationMs: 7000,
-    toyfelBlackHoleSize: 96,
-    toyfelBlackHoleEdgeInset: 34,
-    toyfelBlackHoleAbsorbRadius: 28,
-    toyfelBlackHoleAbsorbSpeed: 980,
-  });
-
-  // ============================================================
-  // build869: ID38 LIGHT / BOMB M / ATTRIBUTE PAINT
-  // ID38 正式名：クロエ。
-  // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.PAINTER] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.PAINTER, effectKey: 'painter',
-    label: 'BOMB M / ELEMENT SPREAD',
-    description: 'LIGHT属性のBOMB Mを扱うR範囲攻撃型。ULT「虹のかかる世界」は6色の貫通ペイント弾を扇状に放ち、命中した敵の属性そのものを書き換える。',
-    ultName: '虹のかかる世界',
-    ultDescription: '前方へ6本の属性変化弾をSPREAD発射する。左から無・火・水・木・闇・光属性。全弾貫通し、命中した敵をその弾と同じ属性へ変更する。同じ敵へ複数属性が命中した場合は、後から命中した属性で上書きされる。',
-    shotType: 'bomb',
-    mainShot: { type: 'bomb', size: 'M' },
-    bombSize: 'M',
-    shotCount: 1,
-    fireRate: 550,
-    bulletSpeed: 660,
-    shotPowerRate: 0.27,
-    bombSplashRadius: 76,
-    bombSplashDamageRate: 0.55,
-    burstNeed: 30,
-    ultGainPerHit: 1.40,
-    ultBaseType: 'projectile',
-    ultAddons: ['damage','multi_element','element_shift'],
-    ultType: 'painter_element_spread',
-    paintSpreadDamageAtkMultiplier: 1.75,
-    paintSpreadSpeed: 560,
-  });
-
-  // ============================================================
-  // build1062: ID39 レオナクロス / DARK body / NEUTRAL SHOT + ULT
-  // 2秒ごとに中距離へ地雷を投擲。設置後3秒、または敵接触で爆発する。
-  // 設置前の直撃は爆発せず、爆発基準ダメージの50%のみ。
-  // ULTはSIGMA-IX「ブラックシップ」と同じ5秒レーザー処理を共用。
-  // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.REMNACROSS] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
-    id: CHARACTER_ID.REMNACROSS,
-    effectKey: 'remnacross',
-    label: 'TRAP / PHOTON BUSTER 202',
-    description: '闇属性のキャラクター。通常SHOTのTRAPとULTは無属性。2秒ごとに中距離へ地雷を投げ、設置から3秒後または敵接触で範囲爆発させる。設置前に敵へ直撃した場合は爆発せず、爆発ダメージの50%だけを与える。ULTは5秒間の無属性極太レーザー。',
-    ultName: '対神性滅焼破壊砲 -フォトンバスター 202-',
-    ultDescription: 'SIGMA-IX「ブラックシップ」と同じ方式で、正面へ極太レーザーを5秒間連続照射する。攻撃属性は無属性。0.25秒ごとにATK×35%のダメージ判定が発生する。',
-    shotType: 'trap',
-    shotElement: 'neutral',
-    mainShot: { type: 'trap' },
-    shotCount: 1,
-    fireRate: 2000,
-    bulletSpeed: 460,
-    shotPowerRate: 0.90,
-    shotOffsetY: 38,
-    trapThrowDistance: 220,
-    trapMaxFlightMs: 620,
-    trapCountdownMs: 3000,
-    trapExplosionRadius: 88,
-    trapPreDeployDamageRate: 0.50,
-    burstNeed: 32,
-    ultGainPerHit: 2.0,
-    ultBaseType: 'beam',
-    ultAddons: ['damage'],
-    ultType: 'testchan_black_ship',
-    ultElement: 'neutral',
-    ultBeamDurationMs: 5000,
-    ultBeamTickMs: 250,
-    ultBeamTickAtkMultiplier: 0.35,
-    ultBeamWidth: 62,
-  });
-
-
-  // ============================================================
-  // build972: ID40 / CONJURE
-  // タップ中は自機前方に設置予告、離指で半透明砲台を生成。
-  // 最大3基 / 寿命3秒 / 1秒ごとに8方向へ計3射 / 1発ATK×0.40 / 非貫通。
-  // ULTは自機左右へ追従砲台を5秒展開し、各砲台が毎秒5発のHOMINGを射出。
-  // 左右各25発（合計50発）、1発ATK×0.30、命中時消滅。
-  // ============================================================
-  SHOOTING_CHARACTERS[CHARACTER_ID.CONJURER] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
-    id: CHARACTER_ID.CONJURER,
-    effectKey: 'conjure',
-    label: 'CONJURE / TURRET',
-    description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大3基。各砲台は3秒間、1秒ごとに8方向へ非貫通弾を射出する。',
-    ultName: 'オーバーライド・コンストラクト',
-    ultDescription: '自身の左右へ追従砲台を5秒間召喚。左右それぞれ毎秒5発、計25発ずつのHOMING弾を自動射出する。HOMING弾は敵に命中すると消滅する。ULT中も通常砲台の射撃・新規設置は継続できる。',
-    shotType: 'conjure',
-    mainShot: { type: 'conjure' },
-    shotCount: 1,
-    fireRate: 1000,
-    bulletSpeed: 520,
-    shotPowerRate: 0.40,
-    conjureMaxTurrets: 3,
-    conjureLifetimeMs: 3000,
-    conjureVolleyIntervalMs: 1000,
-    conjureVolleyCount: 3,
-    conjureBulletsPerVolley: 8,
-    conjurePlaceOffsetY: 112,
-    conjureTurretBulletSpeed: 520,
-    burstNeed: 30,
-    ultGainPerHit: 0.50,
-    ultBaseType: 'summon',
-    ultAddons: ['damage','homing'],
-    ultType: 'conjure_homing_battery',
-    conjureUltDurationMs: 5000,
-    conjureUltShotIntervalMs: 200,
-    conjureUltShotsPerSide: 25,
-    conjureUltDamageAtkMultiplier: 0.30,
-    conjureUltHomingSpeed: 680,
-    conjureUltHomingTurnRate: 8.5,
-    conjureUltTurretOffsetX: 54,
-    conjureUltTurretOffsetY: -8,
-  });
-
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.TESTCHAN,
     effectKey: 'testchan',
-    label: 'HOMING / BLACK SHIP',
-    description: '未来から来たアンドロイド、SIGMA-IX（シグマ-ナイン）。左右2発の緑色ホーミング弾が大きく回り込み、同じ標的へ収束するSR追尾型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。',
+    label: 'TRI-LASER / BLACK SHIP',
+    description: '未来から来たアンドロイド、SIGMA-IX（シグマ-ナイン）。3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
     ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
     ultName: 'ブラックシップ',
     ultType: 'testchan_black_ship',
     moveSpeed: 400,
+    fireRate: 250,
+    bulletSpeed: 920,
+    shotPowerRate: 0.075,
 
-    // build883: SPREADからHOMINGへ変更。
-    // HOMING標準値に寄せ、追尾性能込みで旧3WAYよりわずかに基礎DPSを抑える。
-    fireRate: 285,
-    bulletSpeed: 900,
-    shotPowerRate: 0.115,
-    shotType: 'homing',
-    shotCount: 2,
-    shotSpacing: 30,
+    shotType: 'spread',
+    shotCount: 3,
+    shotAngleStep: 0.115,
     shotStyle: 'testchan',
-    wolfCurveDurationMs: 430,
-    wolfRetreatDepth: 78,
-    wolfOuterOffset: 52,
-    wolfConvergeLead: 54,
 
     burstNeed: 32,
     ultGainPerHit: 0.42,
@@ -2401,7 +2008,7 @@
     aqua: 'images/type_aqua.webp',
     fire: 'images/type_fire.webp',
     wood: 'images/type_wood.webp',
-    dark: 'images/type_dark.webp?v=571',
+    dark: 'images/type_dark.webp',
     light: 'images/type_light.webp',
   });
 
@@ -2436,9 +2043,6 @@
               <span class="shooting-character-portrait">
                 <img src="${c.panelImage || c.image}"
                      alt="${owned ? c.name : '未所持'}"
-                     loading="${owned ? 'eager' : 'lazy'}"
-                     decoding="async"
-                     fetchpriority="${owned ? 'auto' : 'low'}"
                      draggable="false">
                 ${owned ? `<img class="shooting-character-element-icon"
                                src="${getShootingRosterElementIcon(c.element)}"
@@ -2490,23 +2094,6 @@
         hidden: master.hidden === true,
       }))
   );
-
-  // build980: 暫定BALANCE FLASH性能はそのまま、キャラクター固有のULT表示名だけを設定。
-  const BUILD980_ULT_NAME_ONLY = Object.freeze({
-    3:  'ゼピュロス・スピア',
-    10: '星に願いを',
-    13: '奥義・時雨',
-    14: '気まぐれキャット',
-    16: '断罪',
-    19: 'スピア・オブ・インフェルノ',
-    23: 'シルヴァニア・シンフォニー',
-    24: 'デイライト・プリズム',
-    25: 'レインフォール',
-  });
-  Object.entries(BUILD980_ULT_NAME_ONLY).forEach(([id, ultName]) => {
-    const profile = SHOOTING_CHARACTERS[Number(id)];
-    if (profile) profile.ultName = ultName;
-  });
 
   window.ShootingCharacters = Object.freeze({
     CHARACTER_ID,

@@ -1,7 +1,7 @@
 {
-  "build": 1107,
-  "published_at": "2026-10-04T13:25:00+09:00",
-  "label": "shard_reaction_rule_rewrite",
+  "build": 1125,
+  "published_at": "2026-10-04T18:06:00+09:00",
+  "label": "encounter_visible_until_unlock_guard",
   "release_protocol": 2,
   "commit_marker": true
 }
