@@ -1,5 +1,5 @@
 {
-  "version": "1159",
-  "build": 1159,
-  "notes": "CH01-02 tutorial now explains why piercing laser is effective before prompting the Eri-to-Jig character switch."
+  "version": "1160",
+  "build": 1160,
+  "notes": "Start bonus now grants only gems and coins; level enhancement materials were removed from both display and secure reward RPC."
 }
