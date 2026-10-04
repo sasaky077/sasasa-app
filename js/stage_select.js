@@ -113,7 +113,7 @@
   // STORY表示用クリア条件。
   // ステージ固有タイトルは使わず、画面上では「ステージN」で統一する。
   const STORY_STAGE_CONDITIONS = {
-    'shooting_ch01_01': '敵を3体すべて撃破',
+    'shooting_ch01_01': 'チュートリアルを完了',
     'shooting_ch01_02': '90秒以内に敵をすべて撃破',
     'shooting_ch01_03': '被弾3回以内に敵をすべて撃破',
     'shooting_ch01_04': 'オーバーシアを撃破',

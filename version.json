@@ -1,7 +1,7 @@
 {
-  "build": 1092,
-  "published_at": "2026-10-04T02:31:00+09:00",
-  "label": "hide_blessing_ui",
+  "build": 1107,
+  "published_at": "2026-10-04T13:25:00+09:00",
+  "label": "shard_reaction_rule_rewrite",
   "release_protocol": 2,
   "commit_marker": true
 }

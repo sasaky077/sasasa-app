@@ -150,31 +150,36 @@
       id: SHOOTING_STAGE_ID.CH01_01,
       chapter: 1,
       stageNo: 1,
-      name: '朝',
+      name: '前線',
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH01 main = LIGHT. 5/7 LIGHT, AQUA/WOODを少量混在。
+      // build1097: CH01-01は通常スポーンを使わない専用チュートリアル。
+      // 1体 → 2体 → 5体(ULT) の3段階をshooting_core側で制御する。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_01,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 3,
-        maxActive: 2,
-        spawnIntervalMs: 950,
+        tutorial: 'ch01_01',
+        totalEnemies: 8,
+        maxActive: 5,
+        spawnIntervalMs: 999999,
         enemySequence: Object.freeze([
           SHOOTING_ENEMY_ID.MINI_01,
           SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
+          SHOOTING_ENEMY_ID.MINI_01,
         ]),
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        target: 3,
-        text: '敵を3体すべて撃破',
+        target: 8,
+        text: 'チュートリアルを完了',
       }),
 
       playable: true,

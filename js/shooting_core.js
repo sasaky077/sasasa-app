@@ -1970,6 +1970,7 @@
   const STORY_FIXED_PARTY_MAP = Object.freeze({
     shooting_ch01_01: Object.freeze([1]),       // エリ
     shooting_ch01_02: Object.freeze([5, 20]),   // ジグ / アルノ
+    shooting_ch01_04: Object.freeze([1, 5]),    // エリ / ジグ（アウラは別戦闘。救援後はアルノ単独へ交代）
   });
 
   function getSelectedStoryFixedPartyIds() {
@@ -3044,6 +3045,10 @@
     const member = getPartyMember(resolvedOwnerId);
     if (!member) return;
 
+    // build1097: CH01-01は撃破タイミングで1/3 → MAXへ固定する。
+    // 通常HIT由来のゲージ増加はチュートリアル中だけ停止。
+    if (isChapter101TutorialStage()) return;
+
     const safeGainMultiplier = Math.max(0, Number.isFinite(Number(gainMultiplier)) ? Number(gainMultiplier) : 1);
     const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier;
     const wasReady = member.burst >= c.burstNeed;
@@ -3498,6 +3503,10 @@
       normalLastSpawnAt: -9999,
       normalEnemyStunUntil: 0,
       angeEnemyFreezeUntil: 0,
+      ch101TutorialPhase: '',
+      ch101TutorialPaused: false,
+      ch101TutorialOverlayActive: false,
+      ch101TutorialUltTriggered: false,
       // build841: stage-side random patterns are now deterministic.
       chapter4CurtainVolleyIndex: 0,
       chapter43VolleyIndex: 0,
@@ -9155,6 +9164,523 @@
 
   }
 
+  function isChapter101TutorialStage() {
+    return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_01));
+  }
+
+  function getChapter101TutorialCombatEntry(cue) {
+    try {
+      const data = window.ZERAPHIA_STORY_SCENARIO && window.ZERAPHIA_STORY_SCENARIO.shooting_ch01_01;
+      const list = data && Array.isArray(data.combat) ? data.combat : [];
+      return list.find(entry => entry && entry.cue === cue) || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function ensureChapter101TutorialStyle() {
+    if (document.getElementById('shooting-ch101-tutorial-style')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-ch101-tutorial-style';
+    style.textContent = `
+      .shooting-ch101-tutorial-overlay{
+        position:absolute;
+        inset:0;
+        z-index:260;
+        display:flex;
+        align-items:flex-end;
+        justify-content:center;
+        padding:0 14px 86px;
+        background:linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(250,247,240,.10) 55%,rgba(247,243,234,.40) 100%);
+        pointer-events:auto;
+        opacity:0;
+        transition:opacity .18s ease;
+      }
+      .shooting-ch101-tutorial-overlay.show{opacity:1}
+      .shooting-ch104-rescue-overlay{
+        z-index:290;
+        background:
+          radial-gradient(circle at 50% 24%,rgba(255,255,255,.98) 0%,rgba(248,248,246,.96) 28%,rgba(226,229,226,.98) 66%,rgba(198,203,201,.99) 100%),
+          linear-gradient(180deg,#fbfbfa 0%,#dfe3e0 100%);
+      }
+      .shooting-ch104-rescue-overlay::before{
+        content:"";
+        position:absolute;inset:0;
+        background:
+          linear-gradient(105deg,transparent 0 34%,rgba(255,255,255,.68) 48%,transparent 62%),
+          repeating-linear-gradient(176deg,rgba(255,255,255,.0) 0 38px,rgba(105,113,110,.045) 39px 40px);
+        opacity:.78;
+        pointer-events:none;
+      }
+      .shooting-ch104-rescue-overlay .shooting-ch101-tutorial-card{z-index:1}
+      .shooting-ch101-tutorial-card{
+        position:relative;
+        width:min(94%,560px);
+        min-height:122px;
+        padding:16px 18px 24px 116px;
+        border:1px solid rgba(145,116,69,.30);
+        background:rgba(252,249,242,.95);
+        box-shadow:0 12px 34px rgba(63,50,33,.14),inset 0 0 0 1px rgba(255,255,255,.78);
+        backdrop-filter:blur(4px);
+        -webkit-backdrop-filter:blur(4px);
+      }
+      .shooting-ch101-tutorial-portrait{
+        position:absolute;
+        left:10px;
+        bottom:0;
+        width:94px;
+        height:126px;
+        object-fit:cover;
+        object-position:center 20%;
+        opacity:.96;
+      }
+      .shooting-ch101-tutorial-card.no-speaker{padding-left:18px}
+      .shooting-ch101-tutorial-card.no-speaker .shooting-ch101-tutorial-portrait{display:none}
+      .shooting-ch101-tutorial-speaker{
+        min-height:18px;
+        font-family:"Noto Serif JP",serif;
+        font-size:11px;
+        font-weight:700;
+        letter-spacing:.12em;
+        color:#86653b;
+      }
+      .shooting-ch101-tutorial-text{
+        margin-top:7px;
+        font-family:"Noto Serif JP",serif;
+        font-size:13px;
+        line-height:1.8;
+        letter-spacing:.03em;
+        color:#4d4439;
+      }
+      .shooting-ch101-tutorial-tap{
+        position:absolute;
+        right:14px;
+        bottom:7px;
+        font-family:"Cinzel",serif;
+        font-size:7px;
+        letter-spacing:.18em;
+        color:#b7a688;
+      }
+      #shooting-event-root.ch101-ult-prompt #shooting-ult-side{
+        animation:shootingCh101UltPrompt .66s ease-in-out infinite alternate!important;
+      }
+      @keyframes shootingCh101UltPrompt{
+        from{filter:drop-shadow(0 0 2px rgba(191,150,76,.2));transform:scale(1)}
+        to{filter:drop-shadow(0 0 13px rgba(207,164,76,.9));transform:scale(1.04)}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function clearChapter101TutorialOverlay() {
+    document.querySelectorAll('.shooting-ch101-tutorial-overlay').forEach(el => el.remove());
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.classList.remove('ch101-ult-prompt');
+    if (state) {
+      state.ch101TutorialPaused = false;
+      state.ch101TutorialOverlayActive = false;
+    }
+  }
+
+  function showChapter101TutorialPages(cues, onComplete) {
+    if (!state || !isChapter101TutorialStage()) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    ensureChapter101TutorialStyle();
+    clearChapter101TutorialOverlay();
+
+    const root = document.getElementById(ROOT_ID);
+    if (!root) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    const pages = (Array.isArray(cues) ? cues : [cues])
+      .map(cue => getChapter101TutorialCombatEntry(cue))
+      .filter(Boolean);
+    if (!pages.length) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    state.ch101TutorialPaused = true;
+    state.ch101TutorialOverlayActive = true;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch101-tutorial-overlay';
+    overlay.innerHTML = `
+      <div class="shooting-ch101-tutorial-card">
+        <img class="shooting-ch101-tutorial-portrait" src="images/chara_03_panel.webp" alt="" draggable="false">
+        <div class="shooting-ch101-tutorial-speaker"></div>
+        <div class="shooting-ch101-tutorial-text"></div>
+        <div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div>
+      </div>`;
+    root.appendChild(overlay);
+
+    let pageIndex = 0;
+    const card = overlay.querySelector('.shooting-ch101-tutorial-card');
+    const speakerEl = overlay.querySelector('.shooting-ch101-tutorial-speaker');
+    const textEl = overlay.querySelector('.shooting-ch101-tutorial-text');
+
+    const renderPage = () => {
+      const page = pages[pageIndex];
+      const speaker = String(page.speaker || '');
+      card.classList.toggle('no-speaker', !speaker);
+      speakerEl.textContent = speaker;
+      textEl.textContent = String(page.text || '');
+    };
+
+    const finish = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.remove();
+        if (!state) return;
+        state.ch101TutorialPaused = false;
+        state.ch101TutorialOverlayActive = false;
+        prevTs = performance.now();
+        if (typeof onComplete === 'function') onComplete();
+      }, 160);
+    };
+
+    overlay.addEventListener('pointerup', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      pageIndex += 1;
+      if (pageIndex >= pages.length) {
+        finish();
+        return;
+      }
+      renderPage();
+    }, { passive:false });
+
+    renderPage();
+    requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
+  function setChapter101TutorialGauge(fraction) {
+    if (!state || !isChapter101TutorialStage()) return;
+    const c = getCurrentCharacter();
+    const member = getActiveMember();
+    if (!c || !member) return;
+    const need = Math.max(1, Number(c.burstNeed || 1));
+    const value = Math.max(0, Math.min(need, need * Number(fraction || 0)));
+    member.burst = value;
+    member.ultReadyNotified = value >= need;
+    renderHud();
+    if (value >= need) showShootingUltFullChargeNotice();
+  }
+
+  function spawnChapter101TutorialWave(count) {
+    if (!state || !isChapter101TutorialStage()) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+
+    const total = Math.max(1, Number(count || 1));
+    const enemyIds = selectedStage && Array.isArray(selectedStage.enemyIds) ? selectedStage.enemyIds : [];
+    const enemyId = enemyIds[0];
+    const def = getShootingEnemy(enemyId);
+    if (!def || !def.implemented) return;
+
+    const now = performance.now();
+    const xs = total === 5
+      ? [.13,.31,.50,.69,.87]
+      : total === 2
+        ? [.35,.65]
+        : [.50];
+
+    for (let i = 0; i < total; i++) {
+      const enemy = createNormalEnemy(def, now + i * 8);
+      if (!enemy) continue;
+      enemy.x = arena.clientWidth * xs[Math.min(i, xs.length - 1)];
+      enemy.baseX = enemy.x;
+      enemy.y = Math.max(92, arena.clientHeight * (.16 + (i % 2) * .07));
+      enemy.baseY = enemy.y;
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+      state.normalEnemies.push(enemy);
+      state.normalSpawned += 1;
+    }
+    state.normalLastSpawnAt = now;
+  }
+
+  function startChapter101TutorialBattle() {
+    if (!state || !isChapter101TutorialStage()) return;
+    state.ch101TutorialPhase = 'intro';
+    state.ch101TutorialPaused = true;
+    state.normalSpawned = 0;
+    state.normalDefeated = 0;
+    setChapter101TutorialGauge(0);
+
+    setTimeout(() => {
+      if (!state || state.ended || !isChapter101TutorialStage()) return;
+      showChapter101TutorialPages(['intro_aura','intro_help'], () => {
+        if (!state || state.ended) return;
+        state.ch101TutorialPhase = 'wave1';
+        spawnChapter101TutorialWave(1);
+      });
+    }, 260);
+  }
+
+  function handleChapter101TutorialEnemyDefeat() {
+    if (!state || !isChapter101TutorialStage()) return;
+
+    if (state.ch101TutorialPhase === 'wave1' && state.normalDefeated === 1) {
+      state.ch101TutorialPhase = 'between1';
+      state.ch101TutorialPaused = true;
+      setChapter101TutorialGauge(1 / 3);
+      setTimeout(() => {
+        if (!state || state.ended) return;
+        showChapter101TutorialPages(['after_first'], () => {
+          if (!state || state.ended) return;
+          state.ch101TutorialPhase = 'wave2';
+          spawnChapter101TutorialWave(2);
+        });
+      }, 320);
+      return;
+    }
+
+    if (state.ch101TutorialPhase === 'wave2' && state.normalDefeated === 3) {
+      state.ch101TutorialPhase = 'ult_prompt';
+      state.ch101TutorialPaused = true;
+      setChapter101TutorialGauge(1);
+      clearProjectiles();
+      setTimeout(() => {
+        if (!state || state.ended) return;
+        spawnChapter101TutorialWave(5);
+        showChapter101TutorialPages(['ult_1','ult_2','ult_3','ult_help'], () => {
+          if (!state || state.ended) return;
+          state.ch101TutorialPhase = 'ult_ready';
+          const root = document.getElementById(ROOT_ID);
+          if (root) root.classList.add('ch101-ult-prompt');
+        });
+      }, 360);
+    }
+  }
+
+  function defeatChapter101TutorialUltWave() {
+    if (!state || !isChapter101TutorialStage()) return;
+    const now = performance.now();
+    const targets = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    targets.forEach(enemy => {
+      damageNormalEnemy(enemy, Math.max(999999, Number(enemy.hpMax || 1) * 50), now, true, 'weak');
+    });
+  }
+
+
+  function isChapter104BossStage() {
+    return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04));
+  }
+
+  function getChapter104CombatEntry(cue) {
+    try {
+      const data = window.ZERAPHIA_STORY_SCENARIO && window.ZERAPHIA_STORY_SCENARIO.shooting_ch01_04;
+      const list = data && Array.isArray(data.combat) ? data.combat : [];
+      return list.find(entry => entry && entry.cue === cue) || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getChapter104Portrait(speaker) {
+    const map = {
+      'エリ': 'images/chara_01_panel.webp',
+      'アウラ': 'images/chara_03_panel.webp',
+      'ジグ': 'images/chara_05_panel.webp',
+      'アルノ': 'images/chara_20_panel.webp',
+    };
+    return map[String(speaker || '')] || '';
+  }
+
+  function showChapter104RescuePages(cues, onComplete) {
+    if (!state || !isChapter104BossStage()) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    ensureChapter101TutorialStyle();
+
+    const root = document.getElementById(ROOT_ID);
+    if (!root) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    document.querySelectorAll('.shooting-ch104-rescue-overlay').forEach(el => el.remove());
+
+    const pages = (Array.isArray(cues) ? cues : [cues])
+      .map(cue => getChapter104CombatEntry(cue))
+      .filter(Boolean);
+
+    if (!pages.length) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch101-tutorial-overlay shooting-ch104-rescue-overlay';
+    overlay.innerHTML = `
+      <div class="shooting-ch101-tutorial-card">
+        <img class="shooting-ch101-tutorial-portrait" src="" alt="" draggable="false">
+        <div class="shooting-ch101-tutorial-speaker"></div>
+        <div class="shooting-ch101-tutorial-text"></div>
+        <div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div>
+      </div>`;
+    root.appendChild(overlay);
+
+    let pageIndex = 0;
+    const card = overlay.querySelector('.shooting-ch101-tutorial-card');
+    const portrait = overlay.querySelector('.shooting-ch101-tutorial-portrait');
+    const speakerEl = overlay.querySelector('.shooting-ch101-tutorial-speaker');
+    const textEl = overlay.querySelector('.shooting-ch101-tutorial-text');
+
+    const renderPage = () => {
+      const page = pages[pageIndex];
+      const speaker = String(page.speaker || '');
+      const portraitSrc = getChapter104Portrait(speaker);
+
+      card.classList.toggle('no-speaker', !speaker);
+      speakerEl.textContent = speaker;
+      textEl.textContent = String(page.text || '');
+
+      if (portrait) {
+        if (portraitSrc) {
+          portrait.src = portraitSrc;
+          portrait.style.display = '';
+        } else {
+          portrait.removeAttribute('src');
+          portrait.style.display = 'none';
+        }
+      }
+    };
+
+    const finish = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.remove();
+        if (!state || state.ended || state.finishing) return;
+        prevTs = performance.now();
+        if (typeof onComplete === 'function') onComplete();
+      }, 180);
+    };
+
+    overlay.addEventListener('pointerup', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      pageIndex += 1;
+      if (pageIndex >= pages.length) {
+        finish();
+        return;
+      }
+      renderPage();
+    }, { passive:false });
+
+    renderPage();
+    requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
+  function switchChapter104ToArno() {
+    if (!state || !isChapter104BossStage()) return;
+
+    const arnoId = Number(CHARACTER_ID.ARNO || 20);
+    const arno = buildResonatedCharacterProfile(arnoId);
+    if (!arno) return;
+
+    state.characterProfiles[arnoId] = arno;
+
+    // CH01-04: REMNANT01本体との戦闘は、救援前がエリ＋ジグ、救援後はアルノ単独。
+    // アウラは小型レムナント群との別戦闘中なので、ボス戦partyには含めない。
+    // 救援後はエリとジグもアウラ側の援護へ回るため、ボス戦から離脱する。
+    const arnoMember = {
+      id: arnoId,
+      hp: arno.hp,
+      hpMax: arno.hp,
+      burst: 0,
+      ultReadyNotified: false,
+      hitCount: 0,
+      ultUseCount: 0
+    };
+    state.party = [arnoMember];
+    selectedPartyIds = [arnoId];
+
+    state.activeCharacterId = arnoId;
+    selectedCharacterId = arnoId;
+    state.switchReadyAt = performance.now() + 800;
+    state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), performance.now() + 1600);
+    state.lastShotAt = -9999;
+    applySelectedCharacterToUi();
+    renderSwitchRail(true);
+
+    const player = document.getElementById(PLAYER_ID);
+    if (player) {
+      player.classList.remove('character-swap');
+      void player.offsetWidth;
+      player.classList.add('character-swap');
+      setTimeout(() => player.classList.remove('character-swap'), 260);
+    }
+  }
+
+  function maybeTriggerChapter104Rescue() {
+    if (
+      !state ||
+      !isChapter104BossStage() ||
+      state.ended ||
+      state.finishing ||
+      state.ch104RescueTriggered ||
+      !state.boss ||
+      state.boss.hp <= 0
+    ) {
+      return false;
+    }
+
+    const hpMax = Math.max(1, Number(state.boss.hpMax || 1));
+    const ratio = Number(state.boss.hp || 0) / hpMax;
+    if (ratio > 0.60) return false;
+
+    state.ch104RescueTriggered = true;
+    state.phaseTransition = true;
+    removeBossDangerWarning();
+    state.bossDangerExecuteAt = 0;
+    clearProjectiles();
+    deferBossAttackResume(performance.now() + 12000);
+
+    showChapter104RescuePages([
+      'pressure_1',
+      'pressure_2',
+      'pressure_3',
+      'pressure_4',
+      'pressure_5',
+      'pressure_6',
+      'pressure_7',
+      'pressure_8',
+      'impact_1',
+      'impact_2',
+      'rescue_1',
+      'rescue_2',
+      'rescue_3',
+      'rescue_4',
+      'rescue_5',
+      'rescue_6'
+    ], () => {
+      if (!state || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) return;
+
+      // 救援イベント後はアルノ単独へ強制切替。エリとジグはアウラ側の援護へ回る。
+      switchChapter104ToArno();
+      createHit(Number(state.boss.x || 0), Number(state.boss.y || 0), true);
+      flashBossHit(true, true);
+      applyBossStun(2600, 'arno-rescue');
+
+      state.phaseTransition = false;
+      state.lastBossShotAt = performance.now();
+      state.lastShotAt = performance.now();
+      prevTs = performance.now();
+      renderHud();
+    });
+
+    return true;
+  }
+
   function isNormalBattle() {
     return !!(state && state.battleType === 'normal');
   }
@@ -9162,12 +9688,13 @@
   function getNormalBattleConfig() {
     const source = (selectedStage && selectedStage.normalBattle) || {};
 
-    // build1082: CH01-01 is exactly three enemies, not an item-collection stage.
+    // build1097: CH01-01 uses a dedicated 1 -> 2 -> 5 tutorial wave controller.
     if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_01)) {
       return {
         ...source,
-        totalEnemies: 3,
-        maxActive: Math.min(3, Math.max(1, Number(source.maxActive || 2))),
+        tutorial: 'ch01_01',
+        totalEnemies: 8,
+        maxActive: 5,
         infiniteEnemies: false,
       };
     }
@@ -9354,6 +9881,7 @@
 
   function spawnNormalEnemies(now) {
     if (!isNormalBattle() || state.finishing || state.ended) return;
+    if (isChapter101TutorialStage()) return;
     const cfg = getNormalBattleConfig();
 
     // アイテム収集ミッションは、必要数を拾うまで敵が枯渇しないよう保証する。
@@ -10528,6 +11056,7 @@
 
     state.normalDefeated++;
     state.score += Number(enemy.def?.scoreValue || 650);
+    handleChapter101TutorialEnemyDefeat();
     if (shouldDropMissionItem(state.normalDefeated)) spawnMissionItem(enemy.x, enemy.y);
     if (enemy.el) {
       const old = enemy.el;
@@ -10576,6 +11105,11 @@
     const cfg = getNormalBattleConfig();
     const total = Number(cfg.totalEnemies || 0);
     const allDefeated = total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
+
+    if (isChapter101TutorialStage() && allDefeated && !state.ch101TutorialUltTriggered) {
+      state.missionComplete = false;
+      return;
+    }
 
     if (mission.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
       if ((now - state.startedAt) / 1000 > Number(mission.targetSeconds || 60)) {
@@ -10700,6 +11234,7 @@
   }
 
   function clearNormalBattleObjects() {
+    clearChapter101TutorialOverlay();
     if (!state) return;
     (state.normalEnemies || []).forEach(enemy => enemy?.el?.remove());
     (state.collectibles || []).forEach(item => item?.el?.remove());
@@ -13253,6 +13788,9 @@
   }
 
   function updateBossPhase() {
+    // build1102: CH01-04はHP60%で一度追い込まれ、アルノ救援演出へ移行する。
+    if (maybeTriggerChapter104Rescue()) return;
+
     // SCORE ATTACKは1ゲージ固定の∞ボス。
     // 通常BOSS用の「3ゲージ→PHASE算出」を通すと、初撃でPHASE 3扱いになり
     // BREAK演出が発生するため、フェーズ更新自体を無効化する。
@@ -16073,6 +16611,13 @@
       return;
     }
 
+    if (state.ch101TutorialPaused) {
+      prevTs = ts;
+      renderHud();
+      rafId = requestAnimationFrame(gameLoop);
+      return;
+    }
+
     if (state.ultCutinActive) {
       // ULTカットイン中はプレイヤー・敵・弾・DoT・召喚物を含めて完全停止。
       // RAFだけ継続し、再開時のdtジャンプを防ぐ。
@@ -16166,7 +16711,8 @@
     if (!state.phaseTransition && !state.koTransition && !ultLocked) {
       // 長いULT演出で通常射撃だけを止めたい場合は playerShotLockUntil を使う。
       // 敵の移動・攻撃は止めない。敵の行動停止は専用のfreeze/stun処理だけで行う。
-      if (ts >= Number(state.playerShotLockUntil || 0)) firePlayer(ts);
+      const tutorialUltOnly = isChapter101TutorialStage() && state.ch101TutorialPhase === 'ult_ready';
+      if (!tutorialUltOnly && ts >= Number(state.playerShotLockUntil || 0)) firePlayer(ts);
       if (isNormalBattle()) {
         spawnNormalEnemies(ts);
         updateNormalEnemies(dt, ts);
@@ -17043,7 +17589,11 @@
       countdown.classList.add(step.phase);
       if (isChapter04Stage() && i === 0) countdown.classList.add('chapter4-rule-first');
 
-      span.textContent = step.text;
+      if (step.html) {
+        span.innerHTML = step.html;
+      } else {
+        span.textContent = step.text;
+      }
       span.classList.remove('pop', 'ready-pop', 'start-pop');
 
       // 前ステップの固定表示指定を必ず解除してから次の演出へ。
@@ -17051,6 +17601,8 @@
       span.style.removeProperty('opacity');
       span.style.removeProperty('transform');
       span.style.removeProperty('filter');
+      span.style.removeProperty('line-height');
+      span.style.removeProperty('white-space');
       void span.offsetWidth;
 
       if (step.holdVisible) {
@@ -17060,7 +17612,10 @@
         span.style.setProperty('opacity', '1', 'important');
         span.style.setProperty('transform', 'none', 'important');
         span.style.setProperty('filter', 'none', 'important');
-      } else if (step.phase === 'chapter4-rule-phase' || step.phase === 'ready-phase') {
+      } else if (
+        step.phase === 'chapter4-rule-phase' ||
+        step.phase === 'ready-phase'
+      ) {
         span.classList.add('ready-pop');
       } else if (step.phase === 'start-phase') {
         span.classList.add('start-pop');
@@ -17103,6 +17658,9 @@
         rebaseTouchDragToPlayer();
 
         prevTs = performance.now();
+        if (isChapter101TutorialStage()) {
+          startChapter101TutorialBattle();
+        }
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(gameLoop);
       }, step.hold);
@@ -23848,8 +24406,22 @@
     member.ultUseCount = (member.ultUseCount || 0) + 1;
     clearUltTimers();
 
+    const chapter101TutorialUlt =
+      isChapter101TutorialStage() && state.ch101TutorialPhase === 'ult_ready';
+    if (chapter101TutorialUlt) {
+      state.ch101TutorialUltTriggered = true;
+      state.ch101TutorialPhase = 'ult_resolving';
+      const root = document.getElementById(ROOT_ID);
+      if (root) root.classList.remove('ch101-ult-prompt');
+    }
+
     // 約1秒のカットイン → その後にULT効果を発動。
-    playUltCutin(c, () => executeCharacterUlt(c));
+    playUltCutin(c, () => {
+      executeCharacterUlt(c);
+      if (chapter101TutorialUlt) {
+        setTimeout(() => defeatChapter101TutorialUltWave(), 520);
+      }
+    });
     renderHud();
   };
 
@@ -24944,9 +25516,23 @@
 
     // STORY
     if (chapter > 0 && stageNo > 0) {
+      let storyTitle = String(stage.name || '').trim();
+      try {
+        const storyId = String(stage.baseStageId || stage.id || '');
+        const storyData =
+          window.StoryNovel &&
+          typeof window.StoryNovel.dataFor === 'function'
+            ? window.StoryNovel.dataFor(storyId)
+            : null;
+        if (storyData && String(storyData.stageTitle || '').trim()) {
+          storyTitle = String(storyData.stageTitle).trim();
+        }
+      } catch (_) {}
+
       return [
-        `CHAPTER ${String(chapter).padStart(2, '0')}`,
-        `STAGE ${String(stageNo).padStart(2, '0')}`
+        `CHAPTER${String(chapter).padStart(2, '0')}`,
+        `STAGE${String(stageNo).padStart(2, '0')}`,
+        storyTitle || '-'
       ];
     }
 
@@ -24991,6 +25577,7 @@
       <div class="shooting-stage-info-copy" aria-hidden="true">
         <div class="shooting-stage-info-line line-1"></div>
         <div class="shooting-stage-info-line line-2"></div>
+        <div class="shooting-stage-info-line line-3"></div>
       </div>`;
     document.body.appendChild(overlay);
     return overlay;
@@ -24998,16 +25585,37 @@
 
   async function showShootingStageInfo() {
     const overlay = ensureShootingStageInfoOverlay();
-    const [line1, line2] = getShootingStageInfoLines();
+    const lines = getShootingStageInfoLines();
     const line1El = overlay.querySelector('.line-1');
     const line2El = overlay.querySelector('.line-2');
-    if (!line1El || !line2El) return;
+    const line3El = overlay.querySelector('.line-3');
+    if (!line1El || !line2El || !line3El) return;
 
-    // CHAPTERを先に、STAGEは少し余韻を置いて追いかける。
+    const line1 = String(lines[0] || '');
+    const line2 = String(lines[1] || '');
+    const line3 = String(lines[2] || '');
+
     const line1End = renderShootingStageInfoCharacters(line1El, line1, 120);
-    const line2BaseDelay = Math.max(720, line1End - SHOOTING_STAGE_INFO_CHAR_FADE_MS + SHOOTING_STAGE_INFO_LINE_GAP_MS);
+    const line2BaseDelay = Math.max(
+      720,
+      line1End - SHOOTING_STAGE_INFO_CHAR_FADE_MS + SHOOTING_STAGE_INFO_LINE_GAP_MS
+    );
     const line2End = renderShootingStageInfoCharacters(line2El, line2, line2BaseDelay);
-    const revealEnd = Math.max(line1End, line2End);
+
+    let line3End = line2End;
+    if (line3) {
+      line3El.style.display = '';
+      const line3BaseDelay = Math.max(
+        line2BaseDelay + 620,
+        line2End - SHOOTING_STAGE_INFO_CHAR_FADE_MS + SHOOTING_STAGE_INFO_LINE_GAP_MS
+      );
+      line3End = renderShootingStageInfoCharacters(line3El, line3, line3BaseDelay);
+    } else {
+      line3El.textContent = '';
+      line3El.style.display = 'none';
+    }
+
+    const revealEnd = Math.max(line1End, line2End, line3End);
 
     overlay.classList.remove('is-revealing', 'is-fading');
     overlay.classList.add('is-visible');
@@ -25107,7 +25715,8 @@
         font-variant-numeric:lining-nums tabular-nums;
       }
       #shooting-stage-info .shooting-stage-info-line.line-1,
-      #shooting-stage-info .shooting-stage-info-line.line-2{
+      #shooting-stage-info .shooting-stage-info-line.line-2,
+      #shooting-stage-info .shooting-stage-info-line.line-3{
         font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN","Times New Roman",serif;
         font-size:clamp(22px,6.2vw,36px);
         font-weight:400;
@@ -25116,6 +25725,12 @@
       }
       #shooting-stage-info .shooting-stage-info-line.line-2{
         color:#967b60;
+      }
+      #shooting-stage-info .shooting-stage-info-line.line-3{
+        margin-top:4px;
+        color:#4f4943;
+        font-size:clamp(26px,7.4vw,42px);
+        letter-spacing:.18em;
       }
       #shooting-stage-info .shooting-stage-info-char{
         display:inline-block;
@@ -25147,7 +25762,8 @@
         #shooting-stage-info .shooting-stage-info-copy{width:76vw;gap:10px;}
         #shooting-stage-info .shooting-stage-info-line,
         #shooting-stage-info .shooting-stage-info-line.line-1,
-        #shooting-stage-info .shooting-stage-info-line.line-2{
+        #shooting-stage-info .shooting-stage-info-line.line-2,
+        #shooting-stage-info .shooting-stage-info-line.line-3{
           font-size:clamp(20px,6vw,30px);
           letter-spacing:.12em;
           line-height:1.12;

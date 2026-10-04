@@ -1,4 +1,4 @@
-// ZERAPHIA STORY NOVEL ENGINE — build1091
+// ZERAPHIA STORY NOVEL ENGINE — build1100
 (function(){
   'use strict';
 
@@ -17,6 +17,16 @@
 
   let session = null;
   let typingTimer = 0;
+  let introTimer = 0;
+  let entryTransitionTimer = 0;
+
+  // build1095: ノベル全体の呼吸を少しゆっくりにする。
+  const NOVEL_TEXT_SPEED_MS = 32;          // 旧22ms
+  const NOVEL_ENTRY_FADE_MS = 190;         // 台詞送り時の間
+  const NOVEL_LOCATION_FADE_MS = 320;      // 場所が変わる時の間
+  const NOVEL_PHASE_EXIT_MS = 360;         // ノベル→次パートの余韻
+  const NOVEL_INTRO_HOLD_MS = 2400;        // ストーリー開始タイトルをやや長めに表示
+  const NOVEL_INTRO_FADE_MS = 760;         // タイトル退場も少しゆっくり
 
   function normalizeStageId(stageId){
     const raw=String(stageId||'');
@@ -83,6 +93,37 @@
   function resolveCast(entries,index){
     const entry=entries && entries[index];
     const current=String(entry && entry.speaker || '');
+
+    // build1099:
+    // シナリオ側に left / right が1つでも書かれていれば、
+    // 自動判定を使わず、その指定をそのまま採用する。
+    //
+    // 2人:
+    //   left: "アウラ", right: "エリ"
+    // 1人を右:
+    //   left: "", right: "アウラ"
+    // 1人を左:
+    //   left: "アウラ", right: ""
+    // キャラなし:
+    //   left: "", right: ""
+    const hasExplicitCast = !!(
+      entry &&
+      (
+        Object.prototype.hasOwnProperty.call(entry,'left') ||
+        Object.prototype.hasOwnProperty.call(entry,'right')
+      )
+    );
+
+    if(hasExplicitCast){
+      return {
+        left:String(entry.left || ''),
+        right:String(entry.right || ''),
+        active:current
+      };
+    }
+
+    // 既存シナリオ互換。
+    // left/right未指定の行だけ、従来の会話ブロック自動判定を使用する。
     if(!current) return {left:'', right:'', active:''};
     const block=buildDialogueBlock(entries,index);
     const speakers=uniqueSpeakersInBlock(block);
@@ -98,15 +139,31 @@
 
   const STORY_BG_PATHS = Object.freeze({
     outside_tower: 'images/outside_tower.webp',
+    outside_tower_enemy: 'images/outside_tower_enemy.webp',
+    outside_site_enemy: 'images/outside_site_enemy.webp',
     inside: 'images/inside.webp',
     workbench: 'images/workbench.webp',
-    outside_road: 'images/outside_road.webp'
+    outside_road: 'images/outside_road.webp',
+    remnant_01_intro: 'images/scene_remnant_01_battle.webp',
+    remnant_01_battle: 'images/scene_eri_jig_battle.webp',
+    remnant_01_aruno: 'images/scene_aruno_help.webp',
+    remnant_01_rip: 'images/scene_remnant_01_rip.webp'
   });
 
-  function backgroundFor(location){
+  function backgroundFor(location, stageId){
     const loc=String(location||'').trim();
+    const sid=normalizeStageId(stageId||'');
+
+    // build1097: CH01-STAGE01は敵群が浮遊している専用前線背景。
+    if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
     if(!loc) return STORY_BG_PATHS.outside_tower;
 
+    if(loc.includes('大型レムナント・登場')) return STORY_BG_PATHS.remnant_01_intro;
+    if(loc.includes('大型レムナント・戦闘')) return STORY_BG_PATHS.remnant_01_battle;
+    if(loc.includes('大型レムナント・アルノ登場')) return STORY_BG_PATHS.remnant_01_aruno;
+    if(loc.includes('大型レムナント・討伐')) return STORY_BG_PATHS.remnant_01_rip;
+
+    if(loc.includes('一柱目の跡地')) return STORY_BG_PATHS.outside_site_enemy;
     if(loc.includes('作業台')) return STORY_BG_PATHS.workbench;
     if(loc.includes('拠点')) return STORY_BG_PATHS.inside;
     if(loc.includes('奥地')) return STORY_BG_PATHS.outside_road;
@@ -210,6 +267,10 @@
   -webkit-mask-repeat:no-repeat;
   mask-repeat:no-repeat;
 }
+#${ROOT_ID} .story-novel-dialogue{
+  white-space:pre-line;
+}
+
 #${ROOT_ID} .story-novel-textbox{
   position:absolute;
   left:12px;
@@ -219,6 +280,68 @@
   background:rgba(247,243,236,.94);
   backdrop-filter:blur(1.5px);
   -webkit-backdrop-filter:blur(1.5px);
+}
+
+#${ROOT_ID} .story-novel-intro-title{
+  position:absolute;
+  left:50%;
+  top:47%;
+  z-index:45;
+  transform:translate(-50%,-50%);
+  min-width:70%;
+  padding:14px 28px;
+  text-align:center;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:clamp(22px,6vw,34px);
+  font-weight:500;
+  letter-spacing:.16em;
+  color:#4a4037;
+  text-shadow:0 1px 10px rgba(255,255,255,.98),0 0 24px rgba(255,255,255,.90);
+  opacity:0;
+  transition:opacity .62s ease, transform .62s ease;
+  pointer-events:none;
+  will-change:opacity,transform;
+}
+#${ROOT_ID} .story-novel-intro-title::before{
+  content:"";
+  position:absolute;
+  inset:-12px -22px;
+  border-radius:999px;
+  background:radial-gradient(ellipse at center, rgba(255,255,255,.92) 0%, rgba(255,255,255,.72) 42%, rgba(255,255,255,.38) 68%, rgba(255,255,255,0) 100%);
+  filter:blur(16px);
+  -webkit-filter:blur(16px);
+  z-index:-1;
+}
+#${ROOT_ID} .story-novel-intro-title.show{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+}
+#${ROOT_ID}.is-pre-intro .story-novel-textbox,
+#${ROOT_ID}.is-pre-intro .story-novel-cast,
+#${ROOT_ID}.is-pre-intro .story-novel-location{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+#${ROOT_ID} .story-novel-textbox,
+#${ROOT_ID} .story-novel-cast,
+#${ROOT_ID} .story-novel-location{
+  transition:opacity .20s ease, transform .20s ease;
+}
+#${ROOT_ID}.is-entry-transition .story-novel-textbox,
+#${ROOT_ID}.is-entry-transition .story-novel-cast{
+  opacity:0 !important;
+  transform:translateY(4px);
+}
+#${ROOT_ID}.is-location-transition .story-novel-bg{
+  opacity:.72;
+  transition:opacity .32s ease;
+}
+#${ROOT_ID}.is-location-transition .story-novel-textbox,
+#${ROOT_ID}.is-location-transition .story-novel-cast,
+#${ROOT_ID}.is-location-transition .story-novel-location{
+  opacity:0 !important;
 }
 `;
     document.head.appendChild(style);
@@ -251,6 +374,7 @@
         <div class="story-novel-character is-left"><img alt=""></div>
         <div class="story-novel-character is-right"><img alt=""></div>
       </div>
+      <div class="story-novel-intro-title" aria-hidden="true"></div>
       <div class="story-novel-textbox">
         <div class="story-novel-speaker"></div>
         <div class="story-novel-dialogue"></div>
@@ -321,7 +445,7 @@
 
     const chars=Array.from(session.fullText);
     let i=0;
-    const speed=22;
+    const speed=NOVEL_TEXT_SPEED_MS;
     const tick=()=>{
       if(!session) return stopTyping();
       i=Math.min(chars.length,i+1);
@@ -341,6 +465,58 @@
     if(loc.includes('夜') || loc.includes('深夜')) root.classList.add('is-night');
     if(loc.includes('拠点')) root.classList.add('is-base');
     if(loc.includes('霧')) root.classList.add('is-fog');
+  }
+
+  function clearIntroTimer(){
+    if(introTimer){
+      clearTimeout(introTimer);
+      introTimer=0;
+    }
+  }
+
+  function showPreStageIntro(){
+    if(!session || session.phase!=='pre') return false;
+
+    const root=ensureRoot();
+    const first=session.entries && session.entries[0] ? session.entries[0] : null;
+    const location=String(first && first.location || '');
+    const data=session.data || {};
+    const title=root.querySelector('.story-novel-intro-title');
+    const bg=root.querySelector('.story-novel-bg');
+
+    if(bg) bg.style.backgroundImage=`url("${backgroundFor(location, session.stageId)}")`;
+    applyLocationClass(root,location);
+
+    root.classList.add('is-pre-intro');
+    session.introActive=true;
+
+    if(title){
+      title.textContent=
+        String(data.chapter||0)+'-'+String(data.stageNo||0)+'  '+String(data.stageTitle||'');
+      title.classList.remove('show');
+      title.setAttribute('aria-hidden','false');
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>title.classList.add('show'));
+      });
+    }
+
+    clearIntroTimer();
+    introTimer=setTimeout(()=>{
+      introTimer=0;
+      if(!session || !session.introActive) return;
+
+      if(title) title.classList.remove('show');
+
+      setTimeout(()=>{
+        if(!session) return;
+        session.introActive=false;
+        root.classList.remove('is-pre-intro');
+        if(title) title.setAttribute('aria-hidden','true');
+        renderEntry();
+      },NOVEL_INTRO_FADE_MS);
+    },NOVEL_INTRO_HOLD_MS);
+
+    return true;
   }
 
   function renderEntry(){
@@ -364,7 +540,7 @@
     root.querySelector('.story-novel-speaker').textContent=speaker || 'NARRATION';
 
     const bg=root.querySelector('.story-novel-bg');
-    bg.style.backgroundImage=`url("${backgroundFor(location)}")`;
+    bg.style.backgroundImage=`url("${backgroundFor(location, session.stageId)}")`;
     applyLocationClass(root,location);
 
     const cast=root.querySelector('.story-novel-cast');
@@ -396,21 +572,62 @@
     root.classList.toggle('is-narration', !speaker);
     root.classList.toggle('has-duo', !!(castInfo.left && castInfo.right));
     root.classList.toggle('has-solo-right', !!(!castInfo.left && castInfo.right));
+    session.lastLocation=location;
     typeText(entry.text||'');
+  }
+
+  function clearEntryTransitionTimer(){
+    if(entryTransitionTimer){
+      clearTimeout(entryTransitionTimer);
+      entryTransitionTimer=0;
+    }
   }
 
   function advance(){
     if(!session) return;
+    if(session.introActive || session.transitioning) return;
     if(completeTyping()) return;
-    session.index+=1;
-    renderEntry();
+
+    const nextIndex=session.index+1;
+    const nextEntry=session.entries[nextIndex];
+
+    if(!nextEntry){
+      finishCurrent(false);
+      return;
+    }
+
+    const root=ensureRoot();
+    const currentLocation=String(session.lastLocation||'');
+    const nextLocation=String(nextEntry.location||'');
+    const locationChanged=currentLocation!==nextLocation;
+
+    session.transitioning=true;
+    root.classList.add(locationChanged ? 'is-location-transition' : 'is-entry-transition');
+
+    clearEntryTransitionTimer();
+    entryTransitionTimer=setTimeout(()=>{
+      entryTransitionTimer=0;
+      if(!session) return;
+
+      session.index=nextIndex;
+      renderEntry();
+
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          root.classList.remove('is-entry-transition','is-location-transition');
+          if(session) session.transitioning=false;
+        });
+      });
+    }, locationChanged ? NOVEL_LOCATION_FADE_MS : NOVEL_ENTRY_FADE_MS);
   }
 
   function cleanupRoot(){
     stopTyping();
+    clearIntroTimer();
+    clearEntryTransitionTimer();
     const root=document.getElementById(ROOT_ID);
     if(root){
-      root.classList.remove('show');
+      root.classList.remove('show','is-pre-intro','is-entry-transition','is-location-transition');
       root.setAttribute('aria-hidden','true');
       root.style.pointerEvents='none';
 
@@ -434,7 +651,7 @@
     setSharedUiHidden(false);
     setTimeout(()=>{
       if(typeof current.onComplete==='function') current.onComplete({skipped:!!skipped});
-    },120);
+    },NOVEL_PHASE_EXIT_MS);
   }
 
   function exitCurrent(){
@@ -445,7 +662,7 @@
     setSharedUiHidden(false);
     setTimeout(()=>{
       if(typeof current.onExit==='function') current.onExit();
-    },120);
+    },NOVEL_PHASE_EXIT_MS);
   }
 
   function play(stageId,phase,options){
@@ -470,6 +687,9 @@
       index:0,
       typing:false,
       fullText:'',
+      introActive:false,
+      transitioning:false,
+      lastLocation:'',
       onComplete:options && options.onComplete,
       onExit:options && options.onExit
     };
@@ -479,6 +699,11 @@
     root.style.pointerEvents='auto';
     root.setAttribute('aria-hidden','false');
     requestAnimationFrame(()=>root.classList.add('show'));
+
+    if(phase==='pre' && showPreStageIntro()){
+      return true;
+    }
+
     renderEntry();
     return true;
   }
