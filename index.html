@@ -13080,13 +13080,17 @@ function showTenResult(results){
     return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
   }
 
-  // build1124: キャラ一覧の基本表示順。
-  // ストーリーで触れる主要キャラを先頭に並べ、
-  // イヴェルナ / SIGMA-IX / ノアは末尾固定。
-  var ZUKAN_STORY_FIRST_ORDER = [1, 5, 3, 28, 39, 24, 30, 25];
+  // build1146: キャラ一覧の基本表示順はパーティセレクトと共通化。
+  // エリ → ジグ → アウラ → ミモザ → レオナクロス → アルノ → ノエル → リズ → リュネ
+  // → その他(ID順) → イヴェルナ → SIGMA-IX → ノア。
+  var ZUKAN_STORY_FIRST_ORDER = [1, 5, 3, 28, 39, 20, 24, 30, 25];
   var ZUKAN_LAST_ORDER = [32, 50, 52];
 
   function getZukanBaseOrderRank(charaId){
+    if(window.ShootingCharacters && typeof window.ShootingCharacters.getShootingBaseOrderRank === 'function'){
+      return window.ShootingCharacters.getShootingBaseOrderRank(charaId);
+    }
+
     var id = Number(charaId || 0);
     var storyIndex = ZUKAN_STORY_FIRST_ORDER.indexOf(id);
     if(storyIndex >= 0) return storyIndex;
@@ -13094,11 +13098,13 @@ function showTenResult(results){
     var lastIndex = ZUKAN_LAST_ORDER.indexOf(id);
     if(lastIndex >= 0) return 100000 + lastIndex;
 
-    // その他はID順。先頭8体と末尾3体の間に配置する。
     return 1000 + id;
   }
 
   function compareZukanBaseOrder(a, b){
+    if(window.ShootingCharacters && typeof window.ShootingCharacters.compareShootingBaseOrder === 'function'){
+      return window.ShootingCharacters.compareShootingBaseOrder(a, b);
+    }
     var diff = getZukanBaseOrderRank(a && a.id) - getZukanBaseOrderRank(b && b.id);
     if(diff !== 0) return diff;
     return Number((a && a.id) || 0) - Number((b && b.id) || 0);
@@ -17404,9 +17410,9 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1062-leona-dark-neutral-attacks"></script>
+<script src="js/shooting_characters.js?v=1146-shared-character-order"></script>
 <script src="js/story_scenario.js?v=1134-story-linebreak-fix"></script>
-<script src="js/story_novel.js?v=1134-story-linebreak-fix"></script>
+<script src="js/story_novel.js?v=1139-scene-base-workbench-ref"></script>
 <script src="js/stage_select.js?v=1131-story-pre-loader-fix"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">

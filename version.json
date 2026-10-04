@@ -1,5 +1,5 @@
 {
-  "version": "1134-story-linebreak-fix",
-  "build": 1134,
-  "notes": "Added reusable cinematic time-passage transition for story novel scenes; CH02-01 now fades to black, shows '数日後', then fades into the nighttime workbench scene."
+  "version": "1146",
+  "build": 1146,
+  "notes": "Unify the default character order between the character list and party select. Shared base order: Eri, Jig, Aura, Mimosa, Leona Cross, Arno, Noel, Liz, Lyune, remaining characters by ID, then Iverna, SIGMA-IX, Noah. Character-list explicit element/rarity sorting still overrides the base order."
 }

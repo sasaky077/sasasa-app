@@ -13,11 +13,11 @@
   const STORY_CHAPTER_MAX = 8;
   const STORY_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
   const STORY_CHAPTER_TITLES = {
-    1: '目覚めの朝',
-    2: 'ディストラクション',
-    3: '失われたもの',
+    1: '白の戦線',
+    2: '残骸',
+    3: '魂との邂逅',
     4: '嘘と真実',
-    5: '境界のマリオネット',
+    5: '未定',
     6: '未定',
     7: '未定',
     8: '未定'
@@ -26,10 +26,10 @@
   // STORY表示用クリア条件。
   // ステージ固有タイトルは使わず、画面上では「ステージN」で統一する。
   const STORY_STAGE_CONDITIONS = {
-    'shooting_ch01_01': 'アイテムを3つ拾得',
-    'shooting_ch01_02': '90秒以内に敵をすべて撃破',
-    'shooting_ch01_03': '被弾3回以内に敵をすべて撃破',
-    'shooting_ch01_04': 'オーバーシアを撃破',
+    'shooting_ch01_01': '敵を全て撃破',
+    'shooting_ch01_02': '60秒以内に敵をすべて撃破',
+    'shooting_ch01_03': 'アイテムを3つ拾得',
+    'shooting_ch01_04': '大型レムナントを撃破',
 
     'shooting_ch02_01': '敵をすべて撃破',
     'shooting_ch02_02': '150秒以内に敵をすべて撃破',

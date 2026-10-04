@@ -2018,9 +2018,31 @@
     return SHOOTING_ELEMENT_ICON[key] || SHOOTING_ELEMENT_ICON.neutral;
   }
 
+  // build1146: キャラ一覧とパーティセレクトで共通利用する基本表示順。
+  // ストーリー主要キャラを先頭、イヴェルナ / SIGMA-IX / ノアを末尾固定。
+  const SHOOTING_STORY_FIRST_ORDER = Object.freeze([1, 5, 3, 28, 39, 20, 24, 30, 25]);
+  const SHOOTING_LAST_ORDER = Object.freeze([32, 50, 52]);
+
+  function getShootingBaseOrderRank(charaId) {
+    const id = Number(charaId || 0);
+    const storyIndex = SHOOTING_STORY_FIRST_ORDER.indexOf(id);
+    if (storyIndex >= 0) return storyIndex;
+
+    const lastIndex = SHOOTING_LAST_ORDER.indexOf(id);
+    if (lastIndex >= 0) return 100000 + lastIndex;
+
+    return 1000 + id;
+  }
+
+  function compareShootingBaseOrder(a, b) {
+    const diff = getShootingBaseOrderRank(a && a.id) - getShootingBaseOrderRank(b && b.id);
+    if (diff !== 0) return diff;
+    return Number((a && a.id) || 0) - Number((b && b.id) || 0);
+  }
+
   function getShootingRosterHtml() {
     return Object.values(SHOOTING_CHARACTERS)
-      .sort((a, b) => a.id - b.id)
+      .sort(compareShootingBaseOrder)
       .map(c => {
         const ownedData = getOwnedShootingInstance(c.id);
         const owned = !!ownedData;
@@ -2110,6 +2132,10 @@
     getShootingRarityMultiplier,
     getOwnedShootingInstance,
     isShootingCharacterOwned,
+    SHOOTING_STORY_FIRST_ORDER,
+    SHOOTING_LAST_ORDER,
+    getShootingBaseOrderRank,
+    compareShootingBaseOrder,
     getShootingRosterHtml,
   });
   // 旧UI互換。実体は上の統合マスターのみ。

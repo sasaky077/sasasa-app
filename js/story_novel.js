@@ -20,6 +20,7 @@
   let introTimer = 0;
   let entryTransitionTimer = 0;
   let cinematicTransitionTimers = [];
+  let storyEffectTimer = 0;
 
   // build1095: ノベル全体の呼吸を少しゆっくりにする。
   const NOVEL_TEXT_SPEED_MS = 32;          // 旧22ms
@@ -143,12 +144,13 @@
   }
 
   const STORY_BG_PATHS = Object.freeze({
-    outside_tower: 'images/outside_tower.webp',
-    outside_tower_enemy: 'images/outside_tower_enemy.webp',
+    outside_tower: 'images/scene_outside_tower.webp',
+    outside_tower_enemy: 'images/scene_outside_tower_enemy.webp',
     outside_site_enemy: 'images/outside_site_enemy.webp',
-    inside: 'images/inside.webp',
-    workbench: 'images/workbench.webp',
-    outside_road: 'images/outside_road.webp',
+    inside: 'images/scene_base.webp',
+    workbench: 'images/scene_workbench.webp',
+    outside_road: 'images/scene_outside_road.webp',
+    outside_noise: 'images/scene_outside_noise.webp',
     remnant_01_intro: 'images/scene_remnant_01_battle.webp',
     remnant_01_battle: 'images/scene_eri_jig_battle.webp',
     remnant_01_aruno: 'images/scene_aruno_help.webp',
@@ -177,6 +179,7 @@
     if(loc.includes('白い廃墟・塔の並ぶ丘')) return STORY_BG_PATHS.many_tower;
     if(loc.includes('白い廃墟・一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
     if(loc.includes('一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
+    if(loc.includes('白い廃墟・奥地・大型レムナント予感')) return STORY_BG_PATHS.outside_noise;
     if(loc.includes('作業台')) return STORY_BG_PATHS.workbench;
     if(loc.includes('拠点')) return STORY_BG_PATHS.inside;
     if(loc.includes('奥地')) return STORY_BG_PATHS.outside_road;
@@ -391,19 +394,32 @@
   top:47%;
   z-index:45;
   transform:translate(-50%,-50%);
-  min-width:70%;
-  padding:14px 28px;
+  width:min(90%, 520px);
+  padding:14px 18px;
   text-align:center;
   font-family:"Cinzel","Noto Serif JP",serif;
-  font-size:clamp(22px,6vw,34px);
   font-weight:500;
-  letter-spacing:.16em;
   color:#4a4037;
   text-shadow:0 1px 10px rgba(255,255,255,.98),0 0 24px rgba(255,255,255,.90);
   opacity:0;
   transition:opacity .62s ease, transform .62s ease;
   pointer-events:none;
   will-change:opacity,transform;
+}
+#${ROOT_ID} .story-novel-intro-stage-no{
+  display:block;
+  font-size:clamp(18px,5vw,27px);
+  letter-spacing:.14em;
+  line-height:1.15;
+  white-space:nowrap;
+}
+#${ROOT_ID} .story-novel-intro-stage-name{
+  display:block;
+  margin-top:10px;
+  font-size:clamp(20px,5.7vw,32px);
+  letter-spacing:.10em;
+  line-height:1.25;
+  white-space:nowrap;
 }
 #${ROOT_ID} .story-novel-intro-title::before{
   content:"";
@@ -500,6 +516,25 @@
 #${ROOT_ID}.is-location-transition .story-novel-cast,
 #${ROOT_ID}.is-location-transition .story-novel-location{
   opacity:0 !important;
+}
+
+@keyframes storyNovelGroundRumble{
+  0%   { transform:translate3d(0,0,0) scale(1.012); }
+  10%  { transform:translate3d(-3px,1px,0) scale(1.012); }
+  20%  { transform:translate3d(4px,-2px,0) scale(1.012); }
+  30%  { transform:translate3d(-5px,2px,0) scale(1.012); }
+  40%  { transform:translate3d(3px,1px,0) scale(1.012); }
+  50%  { transform:translate3d(-2px,-2px,0) scale(1.012); }
+  60%  { transform:translate3d(5px,2px,0) scale(1.012); }
+  70%  { transform:translate3d(-4px,-1px,0) scale(1.012); }
+  80%  { transform:translate3d(3px,2px,0) scale(1.012); }
+  90%  { transform:translate3d(-2px,-1px,0) scale(1.012); }
+  100% { transform:translate3d(0,0,0) scale(1.012); }
+}
+#${ROOT_ID}.is-ground-rumbling{
+  transform-origin:center center;
+  animation:storyNovelGroundRumble 118ms linear infinite;
+  will-change:transform;
 }
 `;
     document.head.appendChild(style);
@@ -662,8 +697,14 @@
     session.introActive=true;
 
     if(title){
-      title.textContent=
-        String(data.chapter||0)+'-'+String(data.stageNo||0)+'  '+String(data.stageTitle||'');
+      title.textContent='';
+      const stageNo=document.createElement('span');
+      stageNo.className='story-novel-intro-stage-no';
+      stageNo.textContent=String(data.chapter||0)+'-'+String(data.stageNo||0);
+      const stageName=document.createElement('span');
+      stageName.className='story-novel-intro-stage-name';
+      stageName.textContent=String(data.stageTitle||'');
+      title.append(stageNo,stageName);
       title.classList.remove('show');
       title.setAttribute('aria-hidden','false');
       requestAnimationFrame(()=>{
@@ -767,12 +808,79 @@
     return true;
   }
 
+  function clearStoryEffectTimer(){
+    if(storyEffectTimer){
+      clearTimeout(storyEffectTimer);
+      storyEffectTimer=0;
+    }
+  }
+
+  function startGroundRumble(durationMs){
+    const root=ensureRoot();
+    const duration=Math.max(500, Math.min(5000, Number(durationMs)||1800));
+    clearStoryEffectTimer();
+    // Re-trigger animation even when rumble effects are consecutive.
+    root.classList.remove('is-ground-rumbling');
+    void root.offsetWidth;
+    root.classList.add('is-ground-rumbling');
+    storyEffectTimer=setTimeout(function(){
+      storyEffectTimer=0;
+      const currentRoot=document.getElementById(ROOT_ID);
+      if(currentRoot) currentRoot.classList.remove('is-ground-rumbling');
+    },duration);
+  }
+
+  function playStoryEffect(entry){
+    if(!session) return false;
+    const kind=String(entry && entry.effect || '').toLowerCase();
+    if(kind!=='rumble') return false;
+
+    // Text-bearing effects run in parallel with dialogue/narration.
+    // Effect-only entries keep the legacy blocking/auto-advance behavior.
+    if(String(entry && entry.text || '')){
+      startGroundRumble(entry.durationMs);
+      return false;
+    }
+
+    const root=ensureRoot();
+    const duration=Math.max(500, Math.min(5000, Number(entry.durationMs)||1800));
+
+    stopTyping();
+    clearStoryEffectTimer();
+    session.transitioning=true;
+    root.classList.remove('is-entry-transition','is-location-transition');
+    root.classList.remove('is-ground-rumbling');
+    void root.offsetWidth;
+    root.classList.add('is-ground-rumbling');
+
+    storyEffectTimer=setTimeout(function(){
+      storyEffectTimer=0;
+      if(!session) return;
+      root.classList.remove('is-ground-rumbling');
+      session.transitioning=false;
+
+      const nextIndex=session.index+1;
+      if(!session.entries[nextIndex]){
+        finishCurrent(false);
+        return;
+      }
+      session.index=nextIndex;
+      renderEntry();
+    },duration);
+
+    return true;
+  }
+
   function renderEntry(){
     if(!session) return;
     const entry=session.entries[session.index];
     if(!entry){
       finishCurrent(false);
       return;
+    }
+
+    if(entry.effect){
+      if(playStoryEffect(entry)) return;
     }
 
     if(entry.transition){
@@ -848,7 +956,7 @@
       return;
     }
 
-    if(nextEntry && nextEntry.transition){
+    if(nextEntry && (nextEntry.transition || nextEntry.effect)){
       session.index=nextIndex;
       renderEntry();
       return;
@@ -884,9 +992,10 @@
     clearIntroTimer();
     clearEntryTransitionTimer();
     clearCinematicTransitionTimers();
+    clearStoryEffectTimer();
     const root=document.getElementById(ROOT_ID);
     if(root){
-      root.classList.remove('show','is-pre-intro','is-entry-transition','is-location-transition','is-cinematic-transition');
+      root.classList.remove('show','is-pre-intro','is-entry-transition','is-location-transition','is-cinematic-transition','is-ground-rumbling');
       root.setAttribute('aria-hidden','true');
       root.style.pointerEvents='none';
 

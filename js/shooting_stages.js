@@ -51,14 +51,6 @@
     CH05_02: 'shooting_ch05_02',
     CH05_03: 'shooting_ch05_03',
 
-    CH06_01: 'shooting_ch06_01',
-    CH06_02: 'shooting_ch06_02',
-    CH06_03: 'shooting_ch06_03',
-
-    CH07_01: 'shooting_ch07_01',
-    CH07_02: 'shooting_ch07_02',
-    CH07_03: 'shooting_ch07_03',
-
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
     DAILY_TUE_INTERMEDIATE: 'shooting_daily_tue_intermediate',
@@ -90,7 +82,7 @@
   // ============================================================
   //
   // 01 朝:
-  //   エリ単独で3体の敵を撃破する導入ステージ
+  //   収集を覚えるステージ
   //
   // 02 呼吸:
   //   攻撃効率 / キャラ交代を意識するタイムアタック
@@ -103,9 +95,7 @@
   //
   function makeDailyStage(config) {
     const level = config.level === 'advanced' ? 'advanced' : 'intermediate';
-    const questType = config.questType === 'exp' ? 'exp' : 'weekday';
-    const rewardCount = Math.max(1, Number(config.rewardCount || (level === 'advanced' ? 2 : 1)));
-    const advancedGimmick = level === 'advanced' && config.advancedGimmick !== false;
+    const rewardCount = level === 'advanced' ? 2 : 1;
     return Object.freeze({
       id: config.id,
       chapter: 0,
@@ -114,33 +104,21 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze(Array.from(config.enemyIds || [])),
-
-      // build549: DAILY上級はCH06と同系統の「遮断壁＋弱点属性限定」ギミック。
-      // 敵ごとの属性はそのまま使うため、土日など複数属性が混在しても
-      // 各個体の弱点属性だけが有効になる。
-      weaknessOnlyEnemies: advancedGimmick,
-      chapter6Barriers: advancedGimmick
-        ? Object.freeze([
-            Object.freeze({ xRate:.50, yRate:.49, widthRate:.70, height:23, moveRangeRate:.10, moveSpeed:.30, contactDamage:85 })
-          ])
-        : Object.freeze([]),
-
       normalBattle: Object.freeze({
         totalEnemies: Math.max(1, Number(config.totalEnemies || (level === 'advanced' ? 8 : 5))),
         maxActive: Math.max(1, Number(config.maxActive || (level === 'advanced' ? 3 : 2))),
         spawnIntervalMs: Math.max(500, Number(config.spawnIntervalMs || (level === 'advanced' ? 1050 : 1250))),
       }),
-      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.DEFEAT_ALL, text: '敵をすべて撃破' }),
+      mission: Object.freeze(config.mission || { type: SHOOTING_MISSION_TYPE.DEFEAT_ALL, text: '敵をすべて撃破' }),
       dailyQuest: Object.freeze({
         weekday: config.weekday || '',
         level,
-        questType,
-        runLevel: questType === 'exp' ? `exp_${level}` : level,
+        questType: config.questType || 'weekday',
+        runLevel: config.runLevel || level,
         rewardId: config.rewardId || '',
         rewardPool: Object.freeze(Array.from(config.rewardPool || [])),
-        rewardCount,
+        rewardCount: Math.max(1, Number(config.rewardCount || rewardCount)),
       }),
-      stageInfoWeekday: config.stageInfoWeekday || '',
       playable: true,
     });
   }
@@ -150,38 +128,26 @@
       id: SHOOTING_STAGE_ID.CH01_01,
       chapter: 1,
       stageNo: 1,
-      name: '前線',
+      name: '朝',
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // build1097: CH01-01は通常スポーンを使わない専用チュートリアル。
-      // 1体 → 2体 → 5体(ULT) の3段階をshooting_core側で制御する。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_01,
       ]),
       normalBattle: Object.freeze({
-        tutorial: 'ch01_01',
-        totalEnemies: 8,
-        maxActive: 5,
-        spawnIntervalMs: 999999,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-        ]),
+        totalEnemies: 7,
+        maxActive: 2,
+        spawnIntervalMs: 950,
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        target: 8,
-        text: 'チュートリアルを完了',
+        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        target: 3,
+        text: 'アイテムを3個拾ってクリア',
       }),
 
+      // Normal Stage battle logic is the next implementation step.
       playable: true,
     }),
 
@@ -193,28 +159,13 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH01 main = LIGHT. LIGHTを主成分にAQUA/WOOD/DARKを混在。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_01,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 9,
         maxActive: 3,
         spawnIntervalMs: 820,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-        ]),
       }),
 
       mission: Object.freeze({
@@ -234,37 +185,23 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH01 main = LIGHT. 7/11 LIGHT、DARKを次点にFIRE/WOODを少量混在。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_01,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_LASER,
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 11,
+        // build1141: レムナント雑魚を無限湧き。3個回収するまで戦闘継続。
+        infiniteEnemies: true,
         maxActive: 3,
         spawnIntervalMs: 720,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_DARK_LASER,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
-          SHOOTING_ENEMY_ID.MINI_01,
-          SHOOTING_ENEMY_ID.MINI_01,
-        ]),
+        enemyImage: 'images/remnant_01_zako.webp',
+        itemDropRate: 1,
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.MAX_HITS_TAKEN,
-        maxHits: 3,
-        text: '被弾3回以内でクリア',
+        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        target: 3,
+        itemImage: 'images/item_memory_mini.webp',
+        text: 'レムナントの残骸を3つ入手する',
       }),
 
       playable: true,
@@ -277,7 +214,6 @@
       name: '旅立ち',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'light',
 
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.REMNANT_01,
@@ -303,20 +239,14 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH02 main = FIRE. 2/3 FIRE、WOODを少量混在。
+      // 属性導入：まずはFIRE / SHOTだけを見せる。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
         maxActive: 1,
         spawnIntervalMs: 1300,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
-        ]),
       }),
 
       mission: Object.freeze({
@@ -335,22 +265,15 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH02 main = FIRE. 3/4 FIRE、LIGHTを少量混在。
+      // FIRE / SHOTに、突進型CHARGEを追加。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
         SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
-        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 4,
         maxActive: 2,
         spawnIntervalMs: 1500,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-        ]),
       }),
 
       mission: Object.freeze({
@@ -370,21 +293,17 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH02 main = FIRE. FIREのSHOT/LASERを主軸にAQUAを混在。
+      // FIREの3攻撃タイプを1体ずつ体験させる。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
         SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
         maxActive: 2,
         spawnIntervalMs: 1450,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER,
-        ]),
+        // CH02-3だけ突進を少し見切りやすくする。
         chargeSpeed: 470,
       }),
 
@@ -404,7 +323,6 @@
       name: '暴力',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'fire',
 
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.REMNANT_02,
@@ -447,30 +365,16 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH03 main = WOOD. 7/10 WOODを基準に他属性を混在。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_03,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ]),
       normalBattle: Object.freeze({
         infiniteEnemies: true,
         maxActive: 2,
         spawnIntervalMs: 980,
         itemDropRate: 0.80,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-        ]),
 
+        // CH03-01: 弱
         enemyHp: 900,
         enemyBulletDamage: 75,
         enemyBulletSpeed: 190,
@@ -481,7 +385,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: '生命エネルギーを取得しろ',
+        text: 'アイテムを3個拾ってクリア',
       }),
 
       playable: true,
@@ -495,30 +399,16 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH03 main = WOOD. 7/10 WOODを基準に他属性を混在。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_03,
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
       ]),
       normalBattle: Object.freeze({
         infiniteEnemies: true,
         maxActive: 2,
         spawnIntervalMs: 850,
         itemDropRate: 0.80,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-        ]),
 
+        // CH03-02: 中
         enemyHp: 1200,
         enemyBulletDamage: 95,
         enemyBulletSpeed: 215,
@@ -529,7 +419,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: '生命エネルギーを取得しろ',
+        text: 'アイテムを3個拾ってクリア',
       }),
 
       playable: true,
@@ -543,31 +433,16 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH03 main = WOOD. 7/10 WOODを基準に他属性を混在。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.MINI_03,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_LASER,
-        SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
       ]),
       normalBattle: Object.freeze({
         infiniteEnemies: true,
         maxActive: 3,
         spawnIntervalMs: 760,
         itemDropRate: 0.80,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.MINI_03,
-          SHOOTING_ENEMY_ID.ZAKO_DARK_LASER,
-        ]),
 
+        // CH03-03: 強
         enemyHp: 1500,
         enemyBulletDamage: 115,
         enemyBulletSpeed: 235,
@@ -578,7 +453,7 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
         target: 3,
-        text: '生命エネルギーを取得しろ',
+        text: 'アイテムを3個拾ってクリア',
       }),
 
       playable: true,
@@ -591,7 +466,6 @@
       name: '雨冠',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'wood',
 
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.REMNANT_03,
@@ -618,7 +492,6 @@
       name: '棘雨',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'light',
       timeLimitSeconds: 60,
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_04]),
       chapter4Curtain: Object.freeze({
@@ -649,7 +522,6 @@
       name: '狭界',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'light',
       timeLimitSeconds: 60,
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_04]),
       chapter4Curtain: Object.freeze({
@@ -685,7 +557,7 @@
       name: 'サキエル',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'light',
+      timeLimitSeconds: 60,
       introImage: 'images/enemy_sakiel_battle.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_04]),
       chapter4Curtain: Object.freeze({
@@ -696,17 +568,15 @@
         columnsTop: 10,
         columnsBottom: 9,
       }),
-      // build1042: 通常ボス戦 + 記憶のかけら3段階ゲート。
-      // 75% / 50% / 25%でHPが止まり、対応するかけらを拾うまで以降のダメージを通さない。
-      memoryFragments: Object.freeze({
-        thresholds: Object.freeze([0.75, 0.50, 0.25]),
-        count: 3,
-      }),
+      finalItem: Object.freeze({ timeoutSeconds: 10 }),
+      eriOnly: true,
+      survivalBoss: true,
       dangerEveryMs: 10000,
       dangerWays: 2,
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: '記憶のかけらを集め、サキエルを撃破せよ',
+        type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,
+        targetSeconds: 60,
+        text: '60秒生存後、10秒以内に出現アイテムを取得せよ',
       }),
       playable: true,
     }),
@@ -725,30 +595,13 @@
       background: 'images/battle_bg_01.webp',
       introImage: 'images/remnant_05_battle_start.webp',
       reverseHorizontalControls: true,
-      // CH05 main = DARK. 7/10 DARK、LIGHTを次点にAQUAを少量混在。
-      enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.MINI_05,
-        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-      ]),
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
       normalBattle: Object.freeze({
         totalEnemies: 6,
         maxActive: 3,
         spawnIntervalMs: 760,
         infiniteEnemies: true,
         enemyHp: 1100,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.MINI_05,
-        ]),
       }),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
@@ -767,11 +620,7 @@
       background: 'images/battle_bg_01.webp',
       introImage: 'images/remnant_05_battle_start.webp',
       reverseHorizontalControls: true,
-      // CH05 main = DARK. 2/3 DARK、LIGHTを混在。
-      enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.MINI_05,
-        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-      ]),
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
         maxActive: 3,
@@ -783,11 +632,6 @@
         enemyBulletDamage: 125,
         mirageWarningEveryMs: 5200,
         mirageWarningTelegraphMs: 700,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.MINI_05,
-          SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
-          SHOOTING_ENEMY_ID.MINI_05,
-        ]),
       }),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
@@ -804,115 +648,12 @@
       name: 'レムナント：ミラージュ',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      bossElement: 'dark',
       introImage: 'images/remnant_05_battle_start.webp',
       reverseHorizontalControls: true,
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_05]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'レムナント：ミラージュを撃破しろ',
-      }),
-      playable: true,
-    }),
-
-
-    // ============================================================
-    // CHAPTER 06 - 遮断領域（仮）
-    // 共通ギミック：破壊不能の壁。通常弾を遮断し、Homingの優先標的になる。
-    // Laser / Shotgun は貫通可能。
-    // 強敵・ボスは弱点属性以外のダメージを完全無効化する。
-    // ============================================================
-    [SHOOTING_STAGE_ID.CH06_01]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH06_01,
-      chapter: 6,
-      stageNo: 1,
-      name: '遮断領域',
-      type: 'normal',
-      background: 'images/battle_bg_01.webp',
-      // CH06 main = AQUA. FIRE強敵は属性バリア教材として少数配置。
-      enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER,
-        SHOOTING_ENEMY_ID.CH06_STRONG_FIRE,
-      ]),
-      weaknessOnlyElement: 'fire',
-      chapter6Barriers: Object.freeze([
-        Object.freeze({ xRate:.50, yRate:.47, widthRate:.78, height:24, moveRangeRate:.09, moveSpeed:.30, contactDamage:85 })
-      ]),
-      normalBattle: Object.freeze({
-        totalEnemies: 4,
-        maxActive: 2,
-        spawnIntervalMs: 900,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.CH06_STRONG_FIRE,
-        ]),
-      }),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '敵を退け、FIRE強敵を撃破しろ（AQUAのみ有効）',
-      }),
-      playable: true,
-    }),
-
-    [SHOOTING_STAGE_ID.CH06_02]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH06_02,
-      chapter: 6,
-      stageNo: 2,
-      name: '遮断領域',
-      type: 'normal',
-      background: 'images/battle_bg_01.webp',
-      // CH06 main = AQUA. DARK強敵は属性バリア教材として少数配置。
-      enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER,
-        SHOOTING_ENEMY_ID.CH06_STRONG_DARK,
-      ]),
-      weaknessOnlyElement: 'dark',
-      chapter6Barriers: Object.freeze([
-        Object.freeze({ xRate:.50, yRate:.48, widthRate:.62, height:24, moveRangeRate:.12, moveSpeed:.32, contactDamage:85 })
-      ]),
-      normalBattle: Object.freeze({
-        totalEnemies: 4,
-        maxActive: 2,
-        spawnIntervalMs: 850,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER,
-          SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
-          SHOOTING_ENEMY_ID.CH06_STRONG_DARK,
-        ]),
-      }),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '敵を退け、DARK強敵を撃破しろ（LIGHTのみ有効）',
-      }),
-      playable: true,
-    }),
-
-    [SHOOTING_STAGE_ID.CH06_03]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH06_03,
-      chapter: 6,
-      stageNo: 3,
-      name: 'レムナント06',
-      type: 'boss',
-      background: 'images/battle_bg_01.webp',
-      introImage: 'images/remnant_06_battle_start.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_06]),
-      weaknessOnlyElement: 'aqua',
-      bossElement: 'aqua',
-      // build1015: 弾幕の発射間隔倍率(barrage_v1 専用)。0.85 = 間隔15%短縮 ≒ 弾量+18%。
-      // BEGINNER版では core 側で無視する(従来どおり)。
-      bossBarrageIntervalMultiplier: 0.85,
-      chapter6Barriers: Object.freeze([
-        Object.freeze({ xRate:.34, yRate:.43, widthRate:.68, height:22, moveRangeRate:.08, moveSpeed:.28, phase:0, contactDamage:95 }),
-        Object.freeze({ xRate:.67, yRate:.54, widthRate:.68, height:22, moveRangeRate:.08, moveSpeed:.32, phase:2.2, contactDamage:95 }),
-      ]),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'AQUAボスを撃破しろ（WOODのみ有効）',
       }),
       playable: true,
     }),
@@ -927,135 +668,6 @@
     // DAILY QUEST
     // 中級1個 / 上級2個。日曜のみ敵・報酬とも全属性ミックス。
     // ============================================================
-
-    // ============================================================
-    // CHAPTER 07 — FACELESS / REMNANT 07
-    // 「属性」＋「手数」＋「操作」を要求する持ち物検査章。
-    // 仮面OBJECTは通常HPではなく必要HIT数で破壊する。
-    // ============================================================
-
-    [SHOOTING_STAGE_ID.CH07_01]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH07_01,
-      chapter: 7,
-      stageNo: 1,
-      name: '無貌Ⅰ',
-      type: 'normal',
-      background: 'images/battle_bg_01.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS_MINI]),
-      weaknessOnlyEnemies: true,
-      normalBattle: Object.freeze({
-        totalEnemies: 3,
-        maxActive: 2,
-        spawnIntervalMs: 1200,
-        enemyHp: 2600,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-        ]),
-      }),
-      ch07: Object.freeze({
-        maskHitCount: 12,
-        maskWays: 2,
-        maskSpawnDelayMs: 750,
-      }),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        target: 3,
-        text: 'FACELESSをすべて撃破',
-      }),
-      playable: true,
-    }),
-
-    [SHOOTING_STAGE_ID.CH07_02]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH07_02,
-      chapter: 7,
-      stageNo: 2,
-      name: '無貌Ⅱ',
-      type: 'normal',
-      background: 'images/battle_bg_01.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS_MINI]),
-      weaknessOnlyEnemies: true,
-      normalBattle: Object.freeze({
-        totalEnemies: 5,
-        maxActive: 3,
-        spawnIntervalMs: 980,
-        enemyHp: 3400,
-        enemySequence: Object.freeze([
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-          SHOOTING_ENEMY_ID.FACELESS_MINI,
-        ]),
-      }),
-      ch07: Object.freeze({
-        maskHitCount: 18,
-        maskWays: 3,
-        maskSpawnDelayMs: 620,
-      }),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        target: 5,
-        text: 'FACELESSをすべて撃破',
-      }),
-      playable: true,
-    }),
-
-    [SHOOTING_STAGE_ID.CH07_03]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH07_03,
-      chapter: 7,
-      stageNo: 3,
-      name: 'REMNANT 07',
-      type: 'boss',
-      background: 'images/battle_bg_01.webp',
-      introImage: 'images/remnant_07_battle_start.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_07]),
-      bossElement: 'dark',
-
-      // REMNANT07本体はDARK属性バリア。
-      // DARKに対して弱点となる属性、またはNEUTRALだけが通る。
-      weaknessOnlyElement: 'dark',
-
-      // 開幕はFACELESSを倒すまで完全シールド。
-      bossAdds: Object.freeze({
-        enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS_MINI]),
-        totalEnemies: 2,
-        maxActive: 2,
-        spawnIntervalMs: 260,
-        startDelayMs: 0,
-      }),
-
-      ch07: Object.freeze({
-        maskHitCount: 20,
-        maskWays: 3,
-        maskSpawnDelayMs: 520,
-
-        // 突進
-        dashIntervalMs: 6000,
-        dashWarningMs: 700,
-        dashTravelMs: 430,
-        dashReturnMs: 480,
-
-        // 透明化。鳥居を時間内に破壊できないと7秒ロス。
-        vanishIntervalMs: 10500,
-        toriiHitCount: 24,
-        toriiBreakWindowMs: 2800,
-        invisibleMs: 7000,
-
-        // HP50%でREMNANT07が増殖。
-        cloneTriggerRatio: 0.50,
-        cloneCount: 2,
-        cloneHp: 5200,
-      }),
-
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'REMNANT 07を撃破',
-      }),
-      playable: true,
-    }),
-
     [SHOOTING_STAGE_ID.DAILY_MON_INTERMEDIATE]: makeDailyStage({
       id: SHOOTING_STAGE_ID.DAILY_MON_INTERMEDIATE, weekday: 'Mon', level: 'intermediate', name: '月曜巡行・中級',
       enemyIds: [SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT], rewardId: 'soul_vessel_dark',
@@ -1135,29 +747,56 @@
       totalEnemies: 10, maxActive: 3, spawnIntervalMs: 950,
     }),
 
-    // build1026: 経験値素材専用DAILY。
-    // 中級/上級とも報酬は10個。実際の抽選率と付与はSupabase側を正本とする。
+
+    // 経験値素材DAILY。敵撃破で素材アイコンが落ち、合計10個取得でクリア。
     [SHOOTING_STAGE_ID.DAILY_EXP_INTERMEDIATE]: makeDailyStage({
       id: SHOOTING_STAGE_ID.DAILY_EXP_INTERMEDIATE,
-      questType: 'exp', level: 'intermediate', name: '経験値素材巡行・中級', stageInfoWeekday: '経験値素材',
+      level: 'intermediate',
+      questType: 'exp',
+      runLevel: 'exp_intermediate',
+      name: '経験値素材・中級',
       enemyIds: [
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ],
-      rewardPool: ['level_exp_small','level_exp_medium','level_exp_large'],
+      totalEnemies: 10,
+      maxActive: 2,
+      spawnIntervalMs: 1050,
       rewardCount: 10,
-      totalEnemies: 6, maxActive: 2, spawnIntervalMs: 1150,
+      mission: {
+        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        target: 10,
+        itemImage: 'images/item_exp_bronze.webp',
+        text: '経験値素材を合計10個獲得',
+      },
     }),
     [SHOOTING_STAGE_ID.DAILY_EXP_ADVANCED]: makeDailyStage({
       id: SHOOTING_STAGE_ID.DAILY_EXP_ADVANCED,
-      questType: 'exp', level: 'advanced', name: '経験値素材巡行・上級', stageInfoWeekday: '経験値素材',
+      level: 'advanced',
+      questType: 'exp',
+      runLevel: 'exp_advanced',
+      name: '経験値素材・上級',
       enemyIds: [
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER, SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER, SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER,
-        SHOOTING_ENEMY_ID.ZAKO_DARK_LASER, SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_DARK_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER,
+        SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
       ],
-      rewardPool: ['level_exp_medium','level_exp_large'],
+      totalEnemies: 10,
+      maxActive: 3,
+      spawnIntervalMs: 900,
       rewardCount: 10,
-      totalEnemies: 10, maxActive: 3, spawnIntervalMs: 950,
+      mission: {
+        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
+        target: 10,
+        itemImage: 'images/item_exp_gold.webp',
+        text: '経験値素材を合計10個獲得',
+      },
     }),
 
     [SHOOTING_STAGE_ID.FACELESS_ADVANCED]: Object.freeze({
@@ -1166,13 +805,11 @@
       stageNo: 1,
       eventId: 'faceless',
       eventTitle: '無貌の天使',
-      stageInfoName: '無貌の残神',
       difficultyLabel: '上級',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
       introImage: 'images/enemy_faceless_battle_start.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
-      bossElement: 'dark',
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'フェイスレスを撃破',
@@ -1194,13 +831,11 @@
       stageNo: 2,
       eventId: 'faceless',
       eventTitle: '無貌の天使',
-      stageInfoName: '無貌の残神',
       difficultyLabel: '最上級',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
       introImage: 'images/enemy_faceless_battle_start.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
-      bossElement: 'dark',
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'フェイスレスを撃破',
@@ -1229,37 +864,12 @@
       stageNo: 3,
       eventId: 'bullet_hell_test',
       eventTitle: '理想郷 -ノア-',
-      stageInfoName: '理想郷 -ノア-',
       // 戦闘開始時にSPECIAL STAGE TICKETを1枚消費。
       specialTicketCost: 1,
       difficultyLabel: 'STRESS TEST',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.NOAH]),
-      // build1036: ノア固有ギミック。
-      // 短い移動壁を上下2段に配置。WAVE2以降かつHP50%未満で出現し、左右へ独立して往復する。
-      chapter6Barriers: Object.freeze([
-        Object.freeze({
-          xRate: .34,
-          yRate: .42,
-          widthRate: .25,
-          height: 22,
-          moveRangeRate: .19,
-          moveSpeed: .36,
-          phase: 0,
-          contactDamage: 95
-        }),
-        Object.freeze({
-          xRate: .66,
-          yRate: .58,
-          widthRate: .25,
-          height: 22,
-          moveRangeRate: .19,
-          moveSpeed: .42,
-          phase: 2.4,
-          contactDamage: 95
-        }),
-      ]),
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: '理想郷 -ノア-を耐えきれ',
@@ -1278,8 +888,7 @@
       chapter: 0,
       stageNo: 20,
       eventId: 'score_attack',
-      eventTitle: 'スコアアタック',
-      stageInfoBossName: 'すこあちゃん',
+      eventTitle: 'すこあた！',
       difficultyLabel: 'NORMAL',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
@@ -1310,8 +919,7 @@
       chapter: 0,
       stageNo: 21,
       eventId: 'score_attack',
-      eventTitle: 'スコアアタック',
-      stageInfoBossName: 'すこあちゃん',
+      eventTitle: 'すこあた！',
       difficultyLabel: 'HARD',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
@@ -1349,7 +957,6 @@
       stageNo: 1,
       eventId: 'raid',
       eventTitle: 'ザ・テスト',
-      stageInfoBossName: 'SIGMA-IX',
       difficultyLabel: 'DAILY RAID',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
@@ -1380,13 +987,13 @@
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.OVERSEER_AMBUSH]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: '???を撃破',
+        text: 'オーバーシア（亜種）を撃破',
       }),
       guaranteedRewards: Object.freeze([
         Object.freeze({
           type: 'material',
           id: 'overseer_blk_core',
-          name: '???の心核',
+          name: 'オーバーシア亜種の心核',
           image: 'images/item_overseer_blk_core.webp',
           count: 1,
           detail: '特殊強化素材',
