@@ -140,9 +140,9 @@
         maxActive: 2,
         spawnIntervalMs: 950,
 
-        // build1157: CH01-01〜03はLv1前提。最初の操作チュートリアルはかなり軽めにする。
-        enemyHp: 85,
-        enemyBulletDamage: 20,
+        // build1162: CH01-01〜03はLv1前提のまま、敵HPをbuild1157比3倍・ATK(被弾ダメージ)を100へ統一。
+        enemyHp: 255,
+        enemyBulletDamage: 100,
         enemyBulletSpeed: 135,
         enemyFireRate: 1900,
       }),
@@ -175,8 +175,9 @@
         maxActive: 3,
         spawnIntervalMs: 999999,
         enemyImage: 'images/remnant_01_zako.webp',
-        enemyHp: 22,
-        enemyBulletDamage: 15,
+        // build1163: CH01-02も他の序盤ステージに合わせ、HPを225へ統一寄せ。
+        enemyHp: 225,
+        enemyBulletDamage: 100,
         enemyBulletSpeed: 120,
         enemyFireRate: 2200,
       }),
@@ -208,9 +209,9 @@
         enemyImage: 'images/remnant_01_zako.webp',
         itemDropRate: 1,
 
-        // build1157: CH01-03まではLv1前提。
-        enemyHp: 75,
-        enemyBulletDamage: 20,
+        // build1162: CH01-03もHP3倍・ATK(被弾ダメージ)100へ調整。
+        enemyHp: 225,
+        enemyBulletDamage: 100,
         enemyBulletSpeed: 130,
         enemyFireRate: 1900,
       }),

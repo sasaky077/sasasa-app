@@ -1,5 +1,5 @@
 {
-  "version": "1161",
-  "build": 1161,
-  "notes": "Grant Eri, Jig, Aura, Mimosa, Arno and Noel as starter story characters at Lv1 with no limit breaks when missing."
+  "version": "1163",
+  "build": 1163,
+  "notes": "Raised CH01-02 enemy HP from 66 to 225 to align its durability with the other early CH01 stages; ATK/damage remains 100."
 }
