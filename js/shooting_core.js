@@ -1969,7 +1969,7 @@
   // 今後、各STAGEの編成が決まり次第この表へ追加する。
   const STORY_FIXED_PARTY_MAP = Object.freeze({
     shooting_ch01_01: Object.freeze([1]),       // エリ
-    shooting_ch01_02: Object.freeze([5, 20]),   // ジグ / アルノ
+    shooting_ch01_02: Object.freeze([1, 5]),    // エリ / ジグ（キャラチェンジ＋レーザー貫通チュートリアル）
     shooting_ch01_03: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch01_04: Object.freeze([1, 5]),    // エリ / ジグ（アウラは別戦闘。救援後はアルノ単独へ交代）
   });
@@ -3508,6 +3508,9 @@
       ch101TutorialPaused: false,
       ch101TutorialOverlayActive: false,
       ch101TutorialUltTriggered: false,
+      ch102TutorialPhase: '',
+      ch102TutorialPaused: false,
+      ch102TutorialHintEl: null,
       // build841: stage-side random patterns are now deterministic.
       chapter4CurtainVolleyIndex: 0,
       chapter43VolleyIndex: 0,
@@ -3770,6 +3773,7 @@
       setTimeout(() => player.classList.remove('character-swap'), 260);
     }
     renderHud();
+    handleChapter102TutorialSwitch(id);
   };
 
   function placeInitialUnits() {
@@ -9169,6 +9173,215 @@
     return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_01));
   }
 
+  function isChapter102TutorialStage() {
+    return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_02));
+  }
+
+  function ensureChapter102TutorialStyle() {
+    if (document.getElementById('shooting-ch102-tutorial-style')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-ch102-tutorial-style';
+    style.textContent = `
+      .shooting-ch102-tutorial-hint{
+        position:absolute;
+        z-index:275;
+        left:50%;
+        top:58%;
+        bottom:auto;
+        width:min(88%,360px);
+        transform:translateX(-50%) translateY(8px);
+        padding:12px 16px;
+        border:1px solid rgba(149,119,69,.34);
+        background:rgba(255,253,247,.94);
+        box-shadow:0 10px 28px rgba(74,56,32,.16);
+        color:#55432f;
+        font-family:"Noto Serif JP",serif;
+        font-size:12px;
+        line-height:1.75;
+        letter-spacing:.05em;
+        text-align:center;
+        white-space:pre-line;
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .18s ease,transform .18s ease;
+      }
+      .shooting-ch102-tutorial-hint.show{
+        opacity:1;
+        transform:translateX(-50%) translateY(0);
+      }
+      .shooting-switch-btn.ch102-tutorial-target{
+        position:relative !important;
+        z-index:285 !important;
+        outline:3px solid rgba(192,151,69,.98) !important;
+        outline-offset:4px !important;
+        box-shadow:0 0 0 8px rgba(255,247,215,.66),0 0 28px rgba(206,162,67,.88) !important;
+        animation:shootingCh102GuidePulse .65s ease-in-out infinite alternate;
+      }
+      .shooting-ch102-tutorial-pointer{
+        position:absolute;
+        z-index:286;
+        min-width:54px;
+        padding:3px 8px 2px;
+        border:1px solid rgba(183,143,62,.72);
+        background:rgba(255,253,247,.98);
+        color:#9a6b19;
+        font-family:"Noto Serif JP",serif;
+        font-size:10px;
+        font-weight:700;
+        letter-spacing:.12em;
+        text-align:center;
+        pointer-events:none;
+        box-shadow:0 5px 16px rgba(88,62,22,.18);
+        transform:translateX(-50%);
+        animation:shootingCh102PointerBounce .65s ease-in-out infinite alternate;
+      }
+      .shooting-ch102-tutorial-pointer::after{
+        content:"▼";
+        position:absolute;
+        left:50%;
+        top:100%;
+        transform:translateX(-50%);
+        color:#b88627;
+        font-size:13px;
+        line-height:1;
+      }
+      @keyframes shootingCh102PointerBounce{
+        from{transform:translateX(-50%) translateY(-1px)}
+        to{transform:translateX(-50%) translateY(3px)}
+      }
+      @keyframes shootingCh102GuidePulse{
+        from{filter:brightness(1);transform:scale(1)}
+        to{filter:brightness(1.10);transform:scale(1.035)}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function clearChapter102TutorialHint() {
+    if (!state) return;
+    const el = state.ch102TutorialHintEl;
+    if (el && el.isConnected) el.remove();
+    state.ch102TutorialHintEl = null;
+    const pointer = state.ch102TutorialPointerEl;
+    if (pointer && pointer.isConnected) pointer.remove();
+    state.ch102TutorialPointerEl = null;
+    document.querySelectorAll('.shooting-switch-btn.ch102-tutorial-target').forEach(btn => {
+      btn.classList.remove('ch102-tutorial-target');
+    });
+  }
+
+  function showChapter102TutorialHint(text, highlightJig) {
+    if (!state || !isChapter102TutorialStage()) return;
+    ensureChapter102TutorialStyle();
+    clearChapter102TutorialHint();
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    const hint = document.createElement('div');
+    hint.className = 'shooting-ch102-tutorial-hint';
+    hint.textContent = String(text || '');
+    root.appendChild(hint);
+    state.ch102TutorialHintEl = hint;
+    if (highlightJig) {
+      const btn = root.querySelector('.shooting-switch-btn[data-switch-id="5"]');
+      if (btn) {
+        btn.classList.add('ch102-tutorial-target');
+        const pointer = document.createElement('div');
+        pointer.className = 'shooting-ch102-tutorial-pointer';
+        pointer.textContent = 'TAP';
+        root.appendChild(pointer);
+        state.ch102TutorialPointerEl = pointer;
+
+        const layoutGuide = () => {
+          if (!hint.isConnected || !btn.isConnected || !pointer.isConnected) return;
+          const rootRect = root.getBoundingClientRect();
+          const btnRect = btn.getBoundingClientRect();
+          const hintH = hint.offsetHeight || 64;
+          const targetCenterX = btnRect.left - rootRect.left + btnRect.width / 2;
+          const targetTop = btnRect.top - rootRect.top;
+          const hintTop = Math.max(250, targetTop - hintH - 52);
+          hint.style.top = `${hintTop}px`;
+          hint.style.bottom = 'auto';
+          pointer.style.left = `${targetCenterX}px`;
+          pointer.style.top = `${Math.max(8, targetTop - 35)}px`;
+        };
+        requestAnimationFrame(() => {
+          layoutGuide();
+          requestAnimationFrame(layoutGuide);
+        });
+      }
+    }
+    requestAnimationFrame(() => hint.classList.add('show'));
+  }
+
+  function spawnChapter102TutorialLine() {
+    if (!state || !isChapter102TutorialStage()) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const enemyIds = selectedStage && Array.isArray(selectedStage.enemyIds) ? selectedStage.enemyIds : [];
+    const def = getShootingEnemy(enemyIds[0]);
+    if (!def || !def.implemented) return;
+
+    const now = performance.now();
+    const x = clamp(Number(state.player?.x || arena.clientWidth * .5), 54, arena.clientWidth - 54);
+    const ys = [
+      Math.max(96, arena.clientHeight * .16),
+      Math.max(160, arena.clientHeight * .29),
+      Math.max(224, arena.clientHeight * .42),
+    ];
+
+    ys.forEach((y, i) => {
+      const enemy = createNormalEnemy(def, now + i * 8);
+      if (!enemy) return;
+      enemy.x = x;
+      enemy.baseX = x;
+      enemy.y = y;
+      enemy.baseY = y;
+      enemy.ch102TutorialLocked = true;
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+      state.normalEnemies.push(enemy);
+      state.normalSpawned += 1;
+    });
+    state.normalLastSpawnAt = now;
+  }
+
+  function startChapter102TutorialBattle() {
+    if (!state || !isChapter102TutorialStage()) return;
+    state.ch102TutorialPhase = 'explain';
+    state.ch102TutorialPaused = true;
+    state.normalSpawned = 0;
+    state.normalDefeated = 0;
+    clearProjectiles();
+    spawnChapter102TutorialLine();
+    renderHud();
+
+    // 先に「なぜキャラチェンジするのか」を説明し、
+    // 縦一列の敵＝貫通ショットが有効、という判断をプレイヤーに伝える。
+    setTimeout(() => {
+      if (!state || state.ended || !isChapter102TutorialStage()) return;
+      if (state.ch102TutorialPhase !== 'explain') return;
+      showChapter102TutorialHint('直線上に並んだ敵には\nレーザーなどの貫通ショットが便利！', false);
+    }, 180);
+
+    setTimeout(() => {
+      if (!state || state.ended || !isChapter102TutorialStage()) return;
+      if (state.ch102TutorialPhase !== 'explain') return;
+      state.ch102TutorialPhase = 'switch';
+      showChapter102TutorialHint('キャラをチェンジしてみよう\nエリ → ジグ', true);
+    }, 2400);
+  }
+
+  function handleChapter102TutorialSwitch(id) {
+    if (!state || !isChapter102TutorialStage()) return;
+    if (state.ch102TutorialPhase !== 'switch' || Number(id) !== 5) return;
+    state.ch102TutorialPhase = 'laser';
+    state.ch102TutorialPaused = false;
+    state.lastShotAt = -9999;
+    clearChapter102TutorialHint();
+    showChapter102TutorialHint('レーザーで敵をまとめて撃破しよう', false);
+    prevTs = performance.now();
+  }
+
   function getChapter101TutorialCombatEntry(cue) {
     try {
       const data = window.ZERAPHIA_STORY_SCENARIO && window.ZERAPHIA_STORY_SCENARIO.shooting_ch01_01;
@@ -9886,7 +10099,7 @@
 
   function spawnNormalEnemies(now) {
     if (!isNormalBattle() || state.finishing || state.ended) return;
-    if (isChapter101TutorialStage()) return;
+    if (isChapter101TutorialStage() || isChapter102TutorialStage()) return;
     const cfg = getNormalBattleConfig();
 
     // アイテム収集ミッションは、必要数を拾うまで敵が枯渇しないよう保証する。
@@ -10750,6 +10963,14 @@
       if (!enemy || !enemy.el) return;
       const def = enemy.def || {};
 
+      // build1157: CH01-02の貫通チュートリアルは3体を縦一列に固定する。
+      // ジグのレーザーが複数体を貫通することを視覚的に学べるよう、移動・攻撃もしない。
+      if (isChapter102TutorialStage() && enemy.ch102TutorialLocked) {
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
+
       // エリ/ネム等の全体停止：移動停止と敵弾生成停止を必ずセットにする。
       const globalStunUntil = Number(state.normalEnemyStunUntil || 0);
       if (now < globalStunUntil) {
@@ -11148,7 +11369,13 @@
     } else {
       state.missionComplete = allDefeated;
     }
-    if (state.missionComplete) beginNormalStageClear();
+    if (state.missionComplete) {
+      if (isChapter102TutorialStage()) {
+        state.ch102TutorialPhase = 'complete';
+        clearChapter102TutorialHint();
+      }
+      beginNormalStageClear();
+    }
   }
 
   function showStageClearSequence(onComplete) {
@@ -16624,7 +16851,7 @@
       return;
     }
 
-    if (state.ch101TutorialPaused) {
+    if (state.ch101TutorialPaused || state.ch102TutorialPaused) {
       prevTs = ts;
       renderHud();
       rafId = requestAnimationFrame(gameLoop);
@@ -17235,6 +17462,7 @@
   }
 
   function openDailyStage(level, kind = 'weekday') {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     const normalizedLevel = level === 'advanced' ? 'advanced' : 'intermediate';
     const normalizedKind = kind === 'exp' ? 'exp' : 'weekday';
     const attempt = getDailySelectAttempt(normalizedLevel, normalizedKind);
@@ -17254,6 +17482,7 @@
   }
 
   function showDailyStageSelect(options = {}) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     closeDailyStageSelect();
 
     const immediate = !!(options && options.immediate);
@@ -17411,6 +17640,7 @@
   }
 
   function openFacelessStage(stageId) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     // 「無貌の天使」ステージ一覧 → パーティ編成へ進んだことを保持。
     // 編成画面の「戻る」は、特別巡行トップではなく直前のステージ一覧へ戻す。
     window.__shootingReturnContext = { type: 'facelessStageSelect' };
@@ -17419,6 +17649,7 @@
   }
 
   function showFacelessStageSelect(options = {}) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     closeFacelessStageSelect();
     const immediate = !!(options && options.immediate);
     const overlay = document.createElement('div');
@@ -17673,6 +17904,9 @@
         prevTs = performance.now();
         if (isChapter101TutorialStage()) {
           startChapter101TutorialBattle();
+        }
+        if (isChapter102TutorialStage()) {
+          startChapter102TutorialBattle();
         }
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(gameLoop);
@@ -20369,6 +20603,17 @@
 
   window.openShootingEvent = function (options = {}) {
     lastTapAt = 0;
+
+    const requestedStageId = String(options && options.stageId || '');
+    const isChapter03LockedContent =
+      !requestedStageId ||
+      requestedStageId.indexOf('shooting_daily_') === 0 ||
+      requestedStageId.indexOf('shooting_event_') === 0 ||
+      requestedStageId.indexOf('shooting_score_attack_') === 0 ||
+      requestedStageId === 'shooting_raid_test';
+    if (isChapter03LockedContent && typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) {
+      return false;
+    }
 
     // 特別巡行の既存導線は openShootingEvent() を引数なしで呼ぶ。
     // STORYで最後に選んだstageIdを引き継がないよう、

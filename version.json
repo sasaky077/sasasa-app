@@ -1,5 +1,5 @@
 {
-  "version": "1155",
-  "build": 1155,
-  "notes": "Normalize the HOME character only after the HOME screen has its final active layout. During title/loading prerender, normalization is deferred; while the title still covers the screen, HOME is activated behind it and the normalized canvas is prepared so the first HOME render matches later returns without a size jump."
+  "version": "1159",
+  "build": 1159,
+  "notes": "CH01-02 tutorial now explains why piercing laser is effective before prompting the Eri-to-Jig character switch."
 }

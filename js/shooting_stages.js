@@ -139,6 +139,12 @@
         totalEnemies: 7,
         maxActive: 2,
         spawnIntervalMs: 950,
+
+        // build1157: CH01-01〜03はLv1前提。最初の操作チュートリアルはかなり軽めにする。
+        enemyHp: 85,
+        enemyBulletDamage: 20,
+        enemyBulletSpeed: 135,
+        enemyFireRate: 1900,
       }),
 
       mission: Object.freeze({
@@ -163,15 +169,21 @@
         SHOOTING_ENEMY_ID.MINI_01,
       ]),
       normalBattle: Object.freeze({
-        totalEnemies: 9,
+        // build1157: エリ→ジグのキャラチェンジ＋レーザー貫通チュートリアル。
+        // 3体はcore側で縦一列に固定配置するため、通常スポーンは使用しない。
+        totalEnemies: 3,
         maxActive: 3,
-        spawnIntervalMs: 820,
+        spawnIntervalMs: 999999,
+        enemyImage: 'images/remnant_01_zako.webp',
+        enemyHp: 22,
+        enemyBulletDamage: 15,
+        enemyBulletSpeed: 120,
+        enemyFireRate: 2200,
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-        targetSeconds: 90,
-        text: '90秒以内にクリア',
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵を3体すべて撃破',
       }),
 
       playable: true,
@@ -195,6 +207,12 @@
         spawnIntervalMs: 720,
         enemyImage: 'images/remnant_01_zako.webp',
         itemDropRate: 1,
+
+        // build1157: CH01-03まではLv1前提。
+        enemyHp: 75,
+        enemyBulletDamage: 20,
+        enemyBulletSpeed: 130,
+        enemyFireRate: 1900,
       }),
 
       mission: Object.freeze({

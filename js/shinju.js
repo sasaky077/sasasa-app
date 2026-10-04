@@ -665,6 +665,7 @@
   }
 
   function openShinjuScreen() {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     renderOverlay();
     const ov = ensureOverlay();
     ov.classList.add('active');

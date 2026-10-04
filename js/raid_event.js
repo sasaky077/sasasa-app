@@ -1801,6 +1801,7 @@
   }
 
   async function open(options){
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     bindRaidChromeNavigation();
     document.body.classList.add('raid-shell-active');
     const root=ensureRoot(); root.style.display='block'; root.setAttribute('aria-hidden','false');

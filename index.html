@@ -3201,7 +3201,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         <span class="ninmu-cat-jp">デイリー</span><span class="ninmu-cat-en">DAILY</span>
       </button>
       <button class="ninmu-cat-item" id="ninmu-cat-special" onclick="switchNinmuCat('special')">
-        <span class="ninmu-cat-jp">特別邂逅</span><span class="ninmu-cat-en">SPECIAL</span>
+        <span class="ninmu-cat-jp">特別巡行</span><span class="ninmu-cat-en">SPECIAL</span>
       </button>
       <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
         <span class="ninmu-cat-jp">ストーリー</span><span class="ninmu-cat-en">STORY</span>
@@ -9481,6 +9481,10 @@ startTitleBgm();
 
   // 巡行カテゴリ切り替え
   function switchNinmuCat(cat) {
+    if ((cat === 'daily' || cat === 'special') && typeof window.requireChapter03ContentUnlock === 'function') {
+      if (!window.requireChapter03ContentUnlock()) return false;
+    }
+
     ['daily','special','story'].forEach(function(c){
       var btn   = document.getElementById('ninmu-cat-' + c);
       var panel = document.getElementById('ninmu-panel-' + c);
@@ -9673,9 +9677,50 @@ startTitleBgm();
   if(name==='main')  updateMainUI();
 }
 
-  // build1122: 邂逅はCHAPTER03クリア後に解放。
-  var GACHA_UNLOCK_STAGE_ID = 'shooting_ch03_04';
-  var GACHA_UNLOCK_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
+  // build1156: CHAPTER03-04クリア後に主要サブコンテンツを解放。
+  var CH03_CONTENT_UNLOCK_STAGE_ID = 'shooting_ch03_04';
+  var CH03_CONTENT_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
+  var CH03_CONTENT_LOCK_MESSAGE = 'ストーリー[CHAPTER 03-04]をクリア後に解放されます。';
+
+  function isChapter03ContentUnlocked(){
+    try {
+      var map = JSON.parse(localStorage.getItem(CH03_CONTENT_CLEAR_KEY) || '{}') || {};
+      return !!map[CH03_CONTENT_UNLOCK_STAGE_ID];
+    } catch(_){ return false; }
+  }
+
+  function showChapter03ContentLockMessage(){
+    if(typeof showToast === 'function') showToast(CH03_CONTENT_LOCK_MESSAGE);
+    else alert(CH03_CONTENT_LOCK_MESSAGE);
+  }
+
+  function requireChapter03ContentUnlock(){
+    if(isChapter03ContentUnlocked()) return true;
+    showChapter03ContentLockMessage();
+    return false;
+  }
+
+  function syncChapter03ContentLockUI(forceUnlocked){
+    var unlocked = forceUnlocked === true || isChapter03ContentUnlocked();
+    ['ninmu-cat-daily','ninmu-cat-special','raid-home-entry','shinju-home-entry','score-attack-home-entry'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle('is-ch03-locked', !unlocked);
+      el.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+      if(!unlocked) el.setAttribute('title', CH03_CONTENT_LOCK_MESSAGE);
+      else el.removeAttribute('title');
+    });
+    return unlocked;
+  }
+
+  window.isChapter03ContentUnlocked = isChapter03ContentUnlocked;
+  window.showChapter03ContentLockMessage = showChapter03ContentLockMessage;
+  window.requireChapter03ContentUnlock = requireChapter03ContentUnlock;
+  window.syncChapter03ContentLockUI = syncChapter03ContentLockUI;
+
+  // 邂逅も同じCHAPTER03-04クリア条件を使用。
+  var GACHA_UNLOCK_STAGE_ID = CH03_CONTENT_UNLOCK_STAGE_ID;
+  var GACHA_UNLOCK_CLEAR_KEY = CH03_CONTENT_CLEAR_KEY;
 
   function isGachaUnlocked(){
     try {
@@ -9699,6 +9744,7 @@ startTitleBgm();
     var detail = event && event.detail ? event.detail : {};
     if(detail.win && String(detail.stageId || '') === GACHA_UNLOCK_STAGE_ID){
       syncGachaUnlockUI(true);
+      syncChapter03ContentLockUI(true);
       // CH03クリア直後から邂逅バナーも解禁。
       if(typeof renderHomeEventBanners === 'function') renderHomeEventBanners();
       if(typeof initHomeBannerSwipe === 'function') initHomeBannerSwipe();
@@ -9706,9 +9752,15 @@ startTitleBgm();
   });
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ syncGachaUnlockUI(false); }, { once:true });
+    document.addEventListener('DOMContentLoaded', function(){
+      syncGachaUnlockUI(false);
+      syncChapter03ContentLockUI(false);
+    }, { once:true });
   } else {
-    setTimeout(function(){ syncGachaUnlockUI(false); }, 0);
+    setTimeout(function(){
+      syncGachaUnlockUI(false);
+      syncChapter03ContentLockUI(false);
+    }, 0);
   }
 
   // ボトムナビ active 制御
@@ -9847,6 +9899,9 @@ function goHome(){
 
     if(name === 'ninmu'){
       showScreen('ninmu');
+      if(typeof window.isChapter03ContentUnlocked === 'function' && !window.isChapter03ContentUnlocked()) {
+        switchNinmuCat('story');
+      }
       setBnavActive('ninmu');
       setHomeBtnVisible(true);
       setReloadBtnVisible(true);

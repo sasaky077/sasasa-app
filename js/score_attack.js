@@ -262,6 +262,7 @@ async function refresh(options){
  }
 }
 window.openScoreAttack=function(){
+  if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
   const r=ensureRoot();
   r.classList.add('show');
   r.setAttribute('aria-hidden','false');

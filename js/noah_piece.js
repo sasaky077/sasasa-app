@@ -146,6 +146,7 @@
   }
 
   async function openNoahPiecePanel(){
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return;
     buildPanel();
     if (typeof window.refreshSpecialTicketUI === 'function') {
       try { await window.refreshSpecialTicketUI(); } catch (_) {}
