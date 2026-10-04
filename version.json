@@ -1,5 +1,5 @@
 {
-  "version": "1146",
-  "build": 1146,
-  "notes": "Unify the default character order between the character list and party select. Shared base order: Eri, Jig, Aura, Mimosa, Leona Cross, Arno, Noel, Liz, Lyune, remaining characters by ID, then Iverna, SIGMA-IX, Noah. Character-list explicit element/rarity sorting still overrides the base order."
+  "version": "1155",
+  "build": 1155,
+  "notes": "Normalize the HOME character only after the HOME screen has its final active layout. During title/loading prerender, normalization is deferred; while the title still covers the screen, HOME is activated behind it and the normalized canvas is prepared so the first HOME render matches later returns without a size jump."
 }

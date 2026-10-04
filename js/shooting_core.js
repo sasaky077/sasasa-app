@@ -18544,6 +18544,15 @@
     // DAILY巡行はサーバー確定・残回数UIへ戻す専用フロー。
     // ランダム襲来でselectedStageを書き換えない。
     if (!win || isAmbushStage() || isDailyQuestStage()) return;
+
+    // build1147: CH01-03初回クリア後はレベルアップチュートリアルへ直行させる。
+    // RESULT表示中にランダム襲来が割り込むと導線が壊れるため、完了までは抽選しない。
+    try {
+      if (
+        getSelectedBaseStageId() === 'shooting_ch01_03' &&
+        localStorage.getItem('zeraphia_tutorial_levelup_ch01_03_v1') !== '1'
+      ) return;
+    } catch (_) {}
     const rate = 0.10;
     if (Math.random() >= rate) return;
     // リザルトを一度見せてから緊急警告へ。
@@ -18551,6 +18560,83 @@
       if (!state || !state.ended || isAmbushStage()) return;
       startRandomAmbushFromResult();
     }, 1500);
+  }
+
+  // build1153: POSTノベル → RESULT の標準トランジション。
+  // ノベルがフェードアウトしている間も白いベールを残し、背後のバトル画面を一切見せない。
+  // RESULTをベールの下で先に表示してから、ベールだけをゆっくり解除する。
+  const POST_RESULT_TRANSITION_ID = 'shooting-post-result-transition';
+  const POST_RESULT_TRANSITION_MS = 760;
+
+  function ensurePostResultTransition() {
+    let overlay = document.getElementById(POST_RESULT_TRANSITION_ID);
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = POST_RESULT_TRANSITION_ID;
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(overlay);
+
+    if (!document.getElementById('shooting-post-result-transition-style-v1153')) {
+      const style = document.createElement('style');
+      style.id = 'shooting-post-result-transition-style-v1153';
+      style.textContent = `
+        #${POST_RESULT_TRANSITION_ID}{
+          position:fixed;
+          inset:0;
+          z-index:260450;
+          display:none;
+          pointer-events:none;
+          opacity:1;
+          background:
+            radial-gradient(circle at 50% 28%,rgba(255,255,255,.98) 0%,rgba(255,253,248,.96) 38%,rgba(247,242,232,.98) 100%);
+          transition:opacity ${POST_RESULT_TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1);
+          will-change:opacity;
+        }
+        #${POST_RESULT_TRANSITION_ID}.is-active{display:block;opacity:1;}
+        #${POST_RESULT_TRANSITION_ID}.is-releasing{opacity:0;}
+        @media (min-width:500px){
+          #${POST_RESULT_TRANSITION_ID}{
+            left:50%;
+            right:auto;
+            width:100%;
+            max-width:430px;
+            transform:translateX(-50%);
+          }
+        }
+        @media (prefers-reduced-motion:reduce){
+          #${POST_RESULT_TRANSITION_ID}{transition-duration:180ms;}
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return overlay;
+  }
+
+  function armPostResultTransition() {
+    const overlay = ensurePostResultTransition();
+    overlay.classList.remove('is-releasing');
+    overlay.classList.add('is-active');
+    overlay.style.display = 'block';
+    overlay.setAttribute('aria-hidden', 'false');
+    // ノベルより下、バトル/RESULTより上に常駐させる。
+    // これによりノベル終了時にバトル画面が1フレームも露出しない。
+    void overlay.offsetWidth;
+    return overlay;
+  }
+
+  function releasePostResultTransition() {
+    const overlay = document.getElementById(POST_RESULT_TRANSITION_ID);
+    if (!overlay || !overlay.classList.contains('is-active')) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => overlay.classList.add('is-releasing'));
+    });
+    window.setTimeout(() => {
+      overlay.classList.remove('is-active', 'is-releasing');
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+    }, POST_RESULT_TRANSITION_MS + 100);
   }
 
   async function endGame(win) {
@@ -18711,10 +18797,18 @@
     // に固定する。RESULT自体は先に内容だけ生成し、POSTノベル完了まで非表示。
     setBattleHudVisible(false);
 
+    let postResultTransitionArmed = false;
+
     const showResultAfterStory = function(){
       if (result) {
+        // 白いベールの下でRESULTを先に完成させる。
+        // ベールを後からゆっくり外すことで、ノベル→RESULTを標準で滑らかにつなぐ。
         result.classList.add('show');
         result.setAttribute('aria-hidden', 'false');
+      }
+      if (postResultTransitionArmed) {
+        releasePostResultTransition();
+        postResultTransitionArmed = false;
       }
       maybeQueueRandomAmbush(!!win);
     };
@@ -18724,6 +18818,20 @@
       state.stageId ||
       ''
     );
+
+    const hasPostStory = !!(
+      win &&
+      window.StoryNovel &&
+      typeof window.StoryNovel.hasPost === 'function' &&
+      window.StoryNovel.hasPost(storyStageId)
+    );
+
+    // POSTノベル開始前からベールをノベルの背面へ待機させる。
+    // ノベル自身がフェードアウトしても、その下にはベールしか見えない。
+    if (hasPostStory) {
+      armPostResultTransition();
+      postResultTransitionArmed = true;
+    }
 
     if (win && window.StoryNovel) {
       // shooting-stage-result の同期イベントでqueuePost済みならそれを消費。

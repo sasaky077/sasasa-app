@@ -447,6 +447,12 @@
         "location": "大型レムナント・登場",
         "narration": true
       },
+       {
+        "speaker": "ジグ",
+        "text": "おいおい…\n冗談だろ…？",
+        "location": "大型レムナント・登場",
+        "narration": true
+      },
     ]
   },
   "shooting_ch01_04": {
@@ -463,6 +469,13 @@
         "location": "大型レムナント・登場",
         "narration": true
       },
+             {
+        "speaker": "ジグ",
+        "text": "おいおい…\n冗談だろ…？",
+        "location": "大型レムナント・登場",
+        "narration": true
+      },
+
       {
         "speaker": "アウラ",
         "left": "アウラ",

@@ -7403,16 +7403,45 @@ function selectChara(now, gacha) {
   async function normalizeHomeCharacterImage(img){
     if(!img || !img.isConnected) return;
 
+    // build1155:
+    // TITLE/SPLASH中のHOME事前描画では .favorite-area の実レイアウト高さがまだ確定していない。
+    // ここで正規化すると初回HOMEだけ小さいcanvasが作られ、別画面から戻った時に再計算されて
+    // サイズが変わって見える。HOMEがactiveになるまでは生imgを隠したまま計測を保留する。
+    var homeScreen = document.getElementById('screen-main');
+    if(homeScreen && !homeScreen.classList.contains('active')){
+      img.style.visibility = 'hidden';
+      img.style.opacity = '0';
+      img.dataset.homeNormalizePending = '1';
+      return;
+    }
+    img.removeAttribute('data-home-normalize-pending');
+
+    // build1154:
+    // ホーム復帰時に生の<img>が一瞬だけ大きく表示され、その後canvas標準サイズへ
+    // 縮む現象を防ぐ。計測元imgは最初から不可視にし、描画済みcanvasだけを見せる。
+    function revealFallback(){
+      if(!img || !img.isConnected) return;
+      img.style.visibility = 'visible';
+      img.style.opacity = '1';
+      img.removeAttribute('data-home-normalizing');
+    }
+
     try{
       if(typeof img.decode === 'function' && !img.complete){
         await img.decode().catch(function(){});
       }
     }catch(_){}
 
-    if(!img.isConnected || !img.naturalWidth || !img.naturalHeight) return;
+    if(!img.isConnected || !img.naturalWidth || !img.naturalHeight){
+      revealFallback();
+      return;
+    }
 
     var bounds = await getHomeVisualBounds(img);
-    if(!bounds || !img.isConnected) return;
+    if(!bounds || !img.isConnected){
+      revealFallback();
+      return;
+    }
 
     // build1076:
     // 元画像の透明余白をCSS transformで補正するのではなく、
@@ -7465,19 +7494,40 @@ function selectChara(now, gacha) {
     canvas.style.maxWidth = '82vw';
     canvas.style.objectFit = 'contain';
 
+    // canvasは完成するまで見せない。古いcanvasを再利用するresize時は現在表示を維持する。
+    var canvasWasVisible = canvas.style.visibility !== 'hidden';
+    if(!canvasWasVisible) canvas.style.visibility = 'hidden';
+
     var ctx = canvas.getContext('2d');
-    if(!ctx) return;
+    if(!ctx){
+      revealFallback();
+      return;
+    }
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,logicalW,logicalH);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, sx, sy, sw, sh, dx, dy, drawW, drawH);
 
-    // 元imgは計測用に残すが画面上は非表示。
+    // 完成したcanvasを一度に表示。生imgは一度も画面へ出さない。
+    canvas.style.visibility = 'visible';
+    canvas.style.opacity = '1';
     img.style.display = 'none';
+    img.style.visibility = 'hidden';
+    img.style.opacity = '0';
     img.dataset.homeNormalized = '1';
+    img.removeAttribute('data-home-normalizing');
   }
   window.normalizeHomeCharacterImage = normalizeHomeCharacterImage;
+
+  function normalizeCurrentHomeCharacterImages(){
+    var jobs = [];
+    document.querySelectorAll('#fav-display .fav-cut-img, #fav-display .fav-img').forEach(function(img){
+      jobs.push(Promise.resolve(normalizeHomeCharacterImage(img)));
+    });
+    return Promise.allSettled(jobs);
+  }
+  window.normalizeCurrentHomeCharacterImages = normalizeCurrentHomeCharacterImages;
 
   var _homeNormalizeResizeTimer = null;
   window.addEventListener('resize', function(){
@@ -7552,8 +7602,8 @@ function selectChara(now, gacha) {
 
    // build1074: scale/Yは画像の非透明領域から自動算出する。
    // 横位置だけ既存キャラ定義を維持する。
-   var styleAttr = ' data-home-offset-x="' + offsetX + '"' +
-     ' style="transform:translate(' + offsetX + 'px,0px) scale(1);transform-origin:50% 100%;"';
+   var styleAttr = ' data-home-offset-x="' + offsetX + '" data-home-normalizing="1"' +
+     ' style="transform:translate(' + offsetX + 'px,0px) scale(1);transform-origin:50% 100%;visibility:hidden;opacity:0;"';
 
    var homeCutImg = (window.CharacterSkins && typeof window.CharacterSkins.getHomeImage === 'function')
      ? window.CharacterSkins.getHomeImage(chara.id, chara.cutImg || '')
@@ -8212,6 +8262,21 @@ startTitleBgm();
   // タイトルが完全に非表示になった瞬間にだけ切り替える。
   // ============================================================
   titleScreen.classList.add('closing');
+
+  // build1155: TITLEがHOMEを覆っている間にHOMEを最終レイアウトへ切り替え、
+  // 立ち絵の透明余白補正canvasを完成させる。ユーザーにはTITLEしか見えていないため、
+  // HOME初回表示時から「戻ってきた時」と同じサイズで表示できる。
+  document.querySelectorAll('.screen').forEach(function(screen){
+    screen.classList.remove('active');
+  });
+  if(mainScreen) mainScreen.classList.add('active');
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      if(typeof normalizeCurrentHomeCharacterImages === 'function'){
+        normalizeCurrentHomeCharacterImages();
+      }
+    });
+  });
 
   setTimeout(function(){
     // 1. TITLEを完全に消す。
