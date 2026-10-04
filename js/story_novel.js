@@ -19,6 +19,7 @@
   let typingTimer = 0;
   let introTimer = 0;
   let entryTransitionTimer = 0;
+  let cinematicTransitionTimers = [];
 
   // build1095: ノベル全体の呼吸を少しゆっくりにする。
   const NOVEL_TEXT_SPEED_MS = 32;          // 旧22ms
@@ -27,6 +28,10 @@
   const NOVEL_PHASE_EXIT_MS = 360;         // ノベル→次パートの余韻
   const NOVEL_INTRO_HOLD_MS = 2400;        // ストーリー開始タイトルをやや長めに表示
   const NOVEL_INTRO_FADE_MS = 760;         // タイトル退場も少しゆっくり
+  const NOVEL_CINEMATIC_BLACK_IN_MS = 520;
+  const NOVEL_CINEMATIC_LABEL_IN_MS = 360;
+  const NOVEL_CINEMATIC_LABEL_HOLD_MS = 1150;
+  const NOVEL_CINEMATIC_BLACK_OUT_MS = 620;
 
   function normalizeStageId(stageId){
     const raw=String(stageId||'');
@@ -138,17 +143,16 @@
   }
 
   const STORY_BG_PATHS = Object.freeze({
-    outside_tower: 'images/scene_outside_tower.webp',
-    outside_tower_enemy: 'images/scene_outside_tower_enemy.webp',
-    outside_site_enemy: 'images/scene_enemy_site.webp',
-    inside: 'images/scene_base.webp',
-    workbench: 'images/scene_workbench.webp',
-    outside_road: 'images/scene_outside_road.webp',
-    openfire: 'images/scene_openfire.webp',
+    outside_tower: 'images/outside_tower.webp',
+    outside_tower_enemy: 'images/outside_tower_enemy.webp',
+    outside_site_enemy: 'images/outside_site_enemy.webp',
+    inside: 'images/inside.webp',
+    workbench: 'images/workbench.webp',
+    outside_road: 'images/outside_road.webp',
     remnant_01_intro: 'images/scene_remnant_01_battle.webp',
     remnant_01_battle: 'images/scene_eri_jig_battle.webp',
-    remnant_01_aruno: 'images/scene_aruno_help.webp?v=1113',
-    remnant_01_rip: 'images/scene_remnant_01_rip.webp?v=1113',
+    remnant_01_aruno: 'images/scene_aruno_help.webp',
+    remnant_01_rip: 'images/scene_remnant_01_rip.webp',
     enemy_site: 'images/scene_enemy_site.webp',
     many_tower: 'images/scene_many_tower.webp',
     remnant_02_battle: 'images/scene_remnant_02_battle.webp',
@@ -163,12 +167,6 @@
     if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
     if(!loc) return STORY_BG_PATHS.outside_tower;
 
-    // build1113: CH01-04特殊背景は完全一致を最優先。
-    if(loc==='大型レムナント・アルノ登場') return STORY_BG_PATHS.remnant_01_aruno;
-    if(loc==='大型レムナント・討伐') return STORY_BG_PATHS.remnant_01_rip;
-    if(loc==='大型レムナント・登場') return STORY_BG_PATHS.remnant_01_intro;
-    if(loc==='大型レムナント・戦闘') return STORY_BG_PATHS.remnant_01_battle;
-
     if(loc.includes('大型レムナント・登場')) return STORY_BG_PATHS.remnant_01_intro;
     if(loc.includes('大型レムナント・戦闘')) return STORY_BG_PATHS.remnant_01_battle;
     if(loc.includes('大型レムナント・アルノ登場')) return STORY_BG_PATHS.remnant_01_aruno;
@@ -179,7 +177,6 @@
     if(loc.includes('白い廃墟・塔の並ぶ丘')) return STORY_BG_PATHS.many_tower;
     if(loc.includes('白い廃墟・一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
     if(loc.includes('一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
-    if(loc.includes('拠点・焚き火のそば') || loc.includes('焚き火')) return STORY_BG_PATHS.openfire;
     if(loc.includes('作業台')) return STORY_BG_PATHS.workbench;
     if(loc.includes('拠点')) return STORY_BG_PATHS.inside;
     if(loc.includes('奥地')) return STORY_BG_PATHS.outside_road;
@@ -196,19 +193,6 @@
     return STORY_BG_PATHS.outside_tower;
   }
 
-  function applyStoryBackground(bg, location, stageId){
-    if(!bg) return;
-    const primary=backgroundFor(location, stageId);
-    // 特殊背景の読み込みに失敗しても白抜けさせない。
-    // 1枚目が取得できればそれが全面表示され、失敗時のみ2枚目が見える。
-    const fallback=STORY_BG_PATHS.outside_tower;
-    if(primary && primary!==fallback){
-      bg.style.backgroundImage=`url("${primary}"), url("${fallback}")`;
-    }else{
-      bg.style.backgroundImage=`url("${fallback}")`;
-    }
-  }
-
 
   function ensureInlineStyle(){
     if(document.getElementById('story-novel-inline-style')) return;
@@ -219,6 +203,107 @@
   position:fixed;
   inset:0;
   z-index:260500;
+  overflow:hidden;
+  background:#f4f1ea;
+  font-family:"Noto Serif JP",serif;
+  color:#3f3933;
+}
+#${ROOT_ID} .story-novel-bg{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background-position:center center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-color:#f4f1ea;
+  opacity:1;
+}
+#${ROOT_ID} .story-novel-wash{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  background:linear-gradient(to bottom,rgba(255,255,255,.12),rgba(247,243,236,.18) 55%,rgba(247,243,236,.44));
+  pointer-events:none;
+}
+#${ROOT_ID} .story-novel-vignette{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  box-shadow:inset 0 0 55px rgba(95,82,63,.10);
+  pointer-events:none;
+}
+#${ROOT_ID} .story-novel-head{
+  position:absolute;
+  left:0; right:0; top:0;
+  z-index:50;
+  min-height:56px;
+  display:grid;
+  grid-template-columns:70px 1fr 70px;
+  align-items:center;
+  padding:8px 10px;
+  box-sizing:border-box;
+  background:linear-gradient(to bottom,rgba(247,243,236,.92),rgba(247,243,236,.58),rgba(247,243,236,0));
+}
+#${ROOT_ID} .story-novel-back,
+#${ROOT_ID} .story-novel-skip{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#51483f;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px;
+  letter-spacing:.08em;
+  padding:10px 4px;
+}
+#${ROOT_ID} .story-novel-head-copy{ text-align:center; line-height:1.25; }
+#${ROOT_ID} .story-novel-chapter{ display:block; font-size:9px; letter-spacing:.12em; opacity:.65; }
+#${ROOT_ID} .story-novel-stage{ display:block; margin-top:2px; font-size:13px; font-weight:500; letter-spacing:.08em; }
+#${ROOT_ID} .story-novel-location{
+  position:absolute;
+  top:64px; left:0; right:0;
+  z-index:35;
+  text-align:center;
+  font-size:11px;
+  letter-spacing:.10em;
+  color:rgba(63,57,51,.74);
+  text-shadow:0 1px 8px rgba(255,255,255,.95);
+}
+#${ROOT_ID} .story-novel-textbox{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:max(12px, env(safe-area-inset-bottom));
+  z-index:40;
+  min-height:126px;
+  padding:16px 18px 14px;
+  box-sizing:border-box;
+  border-top:1px solid rgba(109,92,72,.18);
+  border-bottom:1px solid rgba(109,92,72,.10);
+  background:rgba(247,243,236,.94);
+  backdrop-filter:blur(1.5px);
+  -webkit-backdrop-filter:blur(1.5px);
+}
+#${ROOT_ID} .story-novel-speaker{
+  min-height:18px;
+  margin-bottom:7px;
+  font-size:12px;
+  letter-spacing:.12em;
+  color:#5e5146;
+}
+#${ROOT_ID} .story-novel-dialogue{
+  min-height:54px;
+  font-size:15px;
+  line-height:1.75;
+  letter-spacing:.03em;
+  white-space:pre-wrap !important;
+}
+#${ROOT_ID} .story-novel-tap{
+  margin-top:8px;
+  text-align:right;
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  letter-spacing:.14em;
+  opacity:.5;
 }
 #${ROOT_ID} .story-novel-cast{
   position:absolute;
@@ -297,18 +382,7 @@
   mask-repeat:no-repeat;
 }
 #${ROOT_ID} .story-novel-dialogue{
-  white-space:pre-line;
-}
-
-#${ROOT_ID} .story-novel-textbox{
-  position:absolute;
-  left:12px;
-  right:12px;
-  bottom:12px;
-  z-index:40;
-  background:rgba(247,243,236,.94);
-  backdrop-filter:blur(1.5px);
-  -webkit-backdrop-filter:blur(1.5px);
+  white-space:pre-line !important;
 }
 
 #${ROOT_ID} .story-novel-intro-title{
@@ -348,6 +422,61 @@
 #${ROOT_ID}.is-pre-intro .story-novel-textbox,
 #${ROOT_ID}.is-pre-intro .story-novel-cast,
 #${ROOT_ID}.is-pre-intro .story-novel-location{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+
+#${ROOT_ID} .story-novel-cinematic{
+  position:absolute;
+  inset:0;
+  z-index:120;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#090909;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity ${NOVEL_CINEMATIC_BLACK_IN_MS}ms ease, visibility 0s linear ${NOVEL_CINEMATIC_BLACK_IN_MS}ms;
+}
+#${ROOT_ID} .story-novel-cinematic.is-black{
+  opacity:1;
+  visibility:visible;
+  transition:opacity ${NOVEL_CINEMATIC_BLACK_IN_MS}ms ease, visibility 0s linear 0s;
+}
+#${ROOT_ID} .story-novel-cinematic-label{
+  position:relative;
+  padding:12px 30px;
+  font-family:"Noto Serif JP",serif;
+  font-size:clamp(18px,5.2vw,28px);
+  font-weight:400;
+  letter-spacing:.28em;
+  color:rgba(255,255,255,.92);
+  opacity:0;
+  transform:translateY(5px);
+  transition:opacity ${NOVEL_CINEMATIC_LABEL_IN_MS}ms ease, transform ${NOVEL_CINEMATIC_LABEL_IN_MS}ms ease;
+}
+#${ROOT_ID} .story-novel-cinematic-label::before,
+#${ROOT_ID} .story-novel-cinematic-label::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:34px;
+  height:1px;
+  background:rgba(255,255,255,.34);
+}
+#${ROOT_ID} .story-novel-cinematic-label::before{ right:100%; margin-right:12px; }
+#${ROOT_ID} .story-novel-cinematic-label::after{ left:100%; margin-left:12px; }
+#${ROOT_ID} .story-novel-cinematic.show-label .story-novel-cinematic-label{
+  opacity:1;
+  transform:translateY(0);
+}
+#${ROOT_ID}.is-cinematic-transition .story-novel-head,
+#${ROOT_ID}.is-cinematic-transition .story-novel-location,
+#${ROOT_ID}.is-cinematic-transition .story-novel-cast,
+#${ROOT_ID}.is-cinematic-transition .story-novel-textbox{
   opacity:0 !important;
   visibility:hidden !important;
   pointer-events:none !important;
@@ -404,6 +533,9 @@
         <div class="story-novel-character is-right"><img alt=""></div>
       </div>
       <div class="story-novel-intro-title" aria-hidden="true"></div>
+      <div class="story-novel-cinematic" aria-hidden="true">
+        <div class="story-novel-cinematic-label"></div>
+      </div>
       <div class="story-novel-textbox">
         <div class="story-novel-speaker"></div>
         <div class="story-novel-dialogue"></div>
@@ -428,23 +560,22 @@
   }
 
   function setSharedUiHidden(hidden){
-    const nav=document.getElementById('bottom-nav-shared');
-    const frame=document.getElementById('global-user-frame');
-    if(hidden){
-      if(nav && nav.dataset.storyPrevDisplay==null) nav.dataset.storyPrevDisplay=nav.style.display||'';
-      if(frame && frame.dataset.storyPrevDisplay==null) frame.dataset.storyPrevDisplay=frame.style.display||'';
-      if(nav) nav.style.display='none';
-      if(frame) frame.style.display='none';
-    }else{
-      if(nav){
-        nav.style.display=nav.dataset.storyPrevDisplay||'';
-        delete nav.dataset.storyPrevDisplay;
+    const targets=[
+      document.getElementById('bottom-nav-shared'),
+      document.getElementById('global-user-frame'),
+      document.getElementById('story-screen-story'),
+      document.getElementById('stage-select-modal')
+    ].filter(Boolean);
+
+    targets.forEach(function(el){
+      if(hidden){
+        if(el.dataset.storyPrevDisplay==null) el.dataset.storyPrevDisplay=el.style.display||'';
+        el.style.display='none';
+      }else{
+        el.style.display=el.dataset.storyPrevDisplay||'';
+        delete el.dataset.storyPrevDisplay;
       }
-      if(frame){
-        frame.style.display=frame.dataset.storyPrevDisplay||'';
-        delete frame.dataset.storyPrevDisplay;
-      }
-    }
+    });
   }
 
   function stopTyping(){
@@ -454,12 +585,23 @@
     }
   }
 
+  function setDialogueTextWithBreaks(el, text){
+    if(!el) return;
+    const value=String(text == null ? '' : text);
+    el.textContent='';
+    const parts=value.split('\n');
+    parts.forEach((part,index)=>{
+      if(index>0) el.appendChild(document.createElement('br'));
+      el.appendChild(document.createTextNode(part));
+    });
+  }
+
   function completeTyping(){
     if(!session || !session.typing) return false;
     stopTyping();
     const root=ensureRoot();
     const dialogue=root.querySelector('.story-novel-dialogue');
-    dialogue.textContent=session.fullText||'';
+    setDialogueTextWithBreaks(dialogue, session.fullText||'');
     session.typing=false;
     return true;
   }
@@ -470,7 +612,7 @@
     stopTyping();
     session.fullText=String(text||'');
     session.typing=true;
-    dialogue.textContent='';
+    setDialogueTextWithBreaks(dialogue, '');
 
     const chars=Array.from(session.fullText);
     let i=0;
@@ -478,7 +620,7 @@
     const tick=()=>{
       if(!session) return stopTyping();
       i=Math.min(chars.length,i+1);
-      dialogue.textContent=chars.slice(0,i).join('');
+      setDialogueTextWithBreaks(dialogue, chars.slice(0,i).join(''));
       if(i>=chars.length){
         stopTyping();
         if(session) session.typing=false;
@@ -513,7 +655,7 @@
     const title=root.querySelector('.story-novel-intro-title');
     const bg=root.querySelector('.story-novel-bg');
 
-    if(bg) applyStoryBackground(bg, location, session.stageId);
+    if(bg) bg.style.backgroundImage=`url("${backgroundFor(location, session.stageId)}")`;
     applyLocationClass(root,location);
 
     root.classList.add('is-pre-intro');
@@ -548,12 +690,93 @@
     return true;
   }
 
+
+  function clearCinematicTransitionTimers(){
+    cinematicTransitionTimers.forEach(function(id){ clearTimeout(id); });
+    cinematicTransitionTimers=[];
+  }
+
+  function queueCinematicTimer(fn, delay){
+    const id=setTimeout(function(){
+      cinematicTransitionTimers=cinematicTransitionTimers.filter(function(x){ return x!==id; });
+      fn();
+    },delay);
+    cinematicTransitionTimers.push(id);
+    return id;
+  }
+
+  function playCinematicTransition(entry){
+    if(!session) return false;
+    const kind=String(entry && entry.transition || '').toLowerCase();
+    if(kind!=='fade_black') return false;
+
+    const root=ensureRoot();
+    const overlay=root.querySelector('.story-novel-cinematic');
+    const label=root.querySelector('.story-novel-cinematic-label');
+    if(!overlay || !label) return false;
+
+    stopTyping();
+    clearCinematicTransitionTimers();
+    session.transitioning=true;
+    root.classList.remove('is-entry-transition','is-location-transition');
+    root.classList.add('is-cinematic-transition');
+    overlay.classList.remove('is-black','show-label');
+    overlay.setAttribute('aria-hidden','false');
+    label.textContent=String(entry.text || '');
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ overlay.classList.add('is-black'); });
+    });
+
+    queueCinematicTimer(function(){
+      if(!session) return;
+      overlay.classList.add('show-label');
+    },NOVEL_CINEMATIC_BLACK_IN_MS + 120);
+
+    queueCinematicTimer(function(){
+      if(!session) return;
+      overlay.classList.remove('show-label');
+    },NOVEL_CINEMATIC_BLACK_IN_MS + 120 + NOVEL_CINEMATIC_LABEL_IN_MS + NOVEL_CINEMATIC_LABEL_HOLD_MS);
+
+    queueCinematicTimer(function(){
+      if(!session) return;
+      const nextIndex=session.index+1;
+      const nextEntry=session.entries[nextIndex];
+      if(!nextEntry){
+        overlay.classList.remove('is-black');
+        root.classList.remove('is-cinematic-transition');
+        overlay.setAttribute('aria-hidden','true');
+        session.transitioning=false;
+        finishCurrent(false);
+        return;
+      }
+
+      session.index=nextIndex;
+      renderEntry();
+      overlay.classList.remove('is-black');
+
+      queueCinematicTimer(function(){
+        if(!session) return;
+        root.classList.remove('is-cinematic-transition');
+        overlay.setAttribute('aria-hidden','true');
+        session.transitioning=false;
+        typeText(nextEntry.text||'');
+      },NOVEL_CINEMATIC_BLACK_OUT_MS);
+    },NOVEL_CINEMATIC_BLACK_IN_MS + 120 + NOVEL_CINEMATIC_LABEL_IN_MS + NOVEL_CINEMATIC_LABEL_HOLD_MS + 300);
+
+    return true;
+  }
+
   function renderEntry(){
     if(!session) return;
     const entry=session.entries[session.index];
     if(!entry){
       finishCurrent(false);
       return;
+    }
+
+    if(entry.transition){
+      if(playCinematicTransition(entry)) return;
     }
 
     const root=ensureRoot();
@@ -569,7 +792,7 @@
     root.querySelector('.story-novel-speaker').textContent=speaker || 'NARRATION';
 
     const bg=root.querySelector('.story-novel-bg');
-    applyStoryBackground(bg, location, session.stageId);
+    bg.style.backgroundImage=`url("${backgroundFor(location, session.stageId)}")`;
     applyLocationClass(root,location);
 
     const cast=root.querySelector('.story-novel-cast');
@@ -625,6 +848,12 @@
       return;
     }
 
+    if(nextEntry && nextEntry.transition){
+      session.index=nextIndex;
+      renderEntry();
+      return;
+    }
+
     const root=ensureRoot();
     const currentLocation=String(session.lastLocation||'');
     const nextLocation=String(nextEntry.location||'');
@@ -654,9 +883,10 @@
     stopTyping();
     clearIntroTimer();
     clearEntryTransitionTimer();
+    clearCinematicTransitionTimers();
     const root=document.getElementById(ROOT_ID);
     if(root){
-      root.classList.remove('show','is-pre-intro','is-entry-transition','is-location-transition');
+      root.classList.remove('show','is-pre-intro','is-entry-transition','is-location-transition','is-cinematic-transition');
       root.setAttribute('aria-hidden','true');
       root.style.pointerEvents='none';
 

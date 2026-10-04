@@ -703,18 +703,10 @@
   function onShootingStoryStageTap(stage, mode = 'normal') {
     if (!stage || !stage.id) return;
 
-    if (isNovelOnlyStoryStage(stage)) {
-      playNovelOnlyStoryStage(stage, mode);
-      return;
-    }
-
     const chapter = Number(stage.chapter || 1);
     const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
     const storyId = stage.baseStageId || stage.id;
 
-    // build1121: 通常のSTORY BATTLEも必ず preノベルを通してから戦闘へ進む。
-    // これが抜けると、CH01-04などのステージ手前演出を飛ばして
-    // 編成/バトルから直接開始してしまう。
     const hideStageSelect = () => {
       const modal = document.getElementById('stage-select-modal');
       if (modal) {
@@ -748,7 +740,28 @@
       return false;
     };
 
-    const beginStoryFlow = () => {
+    const isStoryNovelReady = () => {
+      const novel = window.StoryNovel;
+      if (!novel || typeof novel.playPre !== 'function') return false;
+      if (typeof novel.dataFor === 'function') {
+        try {
+          // シナリオデータ自体の読込完了も待つ。
+          if (!novel.dataFor(storyId)) return false;
+        } catch (_) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    const beginReadyStoryFlow = () => {
+      // StoryNovel準備後にNOVEL専用判定をやり直す。
+      // 読込前に判定するとCH03-01などが通常戦闘扱いになってしまう。
+      if (isNovelOnlyStoryStage(stage)) {
+        playNovelOnlyStoryStage(stage, storyMode);
+        return;
+      }
+
       hideStageSelect();
       setReturnContext();
 
@@ -760,6 +773,7 @@
       );
 
       if (!hasPre) {
+        // StoryNovel/シナリオが準備済みで、本当にpreが無い場合のみ戦闘へ。
         openBattle();
         return;
       }
@@ -769,27 +783,46 @@
         onExit: returnToChapter
       });
 
-      // データ不整合などでpreが開始できなかった場合だけ戦闘へフォールバック。
+      // データ不整合などでpre開始に失敗した時だけ戦闘へフォールバック。
       if (!played) openBattle();
     };
 
-    if (typeof window.openShootingStage === 'function') {
-      beginStoryFlow();
-      return;
-    }
+    // ステージタップ直後にシューティングだけ先に準備完了していても、
+    // StoryNovel / シナリオが未ロードなら待つ。
+    // 以前はここで hasPre=false 扱いになり、事前ストーリーが飛ばされていた。
+    hideStageSelect();
+    setReturnContext();
 
-    // shooting moduleがまだ準備中なら、準備完了後に
-    // 「preノベル → 戦闘」の順で開始する。
     let tries = 0;
-    const timer = setInterval(() => {
+    const maxTries = 50; // 最大5秒。通常は即時～数百msで揃う。
+    const tryStart = () => {
       tries++;
-      if (typeof window.openShootingStage === 'function') {
-        clearInterval(timer);
-        beginStoryFlow();
-      } else if (tries >= 30) {
-        clearInterval(timer);
-        alert('シューティングモジュールを読み込めませんでした');
+      const battleReady = typeof window.openShootingStage === 'function';
+      const storyReady = isStoryNovelReady();
+
+      if (battleReady && storyReady) {
+        beginReadyStoryFlow();
+        return true;
       }
+
+      if (tries >= maxTries) {
+        // StoryNovelだけ失敗した場合に無言でpreを飛ばさない。
+        // ユーザーに再試行可能な状態へ戻す。
+        returnToChapter();
+        if (typeof showToast === 'function') {
+          showToast('ストーリーの読み込みに失敗しました。もう一度お試しください');
+        } else {
+          alert('ストーリーの読み込みに失敗しました。もう一度お試しください');
+        }
+        return true;
+      }
+      return false;
+    };
+
+    if (tryStart()) return;
+
+    const timer = setInterval(() => {
+      if (tryStart()) clearInterval(timer);
     }, 100);
   }
 

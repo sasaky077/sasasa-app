@@ -45,8 +45,9 @@ function buildNextResonanceBonusHTML(target, nextLb){
 
 function setLimitBreakSoulVesselSelection(materialId){
   if(!currentDetailData) return;
-  if(Number(currentDetailData.id) === 1) return; // エリは5属性すべて必須で選択不可
-  var ids = getSoulVesselMaterialIdsByElement(currentDetailData.element);
+  var ids = (typeof getLimitBreakSoulVesselIdsForTarget === 'function')
+    ? getLimitBreakSoulVesselIdsForTarget(currentDetailData)
+    : getSoulVesselMaterialIdsByElement(currentDetailData.element);
   if(ids.indexOf(materialId) === -1) return;
   if(getEvolutionMaterialCount(materialId) < 1){
     showToast('この魂の器は不足しています');
@@ -78,17 +79,7 @@ function getLimitBreakLackList(target){
   } else {
     pushLack(target && target.name ? target.name : '同キャラ', status.sameCharaOwned, recipe.sameChara);
   }
-  if(recipe.requiresAllSoulVessels){
-    (status.soulVesselOptions || []).forEach(function(opt){
-      pushLack(
-        opt && opt.def ? opt.def.name : '魂の器',
-        opt ? opt.owned : 0,
-        opt ? opt.need : recipe.soulVesselCount
-      );
-    });
-  } else {
-    pushLack(selectedVessel && selectedVessel.def ? selectedVessel.def.name : '同タイプの魂の器', status.soulVesselOwned, recipe.soulVesselCount);
-  }
+  pushLack(selectedVessel && selectedVessel.def ? selectedVessel.def.name : '同タイプの魂の器', status.soulVesselOwned, recipe.soulVesselCount);
   pushLack(stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount);
 
   return lacks;
@@ -99,14 +90,12 @@ function buildLimitBreakLackHTML(target){
   if(!lacks.length) return '';
   return '<div class="lb-lack-box">' +
     '<div class="lb-lack-title">不足しています</div>' +
-    '<div class="lb-lack-list">' +
-      lacks.map(function(item){
-        return '<div class="lb-lack-row">' +
-          '<span class="lb-lack-name">' + escapeHtml(item.name) + '</span>' +
-          '<span class="lb-lack-count">不足：' + item.lack + '個</span>' +
-        '</div>';
-      }).join('') +
-    '</div>' +
+    lacks.map(function(item){
+      return '<div class="lb-lack-row">' +
+        '<span class="lb-lack-name">' + escapeHtml(item.name) + '</span>' +
+        '<span class="lb-lack-count">不足：' + item.lack + '個</span>' +
+      '</div>';
+    }).join('') +
   '</div>';
 }
 
@@ -131,22 +120,6 @@ function buildLimitBreakRecipeHTML(target){
 
   function buildSoulVesselHTML(){
     var options = status.soulVesselOptions || [];
-
-    if(recipe.requiresAllSoulVessels){
-      return '<div class="lb-vessel-choice-wrap lb-vessel-all-required">' +
-        options.map(function(opt){
-          var def = opt && opt.def;
-          var icon = def ? '<img src="' + def.img + '" onerror="this.style.display=\'none\'">' : '<span>?</span>';
-          return row(
-            icon,
-            def ? def.name : '魂の器',
-            opt ? opt.owned : 0,
-            opt ? opt.need : 1
-          );
-        }).join('') +
-      '</div>';
-    }
-
     if(options.length <= 1){
       var opt = options[0];
       var def = opt && opt.def;
@@ -193,15 +166,19 @@ function buildLimitBreakRecipeHTML(target){
       status.specialMaterialOwned,
       recipe.specialMaterialCount
     );
-  } else {
+  } else if(recipe.sameChara > 0) {
     firstMaterialRow = row(charaIcon, charaName, status.sameCharaOwned, recipe.sameChara);
   }
+
+  var stoneRow = recipe.stoneCount > 0
+    ? row(stoneIcon, stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount)
+    : '';
 
   return '<div class="lb-recipe-box">' +
     '<div class="lb-recipe-title">必要素材</div>' +
     firstMaterialRow +
     buildSoulVesselHTML() +
-    row(stoneIcon, stoneDef ? stoneDef.name : '共鳴石', status.stoneOwned, recipe.stoneCount) +
+    stoneRow +
   '</div>' +
   buildResonanceBonusHTML(target);
 }
@@ -285,22 +262,17 @@ function playLimitBreakPowerupEffect(target, fromLb, toLb){
 function buildBulkLimitBreakSummaryHTML(target, plan){
   if(!plan || !plan.count) return '';
   var isEri = Number(target && target.id) === 1;
-  var isNoah = Number(target && target.id) === 52;
   var stoneTotal = plan.steps.reduce(function(sum, step){ return sum + Number(step.stoneCount || 0); }, 0);
   var vesselCounts = {};
   plan.steps.forEach(function(step){
-    var ids = Array.isArray(step.soulVesselIds) && step.soulVesselIds.length
-      ? step.soulVesselIds
-      : (step.soulVesselId ? [step.soulVesselId] : []);
-    ids.forEach(function(id){
-      vesselCounts[id] = Number(vesselCounts[id] || 0) + 1;
-    });
+    vesselCounts[step.soulVesselId] = Number(vesselCounts[step.soulVesselId] || 0) + 1;
   });
 
   var materialRows = [];
   if(isEri){
-    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">原初の翼</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
-  } else if(!isNoah) {
+    var eriWingDef = getEvolutionMaterialDef('eri_origin_wing');
+    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(eriWingDef ? eriWingDef.name : '原初の翼環') + '</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
+  } else {
     materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(target.name || '同キャラ') + '</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
   }
 
@@ -308,7 +280,9 @@ function buildBulkLimitBreakSummaryHTML(target, plan){
     var def = getEvolutionMaterialDef(id);
     materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(def ? def.name : '魂の器') + '</span><span class="lb-confirm-consume-count">× ' + vesselCounts[id] + '</span></div>');
   });
-  materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">共鳴石</span><span class="lb-confirm-consume-count">× ' + stoneTotal + '</span></div>');
+  if(stoneTotal > 0){
+    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">共鳴石</span><span class="lb-confirm-consume-count">× ' + stoneTotal + '</span></div>');
+  }
 
   var bonusMaster = getResonanceBonusMaster(target) || {};
   function buildEffectRow(step, extra){
@@ -368,7 +342,7 @@ function confirmBulkLimitBreak(){
 
     for(var i = 0; i < plan.steps.length; i++){
       var step = plan.steps[i];
-      var material = (Number(target.id) === 1 || Number(target.id) === 52) ? null : getAutoLimitBreakMaterial(target);
+      var material = Number(target.id) === 1 ? null : getAutoLimitBreakMaterial(target);
       var ok = await executeLimitBreak(target, material, step.soulVesselId, { silent:true, bulk:true });
       if(!ok) break;
       completed++;
@@ -409,11 +383,10 @@ function openLimitBreakModal(target){
   if(!listEl) return;
 
   var targetKey = getLimitBreakTargetKey(target);
-  var isEri = Number(target.id) === 1;
-  var validVesselIds = isEri ? [] : getSoulVesselMaterialIdsByElement(target.element);
-  if(isEri){
-    selectedLimitBreakSoulVesselId = '';
-  } else if(selectedLimitBreakTargetKey !== targetKey || validVesselIds.indexOf(selectedLimitBreakSoulVesselId) === -1){
+  var validVesselIds = (typeof getLimitBreakSoulVesselIdsForTarget === 'function')
+    ? getLimitBreakSoulVesselIdsForTarget(target)
+    : getSoulVesselMaterialIdsByElement(target.element);
+  if(selectedLimitBreakTargetKey !== targetKey || validVesselIds.indexOf(selectedLimitBreakSoulVesselId) === -1){
     selectedLimitBreakSoulVesselId = resolveLimitBreakSoulVesselId(target, selectedLimitBreakSoulVesselId);
   }
   selectedLimitBreakTargetKey = targetKey;
@@ -435,11 +408,9 @@ function openLimitBreakModal(target){
           : '') +
         '<button type="button" class="btn-pay lb-execute-btn lb-execute-single-btn" onclick="confirmLimitBreak()">1Lvだけ突破する</button>' +
         '<div class="lb-execute-note">' +
-          (status.recipe.requiresAllSoulVessels
-            ? 'エリは「原初の翼・魂の器5種・共鳴石」を消費します'
-            : (status.recipe.specialMaterialId
-                ? '専用限界突破素材を消費します'
-                : '同キャラ素材は自動で消費されます')) +
+          (status.recipe.specialMaterialId
+            ? '原初の翼環を同キャラ素材の代わりに消費します'
+            : '同キャラ素材は自動で消費されます') +
         '</div>' +
       '</div>';
   } else {
@@ -458,10 +429,9 @@ function confirmLimitBreak(materialDbId){
   if(!target) return;
 
   var isEri = Number(target.id) === 1;
-  var isNoah = Number(target.id) === 52;
   var mat = null;
 
-  if(!isEri && !isNoah){
+  if(!isEri){
     mat = materialDbId
       ? box.find(function(b){ return b.db_id === materialDbId; })
       : getAutoLimitBreakMaterial(target);
@@ -487,41 +457,37 @@ function confirmLimitBreak(materialDbId){
     ? selectedVessel.def
     : getEvolutionMaterialDef(recipe.soulVesselId);
   var stoneDef = getEvolutionMaterialDef(recipe.stoneId);
-
-  var vesselConsumeRows = recipe.requiresAllSoulVessels
-    ? (status.soulVesselOptions || []).map(function(opt){
-        var def = opt && opt.def;
-        return '<div class="lb-confirm-consume-row">' +
-          '<span class="lb-confirm-consume-name">' + escapeHtml(def ? def.name : '魂の器') + '</span>' +
-          '<span class="lb-confirm-consume-count">× ' + Number(opt && opt.need || recipe.soulVesselCount || 1) + '</span>' +
-        '</div>';
-      }).join('')
-    : '<div class="lb-confirm-consume-row">' +
-        '<span class="lb-confirm-consume-name">' + escapeHtml(vesselDef ? vesselDef.name : '魂の器') + '</span>' +
-        '<span class="lb-confirm-consume-count">× ' + recipe.soulVesselCount + '</span>' +
-      '</div>';
   var materialName = mat && mat.name ? mat.name : (target.name || '同キャラ');
-  var firstConsumeName = recipe.specialMaterialId
-    ? ((getEvolutionMaterialDef(recipe.specialMaterialId) || {}).name || '専用限界突破素材')
-    : materialName;
-  var firstConsumeCount = recipe.specialMaterialId
-    ? recipe.specialMaterialCount
-    : 1;
+  var consumeRows = '';
+  if(recipe.specialMaterialId){
+    var specialName = ((getEvolutionMaterialDef(recipe.specialMaterialId) || {}).name || '専用限界突破素材');
+    consumeRows += '<div class="lb-confirm-consume-row">' +
+      '<span class="lb-confirm-consume-name">' + escapeHtml(specialName) + '</span>' +
+      '<span class="lb-confirm-consume-count">× ' + recipe.specialMaterialCount + '</span>' +
+    '</div>';
+  } else if(recipe.sameChara > 0){
+    consumeRows += '<div class="lb-confirm-consume-row">' +
+      '<span class="lb-confirm-consume-name">' + escapeHtml(materialName) + '</span>' +
+      '<span class="lb-confirm-consume-count">× ' + recipe.sameChara + '</span>' +
+    '</div>';
+  }
+  consumeRows += '<div class="lb-confirm-consume-row">' +
+    '<span class="lb-confirm-consume-name">' + escapeHtml(vesselDef ? vesselDef.name : '魂の器') + '</span>' +
+    '<span class="lb-confirm-consume-count">× ' + recipe.soulVesselCount + '</span>' +
+  '</div>';
+  if(recipe.stoneCount > 0){
+    consumeRows += '<div class="lb-confirm-consume-row">' +
+      '<span class="lb-confirm-consume-name">' + escapeHtml(stoneDef ? stoneDef.name : '共鳴石') + '</span>' +
+      '<span class="lb-confirm-consume-count">× ' + recipe.stoneCount + '</span>' +
+    '</div>';
+  }
 
   document.getElementById('lb-confirm-text').innerHTML =
     '<div class="lb-confirm-message lb-confirm-message-strong">限界突破を実行しますか？</div>' +
     buildNextResonanceBonusHTML(target, afterLb) +
     '<div class="lb-confirm-consume-box">' +
       '<div class="lb-confirm-consume-title">消失する素材</div>' +
-      '<div class="lb-confirm-consume-row">' +
-        '<span class="lb-confirm-consume-name">' + escapeHtml(firstConsumeName) + '</span>' +
-        '<span class="lb-confirm-consume-count">× ' + firstConsumeCount + '</span>' +
-      '</div>' +
-      vesselConsumeRows +
-      '<div class="lb-confirm-consume-row">' +
-        '<span class="lb-confirm-consume-name">' + escapeHtml(stoneDef ? stoneDef.name : '共鳴石') + '</span>' +
-        '<span class="lb-confirm-consume-count">× ' + recipe.stoneCount + '</span>' +
-      '</div>' +
+      consumeRows +
     '</div>' +
     '<div class="lb-confirm-level"><span>限界突破Lv</span><strong>' + beforeLb + ' → ' + afterLb + '</strong></div>' +
     '<div class="lb-confirm-warning">上記の素材は実行後に元へ戻せません。</div>';
