@@ -1,4 +1,4 @@
 {
-  "build": 1191,
-  "note": "Keep touch hold input active through transient touchcancel during CH01-04 boss battle"
+  "build": 1192,
+  "note": "Keep CH01-04 player drag responsive during battle dialogue pause and throttle HUD redraws"
 }

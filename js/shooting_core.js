@@ -9843,6 +9843,7 @@
       state.ch104StoryPauseStartedAt = performance.now();
     }
     state.ch104StoryPaused = true;
+    state.ch104PauseHudAt = 0;
     state.phaseTransition = true;
     removeBossDangerWarning();
     state.bossDangerExecuteAt = 0;
@@ -9857,6 +9858,7 @@
     }
     state.ch104StoryPauseStartedAt = 0;
     state.ch104StoryPaused = false;
+    state.ch104PauseHudAt = 0;
     state.phaseTransition = false;
     prevTs = performance.now();
   }
@@ -17518,10 +17520,22 @@
       return;
     }
 
-    // build1164: CH01-04救援ノベル中はBOSS・弾・移動・時間を完全停止。
+    // build1192: CH01-04の戦闘中セリフでは、敵・弾・戦闘時間だけを停止し、
+    // プレイヤーのドラッグ追従は止めない。
+    // 以前はここでupdateMovement自体を止めていたため、指を動かしているのに
+    // キャラが固まり「処理落ち」に見えていた。入力座標は継続取得し、
+    // playerOnlyでキャラ位置だけ毎フレーム反映する。
     if (state.ch104StoryPaused) {
       prevTs = ts;
-      renderHud();
+      if (!state.koTransition) updateMovement(0, ts, true);
+
+      // セリフ表示中にHUD全体を60fpsで再描画する必要はない。
+      // DOM更新を間引き、iPhone/Safariでのレイアウト負荷を抑える。
+      if (!Number.isFinite(Number(state.ch104PauseHudAt)) || ts - Number(state.ch104PauseHudAt || 0) >= 120) {
+        state.ch104PauseHudAt = ts;
+        renderHud();
+      }
+
       rafId = requestAnimationFrame(gameLoop);
       return;
     }
