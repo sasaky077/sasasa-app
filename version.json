@@ -1,4 +1,4 @@
 {
-  "build": 1190,
-  "note": "Set CH02-04 boss battle to two HP gauges"
+  "build": 1191,
+  "note": "Keep touch hold input active through transient touchcancel during CH01-04 boss battle"
 }

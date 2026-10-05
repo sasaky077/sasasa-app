@@ -2849,6 +2849,10 @@
   const TOUCH_CANCEL_GRACE_MS = 900;
   const TOUCH_CANCEL_GRACE_MS_CH07_BOSS = 4200;
 
+  function isChapter01BossStage() {
+    return getSelectedBaseStageId() === 'shooting_ch01_04';
+  }
+
   function getTouchCancelGraceMs() {
     return isChapter07BossStage()
       ? TOUCH_CANCEL_GRACE_MS_CH07_BOSS
@@ -20292,11 +20296,11 @@
       nativeTouchCancelTimer = null;
       if (nativeTouchPointerFallback) return;
 
-      // CH07-03では瞬間的な描画負荷でtouchcancelが発生しても、
-      // 実際には指が画面上に残っているケースを優先して扱う。
-      // ここで即終了すると「指を離していないのに操作が切れる」ため、
-      // ボス戦中は論理入力を維持し、次のmove/start/upで正しい状態へ復帰させる。
-      if (isChapter07BossStage() && pointerActive) {
+      // CH01-04 / CH07-03のボス戦では、瞬間的な描画負荷や演出切替で
+      // iOS/WebKitがtouchcancelを送ることがある。これは離指とは限らないため、
+      // 実際のtouchend/pointerupが来るまでは論理入力を維持する。
+      // これにより「指を離していないのに移動・通常攻撃が途切れる」現象を防ぐ。
+      if ((isChapter01BossStage() || isChapter07BossStage()) && pointerActive) {
         activePointerId = null;
         return;
       }
