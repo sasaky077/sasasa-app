@@ -1,5 +1,4 @@
 {
-  "version": "1175",
-  "build": 1175,
-  "notes": "CH01-04 scripted barrier-contact thresholds raised from 50 to 80 for both Eri and Jig phases; no other battle logic changed."
+  "build": 1183,
+  "note": "Remove Noel from starter character distribution while preserving Arno Lv30 starter behavior"
 }

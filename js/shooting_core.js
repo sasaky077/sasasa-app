@@ -652,7 +652,7 @@
   }
 
 
-  // ジグULT：6本の細レーザーが5秒間、壁をランダム反射しながら画面を走査。
+  // ジグULT：細長い閃光レーザーが5秒間、壁をランダム反射しながら画面を走査。
   if (!document.getElementById('shooting-jig-scramble-ray-style-v1')) {
     const jigUltStyle = document.createElement('style');
     jigUltStyle.id = 'shooting-jig-scramble-ray-style-v1';
@@ -660,36 +660,37 @@
       .shooting-jig-scramble-ray{
         position:absolute;
         left:0;top:0;
-        height:var(--jig-ray-width,5px);
-        width:var(--jig-ray-length,128px);
+        height:var(--jig-ray-width,2px);
+        width:var(--jig-ray-length,280px);
         pointer-events:none;
         transform-origin:100% 50%;
         z-index:47;
-        border-radius:999px;
-        opacity:.94;
+        border-radius:0;
+        opacity:.98;
         background:linear-gradient(90deg,
-          rgba(190,226,203,0) 0%,
-          rgba(205,237,214,.42) 16%,
-          rgba(238,255,244,.96) 54%,
-          rgba(255,255,255,1) 82%,
-          rgba(226,255,235,.98) 100%);
+          rgba(218,255,229,0) 0%,
+          rgba(226,255,235,.18) 10%,
+          rgba(241,255,246,.76) 34%,
+          rgba(255,255,255,1) 72%,
+          rgba(255,255,255,1) 94%,
+          rgba(228,255,237,.92) 100%);
         box-shadow:
-          0 0 3px rgba(255,255,255,.98),
-          0 0 8px rgba(190,240,208,.88),
-          0 0 15px rgba(105,191,137,.44);
-        filter:saturate(.72) brightness(1.06);
+          0 0 1px rgba(255,255,255,1),
+          0 0 4px rgba(225,255,234,.98),
+          0 0 8px rgba(151,231,177,.62);
+        filter:brightness(1.18);
         will-change:transform,left,top;
       }
       .shooting-jig-scramble-ray::after{
         content:"";
         position:absolute;
-        right:-4px;
+        right:-2px;
         top:50%;
-        width:9px;height:9px;
+        width:5px;height:5px;
         transform:translateY(-50%);
         border-radius:50%;
-        background:rgba(255,255,255,.98);
-        box-shadow:0 0 7px rgba(231,255,239,1),0 0 14px rgba(127,214,156,.72);
+        background:#fff;
+        box-shadow:0 0 4px rgba(255,255,255,1),0 0 9px rgba(175,245,198,.86);
       }
       #shooting-event-root.jig-scramble-active .shooting-arena{
         box-shadow:inset 0 0 38px rgba(159,218,178,.10);
@@ -3521,6 +3522,16 @@
       ch104RescueTriggered: false,
       ch104ArnoJoined: false,
       ch104PreRescueElapsedMs: 0,
+      // build1176: アルノULT「瞬迅・千ノ刻」専用の時間停止状態。
+      arnoSlashActive: false,
+      arnoSlashStartedAt: 0,
+      arnoSlashUntil: 0,
+      arnoSlashOriginX: 0,
+      arnoSlashOriginY: 0,
+      arnoSlashLastTapAt: -9999,
+      arnoSlashCount: 0,
+      arnoSlashTargetKey: '',
+      arnoSlashTimerId: 0,
       // build841: stage-side random patterns are now deterministic.
       chapter4CurtainVolleyIndex: 0,
       chapter43VolleyIndex: 0,
@@ -17471,6 +17482,16 @@
       return;
     }
 
+    // アルノULT「瞬迅・千ノ刻」中は盤面時間を完全停止する。
+    // RAFだけは継続し、停止中に敵の射撃時計・移動差分が蓄積しないよう毎フレーム基準時刻を更新する。
+    if (state.arnoSlashActive) {
+      prevTs = ts;
+      deferAllEnemyAttackResume(Math.max(ts + 120, Number(state.arnoSlashUntil || ts)));
+      renderHud();
+      rafId = requestAnimationFrame(gameLoop);
+      return;
+    }
+
     if (state.ultCutinActive) {
       // ULTカットイン中はプレイヤー・敵・弾・DoT・召喚物を含めて完全停止。
       // RAFだけ継続し、再開時のdtジャンプを防ぐ。
@@ -23599,29 +23620,274 @@
     renderHud();
   }
 
-  function useArnoUlt(c) {
-    if (!state) return;
-    const now = performance.now();
-    const duration = Number(c.auraDurationMs || 5000);
+  function ensureArnoSlashStyle() {
+    if (document.getElementById('shooting-arno-slash-style')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-arno-slash-style';
+    style.textContent = `
+      .shooting-arno-slash-overlay{
+        position:absolute;inset:0;z-index:88;pointer-events:auto;touch-action:none;
+        background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.08),rgba(18,18,22,.10) 66%,rgba(10,10,14,.18));
+        -webkit-tap-highlight-color:transparent;
+      }
+      .shooting-arno-slash-prompt{
+        position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
+        min-width:138px;padding:7px 13px 8px;text-align:center;
+        border-top:1px solid rgba(255,255,255,.70);border-bottom:1px solid rgba(255,255,255,.42);
+        background:rgba(20,20,24,.26);color:#fff;font-family:"Cinzel","Noto Serif JP",serif;
+        letter-spacing:.16em;text-shadow:0 1px 5px rgba(0,0,0,.55);pointer-events:none;
+      }
+      .shooting-arno-slash-prompt b{display:block;font-size:15px;font-weight:600}
+      .shooting-arno-slash-prompt span{display:block;margin-top:3px;font-size:8px;opacity:.82}
+      .shooting-arno-slash-fx{
+        position:absolute;z-index:89;width:96px;height:3px;left:0;top:0;
+        transform-origin:center center;pointer-events:none;
+        background:linear-gradient(90deg,transparent,rgba(255,255,255,.98) 22%,#fff 50%,rgba(225,230,236,.92) 76%,transparent);
+        box-shadow:0 0 6px rgba(255,255,255,.96),0 0 13px rgba(210,220,235,.62);
+        animation:shootingArnoSlashFx 180ms ease-out forwards;
+      }
+      @keyframes shootingArnoSlashFx{
+        0%{opacity:0;filter:blur(2px);scale:.65 1}
+        18%{opacity:1;filter:blur(0);scale:1.08 1}
+        100%{opacity:0;filter:blur(1px);scale:1.22 1}
+      }
+      #shooting-event-root.arno-slash-time-stop .shooting-wash{
+        background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(220,225,232,.05) 48%,rgba(235,235,240,.14));
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-    // First effect: erase every hostile projectile currently on the board.
-    clearEnemyBulletsOnly();
+  function getArnoSlashTarget() {
+    if (!state) return null;
+    const px = Number(state.player?.x || 0);
+    const py = Number(state.player?.y || 0);
+    const candidates = [];
 
-    state.arnoAuraOwnerId = c.id;
-    state.arnoAuraUntil = now + duration;
-    state.arnoAuraNextTickAt = now;
-    state.ultLockUntil = now + 260;
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      candidates.push({
+        kind:'normal', key:`normal:${enemy.uid || ''}`, ref:enemy,
+        x:Number(enemy.x || 0), y:Number(enemy.y || 0)
+      });
+    });
 
-    const root = document.getElementById(ROOT_ID);
-    if (root) {
-      root.classList.remove('arno-aura-cast');
-      void root.offsetWidth;
-      root.classList.add('arno-aura-cast');
-      setTimeout(() => root.classList.remove('arno-aura-cast'), 620);
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      candidates.push({
+        kind:'boss', key:'boss', ref:state.boss,
+        x:Number(state.boss.x || 0), y:Number(state.boss.y || 0)
+      });
     }
 
-    syncArnoAuraVisuals(now);
+    if (!candidates.length) return null;
+    candidates.sort((a,b) => {
+      const da = (a.x-px)*(a.x-px) + (a.y-py)*(a.y-py);
+      const db = (b.x-px)*(b.x-px) + (b.y-py)*(b.y-py);
+      return da-db;
+    });
+    return candidates[0];
   }
+
+  function moveArnoInFrontOfTarget(target) {
+    if (!state || !target) return;
+    const arena = document.getElementById('shooting-arena');
+    const player = document.getElementById(PLAYER_ID);
+    if (!arena || !player) return;
+    const marginX = 36;
+    const marginY = 44;
+    const x = clamp(Number(target.x || 0), marginX, Math.max(marginX, arena.clientWidth - marginX));
+    // 敵の「手前」＝画面下側へ約72px。画面端では安全域へクランプする。
+    const y = clamp(Number(target.y || 0) + 72, marginY, Math.max(marginY, arena.clientHeight - marginY));
+    state.player.x = x;
+    state.player.y = y;
+    positionUnit(player, x, y);
+  }
+
+  function createArnoSlashFx(target, slashCount) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !target) return;
+    const fx = document.createElement('div');
+    fx.className = 'shooting-arno-slash-fx';
+    const angleSet = [-36,-22,-10,12,25,39];
+    const angle = angleSet[Math.abs(Number(slashCount || 0)) % angleSet.length] + (Math.random() - .5) * 8;
+    const x = Number(target.x || 0) + (Math.random() - .5) * 28;
+    const y = Number(target.y || 0) + (Math.random() - .5) * 24;
+    fx.style.transform = `translate3d(${x - 48}px,${y - 1.5}px,0) rotate(${angle}deg)`;
+    arena.appendChild(fx);
+    setTimeout(() => { if (fx.isConnected) fx.remove(); }, 220);
+  }
+
+  function damageArnoSlashTarget(c, target, now) {
+    if (!state || !target || !c) return false;
+    const baseDamage = Math.max(0, Number(c.atk || 0) * Number(c.arnoSlashDamageAtkRate || 0.35));
+    if (target.kind === 'normal') {
+      const enemy = target.ref;
+      if (!enemy || !enemy.el || enemy.hp <= 0) return false;
+      const targetElement = getCombatTargetElement(enemy);
+      const attackElement = getUltAttackElement(c);
+      const finalDamage = applyElementDamage(baseDamage, attackElement, targetElement);
+      damageNormalEnemy(enemy, finalDamage, now, true, getElementDamageReaction(attackElement, targetElement));
+      return true;
+    }
+
+    if (target.kind === 'boss') {
+      if (!state.boss || state.boss.hp <= 0) return false;
+      const targetElement = getCombatTargetElement(state.boss);
+      const attackElement = getUltAttackElement(c);
+      const finalDamage = applyElementDamage(baseDamage, attackElement, targetElement);
+      const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+      showBossDamageNumber(appliedDamage, true, getElementDamageReaction(attackElement, targetElement));
+      if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(appliedDamage * 100));
+      createHit(state.boss.x, state.boss.y, true);
+      flashBossHit(true);
+      updateBossPhase();
+      if (state.boss.hp <= 0) beginBossDefeat();
+      return true;
+    }
+    return false;
+  }
+
+  function finishArnoUlt() {
+    if (!state || !state.arnoSlashActive) return;
+    const now = performance.now();
+    const startedAt = Number(state.arnoSlashStartedAt || now);
+    const frozenFor = Math.max(0, now - startedAt);
+    const root = document.getElementById(ROOT_ID);
+    const player = document.getElementById(PLAYER_ID);
+    const overlay = root && root.querySelector('.shooting-arno-slash-overlay');
+
+    // ULT中に経過した実時間を、戦闘時計・敵AI時計・バフ等の絶対時刻へまとめて加算。
+    // これにより解除直後の弾まとめ撃ち、移動位置ジャンプ、クリアタイム加算を防ぐ。
+    if (frozenFor > 0) shiftPausedTimestamps(state, frozenFor);
+
+    clearEnemyBulletsOnly();
+    state.arnoSlashActive = false;
+    state.arnoSlashStartedAt = 0;
+    state.arnoSlashUntil = 0;
+    state.arnoSlashLastTapAt = -9999;
+    state.arnoSlashTargetKey = '';
+    state.arnoSlashTimerId = 0;
+
+    // 接敵位置のまま再開すると接触ダメージを受けるため、発動前の位置へ戻してから解除する。
+    // 戻った後は1秒だけ盤面を硬直させ、その後に味方・敵とも通常進行へ復帰する。
+    const recoveryUntil = now + 1000;
+    if (state.player) {
+      state.player.x = Number(state.arnoSlashOriginX || state.player.x || 0);
+      state.player.y = Number(state.arnoSlashOriginY || state.player.y || 0);
+      state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), recoveryUntil);
+      if (player) positionUnit(player, state.player.x, state.player.y);
+    }
+
+    // shiftPausedTimestamps()でULT中の絶対時刻を保護した後、
+    // 千ノ刻専用のロックだけは「終了後1秒」に正規化する。
+    // これを行わないとULT時間分が二重加算され、解除後に数秒硬直する。
+    state.ultLockUntil = recoveryUntil;
+    state.playerShotLockUntil = recoveryUntil;
+    state.lastShotAt = now;
+
+    // 敵の射撃時計もULT中に未来へ送られているため、終了時点へ正規化する。
+    // 1秒の共通硬直中はultLockUntilで敵AI更新自体が止まり、解除後は通常の攻撃間隔で再開する。
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || enemy.hp <= 0) return;
+      enemy.lastShotAt = now;
+      enemy.nextActionAt = recoveryUntil;
+      enemy.attackExecuteAt = 0;
+      enemy.attackState = 'idle';
+      enemy.dashUntil = 0;
+      enemy.dashVx = 0;
+      enemy.dashVy = 0;
+    });
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      state.lastBossShotAt = now;
+      removeBossDangerWarning();
+      state.bossDangerExecuteAt = 0;
+      state.nextBossDangerAt = Math.max(recoveryUntil, now + 1000);
+    }
+    prevTs = now;
+
+    if (overlay) {
+      overlay.classList.add('hide');
+      setTimeout(() => { if (overlay.isConnected) overlay.remove(); }, 160);
+    }
+    if (root) root.classList.remove('arno-slash-time-stop');
+    renderHud();
+  }
+
+  function useArnoUlt(c) {
+    if (!state || state.arnoSlashActive) return;
+    const now = performance.now();
+    const duration = Math.max(500, Number(c.arnoSlashDurationMs || 4000));
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    if (!root || !arena) return;
+
+    ensureArnoSlashStyle();
+    clearEnemyBulletsOnly();
+
+    state.arnoSlashActive = true;
+    state.arnoSlashStartedAt = now;
+    state.arnoSlashUntil = now + duration;
+    state.arnoSlashOriginX = Number(state.player?.x || 0);
+    state.arnoSlashOriginY = Number(state.player?.y || 0);
+    state.arnoSlashLastTapAt = -9999;
+    state.arnoSlashCount = 0;
+    state.arnoSlashTargetKey = '';
+    // ULT中は通常射撃を完全に封じる。
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + duration);
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now + duration);
+
+    const initialTarget = getArnoSlashTarget();
+    if (initialTarget) {
+      state.arnoSlashTargetKey = initialTarget.key;
+      moveArnoInFrontOfTarget(initialTarget);
+    }
+
+    root.classList.add('arno-slash-time-stop');
+    root.querySelectorAll('.shooting-arno-slash-overlay').forEach(el => el.remove());
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-arno-slash-overlay';
+    overlay.innerHTML = `<div class="shooting-arno-slash-prompt"><b>TAP</b><span>瞬迅・千ノ刻</span></div>`;
+    arena.appendChild(overlay);
+
+    overlay.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!state || !state.arnoSlashActive || state.ended || state.finishing) return;
+      const tapNow = performance.now();
+      if (tapNow >= Number(state.arnoSlashUntil || 0)) {
+        finishArnoUlt();
+        return;
+      }
+      const minInterval = Math.max(0, Number(c.arnoSlashMinTapIntervalMs || 80));
+      if (tapNow - Number(state.arnoSlashLastTapAt || -9999) < minInterval) return;
+      state.arnoSlashLastTapAt = tapNow;
+
+      let target = getArnoSlashTarget();
+      if (!target) return;
+      if (target.key !== state.arnoSlashTargetKey) {
+        state.arnoSlashTargetKey = target.key;
+        moveArnoInFrontOfTarget(target);
+      }
+
+      state.arnoSlashCount = Math.max(0, Number(state.arnoSlashCount || 0)) + 1;
+      createArnoSlashFx(target, state.arnoSlashCount);
+      damageArnoSlashTarget(c, target, tapNow);
+    }, { passive:false });
+
+    // 停止中に敵側の次回攻撃時刻をULT終了時刻へ送り、内部蓄積を作らない。
+    // 終了後の1秒硬直はfinishArnoUlt()側で一律管理する。
+    deferAllEnemyAttackResume(now + duration);
+    prevTs = now;
+    renderHud();
+
+    const timerId = setTimeout(() => {
+      if (!state || !state.arnoSlashActive) return;
+      finishArnoUlt();
+    }, duration);
+    state.arnoSlashTimerId = timerId;
+  }
+
 
   // ============================================================
   // SIGMA-IX：ブラックシップ
@@ -23730,7 +23996,7 @@
 
   function damageJigScrambleTargets(beam, c, now) {
     if (!state || !beam) return;
-    const len = Math.max(48, Number(c.jigUltBeamLength || 128));
+    const len = Math.max(48, Number(c.jigUltBeamLength || 280));
     const angle = Number(beam.angle || 0);
     const hx = Number(beam.x || 0);
     const hy = Number(beam.y || 0);
@@ -23738,7 +24004,7 @@
     const ty = hy - Math.sin(angle) * len;
     const hitInterval = Math.max(80, Number(c.jigUltHitIntervalMs || 200));
     const baseDamage = Number(c.atk || 0) * Math.max(0, Number(c.jigUltDamageAtkRate || 0.12));
-    const beamRadius = Math.max(10, Number(c.jigUltBeamWidth || 5) * 1.8);
+    const beamRadius = Math.max(10, Number(c.jigUltBeamWidth || 2) * 1.8);
 
     if (isNormalBattle() || hasBossAdds()) {
       (state.normalEnemies || []).slice().forEach(enemy => {
@@ -23791,8 +24057,8 @@
     const duration = Math.max(1000, Number(c.jigUltDurationMs || 5000));
     const count = Math.max(1, Math.round(Number(c.jigUltBeamCount || 6)));
     const speed = Math.max(180, Number(c.jigUltBeamSpeed || 520));
-    const len = Math.max(48, Number(c.jigUltBeamLength || 128));
-    const width = Math.max(2, Number(c.jigUltBeamWidth || 5));
+    const len = Math.max(48, Number(c.jigUltBeamLength || 280));
+    const width = Math.max(2, Number(c.jigUltBeamWidth || 2));
     const startX = Number(state.player.x || arena.clientWidth * .5);
     const startY = Number(state.player.y || arena.clientHeight * .78);
     const margin = 3;
@@ -25369,7 +25635,7 @@
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);
     else if (c.ultType === 'gresha_burn_field') useGreshaUlt(c);
-    else if (c.ultType === 'arno_aura') useArnoUlt(c);
+    else if (c.ultType === 'arno_thousand_slash' || c.ultType === 'arno_aura') useArnoUlt(c);
     else if (c.ultType === 'speed_storm') useHayateUlt(c);
     else if (c.ultType === 'precision_beam') useAyaneUlt(c);
     else if (c.ultType === 'gojo_purple') useGojoUlt(c);

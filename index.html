@@ -3703,7 +3703,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <img src="images/btmnv_missions.webp" alt="巡行" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">巡行</span>
   </div>
-  <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
+  <div class="bottom-nav-item" id="bnav-zukan" style="display:none" onclick="showMainTab('zukan')">
     <img src="images/btmnv_party.webp" alt="キャラ" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">キャラ</span>
   </div>
@@ -8370,7 +8370,7 @@ startTitleBgm();
     var starterIds = [1, 5, 3, 28, 20, 24]; // エリ / ジグ / アウラ / ミモザ / アルノ / ノエル
 
     // 初期ストーリーキャラ付与はSupabase RPC側で一括保証する。
-    // 既に所持しているキャラは増やさず、未所持のキャラだけLv1・無凸で追加する。
+    // 既に所持しているキャラは増やさず、未所持だけ追加する。アルノ(20)のみLv30・無凸、その他はLv1・無凸。
     var grantResult = await sb.rpc('ensure_starter_story_characters');
 
     if(grantResult && grantResult.error){
@@ -9677,6 +9677,53 @@ startTitleBgm();
   window.requireChapter03ContentUnlock = requireChapter03ContentUnlock;
   window.syncChapter03ContentLockUI = syncChapter03ContentLockUI;
 
+  // build1181: キャラ一覧 / 育成機能はCHAPTER02-02クリア後に解放。
+  // アルノだけ先行してLv30で所持している事実も、このタイミングまではプレイヤーへ見せない。
+  var CHARACTER_CONTENT_UNLOCK_STAGE_ID = 'shooting_ch02_02';
+  var CHARACTER_CONTENT_CLEAR_KEY = CH03_CONTENT_CLEAR_KEY;
+  var CHARACTER_CONTENT_LOCK_MESSAGE = 'ストーリー[CHAPTER 02-02]をクリア後に解放されます。';
+
+  function isCharacterContentUnlocked(){
+    try {
+      var map = JSON.parse(localStorage.getItem(CHARACTER_CONTENT_CLEAR_KEY) || '{}') || {};
+      return !!map[CHARACTER_CONTENT_UNLOCK_STAGE_ID];
+    } catch(_){ return false; }
+  }
+
+  function syncCharacterContentLockUI(forceUnlocked){
+    var unlocked = forceUnlocked === true || isCharacterContentUnlocked();
+    var nav = document.getElementById('bnav-zukan');
+    if(nav){
+      nav.style.display = unlocked ? '' : 'none';
+      nav.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
+      nav.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+    }
+    return unlocked;
+  }
+
+  function requireCharacterContentUnlock(){
+    if(isCharacterContentUnlocked()) return true;
+    if(typeof showToast === 'function') showToast(CHARACTER_CONTENT_LOCK_MESSAGE);
+    else alert(CHARACTER_CONTENT_LOCK_MESSAGE);
+    return false;
+  }
+
+  window.isCharacterContentUnlocked = isCharacterContentUnlocked;
+  window.syncCharacterContentLockUI = syncCharacterContentLockUI;
+  window.requireCharacterContentUnlock = requireCharacterContentUnlock;
+
+  // 初期表示では非表示。既存ユーザーで02-02クリア済みなら即時復帰する。
+  syncCharacterContentLockUI();
+
+  // shooting-stage-resultは進捗保存処理と同じイベントなので、
+  // 02-02勝利そのものを根拠に即時解放し、保存順序の差による1フレーム遅延を避ける。
+  window.addEventListener('shooting-stage-result', function(event){
+    var detail = event && event.detail ? event.detail : {};
+    if(detail.win && String(detail.stageId || '') === CHARACTER_CONTENT_UNLOCK_STAGE_ID){
+      syncCharacterContentLockUI(true);
+    }
+  });
+
   // 邂逅も同じCHAPTER03-04クリア条件を使用。
   var GACHA_UNLOCK_STAGE_ID = CH03_CONTENT_UNLOCK_STAGE_ID;
   var GACHA_UNLOCK_CLEAR_KEY = CH03_CONTENT_CLEAR_KEY;
@@ -9804,6 +9851,9 @@ function goHome(){
 }
   // ボトムナビゲーション切替
   function showMainTab(name){
+    if(name === 'zukan' && typeof requireCharacterContentUnlock === 'function' && !requireCharacterContentUnlock()){
+      return;
+    }
     if(name === 'summon' && !isGachaUnlocked()){
       if(typeof showToast === 'function') showToast('CH03-04をクリアしてください');
       return;

@@ -138,14 +138,14 @@
       1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
         { type:'statRate', hp:0.04, atk:0.04 }
       ]),
-      2: bonus('環流増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
+      2: bonus('瞬迅増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
         { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
       ]),
-      3: bonus('循環加速', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
+      3: bonus('千刻加速', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
       ]),
-      4: bonus('永環', 'オーラ持続 5秒 → 7秒', 'ULT「環流」の攻撃オーラ持続時間を7秒へ延長する。', [
-        { type:'profileSet', field:'auraDurationMs', value:7000 }
+      4: bonus('千ノ刻・極', 'ULT持続 4秒 → 6.5秒', 'ULT「瞬迅・千ノ刻」の連続斬撃受付時間を6.5秒へ延長する。', [
+        { type:'profileSet', field:'arnoSlashDurationMs', value:6500 }
       ])
     }),
 
@@ -198,7 +198,20 @@
     }),
     // build974: 専用定義がないキャラクターも全員Lv1〜Lv4まで基本共鳴を持つ。
     3: genericSet('アウラ'),
-    5: genericSet('ジグ'),
+    5: Object.freeze({
+      1: bonus('基礎共鳴', 'HP・ATK +4%', '基礎HPとATKが4%上昇する。', [
+        { type:'statRate', hp:0.04, atk:0.04 }
+      ]),
+      2: bonus('閃光増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
+      ]),
+      3: bonus('光路同調', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
+        { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
+      ]),
+      4: bonus('SCRAMBLE RAY・極', 'ULTレーザー 6本 → 9本', 'ULT「SCRAMBLE RAY」で同時展開する閃光レーザーを9本へ増加する。', [
+        { type:'profileSet', field:'jigUltBeamCount', value:9 }
+      ])
+    }),
     10: genericSet('オリオン'),
     12: genericSet('シイナ'),
     17: genericSet('アイナ'),

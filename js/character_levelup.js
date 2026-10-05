@@ -561,13 +561,14 @@
 
 
   // ============================================================
-  // CH01-03 LEVEL UP TUTORIAL — build1152
-  // CH01-03をクリアしてRESULTから戻った直後に初回だけ開始する。
-  // 報酬: 金30 / 銀12 / 銅6 / 70,000コイン（初期6体をLv.MAXにできる量）。
+  // CH02-02 LEVEL UP TUTORIAL — build1180
+  // CH02-02のストーリーを完了し、RESULTから戻った直後に初回だけ開始する。
+  // チュートリアル本体はbuild1152の完成フローをそのまま維持し、発火地点だけを移設する。
+  // 報酬: 金30 / 銀12 / 銅6 / 70,000コイン（初期6体をLv30にできる量）。
   // ============================================================
   const LEVELUP_TUTORIAL_DONE_KEY = 'zeraphia_tutorial_levelup_ch01_03_follow_ui_v3';
   const LEVELUP_TUTORIAL_REWARD_KEY = 'zeraphia_tutorial_levelup_reward_ch01_03_v1';
-  const LEVELUP_TUTORIAL_STAGE_ID = 'shooting_ch01_03';
+  const LEVELUP_TUTORIAL_STAGE_ID = 'shooting_ch02_02';
   const LEVELUP_TUTORIAL_ERI_ID = 1;
   const LEVELUP_TUTORIAL_REWARD = Object.freeze({
     level_exp_large: 30,
@@ -768,7 +769,7 @@
       <div class="zeraphia-levelup-tutorial-card">
         <div class="zeraphia-levelup-tutorial-kicker">FIRST CLEAR REWARD</div>
         <h2>経験値素材を獲得しました</h2>
-        <p>キャラクターのレベルアップに使用できます。<br>まずはエリをLv.MAXまで強化してみましょう。</p>
+        <p>キャラクターのレベルアップに使用できます。<br>まずはエリをLv30まで強化してみましょう。</p>
         ${tutorialRewardHtml()}
         <button type="button" class="zeraphia-levelup-tutorial-action" id="zeraphia-levelup-tutorial-start">チュートリアルを開始</button>
       </div>`;
@@ -793,7 +794,7 @@
                     const modal = document.getElementById('character-levelup-modal');
                     return modal && modal.classList.contains('active') ? modal.querySelector('[data-levelup-max]') : null;
                   },
-                  '「上限まで」をタップしてください。\nLv.MAXまでに必要な素材を自動で選択します。',
+                  '「上限まで」をタップしてください。\nLv30までに必要な素材を自動で選択します。',
                   function(){
                     levelupTutorialStep = 'execute';
                     waitForLevelupTutorialTarget(
@@ -803,7 +804,7 @@
                         const button = modal.querySelector('[data-levelup-execute]');
                         return button && !button.disabled ? button : null;
                       },
-                      'Lv.MAXになることを確認して、\n「強化する」をタップしてください。',
+                      'Lv.30になることを確認して、\n「強化する」をタップしてください。',
                       function(){
                         levelupTutorialStep = 'await-complete';
                         waitForLevelupTutorialComplete();
@@ -940,7 +941,7 @@
       <div class="zeraphia-levelup-tutorial-card">
         <div class="zeraphia-levelup-tutorial-kicker">LEVEL UP COMPLETE</div>
         <h2>レベルアップ完了！</h2>
-        <p>${name}がLv.MAXになりました。<br>他のキャラも強化してみよう！</p>
+        <p>${name}がLv30になりました。<br>他のキャラも強化してみよう！</p>
         <button type="button" class="zeraphia-levelup-tutorial-action" id="zeraphia-levelup-tutorial-finish">OK</button>
       </div>`;
     document.body.appendChild(layer);
@@ -1059,6 +1060,8 @@
 
   async function startLevelupTutorialAfterReturn(){
     if(isLevelupTutorialDone()) return;
+    // build1181: CH02-02クリア直後にキャラ一覧を正式解放してから育成チュートリアルへ入る。
+    if(typeof window.syncCharacterContentLockUI === 'function') window.syncCharacterContentLockUI(true);
     injectLevelupTutorialStyle();
     resetUiBeforeLevelupTutorial();
     const loading = document.createElement('div');
@@ -1071,7 +1074,7 @@
     } catch(err){
       console.error('[LevelUpTutorial] reward grant failed:', err);
       removeLevelupTutorialLayer();
-      if(typeof showToast === 'function') showToast('チュートリアル報酬の受け取りに失敗しました。もう一度CH01-03から戻ってください');
+      if(typeof showToast === 'function') showToast('チュートリアル報酬の受け取りに失敗しました。もう一度CH02-02から戻ってください');
     }
   }
 
