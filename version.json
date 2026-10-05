@@ -1,6 +1,4 @@
 {
-  "build": 1187,
-  "version": "build1187",
-  "updated": "2026-10-05",
-  "notes": "CH02-04 story battle fixed party: Eri / Aura / Jig. Preserves CH02-02 Arno-only and CH02-03 Eri/Aura/Jig fixed party."
+  "build": 1190,
+  "note": "Set CH02-04 boss battle to two HP gauges"
 }

@@ -261,9 +261,9 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // 属性導入：まずはFIRE / SHOTだけを見せる。
+      // CH02は属性解説前のため、敵属性は全ステージLIGHTで統一。
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
@@ -287,15 +287,16 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // FIRE / SHOTに、突進型CHARGEを追加。
+      // CH02はLIGHT属性で統一。
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
+        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 4,
         maxActive: 2,
         spawnIntervalMs: 1500,
+        // build1189: CH02雑魚は2種のみ。normal=遠隔弾 / atack=突進。
+        enemyVariants: Object.freeze(['normal', 'atack']),
       }),
 
       mission: Object.freeze({
@@ -315,16 +316,16 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // FIREの3攻撃タイプを1体ずつ体験させる。
+      // CH02はLIGHT属性で統一。
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_LASER,
-        SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
+        SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ]),
       normalBattle: Object.freeze({
         totalEnemies: 3,
         maxActive: 2,
         spawnIntervalMs: 1450,
+        // build1189: CH02雑魚は2種のみ。normal=遠隔弾 / atack=突進。
+        enemyVariants: Object.freeze(['normal', 'atack', 'normal']),
         // CH02-3だけ突進を少し見切りやすくする。
         chargeSpeed: 470,
       }),
@@ -350,15 +351,16 @@
         SHOOTING_ENEMY_ID.REMNANT_02,
       ]),
 
-      // BOSS戦ではFIRE主体の援軍にLIGHTを少量混ぜる。
-      // 4体中3体FIRE / 1体LIGHT = 75% / 25%。
+      // build1190: CH02-04 boss battle uses two HP gauges.
+      bossGauges: 2,
+
+      // CH02-04の援軍もLIGHT属性で統一。
       bossAdds: Object.freeze({
         enemyIds: Object.freeze([
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_CHARGE,
-          SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,
           SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
         ]),
+        // build1189: BOSS戦の雑魚援軍もnormal / atackの2種に統一。
+        enemyVariants: Object.freeze(['normal', 'atack', 'normal', 'atack']),
         totalEnemies: 4,
         maxActive: 1,
         startDelayMs: 4500,

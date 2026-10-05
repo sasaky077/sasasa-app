@@ -3547,11 +3547,13 @@
         x: 0, y: 42,
         element: isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04)
           ? 'wood'
-          : normalizeCombatElement(
-              BOSS?.element ||
-              selectedStage?.bossElement ||
-              selectedStage?.element
-            ),
+          : isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_04)
+            ? 'light'
+            : normalizeCombatElement(
+                BOSS?.element ||
+                selectedStage?.bossElement ||
+                selectedStage?.element
+              ),
         hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
@@ -10592,6 +10594,39 @@
     }
   }
 
+  function resolveChapter02ZakoVariant(enemyDef, spawnIndex, variantConfig) {
+    const stageId = String(getSelectedBaseStageId() || '');
+    if (!/^shooting_ch02_(02|03|04)$/.test(stageId)) return enemyDef;
+
+    const variants = Array.isArray(variantConfig?.enemyVariants) && variantConfig.enemyVariants.length
+      ? variantConfig.enemyVariants
+      : ['normal', 'atack'];
+    const variant = String(variants[Math.max(0, Number(spawnIndex || 0)) % variants.length] || 'normal').toLowerCase();
+    const base = enemyDef || {};
+
+    if (variant === 'atack') {
+      return Object.assign({}, base, {
+        name: '光の残滓・突進型',
+        image: 'images/zako_enemy_01_atack_light.webp',
+        element: 'light',
+        behavior: 'generic_element_charge_v1',
+        telegraphMs: 760,
+        chargeSpeed: Number(variantConfig?.chargeSpeed || base.chargeSpeed || 500),
+        chargeDurationMs: 620,
+      });
+    }
+
+    return Object.assign({}, base, {
+      name: '光の残滓・遠隔型',
+      image: 'images/zako_enemy_01_normal_light.webp',
+      element: 'light',
+      behavior: 'generic_element_shot_v1',
+      fireRate: Number(base.fireRate || 1280),
+      bulletSpeed: Number(base.bulletSpeed || 215),
+      bulletDamage: Number(base.bulletDamage || 90),
+    });
+  }
+
   function createNormalEnemy(enemyDef, now) {
     const arena = document.getElementById('shooting-arena');
     const layer = document.getElementById('shooting-normal-enemy-layer');
@@ -10739,8 +10774,9 @@
       const enemyId = sequence && sequence.length
         ? sequence[state.normalSpawned % sequence.length]
         : enemyIds[state.normalSpawned % enemyIds.length];
-      const def = getShootingEnemy(enemyId);
-      if (!def || !def.implemented) return false;
+      const baseDef = getShootingEnemy(enemyId);
+      if (!baseDef || !baseDef.implemented) return false;
+      const def = resolveChapter02ZakoVariant(baseDef, state.normalSpawned, cfg);
       const enemy = createNormalEnemy(def, now);
       if (!enemy) return false;
       state.normalEnemies.push(enemy);
@@ -10777,8 +10813,9 @@
 
     const enemyIds = cfg.enemyIds;
     const enemyId = enemyIds[state.normalSpawned % enemyIds.length];
-    const def = getShootingEnemy(enemyId);
-    if (!def || !def.implemented || def.kind !== 'normal') return;
+    const baseDef = getShootingEnemy(enemyId);
+    if (!baseDef || !baseDef.implemented || baseDef.kind !== 'normal') return;
+    const def = resolveChapter02ZakoVariant(baseDef, state.normalSpawned, cfg);
 
     const enemy = createNormalEnemy(def, now);
     if (!enemy) return;
