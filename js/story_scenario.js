@@ -178,7 +178,7 @@
       },
       {
         "speaker": "アウラ",
-        "text": "あいつらしつこくて困っちゃうよ！",
+        "text": "あいつら、しつこくて困っちゃうよ！",
         "location": "拠点"
       },
             {
@@ -209,13 +209,13 @@
       },
       {
         "speaker": "",
-        "text": "奥の作業台。ミモザが天球儀を覗き込み、レオナクロスが工具を広げている。",
+        "text": "奥の作業台。\nミモザが天球儀を覗き込み、レオナクロスが工具を広げている。",
         "location": "拠点",
         "narration": true
       },
       {
         "speaker": "レオナクロス",
-        "text": "おかえりエリ！私は今超イカツイ兵器を作成中だ！\n集中してるから邪魔しないでくれよ！",
+        "text": "おかえり諸君！\n私は今超イカツイ兵器を作成中だ！集中してるから邪魔しないでくれよ！",
         "location": "拠点"
       },
       {
@@ -715,7 +715,7 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "消えていく灰の中心に、\nひとつだけ光るものが残っていた。",
+        "text": "消えていく灰の中心に、\nひとつだけ光る結晶が残っていた。",
         "location": "白い廃墟・奥地",
         "narration": true
       },
@@ -724,21 +724,38 @@
         "left": "",
         "right": "エリ",
         "text": "……これ、なに？",
-        "location": "白い廃墟・奥地"
+        "location": "白い廃墟・奥地",
+        "itemImage": "item_memory.webp",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "pulse"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "エリが手を伸ばす。\n触れた瞬間、結晶が淡く脈打つ。",
+        "text": "エリがそっと手を伸ばす。\n指先が触れた瞬間、結晶が淡く脈打つ。",
         "location": "白い廃墟・奥地",
-        "narration": true
+        "narration": true,
+        "itemImage": "item_memory.webp",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "pulse"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "エリは、光を失わないその結晶を拾い上げた。",
+        "location": "白い廃墟・奥地",
+        "narration": true,
+        "itemImage": "item_memory.webp",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "acquire"
       },
       {
         "speaker": "エリ",
         "left": "",
         "right": "エリ",
-        "text": "戻ってミモザに見せよう。\n何か分かるかも。",
+        "text": "……持って帰ろう。\nミモザなら、何か分かるかも。",
         "location": "白い廃墟・奥地"
       }
     ]
