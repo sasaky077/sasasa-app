@@ -761,23 +761,15 @@
     session.transitioning=true;
     root.classList.remove('is-entry-transition','is-location-transition');
     root.classList.add('is-cinematic-transition');
+    // build1184: fade_black is a pure black transition.
+    // Do not render transition text / decorative side rules on the black screen.
     overlay.classList.remove('is-black','show-label');
     overlay.setAttribute('aria-hidden','false');
-    label.textContent=String(entry.text || '');
+    label.textContent='';
 
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){ overlay.classList.add('is-black'); });
     });
-
-    queueCinematicTimer(function(){
-      if(!session) return;
-      overlay.classList.add('show-label');
-    },NOVEL_CINEMATIC_BLACK_IN_MS + 120);
-
-    queueCinematicTimer(function(){
-      if(!session) return;
-      overlay.classList.remove('show-label');
-    },NOVEL_CINEMATIC_BLACK_IN_MS + 120 + NOVEL_CINEMATIC_LABEL_IN_MS + NOVEL_CINEMATIC_LABEL_HOLD_MS);
 
     queueCinematicTimer(function(){
       if(!session) return;
@@ -803,7 +795,7 @@
         session.transitioning=false;
         typeText(nextEntry.text||'');
       },NOVEL_CINEMATIC_BLACK_OUT_MS);
-    },NOVEL_CINEMATIC_BLACK_IN_MS + 120 + NOVEL_CINEMATIC_LABEL_IN_MS + NOVEL_CINEMATIC_LABEL_HOLD_MS + 300);
+    },NOVEL_CINEMATIC_BLACK_IN_MS + 520);
 
     return true;
   }

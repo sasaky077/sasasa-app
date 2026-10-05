@@ -1973,6 +1973,9 @@
     shooting_ch01_02: Object.freeze([1, 5]),    // エリ / ジグ（キャラチェンジ＋レーザー貫通チュートリアル）
     shooting_ch01_03: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch01_04: Object.freeze([1, 5]),    // エリ / ジグ（アウラは別戦闘。救援後はアルノ単独へ交代）
+    shooting_ch02_02: Object.freeze([20]),      // アルノ
+    shooting_ch02_03: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
+    shooting_ch02_04: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
   });
 
   function getSelectedStoryFixedPartyIds() {
