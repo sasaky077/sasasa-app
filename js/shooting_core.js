@@ -19723,6 +19723,17 @@
     // に固定する。RESULT自体は先に内容だけ生成し、POSTノベル完了まで非表示。
     setBattleHudVisible(false);
 
+    // build1193: バトル開始時のステージタイトルオーバーレイが、
+    // 事後ノベルへ遷移した後も残留しないよう明示的に破棄する。
+    // CH01-04 では「STAGE04 / 兆し」がPOSTノベル中央に残るケースがあった。
+    const stageInfoOverlay = document.getElementById('shooting-stage-info');
+    if (stageInfoOverlay) {
+      stageInfoOverlay.classList.remove('is-visible', 'is-revealing', 'is-fading');
+      stageInfoOverlay.setAttribute('aria-hidden', 'true');
+      const stageInfoLines = stageInfoOverlay.querySelectorAll('.shooting-stage-info-line');
+      stageInfoLines.forEach((line) => { line.textContent = ''; });
+    }
+
     let postResultTransitionArmed = false;
 
     const showResultAfterStory = function(){

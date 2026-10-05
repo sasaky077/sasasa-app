@@ -1,4 +1,4 @@
 {
-  "build": 1192,
-  "note": "Keep CH01-04 player drag responsive during battle dialogue pause and throttle HUD redraws"
+  "build": 1194,
+  "note": "Unify CH02-02 and CH02-03 clear conditions to defeat all enemies with no time or hit limits"
 }

@@ -300,9 +300,8 @@
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-        targetSeconds: 150,
-        text: '150秒以内に強敵を撃破',
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
       }),
 
       playable: true,
@@ -331,9 +330,8 @@
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.MAX_HITS_TAKEN,
-        maxHits: 3,
-        text: '被弾3回以内でクリア',
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
       }),
 
       playable: true,
