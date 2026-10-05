@@ -1,5 +1,5 @@
 {
-  "version": "1163",
-  "build": 1163,
-  "notes": "Raised CH01-02 enemy HP from 66 to 225 to align its durability with the other early CH01 stages; ATK/damage remains 100."
+  "version": "1175",
+  "build": 1175,
+  "notes": "CH01-04 scripted barrier-contact thresholds raised from 50 to 80 for both Eri and Jig phases; no other battle logic changed."
 }

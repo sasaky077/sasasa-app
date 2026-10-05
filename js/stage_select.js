@@ -779,6 +779,10 @@
       }
 
       const played = novel.playPre(storyId, {
+        // ノベルを閉じる前に編成画面を背面で完成させる。
+        // これにより「わ、わかった！」などpre最終行の後に
+        // ステージ選択画面が一瞬見えるフラッシュを防ぐ。
+        handoffBeforeNovelExit: true,
         onComplete: () => { openBattle(); },
         onExit: returnToChapter
       });

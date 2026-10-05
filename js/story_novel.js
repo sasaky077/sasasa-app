@@ -1015,6 +1015,18 @@
     if(!session) return;
     const current=session;
     session=null;
+
+    // STORY→編成画面の引き継ぎでは、ノベルを消してから次画面を作ると
+    // 背面のステージ選択が一瞬だけ露出する。
+    // 指定されたフローだけ、ノベルを最前面に残したまま共通UIを復元し、
+    // 次画面（シューティング編成）を先に完成させてからノベルを閉じる。
+    if(current.handoffBeforeNovelExit){
+      setSharedUiHidden(false);
+      if(typeof current.onComplete==='function') current.onComplete({skipped:!!skipped});
+      cleanupRoot();
+      return;
+    }
+
     cleanupRoot();
     setSharedUiHidden(false);
     setTimeout(()=>{
@@ -1059,7 +1071,8 @@
       transitioning:false,
       lastLocation:'',
       onComplete:options && options.onComplete,
-      onExit:options && options.onExit
+      onExit:options && options.onExit,
+      handoffBeforeNovelExit:!!(options && options.handoffBeforeNovelExit)
     };
 
     setSharedUiHidden(true);

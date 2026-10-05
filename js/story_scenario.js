@@ -494,14 +494,21 @@
         "speaker": "ジグ",
         "left": "ジグ",
         "right": "エリ",
-        "text": "あれは無理だ…逃げるぞ。",
+        "text": "あれとやり合うのは危険だ…\n逃げるぞ。",
         "location": "大型レムナント・登場"
+      },
+      {
+        "speaker": "",
+        "text": "",
+        "location": "大型レムナント・登場",
+        "effect": "rumble",
+        "durationMs": 650
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "振り返った先にも、無数のレムナントが現れる。\n気づけば、三人は完全に囲まれていた。",
+        "text": "振り返った先にも、\n無数のレムナントが現れる。\n気づけば、三人は完全に囲まれていた。",
         "location": "大型レムナント・登場",
         "narration": true
       },
@@ -516,7 +523,7 @@
         "speaker": "ジグ",
         "left": "ジグ",
         "right": "エリ",
-        "text": "やるしかねえ。\nアウラは周りの小さい目玉を頼む。\n私とエリで、デカいのを叩く。",
+        "text": "クソ…やるしかねえ…。\nアウラは周りの小さい目玉を頼む。\n私とエリで、デカいのを叩く。",
         "location": "大型レムナント・登場"
       },
       {
@@ -531,20 +538,22 @@
       {
         "cue": "pressure_1",
         "speaker": "エリ",
-        "text": "なに…？！なんで効かないの…？",
-        "location": "大型レムナント・戦闘"
+        "text": "なに…？！\nなんで効かないの…？"
+      },
+      {
+        "cue": "pressure_1_jig",
+        "speaker": "ジグ",
+        "text": "下がってろ…私がやる！"
       },
       {
         "cue": "pressure_2",
         "speaker": "ジグ",
-        "text": "私の攻撃も通らねぇ…",
-        "location": "大型レムナント・戦闘"
+        "text": "通らねぇ…当たってるのに…！"
       },
       {
         "cue": "pressure_3",
         "speaker": "エリ",
-        "text": "あぶない…っ！！",
-        "location": "大型レムナント・戦闘"
+        "text": "ジグ！あぶない…っ！！"
       },
       {
         "cue": "pressure_4",
@@ -568,25 +577,31 @@
       {
         "cue": "pressure_7",
         "speaker": "ジグ",
-        "text": "エリ、私がやつを引きつけてる間に、\nアウラを連れて逃げろ。",
+        "text": "エリ…\n私がやつを引きつけてる間に\nアウラを連れて逃げろ。",
         "location": "大型レムナント・戦闘"
       },
       {
         "cue": "pressure_8",
         "speaker": "エリ",
-        "text": "え…？！無理だよ、できない…！",
+        "text": "え…？！\n無理だよ、できない…！",
         "location": "大型レムナント・戦闘"
       },
       {
         "cue": "pressure_9",
         "speaker": "ジグ",
-        "text": "そうも言ってられないだろ。\nこのままじゃ3人とも犬死だ。",
+        "text": "そうも言ってられないだろ。\nこのままじゃ3人とも犬死にだ。",
         "location": "大型レムナント・戦闘"
       },
       {
         "cue": "pressure_10",
         "speaker": "エリ",
         "text": "でも…",
+        "location": "大型レムナント・戦闘"
+      },
+      {
+        "cue": "pressure_9_urgent",
+        "speaker": "ジグ",
+        "text": "急げ…！！",
         "location": "大型レムナント・戦闘"
       },
       {
@@ -597,17 +612,23 @@
         "narration": true
       },
       {
+        "cue": "pressure_12",
+        "speaker": "ジグ",
+        "text": "…っ……くそったれが…",
+        "location": "大型レムナント・戦闘"
+      },
+      {
         "cue": "impact_1",
         "speaker": "",
-        "text": "――大きな衝撃音。",
-        "location": "大型レムナント・アルノ登場",
+        "text": "――大きな衝撃音が鳴り響く。",
+        "location": "大型レムナント・戦闘",
         "narration": true
       },
       {
         "cue": "impact_2",
         "speaker": "",
         "text": "ジグとエリは、強い力で吹き飛ばされる。",
-        "location": "大型レムナント・アルノ登場",
+        "location": "白化画面",
         "narration": true
       },
       {
@@ -619,7 +640,7 @@
       },
       {
         "cue": "rescue_2",
-        "speaker": "アルノ",
+        "speaker": "ア……アルノ",
         "text": "すまない、少々手荒になった。",
         "location": "大型レムナント・アルノ登場"
       },
@@ -632,7 +653,7 @@
       {
         "cue": "rescue_4",
         "speaker": "ジグ",
-        "text": "お前、基地は...",
+        "text": "お前…どうして…",
         "location": "大型レムナント・アルノ登場"
       },
       {
@@ -650,7 +671,7 @@
       {
         "cue": "arno_battle_start",
         "speaker": "アルノ",
-        "text": "属性相性か…\n運が悪かったな。いくぞ。",
+        "text": "属性相性か…\n運が悪かったな…いくぞ。",
         "location": "大型レムナント・戦闘"
       }
     ],

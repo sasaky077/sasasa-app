@@ -238,6 +238,9 @@
         SHOOTING_ENEMY_ID.REMNANT_01,
       ]),
 
+      // build1168: 負けイベント～アルノ戦まで最初から2ゲージ設計。
+      bossGauges: 2,
+
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: 'オーバーシアを撃破',

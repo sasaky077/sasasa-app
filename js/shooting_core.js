@@ -3511,6 +3511,16 @@
       ch102TutorialPhase: '',
       ch102TutorialPaused: false,
       ch102TutorialHintEl: null,
+      // build1168: CH01-04 負けイベントを Eri 50接触 → Jig 50接触 → 救援 の段階制へ。
+      ch104BarrierContactHits: 0,
+      ch104EriBarrierContactHits: 0,
+      ch104JigBarrierContactHits: 0,
+      ch104ForcedBattlePhase: isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) ? 'eri' : '',
+      ch104StoryPaused: false,
+      ch104StoryPauseStartedAt: 0,
+      ch104RescueTriggered: false,
+      ch104ArnoJoined: false,
+      ch104PreRescueElapsedMs: 0,
       // build841: stage-side random patterns are now deterministic.
       chapter4CurtainVolleyIndex: 0,
       chapter43VolleyIndex: 0,
@@ -3521,11 +3531,13 @@
       mimosaItems: [],
       boss: {
         x: 0, y: 42,
-        element: normalizeCombatElement(
-          BOSS?.element ||
-          selectedStage?.bossElement ||
-          selectedStage?.element
-        ),
+        element: isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04)
+          ? 'wood'
+          : normalizeCombatElement(
+              BOSS?.element ||
+              selectedStage?.bossElement ||
+              selectedStage?.element
+            ),
         hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
@@ -3701,11 +3713,17 @@
       btn.classList.toggle('ult-ready', ultPct >= 1);
       const dead = m.hp <= 0;
       const cooling = remain > 0;
-      btn.disabled = dead || cooling || state.ended || state.finishing || state.koTransition;
+      const ch104Locked = !!(
+        isChapter104BossStage() &&
+        !state.ch104ArnoJoined &&
+        (state.ch104ForcedBattlePhase === 'eri' || state.ch104ForcedBattlePhase === 'jig')
+      );
+      btn.disabled = dead || cooling || ch104Locked || state.ended || state.finishing || state.koTransition;
       btn.classList.toggle('dead', dead);
       btn.classList.toggle('cooling', cooling && !dead);
+      btn.classList.toggle('locked', ch104Locked && !dead);
       const status = btn.querySelector('.shooting-switch-status');
-      if (status) status.textContent = dead ? 'DOWN' : cooling ? `${(remain / 1000).toFixed(1)}s` : 'CHANGE';
+      if (status) status.textContent = dead ? 'DOWN' : ch104Locked ? 'LOCK' : cooling ? `${(remain / 1000).toFixed(1)}s` : 'CHANGE';
 
       // ミモザの恩恵アイテム効果は、控え中でも「まだ効いているか」が
       // 見た目で分かるよう小さいバッジで表示する(交代しても他人には移らない)。
@@ -3736,6 +3754,13 @@
   window.switchShootingCharacter = function(id, forced) {
     id = Number(id);
     if (!state || state.ended || state.finishing || state.koTransition) return;
+    // CH01-04負けイベント中はシナリオ指定の強制交代だけ許可する。
+    if (
+      isChapter104BossStage() &&
+      !state.ch104ArnoJoined &&
+      !forced &&
+      (state.ch104ForcedBattlePhase === 'eri' || state.ch104ForcedBattlePhase === 'jig')
+    ) return;
     const member = getPartyMember(id);
     if (!member || member.hp <= 0 || id === state.activeCharacterId) return;
     const now = performance.now();
@@ -7114,6 +7139,14 @@
       result.push(element);
     };
 
+    // build1164: CH01-04は木属性BOSS + 木属性バリア。
+    // 火属性だけが突破でき、エリ(光) / ジグ(木)はIMMUNEになる。
+    if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04)) {
+      pushUnique('wood');
+      weaknessBarrierElementCache = result;
+      return weaknessBarrierElementCache;
+    }
+
     // CH06など、明示的にバリア対象属性が指定されている場合はその属性を優先。
     const guarded = normalizeCombatElement(selectedStage.weaknessOnlyElement);
     if (guarded && guarded !== 'neutral') {
@@ -7163,7 +7196,7 @@
       return false;
     }
 
-    const enemyElement = normalizeCombatElement(BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
+    const enemyElement = normalizeCombatElement(state?.boss?.element || BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
     return enemyElement !== 'neutral' && isStageWeaknessOnlyTarget(enemyElement);
   }
 
@@ -7177,7 +7210,7 @@
       return null;
     }
 
-    const enemyElement = normalizeCombatElement(BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
+    const enemyElement = normalizeCombatElement(state?.boss?.element || BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
     if (!barrier) {
       barrier = document.createElement('div');
       barrier.id = 'shooting-boss-weakness-barrier';
@@ -7678,6 +7711,16 @@
       if (entry.kind === 'boss') {
         if (!state.boss || state.boss.hp <= 0) return;
         const targetElement = getCombatTargetElement(state.boss);
+
+        // build1166: CH01-04のレーザーも、属性バリア接触は救援用の内部回数だけ加算。
+        // 表示上のHIT/COMBOは実ダメージが入った時だけ加算する。
+        const ch104BarrierContact = !!(
+          isChapter104BossStage() &&
+          !state.ch104RescueTriggered &&
+          isStageWeaknessOnlyTarget(targetElement)
+        );
+        if (ch104BarrierContact) registerChapter104BarrierContact(c.id);
+
         const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
         const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
         state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
@@ -9413,9 +9456,17 @@
       .shooting-ch101-tutorial-overlay.show{opacity:1}
       .shooting-ch104-rescue-overlay{
         z-index:290;
-        background:
-          radial-gradient(circle at 50% 24%,rgba(255,255,255,.98) 0%,rgba(248,248,246,.96) 28%,rgba(226,229,226,.98) 66%,rgba(198,203,201,.99) 100%),
-          linear-gradient(180deg,#fbfbfa 0%,#dfe3e0 100%);
+        background-color:#eef0ed;
+        background-position:center center;
+        background-size:cover;
+        background-repeat:no-repeat;
+      }
+      .shooting-ch104-rescue-overlay.is-impact-white{
+        background:#fff!important;
+        background-image:none!important;
+      }
+      .shooting-ch104-rescue-overlay.is-impact-white::before{
+        opacity:0!important;
       }
       .shooting-ch104-rescue-overlay::before{
         content:"";
@@ -9426,7 +9477,65 @@
         opacity:.78;
         pointer-events:none;
       }
-      .shooting-ch104-rescue-overlay .shooting-ch101-tutorial-card{z-index:1}
+      .shooting-ch104-rescue-overlay .shooting-ch101-tutorial-card{
+        z-index:1;
+        transition:opacity .28s ease, transform .28s ease;
+      }
+      .shooting-ch104-rescue-overlay.is-cinematic-reveal .shooting-ch101-tutorial-card{
+        opacity:0!important;
+        transform:translateY(14px);
+        pointer-events:none;
+      }
+      .shooting-ch104-rescue-overlay.is-cinematic-reveal::before{opacity:0!important}
+      .shooting-ch104-event-flash{
+        position:absolute;
+        inset:0;
+        z-index:300;
+        pointer-events:none;
+        background:#fff;
+        opacity:0;
+      }
+      .shooting-ch104-event-flash.is-light{
+        animation:shootingCh104EventFlashLight 360ms ease-out forwards;
+      }
+      .shooting-ch104-event-flash.is-heavy{
+        animation:shootingCh104EventFlashHeavy 620ms ease-out forwards;
+      }
+      .shooting-ch104-whiteout{
+        position:absolute;
+        inset:0;
+        z-index:304;
+        pointer-events:none;
+        background:#fff;
+        opacity:1;
+        transition:opacity 980ms ease;
+      }
+      .shooting-ch104-whiteout.fade-out{
+        opacity:0;
+      }
+      @keyframes shootingCh104EventFlashLight{
+        0%{opacity:0}
+        18%{opacity:.58}
+        38%{opacity:.34}
+        100%{opacity:0}
+      }
+      @keyframes shootingCh104EventFlashHeavy{
+        0%{opacity:0}
+        12%{opacity:.96}
+        32%{opacity:1}
+        54%{opacity:.72}
+        100%{opacity:0}
+      }
+      .shooting-ch104-battle-start-overlay{
+        z-index:292;
+        background:rgba(238,240,237,.12);
+        backdrop-filter:none;
+        -webkit-backdrop-filter:none;
+      }
+      .shooting-ch104-battle-start-overlay .shooting-ch101-tutorial-card{
+        z-index:2;
+        background:rgba(252,249,242,.93);
+      }
       .shooting-ch101-tutorial-card{
         position:relative;
         width:min(94%,560px);
@@ -9708,7 +9817,135 @@
     return map[String(speaker || '')] || '';
   }
 
-  function showChapter104RescuePages(cues, onComplete) {
+  function beginChapter104StoryPause() {
+    if (!state || !isChapter104BossStage()) return;
+    if (!state.ch104StoryPaused) {
+      state.ch104StoryPauseStartedAt = performance.now();
+    }
+    state.ch104StoryPaused = true;
+    state.phaseTransition = true;
+    removeBossDangerWarning();
+    state.bossDangerExecuteAt = 0;
+    deferBossAttackResume(performance.now() + 120000);
+  }
+
+  function endChapter104StoryPause() {
+    if (!state || !isChapter104BossStage()) return;
+    const started = Number(state.ch104StoryPauseStartedAt || 0);
+    if (started > 0 && Number(state.startedAt || 0) > 0) {
+      state.startedAt += Math.max(0, performance.now() - started);
+    }
+    state.ch104StoryPauseStartedAt = 0;
+    state.ch104StoryPaused = false;
+    state.phaseTransition = false;
+    prevTs = performance.now();
+  }
+
+  function registerChapter104BarrierContact(characterId) {
+    if (!state || !isChapter104BossStage() || state.ch104RescueTriggered) return;
+    const id = Number(characterId || 0);
+    const eriId = Number(CHARACTER_ID.ERI || 1);
+    const jigId = Number(CHARACTER_ID.JIG || 5);
+
+    state.ch104BarrierContactHits = Math.max(0, Number(state.ch104BarrierContactHits || 0)) + 1;
+
+    if (state.ch104ForcedBattlePhase === 'eri' && id === eriId) {
+      state.ch104EriBarrierContactHits = Math.min(80, Math.max(0, Number(state.ch104EriBarrierContactHits || 0)) + 1);
+    } else if (state.ch104ForcedBattlePhase === 'jig' && id === jigId) {
+      state.ch104JigBarrierContactHits = Math.min(80, Math.max(0, Number(state.ch104JigBarrierContactHits || 0)) + 1);
+    }
+  }
+
+  function showChapter104BattleDialogue(cues, onComplete) {
+    if (!state || !isChapter104BossStage()) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    ensureChapter101TutorialStyle();
+    const root = document.getElementById(ROOT_ID);
+    if (!root) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    root.querySelectorAll('.shooting-ch104-battle-dialogue-overlay').forEach(el => el.remove());
+    const pages = (Array.isArray(cues) ? cues : [cues])
+      .map(cue => getChapter104CombatEntry(cue))
+      .filter(Boolean);
+    if (!pages.length) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch101-tutorial-overlay shooting-ch104-battle-dialogue-overlay';
+    overlay.innerHTML = `
+      <div class="shooting-ch101-tutorial-card">
+        <img class="shooting-ch101-tutorial-portrait" src="" alt="" draggable="false">
+        <div class="shooting-ch101-tutorial-speaker"></div>
+        <div class="shooting-ch101-tutorial-text"></div>
+        <div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div>
+      </div>`;
+    root.appendChild(overlay);
+
+    let pageIndex = 0;
+    const card = overlay.querySelector('.shooting-ch101-tutorial-card');
+    const portrait = overlay.querySelector('.shooting-ch101-tutorial-portrait');
+    const speakerEl = overlay.querySelector('.shooting-ch101-tutorial-speaker');
+    const textEl = overlay.querySelector('.shooting-ch101-tutorial-text');
+
+    const renderPage = () => {
+      const page = pages[pageIndex];
+      const speaker = String(page.speaker || '');
+      const portraitSrc = getChapter104Portrait(speaker);
+      card.classList.toggle('no-speaker', !speaker);
+      speakerEl.textContent = speaker;
+      textEl.textContent = String(page.text || '');
+      if (portraitSrc) {
+        portrait.src = portraitSrc;
+        portrait.style.display = '';
+      } else {
+        portrait.removeAttribute('src');
+        portrait.style.display = 'none';
+      }
+    };
+
+    const finish = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.remove();
+        if (typeof onComplete === 'function') onComplete();
+      }, 160);
+    };
+
+    overlay.addEventListener('pointerup', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      pageIndex += 1;
+      if (pageIndex >= pages.length) {
+        finish();
+        return;
+      }
+      renderPage();
+    }, { passive:false });
+
+    renderPage();
+    requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
+  function getChapter104RescueBackground(entry) {
+    const location = String(entry && entry.location || '');
+    if (location.includes('大型レムナント・アルノ登場')) {
+      return 'images/scene_aruno_help.webp';
+    }
+    if (location.includes('大型レムナント・戦闘')) {
+      return 'images/scene_eri_jig_battle.webp';
+    }
+    return 'images/scene_outside_tower.webp';
+  }
+
+  function showChapter104RescuePages(cues, onComplete, options = {}) {
     if (!state || !isChapter104BossStage()) {
       if (typeof onComplete === 'function') onComplete();
       return;
@@ -9759,6 +9996,11 @@
       speakerEl.textContent = speaker;
       textEl.textContent = String(page.text || '');
 
+      const isImpactWhite = String(page && page.location || '') === '白化画面';
+      overlay.classList.toggle('is-impact-white', isImpactWhite);
+      const backgroundSrc = isImpactWhite ? '' : getChapter104RescueBackground(page);
+      overlay.style.backgroundImage = backgroundSrc ? `url("${backgroundSrc}")` : 'none';
+
       if (portrait) {
         if (portraitSrc) {
           portrait.src = portraitSrc;
@@ -9770,7 +10012,69 @@
       }
     };
 
+    const holdCurrentBackgroundThenMessage = (nextIndex, holdMs = 1500, nextBackgroundHoldMs = 0) => {
+      overlay.classList.add('is-cinematic-reveal');
+      setTimeout(() => {
+        if (!overlay.isConnected) return;
+        pageIndex = nextIndex;
+        renderPage();
+        const nextHold = Math.max(0, Number(nextBackgroundHoldMs || 0));
+        if (nextHold > 0) {
+          setTimeout(() => {
+            if (!overlay.isConnected) return;
+            overlay.classList.remove('is-cinematic-reveal');
+            impactTransitioning = false;
+          }, Math.max(1500, nextHold));
+          return;
+        }
+        overlay.classList.remove('is-cinematic-reveal');
+        impactTransitioning = false;
+      }, Math.max(1500, Number(holdMs || 1500)));
+    };
+
+    const revealWhiteFadeThenMessage = (nextIndex, holdMs = 1700, fadeMs = 980) => {
+      overlay.classList.add('is-cinematic-reveal');
+      overlay.querySelectorAll('.shooting-ch104-whiteout').forEach(el => el.remove());
+      pageIndex = nextIndex;
+      renderPage();
+
+      const whiteout = document.createElement('div');
+      whiteout.className = 'shooting-ch104-whiteout';
+      overlay.appendChild(whiteout);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (whiteout.isConnected) whiteout.classList.add('fade-out');
+        });
+      });
+      setTimeout(() => {
+        if (whiteout.isConnected) whiteout.remove();
+      }, Math.max(600, Number(fadeMs || 980)) + 120);
+
+      setTimeout(() => {
+        if (!overlay.isConnected) return;
+        overlay.classList.remove('is-cinematic-reveal');
+        impactTransitioning = false;
+      }, Math.max(1500, Number(holdMs || 1700)));
+    };
+
     const finish = () => {
+      // CH01-04 rescue -> Arno battle handoff: keep the story cover alive until
+      // Arno has already replaced Jig underneath and the battle-start dialogue
+      // overlay has been created. This prevents a one-frame Jig battle flash.
+      if (options && options.handoffBeforeRemove) {
+        if (!state || state.ended || state.finishing) {
+          overlay.remove();
+          return;
+        }
+        prevTs = performance.now();
+        if (typeof onComplete === 'function') onComplete();
+        setTimeout(() => {
+          overlay.classList.remove('show');
+          setTimeout(() => overlay.remove(), 180);
+        }, 50);
+        return;
+      }
+
       overlay.classList.remove('show');
       setTimeout(() => {
         overlay.remove();
@@ -9780,9 +10084,38 @@
       }, 180);
     };
 
+    let impactTransitioning = false;
     overlay.addEventListener('pointerup', event => {
       event.preventDefault();
       event.stopPropagation();
+      if (impactTransitioning) return;
+
+      const currentPage = pages[pageIndex];
+      const nextPage = pages[pageIndex + 1];
+
+      // 「――大きな衝撃音。」の直後：大きなシェイク＋白フラッシュを入れてから、
+      // 吹き飛ばされる描写へ進める。
+      if (currentPage && currentPage.cue === 'impact_1' && nextPage && nextPage.cue === 'impact_2') {
+        impactTransitioning = true;
+        playChapter104EventFlash(overlay, 'heavy');
+        playChapter104ImpactShake(() => {
+          if (!overlay.isConnected) return;
+          pageIndex += 1;
+          renderPage();
+          impactTransitioning = false;
+        });
+        return;
+      }
+
+      // 「ジグとエリは、強い力で吹き飛ばされる。」の直後：画面を真っ白にし、
+      // 白を徐々にフェードアウトさせながらアルノ登場背景を全画面で見せてから、
+      // rescue_1 のナレーションへ進める。
+      if (currentPage && currentPage.cue === 'impact_2' && nextPage && nextPage.cue === 'rescue_1') {
+        impactTransitioning = true;
+        revealWhiteFadeThenMessage(pageIndex + 1, 1800, 1500);
+        return;
+      }
+
       pageIndex += 1;
       if (pageIndex >= pages.length) {
         finish();
@@ -9792,7 +10125,220 @@
     }, { passive:false });
 
     renderPage();
+    const initialHoldMs = Math.max(0, Number(options.initialCinematicMs || 0));
+    if (initialHoldMs > 0) {
+      overlay.classList.add('is-cinematic-reveal');
+      impactTransitioning = true;
+    }
     requestAnimationFrame(() => overlay.classList.add('show'));
+    if (initialHoldMs > 0) {
+      setTimeout(() => {
+        if (!overlay.isConnected) return;
+        overlay.classList.remove('is-cinematic-reveal');
+        impactTransitioning = false;
+      }, Math.max(1500, initialHoldMs));
+    }
+  }
+
+  function playChapter104EventFlash(target, strength = 'light') {
+    const host = target && target.isConnected ? target : document.getElementById(ROOT_ID);
+    if (!host) return;
+
+    host.querySelectorAll('.shooting-ch104-event-flash').forEach(el => el.remove());
+    const flash = document.createElement('div');
+    flash.className = `shooting-ch104-event-flash ${strength === 'heavy' ? 'is-heavy' : 'is-light'}`;
+    host.appendChild(flash);
+    const ttl = strength === 'heavy' ? 680 : 420;
+    setTimeout(() => { if (flash.isConnected) flash.remove(); }, ttl);
+  }
+
+  function getChapter104VisibleShakeTarget() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return null;
+
+    // build1119: CH01-04のストーリー中は、戦闘画面の上に全画面背景オーバーレイが載る。
+    // 背面のshooting-stageを揺らしても見えないため、表示中のオーバーレイ自体を最優先で揺らす。
+    const overlay = root.querySelector('.shooting-ch104-rescue-overlay.show') ||
+      root.querySelector('.shooting-ch104-rescue-overlay');
+    if (overlay) return overlay;
+
+    return root.querySelector('.shooting-stage') || root;
+  }
+
+  function playChapter104DamageShake(onComplete) {
+    const target = getChapter104VisibleShakeTarget();
+    const player = document.getElementById(PLAYER_ID);
+    const done = () => { if (typeof onComplete === 'function') onComplete(); };
+
+    // HPは削らず、直撃したような短い被弾フィードバックだけを出す。
+    if (player) {
+      player.classList.remove('damaged');
+      void player.offsetWidth;
+      player.classList.add('damaged');
+      setTimeout(() => player.classList.remove('damaged'), 420);
+    }
+    if (!target || typeof target.animate !== 'function') {
+      triggerPlayerHitScreenShake();
+      setTimeout(done, 360);
+      return;
+    }
+    try {
+      const animation = target.animate([
+        { transform:'translate3d(0,0,0) scale(1)', offset:0 },
+        { transform:'translate3d(-12px,6px,0) scale(1.008)', offset:.16 },
+        { transform:'translate3d(10px,-5px,0) scale(1.006)', offset:.34 },
+        { transform:'translate3d(-7px,4px,0) scale(1.004)', offset:.54 },
+        { transform:'translate3d(5px,-2px,0) scale(1.002)', offset:.74 },
+        { transform:'translate3d(0,0,0) scale(1)', offset:1 }
+      ], { duration:420, easing:'cubic-bezier(.18,.72,.22,1)', fill:'none' });
+      animation.addEventListener('finish', done, { once:true });
+      animation.addEventListener('cancel', done, { once:true });
+    } catch (_) {
+      triggerPlayerHitScreenShake();
+      setTimeout(done, 380);
+    }
+  }
+
+  function playChapter104ImpactShake(onComplete) {
+    const target = getChapter104VisibleShakeTarget();
+    const done = () => { if (typeof onComplete === 'function') onComplete(); };
+    if (!target || typeof target.animate !== 'function') {
+      triggerPlayerHitScreenShake();
+      setTimeout(done, 620);
+      return;
+    }
+    try {
+      const animation = target.animate([
+        { transform:'translate3d(0,0,0) rotate(0deg) scale(1)', offset:0 },
+        { transform:'translate3d(-28px,14px,0) rotate(-1.15deg) scale(1.024)', offset:.08 },
+        { transform:'translate3d(24px,-15px,0) rotate(.95deg) scale(1.021)', offset:.18 },
+        { transform:'translate3d(-21px,11px,0) rotate(-.78deg) scale(1.017)', offset:.31 },
+        { transform:'translate3d(17px,-8px,0) rotate(.62deg) scale(1.014)', offset:.45 },
+        { transform:'translate3d(-12px,6px,0) rotate(-.46deg) scale(1.010)', offset:.60 },
+        { transform:'translate3d(8px,-4px,0) rotate(.30deg) scale(1.006)', offset:.73 },
+        { transform:'translate3d(-4px,2px,0) rotate(-.14deg) scale(1.003)', offset:.86 },
+        { transform:'translate3d(0,0,0) rotate(0deg) scale(1)', offset:1 }
+      ], { duration:720, easing:'cubic-bezier(.10,.74,.16,1)', fill:'none' });
+      animation.addEventListener('finish', done, { once:true });
+      animation.addEventListener('cancel', done, { once:true });
+    } catch (_) {
+      triggerPlayerHitScreenShake();
+      setTimeout(done, 620);
+    }
+  }
+
+  function showChapter104ArnoBattleStart(onComplete) {
+    if (!state || !isChapter104BossStage()) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+    ensureChapter101TutorialStyle();
+    const root = document.getElementById(ROOT_ID);
+    if (!root) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    const entry = getChapter104CombatEntry('arno_battle_start') || {
+      speaker:'アルノ',
+      text:'相手はこっちだ…こい。'
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch101-tutorial-overlay shooting-ch104-battle-start-overlay';
+    overlay.innerHTML = `
+      <div class="shooting-ch101-tutorial-card">
+        <img class="shooting-ch101-tutorial-portrait" src="images/chara_20_panel.webp" alt="アルノ" draggable="false">
+        <div class="shooting-ch101-tutorial-speaker">アルノ</div>
+        <div class="shooting-ch101-tutorial-text"></div>
+        <div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div>
+      </div>`;
+    const textEl = overlay.querySelector('.shooting-ch101-tutorial-text');
+    if (textEl) textEl.textContent = String(entry.text || '相手はこっちだ…こい。');
+    root.appendChild(overlay);
+
+    let closed = false;
+    const finish = () => {
+      if (closed) return;
+      closed = true;
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.remove();
+        if (typeof onComplete === 'function') onComplete();
+      }, 170);
+    };
+    overlay.addEventListener('pointerup', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      finish();
+    }, { passive:false });
+    requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
+  function applyChapter104ShockwaveDamage() {
+    if (!state || !isChapter104BossStage() || state.ended || state.finishing) return;
+    const member = getActiveMember();
+    if (!member) return;
+
+    // build1116: イベント確定被弾。無敵・属性相性・防御補正を通さず、最大HPの66%分を直接削る。
+    // 既に削れている場合も回復させず、最低1HPは残して救援シーンへ繋ぐ。
+    const forcedDamage = Math.max(1, Math.round(Number(member.hpMax || 1) * 0.66));
+    const appliedDamage = Math.max(0, Math.min(Math.max(0, Number(member.hp || 0) - 1), forcedDamage));
+    member.hp = Math.max(1, Number(member.hp || 0) - appliedDamage);
+    member.hitCount = (member.hitCount || 0) + 1;
+    state.totalHitsTaken = (state.totalHitsTaken || 0) + 1;
+    resetCombo();
+
+    triggerPlayerHitScreenShake();
+    showDamageNumber(state.player.x, state.player.y, appliedDamage, 'player', true, '');
+
+    const player = document.getElementById(PLAYER_ID);
+    if (player) {
+      player.classList.remove('damaged');
+      void player.offsetWidth;
+      player.classList.add('damaged');
+      sustainHitFeedback(player, 420);
+    }
+    state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), performance.now() + 2400);
+    renderHud();
+  }
+
+  function playChapter104UnavoidableShockwave(onComplete) {
+    if (!state || !isChapter104BossStage()) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) {
+      applyChapter104ShockwaveDamage();
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    arena.querySelectorAll('.shooting-ch104-shockwave,.shooting-ch104-shockwave-flash').forEach(el => el.remove());
+
+    const wave = document.createElement('div');
+    wave.className = 'shooting-ch104-shockwave';
+    wave.style.left = `${Number(state.boss && state.boss.x || arena.clientWidth / 2)}px`;
+    wave.style.top = `${Number(state.boss && state.boss.y || arena.clientHeight * .28)}px`;
+
+    const flash = document.createElement('div');
+    flash.className = 'shooting-ch104-shockwave-flash';
+    arena.appendChild(flash);
+    arena.appendChild(wave);
+
+    // 波面が自機へ届くタイミングで確定被弾。回避判定は持たせない。
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing) return;
+      applyChapter104ShockwaveDamage();
+    }, 360);
+
+    setTimeout(() => {
+      wave.remove();
+      flash.remove();
+      if (typeof onComplete === 'function') onComplete();
+    }, 820);
   }
 
   function switchChapter104ToArno() {
@@ -9819,6 +10365,7 @@
     state.party = [arnoMember];
     selectedPartyIds = [arnoId];
 
+    state.ch104ArnoJoined = true;
     state.activeCharacterId = arnoId;
     selectedCharacterId = arnoId;
     state.switchReadyAt = performance.now() + 800;
@@ -9849,51 +10396,99 @@
       return false;
     }
 
-    const hpMax = Math.max(1, Number(state.boss.hpMax || 1));
-    const ratio = Number(state.boss.hp || 0) / hpMax;
-    if (ratio > 0.60) return false;
+    // Phase 1: まずエリだけで80回バリアへ攻撃を当てる。
+    if (
+      state.ch104ForcedBattlePhase === 'eri' &&
+      Number(state.ch104EriBarrierContactHits || 0) >= 80
+    ) {
+      state.ch104ForcedBattlePhase = 'eri-dialogue';
+      beginChapter104StoryPause();
+      renderSwitchRail(false);
+      showChapter104BattleDialogue(['pressure_1', 'pressure_1_jig'], () => {
+        if (!state || state.ended || state.finishing) return;
+        const jigId = Number(CHARACTER_ID.JIG || 5);
+        state.ch104ForcedBattlePhase = 'jig';
+        window.switchShootingCharacter(jigId, true);
+        endChapter104StoryPause();
+        state.lastBossShotAt = performance.now();
+        state.lastShotAt = performance.now();
+        renderSwitchRail(false);
+        renderHud();
+      });
+      return true;
+    }
 
-    state.ch104RescueTriggered = true;
-    state.phaseTransition = true;
-    removeBossDangerWarning();
-    state.bossDangerExecuteAt = 0;
-    clearProjectiles();
-    deferBossAttackResume(performance.now() + 12000);
+    // Phase 2: ジグでも80回バリアへ当てる。ここから完全な負けイベントへ。
+    if (
+      state.ch104ForcedBattlePhase === 'jig' &&
+      Number(state.ch104JigBarrierContactHits || 0) >= 80
+    ) {
+      state.ch104ForcedBattlePhase = 'jig-dialogue';
+      state.ch104RescueTriggered = true;
+      state.ch104PreRescueElapsedMs = Math.max(0, performance.now() - Number(state.startedAt || performance.now()));
+      beginChapter104StoryPause();
+      renderSwitchRail(false);
 
-    showChapter104RescuePages([
-      'pressure_1',
-      'pressure_2',
-      'pressure_3',
-      'pressure_4',
-      'pressure_5',
-      'pressure_6',
-      'pressure_7',
-      'pressure_8',
-      'impact_1',
-      'impact_2',
-      'rescue_1',
-      'rescue_2',
-      'rescue_3',
-      'rescue_4',
-      'rescue_5',
-      'rescue_6'
-    ], () => {
-      if (!state || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) return;
+      showChapter104BattleDialogue(['pressure_2', 'pressure_3'], () => {
+        if (!state || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) return;
 
-      // 救援イベント後はアルノ単独へ強制切替。エリとジグはアウラ側の援護へ回る。
-      switchChapter104ToArno();
-      createHit(Number(state.boss.x || 0), Number(state.boss.y || 0), true);
-      flashBossHit(true, true);
-      applyBossStun(2600, 'arno-rescue');
+        // 「ジグ！あぶない…っ！！」直後。戦闘盤面のまま被弾演出を入れる。
+        playChapter104EventFlash(document.getElementById(ROOT_ID), 'heavy');
+        playChapter104ImpactShake(() => {
+          if (!state || state.ended || state.finishing) return;
 
-      state.phaseTransition = false;
-      state.lastBossShotAt = performance.now();
-      state.lastShotAt = performance.now();
-      prevTs = performance.now();
-      renderHud();
-    });
+          showChapter104RescuePages([
+            'pressure_4',
+            'pressure_5',
+            'pressure_6',
+            'pressure_7',
+            'pressure_8',
+            'pressure_9',
+            'pressure_10',
+            'pressure_9_urgent',
+            'pressure_11',
+            'pressure_12',
+            'impact_1',
+            'impact_2',
+            'rescue_1',
+            'rescue_2',
+            'rescue_3',
+            'rescue_4',
+            'rescue_5',
+            'rescue_6'
+          ], () => {
+            if (!state || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) return;
 
-    return true;
+            clearProjectiles();
+            state.ch104StoryPaused = false;
+            state.ch104StoryPauseStartedAt = 0;
+
+            // 救援後はアルノ単独。BOSSは最初から2ゲージ設計で、満タンPHASE1から開始する。
+            switchChapter104ToArno();
+            if (state.boss) {
+              state.boss.hp = state.boss.hpMax;
+              state.boss.phase = 1;
+            }
+
+            state.running = false;
+            renderHud();
+
+            showChapter104ArnoBattleStart(() => {
+              if (!state || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) return;
+              state.phaseTransition = false;
+              state.resumeElapsedMsPending = Math.max(0, Number(state.ch104PreRescueElapsedMs || 0));
+              state.lastBossShotAt = performance.now();
+              state.lastShotAt = performance.now();
+              prevTs = performance.now();
+              runStartCountdown();
+            });
+          }, { initialCinematicMs: 1500, handoffBeforeRemove: true });
+        });
+      });
+      return true;
+    }
+
+    return false;
   }
 
   function isNormalBattle() {
@@ -14028,7 +14623,7 @@
   }
 
   function updateBossPhase() {
-    // build1102: CH01-04はHP60%で一度追い込まれ、アルノ救援演出へ移行する。
+    // build1168: CH01-04は Eri 50接触 → Jig 50接触 の段階イベントをここで監視する。
     if (maybeTriggerChapter104Rescue()) return;
 
     // SCORE ATTACKは1ゲージ固定の∞ボス。
@@ -14852,6 +15447,16 @@
             p.attackElement || p.element || chara.element
           );
           const targetElement = getCombatTargetElement(state.boss);
+
+          // build1166: CH01-04救援前は、属性バリアへの接触回数だけを内部カウントする。
+          // 表示上のHIT/COMBOは通常ルールどおり「実ダメージが入った時だけ」加算する。
+          const ch104BarrierContact = !!(
+            isChapter104BossStage() &&
+            !state.ch104RescueTriggered &&
+            isStageWeaknessOnlyTarget(targetElement)
+          );
+          if (ch104BarrierContact) registerChapter104BarrierContact(ownerId);
+
           const elementAdjustedDamage = applyElementDamage(
             p.damage,
             attackElement,
@@ -16852,6 +17457,14 @@
     }
 
     if (state.ch101TutorialPaused || state.ch102TutorialPaused) {
+      prevTs = ts;
+      renderHud();
+      rafId = requestAnimationFrame(gameLoop);
+      return;
+    }
+
+    // build1164: CH01-04救援ノベル中はBOSS・弾・移動・時間を完全停止。
+    if (state.ch104StoryPaused) {
       prevTs = ts;
       renderHud();
       rafId = requestAnimationFrame(gameLoop);
@@ -20732,6 +21345,15 @@
   };
 
   window.restartShootingEvent = async function (options = {}) {
+    // build1169: CH01-04でアルノ戦まで到達したGAME OVERのRETRYは、
+    // 負けイベントを再生せず「属性相性か…」のアルノ戦開始台詞から再開する。
+    const chapter104ArnoRetry = !!(
+      isChapter104BossStage() &&
+      state &&
+      state.ch104ArnoJoined &&
+      state.lastResultWin === false
+    );
+
     // build1009: NOAH RETRYも初回出撃と同じ確認を挟む。
     // 「はい」の後だけ begin_noah_attempt へ進み、SPECIAL TICKET -ノア- を1枚消費する。
     if (isNoahStage() && !options.noahTicketConfirmed) {
@@ -20770,10 +21392,13 @@
     // RETRYも新しい1出撃として使用回数へ加算。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
 
-    // RETRYも「再度ステージへ入る」扱いとして同じ演出を挟む。
+    // 通常RETRYは「再度ステージへ入る」演出を挟む。
+    // CH01-04のアルノ戦RETRYだけは負けイベントを飛ばし、戦闘開始台詞へ直行する。
     fadeOutShootingBattleBgm(180, true);
     beginShootingStageTransitionMask();
-    const stageIcatchPromise = showShootingStageIcatch();
+    const stageIcatchPromise = chapter104ArnoRetry
+      ? Promise.resolve()
+      : showShootingStageIcatch();
 
     const root = document.getElementById(ROOT_ID);
     if (!root) {
@@ -20813,11 +21438,42 @@
     root.classList.remove('boss-defeat-flash', 'boss-phase-flash', 'boss-phase-pause', 'player-defeat-flash');
     root.setAttribute('data-boss-phase', '1');
     await stageIcatchPromise;
-    await showShootingStageInfo();
+    if (!chapter104ArnoRetry) {
+      await showShootingStageInfo();
+    }
+
+    if (chapter104ArnoRetry) {
+      // resetState()はCH01-04をエリ開始へ戻すため、アルノ戦専用状態へ再構成する。
+      switchChapter104ToArno();
+      state.ch104RescueTriggered = true;
+      state.ch104ForcedBattlePhase = 'arno';
+      state.ch104StoryPaused = false;
+      state.ch104StoryPauseStartedAt = 0;
+      state.ch104PreRescueElapsedMs = 0;
+      state.resumeElapsedMsPending = 0;
+      state.phaseTransition = false;
+      if (state.boss) {
+        state.boss.hp = state.boss.hpMax;
+        state.boss.phase = 1;
+      }
+    }
+
     placeInitialUnits();
     renderHud();
     await endShootingStageTransitionMask();
     activateShootingBattleBgm(true);
+
+    if (chapter104ArnoRetry) {
+      showChapter104ArnoBattleStart(() => {
+        if (!state || state.ended || state.finishing) return;
+        state.lastBossShotAt = performance.now();
+        state.lastShotAt = performance.now();
+        prevTs = performance.now();
+        runStartCountdown();
+      });
+      return;
+    }
+
     playBossStageIntro(runStartCountdown);
   };
 
