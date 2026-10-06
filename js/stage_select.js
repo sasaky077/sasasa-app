@@ -27,13 +27,13 @@
   // ステージ固有タイトルは使わず、画面上では「ステージN」で統一する。
   const STORY_STAGE_CONDITIONS = {
     'shooting_ch01_01': '敵を全て撃破',
-    'shooting_ch01_02': '60秒以内に敵をすべて撃破',
+    'shooting_ch01_02': '敵をすべて撃破',
     'shooting_ch01_03': 'アイテムを3つ拾得',
     'shooting_ch01_04': '大型レムナントを撃破',
 
     'shooting_ch02_01': '敵をすべて撃破',
-    'shooting_ch02_02': '150秒以内に敵をすべて撃破',
-    'shooting_ch02_03': '被弾3回以内に敵をすべて撃破',
+    'shooting_ch02_02': '敵をすべて撃破',
+    'shooting_ch02_03': '敵をすべて撃破',
     'shooting_ch02_04': 'イリシュを撃破',
 
     'shooting_ch03_01': 'ストーリーを読む',

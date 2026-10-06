@@ -148,6 +148,8 @@
     outside_tower_enemy: 'images/scene_outside_tower_enemy.webp',
     outside_site_enemy: 'images/outside_site_enemy.webp',
     inside: 'images/scene_base.webp',
+    base_departure: 'images/scene_base_02.webp',
+    type_explanation: 'images/scene_type.webp',
     workbench: 'images/scene_workbench.webp',
     outside_road: 'images/scene_outside_road.webp',
     outside_noise: 'images/scene_outside_noise.webp',
@@ -180,6 +182,8 @@
     if(loc.includes('白い廃墟・一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
     if(loc.includes('一柱目の跡地')) return STORY_BG_PATHS.enemy_site;
     if(loc.includes('白い廃墟・奥地・大型レムナント予感')) return STORY_BG_PATHS.outside_noise;
+    if(loc.includes('属性・説明')) return STORY_BG_PATHS.type_explanation;
+    if(loc.includes('拠点・旅立ち')) return STORY_BG_PATHS.base_departure;
     if(loc.includes('作業台')) return STORY_BG_PATHS.workbench;
     if(loc.includes('拠点')) return STORY_BG_PATHS.inside;
     if(loc.includes('奥地')) return STORY_BG_PATHS.outside_road;
@@ -292,6 +296,14 @@
   font-size:12px;
   letter-spacing:.12em;
   color:#5e5146;
+}
+#${ROOT_ID}.story-novel-fullscreen-scene .story-novel-textbox,
+#${ROOT_ID}.story-novel-fullscreen-scene .story-novel-cast,
+#${ROOT_ID}.story-novel-fullscreen-scene .story-novel-item{
+  display:none !important;
+}
+#${ROOT_ID}.story-novel-fullscreen-scene .story-novel-bg{
+  object-fit:cover;
 }
 #${ROOT_ID} .story-novel-dialogue{
   min-height:54px;
@@ -914,7 +926,19 @@
 
   function renderEntry(){
     if(!session) return;
+    const root=ensureRoot();
     const entry=session.entries[session.index];
+    const activeLocation=String(entry && entry.location || '').trim();
+    const activeText=String(entry && entry.text || '').trim();
+    const isFullscreenScene=(activeLocation==='属性・説明' && !activeText);
+    root.classList.toggle('story-novel-fullscreen-scene', isFullscreenScene);
+
+    const textboxWrap=root.querySelector('.story-novel-textbox');
+    const castWrap=root.querySelector('.story-novel-cast');
+    const itemWrapForFullscreen=root.querySelector('.story-novel-item');
+    if(textboxWrap) textboxWrap.style.display=isFullscreenScene ? 'none' : '';
+    if(castWrap) castWrap.style.display=isFullscreenScene ? 'none' : '';
+    if(itemWrapForFullscreen) itemWrapForFullscreen.style.display=isFullscreenScene ? 'none' : '';
     if(!entry){
       finishCurrent(false);
       return;
@@ -928,7 +952,6 @@
       if(playCinematicTransition(entry)) return;
     }
 
-    const root=ensureRoot();
     const data=session.data;
     const speaker=String(entry.speaker||'');
     const location=String(entry.location||'');
