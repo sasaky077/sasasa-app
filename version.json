@@ -1,4 +1,4 @@
 {
-  "build": 1211,
-  "note": "Change character rarity: Arno R→SR, Mimosa SR→R"
+  "build": 1212,
+  "note": "Normalize character ID 3 as Aura and set main shot to CLUSTER 4"
 }

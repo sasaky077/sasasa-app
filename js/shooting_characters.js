@@ -37,7 +37,7 @@
     ELSIA: 12,
     FIA: 5,
     RAGNA: 19,
-    RIZE: 3,
+    AURA: 3,
     SHION: 18,
     ORION: 10,
     NOAH: 52,
@@ -84,7 +84,7 @@
     12: 'r',  // シイナ
     5: 'r',  // ジグ
     19: 'r',  // ラグナ
-    3: 'r',  // リゼ
+    3: 'r',  // アウラ
     18: 'r',  // シオン
     10: 'r',  // オリオン
     50: 'sr',  // SIGMA-IX
@@ -174,7 +174,7 @@
   },
   "3": {
     "id": 3,
-    "name": "リゼ",
+    "name": "アウラ",
     "element": "wood",
     "hp": 600,
     "atk": 250,
@@ -1733,10 +1733,11 @@
     ultBaseType: 'burst', ultAddons: ['damage'], ultType: 'prototype_generic',
   });
 
-  SHOOTING_CHARACTERS[CHARACTER_ID.RIZE] = buildShootingCharacter({
-    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RIZE, effectKey: 'rize',
-    label: 'BOMB / DOT', description: '小範囲へ広がるRスプラッシュ型。ULTは継続ダメージ＋微回復。',
-    shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
+  SHOOTING_CHARACTERS[CHARACTER_ID.AURA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.AURA, effectKey: 'aura',
+    label: 'CLUSTER 4 / DOT', description: '着弾時に4方向へ分裂するCLUSTER型。ULTは継続ダメージ＋微回復。',
+    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50,
+    shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
     ultBaseType: 'dot', ultAddons: ['heal'], ultType: 'prototype_generic',
   });
 
