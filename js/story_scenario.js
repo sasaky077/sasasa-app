@@ -449,16 +449,11 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "雲が裂け、神殿の柱ほどもある、\n巨大な神像のようなものが姿を現す。",
+        "text": "エリ、ジグ、アウラは目の前に聳える巨大な神像を見上げていた。",
         "location": "大型レムナント・登場",
         "narration": true
       },
-             {
-        "speaker": "ジグ",
-        "text": "おいおい…\n冗談だろ…？",
-        "location": "大型レムナント・登場",
-        "narration": true
-      },
+
 
       {
         "speaker": "アウラ",
@@ -471,14 +466,14 @@
         "speaker": "エリ",
         "left": "アウラ",
         "right": "エリ",
-        "text": "いや…とてつもない敵意を感じる…",
+        "text": "なんか…すっごく敵意を感じる…",
         "location": "大型レムナント・登場"
       },
       {
         "speaker": "ジグ",
         "left": "ジグ",
         "right": "エリ",
-        "text": "あれとまともにやり合うのは危険だ…\n逃げるぞ。",
+        "text": "あれと正面からやり合うのは危険だ…\n逃げるぞ。",
         "location": "大型レムナント・登場"
       },
       {
@@ -725,9 +720,8 @@
         "right": "エリ",
         "text": "……これ、なに？",
         "location": "白い廃墟・奥地",
-        "itemImage": "item_memory.webp",
-        "itemImagePosition": "above-dialogue",
-        "itemImageEffect": "pulse"
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "",
@@ -736,9 +730,9 @@
         "text": "エリがそっと手を伸ばす。\n指先が触れた瞬間、結晶が淡く脈打つ。",
         "location": "白い廃墟・奥地",
         "narration": true,
-        "itemImage": "item_memory.webp",
+        "itemImage": "item_memory.webp?v=1200",
         "itemImagePosition": "above-dialogue",
-        "itemImageEffect": "pulse"
+        "itemImageEffect": "grow"
       },
       {
         "speaker": "",
@@ -747,9 +741,8 @@
         "text": "エリは、光を失わないその結晶を拾い上げた。",
         "location": "白い廃墟・奥地",
         "narration": true,
-        "itemImage": "item_memory.webp",
-        "itemImagePosition": "above-dialogue",
-        "itemImageEffect": "acquire"
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "エリ",
@@ -790,33 +783,45 @@
         "speaker": "",
         "text": "ミモザが結晶を手に取る。\n天球儀が、かすかに震える。",
         "location": "拠点・作業台",
-        "narration": true
+        "narration": true,
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
        {
         "speaker": "ミモザ",
         "text": "エリ。これを手に取ったとき、何か感じた？",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "エリ",
         "text": "えっと…光った…かな。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "",
         "text": "ミモザは答えず、じっとエリを見つめる。",
         "location": "拠点・作業台",
-        "narration": true
+        "narration": true,
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "アウラ",
         "text": "…？",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
         "text": "……そう。少し預からせて。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "",
@@ -832,27 +837,37 @@
         "speaker": "",
         "text": "かすかな灯りの下、\n結晶が硝子の器の中で静かに脈打っている。",
         "location": "拠点・作業台・夜",
-        "narration": true
+        "narration": true,
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "レオナクロス",
         "text": "エリが持ち帰った残骸は、数日経ち、\n全部灰になった。これだけが残ってる。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
         "text": "大きさの違いかと思ったけれど、違う。\n小型のレムナントから採取した結晶と、この結晶とは、明らかに性質が違う。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "アウラ",
         "text": "性質？",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
         "text": "なんて言ったらいいか…",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
@@ -862,82 +877,119 @@
       {
         "speaker": "エリ",
         "text": "大きなレムナントは…魂を持っている…ってこと？",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
             {
         "speaker": "ミモザ",
         "text": "…",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "アウラ",
         "text": "それにしても綺麗だよねぇ。\n触ってもいい？",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
         "text": "だめ。……と言いたいところだけど、\n試してみたいことがあるわ。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "",
-        "text": "ミモザが結晶を取り出し、\n自分の手に乗せる。\n何も起きない。",
+        "text": "ミモザが結晶を自分の手に乗せる。\n何も起きない。",
         "location": "拠点・作業台",
-        "narration": true
+        "narration": true,
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "",
         "text": "アウラ、ジグ、アルノが順に触れる。\n何も起きない。",
         "location": "拠点・作業台",
-        "narration": true
+        "narration": true,
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+
       },
       {
         "speaker": "レオナクロス",
         "text": "私も同じだ。このとおり。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
             {
         "speaker": "",
         "text": "何も起きない。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
 
             {
         "speaker": "レオナクロス",
         "text": "はい、エリ。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
       },
 
       {
         "speaker": "",
         "text": "エリが触れたそのとき、\n結晶が、ふっと光を帯びる。",
         "location": "拠点・作業台",
-        "narration": true
+        "narration": true,
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "glow"
       },
             {
         "speaker": "エリ",
         "text": "…えっ？！",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "glow"
       },
       {
         "speaker": "アウラ",
         "text": "わぁ！光った…",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "glow"
       },
       {
         "speaker": "ミモザ",
         "text": "やっぱり。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "glow"
       },
       {
         "speaker": "エリ",
         "text": "なんで私だけ…？",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "glow"
       },
       {
         "speaker": "ミモザ",
         "text": "分からない。だから、調べる。\n別の結晶が入手できるといいんだけど。",
-        "location": "拠点・作業台"
+        "location": "拠点・作業台",
+                "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue",
+        "itemImageEffect": "glow"
       },
 
       {
@@ -1159,7 +1211,7 @@
       },
 {
         "speaker": "ミモザ",
-        "text": "とにかく、厳しい戦いを強いられることが予想されるわ。\nこのデバイスを使って、超小型のエネルギー受信装置を体内に埋め込む。",
+        "text": "とにかく、この先は厳しい戦いを強いられることが予想されるわ。\nこのデバイスを使って、超小型のエネルギー受信装置を体内に埋め込む。",
         "location": "拠点・作業台",
         "narration": true
       },

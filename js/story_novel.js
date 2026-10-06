@@ -387,9 +387,10 @@
 #${ROOT_ID} .story-novel-item{
   position:absolute;
   left:50%;
-  bottom:154px;
-  z-index:34;
-  width:min(34vw, 168px);
+  top:clamp(195px, 31dvh, 245px);
+  bottom:auto;
+  z-index:39;
+  width:min(36vw, 172px);
   min-width:112px;
   max-width:168px;
   display:flex;
@@ -397,36 +398,31 @@
   justify-content:center;
   pointer-events:none;
   opacity:0;
-  transform:translate(-50%,10px) scale(.94);
-  transition:opacity .22s ease, transform .22s ease, filter .22s ease;
-  filter:drop-shadow(0 10px 20px rgba(255,255,255,.16));
+  transform:translateX(-50%);
 }
 #${ROOT_ID} .story-novel-item.show{
   opacity:1;
-  transform:translate(-50%,0) scale(1);
 }
 #${ROOT_ID} .story-novel-item img{
   display:block;
   width:100%;
   height:auto;
   object-fit:contain;
-  filter:drop-shadow(0 3px 12px rgba(255,255,255,.35));
 }
-#${ROOT_ID} .story-novel-item.is-pulse img{
-  animation:storyNovelItemPulse 1.8s ease-in-out infinite;
+#${ROOT_ID} .story-novel-item.is-glow img{
+  filter:
+    brightness(1.28)
+    drop-shadow(0 0 10px rgba(255,255,255,.88))
+    drop-shadow(0 0 24px rgba(245,236,190,.62))
+    drop-shadow(0 0 42px rgba(205,220,255,.34));
 }
-#${ROOT_ID} .story-novel-item.is-acquire img{
-  animation:storyNovelItemAcquire .82s ease-out 1;
+#${ROOT_ID} .story-novel-item.is-grow img{
+  animation:storyNovelItemGrow .34s ease-out 1;
 }
-@keyframes storyNovelItemPulse{
-  0%   { transform:scale(1); filter:brightness(1) drop-shadow(0 3px 12px rgba(255,255,255,.28)); }
-  50%  { transform:scale(1.04); filter:brightness(1.14) drop-shadow(0 0 18px rgba(255,255,255,.52)); }
-  100% { transform:scale(1); filter:brightness(1) drop-shadow(0 3px 12px rgba(255,255,255,.28)); }
-}
-@keyframes storyNovelItemAcquire{
-  0%   { transform:scale(.82); opacity:0; filter:brightness(1.55) drop-shadow(0 0 30px rgba(255,255,255,.82)); }
-  32%  { transform:scale(1.16); opacity:1; filter:brightness(1.26) drop-shadow(0 0 24px rgba(255,255,255,.62)); }
-  100% { transform:scale(1); opacity:1; filter:brightness(1) drop-shadow(0 3px 12px rgba(255,255,255,.28)); }
+@keyframes storyNovelItemGrow{
+  0%   { transform:scale(.86); }
+  72%  { transform:scale(1.12); }
+  100% { transform:scale(1); }
 }
 #${ROOT_ID} .story-novel-dialogue{
   white-space:pre-line !important;
@@ -977,7 +973,7 @@
       const imageName=String(targetEntry && targetEntry.itemImage || '').trim();
       const imageEffect=String(targetEntry && targetEntry.itemImageEffect || '').trim().toLowerCase();
 
-      itemWrap.classList.remove('show','is-pulse','is-acquire');
+      itemWrap.classList.remove('show','is-glow','is-grow');
 
       if(!imageName){
         itemImg.removeAttribute('src');
@@ -995,16 +991,15 @@
       itemImg.src=src;
       itemImg.alt='item';
       itemImg.onerror=function(){
-        itemWrap.classList.remove('show','is-pulse','is-acquire');
+        itemWrap.classList.remove('show','is-glow','is-grow');
       };
 
-      if(imageEffect){
-        void itemWrap.offsetWidth;
-      }
-
       itemWrap.classList.add('show');
-      if(imageEffect==='pulse') itemWrap.classList.add('is-pulse');
-      if(imageEffect==='acquire') itemWrap.classList.add('is-acquire');
+      if(imageEffect==='glow') itemWrap.classList.add('is-glow');
+      if(imageEffect==='grow'){
+        void itemWrap.offsetWidth;
+        itemWrap.classList.add('is-grow');
+      }
     }
 
     applyCharacter(leftWrap,leftImg,castInfo.left,castInfo.active===castInfo.left);
