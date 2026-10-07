@@ -326,9 +326,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=979-gacha-conversion-list-scroll"
+        href="css/style.css?v=1253-limitbreak-powerup-restore"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=979-gacha-conversion-list-scroll"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=1253-limitbreak-powerup-restore"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -405,7 +405,7 @@
 .gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
-  <link rel="stylesheet" href="css/shooting_event.css?v=1073-player-attack-front">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1254-ch04-01-story-party">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=1071-flower-owned-layout">
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
@@ -3077,7 +3077,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   }
 </style>
 
-</head>
+\n<style id="limitbreak-powerup-restore-v1253">\n/* build1253: restore limit break full-screen power-up animation even if legacy style.css block is missing */\n.lb-powerup-effect{\n  position:fixed!important;inset:0!important;z-index:9999999!important;display:none;overflow:hidden;\n  align-items:center;justify-content:center;background:#f8f6f1;pointer-events:none;\n}\n.lb-powerup-effect.show{display:flex!important;animation:lbPowerupWhole 2.35s ease both;}\n.lb-powerup-effect.preparing{display:flex!important;opacity:1!important;background:#f8f6f1!important;pointer-events:auto!important;}\n.lb-powerup-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 48%,rgba(255,233,168,.52),transparent 24%),radial-gradient(circle at 50% 50%,rgba(223,194,132,.34),transparent 52%),linear-gradient(180deg,#fffdf8,#f3efe6);}\n.lb-powerup-rays{position:absolute;left:50%;top:50%;width:120vmax;height:120vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(255,224,142,.18) 0 2deg,transparent 2deg 12deg);animation:lbPowerupRays 2.35s linear both;}\n.lb-powerup-ring{position:absolute;left:50%;top:50%;width:220px;height:220px;border:1px solid rgba(255,221,139,.72);border-radius:50%;transform:translate(-50%,-50%) scale(.35);box-shadow:0 0 28px rgba(255,196,76,.38),inset 0 0 22px rgba(255,239,188,.2);opacity:0;}\n.lb-powerup-effect.show .ring-a{animation:lbPowerupRing 1.15s .3s ease-out both;}\n.lb-powerup-effect.show .ring-b{animation:lbPowerupRing 1.35s .55s ease-out both;}\n.lb-powerup-image-wrap{position:absolute;inset:5% 0 17%;display:flex;align-items:flex-end;justify-content:center;z-index:3;}\n.lb-powerup-image-wrap img{width:min(92vw,500px);height:100%;object-fit:contain;object-position:center bottom;opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.9) drop-shadow(0 16px 25px rgba(80,58,24,.22));}\n.lb-powerup-effect.show .lb-powerup-image-wrap img{animation:lbPowerupCharacter 2.2s .08s cubic-bezier(.16,.8,.2,1) both;}\n.lb-powerup-flash{position:absolute;inset:0;z-index:4;background:#fff6d9;opacity:0;}\n.lb-powerup-effect.show .lb-powerup-flash{animation:lbPowerupFlash 1.55s .52s ease-out both;}\n.lb-powerup-copy{position:absolute;z-index:5;left:0;right:0;bottom:9%;display:flex;flex-direction:column;align-items:center;text-align:center;color:#fff7dc;text-shadow:0 2px 8px rgba(90,67,29,.38),0 0 12px rgba(230,180,75,.26);opacity:0;transform:translateY(12px);}\n.lb-powerup-effect.show .lb-powerup-copy{animation:lbPowerupCopy 1.45s .68s ease-out both;}\n.lb-powerup-copy small{font-family:\"Cinzel\",serif;font-size:9px;letter-spacing:.42em;color:#dbbb70;}\n.lb-powerup-copy strong{margin-top:5px;font-family:\"Cinzel\",serif;font-size:clamp(28px,8vw,42px);letter-spacing:.12em;}\n.lb-powerup-copy span{margin-top:7px;font-size:14px;letter-spacing:.18em;}\n.lb-powerup-copy b{margin-top:7px;font-family:\"Cinzel\",serif;font-size:18px;letter-spacing:.12em;color:#f3d486;}\n.lb-powerup-effect.preparing .lb-powerup-rays,.lb-powerup-effect.preparing .lb-powerup-ring,.lb-powerup-effect.preparing .lb-powerup-image-wrap,.lb-powerup-effect.preparing .lb-powerup-flash,.lb-powerup-effect.preparing .lb-powerup-copy{opacity:0!important;}\n.lb-powerup-effect.preparing::after{content:\"\";position:absolute;left:50%;top:50%;width:34px;height:34px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(159,109,22,.20);box-shadow:0 0 0 10px rgba(184,136,51,.05),0 0 28px rgba(184,136,51,.12);animation:lbPreparingPulse .8s ease-in-out infinite alternate;}\n@keyframes lbPowerupWhole{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}\n@keyframes lbPowerupRays{0%{transform:translate(-50%,-50%) rotate(0deg) scale(.7);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) rotate(22deg) scale(1.1);opacity:.28}}\n@keyframes lbPowerupRing{0%{opacity:0;transform:translate(-50%,-50%) scale(.28)}22%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}}\n@keyframes lbPowerupCharacter{0%{opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.72)}25%{opacity:1;transform:translateY(0) scale(1);filter:brightness(.98)}48%{filter:brightness(1.8) drop-shadow(0 0 24px rgba(255,221,135,.72))}65%,100%{opacity:1;transform:translateY(0) scale(1.035);filter:brightness(1.04) drop-shadow(0 0 16px rgba(255,205,95,.30))}}\n@keyframes lbPowerupFlash{0%,30%{opacity:0}38%{opacity:.92}50%{opacity:.08}100%{opacity:0}}\n@keyframes lbPowerupCopy{0%{opacity:0;transform:translateY(12px)}25%,82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}\n@keyframes lbPreparingPulse{from{transform:translate(-50%,-50%) scale(.78);opacity:.35}to{transform:translate(-50%,-50%) scale(1.08);opacity:.72}}\n</style>\n</head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
   <div class="hud-left">
@@ -5651,8 +5651,8 @@ window.NOTICE_ITEMS = [
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
 <script src="js/shooting_resonance.js?v=974-basic-resonance-all"></script>
-<script src="js/resonance_system.js?v=1127-eri-light-standard-rate"></script>
-<script src="js/resonance_ui.js?v=1127-eri-light-standard-rate"></script>
+<script src="js/resonance_system.js?v=1253-limitbreak-powerup-restore"></script>
+<script src="js/resonance_ui.js?v=1253-limitbreak-powerup-restore"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
@@ -18257,7 +18257,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1246-ch04-story-battles"></script>
+<script src="js/shooting_event.js?v=1254-ch04-01-story-party"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

@@ -12216,3 +12216,32 @@ html body:not(.ui-immersive)
 #shooting-event-root.ayane-rampage-active .shooting-wash{
   background:rgba(14,14,14,.18) !important;
 }
+
+/* ============================================================
+   build1254 — CH04-1 STORY selectable party
+   エリ / ジグ / アウラ / アルノ / ミモザ / レオナクロスから3人選択。
+   旧CH04「エリ単独」CSSをCH04-1だけ明示的に解除する。
+   ============================================================ */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_01"],
+  [data-shooting-stage="shooting_beginner_ch04_01"]
+) .shooting-character-grid.shooting-party-roster{
+  overflow:auto!important;
+  isolation:auto!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_01"],
+  [data-shooting-stage="shooting_beginner_ch04_01"]
+) .shooting-character-grid.shooting-party-roster::after{
+  content:none!important;
+  display:none!important;
+  pointer-events:none!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch04_01"],
+  [data-shooting-stage="shooting_beginner_ch04_01"]
+) .shooting-character-option:not(.locked){
+  opacity:1!important;
+  filter:none!important;
+  pointer-events:auto!important;
+}

@@ -1,4 +1,5 @@
 {
-  "build": 1252,
-  "note": "ID41 display name changed from Kureha to Shuolin; gameplay and Special Encounter settings unchanged."
+  "build": "1254",
+  "version": "20261008-build1254-ch04-01-story-party",
+  "description": "CH04-1 story party selectable: Eri/Jig/Aura/Arno/Mimosa/Leona Cross"
 }

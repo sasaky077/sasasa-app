@@ -2050,6 +2050,16 @@
     return cfg.allowedIds.includes(Number(id));
   }
 
+  // build1254: STORY選択編成では、シナリオ上同行しているキャラを
+  // 所持状況に関係なく使用できる。通常ステージでは従来どおり所持必須。
+  function isShootingCharacterAvailableForCurrentParty(id) {
+    id = Number(id);
+    if (!SHOOTING_CHARACTERS[id] || !isPublicShootingCharacterId(id)) return false;
+    const cfg = getSelectedStorySelectablePartyConfig();
+    if (cfg && cfg.allowedIds.includes(id)) return true;
+    return isShootingCharacterOwned(id);
+  }
+
   function applySelectedStoryFixedParty() {
     const fixed = getSelectedStoryFixedPartyIds();
     if (!fixed) return false;
@@ -2125,8 +2135,7 @@
         .filter((id, index, arr) =>
           arr.indexOf(id) === index &&
           cfg.allowedIds.includes(id) &&
-          !!SHOOTING_CHARACTERS[id] &&
-          isShootingCharacterOwned(id)
+          isShootingCharacterAvailableForCurrentParty(id)
         )
         .slice(0, cfg.requiredSize);
       return;
@@ -2153,13 +2162,16 @@
       return fixedStoryParty.every(id => !!SHOOTING_CHARACTERS[Number(id)]);
     }
 
-    if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
-
     const selectableStoryParty = getSelectedStorySelectablePartyConfig();
     if (selectableStoryParty) {
       if (selectedPartyIds.length !== selectableStoryParty.requiredSize) return false;
-      return selectedPartyIds.every(id => selectableStoryParty.allowedIds.includes(Number(id)));
+      return selectedPartyIds.every(id =>
+        selectableStoryParty.allowedIds.includes(Number(id)) &&
+        isShootingCharacterAvailableForCurrentParty(id)
+      );
     }
+
+    if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
 
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
@@ -2235,13 +2247,28 @@
     if (selectableStoryParty) {
       roster.querySelectorAll('[data-character-id]').forEach(el => {
         const id = Number(el.getAttribute('data-character-id'));
-        if (!selectableStoryParty.allowedIds.includes(id)) el.remove();
+        if (!selectableStoryParty.allowedIds.includes(id)) {
+          el.closest('.shooting-character-option-wrap')?.remove();
+          return;
+        }
+
+        // STORY同行キャラは未所持でもこのステージ内では選択可能。
+        const wrap = el.closest('.shooting-character-option-wrap');
+        const c = SHOOTING_CHARACTERS[id];
+        wrap?.classList.remove('locked');
+        el.classList.remove('locked');
+        el.disabled = false;
+        el.removeAttribute('aria-disabled');
+        el.setAttribute('aria-label', `${c?.name || 'キャラクター'}・ストーリー参加`);
+        const levelLabel = wrap?.querySelector('.shooting-character-level-label');
+        if (levelLabel && !isShootingCharacterOwned(id)) levelLabel.textContent = 'STORY';
+        const portrait = wrap?.querySelector('.shooting-character-portrait img:not(.shooting-character-element-icon)');
+        if (portrait && c?.name) portrait.alt = c.name;
       });
     }
 
     selectedPartyIds = selectedPartyIds.filter(id =>
-      isPublicShootingCharacterId(id) &&
-      isShootingCharacterOwned(id) &&
+      isShootingCharacterAvailableForCurrentParty(id) &&
       (!selectableStoryParty || selectableStoryParty.allowedIds.includes(Number(id)))
     );
   }
@@ -3412,9 +3439,12 @@
     if (!wrap) return;
 
     const fixedStoryParty = getSelectedStoryFixedPartyIds();
+    const selectableStoryParty = getSelectedStorySelectablePartyConfig();
     const slotCount = fixedStoryParty
       ? fixedStoryParty.length
-      : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE);
+      : (selectableStoryParty
+        ? selectableStoryParty.requiredSize
+        : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE));
 
     wrap.innerHTML = Array.from({ length: slotCount }, (_, i) => {
       const id = selectedPartyIds[i];
@@ -3533,7 +3563,7 @@
       } else {
         const selectableStoryParty = getSelectedStorySelectablePartyConfig();
         ruleText.textContent = selectableStoryParty
-          ? 'STORY指定5人から3人選択'
+          ? `STORY指定${selectableStoryParty.allowedIds.length}人から${selectableStoryParty.requiredSize}人選択`
           : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
             ? 'CHAPTER 04 · エリのみ出撃可能'
             : (isStoryShootingStage()
@@ -3576,8 +3606,7 @@
       .filter((id, index, arr) =>
         arr.indexOf(id) === index &&
         !!SHOOTING_CHARACTERS[id] &&
-        isPublicShootingCharacterId(id) &&
-        isShootingCharacterOwned(id)
+        isShootingCharacterAvailableForCurrentParty(id)
       )
       .slice(0, PARTY_SIZE);
 
@@ -21024,10 +21053,16 @@
     }
 
     if (!isPublicShootingCharacterId(id)) return;
-    if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
+    if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterAvailableForCurrentParty(id)) return;
     if (!isAllowedForSelectedStoryParty(id)) return;
 
-    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && id !== Number(CHARACTER_ID.ERI)) {
+    if (
+      isChapter04Stage() &&
+      !isSelectedStorySelectablePartyStage() &&
+      !isChapter43BossStage() &&
+      !isChapter43MemoryBossStage() &&
+      id !== Number(CHARACTER_ID.ERI)
+    ) {
       ensureStoryEriLeader();
       selectedCharacterId = Number(CHARACTER_ID.ERI);
       applySelectedCharacterToUi();
@@ -22067,7 +22102,7 @@
       selectedPartyIds = [];
       const cfg = getSelectedStorySelectablePartyConfig();
       selectedCharacterId =
-        cfg.allowedIds.find(id => isShootingCharacterOwned(id) && !!SHOOTING_CHARACTERS[id]) ||
+        cfg.allowedIds.find(id => isShootingCharacterAvailableForCurrentParty(id)) ||
         firstOwned ||
         CHARACTER_ID.ERI;
     } else if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
