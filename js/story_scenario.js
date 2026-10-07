@@ -1809,36 +1809,55 @@
       {"speaker":"",
         "text":"エリが灰の中から、結晶を拾い上げる。",
         "location":"白い廃墟・奥地",
-        "narration":true},
+        "narration":true,
+        "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+      },
      
         {"speaker":"アウラ",
         "left":"アウラ",
         "right":"エリ",
         "text":"あ、結晶！あいつの魂かな。",
-        "location":"白い廃墟・奥地"},
+        "location":"白い廃墟・奥地",
+             "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+      },
     
       {"speaker":"エリ",
         "left":"アウラ",
         "right":"エリ",
         "text":"…",
-        "location":"白い廃墟・奥地"},
+        "location":"白い廃墟・奥地",
+             "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+      },
 
               {"speaker":"",
         "text":"結晶を手に、ぼーっとするエリをアウラが不思議そうな目で見ている。",
         "location":"白い廃墟・奥地",
-        "narration":true},
-
+        "narration":true,
+             "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+    
+      },
 
         {"speaker":"アウラ",
         "left":"アウラ",
         "right":"エリ",
         "text":"エリ？",
-        "location":"白い廃墟・奥地"},
+        "location":"白い廃墟・奥地",
+             "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+      },
 
                       {"speaker":"",
         "text":"はっとしたように、エリの意識がアウラに向く。",
         "location":"白い廃墟・奥地",
-        "narration":true},
+        "narration":true,      
+               "itemImage": "item_memory.webp?v=1200",
+        "itemImagePosition": "above-dialogue"
+      
+      },
 
         {"speaker":"エリ",
         "left":"アウラ",
@@ -1879,17 +1898,12 @@
         "text":"増えている。\n観測装置でも、この周辺の私たち以外のエネルギー反応が爆発的に増えてることが確認できている。",
         "location":"拠点・作業台"},
 
-
         {"speaker":"ミモザ",
           "text":"そう。これを考慮すると…\n私たち6人では、圧倒的に戦力が足りない。数の問題ね。",
         "location":"拠点・作業台"},
 
-                {"speaker":"レオナクロス",
-          "text":"それに申し訳ないが、私とミモザは戦闘向きではない…",
-        "location":"拠点・作業台"},
-
         {"speaker":"ミモザ",
-          "text":"あなたたちは強い、\n適合率も上がっている。\nけれど…圧倒的な数の暴力には敵わない。",
+          "text":"適合率は上がっているし、戦闘経験も積み、確実に強くなっている。\nけれど…圧倒的な数の暴力には敵わない。",
         "location":"拠点・作業台"},
       
         {"speaker":"ジグ",
