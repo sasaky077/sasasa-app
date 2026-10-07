@@ -601,6 +601,29 @@
   }
 
 
+  // build1214: CH02-04 イリシュ突進の予告モーション。
+  // 座標側の「溜め」と合わせ、色/明滅でも突進直前だと認識できるようにする。
+  if (!document.getElementById('shooting-irish-charge-telegraph-style-v1')) {
+    const irishChargeStyle = document.createElement('style');
+    irishChargeStyle.id = 'shooting-irish-charge-telegraph-style-v1';
+    irishChargeStyle.textContent = `
+      #shooting-event-root #shooting-boss.violence-charge-warning{
+        filter:
+          brightness(1.34)
+          saturate(1.28)
+          drop-shadow(0 0 9px rgba(255,255,255,.82))
+          drop-shadow(0 0 18px rgba(255,95,72,.78)) !important;
+        animation:shootingIrishChargeTelegraph .18s ease-in-out infinite alternate;
+      }
+      @keyframes shootingIrishChargeTelegraph{
+        from{opacity:.82;filter:brightness(1.15) saturate(1.12) drop-shadow(0 0 7px rgba(255,116,88,.52))}
+        to{opacity:1;filter:brightness(1.48) saturate(1.36) drop-shadow(0 0 13px rgba(255,255,255,.90)) drop-shadow(0 0 24px rgba(255,72,54,.92))}
+      }
+    `;
+    document.head.appendChild(irishChargeStyle);
+  }
+
+
   // ベロニカ通常攻撃：近距離の半月状剣撃。
   if (!document.getElementById('shooting-veronica-slash-style-v1')) {
     const veronicaSlashStyle = document.createElement('style');
@@ -2843,11 +2866,13 @@
   // Pointer Eventsが継続して届いている場合はそちらへ一時退避する。
   // Touchが復帰したら自動でTouch Eventsへ戻す。
   let nativeTouchPointerFallback = false;
-  // build551: iOS/PWAでは重いフレーム直後に一時的なtouchcancelが来ることがある。
-  // 140msだと1回のLong Taskで猶予を超えやすいため、操作復帰を待つ時間を少し拡張。
-  // touchendは従来どおり即終了するので、通常の離指レスポンスには影響しない。
-  const TOUCH_CANCEL_GRACE_MS = 900;
-  const TOUCH_CANCEL_GRACE_MS_CH07_BOSS = 4200;
+  // build1213:
+  // iOS/PWAでは描画負荷・GC・演出切替などで、実際には指を離していなくても
+  // touchcancel / pointercancel が一時的に発生することがある。
+  // 特定ステージだけの例外ではなく、全バトル共通の入力保護として扱う。
+  // 実touchendは従来どおり即終了。cancelだけは復帰イベントを長めに待つ。
+  const TOUCH_CANCEL_GRACE_MS = 4200;
+  const TOUCH_CANCEL_GRACE_MS_CH07_BOSS = 6500;
 
   function isChapter01BossStage() {
     return getSelectedBaseStageId() === 'shooting_ch01_04';
@@ -15093,6 +15118,15 @@
     const bossGojoFrozen = now < Number(state.gojoPurpleBossFreezeUntil || 0);
     const bossBlackHolePulled = isEnemyPullFieldActive(now) || bossGojoFrozen;
 
+    // イリシュが拘束/スタン/吸引された場合、突進予告の明滅を残さない。
+    if (
+      boss &&
+      BOSS && BOSS.behavior === 'violence_v1' &&
+      (bossGrabbed || bossStunned || bossBlackHolePulled)
+    ) {
+      boss.classList.remove('violence-charge-warning');
+    }
+
     const applyBossStartBlend = (targetX, targetY) => {
       const startedAt = Number(state.bossMotionBlendStartedAt || 0);
       const duration = Math.max(1, Number(state.bossMotionBlendDurationMs || 420));
@@ -15125,11 +15159,13 @@
         const ch04BossOffsetY = Math.min(8, Math.max(6, h * 0.009));
         state.boss.y = Math.max(64, h * 0.17 + ch04BossOffsetY);
       } else if (BOSS && BOSS.behavior === 'violence_v1') {
-        // CH02-4 イリシュ: 小型化した代わりに、前進時は味方側の壁ギリギリまで一気に突進する。
-        // 壁にめり込ませず、見た目上ボス下端が壁へ届く位置を端末サイズから毎回計算する。
+        // build1214 CH02-04 イリシュ:
+        // 「唐突に突っ込む」のをやめ、必ず約1秒の溜めを見せてから突進する。
+        // 予告中は少し後ろへ引く + 小刻みに震える + 赤白く明滅する。
         const cycleMs = 9200;
-        const approachMs = 620;  // ドン：壁際まで一気に突進
-        const initialDashDelayMs = 2600; // 開始直後は突進しない。少し間を置いて初回突進。
+        const telegraphMs = 1050;
+        const approachMs = 620;
+        const initialDashDelayMs = 2600;
         const battleElapsedMs = Math.max(0, now - Number(state.startedAt || now));
         const cycleAt = battleElapsedMs < initialDashDelayMs
           ? -1
@@ -15139,26 +15175,41 @@
         const violenceScale = Math.max(.1, Number(BOSS.uiScale || 1));
         const bossVisualHalfH = Math.max(48, ((boss && boss.offsetHeight) || 128) * violenceScale * .5);
         const pressY = Math.max(restY + 120, h - bossVisualHalfH - 4);
+        const recoilY = Math.max(48, restY - Math.min(22, h * .032));
 
-        // 横は軽くプレイヤー側へ寄るだけ。追尾し続ける動きにはしない。
+        // 横は軽くプレイヤー側へ寄るだけ。突進直前に狙いを読める程度に留める。
         const targetX = clamp(w * .5 + (state.player.x - w * .5) * .22, 58, w - 58);
         const followX = .014;
         state.boss.x += (targetX - state.boss.x) * Math.min(1, followX * 60 * dt);
 
-        if (cycleAt >= 0 && cycleAt < approachMs) {
-          // ドン：短時間で壁際へ。滞在フェーズは一切作らない。
-          const p = clamp(cycleAt / approachMs, 0, 1);
+        const isTelegraph = cycleAt >= 0 && cycleAt < telegraphMs;
+        const isDash = cycleAt >= telegraphMs && cycleAt < telegraphMs + approachMs;
+        if (boss) boss.classList.toggle('violence-charge-warning', isTelegraph);
+
+        if (isTelegraph) {
+          // 溜め：前半で後方へ引き、後半はその位置で細かく震えて力を溜める。
+          const p = clamp(cycleAt / telegraphMs, 0, 1);
+          const pull = Math.sin(Math.min(1, p * 1.55) * Math.PI * .5);
+          state.boss.y = restY + (recoilY - restY) * pull;
+          const shakeAmp = 1.0 + p * 2.4;
+          state.boss.x += Math.sin(cycleAt * .055) * shakeAmp;
+        } else if (isDash) {
+          // 突進：予告で引いた位置から一気に壁際へ。
+          const dashAt = cycleAt - telegraphMs;
+          const p = clamp(dashAt / approachMs, 0, 1);
           const eased = 1 - Math.pow(1 - p, 4);
-          state.boss.y = restY + (pressY - restY) * eased;
+          state.boss.y = recoilY + (pressY - recoilY) * eased;
         } else {
-          // パッ：突進終了フレームで後方位置へ即座に戻す。
-          // 後退アニメーションも壁際滞在も行わない。
+          // 突進終了後は後方へ戻して次の周期へ。
           state.boss.y = restY;
         }
 
-        // 小さな左右揺れで静止感を消す。Yは壁際の突進上限まで許可する。
-        state.boss.x = clamp(state.boss.x + Math.sin(t * .95) * .45, 54, w - 54);
-        state.boss.y = clamp(state.boss.y, 56, pressY);
+        // 通常時だけごく小さく左右へ揺らす。予告中の震えは上記で別表現。
+        if (!isTelegraph) {
+          state.boss.x += Math.sin(t * .95) * .45;
+        }
+        state.boss.x = clamp(state.boss.x, 54, w - 54);
+        state.boss.y = clamp(state.boss.y, 46, pressY);
       } else if (BOSS && BOSS.behavior === 'remnant07_v1') {
         updateChapter07BossMovement(now, w, h);
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
@@ -20321,10 +20372,12 @@
       nativeTouchCancelTimer = null;
       if (nativeTouchPointerFallback) return;
 
-      // CH01-04 / CH07-03のボス戦では、瞬間的な描画負荷や演出切替で
-      // iOS/WebKitがtouchcancelを送ることがある。これは離指とは限らないため、
-      // 実際のtouchend/pointerupが来るまでは論理入力を維持する。
-      // これにより「指を離していないのに移動・通常攻撃が途切れる」現象を防ぐ。
+      // cancel後に復帰イベントが来なかった場合のみフェイルセーフ終了する。
+      // touchmove / touchstart / pointermoveが戻ればタイマーは即解除され、
+      // 同じ指操作を継続する。CH02-04を含む全ステージ共通。
+      //
+      // CH01-04 / CH07系は既存仕様どおり、極端な演出負荷でも
+      // 実touchend/pointerupまで論理入力を維持する。
       if ((isChapter01BossStage() || isChapter07BossStage()) && pointerActive) {
         activePointerId = null;
         return;

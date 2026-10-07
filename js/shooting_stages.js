@@ -357,8 +357,9 @@
         enemyIds: Object.freeze([
           SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
         ]),
-        // build1189: BOSS戦の雑魚援軍もnormal / atackの2種に統一。
-        enemyVariants: Object.freeze(['normal', 'atack', 'normal', 'atack']),
+        // build1214: CH02-04 イリシュ戦は突進(ATACK)雑魚を出さない。
+        // 援軍は通常射撃タイプのみ。
+        enemyVariants: Object.freeze(['normal', 'normal', 'normal', 'normal']),
         totalEnemies: 4,
         maxActive: 1,
         startDelayMs: 4500,
