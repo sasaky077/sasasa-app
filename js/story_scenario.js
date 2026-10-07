@@ -1,4 +1,4 @@
-// ZERAPHIA STORY SCENARIO — CHAPTER 01-03
+// ZERAPHIA STORY SCENARIO — CHAPTER 01-04
 // Latest organized scenario.
 // Conventions:
 //   - location: background image filename (e.g. "scene_workbench.webp")
@@ -214,7 +214,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "おかえり諸君！\n私は今超イカツイ兵器を作成中だ！集中してるから邪魔しないでくれよ！",
+        "text": "おかえり諸君！\nボクは今超イカツイ兵器を作成中だ！集中してるから邪魔しないでくれよ！",
         "location": "scene_base.webp"
       },
       {
@@ -920,7 +920,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "私も同じだ。このとおり。",
+        "text": "ボクも同じだ。このとおり。",
         "location": "scene_workbench.webp",
         "itemImage": "item_memory.webp?v=1200",
         "itemImagePosition": "above-dialogue"
@@ -1006,7 +1006,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "かしこまり！\n私のスーパーハイテク頭脳で解き明かしてみせよう！",
+        "text": "かしこまり！\nボクのスーパーハイテク頭脳で解き明かしてみせよう！",
         "location": "scene_workbench.webp"
       },
       {
@@ -1035,7 +1035,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "確認できているのは5種類。私たちはこれを、火・水・木・光・闇と定義した。",
+        "text": "確認できているのは5種類。ボクたちはこれを、火・水・木・光・闇と定義した。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1271,7 +1271,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "ミモザの科学力と私の開発力のクロスオーバーだよ！",
+        "text": "ミモザの科学力とボクの開発力のクロスオーバーだよ！",
         "location": "scene_workbench.webp"
       },
       {
@@ -1399,7 +1399,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "アルノは私たちの研究内容を察して、自らを実験体にするよう、提案してくれた。",
+        "text": "アルノはボクたちの研究内容を察して、自らを実験体にするよう、提案してくれた。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1792,7 +1792,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "増えている。\n観測装置でも、この周辺の私たち以外のエネルギー反応が爆発的に増えてることが確認できている。",
+        "text": "増えている。\n観測装置でも、この周辺のボクたち以外のエネルギー反応が爆発的に増えてることが確認できている。",
         "location": "scene_workbench.webp"
       },
       {
@@ -2297,7 +2297,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "よし、ミモザ！私たちも、戦うぞ！",
+        "text": "よし、ミモザ！ボクたちも、戦うぞ！",
         "location": "scene_remnant_03.webp"
       }
     ],
@@ -2555,11 +2555,718 @@
         "text": "先ほど感じた誰かの気配は、もうどこにもない。\nそれでも、不思議な繋がりだけが胸の奥に残っていた。",
         "location": "scene_disk_down.webp",
         "narration": true
+      }
+    ]
+  },
+
+  "shooting_ch04_01": {
+    "chapter": 4,
+    "stageNo": 1,
+    "chapterTitle": "呼び声",
+    "stageTitle": "余波",
+    "pre": [
+      {
+        "speaker": "アウラ",
+        "text": "ねえエリ。本当に誰かの声が聞こえたの？",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "うん……はっきりじゃないけど。\n誰かが、遠くにいた。",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "円盤を通して、誰かとつながった。",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "……うん。",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "やっぱり、あの円盤はどこか別の場所に…",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "アウラ",
+        "text": "どこの誰なんだろう？",
+        "location": "scene_walk.webp"
       },
       {
         "speaker": "",
-        "text": "――新機能「邂逅」が解放されました。",
-        "location": "scene_disk_down.webp",
+        "text": "エリは返事をせず、自分の右手を見つめる。",
+        "location": "scene_walk.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アルノ",
+        "text": "……来るぞ。",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "",
+        "text": "白い霧の向こうから、小型レムナントの群れが姿を現す。",
+        "location": "scene_walk.webp",
+        "narration": true
+      }
+    ],
+    "combat": [],
+    "post": [
+      {
+        "speaker": "ジグ",
+        "text": "ったく……いい加減どっかで休みたいぜ…",
+        "location": "scene_walk.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "そうね。それに…しばらくこのあたりを調べたい。\nどこかに基地でも作れないかしら。",
+        "location": "scene_walk.webp"
+      },
+
+           {
+        "speaker": "アウラ",
+        "text": "さっきの塔でいいんじゃない？",
+        "location": "scene_walk.webp"
+      },
+
+            {
+        "speaker": "レオナクロス",
+        "text": "ダメだ…あそこは反応が強すぎる。\nなるべく反応が弱いところを探そう。屋根さえあればなんとかなる。",
+        "location": "scene_walk.webp"
+      },
+
+                 {
+        "speaker": "アウラ",
+        "text": "そっか、レムナントが寄ってきちゃうかもしれないのか…",
+        "location": "scene_walk.webp"
+      },
+
+                  {
+        "speaker": "レオナクロス",
+        "text": "幸い…周囲には小さな建物がいくつかある。少し探索しよう！",
+        "location": "scene_walk.webp"
+      },
+
+      {
+        "speaker": "",
+        "text": "一行は基地の候補になる場所を探すことにした。\nエリの右手には、まだ不思議な感触が残っていた。",
+        "location": "scene_walk.webp",
+        "narration": true
+      }
+    ]
+  },
+
+"shooting_ch04_02": {
+    "chapter": 4,
+    "stageNo": 2,
+    "chapterTitle": "呼び声",
+    "stageTitle": "異質",
+    "pre": [
+      {
+        "speaker": "",
+        "text": "しばらく歩いた先。\n半ば崩れた石造りの建物が、霧の中から姿を現す。",
+        "location": "scene_chapter04_1.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アウラ",
+        "text": "あ！屋根ある！",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "text": "反応も弱い。ここなら拠点にできそうだ。",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "ジグ",
+        "text": "やっと休めるのか…",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "",
+        "text": "建物に近づいたそのとき、\n入口の影で、何かがゆっくりと身を起こす。",
+        "location": "scene_chapter04_1.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アルノ",
+        "text": "…先客がいるようだ。",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "",
+        "text": "現れたレムナントの身体を、薄い膜のような光が覆っている。",
+        "location": "scene_chapter04_1.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "……また強化個体ね。",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "ジグ",
+        "text": "ったく…バリア持ちかよ。ハズレだぜ。",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "アルノ",
+        "text": "青い方はお前たちに任せる…",
+        "location": "scene_chapter04_1.webp"
+      },
+      {
+        "speaker": "アウラ",
+        "text": "ラジャー！",
+        "location": "scene_chapter04_1.webp"
+      }
+    ],
+
+    "combat": [
+      {
+        "cue": "barrier_break_wood",
+        "speaker": "アルノ",
+        "text": "……片付いたか。",
+                "location": "scene_chapter04_1.webp"
+
+      },
+      {
+        "cue": "barrier_break_water",
+        "speaker": "アウラ",
+        "text": "こっちも終わり！",
+                "location": "scene_chapter04_1.webp"
+
+      }
+    ],
+
+    "post": [
+      {
+        "speaker": "レオナクロス",
+        "text": "よし、基地づくりを始めよう！",
+        "location": "scene_chapter04_2.webp"
+      },
+      {
+        "speaker": "",
+        "text": "一行は建物の中を確かめる。\n壁は崩れかけているが、雨風を凌ぐには十分な環境だった。",
+        "location": "scene_chapter04_2.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "text": "使えそうな資材を集め、入口を補強する。\n最低限ではあるが、しばらく身を寄せる場所は確保できそうだった。",
+        "location": "scene_chapter04_2.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アウラ",
+        "text": "じゃあ、ここがしばらく私たちの家だね！",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "ジグ",
+        "text": "家ってほど立派じゃねぇけどな。",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "text": "それにしても…妙だな。",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "……ええ。",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "text": "ちょっと前まで、強化個体なんて滅多に見なかった。\nここに来るまでの間に、明らかに数が増えている。",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "……何かが変わり始めているのかもしれない。",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "アルノ",
+        "text": "…",
+        "location": "scene_chapter04_3.webp"
+      },
+      {
+        "speaker": "",
+        "text": "その夜。一同は交代で眠りにつく。",
+        "location": "scene_chapter04_4.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ジグ",
+        "text": "久しぶりに屋根のあるところで眠れるぜ…",
+        "location": "scene_chapter04_4.webp"
+      },
+      {
+        "speaker": "アウラ",
+        "text": "ごちそう…ごちそう…むにゃむにゃ",
+        "location": "scene_chapter04_4.webp"
+      },
+      {
+        "speaker": "",
+        "text": "静寂の中、エリの耳に、かすかな川のせせらぎが届いた。\nこの辺りに川などないはずなのに、不思議と懐かしいその音に身を委ねながら、エリはゆっくりと目を閉じた。",
+        "location": "scene_chapter04_4.webp",
+        "narration": true
+      },
+           {
+        "transition": "fade_black",
+        "text": ""
+      }
+    ]
+  },
+
+  "shooting_ch04_03": {
+    "chapter": 4,
+    "stageNo": 3,
+    "chapterTitle": "呼び声",
+    "stageTitle": "炎壁",
+    "pre": [
+
+           {
+        "transition": "fade_black",
+        "text": ""
+      },
+            {
+        "speaker": "",
+        "text": "翌朝。\n一行は拠点を出て、再び円盤の塔へ向かっていた。",
+        "location": "scene_tower_far.webp",
+        "narration": true
+      },
+
+  　　   {
+        "speaker": "ミモザ",
+        "text": "今日から、本格的に円盤を調べるわ。\nどこかに繋がっているとしたら…何か重要な発見があるかもしれないわ。",
+        "location": "scene_tower_far.webp"
+      },
+
+        　　   {
+        "speaker": "レオナクロス",
+        "text": "しばらくはここに定住かもね。",
+        "location": "scene_tower_far.webp"
+      },
+
+              　　   {
+        "speaker": "アウラ",
+        "text": "あ…！あれ！",
+        "location": "scene_tower_far.webp"
+      },
+
+      {
+        "speaker": "",
+        "text": "塔へ続く道を塞ぐように、二体の小型レムナントが立ちはだかる。\nその全身は、赤い炎のような膜に覆れている。",
+        "location": "scene_tower_far.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "赤…",
+        "location": "scene_tower_far.webp"
+      },
+      {
+        "speaker": "ジグ",
+        "text": "水の出番だ。\n……って、水なんてウチらにいねぇぞ。",
+        "location": "scene_tower_far.webp"
+      },
+      {
+        "speaker": "アルノ",
+        "text": "…",
+        "location": "scene_tower_far.webp"
+      }
+    ],
+    "combat": [
+      {
+        "cue": "immune_arno",
+        "speaker": "アルノ",
+        "text": "……駄目だ。通らない。",
+                "location": "scene_tower_far.webp"
+      },
+      {
+        "cue": "immune_aura",
+        "speaker": "アウラ",
+        "text": "私もだめ！全然効いてない！",
+                "location": "scene_tower_far.webp"
+      },
+      {
+        "cue": "immune_eri",
+        "speaker": "エリ",
+        "text": "私も……",
+                "location": "scene_tower_far.webp"
+      },
+      {
+        "cue": "all_immune",
+        "speaker": "ジグ",
+        "text": "チッ……完全に手詰まりじゃねぇか。",
+                "location": "scene_tower_far.webp"
+      },
+            {
+        "cue": "all_immune",
+        "speaker": "ジグ",
+        "text": "レオナ！何か手は？",
+                "location": "scene_tower_far.webp"
+      },
+                  {
+        "cue": "all_immune",
+        "speaker": "レオナクロス",
+        "text": "相性そのものは、こっちじゃ覆せない…！",
+                "location": "scene_tower_far.webp"
+      },
+
+      　 {
+        "cue": "all_immune",
+        "speaker": "レオナクロス",
+        "text": "ボクのフォトンバスターもまるで効かない…",
+                "location": "scene_tower_far.webp"
+      },
+
+        {
+        "cue": "arno_cover",
+        "speaker": "アルノ",
+        "text": "倒せないなら、遠くへ引き離す…\nお前たちは下がれ。",
+                "location": "scene_tower_far.webp"
+      },
+      {
+        "cue": "arno_cover_leona",
+        "speaker": "レオナクロス",
+        "text": "アルノ、無茶だ！\nこいつら、スタミナは無尽蔵だ…地獄の底までついてくるぞ！",
+                "location": "scene_tower_far.webp"
+      },
+      {
+        "cue": "eri_despair",
+        "speaker": "エリ",
+        "text": "ど…どうしたら…",
+                "location": "scene_tower_far.webp"
+      },
+            {
+        "cue": "eri_hears_voice",
+        "speaker": "",
+        "text": "ミモザも、頭を張り巡らしているが、手詰まりの表情。",
+                        "location": "scene_tower_far.webp",
+
+        "narration": true
+      },
+      {
+        "cue": "eri_hears_voice",
+        "speaker": "",
+        "text": "――そのとき。\nエリの耳の奥で、かすかなせせらぎが聞こえた。",
+                                "location": "scene_tower_far.webp",
+        "narration": true
+      },
+      {
+        "cue": "eri_call_1",
+        "speaker": "エリ",
+        "text": "……この音……もしかして…",
+                                "location": "scene_tower_far.webp",
+      },
+      {
+        "cue": "eri_call_2",
+        "speaker": "エリ",
+        "text": "……聞こえる……？\nお願い……力を貸して…",
+                                "location": "scene_tower_far.webp",
+      },
+      {
+        "cue": "summon_lyune",
+        "speaker": "",
+        "text": "――水音。\nエリの胸元から淡い光が広がり、水面のような揺らぎが生まれた。",
+                                "location": "scene_tower_far.webp",
+        "narration": true
+      },
+      {
+        "cue": "lyune_first",
+        "speaker": "？？？",
+        "text": "……よ、呼んだよね…？",
+                                "location": "scene_tower_far.webp",
+      },
+      {
+        "cue": "barrier_break",
+        "speaker": "",
+        "text": "青い光が走る。\n火の膜が大きく揺らぎ、砕け散った。",
+                                "location": "scene_tower_far.webp",
+        "narration": true
+      },
+      {
+        "cue": "aura_surprised",
+        "speaker": "アウラ",
+        "text": "えっ……？！誰？！",
+                                "location": "scene_tower_far.webp",
+      }
+    ],
+    "post": [
+      {
+        "speaker": "",
+        "text": "火のバリアを失ったレムナントが崩れ、白い風の中へ消えていく。",
+        "location": "scene_ch04_03.webp",
+                                "location": "scene_tower_far.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "text": "その向こうに、水色の光をまとった少女が立っていた。",
+        "location": "scene_ch04_03_lyune.webp",
+                                "location": "scene_tower_far.webp",
+        "narration": true
+      },
+      {
+        "speaker": "エリ",
+        "text": "助けてくれて……ありがとう。\nあなたは……？",
+        "location": "scene_ch04_03_lyune.webp"
+      },
+      {
+        "speaker": "？？？",
+        "text": "……リュネ…",
+        "location": "scene_ch04_03_lyune.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "リュネ……。",
+        "location": "scene_ch04_03_lyune.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "すごく…あたたかい場所。\nそこであなたに会って…そして…呼ばれた。",
+        "location": "scene_ch04_03_lyune.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "声が……届いたの？",
+        "location": "scene_ch04_03_lyune.webp"
+      },
+      {
+        "speaker": "",
+        "text": "ミモザはエリとリュネを交互に見つめる。",
+        "location": "scene_ch04_03_lyune.webp",
+        "narration": true
+      },
+            {
+        "speaker": "ミモザ",
+        "text": "……もしかして…",
+        "location": "scene_ch04_03_lyune.webp"
+      }
+
+    ]
+  },
+
+  "shooting_ch04_04": {
+    "chapter": 4,
+    "stageNo": 4,
+    "chapterTitle": "呼び声",
+    "stageTitle": "リュネ",
+    "pre": [
+      {
+        "speaker": "アウラ",
+        "text": "リュネっていうんだ！\nねえねえ、どこから来たの？",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "……分からない。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "白いところにいて……声が聞こえた。\n気づいたら、ここにいた。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "私の……声？",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "うん。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "……待って。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "",
+        "text": "ミモザが、はっとしたようにエリを見る。",
+        "location": "scene_ch04_04.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "……違ったのね。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "接続点は、円盤じゃない。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "え……？",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "エリ。\nあなた自身が、誰かと誰かを繋ぐ接続点なのかもしれない。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "text": "円盤は、その力を開くきっかけだった……",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "少なくとも、今起きた現象を見る限りはね。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "",
+        "text": "その瞬間、周囲の紋様が一斉に光を放つ。",
+        "location": "scene_ch04_04.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アルノ",
+        "text": "……囲まれた。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "",
+        "text": "リュネの出現に呼応するように、周囲から大量のレムナントが姿を現す。",
+        "location": "scene_ch04_04.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ジグ",
+        "text": "話はあとだ！来るぞ！",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "……私も戦う。",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "うん……お願い！",
+        "location": "scene_ch04_04.webp"
+      }
+    ],
+    "combat": [
+      {
+        "cue": "lyune_join_1",
+        "speaker": "リュネ",
+        "text": "エリ、そっちは任せて。",
+                "location": "scene_ch04_04.webp"
+      },
+      {
+        "cue": "lyune_join_2",
+        "speaker": "エリ",
+        "text": "うん！",
+                "location": "scene_ch04_04.webp"
+      }
+    ],
+    "post": [
+      {
+        "speaker": "",
+        "text": "最後のレムナントが崩れ、辺りに静けさが戻る。",
+        "location": "scene_ch04_04.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アウラ",
+        "text": "やったー！リュネ、すごいね！",
+        "location": "scene_ch04_04.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "……。",
+        "location": "scene_ch04_04_lyune_fade.webp"
+      },
+      {
+        "speaker": "",
+        "text": "リュネの輪郭が、淡い光の粒へとほどけ始める。",
+        "location": "scene_ch04_04_lyune_fade.webp",
+        "narration": true
+      },
+      {
+        "speaker": "エリ",
+        "text": "リュネ……？！",
+        "location": "scene_ch04_04_lyune_fade.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "たぶん……長くは、ここにいられないみたい。",
+        "location": "scene_ch04_04_lyune_fade.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "また……会える？",
+        "location": "scene_ch04_04_lyune_fade.webp"
+      },
+      {
+        "speaker": "リュネ",
+        "text": "あなたが呼んでくれたら。\nきっと。",
+        "location": "scene_ch04_04_lyune_fade.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "……リュネ！",
+        "location": "scene_ch04_04_lyune_fade.webp"
+      },
+      {
+        "speaker": "",
+        "text": "リュネの身体が光に包まれ、静かに消えていく。",
+        "location": "scene_ch04_04_lyune_fade.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "text": "同時に、エリの膝から少しだけ力が抜ける。",
+        "location": "scene_ch04_05.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ジグ",
+        "text": "おい……大丈夫か？",
+        "location": "scene_ch04_05.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "うん……ちょっと疲れただけ。",
+        "location": "scene_ch04_05.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "呼び出せるとしても、長時間の接続は難しい……ということね。",
+        "location": "scene_ch04_05.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "text": "だが、これは大発見だぞ。\nエリを通して、離れた存在をこちら側へ呼び出せる。",
+        "location": "scene_ch04_05.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "ええ。\nただし、エリの負担もある。無理はさせられないわ。",
+        "location": "scene_ch04_05.webp"
+      },
+      {
+        "speaker": "エリ",
+        "text": "……リュネ。",
+        "location": "scene_ch04_05.webp"
+      },
+      {
+        "speaker": "",
+        "text": "エリは、リュネが消えた場所をしばらく見つめていた。",
+        "location": "scene_ch04_05.webp",
         "narration": true
       }
     ]
