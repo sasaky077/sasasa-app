@@ -3213,12 +3213,12 @@
       },
       {
         "speaker": "リュネ",
-        "text": "あなたが呼んでくれたら。\nきっと。",
+        "text": "…エリが呼んでくれたら。\nきっと。",
         "location": "scene_ch04_04_lyune_fade.webp"
       },
       {
         "speaker": "エリ",
-        "text": "……リュネ！",
+        "text": "…そっか…またね。",
         "location": "scene_ch04_04_lyune_fade.webp"
       },
       {

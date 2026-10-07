@@ -44,6 +44,9 @@
     IVERNA: 32,
     REI: 33,
     GRESHA: 34,
+    GISELLE: 35,
+    TOYFEL: 37,
+    CHLOE: 38,
     LEONA_CROSS: 39,
   });
 
@@ -93,6 +96,9 @@
     32: 'sr',  // イヴェルナ
     33: 'sr',  // レイ
     34: 'r',   // グレシャ
+    35: 'r',   // ジゼル
+    37: 'r',   // トイフェル
+    38: 'r',   // クロエ
     39: 'r',   // レオナクロス
   });
 
@@ -876,6 +882,72 @@
     "homeScale": 0.83,
     "homeOffsetX": 0,
     "homeOffsetY": -40,
+    "hidden": false
+  },
+  "35": {
+    "id": 35,
+    "name": "ジゼル",
+    "element": "aqua",
+    "hp": 620,
+    "atk": 255,
+    "image": "images/chara_35_battle_back.webp",
+    "panelImage": "images/chara_35_panel.webp",
+    "cutinImage": "images/chara_35_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_35.webp",
+    "homeImage": "images/chara_35_cut.webp",
+    "upImage": "images/chara_35_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "37": {
+    "id": 37,
+    "name": "トイフェル",
+    "element": "dark",
+    "hp": 580,
+    "atk": 290,
+    "image": "images/chara_37_battle_back.webp",
+    "panelImage": "images/chara_37_panel.webp",
+    "cutinImage": "images/chara_37_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_37.webp",
+    "homeImage": "images/chara_37_cut.webp",
+    "upImage": "images/chara_37_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
+    "hidden": false
+  },
+  "38": {
+    "id": 38,
+    "name": "クロエ",
+    "element": "light",
+    "hp": 590,
+    "atk": 255,
+    "image": "images/chara_38_battle_back.webp",
+    "panelImage": "images/chara_38_panel.webp",
+    "cutinImage": "images/chara_38_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_38.webp",
+    "homeImage": "images/chara_38_cut.webp",
+    "upImage": "images/chara_38_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
     "hidden": false
   },
   "39": {
@@ -1915,6 +1987,83 @@
     noahUltHitAtkMultiplier: 0.35,
     noahUltBeatMs: 540,
     noahUltParalyzeMs: 1500,
+  });
+
+
+  // ============================================================
+  // build1248: ID35 / 37 / 38 正式プロフィール復帰
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.GISELLE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.GISELLE,
+    effectKey: 'giselle',
+    label: 'ORBIT / ATK FIELD',
+    description: '水属性の2発ORBIT。ULTは敵弾を消去し、10秒間ATK×1.3の強化フィールドを展開する。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
+    ultName: 'AQUA FIELD',
+    ultType: 'wolf_atk_field',
+    shotType: 'orbit',
+    shotCount: 2,
+    shotSpacing: 28,
+    fireRate: 450,
+    bulletSpeed: 520,
+    shotPowerRate: 0.165,
+    orbitRadius: 30,
+    orbitAngularSpeed: 12.0,
+    orbitForwardLoopRate: 0.29,
+    orbitPhaseStep: Math.PI,
+    burstNeed: 30,
+    ultGainPerHit: 0.75,
+    ultFieldDurationMs: 10000,
+    ultFieldAtkMultiplier: 1.3,
+    ultFieldRadius: 112,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.TOYFEL] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.TOYFEL,
+    effectKey: 'toyfel',
+    label: 'BOMB / DUAL BLACK HOLE',
+    description: '闇属性のBOMB M。ULTは左右端にブラックホールを7秒間展開し、敵弾を吸収する。',
+    ultDescription: '発動時の自機Y座標に合わせ、画面左右端へ2つのブラックホールを7秒間展開。敵弾を吸収する。',
+    ultName: 'DUAL BLACK HOLE',
+    ultType: 'toyfel_double_black_hole',
+    shotType: 'bomb',
+    bombSize: 'M',
+    shotCount: 1,
+    fireRate: 550,
+    bulletSpeed: 660,
+    shotPowerRate: 0.27,
+    splashRadius: 76,
+    splashDamageRate: 0.55,
+    burstNeed: 30,
+    ultGainPerHit: 0.60,
+    toyfelBlackHoleDurationMs: 7000,
+    toyfelBlackHoleSize: 96,
+    toyfelBlackHoleEdgeInset: 34,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.CHLOE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.CHLOE,
+    effectKey: 'chloe',
+    label: 'BOMB / ELEMENT PAINT',
+    description: '光属性のBOMB M。ULT「虹のかかる世界」は6属性の貫通弾を同時に放ち、命中した敵の属性を書き換える。',
+    ultDescription: '無・火・水・木・闇・光の6属性弾を同時発射。全弾貫通し、命中ごとに対象属性を上書きする。',
+    ultName: '虹のかかる世界',
+    ultType: 'painter_rainbow_world',
+    shotType: 'bomb',
+    bombSize: 'M',
+    shotCount: 1,
+    fireRate: 550,
+    bulletSpeed: 660,
+    shotPowerRate: 0.27,
+    splashRadius: 76,
+    splashDamageRate: 0.55,
+    burstNeed: 30,
+    ultGainPerHit: 0.60,
+    paintSpreadDamageAtkMultiplier: 1.75,
+    paintSpreadSpeed: 560,
   });
 
 

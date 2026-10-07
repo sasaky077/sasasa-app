@@ -2001,12 +2001,19 @@
     shooting_ch02_04: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch03_02: Object.freeze([5, 20]),   // ジグ / アルノ
     shooting_ch03_03: Object.freeze([20]),      // アルノ
+    shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
+    shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
+    shooting_ch04_04: Object.freeze([1, 25]),      // エリ / リュネ（リュネはSTORYゲストLv30）
   });
 
   // build1216: CH03-04はストーリー固定ではなく、シナリオ上その場にいる5人から3人を選択。
   const STORY_SELECTABLE_PARTY_MAP = Object.freeze({
     shooting_ch03_04: Object.freeze({
       allowedIds: Object.freeze([1, 5, 3, 39, 28]), // エリ / ジグ / アウラ / レオナクロス / ミモザ
+      requiredSize: 3,
+    }),
+    shooting_ch04_01: Object.freeze({
+      allowedIds: Object.freeze([1, 5, 3, 20, 28, 39]),
       requiredSize: 3,
     }),
   });
@@ -2539,7 +2546,15 @@
 
   shootingUiLayoutType = loadShootingUiLayoutType();
 
+  function isChapter04LyuneGuest(id) {
+    if (Number(id) !== 25 || !selectedStage) return false;
+    const key = String(selectedStage.id || '').toLowerCase().replace(/^shooting_beginner_/, 'shooting_');
+    return key === 'shooting_ch04_04';
+  }
+
   function getShootingResonanceLevel(id) {
+    // build1247: CH04-04のリュネは所持状況に関係なく無凸Lv30のSTORYゲストとして扱う。
+    if (isChapter04LyuneGuest(id)) return 0;
     try {
       const owned = typeof getOwnedShootingInstance === 'function'
         ? getOwnedShootingInstance(Number(id))
@@ -2570,8 +2585,12 @@
       const owned = typeof getOwnedShootingInstance === 'function'
         ? getOwnedShootingInstance(numericId)
         : null;
-      const level = Math.max(1, Number(owned && (owned.characterLevel != null ? owned.characterLevel : owned.character_level) || 1));
-      const rarity = (owned && owned.rarity) || profile.rarity || base.rarity || 'r';
+      const level = isChapter04LyuneGuest(numericId)
+        ? 30
+        : Math.max(1, Number(owned && (owned.characterLevel != null ? owned.characterLevel : owned.character_level) || 1));
+      const rarity = isChapter04LyuneGuest(numericId)
+        ? (profile.rarity || base.rarity || 'r')
+        : ((owned && owned.rarity) || profile.rarity || base.rarity || 'r');
       if (window.CharacterLeveling && typeof window.CharacterLeveling.applyToProfile === 'function') {
         profile = window.CharacterLeveling.applyToProfile(profile, rarity, lb, level) || profile;
       }
@@ -3659,6 +3678,11 @@
       ch104RescueTriggered: false,
       ch104ArnoJoined: false,
       ch104PreRescueElapsedMs: 0,
+      ch403StoryPaused: false,
+      ch403StoryPauseStartedAt: 0,
+      ch403EncounterTriggered: false,
+      ch403BarrierBroken: false,
+      ch403ImmuneHits: 0,
       // build1176: アルノULT「瞬迅・千ノ刻」専用の時間停止状態。
       arnoSlashActive: false,
       arnoSlashStartedAt: 0,
@@ -7393,6 +7417,7 @@
   function isStageWeaknessOnlyTarget(targetElement) {
     const target = normalizeCombatElement(targetElement);
     if (!target || target === 'neutral') return false;
+    if (isChapter403FireWallStage() && state && state.ch403BarrierBroken) return false;
     return getStageWeaknessBarrierElements().includes(target);
   }
 
@@ -7467,6 +7492,10 @@
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
     const incoming = !!(options && options.incoming);
 
+    if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && normalizeCombatElement(targetElement) === 'fire' && normalizedAttackElement !== 'aqua' && !ignoreStageImmunity) {
+      return 0;
+    }
+
     // build1023:
     // 無属性は全属性へ常に等倍で通る共通ルール。
     // weakness-only属性バリアでも、無属性だけはIMMUNE判定の例外として1.0倍で通す。
@@ -7488,6 +7517,8 @@
     const normalizedAttackElement = normalizeCombatElement(attackElement) || 'neutral';
     const rate = getElementDamageMultiplier(normalizedAttackElement, targetElement);
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
+
+    if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && normalizeCombatElement(targetElement) === 'fire' && normalizedAttackElement !== 'aqua' && !ignoreStageImmunity) return 'immune';
 
     if (
       normalizedAttackElement !== 'neutral' &&
@@ -10057,6 +10088,113 @@
   }
 
 
+  function isChapter403FireWallStage() {
+    return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_03));
+  }
+
+  function getChapter403CombatEntries() {
+    try {
+      const data = window.ZERAPHIA_STORY_SCENARIO && window.ZERAPHIA_STORY_SCENARIO.shooting_ch04_03;
+      return data && Array.isArray(data.combat) ? data.combat.filter(Boolean) : [];
+    } catch (_) { return []; }
+  }
+
+  function getChapter403Portrait(speaker) {
+    const map = {
+      'エリ': 'images/chara_01_panel.webp', 'アウラ': 'images/chara_03_panel.webp',
+      'ジグ': 'images/chara_05_panel.webp', 'アルノ': 'images/chara_20_panel.webp',
+      'ミモザ': 'images/chara_28_panel.webp', 'レオナクロス': 'images/chara_39_panel.webp',
+      'リュネ': 'images/chara_25_panel.webp',
+    };
+    return map[String(speaker || '')] || '';
+  }
+
+  function beginChapter403StoryPause() {
+    if (!state || !isChapter403FireWallStage()) return;
+    if (!state.ch403StoryPaused) state.ch403StoryPauseStartedAt = performance.now();
+    state.ch403StoryPaused = true;
+    state.phaseTransition = true;
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), performance.now() + 120000);
+  }
+
+  function endChapter403StoryPause() {
+    if (!state || !isChapter403FireWallStage()) return;
+    const started = Number(state.ch403StoryPauseStartedAt || 0);
+    if (started > 0 && Number(state.startedAt || 0) > 0) state.startedAt += Math.max(0, performance.now() - started);
+    state.ch403StoryPauseStartedAt = 0;
+    state.ch403StoryPaused = false;
+    state.phaseTransition = false;
+    state.playerShotLockUntil = 0;
+    prevTs = performance.now();
+  }
+
+  function breakChapter403FireBarriers() {
+    if (!state || !isChapter403FireWallStage()) return;
+    state.ch403BarrierBroken = true;
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy) return;
+      if (enemy.weaknessBarrierEl) {
+        enemy.weaknessBarrierEl.classList.add('hit');
+        const shield = enemy.weaknessBarrierEl;
+        setTimeout(() => { if (shield && shield.isConnected) shield.remove(); }, 180);
+        enemy.weaknessBarrierEl = null;
+      }
+      if (enemy.el) enemy.el.classList.remove('has-weakness-barrier');
+    });
+  }
+
+  function showChapter403EncounterSequence(onComplete) {
+    if (!state || !isChapter403FireWallStage()) { if (typeof onComplete === 'function') onComplete(); return; }
+    ensureChapter101TutorialStyle();
+    const root = document.getElementById(ROOT_ID);
+    if (!root) { if (typeof onComplete === 'function') onComplete(); return; }
+    root.querySelectorAll('.shooting-ch403-encounter-overlay').forEach(el => el.remove());
+    const pages = getChapter403CombatEntries();
+    if (!pages.length) { if (typeof onComplete === 'function') onComplete(); return; }
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch101-tutorial-overlay shooting-ch403-encounter-overlay';
+    overlay.innerHTML = `<div class="shooting-ch101-tutorial-card"><img class="shooting-ch101-tutorial-portrait" src="" alt="" draggable="false"><div class="shooting-ch101-tutorial-speaker"></div><div class="shooting-ch101-tutorial-text"></div><div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div></div>`;
+    root.appendChild(overlay);
+    let pageIndex = 0;
+    const card = overlay.querySelector('.shooting-ch101-tutorial-card');
+    const portrait = overlay.querySelector('.shooting-ch101-tutorial-portrait');
+    const speakerEl = overlay.querySelector('.shooting-ch101-tutorial-speaker');
+    const textEl = overlay.querySelector('.shooting-ch101-tutorial-text');
+    const renderPage = () => {
+      const page = pages[pageIndex] || {};
+      const speaker = String(page.speaker || '');
+      const portraitSrc = getChapter403Portrait(speaker);
+      card.classList.toggle('no-speaker', !speaker);
+      speakerEl.textContent = speaker;
+      textEl.textContent = String(page.text || '');
+      if (portraitSrc) { portrait.src = portraitSrc; portrait.style.display = ''; }
+      else { portrait.removeAttribute('src'); portrait.style.display = 'none'; }
+    };
+    const finish = () => { overlay.classList.remove('show'); setTimeout(() => { overlay.remove(); if (typeof onComplete === 'function') onComplete(); }, 160); };
+    overlay.addEventListener('pointerup', event => {
+      event.preventDefault(); event.stopPropagation(); pageIndex += 1;
+      if (pageIndex >= pages.length) { finish(); return; }
+      renderPage();
+    }, { passive:false });
+    renderPage(); requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
+  function triggerChapter403EncounterSequence() {
+    if (!state || !isChapter403FireWallStage() || state.ch403EncounterTriggered || state.ended) return;
+    state.ch403EncounterTriggered = true;
+    beginChapter403StoryPause();
+    clearProjectiles();
+    setTimeout(() => {
+      if (!state || state.ended || !isChapter403FireWallStage()) return;
+      showChapter403EncounterSequence(() => {
+        if (!state || state.ended || !isChapter403FireWallStage()) return;
+        breakChapter403FireBarriers();
+        endChapter403StoryPause();
+      });
+    }, 180);
+  }
+
+
   function isChapter104BossStage() {
     return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04));
   }
@@ -12186,6 +12324,11 @@
     if (!enemy || enemy.hp <= 0) return 0;
     const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
+
+    if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && !state.ch403EncounterTriggered && elementReaction === 'immune') {
+      state.ch403ImmuneHits = Math.max(0, Number(state.ch403ImmuneHits || 0)) + 1;
+      if (state.ch403ImmuneHits >= 4) requestAnimationFrame(() => triggerChapter403EncounterSequence());
+    }
 
     // HPが変わらないIMMUNE弾でHP DOMを書き直さない。
     if (appliedDamage > 0) renderMiniEnemyHp(enemy, true);
@@ -17858,6 +18001,14 @@
       return;
     }
 
+    if (state.ch403StoryPaused) {
+      prevTs = ts;
+      if (!state.koTransition) updateMovement(0, ts, true);
+      renderHud();
+      rafId = requestAnimationFrame(gameLoop);
+      return;
+    }
+
     // アルノULT「瞬迅・千ノ刻」中は盤面時間を完全停止する。
     // RAFだけは継続し、停止中に敵の射撃時計・移動差分が蓄積しないよう毎フレーム基準時刻を更新する。
     if (state.arnoSlashActive) {
@@ -18354,12 +18505,23 @@
     );
 
     if (stage.weaknessOnlyEnemies === true || isDailyAdvanced) {
-      const ids = Array.isArray(stage.enemyIds) ? stage.enemyIds : [];
-      for (const enemyId of ids) {
-        const def = getShootingEnemy(enemyId);
-        if (!def || def.kind === 'boss') continue;
-        pushUnique(def.element || stage.enemyElement || stage.element);
-        if (result.length >= 3) break;
+      const normalCfg = stage.normalBattle || {};
+      const sequence = Array.isArray(normalCfg.enemyElementSequence)
+        ? normalCfg.enemyElementSequence
+        : null;
+      if (sequence && sequence.length) {
+        for (const value of sequence) {
+          pushUnique(value);
+          if (result.length >= 3) break;
+        }
+      } else {
+        const ids = Array.isArray(stage.enemyIds) ? stage.enemyIds : [];
+        for (const enemyId of ids) {
+          const def = getShootingEnemy(enemyId);
+          if (!def || def.kind === 'boss') continue;
+          pushUnique(def.element || stage.enemyElement || stage.element);
+          if (result.length >= 3) break;
+        }
       }
     }
     return result;
