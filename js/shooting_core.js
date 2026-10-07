@@ -1999,6 +1999,16 @@
     shooting_ch02_02: Object.freeze([20]),      // アルノ
     shooting_ch02_03: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch02_04: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
+    shooting_ch03_02: Object.freeze([5, 20]),   // ジグ / アルノ
+    shooting_ch03_03: Object.freeze([20]),      // アルノ
+  });
+
+  // build1216: CH03-04はストーリー固定ではなく、シナリオ上その場にいる5人から3人を選択。
+  const STORY_SELECTABLE_PARTY_MAP = Object.freeze({
+    shooting_ch03_04: Object.freeze({
+      allowedIds: Object.freeze([1, 5, 3, 39, 28]), // エリ / ジグ / アウラ / レオナクロス / ミモザ
+      requiredSize: 3,
+    }),
   });
 
   function getSelectedStoryFixedPartyIds() {
@@ -2008,6 +2018,29 @@
       .replace(/^shooting_beginner_/, 'shooting_');
     const ids = STORY_FIXED_PARTY_MAP[key];
     return Array.isArray(ids) && ids.length ? ids.map(Number) : null;
+  }
+
+  function getSelectedStorySelectablePartyConfig() {
+    if (!isStoryShootingStage() || !selectedStage) return null;
+    const key = String(selectedStage.id || '')
+      .toLowerCase()
+      .replace(/^shooting_beginner_/, 'shooting_');
+    const cfg = STORY_SELECTABLE_PARTY_MAP[key];
+    if (!cfg || !Array.isArray(cfg.allowedIds) || !cfg.allowedIds.length) return null;
+    return {
+      allowedIds: cfg.allowedIds.map(Number),
+      requiredSize: Math.max(1, Math.min(PARTY_SIZE, Number(cfg.requiredSize || PARTY_SIZE))),
+    };
+  }
+
+  function isSelectedStorySelectablePartyStage() {
+    return !!getSelectedStorySelectablePartyConfig();
+  }
+
+  function isAllowedForSelectedStoryParty(id) {
+    const cfg = getSelectedStorySelectablePartyConfig();
+    if (!cfg) return true;
+    return cfg.allowedIds.includes(Number(id));
   }
 
   function applySelectedStoryFixedParty() {
@@ -2077,6 +2110,20 @@
     if (!isStoryShootingStage()) return;
     // build1080: ステージ固有の固定編成が定義されている場合は最優先。
     if (applySelectedStoryFixedParty()) return;
+    // build1216: CH03-04は指定5人から任意3人。エリを固定しない。
+    if (isSelectedStorySelectablePartyStage()) {
+      const cfg = getSelectedStorySelectablePartyConfig();
+      selectedPartyIds = selectedPartyIds
+        .map(Number)
+        .filter((id, index, arr) =>
+          arr.indexOf(id) === index &&
+          cfg.allowedIds.includes(id) &&
+          !!SHOOTING_CHARACTERS[id] &&
+          isShootingCharacterOwned(id)
+        )
+        .slice(0, cfg.requiredSize);
+      return;
+    }
     // CH04-1/2は従来どおりエリ単独。CH04-3はエリ固定 + 最大2人追加。
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       selectedPartyIds = isShootingCharacterOwned(CHARACTER_ID.ERI) ? [Number(CHARACTER_ID.ERI)] : [];
@@ -2100,6 +2147,13 @@
     }
 
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
+
+    const selectableStoryParty = getSelectedStorySelectablePartyConfig();
+    if (selectableStoryParty) {
+      if (selectedPartyIds.length !== selectableStoryParty.requiredSize) return false;
+      return selectedPartyIds.every(id => selectableStoryParty.allowedIds.includes(Number(id)));
+    }
+
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
@@ -2147,7 +2201,7 @@
           String(c.panelImage || c.image || '')
         ].join(':');
       })
-      .join('|');
+      .join('|') + `|stage:${String(selectedStage?.id || '')}`;
   }
 
   function refreshShootingRoster() {
@@ -2170,8 +2224,18 @@
       roster.querySelectorAll('[data-character-id="' + id + '"]').forEach(el => el.remove());
     });
 
+    const selectableStoryParty = getSelectedStorySelectablePartyConfig();
+    if (selectableStoryParty) {
+      roster.querySelectorAll('[data-character-id]').forEach(el => {
+        const id = Number(el.getAttribute('data-character-id'));
+        if (!selectableStoryParty.allowedIds.includes(id)) el.remove();
+      });
+    }
+
     selectedPartyIds = selectedPartyIds.filter(id =>
-      isPublicShootingCharacterId(id) && isShootingCharacterOwned(id)
+      isPublicShootingCharacterId(id) &&
+      isShootingCharacterOwned(id) &&
+      (!selectableStoryParty || selectableStoryParty.allowedIds.includes(Number(id)))
     );
   }
 
@@ -3378,7 +3442,11 @@
   window.removeShootingPartyCharacter = function(id) {
     id = Number(id);
     if (getSelectedStoryFixedPartyIds()) return;
-    if (isStoryShootingStage() && id === Number(CHARACTER_ID.ERI)) return;
+    if (
+      isStoryShootingStage() &&
+      !isSelectedStorySelectablePartyStage() &&
+      id === Number(CHARACTER_ID.ERI)
+    ) return;
     const idx = selectedPartyIds.indexOf(id);
     if (idx >= 0) selectedPartyIds.splice(idx, 1);
     if (isStoryShootingStage()) ensureStoryEriLeader();
@@ -3440,11 +3508,14 @@
           .join('・');
         ruleText.textContent = `STORY固定編成 · ${names}`;
       } else {
-        ruleText.textContent = (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
-          ? 'CHAPTER 04 · エリのみ出撃可能'
-          : (isStoryShootingStage()
-            ? '最大3人 · エリ固定 · 1人から出撃可能'
-            : '最大3人 · 1人から出撃可能');
+        const selectableStoryParty = getSelectedStorySelectablePartyConfig();
+        ruleText.textContent = selectableStoryParty
+          ? 'STORY指定5人から3人選択'
+          : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
+            ? 'CHAPTER 04 · エリのみ出撃可能'
+            : (isStoryShootingStage()
+              ? '最大3人 · エリ固定 · 1人から出撃可能'
+              : '最大3人 · 1人から出撃可能'));
       }
     }
 
@@ -3453,7 +3524,13 @@
       const ready = isShootingPartyReady();
       startBtn.disabled = !ready;
       if (!ready) {
-        startBtn.textContent = 'あと 1人 選択';
+        const selectableStoryParty = getSelectedStorySelectablePartyConfig();
+        if (selectableStoryParty) {
+          const remain = Math.max(0, selectableStoryParty.requiredSize - selectedPartyIds.length);
+          startBtn.textContent = `あと ${remain}人 選択`;
+        } else {
+          startBtn.textContent = 'あと 1人 選択';
+        }
       } else if (getSelectedStageTicketCost() > 0 && !isNoahStage()) {
         startBtn.innerHTML = '戦闘開始<br><small style="font-size:.72em;font-weight:500;letter-spacing:.04em;opacity:.82">（SPECIAL TICKET×1消費）</small>';
       } else {
@@ -20425,6 +20502,7 @@
 
     if (!isPublicShootingCharacterId(id)) return;
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterOwned(id)) return;
+    if (!isAllowedForSelectedStoryParty(id)) return;
 
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && id !== Number(CHARACTER_ID.ERI)) {
       ensureStoryEriLeader();
@@ -20433,7 +20511,11 @@
       return;
     }
 
-    if (isStoryShootingStage() && id === Number(CHARACTER_ID.ERI)) {
+    if (
+      isStoryShootingStage() &&
+      !isSelectedStorySelectablePartyStage() &&
+      id === Number(CHARACTER_ID.ERI)
+    ) {
       ensureStoryEriLeader();
       selectedCharacterId = Number(CHARACTER_ID.ERI);
       applySelectedCharacterToUi();
@@ -21457,6 +21539,14 @@
     const firstOwned = Object.keys(SHOOTING_CHARACTERS).map(Number).find(id => isPublicShootingCharacterId(id) && isShootingCharacterOwned(id));
     if (applySelectedStoryFixedParty()) {
       // STORY固定編成をそのまま使用。所持状況には依存しない。
+    } else if (isSelectedStorySelectablePartyStage()) {
+      // build1216: CH03-04は空の3枠から、指定5人のうち3人をプレイヤーが選ぶ。
+      selectedPartyIds = [];
+      const cfg = getSelectedStorySelectablePartyConfig();
+      selectedCharacterId =
+        cfg.allowedIds.find(id => isShootingCharacterOwned(id) && !!SHOOTING_CHARACTERS[id]) ||
+        firstOwned ||
+        CHARACTER_ID.ERI;
     } else if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
       selectedPartyIds = [Number(CHARACTER_ID.ERI)];
       selectedCharacterId = Number(CHARACTER_ID.ERI);

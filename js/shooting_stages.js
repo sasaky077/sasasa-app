@@ -426,10 +426,11 @@
         SHOOTING_ENEMY_ID.MINI_03,
       ]),
       normalBattle: Object.freeze({
-        infiniteEnemies: true,
+        // build1216: アイテム収集を廃止。3体を全滅させたらクリア。
+        totalEnemies: 3,
         maxActive: 2,
         spawnIntervalMs: 850,
-        itemDropRate: 0.80,
+        itemDropRate: 0,
 
         // CH03-02: 中
         enemyHp: 1200,
@@ -440,9 +441,8 @@
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
-        target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
       }),
 
       playable: true,
@@ -460,10 +460,11 @@
         SHOOTING_ENEMY_ID.MINI_03,
       ]),
       normalBattle: Object.freeze({
-        infiniteEnemies: true,
+        // build1216: アイテム収集を廃止。5体を全滅させたらクリア。
+        totalEnemies: 5,
         maxActive: 3,
         spawnIntervalMs: 760,
-        itemDropRate: 0.80,
+        itemDropRate: 0,
 
         // CH03-03: 強
         enemyHp: 1500,
@@ -474,9 +475,8 @@
       }),
 
       mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
-        target: 3,
-        text: 'アイテムを3個拾ってクリア',
+        type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
+        text: '敵をすべて撃破',
       }),
 
       playable: true,
