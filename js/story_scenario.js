@@ -1744,7 +1744,7 @@
     "chapter": 2,
     "stageNo": 4,
     "chapterTitle": "赤い灯",
-    "stageTitle": "旅立ち",
+    "stageTitle": "轟力",
     "pre": [
       {"speaker":"",
         "text":"地鳴りとともに次々と塔が崩れてゆく。土煙の中から、巨大な天使の影が現れる。",
@@ -1765,27 +1765,27 @@
                   {
         "speaker": "",
         "text": "3人が、間一髪でその巨体の突進をかわす。",
-        "location": "白い廃墟・塔の並ぶ丘",
+        "location": "塔の並ぶ丘・大型レムナント",
         "narration": true
       },
 
                   {
         "speaker": "",
         "text": "息つく間もなく、巨体がこちらに向き直り、姿勢を下げる。",
-        "location": "白い廃墟・塔の並ぶ丘",
+        "location": "塔の並ぶ丘・大型レムナント",
         "narration": true
       },
 
             {
         "speaker": "ジグ",
         "text": "もう一発、くるぞ！",
-        "location": "白い廃墟・塔の並ぶ丘"
+        "location": "塔の並ぶ丘・大型レムナント"
       },
 
                   {
         "speaker": "ジグ",
         "text": "足を止めちゃだめだ…動き続けろ！！",
-        "location": "白い廃墟・塔の並ぶ丘"
+        "location": "塔の並ぶ丘・大型レムナント"
       },
 
     ],
@@ -1913,7 +1913,7 @@
     "stageType": "novel",
     "pre": [
       {"speaker":"エリ",
-        "text":"紋様。塔の近くにあったやつだよね。",
+        "text":"紋様…塔の近くにあったやつだよね。",
         "location":"拠点・作業台"},
 
       {"speaker":"ミモザ",
