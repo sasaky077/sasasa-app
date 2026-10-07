@@ -386,6 +386,7 @@
       stageNo: 1,
       name: '羽音',
       type: 'normal',
+      element: 'aqua',
       background: 'images/battle_bg_01.webp',
 
       enemyIds: Object.freeze([
@@ -420,6 +421,7 @@
       stageNo: 2,
       name: '星雨',
       type: 'normal',
+      element: 'aqua',
       background: 'images/battle_bg_01.webp',
 
       enemyIds: Object.freeze([
@@ -454,6 +456,7 @@
       stageNo: 3,
       name: '交差',
       type: 'normal',
+      element: 'aqua',
       background: 'images/battle_bg_01.webp',
 
       enemyIds: Object.freeze([
@@ -488,6 +491,7 @@
       stageNo: 4,
       name: '雨冠',
       type: 'boss',
+      element: 'aqua',
       background: 'images/battle_bg_01.webp',
 
       enemyIds: Object.freeze([
@@ -496,7 +500,7 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'REMNANT 03「天墜」を浄化',
+        text: 'REMNANT 03「リヴィア」を浄化',
       }),
 
       playable: true,
@@ -1023,7 +1027,8 @@
         }),
       ]),
       ambush: Object.freeze({
-        triggerRate: 0.10,
+        enabled: false,
+        triggerRate: 0.00,
         waveHp: Object.freeze([5000, 8000]),
         waveDamage: Object.freeze([350, 600]),
         warningEveryMs: 4000,

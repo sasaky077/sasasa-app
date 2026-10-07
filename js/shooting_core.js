@@ -14473,6 +14473,15 @@
   function handleBossDangerAttack(now) {
     if (!state || isNormalBattle() || state.phaseTransition || state.koTransition) return false;
 
+    // build1237: リヴィアはGAUGE1でWARNING攻撃なし。
+    // GAUGE2開始時に通常のWARNINGタイマーを新規スタートさせる。
+    if (isChapter03BossStage() && Math.max(1, Number(state.boss.phase || 1)) <= 1) {
+      removeBossDangerWarning();
+      state.bossDangerExecuteAt = 0;
+      state.nextBossDangerAt = 0;
+      return false;
+    }
+
     if (state.bossDangerExecuteAt > 0) {
       // WARNING中も通常弾幕は止めない。大技の予兆と通常攻撃を同時進行させる。
       if (now < state.bossDangerExecuteAt) return false;
@@ -14570,13 +14579,13 @@
           state.enemyBullets.push(projectile);
         });
       } else if (isChapter03BossStage()) {
-        // リヴィア（CH03-04）の即死攻撃は2種類を順番に繰り返す。
-        // ① 2WAY + 壁2反射
-        // ② 4発の即死弾が8秒間、戦場をゆらゆら漂う
-        const pattern = Number(state.bossDangerPatternIndex || 0) % 2;
-        state.bossDangerPatternIndex = Number(state.bossDangerPatternIndex || 0) + 1;
+        // build1237: リヴィアのWARNING攻撃はGAUGEごとに固定。
+        // GAUGE1: なし
+        // GAUGE2: 2発（2WAY + 壁2反射）
+        // GAUGE3: 4発（8秒間ゆらゆら漂う）
+        const liviaPhase = Math.max(1, Number(state.boss.phase || 1));
 
-        if (pattern === 0) {
+        if (liviaPhase === 2) {
           [-0.22, 0.22].forEach(offset => {
             const shotAngle = angle + offset;
             const projectile = makeProjectile(
@@ -14592,7 +14601,7 @@
             projectile.dangerMaxReflections = 2;
             state.enemyBullets.push(projectile);
           });
-        } else {
+        } else if (liviaPhase >= 3) {
           const driftSpeed = 138;
           const driftOffsets = [-1.05, -0.35, 0.35, 1.05];
           driftOffsets.forEach((offset, index) => {
@@ -14614,6 +14623,7 @@
             projectile.dangerDriftTurnRate = 0.78;
             state.enemyBullets.push(projectile);
           });
+          state.bossDangerPatternIndex = Number(state.bossDangerPatternIndex || 0) + 1;
         }
       } else {
         const dangerOffsets = isFacelessSuperDifficulty() ? [-0.34, 0, 0.34] : [0];

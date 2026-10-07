@@ -207,6 +207,7 @@
       name: '星護の残穢',
       displayName: '星護の残穢',
       image: 'images/enemy_mini_03_battle.webp',
+      element: 'aqua',
       // CH03通常敵。弾幕は濃いが、撃破テンポは軽めにする。
       hp: 1400,
       bulletDamage: 105,
@@ -314,8 +315,9 @@
       name: 'リヴィア',
       displayName: 'REMNANT 03　リヴィア',
       image: 'images/remnant_03_battle.webp',
+      element: 'aqua',
 
-      gaugeHps: Object.freeze([5000, 6000, 7000]),
+      gaugeHps: Object.freeze([5500, 5500, 5500]),
       gauges: 3,
 
       bulletSpeed: 248,
