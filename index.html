@@ -548,6 +548,65 @@ html body #screen-main .home-menu-notice-anchor > .raid-notice-dot{
   }
 }
 </style>
+  <style id="content-lock-overlay-build1230">
+/*
+  build1230 — LOCK OVERLAY REWORK
+  既存レイアウトへ干渉しないことを最優先:
+  - home / bottom-nav の position, transform, filter は変更しない
+  - body直下 fixed layer / ::after は使わない
+  - 各対象内に absolute の span を1個だけ追加する
+  - 通知ドット用 .home-menu-notice-anchor には触らない
+*/
+html body .content-lock-overlay{
+  position:absolute !important;
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:url("images/contents_lock.webp") center/contain no-repeat !important;
+  pointer-events:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  z-index:30 !important;
+  opacity:.72 !important;
+  filter:drop-shadow(0 2px 5px rgba(58,43,25,.20)) !important;
+  box-sizing:border-box !important;
+}
+
+html body #screen-main .home-type-entry > .content-lock-overlay{
+  left:50% !important;
+  top:50% !important;
+  width:58px !important;
+  height:58px !important;
+  max-width:64% !important;
+  max-height:64% !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:30 !important;
+}
+
+html body #screen-main .home-type-entry > .home-menu-notice-anchor{
+  z-index:40 !important;
+}
+
+html body #bottom-nav-shared .bottom-nav-item > .content-lock-overlay{
+  transform:translate(-50%,-50%) !important;
+  z-index:6 !important;
+}
+
+html body #bottom-nav-shared .bottom-nav-item.locked-visual > img{
+  opacity:.58 !important;
+}
+html body #bottom-nav-shared .bottom-nav-item.locked-visual > .bottom-nav-label{
+  opacity:.70 !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  html body #screen-main .home-type-entry > .content-lock-overlay{
+    width:54px !important;
+    height:54px !important;
+  }
+}
+</style>
   <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
 <style id="raid-bottom-nav-icon-color-fix-build660">
 /* Raid screen: keep shared bottom-nav icon tone identical to normal screens. */
@@ -3703,7 +3762,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <img src="images/btmnv_missions.webp" alt="巡行" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">巡行</span>
   </div>
-  <div class="bottom-nav-item" id="bnav-zukan" style="display:none" onclick="showMainTab('zukan')">
+  <div class="bottom-nav-item" id="bnav-zukan" onclick="showMainTab('zukan')">
     <img src="images/btmnv_party.webp" alt="キャラ" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">キャラ</span>
   </div>
@@ -3711,7 +3770,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <img src="images/btmnv_home.webp" alt="ホーム" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">ホーム</span>
   </div>
-  <div class="bottom-nav-item" id="bnav-summon" style="display:none" onclick="showMainTab('summon')">
+  <div class="bottom-nav-item" id="bnav-summon" onclick="showMainTab('summon')">
     <img src="images/btmnv_recruit.webp" alt="邂逅" loading="eager" decoding="async" fetchpriority="high">
     <span class="bottom-nav-label">邂逅</span>
   </div>
@@ -9654,7 +9713,12 @@ startTitleBgm();
   if(name === 'summon'){ resetSummonResult(); }
   document.getElementById('screen-'+name).classList.add('active');
   if(name==='zukan') renderCurrentZukanTab();
-  if(name==='main')  updateMainUI();
+  if(name==='main'){
+    updateMainUI();
+    if(typeof syncLockedContentVisuals === 'function'){
+      setTimeout(syncLockedContentVisuals, 0);
+    }
+  }
 }
 
   // build1156: ストーリー[CHAPTER 03-04]クリア後に主要サブコンテンツを解放。
@@ -9690,6 +9754,7 @@ startTitleBgm();
       if(!unlocked) el.setAttribute('title', CH03_CONTENT_LOCK_MESSAGE);
       else el.removeAttribute('title');
     });
+    if(typeof syncLockedContentVisuals === 'function') syncLockedContentVisuals();
     return unlocked;
   }
 
@@ -9715,10 +9780,13 @@ startTitleBgm();
     var unlocked = forceUnlocked === true || isCharacterContentUnlocked();
     var nav = document.getElementById('bnav-zukan');
     if(nav){
-      nav.style.display = unlocked ? '' : 'none';
-      nav.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
+      nav.style.display = '';
+      nav.setAttribute('aria-hidden', 'false');
       nav.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+      if(!unlocked) nav.setAttribute('title', CHARACTER_CONTENT_LOCK_MESSAGE);
+      else nav.removeAttribute('title');
     }
+    if(typeof syncLockedContentVisuals === 'function') syncLockedContentVisuals();
     return unlocked;
   }
 
@@ -10108,7 +10176,13 @@ startTitleBgm();
     var unlocked = forceUnlocked === true || isGachaUnlocked();
     // build1125: 邂逅の入口は常時表示。未解放時はタップ時に条件を案内する。
     var navItem = document.getElementById('bnav-summon');
-    if(navItem) navItem.style.display = '';
+    if(navItem){
+      navItem.style.display = '';
+      navItem.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+      if(!unlocked) navItem.setAttribute('title', CH03_CONTENT_LOCK_MESSAGE);
+      else navItem.removeAttribute('title');
+    }
+    if(typeof syncLockedContentVisuals === 'function') syncLockedContentVisuals();
     return unlocked;
   }
 
@@ -10143,6 +10217,152 @@ startTitleBgm();
     }, 0);
   }
 
+  function removeLegacyLockArtifacts(){
+    var legacyLayer = document.getElementById('home-content-lock-layer');
+    if(legacyLayer) legacyLayer.remove();
+
+    document.querySelectorAll('.content-lock-overlay').forEach(function(node){
+      node.remove();
+    });
+  }
+
+  function ensureLockOverlay(target){
+    if(!target) return null;
+    var overlay = target.querySelector(':scope > .content-lock-overlay');
+    if(overlay) return overlay;
+
+    overlay = document.createElement('span');
+    overlay.className = 'content-lock-overlay';
+    overlay.setAttribute('aria-hidden','true');
+    target.appendChild(overlay);
+    return overlay;
+  }
+
+  function setLockMeta(target, locked, message){
+    if(!target) return;
+    target.classList.toggle('locked-visual', !!locked);
+    target.setAttribute('aria-disabled', locked ? 'true' : 'false');
+
+    if(locked && message) target.setAttribute('title', message);
+    else if(!locked) target.removeAttribute('title');
+  }
+
+  function positionBottomNavLock(target, overlay){
+    if(!target || !overlay) return;
+
+    var icon = target.querySelector(':scope > img');
+    if(!icon) return;
+
+    var targetRect = target.getBoundingClientRect();
+    var iconRect = icon.getBoundingClientRect();
+
+    if(!targetRect.width || !targetRect.height || !iconRect.width || !iconRect.height) return;
+
+    var centerX = iconRect.left - targetRect.left + iconRect.width / 2;
+    var centerY = iconRect.top - targetRect.top + iconRect.height / 2;
+    var size = Math.max(32, Math.min(40, Math.min(iconRect.width, iconRect.height) * 0.90));
+
+    overlay.style.left = centerX + 'px';
+    overlay.style.top = centerY + 'px';
+    overlay.style.width = size + 'px';
+    overlay.style.height = size + 'px';
+  }
+
+  function setBottomNavLock(id, locked, message){
+    var target = document.getElementById(id);
+    if(!target) return;
+
+    setLockMeta(target, locked, message);
+
+    var overlay = target.querySelector(':scope > .content-lock-overlay');
+    if(!locked){
+      if(overlay) overlay.remove();
+      return;
+    }
+
+    overlay = ensureLockOverlay(target);
+    positionBottomNavLock(target, overlay);
+
+    requestAnimationFrame(function(){
+      if(target.classList.contains('locked-visual') && overlay.isConnected){
+        positionBottomNavLock(target, overlay);
+      }
+    });
+  }
+
+  function setHomeMenuLock(id, locked, message){
+    var target = document.getElementById(id);
+    if(!target) return;
+
+    setLockMeta(target, locked, message);
+
+    var overlay = target.querySelector(':scope > .content-lock-overlay');
+    if(!locked){
+      if(overlay) overlay.remove();
+      return;
+    }
+
+    ensureLockOverlay(target);
+  }
+
+  function syncLockedContentVisuals(){
+    var characterLocked = !(
+      typeof isCharacterContentUnlocked === 'function' &&
+      isCharacterContentUnlocked()
+    );
+    var gachaLocked = !(
+      typeof isGachaUnlocked === 'function' &&
+      isGachaUnlocked()
+    );
+    var ch03Locked = !(
+      typeof isChapter03ContentUnlocked === 'function' &&
+      isChapter03ContentUnlocked()
+    );
+
+    setBottomNavLock('bnav-zukan', characterLocked, CHARACTER_CONTENT_LOCK_MESSAGE);
+    setBottomNavLock('bnav-summon', gachaLocked, CH03_CONTENT_LOCK_MESSAGE);
+
+    ['raid-home-entry','shinju-home-entry','score-attack-home-entry'].forEach(function(id){
+      setHomeMenuLock(id, ch03Locked, CH03_CONTENT_LOCK_MESSAGE);
+    });
+  }
+
+  window.syncLockedContentVisuals = syncLockedContentVisuals;
+
+  var lockedVisualRaf = 0;
+  function scheduleLockedContentVisualSync(){
+    if(lockedVisualRaf) cancelAnimationFrame(lockedVisualRaf);
+    lockedVisualRaf = requestAnimationFrame(function(){
+      lockedVisualRaf = 0;
+      syncLockedContentVisuals();
+    });
+  }
+
+  function installLockedContentVisuals(){
+    removeLegacyLockArtifacts();
+    syncLockedContentVisuals();
+
+    [60, 220, 600, 1200].forEach(function(delay){
+      setTimeout(syncLockedContentVisuals, delay);
+    });
+
+    window.addEventListener('pageshow', scheduleLockedContentVisualSync);
+    window.addEventListener('resize', scheduleLockedContentVisualSync);
+    window.addEventListener('orientationchange', scheduleLockedContentVisualSync);
+    window.addEventListener('focus', scheduleLockedContentVisualSync);
+    window.addEventListener('shinju-progress-updated', scheduleLockedContentVisualSync);
+
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden) scheduleLockedContentVisualSync();
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', installLockedContentVisuals, { once:true });
+  } else {
+    installLockedContentVisuals();
+  }
+
   // ボトムナビ active 制御
   var BNAV_MAP = { ninmu:'bnav-ninmu', zukan:'bnav-zukan', main:'bnav-main', summon:'bnav-summon', setting:'bnav-setting' };
   function setBnavActive(name){
@@ -10154,6 +10374,9 @@ startTitleBgm();
     if(shared && !isSummoning) shared.style.display = '';
     var target = BNAV_MAP[name];
     if(target){ var el = document.getElementById(target); if(el) el.classList.add('active'); }
+    if(typeof scheduleLockedContentVisualSync === 'function'){
+      scheduleLockedContentVisualSync();
+    }
   }
 
   // ナビの表示/非表示 (生成演出・結果表示中のみ隠す)

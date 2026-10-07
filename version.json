@@ -1,4 +1,4 @@
 {
-  "build": 1224,
-  "note": "Unify locked-content wording to ストーリー[CHAPTER xx-xx]をクリア後に解放されます。"
+  "build": 1231,
+  "note": "Tune lock visuals: increase transparency and slightly reduce home side-menu lock size"
 }
