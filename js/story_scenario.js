@@ -1175,7 +1175,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "道……そうね。何かが、ここを辿ってきた形成にも見える。",
+        "text": "道……そうね。何かが、ここを流れた跡にも見える。",
         "location": "scene_enemy_site.webp"
       },
       {
@@ -1215,7 +1215,12 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "…理解が早いわね。\nさぁ、急がないと。",
+        "text": "…理解が早いわね。",
+        "location": "scene_enemy_site.webp"
+      },
+            {
+        "speaker": "ミモザ",
+        "text": "……それにしても、紋様を辿ってきたのかしら。それとも、私たちを…",
         "location": "scene_enemy_site.webp"
       },
       {
@@ -1226,7 +1231,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "戻りましょう。あまり長いするのは危険な気がするわ。",
+        "text": "戻りましょう。あまり長居するのは危険な気がするわ。",
         "location": "scene_enemy_site.webp"
       },
       {
