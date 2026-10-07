@@ -1,4 +1,4 @@
 {
-  "build": 1239,
-  "note": "CH03-04 iPhone performance: force enemy bullet canvas DPR to 1x; gameplay and bullet counts unchanged"
+  "build": 1242,
+  "note": "CH02-02 elemental switching tutorial: fixed Eri/Arno/Aura party; DARK/WOOD/AQUA enemies with weakness barriers; HP 900/3600/900"
 }

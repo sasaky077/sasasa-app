@@ -182,6 +182,14 @@
     const loc=String(location||'').trim();
     const sid=normalizeStageId(stageId||'');
 
+    // build1240: scenario側で背景画像ファイル名を直接指定できる。
+    // "scene_workbench.webp" / "images/scene_workbench.webp" の両方を許可する。
+    // 旧ロケーション名も下の互換マッピングで引き続き利用可能。
+    const directImage = loc.match(/^(?:images\/)?([^\/]+\.(?:webp|png|jpe?g))$/i);
+    if(directImage){
+      return loc.startsWith('images/') ? loc : ('images/' + loc);
+    }
+
     // build1097: CH01-STAGE01は敵群が浮遊している専用前線背景。
     if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
     if(!loc) return STORY_BG_PATHS.outside_tower;

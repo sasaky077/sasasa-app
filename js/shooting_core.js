@@ -1996,7 +1996,7 @@
     shooting_ch01_02: Object.freeze([1, 5]),    // エリ / ジグ（キャラチェンジ＋レーザー貫通チュートリアル）
     shooting_ch01_03: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch01_04: Object.freeze([1, 5]),    // エリ / ジグ（アウラは別戦闘。救援後はアルノ単独へ交代）
-    shooting_ch02_02: Object.freeze([20]),      // アルノ
+    shooting_ch02_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ（属性切替チュートリアル）
     shooting_ch02_03: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch02_04: Object.freeze([1, 3, 5]), // エリ / アウラ / ジグ
     shooting_ch03_02: Object.freeze([5, 20]),   // ジグ / アルノ
@@ -4710,10 +4710,7 @@
     // ノアは弾数が多いため1x固定、その他Canvas弾幕も最大1.25xに制限する。
     // UI/キャラ画像には影響せず、敵弾Canvasだけを軽量化する。
     const nativeDpr = Math.max(1, Number(window.devicePixelRatio || 1));
-    // build1239: CH03-04 リヴィア戦はiPhone実機でのみフレーム落ちが確認されたため、
-    // 弾数・速度・当たり判定・WARNING仕様は変えず、敵弾Canvasの内部解像度だけ1xへ下げる。
-    // 1.25x -> 1x で描画ピクセル数を約36%削減し、ゲーム難易度には影響させない。
-    const dpr = (isNoahStage() || isChapter03BossStage()) ? 1 : Math.min(1.25, nativeDpr);
+    const dpr = isNoahStage() ? 1 : Math.min(1.25, nativeDpr);
     const pixelWidth = Math.round(cssWidth * dpr);
     const pixelHeight = Math.round(cssHeight * dpr);
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
@@ -7362,14 +7359,27 @@
       return weaknessBarrierElementCache;
     }
 
-    // DAILY上級などの全敵バリア型は、ステージ定義順に最大3属性だけ採用する。
+    // 全敵バリア型でスポーン順属性が明示されている場合は、その属性列を優先する。
+    // CH02-02: DARK / WOOD / AQUA の3属性をそれぞれバリア対象にする。
     if (selectedStage.weaknessOnlyEnemies === true || isDailyAdvancedGimmickStage()) {
-      const ids = Array.isArray(selectedStage.enemyIds) ? selectedStage.enemyIds : [];
-      for (const enemyId of ids) {
-        const def = getShootingEnemy(enemyId);
-        if (!def) continue;
-        pushUnique(def.element || selectedStage.enemyElement || selectedStage.element);
-        if (result.length >= 3) break;
+      const normalCfg = selectedStage.normalBattle || {};
+      const elementSequence = Array.isArray(normalCfg.enemyElementSequence)
+        ? normalCfg.enemyElementSequence
+        : null;
+
+      if (elementSequence && elementSequence.length) {
+        for (const value of elementSequence) {
+          pushUnique(value);
+          if (result.length >= 3) break;
+        }
+      } else {
+        const ids = Array.isArray(selectedStage.enemyIds) ? selectedStage.enemyIds : [];
+        for (const enemyId of ids) {
+          const def = getShootingEnemy(enemyId);
+          if (!def) continue;
+          pushUnique(def.element || selectedStage.enemyElement || selectedStage.element);
+          if (result.length >= 3) break;
+        }
       }
     }
 
@@ -10895,10 +10905,16 @@
       ? Math.max(86, h * .145)
       : Math.max(92, h * (.16 + (state.normalSpawned % 2) * .075));
     const cfg = getNormalBattleConfig();
+    const hpSequence = Array.isArray(cfg.enemyHpSequence) ? cfg.enemyHpSequence : null;
+    const sequencedHp = hpSequence && hpSequence.length
+      ? Number(hpSequence[spawnIndex % hpSequence.length])
+      : NaN;
     const stageEnemyHp = Number(cfg.enemyHp);
-    const enemyHp = Number.isFinite(stageEnemyHp)
-      ? stageEnemyHp
-      : Number(enemyDef.hp || 18);
+    const enemyHp = Number.isFinite(sequencedHp)
+      ? Math.max(1, sequencedHp)
+      : (Number.isFinite(stageEnemyHp)
+        ? stageEnemyHp
+        : Number(enemyDef.hp || 18));
 
     const enemy = {
       uid: `mini_${String(state.stageId || 'stage')}_${spawnIndex}`,
@@ -10969,7 +10985,23 @@
         : enemyIds[state.normalSpawned % enemyIds.length];
       const baseDef = getShootingEnemy(enemyId);
       if (!baseDef || !baseDef.implemented) return false;
-      const def = resolveChapter02ZakoVariant(baseDef, state.normalSpawned, cfg);
+
+      let def = resolveChapter02ZakoVariant(baseDef, state.normalSpawned, cfg);
+
+      // build1241: 通常戦でスポーン順ごとの属性指定を許可する。
+      // CH03-03は同じMINI_03を、木→火→水→闇→光の5属性で1体ずつ出す。
+      const elementSequence = Array.isArray(cfg.enemyElementSequence)
+        ? cfg.enemyElementSequence
+        : null;
+      if (elementSequence && elementSequence.length) {
+        const forcedElement = normalizeCombatElement(
+          elementSequence[state.normalSpawned % elementSequence.length]
+        );
+        if (forcedElement) {
+          def = Object.assign({}, def, { element: forcedElement });
+        }
+      }
+
       const enemy = createNormalEnemy(def, now);
       if (!enemy) return false;
       state.normalEnemies.push(enemy);

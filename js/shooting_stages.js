@@ -287,21 +287,34 @@
       type: 'normal',
       background: 'images/battle_bg_01.webp',
 
-      // CH02はLIGHT属性で統一。
       enemyIds: Object.freeze([
         SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
       ]),
+
+      // build1242:
+      // 属性相性を実戦で覚えるステージ。
+      // 1体ずつ DARK -> WOOD -> AQUA の順で出現し、
+      // エリ(LIGHT) -> アルノ(FIRE) -> アウラ(WOOD)へ切り替えて突破する。
+      weaknessOnlyEnemies: true,
       normalBattle: Object.freeze({
-        totalEnemies: 4,
-        maxActive: 2,
-        spawnIntervalMs: 1500,
-        // build1189: CH02雑魚は2種のみ。normal=遠隔弾 / atack=突進。
-        enemyVariants: Object.freeze(['normal', 'atack']),
+        totalEnemies: 3,
+        maxActive: 1,
+        spawnIntervalMs: 900,
+        itemDropRate: 0,
+
+        enemyVariants: Object.freeze(['normal', 'normal', 'normal']),
+        enemyElementSequence: Object.freeze(['dark', 'wood', 'aqua']),
+
+        // Lv1想定のエリ/アウラは短め、Lv40想定のアルノ担当だけ高耐久。
+        // 1: DARK -> エリ(LIGHT)
+        // 2: WOOD -> アルノ(FIRE)
+        // 3: AQUA -> アウラ(WOOD)
+        enemyHpSequence: Object.freeze([900, 3600, 900]),
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '敵をすべて撃破',
+        text: '属性を切り替えて敵をすべて撃破',
       }),
 
       playable: true,
@@ -468,6 +481,10 @@
         maxActive: 3,
         spawnIntervalMs: 760,
         itemDropRate: 0,
+
+        // build1241: 5体を5属性で1体ずつ出現させる。
+        // 出現順: 木 → 火 → 水 → 闇 → 光
+        enemyElementSequence: Object.freeze(['wood', 'fire', 'aqua', 'dark', 'light']),
 
         // CH03-03: 強
         enemyHp: 1500,
