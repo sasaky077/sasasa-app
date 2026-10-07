@@ -3646,6 +3646,9 @@
       ch102TutorialPhase: '',
       ch102TutorialPaused: false,
       ch102TutorialHintEl: null,
+      ch202ElementTutorialPaused: false,
+      ch202ElementTutorialPending: false,
+      ch202ElementTutorialShown: false,
       // build1168: CH01-04 負けイベントを Eri 50接触 → Jig 50接触 → 救援 の段階制へ。
       ch104BarrierContactHits: 0,
       ch104EriBarrierContactHits: 0,
@@ -9437,6 +9440,50 @@
     return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_02));
   }
 
+  function isChapter202ElementTutorialStage() {
+    return !!(selectedStage && isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_02));
+  }
+
+  function showChapter202ElementTutorialIntro() {
+    if (!state || !isChapter202ElementTutorialStage()) return;
+
+    ensureChapter101TutorialStyle();
+
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+
+    state.ch202ElementTutorialPaused = true;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch101-tutorial-overlay';
+    overlay.innerHTML = `
+      <div class="shooting-ch101-tutorial-card">
+        <img class="shooting-ch101-tutorial-portrait" src="images/chara_28_panel.webp" alt="" draggable="false">
+        <div class="shooting-ch101-tutorial-speaker">ミモザ</div>
+        <div class="shooting-ch101-tutorial-text">属性バリアね。弱点属性で攻撃すれば通るわよ。</div>
+        <div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div>
+      </div>`;
+    root.appendChild(overlay);
+
+    const finish = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.remove();
+        if (!state) return;
+        state.ch202ElementTutorialPaused = false;
+        prevTs = performance.now();
+      }, 160);
+    };
+
+    overlay.addEventListener('pointerup', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      finish();
+    }, { passive:false });
+
+    requestAnimationFrame(() => overlay.classList.add('show'));
+  }
+
   function ensureChapter102TutorialStyle() {
     if (document.getElementById('shooting-ch102-tutorial-style')) return;
     const style = document.createElement('style');
@@ -11006,6 +11053,23 @@
       if (!enemy) return false;
       state.normalEnemies.push(enemy);
       state.normalSpawned++;
+
+      // build1245: CH02-02は最初の敵を盤面に表示した後でミモザの説明を出す。
+      // 1フレーム待つことで、敵本体・属性バリアが先に描画される。
+      if (
+        isChapter202ElementTutorialStage() &&
+        state.ch202ElementTutorialPending &&
+        !state.ch202ElementTutorialShown &&
+        state.normalSpawned === 1
+      ) {
+        state.ch202ElementTutorialPending = false;
+        state.ch202ElementTutorialShown = true;
+        requestAnimationFrame(() => {
+          if (!state || state.ended || !isChapter202ElementTutorialStage()) return;
+          showChapter202ElementTutorialIntro();
+        });
+      }
+
       return true;
     };
 
@@ -17767,7 +17831,7 @@
       return;
     }
 
-    if (state.ch101TutorialPaused || state.ch102TutorialPaused) {
+    if (state.ch101TutorialPaused || state.ch102TutorialPaused || state.ch202ElementTutorialPaused) {
       prevTs = ts;
       renderHud();
       rafId = requestAnimationFrame(gameLoop);
@@ -18833,6 +18897,7 @@
         state.countdown = false;
         state.running = true;
         const resumeElapsedMs = Math.max(0, Number(state.resumeElapsedMsPending || 0));
+        const isResumingBattle = resumeElapsedMs > 0;
         state.startedAt = performance.now() - resumeElapsedMs;
         state.resumeElapsedMsPending = 0;
         state.lastShotAt = -9999;
@@ -18853,6 +18918,11 @@
         }
         if (isChapter102TutorialStage()) {
           startChapter102TutorialBattle();
+        }
+        if (isChapter202ElementTutorialStage() && !isResumingBattle) {
+          // build1245: 敵が盤面に現れて属性バリアが見えてから説明する。
+          state.ch202ElementTutorialPending = true;
+          state.ch202ElementTutorialShown = false;
         }
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(gameLoop);

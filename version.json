@@ -1,4 +1,4 @@
 {
-  "build": 1242,
-  "note": "CH02-02 elemental switching tutorial: fixed Eri/Arno/Aura party; DARK/WOOD/AQUA enemies with weakness barriers; HP 900/3600/900"
+  "build": 1245,
+  "note": "CH02-02 Mimosa barrier tutorial now appears after the first enemy and its elemental barrier are visible; battle pauses then resumes on tap"
 }
