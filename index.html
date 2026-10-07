@@ -3343,7 +3343,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </button>
 
   <!-- 位相遠征：将来実装予定。ホーム左側、レイドバトルの下 -->
-  <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('未開放です。\nストーリーCHAPTER08をクリアすると解放されます。')" aria-label="位相遠征（未開放）" data-home-head="位" data-home-rest="相遠征"></button>
+  <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('ストーリー[CHAPTER 08]をクリア後に解放されます。')" aria-label="位相遠征（未開放）" data-home-head="位" data-home-rest="相遠征"></button>
 
   <button class="score-attack-home-entry home-type-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="スコアアタックへ移動" data-home-head="ス" data-home-rest="コア&#10;　アタック" data-home-lines="2"></button>
 
@@ -6678,15 +6678,36 @@ document.addEventListener('touchend', function (e) {
             '<span class="btn-gacha-cost">' + gemImg + ' ' + (gacha.cost * 10) + '</span>' +
           '</button>';
       } else {
+        var tutorialFreeTen = (
+          typeof isGachaTutorialFreeDraw === 'function' &&
+          isGachaTutorialFreeDraw(gacha, 10)
+        );
+
         btns.innerHTML =
           '<button class="btn-gacha btn-gacha-single" onclick="summonAction(1)">' +
             '<span class="btn-gacha-label">1回引く</span>' +
             '<span class="btn-gacha-cost">' + gemImg + ' ' + gacha.cost + '</span>' +
           '</button>' +
-          '<button class="btn-gacha btn-gacha-ten" onclick="summonAction(10)">' +
+          '<button class="btn-gacha btn-gacha-ten' + (tutorialFreeTen ? ' is-tutorial-free' : '') + '" ' +
+            (tutorialFreeTen ? 'data-gacha-tutorial-free="1" ' : '') +
+            'onclick="summonAction(10)">' +
             '<span class="btn-gacha-label">10回引く</span>' +
-            '<span class="btn-gacha-cost">' + gemImg + ' ' + (gacha.cost * 10) + '</span>' +
+            '<span class="btn-gacha-cost">' +
+              (tutorialFreeTen ? '<strong>初回無料</strong>' : (gemImg + ' ' + (gacha.cost * 10))) +
+            '</span>' +
           '</button>';
+      }
+
+      if(
+        typeof isGachaTutorialTenStepActive === 'function' &&
+        isGachaTutorialTenStepActive() &&
+        tutorialFreeTen
+      ){
+        setTimeout(function(){
+          if(typeof positionGachaTutorialTenSpotlight === 'function'){
+            positionGachaTutorialTenSpotlight();
+          }
+        }, 0);
       }
     }
 
@@ -9636,7 +9657,7 @@ startTitleBgm();
   if(name==='main')  updateMainUI();
 }
 
-  // build1156: CHAPTER03-04クリア後に主要サブコンテンツを解放。
+  // build1156: ストーリー[CHAPTER 03-04]クリア後に主要サブコンテンツを解放。
   var CH03_CONTENT_UNLOCK_STAGE_ID = 'shooting_ch03_04';
   var CH03_CONTENT_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
   var CH03_CONTENT_LOCK_MESSAGE = 'ストーリー[CHAPTER 03-04]をクリア後に解放されます。';
@@ -9677,7 +9698,7 @@ startTitleBgm();
   window.requireChapter03ContentUnlock = requireChapter03ContentUnlock;
   window.syncChapter03ContentLockUI = syncChapter03ContentLockUI;
 
-  // build1181: キャラ一覧 / 育成機能はCHAPTER02-02クリア後に解放。
+  // build1181: キャラ一覧 / 育成機能はストーリー[CHAPTER 02-02]クリア後に解放。
   // アルノだけ先行してLv30で所持している事実も、このタイミングまではプレイヤーへ見せない。
   var CHARACTER_CONTENT_UNLOCK_STAGE_ID = 'shooting_ch02_02';
   var CHARACTER_CONTENT_CLEAR_KEY = CH03_CONTENT_CLEAR_KEY;
@@ -9728,6 +9749,354 @@ startTitleBgm();
   var GACHA_UNLOCK_STAGE_ID = CH03_CONTENT_UNLOCK_STAGE_ID;
   var GACHA_UNLOCK_CLEAR_KEY = CH03_CONTENT_CLEAR_KEY;
 
+  // build1223: CH03-04クリア直後の邂逅チュートリアル。
+  // ①解放案内 → ②ボトムナビ「邂逅」 → ③通常邂逅10連（初回無料）
+  var GACHA_TUTORIAL_LOCAL_KEY = 'zeraphia_gacha_tutorial_completed_v1';
+  var GACHA_TUTORIAL_GACHA_ID = 'gacha_02';
+  var gachaTutorialPendingAfterClear = false;
+  var gachaTutorialFreeAvailable = false;
+  var gachaTutorialStage = 'idle';
+  var gachaTutorialPollTimer = null;
+  var gachaTutorialSpotlightTimer = null;
+
+  function isGachaTutorialCompletedLocal(){
+    try { return localStorage.getItem(GACHA_TUTORIAL_LOCAL_KEY) === '1'; }
+    catch(_){ return false; }
+  }
+
+  function markGachaTutorialCompletedLocal(){
+    try { localStorage.setItem(GACHA_TUTORIAL_LOCAL_KEY, '1'); } catch(_){}
+  }
+
+  function isGachaTutorialFreeDraw(gacha, count){
+    return !!(
+      gachaTutorialFreeAvailable &&
+      gacha &&
+      String(gacha.id || '') === GACHA_TUTORIAL_GACHA_ID &&
+      Number(count) === 10
+    );
+  }
+
+  function isGachaTutorialTenStepActive(){
+    return gachaTutorialStage === 'ten';
+  }
+
+  window.isGachaTutorialFreeDraw = isGachaTutorialFreeDraw;
+  window.isGachaTutorialTenStepActive = isGachaTutorialTenStepActive;
+
+  async function refreshGachaTutorialStatus(){
+    if(!window.zsSupabase) return false;
+    try{
+      var result = await window.zsSupabase.rpc('get_gacha_tutorial_status');
+      if(result && result.error) throw result.error;
+      var data = result && result.data ? result.data : null;
+      gachaTutorialFreeAvailable = !!(data && data.free_available);
+      if(data && data.claimed){
+        markGachaTutorialCompletedLocal();
+      }
+      return !!data;
+    }catch(err){
+      console.warn('[GachaTutorial] status failed:', err);
+      return false;
+    }
+  }
+  window.refreshGachaTutorialStatus = refreshGachaTutorialStatus;
+
+  function ensureGachaTutorialStyle(){
+    if(document.getElementById('gacha-tutorial-style-build1223')) return;
+    var style = document.createElement('style');
+    style.id = 'gacha-tutorial-style-build1223';
+    style.textContent = `
+      #gacha-tutorial-guide{
+        position:fixed;inset:0;z-index:999900;pointer-events:none;
+        font-family:"Noto Serif JP","Yu Mincho",serif;
+      }
+      #gacha-tutorial-guide .gacha-tutorial-intro-backdrop{
+        position:absolute;inset:0;background:rgba(18,18,22,.54);
+        opacity:0;transition:opacity .24s ease;pointer-events:none;
+      }
+      #gacha-tutorial-guide.is-intro .gacha-tutorial-intro-backdrop{
+        opacity:1;pointer-events:auto;
+      }
+      #gacha-tutorial-guide .gacha-tutorial-intro-card{
+        position:absolute;left:50%;top:50%;transform:translate(-50%,-46%);
+        width:min(84vw,390px);box-sizing:border-box;
+        padding:26px 24px 20px;background:rgba(250,248,242,.98);
+        border-top:1px solid rgba(84,72,58,.26);
+        border-bottom:1px solid rgba(84,72,58,.18);
+        box-shadow:0 18px 60px rgba(0,0,0,.26);
+        opacity:0;visibility:hidden;pointer-events:none;
+        text-align:center;color:#403a34;
+        transition:opacity .22s ease,transform .22s ease;
+      }
+      #gacha-tutorial-guide.is-intro .gacha-tutorial-intro-card{
+        opacity:1;visibility:visible;pointer-events:auto;
+        transform:translate(-50%,-50%);
+      }
+      .gacha-tutorial-intro-title{
+        font-size:21px;letter-spacing:.08em;margin-bottom:14px;font-weight:600;
+      }
+      .gacha-tutorial-intro-copy{
+        font-size:14px;line-height:1.9;letter-spacing:.03em;
+      }
+      .gacha-tutorial-next{
+        margin-top:22px;min-width:150px;padding:11px 22px;
+        border:0;border-top:1px solid rgba(70,60,50,.28);
+        border-bottom:1px solid rgba(70,60,50,.20);
+        background:transparent;color:#403a34;font-family:inherit;
+        font-size:13px;letter-spacing:.12em;
+      }
+      #gacha-tutorial-guide .gacha-tutorial-spotlight{
+        position:fixed;left:0;top:0;width:10px;height:10px;
+        border:2px solid rgba(255,255,255,.96);
+        box-shadow:
+          0 0 0 9999px rgba(12,13,17,.58),
+          0 0 0 5px rgba(255,255,255,.20),
+          0 0 20px rgba(255,255,255,.72);
+        opacity:0;visibility:hidden;pointer-events:none;
+        transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease,opacity .18s ease;
+      }
+      #gacha-tutorial-guide.is-target .gacha-tutorial-spotlight{
+        opacity:1;visibility:visible;
+        animation:gachaTutorialPulse1223 .9s ease-in-out infinite alternate;
+      }
+      #gacha-tutorial-guide .gacha-tutorial-callout{
+        position:fixed;left:50%;top:50%;
+        transform:translate(-50%,-50%);
+        max-width:min(78vw,330px);
+        padding:10px 16px;background:rgba(250,248,242,.98);
+        border-top:1px solid rgba(84,72,58,.24);
+        border-bottom:1px solid rgba(84,72,58,.16);
+        box-shadow:0 8px 28px rgba(0,0,0,.22);
+        color:#403a34;text-align:center;font-size:13px;
+        letter-spacing:.08em;line-height:1.6;
+        opacity:0;visibility:hidden;pointer-events:none;
+      }
+      #gacha-tutorial-guide.is-target .gacha-tutorial-callout{
+        opacity:1;visibility:visible;
+      }
+      .btn-gacha-ten.is-tutorial-free .btn-gacha-cost strong{
+        font-weight:700;letter-spacing:.08em;
+      }
+      @keyframes gachaTutorialPulse1223{
+        from{filter:brightness(.92)}
+        to{filter:brightness(1.14)}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureGachaTutorialGuide(){
+    ensureGachaTutorialStyle();
+    var root = document.getElementById('gacha-tutorial-guide');
+    if(root) return root;
+
+    root = document.createElement('div');
+    root.id = 'gacha-tutorial-guide';
+    root.setAttribute('aria-hidden','true');
+    root.innerHTML = `
+      <div class="gacha-tutorial-intro-backdrop"></div>
+      <section class="gacha-tutorial-intro-card" role="dialog" aria-modal="true" aria-labelledby="gacha-tutorial-intro-title">
+        <div class="gacha-tutorial-intro-title" id="gacha-tutorial-intro-title">邂逅が解放されました。</div>
+        <div class="gacha-tutorial-intro-copy">魂と邂逅して、戦力を強化しよう。</div>
+        <button type="button" class="gacha-tutorial-next">次へ</button>
+      </section>
+      <div class="gacha-tutorial-spotlight" aria-hidden="true"></div>
+      <div class="gacha-tutorial-callout" aria-hidden="true"></div>
+    `;
+    document.body.appendChild(root);
+
+    var next = root.querySelector('.gacha-tutorial-next');
+    if(next){
+      next.addEventListener('click', function(){
+        showGachaTutorialNavStep();
+      });
+    }
+    return root;
+  }
+
+  function clearGachaTutorialSpotlightTimer(){
+    if(gachaTutorialSpotlightTimer){
+      clearInterval(gachaTutorialSpotlightTimer);
+      gachaTutorialSpotlightTimer = null;
+    }
+  }
+
+  function hideGachaTutorialGuide(){
+    clearGachaTutorialSpotlightTimer();
+    var root = document.getElementById('gacha-tutorial-guide');
+    if(!root) return;
+    root.classList.remove('is-intro','is-target');
+    root.setAttribute('aria-hidden','true');
+  }
+
+  function completeGachaTutorial(){
+    gachaTutorialFreeAvailable = false;
+    gachaTutorialPendingAfterClear = false;
+    gachaTutorialStage = 'done';
+    markGachaTutorialCompletedLocal();
+    hideGachaTutorialGuide();
+    if(typeof renderSummonBanners === 'function') renderSummonBanners();
+  }
+
+  function positionGachaTutorialTarget(target, label, placement){
+    var root = ensureGachaTutorialGuide();
+    if(!root || !target) return false;
+
+    var rect = target.getBoundingClientRect();
+    if(rect.width <= 0 || rect.height <= 0) return false;
+
+    var pad = 7;
+    var spot = root.querySelector('.gacha-tutorial-spotlight');
+    var callout = root.querySelector('.gacha-tutorial-callout');
+    if(!spot || !callout) return false;
+
+    spot.style.left = Math.max(4, rect.left - pad) + 'px';
+    spot.style.top = Math.max(4, rect.top - pad) + 'px';
+    spot.style.width = Math.max(22, rect.width + pad * 2) + 'px';
+    spot.style.height = Math.max(22, rect.height + pad * 2) + 'px';
+
+    callout.textContent = label || '';
+    callout.style.left = Math.min(window.innerWidth - 18, Math.max(18, rect.left + rect.width / 2)) + 'px';
+
+    var calloutTop;
+    if(placement === 'above'){
+      calloutTop = Math.max(58, rect.top - 54);
+    }else{
+      calloutTop = Math.min(window.innerHeight - 64, rect.bottom + 52);
+    }
+    callout.style.top = calloutTop + 'px';
+
+    root.classList.remove('is-intro');
+    root.classList.add('is-target');
+    root.setAttribute('aria-hidden','false');
+    return true;
+  }
+
+  function showGachaTutorialIntro(){
+    gachaTutorialStage = 'intro';
+    clearGachaTutorialSpotlightTimer();
+    var root = ensureGachaTutorialGuide();
+    root.classList.remove('is-target');
+    root.classList.add('is-intro');
+    root.setAttribute('aria-hidden','false');
+  }
+
+  function showGachaTutorialNavStep(){
+    gachaTutorialStage = 'nav';
+    var nav = document.getElementById('bnav-summon');
+    if(!nav) return;
+
+    positionGachaTutorialTarget(nav, 'ボトムナビの「邂逅」をタップ', 'above');
+
+    clearGachaTutorialSpotlightTimer();
+    gachaTutorialSpotlightTimer = setInterval(function(){
+      if(gachaTutorialStage !== 'nav') return;
+      positionGachaTutorialTarget(nav, 'ボトムナビの「邂逅」をタップ', 'above');
+    }, 300);
+
+    nav.addEventListener('click', function onTutorialSummonNav(){
+      if(gachaTutorialStage !== 'nav') return;
+      clearGachaTutorialSpotlightTimer();
+      setTimeout(function(){
+        prepareGachaTutorialTenStep();
+      }, 120);
+    }, { once:true });
+  }
+
+  async function prepareGachaTutorialTenStep(){
+    gachaTutorialStage = 'loading-ten';
+    hideGachaTutorialGuide();
+
+    await refreshGachaTutorialStatus();
+    if(!gachaTutorialFreeAvailable){
+      completeGachaTutorial();
+      return;
+    }
+
+    var normalGacha = Array.isArray(GACHA_BANNERS)
+      ? GACHA_BANNERS.find(function(g){ return String(g.id || '') === GACHA_TUTORIAL_GACHA_ID; })
+      : null;
+
+    if(!normalGacha){
+      console.warn('[GachaTutorial] normal gacha not found');
+      return;
+    }
+
+    currentGachaId = normalGacha.id;
+    if(typeof renderSummonBanners === 'function') renderSummonBanners();
+    if(typeof openGachaDetail === 'function') openGachaDetail(normalGacha);
+
+    gachaTutorialStage = 'ten';
+    setTimeout(positionGachaTutorialTenSpotlight, 80);
+  }
+
+  function positionGachaTutorialTenSpotlight(){
+    if(gachaTutorialStage !== 'ten') return false;
+    var btn = document.querySelector('#summon-detail-btns .btn-gacha-ten[data-gacha-tutorial-free="1"]');
+    if(!btn) return false;
+
+    positionGachaTutorialTarget(btn, '通常邂逅 10連（初回無料）をタップ', 'above');
+
+    if(!btn.dataset.gachaTutorialBound){
+      btn.dataset.gachaTutorialBound = '1';
+      btn.addEventListener('click', function(){
+        if(gachaTutorialStage !== 'ten') return;
+        gachaTutorialStage = 'confirming';
+        hideGachaTutorialGuide();
+      });
+    }
+
+    clearGachaTutorialSpotlightTimer();
+    gachaTutorialSpotlightTimer = setInterval(function(){
+      if(gachaTutorialStage !== 'ten') return;
+      var live = document.querySelector('#summon-detail-btns .btn-gacha-ten[data-gacha-tutorial-free="1"]');
+      if(live) positionGachaTutorialTarget(live, '通常邂逅 10連（初回無料）をタップ', 'above');
+    }, 300);
+    return true;
+  }
+  window.positionGachaTutorialTenSpotlight = positionGachaTutorialTenSpotlight;
+
+  async function beginGachaTutorialAfterClear(){
+    if(isGachaTutorialCompletedLocal()) return;
+
+    // RESULTを閉じた直後はsecure finalizeの反映待ちになる場合があるため短く再試行。
+    var statusOk = false;
+    for(var i=0; i<8; i++){
+      statusOk = await refreshGachaTutorialStatus();
+      if(statusOk && gachaTutorialFreeAvailable) break;
+      if(statusOk && !gachaTutorialFreeAvailable){
+        // 既に別端末等で受領済みなら再案内しない。
+        markGachaTutorialCompletedLocal();
+        return;
+      }
+      await new Promise(function(resolve){ setTimeout(resolve, 450); });
+    }
+
+    if(!gachaTutorialFreeAvailable) return;
+    showGachaTutorialIntro();
+  }
+
+  function queueGachaTutorialAfterClear(){
+    if(isGachaTutorialCompletedLocal()) return;
+    gachaTutorialPendingAfterClear = true;
+
+    if(gachaTutorialPollTimer) clearInterval(gachaTutorialPollTimer);
+    gachaTutorialPollTimer = setInterval(function(){
+      if(!gachaTutorialPendingAfterClear) return;
+
+      // POSTノベル・RESULTを含むシューティング画面を閉じてから案内を開始する。
+      if(document.getElementById('shooting-event-root')) return;
+
+      clearInterval(gachaTutorialPollTimer);
+      gachaTutorialPollTimer = null;
+      gachaTutorialPendingAfterClear = false;
+      beginGachaTutorialAfterClear();
+    }, 300);
+  }
+
+  window.queueGachaTutorialAfterClear = queueGachaTutorialAfterClear;
+
   function isGachaUnlocked(){
     try {
       var map = JSON.parse(localStorage.getItem(GACHA_UNLOCK_CLEAR_KEY) || '{}') || {};
@@ -9754,6 +10123,11 @@ startTitleBgm();
       // CH03クリア直後から邂逅バナーも解禁。
       if(typeof renderHomeEventBanners === 'function') renderHomeEventBanners();
       if(typeof initHomeBannerSwipe === 'function') initHomeBannerSwipe();
+
+      // RESULTを閉じたあとに邂逅チュートリアルへ案内。
+      if(typeof queueGachaTutorialAfterClear === 'function'){
+        queueGachaTutorialAfterClear();
+      }
     }
   });
 
@@ -9855,8 +10229,14 @@ function goHome(){
       return;
     }
     if(name === 'summon' && !isGachaUnlocked()){
-      if(typeof showToast === 'function') showToast('CH03-04をクリアしてください');
+      if(typeof showToast === 'function') showToast(CH03_CONTENT_LOCK_MESSAGE);
       return;
+    }
+
+    if(name === 'summon' && typeof refreshGachaTutorialStatus === 'function'){
+      refreshGachaTutorialStatus().then(function(){
+        if(typeof renderSummonBanners === 'function') renderSummonBanners();
+      });
     }
 
     // build641: Score Attack is a normal chrome page.
@@ -10002,11 +10382,16 @@ function goHome(){
   }
 
   var cost = currentGacha.cost * currentSummonCount;
+  var tutorialFreeDraw = (
+    typeof isGachaTutorialFreeDraw === 'function' &&
+    isGachaTutorialFreeDraw(currentGacha, currentSummonCount)
+  );
 
-  document.getElementById('summon-confirm-text').textContent =
-    '結晶を ' + cost + ' 個消費してガチャを回します。';
+  document.getElementById('summon-confirm-text').textContent = tutorialFreeDraw
+    ? '初回無料で通常邂逅の10連を回します。'
+    : ('結晶を ' + cost + ' 個消費してガチャを回します。');
 
-  if(userProfile.gem < cost){
+  if(!tutorialFreeDraw && userProfile.gem < cost){
   isSummoning = false;
 
   var standby = document.getElementById('summon-standby');
@@ -10029,6 +10414,13 @@ function goHome(){
 
   function confirmSummonNo(){
    document.getElementById('summon-confirm-modal').classList.remove('active');
+   if(
+     gachaTutorialStage === 'confirming' &&
+     gachaTutorialFreeAvailable
+   ){
+     gachaTutorialStage = 'ten';
+     setTimeout(positionGachaTutorialTenSpotlight, 80);
+   }
   }
 
   function confirmSummonYes(){
@@ -10351,19 +10743,25 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
   }
 
   var cost = currentGacha.cost * count;
+  var tutorialFreeDraw = (
+    typeof isGachaTutorialFreeDraw === 'function' &&
+    isGachaTutorialFreeDraw(currentGacha, count)
+  );
 
-  if(userProfile.gem < cost){
+  if(!tutorialFreeDraw && userProfile.gem < cost){
     recoverSummonUI();
     document.getElementById('paywall-modal').classList.add('active');
     return;
   }
 
-  // ガチャ料金はクライアント値を信用せず、Supabase側の gacha_master から決定する。
-  // ブラウザは「どのガチャを何回引くか」だけをRPCへ渡す。
-  var drawResult = await sb.rpc('draw_gacha', {
-    p_gacha_id: currentGacha.id,
-    p_count: count
-  });
+  // 通常邂逅チュートリアルの初回10連だけ、専用SECURITY DEFINER RPCで無料化。
+  // 無料判定・CH03-04クリア確認・一度きり制御はサーバー側を正とする。
+  var drawResult = tutorialFreeDraw
+    ? await sb.rpc('draw_gacha_tutorial_free')
+    : await sb.rpc('draw_gacha', {
+        p_gacha_id: currentGacha.id,
+        p_count: count
+      });
 
   if(drawResult && drawResult.error){
     var drawMessage = String(drawResult.error.message || '');
@@ -10375,6 +10773,17 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
     if(drawMessage.indexOf('gacha not available') >= 0){
       throw new Error('このガチャは現在利用できません');
     }
+    if(
+      tutorialFreeDraw &&
+      (
+        drawMessage.indexOf('gacha tutorial free draw already claimed') >= 0 ||
+        drawMessage.indexOf('gacha tutorial is not unlocked') >= 0
+      )
+    ){
+      gachaTutorialFreeAvailable = false;
+      completeGachaTutorial();
+      throw new Error('無料10連の状態を更新しました。');
+    }
     throw drawResult.error;
   }
 
@@ -10385,6 +10794,11 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
 
   // DB側で確定した残高だけをローカル表示へ反映する。
   userProfile.gem = Number(drawData.gem);
+
+  if(drawData.tutorial_free === true){
+    gachaTutorialFreeAvailable = false;
+    completeGachaTutorial();
+  }
 
   // v259: 天井カウントもサーバーを正とする。
   if(Number.isFinite(Number(drawData.pity_count))){
@@ -16098,7 +16512,7 @@ function initHomeBannerSwipe(){
 // ホームイベントバナー3「ウルフ実装」から、特別邂逅へ直接遷移
 function openWolfGachaFromHome(){
   if(typeof isGachaUnlocked === 'function' && !isGachaUnlocked()){
-    if(typeof showToast === 'function') showToast('CH03-04をクリアしてください');
+    if(typeof showToast === 'function') showToast(CH03_CONTENT_LOCK_MESSAGE);
     return false;
   }
 
@@ -17617,7 +18031,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1218-story-exp-material-rewards"></script>
+<script src="js/shooting_event.js?v=1222-leona-dark-character-element"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

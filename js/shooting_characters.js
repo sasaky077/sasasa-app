@@ -44,6 +44,7 @@
     IVERNA: 32,
     REI: 33,
     GRESHA: 34,
+    LEONA_CROSS: 39,
   });
 
   // ============================================================
@@ -92,6 +93,7 @@
     32: 'sr',  // イヴェルナ
     33: 'sr',  // レイ
     34: 'r',   // グレシャ
+    39: 'r',   // レオナクロス
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -874,6 +876,28 @@
     "homeScale": 0.83,
     "homeOffsetX": 0,
     "homeOffsetY": -40,
+    "hidden": false
+  },
+  "39": {
+    "id": 39,
+    "name": "レオナクロス",
+    "element": "dark",
+    "hp": 590,
+    "atk": 270,
+    "image": "images/chara_39_battle_back.webp",
+    "panelImage": "images/chara_39_panel.webp",
+    "cutinImage": "images/chara_39_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_39.webp",
+    "homeImage": "images/chara_39_cut.webp",
+    "upImage": "images/chara_39_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
     "hidden": false
   },
   "50": {
@@ -1897,6 +1921,43 @@
   // ============================================================
   // SIGMA-IX：DAILY RAIDクリア報酬
   // ============================================================
+  // build1219: レオナクロス(ID39)を正式にShooting masterへ復帰。
+  // CH03-04の編成候補として表示し、既存coreのTRAP挙動を使用する。
+  SHOOTING_CHARACTERS[CHARACTER_ID.LEONA_CROSS] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.LEONA_CROSS,
+    effectKey: 'testchan',
+    label: 'TRAP / PHOTON BUSTER',
+    description: '闇属性の設置型TRAPで敵を迎撃するテクニカル型。最大3基まで設置可能。ULTは闇属性の極太レーザーを5秒間照射する。',
+    ultDescription: '正面へ闇属性の極太レーザーを5秒間連続照射する。SIGMA-IXのブラックシップと同系統の照射性能。',
+    ultName: '対神性滅焼破壊砲 -フォトンバスター 202-',
+    ultType: 'testchan_black_ship',
+    moveSpeed: 400,
+
+    // ---- 通常ショット：TRAP ----
+    shotType: 'trap',
+    shotStyle: 'remna',
+    shotElement: 'dark',
+    shotPowerRate: 0.95,
+    shotOffsetY: 30,
+    trapMaxPlaced: 3,
+    trapCountdownMs: 3000,
+    trapExplosionRadius: 88,
+    trapPreDeployDamageRate: 0.50,
+    trapThrowSpeed: 560,
+    trapPlaceOffsetY: 146,
+
+    // ---- ULT ----
+    burstNeed: 32,
+    ultGainPerHit: 1.0,
+    coreTop: '38%',
+    ultBeamDurationMs: 5000,
+    ultBeamTickMs: 250,
+    ultBeamTickAtkMultiplier: 0.35,
+    ultBeamWidth: 62,
+    ultBeamElement: 'dark',
+  });
+
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.TESTCHAN,
