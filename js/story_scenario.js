@@ -1993,6 +1993,11 @@
         "text":"ええ、そういうことになるわ。",
         "location":"拠点・作業台"},
 
+                      {"speaker":"アルノ",
+        "text":"…いこう。おそらく…あまり時間がない。",
+        "location":"拠点・作業台"},
+
+
               {
         "transition": "fade_black",
         "text": ""
@@ -2040,35 +2045,67 @@
     "chapterTitle": "旅立ち",
     "stageTitle": "白い道",
     "pre": [
+            {"speaker":"アウラ",
+        "text":"はぁ…お腹すいた。レオナ、キャンディちょうだい…",
+        "location":"白い世界・旅路"},
+
+                    {"speaker":"レオナクロス",
+        "text":"ダメだ！アウラは食べ過ぎだ！貴重なエネルギー源だぞ。",
+        "location":"白い世界・旅路"},
+
+                    {"speaker":"アウラ",
+        "text":"もー！ジグちゃんのご飯が食べたーい！！",
+        "location":"白い世界・旅路"},
+
       {"speaker":"",
-        "text":"基地を離れて2週間が経つ頃。目印のない白い道を、紋様の反応だけを頼りに進む。",
-        "location":"白い廃墟・道",
+        "text":"基地を離れて約2週間ほど。目印のない白い道を、紋様の反応だけを頼りに進む。",
+        "location":"白い世界・旅路",
         "narration":true},
-      {"speaker":"アウラ",
-        "text":"ほんとに、ずっと真っ白だね……。",
-        "location":"白い廃墟・道"},
-      {"speaker":"ミモザ",
-        "text":"反応は合ってる。中心に近づいてる。このまま進めばいい。",
-        "location":"白い廃墟・道"},
-      {"speaker":"ジグ",
-        "text":"来るぞ。話はあとだ。",
-        "location":"白い廃墟・道"}
+
+
+              {"speaker":"",
+        "text":"－－キーン",
+        "location":"白い世界・旅路",
+        "narration":true},
+
+              {"speaker":"",
+        "text":"静けさのなかに突如響き渡る高音。",
+        "location":"白い世界・旅路",
+        "narration":true},
+ 
+        {"speaker":"アルノ",
+        "text":"くるぞ…",
+        "location":"白い世界・旅路"},
+
+                {"speaker":"ジグ",
+        "text":"きりがねぇな…飽きてくるぜ。",
+        "location":"白い世界・旅路"},
+
     ],
     "combat": [],
     "post": [
-      {"speaker":"",
-        "text":"レムナントを退け、さらに先へ進む。霧の向こうに、一本だけ高く伸びる塔の影が見え始めた。",
-        "location":"白い廃墟・道",
-        "narration":true},
       {"speaker":"エリ",
-        "text":"あれ……？",
-        "location":"白い廃墟・道"},
-      {"speaker":"ミモザ",
-        "text":"このあたりが、中心かしら。",
-        "location":"白い廃墟・塔"},
-              {"speaker":"レオナクロス",
-        "text":"あの高い塔が怪しいねぇ。",
-        "location":"白い廃墟・塔"}
+        "text":"あ、あれ。",
+        "location":"白い世界・塔"},
+
+     {"speaker":"",
+      "text":"一同の視線の先に、大きな塔が見える。",
+        "location":"白い世界・塔",
+        "narration":true},
+
+     {"speaker":"",
+      "text":"レオナが手元のレーダーを確認する。",
+        "location":"白い世界・塔",
+        "narration":true},
+
+        
+        {"speaker":"レオナクロス",
+        "text":"あのあたり、かなり反応が強い。",
+        "location":"白い世界・塔"},
+
+                {"speaker":"ミモザ",
+        "text":"中心はすぐそこかもしれないわね。",
+        "location":"白い世界・塔"},
     ]
   },
   "shooting_ch03_03": {
@@ -2077,53 +2114,153 @@
     "chapterTitle": "旅立ち",
     "stageTitle": "接続点",
     "pre": [
-      {"speaker":"","text":"塔へ近づくほど、地面に刻まれた紋様の数が増えていく。",
-        "location":"白い廃墟・塔",
+ 
+         {"speaker":"","text":"一行は数km先に見えている一際高い塔を目指して歩く。",
+        "location":"白い世界・塔・中距離",
         "narration":true},
+
       {"speaker":"ミモザ",
-        "text":"これ。前に見つけたものと同じ。全部、塔へ向いてる。",
-        "location":"白い廃墟・塔"},
-      {"speaker":"","text":"エリが一歩近づく。薄れていた線が、かすかに白く灯る。",
-        "location":"白い廃墟・塔",
-        "narration":true},
-      {"speaker":"エリ",
-        "text":"え？！……光った。",
-        "location":"白い廃墟・塔"},
-      {"speaker":"ミモザ",
-        "text":"やっぱり。エリにだけ反応してる。",
-        "location":"白い廃墟・塔"},
-
-        {"speaker":"ミモザ",
-        "text":"レムナントの結晶と同じ…",
-        "location":"白い廃墟・塔"},
-
-                   {"speaker":"ミモザ",
-        "text":"この光を辿りましょう。",
-        "location":"白い廃墟・塔"},
-
+        "text":"だんだんと…紋様が濃く、太くなっていってるように見えるわね。",
+        "location":"白い世界・塔・中距離"},
 
                    {"speaker":"",
-        "text":"塔の影で何かが蠢く。",
-        "location":"白い廃墟・塔"},
+        "text":"一同の足元に刻まれた紋様は、吸い込まれるように塔の中まで続いている。",
+        "location":"白い世界・塔・中距離"},
 
       {"speaker":"アルノ",
-        "text":"囲まれる。先に片づけるぞ。",
-        "location":"白い廃墟・塔"}
+        "text":"後ろの塔の影に2体…",
+        "location":"白い世界・塔・中距離"},
+
+        {"speaker":"",
+        "text":"一同の背後に、白い影が襲い掛かる。",
+        "location":"白い世界・塔・中距離"},
+
     ],
     "combat": [],
     "post": [
+
+            {"speaker":"アウラ",
+        "text":"レムナントが増えてきた…",
+        "location":"白い世界・塔・中距離"},
+
+              {"speaker":"ミモザ",
+        "text":"やっぱり…発生源はここなのかもしれないわね…",
+        "location":"白い世界・塔・中距離"},
+
+            {"speaker":"ジグ",
+        "text":"デケェのがわんさか出てくるとか…やめてくれよ？",
+        "location":"白い世界・塔・中距離"},
+
+            {"speaker":"アウラ",
+        "text":"あ…入口。",
+        "location":"白い世界・塔・中距離"},
+
+
       {"speaker":"",
-        "text":"塔の入口へ辿り着く。内部へ続く床一面に、同じ紋様が刻まれている。",
-        "location":"白い廃墟・塔",
+        "text":"塔の入口が見える。扉はない。床一面に刻まれた紋様が塔の内部に続いている。",
+        "location":"白い世界・塔・近距離",
         "narration":true},
-      {"speaker":"ミモザ",
-        "text":"この先。反応の中心は、中にある。",
-        "location":"白い廃墟・塔"},
+
+      {"speaker":"レオナクロス",
+        "text":"やはり、あの中だ。他に比べて見るからに反応が強い。",
+        "location":"白い世界・塔・近距離"},
+
+        {"speaker":"アウラ",
+        "text":"入るの…？",
+        "location":"白い世界・塔・近距離"},
+
+                {"speaker":"ミモザ",
+        "text":"そのためにきたのよ。",
+        "location":"白い世界・塔・近距離"},
+
+              {"speaker":"",
+        "text":"アウラが不安そうな目でジグを見る。",
+        "location":"白い世界・塔・近距離",
+        "narration":true},
+
+         {"speaker":"ジグ",
+        "text":"…大丈夫だ。",
+        "location":"白い世界・塔・近距離"},
+
+                      {"speaker":"",
+        "text":"ジグがアウラの肩にそっと手を置く。",
+        "location":"白い世界・塔・近距離",
+        "narration":true},
+
+                      {"speaker":"",
+        "text":"背後で蠢く影。",
+        "location":"白い世界・塔・近距離",
+        "narration":true},
+
+
+                {"speaker":"",
+        "text":"塔に向かって、複数の小型レムナントが向かってくる。",
+        "location":"白い世界・塔・近距離",
+        "narration":true},
+
+
+                 {"speaker":"アルノ",
+        "text":"…進め。私は塔の入り口を守る。",
+        "location":"白い世界・塔・近距離"},
+
+                        {"speaker":"",
+        "text":"アルノはナイフを構えると、素早く敵に斬りかかる。",
+        "location":"白い世界・塔・近距離",
+        "narration":true},
+      
+                 {"speaker":"ミモザ",
+        "text":"…お願い。中で何かあればすぐに呼ぶわ。",
+        "location":"白い世界・塔・近距離"},
+
       {"speaker":"",
-        "text":"その瞬間、塔全体を揺らす低い音が響いた。入口の奥で、巨大な影がゆっくりと立ち上がる。",
-        "location":"白い廃墟・塔",
-        "narration":true}
+        "text":"ミモザが先頭に立ち、塔の中に足を踏み入れる。",
+        "location":"白い世界・塔・内部",
+        "narration":true},
+
+            {"speaker":"",
+        "text":"エリ、レオナクロス、アウラ、ジグが続く。",
+        "location":"白い世界・塔・内部",
+        "narration":true},
+
+
+                         {"speaker":"アウラ",
+        "text":"わぁ…すごく広い…",
+        "location":"白い世界・塔・内部"},
+
+     {"speaker":"エリ",
+        "text":"あれって…",
+        "location":"白い世界・塔・内部"},
+
+      {"speaker":"",
+        "text":"エリが塔の奥の古びた円盤を指さす。",
+        "location":"白い世界・塔・内部",
+        "narration":true},
+
+            {"speaker":"",
+        "text":"足元の紋様は円盤に向かって続いている。",
+        "location":"白い世界・塔・内部",
+        "narration":true},
+
+             {"speaker":"ミモザ",
+        "text":"あそこが…中心なの？",
+        "location":"白い世界・塔・内部"},
+
+                    {"speaker":"",
+        "text":"ミモザが近づこうとしたそのとき―",
+        "location":"白い世界・塔・内部",
+        "narration":true},
+
+                    {"speaker":"",
+        "text":"塔が大きく揺れる。",
+        "location":"白い世界・塔・内部",
+        "narration":true},
+
+             {"speaker":"ジグ",
+        "text":"ハハ…一筋縄には…いかねぇよな。",
+        "location":"白い世界・塔・内部"},
+
     ]
+    
   },
   "shooting_ch03_04": {
     "chapter": 3,
@@ -2132,96 +2269,212 @@
     "stageTitle": "邂逅",
     "pre": [
       {"speaker":"",
-        "text":"大型のレムナントが塔の内部へ降り立つ。",
-        "location":"白い廃墟・塔",
+        "text":"塔の中が激しく揺れ、大きな影が中央に降りてくる。",
+        "location":"白い世界・塔・内部・レムナント",
         "narration":true},
-      {"speaker":"ジグ","text":"ったく…いちいち邪魔しやがって。",
-        "location":"白い廃墟・塔"},
-      {"speaker":"ミモザ",
-        "text":"あれを退けないと、塔の奥までいけないわ…"
-        ,"location":"白い廃墟・塔"},
-      {"speaker":"エリ",
-        "text":"……行こう。ここまで来たんだから。",
-        "location":"白い廃墟・塔"}
+
+      {"speaker":"ジグ",
+        "text":"ったく…いちいち邪魔しやがって。",
+        "location":"白い世界・塔・内部・レムナント"},
+
+      {"speaker":"レオナクロス",
+        "text":"まるで円盤の守り神だね…",
+        "location":"白い世界・塔・内部・レムナント",
+        "narration":true},
+
+            {"speaker":"",
+        "text":"エリがぎゅっと拳を握りしめる。",
+        "location":"白い世界・塔・内部・レムナント",
+        "narration":true},
+
+             {"speaker":"ジグ",
+        "text":"アルノが外のを相手してくれてる間に、ウチらがこっちをやるぞ。",
+        "location":"白い世界・塔・内部・レムナント"},
+
     ],
     "combat": [],
     "post": [
-      {"speaker":"",
-        "text":"大型レムナントが崩れ、塔の内部に静寂が戻る。\n奥には、幾重もの紋様が一点へ集まる円盤が残されていた。",
-        "location":"白い廃墟・塔","narration":true},
+ {"speaker":"",
+  "text":"大型レムナントが崩れ落ち、塔の内部に静寂が戻る。\nその奥には、幾重もの紋様が一点へと集まる、不思議な円盤だけが残されていた。",
+  "location":"白い世界・塔・内部・レムナント・消失",
+  "narration":true},
 
-        {"speaker":"ミモザ",
-        "text":"……誰かがいるわけではなかったわね……でも…",
-        "location":"白い廃墟・塔"},
+{"speaker":"",
+  "text":"円盤は、まるで呼吸をするように、淡い光をゆっくりと明滅させている。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
 
-        {"speaker":"ジグ",
-          "text":"なんだか、あの円盤、エリの動きに呼応しているみたいだぜ…気味悪ィ。",
-        "location":"白い廃墟・塔"},
+{"speaker":"ジグ",
+  "text":"なんだか、あの円盤……生きてるみてぇだな。",
+  "location":"白い世界・塔・内部・円盤"},
 
-        {"speaker":"",
-          "text":"一同は、ゆっくりと円盤に近づく。",
-        "location":"白い廃墟・塔"},
+{"speaker":"",
+  "text":"一同は警戒しながら、ゆっくりと円盤へ近づいていく。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
 
-        {"speaker":"",
-          "text":"円盤は、より一層激しくその光を強める。",
-        "location":"白い廃墟・塔"},
+{"speaker":"",
+  "text":"距離が縮まるにつれ、円盤の光は次第に強くなっていった。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
 
-                      {"speaker":"ミモザ",
-        "text":"間違いなく、エリに反応してる…",
-        "location":"白い廃墟・塔"},
+{"speaker":"ミモザ",
+  "text":"……反応してる？",
+  "location":"白い世界・塔・内部・円盤"},
 
-              {"speaker":"ミモザ",
-        "text":"エリ…この円盤の中心に手をかざしてみてくれない？",
-        "location":"白い廃墟・塔"},
+{"speaker":"",
+  "text":"ミモザが恐る恐る手を伸ばし、円盤の中心へ触れる。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
+
+{"speaker":"",
+  "text":"しかし、何も起こらない。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
+
+{"speaker":"ミモザ",
+  "text":"……なんともないわね。\nそれなら、もしかして……",
+  "location":"白い世界・塔・内部・円盤"},
+
+{"speaker":"",
+  "text":"何かに気づいたように、ミモザがエリへ視線を向ける。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
+
+{"speaker":"ミモザ",
+  "text":"エリ。\nこの円盤の中心に、手をかざしてみてくれない？",
+  "location":"白い世界・塔・内部・円盤"},
+
+{"speaker":"エリ",
+  "text":"わ、私が……？",
+  "location":"白い世界・塔・内部・円盤"},
+
+{"speaker":"ミモザ",
+  "text":"ええ。\n何かが起きるかもしれない。",
+  "location":"白い世界・塔・内部・円盤"},
+
+{"speaker":"エリ",
+  "text":"……うん。",
+  "location":"白い世界・塔・内部・円盤"},
+
+{"speaker":"",
+  "text":"エリが円盤の中心へ、恐る恐る手を伸ばす。",
+  "location":"白い世界・塔・内部・円盤",
+  "narration":true},
+
+{"speaker":"",
+  "text":"指先が触れた、その瞬間だった。",
+  "location":"白い世界・塔・内部・円盤・エリ",
+  "narration":true},
+
+{"speaker":"",
+  "text":"円盤から放たれた光が幾筋にも枝分かれし、塔の壁面を一気に駆け巡る。",
+  "location":"白い世界・塔・内部・円盤・エリ",
+  "narration":true},
+
+{"speaker":"エリ",
+  "text":"……っ！！",
+  "location":"白い世界・塔・内部・円盤・エリ"},
+
+{"speaker":"",
+  "text":"音が遠のく。\n塔も、ミモザたちの姿も、白い光の中へほどけていった。",
+  "location":"白い世界・塔・内部・円盤・エリ",
+  "narration":true},
+
+{"speaker":"エリ",
+  "text":"……ここ……は……？",
+  "location":"白い世界・エリ"},
+
+{"speaker":"",
+  "text":"何もない白の中で、ただひとつ。\n遠くから、自分ではない誰かの気配が伝わってくる。",
+  "location":"白い世界・エリ",
+  "narration":true},
+
+{"speaker":"エリ",
+  "text":"……誰か、いる……？",
+  "location":"白い世界・エリ"},
+
+{"speaker":"",
+  "text":"・・・リ？\n聞こえ…　何か…る……？",
+  "location":"白い世界・エリ",
+  "narration":true},
+
+{"speaker":"",
+  "text":"誰かの声が、遠くから響いているように聞こえた。",
+  "location":"白い世界・エリ",
+  "narration":true},
+
+{"speaker":"エリ",
+  "text":"…………",
+  "location":"白い世界・ホワイトアウト"},
+
+  {"speaker":"",
+  "text":"意識が遠のいていく。視界が徐々に白に包まれる。",
+  "location":"白い世界・ホワイトアウト",
+  "narration":true},
+
+{"speaker":"",
+  "text":"束の間、エリの体が激しく揺さぶられる。",
+  "location":"白い世界・ホワイトアウト",
+  "narration":true},
 
 
-      {"speaker":"エリ",
-        "text":"う、うん…",
-        "location":"白い廃墟・塔"},
+{"speaker":"ジグ",
+  "text":"おい、エリ！\n大丈夫か！？何が起きてる！？",
+  "location":"白い世界・ホワイトアウト"},
 
-      {"speaker":"ミモザ",
-        "text":"何が起きるかは分からない。\n無理だと思ったら、すぐに離れていい。",
-        "location":"白い廃墟・塔"},
-      {"speaker":"",
+{"speaker":"",
+  "text":"エリは円盤から手を離し、ジグに支えられるまま倒れ込む。",
+  "location":"白い世界・エリ・ジグ",
+  "narration":true},
 
-        "text":"エリが円盤の中心へと、恐る恐る手を伸ばす。\n触れた瞬間、円盤から塔の壁まで細い光が駆け巡る。",
-        "location":"白い廃墟・塔",
-        "narration":true},
+{"speaker":"",
+  "text":"円盤の光が緩やかに弱まり、やがて消えた。",
+  "location":"白い世界・エリ・ジグ",
+  "narration":true},
 
-                {"speaker":"エリ",
-        "text":"……っ！！！",
-        "location":"白い世界"},
+{"speaker":"アウラ",
+  "text":"エリ！！",
+  "location":"白い世界・エリ・ジグ"},
 
+{"speaker":"",
+  "text":"エリの瞼がゆっくり開く。何度か瞬きをする。",
+  "location":"白い世界・エリ・ジグ",
+  "narration":true},
 
-        {"speaker":"",
-          "text":"視界が白くほどけてゆく。\n遠く、どこか分からない場所に、確かに“誰か”の気配がある。",
-        "location":"白い世界",
-        "narration":true},
-      
-        {"speaker":"エリ",
-        "text":"……あなたは…",
-        "location":"白い世界"},
-      
-        {"speaker":"ミモザ",
-        "text":"何？！何か感じるの…？",
-        "location":"白い廃墟・塔"},
+{"speaker":"アウラ",
+  "text":"エリ！大丈夫？！",
+  "location":"白い世界・エリ・ジグ"},
 
-      {"speaker":"ジグ",
-        "text":"エリ…何が起きてる…？",
-        "location":"白い廃墟・塔"},
-     
-                {"speaker":"エリ",
-        "text":"なんだか…すごくあたたかいなにかに触れたような…",
-        "location":"白い世界"},
+{"speaker":"ミモザ",
+  "text":"エリ、今……何があったの？",
+  "location":"白い世界・エリ・ジグ"},
 
-        {"speaker":"ミモザ",
-        "text":"エリは、この円盤を接続点として、どこか遠くの魂と邂逅できるのかも…",
-        "location":"白い廃墟・塔"},
+{"speaker":"エリ",
+  "text":"何か…気配がした。遠くに…",
+  "location":"白い世界・エリ・ジグ"},
 
-                        {"speaker":"エリ",
-        "text":"邂逅…",
-        "location":"白い世界"},
+{"speaker":"ミモザ",
+  "text":"気配……やっぱり、ここは魂が集う、接続点のような場所なのかもしれないわ…",
+  "location":"白い世界・円盤・消灯"},
 
+{"speaker":"ミモザ",
+  "text":"そしてエリは……この円盤を通して、遠くにある魂と接触できるのかも…",
+  "location":"白い世界・円盤・消灯"},
+
+{"speaker":"エリ",
+  "text":"接続点……",
+  "location":"白い世界・円盤・消灯"},
+
+{"speaker":"",
+  "text":"エリは、まだあたたかな感触の残る右手を静かに見つめる。",
+  "location":"白い世界・円盤・消灯",
+  "narration":true},
+
+{"speaker":"",
+  "text":"先ほど感じた誰かの気配は、もうどこにもない。\nそれでも、不思議な繋がりだけが胸の奥に残っていた。",
+  "location":"白い世界・円盤・消灯",
+  "narration":true},
 
         {"speaker":"",
         "text":"――新機能「邂逅」が解放されました。",

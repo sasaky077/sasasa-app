@@ -160,7 +160,22 @@
     enemy_site: 'images/scene_enemy_site.webp',
     many_tower: 'images/scene_many_tower.webp',
     remnant_02_battle: 'images/scene_remnant_02_battle.webp',
-    remnant_02_rip: 'images/scene_remnant_02_rip.webp'
+    remnant_02_rip: 'images/scene_remnant_02_rip.webp',
+
+    // build1215: CH03-02～04 scene backgrounds
+    scene_walk: 'images/scene_walk.webp',
+    scene_tower_far: 'images/scene_tower_far.webp',
+    scene_tower_middle: 'images/scene_tower_middle.webp',
+    scene_tower_near: 'images/scene_tower_near.webp',
+    scene_in_tower: 'images/scene_in_tower.webp',
+    scene_remnant_03: 'images/scene_remnant_03.webp',
+    scene_remnant_03_rip: 'images/scene_remnant_03_rip.webp',
+    scene_disk: 'images/scene_disk.webp',
+    scene_disk_eri: 'images/scene_disk_eri.webp',
+    scene_eri_white_world: 'images/scene_eri_white_world.webp',
+    scene_whiteout: 'images/scene_whiteout.webp',
+    scene_eri_jig: 'images/scene_eri_jig.webp',
+    scene_disk_down: 'images/scene_disk_down.webp'
   });
 
   function backgroundFor(location, stageId){
@@ -170,6 +185,21 @@
     // build1097: CH01-STAGE01は敵群が浮遊している専用前線背景。
     if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
     if(!loc) return STORY_BG_PATHS.outside_tower;
+
+    // build1215: CH03-02～04. More specific locations must be matched first.
+    if(loc.includes('白い世界・塔・内部・レムナント・消失')) return STORY_BG_PATHS.scene_remnant_03_rip;
+    if(loc.includes('白い世界・塔・内部・レムナント')) return STORY_BG_PATHS.scene_remnant_03;
+    if(loc.includes('白い世界・塔・内部・円盤・エリ')) return STORY_BG_PATHS.scene_disk_eri;
+    if(loc.includes('白い世界・塔・内部・円盤')) return STORY_BG_PATHS.scene_disk;
+    if(loc.includes('白い世界・塔・内部')) return STORY_BG_PATHS.scene_in_tower;
+    if(loc.includes('白い世界・塔・近距離')) return STORY_BG_PATHS.scene_tower_near;
+    if(loc.includes('白い世界・塔・中距離')) return STORY_BG_PATHS.scene_tower_middle;
+    if(loc.includes('白い世界・エリ・ジグ')) return STORY_BG_PATHS.scene_eri_jig;
+    if(loc.includes('白い世界・ホワイトアウト')) return STORY_BG_PATHS.scene_whiteout;
+    if(loc.includes('白い世界・エリ')) return STORY_BG_PATHS.scene_eri_white_world;
+    if(loc.includes('白い世界・円盤・消灯')) return STORY_BG_PATHS.scene_disk_down;
+    if(loc.includes('白い世界・旅路')) return STORY_BG_PATHS.scene_walk;
+    if(loc.includes('白い世界・塔')) return STORY_BG_PATHS.scene_tower_far;
 
     if(loc.includes('大型レムナント・登場')) return STORY_BG_PATHS.remnant_01_intro;
     if(loc.includes('大型レムナント・戦闘')) return STORY_BG_PATHS.remnant_01_battle;
