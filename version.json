@@ -1,5 +1,5 @@
 {
-  "build": "1254",
-  "version": "20261008-build1254-ch04-01-story-party",
-  "description": "CH04-1 story party selectable: Eri/Jig/Aura/Arno/Mimosa/Leona Cross"
+  "build": "1255",
+  "version": "20261008-build1255-ch04-normal-battle",
+  "description": "CH04 normal battle: restore SHOT, ULT gauge/ULT, combo and standard battle countdown/HUD"
 }

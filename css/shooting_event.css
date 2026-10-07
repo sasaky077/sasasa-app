@@ -12245,3 +12245,22 @@ html body:not(.ui-immersive)
   filter:none!important;
   pointer-events:auto!important;
 }
+
+
+/* ============================================================
+   build1255 — CH04 normal battle restoration
+   旧「回避専用 / SHOT不可」表示を解除し、通常戦闘のCOMBO/MISSION表示へ戻す。
+   ステージ固有ギミックはJS側で個別管理する。
+   ============================================================ */
+#shooting-event-root:is(
+  [data-shooting-stage^="shooting_ch04_"],
+  [data-shooting-stage^="shooting_beginner_ch04_"]
+) .shooting-combo{
+  display:block!important;
+}
+#shooting-event-root:is(
+  [data-shooting-stage^="shooting_ch04_"],
+  [data-shooting-stage^="shooting_beginner_ch04_"]
+) .shooting-mission-hud{
+  display:grid!important;
+}

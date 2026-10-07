@@ -3182,7 +3182,8 @@
 
   function grantUltGaugeForHits(c, hitCount = 1, ownerId = null, gainMultiplier = 1) {
     if (!state || !c || hitCount <= 0) return;
-    if ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) || state?.chapter43AttackSealed) return;
+    // build1255: CH04でも通常どおりULTゲージを加算する。
+    if (state?.chapter43AttackSealed) return;
 
     const resolvedOwnerId = ownerId == null ? c.id : ownerId;
     const ownerMoonlightBlocked =
@@ -4349,10 +4350,7 @@
     if (comboCount) comboCount.textContent = String(state.combo || 0);
     const member = getActiveMember();
     const chara = getCurrentCharacter();
-    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage() && member) {
-      member.burst = 0;
-      member.ultReadyNotified = false;
-    }
+    // build1255: CH04でも通常どおりULTゲージを保持する。
     if (member) {
       if (hpText) hpText.textContent = `${Math.ceil(member.hp)} / ${member.hpMax}`;
       if (hpBar) hpBar.style.width = `${clamp(member.hp / member.hpMax, 0, 1) * 100}%`;
@@ -9217,8 +9215,8 @@
   }
 
   function firePlayer(now) {
-    // CH04-1/2は回避専用。CH04-3のみ通常射撃あり。
-    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) return;
+    // build1255: CH04は通常戦闘としてSHOTを許可する。
+    // CH04-3のストーリー演出で明示的に攻撃封印中の間だけSHOTを止める。
     if (isChapter43BossStage() && state?.chapter43AttackSealed) return;
 
     const c = getCurrentCharacter();
@@ -19056,11 +19054,7 @@
       ...(isChapter43BossStage() ? [
         { text:'全2WAVE', phase:'chapter4-rule-phase', hold:1400 },
         { text:'サキエルを撃破せよ', phase:'chapter4-rule-phase', hold:1800 }
-      ] : (isChapter04Stage() ? [
-        { text:'60秒間生き残り', phase:'chapter4-rule-phase', hold:1500 },
-        { text:'最後に出現する', phase:'chapter4-rule-phase', hold:1500 },
-        { text:'アイテムを獲得せよ', phase:'chapter4-rule-phase', hold:1500 }
-      ] : [])),
+      ] : []),
       ...(isHorizontalControlReversed() ? [
         // CH05: この注意文だけは4.4秒間、文字そのものを表示し続ける。
         // ready-popを付けると1.18秒でopacity:0になるため専用フラグで固定表示する。
@@ -26399,7 +26393,8 @@
 
   function isUltReady() {
     if (!state || state.ended || state.phaseTransition || state.finishing || state.countdown) return false;
-    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) return false;
+    // build1255: CH04でも通常どおりULTを使用可能。
+    // CH04-3の演出上の攻撃封印中だけULTを止める。
     if (isChapter43BossStage() && state.chapter43AttackSealed) return false;
     if (performance.now() < (state.ultLockUntil || 0)) return false;
     const c = getCurrentCharacter();
