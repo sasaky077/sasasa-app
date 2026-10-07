@@ -1060,7 +1060,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "レムナントの中には、弱点の属性しか攻撃を通さないような強化個体がいるみたいなの。",
+        "text": "ここ最近、弱点の属性しか攻撃を通さないような強化個体が発生しているみたいなの。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1085,7 +1085,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "なんか…特別感がねぇな…",
+        "text": "なんか…特別感がねぇなぁ…",
         "location": "scene_workbench.webp"
       },
       {
@@ -1175,7 +1175,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "道……そうね。何かが、ここへ“降りてきた”跡みたいにも見える。",
+        "text": "道……そうね。何かが、ここを辿ってきた形成にも見える。",
         "location": "scene_enemy_site.webp"
       },
       {
@@ -1210,17 +1210,12 @@
     "post": [
       {
         "speaker": "アウラ",
-        "text": "アルノ、本当に強いねー！",
-        "location": "scene_enemy_site.webp"
-      },
-      {
-        "speaker": "アルノ",
-        "text": "…",
+        "text": "おー！これが属性！",
         "location": "scene_enemy_site.webp"
       },
       {
         "speaker": "ミモザ",
-        "text": "…紋様を辿ってきたのかしら。\nそれとも、私たちを。",
+        "text": "…理解が早いわね。\nさぁ、急がないと。",
         "location": "scene_enemy_site.webp"
       },
       {
@@ -1231,7 +1226,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "戻りましょう。あまり深く進むのはよくない気がする。",
+        "text": "戻りましょう。あまり長いするのは危険な気がするわ。",
         "location": "scene_enemy_site.webp"
       },
       {
