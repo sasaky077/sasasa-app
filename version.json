@@ -1,4 +1,4 @@
 {
-  "build": 1231,
-  "note": "Tune lock visuals: increase transparency and slightly reduce home side-menu lock size"
+  "build": 1232,
+  "note": "Restore lock overlay opacity to 0.96; keep reduced home side-menu lock size"
 }
