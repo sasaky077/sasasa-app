@@ -1804,28 +1804,28 @@
         "left":"アウラ",
         "right":"エリ",
         "text":"うん…！私たち、本当に強くなってるみたい。",
-        "location":"白い廃墟・前線"},
+        "location":"塔の並ぶ丘・大型レムナント・討伐"},
 
       {"speaker":"",
         "text":"エリが灰の中から、結晶を拾い上げる。",
-        "location":"塔の並ぶ丘・大型レムナント・討伐",
+        "location":"白い廃墟・奥地",
         "narration":true},
      
         {"speaker":"アウラ",
         "left":"アウラ",
         "right":"エリ",
         "text":"あ、結晶！あいつの魂かな。",
-        "location":"白い廃墟・前線"},
+        "location":"白い廃墟・奥地"},
     
       {"speaker":"エリ",
         "left":"アウラ",
         "right":"エリ",
         "text":"…",
-        "location":"白い廃墟・前線"},
+        "location":"白い廃墟・奥地"},
 
               {"speaker":"",
-        "text":"エリが結晶を手に、遠くをみて固まっている。",
-        "location":"塔の並ぶ丘・大型レムナント・討伐",
+        "text":"結晶を手に、ぼーっとするエリをアウラが不思議そうな目で見ている。",
+        "location":"白い廃墟・奥地",
         "narration":true},
 
 
@@ -1833,18 +1833,18 @@
         "left":"アウラ",
         "right":"エリ",
         "text":"エリ？",
-        "location":"白い廃墟・前線"},
+        "location":"白い廃墟・奥地"},
 
                       {"speaker":"",
         "text":"はっとしたように、エリの意識がアウラに向く。",
-        "location":"塔の並ぶ丘・大型レムナント・討伐",
+        "location":"白い廃墟・奥地",
         "narration":true},
 
         {"speaker":"エリ",
         "left":"アウラ",
         "right":"エリ",
         "text":"あ……ううん、戻ろう。ミモザに調べてもらわなきゃ。",
-        "location":"白い廃墟・前線"},
+        "location":"白い廃墟・奥地"},
      
       {
         "transition": "fade_black",
@@ -1899,19 +1899,22 @@
         {"speaker":"ミモザ",
           "text":"そこで……少し考えがあるの。",
         "location":"拠点・作業台"},
-      
-        {"speaker":"ミモザ",
-          "text":"前に見た紋様。覚えてる？",
-        "location":"拠点・作業台"}
+
     ]
   },
   "shooting_ch03_01": {
     "chapter": 3,
     "stageNo": 1,
     "chapterTitle": "旅立ち",
-    "stageTitle": "旅立ち",
+    "stageTitle": "戦力",
     "stageType": "novel",
     "pre": [
+
+            
+        {"speaker":"ミモザ",
+          "text":"前に見た紋様。覚えてる？",
+        "location":"拠点・作業台"},
+
       {"speaker":"エリ",
         "text":"紋様…塔の近くにあったやつだよね。",
         "location":"拠点・作業台"},
@@ -2030,6 +2033,11 @@
         "location":"拠点・旅立ち",
         "narration":true},        
 
+              {
+        "transition": "fade_black",
+        "text": ""
+      },
+
       {"speaker":"",
         "text":"一行は帰る場所を背にして、白い世界の奥へ進んでいく。\n彼女たちの表情には、確かな覚悟の色が宿っていた。",
         "location":"白い廃墟・奥地",
@@ -2043,7 +2051,7 @@
     "chapter": 3,
     "stageNo": 2,
     "chapterTitle": "旅立ち",
-    "stageTitle": "白い道",
+    "stageTitle": "旅路",
     "pre": [
             {"speaker":"アウラ",
         "text":"はぁ…お腹すいた。レオナ、キャンディちょうだい…",
@@ -2084,9 +2092,18 @@
     ],
     "combat": [],
     "post": [
+
+            {"speaker":"ジグ",
+        "text":"なんか、だんだん手ごわくなってきてねぇか？",
+        "location":"白い世界・旅路"},
+
+                    {"speaker":"アルノ",
+        "text":"個体によって能力に差がある…",
+        "location":"白い世界・旅路"},
+
       {"speaker":"エリ",
         "text":"あ、あれ。",
-        "location":"白い世界・塔"},
+        "location":"白い世界・旅路"},
 
      {"speaker":"",
       "text":"一同の視線の先に、大きな塔が見える。",
@@ -2100,7 +2117,7 @@
 
         
         {"speaker":"レオナクロス",
-        "text":"あのあたり、かなり反応が強い。",
+        "text":"あのあたり…かなり反応が強い。",
         "location":"白い世界・塔"},
 
                 {"speaker":"ミモザ",
@@ -2112,10 +2129,10 @@
     "chapter": 3,
     "stageNo": 3,
     "chapterTitle": "旅立ち",
-    "stageTitle": "接続点",
+    "stageTitle": "円盤",
     "pre": [
  
-         {"speaker":"","text":"一行は数km先に見えている一際高い塔を目指して歩く。",
+         {"speaker":"","text":"一行は少し先に見えている一際高い塔を目指して歩く。",
         "location":"白い世界・塔・中距離",
         "narration":true},
 
@@ -2124,11 +2141,11 @@
         "location":"白い世界・塔・中距離"},
 
                    {"speaker":"",
-        "text":"一同の足元に刻まれた紋様は、吸い込まれるように塔の中まで続いている。",
+        "text":"足元に刻まれた紋様は、吸い込まれるように塔の中まで続いている。",
         "location":"白い世界・塔・中距離"},
 
       {"speaker":"アルノ",
-        "text":"後ろの塔の影に2体…",
+        "text":"2体…8時の方向…",
         "location":"白い世界・塔・中距離"},
 
         {"speaker":"",
@@ -2148,7 +2165,7 @@
         "location":"白い世界・塔・中距離"},
 
             {"speaker":"ジグ",
-        "text":"デケェのがわんさか出てくるとか…やめてくれよ？",
+        "text":"デケェのがわんさか出てくるとか…勘弁してくれよ？",
         "location":"白い世界・塔・中距離"},
 
             {"speaker":"アウラ",
@@ -2157,7 +2174,7 @@
 
 
       {"speaker":"",
-        "text":"塔の入口が見える。扉はない。床一面に刻まれた紋様が塔の内部に続いている。",
+        "text":"塔の入口が見える。扉はない。床一面に刻まれた紋様は、塔の内部に続いている。",
         "location":"白い世界・塔・近距離",
         "narration":true},
 
@@ -2188,7 +2205,7 @@
         "narration":true},
 
                       {"speaker":"",
-        "text":"背後で蠢く影。",
+        "text":"6人の背後に蠢く影。",
         "location":"白い世界・塔・近距離",
         "narration":true},
 
@@ -2266,7 +2283,7 @@
     "chapter": 3,
     "stageNo": 4,
     "chapterTitle": "旅立ち",
-    "stageTitle": "邂逅",
+    "stageTitle": "出会い",
     "pre": [
       {"speaker":"",
         "text":"塔の中が激しく揺れ、大きな影が中央に降りてくる。",
@@ -2289,6 +2306,10 @@
 
              {"speaker":"ジグ",
         "text":"アルノが外のを相手してくれてる間に、ウチらがこっちをやるぞ。",
+        "location":"白い世界・塔・内部・レムナント"},
+
+                     {"speaker":"レオナクロス",
+        "text":"よし、ミモザ！私たちも、戦うぞ！",
         "location":"白い世界・塔・内部・レムナント"},
 
     ],
@@ -2319,7 +2340,7 @@
   "narration":true},
 
 {"speaker":"ミモザ",
-  "text":"……反応してる？",
+  "text":"私たちに……反応してる？",
   "location":"白い世界・塔・内部・円盤"},
 
 {"speaker":"",
@@ -2333,7 +2354,7 @@
   "narration":true},
 
 {"speaker":"ミモザ",
-  "text":"……なんともないわね。\nそれなら、もしかして……",
+  "text":"……なんともないわね。\nもしかして……",
   "location":"白い世界・塔・内部・円盤"},
 
 {"speaker":"",
@@ -2478,7 +2499,7 @@
 
         {"speaker":"",
         "text":"――新機能「邂逅」が解放されました。",
-        "location":"白い廃墟・塔","narration":true}
+        "location":"白い世界・円盤・消灯","narration":true}
     ]
   }
 
