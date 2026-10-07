@@ -18877,7 +18877,7 @@
   // ============================================================
   // v281:
   // クリア時はプレイヤーEXPとコインを必ず付与する。
-  // 追加アイテムは最大3枠。
+  // 進化素材は最大3枠。build1218ではCH02-03～CH03-04に経験値素材0～2個を別枠追加。
   // CHAPTER 01は進化素材を落とさず、共鳴石のみ5%で1個抽選する。
   // CHAPTER 02以降はstageNoに応じて追加ドロップ率を段階的に上げる。
   const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
@@ -18894,6 +18894,82 @@
   const SHOOTING_STORY_ITEM_POOL = Object.freeze(
     SHOOTING_EVOLUTION_REWARD_POOL.filter(item => item.rewardType === 'evolution')
   );
+
+  // build1218:
+  // CH02-03～CH03-04では、通常の追加素材とは別枠でキャラクター経験値素材を抽選する。
+  // 個数: 0 / 1 / 2 を各1/3。
+  // 種類: 銅50% / 銀30% / 金20%。
+  // CH04-01以降は別テーブルにするため、この抽選は適用しない。
+  const SHOOTING_STORY_LEVEL_EXP_REWARD_POOL = Object.freeze([
+    Object.freeze({
+      id: 'level_exp_small',
+      name: '強化素材・銅',
+      image: 'images/item_exp_bronze.webp',
+      rewardType: 'level_exp',
+      weight: 5,
+    }),
+    Object.freeze({
+      id: 'level_exp_medium',
+      name: '強化素材・銀',
+      image: 'images/item_exp_silver.webp',
+      rewardType: 'level_exp',
+      weight: 3,
+    }),
+    Object.freeze({
+      id: 'level_exp_large',
+      name: '強化素材・金',
+      image: 'images/item_exp_gold.webp',
+      rewardType: 'level_exp',
+      weight: 2,
+    }),
+  ]);
+
+  function isStoryLevelExpRewardStage() {
+    const stage = selectedStage || {};
+    const chapter = Math.max(0, Math.floor(Number(stage.chapter || 0)));
+    const stageNo = Math.max(0, Math.floor(Number(stage.stageNo || 0)));
+
+    // CH02-03 / CH02-04
+    if (chapter === 2) return stageNo >= 3 && stageNo <= 4;
+
+    // CH03-01 ～ CH03-04
+    if (chapter === 3) return stageNo >= 1 && stageNo <= 4;
+
+    return false;
+  }
+
+  function pickWeightedStoryLevelExpMaterial() {
+    const pool = SHOOTING_STORY_LEVEL_EXP_REWARD_POOL;
+    const totalWeight = pool.reduce((sum, item) => sum + Math.max(0, Number(item.weight || 0)), 0);
+    if (!pool.length || totalWeight <= 0) return null;
+
+    let roll = Math.random() * totalWeight;
+    for (const item of pool) {
+      roll -= Math.max(0, Number(item.weight || 0));
+      if (roll < 0) return item;
+    }
+    return pool[pool.length - 1] || null;
+  }
+
+  function pickStoryLevelExpMaterialDrops() {
+    if (!isStoryLevelExpRewardStage()) return [];
+
+    // floor(random*3) => 0 / 1 / 2 がそれぞれ厳密に同じ幅（1/3）。
+    const dropCount = Math.floor(Math.random() * 3);
+    if (dropCount <= 0) return [];
+
+    // 同じ素材が2回選ばれた場合は1行にまとめる。
+    // secure reward RPCも同一run/materialの重複claimを許さないため、ここで集約する。
+    const grouped = new Map();
+    for (let i = 0; i < dropCount; i++) {
+      const material = pickWeightedStoryLevelExpMaterial();
+      if (!material) continue;
+      const existing = grouped.get(material.id);
+      if (existing) existing.count += 1;
+      else grouped.set(material.id, { material, count: 1 });
+    }
+    return Array.from(grouped.values());
+  }
 
   function getShootingStoryItemSlotRates() {
     const stage = selectedStage || {};
@@ -19387,6 +19463,12 @@
       });
     }
 
+    // build1218: CH02-03～CH03-04は経験値強化素材を別枠で0～2個追加。
+    // 既存の進化素材ドロップはそのまま残す。
+    if (!dailyQuestReward && !scoreAttackFixedReward && !isRaidStage() && !isFacelessStage()) {
+      itemDrops = itemDrops.concat(pickStoryLevelExpMaterialDrops());
+    }
+
     // ステージ固有の確定報酬は既存仕様を維持。
     const guaranteedRewards = Array.isArray(selectedStage && selectedStage.guaranteedRewards)
       ? selectedStage.guaranteedRewards.map(reward => ({
@@ -19420,7 +19502,9 @@
         type: 'material',
         name: material.name,
         amount: count,
-        detail: material.rewardType === 'shinju' ? '神樹成長素材' : '追加ドロップ',
+        detail: material.rewardType === 'shinju'
+          ? '神樹成長素材'
+          : (material.rewardType === 'level_exp' ? 'キャラクター強化素材' : '追加ドロップ'),
         image: material.image,
         materialId: material.id,
       })),
@@ -19445,6 +19529,9 @@
       itemDrops.forEach(({ material, count }) => {
         if (material.rewardType === 'shinju') {
           grantShinjuNutrition(rewardPlan.nutritionExp, count);
+        } else if (material.rewardType === 'level_exp') {
+          // player_inventoryへの直接書込みは行わず、完了済みrun tokenを使うsecure RPCで付与。
+          persistShootingEvolutionReward(material.id, count);
         } else {
           grantEvolutionReward(material, count);
         }
@@ -23843,14 +23930,27 @@
         -webkit-tap-highlight-color:transparent;
       }
       .shooting-arno-slash-prompt{
-        position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
-        min-width:138px;padding:7px 13px 8px;text-align:center;
-        border-top:1px solid rgba(255,255,255,.70);border-bottom:1px solid rgba(255,255,255,.42);
-        background:rgba(20,20,24,.26);color:#fff;font-family:"Cinzel","Noto Serif JP",serif;
-        letter-spacing:.16em;text-shadow:0 1px 5px rgba(0,0,0,.55);pointer-events:none;
+        position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+        min-width:180px;text-align:center;
+        color:#fff;font-family:"Noto Serif JP",serif;
+        pointer-events:none;
+        text-shadow:
+          0 2px 8px rgba(0,0,0,.72),
+          0 0 18px rgba(255,255,255,.72);
       }
-      .shooting-arno-slash-prompt b{display:block;font-size:15px;font-weight:600}
-      .shooting-arno-slash-prompt span{display:block;margin-top:3px;font-size:8px;opacity:.82}
+      .shooting-arno-slash-prompt b{
+        display:block;
+        font-size:34px;
+        line-height:1;
+        font-weight:700;
+        letter-spacing:.12em;
+        white-space:nowrap;
+        animation:shootingArnoRapidTapPrompt .46s ease-in-out infinite alternate;
+      }
+      @keyframes shootingArnoRapidTapPrompt{
+        from{opacity:.76;transform:scale(.94)}
+        to{opacity:1;transform:scale(1.06)}
+      }
       .shooting-arno-slash-fx{
         position:absolute;z-index:89;width:96px;height:3px;left:0;top:0;
         transform-origin:center center;pointer-events:none;
@@ -24059,7 +24159,7 @@
     root.querySelectorAll('.shooting-arno-slash-overlay').forEach(el => el.remove());
     const overlay = document.createElement('div');
     overlay.className = 'shooting-arno-slash-overlay';
-    overlay.innerHTML = `<div class="shooting-arno-slash-prompt"><b>TAP</b><span>瞬迅・千ノ刻</span></div>`;
+    overlay.innerHTML = `<div class="shooting-arno-slash-prompt"><b>連打！</b></div>`;
     arena.appendChild(overlay);
 
     overlay.addEventListener('pointerdown', event => {

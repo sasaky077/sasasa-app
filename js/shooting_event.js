@@ -10,7 +10,7 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = '20261007-build1216-ch03-battle-rules';
+  const MODULE_VERSION = '20261007-build1218-story-exp-material-rewards';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
