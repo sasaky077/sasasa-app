@@ -1,4 +1,4 @@
 {
-  "build": 1232,
-  "note": "Restore lock overlay opacity to 0.96; keep reduced home side-menu lock size"
+  "build": 1235,
+  "note": "Variable boss gauge HP: Overseer 6500/7500, Irish 5500/7500, Livia 5000/6000/7000; canonical boss names retained"
 }

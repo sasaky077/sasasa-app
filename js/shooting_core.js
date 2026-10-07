@@ -2681,6 +2681,7 @@
         hp: Number(state.boss.hp || 0),
         hpMax: Number(state.boss.hpMax || 0),
         gaugeHp: Number(state.boss.gaugeHp || 0),
+        gaugeHps: Array.isArray(state.boss.gaugeHps) ? state.boss.gaugeHps.slice() : null,
         gauges: Number(state.boss.gauges || 1),
         phase: Number(state.boss.phase || 1),
       } : null,
@@ -2799,6 +2800,9 @@
       state.boss.hp = Math.max(0, Math.min(Number(snapshot.boss.hpMax || state.boss.hpMax), Number(snapshot.boss.hp || 0)));
       state.boss.hpMax = Math.max(1, Number(snapshot.boss.hpMax || state.boss.hpMax));
       state.boss.gaugeHp = Math.max(1, Number(snapshot.boss.gaugeHp || state.boss.gaugeHp));
+      if(Array.isArray(snapshot.boss.gaugeHps) && snapshot.boss.gaugeHps.length){
+        state.boss.gaugeHps = snapshot.boss.gaugeHps.map(v => Math.max(1, Number(v || 1)));
+      }
       state.boss.gauges = Math.max(1, Number(snapshot.boss.gauges || state.boss.gauges));
       state.boss.phase = Math.max(1, Math.min(state.boss.gauges, Number(snapshot.boss.phase || 1)));
     }
@@ -3570,11 +3574,32 @@
       resolvedProfiles[Number(id)] = buildResonatedCharacterProfile(id);
     });
 
-    const stageBossGaugeHp = Math.max(1, Number(selectedStage?.bossGaugeHp || BOSS.gaugeHp || BOSS.hp || 1));
-    const stageBossGauges = Math.max(1, Math.floor(Number(selectedStage?.bossGauges || BOSS.gauges || 1)));
+    const rawBossGaugeHps = Array.isArray(selectedStage?.bossGaugeHps)
+      ? selectedStage.bossGaugeHps
+      : (Array.isArray(BOSS.gaugeHps) ? BOSS.gaugeHps : null);
+
+    const stageBossGaugeHps = rawBossGaugeHps
+      ? rawBossGaugeHps
+          .map(v => Math.max(1, Number(v || 1)))
+          .filter(v => Number.isFinite(v) && v > 0)
+      : null;
+
+    const stageBossGaugeHp = stageBossGaugeHps && stageBossGaugeHps.length
+      ? stageBossGaugeHps[0]
+      : Math.max(1, Number(selectedStage?.bossGaugeHp || BOSS.gaugeHp || BOSS.hp || 1));
+
+    const stageBossGauges = stageBossGaugeHps && stageBossGaugeHps.length
+      ? stageBossGaugeHps.length
+      : Math.max(1, Math.floor(Number(selectedStage?.bossGauges || BOSS.gauges || 1)));
+
     const stageBossTotalHp = Math.max(
       1,
-      Number(selectedStage?.bossTotalHp || (stageBossGaugeHp * stageBossGauges))
+      Number(
+        selectedStage?.bossTotalHp ||
+        (stageBossGaugeHps && stageBossGaugeHps.length
+          ? stageBossGaugeHps.reduce((sum, hp) => sum + hp, 0)
+          : (stageBossGaugeHp * stageBossGauges))
+      )
     );
 
     state = {
@@ -3663,6 +3688,9 @@
         hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
         gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
+        gaugeHps: (!isRaidStage() && !isFacelessStage() && !isAmbushStage() && stageBossGaugeHps && stageBossGaugeHps.length)
+          ? stageBossGaugeHps.slice()
+          : null,
         gauges: isRaidStage() ? 3 : ((isFacelessStage() || isAmbushStage()) ? 1 : stageBossGauges),
         phase: 1
       },
@@ -4086,6 +4114,47 @@
     return { invincibleLeft, atkBuffLeft, atkBuffMultiplier };
   }
 
+  function getBossGaugeHpForPhase(phase){
+    if(!state || !state.boss) return 1;
+    const list = Array.isArray(state.boss.gaugeHps) ? state.boss.gaugeHps : null;
+    const p = Math.max(1, Math.min(Number(state.boss.gauges || 1), Number(phase || 1)));
+    if(list && list.length){
+      return Math.max(1, Number(list[p - 1] || list[list.length - 1] || state.boss.gaugeHp || 1));
+    }
+    return Math.max(1, Number(state.boss.gaugeHp || 1));
+  }
+
+  function getBossGaugeFloorForPhase(phase){
+    if(!state || !state.boss) return 0;
+    const list = Array.isArray(state.boss.gaugeHps) ? state.boss.gaugeHps : null;
+    const p = Math.max(1, Math.min(Number(state.boss.gauges || 1), Number(phase || 1)));
+    if(list && list.length){
+      return list.slice(p).reduce((sum, hp) => sum + Math.max(1, Number(hp || 1)), 0);
+    }
+    return Math.max(0, (Number(state.boss.gauges || 1) - p) * Math.max(1, Number(state.boss.gaugeHp || 1)));
+  }
+
+  function getBossPhaseFromHp(hp){
+    if(!state || !state.boss) return 1;
+    const gauges = Math.max(1, Number(state.boss.gauges || 1));
+    const list = Array.isArray(state.boss.gaugeHps) ? state.boss.gaugeHps : null;
+    const remainingHp = Math.max(0, Number(hp || 0));
+
+    if(list && list.length){
+      for(let phase = 1; phase <= gauges; phase += 1){
+        const floor = list
+          .slice(phase)
+          .reduce((sum, value) => sum + Math.max(1, Number(value || 1)), 0);
+        if(remainingHp > floor) return phase;
+      }
+      return gauges;
+    }
+
+    const gaugeHp = Math.max(1, Number(state.boss.gaugeHp || 1));
+    const remainingGauges = Math.max(1, Math.ceil(remainingHp / gaugeHp));
+    return Math.max(1, Math.min(gauges, gauges - remainingGauges + 1));
+  }
+
   function renderHud() {
     if (!state) return;
     updateBattleTimer(performance.now());
@@ -4100,9 +4169,9 @@
     const gaugeWrap = document.getElementById('shooting-ult-side');
     const gauge = document.getElementById('shooting-burst-gauge');
 
-    const gaugeHp = state.boss.gaugeHp;
     const phase = state.boss.phase || 1;
-    const gaugeFloor = (state.boss.gauges - phase) * gaugeHp;
+    const gaugeHp = getBossGaugeHpForPhase(phase);
+    const gaugeFloor = getBossGaugeFloorForPhase(phase);
     const normalCurrentGaugeHp = clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
     const currentGaugeHp = isChapter43BossStage() ? getChapter43WaveCurrentHp() : normalCurrentGaugeHp;
     const currentGaugeMaxHp = isChapter43BossStage() ? getChapter43WaveMaxHp(phase) : gaugeHp;
@@ -7062,6 +7131,19 @@
     if (!p || !p.el || p.trapVisualDeployed) return;
     p.trapVisualDeployed = true;
     p.el.classList.remove('trap-flying');
+
+    // build1221:
+    // 飛翔中のSHOTには属性色を付けるが、設置後のTRAPオブジェクトには属性色を一切残さない。
+    // ダメージ計算上の属性は p.attackElement 側に保持されるため、見た目だけを無属性化する。
+    p.el.classList.remove(
+      'trap-element-neutral',
+      'trap-element-fire',
+      'trap-element-aqua',
+      'trap-element-wood',
+      'trap-element-light',
+      'trap-element-dark'
+    );
+
     p.el.classList.add('trap-armed');
     p.el.innerHTML = '';
 
@@ -14790,8 +14872,7 @@
     // BREAK演出が発生するため、フェーズ更新自体を無効化する。
     if (!state || state.boss.hp <= 0 || isFacelessStage() || isAmbushStage() || isScoreAttackStage()) return;
     const previous = state.boss.phase || 1;
-    const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
-    const nextPhase = Math.max(1, Math.min(state.boss.gauges, state.boss.gauges - remainingGauges + 1));
+    const nextPhase = getBossPhaseFromHp(state.boss.hp);
     if (nextPhase !== previous) {
       state.boss.phase = nextPhase;
       beginBossPhaseBreak(nextPhase);

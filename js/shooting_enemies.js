@@ -25,10 +25,6 @@
     ZAKO_LIGHT_SHOT: 'zako_light_shot',
     ZAKO_LIGHT_LASER: 'zako_light_laser',
 
-    // CHAPTER 06 強敵（画像は既存zako素材を暫定流用）
-    CH06_STRONG_FIRE: 'shooting_ch06_strong_fire',
-    CH06_STRONG_DARK: 'shooting_ch06_strong_dark',
-
     // Remnant bosses
     REMNANT_01: 'shooting_remnant_01',
     REMNANT_02: 'shooting_remnant_02',
@@ -38,8 +34,6 @@
     REMNANT_06: 'shooting_remnant_06',
     REMNANT_07: 'shooting_remnant_07',
     REMNANT_08: 'shooting_remnant_08',
-    FACELESS_MINI: 'shooting_faceless_mini',
-    REMNANT_07_CLONE: 'shooting_remnant_07_clone',
 
     // SPECIAL EVENT bosses
     FACELESS: 'shooting_faceless',
@@ -56,11 +50,12 @@
   //   画像・ID・基本枠だけ先に確保。
   //   攻撃AIはNormal Stage実装時にshooting_core側へ追加する。
   //
-  // remnant_01:
-  //   現在実装済みのオーバーシア。
+  // remnant_01～03:
+  //   CH01～CH03のストーリーBOSS。
+  //   可変ゲージHPは gaugeHps で定義する。
   //
-  // remnant_02～08:
-  //   ID予約のみ。性能は未定義。
+  // remnant_04～08:
+  //   後続CHAPTER用。
   const SHOOTING_ENEMIES = Object.freeze({
     // ------------------------------------------------------------
     // NORMAL ENEMIES
@@ -157,26 +152,6 @@
       moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
     }),
 
-    // CH06-01：FIRE強敵。AQUA以外のダメージはステージ側で無効化する。
-    [SHOOTING_ENEMY_ID.CH06_STRONG_FIRE]: Object.freeze({
-      id: SHOOTING_ENEMY_ID.CH06_STRONG_FIRE,
-      kind: 'normal', implemented: true, strongEnemy: true,
-      name: '炎冠の強敵', displayName: 'STRONG ENEMY / FIRE',
-      element: 'fire', attackType: 'shot', image: 'images/ch06_strong_fire.webp',
-      hp: 9200, bulletDamage: 175, bulletSpeed: 250, fireRate: 1180,
-      moveSpeed: 24, scoreValue: 2600, behavior: 'generic_element_shot_v1', uiScale: 1.72,
-    }),
-
-    // CH06-02：DARK強敵。LIGHT以外のダメージはステージ側で無効化する。
-    [SHOOTING_ENEMY_ID.CH06_STRONG_DARK]: Object.freeze({
-      id: SHOOTING_ENEMY_ID.CH06_STRONG_DARK,
-      kind: 'normal', implemented: true, strongEnemy: true,
-      name: '黒環の強敵', displayName: 'STRONG ENEMY / DARK',
-      element: 'dark', attackType: 'laser', image: 'images/ch06_strong_dark.webp',
-      hp: 11800, laserDamage: 205, laserSpeed: 565, fireRate: 1780,
-      moveSpeed: 20, scoreValue: 3200, behavior: 'generic_element_laser_v1', uiScale: 1.78,
-    }),
-
     [SHOOTING_ENEMY_ID.MINI_01]: Object.freeze({
       id: SHOOTING_ENEMY_ID.MINI_01,
       kind: 'normal',
@@ -185,7 +160,7 @@
       name: '観測眼の残穢',
       displayName: '観測眼の残穢',
       image: 'images/enemy_mini_01_battle.webp',
-      element: 'light',
+      element: 'neutral',
       hp: 1000,
       bulletDamage: 85,
       bulletSpeed: 185,
@@ -204,7 +179,6 @@
       name: '暴威の残穢',
       displayName: '暴威の残穢',
       image: 'images/enemy_mini_02_battle.webp',
-      element: 'fire',
 
       // CHAPTER 02: 数ではなく「個の暴力」で押す強敵。
       hp: 4000,
@@ -233,7 +207,6 @@
       name: '星護の残穢',
       displayName: '星護の残穢',
       image: 'images/enemy_mini_03_battle.webp',
-      element: 'wood',
       // CH03通常敵。弾幕は濃いが、撃破テンポは軽めにする。
       hp: 1400,
       bulletDamage: 105,
@@ -253,7 +226,6 @@
       name: '流麗の残穢',
       displayName: '流麗の残穢',
       image: 'images/remnant_04_zako_up.webp',
-      element: 'light',
       // CH04通常敵。密度よりも軌道の美しさを優先する。
       hp: 1500,
       bulletDamage: 95,
@@ -273,7 +245,6 @@
       name: 'ミラージュの残影',
       displayName: 'ミラージュの残影',
       image: 'images/remnant_05_battle_mini.webp',
-      element: 'dark',
       hp: 2400,
       bulletDamage: 120,
       bulletSpeed: 230,
@@ -295,10 +266,10 @@
       name: 'オーバーシア',
       displayName: 'REMNANT 01　オーバーシア',
       image: 'images/remnant_01_battle.webp',
-      element: 'light',
+      element: 'neutral',
 
-      gaugeHp: 7500,
-      gauges: 3,
+      gaugeHps: Object.freeze([6500, 7500]),
+      gauges: 2,
 
       bulletSpeed: 255,
       fireRate: 760,
@@ -316,13 +287,13 @@
       kind: 'boss',
       remnantNo: 2,
       implemented: true,
-      name: '暴力',
-      displayName: 'REMNANT 02　暴力',
+      name: 'イリシュ',
+      displayName: 'REMNANT 02　イリシュ',
       image: 'images/remnant_02_battle.webp',
       element: 'fire',
 
-      gaugeHp: 6000,
-      gauges: 3,
+      gaugeHps: Object.freeze([5500, 7500]),
+      gauges: 2,
 
       bulletSpeed: 285,
       fireRate: 920,
@@ -340,12 +311,11 @@
       kind: 'boss',
       remnantNo: 3,
       implemented: true,
-      name: '天墜',
-      displayName: 'REMNANT 03　天墜',
+      name: 'リヴィア',
+      displayName: 'REMNANT 03　リヴィア',
       image: 'images/remnant_03_battle.webp',
-      element: 'wood',
 
-      gaugeHp: 7200,
+      gaugeHps: Object.freeze([5000, 6000, 7000]),
       gauges: 3,
 
       bulletSpeed: 248,
@@ -366,7 +336,6 @@
       name: 'フェイスレス',
       displayName: 'FACELESS　無貌の天使',
       image: 'images/enemy_faceless_battle.webp',
-      element: 'dark',
 
       // 実HPはステージ側のfaceless.waveHpでwaveごとに上書きする。
       gaugeHp: 7600,
@@ -378,41 +347,6 @@
 
       behavior: 'faceless_event_v1',
       uiScale: 1.28,
-    }),
-
-
-    // CH07用FACELESS雑魚。仮面OBJECTを召喚する。
-    [SHOOTING_ENEMY_ID.FACELESS_MINI]: Object.freeze({
-      id: SHOOTING_ENEMY_ID.FACELESS_MINI,
-      kind: 'normal',
-      implemented: true,
-      name: 'フェイスレス',
-      displayName: 'FACELESS',
-      image: 'images/enemy_faceless_battle.webp',
-      element: 'dark',
-      hp: 2600,
-      bulletSpeed: 205,
-      fireRate: 1180,
-      bulletDamage: 105,
-      behavior: 'faceless_minion_v1',
-      uiScale: .82,
-    }),
-
-    // CH07最終フェーズ用REMNANT07分身体。
-    [SHOOTING_ENEMY_ID.REMNANT_07_CLONE]: Object.freeze({
-      id: SHOOTING_ENEMY_ID.REMNANT_07_CLONE,
-      kind: 'normal',
-      implemented: true,
-      name: 'REMNANT 07',
-      displayName: 'REMNANT 07',
-      image: 'images/remnant_07_clone.webp',
-      element: 'dark',
-      hp: 5200,
-      bulletSpeed: 225,
-      fireRate: 980,
-      bulletDamage: 135,
-      behavior: 'remnant07_clone_v1',
-      uiScale: .84,
     }),
 
 
@@ -477,8 +411,7 @@
       implemented: true,
       name: '理想郷：ノア',
       displayName: 'SPECIAL STAGE　理想郷：ノア',
-      image: 'images/noah_battle.webp',
-      element: 'light',
+      image: 'images/nore_battle.webp',
 
       gaugeHp: 5000,
       gauges: 3,
@@ -499,7 +432,6 @@
       name: 'サキエル',
       displayName: 'REMNANT 04　サキエル',
       image: 'images/enemy_sakiel_battle.webp',
-      element: 'light',
 
       // CHAPTER04-04「美しい弾幕」本実装。
       // 超軽量を維持しつつ、螺旋とウェーブを多色で見せる。
@@ -520,7 +452,6 @@
       name: 'ミラージュ',
       displayName: 'REMNANT 05　ミラージュ',
       image: 'images/remnant_05_battle.webp',
-      element: 'dark',
       gaugeHp: 4500,
       gauges: 3,
       bulletSpeed: 240,
@@ -536,10 +467,9 @@
       id: SHOOTING_ENEMY_ID.OVERSEER_AMBUSH,
       kind: 'boss',
       implemented: true,
-      name: '???',
-      displayName: 'EMERGENCY　???',
+      name: 'オーバーシア（亜種）',
+      displayName: 'EMERGENCY　オーバーシア（亜種）',
       image: 'images/remnant_01_blk_battle.webp',
-      element: 'dark',
       gaugeHp: 2500,
       gauges: 1,
       bulletSpeed: 210,
@@ -553,35 +483,13 @@
       id: SHOOTING_ENEMY_ID.REMNANT_06,
       kind: 'boss',
       remnantNo: 6,
-      implemented: true,
-      name: 'レムナント06',
-      displayName: 'REMNANT 06',
-      element: 'aqua',
-      image: 'images/remnant_06_battle.webp',
-      gaugeHp: 6000,
-      gauges: 3,
-      bulletSpeed: 255,
-      fireRate: 760,
-      bulletDamage: 245,
-      behavior: 'barrage_v1',
-      uiScale: 1.12,
+      implemented: false,
     }),
     [SHOOTING_ENEMY_ID.REMNANT_07]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_07,
       kind: 'boss',
       remnantNo: 7,
-      implemented: true,
-      name: 'REMNANT 07',
-      displayName: 'REMNANT 07',
-      image: 'images/remnant_07_battle.webp',
-      element: 'dark',
-      gaugeHp: 12000,
-      gauges: 3,
-      bulletSpeed: 235,
-      fireRate: 820,
-      bulletDamage: 170,
-      behavior: 'remnant07_v1',
-      uiScale: 1.16,
+      implemented: false,
     }),
     [SHOOTING_ENEMY_ID.REMNANT_08]: Object.freeze({
       id: SHOOTING_ENEMY_ID.REMNANT_08,
