@@ -589,9 +589,11 @@
 }
 
 #${ROOT_ID} .story-novel-textbox,
-#${ROOT_ID} .story-novel-cast,
-#${ROOT_ID} .story-novel-location{
+#${ROOT_ID} .story-novel-cast{
   transition:opacity .20s ease, transform .20s ease;
+}
+#${ROOT_ID} .story-novel-location{
+  display:none !important;
 }
 #${ROOT_ID}.is-entry-transition .story-novel-textbox,
 #${ROOT_ID}.is-entry-transition .story-novel-cast{
@@ -998,7 +1000,7 @@
       'CHAPTER '+String(data.chapter||0).padStart(2,'0')+'  '+String(data.chapterTitle||'');
     root.querySelector('.story-novel-stage').textContent=
       String(data.chapter||0)+'-'+String(data.stageNo||0)+'  '+String(data.stageTitle||'');
-    root.querySelector('.story-novel-location').textContent=location ? '— '+location+' —' : '';
+    root.querySelector('.story-novel-location').textContent='';
     root.querySelector('.story-novel-speaker').textContent=speaker || 'NARRATION';
 
     const bg=root.querySelector('.story-novel-bg');

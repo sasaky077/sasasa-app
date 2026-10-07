@@ -48,6 +48,7 @@
     TOYFEL: 37,
     CHLOE: 38,
     LEONA_CROSS: 39,
+    KUREHA: 41,
   });
 
   // ============================================================
@@ -100,6 +101,7 @@
     37: 'r',   // トイフェル
     38: 'r',   // クロエ
     39: 'r',   // レオナクロス
+    41: 'sr',  // シュオリン
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -970,6 +972,28 @@
     "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
+    "hidden": false
+  },
+  "41": {
+    "id": 41,
+    "name": "シュオリン",
+    "element": "fire",
+    "hp": 600,
+    "atk": 290,
+    "image": "images/chara_41_battle_back.webp",
+    "panelImage": "images/chara_41_panel.webp",
+    "cutinImage": "images/chara_41_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_41.webp",
+    "homeImage": "images/chara_41_cut.webp",
+    "upImage": "images/chara_41_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -30,
     "hidden": false
   },
   "50": {
@@ -2105,6 +2129,48 @@
     ultBeamTickAtkMultiplier: 0.35,
     ultBeamWidth: 62,
     ultBeamElement: 'dark',
+  });
+
+  // ============================================================
+  // build1252: シュオリン / 限定SR FIRE
+  // SPREADで集敵後の密着火力を狙う。ULT中も通常ショットを継続可能。
+  // ============================================================
+  SHOOTING_CHARACTERS[CHARACTER_ID.KUREHA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.KUREHA,
+    effectKey: 'kureha',
+    label: 'SPREAD / FIRE BLACK HOLE',
+    description: 'FIRE属性の5WAY SPREAD。ULTは敵陣に炎のブラックホールを展開し、通常敵を中心へ集めながら5秒間継続ダメージを与える。ULT中も通常ショットを継続できる。',
+    ultDescription: '敵陣へ炎のブラックホールを展開。5秒間、通常敵を一か所へ吸引しながら0.25秒ごとにFIRE属性ダメージを与え、全時間でATK×3.0相当。ボスは吸引しないが継続ダメージは有効。発動中も通常ショットを撃ち続けられる。',
+    ultName: '紅蓮坩堝',
+    ultType: 'kureha_fire_black_hole',
+    moveSpeed: 400,
+    fireRate: 300,
+    bulletSpeed: 900,
+    shotPowerRate: 0.070,
+    shotType: 'spread',
+    shotCount: 5,
+    shotAngleStep: 0.115,
+    shotStyle: 'kureha',
+    shotElement: 'fire',
+    shotOffsetY: 40,
+    burstDamage: 0,
+    burstNeed: 32,
+    ultGainPerHit: 0.45,
+    coreTop: '38%',
+    blackHoleTravelSpeed: 760,
+    blackHoleDurationMs: 5000,
+    blackHoleSize: 170,
+    blackHolePullStrength: 12.0,
+    blackHoleTargetY: 112,
+    blackHoleEnemyStopRadius: 10,
+    blackHoleBossStopRadius: 18,
+    blackHoleDamageAtkMultiplier: 3.0,
+    blackHoleDamageTickMs: 250,
+    blackHolePullBoss: false,
+    blackHolePauseEnemyAttacks: false,
+    blackHoleDamageElemental: true,
+    blackHoleStyle: 'fire',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({

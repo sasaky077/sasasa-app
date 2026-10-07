@@ -17085,6 +17085,32 @@
   }
 
 
+  function ensureKurehaBlackHoleStyle() {
+    if (document.getElementById('shooting-kureha-black-hole-style-v1')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-kureha-black-hole-style-v1';
+    style.textContent = `
+      .shooting-eltena-black-hole.kureha-fire-black-hole{
+        filter:drop-shadow(0 0 11px rgba(185,28,15,.42)) drop-shadow(0 0 25px rgba(255,92,28,.22));
+      }
+      .shooting-eltena-black-hole.kureha-fire-black-hole > i{
+        background:radial-gradient(circle at 50% 50%,#080202 0 28%,rgba(36,3,2,.98) 39%,rgba(135,22,9,.90) 55%,rgba(255,92,28,.66) 68%,transparent 79%);
+        box-shadow:0 0 16px rgba(255,93,32,.38),inset 0 0 18px rgba(255,132,54,.18);
+      }
+      .shooting-eltena-black-hole.kureha-fire-black-hole > b{
+        border-color:rgba(255,112,44,.78);
+        box-shadow:0 0 12px rgba(255,69,26,.62),inset 0 0 10px rgba(255,177,75,.25);
+        animation-duration:.52s;
+      }
+      .shooting-eltena-black-hole.kureha-fire-black-hole > span{
+        background:conic-gradient(from 0deg,transparent 0 10%,rgba(255,74,25,.58) 18%,transparent 28% 39%,rgba(255,154,54,.52) 48%,transparent 58% 72%,rgba(190,30,14,.62) 82%,transparent 94%);
+        filter:blur(2px);
+        animation-duration:.78s;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function clearEltenaBlackHole() {
     if (!state) return;
 
@@ -17137,6 +17163,10 @@
 
     const el = document.createElement('div');
     el.className = 'shooting-eltena-black-hole traveling';
+    if (String(c.blackHoleStyle || '') === 'fire') {
+      ensureKurehaBlackHoleStyle();
+      el.classList.add('kureha-fire-black-hole');
+    }
     el.setAttribute('aria-hidden', 'true');
     el.style.setProperty('--eltena-bh-size', `${Number(c.blackHoleSize || 154)}px`);
     el.innerHTML = '<i></i><b></b><span></span>';
@@ -17168,6 +17198,10 @@
       damageTickMs: Math.max(100, Number(c.blackHoleDamageTickMs || 250)),
       nextDamageAt: 0,
       damagePulseIndex: 0,
+      attackElement: normalizeCombatElement(c.element) || null,
+      damageElemental: !!c.blackHoleDamageElemental,
+      pullBoss: c.blackHolePullBoss !== false,
+      pauseEnemyAttacks: c.blackHolePauseEnemyAttacks !== false,
     };
 
     if (root) {
@@ -17249,7 +17283,7 @@
         bh.activeFrom = now;
         bh.activeUntil = now + bh.durationMs;
         bh.nextDamageAt = now;
-        deferAllEnemyAttackResume(bh.activeUntil);
+        if (bh.pauseEnemyAttacks) deferAllEnemyAttackResume(bh.activeUntil);
         bh.el.classList.remove('traveling');
         bh.el.classList.add('active');
         document.getElementById(ROOT_ID)?.classList.add('eltena-black-hole-active');
@@ -17299,18 +17333,30 @@
       if (damage > 0) {
         (state.normalEnemies || []).forEach(enemy => {
           if (!enemy || !enemy.el || enemy.hp <= 0) return;
-          damageNormalEnemy(enemy, applyHitComboDamage(damage), now, false);
+          let tickDamage = damage;
+          if (bh.damageElemental && bh.attackElement) {
+            tickDamage = applyElementDamage(damage, bh.attackElement, getCombatTargetElement(enemy));
+          }
+          damageNormalEnemy(enemy, applyHitComboDamage(tickDamage), now, false);
         });
         state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
         if (isNormalBattle()) evaluateNormalMission(now);
 
         (state.facelessObjects || []).forEach(obj => {
           if (!obj || !obj.el || obj.hp <= 0) return;
-          damageFacelessObject(obj, applyHitComboDamage(damage), now);
+          let tickDamage = damage;
+          if (bh.damageElemental && bh.attackElement) {
+            tickDamage = applyElementDamage(damage, bh.attackElement, getCombatTargetElement(obj));
+          }
+          damageFacelessObject(obj, applyHitComboDamage(tickDamage), now);
         });
 
         if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
-          const applied = Math.min(state.boss.hp, Math.max(0, applyHitComboDamage(damage)));
+          let bossTickDamage = damage;
+          if (bh.damageElemental && bh.attackElement) {
+            bossTickDamage = applyElementDamage(damage, bh.attackElement, getCombatTargetElement(state.boss));
+          }
+          const applied = Math.min(state.boss.hp, Math.max(0, applyHitComboDamage(bossTickDamage)));
           state.boss.hp = Math.max(0, state.boss.hp - applied);
           if ((bh.damagePulseIndex % 2) === 1) {
             createHit(
@@ -17358,9 +17404,9 @@
       positionUnit(obj.hpEl, obj.x, obj.y + 56);
     });
 
-    // ボスも「すべての敵」に含めて吸引する。
-    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
-      deferBossAttackResume(Number(bh.activeUntil || now));
+    // ボス吸引はキャラ定義で制御。クレハは弾幕ギミックを壊さないため位置を動かさない。
+    if (bh.pullBoss && !isNormalBattle() && state.boss && state.boss.hp > 0) {
+      if (bh.pauseEnemyAttacks) deferBossAttackResume(Number(bh.activeUntil || now));
       pullPointTowardBlackHole(state.boss, bh, dt, bh.bossStopRadius, {
         minX: 54, maxX: w - 54, minY: 52, maxY: h * .74
       });
@@ -17477,6 +17523,14 @@
     showUltCut(c.ultName, c.effectKey);
     ultScreenFlash('ult-flash-eltena');
     createEltenaBlackHole(c);
+  }
+
+  function useKurehaUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey);
+    ultScreenFlash('ult-flash-fire');
+    createEltenaBlackHole(c);
+    state.playerShotLockUntil = Math.min(Number(state.playerShotLockUntil || 0), performance.now());
   }
 
 
@@ -19235,7 +19289,7 @@
   // ============================================================
   // v281:
   // クリア時はプレイヤーEXPとコインを必ず付与する。
-  // 進化素材は最大3枠。build1218ではCH02-03～CH03-04に経験値素材0～2個を別枠追加。
+  // 進化素材は最大3枠。build1249ではCH02-03以降に経験値素材0～2個を別枠追加。
   // CHAPTER 01は進化素材を落とさず、共鳴石のみ5%で1個抽選する。
   // CHAPTER 02以降はstageNoに応じて追加ドロップ率を段階的に上げる。
   const SHOOTING_EVOLUTION_REWARD_POOL = Object.freeze([
@@ -19253,11 +19307,10 @@
     SHOOTING_EVOLUTION_REWARD_POOL.filter(item => item.rewardType === 'evolution')
   );
 
-  // build1218:
-  // CH02-03～CH03-04では、通常の追加素材とは別枠でキャラクター経験値素材を抽選する。
+  // build1249:
+  // CH02-03以降では、通常の追加素材とは別枠でキャラクター経験値素材を抽選する。
   // 個数: 0 / 1 / 2 を各1/3。
   // 種類: 銅50% / 銀30% / 金20%。
-  // CH04-01以降は別テーブルにするため、この抽選は適用しない。
   const SHOOTING_STORY_LEVEL_EXP_REWARD_POOL = Object.freeze([
     Object.freeze({
       id: 'level_exp_small',
@@ -19287,13 +19340,11 @@
     const chapter = Math.max(0, Math.floor(Number(stage.chapter || 0)));
     const stageNo = Math.max(0, Math.floor(Number(stage.stageNo || 0)));
 
-    // CH02-03 / CH02-04
-    if (chapter === 2) return stageNo >= 3 && stageNo <= 4;
-
-    // CH03-01 ～ CH03-04
-    if (chapter === 3) return stageNo >= 1 && stageNo <= 4;
-
-    return false;
+    // build1249: メインストーリーの経験値素材は CH02-03 以降を継続対象にする。
+    // 旧実装ではCH03-04で打ち切られており、CH04以降が対象外になっていた。
+    if (chapter < 2) return false;
+    if (chapter === 2) return stageNo >= 3;
+    return chapter >= 3 && stageNo >= 1;
   }
 
   function pickWeightedStoryLevelExpMaterial() {
@@ -19786,24 +19837,51 @@
     let itemDrops = [];
 
     if (dailyQuestReward) {
-      // デイリー報酬はサーバー確定結果だけを表示する。
-      const rows = dailyServer && Array.isArray(dailyServer.items) ? dailyServer.items : [];
-      itemDrops = rows.map(row => {
-        const id = String(row && row.id || '');
-        let def = (typeof window.getEvolutionMaterialDef === 'function')
-          ? window.getEvolutionMaterialDef(id)
-          : (typeof getEvolutionMaterialDef === 'function' ? getEvolutionMaterialDef(id) : null);
+      // build1249: デイリー報酬はサーバー確定結果をそのままRESULTへ正規化して表示する。
+      // RPC世代差で items / reward_items のどちらが来ても拾えるようにする。
+      const rawRows = dailyServer && Array.isArray(dailyServer.items)
+        ? dailyServer.items
+        : (dailyServer && Array.isArray(dailyServer.reward_items) ? dailyServer.reward_items : []);
+
+      const levelExpDefs = {
+        level_exp_small:  { id:'level_exp_small',  name:'強化素材・銅', image:'images/item_exp_bronze.webp', rewardType:'level_exp' },
+        level_exp_medium: { id:'level_exp_medium', name:'強化素材・銀', image:'images/item_exp_silver.webp', rewardType:'level_exp' },
+        level_exp_large:  { id:'level_exp_large',  name:'強化素材・金', image:'images/item_exp_gold.webp',   rewardType:'level_exp' },
+      };
+
+      itemDrops = rawRows.map(row => {
+        const id = String(row && row.id || '').trim();
+
+        // 経験値素材はRESULT表示に必要な名前/画像をここで必ず解決する。
+        // CharacterLevelingの読み込み順に依存させない。
+        let def = levelExpDefs[id] || null;
+
+        if (!def) {
+          const evoDef = (typeof window.getEvolutionMaterialDef === 'function')
+            ? window.getEvolutionMaterialDef(id)
+            : (typeof getEvolutionMaterialDef === 'function' ? getEvolutionMaterialDef(id) : null);
+          if (evoDef) {
+            def = {
+              id: String(evoDef.id || id),
+              name: String(evoDef.name || id || '素材'),
+              image: String(evoDef.image || evoDef.img || ''),
+              rewardType: String(evoDef.rewardType || 'evolution'),
+            };
+          }
+        }
+
         if (!def && window.CharacterLeveling && Array.isArray(window.CharacterLeveling.MATERIALS)) {
           const levelMat = window.CharacterLeveling.MATERIALS.find(item => String(item && item.id || '') === id);
           if (levelMat) {
             def = { id:levelMat.id, name:levelMat.name, image:levelMat.img, rewardType:'level_exp' };
           }
         }
+
         return {
-          material: def || { id:id, name:id || '素材', image:'' },
+          material: def || { id:id, name:id || '素材', image:'', rewardType:'material' },
           count: Math.max(1, Number(row && row.quantity || 1))
         };
-      });
+      }).filter(row => row && row.material && row.material.id);
     } else if (scoreAttackFixedReward) {
       // すこあた！は従来の固定報酬感を維持しつつ、最大3枠以内。
       itemDrops = pickShootingEvolutionRewards(2).map(material => ({ material, count: 1 }));
@@ -19821,7 +19899,7 @@
       });
     }
 
-    // build1218: CH02-03～CH03-04は経験値強化素材を別枠で0～2個追加。
+    // build1249: CH02-03以降は経験値強化素材を別枠で0～2個追加。
     // 既存の進化素材ドロップはそのまま残す。
     if (!dailyQuestReward && !scoreAttackFixedReward && !isRaidStage() && !isFacelessStage()) {
       itemDrops = itemDrops.concat(pickStoryLevelExpMaterialDrops());
@@ -26310,6 +26388,7 @@
     else if (c.ultType === 'precision_beam') useAyaneUlt(c);
     else if (c.ultType === 'gojo_purple') useGojoUlt(c);
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
+    else if (c.ultType === 'kureha_fire_black_hole') useKurehaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
     else if (c.ultType === 'ange_healing_hearts') useAngeUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
