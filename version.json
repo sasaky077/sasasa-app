@@ -1,4 +1,4 @@
 {
-  "build": 1238,
-  "note": "Disable random Overseer variant ambush: enabled=false, triggerRate=0"
+  "build": 1239,
+  "note": "CH03-04 iPhone performance: force enemy bullet canvas DPR to 1x; gameplay and bullet counts unchanged"
 }

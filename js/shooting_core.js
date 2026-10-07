@@ -4710,7 +4710,10 @@
     // ノアは弾数が多いため1x固定、その他Canvas弾幕も最大1.25xに制限する。
     // UI/キャラ画像には影響せず、敵弾Canvasだけを軽量化する。
     const nativeDpr = Math.max(1, Number(window.devicePixelRatio || 1));
-    const dpr = isNoahStage() ? 1 : Math.min(1.25, nativeDpr);
+    // build1239: CH03-04 リヴィア戦はiPhone実機でのみフレーム落ちが確認されたため、
+    // 弾数・速度・当たり判定・WARNING仕様は変えず、敵弾Canvasの内部解像度だけ1xへ下げる。
+    // 1.25x -> 1x で描画ピクセル数を約36%削減し、ゲーム難易度には影響させない。
+    const dpr = (isNoahStage() || isChapter03BossStage()) ? 1 : Math.min(1.25, nativeDpr);
     const pixelWidth = Math.round(cssWidth * dpr);
     const pixelHeight = Math.round(cssHeight * dpr);
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
