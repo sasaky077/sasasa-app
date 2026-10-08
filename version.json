@@ -1,4 +1,4 @@
 {
-  "build": 1278,
-  "note": "Wait for limit break character illustration load before animation and avoid premature close"
+  "build": 1279,
+  "note": "Fix limit break successful save return value and defer completion modal until animation finishes"
 }

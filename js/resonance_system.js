@@ -443,7 +443,7 @@ function getAutoLimitBreakMaterial(target){
 }
 
 
-async function executeLimitBreak(target, material, selectedSoulVesselId){
+async function executeLimitBreak(target, material, selectedSoulVesselId, options){
 
   if(!target) return;
   var isEri = Number(target.id) === 1;
@@ -541,12 +541,16 @@ async function executeLimitBreak(target, material, selectedSoulVesselId){
       (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
   }
 
-  var completeModal = document.getElementById('limitbreak-complete-modal');
-  if (completeModal) {
-    completeModal.classList.add('active');
-  } else {
-    alert('共鳴が完了しました。');
+  // UI側の演出完了後に結果ダイアログを表示する。保存成功を明示的に返す。
+  if(!(options && options.silent)){
+    var completeModal = document.getElementById('limitbreak-complete-modal');
+    if (completeModal) {
+      completeModal.classList.add('active');
+    } else {
+      alert('共鳴が完了しました。');
+    }
   }
+  return true;
 }
 
 
