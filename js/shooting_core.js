@@ -20023,11 +20023,15 @@
 
     // v283: EXP / コインは確定報酬として必ず先頭表示。
     // 旧stateを引き継いだ場合でも表示順を固定する。
+    // build1263: キャラ経験値素材は付与されていても、従来のRESULT CSSが
+    // 最大5行でoverflow:hiddenしていたため、追加ドロップが多いと下側で見切れていた。
+    // 旧CSSがキャッシュに残っていても見えるよう、経験値素材をEXP/COIN直後へ優先配置する。
     const orderedDrops = Array.isArray(drops)
       ? [
           ...drops.filter(drop => drop && drop.type === 'exp'),
           ...drops.filter(drop => drop && drop.type === 'coin'),
-          ...drops.filter(drop => drop && drop.type !== 'exp' && drop.type !== 'coin')
+          ...drops.filter(drop => drop && drop.materialId && /^level_exp_(?:small|medium|large)$/.test(String(drop.materialId))),
+          ...drops.filter(drop => drop && drop.type !== 'exp' && drop.type !== 'coin' && !(drop.materialId && /^level_exp_(?:small|medium|large)$/.test(String(drop.materialId))))
         ]
       : [];
 

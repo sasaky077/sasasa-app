@@ -1,7 +1,7 @@
 {
-  "build": "1262",
-  "label": "story-exp-guaranteed",
-  "note": "guarantee 1-2 character EXP materials from CH02-03 onward",
-  "version": "1262",
+  "build": "1263",
+  "label": "result-exp-visible",
+  "note": "show granted story character EXP materials in RESULT without five-row clipping",
+  "version": "1263",
   "updated": "2026-10-08"
 }
