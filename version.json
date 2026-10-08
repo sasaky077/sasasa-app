@@ -1,7 +1,7 @@
 {
-  "build": "1263",
-  "label": "result-exp-visible",
-  "note": "show granted story character EXP materials in RESULT without five-row clipping",
-  "version": "1263",
+  "build": "1264",
+  "label": "result-reward-scroll-only",
+  "note": "keep RESULT screen fixed and scroll only the reward list",
+  "version": "1264",
   "updated": "2026-10-08"
 }

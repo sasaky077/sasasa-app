@@ -3098,6 +3098,60 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   overflow:visible !important;
 }
 </style>
+
+<style id="shooting-result-reward-scroll-build1264">
+/* build1264: RESULT画面全体は固定し、獲得報酬エリアだけを縦スクロールさせる。 */
+#shooting-event-root #shooting-result .shooting-result-card{
+  overflow-x:hidden !important;
+  overflow-y:hidden !important;
+  overscroll-behavior:none !important;
+}
+#shooting-event-root #shooting-result .shooting-result-rewards,
+#shooting-event-root #shooting-result .shooting-result-reward-section{
+  flex:0 1 auto !important;
+  min-height:0 !important;
+  max-height:clamp(150px,30dvh,300px) !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+#shooting-event-root #shooting-result .shooting-result-reward-head{
+  flex:0 0 auto !important;
+}
+#shooting-event-root #shooting-result .shooting-result-reward-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  height:auto !important;
+  max-height:none !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  padding-right:3px !important;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(141,114,70,.36) transparent;
+}
+#shooting-event-root #shooting-result .shooting-result-reward-list::-webkit-scrollbar{
+  width:4px;
+}
+#shooting-event-root #shooting-result .shooting-result-reward-list::-webkit-scrollbar-thumb{
+  background:rgba(141,114,70,.34);
+  border-radius:4px;
+}
+#shooting-event-root #shooting-result .shooting-result-actions{
+  flex:0 0 auto !important;
+  position:static !important;
+  margin-top:clamp(7px,1.1dvh,11px) !important;
+  padding-top:0 !important;
+  background:transparent !important;
+}
+@media (max-height:700px){
+  #shooting-event-root #shooting-result .shooting-result-rewards,
+  #shooting-event-root #shooting-result .shooting-result-reward-section{
+    max-height:clamp(120px,24dvh,180px) !important;
+  }
+}
+</style>
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
