@@ -3078,8 +3078,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </style>
 
 \n
-<style id="zukan-batch-image-reveal-build1259">
-/* build1259: キャラ一覧の画像をロード完了順にバラバラ見せず、8件単位で同時表示 */
+<style id="zukan-batch-image-reveal-build1260">
+/* build1260: キャラ一覧をバッチ同時表示＋スクロール先24件を先読み */
 #screen-zukan .primoa-index-card.zimg-batch-preparing{
   visibility:hidden!important;
 }
@@ -14393,6 +14393,7 @@ function showTenResult(results){
   var zukanIndexPendingChars = [];
   var zukanIndexRenderedCount = 0;
   var zukanIndexBatchSize = 8;
+  var zukanIndexAheadPreloadCount = 24;
   var zukanIndexLoadObserver = null;
   var zukanIndexRenderGeneration = 0;
 
@@ -14462,6 +14463,68 @@ function showTenResult(results){
   // 1バッチ（8件）単位でdecode完了後に一括表示する。
   // 最大待機時間を短く制限し、回線が遅い時でも画面遷移を止めすぎない。
   var zukanPanelWarmCache = new Set();
+  var zukanPanelPreloadPromises = new Map();
+
+  // build1260: スクロール先のキャラ画像を先回りしてdecodeする。
+  // 画面外の次3バッチ（24件）を低負荷で準備し、スクロール時の
+  // 「画像が順番に出る」見え方を抑える。
+  function preloadZukanPanelSource(src){
+    if(!src) return Promise.resolve();
+    if(zukanPanelWarmCache.has(src)) return Promise.resolve();
+    if(zukanPanelPreloadPromises.has(src)) return zukanPanelPreloadPromises.get(src);
+
+    var promise = new Promise(function(resolve){
+      var img = new Image();
+      var settled = false;
+      var finish = function(){
+        if(settled) return;
+        settled = true;
+        zukanPanelWarmCache.add(src);
+        resolve();
+      };
+      img.decoding = 'async';
+      img.fetchPriority = 'low';
+      img.onload = function(){
+        if(typeof img.decode === 'function') img.decode().catch(function(){}).finally(finish);
+        else finish();
+      };
+      img.onerror = finish;
+      img.src = src;
+      if(img.complete && img.naturalWidth > 0){
+        if(typeof img.decode === 'function') img.decode().catch(function(){}).finally(finish);
+        else finish();
+      }
+    }).finally(function(){
+      zukanPanelPreloadPromises.delete(src);
+    });
+
+    zukanPanelPreloadPromises.set(src, promise);
+    return promise;
+  }
+
+  function preloadUpcomingZukanPanels(fromIndex){
+    var start = Math.max(0, Number(fromIndex || 0));
+    var end = Math.min(zukanIndexPendingChars.length, start + zukanIndexAheadPreloadCount);
+    if(end <= start) return;
+
+    var sources = zukanIndexPendingChars.slice(start, end)
+      .map(function(chara){ return getZukanIndexPanelSrc(chara); })
+      .filter(Boolean);
+
+    var cursor = 0;
+    var concurrency = Math.min(6, sources.length);
+    function worker(){
+      return (async function(){
+        while(cursor < sources.length){
+          var src = sources[cursor++];
+          try { await preloadZukanPanelSource(src); } catch(_){}
+          // メインスレッドを連続占有しない。
+          await new Promise(function(resolve){ setTimeout(resolve, 0); });
+        }
+      })();
+    }
+    Promise.all(Array.from({length:concurrency}, worker)).catch(function(){});
+  }
 
   function waitForImageReadyFast(img, timeoutMs){
     if(!img) return Promise.resolve();
@@ -14562,7 +14625,7 @@ function showTenResult(results){
       });
     }, {
       root: null,
-      rootMargin: '500px 0px',
+      rootMargin: '1600px 0px',
       threshold: 0.01
     });
     zukanIndexLoadObserver.observe(sentinel);
@@ -14588,6 +14651,10 @@ function showTenResult(results){
     // DOMは8件ずつのままなので、iPhoneでの同時decode負荷は増やしすぎない。
     var allCards = grid.querySelectorAll(':scope > .primoa-index-card');
     revealZukanCardBatchTogether(Array.prototype.slice.call(allCards, start, end));
+
+    // build1260: 今表示したバッチの直後から24件を先読み。
+    // ユーザーがスクロールして到達する頃には、ほぼキャッシュ＋decode済みにする。
+    preloadUpcomingZukanPanels(zukanIndexRenderedCount);
 
     if(zukanIndexRenderedCount < zukanIndexPendingChars.length){
       grid.insertAdjacentHTML(
