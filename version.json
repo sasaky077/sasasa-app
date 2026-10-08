@@ -1,7 +1,7 @@
 {
-  "build": "1261",
-  "label": "character-image-batch-preload",
-  "note": "character list scroll ahead preload",
-  "version": "1261",
+  "build": "1262",
+  "label": "story-exp-guaranteed",
+  "note": "guarantee 1-2 character EXP materials from CH02-03 onward",
+  "version": "1262",
   "updated": "2026-10-08"
 }
