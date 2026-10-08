@@ -11220,7 +11220,7 @@
     const base = getShootingEnemy(selectedStage.enemyIds[0]);
     if (!base || !base.implemented) return;
     const enemy = createNormalEnemy(Object.assign({}, base, {
-      element: 'neutral', strongEnemy: false, ch404Role: 'add', ch404Hp: 500,
+      element: 'neutral', strongEnemy: false, ch404Role: 'add', ch404Hp: 280,
     }), now);
     if (!enemy) return;
     state.normalEnemies.push(enemy);
