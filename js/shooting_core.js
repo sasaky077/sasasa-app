@@ -11210,11 +11210,11 @@
       if (!enemy) return;
       state.normalEnemies.push(enemy);
       state.normalSpawned++;
-      state.ch404SummonAt = now + 5000;
+      state.ch404SummonAt = now + 10000;
       return;
     }
     if (now < Number(state.ch404SummonAt || 0)) return;
-    state.ch404SummonAt = now + 5000;
+    state.ch404SummonAt = now + 10000;
     const adds = state.normalEnemies.filter(e => e && e.hp > 0 && e.ch404Role === 'add');
     if (adds.length >= 4) return;
     const base = getShootingEnemy(selectedStage.enemyIds[0]);
