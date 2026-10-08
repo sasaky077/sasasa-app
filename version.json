@@ -1,4 +1,4 @@
 {
-  "build": 1277,
-  "note": "Repair literal escaped newlines in limit break standing illustration animation CSS"
+  "build": 1278,
+  "note": "Wait for limit break character illustration load before animation and avoid premature close"
 }

@@ -233,29 +233,44 @@ function endLimitBreakTransitionCover(){
 function playLimitBreakPowerupEffect(target, fromLb, toLb){
   return new Promise(function(resolve){
     var el = ensureLimitBreakPowerupEffect();
-    el.classList.remove('preparing');
     var img = document.getElementById('lb-powerup-cut');
     var name = document.getElementById('lb-powerup-name');
     var level = document.getElementById('lb-powerup-level');
-
-    if(img){
-      img.src = getLimitBreakCutImage(target);
-      img.onerror = function(){
-        this.onerror = null;
-        this.src = target && (target.upImg || target.img || target.panelImg) || '';
-      };
-    }
     if(name) name.textContent = target && target.name ? target.name : '';
     if(level) level.textContent = 'Lv.' + Number(fromLb || 0) + '  →  Lv.' + Number(toLb || 0);
 
-    el.classList.remove('show');
-    void el.offsetWidth;
-    el.classList.add('show');
-
-    setTimeout(function(){
-      el.classList.remove('show');
-      resolve();
-    }, 2350);
+    // 画像が読み込まれる前にアニメーションが終わることを防止。
+    // 失敗した場合は立ち絵→通常画像→パネル画像の順に試す。
+    var candidates = [getLimitBreakCutImage(target),
+      target && target.upImg, target && target.img, target && target.panelImg]
+      .filter(function(src, i, arr){ return !!src && arr.indexOf(src) === i; });
+    var finished = false;
+    function startAnimation(){
+      if(finished) return;
+      finished = true;
+      el.classList.remove('show', 'preparing');
+      void el.offsetWidth;
+      el.classList.add('show');
+      setTimeout(function(){
+        el.classList.remove('show');
+        resolve();
+      }, 2800);
+    }
+    if(!img || !candidates.length){
+      if(img) img.removeAttribute('src');
+      startAnimation();
+      return;
+    }
+    var index = 0;
+    var loadTimeout = setTimeout(startAnimation, 1800);
+    img.onload = function(){ clearTimeout(loadTimeout); startAnimation(); };
+    img.onerror = function(){
+      index++;
+      if(index < candidates.length){ img.src = candidates[index]; }
+      else { clearTimeout(loadTimeout); startAnimation(); }
+    };
+    img.src = candidates[0];
+    if(img.complete && img.naturalWidth > 0){ clearTimeout(loadTimeout); startAnimation(); }
   });
 }
 
