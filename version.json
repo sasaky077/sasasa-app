@@ -1,4 +1,4 @@
 {
-  "build": 1275,
-  "note": "Gacha pool rate display fallback for limited pickup Nina 36 and Olivia 40"
+  "build": 1277,
+  "note": "Repair literal escaped newlines in limit break standing illustration animation CSS"
 }
