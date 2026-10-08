@@ -26,6 +26,17 @@
     SURVIVE_TIME: 'survive_time',
   });
 
+  const SHOOTING_CHAPTER_TITLES = {
+    1: '白の戦線',
+    2: '残骸',
+    3: '魂との邂逅',
+    4: '水音',
+    5: '未定',
+    6: '未定',
+    7: '未定',
+    8: '未定'
+  };
+
   const SHOOTING_STAGE_ID = Object.freeze({
     CH01_01: 'shooting_ch01_01',
     CH01_02: 'shooting_ch01_02',
@@ -314,7 +325,7 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '属性を切り替えて敵をすべて撃破',
+        text: '敵をすべて撃破',
       }),
 
       playable: true,
@@ -381,7 +392,7 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'REMNANT 02「暴力」を浄化',
+        text: 'イリシュを撃破',
       }),
 
       // ボス画像 images/remnant_02_battle.webp を配置すればそのまま遊べる。
@@ -517,7 +528,7 @@
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'REMNANT 03「リヴィア」を浄化',
+        text: 'リヴィアを撃破',
       }),
 
       playable: true,
@@ -541,7 +552,7 @@
       id: SHOOTING_STAGE_ID.CH04_01,
       chapter: 4,
       stageNo: 1,
-      name: '余波',
+      name: '予感',
       type: 'normal',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_03]),
@@ -560,7 +571,7 @@
       }),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '敵をすべて撃破',
+        text: '強化個体をすべて撃破',
       }),
       playable: true,
     }),
@@ -569,7 +580,7 @@
       id: SHOOTING_STAGE_ID.CH04_02,
       chapter: 4,
       stageNo: 2,
-      name: '異質',
+      name: '',
       type: 'normal',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_03]),
@@ -599,7 +610,7 @@
       id: SHOOTING_STAGE_ID.CH04_03,
       chapter: 4,
       stageNo: 3,
-      name: '炎壁',
+      name: '火を纏う壁',
       type: 'normal',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_03]),
@@ -621,7 +632,7 @@
       }),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '火属性バリアのレムナントを撃破',
+        text: '強化個体をすべて撃破',
       }),
       playable: true,
     }),
@@ -630,7 +641,7 @@
       id: SHOOTING_STAGE_ID.CH04_04,
       chapter: 4,
       stageNo: 4,
-      name: 'リュネ',
+      name: '忘却の川',
       type: 'normal',
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_03]),
@@ -649,7 +660,7 @@
       }),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.DEFEAT_ALL,
-        text: '水・火・光の強化個体と残存する通常個体を撃破',
+        text: '強化個体をすべて撃破',
       }),
       playable: true,
     }),
@@ -1153,6 +1164,7 @@
 
   window.ShootingStages = Object.freeze({
     SHOOTING_MISSION_TYPE,
+    SHOOTING_CHAPTER_TITLES,
     SHOOTING_STAGE_ID,
     SHOOTING_STAGES,
     getShootingStage,

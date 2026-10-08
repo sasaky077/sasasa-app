@@ -12,43 +12,14 @@
   const STORY_CHAPTER_MIN = 1;
   const STORY_CHAPTER_MAX = 8;
   const STORY_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
-  const STORY_CHAPTER_TITLES = {
-    1: '白の戦線',
-    2: '残骸',
-    3: '魂との邂逅',
-    4: '嘘と真実',
-    5: '未定',
-    6: '未定',
-    7: '未定',
-    8: '未定'
-  };
+  // チャプター名は shooting_stages.js の SHOOTING_CHAPTER_TITLES で一元管理。
+  function getStoryChapterTitle(chapter) {
+    const titles = window.ShootingStages && window.ShootingStages.SHOOTING_CHAPTER_TITLES;
+    return (titles && titles[chapter]) || '未定';
+  }
 
-  // STORY表示用クリア条件。
-  // ステージ固有タイトルは使わず、画面上では「ステージN」で統一する。
-  const STORY_STAGE_CONDITIONS = {
-    'shooting_ch01_01': '敵を全て撃破',
-    'shooting_ch01_02': '敵をすべて撃破',
-    'shooting_ch01_03': 'アイテムを3つ拾得',
-    'shooting_ch01_04': '大型レムナントを撃破',
 
-    'shooting_ch02_01': '敵をすべて撃破',
-    'shooting_ch02_02': '敵をすべて撃破',
-    'shooting_ch02_03': '敵をすべて撃破',
-    'shooting_ch02_04': 'イリシュを撃破',
-
-    'shooting_ch03_01': 'ストーリーを読む',
-    'shooting_ch03_02': '敵をすべて撃破',
-    'shooting_ch03_03': '敵をすべて撃破',
-    'shooting_ch03_04': 'リヴィアを撃破',
-
-    'shooting_ch04_01': '60秒耐え、最後のアイテムを5秒以内に獲得',
-    'shooting_ch04_02': '狭まる壁を避けて60秒耐え、最後のアイテムを獲得',
-    'shooting_ch04_03': 'サキエルの猛攻を60秒逃げ切り、最後のアイテムを獲得',
-
-    'shooting_ch05_01': 'アイテムを3つ取得',
-    'shooting_ch05_02': '90秒以内に敵を3体撃破',
-    'shooting_ch05_03': 'レムナント：ミラージュを撃破',
-  };
+  // クリア条件は shooting_stages.js の各ステージ mission.text を表示する。
 
 
   function getStoryClearMap() {
@@ -237,12 +208,12 @@
       item.className = 'ninmu-chapter-item story-chapter-item' + (unlocked ? '' : ' story-chapter-locked');
       item.setAttribute('role', 'button');
       item.setAttribute('aria-label', unlocked
-        ? `CHAPTER ${String(chapter).padStart(2, '0')} ${STORY_CHAPTER_TITLES[chapter] || '未定'}`
+        ? `CHAPTER ${String(chapter).padStart(2, '0')} ${getStoryChapterTitle(chapter)}`
         : `CHAPTER ${String(chapter).padStart(2, '0')} 未解放`);
 
       item.innerHTML =
         '<div class="ninmu-chapter-label">CHAPTER:' + String(chapter).padStart(2, '0') + '</div>' +
-        '<div class="ninmu-chapter-title">' + (unlocked ? (STORY_CHAPTER_TITLES[chapter] || '未定') : '???') + '</div>';
+        '<div class="ninmu-chapter-title">' + (unlocked ? (getStoryChapterTitle(chapter)) : '???') + '</div>';
 
       item.addEventListener('click', () => {
         if (!isStoryChapterUnlocked(chapter, mode)) {
@@ -588,13 +559,7 @@
         const displayStageName = 'ステージ' + stageNo;
         const storyScenario = getStoryScenarioData(stageDef);
         const isNovelOnly = !!(storyScenario && String(storyScenario.stageType || '').toLowerCase() === 'novel');
-        const displayCondition = isNovelOnly
-          ? 'ストーリーを読む'
-          : (
-              STORY_STAGE_CONDITIONS[stageDef.id] ||
-              STORY_STAGE_CONDITIONS[stageDef.baseStageId] ||
-              missionText
-            );
+        const displayCondition = isNovelOnly ? 'ストーリーを読む' : missionText;
 
         card.innerHTML = `
           <div class="ss-card-no">${String(stageNo).padStart(2, '0')}</div>

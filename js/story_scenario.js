@@ -2562,7 +2562,7 @@
   "shooting_ch04_01": {
     "chapter": 4,
     "stageNo": 1,
-    "chapterTitle": "呼び声",
+    "chapterTitle": "呼ばれるもの",
     "stageTitle": "余波",
     "pre": [
       {
@@ -2640,7 +2640,7 @@
 
                  {
         "speaker": "アウラ",
-        "text": "そっか、レムナントが寄ってきちゃうかもしれないのか…",
+        "text": "そっか…レムナントが集まってくるかも…",
         "location": "scene_walk.webp"
       },
 
@@ -2662,7 +2662,7 @@
 "shooting_ch04_02": {
     "chapter": 4,
     "stageNo": 2,
-    "chapterTitle": "呼び声",
+    "chapterTitle": "呼ばれるもの",
     "stageTitle": "異質",
     "pre": [
       {
@@ -2673,12 +2673,12 @@
       },
       {
         "speaker": "アウラ",
-        "text": "あ！屋根ある！",
+        "text": "あ！あそこ、屋根がある！",
         "location": "scene_chapter04_1.webp"
       },
       {
         "speaker": "レオナクロス",
-        "text": "反応も弱い。ここなら拠点にできそうだ。",
+        "text": "…うん…反応も弱い。ここなら拠点にできそうだ。",
         "location": "scene_chapter04_1.webp"
       },
       {
@@ -2710,7 +2710,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "ったく…バリア持ちかよ。ハズレだぜ。",
+        "text": "はぁ～…もう…バリア持ちかよ。ハズレだぜ。",
         "location": "scene_chapter04_1.webp"
       },
       {
@@ -2762,12 +2762,17 @@
       },
       {
         "speaker": "アウラ",
-        "text": "じゃあ、ここがしばらく私たちの家だね！",
+        "text": "できたー！ここがしばらく私たちの家だね！",
         "location": "scene_chapter04_3.webp"
       },
       {
         "speaker": "ジグ",
         "text": "家ってほど立派じゃねぇけどな。",
+        "location": "scene_chapter04_3.webp"
+      },
+            {
+        "speaker": "レオナクロス",
+        "text": "ハハハ…ま、即席にしては上等だよ。",
         "location": "scene_chapter04_3.webp"
       },
       {
@@ -2782,7 +2787,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "ちょっと前まで、強化個体なんて滅多に見なかった。\nここに来るまでの間に、明らかに数が増えている。",
+        "text": "少し前まで、強化個体なんて滅多に見なかった。\nここに来るまでの間に、明らかに数が増えている。",
         "location": "scene_chapter04_3.webp"
       },
       {
@@ -2813,7 +2818,7 @@
       },
       {
         "speaker": "",
-        "text": "静寂の中、エリの耳に、かすかな川のせせらぎが届いた。\nこの辺りに川などないはずなのに、不思議と懐かしいその音に身を委ねながら、エリはゆっくりと目を閉じた。",
+        "text": "静寂の中、エリの耳に、かすかな川のせせらぎが届いた。\nどこからか聞こえてくるその音に身を委ねながら、エリはゆっくりと目を閉じた。",
         "location": "scene_chapter04_4.webp",
         "narration": true
       },
@@ -2827,7 +2832,7 @@
   "shooting_ch04_03": {
     "chapter": 4,
     "stageNo": 3,
-    "chapterTitle": "呼び声",
+    "chapterTitle": "呼ばれるもの",
     "stageTitle": "炎壁",
     "pre": [
 
@@ -2850,7 +2855,7 @@
 
         　　   {
         "speaker": "レオナクロス",
-        "text": "しばらくはここに定住かもね。",
+        "text": "しばらくはここに定住だな。",
         "location": "scene_tower_far.webp"
       },
 
@@ -2873,7 +2878,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "水の出番だ。\n……って、水なんてウチらにいねぇぞ。",
+        "text": "赤っつーことは…火か。\nじゃ、水の出番だ。\n……って、水なんてウチらにいねぇぞ。",
         "location": "scene_tower_far.webp"
       },
       {
@@ -2923,7 +2928,7 @@
       　 {
         "cue": "all_immune",
         "speaker": "レオナクロス",
-        "text": "ボクのフォトンバスターもまるで効かない…",
+        "text": "ボクのフォトンバスターもまるでダメだ…",
                 "location": "scene_tower_far.webp"
       },
 
@@ -2948,7 +2953,7 @@
             {
         "cue": "eri_hears_voice",
         "speaker": "",
-        "text": "ミモザも、頭を張り巡らしているが、手詰まりの表情。",
+        "text": "ミモザも、頭を張り巡らしているが、手詰まりの様子。",
                         "location": "scene_tower_far.webp",
 
         "narration": true
@@ -3002,7 +3007,7 @@
     "post": [
       {
         "speaker": "",
-        "text": "火のバリアを失ったレムナントが崩れ、白い風の中へ消えていく。",
+        "text": "火の膜を失ったレムナントが崩れ、白い風の中へ消えていく。",
         "location": "scene_ch04_03.webp",
                                 "location": "scene_tower_far.webp",
         "narration": true
@@ -3031,7 +3036,7 @@
       },
       {
         "speaker": "リュネ",
-        "text": "すごく…あたたかい場所。\nそこであなたに会って…そして…呼ばれた。",
+        "text": "あなたたちが…呼んだの？",
         "location": "scene_ch04_03_lyune.webp"
       },
       {
@@ -3057,7 +3062,7 @@
   "shooting_ch04_04": {
     "chapter": 4,
     "stageNo": 4,
-    "chapterTitle": "呼び声",
+    "chapterTitle": "呼ばれるもの",
     "stageTitle": "リュネ",
     "pre": [
       {
@@ -3072,12 +3077,12 @@
       },
       {
         "speaker": "リュネ",
-        "text": "白いところにいて……声が聞こえた。\n気づいたら、ここにいた。",
+        "text": "すごくあたたかいところで……眠ってた。遠くの声に呼ばれて…\n気づいたら、ここにいた。",
         "location": "scene_ch04_04.webp"
       },
       {
         "speaker": "エリ",
-        "text": "私の……声？",
+        "text": "……声？",
         "location": "scene_ch04_04.webp"
       },
       {
@@ -3218,7 +3223,7 @@
       },
       {
         "speaker": "エリ",
-        "text": "…そっか…またね。",
+        "text": "…そっか…またね。リュネ。",
         "location": "scene_ch04_04_lyune_fade.webp"
       },
       {
@@ -3245,7 +3250,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "呼び出せるとしても、長時間の接続は難しい……ということね。",
+        "text": "呼び出せても、長時間の接続は難しい……ということね。",
         "location": "scene_ch04_05.webp"
       },
       {
@@ -3255,17 +3260,17 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "ええ。\nただし、エリの負担もある。無理はさせられないわ。",
+        "text": "ええ。\nただし、エリの負担もあるでしょう。無理はさせられないわ。",
         "location": "scene_ch04_05.webp"
       },
       {
         "speaker": "エリ",
-        "text": "……リュネ。",
+        "text": "……",
         "location": "scene_ch04_05.webp"
       },
       {
         "speaker": "",
-        "text": "エリは、リュネが消えた場所をしばらく見つめていた。",
+        "text": "エリは、空に消えゆく光の粒子をしばらく見つめていた。",
         "location": "scene_ch04_05.webp",
         "narration": true
       }
