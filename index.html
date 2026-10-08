@@ -3116,7 +3116,22 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 @keyframes lbPowerupFlash{0%,30%{opacity:0}38%{opacity:.92}50%{opacity:.08}100%{opacity:0}}
 @keyframes lbPowerupCopy{0%{opacity:0;transform:translateY(12px)}25%,82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}
 @keyframes lbPreparingPulse{from{transform:translate(-50%,-50%) scale(.78);opacity:.35}to{transform:translate(-50%,-50%) scale(1.08);opacity:.72}}
-</style>\n
+</style>
+<style id="limitbreak-powerup-text-contrast-build1281">
+/* Limit break text contrast only. Preserve animation, character, and background. */
+.lb-powerup-effect .lb-powerup-copy{
+  color:#513722!important;
+  text-shadow:0 1px 2px rgba(255,255,255,.96),0 0 7px rgba(255,252,242,.94)!important;
+}
+.lb-powerup-effect .lb-powerup-copy small{color:#70502f!important;}
+.lb-powerup-effect .lb-powerup-copy strong{color:#4c3020!important;}
+.lb-powerup-effect .lb-powerup-copy span{color:#624731!important;}
+.lb-powerup-effect .lb-powerup-copy b{color:#82551e!important;}
+</style>
+<style id="limitbreak-powerup-visibility-build1280">
+.lb-powerup-effect.show .lb-powerup-copy{display:flex!important;visibility:visible!important;animation:lbPowerupCopy 1.45s .68s ease-out both!important;}
+.lb-powerup-effect.show .lb-powerup-image-wrap{visibility:visible!important;}
+</style>
 <style id="shooting-result-reward-unclip-build1263">
 /* build1263: RESULT報酬を5行で切らず、実際に獲得した素材をすべて表示する。
    RESULTカード自体が縦スクロール可能なので、報酬欄側では隠さない。 */
@@ -5794,7 +5809,7 @@ window.NOTICE_ITEMS = [
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
 <script src="js/shooting_resonance.js?v=974-basic-resonance-all"></script>
 <script src="js/resonance_system.js?v=1279-limitbreak-return-fix"></script>
-<script src="js/resonance_ui.js?v=1279-limitbreak-return-fix"></script>
+<script src="js/resonance_ui.js?v=1280-limitbreak-visual-sequence"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */

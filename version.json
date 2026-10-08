@@ -1,4 +1,4 @@
 {
-  "build": 1279,
-  "note": "Fix limit break successful save return value and defer completion modal until animation finishes"
+  "build": 1281,
+  "note": "Limit break animation text contrast: deep brown palette only"
 }

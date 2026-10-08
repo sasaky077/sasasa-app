@@ -231,6 +231,7 @@ function endLimitBreakTransitionCover(){
 }
 
 function playLimitBreakPowerupEffect(target, fromLb, toLb){
+  // The result dialog must wait for this visible sequence, not for image network timing.
   return new Promise(function(resolve){
     var el = ensureLimitBreakPowerupEffect();
     var img = document.getElementById('lb-powerup-cut');
@@ -238,39 +239,36 @@ function playLimitBreakPowerupEffect(target, fromLb, toLb){
     var level = document.getElementById('lb-powerup-level');
     if(name) name.textContent = target && target.name ? target.name : '';
     if(level) level.textContent = 'Lv.' + Number(fromLb || 0) + '  →  Lv.' + Number(toLb || 0);
-
-    // 画像が読み込まれる前にアニメーションが終わることを防止。
-    // 失敗した場合は立ち絵→通常画像→パネル画像の順に試す。
-    var candidates = [getLimitBreakCutImage(target),
-      target && target.upImg, target && target.img, target && target.panelImg]
-      .filter(function(src, i, arr){ return !!src && arr.indexOf(src) === i; });
-    var finished = false;
-    function startAnimation(){
-      if(finished) return;
-      finished = true;
-      el.classList.remove('show', 'preparing');
-      void el.offsetWidth;
+    var candidates = [getLimitBreakCutImage(target), target && target.upImg,
+      target && target.img, target && target.panelImg]
+      .filter(function(src,i,arr){return !!src && arr.indexOf(src) === i;});
+    var index = 0;
+    if(img){
+      img.onload = null;
+      img.onerror = function(){
+        index++;
+        if(index < candidates.length) img.src = candidates[index];
+        else img.removeAttribute('src');
+      };
+      if(candidates.length) img.src = candidates[0];
+      else img.removeAttribute('src');
+    }
+    // Start on the next paint. Image failure cannot skip the title or end the effect.
+    el.classList.remove('show','preparing');
+    void el.offsetWidth;
+    requestAnimationFrame(function(){
       el.classList.add('show');
+      el.style.display = 'flex';
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'auto';
       setTimeout(function(){
         el.classList.remove('show');
-        resolve();
-      }, 2800);
-    }
-    if(!img || !candidates.length){
-      if(img) img.removeAttribute('src');
-      startAnimation();
-      return;
-    }
-    var index = 0;
-    var loadTimeout = setTimeout(startAnimation, 1800);
-    img.onload = function(){ clearTimeout(loadTimeout); startAnimation(); };
-    img.onerror = function(){
-      index++;
-      if(index < candidates.length){ img.src = candidates[index]; }
-      else { clearTimeout(loadTimeout); startAnimation(); }
-    };
-    img.src = candidates[0];
-    if(img.complete && img.naturalWidth > 0){ clearTimeout(loadTimeout); startAnimation(); }
+        el.style.removeProperty('display');
+        el.style.removeProperty('opacity');
+        el.style.removeProperty('pointer-events');
+        resolve(true);
+      }, 3000);
+    });
   });
 }
 
