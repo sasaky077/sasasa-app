@@ -20217,25 +20217,9 @@
   }
 
   function maybeQueueRandomAmbush(win) {
-    // DAILY巡行はサーバー確定・残回数UIへ戻す専用フロー。
-    // ランダム襲来でselectedStageを書き換えない。
-    if (!win || isAmbushStage() || isDailyQuestStage()) return;
-
-    // build1147: CH01-03初回クリア後はレベルアップチュートリアルへ直行させる。
-    // RESULT表示中にランダム襲来が割り込むと導線が壊れるため、完了までは抽選しない。
-    try {
-      if (
-        getSelectedBaseStageId() === 'shooting_ch01_03' &&
-        localStorage.getItem('zeraphia_tutorial_levelup_ch01_03_v1') !== '1'
-      ) return;
-    } catch (_) {}
-    const rate = 0.10;
-    if (Math.random() >= rate) return;
-    // リザルトを一度見せてから緊急警告へ。
-    setTimeout(() => {
-      if (!state || !state.ended || isAmbushStage()) return;
-      startRandomAmbushFromResult();
-    }, 1500);
+    // Random EMERGENCY encounter is intentionally disabled.
+    // Keep the function as a no-op for compatibility with existing result flow.
+    return;
   }
 
   // build1153: POSTノベル → RESULT の標準トランジション。

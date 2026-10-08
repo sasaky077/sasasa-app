@@ -11,8 +11,8 @@
   "shooting_ch01_01": {
     "chapter": 1,
     "stageNo": 1,
-    "chapterTitle": "白の前線",
-    "stageTitle": "前線",
+    "chapterTitle": "白の戦線",
+    "stageTitle": "戦線",
     "pre": [
       {
         "speaker": "",
@@ -124,7 +124,7 @@
         "speaker": "エリ",
         "left": "アウラ",
         "right": "エリ",
-        "text": "はぁ…はぁ…できた。",
+        "text": "はぁ……はぁ…できた…",
         "location": "scene_outside_tower_enemy.webp"
       },
       {
@@ -161,7 +161,7 @@
   "shooting_ch01_02": {
     "chapter": 1,
     "stageNo": 2,
-    "chapterTitle": "白の前線",
+    "chapterTitle": "白の戦線",
     "stageTitle": "とある聖堂にて",
     "pre": [
       {
@@ -281,7 +281,7 @@
   "shooting_ch01_03": {
     "chapter": 1,
     "stageNo": 3,
-    "chapterTitle": "白の前線",
+    "chapterTitle": "白の戦線",
     "stageTitle": "残骸",
     "pre": [
       {
@@ -434,8 +434,8 @@
   "shooting_ch01_04": {
     "chapter": 1,
     "stageNo": 4,
-    "chapterTitle": "白の前線",
-    "stageTitle": "天使",
+    "chapterTitle": "白の戦線",
+    "stageTitle": "巨像",
     "pre": [
       {
         "speaker": "",
@@ -755,7 +755,7 @@
   "shooting_ch02_01": {
     "chapter": 2,
     "stageNo": 1,
-    "chapterTitle": "赤い灯",
+    "chapterTitle": "燈火",
     "stageTitle": "結晶",
     "stageType": "novel",
     "pre": [
@@ -1127,7 +1127,7 @@
   "shooting_ch02_02": {
     "chapter": 2,
     "stageNo": 2,
-    "chapterTitle": "赤い灯",
+    "chapterTitle": "燈火",
     "stageTitle": "痕跡",
     "pre": [
       {
@@ -1446,7 +1446,7 @@
   "shooting_ch02_03": {
     "chapter": 2,
     "stageNo": 3,
-    "chapterTitle": "赤い灯",
+    "chapterTitle": "燈火",
     "stageTitle": "ふたたび",
     "pre": [
       {
@@ -1546,13 +1546,13 @@
       },
       {
         "speaker": "",
-        "text": "ランタンのような、小さな赤い灯。\nその横に、誰かが立っている気がする。",
+        "text": "ランタンの灯りのような、小さな燈火が視界の端に見えた気がして、エリは木を取られる。\n",
         "location": "scene_many_tower.webp",
         "narration": true
       },
       {
         "speaker": "アウラ",
-        "text": "エリ！\nなにやってんの！前！",
+        "text": "エリ！\nなにやってんの！前見て！",
         "location": "scene_many_tower.webp"
       }
     ],
@@ -1618,7 +1618,7 @@
       },
       {
         "speaker": "",
-        "text": "一気に緊張が走る。",
+        "text": "3人の身体に緊張が走る。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
@@ -1644,7 +1644,7 @@
   "shooting_ch02_04": {
     "chapter": 2,
     "stageNo": 4,
-    "chapterTitle": "赤い灯",
+    "chapterTitle": "燈火",
     "stageTitle": "轟力",
     "pre": [
       {
@@ -1655,13 +1655,13 @@
       },
       {
         "speaker": "",
-        "text": "激しい衝撃音。",
+        "text": "激しい衝撃音とともに、空間が大きく揺れる。",
         "location": "scene_remnant_02_battle.webp",
         "narration": true
       },
       {
         "speaker": "",
-        "text": "3人が、間一髪でその巨体の突進をかわす。",
+        "text": "3人が、間一髪でその巨体が繰り出す突進をかわす。",
         "location": "scene_remnant_02_battle.webp",
         "narration": true
       },
@@ -1699,7 +1699,7 @@
         "speaker": "アウラ",
         "left": "アウラ",
         "right": "エリ",
-        "text": "うん…！私たち、本当に強くなってるみたい。",
+        "text": "う、うん…！私たち、本当に強くなってるみたい。",
         "location": "scene_remnant_02_rip_after.webp"
       },
       {
@@ -1776,7 +1776,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "それと別に、みんなに話があるの。",
+        "text": "それと…みんなに話があるの。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1787,7 +1787,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "まず、最近のレムナントの発生状況なんだけど…",
+        "text": "まず、最近のレムナントの発生状況…",
         "location": "scene_workbench.webp"
       },
       {
@@ -1802,7 +1802,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "適合率は上がっているし、戦闘経験も積み、確実に強くなっている。\nけれど…圧倒的な数の暴力には敵わない。",
+        "text": "適合率は上がっているし、レムナントとの戦闘を重ねて、確実に強くなっている。\nけれど…圧倒的な数の暴力には敵わない。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1866,7 +1866,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "いくつかの紋様を調べたらね…大型レムナントが残す魂の結晶とよく似た反応が検出されたの。",
+        "text": "紋様をいくつか調べたらね…大型レムナントが残す魂の結晶とよく似た反応が検出されたの。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1988,7 +1988,7 @@
     "chapter": 3,
     "stageNo": 2,
     "chapterTitle": "旅立ち",
-    "stageTitle": "旅路",
+    "stageTitle": "違和感",
     "pre": [
       {
         "speaker": "アウラ",
@@ -2079,7 +2079,7 @@
     "chapter": 3,
     "stageNo": 3,
     "chapterTitle": "旅立ち",
-    "stageTitle": "円盤",
+    "stageTitle": "塔の奥には",
     "pre": [
       {
         "speaker": "",
@@ -2266,7 +2266,7 @@
     "chapter": 3,
     "stageNo": 4,
     "chapterTitle": "旅立ち",
-    "stageTitle": "出会い",
+    "stageTitle": "つながり",
     "pre": [
       {
         "speaker": "",
@@ -2562,8 +2562,8 @@
   "shooting_ch04_01": {
     "chapter": 4,
     "stageNo": 1,
-    "chapterTitle": "呼ばれるもの",
-    "stageTitle": "余波",
+    "chapterTitle": "呼ばれたもの",
+    "stageTitle": "宿探し",
     "pre": [
       {
         "speaker": "アウラ",
@@ -2662,8 +2662,8 @@
 "shooting_ch04_02": {
     "chapter": 4,
     "stageNo": 2,
-    "chapterTitle": "呼ばれるもの",
-    "stageTitle": "異質",
+    "chapterTitle": "呼ばれたもの",
+    "stageTitle": "先客",
     "pre": [
       {
         "speaker": "",
@@ -2832,8 +2832,8 @@
   "shooting_ch04_03": {
     "chapter": 4,
     "stageNo": 3,
-    "chapterTitle": "呼ばれるもの",
-    "stageTitle": "炎壁",
+    "chapterTitle": "呼ばれたもの",
+    "stageTitle": "炎の壁",
     "pre": [
 
            {
@@ -3062,8 +3062,8 @@
   "shooting_ch04_04": {
     "chapter": 4,
     "stageNo": 4,
-    "chapterTitle": "呼ばれるもの",
-    "stageTitle": "リュネ",
+    "chapterTitle": "呼ばれたもの",
+    "stageTitle": "水音",
     "pre": [
       {
         "speaker": "アウラ",
