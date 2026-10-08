@@ -706,6 +706,8 @@
     const chapter = Number(stage.chapter || 1);
     const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
     const storyId = stage.baseStageId || stage.id;
+    // build1272: CH04-04でのみクリア済み再挑戦を先行導入。
+    const replay = String(storyId) === 'shooting_ch04_04' && getStoryShootingRecord(storyId).cleared;
 
     const hideStageSelect = () => {
       const modal = document.getElementById('stage-select-modal');
@@ -734,7 +736,11 @@
       hideStageSelect();
       setReturnContext();
       if (typeof window.openShootingStage === 'function') {
-        window.openShootingStage(stage.id);
+        if (replay && typeof window.openShootingEvent === 'function') {
+          window.openShootingEvent({ stageId: stage.id, storyReplay: true });
+        } else {
+          window.openShootingStage(stage.id);
+        }
         return true;
       }
       return false;
@@ -755,6 +761,7 @@
     };
 
     const beginReadyStoryFlow = () => {
+      if (replay) { openBattle(); return; }
       // StoryNovel準備後にNOVEL専用判定をやり直す。
       // 読込前に判定するとCH03-01などが通常戦闘扱いになってしまう。
       if (isNovelOnlyStoryStage(stage)) {
@@ -796,6 +803,11 @@
     // 以前はここで hasPre=false 扱いになり、事前ストーリーが飛ばされていた。
     hideStageSelect();
     setReturnContext();
+    // 再挑戦はノベルのロードを待たず、戦闘モジュールだけ待つ。
+    if (replay && typeof window.openShootingEvent === 'function') {
+      openBattle();
+      return;
+    }
 
     let tries = 0;
     const maxTries = 50; // 最大5秒。通常は即時～数百msで揃う。

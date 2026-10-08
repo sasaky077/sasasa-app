@@ -1259,7 +1259,7 @@
 
   window.addEventListener('shooting-stage-result', function(event){
     const d=event && event.detail ? event.detail : {};
-    if(d.win && d.stageId) queuePost(d.stageId);
+    if(d.win && d.stageId && !d.storyReplay) queuePost(d.stageId);
   });
 
   window.StoryNovel=Object.freeze({
