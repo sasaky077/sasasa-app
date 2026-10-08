@@ -3078,8 +3078,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </style>
 
 \n
-<style id="zukan-batch-image-reveal-build1260">
-/* build1260: キャラ一覧をバッチ同時表示＋スクロール先24件を先読み */
+<style id="zukan-batch-image-reveal-build1261">
+/* build1261: 初期8件の表示完了を優先し、その後にスクロール先24件を先読み */
 #screen-zukan .primoa-index-card.zimg-batch-preparing{
   visibility:hidden!important;
 }
@@ -14512,7 +14512,7 @@ function showTenResult(results){
       .filter(Boolean);
 
     var cursor = 0;
-    var concurrency = Math.min(6, sources.length);
+    var concurrency = Math.min(4, sources.length);
     function worker(){
       return (async function(){
         while(cursor < sources.length){
@@ -14548,14 +14548,19 @@ function showTenResult(results){
 
   function revealZukanCardBatchTogether(cards){
     var list = Array.prototype.slice.call(cards || []).filter(Boolean);
-    if(!list.length) return;
+    if(!list.length) return Promise.resolve();
     list.forEach(function(card){ card.classList.add('zimg-batch-preparing'); });
 
     var images = list.map(function(card){ return card.querySelector('img.primoa-index-image'); }).filter(Boolean);
-    Promise.all(images.map(function(img){ return waitForImageReadyFast(img, 260); })).finally(function(){
-      requestAnimationFrame(function(){
-        list.forEach(function(card){ card.classList.remove('zimg-batch-preparing'); });
+    return Promise.all(images.map(function(img){ return waitForImageReadyFast(img, 260); })).then(function(){
+      return new Promise(function(resolve){
+        requestAnimationFrame(function(){
+          list.forEach(function(card){ card.classList.remove('zimg-batch-preparing'); });
+          resolve();
+        });
       });
+    }).catch(function(){
+      list.forEach(function(card){ card.classList.remove('zimg-batch-preparing'); });
     });
   }
 
@@ -14650,11 +14655,14 @@ function showTenResult(results){
     // build1259: 追加した8件だけを一括decode → 同一フレームで表示。
     // DOMは8件ずつのままなので、iPhoneでの同時decode負荷は増やしすぎない。
     var allCards = grid.querySelectorAll(':scope > .primoa-index-card');
-    revealZukanCardBatchTogether(Array.prototype.slice.call(allCards, start, end));
+    var revealPromise = revealZukanCardBatchTogether(Array.prototype.slice.call(allCards, start, end));
 
-    // build1260: 今表示したバッチの直後から24件を先読み。
-    // ユーザーがスクロールして到達する頃には、ほぼキャッシュ＋decode済みにする。
-    preloadUpcomingZukanPanels(zukanIndexRenderedCount);
+    // build1261: 先読みを同時スタートさせると、初期8件と通信/decodeが競合して
+    // 最初の一覧だけ画像が欠けて見えることがある。まず現在バッチを表示し、
+    // その後で次の24件を低優先度で先読みする。
+    Promise.resolve(revealPromise).finally(function(){
+      setTimeout(function(){ preloadUpcomingZukanPanels(zukanIndexRenderedCount); }, start === 0 ? 120 : 0);
+    });
 
     if(zukanIndexRenderedCount < zukanIndexPendingChars.length){
       grid.insertAdjacentHTML(
