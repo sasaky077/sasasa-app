@@ -1,5 +1,6 @@
 {
-  "build": "1255",
-  "version": "20261008-build1255-ch04-normal-battle",
-  "description": "CH04 normal battle: restore SHOT, ULT gauge/ULT, combo and standard battle countdown/HUD"
+  "build": 1257,
+  "version": "1257-ch04-02-forced-defeat30",
+  "description": "CH04-02 scripted defeat: defeat counts as story clear, unlocks progression and plays post story",
+  "updated_at": "2026-10-08T08:36:00+09:00"
 }

@@ -18044,6 +18044,138 @@
     renderHud();
   }
 
+
+  function isChapter402ForcedDefeatStage() {
+    return isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02);
+  }
+
+  function triggerChapter402ForcedDefeat(now) {
+    if (!state || state.ended || state.finishing || state.koTransition) return false;
+    if (!isChapter402ForcedDefeatStage()) return false;
+    if (state.ch402ForcedDefeatTriggered) return true;
+
+    const elapsedMs = Math.max(0, Number(now || performance.now()) - Number(state.startedAt || performance.now()));
+    if (elapsedMs < 30000) return false;
+
+    state.ch402ForcedDefeatTriggered = true;
+    state.phaseTransition = true;
+    state.running = false;
+    cancelAnimationFrame(rafId);
+    clearProjectiles();
+
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      arena.querySelectorAll('.shooting-ch04-02-forced-hit').forEach(el => el.remove());
+      const fx = document.createElement('div');
+      fx.className = 'shooting-ch04-02-forced-hit';
+      fx.setAttribute('aria-hidden', 'true');
+      Object.assign(fx.style, {
+        position: 'absolute', inset: '0', zIndex: '9998', overflow: 'hidden',
+        pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(255,248,238,0)'
+      });
+
+      const core = document.createElement('div');
+      Object.assign(core.style, {
+        position: 'absolute', left: '50%', top: '44%', width: '18vmin', height: '18vmin',
+        borderRadius: '50%', transform: 'translate(-50%,-50%) scale(.2)',
+        background: 'radial-gradient(circle, #fff 0 16%, #ffd7a6 28%, #ff6b43 48%, rgba(116,0,0,.94) 67%, rgba(20,0,0,0) 74%)',
+        boxShadow: '0 0 40px rgba(255,255,255,.95), 0 0 90px rgba(255,84,42,.92), 0 0 150px rgba(120,0,0,.82)'
+      });
+
+      const wave = document.createElement('div');
+      Object.assign(wave.style, {
+        position: 'absolute', left: '50%', top: '44%', width: '24vmin', height: '24vmin',
+        borderRadius: '50%', transform: 'translate(-50%,-50%) scale(.15)',
+        border: '4px solid rgba(255,236,214,.95)',
+        boxShadow: '0 0 30px rgba(255,255,255,.9), inset 0 0 20px rgba(255,120,70,.75)'
+      });
+
+      const slash = document.createElement('div');
+      Object.assign(slash.style, {
+        position: 'absolute', left: '-10%', right: '-10%', top: '42%', height: '18%',
+        transform: 'rotate(-7deg) scaleX(.15)', transformOrigin: '50% 50%',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.98) 42%, rgba(255,210,170,.98) 50%, rgba(255,70,45,.88) 58%, rgba(255,255,255,0))',
+        filter: 'blur(2px)', mixBlendMode: 'screen'
+      });
+
+      const label = document.createElement('div');
+      label.textContent = '999999';
+      Object.assign(label.style, {
+        position: 'absolute', left: '50%', top: '49%', transform: 'translate(-50%,-50%) scale(.6)',
+        fontFamily: 'Cinzel, serif', fontWeight: '700', fontSize: 'clamp(38px,12vw,72px)',
+        letterSpacing: '.06em', color: '#fff5e8', opacity: '0',
+        textShadow: '0 2px 8px rgba(90,0,0,.95), 0 0 18px rgba(255,70,30,.95), 0 0 36px rgba(255,255,255,.8)'
+      });
+
+      fx.append(core, wave, slash, label);
+      arena.appendChild(fx);
+
+      try {
+        fx.animate([
+          { background: 'rgba(255,248,238,0)', offset: 0 },
+          { background: 'rgba(255,255,255,.98)', offset: .34 },
+          { background: 'rgba(255,104,72,.66)', offset: .5 },
+          { background: 'rgba(25,0,0,.72)', offset: .72 },
+          { background: 'rgba(0,0,0,0)', offset: 1 }
+        ], { duration: 1050, easing: 'ease-out', fill: 'forwards' });
+        core.animate([
+          { transform: 'translate(-50%,-50%) scale(.18)', opacity: .25 },
+          { transform: 'translate(-50%,-50%) scale(1.9)', opacity: 1, offset: .38 },
+          { transform: 'translate(-50%,-50%) scale(5.8)', opacity: 0 }
+        ], { duration: 950, easing: 'cubic-bezier(.12,.75,.18,1)', fill: 'forwards' });
+        wave.animate([
+          { transform: 'translate(-50%,-50%) scale(.15)', opacity: 1 },
+          { transform: 'translate(-50%,-50%) scale(5.4)', opacity: 0 }
+        ], { duration: 950, easing: 'cubic-bezier(.08,.72,.16,1)', fill: 'forwards' });
+        slash.animate([
+          { transform: 'rotate(-7deg) scaleX(.08)', opacity: 0 },
+          { transform: 'rotate(-7deg) scaleX(1)', opacity: 1, offset: .3 },
+          { transform: 'rotate(-7deg) scaleX(1.18)', opacity: 0 }
+        ], { duration: 720, easing: 'ease-out', fill: 'forwards' });
+        label.animate([
+          { transform: 'translate(-50%,-50%) scale(.55)', opacity: 0 },
+          { transform: 'translate(-50%,-50%) scale(1.18)', opacity: 1, offset: .34 },
+          { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .62 },
+          { transform: 'translate(-50%,-50%) scale(.96)', opacity: 0 }
+        ], { duration: 1050, easing: 'ease-out', fill: 'forwards' });
+      } catch (_) {}
+    }
+
+    triggerPlayerHitScreenShake();
+    window.setTimeout(() => {
+      if (!state || state.ended) return;
+      let wiped = 0;
+      (state.party || []).forEach(member => {
+        if (!member || Number(member.hp || 0) <= 0) return;
+        member.hitCount = Number(member.hitCount || 0) + 1;
+        member.hp = 0;
+        wiped += 1;
+      });
+      state.totalHitsTaken = Number(state.totalHitsTaken || 0) + wiped;
+      renderHud();
+      const player = document.getElementById(PLAYER_ID);
+      if (player) {
+        player.classList.remove('damaged');
+        void player.offsetWidth;
+        player.classList.add('damaged');
+      }
+      window.setTimeout(() => {
+        if (!state || state.ended) return;
+        state.phaseTransition = false;
+        state.running = true;
+        beginPlayerDefeat();
+      }, 260);
+    }, 360);
+
+    window.setTimeout(() => {
+      const fx = document.querySelector('.shooting-ch04-02-forced-hit');
+      if (fx) fx.remove();
+    }, 1500);
+
+    return true;
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
 
@@ -18144,6 +18276,10 @@
 
 
     if (checkBattleTimeLimit(ts)) return;
+
+    // build1257: CH04-02は約30秒で不可避の大技を受ける敗北イベント。
+    // 通常の戦闘操作は30秒まで維持し、時間到達後に全員を一撃でLOSTへ送る。
+    if (triggerChapter402ForcedDefeat(ts)) return;
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
     prevTs = ts;
@@ -20239,8 +20375,18 @@
     }, POST_RESULT_TRANSITION_MS + 100);
   }
 
+  function isStoryScriptedDefeatClearStage() {
+    // build1256: CH04-02はシナリオ上の敗北イベント。
+    // 戦闘上は敗北しても、STORY進行・事後ノベル・クリア保存は成功扱いにする。
+    return isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_02);
+  }
+
   async function endGame(win) {
     if (!state || state.ended) return;
+
+    const battleWin = !!win;
+    const scriptedDefeatClear = !battleWin && isStoryScriptedDefeatClearStage();
+    const progressionWin = battleWin || scriptedDefeatClear;
 
     // build812: RESULT処理中にstage参照が変化してもDAILY判定を揺らさない。
     const dailyQuestAtResult = isDailyQuestStage();
@@ -20312,9 +20458,9 @@
     const retryBtn = document.getElementById('shooting-result-retry');
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
     // build1081: RESULTを閉じるまで勝敗を保持し、STORY後半ノベル判定に使う。
-    state.lastResultWin = !!win;
-    finalizeStoryClearScore(!!win);
-    const rankLetter = getResultRank(state.score, win);
+    state.lastResultWin = progressionWin;
+    finalizeStoryClearScore(progressionWin);
+    const rankLetter = getResultRank(state.score, progressionWin);
 
     if (dailyQuestAtResult) {
       if (raidRow) raidRow.style.display = 'none';
@@ -20341,7 +20487,7 @@
 
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.
-    state.secureFinalizePromise = dailyQuestAtResult ? finalizeDailyQuestRun(state.score, !!win) : submitShootingHighScore(state.score, !!win);
+    state.secureFinalizePromise = dailyQuestAtResult ? finalizeDailyQuestRun(state.score, progressionWin) : submitShootingHighScore(state.score, progressionWin);
     if (dailyQuestAtResult) {
       try {
         await state.secureFinalizePromise;
@@ -20357,7 +20503,9 @@
           stageId: state.stageId || (selectedStage && selectedStage.id) || null,
           chapter: selectedStage ? selectedStage.chapter : null,
           stageNo: selectedStage ? selectedStage.stageNo : null,
-          win: !!win,
+          win: progressionWin,
+          battleWin: battleWin,
+          scriptedDefeat: scriptedDefeatClear,
           score: Number(state.score || 0),
           maxCombo: Number(state.maxCombo || 0),
           clearTimeMs: Number(state.clearTimeMs || 0),
@@ -20374,7 +20522,7 @@
       const c = getBattleCharacter(m.id);
       return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${c.panelImage || c.image}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
     };
-    if (kicker) kicker.textContent = win ? '' : 'MISSION FAILED';
+    if (kicker) kicker.textContent = scriptedDefeatClear ? 'EVENT COMPLETE' : (battleWin ? '' : 'MISSION FAILED');
     if (title) title.textContent = 'RESULT';
     if (score) score.textContent = String(state.score).padStart(6, '0');
     if (combo) combo.textContent = String(state.maxCombo || 0);
@@ -20389,7 +20537,7 @@
       rank.textContent = rankLetter;
       rank.setAttribute('data-rank', rankLetter);
     }
-    renderShootingClearRewards(!!win);
+    renderShootingClearRewards(progressionWin);
 
     // build1082:
     // STORYの表示順を
@@ -20421,7 +20569,8 @@
         releasePostResultTransition();
         postResultTransitionArmed = false;
       }
-      maybeQueueRandomAmbush(!!win);
+      // 敗北イベント完了ではランダム襲来を発生させない。
+      maybeQueueRandomAmbush(battleWin);
     };
 
     const storyStageId = String(
@@ -20431,7 +20580,7 @@
     );
 
     const hasPostStory = !!(
-      win &&
+      progressionWin &&
       window.StoryNovel &&
       typeof window.StoryNovel.hasPost === 'function' &&
       window.StoryNovel.hasPost(storyStageId)
@@ -20444,7 +20593,7 @@
       postResultTransitionArmed = true;
     }
 
-    if (win && window.StoryNovel) {
+    if (progressionWin && window.StoryNovel) {
       // shooting-stage-result の同期イベントでqueuePost済みならそれを消費。
       if (
         typeof window.StoryNovel.consumePendingPost === 'function' &&
