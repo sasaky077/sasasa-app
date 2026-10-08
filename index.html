@@ -6541,14 +6541,27 @@ document.addEventListener('touchend', function (e) {
   }
 
   function getGachaPoolCharacter(charaId){
+    var id = Number(charaId);
+    var found = null;
     if(typeof getCharaById === 'function'){
-      var found = getCharaById(Number(charaId));
-      if(found) return found;
+      found = getCharaById(id);
     }
-    if(typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)){
-      return CHARACTERS.find(function(c){ return Number(c.id) === Number(charaId); }) || null;
+    if(!found && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)){
+      found = CHARACTERS.find(function(c){ return Number(c.id) === id; }) || null;
     }
-    return null;
+    // 限定PUの提供割合は、キャラマスタ未読込・欠落時でも名前とパネル画像を表示する。
+    // 他のキャラやガチャ抽選処理には影響させない。
+    var pickupFallback = {
+      36: { name:'ニーナ', panelImg:'images/chara_36_panel.webp' },
+      40: { name:'オリビア', panelImg:'images/chara_40_panel.webp' }
+    }[id];
+    if(!pickupFallback) return found;
+    if(!found) return { id:id, name:pickupFallback.name, panelImg:pickupFallback.panelImg, rarity:'SR' };
+    if(found.name && (found.panelImg || found.img || found.upImg)) return found;
+    return Object.assign({}, found, {
+      name:found.name || pickupFallback.name,
+      panelImg:found.panelImg || found.img || found.upImg || pickupFallback.panelImg
+    });
   }
 
   function getGachaPoolCharacterImage(chara){
