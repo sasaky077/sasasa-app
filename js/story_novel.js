@@ -182,14 +182,6 @@
     const loc=String(location||'').trim();
     const sid=normalizeStageId(stageId||'');
 
-    // build1240: scenario側で背景画像ファイル名を直接指定できる。
-    // "scene_workbench.webp" / "images/scene_workbench.webp" の両方を許可する。
-    // 旧ロケーション名も下の互換マッピングで引き続き利用可能。
-    const directImage = loc.match(/^(?:images\/)?([^\/]+\.(?:webp|png|jpe?g))$/i);
-    if(directImage){
-      return loc.startsWith('images/') ? loc : ('images/' + loc);
-    }
-
     // build1097: CH01-STAGE01は敵群が浮遊している専用前線背景。
     if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
     if(!loc) return STORY_BG_PATHS.outside_tower;
@@ -300,7 +292,9 @@
   letter-spacing:.08em;
   padding:10px 4px;
 }
-#${ROOT_ID} .story-novel-head-copy{ text-align:center; line-height:1.25; }
+#${ROOT_ID} .story-novel-back{ grid-column:1; justify-self:start; }
+#${ROOT_ID} .story-novel-head-copy{ grid-column:2; text-align:center; line-height:1.25; }
+#${ROOT_ID} .story-novel-skip{ grid-column:3; justify-self:end; }
 #${ROOT_ID} .story-novel-chapter{ display:block; font-size:9px; letter-spacing:.12em; opacity:.65; }
 #${ROOT_ID} .story-novel-stage{ display:block; margin-top:2px; font-size:13px; font-weight:500; letter-spacing:.08em; }
 #${ROOT_ID} .story-novel-location{
@@ -589,11 +583,9 @@
 }
 
 #${ROOT_ID} .story-novel-textbox,
-#${ROOT_ID} .story-novel-cast{
-  transition:opacity .20s ease, transform .20s ease;
-}
+#${ROOT_ID} .story-novel-cast,
 #${ROOT_ID} .story-novel-location{
-  display:none !important;
+  transition:opacity .20s ease, transform .20s ease;
 }
 #${ROOT_ID}.is-entry-transition .story-novel-textbox,
 #${ROOT_ID}.is-entry-transition .story-novel-cast{
@@ -1000,7 +992,7 @@
       'CHAPTER '+String(data.chapter||0).padStart(2,'0')+'  '+String(data.chapterTitle||'');
     root.querySelector('.story-novel-stage').textContent=
       String(data.chapter||0)+'-'+String(data.stageNo||0)+'  '+String(data.stageTitle||'');
-    root.querySelector('.story-novel-location').textContent='';
+    root.querySelector('.story-novel-location').textContent=location ? '— '+location+' —' : '';
     root.querySelector('.story-novel-speaker').textContent=speaker || 'NARRATION';
 
     const bg=root.querySelector('.story-novel-bg');

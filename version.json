@@ -1,7 +1,1 @@
-{
-  "build": "1264",
-  "label": "result-reward-scroll-only",
-  "note": "keep RESULT screen fixed and scroll only the reward list",
-  "version": "1264",
-  "updated": "2026-10-08"
-}
+{"build":1266,"note":"post novel SKIP stays in right header column"}

@@ -3152,6 +3152,41 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   }
 }
 </style>
+
+<style id="shooting-result-reward-three-rows-build1265">
+/* build1265: 報酬欄は最大3種を常時表示し、4種目以降だけ報酬欄内でスクロールする。 */
+#shooting-event-root #shooting-result{
+  --result-reward-row-h:clamp(62px,9.2dvh,82px);
+  --result-reward-row-gap:clamp(5px,1.5vw,8px);
+}
+#shooting-event-root #shooting-result .shooting-result-rewards,
+#shooting-event-root #shooting-result .shooting-result-reward-section{
+  max-height:none !important;
+  overflow:visible !important;
+}
+#shooting-event-root #shooting-result .shooting-result-reward-list{
+  flex:0 1 auto !important;
+  height:auto !important;
+  max-height:calc((var(--result-reward-row-h) * 3) + (var(--result-reward-row-gap) * 2)) !important;
+  gap:var(--result-reward-row-gap) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+#shooting-event-root #shooting-result .shooting-result-reward-item{
+  min-height:var(--result-reward-row-h) !important;
+  height:var(--result-reward-row-h) !important;
+  box-sizing:border-box !important;
+  flex:0 0 var(--result-reward-row-h) !important;
+}
+@media (max-height:700px){
+  #shooting-event-root #shooting-result{
+    --result-reward-row-h:58px;
+    --result-reward-row-gap:5px;
+  }
+}
+</style>
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -18411,7 +18446,7 @@ function fadeOutOpeningBgm(){
 
 <script src="js/shooting_characters.js?v=1212-aura-cluster"></script>
 <script src="js/story_scenario.js?v=1240-location-filenames"></script>
-<script src="js/story_novel.js?v=1240-location-filenames"></script>
+<script src="js/story_novel.js?v=1266-post-skip-right"></script>
 <script src="js/stage_select.js?v=1131-story-pre-loader-fix"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
