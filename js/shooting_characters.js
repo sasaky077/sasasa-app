@@ -1769,7 +1769,9 @@
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.RYUNE, effectKey: 'ryune',
     label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。',
     shotType: 'laser', shotStyle: 'ryune', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
-    ultBaseType: 'beam', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultName: 'アブソリュート・レーテー',
+    ultDescription: '盤面の敵全員にATKの2.0倍の水属性ダメージを与え、全属性バリアを消滅させる。',
+    ultBaseType: 'beam', ultAddons: ['damage', 'barrier_clear'], ultType: 'ryune_absolute_lethe',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.KAINA] = buildShootingCharacter({

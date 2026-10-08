@@ -2003,7 +2003,7 @@
     shooting_ch03_03: Object.freeze([20]),      // アルノ
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
-    shooting_ch04_04: Object.freeze([1, 25]),      // エリ / リュネ（リュネはSTORYゲストLv30）
+    shooting_ch04_04: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ（STORYゲストLv30）
   });
 
   // build1216: CH03-04はストーリー固定ではなく、シナリオ上その場にいる5人から3人を選択。
@@ -5632,7 +5632,10 @@
     return ELEMENT_DAMAGE_RATE.neutral;
   }
 
+  // Elemental barrier checks are tied to the actual target instance, never to its element globally.
+  let combatElementTarget = null;
   function getCombatTargetElement(target, fallbackElement) {
+    combatElementTarget = target || null;
     if (!target) return normalizeCombatElement(fallbackElement);
     return normalizeCombatElement(
       target.element ||
@@ -7399,6 +7402,11 @@
 
     // build1164: CH01-04は木属性BOSS + 木属性バリア。
     // 火属性だけが突破でき、エリ(光) / ジグ(木)はIMMUNEになる。
+    if (isCh404SummonerBattle()) {
+      ['aqua', 'fire', 'light'].forEach(pushUnique);
+      weaknessBarrierElementCache = result;
+      return weaknessBarrierElementCache;
+    }
     if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04)) {
       pushUnique('wood');
       weaknessBarrierElementCache = result;
@@ -7445,6 +7453,9 @@
     const target = normalizeCombatElement(targetElement);
     if (!target || target === 'neutral') return false;
     if (isChapter403FireWallStage() && state && state.ch403BarrierBroken) return false;
+    // A removed barrier belongs only to that enemy. A later enemy of the same element
+    // still gets its own intact shield, while existing cleared enemies stay cleared.
+    if (combatElementTarget && normalizeCombatElement(combatElementTarget.element || combatElementTarget.def?.element) === target && combatElementTarget.lyuneBarrierRemoved) return false;
     return getStageWeaknessBarrierElements().includes(target);
   }
 
@@ -7469,6 +7480,7 @@
     }
 
     const enemyElement = normalizeCombatElement(state?.boss?.element || BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
+    combatElementTarget = state?.boss || null;
     return enemyElement !== 'neutral' && isStageWeaknessOnlyTarget(enemyElement);
   }
 
@@ -10922,6 +10934,10 @@
     return false;
   }
 
+  function isCh404SummonerBattle() {
+    return isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_04);
+  }
+
   function isNormalBattle() {
     return !!(state && state.battleType === 'normal');
   }
@@ -11043,6 +11059,7 @@
   }
 
   function createNormalEnemy(enemyDef, now) {
+    combatElementTarget = null;
     const arena = document.getElementById('shooting-arena');
     const layer = document.getElementById('shooting-normal-enemy-layer');
     if (!arena || !layer || !enemyDef) return null;
@@ -11053,7 +11070,7 @@
     el.className = 'shooting-mini-enemy spawning';
     // build1141: ステージ固有の雑魚画像を指定可能にする。
     // 既存ステージはenemyDef.imageをそのまま使用する。
-    const stageEnemyImage = String(selectedStage?.normalBattle?.enemyImage || enemyDef.image || '');
+    const stageEnemyImage = String(enemyDef.ch404Image || selectedStage?.normalBattle?.enemyImage || enemyDef.image || '');
     el.src = stageEnemyImage;
     el.alt = enemyDef.name || '敵';
     el.draggable = false;
@@ -11122,7 +11139,9 @@
       ? Number(hpSequence[spawnIndex % hpSequence.length])
       : NaN;
     const stageEnemyHp = Number(cfg.enemyHp);
-    const enemyHp = Number.isFinite(sequencedHp)
+    const enemyHp = Number.isFinite(Number(enemyDef.ch404Hp)) && enemyDef.ch404Hp != null
+      ? Math.max(1, Number(enemyDef.ch404Hp))
+      : Number.isFinite(sequencedHp)
       ? Math.max(1, sequencedHp)
       : (Number.isFinite(stageEnemyHp)
         ? stageEnemyHp
@@ -11130,6 +11149,7 @@
 
     const enemy = {
       uid: `mini_${String(state.stageId || 'stage')}_${spawnIndex}`,
+      ch404Role: enemyDef.ch404Role || null,
       def: enemyDef, el, hpEl: hpWrap, elementEl, weaknessBarrierEl, x, y, baseX: x, baseY: y,
       baseDisplayScale,
       displayScale,
@@ -11162,8 +11182,44 @@
     return enemy;
   }
 
+  // CH04-4: one reinforced summoner at a time; surviving adds persist between phases.
+  function spawnCh404Enemies(now) {
+    const cfg = getNormalBattleConfig();
+    const phaseElements = ['aqua', 'fire', 'light'];
+    if (!Number.isInteger(state.ch404Phase)) state.ch404Phase = 0;
+    if (state.ch404Phase >= phaseElements.length) return;
+    const current = (state.normalEnemies || []).find(e => e && e.hp > 0 && e.ch404Role === 'summoner');
+    if (!current) {
+      const base = getShootingEnemy(selectedStage.enemyIds[0]);
+      if (!base || !base.implemented) return;
+      const element = phaseElements[state.ch404Phase];
+      // A newly appearing reinforced enemy receives its own fresh barrier.
+      const enemy = createNormalEnemy(Object.assign({}, base, {
+        element, strongEnemy: true, ch404Role: 'summoner', ch404Hp: 1800,
+      }), now);
+      if (!enemy) return;
+      state.normalEnemies.push(enemy);
+      state.normalSpawned++;
+      state.ch404SummonAt = now + 5000;
+      return;
+    }
+    if (now < Number(state.ch404SummonAt || 0)) return;
+    state.ch404SummonAt = now + 5000;
+    const adds = state.normalEnemies.filter(e => e && e.hp > 0 && e.ch404Role === 'add');
+    if (adds.length >= 4) return;
+    const base = getShootingEnemy(selectedStage.enemyIds[0]);
+    if (!base || !base.implemented) return;
+    const enemy = createNormalEnemy(Object.assign({}, base, {
+      element: 'neutral', strongEnemy: false, ch404Role: 'add', ch404Hp: 500,
+    }), now);
+    if (!enemy) return;
+    state.normalEnemies.push(enemy);
+    state.normalSpawned++;
+  }
+
   function spawnNormalEnemies(now) {
     if (!isNormalBattle() || state.finishing || state.ended) return;
+    if (isCh404SummonerBattle()) { spawnCh404Enemies(now); return; }
     if (isChapter101TutorialStage() || isChapter102TutorialStage()) return;
     const cfg = getNormalBattleConfig();
 
@@ -12393,6 +12449,10 @@
     }
     if (enemy.el) enemy.el.classList.remove('ayane-grabbed', 'ayane-multi-grabbed');
 
+    if (isCh404SummonerBattle() && enemy.ch404Role === 'summoner') {
+      state.ch404Phase = Math.min(3, Number(state.ch404Phase || 0) + 1);
+      // Summoned normal enemies are deliberately not removed.
+    }
     state.normalDefeated++;
     state.score += Number(enemy.def?.scoreValue || 650);
     handleChapter101TutorialEnemyDefeat();
@@ -12443,7 +12503,9 @@
     const mission = getEffectiveNormalMission();
     const cfg = getNormalBattleConfig();
     const total = Number(cfg.totalEnemies || 0);
-    const allDefeated = total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
+    const allDefeated = isCh404SummonerBattle()
+      ? Number(state.ch404Phase || 0) >= 3 && !(state.normalEnemies || []).some(e => e && e.hp > 0)
+      : total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
 
     if (isChapter101TutorialStage() && allDefeated && !state.ch101TutorialUltTriggered) {
       state.missionComplete = false;
@@ -26406,13 +26468,37 @@
     return !!member && member.burst >= c.burstNeed;
   }
 
+  // リュネ ULT「アブソリュート・レーテー」: 盤面全体へATK×2.0を1回適用し、全属性バリアを解除。
+  function useLyuneAbsoluteLetheUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName || 'アブソリュート・レーテー', c.effectKey);
+    const targets = isNormalBattle()
+      ? (state.normalEnemies || []).filter(e => e && e.hp > 0)
+      : (state.boss && state.boss.hp > 0 ? [state.boss] : []);
+    // バリアを先に消すことで、今回の全体攻撃にもIMMUNEが適用されない。
+    targets.forEach(enemy => {
+      if (!enemy.weaknessBarrierEl && !enemy.weaknessBarrier) return;
+      enemy.lyuneBarrierRemoved = true;
+      if (enemy.weaknessBarrierEl) { enemy.weaknessBarrierEl.remove(); enemy.weaknessBarrierEl = null; }
+      if (enemy.el) enemy.el.classList.remove('has-weakness-barrier');
+    });
+    // Boss shields use a separate DOM node; retain the cleared state on this boss only.
+    const bossShield = document.getElementById('shooting-boss-weakness-barrier');
+    if (bossShield && state.boss && state.boss.hp > 0) {
+      state.boss.lyuneBarrierRemoved = true;
+      bossShield.remove();
+    }
+    applyUltDamage(Math.max(0, Number(c.atk || 0)) * 2.0, true, c);
+  }
+
   function executeCharacterUlt(c) {
     if (!state || state.ended || state.finishing) return;
 
     // ULTの内部属性と、画像を使わない演出の基調色を同じ属性へ同期。
     applyUltElementVisualContext(c);
 
-    if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
+    if (Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
+    else if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);

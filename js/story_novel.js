@@ -178,9 +178,24 @@
     scene_disk_down: 'images/scene_disk_down.webp'
   });
 
+  // A location may be an explicit scene image filename in newer chapters.
+  // Resolve only safe local filenames; retain legacy Japanese location routing.
+  function sceneImageForLocation(location){
+    const loc=String(location||'').trim();
+    if(!/^[a-zA-Z0-9_-]+\.(?:webp|png|jpe?g)$/i.test(loc)) return '';
+    return 'images/'+loc;
+  }
+
+  function visibleLocationLabel(location){
+    const loc=String(location||'').trim();
+    return sceneImageForLocation(loc) ? '' : loc;
+  }
+
   function backgroundFor(location, stageId){
     const loc=String(location||'').trim();
     const sid=normalizeStageId(stageId||'');
+    const explicitScene=sceneImageForLocation(loc);
+    if(explicitScene) return explicitScene;
 
     // build1097: CH01-STAGE01は敵群が浮遊している専用前線背景。
     if(sid==='shooting_ch01_01') return STORY_BG_PATHS.outside_tower_enemy;
@@ -992,7 +1007,7 @@
       'CHAPTER '+String(data.chapter||0).padStart(2,'0')+'  '+String(data.chapterTitle||'');
     root.querySelector('.story-novel-stage').textContent=
       String(data.chapter||0)+'-'+String(data.stageNo||0)+'  '+String(data.stageTitle||'');
-    root.querySelector('.story-novel-location').textContent=location ? '— '+location+' —' : '';
+    root.querySelector('.story-novel-location').textContent=visibleLocationLabel(location) ? '— '+visibleLocationLabel(location)+' —' : '';
     root.querySelector('.story-novel-speaker').textContent=speaker || 'NARRATION';
 
     const bg=root.querySelector('.story-novel-bg');
