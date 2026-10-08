@@ -1,6 +1,5 @@
 {
-  "build": 1257,
-  "version": "1257-ch04-02-forced-defeat30",
-  "description": "CH04-02 scripted defeat: defeat counts as story clear, unlocks progression and plays post story",
-  "updated_at": "2026-10-08T08:36:00+09:00"
+  "build": 1258,
+  "label": "ch04-02-normal-win",
+  "note": "Restore CH04-2 as a normal winnable battle; remove scripted defeat/30s wipe logic."
 }
