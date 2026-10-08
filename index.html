@@ -3077,7 +3077,14 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   }
 </style>
 
-\n<style id="limitbreak-powerup-restore-v1253">\n/* build1253: restore limit break full-screen power-up animation even if legacy style.css block is missing */\n.lb-powerup-effect{\n  position:fixed!important;inset:0!important;z-index:9999999!important;display:none;overflow:hidden;\n  align-items:center;justify-content:center;background:#f8f6f1;pointer-events:none;\n}\n.lb-powerup-effect.show{display:flex!important;animation:lbPowerupWhole 2.35s ease both;}\n.lb-powerup-effect.preparing{display:flex!important;opacity:1!important;background:#f8f6f1!important;pointer-events:auto!important;}\n.lb-powerup-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 48%,rgba(255,233,168,.52),transparent 24%),radial-gradient(circle at 50% 50%,rgba(223,194,132,.34),transparent 52%),linear-gradient(180deg,#fffdf8,#f3efe6);}\n.lb-powerup-rays{position:absolute;left:50%;top:50%;width:120vmax;height:120vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(255,224,142,.18) 0 2deg,transparent 2deg 12deg);animation:lbPowerupRays 2.35s linear both;}\n.lb-powerup-ring{position:absolute;left:50%;top:50%;width:220px;height:220px;border:1px solid rgba(255,221,139,.72);border-radius:50%;transform:translate(-50%,-50%) scale(.35);box-shadow:0 0 28px rgba(255,196,76,.38),inset 0 0 22px rgba(255,239,188,.2);opacity:0;}\n.lb-powerup-effect.show .ring-a{animation:lbPowerupRing 1.15s .3s ease-out both;}\n.lb-powerup-effect.show .ring-b{animation:lbPowerupRing 1.35s .55s ease-out both;}\n.lb-powerup-image-wrap{position:absolute;inset:5% 0 17%;display:flex;align-items:flex-end;justify-content:center;z-index:3;}\n.lb-powerup-image-wrap img{width:min(92vw,500px);height:100%;object-fit:contain;object-position:center bottom;opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.9) drop-shadow(0 16px 25px rgba(80,58,24,.22));}\n.lb-powerup-effect.show .lb-powerup-image-wrap img{animation:lbPowerupCharacter 2.2s .08s cubic-bezier(.16,.8,.2,1) both;}\n.lb-powerup-flash{position:absolute;inset:0;z-index:4;background:#fff6d9;opacity:0;}\n.lb-powerup-effect.show .lb-powerup-flash{animation:lbPowerupFlash 1.55s .52s ease-out both;}\n.lb-powerup-copy{position:absolute;z-index:5;left:0;right:0;bottom:9%;display:flex;flex-direction:column;align-items:center;text-align:center;color:#fff7dc;text-shadow:0 2px 8px rgba(90,67,29,.38),0 0 12px rgba(230,180,75,.26);opacity:0;transform:translateY(12px);}\n.lb-powerup-effect.show .lb-powerup-copy{animation:lbPowerupCopy 1.45s .68s ease-out both;}\n.lb-powerup-copy small{font-family:\"Cinzel\",serif;font-size:9px;letter-spacing:.42em;color:#dbbb70;}\n.lb-powerup-copy strong{margin-top:5px;font-family:\"Cinzel\",serif;font-size:clamp(28px,8vw,42px);letter-spacing:.12em;}\n.lb-powerup-copy span{margin-top:7px;font-size:14px;letter-spacing:.18em;}\n.lb-powerup-copy b{margin-top:7px;font-family:\"Cinzel\",serif;font-size:18px;letter-spacing:.12em;color:#f3d486;}\n.lb-powerup-effect.preparing .lb-powerup-rays,.lb-powerup-effect.preparing .lb-powerup-ring,.lb-powerup-effect.preparing .lb-powerup-image-wrap,.lb-powerup-effect.preparing .lb-powerup-flash,.lb-powerup-effect.preparing .lb-powerup-copy{opacity:0!important;}\n.lb-powerup-effect.preparing::after{content:\"\";position:absolute;left:50%;top:50%;width:34px;height:34px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(159,109,22,.20);box-shadow:0 0 0 10px rgba(184,136,51,.05),0 0 28px rgba(184,136,51,.12);animation:lbPreparingPulse .8s ease-in-out infinite alternate;}\n@keyframes lbPowerupWhole{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}\n@keyframes lbPowerupRays{0%{transform:translate(-50%,-50%) rotate(0deg) scale(.7);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) rotate(22deg) scale(1.1);opacity:.28}}\n@keyframes lbPowerupRing{0%{opacity:0;transform:translate(-50%,-50%) scale(.28)}22%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}}\n@keyframes lbPowerupCharacter{0%{opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.72)}25%{opacity:1;transform:translateY(0) scale(1);filter:brightness(.98)}48%{filter:brightness(1.8) drop-shadow(0 0 24px rgba(255,221,135,.72))}65%,100%{opacity:1;transform:translateY(0) scale(1.035);filter:brightness(1.04) drop-shadow(0 0 16px rgba(255,205,95,.30))}}\n@keyframes lbPowerupFlash{0%,30%{opacity:0}38%{opacity:.92}50%{opacity:.08}100%{opacity:0}}\n@keyframes lbPowerupCopy{0%{opacity:0;transform:translateY(12px)}25%,82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}\n@keyframes lbPreparingPulse{from{transform:translate(-50%,-50%) scale(.78);opacity:.35}to{transform:translate(-50%,-50%) scale(1.08);opacity:.72}}\n</style>\n</head>
+\n
+<style id="zukan-batch-image-reveal-build1259">
+/* build1259: キャラ一覧の画像をロード完了順にバラバラ見せず、8件単位で同時表示 */
+#screen-zukan .primoa-index-card.zimg-batch-preparing{
+  visibility:hidden!important;
+}
+</style>
+<style id="limitbreak-powerup-restore-v1253">\n/* build1253: restore limit break full-screen power-up animation even if legacy style.css block is missing */\n.lb-powerup-effect{\n  position:fixed!important;inset:0!important;z-index:9999999!important;display:none;overflow:hidden;\n  align-items:center;justify-content:center;background:#f8f6f1;pointer-events:none;\n}\n.lb-powerup-effect.show{display:flex!important;animation:lbPowerupWhole 2.35s ease both;}\n.lb-powerup-effect.preparing{display:flex!important;opacity:1!important;background:#f8f6f1!important;pointer-events:auto!important;}\n.lb-powerup-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 48%,rgba(255,233,168,.52),transparent 24%),radial-gradient(circle at 50% 50%,rgba(223,194,132,.34),transparent 52%),linear-gradient(180deg,#fffdf8,#f3efe6);}\n.lb-powerup-rays{position:absolute;left:50%;top:50%;width:120vmax;height:120vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(255,224,142,.18) 0 2deg,transparent 2deg 12deg);animation:lbPowerupRays 2.35s linear both;}\n.lb-powerup-ring{position:absolute;left:50%;top:50%;width:220px;height:220px;border:1px solid rgba(255,221,139,.72);border-radius:50%;transform:translate(-50%,-50%) scale(.35);box-shadow:0 0 28px rgba(255,196,76,.38),inset 0 0 22px rgba(255,239,188,.2);opacity:0;}\n.lb-powerup-effect.show .ring-a{animation:lbPowerupRing 1.15s .3s ease-out both;}\n.lb-powerup-effect.show .ring-b{animation:lbPowerupRing 1.35s .55s ease-out both;}\n.lb-powerup-image-wrap{position:absolute;inset:5% 0 17%;display:flex;align-items:flex-end;justify-content:center;z-index:3;}\n.lb-powerup-image-wrap img{width:min(92vw,500px);height:100%;object-fit:contain;object-position:center bottom;opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.9) drop-shadow(0 16px 25px rgba(80,58,24,.22));}\n.lb-powerup-effect.show .lb-powerup-image-wrap img{animation:lbPowerupCharacter 2.2s .08s cubic-bezier(.16,.8,.2,1) both;}\n.lb-powerup-flash{position:absolute;inset:0;z-index:4;background:#fff6d9;opacity:0;}\n.lb-powerup-effect.show .lb-powerup-flash{animation:lbPowerupFlash 1.55s .52s ease-out both;}\n.lb-powerup-copy{position:absolute;z-index:5;left:0;right:0;bottom:9%;display:flex;flex-direction:column;align-items:center;text-align:center;color:#fff7dc;text-shadow:0 2px 8px rgba(90,67,29,.38),0 0 12px rgba(230,180,75,.26);opacity:0;transform:translateY(12px);}\n.lb-powerup-effect.show .lb-powerup-copy{animation:lbPowerupCopy 1.45s .68s ease-out both;}\n.lb-powerup-copy small{font-family:\"Cinzel\",serif;font-size:9px;letter-spacing:.42em;color:#dbbb70;}\n.lb-powerup-copy strong{margin-top:5px;font-family:\"Cinzel\",serif;font-size:clamp(28px,8vw,42px);letter-spacing:.12em;}\n.lb-powerup-copy span{margin-top:7px;font-size:14px;letter-spacing:.18em;}\n.lb-powerup-copy b{margin-top:7px;font-family:\"Cinzel\",serif;font-size:18px;letter-spacing:.12em;color:#f3d486;}\n.lb-powerup-effect.preparing .lb-powerup-rays,.lb-powerup-effect.preparing .lb-powerup-ring,.lb-powerup-effect.preparing .lb-powerup-image-wrap,.lb-powerup-effect.preparing .lb-powerup-flash,.lb-powerup-effect.preparing .lb-powerup-copy{opacity:0!important;}\n.lb-powerup-effect.preparing::after{content:\"\";position:absolute;left:50%;top:50%;width:34px;height:34px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(159,109,22,.20);box-shadow:0 0 0 10px rgba(184,136,51,.05),0 0 28px rgba(184,136,51,.12);animation:lbPreparingPulse .8s ease-in-out infinite alternate;}\n@keyframes lbPowerupWhole{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}\n@keyframes lbPowerupRays{0%{transform:translate(-50%,-50%) rotate(0deg) scale(.7);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) rotate(22deg) scale(1.1);opacity:.28}}\n@keyframes lbPowerupRing{0%{opacity:0;transform:translate(-50%,-50%) scale(.28)}22%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}}\n@keyframes lbPowerupCharacter{0%{opacity:0;transform:translateY(22px) scale(.92);filter:brightness(.72)}25%{opacity:1;transform:translateY(0) scale(1);filter:brightness(.98)}48%{filter:brightness(1.8) drop-shadow(0 0 24px rgba(255,221,135,.72))}65%,100%{opacity:1;transform:translateY(0) scale(1.035);filter:brightness(1.04) drop-shadow(0 0 16px rgba(255,205,95,.30))}}\n@keyframes lbPowerupFlash{0%,30%{opacity:0}38%{opacity:.92}50%{opacity:.08}100%{opacity:0}}\n@keyframes lbPowerupCopy{0%{opacity:0;transform:translateY(12px)}25%,82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}\n@keyframes lbPreparingPulse{from{transform:translate(-50%,-50%) scale(.78);opacity:.35}to{transform:translate(-50%,-50%) scale(1.08);opacity:.72}}\n</style>\n</head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
   <div class="hud-left">
@@ -14442,7 +14449,7 @@ function showTenResult(results){
           '<img class="primoa-index-image zimg-lazy zimg-loading" ' +
             'src="' + detailEscapeHTML(panelSrc) + '" ' +
             'data-zimg-original="' + detailEscapeHTML(panelSrc) + '" ' +
-            'loading="lazy" decoding="async" fetchpriority="low" ' +
+            'loading="eager" decoding="async" fetchpriority="auto" ' +
             'alt="' + detailEscapeHTML(name) + '">' +
           getElementCornerIconHTML(chara, 'primoa-index-element-icon') +
         '</span>' +
@@ -14450,6 +14457,84 @@ function showTenResult(results){
         (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
       '</button>';
   }
+
+  // build1259: キャラ一覧は画像ロード完了順にバラバラ表示せず、
+  // 1バッチ（8件）単位でdecode完了後に一括表示する。
+  // 最大待機時間を短く制限し、回線が遅い時でも画面遷移を止めすぎない。
+  var zukanPanelWarmCache = new Set();
+
+  function waitForImageReadyFast(img, timeoutMs){
+    if(!img) return Promise.resolve();
+    if(img.complete && img.naturalWidth > 0){
+      if(typeof img.decode === 'function'){
+        return Promise.race([
+          img.decode().catch(function(){}),
+          new Promise(function(resolve){ setTimeout(resolve, Math.max(0, Number(timeoutMs || 0))); })
+        ]);
+      }
+      return Promise.resolve();
+    }
+    return new Promise(function(resolve){
+      var done = false;
+      var finish = function(){ if(done) return; done = true; resolve(); };
+      img.addEventListener('load', finish, { once:true });
+      img.addEventListener('error', finish, { once:true });
+      setTimeout(finish, Math.max(0, Number(timeoutMs || 0)));
+    });
+  }
+
+  function revealZukanCardBatchTogether(cards){
+    var list = Array.prototype.slice.call(cards || []).filter(Boolean);
+    if(!list.length) return;
+    list.forEach(function(card){ card.classList.add('zimg-batch-preparing'); });
+
+    var images = list.map(function(card){ return card.querySelector('img.primoa-index-image'); }).filter(Boolean);
+    Promise.all(images.map(function(img){ return waitForImageReadyFast(img, 260); })).finally(function(){
+      requestAnimationFrame(function(){
+        list.forEach(function(card){ card.classList.remove('zimg-batch-preparing'); });
+      });
+    });
+  }
+
+  function warmZukanPanelSourcesInBackground(){
+    if(typeof getAllBoxCharaDefs !== 'function') return;
+    var defs = getAllBoxCharaDefs() || [];
+    var sources = defs.map(function(chara){ return getZukanIndexPanelSrc(chara); }).filter(Boolean)
+      .filter(function(src){ return !zukanPanelWarmCache.has(src); });
+    if(!sources.length) return;
+
+    var cursor = 0;
+    var concurrency = 4;
+    function worker(){
+      return new Promise(function(resolve){
+        function next(){
+          if(cursor >= sources.length){ resolve(); return; }
+          var src = sources[cursor++];
+          var img = new Image();
+          var finish = function(){
+            zukanPanelWarmCache.add(src);
+            setTimeout(next, 0);
+          };
+          img.decoding = 'async';
+          img.onload = function(){
+            if(typeof img.decode === 'function') img.decode().catch(function(){}).finally(finish);
+            else finish();
+          };
+          img.onerror = finish;
+          img.src = src;
+          if(img.complete && img.naturalWidth > 0) finish();
+        }
+        next();
+      });
+    }
+    Promise.all(Array.from({length:Math.min(concurrency, sources.length)}, worker)).catch(function(){});
+  }
+
+  window.addEventListener('load', function(){
+    var startWarm = function(){ try { warmZukanPanelSourcesInBackground(); } catch(_){} };
+    if(typeof requestIdleCallback === 'function') requestIdleCallback(startWarm, { timeout:1200 });
+    else setTimeout(startWarm, 700);
+  }, { once:true });
 
   function disconnectZukanIndexLoadObserver(){
     if(zukanIndexLoadObserver){
@@ -14499,8 +14584,10 @@ function showTenResult(results){
     grid.insertAdjacentHTML('beforeend', html);
     zukanIndexRenderedCount = end;
 
-    // 画像自体の遅延ロードはブラウザ標準 loading="lazy" に任せる。
-    // DOM追加だけを段階化し、iOSでの同時デコード数を抑える。
+    // build1259: 追加した8件だけを一括decode → 同一フレームで表示。
+    // DOMは8件ずつのままなので、iPhoneでの同時decode負荷は増やしすぎない。
+    var allCards = grid.querySelectorAll(':scope > .primoa-index-card');
+    revealZukanCardBatchTogether(Array.prototype.slice.call(allCards, start, end));
 
     if(zukanIndexRenderedCount < zukanIndexPendingChars.length){
       grid.insertAdjacentHTML(
@@ -14515,8 +14602,8 @@ function showTenResult(results){
   // build520:
   // ・最初は8件（4列×2段）だけDOM生成
   // ・下へ近づいたら8件ずつ追加
-  // ・画像ロードはブラウザ標準 loading="lazy" を使用
-  // ・全キャラ一括プリロードは行わない
+  // ・8件ごとにeager load + decode完了後に一括表示
+  // ・未表示分はアイドル時間に低並列で先読み
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
@@ -18257,7 +18344,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1258-ch04-02-normal-win"></script>
+<script src="js/shooting_event.js?v=1259-character-image-batch-preload"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

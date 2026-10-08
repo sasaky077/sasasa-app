@@ -3595,7 +3595,53 @@
   }
 
   function setBattleHudVisible(visible) { UIModule.setBattleHudVisible(ROOT_ID, visible); }
-  function setCharacterSelectVisible(visible) { UIModule.setCharacterSelectVisible(ROOT_ID, visible); }
+  // build1259: パーティ編成のキャラパネルは、読み込み完了順にバラバラ表示しない。
+  // 既存の事前warmを活かしつつ、表示直前の画像decodeを短時間だけ待ってから画面を一括表示する。
+  let shootingPartyRevealToken = 0;
+
+  function waitForShootingRosterImagesReady(timeoutMs = 220) {
+    const roster = document.querySelector('#shooting-character-select .shooting-party-roster');
+    if (!roster) return Promise.resolve();
+    const images = Array.from(roster.querySelectorAll('.shooting-character-portrait img:not(.shooting-character-element-icon)'));
+    if (!images.length) return Promise.resolve();
+
+    const one = img => {
+      if (img.complete && img.naturalWidth > 0) {
+        return typeof img.decode === 'function' ? img.decode().catch(() => {}) : Promise.resolve();
+      }
+      return new Promise(resolve => {
+        let done = false;
+        const finish = () => { if (done) return; done = true; resolve(); };
+        img.addEventListener('load', finish, { once:true });
+        img.addEventListener('error', finish, { once:true });
+        setTimeout(finish, timeoutMs);
+      });
+    };
+
+    return Promise.race([
+      Promise.all(images.map(one)),
+      new Promise(resolve => setTimeout(resolve, timeoutMs))
+    ]);
+  }
+
+  function setCharacterSelectVisible(visible) {
+    if (!visible) {
+      shootingPartyRevealToken += 1;
+      UIModule.setCharacterSelectVisible(ROOT_ID, false);
+      return;
+    }
+
+    const token = ++shootingPartyRevealToken;
+    // warmShootingPartyPanels() は openShootingEvent() の時点ですでに開始済み。
+    // ここでは最大220msだけ待ち、キャッシュ済みならほぼ即時に編成画面を出す。
+    Promise.race([
+      Promise.resolve().then(() => warmShootingPartyPanels()),
+      new Promise(resolve => setTimeout(resolve, 220))
+    ]).then(() => waitForShootingRosterImagesReady(180)).finally(() => {
+      if (token !== shootingPartyRevealToken) return;
+      UIModule.setCharacterSelectVisible(ROOT_ID, true);
+    });
+  }
   function setCommonUiVisible(open) { UIModule.setCommonUiVisible(open); }
 
   function resetState() {

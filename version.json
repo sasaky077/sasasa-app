@@ -1,5 +1,5 @@
 {
-  "build": 1258,
-  "label": "ch04-02-normal-win",
-  "note": "Restore CH04-2 as a normal winnable battle; remove scripted defeat/30s wipe logic."
+  "build": 1259,
+  "label": "character-image-batch-preload",
+  "note": "Preload/decode character panel images and reveal list/party roster in synchronized batches to avoid staggered image pop-in."
 }
