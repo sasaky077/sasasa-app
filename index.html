@@ -14853,7 +14853,11 @@ function showTenResult(results){
     disconnectZukanIndexLoadObserver();
 
     var allChars = getAllBoxCharaDefs();
-    var chars = applyZukanIndexFilterAndSort(allChars);
+    // 所持キャラのみを一覧へ。キャラ定義・ガチャ排出対象は変更しない。
+    var ownedChars = allChars.filter(function(chara){
+      return getOwnedInstancesByCharaId(chara.id).length > 0;
+    });
+    var chars = applyZukanIndexFilterAndSort(ownedChars);
     grid.className = 'zukan-grid primoa-index-grid';
     grid.innerHTML = '';
 
