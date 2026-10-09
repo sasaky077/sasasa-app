@@ -3723,6 +3723,9 @@
       ch403EncounterTriggered: false,
       ch403BarrierBroken: false,
       ch403ImmuneHits: 0,
+      ch403Phase: 0,
+      ch403PhaseStartedAt: 0,
+      ch403PhaseElapsedMs: 0,
       // build1176: アルノULT「瞬迅・千ノ刻」専用の時間停止状態。
       arnoSlashActive: false,
       arnoSlashStartedAt: 0,
@@ -10192,13 +10195,14 @@
     });
   }
 
-  function showChapter403EncounterSequence(onComplete) {
+  function showChapter403EncounterSequence(onComplete, firstOnly = false) {
     if (!state || !isChapter403FireWallStage()) { if (typeof onComplete === 'function') onComplete(); return; }
     ensureChapter101TutorialStyle();
     const root = document.getElementById(ROOT_ID);
     if (!root) { if (typeof onComplete === 'function') onComplete(); return; }
     root.querySelectorAll('.shooting-ch403-encounter-overlay').forEach(el => el.remove());
-    const pages = getChapter403CombatEntries();
+    const allPages = getChapter403CombatEntries();
+    const pages = firstOnly ? allPages.slice(0, 1) : allPages.slice(1);
     if (!pages.length) { if (typeof onComplete === 'function') onComplete(); return; }
     const overlay = document.createElement('div');
     overlay.className = 'shooting-ch101-tutorial-overlay shooting-ch403-encounter-overlay';
@@ -10228,8 +10232,33 @@
     renderPage(); requestAnimationFrame(() => overlay.classList.add('show'));
   }
 
+  function showChapter403ResumeCountdown(onComplete) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) { if (typeof onComplete === 'function') onComplete(); return; }
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-ch403-resume-countdown';
+    overlay.style.cssText = 'position:absolute;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.78);color:#65452e;text-align:center;pointer-events:auto;font-family:serif;';
+    const message = document.createElement('div');
+    message.textContent = '何かの力によって、レムナントのバリアが剥がれた。';
+    message.style.cssText = 'font-size:clamp(15px,4vw,22px);padding:0 22px;line-height:1.8;margin-bottom:28px;';
+    const number = document.createElement('div');
+    number.style.cssText = 'font-size:clamp(56px,17vw,96px);line-height:1;font-weight:bold;';
+    overlay.append(message, number);
+    root.appendChild(overlay);
+    let count = 3;
+    const tick = () => {
+      if (!overlay.isConnected || !state || state.ended || !isChapter403FireWallStage()) { overlay.remove(); return; }
+      if (count <= 0) { overlay.remove(); if (typeof onComplete === 'function') onComplete(); return; }
+      number.textContent = String(count--);
+      setTimeout(tick, 1000);
+    };
+    tick();
+  }
+
   function triggerChapter403EncounterSequence() {
     if (!state || !isChapter403FireWallStage() || state.ch403EncounterTriggered || state.ended) return;
+    const phase = Number(state.ch403Phase || 0);
+    if (phase >= 2) return;
     state.ch403EncounterTriggered = true;
     beginChapter403StoryPause();
     clearProjectiles();
@@ -10237,9 +10266,18 @@
       if (!state || state.ended || !isChapter403FireWallStage()) return;
       showChapter403EncounterSequence(() => {
         if (!state || state.ended || !isChapter403FireWallStage()) return;
-        breakChapter403FireBarriers();
-        endChapter403StoryPause();
-      });
+        state.ch403Phase = phase + 1;
+        state.ch403ImmuneHits = 0;
+        state.ch403PhaseElapsedMs = 0;
+        state.ch403PhaseStartedAt = performance.now();
+        if (phase === 0) {
+          state.ch403EncounterTriggered = false;
+          endChapter403StoryPause();
+        } else {
+          breakChapter403FireBarriers();
+          showChapter403ResumeCountdown(() => endChapter403StoryPause());
+        }
+      }, phase === 0);
     }, 180);
   }
 
@@ -12419,8 +12457,10 @@
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
 
     if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && !state.ch403EncounterTriggered && elementReaction === 'immune') {
+      if (!state.ch403PhaseStartedAt) state.ch403PhaseStartedAt = performance.now();
       state.ch403ImmuneHits = Math.max(0, Number(state.ch403ImmuneHits || 0)) + 1;
-      if (state.ch403ImmuneHits >= 4) requestAnimationFrame(() => triggerChapter403EncounterSequence());
+      const elapsed = Math.max(0, performance.now() - state.ch403PhaseStartedAt);
+      if (state.ch403ImmuneHits >= 25 && elapsed >= 7000) requestAnimationFrame(() => triggerChapter403EncounterSequence());
     }
 
     // HPが変わらないIMMUNE弾でHP DOMを書き直さない。
@@ -14931,7 +14971,7 @@
         // build1237: リヴィアのWARNING攻撃はGAUGEごとに固定。
         // GAUGE1: なし
         // GAUGE2: 2発（2WAY + 壁2反射）
-        // GAUGE3: 3発（8秒間ゆらゆら漂う）
+        // GAUGE3: 4発（8秒間ゆらゆら漂う）
         const liviaPhase = Math.max(1, Number(state.boss.phase || 1));
 
         if (liviaPhase === 2) {
@@ -14952,7 +14992,7 @@
           });
         } else if (liviaPhase >= 3) {
           const driftSpeed = 138;
-          const driftOffsets = [-0.90, 0, 0.90];
+          const driftOffsets = [-1.05, -0.35, 0.35, 1.05];
           driftOffsets.forEach((offset, index) => {
             const heading = angle + offset;
             const projectile = makeProjectile(
@@ -18162,6 +18202,9 @@
       return;
     }
 
+    if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && !state.ch403EncounterTriggered && Number(state.ch403ImmuneHits || 0) >= 25 && Number(state.ch403PhaseStartedAt || 0) > 0 && performance.now() - state.ch403PhaseStartedAt >= 7000) {
+      triggerChapter403EncounterSequence();
+    }
     if (state.ch403StoryPaused) {
       prevTs = ts;
       if (!state.koTransition) updateMovement(0, ts, true);

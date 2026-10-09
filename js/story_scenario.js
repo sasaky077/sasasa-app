@@ -2890,8 +2890,8 @@
     "combat": [
       {
         "cue": "immune_arno",
-        "speaker": "アルノ",
-        "text": "……駄目だ。通らない。",
+        "speaker": "エリ",
+        "text": "……駄目！通らない！",
                 "location": "scene_tower_far.webp"
       },
       {
@@ -2902,8 +2902,8 @@
       },
       {
         "cue": "immune_eri",
-        "speaker": "エリ",
-        "text": "私も……",
+        "speaker": "アルノ",
+        "text": "……",
                 "location": "scene_tower_far.webp"
       },
       {
@@ -2953,7 +2953,7 @@
             {
         "cue": "eri_hears_voice",
         "speaker": "",
-        "text": "ミモザも、頭を張り巡らしているが、手詰まりの様子。",
+        "text": "ミモザも、思考を巡らしているが、手詰まりの様子。",
                         "location": "scene_tower_far.webp",
 
         "narration": true
@@ -2983,12 +2983,6 @@
         "text": "――水音。\nエリの胸元から淡い光が広がり、水面のような揺らぎが生まれた。",
                                 "location": "scene_tower_far.webp",
         "narration": true
-      },
-      {
-        "cue": "lyune_first",
-        "speaker": "？？？",
-        "text": "……よ、呼んだよね…？",
-                                "location": "scene_tower_far.webp",
       },
       {
         "cue": "barrier_break",
