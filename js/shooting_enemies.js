@@ -317,7 +317,7 @@
       image: 'images/remnant_03_battle.webp',
       element: 'aqua',
 
-      gaugeHps: Object.freeze([5500, 5500, 5500]),
+      gaugeHps: Object.freeze([4500, 4500, 4500]),
       gauges: 3,
 
       bulletSpeed: 248,
