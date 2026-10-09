@@ -5185,7 +5185,6 @@
 
     // ノア落雷中 / エルテナ重力場中は盤面全体の敵行動が停止するため、
     // gameLoop外の遅延処理から来た弾生成も最終入口で必ず遮断する。
-    if (ts < Number(state.suzuBulletSilenceUntil || 0)) return true;
     if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
     if (isEnemyPullFieldActive(ts)) return true;
 
@@ -13199,6 +13198,8 @@
     const speed = Number(BOSS.bulletSpeed || 248);
     state.boss.patternTick = (state.boss.patternTick || 0) + 1;
     const tick = state.boss.patternTick;
+    // CH03-04 リヴィア限定: 通常弾の約30%を間引く。WARNINGは維持。
+    const keepLiviaBullet = (i) => !isChapter03BossStage() || ((i + tick) % 10) < 7;
 
     // DAILY RAIDのみ、通常弾幕4セットに1回ほど緑の直線レーザーを混ぜる。
     // フェーズが進むほど弾幕間隔自体が短くなるため、自然にレーザー頻度も少し上がる。
@@ -13208,7 +13209,8 @@
 
     if (phase === 1) {
       // 7WAYの主弾 + たまに小リング
-      [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach(offset => {
+      [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach((offset, i) => {
+        if (!keepLiviaBullet(i)) return;
         const a = baseAngle + offset;
         state.enemyBullets.push(makeProjectile(
           'shooting-enemy-bullet',
@@ -13222,6 +13224,7 @@
       if (tick % 2 === 0) {
         const start = tick * (860 * 0.0022);
         for (let i = 0; i < 10; i++) {
+          if (!keepLiviaBullet(i)) continue;
           const a = start + (Math.PI * 2 * i / 10);
           state.enemyBullets.push(makeProjectile(
             'shooting-enemy-bullet',
@@ -13237,7 +13240,8 @@
 
     if (phase === 2) {
       // 9WAYの厚い弾幕 + 8発交差リング。iPhone/PWA安定化のため同時DOM生成を17発に抑える。
-      [-0.68, -0.51, -0.34, -0.17, 0, 0.17, 0.34, 0.51, 0.68].forEach(offset => {
+      [-0.68, -0.51, -0.34, -0.17, 0, 0.17, 0.34, 0.51, 0.68].forEach((offset, i) => {
+        if (!keepLiviaBullet(i)) return;
         const a = baseAngle + offset;
         state.enemyBullets.push(makeProjectile(
           'shooting-enemy-bullet',
@@ -13250,6 +13254,7 @@
 
       const start = (tick % 2 === 0 ? 0 : Math.PI / 12) + tick * (760 * 0.0028);
       for (let i = 0; i < 8; i++) {
+        if (!keepLiviaBullet(i)) continue;
         const a = start + (Math.PI * 2 * i / 8);
         state.enemyBullets.push(makeProjectile(
           'shooting-enemy-bullet',
@@ -13263,7 +13268,8 @@
     }
 
     // 最終段階: 11WAY + 8発高密度リング。軌道密度は維持しつつ同時DOM生成を19発に抑える。
-    [-0.80, -0.64, -0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48, 0.64, 0.80].forEach(offset => {
+    [-0.80, -0.64, -0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48, 0.64, 0.80].forEach((offset, i) => {
+        if (!keepLiviaBullet(i)) return;
       const a = baseAngle + offset;
       state.enemyBullets.push(makeProjectile(
         'shooting-enemy-bullet',
@@ -13276,6 +13282,7 @@
 
     const start = tick * (650 * 0.0034) + (tick % 2 ? Math.PI / 18 : 0);
     for (let i = 0; i < 8; i++) {
+        if (!keepLiviaBullet(i)) continue;
       const a = start + (Math.PI * 2 * i / 8);
       state.enemyBullets.push(makeProjectile(
         'shooting-enemy-bullet',
@@ -26495,61 +26502,13 @@
     applyUltDamage(Math.max(0, Number(c.atk || 0)) * 2.0, true, c);
   }
 
-  // build1282: 恒常R固有ULT
-  function useSuzuUlt(c) {
-    showUltCut(c.ultName, c.effectKey);
-    clearEnemyBulletsOnly();
-    // 新規弾だけを禁止。敵の移動・攻撃AIの時計は止めない。
-    state.suzuBulletSilenceUntil = Math.max(Number(state.suzuBulletSilenceUntil || 0), performance.now() + 3500);
-    state.ultLockUntil = performance.now() + 260;
-  }
-  function useAirenaUlt(c) {
-    showUltCut(c.ultName, c.effectKey);
-    const arena=document.getElementById('shooting-arena');
-    const layer=document.getElementById('shooting-collectible-layer');
-    if(!arena || !layer) return;
-    const el=document.createElement('div');
-    el.className='shooting-mimosa-item mimosa-item-atk'; el.innerHTML='<i></i>';
-    layer.appendChild(el);
-    const x=arena.clientWidth*(0.20+Math.random()*0.60);
-    const y=arena.clientHeight*(0.24+Math.random()*0.42);
-    state.mimosaItems.push({uid:'airena_atk_'+Date.now(),el,x,y,kind:'atk',label:'ATK UP',detail:'ATK ×1.5 / 5秒',atkBuffMultiplier:1.5,atkBuffDurationMs:5000});
-    positionUnit(el,x,y);
-    state.ultLockUntil=performance.now()+260;
-  }
-  function useMeloriaUlt(c) {
-    showUltCut(c.ultName,c.effectKey);
-    applyBossStun(Number(c.ultStunMs || 5000),'ult');
-    // ダメージ抽選は対象ごとに独立。属性相性の補正は適用しない。
-    if(isNormalBattle()) {
-      const now=performance.now();
-      (state.normalEnemies || []).slice().forEach(enemy=>{
-        if(!enemy || enemy.hp<=0 || Math.random()>=0.20) return;
-        const maxHp=Number(enemy.hpMax || enemy.maxHp || (enemy.def && enemy.def.hp) || enemy.hp);
-        damageNormalEnemy(enemy,Math.max(0,maxHp*0.5),now,true);
-      });
-      state.normalEnemies=state.normalEnemies.filter(enemy=>enemy && enemy.hp>0);
-      evaluateNormalMission(now);
-    } else if(state.boss && state.boss.hp>0 && Math.random()<0.20) {
-      const boss=state.boss;
-      const damage=Math.min(boss.hp,Math.max(0,Number(boss.hpMax || boss.maxHp || boss.initialHp || boss.hp)*0.5));
-      boss.hp=Math.max(0,boss.hp-damage);
-      updateBossPhase();createHit(boss.x,boss.y,true);showBossDamageNumber(damage,true);
-      if(boss.hp<=0) beginBossDefeat();
-    }
-    state.ultLockUntil=performance.now()+260;
-  }
-
   function executeCharacterUlt(c) {
     if (!state || state.ended || state.finishing) return;
 
     // ULTの内部属性と、画像を使わない演出の基調色を同じ属性へ同期。
     applyUltElementVisualContext(c);
 
-    if (c.ultType === 'suzu_bullet_silence') useSuzuUlt(c);
-    else if (c.ultType === 'airena_atk_item') useAirenaUlt(c);
-    else if (c.ultType === 'meloria_stun') useMeloriaUlt(c);
-    else if (Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
+    if (Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
     else if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
