@@ -5185,6 +5185,7 @@
 
     // ノア落雷中 / エルテナ重力場中は盤面全体の敵行動が停止するため、
     // gameLoop外の遅延処理から来た弾生成も最終入口で必ず遮断する。
+    if (ts < Number(state.suzuBulletSilenceUntil || 0)) return true;
     if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
     if (isEnemyPullFieldActive(ts)) return true;
 
@@ -26494,13 +26495,61 @@
     applyUltDamage(Math.max(0, Number(c.atk || 0)) * 2.0, true, c);
   }
 
+  // build1282: 恒常R固有ULT
+  function useSuzuUlt(c) {
+    showUltCut(c.ultName, c.effectKey);
+    clearEnemyBulletsOnly();
+    // 新規弾だけを禁止。敵の移動・攻撃AIの時計は止めない。
+    state.suzuBulletSilenceUntil = Math.max(Number(state.suzuBulletSilenceUntil || 0), performance.now() + 3500);
+    state.ultLockUntil = performance.now() + 260;
+  }
+  function useAirenaUlt(c) {
+    showUltCut(c.ultName, c.effectKey);
+    const arena=document.getElementById('shooting-arena');
+    const layer=document.getElementById('shooting-collectible-layer');
+    if(!arena || !layer) return;
+    const el=document.createElement('div');
+    el.className='shooting-mimosa-item mimosa-item-atk'; el.innerHTML='<i></i>';
+    layer.appendChild(el);
+    const x=arena.clientWidth*(0.20+Math.random()*0.60);
+    const y=arena.clientHeight*(0.24+Math.random()*0.42);
+    state.mimosaItems.push({uid:'airena_atk_'+Date.now(),el,x,y,kind:'atk',label:'ATK UP',detail:'ATK ×1.5 / 5秒',atkBuffMultiplier:1.5,atkBuffDurationMs:5000});
+    positionUnit(el,x,y);
+    state.ultLockUntil=performance.now()+260;
+  }
+  function useMeloriaUlt(c) {
+    showUltCut(c.ultName,c.effectKey);
+    applyBossStun(Number(c.ultStunMs || 5000),'ult');
+    // ダメージ抽選は対象ごとに独立。属性相性の補正は適用しない。
+    if(isNormalBattle()) {
+      const now=performance.now();
+      (state.normalEnemies || []).slice().forEach(enemy=>{
+        if(!enemy || enemy.hp<=0 || Math.random()>=0.20) return;
+        const maxHp=Number(enemy.hpMax || enemy.maxHp || (enemy.def && enemy.def.hp) || enemy.hp);
+        damageNormalEnemy(enemy,Math.max(0,maxHp*0.5),now,true);
+      });
+      state.normalEnemies=state.normalEnemies.filter(enemy=>enemy && enemy.hp>0);
+      evaluateNormalMission(now);
+    } else if(state.boss && state.boss.hp>0 && Math.random()<0.20) {
+      const boss=state.boss;
+      const damage=Math.min(boss.hp,Math.max(0,Number(boss.hpMax || boss.maxHp || boss.initialHp || boss.hp)*0.5));
+      boss.hp=Math.max(0,boss.hp-damage);
+      updateBossPhase();createHit(boss.x,boss.y,true);showBossDamageNumber(damage,true);
+      if(boss.hp<=0) beginBossDefeat();
+    }
+    state.ultLockUntil=performance.now()+260;
+  }
+
   function executeCharacterUlt(c) {
     if (!state || state.ended || state.finishing) return;
 
     // ULTの内部属性と、画像を使わない演出の基調色を同じ属性へ同期。
     applyUltElementVisualContext(c);
 
-    if (Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
+    if (c.ultType === 'suzu_bullet_silence') useSuzuUlt(c);
+    else if (c.ultType === 'airena_atk_item') useAirenaUlt(c);
+    else if (c.ultType === 'meloria_stun') useMeloriaUlt(c);
+    else if (Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
     else if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);

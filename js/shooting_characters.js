@@ -49,6 +49,7 @@
     CHLOE: 38,
     LEONA_CROSS: 39,
     KUREHA: 41,
+    KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
   });
 
   // ============================================================
@@ -102,6 +103,7 @@
     38: 'r',   // クロエ
     39: 'r',   // レオナクロス
     41: 'sr',  // シュオリン
+    42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -996,6 +998,116 @@
     "homeOffsetY": -30,
     "hidden": false
   },
+  "42": {
+  "id": 42,
+  "name": "キョウ",
+  "element": "fire",
+  "hp": 610,
+  "atk": 285,
+  "image": "images/chara_42_battle_back.webp",
+  "panelImage": "images/chara_42_panel.webp",
+  "cutinImage": "images/chara_42_cutin.webp",
+  "uiScale": {
+    "panel": 1,
+    "battleBack": 1.2,
+    "battleUp": 1
+  },
+  "portraitImage": "images/chara_42.webp",
+  "homeImage": "images/chara_42_cut.webp",
+  "upImage": "images/chara_42_up.webp",
+  "homeScale": 0.82,
+  "homeOffsetX": 0,
+  "homeOffsetY": -24,
+  "hidden": false
+},
+  "43": {
+  "id": 43,
+  "name": "スズ",
+  "element": "wood",
+  "hp": 600,
+  "atk": 255,
+  "image": "images/chara_43_battle_back.webp",
+  "panelImage": "images/chara_43_panel.webp",
+  "cutinImage": "images/chara_43_cutin.webp",
+  "uiScale": {
+    "panel": 1,
+    "battleBack": 1.2,
+    "battleUp": 1
+  },
+  "portraitImage": "images/chara_43.webp",
+  "homeImage": "images/chara_43_cut.webp",
+  "upImage": "images/chara_43_up.webp",
+  "homeScale": 0.82,
+  "homeOffsetX": 0,
+  "homeOffsetY": -24,
+  "hidden": false
+},
+  "44": {
+  "id": 44,
+  "name": "メロリア",
+  "element": "dark",
+  "hp": 590,
+  "atk": 265,
+  "image": "images/chara_44_battle_back.webp",
+  "panelImage": "images/chara_44_panel.webp",
+  "cutinImage": "images/chara_44_cutin.webp",
+  "uiScale": {
+    "panel": 1,
+    "battleBack": 1.2,
+    "battleUp": 1
+  },
+  "portraitImage": "images/chara_44.webp",
+  "homeImage": "images/chara_44_cut.webp",
+  "upImage": "images/chara_44_up.webp",
+  "homeScale": 0.82,
+  "homeOffsetX": 0,
+  "homeOffsetY": -24,
+  "hidden": false
+},
+  "45": {
+  "id": 45,
+  "name": "キリマル",
+  "element": "aqua",
+  "hp": 620,
+  "atk": 255,
+  "image": "images/chara_45_battle_back.webp",
+  "panelImage": "images/chara_45_panel.webp",
+  "cutinImage": "images/chara_45_cutin.webp",
+  "uiScale": {
+    "panel": 1,
+    "battleBack": 1.2,
+    "battleUp": 1
+  },
+  "portraitImage": "images/chara_45.webp",
+  "homeImage": "images/chara_45_cut.webp",
+  "upImage": "images/chara_45_up.webp",
+  "homeScale": 0.82,
+  "homeOffsetX": 0,
+  "homeOffsetY": -24,
+  "hidden": false
+},
+  "46": {
+  "id": 46,
+  "name": "アイレナ",
+  "element": "light",
+  "hp": 590,
+  "atk": 255,
+  "image": "images/chara_46_battle_back.webp",
+  "panelImage": "images/chara_46_panel.webp",
+  "cutinImage": "images/chara_46_cutin.webp",
+  "uiScale": {
+    "panel": 1,
+    "battleBack": 1.2,
+    "battleUp": 1
+  },
+  "portraitImage": "images/chara_46.webp",
+  "homeImage": "images/chara_46_cut.webp",
+  "upImage": "images/chara_46_up.webp",
+  "homeScale": 0.82,
+  "homeOffsetX": 0,
+  "homeOffsetY": -24,
+  "hidden": false
+},
   "50": {
     "id": 50,
     "name": "SIGMA-IX",
@@ -2362,6 +2474,13 @@
   // ============================================================
   // 既存UI互換ビュー
   // ============================================================
+  // build1282: 恒常R 5体。既存ショット/ULTエンジンを再利用する。
+  SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...SHOOTING_CHARACTERS[22], id:42, effectKey:'kyou', ultType:'veronica_brass_punch', description:'ベロニカと同型の近接攻撃と一撃ULT。' });
+  SHOOTING_CHARACTERS[45] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:45, effectKey:'kirimaru', shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20, ultType:'jig_scramble_ray', ultName:'水鏡乱反射', ultDescription:'水属性の反射レーザーを5秒間展開する。', jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280, jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200 });
+  SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'suzu_bullet_silence', ultName:'静寂の森', ultDescription:'敵弾を全消去し、3.5秒間新たな敵弾を封じる。敵の移動は継続。' });
+  SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotPowerRate:0.90, shotCount:1, chargeMinMs:120, chargeMaxMs:1200, chargeMinSize:28, chargeMaxSize:72, ultType:'airena_atk_item', ultName:'光の祝福', ultDescription:'ATK1.5倍・5秒のアイテムを1個出現させる。', itemAtkMultiplier:1.5, itemAtkDurationMs:5000 });
+  SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員を5秒スタン。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000 });
+
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
   const CHARACTER_CATALOG = Object.freeze(
     Object.values(SHOOTING_CHARACTER_MASTER)

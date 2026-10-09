@@ -6331,7 +6331,7 @@ document.addEventListener('touchend', function (e) {
   // 通常R27体（ID38 クロエ / ID39 レムナクロスを恒常Rへ追加）
   const GACHA_R_IDS = [
     3, 5, 6, 10, 12, 13, 14, 15, 16, 17,
-    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 34, 35, 37, 38, 39
+    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 34, 35, 37, 38, 39, 42, 43, 44, 45, 46
   ];
 
   const GACHA_SR_RATE = 0.06;
@@ -14552,7 +14552,7 @@ function showTenResult(results){
   }
 
   // 1階層目：キャラ一覧。
-  // v310: 未所持は一覧には表示するが、タップ不可・詳細閲覧不可。
+  // BOX一覧は所持済みキャラのみ表示。未所持はデータ上には保持。
   var zukanIndexPendingChars = [];
   var zukanIndexRenderedCount = 0;
   var zukanIndexBatchSize = 8;
@@ -14729,7 +14729,9 @@ function showTenResult(results){
 
   function warmZukanPanelSourcesInBackground(){
     if(typeof getAllBoxCharaDefs !== 'function') return;
-    var defs = getAllBoxCharaDefs() || [];
+    var defs = (getAllBoxCharaDefs() || []).filter(function(chara){
+      return getOwnedInstancesByCharaId(chara.id).length > 0;
+    });
     var sources = defs.map(function(chara){ return getZukanIndexPanelSrc(chara); }).filter(Boolean)
       .filter(function(src){ return !zukanPanelWarmCache.has(src); });
     if(!sources.length) return;
@@ -14850,7 +14852,11 @@ function showTenResult(results){
     disconnectZukanIndexLoadObserver();
 
     var allChars = getAllBoxCharaDefs();
-    var chars = applyZukanIndexFilterAndSort(allChars);
+    // BOX一覧は所持済みキャラだけを表示する。全キャラ定義はガチャ等のため保持。
+    var ownedChars = allChars.filter(function(chara){
+      return getOwnedInstancesByCharaId(chara.id).length > 0;
+    });
+    var chars = applyZukanIndexFilterAndSort(ownedChars);
     grid.className = 'zukan-grid primoa-index-grid';
     grid.innerHTML = '';
 
@@ -14867,7 +14873,7 @@ function showTenResult(results){
     if(nameSearchClear) nameSearchClear.classList.toggle('show', !!zukanIndexFilter.query);
 
     if(!chars.length){
-      grid.innerHTML = '<div class="box-carousel-empty primoa-filter-empty">条件に一致するキャラがいません</div>';
+      grid.innerHTML = '<div class="box-carousel-empty primoa-filter-empty">' + (ownedChars.length ? '条件に一致するキャラがいません' : '所持キャラがいません') + '</div>';
       return;
     }
 
