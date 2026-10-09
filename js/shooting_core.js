@@ -14931,7 +14931,7 @@
         // build1237: リヴィアのWARNING攻撃はGAUGEごとに固定。
         // GAUGE1: なし
         // GAUGE2: 2発（2WAY + 壁2反射）
-        // GAUGE3: 4発（8秒間ゆらゆら漂う）
+        // GAUGE3: 3発（8秒間ゆらゆら漂う）
         const liviaPhase = Math.max(1, Number(state.boss.phase || 1));
 
         if (liviaPhase === 2) {
@@ -14952,7 +14952,7 @@
           });
         } else if (liviaPhase >= 3) {
           const driftSpeed = 138;
-          const driftOffsets = [-1.05, -0.35, 0.35, 1.05];
+          const driftOffsets = [-0.90, 0, 0.90];
           driftOffsets.forEach((offset, index) => {
             const heading = angle + offset;
             const projectile = makeProjectile(
