@@ -2167,16 +2167,10 @@
         .slice(0, cfg.requiredSize);
       return;
     }
-    // CH04-1/2は従来どおりエリ単独。CH04-3はエリ固定 + 最大2人追加。
-    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
-      selectedPartyIds = isShootingCharacterOwned(CHARACTER_ID.ERI) ? [Number(CHARACTER_ID.ERI)] : [];
-      return;
-    }
-    selectedPartyIds = selectedPartyIds.filter(id => Number(id) !== Number(CHARACTER_ID.ERI));
-    if (isShootingCharacterOwned(CHARACTER_ID.ERI)) {
-      selectedPartyIds.unshift(Number(CHARACTER_ID.ERI));
-    }
-    selectedPartyIds = selectedPartyIds.slice(0, PARTY_SIZE);
+    // ステージ固有の指定編成以外に、エリ単独・エリ先頭の強制制限は設けない。
+    selectedPartyIds = selectedPartyIds.filter((id, index, arr) =>
+      arr.indexOf(id) === index && isShootingCharacterOwned(id)
+    ).slice(0, PARTY_SIZE);
   }
 
   function isShootingPartyReady() {
@@ -2200,12 +2194,6 @@
 
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
 
-    if (!isStoryReplayBattle() && isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
-      return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
-    }
-    if (isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage()) {
-      return Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
-    }
     return true;
   }
 
@@ -3483,7 +3471,7 @@
       ? fixedStoryParty.length
       : (selectableStoryParty
         ? selectableStoryParty.requiredSize
-        : ((!isStoryReplayBattle() && isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE));
+        : PARTY_SIZE);
 
     wrap.innerHTML = Array.from({ length: slotCount }, (_, i) => {
       const id = selectedPartyIds[i];
@@ -3492,7 +3480,7 @@
       const fixedStoryMember = !!fixedStoryParty;
       const fixedStoryEri =
         !fixedStoryParty &&
-        isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
+        false && isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
         i === 0 &&
         Number(id) === Number(CHARACTER_ID.ERI);
 
@@ -3605,11 +3593,9 @@
         const selectableStoryParty = getSelectedStorySelectablePartyConfig();
         ruleText.textContent = selectableStoryParty
           ? `STORY指定${selectableStoryParty.allowedIds.length}人から${selectableStoryParty.requiredSize}人選択`
-          : ((!isStoryReplayBattle() && isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
-            ? 'CHAPTER 04 · エリのみ出撃可能'
-            : (isStoryShootingStage()
-              ? '最大3人 · エリ固定 · 1人から出撃可能'
-              : '最大3人 · 1人から出撃可能'));
+          : (isStoryShootingStage()
+            ? '最大3人 · 1人から出撃可能'
+            : '最大3人 · 1人から出撃可能');
       }
     }
 
@@ -21359,30 +21345,6 @@
     if (!SHOOTING_CHARACTERS[id] || !isShootingCharacterAvailableForCurrentParty(id)) return;
     if (!isAllowedForSelectedStoryParty(id)) return;
 
-    if (
-      isChapter04Stage() && !isStoryReplayBattle() &&
-      !isSelectedStorySelectablePartyStage() &&
-      !isChapter43BossStage() &&
-      !isChapter43MemoryBossStage() &&
-      id !== Number(CHARACTER_ID.ERI)
-    ) {
-      ensureStoryEriLeader();
-      selectedCharacterId = Number(CHARACTER_ID.ERI);
-      applySelectedCharacterToUi();
-      return;
-    }
-
-    if (
-      isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
-      !isSelectedStorySelectablePartyStage() &&
-      id === Number(CHARACTER_ID.ERI)
-    ) {
-      ensureStoryEriLeader();
-      selectedCharacterId = Number(CHARACTER_ID.ERI);
-      applySelectedCharacterToUi();
-      return;
-    }
-
     const idx = selectedPartyIds.indexOf(id);
     if (idx >= 0) selectedPartyIds.splice(idx, 1);
     else if (selectedPartyIds.length < PARTY_SIZE) selectedPartyIds.push(id);
@@ -22417,9 +22379,6 @@
     } else if (isStoryReplayBattle() || isFreeStoryPartyStage()) {
       selectedPartyIds = [];
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
-    } else if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {
-      selectedPartyIds = [Number(CHARACTER_ID.ERI)];
-      selectedCharacterId = Number(CHARACTER_ID.ERI);
     } else {
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
     }
