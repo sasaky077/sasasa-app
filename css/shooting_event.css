@@ -6523,34 +6523,9 @@
    CH04 only. Other chapters/events/raid are untouched.
    ============================================================ */
 
-/* パーティ編成：エリ固定のためキャラ一覧を半透明ホワイトブロックでガード */
-#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-grid.shooting-party-roster{
-  position:relative!important;
-  overflow:hidden!important;
-  isolation:isolate;
-}
-#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-grid.shooting-party-roster::after{
-  content:"※エリ以外出撃不可ステージです※";
-  position:absolute;
-  inset:0;
-  z-index:50;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  box-sizing:border-box;
-  background:rgba(255,255,255,.82);
-  border:1px solid rgba(180,160,125,.24);
-  color:#76664d;
-  font-family:"Noto Serif JP",serif;
-  font-size:13px;
-  font-weight:500;
-  line-height:1.7;
-  letter-spacing:.06em;
-  text-align:center;
-  text-shadow:0 1px 0 rgba(255,255,255,.95);
-  pointer-events:auto;
-}
+/* build1291: 旧CH04「エリ単独」ガード（キャラ一覧を覆う::after）を撤去。
+   CH04の編成制限は shooting_core.js の固定編成表／選択編成表で管理し、
+   CLEAR後の再挑戦は自由編成にする。CSS側では一切制限しない。 */
 
 /* バトル中MISSION：省略せず全文を折り返して表示 */
 #shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-mission-hud{
