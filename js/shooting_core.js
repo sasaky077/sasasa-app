@@ -2011,10 +2011,9 @@
     shooting_ch03_03: Object.freeze([20]),      // アルノ
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
-    shooting_ch04_04: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ（STORYゲストLv30）
   });
 
-  // build1216: CH03-04はストーリー固定ではなく、シナリオ上その場にいる5人から3人を選択。
+  // CH03-04、CH04-01、CH04-04は指定キャラから3人を選択。固定編成表には重複登録しない。
   const STORY_SELECTABLE_PARTY_MAP = Object.freeze({
     shooting_ch03_04: Object.freeze({
       allowedIds: Object.freeze([1, 5, 3, 39, 28]), // エリ / ジグ / アウラ / レオナクロス / ミモザ
@@ -11369,7 +11368,7 @@
   // CH04-4: one reinforced summoner at a time; surviving adds persist between phases.
   function spawnCh404Enemies(now) {
     const cfg = getNormalBattleConfig();
-    const phaseElements = ['aqua', 'fire', 'light'];
+    const phaseElements = ['fire', 'aqua', 'light'];
     if (!Number.isInteger(state.ch404Phase)) state.ch404Phase = 0;
     if (state.ch404Phase >= phaseElements.length) return;
     const current = (state.normalEnemies || []).find(e => e && e.hp > 0 && e.ch404Role === 'summoner');
