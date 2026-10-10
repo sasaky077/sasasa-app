@@ -6326,12 +6326,12 @@ document.addEventListener('touchend', function (e) {
   // 恒常SR（各属性1体） v308
   // FIRE ウルフ(2) / AQUA スゥ(31) / WOOD ミモザ(28)
   // DARK アヤネ(11) / LIGHT ミト(7)
-  const GACHA_PERMANENT_SR_IDS = [2, 31, 28, 11, 7];
+  const GACHA_PERMANENT_SR_IDS = [2, 31, 11, 7];
 
-  // 通常R27体（ID38 クロエ / ID39 レムナクロスを恒常Rへ追加）
+  // ストーリー加入キャラを除外した恒常R（ID38 クロエを含む）
   const GACHA_R_IDS = [
-    3, 5, 6, 10, 12, 13, 14, 15, 16, 17,
-    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 34, 35, 37, 38, 39
+    6, 10, 12, 13, 14, 15, 16,
+    18, 19, 21, 23, 24, 26, 27, 29, 30, 34, 35, 38
   ];
 
   const GACHA_SR_RATE = 0.06;
@@ -6346,7 +6346,6 @@ document.addEventListener('touchend', function (e) {
     36: 0.006, // ニーナ 0.6%
     2:  0.005,
     31: 0.005,
-    28: 0.005,
     11: 0.005,
     7:  0.005
   };
@@ -6364,7 +6363,6 @@ document.addEventListener('touchend', function (e) {
     40: 0.006, // オリビア 0.6%
     2:  0.005,
     31: 0.005,
-    28: 0.005,
     11: 0.005,
     7:  0.005
   };
@@ -6414,7 +6412,7 @@ document.addEventListener('touchend', function (e) {
       poolType: 'pickup',
       title: '限定ピックアップ邂逅',
       detailTitle: 'NINA PICKUP ENCOUNTER',
-      desc: 'ニーナ 0.6% / 他恒常SR 各0.5% / R48.45% / 進化素材48.45%',
+      desc: 'ニーナ 0.6% / 他恒常SR 各0.625% / R48.45% / 進化素材48.45%',
       thumbTitle: 'ニーナPU',
       img: 'images/gacha_banner_03.webp',
       cost: 5,
@@ -6438,7 +6436,7 @@ document.addEventListener('touchend', function (e) {
       poolType: 'pickup',
       title: '限定ピックアップ邂逅',
       detailTitle: 'OLIVIA PICKUP ENCOUNTER',
-      desc: 'オリビア 0.6% / 他恒常SR 各0.5% / R48.45% / 進化素材48.45%',
+      desc: 'オリビア 0.6% / 他恒常SR 各0.625% / R48.45% / 進化素材48.45%',
       thumbTitle: 'オリビアPU',
       img: 'images/gacha_banner_04.webp',
       cost: 5,
@@ -7462,8 +7460,8 @@ function renderResultElementBadge(data){
 
 // ガチャ排出対象外キャラ
 // エリは主人公のため、通常抽選・UR確定・SR以上確定・charaIds指定のいずれからも除外する
-const GACHA_EXCLUDED_CHARACTER_IDS = [1];
-const GACHA_EXCLUDED_CHARACTER_NAMES = ['エリ'];
+const GACHA_EXCLUDED_CHARACTER_IDS = [1, 3, 5, 17, 20, 22, 25, 28, 37, 39];
+const GACHA_EXCLUDED_CHARACTER_NAMES = ['エリ','ジグ','アウラ','ミモザ','アルノ','リュネ','トイフェル','ベロニカ','アイナ','レオナクロス'];
 
 function isGachaExcludedChara(c){
   if(!c) return true;
@@ -7476,7 +7474,7 @@ function matchesGachaFilter(c, gacha) {
   // v177: 非公開キャラクターは、どのガチャからも排出しない。
   if (!c || c.hidden === true) return false;
 
-  // 主人公エリはガチャから排出しない
+  // ストーリー加入キャラはガチャから排出しない
   if (isGachaExcludedChara(c)) return false;
 
   // charaIds が指定されている場合はそちらを優先（min/max/gender/typeは無視）
