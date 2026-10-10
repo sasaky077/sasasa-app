@@ -10210,6 +10210,7 @@
     overlay.innerHTML = `<div class="shooting-ch101-tutorial-card"><img class="shooting-ch101-tutorial-portrait" src="" alt="" draggable="false"><div class="shooting-ch101-tutorial-speaker"></div><div class="shooting-ch101-tutorial-text"></div><div class="shooting-ch101-tutorial-tap">TAP TO CONTINUE</div></div>`;
     root.appendChild(overlay);
     let pageIndex = 0;
+    let barrierVisualRunning = false;
     const card = overlay.querySelector('.shooting-ch101-tutorial-card');
     const portrait = overlay.querySelector('.shooting-ch101-tutorial-portrait');
     const speakerEl = overlay.querySelector('.shooting-ch101-tutorial-speaker');
