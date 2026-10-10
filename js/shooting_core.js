@@ -2011,7 +2011,7 @@
     shooting_ch03_03: Object.freeze([20]),      // アルノ
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
-    shooting_ch04_04: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ（STORYゲストLv30）
+    shooting_ch04_04: Object.freeze([1, 20, 25]), // エリ / アルノ / リュネ（STORYゲストLv30）
   });
 
   // build1216: CH03-04はストーリー固定ではなく、シナリオ上その場にいる5人から3人を選択。
@@ -2024,6 +2024,10 @@
       allowedIds: Object.freeze([1, 5, 3, 20, 28, 39]),
       requiredSize: 3,
     }),
+    shooting_ch04_04: Object.freeze({
+      allowedIds: Object.freeze([1, 20, 25]), // エリ / アルノ / リュネ
+      requiredSize: 3,
+    }),
   });
 
   // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
@@ -2031,7 +2035,7 @@
     if (!isStoryShootingStage() || !selectedStage) return false;
     const id = String(selectedStage.baseStageId || selectedStage.id || '');
     const match = id.match(/ch(\d{2})_(\d{2})/i);
-    return !!match && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4));
+    return !!match && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4 && id !== 'shooting_ch04_04'));
   }
 
   function getSelectedStoryFixedPartyIds() {

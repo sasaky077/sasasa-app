@@ -1206,6 +1206,15 @@
     const root=ensureRoot();
     const back=root.querySelector('.story-novel-back');
     back.style.display=phase==='pre' ? '' : 'none';
+    // Stage heading belongs exclusively to the pre-battle intro.
+    // Reset stale show state when entering post-battle novel.
+    const introTitle=root.querySelector('.story-novel-intro-title');
+    if(introTitle){
+      introTitle.classList.remove('show');
+      introTitle.setAttribute('aria-hidden','true');
+      introTitle.textContent='';
+    }
+    root.classList.remove('is-pre-intro');
 
     session={
       stageId:normalizeStageId(stageId),
