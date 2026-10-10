@@ -9991,6 +9991,7 @@
     root.appendChild(overlay);
 
     let pageIndex = 0;
+    let barrierVisualRunning = false;
     const card = overlay.querySelector('.shooting-ch101-tutorial-card');
     const speakerEl = overlay.querySelector('.shooting-ch101-tutorial-speaker');
     const textEl = overlay.querySelector('.shooting-ch101-tutorial-text');
@@ -10202,7 +10203,7 @@
     if (!root) { if (typeof onComplete === 'function') onComplete(); return; }
     root.querySelectorAll('.shooting-ch403-encounter-overlay').forEach(el => el.remove());
     const allPages = getChapter403CombatEntries();
-    const pages = firstOnly ? allPages.slice(0, 1) : allPages.slice(1);
+    const pages = firstOnly ? allPages.slice(0, 2) : allPages.slice(2);
     if (!pages.length) { if (typeof onComplete === 'function') onComplete(); return; }
     const overlay = document.createElement('div');
     overlay.className = 'shooting-ch101-tutorial-overlay shooting-ch403-encounter-overlay';
@@ -10220,39 +10221,99 @@
       card.classList.toggle('no-speaker', !speaker);
       speakerEl.textContent = speaker;
       textEl.textContent = String(page.text || '');
+      if (!firstOnly && String(page.cue || '') === 'barrier_break' && !state.ch403BarrierBroken) {
+        barrierVisualRunning = true;
+        // Keep the battlefield visible while the blue flash fades and shields shatter.
+        overlay.style.visibility = 'hidden';
+        triggerChapter403BarrierBreakVisual(root, () => {
+          barrierVisualRunning = false;
+          if (overlay.isConnected) overlay.style.visibility = '';
+        });
+      }
       if (portraitSrc) { portrait.src = portraitSrc; portrait.style.display = ''; }
       else { portrait.removeAttribute('src'); portrait.style.display = 'none'; }
     };
     const finish = () => { overlay.classList.remove('show'); setTimeout(() => { overlay.remove(); if (typeof onComplete === 'function') onComplete(); }, 160); };
     overlay.addEventListener('pointerup', event => {
-      event.preventDefault(); event.stopPropagation(); pageIndex += 1;
+      event.preventDefault(); event.stopPropagation();
+      if (barrierVisualRunning) return;
+      pageIndex += 1;
       if (pageIndex >= pages.length) { finish(); return; }
       renderPage();
     }, { passive:false });
     renderPage(); requestAnimationFrame(() => overlay.classList.add('show'));
   }
 
+  function triggerChapter403BarrierBreakVisual(root, onComplete) {
+    if (!state || state.ch403BarrierBroken) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+    // 0.0s: blue flash; 0.6s: flash recedes; 0.9s: live enemy shields break;
+    // 1.3s: reveal the barrier_break narration. Combat stays paused throughout.
+    const encounterState = state;
+    const flash = document.createElement('div');
+    flash.className = 'shooting-ch403-blue-flash';
+    flash.style.cssText = 'position:absolute;inset:0;z-index:265;pointer-events:none;background:#b4eaff;opacity:.9;transition:opacity .35s ease;';
+    root.appendChild(flash);
+    setTimeout(() => {
+      if (flash.isConnected) flash.style.opacity = '0.12';
+    }, 600);
+    setTimeout(() => {
+      if (state === encounterState && !state.ended && isChapter403FireWallStage()) {
+        breakChapter403FireBarriers();
+      }
+    }, 900);
+    setTimeout(() => {
+      flash.remove();
+      if (typeof onComplete === 'function') onComplete();
+    }, 1300);
+  }
+
   function showChapter403ResumeCountdown(onComplete) {
-    const root = document.getElementById(ROOT_ID);
-    if (!root) { if (typeof onComplete === 'function') onComplete(); return; }
-    const overlay = document.createElement('div');
-    overlay.className = 'shooting-ch403-resume-countdown';
-    overlay.style.cssText = 'position:absolute;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.78);color:#65452e;text-align:center;pointer-events:auto;font-family:serif;';
-    const message = document.createElement('div');
-    message.textContent = '何かの力によって、レムナントのバリアが剥がれた。';
-    message.style.cssText = 'font-size:clamp(15px,4vw,22px);padding:0 22px;line-height:1.8;margin-bottom:28px;';
-    const number = document.createElement('div');
-    number.style.cssText = 'font-size:clamp(56px,17vw,96px);line-height:1;font-weight:bold;';
-    overlay.append(message, number);
-    root.appendChild(overlay);
-    let count = 3;
-    const tick = () => {
-      if (!overlay.isConnected || !state || state.ended || !isChapter403FireWallStage()) { overlay.remove(); return; }
-      if (count <= 0) { overlay.remove(); if (typeof onComplete === 'function') onComplete(); return; }
-      number.textContent = String(count--);
-      setTimeout(tick, 1000);
+    const countdown = document.getElementById('shooting-countdown');
+    const span = countdown && countdown.querySelector('span');
+    if (!countdown || !span) { if (typeof onComplete === 'function') onComplete(); return; }
+    // Reuse the ordinary battle READY / 3 / 2 / 1 / START presentation,
+    // without restarting the stage, resetting enemy positions, or the timer.
+    const sequence = [
+      {text:'ARE YOU READY', phase:'ready-phase', hold:1250},
+      {text:'3', phase:'number-phase', hold:850},
+      {text:'2', phase:'number-phase', hold:850},
+      {text:'1', phase:'number-phase', hold:850},
+      {text:'START', phase:'start-phase', hold:1050}
+    ];
+    let index = 0;
+    countdown.classList.remove('chapter4-rule-phase','chapter4-rule-first','ready-phase','number-phase','start-phase');
+    span.textContent = '';
+    countdown.classList.add('show');
+    countdown.setAttribute('aria-hidden','false');
+    const step = () => {
+      if (!state || state.ended || !isChapter403FireWallStage()) {
+        countdown.classList.remove('show','ready-phase','number-phase','start-phase');
+        countdown.setAttribute('aria-hidden','true');
+        return;
+      }
+      if (index >= sequence.length) {
+        countdown.classList.remove('show','ready-phase','number-phase','start-phase');
+        countdown.setAttribute('aria-hidden','true');
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
+      const current = sequence[index++];
+      countdown.classList.remove('ready-phase','number-phase','start-phase');
+      countdown.classList.add(current.phase);
+      span.textContent = current.text;
+      span.classList.remove('pop','ready-pop','start-pop');
+      span.style.removeProperty('animation');
+      span.style.removeProperty('opacity');
+      span.style.removeProperty('transform');
+      span.style.removeProperty('filter');
+      void span.offsetWidth;
+      span.classList.add(current.phase === 'ready-phase' ? 'ready-pop' : current.phase === 'start-phase' ? 'start-pop' : 'pop');
+      setTimeout(step, current.hold);
     };
-    tick();
+    step();
   }
 
   function triggerChapter403EncounterSequence() {
@@ -10274,7 +10335,7 @@
           state.ch403EncounterTriggered = false;
           endChapter403StoryPause();
         } else {
-          breakChapter403FireBarriers();
+          // Barrier already broke visibly on the barrier_break story cue.
           showChapter403ResumeCountdown(() => endChapter403StoryPause());
         }
       }, phase === 0);
@@ -12460,7 +12521,7 @@
       if (!state.ch403PhaseStartedAt) state.ch403PhaseStartedAt = performance.now();
       state.ch403ImmuneHits = Math.max(0, Number(state.ch403ImmuneHits || 0)) + 1;
       const elapsed = Math.max(0, performance.now() - state.ch403PhaseStartedAt);
-      if (state.ch403ImmuneHits >= 25 && elapsed >= 7000) requestAnimationFrame(() => triggerChapter403EncounterSequence());
+      if (state.ch403ImmuneHits >= 25 && elapsed >= 8000) requestAnimationFrame(() => triggerChapter403EncounterSequence());
     }
 
     // HPが変わらないIMMUNE弾でHP DOMを書き直さない。
@@ -18202,7 +18263,7 @@
       return;
     }
 
-    if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && !state.ch403EncounterTriggered && Number(state.ch403ImmuneHits || 0) >= 25 && Number(state.ch403PhaseStartedAt || 0) > 0 && performance.now() - state.ch403PhaseStartedAt >= 7000) {
+    if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && !state.ch403EncounterTriggered && Number(state.ch403ImmuneHits || 0) >= 25 && Number(state.ch403PhaseStartedAt || 0) > 0 && performance.now() - state.ch403PhaseStartedAt >= 8000) {
       triggerChapter403EncounterSequence();
     }
     if (state.ch403StoryPaused) {

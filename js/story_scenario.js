@@ -2951,6 +2951,12 @@
                 "location": "scene_tower_far.webp"
       },
             {
+        "cue": "mimoza_despair",
+        "speaker": "ミモザ",
+        "text": "……",
+        "location": "scene_tower_far.webp"
+      },
+      {
         "cue": "eri_hears_voice",
         "speaker": "",
         "text": "ミモザも、思考を巡らしているが、手詰まりの様子。",
