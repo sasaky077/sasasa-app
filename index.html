@@ -15887,6 +15887,16 @@ function buildShootingShotTypeValue(c, shot, isMain){
   return iconHtml + '<span>' + detailEscapeHTML(typeLabel) + '</span>';
 }
 
+// 貫通判定は shooting_core.js の通常SHOT実装に合わせる。
+// PIERCING (旧 shotgun / precision) は弾に pierce=true を付与する。
+function getDetailShotPiercingText(type){
+  var t = String(type || '').toLowerCase();
+  if(t === 'piercing' || t === 'shotgun' || t === 'precision') return 'あり';
+  // LASERは弾の貫通フラグではなく連続照射として処理される。
+  if(t === 'laser') return '連続照射';
+  return 'なし';
+}
+
 function buildShootingStatusRowHTML(label, valueHtml){
   return '<div class="detail-status-row">' +
     '<span class="detail-status-label">' + detailEscapeHTML(label) + '</span>' +
@@ -15973,6 +15983,8 @@ function buildCharacterDetailHTML(data, options){
         buildShootingStatusRow('ATK', String(getDetailStatValue(data, c, 'ATK'))) +
         buildShootingStatusRowHTML('ショットタイプ(MAIN)', buildShootingShotTypeValue(c, c.mainShot, true)) +
         (c.subShot ? buildShootingStatusRowHTML('ショットタイプ(SUB)', buildShootingShotTypeValue(c, c.subShot, false)) : '') +
+        buildShootingStatusRow('貫通(MAIN)', getDetailShotPiercingText(c.shotType)) +
+        (c.subShot ? buildShootingStatusRow('貫通(SUB)', getDetailShotPiercingText(c.subShot.type)) : '') +
         buildShootingStatusRow('共鳴', 'Lv.' + lb + ' / ' + MAX_LIMIT_BREAK) +
       '</div>' +
     '</div>' +
