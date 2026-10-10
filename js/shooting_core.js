@@ -3199,6 +3199,14 @@
 
   function getUltGainAmountPerHit(c) {
     if (!c) return 0;
+    // Olivia (CONJURE) launches 8-way volleys from up to 3 turrets.
+    // The global 20-second single-shot normalization counts only one hit per
+    // fireRate cycle and inflated her gauge to 1.5 per hit (20 hits to ULT).
+    // Use a per-hit rate appropriate for her multi-projectile shot instead;
+    // keep actual hit detection, ULT projectiles, and all other units unchanged.
+    if (Number(c.id) === Number(CHARACTER_ID.CONJURER) && c.shotType === 'conjure') {
+      return 0.40; // 30-point gauge: 75 qualifying hits, rather than 20.
+    }
     if (window.ShootingCharacters && typeof window.ShootingCharacters.getShootingUltGainPerHitEffective === 'function') {
       return Math.max(0, Number(window.ShootingCharacters.getShootingUltGainPerHitEffective(c) || 0));
     }
