@@ -1360,7 +1360,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "既に埋め込んでんだろ。",
+        "text": "もう既に埋め込んでんだろ。",
         "location": "scene_workbench.webp"
       },
       {
