@@ -2931,15 +2931,23 @@
         {
         "cue": "arno_cover",
         "speaker": "アルノ",
-        "text": "倒せないなら、遠くへ引き離す…\nお前たちは下がれ。",
+        "text": "倒せないなら、遠くへ引き離す…お前たちは下がれ。",
                 "location": "scene_tower_far.webp"
       },
       {
-        "cue": "arno_cover_leona",
+        "cue": "arno_cover_leona1",
         "speaker": "レオナクロス",
-        "text": "アルノ、無茶だ！\nこいつら、スタミナは無尽蔵だ…地獄の底までついてくるぞ！",
+        "text": "アルノ、無茶だ！",
                 "location": "scene_tower_far.webp"
       },
+
+            {
+        "cue": "arno_cover_leona2",
+        "speaker": "レオナクロス",
+        "text": "こいつら、スタミナは無尽蔵だ…地獄の底までついてくるぞ！",
+                "location": "scene_tower_far.webp"
+      },
+
       {
         "cue": "eri_despair",
         "speaker": "エリ",
@@ -2967,6 +2975,14 @@
                                 "location": "scene_tower_far.webp",
         "narration": true
       },
+
+            {
+        "cue": "eri_call_1",
+        "speaker": "エリ",
+        "text": "……！！",
+                                "location": "scene_tower_far.webp",
+      },
+
       {
         "cue": "eri_call_1",
         "speaker": "エリ",
@@ -2976,9 +2992,17 @@
       {
         "cue": "eri_call_2",
         "speaker": "エリ",
-        "text": "……聞こえる……？\nお願い……力を貸して…",
+        "text": "……聞こえる……？",
                                 "location": "scene_tower_far.webp",
       },
+
+            {
+        "cue": "eri_call_3",
+        "speaker": "エリ",
+        "text": "お願い……力を貸して…",
+                                "location": "scene_tower_far.webp",
+      },
+
       {
         "cue": "summon_lyune",
         "speaker": "",
