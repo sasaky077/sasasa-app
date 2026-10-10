@@ -10,6 +10,7 @@
     'ジグ':5,
     'アルノ':20,
     'ノエル':24,
+    'リュネ':25,
     'ミモザ':28,
     'ラテルナ':32,
     'レオナクロス':39
@@ -60,6 +61,8 @@
   }
 
   function getCharacterPanel(name){
+    // CH04-04: リュネは指定された専用パネル画像を使用する。
+    if(String(name||'') === 'リュネ') return 'images/chara_25_panel.webp';
     const id=speakerIds[String(name||'')];
     if(!id) return '';
     try{
