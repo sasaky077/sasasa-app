@@ -1,4 +1,4 @@
 {
-  "build": 1290,
-  "note": "Party replay fix with shooting loader cache-bust"
+  "build": 1293,
+  "note": "CH04 replay roster and frozen clear detection"
 }

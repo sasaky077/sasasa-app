@@ -12235,3 +12235,7 @@ html body:not(.ui-immersive)
 ) .shooting-mission-hud{
   display:grid!important;
 }
+
+/* build1293: CH04 party UI is driven by JS ownership/story rules, not legacy stage CSS. */
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-party-roster::after{content:none!important;display:none!important;pointer-events:none!important}
+#shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-option:not(.locked):not(:disabled){opacity:1!important;filter:none!important;pointer-events:auto!important}

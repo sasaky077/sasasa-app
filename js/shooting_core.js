@@ -1989,20 +1989,29 @@
     );
   }
 
-  // build1272: CH04-04だけを先行検証。既存の未クリア分岐は変更しない。
+  // 再挑戦判定は戦闘画面を開いた瞬間に確定する。初回CLEAR中に変化させない。
   let storyReplayStageId = '';
-  // CLEAR済み判定は画面からのフラグに加え、保存されたクリア履歴でも確認する。
-  // ステージごとの入口差（CH04-02 / CH04-04等）に左右されない共通ルール。
   function isStoryReplayBattle() {
     if (!isStoryShootingStage() || !selectedStage) return false;
-    const actualId = String(selectedStage.id || '');
-    const baseId = String(selectedStage.baseStageId || actualId).replace(/^shooting_beginner_/, 'shooting_');
-    if (storyReplayStageId === baseId) return true;
+    const id = String(selectedStage.baseStageId || selectedStage.id || '').replace(/^shooting_beginner_/, 'shooting_');
+    return storyReplayStageId === id;
+  }
+  function hasClearedStoryShootingStage(stage) {
+    if (!stage) return false;
+    const actual = String(stage.id || '');
+    const base = String(stage.baseStageId || actual).replace(/^shooting_beginner_/, 'shooting_');
+    const ids = [...new Set([actual, base, base.replace(/^shooting_/, 'shooting_beginner_')])];
     try {
       const clears = JSON.parse(localStorage.getItem('zeraphia_story_stage_clears_v1') || '{}') || {};
       const records = JSON.parse(localStorage.getItem('zeraphia_shooting_stage_records_v1') || '{}') || {};
-      return [actualId, baseId].some(id => !!clears[id] || !!records[id]?.cleared);
-    } catch (_) { return false; }
+      if (ids.some(id => !!clears[id] || !!records[id]?.cleared)) return true;
+    } catch (_) {}
+    if (typeof window.getShootingStageRecordSummary === 'function') {
+      for (const id of ids) {
+        try { if (window.getShootingStageRecordSummary(id)?.cleared) return true; } catch (_) {}
+      }
+    }
+    return false;
   }
 
   // build1080: STORYはシナリオ上の固定編成で出撃する。
@@ -22291,8 +22300,9 @@
     // 戦闘開始後のCLEAR更新で初回攻略が再挑戦へ変化しないよう固定。
     const normalizedStoryStageId = String(selectedStage?.baseStageId || selectedStage?.id || '')
       .replace(/^shooting_beginner_/, 'shooting_');
-    storyReplayStageId = (options && options.storyReplay === true &&
-      isStoryShootingStage()) ? normalizedStoryStageId : '';
+    storyReplayStageId = (isStoryShootingStage() &&
+      ((options && options.storyReplay === true) || hasClearedStoryShootingStage(selectedStage)))
+      ? normalizedStoryStageId : '';
     selectedRaidContext = options && options.raidContext ? { ...options.raidContext } : null;
     BOSS = getCurrentShootingEnemy();
     shootingBattleBgmSessionActive = false;
