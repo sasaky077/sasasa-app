@@ -8863,6 +8863,12 @@ startTitleBgm();
 
   // Auth所有者は起動直後に確認済み。ここでは初期ストーリーキャラを保証する。
   await ensureStarterStoryCharactersOwned();
+  // Backfill chapter rewards for returning players with verified clears.
+  try {
+    var storySync = await sb.rpc('claim_story_chapter_characters');
+    if(storySync.error) console.warn('[story grant] sync unavailable',storySync.error);
+  } catch(e) { console.warn('[story grant] sync failed',e); }
+
 
   // 明示的な引き継ぎ待ちだけは整合性保護のため起動前に完了させる。
   // 通常のローカル→クラウド移行はホーム表示を止めずバックグラウンドへ。

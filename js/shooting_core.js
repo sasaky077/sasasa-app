@@ -20640,6 +20640,38 @@
         postResultTransitionArmed = false;
       }
       maybeQueueRandomAmbush(!!win);
+    if (win && ['shooting_ch04_04','shooting_ch06_04'].includes(storyStageId)) {
+      void (async () => {
+        try {
+          await (state.secureFinalizePromise || Promise.resolve());
+          const sb = window.zsSupabase;
+          if (!sb) return;
+          const reply = await sb.rpc('claim_story_chapter_characters');
+          if (reply.error) throw reply.error;
+          const grants = (reply.data && reply.data.characters) || [];
+          if (!grants.length) return;
+          const names = {25:'リュネ',37:'トイフェル',22:'ベロニカ',17:'アイナ'};
+          const message = grants.map(c => `${c.rarity}キャラ[${names[c.id]}]を入手しました。`).join('\n') + '\n\n育成して強化しましょう。';
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#17131bc9;display:flex;align-items:center;justify-content:center;padding:20px';
+          const panel = document.createElement('div');
+          panel.style.cssText = 'width:min(100%,380px);background:#faf6ed;color:#594935;padding:25px 18px;text-align:center;font-family:"Noto Serif JP",serif;border:1px solid #c6a46b';
+          const title = document.createElement('div');
+          title.textContent='NEW CHARACTER';
+          title.style.cssText='font-size:12px;letter-spacing:.2em;color:#9b7a44;margin-bottom:15px';
+          const content = document.createElement('div');
+          content.textContent=message;
+          content.style.cssText='white-space:pre-line;font-size:14px;line-height:2';
+          const button = document.createElement('button');
+          button.textContent='OK';
+          button.style.cssText='margin-top:20px;padding:12px 48px;background:#a88b5b;color:white;border:0;font-family:inherit';
+          button.onclick=()=>{overlay.remove();location.reload();};
+          panel.append(title,content,button);
+          overlay.append(panel);document.body.append(overlay);
+        } catch(err) { console.warn('[story grant] claim failed',err); }
+      })();
+    }
+
     };
 
     const storyStageId = String(
@@ -20684,6 +20716,8 @@
         return;
       }
     }
+
+
 
     showResultAfterStory();
   }
