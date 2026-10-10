@@ -41381,3 +41381,28 @@ html body #screen-summon .summon-banner-arrow-next{
   border-radius:50%;
   filter:drop-shadow(0 1px 2px rgba(48,37,62,.15));
 }
+
+
+/* build1302: pickup trial buttons - preserve existing centered action position.
+   Reserve height for two action rows so the pity counter/title never overlap. */
+#screen-summon:has(#summon-detail-btns > .gacha-trial-entry){
+  --gacha-actions-h:104px;
+}
+#screen-summon #summon-detail-btns:has(> .gacha-trial-entry){
+  left:50% !important;
+  right:auto !important;
+  bottom:var(--gacha-actions-bottom) !important;
+  transform:translateX(-50%) !important;
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:7px !important;
+  width:min(86vw,350px) !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+#screen-summon #summon-detail-btns > .gacha-trial-entry{
+  grid-column:1/-1 !important;
+  width:calc(50% - 4px) !important;
+  min-height:40px !important;
+  justify-self:center !important;
+}

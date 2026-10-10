@@ -326,9 +326,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=1253-limitbreak-powerup-restore"
+        href="css/style.css?v=1302-trial-layout"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=1253-limitbreak-powerup-restore"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=1302-trial-layout"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -3233,6 +3233,25 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     --result-reward-row-gap:5px;
   }
 }
+</style>
+<style id="gacha-trial-image-button-style">
+/* Pickup trial button image: preserve existing click action. */
+.gacha-trial-entry{display:block!important;width:100%!important;height:auto!important;min-height:0!important;padding:0!important;border:0!important;background:transparent!important;line-height:0!important;overflow:visible!important;box-shadow:none!important}
+.gacha-trial-entry img{display:block;width:100%;height:auto;object-fit:contain;pointer-events:none}
+</style>
+<style id="gacha-real-trial-v1">
+  /* 試遊中だけ本編の戦闘rootをガチャ画面より手前へ。通常ステージに無影響。 */
+  #shooting-event-root[data-gacha-trial="1"] { z-index: 300000 !important; }
+  #shooting-event-root[data-gacha-trial="1"] #shooting-gacha-trial-exit {
+    position:absolute; top:calc(env(safe-area-inset-top) + 12px); right:12px;
+    z-index:2000; min-width:74px; height:38px; padding:0 13px;
+    border:1px solid rgba(162,125,66,.72); border-radius:0;
+    background:rgba(250,246,236,.95); color:#624d38;
+    font:600 13px "Noto Serif JP",serif; letter-spacing:.12em;
+    cursor:pointer; touch-action:manipulation;
+  }
+  #shooting-event-root[data-gacha-trial="1"] .shooting-pause-action.shooting-pause-exit { display:none; }
+  #shooting-event-root[data-gacha-trial="1"] .shooting-pause-action:not(.shooting-pause-close):not(.shooting-pause-bgm-toggle) { display:none; }
 </style>
 </head>
 <body>
@@ -6936,6 +6955,12 @@ document.addEventListener('touchend', function (e) {
           }
         }, 0);
       }
+    }
+
+    // Single-character pickup trial only (not the multi-character limited banner).
+    if(btns && gacha.poolType === 'pickup' && (gacha.id === 'gacha_03' || gacha.id === 'gacha_05')){
+      var trialId = gacha.id === 'gacha_03' ? 36 : 40;
+      btns.insertAdjacentHTML('beforeend', '<button type="button" class="gacha-trial-entry" onclick="ZeraphiaGachaTrial.start('+trialId+')" aria-label="使ってみる"><img src="images/gacha_trial_button.webp" alt="使ってみる TRIAL BATTLE - お試し戦"></button>');
     }
 
     // 選択中カードをハイライト
@@ -18613,7 +18638,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1294-ch05"></script>
+<script src="js/shooting_event.js?v=1307-olivia-trial-laser"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>
@@ -20211,5 +20236,6 @@ html body #global-user-frame .hud-sweep-line-player::after{
 })();
 </script>
 
+<script src="js/gacha_trial.js?v=1303-real-shooting-trial"></script>
 </body>
 </html>

@@ -4235,7 +4235,7 @@
       "text": "キミ、なにしてるの？",
       "left": "",
       "right": "",
-      "location": "scene_ch_05_aruno2.webp",
+      "location": "scene_ch_05_aruno3.webp",
     }
   ]
 }

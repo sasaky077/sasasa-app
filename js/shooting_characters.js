@@ -8,6 +8,8 @@
   'use strict';
 
   const CHARACTER_ID = Object.freeze({
+    CONJURER: 40,
+    NINA: 36,
     ERI: 1,
     NEM: 26,
     SUI: 31,
@@ -910,6 +912,28 @@
     "homeOffsetY": -30,
     "hidden": false
   },
+  "36": {
+    "id": 36,
+    "name": "ニーナ",
+    "element": "light",
+    "hp": 590,
+    "atk": 280,
+    "image": "images/chara_36_battle_back.webp",
+    "panelImage": "images/chara_36_panel.webp",
+    "cutinImage": "images/chara_36_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_36.webp",
+    "homeImage": "images/chara_36_cut.webp",
+    "upImage": "images/chara_36_up.webp",
+    "homeScale": 1,
+    "homeOffsetX": 0,
+    "homeOffsetY": 0,
+    "hidden": false
+  },
   "37": {
     "id": 37,
     "name": "トイフェル",
@@ -974,6 +998,28 @@
     "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
+    "hidden": false
+  },
+  "40": {
+    "id": 40,
+    "name": "オリビア",
+    "element": "wood",
+    "hp": 590,
+    "atk": 275,
+    "image": "images/chara_40_battle_back.webp",
+    "panelImage": "images/chara_40_panel.webp",
+    "cutinImage": "images/chara_40_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_40.webp",
+    "homeImage": "images/chara_40_cut.webp",
+    "upImage": "images/chara_40_up.webp",
+    "homeScale": 0.86,
+    "homeOffsetX": 0,
+    "homeOffsetY": -18,
     "hidden": false
   },
   "41": {
@@ -2514,6 +2560,67 @@
         hidden: master.hidden === true,
       }))
   );
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.NINA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NINA, effectKey: 'nina',
+    label: 'PLASMA / CHAIN',
+    description: '弾を撃たず、220px圏内を暴れる電撃が接触した敵・オブジェクトへ絡みつくSRチェイン型。接続は250pxまで維持。最大4体へ伝播し、威力は100%→50%→25%→12.5%。',
+    ultName: '出力最大！',
+    ultDescription: '7秒間、PLASMAの威力が1.5倍、射程が2倍になる。連鎖数と発射速度は変化しない。',
+    shotType: 'lightning',
+    shotCount: 1,
+    fireRate: 300,
+    shotPowerRate: 0.28,
+    lightningMaxTargets: 4,
+    lightningTickCount: 4,
+    lightningTickMs: 70,
+    lightningChainDecay: 0.5,
+    lightningAcquireRange: 220,
+    lightningReleaseRange: 250,
+    lightningChainRange: 160,
+    ultBaseType: 'buff',
+    ultAddons: ['plasma_power_up','plasma_range_up'],
+    ultType: 'nina_output_max',
+    ninaOutputMaxDurationMs: 7000,
+    ninaOutputMaxPowerMultiplier: 1.5,
+    ninaOutputMaxRangeMultiplier: 2.0,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.CONJURER] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.CONJURER,
+    effectKey: 'conjure',
+    label: 'CONJURE / TURRET',
+    description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大3基。各砲台は3秒間、1秒ごとに8方向へ非貫通弾を射出する。',
+    ultName: 'オーバーライド・コンストラクト',
+    ultDescription: '自身の左右へ追従砲台を5秒間召喚。左右それぞれ毎秒5発、計25発ずつのHOMING弾を自動射出する。HOMING弾は敵に命中すると消滅する。ULT中も通常砲台の射撃・新規設置は継続できる。',
+    shotType: 'conjure',
+    mainShot: { type: 'conjure' },
+    shotCount: 1,
+    fireRate: 1000,
+    bulletSpeed: 520,
+    shotPowerRate: 0.40,
+    conjureMaxTurrets: 3,
+    conjureLifetimeMs: 3000,
+    conjureVolleyIntervalMs: 1000,
+    conjureVolleyCount: 3,
+    conjureBulletsPerVolley: 8,
+    conjurePlaceOffsetY: 112,
+    conjureTurretBulletSpeed: 520,
+    burstNeed: 30,
+    ultGainPerHit: 0.50,
+    ultBaseType: 'summon',
+    ultAddons: ['damage','homing'],
+    ultType: 'conjure_homing_battery',
+    conjureUltDurationMs: 5000,
+    conjureUltShotIntervalMs: 200,
+    conjureUltShotsPerSide: 25,
+    conjureUltDamageAtkMultiplier: 0.30,
+    conjureUltHomingSpeed: 680,
+    conjureUltHomingTurnRate: 8.5,
+    conjureUltTurretOffsetX: 54,
+    conjureUltTurretOffsetY: -8,
+  });
 
   window.ShootingCharacters = Object.freeze({
     CHARACTER_ID,

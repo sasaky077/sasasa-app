@@ -38,6 +38,7 @@
   };
 
   const SHOOTING_STAGE_ID = Object.freeze({
+    GACHA_TRIAL: 'shooting_gacha_trial', // 勧誘画面専用・非保存の無限試遊
     CH01_01: 'shooting_ch01_01',
     CH01_02: 'shooting_ch01_02',
     CH01_03: 'shooting_ch01_03',
@@ -136,6 +137,21 @@
   }
 
   const SHOOTING_STAGES = Object.freeze({
+    // 本編の敵・ショット・ULT・操作系を共用するが、通常ステージには登録しない試遊専用ステージ。
+    [SHOOTING_STAGE_ID.GACHA_TRIAL]: Object.freeze({
+      id: SHOOTING_STAGE_ID.GACHA_TRIAL,
+      chapter: 0, stageNo: 0, name: 'TRIAL BATTLE', type: 'normal',
+      eventId: 'gacha_trial', background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_03]),
+      normalBattle: Object.freeze({
+        infiniteEnemies: true, maxActive: 4, spawnIntervalMs: 750,
+        itemDropRate: 0, enemyHp: 900, enemyBulletDamage: 55,
+        enemyBulletSpeed: 170, enemyFireRate: 1600, barrageLevel: 1,
+      }),
+      // 制限時間ゼロのSURVIVE_TIMEではミッション達成が発生しない。
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.SURVIVE_TIME, targetSeconds: 0, text: '何度でも試せます' }),
+      playable: false,
+    }),
     [SHOOTING_STAGE_ID.CH01_01]: Object.freeze({
       id: SHOOTING_STAGE_ID.CH01_01,
       chapter: 1,

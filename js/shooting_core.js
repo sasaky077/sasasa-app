@@ -904,6 +904,14 @@
   let selectedStageId = SHOOTING_STAGE_ID.CH01_04;
   let selectedStage = getShootingStage(selectedStageId);
   let selectedEnemyId = DEFAULT_SHOOTING_ENEMY_ID;
+  let gachaTrialCharacterId = 0;
+  const isGachaTrialStage = () => !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.GACHA_TRIAL);
+  // 試遊のオリビア専用: 敵の直前、画面上部約1/3に固定する遮断壁。
+  // 本編CH06と同じ実体/弾衝突判定を利用し、ニーナと通常ステージには出さない。
+  const GACHA_TRIAL_OLIVIA_WALL = Object.freeze([Object.freeze({
+    xRate: .50, yRate: .34, widthRate: .76, height: 24,
+    moveRangeRate: 0, moveSpeed: 0, contactDamage: 55,
+  })]);
 
   function resolveSelectedStage(options) {
     if (options && options.stageId) selectedStageId = String(options.stageId);
@@ -2092,6 +2100,7 @@
   function isShootingCharacterAvailableForCurrentParty(id) {
     id = Number(id);
     if (!SHOOTING_CHARACTERS[id] || !isPublicShootingCharacterId(id)) return false;
+    if (isGachaTrialStage() && id === gachaTrialCharacterId) return true;
     const cfg = getSelectedStorySelectablePartyConfig();
     if (cfg && cfg.allowedIds.includes(id)) return true;
     return isShootingCharacterOwned(id);
@@ -2633,6 +2642,19 @@
   function buildResonatedCharacterProfile(id) {
     const numericId = Number(id);
     const base = SHOOTING_CHARACTERS[numericId] || SHOOTING_CHARACTERS[CHARACTER_ID.ERI];
+    // 試遊専用の仮想最大育成。所有インスタンス・アイテム・編成は一切書き換えない。
+    if (isGachaTrialStage() && numericId === gachaTrialCharacterId) {
+      let preview = base;
+      if (window.ShootingResonance && typeof window.ShootingResonance.applyToProfile === 'function') {
+        preview = window.ShootingResonance.applyToProfile(preview, 4) || preview;
+      } else if (typeof window.applyShootingResonanceToProfile === 'function') {
+        preview = window.applyShootingResonanceToProfile(preview, 4) || preview;
+      }
+      if (window.CharacterLeveling && typeof window.CharacterLeveling.applyToProfile === 'function') {
+        preview = window.CharacterLeveling.applyToProfile(preview, 'sr', 4, 60) || preview;
+      }
+      return preview;
+    }
     const lb = getShootingResonanceLevel(numericId);
     let profile = base;
 
@@ -2782,7 +2804,7 @@
   }
 
   function saveShootingResumeState(reason) {
-    if (suppressShootingResumeSave) return false;
+    if (isGachaTrialStage() || suppressShootingResumeSave) return false;
     try {
       const noLivingParty = !!(
         state &&
@@ -4742,6 +4764,7 @@
         isFacelessStage() ||
         isScoreAttackStage() ||
         isRaidStage() ||
+        isGachaTrialStage() || // ガチャ試遊の雑魚弾も既存Canvasに集約し、DOM増殖を防ぐ
         getCanvasStoryChapter() > 0
       )
     );
@@ -5275,7 +5298,9 @@
                   ? 'noah'
                   : ((isFacelessStage() || isFacelessBullet)
                     ? 'faceless'
-                    : (storyChapter ? `ch0${storyChapter}` : 'normal')))))));
+                    : (isGachaTrialStage()
+                    ? (gachaTrialCharacterId === 36 ? 'faceless' : 'ch03')
+                    : (storyChapter ? `ch0${storyChapter}` : 'normal'))))))));
       const p = {
         el: virtualEl,
         x, y, vx, vy,
@@ -11443,6 +11468,11 @@
 
       let def = resolveChapter02ZakoVariant(baseDef, state.normalSpawned, cfg);
 
+      // ニーナ試遊専用: ミニ敵の属性と敵弾を闇へ。オリビア・通常ステージは元定義のまま。
+      if (isGachaTrialStage() && gachaTrialCharacterId === 36) {
+        def = Object.assign({}, def, { element: 'dark' });
+      }
+
       // build1241: 通常戦でスポーン順ごとの属性指定を許可する。
       // CH03-03は同じMINI_03を、木→火→水→闇→光の5属性で1体ずつ出す。
       const elementSequence = Array.isArray(cfg.enemyElementSequence)
@@ -11545,6 +11575,8 @@
   // Homingは敵より壁を最優先で追尾する。
   // ============================================================
   function getChapter6BarrierConfig() {
+    // 試遊専用の壁はオリビア(ID40)だけ。CH06/DAILYの判定には一切影響させない。
+    if (isGachaTrialStage()) return gachaTrialCharacterId === 40 ? GACHA_TRIAL_OLIVIA_WALL : [];
     if (selectedStage && Array.isArray(selectedStage.chapter6Barriers) && selectedStage.chapter6Barriers.length) {
       // build1038: ノアの移動壁はWAVE2以降、かつHP50%未満でのみ出現。
       // 条件未達時は空配列を返すため、既に壁が出ていて条件外になった場合も
@@ -12602,16 +12634,27 @@
       if (state.ch403ImmuneHits >= 25 && elapsed >= 8000) requestAnimationFrame(() => triggerChapter403EncounterSequence());
     }
 
-    // HPが変わらないIMMUNE弾でHP DOMを書き直さない。
-    if (appliedDamage > 0) renderMiniEnemyHp(enemy, true);
+    // 試遊は高頻度連鎖HIT時、HPバーの幅は毎回更新しつつ強制リフローのflashだけ抑制。
+    const trialImpactNow = Number(now || performance.now());
+    const trialSmallHit = isGachaTrialStage() && !big;
+    const trialFlash = !trialSmallHit || trialImpactNow >= Number(enemy._trialHpFlashNextAt || 0);
+    if (appliedDamage > 0) {
+      renderMiniEnemyHp(enemy, trialFlash);
+      if (trialSmallHit && trialFlash) enemy._trialHpFlashNextAt = trialImpactNow + 120;
+    }
 
     // build551: IMMUNE相手へSpread/Laser等を当て続けても、ゲーム判定は全件維持しつつ
     // HIT/0/IMMUNE/バリア発光のDOM演出だけ約9fpsへ間引く。
     const visualNow = Number(now || performance.now());
     const immuneVisual = elementReaction === 'immune';
-    const renderImpact = !suppressVisual && (!immuneVisual || visualNow >= Number(enemy._immuneVisualNextAt || 0));
+    // ニーナ連鎖などの高頻度HITでも実ダメージは全件反映。
+    // DOM生成を伴うHIT/数字/点滅のみ、試遊中の小HITを敵ごと約8fpsに抑える。
+    const renderImpact = !suppressVisual &&
+      (!immuneVisual || visualNow >= Number(enemy._immuneVisualNextAt || 0)) &&
+      (!trialSmallHit || visualNow >= Number(enemy._trialVisualNextAt || 0));
     if (renderImpact) {
       if (immuneVisual) enemy._immuneVisualNextAt = visualNow + 110;
+      if (trialSmallHit) enemy._trialVisualNextAt = visualNow + 125;
 
       createHit(enemy.x, enemy.y, !!big);
       showDamageNumber(enemy.x, enemy.y, appliedDamage, 'enemy', !!big, elementReaction);
@@ -12688,6 +12731,7 @@
   }
 
   function evaluateNormalMission(now) {
+    if (isGachaTrialStage()) return;
     if (!isNormalBattle() || state.ended || state.finishing) return;
     const mission = getEffectiveNormalMission();
     const cfg = getNormalBattleConfig();
@@ -16824,6 +16868,13 @@
   }
 
   function beginPlayerDefeat() {
+    // お試しは終了ボタンのみで終了。被弾で倒れても同じキャラを即座に復帰させる。
+    if (isGachaTrialStage() && state && !state.ended) {
+      const member = getActiveMember();
+      if (member) { member.hp = member.hpMax; state.player.invulnUntil = performance.now() + 1600; }
+      renderHud();
+      return;
+    }
     if (!state || state.ended || state.finishing || state.koTransition) return;
     resetScoreAttackComboOnDamage();
     const living = state.party.filter(m => m.hp > 0 && m.id !== state.activeCharacterId);
@@ -18486,7 +18537,7 @@
 
     // SCORE ATTACKでは無関係なイベント/CH04系の更新を毎フレーム呼ばない。
     // キャラクター固有処理（Arno/Mimosa等）はゲーム性に関わるので維持。
-    if (!isScoreAttackStage()) {
+    if (!isScoreAttackStage() && !isGachaTrialStage()) {
       updateFacelessObjects(dt, ts);
       updateAmbushStageMechanics(dt, ts);
       updateChapter4FinalItem(ts);
@@ -18500,8 +18551,8 @@
     updateMimosaItems();
     if (isNormalBattle()) evaluateNormalMission(ts);
 
-    // SCORE ATTACKのHUDは10fpsに抑える。ゲーム本体の当たり判定は60fpsのまま。
-    if (isScoreAttackStage()) {
+    // SCORE ATTACKとガチャ試遊のHUDは約10fps。移動/当たり判定/弾更新は60fpsのまま。
+    if (isScoreAttackStage() || isGachaTrialStage()) {
       if (ts - Number(state.scoreAttackLastHudRenderAt || 0) >= 100) {
         state.scoreAttackLastHudRenderAt = ts;
         renderHud();
@@ -20490,6 +20541,7 @@
   }
 
   async function endGame(win) {
+    if (isGachaTrialStage()) return; // 試遊ではRESULT・報酬・履歴処理に絶対に入らない
     if (!state || state.ended) return;
 
     // build812: RESULT処理中にstage参照が変化してもDAILY判定を揺らさない。
@@ -22184,6 +22236,7 @@
   }
 
   window.startSelectedShootingCharacter = async function (options = {}) {
+    if (isGachaTrialStage()) return; // 試遊の開始は下記の専用経路からのみ
     if (isNoahStage() && !options.noahTicketConfirmed) {
       showNoahBattleStartConfirmDialog(async () => {
         await window.startSelectedShootingCharacter({ noahTicketConfirmed: true });
@@ -22266,6 +22319,105 @@
     requestAnimationFrame(() => {
       playBossStageIntro(runStartCountdown);
     });
+  };
+
+  // 壁の描画スタイルも試遊中のオリビアだけに適用する。通常CSSは変更しない。
+  function ensureGachaTrialOliviaWallStyle() {
+    if (document.getElementById('shooting-gacha-olivia-wall-style')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-gacha-olivia-wall-style';
+    style.textContent = `
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier {
+        position:absolute;left:0;top:0;z-index:23;pointer-events:none;box-sizing:border-box;
+        border:1px solid rgba(189,171,132,.72);border-radius:999px;
+        background:linear-gradient(90deg,rgba(255,255,255,.90),rgba(230,221,200,.84) 22%,rgba(255,255,255,.94) 50%,rgba(230,221,200,.84) 78%,rgba(255,255,255,.90));
+        box-shadow:0 0 0 1px rgba(255,255,255,.72) inset,0 0 10px rgba(208,190,150,.24),0 3px 8px rgba(81,65,39,.10);
+        opacity:.96;
+      }
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier::before,
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier::after {
+        content:"";position:absolute;top:50%;width:10px;height:10px;
+        border:1px solid rgba(153,127,79,.58);background:rgba(255,253,246,.96);
+        transform:translateY(-50%) rotate(45deg);box-shadow:0 0 8px rgba(202,176,120,.24);
+      }
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier::before {left:6px}
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier::after {right:6px}
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier i {
+        position:absolute;left:21px;right:21px;top:50%;height:1px;transform:translateY(-50%);
+        background:repeating-linear-gradient(90deg,rgba(143,115,68,.42) 0 10px,transparent 10px 18px);
+      }
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier b {
+        position:absolute;left:50%;top:50%;width:12px;height:12px;
+        transform:translate(-50%,-50%) rotate(45deg);
+        border:1px solid rgba(147,118,70,.62);background:rgba(255,252,242,.98);
+      }
+      #shooting-event-root[data-gacha-olivia-wall="1"] .shooting-ch06-barrier.hit {
+        filter:brightness(1.12);box-shadow:0 0 0 1px rgba(255,255,255,.9) inset,0 0 18px rgba(213,181,111,.62);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ガチャトライアル: 本編の戦闘エンジンを専用ステージとして開始。
+  // RPC/消費/記録/RESULT/編成画面を経由しない。
+  function startGachaTrialBattle() {
+    if (!isGachaTrialStage() || !SHOOTING_CHARACTERS[gachaTrialCharacterId]) return false;
+    selectedPartyIds = [gachaTrialCharacterId];
+    selectedCharacterId = gachaTrialCharacterId;
+    selectedBlessingId = null;
+    clearEltenaBlackHole();
+    resetState();
+    clearProjectiles();
+    clearNormalBattleObjects();
+    applySelectedCharacterToUi();
+    setCharacterSelectVisible(false);
+    setBattleHudVisible(true);
+    applyShootingUiLayout(shootingUiLayoutType);
+    setShootingHeaderMenuMode(true);
+    ensureShootingPauseMenu();
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return false;
+    root.dataset.gachaTrial = '1';
+    if (gachaTrialCharacterId === 40) {
+      root.dataset.gachaOliviaWall = '1';
+      ensureGachaTrialOliviaWallStyle();
+    }
+    const result = document.getElementById('shooting-result');
+    if (result) { result.classList.remove('show'); result.setAttribute('aria-hidden','true'); }
+    const boss = document.getElementById(BOSS_ID);
+    if (boss) boss.style.display = 'none';
+    const player = document.getElementById(PLAYER_ID);
+    if (player) player.classList.remove('defeated', 'damaged');
+    // 試遊中は右下の通常メニューボタンを「終了」に置き換える。
+    // rootは退出時に破棄するため、通常ステージでは元のメニューボタンに戻る。
+    const trialMenuButton = root.querySelector('#shooting-battle-menu-btn');
+    if (trialMenuButton) {
+      trialMenuButton.removeAttribute('onclick');
+      trialMenuButton.textContent = '終了';
+      trialMenuButton.setAttribute('aria-label', '試遊を終了してガチャトップに戻る');
+      trialMenuButton.title = '試遊を終了';
+      trialMenuButton.addEventListener('click', () => { void window.closeShootingEvent(); }, { once: true });
+    }
+    warmSelectedPartyUltCutins();
+    requestAnimationFrame(() => {
+      if (!isGachaTrialStage() || !state || state.ended || !root.isConnected) return;
+      placeInitialUnits();
+      renderHud();
+      activateShootingBattleBgm(true);
+      runStartCountdown();
+    });
+    return true;
+  }
+
+  window.openShootingTrial = function (characterId) {
+    const id = Number(characterId);
+    if (id !== 36 && id !== 40) return false;
+    if (!SHOOTING_CHARACTERS[id]) return false;
+    const existing = document.getElementById(ROOT_ID);
+    if (existing && existing.classList.contains('open')) return false;
+    gachaTrialCharacterId = id;
+    window.__shootingReturnContext = { type: 'gachaTrial' };
+    return window.openShootingEvent({ stageId: SHOOTING_STAGE_ID.GACHA_TRIAL });
   };
 
   window.openShootingStage = function (stageId) {
@@ -22370,6 +22522,10 @@
     root.setAttribute('data-boss-phase', '1');
     selectedPartyIds = [];
     selectedBlessingId = null;
+    if (isGachaTrialStage()) {
+      ensureShootingPauseMenu();
+      return startGachaTrialBattle();
+    }
     selectedStageHighScore = getLocalShootingHighScore(selectedStage?.id || '');
     setShootingHeaderMenuMode(false);
     void loadShootingHighScore();
@@ -22418,6 +22574,7 @@
   };
 
   window.restartShootingEvent = async function (options = {}) {
+    if (isGachaTrialStage()) return startGachaTrialBattle();
     // build1169: CH01-04でアルノ戦まで到達したGAME OVERのRETRYは、
     // 負けイベントを再生せず「属性相性か…」のアルノ戦開始台詞から再開する。
     const chapter104ArnoRetry = !!(
@@ -22551,6 +22708,7 @@
   };
 
   window.closeShootingEvent = async function () {
+    const leavingGachaTrial = isGachaTrialStage();
     // RESULT画面から戻る時だけ、1秒かけて白へフェードしてから前画面へ戻す。
     // 戦闘中の退出・編成画面のキャンセルには適用しない。
     const resultElBeforeClose = document.getElementById('shooting-result');
@@ -22583,7 +22741,7 @@
 
     // 明示的に「戻る/退出」した場合は中断復帰対象にしない。
     suppressShootingResumeSave = true;
-    clearShootingResumeState();
+    if (!leavingGachaTrial) clearShootingResumeState();
 
     // 戻る先は「この画面を開いた直前の画面」。
     // 先に退避してからクリアし、古い戻り先が次回起動へ残らないようにする。
@@ -22664,6 +22822,7 @@
     setCommonUiVisible(false);
     state = null;
     suppressShootingResumeSave = false;
+    if (leavingGachaTrial) gachaTrialCharacterId = 0;
 
     // 直前画面を復元する。
     if (returningToFacelessStageSelect || returningToDailyStageSelect) {
