@@ -1996,7 +1996,6 @@
       String(selectedStage.baseStageId || selectedStage.id || '')
         .replace(/^shooting_beginner_/, 'shooting_') === storyReplayStageId);
   }
-  function isCh404Replay() { return isStoryReplayBattle() && storyReplayStageId === 'shooting_ch04_04'; }
 
   // build1080: STORYはシナリオ上の固定編成で出撃する。
   // 今後、各STAGEの編成が決まり次第この表へ追加する。
@@ -2039,7 +2038,7 @@
   }
 
   function getSelectedStoryFixedPartyIds() {
-    if (isCh404Replay() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
+    if (isStoryReplayBattle() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
     const key = String(selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
@@ -2048,7 +2047,7 @@
   }
 
   function getSelectedStorySelectablePartyConfig() {
-    if (isCh404Replay() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
+    if (isStoryReplayBattle() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
     const key = String(selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
@@ -2144,7 +2143,7 @@
   }
 
   function ensureStoryEriLeader() {
-    if (isCh404Replay() || isFreeStoryPartyStage() || !isStoryShootingStage()) return;
+    if (isStoryReplayBattle() || isFreeStoryPartyStage() || !isStoryShootingStage()) return;
     // build1080: ステージ固有の固定編成が定義されている場合は最優先。
     if (applySelectedStoryFixedParty()) return;
     // build1216: CH03-04は指定5人から任意3人。エリを固定しない。
@@ -2193,10 +2192,10 @@
 
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
 
-    if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
+    if (!isStoryReplayBattle() && isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
-    if (isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage()) {
+    if (isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage()) {
       return Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
     return true;
@@ -2240,7 +2239,7 @@
           String(c.panelImage || c.image || '')
         ].join(':');
       })
-      .join('|') + `|stage:${String(selectedStage?.id || '')}|replay:${isCh404Replay() ? 1 : 0}`;
+      .join('|') + `|stage:${String(selectedStage?.id || '')}|replay:${isStoryReplayBattle() ? 1 : 0}`;
   }
 
   function refreshShootingRoster() {
@@ -2607,7 +2606,7 @@
   function isChapter04LyuneGuest(id) {
     if (Number(id) !== 25 || !selectedStage) return false;
     const key = String(selectedStage.id || '').toLowerCase().replace(/^shooting_beginner_/, 'shooting_');
-    return key === 'shooting_ch04_04' && !isCh404Replay();
+    return key === 'shooting_ch04_04' && !isStoryReplayBattle();
   }
 
   function getShootingResonanceLevel(id) {
@@ -3476,7 +3475,7 @@
       ? fixedStoryParty.length
       : (selectableStoryParty
         ? selectableStoryParty.requiredSize
-        : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE));
+        : ((!isStoryReplayBattle() && isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) ? 1 : PARTY_SIZE));
 
     wrap.innerHTML = Array.from({ length: slotCount }, (_, i) => {
       const id = selectedPartyIds[i];
@@ -3485,7 +3484,7 @@
       const fixedStoryMember = !!fixedStoryParty;
       const fixedStoryEri =
         !fixedStoryParty &&
-        isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage() &&
+        isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
         i === 0 &&
         Number(id) === Number(CHARACTER_ID.ERI);
 
@@ -3528,7 +3527,7 @@
     id = Number(id);
     if (getSelectedStoryFixedPartyIds()) return;
     if (
-      isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage() &&
+      isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
       !isSelectedStorySelectablePartyStage() &&
       id === Number(CHARACTER_ID.ERI)
     ) return;
@@ -3586,7 +3585,7 @@
 
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      if (isCh404Replay()) {
+      if (isStoryReplayBattle()) {
         ruleText.textContent = 'CLEAR再挑戦 · 所持キャラから最大3人を自由編成';
       } else if (fixedStoryParty) {
         const names = fixedStoryParty
@@ -3598,7 +3597,7 @@
         const selectableStoryParty = getSelectedStorySelectablePartyConfig();
         ruleText.textContent = selectableStoryParty
           ? `STORY指定${selectableStoryParty.allowedIds.length}人から${selectableStoryParty.requiredSize}人選択`
-          : ((isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
+          : ((!isStoryReplayBattle() && isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage())
             ? 'CHAPTER 04 · エリのみ出撃可能'
             : (isStoryShootingStage()
               ? '最大3人 · エリ固定 · 1人から出撃可能'
@@ -20605,7 +20604,7 @@
           chapter: selectedStage ? selectedStage.chapter : null,
           stageNo: selectedStage ? selectedStage.stageNo : null,
           win: !!win,
-          storyReplay: isCh404Replay(),
+          storyReplay: isStoryReplayBattle(),
           score: Number(state.score || 0),
           maxCombo: Number(state.maxCombo || 0),
           clearTimeMs: Number(state.clearTimeMs || 0),
@@ -20731,7 +20730,7 @@
     );
 
     const hasPostStory = !!(
-      win && !isCh404Replay() &&
+      win && !isStoryReplayBattle() &&
       window.StoryNovel &&
       typeof window.StoryNovel.hasPost === 'function' &&
       window.StoryNovel.hasPost(storyStageId)
@@ -20744,7 +20743,7 @@
       postResultTransitionArmed = true;
     }
 
-    if (win && window.StoryNovel && !isCh404Replay()) {
+    if (win && window.StoryNovel && !isStoryReplayBattle()) {
       // shooting-stage-result の同期イベントでqueuePost済みならそれを消費。
       if (
         typeof window.StoryNovel.consumePendingPost === 'function' &&
@@ -21353,7 +21352,7 @@
     if (!isAllowedForSelectedStoryParty(id)) return;
 
     if (
-      isChapter04Stage() && !isCh404Replay() &&
+      isChapter04Stage() && !isStoryReplayBattle() &&
       !isSelectedStorySelectablePartyStage() &&
       !isChapter43BossStage() &&
       !isChapter43MemoryBossStage() &&
@@ -21366,7 +21365,7 @@
     }
 
     if (
-      isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage() &&
+      isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
       !isSelectedStorySelectablePartyStage() &&
       id === Number(CHARACTER_ID.ERI)
     ) {
@@ -22323,7 +22322,7 @@
     const normalizedStoryStageId = String(selectedStage?.baseStageId || selectedStage?.id || '')
       .replace(/^shooting_beginner_/, 'shooting_');
     storyReplayStageId = (options && options.storyReplay === true &&
-      normalizedStoryStageId === 'shooting_ch04_04') ? 'shooting_ch04_04' : '';
+      isStoryShootingStage()) ? normalizedStoryStageId : '';
     selectedRaidContext = options && options.raidContext ? { ...options.raidContext } : null;
     BOSS = getCurrentShootingEnemy();
     shootingBattleBgmSessionActive = false;
@@ -22407,7 +22406,7 @@
         cfg.allowedIds.find(id => isShootingCharacterAvailableForCurrentParty(id)) ||
         firstOwned ||
         CHARACTER_ID.ERI;
-    } else if (isCh404Replay() || isFreeStoryPartyStage()) {
+    } else if (isStoryReplayBattle() || isFreeStoryPartyStage()) {
       selectedPartyIds = [];
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
     } else if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {

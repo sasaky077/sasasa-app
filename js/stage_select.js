@@ -686,8 +686,7 @@
     // build1272: CH04-04でのみクリア済み再挑戦を先行導入。
     const normalizedStoryId = String(storyId).replace(/^shooting_beginner_/, 'shooting_');
     // CLEAR済みの表示に用いた記録と同じ判定で、再挑戦フラグを戦闘側へ渡す。
-    const replay = normalizedStoryId === 'shooting_ch04_04' &&
-      (getStoryShootingRecord(storyId).cleared || getStoryShootingRecord(normalizedStoryId).cleared);
+    const replay = !!(getStoryShootingRecord(storyId).cleared || getStoryShootingRecord(normalizedStoryId).cleared);
 
     const hideStageSelect = () => {
       const modal = document.getElementById('stage-select-modal');
