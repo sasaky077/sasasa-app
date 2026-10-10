@@ -1256,48 +1256,66 @@
       {
         "speaker": "レオナクロス",
         "text": "君たちの力を最大限まで引きだす最強デバイスだ。",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "アウラ",
         "text": "なにその胡散臭いの…",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "",
         "text": "アウラが怪しそうにレオナクロスを見る。\nレオナクロスの手には、小型の注射器型デバイスが握られている。",
         "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue",
         "narration": true
       },
       {
         "speaker": "レオナクロス",
         "text": "ミモザの科学力とボクの開発力のクロスオーバーだよ！",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "レオナクロス",
         "text": "ミモザの研究により\n君たちの力はこの世界との適合率に比例して大きくなることが分かっている。",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "レオナクロス",
         "text": "このデバイスは、適合率を100%に近いところまで持っていく！",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
         "text": "おそらくこの先…\nこないだ遭遇した大型レベルのレムナントと戦うことになる。",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "レオナクロス",
         "text": "名付けて…\n世界律動強制同調式超限臨界適合――",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "アウラ",
         "text": "出た出たいつもの。",
-        "location": "scene_workbench.webp"
+        "location": "scene_workbench.webp",
+        "itemImage": "item_sync_device.webp",
+        "itemImagePosition": "above-dialogue"
       },
       {
         "speaker": "ミモザ",
