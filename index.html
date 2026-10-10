@@ -6347,10 +6347,12 @@ document.addEventListener('touchend', function (e) {
   // DARK アヤネ(11) / LIGHT ミト(7)
   const GACHA_PERMANENT_SR_IDS = [2, 31, 11, 7];
 
-  // ストーリー加入キャラを除外した恒常R（ID38 クロエを含む）
+  // ストーリー加入キャラを除外した恒常R（クロエ38＋追加R42～46を含む）。
+  // 全ガチャがこの共通プールを参照する。抽選の正本はSupabaseのdraw_gacha。
   const GACHA_R_IDS = [
     6, 10, 12, 13, 14, 15, 16,
-    18, 19, 21, 23, 24, 26, 27, 29, 30, 34, 35, 38
+    18, 19, 21, 23, 24, 26, 27, 29, 30, 34, 35, 38,
+    42, 43, 44, 45, 46
   ];
 
   const GACHA_SR_RATE = 0.06;
