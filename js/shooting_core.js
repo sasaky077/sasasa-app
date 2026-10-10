@@ -11369,7 +11369,7 @@
   // CH04-4: one reinforced summoner at a time; surviving adds persist between phases.
   function spawnCh404Enemies(now) {
     const cfg = getNormalBattleConfig();
-    const phaseElements = ['fire', 'aqua', 'light'];
+    const phaseElements = ['aqua', 'fire', 'light'];
     if (!Number.isInteger(state.ch404Phase)) state.ch404Phase = 0;
     if (state.ch404Phase >= phaseElements.length) return;
     const current = (state.normalEnemies || []).find(e => e && e.hp > 0 && e.ch404Role === 'summoner');
