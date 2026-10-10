@@ -2011,7 +2011,7 @@
     shooting_ch03_03: Object.freeze([20]),      // アルノ
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
-    shooting_ch04_04: Object.freeze([1, 20, 25]), // エリ / アルノ / リュネ（STORYゲストLv30）
+    shooting_ch04_04: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ（STORYゲストLv30）
   });
 
   // build1216: CH03-04はストーリー固定ではなく、シナリオ上その場にいる5人から3人を選択。
@@ -2025,7 +2025,7 @@
       requiredSize: 3,
     }),
     shooting_ch04_04: Object.freeze({
-      allowedIds: Object.freeze([1, 20, 25]), // エリ / アルノ / リュネ
+      allowedIds: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ
       requiredSize: 3,
     }),
   });
