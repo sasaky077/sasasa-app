@@ -8,94 +8,55 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  box-sizing:border-box;
-  --paper:#eee4d2;
-  --paper-hi:#fffdf8;
-  --ink:#382b1d;
-  --ink-soft:#665039;
-  --line:#92734a;
-  --line-faint:rgba(150,128,98,.22);
-  --band:rgba(255,255,255,.82);
-  --gold:#b18427;
-  --glow:#e9cf8f;
-  --btn-bg:#fffaf0;
-}
-html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;margin:0;padding:0;overflow:hidden!important;overscroll-behavior:none;touch-action:none;-webkit-overflow-scrolling:auto}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{
-  background:var(--paper);
-  background-image:radial-gradient(ellipse at 50% 38%, var(--paper-hi) 0%, var(--paper) 68%);
-  color:var(--ink);
-  font-family:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
-  -webkit-tap-highlight-color:transparent;
-}
-main{
-  width:100%;max-width:480px; margin:0 auto; height:100dvh; min-height:0; overflow:hidden; justify-content:space-between;
-  display:flex; flex-direction:column; align-items:center;
-  padding:calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom)); box-sizing:border-box;
-}
-.chapter{margin:0;font-size:11px;letter-spacing:.24em;color:var(--ink-soft)}
-h1{margin:6px 0 0;font-size:20px;font-weight:500;letter-spacing:.16em}
-.guide{
-  margin:6px 0 0; min-height:3.4em; max-width:22em;
-  font-size:13px; line-height:1.85; color:var(--ink-soft); text-align:center;
-  transition:opacity .4s ease;
-}
-.stage{width:min(94vw,410px,49dvh);height:min(94vw,410px,49dvh);flex:0 1 auto;aspect-ratio:1/1;margin:4px 0;min-height:0}
-svg{width:100%;height:100%;display:block;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-
+:root{--paper:#e9dfc9;--paper-hi:#fffdf5;--ink:#3d2c1c;--ink-soft:#735c3d;--line:#9a7540;--line-faint:rgba(117,84,43,.34);--band:#f7f0df;--gold:#bc8d36;--glow:#f9d88a;--btn-bg:#fdf8eb}
+*{box-sizing:border-box}
+html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;margin:0;overflow:hidden!important;overscroll-behavior:none;touch-action:none;-webkit-overflow-scrolling:auto}
+body{color:var(--ink);font-family:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;-webkit-tap-highlight-color:transparent;background:radial-gradient(ellipse at 50% 47%,#fffdf6 0%,#f3ead8 50%,#d5c4a4 100%)}
+body:before{content:"";position:fixed;inset:7px;pointer-events:none;border:1px solid rgba(132,94,42,.36);box-shadow:inset 0 0 0 4px rgba(255,255,255,.42),inset 0 0 0 5px rgba(157,119,62,.20);z-index:0}
+body:after{content:"✧";position:fixed;top:9px;right:18px;font-size:20px;color:#ad8547;pointer-events:none;opacity:.75}
+main{position:relative;z-index:1;width:100%;max-width:600px;height:100dvh;margin:0 auto;padding:calc(13px + env(safe-area-inset-top)) 11px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;overflow:hidden}
+.chapter{margin:0;font-size:10px;letter-spacing:.24em;color:#866b43;text-shadow:0 1px #fff}
+#puzzleExit{position:absolute;top:calc(12px + env(safe-area-inset-top));left:17px;min-height:32px!important;padding:5px 11px!important;z-index:3;font-size:11px}
+h1{margin:8px 0 0;font-size:clamp(19px,3.4dvh,25px);font-weight:600;letter-spacing:.17em;color:#4d3520;text-shadow:0 1px 0 #fff}
+h1:after{content:"◆  ◇  ◆";display:block;margin:4px auto 0;font-size:8px;letter-spacing:.65em;color:#b28a4d}
+.guide{margin:5px 0 0;min-height:2.9em;max-width:30em;font-size:clamp(11px,1.8dvh,13px);line-height:1.55;color:#675036;text-align:center;transition:opacity .4s ease}
+.stage{position:relative;flex:1 1 auto;min-height:0;width:min(98vw,540px,calc(100dvh - 195px));max-height:min(98vw,540px,calc(100dvh - 195px));aspect-ratio:1/1;margin:auto 0;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 13px rgba(81,53,22,.14))}
+.stage:before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,#fffdf5 0%,#fffaf0 52%,#eadbc1 73%,#bca17a 88%,#faf4e5 91%,transparent 94%);box-shadow:inset 0 0 0 1px rgba(125,85,32,.20),0 0 0 1px rgba(255,255,255,.45);pointer-events:none}
+.stage:after{content:"";position:absolute;inset:2%;border-radius:50%;border:1px solid rgba(138,99,47,.34);outline:1px solid rgba(255,255,255,.65);outline-offset:3px;pointer-events:none}
+svg{position:relative;width:100%;height:100%;display:block;overflow:visible;touch-action:none;user-select:none;-webkit-user-select:none}
 .ring{transform-box:view-box;transform-origin:0 0;transition:transform .5s cubic-bezier(.32,.72,.2,1);cursor:pointer;outline:none}
 .ring .band{fill:none;stroke:var(--band);transition:stroke .3s ease}
-.ring:focus-visible .band{stroke:var(--line-faint)}
-.ring .edge{fill:none;stroke:var(--line-faint);stroke-width:1}
-.ring .tick{stroke:var(--line-faint);stroke-width:1}
+.ring:focus-visible .band{stroke:#f4d79a}
+.ring .edge{fill:none;stroke:#a78b5c;stroke-width:1.5;opacity:.85}
+.ring .tick{stroke:#b39b73;stroke-width:1.5}
 .ring .decoy{fill:none;stroke:var(--line);stroke-width:3.3;stroke-linecap:round;opacity:.55}
 .ring .dot{fill:var(--line);opacity:.5}
-.trace{fill:none;stroke:var(--ink-soft);stroke-width:5.2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .45s ease, filter .45s ease}
-.trace.lit{stroke:var(--gold);filter:drop-shadow(0 0 3px var(--glow))}
+.trace{fill:none;stroke:#765536;stroke-width:6.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 #fff);transition:stroke .45s ease,filter .45s ease}
+.trace.lit{stroke:#c18c20;filter:drop-shadow(0 0 4px #ffe2a0) drop-shadow(0 0 2px #fff)}
 .ring.hint .band{animation:hint 1.7s ease-in-out}
-@keyframes hint{0%,100%{stroke:var(--band)}35%,65%{stroke:var(--glow)}}
-
-.fixed{fill:none;stroke:var(--line);stroke-width:3;stroke-linecap:round}
-.fixed.lit{stroke:var(--gold);filter:drop-shadow(0 0 3px var(--glow))}
-.mark{fill:var(--line)}
-.mark.lit{fill:var(--gold)}
-.disk{fill:var(--paper-hi);stroke:var(--line);stroke-width:1.2;transition:fill .8s ease, stroke .8s ease}
-.sigil{fill:none;stroke:var(--line);stroke-width:1.4;transition:stroke .8s ease}
+@keyframes hint{0%,100%{stroke:var(--band)}35%,65%{stroke:#ead29c}}
+.fixed{fill:none;stroke:#886134;stroke-width:4;stroke-linecap:round}
+.fixed.lit{stroke:#b98625;filter:drop-shadow(0 0 4px #ffdf94)}
+.mark{fill:#8d622e}.mark.lit{fill:#b98625}
+.disk{fill:#fff9e9;stroke:#a47c3e;stroke-width:2;transition:fill .8s ease,stroke .8s ease}
+.sigil{fill:none;stroke:#ad864b;stroke-width:1.6;transition:stroke .8s ease}
 .rays line{stroke:var(--gold);stroke-width:1.6;stroke-linecap:round;opacity:0;stroke-dasharray:150;stroke-dashoffset:150}
-
-svg.solved .disk{fill:var(--glow);stroke:var(--gold)}
-svg.solved .sigil{stroke:var(--gold)}
+svg.solved .disk{fill:#f5d992;stroke:var(--gold)}svg.solved .sigil{stroke:#ab7922}
 svg.solved .disk-wrap{animation:breathe 3.2s ease-in-out infinite;transform-box:view-box;transform-origin:0 0}
-svg.solved .rays line{animation:ray 1.6s ease-out forwards}
-svg.solved .ring{cursor:default}
+svg.solved .rays line{animation:ray 1.6s ease-out forwards}svg.solved .ring{cursor:default}
 @keyframes ray{0%{opacity:0;stroke-dashoffset:150}20%{opacity:.85}100%{opacity:.18;stroke-dashoffset:0}}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
-
-.status{margin:4px 0 0;font-size:13px;letter-spacing:.1em;color:var(--ink-soft)}
-.status b{color:var(--ink);font-weight:500}
-.controls{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center}
-button{
-  appearance:none;font:inherit;font-size:12px;letter-spacing:.08em;color:var(--ink);
-  background:var(--btn-bg);border:1px solid #a88954;
-  padding:9px 16px;min-height:40px;border-radius:0;box-shadow:0 2px 8px rgba(92,66,32,.10);cursor:pointer;
-}
-button:active{opacity:.6}
-button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
-.modes{display:flex;gap:8px;margin-top:22px}
-.modes button{font-size:11px;padding:7px 12px;min-height:34px}
-.note{margin:4px 0 0;font-size:11px;line-height:1.7;color:var(--ink-soft);text-align:center}
+.status{flex:0 0 auto;margin:0;padding:5px 18px;font-size:12px;letter-spacing:.1em;color:#6b5030;background:linear-gradient(90deg,transparent,#fff9eb 20%,#fff9eb 80%,transparent);border-top:1px solid rgba(162,119,51,.27);border-bottom:1px solid rgba(162,119,51,.27)}
+.status b{color:#9c6c20;font-weight:600;font-size:16px}
+.controls{flex:0 0 auto;display:flex;gap:10px;margin-top:9px;flex-wrap:wrap;justify-content:center}
+button{appearance:none;font:inherit;font-size:12px;letter-spacing:.12em;color:#513a22;background:linear-gradient(180deg,#fffdf5,#e8d9bc);border:1px solid #a27b42;padding:9px 22px;min-height:40px;border-radius:0;box-shadow:inset 0 1px 0 #fff,0 2px 5px rgba(87,57,24,.17);cursor:pointer}
+button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.modes{display:flex;gap:8px;margin-top:22px}.modes button{font-size:11px;padding:7px 12px;min-height:34px}
+.note{flex:0 0 auto;margin:7px 0 0;font-size:10px;line-height:1.4;color:#786245;text-align:center}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-
-@media (prefers-reduced-motion:reduce){
-  .ring{transition-duration:.12s}
-  svg.solved .disk-wrap{animation:none}
-  svg.solved .rays line{animation-duration:.01s}
-}
-@media (max-height:690px){h1{font-size:17px}.guide{font-size:11px;line-height:1.55}.stage{width:min(92vw,42dvh);height:min(92vw,42dvh)}.chapter{font-size:10px}.note{font-size:10px}}
-@media (max-height:560px){.stage{width:min(90vw,37dvh);height:min(90vw,37dvh)}.guide{min-height:0}.note{line-height:1.3}}
+@media(max-height:720px){main{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:calc(10px + env(safe-area-inset-bottom))}.chapter{font-size:9px}h1{margin-top:5px;font-size:19px}.guide{font-size:11px;margin-top:3px}.stage{width:min(98vw,540px,calc(100dvh - 171px));max-height:min(98vw,540px,calc(100dvh - 171px))}.controls{margin-top:5px}.note{margin-top:4px}}
+@media(max-height:560px){.stage{width:min(96vw,540px,calc(100dvh - 152px));max-height:min(96vw,540px,calc(100dvh - 152px))}.guide{min-height:0;font-size:10px}.note{font-size:9px}h1:after{margin-top:1px}}
+@media(prefers-reduced-motion:reduce){.ring{transition-duration:.12s}svg.solved .disk-wrap{animation:none}svg.solved .rays line{animation-duration:.01s}}
 </style>
 </head>
 <body>
@@ -105,7 +66,7 @@ button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
   <h1 id="puzzleTitle">ずれた輪</h1>
   <p class="guide" id="guide">輪に触れると、ひとつずつ回る。<br>紋様の線を、外から円盤の中心までつなげよう。</p>
 
-  <div class="stage">
+  <div class="stage" aria-label="円環パズル盤面">
     <svg id="board" viewBox="-205 -205 410 410" role="group" aria-label="円盤と輪"></svg>
   </div>
 

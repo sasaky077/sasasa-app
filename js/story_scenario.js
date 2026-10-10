@@ -3326,6 +3326,7 @@
       "left": "",
       "right": "",
       "text": "翌日。一行は二手に分かれていた。ジグとアウラはレオナクロスの装置を手に塔の周りを調査し、アルノは塔の上層から辺りを見張っている。",
+      "location": "scene_ch04_05.webp",
       "narration": true
     },
     {
@@ -3333,37 +3334,39 @@
       "left": "",
       "right": "",
       "text": "塔・内部。中央には、かつてエリに反応した円盤がある。",
+      "location": "scene_disk.webp",      
       "narration": true
     },
     {
       "speaker": "ミモザ",
       "text": "……やっぱり、何も起こらないわね",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ",
+      "location": "scene_disk_down.webp",          
     },
     {
       "speaker": "エリ",
       "text": "うん……",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "ミモザ",
       "text": "あれ以来、エリが触れても反応しない。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "ミモザ",
       "text": "もちろん、私たちが触っても同じ。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "エリ",
       "text": "なんだったんだろう、あの時の光……",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "レオナクロス",
@@ -3374,8 +3377,8 @@
     {
       "speaker": "ミモザ",
       "text": "そんな適当な……",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "レオナクロス",
@@ -3439,7 +3442,7 @@
       "speaker": "",
       "left": "",
       "right": "",
-      "text": "もう一度触れる。コトン。",
+      "text": "もう一度触れる。ブゥン。",
       "narration": true
     },
     {
@@ -3480,7 +3483,7 @@
   "chapter": 5,
   "stageNo": 2,
   "chapterTitle": "円環",
-  "stageTitle": "ずれた輪",
+  "stageTitle": "いびつな輪",
   "stageType": "puzzle",
   "ringCount": 3,
   "pre": [
@@ -3525,32 +3528,32 @@
     {
       "speaker": "エリ",
       "text": "あっ、本当だ。",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "ミモザ",
       "text": "……なるほど。内側の輪と連動しているのね。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "ミモザ",
       "text": "よく見ると、それぞれの輪に線が刻まれてる。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "エリ",
       "text": "でも、途中で途切れてるね。",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "ミモザ",
       "text": "ええ。何かの仕掛けに見えるわ。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "レオナクロス",
@@ -3561,8 +3564,8 @@
     {
       "speaker": "エリ",
       "text": "おもちゃ？",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "レオナクロス",
@@ -3579,8 +3582,8 @@
     {
       "speaker": "ミモザ",
       "text": "やってみましょう。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     }
   ],
   "post": [
@@ -3601,14 +3604,14 @@
     {
       "speaker": "エリ",
       "text": "…………",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "ミモザ",
       "text": "…………",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "レオナクロス",
@@ -3619,8 +3622,8 @@
     {
       "speaker": "エリ",
       "text": "……何も起きないね。",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "レオナクロス",
@@ -3631,8 +3634,8 @@
     {
       "speaker": "ミモザ",
       "text": "そうね……何かが外れたような音。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "",
@@ -3650,8 +3653,8 @@
     {
       "speaker": "エリ",
       "text": "あっ……もしかして！",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     }
   ]
 },
@@ -3673,20 +3676,20 @@
     {
       "speaker": "エリ",
       "text": "塔の内側にも、同じ仕掛けがあるんじゃないかな？",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "ミモザ",
       "text": "……なるほど。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "ミモザ",
       "text": "外と内、二つで一つの鍵になっているのかもしれないわね。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "レオナクロス",
@@ -3697,8 +3700,8 @@
     {
       "speaker": "ミモザ",
       "text": "可能性はあるわね。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "",
@@ -3710,8 +3713,8 @@
     {
       "speaker": "エリ",
       "text": "……あった。",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "",
@@ -3723,14 +3726,14 @@
     {
       "speaker": "ミモザ",
       "text": "輪の数が、外のものより多いわね。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "ミモザ",
       "text": "でも、仕組みは同じみたい。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "レオナクロス",
@@ -3770,8 +3773,8 @@
     {
       "speaker": "エリ",
       "text": "わっ……！",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "",
@@ -3783,8 +3786,8 @@
     {
       "speaker": "ミモザ",
       "text": "……何かしら？",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "",
@@ -3796,8 +3799,8 @@
     {
       "speaker": "エリ",
       "text": "これは……",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "",
@@ -3809,8 +3812,8 @@
     {
       "speaker": "エリ",
       "text": "……地図？",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "レオナクロス",
@@ -3821,8 +3824,8 @@
     {
       "speaker": "ミモザ",
       "text": "……見せて。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "",
@@ -3834,20 +3837,20 @@
     {
       "speaker": "ミモザ",
       "text": "…………",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "エリ",
       "text": "ミモザ？",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "ミモザ",
       "text": "……ええ。地図に見える……けど、読めないわ。",
-      "left": "ミモザ",
-      "right": ""
+      "left": "",
+      "right": "ミモザ"
     },
     {
       "speaker": "レオナクロス",
@@ -3858,8 +3861,8 @@
     {
       "speaker": "エリ",
       "text": "でも……どこの地図なんだろう。",
-      "left": "",
-      "right": "エリ"
+      "left": "エリ",
+      "right": ""
     },
     {
       "speaker": "",
@@ -4042,7 +4045,7 @@
     },
     {
       "speaker": "アウラ",
-      "text": "はぁ……はぁ……弾、多すぎ……",
+      "text": "はぁ……疲れたぁ……",
       "left": "アウラ",
       "right": ""
     },
@@ -4065,6 +4068,14 @@
       "left": "ジグ",
       "right": ""
     },
+
+    {
+      "speaker": "アウラ",
+      "text": "おなかすいたぁ…",
+      "left": "アウラ",
+      "right": ""
+    },
+
     {
       "speaker": "",
       "left": "",
@@ -4112,6 +4123,12 @@
       "right": "",
       "text": "つい先ほどまで誰もいなかった塔の真下に、三つの人影が立っていた。",
       "narration": true
+    },
+        {
+      "speaker": "アルノ",
+      "left": "",
+      "right": "アルノ",
+      "text": "……",
     },
     {
       "speaker": "",
