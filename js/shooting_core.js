@@ -2026,8 +2026,16 @@
     }),
   });
 
+  // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
+  function isFreeStoryPartyStage() {
+    if (!isStoryShootingStage() || !selectedStage) return false;
+    const id = String(selectedStage.baseStageId || selectedStage.id || '');
+    const match = id.match(/ch(\d{2})_(\d{2})/i);
+    return !!match && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4));
+  }
+
   function getSelectedStoryFixedPartyIds() {
-    if (isCh404Replay() || !isStoryShootingStage() || !selectedStage) return null;
+    if (isCh404Replay() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
     const key = String(selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
@@ -2036,7 +2044,7 @@
   }
 
   function getSelectedStorySelectablePartyConfig() {
-    if (isCh404Replay() || !isStoryShootingStage() || !selectedStage) return null;
+    if (isCh404Replay() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
     const key = String(selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
@@ -2132,7 +2140,7 @@
   }
 
   function ensureStoryEriLeader() {
-    if (isCh404Replay() || !isStoryShootingStage()) return;
+    if (isCh404Replay() || isFreeStoryPartyStage() || !isStoryShootingStage()) return;
     // build1080: ステージ固有の固定編成が定義されている場合は最優先。
     if (applySelectedStoryFixedParty()) return;
     // build1216: CH03-04は指定5人から任意3人。エリを固定しない。
@@ -2184,7 +2192,7 @@
     if (isChapter04Stage() && !isChapter43BossStage() && !isChapter43MemoryBossStage()) {
       return selectedPartyIds.length === 1 && Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
-    if (isStoryShootingStage() && !isCh404Replay()) {
+    if (isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage()) {
       return Number(selectedPartyIds[0]) === Number(CHARACTER_ID.ERI);
     }
     return true;
@@ -3462,7 +3470,7 @@
       const fixedStoryMember = !!fixedStoryParty;
       const fixedStoryEri =
         !fixedStoryParty &&
-        isStoryShootingStage() && !isCh404Replay() &&
+        isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage() &&
         i === 0 &&
         Number(id) === Number(CHARACTER_ID.ERI);
 
@@ -3505,7 +3513,7 @@
     id = Number(id);
     if (getSelectedStoryFixedPartyIds()) return;
     if (
-      isStoryShootingStage() && !isCh404Replay() &&
+      isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage() &&
       !isSelectedStorySelectablePartyStage() &&
       id === Number(CHARACTER_ID.ERI)
     ) return;
@@ -20640,6 +20648,26 @@
         postResultTransitionArmed = false;
       }
       maybeQueueRandomAmbush(!!win);
+      if (win && isStoryShootingStage()) {
+        void (async () => {
+          try {
+            await (state.secureFinalizePromise || Promise.resolve());
+            const sb = window.zsSupabase;
+            if (!sb || typeof sb.rpc !== 'function') return;
+            const response = await sb.rpc('claim_story_memory_fragments');
+            if (response.error) throw response.error;
+            const amount = Math.max(0, Number(response.data?.claimed || 0));
+            if (amount && typeof window.showToast === 'function') {
+              window.showToast(`記憶の欠片 ×${amount} を入手しました。`);
+            }
+            const status = await sb.rpc('get_story_memory_fragment_status');
+            if (!status.error) {
+              localStorage.setItem('zeraphia_memory_fragment_claim_keys_v1',JSON.stringify(status.data?.claimed_keys || []));
+              window.dispatchEvent(new Event('shooting-stage-record-updated'));
+            }
+          } catch(e) { console.warn('[story memory fragments] reward sync failed',e); }
+        })();
+      }
     if (win && ['shooting_ch04_04','shooting_ch06_04'].includes(storyStageId)) {
       void (async () => {
         try {
@@ -21316,7 +21344,7 @@
     }
 
     if (
-      isStoryShootingStage() && !isCh404Replay() &&
+      isStoryShootingStage() && !isCh404Replay() && !isFreeStoryPartyStage() &&
       !isSelectedStorySelectablePartyStage() &&
       id === Number(CHARACTER_ID.ERI)
     ) {
@@ -22356,7 +22384,7 @@
         cfg.allowedIds.find(id => isShootingCharacterAvailableForCurrentParty(id)) ||
         firstOwned ||
         CHARACTER_ID.ERI;
-    } else if (isCh404Replay()) {
+    } else if (isCh404Replay() || isFreeStoryPartyStage()) {
       selectedPartyIds = [];
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
     } else if (isStoryShootingStage() && isShootingCharacterOwned(CHARACTER_ID.ERI)) {

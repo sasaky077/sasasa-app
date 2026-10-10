@@ -8863,6 +8863,14 @@ startTitleBgm();
 
   // Auth所有者は起動直後に確認済み。ここでは初期ストーリーキャラを保証する。
   await ensureStarterStoryCharactersOwned();
+  // 既存クリア履歴を基に未受領の記憶の欠片を補填する。
+  try {
+    var fragmentSync = await sb.rpc('claim_story_memory_fragments');
+    if(fragmentSync.error) throw fragmentSync.error;
+    var fragmentStatus = await sb.rpc('get_story_memory_fragment_status');
+    if(!fragmentStatus.error) localStorage.setItem('zeraphia_memory_fragment_claim_keys_v1', JSON.stringify(fragmentStatus.data?.claimed_keys || []));
+  } catch(e) { console.warn('[memory fragments] startup sync failed',e); }
+
   // Backfill chapter rewards for returning players with verified clears.
   try {
     var storySync = await sb.rpc('claim_story_chapter_characters');
@@ -18530,7 +18538,7 @@ function fadeOutOpeningBgm(){
 <script src="js/shooting_characters.js?v=1212-aura-cluster"></script>
 <script src="js/story_scenario.js?v=1240-location-filenames"></script>
 <script src="js/story_novel.js?v=1266-post-skip-right"></script>
-<script src="js/stage_select.js?v=1131-story-pre-loader-fix"></script>
+<script src="js/stage_select.js?v=1286-memory-rewards"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>

@@ -561,6 +561,17 @@
         const isNovelOnly = !!(storyScenario && String(storyScenario.stageType || '').toLowerCase() === 'novel');
         const displayCondition = isNovelOnly ? 'ストーリーを読む' : missionText;
 
+        const rewardStage = mode === 'normal' && Number(stageNo) === 4 && Number(chapter) >= 1 && Number(chapter) <= 30;
+        const specialS = [4,7,10,13,16,19,22,25,28,30].includes(Number(chapter));
+        let claimedKeys = [];
+        try { claimedKeys = JSON.parse(localStorage.getItem('zeraphia_memory_fragment_claim_keys_v1') || '[]') || []; } catch(_) {}
+        const key = String(chapter).padStart(2,'0');
+        const clearClaimed = claimedKeys.includes('chapter_' + key);
+        const sClaimed = claimedKeys.includes('rank_s_' + key);
+        const rewardHtml = rewardStage
+          ? `<div style="font-size:10px;line-height:1.7;color:#96784b;margin-top:5px">章クリア：記憶の欠片 ×1 ${clearClaimed ? '（獲得済み）' : ''}${specialS ? `<div>Sランククリア：記憶の欠片 ×1 ${sClaimed ? '（獲得済み）' : ''}</div>` : ''}</div>`
+          : '';
+
         card.innerHTML = `
           <div class="ss-card-no">${String(stageNo).padStart(2, '0')}</div>
           <div class="ss-card-body">
@@ -569,6 +580,7 @@
             </div>
             <div class="ss-card-meta">
               <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
+              ${rewardHtml}
             </div>
           </div>
           ${buildStoryRecordHtml(record)}
