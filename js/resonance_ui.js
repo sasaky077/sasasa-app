@@ -274,7 +274,7 @@ function playLimitBreakPowerupEffect(target, fromLb, toLb){
 
 function buildBulkLimitBreakSummaryHTML(target, plan){
   if(!plan || !plan.count) return '';
-  var isEri = Number(target && target.id) === 1;
+  var isStory = isStoryLimitBreakCharacter(target);
   var stoneTotal = plan.steps.reduce(function(sum, step){ return sum + Number(step.stoneCount || 0); }, 0);
   var vesselCounts = {};
   plan.steps.forEach(function(step){
@@ -282,9 +282,9 @@ function buildBulkLimitBreakSummaryHTML(target, plan){
   });
 
   var materialRows = [];
-  if(isEri){
-    var eriWingDef = getEvolutionMaterialDef('eri_origin_wing');
-    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(eriWingDef ? eriWingDef.name : '原初の翼環') + '</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
+  if(isStory){
+    var fragmentDef = getEvolutionMaterialDef('memory_fragment');
+    materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(fragmentDef ? fragmentDef.name : '記憶の欠片') + '</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
   } else {
     materialRows.push('<div class="lb-confirm-consume-row"><span class="lb-confirm-consume-name">' + escapeHtml(target.name || '同キャラ') + '</span><span class="lb-confirm-consume-count">× ' + plan.count + '</span></div>');
   }
@@ -355,7 +355,7 @@ function confirmBulkLimitBreak(){
 
     for(var i = 0; i < plan.steps.length; i++){
       var step = plan.steps[i];
-      var material = Number(target.id) === 1 ? null : getAutoLimitBreakMaterial(target);
+      var material = isStoryLimitBreakCharacter(target) ? null : getAutoLimitBreakMaterial(target);
       var ok = await executeLimitBreak(target, material, step.soulVesselId, { silent:true, bulk:true });
       if(!ok) break;
       completed++;
@@ -422,7 +422,7 @@ function openLimitBreakModal(target){
         '<button type="button" class="btn-pay lb-execute-btn lb-execute-single-btn" onclick="confirmLimitBreak()">1Lvだけ突破する</button>' +
         '<div class="lb-execute-note">' +
           (status.recipe.specialMaterialId
-            ? '原初の翼環を同キャラ素材の代わりに消費します'
+            ? '記憶の欠片を同キャラ素材の代わりに消費します'
             : '同キャラ素材は自動で消費されます') +
         '</div>' +
       '</div>';
@@ -441,10 +441,10 @@ function confirmLimitBreak(materialDbId){
   var target = currentDetailData;
   if(!target) return;
 
-  var isEri = Number(target.id) === 1;
+  var isStory = isStoryLimitBreakCharacter(target);
   var mat = null;
 
-  if(!isEri){
+  if(!isStory){
     mat = materialDbId
       ? box.find(function(b){ return b.db_id === materialDbId; })
       : getAutoLimitBreakMaterial(target);

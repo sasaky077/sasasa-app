@@ -10,6 +10,11 @@
   const MATERIAL_STORAGE_KEY = 'zeraphia_evolution_materials_v1';
 
   const MATERIAL_MASTER = Object.freeze({
+    memory_fragment: Object.freeze({
+      id: 'memory_fragment', name: '記憶の欠片', shortName: '記憶の欠片',
+      img: 'images/item_wing.webp',
+      desc: 'ストーリーで仲間になるキャラクター共通の限界突破素材。'
+    }),
     eri_origin_wing: Object.freeze({
       id: 'eri_origin_wing',
       name: '原初の翼',

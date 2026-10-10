@@ -191,6 +191,12 @@ function resolveLimitBreakSoulVesselId(target, preferredId){
 }
 
 
+var STORY_LIMIT_BREAK_CHARACTER_IDS = [1,3,5,17,20,22,25,28,37,39];
+function isStoryLimitBreakCharacter(target){
+  return !!target && STORY_LIMIT_BREAK_CHARACTER_IDS.indexOf(Number(target.id)) !== -1;
+}
+window.isStoryLimitBreakCharacter = isStoryLimitBreakCharacter;
+
 function getLimitBreakRecipe(target, preferredSoulVesselId){
   var currentLb = target ? Number(target.limitBreak || 0) : 0;
   var nextLb = Math.min(currentLb + 1, MAX_LIMIT_BREAK);
@@ -206,9 +212,9 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
   return {
     nextLb: nextLb,
     // エリも通常の光属性キャラと同レート。重複キャラ1体の代わりに「原初の翼環」を1個使用する。
-    sameChara: isEri ? 0 : 1,
-    specialMaterialId: isEri ? 'eri_origin_wing' : '',
-    specialMaterialCount: isEri ? 1 : 0,
+    sameChara: isStoryLimitBreakCharacter(target) ? 0 : 1,
+    specialMaterialId: isStoryLimitBreakCharacter(target) ? 'memory_fragment' : '',
+    specialMaterialCount: isStoryLimitBreakCharacter(target) ? 1 : 0,
     soulVesselId: selectedVesselId,
     soulVesselOptions: vesselOptions,
     soulVesselCount: 1,
@@ -447,7 +453,7 @@ async function executeLimitBreak(target, material, selectedSoulVesselId, options
 
   if(!target) return;
   var isEri = Number(target.id) === 1;
-  if(!isEri && !material) return;
+  if(!isStoryLimitBreakCharacter(target) && !material) return;
 
   var currentLb = target.limitBreak || 0;
 
