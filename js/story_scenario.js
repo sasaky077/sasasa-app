@@ -2836,10 +2836,6 @@
     "stageTitle": "炎の壁",
     "pre": [
 
-           {
-        "transition": "fade_black",
-        "text": ""
-      },
             {
         "speaker": "",
         "text": "翌朝。\n一行は拠点を出て、再び円盤の塔へ向かっていた。",
@@ -3000,7 +2996,7 @@
       {
         "cue": "aura_surprised",
         "speaker": "アウラ",
-        "text": "えっ……？！誰？！",
+        "text": "えっ……？！なにが起きたの？！",
                                 "location": "scene_tower_far.webp",
       }
     ],

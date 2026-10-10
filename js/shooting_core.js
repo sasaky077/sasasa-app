@@ -10253,13 +10253,57 @@
     // 0.0s: blue flash; 0.6s: flash recedes; 0.9s: live enemy shields break;
     // 1.3s: reveal the barrier_break narration. Combat stays paused throughout.
     const encounterState = state;
+    // A short, expanding center-origin burst, not a flat cyan screen tint.
+    if (!document.getElementById('shooting-ch403-bloom-style-v2')) {
+      const style = document.createElement('style');
+      style.id = 'shooting-ch403-bloom-style-v2';
+      style.textContent = `
+        .shooting-ch403-blue-flash {
+          position:absolute;inset:0;z-index:265;pointer-events:none;
+          overflow:hidden;isolation:isolate;
+        }
+        .shooting-ch403-blue-flash::before {
+          content:"";position:absolute;left:50%;top:50%;
+          width:180vmax;height:180vmax;border-radius:50%;
+          background:radial-gradient(circle,
+            rgba(255,255,255,1) 0%,
+            rgba(245,254,255,.98) 9%,
+            rgba(194,240,255,.78) 21%,
+            rgba(105,204,244,.30) 37%,
+            rgba(105,204,244,0) 58%);
+          transform:translate(-50%,-50%) scale(.015);
+          opacity:0;
+          animation:shootingCh403Bloom 720ms cubic-bezier(.12,.74,.18,1) both;
+        }
+        .shooting-ch403-blue-flash::after {
+          content:"";position:absolute;left:50%;top:50%;
+          width:22vmin;height:22vmin;border-radius:50%;
+          background:radial-gradient(circle,
+            rgba(255,255,255,1) 0%,rgba(247,255,255,.94) 15%,
+            rgba(166,229,255,.52) 43%,transparent 73%);
+          transform:translate(-50%,-50%) scale(.25);
+          opacity:0;
+          animation:shootingCh403Core 520ms ease-out both;
+        }
+        @keyframes shootingCh403Bloom {
+          0%{opacity:0;transform:translate(-50%,-50%) scale(.015)}
+          12%{opacity:1}
+          39%{opacity:1;transform:translate(-50%,-50%) scale(.7)}
+          70%{opacity:.54;transform:translate(-50%,-50%) scale(1.25)}
+          100%{opacity:0;transform:translate(-50%,-50%) scale(1.65)}
+        }
+        @keyframes shootingCh403Core {
+          0%{opacity:0;transform:translate(-50%,-50%) scale(.25)}
+          18%{opacity:1;transform:translate(-50%,-50%) scale(1.5)}
+          45%{opacity:.9;transform:translate(-50%,-50%) scale(3.8)}
+          100%{opacity:0;transform:translate(-50%,-50%) scale(6)}
+        }
+      `;
+      document.head.appendChild(style);
+    }
     const flash = document.createElement('div');
     flash.className = 'shooting-ch403-blue-flash';
-    flash.style.cssText = 'position:absolute;inset:0;z-index:265;pointer-events:none;background:#b4eaff;opacity:.9;transition:opacity .35s ease;';
     root.appendChild(flash);
-    setTimeout(() => {
-      if (flash.isConnected) flash.style.opacity = '0.12';
-    }, 600);
     setTimeout(() => {
       if (state === encounterState && !state.ended && isChapter403FireWallStage()) {
         breakChapter403FireBarriers();
