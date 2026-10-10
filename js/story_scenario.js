@@ -125,35 +125,35 @@
         "left": "アウラ",
         "right": "エリ",
         "text": "はぁ……はぁ…できた…",
-        "location": "scene_outside_tower_enemy.webp"
+        "location": "scene_outside_tower.webp"
       },
       {
         "speaker": "アウラ",
         "left": "アウラ",
         "right": "エリ",
-        "text": "ここ片づけたら、いったん戻ろ。\nお腹すいた〜。",
-        "location": "scene_outside_tower_enemy.webp"
+        "text": "よし！片付いたし、いったん戻ろ。\nお腹すいた〜。",
+        "location": "scene_outside_tower.webp"
       },
       {
         "speaker": "エリ",
         "left": "アウラ",
         "right": "エリ",
         "text": "アウラはいつもそれだね。",
-        "location": "scene_outside_tower_enemy.webp"
+        "location": "scene_outside_tower.webp"
       },
       {
         "speaker": "アウラ",
         "left": "アウラ",
         "right": "エリ",
         "text": "だって戦うとお腹すくんだもん。\n…ほら、行こ。",
-        "location": "scene_outside_tower_enemy.webp"
+        "location": "scene_outside_tower.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
         "text": "エリが振り返る。\n白い地平線の向こうには、何も見えなくなっていた。",
-        "location": "scene_outside_tower_enemy.webp",
+        "location": "scene_outside_tower.webp",
         "narration": true
       }
     ]
@@ -322,7 +322,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "ウチも行く。",
+        "text": "オレも行く。",
         "location": "scene_workbench.webp"
       },
       {
@@ -492,7 +492,7 @@
         "speaker": "ジグ",
         "left": "ジグ",
         "right": "エリ",
-        "text": "クソ…やるしかねえ…。\nアウラは周りの小さい目玉を頼む。\nウチとエリで、デカいのを叩く。",
+        "text": "クソ…やるしかねえ…。\nアウラは周りの小さい目玉を頼む。\nオレとエリで、デカいのを叩く。",
         "location": "scene_remnant_01_battle.webp"
       },
       {
@@ -512,7 +512,7 @@
       {
         "cue": "pressure_1_jig",
         "speaker": "ジグ",
-        "text": "下がってろ…ウチがやる！"
+        "text": "下がってろ…オレがやる！"
       },
       {
         "cue": "pressure_2",
@@ -546,7 +546,7 @@
       {
         "cue": "pressure_7",
         "speaker": "ジグ",
-        "text": "エリ…\nウチがやつを引きつけてる間に\nアウラを連れて逃げろ。",
+        "text": "エリ…\nオレがやつを引きつけてる間に\nアウラを連れて逃げろ。",
         "location": "scene_eri_jig_battle.webp"
       },
       {
@@ -597,7 +597,7 @@
         "cue": "impact_2",
         "speaker": "",
         "text": "ジグとエリは、強い力で吹き飛ばされる。",
-        "location": "scene_outside_tower.webp",
+        "location": "scene_eri_jig_battle.webp",
         "narration": true
       },
       {
@@ -1070,7 +1070,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "ウチらの属性は分かるのか？",
+        "text": "オレらの属性は分かるのか？",
         "location": "scene_workbench.webp"
       },
       {
@@ -1378,7 +1378,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "ウチら、仲間だろ？",
+        "text": "オレら、仲間だろ？",
         "location": "scene_workbench.webp"
       },
       {
@@ -1891,7 +1891,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "ウチらみたいに、この世界に迷い込んだやつが他にもいるってことか？",
+        "text": "オレらみたいに、この世界に迷い込んだやつが他にもいるってことか？",
         "location": "scene_workbench.webp"
       },
       {
@@ -2292,7 +2292,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "アルノが外を相手してくれてる間に、ウチらがこっちをやるぞ。",
+        "text": "アルノが外を相手してくれてる間に、オレらがこっちをやるぞ。",
         "location": "scene_remnant_03.webp"
       },
       {
@@ -2874,7 +2874,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "赤っつーことは…火か。\nじゃ、水の出番だ。\n……って、水なんてウチらにいねぇぞ。",
+        "text": "赤っつーことは…火か。\nじゃ、水の出番だ。\n……って、水なんてオレらにいねぇぞ。",
         "location": "scene_tower_far.webp"
       },
       {

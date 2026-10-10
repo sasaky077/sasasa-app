@@ -10461,6 +10461,18 @@
     }
   }
 
+  // Resolve both modern explicit scene filenames and legacy location labels.
+  function getChapter104SceneBackground(entry) {
+    const location = String(entry && entry.location || '').trim();
+    if (/^[a-zA-Z0-9_-]+\.(?:webp|png|jpe?g)$/i.test(location)) {
+      return 'images/' + location;
+    }
+    if (location.includes('大型レムナント・アルノ登場')) return 'images/scene_aruno_help.webp';
+    if (location.includes('大型レムナント・戦闘')) return 'images/scene_eri_jig_battle.webp';
+    if (location.includes('大型レムナント・登場')) return 'images/scene_remnant_01_battle.webp';
+    return '';
+  }
+
   function showChapter104BattleDialogue(cues, onComplete) {
     if (!state || !isChapter104BossStage()) {
       if (typeof onComplete === 'function') onComplete();
@@ -10507,6 +10519,8 @@
       card.classList.toggle('no-speaker', !speaker);
       speakerEl.textContent = speaker;
       textEl.textContent = String(page.text || '');
+      const sceneBg = getChapter104SceneBackground(page);
+      overlay.style.backgroundImage = sceneBg ? `url("${sceneBg}")` : 'none';
       if (portraitSrc) {
         portrait.src = portraitSrc;
         portrait.style.display = '';
@@ -10540,14 +10554,7 @@
   }
 
   function getChapter104RescueBackground(entry) {
-    const location = String(entry && entry.location || '');
-    if (location.includes('大型レムナント・アルノ登場')) {
-      return 'images/scene_aruno_help.webp';
-    }
-    if (location.includes('大型レムナント・戦闘')) {
-      return 'images/scene_eri_jig_battle.webp';
-    }
-    return 'images/scene_outside_tower.webp';
+    return getChapter104SceneBackground(entry) || 'images/scene_outside_tower.webp';
   }
 
   function showChapter104RescuePages(cues, onComplete, options = {}) {
